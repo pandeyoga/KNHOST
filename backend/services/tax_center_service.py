@@ -67,11 +67,13 @@ async def _period_pph21(entity_id: Optional[str], period: str) -> Dict[str, floa
 
     `dpp` = Σ `tax_gross` slip (bruto + JKK + JKM + kesehatan tanggungan perusahaan; slip lama tanpa `tax_gross` →
     `gross`); `amount` = Σ `pph21` slip; `gl_amount` = kredit − debit akun hutang PPh 21 pada jurnal `payroll_run`
-    ber-`source_id` `{entity_id}:{period}`; `selisih` = `amount − gl_amount`; `count` = jumlah penggajian.
+    proses itu (PK-22: kunci jurnal = id proses; proses lama tetap `{entity_id}:{period}` — `gl_service.payroll_source_id`);
+    `selisih` = `amount − gl_amount`; `count` = jumlah penggajian.
     """
-    from services.gl_service import ACC_HUTANG_PPH21
+    from services.gl_service import ACC_HUTANG_PPH21, payroll_source_id
     q = {**_ent_q(entity_id), "period": period, "status": {"$in": _PAYROLL_STATUSES}}
-    runs = [r async for r in db.hr_payroll_runs.find(q, {"_id": 0, "id": 1, "entity_id": 1})]
+    runs = [r async for r in db.hr_payroll_runs.find(q, {"_id": 0, "id": 1, "entity_id": 1, "period": 1, "status": 1,
+                                                        "journal_id": 1, "journal_date": 1})]
     dpp = pph = 0.0
     if runs:
         async for s in db.hr_payslips.find({"run_id": {"$in": [r["id"] for r in runs]}},
@@ -80,7 +82,7 @@ async def _period_pph21(entity_id: Optional[str], period: str) -> Dict[str, floa
             dpp += float((s.get("gross") if dasar is None else dasar) or 0)
             pph += float(s.get("pph21") or 0)
     gl_amount = 0.0
-    src = sorted({f"{r.get('entity_id')}:{period}" for r in runs})
+    src = sorted({await payroll_source_id(r) for r in runs})
     if src:
         async for je in db.journal_entries.find(
                 {"source_type": "payroll_run", "source_id": {"$in": src}, "status": {"$ne": "void"}},

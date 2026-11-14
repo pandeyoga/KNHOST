@@ -694,6 +694,30 @@ async def _settlement_lines(doc: Dict[str, Any]) -> List[Dict[str, Any]]:
             for cat, amt in (doc.get("category_totals") or {}).items() if _r(amt) > 0]
 
 
+def settlement_journal_date(doc: Dict[str, Any]) -> str:
+    """PK-22 (FY-02, K-13) — tanggal buku jurnal LPJ = tanggal pengeluaran TERAKHIR di `expense_lines[].date`; tidak ada
+    yang bertanggal → tanggal LPJ diajukan (`submitted_at`, lalu `created_at`). Dipakai
+    langkah PERIKSA, anggaran PK-39, dan jurnal (`_post_and_finish`, juga ulang dari panel PK-24). `periode` LPJ teks bebas, jadi tidak
+    dipakai (ASUMSI unit). Dulu: hari LPJ disetujui."""
+    from services.book_date import tanggal_buku
+    tanggal = []
+    for ln in doc.get("expense_lines") or []:
+        try:
+            if str((ln or {}).get("date") or "").strip():
+                tanggal.append(tanggal_buku(str(ln["date"]).strip()))
+        except ValueError:
+            continue
+    if tanggal:
+        return max(tanggal)
+    for f in ("submitted_at", "created_at"):
+        if doc.get(f):
+            try:
+                return tanggal_buku(doc[f])
+            except ValueError:
+                continue
+    return tanggal_buku()
+
+
 async def approve_settlement(stl_id: str, ctx: EntityContext, actor: Dict[str, Any]) -> Dict[str, Any]:
     doc = await get_settlement(stl_id, ctx)
     _harus_diajukan(doc)   # PK-24 (FY-14) — LPJ draf tidak bisa langsung disetujui
@@ -704,15 +728,18 @@ async def approve_settlement(stl_id: str, ctx: EntityContext, actor: Dict[str, A
                                      pengaju=[doc.get("created_by_id"), doc.get("created_by")])
     if not await _settlement_lines(doc):
         raise HTTPException(status_code=400, detail="Tidak ada pengeluaran untuk diposting")
+    tgl_jurnal = settlement_journal_date(doc)   # PK-22 — tanggal pengeluaran terakhir, bukan hari disetujui
     try:
-        await gl_service.preflight_posting(doc["entity_id"], now_iso())
+        await gl_service.preflight_posting(doc["entity_id"], tgl_jurnal)
     except gl_service.ClosedPeriodError as exc:
         raise HTTPException(status_code=409, detail=str(exc))
-    # PK-39 (K-12) — PERIKSA anggaran tiap kategori (bulan buku jurnal LPJ = hari ini) sebelum PD induk diklaim.
+    # PK-39 (K-12) — PERIKSA anggaran tiap kategori (bulan buku jurnal LPJ) sebelum PD induk diklaim. PK-22 — bulan buku
+    # jurnal LPJ kini tanggal pengeluaran terakhir (dulu hari ini), jadi anggaran yang diperiksa = bulan jurnalnya.
     from services import budget_service as _bs
     try:
         budget_check = await _bs.enforce_budget(doc["entity_id"], _bs.settlement_budget_targets(doc),
-                                                when="lpj_approve", date="", actor=actor, exclude_stl_id=stl_id)
+                                                when="lpj_approve", date=tgl_jurnal, actor=actor,
+                                                exclude_stl_id=stl_id)
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
     # NIAT (1) CX-05 — tutup PD induk atomik LEBIH DULU (settling_stl_id): LPJ kedua tidak dapat memposting.
@@ -752,7 +779,7 @@ async def _post_and_finish(doc: Dict[str, Any], actor: Dict[str, Any], *, raise_
     res = await gl_service.post_durable(
         STL_COLL, stl_id, lambda: gl_service.post_petty_cash_settlement(
             settlement_id=stl_id, entity_id=doc["entity_id"], category_lines=cat_lines,
-            actor_name=actor.get("name", ""), date=now_iso(),
+            actor_name=actor.get("name", ""), date=settlement_journal_date(doc),   # PK-22 (FY-02)
             label=f"{doc['number']} · {doc.get('divisi', '')}".strip(), advance_amount=advance),
         source_type="petty_cash_settlement", source_id=stl_id, raise_on_fail=raise_on_fail)
     if res["gl_status"] != "posted":

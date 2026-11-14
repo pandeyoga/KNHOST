@@ -3319,7 +3319,8 @@ async def backfill_journals(entity_id: Optional[str] = None) -> Dict[str, Any]:
 
 
 async def post_incentive_accrual(entity_id: str, period: str,
-                                 created_by: str = "system") -> Optional[Dict[str, Any]]:
+                                 created_by: str = "system", *, total: Optional[float] = None,
+                                 date: str = "") -> Optional[Dict[str, Any]]:
     """F0-E — Akrual beban insentif penjualan per (entitas, periode).
 
     Model 1 (silo selling): biaya insentif ditanggung entitas SO (= entitas sales).
@@ -3327,20 +3328,26 @@ async def post_incentive_accrual(entity_id: str, period: str,
     sales entitas lain otomatis 0). Idempotent via source_type='incentive_accrual',
     source_id=f'{entity_id}:{period}'.
       Dr Beban Insentif Penjualan / Cr Hutang Insentif Penjualan.
+
+    PK-22 (FY-02, FY-08) — `total` (opsional) = Σ komisi slip gaji: posting gaji mengakru TEPAT angka yang dilunasi slip
+    (dulu dihitung ulang dari daftar akun sales, bisa berbeda dari slip). `date` = tanggal buku jurnal periodik
+    (`periodic_posting.journal_date`); kosong = hari ini (perilaku lama).
     """
     if not entity_id or entity_id == "all" or not period:
         raise ValueError("Akrual insentif membutuhkan entitas spesifik & periode (mis. 2026-06).")
     src_id = f"{entity_id}:{period}"
     await seed_default_coa()
-    from services import sales_force_service as sf
-    from role_registry import roles_in_category   # PR-T4 — akrual insentif: semua akun berkategori kerja "sales"
-    sales_users = await db.users.find(
-        {"role": {"$in": roles_in_category("sales")}, "status": "active"}, {"_id": 0, "id": 1}).to_list(500)
-    total = 0.0
-    for u in sales_users:
-        c = await sf.compute_commission(u["id"], period, entity_id=entity_id)
-        total += float(c.get("total_incentive", 0) or 0)
-    total = round(total, 2)
+    if total is None:
+        from services import sales_force_service as sf
+        from role_registry import roles_in_category   # PR-T4 — akrual insentif: semua akun berkategori kerja "sales"
+        sales_users = await db.users.find(
+            {"role": {"$in": roles_in_category("sales")}, "status": "active"}, {"_id": 0, "id": 1}).to_list(500)
+        total = 0.0
+        for u in sales_users:
+            c = await sf.compute_commission(u["id"], period, entity_id=entity_id)
+            total += float(c.get("total_incentive", 0) or 0)
+    total = round(float(total or 0), 2)
+    tgl = date or now_iso()
     if not await _already_posted("incentive_accrual", src_id):
         if total <= EPS:
             return None
@@ -3348,7 +3355,7 @@ async def post_incentive_accrual(entity_id: str, period: str,
                                f"Akrual insentif penjualan {period}")
         return await _insert_entry(
             lines=lines, description=f"Akrual insentif penjualan {period}",
-            date=now_iso(), source_type="incentive_accrual", source_id=src_id,
+            date=tgl, source_type="incentive_accrual", source_id=src_id,
             entity_id=entity_id, created_by=created_by, source_label=f"INS-{period}")
     # P17 COMM-04 — komisi on-collection berubah (pembayaran batal/susulan) → jurnal koreksi selisih.
     accrued = await _incentive_accrued(src_id)
@@ -3359,7 +3366,7 @@ async def post_incentive_accrual(entity_id: str, period: str,
     desc = f"Koreksi akrual insentif {period} ({accrued:,.0f} → {total:,.0f})"
     try:   # kunci deterministik dari saldo saat ini: klik bersamaan → indeks unik menolak duplikat
         return await _insert_entry(
-            lines=_balanced_pair(dr, cr, abs(delta), desc), description=desc, date=now_iso(),
+            lines=_balanced_pair(dr, cr, abs(delta), desc), description=desc, date=tgl,
             source_type="incentive_accrual_adj", source_id=f"{src_id}@{accrued:.2f}",
             entity_id=entity_id, created_by=created_by, source_label=f"INS-{period}-ADJ")
     except DuplicateKeyError:
@@ -3448,7 +3455,7 @@ async def post_petty_cash_settlement(*, settlement_id: str, entity_id: str,
 
 
 # ═════════════════════════════════════════════════════════════════════════════
-#  H4 — Payroll posting (idempotent per entitas+periode). Lihat PLAN_HRD §4.4.
+#  H4 — Payroll posting. PK-22 (FY-06): idempoten per PROSES gaji (dulu per entitas+periode). Lihat PLAN_HRD §4.4.
 # ═════════════════════════════════════════════════════════════════════════════
 
 async def payroll_source_id(run: Dict[str, Any]) -> str:
@@ -3470,8 +3477,8 @@ async def payroll_source_id(run: Dict[str, Any]) -> str:
 
 
 async def post_payroll_run(run: Dict[str, Any], slips: List[Dict[str, Any]],
-                           created_by: str = "system") -> Optional[Dict[str, Any]]:
-    """Posting jurnal payroll run (SEIMBANG, idempotent).
+                           created_by: str = "system", *, date: str = "") -> Optional[Dict[str, Any]]:
+    """Posting jurnal payroll run (SEIMBANG, idempotent per proses — `payroll_source_id`).
 
       Dr Beban Gaji (6-1000)            = Σ(pokok+tunjangan+lembur)
       Dr Beban BPJS Perusahaan (6-1100) = Σ kontribusi employer
@@ -3482,10 +3489,14 @@ async def post_payroll_run(run: Dict[str, Any], slips: List[Dict[str, Any]],
       Cr Hutang PPh21 (2-1800)          = Σ PPh21
     Anti double-count: mode accrue → komisi sudah jadi beban saat akrual penjualan,
     payroll hanya MEMINDAH liability 2-1500 → 2-1600 (bukan beban baru).
+
+    PK-22 — akrual insentif (mode accrue) TIDAK lagi diposting diam-diam di sini (galatnya dulu ditelan): resep
+    `posting_registry.post_payroll` mengakru Σ komisi slip lebih dulu dan galatnya menggagalkan posting. `date` =
+    tanggal buku jurnal periodik (`periodic_posting.journal_date`); kosong = hari ini. Akun dan arah tidak berubah.
     """
     entity_id = run.get("entity_id")
     period = run.get("period")
-    src_id = f"{entity_id}:{period}"
+    src_id = await payroll_source_id(run)
     existing = await db.journal_entries.find_one(
         {"source_type": "payroll_run", "source_id": src_id, "status": {"$ne": "void"}}, {"_id": 0})
     if existing:
@@ -3501,16 +3512,6 @@ async def post_payroll_run(run: Dict[str, Any], slips: List[Dict[str, Any]],
     mode = run.get("commission_mode", "accrue_then_settle")
     label = run.get("number", f"PAY-{period}")   # K-09 — payroll memakai awalan PAY- (bukan PR- = Permintaan Pembelian)
     desc = f"Payroll {period} ({label})"
-
-    # Mode accrue: pastikan akrual insentif sudah diposting agar 2-1500 punya saldo.
-    incentive_je_id = ""
-    if commission > EPS and mode == "accrue_then_settle":
-        try:
-            inc = await post_incentive_accrual(entity_id, period, created_by)
-            if inc:
-                incentive_je_id = inc.get("id", "")
-        except Exception as exc:
-            logger.warning("[post_payroll_run] efek samping gagal diabaikan: %s", exc)  # KN-C10
 
     def L(code, dr, cr, d=""):
         return {"account_code": code, "debit": round(dr, 2), "credit": round(cr, 2), "description": d}
@@ -3539,20 +3540,40 @@ async def post_payroll_run(run: Dict[str, Any], slips: List[Dict[str, Any]],
     if abs(total_debit - total_credit) > 0.5:
         raise ValueError(f"Jurnal payroll tidak seimbang: Dr {total_debit:,.0f} ≠ Cr {total_credit:,.0f}")
 
-    je = await _insert_entry(
-        lines=lines, description=desc, date=now_iso(),
+    return await _insert_entry(
+        lines=lines, description=desc, date=date or now_iso(),
         source_type="payroll_run", source_id=src_id, entity_id=entity_id,
         created_by=created_by, source_label=label)
-    je["incentive_journal_id"] = incentive_je_id
-    return je
+
+
+async def payroll_cash_accounts(entity_id: str) -> List[str]:
+    """PK-22 (FY-09) — akun yang boleh membayar gaji: hasil pemetaan `kas_bank.kas_besar` dan `kas_bank.kas_kecil` PT itu."""
+    out: List[str] = []
+    for key in ("kas_bank.kas_besar", "kas_bank.kas_kecil"):
+        code = await account_for(key, entity_id)
+        if code and code not in out:
+            out.append(code)
+    return out
+
+
+async def assert_payroll_cash_account(entity_id: str, cash_account: Optional[str]) -> str:
+    """PK-22 (FY-09) — langkah PERIKSA bayar gaji: akun sumber harus salah satu akun pemetaan kas besar/kas kecil PT itu,
+    aktif, dan bisa diposting (dulu cukup "anak 1-1000", jadi piutang & persediaan pun lolos). → kode akun."""
+    allowed = await payroll_cash_accounts(entity_id)
+    cash = cash_account or (allowed[0] if allowed else ACC_KAS_BESAR)
+    acc = await db.gl_accounts.find_one(
+        {"code": cash, "is_postable": True, "entity_id": {"$in": [None, "", entity_id]}}, {"_id": 0})
+    if cash not in allowed or not acc or acc.get("is_active") is False:
+        raise ValueError(f"Akun pembayaran '{cash}' bukan akun kas/bank aktif — pilih akun Kas/Bank.")
+    return cash
 
 
 async def pay_payroll_run(run: Dict[str, Any], created_by: str = "system",
-                          cash_account: Optional[str] = None) -> Optional[Dict[str, Any]]:
-    """Disbursement: Dr Hutang Gaji (2-1600) / Cr Kas/Bank. Idempotent."""
+                          cash_account: Optional[str] = None, *, date: str = "") -> Optional[Dict[str, Any]]:
+    """Disbursement: Dr Hutang Gaji (2-1600) / Cr Kas/Bank. Idempotent per proses (`payroll_source_id`)."""
     entity_id = run.get("entity_id")
     period = run.get("period")
-    src_id = f"{entity_id}:{period}"
+    src_id = await payroll_source_id(run)
     existing = await db.journal_entries.find_one(
         {"source_type": "payroll_pay", "source_id": src_id, "status": {"$ne": "void"}}, {"_id": 0})
     if existing:
@@ -3561,17 +3582,11 @@ async def pay_payroll_run(run: Dict[str, Any], created_by: str = "system",
     net = round(float((run.get("totals") or {}).get("net", 0) or 0), 2)
     if net <= EPS:
         return None
-    cash = cash_account or ACC_KAS_BESAR
-    acc = await db.gl_accounts.find_one(
-        {"code": cash, "is_postable": True, "entity_id": {"$in": [None, "", entity_id]}},
-        {"_id": 0})
-    # W2-023 — sumber pembayaran WAJIB akun kas/bank (anak 1-1000); tidak ada fallback diam-diam.
-    if not acc or acc.get("is_active") is False or acc.get("parent_code") != "1-1000":
-        raise ValueError(f"Akun pembayaran '{cash}' bukan akun kas/bank aktif — pilih akun Kas/Bank.")
+    cash = await assert_payroll_cash_account(entity_id, cash_account)   # W2-023 → PK-22: hanya akun kas/bank pemetaan
     label = run.get("number", f"PAY-{period}")   # K-09
     lines = _balanced_pair(ACC_HUTANG_GAJI, cash, net, f"Pembayaran gaji {period} ({label})")
     return await _insert_entry(
-        lines=lines, description=f"Pembayaran gaji {period} ({label})", date=now_iso(),
+        lines=lines, description=f"Pembayaran gaji {period} ({label})", date=date or now_iso(),
         source_type="payroll_pay", source_id=src_id, entity_id=entity_id,
         created_by=created_by, source_label=label)
 

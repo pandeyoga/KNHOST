@@ -517,7 +517,8 @@ async def _post_dep_entry(a: Dict[str, Any], entry: Dict[str, Any], *, raise_on_
         lambda: gl_service.post_depreciation(
             asset_id=aid, period=period, entity_id=a.get("entity_id", ""), amount=amt, asset_label=_label(a),
             dep_exp_acc=a.get("gl_account_dep_exp", gl_service.ACC_DEP_EXPENSE),
-            acc_dep_acc=a.get("gl_account_acc_dep", gl_service.ACC_FA_ACCUM_DEP)),
+            acc_dep_acc=a.get("gl_account_acc_dep", gl_service.ACC_FA_ACCUM_DEP),
+            date=entry.get("journal_date") or ""),   # PK-22 (FY-02) — tanggal buku periodik yang dicatat di entri
         source_type="fixed_asset_depreciation", source_id=f"{aid}:{period}", raise_on_fail=raise_on_fail)
     if jr["gl_status"] != "posted":
         return {"status": jr["gl_status"], "error": jr["gl_error"]}
@@ -549,12 +550,20 @@ async def run_depreciation(period: str, actor: Dict[str, Any],
     berjurnal / sudah pindah / punya penyusutan sebelumnya yang belum berjurnal dilewati beserta alasannya
     (`skipped_assets`); jurnal gagal satu aset tidak menghentikan aset lain (`failed`)."""
     period = (period or tanggal_buku())[:7]
+    from services import periodic_posting
+    periodic_posting.assert_period_started(period)   # PK-22 (FY-02) — periode depan ditolak
     q: Dict[str, Any] = dict(scope or {})
     if asset_id:
         q["id"] = asset_id   # aset tertentu: status apa pun dibaca supaya alasan lewatnya bisa dilaporkan
     else:
         q["status"] = "active"
     assets = await db.fin_fixed_assets.find(q, {"_id": 0}).to_list(5000)
+    # PK-22 (FY-02, K-13) — tanggal buku per PT (hari terakhir periode, atau hari ini menurut
+    # `gl.tanggal_jurnal_periodik`); periode tertutup ditolak SEBELUM aset mana pun diklaim (`02` §1 P2).
+    tgl_pt: Dict[str, str] = {}
+    for eid in sorted({a.get("entity_id", "") for a in assets if a.get("status") == "active"}):
+        tgl_pt[eid] = await periodic_posting.journal_date(eid, period)
+        await gl_service.preflight_posting(eid, tgl_pt[eid])
     posted: List[Dict[str, Any]] = []
     failed: List[Dict[str, Any]] = []
     skipped_assets: List[Dict[str, Any]] = []
@@ -612,6 +621,13 @@ async def run_depreciation(period: str, actor: Dict[str, Any],
         if blocker:   # urutan periode dijaga: periode sebelumnya yang belum berjurnal diulang dulu
             lewati(a, f"penyusutan {blocker['period']} belum berjurnal — ulangi di Posting Gagal dulu")
             continue
+        # PK-22 (FY-02) — periode harus = periode terakhir disusutkan + 1 bulan (pertama kali: bulan perolehan); periode
+        # yang melompat tidak dijurnal, aset masuk `skipped_assets` beserta alasannya.
+        harap = _expected_period(a, start)
+        if period != harap:
+            lewati(a, f"periode melompat — periode berikutnya untuk aset ini {harap}")
+            skipped_assets[-1].update({"name": a.get("name", ""), "expected_period": harap})
+            continue
         # INV-ATOMIC-01 — CAS per aset; G3 D4-ASSET-01 — klaim macet (>10 menit tanpa entri) boleh diambil alih.
         won = await db.fin_fixed_assets.find_one_and_update(
             {"id": a["id"], "status": a.get("status", "active"),
@@ -635,7 +651,7 @@ async def run_depreciation(period: str, actor: Dict[str, Any],
             "asset_id": a["id"], "asset_number": a.get("number", ""),
             "entity_id": a.get("entity_id", ""), "period": period, "amount": amt,
             "accumulated_after": new_acc, "book_value_after": round(cost - new_acc, 2),
-            "je_id": "", "je_number": "",
+            "je_id": "", "je_number": "", "journal_date": tgl_pt.get(a.get("entity_id", ""), ""),   # PK-22
             "gl_status": "pending", "gl_error": "", "gl_label": f"{a.get('number', '')} · {period}",
             "created_by": actor.get("name", "system"), "created_at": now_iso(),
         }}, upsert=True)
@@ -653,6 +669,16 @@ async def run_depreciation(period: str, actor: Dict[str, Any],
                        "status": fresh.get("status", "active")})
     return {"period": period, "posted": len(posted), "skipped": skipped,
             "total_amount": total, "assets": posted, "failed": failed, "skipped_assets": skipped_assets}
+
+
+def _expected_period(a: Dict[str, Any], start: str) -> str:
+    """PK-22 — periode penyusutan berikutnya yang sah: `last_depreciation_period` + 1 bulan; aset lama tanpa field itu
+    tetapi sudah disusutkan → bulan perolehan + jumlah bulan tersusut; belum pernah → bulan perolehan."""
+    last = str(a.get("last_depreciation_period") or "")[:7]
+    if last:
+        return _add_months(last, 1)
+    n = int(a.get("depreciated_months", 0) or 0)
+    return _add_months(start, n) if n > 0 else start
 
 
 # ── Disposal (gain/loss) ─────────────────────────────────────────────────────

@@ -202,7 +202,12 @@ async def test_PK23_U6_akun_aset_tidak_sah(klien, kepala_admin, db, siap):
 
 
 # ── U7 — 48 bulan: bulan terakhir mengambil seluruh sisa ────────────────────────────────────────────────────────────
-async def test_PK23_U7_susut_tepat_habis(klien, kepala_admin, db, siap):
+async def test_PK23_U7_susut_tepat_habis(klien, kepala_admin, db, siap, monkeypatch):
+    # PK-22 (FY-02) — periode penyusutan yang belum dimulai ditolak: 48 bulan sejak Jan 2026 berakhir Des 2029, jadi
+    # "hari ini" dibekukan 15 Jan 2030 di uji ini (tanggal jurnal tetap akhir tiap periode).
+    import datetime as _dt
+    from services import book_date
+    monkeypatch.setattr(book_date, "_sekarang", lambda: _dt.datetime(2030, 1, 15, 3, 0, tzinfo=_dt.timezone.utc))
     r = await klien.post(URL, headers=kepala_admin, json=_isi(
         name="Laptop U7", category="Inventaris & Perabot Kantor", acquisition_cost=1 * JT, useful_life_months=48,
         acquisition_date="2026-01-15", funding_source="hutang", account_id=None))

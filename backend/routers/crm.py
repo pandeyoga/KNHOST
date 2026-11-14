@@ -378,8 +378,18 @@ async def post_incentive_gl(request: Request, period: str = Query(...),
     eid = entity_id or ctx.active_entity_id
     if eid == "all" or eid not in ctx.allowed_entity_ids:
         raise HTTPException(status_code=400, detail="Pilih entitas spesifik (bukan 'Semua') untuk posting insentif ke GL.")
+    # PK-22 (FY-08) — akrual terpisah hanya untuk PT ber-mode `accrue_then_settle`; mode lain mengakui beban saat gaji
+    # diposting, jadi akrual manual = beban ganda. Tanggal buku = jurnal periodik (`gl.tanggal_jurnal_periodik`, K-13).
+    from services import periodic_posting
+    from services.config_resolver import value_of
+    if await value_of("hr.payroll_commission_mode", {"entity_id": eid}) != "accrue_then_settle":
+        raise HTTPException(status_code=409, detail="PT ini mengakui beban insentif saat gaji diposting, jadi akrual "
+                                                    "terpisah tidak dipakai.")
     try:
-        entry = await gl_service.post_incentive_accrual(eid, period, created_by=actor.get("name", "system"))
+        tgl = await periodic_posting.journal_date(eid, period)
+        entry = await gl_service.post_incentive_accrual(eid, period, created_by=actor.get("name", "system"), date=tgl)
+    except gl_service.ClosedPeriodError as e:
+        raise HTTPException(status_code=409, detail=str(e))
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
     status = await gl_service.incentive_accrual_status(eid, period)

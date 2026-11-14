@@ -436,3 +436,15 @@ Istilah form **Tambah Aset Tetap**, daftar aset, dan Posting Gagal (`docs/bluepr
 | **sudah dipindahkan** | Status "Pindah PT" · keterangan tombol mati "Aset ini sudah dipindahkan ke {PT}." · pesan 409 "Aset {nomor} sudah dipindahkan ke {PT}, jadi tidak bisa diubah, disusutkan, atau dilepas di sini." | Hak atas aset sudah berpindah ke PT lain; yang aktif adalah aset penggantinya di PT itu |
 | **belum berjurnal perolehan** | Pesan 409 "Aset {nomor} belum punya jurnal perolehan. Ulangi posting di Posting Gagal dulu." · alasan lewat penyusutan "belum berjurnal perolehan" · keterangan tombol mati "Jurnal perolehan belum terbit — ulangi di Keuangan › Posting Gagal." | Aset tersimpan tetapi jurnal perolehannya gagal/diproses; tidak disusutkan, dilepas, atau dipindah sampai jurnalnya terbit |
 | **Penyusutan Aset / Pelepasan Aset / Pindah Aset Antar-PT / Bayar Pindah Aset** (Posting Gagal) | Jenis di panel Posting Gagal | Entri penyusutan per aset & periode, pelepasan yang macet, sisi pengirim jurnal pindah aset, dan dua sisi jurnal pembayarannya yang belum terbit — Ulang Posting menerbitkan yang kurang tepat sekali |
+
+### 9.11 Penggajian: hitung ulang, batal, anulir, setoran kewajiban (PK-22)
+
+Istilah SDM › Penggajian (`docs/blueprint/unit/PK-22.md`).
+
+| Istilah | Teks layar | Arti |
+|---|---|---|
+| **setoran kewajiban** | Tab "Setoran Kewajiban" · tombol "Catat Setoran" · kartu "Kewajiban · Sudah disetor · Sisa" | Pembayaran hutang BPJS dan PPh 21 yang dipotong/ditanggung dari gaji suatu masa ke BPJS atau kas negara. Satu setoran = satu kas keluar (rekening wajib) yang mengurangi hutangnya; tanggal setor = tanggal jurnal. Batasnya sisa kewajiban masa itu |
+| **hitung ulang** (penggajian) | Tombol "Hitung Ulang" (draf) · "Dihitung ulang {n}×" | Slip gaji draf dihitung lagi dari data karyawan, lembur, dan komisi terbaru; nomor slip tetap |
+| **batalkan** (penggajian) | Tombol "Batalkan" · lencana "Dibatalkan" | Membatalkan penggajian yang belum diposting (draf, diajukan, disahkan) beserta slipnya; tanpa jurnal. Proses baru periode itu boleh dibuat |
+| **anulir** (penggajian) | Tombol "Anulir" · lencana "Dianulir" | Membatalkan penggajian yang sudah diposting dengan membalik jurnal gajinya (bertanggal sama dengan jurnal asal). Gaji yang sudah dibayar tidak bisa dianulir (koreksi lewat proses susulan) |
+| **tanggal buku** (jurnal periodik) | "Jurnal gaji: … · tanggal buku 31 Okt 2026" · pengaturan "Tanggal jurnal gaji, penyusutan, dan insentif" | Tanggal jurnal gaji, penyusutan, dan akrual insentif: hari terakhir periodenya (bawaan) atau hari jurnal dibuat |

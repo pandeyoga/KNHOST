@@ -127,7 +127,6 @@ JURNAL_U1 = [("2-1600", 0, 8_490_000), ("2-1700", 0, 900_000), ("2-1800", 0, 150
 
 
 # ── U1 — jurnal gaji bertanggal akhir periode ───────────────────────────────────────────────────────────────────────
-@pytest.mark.xfail(strict=True, reason="FY-02 — jurnal gaji masih bertanggal hari posting sampai (b)")
 async def test_PK22_U1_posting_bertanggal_akhir_periode(klien, db, adm):
     run = await _proses(db, KSC, "approved", tag="u1")
     r = await klien.post(f"/api/hr/payroll/runs/{run['id']}/post-gl", headers=await adm())
@@ -145,7 +144,6 @@ async def test_PK22_U1_posting_bertanggal_akhir_periode(klien, db, adm):
 
 
 # ── U2 — periode tertutup ditolak sebelum tulisan ────────────────────────────────────────────────────────────────────
-@pytest.mark.xfail(strict=True, reason="FY-02 — tanggal buku & periksa periode posting gaji di (b)")
 async def test_PK22_U2_periode_tertutup_409_tanpa_jurnal(klien, db, adm, paksa_jurnal_gagal):
     eid = await pt_uji("P22B")
     run = await _proses(db, eid, "approved", tag="u2")
@@ -159,7 +157,6 @@ async def test_PK22_U2_periode_tertutup_409_tanpa_jurnal(klien, db, adm, paksa_j
 
 
 # ── U3 — akun nonaktif: gagal tercatat, tampil di panel, ulang menerbitkan tepat satu jurnal ──────────────────────
-@pytest.mark.xfail(strict=True, reason="FY-06 — posting gaji lewat post_durable & panel di (b)")
 async def test_PK22_U3_jurnal_gagal_panel_lalu_ulang(klien, db, adm):
     eid = await pt_uji("P22C")
     run = await _proses(db, eid, "approved", tag="u3")
@@ -255,7 +252,6 @@ async def test_PK22_U5_batal_lalu_proses_baru(klien, db, adm):
 
 
 # ── U6 — void (lanjutan U1): jurnal pembalik bertanggal akhir periode, saldo kembali nol ───────────────────────────
-@pytest.mark.xfail(strict=True, reason="FY-02 — jurnal asal (rantai U1) bertanggal hari posting sampai (b)")
 async def test_PK22_U6_void_membalik_jurnal(klien, db, adm):
     rid = "prun_pk22_u1_ent_ksc_202610"
     r = await klien.post(f"/api/hr/payroll/runs/{rid}/void", json={"reason": "tunj"}, headers=await adm())
@@ -278,7 +274,6 @@ async def test_PK22_U6_void_membalik_jurnal(klien, db, adm):
 
 
 # ── U7 — proses Oktober baru sesudah void: jurnal kedua terbit (kunci per proses) ─────────────────────────────────
-@pytest.mark.xfail(strict=True, reason="FY-06 — kunci jurnal gaji per proses di (b)")
 async def test_PK22_U7_proses_baru_sesudah_void(klien, db, adm):
     await _karyawan(db, KSC, 5_000_000, 4_000_000)
     h = await adm()
@@ -359,7 +354,6 @@ async def test_PK22_U8b_setoran_pph21_dari_pemetaan_dan_mode_semua_pt(klien, db,
 
 
 # ── U9 — bayar hanya dari akun kas/bank pemetaan ─────────────────────────────────────────────────────────────────────
-@pytest.mark.xfail(strict=True, reason="FY-09 — pembatasan akun bayar di (b)")
 async def test_PK22_U9_bayar_dari_piutang_ditolak(klien, db, adm):
     eid = await pt_uji("P22J")
     run = await _proses(db, eid, "posted", tag="u9")
@@ -423,12 +417,13 @@ async def test_PK22_U11_periode_belum_dimulai(klien, adm):
 
 
 # ── U12 — penyusutan bertanggal akhir periode; periode melompat dilewati beralasan ─────────────────────────────────
-@pytest.mark.xfail(strict=True, reason="FY-02 — tanggal & urutan penyusutan di (b)")
 async def test_PK22_U12_penyusutan_tanggal_dan_periode_melompat(klien, db, adm):
     # Diperoleh 15 Sep, 12 bulan, Rp 12.000.000 → Rp 1.000.000/bulan; September sudah disusutkan (fixture).
     for aid in ("fa_pk22_a", "fa_pk22_b"):
         await db.fin_fixed_assets.insert_one({
+            # `gl_status` = jurnal perolehan sudah terbit (PK-23: aset tanpa jurnal perolehan tidak disusutkan).
             "id": aid, "number": aid.upper(), "name": f"Mesin {aid[-1]}", "entity_id": KSC, "status": "active",
+            "gl_status": "posted",
             "acquisition_date": "2026-09-15", "acquisition_cost": 12_000_000, "salvage_value": 0,
             "useful_life_months": 12, "monthly_depreciation": 1_000_000, "accumulated_depreciation": 1_000_000,
             "book_value": 11_000_000, "depreciated_months": 1, "applied_periods": ["2026-09"],
@@ -454,7 +449,6 @@ async def test_PK22_U12_penyusutan_tanggal_dan_periode_melompat(klien, db, adm):
 
 
 # ── U13 — pengaturan per PT: hari posting untuk ent_kanda saja ──────────────────────────────────────────────────────
-@pytest.mark.xfail(strict=True, reason="FY-02 — posting gaji membaca tanggal buku periodik di (b)")
 async def test_PK22_U13_pengaturan_per_pt(klien, db, adm):
     h = await adm()
     r = await klien.put("/api/config/values", headers=h, json={"items": [{
@@ -478,7 +472,6 @@ async def test_PK22_U13_pengaturan_per_pt(klien, db, adm):
 
 
 # ── U14 — akrual komisi dari slip; galatnya menggagalkan posting ─────────────────────────────────────────────────────
-@pytest.mark.xfail(strict=True, reason="FY-08 — akrual dari slip & galat tidak ditelan di (b)")
 async def test_PK22_U14_akrual_dari_slip_tidak_ditelan(klien, db, adm):
     eid = await pt_uji("P22N")
     run = await _proses(db, eid, "approved", tag="u14", slip=[("Sales A", 5_000_000, 200_000, 300_000, 100_000,
@@ -506,7 +499,6 @@ async def test_PK22_U14_akrual_dari_slip_tidak_ditelan(klien, db, adm):
     assert await _saldo(db, eid, "2-1500") == 0
 
 
-@pytest.mark.xfail(strict=True, reason="FY-08 — penolakan akrual manual di (b)")
 async def test_PK22_U14b_akrual_manual_mode_lain_409(klien, adm):
     eid = await pt_uji("P22O")
     h = await adm(eid)
@@ -521,7 +513,6 @@ async def test_PK22_U14b_akrual_manual_mode_lain_409(klien, adm):
 
 
 # ── Tambahan — tanggal jurnal LPJ = pengeluaran terakhir ─────────────────────────────────────────────────────────────
-@pytest.mark.xfail(strict=True, reason="FY-02 — tanggal jurnal LPJ di (b)")
 async def test_PK22_LPJ_bertanggal_pengeluaran_terakhir(klien, db, adm):
     await db.cash_advances.insert_one({"id": "ca_pk22", "number": "KSC/PD-PK22", "entity_id": KSC,
                                        "status": "disbursed", "total_amount": 500_000, "created_at": "2026-10-01"})
@@ -562,7 +553,6 @@ async def test_PK22_migrasi_izin_peran_kustom(klien, db, kepala_admin):
 
 
 # ── Tambahan — kontrol dua orang pada posting (K-41) ───────────────────────────────────────────────────────────────
-@pytest.mark.xfail(strict=True, reason="FY-09 — kontrol dua orang pada posting di (b)")
 async def test_PK22_kontrol_dua_orang_posting(klien, db, akun, sesi, adm):
     from services import config_resolver as resolver
     eid = await pt_uji("P22K")

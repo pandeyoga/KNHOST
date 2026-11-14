@@ -49,6 +49,10 @@ BASELINE_REL = Path("scripts/guardrails/baselines/posting_coverage.json")
 TANPA_DOKUMEN: Dict[str, str] = {
     "reverse_entry": "pembalikan jurnal manual dari layar Jurnal: sumbernya jurnal itu sendiri, bukan dokumen",
     "post_inventory_opening_balance": "saldo awal persediaan (sekali per PT): tidak ada dokumen sumber",
+    # PK-22 — akrual manual `POST /api/sales/incentive/post-gl` berkunci (PT, periode), bukan dokumen; gagal = 400/409
+    # langsung tanpa tulisan apa pun. Akrual yang menyertai posting gaji lewat resep `posting_registry.post_payroll`
+    # di dalam `post_durable` (jenis `payroll_run`).
+    "post_incentive_accrual": "akrual insentif manual per PT+periode: tidak ada dokumen sumber; gagal tanpa tulisan",
 }
 
 

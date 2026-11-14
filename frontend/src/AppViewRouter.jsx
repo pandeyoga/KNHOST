@@ -35,7 +35,7 @@ import { SalesPortal, PriceApprovals, OrdersView, CrmView, OperationsView, QcHub
   CashManagementView, PurchaseReturns, VendorBillsView, GrIrView, ContraBonsView, IntercoView, InternalRequestsView,
   KeepPendingPanel, RepairOrdersView, DesignRequestsView, LogisticsView, LandedCostView, InputTaxView, RFQView,
   PurchaseRequisitions, ReorderSuggestions, EmployeesView, OrgUnitsView, EmployeeSelfService, AttendanceView,
-  AttendanceSetupView, LiveTrackingView, VisitsView, PayrollRunsView, PayslipsView, LeaveView, OvertimeView,
+  AttendanceSetupView, LiveTrackingView, VisitsView, PayrollRunsView, PayrollRemittancesView, PayslipsView, LeaveView, OvertimeView,
   KpiView, DesignGalleryView, HrAnalyticsView, StockAnalyticsView, ExportCenterView, LocationPutawayView,
   GoodsReceiptsView, OutboundView, CuttingOpsView, ReceivingOcrSettings, RfidTagsView,
   RfidGateMonitorView, RfidLocationsView, CashAdvancesView, SettlementsView, ExpenseCategoriesView,
@@ -419,6 +419,7 @@ export default function AppViewRouter(props) {
       {activeView === "hr-visits" && <VisitsView currentUser={user} selectedEntity={selectedEntity} />}
       {activeView === "hr-payroll-runs" && <PayrollRunsView currentUser={user} selectedEntity={selectedEntity} {...focusDocProps} />}
       {activeView === "hr-payslips" && <PayslipsView currentUser={user} selectedEntity={selectedEntity} />}
+      {activeView === "hr-payroll-remittances" && <PayrollRemittancesView />}
       {activeView === "hr-leave" && <LeaveView currentUser={user} selectedEntity={selectedEntity} />}
       {activeView === "hr-overtime" && <OvertimeView currentUser={user} selectedEntity={selectedEntity} />}
       {activeView === "cs-kpi" && <KpiView currentUser={user} selectedEntity={selectedEntity} />}

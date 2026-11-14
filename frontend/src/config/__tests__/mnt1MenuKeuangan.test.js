@@ -66,7 +66,7 @@ describe("U2 — jumlah tab tampak per hub (admin)", () => {
     expect(labels("ledger")).toEqual(["Jurnal", "Bagan Akun"]);
     expect(labels("fin-reports")).toEqual(["Laba-Rugi, Neraca & Arus Kas", "Profitabilitas", "Proyeksi Kas", "Anggaran", "Konsolidasi"]);
     expect(labels("tax-hub")).toEqual(["Faktur Keluaran", "Faktur Masukan", "PPN & PPh"]);
-    expect(labels("hr-payroll-hub")).toEqual(["Proses Gaji", "Slip Gaji"]);
+    expect(labels("hr-payroll-hub")).toEqual(["Proses Gaji", "Slip Gaji", "Setoran Kewajiban"]);   // PK-22
     expect(labels("hr-kpi-hub")).toEqual(["Kinerja Sales", "Target & Aturan", "Skema (Arsip)", "KPI Karyawan"]);
     expect(HUB_TABS["purchase-orders"].map((t) => t.view)).toContain("landed-cost");
     expect(HUB_TABS["settings-sales"].map((t) => t.view)).not.toContain("incentive-rates");

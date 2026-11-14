@@ -549,7 +549,11 @@ async def _payroll_run_of_journal(je: Dict[str, Any]) -> str:
             {"$or": [{"journal_id": jid}, {"paid_journal_id": jid}]}, {"_id": 0, "id": 1})
         if run:
             return run["id"]
-    ent, _, period = str(je.get("source_id") or "").partition(":")
+    sid = str(je.get("source_id") or "")
+    if sid.startswith("prun"):   # PK-22 — jurnal gaji berkunci id proses
+        run = await db.hr_payroll_runs.find_one({"id": sid}, {"_id": 0, "id": 1})
+        return (run or {}).get("id", "")
+    ent, _, period = sid.partition(":")
     if not (ent and period):
         return ""
     run = await db.hr_payroll_runs.find_one(
@@ -573,14 +577,19 @@ async def derived_refs(doc_type: str, doc: Dict[str, Any]) -> List[Dict[str, Any
         if tgt and sid:
             out.append({"rel": "journal_of", "doc_type": tgt, "doc_id": sid, "note": st})
         return out
-    if doc_type == "payroll_run":
-        # PK-44 — jurnal gaji tidak berawalan id run: dicari dengan kunci "{entity_id}:{period}".
-        src = f"{doc.get('entity_id') or ''}:{doc.get('period') or ''}"
-        async for j in db.journal_entries.find(
-                {"source_type": {"$in": list(PAYROLL_SOURCE_TYPES)}, "source_id": src},
-                {"_id": 0, "id": 1, "number": 1, "source_type": 1}).limit(30):
-            out.append({"rel": "journaled_by", "doc_type": "journal_entry", "doc_id": j["id"],
-                        "doc_number": j.get("number", ""), "note": j.get("source_type", "")})
+    if doc_type == "payroll_run" and doc.get("id"):
+        # PK-44 — jurnal gaji LAMA tidak berawalan id run: dicari dengan kunci "{entity_id}:{period}". PK-22 — jurnal
+        # baru berkunci id proses (tertangkap pencarian `source_id` di bawah); kunci lama hanya untuk proses yang jurnalnya
+        # memang terbit dengan kunci lama (`gl_service.payroll_source_id`), supaya proses kedua periode yang sama tidak
+        # ikut menautkan jurnal proses yang di-void.
+        from services import gl_service as _gl
+        src = await _gl.payroll_source_id(doc)
+        if src != doc["id"]:
+            async for j in db.journal_entries.find(
+                    {"source_type": {"$in": list(PAYROLL_SOURCE_TYPES)}, "source_id": src},
+                    {"_id": 0, "id": 1, "number": 1, "source_type": 1}).limit(30):
+                out.append({"rel": "journaled_by", "doc_type": "journal_entry", "doc_id": j["id"],
+                            "doc_number": j.get("number", ""), "note": j.get("source_type", "")})
     if doc_type == "cash_transaction":
         if doc.get("ref_type") in DOC_TYPES and doc.get("ref_id"):
             out.append({"rel": "parent", "doc_type": doc["ref_type"], "doc_id": doc["ref_id"],

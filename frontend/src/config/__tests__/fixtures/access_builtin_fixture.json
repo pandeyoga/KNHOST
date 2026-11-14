@@ -2943,6 +2943,10 @@
    "hr",
    "payroll"
   ],
+  "hr-payroll-remittances": [
+   "hr",
+   "payroll"
+  ],
   "hr-payroll-runs": [
    "hr",
    "payroll"

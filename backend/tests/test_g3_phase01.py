@@ -240,16 +240,24 @@ def _asset_fixture(monkeypatch):
         return {"id": f"je_{sid}", "number": sid}
     monkeypatch.setattr(fa.gl_service, "post_depreciation", fake_post)
     # PK-23 (FY-01) — hanya aset yang jurnal perolehannya terbit yang disusutkan.
+    # PK-22 (FY-02) — periode yang belum dimulai ditolak dan periode harus berurutan sejak bulan perolehan: uji memakai
+    # Januari–Februari 2026 (dulu 2030, tanpa tanggal perolehan).
     return db.fin_fixed_assets.insert_one({"id": "a1", "status": "active", "acquisition_cost": 1200,
                                           "gl_status": "posted", "salvage_value": 0, "useful_life_months": 12,
+                                          "acquisition_date": "2026-01-15",
                                           "accumulated_depreciation": 0, "depreciated_months": 0})
 
 
 def test_asset02_concurrent_periods_accumulate(monkeypatch):
     async def go():
         await _asset_fixture(monkeypatch)
-        await asyncio.gather(fa.run_depreciation("2030-01", {"name": "x"}),
-                             fa.run_depreciation("2030-02", {"name": "y"}))
+        # PK-22 — Januari & Februari bersamaan: Februari "melompat" (Januari belum tercatat) → dilewati beralasan.
+        r1, r2 = await asyncio.gather(fa.run_depreciation("2026-01", {"name": "x"}),
+                                      fa.run_depreciation("2026-02", {"name": "y"}))
+        assert r1["posted"] == 1 and r2["posted"] == 0 and r2["skipped_assets"], (r1, r2)
+        # Februari dua kali bersamaan sesudah Januari → tepat sekali; register menjumlah (D4-ASSET-02).
+        await asyncio.gather(fa.run_depreciation("2026-02", {"name": "x"}),
+                             fa.run_depreciation("2026-02", {"name": "y"}))
         a = await db.fin_fixed_assets.find_one({"id": "a1"})
         assert (a["accumulated_depreciation"], a["depreciated_months"], a["book_value"]) == (200, 2, 1000)
         assert await db.fin_depreciation_entries.count_documents({}) == 2
@@ -261,11 +269,11 @@ def test_asset01_fault_after_journal_retry_completes_once(monkeypatch):
         await _asset_fixture(monkeypatch)
         undo = inject(db.fin_depreciation_entries, "update_one", lambda *a, **k: True)
         with pytest.raises(Fault):
-            await fa.run_depreciation("2030-01", {"name": "x"})
+            await fa.run_depreciation("2026-01", {"name": "x"})
         undo()
-        await db.fin_fixed_assets.update_one({"id": "a1"}, {"$set": {"depreciation_claims.2030-01": "2000-01-01"}})
-        await fa.run_depreciation("2030-01", {"name": "x"})
-        await fa.run_depreciation("2030-01", {"name": "x"})
+        await db.fin_fixed_assets.update_one({"id": "a1"}, {"$set": {"depreciation_claims.2026-01": "2000-01-01"}})
+        await fa.run_depreciation("2026-01", {"name": "x"})
+        await fa.run_depreciation("2026-01", {"name": "x"})
         a = await db.fin_fixed_assets.find_one({"id": "a1"})
         assert (a["accumulated_depreciation"], a["depreciated_months"]) == (100, 1)
         assert await db.fin_depreciation_entries.count_documents({}) == 1

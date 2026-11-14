@@ -122,6 +122,8 @@ async def run_depreciation(payload: RunDepreciationIn, request: Request) -> Dict
         res = await svc.run_depreciation(payload.period, actor,
                                          asset_id=payload.asset_id or None,
                                          scope=_scope(ctx, payload.entity_id))
+    except gl_service.ClosedPeriodError as e:   # PK-22 — periode tertutup: 409, pesan apa adanya
+        raise HTTPException(status_code=409, detail=str(e))
     except ValueError as e:
         raise _galat(e)
     await audit(actor.get("name", ""), "fixed_asset_depreciation_run", "fixed_asset",

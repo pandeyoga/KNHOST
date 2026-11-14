@@ -234,6 +234,7 @@ class TestW2_017_ConcurrentDepositUse:
 # ═══════════════════════════ W2-022 / W2-023 ═══════════════════════════
 class TestW2_022_023_PayrollPay:
     def _make_posted_run(self) -> str:
+        # PK-22 (FY-06) — jurnal bayar gaji berkunci id proses (dulu "{PT}:{periode}").
         rid = f"prun_{PREFIX}_{uuid.uuid4().hex[:6]}"
         db.hr_payroll_runs.insert_one({
             "id": rid, "number": f"PR-{PREFIX}-{uuid.uuid4().hex[:4]}",
@@ -252,7 +253,7 @@ class TestW2_022_023_PayrollPay:
         assert r.status_code == 400, r.text
         # No journal, run still posted
         je = db.journal_entries.find_one(
-            {"source_type": "payroll_pay", "source_id": f"{ENT}:2099-02"})
+            {"source_type": "payroll_pay", "source_id": rid})
         assert je is None
         run = db.hr_payroll_runs.find_one({"id": rid})
         assert run["status"] == "posted"
@@ -269,7 +270,7 @@ class TestW2_022_023_PayrollPay:
         assert run["status"] == "paid"
 
         je = db.journal_entries.find_one(
-            {"source_type": "payroll_pay", "source_id": f"{ENT}:2099-02", "status": {"$ne": "void"}})
+            {"source_type": "payroll_pay", "source_id": rid, "status": {"$ne": "void"}})
         assert je is not None
         _mark("journal_entries", je["id"])
 
@@ -286,7 +287,7 @@ class TestW2_022_023_PayrollPay:
             {"ref_type": "payroll_run", "ref_id": rid})
         assert cash_after == 1, f"Repeat pay created extra cash_txn (count now {cash_after})"
         je_after = db.journal_entries.count_documents(
-            {"source_type": "payroll_pay", "source_id": f"{ENT}:2099-02", "status": {"$ne": "void"}})
+            {"source_type": "payroll_pay", "source_id": rid, "status": {"$ne": "void"}})
         assert je_after == 1
 
 

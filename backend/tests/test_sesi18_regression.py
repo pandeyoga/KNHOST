@@ -130,7 +130,14 @@ class TestRunDepreciationSuccess:
         fa = db.fin_fixed_assets.find_one({"status": "active"}, {"_id": 0})
         if not fa:
             pytest.skip("no active fixed asset")
-        aid, period = fa["id"], "2030-07"
+        # PK-22 (FY-02) — periode yang belum dimulai kini ditolak 400; uji sukses + idempoten memakai bulan berjalan
+        # (aset yang periodenya melompat dilewati beralasan — tetap 200, dan ulangan tetap 0 diposting).
+        r0 = admin.post("/fixed-assets/run-depreciation",
+                        json={"period": "2030-07", "asset_id": fa["id"], "entity_id": fa.get("entity_id", "")})
+        assert r0.status_code == 400 and "belum dimulai" in r0.text, r0.text
+        import datetime as _dt
+        bulan_wib = (_dt.datetime.now(_dt.timezone.utc) + _dt.timedelta(hours=7)).strftime("%Y-%m")
+        aid, period = fa["id"], bulan_wib
         before = dict(fa)
         # jaga kebersihan: hapus entri periode ini kalau ada
         for e in db.fin_depreciation_entries.find({"asset_id": aid, "period": period}, {"je_id": 1}):

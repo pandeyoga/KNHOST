@@ -5377,8 +5377,10 @@ async def seed_fixed_assets():
     ]
     from services import interco_money_service as icm  # noqa: PLC0415
     made = 0
+    acq_months = []   # PK-22 — bulan perolehan tiap aset (awal deret penyusutan)
     for c in contoh:
         days = c.pop("days")
+        acq_months.append(ago(days=days)[:7])
         try:
             # PK-23 (FY-03) — sumber dana wajib: dibayar dari rekening bank PT (dulu Cr 1-1100 tanpa transaksi kas);
             # kas keluarnya lahir lewat pembuat kas satu pintu, jadi buku rekening = buku besar.
@@ -5392,7 +5394,16 @@ async def seed_fixed_assets():
             print(f"  [warn] aset '{c['name']}' dilewati: {exc}")
     # Jalankan penyusutan beberapa periode supaya NILAI BUKU-nya sudah bergerak —
     # pindah aset antar-PT baru bermakna kalau ada akumulasi penyusutan yang ikut dihapus.
-    periods = sorted({ago(days=d)[:7] for d in (270, 240, 210, 180, 150, 120, 90, 60, 30)})
+    # PK-22 (FY-02) — penyusutan wajib berurutan sejak bulan perolehan (periode yang melompat dilewati) dan periode yang
+    # belum dimulai ditolak: tiap bulan dari bulan perolehan aset tertua sampai bulan lalu (dulu 9 bulan terakhir saja,
+    # sehingga aset yang diperoleh lebih awal kini akan dilewati "periode melompat").
+    akhir = ago(days=30)[:7]
+    bulan = min(acq_months) if acq_months else akhir
+    periods = []
+    while bulan <= akhir:
+        periods.append(bulan)
+        y, m = int(bulan[:4]), int(bulan[5:7])
+        bulan = f"{y + m // 12:04d}-{m % 12 + 1:02d}"
     for p in periods:
         try:
             await fas.run_depreciation(p, actor)

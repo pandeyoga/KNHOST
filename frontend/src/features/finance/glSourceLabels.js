@@ -27,7 +27,8 @@ export const SOURCE_LABELS = {
   subcon_issue: "Kirim ke Makloon", subcon_issue_reversal: "Pembalik Kirim Makloon", subcon_receipt: "Terima dari Makloon",
   subcon_service: "Jasa Makloon", subcon_service_unabsorbed: "Jasa Makloon Tak Terserap",
   makloon_claim: "Klaim Makloon", makloon_material_loss: "Susut Bahan Makloon",
-  payroll_run: "Penggajian", payroll_pay: "Pembayaran Gaji", incentive_accrual: "Akrual Insentif", incentive_accrual_adj: "Koreksi Akrual Insentif",
+  payroll_run: "Penggajian", payroll_pay: "Pembayaran Gaji", payroll_run_reversal: "Pembalik Penggajian",   // PK-22
+  incentive_accrual: "Akrual Insentif", incentive_accrual_adj: "Koreksi Akrual Insentif",
   fixed_asset_acquisition: "Perolehan Aset", fixed_asset_depreciation: "Penyusutan Aset", fixed_asset_disposal: "Pelepasan Aset",
   fixed_asset_transfer: "Mutasi Aset", fixed_asset_transfer_settlement: "Pelunasan Mutasi Aset",
   closing: "Tutup Buku", suspense_reclass: "Reklas Akun Penampung", finance_case: "Kasus Keuangan",

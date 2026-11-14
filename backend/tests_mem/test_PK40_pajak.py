@@ -365,7 +365,8 @@ async def test_PK40_U14_dasar_pph21_bruto_kena_pajak_dan_buku_besar(klien, db, u
     # Jurnal gaji (hitungan tangan): Dr 6-1000 10.000.000 + Dr 6-1100 300.000 = 10.300.000
     #   = Cr 2-1600 9.650.000 + Cr 2-1700 (200.000 + 300.000) 500.000 + Cr 2-1800 150.000.
     je = await gl.post_payroll_run(run, [slip])
-    assert je and je["source_id"] == "ent_ksc:2026-10"
+    # PK-22 (FY-06) — kunci jurnal gaji = id proses (dulu "{PT}:{periode}"); rekap pajak mencari lewat kunci yang sama.
+    assert je and je["source_id"] == run["id"]
     r = await klien.get("/api/tax/summary", params={"period": "2026-10", "entity_id": ENT}, headers=uji["adm"])
     assert r.status_code == 200, r.text
     b = _butir_pph21(r.json())

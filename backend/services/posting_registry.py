@@ -207,6 +207,37 @@ async def durable_receipt_void(receipt: Dict[str, Any], created_by: str = "syste
                                  source_type=st, source_id=sid, field="void_gl_status", raise_on_fail=raise_on_fail)
 
 
+async def post_payroll(run: Dict[str, Any], created_by: str = "system") -> Optional[Dict[str, Any]]:
+    """PK-22 (FY-06, FY-08) — resep posting gaji: (1) bila slip berkomisi dan mode proses `accrue_then_settle`, akrual
+    insentif = Σ komisi SLIP (bukan dihitung ulang dari akun sales) bertanggal buku jurnal gaji — galatnya menggagalkan
+    posting (dulu ditelan); (2) jurnal gaji bertanggal `run["journal_date"]`. Keduanya idempoten, jadi ulang dari panel
+    tidak menggandakan jurnal. → jurnal gaji (+ `incentive_journal_id`)."""
+    from services import gl_service as gl
+    slips = run.get("payslips")
+    if slips is None:
+        slips = await db.hr_payslips.find({"run_id": run["id"]}, {"_id": 0}).to_list(5000)
+    date = run.get("journal_date") or ""
+    commission = round(sum(float(s.get("commission", 0) or 0) for s in slips), 2)
+    incentive_je_id = ""
+    if commission > 0.005 and run.get("commission_mode", "accrue_then_settle") == "accrue_then_settle":
+        inc = await gl.post_incentive_accrual(run["entity_id"], run["period"], created_by, total=commission, date=date)
+        incentive_je_id = (inc or {}).get("id", "")
+        if not incentive_je_id:
+            st = await gl.incentive_accrual_status(run["entity_id"], run["period"])
+            incentive_je_id = st.get("journal_id") or ""
+    je = await gl.post_payroll_run(run, slips, created_by, date=date)
+    if je:
+        je["incentive_journal_id"] = incentive_je_id
+    return je
+
+
+async def _retry_payroll_run(doc: Dict[str, Any], actor: Dict[str, Any]) -> None:
+    from services.hr_payroll_service import post_run_gl
+    run = await post_run_gl(doc["id"], actor)
+    if run.get("gl_status") == "failed":
+        raise RuntimeError(run.get("gl_error") or "jurnal gaji gagal")
+
+
 # ── PK-19 — keputusan selisih bayar (`payment_variance_decisions`) ───────────────────────────────────────────────────
 async def _je(source_type: str, source_id: str) -> Optional[Dict[str, Any]]:
     return await db.journal_entries.find_one({"source_type": source_type, "source_id": source_id,
@@ -576,6 +607,16 @@ KINDS: Dict[str, Dict[str, Any]] = {
         "status_field": "gl_status", "error_field": "gl_error", "failed_at_field": "gl_failed_at",
         "doc_type": "", "link": {"view": "fixed-assets", "tab": "", "focus_type": "fixed_asset"},
         "posters": ("post_asset_acquisition",), "retry": _retry_fixed_asset},
+    # ── PK-22 — jurnal gaji (proses tetap `approved` saat gagal; ulang = posting lagi). Bayar & void gagal → status
+    # kembali (`posted`) dan galat tampil di layar penggajian; keduanya lewat `post_durable` (`pay_gl_status`,
+    # `void_gl_status`) tetapi tidak menunggu di panel karena butuh isian pengguna (rekening, alasan).
+    "payroll_run": {
+        "label": "Penggajian", "collection": "hr_payroll_runs",
+        "failed_query": {"gl_status": "failed", "status": "approved"},
+        "entity_field": "entity_id", "number_field": "number", "amount_field": "totals.net",
+        "status_field": "gl_status", "error_field": "gl_error", "failed_at_field": "gl_failed_at",
+        "doc_type": "payroll_run", "posters": ("post_payroll_run", "post_incentive_accrual", "pay_payroll_run"),
+        "retry": _retry_payroll_run},
     # ── PK-24 — pertanggungjawaban kas kecil (LPJ) yang disetujui; jurnal beban per kategori / Cr uang muka ──
     "petty_cash_settlement": {
         "label": "Pertanggungjawaban Kas Kecil (LPJ)", "collection": "cash_advance_settlements",

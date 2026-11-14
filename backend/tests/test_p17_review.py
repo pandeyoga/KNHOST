@@ -258,7 +258,9 @@ class TestIncentiveGL:
             headers=_hdr(admin_token),
             timeout=60,
         )
-        assert r.status_code in (200, 201, 400), f"post-gl status: {r.status_code} {r.text[:300]}"
+        # PK-22 (FY-02, FY-08) — akrual kini bertanggal akhir periode (Oktober tertutup → 409 pesan periode) dan PT yang
+        # mode komisinya bukan `accrue_then_settle` ditolak 409; keduanya penolakan yang sah, bukan 500.
+        assert r.status_code in (200, 201, 400, 409), f"post-gl status: {r.status_code} {r.text[:300]}"
         body = r.json() if r.content else {}
         print(f"post-gl: {r.status_code} {body}")
 

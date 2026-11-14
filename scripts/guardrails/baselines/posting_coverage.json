@@ -1,10 +1,6 @@
 {
  "_catatan": "PK-18 — garis dasar INV-POST-01 (scripts/guardrails/verify_posting_coverage.py). Hanya boleh turun: unit pemilik menghapus barisnya saat pemanggilnya dialihkan ke gl_service.post_durable. `fungsi` = fungsi gl_service yang belum dicakup jenis registri; `panggilan` = pemanggilan telanjang (berkas:fungsi → fungsi gl); `insert_entry` = sisipan jurnal langsung dari luar gl_service.",
  "fungsi": {
-  "pay_payroll_run": {
-   "pemilik": "PK-22",
-   "alasan": "bayar gaji"
-  },
   "post_amendment_credit_note": {
    "pemilik": "PK-32",
    "alasan": "nota kredit amandemen dan batal item"
@@ -21,10 +17,6 @@
    "pemilik": "PK-25",
    "alasan": "kasus keuangan"
   },
-  "post_incentive_accrual": {
-   "pemilik": "PK-22",
-   "alasan": "akrual insentif"
-  },
   "post_intercompany_transfer": {
    "pemilik": "belum ada",
    "alasan": "pindah kepemilikan roll retur antar-PT (sisa IC-09, laporan PK-30)"
@@ -40,10 +32,6 @@
   "post_paired_entry": {
    "pemilik": "belum ada",
    "alasan": "tinggal twin_je pinjaman antar-PT; pindah aset lewat twin_journal sejak PK-23"
-  },
-  "post_payroll_run": {
-   "pemilik": "PK-22",
-   "alasan": "jurnal gaji"
   },
   "post_penalty_issue": {
    "pemilik": "PK-08",
@@ -95,13 +83,6 @@
   }
  },
  "panggilan": [
-  {
-   "lokasi": "routers/crm.py:post_incentive_gl",
-   "fungsi_gl": "post_incentive_accrual",
-   "jumlah": 1,
-   "pemilik": "PK-22",
-   "alasan": "akrual insentif"
-  },
   {
    "lokasi": "routers/sales_orders_extra.py:cancel_order",
    "fungsi_gl": "reverse_order_journals",
@@ -213,20 +194,6 @@
    "jumlah": 1,
    "pemilik": "belum ada",
    "alasan": "penanda gaya lama gl_posting; jenis goods_receipt terdaftar"
-  },
-  {
-   "lokasi": "services/hr_payroll_service.py:pay_run",
-   "fungsi_gl": "pay_payroll_run",
-   "jumlah": 1,
-   "pemilik": "PK-22",
-   "alasan": "gaji"
-  },
-  {
-   "lokasi": "services/hr_payroll_service.py:post_run_gl",
-   "fungsi_gl": "post_payroll_run",
-   "jumlah": 1,
-   "pemilik": "PK-22",
-   "alasan": "gaji"
   },
   {
    "lokasi": "services/inbound_complete_service.py:complete_task",
@@ -489,8 +456,8 @@
   }
  },
  "total": {
-  "fungsi": 23,
-  "panggilan": 53,
+  "fungsi": 20,
+  "panggilan": 50,
   "insert_entry": 12
  }
 }

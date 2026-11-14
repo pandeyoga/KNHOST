@@ -117,7 +117,7 @@ async def list_payroll_runs(request: Request, entity_id: Optional[str] = Query(N
 
 @router.post("/hr/payroll/runs/preview")
 async def preview_payroll_run(request: Request, body: PayrollRunInput):
-    await require_any_permission(request, [("payroll", "create"), ("hr", "manage_payroll")])   # PK-22 (a) — izin lama tetap diterima sampai (b)
+    await require_permission(request, "payroll", "create")   # PK-22
     from entity_scope import resolve_requested_entity
     # PK-45 (PY-10) — sama dengan proses buat: PT dari penugasan, bukan isi permintaan mentah (kosong → PT aktif).
     body.entity_id = resolve_requested_entity(await entity_ctx(request), body.entity_id)
@@ -131,7 +131,7 @@ async def preview_payroll_run(request: Request, body: PayrollRunInput):
 
 @router.post("/hr/payroll/runs")
 async def create_payroll_run(request: Request, body: PayrollRunInput):
-    actor = await require_any_permission(request, [("payroll", "create"), ("hr", "manage_payroll")])   # PK-22 (a) — izin lama tetap diterima sampai (b)
+    actor = await require_permission(request, "payroll", "create")   # PK-22
     from entity_scope import resolve_requested_entity
     body.entity_id = resolve_requested_entity(await entity_ctx(request), body.entity_id)  # KN-B30
     try:
@@ -157,7 +157,7 @@ async def get_payroll_run(request: Request, run_id: str):
 @router.post("/hr/payroll/runs/{run_id}/submit")
 async def submit_payroll_run(request: Request, run_id: str):
     """UTANG ALUR F-6.7 — draf payroll DIAJUKAN dulu, baru bisa disahkan."""
-    actor = await require_any_permission(request, [("payroll", "create"), ("hr", "manage_payroll")])   # PK-22 (a) — izin lama tetap diterima sampai (b)
+    actor = await require_permission(request, "payroll", "create")   # PK-22
     await guard_doc(request, "hr_payroll_runs", await db.hr_payroll_runs.find_one({"id": run_id}, {"_id": 0}),
                     not_found="Payroll run tidak ditemukan")  # KN-B30
     try:
@@ -172,7 +172,7 @@ async def submit_payroll_run(request: Request, run_id: str):
 @router.post("/hr/payroll/runs/{run_id}/reject")
 async def reject_payroll_run(request: Request, run_id: str, body: PayrollRejectInput):
     """Kembalikan payroll yang diajukan ke draf — ALASAN wajib & tersimpan."""
-    actor = await require_any_permission(request, [("payroll", "approve"), ("hr", "manage_payroll")])   # PK-22 (a) — izin lama tetap diterima sampai (b)
+    actor = await require_permission(request, "payroll", "approve")   # PK-22
     await guard_doc(request, "hr_payroll_runs", await db.hr_payroll_runs.find_one({"id": run_id}, {"_id": 0}),
                     not_found="Payroll run tidak ditemukan")  # KN-B30
     try:
@@ -186,7 +186,7 @@ async def reject_payroll_run(request: Request, run_id: str, body: PayrollRejectI
 
 @router.post("/hr/payroll/runs/{run_id}/approve")
 async def approve_payroll_run(request: Request, run_id: str):
-    actor = await require_any_permission(request, [("payroll", "approve"), ("hr", "manage_payroll")])   # PK-22 (a) — izin lama tetap diterima sampai (b)
+    actor = await require_permission(request, "payroll", "approve")   # PK-22
     await guard_doc(request, "hr_payroll_runs", await db.hr_payroll_runs.find_one({"id": run_id}, {"_id": 0}),
                     not_found="Payroll run tidak ditemukan")  # KN-B30
     await _aps.guard_door("hr_payroll", actor, collection="hr_payroll_runs", doc_id=run_id)   # KP-T4
@@ -234,7 +234,7 @@ async def cancel_payroll_run(request: Request, run_id: str, body: PayrollReasonI
 
 @router.post("/hr/payroll/runs/{run_id}/post-gl")
 async def post_payroll_run_gl(request: Request, run_id: str):
-    actor = await require_any_permission(request, [("payroll", "post"), ("hr", "manage_payroll")])   # PK-22 (a) — izin lama tetap diterima sampai (b)
+    actor = await require_permission(request, "payroll", "post")   # PK-22
     await guard_doc(request, "hr_payroll_runs", await db.hr_payroll_runs.find_one({"id": run_id}, {"_id": 0}),
                     not_found="Payroll run tidak ditemukan")  # KN-B30
     try:
@@ -265,7 +265,7 @@ async def void_payroll_run(request: Request, run_id: str, body: PayrollReasonInp
 
 @router.post("/hr/payroll/runs/{run_id}/pay")
 async def pay_payroll_run(request: Request, run_id: str, body: PayRunInput):
-    actor = await require_any_permission(request, [("payroll", "pay"), ("hr", "manage_payroll")])   # PK-22 (a) — izin lama tetap diterima sampai (b)
+    actor = await require_permission(request, "payroll", "pay")   # PK-22
     await guard_doc(request, "hr_payroll_runs", await db.hr_payroll_runs.find_one({"id": run_id}, {"_id": 0}),
                     not_found="Payroll run tidak ditemukan")  # KN-B30
     try:

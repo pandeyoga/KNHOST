@@ -198,6 +198,8 @@ export const HUB_TABS = {
   "hr-payroll-hub": [
     { view: "hr-payroll-runs",   label: "Proses Gaji",           roles: ["admin", "manager"] },
     { view: "hr-payslips",       label: "Slip Gaji",             roles: ["admin", "manager"] },
+    // PK-22 (FY-07) — setoran hutang BPJS & PPh 21 (izin bayar `payroll.pay`; lihat `hr.view`).
+    { view: "hr-payroll-remittances", label: "Setoran Kewajiban", roles: ["admin", "manager"] },
     // FASE G-0 — "Setup Penggajian" DIHAPUS. Semua aturan BPJS/PPh21/lembur kini
     // hanya ada di Pusat Pengaturan (kelompok "SDM & Penggajian"). Manager tetap
     // berwenang mengubahnya lewat izin hr.manage_payroll — tidak ada wewenang hilang.

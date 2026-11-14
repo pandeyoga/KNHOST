@@ -37,6 +37,8 @@ const KPT5_DOC_NUMBERING = ["settings-doc-numbering"];
 const MNT1_CRM_TABS = ["collection-worklist", "credit-overrides", "sales-performance", "incentive-schemes"];
 // PK-28 (IV-03) — layar BARU Keuangan › Hutang › GR/IR (Diterima Belum Ditagih): admin, manajer, Finance (vendor_bill.view).
 const PK28_GRIR = ["gr-ir"];
+// PK-22 (FY-07) — layar BARU SDM › Penggajian › Setoran Kewajiban (tab ketiga hub Penggajian): admin, manajer.
+const PK22_SETORAN = ["hr-payroll-remittances"];
 // KP-T9 — id layar BARU untuk bagian layar yang SUDAH ADA: layar wadah Badan Usaha & Akses, Perangkat, dan Penjadwal &
 // Notifikasi dibuka satu bagian per tab hub (komponen sama, prop `only`). `settings-pt-profile` = tujuan alias
 // `entities-access` (sudah di baseline). Manajer: Peran & Hak Akses / Cek Peran hanya tampil menurut rancangan menu — izin
@@ -45,9 +47,9 @@ const KPT9_PART_TABS = ["settings-pt-readiness", "settings-accounts", "settings-
   "settings-whatsapp"];
 export const ROLE_REACH_ADDITIONS = {
   admin: [...P2_SETTINGS_VIEWS, ...P8_SUPPLIER_INTERNAL, ...KFT6_DUAL_CONTROL, ...KPT5_DOC_NUMBERING, ...MNT1_CRM_TABS,
-    ...KPT9_PART_TABS, ...PK28_GRIR],
+    ...KPT9_PART_TABS, ...PK28_GRIR, ...PK22_SETORAN],
   manager: [...P2_SETTINGS_VIEWS, ...P8_SUPPLIER_INTERNAL, ...KFT6_DUAL_CONTROL, ...KPT5_DOC_NUMBERING, ...MNT1_CRM_TABS,
-    ...KPT9_PART_TABS, ...PK28_GRIR,
+    ...KPT9_PART_TABS, ...PK28_GRIR, ...PK22_SETORAN,
     "finance-desk",       // MN-T1 — Beranda Keuangan › Perlu Tindakan (Meja Finance; manajer memegang payment_variance.decide)
     "approval-rules",     // D-04 — manajer membaca aturan (dulu lewat Master per Badan Usaha), tulis tetap settings.manage
     "pdf-templates",      // D-01 — tab "Kop & tata letak dasar" (dulu Master per BU kind document-templates); Desainer PDF tetap admin

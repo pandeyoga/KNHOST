@@ -564,6 +564,7 @@ dalam 4 grup); grup "Kas & Aset" dihapus.
 | SDM › Kehadiran (`hr-attendance-hub`) | Lacak Lapangan (`hr-live-tracking`) | A M |
 | SDM › Penggajian (`hr-payroll-hub`) | Proses Gaji (`hr-payroll-runs`) | A M |
 | SDM › Penggajian (`hr-payroll-hub`) | Slip Gaji (`hr-payslips`) | A M |
+| SDM › Penggajian (`hr-payroll-hub`) | Setoran Kewajiban (`hr-payroll-remittances`) — PK-22: hutang BPJS & PPh 21 per masa, Catat Setoran (`payroll.pay`) | A M |
 | SDM › Kinerja & Insentif (`hr-kpi-hub`) | Kinerja Sales (`sales-performance`) | A M S SA |
 | SDM › Kinerja & Insentif (`hr-kpi-hub`) | Target & Aturan (`incentive-rates`) | A M |
 | SDM › Kinerja & Insentif (`hr-kpi-hub`) | Skema (Arsip) (`incentive-schemes`) | A M |
@@ -805,7 +806,7 @@ SIDEBAR (grouped, collapsible, role-filtered)
   (💼 Kas & Aset — DIHAPUS MN-T1: Kas Kecil → Keuangan › Kas & Bank, Kendaraan → Gudang & Logistik, Aset Tetap →
      Akuntansi & Pajak; alamat `?view=kas-aset` → Kas Kecil)
   👥 SDM (HRD) ✅
-     ├── Karyawan · Kehadiran · Penggajian (Proses Gaji · Slip Gaji) · Kinerja & Insentif (MN-T1)
+     ├── Karyawan · Kehadiran · Penggajian (Proses Gaji · Slip Gaji · Setoran Kewajiban — PK-22) · Kinerja & Insentif (MN-T1)
   📊 Analitik (BI)
      └── Sales / Stock / Finance / HR dashboards 🆕
   📝 Dokumen
