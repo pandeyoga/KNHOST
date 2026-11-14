@@ -292,6 +292,11 @@ STATIK=(
   # Ratchet: jumlah "BELUM DITINJAU" hanya boleh turun (BASELINE_UNREVIEWED di skrip).
   "guard:atomic_claim SELF-TEST (bukti-merah dua arah, 10 kasus)|python scripts/guardrails/verify_atomic_claim.py --self-test"
   "guard:atomic_claim (INV-ATOMIC-01, saga/CAS endpoint multi-koleksi)|python scripts/guardrails/verify_atomic_claim.py"
+  # PK-18 (GL-02, IV-04) — INV-POST-01. Jurnal dokumen lewat `gl_service.post_durable` dan jenisnya terdaftar di
+  # `services/posting_registry.py` (panel Posting Gagal). Ratchet ber-pemilik: garis dasar
+  # `baselines/posting_coverage.json` hanya boleh turun; unit pemilik menghapus barisnya.
+  "guard:posting_coverage SELF-TEST (bukti-merah dua arah, 13 kasus)|python scripts/guardrails/verify_posting_coverage.py --self-test"
+  "guard:posting_coverage (INV-POST-01, jurnal dokumen lewat pintu tahan-gagal)|python scripts/guardrails/verify_posting_coverage.py"
   # FASE P5 — baseline UX (loading/empty/chart) akhirnya jadi GATE. Sebelum ini
   # `ux_audit.py` hanya dijalankan manual, tak punya `--self-test`, dan angkanya tak
   # pernah dibuktikan: dari 22 "ERROR" yang dilaporkannya, 17 ternyata TUDUHAN PALSU

@@ -1,5 +1,5 @@
 <!-- DIHASILKAN OTOMATIS oleh scripts/gen_codebase_map.py — JANGAN EDIT TANGAN -->
-<!-- Dihasilkan dari commit: e6bd6a6 pada 2026-11-14 -->
+<!-- Dihasilkan dari commit: 9707664 pada 2026-11-14 -->
 # CODEBASE MAP — Kain Nusantara (dihasilkan otomatis)
 
 Peta ini dihitung dari kode oleh `scripts/gen_codebase_map.py`. Kalau angka di sini
@@ -14,7 +14,7 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 |---|---:|
 | Router (`backend/routers/*.py`) | 166 |
 | Endpoint (`@router.<method>`) | 1797 |
-| Service (`backend/services/*.py`) | 402 |
+| Service (`backend/services/*.py`) | 403 |
 | Koleksi MongoDB disentuh kode produksi | 203 |
 | Direktori fitur frontend (`src/features/*`) | 39 |
 
@@ -177,7 +177,7 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 | `financial_statements.py` | 8 | 270 | `/finance/balance-sheet`, `/finance/balance-sheet/export.csv`, `/finance/cash-flow`, `/finance/cash-flow/export.csv`, `/finance/equity-changes`, `/finance/equity-changes/export.csv` … |
 | `fixed_assets.py` | 10 | 199 | `/fixed-assets`, `/fixed-assets/meta`, `/fixed-assets/run-depreciation`, `/fixed-assets/summary`, `/fixed-assets/{asset_id}`, `/fixed-assets/{asset_id}/dispose` … |
 | `fulfillment.py` | 3 | 49 | `/fulfillment/wizard/{so_id}`, `/fulfillment/wizard/{so_id}/create-interco`, `/fulfillment/wizard/{so_id}/create-pr` |
-| `gl.py` | 23 | 428 | `/gl/accounts`, `/gl/accounts/{code}`, `/gl/accounts/{code}/ledger`, `/gl/cash-accounts`, `/gl/consolidation`, `/gl/inventory-drift-explain` … |
+| `gl.py` | 23 | 432 | `/gl/accounts`, `/gl/accounts/{code}`, `/gl/accounts/{code}/ledger`, `/gl/cash-accounts`, `/gl/consolidation`, `/gl/inventory-drift-explain` … |
 | `gl_mappings.py` | 5 | 82 | `/gl/account-mappings`, `/gl/account-mappings/history`, `/gl/account-mappings/{key}`, `/gl/account-mappings/{key}/candidates`, `/gl/account-mappings/{key}/reset` |
 | `goods_receipts.py` | 37 | 317 | `/goods-receipts`, `/goods-receipts/dn-profiles`, `/goods-receipts/dn-profiles/{partner_id}`, `/goods-receipts/doc-variance`, `/goods-receipts/mode`, `/goods-receipts/partners` … |
 | `grade_master.py` | 4 | 62 | `/master/grades`, `/master/grades/{code}`, `/master/grades/{code}/active` |
@@ -226,7 +226,7 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 | `period_unlocks.py` | 6 | 130 | `/finance/period-unlocks`, `/finance/period-unlocks/active`, `/finance/period-unlocks/reclose-expired`, `/finance/period-unlocks/{plu_id}/approve`, `/finance/period-unlocks/{plu_id}/reject` |
 | `po_board.py` | 2 | 90 | `/purchase-orders/board`, `/purchase-orders/{po_id}/stage` |
 | `pos.py` | 8 | 136 | `/pos/best-sellers`, `/pos/featured`, `/pos/featured/{product_id}`, `/pos/frequently-bought-together`, `/pos/highlights-config`, `/pos/recommendations` … |
-| `posting_failures.py` | 3 | 160 | `/finance/posting-failures`, `/finance/posting-failures/count`, `/finance/posting-failures/{kind}/{doc_id}/retry` |
+| `posting_failures.py` | 3 | 91 | `/finance/posting-failures`, `/finance/posting-failures/count`, `/finance/posting-failures/{kind}/{doc_id}/retry` |
 | `price_approvals.py` | 15 | 630 | `/price-approvals`, `/price-approvals/effective`, `/price-approvals/hint`, `/price-approvals/stats/summary`, `/price-approvals/{approval_id}`, `/price-approvals/{approval_id}/approve` … |
 | `pricelist.py` | 8 | 163 | `/pricelist`, `/pricelist/export`, `/pricelist/import`, `/pricelist/override/{product_id}`, `/pricelist/records`, `/pricelist/{price_id}` |
 | `process_recipes.py` | 5 | 142 | `/process-recipes`, `/process-recipes/forecast`, `/process-recipes/{recipe_id}` |
@@ -432,7 +432,7 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 | `gemini_image_service.py` | 193 | FB-01 — Ilustrasi AI Galeri Desain via Google Gemini "Nano Banana Pro" (SDK google-genai LANGSUNG). |
 | `gl_mapping_registry.py` | 178 | GL-01 — registri kebutuhan akun (SSOT di kode). Satu baris = satu kebutuhan fitur. |
 | `gl_mapping_service.py` | 208 | GL-01 — pemetaan akun terpusat. Resolver: mapping PT → mapping global → bawaan registri. |
-| `gl_service.py` | 3958 | EPIC7-C — General Ledger & Chart of Accounts (akuntansi inti). |
+| `gl_service.py` | 4033 | EPIC7-C — General Ledger & Chart of Accounts (akuntansi inti). |
 | `goods_receipt_close_service.py` | 595 | GRN Fase 2 — rekonsiliasi (§4.4), penyelesaian selisih, penutupan (§4.5), sisa PO, tolak & batal. |
 | `goods_receipt_ocr_service.py` | 604 | GRN Fase 4 — baca surat jalan dengan OpenAI: praproses, panggil, pembaca kedua, log biaya, rem anggaran, pemet |
 | `goods_receipt_service.py` | 1003 | GRN Fase 2 — Kedatangan Barang (satu surat jalan · satu mitra): buat, berkas, kepala SJ, baris, hitung. |
@@ -539,6 +539,7 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 | `po_line_guard.py` | 16 | KN-B15 — satu produk hanya boleh muncul di SATU baris PO (semua jalur: buat PO, PR→PO, amandemen). |
 | `po_variance_task_service.py` | 194 | W2-REQ-06 — tugas keputusan MD atas selisih penerimaan PO (tunggu / amendment / short-close). |
 | `pos_recommendation_service.py` | 213 | F-4b — POS advanced recommendations, dihitung dari histori `sales_orders` (TANPA AI, TANPA koleksi baru). |
+| `posting_registry.py` | 213 | PK-18 (GL-02, GL-12, IV-04) — registri jenis dokumen yang menjurnal: SATU tempat panel Posting Gagal membaca |
 | `pr_sourcing_service.py` | 1030 | FASE E — SOURCING PR: routing `purchase|makloon` + realisasi PR → PO / Order Makloon. |
 | `price_approval_service.py` | 268 | Sub-fase 1.7 + F1b — bagian **BERSAMA** alur Harga Khusus (`price_approvals`). |
 | `price_guard_service.py` | 172 | F1b — SATU definisi **batas bawah harga jual** (price floor) untuk seluruh sistem. |

@@ -90,7 +90,11 @@ async def update_gl_account(code: str, payload: GLAccountUpdate, request: Reques
     actor = await require_permission(request, "accounting", "manage")
     entity_id = await _opt_entity(request, entity_id)
     prev = await gl_service.get_account(code, entity_id=entity_id)
-    acc = await gl_service.update_account(code, payload.model_dump(), entity_id=entity_id)
+    try:   # PK-18 (GL-02) — akun yang masih dipakai pemetaan / masih bersaldo tidak bisa dinonaktifkan
+        acc = await gl_service.update_account(code, payload.model_dump(), entity_id=entity_id,
+                                              tolak_bila_dipakai=True)
+    except gl_service.AccountInUseError as e:
+        raise HTTPException(status_code=409, detail=str(e))
     if acc is None:
         raise HTTPException(status_code=404, detail="Akun tidak ditemukan")
     changed = [k for k, v in payload.model_dump().items() if v is not None]

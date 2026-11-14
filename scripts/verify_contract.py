@@ -122,6 +122,8 @@ CANONICAL_COLLECTIONS = {
     "vehicles", "vehicle_usage_logs",
     # ── R0 (Return Policy Engine — kebijakan retur jual global/kategori/customer) ──
     "sales_return_policies",
+    # ── PK-18 — koleksi dokumen yang menjurnal, terdaftar di registri posting (ENTITY_REGISTRY.md sudah memuatnya) ──
+    "contra_bons", "interco_transactions", "interco_returns", "interco_settlements",
 }
 
 # ── Alias TERLARANG → koleksi kanonik (dari bagian FORBIDDEN ENTITY_REGISTRY) ──

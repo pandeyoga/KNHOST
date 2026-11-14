@@ -16,7 +16,7 @@ Normal balance: asset & expense = debit; liability, equity, income = credit.
 """
 import logging
 import re
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Awaitable, Callable, Dict, List, Optional, Tuple
 
 from pymongo.errors import DuplicateKeyError
 
@@ -385,11 +385,54 @@ async def create_account(payload, entity_id: Optional[str] = None) -> Dict[str, 
     return safe_doc(doc)
 
 
+class AccountInUseError(ValueError):
+    """PK-18 (GL-02) — akun yang masih dipakai pemetaan atau masih bersaldo tidak boleh dinonaktifkan (router → 409)."""
+
+
+async def assert_can_deactivate(code: str, entity_id: Optional[str] = None) -> None:
+    """PK-18 — tolak menonaktifkan akun yang (1) menjadi hasil Pemetaan Akun (`gl_mapping_service.account_for`) untuk
+    salah satu kebutuhan `gl_mapping_registry.ENTRIES` pada PT itu — tanpa `entity_id`: bawaan global dan tiap PT yang
+    tidak punya baris akun sendiri berkode sama; atau (2) bersaldo: Σ debit − Σ kredit jurnal tidak-void akun itu pada
+    PT itu (tanpa `entity_id`: semua PT) ≠ 0 dalam sen. Akun nonaktif membuat setiap jurnal yang memakainya gagal."""
+    from services import gl_mapping_registry as _reg, gl_mapping_service as _glm
+    nama = ((await effective_accounts([code], entity_id)).get(code) or {}).get("name", "")
+    label = f"{code} {nama}".strip()
+    if entity_id:
+        pts: List[Optional[str]] = [entity_id]
+    else:
+        sendiri = {a.get("entity_id") for a in await db.gl_accounts.find(
+            {"code": code, "entity_id": {"$nin": [None, ""]}}, {"_id": 0, "entity_id": 1}).to_list(500)}
+        pts = [None] + [e["id"] for e in await db.business_entities.find({}, {"_id": 0, "id": 1}).to_list(500)
+                        if e.get("id") not in sendiri]
+    for eid in pts:
+        for entry in _reg.ENTRIES:
+            if await _glm.account_for(entry["key"], eid) == code:
+                raise AccountInUseError(f"Akun {label} masih dipakai pemetaan akun \"{entry['label']}\". "
+                                        f"Ganti pemetaannya dulu di Pemetaan Akun.")
+    q: Dict[str, Any] = {"lines.account_code": code, "status": {"$ne": "void"}}
+    if entity_id:
+        q["entity_id"] = entity_id
+    sen = 0
+    async for je in db.journal_entries.find(q, {"_id": 0, "lines": 1}):
+        for ln in je.get("lines") or []:
+            if ln.get("account_code") == code:
+                sen += _sen(ln.get("debit")) - _sen(ln.get("credit"))
+    if sen != 0:
+        raise AccountInUseError(f"Akun {label} masih bersaldo {rupiah(abs(sen) / 100)}. "
+                                f"Pindahkan saldonya dulu sebelum dinonaktifkan.")
+
+
 async def update_account(code: str, patch: Dict[str, Any],
-                         entity_id: Optional[str] = None) -> Optional[Dict[str, Any]]:
+                         entity_id: Optional[str] = None, *,
+                         tolak_bila_dipakai: bool = False) -> Optional[Dict[str, Any]]:
     """Update akun. Kalau `entity_id` diberikan, target override PT (buat baru
     kalau belum ada — upsert override). Kalau tanpa `entity_id`, update akun
-    template global."""
+    template global. PK-18 — `tolak_bila_dipakai` (endpoint PATCH): menonaktifkan akun yang masih dipakai pemetaan
+    atau bersaldo → `AccountInUseError` sebelum apa pun ditulis (fixture uji memanggil tanpa penanda ini)."""
+    if tolak_bila_dipakai and patch.get("is_active") is False:
+        cur = await get_account(code, entity_id=entity_id)
+        if cur and cur.get("is_active") is not False:
+            await assert_can_deactivate(code, entity_id)
     scope: Dict[str, Any] = {"code": code}
     if entity_id:
         scope["entity_id"] = entity_id
@@ -662,22 +705,54 @@ async def preflight_entry(*, lines: List[Dict[str, Any]], entity_id: str, date: 
                                       source_type=source_type, can_backdate=True)
 
 
+def durable_fields(field: str = "gl_status") -> Dict[str, str]:
+    """PK-18 — nama field penanda jurnal untuk `field` status: `gl_status` → `gl_error`/`gl_failed_at`/
+    `journal_entry_id`; `void_gl_status` → `void_gl_error`/…; `steps.$.gl_status` → `steps.$.gl_error`/…"""
+    pre = field[:-len("gl_status")] if field.endswith("gl_status") else f"{field}_"
+    return {"status": field, "error": f"{pre}gl_error", "failed_at": f"{pre}gl_failed_at",
+            "journal": f"{pre}journal_entry_id"}
+
+
+async def post_durable(collection: str, doc_id: str, post: Callable[[], Awaitable[Any]], *,
+                       source_type: str, source_id: str, field: str = "gl_status",
+                       match: Optional[Dict[str, Any]] = None, raise_on_fail: bool = False) -> Dict[str, Any]:
+    """PK-18 (GL-02, IV-04) — satu pintu tahan-gagal untuk jurnal dokumen apa pun (`02_STANDAR.md` §1 P1, langkah 4).
+
+    `post` = fungsi tanpa argumen yang memanggil satu fungsi `post_*` (atau resep `posting_registry`). Urutan:
+    (a) jalankan `post()`; (b) melempar → `<field>="failed"`, galat (≤ 300 huruf), waktu gagal; lempar ulang hanya bila
+    `raise_on_fail`; (c) selesai → jurnal tidak-void ber-(`source_type`, `source_id`) ada → `posted` + id jurnalnya,
+    tidak ada → `not_required` (fungsi posting sengaja tidak menjurnal, mis. nominal nol). Status ditulis dari HASIL,
+    bukan dianggap berhasil. `match` = saringan tambahan untuk unsur larik (`{"steps.seq": 2}` dengan
+    `field="steps.$.gl_status"`). → `{"gl_status", "gl_error", "journal_entry_id", "journal"}`."""
+    f = durable_fields(field)
+    flt = {"id": doc_id, **(match or {})}
+    try:
+        je = await post()
+    except Exception as exc:
+        pesan = str(exc)[:300] or exc.__class__.__name__
+        await db[collection].update_one(flt, {"$set": {f["status"]: "failed", f["error"]: pesan,
+                                                       f["failed_at"]: now_iso(), "updated_at": now_iso()}})
+        if raise_on_fail:
+            raise
+        return {"gl_status": "failed", "gl_error": pesan, "journal_entry_id": "", "journal": None}
+    posted = je if isinstance(je, dict) and je.get("id") else await db.journal_entries.find_one(
+        {"source_type": source_type, "source_id": source_id, "status": {"$ne": "void"}},
+        {"_id": 0, "id": 1, "number": 1})
+    status = "posted" if posted else "not_required"
+    jid = (posted or {}).get("id", "")
+    await db[collection].update_one(flt, {"$set": {f["status"]: status, f["error"]: "", f["journal"]: jid,
+                                                   "updated_at": now_iso()}})
+    return {"gl_status": status, "gl_error": "", "journal_entry_id": jid,
+            "journal": je if isinstance(je, dict) else None}
+
+
 async def post_cash_durable(txn: Dict[str, Any]) -> Optional[Dict[str, Any]]:
     """FN-07/FN-10/CX-04 — posting jurnal kas dengan status TERLIHAT di dokumen kas
-    (`gl_status` posted|failed + galat). Idempotent; kegagalan dilempar ke pemanggil."""
-    try:
-        je = await post_cash_transaction(txn)
-    except Exception as exc:
-        await db.cash_transactions.update_one({"id": txn["id"]}, {"$set": {
-            "gl_status": "failed", "gl_error": str(exc)[:300], "updated_at": now_iso()}})
-        raise
-    posted = je or await db.journal_entries.find_one(
-        {"source_type": "cash_transaction", "source_id": txn["id"], "status": {"$ne": "void"}},
-        {"_id": 0, "id": 1, "number": 1})
-    await db.cash_transactions.update_one({"id": txn["id"]}, {"$set": {
-        "gl_status": "posted" if posted else "not_required", "gl_error": "",
-        "journal_entry_id": (posted or {}).get("id", ""), "updated_at": now_iso()}})
-    return je
+    (`gl_status` posted|failed + galat). Idempotent; kegagalan dilempar ke pemanggil.
+    PK-18 — pembungkus tipis `post_durable(..., raise_on_fail=True)`; perilakunya tidak berubah."""
+    res = await post_durable("cash_transactions", txn["id"], lambda: post_cash_transaction(txn),
+                             source_type="cash_transaction", source_id=txn["id"], raise_on_fail=True)
+    return res["journal"]
 
 
 async def _insert_entry(*, lines: List[Dict[str, Any]], description: str, date: str,
