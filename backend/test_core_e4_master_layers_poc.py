@@ -69,6 +69,11 @@ PPH21_GLOBAL_BY_DESIGN = frozenset({
     "hr.pph21.biaya_jabatan_pct", "hr.pph21.biaya_jabatan_maks_bulanan",
 })
 
+# KF-T7 (#50) — ambang format angka surat jalan PEMASOK: profil format milik pemasok (lintas PT), dibaca
+# `supplier_dn_profile_service.profile_rules()` tanpa konteks PT; spesifikasi `docs/blueprint/unit/KF-T7.md` menetapkan
+# lingkup "global". Lapisan per PT tidak akan pernah dibaca → menyesatkan.
+KFT7_GLOBAL_BY_DESIGN = frozenset({"receiving.dn_profile_min_confirmed", "receiving.dn_profile_min_share_pct"})
+
 
 def ok(cond: bool, label: str, extra: str = "") -> bool:
     global PASS, FAIL
@@ -368,13 +373,13 @@ def main() -> int:
     ops_keys = [e for e in (reg.get("entries") or [])
                 if e["key"].split(".")[0] in ("hr", "uom", "lot", "receiving", "makloon")]
     # Fase 4 · R6 — setelan mesin OCR tingkat instalasi dikecualikan dengan alasan (lihat `OCR_GLOBAL_BY_DESIGN`).
-    GLOBAL_BY_DESIGN = OCR_GLOBAL_BY_DESIGN | PPH21_GLOBAL_BY_DESIGN
+    GLOBAL_BY_DESIGN = OCR_GLOBAL_BY_DESIGN | PPH21_GLOBAL_BY_DESIGN | KFT7_GLOBAL_BY_DESIGN
     no_entity = [e["key"] for e in ops_keys
                  if "entity" not in (e.get("scopes") or []) and e["key"] not in GLOBAL_BY_DESIGN]
     ok(not no_entity,
        f"seluruh {len(ops_keys) - len(GLOBAL_BY_DESIGN)} setelan hr./uom./lot./receiving./makloon. "
        f"(di luar {len(OCR_GLOBAL_BY_DESIGN)} setelan mesin OCR tingkat instalasi dan {len(PPH21_GLOBAL_BY_DESIGN)} tabel "
-       "PPh 21 nasional bertanggal) bisa per badan usaha",
+       f"PPh 21 nasional bertanggal, {len(KFT7_GLOBAL_BY_DESIGN)} ambang format surat jalan pemasok) bisa per badan usaha",
        f"masih hanya-global: {no_entity[:6]}")
     ocr_keys = {e["key"]: e for e in ops_keys if e["key"] in OCR_GLOBAL_BY_DESIGN}
     ok(set(ocr_keys) == OCR_GLOBAL_BY_DESIGN
