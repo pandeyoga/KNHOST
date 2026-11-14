@@ -10,6 +10,7 @@ from fastapi import APIRouter, HTTPException, Request
 
 from core_utils import safe_doc
 from db import db
+from services import approval_policy_service as _aps   # KP-T4 — satu tabel kebijakan persetujuan
 from dependencies import audit, has_permission, require_permission
 from entity_scope import entity_ctx, resolve_scope_ids
 from schemas_contrabon import (
@@ -282,6 +283,7 @@ async def decide_exception(cb_id: str, payload: ContraBonDecisionIn,
                            request: Request) -> Dict[str, Any]:
     """Keputusan BERLABEL atas satu selisih 3-way (INV-CB-03)."""
     actor = await require_permission(request, "contra_bon", "update")
+    await _aps.guard_door("contra_bon_dispute", actor, collection="contra_bons", doc_id=cb_id)   # KP-T4
     try:
         cb = await cbs.decide(cb_id, payload.model_dump(), actor, await _scope(request))
     except cbs.ContraBonError as exc:
@@ -307,6 +309,7 @@ async def submit_contra_bon(cb_id: str, request: Request) -> Dict[str, Any]:
 @router.post("/contra-bons/{cb_id}/verify")
 async def verify_contra_bon(cb_id: str, request: Request) -> Dict[str, Any]:
     actor = await require_permission(request, "contra_bon", "verify")
+    await _aps.guard_door("contra_bon_verify", actor, collection="contra_bons", doc_id=cb_id)   # KP-T4
     try:
         cb = await cbs.verify(cb_id, actor, await _scope(request))
     except cbs.ContraBonError as exc:

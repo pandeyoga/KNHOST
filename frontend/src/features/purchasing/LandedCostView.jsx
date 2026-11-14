@@ -7,7 +7,8 @@ import { SearchBox } from "../../components/ListControls";
 import LandedCostCreateModal from "./LandedCostCreateModal";
 import LandedCostDetailPanel from "./LandedCostDetailPanel";
 import DetailModal from "../../components/DetailModal";
-import { can, roleSatisfies } from "../../config/roles";
+import { can } from "../../config/roles";
+import { useCanDecideMap } from "../../hooks/useCanDecide";   // KP-T4
 import { isZeroMetric } from "../../components/ListPageParts";
 
 /**
@@ -35,6 +36,10 @@ function StatusPill({ status }) {
   return <span className={`status-pill ${cls}`}>{label}</span>;
 }
 
+// KP-T4 — parameter pertanyaan "boleh memutus?" untuk voucher yang menunggu persetujuan.
+const lcDecideParams = (v) => (v.status === "pending_approval"
+  ? { docKind: "landed_cost", entityId: v.entity_id, amount: v.total_cost || 0 } : null);
+
 export default function LandedCostView({ currentUser, selectedEntity }) {
   const [vouchers, setVouchers] = useState([]);
   const [pos, setPos] = useState([]);
@@ -46,8 +51,9 @@ export default function LandedCostView({ currentUser, selectedEntity }) {
   const [showCreate, setShowCreate] = useState(false);
   const [detail, setDetail] = useState(null);
 
-  // Sisir gerbang peran (2026-10-20): ACC/tolak = peringkat peran yang dituntut voucher (= role_satisfies server).
-  const canApproveDoc = (v) => roleSatisfies(currentUser?.role, v?.required_approval_role || "manager");
+  // KP-T4 — boleh setujui/tolak = jawaban server (izin + Aturan Persetujuan), bukan peringkat peran di layar.
+  const decide = useCanDecideMap(vouchers, lcDecideParams);
+  const canApproveDoc = (v) => !!(v && decide[v.id]?.allowed);
   const canCreate = can(currentUser?.permissions, "landed_cost", "create");   // POST /landed-costs
 
   useEffect(() => { loadAll(); }, [selectedEntity]); // eslint-disable-line
@@ -215,6 +221,7 @@ export default function LandedCostView({ currentUser, selectedEntity }) {
           <LandedCostDetailPanel
             voucher={detail}
             canApprove={canApproveDoc(detail)}
+            decideHint={decide[detail.id]?.message || ""}
             currentUser={currentUser}
             onClose={() => setDetail(null)}
             onAction={onAction}

@@ -14,7 +14,6 @@ from core_utils import new_id, next_doc_number, now_iso
 from db import db
 from services import atomic_claim as _saga
 from services import gl_service as gl
-from role_registry import role_in  # peran acuan dikenali (keputusan owner 2026-10-21)
 
 COLL = "mkt_campaign_costs"
 REF_TYPE = "mkt_campaign_cost"
@@ -139,7 +138,8 @@ async def void_cost(cost: Dict[str, Any], reason: str, actor: Dict[str, Any]) ->
 # Diakui saat DISETUJUI: Dr Beban Pemasaran (+PPN Masukan) / Cr Hutang Usaha; dibayar lewat alur
 # Vendor Bill biasa (Dr Hutang / Cr Kas). Dibuat Marketing/Admin, disetujui Finance/Manager (SoD).
 BILL_TYPE = "campaign_expense"
-BILL_APPROVER_ROLES = ("finance", "manager", "admin")
+# KP-T4 — penyetuju tagihan kampanye dibaca dari Aturan Persetujuan (jenis `vendor_bill.kampanye`); daftar peran lama
+# (Finance/Manager/Admin + peran kustom beracuan padanya) kini baris bawaannya (`approval_policy_service`).
 
 
 async def campaign_bills(campaign_id: str) -> List[Dict[str, Any]]:
@@ -216,8 +216,9 @@ async def create_campaign_bill(campaign: Dict[str, Any], payload: Dict[str, Any]
 
 async def approve_campaign_bill(bill: Dict[str, Any], actor: Dict[str, Any]) -> Dict[str, Any]:
     from routers.vendor_bills import _post_bill
-    if not role_in(actor.get("role"), BILL_APPROVER_ROLES):
-        raise HTTPException(status_code=403, detail="Persetujuan tagihan kampanye hanya Finance/Manager/Admin.")
+    from services import approval_policy_service as _aps
+    await _aps.assert_can_decide("vendor_bill.kampanye", bill.get("entity_id"),
+                                 float(bill.get("grand_total") or 0), actor)   # KP-T4 — izin + Aturan Persetujuan
     if bill.get("status") != "pending_approval":
         raise HTTPException(status_code=409, detail=f"Tagihan berstatus '{bill.get('status')}', tidak menunggu persetujuan.")
     # KF-T6 — pembuat ≠ penyetuju dari `kontrol.tagihan_kampanye.*` (satu pembantu).
@@ -241,8 +242,9 @@ async def approve_campaign_bill(bill: Dict[str, Any], actor: Dict[str, Any]) -> 
 
 async def reject_campaign_bill(bill: Dict[str, Any], reason: str, actor: Dict[str, Any]) -> Dict[str, Any]:
     from core_utils import timeline_entry
-    if not role_in(actor.get("role"), BILL_APPROVER_ROLES):
-        raise HTTPException(status_code=403, detail="Penolakan tagihan kampanye hanya Finance/Manager/Admin.")
+    from services import approval_policy_service as _aps
+    await _aps.assert_can_decide("vendor_bill.kampanye", bill.get("entity_id"),
+                                 float(bill.get("grand_total") or 0), actor, action="reject")   # KP-T4
     if len((reason or "").strip()) < 5:
         raise HTTPException(status_code=400, detail="Alasan penolakan wajib diisi (min. 5 karakter).")
     out = await db.vendor_bills.find_one_and_update(

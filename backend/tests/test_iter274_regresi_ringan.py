@@ -3,7 +3,7 @@
 Cakupan:
 1. Auth admin/manager (login demo12345)
 2. GET /api/approval-rules (daftar aturan)
-3. PATCH /api/approval-rules/{id} — validasi merged_max (400) + PATCH sah + restore
+3. PATCH /api/approval-rules/{id} — KP-T4: dimatikan (410), baris tidak berubah
 4. GET /api/settings/effective — section 'ui' & 'role_home'
 5. GET /api/price-approvals (manager) — >=1 pending (read-only)
 """
@@ -60,44 +60,13 @@ class TestApprovalRules:
             assert k in rules[0], f"missing {k} in {rules[0]}"
         assert all("_id" not in x for x in rules)
 
-    def test_patch_min_greater_than_existing_max_rejected(self, admin):
-        rules = admin.get(f"{API}/approval-rules").json()
-        target = next((x for x in rules if x.get("max_amount")), None)
-        assert target, "tidak ada aturan dengan max_amount untuk diuji"
-        bad = float(target["max_amount"]) + 1_000_000
-        r = admin.patch(f"{API}/approval-rules/{target['id']}", json={"min_amount": bad})
-        assert r.status_code == 400, f"expected 400, got {r.status_code}: {r.text[:300]}"
-        assert "max_amount harus lebih besar dari min_amount" in r.json().get("detail", "")
-        # pastikan tidak berubah
-        after = admin.get(f"{API}/approval-rules/{target['id']}").json()
-        assert after["min_amount"] == target["min_amount"]
-
-    def test_patch_valid_then_restore(self, admin):
-        rules = admin.get(f"{API}/approval-rules").json()
-        target = next((x for x in rules if x.get("max_amount")), None)
-        assert target
-        rid = target["id"]
-        orig_min = target["min_amount"]
-        new_min = float(orig_min) + 1 if float(orig_min) + 1 < float(target["max_amount"]) else 0
-        r = admin.patch(f"{API}/approval-rules/{rid}", json={"min_amount": new_min})
-        assert r.status_code == 200, r.text[:300]
-        assert float(r.json()["min_amount"]) == new_min
-        got = admin.get(f"{API}/approval-rules/{rid}").json()
-        assert float(got["min_amount"]) == new_min, "PATCH tidak persist"
-        assert got.get("max_amount") == target.get("max_amount"), "max_amount ikut berubah"
-        # restore
-        rb = admin.patch(f"{API}/approval-rules/{rid}", json={"min_amount": orig_min})
-        assert rb.status_code == 200, rb.text[:300]
-        assert float(admin.get(f"{API}/approval-rules/{rid}").json()["min_amount"]) == float(orig_min)
-
-    def test_patch_unknown_rule_404(self, admin):
-        r = admin.patch(f"{API}/approval-rules/nope-xyz", json={"min_amount": 1})
-        assert r.status_code == 404, r.text[:200]
-
-    def test_patch_empty_payload_400(self, admin):
+    def test_patch_dimatikan_410(self, admin):
+        """KP-T4 (disesuaikan): PATCH aturan lama dimatikan — aturan diubah di Aturan Persetujuan satu tabel."""
         rid = admin.get(f"{API}/approval-rules").json()[0]["id"]
-        r = admin.patch(f"{API}/approval-rules/{rid}", json={})
-        assert r.status_code == 400
+        before = admin.get(f"{API}/approval-rules/{rid}").json()
+        r = admin.patch(f"{API}/approval-rules/{rid}", json={"min_amount": 1})
+        assert r.status_code == 410, r.text[:200]
+        assert admin.get(f"{API}/approval-rules/{rid}").json()["min_amount"] == before["min_amount"]
 
 
 # --- Modul: settings ------------------------------------------------------

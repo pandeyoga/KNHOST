@@ -12,7 +12,6 @@ from dependencies import require_permission, current_user, audit
 from entity_scope import assert_entity_access, entity_ctx, resolve_list_scope, guard_doc
 from core_utils import new_id, now_iso, safe_doc, DEFAULT_ENTITY_ID, timeline_entry, next_doc_number, rupiah
 from schemas import LandedCostCreate, LandedCostPaymentCreate, LandedCostDecision
-from services.config_service import role_satisfies
 from services.landed_cost_service import (
     next_voucher_number, total_cost_of, voucher_financials, resolve_target_rolls,
     compute_allocation, apply_allocation_to_rolls, build_landed_cost_context,
@@ -242,10 +241,9 @@ async def approve_landed_cost(voucher_id: str, request: Request) -> Dict[str, An
     await guard_doc(request, "landed_cost_vouchers", v, not_found="Landed Cost Voucher tidak ditemukan")  # KN-B33
     if v.get("status") != "pending_approval":
         raise HTTPException(status_code=409, detail=f"Voucher status '{v.get('status')}' tidak menunggu approval.")
-    required = v.get("required_approval_role") or "manager"
-    if not role_satisfies(actor.get("role"), required):
-        raise HTTPException(status_code=403,
-                            detail=f"Approval butuh role minimal '{required}'. Role Anda: '{actor.get('role')}'.")
+    # KP-T4 (PR-05) — izin `landed_cost.approve` + Aturan Persetujuan (dulu hanya peringkat, tanpa izin).
+    from services import approval_policy_service as _aps
+    await _aps.assert_can_decide("landed_cost", v.get("entity_id"), float(v.get("total_cost") or 0), actor)
     # KF-T6 — pembuat ≠ penyetuju dari `kontrol.biaya_masuk.*` (satu pembantu).
     from services import dual_control as _dc
     await _dc.tolak_bila_pelaku_sama("biaya_masuk", v, actor, v.get("entity_id", ""),
@@ -294,9 +292,9 @@ async def reject_landed_cost(voucher_id: str, payload: LandedCostDecision, reque
     await guard_doc(request, "landed_cost_vouchers", v, not_found="Landed Cost Voucher tidak ditemukan")  # KN-B33
     if v.get("status") != "pending_approval":
         raise HTTPException(status_code=409, detail=f"Voucher status '{v.get('status')}' tidak menunggu approval.")
-    required = v.get("required_approval_role") or "manager"
-    if not role_satisfies(actor.get("role"), required):
-        raise HTTPException(status_code=403, detail=f"Reject butuh role minimal '{required}'.")
+    from services import approval_policy_service as _aps   # KP-T4 (PR-05) — izin `landed_cost.reject` + Aturan
+    await _aps.assert_can_decide("landed_cost", v.get("entity_id"), float(v.get("total_cost") or 0), actor,
+                                 action="reject")
     updated = await db.landed_cost_vouchers.find_one_and_update(
         {"id": voucher_id},
         {"$set": {"status": "cancelled", "approval_status": "rejected",

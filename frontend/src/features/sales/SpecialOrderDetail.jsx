@@ -21,7 +21,15 @@ import DocumentActionsBar from "../documents/DocumentActionsBar";
 import { askConfirm } from "@/services/confirmService";
 import { approveSpecialOrder, rejectSpecialOrder, decisionErrorText } from "../../services/approvalDecisions";
 import { formatCurrency } from "../../utils/formatters";
+import { useCanDecideMap } from "../../hooks/useCanDecide";   // KP-T4
 
+
+// KP-T4 — jenjang berjalan pesanan khusus (rantai tersimpan) → pertanyaan "boleh memutus?".
+const odDecideParams = (od) => {
+  if (od.status !== "pending_approval") return null;
+  const cur = (od.approval_chain || []).find((l) => l.status !== "approved");
+  return { docKind: "special_order", entityId: od.entity_id, amount: od.total_amount || 0, level: cur?.level || 1 };
+};
 
 export default function SpecialOrderDetail({
   order,
@@ -42,7 +50,11 @@ export default function SpecialOrderDetail({
 
   // FE-04 — izin efektif per aksi (server tetap memeriksa tingkat persetujuan & scope).
   const perms = currentUser?.permissions;
-  const canApprove = order.status === "pending_approval" && can(perms, "order", "approve");
+  // KP-T4 — selain izin, jenjang berjalan harus mencantumkan peran pengguna di Aturan Persetujuan (jawaban server).
+  const odDec = useCanDecideMap([order], odDecideParams)[order.id];
+  const canApprove = order.status === "pending_approval" && can(perms, "order", "approve") && !!odDec?.allowed;
+  const odHint = order.status === "pending_approval" && can(perms, "order", "approve") && odDec && !odDec.allowed
+    ? odDec.message : "";
   const canTransition = can(perms, "order", "update");          // POST /status
 
   // F3 MTO — gating tombol SKU & konversi
@@ -249,6 +261,9 @@ export default function SpecialOrderDetail({
               onClick={async () => { setLoading(true); try { const r = await axios.post(`${API}/special-orders/${order.id}/submit`); onUpdate(r.data); } catch (e) { setError("Gagal mengajukan: " + (e.response?.data?.detail || e.message)); } finally { setLoading(false); } }}>
               <Check size={13} /> Ajukan persetujuan
             </button>
+          )}
+          {odHint && (
+            <span className="text-fs-12 text-kn-text-2" data-testid="od-decide-hint">{odHint}</span>
           )}
           {canApprove && (
             <>

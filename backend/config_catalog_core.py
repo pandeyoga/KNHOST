@@ -14,6 +14,9 @@ RP = "Rp"
 # ═══════════════════════════════════════════════════════════════════════════
 # PAJAK
 # ═══════════════════════════════════════════════════════════════════════════
+# KP-T4 — alasan baku kunci persetujuan yang pindah ke Aturan Persetujuan.
+_KPT4_TIDAK_DIPAKAI = ("Dipindah ke Aturan Persetujuan (Pengaturan › Persetujuan › Aturan Persetujuan). Nilai terakhirnya hanya membentuk aturan bawaan selama aturan belum disimpan.")
+
 E("tax.ppn_rate", sensitif_baca=False,  # KF-T1 — dibaca layar semua pengguna
   group="pajak", type="pct", default=12.0, min=0, max=100, step=0.5,
   unit="%", scopes=("global", "entity"), simulate="tax",
@@ -352,9 +355,9 @@ E("approval.extra_levels", group="persetujuan", type="table", default={},
        "tertentu. Level pertama diatur di Approval Rules.",
   impact="Menambah antrean approval berjenjang (mis. Direksi) untuk dokumen bernilai besar.",
   example="PO ≥ Rp 500.000.000 → setelah Manager, wajib disetujui Direksi",
-  consumers=("services/config_service.py:build_approval_chain",
-             "services/config_service.py:effective_tiers",   # KP-T3 — layar "Jenjang yang berlaku"
-             "services/approval_service.py"), risk="high")
+  consumers=("services/approval_policy_service.py:default_rows_for",), risk="high",
+  # KP-T4 — isi kunci ini pindah ke tabel kebijakan persetujuan (`approval_policies`).
+  status="not_used", not_used_reason=_KPT4_TIDAK_DIPAKAI)
 
 # PENGINGAT ANTREAN PERSETUJUAN (permintaan pemilik 2026-08-15).
 # Angka KPI yang benar hanya bekerja kalau orangnya membuka layar. Ambang ini menjawab

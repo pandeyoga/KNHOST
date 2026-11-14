@@ -163,22 +163,28 @@ describe("D-03 — kunci commission.* tidak tampil ganda", () => {
   });
 });
 
-describe("D-04 — Aturan Persetujuan: manajer membaca, satu jalan nonaktif", () => {
-  test("tanpa settings.manage: daftar tampil baca-saja (tanpa Buat/Ubah/Nonaktifkan)", async () => {
-    mockGet.mockResolvedValue({ data: [{ id: "r1", doc_type: "sales_order", min_amount: 0, max_amount: 1000, required_role: "manager", sort: 1, active: true }] });
+describe("D-04 — Aturan Persetujuan: manajer membaca (KP-T4: satu tabel kebijakan)", () => {
+  // KP-T4 — isi layar KP-T3/D-04 (tabel `approval_rules` + tombol Nonaktifkan) digantikan Aturan Persetujuan satu tabel;
+  // jalur tulis lama dimatikan server. Yang tetap: manajer membaca tanpa tombol ubah, admin punya tombol ubah.
+  const TRF = { doc_kind: "transfer", label: "Transfer gudang", group: "Gudang", has_amount: false, source: "grup",
+    version: 1, permission_label: "Stok & Persediaan", warnings: [], unused_group_rows: [], note: "",
+    levels: [{ level: 1, label: "Persetujuan", tiers: [{ id: "t1", min_amount: 0, max_amount: null, roles: [],
+      role_labels: [], any_holder: true, passing_labels: ["Semua pemegang akses"], no_permission_labels: [] }] }] };
+  const route = () => mockGet.mockImplementation((url) => Promise.resolve({ data: url.endsWith("/approval-policies")
+    ? { entity_id: "all", kinds: [TRF] } : url.endsWith("/approval-policies/kinds") ? { kinds: [], roles: [] } : [] }));
+  test("tanpa settings.manage: aturan tampil baca-saja (tanpa Ubah)", async () => {
+    route();
     const { host } = await mount(<ApprovalRulesSettings currentUser={{ role: "manager", permissions: { settings: ["view"] } }} />);
-    expect(q(host, "rule-row-r1")).not.toBeNull();
+    expect(q(host, "appol-card-transfer")).not.toBeNull();
     expect(q(host, "approval-rules-readonly")).not.toBeNull();
-    expect(q(host, "create-rule-btn")).toBeNull();
-    expect(q(host, "delete-rule-r1")).toBeNull();
+    expect(q(host, "appol-edit-transfer")).toBeNull();
   });
 
-  test("dengan settings.manage: tombol Nonaktifkan berlabel, form tanpa centang Aktif", async () => {
-    mockGet.mockResolvedValue({ data: [{ id: "r1", doc_type: "sales_order", min_amount: 0, max_amount: 1000, required_role: "manager", sort: 1, active: true }] });
+  test("dengan settings.manage: tombol Ubah membuka pop-up baku tanpa centang Aktif", async () => {
+    route();
     const { host } = await mount(<ApprovalRulesSettings currentUser={{ role: "admin", permissions: { settings: ["view", "manage"] } }} />);
-    expect(q(host, "delete-rule-r1").textContent).toContain("Nonaktifkan");
-    await act(async () => { q(host, "create-rule-btn").click(); });
-    expect(q(host, "rule-form-modal")).not.toBeNull();
+    await act(async () => { q(host, "appol-edit-transfer").click(); });
+    expect(document.body.querySelector('[data-testid="appol-editor"]')).not.toBeNull();
     expect(q(host, "rule-active")).toBeNull();
   });
 });

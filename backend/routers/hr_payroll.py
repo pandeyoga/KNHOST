@@ -11,6 +11,7 @@ from fastapi import APIRouter, HTTPException, Request, Query
 from fastapi.responses import StreamingResponse
 
 from db import db
+from services import approval_policy_service as _aps   # KP-T4 — satu tabel kebijakan persetujuan
 from dependencies import require_permission, current_user, audit
 from entity_scope import entity_ctx, resolve_list_scope, assert_entity_access, guard_doc
 from services import hr_payroll_service as pay
@@ -175,6 +176,7 @@ async def approve_payroll_run(request: Request, run_id: str):
     actor = await require_permission(request, "hr", "manage_payroll")
     await guard_doc(request, "hr_payroll_runs", await db.hr_payroll_runs.find_one({"id": run_id}, {"_id": 0}),
                     not_found="Payroll run tidak ditemukan")  # KN-B30
+    await _aps.guard_door("hr_payroll", actor, collection="hr_payroll_runs", doc_id=run_id)   # KP-T4
     try:
         run = await pay.approve_run(run_id, actor)
     except ValueError as e:

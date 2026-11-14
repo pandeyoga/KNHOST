@@ -1,4 +1,8 @@
-"""ITER-273 — Aturan Persetujuan: kontrak CRUD baru (skema mesin) + integrasi mesin evaluate."""
+"""ITER-273 — Aturan Persetujuan: kontrak baca (skema mesin) + integrasi mesin evaluate.
+
+KP-T4 (disesuaikan — perilaku yang sengaja diubah): `POST/PATCH/DELETE /api/approval-rules` dimatikan (410). Validasi &
+integrasi mesin kini lewat `PUT/DELETE /api/approval-policies/{doc_kind}` (satu tabel kebijakan); baca daftar lama tetap.
+"""
 import os
 import pytest
 import requests
@@ -26,18 +30,6 @@ def client():
         pytest.fail(f"no token in login response: {r.text[:300]}")
     s.headers.update({"Authorization": f"Bearer {token}", "X-Entity-Id": ENTITY})
     return s
-
-
-@pytest.fixture(scope="module")
-def created_ids():
-    return []
-
-
-@pytest.fixture(scope="module", autouse=True)
-def cleanup(client, created_ids):
-    yield
-    for rid in created_ids:
-        client.delete(f"{API}/approval-rules/{rid}", timeout=30)
 
 
 # ── GET list: skema mesin & sort ─────────────────────────────────────────────
@@ -77,122 +69,70 @@ class TestListContract:
         assert client.get(f"{API}/approval-rules?doc_type=discount", timeout=30).json() == []
 
 
-# ── POST validasi ────────────────────────────────────────────────────────────
-class TestValidation:
-    def test_bad_doc_type_400(self, client):
-        r = client.post(f"{API}/approval-rules", json={"doc_type": "invoice",
-                        "min_amount": 0, "max_amount": 100}, timeout=30)
-        assert r.status_code == 400, f"{r.status_code}: {r.text[:200]}"
+# ── KP-T4 — jalur tulis lama dimatikan; validasi di jalur baru ───────────────
+PINDAH = "Aturan Persetujuan kini diatur per jenis dokumen"
+
+
+class TestJalurLamaDimatikan:
+    def test_post_patch_delete_410(self, client):
+        rid = client.get(f"{API}/approval-rules", timeout=30).json()[0]["id"]
+        for r in (client.post(f"{API}/approval-rules", json={"doc_type": "sales_order", "min_amount": 0}, timeout=30),
+                  client.patch(f"{API}/approval-rules/{rid}", json={"min_amount": 1}, timeout=30),
+                  client.delete(f"{API}/approval-rules/{rid}", timeout=30)):
+            assert r.status_code == 410, f"{r.status_code}: {r.text[:200]}"
+            assert r.json()["detail"].startswith(PINDAH)
+
+
+class TestValidationBaru:
+    def _put(self, client, kind, levels, version=0, reason="TEST_iter273"):
+        return client.put(f"{API}/approval-policies/{kind}", json={
+            "entity_id": ENTITY, "expected_version": version, "reason": reason, "levels": levels}, timeout=30)
+
+    def test_bad_doc_kind_400(self, client):
+        assert self._put(client, "invoice", []).status_code == 400
 
     def test_bad_role_400(self, client):
-        r = client.post(f"{API}/approval-rules", json={"doc_type": "sales_order",
-                        "min_amount": 0, "max_amount": 100,
-                        "required_role": "supervisor"}, timeout=30)
-        assert r.status_code == 400, f"{r.status_code}: {r.text[:200]}"
+        r = self._put(client, "sales_order.nilai", [{"level": 1, "tiers": [{"min_amount": 0, "roles": ["supervisor"]}]}])
+        assert r.status_code == 400 and r.json()["detail"] == "Peran “supervisor” tidak ada.", r.text[:200]
 
     def test_max_le_min_400(self, client):
-        r = client.post(f"{API}/approval-rules", json={"doc_type": "sales_order",
-                        "min_amount": 500, "max_amount": 500}, timeout=30)
-        assert r.status_code == 400, f"{r.status_code}: {r.text[:200]}"
+        r = self._put(client, "sales_order.nilai",
+                      [{"level": 1, "tiers": [{"min_amount": 500, "max_amount": 500, "roles": ["manager"]}]}])
+        assert r.status_code == 400, r.text[:200]
 
-    def test_negative_min_422(self, client):
-        r = client.post(f"{API}/approval-rules", json={"doc_type": "sales_order",
-                        "min_amount": -5}, timeout=30)
-        assert r.status_code in (400, 422), f"{r.status_code}: {r.text[:200]}"
-
-    def test_discount_and_owner_rejected(self, client):
-        # KP-T3 — "Diskon (%)" dan "Owner" tidak pernah berakibat di mesin: kini ditolak (dulu diterima).
-        r = client.post(f"{API}/approval-rules", json={
-            "doc_type": "discount", "min_amount": 91, "max_amount": 92,
-            "sort": 99, "description": "TEST_iter273_disc"}, timeout=30)
-        assert r.status_code == 400, r.text[:300]
-        r = client.post(f"{API}/approval-rules", json={
-            "doc_type": "purchase_order", "min_amount": 91, "max_amount": 92,
-            "required_role": "owner", "sort": 99, "description": "TEST_iter273_owner"}, timeout=30)
-        assert r.status_code == 400, r.text[:300]
+    def test_no_reason_400(self, client):
+        r = self._put(client, "sales_order.nilai", [{"level": 1, "tiers": [{"min_amount": 0, "roles": []}]}],
+                      reason="")
+        assert r.status_code == 400 and r.json()["detail"] == "Alasan perubahan wajib diisi.", r.text[:200]
 
 
-# ── CRUD + persistence ───────────────────────────────────────────────────────
-class TestCrud:
-    def test_create_patch_partial_delete(self, client, created_ids):
-        r = client.post(f"{API}/approval-rules", json={
-            "doc_type": "purchase_order", "min_amount": 1234, "max_amount": 5678,
-            "required_role": "manager", "sort": 98, "active": True,
-            "description": "TEST_iter273_crud"}, timeout=30)
-        assert r.status_code == 200, r.text[:300]
-        rule = r.json()
-        rid = rule["id"]
-        created_ids.append(rid)
-        assert rule["min_amount"] == 1234 and rule["max_amount"] == 5678
-        assert rule["required_role"] == "manager" and rule["active"] is True
-        assert rule["entity_id"] == "all"
-
-        # PATCH partial: hanya {active}
-        p = client.patch(f"{API}/approval-rules/{rid}", json={"active": False}, timeout=30)
-        assert p.status_code == 200, p.text[:300]
-        assert p.json()["active"] is False
-        g = client.get(f"{API}/approval-rules/{rid}", timeout=30).json()
-        assert g["active"] is False
-        assert g.get("is_active") is None, "field lama is_active tidak boleh ditulis"
-        assert g["min_amount"] == 1234, "PATCH partial merusak field lain"
-
-        # toggle back
-        p2 = client.patch(f"{API}/approval-rules/{rid}", json={"active": True}, timeout=30)
-        assert p2.status_code == 200 and p2.json()["active"] is True
-
-        # PATCH range validation
-        bad = client.patch(f"{API}/approval-rules/{rid}", json={"max_amount": 10}, timeout=30)
-        assert bad.status_code == 400, f"{bad.status_code}: {bad.text[:200]}"
-
-        # DELETE = soft delete
-        d = client.delete(f"{API}/approval-rules/{rid}", timeout=30)
-        assert d.status_code == 200, d.text[:300]
-        after = client.get(f"{API}/approval-rules/{rid}", timeout=30)
-        assert after.status_code == 200
-        assert after.json()["active"] is False, "soft delete harus set active=false"
-
-    def test_patch_unknown_404(self, client):
-        r = client.patch(f"{API}/approval-rules/aprule_nope", json={"active": True}, timeout=30)
-        assert r.status_code == 404, f"{r.status_code}: {r.text[:200]}"
-
-    def test_patch_empty_400(self, client, created_ids):
-        r = client.post(f"{API}/approval-rules", json={
-            "doc_type": "sales_order", "min_amount": 77, "max_amount": 78,
-            "sort": 97, "description": "TEST_iter273_empty"}, timeout=30)
-        rid = r.json()["id"]
-        created_ids.append(rid)
-        e = client.patch(f"{API}/approval-rules/{rid}", json={}, timeout=30)
-        assert e.status_code == 400, f"{e.status_code}: {e.text[:200]}"
-
-
-# ── INTEGRASI MESIN: UI-created rule harus dibaca evaluate_approval ──────────
+# ── INTEGRASI MESIN: aturan dari layar harus dibaca evaluate_approval ────────
 class TestEngineIntegration:
     def test_rule_drives_evaluate_and_removal_restores(self, client):
         base = client.get(f"{API}/settings/evaluate-approval",
-                          params={"doc_type": "sales_order", "amount": 1500}, timeout=30)
+                          params={"doc_type": "sales_order", "amount": 1500, "entity_id": ENTITY}, timeout=30)
         assert base.status_code == 200, base.text[:300]
         baseline = base.json()
-
-        r = client.post(f"{API}/approval-rules", json={
-            "doc_type": "sales_order", "min_amount": 1000, "max_amount": 2000,
-            "required_role": "admin", "sort": 1, "entity_id": ENTITY,
-            "description": "TEST_iter273_engine"}, timeout=30)
+        view = client.get(f"{API}/approval-policies", params={"entity_id": ENTITY, "doc_kind": "sales_order.nilai"},
+                          timeout=30).json()["kinds"][0]
+        version = view["version"] if view["source"] == "pt" else 0
+        r = client.put(f"{API}/approval-policies/sales_order.nilai", json={
+            "entity_id": ENTITY, "expected_version": version, "reason": "TEST_iter273_engine",
+            "levels": [{"level": 1, "tiers": [{"min_amount": 0, "max_amount": 1000, "roles": []},
+                                              {"min_amount": 1000, "max_amount": 2000, "roles": ["admin"]},
+                                              {"min_amount": 2000, "max_amount": None, "roles": []}]}]}, timeout=30)
         assert r.status_code == 200, r.text[:300]
-        rid = r.json()["id"]
         try:
             ev = client.get(f"{API}/settings/evaluate-approval",
-                            params={"doc_type": "sales_order", "amount": 1500}, timeout=30)
+                            params={"doc_type": "sales_order", "amount": 1500, "entity_id": ENTITY}, timeout=30)
             assert ev.status_code == 200, ev.text[:300]
             data = ev.json()
             assert data["requires_approval"] is True, data
             assert data["required_role"] == "admin", data
-            assert data["rule_id"] == rid, data
         finally:
-            d = client.delete(f"{API}/approval-rules/{rid}", timeout=30)
+            d = client.delete(f"{API}/approval-policies/sales_order.nilai",
+                              params={"entity_id": ENTITY, "reason": "TEST_iter273 pulihkan"}, timeout=30)
             assert d.status_code == 200
-
         after = client.get(f"{API}/settings/evaluate-approval",
-                           params={"doc_type": "sales_order", "amount": 1500}, timeout=30).json()
-        assert after.get("rule_id") != rid
-        assert after.get("required_role") == baseline.get("required_role"), \
-            f"baseline {baseline} vs after {after}"
+                           params={"doc_type": "sales_order", "amount": 1500, "entity_id": ENTITY}, timeout=30).json()
+        assert after.get("required_role") == baseline.get("required_role"), f"baseline {baseline} vs after {after}"

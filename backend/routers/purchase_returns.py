@@ -2,6 +2,7 @@
 from typing import Any, Dict, Optional
 from fastapi import APIRouter, Depends, File, Form, Request, HTTPException, Query, UploadFile
 from db import db
+from services import approval_policy_service as _aps   # KP-T4 — satu tabel kebijakan persetujuan
 from dependencies import require_permission, audit
 from core_utils import safe_doc
 from entity_scope import EntityContext, entity_ctx, resolve_list_scope, guard_doc
@@ -132,6 +133,7 @@ async def approve_purchase_return(return_id: str, request: Request,
                                   payload: PurchaseReturnDecision = PurchaseReturnDecision()) -> Dict[str, Any]:
     user = await require_permission(request, "purchase_return", "approve")
     cur = await _guard(return_id, request)
+    await _aps.guard_door("purchase_return", user, doc=cur)   # KP-T4 — Aturan Persetujuan
     # KF-T6 — pembuat ≠ penyetuju dari `kontrol.retur_pembelian.*` (bawaan satu orang). Hanya keputusan baru
     # (draf/menunggu); lanjutan jurnal gagal (IX-17) bukan keputusan.
     if (cur or {}).get("status") in ("draft", "pending_approval"):

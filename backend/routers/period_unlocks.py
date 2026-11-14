@@ -10,6 +10,7 @@ from fastapi import APIRouter, Request, Query, HTTPException
 from pydantic import BaseModel
 
 from db import db
+from services import approval_policy_service as _aps   # KP-T4 — satu tabel kebijakan persetujuan
 from dependencies import require_any_permission, require_permission, audit
 from entity_scope import entity_ctx, resolve_scope_ids
 from services import period_unlock_service as pus
@@ -91,6 +92,7 @@ async def approve_unlock(plu_id: str, request: Request) -> Dict[str, Any]:
     """Setujui usul (DUAL CONTROL: pengusul ≠ penyetuju). Mulai jendela berbatas waktu."""
     actor = await require_permission(request, "period", "unlock")
     await _guard_unlock(request, plu_id)
+    await _aps.guard_door("period_unlock", actor, collection="period_unlock_requests", doc_id=plu_id)   # KP-T4
     try:
         rec = await pus.approve_request(plu_id, actor)
     except pus.DecisionConflict as e:

@@ -399,6 +399,8 @@ def check_kinds(g: Guard, queue_keys: Set[str], kind_queue: Dict[str, str]) -> N
                   f"memutusnya tidak bisa diatur di Aturan Persetujuan (KP-T4).")
     for kind, key in sorted(kind_queue.items()):
         g.bump()
+        if key == "":   # keputusan langsung tanpa dokumen menunggu (bukan antrean) — sah, wajib ber-`note`
+            continue
         if key not in queue_keys:
             g.add(f"jenis dokumen `{kind}` menunjuk antrean `{key}` yang TIDAK ADA di `QUEUES` → aturan yang tidak "
                   f"pernah terlihat di Pusat Persetujuan.")

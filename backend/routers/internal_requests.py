@@ -17,6 +17,7 @@ from typing import Any, Dict, Optional
 from fastapi import APIRouter, HTTPException, Query, Request
 
 from db import db
+from services import approval_policy_service as _aps   # KP-T4 — satu tabel kebijakan persetujuan
 from dependencies import audit, current_user, has_permission, require_permission
 from entity_scope import entity_ctx, resolve_list_scope, assert_entity_access
 from schemas_internal_request import (
@@ -184,6 +185,7 @@ async def convert_request(req_id: str, payload: InternalRequestConvert,
     if not doc:
         raise HTTPException(status_code=404, detail="Permintaan internal tidak ditemukan.")
     assert_entity_access(doc, svc.COLL, ctx)
+    await _aps.guard_door("internal_request", actor, doc=doc)   # KP-T4 — Aturan Persetujuan
     seller = (payload.source_entity_id or doc.get("source_entity_id") or "").strip()
     if seller and seller not in ctx.allowed_entity_ids:
         raise HTTPException(

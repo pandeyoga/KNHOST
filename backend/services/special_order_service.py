@@ -20,8 +20,8 @@ _DEFAULT_PRODUCT_IMAGE = (
     "?crop=entropy&cs=srgb&fm=jpg&ixlib=rb-4.1.0&q=85"
 )
 
-# Simple approval threshold (IDR)
-APPROVAL_THRESHOLD = 10_000_000
+# KP-T4 — ambang `APPROVAL_THRESHOLD` (Rp10 jt, ditulis mati) DIHAPUS: kapan dan siapa yang menyetujui pesanan khusus
+# dibaca dari Aturan Persetujuan (jenis `special_order`, `services/approval_policy_service.py`).
 
 # Status constants (aligned with SO)
 STATUS_DRAFT = "draft"
@@ -74,22 +74,6 @@ async def generate_special_order_number(on_date: Any = None) -> str:
         seq = 1
     
     return f"{prefix}-{seq:04d}"
-
-
-async def evaluate_special_order_approval(total_amount: float, current_status: str) -> str:
-    """Determine initial status based on amount.
-    
-    Returns:
-        - 'draft' if amount <= threshold
-        - 'pending_approval' if amount > threshold
-    """
-    if current_status != STATUS_DRAFT:
-        return current_status
-    
-    if total_amount > APPROVAL_THRESHOLD:
-        return STATUS_PENDING_APPROVAL
-    
-    return STATUS_DRAFT
 
 
 #: Kunci waktu satu entri `status_history[]` — SATU nama, ditetapkan di
@@ -156,20 +140,10 @@ async def ensure_approval_requested_at(dbx: Any = None, *,
             "written": written}
 
 
-async def can_approve_special_order(special_order: Dict[str, Any], user_role: str) -> bool:
-    """Apakah pengguna boleh memutuskan PO custom ini (manager/admin).
-
-    Args:
-        special_order: Special order document
-        user_role: Current user's role
-    
-    Returns:
-        True if user can approve (manager/admin)
-    """
-    if special_order["status"] != STATUS_PENDING_APPROVAL:
-        return False
-    
-    return user_role in ["manager", "admin"]
+async def can_approve_special_order(special_order: Dict[str, Any], user_role: str = "") -> bool:
+    """Apakah PO custom ini sedang menunggu keputusan. KP-T4 — SIAPA yang boleh memutus tidak lagi dicek di sini
+    (dulu nama peran persis manager/admin): `approval_matrix_service.guard` membaca Aturan Persetujuan."""
+    return special_order.get("status") == STATUS_PENDING_APPROVAL
 
 
 async def approve_special_order(special_order_id: str, approved_by: str) -> Dict[str, Any]:

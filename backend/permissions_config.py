@@ -412,6 +412,11 @@ DEFAULT_PERMISSIONS = {
         # diberikan (keputusan pemilik E8.1b) — ini hanya master nama, read-only.
         "supplier": ["view"],
         "interco_price": ["view", "set"],   # 2026-10 — penetap harga internal antar-PT
+        # KP-T4 (K-47) — Finance SUDAH menyetujui/menolak tagihan vendor KAMPANYE lewat nama peran (pintu itu dulu
+        # tanpa izin). Kini izin + Aturan Persetujuan: `vendor_bill.approve|reject` dibutuhkan pintunya, dan baris
+        # Aturan Persetujuan membatasi Finance ke jenis `vendor_bill.kampanye` saja (tagihan pemasok biasa ≥ Manajer).
+        # Tanpa `view` → menu hutang tetap tertutup.
+        "vendor_bill": ["approve", "reject"],
     },
     "warehouse": {
         "field_visibility": ["grade", "lot", "origin"],   # L01 LN-012 — lihat atribut stok

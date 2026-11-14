@@ -13,7 +13,7 @@ from core_utils import new_id, now_iso, safe_doc, DEFAULT_ENTITY_ID, timeline_en
 from entity_scope import entity_ctx, resolve_list_scope, assert_entity_access, guard_doc
 from pagination import is_paged, get_page_params, build_search, merge_query, fetch_page, envelope
 from schemas import VendorBillCreate, VendorBillPaymentCreate, VendorBillDecision
-from services.config_service import compute_order_pricing, get_effective_settings, role_satisfies
+from services.config_service import compute_order_pricing, get_effective_settings
 from services import gl_service
 from services.vendor_bill_service import (
     evaluate_match, bill_financials, next_bill_number, sync_po_billing,
@@ -456,10 +456,9 @@ async def approve_vendor_bill(bill_id: str, request: Request) -> Dict[str, Any]:
         return _hydrate(safe_doc(await _mcost.approve_campaign_bill(bill, actor)))
     if bill.get("status") != "pending_approval":
         raise HTTPException(status_code=409, detail=f"Bill status '{bill.get('status')}' tidak menunggu approval.")
-    required = bill.get("required_approval_role") or "manager"
-    if not role_satisfies(actor.get("role"), required):
-        raise HTTPException(status_code=403,
-                            detail=f"Approval bill butuh role minimal '{required}'. Role Anda: '{actor.get('role')}'.")
+    # KP-T4 (PR-05) — izin `vendor_bill.approve` + Aturan Persetujuan (dulu hanya peringkat, tanpa izin).
+    from services import approval_policy_service as _aps
+    await _aps.assert_can_decide("vendor_bill", bill.get("entity_id"), float(bill.get("grand_total") or 0), actor)
     # KF-T6 — pembuat ≠ penyetuju dari `kontrol.tagihan_pemasok.*` (satu pembantu).
     from services import dual_control as _dc
     await _dc.tolak_bila_pelaku_sama("tagihan_pemasok", bill, actor, bill.get("entity_id", ""),
@@ -486,9 +485,9 @@ async def reject_vendor_bill(bill_id: str, payload: VendorBillDecision, request:
         return _hydrate(safe_doc(out))
     if bill.get("status") != "pending_approval":
         raise HTTPException(status_code=409, detail=f"Bill status '{bill.get('status')}' tidak menunggu approval.")
-    required = bill.get("required_approval_role") or "manager"
-    if not role_satisfies(actor.get("role"), required):
-        raise HTTPException(status_code=403, detail=f"Reject bill butuh role minimal '{required}'.")
+    from services import approval_policy_service as _aps   # KP-T4 (PR-05) — izin `vendor_bill.reject` + Aturan
+    await _aps.assert_can_decide("vendor_bill", bill.get("entity_id"), float(bill.get("grand_total") or 0), actor,
+                                 action="reject")
     updated = await db.vendor_bills.find_one_and_update(
         {"id": bill_id},
         {"$set": {"status": "cancelled", "approval_status": "rejected",

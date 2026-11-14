@@ -267,6 +267,23 @@ async def request_credit_approval(order_id: str, payload: SoCreditApprovalReques
 
 # ─── Approver: keputusan atas 1 entri (approve | reject) ─────────────────────
 
+#: KP-T4 — tipe entri `pending_approvals` → jenis dokumen Aturan Persetujuan (`approval_kinds.py`).
+SO_ENTRY_KIND = {"kredit": "sales_order.kredit", "special_price": "sales_order.harga_khusus",
+                 "makloon": "sales_order.makloon", "pembayaran_sampel": "sales_order.bayar_sampel"}
+
+
+async def so_entry_kind(order: Dict[str, Any], entry: Dict[str, Any]) -> tuple:
+    """(jenis kebijakan, nominal) untuk satu entri. Entri `nilai` = persetujuan nilai bila nilai pesanan memang menuntut
+    persetujuan menurut Aturan Persetujuan; selain itu entri penanda validasi admin (`sales_order.validasi`)."""
+    from services import approval_policy_service as _aps
+    amount = float(entry.get("amount") or order.get("approval_amount") or order.get("grand_total") or 0)
+    kind = SO_ENTRY_KIND.get(entry.get("type") or "")
+    if not kind:
+        nilai = await _aps.required_levels("sales_order.nilai", order.get("entity_id"), amount)
+        kind = "sales_order.nilai" if nilai else "sales_order.validasi"
+    return kind, amount
+
+
 @router.post("/sales-orders/{order_id}/approvals/{approval_id}/decide")
 async def decide_approval(order_id: str, approval_id: str, payload: SoApprovalDecision, request: Request) -> Dict[str, Any]:
     # RBAC — keputusan approval butuh order.approve (sales TIDAK punya → 403).
@@ -288,11 +305,12 @@ async def decide_approval(order_id: str, approval_id: str, payload: SoApprovalDe
         raise HTTPException(status_code=404, detail="Entri approval tidak ditemukan.")
     if entry.get("status") != "pending":
         raise HTTPException(status_code=409, detail="Entri approval sudah diputuskan.")
-    # role aktor harus memenuhi required_role entri
-    from services.config_service import role_satisfies
-    if not role_satisfies(actor.get("role"), entry.get("required_role")):
-        raise HTTPException(status_code=403,
-            detail=f"Keputusan butuh role minimal '{entry.get('required_role')}'.")
+    # KP-T4 — siapa yang boleh memutus entri ini dibaca dari Aturan Persetujuan (sub-jenis per tipe entri), bukan dari
+    # peringkat peran `required_role` yang tersimpan.
+    from services import approval_policy_service as _aps
+    kind, amount = await so_entry_kind(order, entry)
+    await _aps.assert_can_decide(kind, order.get("entity_id"), amount, actor,
+                                 action="approve" if decision == "approve" else "reject")
     new_status = "approved" if decision == "approve" else "rejected"
     if entry.get("type") == "special_price":
         # KF-T6 — pengaju ≠ pemutus dari `kontrol.harga_khusus.*` (satu pembantu, 403).

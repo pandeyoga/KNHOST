@@ -200,8 +200,10 @@ async def test_KFT2_U10b_tujuh_cadangan_lain_sama_dengan_bawaan_registry(monkeyp
     assert _build_allocation_plan([], 0, "", {}, {})["lot_selection"] == "fifo"
     assert "(FIFO)" in _explain_allocation(1, ["L1"], {"name": "Gudang A"}, "ent_ksc", "single", {}, {})
     # approval.po_custom_direksi_min 50 jt: PO Custom 10 jt hanya satu tingkat (Manajer), 60 jt naik ke Direksi.
-    assert am.evaluate("po_custom", {"role": "manager"}, {"total_amount": 10000000}, {})["levels_total"] == 1
-    assert am.evaluate("po_custom", {"role": "manager"}, {"total_amount": 60000000}, {})["levels_total"] == 2
+    # KP-T4 — kunci ini kini hanya membentuk baris BAWAAN Aturan Persetujuan (jenis `special_order`, dibaca lewat resolver
+    # → bawaan registry bila tidak diisi) dan `evaluate` menjadi asinkron; yang diuji tetap: tanpa isian = 50 jt.
+    assert (await am.evaluate("po_custom", {"role": "manager"}, {"total_amount": 10000000}, {}))["levels_total"] == 1
+    assert (await am.evaluate("po_custom", {"role": "manager"}, {"total_amount": 60000000}, {}))["levels_total"] == 2
 
 
 # ── U11 — rujukan pemakai menunjuk fungsi yang ada ───────────────────────────

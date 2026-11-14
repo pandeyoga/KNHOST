@@ -9,6 +9,7 @@ Ini STRUKTUR, bukan nilai bisnis: siapa yang memutus dan mulai nominal berapa ad
 
 Aturan:
 - Tiap kunci `QUEUES` punya ≥ 1 jenis (`queue_key`) — dijaga INV-APPR-01 (`scripts/guardrails/verify_approval_queues.py`).
+  `queue_key` kosong = keputusan langsung tanpa dokumen menunggu (bukan antrean), wajib ber-`note`.
 - `permissions`: izin setujui; lebih dari satu = salah satu cukup. `reject_permissions`: izin pintu tolak bila berbeda.
 - Sub-jenis (`induk.anak`) dipakai bila satu antrean memuat beberapa keputusan dengan aturan berbeda.
 """
@@ -83,6 +84,10 @@ APPROVAL_KINDS: Dict[str, Dict[str, Any]] = {
     "contra_bon_dispute": _k("Sengketa kontrabon", "Keuangan", "contra_bon_dispute", ("contra_bon.update",)),
     "interco": _k("Transaksi antar-PT", "Keuangan", "interco", ("interco.approve",), amount_field="grand_total"),
     "interco_return": _k("Retur antar-PT", "Keuangan", "interco_return", ("interco.approve",)),
+    # Temuan cek ulang KP-T4: pencairan pinjaman antar-PT memakai ambang & peran `antar_entitas.*` yang sama dengan
+    # peta peringkat pribadi (bukan antrean — pencairan langsung oleh yang berwenang, tanpa dokumen menunggu).
+    "interco_loan": _k("Pencairan pinjaman antar-PT", "Keuangan", "", ("interco.approve",), amount_field="principal",
+                       note="Bukan antrean: pencairan dijalankan langsung oleh peran yang tercantum."),
     "cash_advance": _k("Uang muka (panjar)", "Keuangan", "cash_advance", ("cash_advance.approve",),
                        amount_field="total_amount", reject_permissions=("cash_advance.reject",),
                        level_status={1: "pending_atasan", 2: "pending_pimpinan", 3: "pending_finance"},

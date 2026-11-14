@@ -15,7 +15,7 @@ import re
 from typing import Any, Dict, List, Optional
 from db import db
 from core_utils import now_iso, new_id, DEFAULT_ENTITY_ID, safe_doc, timeline_entry, next_doc_number
-from services.config_service import evaluate_approval, role_satisfies, compute_order_pricing
+from services.config_service import evaluate_approval, compute_order_pricing
 from services import line_scope as _lines      # FASE L — satu pintu normalisasi lini
 from services import dual_qty_service as _dual  # FASE U — dua satuan (roll + ukuran)
 
@@ -321,15 +321,24 @@ async def submit_requisition(pr_id: str) -> Dict[str, Any]:
     return safe_doc(await db.purchase_requisitions.find_one({"id": pr_id}, {"_id": 0}))
 
 
+async def _assert_policy(pr: Dict[str, Any], actor: Dict[str, Any], action: str) -> None:
+    """KP-T4 — peran pemutus PR dari Aturan Persetujuan (jenis `purchase_requisition`). Jalur HTTP sudah ditolak 403
+    dengan pesan yang sama oleh `approval_matrix_service.guard`; di sini penjaga untuk pemanggil lain (persetujuan
+    otomatis pemenuhan pesanan khusus menangkap `ValueError`). Izin pintu diperiksa routernya."""
+    from services import approval_policy_service as _aps
+    res = await _aps.can_decide("purchase_requisition", pr.get("entity_id"), float(pr.get("total_est_amount") or 0),
+                                actor, action=action, check_permission=False)
+    if not res["allowed"]:
+        raise ValueError(res["message"])
+
+
 async def approve_requisition(pr_id: str, actor: Dict[str, Any], notes: str = "") -> Dict[str, Any]:
     pr = await db.purchase_requisitions.find_one({"id": pr_id}, {"_id": 0})
     if not pr:
         raise ValueError("PR tidak ditemukan")
     if pr["status"] not in ("draft", "pending_approval"):
         raise ValueError(f"PR {pr['number']} sudah {pr['status']}")
-    required = pr.get("required_approval_role")
-    if not role_satisfies(actor.get("role"), required):
-        raise ValueError(f"Approval PR butuh role minimal '{required or 'manager'}'. Role Anda: '{actor.get('role')}'.")
+    await _assert_policy(pr, actor, "approve")   # KP-T4 — Aturan Persetujuan (dulu peringkat `required_approval_role`)
     # KF-T6 — pengaju ≠ pemutus dari `kontrol.permintaan_pembelian.*` (satu pembantu). Jalur HTTP sudah ditolak 403
     # oleh `approval_matrix_service.guard`; di sini penjaga untuk pemanggil lain (persetujuan otomatis pemenuhan
     # pesanan khusus menangkap `ValueError`). Penilaian tanpa jejak: jejak Admin dicatat sekali oleh `guard`.
@@ -355,9 +364,7 @@ async def reject_requisition(pr_id: str, actor: Dict[str, Any], reason: str = ""
         raise ValueError("PR tidak ditemukan")
     if pr["status"] not in ("draft", "pending_approval"):
         raise ValueError(f"PR {pr['number']} sudah {pr['status']}")
-    required = pr.get("required_approval_role")
-    if not role_satisfies(actor.get("role"), required):
-        raise ValueError(f"Reject PR butuh role minimal '{required or 'manager'}'. Role Anda: '{actor.get('role')}'.")
+    await _assert_policy(pr, actor, "reject")   # KP-T4 — Aturan Persetujuan
     now = now_iso()
     await db.purchase_requisitions.update_one({"id": pr_id}, {"$set": {
         "status": "rejected", "approval_status": "rejected",

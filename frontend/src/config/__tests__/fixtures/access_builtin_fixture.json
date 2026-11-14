@@ -828,6 +828,10 @@
    ],
    "uom": [
     "view"
+   ],
+   "vendor_bill": [
+    "approve",
+    "reject"
    ]
   },
   "manager": {

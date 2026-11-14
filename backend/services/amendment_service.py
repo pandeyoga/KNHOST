@@ -36,7 +36,6 @@ from core_utils import new_id, next_doc_number, now_iso, safe_doc, timeline_entr
 from db import db
 from services import config_service
 from services.config_resolver import resolve
-from role_registry import role_in  # peran acuan dikenali (keputusan owner 2026-10-21)
 
 AMD_COLL = "doc_amendments"
 REASON_COLL = "amendment_reasons"
@@ -252,11 +251,19 @@ async def _dual_control_aktif(entity_id: str = "") -> bool:
 
 async def policy_snapshot(entity_id: str = "") -> Dict[str, Any]:
     """Rekam ambang yang BERLAKU SAAT ITU, supaya keputusan bisa diaudit ulang nanti."""
+    # KP-T4 — siapa yang memutus dan batas "naik ke penyetuju berikutnya" dari Aturan Persetujuan (jenis `amendment`):
+    # `approver_role` = peran kompatibel rentang pertama (tampilan/notifikasi), `admin_approval_above` = batas bawah
+    # rentang kedua jenjang 1 (0 = satu rentang). Kunci `amendment.approver_role|admin_approval_above` tidak dipakai lagi.
+    from services import approval_policy_service as _aps
+    tiers = sorted([r for r in (await _aps.rows_for("amendment", entity_id or None))["rows"]
+                    if int(r.get("level") or 1) == 1 and (r.get("roles") or r.get("any_holder"))],
+                   key=lambda r: float(r.get("min_amount") or 0))
     return {
         "approval_threshold_amount": float(await _cfg("amendment.approval_threshold_amount", entity_id)),
         "approval_threshold_pct": float(await _cfg("amendment.approval_threshold_pct", entity_id)),
-        "approver_role": str(await _cfg("amendment.approver_role", entity_id)),
-        "admin_approval_above": float(await _cfg("amendment.admin_approval_above", entity_id)),
+        "approver_role": (tiers[0].get("legacy_role") or (tiers[0].get("roles") or ["manager"])[0]) if tiers
+        else "manager",
+        "admin_approval_above": float(tiers[1].get("min_amount") or 0) if len(tiers) > 1 else 0.0,
         # KF-T6 — alias: sakelar lama `not_used`; nilainya kini `kontrol.amandemen.min_orang` (dual_control).
         "dual_control": await _dual_control_aktif(entity_id),
         "require_note_above": float(await _cfg("amendment.require_note_above", entity_id)),
@@ -411,6 +418,7 @@ def evaluate_policy(delta: float, base_amount: float, policy: Dict[str, Any],
     return {
         "requires_approval": requires_approval,
         "required_role": required_role if requires_approval else "",
+        "approval_amount": abs_delta,   # KP-T4 — nilai yang dinilai Aturan Persetujuan saat diputus (termasuk akumulasi)
         "method": method,
         "delta_pct": round(pct, 4),
         "explain": reasons,
@@ -578,6 +586,7 @@ async def preview(doc_type: str, doc_id: str, changes: List[Dict[str, Any]],
         "policy": policy,
         "requires_approval": verdict["requires_approval"],
         "required_role": verdict["required_role"],
+        "approval_amount": verdict.get("approval_amount", abs(delta)),
         "method": verdict["method"],
         "method_label": {
             "re_derive": "Dokumen dihitung ulang (belum terbit)",
@@ -644,6 +653,7 @@ async def _amd_doc(pv: Dict[str, Any], reason_code: str, reason_label: str, affe
         "policy_snapshot": pv["policy"], "explain": pv["explain"],
         "requires_approval": pv["requires_approval"],
         "required_role": pv["required_role"],
+        "approval_amount": pv.get("approval_amount", abs(float(pv["impact"]["delta"] or 0))),
         "status": "pending_approval" if pv["requires_approval"] else "approved",
         "proposed_by": actor.get("name", ""), "proposed_by_id": actor.get("id", ""),
         "proposed_at": now,
@@ -732,11 +742,21 @@ async def decide(amd_id: str, action: str, actor: Dict[str, Any],
             "tidak bisa diputus dua kali.")
 
     policy = amd.get("policy_snapshot") or await policy_snapshot(amd.get("entity_id", ""))
-    role = actor.get("role") or ""
-    need = amd.get("required_role") or policy["approver_role"]
-    if not amd.get("approval_permission") and role != "admin" and not role_in(role, (need,)):
-        raise AmendmentError(
-            f"Amandemen ini harus diputus oleh {need}. Peran Anda: {role or 'tidak dikenal'}.")
+    if not amd.get("approval_permission"):
+        # KP-T4 — siapa yang memutus dari Aturan Persetujuan (jenis `amendment`) pada nilai yang dinilai saat diusulkan.
+        # Dokumen lama tanpa `approval_amount`: nilai |dampak|, dinaikkan ke batas rentang kedua bila dulu dituntut
+        # naik (`required_role` admin di atas batas) — jumlah & tuntutan jenjang tetap seperti tersimpan.
+        amt = amd.get("approval_amount")
+        if amt is None:
+            amt = abs(float(((amd.get("impact") or {}).get("delta")) or 0))
+            above = float(policy.get("admin_approval_above") or 0)
+            if amd.get("required_role") == "admin" and above > 0:
+                amt = max(amt, above)
+        from services import approval_policy_service as _aps
+        res = await _aps.can_decide("amendment", amd.get("entity_id") or None, float(amt), actor,
+                                    action="reject" if action == "reject" else "approve", check_permission=False)
+        if not res["allowed"]:
+            raise AmendmentError(res["message"])
     # KF-T6 — pengusul ≠ pemutus dari `kontrol.amandemen.*` (403; berlaku juga untuk menolak, seperti sebelumnya).
     from services import dual_control as _dc
     kontrol = await _dc.tolak_bila_pelaku_sama("amandemen", amd, actor, amd.get("entity_id", ""),

@@ -36,6 +36,11 @@ PRT4_TIDAK_DIPAKAI = 4
 # −4 di U02; `lot.number_format` (izin `inventory.configure`) tidak terhitung di U02.
 KFT2_KUNCI = 11
 KFT2_TIDAK_DIPAKAI = 4
+# KP-T4 — 17 kunci persetujuan pindah ke Aturan Persetujuan (`not_used`); 10 di antaranya berizin `settings.manage`
+# (approval.extra_levels, amendment.{approver_role, admin_approval_above}, antar_entitas.{approval_role,
+# high_value_approval_role, approval_threshold_rupiah}, contra_bon.{tiga kunci yang sama},
+# payment.variance_writeoff_approver_role); 7 lainnya berizin domain (rnd.manage / makloon.configure).
+KPT4_TIDAK_DIPAKAI = 10
 
 
 def _put(key, value, scope_type="entity", scope_id="ent_ksc"):
@@ -69,9 +74,10 @@ async def test_U02_bisa_ubah_232_kunci(klien, akun, sesi, peran_tanpa_acuan):
     # PR-T2 — 232 kunci aktif berizin `settings.manage` saat KF-T1; tiga kunci `ai.*_roles` kini tidak dipakai
     # (diatur di Peran & Hak Akses) → 232 − 3 = 229. KF-T6 menambah kunci `kontrol.*` (KFT6_KUNCI) dan mematikan
     # sakelar lama (KFT6_TIDAK_DIPAKAI). PR-T4 mematikan empat kunci halaman awal (PRT4_TIDAK_DIPAKAI); KF-T2 empat kunci
-    # lain (KFT2_TIDAK_DIPAKAI).
+    # lain (KFT2_TIDAK_DIPAKAI); KP-T4 10 kunci persetujuan berizin settings.manage (KPT4_TIDAK_DIPAKAI). Tidak tumpang
+    # tindih: kunci contra_bon milik KF-T2 (`qty_tolerance_percent`) bukan salah satu dari tiga kunci persetujuan KP-T4.
     assert sum(1 for it in r.json()["items"] if it["can_edit"]) == \
-        229 + KFT6_KUNCI - KFT6_TIDAK_DIPAKAI - PRT4_TIDAK_DIPAKAI - KFT2_TIDAK_DIPAKAI
+        229 + KFT6_KUNCI - KFT6_TIDAK_DIPAKAI - PRT4_TIDAK_DIPAKAI - KFT2_TIDAK_DIPAKAI - KPT4_TIDAK_DIPAKAI
 
 
 async def test_U03_lapisan_grup_tetap_untuk_lintas_pt(klien, akun, sesi, peran_tanpa_acuan):

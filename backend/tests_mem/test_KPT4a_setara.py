@@ -132,8 +132,9 @@ async def lama_levels(kind: str, amt: float, ent: str) -> List[int]:
     if kind == "purchase_order":
         return [lv for lv, _r, _l in await _po_chain(amt, ent)]
     if kind == "special_order":
-        if amt <= 10_000_000:
-            return []
+        # HEAD: pesanan khusus yang diajukan SELALU `pending_approval` dengan tingkat 1 (matriks `levels[0]` tanpa
+        # ambang); tingkat 2 bila nilai ≥ `approval.po_custom_direksi_min`. Ambang Rp10 jt (`APPROVAL_THRESHOLD`)
+        # hanya mengisi field `requires_approval` yang tidak dibaca siapa pun (lihat laporan: koreksi U10).
         direksi = float(await _v("approval.po_custom_direksi_min", ent) or 0)
         return [1, 2] if amt >= direksi else [1]
     if kind == "cash_advance":
@@ -191,6 +192,13 @@ async def lama_boleh(kind: str, role: str, amt: float, ent: str, level: int, per
         else:
             ok = _satisfies(role, lo) or role in ("sales_admin",)
         return punya("interco.approve") and ok
+    if kind == "interco_loan":   # interco_loan_service._approval_gate (HEAD): peta peringkat pribadi
+        th = float(await _v("antar_entitas.approval_threshold_rupiah", ent) or 0)
+        hi = str(await _v("antar_entitas.high_value_approval_role", ent) or "admin")
+        lo = str(await _v("antar_entitas.approval_role", ent) or "manager")
+        rank = {"warehouse": 0, "sales": 0, "manager": 1, "admin": 2}
+        need = hi if (th and amt >= th) else lo
+        return punya("interco.approve") and rank.get(role, 0) >= rank.get(need, 1)
     if kind == "contra_bon_approve":
         th = float(await _v("contra_bon.approval_threshold_rupiah", ent) or 0)
         need = str(await _v("contra_bon.high_value_approval_role", ent) or "admin").lower() if amt >= th > 0 \
@@ -220,7 +228,7 @@ JENIS_G = {k for k in APPROVAL_KINDS if k not in (
     "sales_order.bayar_sampel", "sales_order.makloon", "purchase_order", "purchase_order.deviasi_harga",
     "purchase_requisition", "special_order", "rnd_spec", "rnd_spec.rilis", "rnd_sample", "amendment", "interco",
     "contra_bon_approve", "vendor_bill", "vendor_bill.kampanye", "landed_cost", "cash_advance", "makloon_claim",
-    "payment_variance.hapus_sisa")}
+    "payment_variance.hapus_sisa", "interco_loan")}
 
 
 async def _bandingkan(perms_of, kinds=None) -> Dict[str, Any]:
@@ -268,8 +276,9 @@ async def test_KPT4_U1_baris_bawaan_semua_antrean(db):
     assert [(r["min_amount"], r["max_amount"]) for r in j1] == [(100 * JT, None)]
     assert "manager" in j1[0]["roles"] and "admin" in j1[0]["roles"] and "finance" not in j1[0]["roles"]
     assert [(r["min_amount"], r["label"], r["roles"]) for r in j2] == [(500 * JT, "Direksi", ["admin"])]
-    # tiap jenis katalog menunjuk antrean yang ada (INV-APPR-01 aturan G)
-    assert {v["queue_key"] for v in APPROVAL_KINDS.values()} <= antrean
+    # tiap jenis katalog menunjuk antrean yang ada (INV-APPR-01 aturan G); kosong = keputusan langsung tanpa antrean
+    assert {v["queue_key"] for v in APPROVAL_KINDS.values()} - {""} <= antrean
+    assert all(v["note"] for v in APPROVAL_KINDS.values() if not v["queue_key"])
 
 
 # ── U2 ─────────────────────────────────────────────────────────────────────────────────────────────────────────────

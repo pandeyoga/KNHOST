@@ -11,6 +11,9 @@ from config_registry import E
 
 G = ("global", "entity")
 
+# KP-T4 — alasan baku kunci persetujuan yang pindah ke Aturan Persetujuan.
+_KPT4_TIDAK_DIPAKAI = ("Dipindah ke Aturan Persetujuan (Pengaturan › Persetujuan › Aturan Persetujuan). Nilai terakhirnya hanya membentuk aturan bawaan selama aturan belum disimpan.")
+
 E("amendment.approval_threshold_amount", group="amandemen", type="money",
   default=5000000, min=0, max=100000000000, step=1000000, unit="Rp", scopes=G,
   label="Nilai koreksi yang wajib disetujui",
@@ -41,7 +44,9 @@ E("amendment.approver_role", group="amandemen", type="enum", default="manager",
        "tetap naik ke admin (lihat 'Nilai koreksi yang wajib disetujui admin').",
   impact="Menentukan antrean persetujuan koreksi masuk ke peran yang mana.",
   example="'manager' → koreksi Rp 7.500.000 menunggu persetujuan manager",
-  consumers=("services/amendment_service.py:evaluate_policy",), risk="high")
+  consumers=("services/approval_policy_service.py:default_rows_for",), risk="high",
+  # KP-T4 — isi kunci ini pindah ke tabel kebijakan persetujuan (`approval_policies`).
+  status="not_used", not_used_reason=_KPT4_TIDAK_DIPAKAI)
 
 E("amendment.admin_approval_above", group="amandemen", type="money",
   default=50000000, min=0, max=100000000000, step=5000000, unit="Rp", scopes=G,
@@ -49,8 +54,10 @@ E("amendment.admin_approval_above", group="amandemen", type="money",
   help="Di atas angka ini persetujuan manager tidak cukup — harus admin/direksi.",
   impact="Menaikkan tingkat persetujuan untuk koreksi bernilai besar.",
   example="Ambang Rp 50.000.000 · koreksi Rp 80.000.000 → hanya admin yang bisa menyetujui",
-  consumers=("services/amendment_service.py:evaluate_policy",), risk="high",
-  related=("amendment.approver_role",))
+  consumers=("services/approval_policy_service.py:default_rows_for",), risk="high",
+  related=("amendment.approver_role",),
+  # KP-T4 — isi kunci ini pindah ke tabel kebijakan persetujuan (`approval_policies`).
+  status="not_used", not_used_reason=_KPT4_TIDAK_DIPAKAI)
 
 E("amendment.dual_control", group="amandemen", type="bool", default=True, scopes=G,
   label="Pengusul tidak boleh menyetujui usulannya sendiri",

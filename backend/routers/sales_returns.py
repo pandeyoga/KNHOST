@@ -7,6 +7,7 @@ from fastapi import APIRouter, Request, File, Form, UploadFile, HTTPException, Q
 from typing import Dict, Any, List, Optional
 from pydantic import BaseModel
 from db import db
+from services import approval_policy_service as _aps   # KP-T4 — satu tabel kebijakan persetujuan
 from dependencies import require_permission, require_any_permission, audit, has_permission
 from core_utils import now_iso, new_id, strip_cost_fields, COST_SAFE_ROLES
 from entity_scope import (entity_ctx, resolve_list_scope, assert_entity_access,
@@ -365,6 +366,7 @@ async def approve_return(
         raise HTTPException(status_code=404, detail="Return tidak ditemukan")
     existing.pop("_id", None)
     assert_entity_access(existing, "sales_returns", ctx)
+    await _aps.guard_door("sales_return", user, doc=existing)   # KP-T4 — Aturan Persetujuan
     # KF-T6 — pembuat ≠ penyetuju dari `kontrol.retur_penjualan.*` (bawaan satu orang); hanya retur yang menunggu ACC.
     if existing.get("status") == st.PENDING_APPROVAL:
         from services import dual_control as _dc

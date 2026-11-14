@@ -20,6 +20,9 @@ G = ("global", "entity")
 GC = ("global", "entity", "customer")
 
 # ── Rencana pembayaran ──────────────────────────────────────────────────────
+# KP-T4 — alasan baku kunci persetujuan yang pindah ke Aturan Persetujuan.
+_KPT4_TIDAK_DIPAKAI = ("Dipindah ke Aturan Persetujuan (Pengaturan › Persetujuan › Aturan Persetujuan). Nilai terakhirnya hanya membentuk aturan bawaan selama aturan belum disimpan.")
+
 E("payment.plan_required_above_amount", group="uang-masuk", type="money", default=0,
   min=0, max=100000000000, step=1000000, unit="Rp", scopes=G,
   label="Nilai pesanan yang WAJIB punya rencana pembayaran",
@@ -196,8 +199,10 @@ E("payment.variance_writeoff_approver_role", group="uang-masuk", type="enum", de
   help="Peran minimum yang berwenang memutuskan penghapusan sisa piutang & pengembalian dana.",
   impact="Menentukan siapa yang boleh menekan tombol Hapus Sisa / Kembalikan Dana.",
   example="Manager · sales hanya bisa memilih `sisa tetap piutang` atau `ubah jadwal`",
-  consumers=("services/payment_variance_service.py:variance_policy",), risk="high",
-  related=("payment.variance_writeoff_requires_approval",))
+  consumers=("services/approval_policy_service.py:default_rows_for",), risk="high",
+  related=("payment.variance_writeoff_requires_approval",),
+  # KP-T4 — isi kunci ini pindah ke tabel kebijakan persetujuan (`approval_policies`).
+  status="not_used", not_used_reason=_KPT4_TIDAK_DIPAKAI)
 
 E("payment.variance_writeoff_max_amount", group="uang-masuk", type="money", default=1000000,
   min=0, max=1000000000, step=100000, unit="Rp", scopes=G,

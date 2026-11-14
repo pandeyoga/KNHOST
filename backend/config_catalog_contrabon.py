@@ -20,6 +20,9 @@ from config_registry import E
 
 G = ("global", "entity")
 
+# KP-T4 — alasan baku kunci persetujuan yang pindah ke Aturan Persetujuan.
+_KPT4_TIDAK_DIPAKAI = ("Dipindah ke Aturan Persetujuan (Pengaturan › Persetujuan › Aturan Persetujuan). Nilai terakhirnya hanya membentuk aturan bawaan selama aturan belum disimpan.")
+
 # KF-T2 (L5) — sejak KN-D16 persen 3-way dibaca dari `purchasing.bill_qty_tolerance_percent`; kunci ini tidak dibaca
 # mesin lagi, jadi ditandai tidak dipakai (bukan label "(Lama)" pada kunci yang tampil seolah aktif).
 E("contra_bon.qty_tolerance_percent", group="kontrabon", type="pct", default=1.0,
@@ -64,8 +67,10 @@ E("contra_bon.approval_threshold_rupiah", group="kontrabon", type="money", defau
        "tinggi (lihat 'Peran penyetuju kontrabon bernilai besar').",
   impact="Menentukan kapan pembayaran borongan ke supplier harus naik ke admin.",
   example="Ambang Rp 50.000.000 · kontrabon Rp 120.000.000 → wajib disetujui admin",
-  consumers=("services/contra_bon_service.py:approve",), risk="high",
-  related=("contra_bon.approval_role", "contra_bon.high_value_approval_role"))
+  consumers=("services/approval_policy_service.py:default_rows_for",), risk="high",
+  related=("contra_bon.approval_role", "contra_bon.high_value_approval_role"),
+  # KP-T4 — isi kunci ini pindah ke tabel kebijakan persetujuan (`approval_policies`).
+  status="not_used", not_used_reason=_KPT4_TIDAK_DIPAKAI)
 
 E("contra_bon.approval_role", group="kontrabon", type="enum", default="manager", scopes=G,
   options=[{"value": "manager", "label": "Manager"}, {"value": "admin", "label": "Admin"}],
@@ -73,7 +78,9 @@ E("contra_bon.approval_role", group="kontrabon", type="enum", default="manager",
   help="Peran minimal yang boleh menyetujui kontrabon bernilai di bawah ambang.",
   impact="Menentukan siapa yang boleh melepas pembayaran borongan ke supplier.",
   example="Manager · kontrabon Rp 20.000.000 bisa disetujui manager",
-  consumers=("services/contra_bon_service.py:approve",), risk="high")
+  consumers=("services/approval_policy_service.py:default_rows_for",), risk="high",
+  # KP-T4 — isi kunci ini pindah ke tabel kebijakan persetujuan (`approval_policies`).
+  status="not_used", not_used_reason=_KPT4_TIDAK_DIPAKAI)
 
 E("contra_bon.high_value_approval_role", group="kontrabon", type="enum", default="admin",
   scopes=G,
@@ -82,7 +89,9 @@ E("contra_bon.high_value_approval_role", group="kontrabon", type="enum", default
   help="Peran minimal untuk kontrabon di atas 'Ambang kontrabon bernilai besar'.",
   impact="Uang besar tidak boleh dilepas oleh wewenang yang sama dengan uang kecil.",
   example="Admin · kontrabon Rp 120.000.000 ditolak bila disetujui manager",
-  consumers=("services/contra_bon_service.py:approve",), risk="high")
+  consumers=("services/approval_policy_service.py:default_rows_for",), risk="high",
+  # KP-T4 — isi kunci ini pindah ke tabel kebijakan persetujuan (`approval_policies`).
+  status="not_used", not_used_reason=_KPT4_TIDAK_DIPAKAI)
 
 E("contra_bon.reminder_days_before", group="kontrabon", type="int", default=1,
   min=0, max=14, step=1, unit="hari", scopes=G,

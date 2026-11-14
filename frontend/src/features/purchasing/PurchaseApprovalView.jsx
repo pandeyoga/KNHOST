@@ -34,7 +34,8 @@ const GRID = "grid gap-x-4 grid-cols-[96px_minmax(190px,1.3fr)_140px_190px_110px
 // Hirarki peran — SATU sumber: `config/roles.js` (cermin `backend/role_registry.py`).
 // Tabel lokal lama (`{sales:1, warehouse:1, manager:2, admin:3}`) tidak mengenal
 // `sales_admin`/`finance`, sehingga pita "Role Anda belum memenuhi" salah menuduh.
-import { roleLabel, roleSatisfies } from "../../config/roles";
+import { roleLabel } from "../../config/roles";
+import { useCanDecideMap } from "../../hooks/useCanDecide";   // KP-T4
 
 /**
  * Bentuk rantai approval dari PO. Bila PO lama tidak punya `approval_chain`,
@@ -64,6 +65,16 @@ function matchTab(po, tab) {
   return true;
 }
 
+// KP-T4 — pertanyaan "boleh memutus?" untuk PO yang menunggu: jenis (paksa bila jenjang 1 tersimpan berjenis
+// penyimpangan harga), PT, nilai dasar ambang (`total_amount`), jenjang berjalan.
+const poDecideParams = (po) => {
+  if (po.status !== "waiting_approval") return null;
+  const cur = pendingLevelOf(getChain(po));
+  if (!cur) return null;
+  return { docKind: cur.policy_kind || "purchase_order", entityId: po.entity_id, amount: po.total_amount || 0,
+    level: cur.level || 1 };
+};
+
 export default function PurchaseApprovalView({ currentUser, selectedEntity }) {
   const [pos, setPos] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -75,22 +86,18 @@ export default function PurchaseApprovalView({ currentUser, selectedEntity }) {
   const [rejectTarget, setRejectTarget] = useState(null);
 
   const role = currentUser?.role;
-  // Apakah user boleh menyetujui tingkat PENDING saat ini pada PO ini?
+  // KP-T4 — boleh memutus tingkat berjalan = jawaban server (izin + Aturan Persetujuan untuk jenis, PT, nilai,
+  // jenjang); dulu peringkat peran di layar. Pesan penolakannya dipakai sebagai petunjuk (`decide[po.id].message`).
+  const decide = useCanDecideMap(pos, poDecideParams);
   function canApproveNow(po) {
-    if (po.status !== "waiting_approval") return false;
-    const chain = getChain(po);
-    const pending = pendingLevelOf(chain);
-    if (!pending) return false;
-    if (!roleSatisfies(role, pending.required_role)) return false;
+    if (po.status !== "waiting_approval" || !pendingLevelOf(getChain(po))) return false;
+    if (!decide[po.id]?.allowed) return false;
     // SoD — pembuat tidak boleh menyetujui PO sendiri.
     if (role !== "admin" && po.created_by_id && currentUser?.id && po.created_by_id === currentUser.id) return false;
     return true;
   }
-  // Apakah user secara role bisa menolak (role memenuhi tingkat pending)?
   function canRejectNow(po) {
-    if (po.status !== "waiting_approval") return false;
-    const pending = pendingLevelOf(getChain(po));
-    return !!pending && roleSatisfies(role, pending.required_role);
+    return po.status === "waiting_approval" && !!pendingLevelOf(getChain(po)) && !!decide[po.id]?.allowed;
   }
 
   useEffect(() => { loadPOs(); }, [selectedEntity]); // eslint-disable-line
@@ -246,7 +253,7 @@ export default function PurchaseApprovalView({ currentUser, selectedEntity }) {
                             <span data-testid={`po-approve-locked-${po.id}`}
                               className="flex items-center gap-1 text-[10.5px] text-[#9A5B00] text-right leading-tight">
                               <Lock size={11} className="shrink-0" />
-                              {rejectOk ? "—" : `Menunggu ${roleLabel(pending?.required_role)}`}
+                              {rejectOk ? "—" : (decide[po.id]?.message ? "Belum berwenang" : "Menunggu persetujuan")}
                             </span>
                           )
                         ) : (
@@ -261,6 +268,7 @@ export default function PurchaseApprovalView({ currentUser, selectedEntity }) {
                       <ApprovalDetail po={po} chain={chain} pending={pending} totalLevels={totalLevels}
                         currentUser={currentUser}
                         approveOk={approveOk}
+                        decideHint={decide[po.id]?.message || ""}
                         busy={busyId === po.id}
                         onApprove={() => handleApprove(po)}
                         onReject={() => setRejectTarget(po)} />
@@ -355,7 +363,8 @@ function ApprovalChainSteps({ po, chain, pending, totalLevels }) {
   );
 }
 
-function ApprovalDetail({ po, chain, pending, totalLevels, currentUser, approveOk, busy, onApprove, onReject }) {
+function ApprovalDetail({ po, chain, pending, totalLevels, currentUser, approveOk, decideHint = "", busy, onApprove,
+  onReject }) {
   const flagged = po.price_deviation?.flagged;
   const isCreator = currentUser?.role !== "admin" && po.created_by_id && currentUser?.id && po.created_by_id === currentUser.id;
   const roleBlocked = po.status === "waiting_approval" && !approveOk && !isCreator;
@@ -414,7 +423,7 @@ function ApprovalDetail({ po, chain, pending, totalLevels, currentUser, approveO
             {isCreator ? (
               <span>Anda pembuat PO ini — pemisahan tugas (SoD) melarang menyetujui PO sendiri.</span>
             ) : (
-              <span>Tingkat berjalan butuh peran <b className="uppercase">{roleLabel(pending?.required_role)}</b>. Role Anda (<b className="uppercase">{roleLabel(currentUser?.role)}</b>) belum memenuhi — menunggu approver yang sesuai.</span>
+              <span data-testid={`po-decide-hint-${po.id}`}>{decideHint || "Menunggu penyetuju yang tercantum di Aturan Persetujuan."}</span>
             )}
           </div>
         )

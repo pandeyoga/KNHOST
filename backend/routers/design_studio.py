@@ -10,6 +10,7 @@ from typing import Any, Dict, List
 from fastapi import APIRouter, File, HTTPException, Query, Request, UploadFile
 
 from dependencies import audit, require_any_permission, require_permission
+from services import approval_policy_service as _aps   # KP-T4 — satu tabel kebijakan persetujuan
 from entity_scope import assert_entity_access, entity_ctx
 from routers.design_gallery import _perm_manage, assert_design_writer
 from schemas_design_gallery import (CategoryIn, CategoryPatch, ColorwayIn, DesignFeedbackIn,
@@ -120,6 +121,8 @@ async def _do_transition(gallery_id: str, action: str, payload: DesignTransition
     doc0 = await _guard(gallery_id, ctx)
     if not assess:
         await assert_design_writer(doc0, actor)
+    if assess:
+        await _aps.guard_door("design_gallery", actor, doc=doc0)   # KP-T4 — Aturan Persetujuan
     try:
         doc = await studio.transition(gallery_id, action, actor, payload.note, payload.score,
                                       ctx.active_entity_id,

@@ -22,7 +22,6 @@ from core_utils import new_id, now_iso, next_doc_number, safe_doc
 from dependencies import audit
 from entity_scope import EntityContext, resolve_list_scope, assert_entity_access, assert_active_entity_access
 from services import gl_service
-from role_registry import role_in  # peran acuan dikenali (keputusan owner 2026-10-21)
 
 CA_COLL = "cash_advances"
 STL_COLL = "cash_advance_settlements"
@@ -30,18 +29,31 @@ EXCAT_COLL = "expense_categories"
 
 VALID_PAYMENT = {"tunai", "transfer"}
 
-# Rantai approval PD (configurable). status_from → boleh di-approve role tsb (admin override).
-APPROVAL_STAGES = [
-    {"stage": "atasan",   "status": "pending_atasan",   "roles": ["manager", "admin"],
-     "next": "pending_pimpinan", "label": "Atasan Langsung"},
-    {"stage": "pimpinan", "status": "pending_pimpinan", "roles": ["admin"],
-     "next": "pending_finance",  "label": "Pimpinan"},
-    {"stage": "finance",  "status": "pending_finance",  "roles": ["admin"],
-     "next": "approved",         "label": "Bagian Keuangan"},
-]
-STAGE_BY_STATUS = {s["status"]: s for s in APPROVAL_STAGES}
-FIRST_STATUS = APPROVAL_STAGES[0]["status"]
+# KP-T4 — rantai persetujuan PD dari Aturan Persetujuan (jenis `cash_advance`): jenjang → status lewat
+# `approval_kinds.APPROVAL_KINDS["cash_advance"]["level_status"]`; jenjang tanpa baris dilewati. Dulu `APPROVAL_STAGES`
+# (tiga tahap ditulis mati: Atasan {manager, admin}, Pimpinan {admin}, Keuangan {admin}; admin selalu lolos) — kini
+# baris bawaan tabel (`approval_policy_service.BAWAAN_UANG_MUKA`).
+CA_KIND = "cash_advance"
+_STAGE_KEY = {1: "atasan", 2: "pimpinan", 3: "finance"}
 EDITABLE_STATUSES = {"draft", "rejected"}
+
+
+def _level_status() -> Dict[int, str]:
+    from approval_kinds import APPROVAL_KINDS
+    return dict(APPROVAL_KINDS[CA_KIND]["level_status"])
+
+
+def _level_of_status(status: str) -> int:
+    return next((lv for lv, st in _level_status().items() if st == status), 0)
+
+
+async def _next_status(doc: Dict[str, Any], after_level: int = 0) -> str:
+    """Status berikutnya: jenjang wajib pertama sesudah `after_level` (menurut tabel), atau `approved`."""
+    from services import approval_policy_service as _aps
+    levels = await _aps.required_levels(CA_KIND, doc.get("entity_id"), float(doc.get("total_amount") or 0))
+    st = _level_status()
+    nxt = next((lv["level"] for lv in levels if lv["level"] > after_level and lv["level"] in st), None)
+    return st[nxt] if nxt else "approved"
 
 # Kategori pengeluaran default (dari Excel Laporan Petty Cash) → akun beban COA.
 DEFAULT_EXPENSE_CATEGORIES = [
@@ -230,24 +242,30 @@ async def submit_cash_advance(ca_id: str, ctx: EntityContext, actor: Dict[str, A
     doc = await get_cash_advance(ca_id, ctx)
     if doc["status"] not in EDITABLE_STATUSES:
         raise HTTPException(status_code=409, detail="Hanya PD draft/ditolak yang bisa diajukan")
+    first = await _next_status(doc, 0)   # KP-T4 — jenjang wajib pertama menurut Aturan Persetujuan
     updated = await db[CA_COLL].find_one_and_update(
         {"id": ca_id},
-        {"$set": {"status": FIRST_STATUS, "rejected_reason": "", "updated_at": now_iso()}},
+        {"$set": {"status": first, "rejected_reason": "", "updated_at": now_iso()}},
         projection={"_id": 0}, return_document=ReturnDocument.AFTER)
     await audit(actor.get("name", ""), "cash_advance_submitted", "cash_advance", ca_id,
-                {"status": FIRST_STATUS})
+                {"status": first})
     return safe_doc(updated)
 
 
 async def approve_cash_advance(ca_id: str, note: str, ctx: EntityContext, actor: Dict[str, Any]) -> Dict[str, Any]:
     doc = await get_cash_advance(ca_id, ctx)
-    stage = STAGE_BY_STATUS.get(doc["status"])
-    if not stage:
+    level = _level_of_status(doc["status"])
+    if not level:
         raise HTTPException(status_code=409, detail="PD tidak dalam status menunggu persetujuan")
     role = actor.get("role", "")
-    if role != "admin" and not role_in(role, stage["roles"]):
-        raise HTTPException(status_code=403,
-                            detail=f"Tahap '{stage['label']}' hanya untuk: {', '.join(stage['roles'])}")
+    # KP-T4 — izin `cash_advance.approve` + peran tercantum di Aturan Persetujuan pada jenjang ini (dulu daftar ditulis
+    # mati + pengecualian nama admin).
+    from services import approval_policy_service as _aps
+    await _aps.assert_can_decide(CA_KIND, doc.get("entity_id"), float(doc.get("total_amount") or 0), actor, level)
+    lv_label = next((x["label"] for x in await _aps.required_levels(
+        CA_KIND, doc.get("entity_id"), float(doc.get("total_amount") or 0)) if x["level"] == level), "")
+    stage = {"stage": _STAGE_KEY.get(level, f"jenjang_{level}"), "label": lv_label or f"Jenjang {level}",
+             "next": await _next_status(doc, level)}
     # KF-T6 — pemohon ≠ penyetuju dari `kontrol.uang_muka.*` (bawaan satu orang; di atas batas nominal dua orang).
     from services import dual_control as _dc
     await _dc.tolak_bila_pelaku_sama("uang_muka", doc, actor, doc.get("entity_id", ""),
@@ -268,12 +286,14 @@ async def approve_cash_advance(ca_id: str, note: str, ctx: EntityContext, actor:
 
 async def reject_cash_advance(ca_id: str, reason: str, ctx: EntityContext, actor: Dict[str, Any]) -> Dict[str, Any]:
     doc = await get_cash_advance(ca_id, ctx)
-    stage = STAGE_BY_STATUS.get(doc["status"])
-    if not stage:
+    level = _level_of_status(doc["status"])
+    if not level:
         raise HTTPException(status_code=409, detail="PD tidak dalam status menunggu persetujuan")
     role = actor.get("role", "")
-    if role != "admin" and not role_in(role, stage["roles"]):
-        raise HTTPException(status_code=403, detail="Anda tidak berwenang menolak pada tahap ini")
+    from services import approval_policy_service as _aps   # KP-T4 — izin `cash_advance.reject` + Aturan Persetujuan
+    await _aps.assert_can_decide(CA_KIND, doc.get("entity_id"), float(doc.get("total_amount") or 0), actor, level,
+                                 action="reject")
+    stage = {"stage": _STAGE_KEY.get(level, f"jenjang_{level}"), "label": f"Jenjang {level}"}
     approval = {"stage": stage["stage"], "label": stage["label"], "decision": "rejected",
                 "by": actor.get("name", ""), "role": role, "note": (reason or "").strip(),
                 "at": now_iso()}

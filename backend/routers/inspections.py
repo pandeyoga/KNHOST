@@ -24,6 +24,7 @@ from pydantic import BaseModel
 
 import pagination as pg
 from db import db
+from services import approval_policy_service as _aps   # KP-T4 — satu tabel kebijakan persetujuan
 from dependencies import audit, has_permission, require_any_permission, require_permission
 from entity_scope import assert_active_entity_access, entity_ctx, resolve_list_scope
 from schemas_inspection import (InspectionAssign, InspectionCreate, InspectionFinish,
@@ -275,6 +276,7 @@ async def release_hold(ins_id: str, line_id: str, payload: InspectionReason,
     """Lepas tahanan barang (warna/handfeel menyimpang) — **manajer/admin**, alasan wajib."""
     actor = await require_any_permission(request, [("inspection", "decide"), ("md_quality", "decide")])
     doc = await _guarded(ins_id, request, actor)
+    await _aps.guard_door("inspection_hold", actor, doc=doc)   # KP-T4 — Aturan Persetujuan
     try:
         out = await svc.release_hold(doc["id"], line_id, payload.reason, actor,
                                      can_md_quality=await has_permission(actor, "md_quality", "decide"))

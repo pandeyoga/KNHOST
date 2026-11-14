@@ -56,3 +56,30 @@ export function tableRows(kindView) {
   });
   return rows;
 }
+
+/** Isi editor dari tampilan server (satu jenis): [{level, label, tiers: [{min, max, roles, any_holder}]}]. */
+export function draftFromView(kindView) {
+  return (kindView?.levels || []).map((lv) => ({
+    level: lv.level, label: lv.label || "",
+    tiers: (lv.tiers || []).map((t) => ({
+      min: t.min_amount === null || t.min_amount === undefined ? "" : String(t.min_amount),
+      max: t.max_amount === null || t.max_amount === undefined ? "" : String(t.max_amount),
+      roles: [...(t.roles || [])], any_holder: !!t.any_holder,
+    })),
+  }));
+}
+
+/** Isi `PUT /api/approval-policies/{doc_kind}` dari draf editor. */
+export function payloadFromDraft(draft, { entityId, version, reason, hasAmount, parse = Number }) {
+  return {
+    entity_id: entityId || "all", expected_version: version ?? 0, reason,
+    levels: (draft || []).map((lv, i) => ({
+      level: Number(lv.level) || i + 1, label: (lv.label || "").trim(),
+      tiers: (lv.tiers || []).map((t) => ({
+        min_amount: hasAmount ? (parse(String(t.min || "0")) || 0) : 0,
+        max_amount: hasAmount && String(t.max || "").trim() !== "" ? parse(String(t.max)) : null,
+        roles: t.any_holder ? [] : [...(t.roles || [])], any_holder: !!t.any_holder,
+      })),
+    })),
+  };
+}

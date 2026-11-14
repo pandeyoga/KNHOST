@@ -333,30 +333,29 @@ async def submit_spec(spec_id: str, actor: str = "") -> Dict[str, Any]:
     return await get_spec(spec_id)
 
 
-async def _policy_roles(policy_key: str, entity_id: str) -> List[str]:
-    pol = await rnd_gate.policy(entity_id)
-    allowed = pol.get(policy_key) or []
-    if isinstance(allowed, str):
-        allowed = [x.strip() for x in allowed.split(",") if x.strip()]
-    return list(allowed)
+#: KP-T4 — kunci kebijakan peran lama → jenis dokumen Aturan Persetujuan (`approval_kinds.py`).
+_POLICY_KIND = {"spec_approval_roles": "rnd_spec", "sample_decision_roles": "rnd_sample",
+                "release_roles": "rnd_spec.rilis"}
+
+
+async def _decision(actor: Dict[str, Any], policy_key: str, entity_id: str) -> Dict[str, Any]:
+    from services import approval_policy_service as _aps
+    return await _aps.can_decide(_POLICY_KIND[policy_key], entity_id or None, 0, actor or {}, check_permission=False)
 
 
 async def role_allowed(actor: Dict[str, Any], policy_key: str, entity_id: str) -> bool:
     """Jawaban pemeriksa kebijakan peran TANPA melempar. PR-T7 — dipakai `_assert_role` DAN bendera `caps` pada jawaban
-    rincian sample, supaya tombol layar dan penolakan server selalu sepakat (layar tidak lagi mencocokkan nama peran
-    dari pengaturan sendiri). Aturan kebijakannya sendiri dirombak unit KP-T4; bendera ikut otomatis."""
-    allowed = await _policy_roles(policy_key, entity_id)
-    return not allowed or (actor or {}).get("role", "") in allowed
+    rincian sample, supaya tombol layar dan penolakan server selalu sepakat. KP-T4 — aturannya dari Aturan Persetujuan
+    (dulu kunci `rnd.spec_approval_roles` / `rnd.sample_decision_roles`)."""
+    return bool((await _decision(actor, policy_key, entity_id))["allowed"])
 
 
 async def _assert_role(actor: Dict[str, Any], policy_key: str, entity_id: str, what: str) -> None:
-    """Kebijakan peran (registry G-0) — wewenang tidak bisa dilangkahi lewat endpoint."""
-    allowed = await _policy_roles(policy_key, entity_id)
-    role = (actor or {}).get("role", "")
-    if not await role_allowed(actor, policy_key, entity_id):
-        raise RndError(f"Peran '{role}' tidak berwenang {what}. "
-                       f"Kebijakan berlaku: {', '.join(allowed)} "
-                       "(ubah di Pusat Pengaturan → R&D & Desain).")
+    """Wewenang tidak bisa dilangkahi lewat endpoint. KP-T4 — peran yang boleh dibaca dari Aturan Persetujuan. Izin pintu
+    diperiksa routernya."""
+    res = await _decision(actor, policy_key, entity_id)
+    if not res["allowed"]:
+        raise RndError(res["message"])
 
 
 async def approve_spec(spec_id: str, payload: Dict[str, Any], actor: Dict[str, Any]) -> Dict[str, Any]:
@@ -467,7 +466,7 @@ async def release_product(spec_id: str, actor: Dict[str, Any], note: str = "",
     if cur.get("status") != "approved" or not cur.get("product_id"):
         raise RndError("Hanya spesifikasi yang sudah disetujui (dan sudah punya produk) "
                        "bisa dirilis ke produksi.")
-    await _assert_role(actor, "spec_approval_roles", cur.get("entity_id", ""),
+    await _assert_role(actor, "release_roles", cur.get("entity_id", ""),
                        "merilis produk ke produksi")
     name = (actor or {}).get("name", "")
     if cur.get('lifecycle') == 'produksi':

@@ -197,7 +197,7 @@ export default function ContraBonDetailPanel({ cb, meta, currentUser, entityLabe
             Toleransi berlaku {cb.policy_snapshot_live.qty_tolerance_percent}% /{" "}
             {formatCurrency(cb.policy_snapshot_live.value_tolerance_rupiah)} · ambang persetujuan{" "}
             {formatCurrency(cb.policy_snapshot_live.approval_threshold)} (di atasnya butuh peran{" "}
-            {cb.policy_snapshot_live.high_value_role}) — semuanya diatur di Pengaturan → Kontrabon.
+            {cb.policy_snapshot_live.high_value_role}) — toleransi diatur di Pengaturan → Kontrabon, penyetuju di Pengaturan → Persetujuan → Aturan Persetujuan.
           </p>
         )}
 

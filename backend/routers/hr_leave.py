@@ -14,6 +14,7 @@ from typing import Any, Dict, List, Optional
 from fastapi import APIRouter, HTTPException, Request, Query
 
 from db import db
+from services import approval_policy_service as _aps   # KP-T4 — satu tabel kebijakan persetujuan
 from dependencies import require_permission, current_user, audit
 from core_utils import safe_doc
 from entity_scope import entity_ctx, resolve_list_scope, assert_entity_access
@@ -155,6 +156,7 @@ async def approve_leave_request(leave_id: str, request: Request) -> Dict[str, An
     actor = await require_permission(request, "hr", "manage_attendance")
     ctx = await entity_ctx(request)
     await _get_leave_guard(leave_id, ctx)
+    await _aps.guard_door("hr_leave", actor, collection="hr_leave_requests", doc_id=leave_id)   # KP-T4
     try:
         doc = await lv.approve_leave(leave_id, actor)
     except ValueError as e:
@@ -254,6 +256,7 @@ async def approve_overtime_request(ot_id: str, request: Request) -> Dict[str, An
     actor = await require_permission(request, "hr", "manage_attendance")
     ctx = await entity_ctx(request)
     await _get_ot_guard(ot_id, ctx)
+    await _aps.guard_door("hr_overtime", actor, collection="hr_overtime", doc_id=ot_id)   # KP-T4
     try:
         doc = await lv.approve_overtime(ot_id, actor)
     except ValueError as e:

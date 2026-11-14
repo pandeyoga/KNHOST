@@ -65,7 +65,6 @@ from db import db
 from services import gl_service
 from services import payment_plan_service as plans
 from services.config_resolver import resolve
-from role_registry import role_in  # peran acuan dikenali (keputusan owner 2026-10-21)
 logger = logging.getLogger(__name__)
 
 
@@ -112,12 +111,16 @@ async def variance_policy(entity_id: str = "", customer_id: str = "") -> Dict[st
     async def val(key: str) -> Any:
         return (await resolve(key, ctx))["value"]
 
+    # KP-T4 — peran penyetuju hapus sisa (nilai kompatibel untuk tampilan pilihan) dari Aturan Persetujuan.
+    from services import approval_policy_service as _aps
+    _rows = (await _aps.rows_for("payment_variance.hapus_sisa", entity_id or None))["rows"]
+    _first = next((r for r in _rows if r.get("roles") or r.get("any_holder")), None)
     return {
         "tolerance": float(await val("payment.variance_tolerance_rupiah") or 0),
         "underpay_default": str(await val("payment.variance_underpay_default") or "outstanding"),
         "overpay_default": str(await val("payment.variance_overpay_default") or "deposit"),
         "writeoff_requires_approval": bool(await val("payment.variance_writeoff_requires_approval")),
-        "writeoff_approver_role": str(await val("payment.variance_writeoff_approver_role") or "manager"),
+        "writeoff_approver_role": (_aps.compat_role(_first) if _first else "") or "manager",
         "writeoff_max_amount": float(await val("payment.variance_writeoff_max_amount") or 0),
         "reschedule_days": int(await val("payment.variance_reschedule_days") or 14),
         "refund_method": str(await val("payment.variance_refund_method") or "transfer"),
@@ -614,17 +617,23 @@ async def _refund(customer: Dict[str, Any], amount: float, method: str, *,
 
 
 # ── Wewenang ──────────────────────────────────────────────────────────────
-def _assert_authority(kind: str, amount: float, policy: Dict[str, Any],
-                      actor: Dict[str, Any]) -> str:
-    """Peran & batas nominal untuk keputusan sensitif (hapus sisa / refund)."""
+async def _assert_authority(kind: str, amount: float, policy: Dict[str, Any],
+                            actor: Dict[str, Any], entity_id: str = "") -> str:
+    """Peran & batas nominal untuk keputusan sensitif (hapus sisa / refund).
+
+    KP-T4 — kapan wajib disetujui tetap `payment.variance_writeoff_requires_approval` (pemicu); SIAPA yang boleh
+    memutus dibaca dari Aturan Persetujuan (jenis `payment_variance.hapus_sisa`; dulu `payment.variance_writeoff_
+    approver_role` + admin, termasuk peran kustom beracuannya). Batas nominal keputusan (`writeoff_max_amount`) tetap
+    di sini sampai PK-38."""
     if kind not in SENSITIVE_KINDS or not policy["writeoff_requires_approval"]:
         return ""
     role = (actor.get("role") or "").lower()
     need = (policy["writeoff_approver_role"] or "manager").lower()
-    if not role_in(role, (need, "admin")):
-        raise VarianceError(
-            f"Keputusan '{KIND_LABEL.get(kind, kind)}' wajib diputus {need} atau admin — "
-            "ajukan ke penyetuju.")
+    from services import approval_policy_service as _aps
+    res = await _aps.can_decide("payment_variance.hapus_sisa", entity_id or None, float(amount or 0), actor,
+                                check_permission=False)
+    if not res["allowed"]:
+        raise VarianceError(f"Keputusan '{KIND_LABEL.get(kind, kind)}': {res['message']} Ajukan ke penyetuju.")
     cap = float(policy["writeoff_max_amount"] or 0)
     if cap > 0 and round(float(amount), 2) > cap + EPS and role != "admin":
         raise VarianceError(
@@ -713,7 +722,7 @@ async def decide_receipt(receipt_id: str, payload: Dict[str, Any],
     if amount > gap + EPS:
         raise VarianceError(f"Nominal keputusan {_rp(amount)} melebihi selisih {_rp(gap)}.")
     reason = await _reason_or_fail(payload.get("reason_code", ""))
-    approver_role = _assert_authority(kind, amount, policy, actor)
+    approver_role = await _assert_authority(kind, amount, policy, actor, entity_id)
     if not payload.get("auto"):
         # KF-T6 — pencatat kwitansi ≠ pemutus selisih dari `kontrol.pengurang_piutang.*`. Di sini `VarianceError` (bukan
         # 403): keputusan saat kwitansi dibuat tidak boleh membatalkan uang yang sudah masuk — selisih masuk antrean.
@@ -1041,8 +1050,8 @@ async def decide_bill(bill: Dict[str, Any], assessment: Dict[str, Any],
     reason_code = payload.get("reason_code") or (
         "rounding_diff" if direction == DIR_ROUNDING else "")
     reason = await _reason_or_fail(reason_code)
-    approver_role = _assert_authority(
-        "ap_writeoff" if kind in ("ap_writeoff",) else kind, gap, policy, actor)
+    approver_role = await _assert_authority(
+        "ap_writeoff" if kind in ("ap_writeoff",) else kind, gap, policy, actor, entity_id)
     if direction != DIR_ROUNDING:
         # KF-T6 — pembuat tagihan ≠ pemutus selisih bayar dari `kontrol.pengurang_piutang.*`. `VarianceError` (bukan
         # 403): keputusan ini diambil SESUDAH uang keluar; pemanggil mencatat kegagalannya di linimasa tagihan.

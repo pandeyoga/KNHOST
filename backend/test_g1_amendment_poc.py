@@ -119,10 +119,11 @@ def main() -> int:
     _stock_snap = snapshot_stock()
 
     # Simpan ambang awal supaya bisa dipulihkan di akhir.
+    # KP-T4 — `amendment.admin_approval_above` & `amendment.approver_role` pindah ke Aturan Persetujuan (jenis
+    # `amendment`); tidak diubah/dipulihkan lewat Pusat Pengaturan lagi.
     keys = ["amendment.approval_threshold_amount", "amendment.approval_threshold_pct",
-            "amendment.admin_approval_above", "kontrol.amandemen.min_orang",   # KF-T6 — pengganti amendment.dual_control
-            "amendment.require_note_above", "amendment.issued_doc_policy",
-            "amendment.approver_role"]
+            "kontrol.amandemen.min_orang",   # KF-T6 — pengganti amendment.dual_control
+            "amendment.require_note_above", "amendment.issued_doc_policy"]
     original = {k: cfg_get(admin, k) for k in keys}
 
     # ── TEST 1 ────────────────────────────────────────────────────────────
@@ -224,7 +225,7 @@ def main() -> int:
     head("TEST 5 — dampak BESAR wajib disetujui · peran salah ditolak · kontrol ganda")
     ok(cfg_set(admin, "amendment.approval_threshold_amount", 100000),
        "turunkan ambang jadi Rp 100.000 (uji jalur persetujuan)")
-    ok(cfg_set(admin, "amendment.approver_role", "manager"), "penyetuju = manager")
+    # KP-T4 — penyetuju = Manajer adalah baris bawaan Aturan Persetujuan (jenis `amendment`), tidak perlu diatur.
     ok(cfg_set(admin, "kontrol.amandemen.min_orang", "2"), "kontrol ganda AKTIF (KF-T6: kontrol dua orang)")
     ok(cfg_set(admin, "amendment.require_note_above", 100000),
        "catatan wajib di atas Rp 100.000")

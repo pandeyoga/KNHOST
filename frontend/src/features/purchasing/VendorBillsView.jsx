@@ -28,7 +28,8 @@ const CSV_COLUMNS = [
 import VendorBillCreateModal from "./VendorBillCreateModal";
 import VendorBillDetailPanel from "./VendorBillDetailPanel";
 import DetailModal from "../../components/DetailModal";
-import { can, roleSatisfies } from "../../config/roles";
+import { can } from "../../config/roles";
+import { useCanDecideMap } from "../../hooks/useCanDecide";   // KP-T4
 
 /**
  * VendorBillsView (Fase 5.2 — P0-2) — Tagihan Supplier (Vendor Bill) + 3-Way Matching.
@@ -57,6 +58,11 @@ function MatchPill({ status }) {
   return <span className={`status-pill ${cls}`}>{label}</span>;
 }
 
+// KP-T4 — parameter pertanyaan "boleh memutus?" untuk tagihan yang menunggu persetujuan.
+const vbDecideParams = (b) => (b.status === "pending_approval"
+  ? { docKind: b.bill_type === "campaign_expense" ? "vendor_bill.kampanye" : "vendor_bill", entityId: b.entity_id,
+    amount: b.grand_total || b.total_amount || 0 } : null);
+
 export default function VendorBillsView({ currentUser, selectedEntity }) {
   const { entities } = useEntityScope();
   const [pos, setPos] = useState([]);
@@ -72,8 +78,6 @@ export default function VendorBillsView({ currentUser, selectedEntity }) {
   const [quickBusy, setQuickBusy] = useState("");
   const quickIntents = { submit: useIntentKey("vbsub"), approve: useIntentKey("vbapv") };
 
-  // Sisir gerbang peran (2026-10-20): ACC/tolak = peringkat peran yang dituntut tagihan (= role_satisfies server).
-  const canApproveDoc = (b) => roleSatisfies(currentUser?.role, b?.required_approval_role || "manager");
   const canCreate = can(currentUser?.permissions, "vendor_bill", "create");   // POST /vendor-bills
 
   // P2 — paginasi server-side; tab status jadi filter server, search q server-side.
@@ -86,6 +90,9 @@ export default function VendorBillsView({ currentUser, selectedEntity }) {
   const paged = usePagedList("/vendor-bills", { pageSize: 20, params, search });
   const filtered = paged.items;   // sudah difilter status di server
   const loading = paged.loading;
+  // KP-T4 — boleh setujui/tolak = jawaban server (izin + Aturan Persetujuan), bukan peringkat peran di layar.
+  const decide = useCanDecideMap(detail ? [...filtered, detail] : filtered, vbDecideParams);
+  const canApproveDoc = (b) => !!(b && decide[b.id]?.allowed);
 
   useEffect(() => { loadMeta(); }, [selectedEntity]); // eslint-disable-line
 
@@ -250,6 +257,7 @@ export default function VendorBillsView({ currentUser, selectedEntity }) {
           <VendorBillDetailPanel
             bill={detail}
             canApprove={canApproveDoc(detail)}
+            decideHint={decide[detail.id]?.message || ""}
             currentUser={currentUser}
             onClose={() => setDetail(null)}
             onAction={onAction}

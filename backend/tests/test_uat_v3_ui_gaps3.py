@@ -198,13 +198,20 @@ def test_od_multi_item_item_kedua_tiba_belakangan_dapat_tugas_ambil():
 
 
 def test_pemenang_sample_boleh_diputus_md_tetapi_desain_tetap_manajer():
+    # KP-T4 — `evaluate` kini async dan membaca Aturan Persetujuan (baris bawaan = matriks lama).
     from services import approval_matrix_service as amx
     cfg = {"mode": "enforce", "scope": "all_pending", "sod": True}
     doc = {"number": "SMP-UJI", "created_by": "Ayu Marketing"}
     md = {"role": "md", "name": "Rina Merchandiser"}
-    assert amx.evaluate("sample_acc", md, doc, cfg)["allowed"] is True                 # keputusan pemilik 22 Okt
-    assert amx.evaluate("sample_acc", {"role": "sales", "name": "S"}, doc, cfg)["allowed"] is False
-    assert amx.evaluate("design_acc", md, doc, cfg)["allowed"] is False                # ACC desain/spesifikasi tidak berubah
+
+    async def go(_db):
+        return (await amx.evaluate("sample_acc", md, doc, cfg))["allowed"], \
+            (await amx.evaluate("sample_acc", {"role": "sales", "name": "S"}, doc, cfg))["allowed"], \
+            (await amx.evaluate("design_acc", md, doc, cfg))["allowed"]
+    a, b, c = _run(["services.approval_policy_service", "services.config_service", "services.config_resolver"], go)
+    assert a is True                 # keputusan pemilik 22 Okt
+    assert b is False
+    assert c is False                # ACC desain/spesifikasi tidak berubah
 
 
 def test_isyarat_harga_khusus_selalu_menyebut_manajer_sebagai_penyetuju():

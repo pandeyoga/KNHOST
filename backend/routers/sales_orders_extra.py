@@ -29,7 +29,7 @@ from services.roll_service import (
     reserve_specific_rolls, allocations_from_reserved_rolls,
     record_reservation_movements, rebuild_balance,
 )
-from services.config_service import role_satisfies, get_allocation_policy
+from services.config_service import get_allocation_policy
 from services import so_approvals
 from services.fulfillment_service import classify_lines
 from services.so_status import stage_fields
@@ -457,10 +457,14 @@ async def approve_order(order_id: str, request: Request) -> Dict[str, Any]:
     if dead:
         raise HTTPException(status_code=409, detail={"code": "SO_CLOSED", "message": dead,
                                                      "order_status": order.get("status")})
-    required = order.get("required_approval_role")
-    if not role_satisfies(actor.get("role"), required):
-        raise HTTPException(status_code=403,
-            detail=f"Approval butuh role minimal '{required}'. Role Anda: '{actor.get('role')}'.")
+    # KP-T4 — persetujuan nilai/validasi pesanan dari Aturan Persetujuan (dulu peringkat `required_approval_role`).
+    from routers.so_approvals import so_entry_kind
+    from services import approval_policy_service as _aps
+    _entry = next((p for p in (order.get("pending_approvals") or [])
+                   if p.get("type") == "nilai" and p.get("status") == "pending"), None)
+    if _entry or order.get("required_approval_role"):   # tanpa tuntutan apa pun = cukup izin (perilaku lama)
+        _kind, _amt = await so_entry_kind(order, _entry or {"type": "nilai"})
+        await _aps.assert_can_decide(_kind, order.get("entity_id"), _amt, actor)
     # KF-T6 — pembuat pesanan ≠ penyetuju nilai dari `kontrol.nilai_pesanan.*` (bawaan satu orang; `created_by` = id).
     from services import dual_control as _dc
     await _dc.tolak_bila_pelaku_sama("nilai_pesanan", order, actor, order.get("entity_id", ""),

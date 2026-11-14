@@ -24,6 +24,7 @@ from fastapi import APIRouter, File, HTTPException, Query, Request, Response, Up
 
 import pagination as pg
 from db import db
+from services import approval_policy_service as _aps   # KP-T4 — satu tabel kebijakan persetujuan
 from dependencies import require_any_permission, audit, require_permission
 from entity_scope import assert_entity_access, entity_ctx, resolve_list_scope
 from schemas_design_request import (
@@ -304,6 +305,7 @@ async def approve_request(req_id: str, request: Request,
                           ) -> Dict[str, Any]:
     actor = await require_permission(request, "design_request", "decide")
     doc = await _get_guarded(req_id, request, actor)
+    await _aps.guard_door("design_request", actor, doc=doc)   # KP-T4 — Aturan Persetujuan
     try:
         res = await svc.approve(req_id, actor, payload.note)
     except svc.DesignRequestError as exc:

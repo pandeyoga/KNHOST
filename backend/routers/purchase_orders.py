@@ -10,7 +10,7 @@ from core_utils import new_id, now_iso, safe_doc, DEFAULT_ENTITY_ID, timeline_en
 from entity_scope import entity_ctx, resolve_list_scope, assert_entity_access, guard_doc
 from pagination import is_paged, get_page_params, build_search, merge_query, fetch_page, envelope
 from schemas import PurchaseOrderCreate, PurchaseOrderAmend
-from services.config_service import build_approval_chain, current_pending_level, role_satisfies, get_effective_settings, compute_order_pricing
+from services.config_service import build_approval_chain, current_pending_level, get_effective_settings, compute_order_pricing
 from services.po_amendment_service import amend_po as amend_po_service
 from services import blanket_po_service
 from services import grade_service          # Fase A · PS-09/D-19
@@ -798,6 +798,32 @@ async def _assert_fresh_decision(po: Dict[str, Any], request: Request, body: Opt
             f"PO sudah berubah (v{exp} → v{po.get('version', 1)}) sejak Anda membukanya. Muat ulang dan tinjau versi terbaru."))
 
 
+async def _po_policy_level(po: Dict[str, Any]) -> tuple:
+    """KP-T4 — (jenis kebijakan, nomor jenjang, potret peran) untuk jenjang PO yang sedang menunggu.
+
+    Dokumen baru menyimpan `policy_kind` + potret `roles` per jenjang (D3). Dokumen lama (sebelum pengalihan): jumlah
+    jenjang tetap seperti tersimpan; jenjang 1 yang nilainya di bawah ambang Aturan Persetujuan PO = jenjang paksa
+    (penyimpangan harga / lewat kontrak) → jenis `purchase_order.deviasi_harga`."""
+    from services import approval_policy_service as aps
+    chain = po.get("approval_chain") or [{"level": 1, "status": "pending"}]
+    cur = current_pending_level(chain) or chain[0]
+    level = int(cur.get("level") or 1)
+    kind = cur.get("policy_kind") or ""
+    if not kind:
+        kind = "purchase_order"
+        if level == 1 and not await aps.required_levels("purchase_order", po.get("entity_id"),
+                                                        float(po.get("total_amount") or 0)):
+            kind = "purchase_order.deviasi_harga"
+    return kind, level, cur.get("roles")
+
+
+async def _assert_po_policy(po: Dict[str, Any], actor: Dict[str, Any], action: str) -> None:
+    from services import approval_policy_service as aps
+    kind, level, snap = await _po_policy_level(po)
+    await aps.assert_can_decide(kind, po.get("entity_id"), float(po.get("total_amount") or 0), actor, level,
+                                action=action, snapshot_roles=snap)
+
+
 def _po_nominal(po: Dict[str, Any]) -> float:
     """KF-T6 — nilai PO untuk `kontrol.setujui_po.batas_nominal`."""
     try:
@@ -820,10 +846,9 @@ async def approve_purchase_order(po_id: str, request: Request) -> Dict[str, Any]
         raise HTTPException(status_code=409, detail=f"PO status '{po.get('status')}' tidak menunggu approval")
     await _assert_fresh_decision(po, request)
     required = po.get("required_approval_role")
-    if not role_satisfies(actor.get("role"), required):
-        raise HTTPException(
-            status_code=403,
-            detail=f"Approval PO butuh role minimal '{required}'. Role Anda: '{actor.get('role')}'.")
+    # KP-T4 (PR-05) — boleh memutus = izin `purchase_order.approve` + peran tercantum di Aturan Persetujuan untuk
+    # (jenis, PT, nilai, jenjang berjalan); dulu hanya peringkat peran, tanpa izin, dan pesannya mencetak id peran.
+    await _assert_po_policy(po, actor, "approve")
     # KF-T6 — pembuat ≠ penyetuju dari `kontrol.setujui_po.*` (satu pembantu; Admin boleh sendiri bila diatur, dicatat).
     # 2026-10 — admin menyetujui SEMUA tingkat sekaligus.
     from services import approval_matrix_service as _amx
@@ -938,11 +963,7 @@ async def reject_purchase_order(po_id: str, request: Request) -> Dict[str, Any]:
     await guard_doc(request, "purchase_orders", po, strict=False, not_found="Purchase Order tidak ditemukan")
     if po.get("status") != "waiting_approval":
         raise HTTPException(status_code=409, detail=f"PO status '{po.get('status')}' tidak menunggu approval")
-    required = po.get("required_approval_role")
-    if not role_satisfies(actor.get("role"), required):
-        raise HTTPException(
-            status_code=403,
-            detail=f"Reject PO butuh role minimal '{required}'. Role Anda: '{actor.get('role')}'.")
+    await _assert_po_policy(po, actor, "reject")   # KP-T4 (PR-05) — izin `purchase_order.reject` + Aturan Persetujuan
     body = {}
     try:
         body = await request.json()

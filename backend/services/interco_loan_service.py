@@ -143,21 +143,14 @@ async def _set_pair(pair_id: str, upd: Dict[str, Any],
 
 
 async def _approval_gate(entity_id: str, amount: float, actor: Dict[str, Any]) -> None:
-    """Ambang persetujuan yang SUDAH ADA dipakai ulang (jangan buat kunci kedua)."""
-    from services import config_resolver
-    threshold = float(await config_resolver.value_of(
-        "antar_entitas.approval_threshold_rupiah", {"entity_id": entity_id}) or 0)
-    high_role = str(await config_resolver.value_of(
-        "antar_entitas.high_value_approval_role", {"entity_id": entity_id}) or "admin")
-    low_role = str(await config_resolver.value_of(
-        "antar_entitas.approval_role", {"entity_id": entity_id}) or "manager")
-    rank = {"warehouse": 0, "sales": 0, "manager": 1, "admin": 2}
-    need = high_role if (threshold and amount >= threshold) else low_role
-    if rank.get((actor or {}).get("role", ""), 0) < rank.get(need, 1):
-        raise LoanError(
-            f"Pencairan {rupiah(amount)} butuh peran minimal “{need}” (ambang "
-            f"{rupiah(threshold)} dari Pengaturan → Antar Entitas). Minta orang dengan "
-            f"wewenang itu yang mencairkan.")
+    """Siapa yang boleh mencairkan — KP-T4: Aturan Persetujuan jenis `interco_loan` (dulu ambang & peran
+    `antar_entitas.*` dengan peta peringkat pribadi {manager, admin}; kini baris bawaannya). Izin `interco.approve`
+    diperiksa router."""
+    from services import approval_policy_service as _aps
+    res = await _aps.can_decide("interco_loan", entity_id or None, float(amount or 0), actor or {},
+                                check_permission=False)
+    if not res["allowed"]:
+        raise LoanError(res["message"] + " Minta orang dengan wewenang itu yang mencairkan.")
 
 
 async def disburse(loan_id: str, actor: Dict[str, Any]) -> Dict[str, Any]:

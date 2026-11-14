@@ -2005,7 +2005,8 @@ menuliskannya (bawaan hanya-lapor; data nyata = H3). Pembuat ≠ penyetuju tetap
 **SCOPED** dengan baris grup `entity_id = "all"` (INHERITED_GLOBAL_VALUES).
 ```
 Collection:  approval_policies          Prefix: appol_
-Router:      routers/approval_policies.py   (GET /kinds, GET ?entity_id=&doc_kind=, GET /check)
+Router:      routers/approval_policies.py   (GET /kinds, GET ?entity_id=&doc_kind=, GET /check, PUT /{doc_kind},
+             DELETE /{doc_kind}?entity_id=&reason=, GET /can-decide/me)
 Service:     services/approval_policy_service.py  (required_levels, can_decide, assert_can_decide, who_can_decide,
              build_default_rows, default_rows_for, rows_for, policy_view, check_view)
 Index:       uq_id (unik) · (doc_kind, entity_id, level, sort)
@@ -2016,6 +2017,12 @@ Index:       uq_id (unik) · (doc_kind, entity_id, level, sort)
   sort · active · source (bawaan | migrasi | pengguna) · version · reason · created_at · created_by · updated_at · updated_by
 ```
 Batas nominal sebuah peran untuk satu jenis = batas atas rentang tempat peran itu tercantum (K-51).
+`PUT` mengganti SELURUH baris (jenis, lapisan): baris lama `active=false` + `replaced_at/by` (jejak tetap), baris baru
+`source="pengguna"`, `version+1` (`expected_version` basi → 409). `legacy_role` = nilai kompatibel `required_role`
+(tampilan/notifikasi lama), tidak pernah dipakai memutus.
+Field dokumen yang ikut lahir (KP-T4, D3 — potret saat dokumen dibuat): `purchase_orders.approval_chain[]` dan
+`special_orders.approval_chain[]` menambah `roles`, `rule_id`, `policy_kind`; `doc_amendments.approval_amount` (nilai yang
+dinilai saat diusulkan, termasuk akumulasi); `special_orders.approved_automatically` (tidak butuh persetujuan menurut tabel).
 ⚠️ JANGAN BUAT daftar peran penyetuju baru di kode pintu atau kunci registry — tambah baris/jenis di sini.
 
 ### approval_rules  [Fase 1A IMPLEMENTED]
@@ -2036,6 +2043,10 @@ FASE F-6 (2026-08-17): koleksi ini **TETAP HIDUP**. Rute CRUD-nya kini
   Penilai ambang yang BERLAKU hanya `config_service.evaluate_approval()` /
   `build_approval_chain()` (dipakai `routers/sales_orders.py` & `routers/purchase_orders.py`);
   penilai kembar `approval_service.check_approval_required()` DIHAPUS agar tak ada dua pendapat.
+KP-T4 (2026-11-14): jalur tulis `POST/PATCH/DELETE /api/approval-rules` DIMATIKAN (410). Baris di sini hanya terbaca
+  (riwayat, Master per PT, `/approval-rules/effective`) dan membentuk baris BAWAAN `approval_policies` (SO/PO/PR) selama
+  tabel kebijakan belum punya baris untuk jenis itu. Penilai mesin = `approval_policy_service` (`evaluate_approval` /
+  `build_approval_chain` kini pembungkusnya).
 KP-T3 (2026-11-14): doc_type yang dinilai mesin hanya sales_order|purchase_order|purchase_requisition
   (`discount` dipensiunkan: tidak dibenihkan, ditolak saat simpan, tidak ditampilkan); required_role =
   "" atau peran di registry peran (`owner` ditolak). Pemilih aturan satu fungsi

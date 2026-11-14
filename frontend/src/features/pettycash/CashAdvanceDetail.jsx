@@ -12,7 +12,8 @@ import FormModal from "../../components/FormModal";
 import {
   CA_STATUS, StatusPill, fmtDate, printCashAdvance, printTandaTerima,
 } from "./pettyCashShared";
-import { can, roleIs } from "../../config/roles";
+import { can } from "../../config/roles";
+import { useCanDecideMap } from "../../hooks/useCanDecide";   // KP-T4
 import useIntentKey from "../../hooks/useIntentKey";
 import { moneyPost } from "../../utils/moneyRequest";
 
@@ -23,6 +24,11 @@ import { moneyPost } from "../../utils/moneyRequest";
  * Fase 3 · P4 (L-03) — isi pop-up rincian: CashAdvancesView membungkusnya dengan DetailModal framed (× di pojok
  * menggantikan tombol "Kembali"). Dialog "Cairkan" (`.modal-card` buatan sendiri) → FormModal.
  */
+// KP-T4 — status uang muka → nomor jenjang Aturan Persetujuan (`approval_kinds` `level_status`).
+const CA_LEVEL = { pending_atasan: 1, pending_pimpinan: 2, pending_finance: 3 };
+const caDecideParams = (ca) => (CA_LEVEL[ca.status]
+  ? { docKind: "cash_advance", entityId: ca.entity_id, amount: ca.total_amount || 0, level: CA_LEVEL[ca.status] } : null);
+
 export default function CashAdvanceDetail({ ca, currentUser, entities, onEdit, onChanged, flash }) {
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState("");
@@ -35,18 +41,18 @@ export default function CashAdvanceDetail({ ca, currentUser, entities, onEdit, o
     reject: useIntentKey("car"), disburse: useIntentKey("cad"),
   };
 
-  const role = currentUser?.role;
   const entityName = entities.find((e) => e.id === ca.entity_id)?.short_name
     || entities.find((e) => e.id === ca.entity_id)?.legal_name || ca.entity_id;
 
-  const isPending = ["pending_atasan", "pending_pimpinan", "pending_finance"].includes(ca.status);
-  const stageRoles = {
-    pending_atasan: ["manager", "admin"], pending_pimpinan: ["admin"], pending_finance: ["admin"],
-  };
-  // Sisir lanjutan gerbang peran (2026-10-21): tahap = cash_advance.approve/reject + peran tahap server (peran acuan dikenali).
-  const stageOk = isPending && (role === "admin" || roleIs(role, stageRoles[ca.status] || []));
+  const isPending = Object.prototype.hasOwnProperty.call(CA_LEVEL, ca.status);
+  // KP-T4 — tahap boleh diputus = jawaban server (izin + Aturan Persetujuan jenjang ini); dulu daftar peran per tahap
+  // ditulis di layar. Bila tidak boleh, tombol tampil mati dengan petunjuk dari server.
+  const dec = useCanDecideMap([ca], caDecideParams)[ca.id];
+  const stageOk = isPending && !!dec?.allowed;
   const canApproveStage = stageOk && can(currentUser?.permissions, "cash_advance", "approve");
   const canRejectStage = stageOk && can(currentUser?.permissions, "cash_advance", "reject");
+  const stageHint = isPending && dec && !dec.allowed && can(currentUser?.permissions, "cash_advance", "approve")
+    ? dec.message : "";
   const canEdit = ["draft", "rejected"].includes(ca.status) && can(currentUser?.permissions, "cash_advance", "update");
   const canSubmit = ["draft", "rejected"].includes(ca.status) && can(currentUser?.permissions, "cash_advance", "submit");
   const canDisburse = ca.status === "approved" && can(currentUser?.permissions, "cash_advance", "disburse");
@@ -88,9 +94,12 @@ export default function CashAdvanceDetail({ ca, currentUser, entities, onEdit, o
               {canApproveStage && <button data-testid="ca-approve-btn" className="btn-primary btn-xs" onClick={() => act("approve", { note: "" }, `${ca.number} disetujui tahap ini.`)} disabled={busy}><CheckCircle2 size={13} /> Setujui</button>}
               {canRejectStage && <button data-testid="ca-reject-btn" className="btn-danger btn-xs" onClick={() => setReject(true)} disabled={busy}><XCircle size={13} /> Tolak</button>}
             </>}
+            {stageHint && <button type="button" data-testid="ca-approve-btn-locked" className="btn-primary btn-xs" disabled
+              title={stageHint}><CheckCircle2 size={13} /> Setujui</button>}
             {canDisburse && <button data-testid="ca-disburse-btn" className="btn-primary btn-xs" onClick={() => setDisburse(true)} disabled={busy}><Banknote size={13} /> Cairkan</button>}
           </div>
         </div>
+        {stageHint && <p className="text-fs-12 text-kn-text-2 mx-3 mb-2" data-testid="ca-decide-hint">{stageHint}</p>}
         {err && <div className="notice-bar danger mx-3 mb-3" data-testid="ca-detail-error"><span>{err}</span><button onClick={() => setErr("")}>×</button></div>}
         {busy && <div data-testid="ca-detail-loading" className="mx-3 mb-2 h-1 rounded bg-[#E7F0FF] overflow-hidden"><div className="h-full w-1/3 bg-[#0058CC] animate-pulse" /></div>}
 

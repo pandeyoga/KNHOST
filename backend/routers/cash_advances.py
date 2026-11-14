@@ -10,6 +10,7 @@ from pydantic import BaseModel
 from fastapi import APIRouter, Request, Query
 
 from dependencies import require_permission
+from services import approval_policy_service as _aps   # KP-T4 — satu tabel kebijakan persetujuan
 from entity_scope import entity_ctx
 from schemas_cash_advance import (
     CashAdvanceCreate, CashAdvanceUpdate, ApprovalDecision, DisburseInput,
@@ -158,6 +159,8 @@ async def pay_reimburse(stl_id: str, payload: ReimbursePayIn, request: Request) 
 async def approve_settlement(stl_id: str, request: Request) -> Dict[str, Any]:
     actor = await require_permission(request, "cash_settlement", "approve")
     ctx = await entity_ctx(request)
+    await _aps.guard_door("cash_advance_settlement", actor, collection="cash_advance_settlements",
+                          doc_id=stl_id)   # KP-T4 — Aturan Persetujuan
     return await svc.approve_settlement(stl_id, ctx, actor)
 
 

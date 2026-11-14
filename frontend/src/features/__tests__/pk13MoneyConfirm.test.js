@@ -141,8 +141,10 @@ const mountPanel = (bill, onAction = jest.fn()) => mount(
 describe("U1 — Tagihan Pemasok, daftar: Setujui (A1)", () => {
   test("bertanya dulu dengan nominal & PT; Batal = 0 POST; lanjut = 1 POST …/approve", async () => {
     const bill = billOf();
+    // KP-T4 — tombol Setujui muncul bila server menjawab boleh memutus (Aturan Persetujuan), bukan dari peringkat peran.
     routeGet({ "/vendor-bills": { items: [bill], total: 1, has_more: false }, "/vendor-bills/status-counts": {},
-      "/vendor-bills/payables/summary": null, "/purchase-orders": [] });
+      "/vendor-bills/payables/summary": null, "/purchase-orders": [],
+      "/approval-policies/can-decide/me": { allowed: true, code: "", message: "" } });
     mockPost.mockResolvedValue({ data: { ...bill, status: "posted" } });
     await mount(<VendorBillsView currentUser={MGR} selectedEntity="ent_ksc" />);
 

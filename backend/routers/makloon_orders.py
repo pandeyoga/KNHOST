@@ -9,6 +9,7 @@ from fastapi import APIRouter, HTTPException, Request
 from pydantic import BaseModel, Field
 
 from db import db
+from services import approval_policy_service as _aps   # KP-T4 — satu tabel kebijakan persetujuan
 from dependencies import require_permission, audit
 from entity_scope import entity_ctx, resolve_list_scope, assert_entity_access
 from schemas import (
@@ -384,6 +385,8 @@ async def material_loss_decide_ep(mko_id: str, seq: int, loss_id: str, payload: 
     actor = await require_permission(request, "makloon_order", "approve_loss")
     ctx = await entity_ctx(request)
     await _assert_access(mko_id, ctx)
+    await _aps.guard_door("makloon_loss", actor, collection="makloon_orders", doc_id=mko_id,
+                          action="approve" if payload.approve else "reject")   # KP-T4
     order = await mls.decide_loss(mko_id, seq, loss_id, approve=payload.approve, note=payload.note, actor=actor,
                                   settle=payload.settle, bill_id=payload.bill_id)
     await audit(actor.get("name", ""), "material_loss_" + ("approved" if payload.approve else "rejected"),

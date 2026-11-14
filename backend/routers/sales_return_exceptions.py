@@ -5,6 +5,7 @@ from fastapi import APIRouter, HTTPException, Request
 from pydantic import BaseModel, Field
 
 from db import db
+from services import approval_policy_service as _aps   # KP-T4 — satu tabel kebijakan persetujuan
 from dependencies import audit, require_permission
 from entity_scope import assert_entity_access, entity_ctx
 from services import return_exception_service as rex
@@ -50,6 +51,7 @@ async def request_exception(return_id: str, payload: ExceptionIn, request: Reque
 async def decide_exception(return_id: str, exc_id: str, payload: DecideIn, request: Request) -> Any:
     user = await require_permission(request, "sales_return", "approve")
     ret = await _ret(return_id, request)
+    await _aps.guard_door("sales_return_exception", user, doc=ret)   # KP-T4 — Aturan Persetujuan
     try:
         exc = await rex.decide(ret, exc_id, payload.approve, payload.note, user)
     except LookupError as e:

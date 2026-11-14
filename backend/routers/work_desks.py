@@ -14,6 +14,7 @@ from fastapi import APIRouter, HTTPException, Query, Request
 from pydantic import BaseModel
 
 from db import db
+from services import approval_policy_service as _aps   # KP-T4 — satu tabel kebijakan persetujuan
 from core_utils import safe_doc
 from dependencies import require_permission, permission_matrix, audit
 from entity_scope import assert_entity_access, entity_ctx, resolve_list_scope
@@ -114,6 +115,7 @@ async def verify_order(order_id: str, payload: VerifyIn, request: Request) -> Di
     """E8.13 — verifikasi ADMINISTRATIF (bukan persetujuan nilai)."""
     actor = await require_permission(request, "order", "verify")
     order = await _order_in_scope(request, order_id)
+    await _aps.guard_door("so_verify", actor, doc=order)   # KP-T4 — Aturan Persetujuan
     try:
         res = await verify_svc.verify(order, actor, note=payload.note)
     except verify_svc.VerifyError as exc:

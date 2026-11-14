@@ -582,62 +582,46 @@ async def effective_tiers(doc_type: str, entity_id: Optional[str] = None) -> Dic
 
 
 async def evaluate_approval(doc_type: str, amount: float, entity_id: Optional[str] = None) -> Dict[str, Any]:
-    """Tentukan apakah dokumen butuh approval & role minimum, dari approval_rules.
-    Rule entitas-spesifik diutamakan; fallback ke entity_id='all'.
-    KP-T3 — pemilihan aturan lewat `approval_pool` (dipakai juga layar jenjang efektif)."""
-    pool = (await approval_pool(doc_type, entity_id))["rules"]
-    r = _rule_for(pool, amount)
-    if r:
-        role = r.get("required_role") or ""
-        return {"requires_approval": bool(role), "required_role": role or None,
-                "rule_id": r.get("id"), "doc_type": doc_type}
+    """Apakah dokumen butuh persetujuan pada nilai itu (jenjang 1).
+
+    KP-T4 — pembungkus `approval_policy_service.required_levels` (satu tabel kebijakan `approval_policies`; tanpa baris
+    tersimpan → baris bawaan dari `approval_rules` lewat `approval_pool`, keputusan sama). `required_role` = nilai
+    kompatibel untuk tampilan/notifikasi lama (`compat_role`), BUKAN penentu siapa yang boleh memutus — itu
+    `approval_policy_service.can_decide` di pintunya."""
+    from services import approval_policy_service as aps
+    kind = aps.DOC_TYPE_KIND.get(doc_type)
+    levels = await aps.required_levels(kind, entity_id, amount) if kind else []
+    if levels:
+        l1 = levels[0]
+        return {"requires_approval": True, "required_role": aps.compat_role(l1) or None,
+                "rule_id": l1["rule_id"] or None, "doc_type": doc_type, "roles": l1["roles"],
+                "any_holder": l1["any_holder"]}
     return {"requires_approval": False, "required_role": None, "rule_id": None, "doc_type": doc_type}
 
 
 async def build_approval_chain(doc_type: str, amount: float, entity_id: Optional[str] = None,
                                force_level1_role: Optional[str] = None) -> Dict[str, Any]:
-    """Fase 7.1 — Bangun RANTAI approval berjenjang (multi-level sequential).
+    """Fase 7.1 — RANTAI persetujuan berjenjang (multi-level sequential).
 
-    Level 1 = hasil `evaluate_approval` (matriks approval_rules, biasanya manager).
-    Level 2+ = dari settings `approval.extra_levels[doc_type]` (mis. ≥500jt → Direksi/admin),
-    AKTIF hanya bila approval level-1 sudah diperlukan (atau dipaksa via force_level1_role,
-    mis. deviasi harga). Backward-compatible: doc tanpa extra_levels → rantai 1 elemen.
+    KP-T4 — pembungkus `approval_policy_service.chain_for`: jenjang dari tabel kebijakan (jenjang di atas 1 hanya bila
+    jenjang 1 berlaku). `force_level1_role` (dipertahankan untuk pemanggil lama; nilainya tidak lagi dibaca) = paksa
+    persetujuan walau nilai di bawah ambang (penyimpangan harga / lewat kontrak PO) → jenjang 1 dari jenis
+    `purchase_order.deviasi_harga`. Tiap jenjang menyimpan potret `roles`, `rule_id`, `policy_kind` (D3).
 
     Return:
       requires_approval: bool
-      required_role:     role level pertama yang masih pending (untuk kompat lama)
-      approval_chain:    [{level, required_role, label, status:'pending', approved_by:'', approved_at:''}]
+      required_role:     nilai kompatibel jenjang pertama (tampilan/notifikasi lama)
+      approval_chain:    [{level, required_role, label, roles, rule_id, policy_kind, status:'pending', …}]
     """
-    base = await evaluate_approval(doc_type, amount, entity_id)
-    chain: List[Dict[str, Any]] = []
-
-    l1_role = base.get("required_role")
-    if force_level1_role and not l1_role:
-        l1_role = force_level1_role
-    if l1_role:
-        chain.append({"level": 1, "required_role": l1_role, "label": "Persetujuan",
-                      "status": "pending", "approved_by": "", "approved_by_id": "", "approved_at": ""})
-
-    if chain:  # extra levels hanya bila approval L1 sudah diperlukan
-        settings = await get_effective_settings(entity_id)
-        extra = (((settings.get("approval") or {}).get("extra_levels") or {}).get(doc_type) or [])
-        amt = float(amount or 0)
-        for lv in extra:
-            try:
-                min_amt = float(lv.get("min_amount", 0) or 0)
-            except (TypeError, ValueError):
-                min_amt = 0.0
-            role = (lv.get("role") or "").strip()
-            if role and amt >= min_amt:
-                chain.append({"level": len(chain) + 1, "required_role": role,
-                              "label": lv.get("label") or role.title(),
-                              "status": "pending", "approved_by": "", "approved_by_id": "", "approved_at": ""})
-
+    from services import approval_policy_service as aps
+    kind = aps.DOC_TYPE_KIND.get(doc_type)
+    force = "purchase_order.deviasi_harga" if (force_level1_role and doc_type == "purchase_order") else ""
+    chain = await aps.chain_for(kind, entity_id, amount, force_kind=force) if kind else []
     return {
         "requires_approval": bool(chain),
         "required_role": chain[0]["required_role"] if chain else None,
         "approval_chain": chain,
-        "rule_id": base.get("rule_id"),
+        "rule_id": (chain[0]["rule_id"] or None) if chain else None,
         "doc_type": doc_type,
     }
 

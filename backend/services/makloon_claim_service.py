@@ -81,8 +81,7 @@ def build_claim_from_variance(variance: Dict[str, Any], *, auto_open: bool = Tru
 async def notify_claim_opened(order: Dict[str, Any], step: Dict[str, Any]) -> None:
     """Eskalasi ke penyetuju (mesin notifikasi R6.5/R6.6) — best-effort."""
     claim = step.get("claim") or {}
-    settings = await cs.get_settings()
-    roles = settings.get("claim_approval_roles") or ["manager", "admin"]
+    roles = await _approver_roles(order, claim)   # KP-T4 — penerima = peran tercantum di Aturan Persetujuan
     for role in roles:
         try:
             await notif.create_notification(
@@ -124,7 +123,7 @@ async def propose_claim(mko_id: str, seq: int, *, action: str, amount: Any = Non
          "note": f"{dr.label_of('claim_action', action)} · {rupiah(amt)} · {reason.strip()}"})
     step["claim"] = claim
     await _save(order)
-    for role in (await cs.get_settings()).get("claim_approval_roles", ["manager", "admin"]):
+    for role in await _approver_roles(order, claim):   # KP-T4 — dari Aturan Persetujuan
         try:
             await notif.create_notification(
                 notif_type="makloon_claim_approval",
@@ -138,16 +137,34 @@ async def propose_claim(mko_id: str, seq: int, *, action: str, amount: Any = Non
     return safe_doc(order)
 
 
+async def _approver_roles(order: Dict[str, Any], claim: Dict[str, Any]) -> List[str]:
+    """Peran tujuan notifikasi persetujuan klaim (KP-T4: Aturan Persetujuan jenis `makloon_claim`)."""
+    from services import approval_policy_service as _aps
+    roles = await _aps.roles_allowed("makloon_claim", order.get("entity_id") or None,
+                                     float(parse_decimal(claim.get("amount"), 2) or 0))
+    return roles or ["manager", "admin"]
+
+
+async def _assert_policy(order: Dict[str, Any], claim: Dict[str, Any], actor_role: str, action: str) -> None:
+    """KP-T4 — peran pemutus klaim dari Aturan Persetujuan (dulu `makloon.claim_approval_roles`, nama persis). Izin
+    `makloon_order.claim_approve` diperiksa router; tanpa peran (panggilan sistem) tidak dinilai, seperti dulu."""
+    if not actor_role:
+        return
+    from services import approval_policy_service as _aps
+    res = await _aps.can_decide("makloon_claim", order.get("entity_id") or None,
+                                float(parse_decimal(claim.get("amount"), 2) or 0), {"role": actor_role},
+                                action=action, check_permission=False)
+    if not res["allowed"]:
+        raise ClaimError(res["message"])
+
+
 async def approve_claim(mko_id: str, seq: int, *, actor: str = "system",
                         actor_role: str = "", note: str = "") -> Dict[str, Any]:
-    """Setujui & EKSEKUSI klaim (GL + potong tagihan). Hanya peran penyetuju."""
-    settings = await cs.get_settings()
-    roles = [r.lower() for r in settings.get("claim_approval_roles", ["manager", "admin"])]
-    if actor_role and actor_role.lower() not in roles:
-        raise ClaimError(f"Hanya peran {', '.join(roles)} yang boleh menyetujui klaim makloon.")
+    """Setujui & EKSEKUSI klaim (GL + potong tagihan). Hanya peran penyetuju (Aturan Persetujuan)."""
     order = await _get_order(mko_id)
     step = _find_step(order, seq)
     claim = step.get("claim") or blank_claim()
+    await _assert_policy(order, claim, actor_role, "approve")
     if claim.get("status") != "pending_approval":
         raise ClaimError("Tidak ada pengajuan klaim yang menunggu persetujuan pada langkah ini.")
     action = claim.get("action")
@@ -220,15 +237,12 @@ async def approve_claim(mko_id: str, seq: int, *, actor: str = "system",
 
 async def reject_claim(mko_id: str, seq: int, *, reason: str, actor: str = "system",
                        actor_role: str = "") -> Dict[str, Any]:
-    settings = await cs.get_settings()
-    roles = [r.lower() for r in settings.get("claim_approval_roles", ["manager", "admin"])]
-    if actor_role and actor_role.lower() not in roles:
-        raise ClaimError(f"Hanya peran {', '.join(roles)} yang boleh menolak klaim makloon.")
     if not (reason or "").strip():
         raise ClaimError("Alasan penolakan wajib diisi.")
     order = await _get_order(mko_id)
     step = _find_step(order, seq)
     claim = step.get("claim") or blank_claim()
+    await _assert_policy(order, claim, actor_role, "reject")   # KP-T4
     if claim.get("status") != "pending_approval":
         raise ClaimError("Tidak ada pengajuan klaim yang menunggu persetujuan pada langkah ini.")
     claim.update({"status": "rejected", "rejected_by": actor, "rejected_at": now_iso(),

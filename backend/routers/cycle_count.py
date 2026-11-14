@@ -3,6 +3,7 @@ from typing import Any, Dict, List
 from fastapi import APIRouter, HTTPException, Request
 from pydantic import BaseModel
 from db import db
+from services import approval_policy_service as _aps   # KP-T4 — satu tabel kebijakan persetujuan
 from dependencies import require_permission, audit
 from core_utils import new_id, now_iso, safe_doc, DEFAULT_ENTITY_ID
 from entity_scope import entity_ctx, assert_active_entity_access, guard_doc
@@ -296,6 +297,7 @@ async def approve_session(session_id: str, payload: CycleCountApprove, request: 
     session = await _load_session(session_id, request)
     if session["status"] != "submitted":
         raise HTTPException(status_code=400, detail="Session belum disubmit")
+    await _aps.guard_door("cycle_count", actor, doc=session)   # KP-T4 — Aturan Persetujuan
     # KF-T6 — pengaju (penyetor hitungan) ≠ penyetuju dari `kontrol.stok_opname.*` (bawaan satu orang).
     from services import dual_control as _dc
     await _dc.tolak_bila_pelaku_sama("stok_opname", session, actor, session.get("entity_id", ""),
@@ -370,6 +372,7 @@ async def reject_session(session_id: str, payload: CycleCountReject, request: Re
     session = await _load_session(session_id, request)
     if session["status"] != "submitted":
         raise HTTPException(status_code=400, detail="Session belum disubmit")
+    await _aps.guard_door("cycle_count", actor, doc=session, action="reject")   # KP-T4
     from pymongo import ReturnDocument
     # W2-007 — reject berkompetisi pada transisi yang sama dgn approve: submitted & tanpa saga_lock.
     updated = await db.cycle_count_sessions.find_one_and_update(

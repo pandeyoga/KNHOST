@@ -19,7 +19,7 @@ function StatusPill({ status }) {
   return <span className={`status-pill ${cls}`} data-testid="lc-detail-status">{label}</span>;
 }
 
-export default function LandedCostDetailPanel({ voucher, canApprove, currentUser, onClose, onAction, onError }) {
+export default function LandedCostDetailPanel({ voucher, canApprove, decideHint = "", currentUser, onClose, onAction, onError }) {
   const [payAmount, setPayAmount] = useState("");
   const [cashType, setCashType] = useState("kas_besar");
   const [method, setMethod] = useState("transfer");
@@ -193,8 +193,8 @@ export default function LandedCostDetailPanel({ voucher, canApprove, currentUser
               <button data-testid="lc-action-approve" onClick={() => act("approve")} disabled={busy} className="primary-button"><CheckCircle2 size={13} /> Setujui & Alokasikan HPP</button>
             </>
           )}
-          {voucher.status === "pending_approval" && !canApprove && (
-            <span className="text-[11px] text-[#9A9BA3]">Menunggu persetujuan {voucher.required_approval_role || "manager"}.</span>
+          {voucher.status === "pending_approval" && !canApprove && (   /* KP-T4 — petunjuk dari Aturan Persetujuan */
+            <span className="text-[11px] text-[#9A9BA3]" data-testid="lc-decide-hint">{decideHint || "Menunggu persetujuan."}</span>
           )}
           {voucher.status === "applied" && (
             <button data-testid="lc-action-pay" onClick={() => setShowPay((s) => !s)} disabled={busy} className="primary-button"><Wallet size={13} /> Bayar</button>

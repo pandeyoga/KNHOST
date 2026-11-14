@@ -161,6 +161,11 @@ async def decide_credit_override(override_id: str, payload: CreditOverrideDecisi
     co = await db.credit_overrides.find_one({"id": override_id}, {"_id": 0})
     await guard_doc(request, "credit_overrides", co, strict=False,
                     not_found="Permohonan tidak ditemukan / sudah diputuskan")
+    if co:   # KP-T4 — siapa yang boleh memutus dari Aturan Persetujuan (bawaan: semua pemegang izin)
+        from services import approval_policy_service as _aps
+        await _aps.assert_can_decide("credit_override", co.get("entity_id") or None, float(co.get("amount") or 0),
+                                     actor, action="approve" if payload.decision == "approve" else "reject",
+                                     check_permission=False)
     # KF-T6 — pemohon ≠ pemutus dari `kontrol.lewat_batas_kredit.*` (bawaan satu orang).
     if (co or {}).get("status") == "pending":
         from services import dual_control as _dc

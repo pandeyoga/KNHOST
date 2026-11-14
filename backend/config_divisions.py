@@ -76,39 +76,31 @@ def roles_label(roles: List[str]) -> str:
     return " atau ".join(role_label(r) for r in (roles or []) if r)
 
 
-# Kunci ambang (registry `config_catalog_approval_matrix.py`) untuk tingkat Direksi.
-DIREKSI_MIN_KEY = "approval.po_custom_direksi_min"
-
-# Matriks persetujuan (D-13 poin 2a) — `approvers` = LABEL tampilan (kompatibel PS-17),
-# `levels` = penegakan nyata (PS-20 / D-14).
+# Matriks persetujuan (D-13 poin 2a) — `approvers` = LABEL tampilan (kompatibel PS-17).
+# KP-T4 — daftar peran per tingkat (`levels`) DIHAPUS: siapa yang memutus tiap tahap (dan ambang Direksi pesanan
+# khusus) kini baris Aturan Persetujuan (`approval_policies`; tahap → jenis di `approval_matrix_service.STAGE_KIND`).
 APPROVER_MATRIX: List[Dict[str, Any]] = [
     {"stage": "design_acc", "label": "ACC Desain",
      "approvers": ["Manager"],
      "note": "Pengesahan desain sebelum dipakai untuk proofing/produk.",
      "doc_type": "rnd_spec", "doc_label": "Spesifikasi Desain",
-     "collection": "md_specs", "view": "rnd-specs",
-     "levels": [{"level": 1, "label": "Manager", "roles": ["manager", "admin"]}]},
+     "collection": "md_specs", "view": "rnd-specs"},
     # Keputusan pemilik (UAT v3, 22 Okt 2026): pemenang sample boleh diputus Manajer ATAU MD.
     {"stage": "sample_acc", "label": "ACC Sample",
      "approvers": ["Manager", "MD"],
      "note": "Keputusan hasil round sample (ACC / revisi / tolak).",
      "doc_type": "rnd_sample", "doc_label": "Permintaan Sample",
-     "collection": "md_samples", "view": "rnd-samples",
-     "levels": [{"level": 1, "label": "Manager / MD", "roles": ["manager", "md", "admin"]}]},
+     "collection": "md_samples", "view": "rnd-samples"},
     {"stage": "po_custom", "label": "PO Custom",
      "approvers": ["Manager", "Direksi"],
      "note": "Manager menyetujui; naik ke Direksi bila nilai besar.",
      "doc_type": "special_order", "doc_label": "Pesanan Khusus (PO Custom)",
-     "collection": "special_orders", "view": "special-orders",
-     "levels": [{"level": 1, "label": "Manager", "roles": ["manager", "admin"]},
-                {"level": 2, "label": "Direksi", "roles": ["admin"],
-                 "min_amount_key": DIREKSI_MIN_KEY}]},
+     "collection": "special_orders", "view": "special-orders"},
     {"stage": "purchase_request", "label": "Permintaan Pembelian (PR)",
      "approvers": ["Manager"],
      "note": "Persetujuan PR bahan / kebutuhan sample.",
      "doc_type": "purchase_requisition", "doc_label": "Permintaan Pembelian",
-     "collection": "purchase_requisitions", "view": "purchase-requisitions",
-     "levels": [{"level": 1, "label": "Manager", "roles": ["manager", "admin"]}]},
+     "collection": "purchase_requisitions", "view": "purchase-requisitions"},
     # T8 (audit training L5/PP) — klaim selisih makloon menempel pada langkah SPK
     # (`steps[].claim.status == pending_approval`); tanpa tahap ini manajer yang hanya
     # memantau "Persetujuan Saya" tidak pernah melihatnya.
@@ -116,8 +108,7 @@ APPROVER_MATRIX: List[Dict[str, Any]] = [
      "approvers": ["Manager"],
      "note": "Keputusan klaim hasil makloon kurang dari estimasi (potong bon / ganti rugi / terima dengan catatan).",
      "doc_type": "makloon_claim", "doc_label": "Klaim Selisih Makloon",
-     "collection": "makloon_orders", "view": "makloon-claims",
-     "levels": [{"level": 1, "label": "Manager", "roles": ["manager", "admin"]}]},
+     "collection": "makloon_orders", "view": "makloon-claims"},
 ]
 
 STAGE_BY_ID: Dict[str, Dict[str, Any]] = {s["stage"]: s for s in APPROVER_MATRIX}

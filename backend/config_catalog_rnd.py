@@ -17,6 +17,9 @@ _RND_PERM = ("rnd", "manage")
 # ═══════════════════════════════════════════════════════════════════════════
 # KAPAN BARANG BOLEH DIPESAN / DIJUAL
 # ═══════════════════════════════════════════════════════════════════════════
+# KP-T4 — alasan baku kunci persetujuan yang pindah ke Aturan Persetujuan.
+_KPT4_TIDAK_DIPAKAI = ("Dipindah ke Aturan Persetujuan (Pengaturan › Persetujuan › Aturan Persetujuan). Nilai terakhirnya hanya membentuk aturan bawaan selama aturan belum disimpan.")
+
 E("rnd.lifecycle_enforcement", group="rnd", type="enum", default="block",
   options=({"value": "off", "label": "Abaikan (semua produk boleh dipesan)"},
            {"value": "warn", "label": "Peringatkan saja (tetap boleh lanjut)"},
@@ -84,8 +87,10 @@ E("rnd.spec_approval_roles", group="rnd", type="list", default=["manager", "admi
        "dan siapa yang berhak merilisnya ke produksi.",
   impact="Peran di luar daftar akan ditolak walaupun mencoba lewat API langsung.",
   example="['manager','admin'] → sales boleh mengajukan, tidak boleh menyetujui",
-  consumers=("services/rnd_spec_service.py:_assert_role", "routers/rnd.py"),
-  risk="high", permission=_RND_PERM)
+  consumers=("services/approval_policy_service.py:default_rows_for",),
+  risk="high", permission=_RND_PERM,
+  # KP-T4 — isi kunci ini pindah ke tabel kebijakan persetujuan (`approval_policies`).
+  status="not_used", not_used_reason=_KPT4_TIDAK_DIPAKAI)
 
 # 23 Okt — selaras keputusan pemilik UAT v3 (22 Okt): pemenang boleh diputus Manajer ATAU MD. Matriks `sample_acc`
 # (config_divisions) sudah memuat md, tetapi lapis kebijakan ini masih bawaan lama → MD tetap ditolak di server.
@@ -96,8 +101,10 @@ E("rnd.sample_decision_roles", group="rnd", type="list", default=["manager", "md
        "wewenangnya dibatasi.",
   impact="Peran di luar daftar tidak bisa memutus, sehingga tidak bisa membentuk kontrak harga.",
   example="['manager','md','admin'] → MD/manager memutus; ['manager','admin'] → staf R&D menilai, manager memutus",
-  consumers=("services/rnd_sample_service.py:decide_sample", "routers/rnd.py"),
-  risk="high", permission=_RND_PERM)
+  consumers=("services/approval_policy_service.py:default_rows_for",),
+  risk="high", permission=_RND_PERM,
+  # KP-T4 — isi kunci ini pindah ke tabel kebijakan persetujuan (`approval_policies`).
+  status="not_used", not_used_reason=_KPT4_TIDAK_DIPAKAI)
 
 # ═══════════════════════════════════════════════════════════════════════════
 # ITERASI SAMPLE (rnd 1 → 2 → 3 …)

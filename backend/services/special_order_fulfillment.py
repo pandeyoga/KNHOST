@@ -326,13 +326,11 @@ def needs_release(n: Dict[str, Any]) -> bool:
 
 
 async def can_release(actor: Dict[str, Any], entity_id: str) -> bool:
-    """Peran pelaku boleh merilis SKU baru ke produksi (kebijakan `rnd.spec_approval_roles`, sama dengan
-    `rnd_spec_service.release_product`)."""
-    from services import rnd_gate
-    allowed = (await rnd_gate.policy(entity_id)).get("spec_approval_roles") or []
-    if isinstance(allowed, str):
-        allowed = [x.strip() for x in allowed.split(",") if x.strip()]
-    return not allowed or (actor or {}).get("role", "") in allowed
+    """Peran pelaku boleh merilis SKU baru ke produksi — KP-T4: Aturan Persetujuan jenis `rnd_spec.rilis` (sama dengan
+    `rnd_spec_service.release_product`; dulu kunci `rnd.spec_approval_roles`)."""
+    from services import approval_policy_service as _aps
+    return (await _aps.can_decide("rnd_spec.rilis", entity_id or None, 0, actor or {},
+                                  check_permission=False))["allowed"]
 
 
 async def ensure_released(n: Dict[str, Any], actor: Dict[str, Any], od: Dict[str, Any]) -> None:

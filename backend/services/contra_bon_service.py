@@ -75,10 +75,11 @@ HOLDING_STATUSES = tuple(s for s in STATUSES if s != "cancelled")
 PENDING_STATUSES = ("draft", "submitted", "verified", "approved", "scheduled_payment")
 
 # KF-T2 — `contra_bon.qty_tolerance_percent` tidak dimuat lagi (status `not_used`; persen 3-way dari `three_way_policy`).
+# KP-T4 — `contra_bon.approval_threshold_rupiah|approval_role|high_value_approval_role` pindah ke Aturan Persetujuan
+# (jenis `contra_bon_approve`); `policy()` mengisi tiga field tampilannya dari tabel.
 CFG_KEYS = (
     "contra_bon.value_tolerance_rupiah",
-    "contra_bon.require_reason_out_of_tolerance", "contra_bon.approval_threshold_rupiah",
-    "contra_bon.approval_role", "contra_bon.high_value_approval_role",
+    "contra_bon.require_reason_out_of_tolerance",
     "contra_bon.reminder_days_before", "contra_bon.unbilled_gr_age_days",
     "contra_bon.verify_sla_days", "contra_bon.block_pay_before_approval",
 )
@@ -153,14 +154,24 @@ async def policy(entity_id: str = "") -> Dict[str, Any]:
     # rupiah = contra_bon.value_tolerance_rupiah; `contra_bon.qty_tolerance_percent` lama tak dipakai lagi.
     from services.three_way_policy import tolerances as _tw
     tw = await _tw(entity_id or "")
+    from services import approval_policy_service as _aps   # KP-T4 — ambang & peran tampilan dari Aturan Persetujuan
+    tiers = sorted([r for r in (await _aps.rows_for("contra_bon_approve", entity_id or None))["rows"]
+                    if int(r.get("level") or 1) == 1 and (r.get("roles") or r.get("any_holder"))],
+                   key=lambda r: float(r.get("min_amount") or 0))
+
+    def _who(t):
+        return ", ".join(_aps.role_label(x) for x in (t.get("roles") or [])) or "semua pemegang akses"
+    raw["approval_threshold_rupiah"] = float(tiers[1].get("min_amount") or 0) if len(tiers) > 1 else 0
+    raw["approval_role"] = _who(tiers[0]) if tiers else ""
+    raw["high_value_approval_role"] = _who(tiers[1]) if len(tiers) > 1 else raw["approval_role"]
     return {
         "qty_tolerance_percent": tw["qty_pct"],
         "price_tolerance_percent": tw["price_pct"],
         "value_tolerance_rupiah": tw["value_rp"],
         "require_reason": bool(raw.get("require_reason_out_of_tolerance")),
         "approval_threshold": float(raw.get("approval_threshold_rupiah") or 0),
-        "approval_role": str(raw.get("approval_role") or "manager").lower(),
-        "high_value_role": str(raw.get("high_value_approval_role") or "admin").lower(),
+        "approval_role": str(raw.get("approval_role") or ""),
+        "high_value_role": str(raw.get("high_value_approval_role") or ""),
         "reminder_days_before": int(raw.get("reminder_days_before") or 0),
         "unbilled_gr_age_days": int(raw.get("unbilled_gr_age_days") or 0),
         "verify_sla_days": int(raw.get("verify_sla_days") or 2),
@@ -987,13 +998,6 @@ async def verify(cb_id: str, actor: Dict[str, Any],
     return await decorate(cb, pol)
 
 
-def role_rank(role: str) -> int:
-    """KN-C04 — pangkat dari REGISTRY resmi (13 peran bawaan + peran kustom), bukan peta
-    pribadi 4 peran yang membuat finance/sales_admin/md/peran kustom bernilai 0."""
-    from role_registry import rank_of
-    return rank_of(role)
-
-
 async def approve(cb_id: str, actor: Dict[str, Any],
                   entity_ids: Optional[List[str]] = None) -> Dict[str, Any]:
     cb = await _get(cb_id, entity_ids)
@@ -1004,13 +1008,13 @@ async def approve(cb_id: str, actor: Dict[str, Any],
     pol = await policy(cb.get("entity_id", ""))
     recompute(cb)
     net = cb["totals"]["net_payable"]
-    need = pol["high_value_role"] if net >= pol["approval_threshold"] > 0 else pol["approval_role"]
-    if role_rank(actor.get("role")) < role_rank(need):
-        raise ContraBonError(
-            f"Kontrabon {_rp(net)} butuh persetujuan peran minimal '{need}'"
-            + (f" (di atas ambang {_rp(pol['approval_threshold'])})"
-               if net >= pol["approval_threshold"] > 0 else "")
-            + f". Peran Anda: '{actor.get('role')}'.")
+    # KP-T4 — siapa yang boleh menyetujui dibaca dari Aturan Persetujuan (jenis `contra_bon_approve`, nilai bersih
+    # terutang); dulu peringkat peran `contra_bon.approval_role|high_value_approval_role` di sekitar ambang.
+    from services import approval_policy_service as _aps
+    res = await _aps.can_decide("contra_bon_approve", cb.get("entity_id") or None, float(net or 0), actor,
+                                check_permission=False)
+    if not res["allowed"]:
+        raise ContraBonError(res["message"])
     # KF-T6 — pembuat ≠ penyetuju dari `kontrol.kontrabon.*` (satu pembantu, 403).
     from services import dual_control as _dc
     await _dc.tolak_bila_pelaku_sama("kontrabon", cb, actor, cb.get("entity_id", ""), nominal=float(net or 0),

@@ -270,7 +270,7 @@ def main() -> int:  # noqa: C901 — POC memang panjang & berurutan
 
     keys = ["payment.variance_tolerance_rupiah", "payment.variance_underpay_default",
             "payment.variance_overpay_default", "payment.variance_writeoff_requires_approval",
-            "payment.variance_writeoff_approver_role", "payment.variance_writeoff_max_amount",
+            "payment.variance_writeoff_max_amount",   # KP-T4 — approver_role pindah ke Aturan Persetujuan
             "payment.variance_reschedule_days", "payment.variance_refund_method",
             "payment.variance_ap_tolerance_rupiah"]
     original = {k: cfg_get(admin, k) for k in keys}

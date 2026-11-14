@@ -558,8 +558,13 @@ def f_fulfillment(sa, adm, s1):
     sumber = cukup[0]["entity_id"]
 
     # ── US22: ambang rupiah benar-benar mengunci (config, tanpa deploy) ──
-    r_low = cfg_set(adm, CFG_THRESHOLD, 1, "entity", sumber)
-    check("ambang rupiah antar-PT bisa diturunkan pemilik di Pusat Pengaturan",
+    # KP-T4 — ambang & peran pelepas transaksi antar-PT kini Aturan Persetujuan (jenis `interco`), bukan kunci
+    # `antar_entitas.approval_threshold_rupiah` (tidak dipakai lagi): aturan khusus PT sumber, ambang Rp1.
+    r_low = adm.put("/api/approval-policies/interco", json={
+        "entity_id": sumber, "expected_version": 0, "reason": "POC E-8 gelombang 2 — ambang Rp1",
+        "levels": [{"level": 1, "tiers": [{"min_amount": 0, "max_amount": 1, "roles": ["admin", "manager", "sales_admin"]},
+                                          {"min_amount": 1, "max_amount": None, "roles": ["admin"]}]}]})
+    check("ambang rupiah antar-PT bisa diturunkan pemilik di Aturan Persetujuan",
           r_low.status_code == 200, f"HTTP {r_low.status_code}")
     ditahan = sa.post(f"/api/sales-admin/orders/{oid}/fulfillment-decision",
                       json={"mode": "interco", "source_entity_id": sumber,
@@ -569,7 +574,7 @@ def f_fulfillment(sa, adm, s1):
     check("penolakan menyebut peran penyetuju yang dibutuhkan",
           "peran" in str(ditahan.json().get("detail", "")).lower(),
           str(ditahan.json().get("detail", ""))[:90])
-    cfg_set(adm, CFG_THRESHOLD, 100000000, "entity", sumber)
+    adm.delete("/api/approval-policies/interco", params={"entity_id": sumber, "reason": "POC E-8 — kembali ke grup"})
 
     # ── US16/US22: keputusan "Ambil dari PT lain" ujung-ke-ujung, tanpa manajer ──
     res = sa.post(f"/api/sales-admin/orders/{oid}/fulfillment-decision",

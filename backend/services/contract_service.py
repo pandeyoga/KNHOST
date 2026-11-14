@@ -82,11 +82,10 @@ async def update_settings(payload: Dict[str, Any], actor: str = "") -> Dict[str,
     for flag in ("auto_claim", "require_output_product", "require_yield_reason"):
         if payload.get(flag) is not None:
             nxt[flag] = bool(payload[flag])
-    roles = payload.get("claim_approval_roles")
-    if roles is not None:
-        if not isinstance(roles, list) or not roles:
-            raise ContractError("Peran penyetuju klaim minimal satu (mis. manager, admin).")
-        nxt["claim_approval_roles"] = [str(r).strip().lower() for r in roles if str(r).strip()]
+    if payload.get("claim_approval_roles") is not None:
+        # KP-T4 — penyetuju klaim makloon diatur di Aturan Persetujuan (jenis `makloon_claim`); nilai tersimpan di sini
+        # hanya membentuk baris bawaan dan tidak bisa diubah lagi.
+        raise ContractError("Penyetuju klaim makloon kini diatur di Pengaturan › Persetujuan › Aturan Persetujuan.")
     nxt.update({"scope": SETTINGS_SCOPE, "updated_at": now_iso(), "updated_by": actor})
     await db.system_settings.update_one({"scope": SETTINGS_SCOPE}, {"$set": nxt}, upsert=True)
     return await get_settings()

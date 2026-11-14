@@ -19,8 +19,8 @@ from services.special_order_service import (
     reject_special_order,
     transition_special_order_status,
     create_sku_from_special_order,
-    APPROVAL_THRESHOLD
 )
+from services import approval_policy_service as aps   # KP-T4 — ambang & penyetuju dari Aturan Persetujuan
 from services import purchase_requisition_service as pr_svc
 from services import approval_matrix_service as amx  # PS-20 — PO Custom 2 tingkat (Manager → Direksi)
 from services import special_order_routing as routing
@@ -177,8 +177,23 @@ async def list_special_orders(
         "items": special_orders,
         "count": len(special_orders),
         "by_status": status_counts,
-        "approval_threshold": APPROVAL_THRESHOLD
+        "approval_threshold": await aps.lowest_threshold("special_order", entity_id or None),   # KP-T4
     }
+
+
+async def _setujui_otomatis(order_id: str, user: Dict[str, Any], entity_id: str) -> None:
+    """KP-T4 — Aturan Persetujuan tidak menuntut jenjang apa pun untuk nilai pesanan ini → disetujui otomatis
+    (seperti PR yang tidak butuh persetujuan). Bawaan: jenjang 1 selalu berlaku, jadi jalan ini hanya terpakai bila
+    Admin memasang batas bawah jenjang 1 di Aturan Persetujuan."""
+    od = await approve_special_order(order_id, user.get("email", ""))
+    await db.special_orders.update_one({"id": order_id}, {"$set": {
+        "approval_chain": [], "approval_level_current": 0, "approval_status": "approved",
+        "required_approval_role": "", "approved_automatically": True}})
+    await amx.record(stage="po_custom", action="approve", actor=user, doc=od, entity_id=entity_id, level=0,
+                     level_label="", outcome="disetujui otomatis — tidak butuh persetujuan menurut Aturan Persetujuan",
+                     note="", enforced=True)
+    fresh = safe_doc(await db.special_orders.find_one({"id": order_id}, {"_id": 0})) or od
+    await routing.route_on_approve(fresh, user, entity_id)
 
 
 @router.post("/special-orders")
@@ -270,8 +285,9 @@ async def create_special_order(payload: SpecialOrderCreate, request: Request) ->
         
         # Financial
         "total_amount": total_amount,
-        "requires_approval": total_amount > APPROVAL_THRESHOLD,
-        "approval_threshold": APPROVAL_THRESHOLD,
+        # KP-T4 — dari Aturan Persetujuan (dulu `> APPROVAL_THRESHOLD` Rp10 jt yang tidak menentukan apa pun).
+        "requires_approval": bool(await aps.required_levels("special_order", entity_id, total_amount)),
+        "approval_threshold": await aps.lowest_threshold("special_order", entity_id),
         
         # Timeline
         "expected_delivery": payload.expected_delivery,
@@ -336,6 +352,10 @@ async def create_special_order(payload: SpecialOrderCreate, request: Request) ->
     # oleh …", versi job tidak. Sekarang keduanya memanggil SATU penyusun pesan
     # (`notification_service.notify_special_order_waiting`), dan penjaga INV-NOTIF-02
     # aturan K3 melarang `notif_type="special_order_approval"` disusun di tempat lain.
+    if initial_status == "pending_approval" and not special_order.get("approval_chain"):
+        await _setujui_otomatis(order_id, user, special_order.get("entity_id", ""))   # KP-T4
+        special_order = safe_doc(await db.special_orders.find_one({"id": order_id}, {"_id": 0})) or special_order
+        initial_status = special_order.get("status", initial_status)
     if initial_status == "pending_approval":
         try:
             from services.notification_service import notify_special_order_waiting
@@ -499,6 +519,9 @@ async def submit_special_order(order_id: str, request: Request) -> Dict[str, Any
                  "required_approval_role": ((chain[0].get("roles") or ["manager"])[0] if chain else ""),
                  "approval_status": "pending", "updated_at": now_iso()},
         "$push": {"status_history": {"status": "pending_approval", "timestamp": now_iso(), "user": user.get("email", ""), "note": "Diajukan"}}})
+    if not chain:   # KP-T4 — nilai ini tidak butuh persetujuan menurut Aturan Persetujuan
+        await _setujui_otomatis(order_id, user, od.get("entity_id", ""))
+        return await _fresh(order_id)
     fresh = safe_doc(await db.special_orders.find_one({"id": order_id}, {"_id": 0}))
     try:
         from services.notification_service import notify_special_order_waiting
@@ -553,8 +576,11 @@ async def redesign_special_order(order_id: str, payload: RedesignBody, request: 
         "shipping_address": od.get("shipping_address") or {},
         "custom_item": {"description": new_item["description"], "specifications": {}, "quantity": new_item["quantity"],
                         "unit": new_item["unit"], "target_price": new_item["target_price"], "notes": payload.reason.strip()},
-        "total_amount": new_item["subtotal"], "requires_approval": new_item["subtotal"] > APPROVAL_THRESHOLD,
-        "approval_threshold": APPROVAL_THRESHOLD, "expected_delivery": od.get("expected_delivery", ""),
+        "total_amount": new_item["subtotal"],
+        "requires_approval": bool(await aps.required_levels("special_order", od.get("entity_id"),
+                                                            new_item["subtotal"])),   # KP-T4
+        "approval_threshold": await aps.lowest_threshold("special_order", od.get("entity_id")),
+        "expected_delivery": od.get("expected_delivery", ""),
         "entity_id": od.get("entity_id", ""), "notes": payload.reason.strip(),
         "status_history": [{"status": "draft", "timestamp": now_iso(), "user": user.get("email", ""),
                             "note": f"Redesign dari {od.get('number')} ({design.get('code') or ''})"}],
@@ -1042,11 +1068,9 @@ async def approve_special_order_endpoint(
     if not special_order:
         raise HTTPException(status_code=404, detail="Special order tidak ditemukan")
 
-    if not await can_approve_special_order(special_order, user["role"]):
-        raise HTTPException(
-            status_code=403,
-            detail="Hanya manager/admin yang dapat approve special order dengan status pending_approval"
-        )
+    # KP-T4 — siapa yang boleh memutus dibaca `amx.guard` dari Aturan Persetujuan (dulu nama peran persis).
+    if not await can_approve_special_order(special_order):
+        raise HTTPException(status_code=409, detail="Pesanan khusus ini tidak sedang menunggu persetujuan.")
 
     entity_id = special_order.get("entity_id", "")
     chain, _cfg = await amx.special_order_chain(special_order, entity_id)
@@ -1135,11 +1159,8 @@ async def reject_special_order_endpoint(
     if not special_order:
         raise HTTPException(status_code=404, detail="Special order tidak ditemukan")
     
-    if not await can_approve_special_order(special_order, user["role"]):
-        raise HTTPException(
-            status_code=403,
-            detail="Hanya manager/admin yang dapat reject special order dengan status pending_approval"
-        )
+    if not await can_approve_special_order(special_order):   # KP-T4 — peran dari Aturan Persetujuan (`amx.guard`)
+        raise HTTPException(status_code=409, detail="Pesanan khusus ini tidak sedang menunggu persetujuan.")
     entity_id = special_order.get("entity_id", "")
     chain, _cfg = await amx.special_order_chain(special_order, entity_id)
     level = amx.pending_level(chain) or (chain[0] if chain else None)

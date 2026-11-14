@@ -7,6 +7,7 @@ import { createRoot } from "react-dom/client";
 import ConfirmHost from "../../components/ConfirmHost";
 import { EntityScopeProvider } from "../../context/EntityScopeContext";
 import ApprovalPoliciesView from "../settings/ApprovalPoliciesView";
+import ApprovalRulesSettings from "../settings/ApprovalRulesSettings";
 import { approverText, groupKinds, passingText, tableRows } from "../settings/approvalPolicyHelpers";
 
 const mockGet = jest.fn();
@@ -162,4 +163,74 @@ test("memuat / galat + coba lagi / pemilih PT memuat ulang", async () => {
   await flush();
   const last = mockGet.mock.calls.filter(([u]) => u.endsWith("/approval-policies")).pop();
   expect(last[1].params).toEqual({ entity_id: "all" });
+});
+
+// ── (b) Layar penuh: Ubah / Buat aturan khusus PT ini / Kembali ke aturan grup ──────────────────────────────────────
+
+const ADMIN = { role: "admin", permissions: { settings: ["view", "manage"] } };
+const ROLES = [{ id: "admin", label: "Admin" }, { id: "manager", label: "Manajer" }, { id: "finance", label: "Finance" }];
+async function type(el, value) {
+  const setter = Object.getOwnPropertyDescriptor(el.constructor.prototype, "value").set;
+  await act(async () => {
+    setter.call(el, value);
+    el.dispatchEvent(new Event("input", { bubbles: true }));
+  });
+  await flush();
+}
+function routeFull(list) {
+  mockGet.mockImplementation((url, cfg) => {
+    if (url.endsWith("/approval-policies/kinds")) return Promise.resolve({ data: { kinds: [], roles: ROLES } });
+    if (url.endsWith("/approval-policies/check")) return Promise.resolve({ data: { levels: [] } });
+    if (url.endsWith("/approval-policies")) return Promise.resolve({ data: list(cfg?.params) });
+    return Promise.resolve({ data: [] });
+  });
+}
+
+test("layar penuh: aturan khusus PT → Ubah & Kembali ke aturan grup; aturan grup di PT → Buat aturan khusus PT ini", async () => {
+  routeFull((p) => ({ entity_id: p.entity_id, kinds: [CA_KANDA, PO_KANDA] }));
+  await mountView(<ApprovalRulesSettings currentUser={ADMIN} />);
+  expect(q("appol-create-cash_advance")).not.toBeNull();           // sumber grup di PT Kanda
+  expect(q("appol-edit-purchase_order")).not.toBeNull();           // sumber PT
+  expect(q("appol-reset-purchase_order")).not.toBeNull();
+  expect(q("approval-rules-readonly")).toBeNull();
+});
+
+test("Ubah: pop-up baku, alasan wajib, PUT seluruh jenjang dengan versi; peran registry bisa dicentang", async () => {
+  routeFull((p) => ({ entity_id: p.entity_id, kinds: [PO_KANDA] }));
+  mockPut.mockResolvedValue({ data: { ...PO_KANDA, version: 4 } });
+  await mountView(<ApprovalRulesSettings currentUser={ADMIN} />);
+  await click(q("appol-edit-purchase_order"));
+  expect(q("appol-editor")).not.toBeNull();
+  await click(q("appol-ed-role-0-0-admin"));
+  await click(q("appol-editor-save"));
+  expect(mockPut).not.toHaveBeenCalled();                          // alasan kosong → tidak terkirim
+  expect(document.body.textContent).toContain("Alasan perubahan wajib diisi");
+  await type(q("appol-ed-reason"), "Admin ikut menyetujui PO");
+  await click(q("appol-editor-save"));
+  expect(mockPut).toHaveBeenCalledTimes(1);
+  const [url, body] = mockPut.mock.calls[0];
+  expect(url).toBe("/api/approval-policies/purchase_order");
+  expect(body).toEqual({ entity_id: "ent_kanda", expected_version: 3, reason: "Admin ikut menyetujui PO",
+    levels: [{ level: 1, label: "Persetujuan", tiers: [{ min_amount: 50 * JT, max_amount: null,
+      roles: ["manager", "finance", "admin"], any_holder: false }] }] });
+  expect(q("appol-ok")).not.toBeNull();
+});
+
+test("Kembali ke aturan grup: alasan wajib lalu DELETE berparameter PT", async () => {
+  routeFull((p) => ({ entity_id: p.entity_id, kinds: [PO_KANDA] }));
+  mockDelete.mockResolvedValue({ data: { ...PO_KANDA, source: "grup" } });
+  await mountView(<ApprovalRulesSettings currentUser={ADMIN} />);
+  await click(q("appol-reset-purchase_order"));
+  await type(q("appol-reset-confirm-reason"), "Ikuti aturan grup lagi");
+  await click(q("appol-reset-confirm-confirm"));
+  expect(mockDelete).toHaveBeenCalledWith("/api/approval-policies/purchase_order",
+    { params: { entity_id: "ent_kanda", reason: "Ikuti aturan grup lagi" } });
+});
+
+test("tanpa izin kelola: baca-saja, tidak ada tombol ubah", async () => {
+  routeFull((p) => ({ entity_id: p.entity_id, kinds: [PO_KANDA] }));
+  await mountView(<ApprovalRulesSettings currentUser={{ role: "manager", permissions: { settings: ["view"] } }} />);
+  expect(q("approval-rules-readonly")).not.toBeNull();
+  expect(q("appol-edit-purchase_order")).toBeNull();
+  expect(q("appol-reset-purchase_order")).toBeNull();
 });

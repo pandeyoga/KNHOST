@@ -13,6 +13,7 @@ from fastapi.responses import Response
 from pydantic import BaseModel
 
 from dependencies import require_permission, audit
+from services import approval_policy_service as _aps   # KP-T4 — satu tabel kebijakan persetujuan
 from entity_scope import entity_ctx, resolve_list_scope, assert_entity_access
 from schemas_design_gallery import (DesignAiIllustrateIn, DesignApproveIn, DesignRatingIn,
                                     DesignRejectIn, DesignTransitionIn, DesignVersionIn, GalleryInput,
@@ -203,6 +204,7 @@ async def design_claim_decide(gallery_id: str, claim_id: str, payload: DesignCla
     from services import design_ownership_service as own
     actor = await require_permission(request, "design_ownership", "decide")
     await _guard(gallery_id, await entity_ctx(request))
+    await _aps.guard_door("design_claim", actor, collection="design_gallery", doc_id=gallery_id)   # KP-T4
     try:
         await own.decide_claim(gallery_id, claim_id, payload.approve, actor, payload.reason)
     except own.OwnershipError as exc:

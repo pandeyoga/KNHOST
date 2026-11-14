@@ -14,6 +14,7 @@ from fastapi import APIRouter, HTTPException, Query, Request
 from pydantic import BaseModel, Field
 
 from dependencies import audit, require_permission
+from services import approval_policy_service as _aps   # KP-T4 — satu tabel kebijakan persetujuan
 from entity_scope import assert_entity_access, entity_ctx, guard_doc, resolve_requested_entity, scope_value
 from services import payment_variance_service as pvs
 
@@ -150,6 +151,8 @@ async def decide(receipt_id: str, body: DecideBody, request: Request) -> Dict[st
     from db import db
     rcpt = await db.ar_receipts.find_one({"id": receipt_id}, {"_id": 0})
     await guard_doc(request, "ar_receipts", rcpt, not_found="Kwitansi tidak ditemukan")   # PK-09 E23
+    await _aps.guard_door("payment_variance", actor, doc=rcpt,
+                          amount=abs(float(((rcpt or {}).get("variance") or {}).get("delta") or 0)))   # KP-T4
     # KF-T6 — pencatat kwitansi ≠ pemutus selisih dari `kontrol.pengurang_piutang.*` (403 di jalur antrean).
     from services import dual_control as _dc
     _v = (rcpt or {}).get("variance") or {}

@@ -9,12 +9,10 @@ po_custom, purchase_request) sehingga tidak ada dua sumber kebenaran:
   • `record()`    — tulis jejak ke koleksi `approval_matrix_log` + `audit_logs`.
   • `my_queue()`  — antrean lintas-tahap: apa yang menunggu keputusan SAYA.
 
-Kebijakan (Pusat Pengaturan → Persetujuan & Ambang; lihat `config_catalog_approval_matrix.py`):
-  approval.matrix_enforcement   off | warn | enforce      (bawaan enforce)
-  approval.matrix_scope         all_pending | new_only     (bawaan all_pending)
-  approval.matrix_effective_from  TTTT-BB-HH               (dipakai bila new_only)
-  approval.matrix_sod           bool  — KF-T6: TIDAK DIPAKAI; pemisahan tugas kini `kontrol.<aksi>.min_orang`
-  approval.po_custom_direksi_min money                      (ambang tingkat 2 Direksi)
+KP-T4 — SIAPA yang boleh memutus tiap tahap (dan mulai nominal berapa) dibaca dari SATU tabel kebijakan
+`approval_policies` (`services/approval_policy_service.py`; tahap → jenis dokumen di `STAGE_KIND`). Daftar peran per
+tingkat di `config_divisions.APPROVER_MATRIX` dan kunci `approval.matrix_*` / `approval.po_custom_direksi_min` tidak
+dipakai lagi (nilainya membentuk baris bawaan). Pemisahan tugas tetap `kontrol.<aksi>.*` (KF-T6, `STAGE_AKSI`).
 
 Catatan: "Direksi" = peran **admin** (keputusan pemilik) — tidak ada peran baru.
 """
@@ -24,28 +22,26 @@ from typing import Any, Dict, List, Optional, Tuple
 
 from fastapi import HTTPException
 
-from config_divisions import (APPROVER_MATRIX, DIREKSI_MIN_KEY, STAGE_BY_ID,
-                              role_label, roles_label, stage_label)
+from config_divisions import (APPROVER_MATRIX, STAGE_BY_ID, role_label, roles_label,
+                              stage_label)
 from core_utils import new_id, now_iso, safe_doc
 from db import db
-from services.config_resolver import value_of
-from config_registry import default_of   # KF-T2 — cadangan = bawaan registry
 logger = logging.getLogger(__name__)
 
 
 LOG_COLL = "approval_matrix_log"
 
-K_MODE = "approval.matrix_enforcement"
-K_SCOPE = "approval.matrix_scope"
-K_FROM = "approval.matrix_effective_from"
-K_SOD = "approval.matrix_sod"   # KF-T6 — not_used; alias `settings()["sod"]` dihitung dari `dual_control`
+# KP-T4 — kunci `approval.matrix_enforcement|scope|effective_from` (mode/cakupan matriks) tidak dipakai lagi: penegakan
+# selalu dari Aturan Persetujuan. `approval.matrix_sod` sudah tidak dipakai sejak KF-T6 (alias `settings()["sod"]`).
+
+# KP-T4 — tahap matriks → jenis dokumen Aturan Persetujuan (`approval_kinds.APPROVAL_KINDS`).
+STAGE_KIND = {"design_acc": "rnd_spec", "sample_acc": "rnd_sample", "po_custom": "special_order",
+              "purchase_request": "purchase_requisition", "makloon_claim": "makloon_claim"}
 
 # KF-T6 — tahap matriks → aksi kontrol dua orang (`config_catalog_kontrol.KONTROL_AKSI`).
 STAGE_AKSI = {"design_acc": "acc_desain", "sample_acc": "acc_sample", "po_custom": "po_custom",
               "purchase_request": "permintaan_pembelian"}
 
-MODES = ("off", "warn", "enforce")
-SCOPES = ("all_pending", "new_only")
 
 
 # ─── Kebijakan ──────────────────────────────────────────────────────
@@ -65,55 +61,43 @@ def _as_float(v: Any, default: float = 0.0) -> float:
 
 
 async def settings(entity_id: str = "") -> Dict[str, Any]:
-    """Kebijakan penegakan yang BERLAKU (berlapis global → entitas)."""
-    ctx = {"entity_id": entity_id or ""}
-    mode = str(await value_of(K_MODE, ctx) or "enforce").strip().lower()
-    scope = str(await value_of(K_SCOPE, ctx) or "all_pending").strip().lower()
-    eff = str(await value_of(K_FROM, ctx) or "").strip()[:10]
+    """Ringkasan kebijakan untuk layar (Pusat Persetujuan / Divisi). KP-T4 — penegakan selalu dari Aturan Persetujuan
+    (mode/cakupan matriks lama tidak dipakai lagi); `po_custom_direksi_min` = batas bawah jenjang 2 pesanan khusus di
+    tabel (0 bila tidak ada jenjang 2)."""
     # KF-T6 — alias: "pemisahan tugas aktif" = salah satu tahap matriks butuh orang kedua di PT ini.
     from services import dual_control as _dc
+    from services import approval_policy_service as _aps
     sod = False
     for _aksi in STAGE_AKSI.values():
         if await _dc.butuh_orang_kedua(_aksi, entity_id or ""):
             sod = True
             break
-    direksi_min = _as_float(await value_of(DIREKSI_MIN_KEY, ctx), default_of(DIREKSI_MIN_KEY))   # KF-T2 (KF-06)
-    if mode not in MODES:
-        mode = "enforce"
-    if scope not in SCOPES:
-        scope = "all_pending"
+    rows = (await _aps.rows_for("special_order", entity_id or None))["rows"]
+    j2 = sorted([_as_float(r.get("min_amount")) for r in rows if int(r.get("level") or 1) == 2
+                 and (r.get("roles") or r.get("any_holder"))])
     return {
-        "mode": mode, "scope": scope, "effective_from": eff, "sod": sod,
-        "po_custom_direksi_min": direksi_min,
-        "mode_label": {"off": "Nonaktif (rujukan saja)", "warn": "Peringatkan saja",
-                       "enforce": "Ditegakkan"}[mode],
-        "scope_label": ("Semua dokumen (termasuk yang menunggu)"
-                        if scope == "all_pending" else "Hanya dokumen baru"),
+        "mode": "enforce", "scope": "all_pending", "effective_from": "", "sod": sod,
+        "po_custom_direksi_min": j2[0] if j2 else 0.0,
+        "mode_label": "Ditegakkan (Aturan Persetujuan)",
+        "scope_label": "Semua dokumen (termasuk yang menunggu)",
     }
 
 
-# ─── Tingkat persetujuan per tahap ─────────────────────────────────────
-def levels_for(stage: str, amount: float = 0.0, direksi_min: float = 0.0) -> List[Dict[str, Any]]:
-    """Tingkat yang BERLAKU untuk satu dokumen (tingkat ber-ambang ikut nilai dokumen)."""
-    st = STAGE_BY_ID.get(stage) or {}
-    out: List[Dict[str, Any]] = []
-    for lv in st.get("levels") or []:
-        if lv.get("min_amount_key") == DIREKSI_MIN_KEY:
-            if _as_float(amount) < _as_float(direksi_min):
-                continue
-        out.append({"level": len(out) + 1, "label": lv.get("label") or "Persetujuan",
-                    "roles": list(lv.get("roles") or []),
-                    "roles_label": roles_label(list(lv.get("roles") or [])),
-                    "min_amount": (_as_float(direksi_min)
-                                   if lv.get("min_amount_key") == DIREKSI_MIN_KEY else 0.0)})
-    if not out:  # jaring aman: selalu ada minimal satu tingkat
-        out = [{"level": 1, "label": "Persetujuan", "roles": ["manager", "admin"],
-                "roles_label": roles_label(["manager", "admin"]), "min_amount": 0.0}]
-    return out
+# ─── Tingkat persetujuan per tahap (KP-T4: dari Aturan Persetujuan) ─────────────────────
+async def levels_for(stage: str, amount: float = 0.0, entity_id: str = "") -> List[Dict[str, Any]]:
+    """Tingkat yang BERLAKU untuk satu dokumen menurut Aturan Persetujuan (jenis `STAGE_KIND[stage]`)."""
+    from services import approval_policy_service as _aps
+    kind = STAGE_KIND.get(stage)
+    lv = await _aps.required_levels(kind, entity_id or None, _as_float(amount)) if kind else []
+    return [{"level": x["level"], "label": x["label"], "roles": list(x["roles"]), "any_holder": x["any_holder"],
+             "roles_label": ("Semua pemegang akses" if x["any_holder"] else roles_label(list(x["roles"]))),
+             "rule_id": x["rule_id"], "policy_kind": kind, "min_amount": 0.0} for x in lv]
 
 
 def build_chain(levels: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    """Rantai tersimpan dokumen baru: potret `roles` + id baris kebijakan (D3)."""
     return [{"level": lv["level"], "label": lv["label"], "roles": lv["roles"],
+             "rule_id": lv.get("rule_id", ""), "policy_kind": lv.get("policy_kind", ""),
              "status": "pending", "approved_by": "", "approved_by_id": "",
              "approved_at": ""} for lv in levels]
 
@@ -158,32 +142,6 @@ def is_requester(doc: Dict[str, Any], actor: Dict[str, Any]) -> bool:
     return bool(mine & theirs)
 
 
-# ─── Retroaktif (dokumen lama vs baru) ──────────────────────────────────
-def _doc_date(doc: Dict[str, Any]) -> str:
-    for f in ("created_at", "submitted_at", "updated_at"):
-        v = (doc or {}).get(f)
-        if isinstance(v, str) and len(v) >= 10:
-            return v[:10]
-        if isinstance(v, datetime):
-            return v.astimezone(timezone.utc).date().isoformat()
-    return ""
-
-
-def is_legacy_doc(doc: Dict[str, Any], cfg: Dict[str, Any]) -> bool:
-    """Dokumen dianggap LAMA (dikecualikan) hanya bila kebijakan `new_only`."""
-    if cfg.get("scope") != "new_only":
-        return False
-    eff = (cfg.get("effective_from") or "")[:10] or date.today().isoformat()
-    dd = _doc_date(doc)
-    if not dd:
-        return True  # tanpa tanggal = data lama
-    return dd < eff
-
-
-# Alias lama (kompatibilitas internal)
-_is_legacy_doc = is_legacy_doc
-
-
 def is_admin(actor: Dict[str, Any]) -> bool:
     """2026-10 — keputusan pemilik: admin melewati SEMUA persetujuan & boleh menyetujui sendiri."""
     return str((actor or {}).get("role") or "").strip().lower() == "admin"
@@ -194,52 +152,34 @@ def is_admin(actor: Dict[str, Any]) -> bool:
 
 
 # ─── Inti keputusan ───────────────────────────────────────────────
-def evaluate(stage: str, actor: Dict[str, Any], doc: Dict[str, Any],
-             cfg: Dict[str, Any], amount: Optional[float] = None,
-             level: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
-    """MURNI (tanpa I/O): boleh atau tidak seseorang memutuskan tahap ini sekarang."""
+async def evaluate(stage: str, actor: Dict[str, Any], doc: Dict[str, Any],
+                   cfg: Dict[str, Any], amount: Optional[float] = None,
+                   level: Optional[Dict[str, Any]] = None, action: str = "approve") -> Dict[str, Any]:
+    """Boleh atau tidak seseorang memutuskan tahap ini sekarang — KP-T4: `approval_policy_service.can_decide`
+    (peran tercantum di Aturan Persetujuan untuk jenis, PT, nilai, jenjang). Izin pintu diperiksa routernya."""
+    from services import approval_policy_service as _aps
     st = STAGE_BY_ID.get(stage) or {}
     amt = _as_float(amount if amount is not None else (doc or {}).get("total_amount"), 0.0)
-    lv_all = levels_for(stage, amt, cfg.get("po_custom_direksi_min", default_of(DIREKSI_MIN_KEY)))   # KF-T2 (KF-06)
+    ent = (doc or {}).get("entity_id") or ""
+    lv_all = await levels_for(stage, amt, ent)
     chain = (doc or {}).get("approval_chain") or []
-    cur = level or pending_level(chain) or lv_all[0]
-    roles = list(cur.get("roles") or [])
-    role = str((actor or {}).get("role") or "").strip().lower()
-
+    cur = level or pending_level(chain) or (lv_all[0] if lv_all else {"level": 1, "label": "Persetujuan",
+                                                                         "roles": []})
+    kind = STAGE_KIND.get(stage, "")
+    dec = await _aps.can_decide(kind, ent or None, amt, actor or {}, int(cur.get("level") or 1),
+                                action=action, check_permission=False, snapshot_roles=cur.get("roles"))
     res: Dict[str, Any] = {
         "stage": stage, "stage_label": st.get("label") or stage_label(stage),
         "mode": cfg.get("mode"), "scope": cfg.get("scope"),
         "level": cur.get("level", 1), "level_label": cur.get("label", ""),
-        "roles": roles, "roles_label": roles_label(roles),
-        "levels": lv_all, "levels_total": len(lv_all),
-        "amount": amt, "enforced": True, "allowed": True,
-        "reasons": [], "skip_reason": "",
+        "roles": list(cur.get("roles") or []), "roles_label": ", ".join(dec.get("who") or []),
+        "levels": lv_all, "levels_total": len(lv_all) or 1,
+        "amount": amt, "enforced": True, "allowed": bool(dec["allowed"]),
+        "reasons": [] if dec["allowed"] else [{"code": "role", "message": dec["message"]}],
+        "skip_reason": "",
     }
-
-    if cfg.get("mode") == "off":
-        res["enforced"] = False
-        res["skip_reason"] = "Penegakan matriks dinonaktifkan di Pusat Pengaturan."
-        return res
-    if _is_legacy_doc(doc or {}, cfg):
-        res["enforced"] = False
-        res["skip_reason"] = ("Dokumen lama — kebijakan 'Hanya dokumen baru' "
-                              f"(berlaku sejak {cfg.get('effective_from') or date.today().isoformat()}).")
-        return res
-
-    if role == "admin":
-        res["admin_bypass"] = True
-        res["blocked"] = False
-        return res
-    if roles and role not in roles:
-        res["allowed"] = False
-        res["reasons"].append({
-            "code": "role",
-            "message": (f"Tahap “{res['stage_label']}” tingkat {res['level']} "
-                        f"({cur.get('label', '')}) hanya boleh diputuskan oleh "
-                        f"{roles_label(roles)} sesuai matriks persetujuan divisi. "
-                        f"Peran Anda: {role_label(role)}.")})
-    # KF-T6 — pemisahan tugas TIDAK lagi dinilai di sini: `guard` memanggil `dual_control` (aksi = `STAGE_AKSI`).
-    res["blocked"] = bool(not res["allowed"] and cfg.get("mode") == "enforce")
+    # KF-T6 — pemisahan tugas TIDAK dinilai di sini: `guard` memanggil `dual_control` (aksi = `STAGE_AKSI`).
+    res["blocked"] = not res["allowed"]
     return res
 
 
@@ -247,20 +187,18 @@ async def guard(stage: str, actor: Dict[str, Any], doc: Dict[str, Any],
                 entity_id: str = "", amount: Optional[float] = None,
                 level: Optional[Dict[str, Any]] = None,
                 action: str = "approve") -> Dict[str, Any]:
-    """Penjaga endpoint: 403 bila tidak berhak (mode `enforce`). Pelanggaran dicatat."""
+    """Penjaga endpoint: 403 bila peran tidak tercantum di Aturan Persetujuan (satu pesan, dari tabel). Dicatat."""
     cfg = await settings(entity_id)
-    res = evaluate(stage, actor, doc, cfg, amount=amount, level=level)
+    res = await evaluate(stage, actor, {**(doc or {}), "entity_id": entity_id or (doc or {}).get("entity_id", "")},
+                         cfg, amount=amount, level=level, action=action)
     res["config"] = cfg
     if not res.get("allowed"):
         detail = " ".join(r["message"] for r in res.get("reasons") or [])
         await record(stage=stage, action=action, actor=actor, doc=doc, entity_id=entity_id,
                      level=res.get("level", 1), level_label=res.get("level_label", ""),
-                     outcome=("ditolak sistem" if cfg.get("mode") == "enforce"
-                              else "pelanggaran dicatat (mode peringatan)"),
-                     note=detail, enforced=res.get("enforced", True),
+                     outcome="ditolak sistem", note=detail, enforced=True,
                      violation=True, reasons=res.get("reasons") or [])
-        if cfg.get("mode") == "enforce":
-            raise HTTPException(status_code=403, detail=detail)
+        raise HTTPException(status_code=403, detail=detail)
     # KF-T6 — pengaju ≠ pemutus: satu pembantu, aksi tahap ini (berlaku juga untuk menolak, seperti sebelumnya).
     if stage in STAGE_AKSI:
         from services import dual_control as _dc
@@ -396,11 +334,9 @@ async def my_queue(actor: Dict[str, Any], entity_id: str = "",
                    requester: str, since: str, ready: bool = True,
                    ready_note: str = "", extra: Optional[Dict[str, Any]] = None) -> None:
         st = STAGE_BY_ID[stage_id]
-        ev = evaluate(stage_id, actor, doc, cfg, amount=amount)
+        ev = await evaluate(stage_id, actor, doc, cfg, amount=amount)   # KP-T4 — Aturan Persetujuan
         reasons = list(ev.get("reasons") or [])
-        can = bool(ev.get("allowed")) or not ev.get("enforced", True)
-        if cfg.get("mode") == "warn" and not ev.get("allowed"):
-            can = True  # mode peringatan: tetap boleh, pelanggaran dicatat
+        can = bool(ev.get("allowed"))
         # KF-T6 — pengaju ≠ pemutus dari `dual_control` (penilaian tanpa efek; I/O hanya untuk dokumen milik aktor).
         aksi = STAGE_AKSI.get(stage_id) or ("klaim_makloon" if stage_id == "makloon_claim" else "")
         pengaju = [requester] if stage_id == "makloon_claim" else None
@@ -541,14 +477,21 @@ async def my_queue(actor: Dict[str, Any], entity_id: str = "",
 async def matrix(entity_id: str = "") -> Dict[str, Any]:
     """Matriks + kebijakan penegakan (untuk layar Divisi & Persetujuan / Pusat Persetujuan)."""
     cfg = await settings(entity_id)
+    from services import approval_policy_service as _aps
     stages: List[Dict[str, Any]] = []
     for s in APPROVER_MATRIX:
-        lv = levels_for(s["stage"], amount=cfg["po_custom_direksi_min"],
-                        direksi_min=cfg["po_custom_direksi_min"])
+        view = await _aps.policy_view(STAGE_KIND[s["stage"]], entity_id or None)
+        lv = []
+        for x in view["levels"]:
+            t = next((t for t in x["tiers"] if t["roles"] or t["any_holder"]), None)
+            if t:
+                lv.append({"level": x["level"], "label": x["label"], "roles": t["roles"],
+                           "roles_label": ", ".join(t["role_labels"]) or "Semua pemegang akses",
+                           "min_amount": t["min_amount"] or 0})
         stages.append({**{k: s[k] for k in ("stage", "label", "approvers", "note",
                                             "doc_type", "doc_label", "view")},
-                       "levels": lv,
-                       "binding": cfg["mode"] != "off",
+                       "levels": lv, "policy_kind": STAGE_KIND[s["stage"]],
+                       "binding": True,
                        "endpoints": _ENDPOINTS.get(s["stage"], [])})
     return {"stages": stages, "config": cfg,
             "approver_matrix": APPROVER_MATRIX}
@@ -569,8 +512,9 @@ _ENDPOINTS = {
 # ─── Bantuan khusus PO Custom (2 tingkat) ─────────────────────────────────
 async def special_order_chain(doc: Dict[str, Any], entity_id: str = "") -> Tuple[List[Dict[str, Any]], Dict[str, Any]]:
     """Rantai persetujuan pesanan khusus (dibuat sekali, lalu dipakai apa adanya)."""
-    cfg = await settings(entity_id or (doc or {}).get("entity_id", ""))
-    lv = levels_for("po_custom", _as_float((doc or {}).get("total_amount")),
-                    cfg["po_custom_direksi_min"])
-    chain = (doc or {}).get("approval_chain") or build_chain(lv)
+    ent = entity_id or (doc or {}).get("entity_id", "")
+    cfg = await settings(ent)
+    chain = (doc or {}).get("approval_chain")
+    if not chain:   # KP-T4 — jenjang dari Aturan Persetujuan (jenis `special_order`)
+        chain = build_chain(await levels_for("po_custom", _as_float((doc or {}).get("total_amount")), ent))
     return chain, cfg

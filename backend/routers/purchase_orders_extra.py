@@ -9,6 +9,7 @@ from typing import Any, Dict, List
 from fastapi import APIRouter, HTTPException, Request
 from pymongo import ReturnDocument
 from db import db
+from services import approval_policy_service as _aps   # KP-T4 — satu tabel kebijakan persetujuan
 from dependencies import require_permission, audit
 from core_utils import now_iso, safe_doc, timeline_entry
 from entity_scope import entity_ctx, resolve_list_scope
@@ -190,6 +191,7 @@ async def decide_po_variance_task(task_id: str, payload: Dict[str, Any], request
     actor = await require_permission(request, "purchase_order", "update")
     from entity_scope import resolve_scope_ids
     from services import po_variance_task_service as pvt
+    await _aps.guard_door("po_variance", actor, collection="po_variance_tasks", doc_id=task_id)   # KP-T4
 
     async def _sc(pid: str, act: Dict[str, Any], why: str) -> Dict[str, Any]:
         po = await db.purchase_orders.find_one({"id": pid}, {"_id": 0})

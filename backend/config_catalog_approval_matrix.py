@@ -13,6 +13,9 @@ from config_registry import E
 G = ("global", "entity")
 _SVC = "services/approval_matrix_service.py"
 
+# KP-T4 — alasan baku kunci persetujuan yang pindah ke Aturan Persetujuan.
+_KPT4_TIDAK_DIPAKAI = ("Dipindah ke Aturan Persetujuan (Pengaturan › Persetujuan › Aturan Persetujuan). Nilai terakhirnya hanya membentuk aturan bawaan selama aturan belum disimpan.")
+
 E("approval.matrix_enforcement", group="persetujuan", type="enum", default="enforce",
   options=({"value": "off", "label": "Nonaktif — matriks hanya jadi rujukan tampilan"},
            {"value": "warn", "label": "Peringatkan saja — dicatat, tetapi tetap boleh lanjut"},
@@ -27,10 +30,11 @@ E("approval.matrix_enforcement", group="persetujuan", type="enum", default="enfo
          "jejak persetujuan. Pada 'Peringatkan saja', tindakan tetap lanjut namun ditandai "
          "pelanggaran di jejak sehingga bisa diaudit.",
   example="Sales mencoba meng-ACC desain → ditolak: hanya Manager (atau Direksi/Admin) yang berhak",
-  consumers=(f"{_SVC}:settings", f"{_SVC}:evaluate", "routers/rnd.py",
-             "routers/purchase_requisitions.py", "routers/special_orders.py"),
+  consumers=("services/approval_policy_service.py:default_rows_for",),
   related=("approval.matrix_scope", "approval.matrix_sod"), risk="high",
-  permission=("rnd", "manage"))
+  permission=("rnd", "manage"),
+  # KP-T4 — isi kunci ini pindah ke tabel kebijakan persetujuan (`approval_policies`).
+  status="not_used", not_used_reason=_KPT4_TIDAK_DIPAKAI)
 
 E("approval.matrix_scope", group="persetujuan", type="enum", default="all_pending",
   options=({"value": "all_pending", "label": "Semua dokumen — termasuk yang masih menunggu persetujuan"},
@@ -44,9 +48,11 @@ E("approval.matrix_scope", group="persetujuan", type="enum", default="all_pendin
          "tidak diperiksa matriks (tetap bisa diselesaikan approver lama).",
   example="Ada 5 PR menunggu sejak minggu lalu → pada 'Semua dokumen', kelimanya kini wajib "
           "disetujui Manager yang bukan pengajunya",
-  consumers=(f"{_SVC}:settings", f"{_SVC}:evaluate"),
+  consumers=("services/approval_policy_service.py:default_rows_for",),
   related=("approval.matrix_effective_from",), risk="high",
-  permission=("rnd", "manage"))
+  permission=("rnd", "manage"),
+  # KP-T4 — isi kunci ini pindah ke tabel kebijakan persetujuan (`approval_policies`).
+  status="not_used", not_used_reason=_KPT4_TIDAK_DIPAKAI)
 
 E("approval.matrix_effective_from", group="persetujuan", type="text", default="",
   scopes=G,
@@ -55,9 +61,11 @@ E("approval.matrix_effective_from", group="persetujuan", type="text", default=""
        "dianggap dokumen lama. Bila dibiarkan kosong, sistem memakai tanggal hari ini.",
   impact="Mengubah tanggal ini menggeser garis batas antara dokumen lama dan baru.",
   example="Diisi 2026-08-10 → PR tanggal 9 Agustus tidak diperiksa, PR tanggal 10 Agustus diperiksa",
-  consumers=(f"{_SVC}:settings", f"{_SVC}:evaluate"),
+  consumers=("services/approval_policy_service.py:default_rows_for",),
   related=("approval.matrix_scope",), risk="medium",
-  permission=("rnd", "manage"))
+  permission=("rnd", "manage"),
+  # KP-T4 — isi kunci ini pindah ke tabel kebijakan persetujuan (`approval_policies`).
+  status="not_used", not_used_reason=_KPT4_TIDAK_DIPAKAI)
 
 E("approval.matrix_sod", group="persetujuan", type="bool", default=True, scopes=G,
   label="Pengaju tidak boleh menyetujui dokumennya sendiri",
@@ -80,6 +88,8 @@ E("approval.po_custom_direksi_min", group="persetujuan", type="money", default=5
   impact="Menaikkan angka membuat lebih banyak pesanan cukup disetujui Manager saja; "
          "menurunkannya membuat lebih banyak pesanan wajib menunggu Direksi.",
   example="Diisi 50.000.000 → pesanan khusus Rp 80 juta butuh Manager LALU Direksi",
-  consumers=(f"{_SVC}:levels_for", "routers/special_orders.py"),
+  consumers=("services/approval_policy_service.py:default_rows_for",),
   related=("approval.matrix_enforcement",), risk="medium",
-  permission=("rnd", "manage"))
+  permission=("rnd", "manage"),
+  # KP-T4 — isi kunci ini pindah ke tabel kebijakan persetujuan (`approval_policies`).
+  status="not_used", not_used_reason=_KPT4_TIDAK_DIPAKAI)

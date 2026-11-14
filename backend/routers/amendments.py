@@ -20,6 +20,7 @@ from typing import Any, Dict, List, Optional
 from fastapi import APIRouter, HTTPException, Request
 
 from dependencies import audit, require_permission
+from services import approval_policy_service as _aps   # KP-T4 — satu tabel kebijakan persetujuan
 from db import db
 from entity_scope import assert_entity_access, entity_ctx, resolve_list_scope
 from services import sales_ownership
@@ -155,6 +156,7 @@ async def review_od_cancel_credit_note(cn_id: str, payload: Dict[str, Any], requ
     Manager, Admin — dapat diatur di matriks izin)."""
     from services import od_cancel_credit_note as occn
     actor = await require_permission(request, "finance_amendment", "review_credit_note")
+    await _aps.guard_door("od_cancel_credit_note", actor, collection="credit_notes", doc_id=cn_id)   # KP-T4
     action = str((payload or {}).get("action") or "")
     row = await occn.review(cn_id, action, payload or {}, actor, await entity_ctx(request))
     await audit(actor.get("name", ""), f"od_cancel_credit_note_{action}", "credit_notes", cn_id,

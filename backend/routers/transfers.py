@@ -3,6 +3,7 @@ from typing import Any, Dict, List, Optional
 from fastapi import APIRouter, HTTPException, Request, Query, Response
 from pymongo import ReturnDocument
 from db import db
+from services import approval_policy_service as _aps   # KP-T4 — satu tabel kebijakan persetujuan
 from services import dual_qty_service as _dual  # FASE U — dua satuan (roll + ukuran)
 from dependencies import require_permission, audit
 from core_utils import new_id, now_iso, safe_doc, next_doc_number
@@ -558,6 +559,7 @@ async def approve_transfer(transfer_id: str, payload: TransferApprove, request: 
     """
     actor = await require_permission(request, "transfer", "approve")
     transfer, _ctx = await _guard_transfer(request, transfer_id, side="source")  # FASE E-0 (L13)
+    await _aps.guard_door("transfer", actor, doc=transfer)   # KP-T4 — Aturan Persetujuan
     if transfer["status"] != "waiting_approval":
         raise HTTPException(status_code=400, detail=f"Transfer tidak bisa diapprove (status: {transfer['status']})")
     # KF-T6 — pengaju ≠ penyetuju dari `kontrol.transfer_gudang.*` (bawaan satu orang). Dokumen lama hanya menyimpan

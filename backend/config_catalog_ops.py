@@ -35,6 +35,9 @@ _LOT_PERM = ("inventory", "configure")
 _GRN_PERM = ("goods_receipt", "configure")
 _MAKLOON_PERM = ("makloon", "configure")
 
+# KP-T4 — alasan baku kunci persetujuan yang pindah ke Aturan Persetujuan.
+_KPT4_TIDAK_DIPAKAI = ("Dipindah ke Aturan Persetujuan (Pengaturan › Persetujuan › Aturan Persetujuan). Nilai terakhirnya hanya membentuk aturan bawaan selama aturan belum disimpan.")
+
 E("uom.warn_pct", group="stok-satuan", type="pct", default=2.0, min=0, max=100, step=0.5,
   unit="%", scopes=G, simulate="uom_variance",
   label="Selisih konversi — batas peringatan",
@@ -357,8 +360,10 @@ E("makloon.claim_approval_roles", group="makloon", type="list",
   help="Daftar peran yang berwenang menyetujui aksi klaim (potong bon / ganti rugi / terima).",
   impact="Menentukan siapa yang bisa menutup klaim dan membebankan biaya ke mitra.",
   example="['manager','admin'] → supervisor gudang tidak bisa menyetujui klaim",
-  consumers=("services/makloon_claim_service.py", "services/contract_service.py"), risk="high",
-  permission=_MAKLOON_PERM)
+  consumers=("services/approval_policy_service.py:default_rows_for",), risk="high",
+  permission=_MAKLOON_PERM,
+  # KP-T4 — isi kunci ini pindah ke tabel kebijakan persetujuan (`approval_policies`).
+  status="not_used", not_used_reason=_KPT4_TIDAK_DIPAKAI)
 
 E("makloon.contract_mode", group="makloon", type="enum", default="warn",
   options=({"value": "off", "label": "Tidak diwajibkan"},

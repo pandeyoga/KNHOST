@@ -80,9 +80,11 @@ async def test_PRT7_U3b_employee_id_mengikuti_tautan_karyawan(klien, akun, db, k
 
 
 async def _siapkan_sample(db, klien, kepala_admin) -> None:
-    r = await klien.put("/api/config/values", headers=kepala_admin, json={"items": [{
-        "key": "rnd.sample_decision_roles", "value": ["manager"], "scope_type": "global", "scope_id": "",
-        "reason": "uji PR-T7 U4: hanya manajer memutus pemenang"}]})
+    # KP-T4 — kebijakan "siapa memutus pemenang sample" kini baris Aturan Persetujuan (jenis `rnd_sample`); kunci lama
+    # `rnd.sample_decision_roles` berstatus tidak dipakai (400 bila ditulis). Aturan grup: hanya Manajer.
+    r = await klien.put("/api/approval-policies/rnd_sample", headers=kepala_admin, json={
+        "entity_id": "all", "expected_version": None, "reason": "uji PR-T7 U4: hanya manajer memutus pemenang",
+        "levels": [{"level": 1, "label": "", "tiers": [{"roles": ["manager"]}]}]})
     assert r.status_code == 200, r.text
     if not await db.md_samples.find_one({"id": SAMPLE_ID}):
         await db.md_samples.insert_one({
@@ -129,8 +131,9 @@ async def test_PRT7_U4b_approve_spec_dan_uji_ulang(klien, sesi, db, kepala_admin
     await _siapkan_sample(db, klien, kepala_admin)
     adm = kepala_admin
     caps = (await klien.get(f"/api/rnd/samples/{SAMPLE_ID}", headers=adm)).json()["caps"]
-    allowed = await specs._policy_roles("spec_approval_roles", "ent_ksc")
-    assert caps["approve_spec"] is (not allowed or "admin" in allowed)
+    # KP-T4 — pemeriksa server = Aturan Persetujuan jenis `rnd_spec` (bawaan dari kebijakan lama); bendera sama dengannya.
+    adm_actor = {"role": "admin", "id": "uji_admin_prt7"}
+    assert caps["approve_spec"] is await specs.role_allowed(adm_actor, "spec_approval_roles", "ent_ksc")
     assert caps["pick_winner"] is False   # admin tidak tercantum di ["manager"]
     await db.md_samples.update_one({"id": SAMPLE_ID}, {"$set": {"purpose": "revalidation",
                                                                  "revalidation": {"supplier_id": "sup_x"}}})

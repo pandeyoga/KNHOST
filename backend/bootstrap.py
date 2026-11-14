@@ -1766,7 +1766,8 @@ async def seed_hr_payroll_foundation() -> None:
 
 async def seed_sales_extras_foundation() -> None:
     """Seed contoh Special Order (OD) & Sales Return (idempotent) agar UI tidak kosong."""
-    from services.special_order_service import generate_special_order_number, APPROVAL_THRESHOLD
+    from services.special_order_service import generate_special_order_number
+    from services import approval_policy_service as _aps   # KP-T4 — ambang dari Aturan Persetujuan
     from services.return_service import next_return_number
     from datetime import datetime, timedelta, timezone
     entity_id = PRIMARY_ENTITY_ID
@@ -1804,8 +1805,10 @@ async def seed_sales_extras_foundation() -> None:
                     "shipping_address": addr,
                     "custom_item": {"description": s["desc"], "specifications": {"warna": "custom", "lebar": "1.5m"},
                                     "quantity": s["qty"], "unit": s["unit"], "target_price": s["price"], "notes": ""},
-                    "total_amount": total, "requires_approval": total > APPROVAL_THRESHOLD,
-                    "approval_threshold": APPROVAL_THRESHOLD, "expected_delivery": "",
+                    "total_amount": total,
+                    "requires_approval": bool(await _aps.required_levels("special_order", entity_id, total)),
+                    "approval_threshold": await _aps.lowest_threshold("special_order", entity_id),
+                    "expected_delivery": "",
                     "entity_id": entity_id, "notes": "Contoh data demo",
                     "status_history": [{"status": s["status"], "timestamp": dibuat, "user": "system-seed"}],
                     "created_at": dibuat, "created_by": "system-seed", "updated_at": dibuat,

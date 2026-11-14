@@ -582,8 +582,8 @@ async def _action_block_reason(key: str, doc: Dict[str, Any],
     stage = _STAGE_BY_KEY.get(key)
     if stage:
         cfg = await amx.settings(entity_id)
-        ev = amx.evaluate(stage, actor, doc, cfg,
-                          amount=_as_float(doc.get("total_amount")))
+        ev = await amx.evaluate(stage, actor, doc, cfg,
+                                amount=_as_float(doc.get("total_amount")))   # KP-T4 — Aturan Persetujuan
         if ev.get("blocked"):
             return " ".join(r["message"] for r in ev.get("reasons") or [])
         return ""

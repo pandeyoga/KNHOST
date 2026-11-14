@@ -565,8 +565,14 @@ def test_cycle(admin: str, mgr: str, cb: Dict[str, Any]) -> Dict[str, Any]:
     ok(self_ap.status_code == 403 and "diputuskan orang lain" in self_ap.text,   # KF-T6 — pesan kontrol dua orang
        "pembuat kontrabon TIDAK boleh menyetujui kontrabon sendiri (SoD)", self_ap.text[:120])
 
-    ok(cfg_set(admin, "contra_bon.approval_threshold_rupiah", 1000, "entity", ENT_A),
-       "ambang 'kontrabon bernilai besar' diturunkan ke Rp 1.000 (uji wewenang)")
+    # KP-T4 — ambang & peran persetujuan kontrabon kini Aturan Persetujuan (jenis `contra_bon_approve`), bukan kunci
+    # `contra_bon.approval_threshold_rupiah` (tidak dipakai lagi). Aturan khusus PT A: < Rp1.000 Manajer, ≥ Rp1.000 Admin.
+    put = api("PUT", "/approval-policies/contra_bon_approve", admin, ENT_A, json={
+        "entity_id": ENT_A, "expected_version": 0, "reason": f"{POC_TAG} — uji wewenang",
+        "levels": [{"level": 1, "tiers": [{"min_amount": 0, "max_amount": 1000, "roles": ["manager", "admin"]},
+                                          {"min_amount": 1000, "max_amount": None, "roles": ["admin"]}]}]})
+    ok(put.status_code == 200, "ambang 'kontrabon bernilai besar' diturunkan ke Rp 1.000 (uji wewenang)",
+       put.text[:120])
     mgr2 = login("sales2@kainnusantara.id")
     low = api("POST", f"/contra-bons/{cb['id']}/approve", mgr2, ENT_A)
     ok(low.status_code == 403, "peran di bawah wewenang ditolak", f"HTTP {low.status_code}")
@@ -575,8 +581,9 @@ def test_cycle(admin: str, mgr: str, cb: Dict[str, Any]) -> Dict[str, Any]:
        "di atas ambang: hanya ADMIN yang boleh menyetujui — dan berhasil",
        f"HTTP {a1.status_code} · {rp(a1.json()['totals']['net_payable']) if a1.status_code == 200 else a1.text[:90]}")
     cb = a1.json() if a1.status_code == 200 else cb
-    ok(cfg_reset(admin, "contra_bon.approval_threshold_rupiah", "entity", ENT_A),
-       "ambang dikembalikan ke default sistem")
+    back = api("DELETE", "/approval-policies/contra_bon_approve", admin, ENT_A,
+               params={"entity_id": ENT_A, "reason": f"{POC_TAG} — kembalikan aturan grup"})   # KP-T4
+    ok(back.status_code == 200, "ambang dikembalikan ke aturan grup", back.text[:120])
 
     s = api("POST", f"/contra-bons/{cb['id']}/schedule", admin, ENT_A, json={
         "planned_payment_date": day(3), "method": "transfer", "bank_account_id": BANK_A,

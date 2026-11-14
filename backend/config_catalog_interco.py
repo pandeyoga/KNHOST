@@ -15,6 +15,9 @@ from config_registry import E
 
 G = ("global", "entity")
 
+# KP-T4 — alasan baku kunci persetujuan yang pindah ke Aturan Persetujuan.
+_KPT4_TIDAK_DIPAKAI = ("Dipindah ke Aturan Persetujuan (Pengaturan › Persetujuan › Aturan Persetujuan). Nilai terakhirnya hanya membentuk aturan bawaan selama aturan belum disimpan.")
+
 E("antar_entitas.pricing_mode", group="antar-entitas", type="enum", default="fixed_price",
   scopes=G,
   options=[
@@ -61,8 +64,10 @@ E("antar_entitas.approval_threshold_rupiah", group="antar-entitas", type="money"
        "lebih tinggi (lihat 'Peran penyetuju transaksi bernilai besar').",
   impact="Menentukan kapan penjualan internal harus naik ke admin (pemisahan tugas).",
   example="Ambang Rp 100.000.000 · transaksi Rp 250.000.000 → wajib disetujui admin",
-  consumers=("services/interco_service.py:confirm",), risk="high",
-  related=("antar_entitas.approval_role", "antar_entitas.high_value_approval_role"))
+  consumers=("services/approval_policy_service.py:default_rows_for",), risk="high",
+  related=("antar_entitas.approval_role", "antar_entitas.high_value_approval_role"),
+  # KP-T4 — isi kunci ini pindah ke tabel kebijakan persetujuan (`approval_policies`).
+  status="not_used", not_used_reason=_KPT4_TIDAK_DIPAKAI)
 
 E("antar_entitas.approval_role", group="antar-entitas", type="enum", default="manager",
   scopes=G,
@@ -71,7 +76,9 @@ E("antar_entitas.approval_role", group="antar-entitas", type="enum", default="ma
   help="Peran minimal yang boleh menyetujui transaksi antar-PT bernilai di bawah ambang.",
   impact="Menentukan siapa yang boleh melepas penjualan internal.",
   example="Manager · transaksi Rp 30.000.000 bisa disetujui manager",
-  consumers=("services/interco_service.py:confirm",), risk="high")
+  consumers=("services/approval_policy_service.py:default_rows_for",), risk="high",
+  # KP-T4 — isi kunci ini pindah ke tabel kebijakan persetujuan (`approval_policies`).
+  status="not_used", not_used_reason=_KPT4_TIDAK_DIPAKAI)
 
 E("antar_entitas.high_value_approval_role", group="antar-entitas", type="enum",
   default="admin", scopes=G,
@@ -80,7 +87,9 @@ E("antar_entitas.high_value_approval_role", group="antar-entitas", type="enum",
   help="Peran minimal untuk transaksi antar-PT di atas ambang bernilai besar.",
   impact="Uang besar tidak boleh dilepas oleh wewenang yang sama dengan uang kecil.",
   example="Admin · transaksi Rp 250.000.000 ditolak bila hanya disetujui manager",
-  consumers=("services/interco_service.py:confirm",), risk="high")
+  consumers=("services/approval_policy_service.py:default_rows_for",), risk="high",
+  # KP-T4 — isi kunci ini pindah ke tabel kebijakan persetujuan (`approval_policies`).
+  status="not_used", not_used_reason=_KPT4_TIDAK_DIPAKAI)
 
 E("antar_entitas.settlement_reminder_days", group="antar-entitas", type="int", default=30,
   min=0, max=365, step=1, unit="hari", scopes=G,

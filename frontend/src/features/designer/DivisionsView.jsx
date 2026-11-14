@@ -266,8 +266,11 @@ export default function DivisionsView({ currentUser, selectedEntity, section = "
               Matriks ini <strong>mengikat</strong>: percobaan menyetujui oleh peran yang tidak
               berhak (atau oleh pengaju dokumen sendiri) ditolak sistem dan tercatat di jejak
               persetujuan. Antrean keputusan ada di <strong>Pusat Persetujuan › Persetujuan
-              Saya</strong>; ketegasannya diatur di Pengaturan › Persetujuan › Persetujuan &amp; Ambang.
+              Saya</strong>.
             </p>
+            {/* KP-T4 — tingkat & peran di atas dibaca dari Aturan Persetujuan (satu tabel untuk semua antrean). */}
+            <LinkCard className="mt-2" testId="rnd-matrix-policy-link" what="Siapa yang menyetujui tiap tahap"
+              where="Pengaturan › Persetujuan › Aturan Persetujuan" view="approval-rules" />
           </div>
         </section>
       )}

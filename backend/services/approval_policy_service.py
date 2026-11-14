@@ -101,15 +101,26 @@ def _needs(row: Optional[Dict[str, Any]]) -> bool:
 
 
 def _row(doc_kind: str, entity_id: str, level: int, roles: List[str], *, any_holder: bool = False,
-         min_amount: float = 0.0, max_amount: Optional[float] = None, label: str = "", sort: int = 1) -> Dict[str, Any]:
+         min_amount: float = 0.0, max_amount: Optional[float] = None, label: str = "", sort: int = 1,
+         legacy_role: str = "") -> Dict[str, Any]:
+    """`legacy_role` = peran tunggal sumber lama (mis. `required_role` aturan SO/PO/PR) — HANYA untuk field kompatibel
+    `required_role` / `required_approval_role` yang masih dibaca tampilan & notifikasi; tidak pernah untuk memutus."""
     return {"doc_kind": doc_kind, "entity_id": entity_id or "all", "level": int(level),
             "label": label or (kind(doc_kind)["level_labels"].get(int(level)) or "Persetujuan"),
             "min_amount": _num(min_amount) or 0, "max_amount": _num(max_amount),
             "roles": [] if any_holder else list(roles), "any_holder": bool(any_holder), "sort": int(sort),
-            "active": True, "source": "bawaan"}
+            "active": True, "source": "bawaan", "legacy_role": legacy_role or ""}
 
 
 # ── Baris bawaan dari sumber lama (setara keputusan hari ini) ──────────────────────────────────────────────────────
+# KP-T4 (b) — daftar & ambang yang dulu ditulis di kode pintu kini HANYA sumber baris bawaan (dibaca saat tabel belum
+# punya baris untuk jenis itu, mis. sebelum migrasi). Pintunya sendiri bertanya ke tabel. Nilainya = perilaku sebelum
+# unit ini (jangkar asal di laporan KP-T4). (`special_order_service.APPROVAL_THRESHOLD` dihapus tanpa pengganti: ia
+# tidak pernah menentukan siapa memutus — lihat `default_rows_for("special_order")`.)
+BAWAAN_UANG_MUKA = (("Atasan Langsung", ("manager", "admin")),   # dulu cash_advance_service.APPROVAL_STAGES
+                    ("Pimpinan", ("admin",)), ("Bagian Keuangan", ("admin",)))
+BAWAAN_ANTAR_PT_TANPA_ACC = ("sales_admin",)        # dulu interco_service.SELF_SERVE_BELOW_THRESHOLD (nama persis)
+BAWAAN_TAGIHAN_KAMPANYE = ("finance", "manager", "admin")   # dulu marketing_cost_service.BILL_APPROVER_ROLES
 async def _value(key: str, ent: str) -> Any:
     from services.config_resolver import value_of
     return await value_of(key, {"entity_id": "" if ent in ("", "all") else ent})
@@ -133,7 +144,8 @@ async def _rules_rows(doc_kind: str, doc_type: str, ent: str, limit_to: Optional
             roles, anyh = [x for x in (roles if not anyh else _registry().role_ids()) if x in limit_to], False
         hi = r.get("max_amount")
         out.append(_row(doc_kind, ent, 1, roles, any_holder=anyh, min_amount=float(r.get("min_amount") or 0),
-                        max_amount=(float(hi) if hi is not None else None), sort=n))
+                        max_amount=(float(hi) if hi is not None else None), sort=n,
+                        legacy_role=r.get("required_role") or ""))
     if not out:
         out.append(_row(doc_kind, ent, 1, []))
     return out
@@ -157,7 +169,7 @@ async def _extra_level_rows(ent: str) -> List[Dict[str, Any]]:
             mn = 0.0
         roles, anyh = roles_rank_at_least(role)
         out.append(_row("purchase_order", ent, len(out) + 2, roles, any_holder=anyh, min_amount=mn,
-                        label=lv.get("label") or role.title()))
+                        label=lv.get("label") or role.title(), legacy_role=role))
     return out
 
 
@@ -187,11 +199,11 @@ async def default_rows_for(doc_kind: str, entity_id: str = "all") -> List[Dict[s
     if k == "special_order":
         enforced = await _matrix_enforced(ent)
         direksi = float(await _value("approval.po_custom_direksi_min", ent) or 0)
-        from services.special_order_service import APPROVAL_THRESHOLD
-        return [_row(k, ent, 1, roles_exact(["manager", "admin"]), min_amount=float(APPROVAL_THRESHOLD) + 0.01,
-                     label="Manager"),
+        # Cek ulang KP-T4: pesanan khusus yang diajukan SELALU lewat jenjang 1 (matriks lama tanpa ambang tingkat 1);
+        # ambang Rp10 jt di kode hanya mengisi field tampilan `requires_approval` yang tidak dibaca layar mana pun.
+        return [_row(k, ent, 1, roles_exact(["manager", "admin"]), label="Manager", legacy_role="manager"),
                 _row(k, ent, 2, roles_exact(["admin"] if enforced else ["manager", "admin"]),
-                     min_amount=max(direksi, float(APPROVAL_THRESHOLD) + 0.01), label="Direksi")]
+                     min_amount=max(direksi, 0.0), label="Direksi", legacy_role="admin")]
     if k in ("rnd_spec", "rnd_sample"):
         key = "rnd.spec_approval_roles" if k == "rnd_spec" else "rnd.sample_decision_roles"
         listed = await _value(key, ent) or []
@@ -216,8 +228,9 @@ async def default_rows_for(doc_kind: str, entity_id: str = "all") -> List[Dict[s
         low = _ordered({"admin", *roles_with_base([need])})
         high = _ordered({"admin", *roles_with_base(["admin"])})
         if above > 0:
-            return [_row(k, ent, 1, low, max_amount=above, sort=1), _row(k, ent, 1, high, min_amount=above, sort=2)]
-        return _only(ent, k, low)
+            return [_row(k, ent, 1, low, max_amount=above, sort=1, legacy_role=need),
+                    _row(k, ent, 1, high, min_amount=above, sort=2, legacy_role="admin")]
+        return _only(ent, k, low, legacy_role=need)
     if k == "interco":
         th = float(await _value("antar_entitas.approval_threshold_rupiah", ent) or 0)
         hi_role = str(await _value("antar_entitas.high_value_approval_role", ent) or "admin")
@@ -226,10 +239,22 @@ async def default_rows_for(doc_kind: str, entity_id: str = "all") -> List[Dict[s
         lo_roles, lo_any = roles_rank_at_least(lo_role)
         if th <= 0:
             return _only(ent, k, hi_roles, any_holder=hi_any)
-        from services.interco_service import SELF_SERVE_BELOW_THRESHOLD
-        lo_roles = lo_roles if lo_any else _ordered({*lo_roles, *roles_exact(SELF_SERVE_BELOW_THRESHOLD)})
+        lo_roles = lo_roles if lo_any else _ordered({*lo_roles, *roles_exact(BAWAAN_ANTAR_PT_TANPA_ACC)})
         return [_row(k, ent, 1, lo_roles, any_holder=lo_any, max_amount=th, sort=1),
                 _row(k, ent, 1, hi_roles, any_holder=hi_any, min_amount=th, sort=2)]
+    if k == "interco_loan":
+        # dulu `interco_loan_service._approval_gate`: peta peringkat pribadi {manager 1, admin 2, lainnya 0} → nama persis
+        th = float(await _value("antar_entitas.approval_threshold_rupiah", ent) or 0)
+        hi_role = str(await _value("antar_entitas.high_value_approval_role", ent) or "admin")
+        lo_role = str(await _value("antar_entitas.approval_role", ent) or "manager")
+        pribadi = {"manager": 1, "admin": 2}
+
+        def _lolos(need: str) -> List[str]:
+            return roles_exact([r for r, n in pribadi.items() if n >= pribadi.get(need, 1)])
+        if th > 0:
+            return [_row(k, ent, 1, _lolos(lo_role), max_amount=th, sort=1, legacy_role=lo_role),
+                    _row(k, ent, 1, _lolos(hi_role), min_amount=th, sort=2, legacy_role=hi_role)]
+        return _only(ent, k, _lolos(lo_role), legacy_role=lo_role)
     if k == "contra_bon_approve":
         th = float(await _value("contra_bon.approval_threshold_rupiah", ent) or 0)
         lo_role = str(await _value("contra_bon.approval_role", ent) or "manager").lower()
@@ -241,19 +266,17 @@ async def default_rows_for(doc_kind: str, entity_id: str = "all") -> List[Dict[s
                     _row(k, ent, 1, hi_roles, any_holder=hi_any, min_amount=th, sort=2)]
         return _only(ent, k, lo_roles, any_holder=lo_any)
     if k == "vendor_bill.kampanye":
-        from services.marketing_cost_service import BILL_APPROVER_ROLES
-        return _only(ent, k, _ordered({"admin", *roles_with_base(BILL_APPROVER_ROLES)}))
+        return _only(ent, k, _ordered({"admin", *roles_with_base(BAWAAN_TAGIHAN_KAMPANYE)}))
     if k == "cash_advance":
-        from services.cash_advance_service import APPROVAL_STAGES
-        return [_row(k, ent, n, _ordered({"admin", *roles_with_base(st["roles"])}), label=st["label"])
-                for n, st in enumerate(APPROVAL_STAGES, 1)]
+        return [_row(k, ent, n, _ordered({"admin", *roles_with_base(roles)}), label=label)
+                for n, (label, roles) in enumerate(BAWAAN_UANG_MUKA, 1)]
     if k == "makloon_claim":
         from services import contract_service as cs
         roles = (await cs.get_settings()).get("claim_approval_roles", ["manager", "admin"])
         return _only(ent, k, roles_exact(roles or []))
     if k == "payment_variance.hapus_sisa":
         need = str(await _value("payment.variance_writeoff_approver_role", ent) or "manager").lower()
-        return _only(ent, k, roles_with_base([need, "admin"]))
+        return _only(ent, k, roles_with_base([need, "admin"]), legacy_role=need)
     # Mekanisme G (izin saja) — termasuk lewat-batas kredit sesudah PR-T2: siapa pun pemegang izinnya.
     return _only(ent, k, [], any_holder=True)
 
@@ -312,23 +335,34 @@ def _level_label(doc_kind: str, row: Optional[Dict[str, Any]], level: int) -> st
     return (row or {}).get("label") or kind(doc_kind)["level_labels"].get(level) or "Persetujuan"
 
 
-def levels_from_rows(doc_kind: str, rows: List[Dict[str, Any]], amount: float) -> List[Dict[str, Any]]:
+def levels_from_rows(doc_kind: str, rows: List[Dict[str, Any]], amount: float,
+                     require_level1: bool = True) -> List[Dict[str, Any]]:
     out: List[Dict[str, Any]] = []
     for lv in _levels(rows):
         t = _tier(rows, lv, amount)
         if not _needs(t):
-            if lv == 1:
+            if lv == 1 and require_level1:
                 return []   # jenjang di atas 1 hanya berlaku bila jenjang 1 berlaku (aturan mesin lama)
             continue
         out.append({"level": lv, "label": _level_label(doc_kind, t, lv), "rule_id": t.get("id") or "",
-                    "roles": list(t.get("roles") or []), "any_holder": bool(t.get("any_holder"))})
+                    "roles": list(t.get("roles") or []), "any_holder": bool(t.get("any_holder")),
+                    "legacy_role": t.get("legacy_role") or ""})
     return out
 
 
-async def required_levels(doc_kind: str, entity_id: Optional[str], amount: float = 0.0) -> List[Dict[str, Any]]:
-    """Jenjang yang wajib untuk nilai itu: `[{level, label, rule_id, roles, any_holder}]`; kosong = tanpa persetujuan."""
+def compat_role(level: Dict[str, Any]) -> str:
+    """Nilai field kompatibel `required_role` (tampilan/notifikasi lama) untuk satu jenjang — BUKAN untuk memutus."""
+    if not level:
+        return ""
+    return level.get("legacy_role") or (list(level.get("roles") or [""])[0] if level.get("roles") else "")
+
+
+async def required_levels(doc_kind: str, entity_id: Optional[str], amount: float = 0.0,
+                          require_level1: bool = True) -> List[Dict[str, Any]]:
+    """Jenjang yang wajib untuk nilai itu: `[{level, label, rule_id, roles, any_holder}]`; kosong = tanpa persetujuan.
+    `require_level1=False` hanya untuk rantai PO yang jenjang 1-nya dipaksa (penyimpangan harga / lewat kontrak)."""
     src = await rows_for(doc_kind, entity_id)
-    return levels_from_rows(doc_kind, src["rows"], _amt(doc_kind, amount))
+    return levels_from_rows(doc_kind, src["rows"], _amt(doc_kind, amount), require_level1)
 
 
 def _decider_row(doc_kind: str, rows: List[Dict[str, Any]], level: int, amount: float) -> Tuple[Optional[Dict], str]:
@@ -559,3 +593,166 @@ async def check_view(doc_kind: str, entity_id: Optional[str], amount: float) -> 
                else [role_label(x) for x in lv["roles"] if holders.get(x)])
         out.append({"level": lv["level"], "label": lv["label"], "who": who})
     return {"doc_kind": doc_kind, "amount": _num(amt), "source": src["source"], "levels": out}
+
+
+# ── Mengubah tabel (layar Aturan Persetujuan) ──────────────────────────────────────────────────────────────────────
+def _bad(msg: str, code: int = 400) -> HTTPException:
+    return HTTPException(status_code=code, detail=msg)
+
+
+def _parse_levels(doc_kind: str, levels: Any) -> List[Dict[str, Any]]:
+    """Isi `PUT` → baris tervalidasi (tanpa id). Melempar 400 berpesan manusia."""
+    reg = _registry()
+    amount_kind = has_amount(doc_kind)
+    if not isinstance(levels, list):
+        raise _bad("Isi jenjang tidak sah.")
+    out: List[Dict[str, Any]] = []
+    for n, lv in enumerate(levels, 1):
+        if not isinstance(lv, dict):
+            raise _bad("Isi jenjang tidak sah.")
+        level = int(lv.get("level") or n)
+        if level < 1:
+            raise _bad("Nomor jenjang harus 1 atau lebih.")
+        label = str(lv.get("label") or "").strip()[:60]
+        tiers = lv.get("tiers") or []
+        if not isinstance(tiers, list) or not tiers:
+            raise _bad(f"Jenjang {level} belum punya rentang.")
+        for i, t in enumerate(tiers, 1):
+            if not isinstance(t, dict):
+                raise _bad("Isi jenjang tidak sah.")
+            try:
+                lo = float(t.get("min_amount") or 0)
+                hi_raw = t.get("max_amount")
+                hi = None if hi_raw in (None, "") else float(hi_raw)
+            except (TypeError, ValueError):
+                raise _bad(f"Rentang jenjang {level} tidak sah: batas harus angka.")
+            if not math.isfinite(lo) or lo < 0 or (hi is not None and not math.isfinite(hi)):
+                raise _bad(f"Rentang jenjang {level} tidak sah: batas harus angka 0 atau lebih.")
+            if not amount_kind and (lo != 0 or hi is not None):
+                raise _bad("Jenis dokumen ini tidak memakai nominal.")
+            if hi is not None and hi <= lo:
+                raise _bad(f"Rentang jenjang {level} tidak sah: batas atas harus lebih besar dari batas bawah.")
+            any_holder = bool(t.get("any_holder"))
+            roles: List[str] = []
+            for rid in ([] if any_holder else (t.get("roles") or [])):
+                rid = str(rid or "").strip()
+                if not reg.is_role(rid):
+                    raise _bad(f"Peran “{rid}” tidak ada.")
+                if rid not in roles:
+                    roles.append(rid)
+            out.append(_row(doc_kind, "all", level, _ordered(roles), any_holder=any_holder, min_amount=lo,
+                            max_amount=hi, label=label, sort=i))
+    return out
+
+
+async def _layer_rows(doc_kind: str, ent: str) -> List[Dict[str, Any]]:
+    return await db[COLL].find({"doc_kind": doc_kind, "entity_id": ent, "active": True},
+                               {"_id": 0}).to_list(500)
+
+
+async def replace_rows(doc_kind: str, entity_id: str, levels: Any, *, expected_version: Optional[int],
+                       reason: str, actor: Dict[str, Any]) -> Dict[str, Any]:
+    """Mengganti SELURUH baris (jenis, lapisan) sekaligus. `entity_id = "all"` = grup. Jawaban seperti `policy_view`.
+
+    Versi = angka `version` baris aktif lapisan itu (0 bila belum ada baris tersimpan, termasuk saat masih memakai
+    aturan bawaan). `expected_version` basi → 409. Baris lama dinonaktifkan (jejak tetap ada), tidak dihapus."""
+    kind(doc_kind)
+    if not (reason or "").strip():
+        raise _bad("Alasan perubahan wajib diisi.")
+    ent = entity_id or "all"
+    rows = _parse_levels(doc_kind, levels)
+    cur = await _layer_rows(doc_kind, ent)
+    version = max([int(r.get("version") or 0) for r in cur] or [0])
+    if expected_version is not None and int(expected_version) != version:
+        raise _bad("Aturan ini sudah diubah orang lain. Muat ulang.", 409)
+    now = now_iso()
+    who = (actor or {}).get("name", "")
+    if cur:
+        res = await db[COLL].update_many(
+            {"doc_kind": doc_kind, "entity_id": ent, "active": True, "version": version},
+            {"$set": {"active": False, "replaced_at": now, "replaced_by": who, "updated_at": now}})
+        if res.modified_count != len(cur):
+            raise _bad("Aturan ini sudah diubah orang lain. Muat ulang.", 409)
+    lama = {(int(r.get("level") or 1), float(r.get("min_amount") or 0)): r.get("legacy_role") or "" for r in cur}
+    docs = []
+    for r in rows:
+        key = (r["level"], float(r["min_amount"] or 0))
+        legacy = lama.get(key) or (r["roles"][0] if r["roles"] else "")
+        docs.append({**r, "id": new_id("appol"), "entity_id": ent, "source": "pengguna", "version": version + 1,
+                     "legacy_role": legacy, "reason": reason.strip()[:400], "created_at": now, "created_by": who,
+                     "updated_at": now, "updated_by": who})
+    if docs:
+        await db[COLL].insert_many([dict(d) for d in docs])
+    try:
+        from dependencies import audit
+        await audit(who, "approval_policy_replaced", COLL, f"{doc_kind}:{ent}",
+                    {"doc_kind": doc_kind, "entity_id": ent, "version": version + 1, "rows": len(docs)},
+                    reason=reason.strip()[:400])
+    except Exception:  # noqa: BLE001 — jejak tambahan; baris sudah tersimpan
+        pass
+    return await policy_view(doc_kind, ent)
+
+
+async def delete_pt_rows(doc_kind: str, entity_id: str, *, reason: str, actor: Dict[str, Any]) -> Dict[str, Any]:
+    """Menghapus baris khusus PT (kembali ke aturan grup). Baris lama dinonaktifkan, tidak dihapus."""
+    kind(doc_kind)
+    if not (reason or "").strip():
+        raise _bad("Alasan perubahan wajib diisi.")
+    if not entity_id or entity_id == "all":
+        raise _bad("Pilih PT yang aturan khususnya akan dihapus.")
+    now = now_iso()
+    who = (actor or {}).get("name", "")
+    await db[COLL].update_many({"doc_kind": doc_kind, "entity_id": entity_id, "active": True},
+                               {"$set": {"active": False, "replaced_at": now, "replaced_by": who,
+                                         "replaced_reason": reason.strip()[:400], "updated_at": now}})
+    try:
+        from dependencies import audit
+        await audit(who, "approval_policy_reset_to_group", COLL, f"{doc_kind}:{entity_id}",
+                    {"doc_kind": doc_kind, "entity_id": entity_id}, reason=reason.strip()[:400])
+    except Exception:  # noqa: BLE001
+        pass
+    return await policy_view(doc_kind, entity_id)
+
+
+# ── Pembantu pintu ─────────────────────────────────────────────────────────────────────────────────────────────────
+#: `doc_type` lama mesin `approval_rules` → jenis dokumen kebijakan (dipakai pembungkus `config_service`).
+DOC_TYPE_KIND = {"sales_order": "sales_order.nilai", "purchase_order": "purchase_order",
+                 "purchase_requisition": "purchase_requisition"}
+
+
+async def chain_for(doc_kind: str, entity_id: Optional[str], amount: float,
+                    force_kind: str = "") -> List[Dict[str, Any]]:
+    """Rantai jenjang yang disimpan dokumen baru (potret `roles` + id baris, D3). `force_kind`: bila jenis utama tidak
+    menuntut persetujuan pada nilai itu, jenjang 1 diambil dari jenis paksa (mis. penyimpangan harga PO) dan jenjang
+    berikutnya dari jenis utama yang memuat nilai itu (perilaku `build_approval_chain` lama)."""
+    levels = await required_levels(doc_kind, entity_id, amount)
+    kinds = {lv["level"]: doc_kind for lv in levels}
+    if not levels and force_kind:
+        first = (await required_levels(force_kind, entity_id, amount))[:1]
+        rest = [lv for lv in await required_levels(doc_kind, entity_id, amount, require_level1=False)
+                if lv["level"] >= 2]
+        levels = first + rest
+        kinds = {lv["level"]: (force_kind if lv in first else doc_kind) for lv in levels}
+    return [{"level": lv["level"], "required_role": compat_role(lv), "label": lv["label"],
+             "roles": list(lv["roles"]), "any_holder": bool(lv["any_holder"]), "rule_id": lv["rule_id"],
+             "policy_kind": kinds[lv["level"]], "status": "pending", "approved_by": "", "approved_by_id": "",
+             "approved_at": ""} for lv in levels]
+
+
+async def lowest_threshold(doc_kind: str, entity_id: Optional[str]) -> float:
+    """Batas bawah rentang jenjang 1 terendah yang butuh persetujuan (tampilan "butuh persetujuan mulai …")."""
+    rows = (await rows_for(doc_kind, entity_id))["rows"]
+    mins = sorted(_bounds(r)[0] for r in rows if int(r.get("level") or 1) == 1 and _needs(r))
+    return mins[0] if mins else 0.0
+
+
+async def guard_door(doc_kind: str, actor: Dict[str, Any], *, doc: Optional[Dict[str, Any]] = None,
+                     collection: str = "", doc_id: str = "", amount: float = 0.0, action: str = "approve") -> None:
+    """Pintu bermekanisme "izin saja" (G): sesudah izin & dokumen diperiksa router, tanyakan Aturan Persetujuan
+    (bawaan: semua pemegang izin → tidak ada keputusan yang berubah; bila Admin membatasi peran di tabel, pintu ini
+    ikut). PT = PT dokumen (`doc` atau dibaca dari `collection` + `doc_id`)."""
+    ent = (doc or {}).get("entity_id")
+    if doc is None and collection and doc_id:
+        d = await db[collection].find_one({"id": doc_id}, {"_id": 0, "entity_id": 1})
+        ent = (d or {}).get("entity_id")
+    await assert_can_decide(doc_kind, ent or None, amount, actor, action=action, check_permission=False)

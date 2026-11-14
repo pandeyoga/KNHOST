@@ -222,8 +222,8 @@ async def main():  # noqa: C901 — satu skrip POC lengkap (protokol repo)
     else:
         bad(f"Kebijakan makloon tidak lengkap: {r.status_code} {r.text[:200]}")
     r = s.put(f"{API}/supplier-contracts/policy",
-              json={"variance_tolerance_pct": 3, "contract_mode": "warn", "auto_claim": True,
-                    "claim_approval_roles": ["manager", "admin"]}, timeout=30)
+              json={"variance_tolerance_pct": 3, "contract_mode": "warn", "auto_claim": True},
+              timeout=30)   # KP-T4 — penyetuju klaim kini di Aturan Persetujuan (jenis `makloon_claim`)
     ok("Admin dapat mengubah kebijakan makloon tanpa deploy") if r.ok else \
         bad(f"Admin gagal ubah kebijakan: {r.status_code} {r.text[:200]}")
     r = s_sales.put(f"{API}/supplier-contracts/policy", json={"variance_tolerance_pct": 50}, timeout=30)

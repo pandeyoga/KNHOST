@@ -11,6 +11,7 @@ from typing import Any, Dict, List, Optional
 from fastapi import APIRouter, File, Form, HTTPException, Request, UploadFile
 
 from dependencies import audit, has_permission, require_any_permission, require_permission
+from services import approval_policy_service as _aps   # KP-T4 — satu tabel kebijakan persetujuan
 from entity_scope import entity_ctx, guard_party, resolve_scope_ids
 from schemas_interco import (
     IntercoActionIn, IntercoCreate, IntercoReasonIn, IntercoReturnCreate,
@@ -443,6 +444,7 @@ async def approve_interco_return(ret_id: str, payload: IntercoActionIn,
         # LN-140 — retur internal WAJIB TERIMA (R-10) boleh diterima gudang penerima; selain itu butuh `approve`.
         actor = await require_permission(request, "interco", "approve")
     await guard_party(request, await icret.get_one(ret_id), label="Retur antar-PT")
+    await _aps.guard_door("interco_return", actor, collection="interco_returns", doc_id=ret_id)   # KP-T4
     from services.twin_journal import TwinJournalError
     try:
         res = await icret.approve(ret_id, actor)

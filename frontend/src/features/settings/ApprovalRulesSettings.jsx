@@ -1,354 +1,115 @@
 /**
- * Approval Rules Settings — matriks ambang persetujuan per jenis dokumen.
- * Skema TUNGGAL = skema mesin: {doc_type, entity_id, min_amount, max_amount,
- * required_role, sort, active, is_percent}.
+ * Pengaturan › Persetujuan › Aturan Persetujuan.
  *
- * Fase 3 · P2 (D-04, keputusan pemilik 26 Okt) — Pengaturan › Persetujuan › Aturan Persetujuan:
- *  · SATU jalan aktif/nonaktif: tombol "Nonaktifkan/Aktifkan" + dialog konfirmasi (centang "Aktif" di form dicabut;
- *    lencana status hanya label, tanpa ikon sampah);
- *  · manajer MEMBACA aturan di sini (dulu hanya lewat Master per Badan Usaha, yang kini menautkan ke sini) — tombol
- *    buat/ubah/nonaktifkan hanya untuk izin settings.manage (server tetap penjaga: GET = settings.view);
- *  · L-02: kepala halaman baku (`PageHeader`) + tabel di `section-card`; L-04 kelas C: banner desktop di HP.
+ * KP-T4 — SATU tabel kebijakan untuk semua antrean (`docs/blueprint/unit/KP-T4.md`): per PT, per jenis dokumen
+ * (berkelompok Penjualan, Pembelian, Keuangan, Gudang, R&D, SDM) siapa yang boleh menyetujui, mulai nominal berapa, dan
+ * siapa saja yang lolos (peran tercantum DAN memegang izinnya). Semua pintu persetujuan bertanya ke tabel yang sama
+ * (`services/approval_policy_service.py`).
  *
- * KP-T3 — bagian "Jenjang yang berlaku" per PT (`ApprovalEffectiveTiers`), pilihan palsu dibuang (Owner, Diskon),
- * baris berperan tak dikenal/hasil migrasi diberi catatan, dan peringatan server tampil di pop-up hasil simpan.
+ * Isi layar KP-T3 (tabel `approval_rules` + "Jenjang yang berlaku") digantikan: jalur tulis lama dimatikan server (410).
+ * Tombol: **Ubah** (pop-up baku, alasan wajib), **Buat aturan khusus PT ini**, **Kembali ke aturan grup** (alasan
+ * wajib), **Coba nilai**. Mengubah butuh izin kelola pengaturan; lapisan "Semua PT" hanya untuk peran lintas PT (server).
  */
-import { useState, useEffect } from "react";
+import { useCallback, useEffect, useState } from "react";
+import { Eye, Settings } from "lucide-react";
 import axios, { API } from "../../services/apiClient";
-import {
-  AlertCircle, CheckCircle2, Edit2, Eye, Loader2, Plus, Power, Settings, X
-} from "lucide-react";
-import ApprovalRuleForm from "./ApprovalRuleForm";
-import ApprovalEffectiveTiers from "./ApprovalEffectiveTiers";
-import ApprovalPoliciesView from "./ApprovalPoliciesView";   // KP-T4 (a) — satu tabel kebijakan, hanya-baca
-import FormModal from "../../components/FormModal";
 import DesktopOnlyNotice from "../../components/DesktopOnlyNotice";
+import OkNotice from "../../components/OkNotice";
 import { PageHeader } from "../../components/ListPageParts";
-import { docTypeLabel, fmtRange, roleLabel } from "./approvalRulesConstants";
-import { askConfirm } from "@/services/confirmService";
+import { askReason } from "@/services/confirmService";
 import { useEntityScope } from "../../context/EntityScopeContext";
 import { can } from "../../config/roles";
-
-const EMPTY_FORM = {
-  doc_type: "sales_order",
-  min_amount: "",
-  max_amount: "",
-  required_role: "manager",
-  sort: 1,
-  active: true,
-  description: "",
-  entity_id: "all",
-};
+import ApprovalPoliciesView from "./ApprovalPoliciesView";
+import ApprovalPolicyEditor from "./ApprovalPolicyEditor";
 
 export default function ApprovalRulesSettings({ currentUser }) {
-  const [rules, setRules] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-  const [notice, setNotice] = useState(null);
-  const [showCreateForm, setShowCreateForm] = useState(false);
-  const [editingRule, setEditingRule] = useState(null);
-  const [formData, setFormData] = useState(EMPTY_FORM);
-  const [tiersKey, setTiersKey] = useState(0);   // KP-T3 — muat ulang "Jenjang yang berlaku" setelah perubahan
-
-  const token = localStorage.getItem("kn_token");
-  const isAdmin = can(currentUser?.permissions, "settings", "manage");   // Sisir gerbang peran (2026-10-20) — tulis /approval-rules = settings.manage
-  const auth = { headers: { Authorization: `Bearer ${token}` } };
+  const canEdit = can(currentUser?.permissions, "settings", "manage");
   const { entities } = useEntityScope();
-  const entityName = (id) => {
-    const e = entities.find((x) => x.id === id);
-    return e ? (e.code ? `${e.name} (${e.code})` : e.name) : id;
-  };
+  const [roles, setRoles] = useState([]);
+  const [editor, setEditor] = useState(null);   // {kind, entityId, mode}
+  const [reloadKey, setReloadKey] = useState(0);
+  const [ok, setOk] = useState("");
+  const [error, setError] = useState("");
 
   useEffect(() => {
-    loadRules();
-  }, []); // eslint-disable-line
+    if (!canEdit) return;
+    axios.get(`${API}/approval-policies/kinds`)
+      .then((r) => setRoles(Array.isArray(r.data?.roles) ? r.data.roles : []))
+      .catch(() => setRoles([]));
+  }, [canEdit]);
 
-  async function loadRules() {
-    setLoading(true);
-    try {
-      const res = await axios.get(`${API}/approval-rules`, auth);
-      setRules(Array.isArray(res.data) ? res.data : []);
-      setError(null);
-    } catch (e) {
-      setError("Gagal memuat rules: " + (e.response?.data?.detail || e.message));
-    } finally {
-      setLoading(false);
-    }
-  }
+  const namaPT = useCallback((id) => {
+    if (!id || id === "all") return "Semua PT (aturan grup)";
+    const e = (entities || []).find((x) => x.id === id);
+    return e ? (e.code ? `${e.name} (${e.code})` : e.name) : "PT terpilih";
+  }, [entities]);
 
-  function reloadAll() {
-    loadRules();
-    setTiersKey((k) => k + 1);
-  }
-
-  function resetForm() {
-    setFormData(EMPTY_FORM);
-    setEditingRule(null);
-    setShowCreateForm(false);
-  }
-
-  function handleEdit(rule) {
-    setFormData({
-      doc_type: rule.doc_type || "sales_order",
-      min_amount: rule.min_amount ?? "",
-      max_amount: rule.max_amount ?? "",
-      required_role: rule.required_role || "",
-      sort: rule.sort ?? 1,
-      active: rule.active !== false,
-      description: rule.description || "",
-      entity_id: rule.entity_id || "all",
+  const kembaliKeGrup = async (kind, entityId) => {
+    const reason = await askReason({
+      title: "Kembali ke aturan grup",
+      message: `Aturan khusus ${namaPT(entityId)} untuk ${kind.label} dihapus; PT ini kembali memakai aturan grup.`,
+      confirmLabel: "Kembali ke aturan grup", testId: "appol-reset-confirm",
     });
-    setEditingRule(rule);
-    setShowCreateForm(true);
-  }
-
-  function buildPayload() {
-    const min = parseFloat(formData.min_amount);
-    return {
-      doc_type: formData.doc_type,
-      min_amount: Number.isNaN(min) ? 0 : min,
-      max_amount: formData.max_amount === "" || formData.max_amount === null
-        ? null : parseFloat(formData.max_amount),
-      required_role: formData.required_role || "",
-      sort: parseInt(formData.sort) || 1,
-      active: !!formData.active,
-      description: formData.description || "",
-      entity_id: formData.entity_id || "all",
-    };
-  }
-
-  async function handleSubmit(e) {
-    e.preventDefault();
-    const payload = buildPayload();
-    if (payload.max_amount !== null && payload.max_amount <= payload.min_amount) {
-      return setError("Nilai maksimal harus lebih besar dari nilai minimal");
-    }
-    let res;
+    if (!reason) return;
+    setError("");
     try {
-      if (editingRule) {
-        res = await axios.patch(`${API}/approval-rules/${editingRule.id}`, payload, auth);
-        setNotice("Aturan berhasil diubah.");
-      } else {
-        res = await axios.post(`${API}/approval-rules`, payload, auth);
-        setNotice("Aturan berhasil dibuat.");
-      }
+      await axios.delete(`${API}/approval-policies/${kind.doc_kind}`, { params: { entity_id: entityId, reason } });
+      setOk(`${kind.label}: ${namaPT(entityId)} kembali memakai aturan grup.`);
+      setReloadKey((k) => k + 1);
     } catch (e) {
-      return setError("Gagal menyimpan: " + (e.response?.data?.detail || e.message));
+      const d = e?.response?.data?.detail;
+      setError(typeof d === "string" ? d : "Gagal mengembalikan ke aturan grup.");
     }
-    resetForm();
-    reloadAll();
-    // KP-T3 — peringatan tidak menolak simpan; ditampilkan supaya akibatnya terlihat sebelum ada dokumen lolos.
-    const warnings = res?.data?.warnings || [];
-    if (warnings.length) {
-      await askConfirm({
-        title: "Aturan tersimpan. Perhatikan:",
-        message: <>{warnings.map((w, i) => <span key={i} className="block mt-1">• {w.message}</span>)}</>,
-        confirmLabel: "Mengerti",
-        cancelLabel: "Tutup",
-        testId: "approval-rule-warnings",
-      });
-    }
-  }
+  };
 
-  async function handleDelete(rule) {
-    const ok = await askConfirm({
-      title: `Nonaktifkan aturan ${docTypeLabel(rule.doc_type)} (${fmtRange(rule)})?`,
-      message: "Mesin persetujuan berhenti membaca aturan ini; dokumen pada rentang tersebut tidak lagi otomatis meminta persetujuan.",
-      confirmLabel: "Nonaktifkan Aturan",
-      danger: true,
-      testId: "approval-rule-delete-confirm",
-    });
-    if (!ok) return;
-    try {
-      await axios.delete(`${API}/approval-rules/${rule.id}`, auth);
-      setNotice("Aturan dinonaktifkan.");
-      reloadAll();
-    } catch (e) {
-      setError("Gagal menonaktifkan: " + (e.response?.data?.detail || e.message));
+  const renderActions = (kind, data) => {
+    if (!canEdit) return null;
+    const entityId = data?.entity_id || "all";
+    if (entityId === "all") {
+      return (
+        <button type="button" className="btn-secondary btn-sm" data-testid={`appol-edit-${kind.doc_kind}`}
+          onClick={() => setEditor({ kind, entityId, mode: kind.source === "grup" ? "edit" : "create" })}>Ubah</button>
+      );
     }
-  }
-
-  // G5-20 — badge "Aktif" dulu langsung PATCH sekali klik (tanpa konfirmasi) sementara ikon sampah membuka dialog
-  // "Nonaktifkan aturan". Kini satu tombol ⏻: aktif → dialog nonaktifkan; nonaktif → dialog aktifkan.
-  async function toggleActive(rule) {
-    if (rule.active !== false) { await handleDelete(rule); return; }
-    const ok = await askConfirm({
-      title: `Aktifkan aturan ${docTypeLabel(rule.doc_type)} (${fmtRange(rule)})?`,
-      message: "Mesin persetujuan kembali membaca aturan ini untuk dokumen baru pada rentang tersebut.",
-      confirmLabel: "Aktifkan Aturan",
-    });
-    if (!ok) return;
-    try {
-      await axios.patch(`${API}/approval-rules/${rule.id}`,
-        { active: rule.active === false }, auth);
-      reloadAll();
-    } catch (e) {
-      setError("Gagal mengubah status: " + (e.response?.data?.detail || e.message));
+    if (kind.source === "pt") {
+      return (
+        <>
+          <button type="button" className="btn-secondary btn-sm" data-testid={`appol-edit-${kind.doc_kind}`}
+            onClick={() => setEditor({ kind, entityId, mode: "edit" })}>Ubah</button>
+          <button type="button" className="btn-ghost btn-sm" data-testid={`appol-reset-${kind.doc_kind}`}
+            onClick={() => kembaliKeGrup(kind, entityId)}>Kembali ke aturan grup</button>
+        </>
+      );
     }
-  }
+    return (
+      <button type="button" className="btn-secondary btn-sm" data-testid={`appol-create-${kind.doc_kind}`}
+        onClick={() => setEditor({ kind, entityId, mode: "create" })}>Buat aturan khusus PT ini</button>
+    );
+  };
 
   return (
-    <div data-testid="approval-rules-settings" className="view-container">
-      <DesktopOnlyNotice testId="settings-desktop-notice" what="Pengaturan" />
-      {notice && (
-        <div className="notice-bar success">
-          <CheckCircle2 size={14} /> {notice}
-          <button onClick={() => setNotice(null)}><X size={12} /></button>
-        </div>
-      )}
-
-      {error && (
-        <div className="notice-bar danger">
-          <AlertCircle size={14} /> {error}
-          <button onClick={() => setError(null)}><X size={12} /></button>
-        </div>
-      )}
-
+    <div className="page-shell" data-testid="approval-rules-settings">
+      <DesktopOnlyNotice />
       <PageHeader icon={Settings} title="Aturan Persetujuan" testId="approval-rules-head"
-        subtitle="Rentang nilai dokumen & peran yang berwenang memutuskan — dibaca langsung oleh mesin persetujuan"
-        actions={isAdmin && !showCreateForm ? (
-          <button data-testid="create-rule-btn" className="primary-button" onClick={() => setShowCreateForm(true)}>
-            <Plus size={14} /> Buat Aturan Baru
-          </button>
-        ) : null} />
-      {!isAdmin && (
+        subtitle="Siapa menyetujui apa, mulai nominal berapa — per PT, untuk semua antrean persetujuan" />
+      {!canEdit && (
         <div className="notice-bar" data-testid="approval-rules-readonly">
           <Eye size={14} /> Mode baca — mengubah aturan persetujuan butuh izin kelola pengaturan.
         </div>
       )}
-
-      <FormModal
-        open={showCreateForm && isAdmin}
-        onClose={resetForm}
-        title={editingRule ? "Ubah Aturan Persetujuan" : "Aturan Persetujuan Baru"}
-        subtitle="Rentang nilai dokumen & peran yang berwenang memutuskan"
-        icon={Settings}
-        size="lg"
-        testId="rule-form-modal"
-      >
-        <ApprovalRuleForm
-          variant="modal"
-          formData={formData}
-          setFormData={setFormData}
-          onSubmit={handleSubmit}
-          onCancel={resetForm}
-          editingRule={editingRule}
-        />
-      </FormModal>
-
-      {/* KP-T4 (a) — semua antrean dalam satu tabel kebijakan (hanya-baca; pintu lama belum dialihkan). */}
-      <section className="section-card mb-4">
-        <ApprovalPoliciesView />
+      <OkNotice message={ok} onDismiss={() => setOk("")} testId="appol-ok" />
+      {error && <div className="notice-bar danger" data-testid="appol-action-error">{error}</div>}
+      <section className="section-card">
+        <ApprovalPoliciesView renderActions={renderActions} reloadKey={reloadKey} />
       </section>
-
-      <ApprovalEffectiveTiers reloadKey={tiersKey} />
-
-      {loading ? (
-        <div className="loading-state">
-          <Loader2 size={24} className="spin" />
-          <p>Memuat aturan persetujuan…</p>
-        </div>
-      ) : rules.length === 0 ? (
-        <div className="empty-state">
-          <Settings size={32} style={{ opacity: 0.3 }} />
-          <p>Belum ada aturan persetujuan.</p>
-          {isAdmin && !showCreateForm && (
-            <button className="primary-button" onClick={() => setShowCreateForm(true)}>
-              <Plus size={14} /> Buat Aturan Pertama
-            </button>
-          )}
-        </div>
-      ) : (
-        <section className="section-card">
-        <div className="table-container">
-          <table className="data-table">
-            <thead>
-              <tr>
-                <th>Jenis Dokumen</th>
-                <th>Berlaku untuk PT</th>
-                <th>Rentang Nilai</th>
-                <th>Peran Penyetuju</th>
-                <th className="text-center">Urutan</th>
-                <th>Status</th>
-                {isAdmin && <th className="text-right">Aksi</th>}
-              </tr>
-            </thead>
-            <tbody>
-              {rules.map(rule => (
-                <tr key={rule.id} data-testid={`rule-row-${rule.id}`}>
-                  <td>
-                    <span className="feature-badge badge-blue">
-                      {docTypeLabel(rule.doc_type)}
-                    </span>
-                    {rule.description && (
-                      <div className="text-xs text-muted">{rule.description}</div>
-                    )}
-                  </td>
-                  <td className="text-sm">
-                    {(!rule.entity_id || rule.entity_id === "all") ? "Semua PT" : entityName(rule.entity_id)}
-                  </td>
-                  <td className="font-mono text-sm tabular-nums whitespace-nowrap">
-                    {fmtRange(rule)}
-                  </td>
-                  <td>
-                    {rule.required_role ? (
-                      <span className="feature-badge badge-purple">
-                        {rule.required_role_label || roleLabel(rule.required_role)}
-                      </span>
-                    ) : (
-                      <span className="text-xs text-muted">Tanpa persetujuan (otomatis)</span>
-                    )}
-                    {rule.role_known === false && (
-                      <div className="text-xs text-kn-danger-text" data-testid={`rule-role-unknown-${rule.id}`}>
-                        peran tidak dikenal — diperlakukan sebagai Manajer
-                      </div>
-                    )}
-                    {rule.migrated_from_role && (
-                      <div className="text-xs text-muted" data-testid={`rule-role-migrated-${rule.id}`}>
-                        Dulu dipilih “{rule.migrated_from_role}”, yang selama ini sama dengan Manajer. Ubah ke Admin
-                        bila yang dimaksud Direksi.
-                      </div>
-                    )}
-                  </td>
-                  <td className="text-center tabular-nums">{rule.sort}</td>
-                  <td>
-                    <span
-                      data-testid={`toggle-rule-${rule.id}`}
-                      className={`status-pill ${rule.active !== false ? "pill-success" : "pill-muted"}`}
-                    >
-                      {rule.active !== false ? "Aktif" : "Nonaktif"}
-                    </span>
-                  </td>
-                  {isAdmin && (
-                  <td>
-                    <div className="flex justify-end gap-2">
-                      <button
-                        data-testid={`edit-rule-${rule.id}`}
-                        className="icon-button"
-                        title="Ubah aturan"
-                        aria-label="Ubah aturan"
-                        onClick={() => handleEdit(rule)}
-                      >
-                        <Edit2 size={14} />
-                      </button>
-                      {/* D-04 — satu-satunya jalan aktif/nonaktif (dialog konfirmasi di toggleActive). */}
-                      <button
-                        data-testid={`delete-rule-${rule.id}`}
-                        className={`secondary-button text-[11px] ${rule.active !== false ? "!text-[#C0392B]" : ""}`}
-                        onClick={() => toggleActive(rule)}
-                      >
-                        <Power size={12} /> {rule.active !== false ? "Nonaktifkan" : "Aktifkan"}
-                      </button>
-                    </div>
-                  </td>
-                  )}
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-        </section>
-      )}
+      <ApprovalPolicyEditor open={!!editor} kind={editor?.kind} entityId={editor?.entityId}
+        entityLabel={namaPT(editor?.entityId)} mode={editor?.mode} roles={roles}
+        onClose={() => setEditor(null)}
+        onSaved={(res) => {
+          setEditor(null);
+          setOk(`${res?.label || "Aturan"} tersimpan untuk ${namaPT(res?.entity_id || editor?.entityId)}.`);
+          setReloadKey((k) => k + 1);
+        }} />
     </div>
   );
 }

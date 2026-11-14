@@ -15,6 +15,7 @@ from fastapi.responses import Response
 from pymongo import ReturnDocument
 
 from db import db
+from services import approval_policy_service as _aps   # KP-T4 — satu tabel kebijakan persetujuan
 from dependencies import has_permission, require_permission, audit
 from core_utils import new_id, now_iso, safe_doc, DEFAULT_ENTITY_ID, rupiah
 from entity_scope import entity_ctx, resolve_list_scope, assert_entity_access
@@ -382,6 +383,7 @@ async def approve_price_approval(approval_id: str, payload: PriceApprovalDecisio
     doc = await _get_or_404(approval_id, request)
     if doc["status"] not in DECIDABLE_STATUSES:
         raise HTTPException(status_code=409, detail=f"Status '{doc['status']}' tidak dapat disetujui")
+    await _aps.guard_door("price", user, doc=doc)   # KP-T4 — Aturan Persetujuan
     # KF-T6 — pengaju ≠ pemutus dari `kontrol.harga_khusus.*` (satu pembantu, 403).
     await dual_control.tolak_bila_pelaku_sama("harga_khusus", doc, user, doc.get("entity_id", ""),
                                               pengaju=_pengaju_harga(doc))

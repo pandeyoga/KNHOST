@@ -35,6 +35,8 @@ DICABUT_SESUDAH = {r: {"vendor_bill": {"view"}, "landed_cost": {"view"}, "input_
                    for r in ("warehouse", "warehouse_admin")}   # PK-17 (IA-02)
 for _r in ("admin", "manager", "sales_admin", "finance"):   # PR-T4 — KPI & komisi sales lain (dulu nama peran)
     TAMBAHAN_SESUDAH.setdefault(_r, {}).setdefault("order", set()).add("view_sales_kpi")
+# KP-T4 (K-47) — Finance menyetujui/menolak tagihan vendor kampanye (dulu lewat nama peran, pintu tanpa izin).
+TAMBAHAN_SESUDAH.setdefault("finance", {}).setdefault("vendor_bill", set()).update({"approve", "reject"})
 # PK-45 — izin kredit pelanggan (K-28) dan pesanan tanpa PPN (K-33).
 for _r, _tambah in {"admin": {"customer": {"manage_credit"}, "order": {"tax_override"}},
                     "manager": {"customer": {"manage_credit"}, "order": {"tax_override"}},

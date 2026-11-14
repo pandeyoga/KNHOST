@@ -44,13 +44,9 @@ COLL_ICT = "interco_transactions"
 COLL_ICA = "interco_accounts"
 COLL_ICS = "interco_settlements"
 
-# FASE E-8 (E8.10b#4) — peran yang boleh MELEPAS SENDIRI transaksi antar-PT selama
-# nilainya di BAWAH ambang `antar_entitas.approval_threshold_rupiah`.
-# Keputusan pemilik: keputusan pemenuhan (termasuk "ambil dari PT lain") adalah
-# wewenang penuh Admin Sales tanpa persetujuan manajer — penahannya nilai rupiah,
-# bukan jabatan. Daftar ini SENGAJA eksplisit & sempit: menaruh peran lain di sini
-# berarti memberi orang itu kuasa memindahkan barang antar badan usaha.
-SELF_SERVE_BELOW_THRESHOLD = ("sales_admin",)
+# FASE E-8 (E8.10b#4) — Admin Sales boleh MELEPAS SENDIRI transaksi antar-PT di BAWAH ambang (keputusan pemilik:
+# penahannya nilai rupiah, bukan jabatan). KP-T4 — daftar `SELF_SERVE_BELOW_THRESHOLD` pindah ke Aturan Persetujuan
+# (jenis `interco`, rentang di bawah ambang; baris bawaan `approval_policy_service.BAWAAN_ANTAR_PT_TANPA_ACC`).
 
 # ── Status siklus ────────────────────────────────────────────────────────────
 STATUSES = ("draft", "confirmed", "shipped", "received", "invoiced", "settled",
@@ -270,28 +266,15 @@ async def _assert_may_release(actor_user: Optional[Dict[str, Any]], grand: float
        peran bernilai besar seperti peran lain. Ambangnya tetap hidup dan bisa
        diturunkan pemilik kapan pun tanpa deploy — bukan pintu yang dibuka permanen.
     """
-    from role_registry import role_satisfies
-
-    threshold = float(await _config("antar_entitas.approval_threshold_rupiah",
-                                    seller_entity_id) or 0)
-    high_role = str(await _config("antar_entitas.high_value_approval_role",
-                                   seller_entity_id) or "admin")
-    low_role = str(await _config("antar_entitas.approval_role",
-                                  seller_entity_id) or "manager")
-    actor_role = str((actor_user or {}).get("role") or "")
-    besar = float(grand or 0) >= threshold
-
-    if besar:
-        if not role_satisfies(actor_role, high_role):
-            raise IntercoError(
-                f"Transaksi {rupiah(grand)} melewati ambang bernilai besar "
-                f"({rupiah(threshold)}). Wajib disetujui peran '{high_role}'.")
-        return
-    if role_satisfies(actor_role, low_role) or actor_role in SELF_SERVE_BELOW_THRESHOLD:
-        return
-    raise IntercoError(
-        f"Transaksi butuh persetujuan minimal peran '{low_role}'. "
-        f"Simpan dulu sebagai draf, lalu minta persetujuan.")
+    # KP-T4 — siapa yang boleh melepas dibaca dari Aturan Persetujuan (jenis `interco`, PT penjual, nilai transaksi):
+    # baris bawaannya = ambang `antar_entitas.*` lama (di bawah ambang ≥ peran persetujuan + Admin Sales; di atasnya
+    # ≥ peran bernilai besar). Izin `interco.approve` diperiksa router konfirmasi; jalur `create(submit_now)` hanya
+    # menilai peran, seperti dulu.
+    from services import approval_policy_service as _aps
+    res = await _aps.can_decide("interco", seller_entity_id or None, float(grand or 0), actor_user or {},
+                                check_permission=False)
+    if not res["allowed"]:
+        raise IntercoError(res["message"] + " Simpan dulu sebagai draf, lalu minta persetujuan.")
 
 
 async def create(payload: Dict[str, Any], actor: str = "",

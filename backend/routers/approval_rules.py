@@ -4,16 +4,18 @@ Skema TUNGGAL = skema yang dibaca mesin (`config_service.evaluate_approval`):
 {doc_type, entity_id, min_amount, max_amount, required_role, sort, active, is_percent}.
 
 KP-T3 — hanya jenis dokumen yang dinilai mesin (`discount` dipensiunkan) dan hanya peran yang ada di registry;
-`GET /approval-rules/effective` menampilkan jenjang yang sungguh berlaku per PT (fungsi pemilih yang sama dengan
-mesin), dan jawaban simpan memuat `warnings` (celah, tumpang tindih, lebih longgar dari grup, peran tak dikenal).
+`GET /approval-rules/effective` menampilkan jenjang dari baris lama ini per PT.
+
+KP-T4 — POST/PATCH/DELETE dimatikan (410, pesan menunjuk layar baru). Siapa menyetujui apa kini SATU tabel per jenis
+dokumen (`routers/approval_policies.py`, koleksi `approval_policies`); baris di sini hanya terbaca (riwayat, Master
+per PT) dan membentuk aturan bawaan SO/PO/PR selama tabel kebijakan belum punya baris.
 """
 from typing import Any, Dict, List, Optional
 from fastapi import APIRouter, HTTPException, Request
 from pydantic import BaseModel, Field
 from db import db
-from dependencies import require_permission, current_user
+from dependencies import require_permission
 from entity_scope import assert_entity_access, entity_ctx, resolve_requested_entity, resolve_scope_ids
-from role_registry import is_role
 from services import approval_service
 from services.config_service import APPROVAL_DOC_TYPES, effective_tiers, role_view
 
@@ -27,7 +29,15 @@ PESAN_LIHAT = f"Anda belum punya akses untuk melihat aturan persetujuan. Minta A
 PESAN_UBAH = f"Anda belum punya akses untuk mengubah aturan persetujuan. Minta Admin menambahkan akses {_MODUL}."
 PESAN_DISKON = "Jenis aturan 'Diskon (%)' sudah tidak dipakai. Potongan harga diatur lewat Harga Khusus."
 PESAN_JENIS = f"Jenis dokumen tidak dikenal. Pilihan: {', '.join(APPROVAL_DOC_TYPES.values())}."
-PESAN_PERAN = "Peran penyetuju tidak dikenal. Pilih peran yang ada di Peran & Hak Akses."
+# KP-T4 — jalur tulis lama dimatikan (D8): siapa menyetujui apa kini satu tabel per jenis dokumen
+# (`PUT /api/approval-policies/{doc_kind}`). Baris `approval_rules` tetap terbaca (riwayat, Master per PT) dan hanya
+# membentuk aturan bawaan selama tabel kebijakan belum punya baris.
+PESAN_PINDAH = ("Aturan Persetujuan kini diatur per jenis dokumen di Pengaturan › Persetujuan › Aturan Persetujuan "
+                "(siapa menyetujui apa, mulai nominal berapa).")
+
+
+def _pindah() -> HTTPException:
+    return HTTPException(status_code=410, detail=PESAN_PINDAH)
 
 
 class ApprovalRuleCreate(BaseModel):
@@ -58,27 +68,8 @@ def _validate_doc_type(doc_type: Optional[str]) -> None:
     raise HTTPException(status_code=400, detail=PESAN_DISKON if doc_type == "discount" else PESAN_JENIS)
 
 
-def _validate(doc_type: Optional[str], required_role: Optional[str],
-              min_amount: Optional[float], max_amount: Optional[float]):
-    _validate_doc_type(doc_type)
-    if required_role is not None and required_role != "" and not is_role(required_role):
-        raise HTTPException(status_code=400, detail=PESAN_PERAN)
-    if max_amount is not None and min_amount is not None and max_amount <= min_amount:
-        raise HTTPException(status_code=400, detail="Nilai maksimal harus lebih besar dari nilai minimal.")
-
-
 def _with_label(rule: Dict[str, Any]) -> Dict[str, Any]:
     return {**rule, **role_view(rule.get("required_role") or "")}
-
-
-async def _with_warnings(rule: Dict[str, Any]) -> Dict[str, Any]:
-    """KP-T3 — peringatan untuk pasangan (PT, jenis dokumen) aturan yang baru disimpan; tidak menolak simpan."""
-    out = _with_label(rule)
-    if rule.get("doc_type") in VALID_DOC_TYPES:
-        out["warnings"] = (await effective_tiers(rule["doc_type"], rule.get("entity_id") or "all"))["warnings"]
-    else:
-        out["warnings"] = []
-    return out
 
 
 @router.get("/approval-rules")
@@ -115,33 +106,11 @@ async def effective_approval_tiers(request: Request, entity_id: str = "",
             "doc_types": [await effective_tiers(k, ent) for k in kinds]}
 
 
-def _assert_rule_entity_allowed(entity_id: Optional[str], ctx) -> None:
-    """Aturan ber-cakupan entitas hanya boleh menunjuk entitas dalam wewenang pengguna."""
-    if entity_id in (None, "", "all"):
-        return
-    if entity_id not in ctx.allowed_entity_ids:
-        raise HTTPException(status_code=403, detail="Tidak berwenang atas entitas ini")
-
-
 @router.post("/approval-rules")
 async def create_approval_rule(payload: ApprovalRuleCreate, request: Request) -> Dict[str, Any]:
+    """KP-T4 — dimatikan (410): aturan baru dibuat di `PUT /api/approval-policies/{doc_kind}`."""
     await require_permission(request, "settings", "manage", PESAN_UBAH)
-    user = await current_user(request)
-    _validate(payload.doc_type, payload.required_role, payload.min_amount, payload.max_amount)
-    _assert_rule_entity_allowed(payload.entity_id, await entity_ctx(request))
-    rule = await approval_service.create_approval_rule(
-        doc_type=payload.doc_type,
-        min_amount=payload.min_amount,
-        max_amount=payload.max_amount,
-        required_role=payload.required_role,
-        sort=payload.sort,
-        active=payload.active,
-        description=payload.description,
-        created_by=user["email"],
-        entity_id=payload.entity_id or "all",
-        is_percent=False,   # KP-T3 — satu-satunya jenis persen (`discount`) dipensiunkan
-    )
-    return await _with_warnings(rule)
+    raise _pindah()
 
 
 @router.get("/approval-rules/{rule_id}")
@@ -157,35 +126,13 @@ async def get_approval_rule(rule_id: str, request: Request) -> Dict[str, Any]:
 
 @router.patch("/approval-rules/{rule_id}")
 async def update_approval_rule(rule_id: str, payload: ApprovalRuleUpdate, request: Request) -> Dict[str, Any]:
+    """KP-T4 — dimatikan (410): ubah aturan di `PUT /api/approval-policies/{doc_kind}`."""
     await require_permission(request, "settings", "manage", PESAN_UBAH)
-    updates = {k: v for k, v in payload.model_dump(exclude_unset=True).items()}
-    if not updates:
-        raise HTTPException(status_code=400, detail="Tidak ada field untuk diubah")
-    existing = await db.approval_rules.find_one({"id": rule_id}, {"_id": 0})
-    if not existing:
-        raise HTTPException(status_code=404, detail="Aturan persetujuan tidak ditemukan.")
-    # Nilai efektif pasca-PATCH: field yang dikirim menang, sisanya dari dokumen lama.
-    merged_min = updates.get("min_amount", existing.get("min_amount", 0))
-    merged_max = updates["max_amount"] if "max_amount" in updates else existing.get("max_amount")
-    # KP-T3 — jenis dokumen hasil gabungan diperiksa: aturan `discount` lama tidak bisa dihidupkan lagi.
-    _validate(updates.get("doc_type", existing.get("doc_type")), updates.get("required_role"), merged_min, merged_max)
-    if "entity_id" in updates:
-        _assert_rule_entity_allowed(updates["entity_id"], await entity_ctx(request))
-        updates["entity_id"] = updates["entity_id"] or "all"
-    if "doc_type" in updates:
-        updates["is_percent"] = False
-    try:
-        rule = await approval_service.update_approval_rule(rule_id, updates)
-    except ValueError:
-        raise HTTPException(status_code=404, detail="Aturan persetujuan tidak ditemukan.")
-    return await _with_warnings(rule)
+    raise _pindah()
 
 
 @router.delete("/approval-rules/{rule_id}")
 async def delete_approval_rule(rule_id: str, request: Request) -> Dict[str, str]:
-    """Soft delete (set active=False) — mesin approval berhenti membaca aturan ini."""
+    """KP-T4 — dimatikan (410): hapus aturan khusus PT di `DELETE /api/approval-policies/{doc_kind}`."""
     await require_permission(request, "settings", "manage", PESAN_UBAH)
-    success = await approval_service.delete_approval_rule(rule_id)
-    if not success:
-        raise HTTPException(status_code=404, detail="Aturan persetujuan tidak ditemukan.")
-    return {"message": "Aturan persetujuan dinonaktifkan"}
+    raise _pindah()

@@ -7,6 +7,12 @@ Benih lingkungan B (hitungan tangan dari `config_service.DEFAULT_APPROVAL_RULES`
   PR  grup: [0, 50 jt) tanpa persetujuan  · [50 jt, ∞) Manajer    → 2 baris
   `approval.extra_levels` grup: PO ≥ 500 jt → Admin "Direksi"
 PT seed: `ent_ksc`, `ent_kanda`. Akun admin seed.
+
+KP-T4 (disesuaikan, perilaku yang SENGAJA diubah): jalur tulis `POST/PATCH/DELETE /api/approval-rules` dimatikan (410,
+pesan menunjuk Aturan Persetujuan) dan `approval.extra_levels` tidak dipakai lagi (`not_used`). Pemeriksaan peran &
+jenis dokumen yang dulu di jalur tulis lama kini di `PUT /api/approval-policies/{doc_kind}` (U1, U2). Aturan khusus PT
+untuk U6/U9 disisipkan lewat `approval_service` (fixture) — baris lama tetap terbaca `/effective` dan membentuk aturan
+bawaan selama tabel kebijakan belum punya baris.
 """
 from __future__ import annotations
 
@@ -92,9 +98,15 @@ async def test_KPT3_U1_peran_owner_ditolak(klien, kepala_admin, db):
     n0 = await db.approval_rules.count_documents({})
     r = await klien.post("/api/approval-rules", headers=kepala_admin,
                          json={"doc_type": "purchase_order", "min_amount": 0, "required_role": "owner"})
-    assert r.status_code == 400, r.text
-    assert _detail(r).startswith("Peran penyetuju tidak dikenal"), _detail(r)
+    assert r.status_code == 410, r.text   # KP-T4 — jalur tulis lama dimatikan
+    assert _detail(r).startswith("Aturan Persetujuan kini diatur per jenis dokumen"), _detail(r)
     assert await db.approval_rules.count_documents({}) == n0
+    # KP-T4 — peran yang tidak ada tetap ditolak di jalur baru.
+    r = await klien.put("/api/approval-policies/purchase_order", headers=kepala_admin, json={
+        "entity_id": "all", "expected_version": 0, "reason": "uji KP-T3",
+        "levels": [{"level": 1, "tiers": [{"min_amount": 0, "roles": ["owner"]}]}]})
+    assert r.status_code == 400, r.text
+    assert _detail(r) == "Peran “owner” tidak ada."
 
 
 # ── U2 — jenis `discount` ditolak ──────────────────────────────────────────────────────────────────────────────────────
@@ -102,13 +114,13 @@ async def test_KPT3_U2_jenis_diskon_ditolak(klien, kepala_admin, db):
     n0 = await db.approval_rules.count_documents({})
     r = await klien.post("/api/approval-rules", headers=kepala_admin,
                          json={"doc_type": "discount", "min_amount": 0, "max_amount": 10})
-    assert r.status_code == 400, r.text
-    assert _detail(r).startswith("Jenis aturan 'Diskon (%)' sudah tidak dipakai"), _detail(r)
-    r = await klien.post("/api/approval-rules", headers=kepala_admin,
-                         json={"doc_type": "invoice", "min_amount": 0, "max_amount": 10})
-    assert r.status_code == 400, r.text
-    assert _detail(r) == ("Jenis dokumen tidak dikenal. Pilihan: Pesanan Penjualan, Pesanan Pembelian, "
-                          "Permintaan Pembelian.")
+    assert r.status_code == 410, r.text   # KP-T4 — jalur tulis lama dimatikan
+    assert _detail(r).startswith("Aturan Persetujuan kini diatur per jenis dokumen"), _detail(r)
+    for jenis in ("discount", "invoice"):   # KP-T4 — jenis tak dikenal ditolak di jalur baru
+        r = await klien.put(f"/api/approval-policies/{jenis}", headers=kepala_admin,
+                            json={"entity_id": "all", "reason": "uji KP-T3", "levels": []})
+        assert r.status_code == 400, r.text
+        assert _detail(r) == "Jenis dokumen tidak dikenal."
     assert await db.approval_rules.count_documents({}) == n0
 
 
@@ -184,17 +196,11 @@ async def test_KPT3_U4_migrasi_owner_dan_diskon(db):
 
 # ── U6 — aturan khusus PT ent_kanda: peringatan celah & lebih longgar dari grup ────────────────────────────────────────
 async def test_KPT3_U6_aturan_pt_lebih_longgar(klien, kepala_admin):
-    r = await klien.post("/api/approval-rules", headers=kepala_admin,
-                         json={"doc_type": "purchase_order", "entity_id": "ent_kanda", "min_amount": 500 * JT,
-                               "required_role": "admin"})
-    assert r.status_code == 200, r.text
-    assert r.json()["id"]
-    assert r.json().get("warnings"), r.json()
-    assert {"celah", "lebih_longgar_dari_grup"} <= set(_kode(r.json()["warnings"]))
-    p = await klien.patch(f"/api/approval-rules/{r.json()['id']}", headers=kepala_admin,
-                          json={"description": "Direksi untuk PO besar"})
-    assert p.status_code == 200, p.text
-    assert {"celah", "lebih_longgar_dari_grup"} <= set(_kode(p.json().get("warnings") or []))
+    # KP-T4 — fixture lewat layanan (jalur tulis HTTP lama dimatikan); peringatan dibaca dari `/effective`.
+    from services import approval_service
+    rule = await approval_service.create_approval_rule("purchase_order", 500 * JT, None, "admin", 1,
+                                                       description="Direksi untuk PO besar", entity_id="ent_kanda")
+    assert rule["id"]
 
     dt = _satu(await _efektif(klien, kepala_admin, "ent_kanda", "purchase_order"), "purchase_order")
     assert dt["source"] == "pt"
@@ -234,10 +240,9 @@ async def test_KPT3_U8_mesin_tidak_berubah(klien, kepala_admin):
 # ── U9 — tumpang tindih rentang ────────────────────────────────────────────────────────────────────────────────────────
 async def test_KPT3_U9_tumpang_tindih(klien, kepala_admin, db):
     await db.approval_rules.update_many({"doc_type": "sales_order", "entity_id": "all"}, {"$set": {"active": False}})
-    for body in ({"doc_type": "sales_order", "min_amount": 0, "max_amount": 50 * JT, "required_role": "", "sort": 1},
-                 {"doc_type": "sales_order", "min_amount": 30 * JT, "required_role": "manager", "sort": 2}):
-        r = await klien.post("/api/approval-rules", headers=kepala_admin, json=body)
-        assert r.status_code == 200, r.text
+    from services import approval_service   # KP-T4 — fixture lewat layanan (jalur tulis HTTP lama dimatikan)
+    await approval_service.create_approval_rule("sales_order", 0, 50 * JT, "", 1)
+    await approval_service.create_approval_rule("sales_order", 30 * JT, None, "manager", 2)
     dt = _satu(await _efektif(klien, kepala_admin, "ent_ksc", "sales_order"), "sales_order")
     assert dt["source"] == "grup"
     tt = [x for x in dt["warnings"] if x["code"] == "tumpang_tindih"]
@@ -274,7 +279,9 @@ async def test_KPT3_U11_jenjang_tambahan_peran_tak_dikenal(klien, kepala_admin):
         "key": "approval.extra_levels", "value": {"purchase_order": [{"min_amount": 1, "role": "direktur"}]},
         "scope_type": "global", "scope_id": "", "reason": "uji KP-T3"}]})
     assert r.status_code == 400, r.text
-    assert _detail(r) == "Jenjang tambahan baris 1: peran “direktur” tidak ada."
+    # KP-T4 — kunci ini tidak dipakai lagi (jenjang PO kini di Aturan Persetujuan): semua tulisan ditolak berpesan.
+    assert _detail(r).startswith("'Jenjang persetujuan tambahan' tidak dipakai sistem saat ini — Dipindah ke Aturan "
+                                 "Persetujuan"), _detail(r)
     assert await resolver.value_of("approval.extra_levels", ctx) == awal
     # Nilai minimal harus angka ≥ 0.
     r = await klien.put("/api/config/values", headers=kepala_admin, json={"items": [{

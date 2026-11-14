@@ -38,7 +38,7 @@ function MatchPill({ status }) {
   return <span className={`status-pill ${cls}`} data-testid="vb-detail-match">{label}</span>;
 }
 
-export default function VendorBillDetailPanel({ bill, canApprove, currentUser, onClose, onAction, onError }) {
+export default function VendorBillDetailPanel({ bill, canApprove, decideHint = "", currentUser, onClose, onAction, onError }) {
   const [payAmount, setPayAmount] = useState("");
   const [method, setMethod] = useState("transfer");
   const [payDate, setPayDate] = useState(new Date().toISOString().slice(0, 10));
@@ -270,8 +270,8 @@ export default function VendorBillDetailPanel({ bill, canApprove, currentUser, o
               <button data-testid="vb-action-approve" onClick={() => approveBill()} disabled={busy} className="primary-button"><CheckCircle2 size={13} /> Setujui & Posting</button>
             </>
           )}
-          {bill.status === "pending_approval" && !canApprove && (
-            <span className="text-[11px] text-[#9A9BA3]">Menunggu persetujuan {bill.required_approval_role || "manager"}.</span>
+          {bill.status === "pending_approval" && !canApprove && (   /* KP-T4 — petunjuk dari Aturan Persetujuan */
+            <span className="text-[11px] text-[#9A9BA3]" data-testid="vb-decide-hint">{decideHint || "Menunggu persetujuan."}</span>
           )}
           {bill.status === "posted" && (
             <>
