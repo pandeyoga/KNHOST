@@ -1,0 +1,281 @@
+FFFFF.FFFFFFFFF                                                          [100%]
+=================================== FAILURES ===================================
+____________ test_KFT2_U2_sebelas_kunci_baru_dan_lima_tidak_dipakai ____________
+
+    def test_KFT2_U2_sebelas_kunci_baru_dan_lima_tidak_dipakai():
+        for key, (group, typ, default, lo, hi, unit, perm) in BARU.items():
+            e = registry.get(key)
+>           assert e is not None, f"{key} belum terdaftar"
+E           AssertionError: returns.customer_window_days belum terdaftar
+E           assert None is not None
+
+tests_mem/test_KFT2_kunci_pengaturan.py:74: AssertionError
+____________ test_KFT2_U3_batas_retur_per_pt_lewat_pusat_pengaturan ____________
+
+klien = <httpx.AsyncClient object at 0x7f28799346d0>
+kepala_admin = {'Authorization': 'Bearer tok_uji_8d621a74df4943bc8d928cc7fc6c4651', 'X-Entity-Id': 'ent_ksc'}
+
+    async def test_KFT2_U3_batas_retur_per_pt_lewat_pusat_pengaturan(klien, kepala_admin):
+        from services.return_policy_service import return_assumptions
+        r = await klien.put("/api/config/values", headers=kepala_admin, json=_put("returns.customer_window_days", 30))
+>       assert r.status_code == 200, r.text
+E       AssertionError: {"detail":"Setting 'returns.customer_window_days' tidak ada di registry"}
+E       assert 404 == 200
+E        +  where 404 = <Response [404 Not Found]>.status_code
+
+tests_mem/test_KFT2_kunci_pengaturan.py:96: AssertionError
+---------------------------- Captured stdout setup -----------------------------
+[bootstrap] FASE F lifecycle backfill: 5 produk distempel 'produksi'
+[bootstrap] kebersihan data: 5 record dirapikan {'customers': 3, 'suppliers': 0, 'users': 0, 'hr_employees': 2, 'makloons': 0}
+_____________ test_KFT2_U4_nilai_lama_terbaca_sebagai_lapisan_lama _____________
+
+klien = <httpx.AsyncClient object at 0x7f28799346d0>
+kepala_admin = {'Authorization': 'Bearer tok_uji_8d621a74df4943bc8d928cc7fc6c4651', 'X-Entity-Id': 'ent_ksc'}
+db = <motor.motor_asyncio.AsyncIOMotorDatabase object at 0x7f288cb889d0>
+
+    async def test_KFT2_U4_nilai_lama_terbaca_sebagai_lapisan_lama(klien, kepala_admin, db):
+        from services.return_policy_service import return_assumptions
+        # Fixture (sisip langsung): nilai yang dulu ditulis `PUT /api/settings` ke dokumen grup.
+        await db.system_settings.update_one({"scope": "global"}, {"$set": {"returns.customer_window_days": 14}})
+        assert (await return_assumptions(""))["customer_window_days"] == 14
+        r = await klien.get("/api/config/effective", headers=kepala_admin, params={"q": "returns.customer_window_days"})
+        assert r.status_code == 200, r.text
+        items = [it for it in r.json()["items"] if it["key"] == "returns.customer_window_days"]
+>       assert len(items) == 1, r.json()
+E       AssertionError: {'groups': [{'id': 'uang-masuk', 'label': 'Uang Masuk & Piutang', 'order': 1, 'question': 'Kapan pelanggan harus bayar....], 'context': {'entity_id': '', 'customer_id': '', 'supplier_id': '', 'product_id': '', ...}, 'items': [], 'total': 0}
+E       assert 0 == 1
+E        +  where 0 = len([])
+
+tests_mem/test_KFT2_kunci_pengaturan.py:113: AssertionError
+______________ test_KFT2_U5_harga_per_grade_dari_pusat_pengaturan ______________
+
+klien = <httpx.AsyncClient object at 0x7f28799346d0>
+kepala_admin = {'Authorization': 'Bearer tok_uji_8d621a74df4943bc8d928cc7fc6c4651', 'X-Entity-Id': 'ent_ksc'}
+
+    async def test_KFT2_U5_harga_per_grade_dari_pusat_pengaturan(klien, kepala_admin):
+        from services.return_grade_impairment import compute, grade_factors
+        tabel = {"A": 100, "A1": 95, "A2": 90, "B": 50, "B1": 60, "C": 40, "BS": 10}
+        r = await klien.put("/api/config/values", headers=kepala_admin,
+                            json=_put("returns.grade_price_factors", tabel, "global", ""))
+>       assert r.status_code == 200, r.text
+E       AssertionError: {"detail":"Setting 'returns.grade_price_factors' tidak ada di registry"}
+E       assert 404 == 200
+E        +  where 404 = <Response [404 Not Found]>.status_code
+
+tests_mem/test_KFT2_kunci_pengaturan.py:125: AssertionError
+_________________ test_KFT2_U6_saling_hapus_hanya_untuk_pt_itu _________________
+
+klien = <httpx.AsyncClient object at 0x7f28799346d0>
+kepala_admin = {'Authorization': 'Bearer tok_uji_8d621a74df4943bc8d928cc7fc6c4651', 'X-Entity-Id': 'ent_ksc'}
+
+    async def test_KFT2_U6_saling_hapus_hanya_untuk_pt_itu(klien, kepala_admin):
+        from services.interco_service import payment_settings
+        r = await klien.put("/api/config/values", headers=kepala_admin, json=_put("interco_payment.allow_netting", True))
+>       assert r.status_code == 200, r.text
+E       AssertionError: {"detail":"Setting 'interco_payment.allow_netting' tidak ada di registry"}
+E       assert 404 == 200
+E        +  where 404 = <Response [404 Not Found]>.status_code
+
+tests_mem/test_KFT2_kunci_pengaturan.py:136: AssertionError
+_______________ test_KFT2_U8_put_settings_lama_410_tanpa_menulis _______________
+
+klien = <httpx.AsyncClient object at 0x7f28799346d0>
+kepala_admin = {'Authorization': 'Bearer tok_uji_8d621a74df4943bc8d928cc7fc6c4651', 'X-Entity-Id': 'ent_ksc'}
+db = <motor.motor_asyncio.AsyncIOMotorDatabase object at 0x7f288cb889d0>
+
+    async def test_KFT2_U8_put_settings_lama_410_tanpa_menulis(klien, kepala_admin, db):
+        sebelum = await db.system_settings.find_one({"scope": "global"}, {"_id": 0})
+        r = await klien.put("/api/settings", headers=kepala_admin,
+                            json={"scope": "global", "returns": {"customer_window_days": 5}})
+>       assert r.status_code == 410, r.text
+E       AssertionError: {"id":"set_a5536a8fc645","scope":"global","returns":{"customer_window_days":5},"interco_payment":{"allow_netting":false,"require_full_payment":true,"cutoff_day":null,"payment_day":null,"basis":null,"reminder_days":3},"tax":{"ppn_rate":12.0,"dpp_nilai_lain":true,"ppn_mode":"excluded","efaktur_enabled":true,"pph_items":[{"code":"pph21","name":"PPh 21 — Karyawan","rate":0.0,"basis":"payroll","enabled":true},{"code":"pph23","name":"PPh 23 — Jasa/Sewa","rate":2.0,"basis":"manual","enabled":true},{"code":"pph_final_pp23","name":"PPh Final UMKM (PP23)","rate":0.5,"basis":"omzet","enabled":false}]},"finance":{"base_currency":"IDR","fiscal_year_end_month":12,"default_payment_term_code":"NET30"},"sales":{"quotation_enabled":false,"allow_partial_shipment":true,"allow_order_discount":false,"allow_item_discount":false,"require_so_validation":false},"inventory":{"default_uom":"meter","min_cut_qty":0.5,"stock_analytics":{"velocity_window_days":90,"best_seller_pct":20,"slow_moving_pct":20,"new_sku_age_days":90},"reorder":{"velocity_window_days":90,"safety_days":7},"intercompany_transfer_required":true},"purchasing":{"receive_tolerance_percent":2.0,"require_supplier_master":false,"qc_on_receipt":true,"price_deviation_approval_percent":10.0,"allow_item_discount":true,"allow_order_discount":true,"bill_qty_tolerance_percent":0.0,"bill_price_tolerance_percent":5.0},"allocation":{"mode":"auto","roll_pick_sales":true,"makloon_reserve_mode":"block","priority_order":["owner","lot","location","roll_efficiency"],"lot_mode":"prefer_single","lot_selection":"fifo","location_pref":"single_warehouse","allow_intercompany":true,"allow_partial":true,"dye_lot_strict":false},"commission":{"strategy":"per_sku","incentive_unit":"meter","default_margin_cap_pct":50.0,"discount_threshold_type":"pct","discount_threshold":10.0,"discount_mechanic":"tier_factor","discount_factor":0.5,"discount_potong_rp":0.0},"created_at":"2026-11-14T02:52:10.909723+00:00","updated_at":"2026-11-14T02:52:11.045353+00:00"}
+E       assert 200 == 410
+E        +  where 200 = <Response [200 OK]>.status_code
+
+tests_mem/test_KFT2_kunci_pengaturan.py:154: AssertionError
+____________ test_KFT2_U9_kunci_tidak_dipakai_ditolak_dengan_alasan ____________
+
+klien = <httpx.AsyncClient object at 0x7f28799346d0>
+kepala_admin = {'Authorization': 'Bearer tok_uji_8d621a74df4943bc8d928cc7fc6c4651', 'X-Entity-Id': 'ent_ksc'}
+
+    async def test_KFT2_U9_kunci_tidak_dipakai_ditolak_dengan_alasan(klien, kepala_admin):
+        for key, alasan in TIDAK_DIPAKAI.items():
+            r = await klien.put("/api/config/values", headers=kepala_admin, json=_put(key, NILAI_U9[key], "global", ""))
+>           assert r.status_code == 400, (key, r.text)
+E           AssertionError: ('contra_bon.qty_tolerance_percent', '{"saved":[{"id":"cfgv_6fcc2e2d4bec","key":"contra_bon.qty_tolerance_percent","sc...1+00:00","created_at":"2026-11-14T02:52:11.063238+00:00","applied_at":"2026-11-14T02:52:11.063231+00:00"}],"count":1}')
+E           assert 200 == 400
+E            +  where 200 = <Response [200 OK]>.status_code
+
+tests_mem/test_KFT2_kunci_pengaturan.py:163: AssertionError
+______________ test_KFT2_U10_cadangan_sama_dengan_bawaan_registry ______________
+
+    async def test_KFT2_U10_cadangan_sama_dengan_bawaan_registry():
+        from services.ar_aging_service import _denda_estimate
+        from services.config_service import compute_order_pricing
+        from services.so_approvals import require_validation_default
+        harga = await compute_order_pricing([{"price": 100, "quantity": 1, "discount_percent": 10}],
+                                            settings={"sales": {}, "tax": {}})
+>       assert harga["items_discount_total"] == 0.0          # sales.allow_item_discount bawaan False
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       assert 10.0 == 0.0
+
+tests_mem/test_KFT2_kunci_pengaturan.py:174: AssertionError
+________ test_KFT2_U10b_tujuh_cadangan_lain_sama_dengan_bawaan_registry ________
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7f28797d1790>
+
+    async def test_KFT2_U10b_tujuh_cadangan_lain_sama_dengan_bawaan_registry(monkeypatch):
+        """Baris lain tabel KF-06 (pelengkap U10): dokumen pengaturan tanpa kunci → perilaku = bawaan registry."""
+        from services import approval_matrix_service as am
+        from services import config_service as cs
+        from services.roll_service import _build_allocation_plan, _explain_allocation
+        from services.sales_force_service import _discount_factor
+    
+        async def _tanpa_isi(entity_id=None):
+            return {"scope": "all", "tax": {"is_pkp": True}, "allocation": {}, "inventory": {}}
+        monkeypatch.setattr(cs, "get_effective_settings", _tanpa_isi)
+        # tax.ppn_rate 12 + tax.dpp_nilai_lain benar: DPP 11/12 × 1.200.000 = 1.100.000; PPN 12 % × 1.100.000 = 132.000.
+        pajak = await cs.compute_tax(1200000)
+>       assert (pajak["ppn_rate"], pajak["dpp_nilai_lain"], pajak["ppn_amount"]) == (12.0, True, 132000.0)
+E       assert (0.0, False, 0.0) == (12.0, True, 132000.0)
+E         
+E         At index 0 diff: 0.0 != 12.0
+E         Use -v to get more diff
+
+tests_mem/test_KFT2_kunci_pengaturan.py:192: AssertionError
+___________ test_KFT2_U11_kesehatan_konfigurasi_tanpa_rujukan_rusak ____________
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7f28797f4c10>
+
+    def test_KFT2_U11_kesehatan_konfigurasi_tanpa_rujukan_rusak(monkeypatch):
+        from services import config_health
+        # Jalur bawaan modul = `/app/...`; uji membaca kode di salinan kerja ini.
+        monkeypatch.setattr(config_health, "BACKEND", str(BACKEND))
+        monkeypatch.setattr(config_health, "FRONTEND", str(ROOT / "frontend/src"))
+        rep = config_health.report()
+>       assert [(b["key"], b["wiring_status"]) for b in rep["broken"]] == []
+E       AssertionError: assert [('returns.ev...le', 'STALE')] == []
+E         
+E         Left contains 4 more items, first extra item: ('returns.evidence_required_submit', 'STALE')
+E         Use -v to get more diff
+
+tests_mem/test_KFT2_kunci_pengaturan.py:219: AssertionError
+_______________ test_KFT2_U12_akun_biaya_bank_dari_pemetaan_akun _______________
+
+klien = <httpx.AsyncClient object at 0x7f28799346d0>
+kepala_admin = {'Authorization': 'Bearer tok_uji_8d621a74df4943bc8d928cc7fc6c4651', 'X-Entity-Id': 'ent_ksc'}
+
+    async def test_KFT2_U12_akun_biaya_bank_dari_pemetaan_akun(klien, kepala_admin):
+        from services import bank_recon_service as brs
+        r = await klien.post("/api/gl/accounts", headers=kepala_admin, params={"entity_id": "ent_ksc"},
+                             json={"code": "6-8100", "name": "Beban Bank Uji KF-T2", "type": "expense",
+                                   "parent_code": "6-0000"})
+        assert r.status_code == 200, r.text
+        r = await klien.put("/api/gl/account-mappings/kas_bank.beban_bank", headers=kepala_admin,
+                            json={"account_code": "6-8100", "entity_id": "ent_ksc", "reason": "uji KF-T2 akun biaya bank"})
+        assert r.status_code == 200, r.text
+>       assert (await brs.load_cfg("ent_ksc"))["charge_acc"] == "6-8100"
+E       AssertionError: assert '6-8000' == '6-8100'
+E         
+E         - 6-8100
+E         ?    -
+E         + 6-8000
+E         ?      +
+
+tests_mem/test_KFT2_kunci_pengaturan.py:238: AssertionError
+_____________ test_KFT2_U14_tidak_ada_layar_menulis_settings_lama ______________
+
+    def test_KFT2_U14_tidak_ada_layar_menulis_settings_lama():
+        pola = re.compile(r"""axios\.put\(\s*[`"'](?:\$\{API\})?/settings[`"'?]""")
+        temuan = [str(p.relative_to(ROOT)) for p in (ROOT / "frontend/src").rglob("*.js*")
+                  if "node_modules" not in p.parts and pola.search(p.read_text(encoding="utf-8", errors="ignore"))]
+>       assert temuan == []
+E       AssertionError: assert ['frontend/sr...Schedule.jsx'] == []
+E         
+E         Left contains 2 more items, first extra item: 'frontend/src/features/sales/ReturnAssumptionsPanel.jsx'
+E         Use -v to get more diff
+
+tests_mem/test_KFT2_kunci_pengaturan.py:247: AssertionError
+____________________ test_KFT2_U13_pindahan_akun_biaya_bank ____________________
+
+klien = <httpx.AsyncClient object at 0x7f28797cfdd0>
+kepala_admin = {'Authorization': 'Bearer tok_uji_0a388d6d217d400ca7113be841e4fe8a', 'X-Entity-Id': 'ent_ksc'}
+db = <motor.motor_asyncio.AsyncIOMotorDatabase object at 0x7f288cb889d0>
+
+    async def test_KFT2_U13_pindahan_akun_biaya_bank(klien, kepala_admin, db):
+        from services import gl_mapping_service as glm
+>       mod = _skrip()
+              ^^^^^^^^
+
+tests_mem/test_KFT2_migrasi_akun_bank.py:35: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests_mem/test_KFT2_migrasi_akun_bank.py:23: in _skrip
+    spec.loader.exec_module(mod)
+<frozen importlib._bootstrap_external>:936: in exec_module
+    ???
+<frozen importlib._bootstrap_external>:1073: in get_code
+    ???
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <_frozen_importlib_external.SourceFileLoader object at 0x7f2879790650>
+path = '<HEAD>/scripts/migrate_kft2_akun_bank.py'
+
+>   ???
+E   FileNotFoundError: [Errno 2] No such file or directory: '<HEAD>/scripts/migrate_kft2_akun_bank.py'
+
+<frozen importlib._bootstrap_external>:1130: FileNotFoundError
+---------------------------- Captured stdout setup -----------------------------
+[bootstrap] FASE F lifecycle backfill: 5 produk distempel 'produksi'
+[bootstrap] kebersihan data: 5 record dirapikan {'customers': 3, 'suppliers': 0, 'users': 0, 'hr_employees': 2, 'makloons': 0}
+________ test_KFT2_U13b_pemetaan_yang_sudah_diubah_tidak_ditimpa_bawaan ________
+
+klien = <httpx.AsyncClient object at 0x7f28797cfdd0>
+kepala_admin = {'Authorization': 'Bearer tok_uji_0a388d6d217d400ca7113be841e4fe8a', 'X-Entity-Id': 'ent_ksc'}
+
+    async def test_KFT2_U13b_pemetaan_yang_sudah_diubah_tidak_ditimpa_bawaan(klien, kepala_admin):
+        """Pelengkap U13 (lihat "Menyimpang" di laporan): Admin sudah mengubah Pemetaan Akun `kas_bank.beban_bank` untuk
+        `ent_kanda`, kunci Pusat Pengaturan masih bawaan 6-8000. Jurnal hari ini sudah memakai akun pemetaan (6-8000 adalah
+        kode bawaan yang dialihkan `remap_lines`), jadi skrip tidak boleh mengembalikan pemetaan ke 6-8000."""
+        from services import gl_mapping_service as glm
+>       mod = _skrip()
+              ^^^^^^^^
+
+tests_mem/test_KFT2_migrasi_akun_bank.py:72: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests_mem/test_KFT2_migrasi_akun_bank.py:23: in _skrip
+    spec.loader.exec_module(mod)
+<frozen importlib._bootstrap_external>:936: in exec_module
+    ???
+<frozen importlib._bootstrap_external>:1073: in get_code
+    ???
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <_frozen_importlib_external.SourceFileLoader object at 0x7f2879776590>
+path = '<HEAD>/scripts/migrate_kft2_akun_bank.py'
+
+>   ???
+E   FileNotFoundError: [Errno 2] No such file or directory: '<HEAD>/scripts/migrate_kft2_akun_bank.py'
+
+<frozen importlib._bootstrap_external>:1130: FileNotFoundError
+=============================== warnings summary ===============================
+../../../venv311/lib/python3.11/site-packages/starlette/formparsers.py:12
+  <venv>/lib/python3.11/site-packages/starlette/formparsers.py:12: PendingDeprecationWarning: Please use `import python_multipart` instead.
+    import multipart
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests_mem/test_KFT2_kunci_pengaturan.py::test_KFT2_U2_sebelas_kunci_baru_dan_lima_tidak_dipakai
+FAILED tests_mem/test_KFT2_kunci_pengaturan.py::test_KFT2_U3_batas_retur_per_pt_lewat_pusat_pengaturan
+FAILED tests_mem/test_KFT2_kunci_pengaturan.py::test_KFT2_U4_nilai_lama_terbaca_sebagai_lapisan_lama
+FAILED tests_mem/test_KFT2_kunci_pengaturan.py::test_KFT2_U5_harga_per_grade_dari_pusat_pengaturan
+FAILED tests_mem/test_KFT2_kunci_pengaturan.py::test_KFT2_U6_saling_hapus_hanya_untuk_pt_itu
+FAILED tests_mem/test_KFT2_kunci_pengaturan.py::test_KFT2_U8_put_settings_lama_410_tanpa_menulis
+FAILED tests_mem/test_KFT2_kunci_pengaturan.py::test_KFT2_U9_kunci_tidak_dipakai_ditolak_dengan_alasan
+FAILED tests_mem/test_KFT2_kunci_pengaturan.py::test_KFT2_U10_cadangan_sama_dengan_bawaan_registry
+FAILED tests_mem/test_KFT2_kunci_pengaturan.py::test_KFT2_U10b_tujuh_cadangan_lain_sama_dengan_bawaan_registry
+FAILED tests_mem/test_KFT2_kunci_pengaturan.py::test_KFT2_U11_kesehatan_konfigurasi_tanpa_rujukan_rusak
+FAILED tests_mem/test_KFT2_kunci_pengaturan.py::test_KFT2_U12_akun_biaya_bank_dari_pemetaan_akun
+FAILED tests_mem/test_KFT2_kunci_pengaturan.py::test_KFT2_U14_tidak_ada_layar_menulis_settings_lama
+FAILED tests_mem/test_KFT2_migrasi_akun_bank.py::test_KFT2_U13_pindahan_akun_biaya_bank
+FAILED tests_mem/test_KFT2_migrasi_akun_bank.py::test_KFT2_U13b_pemetaan_yang_sudah_diubah_tidak_ditimpa_bawaan
+14 failed, 1 passed, 1 warning in 2.91s

@@ -1,0 +1,91 @@
+== audit_config_wiring
+-- sebelum:
+Total kunci terdeklarasi : 78
+-- sesudah:
+Total kunci terdeklarasi : 71
+== audit_config_wiring_selftest
+-- sebelum:
+[1] keadaan nyata          : wired=True pelanggaran=9
+[7] daun lama kunci bertanggal: NOT_USED · bila tidak bertanggal: ORPHAN_UI (harus NOT_USED · pelanggaran)
+SELF-TEST: FAIL
+-- sesudah:
+[1] keadaan nyata          : wired=True pelanggaran=0
+[7] daun lama kunci bertanggal: NOT_USED · bila tidak bertanggal: ORPHAN_UI (harus NOT_USED · pelanggaran)
+SELF-TEST: PASS — guardrail terbukti bisa memerah
+== audit_config_wiring_strict
+-- sebelum:
+Total kunci terdeklarasi : 78
+-- sesudah:
+Total kunci terdeklarasi : 71
+== audit_i18n_id
+-- sebelum:
+  ✗ 113 temuan di 66 berkas.
+-- sesudah:
+  ✗ 112 temuan di 65 berkas.
+== audit_i18n_id_strict
+-- sebelum:
+  ✗ 113 temuan di 66 berkas.
+-- sesudah:
+  ✗ 112 temuan di 65 berkas.
+== config_health
+-- sebelum:
+total 372 summary {'OK': 359, 'NOT_USED': 9, 'STALE': 4}
+-- sesudah:
+total 383 summary {'OK': 369, 'NOT_USED': 14}
+== verify_access_catalog_nav
+-- sebelum:
+verify_access_catalog_nav: 0 temuan
+-- sesudah:
+verify_access_catalog_nav: 0 temuan
+== verify_auth_coverage
+-- sebelum:
+[FAIL] 28 pelanggaran (dari 1740 cek):
+  ✗ handheld.py: `GET /tasks/summary` TIDAK menegakkan auth (require_permission/require_any_permission/require_role/current_user/entity_ctx) → dapat diakses TANPA login. Tambah enforcer atau daftarkan di PUBLIC_ALLOWLIST bila memang publik.
+-- sesudah:
+[FAIL] 28 pelanggaran (dari 1740 cek):
+  ✗ handheld.py: `GET /tasks/summary` TIDAK menegakkan auth (require_permission/require_any_permission/require_role/current_user/entity_ctx) → dapat diakses TANPA login. Tambah enforcer atau daftarkan di PUBLIC_ALLOWLIST bila memang publik.
+== verify_blocking_dialogs
+-- sebelum:
+[PASS] 1 cek lolos, 0 pelanggaran.
+-- sesudah:
+[PASS] 1 cek lolos, 0 pelanggaran.
+== verify_codebase_map
+-- sebelum:
+[PASS] 5 cek lolos, 0 pelanggaran.
+-- sesudah:
+[PASS] 5 cek lolos, 0 pelanggaran.
+== verify_custom_modals
+-- sebelum:
+[PASS] 98 cek lolos, 0 pelanggaran.
+-- sesudah:
+[PASS] 98 cek lolos, 0 pelanggaran.
+== verify_error_notice
+-- sebelum:
+[PASS] 283 cek lolos, 0 pelanggaran.
+-- sesudah:
+[PASS] 283 cek lolos, 0 pelanggaran.
+== verify_knselect_contract
+-- sebelum:
+verify_knselect_contract: 0 temuan
+-- sesudah:
+verify_knselect_contract: 0 temuan
+== verify_modal_dismiss
+-- sebelum:
+[PASS] 10 cek lolos, 0 pelanggaran.
+-- sesudah:
+[PASS] 10 cek lolos, 0 pelanggaran.
+== verify_money_idempotency
+-- sebelum:
+[PASS] 17 cek lolos, 0 pelanggaran.
+-- sesudah:
+[PASS] 17 cek lolos, 0 pelanggaran.
+== verify_page_tabs
+-- sebelum:
+[FAIL] 1 pelanggaran (dari 13 cek):
+-- sesudah:
+[FAIL] 1 pelanggaran (dari 13 cek):
+== verify_ui_standard
+-- sebelum:
+[FAIL] 26 pelanggaran (dari 4320 cek):
+-- sesudah:
+[FAIL] 26 pelanggaran (dari 4319 cek):

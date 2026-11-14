@@ -1,0 +1,9 @@
+== SEBELUM (HEAD)
+total 372 summary {'OK': 359, 'NOT_USED': 9, 'STALE': 4}
+BROKEN returns.evidence_required_submit STALE ['services/return_evidence_service.py:assert_evidence', 'routers/sales_returns.py:submit_return'] []
+BROKEN returns.evidence_required_approve STALE ['services/return_evidence_service.py:assert_evidence', 'routers/sales_returns.py:approve_return'] []
+BROKEN returns.evidence_required_inspect STALE ['services/return_evidence_service.py:assert_evidence', 'routers/sales_returns.py:complete_inspection'] []
+BROKEN returns.evidence_required_settle STALE ['services/return_evidence_service.py:assert_evidence', 'routers/sales_returns.py:settle_return'] []
+
+== SESUDAH
+total 383 summary {'OK': 369, 'NOT_USED': 14}

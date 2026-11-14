@@ -1,0 +1,58 @@
+== SEBELUM (HEAD)
+================================================================================================
+AUDIT WIRING KONFIGURASI — apakah setiap setting benar-benar berfungsi?
+================================================================================================
+Total kunci terdeklarasi : 78
+  OK           68   wiring lengkap (dibaca kode + bisa diubah user)
+  NOT_USED      1   registry menyatakan tidak dipakai + alasan (SAH)
+  HIDDEN        2   dibaca kode TAPI TANPA UI (hanya via DB/API)
+  ORPHAN_UI     0   ADA UI TAPI TIDAK DIBACA KODE  <-- tombol palsu
+  DEAD          7   tidak dibaca & tidak ada UI
+
+Pusat Pengaturan (UI generik): TERSAMBUNG
+Editor konfigurasi di luar Pusat Pengaturan: 2 berkas <-- sumber kebenaran ganda
+  ! features/sales/ReturnAssumptionsPanel.jsx → /settings
+  ! features/finance/interco/IntercoPaymentSchedule.jsx → /settings
+
+Per scope:
+  global         total= 78  OK= 68 HIDDEN=  2 ORPHAN_UI=  0 DEAD=  7 NOT_USED=  1
+
+── DEAD (7) ────────────────────────────────────────────────────────────────────────
+  [global] returns.grade_price_factors.A                        default=100
+  [global] returns.grade_price_factors.A1                       default=95
+  [global] returns.grade_price_factors.A2                       default=90
+  [global] returns.grade_price_factors.B                        default=70
+  [global] returns.grade_price_factors.B1                       default=60
+  [global] returns.grade_price_factors.C                        default=40
+  [global] returns.grade_price_factors.BS                       default=10
+
+── HIDDEN (2) ──────────────────────────────────────────────────────────────────────
+  [global] interco_payment.allow_netting                        default=False  kode: be:services/interco_service.py
+  [global] interco_payment.require_full_payment                 default=True  kode: be:services/interco_service.py
+
+── NOT_USED (1) ────────────────────────────────────────────────────────────────────
+  [global] sales.quotation_enabled                              default=False  alasan: Alur Penawaran (Quotation) BELUM ADA di sistem — tidak ada satu pun en
+
+⚠️  9 kunci bermasalah + 2 editor ganda (INV-CFG).
+
+== SESUDAH
+================================================================================================
+AUDIT WIRING KONFIGURASI — apakah setiap setting benar-benar berfungsi?
+================================================================================================
+Total kunci terdeklarasi : 71
+  OK           70   wiring lengkap (dibaca kode + bisa diubah user)
+  NOT_USED      1   registry menyatakan tidak dipakai + alasan (SAH)
+  HIDDEN        0   dibaca kode TAPI TANPA UI (hanya via DB/API)
+  ORPHAN_UI     0   ADA UI TAPI TIDAK DIBACA KODE  <-- tombol palsu
+  DEAD          0   tidak dibaca & tidak ada UI
+
+Pusat Pengaturan (UI generik): TERSAMBUNG
+Editor konfigurasi di luar Pusat Pengaturan: TIDAK ADA (satu sumber kebenaran)
+
+Per scope:
+  global         total= 71  OK= 70 HIDDEN=  0 ORPHAN_UI=  0 DEAD=  0 NOT_USED=  1
+
+── NOT_USED (1) ────────────────────────────────────────────────────────────────────
+  [global] sales.quotation_enabled                              default=False  alasan: Alur Penawaran (Quotation) BELUM ADA di sistem — tidak ada satu pun en
+
+✅ INV-CFG: setiap setting terdeklarasi punya pembaca kode DAN jalur ubah yang nyata; tidak ada editor ganda.

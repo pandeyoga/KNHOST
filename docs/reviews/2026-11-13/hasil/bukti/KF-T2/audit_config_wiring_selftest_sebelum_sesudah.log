@@ -1,0 +1,32 @@
+== SEBELUM (HEAD)
+[1] keadaan nyata          : wired=True pelanggaran=9
+    - DEAD global:returns.grade_price_factors.A
+    - DEAD global:returns.grade_price_factors.A1
+    - DEAD global:returns.grade_price_factors.A2
+    - DEAD global:returns.grade_price_factors.B
+    - DEAD global:returns.grade_price_factors.B1
+    - DEAD global:returns.grade_price_factors.C
+    - DEAD global:returns.grade_price_factors.BS
+    - HIDDEN global:interco_payment.allow_netting
+    - HIDDEN global:interco_payment.require_full_payment
+[2] Hub diputus (simulasi) : HIDDEN=53 (harus > 0)
+[3] penulis config lama    : 2 berkas (harus 0)
+    - features/sales/ReturnAssumptionsPanel.jsx → /settings
+    - features/finance/interco/IntercoPaymentSchedule.jsx → /settings
+[4] penulis lama disuntik  : terdeteksi=3 (harus > 2)
+[5] kartu pengalih murni   : tidak dihitung editor (benar)
+[6] index == regex         : 234/234 sama (harus 100%)
+[7] daun lama kunci bertanggal: NOT_USED · bila tidak bertanggal: ORPHAN_UI (harus NOT_USED · pelanggaran)
+
+SELF-TEST: FAIL
+
+== SESUDAH
+[1] keadaan nyata          : wired=True pelanggaran=0
+[2] Hub diputus (simulasi) : HIDDEN=60 (harus > 0)
+[3] penulis config lama    : 0 berkas (harus 0)
+[4] penulis lama disuntik  : terdeteksi=1 (harus > 0)
+[5] kartu pengalih murni   : tidak dihitung editor (benar)
+[6] index == regex         : 213/213 sama (harus 100%)
+[7] daun lama kunci bertanggal: NOT_USED · bila tidak bertanggal: ORPHAN_UI (harus NOT_USED · pelanggaran)
+
+SELF-TEST: PASS — guardrail terbukti bisa memerah

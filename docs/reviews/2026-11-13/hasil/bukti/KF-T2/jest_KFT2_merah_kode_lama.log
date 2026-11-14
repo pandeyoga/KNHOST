@@ -1,0 +1,27 @@
+[visual-edits] @emergentbase/visual-edits not installed — visual editing disabled.
+[visual-edits] @emergentbase/visual-edits not installed — visual editing disabled.
+FAIL src/features/__tests__/kft2KunciPengaturan.test.js
+  ● Test suite failed to run
+
+    Cannot find module '../sales/ReturnGeneralLimits' from 'src/features/__tests__/kft2KunciPengaturan.test.js'
+
+       6 | import path from "path";
+       7 | import { createRoot } from "react-dom/client";
+    >  8 | import ReturnGeneralLimits, { RETURN_LIMIT_KEYS } from "../sales/ReturnGeneralLimits";
+         | ^
+       9 | import IntercoPaymentSchedule from "../finance/interco/IntercoPaymentSchedule";
+      10 | import { configApi } from "../settings/config/configApi";
+      11 | import { setAccessContext } from "../../config/roles";
+
+      at Resolver.resolveModule (../fe/node_modules/jest-resolve/build/resolver.js:324:11)
+      at Object.<anonymous> (src/features/__tests__/kft2KunciPengaturan.test.js:8:1)
+      at TestScheduler.scheduleTests (../fe/node_modules/@jest/core/build/TestScheduler.js:333:13)
+      at runJest (../fe/node_modules/@jest/core/build/runJest.js:404:19)
+      at _run10000 (../fe/node_modules/@jest/core/build/cli/index.js:320:7)
+      at runCLI (../fe/node_modules/@jest/core/build/cli/index.js:173:3)
+
+Test Suites: 1 failed, 1 total
+Tests:       0 total
+Snapshots:   0 total
+Time:        0.781 s
+Ran all test suites matching /kft2KunciPengaturan/i.

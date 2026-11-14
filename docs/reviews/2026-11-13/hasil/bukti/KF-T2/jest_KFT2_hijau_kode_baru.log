@@ -1,0 +1,16 @@
+[visual-edits] @emergentbase/visual-edits not installed — visual editing disabled.
+[visual-edits] @emergentbase/visual-edits not installed — visual editing disabled.
+PASS src/features/__tests__/kft2KunciPengaturan.test.js
+  ✓ KF-T2 · U14 (pelengkap) — tidak ada layar yang menulis PUT /api/settings; panel lama dihapus (38 ms)
+  KF-T2 · Batas retur umum (Kebijakan Retur)
+    ✓ kartu Pusat Pengaturan untuk tepat lima kunci returns.* (167 ms)
+    ✓ tanpa akses baca Pusat Pengaturan (403) → satu baris hanya-baca dari pengaturan efektif (14 ms)
+  KF-T2 · Aturan jadwal bayar (Antar-PT › Jadwal Bayar)
+    ✓ kartu interco_payment.* menggantikan form lama; kunci antar-PT lain tidak ikut (50 ms)
+    ✓ tanpa akses baca → bagian aturan tidak tampil; jadwal tetap tampil (8 ms)
+
+Test Suites: 1 passed, 1 total
+Tests:       5 passed, 5 total
+Snapshots:   0 total
+Time:        1.714 s
+Ran all test suites matching /kft2KunciPengaturan/i.

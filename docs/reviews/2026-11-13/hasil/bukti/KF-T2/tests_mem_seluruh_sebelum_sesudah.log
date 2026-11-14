@@ -1,0 +1,4 @@
+== sebelum (HEAD 36b056e, salinan kerja tanpa perubahan)
+379 passed, 2 skipped, 3 xfailed, 11 warnings in 42.23s
+== sesudah
+394 passed, 2 skipped, 3 xfailed, 11 warnings in 43.66s

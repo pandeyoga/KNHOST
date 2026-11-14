@@ -1,0 +1,16 @@
+== KF-T2 akun rekonsiliasi bank → Pemetaan Akun — mode lapor (lapisan grup + 3 PT) ==
+Selisih akun jurnal: 1
+  - bank.charge_account_code → kas_bank.beban_bank · ent_ksc · hari ini 6-8100, sesudah pengalihan 6-8000 → pemetaan diisi 6-8100
+(mode lapor; jalankan dengan --apply untuk menulis)
+
+== KF-T2 akun rekonsiliasi bank → Pemetaan Akun — mode tulis (lapisan grup + 3 PT) ==
+Selisih akun jurnal: 1
+  - bank.charge_account_code → kas_bank.beban_bank · ent_ksc · hari ini 6-8100, sesudah pengalihan 6-8000 → pemetaan diisi 6-8100
+Ditulis: 1 · gagal: 0
+
+== KF-T2 akun rekonsiliasi bank → Pemetaan Akun — mode tulis (lapisan grup + 3 PT) ==
+Selisih akun jurnal: 0
+Ditulis: 0 · gagal: 0
+
+Argumen tidak dikenal atau bertentangan: --salah (tanpa argumen / --dry-run untuk lapor, --apply untuk menulis)
+argumen salah → 2

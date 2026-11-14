@@ -1,0 +1,44 @@
+============================= test session starts ==============================
+platform linux -- Python 3.11.18, pytest-9.1.1, pluggy-1.6.0 -- <venv>/bin/python
+rootdir: <worktree>/backend
+configfile: pytest.ini
+plugins: xdist-3.8.0, anyio-4.14.2
+collecting ... collected 29 items
+
+tests_mem/test_KFT2_kunci_pengaturan.py::test_KFT2_U2_sebelas_kunci_baru_dan_lima_tidak_dipakai PASSED [  3%]
+tests_mem/test_KFT2_kunci_pengaturan.py::test_KFT2_U3_batas_retur_per_pt_lewat_pusat_pengaturan PASSED [  6%]
+tests_mem/test_KFT2_kunci_pengaturan.py::test_KFT2_U4_nilai_lama_terbaca_sebagai_lapisan_lama PASSED [ 10%]
+tests_mem/test_KFT2_kunci_pengaturan.py::test_KFT2_U5_harga_per_grade_dari_pusat_pengaturan PASSED [ 13%]
+tests_mem/test_KFT2_kunci_pengaturan.py::test_KFT2_U6_saling_hapus_hanya_untuk_pt_itu PASSED [ 17%]
+tests_mem/test_KFT2_kunci_pengaturan.py::test_KFT2_U7_bawaan_jadwal_bayar_sama_dengan_hari_ini PASSED [ 20%]
+tests_mem/test_KFT2_kunci_pengaturan.py::test_KFT2_U8_put_settings_lama_410_tanpa_menulis PASSED [ 24%]
+tests_mem/test_KFT2_kunci_pengaturan.py::test_KFT2_U9_kunci_tidak_dipakai_ditolak_dengan_alasan PASSED [ 27%]
+tests_mem/test_KFT2_kunci_pengaturan.py::test_KFT2_U10_cadangan_sama_dengan_bawaan_registry PASSED [ 31%]
+tests_mem/test_KFT2_kunci_pengaturan.py::test_KFT2_U10b_tujuh_cadangan_lain_sama_dengan_bawaan_registry PASSED [ 34%]
+tests_mem/test_KFT2_kunci_pengaturan.py::test_KFT2_U11_kesehatan_konfigurasi_tanpa_rujukan_rusak PASSED [ 37%]
+tests_mem/test_KFT2_kunci_pengaturan.py::test_KFT2_U12_akun_biaya_bank_dari_pemetaan_akun PASSED [ 41%]
+tests_mem/test_KFT2_kunci_pengaturan.py::test_KFT2_U14_tidak_ada_layar_menulis_settings_lama PASSED [ 44%]
+tests_mem/test_KFT2_migrasi_akun_bank.py::test_KFT2_U13_pindahan_akun_biaya_bank PASSED [ 48%]
+tests_mem/test_KFT2_migrasi_akun_bank.py::test_KFT2_U13b_pemetaan_yang_sudah_diubah_tidak_ditimpa_bawaan PASSED [ 51%]
+tests_mem/test_KFT1_izin_pengaturan.py::test_U01_pemegang_kelola_pengaturan_menyimpan_lapisan_pt PASSED [ 55%]
+tests_mem/test_KFT1_izin_pengaturan.py::test_U02_bisa_ubah_232_kunci PASSED [ 58%]
+tests_mem/test_KFT1_izin_pengaturan.py::test_U03_lapisan_grup_tetap_untuk_lintas_pt PASSED [ 62%]
+tests_mem/test_KFT1_izin_pengaturan.py::test_U04_lihat_saja_tidak_bisa_ubah PASSED [ 65%]
+tests_mem/test_KFT1_izin_pengaturan.py::test_U05_manajer_kosong_tidak_lagi_lewat_nama_peran PASSED [ 68%]
+tests_mem/test_KFT1_izin_pengaturan.py::test_U06_manajer_bawaan_tetap_berwenang PASSED [ 72%]
+tests_mem/test_KFT1_izin_pengaturan.py::test_U07_izin_konfigurasi_stok_hanya_kunci_lot PASSED [ 75%]
+tests_mem/test_KFT1_izin_pengaturan.py::test_U08_migrasi_peran_beracuan_manajer_sekali_jalan PASSED [ 79%]
+tests_mem/test_KFT1_izin_pengaturan.py::test_U09_sopir_tidak_membaca_pusat_pengaturan PASSED [ 82%]
+tests_mem/test_KFT1_izin_pengaturan.py::test_U10_md_tetap_32_kunci_rnd PASSED [ 86%]
+tests_mem/test_KFT1_izin_pengaturan.py::test_U11_pengaturan_efektif_disaring_untuk_pembaca_biasa PASSED [ 89%]
+tests_mem/test_KFT1_izin_pengaturan.py::test_U12_baca_pengaturan_mentah_butuh_izin_lihat PASSED [ 93%]
+tests_mem/test_KFT1_izin_pengaturan.py::test_U13_registry_tanpa_nama_peran PASSED [ 96%]
+tests_mem/test_KFT1_izin_pengaturan.py::test_U14_tab_pengaturan_mengikuti_izin_kuncinya PASSED [100%]
+
+=============================== warnings summary ===============================
+../../venv311/lib/python3.11/site-packages/starlette/formparsers.py:12
+  <venv>/lib/python3.11/site-packages/starlette/formparsers.py:12: PendingDeprecationWarning: Please use `import python_multipart` instead.
+    import multipart
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+======================== 29 passed, 1 warning in 4.76s =========================

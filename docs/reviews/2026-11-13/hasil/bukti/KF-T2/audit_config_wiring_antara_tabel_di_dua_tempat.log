@@ -1,0 +1,31 @@
+================================================================================================
+AUDIT WIRING KONFIGURASI — apakah setiap setting benar-benar berfungsi?
+================================================================================================
+Total kunci terdeklarasi : 78
+  OK           70   wiring lengkap (dibaca kode + bisa diubah user)
+  NOT_USED      1   registry menyatakan tidak dipakai + alasan (SAH)
+  HIDDEN        0   dibaca kode TAPI TANPA UI (hanya via DB/API)
+  ORPHAN_UI     7   ADA UI TAPI TIDAK DIBACA KODE  <-- tombol palsu
+  DEAD          0   tidak dibaca & tidak ada UI
+
+Pusat Pengaturan (UI generik): TERSAMBUNG
+Editor konfigurasi di luar Pusat Pengaturan: 2 berkas <-- sumber kebenaran ganda
+  ! features/sales/ReturnAssumptionsPanel.jsx → /settings
+  ! features/finance/interco/IntercoPaymentSchedule.jsx → /settings
+
+Per scope:
+  global         total= 78  OK= 70 HIDDEN=  0 ORPHAN_UI=  7 DEAD=  0 NOT_USED=  1
+
+── ORPHAN_UI (7) ───────────────────────────────────────────────────────────────────
+  [global] returns.grade_price_factors.A                        default=100  UI: features/settings/config/SettingsHub.jsx (registry generik)
+  [global] returns.grade_price_factors.A1                       default=95  UI: features/settings/config/SettingsHub.jsx (registry generik)
+  [global] returns.grade_price_factors.A2                       default=90  UI: features/settings/config/SettingsHub.jsx (registry generik)
+  [global] returns.grade_price_factors.B                        default=70  UI: features/settings/config/SettingsHub.jsx (registry generik)
+  [global] returns.grade_price_factors.B1                       default=60  UI: features/settings/config/SettingsHub.jsx (registry generik)
+  [global] returns.grade_price_factors.C                        default=40  UI: features/settings/config/SettingsHub.jsx (registry generik)
+  [global] returns.grade_price_factors.BS                       default=10  UI: features/settings/config/SettingsHub.jsx (registry generik)
+
+── NOT_USED (1) ────────────────────────────────────────────────────────────────────
+  [global] sales.quotation_enabled                              default=False  alasan: Alur Penawaran (Quotation) BELUM ADA di sistem — tidak ada satu pun en
+
+⚠️  7 kunci bermasalah + 2 editor ganda (INV-CFG).

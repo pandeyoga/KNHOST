@@ -1,0 +1,19 @@
+Kode keluar penjaga statik (tanpa database; `audit_config_wiring.py` dan `config_health` lewat salinan berjalur worktree).
+penjaga                               sebelum (HEAD 36b056e)   sesudah
+verify_auth_coverage                  1 (28 pelanggaran)       1 (28 pelanggaran, isi sama)
+verify_access_catalog_nav             0 (0 temuan)             0 (0 temuan)
+verify_ui_standard                    1 (26 pelanggaran)       1 (26 pelanggaran, isi sama; hex 16842 → 16836)
+verify_custom_modals                  0                        0
+verify_codebase_map                   0                        0
+verify_money_idempotency              0                        0
+verify_error_notice                   0                        0
+verify_knselect_contract              0                        0
+verify_page_tabs                      1 (1 pelanggaran)        1 (sama)
+verify_modal_dismiss                  0                        0
+verify_blocking_dialogs               0                        0
+audit_i18n_id                         0 (113 temuan)           0 (112 temuan)
+audit_i18n_id --strict                1 (113 temuan)           1 (112 temuan)
+audit_config_wiring                   0 (9 kunci bermasalah + 2 editor ganda)   0 (bersih)
+audit_config_wiring --strict          1                        0
+audit_config_wiring --self-test       1 (FAIL)                 0 (PASS)
+config_health (broken)                4 STALE                  0
