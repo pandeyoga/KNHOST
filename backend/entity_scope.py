@@ -155,6 +155,7 @@ SCOPED_COLLECTIONS = {
     "logistics_deliveries",   # FB-02 — pengiriman logistik (foto muat/POD, posisi)
     "fleet_vehicles",         # Armada internal (master kendaraan per badan usaha)
     "tax_pph_records",
+    "tax_period_locks",               # PK-40 — kunci masa pajak per PT (dilaporkan / dibuka lagi)
     "mkt_campaign_costs",             # COMM-04 — realisasi biaya kampanye (uang satu PT)
     "makloons", "process_recipes",   # M1 — master mitra makloon + resep proses (SCOPED)
     "makloon_orders",                 # M3 — transaksi makloon/subkontrak (SCOPED)

@@ -6,11 +6,13 @@ Terbitkan Faktur Pajak dari Sales Order (MANUAL, OPSIONAL — pajak tidak wajib)
 - Status: normal | pengganti (revisi) | batal. Snapshot penjual (entitas) & pembeli (customer).
 - DPP/PPN diambil dari snapshot pajak order (Fase 1B). Render dokumen defensif (.get()).
 """
-from typing import Any, Dict, List, Optional
+from typing import Any, Callable, Dict, List, Optional
 from datetime import datetime, timezone
 from fastapi import HTTPException
+from pymongo.errors import DuplicateKeyError
 from db import db
 from core_utils import new_id, now_iso, safe_doc, next_doc_number
+from services.input_tax_service import normalize_nsfp
 
 ELIGIBLE_ORDER_STATUSES = {"confirmed", "partially_picked", "picked",
                           "partially_shipped", "shipped", "done"}
@@ -43,6 +45,71 @@ def saringan_keluaran_aktif() -> Dict[str, Any]:
     `replaced_by_id: None` juga cocok untuk dokumen tanpa field itu. Daftar/riwayat faktur TIDAK memakai saringan ini.
     """
     return {"status": {"$ne": "batal"}, "replaced_by_id": None}
+
+
+# ── PK-40 (SL-13) — keunikan faktur dijamin INDEKS, bukan "cari dulu, lalu sisip" ───────────────────────────────────
+# `active_key` hanya ada pada faktur AKTIF (bukan batal, belum diganti): `so:{order_id}` / `ic:{interco_pair_id}` →
+# indeks unik parsial `uq_fkt_active`. `nsfp_key` = digit NSFP faktur aktif ber-NSFP → `uq_fkt_nsfp` (lintas PT).
+# Pola yang sama di `tax_invoices_in` (`vb:{vendor_bill_id}` / `ic:…`, status `recorded`). Pencarian sebelum tulis tetap
+# ada sebagai jalan cepat (pesan rapi); `DuplicateKeyError` dari indeks dipetakan ke 409 berpesan sama.
+KUNCI_FAKTUR = {"active_key": "", "nsfp_key": ""}   # untuk `$unset`
+PESAN_NSFP_DIPAKAI = "Nomor seri {nsfp} sudah dipakai faktur {nomor}. Periksa nomor serinya."
+
+
+def kunci_aktif_keluaran(fkt: Dict[str, Any]) -> Dict[str, str]:
+    """Field kunci faktur keluaran menurut keadaannya: faktur tidak aktif → `{}` (kuncinya harus dicabut)."""
+    if fkt.get("status") == "batal" or fkt.get("replaced_by_id"):
+        return {}
+    out: Dict[str, str] = {}
+    if fkt.get("interco_pair_id"):
+        out["active_key"] = f"ic:{fkt['interco_pair_id']}"
+    elif fkt.get("order_id"):
+        out["active_key"] = f"so:{fkt['order_id']}"
+    digits = normalize_nsfp(fkt.get("nsfp"))
+    if digits:
+        out["nsfp_key"] = digits
+    return out
+
+
+def pesan_nsfp(nsfp: Optional[str], nomor: str) -> str:
+    return PESAN_NSFP_DIPAKAI.format(nsfp=(nsfp or "").strip(), nomor=nomor or "-")
+
+
+async def _pemakai_nsfp(digits: str, kecuali: tuple = ()) -> Optional[Dict[str, Any]]:
+    """Jalan cepat: faktur keluaran aktif LAIN yang memegang NSFP ini (penjaminnya indeks `uq_fkt_nsfp`)."""
+    if not digits:
+        return None
+    q: Dict[str, Any] = {"nsfp_key": digits}
+    if kecuali:
+        q["id"] = {"$nin": list(kecuali)}
+    return await db.tax_invoices.find_one(q, {"_id": 0, "id": 1, "number": 1})
+
+
+async def galat_kunci_kembar(coll: str, exc: DuplicateKeyError, kunci: Dict[str, str], *, kecuali_id: str,
+                             nsfp: Optional[str], pesan_aktif: Callable[[str], str]) -> Optional[HTTPException]:
+    """`DuplicateKeyError` dari `uq_*_active`/`uq_*_nsfp` → 409 berpesan; indeks lain (mis. nomor) → `None` (dilempar
+    ulang pemanggil). Penyebab = dokumen lain yang memegang kunci itu, atau `keyPattern` galat yang menyebut field itu
+    (`keyPattern` saja tidak cukup: database tiruan mengisinya keliru)."""
+    from indexes import is_duplicate_on
+    for field in ("active_key", "nsfp_key"):
+        val = kunci.get(field)
+        if not val:
+            continue
+        holder = await db[coll].find_one({field: val, "id": {"$ne": kecuali_id}}, {"_id": 0, "number": 1})
+        if holder or is_duplicate_on(exc, field):
+            nomor = (holder or {}).get("number", "")
+            return HTTPException(status_code=409,
+                                 detail=pesan_nsfp(nsfp, nomor) if field == "nsfp_key" else pesan_aktif(nomor))
+    return None
+
+
+def _pesan_sudah_terbit(nomor: str) -> str:
+    return f"Faktur Pajak sudah diterbitkan untuk order ini ({nomor}). Gunakan Pengganti untuk revisi."
+
+
+async def _masa_terbuka(entity_id: Optional[str], tanggal: Any, aksi: str) -> None:
+    from services.tax_center_service import assert_masa_terbuka   # impor di dalam: hindari lingkar impor
+    await assert_masa_terbuka(entity_id, tanggal, aksi=aksi)
 
 
 def format_nsfp_display(fkt: Dict[str, Any]) -> str:
@@ -149,25 +216,37 @@ async def issue_tax_invoice(order_id: str, kode_transaksi: Optional[str],
     # F-10 — DPP Nilai Lain → kode transaksi default 04 (DPP Nilai Lain, Coretax)
     kode = (kode_transaksi or ("04" if order.get("dpp_nilai_lain") else "01")).strip()
     _validate_eligibility(order, entity, kode)
-    existing = await db.tax_invoices.find_one(
+    existing = await db.tax_invoices.find_one(   # jalan cepat; penjaminnya indeks `uq_fkt_active` (PK-40)
         {"order_id": order_id, "status": {"$ne": "batal"}}, {"_id": 0})
     if existing:
-        raise HTTPException(
-            status_code=409,
-            detail=f"Faktur Pajak sudah diterbitkan untuk order ini ({existing.get('number')}). Gunakan Pengganti untuk revisi.")
+        raise HTTPException(status_code=409, detail=_pesan_sudah_terbit(existing.get("number")))
+    fdate = faktur_date or now_iso()
+    await _masa_terbuka(order.get("entity_id"), fdate, "penerbitan faktur")   # PK-40 — PERIKSA sebelum tulis
+    nsfp_raw = (nsfp or "").strip()
+    dup = await _pemakai_nsfp(normalize_nsfp(nsfp_raw))
+    if dup:
+        raise HTTPException(status_code=409, detail=pesan_nsfp(nsfp_raw, dup.get("number")))
     fkt = {
         "id": new_id("fkt"),
         "number": await _next_faktur_no(order.get("entity_id")),
-        "nsfp": (nsfp or "").strip(),
+        "nsfp": nsfp_raw,
         "kode_transaksi": kode,
         "status": "normal",
         "replaces_id": None, "replaced_by_id": None, "cancel_reason": "",
-        "faktur_date": faktur_date or now_iso(),
+        "faktur_date": fdate,
         "order_id": order_id, "order_number": order.get("number", ""),
         "created_by": actor_name, "created_at": now_iso(), "updated_at": now_iso(),
         **_snapshot_from_order(order, entity, customer),
     }
-    await db.tax_invoices.insert_one(dict(fkt))
+    fkt.update(kunci_aktif_keluaran(fkt))
+    try:
+        await db.tax_invoices.insert_one(dict(fkt))
+    except DuplicateKeyError as exc:   # PK-40 — dua terbit bersamaan: yang kalah 409
+        err = await galat_kunci_kembar("tax_invoices", exc, fkt, kecuali_id=fkt["id"], nsfp=nsfp_raw,
+                                       pesan_aktif=_pesan_sudah_terbit)
+        if err:
+            raise err from exc
+        raise
     from services import doc_refs_service as _refs
     await _refs.safe_link(("tax_invoice", fkt["id"]), ("sales_order", order_id),
                           "parent", note="faktur pajak atas pesanan")
@@ -180,12 +259,31 @@ async def set_nsfp(fkt_id: str, nsfp: str, kode_transaksi: Optional[str]) -> Dic
         raise HTTPException(status_code=404, detail="Faktur Pajak tidak ditemukan")
     if fkt.get("status") == "batal":
         raise HTTPException(status_code=400, detail="Faktur Pajak batal tidak bisa diubah.")
-    upd = {"nsfp": (nsfp or "").strip(), "updated_at": now_iso()}
+    await _masa_terbuka(fkt.get("entity_id"), fkt.get("faktur_date"), "perubahan nomor seri")   # PK-40
+    nsfp_raw = (nsfp or "").strip()
+    upd: Dict[str, Any] = {"nsfp": nsfp_raw, "updated_at": now_iso()}
     if kode_transaksi:
         if kode_transaksi.strip() not in KODE_TRANSAKSI_VALID:
             raise HTTPException(status_code=400, detail=f"Kode transaksi tidak valid: {kode_transaksi}")
         upd["kode_transaksi"] = kode_transaksi.strip()
-    await db.tax_invoices.update_one({"id": fkt_id}, {"$set": upd})
+    # PK-40 — faktur aktif ber-NSFP memegang `nsfp_key`; NSFP kosong / faktur sudah diganti → kunci dicabut.
+    kunci = kunci_aktif_keluaran({**fkt, "nsfp": nsfp_raw})
+    ops: Dict[str, Any] = {"$set": upd}
+    if kunci.get("nsfp_key"):
+        dup = await _pemakai_nsfp(kunci["nsfp_key"], kecuali=(fkt_id,))
+        if dup:
+            raise HTTPException(status_code=409, detail=pesan_nsfp(nsfp_raw, dup.get("number")))
+        upd["nsfp_key"] = kunci["nsfp_key"]
+    else:
+        ops["$unset"] = {"nsfp_key": ""}
+    try:
+        await db.tax_invoices.update_one({"id": fkt_id}, ops)
+    except DuplicateKeyError as exc:
+        err = await galat_kunci_kembar("tax_invoices", exc, {"nsfp_key": kunci.get("nsfp_key", "")}, kecuali_id=fkt_id,
+                                       nsfp=nsfp_raw, pesan_aktif=_pesan_sudah_terbit)
+        if err:
+            raise err from exc
+        raise
     return safe_doc(await db.tax_invoices.find_one({"id": fkt_id}, {"_id": 0}))
 
 
@@ -210,27 +308,53 @@ async def replace_tax_invoice(fkt_id: str, reason: Optional[str],
         raise HTTPException(status_code=400, detail="Faktur Pajak batal tidak bisa diganti.")
     if original.get("replaced_by_id"):
         raise HTTPException(status_code=409, detail="Faktur ini sudah pernah diganti.")
+    # PK-40 — masa faktur asli DAN masa hari ini (tanggal pengganti) harus belum dilaporkan.
+    await _masa_terbuka(original.get("entity_id"), original.get("faktur_date"), "penggantian faktur")
+    await _masa_terbuka(original.get("entity_id"), None, "penggantian faktur")
     order, entity, customer = await _load_order_entity_customer(original["order_id"])
     kode = (kode_transaksi or original.get("kode_transaksi")
             or ("04" if order.get("dpp_nilai_lain") else "01")).strip()
     _validate_eligibility(order, entity, kode)
-    new_fkt = {
-        "id": new_id("fkt"),
-        "number": await _next_faktur_no(order.get("entity_id")),
-        "nsfp": (nsfp or "").strip(),
-        "kode_transaksi": kode,
-        "status": "pengganti",
-        "replaces_id": original["id"], "replaced_by_id": None,
-        "cancel_reason": "", "replace_reason": (reason or "").strip(),
-        "faktur_date": now_iso(),
-        "order_id": original["order_id"], "order_number": order.get("number", ""),
-        "created_by": actor_name, "created_at": now_iso(), "updated_at": now_iso(),
-        **_snapshot_from_order(order, entity, customer),
-    }
-    await db.tax_invoices.insert_one(dict(new_fkt))
-    await db.tax_invoices.update_one(
-        {"id": original["id"]},
-        {"$set": {"replaced_by_id": new_fkt["id"], "updated_at": now_iso()}})
+    nsfp_raw = (nsfp or "").strip()
+    dup = await _pemakai_nsfp(normalize_nsfp(nsfp_raw), kecuali=(original["id"],))   # NSFP asli boleh dipakai lagi
+    if dup:
+        raise HTTPException(status_code=409, detail=pesan_nsfp(nsfp_raw, dup.get("number")))
+    new_id_ = new_id("fkt")
+    kunci_asli = kunci_aktif_keluaran(original)
+    # PK-40 (1) Klaim faktur asli: hanya satu penggantian yang menang; kuncinya dilepas untuk pengganti.
+    klaim = await db.tax_invoices.update_one(
+        {"id": original["id"], "replaced_by_id": None, "status": {"$ne": "batal"}},
+        {"$set": {"replaced_by_id": new_id_, "updated_at": now_iso()}, "$unset": dict(KUNCI_FAKTUR)})
+    if not klaim.matched_count:
+        raise HTTPException(status_code=409, detail="Faktur ini sudah pernah diganti.")
+    try:   # (2) sisip pengganti ber-`active_key`
+        new_fkt = {
+            "id": new_id_,
+            "number": await _next_faktur_no(order.get("entity_id")),
+            "nsfp": nsfp_raw,
+            "kode_transaksi": kode,
+            "status": "pengganti",
+            "replaces_id": original["id"], "replaced_by_id": None,
+            "cancel_reason": "", "replace_reason": (reason or "").strip(),
+            "faktur_date": now_iso(),
+            "order_id": original["order_id"], "order_number": order.get("number", ""),
+            "created_by": actor_name, "created_at": now_iso(), "updated_at": now_iso(),
+            **_snapshot_from_order(order, entity, customer),
+        }
+        new_fkt.update(kunci_aktif_keluaran(new_fkt))
+        await db.tax_invoices.insert_one(dict(new_fkt))
+    except Exception as exc:  # noqa: BLE001 — (3) sisip gagal → faktur asli dikembalikan, galat diteruskan
+        try:
+            await db.tax_invoices.update_one({"id": original["id"], "replaced_by_id": new_id_},
+                                             {"$set": {"replaced_by_id": None, "updated_at": now_iso(), **kunci_asli}})
+        except Exception as exc2:  # noqa: BLE001
+            print(f"[tax_invoice] faktur asli {original['id']} gagal dikembalikan: {exc2}")
+        if isinstance(exc, DuplicateKeyError):
+            err = await galat_kunci_kembar("tax_invoices", exc, {"nsfp_key": normalize_nsfp(nsfp_raw)},
+                                           kecuali_id=new_id_, nsfp=nsfp_raw, pesan_aktif=_pesan_sudah_terbit)
+            if err:
+                raise err from exc
+        raise
     from services import doc_refs_service as _refs
     await _refs.safe_link(("tax_invoice", new_fkt["id"]), ("sales_order", original["order_id"]),
                           "parent", note="faktur pengganti atas pesanan")
@@ -247,14 +371,31 @@ async def cancel_tax_invoice(fkt_id: str, reason: str, actor_name: str) -> Dict[
         raise HTTPException(status_code=400, detail="Faktur Pajak sudah batal.")
     if not (reason or "").strip():
         raise HTTPException(status_code=400, detail="Alasan pembatalan wajib diisi.")
-    await db.tax_invoices.update_one(
-        {"id": fkt_id},
-        {"$set": {"status": "batal", "cancel_reason": reason.strip(), "updated_at": now_iso()}})
+    await _masa_terbuka(fkt.get("entity_id"), fkt.get("faktur_date"), "pembatalan faktur")   # PK-40
+    # PK-40 — bila faktur ini pengganti, faktur asli aktif lagi dan mendapat kembali `active_key`/`nsfp_key`. NSFP asli
+    # yang sementara itu dipakai faktur aktif lain → tolak sebelum menulis (bukan diam-diam tanpa kunci).
+    asli = None
+    if fkt.get("replaces_id") and not fkt.get("replaced_by_id"):   # pengganti yang sudah diganti lagi: asli tetap
+        asli = await db.tax_invoices.find_one({"id": fkt["replaces_id"], "replaced_by_id": fkt_id}, {"_id": 0})
+    kunci_asli = kunci_aktif_keluaran({**asli, "replaced_by_id": None}) if asli else {}
+    if kunci_asli.get("nsfp_key"):
+        dup = await _pemakai_nsfp(kunci_asli["nsfp_key"], kecuali=(fkt_id, asli["id"]))
+        if dup:
+            raise HTTPException(status_code=409, detail=pesan_nsfp(asli.get("nsfp"), dup.get("number")))
+    res = await db.tax_invoices.update_one(
+        {"id": fkt_id, "status": {"$ne": "batal"}},
+        {"$set": {"status": "batal", "cancel_reason": reason.strip(), "updated_at": now_iso()},
+         "$unset": dict(KUNCI_FAKTUR)})
+    if not res.matched_count:
+        raise HTTPException(status_code=400, detail="Faktur Pajak sudah batal.")
     # bila faktur ini pengganti, lepas tanda replaced di originalnya agar bisa diterbitkan ulang
-    if fkt.get("replaces_id"):
-        await db.tax_invoices.update_one(
-            {"id": fkt["replaces_id"]},
-            {"$set": {"replaced_by_id": None, "updated_at": now_iso()}})
+    if asli:
+        try:
+            await db.tax_invoices.update_one(
+                {"id": asli["id"], "replaced_by_id": fkt_id},
+                {"$set": {"replaced_by_id": None, "updated_at": now_iso(), **kunci_asli}})
+        except DuplicateKeyError as exc:   # balapan sangat sempit: faktur aktif lain memegang kuncinya → asli tetap
+            print(f"[tax_invoice] faktur asli {asli['id']} tidak diaktifkan lagi (kunci dipegang faktur lain): {exc}")
     return safe_doc(await db.tax_invoices.find_one({"id": fkt_id}, {"_id": 0}))
 
 

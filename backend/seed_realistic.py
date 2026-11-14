@@ -2832,6 +2832,7 @@ async def seed_tax_invoice_examples():
             "grand_total": float(o.get("grand_total", 0) or 0),
             "is_pkp": True,
             "created_by": by_name, "created_at": now_iso(), "updated_at": now_iso(),
+            "active_key": f"so:{o['id']}",   # PK-40 — kunci faktur aktif (indeks unik `uq_fkt_active`)
         }
         await db.tax_invoices.insert_one(dict(fkt))
         made += 1

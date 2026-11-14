@@ -22,6 +22,8 @@ from services import penalty_service as pens
 pytestmark = pytest.mark.anyio
 E1 = "ent_ksc"
 SEKARANG = datetime.datetime.now(datetime.timezone.utc).isoformat()
+# PK-40 (SL-13): `uq_fkt_active`, `uq_fkt_nsfp`, `uq_fpm_active`, `uq_fpm_nsfp`, `uq_tax_period` masuk daftar wajib.
+PK40_INDEKS = 5
 
 
 def _info_lengkap() -> dict:
@@ -53,7 +55,8 @@ def test_U12_pembanding_indeks():
     f["penalties"]["uq_penalty_line_period"]["key"] = [("doc_id", 1), ("period_key", 1)]
     assert [x["problem"] for x in indexes.diff_required(f)] == ["kunci berbeda"]
     # KP-T5 — + `doc_number_formats.uq_kind_entity` (satu format nomor per jenis per PT/grup): 8 → 9.
-    assert len(indexes.REQUIRED_UNIQUE_INDEXES) == 9
+    # PK-40 menambah 5 indeks wajib (faktur keluaran/masukan aktif & NSFP, kunci masa pajak): 9 + 5.
+    assert len(indexes.REQUIRED_UNIQUE_INDEXES) == 9 + PK40_INDEKS
 
 
 async def test_U13_mode_enforce_dan_warn(aplikasi, monkeypatch):

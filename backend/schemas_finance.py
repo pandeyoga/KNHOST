@@ -77,6 +77,18 @@ class SuspenseReclassInput(BaseModel):
 
 # ─── EPIC7 — Pusat Pajak (PPh manual record) ─────────────────────────────────
 
+class TaxPeriodLockInput(BaseModel):
+    """PK-40 — tandai masa pajak sudah dilaporkan (PT lewat `resolve_write_entity`, bukan dipercaya mentah)."""
+    entity_id: str = ""
+    note: str = ""
+
+
+class TaxPeriodUnlockInput(BaseModel):
+    """PK-40 — buka lagi masa pajak; alasan diperiksa layanan (400 berpesan, bukan 422)."""
+    entity_id: str = ""
+    reason: str = ""
+
+
 class PphRecordInput(BaseModel):
     entity_id: str                     # entitas spesifik (wajib, bukan 'all')
     period: str                        # YYYY-MM

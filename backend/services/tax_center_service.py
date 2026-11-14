@@ -13,7 +13,10 @@ Aturan emas: PKP/non-PKP mengikuti konfigurasi ENTITAS (business_entities.defaul
 di-resolve via config_service.get_effective_settings (sudah men-set tax.is_pkp & ppn_rate=0
 utk non-PKP). PPh berlaku lintas PKP/non-PKP (PPh ≠ PPN).
 """
+import re
 from typing import Any, Dict, List, Optional
+
+from fastapi import HTTPException
 
 from db import db
 from core_utils import now_iso, new_id
@@ -21,7 +24,8 @@ from services.config_service import get_effective_settings
 from services import input_tax_service
 
 PPH_RECORDS = "tax_pph_records"
-_PAYROLL_STATUSES = ["approved", "posted", "paid"]
+# PK-40 (FY-16) — rekap PPh 21 hanya memuat penggajian yang SUDAH terjurnal (dulu ikut `approved`).
+_PAYROLL_STATUSES = ["posted", "paid"]
 _ACTIVE_SO_EXCLUDE = {"cancelled", "draft", "rejected"}
 
 
@@ -51,19 +55,43 @@ async def list_periods(entity_id: Optional[str]) -> List[str]:
     in_dates = await db.tax_invoices_in.distinct("faktur_date", eq)
     pay_periods = await db.hr_payroll_runs.distinct("period", eq)
     pph_periods = await db.tax_pph_records.distinct("period", eq)
-    months = {(d or "")[:7] for d in out_dates if d} | {(d or "")[:7] for d in in_dates if d}
+    # PK-40 — masa faktur = periode WIB (`period_of`), sama dengan saringan rekap PPN (dulu 7 huruf pertama = bulan UTC).
+    months = {input_tax_service.period_of(d) for d in list(out_dates) + list(in_dates) if d}
     months |= {p for p in pay_periods if p} | {p for p in pph_periods if p}
     months.add(_cur_month())
     return sorted({m for m in months if m}, reverse=True)
 
 
 async def _period_pph21(entity_id: Optional[str], period: str) -> Dict[str, float]:
-    """PPh 21 aktual dari payroll run (periode+entitas). dpp=gross, amount=pph21."""
+    """PK-40 (FY-16) — PPh 21 masa itu dari penggajian TERJURNAL (`posted`/`paid`), dasar sama dengan slip gaji.
+
+    `dpp` = Σ `tax_gross` slip (bruto + JKK + JKM + kesehatan tanggungan perusahaan; slip lama tanpa `tax_gross` →
+    `gross`); `amount` = Σ `pph21` slip; `gl_amount` = kredit − debit akun hutang PPh 21 pada jurnal `payroll_run`
+    ber-`source_id` `{entity_id}:{period}`; `selisih` = `amount − gl_amount`; `count` = jumlah penggajian.
+    """
+    from services.gl_service import ACC_HUTANG_PPH21
     q = {**_ent_q(entity_id), "period": period, "status": {"$in": _PAYROLL_STATUSES}}
-    runs = await db.hr_payroll_runs.find(q, {"_id": 0, "totals": 1}).to_list(1000)
-    gross = sum(float((r.get("totals") or {}).get("gross") or 0) for r in runs)
-    pph = sum(float((r.get("totals") or {}).get("pph21") or 0) for r in runs)
-    return {"dpp": round(gross, 2), "amount": round(pph, 2), "count": len(runs)}
+    runs = [r async for r in db.hr_payroll_runs.find(q, {"_id": 0, "id": 1, "entity_id": 1})]
+    dpp = pph = 0.0
+    if runs:
+        async for s in db.hr_payslips.find({"run_id": {"$in": [r["id"] for r in runs]}},
+                                           {"_id": 0, "tax_gross": 1, "gross": 1, "pph21": 1}):
+            dasar = s.get("tax_gross")
+            dpp += float((s.get("gross") if dasar is None else dasar) or 0)
+            pph += float(s.get("pph21") or 0)
+    gl_amount = 0.0
+    src = sorted({f"{r.get('entity_id')}:{period}" for r in runs})
+    if src:
+        async for je in db.journal_entries.find(
+                {"source_type": "payroll_run", "source_id": {"$in": src}, "status": {"$ne": "void"}},
+                {"_id": 0, "lines": 1}):
+            for ln in je.get("lines") or []:
+                if ln.get("account_code") == ACC_HUTANG_PPH21:
+                    gl_amount += float(ln.get("credit") or 0) - float(ln.get("debit") or 0)
+    amount = round(pph, 2)
+    gl_amount = round(gl_amount, 2)
+    return {"dpp": round(dpp, 2), "amount": amount, "gl_amount": gl_amount,
+            "selisih": round(amount - gl_amount, 2), "count": len(runs)}
 
 
 async def _period_omzet(entity_id: Optional[str], period: str) -> float:
@@ -109,11 +137,13 @@ async def compute_pph(entity_id: Optional[str], period: str,
         dpp = 0.0
         amount = 0.0
         source = ""
+        extra: Dict[str, Any] = {}
         if basis == "payroll":
             p21 = await _period_pph21(entity_id, period)
             dpp, amount = p21["dpp"], p21["amount"]
-            # G1-40 — tanpa istilah Inggris "payroll run".
-            source = f"{p21['count']} penggajian terposting (PPh 21 tarif efektif/TER)"
+            # PK-40 (FY-16) — pembanding buku besar + jumlah penggajian ikut di butir PPh 21.
+            extra = {"gl_amount": p21["gl_amount"], "selisih": p21["selisih"], "count": p21["count"]}
+            source = f"{p21['count']} penggajian terjurnal · dasar = penghasilan bruto kena pajak slip"
         elif basis == "omzet":
             dpp = await _period_omzet(entity_id, period)
             amount = round(dpp * rate / 100.0, 2)
@@ -128,7 +158,7 @@ async def compute_pph(entity_id: Optional[str], period: str,
             "code": code, "name": cfg.get("name") or code,
             "basis": basis, "rate": rate,
             "dpp": round(dpp, 2), "amount": round(amount, 2),
-            "source": source, "editable": basis == "manual",
+            "source": source, "editable": basis == "manual", **extra,
         })
     return {"items": items, "total": round(total, 2)}
 
@@ -182,6 +212,161 @@ async def tax_summary(entity_id: Optional[str], period: Optional[str],
     }
 
 
+# ── PK-40 (SL-13) — masa pajak dilaporkan / terkunci ─────────────────────────────────────────────────────────────
+# Satu dokumen `tax_period_locks` per (PT, masa) — indeks unik wajib `uq_tax_period`. `status` = `reported` (terkunci)
+# | `reopened` (dibuka lagi; kejadian laporan lama di `history[]`). Tanpa dokumen = perilaku lama (bebas diubah).
+LOCKS = "tax_period_locks"
+_MASA = re.compile(r"^\d{4}-(0[1-9]|1[0-2])$")
+PESAN_MASA_TERKUNCI = ("Masa pajak {bulan} {pt} sudah ditandai dilaporkan, jadi {aksi} tidak bisa dilakukan. "
+                       "Buka dulu masa pajaknya di Pusat Pajak.")
+
+
+class TaxPeriodLocked(HTTPException):
+    """Aksi pada masa pajak yang sudah ditandai dilaporkan → 409 (dilempar di langkah PERIKSA, sebelum tulisan)."""
+
+    def __init__(self, pesan: str):
+        super().__init__(status_code=409, detail=pesan)
+
+
+def bulan_tahun(period: str) -> str:
+    """`2026-10` → "Oktober 2026"."""
+    from services.book_date import _BULAN
+    return f"{_BULAN[int(period[5:7])]} {period[:4]}"
+
+
+def masa_dari(tanggal: Any) -> str:
+    """Masa pajak `YYYY-MM` dari tanggal/stempel (WIB, `periode_buku`) atau dari teks masa `YYYY-MM` apa adanya."""
+    from services.book_date import periode_buku
+    if isinstance(tanggal, str) and _MASA.match(tanggal.strip()):
+        return tanggal.strip()
+    return periode_buku(tanggal)
+
+
+async def _nama_pt(entity_id: str) -> str:
+    e = await db.business_entities.find_one({"id": entity_id}, {"_id": 0, "legal_name": 1, "short_name": 1,
+                                                                "name": 1}) or {}
+    return e.get("legal_name") or e.get("short_name") or e.get("name") or entity_id
+
+
+async def assert_masa_terbuka(entity_id: Optional[str], tanggal: Any, *, aksi: str) -> None:
+    """Langkah PERIKSA: masa pajak `tanggal` untuk PT itu sudah ditandai dilaporkan → `TaxPeriodLocked` (409).
+
+    `tanggal` kosong = hari ini (WIB); teks `YYYY-MM` = masa itu sendiri (rekaman PPh). `aksi` = teks Indonesia aksi.
+    """
+    from core_utils import DEFAULT_ENTITY_ID
+    eid = entity_id or DEFAULT_ENTITY_ID
+    try:
+        period = masa_dari(tanggal)
+    except ValueError:   # tanggal tak dikenal: perilaku lama (7 huruf pertama), tidak menebak masa lain
+        period = str(tanggal)[:7]
+    if await db[LOCKS].find_one({"entity_id": eid, "period": period, "status": "reported"}, {"_id": 0, "id": 1}):
+        raise TaxPeriodLocked(PESAN_MASA_TERKUNCI.format(bulan=bulan_tahun(period), pt=await _nama_pt(eid),
+                                                         aksi=aksi))
+
+
+async def list_period_locks(entity_ids: List[str]) -> List[Dict[str, Any]]:
+    """Daftar masa (sama dengan pemilih masa Pusat Pajak) + keadaan dilaporkan. Beberapa PT: `locked` = semua PT
+    dalam cakupan sudah ditandai; rincian per PT di `entities`."""
+    ids = list(entity_ids)
+    periods = await list_periods(ids[0] if len(ids) == 1 else ids)
+    locks: Dict[tuple, Dict[str, Any]] = {}
+    async for d in db[LOCKS].find({"entity_id": {"$in": ids}}, {"_id": 0}):
+        locks[(d.get("entity_id"), d.get("period"))] = d
+    out: List[Dict[str, Any]] = []
+    for p in periods:
+        per_pt = []
+        for eid in ids:
+            d = locks.get((eid, p)) or {}
+            per_pt.append({"entity_id": eid, "locked": d.get("status") == "reported", "status": d.get("status", ""),
+                           "reported_at": d.get("reported_at", ""), "reported_by": d.get("reported_by", ""),
+                           "note": d.get("note", ""), "reopened_at": d.get("reopened_at", ""),
+                           "reopened_by": d.get("reopened_by", ""), "snapshot": d.get("snapshot")})
+        row = dict(per_pt[0]) if len(per_pt) == 1 else {
+            "locked": bool(per_pt) and all(x["locked"] for x in per_pt), "status": "", "reported_at": "",
+            "reported_by": "", "note": "", "reopened_at": "", "reopened_by": "", "snapshot": None}
+        row.pop("entity_id", None)
+        out.append({"period": p, **row, "entities": per_pt})
+    return out
+
+
+async def _potret_masa(entity_id: str, period: str) -> Dict[str, float]:
+    """Angka rekap saat masa ditandai dilaporkan (D3 — potret disimpan, tidak dihitung ulang)."""
+    ppn = await input_tax_service.vat_summary(period=period, entity_id=entity_id)
+    tax_cfg = (await get_effective_settings(entity_id)).get("tax", {}) or {}
+    pph = await compute_pph(entity_id, period, tax_cfg.get("pph_items", []))
+    return {"keluaran_ppn": ppn["keluaran"]["ppn"], "masukan_ppn": ppn["masukan"]["ppn"], "net_ppn": ppn["net_ppn"],
+            "pph_total": pph["total"], "gl_keluaran_ppn": ppn["keluaran"]["gl_ppn"],
+            "gl_masukan_ppn": ppn["masukan"]["gl_ppn"]}
+
+
+def _periksa_teks_masa(period: str) -> str:
+    p = (period or "").strip()
+    if not _MASA.match(p):
+        raise HTTPException(status_code=400, detail="Masa pajak harus berbentuk TTTT-BB, mis. 2026-10.")
+    return p
+
+
+async def lock_period(entity_id: str, period: str, note: str, actor: Dict[str, Any]) -> Dict[str, Any]:
+    """Tandai masa pajak PT itu sudah dilaporkan (terkunci) + simpan potret angka rekap saat itu."""
+    from pymongo import ReturnDocument
+    from pymongo.errors import DuplicateKeyError
+    from services.book_date import periode_buku, tanggal_panjang
+    period = _periksa_teks_masa(period)
+    if period >= periode_buku():
+        raise HTTPException(status_code=400, detail=(f"Masa pajak {bulan_tahun(period)} belum berakhir, belum bisa "
+                                                     "ditandai dilaporkan."))
+
+    async def _sudah(d: Dict[str, Any]) -> HTTPException:
+        return HTTPException(status_code=409, detail=(
+            f"Masa pajak {bulan_tahun(period)} sudah ditandai dilaporkan oleh {d.get('reported_by') or '-'} pada "
+            f"{tanggal_panjang(d.get('reported_at') or None)}."))
+
+    ada = await db[LOCKS].find_one({"entity_id": entity_id, "period": period}, {"_id": 0})
+    if ada and ada.get("status") == "reported":
+        raise await _sudah(ada)
+    snapshot = await _potret_masa(entity_id, period)
+    now = now_iso()
+    try:
+        doc = await db[LOCKS].find_one_and_update(
+            {"entity_id": entity_id, "period": period, "status": {"$ne": "reported"}},
+            {"$set": {"status": "reported", "reported_at": now, "reported_by": actor.get("name", ""),
+                      "reported_by_id": actor.get("id", ""), "note": (note or "").strip(), "snapshot": snapshot,
+                      "reopened_at": "", "reopened_by": "", "reopen_reason": "", "updated_at": now},
+             "$setOnInsert": {"id": new_id("tpl"), "history": [], "created_at": now}},
+            upsert=True, projection={"_id": 0}, return_document=ReturnDocument.AFTER)
+    except DuplicateKeyError:   # kunci bersamaan: yang kalah melihat dokumen pemenang (indeks unik `uq_tax_period`)
+        raise await _sudah(await db[LOCKS].find_one({"entity_id": entity_id, "period": period}, {"_id": 0}) or {})
+    # `upsert` + saringan status: sebagian pengemudi tidak mengembalikan dokumen sesudah ubah → baca ulang.
+    return doc or await db[LOCKS].find_one({"entity_id": entity_id, "period": period}, {"_id": 0})
+
+
+async def unlock_period(entity_id: str, period: str, reason: str, actor: Dict[str, Any]) -> Dict[str, Any]:
+    """Buka lagi masa pajak yang sudah ditandai dilaporkan (alasan wajib). Kejadian laporan lama → `history[]`."""
+    from pymongo import ReturnDocument
+    from input_rules import count_letters
+    period = _periksa_teks_masa(period)
+    reason = (reason or "").strip()
+    if count_letters(reason) < 5:
+        raise HTTPException(status_code=400, detail="Alasan membuka masa pajak wajib diisi (minimal 5 huruf).")
+    ada = await db[LOCKS].find_one({"entity_id": entity_id, "period": period, "status": "reported"}, {"_id": 0})
+    if not ada:
+        raise HTTPException(status_code=409,
+                            detail=f"Masa pajak {bulan_tahun(period)} belum ditandai dilaporkan, jadi tidak perlu dibuka.")
+    now = now_iso()
+    kejadian = {k: ada.get(k) for k in ("reported_at", "reported_by", "reported_by_id", "note", "snapshot")}
+    kejadian.update({"reopened_at": now, "reopened_by": actor.get("name", ""), "reopened_by_id": actor.get("id", ""),
+                     "reopen_reason": reason})
+    doc = await db[LOCKS].find_one_and_update(
+        {"id": ada["id"], "status": "reported", "reported_at": ada.get("reported_at")},
+        {"$set": {"status": "reopened", "reopened_at": now, "reopened_by": actor.get("name", ""),
+                  "reopened_by_id": actor.get("id", ""), "reopen_reason": reason, "updated_at": now},
+         "$push": {"history": kejadian}},
+        projection={"_id": 0}, return_document=ReturnDocument.AFTER)
+    if not doc:   # dibuka/ditandai ulang orang lain di antara baca dan tulis
+        raise HTTPException(status_code=409, detail="Masa pajak ini baru saja diubah orang lain. Muat ulang lalu ulangi.")
+    return doc
+
+
 # ── Manual PPh records (basis=manual) ────────────────────────────────────────
 
 async def list_pph_records(entity_id: Optional[str], period: Optional[str] = None,
@@ -200,6 +385,7 @@ async def record_pph(entity_id: str, period: str, code: str, name: str,
         raise ValueError("Pilih entitas spesifik untuk merekam PPh manual (bukan 'Semua Entitas').")
     if not period or len(period) != 7:
         raise ValueError("Periode harus format YYYY-MM.")
+    await assert_masa_terbuka(entity_id, period.strip(), aksi="perekaman PPh")   # PK-40 — masa terkunci → 409
     dpp = round(float(dpp or 0), 2)
     amount = round(dpp * float(rate or 0) / 100.0, 2)
     doc = {
@@ -216,5 +402,8 @@ async def record_pph(entity_id: str, period: str, code: str, name: str,
 
 
 async def delete_pph_record(record_id: str) -> bool:
+    rec = await db.tax_pph_records.find_one({"id": record_id}, {"_id": 0, "entity_id": 1, "period": 1})
+    if rec:   # PK-40 — rekaman masa yang sudah dilaporkan tidak bisa dihapus (409)
+        await assert_masa_terbuka(rec.get("entity_id"), rec.get("period") or "", aksi="penghapusan rekaman PPh")
     res = await db.tax_pph_records.delete_one({"id": record_id})
     return res.deleted_count > 0

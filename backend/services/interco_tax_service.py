@@ -38,7 +38,7 @@ from typing import Any, Dict, List, Optional
 from core_utils import new_id, next_doc_number, now_iso, rupiah, safe_doc, timeline_entry
 from db import db
 from services import interco_service as ics
-from services.input_tax_service import next_input_number, normalize_nsfp, period_of
+from services.input_tax_service import kunci_aktif_masukan, next_input_number, normalize_nsfp, period_of
 
 EPS = 0.01
 COLL_OUT = "tax_invoices"       # Faktur Pajak Keluaran (penjual)
@@ -161,24 +161,48 @@ async def state(pair_id: str) -> Dict[str, Any]:
 # ═══════════════════════════════════════════════════════════════════════════
 # TERBITKAN (kembar: keluaran penjual + masukan pembeli)
 # ═══════════════════════════════════════════════════════════════════════════
+async def _masa_terbuka(seller: Dict[str, Any], tanggal: Any, aksi: str) -> None:
+    """PK-40 — masa pajak `tanggal` di PT penjual (keluaran) dan PT pembeli (masukan) harus belum dilaporkan."""
+    from services.tax_center_service import assert_masa_terbuka
+    for eid in dict.fromkeys([seller.get("seller_entity_id"), seller.get("buyer_entity_id")]):
+        await assert_masa_terbuka(eid, tanggal, aksi=aksi)
+
+
+def _sudah_terbit(nomor: str) -> str:
+    return (f"Faktur pajak internal {nomor} sudah terbit untuk transaksi ini. Gunakan **Faktur Pengganti** bila "
+            "angkanya berubah.")
+
+
 async def issue(pair_id: str, actor: str = "", nsfp: str = "",
                 kode_transaksi: str = "01", faktur_date: str = "",
                 replaces: Optional[Dict[str, Any]] = None,
-                replace_reason: str = "") -> Dict[str, Any]:
-    """Terbitkan PASANGAN faktur pajak internal untuk satu transaksi antar-PT."""
+                replace_reason: str = "", cancel_in: Optional[Dict[str, Any]] = None,
+                ) -> Dict[str, Any]:
+    """Terbitkan PASANGAN faktur pajak internal untuk satu transaksi antar-PT.
+
+    PK-40 (SL-13): keluaran & masukan ber-`active_key` `ic:{pair_id}` (+ `nsfp_key`); keunikan dijamin indeks
+    `uq_fkt_*`/`uq_fpm_*`. Pengganti: faktur asli DIKLAIM dulu (kuncinya dilepas), faktur masukan lama (`cancel_in`)
+    dibatalkan, baru pasangan baru disisip; sisip gagal → keadaan lama dikembalikan.
+    """
+    from pymongo.errors import DuplicateKeyError
+    from services import tax_invoice_service as tis
     seller, buyer = await ics._pair_docs(pair_id)
     st = await state(pair_id)
     if st["blocked_reason"]:
         raise IntercoTaxError(st["blocked_reason"])
     if replaces is None and st["out"]:
-        raise IntercoTaxError(
-            f"Faktur pajak internal {st['out'].get('number')} sudah terbit untuk "
-            f"transaksi ini. Gunakan **Faktur Pengganti** bila angkanya berubah.")
+        raise IntercoTaxError(_sudah_terbit(st['out'].get('number')))
 
     net = _net_amounts(seller)
+    fdate = faktur_date or seller.get("invoiced_at") or now_iso()
+    await _masa_terbuka(seller, fdate, "penggantian faktur" if replaces is not None else "penerbitan faktur")
+    nsfp_raw = (nsfp or "").strip()
+    dup = await tis._pemakai_nsfp(normalize_nsfp(nsfp_raw), kecuali=((replaces or {}).get("id", ""),))
+    if dup:
+        from fastapi import HTTPException
+        raise HTTPException(status_code=409, detail=tis.pesan_nsfp(nsfp_raw, dup.get("number")))
     ent_s = await _entity_full(seller["seller_entity_id"])
     ent_b = await _entity_full(seller["buyer_entity_id"])
-    fdate = faktur_date or seller.get("invoiced_at") or now_iso()
     items = _items_for_faktur(seller)
     rate = float(seller.get("tax_rate") or 0)
     nominal = float(seller.get("tax_rate_nominal") or rate)
@@ -189,7 +213,6 @@ async def issue(pair_id: str, actor: str = "", nsfp: str = "",
     out_number = await next_doc_number(COLL_OUT, "number", "FKT-",
                                       entity_id=seller["seller_entity_id"])
     in_number = await next_input_number(seller["buyer_entity_id"])   # KP-T5 — PT pembeli (faktur masukan)
-    nsfp_raw = (nsfp or "").strip()
 
     shared_tax = {
         "interco_pair_id": pair_id,
@@ -281,17 +304,64 @@ async def issue(pair_id: str, actor: str = "", nsfp: str = "",
         **shared_tax,
     }
 
-    await db[COLL_OUT].insert_one(dict(out_doc))
-    await db[COLL_IN].insert_one(dict(in_doc))
+    # PK-40 — kunci aktif kedua dokumen kembar.
+    out_doc.update(tis.kunci_aktif_keluaran(out_doc))
+    in_doc.update(kunci_aktif_masukan(in_doc))
 
-    if is_pengganti:
-        await db[COLL_OUT].update_one(
-            {"id": replaces["id"]},
-            {"$set": {"replaced_by_id": out_id, "updated_at": now_iso()}})
+    kunci_asli = tis.kunci_aktif_keluaran(replaces) if is_pengganti else {}
+    if is_pengganti:   # (1) klaim faktur asli: hanya satu penggantian yang menang
+        klaim = await db[COLL_OUT].update_one(
+            {"id": replaces["id"], "replaced_by_id": None, "status": {"$in": list(ACTIVE_OUT)}},
+            {"$set": {"replaced_by_id": out_id, "updated_at": now_iso()}, "$unset": dict(tis.KUNCI_FAKTUR)})
+        if not klaim.matched_count:
+            from fastapi import HTTPException
+            raise HTTPException(status_code=409, detail="Faktur ini sudah pernah diganti.")
+    if cancel_in:      # (2) faktur masukan lama dibatalkan (kuncinya dicabut) sebelum pasangan baru lahir
+        await db[COLL_IN].update_one(
+            {"id": cancel_in["id"], "status": {"$in": list(ACTIVE_IN)}},
+            {"$set": {"status": "cancelled", "cancel_reason": f"Diganti: {replace_reason}",
+                      "cancelled_by": actor or "system", "cancelled_at": now_iso(), "updated_at": now_iso()},
+             "$unset": dict(tis.KUNCI_FAKTUR),
+             "$push": {"timeline": timeline_entry(
+                 "replaced", "Diganti faktur masukan baru", actor or "system", replace_reason)}})
+    out_masuk = False
+    try:               # (3) sisip pasangan baru
+        await db[COLL_OUT].insert_one(dict(out_doc))
+        out_masuk = True
+        await db[COLL_IN].insert_one(dict(in_doc))
+    except Exception as exc:  # noqa: BLE001 — kembalikan keadaan sebelum aksi ini, lalu teruskan galatnya
+        await _kembalikan(out_doc["id"] if out_masuk else "", replaces, out_id, kunci_asli, cancel_in)
+        if isinstance(exc, DuplicateKeyError):
+            coll, doc = (COLL_IN, in_doc) if out_masuk else (COLL_OUT, out_doc)
+            err = await tis.galat_kunci_kembar(coll, exc, doc, kecuali_id=doc["id"], nsfp=nsfp_raw,
+                                               pesan_aktif=_sudah_terbit)
+            if err:
+                raise err from exc
+        raise
 
     await _stamp_pair(pair_id, out_doc, in_doc)
     await _link(pair_id, seller, buyer, out_doc, in_doc)
     return {"out": safe_doc(out_doc), "in": safe_doc(in_doc)}
+
+
+async def _kembalikan(out_baru_id: str, replaces: Optional[Dict[str, Any]], out_id: str,
+                      kunci_asli: Dict[str, str], cancel_in: Optional[Dict[str, Any]]) -> None:
+    """PK-40 — kompensasi bila sisip pasangan gagal: buang faktur keluaran yang baru lahir (belum dirujuk apa pun),
+    kembalikan faktur asli dan faktur masukan lama ke keadaan aktifnya."""
+    try:
+        if out_baru_id:
+            await db[COLL_OUT].delete_one({"id": out_baru_id})
+        if replaces:
+            await db[COLL_OUT].update_one({"id": replaces["id"], "replaced_by_id": out_id},
+                                          {"$set": {"replaced_by_id": None, "updated_at": now_iso(), **kunci_asli}})
+        if cancel_in:
+            kunci_in = kunci_aktif_masukan({**cancel_in, "status": "recorded"})
+            await db[COLL_IN].update_one(
+                {"id": cancel_in["id"], "status": "cancelled"},
+                {"$set": {"status": "recorded", "updated_at": now_iso(), **kunci_in},
+                 "$unset": {"cancel_reason": "", "cancelled_by": "", "cancelled_at": ""}, "$pop": {"timeline": 1}})
+    except Exception as exc:  # noqa: BLE001
+        print(f"[interco_tax] kompensasi gagal ({out_id}): {exc}")
 
 
 async def _stamp_pair(pair_id: str, out_doc: Optional[Dict[str, Any]],
@@ -339,17 +409,13 @@ async def replace(pair_id: str, reason: str, actor: str = "") -> Dict[str, Any]:
     if not out:
         raise IntercoTaxError("Belum ada faktur pajak internal yang bisa diganti.")
     inn = await _active_in(pair_id)
-    if inn:
-        await db[COLL_IN].update_one(
-            {"id": inn["id"]},
-            {"$set": {"status": "cancelled", "cancel_reason": f"Diganti: {reason}",
-                      "cancelled_by": actor or "system", "cancelled_at": now_iso(),
-                      "updated_at": now_iso()},
-             "$push": {"timeline": timeline_entry(
-                 "replaced", "Diganti faktur masukan baru", actor or "system", reason)}})
+    # PK-40 — masa faktur asli (kedua PT) harus belum dilaporkan; masa pengganti diperiksa `issue`. PERIKSA sebelum
+    # tulisan apa pun: faktur masukan lama baru dibatalkan di dalam `issue` sesudah faktur asli diklaim.
+    seller, _ = await ics._pair_docs(pair_id)
+    await _masa_terbuka(seller, out.get("faktur_date"), "penggantian faktur")
     return await issue(pair_id, actor=actor, nsfp=out.get("nsfp", ""),
                        kode_transaksi=out.get("kode_transaksi", "01"),
-                       replaces=out, replace_reason=reason)
+                       replaces=out, replace_reason=reason, cancel_in=inn)
 
 
 async def cancel(pair_id: str, reason: str, actor: str = "") -> Dict[str, Any]:
@@ -361,16 +427,24 @@ async def cancel(pair_id: str, reason: str, actor: str = "") -> Dict[str, Any]:
     inn = await _active_in(pair_id)
     if not out and not inn:
         raise IntercoTaxError("Tidak ada faktur pajak internal aktif untuk transaksi ini.")
+    # PK-40 — masa faktur keluaran (PT penjual) dan masukan (PT pembeli) harus belum dilaporkan.
+    from services.tax_center_service import assert_masa_terbuka
+    if out:
+        await assert_masa_terbuka(out.get("entity_id"), out.get("faktur_date"), aksi="pembatalan faktur")
+    if inn:
+        await assert_masa_terbuka(inn.get("entity_id"), inn.get("faktur_date"), aksi="pembatalan faktur")
     if out:
         await db[COLL_OUT].update_one(
             {"id": out["id"]},
-            {"$set": {"status": "batal", "cancel_reason": reason, "updated_at": now_iso()}})
+            {"$set": {"status": "batal", "cancel_reason": reason, "updated_at": now_iso()},
+             "$unset": {"active_key": "", "nsfp_key": ""}})
     if inn:
         await db[COLL_IN].update_one(
             {"id": inn["id"]},
             {"$set": {"status": "cancelled", "cancel_reason": reason,
                       "cancelled_by": actor or "system", "cancelled_at": now_iso(),
                       "updated_at": now_iso()},
+             "$unset": {"active_key": "", "nsfp_key": ""},
              "$push": {"timeline": timeline_entry(
                  "cancelled", "Faktur masukan internal dibatalkan", actor or "system", reason)}})
     await _stamp_pair(pair_id, None, None, status="cancelled")

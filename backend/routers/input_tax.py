@@ -8,6 +8,7 @@ Lifecycle: recorded → cancelled.
 from typing import Any, Dict, List
 from fastapi import APIRouter, HTTPException, Request
 from pymongo import ReturnDocument
+from pymongo.errors import DuplicateKeyError
 from db import db
 from dependencies import require_permission, audit
 from core_utils import new_id, now_iso, safe_doc, DEFAULT_ENTITY_ID, timeline_entry, rupiah
@@ -15,7 +16,7 @@ from entity_scope import entity_ctx, resolve_list_scope, assert_entity_access, g
 from schemas import InputTaxInvoiceCreate, InputTaxInvoiceCancel
 from services.input_tax_service import (
     next_input_number, normalize_nsfp, format_nsfp_display, period_of,
-    find_active_duplicate_nsfp, snapshot_from_bill, eligible_vendor_bills, vat_summary,
+    find_active_duplicate_nsfp, snapshot_from_bill, eligible_vendor_bills, vat_summary, kunci_aktif_masukan,
     ELIGIBLE_BILL_STATUSES, ACTIVE_INPUT_STATUSES,
 )
 
@@ -102,15 +103,16 @@ async def create_input_tax(payload: InputTaxInvoiceCreate, request: Request) -> 
     nsfp_digits = normalize_nsfp(nsfp_raw)
     if len(nsfp_digits) < 1:
         raise HTTPException(status_code=400, detail="NSFP (Nomor Seri Faktur Pajak) supplier wajib diisi.")
-    dup = await find_active_duplicate_nsfp(nsfp_digits)
+    from services.tax_invoice_service import galat_kunci_kembar, pesan_nsfp
+    dup = await find_active_duplicate_nsfp(nsfp_digits)   # jalan cepat; penjaminnya indeks `uq_fpm_nsfp` (PK-40)
     if dup:
-        raise HTTPException(
-            status_code=409,
-            detail=f"NSFP '{nsfp_raw}' sudah dicatat pada {dup.get('number')}.")
+        raise HTTPException(status_code=409, detail=pesan_nsfp(nsfp_raw, dup.get("number")))
 
     snap = snapshot_from_bill(bill)
     entity_id = snap.get("entity_id") or DEFAULT_ENTITY_ID
     faktur_date = payload.faktur_date or bill.get("bill_date") or now_iso()
+    from services.tax_center_service import assert_masa_terbuka   # PK-40 — masa terkunci → 409 sebelum tulis
+    await assert_masa_terbuka(entity_id, faktur_date, aksi="pencatatan faktur masukan")
     number = await next_input_number(entity_id)   # KP-T5 — PT dokumen (N1)
     actor_name = payload.created_by or actor.get("name", "Admin")
 
@@ -133,6 +135,7 @@ async def create_input_tax(payload: InputTaxInvoiceCreate, request: Request) -> 
         "created_at": now_iso(),
         "updated_at": now_iso(),
     }
+    doc.update(kunci_aktif_masukan(doc))   # PK-40 — `active_key` vb:… + `nsfp_key` (indeks `uq_fpm_active`/`uq_fpm_nsfp`)
     # INV-ATOMIC-01 — klaim vendor_bills (belum punya faktur aktif) SESUDAH semua validasi,
     # sebelum faktur ditulis: dua pencatatan bersamaan atas bill yang sama → satu 409.
     from services import atomic_claim as _saga
@@ -143,6 +146,12 @@ async def create_input_tax(payload: InputTaxInvoiceCreate, request: Request) -> 
         await db.tax_invoices_in.insert_one(doc)
     except Exception as exc:  # noqa: BLE001
         await _saga.release("vendor_bills", bill["id"])   # faktur belum lahir → aman dilepas
+        if isinstance(exc, DuplicateKeyError):   # PK-40 — NSFP sama dicatat bersamaan: yang kalah 409
+            err = await galat_kunci_kembar(
+                "tax_invoices_in", exc, doc, kecuali_id=doc["id"], nsfp=nsfp_raw,
+                pesan_aktif=lambda n: f"Bill ini sudah punya Faktur Masukan aktif ({n}).")
+            if err:
+                raise err from exc
         raise
     # Tandai bill agar tak dobel + tampil di UI (tulisan akhir sekaligus mencabut kunci).
     await db.vendor_bills.update_one(
@@ -169,6 +178,8 @@ async def cancel_input_tax(fpm_id: str, payload: InputTaxInvoiceCancel, request:
         raise HTTPException(status_code=409, detail="Faktur Pajak Masukan sudah dibatalkan.")
     if not (payload.reason or "").strip():
         raise HTTPException(status_code=400, detail="Alasan pembatalan wajib diisi.")
+    from services.tax_center_service import assert_masa_terbuka   # PK-40 — masa terkunci → 409 sebelum tulis
+    await assert_masa_terbuka(d.get("entity_id"), d.get("faktur_date"), aksi="pembatalan faktur")
     # INV-ATOMIC-01 — klaim faktur (status != cancelled) SESUDAH validasi, sebelum bill dilepas.
     from services import atomic_claim as _saga
     await _saga.claim("tax_invoices_in", fpm_id, "input_tax_cancel",
@@ -178,10 +189,12 @@ async def cancel_input_tax(fpm_id: str, payload: InputTaxInvoiceCancel, request:
             {"id": d["vendor_bill_id"]},
             {"$set": {"input_faktur_status": "cancelled", "updated_at": now_iso()},
              "$unset": {"input_faktur_id": "", "input_faktur_number": "", "input_faktur_nsfp": ""}})
+    selesai = _saga.finish_set({"status": "cancelled", "cancel_reason": payload.reason.strip(),
+                                "cancelled_by": actor["name"], "cancelled_at": now_iso(), "updated_at": now_iso()})
+    selesai["$unset"].update({"active_key": "", "nsfp_key": ""})   # PK-40 — NSFP & tagihan bebas dipakai lagi
     updated = await db.tax_invoices_in.find_one_and_update(
         {"id": fpm_id},
-        {**_saga.finish_set({"status": "cancelled", "cancel_reason": payload.reason.strip(),
-                             "cancelled_by": actor["name"], "cancelled_at": now_iso(), "updated_at": now_iso()}),
+        {**selesai,
          "$push": {"timeline": timeline_entry("cancelled", "Faktur Masukan dibatalkan",
                                               actor["name"], payload.reason.strip())}},
         projection={"_id": 0}, return_document=ReturnDocument.AFTER)

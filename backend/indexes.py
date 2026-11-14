@@ -202,6 +202,9 @@ INDEX_SPECS: Dict[str, List[IndexKeys]] = {
         [("number", A)],
         [("faktur_date", D)],
     ],
+    "tax_invoices_in": [             # PK-40 — rekap PPN per PT per masa (saringan `faktur_date` di kueri)
+        [("entity_id", A), ("faktur_date", A)],
+    ],
     # ── Master data ───────────────────────────────────────────────────────
     "customers": [
         [("entity_id", A), ("status", A)],
@@ -688,6 +691,25 @@ REQUIRED_UNIQUE_INDEXES: List[Dict[str, Any]] = [
     {"collection": "doc_number_formats", "name": "uq_kind_entity", "label": "format nomor per jenis per PT",
      "keys": [("kind", 1), ("entity_id", 1)], "partial": {"kind": dict(_NONEMPTY)},
      "finder": _finder_dup("doc_number_formats", '{kind:{$type:"string",$gt:""}}', '{k:"$kind",e:"$entity_id"}',
+                           "$id")},
+]
+
+
+# PK-40 (SL-13) — satu faktur pajak aktif per pesanan / transaksi antar-PT / tagihan pemasok, satu NSFP per faktur
+# aktif (lintas PT), satu dokumen kunci per (PT, masa pajak). Field kunci diisi layanan faktur; data lama diisi
+# `scripts/blueprint/pk40_kunci_faktur.py --terapkan` (baca-saja dulu: kembar = titik henti H6).
+REQUIRED_UNIQUE_INDEXES += [
+    {"collection": c, "name": n, "label": lbl, "keys": [(f, 1)], "partial": {f: dict(_NONEMPTY)},
+     "finder": _finder_dup(c, f'{{{f}:{{$type:"string",$gt:""}}}}', f'"${f}"')}
+    for c, n, f, lbl in (
+        ("tax_invoices", "uq_fkt_active", "active_key", "satu faktur pajak keluaran aktif per pesanan"),
+        ("tax_invoices", "uq_fkt_nsfp", "nsfp_key", "satu nomor seri per faktur pajak keluaran aktif"),
+        ("tax_invoices_in", "uq_fpm_active", "active_key", "satu faktur pajak masukan aktif per tagihan"),
+        ("tax_invoices_in", "uq_fpm_nsfp", "nsfp_key", "satu nomor seri per faktur pajak masukan aktif"))
+] + [
+    {"collection": "tax_period_locks", "name": "uq_tax_period", "label": "satu kunci masa pajak per PT per masa",
+     "keys": [("entity_id", 1), ("period", 1)], "partial": {"period": dict(_NONEMPTY)},
+     "finder": _finder_dup("tax_period_locks", '{period:{$type:"string",$gt:""}}', '{e:"$entity_id",p:"$period"}',
                            "$id")},
 ]
 

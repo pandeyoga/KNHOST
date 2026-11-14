@@ -842,11 +842,14 @@ async def layer_tax_invoice_invariants(db):
         line("PASS", G, "faktur: referensi order valid + hanya PKP & ber-PPN (normal/pengganti)")
 
     # FKT-3: maksimal 1 faktur AKTIF (bukan batal & belum diganti) per order + nomor unik
+    # PK-40 (SL-13): dikelompokkan per kunci pemilik (`so:{order_id}` / `ic:{interco_pair_id}`) — faktur internal
+    # antar-PT ber-`order_id` kosong tidak lagi tertumpuk jadi satu kelompok.
     from collections import defaultdict
     active_by_order = defaultdict(int)
     for f in fakturs:
         if f.get("status") != "batal" and not f.get("replaced_by_id"):
-            active_by_order[f.get("order_id")] += 1
+            pemilik = f"ic:{f['interco_pair_id']}" if f.get("interco_pair_id") else f"so:{f.get('order_id')}"
+            active_by_order[pemilik] += 1
     dup_active = [oid for oid, n in active_by_order.items() if n > 1]
     numbers = [f.get("number") for f in fakturs]
     dup_no = len(numbers) != len(set(numbers))
@@ -857,6 +860,38 @@ async def layer_tax_invoice_invariants(db):
     else:
         results["pass"] += 1
         line("PASS", G, f"faktur: ≤1 faktur aktif/order + {len(set(numbers))} nomor unik")
+
+    # FKT-5 (PK-40, D2): field kunci `active_key`/`nsfp_key` = fungsi layanan (`kunci_aktif_keluaran`,
+    # `kunci_aktif_masukan`). Kunci SALAH (nilai beda / tersisa di faktur tidak aktif) = FAIL; kunci BELUM ADA pada
+    # faktur lama = WARN (pembangun ulang: `scripts/blueprint/pk40_kunci_faktur.py`, data nyata = keputusan pemilik).
+    try:
+        sys.path.insert(0, str(ROOT / "backend"))
+        from services.input_tax_service import kunci_aktif_masukan
+        from services.tax_invoice_service import kunci_aktif_keluaran
+        masukan = await db.tax_invoices_in.find({}, {"_id": 0}).to_list(None)
+        salah, belum = [], []
+        for coll, rows, fn in (("tax_invoices", fakturs, kunci_aktif_keluaran),
+                               ("tax_invoices_in", masukan, kunci_aktif_masukan)):
+            for f in rows:
+                harus = fn(f)
+                for fld in ("active_key", "nsfp_key"):
+                    if fld in f and f.get(fld) != harus.get(fld):
+                        salah.append(f"{coll}:{f.get('number')}")
+                    elif fld not in f and harus.get(fld):
+                        belum.append(f"{coll}:{f.get('number')}")
+        if salah:
+            results["fail"] += 1
+            line("FAIL", R, f"faktur: {len(salah)} field kunci aktif tidak sesuai keadaan faktur (PK-40)", str(salah[:5]))
+        elif belum:
+            results["warn"] += 1
+            line("WARN", Y, f"faktur: {len(set(belum))} faktur lama belum berkunci aktif — jalankan "
+                             "scripts/blueprint/pk40_kunci_faktur.py (baca-saja dulu)", str(sorted(set(belum))[:5]))
+        else:
+            results["pass"] += 1
+            line("PASS", G, "faktur: field kunci aktif (active_key/nsfp_key) sesuai keadaan faktur (PK-40)")
+    except Exception as exc:  # noqa: BLE001
+        results["warn"] += 1
+        line("WARN", Y, f"faktur: pemeriksaan kunci aktif PK-40 dilewati: {exc}")
 
     # FKT-4: rantai pengganti konsisten (replaces_id menunjuk faktur yang ada)
     ids = {f.get("id") for f in fakturs}

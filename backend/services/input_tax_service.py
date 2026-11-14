@@ -33,6 +33,23 @@ def normalize_nsfp(nsfp: Optional[str]) -> str:
     return "".join(ch for ch in (nsfp or "") if ch.isdigit())
 
 
+def kunci_aktif_masukan(doc: Dict[str, Any]) -> Dict[str, str]:
+    """PK-40 (SL-13) — field kunci faktur masukan AKTIF (`recorded`): `active_key` = `vb:{vendor_bill_id}` /
+    `ic:{interco_pair_id}` (indeks unik `uq_fpm_active`), `nsfp_key` = `nsfp_digits` (`uq_fpm_nsfp`). Tidak aktif → `{}`.
+    `nsfp_digits` dipakai bila ada (faktur masukan internal tanpa NSFP DJP menyimpan nomor internal di `nsfp`)."""
+    if doc.get("status") not in ACTIVE_INPUT_STATUSES:
+        return {}
+    out: Dict[str, str] = {}
+    if doc.get("vendor_bill_id"):
+        out["active_key"] = f"vb:{doc['vendor_bill_id']}"
+    elif doc.get("interco_pair_id"):
+        out["active_key"] = f"ic:{doc['interco_pair_id']}"
+    digits = doc["nsfp_digits"] if "nsfp_digits" in doc else normalize_nsfp(doc.get("nsfp"))
+    if digits:
+        out["nsfp_key"] = digits
+    return out
+
+
 def format_nsfp_display(nsfp: Optional[str]) -> str:
     """Tampilkan NSFP 16-digit sebagai NNN-NN.NN-NNNNNNNN bila cukup digit."""
     d = normalize_nsfp(nsfp)
@@ -116,12 +133,54 @@ async def eligible_vendor_bills(entity_id: str = "", entity_ids: Optional[List[s
     return rows
 
 
+# PK-40 (SL-13) — teks pembanding buku besar di rekap PPN.
+SELISIH_NOTE = "Selisih berarti ada jurnal PPN tanpa faktur pajak, atau faktur tanpa jurnal, pada masa ini."
+_FIELDS_REKAP = {"_id": 0, "faktur_date": 1, "ppn_amount": 1, "dpp": 1, "supplier_name": 1}
+
+
+def _jendela_masa(period: str) -> Dict[str, str]:
+    """PK-40 — rentang teks `faktur_date` [awal masa − 1 hari, akhir masa + 1 hari] (stempel UTC/WIB di tepi masa ikut
+    terambil); baris lalu disaring persis dengan `period_of` (WIB). Batas atas eksklusif = akhir + 2 hari."""
+    import calendar
+    from datetime import date, timedelta
+    y, m = int(period[:4]), int(period[5:7])
+    awal = date(y, m, 1)
+    akhir = date(y, m, calendar.monthrange(y, m)[1])
+    return {"$gte": (awal - timedelta(days=1)).isoformat(), "$lt": (akhir + timedelta(days=2)).isoformat()}
+
+
+async def _gl_ppn_masa(period: str, entity_q: Dict[str, Any]) -> Dict[str, float]:
+    """PK-40 — mutasi akun PPN di buku besar masa itu (jurnal bukan `void`, PT sama, tanggal buku dalam masa):
+    keluaran = kredit − debit akun `penjualan.ppn_keluaran`; masukan = debit − kredit akun `pembelian.ppn_masukan`
+    (semua kode yang pernah dipakai kebutuhan itu: `known_codes`)."""
+    import calendar
+    from services.gl_mapping_service import known_codes
+    out_codes = set(await known_codes("penjualan.ppn_keluaran"))
+    in_codes = set(await known_codes("pembelian.ppn_masukan"))
+    y, m = int(period[:4]), int(period[5:7])
+    akhir = f"{period}-{calendar.monthrange(y, m)[1]:02d}"
+    q = {"status": {"$ne": "void"}, **entity_q, "lines.account_code": {"$in": sorted(out_codes | in_codes)},
+         "date": {"$gte": f"{period}-01", "$lte": f"{akhir}T23:59:59.999999"}}   # sama dengan batas laporan
+    keluaran = masukan = 0.0
+    async for je in db.journal_entries.find(q, {"_id": 0, "lines": 1}):
+        for ln in je.get("lines") or []:
+            code = ln.get("account_code")
+            dr, cr = float(ln.get("debit") or 0), float(ln.get("credit") or 0)
+            if code in out_codes:
+                keluaran += cr - dr
+            if code in in_codes:
+                masukan += dr - cr
+    return {"keluaran": round(keluaran, 2), "masukan": round(masukan, 2)}
+
+
 async def vat_summary(period: str = "", entity_id: str = "", entity_ids: Optional[List[str]] = None) -> Dict[str, Any]:
     """Rekap PPN Masukan vs Keluaran untuk satu periode (YYYY-MM).
 
     Keluaran = Σ ppn_amount Faktur Pajak Jual aktif (tax_invoices: bukan batal, belum diganti — PK-45 TX-01).
     Masukan  = Σ ppn_amount Faktur Pajak Masukan (tax_invoices_in, status recorded).
     Net      = Keluaran − Masukan → >0 KURANG BAYAR (setor), <0 LEBIH BAYAR (kredit).
+    PK-40 (SL-13): masa = `period_of(faktur_date)` (WIB), disaring di kueri lalu persis di baris; kursor dibaca habis
+    (tanpa batas 5.000); pembanding `gl_ppn` dari buku besar + `selisih` (rekap − buku besar).
     """
     if not period:   # PK-37 — bulan pajak berjalan WIB (dulu bulan UTC)
         from services.book_date import periode_buku
@@ -129,20 +188,28 @@ async def vat_summary(period: str = "", entity_id: str = "", entity_ids: Optiona
     period = period.strip()
 
     def _in_period(doc: Dict[str, Any]) -> bool:
-        return (doc.get("faktur_date", "") or "")[:7] == period
+        return period_of(doc.get("faktur_date", "") or "") == period
 
     from services.tax_invoice_service import saringan_keluaran_aktif
     out_q: Dict[str, Any] = saringan_keluaran_aktif()   # PK-45 (TX-01) — faktur yang sudah diganti tidak dihitung
     in_q: Dict[str, Any] = {"status": {"$in": list(ACTIVE_INPUT_STATUSES)}}
+    ent_q: Dict[str, Any] = {}
     if entity_id and entity_id != "all":
-        out_q["entity_id"] = entity_id
-        in_q["entity_id"] = entity_id
+        ent_q = {"entity_id": entity_id}
     elif entity_ids is not None:   # PK-09 — gabungan = PT yang ditugaskan
-        out_q["entity_id"] = {"$in": list(entity_ids)}
-        in_q["entity_id"] = {"$in": list(entity_ids)}
+        ent_q = {"entity_id": {"$in": list(entity_ids)}}
+    out_q.update(ent_q)
+    in_q.update(ent_q)
+    try:
+        jendela = _jendela_masa(period)
+    except ValueError:   # teks masa tak dikenal: tanpa saringan kueri, saringan baris tetap
+        jendela = None
+    if jendela:
+        out_q["faktur_date"] = dict(jendela)
+        in_q["faktur_date"] = dict(jendela)
 
-    out_docs = [d for d in await db.tax_invoices.find(out_q, {"_id": 0}).to_list(5000) if _in_period(d)]
-    in_docs = [d for d in await db.tax_invoices_in.find(in_q, {"_id": 0}).to_list(5000) if _in_period(d)]
+    out_docs = [d async for d in db.tax_invoices.find(out_q, _FIELDS_REKAP) if _in_period(d)]
+    in_docs = [d async for d in db.tax_invoices_in.find(in_q, _FIELDS_REKAP) if _in_period(d)]
 
     keluaran_ppn = round(sum(float(d.get("ppn_amount", 0) or 0) for d in out_docs), 2)
     keluaran_dpp = round(sum(float(d.get("dpp", 0) or 0) for d in out_docs), 2)
@@ -166,10 +233,14 @@ async def vat_summary(period: str = "", entity_id: str = "", entity_ids: Optiona
         s["dpp"] = round(s["dpp"] + float(d.get("dpp", 0) or 0), 2)
         s["count"] += 1
 
+    gl = await _gl_ppn_masa(period, ent_q) if jendela else {"keluaran": 0.0, "masukan": 0.0}
     return {
         "period": period,
-        "keluaran": {"ppn": keluaran_ppn, "dpp": keluaran_dpp, "count": len(out_docs)},
-        "masukan": {"ppn": masukan_ppn, "dpp": masukan_dpp, "count": len(in_docs)},
+        "keluaran": {"ppn": keluaran_ppn, "dpp": keluaran_dpp, "count": len(out_docs), "gl_ppn": gl["keluaran"],
+                     "selisih": round(keluaran_ppn - gl["keluaran"], 2)},
+        "masukan": {"ppn": masukan_ppn, "dpp": masukan_dpp, "count": len(in_docs), "gl_ppn": gl["masukan"],
+                    "selisih": round(masukan_ppn - gl["masukan"], 2)},
+        "selisih_note": SELISIH_NOTE,
         "net_ppn": net,
         "position": position,
         "position_label": position_label,

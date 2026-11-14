@@ -78,6 +78,7 @@ CANONICAL_COLLECTIONS = {
     # ── Fase 5.5 P0-3 (Faktur Pajak Masukan / Input VAT) ──
     "tax_invoices_in",
     "tax_pph_records",
+    "tax_period_locks",     # PK-40 — masa pajak ditandai dilaporkan (terkunci) per PT
     "roll_label_prints",    # LN-042-T03 — histori cetak label roll
     "mkt_campaign_costs",   # COMM-04 — realisasi biaya kampanye (jurnal Beban Pemasaran)
     # ── Fase 6.1 P1 (RFQ / Quotation → sourcing) ──

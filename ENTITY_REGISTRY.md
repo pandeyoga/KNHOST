@@ -51,6 +51,7 @@ Sebelum membuat apapun yang baru, tanya: **"Apakah ini sudah ada di sini?"**
 | Kebijakan Persetujuan *(KP-T4)* | `approval_policies` | `routers/approval_policies.py`, `services/approval_policy_service.py` (dipanggil semua pintu persetujuan), katalog `approval_kinds.py` | — | `ApprovalPoliciesView` (Pengaturan › Persetujuan › Aturan Persetujuan) |
 | Penomoran Dokumen *(KP-T5)* | `doc_number_formats` (+ penghitung `number_sequences`) | `core_utils.next_doc_number` (satu-satunya pembuat nomor), `services/doc_numbering_service.py`, katalog `doc_number_kinds.py`, `routers/doc_numbering.py` | `DocNumberingPut`, `DocNumberingPreview` | `DocNumberingView` (Pengaturan › Dokumen & Cetak › Penomoran Dokumen) |
 | Usulan Jurnal Manual *(KF-T6)* | `journal_proposals` | `routers/gl.py` (`POST /gl/journal` → 202, `/gl/journal-proposals*`), `services/journal_proposal_service.py` | `JournalEntryCreate`, `ProposalReject` | `JournalProposalsPanel` (Buku Besar › Jurnal › Menunggu persetujuan) |
+| Kunci Masa Pajak *(PK-40)* | `tax_period_locks` | `routers/tax_center.py` (`/api/tax/periods*`), `services/tax_center_service.py` (`assert_masa_terbuka` dipanggil layanan faktur & PPh) | `TaxPeriodLockInput`, `TaxPeriodUnlockInput` | `TaxCenterView` (Akuntansi & Pajak › Pusat Pajak) |
 | Niat Bayar Hutang *(PK-05)* | `ap_payment_intents` | `routers/ap_payments.py`, `services/ap_payment_service.py` (dipanggil bayar faktur & bayar kontrabon) | `VendorBillPaymentCreate`, `ContraBonPayIn` | `VendorBillDetailPanel` & `contrabon/PayModal` (panel bayar, `features/purchasing/apPayment.jsx`) |
 | Kontrabon *(FASE G-7)* | `contra_bons` | `routers/contra_bons.py`, `services/contra_bon_service.py`, `services/contra_bon_reminder.py` | `ContraBonCreate`, `ContraBonDeductionIn`, `ContraBonDecisionIn`, `ContraBonScheduleIn`, `ContraBonPayIn`, `InvoiceExchangeIn` | `ContraBonsView` (Pembelian → Hutang Supplier (AP) → Kontrabon) |
 | Transaksi Antar Entitas *(FASE G-6)* | `interco_transactions`, `interco_accounts`, `interco_settlements` | `routers/interco.py`, `services/interco_service.py`, `services/consolidation_service.py` (eliminasi margin) | `IntercoCreate`, `IntercoActionIn`, `IntercoSettlementCreate` | `IntercoView` (Pembelian → Hutang Supplier (AP) → Antar Entitas (Jual-Beli)) · `GroupConsolidationView` (eliminasi AUTO G-6) |
@@ -2203,11 +2204,18 @@ Key Fields:
   customer_id, customer_name, customer_npwp, customer_address, has_customer_npwp (snapshot),
   items[] ({product_name, sku, quantity, unit, price, subtotal, discount_amount, line_total}),
   total_amount, discount_total, net_subtotal, dpp, ppn_rate, ppn_mode, ppn_amount, grand_total,
-  is_pkp, created_by, created_at, updated_at
+  is_pkp, created_by, created_at, updated_at,
+  active_key (PK-40: HANYA pada faktur aktif — `so:{order_id}` / `ic:{interco_pair_id}`; dicabut saat diganti/batal),
+  nsfp_key (PK-40: digit NSFP faktur aktif ber-NSFP)
 Dibuat saat:  MANUAL (opsional — pajak TIDAK wajib) dari Order detail; PKP-only + ppn_amount>0; idempotent (1 aktif/order).
+Keunikan (PK-40, dijamin indeks unik wajib): `uq_fkt_active` (satu faktur aktif per pesanan / transaksi antar-PT),
+  `uq_fkt_nsfp` (satu NSFP per faktur aktif, lintas PT). Penulis kunci: services/tax_invoice_service.py
+  (`kunci_aktif_keluaran`), services/interco_tax_service.py; data lama: scripts/blueprint/pk40_kunci_faktur.py.
+  Masa pajak terkunci (`tax_period_locks`) → terbit/ganti/batal/ubah NSFP ditolak 409.
 INVARIAN (verify_data_integrity L4-FKT):
   PPN == DPP × rate · Grand == DPP + PPN · ref order valid · normal/pengganti ⟹ is_pkp & ppn>0 ·
-  ≤1 faktur aktif (bukan batal & belum diganti) per order · nomor unik · rantai pengganti (replaces_id valid).
+  ≤1 faktur aktif (bukan batal & belum diganti) per pemilik (`so:`/`ic:`) · nomor unik · rantai pengganti (replaces_id
+  valid) · FKT-5 (PK-40) active_key/nsfp_key = keadaan faktur (kunci lama belum diisi = WARN).
 ⚠️ Penomoran HYBRID: FKT-##### internal + NSFP resmi diisi menyusul (alokasi DJP/Coretax e-Faktur).
 ⚠️ JANGAN BUAT: faktur, faktur_pajak, bills, tagihan — gunakan tax_invoices.
 ```
@@ -2624,15 +2632,20 @@ Key Fields:
   supplier_id, supplier_name, supplier_npwp, entity_id,
   dpp, ppn_rate, ppn_mode, ppn_amount, grand_total,
   notes, timeline[], cancel_reason, cancelled_by, cancelled_at,
-  created_by, created_by_id, created_at, updated_at
+  created_by, created_by_id, created_at, updated_at,
+  active_key (PK-40: hanya status=recorded — `vb:{vendor_bill_id}` / `ic:{interco_pair_id}`), nsfp_key (= nsfp_digits)
 Dedupe:      NSFP (digit-only) unik di antara faktur status=recorded → 409 bila ganda.
              1 Vendor Bill → max 1 faktur masukan aktif (vendor_bills.input_faktur_status).
+             PK-40: dijamin indeks unik wajib `uq_fpm_active`, `uq_fpm_nsfp` (`kunci_aktif_masukan`); indeks biasa
+             (entity_id, faktur_date) untuk rekap per masa.
 Endpoints:   GET/POST /input-tax-invoices · GET /input-tax-invoices/{id} ·
              GET /input-tax-invoices/eligible-bills · POST /input-tax-invoices/{id}/cancel ·
              GET /tax/vat-summary?period=YYYY-MM (Rekap PPN Masukan vs Keluaran)
-Rekap PPN:   /tax/vat-summary → keluaran (tax_invoices, status≠batal) vs masukan
+Rekap PPN:   /tax/vat-summary → keluaran (tax_invoices aktif: bukan batal & belum diganti) vs masukan
              (tax_invoices_in, status=recorded) per period; net = keluaran−masukan →
              >0 kurang_bayar (setor), <0 lebih_bayar (kredit), =0 nihil.
+             PK-40: masa = periode WIB `faktur_date` (saringan di kueri, tanpa batas 5.000 baris); keluaran/masukan
+             memuat `gl_ppn` (mutasi akun PPN keluaran/masukan buku besar masa itu) + `selisih` (rekap − buku besar).
 Efek:        create → vendor_bills.input_faktur_id/number/status='recorded'/nsfp.
              cancel → unset flag bill (eligible lagi), NSFP bisa dipakai ulang.
 ⚠️ JANGAN BUAT: faktur_masukan, input_vat, ppn_masukan, vat_in, purchase_tax_invoices
@@ -3002,7 +3015,10 @@ INDEKS UNIK WAJIB (PK-14, `backend/indexes.py` REQUIRED_UNIQUE_INDEXES — aplik
   interco_transactions / interco_settlements / interco_returns / interco_loans .uq_number (number) ·
   penalties.uq_penalty_line_period (doc_id, plan_id, line_seq, period_key) ·
   payment_plans.uq_plan_active_doc (doc_type, doc_id | status active) ·
-  finance_cases.uq_case_open_source (case_type, source.id | status open/in_progress)
+  finance_cases.uq_case_open_source (case_type, source.id | status open/in_progress) ·
+  PK-40: tax_invoices.uq_fkt_active (active_key) · tax_invoices.uq_fkt_nsfp (nsfp_key) ·
+  tax_invoices_in.uq_fpm_active (active_key) · tax_invoices_in.uq_fpm_nsfp (nsfp_key) ·
+  tax_period_locks.uq_tax_period (entity_id, period)
 ⚠️ AR aging/Outstanding = DERIVED dari invoices + credit_limit; denda 1–3% pada invoices
 ⚠️ JANGAN buat: ledger, accounts, gl (pakai journal_entries/chart_of_accounts/bank_accounts)
 ```
@@ -3202,6 +3218,29 @@ Service:     services/tax_center_service.py → record_pph()
 Key Fields:  id, code (pph21|pph23|...), period (YYYY-MM), rate, dpp, amount, note,
              status, entity_id, created_by
 ⚠️ entity_id = SCOPED (per-PT). Basis payroll dihitung dari hr_payroll_runs (bukan koleksi ini).
+   PK-40 (FY-16): butir PPh 21 = penggajian `posted`/`paid` saja; dpp = Σ hr_payslips.tax_gross (slip lama: gross),
+   amount = Σ pph21 slip, gl_amount = kredit − debit 2-1800 jurnal `payroll_run` `{entity_id}:{period}`, selisih.
+   Rekam/hapus rekaman pada masa yang sudah dilaporkan (`tax_period_locks`) → 409.
+```
+
+#### tax_period_locks  [PK-40 — masa pajak ditandai dilaporkan / terkunci]
+```
+Collection:  tax_period_locks   Prefix: tpl_
+Router:      routers/tax_center.py (GET /api/tax/periods · POST /api/tax/periods/{period}/lock ·
+             POST /api/tax/periods/{period}/unlock) — baca `accounting.view`, kunci/buka `accounting.manage`
+Service:     services/tax_center_service.py (`assert_masa_terbuka`, `lock_period`, `unlock_period`,
+             `list_period_locks`)
+Component:   features/finance/TaxCenterView.jsx (lencana Sudah/Belum dilaporkan, Tandai Sudah Dilaporkan, Buka Masa Pajak)
+Key Fields:  id, entity_id, period (YYYY-MM), status (reported|reopened), reported_at, reported_by, reported_by_id,
+             note, snapshot {keluaran_ppn, masukan_ppn, net_ppn, pph_total, gl_keluaran_ppn, gl_masukan_ppn}
+             (potret saat ditandai — tidak dihitung ulang, D3), reopened_at, reopened_by, reopened_by_id,
+             reopen_reason, history[] (kejadian laporan yang dibuka lagi: reported_* + snapshot + reopen_*),
+             created_at, updated_at
+Indeks:      uq_tax_period (entity_id, period) — unik, wajib-ada (PK-14 REQUIRED_UNIQUE_INDEXES)
+Aturan:      kunci hanya untuk masa yang SUDAH berakhir (WIB); buka wajib alasan ≥ 5 huruf; satu orang berizin.
+             `status == reported` → terbit/ganti/batal/ubah NSFP faktur keluaran, catat/batal faktur masukan, faktur
+             internal antar-PT, rekam/hapus PPh masa itu ditolak 409 (langkah PERIKSA, sebelum tulisan).
+⚠️ entity_id = SCOPED (per-PT). Tanpa dokumen = masa terbuka (perilaku sebelum PK-40).
 ```
 
 #### rfid_tags  [FASE 5 IMPLEMENTED — RFID Simulator: tag ↔ roll]

@@ -1,5 +1,5 @@
 <!-- DIHASILKAN OTOMATIS oleh scripts/gen_codebase_map.py — JANGAN EDIT TANGAN -->
-<!-- Dihasilkan dari commit: 5e94a1d pada 2026-11-14 -->
+<!-- Dihasilkan dari commit: bcce72a pada 2026-11-14 -->
 # CODEBASE MAP — Kain Nusantara (dihasilkan otomatis)
 
 Peta ini dihitung dari kode oleh `scripts/gen_codebase_map.py`. Kalau angka di sini
@@ -13,7 +13,7 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 | Ukuran | Nilai |
 |---|---:|
 | Router (`backend/routers/*.py`) | 164 |
-| Endpoint (`@router.<method>`) | 1777 |
+| Endpoint (`@router.<method>`) | 1780 |
 | Service (`backend/services/*.py`) | 392 |
 | Koleksi MongoDB disentuh kode produksi | 202 |
 | Direktori fitur frontend (`src/features/*`) | 39 |
@@ -29,9 +29,9 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 | `schemas_purchasing.py` | 625 |
 | `dependencies.py` | 286 |
 | `permissions_config.py` | 828 |
-| `entity_scope.py` | 728 |
+| `entity_scope.py` | 729 |
 | `pagination.py` | 145 |
-| `indexes.py` | 799 |
+| `indexes.py` | 821 |
 | `bootstrap.py` | 2150 |
 | `login_only_endpoints.py` | 80 |
 
@@ -194,7 +194,7 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 | `inbound_scan_label.py` | 10 | 333 | `/inbound/rolls/{roll_id}/confirm-measure`, `/inbound/rolls/{roll_id}/putaway`, `/inbound/rolls/{roll_id}/scan`, `/inbound/rolls/{roll_id}/tag`, `/inbound/scan-label/stats`, `/inbound/tasks/{task_id}/scan-label` … |
 | `incentive_rates.py` | 4 | 105 | `/incentive-rates`, `/incentive-rates/{rate_id}` |
 | `initial_registration.py` | 22 | 329 | `/registration/freeze`, `/registration/sessions`, `/registration/sessions/{sid}`, `/registration/sessions/{sid}/approve`, `/registration/sessions/{sid}/approve-count`, `/registration/sessions/{sid}/bins` … |
-| `input_tax.py` | 6 | 190 | `/input-tax-invoices`, `/input-tax-invoices/eligible-bills`, `/input-tax-invoices/{fpm_id}`, `/input-tax-invoices/{fpm_id}/cancel`, `/tax/vat-summary` |
+| `input_tax.py` | 6 | 203 | `/input-tax-invoices`, `/input-tax-invoices/eligible-bills`, `/input-tax-invoices/{fpm_id}`, `/input-tax-invoices/{fpm_id}/cancel`, `/tax/vat-summary` |
 | `inspections.py` | 18 | 543 | `/inspections`, `/inspections/export`, `/inspections/meta`, `/inspections/meta/ref-docs`, `/inspections/qc-4point`, `/inspections/queue/qc-tasks` … |
 | `integrations.py` | 4 | 84 | `/admin/integrations`, `/admin/integrations/gemini/test`, `/admin/integrations/openai/test` |
 | `interco.py` | 38 | 595 | `/interco/accounts`, `/interco/accounts/{from_entity_id}/{to_entity_id}`, `/interco/accounts/{payer_entity_id}/{payee_entity_id}/remind`, `/interco/contracts`, `/interco/margin-by-product`, `/interco/margin-report` … |
@@ -273,7 +273,7 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 | `supplier_contracts.py` | 14 | 299 | `/makloon-claims/recap`, `/makloon-claims/recap.xlsx`, `/makloon-partners/scorecard`, `/supplier-contracts`, `/supplier-contracts/policy`, `/supplier-contracts/resolve` … |
 | `supplier_items.py` | 11 | 208 | `/supplier-items`, `/supplier-items/import`, `/supplier-items/import-file`, `/supplier-items/import-template`, `/supplier-items/lookup`, `/supplier-items/stats` … |
 | `suppliers.py` | 13 | 388 | `/supplier-price-list/resolve`, `/supplier-price-list/{entry_id}`, `/suppliers`, `/suppliers/{supplier_id}`, `/suppliers/{supplier_id}/360`, `/suppliers/{supplier_id}/price-list` … |
-| `tax_center.py` | 4 | 68 | `/tax/pph-records`, `/tax/pph-records/{record_id}`, `/tax/summary` |
+| `tax_center.py` | 7 | 104 | `/tax/periods`, `/tax/periods/{period}/lock`, `/tax/periods/{period}/unlock`, `/tax/pph-records`, `/tax/pph-records/{record_id}`, `/tax/summary` |
 | `tax_invoices.py` | 7 | 106 | `/sales-orders/{order_id}/tax-invoice`, `/tax-invoices`, `/tax-invoices/{fkt_id}`, `/tax-invoices/{fkt_id}/cancel`, `/tax-invoices/{fkt_id}/document`, `/tax-invoices/{fkt_id}/nsfp` … |
 | `transfers.py` ⚠️>800 | 14 | 865 | `/transfers`, `/transfers/inter-company`, `/transfers/so-options`, `/transfers/so-rolls`, `/transfers/{transfer_id}`, `/transfers/{transfer_id}/approve` … |
 | `uom_conversions.py` | 10 | 226 | `/uom-conversions/catalog`, `/uom-conversions/check-variance`, `/uom-conversions/convert`, `/uom-conversions/rules`, `/uom-conversions/rules/{rule_id}`, `/uom-conversions/rules/{rule_id}/status` … |
@@ -454,7 +454,7 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 | `initial_registration_lines.py` | 328 | PREP-B — baris pendaftaran di lapangan (HP/handheld): EPC → produk → panjang → simpan & lanjut. |
 | `initial_registration_plan.py` | 215 | PREP-B — rencana & rekonsiliasi pendaftaran awal gedung (K-OPN-01/02). |
 | `initial_registration_service.py` | 285 | PREP-B — mode "pendaftaran awal gedung" (KEPUTUSAN_GATE_RFID §8, K-OPN-01..05): siklus sesi. |
-| `input_tax_service.py` | 177 | Faktur Pajak Masukan (tax_invoices_in) service — Fase 5.5 / P0-3. |
+| `input_tax_service.py` | 248 | Faktur Pajak Masukan (tax_invoices_in) service — Fase 5.5 / P0-3. |
 | `inspection_service.py` | 1888 | FASE I — **INSPEKSI & QC SEBAGAI DOKUMEN** (`<ENT>/INS-#####`). |
 | `integrations_service.py` | 159 | H5 service — Integrasi pihak ketiga (config runtime di system_settings). |
 | `interco_loan_service.py` | 268 | FASE E-7 (E7f) — **PINJAMAN UANG ANTAR-PT** (`<ENT>/ICL-#####`). |
@@ -464,7 +464,7 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 | `interco_reminder.py` | 179 | FASE G-6b — **PENGINGAT SETTLEMENT** saldo antar-PT yang menganggur. |
 | `interco_return_service.py` | 921 | FASE G-6b — **RETUR ANTAR-PT** (jalan resmi setelah barangnya sudah berpindah). |
 | `interco_service.py` | 2034 | FASE G-6 — Layanan **TRANSAKSI ANTAR ENTITAS** (jual-beli antar-PT dalam grup). |
-| `interco_tax_service.py` | 394 | FASE G-6b — **FAKTUR PAJAK INTERNAL** untuk transaksi antar-PT ber-PPN. |
+| `interco_tax_service.py` | 468 | FASE G-6b — **FAKTUR PAJAK INTERNAL** untuk transaksi antar-PT ber-PPN. |
 | `internal_request_service.py` | 516 | FASE E-7 (E7.1 · gelombang 2 “E7d”) — **PERMINTAAN INTERNAL** (`<ENT>/PIN-#####`). |
 | `inventory_drift_watch.py` | 129 | services/inventory_drift_watch.py — PEMANTAU DRIFT PERSEDIAAN (INV-GL-DRIFT). |
 | `inventory_service.py` | 237 | Inventory service: reservation expiry projections & document rendering. |
@@ -658,8 +658,8 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 | `supplier_dn_profile_service.py` | 247 | GRN — profil surat jalan per mitra (`supplier_dn_profiles`): format angka, nama lain, pemetaan barang. |
 | `supplier_item_service.py` | 578 | FASE E — SERVICE `supplier_items` (Barang Supplier / katalog versi supplier). |
 | `supplier_service.py` | 485 | Depth #3 — Supplier Intelligence: Price-List resolution + Scorecard. |
-| `tax_center_service.py` | 220 | EPIC 7 — Pusat Pajak (PPN + PPh) service. |
-| `tax_invoice_service.py` | 331 | Faktur Pajak Jual (tax_invoices) service — Sub-fase 1.9. |
+| `tax_center_service.py` | 409 | EPIC 7 — Pusat Pajak (PPN + PPh) service. |
+| `tax_invoice_service.py` | 472 | Faktur Pajak Jual (tax_invoices) service — Sub-fase 1.9. |
 | `text_normalize.py` | 88 | K-1/K-2 (feedback klien 2026-09) — normalisasi penulisan (EYD) & nomor telepon/WhatsApp. |
 | `three_way_policy.py` | 32 | KN-D16 (audit 2026-09-21) — SATU ambang toleransi 3-way match (PO ↔ terima ↔ faktur). |
 | `tolerances.py` | 9 | KN-A13 (audit 2026-09-21) — SATU sumber toleransi numerik. |
@@ -692,7 +692,7 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 
 | Fitur (`src/features/`) | Berkas | Baris |
 |---|---:|---:|
-| `__tests__` | 99 | 15027 |
+| `__tests__` | 100 | 15194 |
 | `admin` | 35 | 6764 |
 | `approvals` | 9 | 1720 |
 | `catalog` | 24 | 1450 |
@@ -703,7 +703,7 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 | `desks` | 2 | 229 |
 | `documents` | 18 | 2676 |
 | `export` | 9 | 700 |
-| `finance` | 95 | 21144 |
+| `finance` | 95 | 21269 |
 | `home` | 5 | 1130 |
 | `hr` | 33 | 5350 |
 | `inspections` | 12 | 2181 |
@@ -740,7 +740,7 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 
 ## Berkas melewati batas ukuran
 
-20 berkas.
+21 berkas.
 
 | Berkas | Baris | Batas |
 |---|---:|---:|
@@ -758,9 +758,10 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 | `frontend/src/features/wms/OutboundScanInterface.jsx` | 624 | 500 |
 | `frontend/src/features/wms/InventoryStockView.jsx` | 600 | 500 |
 | `frontend/src/features/internal_requests/InternalRequestsView.jsx` | 561 | 500 |
+| `frontend/src/features/finance/TaxCenterView.jsx` | 558 | 500 |
 | `frontend/src/features/purchasing/makloon/MakloonWizard.jsx` | 542 | 500 |
 | `frontend/src/features/pos/CheckoutDrawer.jsx` | 535 | 500 |
 | `frontend/src/features/settings/entities/RoleRealityPanel.jsx` | 511 | 500 |
 | `frontend/src/features/settings/entities/EntityDetailDrawer.jsx` | 510 | 500 |
-| `frontend/src/features/wms/warehouses/WarehouseMasterView.jsx` | 502 | 500 |
 | `frontend/src/features/purchasing/contrabon/ContraBonCreateWizard.jsx` | 502 | 500 |
+| `frontend/src/features/wms/warehouses/WarehouseMasterView.jsx` | 502 | 500 |

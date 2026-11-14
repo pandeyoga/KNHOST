@@ -12,6 +12,9 @@
  * Faktur Masukan) → kartu tautan ke `input-tax` dengan masa pajak yang sama; angka PPN Masukan per faktur hanya di
  * satu tabel. Preset `{ tab, period }` dibaca dari tautan (mis. baris "Posisi PPN" di Faktur Masukan).
  * L-03: pop-up Rekam DPP PPh (`fixed inset-0`) → FormModal.
+ * PK-40 (SL-13, FY-16): lencana masa "Sudah/Belum dilaporkan" + tombol Tandai Sudah Dilaporkan / Buka Masa Pajak
+ * (`GET/POST /api/tax/periods…`, izin `accounting.manage`, satu PT); kartu PPN menampilkan angka buku besar + selisih;
+ * baris PPh 21 = dasar bruto kena pajak + beda dengan buku besar.
  */
 import { apiErrorText } from "../../utils/apiError";
 import MoneyInput from "../../components/MoneyInput";
@@ -31,8 +34,10 @@ import LinkCard from "../../components/LinkCard";
 import useViewPreset from "../../hooks/useViewPreset";
 import useIntentKey from "../../hooks/useIntentKey";
 import { moneyDelete, moneyPost } from "../../utils/moneyRequest";
-import { confirmMoney } from "../../utils/moneyConfirm";
+import { confirmMoney, rupiahText } from "../../utils/moneyConfirm";
 import { useEntityScope } from "../../context/EntityScopeContext";
+import { askConfirm, askReason } from "../../services/confirmService";
+import { formatDate, todayWib } from "../../utils/formatters";
 
 const MONTHS = ["Jan", "Feb", "Mar", "Apr", "Mei", "Jun", "Jul", "Agu", "Sep", "Okt", "Nov", "Des"];
 function fmtPeriod(p) {
@@ -41,6 +46,13 @@ function fmtPeriod(p) {
   return `${MONTHS[(parseInt(m, 10) || 1) - 1]} ${y}`;
 }
 const BASIS_LABEL = { payroll: "Otomatis · Payroll", omzet: "Otomatis · Omzet", manual: "Manual" };
+const BULAN = ["Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober",
+  "November", "Desember"];
+/** PK-40 — "2026-10" → "Oktober 2026" (teks konfirmasi). */
+function fullPeriod(p) {
+  if (!p || p.length !== 7) return p || "—";
+  return `${BULAN[(parseInt(p.slice(5), 10) || 1) - 1]} ${p.slice(0, 4)}`;
+}
 
 const TABS = [
   { key: "ppn", label: "PPN (SPT Masa)", icon: Receipt },
@@ -58,6 +70,10 @@ export default function TaxCenterView({ currentUser, selectedEntity }) {
   const [error, setError] = useState("");
   const [period, setPeriod] = useState(() => preset?.period || "");
   const [recordFor, setRecordFor] = useState(null); // pph item cfg → open modal
+  // PK-40 — keadaan masa pajak (dilaporkan/terkunci) per masa untuk PT terpilih.
+  const [masa, setMasa] = useState([]);
+  const [lockBusy, setLockBusy] = useState(false);
+  const [lockErr, setLockErr] = useState("");
 
   const canManage = can(currentUser?.permissions, "accounting", "manage");   // Sisir gerbang peran (2026-10-20) — POST/DELETE /tax/pph-records
   const entSpecific = selectedEntity && selectedEntity !== "all";
@@ -79,6 +95,14 @@ export default function TaxCenterView({ currentUser, selectedEntity }) {
 
   useEffect(() => { load(period); }, [period, selectedEntity]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  const loadMasa = useCallback(async () => {
+    try {
+      const r = await axios.get(`${API}/tax/periods`, { params: { entity_id: entSpecific ? selectedEntity : "all" } });
+      setMasa(Array.isArray(r.data) ? r.data : []);
+    } catch { setMasa([]); }
+  }, [selectedEntity, entSpecific]);
+  useEffect(() => { loadMasa(); }, [loadMasa]);
+
   const ent = data?.entity || {};
   const cfg = data?.config || {};
   const isPkp = !!cfg.is_pkp;
@@ -87,6 +111,42 @@ export default function TaxCenterView({ currentUser, selectedEntity }) {
   const periodOpts = (data?.periods || []).map((p) => ({ value: p, label: fmtPeriod(p) }));
   // Masa dari tautan yang belum ada di daftar server tetap bisa dipilih (tidak tampil kosong).
   if (period && !periodOpts.some((o) => o.value === period)) periodOpts.unshift({ value: period, label: fmtPeriod(period) });
+  const lockInfo = masa.find((m) => m.period === period) || null;
+  const masaBerakhir = !!period && period < todayWib().slice(0, 7);
+
+  // PK-40 — konfirmasi menyebut masa, PT, dan angka rekap yang akan dipotret (02_STANDAR §3.4 N5).
+  const tandaiDilaporkan = async () => {
+    const kel = ppn?.keluaran?.ppn || 0;
+    const mas = ppn?.masukan?.ppn || 0;
+    const net = ppn?.net_ppn || 0;
+    const posisi = net < 0 ? "lebih bayar" : "kurang bayar";
+    const ok = await askConfirm({
+      title: "Tandai Sudah Dilaporkan", testId: "tax-lock-confirm", confirmLabel: "Tandai Sudah Dilaporkan",
+      message: `Tandai masa ${fullPeriod(period)} ${ent.name || ""} sudah dilaporkan? PPN keluaran ${rupiahText(kel)}, `
+        + `PPN masukan ${rupiahText(mas)}, ${posisi} ${rupiahText(Math.abs(net))}. Sesudah ini faktur dan rekaman PPh `
+        + "masa ini tidak bisa diubah.",
+    });
+    if (!ok) return;
+    setLockBusy(true); setLockErr("");
+    try {
+      await axios.post(`${API}/tax/periods/${period}/lock`, { entity_id: selectedEntity, note: "" });
+      await loadMasa();
+    } catch (e) { setLockErr(apiErrorText(e, "Gagal menandai masa pajak.")); } finally { setLockBusy(false); }
+  };
+  const bukaMasa = async () => {
+    const alasan = await askReason({
+      title: "Buka Masa Pajak", testId: "tax-unlock-confirm", confirmLabel: "Buka Masa Pajak", danger: true,
+      reasonLabel: "Alasan membuka masa pajak",
+      message: `Masa ${fullPeriod(period)} ${ent.name || ""} dibuka lagi: faktur dan rekaman PPh masa ini bisa diubah `
+        + "sampai ditandai dilaporkan lagi.",
+    });
+    if (alasan === null) return;
+    setLockBusy(true); setLockErr("");
+    try {
+      await axios.post(`${API}/tax/periods/${period}/unlock`, { entity_id: selectedEntity, reason: alasan });
+      await loadMasa();
+    } catch (e) { setLockErr(apiErrorText(e, "Gagal membuka masa pajak.")); } finally { setLockBusy(false); }
+  };
 
   return (
     <div data-testid="tax-center-view">
@@ -102,6 +162,11 @@ export default function TaxCenterView({ currentUser, selectedEntity }) {
           <div className="flex items-center gap-2 ml-auto">
             <KNSelect data-testid="tax-center-period" value={period} onValueChange={setPeriod}
               options={periodOpts} className="field !py-1 !px-2 text-[12px] w-auto" placeholder="Periode" />
+            <MasaBadge info={lockInfo} />
+            {canManage && (
+              <MasaActions info={lockInfo} entSpecific={entSpecific} masaBerakhir={masaBerakhir} period={period}
+                busy={lockBusy} onLock={tandaiDilaporkan} onUnlock={bukaMasa} />
+            )}
             <button data-testid="tax-center-refresh" className="icon-button" onClick={() => load(period)} aria-label="Muat ulang">
               <RefreshCw size={14} className={loading ? "animate-spin" : ""} />
             </button>
@@ -125,6 +190,7 @@ export default function TaxCenterView({ currentUser, selectedEntity }) {
       </div>
 
       <ErrorNotice message={error} onRetry={() => load(period)} onDismiss={() => setError("")} testId="tax-center-error" />
+      <ErrorNotice message={lockErr} onDismiss={() => setLockErr("")} testId="tax-lock-error" />
 
       {loading ? (
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3" data-testid="tax-center-loading">
@@ -161,6 +227,34 @@ export default function TaxCenterView({ currentUser, selectedEntity }) {
           onClose={() => setRecordFor(null)} onSaved={() => { setRecordFor(null); load(period); }} />
       )}
     </div>
+  );
+}
+
+/* PK-40 — lencana keadaan masa pajak (sudah/belum ditandai dilaporkan). */
+function MasaBadge({ info }) {
+  const locked = !!info?.locked;
+  const hint = locked && info?.reported_by ? `oleh ${info.reported_by}, ${formatDate(info.reported_at)}` : undefined;
+  return (
+    <span data-testid="tax-masa-badge" title={hint}
+      className={`rounded px-1.5 py-0.5 text-fs-12 font-bold ${locked ? "bg-kn-success-soft text-kn-success-text" : "bg-kn-neutral-soft text-kn-text-2"}`}>
+      {locked ? "Sudah dilaporkan" : "Belum dilaporkan"}
+    </span>
+  );
+}
+
+/* PK-40 — Tandai Sudah Dilaporkan / Buka Masa Pajak (pemegang `accounting.manage`, satu PT). */
+function MasaActions({ info, entSpecific, masaBerakhir, period, busy, onLock, onUnlock }) {
+  if (entSpecific && info?.locked) {
+    return (
+      <button type="button" data-testid="tax-unlock-btn" className="btn-secondary btn-sm"
+        disabled={busy} onClick={onUnlock}>Buka Masa Pajak</button>
+    );
+  }
+  const hint = !entSpecific ? "Pilih satu PT untuk menandai masa pajak"
+    : !masaBerakhir ? `Masa ${fmtPeriod(period)} belum berakhir` : undefined;
+  return (
+    <button type="button" data-testid="tax-lock-btn" className="btn-primary btn-sm"
+      disabled={busy || !!hint} title={hint} onClick={onLock}>Tandai Sudah Dilaporkan</button>
   );
 }
 
@@ -204,9 +298,11 @@ function PpnTab({ ppn, isPkp, entity, period }) {
     <div data-testid="tax-ppn-tab">
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-3">
         <Kpi testId="tax-kpi-keluaran" label="Pajak Keluaran" value={formatCurrency(keluaran.ppn)} icon={TrendingUp}
-          sub={`${keluaran.count || 0} faktur · DPP ${formatCurrency(keluaran.dpp)}`} color="#0058CC" />
+          sub={`${keluaran.count || 0} faktur · DPP ${formatCurrency(keluaran.dpp)}`} color="#0058CC"
+          extra={<GlLine testId="tax-kpi-keluaran-gl" part={keluaran} note={ppn?.selisih_note} />} />
         <Kpi testId="tax-kpi-masukan" label="Pajak Masukan" value={formatCurrency(masukan.ppn)} icon={TrendingDown}
-          sub={`${masukan.count || 0} faktur · DPP ${formatCurrency(masukan.dpp)}`} color="#B45309" />
+          sub={`${masukan.count || 0} faktur · DPP ${formatCurrency(masukan.dpp)}`} color="#B45309"
+          extra={<GlLine testId="tax-kpi-masukan-gl" part={masukan} note={ppn?.selisih_note} />} />
         {/* Audit UI 24 Okt (068): label posisi ("PPN Nihil" dst.) sudah tampil di kartu posisi
             di bawah — KPI ini cukup "Selisih PPN" agar tidak tertulis dua kali. */}
         <Kpi testId="tax-kpi-net" label="Selisih PPN" value={formatCurrency(Math.abs(net))}
@@ -238,6 +334,22 @@ function PpnTab({ ppn, isPkp, entity, period }) {
   );
 }
 
+/* PK-40 — baris kedua kartu PPN: angka buku besar; selisih ≠ 0 → peringatan dengan penjelasan. */
+function GlLine({ part, note, testId }) {
+  if (part?.gl_ppn === undefined) return null;
+  const selisih = Number(part.selisih || 0);
+  return (
+    <p className="text-fs-12 text-kn-text-2 truncate" data-testid={testId}>
+      Menurut buku besar {formatCurrency(part.gl_ppn)}
+      {Math.abs(selisih) >= 0.01 && (
+        <span className="ml-1 font-semibold text-kn-warning-text" title={note} data-testid={`${testId}-selisih`}>
+          · Selisih {formatCurrency(selisih)}
+        </span>
+      )}
+    </p>
+  );
+}
+
 /* ─────────────────────────── PPh Tab ─────────────────────────── */
 function PphTab({ pph, entSpecific, canManage, onRecord, entityId, period, onReload }) {
   const items = pph?.items || [];
@@ -249,7 +361,7 @@ function PphTab({ pph, entSpecific, canManage, onRecord, entityId, period, onRel
           <div className="section-body py-3 flex items-start gap-2">
             <Info size={15} className="text-[#0058CC] mt-0.5 shrink-0" />
             <p className="text-[11px] text-[#6B6B73] leading-relaxed">
-              <b>PPh 21</b> ditarik otomatis dari payroll (TER). Butir lain mengikuti <b>Konfigurasi</b> — basis <i>manual</i> perlu direkam DPP-nya, basis <i>omzet</i> dihitung dari peredaran bruto.
+              <b>PPh 21</b> ditarik otomatis dari penggajian yang sudah terjurnal (TER), dasarnya penghasilan bruto kena pajak slip gaji. Butir lain mengikuti <b>Konfigurasi</b> — basis <i>manual</i> perlu direkam DPP-nya, basis <i>omzet</i> dihitung dari peredaran bruto.
             </p>
           </div>
         </div>
@@ -265,7 +377,7 @@ function PphTab({ pph, entSpecific, canManage, onRecord, entityId, period, onRel
               <table className="w-full text-[12px]" data-testid="tax-pph-table">
                 <thead><tr className="text-left text-[10px] font-bold uppercase text-[#8E8E93] bg-[#FAFBFC] border-b border-[#EFF0F2]">
                   <th className="px-3 py-2">Butir</th><th className="px-3 py-2">Basis</th>
-                  <th className="px-3 py-2 text-right">Tarif</th><th className="px-3 py-2 text-right">DPP</th>
+                  <th className="px-3 py-2 text-right">Tarif</th><th className="px-3 py-2 text-right">DPP / Dasar</th>
                   <th className="px-3 py-2 text-right">PPh Terutang</th><th className="px-3 py-2 text-center">Aksi</th>
                 </tr></thead>
                 <tbody>
@@ -277,8 +389,20 @@ function PphTab({ pph, entSpecific, canManage, onRecord, entityId, period, onRel
                       </td>
                       <td className="px-3 py-2"><span className="chip text-[10px]">{BASIS_LABEL[it.basis] || it.basis}</span></td>
                       <td className="px-3 py-2 text-right tabular-nums text-[#6B6B73]">{it.basis === "payroll" ? "TER" : `${it.rate}%`}</td>
-                      <td className="px-3 py-2 text-right tabular-nums">{formatCurrency(it.dpp)}</td>
-                      <td className="px-3 py-2 text-right tabular-nums font-bold text-[#1C1C1E]">{formatCurrency(it.amount)}</td>
+                      <td className="px-3 py-2 text-right tabular-nums">
+                        {formatCurrency(it.dpp)}
+                        {it.basis === "payroll" && (
+                          <p className="text-fs-12 text-kn-text-2 font-normal" data-testid={`tax-pph-basis-${it.code}`}>Dasar (bruto kena pajak)</p>
+                        )}
+                      </td>
+                      <td className="px-3 py-2 text-right tabular-nums font-bold text-[#1C1C1E]">
+                        {formatCurrency(it.amount)}
+                        {it.basis === "payroll" && Math.abs(Number(it.selisih || 0)) >= 0.01 && (
+                          <p className="text-fs-12 font-semibold text-kn-warning-text" data-testid={`tax-pph-gl-${it.code}`}>
+                            Beda dengan buku besar {formatCurrency(it.selisih)}
+                          </p>
+                        )}
+                      </td>
                       <td className="px-3 py-2 text-center">
                         {it.editable && canManage ? (
                           <button data-testid={`tax-pph-record-${it.code}`} className="inline-flex items-center gap-1 text-[11px] font-semibold text-[#0058CC] hover:underline disabled:opacity-40 disabled:no-underline"
@@ -415,7 +539,7 @@ function PphRecordModal({ item, entityId, period, onClose, onSaved }) {
   );
 }
 
-function Kpi({ label, value, icon: Icon, sub, color = "#0058CC", tone = "", testId }) {
+function Kpi({ label, value, icon: Icon, sub, extra = null, color = "#0058CC", tone = "", testId }) {
   return (
     <div className="section-card" data-testid={testId}>
       <div className="section-body flex items-center gap-3 py-3">
@@ -426,6 +550,7 @@ function Kpi({ label, value, icon: Icon, sub, color = "#0058CC", tone = "", test
           <p className="text-[10px] font-bold uppercase tracking-wide text-[#8E8E93]">{label}</p>
           <p className="text-[18px] font-bold tabular-nums truncate" style={tone ? { color: tone } : { color: "#1C1C1E" }} data-testid={`${testId}-value`}>{value}</p>
           {sub && <p className="text-[10px] text-[#9A9BA3] truncate">{sub}</p>}
+          {extra}
         </div>
       </div>
     </div>

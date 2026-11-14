@@ -188,7 +188,8 @@ async def test_PK45_U8_permohonan_nominal_nol_400(klien, db, uji):
 async def _rekap(klien, h, periode: str) -> dict:
     r = await klien.get("/api/tax/vat-summary", params={"period": periode, "entity_id": "ent_ksc"}, headers=h)
     assert r.status_code == 200, r.text
-    return r.json()["keluaran"]
+    # PK-40 menambah `gl_ppn`/`selisih` (pembanding buku besar) di kartu keluaran; uji PK-45 menilai tiga angka faktur.
+    return {k: r.json()["keluaran"][k] for k in ("ppn", "dpp", "count")}
 
 
 async def _terbitkan(klien, h, oid: str) -> dict:
