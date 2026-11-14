@@ -1,5 +1,5 @@
 <!-- DIHASILKAN OTOMATIS oleh scripts/gen_codebase_map.py — JANGAN EDIT TANGAN -->
-<!-- Dihasilkan dari commit: 1392969 pada 2026-11-14 -->
+<!-- Dihasilkan dari commit: 885daca pada 2026-11-14 -->
 # CODEBASE MAP — Kain Nusantara (dihasilkan otomatis)
 
 Peta ini dihitung dari kode oleh `scripts/gen_codebase_map.py`. Kalau angka di sini
@@ -14,7 +14,7 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 |---|---:|
 | Router (`backend/routers/*.py`) | 163 |
 | Endpoint (`@router.<method>`) | 1774 |
-| Service (`backend/services/*.py`) | 389 |
+| Service (`backend/services/*.py`) | 390 |
 | Koleksi MongoDB disentuh kode produksi | 202 |
 | Direktori fitur frontend (`src/features/*`) | 39 |
 
@@ -330,6 +330,7 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 | `bank_statement_parser.py` | 536 | FASE G-8 — PARSER MUTASI BANK MULTI-FORMAT. |
 | `base_fabric.py` | 26 | Kain dasar — rujukan induk master data (mis. kain polos woven yang menjadi bahan printing). |
 | `blanket_po_service.py` | 348 | Blanket / Contract PO service (P2 — call-off). |
+| `book_date.py` | 123 | PK-37 (GL-05, keputusan K-03) — SATU tanggal buku WIB dan kunci periode untuk dokumen, pembayaran, dan mutasi  |
 | `budget_service.py` | 531 | R6.3 — Budget Control penuh: Anggaran vs Komitmen vs Realisasi + enforcement. |
 | `cash_advance_service.py` | 679 | Service — Cash Advance (Form PD) + Pertanggungjawaban (Settlement) + Expense Categories. |
 | `cash_entity_service.py` | 98 | FASE E-7 (E7.4 · keputusan pemilik 3a) — **KAS TINGKAT GRUP DIHAPUS**. |

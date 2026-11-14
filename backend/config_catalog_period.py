@@ -48,3 +48,18 @@ E("gl.jurnal_manual_akun_kontrol", group="pajak-pembukuan", section="tutup-buku"
              "services/gl_service.py:list_accounts"),
   risk="high", requires_reason=True,
   permission=("accounting", "manage"))
+
+# PK-37 (GL-05, keputusan K-03 "Mengunci") — langkah PERIKSA dokumen/pembayaran/mutasi stok di periode tertutup.
+E("periode.kunci_dokumen", group="pajak-pembukuan", section="tutup-buku", type="bool",
+  default=True, scopes=G,
+  label="Periode tertutup mengunci dokumen",
+  help="Bila menyala, dokumen, pembayaran, dan mutasi stok yang bertanggal di periode yang sudah ditutup ditolak "
+       "sebelum disimpan. Bila mati, dokumen tetap tersimpan dan hanya jurnalnya yang ditolak.",
+  # Teks spesifikasi menyebut panel "Posting Gagal"; kata 'posting' ditolak penjaga INV-CFG-TXT → disebut "jurnal gagal".
+  impact="Mati = dokumen bisa tersimpan tanpa jurnal, lalu jurnalnya harus diselesaikan dari daftar jurnal gagal di "
+         "menu Keuangan.",
+  example="Menyala · Oktober sudah ditutup · penyesuaian stok bertanggal 30 Okt → ditolak, stok tidak berubah",
+  consumers=("services/book_date.py:periksa_periode_dokumen",),
+  risk="high", requires_reason=True,
+  permission=("accounting", "manage"),
+  related=("periode.unlock_window_hours", "periode.max_days_after_close"))

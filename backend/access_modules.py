@@ -619,6 +619,8 @@ for _v in ("settings-cfg-notify", "settings-cfg-finance", "settings-cfg-approval
 del _v
 # PK-36 — kunci `gl.jurnal_manual_akun_kontrol` (kelompok "keuangan-dasar") diubah pemegang `accounting.manage`; aturan
 # KF-T1 (U14): tab kelompok itu juga terbuka bagi pemegang izin pengubah kuncinya.
+# PK-37 — kunci `periode.kunci_dokumen` (kelompok "Pajak, pembukuan & antar-PT") diubah pemegang `accounting.manage`;
+# aturan KF-T1 (U14): tab kelompok itu juga terbuka bagi pemegang izin pengubah kuncinya.
 VIEW_RESOURCE_OVERRIDES["settings-cfg-finance"] = [*VIEW_RESOURCE_OVERRIDES["settings-cfg-finance"], "accounting"]
 
 
