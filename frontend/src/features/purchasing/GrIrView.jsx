@@ -221,7 +221,10 @@ export default function GrIrView() {
                             onClick={() => clear(it)} className="primary-button btn-sm whitespace-nowrap">
                             {busy === it.po_id ? "Memproses…" : "Kliring"}</button>
                         ) : (
-                          <span className="text-[12px] text-kn-text-2 whitespace-nowrap" data-testid={`grir-why-${it.po_id}`}>
+                          // Cek layar 14 Nov — alasan boleh turun baris: kolom aksi lekat tetap ramping di 1024 px
+                          // (dulu satu baris lebar menutupi kolom Sisa GR/IR).
+                          <span className="inline-block max-w-[110px] whitespace-normal text-left text-fs-12 leading-tight text-kn-text-2"
+                            data-testid={`grir-why-${it.po_id}`}>
                             {canClear ? (alasan || "—") : "—"}</span>
                         )}
                       </td>

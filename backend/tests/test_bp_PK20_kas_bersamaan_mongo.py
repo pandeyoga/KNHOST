@@ -23,7 +23,9 @@ def test_U12_dua_create_cash_bersamaan_satu_kas_satu_jurnal():
         await ensure_id_index("cash_transactions")
         for _ in range(3):   # beberapa putaran: balapan tidak selalu muncul di satu percobaan
             ent = f"ent_bp20_{uuid.uuid4().hex[:6]}"
-            await db.business_entities.insert_one({"id": ent, "short_name": "PT Uji BP20", "status": "active"})
+            # Nama pendek unik per putaran: nomor kas berawalan nama PT dan `uq_number` global — nama sama di dua PT uji
+            # membuat nomor bertabrakan (bukan balapan yang diuji di sini).
+            await db.business_entities.insert_one({"id": ent, "short_name": f"PT Uji {ent}", "status": "active"})
             await db.bank_accounts.insert_one({"id": f"rek_{ent}", "name": "Kas Kecil Uji", "entity_id": ent,
                                                "account_type": "cash", "cash_type": "kas_kecil", "is_active": True,
                                                "opening_balance": 0})
