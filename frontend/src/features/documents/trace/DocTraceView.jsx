@@ -23,7 +23,9 @@ import { openConfig } from "../../settings/config/configDeepLink";
 import TraceBackfill from "./TraceBackfill";
 import TraceGraph from "./TraceGraph";
 import TraceSearch from "./TraceSearch";
-import { errText, fetchTrace, shortDate, traceUrl } from "./traceApi";
+import {
+  HIDDEN_AMOUNT, HIDDEN_AMOUNT_HINT, canOpenNode, errText, fetchTrace, isAmountHidden, shortDate, traceUrl,
+} from "./traceApi";
 import { can } from "../../../config/roles";
 
 const DEPTHS = [1, 2, 3, 4, 6, 8];
@@ -213,7 +215,8 @@ export default function DocTraceView({
                     )}
                     {a.link?.view && onOpenDocument && (
                       <button className="secondary-button" data-testid="trace-open-anchor"
-                        onClick={() => onOpenDocument(a.link)}>
+                        disabled={!canOpenNode(a)} title={canOpenNode(a) ? undefined : HIDDEN_AMOUNT_HINT}
+                        onClick={() => canOpenNode(a) && onOpenDocument(a.link)}>
                         <ExternalLink size={13} /> Buka dokumen
                       </button>
                     )}
@@ -232,7 +235,8 @@ export default function DocTraceView({
                     <Kpi testId="trace-kpi-depth" label="Kedalaman" value={String(trace.depth || 0)} />
                     <Kpi testId="trace-kpi-status" label="Status dokumen" value={a.status || "—"} />
                     <Kpi testId="trace-kpi-amount" label="Nilai dokumen"
-                      value={Number(a.amount) > 0 ? formatCurrency(a.amount) : "—"} tone="#1B7A43" />
+                      value={isAmountHidden(a) ? HIDDEN_AMOUNT : Number(a.amount) > 0 ? formatCurrency(a.amount) : "—"}
+                      tone={isAmountHidden(a) ? "#8E8E93" : "#1B7A43"} />
                   </div>
                   <div className="flex flex-wrap items-center justify-between gap-2">
                     <p className="text-[11px] text-[#6B6B73]">

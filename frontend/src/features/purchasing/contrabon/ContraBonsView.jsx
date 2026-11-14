@@ -48,8 +48,14 @@ const TABS = [
   { id: "schedules", label: "Jadwal Tukar Faktur" },
 ];
 
+/** PK-17 (IA-09) — nilai kontrabon hanya untuk pemegang `vendor_bill.view`; server mengirim `null` bagi yang lain. */
+const moneyOrDash = (v) => (v === null || v === undefined ? "—" : formatCurrency(v));
+
 export default function ContraBonsView({ currentUser, selectedEntity, entities = [] }) {
-  const [tab, setTab] = useState("list");
+  // PK-17 — tanpa izin lihat tagihan pemasok, tab "Daftar Kontrabon" (isinya nominal) tidak ditampilkan.
+  const canSeeValue = can(currentUser?.permissions, "vendor_bill", "view");
+  const tabs = useMemo(() => (canSeeValue ? TABS : TABS.filter((t) => t.id !== "list")), [canSeeValue]);
+  const [tab, setTab] = useState(canSeeValue ? "list" : "unbilled");
   const [meta, setMeta] = useState(null);
   const [summary, setSummary] = useState(null);
   const [rows, setRows] = useState([]);
@@ -227,7 +233,7 @@ export default function ContraBonsView({ currentUser, selectedEntity, entities =
               {summary.waiting_count}
             </p>
             <p className="text-[11px] text-[#8E8E93]">
-              {formatCurrency(summary.waiting_value)} diajukan / terverifikasi
+              {moneyOrDash(summary.waiting_value)} diajukan / terverifikasi
             </p>
           </div>
           <div className="stat-card">
@@ -235,20 +241,20 @@ export default function ContraBonsView({ currentUser, selectedEntity, entities =
             <p className="stat-value text-[#0F6B52]" data-testid="cb-kpi-scheduled">
               {summary.scheduled_count}
             </p>
-            <p className="text-[11px] text-[#8E8E93] tabular-nums">{formatCurrency(summary.scheduled_value)}</p>
+            <p className="text-[11px] text-[#8E8E93] tabular-nums">{moneyOrDash(summary.scheduled_value)}</p>
           </div>
           <div className={`stat-card ${summary.due_soon_count ? "ring-1 ring-[#FFE0B2]" : ""}`}>
             <p className="stat-label">Jatuh tempo ≤ 7 hari</p>
             <p className="stat-value text-[#0058CC]" data-testid="cb-kpi-duesoon">
               {summary.due_soon_count}
             </p>
-            <p className="text-[11px] text-[#8E8E93] tabular-nums">{formatCurrency(summary.due_soon_value)}</p>
+            <p className="text-[11px] text-[#8E8E93] tabular-nums">{moneyOrDash(summary.due_soon_value)}</p>
           </div>
           <div className={`stat-card ${summary.disputed_count ? "ring-1 ring-[#F3C9C7]" : ""}`}>
             <p className="stat-label">Sengketa</p>
             <p className={`stat-value ${summary.disputed_count ? "text-[#C0392B]" : "text-[#1B7F4B]"}`}
               data-testid="cb-kpi-disputed">{summary.disputed_count}</p>
-            <p className="text-[11px] text-[#8E8E93] tabular-nums">{formatCurrency(summary.disputed_value)}</p>
+            <p className="text-[11px] text-[#8E8E93] tabular-nums">{moneyOrDash(summary.disputed_value)}</p>
           </div>
           <div className={`stat-card ${summary.overdue_count ? "ring-1 ring-[#F3C9C7]" : ""}`}>
             <p className="stat-label">Lewat batas waktu</p>
@@ -259,8 +265,8 @@ export default function ContraBonsView({ currentUser, selectedEntity, entities =
           <button className="stat-card text-left" data-testid="cb-kpi-unbilled"
             onClick={() => setTab("unbilled")}>
             <p className="stat-label">GR belum ditagih</p>
-            <p className="stat-value text-[#8C4A00]">
-              {formatCurrency(summary.unbilled_gr_value)}
+            <p className="stat-value text-[#8C4A00]" data-testid="cb-kpi-unbilled-value">
+              {moneyOrDash(summary.unbilled_gr_value)}
             </p>
             <p className="text-[11px] text-[#8E8E93]">
               {summary.unbilled_gr_po_count} PO
@@ -273,10 +279,10 @@ export default function ContraBonsView({ currentUser, selectedEntity, entities =
       <div className="section-card">
         <div className="section-head flex-wrap gap-2">
           <PageTabs testId="cb-tabs" ariaLabel="Kontrabon" className="min-w-0" value={tab} onChange={setTab}
-            tabs={TABS.map((t) => ({ key: t.id, label: t.label, testId: `cb-tab-${t.id}` }))} />
+            tabs={tabs.map((t) => ({ key: t.id, label: t.label, testId: `cb-tab-${t.id}` }))} />
         </div>
         <div className="section-body">
-          {tab === "list" && (
+          {tab === "list" && canSeeValue && (
             <>
               <div className="mb-3 grid grid-cols-1 gap-2 rounded-lg border border-[#E5E5EA] bg-[#FAFBFC] px-3 py-2"
                 data-testid="cb-filter-bar">
@@ -349,7 +355,7 @@ export default function ContraBonsView({ currentUser, selectedEntity, entities =
           selectedEntity={selectedEntity} onClose={() => setWizard(null)}
           onCreated={async (cb, failed = []) => {
             setWizard(null);
-            setTab("list");
+            if (canSeeValue) setTab("list");
             setActive(cb);
             const ded = (cb.deductions || []).length;
             notify(`Kontrabon ${cb.number} terbit — ${(cb.bills || []).length} faktur digabung`

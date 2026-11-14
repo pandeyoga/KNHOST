@@ -29,6 +29,8 @@ export default function WaitingBoardsStrip({
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [failed, setFailed] = useState(false);
+  // PK-17 (IA-03) — 403 = peran ini memang tidak berhak atas papan (bukan "gagal memuat"): papan tidak digambar.
+  const [denied, setDenied] = useState(false);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -37,11 +39,15 @@ export default function WaitingBoardsStrip({
       const res = await axios.get(`${API}${endpoint}`, { params });
       setData(res.data || null);
       setFailed(false);
+      setDenied(false);
     } catch (e) {
-      setFailed(true);
+      if (e?.response?.status === 403) { setDenied(true); setFailed(false); }
+      else setFailed(true);
     } finally { setLoading(false); }
   }, [endpoint, entityId]);
   useEffect(() => { load(); }, [load]);
+
+  if (denied) return null;
 
   const unreadable = !loading && (failed || !data);
   const boards = selectWaitingBoards(data, unreadable, primaryKey);

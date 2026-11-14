@@ -5,7 +5,7 @@ Payload SALES sengaja TANPA biaya/HPP (role tightening EPIC 1).
 """
 from calendar import monthrange
 from datetime import datetime, timedelta, timezone
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Tuple
 
 from db import db
 from services.analytics_time import now_wib, wib_midnight_utc
@@ -256,6 +256,13 @@ WAREHOUSE_BOARD_KEYS = ("transfer", "cycle_count", "inspection_hold")
 FINANCE_BOARD_KEYS = ("contra_bon_approve", "contra_bon_verify", "contra_bon_dispute",
                       "vendor_bill")
 
+#: PK-17 (IA-03) — izin LIHAT modul sumber tiap papan keuangan. Papan hanya dikirim bila izinnya dipegang
+#: peran pemanggil (nominal & nama pemasok ikut di baris papan).
+FINANCE_BOARD_PERMISSION: Dict[str, Tuple[str, str]] = {
+    "contra_bon_approve": ("contra_bon", "view"), "contra_bon_verify": ("contra_bon", "view"),
+    "contra_bon_dispute": ("contra_bon", "view"), "vendor_bill": ("vendor_bill", "view"),
+}
+
 
 async def _waiting_boards(entity_id: Optional[str],
                           keys: tuple = HOME_BOARD_KEYS,
@@ -293,8 +300,14 @@ async def warehouse_home(entity_id: Optional[Any] = None,
 async def finance_home(entity_id: Optional[Any] = None,
                        allowed: Optional[Dict[str, Any]] = None,
                        actor: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
-    """Papan antrean keuangan — dipakai Meja Finance di atas antrean pekerjaannya."""
-    boards = await _waiting_boards(entity_id, FINANCE_BOARD_KEYS, allowed, actor)
+    """Papan antrean keuangan — dipakai Meja Finance di atas antrean pekerjaannya.
+
+    PK-17 — `allowed` = izin peran pemanggil; papan yang izin lihat modul sumbernya tidak dipegang tidak dikirim
+    (`None` = pemanggil sistem, semua papan)."""
+    keys = FINANCE_BOARD_KEYS if allowed is None else tuple(
+        k for k in FINANCE_BOARD_KEYS
+        if any(a in (allowed.get(FINANCE_BOARD_PERMISSION[k][0]) or []) for a in (FINANCE_BOARD_PERMISSION[k][1], "*")))
+    boards = await _waiting_boards(entity_id, keys, allowed, actor) if keys else []
     return {"waiting_boards": boards,
             "total_waiting": sum(int(b.get("count") or 0) for b in boards)}
 

@@ -14,6 +14,10 @@ from role_registry import role_in  # peran acuan dikenali (keputusan owner 2026-
 
 router = APIRouter(prefix="/api")
 
+#: PK-17 (standar Z6) — membuat/mengubah rekening = izin `cash.configure` (bukan `cash.create` pencatat transaksi).
+PESAN_KELOLA_REKENING = ("Anda belum punya akses untuk mengelola rekening kas dan bank. Minta Admin menambahkan "
+                         "akses 'Kas, Bank & Kasus Keuangan'.")
+
 
 @router.get("/bank-accounts")
 async def list_bank_accounts(request: Request, entity_id: str = Query(None)) -> List[Dict[str, Any]]:
@@ -46,7 +50,7 @@ async def bank_cash_position(request: Request, entity_id: str = Query(None)) -> 
 @router.post("/bank-accounts")
 async def create_bank_account(payload: BankAccountCreate, request: Request) -> Dict[str, Any]:
     """Buat akun kas/bank baru."""
-    actor = await require_permission(request, "cash", "create")
+    actor = await require_permission(request, "cash", "configure", detail=PESAN_KELOLA_REKENING)
     ctx = await entity_ctx(request)
     # FASE E-7 (E7.4) — rekening tingkat grup DIHAPUS: setiap rekening wajib milik
     # satu badan usaha, kalau tidak neraca & arus kas per PT tidak pernah utuh.
@@ -65,7 +69,7 @@ async def create_bank_account(payload: BankAccountCreate, request: Request) -> D
 @router.patch("/bank-accounts/{account_id}")
 async def patch_bank_account(account_id: str, payload: BankAccountUpdate, request: Request) -> Dict[str, Any]:
     """Ubah / nonaktifkan akun kas/bank."""
-    actor = await require_permission(request, "cash", "create")
+    actor = await require_permission(request, "cash", "configure", detail=PESAN_KELOLA_REKENING)
     data = payload.model_dump()
     # KN-B34 — rekening yang diubah wajib milik entitas aktif; entitas tujuan wajib ∈ penugasan
     # (dulu assert_owned hanya menolak nilai tingkat grup → rekening PT lain bisa "dipindahkan").

@@ -28,7 +28,8 @@
    "cash": [
     "view",
     "create",
-    "delete"
+    "delete",
+    "configure"
    ],
    "cash_advance": [
     "view",
@@ -599,7 +600,8 @@
    ],
    "cash": [
     "view",
-    "create"
+    "create",
+    "configure"
    ],
    "cash_advance": [
     "view",
@@ -757,7 +759,8 @@
    "cash": [
     "view",
     "create",
-    "delete"
+    "delete",
+    "configure"
    ],
    "cash_advance": [
     "view",
@@ -1872,9 +1875,6 @@
     "create",
     "count"
    ],
-   "input_tax": [
-    "view"
-   ],
    "inspection": [
     "view",
     "inspect"
@@ -1893,9 +1893,6 @@
    "label": [
     "view",
     "generate"
-   ],
-   "landed_cost": [
-    "view"
    ],
    "logistics": [
     "view",
@@ -1982,9 +1979,6 @@
     "create",
     "update"
    ],
-   "vendor_bill": [
-    "view"
-   ],
    "warehouse": [
     "view",
     "create",
@@ -2039,9 +2033,6 @@
    "grade_master": [
     "view"
    ],
-   "input_tax": [
-    "view"
-   ],
    "inspection": [
     "view",
     "create",
@@ -2066,9 +2057,6 @@
    "label": [
     "view",
     "generate"
-   ],
-   "landed_cost": [
-    "view"
    ],
    "logistics": [
     "view",
@@ -2163,9 +2151,6 @@
     "view",
     "create",
     "update"
-   ],
-   "vendor_bill": [
-    "view"
    ],
    "warehouse": [
     "view",

@@ -347,6 +347,40 @@ def pdf_type_of(doc_type: str) -> str:
     return t if t in DOC_REGISTRY else ""
 
 
+# ── PK-17 (K-18, IA-01) — nominal dokumen hanya untuk pemegang izin lihat modul sumbernya ─────────────
+#: Jenis dokumen bernilai uang → izin LIHAT modul sumbernya. Jenis yang tidak terdaftar tidak disaring.
+SOURCE_PERMISSION: Dict[str, Tuple[str, str]] = {
+    "sales_order": ("order", "view"), "sales_return": ("sales_return", "view"),
+    "purchase_order": ("purchase_order", "view"), "purchase_return": ("purchase_return", "view"),
+    "vendor_bill": ("vendor_bill", "view"), "contra_bon": ("vendor_bill", "view"),
+    "landed_cost": ("landed_cost", "view"), "input_tax_invoice": ("input_tax", "view"),
+    "tax_invoice": ("tax_invoice", "view"), "ar_receipt": ("ar_receipt", "view"),
+    "payment_plan": ("payment_plan", "view"), "penalty": ("penalty", "view"),
+    "payment_variance": ("payment_variance", "view"), "finance_case": ("finance_case", "view"),
+    "cash_transaction": ("cash", "view"), "journal_entry": ("accounting", "view"),
+    "interco_transaction": ("interco", "view"), "interco_return": ("interco", "view"),
+    "interco_settlement": ("interco_finance", "view"), "interco_loan": ("interco_finance", "view"),
+}
+
+
+def may_see_amount(doc_type: str, viewer_perms: Optional[Dict[str, List[str]]]) -> bool:
+    """`viewer_perms=None` = pemanggil sistem (tanpa penyaringan)."""
+    need = SOURCE_PERMISSION.get(doc_type)
+    if viewer_perms is None or not need:
+        return True
+    acts = viewer_perms.get(need[0]) or []
+    return need[1] in acts or "*" in acts
+
+
+def redact_node(node: Dict[str, Any], viewer_perms: Optional[Dict[str, List[str]]]) -> Dict[str, Any]:
+    """Simpul/butir rujukan tanpa nominal bila izin modul sumbernya tidak dipegang. Nomor, jenis, status, tanggal,
+    dan judul tetap; tombol buka & cetak dimatikan (`can_open`, `pdf_doc_type`)."""
+    if not node or may_see_amount(node.get("doc_type") or "", viewer_perms):
+        return node
+    node.update({"amount": None, "amount_hidden": True, "can_open": False, "pdf_doc_type": ""})
+    return node
+
+
 def node_of(doc_type: str, doc: Dict[str, Any]) -> Dict[str, Any]:
     meta = DOC_TYPES.get(doc_type, {})
     return {
@@ -483,8 +517,10 @@ async def all_refs(doc_type: str, doc: Dict[str, Any]) -> List[Dict[str, Any]]:
                      if (r["doc_type"], r["doc_id"]) not in have]
 
 
-async def refs_of(doc_type: str, doc_id: str, resolve_targets: bool = True) -> Dict[str, Any]:
-    """Daftar referensi sebuah dokumen + status hidup/mati targetnya."""
+async def refs_of(doc_type: str, doc_id: str, resolve_targets: bool = True,
+                  viewer_perms: Optional[Dict[str, List[str]]] = None) -> Dict[str, Any]:
+    """Daftar referensi sebuah dokumen + status hidup/mati targetnya. PK-17: `viewer_perms` (izin peran pembaca;
+    `None` = sistem) → butir & jangkar yang modul sumbernya tidak boleh dilihat tanpa nominal (`redact_node`)."""
     doc = await load_doc(doc_type, doc_id)
     if not doc:
         raise RefsError("Dokumen tidak ditemukan.")
@@ -501,18 +537,22 @@ async def refs_of(doc_type: str, doc_id: str, resolve_targets: bool = True) -> D
                 row["doc_number"] = number_of(r["doc_type"], tgt)
                 row["status"] = tgt.get("status") or ""
                 row["link"] = node_of(r["doc_type"], tgt)["link"]
-        out.append(row)
+        out.append(redact_node(row, viewer_perms))
     return {"doc_type": doc_type, "doc_id": doc_id,
             "number": number_of(doc_type, doc), "refs": out,
-            "anchor": node_of(doc_type, doc)}
+            "anchor": redact_node(node_of(doc_type, doc), viewer_perms)}
 
 
 # ── Penelusuran (graf dari jangkar mana pun) ───────────────────────────────
-async def trace(doc_type: str, doc_id: str, depth: Optional[int] = None) -> Dict[str, Any]:
+async def trace(doc_type: str, doc_id: str, depth: Optional[int] = None,
+                viewer_perms: Optional[Dict[str, List[str]]] = None) -> Dict[str, Any]:
     """Telusuri seluruh rantai dokumen dari jangkar mana pun (BFS atas `refs[]`).
 
     Kedalaman dibatasi `docref.trace_max_depth` (configurable) supaya graf besar
     tidak membekukan UI; sisa simpul dilaporkan lewat `truncated`.
+
+    PK-17 (K-18) — `viewer_perms` = izin peran pembaca (`None` = pemanggil sistem): simpul yang modul sumbernya
+    tidak boleh dilihat tetap tampil (nomor/jenis/status) tetapi tanpa nominal (`redact_node`).
     """
     anchor_doc = await load_doc(doc_type, doc_id)
     if not anchor_doc:
@@ -535,7 +575,7 @@ async def trace(doc_type: str, doc_id: str, depth: Optional[int] = None) -> Dict
         cur_doc = await load_doc(cur_type, cur_id)
         if not cur_doc:
             continue
-        node = node_of(cur_type, cur_doc)
+        node = redact_node(node_of(cur_type, cur_doc), viewer_perms)
         node["level"] = level
         node["is_anchor"] = key == anchor_key
         seen[key] = node
@@ -607,8 +647,9 @@ async def reference_line(doc_type: str, doc_id: str, limit: int = 6) -> Dict[str
 
 
 # ── Pencarian dokumen (titik masuk layar Jejak Dokumen) ────────────────────
-async def search(q: str, limit: int = 20, entity_id: str = "") -> List[Dict[str, Any]]:
-    """Cari dokumen lintas jenis berdasarkan nomor / nama pihak."""
+async def search(q: str, limit: int = 20, entity_id: str = "",
+                 viewer_perms: Optional[Dict[str, List[str]]] = None) -> List[Dict[str, Any]]:
+    """Cari dokumen lintas jenis berdasarkan nomor / nama pihak. PK-17: nominal disaring `redact_node`."""
     ql = (q or "").strip()
     if len(ql) < 2:
         return []
@@ -629,7 +670,7 @@ async def search(q: str, limit: int = 20, entity_id: str = "") -> List[Dict[str,
         except Exception:  # noqa: BLE001 — koleksi belum ada di DB baru
             continue
         for row in rows:
-            node = node_of(meta["doc_type"], safe_doc(row))
+            node = redact_node(node_of(meta["doc_type"], safe_doc(row)), viewer_perms)
             node["ref_count"] = len(row.get("refs") or [])
             out.append(node)
     return out[:limit]

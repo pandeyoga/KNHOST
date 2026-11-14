@@ -10,7 +10,7 @@ from fastapi import APIRouter, HTTPException, Request
 
 from core_utils import safe_doc
 from db import db
-from dependencies import audit, require_permission
+from dependencies import audit, has_permission, require_permission
 from entity_scope import entity_ctx, resolve_scope_ids
 from schemas_contrabon import (
     ContraBonCreate, ContraBonDecisionIn, ContraBonDeductionIn, ContraBonNoteIn,
@@ -38,6 +38,56 @@ def _fail(exc: Exception) -> HTTPException:
     return HTTPException(status_code=400, detail=str(exc))
 
 
+# ── PK-17 (IA-09) — nominal kontrabon hanya untuk pemegang `vendor_bill.view` ────────────────────────────
+# Kontrabon adalah kumpulan tagihan pemasok; `contra_bon.view` (dipegang gudang untuk "GR belum ditagih") tidak
+# membuka nilai uangnya. Nomor, status, pemasok, tanggal, dan hitungan tetap tampil.
+#: Kolom bernilai uang di baris tagihan, potongan, keputusan, pembayaran, pengecualian 3-way, dan GR belum ditagih.
+KOLOM_NILAI = frozenset({"amount", "applied_amount", "grand_total", "outstanding_at_pick", "settled_amount",
+                         "claim_deduction_info", "bill_price", "po_price", "price", "unbilled_value"})
+#: Teks bebas yang ditulis mesin dengan nominal di dalamnya (catatan linimasa, rincian pengecualian).
+TEKS_BERNILAI = ("detail", "note", "notes")
+NILAI_DISEMBUNYIKAN = "Nilai disembunyikan"
+
+
+def _kosongkan_nilai(obj: Any) -> Any:
+    if isinstance(obj, list):
+        return [_kosongkan_nilai(x) for x in obj]
+    if not isinstance(obj, dict):
+        return obj
+    out: Dict[str, Any] = {}
+    for k, v in obj.items():
+        if k in KOLOM_NILAI and isinstance(v, (int, float)) and not isinstance(v, bool):
+            out[k] = None
+        elif k in TEKS_BERNILAI and isinstance(v, str) and "Rp" in v:
+            out[k] = NILAI_DISEMBUNYIKAN
+        else:
+            out[k] = _kosongkan_nilai(v)
+    return out
+
+
+def redact_contra_bon(cb: Dict[str, Any]) -> Dict[str, Any]:
+    """Kontrabon tanpa nominal: seluruh isi `totals`, nilai di baris tagihan/potongan/keputusan/pembayaran, dan
+    `match_summary.exceptions_value` menjadi `null`; `amount_hidden: true`."""
+    out = dict(cb)
+    out["totals"] = {k: None for k in (cb.get("totals") or {})}
+    for key in ("bills", "deductions", "decisions", "payments", "timeline"):
+        if key in out:
+            out[key] = _kosongkan_nilai(out[key])
+    if isinstance(out.get("match_summary"), dict):
+        out["match_summary"] = {**out["match_summary"], "exceptions_value": None}
+    out["amount_hidden"] = True
+    return out
+
+
+async def _boleh_nominal(actor: Dict[str, Any]) -> bool:
+    return await has_permission(actor, "vendor_bill", "view")
+
+
+def _tanpa_nilai(row: Dict[str, Any]) -> Dict[str, Any]:
+    """Ringkasan/baris jadwal: field berakhiran `_value` menjadi `null`; hitungan (`_count`) tetap."""
+    return {k: (None if k.endswith("_value") else v) for k, v in row.items()}
+
+
 # ── Meta & bantuan layar (STATIS sebelum route /{id}) ─────────────────────────
 
 @router.get("/contra-bons/meta")
@@ -57,8 +107,11 @@ async def contra_bon_meta(request: Request, entity_id: str = "") -> Dict[str, An
 
 @router.get("/contra-bons/summary")
 async def contra_bon_summary(request: Request, entity_id: str = "") -> Dict[str, Any]:
-    await require_permission(request, "contra_bon", "view")
-    return await cbs.summary(await _scope(request, entity_id), entity_id)
+    actor = await require_permission(request, "contra_bon", "view")
+    out = await cbs.summary(await _scope(request, entity_id), entity_id)
+    if not await _boleh_nominal(actor):   # PK-17 — nilai (`*_value`) disembunyikan, hitungan tetap
+        out = {**_tanpa_nilai(out), "amount_hidden": True}
+    return out
 
 
 @router.get("/contra-bons/status-counts")
@@ -84,16 +137,23 @@ async def contra_bon_prepare(request: Request, supplier_id: str, entity_id: str 
 async def contra_bon_unbilled(request: Request, entity_id: str = "",
                               supplier_id: str = "") -> Dict[str, Any]:
     """US3 — penerimaan barang yang belum ditagih supplier (jangan sampai terlewat)."""
-    await require_permission(request, "contra_bon", "view")
-    return await cbs.unbilled_receipts(await _scope(request, entity_id),
-                                       supplier_id=supplier_id, entity_id=entity_id)
+    actor = await require_permission(request, "contra_bon", "view")
+    out = await cbs.unbilled_receipts(await _scope(request, entity_id),
+                                      supplier_id=supplier_id, entity_id=entity_id)
+    if not await _boleh_nominal(actor):   # PK-17 — qty & umur tetap; nilai & harga disembunyikan
+        out = {**out, "total_value": None, "rows": _kosongkan_nilai(out.get("rows") or []), "amount_hidden": True}
+    return out
 
 
 @router.get("/contra-bons/exchange-schedules")
 async def contra_bon_schedules(request: Request, entity_id: str = "") -> Dict[str, Any]:
     """US1 — jadwal tukar faktur seluruh supplier + kesiapan siklus berikutnya."""
-    await require_permission(request, "contra_bon", "view")
-    return await reminder.schedules(await _scope(request, entity_id), entity_id)
+    actor = await require_permission(request, "contra_bon", "view")
+    out = await reminder.schedules(await _scope(request, entity_id), entity_id)
+    if not await _boleh_nominal(actor):   # PK-17 — "siap dikontrabon"/"belum ditagih" bernilai uang tagihan pemasok
+        out = {**out, "rows": [_tanpa_nilai(r) for r in out.get("rows") or []],
+               "due_soon": [_tanpa_nilai(r) for r in out.get("due_soon") or []], "amount_hidden": True}
+    return out
 
 
 @router.put("/suppliers/{supplier_id}/invoice-exchange")
@@ -135,25 +195,27 @@ async def contra_bon_run_reminder(request: Request) -> Dict[str, Any]:
 @router.get("/contra-bons")
 async def list_contra_bons(request: Request, entity_id: str = "", status: str = "",
                            supplier_id: str = "", q: str = "") -> List[Dict[str, Any]]:
-    await require_permission(request, "contra_bon", "view")
-    return await cbs.list_contra_bons(await _scope(request, entity_id), entity_id,
-                                       status=status, supplier_id=supplier_id, q=q)
+    actor = await require_permission(request, "contra_bon", "view")
+    rows = await cbs.list_contra_bons(await _scope(request, entity_id), entity_id,
+                                      status=status, supplier_id=supplier_id, q=q)
+    return rows if await _boleh_nominal(actor) else [redact_contra_bon(r) for r in rows]
 
 
 @router.get("/contra-bons/{cb_id}")
 async def get_contra_bon(cb_id: str, request: Request) -> Dict[str, Any]:
-    await require_permission(request, "contra_bon", "view")
+    actor = await require_permission(request, "contra_bon", "view")
     try:
         cb = await cbs._get(cb_id, await _scope(request))
     except cbs.ContraBonError as exc:
         raise HTTPException(status_code=404, detail=str(exc)) from exc
-    return await cbs.decorate(cb)
+    dec = await cbs.decorate(cb)
+    return dec if await _boleh_nominal(actor) else redact_contra_bon(dec)
 
 
 @router.get("/contra-bons/{cb_id}/receipt")
 async def contra_bon_receipt(cb_id: str, request: Request) -> Dict[str, Any]:
     """US9 — data **Tanda Terima Kontrabon** (dipakai layar & mesin PDF)."""
-    await require_permission(request, "contra_bon", "view")
+    actor = await require_permission(request, "contra_bon", "view")
     try:
         cb = await cbs._get(cb_id, await _scope(request))
     except cbs.ContraBonError as exc:
@@ -169,6 +231,8 @@ async def contra_bon_receipt(cb_id: str, request: Request) -> Dict[str, Any]:
                              "po_number": b.get("po_number", ""),
                              "grn_task_id": t.get("id", ""), "status": t.get("status", ""),
                              "completed_at": t.get("completed_at", "")})
+    if not await _boleh_nominal(actor):
+        dec = redact_contra_bon(dec)
     return {"contra_bon": dec, "goods_receipts": receipts}
 
 

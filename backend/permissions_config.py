@@ -77,7 +77,8 @@ DEFAULT_PERMISSIONS = {
         # `hold` (2026-09) — menahan desain yang sudah ACC agar tidak masuk proofing R&D.
         "rnd": ["view", "create", "submit", "assess", "decide", "manage", "hold"],
         "supplier": ["view", "create", "update", "delete"],
-        "cash": ["view", "create", "delete"],
+        # PK-17 — `configure` = membuat/mengubah rekening kas & bank (dulu ikut `create` pencatat transaksi).
+        "cash": ["view", "create", "delete", "configure"],
         "fixed_asset": ["view", "create", "update", "run", "dispose"],
         "budget": ["view", "create", "update", "delete", "configure"],
         "purchase_order": ["view", "create", "update", "approve", "reject"],
@@ -221,7 +222,8 @@ DEFAULT_PERMISSIONS = {
         # **satu-satunya** yang boleh melepas tahanan barang (keputusan pemilik #5).
         "inspection": ["view", "create", "assign", "inspect", "decide", "reopen"],
         "supplier": ["view", "create", "update", "delete"],
-        "cash": ["view", "create", "delete"],
+        # PK-17 — `configure` = membuat/mengubah rekening kas & bank (dulu ikut `create` pencatat transaksi).
+        "cash": ["view", "create", "delete", "configure"],
         "fixed_asset": ["view", "create", "update", "run", "dispose"],
         "budget": ["view", "create", "update", "delete"],
         "purchase_order": ["view", "create", "update", "approve", "reject"],
@@ -386,7 +388,7 @@ DEFAULT_PERMISSIONS = {
         "approval": ["view"],
         "penalty": ["view", "issue"],          # waive/adjust → manajer
         "payment_plan": ["view", "update"],
-        "cash": ["view", "create"],
+        "cash": ["view", "create", "configure"],   # PK-17 — `configure` = kelola rekening kas & bank
         "accounting": ["view"],
         "finance_case": ["view", "create"],
         "finance_amendment": ["propose"],
@@ -441,15 +443,14 @@ DEFAULT_PERMISSIONS = {
         "purchase_order": ["view"],
         "purchase_return": ["view", "create"],
         "purchase_requisition": ["view", "create", "update"],
-        "vendor_bill": ["view"],
+        # PK-17 (IA-02) — `vendor_bill`, `landed_cost`, `input_tax` (lihat) DICABUT dari bawaan: tidak ada menu gudang
+        # untuknya (tab Hutang Pemasok gudang hanya Kontrabon). Matriks tersimpan: `scripts/apply_pk17_role_cleanup.py`.
         # FASE G-7 — gudang IKUT MELIHAT kontrabon: dialah yang tahu barang mana sudah
         # diterima tapi fakturnya belum datang ("GR belum ditagih"). Tidak boleh mengubah uang.
         "contra_bon": ["view"],
         # FASE G-6 — gudang ikut melihat transaksi antar-PT (barang fisik lewat mereka)
         # + boleh menandai ship/receive (aliran barang), tanpa mengubah uang.
         "interco": ["view", "ship", "receive"],
-        "landed_cost": ["view"],
-        "input_tax": ["view"],
         "rfq": ["view", "create", "update"],
         "vehicle_log": ["view", "create", "update"],
         "esign": ["view", "sign"],
@@ -541,9 +542,8 @@ DEFAULT_PERMISSIONS = {
         "purchase_order": ["view"],
         "purchase_return": ["view", "create"],
         "purchase_requisition": ["view", "create", "update"],
-        "vendor_bill": ["view"], "contra_bon": ["view"],
+        "contra_bon": ["view"],   # PK-17 — vendor_bill/landed_cost/input_tax dicabut dari bawaan (lihat `warehouse`)
         "interco": ["view", "ship", "receive"],
-        "landed_cost": ["view"], "input_tax": ["view"],
         "rfq": ["view"],
         "vehicle_log": ["view", "create", "update"],
         "esign": ["view", "sign"],

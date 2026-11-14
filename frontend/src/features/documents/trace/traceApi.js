@@ -33,6 +33,16 @@ export function relTone(rel) {
   return REL_TONE[relFamily(rel)] || REL_TONE.downstream;
 }
 
+/**
+ * PK-17 (K-18) — server mengosongkan nominal dokumen yang modul sumbernya tidak boleh dilihat peran pembaca
+ * (`amount: null`, `amount_hidden: true`, `can_open: false`). Nomor, jenis, status, dan tanggal tetap tampil.
+ */
+export const HIDDEN_AMOUNT = "Nilai disembunyikan";
+export const HIDDEN_AMOUNT_HINT = "Peran Anda tidak punya akses lihat modul dokumen ini.";
+export const isAmountHidden = (node) => !!node?.amount_hidden;
+/** Tombol "buka dokumen" hanya hidup bila server tidak menandai simpul tertutup. */
+export const canOpenNode = (node) => !!node && node.can_open !== false && !node.amount_hidden;
+
 /** Pesan galat yang bisa dibaca user (backend selalu mengirim `detail`). */
 export function errText(e, fallback = "Terjadi kesalahan.") {
   return e?.response?.data?.detail || e?.message || fallback;

@@ -15,6 +15,8 @@ export default function ExchangeSchedulesTab({ data, loading, onEdit, onCreateFo
   busy, canWrite = true }) {
   const rows = data?.rows || [];
   const dueSoon = data?.due_soon || [];
+  // PK-17 — peran tanpa izin lihat tagihan pemasok: server mengosongkan nilai (`amount_hidden`), layar menulis "—".
+  const hidden = !!data?.amount_hidden;
 
   return (
     <div data-testid="cb-schedules-tab">
@@ -39,14 +41,14 @@ export default function ExchangeSchedulesTab({ data, loading, onEdit, onCreateFo
         <div className="stat-card">
           <p className="stat-label">Siap dikontrabon</p>
           <p className="stat-value" data-testid="cb-sched-billable">
-            {formatCurrency(rows.reduce((a, r) => a + Number(r.billable_value || 0), 0))}
+            {hidden ? "—" : formatCurrency(rows.reduce((a, r) => a + Number(r.billable_value || 0), 0))}
           </p>
           <p className="text-[10px] text-[#8E8E93]">tagihan supplier yang masih menggantung</p>
         </div>
         <div className="stat-card">
           <p className="stat-label">Belum ditagih supplier</p>
           <p className="stat-value" data-testid="cb-sched-unbilled">
-            {formatCurrency(rows.reduce((a, r) => a + Number(r.unbilled_gr_value || 0), 0))}
+            {hidden ? "—" : formatCurrency(rows.reduce((a, r) => a + Number(r.unbilled_gr_value || 0), 0))}
           </p>
           <p className="text-[10px] text-[#8E8E93]">barang sudah diterima, faktur belum datang</p>
         </div>
@@ -130,11 +132,11 @@ export default function ExchangeSchedulesTab({ data, loading, onEdit, onCreateFo
                         : <span className="text-[#C7C7CC]">—</span>}
                     </td>
                     <td className="px-3 py-2 text-right tabular-nums">
-                      {formatCurrency(r.billable_value)}
+                      {hidden ? "—" : formatCurrency(r.billable_value)}
                       <p className="text-[10px] text-[#8E8E93]">{r.billable_count} faktur</p>
                     </td>
                     <td className="px-3 py-2 text-right tabular-nums">
-                      {formatCurrency(r.unbilled_gr_value)}
+                      {hidden ? "—" : formatCurrency(r.unbilled_gr_value)}
                       <p className="text-[10px] text-[#8E8E93]">{r.unbilled_gr_po_count} PO</p>
                     </td>
                     <td className="px-3 py-2 text-right whitespace-nowrap">

@@ -47,7 +47,7 @@ export default function RoleAdvancedPanel({ module, perms, original, labels, dis
                           onClick={() => onToggle(res, a)}
                           className={`inline-flex items-center gap-0.5 rounded-md border px-1.5 py-0.5 text-[10px] font-semibold transition-colors disabled:opacity-50 ${
                             on ? "border-[#0058CC] bg-[#EAF2FF] text-[#0058CC]" : "border-[#E5E5EA] bg-white text-[#8E8E93] hover:border-[#1C1C1E]/40"}`}>
-                    {on && <Check size={9} />} {al[a] || a}
+                    {on && <Check size={9} />} {al[`${res}.${a}`] || al[a] || a}
                   </button>
                 );
               })}

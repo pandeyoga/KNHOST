@@ -15,7 +15,7 @@ import MediaLightbox from "../../../components/MediaLightbox";
 import { downloadFile } from "../../../hooks/useBlobUrl";
 import { API } from "../../../services/apiClient";
 import { formatCurrency } from "../../../utils/formatters";
-import { relTone, shortDate } from "./traceApi";
+import { HIDDEN_AMOUNT, HIDDEN_AMOUNT_HINT, canOpenNode, isAmountHidden, relTone, shortDate } from "./traceApi";
 
 /** UAT 24 Okt (P16.2) — PDF dokumen node (pratinjau di halaman / unduh) tanpa pindah layar. */
 const pdfUrl = (node) => `${API}/pdf/render/${node.pdf_doc_type}/${node.doc_id}?format=pdf${node.entity_id ? `&entity_id=${node.entity_id}` : ""}`;
@@ -25,6 +25,9 @@ function NodeCard({ node, isAnchor, onAnchor, onOpen }) {
   const [busy, setBusy] = useState(false);
   const fname = `${node.pdf_doc_type}-${node.number || node.doc_id}.pdf`.replace(/[\/]/g, "-");
   const download = async () => { setBusy(true); try { await downloadFile(`${pdfUrl(node)}&download=true`, fname); } catch { /* galat diunduh tampil di toast global */ } finally { setBusy(false); } };
+  // PK-17 (K-18) — nominal disembunyikan server: tampil "Nilai disembunyikan", tombol buka & cetak mati.
+  const hidden = isAmountHidden(node);
+  const openable = canOpenNode(node);
   return (
     <div data-testid={`trace-node-${node.doc_id}`}
       className={`rounded-lg border p-2 transition-colors ${isAnchor
@@ -41,9 +44,10 @@ function NodeCard({ node, isAnchor, onAnchor, onOpen }) {
           <span className="block truncate text-[10px] text-[#6B6B73]">{node.title || "—"}</span>
         </button>
         {node.link?.view && (
-          <button type="button" title="Buka dokumennya" data-testid={`trace-open-${node.doc_id}`}
-            onClick={() => onOpen(node)}
-            className="shrink-0 rounded-md border border-[#EDEEF1] p-1 text-[#4A4B52] hover:bg-[#F2F3F5]">
+          <button type="button" title={openable ? "Buka dokumennya" : HIDDEN_AMOUNT_HINT}
+            data-testid={`trace-open-${node.doc_id}`} disabled={!openable}
+            onClick={() => openable && onOpen(node)}
+            className="shrink-0 rounded-md border border-[#EDEEF1] p-1 text-[#4A4B52] hover:bg-[#F2F3F5] disabled:cursor-not-allowed disabled:opacity-40">
             <ExternalLink size={12} />
           </button>
         )}
@@ -61,12 +65,21 @@ function NodeCard({ node, isAnchor, onAnchor, onOpen }) {
           </span>
         )}
       </div>
-      {Number(node.amount) > 0 && (
+      {hidden ? (
+        <p className="mt-0.5 text-[10.5px] font-semibold text-[#8E8E93]" title={HIDDEN_AMOUNT_HINT}
+          data-testid={`trace-amount-hidden-${node.doc_id}`}>
+          {HIDDEN_AMOUNT}
+        </p>
+      ) : Number(node.amount) > 0 && (
         <p className="mt-0.5 text-[10.5px] font-semibold tabular-nums text-[#1C1C1E]">
           {formatCurrency(node.amount)}
         </p>
       )}
-      {node.pdf_doc_type ? (
+      {hidden ? (
+        <p className="mt-1 text-[9.5px] text-[#9A9BA3]" data-testid={`trace-hidden-hint-${node.doc_id}`}>
+          {HIDDEN_AMOUNT_HINT}
+        </p>
+      ) : node.pdf_doc_type ? (
         <div className="mt-1 flex gap-1">
           <button type="button" data-testid={`trace-pdf-view-${node.doc_id}`} onClick={() => setView(true)}
             className="inline-flex items-center gap-1 rounded-md border border-[#EDEEF1] px-1.5 py-0.5 text-[10px] font-semibold text-[#0058CC] hover:bg-[#F2F3F5]"><Eye size={11} /> Pratinjau</button>

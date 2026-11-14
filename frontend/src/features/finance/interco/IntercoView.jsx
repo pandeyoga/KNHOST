@@ -55,6 +55,9 @@ const TABS = [
   { id: "margin",       label: "Rapor Margin",     icon: TrendingUp },
 ];
 
+// PK-17 — petunjuk kartu saldo bila server menyembunyikannya (`summary.finance_hidden`).
+const FINANCE_HIDDEN_HINT = "Saldo antar-PT hanya untuk peran berizin keuangan antar-PT.";
+
 // Tab yang bicara UANG antar-PT — dipagari izin `interco_finance` (E-0/E0.8f).
 const MONEY_TABS = ["balances", "settlements", "schedule", "loans", "margin"];
 // L08 — tab retur tampil di menu Retur terpadu (view `interco-returns`), bukan di layar transaksi.
@@ -299,13 +302,18 @@ export default function IntercoView({ currentUser, selectedEntity, entities = []
       <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
         {/* Keputusan pemilik K-07 (26 Okt) — angka utama = posisi BERSIH dua arah per pasangan PT (netting);
             sisa per dokumen (bruto) = rincian di Jadwal Bayar. Server lama tanpa `net_*` jatuh ke angka bruto. */}
+        {/* PK-17 (IA-09) — tanpa izin keuangan antar-PT server mengosongkan saldo (`finance_hidden`). */}
         <Kpi label="Piutang Antar-PT (bersih)"
-             value={formatCurrency((summary?.net_receivable ?? summary?.total_receivable) || 0)}
-             hint={`posisi bersih dua arah per pasangan PT · per dokumen (bruto) ${formatCurrency(summary?.total_receivable || 0)}`}
+             value={summary?.finance_hidden ? "—"
+               : formatCurrency((summary?.net_receivable ?? summary?.total_receivable) || 0)}
+             hint={summary?.finance_hidden ? FINANCE_HIDDEN_HINT
+               : `posisi bersih dua arah per pasangan PT · per dokumen (bruto) ${formatCurrency(summary?.total_receivable || 0)}`}
              testid="interco-kpi-receivable" />
         <Kpi label="Utang Antar-PT (bersih)"
-             value={formatCurrency((summary?.net_payable ?? summary?.total_payable) || 0)}
-             hint={`posisi bersih dua arah per pasangan PT · per dokumen (bruto) ${formatCurrency(summary?.total_payable || 0)} — lihat Jadwal Bayar`}
+             value={summary?.finance_hidden ? "—"
+               : formatCurrency((summary?.net_payable ?? summary?.total_payable) || 0)}
+             hint={summary?.finance_hidden ? FINANCE_HIDDEN_HINT
+               : `posisi bersih dua arah per pasangan PT · per dokumen (bruto) ${formatCurrency(summary?.total_payable || 0)} — lihat Jadwal Bayar`}
              testid="interco-kpi-payable" />
         <Kpi label="Dokumen Terbuka" value={String(summary?.open_documents || 0)}
              hint="dikonfirmasi s/d difakturkan, belum lunas · draf tidak dihitung" testid="interco-kpi-open" />

@@ -10,6 +10,9 @@ import { formatCurrency, formatQty } from "../../../utils/formatters";
 import { docStatusLabel } from "../../../utils/docStatus";
 import { fmtDate, humanDays } from "./contraBonApi";
 
+/** PK-17 — nilai `null` dari server = disembunyikan (peran tanpa izin lihat tagihan pemasok), bukan Rp 0. */
+const money = (v) => (v === null || v === undefined ? "—" : formatCurrency(v));
+
 export default function UnbilledReceiptsTab({ data, loading, canWrite = true, onCreateFor }) {
   const [open, setOpen] = useState({});
   const rows = data?.rows || [];
@@ -20,7 +23,7 @@ export default function UnbilledReceiptsTab({ data, loading, canWrite = true, on
         <div className="stat-card">
           <p className="stat-label">Nilai belum ditagih</p>
           <p className="stat-value text-[#0058CC]" data-testid="cb-unbilled-total">
-            {formatCurrency(data?.total_value)}
+            {money(data?.total_value)}
           </p>
           <p className="text-[10px] text-[#8E8E93]">barang sudah diterima, faktur belum datang</p>
         </div>
@@ -98,7 +101,7 @@ export default function UnbilledReceiptsTab({ data, loading, canWrite = true, on
                       </p>
                     </td>
                     <td className="px-3 py-2 text-right font-semibold tabular-nums">
-                      {formatCurrency(r.unbilled_value)}
+                      {money(r.unbilled_value)}
                     </td>
                     <td className="px-3 py-2">
                       <span className={`inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-[10px] font-bold ${
@@ -148,7 +151,7 @@ export default function UnbilledReceiptsTab({ data, loading, canWrite = true, on
                                   {formatQty(it.unbilled_qty)} {it.unit}
                                 </td>
                                 <td className="py-1 text-right tabular-nums">
-                                  {formatCurrency(it.unbilled_value)}
+                                  {money(it.unbilled_value)}
                                 </td>
                               </tr>
                             ))}

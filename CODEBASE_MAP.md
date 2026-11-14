@@ -1,5 +1,5 @@
 <!-- DIHASILKAN OTOMATIS oleh scripts/gen_codebase_map.py — JANGAN EDIT TANGAN -->
-<!-- Dihasilkan dari commit: e3e9869 pada 2026-11-13 -->
+<!-- Dihasilkan dari commit: ea0de78 pada 2026-11-14 -->
 # CODEBASE MAP — Kain Nusantara (dihasilkan otomatis)
 
 Peta ini dihitung dari kode oleh `scripts/gen_codebase_map.py`. Kalau angka di sini
@@ -27,7 +27,7 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 | `core_utils.py` | 385 |
 | `schemas.py` | 1115 |
 | `schemas_purchasing.py` | 625 |
-| `dependencies.py` | 233 |
+| `dependencies.py` | 234 |
 | `permissions_config.py` | 694 |
 | `entity_scope.py` | 724 |
 | `pagination.py` | 145 |
@@ -69,7 +69,7 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 | `require_role()` |  |
 | `permission_matrix()` |  |
 | `has_permission()` | Cek izin tanpa melempar (untuk cabang "boleh override?"). |
-| `require_permission()` |  |
+| `require_permission()` | `detail` (PK-17, standar Z6) — kalimat 403 untuk manusia; kosong = pesan teknis lama. |
 | `require_any_permission()` | Izin "SALAH SATU dari" — untuk layar yang menyatukan beberapa domain. |
 | `audit_diff()` | Field yang berubah (level atas) dari before → after; after parsial hanya membandingkan kuncinya. |
 | `audit()` | Tulis satu baris jejak audit. |
@@ -131,7 +131,7 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 | `ar_receipts.py` | 7 | 141 | `/ar-receipts`, `/ar-receipts/deposit`, `/ar-receipts/open-orders`, `/ar-receipts/{receipt_id}`, `/ar-receipts/{receipt_id}/repost`, `/ar-receipts/{receipt_id}/void` |
 | `audit.py` | 2 | 98 | `/audit-logs`, `/audit-logs/resource` |
 | `auth.py` | 5 | 191 | `/auth/context`, `/auth/login`, `/auth/logout`, `/auth/me`, `/roles` |
-| `bank.py` | 6 | 131 | `/bank-accounts`, `/bank-accounts/position`, `/bank-accounts/{account_id}`, `/bank-accounts/{account_id}/ledger`, `/cash-transactions/{txn_id}/reconcile` |
+| `bank.py` | 6 | 135 | `/bank-accounts`, `/bank-accounts/position`, `/bank-accounts/{account_id}`, `/bank-accounts/{account_id}/ledger`, `/cash-transactions/{txn_id}/reconcile` |
 | `bank_reconciliation.py` | 23 | 436 | `/bank-reconciliation/auto-match`, `/bank-reconciliation/formats`, `/bank-reconciliation/formats/{format_id}`, `/bank-reconciliation/holding`, `/bank-reconciliation/import`, `/bank-reconciliation/import-file` … |
 | `budgets.py` | 9 | 175 | `/finance/budget-check`, `/finance/budget-keys`, `/finance/budget-rules`, `/finance/budget-vs-actual`, `/finance/budgets`, `/finance/budgets/{budget_id}` |
 | `cash.py` | 4 | 251 | `/cash-transactions`, `/cash-transactions/summary`, `/cash-transactions/{txn_id}/void` |
@@ -142,7 +142,7 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 | `color_library.py` | 14 | 194 | `/color-library`, `/color-library/customer-colors`, `/color-library/customer-colors/{customer_id}/card`, `/color-library/nearest`, `/color-library/supplier-variants`, `/color-library/use-requests` … |
 | `config.py` | 12 | 429 | `/effective`, `/explain`, `/health`, `/history`, `/impact-apply`, `/impact-preview` … |
 | `consolidation.py` | 7 | 143 | `/consolidation/sync-g6`, `/finance/consolidation/eliminations`, `/finance/consolidation/eliminations/sync-from-pairs`, `/finance/consolidation/eliminations/{elim_id}`, `/finance/consolidation/ic-candidates`, `/finance/consolidation/summary` |
-| `contra_bons.py` | 24 | 338 | `/contra-bons`, `/contra-bons/bank-line-candidates/{line_id}`, `/contra-bons/exchange-schedules`, `/contra-bons/meta`, `/contra-bons/prepare`, `/contra-bons/run-reminder` … |
+| `contra_bons.py` | 24 | 402 | `/contra-bons`, `/contra-bons/bank-line-candidates/{line_id}`, `/contra-bons/exchange-schedules`, `/contra-bons/meta`, `/contra-bons/prepare`, `/contra-bons/run-reminder` … |
 | `costing.py` | 2 | 27 | `/wac`, `/wac/{product_id}` |
 | `crm.py` | 24 | 456 | `/collection-reminders`, `/collection-reminders/mark`, `/collection-worklist`, `/credit-overrides`, `/credit-overrides/{override_id}`, `/credit-overrides/{override_id}/decision` … |
 | `crm_omnichannel.py` | 10 | 206 | `/crm/interactions`, `/crm/interactions/{intx_id}`, `/crm/leads`, `/crm/leads/board`, `/crm/leads/{lead_id}`, `/crm/leads/{lead_id}/convert` … |
@@ -157,7 +157,7 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 | `design_gallery.py` | 26 | 494 | `/design-gallery`, `/design-gallery-ai/status`, `/design-gallery-products/unlink`, `/design-gallery/{gallery_id}`, `/design-gallery/{gallery_id}/ai-illustrate`, `/design-gallery/{gallery_id}/approve` … |
 | `design_requests.py` | 20 | 398 | `/design-requests`, `/design-requests-for-so/{so_id}`, `/design-requests/meta`, `/design-requests/{req_id}`, `/design-requests/{req_id}/approve`, `/design-requests/{req_id}/assign` … |
 | `design_studio.py` | 25 | 341 | `/design-gallery/{gallery_id}/colorways`, `/design-gallery/{gallery_id}/colorways/{cw_id}`, `/design-gallery/{gallery_id}/feedback`, `/design-gallery/{gallery_id}/files-kind/{kind}`, `/design-gallery/{gallery_id}/history`, `/design-gallery/{gallery_id}/lifecycle/activate` … |
-| `documents.py` | 17 | 426 | `/document-templates`, `/document-templates/{template_id}`, `/document-templates/{template_id}/preview`, `/documents/barcode`, `/documents/generate`, `/documents/preview/{order_id}` … |
+| `documents.py` | 17 | 435 | `/document-templates`, `/document-templates/{template_id}`, `/document-templates/{template_id}/preview`, `/documents/barcode`, `/documents/generate`, `/documents/preview/{order_id}` … |
 | `entities.py` | 11 | 245 | `/entities`, `/entities/count`, `/entities/{entity_id}`, `/entities/{entity_id}/archive`, `/entities/{entity_id}/audit`, `/entities/{entity_id}/deactivation-impact` … |
 | `entity_masters.py` | 7 | 103 | `/entity-masters`, `/entity-masters/{kind}`, `/entity-masters/{kind}/effective`, `/entity-masters/{kind}/{row_id}`, `/entity-masters/{kind}/{row_id}/override` |
 | `enums.py` | 5 | 124 | `/enums`, `/enums/products/validate`, `/enums/stage-transitions`, `/enums/stage-transitions/validate`, `/enums/{name}` |
@@ -175,7 +175,7 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 | `goods_receipts.py` | 37 | 316 | `/goods-receipts`, `/goods-receipts/dn-profiles`, `/goods-receipts/dn-profiles/{partner_id}`, `/goods-receipts/doc-variance`, `/goods-receipts/mode`, `/goods-receipts/partners` … |
 | `grade_master.py` | 4 | 62 | `/master/grades`, `/master/grades/{code}`, `/master/grades/{code}/active` |
 | `handheld.py` | 27 | 351 | `/batches`, `/device/config`, `/devices`, `/devices/{device_id}/activity`, `/devices/{device_id}/enable`, `/devices/{device_id}/profile` … |
-| `home.py` | 5 | 111 | `/admin`, `/finance`, `/manager`, `/sales`, `/warehouse` |
+| `home.py` | 5 | 117 | `/admin`, `/finance`, `/manager`, `/sales`, `/warehouse` |
 | `hr.py` | 15 | 517 | `/hr/employees`, `/hr/employees/me`, `/hr/employees/{employee_id}`, `/hr/employees/{employee_id}/360`, `/hr/org-units`, `/hr/org-units/tree` … |
 | `hr_analytics.py` | 1 | 23 | `/hr/analytics/summary` |
 | `hr_attendance.py` | 21 | 514 | `/hr/attendance`, `/hr/attendance/clock-in`, `/hr/attendance/clock-out`, `/hr/attendance/import`, `/hr/attendance/ingest`, `/hr/attendance/manual` … |
@@ -191,7 +191,7 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 | `input_tax.py` | 6 | 190 | `/input-tax-invoices`, `/input-tax-invoices/eligible-bills`, `/input-tax-invoices/{fpm_id}`, `/input-tax-invoices/{fpm_id}/cancel`, `/tax/vat-summary` |
 | `inspections.py` | 18 | 536 | `/inspections`, `/inspections/export`, `/inspections/meta`, `/inspections/meta/ref-docs`, `/inspections/qc-4point`, `/inspections/queue/qc-tasks` … |
 | `integrations.py` | 4 | 84 | `/admin/integrations`, `/admin/integrations/gemini/test`, `/admin/integrations/openai/test` |
-| `interco.py` | 38 | 584 | `/interco/accounts`, `/interco/accounts/{from_entity_id}/{to_entity_id}`, `/interco/accounts/{payer_entity_id}/{payee_entity_id}/remind`, `/interco/contracts`, `/interco/margin-by-product`, `/interco/margin-report` … |
+| `interco.py` | 38 | 593 | `/interco/accounts`, `/interco/accounts/{from_entity_id}/{to_entity_id}`, `/interco/accounts/{payer_entity_id}/{payee_entity_id}/remind`, `/interco/contracts`, `/interco/margin-by-product`, `/interco/margin-report` … |
 | `interco_loans.py` | 8 | 138 | `/interco/loans`, `/interco/loans/meta`, `/interco/loans/{loan_id}`, `/interco/loans/{loan_id}/cancel`, `/interco/loans/{loan_id}/disburse`, `/interco/loans/{loan_id}/repay` … |
 | `interco_prices.py` | 5 | 76 | `/interco/prices/access`, `/interco/prices/bulk`, `/interco/prices/missing`, `/interco/prices/request`, `/interco/prices/summary` |
 | `internal_requests.py` | 9 | 226 | `/internal-requests`, `/internal-requests-availability/{product_id}`, `/internal-requests/meta`, `/internal-requests/{req_id}`, `/internal-requests/{req_id}/cancel`, `/internal-requests/{req_id}/convert` … |
@@ -369,7 +369,7 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 | `dispatch_payment_gate.py` | 160 | F-10 (uji pra-UAT 2026-10-21, keputusan owner Q-02) — termin bayar-sebelum-kirim MENAHAN pengiriman. |
 | `dn_rules.py` | 350 | GRN Fase 4 — aturan murni pembacaan surat jalan (§4.8): angka, qty declared, nomor PO, pencocokan baris, total |
 | `doc_label_service.py` | 174 | doc_label_service — NOMOR DOKUMEN yang layak dibaca untuk pasangan (jenis sumber daya, id teknis). |
-| `doc_refs_service.py` | 939 | FASE G-4 — **RELASI DOKUMEN TERSIMPAN** (`refs[]` dua arah) + Jejak Dokumen. |
+| `doc_refs_service.py` | 980 | FASE G-4 — **RELASI DOKUMEN TERSIMPAN** (`refs[]` dua arah) + Jejak Dokumen. |
 | `document_relations_service.py` | 285 | EPIC 6 — Document Relations / Process Timeline service. |
 | `dual_qty_service.py` | 318 | FASE U — DUA SATUAN (jumlah roll + ukuran) · satu pintu untuk semua dokumen. |
 | `entity_context_service.py` | 171 | F0-A — Entity identity & context helper (Multi-Entity foundation). |
@@ -423,7 +423,7 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 | `handheld_sync.py` | 419 | PREP-G — kiriman batch C72 (idempoten) + penyelesaian dokumen + potong sampel. |
 | `handheld_tags.py` | 313 | PREP-G — EPC dibuat sistem lalu DITULIS ke tag oleh C72 (K-OPN-05: EPC bawaan tag dianggap TIDAK unik). |
 | `handheld_tasks.py` | 446 | PREP-G — daftar tugas per jenis + unduhan "yang diharapkan" per dokumen untuk C72 (pencocokan di perangkat & o |
-| `home_service.py` | 501 | EPIC 1 — Agregasi Home/landing per role (Control Tower / Performa Saya). |
+| `home_service.py` | 514 | EPIC 1 — Agregasi Home/landing per role (Control Tower / Performa Saya). |
 | `hr_ai_service.py` | 117 | H5 service — AI auto-tag motif via Anthropic Claude (SDK LANGSUNG, bukan Emergent). |
 | `hr_analytics_service.py` | 210 | HRD H6 service — HR Analytics (Dashboard BI SDM). |
 | `hr_attendance_service.py` | 273 | HRD H1 services — Absensi (attendance). |
@@ -644,7 +644,7 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 | `text_normalize.py` | 88 | K-1/K-2 (feedback klien 2026-09) — normalisasi penulisan (EYD) & nomor telepon/WhatsApp. |
 | `three_way_policy.py` | 32 | KN-D16 (audit 2026-09-21) — SATU ambang toleransi 3-way match (PO ↔ terima ↔ faktur). |
 | `tolerances.py` | 9 | KN-A13 (audit 2026-09-21) — SATU sumber toleransi numerik. |
-| `trace_print_service.py` | 63 | Cetak Jejak Dokumen — seluruh rantai dokumen satu jangkar sebagai satu PDF audit. |
+| `trace_print_service.py` | 76 | Cetak Jejak Dokumen — seluruh rantai dokumen satu jangkar sebagai satu PDF audit. |
 | `tracking_service.py` | 134 | HRD H2 services — Live Field Tracking (WebSocket). |
 | `transfer_receipt_service.py` | 658 | P03 (IMP-26/27) + sisa P02 — transfer terkait SO, penerimaan AKTUAL per roll, exception, cek ulang aturan tuju |
 | `trip_service.py` | 140 | L07 LN-070/071 — picking list multi-gudang, cek kesiapan trip multi-SO, manifest armada. |
@@ -673,7 +673,7 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 
 | Fitur (`src/features/`) | Berkas | Baris |
 |---|---:|---:|
-| `__tests__` | 79 | 11169 |
+| `__tests__` | 80 | 11369 |
 | `admin` | 34 | 6577 |
 | `approvals` | 9 | 1699 |
 | `catalog` | 24 | 1449 |
@@ -682,9 +682,9 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 | `design` | 8 | 1580 |
 | `designer` | 8 | 1624 |
 | `desks` | 2 | 229 |
-| `documents` | 18 | 2640 |
+| `documents` | 18 | 2675 |
 | `export` | 9 | 700 |
-| `finance` | 93 | 20861 |
+| `finance` | 93 | 20873 |
 | `home` | 5 | 1130 |
 | `hr` | 33 | 5340 |
 | `inspections` | 12 | 2171 |
@@ -702,13 +702,13 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 | `pos` | 23 | 2632 |
 | `pricing` | 1 | 151 |
 | `production` | 3 | 751 |
-| `purchasing` | 86 | 18203 |
+| `purchasing` | 86 | 18214 |
 | `rfid` | 21 | 3556 |
 | `rnd` | 66 | 7874 |
 | `sales` | 97 | 15769 |
 | `sales_admin` | 11 | 1872 |
 | `samples` | 8 | 777 |
-| `settings` | 49 | 9231 |
+| `settings` | 49 | 9232 |
 | `tanya` | 25 | 1592 |
 | `transfers` | 1 | 20 |
 | `wms` | 99 | 13195 |

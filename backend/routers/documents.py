@@ -9,7 +9,7 @@ from fastapi import APIRouter, Body, HTTPException, Query, Request
 from fastapi.responses import HTMLResponse
 from pymongo import ReturnDocument
 from db import db
-from dependencies import require_permission, audit, current_user
+from dependencies import require_permission, audit, current_user, permission_matrix
 from core_utils import new_id, now_iso, safe_doc
 from schemas import BarcodeGenerate, DocumentGenerate, GenericPatch, TemplatePayload
 from services.inventory_service import render_order_html
@@ -85,6 +85,12 @@ async def _assert_printable_entity(request: Request, source_id: str) -> None:
         return
 
 
+async def _viewer_perms(actor: Dict[str, Any]) -> Dict[str, List[str]]:
+    """PK-17 (K-18) — izin PERAN pembaca; dipakai `doc_refs_service.redact_node` menyembunyikan nominal dokumen
+    yang modul sumbernya tidak boleh dilihat (izin `document.view` saja tidak membuka nilai uang)."""
+    return (await permission_matrix()).get(actor.get("role") or "") or {}
+
+
 @router.get("/documents/trace/{doc_type}/{doc_id}")
 async def document_trace(doc_type: str, doc_id: str, request: Request,
                          depth: int = Query(0, ge=0, le=8)) -> Dict[str, Any]:
@@ -94,10 +100,11 @@ async def document_trace(doc_type: str, doc_id: str, request: Request,
     membaca relasi yang benar-benar TERSIMPAN di `refs[]` sehingga Faktur, Kwitansi,
     Retur, Tagihan Supplier, atau Nota Kredit pun bisa jadi titik masuk penelusuran.
     """
-    await require_permission(request, "document", "view")
+    actor = await require_permission(request, "document", "view")
     await _assert_doc_entity(request, doc_type, doc_id)     # FASE E-0 (L19)
     try:
-        return await refs_svc.trace(doc_type, doc_id, depth=depth or None)
+        return await refs_svc.trace(doc_type, doc_id, depth=depth or None,
+                                    viewer_perms=await _viewer_perms(actor))
     except refs_svc.RefsError as exc:
         raise HTTPException(status_code=404, detail=str(exc)) from exc
 
@@ -112,7 +119,8 @@ async def document_trace_print(doc_type: str, doc_id: str, request: Request,
     await _assert_doc_entity(request, doc_type, doc_id)
     try:
         content, media, doc = await render_trace(doc_type, doc_id, depth or None,
-                                                 actor.get("name", ""), fmt=format)
+                                                 actor.get("name", ""), fmt=format,
+                                                 viewer_perms=await _viewer_perms(actor))
     except refs_svc.RefsError as exc:
         raise HTTPException(status_code=404, detail=str(exc)) from exc
     await audit(actor.get("name", ""), "doc_trace_printed", doc_type, doc_id, {"depth": depth, "format": format})
@@ -126,10 +134,10 @@ async def document_trace_print(doc_type: str, doc_id: str, request: Request,
 @router.get("/documents/refs/{doc_type}/{doc_id}")
 async def document_refs(doc_type: str, doc_id: str, request: Request) -> Dict[str, Any]:
     """Daftar referensi satu dokumen (induk & turunan) + status hidup targetnya."""
-    await require_permission(request, "document", "view")
+    actor = await require_permission(request, "document", "view")
     await _assert_doc_entity(request, doc_type, doc_id)     # FASE E-0 (L19)
     try:
-        return await refs_svc.refs_of(doc_type, doc_id)
+        return await refs_svc.refs_of(doc_type, doc_id, viewer_perms=await _viewer_perms(actor))
     except refs_svc.RefsError as exc:
         raise HTTPException(status_code=404, detail=str(exc)) from exc
 
@@ -139,13 +147,14 @@ async def document_trace_search(request: Request, q: str = Query("", min_length=
                                 entity_id: str = Query(""),
                                 limit: int = Query(20, ge=1, le=50)) -> List[Dict[str, Any]]:
     """Cari dokumen lintas jenis (nomor / pelanggan / supplier) untuk layar Jejak Dokumen."""
-    await require_permission(request, "document", "view")
+    actor = await require_permission(request, "document", "view")
     ctx = await entity_ctx(request)
     ids = resolve_scope_ids(ctx, entity_id or None)
+    perms = await _viewer_perms(actor)
     # Pencarian lintas-jenis hanya di dalam entitas yang boleh dilihat (FASE E-0/L19).
     out = []
     for eid in ids:
-        out.extend(await refs_svc.search(q, limit=limit, entity_id=eid))
+        out.extend(await refs_svc.search(q, limit=limit, entity_id=eid, viewer_perms=perms))
     return out[:limit]
 
 

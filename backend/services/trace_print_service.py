@@ -1,5 +1,5 @@
 """Cetak Jejak Dokumen — seluruh rantai dokumen satu jangkar sebagai satu PDF audit."""
-from typing import Any, Dict, Optional
+from typing import Any, Dict, List, Optional
 
 from core_utils import now_iso
 from services import doc_refs_service as refs
@@ -12,13 +12,24 @@ def _col(key: str, label: str, align: str = "") -> Dict[str, str]:
     return {"key": key, "label": label, "align": align}
 
 
-async def build_trace_doc(doc_type: str, doc_id: str, depth: Optional[int], printed_by: str) -> Dict[str, Any]:
-    tr = await refs.trace(doc_type, doc_id, depth=depth)
+#: PK-17 — teks kolom nilai untuk simpul yang nominalnya disembunyikan (glosarium KN_32).
+NILAI_DISEMBUNYIKAN = "Nilai disembunyikan"
+
+
+def _nilai(n: Dict[str, Any]) -> str:
+    if n.get("amount_hidden"):
+        return NILAI_DISEMBUNYIKAN
+    return fmt_rp(n["amount"]) if n.get("amount") else "-"
+
+
+async def build_trace_doc(doc_type: str, doc_id: str, depth: Optional[int], printed_by: str,
+                          viewer_perms: Optional[Dict[str, List[str]]] = None) -> Dict[str, Any]:
+    tr = await refs.trace(doc_type, doc_id, depth=depth, viewer_perms=viewer_perms)
     a = tr["anchor"] or {}
     num = {n["key"]: n["number"] for n in tr["nodes"]}
     items = [{"no": i, "stage": n["label"], "number": n["number"] + (" ★" if n.get("is_anchor") else ""),
               "title": n.get("title") or "-", "date": fmt_date(n.get("date")) if n.get("date") else "-",
-              "status": n.get("status") or "-", "amount": fmt_rp(n["amount"]) if n.get("amount") else "-",
+              "status": n.get("status") or "-", "amount": _nilai(n),
               "level": str(n.get("level", 0))}
              for i, n in enumerate(tr["nodes"], 1)]
     edges = [{"from": num.get(e["from"], e["from"]), "rel": e.get("rel_label") or e.get("rel", ""),
@@ -32,7 +43,7 @@ async def build_trace_doc(doc_type: str, doc_id: str, depth: Optional[int], prin
         "title": "Jejak Dokumen (Audit Trail)", "number": a.get("number", doc_id),
         "date": fmt_date(now_iso()), "status": a.get("status") or "",
         "meta": [{"label": "Jangkar", "value": f"{a.get('label', doc_type)} — {a.get('title') or '-'}"},
-                 {"label": "Nilai jangkar", "value": fmt_rp(a.get("amount")) if a.get("amount") else "-"},
+                 {"label": "Nilai jangkar", "value": _nilai(a)},
                  {"label": "Dokumen terkait", "value": str(tr["node_count"])},
                  {"label": "Relasi", "value": str(tr["edge_count"])},
                  {"label": "Kedalaman", "value": str(tr["depth"])},
@@ -52,8 +63,10 @@ async def build_trace_doc(doc_type: str, doc_id: str, depth: Optional[int], prin
     }
 
 
-async def render_trace(doc_type: str, doc_id: str, depth: Optional[int], printed_by: str, fmt: str = "pdf"):
-    doc = await build_trace_doc(doc_type, doc_id, depth, printed_by)
+async def render_trace(doc_type: str, doc_id: str, depth: Optional[int], printed_by: str, fmt: str = "pdf",
+                       viewer_perms: Optional[Dict[str, List[str]]] = None):
+    """PK-17 — `viewer_perms` = izin peran pencetak (`None` = sistem): nominal disaring seperti layar jejak."""
+    doc = await build_trace_doc(doc_type, doc_id, depth, printed_by, viewer_perms)
     cfg = await svc.get_template_cfg(svc.DEFAULT_CODE)
     branding = await svc.get_branding(doc.pop("entity_id") or None)
     html = render_html(cfg, branding, doc)

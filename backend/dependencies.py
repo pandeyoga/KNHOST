@@ -109,15 +109,16 @@ async def has_permission(user: Dict[str, Any], module: str, action: str) -> bool
     return action in allowed or "*" in allowed
 
 
-async def require_permission(request: Request, module: str, action: str) -> Dict[str, Any]:
+async def require_permission(request: Request, module: str, action: str, detail: str = "") -> Dict[str, Any]:
+    """`detail` (PK-17, standar Z6) — kalimat 403 untuk manusia; kosong = pesan teknis lama."""
     user = await current_user(request)
     if await has_permission(user, module, action):
         return user
-    raise HTTPException(status_code=403, detail=f"Permission ditolak: {module}.{action}")
+    raise HTTPException(status_code=403, detail=detail or f"Permission ditolak: {module}.{action}")
 
 
 async def require_any_permission(request: Request,
-                                 options: List[tuple]) -> Dict[str, Any]:
+                                 options: List[tuple], detail: str = "") -> Dict[str, Any]:
     """Izin "SALAH SATU dari" — untuk layar yang menyatukan beberapa domain.
 
     FASE E-9 (E9.6): satu rantai retur memuat tiga dokumen milik tiga domain
@@ -136,7 +137,7 @@ async def require_any_permission(request: Request,
             return user
     opts = " / ".join(f"{m}.{a}" for m, a in options)
     raise HTTPException(status_code=403,
-                        detail=f"Permission ditolak: butuh salah satu dari {opts}")
+                        detail=detail or f"Permission ditolak: butuh salah satu dari {opts}")
 
 
 _SECRET_KEY_HINTS = ("password", "passwd", "secret", "token", "api_key", "apikey", "private_key",

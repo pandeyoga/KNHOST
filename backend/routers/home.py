@@ -3,7 +3,7 @@ from typing import Any, Dict, Optional, Union
 
 from fastapi import APIRouter, HTTPException, Request, Query
 
-from dependencies import current_user, permission_matrix, require_role
+from dependencies import current_user, permission_matrix, require_any_permission, require_role
 from entity_scope import entity_ctx
 from services import home_service
 
@@ -105,7 +105,13 @@ async def home_finance(request: Request,
     Dipakai Meja Finance. Seperti papan gudang, yang MEMBATASI adalah penugasan badan
     usaha — bukan nama peran: manajer & pemilik yang membuka layar yang sama harus
     melihat angka yang sama (INV-HOME-01).
+
+    PK-17 (IA-03) — dulu cukup login (Sopir pun melihat nominal & nama pemasok). Kini butuh
+    `contra_bon.view` atau `vendor_bill.view`; papan disaring per izin di `finance_home`.
     """
+    await require_any_permission(request, [("contra_bon", "view"), ("vendor_bill", "view")], detail=(
+        "Anda belum punya akses untuk melihat antrean hutang pemasok. Minta Admin menambahkan akses "
+        "'Hutang Supplier & Kontrabon'."))
     eid = await _own_entity(request, entity_id, allow_combined=True)
     return await home_service.finance_home(eid, await _allowed(request),
                                            await current_user(request))

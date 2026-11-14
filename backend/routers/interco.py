@@ -10,7 +10,7 @@ from typing import Any, Dict, List, Optional
 
 from fastapi import APIRouter, File, Form, HTTPException, Request, UploadFile
 
-from dependencies import audit, require_any_permission, require_permission
+from dependencies import audit, has_permission, require_any_permission, require_permission
 from entity_scope import entity_ctx, guard_party, resolve_scope_ids
 from schemas_interco import (
     IntercoActionIn, IntercoCreate, IntercoReasonIn, IntercoReturnCreate,
@@ -62,11 +62,20 @@ async def interco_meta(request: Request) -> Dict[str, Any]:
     return await ics.meta()
 
 
+#: PK-17 (IA-09) — angka saldo ringkasan yang hanya untuk pemegang `interco_finance.view` (saldo per pasangan PT
+#: sudah dipagari izin itu di `/interco/accounts`).
+SALDO_RINGKASAN = ("net_payable", "net_receivable", "total_receivable", "total_payable")
+
+
 @router.get("/interco/summary")
 async def interco_summary(request: Request, entity_id: str = "") -> Dict[str, Any]:
-    await require_permission(request, "interco", "view")
+    actor = await require_permission(request, "interco", "view")
     scope = await _scope(request, entity_id)
-    return await ics.summary(scope, entity_id)
+    out = await ics.summary(scope, entity_id)
+    if not await has_permission(actor, "interco_finance", "view"):
+        out.update({k: None for k in SALDO_RINGKASAN})
+        out.update({"net_pairs": [], "finance_hidden": True})
+    return out
 
 
 # ── Transaksi ────────────────────────────────────────────────────────────────

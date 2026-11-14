@@ -22,6 +22,11 @@ SIMPAN: dict = {}
 # Tambahan izin bawaan yang SENGAJA dibuat unit sesudah PR-T9 (berkas "sebelum" tetap foto kode sebelum PR-T9).
 TAMBAHAN_SESUDAH = {r: {"inventory": {"configure"}, "goods_receipt": {"configure"}, "makloon": {"configure"}}
                     for r in ("admin", "manager")}   # KF-T1
+for _r in ("admin", "manager", "finance"):   # PK-17 — kelola rekening kas & bank
+    TAMBAHAN_SESUDAH.setdefault(_r, {})["cash"] = {"configure"}
+# Pencabutan izin bawaan yang SENGAJA dibuat unit sesudah PR-T9.
+DICABUT_SESUDAH = {r: {"vendor_bill": {"view"}, "landed_cost": {"view"}, "input_tax": {"view"}}
+                   for r in ("warehouse", "warehouse_admin")}   # PK-17 (IA-02)
 
 
 def _himpunan(perms: dict) -> dict:
@@ -46,6 +51,9 @@ async def test_U01_izin_efektif_sama_dengan_sebelum(klien, kepala_admin):
         sekarang = _himpunan(roles[rid]["permissions"])
         for res, acts in TAMBAHAN_SESUDAH.get(rid, {}).items():
             sekarang[res] = sekarang.get(res, set()) - acts
+        for res, acts in DICABUT_SESUDAH.get(rid, {}).items():
+            assert not (sekarang.get(res, set()) & acts), (rid, res)
+            sekarang[res] = sekarang.get(res, set()) | acts
         assert {k: v for k, v in sekarang.items() if v} == _himpunan(perms), rid
 
 

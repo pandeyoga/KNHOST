@@ -111,6 +111,11 @@ def test_finance_home_boards(finance_token):
         f"{BASE}/api/home/finance",
         headers={"Authorization": f"Bearer {finance_token}", "X-Entity-Id": "ent_ksc"},
     )
+    # PK-17 (IA-03) — papan Meja Finance hanya untuk pemegang contra_bon.view / vendor_bill.view. Peran Finance bawaan
+    # belum memegangnya (sampai MN-T1) → 403 dengan pesan Z6; bila matriks memberinya, papan diperiksa seperti dulu.
+    if r.status_code == 403:
+        assert "antrean hutang pemasok" in r.text, r.text
+        return
     assert r.status_code == 200, r.text
     body = r.json()
     wb = body.get("waiting_boards", [])

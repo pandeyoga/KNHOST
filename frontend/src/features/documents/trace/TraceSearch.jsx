@@ -9,7 +9,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { FileSearch, Loader2, Search } from "lucide-react";
 import EntityBadge from "../../../components/EntityBadge";
 import { formatCurrency } from "../../../utils/formatters";
-import { errText, searchDocs, shortDate } from "./traceApi";
+import { HIDDEN_AMOUNT, HIDDEN_AMOUNT_HINT, errText, isAmountHidden, searchDocs, shortDate } from "./traceApi";
 
 export default function TraceSearch({ entityId, onPick, onError }) {
   const [q, setQ] = useState("");
@@ -87,7 +87,13 @@ export default function TraceSearch({ entityId, onPick, onError }) {
                     {n.ref_count ? ` · ${n.ref_count} referensi` : " · belum ada referensi"}
                   </span>
                 </span>
-                {Number(n.amount) > 0 && (
+                {isAmountHidden(n) ? (
+                  /* PK-17 (K-18) — nominal dokumen di luar izin peran disembunyikan server. */
+                  <span className="shrink-0 text-[11px] font-semibold text-[#8E8E93]" title={HIDDEN_AMOUNT_HINT}
+                    data-testid={`trace-result-amount-hidden-${n.doc_id}`}>
+                    {HIDDEN_AMOUNT}
+                  </span>
+                ) : Number(n.amount) > 0 && (
                   <span className="shrink-0 text-[11.5px] font-semibold tabular-nums text-[#1C1C1E]">
                     {formatCurrency(n.amount)}
                   </span>

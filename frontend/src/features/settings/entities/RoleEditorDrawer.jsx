@@ -61,7 +61,8 @@ export default function RoleEditorDrawer({ role, template, roles, modules, label
   // PR-T9 — izin baru peran dasar yang belum diikuti peran kustom ini.
   const pendingCount = editing ? (role.pending_from_base_count || 0) : 0;
   const pendingList = Object.entries((editing && role.pending_from_base) || {}).map(([res, acts]) =>
-    `${labels?.resource_labels?.[res] || res}: ${(acts || []).map((a) => labels?.action_labels?.[a] || a).join(", ")}`).join("; ");
+    `${labels?.resource_labels?.[res] || res}: ${(acts || []).map((a) => labels?.action_labels?.[`${res}.${a}`]
+      || labels?.action_labels?.[a] || a).join(", ")}`).join("; ");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [discard, setDiscard] = useState(false);

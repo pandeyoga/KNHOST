@@ -139,6 +139,8 @@ MODULE_CATALOG: List[Dict[str, Any]] = [
              "settings-hub", "settings-finance", "settings-cfg-finance"]},   # fase 3 · P8 — aturan piutang & pajak
     {"id": "finance_ops", "group": "Keuangan", "label": "Kas, Bank & Kasus Keuangan",
      "description": "Dasbor keuangan, rekening & saldo, transaksi kas, rekonsiliasi bank, kasus uang nyangkut, amandemen.",
+     # PK-17 — `cash.configure` (kelola rekening kas & bank, menu `bank-accounts`) ikut tingkat "Kelola penuh"
+     # (aksi penuh = aksi Admin di DEFAULT_PERMISSIONS).
      "resources": ["cash", "finance_case", "finance_amendment"],
      "nav": ["keuangan", "finance-tower", "cash-bank", "bank-accounts", "cash-management",
              "bank-reconciliation", "finance-cases",
@@ -330,6 +332,8 @@ ACTION_LABEL = {
     "activate": "Aktif / nonaktifkan", "grade": "Lihat grade", "lot": "Lihat LOT", "origin": "Lihat asal lokal/impor",
     "commercial": "POV komersial (grade selalu tersembunyi)",
     "unlock": "Buka kunci", "untagged_override": "Pengecualian roll tanpa tag", "verify": "Verifikasi", "view_pii": "Lihat data pribadi", "void": "Void", "waive": "Bebaskan",
+    # Label khusus satu pasangan `<sumber daya>.<aksi>` (didahulukan editor peran atas label aksi umum).
+    "cash.configure": "Kelola rekening kas & bank",   # PK-17
 }
 
 

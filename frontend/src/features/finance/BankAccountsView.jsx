@@ -35,6 +35,7 @@ const EMPTY_FORM = { name: "", account_type: "bank", bank_name: "", account_numb
 
 export default function BankAccountsView({ selectedEntity, currentUser }) {
   const canAudit = can(currentUser?.permissions, "audit", "view");
+  const canConfigure = can(currentUser?.permissions, "cash", "configure");   // PK-17 — kelola rekening kas & bank
   const [detailTab, setDetailTab] = useState("ledger");
   const [accounts, setAccounts] = useState([]);
   const srch = useListSearch(accounts, null, { testId: "bank-accounts", pageSize: 24, placeholder: "Cari nama / bank / nomor rekening…" });
@@ -120,6 +121,7 @@ export default function BankAccountsView({ selectedEntity, currentUser }) {
   const closeForm = () => { setShowForm(false); setForm(EMPTY_FORM); setFormErr(""); };
   const submitForm = async (e) => {
     e?.preventDefault?.();
+    if (!canConfigure) return;
     if (!form.name.trim()) { setFormErr("Nama akun wajib diisi."); return; }
     setSaving(true);
     try {
@@ -180,9 +182,11 @@ export default function BankAccountsView({ selectedEntity, currentUser }) {
         <div className="section-head">
           <div className="flex items-center gap-2"><Landmark size={16} className="text-[#0058CC]" /><h2 data-testid="bank-title">Akun Kas & Bank</h2></div>
           <div className="flex items-center gap-2 ml-auto">
-            <button data-testid="bank-add-toggle" className="primary-button" onClick={() => setShowForm(true)}>
-              <Plus size={14} /> Tambah Akun
-            </button>
+            {canConfigure && (
+              <button data-testid="bank-add-toggle" className="primary-button" onClick={() => setShowForm(true)}>
+                <Plus size={14} /> Tambah Akun
+              </button>
+            )}
             <button data-testid="bank-refresh" className="icon-button" onClick={load} aria-label="Muat ulang" title="Muat ulang"><RefreshCw size={14} className={loading ? "animate-spin" : ""} /></button>
           </div>
         </div>
@@ -230,7 +234,7 @@ export default function BankAccountsView({ selectedEntity, currentUser }) {
           ) : loadFailed ? null /* PK-16 — gagal memuat: hanya galat + "Coba lagi", bukan "belum ada akun" */
             : srch.shown.length === 0 ? (
             <div data-testid="bank-empty" className="py-12 text-center text-[12px] text-[#8E8E93]">
-              <Landmark size={26} className="mx-auto mb-2 text-gray-300" />Belum ada akun. Klik “Tambah Akun”.
+              <Landmark size={26} className="mx-auto mb-2 text-gray-300" />Belum ada akun.{canConfigure ? " Klik “Tambah Akun”." : ""}
             </div>
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3" data-testid="bank-cards">

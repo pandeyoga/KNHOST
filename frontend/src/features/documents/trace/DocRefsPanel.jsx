@@ -10,7 +10,7 @@
  */
 import { useCallback, useEffect, useState } from "react";
 import { ExternalLink, GitBranch, Loader2, RefreshCw } from "lucide-react";
-import { errText, fetchRefs, relTone } from "./traceApi";
+import { HIDDEN_AMOUNT_HINT, canOpenNode, errText, fetchRefs, relTone } from "./traceApi";
 import { openTrace } from "./traceDeepLink";
 import { docStatusLabel } from "../../../utils/docStatus";
 
@@ -58,9 +58,11 @@ export default function DocRefsPanel({ docType, docId, onOpenDocument, compact =
           </p>
         </div>
         {r.link?.view && onOpenDocument && (
-          <button type="button" title="Buka dokumen" data-testid={`docrefs-open-${r.doc_id}`}
-            onClick={() => onOpenDocument(r.link)}
-            className="shrink-0 rounded-md border border-[#EDEEF1] p-1 text-[#4A4B52] hover:bg-[#F2F3F5]">
+          /* PK-17 (K-18) — dokumen yang modulnya di luar izin peran: tombol buka mati. */
+          <button type="button" title={canOpenNode(r) ? "Buka dokumen" : HIDDEN_AMOUNT_HINT}
+            data-testid={`docrefs-open-${r.doc_id}`} disabled={!canOpenNode(r)}
+            onClick={() => canOpenNode(r) && onOpenDocument(r.link)}
+            className="shrink-0 rounded-md border border-[#EDEEF1] p-1 text-[#4A4B52] hover:bg-[#F2F3F5] disabled:cursor-not-allowed disabled:opacity-40">
             <ExternalLink size={12} />
           </button>
         )}
