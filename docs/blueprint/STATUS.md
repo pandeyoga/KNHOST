@@ -62,7 +62,7 @@ Papan kerja agen pelaksana. Aturan mengubahnya: `00_ATURAN_EKSEKUSI.md` §5. Uru
 | 55 | PK-26 | Landed cost untuk roll yang sudah terjual | PK-18 | selesai | 550c400 | [PK-26](../reviews/2026-11-13/hasil/PK-26.md) |  |
 | 56 | PK-27 | Biaya roll pada scrap, retur, dan HPP | PK-18 | selesai | 9d29e77 | [PK-27](../reviews/2026-11-13/hasil/PK-27.md) | H4: akun selisih retur beli belum diatur pemilik |
 | 57 | PK-28 | GR/IR: varians, umur, kliring | PK-18 | selesai | 3267c09 | [PK-28](../reviews/2026-11-13/hasil/PK-28.md) | H4: akun Selisih harga pembelian belum diatur pemilik (kliring GR/IR menunggu) |
-| 58 | PK-29 | Rekonsiliasi persediaan per PT; true-up dibatasi | PK-27 | siap |  |  |  |
+| 58 | PK-29 | Rekonsiliasi persediaan per PT; true-up dibatasi | PK-27 | dikerjakan |  |  | Dikerjakan paralel (worktree terpisah), 14 Nov |
 | 59 | PK-30 | Antar-PT: panjang aktual, jalur lama, harga dan PPN | PK-06 | selesai | `a4b7c8d` · `a0ae755` | [PK-30](../reviews/2026-11-13/hasil/PK-30.md) | H4 PPN masukan pembeli non-PKP → Menunggu pemilik |
 | 60 | PK-31 | Eliminasi per periode; rantai A→B→C; retur setelah lunas | PK-30 | selesai | dae12fc | [PK-31](../reviews/2026-11-13/hasil/PK-31.md) |  |
 | 61 | PK-32 | Nota kredit satu mesin | PK-19 | menunggu |  |  |  |
