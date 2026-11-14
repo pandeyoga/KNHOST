@@ -177,44 +177,54 @@ async def submit_leave(emp: Dict[str, Any], payload: Dict[str, Any], actor_name:
     days_list = working_days(date_from, date_to)
     if not days_list:
         raise ValueError("Rentang tanggal tidak valid (pastikan ada hari kerja Senin–Jumat).")
-    days = len(days_list)
-    entity_id = emp.get("entity_id", "")
-    # HR-03 — tanggal yang sudah tercakup cuti lain (pending/approved) ditolak.
-    clash = await db.hr_leave_requests.find_one(
-        {"employee_id": emp["id"], "status": {"$in": ["pending", "approved"]}, "work_dates": {"$in": days_list}},
-        {"_id": 0, "number": 1})
-    if clash:
-        raise ValueError(f"Tanggal bertabrakan dengan pengajuan cuti {clash.get('number', '')}.")
-    reserved: List[tuple] = []
-    if LEAVE_TYPES[ltype]["deduct"]:
-        # reservasi atomik per tahun: sisa = jatah − terpakai − pending (CAS $inc pending)
-        for yr, n in _days_per_year(days_list).items():
-            bal = await recompute_balance(emp["id"], entity_id, yr)
-            ok = await db.hr_leave_balances.update_one(
-                {"id": bal["id"], "$expr": {"$gte": [{"$subtract": [{"$subtract": ["$entitlement", "$used"]},
-                                                                    "$pending"]}, n]}},
-                {"$inc": {"pending": n}})
-            if ok.modified_count != 1:
-                for b_id, k in reserved:
-                    await db.hr_leave_balances.update_one({"id": b_id}, {"$inc": {"pending": -k}})
-                free = int(bal["entitlement"]) - int(bal["used"]) - int(bal["pending"])
-                raise ValueError(f"Saldo cuti {yr} tidak cukup (sisa {max(free, 0)} hari setelah pengajuan "
-                                 f"yang menunggu, diminta {n} hari).")
-            reserved.append((bal["id"], n))
-    number = await next_doc_number("hr_leave_requests", "number", "LV-", entity_id=entity_id)
-    doc = {
-        "id": new_id("leave"), "number": number,
-        "employee_id": emp["id"], "employee_name": emp.get("name", ""),
-        "entity_id": entity_id, "leave_type": ltype, "leave_label": LEAVE_TYPES[ltype]["label"],
-        "date_from": date_from, "date_to": date_to, "days": days, "work_dates": days_list,
-        "reason": payload.get("reason", ""), "attachment_url": payload.get("attachment_url", ""),
-        "status": "pending", "approver": "", "approved_at": "", "reject_reason": "",
-        "created_by": actor_name, "created_at": now_iso(), "updated_at": now_iso(),
-    }
-    await db.hr_leave_requests.insert_one(doc)
-    for yr in _days_per_year(days_list):
-        await recompute_balance(emp["id"], entity_id, yr)
-    return safe_doc(doc)
+    # PK-33 (INV-ATOMIC-01) — klaim KARYAWAN sesudah validasi isian, sebelum cek tabrakan tanggal + reservasi saldo + sisip
+    # pengajuan: dua pengajuan bersamaan untuk karyawan yang sama tidak bisa sama-sama lolos cek tabrakan, dan
+    # `recompute_balance` permintaan kedua tidak lagi menimpa `pending` yang baru dipesan permintaan pertama (saldo cuti
+    # terpesan ganda). Yang kalah 409. Kunci SELALU dilepas (`finally`, hanya kunci milik pemanggil): tabrakan/saldo kurang
+    # adalah hasil cek yang sah, dan semua tulisan di bawah bisa dihitung ulang dari pengajuan (`recompute_balance`).
+    from services import atomic_claim as _saga
+    lk = await _saga.claim("hr_employees", emp["id"], "hr_leave_submit", actor=actor_name)
+    try:
+        days = len(days_list)
+        entity_id = emp.get("entity_id", "")
+        # HR-03 — tanggal yang sudah tercakup cuti lain (pending/approved) ditolak.
+        clash = await db.hr_leave_requests.find_one(
+            {"employee_id": emp["id"], "status": {"$in": ["pending", "approved"]}, "work_dates": {"$in": days_list}},
+            {"_id": 0, "number": 1})
+        if clash:
+            raise ValueError(f"Tanggal bertabrakan dengan pengajuan cuti {clash.get('number', '')}.")
+        reserved: List[tuple] = []
+        if LEAVE_TYPES[ltype]["deduct"]:
+            # reservasi atomik per tahun: sisa = jatah − terpakai − pending (CAS $inc pending)
+            for yr, n in _days_per_year(days_list).items():
+                bal = await recompute_balance(emp["id"], entity_id, yr)
+                ok = await db.hr_leave_balances.update_one(
+                    {"id": bal["id"], "$expr": {"$gte": [{"$subtract": [{"$subtract": ["$entitlement", "$used"]},
+                                                                        "$pending"]}, n]}},
+                    {"$inc": {"pending": n}})
+                if ok.modified_count != 1:
+                    for b_id, k in reserved:
+                        await db.hr_leave_balances.update_one({"id": b_id}, {"$inc": {"pending": -k}})
+                    free = int(bal["entitlement"]) - int(bal["used"]) - int(bal["pending"])
+                    raise ValueError(f"Saldo cuti {yr} tidak cukup (sisa {max(free, 0)} hari setelah pengajuan "
+                                     f"yang menunggu, diminta {n} hari).")
+                reserved.append((bal["id"], n))
+        number = await next_doc_number("hr_leave_requests", "number", "LV-", entity_id=entity_id)
+        doc = {
+            "id": new_id("leave"), "number": number,
+            "employee_id": emp["id"], "employee_name": emp.get("name", ""),
+            "entity_id": entity_id, "leave_type": ltype, "leave_label": LEAVE_TYPES[ltype]["label"],
+            "date_from": date_from, "date_to": date_to, "days": days, "work_dates": days_list,
+            "reason": payload.get("reason", ""), "attachment_url": payload.get("attachment_url", ""),
+            "status": "pending", "approver": "", "approved_at": "", "reject_reason": "",
+            "created_by": actor_name, "created_at": now_iso(), "updated_at": now_iso(),
+        }
+        await db.hr_leave_requests.insert_one(doc)
+        for yr in _days_per_year(days_list):
+            await recompute_balance(emp["id"], entity_id, yr)
+        return safe_doc(doc)
+    finally:
+        await _saga.release("hr_employees", emp["id"], token=(lk.get("saga_lock") or {}).get("token", ""))
 
 
 async def _recompute_years(lv: Dict[str, Any]) -> None:

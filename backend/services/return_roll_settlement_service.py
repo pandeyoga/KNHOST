@@ -565,26 +565,36 @@ async def reverse_all(ret: Dict[str, Any], actor: str, reason: str) -> Dict[str,
 async def back_shipment(ret: Dict[str, Any], roll_ids: List[str], actor: Dict[str, Any]) -> Dict[str, Any]:
     """Surat jalan pengembalian roll ke pelanggan untuk outcome Diskon / Tolak klaim yang barangnya sempat diterima
     gudang. Roll tidak pernah kembali ke persediaan (milik pelanggan) → tanpa jurnal."""
+    from services import atomic_claim as _saga
     from services.shipment_service import _next_shipment_no
     outcomes = ret.get("roll_outcomes") or {}
     pend = [r for r in roll_ids if (outcomes.get(r) or {}).get("back_pending")]
     if not pend:
         raise RollSettlementError("Tidak ada roll Diskon/Tolak yang menunggu dikirim balik.")
     entity = ret.get("entity_id", "")
-    no = await _next_shipment_no(entity)
-    docs = {r["id"]: r async for r in db.inventory_rolls.find({"id": {"$in": pend}}, {"_id": 0, "id": 1, "roll_no": 1, "unit": 1})}
-    rolls = [{"roll_id": r, "roll_no": (docs.get(r) or {}).get("roll_no", ""), "qty": outcomes[r]["qty_back"],
-              "unit": (docs.get(r) or {}).get("unit", "")} for r in pend]
-    doc = {"id": new_id("shp"), "shipment_no": no, "kind": "return_back", "entity_id": entity, "order_id": "",
-           "ref_order_id": ret.get("order_id", ""), "ref_order_number": ret.get("order_number", ""), "return_id": ret["id"],
-           "return_number": ret.get("number", ""), "customer_id": ret.get("customer_id", ""),
-           "customer_name": ret.get("customer_name", ""), "rolls": rolls, "quantity": round(sum(x["qty"] for x in rolls), 2),
-           "status": "dispatched", "created_by": actor.get("name", ""), "created_at": now_iso(), "logistics_id": ""}
-    await db.shipments.insert_one(dict(doc))
+    # PK-33 (INV-ATOMIC-01) — klaim retur berprasyarat roll-roll ini MASIH menunggu dikirim balik, sesudah validasi dan
+    # sebelum nomor surat jalan diambil: dua "Kirim balik" bersamaan (dokumen dibaca keduanya sebelum ada tulisan) tidak
+    # lagi menerbitkan dua surat jalan untuk roll yang sama — yang kalah 409. Tulisan akhir `finish_set` mencabut kunci.
+    await _saga.claim("sales_returns", ret["id"], "return_back_shipment",
+                      precondition={f"roll_outcomes.{r}.back_pending": True for r in pend}, actor=actor.get("name", ""))
+    try:
+        no = await _next_shipment_no(entity)
+        docs = {r["id"]: r async for r in db.inventory_rolls.find({"id": {"$in": pend}}, {"_id": 0, "id": 1, "roll_no": 1, "unit": 1})}
+        rolls = [{"roll_id": r, "roll_no": (docs.get(r) or {}).get("roll_no", ""), "qty": outcomes[r]["qty_back"],
+                  "unit": (docs.get(r) or {}).get("unit", "")} for r in pend]
+        doc = {"id": new_id("shp"), "shipment_no": no, "kind": "return_back", "entity_id": entity, "order_id": "",
+               "ref_order_id": ret.get("order_id", ""), "ref_order_number": ret.get("order_number", ""), "return_id": ret["id"],
+               "return_number": ret.get("number", ""), "customer_id": ret.get("customer_id", ""),
+               "customer_name": ret.get("customer_name", ""), "rolls": rolls, "quantity": round(sum(x["qty"] for x in rolls), 2),
+               "status": "dispatched", "created_by": actor.get("name", ""), "created_at": now_iso(), "logistics_id": ""}
+        await db.shipments.insert_one(dict(doc))
+    except Exception as exc:  # noqa: BLE001 — kunci dibiarkan + alasan tercatat (terlihat di Kunci Saga)
+        await _saga.mark_failed("sales_returns", ret["id"], f"back_shipment: {exc}")
+        raise
     upd = {f"roll_outcomes.{r}.back_pending": False for r in pend}
     upd.update({f"roll_outcomes.{r}.back_shipment_no": no for r in pend})
     upd.update({f"roll_locations.{r}.stage": "returned_to_customer" for r in pend})
     upd["updated_at"] = now_iso()
-    await db.sales_returns.update_one({"id": ret["id"]}, {"$set": upd})
+    await db.sales_returns.update_one({"id": ret["id"]}, _saga.finish_set(upd))
     doc.pop("_id", None)
     return doc

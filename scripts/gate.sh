@@ -290,7 +290,9 @@ STATIK=(
   # AUDIT 2026-09 T-01 Opsi B — INV-ATOMIC-01. Tanpa replica set/transaksi: endpoint tulis
   # multi-koleksi wajib klaim atomik (`atomic_claim.claim`) atau CAS berprasyarat status.
   # Ratchet: jumlah "BELUM DITINJAU" hanya boleh turun (BASELINE_UNREVIEWED di skrip).
-  "guard:atomic_claim SELF-TEST (bukti-merah dua arah, 10 kasus)|python scripts/guardrails/verify_atomic_claim.py --self-test"
+  # PK-33 (DB-01) — pencacah menghubungkan pemanggilan lewat impor nyata (bukan nama polos), kunci REVIEWED =
+  # "METODE /path persis", pola di pembantu modul router yang sama, mekanisme `unit` (ID di INDEKS_UNIT, belum selesai).
+  "guard:atomic_claim SELF-TEST (bukti-merah dua arah, 64 kasus)|python scripts/guardrails/verify_atomic_claim.py --self-test"
   "guard:atomic_claim (INV-ATOMIC-01, saga/CAS endpoint multi-koleksi)|python scripts/guardrails/verify_atomic_claim.py"
   # PK-18 (GL-02, IV-04) — INV-POST-01. Jurnal dokumen lewat `gl_service.post_durable` dan jenisnya terdaftar di
   # `services/posting_registry.py` (panel Posting Gagal). Ratchet ber-pemilik: garis dasar

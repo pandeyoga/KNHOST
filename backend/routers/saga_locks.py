@@ -16,7 +16,9 @@ LOCKED_COLLECTIONS = ["wms_tasks", "sales_orders", "warehouse_transfers", "cycle
                       "mfg_work_orders", "internal_requests",
                       # OPS-04 (P21) — koleksi ber-claim() yang dulu terlewat: kuncinya tak terlihat & tak bisa dilepas.
                       "goods_receipts", "purchase_orders", "purchase_requisitions", "customers", "bank_statement_lines",
-                      "mkt_campaign_costs", "finance_cases"]
+                      "mkt_campaign_costs", "finance_cases",
+                      # PK-33 — klaim karyawan saat pengajuan cuti (`hr_leave_service.submit_leave`).
+                      "hr_employees"]
 
 
 @router.get("/saga-locks")

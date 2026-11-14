@@ -1,5 +1,5 @@
 <!-- DIHASILKAN OTOMATIS oleh scripts/gen_codebase_map.py — JANGAN EDIT TANGAN -->
-<!-- Dihasilkan dari commit: 03eb3e9 pada 2026-11-14 -->
+<!-- Dihasilkan dari commit: 64143aa pada 2026-11-14 -->
 # CODEBASE MAP — Kain Nusantara (dihasilkan otomatis)
 
 Peta ini dihitung dari kode oleh `scripts/gen_codebase_map.py`. Kalau angka di sini
@@ -258,7 +258,7 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 | `rfq.py` | 8 | 222 | `/rfqs`, `/rfqs/{rfq_id}`, `/rfqs/{rfq_id}/award`, `/rfqs/{rfq_id}/cancel`, `/rfqs/{rfq_id}/compare`, `/rfqs/{rfq_id}/quote` … |
 | `rnd.py` ⚠️>800 | 46 | 1060 | `/rnd/base-fabrics`, `/rnd/labdip-history`, `/rnd/lifecycle-board`, `/rnd/meta`, `/rnd/products/{product_id}/supplier-eligibility`, `/rnd/reports/designer-kpi` … |
 | `rnd_org.py` | 3 | 70 | `/rnd/divisions`, `/rnd/divisions/members` |
-| `saga_locks.py` | 3 | 121 | `/saga-locks`, `/saga-locks/{collection}/{doc_id}/inspect`, `/saga-locks/{collection}/{doc_id}/release` |
+| `saga_locks.py` | 3 | 123 | `/saga-locks`, `/saga-locks/{collection}/{doc_id}/inspect`, `/saga-locks/{collection}/{doc_id}/release` |
 | `sales_orders.py` ⚠️>800 | 3 | 857 | `/sales-orders`, `/sales-orders/{order_id}` |
 | `sales_orders_extra.py` ⚠️>800 | 21 | 1014 | `/sales-orders`, `/sales-orders/frequent-products`, `/sales-orders/preview-allocation`, `/sales-orders/preview-lots`, `/sales-orders/preview-roll-reconcile`, `/sales-orders/stats/summary` … |
 | `sales_p04.py` | 5 | 75 | `/customers/{customer_id}/grade-rules`, `/sales-orders/{order_id}/items/{product_id}/roll-candidates`, `/sales/keep-pending`, `/sales/stock-summary` |
@@ -462,7 +462,7 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 | `hr_analytics_service.py` | 210 | HRD H6 service — HR Analytics (Dashboard BI SDM). |
 | `hr_attendance_service.py` | 273 | HRD H1 services — Absensi (attendance). |
 | `hr_kpi_service.py` | 167 | HRD H5 services — KPI Design (input manual per karyawan/periode + rekap). |
-| `hr_leave_service.py` | 427 | HRD H3 services — Cuti, Izin & Lembur (Leave/Permit & Overtime). |
+| `hr_leave_service.py` | 437 | HRD H3 services — Cuti, Izin & Lembur (Leave/Permit & Overtime). |
 | `hr_pay_components.py` | 410 | PY-T1 (PY-01, PY-02) — komponen gaji per PT (`hr_pay_components`): isi awal, validasi, pembangun `components[] |
 | `hr_pay_inputs.py` | 287 | PY-T1 (PY-02, K-37, K-40) — antrean masukan komponen gaji (`hr_pay_inputs`). |
 | `hr_payroll_pdf.py` | 177 | HRD H4 — Payslip PDF (reportlab). Slip gaji ringkas, profesional, Bahasa Indonesia. |
@@ -606,7 +606,7 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 | `return_operator_view.py` | 84 | F-11-layar (uji pra-UAT 2026-10-21) — Gudang & QC membuka retur pelanggan untuk scan & QC. |
 | `return_policy_service.py` | 475 | R0 — Return Policy Engine (Master Data). |
 | `return_replacement_service.py` | 239 | LN-090 T02/T03 — pesanan pengganti nyata untuk retur tukar barang (KLR-03/04/05, owner 2026-10-19). |
-| `return_roll_settlement_service.py` | 590 | UAT 23 Okt (permintaan pemilik) — PENYELESAIAN RETUR PER ROLL, boleh bertahap. |
+| `return_roll_settlement_service.py` | 600 | UAT 23 Okt (permintaan pemilik) — PENYELESAIAN RETUR PER ROLL, boleh bertahap. |
 | `return_rolls_service.py` | 272 | L08 LN-080 — retur hanya dari barang yang BENAR-BENAR terkirim (roll per SJ) + batas kumulatif atomik per SO. |
 | `return_service.py` | 2153 | Sub-fase 1.11 — Returns & Barang Sisa |
 | `return_settlement_policy.py` | 37 | LN-091/LN-092 — kebijakan penyelesaian retur (owner 2026-10-19: KLR-01/02/06/07/10). |
