@@ -369,7 +369,12 @@
    tanpa bergantung pada urutan kelas.
 
    104px = tinggi tombol (~48px) + jarak bawah (24px) + sisa napas (32px).
-   Widget hanya dirender setelah masuk, jadi layar login tidak terpengaruh. */
+   Widget hanya dirender setelah masuk, jadi layar login tidak terpengaruh.
+
+   14 Nov 2026 (perapian Meja Finance, keputusan pemilik): ruang aman ini hanya menolong di AKHIR halaman;
+   saat halaman baru dibuka/digulir widget tetap menutupi angka & kontrol di tepi kanan bawah. Maka di layar
+   > 768 px tombolnya kini di TOPBAR (`TourMenu placement="topbar"`). Ruang aman tetap dipertahankan untuk
+   layar ≤ 768 px (tombol masih mengapung) dan tombol mengapung lain (`.m-back-float`). */
 #main-content { padding-bottom: 104px; }
 
 /* P19 — widget "Bantuan & Panduan" disembunyikan selama dialog/modal terbuka

@@ -1,5 +1,5 @@
 <!-- DIHASILKAN OTOMATIS oleh scripts/gen_codebase_map.py — JANGAN EDIT TANGAN -->
-<!-- Dihasilkan dari commit: 47b48d6 pada 2026-11-15 -->
+<!-- Dihasilkan dari commit: 263ed25 pada 2026-11-15 -->
 # CODEBASE MAP — Kain Nusantara (dihasilkan otomatis)
 
 Peta ini dihitung dari kode oleh `scripts/gen_codebase_map.py`. Kalau angka di sini
@@ -33,7 +33,7 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 | `pagination.py` | 145 |
 | `indexes.py` | 1157 |
 | `bootstrap.py` | 2171 |
-| `login_only_endpoints.py` | 87 |
+| `login_only_endpoints.py` | 104 |
 
 ### Fungsi utilitas — JANGAN re-implementasi
 
@@ -129,7 +129,7 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 | `ai_assist.py` | 7 | 82 | `/actions`, `/actions/{pid}`, `/actions/{pid}/confirm`, `/actions/{pid}/dismiss`, `/actions/{pid}/second`, `/insights` … |
 | `ai_finance_packs.py` | 3 | 126 | `/finance/closing-pack`, `/finance/closing-pack/{pack_id}`, `/finance/closing-pack/{pack_id}/export.xlsx` |
 | `amendments.py` | 10 | 187 | `/amendment-reasons`, `/amendments`, `/amendments/doc/{doc_type}/{doc_id}`, `/amendments/preview`, `/amendments/stats/summary`, `/amendments/{amd_id}` … |
-| `ap_payments.py` | 4 | 85 | `/ap-payments/accounts`, `/ap-payments/pending`, `/ap-payments/{intent_id}/cancel`, `/ap-payments/{intent_id}/resume` |
+| `ap_payments.py` | 4 | 101 | `/ap-payments/accounts`, `/ap-payments/pending`, `/ap-payments/{intent_id}/cancel`, `/ap-payments/{intent_id}/resume` |
 | `approval_policies.py` | 5 | 132 | `/can-decide/me`, `/check`, `/kinds`, `/{doc_kind}` |
 | `approval_rules.py` | 6 | 138 | `/approval-rules`, `/approval-rules/effective`, `/approval-rules/{rule_id}` |
 | `approvals_matrix.py` | 3 | 56 | `/approvals/matrix`, `/approvals/matrix-log`, `/approvals/my-queue` |
@@ -147,7 +147,7 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 | `client_dataset.py` | 6 | 60 | `/batches`, `/batches/{batch_id}`, `/batches/{batch_id}/commit`, `/batches/{batch_id}/rollback`, `/template`, `/upload` |
 | `closing.py` | 7 | 199 | `/finance/closing`, `/finance/closing/checklist`, `/finance/closing/close`, `/finance/closing/preview`, `/finance/closing/status`, `/finance/closing/{closing_id}/reclose` … |
 | `color_library.py` | 14 | 196 | `/color-library`, `/color-library/customer-colors`, `/color-library/customer-colors/{customer_id}/card`, `/color-library/nearest`, `/color-library/supplier-variants`, `/color-library/use-requests` … |
-| `config.py` | 14 | 556 | `/effective`, `/explain`, `/health`, `/history`, `/impact-apply`, `/impact-preview` … |
+| `config.py` | 14 | 570 | `/effective`, `/explain`, `/health`, `/history`, `/impact-apply`, `/impact-preview` … |
 | `consolidation.py` | 7 | 142 | `/consolidation/sync-g6`, `/finance/consolidation/eliminations`, `/finance/consolidation/eliminations/sync-from-pairs`, `/finance/consolidation/eliminations/{elim_id}`, `/finance/consolidation/ic-candidates`, `/finance/consolidation/summary` |
 | `contra_bons.py` | 24 | 405 | `/contra-bons`, `/contra-bons/bank-line-candidates/{line_id}`, `/contra-bons/exchange-schedules`, `/contra-bons/meta`, `/contra-bons/prepare`, `/contra-bons/run-reminder` … |
 | `costing.py` | 2 | 27 | `/wac`, `/wac/{product_id}` |
@@ -202,7 +202,7 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 | `inbound_scan_label.py` | 10 | 333 | `/inbound/rolls/{roll_id}/confirm-measure`, `/inbound/rolls/{roll_id}/putaway`, `/inbound/rolls/{roll_id}/scan`, `/inbound/rolls/{roll_id}/tag`, `/inbound/scan-label/stats`, `/inbound/tasks/{task_id}/scan-label` … |
 | `incentive.py` | 28 | 554 | `/achievement`, `/achievement/export`, `/achievement/sources`, `/components`, `/components/{component_id}`, `/definitions/current` … |
 | `incentive_rates.py` | 4 | 105 | `/incentive-rates`, `/incentive-rates/{rate_id}` |
-| `initial_registration.py` | 22 | 329 | `/registration/freeze`, `/registration/sessions`, `/registration/sessions/{sid}`, `/registration/sessions/{sid}/approve`, `/registration/sessions/{sid}/approve-count`, `/registration/sessions/{sid}/bins` … |
+| `initial_registration.py` | 22 | 349 | `/registration/freeze`, `/registration/sessions`, `/registration/sessions/{sid}`, `/registration/sessions/{sid}/approve`, `/registration/sessions/{sid}/approve-count`, `/registration/sessions/{sid}/bins` … |
 | `input_tax.py` | 6 | 203 | `/input-tax-invoices`, `/input-tax-invoices/eligible-bills`, `/input-tax-invoices/{fpm_id}`, `/input-tax-invoices/{fpm_id}/cancel`, `/tax/vat-summary` |
 | `inspections.py` | 18 | 543 | `/inspections`, `/inspections/export`, `/inspections/meta`, `/inspections/meta/ref-docs`, `/inspections/qc-4point`, `/inspections/queue/qc-tasks` … |
 | `integrations.py` | 8 | 172 | `/admin/integrations`, `/admin/integrations/gemini/test`, `/admin/integrations/openai/test`, `/admin/integrations/whatsapp`, `/admin/integrations/whatsapp/adopt`, `/admin/integrations/whatsapp/test` |
@@ -277,7 +277,7 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 | `so_approvals.py` | 8 | 567 | `/approvals/backlog`, `/approvals/queue`, `/approvals/queue-board/{key}`, `/sales-orders/{order_id}/approvals/{approval_id}/decide`, `/sales-orders/{order_id}/approvals/{approval_id}/evidence`, `/sales-orders/{order_id}/approvals/{approval_id}/evidence/{att_id}/download` … |
 | `so_override.py` | 2 | 58 | `/sales-orders/{order_id}/override`, `/sales-orders/{order_id}/override-context` |
 | `so_release.py` | 3 | 60 | `/sales-orders/{order_id}/approvals/{approval_id}/continue-normal-price`, `/sales-orders/{order_id}/release`, `/sales-orders/{order_id}/review-release` |
-| `special_orders.py` ⚠️>800 | 30 | 1521 | `/special-orders`, `/special-orders/{order_id}`, `/special-orders/{order_id}/approve`, `/special-orders/{order_id}/convert-to-so`, `/special-orders/{order_id}/create-pr`, `/special-orders/{order_id}/create-sku` … |
+| `special_orders.py` ⚠️>800 | 30 | 1523 | `/special-orders`, `/special-orders/{order_id}`, `/special-orders/{order_id}/approve`, `/special-orders/{order_id}/convert-to-so`, `/special-orders/{order_id}/create-pr`, `/special-orders/{order_id}/create-sku` … |
 | `stock_buckets.py` | 9 | 106 | `/stock/atp`, `/stock/buckets`, `/stock/hold`, `/stock/hold/{hold_id}/release`, `/stock/holds`, `/stock/pending-so` … |
 | `stock_figures.py` | 4 | 82 | `/stock/figures`, `/stock/figures/{product_id}`, `/stock/my-site` |
 | `store_credit.py` | 7 | 139 | `/store-credit`, `/store-credit/adjust`, `/store-credit/balance`, `/store-credit/entries/{entry_id}/reverse`, `/store-credit/ledger`, `/store-credit/open-orders` … |
@@ -753,7 +753,7 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 
 | Fitur (`src/features/`) | Berkas | Baris |
 |---|---:|---:|
-| `__tests__` | 153 | 25966 |
+| `__tests__` | 154 | 25996 |
 | `admin` | 36 | 6983 |
 | `approvals` | 9 | 1724 |
 | `catalog` | 24 | 1459 |
@@ -764,7 +764,7 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 | `desks` | 2 | 229 |
 | `documents` | 18 | 2580 |
 | `export` | 9 | 700 |
-| `finance` | 114 | 27053 |
+| `finance` | 114 | 27059 |
 | `home` | 6 | 1203 |
 | `hr` | 40 | 7755 |
 | `incentive` | 8 | 2783 |
@@ -787,7 +787,7 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 | `rfid` | 21 | 3556 |
 | `rnd` | 66 | 7906 |
 | `sales` | 98 | 16014 |
-| `sales_admin` | 11 | 1883 |
+| `sales_admin` | 12 | 1921 |
 | `samples` | 8 | 776 |
 | `settings` | 71 | 13175 |
 | `tanya` | 27 | 2483 |
@@ -806,7 +806,7 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 
 | Berkas | Baris | Batas |
 |---|---:|---:|
-| `backend/routers/special_orders.py` | 1521 | 800 |
+| `backend/routers/special_orders.py` | 1523 | 800 |
 | `backend/routers/sales_returns.py` | 1322 | 800 |
 | `backend/routers/rnd.py` | 1060 | 800 |
 | `backend/routers/purchase_orders.py` | 1036 | 800 |

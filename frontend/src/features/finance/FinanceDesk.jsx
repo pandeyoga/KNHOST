@@ -17,6 +17,7 @@
  * Uang muka pesanan belum dikirim (dulu antrean pantau di meja ini) = kolom di Piutang › Titipan & Saldo Kredit.
  */
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { compareFilledQueues } from "../sales_admin/deskQueueOrder";   // perapian Meja Finance 14 Nov: urutan kelompok
 import { ListChecks, RefreshCw } from "lucide-react";
 import axios, { API } from "../../services/apiClient";
 import ErrorNotice from "../../components/ErrorNotice";
@@ -161,7 +162,12 @@ export default function FinanceDesk({ currentUser, selectedEntity = "all", onOpe
       return { ...r, action: "Bayar", action_kind: "supplier_card" };
     }
     return r;
-  }) })), [perms, src, canOpen, cardsEnabled]);
+  }) }))
+    // Perapian Meja Finance (14 Nov, cabang gifted-cori `01ce23b`): kelompok berisi diurutkan umur tertua → nilai →
+    // jumlah; seri mengikuti urutan `PERLU_TINDAKAN`. Kelompok kosong memang tidak tampil (MN-T2), jadi lipatan
+    // "antrean kosong" dari perapian itu tidak dipakai.
+    .map((g, i) => ({ g, i })).sort((x, y) => compareFilledQueues(x.g, y.g) || x.i - y.i).map((x) => x.g),
+  [perms, src, canOpen, cardsEnabled]);
 
   function flash(msg) { setToast(msg); setTimeout(() => setToast(""), 5000); }
 
