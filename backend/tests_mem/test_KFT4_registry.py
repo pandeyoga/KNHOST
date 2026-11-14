@@ -29,6 +29,10 @@ KFT7_PEMBAYARAN_PELANGGAN = 2
 #: Editor KF-T4 (tabel "Editor baru") memberi PILIHAN pada daftar yang dulu tanpa pilihan: urutan alokasi dan sumbu
 #: varian. Nilai pilihan kunci lain tidak boleh berubah.
 PILIHAN_BARU = {"allocation.priority_order", "rnd.variant_axes_default", "rnd.variant_axes_optional"}
+#: Bidang perilaku yang SENGAJA diubah unit sesudah KF-T4 (potret tetap foto sebelum KF-T4).
+#: PK-38 (K-11) — batas pengurang piutang tanpa uang masuk: bawaan = batas hapus sisa hari ini (Rp 1.000.000),
+#: maksimum Rp 1.000.000.000 (spesifikasi unit).
+BERUBAH_SESUDAH = {"kontrol.pengurang_piutang.batas_nominal": {"default", "max"}}
 
 
 def _penjaga():
@@ -64,6 +68,8 @@ def test_KFT4_U2_bidang_perilaku_sama_dengan_potret():
         e = registry.get(key)
         assert e is not None, f"kunci hilang: {key}"
         for f in ("type", "default", "min", "max", "scopes", "permission", "status", "sensitif_baca"):
+            if f in BERUBAH_SESUDAH.get(key, ()):
+                continue
             assert e[f] == lama[f], (key, f, e[f], lama[f])
         nilai = [o["value"] for o in e["options"]]
         if key in PILIHAN_BARU:

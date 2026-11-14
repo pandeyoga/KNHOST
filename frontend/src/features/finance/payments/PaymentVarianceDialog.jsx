@@ -284,10 +284,13 @@ export default function PaymentVarianceDialog({
         )}
         {picked?.requires_role && (
           <p className="text-[10.5px] text-[#6B6B73]">
-            Keputusan ini hanya bisa disimpan oleh <b>{picked.requires_role}</b> / admin
-            {Number(picked.max_amount || 0) > 0
-              ? ` dan maksimum ${money(picked.max_amount)} untuk ${picked.requires_role}.`
-              : "."}
+            Keputusan ini hanya bisa disimpan oleh <b>{picked.requires_role}</b> / admin.
+          </p>
+        )}
+        {/* PK-38 — batas pengurang piutang tanpa uang masuk dari server (satu angka untuk hapus sisa & kasus). */}
+        {Number(picked?.needs_second_person_above || 0) > 0 && (
+          <p className="text-fs-12 text-kn-text-2" data-testid="pv-second-person-hint">
+            Di atas {money(picked.needs_second_person_above)}, keputusan harus oleh orang yang berbeda dari pembuat dokumen.
           </p>
         )}
         {error && (

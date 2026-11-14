@@ -49,16 +49,19 @@ def _angka(v: Any) -> float:
         return 0.0
 
 
-async def butuh_orang_kedua(aksi: str, entity_id: str, nominal: float = 0.0) -> bool:
+async def butuh_orang_kedua(aksi: str, entity_id: str, nominal: float = 0.0, *,
+                            batas: Optional[float] = None) -> bool:
     """True bila `kontrol.<aksi>.min_orang` untuk PT itu = "2", atau `batas_nominal` > 0 dan `nominal` di atasnya.
 
+    PK-38 — `batas` (opsional) = batas nominal yang sudah dibaca pemanggil (mis. `ar_reduction_guard.batas`, yang
+    memakai kunci lama sebagai cadangan selama kunci baru belum diisi); tanpa itu dibaca dari `kontrol.<aksi>.batas_nominal`.
     Aksi tak dikenal → `KeyError` (salah ketik di titik pasang harus ketahuan, bukan diam-diam lolos)."""
     a = _aksi(aksi)
     if str(await _nilai(kunci_min_orang(aksi), entity_id)).strip() == "2":
         return True
     if a["punya_nominal"]:
-        batas = _angka(await _nilai(kunci_batas(aksi), entity_id))
-        if batas > 0 and _angka(nominal) > batas:
+        nilai_batas = _angka(batas) if batas is not None else _angka(await _nilai(kunci_batas(aksi), entity_id))
+        if nilai_batas > 0 and _angka(nominal) > nilai_batas:
             return True
     return False
 
@@ -100,10 +103,10 @@ def _is_admin(aktor: Dict[str, Any]) -> bool:
 
 async def periksa(aksi: str, dokumen: Dict[str, Any], aktor: Dict[str, Any], entity_id: str = "", *,
                   nominal: float = 0.0, pengaju: Optional[Iterable[str]] = None,
-                  kecualikan_admin: bool = True) -> Dict[str, Any]:
+                  kecualikan_admin: bool = True, batas: Optional[float] = None) -> Dict[str, Any]:
     """Penilaian tanpa efek samping (dipakai layar antrean untuk menonaktifkan tombol dengan alasan jujur)."""
     eid = entity_id or (dokumen or {}).get("entity_id") or ""
-    dua = await butuh_orang_kedua(aksi, eid, nominal)
+    dua = await butuh_orang_kedua(aksi, eid, nominal, batas=batas)   # PK-38 — `batas` dari pemanggil
     sendiri = pelaku_sama(dokumen or {}, aktor or {}, pengaju)
     out = {"dua_orang": dua, "sendiri": sendiri, "admin_sendiri": False, "ditolak": False, "pesan": ""}
     if not dua or not sendiri:
@@ -118,7 +121,8 @@ async def periksa(aksi: str, dokumen: Dict[str, Any], aktor: Dict[str, Any], ent
 async def tolak_bila_pelaku_sama(aksi: str, dokumen: Dict[str, Any], aktor: Dict[str, Any],
                                  entity_id: str = "", *, nominal: float = 0.0,
                                  pengaju: Optional[Iterable[str]] = None,
-                                 kecualikan_admin: bool = True) -> Dict[str, Any]:
+                                 kecualikan_admin: bool = True,
+                                 batas: Optional[float] = None) -> Dict[str, Any]:
     """(1) tidak butuh orang kedua, atau pelaku berbeda → lolos. (2) pelaku sama, aktor Admin,
     `kontrol.admin_boleh_sendiri` ya dan aksi tidak di `kontrol.admin_tetap_dua_orang` → lolos, dicatat di jejak
     persetujuan ("diputuskan sendiri oleh admin"). (3) selain itu 403.
@@ -128,7 +132,7 @@ async def tolak_bila_pelaku_sama(aksi: str, dokumen: Dict[str, Any], aktor: Dict
     Jawaban: `{"dua_orang", "sendiri", "admin_sendiri"}`."""
     eid = entity_id or (dokumen or {}).get("entity_id") or ""
     res = await periksa(aksi, dokumen, aktor, eid, nominal=nominal, pengaju=pengaju,
-                        kecualikan_admin=kecualikan_admin)
+                        kecualikan_admin=kecualikan_admin, batas=batas)
     if res["ditolak"]:
         raise HTTPException(status_code=403, detail=res["pesan"])
     if res["admin_sendiri"]:
@@ -176,6 +180,11 @@ async def aturan(entity_id: str = "") -> Dict[str, Any]:
                      "sumber_batas": _SUMBER.get(b["source_layer"], "default") if b else None,
                      "kunci_min_orang": kunci_min_orang(a["aksi"]),
                      "kunci_batas": kunci_batas(a["aksi"]) if a["punya_nominal"] else None})
+    # PK-38 — batas pengurang piutang yang DIPAKAI mesin (L6): selama kunci baru belum diisi, nilai kunci lama.
+    from services import ar_reduction_guard as _arg
+    for r in rows:
+        if r["aksi"] == _arg.AKSI and r["sumber_batas"] == "default":
+            r["batas_nominal"] = await _arg.batas(eid)
     tetap = res[K_ADMIN_TETAP]["value"]
     return {"rows": rows, "bagian": list(BAGIAN), "entity_id": eid,
             "admin_boleh_sendiri": bool(res[K_ADMIN_BOLEH]["value"]),

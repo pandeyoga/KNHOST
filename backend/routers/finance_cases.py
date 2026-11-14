@@ -58,7 +58,13 @@ async def get_policy(request: Request,
                      ctx: EntityContext = Depends(entity_ctx)) -> Dict[str, Any]:
     """Kebijakan berlaku (SLA, ambang persetujuan, jendela duplikat) dari Pusat Pengaturan."""
     await require_permission(request, "finance_case", "view")
-    return await svc.policy(ctx.active_entity_id or "")
+    ent = ctx.active_entity_id or ""
+    out = await svc.policy(ent)
+    # PK-38 — wizard menampilkan batas pengurang piutang tanpa uang masuk dari server (bukan angka di layar).
+    from services import ar_reduction_guard as _arg
+    out["needs_second_person_above"] = await _arg.batas("" if ent == "all" else ent)
+    out["ar_reduction_actions"] = sorted(_arg.TANPA_KAS["finance_case"])
+    return out
 
 
 @router.get("/finance-cases/stats")

@@ -61,6 +61,10 @@ KFT7_KUNCI = 26
 # tidak bisa diubah pemegang `settings.manage` saja (U02 tetap). Tab "Keuangan" Pusat Pengaturan kini juga terbuka bagi
 # pemegang izin `accounting` (U14, `VIEW_RESOURCE_OVERRIDES["settings-cfg-finance"]`).
 PK37_KUNCI = 1
+# PK-38 — aksi kontrol dua orang baru `bayar_hutang` (K-17): dua kunci `kontrol.bayar_hutang.{min_orang,batas_nominal}`
+# berizin `settings.manage` → ikut terhitung di U02 dan U04. Batas pengurang piutang sudah ada sejak KF-T6 (hanya
+# bawaannya yang berubah); `payment.variance_writeoff_max_amount` tetap aktif.
+PK38_KUNCI = 2
 
 
 def _put(key, value, scope_type="entity", scope_id="ent_ksc"):
@@ -99,7 +103,7 @@ async def test_U02_bisa_ubah_232_kunci(klien, akun, sesi, peran_tanpa_acuan):
     # salah satu dari tiga kunci persetujuan KP-T4.
     assert sum(1 for it in r.json()["items"] if it["can_edit"]) == \
         229 + KFT6_KUNCI - KFT6_TIDAK_DIPAKAI - PRT4_TIDAK_DIPAKAI - KFT2_TIDAK_DIPAKAI - KPT4_TIDAK_DIPAKAI \
-        - KFT3_TIDAK_DIPAKAI + KFT7_KUNCI
+        - KFT3_TIDAK_DIPAKAI + KFT7_KUNCI + PK38_KUNCI
 
 
 async def test_U03_lapisan_grup_tetap_untuk_lintas_pt(klien, akun, sesi, peran_tanpa_acuan):
@@ -122,8 +126,9 @@ async def test_U04_lihat_saja_tidak_bisa_ubah(klien, akun, sesi, peran_tanpa_acu
     assert r.status_code == 200, r.text
     # PK-46 menambah lima kunci PPh 21 bertanggal; KF-T6 kunci kontrol.*; KF-T2 kunci retur & jadwal bayar antar-PT;
     # KP-T7 kunci pengingat & penjadwal; PK-36 kunci akun kontrol; KF-T7 nilai yang dulu ditulis mati; PK-37 kunci
-    # periode tertutup mengunci dokumen.
-    assert r.json()["total"] == 310 + 5 + KFT6_KUNCI + KFT2_KUNCI + KPT7_KUNCI + PK36_KUNCI + KFT7_KUNCI + PK37_KUNCI
+    # periode tertutup mengunci dokumen; PK-38 kontrol dua orang bayar hutang.
+    assert r.json()["total"] == 310 + 5 + KFT6_KUNCI + KFT2_KUNCI + KPT7_KUNCI + PK36_KUNCI + KFT7_KUNCI + PK37_KUNCI \
+        + PK38_KUNCI
 
 
 async def test_U05_manajer_kosong_tidak_lagi_lewat_nama_peran(klien, akun, sesi, peran_manajer_kosong):

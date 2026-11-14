@@ -158,8 +158,12 @@ def run():
             "byproduct_lot": "SISA-T1",
             "rolls": [{"lot": "GREY-MKO-1", "length": 100, "grade": "A"},
                       {"lot": "GREY-MKO-2", "length": 82, "grade": "A"}]}
+    # PK-38 (IA-08) — gudang tidak lagi mengetik nilai tagihan jasa (ongkos/PPN/no. faktur): diisi bagian Pembelian
+    # (pemegang `vendor_bill.create`). Gudang yang mengisi ongkos → 403; penerimaan bernilai manual oleh admin.
     r = requests.post(f"{BASE}/makloon-orders/{mko}/receive", headers=H(wh), json=recv)
-    chk("warehouse receive step 1 → 200", r.status_code == 200, f"status={r.status_code} {r.text[:200]}")
+    chk("PK-38: warehouse receive dengan ongkos jasa → 403", r.status_code == 403, f"status={r.status_code} {r.text[:200]}")
+    r = requests.post(f"{BASE}/makloon-orders/{mko}/receive", headers=H(admin), json=recv)
+    chk("admin (Pembelian) receive step 1 → 200", r.status_code == 200, f"status={r.status_code} {r.text[:200]}")
     if r.status_code == 200:
         o = r.json()
         st = o["steps"][0]

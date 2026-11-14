@@ -1099,7 +1099,15 @@ async def pay(cb_id: str, payload: Dict[str, Any], actor: Dict[str, Any],
     """PK-05 — pemanggil tipis: seluruh alur bayar (periksa → niat → faktur → kas → dokumen → jurnal) ada di
     `ap_payment_service.pay_payable`. Bentuk jawaban lama dipertahankan (+ `payment_intent`, `warning`).
     Galat `ApPaymentError` diteruskan ke router (400/409)."""
-    await _get(cb_id, entity_ids)            # pagar PT sebelum apa pun
+    cb = await _get(cb_id, entity_ids)       # pagar PT sebelum apa pun
+    # PK-38 (IA-12, K-17) — PERIKSA: bila `kontrol.bayar_hutang.*` menuntut orang kedua (bawaan satu orang), penyetuju
+    # kontrabon tidak boleh membayarnya sendiri (403, teks KF-T6). Sebelum niat/kas/jurnal apa pun.
+    from services import dual_control as _dc
+    _ent = cb.get("entity_id", "")
+    _nominal = float(payload.get("amount") or 0) or float((recompute(dict(cb)).get("totals") or {}).get("outstanding") or 0)
+    if await _dc.butuh_orang_kedua("bayar_hutang", _ent, _nominal):
+        await _dc.tolak_bila_pelaku_sama("bayar_hutang", cb, actor, _ent, nominal=_nominal,
+                                         pengaju=[cb.get("approved_by_id") or cb.get("approved_by")])
     from services import ap_payment_service as aps
     res = await aps.pay_payable(
         kind="contra_bon", target_id=cb_id, actor=actor, amount=payload.get("amount"),

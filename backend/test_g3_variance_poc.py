@@ -426,12 +426,22 @@ def main() -> int:  # noqa: C901 — POC memang panjang & berurutan
     r = pay(admin, so5["customer_id"], round(t5 - 400000, 2),
             [{"order_id": so5["id"], "amount": round(t5 - 400000, 2)}])
     rec5 = r.json() if r.status_code in (200, 201) else {}
+    # PK-38 (K-11) — di atas batas pengurang piutang (selama `kontrol.pengurang_piutang.batas_nominal` belum diisi =
+    # kunci lama ini) keputusan harus orang yang BERBEDA dari pembuat kwitansi — bukan lagi "harus admin/direksi".
+    so5b = make_order(admin, qty=12.0)
+    t5b = round(float(so5b.get("grand_total") or 0), 2)
+    r = pay(manager, so5b["customer_id"], round(t5b - 400000, 2),
+            [{"order_id": so5b["id"], "amount": round(t5b - 400000, 2)}])
+    rec5b = r.json() if r.status_code in (200, 201) else {}
+    r_self = decide(manager, rec5b.get("id", "-"), kind="writeoff", reason_code="uncollectible_small")
+    ok(r_self.status_code == 403 and "orang lain" in r_self.text.lower(),
+       "PK-38 — di atas batas, pembuat kwitansi DITOLAK memutus sendiri (harus orang kedua)", r_self.text[:100])
     r_over = decide(manager, rec5["id"], kind="writeoff", reason_code="uncollectible_small")
-    ok(r_over.status_code == 400 and "batas" in r_over.text.lower(),
-       "di atas batas nominal, manager DITOLAK (harus admin/direksi)", r_over.text[:100])
-    r_adm = decide(admin, rec5["id"], kind="writeoff", reason_code="uncollectible_small",
+    ok(r_over.status_code == 200,
+       "PK-38 — di atas batas, Manajer yang bukan pembuat kwitansi boleh memutus (orang kedua)", r_over.text[:100])
+    r_adm = decide(admin, rec5b.get("id", "-"), kind="writeoff", reason_code="uncollectible_small",
                    note="Keputusan direksi")
-    ok(r_adm.status_code == 200, "admin/direksi boleh memutus di atas batas",
+    ok(r_adm.status_code == 200, "orang kedua (admin) memutus kwitansi buatan manajer di atas batas",
        (r_adm.json() or {}).get("number", ""))
     cfg_set(admin, "payment.variance_writeoff_max_amount",
             original.get("payment.variance_writeoff_max_amount") or 1000000)

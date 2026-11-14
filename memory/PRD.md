@@ -36,6 +36,18 @@ GL-01: registri `services/gl_mapping_registry.py` (54 kebutuhan) → koleksi `gl
   Sebagian {rupiah} / Belum + tautan "Cocokkan di Rekonsiliasi Bank" (rekening terpilih). Pembangun ulang
   `rebuild_reconciled`; INV-BNK-02 mencakup semua kas bertanda/berangka rekonsiliasi (tanda manual lama = peringatan;
   memulihkan/menghapusnya = paket perbaikan data, keputusan pemilik).
+- 2026-11-14 PK-38 (wewenang pengurang piutang, bayar kontrabon, nilai jasa makloon, ganti termin; FX-10/FX-16/IA-08/IA-12,
+  K-11/K-14/K-17): satu pintu `services/ar_reduction_guard.py` untuk keputusan yang menurunkan piutang tanpa uang masuk
+  (hapus sisa kurang bayar; kasus biaya bank, uang dipegang karyawan, salah PT) — satu batas
+  `kontrol.pengurang_piutang.batas_nominal` (bawaan Rp 1.000.000; selama belum diisi memakai
+  `payment.variance_writeoff_max_amount`), di atasnya pembuat dokumen ≠ pemutus (403, teks kontrol dua orang), jejak
+  `ar_reduction_checked`; hapus sisa di atas batas kini "orang kedua", bukan "harus admin" (refund & tutup sisa hutang
+  tetap "harus admin"); biaya bank otomatis hanya bila ≤ min(ambang otomatis, batas). Aksi kontrol dua orang baru
+  `bayar_hutang` (bawaan satu orang; pembanding = penyetuju kontrabon); Finance bawaan `contra_bon` view + pay.
+  Catat Jasa / Terima Hasil makloon: tanpa `vendor_bill.create` ongkos/PPN/no. faktur terisi atau biaya lain berbeda dari order → 403,
+  tarif dari kontrak (tarif nol → 400), detail order membawa `service_value_editable`. Koreksi Pesanan: termin lebih
+  longgar (DP % turun, atau sama dan tempo bertambah) butuh `order.release_unpaid` (403; baris amandemen `loosened`,
+  jejak `so_term_loosened`; `override-context` membawa `can_loosen_term`, `current_term`).
 - 2026-11-14 PK-36 (akun kontrol tertutup dari jurnal manual, IC-06/GL-10, K-02): akun piutang, hutang, persediaan,
   dan antar-PT (registri Pemetaan Akun `control` + `CONTROL_LEDGERS`; per PT = kode bawaan ∪ pemetaan efektif ∪ kode
   riwayat pemetaan, `gl_mapping_service.control_accounts`) hanya berubah lewat dokumennya. Jurnal manual (termasuk

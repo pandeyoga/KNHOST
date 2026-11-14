@@ -29,6 +29,31 @@ class OverrideError(Exception):
     pass
 
 
+# ── PK-38 (FX-16, K-14) — ganti termin ke yang lebih longgar = izin setara pengecualian kirim-sebelum-bayar ──────────
+PESAN_TERMIN_LONGGAR = ("Anda belum punya akses untuk melonggarkan termin bayar ({lama} → {baru}). Minta Finance atau "
+                        "Manajer yang mengubahnya, atau minta Admin menambahkan akses 'Pesanan Penjualan'.")
+
+
+def term_shape(code: str, row: Dict[str, Any] = None) -> Dict[str, Any]:
+    """`{code, dp_percent, net_days}` — termin yang tidak ditemukan di master = 0 / 0."""
+    r = row or {}
+    return {"code": code or "", "dp_percent": float(r.get("dp_percent") or 0), "net_days": int(r.get("net_days") or 0)}
+
+
+async def current_term(order: Dict[str, Any]) -> Dict[str, Any]:
+    from services import entity_master_service as ems
+    code = str(order.get("payment_term_code") or "")
+    row = await ems.resolve_row("payment-terms", code, order.get("entity_id") or "", include_inactive=True) if code else None
+    return term_shape(code, row)
+
+
+def lebih_longgar(lama: Dict[str, Any], baru: Dict[str, Any]) -> bool:
+    """ASUMSI unit: lebih longgar = persen wajib-bayar sebelum kirim turun, atau sama dan hari tempo bertambah."""
+    if baru["dp_percent"] < lama["dp_percent"]:
+        return True
+    return baru["dp_percent"] == lama["dp_percent"] and baru["net_days"] > lama["net_days"]
+
+
 async def lock_reason(order: Dict[str, Any]) -> str:
     """'' bila SO masih boleh di-override; selain itu kalimat alasan terkunci."""
     if order.get("order_type") == "sample":
@@ -62,9 +87,11 @@ def _check_date(value: str, label: str) -> None:
         raise OverrideError(f"{label} tidak boleh di masa lalu.")
 
 
-async def _header(order: Dict[str, Any], header: Dict[str, Any]) -> Tuple[Dict[str, Any], List[Dict[str, Any]]]:
+async def _header(order: Dict[str, Any], header: Dict[str, Any], *,
+                  can_loosen_term: bool = True) -> Tuple[Dict[str, Any], List[Dict[str, Any]]]:
     patch: Dict[str, Any] = {}
     diff: List[Dict[str, Any]] = []
+    loosened = False
     for f, label in HEADER_LABEL.items():
         if header.get(f) is None:
             continue
@@ -90,8 +117,15 @@ async def _header(order: Dict[str, Any], header: Dict[str, Any]) -> Tuple[Dict[s
             if not term:
                 raise OverrideError("Termin bayar tidak dikenal.")
             patch["payment_term_name"] = term.get("name", new)
+            # PK-38 — termin lebih longgar dari yang sekarang butuh izin `order.release_unpaid` (403 sebelum apa pun).
+            loosened = lebih_longgar(await current_term(order), term_shape(new, term))
+            if loosened and not can_loosen_term:
+                from fastapi import HTTPException
+                raise HTTPException(status_code=403, detail=PESAN_TERMIN_LONGGAR.format(lama=old or "—", baru=new))
         patch[f] = new
         diff.append(_chg("Pesanan", f, label, shown_old, shown_new))
+        if f == "payment_term_code" and loosened:
+            diff[-1]["loosened"] = True   # PK-38 — baris amandemen menandai pelonggaran termin
     method = patch.get("fulfillment_method", order.get("fulfillment_method") or "kirim")
     if method == "ambil" and not patch.get("pickup_date", order.get("pickup_date")):
         raise OverrideError("Order Pengambilan membutuhkan tanggal ambil.")
@@ -303,7 +337,8 @@ async def _apply_lines(order, items, by_pid, qty_plan, adds, actor, diff) -> Dic
     return patch
 
 
-async def apply(order_id: str, body: Dict[str, Any], actor: Dict[str, Any]) -> Dict[str, Any]:
+async def apply(order_id: str, body: Dict[str, Any], actor: Dict[str, Any], *,
+                can_loosen_term: bool = False) -> Dict[str, Any]:
     from services import atomic_claim as saga
     order = safe_doc(await db.sales_orders.find_one({"id": order_id}, {"_id": 0}))
     if not order:
@@ -314,7 +349,7 @@ async def apply(order_id: str, body: Dict[str, Any], actor: Dict[str, Any]) -> D
     note = (body.get("note") or "").strip()
     if len(note) < 5:
         raise OverrideError("Alasan override wajib diisi (minimal 5 karakter).")
-    hdr_patch, diff = await _header(order, body.get("header") or {})
+    hdr_patch, diff = await _header(order, body.get("header") or {}, can_loosen_term=can_loosen_term)
     by_pid, qty_plan, price_changes, line_diff = _plan_lines(order, body.get("lines") or [])
     diff += line_diff
     adds = [a for a in body.get("add_items") or [] if float(a.get("quantity") or 0) > 0]

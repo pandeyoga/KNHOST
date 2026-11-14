@@ -359,6 +359,7 @@ DEFAULT_PERMISSIONS = {
         # manajer/admin sampai pemilik memutuskan sebaliknya — jangan diperluas sendiri.
         # MN-T1 — pemilik memutuskan K-17: lihat + bayar tagihan & kontrabon ditambahkan blok MN-T1 di akhir berkas
         # (landed cost tetap manajer/admin).
+        # PK-38 (K-17, keputusan pemilik) — `contra_bon` view + pay ditambahkan di blok PK-38 di bawah.
         "product": ["view"],
         "customer": ["view"],
         "template": ["view"],
@@ -709,6 +710,11 @@ for _role, _pairs in {"admin": (("customer", "manage_credit"), ("order", "tax_ov
     for _res, _act in _pairs:
         _cur = DEFAULT_PERMISSIONS[_role].setdefault(_res, ["view"])
         DEFAULT_PERMISSIONS[_role][_res] = list(_cur) + [x for x in (_act,) if x not in _cur]
+# PK-38 (IA-12, K-17) — membayar hutang = pemegang izin bayar (bawaan Finance dan Manajer). Finance menerima
+# `contra_bon` view + pay (BUKAN verify/approve): bayar kontrabon kini bisa dipegang orang yang berbeda dari
+# penyetujunya. Tersalin sekali ke matriks tersimpan (sync_permission_modules); bisa dicabut di Peran & Hak Akses.
+_cur = DEFAULT_PERMISSIONS["finance"].setdefault("contra_bon", [])
+DEFAULT_PERMISSIONS["finance"]["contra_bon"] = list(_cur) + [x for x in ("view", "pay") if x not in _cur]
 
 # ═══════════════════════════════════════════════════════════════════════════
 # PR-T2 (K-47) — wewenang yang dulu ditentukan NAMA PERAN (`require_role`, daftar peran di handler) kini izin biasa:

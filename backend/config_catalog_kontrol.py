@@ -67,7 +67,8 @@ KONTROL_AKSI: List[Dict[str, Any]] = [
     _a("proses_gaji", "Pengesahan gaji", "C", "1", True, _SDM),
     _a("uang_muka", "Uang muka / kasbon", "C", "1", True, _SDM),
     _a("lpj_uang_muka", "Pertanggungjawaban uang muka", "C", "1", True, _SDM),
-    _a("pengurang_piutang", "Bebas denda dan hapus selisih bayar", "C", "1", True, _PJ),
+    # PK-38 — nama diperluas: aksi ini kini juga mencakup kasus keuangan yang menutup piutang tanpa uang masuk.
+    _a("pengurang_piutang", "Pengurang piutang tanpa uang masuk", "C", "1", True, _PJ),
     _a("lewat_batas_kredit", "Izin lewat batas kredit", "C", "1", True, _PJ),
     _a("klaim_makloon", "Klaim selisih makloon", "C", "1", True, _GD),
     _a("permintaan_internal", "Permintaan internal antar-PT", "C", "1", False, _GD),
@@ -75,6 +76,8 @@ KONTROL_AKSI: List[Dict[str, Any]] = [
     _a("nilai_pesanan", "Persetujuan nilai pesanan", "C", "1", True, _PJ),
     _a("buka_kembali_tutup_buku", "Buka kembali tutup buku", "C", "1", False, _BB),
     _a("jurnal_manual", "Jurnal manual", "C", "1", True, _BB),
+    # PK-38 (IA-12, K-17) — bayar kontrabon: pembanding = PENYETUJU kontrabon; bawaan satu orang.
+    _a("bayar_hutang", "Bayar hutang", "C", "1", True, _PB),
 ]
 
 #: KF-T6 serah-terima (b) — titik pasang tiap aksi (`berkas.py:fungsi`).
@@ -106,7 +109,7 @@ _TITIK: Dict[str, Tuple[str, ...]] = {
     "proses_gaji": ("services/hr_payroll_service.py:approve_run",),
     "uang_muka": ("services/cash_advance_service.py:approve_cash_advance",),
     "lpj_uang_muka": ("services/cash_advance_service.py:approve_settlement",),
-    "pengurang_piutang": ("services/penalty_service.py:waive", "services/payment_variance_service.py:decide_receipt", "services/payment_variance_service.py:decide_bill", "routers/payment_variance.py:decide"),
+    "pengurang_piutang": ("services/penalty_service.py:waive", "services/payment_variance_service.py:decide_receipt", "services/payment_variance_service.py:decide_bill", "routers/payment_variance.py:decide", "services/ar_reduction_guard.py:periksa"),   # PK-38 — + satu pintu pengurang piutang
     "lewat_batas_kredit": ("routers/crm.py:decide_credit_override",),
     "klaim_makloon": ("routers/makloon_orders.py:approve_claim",),
     "permintaan_internal": ("services/internal_request_service.py:convert",),
@@ -114,6 +117,7 @@ _TITIK: Dict[str, Tuple[str, ...]] = {
     "nilai_pesanan": ("routers/sales_orders_extra.py:approve_order",),
     "buka_kembali_tutup_buku": ("routers/closing.py:_reopen_dua_orang",),
     "jurnal_manual": ("routers/gl.py:create_journal", "services/journal_proposal_service.py:setujui"),
+    "bayar_hutang": ("services/contra_bon_service.py:pay",),   # PK-38
 }
 for _x in KONTROL_AKSI:
     _x["titik"] = _TITIK.get(_x["aksi"], ())
@@ -121,7 +125,7 @@ for _x in KONTROL_AKSI:
 # KF-T4 — sub-judul di Pengaturan (≤ 14 kunci per sub-judul): bagian layar dipecah bila lebih besar.
 _SUB_JUDUL: Dict[str, Tuple[str, ...]] = {
     "dua-orang-pembelian": ("permintaan_pembelian", "setujui_po", "po_tingkat_berikut", "retur_pembelian"),
-    "dua-orang-hutang": ("tagihan_pemasok", "biaya_masuk", "kontrabon", "tagihan_kampanye"),
+    "dua-orang-hutang": ("tagihan_pemasok", "biaya_masuk", "kontrabon", "tagihan_kampanye", "bayar_hutang"),
     "dua-orang-piutang": ("pengurang_piutang", "lewat_batas_kredit"),
 }
 _SUB_BAGIAN = {_PJ: "dua-orang-penjualan", _GD: "dua-orang-gudang", _SDM: "dua-orang-sdm", _BB: "dua-orang-buku"}
@@ -130,7 +134,7 @@ _PENDEK: Dict[str, str] = {
     "po_custom": "Pesanan khusus", "permintaan_pembelian": "Permintaan pembelian", "amandemen": "Koreksi dokumen",
     "po_tingkat_berikut": "PO tingkat berikutnya", "susut_makloon": "Susut makloon",
     "registrasi_stok_awal": "Nilai stok awal", "lpj_uang_muka": "Laporan uang muka",
-    "pengurang_piutang": "Bebas denda/hapus selisih", "lewat_batas_kredit": "Lewat batas kredit",
+    "pengurang_piutang": "Pengurang piutang", "lewat_batas_kredit": "Lewat batas kredit",   # PK-38
     "nilai_pesanan": "Nilai pesanan",
 }
 for _x in KONTROL_AKSI:
@@ -153,6 +157,22 @@ def kunci_batas(aksi: str) -> str:
 
 
 _OPSI = ({"value": "1", "label": "Cukup satu orang"}, {"value": "2", "label": "Harus dua orang"})
+
+#: PK-38 (FX-10, K-11) — satu batas untuk semua pengurang piutang tanpa uang masuk. Bawaan = batas hapus sisa yang
+#: berlaku hari ini (Rp 1.000.000); selama kunci ini belum pernah diisi (grup maupun PT), nilai kunci lama
+#: `payment.variance_writeoff_max_amount` yang dipakai (`services/ar_reduction_guard.py:batas`).
+_BATAS_KHUSUS: Dict[str, Dict[str, Any]] = {
+    "pengurang_piutang": dict(
+        default=1000000, min=0, max=1000000000, step=100000, unit="Rp",
+        label="Batas pengurang piutang tanpa uang masuk",
+        help=("Berlaku untuk hapus sisa kurang bayar dan penyelesaian kasus yang menutup piutang tanpa uang masuk "
+              "(biaya bank, uang dipegang karyawan, salah PT). Di atas nilai ini keputusan harus diambil orang yang "
+              "berbeda dari pembuat dokumennya. 0 = tidak dipakai."),
+        impact="Menaikkan nilai ini memperbesar piutang yang bisa dihapus satu orang.",
+        example="Rp 1.000.000 · biaya bank Rp 1.500.000 diputus pembuat kasusnya sendiri → ditolak, harus orang kedua",
+        consumers=("services/ar_reduction_guard.py:batas", f"{_DC}:butuh_orang_kedua"),
+        related=(kunci_min_orang("pengurang_piutang"), "case.auto_bank_charge_max")),
+}
 #: KF-T4 — kartu di "Semua pengaturan" tanpa editor: kontrol dua orang diubah di satu tempat (tab Kontrol dua orang).
 _EDIT_AT = {"view": "settings-dual-control", "label": "Persetujuan › Kontrol dua orang"}
 
@@ -166,7 +186,11 @@ for _x in KONTROL_AKSI:
       example=f"Rina mengajukan “{_x['label']}” lalu memutuskannya sendiri → ditolak bila 2, lolos bila 1",
       consumers=_cons, risk="high", requires_reason=True, permission=("settings", "manage"), edit_at=_EDIT_AT,
       related=((kunci_batas(_x["aksi"]),) if _x["punya_nominal"] else ()) + (K_ADMIN_BOLEH,))
-    if _x["punya_nominal"]:
+    if _x["punya_nominal"] and _x["aksi"] in _BATAS_KHUSUS:
+        E(kunci_batas(_x["aksi"]), group="persetujuan", section=_x["sub_judul"], type="money", scopes=G,
+          risk="high", requires_reason=True, permission=("settings", "manage"), edit_at=_EDIT_AT,
+          **_BATAS_KHUSUS[_x["aksi"]])
+    elif _x["punya_nominal"]:
         E(kunci_batas(_x["aksi"]), group="persetujuan", section=_x["sub_judul"], type="money", default=0, min=0, max=1000000000000,
           step=1000000, unit="Rp", scopes=G,
           label=f"{_PENDEK.get(_x['aksi'], _x['label'])}: dua orang di atas",

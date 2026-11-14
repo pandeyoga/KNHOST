@@ -820,8 +820,27 @@ async def _flush_unabsorbed_service(order: Dict[str, Any], label: str) -> None:
         "Tak Terserap (5-1200), keluar dari WIP.")
 
 
+# ─── PK-38 (IA-08) — nilai tagihan jasa diisi bagian Pembelian ───────────────
+PESAN_NILAI_JASA_GUDANG = ("Nilai tagihan jasa diisi bagian Pembelian. Kosongkan Ongkos Jasa, PPN, dan No. Faktur "
+                           "Mitra, lalu simpan lagi; tarif dihitung dari kontrak.")
+PESAN_TARIF_KONTRAK_NOL = ("Tarif jasa langkah ini belum ada di kontrak. Minta bagian Pembelian mengisi tarifnya, lalu "
+                           "catat lagi.")
+
+
+def _nilai_jasa_dari_kontrak(data: Dict[str, Any], step: Dict[str, Any]) -> Dict[str, Any]:
+    """Pelaku tanpa izin `vendor_bill.create` tidak menentukan nilai tagihan jasa: ongkos/PPN/no. faktur terisi, atau
+    biaya lain yang berbeda dari biaya lain langkah → 403. Selain itu tarif dihitung dari kontrak/basis langkah dan
+    biaya lain diambil dari order (biaya lain 0/kosong = "tidak diisi")."""
+    step_aux = round(float(step.get("aux_cost") or 0), 2)
+    aux_in = round(parse_decimal(data.get("aux_cost") or 0, 2), 2)
+    if (parse_decimal(data.get("tariff") or 0, 2) > 0 or parse_decimal(data.get("ppn") or 0, 2) > 0
+            or str(data.get("supplier_invoice_no") or "").strip() or (aux_in > 0 and aux_in != step_aux)):
+        raise HTTPException(status_code=403, detail=PESAN_NILAI_JASA_GUDANG)
+    return {**data, "tariff": 0, "ppn": 0, "supplier_invoice_no": "", "aux_cost": step_aux}
+
+
 async def record_service_step(mko_id: str, seq: int, data: Dict[str, Any], *,
-                              actor_name: str = "system") -> Dict[str, Any]:
+                              actor_name: str = "system", can_set_service_value: bool = True) -> Dict[str, Any]:
     """FASE T — selesaikan langkah **jasa murni** (mis. pembuatan kasa/screen).
 
     Tidak ada bahan yang keluar gudang dan tidak ada roll yang lahir; yang terjadi
@@ -852,6 +871,9 @@ async def record_service_step(mko_id: str, seq: int, data: Dict[str, Any], *,
         if prev.get("status") != "received":
             raise HTTPException(status_code=409,
                                 detail=f"Langkah {seq - 1} harus diselesaikan dulu")
+
+    if not can_set_service_value:   # PK-38 (IA-08) — sebelum tarif dihitung & tagihan lahir
+        data = _nilai_jasa_dari_kontrak(data, step)
 
     entity_id = order["entity_id"]
     # PK-37 (K-03) — PERIKSA periode buku hari ini sebelum tagihan jasa & jurnalnya dicatat.
@@ -888,6 +910,8 @@ async def record_service_step(mko_id: str, seq: int, data: Dict[str, Any], *,
                       else step.get("aux_cost", 0)) or 0, 2)
     ppn = round(float(data.get("ppn") or 0), 2)
     net_service = round(tariff + aux, 2)
+    if net_service <= 0 and not can_set_service_value:   # PK-38 — pelaku tidak bisa mengisi tarifnya sendiri
+        raise HTTPException(status_code=400, detail=PESAN_TARIF_KONTRAK_NOL)
     if net_service <= 0:
         raise HTTPException(
             status_code=400,
@@ -963,7 +987,7 @@ async def record_service_step(mko_id: str, seq: int, data: Dict[str, Any], *,
 # ─── Receive ─────────────────────────────────────────────────────────────────
 
 async def receive_step(mko_id: str, seq: int, data: Dict[str, Any], *,
-                       actor_name: str = "system") -> Dict[str, Any]:
+                       actor_name: str = "system", can_set_service_value: bool = True) -> Dict[str, Any]:
     order = await _get_order(mko_id)
     if order.get("status") == CANCELLED:
         raise HTTPException(status_code=409, detail="Order sudah dibatalkan — catat retur bahan, bukan penerimaan hasil")
@@ -978,6 +1002,8 @@ async def receive_step(mko_id: str, seq: int, data: Dict[str, Any], *,
             detail=f"Langkah {seq} ({step.get('stage_label') or step.get('process_type')}) "
                    "adalah JASA MURNI — tidak ada kain yang diterima. Selesaikan dengan "
                    "aksi \"Catat Jasa\".")
+    if not can_set_service_value:   # PK-38 (IA-08) — sebelum klaim & konsumsi roll input
+        data = _nilai_jasa_dari_kontrak(data, step)
     # PK-37 (K-03) — PERIKSA periode buku hari ini sebelum roll hasil lahir (jurnal WIP → persediaan).
     from services.book_date import periksa_periode_dokumen_409
     await periksa_periode_dokumen_409(order.get("entity_id") or "", None, jenis="dokumen makloon")

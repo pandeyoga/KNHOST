@@ -349,6 +349,12 @@ export default function CasePlaybookWizard({ caseData, reasons, entities, custom
             value={note} onChange={(e) => setNote(e.target.value)} />
         </div>
 
+        {/* PK-38 — aksi yang menutup piutang tanpa uang masuk: batas dari server (`needs_second_person_above`). */}
+        {(policy?.ar_reduction_actions || []).includes(action?.code) && Number(policy?.needs_second_person_above || 0) > 0 && (
+          <p className="text-fs-12 text-kn-text-2" data-testid="case-second-person-hint">
+            Di atas {formatCurrency(policy.needs_second_person_above)}, keputusan harus oleh orang yang berbeda dari pembuat dokumen.
+          </p>
+        )}
         {needsApproval && (
           <div className="flex items-start gap-2 rounded-lg border border-[#F3C9C7] bg-[#FDECEA] px-3 py-2 text-[11px] text-[#8A2A20]"
             data-testid="case-approval-warning">

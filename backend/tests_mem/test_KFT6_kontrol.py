@@ -21,7 +21,13 @@ AWAL_DUA = {"acc_desain", "acc_sample", "po_custom", "permintaan_pembelian", "ha
 BERNOMINAL = {"po_custom", "permintaan_pembelian", "amandemen", "setujui_po", "tagihan_pemasok", "biaya_masuk",
               "kontrabon", "tagihan_kampanye", "retur_antar_pt", "susut_makloon", "retur_penjualan",
               "retur_pembelian", "proses_gaji", "uang_muka", "lpj_uang_muka", "pengurang_piutang",
-              "lewat_batas_kredit", "klaim_makloon", "nilai_pesanan", "jurnal_manual"}
+              "lewat_batas_kredit", "klaim_makloon", "nilai_pesanan", "jurnal_manual",
+              "bayar_hutang"}   # PK-38 (K-17)
+# PK-38 — aksi ke-36 `bayar_hutang` (bayar kontrabon; bawaan satu orang, bernominal) → 36 aksi, 21 bernominal,
+# 59 kunci `kontrol.*`. Batas pengurang piutang: bawaan Rp 1.000.000, maksimum Rp 1.000.000.000 (K-11).
+N_AKSI = 36
+N_KUNCI = 59
+BATAS_KHUSUS = {"pengurang_piutang": (1000000, 1000000000)}
 
 
 def _kontrol():
@@ -41,7 +47,7 @@ async def _cabut(klien, h, key, scope_id):
 
 async def test_katalog_35_aksi_20_bernominal():
     aksi = [a["aksi"] for a in _kontrol()]
-    assert len(aksi) == len(set(aksi)) == 35
+    assert len(aksi) == len(set(aksi)) == N_AKSI
     assert {a["aksi"] for a in _kontrol() if a["awal"] == "2"} == AWAL_DUA
     assert {a["aksi"] for a in _kontrol() if a["punya_nominal"]} == BERNOMINAL
     for a in aksi:
@@ -54,11 +60,12 @@ async def test_katalog_35_aksi_20_bernominal():
         b = registry.get(f"kontrol.{a}.batas_nominal")
         assert (b is not None) == (a in BERNOMINAL), a
         if b:
-            assert (b["type"], b["default"], b["min"], b["max"], b["unit"]) == ("money", 0, 0, 1000000000000, "Rp")
+            awal, maks = BATAS_KHUSUS.get(a, (0, 1000000000000))
+            assert (b["type"], b["default"], b["min"], b["max"], b["unit"]) == ("money", awal, 0, maks, "Rp")
     assert registry.require("kontrol.admin_boleh_sendiri")["default"] is True
     assert registry.require("kontrol.admin_tetap_dua_orang")["default"] == [
         "susut_makloon", "pengecualian_retur", "klaim_desain", "registrasi_stok_awal"]
-    assert len([k for k in registry.keys() if k.startswith("kontrol.")]) == 57
+    assert len([k for k in registry.keys() if k.startswith("kontrol.")]) == N_KUNCI
 
 
 async def test_U01_bawaan(aplikasi):
@@ -129,7 +136,7 @@ async def test_aturan_endpoint(klien, kepala_admin):
     r = await klien.get("/api/kontrol/aturan", headers=kepala_admin, params={"entity_id": "ent_ksc"})
     assert r.status_code == 200, r.text
     j = r.json()
-    assert len(j["rows"]) == 35 and j["can_edit"] is True
+    assert len(j["rows"]) == N_AKSI and j["can_edit"] is True
     assert j["admin_boleh_sendiri"] is True
     assert j["admin_tetap_dua_orang"] == ["susut_makloon", "pengecualian_retur", "klaim_desain", "registrasi_stok_awal"]
     po = next(x for x in j["rows"] if x["aksi"] == "setujui_po")
@@ -148,7 +155,7 @@ async def test_U11_tim_kecil_satu_pt(klien, kepala_admin):
              for a in _kontrol()]
     r = await klien.put("/api/config/values", headers=kepala_admin, json={"items": items})
     assert r.status_code == 200, r.text
-    assert r.json()["count"] == 35
+    assert r.json()["count"] == N_AKSI
     try:
         for a in _kontrol():
             assert await butuh_orang_kedua(a["aksi"], "ent_ksc") is False, a["aksi"]
@@ -199,7 +206,7 @@ _TAK_SAH = {"enum": "3", "money": -1, "bool": "bukan-bool", "list": "bukan-dafta
 
 async def test_U17_putaran_semua_kunci_kontrol(klien, kepala_admin):
     kunci = [k for k in registry.keys() if k.startswith("kontrol.")]
-    assert len(kunci) == 57
+    assert len(kunci) == N_KUNCI
     for key in kunci:
         e = registry.require(key)
         awal = await resolver.value_of(key)

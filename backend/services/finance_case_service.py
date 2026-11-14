@@ -495,9 +495,19 @@ async def resolve(case_id: str, payload: Dict[str, Any], actor: Dict[str, Any],
     if payload.get("allocations"):
         amount = _round(sum(float(a.get("amount") or 0) for a in payload["allocations"]))
     # Selisih biaya bank kecil boleh selesai tanpa persetujuan (kebijakan admin).
-    auto_ok = (case["case_type"] == "selisih_biaya_bank"
-               and amount <= float(pol["auto_charge_max"] or 0) + EPS)
+    # PK-38 — dan tidak melewati batas pengurang piutang tanpa uang masuk: syaratnya `amount <= min(auto, batas)`.
+    from services import ar_reduction_guard as _arg
+    auto_max = float(pol["auto_charge_max"] or 0)
+    if case["case_type"] == "selisih_biaya_bank":
+        _b = await _arg.batas(case.get("entity_id") or "")
+        if _b > 0:
+            auto_max = min(auto_max, _b)
+    auto_ok = (case["case_type"] == "selisih_biaya_bank" and amount <= auto_max + EPS)
     approver = "" if auto_ok else _assert_authority(action, amount, pol, actor)
+    # PK-38 (FX-10) — biaya bank, uang dipegang karyawan, salah PT = pengurang piutang tanpa uang masuk: satu batas +
+    # pembuat kasus ≠ penyelesai di atasnya (403), SEBELUM klaim kasus dan dokumen turunan apa pun.
+    await _arg.periksa(sumber="finance_case", jenis=action["code"], entity_id=case.get("entity_id") or "",
+                       nominal=amount, dokumen=case, aktor=actor)
     # PK-37 (K-03) — PERIKSA periode buku hari ini sebelum kasus diklaim & dokumen turunan lahir (HTTP 409; CaseError
     # dipetakan router ke 400).
     from services.book_date import periksa_periode_dokumen_409

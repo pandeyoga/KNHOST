@@ -154,18 +154,22 @@ async def decide(receipt_id: str, body: DecideBody, request: Request) -> Dict[st
     await _aps.guard_door("payment_variance", actor, doc=rcpt,
                           amount=abs(float(((rcpt or {}).get("variance") or {}).get("delta") or 0)))   # KP-T4
     # KF-T6 — pencatat kwitansi ≠ pemutus selisih dari `kontrol.pengurang_piutang.*` (403 di jalur antrean).
-    from services import dual_control as _dc
-    _v = (rcpt or {}).get("variance") or {}
-    await _dc.tolak_bila_pelaku_sama(
-        "pengurang_piutang", rcpt or {}, actor, (rcpt or {}).get("entity_id", ""),
-        nominal=float(body.model_dump().get("amount") or 0) or abs(float(_v.get("delta") or 0)),
-        pengaju=[(rcpt or {}).get("created_by")])
+    # PK-38 — hapus sisa (pengurang piutang tanpa uang masuk) diperiksa satu pintu `ar_reduction_guard` di dalam
+    # `decide_receipt` (batas nominal bersama + orang kedua → `VarianceForbidden` = 403). Pilihan lain: jumlah orang saja.
+    from services import ar_reduction_guard as _arg
+    if not _arg.berlaku("payment_variance", body.kind):
+        from services import dual_control as _dc
+        await _dc.tolak_bila_pelaku_sama(
+            "pengurang_piutang", rcpt or {}, actor, (rcpt or {}).get("entity_id", ""), nominal=0.0,
+            pengaju=[(rcpt or {}).get("created_by")])
     if str(body.model_dump().get("kind") or "") not in ("outstanding", "reschedule"):
         # PK-37 (K-03) — jalur antrean: PERIKSA periode buku hari ini → 409 (di layanan menjadi VarianceError).
         from services.book_date import periksa_periode_dokumen_409
         await periksa_periode_dokumen_409((rcpt or {}).get("entity_id") or "", None, jenis="keputusan selisih bayar")
     try:
         row = await pvs.decide_receipt(receipt_id, body.model_dump(), actor)
+    except pvs.VarianceForbidden as exc:
+        raise _err(exc, 403) from exc
     except pvs.VarianceError as exc:
         raise _err(exc) from exc
     await audit(actor.get("name", ""), "payment_variance_decided",

@@ -9,6 +9,16 @@ import { OverrideLinesEditor } from "./OverrideLinesEditor";
 
 const num = (v) => (v === "" || v == null ? null : Number(v));
 
+// PK-38 (FX-16) — sama dengan server (`so_override_service.lebih_longgar`): persen wajib-bayar sebelum kirim turun, atau
+// sama dan hari tempo bertambah. Termin tak dikenal = 0 % / 0 hari.
+const bentuk = (t) => ({ dp: Number(t?.dp_percent) || 0, hari: Number(t?.net_days) || 0 });
+export function terminLebihLonggar(lama, baru) {
+  const a = bentuk(lama); const b = bentuk(baru);
+  return b.dp < a.dp || (b.dp === a.dp && b.hari > a.hari);
+}
+export const PETUNJUK_TERMIN_MATI = "Butuh akses pengecualian kirim sebelum bayar";
+export const PERINGATAN_TERMIN_LONGGAR = "Termin ini lebih longgar. Pesanan bisa dikirim sebelum dibayar; perubahan dicatat atas nama Anda.";
+
 /**
  * 2026-10 — OVERRIDE SO (Admin Sales · Manager · Admin), hanya sebelum picking.
  * Header & baris langsung berlaku (tercatat amandemen); harga/diskon → menunggu
@@ -33,6 +43,15 @@ export default function SalesOrderOverrideDialog({ order, onClose, onDone }) {
   const hv = (k) => header[k] ?? order[k] ?? "";
   const setH = (k, v) => setHeader((cur) => ({ ...cur, [k]: v }));
   const locked = ctx?.locked_reason;
+  // PK-38 — termin yang lebih longgar dari termin pesanan sekarang mati bila server bilang pelaku tidak berizin.
+  const termNow = ctx?.current_term || null;
+  const longgar = (t) => Boolean(termNow) && t.code !== termNow.code && terminLebihLonggar(termNow, t);
+  const termOptions = terms.map((t) => {
+    const mati = longgar(t) && !ctx?.can_loosen_term;
+    return { value: t.code, label: mati ? `${t.name} — ${PETUNJUK_TERMIN_MATI}` : t.name, disabled: mati };
+  });
+  const termPicked = terms.find((t) => t.code === header.payment_term_code);
+  const warnLoosen = Boolean(termPicked) && Boolean(ctx?.can_loosen_term) && longgar(termPicked);
 
   async function submit() {
     setBusy(true); setError("");
@@ -76,7 +95,10 @@ export default function SalesOrderOverrideDialog({ order, onClose, onDone }) {
               <div>
                 <label className="text-[9px] font-bold uppercase tracking-wide text-[#8E8E93]">Termin bayar</label>
                 <KNSelect data-testid="override-term" className="field" value={hv("payment_term_code")} onValueChange={(v) => setH("payment_term_code", v)}
-                  options={terms.map((t) => ({ value: t.code, label: t.name }))} />
+                  options={termOptions} />
+                {warnLoosen && (
+                  <p data-testid="override-term-loosen-warning" className="mt-1 text-fs-12 text-kn-warning-text">{PERINGATAN_TERMIN_LONGGAR}</p>
+                )}
               </div>
               <div>
                 <label className="text-[9px] font-bold uppercase tracking-wide text-[#8E8E93]">Metode</label>

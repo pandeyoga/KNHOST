@@ -22,6 +22,10 @@ def pesan(label: str) -> str:
             "Admin dapat mengubah aturan ini di Pengaturan › Persetujuan › Kontrol dua orang.")
 
 
+# PK-38 — label aksi `pengurang_piutang` diperluas (kini juga kasus keuangan yang menutup piutang tanpa uang masuk).
+LABEL_PENGURANG_PIUTANG = "Pengurang piutang tanpa uang masuk"
+
+
 def _id(awal: str) -> str:
     return f"{awal}_kft6c_{uuid.uuid4().hex[:8]}"
 
@@ -104,7 +108,7 @@ async def test_pengurang_piutang_bebas_denda(klien, db, orang):
     p = {"id": _id("pen"), "number": "DN-KFT6", "entity_id": "ent_ksc", "status": "issued", "amount": 50000,
          "paid_amount": 0, "customer_id": "", "created_by": orang["mgr"]["name"], "created_at": now_iso()}
     await db.penalties.insert_one(dict(p))
-    await _dua_orang(klien, "pengurang_piutang", "Bebas denda dan hapus selisih bayar",
+    await _dua_orang(klien, "pengurang_piutang", LABEL_PENGURANG_PIUTANG,
                      f"/api/penalties/{p['id']}/waive", orang, {"reason_code": "penalty_waiver", "note": "uji"})
 
 
@@ -113,7 +117,7 @@ async def test_pengurang_piutang_selisih_kwitansi(klien, db, orang):
           "created_by": orang["mgr"]["id"], "created_by_name": orang["mgr"]["name"],
           "variance": {"direction": "under", "delta": -1000, "needs_decision": True}, "created_at": now_iso()}
     await db.ar_receipts.insert_one(dict(rc))
-    await _dua_orang(klien, "pengurang_piutang", "Bebas denda dan hapus selisih bayar",
+    await _dua_orang(klien, "pengurang_piutang", LABEL_PENGURANG_PIUTANG,
                      f"/api/payment-variances/receipt/{rc['id']}/decide", orang,
                      {"kind": "writeoff", "reason_code": "rounding_diff", "amount": 1000})
 

@@ -34,6 +34,18 @@ const ISSUE_MODES = [
 // FIX-3a (INP-10) — satu pengurai angka isian (koma desimal Indonesia), NaN → 0.
 const dec = (v) => { const n = parseDecimal(v); return Number.isFinite(n) ? n : 0; };
 
+// PK-38 (IA-08) — nilai tagihan jasa (ongkos, biaya lain, PPN, no. faktur) diisi bagian Pembelian. Server menandai per
+// langkah `service_value_editable`; bila salah isiannya tidak ditampilkan dan tarif dihitung dari kontrak.
+export const nilaiJasaBolehDiisi = (step) => step?.service_value_editable !== false;
+export const KETERANGAN_NILAI_JASA = "Nilai tagihan jasa dihitung dari kontrak. Bila perlu diubah, hubungi bagian Pembelian.";
+function KeteranganNilaiJasa({ testId }) {
+  return (
+    <p data-testid={testId} className="rounded-md border border-kn-divider bg-kn-neutral-soft px-2.5 py-1.5 text-fs-12 text-kn-text-2 sm:col-span-3">
+      {KETERANGAN_NILAI_JASA}
+    </p>
+  );
+}
+
 export function IssueModal({ step, warehouses, defaultWh, busy, onClose, onConfirm, mkoId = "" }) {
   // Stok bahan MILIK entitas SPK per gudang (dihitung server) — gudang tanpa stok
   // tetap tampil tetapi diberi tanda, supaya 409 "stok tidak cukup" tidak jadi kejutan.
@@ -142,6 +154,7 @@ export function ReceiveModal({ step, warehouses, defaultWh, mkoNumber, busy, onC
   const totalRolls = rolls.reduce((a, r) => a + (dec(r.length) || 0), 0);
   const setRoll = (i, k, v) => setRolls((p) => p.map((r, idx) => (idx === i ? { ...r, [k]: v } : r)));
   const usingDoc = Boolean(docUom) && dec(docQty) > 0;
+  const bolehNilai = nilaiJasaBolehDiisi(step);   // PK-38
 
   const submit = async () => {
     setErr("");
@@ -152,8 +165,10 @@ export function ReceiveModal({ step, warehouses, defaultWh, mkoNumber, busy, onC
     try {
       const body = {
         actual_output_qty: usingDoc ? 0 : oq, actual_byproduct_qty: dec(byQty) || 0,
-        tariff: dec(tariff) || 0, aux_cost: dec(aux) || 0, ppn: dec(ppn) || 0,
-        output_warehouse_id: wh, supplier_invoice_no: invNo,
+        // PK-38 — tanpa wewenang nilai jasa: ongkos/PPN/no. faktur kosong, biaya lain = nilai langkah (dari order).
+        tariff: bolehNilai ? (dec(tariff) || 0) : 0, aux_cost: bolehNilai ? (dec(aux) || 0) : (Number(step.aux_cost) || 0),
+        ppn: bolehNilai ? (dec(ppn) || 0) : 0,
+        output_warehouse_id: wh, supplier_invoice_no: bolehNilai ? invNo : "",
         colors: parseInt(colors, 10) || 0, repeats: parseInt(repeats, 10) || 0,
         byproduct_lot: `SISA-${mkoNumber}-${step.seq}`,
         rolls: rolls.map((r) => ({ lot: r.lot.trim(), length: dec(r.length) || 0, grade: r.grade || "A", dye_lot: (r.dye_lot || "").trim() })),
@@ -183,12 +198,13 @@ export function ReceiveModal({ step, warehouses, defaultWh, mkoNumber, busy, onC
           <FieldR label={`Qty Output (${step.output_unit || "unit"})`}><input data-testid="mko-recv-output-qty" type="text" inputMode="decimal" className="field" value={outQty} onChange={(e) => setOutQty(e.target.value)} disabled={usingDoc} /></FieldR>
           <FieldR label={`Qty Barang Sisa (${step.input_unit || "unit"})`}><input data-testid="mko-recv-byproduct-qty" type="text" inputMode="decimal" className="field" value={byQty} onChange={(e) => setByQty(e.target.value)} /></FieldR>
           <FieldR label="Gudang Terima"><KNSelect data-testid="mko-recv-warehouse" className="field" value={wh} onValueChange={setWh} options={whOpts} /></FieldR>
-          <FieldR label="Ongkos Jasa (kosong = dari kontrak)"><MoneyInput testId="mko-recv-tariff" className="field" value={tariff} placeholder="otomatis" onChange={(v) => setTariff(v)} /></FieldR>
-          <FieldR label="Bahan Pembantu (Rp)"><MoneyInput testId="mko-recv-aux" className="field" value={aux} onChange={(v) => setAux(v)} /></FieldR>
-          <FieldR label="PPN (Rp)"><MoneyInput testId="mko-recv-ppn" className="field" value={ppn} onChange={(v) => setPpn(v)} /></FieldR>
+          {bolehNilai && <FieldR label="Ongkos Jasa (kosong = dari kontrak)"><MoneyInput testId="mko-recv-tariff" className="field" value={tariff} placeholder="otomatis" onChange={(v) => setTariff(v)} /></FieldR>}
+          {bolehNilai && <FieldR label="Bahan Pembantu (Rp)"><MoneyInput testId="mko-recv-aux" className="field" value={aux} onChange={(v) => setAux(v)} /></FieldR>}
+          {bolehNilai && <FieldR label="PPN (Rp)"><MoneyInput testId="mko-recv-ppn" className="field" value={ppn} onChange={(v) => setPpn(v)} /></FieldR>}
           <FieldR label="Jumlah warna (screen)"><input data-testid="mko-recv-colors" type="number" className="field" value={colors} onChange={(e) => setColors(e.target.value)} /></FieldR>
           <FieldR label="Jumlah repeat"><input data-testid="mko-recv-repeats" type="number" className="field" value={repeats} onChange={(e) => setRepeats(e.target.value)} /></FieldR>
-          <FieldR label="No. Faktur Makloon"><input data-testid="mko-recv-invoice" className="field" value={invNo} onChange={(e) => setInvNo(e.target.value)} placeholder="mis. INV-MKL-001" /></FieldR>
+          {bolehNilai && <FieldR label="No. Faktur Makloon"><input data-testid="mko-recv-invoice" className="field" value={invNo} onChange={(e) => setInvNo(e.target.value)} placeholder="mis. INV-MKL-001" /></FieldR>}
+          {!bolehNilai && <KeteranganNilaiJasa testId="mko-recv-value-note" />}
         </div>
 
         <div className="rounded-lg border border-[#EFF0F2] bg-[#FAFBFC] p-2.5">
@@ -241,6 +257,7 @@ export function RecordServiceModal({ step, mkoNumber, busy, onClose, onConfirm }
   const [repeats, setRepeats] = useState(String(step.repeats || ""));
   const [note, setNote] = useState("");
   const [err, setErr] = useState("");
+  const bolehNilai = nilaiJasaBolehDiisi(step);   // PK-38
 
   const submit = async () => {
     setErr("");
@@ -251,10 +268,11 @@ export function RecordServiceModal({ step, mkoNumber, busy, onClose, onConfirm }
     }
     try {
       await onConfirm({
-        tariff: parseFloat(tariff) || 0,
-        aux_cost: parseFloat(aux) || 0,
-        ppn: parseFloat(ppn) || 0,
-        supplier_invoice_no: invNo,
+        // PK-38 — tanpa wewenang nilai jasa: ongkos/PPN/no. faktur kosong, biaya lain = nilai langkah (dari order).
+        tariff: bolehNilai ? (parseFloat(tariff) || 0) : 0,
+        aux_cost: bolehNilai ? (parseFloat(aux) || 0) : (Number(step.aux_cost) || 0),
+        ppn: bolehNilai ? (parseFloat(ppn) || 0) : 0,
+        supplier_invoice_no: bolehNilai ? invNo : "",
         colors: parseInt(colors, 10) || 0,
         repeats: parseInt(repeats, 10) || 0,
         note,
@@ -278,16 +296,22 @@ export function RecordServiceModal({ step, mkoNumber, busy, onClose, onConfirm }
           Yang lahir: <b>tagihan jasa {step.makloon_name || "mitra"}</b> + jurnal WIP.
         </div>
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-          <FieldR label="Ongkos Jasa (kosong = dari kontrak/basis)">
-            <MoneyInput testId="mko-service-tariff" className="field" value={tariff} placeholder="otomatis" onChange={(v) => setTariff(v)} />
-          </FieldR>
-          <FieldR label="Biaya Lain (Rp)">
-            <MoneyInput testId="mko-service-aux" className="field" value={aux}
-              onChange={(v) => setAux(v)} />
-          </FieldR>
-          <FieldR label="PPN (Rp)">
-            <MoneyInput testId="mko-service-ppn" className="field" value={ppn} onChange={(v) => setPpn(v)} />
-          </FieldR>
+          {bolehNilai && (
+            <FieldR label="Ongkos Jasa (kosong = dari kontrak/basis)">
+              <MoneyInput testId="mko-service-tariff" className="field" value={tariff} placeholder="otomatis" onChange={(v) => setTariff(v)} />
+            </FieldR>
+          )}
+          {bolehNilai && (
+            <FieldR label="Biaya Lain (Rp)">
+              <MoneyInput testId="mko-service-aux" className="field" value={aux}
+                onChange={(v) => setAux(v)} />
+            </FieldR>
+          )}
+          {bolehNilai && (
+            <FieldR label="PPN (Rp)">
+              <MoneyInput testId="mko-service-ppn" className="field" value={ppn} onChange={(v) => setPpn(v)} />
+            </FieldR>
+          )}
           <FieldR label="Jumlah warna (kasa per warna)">
             <input data-testid="mko-service-colors" type="number" className="field" value={colors}
               onChange={(e) => setColors(e.target.value)} />
@@ -296,17 +320,20 @@ export function RecordServiceModal({ step, mkoNumber, busy, onClose, onConfirm }
             <input data-testid="mko-service-repeats" type="number" className="field" value={repeats}
               onChange={(e) => setRepeats(e.target.value)} />
           </FieldR>
-          <FieldR label="No. Faktur Mitra">
-            <input data-testid="mko-service-invoice" className="field" value={invNo}
-              onChange={(e) => setInvNo(e.target.value)} placeholder={`mis. INV-KASA-${step.seq}`} />
-          </FieldR>
+          {bolehNilai && (
+            <FieldR label="No. Faktur Mitra">
+              <input data-testid="mko-service-invoice" className="field" value={invNo}
+                onChange={(e) => setInvNo(e.target.value)} placeholder={`mis. INV-KASA-${step.seq}`} />
+            </FieldR>
+          )}
+          {!bolehNilai && <KeteranganNilaiJasa testId="mko-service-value-note" />}
         </div>
         <FieldR label="Catatan (opsional)">
           <input data-testid="mko-service-note" className="field" value={note}
             onChange={(e) => setNote(e.target.value)}
             placeholder={`mis. 3 kasa motif untuk ${mkoNumber}`} />
         </FieldR>
-        {step.tariff_basis && (
+        {step.tariff_basis && bolehNilai && (
           <p className="text-[10.5px] text-[#6B6B73]">
             Basis tarif langkah ini: <b>{step.tariff_basis}</b>
             {step.contract_number && <> · kontrak <b>{step.contract_number}</b></>}

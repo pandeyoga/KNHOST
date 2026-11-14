@@ -10,7 +10,7 @@ from pydantic import BaseModel, Field
 
 from db import db
 from services import approval_policy_service as _aps   # KP-T4 — satu tabel kebijakan persetujuan
-from dependencies import require_permission, audit
+from dependencies import has_permission, require_permission, audit
 from entity_scope import entity_ctx, resolve_list_scope, assert_entity_access
 from schemas import (
     MakloonOrderCreate, MakloonIssueIn, MakloonReceiveIn, MakloonOrderCancel,
@@ -128,12 +128,18 @@ async def claim_stats(request: Request, entity_id: Optional[str] = None) -> Dict
 
 @router.get("/makloon-orders/{mko_id}")
 async def get_order(mko_id: str, request: Request) -> Dict[str, Any]:
-    await require_permission(request, "makloon_order", "view")
+    actor = await require_permission(request, "makloon_order", "view")
     ctx = await entity_ctx(request)
     data = await makloon_order_detail(mko_id)
     if not data:
         raise HTTPException(status_code=404, detail="Order makloon tidak ditemukan")
     assert_entity_access(data, "makloon_orders", ctx)
+    # PK-38 (IA-08) — layar tahu isian nilai tagihan jasa mana yang ditampilkan untuk pelaku ini.
+    # Nilai tagihan jasa (ongkos, biaya lain, PPN, no. faktur) ditentukan pemegang `vendor_bill.create` (bagian
+    # Pembelian); pelaku lain hanya menandai selesai — tarif dari kontrak.
+    editable = await has_permission(actor, "vendor_bill", "create")
+    for s in data.get("steps") or []:
+        s["service_value_editable"] = editable
     return data
 
 
@@ -199,7 +205,8 @@ async def receive_order_step(mko_id: str, payload: MakloonReceiveIn, request: Re
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
     order = await receive_step(mko_id, payload.step_seq, data,
-                               actor_name=actor.get("name", ""))
+                               actor_name=actor.get("name", ""),
+                               can_set_service_value=await has_permission(actor, "vendor_bill", "create"))   # PK-38
     await audit(actor.get("name", ""), "makloon_order_received", "makloon_order", mko_id,
                 {"step_seq": payload.step_seq})
     return order
@@ -235,7 +242,8 @@ async def record_order_service(mko_id: str, payload: MakloonServiceIn,
     ctx = await entity_ctx(request)
     await _assert_access(mko_id, ctx)
     order = await record_service_step(mko_id, payload.step_seq, payload.model_dump(),
-                                      actor_name=actor.get("name", ""))
+                                      actor_name=actor.get("name", ""),
+                                      can_set_service_value=await has_permission(actor, "vendor_bill", "create"))
     await audit(actor.get("name", ""), "makloon_service_recorded", "makloon_order", mko_id,
                 {"step_seq": payload.step_seq, "tariff": payload.tariff,
                  "aux_cost": payload.aux_cost, "note": payload.note})

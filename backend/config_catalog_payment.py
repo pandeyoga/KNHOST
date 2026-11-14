@@ -208,15 +208,20 @@ E("payment.variance_writeoff_approver_role", group="pembayaran-pelanggan", secti
   # KP-T4 — isi kunci ini pindah ke tabel kebijakan persetujuan (`approval_policies`).
   status="not_used", not_used_reason=_KPT4_TIDAK_DIPAKAI)
 
+# PK-38 — hapus sisa kini dibatasi `kontrol.pengurang_piutang.batas_nominal` (orang kedua, bukan "harus admin"). Kunci ini
+# tetap berlaku untuk pengembalian dana & tutup sisa hutang pemasok (perilaku hari ini), dan menjadi cadangan batas
+# pengurang piutang selama kunci baru belum pernah diisi (`services/ar_reduction_guard.py:batas`).
 E("payment.variance_writeoff_max_amount", group="pembayaran-pelanggan", section="selisih-bayar", type="money", default=1000000,
   min=0, max=1000000000, step=100000, unit="Rp", scopes=G,
-  label="Batas nominal penghapusan sisa oleh Manajer",
-  help="Di atas nilai ini penghapusan sisa kurang bayar hanya boleh oleh admin/direksi. "
-       "Isi 0 bila tidak ingin membatasi.",
-  impact="Membatasi kerugian yang bisa diputus satu orang tanpa eskalasi.",
-  example="Rp 1.000.000 · Manajer menghapus Rp 3.000.000 → ditolak, harus admin",
-  consumers=("services/payment_variance_service.py:variance_policy",), risk="high",
-  related=("payment.variance_writeoff_approver_role",))
+  label="Batas pengembalian dana oleh Manajer",
+  help="Di atas nilai ini pengembalian kelebihan bayar pelanggan dan penutupan sisa hutang pemasok hanya boleh oleh "
+       "admin/direksi. Selama batas pengurang piutang tanpa uang masuk belum pernah diisi, nilai ini juga dipakai "
+       "sebagai batas itu. Isi 0 bila tidak ingin membatasi.",
+  impact="Membatasi uang yang bisa dikembalikan satu Manajer tanpa eskalasi.",
+  example="Rp 1.000.000 · Manajer mengembalikan kelebihan bayar Rp 3.000.000 → ditolak, harus admin",
+  consumers=("services/payment_variance_service.py:variance_policy", "services/ar_reduction_guard.py:batas"),
+  risk="high",
+  related=("payment.variance_writeoff_approver_role", "kontrol.pengurang_piutang.batas_nominal"))
 
 E("payment.variance_reschedule_days", group="pembayaran-pelanggan", section="selisih-bayar", type="int", default=14,
   min=1, max=365, step=1, unit="hari", scopes=G,

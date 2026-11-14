@@ -115,6 +115,11 @@ class VarianceError(ValueError):
     """Kesalahan selisih pembayaran dengan pesan siap tampil (Bahasa Indonesia)."""
 
 
+class VarianceForbidden(VarianceError):
+    """PK-38 — keputusan ditolak karena wewenang (dua orang); router menjawab 403. Turunan `VarianceError` supaya
+    keputusan saat kwitansi dibuat tetap tidak membatalkan uang yang sudah masuk (`ar_receipt_service`)."""
+
+
 # ── Kebijakan (registry FASE G-0 — tidak ada angka hardcode) ───────────────
 async def variance_policy(entity_id: str = "", customer_id: str = "") -> Dict[str, Any]:
     ctx = {"entity_id": entity_id or "", "customer_id": customer_id or ""}
@@ -133,10 +138,17 @@ async def variance_policy(entity_id: str = "", customer_id: str = "") -> Dict[st
         "writeoff_requires_approval": bool(await val("payment.variance_writeoff_requires_approval")),
         "writeoff_approver_role": (_aps.compat_role(_first) if _first else "") or "manager",
         "writeoff_max_amount": float(await val("payment.variance_writeoff_max_amount") or 0),
+        # PK-38 — batas pengurang piutang tanpa uang masuk (hapus sisa): di atasnya harus orang kedua.
+        "ar_reduction_limit": await _ar_reduction_limit(entity_id),
         "reschedule_days": int(await val("payment.variance_reschedule_days") or 14),
         "refund_method": str(await val("payment.variance_refund_method") or "transfer"),
         "ap_tolerance": float(await val("payment.variance_ap_tolerance_rupiah") or 0),
     }
+
+
+async def _ar_reduction_limit(entity_id: str) -> float:
+    from services import ar_reduction_guard as _arg   # PK-38
+    return await _arg.batas(entity_id or "")
 
 
 # ── Label alasan (taksonomi FASE G-1, bisa ditambah admin) ─────────────────
@@ -286,7 +298,9 @@ def _options(direction: str, delta: float, policy: Dict[str, Any],
              "impact": f"Piutang −{_rp(gap)} · beban naik {_rp(gap)} (berjurnal, tak bisa dihapus).",
              "available": True, "requires_reason": True,
              "requires_role": policy["writeoff_approver_role"] if policy["writeoff_requires_approval"] else "",
-             "max_amount": policy["writeoff_max_amount"]},
+             # PK-38 — angka dari server: di atas batas ini keputusan harus oleh orang selain pembuat kwitansi.
+             "max_amount": policy.get("ar_reduction_limit", policy["writeoff_max_amount"]),
+             "needs_second_person_above": policy.get("ar_reduction_limit", policy["writeoff_max_amount"])},
         ]
     elif direction == DIR_OVER:
         others_total = round(float(ctx.get("others_total", 0)), 2)
@@ -634,8 +648,12 @@ async def _assert_authority(kind: str, amount: float, policy: Dict[str, Any],
 
     KP-T4 — kapan wajib disetujui tetap `payment.variance_writeoff_requires_approval` (pemicu); SIAPA yang boleh
     memutus dibaca dari Aturan Persetujuan (jenis `payment_variance.hapus_sisa`; dulu `payment.variance_writeoff_
-    approver_role` + admin, termasuk peran kustom beracuannya). Batas nominal keputusan (`writeoff_max_amount`) tetap
-    di sini sampai PK-38."""
+    approver_role` + admin, termasuk peran kustom beracuannya).
+
+    PK-38 — hapus sisa (`writeoff`) tidak lagi dibatasi "harus admin" di atas `writeoff_max_amount`: batasnya kini satu
+    untuk semua pengurang piutang tanpa uang masuk dan di atasnya keputusan harus orang kedua
+    (`services/ar_reduction_guard.py`). Pengembalian dana (`refund`) dan tutup sisa hutang (`ap_writeoff`) bukan
+    pengurang piutang: batas "harus admin" di atas `writeoff_max_amount` tetap berlaku untuk keduanya (perilaku hari ini)."""
     if kind not in SENSITIVE_KINDS or not policy["writeoff_requires_approval"]:
         return ""
     role = (actor.get("role") or "").lower()
@@ -646,7 +664,7 @@ async def _assert_authority(kind: str, amount: float, policy: Dict[str, Any],
     if not res["allowed"]:
         raise VarianceError(f"Keputusan '{KIND_LABEL.get(kind, kind)}': {res['message']} Ajukan ke penyetuju.")
     cap = float(policy["writeoff_max_amount"] or 0)
-    if cap > 0 and round(float(amount), 2) > cap + EPS and role != "admin":
+    if kind != "writeoff" and cap > 0 and round(float(amount), 2) > cap + EPS and role != "admin":
         raise VarianceError(
             f"Nominal {_rp(amount)} melebihi batas keputusan {need} ({_rp(cap)}) — "
             "harus admin/direksi.")
@@ -734,12 +752,24 @@ async def decide_receipt(receipt_id: str, payload: Dict[str, Any],
         raise VarianceError(f"Nominal keputusan {_rp(amount)} melebihi selisih {_rp(gap)}.")
     reason = await _reason_or_fail(payload.get("reason_code", ""))
     approver_role = await _assert_authority(kind, amount, policy, actor, entity_id)
-    if not payload.get("auto"):
+    from services import ar_reduction_guard as _arg
+    if _arg.berlaku("payment_variance", kind):
+        # PK-38 — hapus sisa = pengurang piutang tanpa uang masuk: satu batas + orang kedua (sebelum `_write_off_orders`).
+        # `VarianceForbidden` (turunan `VarianceError`): jalur antrean menjawab 403; keputusan saat kwitansi dibuat
+        # tidak membatalkan uang yang sudah masuk — selisih masuk antrean.
+        from fastapi import HTTPException as _HE
+        try:
+            await _arg.periksa(sumber="payment_variance", jenis=kind, entity_id=entity_id, nominal=amount,
+                               dokumen=receipt, aktor=actor, pengaju=[receipt.get("created_by")])
+        except _HE as exc:
+            raise VarianceForbidden(str(exc.detail)) from exc
+    elif not payload.get("auto"):
         # KF-T6 — pencatat kwitansi ≠ pemutus selisih dari `kontrol.pengurang_piutang.*`. Di sini `VarianceError` (bukan
         # 403): keputusan saat kwitansi dibuat tidak boleh membatalkan uang yang sudah masuk — selisih masuk antrean.
-        # Jalur antrean (`routers/payment_variance.py`) sudah menolak 403 lebih dulu.
+        # Jalur antrean (`routers/payment_variance.py`) sudah menolak 403 lebih dulu. PK-38 — pilihan selain hapus sisa
+        # tidak mengurangi piutang tanpa uang masuk: hanya jumlah orang (batas nominal tidak berlaku, `nominal=0`).
         from services import dual_control as _dc
-        _dcr = await _dc.periksa("pengurang_piutang", receipt, actor, entity_id, nominal=amount,
+        _dcr = await _dc.periksa("pengurang_piutang", receipt, actor, entity_id, nominal=0.0,
                                  pengaju=[receipt.get("created_by")])
         if _dcr["ditolak"]:
             raise VarianceError(_dcr["pesan"])
@@ -1069,8 +1099,9 @@ async def decide_bill(bill: Dict[str, Any], assessment: Dict[str, Any],
     if direction != DIR_ROUNDING:
         # KF-T6 — pembuat tagihan ≠ pemutus selisih bayar dari `kontrol.pengurang_piutang.*`. `VarianceError` (bukan
         # 403): keputusan ini diambil SESUDAH uang keluar; pemanggil mencatat kegagalannya di linimasa tagihan.
+        # PK-38 — hutang, bukan piutang: batas pengurang piutang tidak berlaku (`nominal=0`), hanya jumlah orang.
         from services import dual_control as _dc
-        _dcr = await _dc.periksa("pengurang_piutang", bill, actor, entity_id, nominal=gap,
+        _dcr = await _dc.periksa("pengurang_piutang", bill, actor, entity_id, nominal=0.0,
                                  pengaju=[bill.get("created_by_id")])
         if _dcr["ditolak"]:
             raise VarianceError(_dcr["pesan"])

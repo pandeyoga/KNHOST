@@ -465,10 +465,11 @@ async def waive(penalty_id: str, reason_code: str, note: str,
     rest = round(float(p.get("amount") or 0) - paid, 2)
     if rest <= EPS:
         raise PenaltyError("Nota denda sudah lunas — tidak ada sisa yang bisa dibebaskan.")
-    # KF-T6 — penerbit nota denda ≠ yang membebaskannya dari `kontrol.pengurang_piutang.*` (bawaan satu orang; di atas
-    # batas nominal dua orang). Diperiksa sebelum jurnal pembalik.
+    # KF-T6 — penerbit nota denda ≠ yang membebaskannya dari `kontrol.pengurang_piutang.*` (bawaan satu orang). Diperiksa
+    # sebelum jurnal pembalik. PK-38 — batas nominal kunci ini kini khusus pengurang piutang tanpa uang masuk
+    # (`services/ar_reduction_guard.py:TANPA_KAS`, bawaan Rp 1.000.000); bebas denda tidak termasuk → jumlah orang saja.
     from services import dual_control as _dc
-    await _dc.tolak_bila_pelaku_sama("pengurang_piutang", p, actor, p.get("entity_id", ""), nominal=rest,
+    await _dc.tolak_bila_pelaku_sama("pengurang_piutang", p, actor, p.get("entity_id", ""), nominal=0.0,
                                      pengaju=[p.get("created_by_id"), p.get("created_by")])
     je = None
     if p["status"] in ("issued", "adjusted"):
