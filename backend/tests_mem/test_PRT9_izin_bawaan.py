@@ -24,6 +24,11 @@ TAMBAHAN_SESUDAH = {r: {"inventory": {"configure"}, "goods_receipt": {"configure
                     for r in ("admin", "manager")}   # KF-T1
 for _r in ("admin", "manager", "finance"):   # PK-17 — kelola rekening kas & bank
     TAMBAHAN_SESUDAH.setdefault(_r, {})["cash"] = {"configure"}
+for _r in DEFAULT_PERMISSIONS:   # PR-T2 — izin pengganti gerbang nama peran (sumber daya & aksi baru, templat asisten)
+    for _res, _acts in bootstrap._prt2_default_pairs(_r).items():
+        TAMBAHAN_SESUDAH.setdefault(_r, {}).setdefault(_res, set()).update(_acts)
+# Butir di `migrations_applied`: 15 butir PR-T9 + `prt2:gerbang-peran` (PR-T2).
+JUMLAH_MIGRASI = 16
 # Pencabutan izin bawaan yang SENGAJA dibuat unit sesudah PR-T9.
 DICABUT_SESUDAH = {r: {"vendor_bill": {"view"}, "landed_cost": {"view"}, "input_tax": {"view"}}
                    for r in ("warehouse", "warehouse_admin")}   # PK-17 (IA-02)
@@ -76,8 +81,8 @@ async def test_U06_start_biasa_tidak_menulis(db):
     await _nyalakan_ulang()
     akhir = await db.permission_settings.find_one({"id": "default"})
     assert akhir["updated_at"] == awal["updated_at"]
-    assert len(akhir["migrations_applied"]) == 15
-    assert len(set(akhir["migrations_applied"])) == 15
+    assert len(akhir["migrations_applied"]) == JUMLAH_MIGRASI
+    assert len(set(akhir["migrations_applied"])) == JUMLAH_MIGRASI
 
 
 async def test_U12_kembalikan_bawaan_ikut_menu(klien, kepala_admin):
@@ -212,4 +217,4 @@ async def test_U15_instalasi_lama_garis_dasar(klien, kepala_admin, db):
     assert "ar_receipt" not in s["permissions"]
     rec = await db.permission_settings.find_one({"id": "default"})
     assert "create" in rec["defaults_applied"]["sales"]["ar_receipt"]
-    assert len(rec["migrations_applied"]) == 15
+    assert len(rec["migrations_applied"]) == JUMLAH_MIGRASI

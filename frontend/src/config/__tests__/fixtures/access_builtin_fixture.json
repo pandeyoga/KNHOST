@@ -5,7 +5,51 @@
     "view",
     "create",
     "void",
-    "manage"
+    "manage",
+    "reopen"
+   ],
+   "ai": [
+    "view",
+    "view_margin",
+    "view_stock_value",
+    "manage",
+    "configure"
+   ],
+   "ai_template": [
+    "daily_brief",
+    "sales_today_vs_yesterday",
+    "receiving_today",
+    "dispatch_today",
+    "pending_approvals",
+    "top_products",
+    "top_customers",
+    "sales_ranking",
+    "target_vs_actual",
+    "sales_trend_12m",
+    "sales_by_line",
+    "sales_by_city",
+    "why_sales_changed",
+    "new_customers",
+    "inactive_customers",
+    "discounts",
+    "returns",
+    "margin_by_product",
+    "ar_due",
+    "collections_week",
+    "ap_due",
+    "cash_position",
+    "pnl_month",
+    "low_stock",
+    "slow_stock",
+    "stock_value_wh",
+    "stock_by_dyelot",
+    "po_overdue",
+    "incoming_week",
+    "supplier_performance",
+    "makloon_status",
+    "weekly_executive",
+    "entity_comparison",
+    "hr_today"
    ],
    "approval": [
     "view"
@@ -63,6 +107,12 @@
     "verify",
     "approve",
     "pay"
+   ],
+   "costing": [
+    "view"
+   ],
+   "credit_override": [
+    "approve"
    ],
    "customer": [
     "view",
@@ -180,7 +230,8 @@
     "assign",
     "inspect",
     "decide",
-    "reopen"
+    "reopen",
+    "release"
    ],
    "interco": [
     "view",
@@ -255,6 +306,9 @@
     "record_loss",
     "approve_loss"
    ],
+   "manager_home": [
+    "view"
+   ],
    "marketing": [
     "view",
     "create",
@@ -277,7 +331,8 @@
    "od_pricing": [
     "view_cost",
     "set_price",
-    "lock"
+    "lock",
+    "unlock"
    ],
    "order": [
     "view",
@@ -349,7 +404,8 @@
     "update",
     "delete",
     "import",
-    "export"
+    "export",
+    "retire"
    ],
    "production": [
     "view",
@@ -398,6 +454,10 @@
     "view",
     "export"
    ],
+   "rfid_device": [
+    "configure",
+    "revoke"
+   ],
    "rfq": [
     "view",
     "create",
@@ -419,7 +479,17 @@
     "assess_proofing",
     "decide_labdip",
     "decide_handfeel",
-    "decide_proofing"
+    "decide_proofing",
+    "manage_org",
+    "report",
+    "extend_rounds"
+   ],
+   "sales_force": [
+    "view",
+    "update",
+    "delete",
+    "post",
+    "assign"
    ],
    "sales_return": [
     "view",
@@ -432,7 +502,8 @@
     "decide_compensation",
     "post_logistics",
     "split_cutloss",
-    "decide_rolls"
+    "decide_rolls",
+    "treat_cutloss"
    ],
    "sample_order": [
     "view",
@@ -470,6 +541,11 @@
     "update",
     "delete",
     "import"
+   ],
+   "system_tools": [
+    "view",
+    "update",
+    "configure"
    ],
    "tax_invoice": [
     "view",
@@ -531,7 +607,8 @@
     "update",
     "delete",
     "import",
-    "export"
+    "export",
+    "configure"
    ],
    "wms": [
     "view",
@@ -592,6 +669,19 @@
   "finance": {
    "accounting": [
     "view"
+   ],
+   "ai": [
+    "view",
+    "view_stock_value"
+   ],
+   "ai_template": [
+    "daily_brief",
+    "ar_due",
+    "collections_week",
+    "ap_due",
+    "cash_position",
+    "pnl_month",
+    "stock_value_wh"
    ],
    "approval": [
     "view"
@@ -745,6 +835,48 @@
     "void",
     "manage"
    ],
+   "ai": [
+    "view",
+    "view_margin",
+    "view_stock_value",
+    "manage"
+   ],
+   "ai_template": [
+    "daily_brief",
+    "sales_today_vs_yesterday",
+    "receiving_today",
+    "dispatch_today",
+    "pending_approvals",
+    "top_products",
+    "top_customers",
+    "sales_ranking",
+    "target_vs_actual",
+    "sales_trend_12m",
+    "sales_by_line",
+    "sales_by_city",
+    "why_sales_changed",
+    "new_customers",
+    "inactive_customers",
+    "discounts",
+    "returns",
+    "margin_by_product",
+    "ar_due",
+    "collections_week",
+    "ap_due",
+    "cash_position",
+    "pnl_month",
+    "low_stock",
+    "slow_stock",
+    "stock_value_wh",
+    "stock_by_dyelot",
+    "po_overdue",
+    "incoming_week",
+    "supplier_performance",
+    "makloon_status",
+    "weekly_executive",
+    "entity_comparison",
+    "hr_today"
+   ],
    "approval": [
     "view"
    ],
@@ -796,6 +928,12 @@
     "verify",
     "approve",
     "pay"
+   ],
+   "costing": [
+    "view"
+   ],
+   "credit_override": [
+    "approve"
    ],
    "customer": [
     "view",
@@ -899,7 +1037,8 @@
     "assign",
     "inspect",
     "decide",
-    "reopen"
+    "reopen",
+    "release"
    ],
    "interco": [
     "view",
@@ -966,6 +1105,9 @@
     "claim_approve",
     "record_loss",
     "approve_loss"
+   ],
+   "manager_home": [
+    "view"
    ],
    "marketing": [
     "view",
@@ -1112,7 +1254,17 @@
     "manage",
     "hold",
     "pic_decide",
-    "override_fail"
+    "override_fail",
+    "manage_org",
+    "report",
+    "extend_rounds"
+   ],
+   "sales_force": [
+    "view",
+    "update",
+    "delete",
+    "post",
+    "assign"
    ],
    "sales_return": [
     "view",
@@ -1125,7 +1277,8 @@
     "decide_compensation",
     "post_logistics",
     "split_cutloss",
-    "decide_rolls"
+    "decide_rolls",
+    "treat_cutloss"
    ],
    "sample_order": [
     "view",
@@ -1161,6 +1314,10 @@
     "update",
     "delete",
     "import"
+   ],
+   "system_tools": [
+    "view",
+    "update"
    ],
    "tax_invoice": [
     "view",
@@ -1218,6 +1375,19 @@
    ]
   },
   "md": {
+   "ai": [
+    "view"
+   ],
+   "ai_template": [
+    "receiving_today",
+    "sales_by_line",
+    "low_stock",
+    "slow_stock",
+    "po_overdue",
+    "incoming_week",
+    "supplier_performance",
+    "makloon_status"
+   ],
    "color": [
     "view",
     "create",
@@ -1306,7 +1476,8 @@
    "product": [
     "view",
     "create",
-    "update"
+    "update",
+    "retire"
    ],
    "purchase_order": [
     "view"
@@ -1346,7 +1517,8 @@
    "sales_return": [
     "view",
     "record_cutloss",
-    "split_cutloss"
+    "split_cutloss",
+    "treat_cutloss"
    ],
    "supplier": [
     "view"
@@ -1407,7 +1579,8 @@
    "sales_return": [
     "view",
     "record_cutloss",
-    "split_cutloss"
+    "split_cutloss",
+    "treat_cutloss"
    ],
    "supplier": [
     "view"
@@ -1462,6 +1635,20 @@
    ]
   },
   "sales": {
+   "ai": [
+    "view"
+   ],
+   "ai_template": [
+    "sales_today_vs_yesterday",
+    "top_products",
+    "top_customers",
+    "target_vs_actual",
+    "sales_trend_12m",
+    "new_customers",
+    "inactive_customers",
+    "ar_due",
+    "stock_by_dyelot"
+   ],
    "ar_receipt": [
     "view",
     "create"
@@ -1602,6 +1789,30 @@
    ]
   },
   "sales_admin": {
+   "ai": [
+    "view"
+   ],
+   "ai_template": [
+    "daily_brief",
+    "sales_today_vs_yesterday",
+    "dispatch_today",
+    "top_products",
+    "top_customers",
+    "sales_ranking",
+    "target_vs_actual",
+    "sales_trend_12m",
+    "sales_by_line",
+    "sales_by_city",
+    "why_sales_changed",
+    "new_customers",
+    "inactive_customers",
+    "discounts",
+    "returns",
+    "ar_due",
+    "collections_week",
+    "low_stock",
+    "stock_by_dyelot"
+   ],
    "approval": [
     "view"
    ],
@@ -1999,6 +2210,18 @@
    ]
   },
   "warehouse_admin": {
+   "ai": [
+    "view"
+   ],
+   "ai_template": [
+    "receiving_today",
+    "dispatch_today",
+    "low_stock",
+    "slow_stock",
+    "stock_by_dyelot",
+    "po_overdue",
+    "incoming_week"
+   ],
    "color": [
     "view"
    ],
@@ -2121,6 +2344,9 @@
     "receive",
     "cancel"
    ],
+   "rfid_device": [
+    "revoke"
+   ],
    "rfq": [
     "view"
    ],
@@ -2160,7 +2386,8 @@
    "warehouse": [
     "view",
     "create",
-    "update"
+    "update",
+    "configure"
    ],
    "wms": [
     "view",
@@ -2201,6 +2428,7 @@
    "audit",
    "budget",
    "contra_bon",
+   "costing",
    "fixed_asset",
    "gl_mapping",
    "input_tax",
@@ -2340,8 +2568,7 @@
    "vendor_bill"
   ],
   "costing": [
-   "audit",
-   "reports"
+   "costing"
   ],
   "cs-bi-hrd": [
    "audit",
@@ -2474,6 +2701,7 @@
    "accounting",
    "audit",
    "budget",
+   "costing",
    "fixed_asset",
    "gl_mapping",
    "period",
@@ -2584,6 +2812,9 @@
   ],
   "hrd": [
    "hr"
+  ],
+  "incentive-rates": [
+   "sales_force"
   ],
   "input-tax": [
    "contra_bon",
@@ -2898,6 +3129,7 @@
    "accounting",
    "audit",
    "budget",
+   "costing",
    "fixed_asset",
    "gl_mapping",
    "period",
@@ -3156,6 +3388,7 @@
    "permission",
    "production",
    "repair_order",
+   "rfid_device",
    "scheduler",
    "settings",
    "user",
@@ -3197,6 +3430,7 @@
    "cash_advance",
    "cash_settlement",
    "contra_bon",
+   "credit_override",
    "design_ownership",
    "design_request",
    "entity",
@@ -3231,8 +3465,10 @@
    "purchase_requisition",
    "purchase_return",
    "repair_order",
+   "rfid_device",
    "rfq",
    "rnd",
+   "sales_force",
    "sales_return",
    "scheduler",
    "settings",
@@ -3282,12 +3518,14 @@
    "rnd"
   ],
   "settings-sales": [
+   "credit_override",
    "internal_request",
    "od_fulfillment",
    "od_pricing",
    "order",
    "price_approval",
    "pricelist",
+   "sales_force",
    "sales_return"
   ],
   "settings-system": [
@@ -3298,6 +3536,7 @@
    "permission",
    "production",
    "repair_order",
+   "rfid_device",
    "scheduler",
    "settings",
    "user",
@@ -3382,6 +3621,10 @@
    "supplier",
    "supplier_contract",
    "supplier_item"
+  ],
+  "tanya-kn": [
+   "ai",
+   "ai_template"
   ],
   "tax-hub": [
    "ar_receipt",

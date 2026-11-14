@@ -627,6 +627,154 @@ async def migrate_kft1_settings_permissions() -> None:
     await db.system_settings.update_one(marker, {"$set": {"kft1_izin_pengaturan": now_iso()}}, upsert=True)
 
 
+# ─── PR-T2 (K-47) — gerbang nama peran → izin, sekali jalan ────────────────────────────────────────────────────────
+PRT2_MIGRATION_ID = "prt2:gerbang-peran"
+#: Baris bertanda N (nama peran saja): pasangan pengganti → peran yang hari ini lolos lewat nama (`role_in`: peran itu
+#: sendiri atau peran acuannya). Admin selalu lolos dan memegang semua pasangan bawaannya.
+PRT2_NAME_GATES = {
+    **{("sales_force", a): ("manager",) for a in ("view", "update", "delete", "post", "assign")},
+    ("credit_override", "approve"): ("manager",),
+    ("costing", "view"): ("admin", "manager"),          # + COST_SAFE_ROLES (kolom biaya/HPP)
+    ("manager_home", "view"): ("manager",),
+    ("system_tools", "view"): ("admin", "manager"), ("system_tools", "update"): ("admin", "manager"),
+    ("system_tools", "configure"): ("admin",),
+    ("ai", "manage"): ("admin", "manager"), ("ai", "configure"): ("admin",),
+    ("rfid_device", "configure"): ("admin",), ("rfid_device", "revoke"): ("admin", "warehouse_admin"),
+}
+#: Baris bertanda P+N (izin P ditambah nama peran): pasangan → (peran yang lolos lewat nama, izin P — salah satu
+#: cukup; aksi "*" = aksi apa pun pada sumber daya itu). Hanya diberikan bila peran itu juga memegang P.
+PRT2_PERM_NAME_GATES = [
+    (("internal_request", "convert"), ("admin", "manager", "sales_admin"), (("internal_request", "view"),)),
+    (("rnd", "manage_org"), ("admin", "manager"), (("rnd", "view"),)),
+    (("rnd", "report"), ("admin", "manager"), (("rnd", "view"),)),
+    (("color", "approve"), ("admin", "manager"), (("color", "update"),)),
+    (("price_approval", "approve"), ("admin", "manager"), (("price_approval", "*"),)),
+    (("goods_receipt", "configure"), ("admin", "manager"), (("goods_receipt", "approve"),)),
+    (("accounting", "reopen"), ("admin",), (("accounting", "manage"),)),
+    (("warehouse", "configure"), ("admin", "warehouse_admin"), (("warehouse", "update"),)),
+    (("product", "retire"), ("admin", "md"), (("product", "*"), ("color", "*"))),
+    (("rnd", "extend_rounds"), ("admin", "manager"), (("rnd", "*"),)),
+    (("inspection", "release"), ("admin", "manager"), (("inspection", "decide"), ("md_quality", "decide"))),
+    (("marketing", "approve"), ("admin", "manager"), (("marketing", "update"),)),
+    (("wms", "approve"), ("admin", "manager", "warehouse_admin"), (("wms", "*"), ("transfer", "*"))),
+    (("od_pricing", "unlock"), ("admin",), (("order", "update"),)),
+    (("entity", "delete"), ("admin",), (("entity", "*"),)),
+]
+#: Nilai bawaan kunci `ai.*_roles` bila kosong (sama dengan pembacanya sebelum PR-T2).
+_PRT2_AI_FALLBACK = {"ai.enabled_roles": ("admin", "manager", "sales_admin", "finance", "md", "warehouse_admin", "sales"),
+                     "ai.margin_roles": ("admin", "manager"), "ai.stock_value_roles": ("admin", "manager", "finance")}
+
+
+def _prt2_default_pairs(rid: str) -> Dict[str, List[str]]:
+    """Pasangan bawaan PR-T2 milik peran bawaan `rid` (sumber daya baru, aksi baru, templat asisten)."""
+    from permissions_config import PRT2_ACTIONS, PRT2_RESOURCES
+    perms = DEFAULT_PERMISSIONS.get(rid) or {}
+    out = {res: list(perms[res]) for res in [*PRT2_RESOURCES, "ai_template"] if perms.get(res)}
+    for (res, act), roles in PRT2_ACTIONS.items():
+        if rid in roles:
+            out.setdefault(res, []).append(act)
+    return out
+
+
+async def migrate_role_gates_to_permissions() -> None:
+    """PR-T2 (K-47) — sekali jalan (`permission_settings.migrations_applied` ∋ `prt2:gerbang-peran`): peran yang hari ini
+    lolos lewat NAMA peran menerima izin penggantinya, supaya tidak ada yang kehilangan akses saat gerbang nama dicabut.
+
+    Dipanggil sesudah `ensure_permission_ledger` dan sebelum `sync_permission_modules`. Peran bawaan dan peran kustom
+    yang SUDAH ADA: baris N → menurut nama (peran atau peran acuan); baris P+N → hanya bila juga memegang P; `ai.view`
+    menurut nilai `ai.enabled_roles` yang berlaku; `ai.view_margin`/`ai.view_stock_value` menurut `ai.margin_roles`/
+    `ai.stock_value_roles` (nama persis); templat asisten hanya peran bawaan (nama persis) yang memegang `ai.view`;
+    `sales_return.treat_cutloss` → admin, manajer, dan isi `returns.cutloss_treatment_roles` (global + per PT).
+    Pasangan bawaan PR-T2 peran bawaan dicatat di `defaults_applied` (pencabutan Admin sesudahnya bertahan);
+    `custom_roles.levels` dihitung ulang; `pending_defaults` untuk pasangan yang sama dibuang; satu baris jejak audit
+    `role_gates_migrated` berisi pasangan yang diberikan. Peran kustom yang dibuat sesudahnya mengikuti tingkat modulnya."""
+    record = await db.permission_settings.find_one({"id": "default"}, {"_id": 0})
+    if not record or PRT2_MIGRATION_ID in (record.get("migrations_applied") or []):
+        return
+    from access_modules import levels_of
+    from permissions_config import AI_TEMPLATES
+    from services.config_resolver import value_of
+
+    matrix: Dict[str, Dict[str, List[str]]] = record.get("matrix") or {}
+    customs = {c["id"]: c for c in await db.custom_roles.find({}, {"_id": 0}).to_list(500)}
+    targets = [*DEFAULT_PERMISSIONS, *[c for c in customs if c not in DEFAULT_PERMISSIONS]]
+    granted: Dict[str, Dict[str, List[str]]] = {}
+
+    def acuan(rid: str) -> str:
+        return "" if rid in DEFAULT_PERMISSIONS else ((customs.get(rid) or {}).get("base_role") or "")
+
+    def lolos(rid: str, roles) -> bool:   # = role_registry.role_in
+        return rid in roles or (bool(acuan(rid)) and acuan(rid) in roles)
+
+    def memegang(rid: str, alts) -> bool:
+        perms = matrix.get(rid) or {}
+        return any(bool(perms.get(res)) if act == "*" else act in (perms.get(res) or []) for res, act in alts)
+
+    def beri(rid: str, res: str, act: str) -> None:
+        perms = matrix.setdefault(rid, {})
+        cur = list(perms.get(res) or [])
+        if act not in cur:
+            perms[res] = cur + [act]
+            granted.setdefault(rid, {}).setdefault(res, []).append(act)
+
+    for res, acts in _prt2_default_pairs("admin").items():   # Admin lolos semua gerbang nama; matriksnya terkunci
+        for act in acts:
+            beri("admin", res, act)
+    for rid in targets:
+        for (res, act), roles in PRT2_NAME_GATES.items():
+            if lolos(rid, roles):
+                beri(rid, res, act)
+        for (res, act), roles, alts in PRT2_PERM_NAME_GATES:
+            if lolos(rid, roles) and memegang(rid, alts):
+                beri(rid, res, act)
+    cut = {"admin", "manager", *(await value_of("returns.cutloss_treatment_roles") or [])}
+    for eid in await db.business_entities.distinct("id"):
+        cut.update(await value_of("returns.cutloss_treatment_roles", {"entity_id": eid}) or [])
+    ai = {k: set(await value_of(k) or v) for k, v in _PRT2_AI_FALLBACK.items()}
+    for rid in targets:
+        if lolos(rid, cut) and memegang(rid, (("sales_return", "*"),)):
+            beri(rid, "sales_return", "treat_cutloss")
+        if lolos(rid, ai["ai.enabled_roles"]):
+            beri(rid, "ai", "view")
+        if rid in ai["ai.margin_roles"]:
+            beri(rid, "ai", "view_margin")
+        if rid in ai["ai.stock_value_roles"]:
+            beri(rid, "ai", "view_stock_value")
+    for rid in DEFAULT_PERMISSIONS:   # templat: nama persis, hanya peran bawaan yang bisa membuka asisten
+        if rid != "admin" and "view" in ((matrix.get(rid) or {}).get("ai") or []):
+            for t in AI_TEMPLATES:
+                if rid in (t.get("roles") or []):
+                    beri(rid, "ai_template", t["id"])
+
+    patch: Dict[str, Any] = {}
+    applied = record.get("defaults_applied")
+    if applied is not None:   # None = instalasi sebelum L01: sync_permission_modules membuat garis dasar dari bawaan
+        for rid in DEFAULT_PERMISSIONS:
+            done = applied.setdefault(rid, {})
+            for res, acts in [*_prt2_default_pairs(rid).items(), *(granted.get(rid) or {}).items()]:
+                cur = list(done.get(res) or [])
+                done[res] = cur + [a for a in acts if a not in cur]
+        patch["defaults_applied"] = applied
+    if granted:
+        patch.update({"matrix": matrix, "updated_at": now_iso()})
+    update: Dict[str, Any] = {"$addToSet": {"migrations_applied": PRT2_MIGRATION_ID}}
+    if patch:
+        update["$set"] = patch
+    for cid, c in customs.items():
+        if cid not in granted:
+            continue
+        perms = matrix.get(cid) or {}
+        pending = {k: [a for a in v if a not in (granted[cid].get(k) or [])]
+                   for k, v in (c.get("pending_defaults") or {}).items()}
+        await db.custom_roles.update_one({"id": cid}, {"$set": {
+            "levels": {k: v["level"] for k, v in levels_of(perms).items()},
+            "pending_defaults": {k: v for k, v in pending.items() if v}, "updated_at": now_iso()}})
+    await db.permission_settings.update_one({"id": "default"}, update)
+    from dependencies import audit
+    await audit("Sistem (migrasi PR-T2)", "role_gates_migrated", "permission_settings", "default", granted,
+                reason="K-47 — akses yang dulu lewat nama peran kini izin yang terlihat dan bisa dicabut")
+
+
 async def sync_uom_factors() -> None:
     """Selaraskan master satuan dengan daftar benih (idempotent) — FASE U.
 
@@ -1759,6 +1907,7 @@ async def run_bootstrap() -> None:
         import logging
         logging.getLogger("bootstrap").warning("[entity] rebrand 2026-09 dilewati: %s", exc)
     await ensure_permission_ledger()   # PR-T9 — HARUS sebelum sync_permission_modules (lihat docstring)
+    await migrate_role_gates_to_permissions()   # PR-T2 — sesudah buku catatan, sebelum bawaan baru diteruskan
     await sync_permission_modules()
     await sync_permission_revocations()
     await migrate_kft1_settings_permissions()

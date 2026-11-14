@@ -5,7 +5,7 @@ membukanya. Admin mengatur per modul dengan 3 tingkat: none · view · manage.
 """
 from typing import Any, Dict, List
 
-from permissions_config import DEFAULT_PERMISSIONS, EXTRA_ACTIONS
+from permissions_config import AI_TEMPLATES, DEFAULT_PERMISSIONS, EXTRA_ACTIONS
 
 LEVELS = ("none", "view", "manage")
 LEVEL_LABEL = {"none": "Tidak ada", "view": "Lihat saja", "manage": "Kelola penuh"}
@@ -202,6 +202,31 @@ MODULE_CATALOG: List[Dict[str, Any]] = [
      "description": "Menandai peran sebagai POV komersial Sales: hanya varian warna; GRADE SELALU disembunyikan "
                     "walau izin visibilitas grade dicentang (berlaku juga saat trial).",
      "resources": ["sales_pov"], "nav": []},
+    # PR-T2 (K-47) — wewenang yang dulu ditentukan nama peran kini modul akses yang terlihat & bisa dicabut.
+    {"id": "sales_force", "group": "Penjualan", "label": "Pengawasan Tim Sales & Kredit",
+     "description": "Target & insentif sales, tarif komisi, penugasan ulang pelanggan, akrual insentif ke buku besar, "
+                    "dan persetujuan pengecualian batas kredit.",
+     "resources": ["sales_force", "credit_override"],
+     "nav": ["settings-hub", "settings-sales", "incentive-rates"]},
+    {"id": "costing", "group": "Alat", "label": "HPP & Margin Produk",
+     "description": "Harga pokok rata-rata (HPP) per produk dan kolom biaya/margin di layar lain. Tanpa izin ini kolom "
+                    "biaya disembunyikan server.",
+     "resources": ["costing"], "nav": ["costing", "akuntansi", "fin-reports", "profitability"], "sensitive": True},
+    {"id": "manager_home", "group": "Alat", "label": "Beranda Manajer",
+     "description": "Ringkasan beranda manajer & admin (angka penjualan, stok, dan antrean lintas modul).",
+     "resources": ["manager_home"], "nav": []},
+    {"id": "system_tools", "group": "Organisasi", "label": "Kebersihan Data & Alat Sistem",
+     "description": "Riwayat & pratinjau kebersihan data, perbaikan lokasi, peta notifikasi giliran; 'Kelola penuh' juga "
+                    "menjalankan/mengembalikan pembersihan dan melepas kunci proses yang macet.",
+     "resources": ["system_tools"], "nav": [], "sensitive": True},
+    {"id": "devices", "group": "Gudang", "label": "Perangkat RFID & Handheld",
+     "description": "Mendaftarkan dan mengatur reader RFID, printer label, dan handheld (kunci API, profil, parameter "
+                    "gerbang), serta mencabut akses perangkat yang hilang.",
+     "resources": ["rfid_device"], "nav": ["settings-hub", "settings-system", "settings-devices"], "sensitive": True},
+    {"id": "assistant", "group": "Alat", "label": "Asisten Tanya KN",
+     "description": "Asisten analitik: chat, templat laporan (per templat), jadwal laporan; margin & nilai persediaan "
+                    "dipisah; pemakaian & biaya asisten.",
+     "resources": ["ai", "ai_template"], "nav": ["tanya-kn"]},
     {"id": "admin", "group": "Organisasi", "label": "Pengaturan, Pengguna & Hak Akses",
      "description": "Pengaturan sistem, badan usaha, akun pengguna, peran & hak akses, penjadwal. Hati-hati: 'Kelola penuh' berarti bisa mengubah hak akses orang lain.",
      "resources": ["user", "permission", "settings", "entity", "scheduler"],
@@ -305,6 +330,11 @@ RESOURCE_LABEL = {
     "od_pricing": "Harga Pesanan Khusus (kunci, harga PIC, biaya kontrak)",
     "repair_order": "Perbaikan / Celup Ulang Roll",
     "data_export": "Pusat Export Data",
+    # PR-T2
+    "sales_force": "Tim Sales: Target, Insentif & Penugasan", "credit_override": "Pengecualian Batas Kredit",
+    "costing": "HPP & Margin Produk", "manager_home": "Beranda Manajer",
+    "system_tools": "Kebersihan Data & Alat Sistem", "rfid_device": "Perangkat RFID & Handheld",
+    "ai": "Asisten Tanya KN", "ai_template": "Templat Laporan Tanya KN",
 }
 
 ACTION_LABEL = {
@@ -334,9 +364,24 @@ ACTION_LABEL = {
     "unlock": "Buka kunci", "untagged_override": "Pengecualian roll tanpa tag", "verify": "Verifikasi", "view_pii": "Lihat data pribadi", "void": "Void", "waive": "Bebaskan",
     # Label khusus satu pasangan `<sumber daya>.<aksi>` (didahulukan editor peran atas label aksi umum).
     "cash.configure": "Kelola rekening kas & bank",   # PK-17
+    # PR-T2 — aksi baru pengganti gerbang nama peran
+    "revoke": "Cabut akses perangkat", "view_margin": "Lihat margin & laba kotor",
+    "view_stock_value": "Lihat nilai persediaan", "extend_rounds": "Buka ronde di atas batas",
+    "retire": "Nonaktifkan / hapus permanen master",
+    "treat_cutloss": "Pilih potongan cacat: masuk BS atau dibuang",
+    "sales_force.post": "Catat akrual ke buku besar", "sales_force.assign": "Pindahkan pelanggan ke sales lain",
+    "rnd.manage_org": "Kelola divisi R&D", "rnd.report": "Laporan penilaian desainer & papan SLA",
+    "goods_receipt.configure": "Ganti mode penerimaan", "warehouse.configure": "Ubah struktur & profil gudang",
+    "accounting.reopen": "Buka kembali periode & tembus blokir akun sementara",
+    "inspection.release": "Lepas / tolak tahanan barang", "od_pricing.unlock": "Buka kunci harga final",
+    "system_tools.configure": "Jalankan & kembalikan pembersihan, lepas kunci proses",
+    "rfid_device.configure": "Daftarkan & atur perangkat", "ai.manage": "Lihat pemakaian & atur aturan asisten",
+    "ai.configure": "Pengaturan teknis asisten & buka riwayat pengguna lain",
 }
 # PK-45 — izin kredit pelanggan (modul Pelanggan & CRM) dan pesanan tanpa PPN (modul Pesanan Penjualan).
 ACTION_LABEL.update({"manage_credit": "Ubah plafon & blokir kredit", "tax_override": "Buat pesanan tanpa PPN"})
+#: PR-T2 — label aksi templat laporan Tanya KN = judul templat.
+ACTION_LABEL.update({f"ai_template.{t['id']}": t["title"] for t in AI_TEMPLATES})
 
 
 def clean_permissions(perms: Any) -> Dict[str, List[str]]:
@@ -394,6 +439,9 @@ VIEW_RESOURCE_OVERRIDES: Dict[str, List[str]] = {
     "settings-cfg-hr": ["settings", "hr"],
     "settings-cfg-purchasing": ["settings", "makloon"],
     "settings-cfg-warehouse": ["settings", "uom", "inventory", "goods_receipt"],
+    # PR-T2 — menu hanya untuk pemegang izinnya (bukan semua pemegang modul Laporan / Penjualan).
+    "costing": ["costing"],
+    "incentive-rates": ["sales_force"],
 }
 
 

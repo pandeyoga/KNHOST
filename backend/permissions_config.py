@@ -702,3 +702,57 @@ for _role, _pairs in {"admin": (("customer", "manage_credit"), ("order", "tax_ov
     for _res, _act in _pairs:
         _cur = DEFAULT_PERMISSIONS[_role].setdefault(_res, ["view"])
         DEFAULT_PERMISSIONS[_role][_res] = list(_cur) + [x for x in (_act,) if x not in _cur]
+
+# ═══════════════════════════════════════════════════════════════════════════
+# PR-T2 (K-47) — wewenang yang dulu ditentukan NAMA PERAN (`require_role`, daftar peran di handler) kini izin biasa:
+# tampil dan bisa dicabut di layar Peran & Hak Akses, dan bisa diberikan ke peran kustom tanpa peran acuan.
+# Penerima bawaan = siapa yang hari ini lolos lewat nama peran (tabel "Izin dan peran", docs/blueprint/unit/PR-T2.md).
+# Instalasi lama menerima pasangan ini sekali lewat `bootstrap.migrate_role_gates_to_permissions`.
+# ═══════════════════════════════════════════════════════════════════════════
+_PRT2_AI_VIEW = ("admin", "manager", "sales_admin", "finance", "md", "warehouse_admin", "sales")   # = ai.enabled_roles bawaan
+PRT2_RESOURCES = {
+    "sales_force": {"admin": ["view", "update", "delete", "post", "assign"],
+                    "manager": ["view", "update", "delete", "post", "assign"]},
+    "credit_override": {"admin": ["approve"], "manager": ["approve"]},
+    "costing": {"admin": ["view"], "manager": ["view"]},
+    "manager_home": {"admin": ["view"], "manager": ["view"]},
+    "system_tools": {"admin": ["view", "update", "configure"], "manager": ["view", "update"]},
+    "rfid_device": {"admin": ["configure", "revoke"], "warehouse_admin": ["revoke"]},
+    "ai": {r: (["view"] + (["view_margin"] if r in ("admin", "manager") else [])
+               + (["view_stock_value"] if r in ("admin", "manager", "finance") else [])
+               + (["manage"] if r in ("admin", "manager") else []) + (["configure"] if r == "admin" else []))
+           for r in _PRT2_AI_VIEW},
+}
+#: Aksi baru pada sumber daya lama → peran penerima bawaan.
+PRT2_ACTIONS = {
+    ("rnd", "manage_org"): ("admin", "manager"), ("rnd", "report"): ("admin", "manager"),
+    ("rnd", "extend_rounds"): ("admin", "manager"),
+    ("goods_receipt", "configure"): ("admin", "manager"),   # sudah ada sejak KF-T1 (mode surat jalan supplier)
+    ("warehouse", "configure"): ("admin", "warehouse_admin"),
+    ("accounting", "reopen"): ("admin",),
+    ("inspection", "release"): ("admin", "manager"),
+    ("product", "retire"): ("admin", "md"),
+    ("sales_return", "treat_cutloss"): ("admin", "manager", "md", "md_quality"),
+    ("od_pricing", "unlock"): ("admin",),
+}
+for _res, _by_role in PRT2_RESOURCES.items():
+    for _role, _acts in _by_role.items():
+        DEFAULT_PERMISSIONS[_role][_res] = list(_acts)
+for (_res, _act), _roles in PRT2_ACTIONS.items():
+    for _role in _roles:
+        _cur = list(DEFAULT_PERMISSIONS[_role].get(_res) or [])
+        DEFAULT_PERMISSIONS[_role][_res] = _cur + [_act] if _act not in _cur else _cur
+# Templat laporan Tanya KN: satu aksi per templat (id templat). Sumber nilai bawaan = field `roles` di JSON templat;
+# hanya peran yang bisa membuka asisten (`ai.view`) yang menerimanya. Admin: semua templat.
+import json as _json  # noqa: E402 — dipakai blok PR-T2 saja
+from pathlib import Path as _Path  # noqa: E402
+
+AI_TEMPLATES = _json.loads((_Path(__file__).resolve().parent / "data" / "ai" / "templates_laporan_v1.json")
+                           .read_text(encoding="utf-8"))["templates"]
+AI_TEMPLATE_IDS = [t["id"] for t in AI_TEMPLATES]
+DEFAULT_PERMISSIONS["admin"]["ai_template"] = list(AI_TEMPLATE_IDS)
+for _role, _mods in DEFAULT_PERMISSIONS.items():
+    if _role != "admin" and "view" in (_mods.get("ai") or []):
+        _ids = [t["id"] for t in AI_TEMPLATES if _role in (t.get("roles") or [])]
+        if _ids:
+            _mods["ai_template"] = _ids
