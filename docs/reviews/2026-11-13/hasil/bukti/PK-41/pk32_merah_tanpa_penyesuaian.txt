@@ -1,0 +1,12 @@
+E       AssertionError: {'current': 800000.0, 'b1_30': 0.0, 'b31_60': 0.0, 'b61_90': 0.0, ...}
+E       assert (200000.0, 600000.0, 800000.0) == (320000, 480000, 800000)
+E         
+E         At index 0 diff: 200000.0 != 320000
+E         Use -v to get more diff
+E       AssertionError: {'current': 100000.0, 'b1_30': 1000000.0, 'b31_60': 0.0, 'b61_90': 0.0, ...}
+E       assert (1000000.0, 1....0, 1100000.0) == (1100000, 0, 1100000)
+E         
+E         At index 0 diff: 1000000.0 != 1100000
+E         Use -v to get more diff
+FAILED tests_mem/test_PK41_laporan.py::test_PK41_PK32_nota_tertangguh_tidak_dipotong_dua_kali
+FAILED tests_mem/test_PK41_laporan.py::test_PK41_PK32_nota_debit_jadi_baris_tagihan

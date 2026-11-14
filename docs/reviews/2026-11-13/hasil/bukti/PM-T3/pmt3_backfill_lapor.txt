@@ -1,0 +1,3 @@
+Bisa diisi otomatis (PT berekening tunggal): 0 kas
+Perlu diputus orang: 0 kas
+Mode lapor: tidak ada yang diubah. Pakai --terapkan untuk menulis (data nyata = keputusan pemilik).

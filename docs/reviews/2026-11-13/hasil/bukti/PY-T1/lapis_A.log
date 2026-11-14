@@ -1,0 +1,30 @@
+== tests/test_bp_PK14_indeks_wajib.py
+.........                                                                [100%]
+9 passed in 43.95s
+== tests/test_bp_PMT3_cocok_bersamaan.py
+.                                                                        [100%]
+1 passed in 1.00s
+== tests/test_bp_PYT1_data_acuan.py
+=========================== short test summary info ============================
+FAILED tests/test_bp_PYT1_data_acuan.py::test_U14_dua_proses_reguler_bersamaan_satu_proses
+1 failed, 1 passed, 1 warning in 0.85s
+== tests/test_bp_PK33_klaim_bersamaan.py
+..                                                                       [100%]
+2 passed in 1.16s
+== tests/test_f16_due_from_first_sj.py
+...                                                                      [100%]
+3 passed in 4.11s
+== tests/test_g3_phase03c_live.py
+=========================== short test summary info ============================
+FAILED tests/test_g3_phase03c_live.py::test_po02_qty_to_received_triggers_reapproval
+1 failed, 9 passed in 1.90s
+== tests/test_iter113_p05_new_features.py
+..........s                                                              [100%]
+10 passed, 1 skipped in 1.22s
+== tests/test_iter114_p07_reversal.py
+=========================== short test summary info ============================
+FAILED tests/test_iter114_p07_reversal.py::test_reverse_auto_cash_transaction_je
+1 failed, 18 passed in 2.35s
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+2 passed, 1 warning in 0.89s

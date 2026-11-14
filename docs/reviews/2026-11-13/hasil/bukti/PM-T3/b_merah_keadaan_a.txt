@@ -1,0 +1,4 @@
+$S/wt21/backend/tests_mem/test_PMT3_kwitansi_rekening.py:423: AssertionError: assert 'kas_pmt3_lama_ksc' not in ({'kas_pmt3_lama_ksc'} | {'kas_pmt3_lama_ksc'})
+$S/wt21/backend/tests_mem/test_PMT3_kwitansi_rekening.py:486: AttributeError: module 'services.ar_receipt_service' has no attribute 'isi_rekening_kwitansi_lama'
+$S/wt21/backend/tests_mem/test_PMT3_kwitansi_rekening.py:520: KeyError: 'customer_name'
+3 failed, 16 passed, 1 warning in 8.96s

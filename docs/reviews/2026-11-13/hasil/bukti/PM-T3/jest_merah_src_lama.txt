@@ -1,0 +1,7 @@
+  ✕ form kwitansi: rekening penerima dari instruksi pesanan; beda instruksi → peringatan + catatan wajib; konfirmasi N5 (579 ms)
+  ✕ form kwitansi: nomor referensi bertanda wajib bila pengaturan PT menyala; giro meminta jatuh tempo (161 ms)
+  ✕ form kwitansi dari mutasi bank: nominal, rekening mutasi, referensi, tanggal terisi (139 ms)
+  ✕ riwayat kwitansi: kolom rekening & referensi, lencana status, tanda tidak sesuai instruksi, saringan belum terverifikasi (118 ms)
+  ✕ rekonsiliasi: lencana kode bayar; tombol catat kwitansi hanya bila pesanan belum punya kwitansi yang menunggu (178 ms)
+  ✕ rekonsiliasi mode Semua PT: tombol catat kwitansi mati dengan alasan tertulis (72 ms)
+Tests:       6 failed, 6 total

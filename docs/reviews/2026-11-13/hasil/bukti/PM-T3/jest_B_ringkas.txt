@@ -1,0 +1,15 @@
+      at Object.<anonymous> (../fe/node_modules/cmdk/node_modules/@radix-ui/react-use-controllable-state/src/use-controllable-state.tsx:2:32)
+      at Object.<anonymous> (../fe/node_modules/cmdk/node_modules/@radix-ui/react-dialog/src/dialog.tsx:6:38)
+      at Object.<anonymous> (../fe/node_modules/cmdk/dist/index.js:1:961)
+      at Object.<anonymous> (src/components/ui/command.jsx:2:1)
+      at Object.<anonymous> (src/components/KNSelect.jsx:43:1)
+      at Object.<anonymous> (src/features/wms/transfer/TransferReceiptPanel.jsx:9:1)
+      at Object.<anonymous> (src/features/wms/transfer/TransferDetailModal.jsx:8:1)
+      at Object.<anonymous> (src/features/wms/transfer/__tests__/TransferDetailModal.test.js:4:1)
+
+
+Test Suites: 35 failed, 111 passed, 146 total
+Tests:       898 passed, 898 total
+Snapshots:   0 total
+Time:        199.152 s
+Ran all test suites.

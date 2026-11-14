@@ -1,0 +1,9 @@
+== INV-ATOMIC-01 — endpoint tulis multi-koleksi memakai klaim atomik / CAS (saga, tanpa transaksi) ==
+[FAIL] 6 pelanggaran (dari 131 cek):
+  ✗ backend/routers/inbound_scan_label.py /inbound/rolls/{roll_id}/putaway: dicatat 'cas' tetapi find_one_and_update induk tidak berprasyarat status.
+  ✗ backend/routers/inbound_scan_label.py /inbound/rolls/{roll_id}/scan: dicatat 'cas' tetapi find_one_and_update induk tidak berprasyarat status.
+  ✗ backend/routers/purchase_orders_extra.py /purchase-orders/{po_id}/close: dicatat 'cas' tetapi find_one_and_update induk tidak berprasyarat status.
+  ✗ backend/routers/transfers.py /transfers/{transfer_id}: dicatat 'claim' tetapi tidak memanggil atomic_claim.claim(). Pasang klaim atau ubah mekanisme.
+  ✗ backend/routers/transfers.py /transfers/{transfer_id}: klaim tanpa pencabut kunci (finish_set / $unset saga_lock / so_transition / release).
+  ✗ BELUM DITINJAU = 96 > baseline 0. Endpoint multi-koleksi BARU wajib memakai atomic_claim.claim()/CAS dan dicatat di REVIEWED: client_dataset.py POST /batches/{batch_id}/rollback; cycle_count.py POST /cycle-count/sessions/{session_id}/roll-finalize; access_roles.py DELETE /roles/{rid}; entity_masters.py DELETE /entity-masters/{kind}/{row_id}; purchase_orders.py POST /purchase-orders/{po_id}/approve
+→ Perbaiki sesuai INVARIANT INV-ATOMIC-01 (detail: memory/INVARIANTS.md).

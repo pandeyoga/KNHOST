@@ -1,0 +1,48 @@
+E       AssertionError: {"detail":"Pilih rekening kas/bank untuk transaksi ini. Sukacita punya 3 rekening Bank."}
+E       assert 409 == 200
+E        +  where 409 = <Response [409 Conflict]>.status_code
+E       AssertionError: {"detail":"Rekening BCA Penerimaan Kanda bukan rekening aktif Sukacita."}
+E       assert (409, 'Rekeni...if Sukacita.') == (400, 'Rekeni...witansi ini.')
+E         
+E         At index 0 diff: 409 != 400
+E         Use -v to get more diff
+E       AssertionError: {"id":"arc_33a26c12a730","number":"KSC/AR-00001","customer_id":"cus_pmt3_12f9292d","customer_name":"Toko Maju","entity_id":"ent_ksc","receipt_date":"2026-11-14T19:04:06.289339+00:00","method":"transfer","amount":500000.0,"used_deposit":0.0,"total_funds":500000.0,"applied_total":500000.0,"unapplied_amount":0.0,"deposit_delta":0.0,"allocations":[{"order_id":"so_pmt3_4703ed37","order_number":"SO-PMT3-4","applied":500000.0,"outstanding_after":1000000.0,"payment_status":"partial","entity_id":"ent_ksc","plan_line_seq":0,"parts":[{"kind":"kas","amount":500000.0,"payment_id":"pay_29bf7a5e6b8fcfabd2e429c8"}]}],"account_id":"bank_2c0e653e0681","notes":"uji PM-T3","status":"posted","effects_done":true,"variance":{"expected":1500000.0,"funds":500000.0,"capacity":500000.0,"boundary":1500000.0,"boundary_label":"tagihan yang jatuh tempo","delta":-1000000.0,"direction":"under","tolerance":5000.0,"needs_decision":true,"target_order_ids":["so_pmt3_4703ed37"],"decision_id":"","decision_kind":"","decision_number":"","resolved":false,"explain":["Uang masuk Rp 500.000","Tagihan yang jatuh tempo (1 pesanan tujuan) = Rp 1.500.000","Selisih Rp 1.000.000 KURANG bayar","Toleransi berlaku Rp 5.000 (Pusat Pengaturan → Uang Masuk & Piutang)"]},"created_by":"user_admin_01","created_by_name":"Budi Santoso","created_at":"2026-11-14T19:04:06.299114+00:00","updated_at":"2026-11-14T19:04:06.299668+00:00","refs":[{"rel":"settles","doc_type":"sales_order","doc_id":"so_pmt3_4703ed37","doc_number":"SO-PMT3-4","note":"pembayaran dialokasikan ke pesanan","at":"2026-11-14T19:04:06.299626+00:00"}],"gl_status":"posted","gl_error":"","cash_txn_id":"cash_5c684036ca8715a7b8362161","deposit_credited":true}
+E       assert (200, None) == (400, 'Rekeni...ansfer bank.')
+E         At index 0 diff: 200 != 400
+E       AssertionError: {"detail":"Setting 'payment.wajib_nomor_referensi' tidak ada di registry"}
+E       assert 404 == 200
+E        +  where 404 = <Response [404 Not Found]>.status_code
+E       AssertionError: {"id":"arc_b4d409625b32","number":"KSC/AR-00002","customer_id":"cus_pmt3_12f9292d","customer_name":"Toko Maju","entity_id":"ent_ksc","receipt_date":"2026-11-14T19:04:06.438615+00:00","method":"transfer","amount":1111000.0,"used_deposit":0.0,"total_funds":1111000.0,"applied_total":1111000.0,"unapplied_amount":0.0,"deposit_delta":0.0,"allocations":[{"order_id":"so_pmt3_fc7d16c5","order_number":"SO-PMT3-5","applied":1111000.0,"outstanding_after":0.0,"payment_status":"paid","entity_id":"ent_ksc","plan_line_seq":0,"parts":[{"kind":"kas","amount":1111000.0,"payment_id":"pay_3a93c14dc99a6483acb80b7a"}]}],"account_id":"bank_3d05a7b86be6","notes":"uji PM-T3","status":"posted","effects_done":true,"variance":{"expected":1111000.0,"funds":1111000.0,"capacity":1111000.0,"boundary":1111000.0,"boundary_label":"tagihan yang jatuh tempo","delta":0.0,"direction":"none","tolerance":5000.0,"needs_decision":false,"target_order_ids":["so_pmt3_fc7d16c5"],"decision_id":"","decision_kind":"","decision_number":"","resolved":true,"explain":["Uang masuk Rp 1.111.000","Tagihan yang jatuh tempo (1 pesanan tujuan) = Rp 1.111.000","Selisih Rp 0 nihil","Toleransi berlaku Rp 5.000 (Pusat Pengaturan → Uang Masuk & Piutang)"]},"created_by":"user_admin_01","created_by_name":"Budi Santoso","created_at":"2026-11-14T19:04:06.447245+00:00","updated_at":"2026-11-14T19:04:06.447786+00:00","refs":[{"rel":"settles","doc_type":"sales_order","doc_id":"so_pmt3_fc7d16c5","doc_number":"SO-PMT3-5","note":"pembayaran dialokasikan ke pesanan","at":"2026-11-14T19:04:06.447744+00:00"}],"gl_status":"posted","gl_error":"","cash_txn_id":"cash_7c809f2802b6cd1cee342101","deposit_credited":true}
+E       assert (200, None) == (400, 'Rekeni...n alasannya.')
+E       KeyError: 'pay_code_hits'
+E       KeyError: 'l7'
+E           AssertionError: {"detail":"Pilih rekening kas/bank untuk transaksi ini. Sukacita punya 3 rekening Bank."}
+E           assert 409 == 200
+E            +  where 409 = <Response [409 Conflict]>.status_code
+E       AssertionError: {"detail": "Pilih rekening kas/bank untuk transaksi ini. Sukacita punya 3 rekening Bank."}
+E           KeyError: "Setting 'payment.wajib_nomor_referensi' tidak ada di registry"
+E       AttributeError: 'NoneType' object has no attribute 'get'
+FAILED tests_mem/test_PMT3_kwitansi_rekening.py::test_PMT3_U1_transfer_tanpa_rekening_memakai_bawaan_pt
+FAILED tests_mem/test_PMT3_kwitansi_rekening.py::test_PMT3_U2_rekening_pt_lain_ditolak_tanpa_tulisan
+FAILED tests_mem/test_PMT3_kwitansi_rekening.py::test_PMT3_U3_rekening_tidak_bisa_ditentukan_atau_bukan_penerimaan
+FAILED tests_mem/test_PMT3_kwitansi_rekening.py::test_PMT3_U4_referensi_wajib_per_pt
+FAILED tests_mem/test_PMT3_kwitansi_rekening.py::test_PMT3_U5_rekening_beda_instruksi_wajib_catatan
+FAILED tests_mem/test_PMT3_kwitansi_rekening.py::test_PMT3_U7_kode_bayar_mencocokkan_otomatis
+FAILED tests_mem/test_PMT3_kwitansi_rekening.py::test_PMT3_U8_kode_bayar_nominal_berbeda_hanya_usulan
+FAILED tests_mem/test_PMT3_kwitansi_rekening.py::test_PMT3_U9_lepas_mengembalikan_status_dan_batal_terverifikasi_ditolak
+FAILED tests_mem/test_PMT3_kwitansi_rekening.py::test_PMT3_U12_daftar_belum_terverifikasi_memakai_batas_bawaan
+FAILED tests_mem/test_PMT3_kwitansi_rekening.py::test_PMT3_U13_periode_tertutup_lalu_jurnal_gagal_diulang
+FAILED tests_mem/test_PMT3_kwitansi_rekening.py::test_PMT3_U14_izin_kwitansi
+FAILED tests_mem/test_PMT3_kwitansi_rekening.py::test_PMT3_U15_putaran_tiga_kunci
+FAILED tests_mem/test_PMT3_kwitansi_rekening.py::test_PMT3_cetak_kwitansi_memuat_cara_bayar_rekening_referensi
+$S/pmt3_red/backend/tests_mem/test_PMT3_kwitansi_rekening.py:141: AssertionError: {"detail":"Pilih rekening kas/bank untuk transaksi ini. Sukacita punya 3 rekening Bank."}
+$S/pmt3_red/backend/tests_mem/test_PMT3_kwitansi_rekening.py:161: AssertionError: {"detail":"Rekening BCA Penerimaan Kanda bukan rekening aktif Sukacita."}
+$S/pmt3_red/backend/tests_mem/test_PMT3_kwitansi_rekening.py:189: AssertionError: {"id":"arc_073f6dfb9f01","number":"KSC/AR-00001","customer_id":"cus_pmt3_af16d0ae","customer_name":"Toko Maju","entity_id":"ent_ksc","receipt_date":"2026-11-14T19:04:31.957105+00
+$S/pmt3_red/backend/tests_mem/test_PMT3_kwitansi_rekening.py:133: AssertionError: {"detail":"Setting 'payment.wajib_nomor_referensi' tidak ada di registry"}
+$S/pmt3_red/backend/tests_mem/test_PMT3_kwitansi_rekening.py:219: AssertionError: {"id":"arc_c41537ab7780","number":"KSC/AR-00002","customer_id":"cus_pmt3_af16d0ae","customer_name":"Toko Maju","entity_id":"ent_ksc","receipt_date":"2026-11-14T19:04:32.014658+00
+$S/pmt3_red/backend/tests_mem/test_PMT3_kwitansi_rekening.py:233: KeyError: 'pay_code_hits'
+$S/pmt3_red/backend/tests_mem/test_PMT3_kwitansi_rekening.py:249: AssertionError: {"detail":"Pilih rekening kas/bank untuk transaksi ini. Sukacita punya 3 rekening Bank."}
+$S/pmt3_red/backend/tests_mem/test_PMT3_kwitansi_rekening.py:271: KeyError: 'l7'
+$S/pmt3_red/backend/tests_mem/test_PMT3_kwitansi_rekening.py:304: AssertionError: {"detail":"Pilih rekening kas/bank untuk transaksi ini. Sukacita punya 3 rekening Bank."}
+$S/pmt3_red/backend/tests_mem/test_PMT3_kwitansi_rekening.py:339: AssertionError: {"detail":"Pilih rekening kas/bank untuk transaksi ini. Sukacita punya 3 rekening Bank."}
+$S/pmt3_red/backend/tests_mem/test_PMT3_kwitansi_rekening.py:360: AssertionError: {"detail": "Pilih rekening kas/bank untuk transaksi ini. Sukacita punya 3 rekening Bank."}

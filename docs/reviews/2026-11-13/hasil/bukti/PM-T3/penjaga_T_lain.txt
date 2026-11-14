@@ -1,0 +1,12 @@
+== verify_role_gate_ui [PASS] 31 cek lolos, 0 pelanggaran.
+== verify_payment_vocab [PASS] 1810 cek lolos, 0 pelanggaran.
+== verify_permission_checked [PASS] 606 cek lolos, 0 pelanggaran.
+== verify_posting_coverage [PASS] 133 cek lolos, 0 pelanggaran.
+== verify_cash_single_door [PASS] 725 cek lolos, 0 pelanggaran.
+== verify_access_catalog_nav verify_access_catalog_nav: 0 temuan
+[PASS] 157 cek lolos, 0 pelanggaran.
+[PASS] 157 cek lolos, 0 pelanggaran.
+[PASS] 3276 cek lolos, 0 pelanggaran.
+audit_config_wiring --strict exit=0
+
+check_nav_map PASS

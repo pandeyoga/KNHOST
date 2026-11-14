@@ -1,0 +1,2 @@
+Ringkasan: 5 proses · 0 tanpa jenis · 0 akan diberi kunci · 0 PT+periode kembar · 0 slip tanpa komponen (tidak diubah; dibaca dari kolomnya)
+Mode baca-saja: tidak ada yang diubah. Pakai --apply untuk menulis (data nyata = keputusan pemilik).

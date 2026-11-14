@@ -1,0 +1,35 @@
+== INV-ATOMIC-01 — endpoint tulis multi-koleksi memakai klaim atomik / CAS (saga, tanpa transaksi) ==
+[FAIL] 1 pelanggaran (dari 131 cek):
+  ✗ BELUM DITINJAU = 29 > baseline 0. Endpoint multi-koleksi BARU wajib memakai atomic_claim.claim()/CAS dan dicatat di REVIEWED: client_dataset.py POST /batches/{batch_id}/rollback; inspections.py POST /inspections/{ins_id}/lines/{line_id}/mdq-cut; purchase_orders.py POST /purchase-orders/{po_id}/amend; purchase_orders.py POST /purchase-orders/{po_id}/approve; sales_return_exceptions.py POST /sales-returns/{return_id}/replacement-order
+→ Perbaiki sesuai INVARIANT INV-ATOMIC-01 (detail: memory/INVARIANTS.md).
+
+BELUM DITINJAU sesudah A+B (sebelum C): 29
+- client_dataset.py · POST /batches/{batch_id}/rollback — client_dataset_imports, product_templates, products, supplier_items
+- inspections.py · POST /inspections/{ins_id}/lines/{line_id}/mdq-cut — inspections, inventory_movements, inventory_rolls, mdq_cuts
+- purchase_orders.py · POST /purchase-orders/{po_id}/amend — po_variance_tasks, purchase_orders, wms_tasks
+- purchase_orders.py · POST /purchase-orders/{po_id}/approve — notifications, po_variance_tasks, purchase_orders
+- sales_return_exceptions.py · POST /sales-returns/{return_id}/replacement-order — price_approvals, sales_orders, sales_returns
+- vendor_bills.py · POST /vendor-bills/{bill_id}/payments/{payment_id}/void — cash_transactions, purchase_orders, vendor_bills
+- access_roles.py · PATCH /roles/{rid} — custom_roles, permission_settings
+- access_roles.py · DELETE /roles/{rid} — custom_roles, permission_settings
+- customers.py · POST /customers/{customer_id}/merge — customers, inventory_rolls
+- cutting.py · POST /tasks/{task_id}/receive — sales_orders, wms_tasks
+- cycle_count.py · POST /cycle-count/sessions/{session_id}/roll-finalize — cycle_count_sessions, inventory_rolls
+- design_gallery.py · PUT /design-gallery/{gallery_id} — design_gallery, products
+- goods_receipts.py · POST /goods-receipts/{grn_id}/start-count — goods_receipts, wms_tasks
+- handheld.py · POST /tag-writes/{write_id}/confirm — inventory_rolls, rfid_tags
+- hr_leave.py · POST /hr/leave-requests/me — hr_leave_balances, hr_leave_requests
+- hr_leave.py · POST /hr/leave-requests — hr_leave_balances, hr_leave_requests
+- hr_payroll.py · POST /hr/payroll/runs/{run_id}/recalculate — hr_payroll_runs, hr_payslips
+- inventory.py · POST /inventory/rolls/{roll_id}/fix-location — inventory_rolls, location_corrections
+- makloon_orders.py · POST /makloon-orders/{mko_id}/steps/{seq}/partial-receipts/{grn_id}/cancel — goods_receipts, makloon_orders
+- master_governance.py · POST /master-governance/batches — master_governance_batches, products
+- master_governance.py · POST /master-governance/batches/{batch_id}/rollback — master_governance_batches, products
+- outbound_picking.py · POST /outbound/so/{order_id}/loading-check/simulate-tags — inventory_rolls, rfid_tags
+- sales_returns.py · POST /sales-returns — return_create_locks, sales_returns
+- sales_returns.py · POST /sales-returns/{return_id}/settle — credit_notes, sales_returns
+- sales_returns.py · POST /sales-returns/{return_id}/roll-settlement/back-shipment — sales_returns, shipments
+- special_orders.py · POST /special-orders/{order_id}/fulfillment/{item_key}/route — purchase_requisitions, special_orders
+- transfers.py · POST /transfers/{transfer_id}/exceptions/{exc_id}/resolve — inventory_movements, inventory_rolls
+- warehouses.py · PUT /warehouses/{warehouse_id}/structure — location_migrations, warehouses
+- warehouses.py · PATCH /warehouses/{warehouse_id} — location_migrations, warehouses

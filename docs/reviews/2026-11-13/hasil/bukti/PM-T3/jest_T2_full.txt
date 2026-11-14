@@ -1,0 +1,20 @@
+FAIL src/features/__tests__/roleGateSweep2.test.js
+FAIL src/features/__tests__/mkl02RecapPaging.test.js
+FAIL src/features/__tests__/phase3P4Popups.test.js
+FAIL src/features/__tests__/phase4R2.test.js
+FAIL src/features/__tests__/fe07ReturnErrors.test.js
+FAIL src/features/__tests__/fix3bForms.test.js
+FAIL src/features/__tests__/fix1Cakupan.test.js
+FAIL src/features/__tests__/mobileShell.test.js
+FAIL src/features/__tests__/phase3P5.test.js
+FAIL src/features/__tests__/uatV3ReturnsOps.test.js
+FAIL src/features/__tests__/uatV3SpecialOrder.test.js
+FAIL src/features/__tests__/phase3Settings.test.js
+FAIL src/features/__tests__/decisionsD3.test.js
+FAIL src/features/__tests__/phase3P8Activation.test.js
+FAIL src/features/__tests__/phase4R6.test.js
+FAIL src/features/__tests__/phase3P6Kpi.test.js
+FAIL src/components/__tests__/knSelect.test.js
+FAIL src/features/__tests__/phase3P4Finance.test.js
+Test Suites: 35 failed, 116 passed, 151 total
+Tests:       934 passed, 934 total

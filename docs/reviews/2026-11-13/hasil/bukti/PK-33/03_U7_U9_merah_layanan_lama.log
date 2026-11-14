@@ -1,0 +1,7 @@
+E       AssertionError: permintaan B ikut membuat surat jalan KSC/SJ-00002
+E       assert 'ok' not in {'mulai': True, 'ok': {'id': 'shp_d5ea4a2e6795', 'shipment_no': 'KSC/SJ-00002', 'kind': 'return_back', 'entity_id': 'ent_ksc', ...}}
+E       AssertionError: permintaan B ikut lolos: KSC/LV-00002
+E       assert 'ok' not in {'mulai': True, 'ok': {'id': 'leave_3ab3dd91f440', 'number': 'KSC/LV-00002', 'employee_id': 'emp_pk33_31a9bfc4', 'employee_name': 'Karyawan Uji ae28', ...}}
+FAILED tests_mem/test_PK33_atomisitas.py::test_PK33_U7_kirim_balik_dua_permintaan_bersela_satu_surat_jalan
+FAILED tests_mem/test_PK33_atomisitas.py::test_PK33_U7_cuti_dua_permintaan_bersela_satu_pengajuan
+2 failed, 7 passed, 10 deselected, 1 warning in 2.19s

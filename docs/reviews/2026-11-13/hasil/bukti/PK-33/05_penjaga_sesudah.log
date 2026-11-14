@@ -1,0 +1,2 @@
+== INV-ATOMIC-01 — endpoint tulis multi-koleksi memakai klaim atomik / CAS (saga, tanpa transaksi) ==
+[PASS] 160 cek lolos, 0 pelanggaran.

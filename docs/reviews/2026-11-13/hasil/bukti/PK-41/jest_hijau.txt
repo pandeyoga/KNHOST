@@ -1,0 +1,9 @@
+    ✓ judul kolom = bucket_labels; kolom pertama 'Belum jatuh tempo'; baris pencocokan di bawah total (601 ms)
+    ✓ batas dua kolom: kolom yang tidak dipakai server tidak tampil (116 ms)
+    ✓ rincian pelanggan: pesanan dibuka → baris per surat jalan + Belum dikirim; status umur ikon + teks (103 ms)
+    ✓ baris saldo awal rekening di bawah Kas Awal + keterangan metode langsung (132 ms)
+    ✓ sub-teks 'sesudah nota kredit', lima baris pencocokan, kalimat kaki baru (175 ms)
+    ✓ tanpa izin HPP (server tidak mengirim pencocokan) → panel tidak tampil (166 ms)
+    ✓ sub-teks kartu Piutang dan Modal Kerja (159 ms)
+    ✓ kelompok pertama 'Belum jatuh tempo'; kartu pencocokan (172 ms)
+Tests:       8 passed, 8 total

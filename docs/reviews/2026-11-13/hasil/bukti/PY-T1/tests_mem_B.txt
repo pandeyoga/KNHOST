@@ -1,0 +1,2 @@
+1745 passed, 2 skipped, 3 xfailed, 12 warnings in 1551.60s (0:25:51)
+(basis B = 35a1f9a, salinan bersih git archive)

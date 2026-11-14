@@ -1,0 +1,1253 @@
+{
+ "keluar": [
+  {
+   "endpoint": "admin.py · POST /master-data/import-products",
+   "koleksi_sebenarnya": [
+    "products"
+   ],
+   "substantif": [
+    "products"
+   ],
+   "salah_atribusi_lama": {
+    "ocr_sample_service.update": [
+     "ocr_samples"
+    ]
+   }
+  },
+  {
+   "endpoint": "ai_analytics.py · DELETE /my-templates/{template_id}",
+   "koleksi_sebenarnya": [
+    "ai_user_templates"
+   ],
+   "substantif": [
+    "ai_user_templates"
+   ],
+   "salah_atribusi_lama": {
+    "ocr_sample_service.delete": [
+     "ocr_samples"
+    ]
+   }
+  },
+  {
+   "endpoint": "ai_analytics.py · DELETE /schedules/{schedule_id}",
+   "koleksi_sebenarnya": [
+    "ai_schedules"
+   ],
+   "substantif": [
+    "ai_schedules"
+   ],
+   "salah_atribusi_lama": {
+    "ocr_sample_service.delete": [
+     "ocr_samples"
+    ]
+   }
+  },
+  {
+   "endpoint": "ai_analytics.py · DELETE /sessions/{session_id}",
+   "koleksi_sebenarnya": [
+    "ai_chat_sessions"
+   ],
+   "substantif": [
+    "ai_chat_sessions"
+   ],
+   "salah_atribusi_lama": {
+    "ocr_sample_service.delete": [
+     "ocr_samples"
+    ]
+   }
+  },
+  {
+   "endpoint": "bank_reconciliation.py · DELETE /bank-reconciliation/formats/{format_id}",
+   "koleksi_sebenarnya": [
+    "bank_statement_formats"
+   ],
+   "substantif": [
+    "bank_statement_formats"
+   ],
+   "salah_atribusi_lama": {
+    "ocr_sample_service.delete": [
+     "ocr_samples"
+    ]
+   }
+  },
+  {
+   "endpoint": "budgets.py · DELETE /finance/budgets/{budget_id}",
+   "koleksi_sebenarnya": [
+    "budgets"
+   ],
+   "substantif": [
+    "budgets"
+   ],
+   "salah_atribusi_lama": {
+    "ocr_sample_service.delete": [
+     "ocr_samples"
+    ]
+   }
+  },
+  {
+   "endpoint": "categories.py · DELETE /product-categories/{category_id}",
+   "koleksi_sebenarnya": [
+    "product_categories"
+   ],
+   "substantif": [
+    "product_categories"
+   ],
+   "salah_atribusi_lama": {
+    "ocr_sample_service.delete": [
+     "ocr_samples"
+    ]
+   }
+  },
+  {
+   "endpoint": "categories.py · POST /product-categories",
+   "koleksi_sebenarnya": [
+    "product_categories"
+   ],
+   "substantif": [
+    "product_categories"
+   ],
+   "salah_atribusi_lama": {
+    "ocr_sample_service.update": [
+     "ocr_samples"
+    ]
+   }
+  },
+  {
+   "endpoint": "color_library.py · DELETE /color-library/{color_id}",
+   "koleksi_sebenarnya": [
+    "color_library"
+   ],
+   "substantif": [
+    "color_library"
+   ],
+   "salah_atribusi_lama": {
+    "ocr_sample_service.delete": [
+     "ocr_samples"
+    ]
+   }
+  },
+  {
+   "endpoint": "consolidation.py · DELETE /finance/consolidation/eliminations/{elim_id}",
+   "koleksi_sebenarnya": [
+    "intercompany_eliminations"
+   ],
+   "substantif": [
+    "intercompany_eliminations"
+   ],
+   "salah_atribusi_lama": {
+    "ocr_sample_service.delete": [
+     "ocr_samples"
+    ]
+   }
+  },
+  {
+   "endpoint": "crm_omnichannel.py · DELETE /crm/interactions/{intx_id}",
+   "koleksi_sebenarnya": [
+    "crm_interactions"
+   ],
+   "substantif": [
+    "crm_interactions"
+   ],
+   "salah_atribusi_lama": {
+    "ocr_sample_service.delete": [
+     "ocr_samples"
+    ]
+   }
+  },
+  {
+   "endpoint": "crm_omnichannel.py · DELETE /crm/leads/{lead_id}",
+   "koleksi_sebenarnya": [
+    "crm_leads"
+   ],
+   "substantif": [
+    "crm_leads"
+   ],
+   "salah_atribusi_lama": {
+    "ocr_sample_service.delete": [
+     "ocr_samples"
+    ]
+   }
+  },
+  {
+   "endpoint": "customer_prices.py · DELETE /customer-prices/{price_id}",
+   "koleksi_sebenarnya": [],
+   "substantif": [],
+   "salah_atribusi_lama": {
+    "ocr_sample_service.delete": [
+     "ocr_samples"
+    ],
+    "pricelist_service.deactivate_price": [
+     "entity_prices"
+    ]
+   }
+  },
+  {
+   "endpoint": "customers.py · PATCH /customers/{customer_id}",
+   "koleksi_sebenarnya": [
+    "customers"
+   ],
+   "substantif": [
+    "customers"
+   ],
+   "salah_atribusi_lama": {
+    "ocr_sample_service.update": [
+     "ocr_samples"
+    ]
+   }
+  },
+  {
+   "endpoint": "customers.py · POST /customers/{customer_id}/addresses",
+   "koleksi_sebenarnya": [
+    "customers"
+   ],
+   "substantif": [
+    "customers"
+   ],
+   "salah_atribusi_lama": {
+    "ocr_sample_service.update": [
+     "ocr_samples"
+    ]
+   }
+  },
+  {
+   "endpoint": "cycle_count.py · POST /cycle-count/sessions/{session_id}/approve",
+   "koleksi_sebenarnya": [
+    "cycle_count_sessions"
+   ],
+   "substantif": [
+    "cycle_count_sessions"
+   ],
+   "salah_atribusi_lama": {
+    "design_ownership_service.claim": [
+     "design_gallery"
+    ],
+    "dispatch_payment_gate.release": [
+     "sales_orders"
+    ]
+   }
+  },
+  {
+   "endpoint": "design_gallery.py · DELETE /design-gallery/{gallery_id}",
+   "koleksi_sebenarnya": [
+    "design_gallery"
+   ],
+   "substantif": [
+    "design_gallery"
+   ],
+   "salah_atribusi_lama": {
+    "ocr_sample_service.delete": [
+     "ocr_samples"
+    ]
+   }
+  },
+  {
+   "endpoint": "design_gallery.py · DELETE /design-gallery/{gallery_id}/files/{file_id}/comments/{comment_id}",
+   "koleksi_sebenarnya": [
+    "design_gallery"
+   ],
+   "substantif": [
+    "design_gallery"
+   ],
+   "salah_atribusi_lama": {
+    "ocr_sample_service.delete": [
+     "ocr_samples"
+    ]
+   }
+  },
+  {
+   "endpoint": "design_gallery.py · DELETE /design-gallery/{gallery_id}/rating",
+   "koleksi_sebenarnya": [
+    "design_gallery"
+   ],
+   "substantif": [
+    "design_gallery"
+   ],
+   "salah_atribusi_lama": {
+    "ocr_sample_service.delete": [
+     "ocr_samples"
+    ]
+   }
+  },
+  {
+   "endpoint": "design_studio.py · DELETE /design-gallery/{gallery_id}/colorways/{cw_id}",
+   "koleksi_sebenarnya": [
+    "design_gallery"
+   ],
+   "substantif": [
+    "design_gallery"
+   ],
+   "salah_atribusi_lama": {
+    "ocr_sample_service.delete": [
+     "ocr_samples"
+    ]
+   }
+  },
+  {
+   "endpoint": "documents.py · DELETE /document-templates/{template_id}",
+   "koleksi_sebenarnya": [
+    "document_templates"
+   ],
+   "substantif": [
+    "document_templates"
+   ],
+   "salah_atribusi_lama": {
+    "ocr_sample_service.delete": [
+     "ocr_samples"
+    ]
+   }
+  },
+  {
+   "endpoint": "entities.py · DELETE /entities/{entity_id}/tax-status/pending",
+   "koleksi_sebenarnya": [
+    "business_entities"
+   ],
+   "substantif": [
+    "business_entities"
+   ],
+   "salah_atribusi_lama": {
+    "ocr_sample_service.delete": [
+     "ocr_samples"
+    ]
+   }
+  },
+  {
+   "endpoint": "entity_masters.py · DELETE /entity-masters/{kind}/{row_id}",
+   "koleksi_sebenarnya": [],
+   "substantif": [],
+   "salah_atribusi_lama": {
+    "ocr_sample_service.delete": [
+     "ocr_samples"
+    ],
+    "data_hygiene_service.revert": [
+     "data_hygiene_log"
+    ],
+    "ai_actions._segarkan": [
+     "ai_action_proposals"
+    ]
+   }
+  },
+  {
+   "endpoint": "entity_masters.py · POST /entity-masters/{kind}",
+   "koleksi_sebenarnya": [],
+   "substantif": [],
+   "salah_atribusi_lama": {
+    "handheld_devices.create": [
+     "rfid_devices"
+    ],
+    "ai_actions._segarkan": [
+     "ai_action_proposals"
+    ]
+   }
+  },
+  {
+   "endpoint": "export_center.py · DELETE /templates/{tpl_id}",
+   "koleksi_sebenarnya": [
+    "export_templates"
+   ],
+   "substantif": [
+    "export_templates"
+   ],
+   "salah_atribusi_lama": {
+    "ocr_sample_service.delete": [
+     "ocr_samples"
+    ]
+   }
+  },
+  {
+   "endpoint": "gl.py · DELETE /gl/accounts/{code}",
+   "koleksi_sebenarnya": [
+    "gl_accounts"
+   ],
+   "substantif": [
+    "gl_accounts"
+   ],
+   "salah_atribusi_lama": {
+    "ocr_sample_service.delete": [
+     "ocr_samples"
+    ]
+   }
+  },
+  {
+   "endpoint": "handheld.py · POST /tasks/{kind}/{doc_id}/complete",
+   "koleksi_sebenarnya": [],
+   "substantif": [],
+   "salah_atribusi_lama": {
+    "cycle_count_service.complete": [
+     "rfid_cycle_counts",
+     "rfid_verify_sessions"
+    ]
+   }
+  },
+  {
+   "endpoint": "hr.py · DELETE /hr/employees/{employee_id}",
+   "koleksi_sebenarnya": [
+    "hr_employees"
+   ],
+   "substantif": [
+    "hr_employees"
+   ],
+   "salah_atribusi_lama": {
+    "ocr_sample_service.delete": [
+     "ocr_samples"
+    ]
+   }
+  },
+  {
+   "endpoint": "hr.py · DELETE /hr/org-units/{unit_id}",
+   "koleksi_sebenarnya": [
+    "hr_org_units"
+   ],
+   "substantif": [
+    "hr_org_units"
+   ],
+   "salah_atribusi_lama": {
+    "ocr_sample_service.delete": [
+     "ocr_samples"
+    ]
+   }
+  },
+  {
+   "endpoint": "hr.py · PATCH /hr/employees/{employee_id}",
+   "koleksi_sebenarnya": [
+    "hr_employees"
+   ],
+   "substantif": [
+    "hr_employees"
+   ],
+   "salah_atribusi_lama": {
+    "ocr_sample_service.update": [
+     "ocr_samples"
+    ]
+   }
+  },
+  {
+   "endpoint": "hr_attendance.py · DELETE /hr/devices/{dev_id}",
+   "koleksi_sebenarnya": [
+    "hr_devices"
+   ],
+   "substantif": [
+    "hr_devices"
+   ],
+   "salah_atribusi_lama": {
+    "ocr_sample_service.delete": [
+     "ocr_samples"
+    ]
+   }
+  },
+  {
+   "endpoint": "hr_attendance.py · DELETE /hr/geofences/{geo_id}",
+   "koleksi_sebenarnya": [
+    "hr_geofences"
+   ],
+   "substantif": [
+    "hr_geofences"
+   ],
+   "salah_atribusi_lama": {
+    "ocr_sample_service.delete": [
+     "ocr_samples"
+    ]
+   }
+  },
+  {
+   "endpoint": "hr_attendance.py · DELETE /hr/shifts/{shift_id}",
+   "koleksi_sebenarnya": [
+    "hr_shifts"
+   ],
+   "substantif": [
+    "hr_shifts"
+   ],
+   "salah_atribusi_lama": {
+    "ocr_sample_service.delete": [
+     "ocr_samples"
+    ]
+   }
+  },
+  {
+   "endpoint": "hr_kpi.py · DELETE /hr/kpi/{kpi_id}",
+   "koleksi_sebenarnya": [
+    "hr_kpi"
+   ],
+   "substantif": [
+    "hr_kpi"
+   ],
+   "salah_atribusi_lama": {
+    "ocr_sample_service.delete": [
+     "ocr_samples"
+    ]
+   }
+  },
+  {
+   "endpoint": "incentive_rates.py · DELETE /incentive-rates/{rate_id}",
+   "koleksi_sebenarnya": [
+    "incentive_rates"
+   ],
+   "substantif": [
+    "incentive_rates"
+   ],
+   "salah_atribusi_lama": {
+    "ocr_sample_service.delete": [
+     "ocr_samples"
+    ]
+   }
+  },
+  {
+   "endpoint": "incentive_rates.py · POST /incentive-rates",
+   "koleksi_sebenarnya": [
+    "incentive_rates"
+   ],
+   "substantif": [
+    "incentive_rates"
+   ],
+   "salah_atribusi_lama": {
+    "ocr_sample_service.update": [
+     "ocr_samples"
+    ]
+   }
+  },
+  {
+   "endpoint": "inventory.py · POST /inventory/rolls/{roll_id}/reservations/{reservation_id}/cut",
+   "koleksi_sebenarnya": [
+    "inventory_rolls"
+   ],
+   "substantif": [
+    "inventory_rolls"
+   ],
+   "salah_atribusi_lama": {
+    "ocr_sample_service.update": [
+     "ocr_samples"
+    ]
+   }
+  },
+  {
+   "endpoint": "makloons.py · DELETE /makloons/{makloon_id}",
+   "koleksi_sebenarnya": [
+    "makloons"
+   ],
+   "substantif": [
+    "makloons"
+   ],
+   "salah_atribusi_lama": {
+    "ocr_sample_service.delete": [
+     "ocr_samples"
+    ]
+   }
+  },
+  {
+   "endpoint": "marketing.py · DELETE /marketing/posts/{pid}",
+   "koleksi_sebenarnya": [
+    "mkt_posts"
+   ],
+   "substantif": [
+    "mkt_posts"
+   ],
+   "salah_atribusi_lama": {
+    "ocr_sample_service.delete": [
+     "ocr_samples"
+    ]
+   }
+  },
+  {
+   "endpoint": "marketing.py · DELETE /marketing/posts/{pid}/attachments/{fid}",
+   "koleksi_sebenarnya": [
+    "mkt_posts"
+   ],
+   "substantif": [
+    "mkt_posts"
+   ],
+   "salah_atribusi_lama": {
+    "ocr_sample_service.delete": [
+     "ocr_samples"
+    ]
+   }
+  },
+  {
+   "endpoint": "marketing.py · DELETE /marketing/templates/{tid}",
+   "koleksi_sebenarnya": [
+    "mkt_templates"
+   ],
+   "substantif": [
+    "mkt_templates"
+   ],
+   "salah_atribusi_lama": {
+    "ocr_sample_service.delete": [
+     "ocr_samples"
+    ]
+   }
+  },
+  {
+   "endpoint": "outbound_picking.py · POST /outbound/loading-check/{session_id}/complete",
+   "koleksi_sebenarnya": [
+    "rfid_verify_sessions"
+   ],
+   "substantif": [
+    "rfid_verify_sessions"
+   ],
+   "salah_atribusi_lama": {
+    "cycle_count_service.complete": [
+     "rfid_cycle_counts",
+     "rfid_verify_sessions"
+    ]
+   }
+  },
+  {
+   "endpoint": "pdf.py · DELETE /templates/{doc_type}",
+   "koleksi_sebenarnya": [
+    "pdf_templates"
+   ],
+   "substantif": [
+    "pdf_templates"
+   ],
+   "salah_atribusi_lama": {
+    "ocr_sample_service.delete": [
+     "ocr_samples"
+    ]
+   }
+  },
+  {
+   "endpoint": "pegging.py · DELETE /inventory/rolls/{roll_id}/earmark",
+   "koleksi_sebenarnya": [
+    "inventory_rolls"
+   ],
+   "substantif": [
+    "inventory_rolls"
+   ],
+   "salah_atribusi_lama": {
+    "ocr_sample_service.delete": [
+     "ocr_samples"
+    ]
+   }
+  },
+  {
+   "endpoint": "price_approvals.py · DELETE /price-approvals/{approval_id}",
+   "koleksi_sebenarnya": [
+    "price_approvals"
+   ],
+   "substantif": [
+    "price_approvals"
+   ],
+   "salah_atribusi_lama": {
+    "ocr_sample_service.delete": [
+     "ocr_samples"
+    ]
+   }
+  },
+  {
+   "endpoint": "price_approvals.py · DELETE /price-approvals/{approval_id}/attachments/{att_id}",
+   "koleksi_sebenarnya": [
+    "price_approvals"
+   ],
+   "substantif": [
+    "price_approvals"
+   ],
+   "salah_atribusi_lama": {
+    "ocr_sample_service.delete": [
+     "ocr_samples"
+    ]
+   }
+  },
+  {
+   "endpoint": "pricelist.py · DELETE /pricelist/override/{product_id}",
+   "koleksi_sebenarnya": [
+    "entity_prices"
+   ],
+   "substantif": [
+    "entity_prices"
+   ],
+   "salah_atribusi_lama": {
+    "ocr_sample_service.delete": [
+     "ocr_samples"
+    ]
+   }
+  },
+  {
+   "endpoint": "pricelist.py · DELETE /pricelist/{price_id}",
+   "koleksi_sebenarnya": [
+    "entity_prices"
+   ],
+   "substantif": [
+    "entity_prices"
+   ],
+   "salah_atribusi_lama": {
+    "ocr_sample_service.delete": [
+     "ocr_samples"
+    ]
+   }
+  },
+  {
+   "endpoint": "process_recipes.py · DELETE /process-recipes/{recipe_id}",
+   "koleksi_sebenarnya": [
+    "process_recipes"
+   ],
+   "substantif": [
+    "process_recipes"
+   ],
+   "salah_atribusi_lama": {
+    "ocr_sample_service.delete": [
+     "ocr_samples"
+    ]
+   }
+  },
+  {
+   "endpoint": "product_templates.py · DELETE /product-templates/{template_id}",
+   "koleksi_sebenarnya": [
+    "product_templates"
+   ],
+   "substantif": [
+    "product_templates"
+   ],
+   "salah_atribusi_lama": {
+    "ocr_sample_service.delete": [
+     "ocr_samples"
+    ]
+   }
+  },
+  {
+   "endpoint": "production.py · DELETE /production/boms/{bom_id}",
+   "koleksi_sebenarnya": [
+    "mfg_boms"
+   ],
+   "substantif": [
+    "mfg_boms"
+   ],
+   "salah_atribusi_lama": {
+    "ocr_sample_service.delete": [
+     "ocr_samples"
+    ]
+   }
+  },
+  {
+   "endpoint": "products.py · DELETE /products/{product_id}",
+   "koleksi_sebenarnya": [
+    "products"
+   ],
+   "substantif": [
+    "products"
+   ],
+   "salah_atribusi_lama": {
+    "ocr_sample_service.delete": [
+     "ocr_samples"
+    ]
+   }
+  },
+  {
+   "endpoint": "products.py · PATCH /products/{product_id}",
+   "koleksi_sebenarnya": [
+    "products"
+   ],
+   "substantif": [
+    "products"
+   ],
+   "salah_atribusi_lama": {
+    "ocr_sample_service.update": [
+     "ocr_samples"
+    ]
+   }
+  },
+  {
+   "endpoint": "products.py · POST /products",
+   "koleksi_sebenarnya": [
+    "products"
+   ],
+   "substantif": [
+    "products"
+   ],
+   "salah_atribusi_lama": {
+    "ocr_sample_service.update": [
+     "ocr_samples"
+    ]
+   }
+  },
+  {
+   "endpoint": "purchase_requisitions.py · POST /purchase-requisitions/{pr_id}/approve",
+   "koleksi_sebenarnya": [
+    "purchase_requisitions"
+   ],
+   "substantif": [
+    "purchase_requisitions"
+   ],
+   "salah_atribusi_lama": {
+    "return_grade_impairment.record": [
+     "inventory_rolls",
+     "sales_returns"
+    ]
+   }
+  },
+  {
+   "endpoint": "purchase_requisitions.py · POST /purchase-requisitions/{pr_id}/reject",
+   "koleksi_sebenarnya": [
+    "purchase_requisitions"
+   ],
+   "substantif": [
+    "purchase_requisitions"
+   ],
+   "salah_atribusi_lama": {
+    "return_grade_impairment.record": [
+     "inventory_rolls",
+     "sales_returns"
+    ]
+   }
+  },
+  {
+   "endpoint": "purchase_returns.py · DELETE /purchase-returns/{return_id}",
+   "koleksi_sebenarnya": [
+    "purchase_returns"
+   ],
+   "substantif": [
+    "purchase_returns"
+   ],
+   "salah_atribusi_lama": {
+    "ocr_sample_service.delete": [
+     "ocr_samples"
+    ]
+   }
+  },
+  {
+   "endpoint": "return_policies.py · DELETE /sales-return-policies/{policy_id}",
+   "koleksi_sebenarnya": [
+    "sales_return_policies"
+   ],
+   "substantif": [
+    "sales_return_policies"
+   ],
+   "salah_atribusi_lama": {
+    "ocr_sample_service.delete": [
+     "ocr_samples"
+    ]
+   }
+  },
+  {
+   "endpoint": "rfid.py · DELETE /rfid/devices/{device_id}",
+   "koleksi_sebenarnya": [
+    "rfid_devices"
+   ],
+   "substantif": [
+    "rfid_devices"
+   ],
+   "salah_atribusi_lama": {
+    "ocr_sample_service.delete": [
+     "ocr_samples"
+    ]
+   }
+  },
+  {
+   "endpoint": "rfq.py · POST /rfqs/{rfq_id}/quote",
+   "koleksi_sebenarnya": [
+    "rfqs"
+   ],
+   "substantif": [
+    "rfqs"
+   ],
+   "salah_atribusi_lama": {
+    "ocr_sample_service.update": [
+     "ocr_samples"
+    ]
+   }
+  },
+  {
+   "endpoint": "rnd.py · POST /rnd/specs/{spec_id}/approve",
+   "koleksi_sebenarnya": [
+    "products"
+   ],
+   "substantif": [
+    "products"
+   ],
+   "salah_atribusi_lama": {
+    "return_grade_impairment.record": [
+     "inventory_rolls",
+     "sales_returns"
+    ]
+   }
+  },
+  {
+   "endpoint": "rnd.py · POST /rnd/specs/{spec_id}/reject",
+   "koleksi_sebenarnya": [],
+   "substantif": [],
+   "salah_atribusi_lama": {
+    "return_grade_impairment.record": [
+     "inventory_rolls",
+     "sales_returns"
+    ]
+   }
+  },
+  {
+   "endpoint": "sales_return_exceptions.py · DELETE /sales-returns/{return_id}/compensation",
+   "koleksi_sebenarnya": [
+    "sales_returns"
+   ],
+   "substantif": [
+    "sales_returns"
+   ],
+   "salah_atribusi_lama": {
+    "ocr_sample_service.delete": [
+     "ocr_samples"
+    ]
+   }
+  },
+  {
+   "endpoint": "sales_returns.py · DELETE /sales-returns/{return_id}/attachments/{att_id}",
+   "koleksi_sebenarnya": [
+    "sales_returns"
+   ],
+   "substantif": [
+    "sales_returns"
+   ],
+   "salah_atribusi_lama": {
+    "ocr_sample_service.delete": [
+     "ocr_samples"
+    ]
+   }
+  },
+  {
+   "endpoint": "sales_returns.py · POST /sales-returns/{return_id}/roll-settlement/{settlement_id}/complete",
+   "koleksi_sebenarnya": [],
+   "substantif": [],
+   "salah_atribusi_lama": {
+    "cycle_count_service.complete": [
+     "rfid_cycle_counts",
+     "rfid_verify_sessions"
+    ]
+   }
+  },
+  {
+   "endpoint": "sample_orders.py · POST /sample-orders/{order_id}/approve-payment",
+   "koleksi_sebenarnya": [
+    "sales_orders"
+   ],
+   "substantif": [
+    "sales_orders"
+   ],
+   "salah_atribusi_lama": {
+    "ocr_sample_service.update": [
+     "ocr_samples"
+    ]
+   }
+  },
+  {
+   "endpoint": "scheduler.py · PUT /scheduler/settings",
+   "koleksi_sebenarnya": [
+    "system_settings"
+   ],
+   "substantif": [
+    "system_settings"
+   ],
+   "salah_atribusi_lama": {
+    "ocr_sample_service.update": [
+     "ocr_samples"
+    ]
+   }
+  },
+  {
+   "endpoint": "settings.py · DELETE /payment-terms/{term_id}",
+   "koleksi_sebenarnya": [
+    "payment_terms"
+   ],
+   "substantif": [
+    "payment_terms"
+   ],
+   "salah_atribusi_lama": {
+    "ocr_sample_service.delete": [
+     "ocr_samples"
+    ],
+    "data_hygiene_service.revert": [
+     "data_hygiene_log"
+    ]
+   }
+  },
+  {
+   "endpoint": "so_approvals.py · POST /sales-orders/{order_id}/approvals/{approval_id}/decide",
+   "koleksi_sebenarnya": [],
+   "substantif": [],
+   "salah_atribusi_lama": {
+    "design_ownership_service.claim": [
+     "design_gallery"
+    ],
+    "dispatch_payment_gate.release": [
+     "sales_orders"
+    ]
+   }
+  },
+  {
+   "endpoint": "special_orders.py · DELETE /special-orders/{order_id}",
+   "koleksi_sebenarnya": [
+    "special_orders"
+   ],
+   "substantif": [
+    "special_orders"
+   ],
+   "salah_atribusi_lama": {
+    "ocr_sample_service.delete": [
+     "ocr_samples"
+    ]
+   }
+  },
+  {
+   "endpoint": "special_orders.py · POST /special-orders/{order_id}/convert-to-so",
+   "koleksi_sebenarnya": [
+    "special_orders"
+   ],
+   "substantif": [
+    "special_orders"
+   ],
+   "salah_atribusi_lama": {
+    "design_ownership_service.claim": [
+     "design_gallery"
+    ],
+    "dispatch_payment_gate.release": [
+     "sales_orders"
+    ]
+   }
+  },
+  {
+   "endpoint": "special_orders.py · POST /special-orders/{order_id}/reject",
+   "koleksi_sebenarnya": [
+    "special_orders"
+   ],
+   "substantif": [
+    "special_orders"
+   ],
+   "salah_atribusi_lama": {
+    "return_grade_impairment.record": [
+     "inventory_rolls",
+     "sales_returns"
+    ]
+   }
+  },
+  {
+   "endpoint": "suppliers.py · DELETE /supplier-price-list/{entry_id}",
+   "koleksi_sebenarnya": [
+    "supplier_price_lists"
+   ],
+   "substantif": [
+    "supplier_price_lists"
+   ],
+   "salah_atribusi_lama": {
+    "ocr_sample_service.delete": [
+     "ocr_samples"
+    ]
+   }
+  },
+  {
+   "endpoint": "suppliers.py · DELETE /suppliers/{supplier_id}",
+   "koleksi_sebenarnya": [
+    "suppliers"
+   ],
+   "substantif": [
+    "suppliers"
+   ],
+   "salah_atribusi_lama": {
+    "ocr_sample_service.delete": [
+     "ocr_samples"
+    ]
+   }
+  },
+  {
+   "endpoint": "suppliers.py · PATCH /suppliers/{supplier_id}",
+   "koleksi_sebenarnya": [
+    "suppliers"
+   ],
+   "substantif": [
+    "suppliers"
+   ],
+   "salah_atribusi_lama": {
+    "ocr_sample_service.update": [
+     "ocr_samples"
+    ]
+   }
+  },
+  {
+   "endpoint": "tax_center.py · DELETE /tax/pph-records/{record_id}",
+   "koleksi_sebenarnya": [
+    "tax_pph_records"
+   ],
+   "substantif": [
+    "tax_pph_records"
+   ],
+   "salah_atribusi_lama": {
+    "ocr_sample_service.delete": [
+     "ocr_samples"
+    ]
+   }
+  },
+  {
+   "endpoint": "uoms.py · DELETE /uoms/{uom_id}",
+   "koleksi_sebenarnya": [
+    "uoms"
+   ],
+   "substantif": [
+    "uoms"
+   ],
+   "salah_atribusi_lama": {
+    "ocr_sample_service.delete": [
+     "ocr_samples"
+    ]
+   }
+  },
+  {
+   "endpoint": "users.py · DELETE /users/{user_id}",
+   "koleksi_sebenarnya": [
+    "users"
+   ],
+   "substantif": [
+    "users"
+   ],
+   "salah_atribusi_lama": {
+    "ocr_sample_service.delete": [
+     "ocr_samples"
+    ]
+   }
+  },
+  {
+   "endpoint": "vendor_bills.py · POST /vendor-bills",
+   "koleksi_sebenarnya": [
+    "purchase_orders"
+   ],
+   "substantif": [
+    "purchase_orders"
+   ],
+   "salah_atribusi_lama": {
+    "design_ownership_service.claim": [
+     "design_gallery"
+    ],
+    "dispatch_payment_gate.release": [
+     "sales_orders"
+    ]
+   }
+  },
+  {
+   "endpoint": "warehouse_sites.py · DELETE /warehouse-sites/{site_id}",
+   "koleksi_sebenarnya": [
+    "warehouse_sites"
+   ],
+   "substantif": [
+    "warehouse_sites"
+   ],
+   "salah_atribusi_lama": {
+    "ocr_sample_service.delete": [
+     "ocr_samples"
+    ]
+   }
+  },
+  {
+   "endpoint": "warehouse_sites.py · PATCH /warehouse-sites/{site_id}",
+   "koleksi_sebenarnya": [
+    "warehouse_sites"
+   ],
+   "substantif": [
+    "warehouse_sites"
+   ],
+   "salah_atribusi_lama": {
+    "ocr_sample_service.update": [
+     "ocr_samples"
+    ]
+   }
+  },
+  {
+   "endpoint": "warehouses.py · DELETE /warehouses/{warehouse_id}",
+   "koleksi_sebenarnya": [
+    "warehouses"
+   ],
+   "substantif": [
+    "warehouses"
+   ],
+   "salah_atribusi_lama": {
+    "ocr_sample_service.delete": [
+     "ocr_samples"
+    ]
+   }
+  }
+ ],
+ "masuk": [
+  {
+   "endpoint": "cutting.py · POST /tasks/{task_id}/receive",
+   "koleksi": [
+    "sales_orders",
+    "wms_tasks"
+   ],
+   "lewat": {
+    "cutting_service.receive": [
+     "sales_orders",
+     "wms_tasks"
+    ]
+   },
+   "lama": null
+  },
+  {
+   "endpoint": "data_hygiene.py · POST /data-hygiene/run",
+   "koleksi": [
+    "data_hygiene_log",
+    "data_hygiene_runs"
+   ],
+   "lewat": {
+    "data_hygiene_service.run": [
+     "data_hygiene_log",
+     "data_hygiene_runs"
+    ]
+   },
+   "lama": null
+  },
+  {
+   "endpoint": "inspections.py · POST /inspections/{ins_id}/lines/{line_id}/mdq-cut",
+   "koleksi": [
+    "inspections",
+    "inventory_movements",
+    "inventory_rolls",
+    "mdq_cuts"
+   ],
+   "lewat": {
+    "mdq_cut_service.cut": [
+     "inspections",
+     "inventory_movements",
+     "inventory_rolls",
+     "mdq_cuts"
+    ]
+   },
+   "lama": null
+  },
+  {
+   "endpoint": "marketing.py · PATCH /marketing/accounts/{aid}",
+   "koleksi": [
+    "mkt_accounts",
+    "mkt_posts"
+   ],
+   "lewat": {
+    "marketing_ext.update_account": [
+     "mkt_accounts",
+     "mkt_posts"
+    ]
+   },
+   "lama": null
+  },
+  {
+   "endpoint": "purchase_orders.py · POST /purchase-orders/{po_id}/amend",
+   "koleksi": [
+    "po_variance_tasks",
+    "purchase_orders",
+    "wms_tasks"
+   ],
+   "lewat": {
+    "po_amendment_service.amend_po": [
+     "purchase_orders",
+     "wms_tasks"
+    ],
+    "po_variance_task_service.close_amendment_tasks": [
+     "po_variance_tasks"
+    ]
+   },
+   "lama": null
+  },
+  {
+   "endpoint": "transfers.py · POST /transfers/{transfer_id}/exceptions/{exc_id}/resolve",
+   "koleksi": [
+    "inventory_movements",
+    "inventory_rolls"
+   ],
+   "lewat": {
+    "transfer_receipt_service.resolve": [
+     "inventory_movements",
+     "inventory_rolls"
+    ]
+   },
+   "lama": null
+  }
+ ]
+}

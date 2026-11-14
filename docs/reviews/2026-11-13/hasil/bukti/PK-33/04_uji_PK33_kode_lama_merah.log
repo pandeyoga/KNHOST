@@ -1,0 +1,35 @@
+E       AssertionError: (199, 211, 178)
+E       assert [('sales_orde...tasks']), ...] == [('sales_orde...turns']), ...]
+E       AssertionError: ['transfers.py DELETE /transfers/{transfer_id}', 'inbound_scan_label.py DELETE /inbound/rolls/{roll_id}/scan', 'access...es/{entity_id}', 'entity_masters.py DELETE /entity-masters/{kind}/{row_id}', 'rfid.py DELETE /rfid/tags/{tag_id}', ...]
+E       assert not ['transfers.py DELETE /transfers/{transfer_id}', 'inbound_scan_label.py DELETE /inbound/rolls/{roll_id}/scan', 'access...es/{entity_id}', 'entity_masters.py DELETE /entity-masters/{kind}/{row_id}', 'rfid.py DELETE /rfid/tags/{tag_id}', ...]
+E       AssertionError: ['sales_orders.py POST /sales-orders', 'sales_orders_extra.py POST /sales-orders/{order_id}/items/{product_id}/realloc...oices', 'sales_orders_extra.py POST /sales-orders/{order_id}/release-reservation', 'transfers.py POST /transfers', ...]
+E       assert not ['sales_orders.py POST /sales-orders', 'sales_orders_extra.py POST /sales-orders/{order_id}/items/{product_id}/realloc...oices', 'sales_orders_extra.py POST /sales-orders/{order_id}/release-reservation', 'transfers.py POST /transfers', ...]
+E       AssertionError: ['sales_orders_extra.py POST /sales-orders/{order_id}/cancel', 'sales_orders_extra.py POST /sales-orders/{order_id}/it...POST /sales-orders/{order_id}/release-reservation', 'special_orders.py POST /special-orders/{order_id}/create-pr', ...]
+E       assert not ['sales_orders_extra.py POST /sales-orders/{order_id}/cancel', 'sales_orders_extra.py POST /sales-orders/{order_id}/it...POST /sales-orders/{order_id}/release-reservation', 'special_orders.py POST /special-orders/{order_id}/create-pr', ...]
+E       AssertionError: ['input_tax.py POST /input-tax-invoices', 'special_orders.py POST /special-orders/{order_id}/create-pr', 'cycle_count.... /sales-returns/{return_id}/replacement-order', 'special_orders.py POST /special-orders/{order_id}/convert-to-so', ...]
+E       assert not ['input_tax.py POST /input-tax-invoices', 'special_orders.py POST /special-orders/{order_id}/create-pr', 'cycle_count.... /sales-returns/{return_id}/replacement-order', 'special_orders.py POST /special-orders/{order_id}/convert-to-so', ...]
+E       AssertionError: ['special_orders.py POST /special-orders/{order_id}/approve', 'rnd.py POST /rnd/samples/{sample_id}/decide', 'purchase...}/reject', 'rnd.py POST /rnd/specs/{spec_id}/approve', 'special_orders.py POST /special-orders/{order_id}/reject', ...]
+E       assert not ['special_orders.py POST /special-orders/{order_id}/approve', 'rnd.py POST /rnd/samples/{sample_id}/decide', 'purchase...}/reject', 'rnd.py POST /rnd/specs/{spec_id}/approve', 'special_orders.py POST /special-orders/{order_id}/reject', ...]
+E       AssertionError:   [PASS] claim + finish_set → hijau → hijau
+E       assert 1 == 0
+E       AssertionError: == INV-ATOMIC-01 — endpoint tulis multi-koleksi memakai klaim atomik / CAS (saga, tanpa transaksi) ==
+E       assert 1 == 0
+E       AttributeError: module 'vac_pk33' has no attribute 'unit_statuses'
+E   AttributeError: module 'vac_pk33' has no attribute '_tanpa_aman'
+E       AssertionError: permintaan B ikut membuat surat jalan KSC/SJ-00002
+E       assert 'ok' not in {'mulai': True, 'ok': {'id': 'shp_0a8cf9790c8a', 'shipment_no': 'KSC/SJ-00002', 'kind': 'return_back', 'entity_id': 'ent_ksc', ...}}
+E       AssertionError: permintaan B ikut lolos: KSC/LV-00002
+E       assert 'ok' not in {'mulai': True, 'ok': {'id': 'leave_bb65ae4a2bdb', 'number': 'KSC/LV-00002', 'employee_id': 'emp_pk33_e4aa1446', 'employee_name': 'Karyawan Uji c804', ...}}
+FAILED tests_mem/test_PK33_atomisitas.py::test_PK33_U1_pencacah_urutan_berkas_tidak_mengubah_hasil
+FAILED tests_mem/test_PK33_atomisitas.py::test_PK33_U1_tidak_ada_salah_atribusi_nama_polos[ocr_sample_service.delete]
+FAILED tests_mem/test_PK33_atomisitas.py::test_PK33_U1_tidak_ada_salah_atribusi_nama_polos[ocr_sample_service.update]
+FAILED tests_mem/test_PK33_atomisitas.py::test_PK33_U1_tidak_ada_salah_atribusi_nama_polos[design_ownership_service.claim]
+FAILED tests_mem/test_PK33_atomisitas.py::test_PK33_U1_tidak_ada_salah_atribusi_nama_polos[dispatch_payment_gate.release]
+FAILED tests_mem/test_PK33_atomisitas.py::test_PK33_U1_tidak_ada_salah_atribusi_nama_polos[return_grade_impairment.record]
+FAILED tests_mem/test_PK33_atomisitas.py::test_PK33_U3_U5_penjaga_atomic_claim_hijau[arg0]
+FAILED tests_mem/test_PK33_atomisitas.py::test_PK33_U3_U5_penjaga_atomic_claim_hijau[arg1]
+FAILED tests_mem/test_PK33_atomisitas.py::test_PK33_U6_unit_selesai_merah - A...
+FAILED tests_mem/test_PK33_atomisitas.py::test_PK33_U10_alasan_none_bermakna
+FAILED tests_mem/test_PK33_atomisitas.py::test_PK33_U7_kirim_balik_dua_permintaan_bersela_satu_surat_jalan
+FAILED tests_mem/test_PK33_atomisitas.py::test_PK33_U7_cuti_dua_permintaan_bersela_satu_pengajuan
+12 failed, 7 passed, 1 warning in 59.65s

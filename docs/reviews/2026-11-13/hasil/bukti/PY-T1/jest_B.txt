@@ -1,0 +1,8 @@
+      at Object.<anonymous> (src/features/wms/transfer/__tests__/TransferDetailModal.test.js:4:1)
+
+
+Test Suites: 35 failed, 111 passed, 146 total
+Tests:       898 passed, 898 total
+Snapshots:   0 total
+Time:        298.699 s
+Ran all test suites.

@@ -1,0 +1,54 @@
+E       assert (100000.0, 0....0.0, 100000.0) == (40000, 60000, 100000, 40000)
+E         
+E         At index 0 diff: 100000.0 != 40000
+E         Use -v to get more diff
+E       KeyError: 'reconciliation'
+E       assert (100000.0, 44...00.0, 60000.0) == (40000, 45, 1... 40000, 60000)
+E         
+E         At index 0 diff: 100000.0 != 40000
+E         Use -v to get more diff
+E       assert (0.0, 0.0, 0.0) == (60000, 60000, 0)
+E         
+E         At index 0 diff: 0.0 != 60000
+E         Use -v to get more diff
+E       assert 0.0 == (50 * 1000000)
+E       assert (0.0, 0) == (7000000, 1)
+E         
+E         At index 0 diff: 0.0 != 7000000
+E         Use -v to get more diff
+E       assert (793.33, 86.67, 200.0) == (250, 130, 500)
+E         
+E         At index 0 diff: 793.33 != 250
+E         Use -v to get more diff
+E       KeyError: 'opening_balance_additions'
+E       assert (0, 0.0, 0.0) == (300, 300, 300)
+E         
+E         At index 0 diff: 0 != 300
+E         Use -v to get more diff
+E       KeyError: 'not_due'
+E       ImportError: cannot import name '_due_from_supplier_term' from 'routers.vendor_bills' (/tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/pk41/lama/backend/routers/vendor_bills.py)
+E       KeyError: 'credit_notes'
+E       KeyError: 'credit_notes'
+E   KeyError: 'ar_ledger'
+E       AssertionError: assert ('2026-11-20', 5, 'first_sj') == ('2026-11-20', 1, 'per_sj')
+E         
+E         At index 1 diff: 5 != 1
+E         Use -v to get more diff
+E       KeyError: 'bucket_labels'
+FAILED tests_mem/test_PK41_laporan.py::test_PK41_U1_umur_piutang_per_surat_jalan
+FAILED tests_mem/test_PK41_laporan.py::test_PK41_U15_pencocokan_saldo_akun_piutang
+FAILED tests_mem/test_PK41_laporan.py::test_PK41_U3_status_kredit_baris_terkirim
+FAILED tests_mem/test_PK41_laporan.py::test_PK41_U4_posisi_per_tanggal - asse...
+FAILED tests_mem/test_PK41_laporan.py::test_PK41_U5_hutang_tanpa_batas_2000
+FAILED tests_mem/test_PK41_laporan.py::test_PK41_U6_piutang_tanpa_batas_5000_pelanggan
+FAILED tests_mem/test_PK41_laporan.py::test_PK41_U7_arus_kas_per_jenis_transaksi
+FAILED tests_mem/test_PK41_laporan.py::test_PK41_U8_saldo_awal_bukan_pendanaan
+FAILED tests_mem/test_PK41_laporan.py::test_PK41_U9_akun_kas_dari_pemetaan - ...
+FAILED tests_mem/test_PK41_laporan.py::test_PK41_U10_hutang_belum_jatuh_tempo_dan_pencocokan
+FAILED tests_mem/test_PK41_laporan.py::test_PK41_U10b_buat_tagihan_isi_jatuh_tempo_dari_termin
+FAILED tests_mem/test_PK41_laporan.py::test_PK41_U11_profitabilitas_nota_kredit
+FAILED tests_mem/test_PK41_laporan.py::test_PK41_U11b_pencocokan_disembunyikan_tanpa_izin_hpp
+FAILED tests_mem/test_PK41_laporan.py::test_PK41_U12_tower_gabungan_saringan_pt
+FAILED tests_mem/test_PK41_laporan.py::test_PK41_U13_proyeksi_dan_umur_berlawanan_tanda
+FAILED tests_mem/test_PK41_laporan.py::test_PK41_U14_judul_kolom_dari_pengaturan
+16 failed, 4 passed, 1 warning in 5.89s

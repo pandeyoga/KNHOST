@@ -1,0 +1,25 @@
+>       from services.report_basis import label_kelompok_umur
+E       ModuleNotFoundError: No module named 'services.report_basis'
+
+tests_mem/test_PK41_dasar_laporan.py:242: ModuleNotFoundError
+=============================== warnings summary ===============================
+../../venv311/lib/python3.11/site-packages/starlette/formparsers.py:12
+  /tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/venv311/lib/python3.11/site-packages/starlette/formparsers.py:12: PendingDeprecationWarning: Please use `import python_multipart` instead.
+    import multipart
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests_mem/test_PK41_dasar_laporan.py::test_PK41_U1_baris_per_surat_jalan
+FAILED tests_mem/test_PK41_dasar_laporan.py::test_PK41_U2_bayar_dialokasikan_ke_surat_jalan
+FAILED tests_mem/test_PK41_dasar_laporan.py::test_PK41_U4_posisi_per_tanggal
+FAILED tests_mem/test_PK41_dasar_laporan.py::test_PK41_U4b_jurnal_sesudah_per_belum_terkirim
+FAILED tests_mem/test_PK41_dasar_laporan.py::test_PK41_U4c_pesanan_mati_dan_tunai_tidak_ikut
+FAILED tests_mem/test_PK41_dasar_laporan.py::test_PK41_U4d_uang_muka_mengurangi_belum_dikirim
+FAILED tests_mem/test_PK41_dasar_laporan.py::test_PK41_U4e_bayar_ke_jatuh_tempo_tertua
+FAILED tests_mem/test_PK41_dasar_laporan.py::test_PK41_U13_hari_antara_berlawanan_tanda
+FAILED tests_mem/test_PK41_dasar_laporan.py::test_PK41_U7_golongan_arus_kas
+FAILED tests_mem/test_PK41_dasar_laporan.py::test_PK41_U8_saldo_awal_bukan_pendanaan
+FAILED tests_mem/test_PK41_dasar_laporan.py::test_PK41_U9_kode_kas_dari_pemetaan
+FAILED tests_mem/test_PK41_dasar_laporan.py::test_PK41_U14_label_kelompok_umur
+FAILED tests_mem/test_PK41_dasar_laporan.py::test_PK41_U14b_label_sejalan_dengan_kelompok
+13 failed, 1 warning in 2.95s

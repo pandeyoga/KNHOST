@@ -1,0 +1,65 @@
+  [PASS] claim + finish_set → hijau → hijau
+  [PASS] claim tanpa pencabut kunci → MERAH → MERAH
+  [PASS] dicatat claim tapi tak memanggil claim() → MERAH → MERAH
+  [PASS] validasi 400 SESUDAH klaim (kunci tertinggal) → MERAH → MERAH
+  [PASS] validasi 400 SEBELUM klaim → hijau → hijau
+  [PASS] validasi 400 sesudah klaim TAPI release() dulu → hijau → hijau
+  [PASS] cas berprasyarat status → hijau → hijau
+  [PASS] dicatat cas tapi tanpa prasyarat status → MERAH → MERAH
+  [PASS] compensate dengan except→release → hijau → hijau
+  [PASS] dicatat compensate tanpa kompensasi → MERAH → MERAH
+  [PASS] service merujuk fungsi yang tak ada → MERAH → MERAH
+  [PASS] service nyata berklaim (putaway confirm_arrival) → hijau → hijau
+  [PASS] service nyata TANPA klaim (atomic_claim.finish_set) → MERAH → MERAH
+  [PASS] service_cas nyata berprasyarat status (retire_tag) → hijau → hijau
+  [PASS] service_cas nyata TANPA find_one_and_update berprasyarat (atomic_claim.release) → MERAH → MERAH
+  [PASS] entri REVIEWED basi (endpoint hilang) → MERAH → MERAH
+  [PASS] alasan pendek → MERAH → MERAH
+  [PASS] BELUM DITINJAU naik di atas baseline → MERAH → MERAH
+  [PASS] BELUM DITINJAU turun di bawah baseline → MERAH (turunkan baseline) → MERAH
+  [PASS] BELUM DITINJAU == baseline → hijau → hijau
+  [PASS] pencacah: `x.delete`/`d.update` TANPA impor layanan tidak dihitung → 0 baris → 0 baris
+  [PASS] pencacah: `from services import X as x` + `x.delete` → dihitung (alpha+ocr_samples) → [['alpha', 'ocr_samples']]
+  [PASS] pencacah: `from services.X import fn as g` di badan endpoint + `g()` → dihitung, bermetode POST → [('POST /a/{i}/go', ['alpha', 'ocr_samples'])]
+  [PASS] path persis: entri 'POST /x' TIDAK menutupi 'POST /x/{id}/go' → tetap belum ditinjau → [('r.py', 'POST /x/{id}/go')]
+  [PASS] path persis: entri 'POST /x' untuk endpoint yang hanya ada '/x/{id}/go' → MERAH (basi) → MERAH
+  [PASS] dua metode path sama: entri DELETE diperiksa pada fungsi DELETE (berklaim) → hijau → hijau
+  [PASS] dua metode path sama: fungsi DELETE tanpa klaim (PATCH berklaim) → MERAH → MERAH
+  [PASS] dua metode path sama: entri DELETE tidak menutupi PATCH → PATCH tetap belum ditinjau → [('r.py', 'PATCH /x/{id}')]
+  [PASS] kunci tanpa metode HTTP → MERAH → MERAH
+  [PASS] mekanisme tak dikenal → MERAH → MERAH
+  [PASS] cas di pembantu modul yang sama → hijau → hijau
+  [PASS] cas: endpoint memanggil pembantu TANPA prasyarat → MERAH → MERAH
+  [PASS] claim di pembantu modul yang sama → hijau → hijau
+  [PASS] claim: pembantu tidak dipanggil (tidak ada di peta pembantu) → MERAH → MERAH
+  [PASS] claim di pembantu, validasi 400 SESUDAH klaim di pembantu → MERAH → MERAH
+  [PASS] RE_CAS $elemMatch berprasyarat unsur larik ($ne) → hijau → hijau
+  [PASS] RE_CAS $elemMatch hanya mencocokkan id (tanpa prasyarat) → MERAH → MERAH
+  [PASS] RE_CAS prasyarat status diteruskan ke penulis (cas={"status"…}) → hijau → hijau
+  [PASS] RE_CAS penulis dipanggil tanpa prasyarat cas= → MERAH → MERAH
+  [PASS] RE_CAS hapus bersyarat status → hijau → hijau
+  [PASS] RE_CAS hapus tanpa syarat status → MERAH → MERAH
+  [PASS] RE_CAS filter bernama berisi status → find_one_and_update(_cas, …) → hijau → hijau
+  [PASS] RE_CAS filter bernama TANPA status → MERAH → MERAH
+  [PASS] RE_CAS update_one(filter bernama berstatus) + modified_count diperiksa → hijau → hijau
+  [PASS] RE_CAS update_one(filter bernama berstatus) TANPA memeriksa hasil → MERAH → MERAH
+  [PASS] RE_CAS update_one berprasyarat status + modified_count diperiksa → hijau → hijau
+  [PASS] RE_CAS update_one berprasyarat status TANPA memeriksa hasil → MERAH → MERAH
+  [PASS] RE_CAS update_one(held_cas(roll)) → hijau → hijau
+  [PASS] RE_CAS update_one roll tanpa held_cas → MERAH → MERAH
+  [PASS] RE_CAS update_one $elemMatch berprasyarat status unsur → hijau → hijau
+  [PASS] RE_CAS update_one $elemMatch tanpa prasyarat → MERAH → MERAH
+  [PASS] claim alias `saga` + release di finally (400 di dalam try) → hijau → hijau
+  [PASS] claim alias `saga`, finally TANPA release → MERAH → MERAH
+  [PASS] unit: ID dikenal, status dikerjakan → hijau → hijau
+  [PASS] unit: ID dikenal, status siap → hijau → hijau
+  [PASS] unit: ID tak dikenal di INDEKS_UNIT → MERAH → MERAH
+  [PASS] unit: status selesai → MERAH (basi, sebut unit sudah selesai) → MERAH
+  [PASS] unit: status tervalidasi → MERAH → MERAH
+  [PASS] unit: alasan sesudah ID < 20 huruf → MERAH → MERAH
+  [PASS] unit: alasan tanpa awalan ID → MERAH → MERAH
+  [PASS] unit_statuses membaca ID dari INDEKS dan status dari STATUS → {'PK-99': 'dikerjakan', 'PK-98': 'selesai'}
+  [PASS] none: alasan hanya 'aman …' (tanpa MENGAPA) → MERAH → MERAH
+  [PASS] none: alasan menyebut mengapa ulangan aman → hijau → hijau
+  [PASS] kode nyata saat ini HIJAU (0 pelanggaran) → hijau
+  SELF-TEST HIJAU (64 kasus, 0 gagal).

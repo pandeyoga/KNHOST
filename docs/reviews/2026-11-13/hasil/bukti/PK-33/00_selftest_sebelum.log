@@ -1,0 +1,28 @@
+  [PASS] claim + finish_set → hijau → hijau
+  [PASS] claim tanpa pencabut kunci → MERAH → MERAH
+  [PASS] dicatat claim tapi tak memanggil claim() → MERAH → MERAH
+  [PASS] validasi 400 SESUDAH klaim (kunci tertinggal) → MERAH → MERAH
+  [PASS] validasi 400 SEBELUM klaim → hijau → hijau
+  [PASS] validasi 400 sesudah klaim TAPI release() dulu → hijau → hijau
+  [PASS] cas berprasyarat status → hijau → hijau
+  [PASS] dicatat cas tapi tanpa prasyarat status → MERAH → MERAH
+  [PASS] compensate dengan except→release → hijau → hijau
+  [PASS] dicatat compensate tanpa kompensasi → MERAH → MERAH
+  [PASS] service merujuk fungsi yang tak ada → MERAH → MERAH
+  [PASS] service nyata berklaim (putaway confirm_arrival) → hijau → hijau
+  [FAIL] service nyata TANPA klaim → MERAH → hijau
+  [PASS] service_cas nyata berprasyarat status (retire_tag) → hijau → hijau
+  [PASS] service_cas nyata TANPA find_one_and_update berprasyarat → MERAH → MERAH
+  [PASS] entri REVIEWED basi (endpoint hilang) → MERAH → MERAH
+  [PASS] alasan pendek → MERAH → MERAH
+  [PASS] BELUM DITINJAU naik di atas baseline → MERAH → MERAH
+  [PASS] BELUM DITINJAU turun di bawah baseline → MERAH (turunkan baseline) → MERAH
+  [PASS] BELUM DITINJAU == baseline → hijau → hijau
+  [FAIL] kode nyata saat ini HIJAU (6 pelanggaran)
+    ✗ backend/routers/inbound_scan_label.py /inbound/rolls/{roll_id}/putaway: dicatat 'cas' tetapi find_one_and_update induk tidak berprasyarat status.
+    ✗ backend/routers/inbound_scan_label.py /inbound/rolls/{roll_id}/scan: dicatat 'cas' tetapi find_one_and_update induk tidak berprasyarat status.
+    ✗ backend/routers/purchase_orders_extra.py /purchase-orders/{po_id}/close: dicatat 'cas' tetapi find_one_and_update induk tidak berprasyarat status.
+    ✗ backend/routers/transfers.py /transfers/{transfer_id}: dicatat 'claim' tetapi tidak memanggil atomic_claim.claim(). Pasang klaim atau ubah mekanisme.
+    ✗ backend/routers/transfers.py /transfers/{transfer_id}: klaim tanpa pencabut kunci (finish_set / $unset saga_lock / so_transition / release).
+    ✗ BELUM DITINJAU = 96 > baseline 0. Endpoint multi-koleksi BARU wajib memakai atomic_claim.claim()/CAS dan dicatat di REVIEWED: client_dataset.py POST /batches/{batch_id}/rollback; cycle_count.py POST /
+  SELF-TEST MERAH (2 gagal).

@@ -1,0 +1,63 @@
+# Uji PY-T1 di kode lama (salinan bersih 35a1f9a + berkas uji baru)
+FAILED tests_mem/test_PYT1_komponen_gaji.py::test_PYT1_U1_proses_reguler_komponen_dan_kolom_lama[asyncio]
+FAILED tests_mem/test_PYT1_komponen_gaji.py::test_PYT1_U12_baris_pdf_dari_komponen[asyncio]
+FAILED tests_mem/test_PYT1_komponen_gaji.py::test_PYT1_U14_reguler_kedua_proses_sama[asyncio]
+FAILED tests_mem/test_PYT1_komponen_gaji.py::test_PYT1_U4_proses_thr_pph21_gabungan_bulan[asyncio]
+FAILED tests_mem/test_PYT1_komponen_gaji.py::test_PYT1_U5_posting_thr_jurnal_sendiri[asyncio]
+FAILED tests_mem/test_PYT1_komponen_gaji.py::test_PYT1_U13_rekap_pph21_dua_proses[asyncio]
+FAILED tests_mem/test_PYT1_komponen_gaji.py::test_PYT1_U3_dua_bonus_dua_baris[asyncio]
+FAILED tests_mem/test_PYT1_komponen_gaji.py::test_PYT1_U6_anulir_melepas_masukan[asyncio]
+FAILED tests_mem/test_PYT1_komponen_gaji.py::test_PYT1_U7_hitung_ulang_mengikuti_antrean[asyncio]
+FAILED tests_mem/test_PYT1_komponen_gaji.py::test_PYT1_U8_masukan_manual[asyncio]
+FAILED tests_mem/test_PYT1_komponen_gaji.py::test_PYT1_U9_kunci_sumber_sama_satu_dokumen[asyncio]
+FAILED tests_mem/test_PYT1_komponen_gaji.py::test_PYT1_U10_potongan_berakun_jurnal[asyncio]
+FAILED tests_mem/test_PYT1_komponen_gaji.py::test_PYT1_U10b_validasi_komponen[asyncio]
+FAILED tests_mem/test_PYT1_komponen_gaji.py::test_PYT1_U11_format_periode[asyncio]
+FAILED tests_mem/test_PYT1_komponen_gaji.py::test_PYT1_U15_ubah_jam_absen_hitung_ulang_lembur[asyncio]
+FAILED tests_mem/test_PYT1_komponen_gaji.py::test_PYT1_U16_izin_masukan[asyncio]
+FAILED tests_mem/test_PYT1_komponen_gaji.py::test_PYT1_migrasi_proses_lama_mode_lapor_lalu_terapkan[asyncio]
+17 failed, 1 warning in 4.56s
+
+# Sebab (tb=line)
+E   ImportError: cannot import name 'hr_pay_components' from 'services' (services/__init__.py)
+tests_mem/test_PYT1_komponen_gaji.py:135: ImportError: cannot import name 'hr_pay_components' from 'services' (/tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/pyt1_B/backend
+E   KeyError: 'u1'
+tests_mem/test_PYT1_komponen_gaji.py:162: KeyError: 'u1'
+E   KeyError: 'u1'
+tests_mem/test_PYT1_komponen_gaji.py:179: KeyError: 'u1'
+E   AssertionError: {"id":"prun_f51963d1dcdb","number":"KANDA/PAY-00001","entity_id":"ent_kanda","period":"2026-10","status":"draft","commission_mode":"accrue_then_settle","totals":{"employees":2,"salary_earnings":13800000.0,"commission":0.0,"gross":13800000.0,"bpjs_emp":0.0,"bpjs_er":0.0,"pph21":15
+    assert 200 == 400
+tests_mem/test_PYT1_komponen_gaji.py:189: AssertionError: {"id":"prun_f51963d1dcdb","number":"KANDA/PAY-00001","entity_id":"ent_kanda","period":"2026-10","status":"draft","commission_mode":"accrue_then_set
+E   KeyError: 'u4'
+tests_mem/test_PYT1_komponen_gaji.py:218: KeyError: 'u4'
+E   assert (0.0, 0.0, 0.0, 0) == (21800000, 840000, 840000, 2)
+tests_mem/test_PYT1_komponen_gaji.py:243: assert (0.0, 0.0, 0.0, 0) == (21800000, 840000, 840000, 2)
+E   AssertionError: {"detail":"Not Found"}
+    assert 404 == 200
+tests_mem/test_PYT1_komponen_gaji.py:251: AssertionError: {"detail":"Not Found"}
+E   KeyError: 'u3'
+tests_mem/test_PYT1_komponen_gaji.py:272: KeyError: 'u3'
+E   AssertionError: {"detail":"Not Found"}
+    assert 404 == 200
+tests_mem/test_PYT1_komponen_gaji.py:289: AssertionError: {"detail":"Not Found"}
+E   AssertionError: {"detail":"Not Found"}
+    assert 404 == 200
+tests_mem/test_PYT1_komponen_gaji.py:320: AssertionError: {"detail":"Not Found"}
+E   ImportError: cannot import name 'hr_pay_inputs' from 'services' (services/__init__.py)
+tests_mem/test_PYT1_komponen_gaji.py:338: ImportError: cannot import name 'hr_pay_inputs' from 'services' (ser
+E   AssertionError: {"detail":"Not Found"}
+    assert 404 == 200
+tests_mem/test_PYT1_komponen_gaji.py:357: AssertionError: {"detail":"Not Found"}
+E   AssertionError: {"detail":"Not Found"}
+    assert 404 == 200
+tests_mem/test_PYT1_komponen_gaji.py:375: AssertionError: {"detail":"Not Found"}
+E   AssertionError: 2026-13
+    assert "Periode haru...i '2026-13')." == 'Periode haru...mis. 2026-10.'
+tests_mem/test_PYT1_komponen_gaji.py:401: AssertionError: 2026-13
+E   assert (660, 120, 0) == (600, 60, 0)
+tests_mem/test_PYT1_komponen_gaji.py:420: assert (660, 120, 0) == (600, 60, 0)
+E   AssertionError: {"detail": "Not Found"}
+    assert 404 == 200
+tests_mem/test_PYT1_komponen_gaji.py:430: AssertionError: {"detail": "Not Found"}
+E   FileNotFoundError: [Errno 2] No such file or directory: '/tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/pyt1_B/scripts/migrasi_pyt1_proses_gaji.py'
+<frozen importlib._bootstrap_external>:1130: FileNotFoundError: [Errno 2] No such file or directory: '/tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/pyt1_B/scripts/migrasi_pyt1_proses_gaji.py'
