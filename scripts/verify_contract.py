@@ -64,6 +64,8 @@ CANONICAL_COLLECTIONS = {
     "journal_proposals",
     # ── KP-T4 (blueprint) — satu tabel kebijakan persetujuan ──
     "approval_policies",
+    # ── KP-T5 (blueprint) — tabel Penomoran Dokumen (format yang diubah saja) ──
+    "doc_number_formats",
     "cash_transactions",
     # ── Depth #1 (Retur Beli / Nota Debit) ──
     "purchase_returns",

@@ -52,7 +52,8 @@ def test_U12_pembanding_indeks():
     f = _info_lengkap()
     f["penalties"]["uq_penalty_line_period"]["key"] = [("doc_id", 1), ("period_key", 1)]
     assert [x["problem"] for x in indexes.diff_required(f)] == ["kunci berbeda"]
-    assert len(indexes.REQUIRED_UNIQUE_INDEXES) == 8
+    # KP-T5 — + `doc_number_formats.uq_kind_entity` (satu format nomor per jenis per PT/grup): 8 → 9.
+    assert len(indexes.REQUIRED_UNIQUE_INDEXES) == 9
 
 
 async def test_U13_mode_enforce_dan_warn(aplikasi, monkeypatch):

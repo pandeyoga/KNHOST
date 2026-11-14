@@ -424,6 +424,8 @@ ID_INDEX_COLLECTIONS: List[str] = [
     "journal_proposals",
     # KP-T4 — baris kebijakan persetujuan (`appol_…`).
     "approval_policies",
+    # KP-T5 — baris format nomor dokumen (`dnf_…`).
+    "doc_number_formats",
 ]
 
 # FIX-5 — rujukan bersarang roll yang dicari per nilai (B3a SCH-9: index `reserved_ref` utuh tidak terpakai oleh
@@ -682,6 +684,11 @@ REQUIRED_UNIQUE_INDEXES: List[Dict[str, Any]] = [
      "partial": {"source.id": dict(_NONEMPTY), "status": {"$in": ["open", "in_progress"]}},
      "finder": _finder_dup("finance_cases", '{"source.id":{$type:"string",$gt:""},status:{$in:["open","in_progress"]}}',
                            '{t:"$case_type",s:"$source.id"}')},
+    # KP-T5 (D7) — satu baris format nomor per (jenis, PT|grup); simpan bersamaan tidak bisa membuat baris kembar.
+    {"collection": "doc_number_formats", "name": "uq_kind_entity", "label": "format nomor per jenis per PT",
+     "keys": [("kind", 1), ("entity_id", 1)], "partial": {"kind": dict(_NONEMPTY)},
+     "finder": _finder_dup("doc_number_formats", '{kind:{$type:"string",$gt:""}}', '{k:"$kind",e:"$entity_id"}',
+                           "$id")},
 ]
 
 

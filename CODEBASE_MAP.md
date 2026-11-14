@@ -1,5 +1,5 @@
 <!-- DIHASILKAN OTOMATIS oleh scripts/gen_codebase_map.py — JANGAN EDIT TANGAN -->
-<!-- Dihasilkan dari commit: 689ca70 pada 2026-11-14 -->
+<!-- Dihasilkan dari commit: 64ecb19 pada 2026-11-14 -->
 # CODEBASE MAP — Kain Nusantara (dihasilkan otomatis)
 
 Peta ini dihitung dari kode oleh `scripts/gen_codebase_map.py`. Kalau angka di sini
@@ -14,7 +14,7 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 |---|---:|
 | Router (`backend/routers/*.py`) | 163 |
 | Endpoint (`@router.<method>`) | 1774 |
-| Service (`backend/services/*.py`) | 390 |
+| Service (`backend/services/*.py`) | 391 |
 | Koleksi MongoDB disentuh kode produksi | 202 |
 | Direktori fitur frontend (`src/features/*`) | 39 |
 
@@ -24,14 +24,14 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 |---|---:|
 | `server.py` | 419 |
 | `db.py` | 12 |
-| `core_utils.py` | 394 |
+| `core_utils.py` | 438 |
 | `schemas.py` | 1123 |
 | `schemas_purchasing.py` | 625 |
 | `dependencies.py` | 286 |
 | `permissions_config.py` | 801 |
 | `entity_scope.py` | 728 |
 | `pagination.py` | 145 |
-| `indexes.py` | 792 |
+| `indexes.py` | 799 |
 | `bootstrap.py` | 2150 |
 | `login_only_endpoints.py` | 80 |
 
@@ -42,7 +42,7 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 | Fungsi | Ringkas (baris pertama docstring) |
 |---|---|
 | `now_iso()` |  |
-| `next_doc_number()` | Generate nomor dokumen berurutan (deletion-safe). |
+| `next_doc_number()` | Satu-satunya pembuat nomor dokumen (deletion-safe, sequence atomik `number_sequences`). |
 | `entity_code()` | Kode pendek entitas untuk nomor dokumen (doc_prefix → short_name → upper id). |
 | `invalidate_entity_code()` | FASE E-1 (E1.4) — buang cache kode entitas setelah entitas dibuat/diubah. |
 | `new_id()` |  |
@@ -380,6 +380,7 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 | `dispatch_payment_gate.py` | 160 | F-10 (uji pra-UAT 2026-10-21, keputusan owner Q-02) — termin bayar-sebelum-kirim MENAHAN pengiriman. |
 | `dn_rules.py` | 350 | GRN Fase 4 — aturan murni pembacaan surat jalan (§4.8): angka, qty declared, nomor PO, pencocokan baris, total |
 | `doc_label_service.py` | 174 | doc_label_service — NOMOR DOKUMEN yang layak dibaca untuk pasangan (jenis sumber daya, id teknis). |
+| `doc_numbering_service.py` | 176 | doc_numbering_service.py — format nomor dokumen yang berlaku (unit KP-T5, KP-12). |
 | `doc_refs_service.py` | 980 | FASE G-4 — **RELASI DOKUMEN TERSIMPAN** (`refs[]` dua arah) + Jejak Dokumen. |
 | `document_relations_service.py` | 285 | EPIC 6 — Document Relations / Process Timeline service. |
 | `dual_control.py` | 253 | KF-T6 — satu pembantu untuk kontrol "harus dua orang" (`docs/blueprint/unit/KF-T6.md`, `02_STANDAR.md` §2.3). |

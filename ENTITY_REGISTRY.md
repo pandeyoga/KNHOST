@@ -49,6 +49,7 @@ Sebelum membuat apapun yang baru, tanya: **"Apakah ini sudah ada di sini?"**
 | Design Gallery *(FASE H5)* | `design_gallery` | `routers/design_gallery.py` | `GalleryInput`, `GalleryUpdate` | `DesignGalleryView` |
 | AI Integrations *(FASE H5)* | `system_settings` *(scope=integrations)* | `routers/integrations.py` | `IntegrationsUpdate` | `IntegrationsPanel` (AdminView tab Integrasi AI) |
 | Kebijakan Persetujuan *(KP-T4)* | `approval_policies` | `routers/approval_policies.py`, `services/approval_policy_service.py` (dipanggil semua pintu persetujuan), katalog `approval_kinds.py` | — | `ApprovalPoliciesView` (Pengaturan › Persetujuan › Aturan Persetujuan) |
+| Penomoran Dokumen *(KP-T5)* | `doc_number_formats` (+ penghitung `number_sequences`) | `core_utils.next_doc_number` (satu-satunya pembuat nomor), `services/doc_numbering_service.py`, katalog `doc_number_kinds.py` | — | (layar menyusul, KP-T5 serah-terima b) |
 | Usulan Jurnal Manual *(KF-T6)* | `journal_proposals` | `routers/gl.py` (`POST /gl/journal` → 202, `/gl/journal-proposals*`), `services/journal_proposal_service.py` | `JournalEntryCreate`, `ProposalReject` | `JournalProposalsPanel` (Buku Besar › Jurnal › Menunggu persetujuan) |
 | Niat Bayar Hutang *(PK-05)* | `ap_payment_intents` | `routers/ap_payments.py`, `services/ap_payment_service.py` (dipanggil bayar faktur & bayar kontrabon) | `VendorBillPaymentCreate`, `ContraBonPayIn` | `VendorBillDetailPanel` & `contrabon/PayModal` (panel bayar, `features/purchasing/apPayment.jsx`) |
 | Kontrabon *(FASE G-7)* | `contra_bons` | `routers/contra_bons.py`, `services/contra_bon_service.py`, `services/contra_bon_reminder.py` | `ContraBonCreate`, `ContraBonDeductionIn`, `ContraBonDecisionIn`, `ContraBonScheduleIn`, `ContraBonPayIn`, `InvoiceExchangeIn` | `ContraBonsView` (Pembelian → Hutang Supplier (AP) → Kontrabon) |
@@ -2055,6 +2056,28 @@ Field dokumen yang ikut lahir (KP-T4, D3 — potret saat dokumen dibuat): `purch
 `special_orders.approval_chain[]` menambah `roles`, `rule_id`, `policy_kind`; `doc_amendments.approval_amount` (nilai yang
 dinilai saat diusulkan, termasuk akumulasi); `special_orders.approved_automatically` (tidak butuh persetujuan menurut tabel).
 ⚠️ JANGAN BUAT daftar peran penyetuju baru di kode pintu atau kunci registry — tambah baris/jenis di sini.
+
+### doc_number_formats  [KP-T5 — Penomoran Dokumen: format nomor per jenis dokumen per PT]
+Hanya format yang **diubah**; tanpa baris = bawaan katalog `doc_number_kinds.py` = bentuk nomor sebelum KP-T5 (tidak ada
+migrasi data, tidak ada dokumen dinomori ulang — H3). Pembaca: `doc_numbering_service.effective_format` (baris PT → baris
+grup `entity_id = "all"` → katalog); `scope` hanya pada baris grup. Pembuat nomor tetap `core_utils.next_doc_number`.
+```
+Collection:  doc_number_formats         Prefix: dnf_
+Service:     services/doc_numbering_service.py  (effective_format, plan, seed_number, render)
+Index:       uq_id (unik) · uq_kind_entity (kind, entity_id) unik — wajib-ada (indexes.REQUIRED_UNIQUE_INDEXES, D7)
+
+  id · kind (kunci katalog, mis. so, cn_retur, lot) · entity_id ("all" = grup | id PT)
+  prefix  teks [A-Z0-9][A-Z0-9-]{0,11} — awalan tercetak (awalan IDENTITAS katalog tetap kunci deret)
+  width   bilangan 3–8 · date_token "" | YY | YYYY | YYMM | YYYYMM | YYMMDD · reset tidak | tahunan | bulanan | harian
+  scope   per_pt | bersama — hanya baris grup
+  version · reason · created_at · created_by · updated_at · updated_by
+```
+Bentuk nomor: per PT `{KODE PT}/{prefix}{sisipan-}{angka}`; bersama `{prefix}{sisipan-}{angka}`. Kunci `number_sequences`
+tidak berubah: per PT (`entity_id`=PT, `doc_type` = awalan identitas + bagian periode, tanpa `-` akhir, huruf besar),
+bersama (`"__shared__"`, `koleksi:field:awalan identitas + bagian periode-`). Bagian periode menurut `reset`. Deret
+periode baru disemai dari nomor tertinggi yang sudah ada. Perubahan dicatat di `audit_logs` (`doc_number_format_saved`,
+`doc_number_format_cleared`) beserta format sebelum/sesudah dan alasan.
+⚠️ JANGAN menulis awalan/lebar nomor baru di titik panggil tanpa entri katalog `doc_number_kinds.py` (uji U1 KP-T5).
 
 ### approval_rules  [Fase 1A IMPLEMENTED]
 ```

@@ -5,8 +5,11 @@ from pydantic import BeforeValidator
 import bcrypt
 import hashlib
 import re
+import logging
 import uuid
 from permissions_config import DEFAULT_PERMISSIONS
+
+_log = logging.getLogger(__name__)
 
 # SEC-2 — umur session (jam): KF-T7 (#68) kini pengaturan `keamanan.umur_sesi_jam` (bawaan 24), dibaca saat login
 # (`routers/auth.py`) dan disimpan di sesi (`ttl_hours`); sliding renewal saat sisa < setengah umur sesi itu.
@@ -18,8 +21,49 @@ def now_iso() -> str:
 
 async def next_doc_number(collection: str, field: str, prefix: str, width: int = 5,
                           entity_id: Optional[str] = None,
-                          scheme: str = "per_entity_prefix") -> str:
-    """Generate nomor dokumen berurutan (deletion-safe).
+                          scheme: str = "per_entity_prefix", *, kind: str = "", at: Any = None) -> str:
+    """Satu-satunya pembuat nomor dokumen (deletion-safe, sequence atomik `number_sequences`).
+
+    KP-T5 (KP-12) — format dibaca dari tabel Penomoran Dokumen (`services/doc_numbering_service.effective_format`:
+    baris PT → baris grup → bawaan katalog `doc_number_kinds.py`). Langkah:
+      1. jenis = `kind`, atau dikenali dari (koleksi, field, awalan) lewat `doc_number_kinds.lookup`. Tidak dikenal →
+         perilaku lama dengan argumen apa adanya (`_legacy_next_doc_number`) + catatan log; nomor turunan
+         (`INV-<nomor SO>-`) juga jalur lama;
+      2. format = `effective_format(jenis, PT)`;
+      3. cara: `scope = per_pt` dan PT terisi (bukan `None`/`"all"`) → per PT; selain itu bersama. Selama grup belum
+         memilih cara, titik panggil ber-`scheme="shared"` tetap bersama;
+      4. kunci deret = kunci hari ini (awalan identitas, bukan awalan tercetak) → semai sekali → `$inc` → rakit.
+    Tanpa baris format (keadaan saat dipasang) hasilnya identik dengan jalur lama — `tests_mem/test_KPT5a_setara.py`.
+    `at` = waktu untuk sisipan tanggal (bawaan sekarang; penyemai data demo memberi tanggal dokumennya).
+    """
+    import doc_number_kinds as _dnk
+    hit = _dnk.lookup(collection, field, prefix, scheme, kind)
+    if hit is None or hit[0]["derived"]:
+        if hit is None:
+            _log.info("[next_doc_number] jenis nomor tidak dikenal katalog: %s.%s %r (kind=%r) — jalur lama",
+                      collection, field, prefix, kind)
+        return await _legacy_next_doc_number(collection, field, prefix, width, entity_id, scheme)
+    from db import db
+    from pymongo import ReturnDocument
+    from services import doc_numbering_service as _dns
+    plan = await _dns.plan(hit[0], entity_id, scheme=scheme, stamp=hit[1], at=at)
+    key = plan["key"]
+    if not await db.number_sequences.find_one(key, {"_id": 1}):
+        seed_no = await _dns.seed_number(plan)
+        await db.number_sequences.update_one(
+            key, {"$setOnInsert": {**key, "prefix": plan["seed_patterns"][0], "last_no": seed_no,
+                                   "created_at": now_iso()}}, upsert=True)
+    seq = await db.number_sequences.find_one_and_update(
+        key, {"$inc": {"last_no": 1}, "$set": {"updated_at": now_iso()}},
+        return_document=ReturnDocument.AFTER)
+    code = await entity_code(entity_id) if plan["per_pt"] else ""
+    return _dns.render(plan, seq["last_no"], code)
+
+
+async def _legacy_next_doc_number(collection: str, field: str, prefix: str, width: int = 5,
+                                  entity_id: Optional[str] = None,
+                                  scheme: str = "per_entity_prefix") -> str:
+    """Jalur lama (sebelum KP-T5) untuk awalan yang tidak dikenal katalog dan nomor turunan.
 
     Dua mode:
     - **Legacy/shared** (`entity_id=None` atau `scheme="shared"`): pindai nomor
