@@ -17,7 +17,8 @@ import { useCanDecideMap } from "../../hooks/useCanDecide";   // KP-T4
 import useIntentKey from "../../hooks/useIntentKey";
 import { moneyPost } from "../../utils/moneyRequest";
 import { usePaymentMethods } from "../../config/paymentMethods";   // PM-T1 — label cara bayar dari daftar induk
-import CashAccountField, { cashAccountBlocked, cashAccountBlockReason } from "../../components/CashAccountField";   // PK-20
+import CashAccountField, { cashAccountBlocked, cashAccountBlockReason, cashAccountLabel } from "../../components/CashAccountField";   // PK-20
+import { confirmMoney } from "../../utils/moneyConfirm";   // PK-24 — konfirmasi cairkan menyebut nominal & PT
 
 /**
  * CashAdvanceDetail — Detail Form PD: ringkasan, rincian, timeline approval,
@@ -40,6 +41,7 @@ export default function CashAdvanceDetail({ ca, currentUser, entities, onEdit, o
   const [cashType, setCashType] = useState("kas_kecil");
   const [accountId, setAccountId] = useState("");   // PK-20 — rekening sumber pencairan (wajib)
   const [accState, setAccState] = useState("memuat");
+  const [account, setAccount] = useState(null);
   // PK-12 — satu kunci idempotensi per aksi (ajukan / setujui / tolak / cairkan).
   const intents = {
     submit: useIntentKey("cas"), approve: useIntentKey("caa"),
@@ -190,6 +192,14 @@ export default function CashAdvanceDetail({ ca, currentUser, entities, onEdit, o
           busy={busy} submitLabel="Cairkan Dana" submitTestId="ca-disburse-confirm"
           submitDisabled={cashAccountBlocked(accState, accountId)}
           onSubmit={async () => {
+            // PK-24 (N5) — cairkan = uang keluar: konfirmasi menyebut nominal, penerima, rekening, dan PT.
+            const ok = await confirmMoney({
+              title: `Cairkan ${ca.number}?`,
+              effect: `Kas keluar dari ${account ? cashAccountLabel(account) : "rekening terpilih"} sebagai uang muka ${ca.created_by || "pemohon"}.`,
+              amount: ca.total_amount, entityId: ca.entity_id, entities,
+              confirmLabel: "Cairkan Dana", testId: "ca-disburse-money-confirm",
+            });
+            if (!ok) return;
             setDisburse(false);
             await act("disburse", { cash_type: cashType, ...(accountId ? { account_id: accountId } : {}) },
               `${ca.number} dicairkan (${formatCurrency(ca.total_amount)}).`);
@@ -199,7 +209,7 @@ export default function CashAdvanceDetail({ ca, currentUser, entities, onEdit, o
             <KNSelect data-testid="ca-disburse-cashtype" className="form-input" value={cashType} onValueChange={setCashType}
               options={[{ value: "kas_kecil", label: "Kas Kecil (tunai)" }, { value: "kas_besar", label: "Bank (transfer)" }]} />
             <CashAccountField entityId={ca.entity_id} cashType={cashType} value={accountId} onChange={setAccountId}
-              onState={setAccState} testId="ca-disburse-account" />
+              onState={setAccState} onAccount={setAccount} testId="ca-disburse-account" />
             {cashAccountBlocked(accState, accountId) && accState !== "kosong" && (
               <p className="text-fs-12 text-kn-text-2" data-testid="ca-disburse-account-reason">
                 {cashAccountBlockReason(accState)}

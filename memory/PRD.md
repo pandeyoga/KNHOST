@@ -33,6 +33,19 @@ GL-01: registri `services/gl_mapping_registry.py` (54 kebutuhan) → koleksi `gl
   roll terjual mengendap di 1-1300). Susut potong dan potong uji mutu dinilai `unit_cost` roll (termasuk landed cost),
   `base_unit_cost` hanya bila biaya roll kosong. Layar rincian voucher: kolom **Perlakuan**, tiga baris ringkas
   pembukuan, dan kalimat peringatan sebelum disetujui bila ada roll yang sudah keluar.
+- 2026-11-14 PK-24 (SL-09, FY-13, FY-14, FY-19, IA-05, K-17 — kas kecil): LPJ disetujui (hanya yang **diajukan**;
+  draf ditolak 409) melewati NIAT `approved` + jurnal `post_durable` → `posted_to_gl` hanya bila jurnal terbit (gagal →
+  Posting Gagal jenis `petty_cash_settlement`, ulang meneruskan dari langkah jurnal; PD induk tetap terklaim). Akun beban
+  dari kategori **efektif PT LPJ** (lapisan PT menang atas global). Sisa uang muka disimpan `sisa_dikembalikan` (`open`)
+  dan ditutup **Terima Pengembalian Sisa** (`POST …/return-remainder`, izin baru `cash_settlement.pay`): kas masuk lewat
+  `cash_ledger.create_cash` (Dr kas / Cr `kas_bank.uang_muka_karyawan`) → saldo uang muka PD nol; klaim `open →
+  returning` menjaga satu penerimaan. LPJ terkunci sesudah diajukan; LPJ ditolak dibuka lagi pembuatnya (`…/reopen`,
+  "Perbaiki & Ajukan Lagi"); lampiran bukti (unggah/hapus saat draf) dan pengaturan `finance.lpj_wajib_lampiran` (bawaan
+  mati, per PT). Bayar reimburse & laporan hutang reimburse kini berizin kas kecil (`cash_settlement.pay` / `.view`);
+  Admin, Manajer, Finance memegang `pay`; mencairkan PD = `cash_advance.disburse` (Manajer & Finance, K-17) dengan kontrol
+  dua orang `kontrol.cairkan_uang_muka.*` (bawaan satu orang). Layar: ringkasan "Sisa Harus Dikembalikan" / "Sisa
+  Dikembalikan · {kas}" / "Kekurangan Dana", pop-up kas baku (Jenis kas · Rekening · Tanggal) di rincian LPJ dan tombol
+  **Bayar** per baris di Hutang Reimburse, Periode LPJ = pilihan bulan, konfirmasi cairkan menyebut nominal & PT.
 - 2026-11-14 PK-39 (FY-10, FY-11, FY-12, K-12 — angka anggaran, pagu terkunci, cakupan pemeriksaan): Anggaran vs
   Realisasi dihitung **per PT pemilik pagu** (mode gabungan: kolom PT + pita "belum dieliminasi"); komitmen PO = **sisa
   PO** (`po_open_value`, PO `partial` ikut, `receiving` tidak dihitung dua kali); realisasi akun persediaan = penerimaan

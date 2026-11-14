@@ -95,7 +95,8 @@
     "submit",
     "approve",
     "reject",
-    "manage"
+    "manage",
+    "pay"
    ],
    "color": [
     "view",
@@ -709,7 +710,8 @@
     "view",
     "create",
     "update",
-    "submit"
+    "submit",
+    "pay"
    ],
    "contra_bon": [
     "view",
@@ -933,7 +935,8 @@
     "submit",
     "approve",
     "reject",
-    "manage"
+    "manage",
+    "pay"
    ],
    "color": [
     "view",

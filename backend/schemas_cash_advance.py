@@ -79,7 +79,7 @@ class SettlementLine(BaseModel):
 class SettlementCreate(BaseModel):
     cash_advance_id: str
     divisi: str = ""
-    periode: str = ""
+    periode: str = ""                # PK-24 — bulan `YYYY-MM` (kosong boleh)
     expense_lines: List[SettlementLine] = []
     dibuat_oleh: str = ""
     catatan: str = ""
@@ -90,6 +90,14 @@ class SettlementUpdate(BaseModel):
     periode: Optional[str] = None
     expense_lines: Optional[List[SettlementLine]] = None
     catatan: Optional[str] = None
+
+
+class ReturnRemainderIn(BaseModel):
+    """PK-24 — terima pengembalian sisa uang muka: jenis kas, rekening tujuan (`bank_accounts` milik PT LPJ; kosong =
+    rekening tunggal PT jenis kas itu), tanggal kas (kosong = hari ini)."""
+    cash_type: str = "kas_kecil"
+    account_id: str = ""
+    txn_date: Optional[str] = None
 
 
 class ExpenseCategoryUpdate(BaseModel):

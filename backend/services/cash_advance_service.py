@@ -7,11 +7,17 @@ Koleksi:
 
 Akuntansi (anti double-count, buku per-entitas seimbang):
 - Disburse : cash_transaction(out, ref_type='cash_advance') → GL Dr 1-1400 Uang Muka / Cr Kas.
-- Settlement approved : GL Dr [beban per kategori] / Cr 1-1400 Uang Muka (= total pengeluaran).
+- Settlement approved : GL Dr [beban per kategori, akun PT LPJ] / Cr 1-1400 Uang Muka (≤ uang muka; kelebihan →
+  Cr 2-1650 Hutang Reimburse). PK-24: LPJ `approved` + jurnal lewat `post_durable` → `posted_to_gl` hanya bila jurnal
+  terbit (gagal → panel Posting Gagal, jenis `petty_cash_settlement`).
+- Pengembalian sisa (PK-24) : cash_transaction(in, ref_type='cash_advance_return') → Dr Kas / Cr 1-1400 (pemetaan
+  `kas_bank.uang_muka_karyawan`) sebesar uang muka − pengeluaran → saldo uang muka PD = 0.
+- Bayar reimburse : cash_transaction(out, ref_type='reimburse_payable') → Dr 2-1650 / Cr Kas.
 
 Rantai approval PD (default — ACC owner, configurable):
   Atasan Langsung=manager · Pimpinan=admin · Bagian Keuangan=admin(finance); admin override semua tahap.
 """
+import re
 from typing import Any, Dict, List, Optional
 
 from fastapi import HTTPException
@@ -131,9 +137,11 @@ async def update_expense_category(code: str, patch: Dict[str, Any], actor: Dict[
     return await db[EXCAT_COLL].find_one({"code": code}, {"_id": 0})
 
 
-async def _category_account_map() -> Dict[str, str]:
-    rows = await db[EXCAT_COLL].find({}, {"_id": 0, "code": 1, "account_code": 1}).to_list(200)
-    return {r["code"]: r.get("account_code") or FALLBACK_ACCOUNT for r in rows}
+async def _category_account_map(entity_id: str) -> Dict[str, str]:
+    """PK-24 (FY-13) — peta kategori → akun beban EFEKTIF untuk PT LPJ (lapisan PT menang atas global, tanpa kembar).
+    Dulu dibaca dari SEMUA baris kategori tanpa lapisan, sehingga lapisan PT lain bisa terpakai."""
+    rows = await list_expense_categories(entity_id=entity_id)
+    return {r["code"]: r.get("account_code") or FALLBACK_ACCOUNT for r in rows if r.get("code")}
 
 
 # ═══ Cash Advance (Form PD) ════════════════════════════════════
@@ -313,6 +321,12 @@ async def disburse_cash_advance(ca_id: str, payload, ctx: EntityContext, actor: 
         raise HTTPException(status_code=409, detail="Hanya PD berstatus 'approved' yang bisa dicairkan")
     cash_type = payload.cash_type if payload.cash_type in ("kas_kecil", "kas_besar") else "kas_kecil"
     entity_id = doc["entity_id"]
+    # PK-24 (K-17) — pemohon ≠ pencair dari `kontrol.cairkan_uang_muka.*` (bawaan satu orang; di atas batas nominal dua
+    # orang). Wewenang mencairkan sendiri = izin `cash_advance.disburse` (bawaan Admin, Manajer, Finance).
+    from services import dual_control as _dc
+    await _dc.tolak_bila_pelaku_sama("cairkan_uang_muka", doc, actor, entity_id,
+                                     nominal=float(doc.get("total_amount") or 0),
+                                     pengaju=[doc.get("created_by_id"), doc.get("created_by")])
     try:
         await gl_service.preflight_posting(entity_id, payload.txn_date or now_iso())
     except gl_service.ClosedPeriodError as exc:
@@ -363,18 +377,72 @@ async def _finish_disburse(ca_id: str, doc: Dict[str, Any], txn: Dict[str, Any],
         "cash_txn_id": txn["id"], "cash_txn_number": number,
         "je_id": (je or {}).get("id"), "je_number": (je or {}).get("number"),
         "cash_type": cash_type, "amount": _r(doc["total_amount"]),
+        "account_id": txn.get("account_id", ""),   # PK-24 — rekening sumber pencairan
         "disbursed_at": now_iso(), "disbursed_by": actor.get("name", ""),
+        "disbursed_by_id": actor.get("id", ""),    # PK-24 — id pelaku (bahan kontrol dua orang)
         "note": (payload.note or "").strip(),
     }
     updated = await db[CA_COLL].find_one_and_update(
         {"id": ca_id, "status": "approved"},
-        {"$set": {"status": "disbursed", "disbursement": disb, "updated_at": now_iso()}},
+        {"$set": {"status": "disbursed", "disbursement": disb, "disbursed_by_id": actor.get("id", ""),
+                  "updated_at": now_iso()}},
         projection={"_id": 0}, return_document=ReturnDocument.AFTER)
     await audit(actor.get("name", ""), "cash_advance_disbursed", "cash_advance", ca_id, disb)
     return safe_doc(updated)
 
 
 # ═══ Settlement (Laporan Pertanggungjawaban) ══════════════════════════
+#: PK-24 — status LPJ: draft → submitted → approved (disetujui, jurnal belum terbit) → posted_to_gl; ditolak = rejected
+#: (pembuatnya bisa membuka lagi → draft). LPJ "aktif" (memblokir LPJ kedua atas PD yang sama) = selain ditolak.
+STL_ACTIVE_STATUSES = ["draft", "submitted", "approved", "posted_to_gl"]
+_STL_STATUS_KATA = {"draft": "masih draf", "submitted": "sudah diajukan", "approved": "sudah disetujui",
+                    "posted_to_gl": "sudah disetujui dan dijurnal", "rejected": "sudah ditolak"}
+#: PK-24 (FY-14) — pengaturan Pusat Pengaturan: LPJ wajib berlampiran bukti saat diajukan (bawaan mati, per PT).
+K_WAJIB_LAMPIRAN = "finance.lpj_wajib_lampiran"
+_RX_PERIODE = re.compile(r"^\d{4}-(0[1-9]|1[0-2])$")
+
+
+def _periode(value: Optional[str]) -> str:
+    """PK-24 — isian `periode` LPJ = bulan `YYYY-MM` (layar: pilihan bulan); kosong boleh. Teks bebas lama di LPJ yang
+    sudah ada tidak ditulis ulang (hanya nilai baru yang diperiksa)."""
+    v = (value or "").strip()
+    if v and not _RX_PERIODE.match(v):
+        raise HTTPException(status_code=400, detail="Periode LPJ diisi bulan, mis. 2026-07 (pilih dari daftar bulan).")
+    return v
+
+
+def _pesan_terkunci(doc: Dict[str, Any]) -> str:
+    return (f"LPJ {doc.get('number', '')} sudah diajukan, jadi isinya tidak bisa diubah. Minta penyetuju menolaknya "
+            "bila perlu diperbaiki.")
+
+
+def _harus_draf(doc: Dict[str, Any]) -> None:
+    """PK-24 (FY-14) — isi & lampiran LPJ hanya bisa diubah selagi draf."""
+    if doc.get("status") != "draft":
+        raise HTTPException(status_code=409, detail=_pesan_terkunci(doc))
+
+
+def _harus_diajukan(doc: Dict[str, Any]) -> None:
+    """PK-24 (FY-14) — setujui/tolak hanya untuk LPJ berstatus diajukan (dulu LPJ draf bisa langsung disetujui)."""
+    st, nomor = doc.get("status"), doc.get("number", "")
+    if st == "submitted":
+        return
+    if st == "draft":
+        raise HTTPException(status_code=409, detail=f"LPJ {nomor} belum diajukan.")
+    if st == "approved":
+        raise HTTPException(status_code=409, detail=(
+            f"LPJ {nomor} sudah disetujui; jurnalnya belum terbit dan diulang dari Keuangan › Posting Gagal."))
+    raise HTTPException(status_code=409, detail=f"LPJ {nomor} {_STL_STATUS_KATA.get(st, st)}, jadi tidak menunggu "
+                                                "persetujuan.")
+
+
+def _pembuat(doc: Dict[str, Any], actor: Dict[str, Any]) -> bool:
+    """Apakah aktor = pembuat LPJ: id bila tersimpan (KF-T6), nama untuk LPJ lama tanpa id."""
+    if doc.get("created_by_id"):
+        return doc["created_by_id"] == (actor or {}).get("id")
+    return bool(doc.get("created_by")) and doc.get("created_by") == (actor or {}).get("name")
+
+
 def _compute_settlement(expense_lines, total_pettycash: float) -> Dict[str, Any]:
     lines: List[Dict[str, Any]] = []
     cat_totals: Dict[str, float] = {}
@@ -403,10 +471,11 @@ async def create_settlement(payload, ctx: EntityContext, actor: Dict[str, Any]) 
     if ca["status"] != "disbursed":
         raise HTTPException(status_code=409, detail="Pertanggungjawaban hanya untuk PD berstatus dicairkan (belum selesai)")
     other = await db[STL_COLL].find_one(
-        {"cash_advance_id": ca["id"], "status": {"$in": ["draft", "submitted", "posted_to_gl"]}},
+        {"cash_advance_id": ca["id"], "status": {"$in": STL_ACTIVE_STATUSES}},
         {"_id": 0, "number": 1})
     if other:
         raise HTTPException(status_code=409, detail=f"PD ini sudah punya pertanggungjawaban {other['number']}")
+    periode = _periode(payload.periode)
     calc = _compute_settlement(payload.expense_lines, ca.get("total_amount", 0))
     if not calc["expense_lines"]:
         raise HTTPException(status_code=400, detail="Minimal 1 baris pengeluaran")
@@ -418,12 +487,13 @@ async def create_settlement(payload, ctx: EntityContext, actor: Dict[str, Any]) 
         "cash_advance_id": ca["id"],
         "cash_advance_number": ca["number"],
         "divisi": (payload.divisi or ca.get("divisi", "")).strip(),
-        "periode": payload.periode or "",
+        "periode": periode,
         "dibuat_oleh": (payload.dibuat_oleh or actor.get("name", "")).strip(),
         "disetujui_oleh": "",
         "catatan": (payload.catatan or "").strip(),
         "status": "draft",
         "journal_entry_id": "",
+        "attachments": [],   # PK-24 — bukti pengeluaran (unggah/hapus hanya saat draf)
         "created_by": actor.get("name", ""),
         "created_by_id": actor.get("id", ""),   # KF-T6 — pemohon andal untuk kontrol dua orang
         "created_at": now_iso(),
@@ -460,13 +530,14 @@ async def get_settlement(stl_id: str, ctx: EntityContext) -> Dict[str, Any]:
 
 async def update_settlement(stl_id: str, payload, ctx: EntityContext, actor: Dict[str, Any]) -> Dict[str, Any]:
     doc = await get_settlement(stl_id, ctx)
-    if doc["status"] not in ("draft", "submitted"):
-        raise HTTPException(status_code=409, detail="Hanya draft/submitted yang bisa diubah")
+    _harus_draf(doc)   # PK-24 (FY-14) — dulu LPJ diajukan pun bisa diubah
     upd: Dict[str, Any] = {}
-    for f in ["divisi", "periode", "catatan"]:
+    for f in ["divisi", "catatan"]:
         v = getattr(payload, f, None)
         if v is not None:
             upd[f] = v.strip() if isinstance(v, str) else v
+    if getattr(payload, "periode", None) is not None:
+        upd["periode"] = _periode(payload.periode)
     if payload.expense_lines is not None:
         calc = _compute_settlement(payload.expense_lines, doc.get("total_pettycash", 0))
         if not calc["expense_lines"]:
@@ -474,15 +545,32 @@ async def update_settlement(stl_id: str, payload, ctx: EntityContext, actor: Dic
         upd.update(calc)
     upd["updated_at"] = now_iso()
     updated = await db[STL_COLL].find_one_and_update(
-        {"id": stl_id}, {"$set": upd}, projection={"_id": 0}, return_document=ReturnDocument.AFTER)
+        {"id": stl_id, "status": "draft"}, {"$set": upd}, projection={"_id": 0}, return_document=ReturnDocument.AFTER)
+    if not updated:   # diajukan di antara baca dan tulis
+        raise HTTPException(status_code=409, detail=_pesan_terkunci(doc))
     await audit(actor.get("name", ""), "settlement_updated", "cash_advance_settlement", stl_id, upd)
     return safe_doc(updated)
+
+
+async def _nilai_pengaturan(key: str, entity_id: str) -> Any:
+    """Nilai Pusat Pengaturan untuk PT dokumen (berlapis global → PT). Galat baca = bawaan registry (`02` §2.2)."""
+    from services.config_resolver import value_of
+    try:
+        return await value_of(key, {"entity_id": entity_id or ""})
+    except Exception:  # noqa: BLE001
+        import config_registry as _reg
+        return _reg.require(key)["default"]
 
 
 async def submit_settlement(stl_id: str, ctx: EntityContext, actor: Dict[str, Any]) -> Dict[str, Any]:
     doc = await get_settlement(stl_id, ctx)
     if doc["status"] != "draft":
-        raise HTTPException(status_code=409, detail="Hanya draft yang bisa diajukan")
+        kata = _STL_STATUS_KATA.get(doc["status"], doc["status"])
+        raise HTTPException(status_code=409, detail=(
+            f"Hanya LPJ draf yang bisa diajukan; LPJ {doc.get('number', '')} {kata}."))
+    # PK-24 (FY-14) — bukti pengeluaran wajib bila pengaturan PT menyala (bawaan mati = perilaku lama).
+    if bool(await _nilai_pengaturan(K_WAJIB_LAMPIRAN, doc["entity_id"])) and not (doc.get("attachments") or []):
+        raise HTTPException(status_code=400, detail="Lampirkan minimal satu bukti pengeluaran sebelum mengajukan LPJ.")
     # PK-39 (K-12) — PERIKSA anggaran tiap kategori; mode tolak di sini hanya memperingatkan (persetujuannya yang ditahan).
     from services import budget_service as _bs
     try:
@@ -491,22 +579,131 @@ async def submit_settlement(stl_id: str, ctx: EntityContext, actor: Dict[str, An
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
     updated = await db[STL_COLL].find_one_and_update(
-        {"id": stl_id}, {"$set": {"status": "submitted", "budget_check": budget_check, "updated_at": now_iso()}},
+        {"id": stl_id, "status": "draft"},
+        {"$set": {"status": "submitted", "budget_check": budget_check, "submitted_by": actor.get("name", ""),
+                  "submitted_by_id": actor.get("id", ""), "submitted_at": now_iso(), "updated_at": now_iso()}},
         projection={"_id": 0}, return_document=ReturnDocument.AFTER)
+    if not updated:
+        raise HTTPException(status_code=409, detail=f"LPJ {doc.get('number', '')} berubah saat diajukan. Muat ulang.")
     await audit(actor.get("name", ""), "settlement_submitted", "cash_advance_settlement", stl_id, {})
     return safe_doc(updated)
 
 
+async def reopen_settlement(stl_id: str, ctx: EntityContext, actor: Dict[str, Any]) -> Dict[str, Any]:
+    """PK-24 — LPJ ditolak dibuka lagi (→ draf) oleh PEMBUATNYA untuk diperbaiki lalu diajukan ulang."""
+    doc = await get_settlement(stl_id, ctx)
+    nomor = doc.get("number", "")
+    if doc.get("status") != "rejected":
+        kata = _STL_STATUS_KATA.get(doc.get("status"), doc.get("status"))
+        raise HTTPException(status_code=409, detail=f"Hanya LPJ yang ditolak yang bisa dibuka lagi; LPJ {nomor} {kata}.")
+    if not _pembuat(doc, actor):
+        pembuat = doc.get("created_by") or "pembuatnya"
+        raise HTTPException(status_code=403, detail=(
+            f"Hanya pembuat LPJ {nomor} ({pembuat}) yang bisa membukanya lagi untuk diperbaiki."))
+    ca = await db[CA_COLL].find_one({"id": doc.get("cash_advance_id")}, {"_id": 0, "status": 1, "number": 1}) or {}
+    if ca.get("status") != "disbursed":
+        raise HTTPException(status_code=409, detail=(
+            f"PD {ca.get('number') or doc.get('cash_advance_number', '')} sudah tidak menunggu pertanggungjawaban, jadi "
+            f"LPJ {nomor} tidak bisa dibuka lagi."))
+    other = await db[STL_COLL].find_one({"cash_advance_id": doc.get("cash_advance_id"), "id": {"$ne": stl_id},
+                                         "status": {"$in": STL_ACTIVE_STATUSES}}, {"_id": 0, "number": 1})
+    if other:
+        raise HTTPException(status_code=409, detail=f"PD ini sudah punya pertanggungjawaban {other['number']}")
+    updated = await db[STL_COLL].find_one_and_update(
+        {"id": stl_id, "status": "rejected"},
+        {"$set": {"status": "draft", "last_rejected_reason": doc.get("rejected_reason", ""), "rejected_reason": "",
+                  "reopened_at": now_iso(), "reopened_by": actor.get("name", ""),
+                  "reopened_by_id": actor.get("id", ""), "updated_at": now_iso()}},
+        projection={"_id": 0}, return_document=ReturnDocument.AFTER)
+    if not updated:
+        raise HTTPException(status_code=409, detail=f"LPJ {nomor} berubah saat dibuka. Muat ulang.")
+    await audit(actor.get("name", ""), "settlement_reopened", "cash_advance_settlement", stl_id, {})
+    return safe_doc(updated)
+
+
+# ── PK-24 — lampiran bukti pengeluaran (pola lampiran retur; penyimpanan `services/storage_service`) ──────────────────
+def _lampiran_aktif(doc: Dict[str, Any], att_id: str) -> Dict[str, Any]:
+    att = next((a for a in (doc.get("attachments") or []) if a.get("id") == att_id), None)
+    if not att:
+        raise HTTPException(status_code=404, detail="Lampiran tidak ditemukan")
+    return att
+
+
+async def add_settlement_attachment(stl_id: str, filename: str, content_type: str, data: bytes,
+                                    ctx: EntityContext, actor: Dict[str, Any]) -> Dict[str, Any]:
+    from services import storage_service as storage
+    doc = await get_settlement(stl_id, ctx)
+    _harus_draf(doc)
+    try:
+        ct = storage.validate_upload(filename, content_type, len(data), data[:16])
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    att_id = new_id("att")
+    path = f"cash_advance_settlements/{stl_id}/{att_id}.{storage.ext_of(filename)}"
+    await storage.put_object(path, data, ct)
+    att = {"id": att_id, "filename": filename or "lampiran", "content_type": ct, "size": len(data), "path": path,
+           "uploaded_by": actor.get("name", ""), "uploaded_by_id": actor.get("id", ""), "uploaded_at": now_iso()}
+    res = await db[STL_COLL].update_one({"id": stl_id, "status": "draft"},
+                                        {"$push": {"attachments": att}, "$set": {"updated_at": now_iso()}})
+    if not res.modified_count:   # diajukan di antara baca dan tulis — berkas yang terlanjur tersimpan dibuang
+        try:
+            await storage.delete_object(path)
+        except Exception:  # noqa: BLE001
+            pass
+        raise HTTPException(status_code=409, detail=_pesan_terkunci(doc))
+    await audit(actor.get("name", ""), "settlement_attachment_added", "cash_advance_settlement", stl_id,
+                {"attachment_id": att_id, "filename": att["filename"]})
+    return att
+
+
+async def get_settlement_attachment(stl_id: str, att_id: str, ctx: EntityContext):
+    """→ (lampiran, isi berkas). 404 bila lampiran / berkasnya tidak ada."""
+    from services import storage_service as storage
+    att = _lampiran_aktif(await get_settlement(stl_id, ctx), att_id)
+    try:
+        data, _ = await storage.get_object(att["path"])
+    except (FileNotFoundError, ValueError) as exc:
+        raise HTTPException(status_code=404, detail="Berkas lampiran tidak ditemukan di penyimpanan.") from exc
+    return att, data
+
+
+async def delete_settlement_attachment(stl_id: str, att_id: str, ctx: EntityContext,
+                                       actor: Dict[str, Any]) -> Dict[str, Any]:
+    from services import storage_service as storage
+    doc = await get_settlement(stl_id, ctx)
+    _harus_draf(doc)
+    att = _lampiran_aktif(doc, att_id)
+    res = await db[STL_COLL].update_one({"id": stl_id, "status": "draft"},
+                                        {"$pull": {"attachments": {"id": att_id}}, "$set": {"updated_at": now_iso()}})
+    if not res.modified_count:
+        raise HTTPException(status_code=409, detail=_pesan_terkunci(doc))
+    try:
+        await storage.delete_object(att.get("path", ""))
+    except Exception:  # noqa: BLE001 — berkas fisik yang gagal dihapus tidak membatalkan penghapusan di dokumen
+        pass
+    await audit(actor.get("name", ""), "settlement_attachment_deleted", "cash_advance_settlement", stl_id,
+                {"attachment_id": att_id, "filename": att.get("filename", "")})
+    return {"ok": True}
+
+
+# ── PK-24 — setujui LPJ: PERIKSA → NIAT (PD diklaim + LPJ `approved`) → JURNAL (`post_durable`) → SELESAI ────────────
+async def _settlement_lines(doc: Dict[str, Any]) -> List[Dict[str, Any]]:
+    """Baris beban per kategori dengan akun PT LPJ (FY-13); kategori tanpa akun → akun cadangan."""
+    cat_map = await _category_account_map(doc.get("entity_id") or "")
+    return [{"account_code": cat_map.get(cat, FALLBACK_ACCOUNT), "amount": _r(amt), "desc": f"Beban {cat}"}
+            for cat, amt in (doc.get("category_totals") or {}).items() if _r(amt) > 0]
+
+
 async def approve_settlement(stl_id: str, ctx: EntityContext, actor: Dict[str, Any]) -> Dict[str, Any]:
     doc = await get_settlement(stl_id, ctx)
-    if doc["status"] not in ("submitted", "draft"):
-        raise HTTPException(status_code=409, detail="Hanya draft/submitted yang bisa disetujui")
+    _harus_diajukan(doc)   # PK-24 (FY-14) — LPJ draf tidak bisa langsung disetujui
     # KF-T6 — pemohon ≠ penyetuju dari `kontrol.lpj_uang_muka.*` (bawaan satu orang).
     from services import dual_control as _dc
     await _dc.tolak_bila_pelaku_sama("lpj_uang_muka", doc, actor, doc.get("entity_id", ""),
                                      nominal=float(doc.get("total_pengeluaran") or 0),
                                      pengaju=[doc.get("created_by_id"), doc.get("created_by")])
-    # CX-05 — tutup PD induk atomik LEBIH DULU (disbursed→settling): LPJ kedua tidak dapat memposting.
+    if not await _settlement_lines(doc):
+        raise HTTPException(status_code=400, detail="Tidak ada pengeluaran untuk diposting")
     try:
         await gl_service.preflight_posting(doc["entity_id"], now_iso())
     except gl_service.ClosedPeriodError as exc:
@@ -518,49 +715,83 @@ async def approve_settlement(stl_id: str, ctx: EntityContext, actor: Dict[str, A
                                                 when="lpj_approve", date="", actor=actor, exclude_stl_id=stl_id)
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
+    # NIAT (1) CX-05 — tutup PD induk atomik LEBIH DULU (settling_stl_id): LPJ kedua tidak dapat memposting.
     parent = await db[CA_COLL].find_one_and_update(
         {"id": doc["cash_advance_id"], "status": "disbursed",
          "$or": [{"settling_stl_id": {"$exists": False}}, {"settling_stl_id": stl_id}]},
         {"$set": {"settling_stl_id": stl_id, "updated_at": now_iso()}}, projection={"_id": 0})
     if not parent:
         raise HTTPException(status_code=409, detail="PD induk sudah dipertanggungjawabkan / sedang diproses LPJ lain")
-    cat_map = await _category_account_map()
-    cat_lines = []
-    for cat, amt in (doc.get("category_totals") or {}).items():
-        if _r(amt) <= 0:
-            continue
-        cat_lines.append({"account_code": cat_map.get(cat, FALLBACK_ACCOUNT),
-                          "amount": _r(amt), "desc": f"Beban {cat}"})
-    try:
-        if not cat_lines:
-            raise HTTPException(status_code=400, detail="Tidak ada pengeluaran untuk diposting")
-        je = await gl_service.post_petty_cash_settlement(
+    # NIAT (2) — LPJ `submitted → approved` dengan jurnal `pending` (bersyarat nilai lama: satu penyetuju menang).
+    approved = await db[STL_COLL].find_one_and_update(
+        {"id": stl_id, "status": "submitted"},
+        {"$set": {"status": "approved", "gl_status": "pending", "gl_error": "", "budget_check": budget_check,
+                  "disetujui_oleh": actor.get("name", ""), "approved_by_id": actor.get("id", ""),
+                  "approved_at": now_iso(), "updated_at": now_iso()}},
+        projection={"_id": 0}, return_document=ReturnDocument.AFTER)
+    if not approved:
+        await db[CA_COLL].update_one({"id": doc["cash_advance_id"], "settling_stl_id": stl_id, "status": "disbursed"},
+                                     {"$unset": {"settling_stl_id": ""}})
+        raise HTTPException(status_code=409, detail=f"LPJ {doc.get('number', '')} berubah saat disetujui. Muat ulang.")
+    await audit(actor.get("name", ""), "settlement_approved", "cash_advance_settlement", stl_id,
+                {"total": doc.get("total_pengeluaran")})
+    return await _post_and_finish(approved, actor)
+
+
+async def _post_and_finish(doc: Dict[str, Any], actor: Dict[str, Any], *, raise_on_fail: bool = False) -> Dict[str, Any]:
+    """JURNAL lewat pintu tahan-gagal → SELESAI hanya bila jurnal `posted`. Jurnal gagal: LPJ tetap `approved` +
+    `gl_status="failed"` (panel Posting Gagal, jenis `petty_cash_settlement`); PD induk tetap terklaim LPJ ini."""
+    stl_id = doc["id"]
+    parent = await db[CA_COLL].find_one({"id": doc.get("cash_advance_id")}, {"_id": 0}) or {}
+    advance = float(parent.get("total_amount") or doc.get("total_pettycash") or 0)
+    cat_lines = await _settlement_lines(doc)
+    if not cat_lines:   # tidak terjadi lewat `approve_settlement` (diperiksa lebih dulu); penjaga untuk data lama
+        if raise_on_fail:
+            raise RuntimeError("Tidak ada pengeluaran untuk diposting")
+        return safe_doc(await db[STL_COLL].find_one({"id": stl_id}, {"_id": 0}))
+    res = await gl_service.post_durable(
+        STL_COLL, stl_id, lambda: gl_service.post_petty_cash_settlement(
             settlement_id=stl_id, entity_id=doc["entity_id"], category_lines=cat_lines,
             actor_name=actor.get("name", ""), date=now_iso(),
-            label=f"{doc['number']} · {doc.get('divisi', '')}".strip(),
-            advance_amount=float(parent.get("total_amount") or 0))
-    except Exception:
-        await db[CA_COLL].update_one({"id": doc["cash_advance_id"], "settling_stl_id": stl_id,
-                                      "status": "disbursed"}, {"$unset": {"settling_stl_id": ""}})
-        raise
-    excess = _r(max(float(doc.get("total_pengeluaran") or 0) - float(parent.get("total_amount") or 0), 0.0))
+            label=f"{doc['number']} · {doc.get('divisi', '')}".strip(), advance_amount=advance),
+        source_type="petty_cash_settlement", source_id=stl_id, raise_on_fail=raise_on_fail)
+    if res["gl_status"] != "posted":
+        return safe_doc(await db[STL_COLL].find_one({"id": stl_id}, {"_id": 0}))
+    je = res.get("journal") or await db.journal_entries.find_one({"id": res["journal_entry_id"]},
+                                                                 {"_id": 0, "id": 1, "number": 1}) or {}
+    total = float(doc.get("total_pengeluaran") or 0)
+    excess = _r(max(total - advance, 0.0))
+    remainder = _r(max(advance - total, 0.0))
     updated = await db[STL_COLL].find_one_and_update(
-        {"id": stl_id},
-        {"$set": {"status": "posted_to_gl", "journal_entry_id": (je or {}).get("id", ""), "budget_check": budget_check,
+        {"id": stl_id, "status": "approved"},
+        {"$set": {"status": "posted_to_gl", "journal_entry_id": je.get("id", ""),
+                  "journal_entry_number": je.get("number", ""), "posted_at": now_iso(),
                   # CX-05 — kelebihan pengeluaran = Hutang Reimburse Karyawan (2-1650) yang harus dibayar
                   "hutang_reimburse": {"amount": excess, "status": "open" if excess > 0 else "none",
                                        "cash_txn_id": "", "paid_at": ""},
-                  "journal_entry_number": (je or {}).get("number", ""),
-                  "disetujui_oleh": actor.get("name", ""), "approved_at": now_iso(),
+                  # PK-24 (SL-09) — sisa uang muka yang harus kembali; ditutup oleh `return_remainder`
+                  "sisa_dikembalikan": {"amount": remainder, "status": "open" if remainder > 0 else "none",
+                                        "cash_txn_id": "", "cash_txn_number": "", "journal_entry_number": "",
+                                        "returned_at": "", "returned_by": ""},
                   "updated_at": now_iso()}},
         projection={"_id": 0}, return_document=ReturnDocument.AFTER)
+    if not updated:   # sudah diselesaikan pemanggil lain (ulang bersamaan)
+        return safe_doc(await db[STL_COLL].find_one({"id": stl_id}, {"_id": 0}))
     # Tandai PD induk sebagai settled
     await db[CA_COLL].update_one({"id": doc["cash_advance_id"], "settling_stl_id": stl_id},
                                  {"$set": {"status": "settled", "settled_by_stl_id": stl_id,
                                            "updated_at": now_iso()}})
     await audit(actor.get("name", ""), "settlement_posted", "cash_advance_settlement", stl_id,
-                {"je_id": (je or {}).get("id"), "total": doc.get("total_pengeluaran")})
+                {"je_id": je.get("id"), "total": doc.get("total_pengeluaran")})
     return safe_doc(updated)
+
+
+async def repost_settlement(stl_id: str, actor: Dict[str, Any]) -> Dict[str, Any]:
+    """PK-24 — jalur ulang panel Posting Gagal: meneruskan LPJ `approved` dari langkah JURNAL (tepat satu jurnal)."""
+    doc = await db[STL_COLL].find_one({"id": stl_id}, {"_id": 0})
+    if not doc or doc.get("status") != "approved":
+        raise RuntimeError("LPJ ini tidak menunggu jurnal.")
+    return await _post_and_finish(doc, actor, raise_on_fail=True)
 
 
 async def pay_reimburse(stl_id: str, payload, ctx: EntityContext, actor: Dict[str, Any]) -> Dict[str, Any]:
@@ -600,7 +831,9 @@ async def pay_reimburse(stl_id: str, payload, ctx: EntityContext, actor: Dict[st
             _saga.finish_set({"hutang_reimburse.status": "paid", "hutang_reimburse.cash_txn_id": txn["id"],
                               "hutang_reimburse.cash_txn_number": txn["number"],
                               "hutang_reimburse.journal_entry_number": (je or {}).get("number", ""),
+                              "hutang_reimburse.account_id": txn.get("account_id", ""),
                               "hutang_reimburse.paid_at": now_iso(), "hutang_reimburse.paid_by": actor.get("name", ""),
+                              "hutang_reimburse.paid_by_id": actor.get("id", ""),
                               "updated_at": now_iso()}),
             projection={"_id": 0}, return_document=ReturnDocument.AFTER)
     except Exception:
@@ -609,6 +842,90 @@ async def pay_reimburse(stl_id: str, payload, ctx: EntityContext, actor: Dict[st
     await audit(actor.get("name", ""), "reimburse_paid", "cash_advance_settlement", stl_id,
                 {"amount": hr["amount"], "cash_txn_id": txn["id"]})
     return safe_doc(updated)
+
+
+def _pesan_tanpa_sisa(doc: Dict[str, Any]) -> str:
+    return f"LPJ {doc.get('number', '')} tidak punya sisa uang muka yang belum dikembalikan."
+
+
+async def return_remainder(stl_id: str, payload, ctx: EntityContext, actor: Dict[str, Any]) -> Dict[str, Any]:
+    """PK-24 (SL-09) — terima pengembalian SISA uang muka (uang muka − pengeluaran) dari karyawan: satu kas MASUK
+    Dr Kas / Cr uang muka karyawan (pemetaan `kas_bank.uang_muka_karyawan`, bawaan 1-1400) → saldo uang muka PD = 0.
+
+    PERIKSA (status `open`, periode, rekening) → NIAT `open → returning` (bersyarat: satu penerima menang) → EFEK +
+    JURNAL lewat pembuat kas `cash_ledger.create_cash` (rujukan `cash_advance_return`/id LPJ = id kas tetap) →
+    `returned`. Jurnal gagal → kembali `open`; kas `failed` tertinggal dan DIPAKAI ULANG saat diulang."""
+    doc = await get_settlement(stl_id, ctx)
+    sr = doc.get("sisa_dikembalikan") or {}
+    amount = _r(sr.get("amount"))
+    if doc.get("status") != "posted_to_gl" or amount <= 0 or sr.get("status") not in ("open", "returning"):
+        raise HTTPException(status_code=409, detail=_pesan_tanpa_sisa(doc))
+    if sr.get("status") == "returning":
+        raise HTTPException(status_code=409, detail=(
+            f"Pengembalian sisa LPJ {doc.get('number', '')} sedang diproses. Muat ulang sebentar lagi."))
+    cash_type = getattr(payload, "cash_type", "") or ""
+    cash_type = cash_type if cash_type in ("kas_kecil", "kas_besar") else "kas_kecil"
+    txn_date = getattr(payload, "txn_date", None) or now_iso()
+    entity_id = doc["entity_id"]
+    try:
+        await gl_service.preflight_posting(entity_id, txn_date)
+    except gl_service.ClosedPeriodError as exc:
+        raise HTTPException(status_code=409, detail=str(exc))
+    from services import cash_ledger
+    from services import gl_mapping_service as _glm
+    rek = await cash_ledger.periksa_rekening(entity_id, getattr(payload, "account_id", "") or "", cash_type)
+    lawan = await _glm.account_for("kas_bank.uang_muka_karyawan", entity_id)
+    claimed = await db[STL_COLL].find_one_and_update(
+        {"id": stl_id, "status": "posted_to_gl", "sisa_dikembalikan.status": "open"},
+        {"$set": {"sisa_dikembalikan.status": "returning", "sisa_dikembalikan.returning_at": now_iso(),
+                  "sisa_dikembalikan.returning_by": actor.get("name", ""), "updated_at": now_iso()}},
+        projection={"_id": 0}, return_document=ReturnDocument.AFTER)
+    if not claimed:
+        cur = (await db[STL_COLL].find_one({"id": stl_id}, {"_id": 0, "sisa_dikembalikan": 1}) or {}).get(
+            "sisa_dikembalikan") or {}
+        if cur.get("status") == "returning":
+            raise HTTPException(status_code=409, detail=(
+                f"Pengembalian sisa LPJ {doc.get('number', '')} sedang diproses. Muat ulang sebentar lagi."))
+        raise HTTPException(status_code=409, detail=_pesan_tanpa_sisa(doc))
+
+    async def _buka_lagi(extra: Optional[Dict[str, Any]] = None):
+        await db[STL_COLL].update_one({"id": stl_id, "sisa_dikembalikan.status": "returning"},
+                                      {"$set": {"sisa_dikembalikan.status": "open", **(extra or {}),
+                                                "updated_at": now_iso()}})
+
+    karyawan = (doc.get("dibuat_oleh") or doc.get("created_by") or "karyawan").strip()
+    try:
+        txn = await cash_ledger.create_cash(
+            entity_id=entity_id, direction="in", amount=amount, ref_type="cash_advance_return", ref_id=stl_id,
+            account_id=rek["account_id"], cash_type=rek["cash_type"], txn_date=txn_date,
+            category="pengembalian uang muka", contra_account_code=lawan,
+            description=f"Pengembalian sisa uang muka {doc.get('number', '')} — {karyawan}",
+            actor=actor.get("name", ""))
+    except cash_ledger.CashPostingError as exc:
+        await _buka_lagi({"sisa_dikembalikan.cash_txn_id": exc.txn.get("id", ""),
+                          "sisa_dikembalikan.last_error": str(exc.error)[:300]})
+        raise HTTPException(status_code=409, detail=(
+            f"Kas {exc.txn.get('number', '')} tercatat tetapi jurnal gagal: {exc.error}. Ulangi untuk melanjutkan "
+            "(tanpa kas ganda).")) from exc
+    except Exception:
+        await _buka_lagi()
+        raise
+    je = await db.journal_entries.find_one(
+        {"source_type": "cash_transaction", "source_id": txn["id"], "status": {"$ne": "void"}},
+        {"_id": 0, "id": 1, "number": 1}) or {}
+    updated = await db[STL_COLL].find_one_and_update(
+        {"id": stl_id, "sisa_dikembalikan.status": "returning"},
+        {"$set": {"sisa_dikembalikan.status": "returned", "sisa_dikembalikan.cash_txn_id": txn["id"],
+                  "sisa_dikembalikan.cash_txn_number": txn.get("number", ""),
+                  "sisa_dikembalikan.journal_entry_number": je.get("number", ""),
+                  "sisa_dikembalikan.account_id": txn.get("account_id", ""),
+                  "sisa_dikembalikan.last_error": "",
+                  "sisa_dikembalikan.returned_at": now_iso(), "sisa_dikembalikan.returned_by": actor.get("name", ""),
+                  "sisa_dikembalikan.returned_by_id": actor.get("id", ""), "updated_at": now_iso()}},
+        projection={"_id": 0}, return_document=ReturnDocument.AFTER)
+    await audit(actor.get("name", ""), "settlement_remainder_returned", "cash_advance_settlement", stl_id,
+                {"amount": amount, "cash_txn_id": txn["id"]})
+    return safe_doc(updated or await db[STL_COLL].find_one({"id": stl_id}, {"_id": 0}))
 
 
 REIMBURSE_BUCKETS = (("0-7", 7), ("8-14", 14), ("15-30", 30), (">30", None))
@@ -663,12 +980,14 @@ async def reimburse_payables(ctx: EntityContext, entity_id: Optional[str] = None
 
 async def reject_settlement(stl_id: str, reason: str, ctx: EntityContext, actor: Dict[str, Any]) -> Dict[str, Any]:
     doc = await get_settlement(stl_id, ctx)
-    if doc["status"] not in ("submitted", "draft"):
-        raise HTTPException(status_code=409, detail="Hanya draft/submitted yang bisa ditolak")
+    _harus_diajukan(doc)   # PK-24 (FY-14) — hanya LPJ diajukan yang bisa ditolak
     updated = await db[STL_COLL].find_one_and_update(
-        {"id": stl_id},
-        {"$set": {"status": "rejected", "rejected_reason": (reason or "").strip(), "updated_at": now_iso()}},
+        {"id": stl_id, "status": "submitted"},
+        {"$set": {"status": "rejected", "rejected_reason": (reason or "").strip(), "rejected_by": actor.get("name", ""),
+                  "rejected_by_id": actor.get("id", ""), "rejected_at": now_iso(), "updated_at": now_iso()}},
         projection={"_id": 0}, return_document=ReturnDocument.AFTER)
+    if not updated:
+        raise HTTPException(status_code=409, detail=f"LPJ {doc.get('number', '')} berubah saat ditolak. Muat ulang.")
     await audit(actor.get("name", ""), "settlement_rejected", "cash_advance_settlement", stl_id,
                 {"reason": reason})
     return safe_doc(updated)

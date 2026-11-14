@@ -1045,7 +1045,7 @@ Sumber angka (derived; bulan = bulan buku WIB `book_date.periode_buku`; dihitung
                                    (termasuk `partial`); key = PO.budget_dimension/budget_key atau akun
                                    pemetaan `persediaan.persediaan`; nilai = SISA PO `po_open_value`
                                    = net_subtotal × (1 − nilai diterima / nilai dipesan)
-  Komitmen  LPJ petty cash      → cash_advance_settlements status draft|submitted (per kategori, bulan created_at WIB)
+  Komitmen  LPJ petty cash      → cash_advance_settlements status draft|submitted|approved (per kategori, bulan created_at WIB)
 Rumus: spent = actual + committed · remaining = budget − spent · variance = budget − actual
 Mode gabungan: tiap baris `entity_id`/`entity_name`; `is_combined` + `combined_note` (belum dieliminasi).
 Pemeriksaan (budget_service.enforce_budget; enforce_po_budget = pembungkus PO), hasil di dokumen `budget_check`
@@ -3672,8 +3672,21 @@ Key Fields:  id, epc, tag_id, roll_id, sku, product_name, roll_no, device_id, de
 | Collection | Prefix/ID | Router utama | Catatan |
 |-----------|-----------|--------------|---------|
 | cash_advances | ca_ (number: {PT}/PD-#####) | routers/cash_advances.py | Form Pengajuan Dana (PD). State-machine draft→pending_atasan→pending_pimpinan→pending_finance→approved→disbursed→settled. SCOPED. |
-| cash_advance_settlements | stl_ (number: {PT}/STL-#####) | routers/cash_advances.py | Laporan Pertanggungjawaban (LPJ) atas PD. Posting GL saat approved (Dr beban/Cr Kas Kecil). SCOPED. PK-44: `refs[]` (G-4) — relasi `parent` ke PD-nya ditulis saat lahir (jenis dokumen `cash_settlement`). |
+| cash_advance_settlements | stl_ (number: {PT}/STL-#####) | routers/cash_advances.py | Laporan Pertanggungjawaban (LPJ) atas PD. Posting GL saat approved (Dr beban/Cr Kas Kecil). SCOPED. PK-44: `refs[]` (G-4) — relasi `parent` ke PD-nya ditulis saat lahir (jenis dokumen `cash_settlement`). PK-24: lihat blok "PK-24 — kas kecil" di bawah. |
 | expense_categories | — (code kategori) | routers/cash_advances.py | Mapping kategori beban petty cash → akun COA (6-4100..6-4900). Config. |
+
+**PK-24 — kas kecil (pengembalian sisa uang muka, LPJ terkunci, lampiran).** Tanpa migrasi: LPJ lama tanpa field baru
+tetap terbaca (LPJ `posted_to_gl` lama yang bersisa tidak dibuka kewajiban kembalinya — keputusan pemilik, H3).
+
+| Koleksi · field | Tipe | Arti |
+|---|---|---|
+| `cash_advance_settlements.status` | teks | `draft` → `submitted` → **`approved`** (disetujui, jurnal belum terbit/gagal) → `posted_to_gl`; `rejected` (pembuat bisa `POST …/reopen` → `draft`). Ubah & lampiri hanya `draft`; setujui/tolak hanya `submitted` |
+| `cash_advance_settlements.gl_status`, `gl_error`, `gl_failed_at`, `journal_entry_id` | menurut PK-18 | Status jurnal LPJ (`post_durable`); gagal → panel Posting Gagal jenis `petty_cash_settlement` |
+| `cash_advance_settlements.sisa_dikembalikan` | `{amount, status: none\|open\|returning\|returned, cash_txn_id, cash_txn_number, journal_entry_number, account_id, returned_at, returned_by, returned_by_id, last_error}` | Sisa uang muka (uang muka − pengeluaran) yang harus kembali; ditulis saat LPJ dijurnal, ditutup `POST …/return-remainder` (kas masuk `ref_type="cash_advance_return"`, `ref_id` = id LPJ: Dr kas / Cr `kas_bank.uang_muka_karyawan`) |
+| `cash_advance_settlements.attachments[]` | `{id, filename, content_type, size, path, uploaded_by, uploaded_by_id, uploaded_at}` | Bukti pengeluaran (`services/storage_service`, `cash_advance_settlements/{id}/{att}.{ext}`); wajib ≥ 1 saat diajukan bila `finance.lpj_wajib_lampiran` menyala untuk PT itu |
+| `cash_advance_settlements.submitted_by_id`, `approved_by_id`, `rejected_by_id`, `reopened_by_id` (+ nama & waktu) | teks | Id pelaku (bahan kontrol dua orang) |
+| `cash_advance_settlements.hutang_reimburse.paid_by_id`, `.account_id` | teks | Pembayar & rekening bayar reimburse |
+| `cash_advances.disbursed_by_id`, `disbursement.account_id`, `disbursement.disbursed_by_id` | teks | Pencair & rekening sumber pencairan (kontrol `kontrol.cairkan_uang_muka.*`, pembanding = pemohon PD) |
 | vehicles | veh_ | routers/vehicle_logs.py | Master kendaraan ringan (no_polisi/nama/jenis). SCOPED. |
 | vehicle_usage_logs | vhl_ (number: {PT}/VHL-#####) | routers/vehicle_logs.py | Laporan Penggunaan & Biaya Kendaraan (km, BBM, tol, parkir). SCOPED. |
 

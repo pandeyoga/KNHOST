@@ -87,3 +87,14 @@ E("amendment.issued_doc_policy", group="retur-koreksi", section="koreksi", type=
   impact="Menentukan apakah koreksi menghasilkan nota baru atau menimpa dokumen asal.",
   example="Hanya lewat nota · pesanan sudah dibayar lalu harga dikoreksi turun Rp 500.000 → terbit Nota Kredit",
   consumers=("services/amendment_service.py:policy_snapshot",), risk="high")
+
+
+# ── PK-24 (FY-14) — kas kecil: bukti pengeluaran wajib saat LPJ diajukan ─────────────────────────────────────────────
+# ASUMSI unit (`00` §4.1): pengaturan berbawaan MATI = perilaku hari ini (LPJ bisa diajukan tanpa lampiran).
+E("finance.lpj_wajib_lampiran", group="keuangan-dasar", section="tutup-buku", type="bool", default=False, scopes=G,
+  label="LPJ kas kecil wajib berlampiran bukti",
+  help="Bila menyala, pertanggungjawaban kas kecil tidak bisa diajukan tanpa minimal satu lampiran bukti pengeluaran.",
+  impact="Karyawan harus mengunggah foto nota sebelum mengajukan LPJ.",
+  example="Menyala untuk PT A → LPJ PT A tanpa lampiran ditolak saat diajukan; PT B tidak terpengaruh",
+  consumers=("services/cash_advance_service.py:submit_settlement",),
+  risk="medium", permission=("accounting", "manage"))

@@ -84,6 +84,9 @@ KONTROL_AKSI: List[Dict[str, Any]] = [
     # CR-T1 (K-28) — memutus pengajuan perubahan profil kredit pelanggan (plafon, termin, hari blokir, blokir manual);
     # bernominal = plafon BARU (0 bila plafon tidak diubah), bawaan satu orang.
     _a("ubah_profil_kredit", "Ubah profil kredit pelanggan", "C", "1", True, _PJ),
+    # PK-24 (K-17) — mencairkan uang muka yang sudah disetujui; pembanding = PEMOHON PD (penerima dana); bernominal =
+    # nilai PD, bawaan satu orang.
+    _a("cairkan_uang_muka", "Cairkan uang muka", "C", "1", True, _SDM),
 ]
 
 #: KF-T6 serah-terima (b) — titik pasang tiap aksi (`berkas.py:fungsi`).
@@ -127,6 +130,7 @@ _TITIK: Dict[str, Tuple[str, ...]] = {
     "ubah_rekening": ("services/bank_account_change_service.py:_dua_orang",
                       "services/bank_account_change_service.py:putuskan"),   # PM-T1
     "ubah_profil_kredit": ("services/credit_profile_service.py:decide",),   # CR-T1
+    "cairkan_uang_muka": ("services/cash_advance_service.py:disburse_cash_advance",),   # PK-24
 }
 for _x in KONTROL_AKSI:
     _x["titik"] = _TITIK.get(_x["aksi"], ())

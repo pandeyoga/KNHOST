@@ -16,6 +16,7 @@ import { STL_STATUS, StatusPill } from "./pettyCashShared";
 import SettlementForm from "./SettlementForm";
 import SettlementDetail from "./SettlementDetail";
 import { can } from "../../config/roles";
+import { formatPeriodId } from "../../components/KNMonthPicker";
 
 /**
  * SettlementsView — Laporan Pertanggungjawaban (LPJ) atas PD dicairkan.
@@ -25,10 +26,11 @@ import { can } from "../../config/roles";
  * (SettlementForm), rincian = DetailModal framed (SettlementDetail). Daftar dulu grid buatan sendiri (lebar tetap,
  * aksi di luar layar 390 px) → `ResponsiveTable` (tabel baku ≥641 px, kartu di HP; tombol Detail di kaki kartu).
  */
+// PK-24 — + "Menunggu jurnal" (LPJ disetujui yang jurnalnya belum terbit / gagal).
 const TABS = [
   { key: "", label: "Semua" }, { key: "draft", label: "Draf" },
-  { key: "submitted", label: "Diajukan" }, { key: "posted_to_gl", label: "Terposting" },
-  { key: "rejected", label: "Ditolak" },
+  { key: "submitted", label: "Diajukan" }, { key: "approved", label: "Menunggu jurnal" },
+  { key: "posted_to_gl", label: "Terposting" }, { key: "rejected", label: "Ditolak" },
 ];
 
 export default function SettlementsView({ currentUser, selectedEntity = "all", entities = [], focusDoc, onClearFocus }) {
@@ -40,6 +42,7 @@ export default function SettlementsView({ currentUser, selectedEntity = "all", e
   const [toast, setToast] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
   const [selected, setSelected] = useState(null);
+  const [resubmit, setResubmit] = useState(false);   // PK-24 — mode ubah: simpan lalu ajukan lagi (LPJ ditolak)
 
   const canCreate = can(currentUser?.permissions, "cash_settlement", "create");   // Sisir gerbang peran (2026-10-20) — POST /cash-advance-settlements
 
@@ -137,8 +140,8 @@ export default function SettlementsView({ currentUser, selectedEntity = "all", e
                 render: (r) => <span className="text-[11.5px] font-bold text-[#0058CC] whitespace-nowrap">{r.number}</span> },
               { key: "status", header: "Status", mobile: "badge", render: (r) => <StatusPill status={r.status} map={STL_STATUS} /> },
               { key: "ref", header: "Ref PD / Divisi", mobile: "subtitle",
-                render: (r) => <span className="min-w-0"><span className="block text-[12px] font-semibold">{r.cash_advance_number || "—"}</span><span className="block text-[10.5px] text-[#9A9BA3]">{r.divisi || "—"} · {r.periode || "—"}</span></span> },
-              { key: "entity", header: "Entitas", priority: 2, render: (r) => entityName(r.entity_id) },
+                render: (r) => <span className="min-w-0"><span className="block text-[12px] font-semibold">{r.cash_advance_number || "—"}</span><span className="block text-[10.5px] text-[#9A9BA3]">{r.divisi || "—"} · {r.periode ? formatPeriodId(r.periode) : "—"}</span></span> },
+              { key: "entity", header: "PT", priority: 2, render: (r) => entityName(r.entity_id) },
               { key: "total", header: "Pengeluaran", align: "right", priority: 1,
                 render: (r) => <span className="tabular-nums font-semibold">{formatCurrency(r.total_pengeluaran)}</span> },
             ]}
@@ -153,11 +156,18 @@ export default function SettlementsView({ currentUser, selectedEntity = "all", e
           onSaved={(rec) => { flash(`${rec.number} dibuat.`); setSelected(rec); setView("detail"); load(); }} />
       )}
 
+      {view === "edit" && selected && (
+        <SettlementForm categories={categories} selectedEntity={selectedEntity} record={selected} resubmit={resubmit}
+          onCancel={() => setView("detail")}
+          onSaved={(rec) => { flash(resubmit ? `${rec.number} diperbaiki dan diajukan lagi.` : `${rec.number} disimpan.`); setSelected(rec); setView("detail"); load(); }} />
+      )}
+
       {view === "detail" && selected && (
         <DetailModal framed size="xl" label={`Rincian ${selected.number || "LPJ"}`} testId="stl-detail-modal"
           onClose={() => { setSelected(null); setView("list"); load(); }}>
           <SettlementDetail stl={selected} currentUser={currentUser} entities={entities} catLabels={catLabels}
-            onChanged={(rec) => { setSelected(rec); load(); }} flash={flash} />
+            onChanged={(rec) => { setSelected(rec); load(); }} flash={flash}
+            onEdit={(rec, opt) => { setSelected(rec); setResubmit(!!opt?.resubmit); setView("edit"); }} />
         </DetailModal>
       )}
     </div>

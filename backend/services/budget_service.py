@@ -25,7 +25,7 @@ Sumber angka (semua diturunkan / derived — TIDAK ada materialized cache, GL-sa
 - **Komitmen (committed)**
   * PO terbuka (status di luar `CLOSED_PO_STATUSES`, termasuk `partial`) → key dari `budget_dimension`/`budget_key`
     PO (bila di-tag) atau akun persediaan hasil pemetaan `persediaan.persediaan`; nilai = SISA PO (`po_open_value`).
-  * LPJ petty cash (`cash_advance_settlements` status draft/submitted) → per kategori, bulan `created_at` (WIB).
+  * LPJ petty cash (`cash_advance_settlements` status draft/submitted/approved) → per kategori, bulan `created_at` (WIB).
 - Laporan dihitung PER PT pemilik pagu (mode gabungan = penjumlahan, belum dieliminasi).
 
 Pemeriksaan: `enforce_budget()` (titik `po_create`, `po_approve`, `bill_approve`, `cash_out`, `lpj_submit`,
@@ -51,7 +51,8 @@ HISTORY_COLL = "budget_history"
 # uji `test_PK39_angka.py` menjaga keduanya tetap sama). Dulu daftar status terbuka yang memuat `receiving` (dihitung
 # dua kali dengan penerimaannya) tetapi tidak memuat `partial` (sisa PO hilang dari komitmen).
 CLOSED_PO_STATUSES = ("cancelled", "rejected", "closed_short", "completed")
-OPEN_STL_STATUSES = ["draft", "submitted"]     # LPJ belum diposting → komitmen
+# LPJ belum diposting → komitmen. PK-24: + `approved` (disetujui, jurnalnya belum terbit / gagal).
+OPEN_STL_STATUSES = ["draft", "submitted", "approved"]
 GR_SOURCE, PRET_SOURCE, STL_SOURCE = "goods_receipt", "purchase_return", "petty_cash_settlement"
 
 DEFAULT_RULES = {

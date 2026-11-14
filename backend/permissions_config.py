@@ -902,3 +902,20 @@ for _role, _mods in AGT2_DEFAULT_PAIRS.items():
     for _res, _acts in _mods.items():
         _cur = list(DEFAULT_PERMISSIONS[_role].get(_res) or [])
         DEFAULT_PERMISSIONS[_role][_res] = _cur + [a for a in _acts if a not in _cur]
+
+# ═══════════════════════════════════════════════════════════════════════════
+# PK-24 (IA-05, K-17) — kas kecil: `cash_settlement.pay` (baru) = membayar hutang reimburse karyawan dan menerima
+# pengembalian sisa uang muka (`POST /api/cash-advance-settlements/{id}/pay-reimburse` | `/return-remainder`; dulu bayar
+# reimburse dijaga `accounting.create`). Bawaan Admin, Manajer, Finance. Mencairkan uang muka (`cash_advance.disburse`)
+# untuk Manajer dan Finance sudah dipasang blok MN-T1 (K-17) — baris di bawah idempoten ("lewati bila sudah ada").
+# Instalasi lama menerima pasangan baru sekali lewat `bootstrap.sync_permission_modules` (`defaults_applied`, PR-T9).
+# ═══════════════════════════════════════════════════════════════════════════
+PK24_DEFAULT_PAIRS = {
+    "admin": {"cash_settlement": ("pay",)},
+    "manager": {"cash_settlement": ("pay",), "cash_advance": ("disburse",)},
+    "finance": {"cash_settlement": ("pay",), "cash_advance": ("disburse",)},
+}
+for _role, _mods in PK24_DEFAULT_PAIRS.items():
+    for _res, _acts in _mods.items():
+        _cur = list(DEFAULT_PERMISSIONS[_role].get(_res) or [])
+        DEFAULT_PERMISSIONS[_role][_res] = _cur + [a for a in _acts if a not in _cur]

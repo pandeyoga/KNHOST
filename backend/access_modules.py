@@ -490,7 +490,8 @@ _SENSITIVE_GROUPS: List[Tuple[str, Tuple[Tuple[str, str], ...]]] = [
      (("period", "unlock"), ("period", "backdate"), ("accounting", "reopen"))),
     ("membatalkan jurnal dan menutup buku", (("accounting", "void"), ("accounting", "manage"))),
     ("membayar pemasok dan mencairkan dana",
-     (("vendor_bill", "pay"), ("contra_bon", "pay"), ("landed_cost", "pay"), ("cash_advance", "disburse"))),
+     (("vendor_bill", "pay"), ("contra_bon", "pay"), ("landed_cost", "pay"), ("cash_advance", "disburse"),
+      ("cash_settlement", "pay"))),   # PK-24 — bayar reimburse & terima pengembalian sisa uang muka
     ("membebaskan atau mengubah denda", (("penalty", "waive"), ("penalty", "adjust"))),
     ("membatalkan kwitansi, faktur pajak, atau rencana bayar",
      (("ar_receipt", "void"), ("tax_invoice", "cancel"), ("payment_plan", "void"))),
@@ -611,6 +612,8 @@ ACTION_LABEL.update({"credit_profile.view": "Lihat plafon, status kredit & riway
 # AG-T2 — Asisten Keuangan (modul Asisten Tanya KN).
 RESOURCE_LABEL["ai_finance"] = "Asisten Keuangan"
 ACTION_LABEL.update({"ai_finance.view": "Bertanya soal keuangan lewat Tanya KN"})
+# PK-24 (IA-05) — kas kecil: bayar hutang reimburse & terima pengembalian sisa uang muka (modul Kas Kecil).
+ACTION_LABEL.update({"cash_settlement.pay": "Bayar reimburse & terima pengembalian sisa uang muka"})
 # PR-T4 — KPI & komisi sales lain (modul Pesanan Penjualan; dulu daftar nama peran di `_kpi_scope`).
 ACTION_LABEL.update({"order.view_sales_kpi": "Lihat KPI & komisi sales lain"})
 # KP-T8 — kunci layanan luar & koneksi WhatsApp (modul Pusat Pengaturan).

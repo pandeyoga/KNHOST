@@ -70,6 +70,8 @@ const REF_LABEL = {
   ar_receipt: "kwitansi piutang", customer_advance: "uang muka pelanggan", sales_return: "retur penjualan",
   vendor_bill_payment: "pembayaran tagihan supplier", purchase_return: "retur pembelian", interco_settlement: "pelunasan antar-PT",
   cash_advance: "pengajuan dana", petty_cash_settlement: "LPJ kas kecil", refund: "pengembalian dana",
+  // PK-24 — kas dari LPJ: pengembalian sisa uang muka (masuk) dan bayar hutang reimburse (keluar).
+  cash_advance_return: "pengembalian sisa uang muka", reimburse_payable: "bayar reimburse karyawan",
 };
 
 export default function CashManagementView({ currentUser, selectedEntity, focusDoc, onClearFocus }) {

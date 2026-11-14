@@ -7,14 +7,15 @@ from typing import Any, Dict, List, Optional
 
 from pydantic import BaseModel
 
-from fastapi import APIRouter, Request, Query
+from fastapi import APIRouter, File, Query, Request, UploadFile
+from fastapi.responses import Response
 
 from dependencies import require_permission
 from services import approval_policy_service as _aps   # KP-T4 — satu tabel kebijakan persetujuan
 from entity_scope import entity_ctx
 from schemas_cash_advance import (
     CashAdvanceCreate, CashAdvanceUpdate, ApprovalDecision, DisburseInput,
-    SettlementCreate, SettlementUpdate, ExpenseCategoryUpdate,
+    SettlementCreate, SettlementUpdate, ExpenseCategoryUpdate, ReturnRemainderIn,
 )
 from services import cash_advance_service as svc
 
@@ -108,8 +109,9 @@ async def list_settlements(request: Request, entity_id: str = Query(None),
 
 @router.get("/cash-advance-settlements/reimburse-payables")
 async def reimburse_payables(request: Request, entity_id: str = Query(None)) -> Dict[str, Any]:
-    """Laporan Hutang Reimburse Karyawan (2-1650) terbuka per karyawan + umur hutang."""
-    await require_permission(request, "accounting", "view")
+    """Laporan Hutang Reimburse Karyawan (2-1650) terbuka per karyawan + umur hutang.
+    PK-24 (IA-05) — izin kas kecil `cash_settlement.view` (dulu `accounting.view`)."""
+    await require_permission(request, "cash_settlement", "view")
     ctx = await entity_ctx(request)
     return await svc.reimburse_payables(ctx, entity_id=entity_id)
 
@@ -142,6 +144,40 @@ async def submit_settlement(stl_id: str, request: Request) -> Dict[str, Any]:
     return await svc.submit_settlement(stl_id, ctx, actor)
 
 
+@router.post("/cash-advance-settlements/{stl_id}/reopen")
+async def reopen_settlement(stl_id: str, request: Request) -> Dict[str, Any]:
+    """PK-24 — LPJ ditolak dibuka lagi (→ draf) oleh pembuatnya untuk diperbaiki dan diajukan ulang."""
+    actor = await require_permission(request, "cash_settlement", "update")
+    ctx = await entity_ctx(request)
+    return await svc.reopen_settlement(stl_id, ctx, actor)
+
+
+# ─── PK-24 — lampiran bukti pengeluaran (unggah & hapus hanya saat draf) ─────────────
+@router.post("/cash-advance-settlements/{stl_id}/attachments")
+async def upload_settlement_attachment(stl_id: str, request: Request, file: UploadFile = File(...)) -> Dict[str, Any]:
+    actor = await require_permission(request, "cash_settlement", "update")
+    ctx = await entity_ctx(request)
+    data = await file.read()
+    return await svc.add_settlement_attachment(stl_id, file.filename or "", file.content_type or "", data, ctx, actor)
+
+
+@router.get("/cash-advance-settlements/{stl_id}/attachments/{att_id}")
+async def get_settlement_attachment(stl_id: str, att_id: str, request: Request, download: bool = False) -> Response:
+    await require_permission(request, "cash_settlement", "view")
+    ctx = await entity_ctx(request)
+    att, data = await svc.get_settlement_attachment(stl_id, att_id, ctx)
+    from services.return_attachment_service import disposition
+    return Response(content=data, media_type=att.get("content_type") or "application/octet-stream",
+                    headers={"Content-Disposition": disposition(att, download)})
+
+
+@router.delete("/cash-advance-settlements/{stl_id}/attachments/{att_id}")
+async def delete_settlement_attachment(stl_id: str, att_id: str, request: Request) -> Dict[str, Any]:
+    actor = await require_permission(request, "cash_settlement", "update")
+    ctx = await entity_ctx(request)
+    return await svc.delete_settlement_attachment(stl_id, att_id, ctx, actor)
+
+
 class ReimbursePayIn(BaseModel):
     cash_type: str = "kas_besar"
     txn_date: Optional[str] = None
@@ -150,10 +186,19 @@ class ReimbursePayIn(BaseModel):
 
 @router.post("/cash-advance-settlements/{stl_id}/pay-reimburse")
 async def pay_reimburse(stl_id: str, payload: ReimbursePayIn, request: Request) -> Dict[str, Any]:
-    """CX-05 — bayar kelebihan LPJ (Hutang Reimburse Karyawan 2-1650) ke karyawan."""
-    actor = await require_permission(request, "accounting", "create")
+    """CX-05 — bayar kelebihan LPJ (Hutang Reimburse Karyawan 2-1650) ke karyawan.
+    PK-24 (IA-05) — izin kas kecil `cash_settlement.pay` (dulu `accounting.create`)."""
+    actor = await require_permission(request, "cash_settlement", "pay")
     ctx = await entity_ctx(request)
     return await svc.pay_reimburse(stl_id, payload, ctx, actor)
+
+
+@router.post("/cash-advance-settlements/{stl_id}/return-remainder")
+async def return_remainder(stl_id: str, payload: ReturnRemainderIn, request: Request) -> Dict[str, Any]:
+    """PK-24 (SL-09) — terima pengembalian sisa uang muka dari karyawan: kas masuk Dr Kas / Cr uang muka karyawan."""
+    actor = await require_permission(request, "cash_settlement", "pay")
+    ctx = await entity_ctx(request)
+    return await svc.return_remainder(stl_id, payload, ctx, actor)
 
 
 @router.post("/cash-advance-settlements/{stl_id}/approve")

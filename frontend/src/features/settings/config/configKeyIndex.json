@@ -1319,6 +1319,10 @@
    "retur-koreksi",
    "koreksi"
   ],
+  "finance.lpj_wajib_lampiran": [
+   "pajak-pembukuan",
+   "tutup-buku"
+  ],
   "docref.autolink_enabled": [
    "persetujuan",
    "rujukan-dokumen"
@@ -2134,6 +2138,14 @@
   "kontrol.ubah_profil_kredit.batas_nominal": [
    "persetujuan",
    "dua-orang-piutang"
+  ],
+  "kontrol.cairkan_uang_muka.min_orang": [
+   "persetujuan",
+   "dua-orang-sdm"
+  ],
+  "kontrol.cairkan_uang_muka.batas_nominal": [
+   "persetujuan",
+   "dua-orang-sdm"
   ],
   "kontrol.admin_boleh_sendiri": [
    "persetujuan",

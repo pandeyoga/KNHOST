@@ -540,7 +540,7 @@ dalam 4 grup); grup "Kas & Aset" dihapus.
 | Keuangan › Kas & Bank (`cash-bank`) | Rekening & Saldo (`bank-accounts`) | A M F |
 | Keuangan › Kas & Bank (`cash-bank`) | Transaksi Kas (`cash-management`) | A M F |
 | Keuangan › Kas & Bank (`cash-bank`) | Rekonsiliasi (`bank-reconciliation`) | A M F |
-| Keuangan › Kas & Bank (`cash-bank`) | Kas Kecil (`petty-cash`) | A M F S SA |
+| Keuangan › Kas & Bank (`cash-bank`) | Kas Kecil (`petty-cash`) — PK-24: Finance & Manajer mencairkan PD (`cash_advance.disburse`), membayar reimburse & menerima pengembalian sisa (`cash_settlement.pay`) | A M F S SA |
 | Keuangan › Antar-PT (`interco-transactions`) | — (view `interco-transactions`) | A M F SA G GA |
 | Akuntansi & Pajak › Buku Besar (`ledger`) | Jurnal (`general-ledger`) | A M F |
 | Akuntansi & Pajak › Buku Besar (`ledger`) | Bagan Akun (`chart-of-accounts`) | A M F |
@@ -583,7 +583,7 @@ menampilkan "nama lama → kini di …"):
 | `store-credit` (Saldo Kredit) | idem | `{bagian: "saldo"}` |
 | `cash-advances` (Pengajuan Dana) | Keuangan › Kas & Bank › Kas Kecil (`petty-cash`) | `{bagian: "pengajuan"}` |
 | `settlements` (Pertanggungjawaban) | idem | `{bagian: "pertanggungjawaban"}` |
-| `reimburse-payables` (Hutang Reimburse) | idem (chip hanya dengan `accounting.view`) | `{bagian: "reimburse"}` |
+| `reimburse-payables` (Hutang Reimburse) | idem (chip dengan `cash_settlement.view` — PK-24, dulu `accounting.view`) | `{bagian: "reimburse"}` |
 | `kas-aset` (id grup lama, `legacy`) | Keuangan › Kas & Bank › Kas Kecil | — |
 
 Id yang tetap tetapi berpindah induk: `finance-desk` (kini tab pertama Beranda Keuangan; beranda peran Finance tetap,

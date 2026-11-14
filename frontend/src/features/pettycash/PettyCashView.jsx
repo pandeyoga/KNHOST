@@ -3,7 +3,8 @@
  * tiga layar lama yang dirender UTUH (isi tidak diubah; satu layar bertahap = MN-T2): chip "Pengajuan dana"
  * (`cash-advances`, GET /api/cash-advances — `cash_advance.view`), "Pertanggungjawaban" (`settlements`,
  * GET /api/cash-advance-settlements — `cash_settlement.view`), "Hutang reimburse" (`reimburse-payables`,
- * GET /api/cash-advance-settlements/reimburse-payables — `accounting.view`). Alamat lama = alias di
+ * GET /api/cash-advance-settlements/reimburse-payables — `cash_settlement.view` sejak PK-24, dulu `accounting.view`).
+ * Alamat lama = alias di
  * `config/viewAliases.js` dengan preset `{ bagian }`; rute cadangan id lama tetap di AppViewRouter. Chip tampil menurut
  * izin endpoint layarnya dan menu yang disembunyikan peran (`hidden_views` / `ROLE_NAV.remove` atas id lama).
  */
@@ -18,7 +19,7 @@ import ReimbursePayablesView from "./ReimbursePayablesView";
 export const PETTY_CASH_PARTS = [
   { key: "pengajuan", label: "Pengajuan dana", id: "cash-advances", izin: [["cash_advance", "view"]] },
   { key: "pertanggungjawaban", label: "Pertanggungjawaban", id: "settlements", izin: [["cash_settlement", "view"]] },
-  { key: "reimburse", label: "Hutang reimburse", id: "reimburse-payables", izin: [["accounting", "view"]] },
+  { key: "reimburse", label: "Hutang reimburse", id: "reimburse-payables", izin: [["cash_settlement", "view"]] },
 ];
 
 // PK-44 — tautan dokumen PD/LPJ membuka chip jenisnya (selain lewat preset alias `cash-advances`/`settlements`).
@@ -40,7 +41,7 @@ export default function PettyCashView({ currentUser, selectedEntity, entities, f
         options={parts.map((b) => ({ key: b.key, label: b.label }))} />
       {active === "pengajuan" && <CashAdvancesView currentUser={currentUser} selectedEntity={selectedEntity} entities={entities} {...fokus} />}
       {active === "pertanggungjawaban" && <SettlementsView currentUser={currentUser} selectedEntity={selectedEntity} entities={entities} {...fokus} />}
-      {active === "reimburse" && <ReimbursePayablesView selectedEntity={selectedEntity} entities={entities} />}
+      {active === "reimburse" && <ReimbursePayablesView currentUser={currentUser} selectedEntity={selectedEntity} entities={entities} />}
       {!parts.length && (
         <div className="empty-state" data-testid="petty-cash-no-access">
           Anda belum punya akses untuk melihat kas kecil. Minta Admin menambahkan akses &apos;Kas Kecil (pengajuan dana

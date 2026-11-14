@@ -398,25 +398,41 @@ describe("U8/U9 — LPJ: Setujui & Posting GL (A6) dan Bayar Reimburse (A7)", ()
     expect(onChanged).toHaveBeenCalledTimes(1);
   });
 
-  test("U9: pesan Rp 250.000; lanjut = 1 POST …/pay-reimburse berisi cash_type kas_besar", async () => {
-    const stl = stlOf({ status: "approved", sisa_kurang_dana: -250000, hutang_reimburse: { status: "open", amount: 250000 } });
+  // PK-24 (IA-05) — bayar reimburse berizin `cash_settlement.pay` (dulu `accounting.create`) dan lewat pop-up baku
+  // (Jenis kas · Rekening · Tanggal) sebelum konfirmasi; konfirmasinya tetap menyebut nominal & PT.
+  test("U9: pop-up bayar → pesan Rp 250.000; lanjut = 1 POST …/pay-reimburse berisi kas_besar + rekening tunggal", async () => {
+    const stl = stlOf({ status: "posted_to_gl", sisa_kurang_dana: -250000, hutang_reimburse: { status: "open", amount: 250000 } });
+    mockGet.mockImplementation((url) => Promise.resolve({ data: url.endsWith("/bank-accounts")
+      ? [{ id: "rek_bca", name: "BCA Operasional", bank_name: "BCA", account_number: "123", entity_id: "ent_ksc",
+        account_type: "bank", cash_type: "kas_besar", is_active: true }] : [] }));
     mockPost.mockResolvedValue({ data: { ...stl, hutang_reimburse: { status: "paid", amount: 250000 } } });
-    await mountStl(stl, { role: "finance", permissions: { accounting: ["create"] } });
+    await mountStl(stl, { role: "finance", permissions: { cash_settlement: ["pay"] } });
 
     await click(q("stl-pay-reimburse-btn"));
+    expect(mockPost).not.toHaveBeenCalled();
+    expect(q("stl-reimburse-modal")).not.toBeNull();
+    await click(q("stl-reimburse-modal-submit"));
     expect(mockPost).not.toHaveBeenCalled();
     expect(q("stl-reimburse-confirm")).not.toBeNull();
     const m = message("stl-reimburse-confirm");
     expect(m.strong).toEqual(["Rp 250.000", "PT Kain Suka Cita"]);
     expect(m.text).toContain("Kas keluar untuk melunasi kelebihan pengeluaran Sari");
+    expect(m.text).toContain("BCA Operasional");
     await click(q("stl-reimburse-confirm-cancel"));
     expect(mockPost).not.toHaveBeenCalled();
 
-    await click(q("stl-pay-reimburse-btn"));
+    await click(q("stl-reimburse-modal-submit"));
     await click(q("stl-reimburse-confirm-confirm"));
     expect(mockPost).toHaveBeenCalledTimes(1);
     expect(mockPost.mock.calls[0][0]).toBe("/api/cash-advance-settlements/stl1/pay-reimburse");
-    expect(mockPost.mock.calls[0][1]).toEqual({ cash_type: "kas_besar" });
+    expect(mockPost.mock.calls[0][1]).toEqual(expect.objectContaining({ cash_type: "kas_besar", account_id: "rek_bca" }));
+  });
+
+  test("U9b (PK-24): accounting.create saja tidak lagi menampilkan tombol bayar", async () => {
+    const stl = stlOf({ status: "posted_to_gl", sisa_kurang_dana: -250000, hutang_reimburse: { status: "open", amount: 250000 } });
+    await mountStl(stl, { role: "finance", permissions: { accounting: ["create"] } });
+    expect(q("stl-pay-reimburse-btn")).toBeNull();
+    expect(q("stl-reimburse-bar").textContent).toContain("pemegang izin bayar kas kecil");
   });
 });
 

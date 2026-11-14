@@ -73,10 +73,6 @@
    "pemilik": "PK-08",
    "alasan": "pembalik denda"
   },
-  "post_petty_cash_settlement": {
-   "pemilik": "PK-24",
-   "alasan": "pertanggungjawaban kas kecil"
-  },
   "post_production_output": {
    "pemilik": "belum ada",
    "alasan": "hasil produksi"
@@ -224,13 +220,6 @@
    "jumlah": 1,
    "pemilik": "PK-20",
    "alasan": "rekonsiliasi bank (PK-15 memberi penanda sendiri)"
-  },
-  {
-   "lokasi": "services/cash_advance_service.py:approve_settlement",
-   "fungsi_gl": "post_petty_cash_settlement",
-   "jumlah": 1,
-   "pemilik": "PK-24",
-   "alasan": "LPJ"
   },
   {
    "lokasi": "services/finance_case_actions.py:act_akui_dipegang_karyawan",

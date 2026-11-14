@@ -11,6 +11,8 @@
  * (satu rekening: terisi otomatis & terkunci) · "pilih" (lebih dari satu: wajib dipilih) · "galat" (daftar gagal dimuat:
  * pesan tampil, simpan TIDAK dimatikan — server tetap menolak bila rekening tak bisa ditentukan) · "tanpa_pt".
  * Label opsi "{nama rekening} · {bank} {nomor}". `cashType` kosong = semua jenis.
+ * PK-24 — `onAccount` (opsional) menerima dokumen rekening terpilih (atau null) untuk kalimat konfirmasi
+ * ("… ke {nama rekening} · {PT}?").
  */
 import { useEffect, useMemo, useState } from "react";
 import axios, { API } from "../services/apiClient";
@@ -48,8 +50,8 @@ export function cashAccountBlockReason(state) {
   return "";
 }
 
-export default function CashAccountField({ entityId, cashType = "", value, onChange, onState, label = "Rekening",
-  testId = "cash-account", className = "" }) {
+export default function CashAccountField({ entityId, cashType = "", value, onChange, onState, onAccount,
+  label = "Rekening", testId = "cash-account", className = "" }) {
   const { entities } = useEntityScope();
   const [rows, setRows] = useState(null);
   const [err, setErr] = useState("");
@@ -82,6 +84,7 @@ export default function CashAccountField({ entityId, cashType = "", value, onCha
   else if (options.length === 1) state = "tunggal";
 
   useEffect(() => { onState?.(state); }, [state]); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { onAccount?.((rows || []).find((a) => a.id === value) || null); }, [rows, value]); // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => {
     if (state === "tunggal" && value !== options[0].value) onChange?.(options[0].value);
     else if ((state === "pilih" || state === "kosong") && value && !options.some((o) => o.value === value)) onChange?.("");

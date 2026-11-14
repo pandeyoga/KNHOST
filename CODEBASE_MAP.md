@@ -1,5 +1,5 @@
 <!-- DIHASILKAN OTOMATIS oleh scripts/gen_codebase_map.py — JANGAN EDIT TANGAN -->
-<!-- Dihasilkan dari commit: a8e7b86 pada 2026-11-14 -->
+<!-- Dihasilkan dari commit: 9d29e77 pada 2026-11-14 -->
 # CODEBASE MAP — Kain Nusantara (dihasilkan otomatis)
 
 Peta ini dihitung dari kode oleh `scripts/gen_codebase_map.py`. Kalau angka di sini
@@ -13,7 +13,7 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 | Ukuran | Nilai |
 |---|---:|
 | Router (`backend/routers/*.py`) | 167 |
-| Endpoint (`@router.<method>`) | 1801 |
+| Endpoint (`@router.<method>`) | 1806 |
 | Service (`backend/services/*.py`) | 408 |
 | Koleksi MongoDB disentuh kode produksi | 203 |
 | Direktori fitur frontend (`src/features/*`) | 39 |
@@ -28,7 +28,7 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 | `schemas.py` | 1134 |
 | `schemas_purchasing.py` | 628 |
 | `dependencies.py` | 287 |
-| `permissions_config.py` | 904 |
+| `permissions_config.py` | 921 |
 | `entity_scope.py` | 745 |
 | `pagination.py` | 145 |
 | `indexes.py` | 934 |
@@ -140,7 +140,7 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 | `bank_reconciliation.py` | 23 | 436 | `/bank-reconciliation/auto-match`, `/bank-reconciliation/formats`, `/bank-reconciliation/formats/{format_id}`, `/bank-reconciliation/holding`, `/bank-reconciliation/import`, `/bank-reconciliation/import-file` … |
 | `budgets.py` | 10 | 207 | `/finance/budget-check`, `/finance/budget-keys`, `/finance/budget-rules`, `/finance/budget-vs-actual`, `/finance/budgets`, `/finance/budgets/{budget_id}` … |
 | `cash.py` | 4 | 290 | `/cash-transactions`, `/cash-transactions/summary`, `/cash-transactions/{txn_id}/void` |
-| `cash_advances.py` | 19 | 172 | `/cash-advance-settlements`, `/cash-advance-settlements/reimburse-payables`, `/cash-advance-settlements/{stl_id}`, `/cash-advance-settlements/{stl_id}/approve`, `/cash-advance-settlements/{stl_id}/pay-reimburse`, `/cash-advance-settlements/{stl_id}/reject` … |
+| `cash_advances.py` | 24 | 217 | `/cash-advance-settlements`, `/cash-advance-settlements/reimburse-payables`, `/cash-advance-settlements/{stl_id}`, `/cash-advance-settlements/{stl_id}/approve`, `/cash-advance-settlements/{stl_id}/attachments`, `/cash-advance-settlements/{stl_id}/attachments/{att_id}` … |
 | `categories.py` | 5 | 169 | `/product-categories`, `/product-categories/{category_id}`, `/product-motifs` |
 | `client_dataset.py` | 6 | 60 | `/batches`, `/batches/{batch_id}`, `/batches/{batch_id}/commit`, `/batches/{batch_id}/rollback`, `/template`, `/upload` |
 | `closing.py` | 6 | 171 | `/finance/closing`, `/finance/closing/close`, `/finance/closing/preview`, `/finance/closing/status`, `/finance/closing/{closing_id}/reclose`, `/finance/closing/{closing_id}/reopen` |
@@ -342,8 +342,8 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 | `base_fabric.py` | 26 | Kain dasar — rujukan induk master data (mis. kain polos woven yang menjadi bahan printing). |
 | `blanket_po_service.py` | 348 | Blanket / Contract PO service (P2 — call-off). |
 | `book_date.py` | 123 | PK-37 (GL-05, keputusan K-03) — SATU tanggal buku WIB dan kunci periode untuk dokumen, pembayaran, dan mutasi  |
-| `budget_service.py` | 866 | R6.3 — Budget Control penuh: Anggaran vs Komitmen vs Realisasi + enforcement. |
-| `cash_advance_service.py` | 674 | Service — Cash Advance (Form PD) + Pertanggungjawaban (Settlement) + Expense Categories. |
+| `budget_service.py` | 867 | R6.3 — Budget Control penuh: Anggaran vs Komitmen vs Realisasi + enforcement. |
+| `cash_advance_service.py` | 993 | Service — Cash Advance (Form PD) + Pertanggungjawaban (Settlement) + Expense Categories. |
 | `cash_entity_service.py` | 98 | FASE E-7 (E7.4 · keputusan pemilik 3a) — **KAS TINGKAT GRUP DIHAPUS**. |
 | `cash_flow_service.py` | 154 | FINANCE — Laporan Arus Kas (Cash Flow Statement). FN-04: klasifikasi per jurnal kas |
 | `cash_ledger.py` | 278 | PK-20 (SL-11, `02_STANDAR.md` §1 P5) — SATU pembuat transaksi kas (`cash_transactions`). |
@@ -545,7 +545,7 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 | `po_pricing.py` | 39 | PK-28 (IV-03) — harga neto satu baris PO: SATU hitungan untuk nilai penerimaan barang (Dr Persediaan / Cr GR/I |
 | `po_variance_task_service.py` | 194 | W2-REQ-06 — tugas keputusan MD atas selisih penerimaan PO (tunggu / amendment / short-close). |
 | `pos_recommendation_service.py` | 213 | F-4b — POS advanced recommendations, dihitung dari histori `sales_orders` (TANPA AI, TANPA koleksi baru). |
-| `posting_registry.py` | 470 | PK-18 (GL-02, GL-12, IV-04) — registri jenis dokumen yang menjurnal: SATU tempat panel Posting Gagal membaca |
+| `posting_registry.py` | 484 | PK-18 (GL-02, GL-12, IV-04) — registri jenis dokumen yang menjurnal: SATU tempat panel Posting Gagal membaca |
 | `pr_sourcing_service.py` | 1030 | FASE E — SOURCING PR: routing `purchase|makloon` + realisasi PR → PO / Order Makloon. |
 | `price_approval_service.py` | 268 | Sub-fase 1.7 + F1b — bagian **BERSAMA** alur Harga Khusus (`price_approvals`). |
 | `price_guard_service.py` | 172 | F1b — SATU definisi **batas bawah harga jual** (price floor) untuk seluruh sistem. |
@@ -591,7 +591,7 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 | `return_replacement_service.py` | 239 | LN-090 T02/T03 — pesanan pengganti nyata untuk retur tukar barang (KLR-03/04/05, owner 2026-10-19). |
 | `return_roll_settlement_service.py` | 574 | UAT 23 Okt (permintaan pemilik) — PENYELESAIAN RETUR PER ROLL, boleh bertahap. |
 | `return_rolls_service.py` | 272 | L08 LN-080 — retur hanya dari barang yang BENAR-BENAR terkirim (roll per SJ) + batas kumulatif atomik per SO. |
-| `return_service.py` | 2153 | Sub-fase 1.11 — Returns & Barang Sisa |
+| `return_service.py` | 2152 | Sub-fase 1.11 — Returns & Barang Sisa |
 | `return_settlement_policy.py` | 37 | LN-091/LN-092 — kebijakan penyelesaian retur (owner 2026-10-19: KLR-01/02/06/07/10). |
 | `return_state.py` | 99 | R1 — State machine retur jual (Sales Return). |
 | `return_timeline_service.py` | 157 | L08 LN-081 — satu timeline kasus retur dengan jalur terpisah: izin · perjalanan masuk · |
@@ -711,7 +711,7 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 
 | Fitur (`src/features/`) | Berkas | Baris |
 |---|---:|---:|
-| `__tests__` | 119 | 18946 |
+| `__tests__` | 120 | 19223 |
 | `admin` | 36 | 6981 |
 | `approvals` | 9 | 1720 |
 | `catalog` | 24 | 1459 |
@@ -736,11 +736,11 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 | `notifications` | 1 | 33 |
 | `orders` | 24 | 4033 |
 | `pdf` | 5 | 1075 |
-| `pettycash` | 12 | 1733 |
+| `pettycash` | 13 | 2075 |
 | `pos` | 25 | 2807 |
 | `pricing` | 1 | 151 |
 | `production` | 3 | 753 |
-| `purchasing` | 88 | 18840 |
+| `purchasing` | 88 | 18842 |
 | `rfid` | 21 | 3556 |
 | `rnd` | 66 | 7906 |
 | `sales` | 97 | 15812 |

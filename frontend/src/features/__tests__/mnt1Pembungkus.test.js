@@ -90,20 +90,23 @@ describe("Titipan & Saldo Kredit (customer-credit)", () => {
 });
 
 describe("Kas Kecil (petty-cash)", () => {
-  test("admin & finance: tiga chip (Hutang reimburse butuh accounting.view)", async () => {
-    for (const role of ["admin", "finance"]) {
+  // PK-24 (IA-05) — chip "Hutang reimburse" kini mengikuti izin kas kecil `cash_settlement.view` (endpoint laporan
+  // beralih dari `accounting.view`), jadi Sales (pemegang `cash_settlement.view`) juga melihatnya.
+  test("admin, finance & sales: tiga chip (Hutang reimburse butuh cash_settlement.view)", async () => {
+    for (const role of ["admin", "finance", "sales"]) {
       const host = await mount(<PettyCashView currentUser={user(role)} selectedEntity="ent_ksc" entities={[]} />);
       expect(chips(host, "petty-cash-bagian")).toEqual(["Pengajuan dana", "Pertanggungjawaban", "Hutang reimburse"]);
       expect(aktif(host, "petty-cash-bagian")).toBe("Pengajuan dana");
       expect(ada(host, "layar-cash-advances")).toBe(true);
     }
   });
-  test("sales (tanpa accounting.view): dua chip; preset `reimburse` jatuh ke chip pertama", async () => {
+  test("tanpa cash_settlement.view: satu chip; preset `reimburse` jatuh ke chip pertama", async () => {
     const host = await mount(
       <ViewPresetProvider preset={{ view: "petty-cash", bagian: "reimburse", nonce: 1 }}>
-        <PettyCashView currentUser={user("sales")} selectedEntity="ent_ksc" entities={[]} />
+        <PettyCashView currentUser={{ role: "sales", permissions: { cash_advance: ["view"], accounting: ["view"] } }}
+          selectedEntity="ent_ksc" entities={[]} />
       </ViewPresetProvider>);
-    expect(chips(host, "petty-cash-bagian")).toEqual(["Pengajuan dana", "Pertanggungjawaban"]);
+    expect(chips(host, "petty-cash-bagian")).toEqual(["Pengajuan dana"]);
     expect(aktif(host, "petty-cash-bagian")).toBe("Pengajuan dana");
     expect(ada(host, "layar-reimburse-payables")).toBe(false);
   });

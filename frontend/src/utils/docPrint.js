@@ -154,6 +154,14 @@ export function printSettlement(stl, entityName, catLabels = {}) {
       <td class="num">${formatCurrency(l.amount)}</td>
     </tr>`).join("");
   const sisa = stl.sisa_kurang_dana || 0;
+  // PK-24 (FY-19) — label sisa sama dengan rincian LPJ: kewajiban kembali hanya sesudah disetujui; nomor kas bila sudah.
+  const sr = stl.sisa_dikembalikan || {};
+  const sisaLabel = sisa < 0 ? "KEKURANGAN DANA"
+    : sr.status === "returned" ? `SISA DIKEMBALIKAN · ${escapeHtml(sr.cash_txn_number || "")}`
+      : sr.status === "open" ? "SISA HARUS DIKEMBALIKAN" : "SISA UANG MUKA";
+  const BULAN = ["Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember"];
+  const pm = /^(\d{4})-(\d{2})$/.exec(String(stl.periode || ""));
+  const periode = pm ? `${BULAN[Number(pm[2]) - 1] || pm[2]} ${pm[1]}` : (stl.periode || "-");
   const body = `
     <div class="doc-head">
       <div><h1>${escapeHtml(entityName || "")}</h1><div style="font-size:11px;color:#555">Laporan Pertanggungjawaban Dana</div></div>
@@ -162,7 +170,7 @@ export function printSettlement(stl, entityName, catLabels = {}) {
     <div class="meta">
       <div><span class="k">Ref. PD</span><span class="v">${escapeHtml(stl.cash_advance_number || "-")}</span></div>
       <div><span class="k">Divisi</span><span class="v">${escapeHtml(stl.divisi || "-")}</span></div>
-      <div><span class="k">Periode</span><span class="v">${escapeHtml(stl.periode || "-")}</span></div>
+      <div><span class="k">Periode</span><span class="v">${escapeHtml(periode)}</span></div>
       <div><span class="k">Dibuat Oleh</span><span class="v">${escapeHtml(stl.dibuat_oleh || "-")}</span></div>
     </div>
     <table>
@@ -171,7 +179,7 @@ export function printSettlement(stl, entityName, catLabels = {}) {
       <tfoot>
         <tr><td colspan="4">TOTAL PENGELUARAN</td><td class="num">${formatCurrency(stl.total_pengeluaran)}</td></tr>
         <tr><td colspan="4">DANA DITERIMA (PD)</td><td class="num">${formatCurrency(stl.total_pettycash)}</td></tr>
-        <tr><td colspan="4">${sisa >= 0 ? "SISA DIKEMBALIKAN" : "KEKURANGAN DANA"}</td><td class="num">${formatCurrency(Math.abs(sisa))}</td></tr>
+        <tr><td colspan="4">${sisaLabel}</td><td class="num">${formatCurrency(Math.abs(sisa))}</td></tr>
       </tfoot>
     </table>
     <div class="sign-row">

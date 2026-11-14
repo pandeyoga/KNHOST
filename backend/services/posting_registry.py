@@ -267,6 +267,13 @@ async def _retry_grir_clearing(doc: Dict[str, Any], actor: Dict[str, Any]) -> No
     await durable_grir_clearing(doc, clearing, raise_on_fail=True)
 
 
+async def _retry_petty_cash_settlement(doc: Dict[str, Any], actor: Dict[str, Any]) -> None:
+    """PK-24 — LPJ disetujui yang jurnalnya gagal: diteruskan dari langkah JURNAL (`repost_settlement`), lalu SELESAI
+    (status `posted_to_gl`, hutang reimburse / sisa dikembalikan, PD induk `settled`)."""
+    from services.cash_advance_service import repost_settlement
+    await repost_settlement(doc["id"], actor)
+
+
 # ── Registri ─────────────────────────────────────────────────────────────────────────────────────────────────────────
 KINDS: Dict[str, Dict[str, Any]] = {
     # PK-20 — jurnal kas lewat pintu `post_cash_durable` (fungsi pribadi `_post_cash_transaction`, bukan `post_*`).
@@ -375,6 +382,13 @@ KINDS: Dict[str, Dict[str, Any]] = {
         "status_field": "gl_status", "error_field": "gl_error", "failed_at_field": "gl_failed_at",
         "doc_type": "", "link": {"view": "fixed-assets", "tab": "", "focus_type": "fixed_asset"},
         "posters": ("post_asset_acquisition",), "retry": _retry_fixed_asset},
+    # ── PK-24 — pertanggungjawaban kas kecil (LPJ) yang disetujui; jurnal beban per kategori / Cr uang muka ──
+    "petty_cash_settlement": {
+        "label": "Pertanggungjawaban Kas Kecil (LPJ)", "collection": "cash_advance_settlements",
+        "failed_query": {"gl_status": "failed"}, "entity_field": "entity_id", "number_field": "number",
+        "amount_field": "total_pengeluaran", "status_field": "gl_status", "error_field": "gl_error",
+        "failed_at_field": "gl_failed_at", "doc_type": "cash_settlement",
+        "posters": ("post_petty_cash_settlement",), "retry": _retry_petty_cash_settlement},
     # ── PK-28 — kliring sisa GR/IR: satu baris panel per unsur `grir_clearings[]` yang gagal ──
     "grir_clearing": {
         "label": "Kliring GR/IR", "collection": "purchase_orders", "failed_query": {"grir_clearings.gl_status": "failed"},
