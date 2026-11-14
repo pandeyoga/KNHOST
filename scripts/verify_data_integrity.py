@@ -2720,28 +2720,23 @@ async def layer_config_invariants(db):
         line("FAIL", R, f"INV-CFG-01: audit wiring tidak bisa dimuat: {exc}")
         return
 
-    reg_index = acw.registry_index()
-    wired, wired_problems = acw.hub_wired()
-    be, fe = acw.load_corpus()
-    editor_set = acw.detect_fe_editors(fe)
-    rows = acw.build_rows(
-        acw.declared_global() + acw.declared_other_scopes(),
-        be,
-        {k: v for k, v in fe.items() if k not in editor_set},
-        {k: v for k, v in fe.items() if k in editor_set},
-        reg_index,
-        wired,
-    )
+    # KF-T8 — fungsi yang SAMA dengan gate `audit_config_wiring.py --strict`: seluruh registry + daun tersimpan + kunci
+    # yang dibaca kode; "registry tidak termuat utuh" ikut memerahkan.
+    hasil = acw.collect()
+    reg_index, rows = hasil["reg_index"], hasil["rows"]
+    wired, wired_problems = hasil["hub_wired"], hasil["hub_problems"]
+    n_reg, gaps = hasil["registry_total"], hasil["registry_gaps"]
     bad = [r for r in rows if r["status"] in acw.VIOLATIONS]
-    if bad:
+    if bad or gaps:
         results["fail"] += 1
-        line("FAIL", R, f"INV-CFG-01: {len(bad)} setting tanpa pembaca kode / tanpa jalur ubah",
-             str([f"{r['status']} {r['scope']}:{r['path']}" for r in bad[:5]]))
+        line("FAIL", R, f"INV-CFG-01: {len(bad)} setting tanpa pembaca kode / tanpa jalur ubah "
+                        f"(dari {len(rows)}, registry {n_reg}); {len(gaps)} katalog tidak termuat",
+             str([f"{r['status']} {r['scope']}:{r['path']}" for r in bad[:5]] + gaps[:3]))
     else:
         n_used = sum(1 for r in rows if r["status"] == "OK")
         n_off = sum(1 for r in rows if r["status"] == "NOT_USED")
         results["pass"] += 1
-        line("PASS", G, f"INV-CFG-01: {len(rows)} setting — {n_used} aktif & bisa diubah user, "
+        line("PASS", G, f"INV-CFG-01: {len(rows)} setting (registry {n_reg}) — {n_used} aktif & bisa diubah user, "
                         f"{n_off} ditandai tidak dipakai + alasan; nol tersembunyi/palsu/mati")
 
     if not wired:
@@ -2770,7 +2765,7 @@ async def layer_config_invariants(db):
         line("PASS", G, f"INV-CFG-03: {len(reg_index)} entri registry lengkap "
                         "(consumers · alasan · bentuk tabel)")
 
-    writers = acw.legacy_config_writers(fe)
+    writers = hasil["writers"]   # KF-T8 — dari `acw.collect()` (sama dengan `legacy_config_writers(fe)`)
     if writers:
         results["fail"] += 1
         line("FAIL", R, f"INV-CFG-04: {len(writers)} layar masih menulis konfigurasi "

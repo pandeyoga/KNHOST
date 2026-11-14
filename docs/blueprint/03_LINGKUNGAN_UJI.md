@@ -94,7 +94,7 @@ Skrip siap pakai di `docs/audit/konfigurasi-peran-2026-11-13/bukti/`:
 | Skrip | Isi | Lama |
 |---|---|---|
 | `inv_endpoints.py <keluaran.json>` | Inventaris statik 1.749 endpoint beserta jenis gerbangnya | ±12 dtk |
-| `t1_config.py <keluaran.json>` | Tiap kunci Pusat Pengaturan: tulis → baca lewat 3 jalur → lapisan PT → nilai tak sah → pulihkan | ±1 mnt |
+| `t1_config.py <keluaran.json>` (arsip; padanan gate sejak KF-T8: `python -m pytest backend/tests_mem/test_KFT8_putaran_pengaturan.py -n 0 -q` — `config_roundtrip` INV-CFG-08, satu kasus per kunci, kode gagal P1–P8, daftar & tabel benar-benar diubah) | Tiap kunci Pusat Pengaturan: tulis → baca lewat 3 jalur → lapisan PT → nilai tak sah → pulihkan | ±1 mnt (tes gate ±90 dtk) |
 | `t2_roles.py <keluaran.json> <inventaris.json>` lalu `t2_analyze.py <folder>` | 16 peran (termasuk 4 peran kustom uji) × 786 rute GET, dibandingkan dengan matriks izin | ±12 mnt |
 | `t3_escalation.py`, `t3b_eskalasi_akun.py` | Siapa bisa mengubah pengaturan; peran kustom menaikkan haknya sendiri | ±10 dtk |
 | `t4_peran_bawaan.py`, `t5_jadwal_pengaturan.py` | Izin peran bawaan setelah proses awal diulang; pindah-massal akun Admin; perubahan pengaturan berjadwal | ±10 dtk |
@@ -133,6 +133,15 @@ Dijalankan di luar Docker dengan tautan `/app` dan tanpa MongoDB. Gate yang butu
 Arti untuk pelaksana: **garis dasar repo saat ini merah.** Unit PK-01 mengulang pengukuran ini di lingkungan A dan
 menyimpannya; sejak itu aturannya "tidak boleh lebih merah". Unit tertentu ditugasi menghijaukan gate tertentu (lihat
 kolom "Gate" di `STATUS.md`).
+
+Gate baru sesudah garis dasar (KF-T8, 14 Nov 2026 — belum ada di tabel §4/§4.1; hijau saat lahir):
+
+| Gate | Tingkat | Isi |
+|---|---|---|
+| `guard:config_fallback SELF-TEST` · `guard:config_fallback` (INV-CFG-09) | statik (`--quick`) | `scripts/guardrails/verify_config_fallback.py`: cadangan kode kunci registry (`.get("<daun>", x)`, `<baca> or x`, konstanta huruf besar) = bawaan registry; pengecualian + garis dasar beralasan di `scripts/guardrails/config_fallback_allow.json` (butir basi = merah) |
+| `guard:config_entity SELF-TEST` · `guard:config_entity` (INV-CFG-10) | statik (`--quick`) | Skrip yang sama `--entity`: kunci berlapis PT tidak dibaca `value_of` tanpa PT dokumen |
+| `config_wiring` · `config_wiring SELF-TEST` (INV-CFG-01/04) | statik (`--quick`) | Sejak KF-T8 menilai SELURUH registry ("Total kunci terdeklarasi: N (registry R)"); uji-diri [1]–[10] |
+| `config_roundtrip` (INV-CFG-08) | bawaan/`--ci`/`--full` (bukan `--quick`) | Uji putaran tiap kunci di lingkungan B (`backend/tests_mem/test_KFT8_putaran_pengaturan.py`, ±90 dtk); tanpa `mongomock-motor` gate MERAH ("pasang mongomock-motor (lihat 03_LINGKUNGAN_UJI §3)") |
 
 ### 4.1 Garis dasar lingkungan A (PK-01)
 

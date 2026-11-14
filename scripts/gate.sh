@@ -10,6 +10,7 @@
 #   bash scripts/gate.sh            ~25 s  DEFAULT — statik + seed + invarian +
 #                                          runtime IDOR/race/state + sweep +
 #                                          health + ANTI-RESIDU
+#                                          + config_roundtrip (KF-T8, lingkungan B, ±90 s tambahan)
 #   bash scripts/gate.sh --ci       ~25 s  Cakupan = DEFAULT, tapi TANPA warna +
 #                                          receipt JSON (memory/GATE_RECEIPT.json)
 #                                          → dipakai CI / pre-commit / robot.
@@ -306,6 +307,13 @@ STATIK=(
   # Bukti-merah (aturan repo #6): guardrail-nya sendiri harus terbukti bisa memerah.
   # Bagian [6] self-test juga membuktikan optimasi index == hasil regex lama.
   "config_wiring SELF-TEST (bukti-merah guardrail)|python scripts/audit_config_wiring.py --self-test"
+  # KF-T8 — INV-CFG-09: cadangan kode untuk kunci registry = bawaan registry (`.get("<daun>", x)`, `<baca> or x`,
+  # konstanta). INV-CFG-10: kunci berlapis PT dibaca `value_of` dengan PT dokumennya. Pengecualian beralasan + garis
+  # dasar di `scripts/guardrails/config_fallback_allow.json`; butir basi = merah (daftar hanya bisa berkurang).
+  "guard:config_fallback SELF-TEST (bukti-merah cadangan ≠ bawaan, konstanta, pengecualian basi)|python scripts/guardrails/verify_config_fallback.py --self-test"
+  "guard:config_fallback (INV-CFG-09, cadangan = bawaan registry)|python scripts/guardrails/verify_config_fallback.py"
+  "guard:config_entity SELF-TEST (bukti-merah value_of tanpa PT dokumen)|python scripts/guardrails/verify_config_fallback.py --entity --self-test"
+  "guard:config_entity (INV-CFG-10, nilai PT diteruskan)|python scripts/guardrails/verify_config_fallback.py --entity"
   # FASE G-4 — hook penautan relasi WAJIB ada di titik lahir tiap dokumen turunan
   # (statik: baca kode). Self-test membuktikan audit ini benar-benar bisa memerah.
   "audit_doc_refs SELF-TEST (bukti-merah relasi dokumen)|python scripts/audit_doc_refs.py --self-test"
@@ -504,6 +512,7 @@ if [ "$MODE" = "quick" ]; then
   skip_gate "seed_realistic" "mode --quick"
   skip_gate "verify_data_integrity" "mode --quick"
   skip_gate "gate runtime (IDOR/race/state/sweep/health)" "mode --quick"
+  skip_gate "config_roundtrip (INV-CFG-08, tiap kunci tulis→baca tiga jalur)" "mode --quick"   # KF-T8
   skip_gate "INV-GATE-01 anti-residu" "mode --quick"
 else
 
@@ -545,6 +554,16 @@ else
   skip_gate "seed_realistic" "MONGO_URL tak tersedia"
   skip_gate "verify_data_integrity" "MONGO_URL tak tersedia"
   skip_gate "audit_doc_refs" "MONGO_URL tak tersedia"
+fi
+
+# ============ KF-T8 — INV-CFG-08: putaran pengaturan (lingkungan B, tanpa backend & tanpa MongoDB asli) ============
+# Tiap kunci registry: tulis grup → baca `GET /api/config/effective` + `value_of` + pembaca lama → lapisan PT → cabut →
+# nilai tak sah 400 → tanpa alasan 400 → pulihkan (P1–P8, `backend/tests_mem/test_KFT8_putaran_pengaturan.py`, ±90 dtk).
+# Tanpa mongomock-motor gate ini MERAH, bukan dilewati.
+if python -c "import mongomock_motor" 2>/dev/null; then
+  run_gate "config_roundtrip (INV-CFG-08, tiap kunci tulis→baca tiga jalur)" "python -m pytest backend/tests_mem/test_KFT8_putaran_pengaturan.py -n 0 -q"
+else
+  run_gate "config_roundtrip (INV-CFG-08, tiap kunci tulis→baca tiga jalur)" "echo 'pasang mongomock-motor (lihat 03_LINGKUNGAN_UJI §3)'; exit 1"
 fi
 
 # ============ RUNTIME (butuh backend + auth) ============

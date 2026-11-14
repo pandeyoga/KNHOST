@@ -1,0 +1,958 @@
+{
+ "_catatan": "KF-T8 — pengecualian penjaga `verify_config_fallback.py` (INV-CFG-09/10). Butir yang tidak lagi cocok dengan kode = merah (pengecualian basi), jadi daftar ini hanya bisa berkurang. `jenis`: bukan_pengaturan (temuan palsu: bukan pembacaan pengaturan) · berdampak / beda_bawaan (temuan nyata, milik unit pemilik kunci) · hanya_bila_kosong / sama_bawaan (cadangan yang harus memakai config_registry.default_of) · garis_dasar (INV-CFG-10). Garis dasar dibuat 14 Nov 2026.",
+ "pengecualian": [
+  {
+   "file": "backend/services/hr_payroll_service.py",
+   "key": "hr.feature_toggles.pph21",
+   "line_text": "float(s.get(\"pph21\", 0) or 0) for s in prior",
+   "jenis": "bukan_pengaturan",
+   "alasan": "Bukan pengaturan: nominal PPh 21 pada slip gaji sebelumnya (`s` = slip), bukan sakelar `hr.feature_toggles.pph21`."
+  },
+  {
+   "file": "backend/services/tax_invoice_service.py",
+   "key": "tax.ppn_rate",
+   "line_text": "float(order.get(\"ppn_rate\", 0)",
+   "jenis": "bukan_pengaturan",
+   "alasan": "Bukan pengaturan: tarif PPN yang tersimpan pada dokumen pesanan (`order`), bukan `tax.ppn_rate`."
+  },
+  {
+   "file": "backend/services/tax_invoice_service.py",
+   "key": "tax.ppn_rate",
+   "line_text": "order.get(\"effective_rate\", order.get(\"ppn_rate\", 0))",
+   "jenis": "bukan_pengaturan",
+   "alasan": "Bukan pengaturan: tarif efektif/PPN yang tersimpan pada dokumen pesanan (`order`), bukan `tax.ppn_rate`."
+  },
+  {
+   "file": "backend/services/tax_invoice_service.py",
+   "key": "tax.ppn_rate",
+   "line_text": "fkt.get('ppn_rate', 0)",
+   "jenis": "bukan_pengaturan",
+   "alasan": "Bukan pengaturan: tarif PPN tercetak dari faktur pajak tersimpan (`fkt`)."
+  },
+  {
+   "file": "backend/services/config_service.py",
+   "key": "tax.dpp_nilai_lain",
+   "line_text": "\"dpp_nilai_lain\": tax.get(\"dpp_nilai_lain\", False)",
+   "jenis": "bukan_pengaturan",
+   "alasan": "Bukan pengaturan: `tax` = hasil `compute_tax` (selalu memuat `dpp_nilai_lain`); cabang tanpa PPN mengisinya False."
+  },
+  {
+   "file": "backend/services/interco_service.py",
+   "key": "antar_entitas.pricing_mode",
+   "line_text": "payload.get(\"pricing_mode\") or \"\"",
+   "jenis": "bukan_pengaturan",
+   "alasan": "Bukan pengaturan: isian permintaan (`payload`); bila kosong baris berikutnya membaca pengaturan lewat `_config`."
+  },
+  {
+   "file": "backend/services/interco_service.py",
+   "key": "antar_entitas.ppn_mode",
+   "line_text": "payload.get(\"ppn_mode\") or \"\"",
+   "jenis": "bukan_pengaturan",
+   "alasan": "Bukan pengaturan: isian permintaan (`payload`); bila kosong baris berikutnya membaca pengaturan lewat `_config`."
+  },
+  {
+   "file": "backend/services/lot_service.py",
+   "key": "lot.enforcement_mode",
+   "line_text": "payload.get(\"enforcement_mode\") or \"\"",
+   "jenis": "bukan_pengaturan",
+   "alasan": "Bukan pengaturan: isian permintaan simpan (`payload`); kosong = tidak diubah."
+  },
+  {
+   "file": "backend/services/contract_service.py",
+   "key": "makloon.contract_mode",
+   "line_text": "payload.get(\"contract_mode\") or \"\"",
+   "jenis": "bukan_pengaturan",
+   "alasan": "Bukan pengaturan: isian permintaan simpan (`payload`); kosong = tidak diubah."
+  },
+  {
+   "file": "backend/routers/incentive_rates.py",
+   "key": "commission.incentive_unit",
+   "line_text": "doc.get(\"incentive_unit\") or \"\"",
+   "jenis": "bukan_pengaturan",
+   "alasan": "Bukan pengaturan: isian tarif baru (`doc` = isi permintaan); kosong → baris berikutnya membaca pengaturan."
+  },
+  {
+   "file": "backend/routers/inbound_scan_label.py",
+   "key": "receiving.label_variance_tolerance_percent",
+   "line_text": "await value_of(\"receiving.label_variance_tolerance_percent\", {\"entity_id\": entity_id or \"\"}) or 0",
+   "jenis": "hanya_bila_kosong",
+   "alasan": "Garis dasar KF-T8: cadangan `or 0` ≠ bawaan 2.0, hanya terpakai bila nilai tersimpan kosong/None. Ganti dengan `config_registry.default_of`, lalu hapus butir ini."
+  },
+  {
+   "file": "backend/routers/incentive_rates.py",
+   "key": "commission.incentive_unit",
+   "line_text": "await value_of(\"commission.incentive_unit\", {\"entity_id\": payload.entity_id}) or \"meter\"",
+   "jenis": "sama_bawaan",
+   "alasan": "Garis dasar KF-T8: cadangan 'meter' = bawaan registry; ganti dengan `config_registry.default_of(\"commission.incentive_unit\")`, lalu hapus butir ini."
+  },
+  {
+   "file": "backend/routers/purchase_orders.py",
+   "key": "purchasing.price_deviation_approval_percent",
+   "line_text": "settings.get(\"purchasing\", {}).get(\"price_deviation_approval_percent\", 10.0)",
+   "jenis": "sama_bawaan",
+   "alasan": "Garis dasar KF-T8: `or 10.0` = bawaan registry dan arti 0 tertulis di penjelasan kunci (\"Isi 0 dibaca sistem sebagai …\"); ganti dengan `or config_registry.default_of(\"purchasing.price_deviation_approval_percent\")`, lalu hapus butir ini."
+  },
+  {
+   "file": "backend/routers/sales_orders.py",
+   "key": "inventory.min_cut_qty",
+   "line_text": "await value_of(\"inventory.min_cut_qty\", {\"entity_id\": entity_id}) or 0",
+   "jenis": "hanya_bila_kosong",
+   "alasan": "Garis dasar KF-T8: cadangan `or 0` ≠ bawaan 0.5, hanya terpakai bila nilai tersimpan kosong/None. Ganti dengan `config_registry.default_of`, lalu hapus butir ini."
+  },
+  {
+   "file": "backend/services/ai_chat_service.py",
+   "key": "ai.glossary",
+   "line_text": "await value_of(\"ai.glossary\") or \"\"",
+   "jenis": "sama_bawaan",
+   "alasan": "Garis dasar KF-T8: cadangan '' = bawaan registry; ganti dengan `config_registry.default_of(\"ai.glossary\")`, lalu hapus butir ini."
+  },
+  {
+   "file": "backend/services/ai_chat_service.py",
+   "key": "ai.model_main",
+   "line_text": "cfg.get(\"model_main\") or \"\"",
+   "jenis": "hanya_bila_kosong",
+   "alasan": "Garis dasar KF-T8: cadangan `or ''` ≠ bawaan 'gpt-6-sol', hanya terpakai bila nilai tersimpan kosong/None. Ganti dengan `config_registry.default_of`, lalu hapus butir ini."
+  },
+  {
+   "file": "backend/services/ai_chat_service.py",
+   "key": "ai.route_threshold_pct",
+   "line_text": "await value_of(\"ai.route_threshold_pct\") or 90",
+   "jenis": "sama_bawaan",
+   "alasan": "Garis dasar KF-T8: cadangan 90 = bawaan registry; ganti dengan `config_registry.default_of(\"ai.route_threshold_pct\")`, lalu hapus butir ini."
+  },
+  {
+   "file": "backend/services/ai_cost.py",
+   "key": "ai.monthly_budget_usd",
+   "line_text": "await value_of(\"ai.monthly_budget_usd\") or 0",
+   "jenis": "hanya_bila_kosong",
+   "alasan": "Garis dasar KF-T8: cadangan `or 0` ≠ bawaan 100, hanya terpakai bila nilai tersimpan kosong/None. Ganti dengan `config_registry.default_of`, lalu hapus butir ini."
+  },
+  {
+   "file": "backend/services/ai_insights.py",
+   "key": "ai.anomaly_cover_days",
+   "line_text": "await value_of(\"ai.anomaly_cover_days\") or 14",
+   "jenis": "sama_bawaan",
+   "alasan": "Garis dasar KF-T8: cadangan 14 = bawaan registry; ganti dengan `config_registry.default_of(\"ai.anomaly_cover_days\")`, lalu hapus butir ini."
+  },
+  {
+   "file": "backend/services/ai_insights.py",
+   "key": "ai.anomaly_drop_pct",
+   "line_text": "await value_of(\"ai.anomaly_drop_pct\") or 30",
+   "jenis": "sama_bawaan",
+   "alasan": "Garis dasar KF-T8: cadangan 30 = bawaan registry; ganti dengan `config_registry.default_of(\"ai.anomaly_drop_pct\")`, lalu hapus butir ini."
+  },
+  {
+   "file": "backend/services/ai_schedules.py",
+   "key": "ai.chat_retention_days",
+   "line_text": "await value_of(\"ai.chat_retention_days\") or 180",
+   "jenis": "sama_bawaan",
+   "alasan": "Garis dasar KF-T8: cadangan 180 = bawaan registry; ganti dengan `config_registry.default_of(\"ai.chat_retention_days\")`, lalu hapus butir ini."
+  },
+  {
+   "file": "backend/services/ai_templates.py",
+   "key": "ai.template_cache_minutes",
+   "line_text": "await value_of(\"ai.template_cache_minutes\") or 0",
+   "jenis": "hanya_bila_kosong",
+   "alasan": "Garis dasar KF-T8: cadangan `or 0` ≠ bawaan 5, hanya terpakai bila nilai tersimpan kosong/None. Ganti dengan `config_registry.default_of`, lalu hapus butir ini."
+  },
+  {
+   "file": "backend/services/analytics_config.py",
+   "key": "ai.sales_attribution",
+   "line_text": "await value_of(\"ai.sales_attribution\", ctx) or \"team_split\"",
+   "jenis": "sama_bawaan",
+   "alasan": "Garis dasar KF-T8: cadangan 'team_split' = bawaan registry; ganti dengan `config_registry.default_of(\"ai.sales_attribution\")`, lalu hapus butir ini."
+  },
+  {
+   "file": "backend/services/analytics_config.py",
+   "key": "ai.sales_definition",
+   "line_text": "await value_of(\"ai.sales_definition\", ctx) or \"net_order\"",
+   "jenis": "sama_bawaan",
+   "alasan": "Garis dasar KF-T8: cadangan 'net_order' = bawaan registry; ganti dengan `config_registry.default_of(\"ai.sales_definition\")`, lalu hapus butir ini."
+  },
+  {
+   "file": "backend/services/ar_aging_service.py",
+   "key": "ar.denda_rate_pct_per_month",
+   "line_text": "cfg.get(\"denda_rate_pct_per_month\", default_of(\"ar.denda_rate_pct_per_month\")) or 0",
+   "jenis": "hanya_bila_kosong",
+   "alasan": "Garis dasar KF-T8: cadangan `or 0` ≠ bawaan 2.0, hanya terpakai bila nilai tersimpan kosong/None. Ganti dengan `config_registry.default_of`, lalu hapus butir ini."
+  },
+  {
+   "file": "backend/services/ar_aging_service.py",
+   "key": "ar.grace_days",
+   "line_text": "cfg.get(\"grace_days\", 0)",
+   "jenis": "sama_bawaan",
+   "alasan": "Garis dasar KF-T8: cadangan 0 = bawaan registry; ganti dengan `config_registry.default_of(\"ar.grace_days\")`, lalu hapus butir ini."
+  },
+  {
+   "file": "backend/services/bank_recon_service.py",
+   "key": "bank.amount_tolerance",
+   "line_text": "raw.get(\"amount_tolerance\") or 0",
+   "jenis": "sama_bawaan",
+   "alasan": "Garis dasar KF-T8: cadangan 0 = bawaan registry; ganti dengan `config_registry.default_of(\"bank.amount_tolerance\")`, lalu hapus butir ini."
+  },
+  {
+   "file": "backend/services/bank_recon_service.py",
+   "key": "bank.auto_match_min_score",
+   "line_text": "raw.get(\"auto_match_min_score\") or 0",
+   "jenis": "hanya_bila_kosong",
+   "alasan": "Garis dasar KF-T8: cadangan `or 0` ≠ bawaan 80, hanya terpakai bila nilai tersimpan kosong/None. Ganti dengan `config_registry.default_of`, lalu hapus butir ini."
+  },
+  {
+   "file": "backend/services/bank_recon_service.py",
+   "key": "bank.date_window_days",
+   "line_text": "raw.get(\"date_window_days\") or 0",
+   "jenis": "hanya_bila_kosong",
+   "alasan": "Garis dasar KF-T8: cadangan `or 0` ≠ bawaan 3, hanya terpakai bila nilai tersimpan kosong/None. Ganti dengan `config_registry.default_of`, lalu hapus butir ini."
+  },
+  {
+   "file": "backend/services/bank_recon_service.py",
+   "key": "bank.holding_max_age_days",
+   "line_text": "raw.get(\"holding_max_age_days\") or 7",
+   "jenis": "sama_bawaan",
+   "alasan": "Garis dasar KF-T8: cadangan 7 = bawaan registry; ganti dengan `config_registry.default_of(\"bank.holding_max_age_days\")`, lalu hapus butir ini."
+  },
+  {
+   "file": "backend/services/bank_recon_service.py",
+   "key": "bank.match_weight_amount",
+   "line_text": "raw.get(\"match_weight_amount\") or 0",
+   "jenis": "hanya_bila_kosong",
+   "alasan": "Garis dasar KF-T8: cadangan `or 0` ≠ bawaan 40, hanya terpakai bila nilai tersimpan kosong/None. Ganti dengan `config_registry.default_of`, lalu hapus butir ini."
+  },
+  {
+   "file": "backend/services/bank_recon_service.py",
+   "key": "bank.match_weight_date",
+   "line_text": "raw.get(\"match_weight_date\") or 0",
+   "jenis": "hanya_bila_kosong",
+   "alasan": "Garis dasar KF-T8: cadangan `or 0` ≠ bawaan 20, hanya terpakai bila nilai tersimpan kosong/None. Ganti dengan `config_registry.default_of`, lalu hapus butir ini."
+  },
+  {
+   "file": "backend/services/bank_recon_service.py",
+   "key": "bank.match_weight_name",
+   "line_text": "raw.get(\"match_weight_name\") or 0",
+   "jenis": "hanya_bila_kosong",
+   "alasan": "Garis dasar KF-T8: cadangan `or 0` ≠ bawaan 15, hanya terpakai bila nilai tersimpan kosong/None. Ganti dengan `config_registry.default_of`, lalu hapus butir ini."
+  },
+  {
+   "file": "backend/services/bank_recon_service.py",
+   "key": "bank.match_weight_ref",
+   "line_text": "raw.get(\"match_weight_ref\") or 0",
+   "jenis": "hanya_bila_kosong",
+   "alasan": "Garis dasar KF-T8: cadangan `or 0` ≠ bawaan 25, hanya terpakai bila nilai tersimpan kosong/None. Ganti dengan `config_registry.default_of`, lalu hapus butir ini."
+  },
+  {
+   "file": "backend/services/bank_recon_service.py",
+   "key": "bank.rule_bonus_score",
+   "line_text": "raw.get(\"rule_bonus_score\") or 0",
+   "jenis": "hanya_bila_kosong",
+   "alasan": "Garis dasar KF-T8: cadangan `or 0` ≠ bawaan 15, hanya terpakai bila nilai tersimpan kosong/None. Ganti dengan `config_registry.default_of`, lalu hapus butir ini."
+  },
+  {
+   "file": "backend/services/bank_recon_service.py",
+   "key": "bank.rule_learn_after",
+   "line_text": "raw.get(\"rule_learn_after\") or 3",
+   "jenis": "sama_bawaan",
+   "alasan": "Garis dasar KF-T8: cadangan 3 = bawaan registry; ganti dengan `config_registry.default_of(\"bank.rule_learn_after\")`, lalu hapus butir ini."
+  },
+  {
+   "file": "backend/services/bank_recon_service.py",
+   "key": "bank.suggest_min_score",
+   "line_text": "raw.get(\"suggest_min_score\") or 0",
+   "jenis": "hanya_bila_kosong",
+   "alasan": "Garis dasar KF-T8: cadangan `or 0` ≠ bawaan 60, hanya terpakai bila nilai tersimpan kosong/None. Ganti dengan `config_registry.default_of`, lalu hapus butir ini."
+  },
+  {
+   "file": "backend/services/closing_service.py",
+   "key": "finance.fiscal_year_end_month",
+   "line_text": "await value_of(\"finance.fiscal_year_end_month\",",
+   "jenis": "sama_bawaan",
+   "alasan": "Garis dasar KF-T8: cadangan 12 = bawaan registry; ganti dengan `config_registry.default_of(\"finance.fiscal_year_end_month\")`, lalu hapus butir ini."
+  },
+  {
+   "file": "backend/services/config_currency.py",
+   "key": "finance.base_currency",
+   "line_text": "await value_of(\"finance.base_currency\", {\"entity_id\": entity_id}) or \"IDR\"",
+   "jenis": "sama_bawaan",
+   "alasan": "Garis dasar KF-T8: cadangan 'IDR' = bawaan registry; ganti dengan `config_registry.default_of(\"finance.base_currency\")`, lalu hapus butir ini."
+  },
+  {
+   "file": "backend/services/config_currency.py",
+   "key": "finance.fiscal_year_end_month",
+   "line_text": "await value_of(\"finance.fiscal_year_end_month\", {\"entity_id\": entity_id}) or 12",
+   "jenis": "sama_bawaan",
+   "alasan": "Garis dasar KF-T8: cadangan 12 = bawaan registry; ganti dengan `config_registry.default_of(\"finance.fiscal_year_end_month\")`, lalu hapus butir ini."
+  },
+  {
+   "file": "backend/services/config_service.py",
+   "key": "tax.ppn_mode",
+   "line_text": "tax.get(\"ppn_mode\", \"excluded\")",
+   "jenis": "sama_bawaan",
+   "alasan": "Garis dasar KF-T8: cadangan 'excluded' = bawaan registry; ganti dengan `config_registry.default_of(\"tax.ppn_mode\")`, lalu hapus butir ini."
+  },
+  {
+   "file": "backend/services/config_service.py",
+   "key": "tax.ppn_rate",
+   "line_text": "tax.get(\"ppn_rate\", _reg_default(\"tax.ppn_rate\")) or 0",
+   "jenis": "hanya_bila_kosong",
+   "alasan": "Garis dasar KF-T8: cadangan `or 0` ≠ bawaan 12.0, hanya terpakai bila nilai tersimpan kosong/None. Ganti dengan `config_registry.default_of`, lalu hapus butir ini."
+  },
+  {
+   "file": "backend/services/contra_bon_service.py",
+   "key": "contra_bon.reminder_days_before",
+   "line_text": "raw.get(\"reminder_days_before\") or 0",
+   "jenis": "hanya_bila_kosong",
+   "alasan": "Garis dasar KF-T8: cadangan `or 0` ≠ bawaan 1, hanya terpakai bila nilai tersimpan kosong/None. Ganti dengan `config_registry.default_of`, lalu hapus butir ini."
+  },
+  {
+   "file": "backend/services/contra_bon_service.py",
+   "key": "contra_bon.unbilled_gr_age_days",
+   "line_text": "raw.get(\"unbilled_gr_age_days\") or 0",
+   "jenis": "hanya_bila_kosong",
+   "alasan": "Garis dasar KF-T8: cadangan `or 0` ≠ bawaan 3, hanya terpakai bila nilai tersimpan kosong/None. Ganti dengan `config_registry.default_of`, lalu hapus butir ini."
+  },
+  {
+   "file": "backend/services/contra_bon_service.py",
+   "key": "contra_bon.value_tolerance_rupiah",
+   "line_text": "pol.get(\"value_tolerance_rupiah\") or 0",
+   "jenis": "hanya_bila_kosong",
+   "alasan": "Garis dasar KF-T8: cadangan `or 0` ≠ bawaan 50000, hanya terpakai bila nilai tersimpan kosong/None. Ganti dengan `config_registry.default_of`, lalu hapus butir ini."
+  },
+  {
+   "file": "backend/services/contra_bon_service.py",
+   "key": "contra_bon.verify_sla_days",
+   "line_text": "raw.get(\"verify_sla_days\") or 2",
+   "jenis": "sama_bawaan",
+   "alasan": "Garis dasar KF-T8: cadangan 2 = bawaan registry; ganti dengan `config_registry.default_of(\"contra_bon.verify_sla_days\")`, lalu hapus butir ini."
+  },
+  {
+   "file": "backend/services/contra_bon_service.py",
+   "key": "contra_bon.verify_sla_days",
+   "line_text": "pol.get(\"verify_sla_days\", 2)",
+   "jenis": "sama_bawaan",
+   "alasan": "Garis dasar KF-T8: cadangan 2 = bawaan registry; ganti dengan `config_registry.default_of(\"contra_bon.verify_sla_days\")`, lalu hapus butir ini."
+  },
+  {
+   "file": "backend/services/contra_bon_service.py",
+   "key": "contra_bon.verify_sla_days",
+   "line_text": "pol.get(\"verify_sla_days\") or 2",
+   "jenis": "sama_bawaan",
+   "alasan": "Garis dasar KF-T8: cadangan 2 = bawaan registry; ganti dengan `config_registry.default_of(\"contra_bon.verify_sla_days\")`, lalu hapus butir ini."
+  },
+  {
+   "file": "backend/services/cutting_service.py",
+   "key": "cutting.wait_late_minutes",
+   "line_text": "await config_resolver.value_of(\"cutting.wait_late_minutes\", ctx) or WAIT_LATE_MIN",
+   "jenis": "sama_bawaan",
+   "alasan": "Garis dasar KF-T8: cadangan 240 = bawaan registry; ganti dengan `config_registry.default_of(\"cutting.wait_late_minutes\")`, lalu hapus butir ini."
+  },
+  {
+   "file": "backend/services/cutting_service.py",
+   "key": "cutting.wait_warn_minutes",
+   "line_text": "await config_resolver.value_of(\"cutting.wait_warn_minutes\", ctx) or WAIT_WARN_MIN",
+   "jenis": "sama_bawaan",
+   "alasan": "Garis dasar KF-T8: cadangan 120 = bawaan registry; ganti dengan `config_registry.default_of(\"cutting.wait_warn_minutes\")`, lalu hapus butir ini."
+  },
+  {
+   "file": "backend/services/design_studio_service.py",
+   "key": "rnd.design_acc_min_score",
+   "line_text": "await value_of(\"rnd.design_acc_min_score\", ctx) or 0",
+   "jenis": "hanya_bila_kosong",
+   "alasan": "Garis dasar KF-T8: cadangan `or 0` ≠ bawaan 1.5, hanya terpakai bila nilai tersimpan kosong/None. Ganti dengan `config_registry.default_of`, lalu hapus butir ini."
+  },
+  {
+   "file": "backend/services/design_studio_service.py",
+   "key": "rnd.design_code_seq_digits",
+   "line_text": "await value_of(\"rnd.design_code_seq_digits\", ctx) or 3",
+   "jenis": "sama_bawaan",
+   "alasan": "Garis dasar KF-T8: cadangan 3 = bawaan registry; ganti dengan `config_registry.default_of(\"rnd.design_code_seq_digits\")`, lalu hapus butir ini."
+  },
+  {
+   "file": "backend/services/dispatch_payment_gate.py",
+   "key": "finance.dispatch_payment_gate",
+   "line_text": "await value_of(\"finance.dispatch_payment_gate\", {\"entity_id\": entity_id or \"\"}) or \"block\"",
+   "jenis": "sama_bawaan",
+   "alasan": "Garis dasar KF-T8: cadangan 'block' = bawaan registry; ganti dengan `config_registry.default_of(\"finance.dispatch_payment_gate\")`, lalu hapus butir ini."
+  },
+  {
+   "file": "backend/services/finance_case_service.py",
+   "key": "case.approver_role",
+   "line_text": "raw.get(\"approver_role\") or \"manager\"",
+   "jenis": "sama_bawaan",
+   "alasan": "Garis dasar KF-T8: cadangan 'manager' = bawaan registry; ganti dengan `config_registry.default_of(\"case.approver_role\")`, lalu hapus butir ini."
+  },
+  {
+   "file": "backend/services/finance_case_service.py",
+   "key": "case.auto_bank_charge_max",
+   "line_text": "raw.get(\"auto_bank_charge_max\") or 0",
+   "jenis": "hanya_bila_kosong",
+   "alasan": "Garis dasar KF-T8: cadangan `or 0` ≠ bawaan 50000, hanya terpakai bila nilai tersimpan kosong/None. Ganti dengan `config_registry.default_of`, lalu hapus butir ini."
+  },
+  {
+   "file": "backend/services/finance_case_service.py",
+   "key": "case.duplicate_window_days",
+   "line_text": "raw.get(\"duplicate_window_days\") or 7",
+   "jenis": "sama_bawaan",
+   "alasan": "Garis dasar KF-T8: cadangan 7 = bawaan registry; ganti dengan `config_registry.default_of(\"case.duplicate_window_days\")`, lalu hapus butir ini."
+  },
+  {
+   "file": "backend/services/finance_case_service.py",
+   "key": "case.high_amount_threshold",
+   "line_text": "raw.get(\"high_amount_threshold\") or 0",
+   "jenis": "hanya_bila_kosong",
+   "alasan": "Garis dasar KF-T8: cadangan `or 0` ≠ bawaan 10000000, hanya terpakai bila nilai tersimpan kosong/None. Ganti dengan `config_registry.default_of`, lalu hapus butir ini."
+  },
+  {
+   "file": "backend/services/finance_case_service.py",
+   "key": "case.refund_max_amount",
+   "line_text": "raw.get(\"refund_max_amount\") or 0",
+   "jenis": "hanya_bila_kosong",
+   "alasan": "Garis dasar KF-T8: cadangan `or 0` ≠ bawaan 25000000, hanya terpakai bila nilai tersimpan kosong/None. Ganti dengan `config_registry.default_of`, lalu hapus butir ini."
+  },
+  {
+   "file": "backend/services/finance_case_service.py",
+   "key": "case.require_approval_above",
+   "line_text": "raw.get(\"require_approval_above\") or 0",
+   "jenis": "hanya_bila_kosong",
+   "alasan": "Garis dasar KF-T8: cadangan `or 0` ≠ bawaan 5000000, hanya terpakai bila nilai tersimpan kosong/None. Ganti dengan `config_registry.default_of`, lalu hapus butir ini."
+  },
+  {
+   "file": "backend/services/finance_case_service.py",
+   "key": "case.sla_hours",
+   "line_text": "raw.get(\"sla_hours\") or 24",
+   "jenis": "sama_bawaan",
+   "alasan": "Garis dasar KF-T8: cadangan 24 = bawaan registry; ganti dengan `config_registry.default_of(\"case.sla_hours\")`, lalu hapus butir ini."
+  },
+  {
+   "file": "backend/services/finance_case_service.py",
+   "key": "case.sla_hours_high",
+   "line_text": "raw.get(\"sla_hours_high\") or 8",
+   "jenis": "sama_bawaan",
+   "alasan": "Garis dasar KF-T8: cadangan 8 = bawaan registry; ganti dengan `config_registry.default_of(\"case.sla_hours_high\")`, lalu hapus butir ini."
+  },
+  {
+   "file": "backend/services/goods_receipt_ocr_service.py",
+   "key": "receiving.min_photo_short_side_px",
+   "line_text": "cfg.get(\"min_photo_short_side_px\") or 0",
+   "jenis": "hanya_bila_kosong",
+   "alasan": "Garis dasar KF-T8: cadangan `or 0` ≠ bawaan 1000, hanya terpakai bila nilai tersimpan kosong/None. Ganti dengan `config_registry.default_of`, lalu hapus butir ini."
+  },
+  {
+   "file": "backend/services/goods_receipt_ocr_service.py",
+   "key": "receiving.ocr_price_table",
+   "line_text": "cfg.get(\"ocr_price_table\") or {}",
+   "jenis": "hanya_bila_kosong",
+   "alasan": "Garis dasar KF-T8: cadangan `or {}` ≠ bawaan '{\"gpt-6-sol\": {\"in\": 2.0, \"cached_in\": 0.2, \"out\": 10.0}, \"gpt-6-luna\": {\"in\": 0.5, \"cached_in\": 0.05, \"out\": 2.0}, \"gpt-5.6-sol\": {\"in\": 5.0, \"cached_in\": 0.5, \"out\": 30.0}, \"price_version\": \"2026-09-28\"}', hanya terpakai bila nilai tersimpan kosong/None. Ganti dengan `config_registry.default_of`, lalu hapus butir ini."
+  },
+  {
+   "file": "backend/services/hr_payroll_service.py",
+   "key": "hr.overtime.hours_divisor",
+   "line_text": "ot.get(\"hours_divisor\", WORK_HOURS_DIVISOR)",
+   "jenis": "sama_bawaan",
+   "alasan": "Garis dasar KF-T8: cadangan 173 = bawaan registry; ganti dengan `config_registry.default_of(\"hr.overtime.hours_divisor\")`, lalu hapus butir ini."
+  },
+  {
+   "file": "backend/services/hr_payroll_service.py",
+   "key": "hr.overtime.multiplier",
+   "line_text": "ot.get(\"multiplier\", 1.5)",
+   "jenis": "sama_bawaan",
+   "alasan": "Garis dasar KF-T8: cadangan 1.5 = bawaan registry; ganti dengan `config_registry.default_of(\"hr.overtime.multiplier\")`, lalu hapus butir ini."
+  },
+  {
+   "file": "backend/services/hr_payroll_service.py",
+   "key": "hr.payroll_commission_mode",
+   "line_text": "cfg.get(\"payroll_commission_mode\", \"accrue_then_settle\")",
+   "jenis": "sama_bawaan",
+   "alasan": "Garis dasar KF-T8: cadangan 'accrue_then_settle' = bawaan registry; ganti dengan `config_registry.default_of(\"hr.payroll_commission_mode\")`, lalu hapus butir ini."
+  },
+  {
+   "file": "backend/services/inbound_complete_service.py",
+   "key": "lot.status_on_receipt",
+   "line_text": "_lot_settings.get(\"status_on_receipt\", \"karantina\")",
+   "jenis": "sama_bawaan",
+   "alasan": "Garis dasar KF-T8: cadangan 'karantina' = bawaan registry; ganti dengan `config_registry.default_of(\"lot.status_on_receipt\")`, lalu hapus butir ini."
+  },
+  {
+   "file": "backend/services/inbound_complete_service.py",
+   "key": "receiving.line_qty_tolerance_pct",
+   "line_text": "await value_of(\"receiving.line_qty_tolerance_pct\",",
+   "jenis": "hanya_bila_kosong",
+   "alasan": "Garis dasar KF-T8: cadangan `or 0` ≠ bawaan 2.0, hanya terpakai bila nilai tersimpan kosong/None. Ganti dengan `config_registry.default_of`, lalu hapus butir ini."
+  },
+  {
+   "file": "backend/services/inbound_complete_service.py",
+   "key": "receiving.supplier_dn_mode",
+   "line_text": "await _cfg_value(\"receiving.supplier_dn_mode\", {\"entity_id\": task.get(\"entity_id\")}) or \"warn\"",
+   "jenis": "sama_bawaan",
+   "alasan": "Garis dasar KF-T8: cadangan 'warn' = bawaan registry; ganti dengan `config_registry.default_of(\"receiving.supplier_dn_mode\")`, lalu hapus butir ini."
+  },
+  {
+   "file": "backend/services/inspection_service.py",
+   "key": "qc.accept_all_with_hold_action",
+   "line_text": "await value_of(\"qc.accept_all_with_hold_action\", {\"entity_id\": entity_id or \"\"}) or \"peringatkan\"",
+   "jenis": "sama_bawaan",
+   "alasan": "Garis dasar KF-T8: cadangan 'peringatkan' = bawaan registry; ganti dengan `config_registry.default_of(\"qc.accept_all_with_hold_action\")`, lalu hapus butir ini."
+  },
+  {
+   "file": "backend/services/inspection_service.py",
+   "key": "qc.color_mismatch_action",
+   "line_text": "await value_of(\"qc.color_mismatch_action\", ctx) or \"tahan\"",
+   "jenis": "sama_bawaan",
+   "alasan": "Garis dasar KF-T8: cadangan 'tahan' = bawaan registry; ganti dengan `config_registry.default_of(\"qc.color_mismatch_action\")`, lalu hapus butir ini."
+  },
+  {
+   "file": "backend/services/inspection_service.py",
+   "key": "qc.handfeel_mismatch_action",
+   "line_text": "await value_of(\"qc.handfeel_mismatch_action\", ctx) or \"peringatkan\"",
+   "jenis": "sama_bawaan",
+   "alasan": "Garis dasar KF-T8: cadangan 'peringatkan' = bawaan registry; ganti dengan `config_registry.default_of(\"qc.handfeel_mismatch_action\")`, lalu hapus butir ini."
+  },
+  {
+   "file": "backend/services/inspection_service.py",
+   "key": "qc.md_sampling_min",
+   "line_text": "await value_of(\"qc.md_sampling_min\", ctx) or 1",
+   "jenis": "sama_bawaan",
+   "alasan": "Garis dasar KF-T8: cadangan 1 = bawaan registry; ganti dengan `config_registry.default_of(\"qc.md_sampling_min\")`, lalu hapus butir ini."
+  },
+  {
+   "file": "backend/services/inspection_service.py",
+   "key": "qc.md_sampling_pct",
+   "line_text": "await value_of(\"qc.md_sampling_pct\", ctx) or 0",
+   "jenis": "sama_bawaan",
+   "alasan": "Garis dasar KF-T8: cadangan 0 = bawaan registry; ganti dengan `config_registry.default_of(\"qc.md_sampling_pct\")`, lalu hapus butir ini."
+  },
+  {
+   "file": "backend/services/inspection_service.py",
+   "key": "qc.sampling_min",
+   "line_text": "await value_of(\"qc.sampling_min\", ctx) or 1",
+   "jenis": "sama_bawaan",
+   "alasan": "Garis dasar KF-T8: cadangan 1 = bawaan registry; ganti dengan `config_registry.default_of(\"qc.sampling_min\")`, lalu hapus butir ini."
+  },
+  {
+   "file": "backend/services/interco_reminder.py",
+   "key": "antar_entitas.settlement_reminder_days",
+   "line_text": "await ics._config(\"antar_entitas.settlement_reminder_days\", payer) or 30",
+   "jenis": "sama_bawaan",
+   "alasan": "Garis dasar KF-T8: `or 30` = bawaan registry dan arti 0 tertulis di penjelasan kunci (\"Isi 0 dibaca sistem sebagai …\"); ganti dengan `or config_registry.default_of(\"antar_entitas.settlement_reminder_days\")`, lalu hapus butir ini."
+  },
+  {
+   "file": "backend/services/interco_reminder.py",
+   "key": "antar_entitas.settlement_reminder_days",
+   "line_text": "await ics._config(\"antar_entitas.settlement_reminder_days\",",
+   "jenis": "sama_bawaan",
+   "alasan": "Garis dasar KF-T8: `or 30` = bawaan registry dan arti 0 tertulis di penjelasan kunci (\"Isi 0 dibaca sistem sebagai …\"); ganti dengan `or config_registry.default_of(\"antar_entitas.settlement_reminder_days\")`, lalu hapus butir ini."
+  },
+  {
+   "file": "backend/services/interco_service.py",
+   "key": "antar_entitas.ppn_mode",
+   "line_text": "await _config(\"antar_entitas.ppn_mode\", seller) or \"ikut_pkp\"",
+   "jenis": "sama_bawaan",
+   "alasan": "Garis dasar KF-T8: cadangan 'ikut_pkp' = bawaan registry; ganti dengan `config_registry.default_of(\"antar_entitas.ppn_mode\")`, lalu hapus butir ini."
+  },
+  {
+   "file": "backend/services/interco_service.py",
+   "key": "antar_entitas.ppn_rate_percent",
+   "line_text": "await _config(\"antar_entitas.ppn_rate_percent\", seller_entity_id) or 0",
+   "jenis": "sama_bawaan",
+   "alasan": "Garis dasar KF-T8: cadangan 0 = bawaan registry; ganti dengan `config_registry.default_of(\"antar_entitas.ppn_rate_percent\")`, lalu hapus butir ini."
+  },
+  {
+   "file": "backend/services/interco_service.py",
+   "key": "antar_entitas.pricing_mode",
+   "line_text": "await _config(\"antar_entitas.pricing_mode\", seller) or \"fixed_price\"",
+   "jenis": "sama_bawaan",
+   "alasan": "Garis dasar KF-T8: cadangan 'fixed_price' = bawaan registry; ganti dengan `config_registry.default_of(\"antar_entitas.pricing_mode\")`, lalu hapus butir ini."
+  },
+  {
+   "file": "backend/services/interco_service.py",
+   "key": "antar_entitas.settlement_reminder_days",
+   "line_text": "await _config(\"antar_entitas.settlement_reminder_days\") or 30",
+   "jenis": "sama_bawaan",
+   "alasan": "Garis dasar KF-T8: `or 30` = bawaan registry dan arti 0 tertulis di penjelasan kunci (\"Isi 0 dibaca sistem sebagai …\"); ganti dengan `or config_registry.default_of(\"antar_entitas.settlement_reminder_days\")`, lalu hapus butir ini."
+  },
+  {
+   "file": "backend/services/interco_service.py",
+   "key": "interco_payment.basis",
+   "line_text": "cfg.get(\"basis\") or \"\"",
+   "jenis": "sama_bawaan",
+   "alasan": "Garis dasar KF-T8: cadangan '' = bawaan registry; ganti dengan `config_registry.default_of(\"interco_payment.basis\")`, lalu hapus butir ini."
+  },
+  {
+   "file": "backend/services/interco_service.py",
+   "key": "interco_payment.basis",
+   "line_text": "pcfg.get(\"basis\") or \"\"",
+   "jenis": "sama_bawaan",
+   "alasan": "Garis dasar KF-T8: cadangan '' = bawaan registry; ganti dengan `config_registry.default_of(\"interco_payment.basis\")`, lalu hapus butir ini."
+  },
+  {
+   "file": "backend/services/interco_service.py",
+   "key": "interco_payment.reminder_days",
+   "line_text": "cfg.get(\"reminder_days\") or 0",
+   "jenis": "hanya_bila_kosong",
+   "alasan": "Garis dasar KF-T8: cadangan `or 0` ≠ bawaan 3, hanya terpakai bila nilai tersimpan kosong/None. Ganti dengan `config_registry.default_of`, lalu hapus butir ini."
+  },
+  {
+   "file": "backend/services/makloon_order_service.py",
+   "key": "makloon.contract_mode",
+   "line_text": "settings.get(\"contract_mode\", \"warn\")",
+   "jenis": "sama_bawaan",
+   "alasan": "Garis dasar KF-T8: cadangan 'warn' = bawaan registry; ganti dengan `config_registry.default_of(\"makloon.contract_mode\")`, lalu hapus butir ini."
+  },
+  {
+   "file": "backend/services/notification_service.py",
+   "key": "notif.low_stock_division",
+   "line_text": "await value_of(\"notif.low_stock_division\", {\"entity_id\": \"\"}) or \"\"",
+   "jenis": "sama_bawaan",
+   "alasan": "Garis dasar KF-T8: cadangan '' = bawaan registry; ganti dengan `config_registry.default_of(\"notif.low_stock_division\")`, lalu hapus butir ini."
+  },
+  {
+   "file": "backend/services/payment_plan_service.py",
+   "key": "payment.default_dp_percent",
+   "line_text": "await val(\"payment.default_dp_percent\") or 0",
+   "jenis": "hanya_bila_kosong",
+   "alasan": "Garis dasar KF-T8: cadangan `or 0` ≠ bawaan 30.0, hanya terpakai bila nilai tersimpan kosong/None. Ganti dengan `config_registry.default_of`, lalu hapus butir ini."
+  },
+  {
+   "file": "backend/services/payment_plan_service.py",
+   "key": "payment.default_installment_interval",
+   "line_text": "await val(\"payment.default_installment_interval\") or \"monthly\"",
+   "jenis": "sama_bawaan",
+   "alasan": "Garis dasar KF-T8: cadangan 'monthly' = bawaan registry; ganti dengan `config_registry.default_of(\"payment.default_installment_interval\")`, lalu hapus butir ini."
+  },
+  {
+   "file": "backend/services/payment_plan_service.py",
+   "key": "payment.default_installments",
+   "line_text": "await val(\"payment.default_installments\") or 1",
+   "jenis": "hanya_bila_kosong",
+   "alasan": "Garis dasar KF-T8: cadangan `or 1` ≠ bawaan 3, hanya terpakai bila nilai tersimpan kosong/None. Ganti dengan `config_registry.default_of`, lalu hapus butir ini."
+  },
+  {
+   "file": "backend/services/payment_plan_service.py",
+   "key": "payment.plan_required_above_amount",
+   "line_text": "await val(\"payment.plan_required_above_amount\") or 0",
+   "jenis": "sama_bawaan",
+   "alasan": "Garis dasar KF-T8: cadangan 0 = bawaan registry; ganti dengan `config_registry.default_of(\"payment.plan_required_above_amount\")`, lalu hapus butir ini."
+  },
+  {
+   "file": "backend/services/payment_variance_service.py",
+   "key": "payment.variance_ap_tolerance_rupiah",
+   "line_text": "await val(\"payment.variance_ap_tolerance_rupiah\") or 0",
+   "jenis": "hanya_bila_kosong",
+   "alasan": "Garis dasar KF-T8: cadangan `or 0` ≠ bawaan 5000, hanya terpakai bila nilai tersimpan kosong/None. Ganti dengan `config_registry.default_of`, lalu hapus butir ini."
+  },
+  {
+   "file": "backend/services/payment_variance_service.py",
+   "key": "payment.variance_overpay_default",
+   "line_text": "await val(\"payment.variance_overpay_default\") or \"deposit\"",
+   "jenis": "sama_bawaan",
+   "alasan": "Garis dasar KF-T8: cadangan 'deposit' = bawaan registry; ganti dengan `config_registry.default_of(\"payment.variance_overpay_default\")`, lalu hapus butir ini."
+  },
+  {
+   "file": "backend/services/payment_variance_service.py",
+   "key": "payment.variance_refund_method",
+   "line_text": "await val(\"payment.variance_refund_method\") or \"transfer\"",
+   "jenis": "sama_bawaan",
+   "alasan": "Garis dasar KF-T8: cadangan 'transfer' = bawaan registry; ganti dengan `config_registry.default_of(\"payment.variance_refund_method\")`, lalu hapus butir ini."
+  },
+  {
+   "file": "backend/services/payment_variance_service.py",
+   "key": "payment.variance_reschedule_days",
+   "line_text": "await val(\"payment.variance_reschedule_days\") or 14",
+   "jenis": "sama_bawaan",
+   "alasan": "Garis dasar KF-T8: cadangan 14 = bawaan registry; ganti dengan `config_registry.default_of(\"payment.variance_reschedule_days\")`, lalu hapus butir ini."
+  },
+  {
+   "file": "backend/services/payment_variance_service.py",
+   "key": "payment.variance_tolerance_rupiah",
+   "line_text": "await val(\"payment.variance_tolerance_rupiah\") or 0",
+   "jenis": "hanya_bila_kosong",
+   "alasan": "Garis dasar KF-T8: cadangan `or 0` ≠ bawaan 5000, hanya terpakai bila nilai tersimpan kosong/None. Ganti dengan `config_registry.default_of`, lalu hapus butir ini."
+  },
+  {
+   "file": "backend/services/payment_variance_service.py",
+   "key": "payment.variance_underpay_default",
+   "line_text": "await val(\"payment.variance_underpay_default\") or \"outstanding\"",
+   "jenis": "sama_bawaan",
+   "alasan": "Garis dasar KF-T8: cadangan 'outstanding' = bawaan registry; ganti dengan `config_registry.default_of(\"payment.variance_underpay_default\")`, lalu hapus butir ini."
+  },
+  {
+   "file": "backend/services/payment_variance_service.py",
+   "key": "payment.variance_writeoff_max_amount",
+   "line_text": "await val(\"payment.variance_writeoff_max_amount\") or 0",
+   "jenis": "hanya_bila_kosong",
+   "alasan": "Garis dasar KF-T8: cadangan `or 0` ≠ bawaan 1000000, hanya terpakai bila nilai tersimpan kosong/None. Ganti dengan `config_registry.default_of`, lalu hapus butir ini."
+  },
+  {
+   "file": "backend/services/penalty_service.py",
+   "key": "payment.penalty_base",
+   "line_text": "await val(\"payment.penalty_base\") or \"installment\"",
+   "jenis": "sama_bawaan",
+   "alasan": "Garis dasar KF-T8: cadangan 'installment' = bawaan registry; ganti dengan `config_registry.default_of(\"payment.penalty_base\")`, lalu hapus butir ini."
+  },
+  {
+   "file": "backend/services/penalty_service.py",
+   "key": "payment.penalty_cap_pct",
+   "line_text": "await val(\"payment.penalty_cap_pct\") or 0",
+   "jenis": "sama_bawaan",
+   "alasan": "Garis dasar KF-T8: cadangan 0 = bawaan registry; ganti dengan `config_registry.default_of(\"payment.penalty_cap_pct\")`, lalu hapus butir ini."
+  },
+  {
+   "file": "backend/services/penalty_service.py",
+   "key": "payment.penalty_min_amount",
+   "line_text": "await val(\"payment.penalty_min_amount\") or 0",
+   "jenis": "hanya_bila_kosong",
+   "alasan": "Garis dasar KF-T8: cadangan `or 0` ≠ bawaan 10000, hanya terpakai bila nilai tersimpan kosong/None. Ganti dengan `config_registry.default_of`, lalu hapus butir ini."
+  },
+  {
+   "file": "backend/services/penalty_service.py",
+   "key": "payment.penalty_mode",
+   "line_text": "await val(\"payment.penalty_mode\") or \"draft\"",
+   "jenis": "sama_bawaan",
+   "alasan": "Garis dasar KF-T8: cadangan 'draft' = bawaan registry; ganti dengan `config_registry.default_of(\"payment.penalty_mode\")`, lalu hapus butir ini."
+  },
+  {
+   "file": "backend/services/penalty_service.py",
+   "key": "payment.penalty_waive_approver_role",
+   "line_text": "await val(\"payment.penalty_waive_approver_role\") or \"manager\"",
+   "jenis": "sama_bawaan",
+   "alasan": "Garis dasar KF-T8: cadangan 'manager' = bawaan registry; ganti dengan `config_registry.default_of(\"payment.penalty_waive_approver_role\")`, lalu hapus butir ini."
+  },
+  {
+   "file": "backend/services/pos_recommendation_service.py",
+   "key": "pos.best_sellers.window_days",
+   "line_text": "await value_of(\"pos.best_sellers.window_days\", ctx) or 90",
+   "jenis": "sama_bawaan",
+   "alasan": "Garis dasar KF-T8: cadangan 90 = bawaan registry; ganti dengan `config_registry.default_of(\"pos.best_sellers.window_days\")`, lalu hapus butir ini."
+  },
+  {
+   "file": "backend/services/pr_sourcing_service.py",
+   "key": "purchasing.price_deviation_approval_percent",
+   "line_text": "settings.get(\"purchasing\", {}).get(\"price_deviation_approval_percent\", 10.0)",
+   "jenis": "sama_bawaan",
+   "alasan": "Garis dasar KF-T8: `or 10.0` = bawaan registry dan arti 0 tertulis di penjelasan kunci (\"Isi 0 dibaca sistem sebagai …\"); ganti dengan `or config_registry.default_of(\"purchasing.price_deviation_approval_percent\")`, lalu hapus butir ini."
+  },
+  {
+   "file": "backend/services/purchase_requisition_service.py",
+   "key": "inventory.reorder.safety_days",
+   "line_text": "rcfg.get(\"safety_days\", 7)",
+   "jenis": "sama_bawaan",
+   "alasan": "Garis dasar KF-T8: cadangan 7 = bawaan registry; ganti dengan `config_registry.default_of(\"inventory.reorder.safety_days\")`, lalu hapus butir ini."
+  },
+  {
+   "file": "backend/services/purchase_requisition_service.py",
+   "key": "inventory.reorder.velocity_window_days",
+   "line_text": "rcfg.get(\"velocity_window_days\", 90)",
+   "jenis": "sama_bawaan",
+   "alasan": "Garis dasar KF-T8: cadangan 90 = bawaan registry; ganti dengan `config_registry.default_of(\"inventory.reorder.velocity_window_days\")`, lalu hapus butir ini."
+  },
+  {
+   "file": "backend/services/qc_inspection_service.py",
+   "key": "qc.grade_thresholds.a_max",
+   "line_text": "th.get(\"a_max\", 20.0)",
+   "jenis": "sama_bawaan",
+   "alasan": "Garis dasar KF-T8: `or 20.0` = bawaan registry dan arti 0 tertulis di penjelasan kunci (\"Isi 0 dibaca sistem sebagai …\"); ganti dengan `or config_registry.default_of(\"qc.grade_thresholds.a_max\")`, lalu hapus butir ini."
+  },
+  {
+   "file": "backend/services/qc_inspection_service.py",
+   "key": "qc.grade_thresholds.b_max",
+   "line_text": "th.get(\"b_max\", 40.0)",
+   "jenis": "sama_bawaan",
+   "alasan": "Garis dasar KF-T8: `or 40.0` = bawaan registry dan arti 0 tertulis di penjelasan kunci (\"Isi 0 dibaca sistem sebagai …\"); ganti dengan `or config_registry.default_of(\"qc.grade_thresholds.b_max\")`, lalu hapus butir ini."
+  },
+  {
+   "file": "backend/services/receiving_uom_service.py",
+   "key": "purchasing.receive_tolerance_percent",
+   "line_text": "(st.get(\"purchasing\", {}) or {}).get(\"receive_tolerance_percent\", 2.0)",
+   "jenis": "hanya_bila_kosong",
+   "alasan": "Garis dasar KF-T8: cadangan `or 0` ≠ bawaan 2.0, hanya terpakai bila nilai tersimpan kosong/None. Ganti dengan `config_registry.default_of`, lalu hapus butir ini."
+  },
+  {
+   "file": "backend/services/receiving_uom_service.py",
+   "key": "receiving.line_qty_tolerance_pct",
+   "line_text": "await _value_of(\"receiving.line_qty_tolerance_pct\",",
+   "jenis": "hanya_bila_kosong",
+   "alasan": "Garis dasar KF-T8: cadangan `or 0` ≠ bawaan 2.0, hanya terpakai bila nilai tersimpan kosong/None. Ganti dengan `config_registry.default_of`, lalu hapus butir ini."
+  },
+  {
+   "file": "backend/services/receiving_uom_service.py",
+   "key": "receiving.supplier_uom_input_mode",
+   "line_text": "st.get(\"supplier_uom_input_mode\", \"prefer\")",
+   "jenis": "sama_bawaan",
+   "alasan": "Garis dasar KF-T8: cadangan 'prefer' = bawaan registry; ganti dengan `config_registry.default_of(\"receiving.supplier_uom_input_mode\")`, lalu hapus butir ini."
+  },
+  {
+   "file": "backend/services/return_grade_impairment.py",
+   "key": "returns.grade_price_factors",
+   "line_text": "a.get(\"grade_price_factors\") or {}",
+   "jenis": "hanya_bila_kosong",
+   "alasan": "Garis dasar KF-T8: cadangan `or {}` ≠ bawaan {'A': 100, 'A1': 95, 'A2': 90, 'B': 70, 'B1': 60, 'C': 40, 'BS': 10}, hanya terpakai bila nilai tersimpan kosong/None. Ganti dengan `config_registry.default_of`, lalu hapus butir ini."
+  },
+  {
+   "file": "backend/services/rnd_kpi_service.py",
+   "key": "rnd.kpi_weight_design",
+   "line_text": "pol.get(\"kpi_weight_design\") or 0",
+   "jenis": "hanya_bila_kosong",
+   "alasan": "Garis dasar KF-T8: cadangan `or 0` ≠ bawaan 20, hanya terpakai bila nilai tersimpan kosong/None. Ganti dengan `config_registry.default_of`, lalu hapus butir ini."
+  },
+  {
+   "file": "backend/services/rnd_sample_service.py",
+   "key": "rnd.max_rounds",
+   "line_text": "pol.get(\"max_rounds\") or 3",
+   "jenis": "sama_bawaan",
+   "alasan": "Garis dasar KF-T8: cadangan 3 = bawaan registry; ganti dengan `config_registry.default_of(\"rnd.max_rounds\")`, lalu hapus butir ini."
+  },
+  {
+   "file": "backend/services/rnd_sample_service.py",
+   "key": "rnd.round_sla_days",
+   "line_text": "pol.get(\"round_sla_days\") or 7",
+   "jenis": "sama_bawaan",
+   "alasan": "Garis dasar KF-T8: cadangan 7 = bawaan registry; ganti dengan `config_registry.default_of(\"rnd.round_sla_days\")`, lalu hapus butir ini."
+  },
+  {
+   "file": "backend/services/roll_service.py",
+   "key": "allocation.location_pref",
+   "line_text": "policy.get(\"location_pref\", \"single_warehouse\")",
+   "jenis": "sama_bawaan",
+   "alasan": "Garis dasar KF-T8: cadangan 'single_warehouse' = bawaan registry; ganti dengan `config_registry.default_of(\"allocation.location_pref\")`, lalu hapus butir ini."
+  },
+  {
+   "file": "backend/services/roll_service.py",
+   "key": "allocation.lot_mode",
+   "line_text": "policy.get(\"lot_mode\", \"prefer_single\")",
+   "jenis": "sama_bawaan",
+   "alasan": "Garis dasar KF-T8: cadangan 'prefer_single' = bawaan registry; ganti dengan `config_registry.default_of(\"allocation.lot_mode\")`, lalu hapus butir ini."
+  },
+  {
+   "file": "backend/services/roll_service.py",
+   "key": "cutting.remnant_grade",
+   "line_text": "await value_of(\"cutting.remnant_grade\", ctx) or \"keep\"",
+   "jenis": "sama_bawaan",
+   "alasan": "Garis dasar KF-T8: cadangan 'keep' = bawaan registry; ganti dengan `config_registry.default_of(\"cutting.remnant_grade\")`, lalu hapus butir ini."
+  },
+  {
+   "file": "backend/services/roll_service.py",
+   "key": "cutting.remnant_threshold",
+   "line_text": "await value_of(\"cutting.remnant_threshold\", ctx) or 0",
+   "jenis": "hanya_bila_kosong",
+   "alasan": "Garis dasar KF-T8: cadangan `or 0` ≠ bawaan 2.0, hanya terpakai bila nilai tersimpan kosong/None. Ganti dengan `config_registry.default_of`, lalu hapus butir ini."
+  },
+  {
+   "file": "backend/services/roll_service.py",
+   "key": "cutting.waste_limit_pct",
+   "line_text": "await value_of(\"cutting.waste_limit_pct\", {\"entity_id\": entity_id or \"\", \"product_id\": product_id})",
+   "jenis": "hanya_bila_kosong",
+   "alasan": "Garis dasar KF-T8: cadangan `or 0` ≠ bawaan 3.0, hanya terpakai bila nilai tersimpan kosong/None. Ganti dengan `config_registry.default_of`, lalu hapus butir ini."
+  },
+  {
+   "file": "backend/services/sales_force_service.py",
+   "key": "commission.default_margin_cap_pct",
+   "line_text": "cfg.get(\"default_margin_cap_pct\", 50.0)",
+   "jenis": "hanya_bila_kosong",
+   "alasan": "Garis dasar KF-T8: cadangan `or 0` ≠ bawaan 50.0, hanya terpakai bila nilai tersimpan kosong/None. Ganti dengan `config_registry.default_of`, lalu hapus butir ini."
+  },
+  {
+   "file": "backend/services/sales_force_service.py",
+   "key": "commission.discount_factor",
+   "line_text": "cfg.get(\"discount_factor\", default_of(\"commission.discount_factor\")) or 0",
+   "jenis": "hanya_bila_kosong",
+   "alasan": "Garis dasar KF-T8: cadangan `or 0` ≠ bawaan 0.5, hanya terpakai bila nilai tersimpan kosong/None. Ganti dengan `config_registry.default_of`, lalu hapus butir ini."
+  },
+  {
+   "file": "backend/services/sales_force_service.py",
+   "key": "commission.discount_mechanic",
+   "line_text": "cfg.get(\"discount_mechanic\", \"tier_factor\")",
+   "jenis": "sama_bawaan",
+   "alasan": "Garis dasar KF-T8: cadangan 'tier_factor' = bawaan registry; ganti dengan `config_registry.default_of(\"commission.discount_mechanic\")`, lalu hapus butir ini."
+  },
+  {
+   "file": "backend/services/sales_force_service.py",
+   "key": "commission.discount_potong_rp",
+   "line_text": "cfg.get(\"discount_potong_rp\", 0)",
+   "jenis": "sama_bawaan",
+   "alasan": "Garis dasar KF-T8: cadangan 0 = bawaan registry; ganti dengan `config_registry.default_of(\"commission.discount_potong_rp\")`, lalu hapus butir ini."
+  },
+  {
+   "file": "backend/services/sales_force_service.py",
+   "key": "commission.discount_threshold",
+   "line_text": "cfg.get(\"discount_threshold\", default_of(\"commission.discount_threshold\")) or 0",
+   "jenis": "hanya_bila_kosong",
+   "alasan": "Garis dasar KF-T8: cadangan `or 0` ≠ bawaan 10.0, hanya terpakai bila nilai tersimpan kosong/None. Ganti dengan `config_registry.default_of`, lalu hapus butir ini."
+  },
+  {
+   "file": "backend/services/sales_force_service.py",
+   "key": "commission.discount_threshold_type",
+   "line_text": "cfg.get(\"discount_threshold_type\", \"pct\")",
+   "jenis": "sama_bawaan",
+   "alasan": "Garis dasar KF-T8: cadangan 'pct' = bawaan registry; ganti dengan `config_registry.default_of(\"commission.discount_threshold_type\")`, lalu hapus butir ini."
+  },
+  {
+   "file": "backend/services/sales_force_service.py",
+   "key": "commission.strategy",
+   "line_text": "(settings.get(\"commission\") or {}).get(\"strategy\", \"per_sku\")",
+   "jenis": "sama_bawaan",
+   "alasan": "Garis dasar KF-T8: cadangan 'per_sku' = bawaan registry; ganti dengan `config_registry.default_of(\"commission.strategy\")`, lalu hapus butir ini."
+  },
+  {
+   "file": "backend/services/sales_p04_service.py",
+   "key": "sales.keep_max_age_days",
+   "line_text": "await config_resolver.value_of(\"sales.keep_max_age_days\", {\"entity_id\": entity_id}) or 0",
+   "jenis": "sama_bawaan",
+   "alasan": "Garis dasar KF-T8: cadangan 0 = bawaan registry; ganti dengan `config_registry.default_of(\"sales.keep_max_age_days\")`, lalu hapus butir ini."
+  },
+  {
+   "file": "backend/services/sample_sale_service.py",
+   "key": "sales.sample_payment_tolerance_pct",
+   "line_text": "await value_of(\"sales.sample_payment_tolerance_pct\", {\"entity_id\": o.get(\"entity_id\") or \"\"}) or 0",
+   "jenis": "hanya_bila_kosong",
+   "alasan": "Garis dasar KF-T8: cadangan `or 0` ≠ bawaan 5.0, hanya terpakai bila nilai tersimpan kosong/None. Ganti dengan `config_registry.default_of`, lalu hapus butir ini."
+  },
+  {
+   "file": "backend/services/tax_center_service.py",
+   "key": "tax.pph_items",
+   "line_text": "tax_cfg.get(\"pph_items\", [])",
+   "jenis": "sama_bawaan",
+   "alasan": "Garis dasar KF-T8: cadangan [] = bawaan registry; ganti dengan `config_registry.default_of(\"tax.pph_items\")`, lalu hapus butir ini."
+  },
+  {
+   "file": "backend/services/three_way_policy.py",
+   "key": "purchasing.bill_price_tolerance_percent",
+   "line_text": "pur.get(\"bill_price_tolerance_percent\", 5.0)",
+   "jenis": "hanya_bila_kosong",
+   "alasan": "Garis dasar KF-T8: cadangan `or 0.0` ≠ bawaan 5.0, hanya terpakai bila nilai tersimpan kosong/None. Ganti dengan `config_registry.default_of`, lalu hapus butir ini."
+  },
+  {
+   "file": "backend/services/three_way_policy.py",
+   "key": "purchasing.bill_qty_tolerance_percent",
+   "line_text": "pur.get(\"bill_qty_tolerance_percent\", 0.0)",
+   "jenis": "sama_bawaan",
+   "alasan": "Garis dasar KF-T8: cadangan 0.0 = bawaan registry; ganti dengan `config_registry.default_of(\"purchasing.bill_qty_tolerance_percent\")`, lalu hapus butir ini."
+  },
+  {
+   "file": "backend/services/uom_rules_service.py",
+   "key": "uom.precision",
+   "line_text": "eng[\"settings\"].get(\"precision\", 2)",
+   "jenis": "sama_bawaan",
+   "alasan": "Garis dasar KF-T8: cadangan 2 = bawaan registry; ganti dengan `config_registry.default_of(\"uom.precision\")`, lalu hapus butir ini."
+  },
+  {
+   "file": "backend/services/wa_alert_service.py",
+   "key": "notif.wa_broadcast_roles",
+   "line_text": "await policy.threshold(\"notif.wa_broadcast_roles\") or []",
+   "jenis": "hanya_bila_kosong",
+   "alasan": "Garis dasar KF-T8: cadangan `or []` ≠ bawaan ['admin', 'manager'], hanya terpakai bila nilai tersimpan kosong/None. Ganti dengan `config_registry.default_of`, lalu hapus butir ini."
+  },
+  {
+   "file": "backend/services/wa_alert_service.py",
+   "key": "notif.wa_pic_number",
+   "line_text": "await policy.threshold(\"notif.wa_pic_number\", entity_id) or \"\"",
+   "jenis": "sama_bawaan",
+   "alasan": "Garis dasar KF-T8: cadangan '' = bawaan registry; ganti dengan `config_registry.default_of(\"notif.wa_pic_number\")`, lalu hapus butir ini."
+  },
+  {
+   "file": "backend/routers/hr.py",
+   "key": "hr.feature_toggles.npwp_required",
+   "line_text": "_cfg_value(\"hr.feature_toggles.npwp_required\")",
+   "mode": "entity",
+   "jenis": "garis_dasar",
+   "alasan": "KF-T3 — sisa kelas KF-10 (ditemukan KF-T8): nilai PT dokumen belum diteruskan ke `value_of`; perbaiki lalu hapus butir ini."
+  }
+ ]
+}

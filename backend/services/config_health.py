@@ -71,6 +71,27 @@ def _cocok(text: str, key: str) -> bool:
 
 
 _TREES: Dict[str, Any] = {}
+# KF-T8 — baris berkas untuk `_segmen` (berkas, isi, baris); dipakai ulang selama isi berkasnya sama.
+_BARIS: Dict[str, Any] = {}
+_FUNGSI: Dict[str, Any] = {}   # KF-T8 — (pohon, {nama fungsi: simpul}) per berkas
+_RX_BARIS = re.compile(r"[^\r\n]*(?:\r\n|\r|\n)|[^\r\n]+\Z")
+
+
+def _segmen(path: str, text: str, node: Any) -> Optional[str]:
+    """KF-T8 — sama dengan `ast.get_source_segment(text, node)`, tetapi baris berkas dipecah SEKALI per berkas (dulu
+    dipecah ulang tiap panggilan: ±4 dtk tiap penilaian seluruh registry di gate kabel pengaturan / INV-CFG-01).
+    Pemecah baris sama dengan `ast` (\\r\\n, \\r, \\n; bukan \\f); kesetaraannya diuji `test_KFT8_U14b`."""
+    simpan = _BARIS.get(path)
+    if simpan is None or simpan[0] is not text:
+        simpan = _BARIS[path] = (text, _RX_BARIS.findall(text))
+    lines = simpan[1]
+    if getattr(node, "end_lineno", None) is None or getattr(node, "end_col_offset", None) is None:
+        return None
+    a, b = node.lineno - 1, node.end_lineno - 1
+    if a == b:
+        return lines[a].encode()[node.col_offset:node.end_col_offset].decode()
+    return "".join([lines[a].encode()[node.col_offset:].decode(), *lines[a + 1:b],
+                    lines[b].encode()[:node.end_col_offset].decode()])
 
 
 def _hanya_teks(node: Any) -> bool:
@@ -95,18 +116,24 @@ def _badan_fungsi(path: str, text: str, name: str) -> Optional[str]:
     tree = _TREES[path]
     if tree is None:
         return None
-    fn = next((n for n in ast.walk(tree)
-               if isinstance(n, (ast.FunctionDef, ast.AsyncFunctionDef)) and n.name == name), None)
+    simpan = _FUNGSI.get(path)            # KF-T8 — indeks fungsi sekali per pohon (dulu `ast.walk` tiap rujukan)
+    if simpan is None or simpan[0] is not tree:
+        indeks: Dict[str, Any] = {}
+        for n in ast.walk(tree):          # urutan sama dengan `next(ast.walk …)` lama: kemunculan pertama menang
+            if isinstance(n, (ast.FunctionDef, ast.AsyncFunctionDef)):
+                indeks.setdefault(n.name, n)
+        simpan = _FUNGSI[path] = (tree, indeks)
+    fn = simpan[1].get(name)
     if fn is None:
         return None
-    parts = [ast.get_source_segment(text, fn) or ""]
+    parts = [_segmen(path, text, fn) or ""]   # KF-T8 — dulu ast.get_source_segment (hasil sama)
     dipakai = {n.id for n in ast.walk(fn) if isinstance(n, ast.Name)}
     for top in tree.body:
         targets = top.targets if isinstance(top, ast.Assign) else [top.target] if isinstance(top, ast.AnnAssign) else []
         value = getattr(top, "value", None)
         if value is not None and any(isinstance(t, ast.Name) and t.id in dipakai for t in targets) \
                 and _hanya_teks(value):
-            parts.append(ast.get_source_segment(text, top) or "")
+            parts.append(_segmen(path, text, top) or "")
     return "\n".join(parts)
 
 
@@ -162,6 +189,8 @@ def check_entry(entry: Dict[str, Any]) -> Dict[str, Any]:
 def report() -> Dict[str, Any]:
     _CACHE.clear()
     _TREES.clear()
+    _BARIS.clear()   # KF-T8
+    _FUNGSI.clear()
     rows = [check_entry(e) for e in registry.all_entries()]
     summary: Dict[str, int] = {}
     for r in rows:

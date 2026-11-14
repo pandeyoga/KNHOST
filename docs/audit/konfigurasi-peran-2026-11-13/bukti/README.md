@@ -11,7 +11,7 @@ Cara memasang lingkungan dan pola uji: `docs/blueprint/03_LINGKUNGAN_UJI.md` §3
 |---|---|---|
 | `boot_app.py` | Mengganti klien MongoDB dengan `mongomock-motor` sebelum aplikasi diimpor | Aplikasi menyala: 1.754 rute, 100 koleksi, 4 akun, 3 PT |
 | `inv_endpoints.py` | Inventaris statik gerbang tiap endpoint | 1.749 endpoint: 1.566 izin · 17 izin lewat cabang · 38 nama peran · 107 hanya login · 21 tanpa sesi |
-| `t1_config.py` | Tiap kunci Pusat Pengaturan: tulis → baca lewat 3 jalur → lapisan PT → nilai tak sah → pulihkan | 310 kunci; 287 tulis grup dan 242 tulis PT terbaca benar; 264 nilai tak sah ditolak; 97 wajib-alasan ditolak; 2 penyimpangan (PT non-PKP) |
+| `t1_config.py` | Tiap kunci Pusat Pengaturan: tulis → baca lewat 3 jalur → lapisan PT → nilai tak sah → pulihkan | 310 kunci; 287 tulis grup dan 242 tulis PT terbaca benar; 264 nilai tak sah ditolak; 97 wajib-alasan ditolak; 2 penyimpangan (PT non-PKP). Sejak KF-T8 punya padanan gate `config_roundtrip` (INV-CFG-08): `backend/tests_mem/test_KFT8_putaran_pengaturan.py` (pembangkit nilai `backend/tests_mem/_nilai_uji.py`); skrip ini tetap arsip |
 | `t2_roles.py` + `t2_analyze.py` | 12 peran bawaan + 4 peran kustom uji × 786 rute baca, dibandingkan dengan matriks | Rute berizin mengikuti matriks; peran kustom beracuan Manajer tanpa izin tetap lolos 23 rute |
 | `t3_escalation.py` | Siapa bisa mengubah pengaturan; peran kustom mengubah peran lain | Pemegang `settings.manage`: 0 dari 232 kunci bisa diubah; peran beracuan Manajer tanpa izin: bisa mengubah 48 kunci |
 | `t3b_eskalasi_akun.py` | Peran kustom pengelola akun | Menjadikan diri Admin: 200 · reset sandi Admin: 200 · membuat peran beracuan Manajer: 200 |
