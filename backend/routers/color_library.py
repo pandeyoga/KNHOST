@@ -11,13 +11,12 @@ from fastapi.responses import Response
 from pydantic import BaseModel
 
 from db import db
-from dependencies import require_permission, audit
+from dependencies import has_permission, require_permission, audit
 from entity_scope import entity_ctx, resolve_list_scope
 from schemas import ColorCreate, ColorPatch
 from services import color_service as svc
 from services import color_lock_service as lock
 from services.color_card_pdf import render_customer_color_card
-from role_registry import role_in  # peran acuan dikenali (keputusan owner 2026-10-21)
 
 router = APIRouter(prefix="/api")
 
@@ -164,12 +163,15 @@ async def create_color(payload: ColorCreate, request: Request) -> Dict[str, Any]
 async def patch_color(color_id: str, payload: ColorPatch, request: Request) -> Dict[str, Any]:
     actor = await require_permission(request, "color", "update")
     patch = payload.model_dump(exclude_none=True)
-    if "exclusive_customer_id" in patch and not role_in(actor.get("role"), ("admin", "manager")):
-        # KN-E47 — kepemilikan warna eksklusif hanya diubah admin/manajer (md dulu bisa mengosongkannya).
+    if "exclusive_customer_id" in patch and not await has_permission(actor, "color", "approve"):
+        # KN-E47 — kepemilikan warna eksklusif hanya diubah pemegang `color.approve` (PR-T2; dulu nama peran
+        # admin/manajer — md dulu bisa mengosongkannya).
         from db import db as _db
         cur = await _db.color_library.find_one({"id": color_id}, {"_id": 0, "exclusive_customer_id": 1}) or {}
         if (cur.get("exclusive_customer_id") or "") != (patch.get("exclusive_customer_id") or ""):
-            raise HTTPException(status_code=403, detail="Mengubah pemilik warna eksklusif hanya boleh admin/manajer.")
+            raise HTTPException(status_code=403, detail=(
+                "Anda belum punya akses untuk mengubah pelanggan eksklusif warna. Minta Admin menambahkan akses "
+                "'Produk, Kategori & Satuan'."))
     try:
         color = await svc.update_color(color_id, patch)
     except ValueError as e:
@@ -185,7 +187,7 @@ async def patch_color(color_id: str, payload: ColorPatch, request: Request) -> D
 async def delete_color(color_id: str, request: Request) -> Dict[str, Any]:
     actor = await require_permission(request, "color", "delete")
     from services.master_usage_service import assert_lifecycle_role
-    assert_lifecycle_role(actor, "menonaktifkan warna")
+    await assert_lifecycle_role(actor, "menonaktifkan warna")
     try:
         res = await svc.delete_color(color_id)
     except ValueError as e:

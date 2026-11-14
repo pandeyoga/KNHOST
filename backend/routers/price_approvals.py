@@ -15,7 +15,7 @@ from fastapi.responses import Response
 from pymongo import ReturnDocument
 
 from db import db
-from dependencies import require_permission, audit
+from dependencies import has_permission, require_permission, audit
 from core_utils import new_id, now_iso, safe_doc, DEFAULT_ENTITY_ID, rupiah
 from entity_scope import entity_ctx, resolve_list_scope, assert_entity_access
 from schemas import PriceApprovalCreate, PriceApprovalDecision, GenericPatch
@@ -150,9 +150,9 @@ async def _get_or_404(approval_id: str, request: Optional[Request] = None) -> Di
     return doc
 
 
-def _ensure_owner_or_privileged(doc: Dict[str, Any], user: Dict[str, Any]) -> None:
-    role = user.get("role")
-    if role_in(role, ("admin", "manager")):
+async def _ensure_owner_or_privileged(doc: Dict[str, Any], user: Dict[str, Any]) -> None:
+    """Pengajuan orang lain hanya dikelola pemegang `price_approval.approve` (PR-T2; dulu nama peran admin/manajer)."""
+    if await has_permission(user, "price_approval", "approve"):
         return
     if doc.get("requested_by") != user.get("id"):
         raise HTTPException(status_code=403, detail="Anda hanya dapat mengelola pengajuan Anda sendiri")
@@ -288,7 +288,7 @@ async def get_price_approval(approval_id: str, request: Request) -> Dict[str, An
     ctx = await entity_ctx(request)
     doc = await _get_or_404(approval_id, request)
     assert_entity_access(doc, "price_approvals", ctx)
-    _ensure_owner_or_privileged(doc, user)
+    await _ensure_owner_or_privileged(doc, user)
     return _decorate(doc)
 
 
@@ -296,7 +296,7 @@ async def get_price_approval(approval_id: str, request: Request) -> Dict[str, An
 async def patch_price_approval(approval_id: str, payload: GenericPatch, request: Request) -> Dict[str, Any]:
     user = await require_permission(request, "price_approval", "update")
     doc = await _get_or_404(approval_id, request)
-    _ensure_owner_or_privileged(doc, user)
+    await _ensure_owner_or_privileged(doc, user)
     if doc["status"] not in EDITABLE_STATUSES:
         raise HTTPException(status_code=409, detail=f"Pengajuan status '{doc['status']}' tidak dapat diubah")
     if _so_bound(doc) and doc["status"] == "pending":
@@ -334,7 +334,7 @@ async def patch_price_approval(approval_id: str, payload: GenericPatch, request:
 async def delete_price_approval(approval_id: str, request: Request) -> Dict[str, Any]:
     user = await require_permission(request, "price_approval", "delete")
     doc = await _get_or_404(approval_id, request)
-    _ensure_owner_or_privileged(doc, user)
+    await _ensure_owner_or_privileged(doc, user)
     if doc["status"] == "approved":
         raise HTTPException(status_code=409, detail="Pengajuan yang sudah disetujui tidak dapat dihapus")
     if _so_bound(doc) and doc["status"] == "pending":
@@ -352,7 +352,7 @@ async def delete_price_approval(approval_id: str, request: Request) -> Dict[str,
 async def submit_price_approval(approval_id: str, request: Request) -> Dict[str, Any]:
     user = await require_permission(request, "price_approval", "update")
     doc = await _get_or_404(approval_id, request)
-    _ensure_owner_or_privileged(doc, user)
+    await _ensure_owner_or_privileged(doc, user)
     if doc["status"] != "draft":
         raise HTTPException(status_code=409, detail="Hanya pengajuan draft yang dapat disubmit")
     if EVIDENCE_REQUIRED and not [a for a in (doc.get("attachments") or []) if not a.get("is_deleted")]:
@@ -566,7 +566,7 @@ async def revoke_price_approval(approval_id: str, payload: PriceApprovalDecision
 async def upload_attachment(approval_id: str, request: Request, file: UploadFile = File(...)) -> Dict[str, Any]:
     user = await require_permission(request, "price_approval", "update")
     doc = await _get_or_404(approval_id, request)
-    _ensure_owner_or_privileged(doc, user)
+    await _ensure_owner_or_privileged(doc, user)
     data = await file.read()
     try:
         content_type = storage.validate_upload(file.filename, file.content_type, len(data), data[:16])
@@ -600,7 +600,7 @@ async def download_attachment(approval_id: str, att_id: str, request: Request):
     # UAT 24 Okt (P17.2) — token lewat query `?auth=` DIHAPUS; layar memuat lampiran sebagai blob (header sesi).
     user = await require_permission(request, "price_approval", "view")
     doc = await _get_or_404(approval_id, request)
-    _ensure_owner_or_privileged(doc, user)
+    await _ensure_owner_or_privileged(doc, user)
     att = next((a for a in (doc.get("attachments") or []) if a.get("id") == att_id and not a.get("is_deleted")), None)
     if not att:
         raise HTTPException(status_code=404, detail="Lampiran tidak ditemukan")
@@ -618,7 +618,7 @@ async def download_attachment(approval_id: str, att_id: str, request: Request):
 async def delete_attachment(approval_id: str, att_id: str, request: Request) -> Dict[str, Any]:
     user = await require_permission(request, "price_approval", "update")
     doc = await _get_or_404(approval_id, request)
-    _ensure_owner_or_privileged(doc, user)
+    await _ensure_owner_or_privileged(doc, user)
     if doc.get("status") != "draft":   # bukti pengajuan yang sudah diajukan tidak boleh hilang
         raise HTTPException(status_code=409, detail="Bukti hanya bisa dihapus selama pengajuan masih draf.")
     res = await db.price_approvals.update_one(

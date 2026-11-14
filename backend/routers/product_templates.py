@@ -103,7 +103,7 @@ async def patch_template(template_id: str, payload: ProductTemplatePatch, reques
 async def delete_template(template_id: str, request: Request) -> Dict[str, Any]:
     actor = await require_permission(request, "product", "delete")
     from services.master_usage_service import assert_lifecycle_role
-    assert_lifecycle_role(actor, "mengarsipkan induk produk")
+    await assert_lifecycle_role(actor, "mengarsipkan induk produk")
     await catalog_access.template_for(actor, template_id, manage=True)
     try:
         res = await svc.delete_template(template_id)

@@ -6,7 +6,7 @@ from fastapi import APIRouter, File, Form, HTTPException, Request, UploadFile
 from fastapi.responses import Response
 
 from db import db
-from dependencies import audit, require_any_permission, require_permission
+from dependencies import audit, has_permission, require_any_permission, require_permission
 from entity_scope import entity_ctx
 from schemas_goods_receipt import (GRNCatalogIn, GRNCountRollIn, GRNCreateIn, GRNDnPatch, GRNLineIn, GRNLinePatch,
                                    GRNModeIn, GRNProfilePatch, GRNReasonIn, GRNResolveIn, GRNScanIn, GRNVersionIn)
@@ -15,7 +15,6 @@ from services import goods_receipt_ocr_service as go
 from services import goods_receipt_service as gs
 from services import receiving_mode_service as rms
 from services import supplier_dn_profile_service as sdp
-from role_registry import role_in  # peran acuan dikenali (keputusan owner 2026-10-21)
 
 router = APIRouter(prefix="/api")
 M = "goods_receipt"
@@ -115,8 +114,10 @@ async def grn_mode_status(request: Request) -> Dict[str, Any]:
 @router.put("/goods-receipts/mode")
 async def grn_mode_switch(body: GRNModeIn, request: Request) -> Dict[str, Any]:
     actor, ctx = await _act(request, "approve")
-    if not role_in(actor.get("role"), ("admin", "manager")):
-        raise HTTPException(status_code=403, detail="Hanya admin/manajer yang boleh mengganti mode penerimaan.")
+    if not await has_permission(actor, M, "configure"):   # PR-T2 — dulu nama peran admin/manajer
+        raise HTTPException(status_code=403, detail=(
+            "Anda belum punya akses untuk mengganti mode penerimaan. Minta Admin menambahkan akses "
+            "'Operasi Gudang (WMS)'."))
     return await rms.switch(body.entity_id, body.mode, body.reason, actor, ctx)
 
 

@@ -794,4 +794,6 @@ E("returns.cutloss_treatment_roles", group="retur", type="list", default=["md", 
        "Admin dan manajer selalu boleh.",
   impact="Peran lain tetap bisa mencatat qty cacat, tetapi pilihan BS/Dibuang dan tombol 'Proses potongan' ditolak.",
   example="[md, md_quality] → MD dan MD Quality yang memutus BS atau dibuang",
-  consumers=("services/return_cutloss_split_service.py:assert_can_choose",), permission=("sales_return", "policy"), risk="low")
+  consumers=("services/return_cutloss_split_service.py:assert_can_choose",), permission=("sales_return", "policy"), risk="low",
+  # PR-T2 (K-47) — kini izin `sales_return.treat_cutloss`; nilai kunci ini dibaca sekali oleh migrasi pemasangan unit itu.
+  status="not_used", not_used_reason="Diatur di Peran & Hak Akses › Pesanan Penjualan (Pilih potongan cacat: masuk BS atau dibuang)")

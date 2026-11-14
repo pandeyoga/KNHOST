@@ -17,7 +17,7 @@ from typing import Any, Dict, Optional
 from fastapi import APIRouter, HTTPException, Query, Request
 
 from db import db
-from dependencies import audit, current_user, require_permission
+from dependencies import audit, current_user, has_permission, require_permission
 from entity_scope import entity_ctx, resolve_list_scope, assert_entity_access
 from schemas_internal_request import (
     InternalRequestConvert, InternalRequestCreate, InternalRequestDecision,
@@ -112,10 +112,11 @@ async def get_request(req_id: str, request: Request) -> Dict[str, Any]:
 async def request_sources(req_id: str, request: Request) -> Dict[str, Any]:
     """Kandidat badan usaha sumber + stok & kesiapan harga internalnya.
 
-    Hanya peran lintas-entitas: isinya rincian stok badan usaha LAIN (E5.1).
+    Isinya rincian stok badan usaha LAIN (E5.1) → hanya yang boleh MEMILIH sumber: izin `internal_request.convert`
+    (PR-T2; dulu nama peran lintas-entitas — sama dengan `work_desks._assert_may_choose_source`).
     """
     actor = await require_permission(request, "internal_request", "view")
-    if not _is_cross(actor):
+    if not await has_permission(actor, "internal_request", "convert"):
         raise HTTPException(
             status_code=403,
             detail=("Rincian stok badan usaha lain bukan wewenang peran Anda. "

@@ -6,7 +6,7 @@ from fastapi import APIRouter, HTTPException, Request
 from entity_scope import entity_ctx
 from routers.ai_analytics import _ai_user
 from services import ai_actions, ai_insights
-from role_registry import role_in  # peran acuan dikenali (keputusan owner 2026-10-21)
+from dependencies import has_permission
 
 router = APIRouter(prefix="/api/ai")
 
@@ -37,7 +37,8 @@ async def get_insights(request: Request) -> List[Dict[str, Any]]:
 @router.post("/insights/scan")
 async def scan_insights(request: Request) -> Dict[str, Any]:
     user = await _ai_user(request)
-    if not role_in(user.get("role"), ("admin", "manager")):
-        raise HTTPException(status_code=403, detail="Hanya admin/manajer yang boleh memindai ulang")
+    if not await has_permission(user, "ai", "manage"):   # PR-T2 — dulu nama peran admin/manajer
+        raise HTTPException(status_code=403, detail=(
+            "Anda belum punya akses untuk memindai ulang peringatan. Minta Admin menambahkan akses 'Asisten Tanya KN'."))
     ctx = await entity_ctx(request)
     return await ai_insights.scan(None if ctx.view_all else ctx.active_entity_id)

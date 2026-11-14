@@ -38,7 +38,7 @@ SAMPLE_KINDS = {
 CATALOGUE_BASE_QTY = 1.0    # yard per warna tersedia
 CATALOGUE_SOFT_QTY = 2.0    # tambahan satu warna soft (komponen TERPISAH)
 SAMPLE_BILLINGS = ("free", "paid")
-SAMPLE_PAYMENT_APPROVERS = ("finance", "sample_admin", "manager", "admin")
+# PR-T2 — penyetuju bayar sample = izin `sample_order.approve_payment` (daftar peran SAMPLE_PAYMENT_APPROVERS dihapus).
 
 
 def norm_kind(kind: Optional[str]) -> str:

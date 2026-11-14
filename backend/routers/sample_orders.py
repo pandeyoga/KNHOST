@@ -13,12 +13,12 @@ from pydantic import BaseModel
 
 from core_utils import now_iso, safe_doc, strip_cost_fields
 from db import db
-from dependencies import audit, require_permission
+from dependencies import audit, has_permission, require_permission
 from entity_scope import assert_active_entity_access, entity_ctx, resolve_list_scope
 from services import sales_ownership, so_approvals
 from services.fulfillment_status import create_outbound_tasks_for_order, recompute_so_status
 from services.sales_order_helpers import norm_backorder, so_transition
-from services.sample_sale_service import SAMPLE_LIMITS, SAMPLE_PAYMENT_APPROVERS
+from services.sample_sale_service import SAMPLE_LIMITS
 from services.work_desk_service import _age_days, _queue, _row
 from role_registry import role_in  # peran acuan dikenali (keputusan owner 2026-10-21)
 
@@ -154,7 +154,7 @@ async def sample_desk(request: Request, entity_id: str = None) -> Dict[str, Any]
     gudang = await find({"status": {"$in": ["confirmed", "partially_picked", "picked"]}})
     kirim = await find({"status": {"$in": ["partially_shipped", "shipped", "delivered"]}})
     selesai = await find({"status": "done", "updated_at": {"$gte": _days_ago(7)}})
-    can_pay = role_in(actor.get("role"), SAMPLE_PAYMENT_APPROVERS)
+    can_pay = await has_permission(actor, "sample_order", "approve_payment")   # PR-T2 — sama dengan gerbang setujui bayar
     return {
         "title": "Meja Admin Sample", "role": actor.get("role"),
         "queues": [
@@ -177,9 +177,7 @@ async def sample_desk(request: Request, entity_id: str = None) -> Dict[str, Any]
 
 @router.post("/sample-orders/{order_id}/approve-payment")
 async def approve_payment(order_id: str, payload: NoteIn, request: Request) -> Dict[str, Any]:
-    actor = await require_permission(request, "sample_order", "approve_payment")
-    if not role_in(actor.get("role"), SAMPLE_PAYMENT_APPROVERS):
-        raise HTTPException(status_code=403, detail="Persetujuan pembayaran sample hanya oleh Finance atau Admin Sample.")
+    actor = await require_permission(request, "sample_order", "approve_payment")   # PR-T2 — gerbang nama peran dicabut
     order = await _load(order_id, request)
     if order.get("sample_billing") != "paid":
         raise HTTPException(status_code=400, detail=f"{order['number']} sample gratis — tidak ada pembayaran yang perlu disetujui.")

@@ -4,7 +4,7 @@
   GET /api/approvals/my-queue     — dokumen yang menunggu keputusan saya (4 tahap)
   GET /api/approvals/matrix-log   — jejak keputusan & pelanggaran (audit)
 
-Akses: peran penilai/approver (admin/manager) — sama seperti layar Divisi & Persetujuan.
+Akses: izin `approval.view` (membaca); keputusan dijaga izin & aturan di endpoint aslinya.
 Keputusan tetap dilakukan di endpoint aslinya (rnd/specs, rnd/samples, PR, special-orders)
 supaya tidak ada dua jalur penulisan status.
 """
@@ -15,31 +15,9 @@ from fastapi import APIRouter, HTTPException, Query, Request
 from dependencies import require_permission
 from entity_scope import entity_ctx
 from services import approval_matrix_service as amx
-from role_registry import role_in  # peran acuan dikenali (keputusan owner 2026-10-21)
 
 router = APIRouter(prefix="/api")
-
-APPROVER_ROLES = ("admin", "manager")
-
-
-def _assert_approver(actor: Dict[str, Any]) -> None:
-    """DIPENSIUNKAN (sesi 2026-08-15) — jangan dipakai untuk menjaga BACAAN.
-
-    Dulu ketiga endpoint di bawah memakai `require_permission("rnd","view")` **lalu**
-    pagar ini, yang menilai wewenang dari **literal peran**. Dua akibatnya nyata:
-      1. `sales_admin` diberi `approval: ["view"]` oleh keputusan pemilik E8.1b
-         ("melihat antrean, tanpa menyetujui") — izin itu **tidak pernah berlaku**
-         karena literal perannya bukan admin/manager. Wewenang di matriks jadi hiasan.
-      2. Izin yang diperiksa (`rnd.view`) tidak berhubungan dengan barang yang
-         dijaga (antrean persetujuan) — matriks izin dan kode saling bertentangan.
-    Kelas cacat ini yang dijaga INV-ROLE-01. Sekarang BACAAN dijaga
-    `approval.view`; MEMUTUSKAN tetap dijaga peringkat peran di
-    `services/approvals_matrix_service.py` (tidak diubah).
-    """
-    if not role_in((actor or {}).get("role"), APPROVER_ROLES):
-        raise HTTPException(status_code=403,
-                            detail="Hanya admin/manager (approver) yang dapat membuka "
-                                   "antrean & matriks persetujuan.")
+# PR-T2 — `_assert_approver`/`APPROVER_ROLES` (dipensiunkan 2026-08-15, tanpa pemanggil) dihapus.
 
 
 def _eid(entity_id: Optional[str], ctx) -> str:

@@ -18,11 +18,10 @@ from pymongo.collation import Collation
 
 from core_utils import qty_dual
 from db import db
-from role_registry import role_in
 from services import line_scope
 from services import master_cleanup_refs as refs
 from services.catalog_access import visible_query
-from services.master_usage_service import LIFECYCLE_ROLES
+from services.master_usage_service import may_retire
 
 KEEP, RENAME, RECODE, MERGE, DEACTIVATE = "PERTAHANKAN", "GANTI_NAMA", "GANTI_KODE", "GABUNG_KE", "NONAKTIFKAN"
 ACTIONS = (KEEP, RENAME, RECODE, MERGE, DEACTIVATE)
@@ -253,8 +252,9 @@ async def validate(actor: Dict[str, Any], raw_rows: List[Dict[str, Any]]) -> Dic
                              "errors": [], "warnings": ["Kolom perbaikan diisi tetapi tindakan PERTAHANKAN — diabaikan."],
                              "product_id": r["id"]})
     general: List[str] = []
-    if any(s["tindakan"] in RETIRING for s in plan) and not role_in(actor.get("role"), LIFECYCLE_ROLES):
-        general.append("Hanya Admin atau MD yang boleh menonaktifkan/menggantikan SKU (GANTI_KODE, GABUNG_KE, NONAKTIFKAN).")
+    if any(s["tindakan"] in RETIRING for s in plan) and not await may_retire(actor):   # PR-T2 — izin `product.retire`
+        general.append("Anda belum punya akses untuk menonaktifkan/menggantikan SKU (GANTI_KODE, GABUNG_KE, NONAKTIFKAN). "
+                       "Minta Admin menambahkan akses 'Produk, Kategori & Satuan'.")
     if len(raw_rows) > MAX_ROWS:
         general.append(f"Lembar memuat {len(raw_rows)} baris — maks. {MAX_ROWS} per unggahan.")
     n_err = sum(len(x["errors"]) for x in out_rows) + len(general)

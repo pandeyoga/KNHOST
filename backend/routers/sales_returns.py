@@ -9,7 +9,6 @@ from pydantic import BaseModel
 from db import db
 from dependencies import require_permission, require_any_permission, audit, has_permission
 from core_utils import now_iso, new_id, strip_cost_fields, COST_SAFE_ROLES
-from role_registry import role_in
 from entity_scope import (entity_ctx, resolve_list_scope, assert_entity_access,
                           resolve_scope_ids)
 from schemas import (SalesReturnCreate, SalesReturnDecision, ReturnRollDecisionsIn,
@@ -705,7 +704,7 @@ class RollBackShipmentIn(BaseModel):
 
 
 def _hide_cost(out: Dict[str, Any], user: Dict[str, Any]) -> Dict[str, Any]:
-    if role_in(user.get("role"), COST_SAFE_ROLES):   # S-10 — HPP hanya untuk admin/manajer
+    if (user.get("role") or "") in COST_SAFE_ROLES:   # S-10 — HPP hanya untuk pemegang `costing.view` (PR-T2)
         return out
     out = dict(out)
     out["journal"] = [ln for ln in out.get("journal") or [] if not ln.get("cost")]
@@ -850,7 +849,7 @@ async def settle_preview(return_id: str, request: Request, payload: SalesReturnS
             _exchange_allowed(existing)
         except HTTPException as e:
             out["blocked"] = e.detail
-    if not role_in(user.get("role"), COST_SAFE_ROLES):   # S-10 — HPP hanya untuk admin/manajer
+    if (user.get("role") or "") not in COST_SAFE_ROLES:   # S-10 — HPP hanya untuk pemegang `costing.view` (PR-T2)
         out["journal"] = [ln for ln in out["journal"] if not ln.get("cost")]
         out.pop("cogs_amount", None)
         out["cost_hidden"] = True

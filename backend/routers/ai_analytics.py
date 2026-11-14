@@ -4,25 +4,25 @@ from typing import Any, Dict, List, Optional
 from fastapi import APIRouter, HTTPException, Query, Request
 
 from db import db
-from dependencies import audit, current_user, require_role
+from dependencies import audit, has_permission, require_permission
 from entity_scope import entity_ctx
 from services import analytics_catalog as cat
 from services import analytics_engine as engine
 from services import analytics_facts as facts
-from role_registry import role_in  # peran acuan dikenali (keputusan owner 2026-10-21)
 
 router = APIRouter(prefix="/api/ai")
 
-AI_ROLES = ("admin", "manager", "sales_admin", "finance", "md", "warehouse_admin", "sales")
+_DENY_AI = "Anda belum punya akses untuk memakai asisten Tanya KN. Minta Admin menambahkan akses 'Asisten Tanya KN'."
 
 
 async def _ai_user(request: Request) -> Dict[str, Any]:
-    from services.config_resolver import value_of
-    user = await current_user(request)
-    roles = await value_of("ai.enabled_roles") or list(AI_ROLES)
-    if user.get("role") != "admin" and not role_in(user.get("role"), roles):
-        raise HTTPException(status_code=403, detail="Asisten analitik belum dibuka untuk peran Anda")
-    return user
+    """PR-T2 — membuka asisten = izin `ai.view` (dulu daftar peran di pengaturan `ai.enabled_roles`)."""
+    return await require_permission(request, "ai", "view", detail=_DENY_AI)
+
+
+async def _sees_all(user: Dict[str, Any]) -> bool:
+    """PR-T2 — membuka hasil/sesi/jadwal milik pengguna lain = izin `ai.configure` (dulu peran `admin` persis)."""
+    return await has_permission(user, "ai", "configure")
 
 
 async def _run(fn, payload: Dict[str, Any], request: Request) -> Dict[str, Any]:
@@ -56,21 +56,21 @@ async def post_analyze_change(payload: Dict[str, Any], request: Request) -> Dict
 async def get_result(result_id: str, request: Request) -> Dict[str, Any]:
     user = await _ai_user(request)
     doc = await db.ai_results.find_one({"result_id": result_id}, {"_id": 0, "expires_at": 0})
-    if not doc or (doc.get("user_id") != user["id"] and user.get("role") != "admin"):
+    if not doc or (doc.get("user_id") != user["id"] and not await _sees_all(user)):
         raise HTTPException(status_code=404, detail="Hasil tidak ditemukan atau sudah kedaluwarsa")
     return doc
 
 
 @router.get("/facts/status")
 async def facts_status(request: Request) -> Dict[str, Any]:
-    await require_role(request, ["admin", "manager"])
+    await require_permission(request, "ai", "manage")
     st = await db.ai_fact_state.find_one({"id": facts.STATE_ID}, {"_id": 0}) or {}
     return {**st, "rows": await db.fact_sales_lines.count_documents({})}
 
 
 @router.post("/facts/rebuild")
 async def facts_rebuild(request: Request, date_from: Optional[str] = Query(None, alias="from")) -> Dict[str, Any]:
-    actor = await require_role(request, ["admin"])
+    actor = await require_permission(request, "ai", "configure")
     res = await facts.rebuild_facts(date_from)
     await audit(actor.get("name", ""), "ai_facts_rebuild", "fact_sales_lines", facts.STATE_ID, res)
     return res
@@ -88,7 +88,8 @@ async def list_templates(request: Request) -> Dict[str, Any]:
     from services import ai_templates
     user = await _ai_user(request)
     return {"version": ai_templates.TEMPLATES["version"], "groups": ai_templates.GROUP_ORDER,
-            "period_presets": ai_templates.PERIOD_PRESETS, "templates": ai_templates.for_role(user.get("role") or "")}
+            "period_presets": ai_templates.PERIOD_PRESETS,
+            "templates": ai_templates.available(await ai_templates.allowed_ids(user))}
 
 
 @router.post("/templates/{template_id}/run")
@@ -159,7 +160,7 @@ async def delete_session(session_id: str, request: Request) -> Dict[str, Any]:
 @router.get("/sessions/{session_id}")
 async def get_session(session_id: str, request: Request) -> Dict[str, Any]:
     user = await _ai_user(request)
-    q = {"id": session_id} if user.get("role") == "admin" else {"id": session_id, "user_id": user["id"]}
+    q = {"id": session_id} if await _sees_all(user) else {"id": session_id, "user_id": user["id"]}
     doc = await db.ai_chat_sessions.find_one(q, {"_id": 0, "items": 0})
     if not doc:
         raise HTTPException(status_code=404, detail="Sesi tidak ditemukan")
@@ -252,8 +253,10 @@ async def export_answer(request: Request, ids: str = ""):
 
 
 # ── F4 — narasi AI, template pribadi, laporan terjadwal · F5 — snapshot · biaya ─────
-async def _owned_results(ids: List[str], user) -> List[Dict[str, Any]]:
-    q = {"result_id": {"$in": ids[:20]}} if user.get("role") == "admin" else {"result_id": {"$in": ids[:20]}, "user_id": user["id"]}
+async def _owned_results(ids: List[str], user, *, all_users: Optional[bool] = None) -> List[Dict[str, Any]]:
+    if all_users is None:
+        all_users = await _sees_all(user)
+    q = {"result_id": {"$in": ids[:20]}} if all_users else {"result_id": {"$in": ids[:20]}, "user_id": user["id"]}
     docs = {d["result_id"]: d async for d in db.ai_results.find(q, {"_id": 0, "expires_at": 0})}
     return [docs[i] for i in ids if i in docs]
 
@@ -264,7 +267,7 @@ async def post_narrative(payload: Dict[str, Any], request: Request) -> Dict[str,
     from services.ai_narrative import narrate
     user = await _ai_user(request)
     tpl = ai_templates.BY_ID.get(payload.get("template_id") or "")
-    if not tpl or (user.get("role") != "admin" and not role_in(user.get("role"), tpl["roles"])):
+    if not tpl or not await has_permission(user, "ai_template", tpl["id"]):   # PR-T2 — izin per templat
         raise HTTPException(status_code=404, detail="Template tidak ditemukan")
     results = await _owned_results([str(x) for x in payload.get("result_ids") or []], user)
     if not results:
@@ -305,7 +308,7 @@ async def delete_my_template(template_id: str, request: Request) -> Dict[str, An
 
 
 async def _own_schedule(schedule_id: str, user) -> Dict[str, Any]:
-    q = {"id": schedule_id} if user.get("role") == "admin" else {"id": schedule_id, "user_id": user["id"]}
+    q = {"id": schedule_id} if await _sees_all(user) else {"id": schedule_id, "user_id": user["id"]}
     doc = await db.ai_schedules.find_one(q, {"_id": 0})
     if not doc:
         raise HTTPException(status_code=404, detail="Jadwal tidak ditemukan")
@@ -321,13 +324,13 @@ async def list_schedules(request: Request) -> List[Dict[str, Any]]:
 @router.post("/schedules")
 async def create_schedule(payload: Dict[str, Any], request: Request) -> Dict[str, Any]:
     from core_utils import new_id, now_iso
-    from services import ai_schedules
+    from services import ai_schedules, ai_templates
     user = await _ai_user(request)
     ctx = await entity_ctx(request)
     if await db.ai_schedules.count_documents({"user_id": user["id"]}) >= 20:
         raise HTTPException(status_code=400, detail="Maksimal 20 jadwal per pengguna")
     try:
-        body = ai_schedules.validate(payload, user.get("role") or "")
+        body = ai_schedules.validate(payload, await ai_templates.allowed_ids(user))
     except ai_schedules.ScheduleError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
     doc = {"id": new_id("aisch"), "user_id": user["id"], "user_name": user.get("name"), "entity_id": ctx.active_entity_id,
@@ -338,11 +341,12 @@ async def create_schedule(payload: Dict[str, Any], request: Request) -> Dict[str
 
 @router.patch("/schedules/{schedule_id}")
 async def update_schedule(schedule_id: str, payload: Dict[str, Any], request: Request) -> Dict[str, Any]:
-    from services import ai_schedules
+    from services import ai_schedules, ai_templates
     user = await _ai_user(request)
     cur = await _own_schedule(schedule_id, user)
     try:
-        body = ai_schedules.validate({**cur, **payload, "template_id": cur["template_id"]}, user.get("role") or "")
+        body = ai_schedules.validate({**cur, **payload, "template_id": cur["template_id"]},
+                                     await ai_templates.allowed_ids(user))
     except ai_schedules.ScheduleError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
     if "active" in payload:
@@ -377,26 +381,28 @@ async def list_schedule_runs(request: Request, schedule_id: str = "") -> List[Di
 @router.get("/schedule-runs/{run_id}")
 async def get_schedule_run(run_id: str, request: Request) -> Dict[str, Any]:
     user = await _ai_user(request)
-    q = {"id": run_id} if user.get("role") == "admin" else {"id": run_id, "user_id": user["id"]}
+    semua = await _sees_all(user)
+    q = {"id": run_id} if semua else {"id": run_id, "user_id": user["id"]}
     run = await db.ai_schedule_runs.find_one(q, {"_id": 0})
     if not run:
         raise HTTPException(status_code=404, detail="Riwayat laporan tidak ditemukan")
-    owner = {"id": run["user_id"], "role": "admin" if user.get("role") == "admin" else user.get("role")}
-    run["results"] = {r["result_id"]: r for r in await _owned_results(run.get("result_ids") or [], owner)}
+    owner = {"id": run["user_id"]}
+    run["results"] = {r["result_id"]: r for r in await _owned_results(run.get("result_ids") or [], owner,
+                                                                       all_users=semua)}
     return run
 
 
 @router.get("/snapshots/status")
 async def snapshots_status(request: Request) -> Dict[str, Any]:
     from services import analytics_snapshots
-    await require_role(request, ["admin", "manager"])
+    await require_permission(request, "ai", "manage")
     return await analytics_snapshots.status()
 
 
 @router.post("/snapshots/run")
 async def snapshots_run(request: Request) -> Dict[str, Any]:
     from services import analytics_snapshots
-    actor = await require_role(request, ["admin"])
+    actor = await require_permission(request, "ai", "configure")
     res = await analytics_snapshots.job_snapshot_daily()
     await audit(actor.get("name", ""), "ai_snapshot_run", "fact_stock_daily", "daily", res)
     return res
@@ -406,7 +412,7 @@ async def snapshots_run(request: Request) -> Dict[str, Any]:
 async def usage_summary(request: Request) -> Dict[str, Any]:
     from services import ai_cost
     from services.analytics_time import now_wib
-    await require_role(request, ["admin", "manager"])
+    await require_permission(request, "ai", "manage")
     start = now_wib().replace(day=1, hour=0, minute=0, second=0, microsecond=0).isoformat()
     rows = await db.ai_usage_log.aggregate([
         {"$match": {"feature": {"$regex": "^bi_"}, "created_at": {"$gte": start}, "demo": {"$ne": True}}},
@@ -422,9 +428,9 @@ async def usage_summary(request: Request) -> Dict[str, Any]:
 
 @router.get("/usage/daily")
 async def usage_daily(request: Request, days: int = 30, scope: str = "bi") -> Dict[str, Any]:
-    """Halaman Biaya AI: owner/admin + peran yang boleh memakai asisten (`ai.enabled_roles`)."""
+    """Halaman Biaya AI: pemegang izin asisten (`ai.view`)."""
     from services import ai_usage_report
     user = await _ai_user(request)
-    # KN-E44 — selain admin/manager hanya melihat pemakaiannya sendiri.
-    only = None if role_in(user.get("role"), ("admin", "manager")) else user["id"]
+    # KN-E44 — tanpa izin `ai.manage` (PR-T2; dulu admin/manager) hanya melihat pemakaiannya sendiri.
+    only = None if await has_permission(user, "ai", "manage") else user["id"]
     return await ai_usage_report.daily_report(days, scope, only_user_id=only)

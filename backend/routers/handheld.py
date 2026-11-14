@@ -12,7 +12,7 @@ from typing import Any, Dict, List, Optional
 from fastapi import APIRouter, Query, Request
 from pydantic import BaseModel, Field
 
-from dependencies import audit, require_permission, require_role
+from dependencies import audit, require_permission
 from services import handheld_core as core
 from services import handheld_devices as devs
 from services import handheld_sync as sync
@@ -305,7 +305,7 @@ async def list_devices(request: Request) -> Dict[str, Any]:
 
 @router.post("/devices")
 async def create_device(payload: DeviceCreateIn, request: Request) -> Dict[str, Any]:
-    actor = await require_role(request, ["admin"])
+    actor = await require_permission(request, "rfid_device", "configure")
     out = await devs.create(payload.model_dump(), actor["name"])
     await audit(actor["name"], "handheld_device_created", "rfid_device", out["device"]["id"],
                 {"code": out["device"].get("code"), "warehouse_id": payload.warehouse_id, "scope_level": payload.scope_level})
@@ -314,7 +314,7 @@ async def create_device(payload: DeviceCreateIn, request: Request) -> Dict[str, 
 
 @router.post("/devices/{device_id}/rotate-key")
 async def rotate_key(device_id: str, request: Request, base_url: str = "") -> Dict[str, Any]:
-    actor = await require_role(request, ["admin"])
+    actor = await require_permission(request, "rfid_device", "configure")
     out = await devs.rotate_key(device_id, base_url)
     await audit(actor["name"], "rfid_device_key_issued", "rfid_device", device_id, {"regenerate": True, "via": "handheld"})
     return out
@@ -322,7 +322,7 @@ async def rotate_key(device_id: str, request: Request, base_url: str = "") -> Di
 
 @router.post("/devices/{device_id}/revoke")
 async def revoke(device_id: str, payload: RevokeIn, request: Request) -> Dict[str, Any]:
-    actor = await require_role(request, ["admin", "warehouse_admin"])
+    actor = await require_permission(request, "rfid_device", "revoke")
     out = await devs.revoke(device_id, payload.reason, actor["name"])
     await audit(actor["name"], "handheld_device_revoked", "rfid_device", device_id, {}, reason=payload.reason.strip())
     return out
@@ -330,7 +330,7 @@ async def revoke(device_id: str, payload: RevokeIn, request: Request) -> Dict[st
 
 @router.post("/devices/{device_id}/enable")
 async def enable(device_id: str, request: Request) -> Dict[str, Any]:
-    actor = await require_role(request, ["admin"])
+    actor = await require_permission(request, "rfid_device", "configure")
     out = await devs.enable(device_id)
     await audit(actor["name"], "handheld_device_enabled", "rfid_device", device_id, {})
     return out
@@ -338,7 +338,7 @@ async def enable(device_id: str, request: Request) -> Dict[str, Any]:
 
 @router.put("/devices/{device_id}/profile")
 async def set_profile(device_id: str, payload: ProfileIn, request: Request) -> Dict[str, Any]:
-    actor = await require_role(request, ["admin"])
+    actor = await require_permission(request, "rfid_device", "configure")
     out = await devs.set_profile(device_id, payload.profile, payload.scope_level)
     await audit(actor["name"], "handheld_profile_set", "rfid_device", device_id,
                 {"profile_version": out.get("profile_version"), "scope_level": out.get("scope_level")})

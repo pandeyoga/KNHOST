@@ -3,7 +3,7 @@ from typing import Any, Dict, List, Optional
 from fastapi import APIRouter, HTTPException, Request, Response
 from pymongo import ReturnDocument
 from db import db
-from dependencies import require_permission, audit
+from dependencies import has_permission, require_permission, audit
 from core_utils import new_id, now_iso, safe_doc, DEFAULT_ENTITY_ID
 from entity_scope import entity_ctx, resolve_work_scope, assert_entity_access
 from schemas import ScannerScan, WMSTaskCreate
@@ -191,9 +191,9 @@ async def location_scope_summary(request: Request) -> Dict[str, Any]:
 async def takeover_task(task_id: str, payload: Dict[str, Any], request: Request) -> Dict[str, Any]:
     """IMP-20/DEC-09 — supervisor mengambil alih tugas lokasi lain; alasan wajib & tercatat."""
     actor = await require_permission(request, "wms", "update")
-    from services import location_scope
-    if not location_scope.is_supervisor(actor):
-        raise HTTPException(status_code=403, detail="Hanya supervisor gudang, manajer, atau admin yang boleh mengambil alih tugas.")
+    if not await has_permission(actor, "wms", "approve"):   # PR-T2 — dulu nama peran supervisor gudang/manajer/admin
+        raise HTTPException(status_code=403, detail=(
+            "Anda belum punya akses untuk mengambil alih tugas. Minta Admin menambahkan akses 'Operasi Gudang (WMS)'."))
     reason = str((payload or {}).get("reason") or "").strip()
     if len(reason) < 5:
         raise HTTPException(status_code=400, detail="Alasan mengambil alih wajib diisi (minimal 5 karakter).")

@@ -18,7 +18,6 @@ from fastapi import HTTPException
 
 from core_utils import new_id, now_iso, safe_doc
 from db import db
-from role_registry import role_in
 from services import atomic_claim
 from services import master_cleanup_validate as mv
 from services import master_governance_service as mg
@@ -284,8 +283,10 @@ async def rollback_cleanup(batch_id: str, reason: str, actor: Dict[str, Any]) ->
     if head.get("status") not in ROLLBACKABLE:
         raise HTTPException(status_code=409, detail=f"Batch berstatus '{head.get('status')}' — tidak bisa dibatalkan.")
     if any(c.get("tindakan") in mv.RETIRING for c in head.get("changes") or []) and \
-            not role_in(actor.get("role"), mu.LIFECYCLE_ROLES):
-        raise HTTPException(status_code=403, detail="Hanya Admin atau MD yang boleh membatalkan batch yang menggantikan SKU.")
+            not await mu.may_retire(actor):   # PR-T2 — izin `product.retire`
+        raise HTTPException(status_code=403, detail=(
+            "Anda belum punya akses untuk membatalkan batch yang menggantikan SKU. Minta Admin menambahkan akses "
+            "'Produk, Kategori & Satuan'."))
     b = await atomic_claim.claim(COLL, batch_id, "rollback", precondition={"status": {"$in": ROLLBACKABLE}},
                                  actor=actor.get("name", ""))
     done, skipped = [], []

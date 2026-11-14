@@ -7,7 +7,7 @@ import hashlib
 import json
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any, Collection, Dict, List, Optional, Set
 
 from db import db
 from services import ai_tools
@@ -23,18 +23,29 @@ GROUP_ORDER = ["Harian", "Penjualan", "Keuangan", "Stok", "Pembelian", "Eksekuti
 PERIOD_PRESETS = ["today", "this_week", "mtd", "last_month", "last_90d", "ytd"]
 
 
-def for_role(role: str) -> List[Dict[str, Any]]:
+async def allowed_ids(user: Dict[str, Any]) -> Set[str]:
+    """PR-T2 — templat yang boleh dipakai `user` = aksi izin `ai_template.<id templat>` di matriks perannya.
+
+    Field `roles` di JSON templat hanya sumber nilai BAWAAN (`permissions_config`); tidak dibaca di sini."""
+    from dependencies import permission_matrix
+    acts = ((await permission_matrix()).get((user or {}).get("role") or "", {}) or {}).get("ai_template") or []
+    return set(BY_ID) if "*" in acts else {a for a in acts if a in BY_ID}
+
+
+def available(allowed: Collection[str]) -> List[Dict[str, Any]]:
+    """Templat yang ditawarkan (urut grup) dari himpunan id templat berizin (`allowed_ids`)."""
     out = []
     for t in TEMPLATES["templates"]:
-        if role == "admin" or role in t["roles"]:
+        if t["id"] in allowed:
             out.append({k: t[k] for k in ("id", "title", "group", "prompt", "params", "narrative")}
                        | {"has_period": any("period" in s["args"] and s["args"]["period"] for s in t["steps"])})
     return sorted(out, key=lambda t: GROUP_ORDER.index(t["group"]) if t["group"] in GROUP_ORDER else 99)
 
 
-def suggest(question: str, role: str, n: int = 3) -> List[Dict[str, Any]]:
+def suggest(question: str, allowed: Collection[str], n: int = 3) -> List[Dict[str, Any]]:
     q = question.lower()
-    scored = [(difflib.SequenceMatcher(None, q, (t["prompt"] + " " + t["title"]).lower()).ratio(), t) for t in for_role(role)]
+    scored = [(difflib.SequenceMatcher(None, q, (t["prompt"] + " " + t["title"]).lower()).ratio(), t)
+              for t in available(allowed)]
     return [t for s, t in sorted(scored, key=lambda x: -x[0])[:n]]
 
 
@@ -44,11 +55,11 @@ def _similar(a: str, b: str) -> float:
     return min(difflib.SequenceMatcher(None, a, b).ratio(), len(ta & tb) / len(ta | tb) if ta | tb else 0.0)
 
 
-def route(question: str, role: str, threshold_pct: int) -> Optional[Dict[str, Any]]:
+def route(question: str, allowed: Collection[str], threshold_pct: int) -> Optional[Dict[str, Any]]:
     """F5 — pertanyaan yang hampir sama dengan template (≥ ambang) dijalankan sebagai template."""
     q = question.lower().strip(" ?.!")
     best, score = None, 0.0
-    for t in for_role(role):
+    for t in available(allowed):
         if any(p.get("required") for p in t["params"]):
             continue
         s = max(_similar(q, x.lower().strip(" ?.!")) for x in (t["prompt"], t["title"]))
@@ -111,7 +122,7 @@ def _resolve(ref: str, results: List[Dict[str, Any]]) -> Optional[str]:
 async def run(template_id: str, params: Dict[str, Any], user, ctx, session_id: Optional[str] = None,
               use_cache: bool = True) -> Dict[str, Any]:
     t = BY_ID.get(template_id)
-    if not t or (user.get("role") != "admin" and user.get("role") not in t["roles"]):
+    if not t or template_id not in await allowed_ids(user):   # PR-T2 — izin `ai_template.<id>`
         raise ai_tools.engine.AnalyticsError("Template tidak ditemukan untuk peran Anda.")
     for p in t["params"]:
         if p.get("required") and not params.get(p["name"]):

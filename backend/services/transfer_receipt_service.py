@@ -429,7 +429,7 @@ async def receive(transfer: Dict[str, Any], body: Any, actor: Dict[str, Any]) ->
     await _rfz.assert_transfer_movable(transfer, "in", to_bin_id=((node or {}).get("bin") or {}).get("id", ""))
     override = (body.rule_exception_reason or "").strip()
     if override:
-        pr.assert_supervisor(actor, "memberi pengecualian aturan gudang saat terima")
+        await pr.assert_supervisor(actor, "memberi pengecualian aturan gudang saat terima")
         _reason(override, "Alasan pengecualian aturan")
     results: List[Dict[str, Any]] = []
     # Validasi SEMUA baris dulu — tidak ada roll yang mendarat bila satu baris tidak sah.
@@ -563,7 +563,7 @@ async def report(transfer: Dict[str, Any], body: Any, actor: Dict[str, Any]) -> 
 
 
 async def resolve(transfer: Dict[str, Any], exc_id: str, body: Any, actor: Dict[str, Any]) -> Dict[str, Any]:
-    pr.assert_supervisor(actor, "menyelesaikan exception transfer")
+    await pr.assert_supervisor(actor, "menyelesaikan exception transfer")
     exc = next((e for e in transfer.get("exceptions") or [] if e["id"] == exc_id), None)
     if not exc or exc.get("status") != "open":
         raise HTTPException(status_code=404, detail="Exception terbuka tidak ditemukan.")

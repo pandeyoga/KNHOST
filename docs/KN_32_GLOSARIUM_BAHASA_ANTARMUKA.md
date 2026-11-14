@@ -162,3 +162,25 @@ memakai kalimat persis di kolom "Teks".
 |---|---|---|---|
 | Nilai disembunyikan | "Nilai disembunyikan" + petunjuk "Peran Anda tidak punya akses lihat modul dokumen ini." | Nominal dokumen yang modul sumbernya tidak boleh dilihat peran pembaca. Server mengirim `amount: null`, `amount_hidden: true`; nomor, jenis, status, dan tanggal tetap tampil, tombol buka dan cetak simpul itu mati. Kartu ringkasan yang nilainya disembunyikan menulis "—" | PK-17 · Jejak Dokumen (graf, pencarian, cetak), Referensi Dokumen, Kontrabon, kartu saldo Antar-PT ("Saldo antar-PT hanya untuk peran berizin keuangan antar-PT.") |
 | Kelola rekening kas & bank | "Kelola rekening kas & bank" | Izin `cash.configure` (modul "Kas, Bank & Kasus Keuangan"): membuat dan mengubah rekening kas/bank. Terpisah dari mencatat transaksi kas (`cash.create`). Pesan 403: "Anda belum punya akses untuk mengelola rekening kas dan bank. Minta Admin menambahkan akses 'Kas, Bank & Kasus Keuangan'." | PK-17 · Peran & Hak Akses (label aksi), Kas & Bank › Rekening |
+
+### 9.1 Modul akses & aksi pengganti nama peran (PR-T2)
+
+Wewenang yang dulu ditentukan nama peran kini izin yang tampil di **Peran & Hak Akses** (`backend/access_modules.py`).
+Label modul/sumber daya/aksi di bawah adalah teks layar editor peran; pesan 403 dipetakan pusat di PR-T6.
+
+| Modul (grup) | Sumber daya — label | Aksi baru (label) |
+|---|---|---|
+| **Pengawasan Tim Sales & Kredit** (Penjualan) | `sales_force` — "Tim Sales: Target, Insentif & Penugasan"; `credit_override` — "Pengecualian Batas Kredit" | `sales_force.post` "Catat akrual ke buku besar", `sales_force.assign` "Pindahkan pelanggan ke sales lain" |
+| **HPP & Margin Produk** (Alat, sensitif) | `costing` — "HPP & Margin Produk" | `view` — juga menentukan kolom biaya/HPP di jawaban server |
+| **Beranda Manajer** (Alat) | `manager_home` — "Beranda Manajer" | `view` |
+| **Kebersihan Data & Alat Sistem** (Organisasi, sensitif) | `system_tools` — "Kebersihan Data & Alat Sistem" | `configure` "Jalankan & kembalikan pembersihan, lepas kunci proses" |
+| **Perangkat RFID & Handheld** (Gudang, sensitif) | `rfid_device` — "Perangkat RFID & Handheld" | `configure` "Daftarkan & atur perangkat", `revoke` "Cabut akses perangkat" |
+| **Asisten Tanya KN** (Alat) | `ai` — "Asisten Tanya KN"; `ai_template` — "Templat Laporan Tanya KN" | `view_margin` "Lihat margin & laba kotor", `view_stock_value` "Lihat nilai persediaan", `ai.manage` "Lihat pemakaian & atur aturan asisten", `ai.configure` "Pengaturan teknis asisten & buka riwayat pengguna lain"; satu aksi per templat (label = judul templat) |
+
+Aksi baru pada sumber daya lama: `rnd.manage_org` "Kelola divisi R&D", `rnd.report` "Laporan penilaian desainer & papan
+SLA", `rnd.extend_rounds` "Buka ronde di atas batas", `goods_receipt.configure` "Ganti mode penerimaan",
+`warehouse.configure` "Ubah struktur & profil gudang", `accounting.reopen` "Buka kembali periode & tembus blokir akun
+sementara", `inspection.release` "Lepas / tolak tahanan barang", `product.retire` "Nonaktifkan / hapus permanen master",
+`sales_return.treat_cutloss` "Pilih potongan cacat: masuk BS atau dibuang", `od_pricing.unlock` "Buka kunci harga final".
+Pengaturan yang digantikan izin ini berstatus "tidak dipakai" dengan alasan "Diatur di Peran & Hak Akses › …"
+(`ai.enabled_roles`, `ai.margin_roles`, `ai.stock_value_roles`, `returns.cutloss_treatment_roles`).

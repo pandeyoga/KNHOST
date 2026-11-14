@@ -8,10 +8,9 @@ from typing import Any, Dict, List, Optional
 from fastapi import APIRouter, Request, Query, HTTPException
 from pydantic import BaseModel
 
-from dependencies import require_permission, audit
+from dependencies import has_permission, require_permission, audit
 from entity_scope import entity_ctx
 from services import closing_service as cs
-from role_registry import role_in
 
 router = APIRouter(prefix="/api")
 
@@ -75,8 +74,8 @@ async def close_period(payload: CloseRequest, request: Request) -> Dict[str, Any
     """Tutup buku periode: buat jurnal penutup otomatis + tandai tertutup."""
     actor = await require_permission(request, "accounting", "manage")
     eid = await _resolve_entity(request, payload.entity_id)
-    # K-15 — hanya admin yang boleh menembus blokir Suspense (aturan peran sama dengan Reopen).
-    is_admin = role_in(actor.get("role"), ("admin",)) or actor.get("role") == "system/demo"
+    # K-15 — menembus blokir Suspense = izin yang sama dengan Reopen (`accounting.reopen`, PR-T2; dulu nama peran admin).
+    is_admin = await has_permission(actor, "accounting", "reopen")
     try:
         rec = await cs.close_period(payload.period_type, payload.period_key, actor, eid, payload.note or "",
                                     suspense_override_reason=payload.suspense_override_reason or "",
@@ -103,10 +102,11 @@ async def close_period(payload: CloseRequest, request: Request) -> Dict[str, Any
 
 @router.post("/finance/closing/{closing_id}/reopen")
 async def reopen_period(closing_id: str, request: Request) -> Dict[str, Any]:
-    """Buka kembali periode (admin only): void jurnal penutup + status reopened."""
+    """Buka kembali periode (izin `accounting.reopen`, bawaan admin): void jurnal penutup + status reopened."""
     actor = await require_permission(request, "accounting", "manage")
-    if actor.get("role") not in ("admin", "system/demo"):
-        raise HTTPException(status_code=403, detail="Hanya admin yang dapat membuka kembali periode.")
+    if not await has_permission(actor, "accounting", "reopen"):   # PR-T2 — dulu nama peran admin
+        raise HTTPException(status_code=403, detail=(
+            "Anda belum punya akses untuk membuka kembali periode. Minta Admin menambahkan akses 'Akuntansi & Tutup Buku'."))
     try:
         rec = await cs.reopen_period(closing_id, actor)
     except ValueError as e:

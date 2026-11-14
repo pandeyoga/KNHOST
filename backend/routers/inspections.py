@@ -71,7 +71,7 @@ async def meta(request: Request, entity_id: str = Query("")) -> Dict[str, Any]:
                         "group": "Petugas QC" if u.get("dedicated") else "Peran lain"}
                        for u in officers]
     out["role"] = (actor or {}).get("role", "")
-    out["can_release_hold"] = (actor or {}).get("role") in svc.HOLD_RELEASE_ROLES
+    out["can_release_hold"] = await has_permission(actor, "inspection", "release")   # PR-T2 — sama dengan gerbang lepas
     out["can_md_quality"] = await has_permission(actor, "md_quality", "inspect")
     out["can_md_quality_decide"] = await has_permission(actor, "md_quality", "decide")
     out["can_qc"] = await has_permission(actor, "qc", "inspect")
@@ -461,7 +461,7 @@ async def ref_doc_options(request: Request, kind: str = Query(""),
     # tetap butuh `inspection.create` — pagarnya di `POST /api/inspections`, bukan di
     # sini. Menyembunyikan daftar tidak menambah keamanan, hanya menambah kebingungan.
     return {"items": out, "kind": want,
-            "can_create": bool((actor or {}).get("role") in ("admin", "manager"))}
+            "can_create": await has_permission(actor, "inspection", "create")}   # PR-T2 — = gerbang POST /inspections
 
 
 @router.get("/inspections/{ins_id}/pdf")

@@ -8,9 +8,7 @@ from typing import Any, Dict, List
 from fastapi import HTTPException
 
 from db import db
-from role_registry import role_in  # peran acuan dikenali (keputusan owner 2026-10-21)
 
-LIFECYCLE_ROLES = {"admin", "md"}
 
 _PRODUCT_REFS = [
     ("inventory_rolls", {"product_id": "{id}"}, "Roll stok"),
@@ -61,17 +59,26 @@ async def usage(kind: str, mid: str) -> Dict[str, Any]:
     return {"kind": kind, "id": mid, "name": doc.get("name") or doc.get("supplier_sku") or doc.get("code") or mid,
             "status": doc.get("status", "active"), "in_use": bool(rows), "refs": rows,
             "can_delete": not rows,
-            "policy": ("Dipakai stok/transaksi: tidak bisa dihapus, hanya dinonaktifkan/diarsipkan oleh Admin atau MD."
-                       if rows else "Belum pernah dipakai: boleh dihapus permanen oleh Admin atau MD.")}
+            "policy": ("Dipakai stok/transaksi: tidak bisa dihapus, hanya dinonaktifkan/diarsipkan oleh pemegang akses "
+                       "'Nonaktifkan / hapus permanen master' (bawaan Admin & MD)."
+                       if rows else "Belum pernah dipakai: boleh dihapus permanen oleh pemegang akses 'Nonaktifkan / "
+                                    "hapus permanen master' (bawaan Admin & MD).")}
 
 
-def assert_lifecycle_role(actor: Dict[str, Any], action: str = "menonaktifkan master") -> None:
-    if not role_in((actor or {}).get("role"), LIFECYCLE_ROLES):
-        raise HTTPException(status_code=403, detail=f"Hanya Admin atau MD yang boleh {action}.")
+async def may_retire(actor: Dict[str, Any]) -> bool:
+    """PR-T2 — menonaktifkan/menggantikan/menghapus permanen master = izin `product.retire` (dulu nama peran admin/MD)."""
+    from dependencies import has_permission
+    return await has_permission(actor or {}, "product", "retire")
+
+
+async def assert_lifecycle_role(actor: Dict[str, Any], action: str = "menonaktifkan master") -> None:
+    if not await may_retire(actor):
+        raise HTTPException(status_code=403, detail=(
+            f"Anda belum punya akses untuk {action}. Minta Admin menambahkan akses 'Produk, Kategori & Satuan'."))
 
 
 async def purge(kind: str, mid: str, actor: Dict[str, Any]) -> Dict[str, Any]:
-    assert_lifecycle_role(actor, "menghapus master")
+    await assert_lifecycle_role(actor, "menghapus master")
     info = await usage(kind, mid)
     if info["in_use"]:
         refs = ", ".join(f"{r['label']} ({r['count']})" for r in info["refs"])

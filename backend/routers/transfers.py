@@ -570,7 +570,7 @@ async def approve_transfer(transfer_id: str, payload: TransferApprove, request: 
                     "message": (f"{len(viol)} roll melanggar aturan gudang untuk pemilik baru: {viol[0]['violations'][0]} "
                                 "Pindahkan dulu ke gudang yang boleh, atau supervisor memberi pengecualian beralasan.")})
             from services import placement_rules as _pr
-            _pr.assert_supervisor(actor, "memberi pengecualian aturan gudang")
+            await _pr.assert_supervisor(actor, "memberi pengecualian aturan gudang")
             if len(reason) < 5:
                 raise HTTPException(status_code=400, detail="Alasan pengecualian minimal 5 karakter.")
             rule_exc = {"by": actor["name"], "reason": reason, "at": now_iso(), "violations": viol[:20]}

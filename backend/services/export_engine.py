@@ -47,7 +47,7 @@ def _has(perms: Dict[str, List[str]], perm: Optional[tuple]) -> bool:
 def _col_denied(col: Dict[str, Any], user, perms, hidden) -> Optional[str]:
     if col.get("vis") and col["vis"] in hidden:
         return f"Atribut {col['vis']} disembunyikan untuk peran Anda"
-    if col.get("cost") and not reg.role_in(user.get("role"), COST_SAFE_ROLES):
+    if col.get("cost") and (user.get("role") or "") not in COST_SAFE_ROLES:   # PR-T2 — pemegang `costing.view`
         return "Kolom biaya (HPP) hanya untuk admin/manajer"
     if col.get("perm") and not _has(perms, col["perm"]):
         return f"Butuh izin {col['perm'][0]}.{col['perm'][1]}"

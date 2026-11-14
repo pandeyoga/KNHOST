@@ -57,6 +57,16 @@ def _may_edit(entry: Dict[str, Any], user: Dict[str, Any], perms: Dict[str, List
     return _may(perms, module, action)
 
 
+async def require_setting_edit(request: Request, key: str) -> Dict[str, Any]:
+    """PR-T2 — layar lama yang mengubah kunci Pusat Pengaturan (mis. `PUT /lots/settings`) memakai pemeriksa yang SAMA
+    dengan `PUT /api/config/values` (`_may_edit`), supaya kedua layar selalu sepakat siapa yang boleh mengubah."""
+    user = await current_user(request)
+    if not _may_edit(registry.require(key), user, await _allowed(user)):
+        raise HTTPException(status_code=403, detail=(
+            "Anda belum punya akses untuk mengubah pengaturan ini. Minta Admin menambahkan akses 'Pengaturan'."))
+    return user
+
+
 def _may_read(entry: Optional[Dict[str, Any]], user: Dict[str, Any], perms: Dict[str, List[str]]) -> bool:
     """KF-T1 — boleh MEMBACA sebuah setting: Admin, pemegang `settings.view`, atau yang boleh mengubahnya.
 

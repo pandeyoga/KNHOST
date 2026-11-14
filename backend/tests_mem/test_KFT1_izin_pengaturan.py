@@ -53,7 +53,9 @@ async def test_U02_bisa_ubah_232_kunci(klien, akun, sesi, peran_tanpa_acuan):
     _, h = await _orang(akun, sesi, rid)
     r = await klien.get("/api/config/effective", headers=h)
     assert r.status_code == 200, r.text
-    assert sum(1 for it in r.json()["items"] if it["can_edit"]) == 232
+    # PR-T2 — 232 kunci aktif berizin `settings.manage` saat KF-T1; tiga kunci `ai.*_roles` kini tidak dipakai
+    # (diatur di Peran & Hak Akses) → 232 − 3 = 229.
+    assert sum(1 for it in r.json()["items"] if it["can_edit"]) == 229
 
 
 async def test_U03_lapisan_grup_tetap_untuk_lintas_pt(klien, akun, sesi, peran_tanpa_acuan):

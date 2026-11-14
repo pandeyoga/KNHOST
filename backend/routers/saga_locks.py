@@ -2,7 +2,7 @@
 from typing import Any, Dict, List, Optional
 from fastapi import APIRouter, Body, HTTPException, Request
 from db import db
-from dependencies import require_role, audit
+from dependencies import require_permission, audit
 from services.atomic_claim import LOCK
 
 router = APIRouter(prefix="/api")
@@ -21,7 +21,7 @@ LOCKED_COLLECTIONS = ["wms_tasks", "sales_orders", "warehouse_transfers", "cycle
 
 @router.get("/saga-locks")
 async def list_saga_locks(request: Request) -> List[Dict[str, Any]]:
-    await require_role(request, ["admin"])
+    await require_permission(request, "system_tools", "configure")
     out: List[Dict[str, Any]] = []
     for coll in LOCKED_COLLECTIONS:
         async for d in db[coll].find({LOCK: {"$exists": True}}, {"_id": 0, "id": 1, "status": 1, LOCK: 1}):
@@ -79,7 +79,7 @@ async def _locked_doc(collection: str, doc_id: str) -> Dict[str, Any]:
 @router.get("/saga-locks/{collection}/{doc_id}/inspect")
 async def inspect_saga_lock(collection: str, doc_id: str, request: Request) -> Dict[str, Any]:
     """GN-11 — apa yang sudah terjadi sebelum saga mati (efek hilir) + apakah kunci masih aktif."""
-    await require_role(request, ["admin"])
+    await require_permission(request, "system_tools", "configure")
     doc = await _locked_doc(collection, doc_id)
     lock = doc[LOCK]
     return {"collection": collection, "id": doc_id, "status": doc.get("status"), "lock": lock,
@@ -92,7 +92,7 @@ async def release_saga_lock(collection: str, doc_id: str, request: Request,
                             payload: Optional[Dict[str, Any]] = Body(None)) -> Dict[str, Any]:
     """GN-11 — lepas kunci hanya bila: tidak aktif (basi/ gagal), alasan tercatat, efek hilir yang sudah
     terposting diakui eksplisit, dan kunci yang dilepas = kunci yang diperiksa (fencing token/started_at)."""
-    actor = await require_role(request, ["admin"])
+    actor = await require_permission(request, "system_tools", "configure")
     payload = payload or {}
     doc = await _locked_doc(collection, doc_id)
     lock = doc[LOCK]

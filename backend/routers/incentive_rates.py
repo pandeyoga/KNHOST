@@ -1,6 +1,6 @@
 """Incentive Rates router (EPIC4) — matriks rate insentif (entity × category).
 
-Akses: admin + manager (require_role manager → admin auto). Respons ARRAY/OBJEK
+Akses: izin `sales_force` (PR-T2; bawaan admin + manager). Respons ARRAY/OBJEK
 telanjang (kontrak KN3). PATCH pakai GenericPatch (`{data:{...}}`).
 """
 from typing import Any, Dict, List, Optional
@@ -10,7 +10,7 @@ from pydantic import BaseModel, Field
 from pymongo import ReturnDocument
 
 from db import db
-from dependencies import require_role, audit
+from dependencies import require_permission, audit
 from core_utils import new_id, now_iso, safe_doc
 from entity_scope import entity_ctx, resolve_list_scope_inherit
 
@@ -42,7 +42,7 @@ _FIELDS = ["entity_id", "category", "incentive_unit", "per_unit_amount",
 
 @router.get("/incentive-rates")
 async def list_rates(request: Request, entity_id: Optional[str] = None) -> List[Dict[str, Any]]:
-    await require_role(request, ["manager"])
+    await require_permission(request, "sales_force", "view")
     # FASE E-0 (L17) — ter-scope entitas, tetapi tarif bawaan grup (`entity_id="all"`)
     # tetap terlihat sebagai WARISAN (label asal ditampilkan UI di FASE E-4).
     ctx = await entity_ctx(request)
@@ -54,7 +54,7 @@ async def list_rates(request: Request, entity_id: Optional[str] = None) -> List[
 
 @router.post("/incentive-rates")
 async def create_rate(payload: RatePayload, request: Request) -> Dict[str, Any]:
-    actor = await require_role(request, ["manager"])
+    actor = await require_permission(request, "sales_force", "update")
     if not (payload.category or "").strip():
         raise HTTPException(status_code=400, detail="Kategori wajib diisi")
     dup = await db.incentive_rates.find_one(
@@ -76,7 +76,7 @@ async def create_rate(payload: RatePayload, request: Request) -> Dict[str, Any]:
 
 @router.patch("/incentive-rates/{rate_id}")
 async def update_rate(rate_id: str, payload: GenericPatch, request: Request) -> Dict[str, Any]:
-    actor = await require_role(request, ["manager"])
+    actor = await require_permission(request, "sales_force", "update")
     data = {k: v for k, v in payload.data.items() if k in _FIELDS}
     if not data:
         raise HTTPException(status_code=400, detail="Tidak ada field valid untuk diupdate")
@@ -95,7 +95,7 @@ async def delete_rate(rate_id: str, request: Request,
     # FASE P5 — `reason` (opsional di API, WAJIB di layar): tarif insentif menentukan
     # komisi yang dibayar ke sales, jadi penghapusannya berdampak uang dan alasannya
     # ikut tersimpan di Jejak Audit.
-    actor = await require_role(request, ["manager"])
+    actor = await require_permission(request, "sales_force", "delete")
     existing = await db.incentive_rates.find_one({"id": rate_id}, {"_id": 0})
     if not existing:
         raise HTTPException(status_code=404, detail="Rate tidak ditemukan")

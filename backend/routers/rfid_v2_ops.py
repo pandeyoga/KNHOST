@@ -6,7 +6,7 @@ PREP-D2: membuka kunci gate butuh `wms.approve`; tutup sesi manual = penilai pen
 """
 from fastapi import APIRouter, Request
 
-from dependencies import audit, require_permission, require_role
+from dependencies import audit, require_permission
 from entity_scope import assert_entity_access, entity_ctx
 from routers.rfid_v2 import _operator_device, _payload
 from services import rfid_v2_health as health
@@ -108,7 +108,7 @@ async def acknowledge_latch(device_id: str, request: Request):
 
 @router.put('/rfid/v2/ops/devices/{device_id}/protocol')
 async def put_protocol(device_id: str, request: Request):
-    await require_role(request, ['admin'])
+    await require_permission(request, 'rfid_device', 'configure')
     actor, dev, _ = await _scoped(request, device_id, True)
     body = await _payload(request)
     res = await service.set_protocol(dev, (body or {}).get('protocol'), actor)
@@ -124,7 +124,7 @@ async def gate_parameter_defaults(request: Request):
 
 @router.post('/rfid/v2/ops/devices/{device_id}/gate-parameters')
 async def post_gate_parameters(device_id: str, request: Request):
-    await require_role(request, ['admin'])
+    await require_permission(request, 'rfid_device', 'configure')
     actor, dev, _ = await _scoped(request, device_id, True)
     body = await _payload(request)
     if not isinstance(body, dict) or not isinstance(body.get('parameters'), dict):
@@ -139,7 +139,7 @@ async def post_gate_parameters(device_id: str, request: Request):
 
 @router.post('/rfid/v2/ops/devices/{device_id}/simulate')
 async def simulate(device_id: str, request: Request):
-    await require_role(request, ['admin'])   # alat admin/dev — lintasan & klaim bertanda simulated
+    await require_permission(request, 'rfid_device', 'configure')   # alat admin/dev — lintasan & klaim bertanda simulated
     actor, dev, _ = await _scoped(request, device_id, True)
     body = await _payload(request)
     if not isinstance(body, dict):
@@ -162,5 +162,5 @@ async def device_health(device_id: str, request: Request):
 
 @router.post('/rfid/v2/ops/health/check')
 async def health_check(request: Request):
-    await require_role(request, ['admin'])
+    await require_permission(request, 'rfid_device', 'configure')
     return await health.check_all()

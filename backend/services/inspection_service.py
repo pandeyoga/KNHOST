@@ -39,7 +39,6 @@ from typing import Any, Dict, List, Optional, Tuple
 from core_utils import new_id, next_doc_number, now_iso, safe_doc, timeline_entry
 from db import db
 from services import line_scope
-from role_registry import role_in  # peran acuan dikenali (keputusan owner 2026-10-21)
 logger = logging.getLogger(__name__)
 
 
@@ -122,8 +121,8 @@ MISMATCH_ACTIONS: Dict[str, str] = {
 #: manajer yang setahun kemudian bertanya "kenapa barang ini dulu ditolak?". Alasan
 #: yang tidak bisa dipakai orang lain sama saja dengan kolom kosong yang terisi.
 MIN_REASON = 15
-#: Peran yang boleh melepas tahanan (keputusan pemilik #5: **manajer**).
-HOLD_RELEASE_ROLES: Tuple[str, ...] = ("admin", "manager")
+#: Yang boleh melepas tahanan (keputusan pemilik #5: **manajer**) = izin `inspection.release` (PR-T2; bawaan admin &
+#: manajer) — atau `md_quality.decide` untuk jenis penerimaan PO/hasil makloon.
 
 
 class InspectionError(ValueError):
@@ -1675,16 +1674,22 @@ async def reopen(ins_id: str, reason: str, actor: Dict[str, Any]) -> Dict[str, A
     return out
 
 
+async def _may_release(actor: Dict[str, Any]) -> bool:
+    """PR-T2 — lepas/tolak tahanan = izin `inspection.release` (dulu nama peran admin/manajer)."""
+    from dependencies import has_permission
+    return await has_permission(actor or {}, "inspection", "release")
+
+
 async def release_hold(ins_id: str, line_id: str, reason: str,
                        actor: Dict[str, Any], can_md_quality: bool = False) -> Dict[str, Any]:
     """Lepas tahanan satu baris — MD Quality (penerimaan PO/hasil makloon) atau manajer/admin (cadangan)."""
     doc = await _load(ins_id)
     line = _line_of(doc, line_id)
     md_ok = can_md_quality and doc.get("kind") in MD_QUALITY_KINDS
-    if not role_in((actor or {}).get("role"), HOLD_RELEASE_ROLES) and not md_ok:
+    if not md_ok and not await _may_release(actor):
         raise PermissionError(
-            "Hanya MD Quality (penerimaan PO/hasil makloon) atau MANAJER yang boleh melepas "
-            "tahanan barang yang warnanya beda dari sample.")
+            "Hanya MD Quality (penerimaan PO/hasil makloon) atau pemegang akses 'Lepas / tolak tahanan barang' "
+            "(bawaan manajer) yang boleh melepas tahanan barang yang warnanya beda dari sample.")
     if not line.get("hold"):
         raise InspectionError("Baris ini tidak sedang ditahan.")
     why = (reason or "").strip()
@@ -1722,9 +1727,9 @@ async def reject_hold(ins_id: str, line_id: str, reason: str, actor: Dict[str, A
     doc = await _load(ins_id)
     line = _line_of(doc, line_id)
     md_ok = can_md_quality and doc.get("kind") in MD_QUALITY_KINDS
-    if not role_in((actor or {}).get("role"), HOLD_RELEASE_ROLES) and not md_ok:
-        raise PermissionError("Hanya MD Quality (penerimaan PO/hasil makloon) atau MANAJER yang boleh "
-                              "menolak barang yang ditahan.")
+    if not md_ok and not await _may_release(actor):
+        raise PermissionError("Hanya MD Quality (penerimaan PO/hasil makloon) atau pemegang akses 'Lepas / tolak "
+                              "tahanan barang' (bawaan manajer) yang boleh menolak barang yang ditahan.")
     if not line.get("hold"):
         raise InspectionError("Baris ini tidak sedang ditahan.")
     why = (reason or "").strip()
@@ -1850,7 +1855,6 @@ async def meta(entity_id: str = "") -> Dict[str, Any]:
             "color_mismatch_label": MISMATCH_ACTIONS[pol["color"]],
             "handfeel_mismatch_action": pol["handfeel"],
             "handfeel_mismatch_label": MISMATCH_ACTIONS[pol["handfeel"]],
-            "hold_release_roles": list(HOLD_RELEASE_ROLES),
             # Panjang MINIMUM alasan wajib — dikirim supaya layar tidak menebaknya.
             # Terukur 2026-08-23 di peramban: pop-up alasan hanya menolak isian
             # KOSONG, jadi alasan "pendek" (6 huruf) lolos di layar lalu dijawab

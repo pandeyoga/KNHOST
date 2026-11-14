@@ -409,7 +409,7 @@ async def resolve_document_number(request: Request, number: str = Query(..., min
                  "md_sample": "md_sample", "customer": "customer", "sample_order": "sample_order"}
     def _may_view(ref_type: str) -> bool:
         mod = MODULE_OF.get(ref_type, "")
-        if not mod or user.get("role") == "admin":
+        if not mod:   # PR-T2 — tanpa jalan pintas nama peran Admin: Admin memegang semua izin (matriks terkunci)
             return True
         acts = matrix.get(mod)
         return True if acts is None and mod not in {"order", "purchase_order", "logistics"} else bool(acts and ("view" in acts or "*" in acts))

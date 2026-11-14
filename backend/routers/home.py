@@ -3,7 +3,7 @@ from typing import Any, Dict, Optional, Union
 
 from fastapi import APIRouter, HTTPException, Request, Query
 
-from dependencies import current_user, permission_matrix, require_any_permission, require_role
+from dependencies import current_user, permission_matrix, require_any_permission, require_permission
 from entity_scope import entity_ctx
 from services import home_service
 
@@ -55,16 +55,16 @@ async def home_sales(request: Request, entity_id: Optional[str] = Query(None),
 
 @router.get("/admin")
 async def home_admin(request: Request, entity_id: Optional[str] = Query(None)) -> Dict[str, Any]:
-    """Control Tower. admin (auto) + manager."""
-    await require_role(request, ["manager"])
+    """Control Tower. Izin `manager_home.view` (PR-T2; bawaan admin + manager)."""
+    await require_permission(request, "manager_home", "view")
     return await home_service.admin_home(await _scope_entity(request, entity_id), await _allowed(request),
                                          await current_user(request))
 
 
 @router.get("/manager")
 async def home_manager(request: Request, entity_id: Optional[str] = Query(None)) -> Dict[str, Any]:
-    """Manager Home. admin (auto) + manager."""
-    await require_role(request, ["manager"])
+    """Manager Home. Izin `manager_home.view` (PR-T2; bawaan admin + manager)."""
+    await require_permission(request, "manager_home", "view")
     return await home_service.manager_home(None, await _scope_entity(request, entity_id), await _allowed(request),
                                            await current_user(request))
 

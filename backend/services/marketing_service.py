@@ -11,7 +11,6 @@ from typing import Any, Dict, List, Optional
 from db import db
 from core_utils import new_id, now_iso
 from services import storage_service as storage
-from role_registry import role_in  # peran acuan dikenali (keputusan owner 2026-10-21)
 
 PLATFORMS = [
     {"code": "instagram", "label": "Instagram", "color": "#C13584"},
@@ -32,7 +31,6 @@ TRANSITIONS = {
     "approved": {"scheduled", "draft", "cancelled"}, "scheduled": {"published", "approved", "cancelled"},
     "published": set(), "cancelled": {"idea"},
 }
-APPROVE_ROLES = {"admin", "manager"}
 METRIC_FIELDS = ["likes", "comments", "shares", "saves", "reach", "impressions", "clicks", "followers_gained", "sales_leads"]
 REMINDER_WINDOW_MIN = 60
 WIB = timezone(timedelta(hours=7))
@@ -205,8 +203,11 @@ async def transition(pid: str, to: str, actor: Dict[str, Any], note: str = "", p
     frm = cur.get("status", "idea")
     if to not in TRANSITIONS.get(frm, set()):
         raise MarketingError(f"Tidak bisa dari '{frm}' ke '{to}'.")
-    if to == "approved" and not role_in(actor.get("role"), APPROVE_ROLES):
-        raise MarketingError("Hanya manager/admin yang boleh menyetujui konten.")
+    if to == "approved":   # PR-T2 — izin `marketing.approve` (dulu nama peran manager/admin; izinnya tidak diperiksa)
+        from dependencies import has_permission
+        if not await has_permission(actor, "marketing", "approve"):
+            raise MarketingError("Anda belum punya akses untuk menyetujui konten. Minta Admin menambahkan akses "
+                                 "'Marketing & Sosial Media'.")
     if to == "review" and not (cur.get("caption") or "").strip():
         raise MarketingError("Isi caption dulu sebelum diajukan review.")
     if to == "scheduled":

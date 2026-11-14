@@ -699,8 +699,10 @@ async def auto_procure(od: Dict[str, Any], actor: Dict[str, Any], warehouse_id: 
 async def unlock_price(od: Dict[str, Any], actor: Dict[str, Any], reason: str) -> None:
     if not (od.get("pricing") or {}).get("locked"):
         raise ODError("Harga belum dikunci.")
-    if actor.get("role") != "admin":
-        raise ODError("Hanya admin yang boleh membuka kunci harga.")
+    from dependencies import has_permission
+    if not await has_permission(actor, "od_pricing", "unlock"):   # PR-T2 — dulu peran `admin` persis
+        raise ODError("Anda belum punya akses untuk membuka kunci harga final. Minta Admin menambahkan akses "
+                      "'Pesanan Penjualan'.")
     if not (reason or "").strip():
         raise ODError("Alasan buka kunci wajib diisi.")
     if od.get("linked_pr_id") or od.get("linked_sales_order_id") or od.get("linked_po_id") or od.get("linked_mko_id"):

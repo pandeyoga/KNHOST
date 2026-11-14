@@ -9,7 +9,7 @@ from pydantic import BaseModel
 
 from db import db
 from core_utils import now_iso
-from dependencies import audit, require_any_permission, require_permission
+from dependencies import audit, has_permission, require_any_permission, require_permission
 from entity_scope import assert_entity_access, entity_ctx, resolve_list_scope
 from services import marketing_cost_service as mcost
 from services import marketing_service as mkt
@@ -381,8 +381,10 @@ async def delete_template(tid: str, request: Request) -> Dict[str, Any]:
     if not cur:
         raise HTTPException(status_code=404, detail="Template tidak ditemukan")
     assert_entity_access(cur, "mkt_templates", ctx)
-    if user.get("role") not in mkt.APPROVE_ROLES and cur.get("created_by_id") != user.get("id"):
-        raise HTTPException(status_code=403, detail="Hanya pembuat template atau manager/admin yang boleh menghapus.")
+    if cur.get("created_by_id") != user.get("id") and not await has_permission(user, "marketing", "delete"):   # PR-T2
+        raise HTTPException(status_code=403, detail=(
+            "Template orang lain hanya bisa dihapus pemegang akses hapus Marketing. Minta Admin menambahkan akses "
+            "'Marketing & Sosial Media'."))
     await db.mkt_templates.delete_one({"id": tid})
     await audit(user.get("name", ""), "mkt_template_delete", "mkt_template", tid, {"name": cur.get("name")})
     return {"ok": True}

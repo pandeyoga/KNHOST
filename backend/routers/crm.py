@@ -8,7 +8,7 @@ from typing import Any, Dict, List
 from fastapi import APIRouter, HTTPException, Request, Query
 from pymongo import ReturnDocument
 from db import db
-from dependencies import require_permission, require_role, current_user, audit
+from dependencies import require_permission, current_user, audit
 from core_utils import new_id, now_iso, safe_doc, DEFAULT_ENTITY_ID
 from schemas import (
     CustomerReassign, SalesTargetCreate, SalesIncentiveCreate,
@@ -69,7 +69,7 @@ async def get_customer_360(customer_id: str, request: Request) -> Dict[str, Any]
 # ── Reassign salesperson (Manager/Admin, teraudit) ───────────────────────────
 @router.post("/customers/{customer_id}/reassign")
 async def reassign_customer(customer_id: str, payload: CustomerReassign, request: Request) -> Dict[str, Any]:
-    actor = await require_role(request, ["manager"])
+    actor = await require_permission(request, "sales_force", "assign")
     sales = await db.users.find_one({"id": payload.assigned_sales_id, "role": "sales", "status": "active"}, {"_id": 0})
     if not sales:
         raise HTTPException(status_code=400, detail="Salesperson tujuan tidak valid")
@@ -145,7 +145,7 @@ async def get_credit_override(override_id: str, request: Request) -> Dict[str, A
 
 @router.post("/credit-overrides/{override_id}/decision")
 async def decide_credit_override(override_id: str, payload: CreditOverrideDecision, request: Request) -> Dict[str, Any]:
-    actor = await require_role(request, ["manager"])
+    actor = await require_permission(request, "credit_override", "approve")
     if payload.decision not in ("approve", "reject"):
         raise HTTPException(status_code=400, detail="decision harus approve|reject")
     new_status = "approved" if payload.decision == "approve" else "rejected"
@@ -274,7 +274,7 @@ async def get_sales_kpi(request: Request, sales_id: str = None, period: str = No
 
 @router.get("/sales/leaderboard")
 async def get_leaderboard(request: Request, period: str = None, entity_id: str = None) -> List[Dict[str, Any]]:
-    await require_role(request, ["manager"])
+    await require_permission(request, "sales_force", "view")
     ctx = await entity_ctx(request)
     if not entity_id:   # angka papan peringkat mengikuti badan usaha aktif (sama dengan AR Aging)
         entity_id = "all" if ctx.view_all else ctx.active_entity_id
@@ -318,7 +318,7 @@ async def get_commission_history(request: Request, sales_id: str = None, period_
 async def get_incentive_gl_status(request: Request, period: str = Query(...),
                                   entity_id: str = None) -> Dict[str, Any]:
     """Status akrual insentif untuk (entitas aktif|param, periode)."""
-    await require_role(request, ["manager"])
+    await require_permission(request, "sales_force", "view")
     ctx = await entity_ctx(request)
     eid = entity_id or ctx.active_entity_id
     if eid == "all" or eid not in ctx.allowed_entity_ids:
@@ -333,7 +333,7 @@ async def post_incentive_gl(request: Request, period: str = Query(...),
 
     Dr Beban Insentif Penjualan / Cr Hutang Insentif Penjualan. Idempotent.
     """
-    actor = await require_role(request, ["manager"])
+    actor = await require_permission(request, "sales_force", "post")
     ctx = await entity_ctx(request)
     eid = entity_id or ctx.active_entity_id
     if eid == "all" or eid not in ctx.allowed_entity_ids:
@@ -376,7 +376,7 @@ async def list_targets(request: Request, sales_id: str = None, period: str = Non
 
 @router.post("/sales-targets")
 async def create_target(payload: SalesTargetCreate, request: Request) -> Dict[str, Any]:
-    actor = await require_role(request, ["manager"])
+    actor = await require_permission(request, "sales_force", "update")
     ctx = await entity_ctx(request)
     sales = await db.users.find_one({"id": payload.sales_id, "role": "sales"},
                                     {"_id": 0, "name": 1, "home_entity_id": 1})
@@ -431,7 +431,7 @@ async def list_incentives(request: Request, sales_id: str = None, period: str = 
 
 @router.post("/sales-incentives")
 async def create_incentive(payload: SalesIncentiveCreate, request: Request) -> Dict[str, Any]:
-    actor = await require_role(request, ["manager"])
+    actor = await require_permission(request, "sales_force", "update")
     ctx = await entity_ctx(request)
     sales = await db.users.find_one({"id": payload.sales_id, "role": "sales"},
                                     {"_id": 0, "name": 1, "home_entity_id": 1})

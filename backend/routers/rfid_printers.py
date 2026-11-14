@@ -24,7 +24,7 @@ from fastapi import APIRouter, HTTPException, Query, Request
 from pydantic import BaseModel, Field
 
 from db import db
-from dependencies import audit, require_permission, require_role
+from dependencies import audit, require_permission
 from entity_scope import assert_entity_access, entity_ctx, resolve_scope_ids
 
 router = APIRouter()
@@ -242,7 +242,7 @@ class ProfilePayload(BaseModel):
 
 @router.put("/rfid/printers/{device_id}/profile")
 async def put_printer_profile(device_id: str, payload: ProfilePayload, request: Request) -> Dict[str, Any]:
-    actor = await require_role(request, ["admin"])
+    actor = await require_permission(request, "rfid_device", "configure")
     from core_utils import now_iso
     from services import rfid_label_template as tpl
     before = await _printer_device(device_id)

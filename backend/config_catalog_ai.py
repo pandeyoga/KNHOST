@@ -21,18 +21,24 @@ E("ai.sales_attribution", group="asisten-analitik", type="enum", default="team_s
   example="team_split → pesanan dengan tim 60/40 dibagi ke dua sales",
   consumers=_C, risk="high")
 
+# PR-T2 (K-47) — siapa yang memakai asisten / melihat margin / melihat nilai persediaan kini IZIN peran (`ai.view`,
+# `ai.view_margin`, `ai.view_stock_value`); nilai tiga kunci di bawah dibaca sekali oleh migrasi pemasangan unit itu.
+_PRT2_NOT_USED = "Diatur di Peran & Hak Akses › Asisten Tanya KN"
+
 E("ai.margin_roles", group="asisten-analitik", type="list", default=["admin", "manager"], scopes=("global",),
   label="Peran yang boleh melihat margin/laba kotor",
   help="Peran lain menerima jawaban tanpa HPP, laba kotor, maupun margin.",
   impact="Menambah peran = peran itu melihat HPP lewat asisten.",
-  example="[admin, manager]", consumers=_C, risk="high")
+  example="[admin, manager]", consumers=_C, risk="high",
+  status="not_used", not_used_reason=_PRT2_NOT_USED)
 
 E("ai.stock_value_roles", group="asisten-analitik", type="list", default=["admin", "manager", "finance"],
   scopes=("global",),
   label="Peran yang boleh melihat nilai persediaan",
   help="Peran lain hanya melihat qty dan jumlah roll, tanpa nilai rupiah stok.",
   impact="Menambah peran = peran itu melihat nilai persediaan lewat asisten.",
-  example="[admin, manager, finance]", consumers=_C, risk="medium")
+  example="[admin, manager, finance]", consumers=_C, risk="medium",
+  status="not_used", not_used_reason=_PRT2_NOT_USED)
 
 # ── Tanya KN F2 — chat bebas (mati sampai kunci OpenAI & persetujuan klien) ───
 _CH = ("services/ai_chat_service.py:chat_config",)
@@ -75,7 +81,8 @@ E("ai.enabled_roles", group="asisten-analitik", type="list",
   default=["admin", "manager", "sales_admin", "finance", "md", "warehouse_admin", "sales"], scopes=_G,
   label="Peran yang boleh memakai asisten", help="Admin selalu boleh. Peran lain di luar daftar tidak melihat Tanya KN.",
   impact="Menghapus peran = peran itu kehilangan akses template, chat, dan jadwal.", example="[admin, manager, sales]",
-  consumers=("routers/ai_analytics.py:_ai_user",), risk="medium")
+  consumers=("routers/ai_analytics.py:_ai_user",), risk="medium",
+  status="not_used", not_used_reason=_PRT2_NOT_USED)
 E("ai.monthly_budget_usd", group="asisten-analitik", type="int", default=100, min=0, max=100000, scopes=_G,
   label="Anggaran AI bulanan (USD)", help="Bila biaya bulan berjalan mencapai batas, chat bebas & narasi AI mati; template tetap jalan.",
   impact="0 = AI berbayar selalu mati.", example="100", consumers=("services/ai_cost.py:budget_state",), risk="medium")

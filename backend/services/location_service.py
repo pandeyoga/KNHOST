@@ -302,10 +302,10 @@ async def place_roll(roll: Dict[str, Any], wh: Dict[str, Any], node: Dict[str, A
     bin_id = node["bin"]["id"]
     from services import registration_freeze as _rfz   # PREP-B K-OPN-03 — area beku pendaftaran awal
     await _rfz.assert_movable(action="penempatan/pindah bin", roll=roll, to_warehouse_id=wh["id"], to_bin_id=bin_id)
-    pr.check_override(actor, override, await pr.evaluate(wh, node, roll, prod, extra_status_ok=extra_status_ok))
+    await pr.check_override(actor, override, await pr.evaluate(wh, node, roll, prod, extra_status_ok=extra_status_ok))
     await pr.acquire_bin_lock(bin_id, (actor or {}).get("id", "system"))
     try:
-        exc = pr.check_override(actor, override, await pr.evaluate(wh, node, roll, prod, extra_status_ok=extra_status_ok))
+        exc = await pr.check_override(actor, override, await pr.evaluate(wh, node, roll, prod, extra_status_ok=extra_status_ok))
         flt = {"id": roll["id"], "warehouse_id": roll.get("warehouse_id") or wh["id"],
                "bin_id": roll.get("bin_id") or None, **(cas or {})}
         res = await db.inventory_rolls.update_one(flt, {"$set": {"bin_id": bin_id, "bin_code": node["bin"].get("code", ""),

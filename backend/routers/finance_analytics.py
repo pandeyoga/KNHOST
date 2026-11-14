@@ -18,7 +18,6 @@ from entity_scope import entity_ctx, resolve_list_scope, scope_line, scope_meta
 from services import profitability_service as prof
 from services import cashflow_forecast_service as fc
 from services import finance_tower_service as tower
-from role_registry import role_in  # peran acuan dikenali (keputusan owner 2026-10-21)
 
 router = APIRouter(prefix="/api")
 
@@ -62,7 +61,7 @@ async def export_profitability(
     scope = await _scope(request, "sales_orders", entity_id)
     ent = entity_id if entity_id and entity_id != "all" else None
     data = await prof.profitability(start=start, end=end, scope=scope, entity_id=ent)
-    cost_ok = role_in(actor.get("role"), COST_SAFE_ROLES)
+    cost_ok = (actor.get("role") or "") in COST_SAFE_ROLES   # PR-T2 — pemegang `costing.view`
     pt_row = [scope_line(await scope_meta(await entity_ctx(request), entity_id))]   # PK-16 — baris kepala PT/cakupan
 
     def _cell(v: Any) -> Any:

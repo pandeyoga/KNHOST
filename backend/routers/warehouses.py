@@ -37,7 +37,6 @@ MASTER_SCOPE_ROLES = {"admin", "manager", "warehouse"}
 # FIX-1 (B3b FRM-01) — perubahan STRUKTUR/PROFIL gudang lewat PATCH (zona & bin, mode pemakaian, site, peran gedung,
 # aturan simpan, gate, mode stok, bentuk simpan, aktif/nonaktif) hanya admin & Admin Gudang. Operator `warehouse`
 # (pemegang `warehouse.update`) dulu bisa mengosongkan bin berisi 18.471 roll & mengubah gudang khusus PT lain.
-STRUCTURE_ROLES = {"admin", "warehouse_admin"}
 STRUCTURE_KEYS = {"zones", "sharing_mode", "entity_ids", "site_id", "roles", "storage_rules", "gate_config",
                   "stock_mode", "storage_form", "active", "loading_check_policy"}
 
@@ -115,7 +114,7 @@ async def get_orphan_rolls(warehouse_id: str, request: Request) -> Dict[str, Any
         p = prods.get(r["product_id"], {})
         r["sku"], r["product_name"] = p.get("sku", ""), p.get("name", "")
     from services.placement_rules import is_supervisor
-    return {"count": len(rows), "rolls": rows, "can_edit_structure": is_supervisor(actor)}
+    return {"count": len(rows), "rolls": rows, "can_edit_structure": await is_supervisor(actor)}
 
 
 @router.get("/warehouses/{warehouse_id}/occupancy")
@@ -154,7 +153,7 @@ async def put_warehouse_structure(warehouse_id: str, payload: StructurePayload, 
     ctx = await entity_ctx(request)
     from services import location_scope
     from services.placement_rules import assert_supervisor
-    assert_supervisor(actor, "mengubah struktur gudang dan kapasitas bin")
+    await assert_supervisor(actor, "mengubah struktur gudang dan kapasitas bin")
     await location_scope.assert_warehouse(actor, warehouse_id, "menata struktur binnya")
     # E4.1 — menata bin di gudang badan usaha lain = ikut mengatur operasinya.
     await whscope.assert_usable(warehouse_id, ctx.active_entity_id,
@@ -269,8 +268,9 @@ def _validate_basic_fields(data: Dict[str, Any]) -> None:
 async def _assert_patch_scope(actor: Dict[str, Any], ctx, current: Dict[str, Any], data: Dict[str, Any]) -> None:
     """FIX-1 (FRM-01, P0) — PATCH dulu tanpa cek PT/lokasi: operator PT Sukacita mengubah gudang KHUSUS PT Cipta
     Sandang (200). Kini: (1) lokasi tugas petugas berpagar, (2) gudang khusus hanya oleh akun yang ditugaskan ke
-    salah satu PT-nya, (3) kunci struktur/profil hanya admin & Admin Gudang."""
-    from role_registry import role_in
+    salah satu PT-nya, (3) kunci struktur/profil hanya pemegang `warehouse.configure` (PR-T2; bawaan admin & Admin
+    Gudang)."""
+    from dependencies import has_permission
     from services import location_scope
     await location_scope.assert_warehouse(actor, current.get("id") or "", "mengubah data gudang ini")
     if whscope.mode_of(current) == whscope.DEDICATED:
@@ -280,10 +280,10 @@ async def _assert_patch_scope(actor: Dict[str, Any], ctx, current: Dict[str, Any
                 f"Gudang {current.get('name') or current.get('code')} khusus badan usaha lain — Anda tidak "
                 "ditugaskan di badan usaha itu."))
     touched = sorted(STRUCTURE_KEYS & set(data.keys()))
-    if touched and not role_in(actor.get("role"), STRUCTURE_ROLES):
+    if touched and not await has_permission(actor, "warehouse", "configure"):
         raise HTTPException(status_code=403, detail=(
-            "Hanya Admin atau Admin Gudang yang boleh mengubah struktur/profil gudang "
-            f"({', '.join(touched)})."))
+            "Anda belum punya akses untuk mengubah struktur/profil gudang "
+            f"({', '.join(touched)}). Minta Admin menambahkan akses 'Operasi Gudang (WMS)'."))
 
 
 @router.patch("/warehouses/{warehouse_id}")

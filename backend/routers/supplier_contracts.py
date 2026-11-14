@@ -3,7 +3,8 @@
 RBAC (tanpa modul izin baru yang berlebihan):
   * lihat   → `supplier_contract:view`   (admin, manager, warehouse, purchasing-role)
   * kelola  → `supplier_contract:create|update|delete` (admin, manager)
-  * kebijakan makloon (toleransi/susut default) → admin/manager (`require_role`)
+  * kebijakan makloon (toleransi/susut default) → siapa yang boleh mengubah kunci `makloon.contract_mode` di Pusat
+    Pengaturan (PR-T2; pemeriksa yang sama dengan `PUT /api/config/values`)
 
 Semua endpoint ber-prefix `/api` (aturan ingress) dan mengembalikan ARRAY/OBJEK telanjang
 (kontrak respons KN) kecuali saat paginasi diminta (`?page=`).
@@ -13,7 +14,7 @@ from typing import Any, Dict, List, Optional
 from fastapi import APIRouter, HTTPException, Request
 
 from db import db
-from dependencies import audit, require_permission, require_role
+from dependencies import audit, current_user, require_permission
 from entity_scope import entity_ctx, resolve_list_scope
 from pagination import envelope, get_page_params, is_paged
 from schemas_contracts import (ContractStatusIn, MakloonPolicyIn, SupplierContractCreate,
@@ -73,9 +74,16 @@ async def get_policy(request: Request) -> Dict[str, Any]:
     return await cs.get_settings(ctx.active_entity_id)
 
 
+async def _setting_editor(request: Request) -> Dict[str, Any]:
+    """PR-T2 — pemeriksa yang sama dengan `PUT /api/config/values` untuk kunci `makloon.contract_mode`."""
+    from routers.config import require_setting_edit
+    return await require_setting_edit(request, "makloon.contract_mode")
+
+
 @router.put("/supplier-contracts/policy")
 async def update_policy(payload: MakloonPolicyIn, request: Request) -> Dict[str, Any]:
-    actor = await require_role(request, ["admin", "manager"])
+    await current_user(request)
+    actor = await _setting_editor(request)
     try:
         out = await cs.update_settings(payload.model_dump(exclude_none=True),
                                        actor=actor.get("name", ""))

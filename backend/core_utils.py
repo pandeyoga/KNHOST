@@ -6,7 +6,7 @@ import bcrypt
 import hashlib
 import re
 import uuid
-from role_registry import role_in  # peran acuan dikenali (keputusan owner 2026-10-21)
+from permissions_config import DEFAULT_PERMISSIONS
 
 # SEC-2 — umur session (jam). Sliding renewal saat sisa < setengah TTL.
 SESSION_TTL_HOURS = 24
@@ -365,12 +365,21 @@ COST_FIELDS = {
     "landed_cost_refs", "cogs_amount", "cogs", "wac", "margin", "margin_pct",
     "cogs_base", "cogs_landed",   # Tanya KN F0.4 — pecahan HPP di /finance/profitability
 }
-COST_SAFE_ROLES = {"admin", "manager"}
+#: PR-T2 — peran pemegang izin `costing.view` (HPP & Margin Produk). Himpunan ini DIISI ULANG DI TEMPAT dari matriks
+#: izin oleh `custom_role_service.sync_registry` (pola `role_registry.CROSS_ENTITY_ROLES`) supaya semua modul yang
+#: mengimpornya ikut berubah; nilai awal = bawaan.
+COST_SAFE_ROLES = {r for r, p in DEFAULT_PERMISSIONS.items() if "view" in (p.get("costing") or [])}
+
+
+def refresh_cost_safe_roles(matrix: Dict[str, Dict[str, Any]]) -> None:
+    COST_SAFE_ROLES.clear()
+    COST_SAFE_ROLES.update(r for r, p in (matrix or {}).items()
+                           if {"view", "*"} & set((p or {}).get("costing") or []))
 
 
 def strip_cost_fields(data: Any, role: Optional[str]) -> Any:
-    """S-10 — hapus field biaya (HPP/margin) dari respons bila role bukan admin/manager."""
-    if role_in(role, COST_SAFE_ROLES):
+    """S-10 — hapus field biaya (HPP/margin) dari respons bila peran tidak memegang `costing.view` (PR-T2)."""
+    if (role or "") in COST_SAFE_ROLES:
         return data
     if isinstance(data, dict):
         return {k: strip_cost_fields(v, role) for k, v in data.items() if k not in COST_FIELDS}

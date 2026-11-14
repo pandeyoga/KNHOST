@@ -16,7 +16,7 @@ from pydantic import BaseModel, Field
 
 import domain_registry as dr
 from db import db
-from dependencies import audit, current_user, require_permission
+from dependencies import audit, current_user, has_permission, require_permission
 from entity_scope import assert_entity_access, entity_ctx, resolve_list_scope
 from schemas_rnd import (IssueMaterialBody, ReasonBody, ReleaseBody, RoundAssessBody, RoundOpenBody,
                          RoundSubmitBody, SampleDecideBody, SampleDeliverBody,
@@ -141,19 +141,14 @@ async def _sample_guard(sample_id: str, ctx) -> Dict[str, Any]:
 # PS-18 — laporan PENILAIAN ORANG (KPI desainer & papan eskalasi) bukan data sample
 # biasa: isinya nilai kerja rekan sekantor. `rnd.view` saja tidak cukup karena sales &
 # gudang pun memilikinya (mereka perlu melihat permintaan sample, bukan rapor orang).
-# Karena itu dibatasi ke peran yang memang menilai — selaras dengan menu "Desainer"
-# yang juga hanya tampil untuk admin & manager.
-APPRAISAL_ROLES = ("admin", "manager")
-
-
-def _assert_appraisal_role(actor: Dict[str, Any]) -> None:
-    import role_registry as reg
-    if not reg.role_in((actor or {}).get("role"), APPRAISAL_ROLES):
+# Karena itu dibatasi izin `rnd.report` (PR-T2; bawaan admin & manager, peran yang memang menilai).
+async def _assert_appraisal_role(actor: Dict[str, Any]) -> None:
+    """PR-T2 — rapor desainer & papan SLA = izin `rnd.report` (dulu nama peran admin/manager)."""
+    if not await has_permission(actor, "rnd", "report"):
         raise HTTPException(
             status_code=403,
-            detail="Laporan penilaian desainer hanya untuk manager & admin. "
-                   "Peran lain tetap bisa melihat permintaan sample dan hasil round-nya "
-                   "di menu R&D.")
+            detail="Anda belum punya akses untuk melihat laporan penilaian desainer. Minta Admin menambahkan akses "
+                   "'Riset & Sample (R&D)'. Permintaan sample dan hasil round-nya tetap bisa dilihat di menu R&D.")
 
 
 # ═══ META ══════════════════════════════════════════════════════════════════
@@ -901,7 +896,7 @@ async def designer_kpi_report(request: Request,
     PS-17: `division` menyaring baris ke satu divisi (peringkat tetap global).
     """
     actor = await require_permission(request, "rnd", "view")
-    _assert_appraisal_role(actor)
+    await _assert_appraisal_role(actor)
     ctx = await entity_ctx(request)
     scope = resolve_list_scope("md_samples", {}, ctx, entity_id)
     eid = entity_id if entity_id and entity_id != "all" else ctx.active_entity_id
@@ -941,7 +936,7 @@ async def designer_kpi_trend_report(request: Request,
     disaring per bulan → tren "nilai bila dinilai dari pekerjaan bulan itu".
     """
     actor = await require_permission(request, "rnd", "view")
-    _assert_appraisal_role(actor)
+    await _assert_appraisal_role(actor)
     ctx = await entity_ctx(request)
     scope = resolve_list_scope("md_samples", {}, ctx, entity_id)
     eid = entity_id if entity_id and entity_id != "all" else ctx.active_entity_id
@@ -961,7 +956,7 @@ async def export_designer_kpi(request: Request,
     mungkin berbeda.
     """
     actor = await require_permission(request, "rnd", "view")
-    _assert_appraisal_role(actor)
+    await _assert_appraisal_role(actor)
     ctx = await entity_ctx(request)
     scope = resolve_list_scope("md_samples", {}, ctx, entity_id)
     eid = entity_id if entity_id and entity_id != "all" else ctx.active_entity_id
@@ -994,7 +989,7 @@ async def designer_kpi_report_pdf(request: Request,
     unduh). Sumber angka sama dengan layar (`my_kpi`), jadi tidak ada hitungan kedua.
     """
     actor = await require_permission(request, "rnd", "view")
-    _assert_appraisal_role(actor)
+    await _assert_appraisal_role(actor)
     ctx = await entity_ctx(request)
     scope = resolve_list_scope("md_samples", {}, ctx, entity_id)
     eid = entity_id if entity_id and entity_id != "all" else ctx.active_entity_id
@@ -1018,7 +1013,7 @@ async def sla_board(request: Request,
                     entity_id: Optional[str] = Query(None)) -> Dict[str, Any]:
     """Papan eskalasi SLA: round yang masih berjalan tetapi sudah lewat tenggat."""
     actor = await require_permission(request, "rnd", "view")
-    _assert_appraisal_role(actor)
+    await _assert_appraisal_role(actor)
     ctx = await entity_ctx(request)
     scope = resolve_list_scope("md_samples", {}, ctx, entity_id)
     eid = entity_id if entity_id and entity_id != "all" else ctx.active_entity_id

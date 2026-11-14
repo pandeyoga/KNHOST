@@ -139,7 +139,8 @@ async def propose_action(args, user, ctx, session_id=None) -> Dict[str, Any]:
 
 async def load(pid: str, user: Dict[str, Any]) -> Dict[str, Any]:
     doc = await db.ai_action_proposals.find_one({"id": pid}, {"_id": 0})
-    if not doc or (doc["user_id"] != user["id"] and user.get("role") != "admin"):
+    from dependencies import has_permission
+    if not doc or (doc["user_id"] != user["id"] and not await has_permission(user, "ai", "configure")):   # PR-T2
         raise HTTPException(status_code=404, detail="Draf tindakan tidak ditemukan")
     return doc
 

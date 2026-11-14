@@ -22,7 +22,7 @@ from services.ai_number_check import verify
 from services.analytics_config import ai_policy
 from services.analytics_time import now_wib
 from services.config_resolver import value_of
-from role_registry import role_in  # peran acuan dikenali (keputusan owner 2026-10-21)
+from dependencies import has_permission
 
 logger = logging.getLogger(__name__)
 _DATA = Path(__file__).resolve().parents[1] / "data" / "ai"
@@ -81,12 +81,15 @@ async def status(user: Dict[str, Any]) -> Dict[str, Any]:
     return {"chat_enabled": bool(cfg["enabled"]) and (mock or (has_key and not budget["exceeded"])),
             "config_enabled": bool(cfg["enabled"]), "has_key": has_key, "narrative_ai": live, "budget": budget,
             "mock": mock, "model": cfg["model_main"], "sales_definition": pol["sales_definition"],
-            "sales_attribution": pol["sales_attribution"], "margin_roles": pol["margin_roles"],
-            "stock_value_roles": pol["stock_value_roles"], "can_edit_rules": role_in(user.get("role"), ("admin", "manager"))}
+            "sales_attribution": pol["sales_attribution"],
+            # PR-T2 — dari izin peran (Peran & Hak Akses › Asisten Tanya KN), bukan daftar peran di pengaturan.
+            "can_view_margin": await has_permission(user, "ai", "view_margin"),
+            "can_view_stock_value": await has_permission(user, "ai", "view_stock_value"),
+            "can_edit_rules": await has_permission(user, "ai", "manage")}
 
 
 async def _session_context(user, ctx) -> str:
-    pol = await ai_policy()
+    margin, stock = await has_permission(user, "ai", "view_margin"), await has_permission(user, "ai", "view_stock_value")
     now = now_wib()
     ents = [e async for e in db.business_entities.find({"id": {"$in": ctx.allowed_entity_ids}}, {"_id": 0, "id": 1, "short_name": 1})
             .sort("id", 1)]   # KN-E40 — urutan tetap supaya prefix cache tidak pecah
@@ -97,7 +100,7 @@ async def _session_context(user, ctx) -> str:
             f"Pengguna: {user.get('name')} · peran: {role} · lini produk: {', '.join(user.get('allowed_line_codes') or []) or 'semua'}\n"
             f"Entitas aktif: {name.get(ctx.active_entity_id, ctx.active_entity_id)} · boleh melihat: {', '.join(name.values())} · "
             f"mode: {'semua entitas' if getattr(ctx, 'view_all', False) else 'satu entitas'}\n"
-            f"Hak data: margin={'ya' if role in pol['margin_roles'] else 'tidak'} · nilai stok={'ya' if role in pol['stock_value_roles'] else 'tidak'} · "
+            f"Hak data: margin={'ya' if margin else 'tidak'} · nilai stok={'ya' if stock else 'tidak'} · "
             f"hanya pelanggan sendiri={'ya' if role == 'sales' else 'tidak'}\nVersi: {VERSIONS}" + await _glossary())
 
 
@@ -158,8 +161,8 @@ async def chat_events(question: str, session_id: Optional[str], deep: bool, user
     prefix_ctx = context_prefix(context)
     turn_user = {"role": "user", "content": question, "at": now_iso(),
                  **({"context": {k: str(context.get(k) or "")[:120] for k in ("type", "id", "label")}} if prefix_ctx else {})}
-    role = user.get("role") or ""
-    routed = None if prefix_ctx else ai_templates.route(question, role, int(await value_of("ai.route_threshold_pct") or 90))
+    allowed = await ai_templates.allowed_ids(user)   # PR-T2 — templat berizin, bukan nama peran
+    routed = None if prefix_ctx else ai_templates.route(question, allowed, int(await value_of("ai.route_threshold_pct") or 90))
     if routed:
         async for ev in _template_answer(routed, question, session, turn_user, user, ctx,
                                          f"Pertanyaan ini cocok dengan template \u201c{routed['title']}\u201d, jadi dijawab langsung tanpa AI."):
@@ -172,7 +175,7 @@ async def chat_events(question: str, session_id: Optional[str], deep: bool, user
         text = ("Anggaran AI bulan ini sudah habis, jadi chat bebas dimatikan sampai bulan depan. " if budget["exceeded"] else
                 "Asisten chat bebas belum aktif (menunggu kunci OpenAI dan persetujuan pengiriman data agregat). ") + \
             "Sementara itu, template laporan berikut bisa langsung menjawab tanpa AI:"
-        sugg = ai_templates.suggest(question, role)
+        sugg = ai_templates.suggest(question, allowed)
         await _append(session, [turn_user, {"role": "assistant", "content": text, "suggestions": sugg, "at": now_iso()}], [])
         async for ev in stream_text(text):
             yield ev
@@ -186,7 +189,7 @@ async def chat_events(question: str, session_id: Optional[str], deep: bool, user
         yield {"type": "done", "error": "Kuota pertanyaan harian Anda sudah habis.", "session_id": session["id"]}
         return
     if mock:
-        tpl = next((t for t in ai_templates.suggest(question, role, n=50) if not any(p.get("required") for p in t["params"])), None)
+        tpl = next((t for t in ai_templates.suggest(question, allowed, n=50) if not any(p.get("required") for p in t["params"])), None)
         if not tpl:
             yield {"type": "done", "error": "Tidak ada laporan yang cocok untuk peran Anda.", "session_id": session["id"]}
             return
@@ -306,7 +309,8 @@ async def _template_answer(tpl, question, session, turn_user, user, ctx, lead: s
         yield {"type": "result", "result_id": rid, "title": r.get("title")}
     blocks = [f"```kn-{'chart' if b['kind'] == 'chart' else 'table'}\n{json.dumps(b, ensure_ascii=False)}\n```"
               for b in out["blocks"] if b["kind"] in ("chart", "table")]
-    follow = json.dumps([t["title"] for t in ai_templates.suggest(question, user.get("role") or "", n=4) if t["id"] != tpl["id"]][:3],
+    allowed = await ai_templates.allowed_ids(user)
+    follow = json.dumps([t["title"] for t in ai_templates.suggest(question, allowed, n=4) if t["id"] != tpl["id"]][:3],
                         ensure_ascii=False)
     text = f"{lead} Angka di bawah dihitung langsung oleh server.\n\n" + (f"{out['narrative']}\n\n" if out.get("narrative") else "") + \
         "\n\n".join(blocks) + f"\n\n```kn-followups\n{follow}\n```"

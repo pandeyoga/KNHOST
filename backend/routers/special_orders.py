@@ -9,7 +9,7 @@ from typing import Any, Dict, Optional
 from fastapi import APIRouter, HTTPException, Request
 from pydantic import BaseModel, Field
 from db import db
-from dependencies import require_permission, audit, current_user
+from dependencies import has_permission, require_permission, audit, current_user
 from core_utils import new_id, now_iso, rupiah, safe_doc
 from entity_scope import entity_ctx, resolve_list_scope, assert_entity_access
 from services.special_order_service import (
@@ -1009,7 +1009,8 @@ async def unlock_price(order_id: str, payload: SpecialOrderReject, request: Requ
     try:
         await p2.unlock_price(od, user, payload.reason)
     except p2.ODError as exc:
-        raise HTTPException(status_code=400 if user.get("role") == "admin" else 403, detail=str(exc)) from exc
+        may = await has_permission(user, "od_pricing", "unlock")   # PR-T2 — tanpa izin buka kunci → 403
+        raise HTTPException(status_code=400 if may else 403, detail=str(exc)) from exc
     await audit(user.get("name", ""), "special_order_price_unlocked", "special_order", order_id,
                 {"number": od.get("number")}, reason=payload.reason)
     return await _fresh(order_id)

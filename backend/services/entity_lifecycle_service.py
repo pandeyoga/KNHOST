@@ -308,7 +308,7 @@ async def deactivation_impact(entity_id: str) -> Dict[str, Any]:
         "first_document": issued,
         "blockers": blockers,
         "can_archive": not blockers,
-        "force_requires": ["peran admin", "alasan tertulis"],
+        "force_requires": ["akses hapus Badan Usaha (bawaan Admin)", "alasan tertulis"],
     }
 
 
@@ -335,9 +335,11 @@ async def archive_entity(entity_id: str, actor: Dict[str, Any], reason: str = ""
                     "force=true beserta alasan (hanya admin).",
         })
     if force:
-        if (actor or {}).get("role") != "admin":
-            raise HTTPException(status_code=403,
-                                detail="Hanya admin yang boleh memaksa pengarsipan.")
+        from dependencies import has_permission
+        if not await has_permission(actor or {}, "entity", "delete"):   # PR-T2 — dulu peran `admin` persis
+            raise HTTPException(status_code=403, detail=(
+                "Anda belum punya akses untuk memaksa pengarsipan badan usaha. Minta Admin menambahkan akses "
+                "'Pengaturan, Pengguna & Hak Akses'."))
         if not (reason or "").strip():
             raise HTTPException(status_code=400,
                                 detail="Alasan wajib diisi saat memaksa pengarsipan.")

@@ -7,7 +7,7 @@ WebSocket realtime menyusul di Fase 5 (lihat KN_14 §8.2).
 from typing import Any, Dict, List, Optional  # noqa: F401
 from fastapi import APIRouter, HTTPException, Request
 from db import db
-from dependencies import current_user, require_role
+from dependencies import current_user, require_permission
 from entity_scope import entity_ctx, resolve_scope_ids
 from pagination import envelope, fetch_page, get_page_params, is_paged
 from services.notification_doc_ref import attach_doc_refs
@@ -109,6 +109,6 @@ async def mark_read(notification_id: str, request: Request) -> Dict[str, Any]:
 @router.post("/notifications/generate")
 async def generate(request: Request) -> Dict[str, Any]:
     """Pindai event sistem (stok menipis, reservasi kedaluwarsa) → buat notifikasi."""
-    await require_role(request, ["manager"])  # admin auto-allowed di require_role
+    await require_permission(request, "system_tools", "update")
     created = await generate_system_notifications()
     return {"created": created}

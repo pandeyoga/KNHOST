@@ -26,7 +26,6 @@ from core_utils import now_iso
 PLACEABLE = {"available", "reserved", "committed", "picked", "packed", "hold", "wip", "quarantine", "blocked", "damaged"}
 QC_STATUSES = {"quarantine", "hold", "blocked", "damaged"}
 NODE_FUNCTIONS = {"storage", "qc", "staging", "return"}
-SUPERVISOR_ROLES = {"warehouse_admin", "manager", "admin"}
 
 
 def _norm(v: Any) -> str:
@@ -52,14 +51,16 @@ def warehouse_rules(wh: Dict[str, Any]) -> Dict[str, Any]:
     return node_rules({"rules": sr})
 
 
-def is_supervisor(actor: Optional[Dict[str, Any]]) -> bool:
-    from role_registry import role_in
-    return role_in((actor or {}).get("role"), SUPERVISOR_ROLES)
+async def is_supervisor(actor: Optional[Dict[str, Any]]) -> bool:
+    """PR-T2 — wewenang supervisor gudang = izin `wms.approve` (dulu nama peran Admin Gudang/Manajer/Admin)."""
+    from dependencies import has_permission
+    return await has_permission(actor or {}, "wms", "approve")
 
 
-def assert_supervisor(actor: Optional[Dict[str, Any]], action: str) -> None:
-    if not is_supervisor(actor):
-        raise HTTPException(status_code=403, detail=f"Hanya Admin Gudang, Manajer, atau Admin yang boleh {action}.")
+async def assert_supervisor(actor: Optional[Dict[str, Any]], action: str) -> None:
+    if not await is_supervisor(actor):
+        raise HTTPException(status_code=403, detail=(
+            f"Anda belum punya akses untuk {action}. Minta Admin menambahkan akses 'Operasi Gudang (WMS)'."))
 
 
 def flatten_nodes(wh: Dict[str, Any]) -> List[Dict[str, Any]]:
@@ -280,7 +281,8 @@ async def release_bin_lock(bin_id: str) -> None:
     await db.bin_locks.delete_one({"_id": f"lock:{bin_id}"})
 
 
-def check_override(actor: Optional[Dict[str, Any]], override: Optional[Dict[str, Any]], res: Dict[str, Any]) -> Optional[Dict[str, Any]]:
+async def check_override(actor: Optional[Dict[str, Any]], override: Optional[Dict[str, Any]],
+                         res: Dict[str, Any]) -> Optional[Dict[str, Any]]:
     """Kapasitas lebih → wajib pengecualian supervisor ber-alasan. Blok lain tidak bisa dikecualikan."""
     if res["blocks"]:
         raise HTTPException(status_code=400, detail=" | ".join(res["blocks"][:5]))
@@ -292,8 +294,10 @@ def check_override(actor: Optional[Dict[str, Any]], override: Optional[Dict[str,
         raise HTTPException(status_code=409, detail={
             "code": "BIN_CAPACITY_FULL", "limit": c["limit"], "count": c["count"],
             "message": f"Bin penuh: {c['count']}/{c['limit']} roll. Pilih bin lain atau minta supervisor gudang memberi pengecualian beralasan."})
-    if not is_supervisor(actor):
-        raise HTTPException(status_code=403, detail="Pengecualian kapasitas hanya oleh supervisor gudang, manajer, atau admin.")
+    if not await is_supervisor(actor):
+        raise HTTPException(status_code=403, detail=(
+            "Pengecualian kapasitas hanya oleh supervisor gudang (akses 'Setujui' Operasi Gudang, bawaan Admin Gudang, "
+            "Manajer, Admin)."))
     if len(reason) < 5:
         raise HTTPException(status_code=400, detail="Alasan pengecualian kapasitas minimal 5 karakter.")
     return {"by": actor.get("name"), "by_id": actor.get("id"), "reason": reason, "at": now_iso(),

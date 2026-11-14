@@ -261,7 +261,7 @@ async def get_product(product_id: str, request: Request) -> Dict[str, Any]:
 async def delete_product(product_id: str, request: Request) -> Dict[str, Any]:
     actor = await require_permission(request, "product", "delete")
     from services.master_usage_service import assert_lifecycle_role
-    assert_lifecycle_role(actor, "menonaktifkan SKU")
+    await assert_lifecycle_role(actor, "menonaktifkan SKU")
     from services.catalog_access import product_for
     existing = await product_for(actor, product_id)
     if existing.get('saga_lock'):

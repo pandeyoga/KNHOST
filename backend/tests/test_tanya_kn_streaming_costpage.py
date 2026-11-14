@@ -1,7 +1,8 @@
 """Tanya KN — F6: Jawaban Bertahap (SSE streaming) + Halaman Biaya AI (/api/ai/usage/daily).
 
 Prerequisites (per agent-to-agent context): DB has ai.enabled=true and ai.model_main=mock-chat.
-Restores ai.enabled_roles after the 403 test.
+Restores the Sales role's `ai.view` permission after the 403 test (PR-T2: access = permission, not
+`ai.enabled_roles`).
 """
 import json
 import sys
@@ -146,19 +147,17 @@ def test_usage_daily_role_access_and_toggle():
     r = requests.get(f"{BASE}/ai/usage/daily", timeout=15)
     assert r.status_code in (401, 403)
 
-    # Remove sales from enabled_roles → sales should 403
-    default_roles = ["admin", "manager", "sales_admin", "finance", "md", "warehouse_admin", "sales"]
+    # PR-T2 — cabut izin `ai.view` peran Sales (Peran & Hak Akses) → sales should 403
+    before = admin.get(f"{BASE}/access/roles/sales").json()["permissions"]
     try:
-        new_roles = [r for r in default_roles if r != "sales"]
-        rr = admin.put(f"{BASE}/config/values", json={"items": [
-            {"key": "ai.enabled_roles", "value": new_roles, "reason": "test 403"}]})
-        assert rr.status_code in (200, 204), rr.text
+        rr = admin.patch(f"{BASE}/access/roles/sales",
+                         json={"permissions": {k: v for k, v in before.items() if k not in ("ai", "ai_template")}})
+        assert rr.status_code == 200, rr.text
         sales = _login("sales@kainnusantara.id")
         r = sales.get(f"{BASE}/ai/usage/daily")
         assert r.status_code == 403, f"expected 403, got {r.status_code}: {r.text}"
     finally:
-        admin.put(f"{BASE}/config/values", json={"items": [
-            {"key": "ai.enabled_roles", "value": default_roles, "reason": "restore"}]})
+        admin.patch(f"{BASE}/access/roles/sales", json={"permissions": before})
         # sanity check restore
         r = _login("sales@kainnusantara.id").get(f"{BASE}/ai/usage/daily")
         assert r.status_code == 200, "restore failed"

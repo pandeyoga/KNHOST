@@ -13,7 +13,7 @@ from pydantic import BaseModel
 
 from core_utils import safe_doc, new_id, now_iso
 from db import db
-from dependencies import require_permission, require_role, audit
+from dependencies import require_permission, audit
 from entity_scope import entity_ctx, resolve_scope_ids, assert_entity_access
 import services.rfid_service as rfid
 
@@ -416,7 +416,7 @@ async def get_devices(request: Request, warehouse_id: Optional[str] = None) -> D
 
 @router.post("/rfid/devices")
 async def post_device(payload: DevicePayload, request: Request) -> Dict[str, Any]:
-    actor = await require_role(request, ["admin"])
+    actor = await require_permission(request, "rfid_device", "configure")
     _ctx = await entity_ctx(request)   # FIX-3a (FRM-12) — mode simulasi RFID PT aktif menentukan detak simulasi
     dev = await rfid.create_device(payload.model_dump(), actor["name"], sim_entity=_ctx.active_entity_id or "")
     await audit(actor["name"], "rfid_device_created", "rfid_device", dev["id"], {"code": dev["code"]})
@@ -425,7 +425,7 @@ async def post_device(payload: DevicePayload, request: Request) -> Dict[str, Any
 
 @router.patch("/rfid/devices/{device_id}")
 async def patch_device(device_id: str, payload: DevicePatch, request: Request) -> Dict[str, Any]:
-    actor = await require_role(request, ["admin"])
+    actor = await require_permission(request, "rfid_device", "configure")
     _ctx = await entity_ctx(request)   # FIX-3a (FRM-12)
     dev = await rfid.update_device(device_id, payload.model_dump(exclude_none=True), sim_entity=_ctx.active_entity_id or "")
     await audit(actor["name"], "rfid_device_updated", "rfid_device", device_id, {})
@@ -434,7 +434,7 @@ async def patch_device(device_id: str, payload: DevicePatch, request: Request) -
 
 @router.delete("/rfid/devices/{device_id}")
 async def del_device(device_id: str, request: Request) -> Dict[str, Any]:
-    actor = await require_role(request, ["admin"])
+    actor = await require_permission(request, "rfid_device", "configure")
     res = await rfid.delete_device(device_id)
     await audit(actor["name"], "rfid_device_deleted", "rfid_device", device_id, {})
     return res
@@ -442,7 +442,7 @@ async def del_device(device_id: str, request: Request) -> Dict[str, Any]:
 
 @router.post("/rfid/devices/seed-defaults")
 async def post_seed_devices(request: Request) -> Dict[str, Any]:
-    actor = await require_role(request, ["admin"])
+    actor = await require_permission(request, "rfid_device", "configure")
     res = await rfid.seed_default_devices(actor["name"])
     await audit(actor["name"], "rfid_devices_seeded", "rfid_device", "batch", {"created": res["created"]})
     return res
@@ -659,7 +659,7 @@ class AckPayload(BaseModel):
 @router.post("/rfid/devices/{device_id}/api-key")
 async def post_device_api_key(device_id: str, request: Request,
                               regenerate: bool = False) -> Dict[str, Any]:
-    actor = await require_role(request, ["admin"])
+    actor = await require_permission(request, "rfid_device", "configure")
     from services import rfid_ingest_service as ing
     res = await ing.ensure_api_key(device_id, regenerate)
     await audit(actor["name"], "rfid_device_key_issued", "rfid_device", device_id,

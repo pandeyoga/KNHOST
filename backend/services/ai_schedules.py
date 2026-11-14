@@ -7,7 +7,7 @@ from __future__ import annotations
 
 import logging
 from datetime import datetime, timedelta, timezone
-from typing import Any, Dict, List, Optional
+from typing import Any, Collection, Dict, List, Optional
 
 from core_utils import new_id, now_iso
 from db import db
@@ -38,9 +38,10 @@ def next_run(freq: str, weekday: int, hhmm: str, after: Optional[datetime] = Non
     return cand.astimezone(timezone.utc).isoformat()
 
 
-def validate(payload: Dict[str, Any], role: str) -> Dict[str, Any]:
+def validate(payload: Dict[str, Any], allowed: Collection[str]) -> Dict[str, Any]:
+    """`allowed` = id templat berizin pemilik jadwal (`ai_templates.allowed_ids`, PR-T2)."""
     tpl = ai_templates.BY_ID.get(payload.get("template_id") or "")
-    if not tpl or (role != "admin" and role not in tpl["roles"]):
+    if not tpl or tpl["id"] not in allowed:
         raise ScheduleError("Template tidak ditemukan untuk peran Anda.")
     freq = payload.get("frequency") or "daily"
     hhmm = str(payload.get("time") or "07:00")
@@ -77,8 +78,8 @@ async def run_schedule(sched: Dict[str, Any], trigger: str = "schedule") -> Dict
            "title": sched["title"], "trigger": trigger, "created_at": now_iso()}
     try:
         user = await db.users.find_one({"id": sched["user_id"]}, {"_id": 0, "password": 0, "password_hash": 0})
-        roles = await value_of("ai.enabled_roles") or []
-        if not user or user.get("status", "active") != "active" or (user.get("role") != "admin" and user.get("role") not in roles):
+        from dependencies import has_permission
+        if not user or user.get("status", "active") != "active" or not await has_permission(user, "ai", "view"):   # PR-T2
             raise ScheduleError("Pemilik jadwal tidak aktif atau tidak lagi boleh memakai asisten.")
         ctx = await ctx_for(user, sched["entity_id"], bool(sched.get("view_all")))
         out = await ai_templates.run(sched["template_id"], sched.get("params") or {}, user, ctx, use_cache=False)

@@ -9,7 +9,7 @@ RBAC — memakai modul izin `inventory` yang SUDAH ADA (tanpa modul izin baru, R
   * lihat (`inventory:view`)   → admin, manager, sales, warehouse (traceability harus
     transparan lintas peran: sales perlu recall, gudang perlu silsilah).
   * ubah  (`inventory:update`) → admin, manager, warehouse (aksi lapangan).
-  * pengaturan penegakan      → admin/manager (`require_role`).
+  * pengaturan penegakan      → siapa yang boleh mengubah kunci `lot.enforcement_mode` di Pusat Pengaturan (PR-T2).
 Semua endpoint ber-prefix `/api` (aturan ingress).
 """
 from typing import Any, Dict, Optional
@@ -17,7 +17,7 @@ from typing import Any, Dict, Optional
 from fastapi import APIRouter, HTTPException, Request
 
 from db import db
-from dependencies import audit, require_permission, require_role
+from dependencies import audit, current_user, require_permission
 from entity_scope import assert_entity_access, entity_ctx, resolve_list_scope
 from pagination import envelope, get_page_params, is_paged
 from schemas_lots import (LotAttachRollsIn, LotCreateIn, LotLabelIn, LotMergeIn,
@@ -94,9 +94,16 @@ async def lot_settings(request: Request) -> Dict[str, Any]:
     return await ls.get_settings(ctx.active_entity_id)
 
 
+async def _setting_editor(request: Request) -> Dict[str, Any]:
+    """PR-T2 — pemeriksa yang sama dengan `PUT /api/config/values` untuk kunci `lot.enforcement_mode`."""
+    from routers.config import require_setting_edit
+    return await require_setting_edit(request, "lot.enforcement_mode")
+
+
 @router.put("/lots/settings")
 async def update_lot_settings(payload: LotSettingsIn, request: Request) -> Dict[str, Any]:
-    actor = await require_role(request, ["manager"])
+    await current_user(request)
+    actor = await _setting_editor(request)
     try:
         doc = await ls.update_settings(payload.model_dump(exclude_none=True),
                                        actor.get("name", ""))

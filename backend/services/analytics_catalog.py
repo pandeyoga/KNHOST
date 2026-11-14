@@ -54,12 +54,15 @@ SOURCE_DIMS: Dict[str, Dict[str, str]] = {
 DATED_SOURCES = {"fact", "returns", "journal", "targets", "collections", "purchases", "received"}
 
 _O = (("order", "view"),)
+# PR-T2 — metrik bernilai sensitif butuh izin tambahan (dulu daftar peran `ai.margin_roles`/`ai.stock_value_roles`).
+_MARGIN = ("ai", "view_margin")
+_STOCK_VALUE = ("ai", "view_stock_value")
 _AR = (("ar_receipt", "view"), ("order", "view"))
 _NOTE_LIVE = "pesanan hidup (bukan batal/draft/kedaluwarsa/ditolak), tanpa sample"
 
 
 def M(label: str, source: str, agg: str, unit: str, definition: str, *, perms: Tuple = _O,
-      requires: str = "", date_basis: str = "tanggal pesanan (WIB)", additive: bool = True) -> Dict[str, Any]:
+      requires: Tuple = (), date_basis: str = "tanggal pesanan (WIB)", additive: bool = True) -> Dict[str, Any]:
     return {"label": label, "source": source, "agg": agg, "unit": unit, "definition": definition,
             "perms": perms, "requires": requires, "date_basis": date_basis, "additive": additive}
 
@@ -80,9 +83,9 @@ METRICS: Dict[str, Dict[str, Any]] = {
     "new_customers": M("Pelanggan baru", "fact_new", "new", "count",
                        "Pelanggan yang pesanan hidup PERTAMA-nya jatuh di periode"),
     "gross_margin": M("Laba kotor", "fact", "margin", "idr",
-                      "Penjualan bersih − HPP (unit_cost × qty dasar, snapshot saat pesanan)", requires="margin_roles"),
+                      "Penjualan bersih − HPP (unit_cost × qty dasar, snapshot saat pesanan)", requires=_MARGIN),
     "gross_margin_pct": M("Margin kotor %", "fact", "derived", "pct", "Laba kotor / penjualan bersih",
-                          requires="margin_roles", additive=False),
+                          requires=_MARGIN, additive=False),
     "returns_value": M("Nilai retur", "returns", "sum", "idr", "Σ nilai bersih nota kredit",
                        date_basis="tanggal nota (WIB)"),
     "recognized_revenue": M("Pendapatan diakui", "journal", "sum", "idr",
@@ -119,7 +122,7 @@ METRICS: Dict[str, Dict[str, Any]] = {
     "stock_rolls": M("Jumlah roll", "stock", "rolls", "count", "Jumlah roll fisik",
                      perms=(("inventory", "view"), ("wms", "view")), date_basis="posisi saat ini"),
     "stock_value": M("Nilai persediaan", "stock", "value", "idr", "Σ sisa panjang × unit_cost roll fisik",
-                     perms=(("inventory", "view"), ("wms", "view")), requires="stock_value_roles",
+                     perms=(("inventory", "view"), ("wms", "view")), requires=_STOCK_VALUE,
                      date_basis="posisi saat ini"),
     "stock_available_qty": M("Stok tersedia", "stock", "avail", "qty", "Σ sisa panjang roll berstatus available",
                              perms=(("inventory", "view"), ("wms", "view")), date_basis="posisi saat ini"),

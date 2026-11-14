@@ -481,6 +481,8 @@ async def update_permissions(payload: PermissionUpdate, request: Request) -> Dic
         raise HTTPException(status_code=409, detail="Matriks izin sudah diubah admin lain sejak Anda membukanya. Muat ulang lalu ulangi perubahan Anda.")
     from services.field_visibility import invalidate
     invalidate()
+    from services.custom_role_service import sync_registry   # PR-T2 — himpunan COST_SAFE_ROLES ikut matriks baru
+    await sync_registry()
     await audit(actor["name"], "permissions_updated", "permission_settings", "default", payload.matrix,
                 before=prev.get("matrix"))
     return {"matrix": payload.matrix, "version": payload.version + 1}

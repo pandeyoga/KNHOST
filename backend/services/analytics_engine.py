@@ -16,7 +16,7 @@ from dependencies import has_permission
 from core_utils import now_iso
 from services import analytics_catalog as cat
 from services import analytics_facts as facts
-from services.analytics_config import ai_policy, role_may
+from services.analytics_config import ai_policy
 from services.analytics_time import Period, compare_period, now_wib, period_from_args
 from services.line_scope import visibility_query
 from role_registry import role_in  # peran acuan dikenali (keputusan owner 2026-10-21)
@@ -463,7 +463,7 @@ async def _gate(metrics: List[str], sc: Scope) -> Tuple[List[str], List[str]]:
     ok, denied = [], []
     for m in metrics:
         meta = cat.METRICS[m]
-        if (meta["requires"] and not role_may(sc.policy, meta["requires"], sc.role)) or not await sc.allowed(meta["perms"]):
+        if (meta["requires"] and not await sc.allowed((meta["requires"],))) or not await sc.allowed(meta["perms"]):
             denied.append(m)
         else:
             ok.append(m)

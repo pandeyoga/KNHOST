@@ -1,6 +1,7 @@
 """CUT-01..05 — pemecahan fisik roll cutloss setelah QC: potongan baik / BS / dibuang.
 
-Owner 2026-10-19D: yang memilih BS/Dibuang = peran di `returns.cutloss_treatment_roles` (bawaan MD);
+Owner 2026-10-19D: yang memilih BS/Dibuang = pemegang izin `sales_return.treat_cutloss` (PR-T2; bawaan admin, manajer,
+MD, MD Quality — dulu daftar peran `returns.cutloss_treatment_roles`);
 BS dicatat per satuan dasar (kg/yard), bukan per roll, nilai = HPP proporsional (CUT-03); dipecah setelah QC
 selesai (CUT-04); potongan baik dikirim balik dengan Surat Jalan baru yang merujuk SJ & SO asal (CUT-05).
 """
@@ -10,9 +11,7 @@ from core_utils import new_id, now_iso
 from db import db
 from services import gl_service
 from services.roll_service import PHYSICAL_ROLL_STATUSES, insert_child_roll, rebuild_balance, to_base_qty
-from role_registry import role_in  # peran acuan dikenali (keputusan owner 2026-10-21)
 
-ROLES_KEY = "returns.cutloss_treatment_roles"
 TREATMENTS = {"bs": "Masuk stok BS", "dispose": "Dibuang"}
 # UAT 23 Okt — pecah roll juga sesudah retur diselesaikan Nego: kerja fisik MD boleh menyusul keputusan uang.
 SPLIT_STATUSES = ("inspected", "nego_settled", "settled")
@@ -20,11 +19,12 @@ EPS = 0.001
 
 
 async def assert_can_choose(actor: Dict[str, Any], entity_id: str) -> None:
-    from services import config_resolver
-    roles = await config_resolver.value_of(ROLES_KEY, {"entity_id": entity_id} if entity_id else None) or []
-    if role_in(actor.get("role"), ("admin", "manager")) or role_in(actor.get("role"), roles):
+    """PR-T2 — izin `sales_return.treat_cutloss` (`entity_id` dipertahankan untuk pemanggil; izin berlaku semua PT)."""
+    from dependencies import has_permission
+    if await has_permission(actor, "sales_return", "treat_cutloss"):
         return
-    raise PermissionError("Peran Anda tidak diatur untuk memilih potongan cacat masuk BS atau dibuang")
+    raise PermissionError("Anda belum punya akses untuk memilih potongan cacat masuk BS atau dibuang. Minta Admin "
+                          "menambahkan akses 'Pesanan Penjualan'.")
 
 
 def _entry(ret: Dict[str, Any], ctl_id: str) -> Dict[str, Any]:

@@ -27,8 +27,10 @@ async def list_custom() -> List[Dict[str, Any]]:
 
 async def sync_registry() -> None:
     reg.register_custom_roles(await list_custom())
-    rec = await db.permission_settings.find_one({"id": "default"}, {"_id": 0, "cross_entity": 1}) or {}
+    rec = await db.permission_settings.find_one({"id": "default"}, {"_id": 0, "cross_entity": 1, "matrix": 1}) or {}
     reg.apply_cross_entity(rec.get("cross_entity") or {})
+    from core_utils import refresh_cost_safe_roles   # PR-T2 — kolom biaya/HPP mengikuti izin `costing.view`
+    refresh_cost_safe_roles(rec.get("matrix") or DEFAULT_PERMISSIONS)
 
 
 async def _set_cross_entity(rid: str, value: Optional[bool]) -> None:

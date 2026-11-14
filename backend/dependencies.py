@@ -90,12 +90,7 @@ async def current_user(request: Request) -> Dict[str, Any]:
     return user
 
 
-async def require_role(request: Request, allowed_roles: List[str]) -> Dict[str, Any]:
-    import role_registry as reg
-    user = await current_user(request)
-    if user.get("role") == "admin" or reg.role_in(user.get("role"), allowed_roles):
-        return user
-    raise HTTPException(status_code=403, detail="Role Anda tidak memiliki izin untuk aksi ini")
+# PR-T2 (K-47) — `require_role` (gerbang NAMA peran) dihapus: wewenang hanya dari izin (`require_permission`).
 
 
 async def permission_matrix() -> Dict[str, Dict[str, List[str]]]:

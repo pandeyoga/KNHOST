@@ -8,8 +8,9 @@ pemeriksa cakupan PT/lokasi → pengguna PT A / lokasi Soreang membuka dokumen P
 Cek STATIK (AST): setiap fungsi rute ber-parameter path di router cakupan WMS-RFID wajib memanggil salah satu penjaga
 yang dikenal (langsung atau lewat helper modul berawalan `_`): `assert_entity_access`, `assert_active_entity_access`,
 `guard_doc`, `location_scope.*`, pemuat dokumen bertanda cakupan (`_guard*`, `_load_session`, `_session`, `_qc_task`,
-`_roll*`, `pa._get`/layanan PA bercakupan, `rps.*`/`rfid.*` bercakupan `resolve_scope_ids`), atau `require_role`
-(infrastruktur admin). Pengecualian SENGAJA dicatat di `ALLOW` beserta alasannya.
+`_roll*`, `pa._get`/layanan PA bercakupan, `rps.*`/`rfid.*` bercakupan `resolve_scope_ids`), atau izin konfigurasi
+perangkat `require_permission(request, "rfid_device", …)` (infrastruktur; PR-T2 menggantikan `require_role(["admin"])`).
+Pengecualian SENGAJA dicatat di `ALLOW` beserta alasannya.
 Pelengkap RUNTIME: `backend/tests/test_fix1_cakupan.py::test_g_scope_01_sweep_get_by_id` (sapuan OpenAPI, id milik
 PT & lokasi lain → 403/404).
 
@@ -33,7 +34,7 @@ SCOPE_ROUTERS = [
 GUARD_RE = re.compile(
     r"assert_entity_access|assert_active_entity_access|guard_doc|location_scope\.|_assert_\w+\(|_guard\w*\(|"
     r"_load_session\(|_session\(|_qc_task\(|_roll\w*\(|pa\._get\(|resolve_scope_ids\(|_scope\(request\)|"
-    r"require_role\(|_guarded\(|ctx\.can_access\(|can_access\(|_act\(|_doc_scope\(|_grn\(|_load\(|"
+    r"require_permission\(request, [\"']rfid_device[\"']|_guarded\(|ctx\.can_access\(|can_access\(|_act\(|_doc_scope\(|_grn\(|_load\(|"
     r"resolve_list_scope\(|resolve_work_scope\(|"
     # kanal PERANGKAT (X-Device-Key) — identitas = perangkat terdaftar di gedungnya, bukan sesi pengguna
     r"_device\(request\)|ing\.authenticate\(")

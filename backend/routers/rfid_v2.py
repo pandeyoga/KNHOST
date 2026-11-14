@@ -10,7 +10,7 @@ import json
 from fastapi import APIRouter, HTTPException, Query, Request, Response
 
 from db import db
-from dependencies import require_permission, require_role
+from dependencies import require_permission
 from entity_scope import assert_entity_access, entity_ctx, resolve_list_scope
 from services import rfid_v2_health as health
 from services import rfid_v2_latch as latch
@@ -124,7 +124,7 @@ async def post_close(passage_id: str, request: Request):
 
 @router.put('/rfid/v2/ops/devices/{device_id}/config')
 async def put_config(device_id: str, request: Request):
-    await require_role(request, ['admin'])  # kebijakan perangkat/key infrastruktur yang ada
+    await require_permission(request, 'rfid_device', 'configure')  # kebijakan perangkat/key infrastruktur yang ada
     actor, dev, _ = await _operator_device(request, device_id, True)
     return await service.publish_config(dev, await _payload(request), actor)
 
