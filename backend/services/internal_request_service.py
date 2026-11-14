@@ -63,6 +63,10 @@ class InternalRequestError(ValueError):
     """Kesalahan ber-kalimat siap tampil (Bahasa Indonesia)."""
 
 
+class InternalRequestForbidden(InternalRequestError):
+    """PK-30 (IC-10) — konversi dengan harga/PPN di luar kontrak tanpa izin `interco.override_terms` → 403."""
+
+
 def _today() -> str:
     return now_iso()[:10]
 
@@ -391,7 +395,7 @@ async def cancel(req_id: str, actor: Dict[str, Any], reason: str = "") -> Dict[s
 
 async def convert(req_id: str, actor: Dict[str, Any], *, source_entity_id: str = "",
                   pricing_mode: str = "", ppn_mode: str = "", submit_now: bool = False,
-                  notes: str = "") -> Dict[str, Any]:
+                  notes: str = "", override_reason: str = "") -> Dict[str, Any]:
     """Jadikan permintaan ini **transaksi antar-PT** (mesin G-6) + jejak dua arah.
 
     Yang lahir di sini adalah dokumen KEMBAR (penjual & pembeli), harga dari kontrak
@@ -421,6 +425,7 @@ async def convert(req_id: str, actor: Dict[str, Any], *, source_entity_id: str =
                    "notes": it.get("notes", "")} for it in req["items"]],
         "pricing_mode": pricing_mode or "",
         "ppn_mode": ppn_mode or "",
+        "override_reason": override_reason or "",   # PK-30 — aturan penyimpangan harga/PPN berlaku juga di sini
         "notes": (notes or f"Dari permintaan internal {req['number']} — {req['reason']}")[:600],
         "submit_now": bool(submit_now),
         # E7d/E8.12 — jejak permintaan & pesanan pelanggan menempel di transaksinya.
@@ -442,6 +447,8 @@ async def convert(req_id: str, actor: Dict[str, Any], *, source_entity_id: str =
         await atomic_claim.release(COLL, req_id)
         # Kalimat mesin G-6 sudah menuntun (mis. “buat kontrak internal dulu”),
         # jadi diteruskan apa adanya — jangan ditelan menjadi galat generik.
+        if isinstance(exc, ics.IntercoForbidden):
+            raise InternalRequestForbidden(str(exc)) from exc
         raise InternalRequestError(str(exc)) from exc
     except Exception as exc:  # noqa: BLE001 — kunci dibiarkan; retry melanjutkan pasangan yang sama
         await atomic_claim.mark_failed(COLL, req_id, str(exc))

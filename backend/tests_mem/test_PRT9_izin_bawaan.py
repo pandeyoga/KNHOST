@@ -60,6 +60,9 @@ TAMBAHAN_SESUDAH.setdefault("finance", {}).setdefault("contra_bon", set()).updat
 for _r, _tambah in _pc.KPT8_DEFAULT_PAIRS.items():
     for _res, _aksi in _tambah.items():
         TAMBAHAN_SESUDAH.setdefault(_r, {}).setdefault(_res, set()).update(_aksi)
+# PK-30 (IC-10) — harga/PPN antar-PT di luar kontrak: Admin & Manajer (`permissions_config.PK30_OVERRIDE_TERMS_ROLES`).
+for _r in _pc.PK30_OVERRIDE_TERMS_ROLES:
+    TAMBAHAN_SESUDAH.setdefault(_r, {}).setdefault("interco", set()).add("override_terms")
 
 
 def _himpunan(perms: dict) -> dict:

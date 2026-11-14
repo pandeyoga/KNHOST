@@ -26,12 +26,15 @@ SOURCES = {
     "interco_return": ("interco_returns", {"gl_status": "failed"}, "entity_id", "number"),
     "interco_settlement_payer": ("interco_settlements", {"gl_status_payer": "failed"}, "payer_entity_id", "number"),
     "interco_settlement_payee": ("interco_settlements", {"gl_status_payee": "failed"}, "payee_entity_id", "number"),
+    # PK-30 — jurnal penyesuaian panjang roll antar-PT, satu baris per sisi (PT) yang gagal
+    "interco_adj": ("interco_transactions", {"gl_status_adj": "failed"}, "entity_id", "number"),
 }
 LABELS = {"cash_transaction": "Transaksi Kas", "ar_receipt": "Kwitansi AR", "purchase_return": "Retur Beli",
           "goods_receipt": "Penerimaan Barang (GR)", "shipment": "Surat Jalan",
           "contra_bon": "Kontrabon (jurnal potongan)", "interco_transaction": "Transaksi Antar-PT",
           "interco_return": "Retur Antar-PT", "interco_settlement_payer": "Pelunasan Antar-PT (pembayar)",
-          "interco_settlement_payee": "Pelunasan Antar-PT (penerima)"}
+          "interco_settlement_payee": "Pelunasan Antar-PT (penerima)",
+          "interco_adj": "Penyesuaian Panjang Antar-PT"}
 
 
 def _pick(doc: Dict[str, Any], dotted: str) -> Any:
@@ -43,6 +46,11 @@ def _pick(doc: Dict[str, Any], dotted: str) -> Any:
 def _row(kind: str, d: Dict[str, Any]) -> Dict[str, Any]:
     _, _, ent_f, num_f = SOURCES[kind]
     glp = d.get("gl_posting") or {}
+    if kind == "interco_adj":   # PK-30 — nominal & galat milik jurnal penyesuaian, bukan jurnal konfirmasi
+        return {"kind": kind, "kind_label": LABELS[kind], "id": d["id"], "number": d.get(num_f) or d["id"],
+                "entity_id": _pick(d, ent_f) or "",
+                "amount": abs(float((d.get("length_adjustment") or {}).get("delta_total") or 0)),
+                "error": d.get("gl_error_adj") or "", "updated_at": d.get("updated_at") or d.get("created_at") or ""}
     return {"kind": kind, "kind_label": LABELS[kind], "id": d["id"],
             "number": d.get(num_f) or d.get("number") or d["id"],
             "entity_id": _pick(d, ent_f) or "",
@@ -84,10 +92,14 @@ async def _retry(kind: str, doc: Dict[str, Any], actor: Dict[str, Any]) -> None:
     elif kind == "contra_bon":
         from services.ap_payment_service import repost_contra_bon
         await repost_contra_bon(doc["id"])
-    elif kind in ("interco_transaction", "interco_return", "interco_settlement_payer", "interco_settlement_payee"):
+    elif kind in ("interco_transaction", "interco_return", "interco_settlement_payer", "interco_settlement_payee",
+                  "interco_adj"):
         if kind == "interco_transaction":
             from services.interco_service import repost_gl
             res = await repost_gl(doc["pair_id"], actor["name"])
+        elif kind == "interco_adj":
+            from services.interco_service import repost_length_adjustment
+            res = await repost_length_adjustment(doc["pair_id"], actor["name"])
         elif kind == "interco_return":
             from services.interco_return_service import repost_gl
             res = await repost_gl(doc["return_pair_id"], actor["name"])
@@ -132,7 +144,8 @@ async def retry_posting_failure(kind: str, doc_id: str, request: Request) -> Dic
     fresh = await db[coll].find_one({"id": doc_id}, {"_id": 0}) or {}
     status = (fresh.get("gl_posting") or {}).get("status") if kind == "goods_receipt" else \
         fresh.get("gl_status_payer") if kind == "interco_settlement_payer" else \
-        fresh.get("gl_status_payee") if kind == "interco_settlement_payee" else fresh.get("gl_status")
+        fresh.get("gl_status_payee") if kind == "interco_settlement_payee" else \
+        fresh.get("gl_status_adj") if kind == "interco_adj" else fresh.get("gl_status")
     return {"kind": kind, "id": doc_id, "gl_status": status}
 
 

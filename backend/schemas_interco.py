@@ -33,6 +33,9 @@ class IntercoCreate(BaseModel):
     contract_id: str = ""            # kontrak internal (partner_kind="entity") — opsional (auto-resolve bila kosong)
     pricing_mode: str = ""           # kosong = pakai config `antar_entitas.pricing_mode`
     ppn_mode: str = ""               # kosong = pakai config per-PT `antar_entitas.ppn_mode`
+    # PK-30 (IC-10) — wajib (≥ 5 huruf) bila harga/mode harga/mode PPN berbeda dari kontrak & pengaturan PT penjual;
+    # hanya pemegang izin `interco.override_terms`.
+    override_reason: str = ""
     doc_date: str = ""               # default: hari ini
     due_date: str = ""
     notes: str = ""

@@ -476,6 +476,7 @@ def test_c4_dua_arah_dagang_tidak_saling_menimpa_saldo(adm):
     r = adm.post(f"{BASE}/api/interco/transactions", json={
         "seller_entity_id": debtor, "buyer_entity_id": creditor,
         "pricing_mode": "at_cost",
+        "override_reason": "uji POC — harga di luar kontrak (PK-30)",
         "items": [{"product_id": pid, "quantity": 1}]})
     assert r.status_code == 200, r.text
     rev_pair = r.json()["pair_id"]

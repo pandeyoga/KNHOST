@@ -715,6 +715,14 @@ for _role, _pairs in {"admin": (("customer", "manage_credit"), ("order", "tax_ov
 # penyetujunya. Tersalin sekali ke matriks tersimpan (sync_permission_modules); bisa dicabut di Peran & Hak Akses.
 _cur = DEFAULT_PERMISSIONS["finance"].setdefault("contra_bon", [])
 DEFAULT_PERMISSIONS["finance"]["contra_bon"] = list(_cur) + [x for x in ("view", "pay") if x not in _cur]
+# PK-30 (IC-10) — harga per baris, mode harga, dan mode PPN antar-PT yang berbeda dari kontrak & pengaturan PT penjual
+# hanya untuk pemegang `interco.override_terms` (+ alasan). Bawaan Admin & Manajer (pemegang `interco.approve`); Admin
+# Sales yang dulu bisa mengetik harga sendiri kini butuh izin ini. Tersalin sekali ke matriks tersimpan
+# (sync_permission_modules); dapat diatur di Peran & Hak Akses.
+PK30_OVERRIDE_TERMS_ROLES = ("admin", "manager")
+for _role in PK30_OVERRIDE_TERMS_ROLES:
+    _cur = DEFAULT_PERMISSIONS[_role].setdefault("interco", ["view"])
+    DEFAULT_PERMISSIONS[_role]["interco"] = list(_cur) + [x for x in ("override_terms",) if x not in _cur]
 
 # ═══════════════════════════════════════════════════════════════════════════
 # PR-T2 (K-47) — wewenang yang dulu ditentukan NAMA PERAN (`require_role`, daftar peran di handler) kini izin biasa:

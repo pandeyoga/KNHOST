@@ -52,6 +52,23 @@ E("antar_entitas.ppn_mode", group="pajak-pembukuan", section="antar-pt", type="e
   consumers=("services/interco_service.py:create",), risk="high",
   related=("antar_entitas.pricing_mode",))
 
+# PK-30 (K-07, IC-02) — roll antar-PT dikirim utuh; bawaan: dokumen & jurnal mengikuti panjang roll yang dikirim.
+E("antar_entitas.selisih_panjang", group="pajak-pembukuan", section="antar-pt", type="enum", default="sesuaikan",
+  scopes=G,
+  options=[
+      {"value": "sesuaikan", "label": "Dokumen menyesuaikan panjang roll yang dikirim"},
+      {"value": "tolak", "label": "Tolak bila panjang roll tidak sama dengan pesanan"},
+  ],
+  label="Bila panjang roll beda dari pesanan antar-PT",
+  help="Roll antar-PT dikirim utuh. Pilih apakah nilai transaksi mengikuti panjang roll yang benar-benar dikirim, "
+       "atau pengiriman ditolak sampai rollnya pas.",
+  impact="Pada 'menyesuaikan', nilai tagihan antar-PT bisa berubah dari yang dikonfirmasi dan jurnal penyesuaian "
+         "terbit di kedua PT.",
+  example="Pesan 100 m @ Rp 25.000, roll 130 m: tagihan menjadi Rp 3.250.000 (naik Rp 750.000).",
+  risk="high", requires_reason=True, permission=("accounting", "manage"),
+  consumers=("services/interco_service.py:precheck_warehouse_task",),
+  related=("antar_entitas.pricing_mode", "antar_entitas.ppn_mode"))
+
 E("antar_entitas.approval_threshold_rupiah", group="pajak-pembukuan", section="antar-pt", type="money",
   default=100000000, min=0, step=1000000, unit="Rp", scopes=G,
   label="Transaksi antar-PT bernilai besar mulai",

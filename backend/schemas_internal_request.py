@@ -42,3 +42,5 @@ class InternalRequestConvert(BaseModel):
     ppn_mode: Optional[str] = ""
     submit_now: bool = False
     notes: str = ""
+    # PK-30 (IC-10) — wajib bila mode harga/PPN berbeda dari pengaturan PT penjual (izin `interco.override_terms`).
+    override_reason: str = ""

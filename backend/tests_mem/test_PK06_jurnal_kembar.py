@@ -155,6 +155,8 @@ async def test_U9_buat_dan_konfirmasi_ditolak_sebelum_sisip(klien, kepala_admin,
     async with paksa_jurnal_gagal("akun", entity_id=KANDA, kode_akun="2-1250"):
         r = await klien.post("/api/interco/transactions", headers=kepala_admin, json={
             "seller_entity_id": KSC, "buyer_entity_id": KANDA, "ppn_mode": "tanpa_ppn", "submit_now": True,
+            # PK-30 (IC-10) — harga ketikan tanpa kontrak & mode PPN di luar pengaturan PT = penyimpangan: wajib alasan
+            "override_reason": "uji PK-06 harga manual",
             "items": [{"product_id": "prd_x", "quantity": 10, "unit_price": 100000}]})
     assert r.status_code == 409, r.text
     assert await jumlah("interco_transactions", {}) == n0

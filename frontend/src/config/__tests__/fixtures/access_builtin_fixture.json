@@ -245,7 +245,8 @@
     "settle",
     "return",
     "tax",
-    "decide_rolls"
+    "decide_rolls",
+    "override_terms"
    ],
    "interco_finance": [
     "view"
@@ -1052,7 +1053,8 @@
     "settle",
     "return",
     "tax",
-    "decide_rolls"
+    "decide_rolls",
+    "override_terms"
    ],
    "interco_finance": [
     "view"

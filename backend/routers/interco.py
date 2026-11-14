@@ -34,8 +34,11 @@ async def _scope(request: Request, entity_id: Optional[str] = None) -> List[str]
 
 def _fail(exc: Exception) -> HTTPException:
     """Galat bisnis antar-PT → 400. PK-06: pemeriksaan jurnal kedua buku gagal (`TwinJournalError`) dan konflik
-    keadaan (`IntercoConflict`: sisa berubah, jurnal transaksi masih gagal) → 409."""
+    keadaan (`IntercoConflict`: sisa berubah, jurnal transaksi masih gagal) → 409. PK-30: `IntercoForbidden` → 403;
+    panjang roll beda pada mode `tolak` (`IntercoLengthMismatch`, juga `IntercoConflict`) → 409."""
     from services.twin_journal import TwinJournalError
+    if isinstance(exc, ics.IntercoForbidden):   # PK-30 — harga/PPN di luar kontrak tanpa izin
+        return HTTPException(status_code=403, detail=str(exc))
     if isinstance(exc, (TwinJournalError, ics.IntercoConflict)):
         return HTTPException(status_code=409, detail=str(exc))
     return HTTPException(status_code=400, detail=str(exc))

@@ -69,6 +69,9 @@ PK38_KUNCI = 2
 # terhitung di katalog (U04) tetapi tidak bisa diubah pemegang `settings.manage` saja (U02 tetap). Tab "AI & Tampilan"
 # (`settings-cfg-system`) kini juga terbuka bagi pemegang izin `integration` (U14, `VIEW_RESOURCE_OVERRIDES`).
 KPT8_KUNCI = 2
+# PK-30 — satu kunci baru `antar_entitas.selisih_panjang` berizin `accounting.manage` (kelompok "pajak-pembukuan"): ikut
+# terhitung di katalog (U04) tetapi tidak bisa diubah pemegang `settings.manage` saja (U02 tetap).
+PK30_KUNCI = 1
 
 
 def _put(key, value, scope_type="entity", scope_id="ent_ksc"):
@@ -130,9 +133,10 @@ async def test_U04_lihat_saja_tidak_bisa_ubah(klien, akun, sesi, peran_tanpa_acu
     assert r.status_code == 200, r.text
     # PK-46 menambah lima kunci PPh 21 bertanggal; KF-T6 kunci kontrol.*; KF-T2 kunci retur & jadwal bayar antar-PT;
     # KP-T7 kunci pengingat & penjadwal; PK-36 kunci akun kontrol; KF-T7 nilai yang dulu ditulis mati; PK-37 kunci
-    # periode tertutup mengunci dokumen; PK-38 kontrol dua orang bayar hutang; KP-T8 hidup/mati & model pengenal gambar.
+    # periode tertutup mengunci dokumen; PK-38 kontrol dua orang bayar hutang; KP-T8 hidup/mati & model pengenal gambar;
+    # PK-30 selisih panjang roll antar-PT.
     assert r.json()["total"] == 310 + 5 + KFT6_KUNCI + KFT2_KUNCI + KPT7_KUNCI + PK36_KUNCI + KFT7_KUNCI + PK37_KUNCI \
-        + PK38_KUNCI + KPT8_KUNCI
+        + PK38_KUNCI + KPT8_KUNCI + PK30_KUNCI
 
 
 async def test_U05_manajer_kosong_tidak_lagi_lewat_nama_peran(klien, akun, sesi, peran_manajer_kosong):

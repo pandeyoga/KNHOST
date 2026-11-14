@@ -36,6 +36,8 @@ DECIDER_ROLES = ("admin", "manager", "sales_admin")
 
 
 def _fail(exc: Exception) -> HTTPException:
+    if isinstance(exc, svc.InternalRequestForbidden):   # PK-30 — harga/PPN di luar kontrak tanpa izin
+        return HTTPException(status_code=403, detail=str(exc))
     return HTTPException(status_code=400, detail=str(exc))
 
 
@@ -196,7 +198,7 @@ async def convert_request(req_id: str, payload: InternalRequestConvert,
         res = await svc.convert(
             req_id, actor, source_entity_id=seller,
             pricing_mode=payload.pricing_mode or "", ppn_mode=payload.ppn_mode or "",
-            submit_now=payload.submit_now, notes=payload.notes)
+            submit_now=payload.submit_now, notes=payload.notes, override_reason=payload.override_reason)
     except svc.InternalRequestError as exc:
         raise _fail(exc) from exc
     await audit(actor.get("name", ""), "internal_request_converted", "internal_request",

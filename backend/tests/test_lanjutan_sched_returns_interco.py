@@ -153,6 +153,7 @@ def test_ln083_t03_klr08_checklist_warning_klr09_request_date():
 def _ict(seller, buyer, qty):
     r = requests.post(f"{BASE}/interco/transactions", headers={**ADMIN, "X-Entity-Id": "all"}, json={
         "seller_entity_id": seller, "buyer_entity_id": buyer, "pricing_mode": "at_cost", "notes": f"TEST_{T}",
+        "override_reason": "uji POC — harga di luar kontrak (PK-30)",
         "items": [{"product_id": "prod_batik_mega", "quantity": qty, "unit_price": 10000}], "submit_now": True})
     assert r.status_code == 200, r.text
     d = r.json()

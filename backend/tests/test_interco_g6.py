@@ -81,6 +81,7 @@ def test_04_create_transaction_at_cost_pair(client):
         "seller_entity_id": "ent_ksc",
         "buyer_entity_id": "ent_kanda",
         "pricing_mode": "at_cost",
+        "override_reason": "uji POC — harga di luar kontrak (PK-30)",
         "items": [{"product_id": "prod_batik_mega", "quantity": 10,
                    "unit_price": 50000}],
         "submit_now": True,

@@ -565,6 +565,8 @@ ACTION_LABEL.update({"order.view_sales_kpi": "Lihat KPI & komisi sales lain"})
 # KP-T8 — kunci layanan luar & koneksi WhatsApp (modul Pusat Pengaturan).
 RESOURCE_LABEL["integration"] = "Integrasi & Kunci Layanan Luar"
 ACTION_LABEL["integration.manage"] = "Kelola"
+# PK-30 (IC-10) — harga/PPN antar-PT di luar kontrak (modul Transaksi Antar Badan Usaha; tanpa id menu baru).
+ACTION_LABEL.update({"interco.override_terms": "Ubah harga/PPN di luar kontrak"})
 # PR-T5 — aksi yang belum berlabel (`set` dari kamus layar lama `auditLabels.js`).
 ACTION_LABEL.update({"count": "Hitung", "review": "Tinjau", "close": "Tutup", "set": "Atur"})
 #: PR-T2 — label aksi templat laporan Tanya KN = judul templat.

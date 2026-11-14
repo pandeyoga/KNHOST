@@ -78,6 +78,23 @@ class IntercoError(Exception):
     """Pelanggaran aturan bisnis antar-PT (dipetakan ke HTTP 400 di router)."""
 
 
+class IntercoForbidden(IntercoError):
+    """PK-30 (IC-10) — harga/PPN di luar kontrak tanpa izin `interco.override_terms` → HTTP 403."""
+
+
+class IntercoLengthMismatch(IntercoError, IntercoConflict):
+    """PK-30 (IC-02) — panjang roll ≠ jumlah dokumen pada mode `tolak` → HTTP 409 (tetap sebuah `IntercoError`)."""
+
+
+#: PK-30 — kunci pengaturan "Bila panjang roll beda dari pesanan antar-PT" (dibaca dengan PT PENJUAL).
+KUNCI_SELISIH_PANJANG = "antar_entitas.selisih_panjang"
+#: PK-30 — toleransi pembulatan harga satuan (bukan aturan bisnis): selisih ≤ setengah sen = harga yang sama.
+_HARGA_EPS = 0.005
+PESAN_TANPA_IZIN_HARGA = ("Anda belum punya akses untuk mengubah harga atau PPN antar-PT di luar kontrak. Minta Admin "
+                          "menambahkan akses 'Transaksi Antar Badan Usaha'.")
+PESAN_ALASAN_HARGA = "Alasan mengubah harga atau PPN wajib diisi (minimal 5 huruf)."
+
+
 # ═══════════════════════════════════════════════════════════════════════════
 # Utils
 # ═══════════════════════════════════════════════════════════════════════════
@@ -278,6 +295,23 @@ async def _assert_may_release(actor_user: Optional[Dict[str, Any]], grand: float
         raise IntercoError(res["message"] + " Simpan dulu sebagai draf, lalu minta persetujuan.")
 
 
+async def _terms_override(actor_user: Optional[Dict[str, Any]], actor: str, reason: Any, *,
+                          pricing: Optional[Dict[str, str]], ppn: Optional[Dict[str, str]],
+                          lines: List[Dict[str, Any]]) -> Optional[Dict[str, Any]]:
+    """PK-30 (IC-10) — harga/mode di luar kontrak & pengaturan PT penjual: izin `interco.override_terms` lalu alasan
+    ≥ 5 huruf (keduanya sebelum dokumen lahir). Tanpa penyimpangan → None (tidak ada yang diperiksa/dicatat)."""
+    if not (pricing or ppn or lines):
+        return None
+    from dependencies import has_permission
+    if not actor_user or not await has_permission(actor_user, "interco", "override_terms"):
+        raise IntercoForbidden(PESAN_TANPA_IZIN_HARGA)
+    alasan = str(reason or "").strip()
+    if len(alasan) < 5:
+        raise IntercoError(PESAN_ALASAN_HARGA)
+    return {"by": actor or actor_user.get("name", ""), "by_id": actor_user.get("id", ""), "reason": alasan,
+            "at": now_iso(), "pricing_mode": pricing, "ppn_mode": ppn, "lines": lines}
+
+
 async def create(payload: Dict[str, Any], actor: str = "",
                  actor_user: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
     seller = (payload.get("seller_entity_id") or "").strip()
@@ -291,13 +325,16 @@ async def create(payload: Dict[str, Any], actor: str = "",
     if not items_in:
         raise IntercoError("Minimal satu barang harus dimasukkan.")
 
-    pricing_mode = (payload.get("pricing_mode") or "").strip().lower() or \
-                   (await _config("antar_entitas.pricing_mode", seller) or "fixed_price")
+    # PK-30 (IC-10) — nilai STANDAR = pengaturan PT penjual; isi permintaan yang berbeda = penyimpangan.
+    std_pricing = await _config("antar_entitas.pricing_mode", seller) or "fixed_price"
+    pricing_req = (payload.get("pricing_mode") or "").strip().lower()
+    pricing_mode = pricing_req or std_pricing
     if pricing_mode not in PRICING_MODES:
         raise IntercoError(f"Mode harga '{pricing_mode}' tidak dikenal.")
 
-    ppn_mode = (payload.get("ppn_mode") or "").strip().lower() or \
-               (await _config("antar_entitas.ppn_mode", seller) or "ikut_pkp")
+    std_ppn = await _config("antar_entitas.ppn_mode", seller) or "ikut_pkp"
+    ppn_req = (payload.get("ppn_mode") or "").strip().lower()
+    ppn_mode = ppn_req or std_ppn
     if ppn_mode not in PPN_MODES:
         raise IntercoError(f"Mode PPN '{ppn_mode}' tidak dikenal.")
 
@@ -305,6 +342,7 @@ async def create(payload: Dict[str, Any], actor: str = "",
 
     # Resolusi harga per baris
     items: List[Dict[str, Any]] = []
+    harga_menyimpang: List[Dict[str, Any]] = []
     for it in items_in:
         pid = (it.get("product_id") or "").strip()
         qty = float(it.get("quantity") or 0)
@@ -312,7 +350,21 @@ async def create(payload: Dict[str, Any], actor: str = "",
             raise IntercoError("Setiap baris wajib produk & jumlah > 0.")
         override = it.get("unit_price")
         override_val = float(override) if override not in (None, "", 0) else None
-        pr = await _resolve_price(seller, buyer, pid, override_val, pricing_mode)
+        if override_val is None:
+            pr = await _resolve_price(seller, buyer, pid, None, pricing_mode)
+        else:
+            # PK-30 — harga ketikan dibandingkan dengan harga standar mode ini (kontrak belum ada = tidak ada standar).
+            try:
+                std = await _resolve_price(seller, buyer, pid, None, pricing_mode)
+            except IntercoError:
+                std = None
+            if std is not None and abs(round(override_val, 2) - float(std["unit_price"])) <= _HARGA_EPS:
+                pr = std
+            else:
+                pr = await _resolve_price(seller, buyer, pid, override_val, pricing_mode)
+                harga_menyimpang.append({"product_id": pid,
+                                         "standard_price": float(std["unit_price"]) if std else None,
+                                         "used_price": float(pr["unit_price"])})
         snap = await _product_snapshot(pid)
         items.append({
             "product_id": pid,
@@ -331,6 +383,18 @@ async def create(payload: Dict[str, Any], actor: str = "",
         })
 
     totals = _totals_from_items(items, tax["rate"], tax["apply"])
+    seller_snap = await _entity_snapshot(seller)
+    buyer_snap = await _entity_snapshot(buyer)
+    # PK-30 (IC-10) — PERIKSA sebelum nomor & dokumen: penyimpangan butuh izin + alasan; penjual non-PKP tanpa PPN.
+    terms_override = await _terms_override(
+        actor_user, actor, payload.get("override_reason"),
+        pricing={"standar": std_pricing, "dipakai": pricing_mode} if pricing_req and pricing_req != std_pricing
+        else None,
+        ppn={"standar": std_ppn, "dipakai": ppn_mode} if ppn_req and ppn_req != std_ppn else None,
+        lines=harga_menyimpang)
+    if tax["apply"] and not seller_snap["is_pkp"]:
+        raise IntercoError(f"PT penjual {seller_snap['name'] or seller} bukan PKP, jadi transaksi ini tidak boleh "
+                           "memungut PPN. Pilih mode PPN \"Tanpa PPN\".")
     pair_id = new_id("icp")
     seller_id = new_id("ict")
     buyer_id = new_id("ict")
@@ -338,8 +402,6 @@ async def create(payload: Dict[str, Any], actor: str = "",
     number_b = await _next_number(buyer)
     doc_date = payload.get("doc_date") or _today()
     due_date = payload.get("due_date") or ""
-    seller_snap = await _entity_snapshot(seller)
-    buyer_snap = await _entity_snapshot(buyer)
     submit_now = bool(payload.get("submit_now"))
 
     # Bila submit_now → periksa ambang persetujuan (samakan gerbang dengan confirm()).
@@ -367,6 +429,11 @@ async def create(payload: Dict[str, Any], actor: str = "",
         "grand_total": totals["total"],
         "pricing_mode": pricing_mode,
         "ppn_mode": ppn_mode,
+        # PK-30 (IC-10) — potret status PKP kedua PT saat dibuat + penyimpangan harga/PPN (D3: keputusan + potret).
+        "seller_is_pkp": bool(seller_snap["is_pkp"]),
+        "buyer_is_pkp": bool(buyer_snap["is_pkp"]),
+        "tax_warning": "pembeli_non_pkp" if tax["apply"] and not buyer_snap["is_pkp"] else "",
+        "terms_override": terms_override,
         "contract_id": (payload.get("contract_id") or "").strip(),
         # FASE E-7 (E7d) & E8.12/E9.2 — ASAL PERMINTAAN menempel di transaksinya.
         # Tanpa kolom ini, pertanyaan "transaksi antar-PT ini untuk pesanan siapa?"
@@ -421,6 +488,11 @@ async def create(payload: Dict[str, Any], actor: str = "",
             seller_doc["gl_status"] = buyer_doc["gl_status"] = "not_required"
     await db[COLL_ICT].insert_many([seller_doc, buyer_doc])
     await _link_refs(pair_id)
+    if terms_override:
+        from dependencies import audit as _audit
+        await _audit(actor or terms_override["by"], "interco_terms_overridden", "interco_transaction", pair_id,
+                     {"numbers": [number_s, number_b], **terms_override}, reason=terms_override["reason"],
+                     scope_entity_id=seller)
 
     gl_res: Dict[str, Any] = {}
     if submit_now:
@@ -1711,6 +1783,234 @@ async def pair_journal(pair_id: str) -> Dict[str, Any]:
         "tax_invoices_out": [safe_doc(t) for t in tax_out],
         "tax_invoices_in": [safe_doc(t) for t in tax_in],
     }
+
+
+# ═══════════════════════════════════════════════════════════════════════════
+# PK-30 (IC-02, K-07) — PANJANG AKTUAL: roll antar-PT dikirim utuh, dokumen & jurnal mengikuti panjangnya
+# ═══════════════════════════════════════════════════════════════════════════
+def _angka(q: float) -> str:
+    """Panjang untuk kalimat pengguna: 130 → "130", 130.5 → "130,5"."""
+    s = f"{round(float(q), 2):.2f}".rstrip("0").rstrip(".")
+    return s.replace(".", ",")
+
+
+async def _actual_lengths(transfer_id: str) -> Dict[str, float]:
+    """Panjang aktual per produk = Σ `length_remaining` roll yang direservasi tugas gudang ini."""
+    out: Dict[str, float] = {}
+    async for r in db.inventory_rolls.find({"reserved_ref.id": transfer_id},
+                                           {"_id": 0, "product_id": 1, "length_remaining": 1}):
+        out[r["product_id"]] = round(out.get(r["product_id"], 0.0) + float(r.get("length_remaining") or 0), 4)
+    return out
+
+
+def _ordered_by_product(doc: Dict[str, Any]) -> Dict[str, float]:
+    out: Dict[str, float] = {}
+    for it in doc.get("items") or []:
+        out[it["product_id"]] = round(out.get(it["product_id"], 0.0) + float(it.get("quantity") or 0), 4)
+    return out
+
+
+def _first_difference(doc: Dict[str, Any], actual: Dict[str, float]) -> Optional[Tuple[str, float, float, str]]:
+    """(produk, aktual, pesanan, satuan) baris pertama yang panjangnya berbeda > QTY_EPS; None bila semua sama."""
+    from services.tolerances import QTY_EPS
+    units = {it["product_id"]: it.get("unit") or "meter" for it in doc.get("items") or []}
+    for pid, ordered in _ordered_by_product(doc).items():
+        got = float(actual.get(pid, ordered))
+        if abs(got - ordered) > QTY_EPS:
+            return pid, got, ordered, units.get(pid, "meter")
+    return None
+
+
+def _adjusted_doc_fields(doc: Dict[str, Any], actual: Dict[str, float]) -> Dict[str, Any]:
+    """Baris & total baru menurut panjang aktual (rumus `_totals_from_items`, tarif & sakelar PPN dokumen).
+
+    Satu produk di beberapa baris: selisih panjangnya dibebankan ke baris TERAKHIR produk itu."""
+    from services.tolerances import QTY_EPS
+    ordered = _ordered_by_product(doc)
+    last_idx = {it["product_id"]: i for i, it in enumerate(doc.get("items") or [])}
+    items: List[Dict[str, Any]] = []
+    lines: List[Dict[str, Any]] = []
+    for i, it in enumerate(doc.get("items") or []):
+        new = dict(it)
+        pid = it["product_id"]
+        if last_idx[pid] == i and pid in actual and abs(float(actual[pid]) - ordered[pid]) > QTY_EPS:
+            q_from = float(it.get("quantity") or 0)
+            q_to = round(q_from + float(actual[pid]) - ordered[pid], 4)
+            new["quantity_ordered"] = float(it.get("quantity_ordered", q_from))
+            new["quantity"] = q_to
+            new["line_subtotal"] = round(q_to * float(it.get("unit_price") or 0), 2)
+            lines.append({"product_id": pid, "from_qty": round(ordered[pid], 4), "to_qty": round(float(actual[pid]), 4)})
+        items.append(new)
+    totals = _totals_from_items(items, float(doc.get("tax_rate") or 0), bool(doc.get("tax_apply")))
+    from_sub, from_tax = float(doc.get("subtotal") or 0), float(doc.get("tax_amount") or 0)
+    from_total = float(doc.get("grand_total") or 0)
+    return {"items": items, "subtotal": totals["subtotal"], "tax_amount": totals["tax"],
+            "grand_total": totals["total"], "lines": lines,
+            "from_subtotal": round(from_sub, 2), "to_subtotal": totals["subtotal"],
+            "delta_subtotal": round(totals["subtotal"] - from_sub, 2),
+            "delta_tax": round(totals["tax"] - from_tax, 2),
+            "delta_total": round(totals["total"] - from_total, 2)}
+
+
+def _adjust_sides(seller: Dict[str, Any], buyer: Dict[str, Any], adj: Dict[str, Any]) -> List[Any]:
+    """Rencana jurnal PENYESUAIAN PANJANG dua sisi (kunci `{pair}:adj:seller` / `{pair}:adj:buyer`, status `_adj`).
+
+    Roll lebih panjang (selisih total > 0):
+      Penjual  Dr 1-1250 selisih total · Cr 4-1000 selisih DPP · Cr 2-1200 selisih PPN
+      Pembeli  Dr 1-1310 selisih DPP · Dr 1-1500 selisih PPN · Cr 2-1250 selisih total
+    Roll lebih pendek: arah yang sama dibalik, nilai mutlak. Selisih total 0 → tidak ada jurnal.
+    """
+    from services.twin_journal import TwinSide
+    d_sub, d_tax, d_tot = (float(adj.get("delta_subtotal") or 0), float(adj.get("delta_tax") or 0),
+                           float(adj.get("delta_total") or 0))
+    if abs(d_tot) <= EPS:
+        return []
+    naik = d_tot > 0
+    s_, t_, g_ = abs(d_sub), abs(d_tax), abs(d_tot)
+    code = seller.get("number") or seller["pair_id"]
+    ket = f"Penyesuaian panjang roll antar-PT {code}"
+
+    def _l(acc: str, amount: float, debit: bool, desc: str) -> Dict[str, Any]:
+        return {"account_code": acc, "debit": amount if debit else 0.0, "credit": 0.0 if debit else amount,
+                "description": desc}
+
+    lines_s = [_l(gl_service.ACC_IC_AR, g_, naik, f"Piutang antar-PT {code} — {ket.lower()}"),
+               _l(gl_service.ACC_PENDAPATAN, s_, not naik, f"Pendapatan antar-PT {code} — {ket.lower()}")]
+    if t_ > EPS:
+        lines_s.append(_l(gl_service.ACC_PPN_OUT, t_, not naik, f"PPN Keluaran antar-PT {code} — {ket.lower()}"))
+    num_b = buyer.get("number", code)
+    lines_b = [_l(gl_service.ACC_PERSEDIAAN_TRANSIT, s_, naik, f"Barang antar-PT dalam perjalanan {num_b} — "
+                                                               f"{ket.lower()}")]
+    if t_ > EPS:
+        lines_b.append(_l(gl_service.ACC_PPN_IN, t_, naik, f"PPN Masukan antar-PT {num_b} — {ket.lower()}"))
+    lines_b.append(_l(gl_service.ACC_IC_AP, g_, not naik, f"Utang antar-PT {num_b} — {ket.lower()}"))
+    return [
+        TwinSide("seller", seller["seller_entity_id"], lines_s, ket, code, (COLL_ICT, seller["id"]), "_adj"),
+        TwinSide("buyer", seller["buyer_entity_id"], lines_b, f"Penyesuaian panjang roll antar-PT {num_b}", num_b,
+                 (COLL_ICT, buyer["id"]), "_adj"),
+    ]
+
+
+def _delivery_lines(seller: Dict[str, Any], buyer: Dict[str, Any], cost_out: float, receipt: float
+                    ) -> List[Tuple[str, str, List[Dict[str, Any]]]]:
+    """Baris jurnal HPP penjual & penerimaan pembeli (`post_gl_on_delivery`) untuk pemeriksaan awal."""
+    out = []
+    code = seller.get("number") or seller["pair_id"]
+    if cost_out > EPS:
+        out.append(("cogs", seller["seller_entity_id"], gl_service._balanced_pair(
+            gl_service.ACC_HPP, gl_service.ACC_PERSEDIAAN, round(cost_out, 2), f"HPP antar-PT {code}")))
+    if receipt > EPS:
+        out.append(("receipt", seller["buyer_entity_id"], gl_service._balanced_pair(
+            gl_service.ACC_PERSEDIAAN, gl_service.ACC_PERSEDIAAN_TRANSIT, round(receipt, 2),
+            f"Penerimaan barang antar-PT {buyer.get('number', '')}")))
+    return out
+
+
+async def precheck_warehouse_task(transfer: Dict[str, Any], *, periksa_jurnal: bool = True) -> Dict[str, Any]:
+    """PERIKSA sebelum tugas gudang antar-PT disetujui (tanpa tulisan apa pun).
+
+    1. Panjang aktual per produk = Σ panjang roll yang direservasi tugas ini; berbeda dari jumlah dokumen > QTY_EPS →
+       `differs`. Mode `antar_entitas.selisih_panjang` PT PENJUAL = `tolak` + berbeda → `IntercoLengthMismatch` (409).
+    2. (`periksa_jurnal`) Jurnal penyesuaian dua sisi (bila berbeda) lewat `twin_journal.preflight_twin`, lalu jurnal
+       HPP penjual & penerimaan pembeli lewat `gl_service.preflight_entry` — semuanya bertanggal hari ini (WIB).
+    → `{"actual": {product_id: qty}, "differs": bool}`. Dipakai `create_warehouse_task` (tanpa periksa jurnal).
+    """
+    from services import twin_journal as _twin
+    pair_id = transfer.get("interco_pair_id") or ""
+    seller, buyer = await _pair_docs(pair_id)
+    actual = await _actual_lengths(transfer["id"])
+    beda = _first_difference(seller, actual)
+    if beda:
+        mode = await _config(KUNCI_SELISIH_PANJANG, seller["seller_entity_id"])
+        if mode == "tolak":
+            _pid, got, ordered, unit = beda
+            raise IntercoLengthMismatch(
+                f"Panjang roll yang dipilih ({_angka(got)} {unit}) tidak sama dengan jumlah pada transaksi antar-PT "
+                f"({_angka(ordered)} {unit}). Pilih roll lain, atau ubah pengaturan \"Bila panjang roll beda dari "
+                "pesanan antar-PT\".")
+    out = {"actual": actual, "differs": bool(beda)}
+    if not periksa_jurnal:
+        return out
+    date = _today()
+    adj = _adjusted_doc_fields(seller, actual) if beda and not seller.get("length_adjustment") else None
+    if adj:
+        await _twin.preflight_twin(source_type="interco_transaction", base_id=f"{pair_id}:adj", date=date,
+                                   sides=_adjust_sides(seller, buyer, adj))
+    cost_out = 0.0
+    async for r in db.inventory_rolls.find({"reserved_ref.id": transfer["id"]},
+                                           {"_id": 0, "length_remaining": 1, "unit_cost": 1, "base_unit_cost": 1}):
+        cost_out += float(r.get("length_remaining") or 0) * float(r.get("unit_cost") or r.get("base_unit_cost") or 0)
+    receipt = float(adj["subtotal"]) if adj else float(seller.get("subtotal") or 0)
+    for suffix, ent, lines in _delivery_lines(seller, buyer, cost_out, receipt):
+        if await gl_service._already_posted("interco_transaction", f"{pair_id}:{suffix}"):
+            continue
+        await gl_service.preflight_entry(lines=lines, entity_id=ent, date=date, source_type="interco_transaction")
+    return out
+
+
+async def apply_length_adjustment(pair_id: str, actual: Dict[str, float], transfer: Dict[str, Any],
+                                  actor: str) -> Dict[str, Any]:
+    """Sesuaikan KEDUA dokumen ke panjang aktual + jurnal penyesuaian dua sisi (aman diulang).
+
+    * Dokumen sudah ber-`length_adjustment` → dikembalikan apa adanya (`adjusted: False`); jurnal yang kurang diulang
+      lewat `repost_length_adjustment` (panel Posting Gagal, jenis `interco_adj`).
+    * Panjang sama → tidak ada yang ditulis.
+    * Selain itu: `quantity_ordered`/`quantity`/`line_subtotal`, `subtotal`/`tax_amount`/`grand_total`, dan
+      `length_adjustment` ditulis bersyarat (belum ber-`length_adjustment`) pada kedua dokumen; lalu `post_twin`
+      `{pair}:adj` (sisi gagal → `gl_status_adj: failed`, tidak melempar); faktur pajak internal yang sudah terbit
+      ditandai perlu pengganti; saldo antar-PT dihitung ulang.
+    """
+    from services import twin_journal as _twin
+    seller, buyer = await _pair_docs(pair_id)
+    prev = seller.get("length_adjustment")
+    if prev:
+        if prev.get("transfer_id") != transfer.get("id"):
+            print(f"[interco] {pair_id}: sudah disesuaikan untuk tugas {prev.get('transfer_id')} — dilewati")
+        return {"adjusted": False, "length_adjustment": prev, "gl": {}}
+    if not _first_difference(seller, actual):
+        return {"adjusted": False, "length_adjustment": None, "gl": {}}
+    f = _adjusted_doc_fields(seller, actual)
+    adj = {"transfer_id": transfer.get("id", ""), "from_subtotal": f["from_subtotal"], "to_subtotal": f["to_subtotal"],
+           "delta_subtotal": f["delta_subtotal"], "delta_tax": f["delta_tax"], "delta_total": f["delta_total"],
+           "lines": f["lines"], "by": actor or "system", "at": now_iso()}
+    sides_preview = _adjust_sides(seller, buyer, adj)
+    res = await db[COLL_ICT].update_many(
+        {"pair_id": pair_id, "length_adjustment": {"$exists": False}},
+        {"$set": {"items": f["items"], "subtotal": f["subtotal"], "tax_amount": f["tax_amount"],
+                  "grand_total": f["grand_total"], "length_adjustment": adj,
+                  "gl_status_adj": "pending" if sides_preview else "not_required",
+                  "updated_at": now_iso(), "updated_by": actor or "system"}})
+    if not res.modified_count:
+        seller, _ = await _pair_docs(pair_id)
+        return {"adjusted": False, "length_adjustment": seller.get("length_adjustment"), "gl": {}}
+    seller, buyer = await _pair_docs(pair_id)
+    gl_res = await repost_length_adjustment(pair_id, actor)
+    if abs(adj["delta_total"]) > EPS:
+        try:
+            from services import interco_tax_service as _tax
+            await _tax.flag_needs_replacement(
+                pair_id, note=(f"Nilai transaksi disesuaikan ke panjang roll yang dikirim "
+                               f"({rupiah(adj['from_subtotal'])} → {rupiah(adj['to_subtotal'])})."))
+        except Exception as exc:  # noqa: BLE001 — penanda faktur, bukan syarat dokumen
+            print(f"[interco] tandai faktur pengganti gagal {pair_id}: {exc}")
+    await _update_account_balance(seller["seller_entity_id"], seller["buyer_entity_id"])
+    return {"adjusted": True, "length_adjustment": adj, "gl": gl_res,
+            "warning": await _twin.warning_for(gl_res, _adjust_sides(seller, buyer, adj)) if gl_res else ""}
+
+
+async def repost_length_adjustment(pair_id: str, actor: str = "") -> Dict[str, Dict[str, str]]:
+    """Terbitkan jurnal penyesuaian panjang yang KURANG (per sisi, idempoten; panel Posting Gagal `interco_adj`)."""
+    from services import twin_journal as _twin
+    seller, buyer = await _pair_docs(pair_id)
+    adj = seller.get("length_adjustment") or {}
+    if not adj:
+        return {}
+    sides = _adjust_sides(seller, buyer, adj)
+    if not sides:
+        await db[COLL_ICT].update_many({"pair_id": pair_id}, {"$set": {"gl_status_adj": "not_required"}})
+        return {}
+    return await _twin.post_twin(source_type="interco_transaction", base_id=f"{pair_id}:adj",
+                                 date=adj.get("at") or now_iso(), sides=sides, created_by=actor or "system")
 
 
 # ═══════════════════════════════════════════════════════════════════════════

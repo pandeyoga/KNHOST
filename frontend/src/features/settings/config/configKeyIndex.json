@@ -1533,6 +1533,10 @@
    "pajak-pembukuan",
    "antar-pt"
   ],
+  "antar_entitas.selisih_panjang": [
+   "pajak-pembukuan",
+   "antar-pt"
+  ],
   "antar_entitas.approval_threshold_rupiah": [
    "pajak-pembukuan",
    "antar-pt"
