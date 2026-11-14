@@ -1,0 +1,107 @@
+[visual-edits] @emergentbase/visual-edits not installed — visual editing disabled.
+[visual-edits] @emergentbase/visual-edits not installed — visual editing disabled.
+PASS src/config/__tests__/roleReach.test.js
+FAIL src/features/__tests__/pk28GrIr.test.js
+  ● Test suite failed to run
+
+    Cannot find module '../purchasing/GrIrView' from 'src/features/__tests__/pk28GrIr.test.js'
+
+    [0m [90m  8 |[39m [36mimport[39m [33mReact[39m[33m,[39m { act } [36mfrom[39m [32m"react"[39m[33m;[39m
+     [90m  9 |[39m [36mimport[39m { createRoot } [36mfrom[39m [32m"react-dom/client"[39m[33m;[39m
+    [31m[1m>[22m[39m[90m 10 |[39m [36mimport[39m [33mGrIrView[39m[33m,[39m { [33mTEKS_GALAT[39m[33m,[39m [33mTEKS_KOSONG[39m[33m,[39m [33mTEKS_MEMUAT[39m[33m,[39m [33mTEKS_SEMUA_PT[39m[33m,[39m alasanTidakKliring } [36mfrom[39m [32m"../purchasing/GrIrView"[39m[33m;[39m
+     [90m    |[39m [31m[1m^[22m[39m
+     [90m 11 |[39m [36mimport[39m { [33mPriceVarianceRow[39m } [36mfrom[39m [32m"../purchasing/VendorBillDetailPanel"[39m[33m;[39m
+     [90m 12 |[39m [36mimport[39m { [33mAppNavProvider[39m } [36mfrom[39m [32m"../../context/AppNavContext"[39m[33m;[39m
+     [90m 13 |[39m [36mimport[39m { [33mEntityScopeProvider[39m } [36mfrom[39m [32m"../../context/EntityScopeContext"[39m[33m;[39m[0m
+
+      at Resolver.resolveModule (../fe/node_modules/jest-resolve/build/resolver.js:324:11)
+      at Object.<anonymous> (src/features/__tests__/pk28GrIr.test.js:10:1)
+
+FAIL src/config/__tests__/mnt1MenuKeuangan.test.js
+  ● U2 — jumlah tab tampak per hub (admin) › accounts-payable = 3 tab
+
+    expect(received).toHaveLength(expected)
+
+    Expected length: 3
+    Received length: 2
+    Received array:  [{"label": "Tagihan", "roles": ["admin", "manager"], "view": "vendor-bills"}, {"label": "Kontrabon", "roles": ["admin", "manager", "warehouse"], "view": "contra-bons"}]
+
+    [0m [90m 55 |[39m     [[32m"hr-kpi-hub"[39m[33m,[39m [35m4[39m][33m,[39m [[32m"purchase-orders"[39m[33m,[39m [35m7[39m][33m,[39m
+     [90m 56 |[39m   ])([32m"%s = %i tab"[39m[33m,[39m (hub[33m,[39m n) [33m=>[39m {
+    [31m[1m>[22m[39m[90m 57 |[39m     expect(hubTabsForRole(hub[33m,[39m [32m"admin"[39m))[33m.[39mtoHaveLength(n)[33m;[39m
+     [90m    |[39m                                          [31m[1m^[22m[39m
+     [90m 58 |[39m   })[33m;[39m
+     [90m 59 |[39m   test([32m"label tab persis tabel lama → baru"[39m[33m,[39m () [33m=>[39m {
+     [90m 60 |[39m     expect(labels([32m"finance-tower"[39m))[33m.[39mtoEqual([[32m"Perlu Tindakan"[39m[33m,[39m [32m"Posisi"[39m[33m,[39m [32m"Analisis"[39m])[33m;[39m[0m
+
+      at src/config/__tests__/mnt1MenuKeuangan.test.js:57:42
+      at TestScheduler.scheduleTests (../fe/node_modules/@jest/core/build/TestScheduler.js:333:13)
+      at runJest (../fe/node_modules/@jest/core/build/runJest.js:404:19)
+      at _run10000 (../fe/node_modules/@jest/core/build/cli/index.js:320:7)
+      at runCLI (../fe/node_modules/@jest/core/build/cli/index.js:173:3)
+
+  ● U2 — jumlah tab tampak per hub (admin) › label tab persis tabel lama → baru
+
+    expect(received).toEqual(expected) // deep equality
+
+    - Expected  - 1
+    + Received  + 0
+
+      Array [
+        "Tagihan",
+        "Kontrabon",
+    -   "GR/IR (Diterima Belum Ditagih)",
+      ]
+
+    [0m [90m 61 |[39m     expect(labels([32m"ar-aging"[39m))[33m.[39mtoEqual([[32m"Saldo & Umur"[39m[33m,[39m [32m"Penagihan & Penerimaan"[39m[33m,[39m [32m"Rencana & Denda"[39m[33m,[39m
+     [90m 62 |[39m       [32m"Titipan & Saldo Kredit"[39m[33m,[39m [32m"Kredit & Plafon"[39m[33m,[39m [32m"Kasus"[39m])[33m;[39m
+    [31m[1m>[22m[39m[90m 63 |[39m     expect(labels([32m"accounts-payable"[39m))[33m.[39mtoEqual([[32m"Tagihan"[39m[33m,[39m [32m"Kontrabon"[39m[33m,[39m [32m"GR/IR (Diterima Belum Ditagih)"[39m])[33m;[39m   [90m// PK-28[39m
+     [90m    |[39m                                        [31m[1m^[22m[39m
+     [90m 64 |[39m     expect(labels([32m"cash-bank"[39m))[33m.[39mtoEqual([[32m"Rekening & Saldo"[39m[33m,[39m [32m"Transaksi Kas"[39m[33m,[39m [32m"Rekonsiliasi"[39m[33m,[39m [32m"Kas Kecil"[39m])[33m;[39m
+     [90m 65 |[39m     expect(labels([32m"closing"[39m))[33m.[39mtoEqual([[32m"Daftar Periksa & Tutup"[39m[33m,[39m [32m"Buka Periode"[39m[33m,[39m [32m"Posting Gagal"[39m])[33m;[39m
+     [90m 66 |[39m     expect(labels([32m"ledger"[39m))[33m.[39mtoEqual([[32m"Jurnal"[39m[33m,[39m [32m"Bagan Akun"[39m])[33m;[39m[0m
+
+      at Object.<anonymous> (src/config/__tests__/mnt1MenuKeuangan.test.js:63:40)
+      at TestScheduler.scheduleTests (../fe/node_modules/@jest/core/build/TestScheduler.js:333:13)
+      at runJest (../fe/node_modules/@jest/core/build/runJest.js:404:19)
+      at _run10000 (../fe/node_modules/@jest/core/build/cli/index.js:320:7)
+      at runCLI (../fe/node_modules/@jest/core/build/cli/index.js:173:3)
+
+  ● U7–U10 — menu per peran › U7 Finance: Keuangan (Beranda 3, Piutang 6, Hutang 3, Kas & Bank 4, Antar-PT) + Akuntansi (Buku Besar 2, Pajak › Faktur Keluaran)
+
+    expect(received).toEqual(expected) // deep equality
+
+    - Expected  - 1
+    + Received  + 0
+
+    @@ -1,10 +1,9 @@
+      Object {
+        "accounts-payable": Array [
+          "vendor-bills",
+          "contra-bons",
+    -     "gr-ir",
+        ],
+        "ar-aging": Array [
+          "ar-aging",
+          "collection-worklist",
+          "payment-plans",
+
+    [0m [90m 143 |[39m   test([32m"U7 Finance: Keuangan (Beranda 3, Piutang 6, Hutang 3, Kas & Bank 4, Antar-PT) + Akuntansi (Buku Besar 2, Pajak › Faktur Keluaran)"[39m[33m,[39m () [33m=>[39m {
+     [90m 144 |[39m     [36mconst[39m m [33m=[39m menu([32m"finance"[39m)[33m;[39m
+    [31m[1m>[22m[39m[90m 145 |[39m     expect(m[33m.[39mkeuangan)[33m.[39mtoEqual({
+     [90m     |[39m                        [31m[1m^[22m[39m
+     [90m 146 |[39m       [32m"finance-tower"[39m[33m:[39m [[32m"finance-desk"[39m[33m,[39m [32m"finance-tower"[39m[33m,[39m [32m"bi-finance"[39m][33m,[39m
+     [90m 147 |[39m       [32m"ar-aging"[39m[33m:[39m [[32m"ar-aging"[39m[33m,[39m [32m"collection-worklist"[39m[33m,[39m [32m"payment-plans"[39m[33m,[39m [32m"customer-credit"[39m[33m,[39m [32m"credit-overrides"[39m[33m,[39m [32m"finance-cases"[39m][33m,[39m
+     [90m 148 |[39m       [32m"accounts-payable"[39m[33m:[39m [[32m"vendor-bills"[39m[33m,[39m [32m"contra-bons"[39m[33m,[39m [32m"gr-ir"[39m][33m,[39m   [90m// PK-28 — GR/IR: lihat (vendor_bill.view)[39m[0m
+
+      at Object.<anonymous> (src/config/__tests__/mnt1MenuKeuangan.test.js:145:24)
+      at TestScheduler.scheduleTests (../fe/node_modules/@jest/core/build/TestScheduler.js:333:13)
+      at runJest (../fe/node_modules/@jest/core/build/runJest.js:404:19)
+      at _run10000 (../fe/node_modules/@jest/core/build/cli/index.js:320:7)
+      at runCLI (../fe/node_modules/@jest/core/build/cli/index.js:173:3)
+
+Test Suites: 2 failed, 1 passed, 3 total
+Tests:       3 failed, 75 passed, 78 total
+Snapshots:   0 total
+Time:        3.342 s
+Ran all test suites matching /src\/features\/__tests__\/pk28GrIr.test.js|src\/config\/__tests__\/mnt1MenuKeuangan.test.js|src\/config\/__tests__\/roleReach.test.js/i.

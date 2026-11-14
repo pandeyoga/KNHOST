@@ -1,0 +1,1 @@
+HEAD murni 7a95457 (backend sama dengan c3eb0a2): 1458 passed, 2 skipped, 4 xfailed (lihat tests_mem_basis_c3eb0a2.txt)

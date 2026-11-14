@@ -1,0 +1,19 @@
+ERROR tests_mem/test_AGT2_asisten_keuangan.py::test_AGT2_U1_baca_saja_menolak_tulis_tanpa_memanggil_aplikasi[asyncio]
+ERROR tests_mem/test_AGT2_asisten_keuangan.py::test_AGT2_U1b_sesi_sementara_jadwal[asyncio]
+ERROR tests_mem/test_AGT2_asisten_keuangan.py::test_AGT2_U2_tanpa_izin_layar_galat_dari_endpoint[asyncio]
+ERROR tests_mem/test_AGT2_asisten_keuangan.py::test_AGT2_U3_laba_rugi_sama_dengan_layar[asyncio]
+ERROR tests_mem/test_AGT2_asisten_keuangan.py::test_AGT2_U4_entity_id_di_argumen_ditolak[asyncio]
+ERROR tests_mem/test_AGT2_asisten_keuangan.py::test_AGT2_U5_pt_lain_ditolak_tanpa_panggil_penyedia[asyncio]
+ERROR tests_mem/test_AGT2_asisten_keuangan.py::test_AGT2_U6_gabungan_berlabel_belum_dieliminasi[asyncio]
+ERROR tests_mem/test_AGT2_asisten_keuangan.py::test_AGT2_U7_angka_tak_cocok_tidak_pernah_terkirim[asyncio]
+ERROR tests_mem/test_AGT2_asisten_keuangan.py::test_AGT2_U8_jawaban_lolos_dengan_sumber[asyncio]
+ERROR tests_mem/test_AGT2_asisten_keuangan.py::test_AGT2_U9_nama_pihak_disamarkan[asyncio]
+ERROR tests_mem/test_AGT2_asisten_keuangan.py::test_AGT2_U10_penyamaran_per_pt[asyncio]
+ERROR tests_mem/test_AGT2_asisten_keuangan.py::test_AGT2_U12_gerbang_izin_lalu_sakelar[asyncio]
+ERROR tests_mem/test_AGT2_asisten_keuangan.py::test_AGT2_U13_sakelar_hanya_pemegang_konfigurasi[asyncio]
+ERROR tests_mem/test_AGT2_asisten_keuangan.py::test_AGT2_U14_teks_bebas_menutup_alat_tindakan[asyncio]
+FAILED tests_mem/test_AGT2_asisten_keuangan.py::test_AGT2_U11_gaji_dibuang - ...
+FAILED tests_mem/test_AGT2_asisten_keuangan.py::test_AGT2_U15_alat_keuangan_tanpa_db_dan_tanpa_build_scope
+FAILED tests_mem/test_AGT2_evaluasi.py::test_AGT2_U17a_bentuk_set_keuangan - ...
+FAILED tests_mem/test_AGT2_evaluasi.py::test_AGT2_U17b_pengukur_engine_60_dari_60_di_data_seed[asyncio]
+4 failed, 1 warning, 14 errors in 6.63s

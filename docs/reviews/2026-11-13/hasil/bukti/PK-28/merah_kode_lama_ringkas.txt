@@ -1,0 +1,32 @@
+E           KeyError: 'Kebutuhan akun tidak dikenal: pembelian.selisih_harga'
+E           KeyError: 'Kebutuhan akun tidak dikenal: pembelian.selisih_harga'
+E           KeyError: 'Kebutuhan akun tidak dikenal: pembelian.selisih_harga'
+E           KeyError: 'Kebutuhan akun tidak dikenal: pembelian.selisih_harga'
+E       KeyError: 'ap_basis'
+E       KeyError: 'ap_basis'
+E       KeyError: 'ap_basis'
+E       TypeError: post_goods_receipt() got an unexpected keyword argument 'po_id'
+E           KeyError: 'Kebutuhan akun tidak dikenal: pembelian.selisih_harga'
+E           KeyError: 'Kebutuhan akun tidak dikenal: pembelian.selisih_harga'
+E       TypeError: post_goods_receipt() got an unexpected keyword argument 'po_id'
+E           KeyError: 'Kebutuhan akun tidak dikenal: pembelian.selisih_harga'
+E           KeyError: 'Kebutuhan akun tidak dikenal: pembelian.selisih_harga'
+E           KeyError: 'Kebutuhan akun tidak dikenal: pembelian.selisih_harga'
+E       TypeError: post_goods_receipt() got an unexpected keyword argument 'po_id'
+E       ModuleNotFoundError: No module named 'services.po_pricing'
+FAILED tests_mem/test_PK28_gr_ir.py::test_PK28_U1_faktur_lebih_mahal_selisih_ke_akun_selisih[asyncio]
+FAILED tests_mem/test_PK28_gr_ir.py::test_PK28_U2_faktur_ber_ppn_selisih_dan_ppn_masukan[asyncio]
+FAILED tests_mem/test_PK28_gr_ir.py::test_PK28_U3_faktur_lebih_murah_selisih_dikredit[asyncio]
+FAILED tests_mem/test_PK28_gr_ir.py::test_PK28_U4_tanpa_pemetaan_perilaku_lama_dan_terlihat_di_daftar[asyncio]
+FAILED tests_mem/test_PK28_gr_ir.py::test_PK28_U5_retur_sebelum_ditagih_dasar_grir_tanpa_ppn[asyncio]
+FAILED tests_mem/test_PK28_gr_ir.py::test_PK28_U6_retur_sesudah_ditagih_penuh_dasar_hutang[asyncio]
+FAILED tests_mem/test_PK28_gr_ir.py::test_PK28_U7_retur_sesudah_ditagih_sebagian_dasar_hutang[asyncio]
+FAILED tests_mem/test_PK28_gr_ir.py::test_PK28_U8_daftar_per_po_dan_saldo_buku_besar[asyncio]
+FAILED tests_mem/test_PK28_gr_ir.py::test_PK28_U9_kliring_sisa_kredit_lalu_nol[asyncio]
+FAILED tests_mem/test_PK28_gr_ir.py::test_PK28_U10_po_masih_berjalan_ditolak_tanpa_tulisan[asyncio]
+FAILED tests_mem/test_PK28_gr_ir.py::test_PK28_U10b_pemeriksaan_lain_tanpa_tulisan[asyncio]
+FAILED tests_mem/test_PK28_gr_ir.py::test_PK28_U11_kliring_sisa_debit[asyncio]
+FAILED tests_mem/test_PK28_gr_ir.py::test_PK28_U12_jurnal_kliring_gagal_lalu_ulang_tepat_sekali[asyncio]
+FAILED tests_mem/test_PK28_gr_ir.py::test_PK28_U12b_kliring_gagal_menahan_kliring_baru[asyncio]
+FAILED tests_mem/test_PK28_gr_ir.py::test_PK28_U13_lihat_dengan_vendor_bill_view_kliring_butuh_accounting_manage[asyncio]
+FAILED tests_mem/test_PK28_gr_ir.py::test_PK28_U14_harga_neto_baris_po_dipakai_penerimaan[asyncio]

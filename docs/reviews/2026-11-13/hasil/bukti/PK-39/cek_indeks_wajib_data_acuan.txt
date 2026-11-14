@@ -1,0 +1,8 @@
+credit_profile_requests.uq_open_request (satu pengajuan perubahan kredit terbuka per pelanggan per PT): terpasang · 0 kelompok kembar
+intercompany_eliminations.uq_pair_period (satu eliminasi otomatis antar-PT per pasangan per bulan): terpasang · 0 kelompok kembar
+payment_codes.uq_pay_code (kode bayar unik lintas PT): terpasang · 0 kelompok kembar
+payment_codes.uq_pay_code_line (satu kode bayar per pesanan per baris tagihan): terpasang · 0 kelompok kembar
+budgets.uq_budget_key (satu pagu per PT per tahun per bulan per akun/kategori): tidak ada · 0 kelompok kembar
+  Cari data kembar: db.budgets.aggregate([{$match:{key:{$type:"string",$gt:""}}},{$group:{_id:{e:"$entity_id",y:"$year",m:"$month",d:"$dimension",k:"$key"},n:{$sum:1},nomor:{$push:"$id"}}},{$match:{n:{$gt:1}}}])
+
+21 dari 22 indeks wajib beres.

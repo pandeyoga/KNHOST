@@ -1,0 +1,6 @@
+LAMA U1 jurnal faktur: {'2-1150': (1100000.0, 0.0), '2-1100': (0.0, 1100000.0)} sisa GR/IR PO: -100000.0
+.LAMA U5 jurnal retur: {'2-1150': (222000.0, 0.0), '1-1300': (0.0, 200000.0), '1-1500': (0.0, 22000.0)}
+LAMA U5 billable_received: 100.0
+LAMA U5 faktur 100 m: 200 posted
+LAMA U5 sisa GR/IR PO: -222000.0
+2 passed, 1 warning in 1.44s

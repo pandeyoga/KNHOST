@@ -1,0 +1,8 @@
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests_mem/test_PK20_satu_pembuat_kas.py:11: in <module>
+    from services.cash_ledger import CashPostingError, CashRejected
+E   ImportError: cannot import name 'CashPostingError' from 'services.cash_ledger' (/tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/wt21/backend/services/cash_ledger.py)
+=========================== short test summary info ============================
+ERROR tests_mem/test_PK20_satu_pembuat_kas.py
+!!!!!!!!!!!!!!!!!!!! Interrupted: 1 error during collection !!!!!!!!!!!!!!!!!!!!
+1 error in 0.17s

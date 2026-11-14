@@ -1,0 +1,115 @@
+FFFFFFFF.FFFFFFF.FFFFFF                                                  [100%]
+=================================== FAILURES ===================================
+E   AttributeError: module 'services.landed_cost_service' has no attribute 'split_allocation'
+<salinan bersih c3eb0a2>/backend/tests_mem/test_PK26_landed_cost.py:148: AttributeError: module 'services.landed_cost_service' has no attribute 'split_allocation'
+E   AttributeError: module 'services.landed_cost_service' has no attribute 'split_allocation'
+<salinan bersih c3eb0a2>/backend/tests_mem/test_PK26_landed_cost.py:148: AttributeError: module 'services.landed_cost_service' has no attribute 'split_allocation'
+E   AttributeError: module 'services.landed_cost_service' has no attribute 'split_allocation'
+<salinan bersih c3eb0a2>/backend/tests_mem/test_PK26_landed_cost.py:148: AttributeError: module 'services.landed_cost_service' has no attribute 'split_allocation'
+E   AttributeError: module 'services.landed_cost_service' has no attribute 'split_allocation'
+<salinan bersih c3eb0a2>/backend/tests_mem/test_PK26_landed_cost.py:148: AttributeError: module 'services.landed_cost_service' has no attribute 'split_allocation'
+E   AttributeError: module 'services.landed_cost_service' has no attribute 'treatment_of'
+<salinan bersih c3eb0a2>/backend/tests_mem/test_PK26_landed_cost.py:188: AttributeError: module 'services.landed_cost_service' has no attribute 'treatment_of'
+E   AttributeError: module 'services.landed_cost_service' has no attribute 'split_allocation'
+<salinan bersih c3eb0a2>/backend/tests_mem/test_PK26_landed_cost.py:202: AttributeError: module 'services.landed_cost_service' has no attribute 'split_allocation'
+E   AttributeError: module 'services.landed_cost_service' has no attribute 'split_allocation'
+<salinan bersih c3eb0a2>/backend/tests_mem/test_PK26_landed_cost.py:148: AttributeError: module 'services.landed_cost_service' has no attribute 'split_allocation'
+E   TypeError: post_landed_cost() missing 1 required keyword-only argument: 'amount'
+<salinan bersih c3eb0a2>/backend/tests_mem/test_PK26_landed_cost.py:227: TypeError: post_landed_cost() missing 1 required keyword-only argument: 'amount'
+E   AssertionError: assert {'1-1300': (3...0, 3000000.0)} == {'1-1300': (1... (0, 3000000)}
+      
+      Omitting 1 identical items, use -vv to show
+      Differing items:
+      {'1-1300': (3000000.0, 0.0)} != {'1-1300': (1500000.0, 0)}
+      Right contains 1 more item:
+      {'5-1000': (1500000.0, 0)}
+      Use -v to get more diff
+<salinan bersih c3eb0a2>/backend/tests_mem/test_PK26_landed_cost.py:268: AssertionError: assert {'1-1300': (3...0, 3000000.0)} == {'1-1300': (1... (0, 3000000)}
+E   KeyError: 'capitalization'
+<salinan bersih c3eb0a2>/backend/tests_mem/test_PK26_landed_cost.py:292: KeyError: 'capitalization'
+E   assert 3000000.0 == (1.5 * 1000000)
+     +  where 3000000.0 = round((4750000.0 - 1750000.0), 2)
+<salinan bersih c3eb0a2>/backend/tests_mem/test_PK26_landed_cost.py:303: assert 3000000.0 == (1.5 * 1000000)
+E   AssertionError: assert {'1-1300': (3....0, 300000.0)} == {'1-1300': (1...: (0, 300000)}
+      
+      Omitting 1 identical items, use -vv to show
+      Differing items:
+      {'1-1300': (300000.0, 0.0)} != {'1-1300': (100000, 0)}
+      Right contains 2 more items:
+      {'1-1350': (100000, 0), '5-1000': (100000, 0)}
+      Use -v to get more diff
+<salinan bersih c3eb0a2>/backend/tests_mem/test_PK26_landed_cost.py:315: AssertionError: assert {'1-1300': (3....0, 300000.0)} == {'1-1300': (1...: (0, 300000)}
+E   AssertionError: assert (1 == 1 and {'1-1300': (1....0, 100000.0)} == {'1-1300': (9...: (0, 100000)}
+     +  where 1 = len([{'id': 'je_86ecd447b459', 'number': 'KSC/JE-00010', 'date': '2026-11-14', 'description': 'Landed cost LCV-00003', ...}])
+      
+      Omitting 1 identical items, use -vv to show
+      Differing items:
+      {'1-1300': (100000.0, 0.0)} != {'1-1300': (98000, 0)}
+      Right contains 1 more item:
+      {'5-1000': (2000, 0)}
+      Use -v to get more diff)
+<salinan bersih c3eb0a2>/backend/tests_mem/test_PK26_landed_cost.py:330: AssertionError: assert (1 == 1 and {'1-1300': (1....0, 100000.0)} == {'1-1300': (9...: (0, 100000)}
+E   AssertionError: {"detail":"Setting 'inventory.landed_cost_porsi_terjual' tidak ada di registry"}
+    assert 404 == 200
+     +  where 404 = <Response [404 Not Found]>.status_code
+<salinan bersih c3eb0a2>/backend/tests_mem/test_PK26_landed_cost.py:126: AssertionError: {"detail":"Setting 'inventory.landed_cost_porsi_terjual' tidak ada di registry"}
+E   AssertionError: assert {'1-1300': (3...0, 3000000.0)} == {'1-1300': (1... (0, 3000000)}
+      
+      Omitting 1 identical items, use -vv to show
+      Differing items:
+      {'1-1300': (3000000.0, 0.0)} != {'1-1300': (1500000.0, 0)}
+      Right contains 1 more item:
+      {'5-1900': (1500000.0, 0)}
+      Use -v to get more diff
+<salinan bersih c3eb0a2>/backend/tests_mem/test_PK26_landed_cost.py:375: AssertionError: assert {'1-1300': (3...0, 3000000.0)} == {'1-1300': (1... (0, 3000000)}
+E   KeyError: 'capitalization'
+<salinan bersih c3eb0a2>/backend/tests_mem/test_PK26_landed_cost.py:405: KeyError: 'capitalization'
+E   KeyError: 'capitalization'
+<salinan bersih c3eb0a2>/backend/tests_mem/test_PK26_landed_cost.py:420: KeyError: 'capitalization'
+E   AssertionError: assert {'5-9500': (2...0.0, 20000.0)} == {'5-9500': (2...': (0, 22000)}
+      
+      Differing items:
+      {'5-9500': (20000.0, 0.0)} != {'5-9500': (22000, 0)}
+      {'1-1300': (0.0, 20000.0)} != {'1-1300': (0, 22000)}
+      Use -v to get more diff
+<salinan bersih c3eb0a2>/backend/tests_mem/test_PK26_landed_cost.py:452: AssertionError: assert {'5-9500': (2...0.0, 20000.0)} == {'5-9500': (2...': (0, 22000)}
+E   AssertionError: assert {'5-9500': (1...0.0, 15000.0)} == {'5-9500': (1...': (0, 16500)}
+      
+      Differing items:
+      {'5-9500': (15000.0, 0.0)} != {'5-9500': (16500, 0)}
+      {'1-1300': (0.0, 15000.0)} != {'1-1300': (0, 16500)}
+      Use -v to get more diff
+<salinan bersih c3eb0a2>/backend/tests_mem/test_PK26_landed_cost.py:467: AssertionError: assert {'5-9500': (1...0.0, 15000.0)} == {'5-9500': (1...': (0, 16500)}
+E   KeyError: "Setting 'inventory.landed_cost_porsi_terjual' tidak ada di registry"
+<salinan bersih c3eb0a2>/backend/config_registry.py:393: KeyError: "Setting 'inventory.landed_cost_porsi_terjual' tidak ada di registry"
+E   assert None
+     +  where None = <function search at 0x7f5d4fc8a2a0>('PASS.*INV-LC-01', "\n\x1b[96m\x1b[1mL4-GL — Invarian General Ledger (keseimbangan & rekonsiliasi)\x1b[0m\n  \x1b[92m[PASS]\x1b[0m GL: 20...OGS-ZERO)\n  \x1b[92m[PASS]\x1b[0m GL: Piutang 1-1200 ter-rekonsiliasi per entitas (tak bocor ke 'all', tak negatif)\n")
+     +    where <function search at 0x7f5d4fc8a2a0> = re.search
+     +    and   "\n\x1b[96m\x1b[1mL4-GL — Invarian General Ledger (keseimbangan & rekonsiliasi)\x1b[0m\n  \x1b[92m[PASS]\x1b[0m GL: 20...OGS-ZERO)\n  \x1b[92m[PASS]\x1b[0m GL: Piutang 1-1200 ter-rekonsiliasi per entitas (tak bocor ke 'all', tak negatif)\n" = CaptureResult(out="\n\x1b[96m\x1b[1mL4-GL — Invarian General Ledger (keseimbangan & rekonsiliasi)\x1b[0m\n  \x1b[92m[P...\n  \x1b[92m[PASS]\x1b[0m GL: Piutang 1-1200 ter-rekonsiliasi per entitas (tak bocor ke 'all', tak negatif)\n", err='').out
+     +      where CaptureResult(out="\n\x1b[96m\x1b[1mL4-GL — Invarian General Ledger (keseimbangan & rekonsiliasi)\x1b[0m\n  \x1b[92m[P...\n  \x1b[92m[PASS]\x1b[0m GL: Piutang 1-1200 ter-rekonsiliasi per entitas (tak bocor ke 'all', tak negatif)\n", err='') = readouterr()
+     +        where readouterr = <_pytest.capture.CaptureFixture object at 0x7f5d39668b10>.readouterr
+<salinan bersih c3eb0a2>/backend/tests_mem/test_PK26_landed_cost.py:509: assert None
+../../../venv311/lib/python3.11/site-packages/starlette/formparsers.py:12
+=========================== short test summary info ============================
+FAILED tests_mem/test_PK26_landed_cost.py::test_PK26_U1_murni_satu_roll_terjual
+FAILED tests_mem/test_PK26_landed_cost.py::test_PK26_U2_murni_tiga_golongan
+FAILED tests_mem/test_PK26_landed_cost.py::test_PK26_U3_murni_roll_sudah_susut
+FAILED tests_mem/test_PK26_landed_cost.py::test_PK26_U10_murni_pembulatan_sen
+FAILED tests_mem/test_PK26_landed_cost.py::test_PK26_murni_status_lain_dan_dalam_perjalanan
+FAILED tests_mem/test_PK26_landed_cost.py::test_PK26_murni_negatif_ditolak - ...
+FAILED tests_mem/test_PK26_landed_cost.py::test_PK26_murni_lebih_satu_sen_karena_pembulatan_bukan_negatif
+FAILED tests_mem/test_PK26_landed_cost.py::test_PK26_a_post_landed_cost_dari_capitalization[asyncio]
+FAILED tests_mem/test_PK26_landed_cost.py::test_PK26_U1_roll_terjual_ke_hpp[asyncio]
+FAILED tests_mem/test_PK26_landed_cost.py::test_PK26_U8_setujui_lagi_ditolak[asyncio]
+FAILED tests_mem/test_PK26_landed_cost.py::test_PK26_U9_rekonsiliasi_tetap_nol[asyncio]
+FAILED tests_mem/test_PK26_landed_cost.py::test_PK26_U2_tiga_golongan[asyncio]
+FAILED tests_mem/test_PK26_landed_cost.py::test_PK26_U3_bagian_susut_dibebankan[asyncio]
+FAILED tests_mem/test_PK26_landed_cost.py::test_PK26_U4_varians_hanya_pt_yang_diatur[asyncio]
+FAILED tests_mem/test_PK26_landed_cost.py::test_PK26_U5_akun_hpp_dari_pemetaan_pt[asyncio]
+FAILED tests_mem/test_PK26_landed_cost.py::test_PK26_U7_ulang_posting_memakai_angka_tersimpan[asyncio]
+FAILED tests_mem/test_PK26_landed_cost.py::test_PK26_U10_pembulatan_sen_lewat_api[asyncio]
+FAILED tests_mem/test_PK26_landed_cost.py::test_PK26_U11_susut_potong_dinilai_biaya_roll[asyncio]
+FAILED tests_mem/test_PK26_landed_cost.py::test_PK26_U12_potong_uji_mutu_dinilai_biaya_roll[asyncio]
+FAILED tests_mem/test_PK26_landed_cost.py::test_PK26_U13_putaran_t1_config[asyncio]
+FAILED tests_mem/test_PK26_landed_cost.py::test_PK26_invarian_INV_LC_01[asyncio]
+21 failed, 2 passed, 1 warning in 1.72s

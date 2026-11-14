@@ -1,0 +1,517 @@
+FFFFFFFFFFFFFFFF                                                         [100%]
+=================================== FAILURES ===================================
+_______ test_PK28_U1_faktur_lebih_mahal_selisih_ke_akun_selisih[asyncio] _______
+
+klien = <httpx.AsyncClient object at 0x7fce0867cd90>
+kepala_admin = {'Authorization': 'Bearer tok_uji_bedd7fbd60ce4ad8aa3fa848caa99353', 'X-Entity-Id': 'ent_ksc'}
+db = <motor.motor_asyncio.AsyncIOMotorDatabase object at 0x7fce1c0dae10>
+bahan = {'pid': 'prd_pk28_14dfdb33', 'wid': 'wh_pk28_8e648efc', 'sid': 'sup_pk28_0394cb94', 'h_buat': {'Authorization': 'Bearer tok_uji_3d13f0c143924c17bcfc000cebe21a6e', 'X-Entity-Id': 'ent_ksc'}}
+
+    @MENUNGGU_B
+    async def test_PK28_U1_faktur_lebih_mahal_selisih_ke_akun_selisih(klien, kepala_admin, db, bahan):
+        """Terima 100 m × 10.000 = 1.000.000 (Dr 1-1300 / Cr 2-1150). Faktur 100 m @ 11.000 = 1.100.000 (tanpa PPN):
+        GR/IR dihapus 100 × 10.000 = 1.000.000; selisih 1.100.000 − 1.000.000 = 100.000 → Dr 5-9920. Saldo 2-1150 PO = 0."""
+>       async with terpetakan():
+
+tests_mem/test_PK28_gr_ir.py:203: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+/usr/lib/python3.11/contextlib.py:210: in __aenter__
+    return await anext(self.gen)
+           ^^^^^^^^^^^^^^^^^^^^^
+tests_mem/test_PK28_gr_ir.py:93: in terpetakan
+    await petakan(eid)
+tests_mem/test_PK28_gr_ir.py:82: in petakan
+    await glm.set_mapping(KUNCI, eid, AKUN, "uji PK-28 terpetakan", AKTOR_UJI)
+services/gl_mapping_service.py:162: in set_mapping
+    entry = reg.require(key)
+            ^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+key = 'pembelian.selisih_harga'
+
+    def require(key: str) -> Dict[str, Any]:
+        if key not in BY_KEY:
+>           raise KeyError(f"Kebutuhan akun tidak dikenal: {key}")
+E           KeyError: 'Kebutuhan akun tidak dikenal: pembelian.selisih_harga'
+
+services/gl_mapping_registry.py:177: KeyError
+---------------------------- Captured stdout setup -----------------------------
+[bootstrap] SANDI AWAL akun seed (ganti segera): yVQGqaOiYtzZfrwL
+[bootstrap] FASE F lifecycle backfill: 5 produk distempel 'produksi'
+[bootstrap] kebersihan data: 5 record dirapikan {'customers': 3, 'suppliers': 0, 'users': 0, 'hr_employees': 2, 'makloons': 0}
+_________ test_PK28_U2_faktur_ber_ppn_selisih_dan_ppn_masukan[asyncio] _________
+
+klien = <httpx.AsyncClient object at 0x7fce0867cd90>
+kepala_admin = {'Authorization': 'Bearer tok_uji_bedd7fbd60ce4ad8aa3fa848caa99353', 'X-Entity-Id': 'ent_ksc'}
+db = <motor.motor_asyncio.AsyncIOMotorDatabase object at 0x7fce1c0dae10>
+bahan = {'pid': 'prd_pk28_14dfdb33', 'wid': 'wh_pk28_8e648efc', 'sid': 'sup_pk28_0394cb94', 'h_buat': {'Authorization': 'Bearer tok_uji_3d13f0c143924c17bcfc000cebe21a6e', 'X-Entity-Id': 'ent_ksc'}}
+
+    @MENUNGGU_B
+    async def test_PK28_U2_faktur_ber_ppn_selisih_dan_ppn_masukan(klien, kepala_admin, db, bahan):
+        """PO ber-PPN 11 %. Faktur 100 m @ 11.000: neto 1.100.000, PPN 11 % = 121.000, total 1.221.000.
+        Jurnal: Dr 2-1150 1.000.000 + Dr 5-9920 100.000 + Dr 1-1500 121.000 = Cr 2-1100 1.221.000."""
+>       async with terpetakan():
+
+tests_mem/test_PK28_gr_ir.py:223: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+/usr/lib/python3.11/contextlib.py:210: in __aenter__
+    return await anext(self.gen)
+           ^^^^^^^^^^^^^^^^^^^^^
+tests_mem/test_PK28_gr_ir.py:93: in terpetakan
+    await petakan(eid)
+tests_mem/test_PK28_gr_ir.py:82: in petakan
+    await glm.set_mapping(KUNCI, eid, AKUN, "uji PK-28 terpetakan", AKTOR_UJI)
+services/gl_mapping_service.py:162: in set_mapping
+    entry = reg.require(key)
+            ^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+key = 'pembelian.selisih_harga'
+
+    def require(key: str) -> Dict[str, Any]:
+        if key not in BY_KEY:
+>           raise KeyError(f"Kebutuhan akun tidak dikenal: {key}")
+E           KeyError: 'Kebutuhan akun tidak dikenal: pembelian.selisih_harga'
+
+services/gl_mapping_registry.py:177: KeyError
+__________ test_PK28_U3_faktur_lebih_murah_selisih_dikredit[asyncio] ___________
+
+klien = <httpx.AsyncClient object at 0x7fce0867cd90>
+kepala_admin = {'Authorization': 'Bearer tok_uji_bedd7fbd60ce4ad8aa3fa848caa99353', 'X-Entity-Id': 'ent_ksc'}
+db = <motor.motor_asyncio.AsyncIOMotorDatabase object at 0x7fce1c0dae10>
+bahan = {'pid': 'prd_pk28_14dfdb33', 'wid': 'wh_pk28_8e648efc', 'sid': 'sup_pk28_0394cb94', 'h_buat': {'Authorization': 'Bearer tok_uji_3d13f0c143924c17bcfc000cebe21a6e', 'X-Entity-Id': 'ent_ksc'}}
+
+    @MENUNGGU_B
+    async def test_PK28_U3_faktur_lebih_murah_selisih_dikredit(klien, kepala_admin, db, bahan):
+        """Faktur 100 m @ 9.500 = 950.000: GR/IR 1.000.000 dihapus; selisih 950.000 − 1.000.000 = −50.000 → Cr 5-9920."""
+>       async with terpetakan():
+
+tests_mem/test_PK28_gr_ir.py:239: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+/usr/lib/python3.11/contextlib.py:210: in __aenter__
+    return await anext(self.gen)
+           ^^^^^^^^^^^^^^^^^^^^^
+tests_mem/test_PK28_gr_ir.py:93: in terpetakan
+    await petakan(eid)
+tests_mem/test_PK28_gr_ir.py:82: in petakan
+    await glm.set_mapping(KUNCI, eid, AKUN, "uji PK-28 terpetakan", AKTOR_UJI)
+services/gl_mapping_service.py:162: in set_mapping
+    entry = reg.require(key)
+            ^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+key = 'pembelian.selisih_harga'
+
+    def require(key: str) -> Dict[str, Any]:
+        if key not in BY_KEY:
+>           raise KeyError(f"Kebutuhan akun tidak dikenal: {key}")
+E           KeyError: 'Kebutuhan akun tidak dikenal: pembelian.selisih_harga'
+
+services/gl_mapping_registry.py:177: KeyError
+__ test_PK28_U4_tanpa_pemetaan_perilaku_lama_dan_terlihat_di_daftar[asyncio] ___
+
+klien = <httpx.AsyncClient object at 0x7fce0867cd90>
+kepala_admin = {'Authorization': 'Bearer tok_uji_bedd7fbd60ce4ad8aa3fa848caa99353', 'X-Entity-Id': 'ent_ksc'}
+db = <motor.motor_asyncio.AsyncIOMotorDatabase object at 0x7fce1c0dae10>
+bahan = {'pid': 'prd_pk28_14dfdb33', 'wid': 'wh_pk28_8e648efc', 'sid': 'sup_pk28_0394cb94', 'h_buat': {'Authorization': 'Bearer tok_uji_3d13f0c143924c17bcfc000cebe21a6e', 'X-Entity-Id': 'ent_ksc'}}
+
+    @MENUNGGU_B
+    async def test_PK28_U4_tanpa_pemetaan_perilaku_lama_dan_terlihat_di_daftar(klien, kepala_admin, db, bahan):
+        """Akun selisih belum diatur → jurnal lama Dr 2-1150 1.100.000 / Cr 2-1100 1.100.000; sisa PO = 1.000.000 −
+        1.100.000 = −100.000 (saldo debit) dan selisih belum terposting 100.000 tampil di daftar GR/IR."""
+>       await lepas_peta()
+
+tests_mem/test_PK28_gr_ir.py:255: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests_mem/test_PK28_gr_ir.py:87: in lepas_peta
+    if (await glm.resolve(KUNCI, eid))["source"] == "entity":
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+services/gl_mapping_service.py:37: in resolve
+    entry = reg.require(key)
+            ^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+key = 'pembelian.selisih_harga'
+
+    def require(key: str) -> Dict[str, Any]:
+        if key not in BY_KEY:
+>           raise KeyError(f"Kebutuhan akun tidak dikenal: {key}")
+E           KeyError: 'Kebutuhan akun tidak dikenal: pembelian.selisih_harga'
+
+services/gl_mapping_registry.py:177: KeyError
+_______ test_PK28_U5_retur_sebelum_ditagih_dasar_grir_tanpa_ppn[asyncio] _______
+
+klien = <httpx.AsyncClient object at 0x7fce0867cd90>
+kepala_admin = {'Authorization': 'Bearer tok_uji_bedd7fbd60ce4ad8aa3fa848caa99353', 'X-Entity-Id': 'ent_ksc'}
+db = <motor.motor_asyncio.AsyncIOMotorDatabase object at 0x7fce1c0dae10>
+bahan = {'pid': 'prd_pk28_14dfdb33', 'wid': 'wh_pk28_8e648efc', 'sid': 'sup_pk28_0394cb94', 'h_buat': {'Authorization': 'Bearer tok_uji_3d13f0c143924c17bcfc000cebe21a6e', 'X-Entity-Id': 'ent_ksc'}}
+
+    @MENUNGGU_B
+    async def test_PK28_U5_retur_sebelum_ditagih_dasar_grir_tanpa_ppn(klien, kepala_admin, db, bahan):
+        """PO ber-PPN 11 %, terima 100 m (GR/IR kredit 1.000.000). Retur 20 m × 10.000 = 200.000 sebelum ada faktur → dasar
+        GR/IR: Dr 2-1150 200.000 / Cr 1-1300 200.000, TANPA PPN (PPN masukan belum pernah dicatat). Boleh tagih = 100 − 20
+        = 80. Faktur 100 m ditolak; faktur 80 m: Dr 2-1150 800.000 + Dr 1-1500 88.000 (11 % × 800.000) = Cr 2-1100 888.000.
+        Sisa 2-1150 PO = 1.000.000 − 200.000 − 800.000 = 0; 1-1500 naik 88.000."""
+        po = await buat_po(db, bahan, ppn=True)
+        await terima(klien, kepala_admin, db, bahan, po, 100)
+        ppn0 = await saldo_akun(PPN_IN, KSC)
+        rid = await retur(klien, bahan, po, 20, 10_000, setujui=kepala_admin)
+        ret = await db.purchase_returns.find_one({"id": rid}, {"_id": 0})
+>       assert ret["ap_basis"] == "gr_ir"
+               ^^^^^^^^^^^^^^^
+E       KeyError: 'ap_basis'
+
+tests_mem/test_PK28_gr_ir.py:281: KeyError
+________ test_PK28_U6_retur_sesudah_ditagih_penuh_dasar_hutang[asyncio] ________
+
+klien = <httpx.AsyncClient object at 0x7fce0867cd90>
+kepala_admin = {'Authorization': 'Bearer tok_uji_bedd7fbd60ce4ad8aa3fa848caa99353', 'X-Entity-Id': 'ent_ksc'}
+db = <motor.motor_asyncio.AsyncIOMotorDatabase object at 0x7fce1c0dae10>
+bahan = {'pid': 'prd_pk28_14dfdb33', 'wid': 'wh_pk28_8e648efc', 'sid': 'sup_pk28_0394cb94', 'h_buat': {'Authorization': 'Bearer tok_uji_3d13f0c143924c17bcfc000cebe21a6e', 'X-Entity-Id': 'ent_ksc'}}
+
+    @MENUNGGU_B
+    async def test_PK28_U6_retur_sesudah_ditagih_penuh_dasar_hutang(klien, kepala_admin, db, bahan):
+        """Terima 100 m, faktur 100 m @ 10.000 + PPN 11 % diposting. Retur 20 m: dasar hutang, jurnal seperti sekarang —
+        Dr 2-1100 222.000 / Cr 1-1300 200.000 / Cr 1-1500 22.000 (pembalik PPN). Boleh tagih tetap 100 − 100 = 0."""
+        po = await buat_po(db, bahan, ppn=True)
+        await terima(klien, kepala_admin, db, bahan, po, 100)
+        r = await tagih(klien, bahan, po, 100, 10_000)
+        assert r.status_code == 200 and r.json()["status"] == "posted", r.text
+        rid = await retur(klien, bahan, po, 20, 10_000, setujui=kepala_admin)
+        ret = await db.purchase_returns.find_one({"id": rid}, {"_id": 0})
+>       assert ret["ap_basis"] == "hutang"
+               ^^^^^^^^^^^^^^^
+E       KeyError: 'ap_basis'
+
+tests_mem/test_PK28_gr_ir.py:307: KeyError
+______ test_PK28_U7_retur_sesudah_ditagih_sebagian_dasar_hutang[asyncio] _______
+
+klien = <httpx.AsyncClient object at 0x7fce0867cd90>
+kepala_admin = {'Authorization': 'Bearer tok_uji_bedd7fbd60ce4ad8aa3fa848caa99353', 'X-Entity-Id': 'ent_ksc'}
+db = <motor.motor_asyncio.AsyncIOMotorDatabase object at 0x7fce1c0dae10>
+bahan = {'pid': 'prd_pk28_14dfdb33', 'wid': 'wh_pk28_8e648efc', 'sid': 'sup_pk28_0394cb94', 'h_buat': {'Authorization': 'Bearer tok_uji_3d13f0c143924c17bcfc000cebe21a6e', 'X-Entity-Id': 'ent_ksc'}}
+
+    @MENUNGGU_B
+    async def test_PK28_U7_retur_sesudah_ditagih_sebagian_dasar_hutang(klien, kepala_admin, db, bahan):
+        """Terima 100 m, faktur 60 m diposting, retur 20 m → dasar hutang (ada faktur terposting); retur tidak mengurangi
+        boleh-tagih: 100 − 60 = 40."""
+        po = await buat_po(db, bahan)
+        await terima(klien, kepala_admin, db, bahan, po, 100)
+        r = await tagih(klien, bahan, po, 60, 10_000)
+        assert r.status_code == 200 and r.json()["status"] == "posted", r.text
+        rid = await retur(klien, bahan, po, 20, 10_000, setujui=kepala_admin)
+>       assert (await db.purchase_returns.find_one({"id": rid}))["ap_basis"] == "hutang"
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       KeyError: 'ap_basis'
+
+tests_mem/test_PK28_gr_ir.py:323: KeyError
+___________ test_PK28_U8_daftar_per_po_dan_saldo_buku_besar[asyncio] ___________
+
+klien = <httpx.AsyncClient object at 0x7fce0867cd90>
+kepala_admin = {'Authorization': 'Bearer tok_uji_bedd7fbd60ce4ad8aa3fa848caa99353', 'X-Entity-Id': 'ent_ksc'}
+db = <motor.motor_asyncio.AsyncIOMotorDatabase object at 0x7fce1c0dae10>
+bahan = {'pid': 'prd_pk28_14dfdb33', 'wid': 'wh_pk28_8e648efc', 'sid': 'sup_pk28_0394cb94', 'h_buat': {'Authorization': 'Bearer tok_uji_3d13f0c143924c17bcfc000cebe21a6e', 'X-Entity-Id': 'ent_ksc'}}
+
+    async def test_PK28_U8_daftar_per_po_dan_saldo_buku_besar(klien, kepala_admin, db, bahan):
+        """PT `ent_kanda` (tidak dipakai uji lain di modul ini → total tidak tercampur). Terima 100 m × 10.000 (fixture, PO tetap `receiving`)
+        → sisa PO 1.000.000, umur 0 hari. Jurnal manual Dr 2-1150 5.000 / Cr 6-9000 5.000 tanpa PO → tak terhubung −5.000.
+        Buku besar 2-1150 = 1.000.000 − 5.000 = 995.000 = total sisa + tak terhubung."""
+        from services.book_date import tanggal_buku
+        eid = "ent_kanda"
+        h = {**kepala_admin, "X-Entity-Id": eid}
+        po = await buat_po(db, bahan, status="receiving", eid=eid)
+>       tid = await terima_fixture(db, po, 100)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests_mem/test_PK28_gr_ir.py:337: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+db = <motor.motor_asyncio.AsyncIOMotorDatabase object at 0x7fce1c0dae10>
+po = {'id': 'po_pk28_3ff87dcf', 'po_number': 'PO/PK28/3ff87dcf', 'entity_id': 'ent_kanda', 'status': 'receiving', ...}
+qty = 100, harga = 10000.0
+
+    async def terima_fixture(db, po, qty: float, harga: float = 10_000.0) -> str:
+        """Fixture penerimaan: `post_goods_receipt` dengan nilai yang sama dengan alur gudang (PO TIDAK berubah status)."""
+        from services import gl_service as gl
+        tid = uid("tsk")
+        await db.wms_tasks.insert_one({"id": tid, "flow_type": "inbound", "status": "completed", "po_id": po["id"],
+                                       "entity_id": po["entity_id"], "quantity": qty, "created_at": now_iso()})
+        await db.purchase_orders.update_one({"id": po["id"]}, {"$inc": {"items.0.received_qty": qty}})
+>       await gl.post_goods_receipt(task_id=tid, entity_id=po["entity_id"], amount=round(qty * harga, 2),
+                                    label=po["po_number"], po_id=po["id"])
+E       TypeError: post_goods_receipt() got an unexpected keyword argument 'po_id'
+
+tests_mem/test_PK28_gr_ir.py:139: TypeError
+______________ test_PK28_U9_kliring_sisa_kredit_lalu_nol[asyncio] ______________
+
+klien = <httpx.AsyncClient object at 0x7fce0867cd90>
+kepala_admin = {'Authorization': 'Bearer tok_uji_bedd7fbd60ce4ad8aa3fa848caa99353', 'X-Entity-Id': 'ent_ksc'}
+db = <motor.motor_asyncio.AsyncIOMotorDatabase object at 0x7fce1c0dae10>
+bahan = {'pid': 'prd_pk28_14dfdb33', 'wid': 'wh_pk28_8e648efc', 'sid': 'sup_pk28_0394cb94', 'h_buat': {'Authorization': 'Bearer tok_uji_3d13f0c143924c17bcfc000cebe21a6e', 'X-Entity-Id': 'ent_ksc'}}
+
+    async def test_PK28_U9_kliring_sisa_kredit_lalu_nol(klien, kepala_admin, db, bahan):
+        """Sisa kredit 10.000 → Dr 2-1150 10.000 / Cr 5-9920 10.000; sisa 0; ulang → 409 "sudah nol"."""
+>       async with terpetakan():
+
+tests_mem/test_PK28_gr_ir.py:373: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+/usr/lib/python3.11/contextlib.py:210: in __aenter__
+    return await anext(self.gen)
+           ^^^^^^^^^^^^^^^^^^^^^
+tests_mem/test_PK28_gr_ir.py:93: in terpetakan
+    await petakan(eid)
+tests_mem/test_PK28_gr_ir.py:82: in petakan
+    await glm.set_mapping(KUNCI, eid, AKUN, "uji PK-28 terpetakan", AKTOR_UJI)
+services/gl_mapping_service.py:162: in set_mapping
+    entry = reg.require(key)
+            ^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+key = 'pembelian.selisih_harga'
+
+    def require(key: str) -> Dict[str, Any]:
+        if key not in BY_KEY:
+>           raise KeyError(f"Kebutuhan akun tidak dikenal: {key}")
+E           KeyError: 'Kebutuhan akun tidak dikenal: pembelian.selisih_harga'
+
+services/gl_mapping_registry.py:177: KeyError
+________ test_PK28_U10_po_masih_berjalan_ditolak_tanpa_tulisan[asyncio] ________
+
+klien = <httpx.AsyncClient object at 0x7fce0867cd90>
+kepala_admin = {'Authorization': 'Bearer tok_uji_bedd7fbd60ce4ad8aa3fa848caa99353', 'X-Entity-Id': 'ent_ksc'}
+db = <motor.motor_asyncio.AsyncIOMotorDatabase object at 0x7fce1c0dae10>
+bahan = {'pid': 'prd_pk28_14dfdb33', 'wid': 'wh_pk28_8e648efc', 'sid': 'sup_pk28_0394cb94', 'h_buat': {'Authorization': 'Bearer tok_uji_3d13f0c143924c17bcfc000cebe21a6e', 'X-Entity-Id': 'ent_ksc'}}
+
+    async def test_PK28_U10_po_masih_berjalan_ditolak_tanpa_tulisan(klien, kepala_admin, db, bahan):
+>       async with terpetakan():
+
+tests_mem/test_PK28_gr_ir.py:398: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+/usr/lib/python3.11/contextlib.py:210: in __aenter__
+    return await anext(self.gen)
+           ^^^^^^^^^^^^^^^^^^^^^
+tests_mem/test_PK28_gr_ir.py:93: in terpetakan
+    await petakan(eid)
+tests_mem/test_PK28_gr_ir.py:82: in petakan
+    await glm.set_mapping(KUNCI, eid, AKUN, "uji PK-28 terpetakan", AKTOR_UJI)
+services/gl_mapping_service.py:162: in set_mapping
+    entry = reg.require(key)
+            ^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+key = 'pembelian.selisih_harga'
+
+    def require(key: str) -> Dict[str, Any]:
+        if key not in BY_KEY:
+>           raise KeyError(f"Kebutuhan akun tidak dikenal: {key}")
+E           KeyError: 'Kebutuhan akun tidak dikenal: pembelian.selisih_harga'
+
+services/gl_mapping_registry.py:177: KeyError
+____________ test_PK28_U10b_pemeriksaan_lain_tanpa_tulisan[asyncio] ____________
+
+klien = <httpx.AsyncClient object at 0x7fce0867cd90>
+kepala_admin = {'Authorization': 'Bearer tok_uji_bedd7fbd60ce4ad8aa3fa848caa99353', 'X-Entity-Id': 'ent_ksc'}
+db = <motor.motor_asyncio.AsyncIOMotorDatabase object at 0x7fce1c0dae10>
+bahan = {'pid': 'prd_pk28_14dfdb33', 'wid': 'wh_pk28_8e648efc', 'sid': 'sup_pk28_0394cb94', 'h_buat': {'Authorization': 'Bearer tok_uji_3d13f0c143924c17bcfc000cebe21a6e', 'X-Entity-Id': 'ent_ksc'}}
+
+    async def test_PK28_U10b_pemeriksaan_lain_tanpa_tulisan(klien, kepala_admin, db, bahan):
+        """Alasan pendek → 400; faktur draf → 409; akun selisih belum diatur → 409 — tidak ada tulisan."""
+        po = await buat_po(db, bahan, status="completed")
+>       await terima_fixture(db, po, 100)
+
+tests_mem/test_PK28_gr_ir.py:414: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+db = <motor.motor_asyncio.AsyncIOMotorDatabase object at 0x7fce1c0dae10>
+po = {'id': 'po_pk28_e42865d4', 'po_number': 'PO/PK28/e42865d4', 'entity_id': 'ent_ksc', 'status': 'completed', ...}
+qty = 100, harga = 10000.0
+
+    async def terima_fixture(db, po, qty: float, harga: float = 10_000.0) -> str:
+        """Fixture penerimaan: `post_goods_receipt` dengan nilai yang sama dengan alur gudang (PO TIDAK berubah status)."""
+        from services import gl_service as gl
+        tid = uid("tsk")
+        await db.wms_tasks.insert_one({"id": tid, "flow_type": "inbound", "status": "completed", "po_id": po["id"],
+                                       "entity_id": po["entity_id"], "quantity": qty, "created_at": now_iso()})
+        await db.purchase_orders.update_one({"id": po["id"]}, {"$inc": {"items.0.received_qty": qty}})
+>       await gl.post_goods_receipt(task_id=tid, entity_id=po["entity_id"], amount=round(qty * harga, 2),
+                                    label=po["po_number"], po_id=po["id"])
+E       TypeError: post_goods_receipt() got an unexpected keyword argument 'po_id'
+
+tests_mem/test_PK28_gr_ir.py:139: TypeError
+__________________ test_PK28_U11_kliring_sisa_debit[asyncio] ___________________
+
+klien = <httpx.AsyncClient object at 0x7fce0867cd90>
+kepala_admin = {'Authorization': 'Bearer tok_uji_bedd7fbd60ce4ad8aa3fa848caa99353', 'X-Entity-Id': 'ent_ksc'}
+db = <motor.motor_asyncio.AsyncIOMotorDatabase object at 0x7fce1c0dae10>
+bahan = {'pid': 'prd_pk28_14dfdb33', 'wid': 'wh_pk28_8e648efc', 'sid': 'sup_pk28_0394cb94', 'h_buat': {'Authorization': 'Bearer tok_uji_3d13f0c143924c17bcfc000cebe21a6e', 'X-Entity-Id': 'ent_ksc'}}
+
+    async def test_PK28_U11_kliring_sisa_debit(klien, kepala_admin, db, bahan):
+        """Terima 100 m (Cr 1.000.000); faktur 100 m @ 10.050 tanpa pemetaan (+0,5 %, dalam toleransi) → Dr 2-1150 1.005.000
+        → sisa debit −5.000. Dipetakan lalu dikliring: Dr 5-9920 5.000 / Cr 2-1150 5.000, arah `kredit_grir`."""
+>       await lepas_peta()
+
+tests_mem/test_PK28_gr_ir.py:436: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests_mem/test_PK28_gr_ir.py:87: in lepas_peta
+    if (await glm.resolve(KUNCI, eid))["source"] == "entity":
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+services/gl_mapping_service.py:37: in resolve
+    entry = reg.require(key)
+            ^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+key = 'pembelian.selisih_harga'
+
+    def require(key: str) -> Dict[str, Any]:
+        if key not in BY_KEY:
+>           raise KeyError(f"Kebutuhan akun tidak dikenal: {key}")
+E           KeyError: 'Kebutuhan akun tidak dikenal: pembelian.selisih_harga'
+
+services/gl_mapping_registry.py:177: KeyError
+_____ test_PK28_U12_jurnal_kliring_gagal_lalu_ulang_tepat_sekali[asyncio] ______
+
+klien = <httpx.AsyncClient object at 0x7fce0867cd90>
+kepala_admin = {'Authorization': 'Bearer tok_uji_bedd7fbd60ce4ad8aa3fa848caa99353', 'X-Entity-Id': 'ent_ksc'}
+db = <motor.motor_asyncio.AsyncIOMotorDatabase object at 0x7fce1c0dae10>
+bahan = {'pid': 'prd_pk28_14dfdb33', 'wid': 'wh_pk28_8e648efc', 'sid': 'sup_pk28_0394cb94', 'h_buat': {'Authorization': 'Bearer tok_uji_3d13f0c143924c17bcfc000cebe21a6e', 'X-Entity-Id': 'ent_ksc'}}
+paksa_jurnal_gagal = <function paksa_jurnal_gagal.<locals>._paksa at 0x7fce08592480>
+
+    async def test_PK28_U12_jurnal_kliring_gagal_lalu_ulang_tepat_sekali(klien, kepala_admin, db, bahan, paksa_jurnal_gagal):
+>       async with terpetakan():
+
+tests_mem/test_PK28_gr_ir.py:453: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+/usr/lib/python3.11/contextlib.py:210: in __aenter__
+    return await anext(self.gen)
+           ^^^^^^^^^^^^^^^^^^^^^
+tests_mem/test_PK28_gr_ir.py:93: in terpetakan
+    await petakan(eid)
+tests_mem/test_PK28_gr_ir.py:82: in petakan
+    await glm.set_mapping(KUNCI, eid, AKUN, "uji PK-28 terpetakan", AKTOR_UJI)
+services/gl_mapping_service.py:162: in set_mapping
+    entry = reg.require(key)
+            ^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+key = 'pembelian.selisih_harga'
+
+    def require(key: str) -> Dict[str, Any]:
+        if key not in BY_KEY:
+>           raise KeyError(f"Kebutuhan akun tidak dikenal: {key}")
+E           KeyError: 'Kebutuhan akun tidak dikenal: pembelian.selisih_harga'
+
+services/gl_mapping_registry.py:177: KeyError
+__________ test_PK28_U12b_kliring_gagal_menahan_kliring_baru[asyncio] __________
+
+klien = <httpx.AsyncClient object at 0x7fce0867cd90>
+kepala_admin = {'Authorization': 'Bearer tok_uji_bedd7fbd60ce4ad8aa3fa848caa99353', 'X-Entity-Id': 'ent_ksc'}
+db = <motor.motor_asyncio.AsyncIOMotorDatabase object at 0x7fce1c0dae10>
+bahan = {'pid': 'prd_pk28_14dfdb33', 'wid': 'wh_pk28_8e648efc', 'sid': 'sup_pk28_0394cb94', 'h_buat': {'Authorization': 'Bearer tok_uji_3d13f0c143924c17bcfc000cebe21a6e', 'X-Entity-Id': 'ent_ksc'}}
+paksa_jurnal_gagal = <function paksa_jurnal_gagal.<locals>._paksa at 0x7fce0852a840>
+
+    async def test_PK28_U12b_kliring_gagal_menahan_kliring_baru(klien, kepala_admin, db, bahan, paksa_jurnal_gagal):
+        """Tambahan (bukan baris tabel): unsur kliring yang jurnalnya gagal belum mengubah buku besar; kliring baru selama
+        itu = jurnal ganda saat unsur pertama diulang. Ditolak 409 sampai unsur itu diulang dari Posting Gagal."""
+>       async with terpetakan():
+
+tests_mem/test_PK28_gr_ir.py:482: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+/usr/lib/python3.11/contextlib.py:210: in __aenter__
+    return await anext(self.gen)
+           ^^^^^^^^^^^^^^^^^^^^^
+tests_mem/test_PK28_gr_ir.py:93: in terpetakan
+    await petakan(eid)
+tests_mem/test_PK28_gr_ir.py:82: in petakan
+    await glm.set_mapping(KUNCI, eid, AKUN, "uji PK-28 terpetakan", AKTOR_UJI)
+services/gl_mapping_service.py:162: in set_mapping
+    entry = reg.require(key)
+            ^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+key = 'pembelian.selisih_harga'
+
+    def require(key: str) -> Dict[str, Any]:
+        if key not in BY_KEY:
+>           raise KeyError(f"Kebutuhan akun tidak dikenal: {key}")
+E           KeyError: 'Kebutuhan akun tidak dikenal: pembelian.selisih_harga'
+
+services/gl_mapping_registry.py:177: KeyError
+_ test_PK28_U13_lihat_dengan_vendor_bill_view_kliring_butuh_accounting_manage[asyncio] _
+
+klien = <httpx.AsyncClient object at 0x7fce0867cd90>
+db = <motor.motor_asyncio.AsyncIOMotorDatabase object at 0x7fce1c0dae10>
+bahan = {'pid': 'prd_pk28_14dfdb33', 'wid': 'wh_pk28_8e648efc', 'sid': 'sup_pk28_0394cb94', 'h_buat': {'Authorization': 'Bearer tok_uji_3d13f0c143924c17bcfc000cebe21a6e', 'X-Entity-Id': 'ent_ksc'}}
+akun = <function akun.<locals>._akun at 0x7fce086c1620>
+sesi = <function sesi.<locals>._sesi at 0x7fce086c11c0>
+peran_tanpa_acuan = <function peran_tanpa_acuan.<locals>._peran at 0x7fce0852b600>
+peran_manajer_kosong = <function peran_manajer_kosong.<locals>._peran at 0x7fce0852b740>
+
+    async def test_PK28_U13_lihat_dengan_vendor_bill_view_kliring_butuh_accounting_manage(
+            klien, db, bahan, akun, sesi, peran_tanpa_acuan, peran_manajer_kosong):
+        peran = await peran_tanpa_acuan({"vendor_bill": ["view"]}, label="Tanpa Acuan PK-28")
+        u = await akun(peran)
+        h = await sesi(u)
+        po = await buat_po(db, bahan, status="completed")
+>       await terima_fixture(db, po, 10)
+
+tests_mem/test_PK28_gr_ir.py:505: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+db = <motor.motor_asyncio.AsyncIOMotorDatabase object at 0x7fce1c0dae10>
+po = {'id': 'po_pk28_797a9c3a', 'po_number': 'PO/PK28/797a9c3a', 'entity_id': 'ent_ksc', 'status': 'completed', ...}
+qty = 10, harga = 10000.0
+
+    async def terima_fixture(db, po, qty: float, harga: float = 10_000.0) -> str:
+        """Fixture penerimaan: `post_goods_receipt` dengan nilai yang sama dengan alur gudang (PO TIDAK berubah status)."""
+        from services import gl_service as gl
+        tid = uid("tsk")
+        await db.wms_tasks.insert_one({"id": tid, "flow_type": "inbound", "status": "completed", "po_id": po["id"],
+                                       "entity_id": po["entity_id"], "quantity": qty, "created_at": now_iso()})
+        await db.purchase_orders.update_one({"id": po["id"]}, {"$inc": {"items.0.received_qty": qty}})
+>       await gl.post_goods_receipt(task_id=tid, entity_id=po["entity_id"], amount=round(qty * harga, 2),
+                                    label=po["po_number"], po_id=po["id"])
+E       TypeError: post_goods_receipt() got an unexpected keyword argument 'po_id'
+
+tests_mem/test_PK28_gr_ir.py:139: TypeError
+________ test_PK28_U14_harga_neto_baris_po_dipakai_penerimaan[asyncio] _________
+
+klien = <httpx.AsyncClient object at 0x7fce0867cd90>
+kepala_admin = {'Authorization': 'Bearer tok_uji_bedd7fbd60ce4ad8aa3fa848caa99353', 'X-Entity-Id': 'ent_ksc'}
+db = <motor.motor_asyncio.AsyncIOMotorDatabase object at 0x7fce1c0dae10>
+bahan = {'pid': 'prd_pk28_14dfdb33', 'wid': 'wh_pk28_8e648efc', 'sid': 'sup_pk28_0394cb94', 'h_buat': {'Authorization': 'Bearer tok_uji_3d13f0c143924c17bcfc000cebe21a6e', 'X-Entity-Id': 'ent_ksc'}}
+
+    async def test_PK28_U14_harga_neto_baris_po_dipakai_penerimaan(klien, kepala_admin, db, bahan):
+        """PO 100 m @ 10.000, diskon baris 5 %, diskon kepala 2 %: neto = 10.000 × 0,95 × 0,98 = 9.310 (line_total
+        950.000 ÷ 100 = 9.500; × 0,98). Terima 50 m → 50 × 9.310 = 465.500 (Dr 1-1300 / Cr 2-1150)."""
+        po = await buat_po(db, bahan, diskon_baris=5, diskon_kepala=2)
+        tid = await terima(klien, kepala_admin, db, bahan, po, 50)
+        je = await jurnal_aktif("goods_receipt", tid)
+        assert len(je) == 1 and baris(je[0]) == {PERSEDIAAN: (465_500, 0), GRIR: (0, 465_500)}
+>       from services.po_pricing import po_line_net_unit_price
+E       ModuleNotFoundError: No module named 'services.po_pricing'
+
+tests_mem/test_PK28_gr_ir.py:523: ModuleNotFoundError
+=============================== warnings summary ===============================
+../../../venv311/lib/python3.11/site-packages/starlette/formparsers.py:12
+  /tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/venv311/lib/python3.11/site-packages/starlette/formparsers.py:12: PendingDeprecationWarning: Please use `import python_multipart` instead.
+    import multipart
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests_mem/test_PK28_gr_ir.py::test_PK28_U1_faktur_lebih_mahal_selisih_ke_akun_selisih[asyncio]
+FAILED tests_mem/test_PK28_gr_ir.py::test_PK28_U2_faktur_ber_ppn_selisih_dan_ppn_masukan[asyncio]
+FAILED tests_mem/test_PK28_gr_ir.py::test_PK28_U3_faktur_lebih_murah_selisih_dikredit[asyncio]
+FAILED tests_mem/test_PK28_gr_ir.py::test_PK28_U4_tanpa_pemetaan_perilaku_lama_dan_terlihat_di_daftar[asyncio]
+FAILED tests_mem/test_PK28_gr_ir.py::test_PK28_U5_retur_sebelum_ditagih_dasar_grir_tanpa_ppn[asyncio]
+FAILED tests_mem/test_PK28_gr_ir.py::test_PK28_U6_retur_sesudah_ditagih_penuh_dasar_hutang[asyncio]
+FAILED tests_mem/test_PK28_gr_ir.py::test_PK28_U7_retur_sesudah_ditagih_sebagian_dasar_hutang[asyncio]
+FAILED tests_mem/test_PK28_gr_ir.py::test_PK28_U8_daftar_per_po_dan_saldo_buku_besar[asyncio]
+FAILED tests_mem/test_PK28_gr_ir.py::test_PK28_U9_kliring_sisa_kredit_lalu_nol[asyncio]
+FAILED tests_mem/test_PK28_gr_ir.py::test_PK28_U10_po_masih_berjalan_ditolak_tanpa_tulisan[asyncio]
+FAILED tests_mem/test_PK28_gr_ir.py::test_PK28_U10b_pemeriksaan_lain_tanpa_tulisan[asyncio]
+FAILED tests_mem/test_PK28_gr_ir.py::test_PK28_U11_kliring_sisa_debit[asyncio]
+FAILED tests_mem/test_PK28_gr_ir.py::test_PK28_U12_jurnal_kliring_gagal_lalu_ulang_tepat_sekali[asyncio]
+FAILED tests_mem/test_PK28_gr_ir.py::test_PK28_U12b_kliring_gagal_menahan_kliring_baru[asyncio]
+FAILED tests_mem/test_PK28_gr_ir.py::test_PK28_U13_lihat_dengan_vendor_bill_view_kliring_butuh_accounting_manage[asyncio]
+FAILED tests_mem/test_PK28_gr_ir.py::test_PK28_U14_harga_neto_baris_po_dipakai_penerimaan[asyncio]
+16 failed, 1 warning in 2.79s

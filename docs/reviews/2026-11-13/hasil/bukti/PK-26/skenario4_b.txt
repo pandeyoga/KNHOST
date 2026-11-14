@@ -1,0 +1,5 @@
+Arus kas Oktober menurut laporan : {'operating': 793.33, 'investing': 86.67, 'financing': 200.0}
+  kas awal 900.00 + perubahan 1,080.00 = kas akhir 1,980.00 | kas akhir buku besar 1,980.00 | cocok: True
+Hitungan tangan (klasifikasi baku): operasi +250 (jual 300 − sewa 50); investasi +130 (hasil jual mesin); pendanaan +500 (pinjaman); saldo awal rekening 200 = bagian kas awal, bukan arus periode
+Saldo kas buku besar 31 Okt: 1,980.00 (900 awal + 300 − 50 + 130 + 500 + 200 = 1.980)
+Perubahan ekuitas: awal 980.00 + mutasi 500.00 = akhir 1,480.00 | ekuitas di neraca 1,480.00 | laba periode 300.00

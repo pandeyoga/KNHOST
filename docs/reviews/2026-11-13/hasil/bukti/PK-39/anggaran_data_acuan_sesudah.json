@@ -1,0 +1,50 @@
+{
+ "ent_ksc": {
+  "baris": 0,
+  "total": {
+   "budget": 0.0,
+   "commitment": 0.0,
+   "committed": 0.0,
+   "actual": 0.0,
+   "spent": 0.0,
+   "remaining": 0.0,
+   "variance": 0.0,
+   "used_pct": null,
+   "spent_pct": null,
+   "over_count": 0
+  },
+  "contoh": []
+ },
+ "ent_kanda": {
+  "baris": 0,
+  "total": {
+   "budget": 0.0,
+   "commitment": 0.0,
+   "committed": 0.0,
+   "actual": 0.0,
+   "spent": 0.0,
+   "remaining": 0.0,
+   "variance": 0.0,
+   "used_pct": null,
+   "spent_pct": null,
+   "over_count": 0
+  },
+  "contoh": []
+ },
+ "ent_0ca8e719eeba": {
+  "baris": 0,
+  "total": {
+   "budget": 0.0,
+   "commitment": 0.0,
+   "committed": 0.0,
+   "actual": 0.0,
+   "spent": 0.0,
+   "remaining": 0.0,
+   "variance": 0.0,
+   "used_pct": null,
+   "spent_pct": null,
+   "over_count": 0
+  },
+  "contoh": []
+ }
+}

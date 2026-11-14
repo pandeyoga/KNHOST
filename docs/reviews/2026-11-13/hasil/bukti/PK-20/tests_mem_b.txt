@@ -1,0 +1,1 @@
+1472 passed, 2 skipped, 4 xfailed in 685.12s (0:11:25)

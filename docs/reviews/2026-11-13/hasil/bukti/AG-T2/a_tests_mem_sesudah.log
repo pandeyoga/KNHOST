@@ -1,0 +1,5 @@
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests_mem/test_PRT2_migrasi.py::test_katalog_enam_modul_dan_label - As...
+1 failed, 1476 passed, 2 skipped, 4 xfailed, 11 warnings in 717.25s (0:11:57)
+test_PRT2_migrasi::test_katalog_enam_modul_dan_label disesuaikan (resources assistant + ai_finance) lalu 5/5 lulus

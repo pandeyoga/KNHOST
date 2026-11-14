@@ -1,0 +1,9 @@
+  ✕ U14 — kolom Perlakuan tiga nilai + tiga baris ringkas Rp 100.000 (66 ms)
+  ✕ U14 — baris 0 disembunyikan; varians memakai label biaya masuk pembelian (16 ms)
+  ✕ sebelum disetujui: kalimat roll keluar hanya bila pratinjau memuat roll keluar (13 ms)
+  ✕ voucher lama tanpa treatment/capitalization: kolom Perlakuan '—', tanpa ringkasan (17 ms)
+    TypeError: Cannot read properties of null (reading 'textContent')
+    TypeError: Cannot read properties of null (reading 'textContent')
+    TypeError: Cannot read properties of null (reading 'textContent')
+    TypeError: Cannot read properties of null (reading 'textContent')
+Tests:       4 failed, 4 total

@@ -1,0 +1,2 @@
+lebih longgar: []
+q107 sales query_metrics | lama: None [] | baru: Semua metrik yang diminta tidak tersedia untuk peran Anda: ar_outstanding []

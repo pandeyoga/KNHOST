@@ -1,0 +1,5 @@
+Data acuan lingkungan A (sesudah restore_demo), baca-saja:
+kas aktif tanpa rekening: 5 dari 17
+  per PT/jenis: {('ent_ksc', 'kas_besar'): 1, ('ent_ksc', 'kas_kecil'): 3, ('ent_kanda', 'kas_kecil'): 1}
+account_id berpola kode akun: 0
+rekening per PT per jenis: {('ent_ksc', 'kas_besar'): 1, ('ent_ksc', 'kas_kecil'): 1, ('ent_kanda', 'kas_besar'): 1, ('ent_kanda', 'kas_kecil'): 1, ('ent_96faba185433', 'kas_besar'): 1, ('ent_96faba185433', 'kas_kecil'): 1, ('ent_bp20_4f9b3a', 'kas_kecil'): 1, ('ent_bp20_b1a599', 'kas_kecil'): 1, ('ent_bp20_6bc566', 'kas_kecil'): 1}

@@ -1,0 +1,15 @@
+PASSED tests_mem/test_AGT2_pengalihan.py::test_AGT2_b_posisi_kas_dan_proyeksi_sama_dengan_layar[asyncio]
+PASSED tests_mem/test_AGT2_pengalihan.py::test_AGT2_b_jadwal_tanpa_permintaan_memakai_sesi_sementara[asyncio]
+PASSED tests_mem/test_AGT2_pengalihan.py::test_AGT2_b_120_pertanyaan_lama_tidak_lebih_longgar[asyncio]
+FAILED tests_mem/test_AGT2_pengalihan.py::test_AGT2_U16_admin_sales_metrik_piutang_dan_layar_sepakat[asyncio]
+FAILED tests_mem/test_AGT2_pengalihan.py::test_AGT2_U16b_izin_metrik_keuangan_sama_dengan_endpoint_layar
+FAILED tests_mem/test_AGT2_pengalihan.py::test_AGT2_U16c_tabel_peran_metrik_hanya_menyempit[asyncio]
+FAILED tests_mem/test_AGT2_pengalihan.py::test_AGT2_b_laba_rugi_tanpa_gerbang_nama_peran[asyncio]
+FAILED tests_mem/test_AGT2_pengalihan.py::test_AGT2_b_mode_umum_nama_pihak_disamarkan[asyncio]
+FAILED tests_mem/test_AGT2_pengalihan.py::test_AGT2_b_pengalir_tidak_memecah_kode
+FAILED tests_mem/test_AGT2_pengalihan.py::test_AGT2_b_narasi_templat_disamarkan[asyncio]
+7 failed, 3 passed, 1 warning in 2.46s
+E       AssertionError: {"result_id":"r_1c1ff3a4aa","title":"Piutang","definition":"Piutang: Σ sisa tagihan pesanan tempo (mesin umur piutang)","period":{"preset":"mtd","from":"2026-11-01","to":"2026-11-14","tz":"Asia/Jakarta","label":"Bulan ini (1 Nov 2026 – 14 Nov 2026)"},"entity_scope":{"mode":"active","entity_ids":["ent_ksc"]},"columns":[{"key":"ar_outstanding","label":"Piutang","type":"metric","unit":"idr"}],"rows":[{"ar_outstanding":5000000.0}],"totals":{"ar_outstanding":5000000.0},"totals_by_unit":null,"compare":null,"row_count":1,"truncated":false,"warnings":[],"denied":[],"source":"cat-v1"}
+E       assert (200 == 400)
+E        +  where 200 = <Response [200 OK]>.status_code
+E           AssertionError: ar_outstanding

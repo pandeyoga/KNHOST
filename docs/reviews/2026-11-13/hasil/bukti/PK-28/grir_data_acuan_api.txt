@@ -1,0 +1,3 @@
+ent_ksc {'total_balance': 0.0, 'unlinked_balance': 0.0, 'gl_balance': None, 'total': 0} baris 0
+ent_kanda {'total_balance': 0, 'unlinked_balance': 0.0, 'gl_balance': None, 'total': 0} baris 0
+ent_96faba185433 {'total_balance': 26000000.0, 'unlinked_balance': 0.0, 'gl_balance': None, 'total': 1} baris 1

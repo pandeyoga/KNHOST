@@ -132,9 +132,9 @@ P14-K1 → Bima). Laporan hasil di `docs/uat/2026-10-21/hasil/UAT24-*.md`.
 | IC-05 | Akuntan PT-A bisa memposting jurnal manual ke buku PT-B | Tinggi | PK-09 | implemented_pending_review | ya — dijalankan (bukti merah 15/19 di kode lama) | `bdd8e40` | [PK-09](2026-11-13/hasil/PK-09.md) |
 | IC-06 | Akun antar-PT terbuka untuk jurnal manual dan pembalikan sepihak | Tinggi | PK-36 | implemented_pending_review | ya — dijalankan (bukti merah U1, U2, U4–U6, U9, U10, U13–U16 di kode lama; lapis A lulus) | `16b50fe` | [PK-36](2026-11-13/hasil/PK-36.md) |
 | IC-07 | Retur setelah lunas menghasilkan saldo yang tak terlihat dan tak bisa dilunasi | Tinggi | PK-31 | implemented_pending_review | ya — dijalankan (bukti merah di kode lama per tabel uji; U15 lapis A lulus) | `2442562` · `dae12fc` | [PK-31](2026-11-13/hasil/PK-31.md) |
-| IV-01 | Landed cost untuk roll yang sudah terjual mengendap di persediaan | Tinggi | PK-26 | open | belum dicek — diisi unit pemegang | — | — |
+| IV-01 | Landed cost untuk roll yang sudah terjual mengendap di persediaan | Tinggi | PK-26 | implemented_pending_review | ya — dijalankan (bukti merah U1–U5, U7–U14 di kode lama; U6 sudah hijau sejak PK-37) | `ccfa7b4` · `550c400` | [PK-26](2026-11-13/hasil/PK-26.md) |
 | IV-02 | Scrap retur dihapusbukukan tetapi roll tetap dihitung | Tinggi | PK-27 | open | belum dicek — diisi unit pemegang | — | — |
-| IV-03 | GR/IR tanpa akun varians, tanpa umur, tanpa kliring | Tinggi | PK-28 | open | belum dicek — diisi unit pemegang | — | — |
+| IV-03 | GR/IR tanpa akun varians, tanpa umur, tanpa kliring | Tinggi | PK-28 | implemented_pending_review | ya — dijalankan (bukti merah U1–U14, U16 di kode lama; U15 lapis A lulus) | `864dc2d` · `3267c09` · `8b089bf` | [PK-28](2026-11-13/hasil/PK-28.md) |
 | IV-04 | Jurnal gagal setelah stok berubah, tanpa penanda dan tanpa jalur ulang | Tinggi | PK-18 | implemented_pending_review | ya — dijalankan (bukti merah U2–U11, U14 di kode lama; U13 lapis A lulus) | `242a765` · `a48a0a9` · `f1b8239` | [PK-18](2026-11-13/hasil/PK-18.md) |
 | UX-01 | "Catat Transaksi" kas tanpa penahan klik ganda | Tinggi | PK-12 | implemented_pending_review | ya — dijalankan (bukti merah 11/13 server, 9/9 layar di kode lama) | `b5f3011` | [PK-12](2026-11-13/hasil/PK-12.md) |
 | UX-02 | Kunci idempotensi hanya di kwitansi piutang | Tinggi | PK-12 | implemented_pending_review | ya — dijalankan (bukti merah 11/13 server, 9/9 layar di kode lama) | `b5f3011` | [PK-12](2026-11-13/hasil/PK-12.md) |
@@ -156,7 +156,7 @@ P14-K1 → Bima). Laporan hasil di `docs/uat/2026-10-21/hasil/UAT24-*.md`.
 | SL-08 | Uang bisa dialokasikan ke pesanan batal/draf | Sedang | PK-19 | open | belum dicek — diisi unit pemegang | — | — |
 | SL-09 | Sisa uang muka karyawan tidak punya alur pengembalian; persetujuan tanpa pemisahan pembuat/penyetuju | Sedang | PK-24 | open | belum dicek — diisi unit pemegang | — | — |
 | SL-10 | Lepas-cocok rekonsiliasi tanpa penjaga; dua mekanisme rekonsiliasi | Sedang | PK-21 | implemented_pending_review | ya — dijalankan (bukti merah U3, U3b, U5–U7, U10, U11, X1–X3 di kode lama; U12–U13 lapis A lulus) | `3c459d9` | [PK-21](2026-11-13/hasil/PK-21.md) |
-| SL-11 | Kas tanpa rekening; kas refund menyimpan kode akun di field rekening | Sedang | PK-20 | open | belum dicek — diisi unit pemegang | — | — |
+| SL-11 | Kas tanpa rekening; kas refund menyimpan kode akun di field rekening | Sedang | PK-20 | implemented_pending_review | ya — dijalankan (bukti merah U1–U11, U13 di kode lama; U12 lapis A lulus) | `5882aaa` · `7f9a527` · `8b089bf` | [PK-20](2026-11-13/hasil/PK-20.md) |
 | SL-12 | Kontrabon disimpan utuh tanpa versi; nomor faktur supplier tanpa indeks unik | Sedang | PK-05 | implemented_pending_review | ya — dijalankan (bukti merah 14/15 di kode lama) | `212b21c` | [PK-05](2026-11-13/hasil/PK-05.md) |
 | SL-13 | Pajak: satu faktur per pesanan cek-lalu-sisip; nomor seri tanpa cek kembar; rekap dipotong 5.000 baris; tidak ada ekspor Coretax, PPh 23, bukti potong | Sedang | PK-40 | implemented_pending_review | ya — dijalankan (bukti merah U1, U3–U10, U12–U16 di kode lama; U2, U6 lapis A lulus) | `a78f552` · `f2bf995` | [PK-40](2026-11-13/hasil/PK-40.md) |
 | IC-08 | Settlement antar-PT tidak membuat transaksi kas; pelunasan ganda mungkin | Sedang | PK-06 | implemented_pending_review | ya — dijalankan (bukti merah 17/17 di kode lama) | `dfec457` | [PK-06](2026-11-13/hasil/PK-06.md) |
@@ -188,9 +188,9 @@ P14-K1 → Bima). Laporan hasil di `docs/uat/2026-10-21/hasil/UAT24-*.md`.
 | FY-05 | Status aset transferred tidak dijaga saat diubah/dilepas lewat API | Sedang | PK-23 | open | belum dicek — diisi unit pemegang | — | — |
 | FY-08 | Hutang insentif: akrual dan gaji menghitung dari dua sumber berbeda; galat akrual ditelan | Sedang | PK-22 | open | belum dicek — diisi unit pemegang | — | — |
 | FY-09 | Kontrol gaji: ajukan, sahkan, posting, bayar satu izin; status tengah bisa macet; akun bayar tidak dibatasi ke kas | Sedang | PK-22 | open | belum dicek — diisi unit pemegang | — | — |
-| FY-10 | Anggaran kategori membaca tahun dari isian teks bebas "periode" LPJ | Sedang | PK-39 | open | belum dicek — diisi unit pemegang | — | — |
-| FY-11 | Angka anggaran salah: akun persediaan memakai mutasi bersih; PO terima-sebagian dihitung dua kali; mode gabungan membandingkan pagu per PT dengan… | Sedang | PK-39 | open | belum dicek — diisi unit pemegang | — | — |
-| FY-12 | Anggaran hanya peringatan dan hanya di PO; pagu tanpa indeks unik dan tanpa jejak ubah | Sedang | PK-39 | open | belum dicek — diisi unit pemegang | — | — |
+| FY-10 | Anggaran kategori membaca tahun dari isian teks bebas "periode" LPJ | Sedang | PK-39 | implemented_pending_review | ya — dijalankan (bukti merah U1–U7, U9–U16 di kode lama; U8 lapis A lulus) | `d5c466d` · `cae2b07` · `ebf959d` | [PK-39](2026-11-13/hasil/PK-39.md) |
+| FY-11 | Angka anggaran salah: akun persediaan memakai mutasi bersih; PO terima-sebagian dihitung dua kali; mode gabungan membandingkan pagu per PT dengan… | Sedang | PK-39 | implemented_pending_review | ya — dijalankan (bukti merah U1–U7, U9–U16 di kode lama; U8 lapis A lulus) | `d5c466d` · `cae2b07` · `ebf959d` | [PK-39](2026-11-13/hasil/PK-39.md) |
+| FY-12 | Anggaran hanya peringatan dan hanya di PO; pagu tanpa indeks unik dan tanpa jejak ubah | Sedang | PK-39 | implemented_pending_review | ya — dijalankan (bukti merah U1–U7, U9–U16 di kode lama; U8 lapis A lulus) | `d5c466d` · `cae2b07` · `ebf959d` | [PK-39](2026-11-13/hasil/PK-39.md) |
 | FY-13 | Peta kategori→akun saat posting LPJ mengabaikan lapisan entitas | Sedang | PK-24 | open | belum dicek — diisi unit pemegang | — | — |
 | FY-14 | LPJ tanpa bukti, vendor, PPN; masih bisa diubah setelah diajukan | Sedang | PK-24 | open | belum dicek — diisi unit pemegang | — | — |
 | FY-15 | Pusat pajak: entity_id=all dan entitas dari klien tanpa cek penugasan; hapus rekaman PPh tanpa cek entitas | Sedang | PK-09 | implemented_pending_review | ya — dijalankan (bukti merah 15/19 di kode lama) | `bdd8e40` | [PK-09](2026-11-13/hasil/PK-09.md) |
@@ -251,7 +251,7 @@ P14-K1 → Bima). Laporan hasil di `docs/uat/2026-10-21/hasil/UAT24-*.md`.
 | GL-13 | to_list berbatas memotong diam-diam (rekonsiliasi persediaan 100.000 roll, sementara uji beban 346.700 roll) | Rendah | PK-29 | open | belum dicek — diisi unit pemegang | — | — |
 | SL-14 | urutan kas/deposit pada refund | Rendah | PK-19 | open | belum dicek — diisi unit pemegang | — | — |
 | IC-12 | penomoran antar-PT tanpa indeks unik, rujukan nyasar ke koleksi entities | Rendah | PK-14 | implemented_pending_review | ya — dijalankan (bukti merah 6/6 lapis B di kode lama; lapis A 9/9 di MongoDB asli) | `a42f3ef` | [PK-14](2026-11-13/hasil/PK-14.md) |
-| IV-10 | hapus-buku susut memakai biaya tanpa landed | Rendah | PK-26 | open | belum dicek — diisi unit pemegang | — | — |
+| IV-10 | hapus-buku susut memakai biaya tanpa landed | Rendah | PK-26 | implemented_pending_review | ya — dijalankan (bukti merah U1–U5, U7–U14 di kode lama; U6 sudah hijau sejak PK-37) | `ccfa7b4` · `550c400` | [PK-26](2026-11-13/hasil/PK-26.md) |
 | IV-11 | sisa sen per penerimaan menumpuk | Rendah | PK-35 | open | belum dicek — diisi unit pemegang | — | — |
 | UX-18 | kontrol mentah, istilah Inggris, isian uang tanpa pemisah ribuan | Rendah | PK-42 | implemented_pending_review | ya — dijalankan (bukti merah U1–U5, U7–U12 di kode lama) | `5e747b2` | [PK-42](2026-11-13/hasil/PK-42.md) |
 
@@ -289,10 +289,10 @@ P14-K1 → Bima). Laporan hasil di `docs/uat/2026-10-21/hasil/UAT24-*.md`.
 | TX-06 | Faktor DPP, pembulatan, kode transaksi ditulis mati; tanpa data pajak pelanggan/barang | Sedang | TX-T1 | implemented_pending_review | ya — dijalankan (bukti merah U1–U15 kecuali bagian angka U1/U13 dan U12; lapis A d4 lulus) | `9707664` · `f1b8239` | [TX-T1](2026-11-13/hasil/TX-T1.md) |
 | AG-01 | Konfirmasi gagal kembali ke antre; bisa menggandakan PO | Sedang | AG-T1 | implemented_pending_review | ya — dijalankan (bukti merah U1, U2, U5–U16 di kode lama; lapis A lulus) | `3e1a42c` | [AG-T1](2026-11-13/hasil/AG-T1.md) |
 | AG-02 | Draf tanpa masa berlaku; entitas tidak diperiksa ulang | Sedang | AG-T1 | implemented_pending_review | ya — dijalankan (bukti merah U1, U2, U5–U16 di kode lama; lapis A lulus) | `3e1a42c` | [AG-T1](2026-11-13/hasil/AG-T1.md) |
-| AG-03 | Aturan cakupan asisten terpisah dari izin router | Sedang | AG-T2 | open | belum dicek — diisi unit pemegang | — | — |
+| AG-03 | Aturan cakupan asisten terpisah dari izin router | Sedang | AG-T2 | implemented_pending_review | ya — dijalankan (bukti merah U1–U16 di kode lama; U17 lapis A 60/60) | `4ffc907` · `5f11189` | [AG-T2](2026-11-13/hasil/AG-T2.md) |
 | AG-04 | Pencarian supplier/gudang/sales tanpa saringan entitas | Sedang | AG-T1 | implemented_pending_review | ya — dijalankan (bukti merah U1, U2, U5–U16 di kode lama; lapis A lulus) | `3e1a42c` | [AG-T1](2026-11-13/hasil/AG-T1.md) |
 | AG-05 | Skema alat menawarkan yang tidak dilayani | Rendah | AG-T1 | implemented_pending_review | ya — dijalankan (bukti merah U1, U2, U5–U16 di kode lama; lapis A lulus) | `3e1a42c` | [AG-T1](2026-11-13/hasil/AG-T1.md) |
-| AG-06 | Nama dan nominal dikirim ke penyedia tanpa penyamaran | Keputusan | AG-T2 | open | belum dicek — diisi unit pemegang | — | — |
+| AG-06 | Nama dan nominal dikirim ke penyedia tanpa penyamaran | Keputusan | AG-T2 | implemented_pending_review | ya — dijalankan (bukti merah U1–U16 di kode lama; U17 lapis A 60/60) | `4ffc907` · `5f11189` | [AG-T2](2026-11-13/hasil/AG-T2.md) |
 | PY-01 | Slip berkolom tetap | Tinggi | PY-T1 | open | belum dicek — diisi unit pemegang | — | — |
 | PY-02 | Satu proses gaji per PT per periode | Tinggi | PY-T1 | open | belum dicek — diisi unit pemegang | — | — |
 | PY-03 | Tabel tarif PPh 21 tampak tidak disalin dari peraturan | Tinggi | PK-46 | pending_decision | ya — dibaca; mekanisme siap, isi tabel menunggu berkas pemilik (H4) | `c38ab35` | [PK-46](2026-11-13/hasil/PK-46.md) |

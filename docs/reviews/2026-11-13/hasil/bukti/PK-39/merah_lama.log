@@ -1,0 +1,63 @@
+E   AssertionError: {'id': 'budget_01236619b765', 'dimension': 'account', 'key': '1-1300', 'label': 'Persediaan Barang', ...}
+/tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/wt27/backend/tests_mem/test_PK39_angka.py:73: AssertionError: {'id': 'budget_01236619b765', 'dimension': 'account', 'key': '1-1300', 'label': 'Persediaan Barang', ...}
+E   AssertionError: {'id': 'budget_8a92f6b9dc5e', 'dimension': 'account', 'key': '1-1300', 'label': 'Persediaan Barang', ...}
+/tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/wt27/backend/tests_mem/test_PK39_angka.py:83: AssertionError: {'id': 'budget_8a92f6b9dc5e', 'dimension': 'account', 'key': '1-1300', 'label': 'Persediaan Barang', ...}
+E   AssertionError: {'id': 'budget_b4c20c27d3ea', 'dimension': 'account', 'key': '1-1300', 'label': 'Persediaan Barang', ...}
+/tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/wt27/backend/tests_mem/test_PK39_angka.py:93: AssertionError: {'id': 'budget_b4c20c27d3ea', 'dimension': 'account', 'key': '1-1300', 'label': 'Persediaan Barang', ...}
+E   AssertionError: {'id': 'budget_5e3033310c52', 'dimension': 'account', 'key': '1-1300', 'label': 'Persediaan Barang', ...}
+/tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/wt27/backend/tests_mem/test_PK39_angka.py:106: AssertionError: {'id': 'budget_5e3033310c52', 'dimension': 'account', 'key': '1-1300', 'label': 'Persediaan Barang', ...}
+E   AssertionError: {'id': 'budget_d849e2119047', 'dimension': 'category', 'key': 'transportasi', 'label': 'Transportasi (Service Mobil/Taxi/BBM/Tol/Parkir)', ...}
+/tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/wt27/backend/tests_mem/test_PK39_angka.py:120: AssertionError: {'id': 'budget_d849e2119047', 'dimension': 'category', 'key': 'transportasi', 'label': 'Transportasi (Service Mobil/Taxi/BBM/Tol/Parkir)', ...}
+E   AssertionError: [{'id': 'budget_a9007e325164', 'dimension': 'account', 'key': '6-2000', 'label': 'Beban Sewa', ...}, {'id': 'budget_9a0020e98d50', 'dimension': 'account', 'key': '6-2000', 'label': 'Beban Sewa', ...}]
+/tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/wt27/backend/tests_mem/test_PK39_angka.py:133: AssertionError: [{'id': 'budget_a9007e325164', 'dimension': 'account', 'key': '6-2000', 'label': 'Beban Sewa', ...}, {'id': 'budget_9a0020e98d50', 'dimension': 'account', 'key': '6-2000', 'label': 'Beban Sewa', ...}]
+E   AssertionError: {"detail":"Anggaran untuk kombinasi entitas/tahun/bulan/kunci ini sudah ada — ubah saja."}
+/tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/wt27/backend/tests_mem/test_PK39_angka.py:149: AssertionError: {"detail":"Anggaran untuk kombinasi entitas/tahun/bulan/kunci ini sudah ada — ubah saja."}
+E   assert (None is not None)
+/tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/wt27/backend/tests_mem/test_PK39_angka.py:157: assert (None is not None)
+E   AssertionError: {"detail":"Not Found"}
+/tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/wt27/backend/tests_mem/test_PK39_angka.py:170: AssertionError: {"detail":"Not Found"}
+E   AssertionError: {"detail": "Not Found"}
+/tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/wt27/backend/tests_mem/test_PK39_angka.py:198: AssertionError: {"detail": "Not Found"}
+E   ImportError: cannot import name 'po_open_value' from 'services.budget_service' (/tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/wt27/backend/services/budget_service.py)
+/tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/wt27/backend/tests_mem/test_PK39_angka.py:211: ImportError: cannot import name 'po_open_value' from 'services.budget_service' (/tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/wt27/backend/services/budget_service.py)
+E   ImportError: cannot import name 'po_open_value' from 'services.budget_service' (/tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/wt27/backend/services/budget_service.py)
+/tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/wt27/backend/tests_mem/test_PK39_angka.py:211: ImportError: cannot import name 'po_open_value' from 'services.budget_service' (/tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/wt27/backend/services/budget_service.py)
+E   ImportError: cannot import name 'po_open_value' from 'services.budget_service' (/tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/wt27/backend/services/budget_service.py)
+/tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/wt27/backend/tests_mem/test_PK39_angka.py:211: ImportError: cannot import name 'po_open_value' from 'services.budget_service' (/tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/wt27/backend/services/budget_service.py)
+E   AssertionError: {"detail":"Setting 'budget.mode' tidak ada di registry"}
+/tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/wt27/backend/tests_mem/test_PK39_pemeriksaan.py:27: AssertionError: {"detail":"Setting 'budget.mode' tidak ada di registry"}
+E   KeyError: 'budget_check'
+/tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/wt27/backend/tests_mem/test_PK39_pemeriksaan.py:112: KeyError: 'budget_check'
+E   KeyError: 'budget_check'
+/tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/wt27/backend/tests_mem/test_PK39_pemeriksaan.py:132: KeyError: 'budget_check'
+E   AssertionError: {"detail":"Setting 'budget.mode' tidak ada di registry"}
+/tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/wt27/backend/tests_mem/test_PK39_pemeriksaan.py:27: AssertionError: {"detail":"Setting 'budget.mode' tidak ada di registry"}
+E   KeyError: 'budget_check'
+/tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/wt27/backend/tests_mem/test_PK39_pemeriksaan.py:176: KeyError: 'budget_check'
+E   AssertionError: {"detail":"Setting 'budget.mode' tidak ada di registry"}
+/tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/wt27/backend/tests_mem/test_PK39_pemeriksaan.py:27: AssertionError: {"detail":"Setting 'budget.mode' tidak ada di registry"}
+E   AssertionError: {'entity_id': 'ent_kanda', 'mode': 'block', 'warn_threshold_pct': 85.0, 'unbudgeted_action': 'allow', ...}
+/tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/wt27/backend/tests_mem/test_PK39_pemeriksaan.py:202: AssertionError: {'entity_id': 'ent_kanda', 'mode': 'block', 'warn_threshold_pct': 85.0, 'unbudgeted_action': 'allow', ...}
+E   KeyError: "Setting 'budget.mode' tidak ada di registry"
+FAILED tests_mem/test_PK39_angka.py::test_PK39_U1_po_sebagian_sisa_jadi_komitmen[asyncio]
+FAILED tests_mem/test_PK39_angka.py::test_PK39_U2_po_sedang_diterima_tidak_dihitung_dua_kali[asyncio]
+FAILED tests_mem/test_PK39_angka.py::test_PK39_U3_hpp_tidak_mengurangi_realisasi_persediaan[asyncio]
+FAILED tests_mem/test_PK39_angka.py::test_PK39_U4_retur_beli_mengurangi_realisasi[asyncio]
+FAILED tests_mem/test_PK39_angka.py::test_PK39_U5_lpj_pada_bulan_jurnal[asyncio]
+FAILED tests_mem/test_PK39_angka.py::test_PK39_U6_gabungan_per_pt[asyncio] - ...
+FAILED tests_mem/test_PK39_angka.py::test_PK39_U7_pagu_kembar_409[asyncio] - ...
+FAILED tests_mem/test_PK39_angka.py::test_PK39_U7b_indeks_unik_terdaftar_wajib[asyncio]
+FAILED tests_mem/test_PK39_angka.py::test_PK39_U9_riwayat_pagu[asyncio] - Ass...
+FAILED tests_mem/test_PK39_angka.py::test_PK39_U16_riwayat_berizin_lihat[asyncio]
+FAILED tests_mem/test_PK39_angka.py::test_PK39_sisa_po[items0-60.0] - ImportE...
+FAILED tests_mem/test_PK39_angka.py::test_PK39_sisa_po[items1-0.0] - ImportEr...
+FAILED tests_mem/test_PK39_angka.py::test_PK39_sisa_po[items2-50.0] - ImportE...
+FAILED tests_mem/test_PK39_pemeriksaan.py::test_PK39_U10_tagihan_kampanye_tolak_vs_peringatkan[asyncio]
+FAILED tests_mem/test_PK39_pemeriksaan.py::test_PK39_U11_kas_keluar_peringatkan_lalu_tolak[asyncio]
+FAILED tests_mem/test_PK39_pemeriksaan.py::test_PK39_U11b_kas_keluar_ke_akun_bukan_beban_tidak_diperiksa[asyncio]
+FAILED tests_mem/test_PK39_pemeriksaan.py::test_PK39_U12_lpj_ajukan_diperingatkan_setujui_ditolak[asyncio]
+FAILED tests_mem/test_PK39_pemeriksaan.py::test_PK39_U12b_lpj_disetujui_menyimpan_pemeriksaan[asyncio]
+FAILED tests_mem/test_PK39_pemeriksaan.py::test_PK39_U13_mode_mati_lewati[asyncio]
+FAILED tests_mem/test_PK39_pemeriksaan.py::test_PK39_U14_mode_lama_dan_put_ditolak[asyncio]
+FAILED tests_mem/test_PK39_pemeriksaan.py::test_PK39_U15_putaran_t1_config[asyncio]
+21 failed, 1 warning in 2.93s

@@ -1,0 +1,8 @@
+| Peran bawaan (ber-ai.view) | ar_outstanding | ar_overdue | collections_amount | ap_outstanding | ap_due | recognized_revenue |
+| admin | ya | ya | ya | ya | ya | ya |
+| finance | ya | ya | ya | ya | ya | ya |
+| manager | ya | ya | ya | ya | ya | ya |
+| md | tidak (dulu ya) | tidak (dulu ya) | tidak (dulu ya) | tidak | tidak | tidak |
+| sales | tidak (dulu ya) | tidak (dulu ya) | ya | tidak | tidak | tidak |
+| sales_admin | tidak (dulu ya) | tidak (dulu ya) | ya | tidak | tidak | tidak |
+| warehouse_admin | tidak (dulu ya) | tidak (dulu ya) | tidak (dulu ya) | tidak | tidak | tidak |

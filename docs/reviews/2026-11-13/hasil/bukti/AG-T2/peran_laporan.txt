@@ -1,0 +1,8 @@
+| Peran bawaan (ber-ai.view) | income_statement (lama → baru) | cash_position | cashflow_forecast |
+| admin | ya → ya | ya → ya | ya → ya |
+| finance | ya → ya | ya → ya | ya → ya |
+| manager | ya → ya | ya → ya | ya → ya |
+| md | tidak → tidak | tidak → tidak | tidak → tidak |
+| sales | tidak → tidak | tidak → tidak | tidak → tidak |
+| sales_admin | tidak → tidak | tidak → tidak | tidak → tidak |
+| warehouse_admin | tidak → tidak | tidak → tidak | tidak → tidak |

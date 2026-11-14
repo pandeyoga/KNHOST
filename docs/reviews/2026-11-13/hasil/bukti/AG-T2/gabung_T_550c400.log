@@ -1,0 +1,22 @@
+HEAD tujuan 550c400 (T = wt30)
+tests_mem HEAD: 1506 passed, 2 skipped, 3 xfailed, 11 warnings in 810.36s (0:13:30)
+tests_mem T:    1535 passed, 2 skipped, 3 xfailed, 11 warnings in 821.19s (0:13:41)
+jest HEAD: Tests:       813 passed, 813 total · Test Suites: 35 failed, 100 passed, 135 total
+jest T:    Tests:       821 passed, 821 total · Test Suites: 35 failed, 101 passed, 136 total
+hitung_penjaga HEAD = T:
+verify_auth_coverage: [FAIL] 27 pelanggaran :
+verify_ui_standard: [FAIL] 13 pelanggaran :
+verify_approval_queues: 
+audit_i18n_id:   ✗ 103 temuan di 60 berkas.
+audit_create_modal: [FAIL] 6 pelanggaran :
+verify_page_tabs: [FAIL] 1 pelanggaran total (INV-UI-12 1 · INV-UI-13 0 · INV-UI-14 0)
+verify_to_list_bound: [FAIL] 6 pelanggaran :
+verify_list_export: [PASS] 0 pelanggaran.
+verify_error_notice: [PASS] 0 pelanggaran.
+verify_custom_modals: [PASS] 0 pelanggaran.
+verify_knselect_contract: verify_knselect_contract: 0 temuan
+verify_entity_label:   ✗ 2 pelanggaran:
+verify_access_catalog_nav: verify_access_catalog_nav: 0 temuan
+verify_money_idempotency: [PASS] 0 pelanggaran.
+verify_codebase_map: [PASS] 0 pelanggaran.
+verify_scope_guard: 

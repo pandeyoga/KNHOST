@@ -1,0 +1,1 @@
+550c400 (a) tergabung: 1515 passed, 2 skipped, 10 xfailed, 11 warnings in 778.73s (0:12:58) · HEAD murni 550c400: 1506 passed, 2 skipped, 3 xfailed, 11 warnings in 787.58s (0:13:07)

@@ -1,0 +1,2 @@
+== INV-CASH-01 — kas hanya lahir dari satu pembuat (`cash_ledger.create_cash`) ==
+[PASS] 699 cek lolos, 0 pelanggaran.

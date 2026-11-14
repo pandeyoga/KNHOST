@@ -1,0 +1,2 @@
+== INV-POST-01 — jurnal dokumen lewat pintu tahan-gagal & jenisnya terdaftar di registri posting ==
+[PASS] 143 cek lolos, 0 pelanggaran.

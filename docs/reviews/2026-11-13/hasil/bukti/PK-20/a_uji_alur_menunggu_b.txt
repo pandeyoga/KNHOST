@@ -1,0 +1,14 @@
+E       assert ('Jurnal kas gagal' in '{"detail":"Jurnal kas gagal, transaksi tidak disimpan: Akun 6-2000 nonaktif"}' and 'Transaksi tersimpan dan bisa diulang dari Posting Gagal' in '{"detail":"Jurnal kas gagal, transaksi tidak disimpan: Akun 6-2000 nonaktif"}')
+E       AssertionError: assert ('1-1110' == 'rek_k'
+E         
+E       AssertionError: assert ('ent_kanda' == 'ent_ksc'
+E         
+E       KeyError: 'account_id'
+E       AssertionError: [('cash_1b0a1431cf01a50a60d9db46', 'rek_k'), ('cash_76fa5f3857273aae05a088fd', 'rek_k'), ('cash_189ede798dd79cd6ed6509...de74522e98ea5ac885acaed', 'rek_b1'), ('cash_c83a803d50905e9c9e7713c8', 'rek_b1'), ('cash_94d81dbe6d80', '1-1110'), ...]
+E       assert False
+FAILED tests_mem/test_PK20_satu_pembuat_kas.py::test_PK20_U6b_kas_manual_jurnal_gagal_tersimpan[asyncio]
+FAILED tests_mem/test_PK20_satu_pembuat_kas.py::test_PK20_U8_refund_retur_berekening_dijurnal_induk[asyncio]
+FAILED tests_mem/test_PK20_satu_pembuat_kas.py::test_PK20_U9_bayar_landed_cost_entitas_voucher[asyncio]
+FAILED tests_mem/test_PK20_satu_pembuat_kas.py::test_PK20_U10_kwitansi_berekening[asyncio]
+FAILED tests_mem/test_PK20_satu_pembuat_kas.py::test_PK20_U11_saldo_rekening_sama_dengan_buku_besar[asyncio]
+5 failed, 9 passed in 1.50s

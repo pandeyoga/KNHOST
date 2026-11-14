@@ -1,0 +1,9 @@
+  ✕ kotak tanya: pilihan Mode hanya tampil bila Asisten Keuangan menyala untuk akun ini (164 ms)
+  ✕ mode Keuangan: banner menyebut PT; mode gabungan menyebut belum dieliminasi (16 ms)
+  ✕ jawaban keuangan: Sumber berisi judul · PT · periode, catatan, dan tombol Buka di layar ke laporannya (30 ms)
+  ✕ jawaban keuangan tak terpastikan: lencana 'Angka tidak bisa dipastikan', tanpa daftar angka; tanpa tombol bila layar tak terbuka (18 ms)
+  ✕ permintaan mode Keuangan mengirim mode; jawaban membawa sumber dari server (22 ms)
+  ✕ Akun & Akses: sakelar Asisten Keuangan hanya-baca tanpa ai.configure, alasannya tertulis (100 ms)
+  ✕ Akun & Akses: pemegang ai.configure menyalakan sakelar → dikirim {ai_finance: {enabled: true}} (46 ms)
+  ✓ Akun & Akses: sakelar tidak tampil di formulir akun baru (akun belum ada) (62 ms)
+Tests:       7 failed, 1 passed, 8 total

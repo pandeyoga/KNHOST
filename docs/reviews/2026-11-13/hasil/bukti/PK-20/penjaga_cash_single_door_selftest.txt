@@ -1,0 +1,17 @@
+  [PASS] lewat create_cash; baca & $set biasa → hijau → hijau
+  [PASS] U13 — sisipan langsung `cash_transactions.insert_one` di berkas contoh → MERAH → MERAH
+  [PASS] `db["cash_transactions"].insert_many` → MERAH → MERAH
+  [PASS] `update_one(..., upsert=True)` di luar pembuat → MERAH → MERAH
+  [PASS] `replace_one` → MERAH → MERAH
+  [PASS] pemanggilan `post_cash_transaction` di luar gl_service → MERAH → MERAH
+  [PASS] `_post_cash_transaction` di gl_service sendiri → hijau → hijau
+  [PASS] `post_cash_durable` di luar pembuat & registri → MERAH → MERAH
+  [PASS] `post_cash_durable` di posting_registry → hijau → hijau
+  [PASS] definisi `_next_cash_number` (bahkan di cash_ledger) → MERAH → MERAH
+  [PASS] tests/, tests_mem/, scripts/, bootstrap.py, seed_*.py, test_*.py dikecualikan → hijau → hijau
+  [PASS] temuan terdaftar di garis dasar → hijau → hijau
+  [PASS] garis dasar tanpa alasan → MERAH → MERAH
+  [PASS] temuan bertambah melebihi garis dasar → MERAH → MERAH
+  [PASS] garis dasar basi (pemanggil sudah dialihkan) → MERAH → MERAH
+  [PASS] kode nyata saat ini HIJAU (0 pelanggaran)
+  SELF-TEST HIJAU (0 gagal).
