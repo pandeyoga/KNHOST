@@ -1942,6 +1942,33 @@ ai_results (hasil alat keuangan `fin_*`, `services/ai_finance_tools.py`)
   link          {view, nav_id, focus_type, focus_id, tab?} — tombol "Buka di layar" di bagian Sumber
 ```
 
+### ai_finance_packs  [AG-T4 — paket tutup buku bulanan Asisten Keuangan]
+Paket satu bulan untuk satu PT, disusun dari endpoint layar lewat pintu baca-saja `SelfApi` (sesi & PT pembuat). **USER_SCOPED**
+(dibaca pembuatnya, `user_id`); PT paket = `entity_id` (PT aktif saat dibuat; mode "Semua PT" ditolak 409). Tiap lembar
+disimpan sebagai satu dokumen `ai_results` (bentuk hasil Tanya KN, 30 hari); koleksi ini tidak dibaca kode lain.
+```
+Collection:  ai_finance_packs          Prefix: aipack_
+Router:      routers/ai_finance_packs.py  (POST /api/ai/finance/closing-pack [?stream=1], GET …/{id}, GET …/{id}/export.xlsx)
+Service:     services/ai_finance_reports.py (build_closing_pack, iter_closing_pack, month_bounds, build_morning_brief)
+Index:       uq_id (unik) · (user_id, created_at)
+
+  id · user_id · user_name · entity_id · entity_label · entity_code · created_at
+  period        YYYY-MM (bulan yang sudah berakhir) · period_label "Februari 2026" · start · end (hari pertama/terakhir)
+  sections[]    {key, title, status ok|skipped|error, note, result_id} — 12 lembar berurutan (Ringkasan … Status Periode);
+                `skipped` = endpoint menjawab 403 ("Tidak disertakan: Anda belum punya akses {modul}.")
+  summary · summary_source auto|model   ringkasan; `model` hanya bila teks penyedia lolos pemeriksa angka
+  verification  {checked, unmatched, ok} pemeriksa angka atas ringkasan yang dipakai
+```
+
+### ai_schedules — field AG-T4 (ringkasan pagi keuangan)
+```
+  kind          template (bawaan; dokumen lama tanpa field = template) | finance_morning
+  finance_morning: template_id "" · frequency daily (selalu) · entity_id = PT aktif saat dibuat · entity_label
+                title "Ringkasan pagi keuangan · {nama PT}". Saat dijalankan: izin `ai_finance.view` + sakelar akun pemilik
+                diperiksa; sesi sementara pemilik (10 menit, `purpose: ai_schedule`) ditutup di `finally`
+ai_schedule_runs (finance_morning): kind · sections[] {key, title, status, note, result_id} · narrative (teks notifikasi)
+```
+
 ### payment_terms  [Fase 1A IMPLEMENTED]
 ```
 Collection:  payment_terms             Prefix: pterm_

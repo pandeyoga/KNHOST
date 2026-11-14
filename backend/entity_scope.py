@@ -271,6 +271,7 @@ SCOPED_COLLECTIONS = {
 USER_SCOPED_COLLECTIONS = {
     "ai_chat_sessions", "ai_results", "ai_schedules", "ai_schedule_runs", "ai_user_templates", "ai_feedback",
     "ai_action_proposals",   # AG-T1 (D9) — kartu tindakan Tanya KN: dibaca pemiliknya (`user_id`); PT kartu = `entity_id`
+    "ai_finance_packs",      # AG-T4 (D9) — paket tutup buku: dibaca pembuatnya (`user_id`); PT paket = `entity_id`
     "export_jobs", "export_templates",   # L11 — pekerjaan export milik pengguna (dibaca hanya oleh pemiliknya)
 }
 # Koleksi sistem Tanya KN (status sinkron fakta, cache, log biaya) — bukan data bisnis per entitas.

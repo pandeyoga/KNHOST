@@ -7,6 +7,7 @@ import { TanyaInsights } from "./TanyaInsights";
 import { TanyaAnswer } from "./TanyaAnswer";
 import { TanyaBudgetCard } from "./TanyaBudgetCard";
 import { TanyaChatPane, TanyaWelcome, useFillHeight } from "./TanyaChatPane";
+import { TanyaClosingPackCard, TanyaClosingPackResult } from "./TanyaClosingPack";
 import { TanyaCostView } from "./TanyaCostView";
 import { TanyaSaveTemplateDialog, TanyaScheduleDialog } from "./TanyaDialogs";
 import { TanyaHistory } from "./TanyaHistory";
@@ -14,7 +15,8 @@ import { TanyaRulesStrip } from "./TanyaRulesStrip";
 import { TanyaSchedules } from "./TanyaSchedules";
 import { TanyaPeriodChips, TanyaTemplateGallery } from "./TanyaTemplateGallery";
 import { TanyaThread } from "./TanyaThread";
-import { deleteMyTemplate, fetchMyTemplates, fetchScheduleRun, fetchStatus, fetchTemplates, runTemplate } from "./tanyaApi";
+import { buildClosingPack, deleteMyTemplate, downloadClosingPack, fetchMyTemplates, fetchScheduleRun, fetchStatus, fetchTemplates,
+  runTemplate } from "./tanyaApi";
 import { useTanyaChat } from "./useTanyaChat";
 import useIsMobile from "../../hooks/useIsMobile";
 import "./tanya.css";
@@ -25,6 +27,15 @@ const initialTab = () => {
   const t = new URLSearchParams(window.location.search).get("tab");
   if (t === "chat" || TABS.some(([k]) => k === t)) return t;
   return typeof window !== "undefined" && window.matchMedia?.(MOBILE_Q).matches ? "chat" : "reports";
+};
+
+const PACK_FAILED = "Paket tidak bisa disusun. Coba lagi.";
+/** Galat permintaan paket: pesan server untuk isian/izin (400/403/409), selain itu kalimat baku. */
+const packError = (e) => {
+  let body = e?.response?.data;
+  if (typeof body === "string") { try { body = JSON.parse(body); } catch { body = null; } }
+  const st = e?.response?.status;
+  return [400, 403, 409].includes(st) && typeof body?.detail === "string" ? body.detail : PACK_FAILED;
 };
 
 const FINANCE_PROMPTS = [
@@ -50,6 +61,8 @@ export default function TanyaKnView({ selectedEntity, entities }) {
   const [saveQuestion, setSaveQuestion] = useState(null);
   const [docCtx, setDocCtx] = useState(null);
   const [mode, setMode] = useState("umum");   // AG-T2 — "keuangan" hanya bila Asisten Keuangan menyala untuk akun ini
+  const [pack, setPack] = useState(null);     // AG-T4 — {status: busy|error|done, done, total, period, pack, error}
+  const [packDl, setPackDl] = useState(false);
   const chat = useTanyaChat(() => setHistoryKey((k) => k + 1));
   const compact = useIsMobile(900);
   const lastEntry = chat.thread[chat.thread.length - 1];
@@ -95,7 +108,7 @@ export default function TanyaKnView({ selectedEntity, entities }) {
   }, [catalog]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const run = useCallback(async (tpl, p = period) => {
-    setActive(tpl); setTplBusy(true);
+    setPack(null); setActive(tpl); setTplBusy(true);
     try {
       setTplAnswer({ kind: "template", data: await runTemplate(tpl.id, tpl.has_period ? { period: p } : {}) });
     } catch (e) {
@@ -105,7 +118,26 @@ export default function TanyaKnView({ selectedEntity, entities }) {
 
   const onPeriod = (p) => { setPeriod(p); if (active?.has_period) run(active, p); };
   const askMode = status?.finance_enabled && status?.chat_enabled && mode === "keuangan" ? "keuangan" : "umum";
-  const ask = (q) => { toMain(); setTplAnswer(null); setActive(null); chat.ask(q, docCtx, askMode); };
+  const ask = (q) => { toMain(); setTplAnswer(null); setActive(null); setPack(null); chat.ask(q, docCtx, askMode); };
+  const buildPack = async (p) => {   // AG-T4 — kemajuan per lembar dari server ("Menyusun paket… (i dari 12)")
+    toMain(); setTplAnswer(null); setActive(null);
+    setPack({ status: "busy", done: 0, total: 12, period: p });
+    let got = null;
+    let err = "";
+    try {
+      await buildClosingPack(p, (ev) => {
+        if (ev.type === "progress") setPack((s) => ({ ...s, done: ev.done, total: ev.total }));
+        if (ev.type === "done") { got = ev.pack || null; err = ev.error || ""; }
+      });
+      setPack(got ? { status: "done", pack: got, period: p } : { status: "error", error: err || PACK_FAILED, period: p });
+    } catch (e) { setPack({ status: "error", error: packError(e), period: p }); }
+  };
+  const downloadPack = async (pk) => {
+    setPackDl(true);
+    try { await downloadClosingPack(pk); }
+    catch { toast({ title: "Gagal mengunduh Excel", variant: "destructive" }); }
+    finally { setPackDl(false); }
+  };
   const removeMine = async (id) => { await deleteMyTemplate(id).catch(() => null); loadMine(); toast({ title: "Template pribadi dihapus" }); };
   const onSchedule = (data) => setScheduleTarget({ template: data.template, params: data.params,
     hasPeriod: !!catalog?.templates.find((t) => t.id === data.template.id)?.has_period });
@@ -118,6 +150,12 @@ export default function TanyaKnView({ selectedEntity, entities }) {
   const view = !compact && tab === "chat" ? "reports" : tab;
   const tabs = compact ? [["chat", "Tanya"], ...TABS] : TABS;
 
+  const financeScope = { combined: selectedEntity === "all", label: entityFullById(entities || [], selectedEntity, "PT aktif") };
+  // AG-T4 — kartu Paket tutup buku (grup Keuangan) & jadwal ringkasan pagi: hanya bila Asisten Keuangan menyala untuk akun.
+  const financeCard = status?.finance_enabled ? (
+    <TanyaClosingPackCard combined={financeScope.combined} ptLabel={financeScope.label} busy={pack?.status === "busy"}
+      onBuild={buildPack} />
+  ) : null;
   const tabBar = (
     <div className="tanya-side-tabs" role="tablist">
       {tabs.map(([k, label]) => (
@@ -130,36 +168,37 @@ export default function TanyaKnView({ selectedEntity, entities }) {
     {view === "reports" && (<>
       <TanyaPeriodChips presets={catalog.period_presets} value={period} onChange={onPeriod} />
       <TanyaTemplateGallery groups={catalog.groups} templates={catalog.templates} activeId={active?.id} onRun={(t) => { toMain(); run(t); }}
-        myTemplates={mine} onAskMine={ask} onDeleteMine={removeMine} />
+        myTemplates={mine} onAskMine={ask} onDeleteMine={removeMine} financeCard={financeCard} />
     </>)}
     {view === "history" && (
       <TanyaHistory activeId={chat.sessionId} refreshKey={historyKey} onNew={() => { toMain(); chat.reset(); setTplAnswer(null); setDocCtx(null); }}
         onOpen={(id) => { toMain(); setTplAnswer(null); setActive(null); chat.openSession(id); }}
         onDeleted={(id) => { if (id === chat.sessionId) chat.reset(); }} />
     )}
-    {view === "schedules" && <TanyaSchedules refreshKey={schedKey} onOpenRun={(id) => { toMain(); openRun(id); }} />}
+    {view === "schedules" && <TanyaSchedules refreshKey={schedKey} onOpenRun={(id) => { toMain(); setPack(null); openRun(id); }}
+      finance={status?.finance_enabled ? financeScope : null} />}
     {view === "insights" && <TanyaInsights canScan={!!status?.can_edit_rules} onAsk={ask} refreshKey={selectedEntity} />}
     {view === "cost" && <TanyaBudgetCard budget={status?.budget} />}
   </>);
-  const scrollKey = `${chat.thread.length}|${lastEntry?.pending}|${(lastEntry?.streamText || "").length >> 7}|${!!lastEntry?.answer}|${lastEntry?.error || ""}|${tplAnswer ? 1 : 0}|${tplBusy}`;
+  const scrollKey = `${chat.thread.length}|${lastEntry?.pending}|${(lastEntry?.streamText || "").length >> 7}|${!!lastEntry?.answer}|${lastEntry?.error || ""}|${tplAnswer ? 1 : 0}|${tplBusy}|${pack?.status || ""}`;
   // Cek layar 14 Nov — mode Keuangan: saran pembuka berupa pertanyaan keuangan (bukan laporan umum gudang/penjualan).
   const prompts = askMode === "keuangan" ? FINANCE_PROMPTS.map((label) => ({ label }))
     : catalog.templates.slice(0, 4).map((t) => ({ label: t.prompt || t.title, tpl: t }));
   const pick = (p) => (status?.chat_enabled ? ask(p.label) : (toMain(), run(p.tpl)));
-  const financeScope = { combined: selectedEntity === "all", label: entityFullById(entities || [], selectedEntity, "PT aktif") };
   const composer = { status, busy, entityLabel, onAsk: ask, context: docCtx, onClearContext: () => setDocCtx(null),
     statusText: tplBusy ? `Menjalankan ${active?.title || "laporan"}…` : chat.statusText, mode: askMode, onMode: setMode,
     financeScope };
   const chatMain = (<TanyaChatPane scrollKey={scrollKey} composer={composer}>
-    {tplAnswer && chat.thread.length > 0 && (
-      <button type="button" className="tanya-chip tanya-back" onClick={() => { setTplAnswer(null); setActive(null); }} data-testid="tanya-back-to-chat">
+    {(tplAnswer || pack) && chat.thread.length > 0 && (
+      <button type="button" className="tanya-chip tanya-back" onClick={() => { setTplAnswer(null); setActive(null); setPack(null); }} data-testid="tanya-back-to-chat">
         <ArrowLeft className="h-3.5 w-3.5 inline" /> Kembali ke percakapan
       </button>
     )}
-    {tplBusy && !tplAnswer && <div className="tanya-loading" data-testid="tanya-busy"><Loader2 className="h-5 w-5 animate-spin" /> Menjalankan laporan…</div>}
-    {tplAnswer && <div className={tplBusy ? "tanya-dim" : ""}><TanyaAnswer answer={tplAnswer} {...answerProps} /></div>}
-    {!tplAnswer && chat.thread.length > 0 && <TanyaThread entries={chat.thread} statusText={chat.statusText} answerProps={answerProps} onRunTemplate={(t) => run(t)} />}
-    {!tplAnswer && !tplBusy && !chat.thread.length && <TanyaWelcome prompts={prompts} onPick={pick} />}
+    {pack && <TanyaClosingPackResult state={pack} onRetry={() => buildPack(pack.period)} onDownload={downloadPack} downloading={packDl} />}
+    {!pack && tplBusy && !tplAnswer && <div className="tanya-loading" data-testid="tanya-busy"><Loader2 className="h-5 w-5 animate-spin" /> Menjalankan laporan…</div>}
+    {!pack && tplAnswer && <div className={tplBusy ? "tanya-dim" : ""}><TanyaAnswer answer={tplAnswer} {...answerProps} /></div>}
+    {!pack && !tplAnswer && chat.thread.length > 0 && <TanyaThread entries={chat.thread} statusText={chat.statusText} answerProps={answerProps} onRunTemplate={(t) => run(t)} />}
+    {!pack && !tplAnswer && !tplBusy && !chat.thread.length && <TanyaWelcome prompts={prompts} onPick={pick} />}
   </TanyaChatPane>);
   const dialogs = (<>
     <TanyaScheduleDialog target={scheduleTarget} periodPresets={catalog.period_presets} onClose={() => setScheduleTarget(null)}

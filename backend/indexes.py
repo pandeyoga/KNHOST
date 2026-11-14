@@ -395,6 +395,10 @@ INDEX_SPECS: Dict[str, List[IndexKeys]] = {
     "ai_action_proposals": [
         [("user_id", A), ("status", A), ("created_at", D)],
     ],
+    # AG-T4 — paket tutup buku milik pengguna (kunci `id` unik: ID_INDEX_COLLECTIONS).
+    "ai_finance_packs": [
+        [("user_id", A), ("created_at", D)],
+    ],
     # PK-20 — kas dicari per rujukan dokumen induknya (`cash_ledger.create_cash`); id kas tetap dijaga `uq_id`.
     "cash_transactions": [
         [("ref_type", A), ("ref_id", A), ("direction", A)],
@@ -459,6 +463,8 @@ ID_INDEX_COLLECTIONS: List[str] = [
     "customer_credit_profiles", "credit_profile_requests",
     # AG-T1 — kartu tindakan Tanya KN (`aiact_…`).
     "ai_action_proposals",
+    # AG-T4 — paket tutup buku Asisten Keuangan (`aipack_…`).
+    "ai_finance_packs",
     # PM-T2 — kode bayar (`pyc_…`).
     "payment_codes",
     # PK-20 — id kas turunan rujukan (`cash_` + SHA-1 `ref_type|ref_id|direction|seq`): upsert bersamaan = satu kas.

@@ -2,6 +2,10 @@
 
 Dispatcher `ai_schedule_dispatch` (scheduler_service, tiap 5 menit) mengklaim jadwal jatuh tempo dengan CAS pada
 `next_run_at`, lalu menjalankan template dengan identitas & hak akses PEMILIK jadwal.
+
+AG-T4 — `kind`: `template` (bawaan) atau `finance_morning` (ringkasan pagi keuangan per PT, harian). Yang kedua memeriksa
+izin `ai_finance.view` + sakelar akun pemilik saat dijalankan, membaca endpoint layar lewat sesi sementara pemilik
+(`SelfApi.for_user`, baca-saja, ditutup di `finally`), lalu mengirim notifikasi ke pemilik.
 """
 from __future__ import annotations
 
@@ -18,6 +22,12 @@ from services.config_resolver import value_of
 
 logger = logging.getLogger(__name__)
 FREQS = ("daily", "weekly")
+# AG-T4 — jenis jadwal: `template` (bawaan; dokumen lama tanpa `kind`) atau ringkasan pagi keuangan per PT.
+KIND_TEMPLATE, KIND_FINANCE_MORNING = "template", "finance_morning"
+FINANCE_MORNING_TITLE = "Ringkasan pagi keuangan"
+FINANCE_DAILY_ONLY = "Ringkasan pagi keuangan hanya bisa dijadwalkan harian."
+FINANCE_COMBINED = "Pilih satu PT. Ringkasan pagi keuangan dibuat per PT."
+FINANCE_REVOKED = "Pemilik jadwal tidak lagi boleh memakai Asisten Keuangan."
 
 
 class ScheduleError(Exception):
@@ -60,6 +70,26 @@ def validate(payload: Dict[str, Any], allowed: Collection[str]) -> Dict[str, Any
             "next_run_at": next_run(freq, weekday, f"{h:02d}:{m:02d}")}
 
 
+def _hhmm(raw: Any) -> str:
+    try:
+        h, m = (int(x) for x in str(raw or "07:00").split(":"))
+        assert 0 <= h < 24 and 0 <= m < 60
+    except (ValueError, AssertionError) as exc:
+        raise ScheduleError("Jam kirim tidak valid (JJ:MM).") from exc
+    return f"{h:02d}:{m:02d}"
+
+
+def validate_finance_morning(payload: Dict[str, Any], entity_label: str) -> Dict[str, Any]:
+    """AG-T4 — ringkasan pagi keuangan: hanya harian, satu PT (PT aktif saat dibuat), jam kirim isian pengguna."""
+    if (payload.get("frequency") or "daily") != "daily":
+        raise ScheduleError(FINANCE_DAILY_ONLY)
+    hhmm = _hhmm(payload.get("time"))
+    title = f"{FINANCE_MORNING_TITLE} · {entity_label}" if entity_label else FINANCE_MORNING_TITLE
+    return {"kind": KIND_FINANCE_MORNING, "template_id": "", "title": title[:120], "entity_label": entity_label,
+            "params": {}, "frequency": "daily", "weekday": 0, "time": hhmm, "channel": "in_app",
+            "next_run_at": next_run("daily", 0, hhmm)}
+
+
 async def ctx_for(user: Dict[str, Any], entity_id: str, view_all: bool):
     from entity_scope import CROSS_ENTITY_ROLES, EntityContext, all_active_entity_ids, resolve_allowed_entities
     home = user.get("home_entity_id") or entity_id
@@ -72,27 +102,67 @@ async def ctx_for(user: Dict[str, Any], entity_id: str, view_all: bool):
     return EntityContext(user=user, active_entity_id=entity_id, allowed_entity_ids=allowed, view_all=view_all and len(allowed) > 1)
 
 
+async def _run_finance_morning(sched: Dict[str, Any], run: Dict[str, Any]) -> None:
+    """AG-T4 — ringkasan pagi keuangan: izin `ai_finance.view` + sakelar akun PEMILIK diperiksa saat dijalankan, lalu
+    endpoint layar dibaca lewat sesi sementara pemilik (baca-saja, PT jadwal) yang selalu ditutup."""
+    from dependencies import has_permission
+    from services import ai_finance_reports
+    from services.ai_chat_service import finance_enabled
+    from services.ai_self_api import SelfApi
+    from services.notification_service import create_notification
+    user = await db.users.find_one({"id": sched["user_id"]}, {"_id": 0, "password": 0, "password_hash": 0})
+    if not user or user.get("status", "active") != "active" or not await finance_enabled(user):
+        raise ScheduleError(FINANCE_REVOKED)
+    if not await has_permission(user, "ai", "view"):
+        raise ScheduleError("Pemilik jadwal tidak aktif atau tidak lagi boleh memakai asisten.")
+    await ctx_for(user, sched["entity_id"], False)   # PT jadwal masih dalam cakupan pemilik
+    api = await SelfApi.for_user(user, sched["entity_id"], read_only=True)
+    try:
+        brief = await ai_finance_reports.build_morning_brief(api, user=user, entity_id=sched["entity_id"],
+                                                             entity_label=sched.get("entity_label") or "")
+    finally:
+        await api.aclose()
+    run.update(status="ok", kind=KIND_FINANCE_MORNING,
+               template={"id": KIND_FINANCE_MORNING, "kind": KIND_FINANCE_MORNING, "title": sched["title"],
+                         "group": "Keuangan", "prompt": "", "narrative": "auto"},
+               params={}, blocks=brief["blocks"], result_ids=brief["result_ids"], warnings=[],
+               sections=brief["sections"], narrative=brief["text"], narrative_source="auto")
+    await create_notification(notif_type="ai_report", title=sched["title"], body=brief["text"][:1200],
+                              link="tanya-kn", entity_id=sched["entity_id"], recipient_user=sched["user_id"],
+                              recipient_role="",  # GN-16 — laporan pribadi, bukan siaran
+                              ref=run["id"], dedupe=False)
+
+
+async def _run_template(sched: Dict[str, Any], run: Dict[str, Any], create_notification) -> None:
+    """Laporan templat (bawaan): hak `ai.view` pemilik, templat berizin, narasi; notifikasi ke pemilik."""
+    user = await db.users.find_one({"id": sched["user_id"]}, {"_id": 0, "password": 0, "password_hash": 0})
+    from dependencies import has_permission
+    if not user or user.get("status", "active") != "active" or not await has_permission(user, "ai", "view"):   # PR-T2
+        raise ScheduleError("Pemilik jadwal tidak aktif atau tidak lagi boleh memakai asisten.")
+    ctx = await ctx_for(user, sched["entity_id"], bool(sched.get("view_all")))
+    out = await ai_templates.run(sched["template_id"], sched.get("params") or {}, user, ctx, use_cache=False)
+    shown = [out["results"][r] for r in dict.fromkeys(b["result_id"] for b in out["blocks"])]
+    narr = await narrate(ai_templates.BY_ID[sched["template_id"]], shown, user)
+    run.update(status="ok", template=out["template"], params=out["params"], blocks=out["blocks"],
+               result_ids=list(out["results"]), warnings=out["warnings"],
+               narrative=(narr or {}).get("text"), narrative_source=(narr or {}).get("source"))
+    body = (narr or {}).get("text") or "Laporan siap. Buka Tanya KN untuk grafik dan tabel lengkap."
+    await create_notification(notif_type="ai_report", title=f"Laporan terjadwal: {sched['title']}", body=body[:1200],
+                              link="tanya-kn", entity_id=sched["entity_id"], recipient_user=sched["user_id"],
+                              recipient_role="",  # GN-16 — laporan pribadi, bukan siaran
+                              ref=run["id"], dedupe=False)
+
+
 async def run_schedule(sched: Dict[str, Any], trigger: str = "schedule") -> Dict[str, Any]:
     from services.notification_service import create_notification
-    run = {"id": new_id("airun"), "schedule_id": sched["id"], "user_id": sched["user_id"], "template_id": sched["template_id"],
-           "title": sched["title"], "trigger": trigger, "created_at": now_iso()}
+    run = {"id": new_id("airun"), "schedule_id": sched["id"], "user_id": sched["user_id"],
+           "template_id": sched.get("template_id") or "", "title": sched["title"], "trigger": trigger,
+           "created_at": now_iso()}
     try:
-        user = await db.users.find_one({"id": sched["user_id"]}, {"_id": 0, "password": 0, "password_hash": 0})
-        from dependencies import has_permission
-        if not user or user.get("status", "active") != "active" or not await has_permission(user, "ai", "view"):   # PR-T2
-            raise ScheduleError("Pemilik jadwal tidak aktif atau tidak lagi boleh memakai asisten.")
-        ctx = await ctx_for(user, sched["entity_id"], bool(sched.get("view_all")))
-        out = await ai_templates.run(sched["template_id"], sched.get("params") or {}, user, ctx, use_cache=False)
-        shown = [out["results"][r] for r in dict.fromkeys(b["result_id"] for b in out["blocks"])]
-        narr = await narrate(ai_templates.BY_ID[sched["template_id"]], shown, user)
-        run.update(status="ok", template=out["template"], params=out["params"], blocks=out["blocks"],
-                   result_ids=list(out["results"]), warnings=out["warnings"],
-                   narrative=(narr or {}).get("text"), narrative_source=(narr or {}).get("source"))
-        body = (narr or {}).get("text") or "Laporan siap. Buka Tanya KN untuk grafik dan tabel lengkap."
-        await create_notification(notif_type="ai_report", title=f"Laporan terjadwal: {sched['title']}", body=body[:1200],
-                                  link="tanya-kn", entity_id=sched["entity_id"], recipient_user=sched["user_id"],
-                                  recipient_role="",  # GN-16 — laporan pribadi, bukan siaran
-                                  ref=run["id"], dedupe=False)
+        if sched.get("kind") == KIND_FINANCE_MORNING:
+            await _run_finance_morning(sched, run)
+        else:
+            await _run_template(sched, run, create_notification)
     except ScheduleError as exc:
         run.update(status="error", error=str(exc))
     except Exception as exc:  # noqa: BLE001 — satu jadwal gagal tidak menghentikan dispatcher

@@ -32,16 +32,19 @@ function MyTemplates({ items, onAsk, onDelete }) {
   );
 }
 
-export function TanyaTemplateGallery({ groups, templates, activeId, onRun, myTemplates, onAskMine, onDeleteMine }) {
+/** `financeCard` (AG-T4) = kartu Paket tutup buku di awal grup "Keuangan" (tampil walau grup tanpa templat). */
+export function TanyaTemplateGallery({ groups, templates, activeId, onRun, myTemplates, onAskMine, onDeleteMine, financeCard = null }) {
   return (
     <nav className="tanya-gallery" data-testid="tanya-template-gallery">
       <MyTemplates items={myTemplates} onAsk={onAskMine} onDelete={onDeleteMine} />
       {groups.map((g) => {
         const list = templates.filter((t) => t.group === g);
-        if (!list.length) return null;
+        const extra = g === "Keuangan" ? financeCard : null;
+        if (!list.length && !extra) return null;
         return (
           <section key={g} className="tanya-group">
             <div className="tanya-group-title">{g}</div>
+            {extra}
             {list.map((t) => (
               <button key={t.id} type="button" className={`tanya-tpl ${activeId === t.id ? "active" : ""}`}
                 onClick={() => onRun(t)} data-testid={`tanya-template-${t.id}`}>

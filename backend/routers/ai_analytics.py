@@ -242,16 +242,22 @@ async def post_feedback(payload: Dict[str, Any], request: Request) -> Dict[str, 
 _XLSX = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
 
 
-def _fill_sheet(ws, doc: Dict[str, Any]) -> None:
+def _fill_sheet(ws, doc: Dict[str, Any], *, heading: str = "", notes: Optional[List[str]] = None) -> None:
+    """Satu hasil → satu lembar. AG-T4: `heading` (baris A1) dan `notes` (baris "Keterangan: …" di bawah Periode) dipakai
+    paket tutup buku; pemanggil lama tanpa keduanya mendapat tata letak yang sama persis seperti dulu."""
     from openpyxl.styles import Font
-    ws.append([_safe_cell(doc.get("title") or "Tanya KN")])
+    ws.append([_safe_cell(heading or doc.get("title") or "Tanya KN")])
     ws["A1"].font = Font(bold=True, size=13)
     per = doc.get("period") or {}
     ws.append([f"Periode: {per.get('label', '-')}"])
-    ws.append([f"Definisi: {doc.get('definition') or '-'}"])
+    if notes is None:
+        ws.append([f"Definisi: {doc.get('definition') or '-'}"])
+    for n in notes or []:
+        ws.append([_safe_cell(f"Keterangan: {n}")])
     ws.append([])
     cols = doc.get("columns") or []
     ws.append([c["label"] for c in cols])
+    head_row = ws.max_row
     for cell in ws[ws.max_row]:
         cell.font = Font(bold=True)
     fmt = {"idr": "#,##0", "qty": "#,##0.00", "pct": "0.00", "count": "#,##0"}
@@ -261,7 +267,7 @@ def _fill_sheet(ws, doc: Dict[str, Any]) -> None:
             if c.get("unit") in fmt:
                 ws.cell(row=ws.max_row, column=i).number_format = fmt[c["unit"]]
     for i in range(1, len(cols) + 1):
-        ws.column_dimensions[ws.cell(row=5, column=i).column_letter].width = 22
+        ws.column_dimensions[ws.cell(row=head_row, column=i).column_letter].width = 22
 
 
 def _safe_cell(v: Any) -> Any:
@@ -385,11 +391,22 @@ async def create_schedule(payload: Dict[str, Any], request: Request) -> Dict[str
     from core_utils import new_id, now_iso
     from services import ai_schedules, ai_templates
     user = await _ai_user(request)
+    kind = str(payload.get("kind") or ai_schedules.KIND_TEMPLATE)
+    if kind == ai_schedules.KIND_FINANCE_MORNING:   # AG-T4 — ringkasan pagi: Asisten Keuangan + sakelar akun (K-45)
+        await _finance_user(request)
     ctx = await entity_ctx(request)
     if await db.ai_schedules.count_documents({"user_id": user["id"]}) >= 20:
         raise HTTPException(status_code=400, detail="Maksimal 20 jadwal per pengguna")
     try:
-        body = ai_schedules.validate(payload, await ai_templates.allowed_ids(user))
+        if kind == ai_schedules.KIND_FINANCE_MORNING:
+            if ctx.view_all:   # N3 — ringkasan pagi per PT; mode gabungan tidak dijadwalkan
+                raise HTTPException(status_code=409, detail=ai_schedules.FINANCE_COMBINED)
+            from entity_scope import scope_meta
+            body = ai_schedules.validate_finance_morning(payload, (await scope_meta(ctx)).get("label") or "")
+        elif kind == ai_schedules.KIND_TEMPLATE:
+            body = ai_schedules.validate(payload, await ai_templates.allowed_ids(user))
+        else:
+            raise ai_schedules.ScheduleError("Jenis jadwal tidak dikenal.")
     except ai_schedules.ScheduleError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
     doc = {"id": new_id("aisch"), "user_id": user["id"], "user_name": user.get("name"), "entity_id": ctx.active_entity_id,
@@ -404,8 +421,11 @@ async def update_schedule(schedule_id: str, payload: Dict[str, Any], request: Re
     user = await _ai_user(request)
     cur = await _own_schedule(schedule_id, user)
     try:
-        body = ai_schedules.validate({**cur, **payload, "template_id": cur["template_id"]},
-                                     await ai_templates.allowed_ids(user))
+        if cur.get("kind") == ai_schedules.KIND_FINANCE_MORNING:   # AG-T4 — jenis & PT tetap; hanya jam/aktif berubah
+            body = ai_schedules.validate_finance_morning({**cur, **payload}, cur.get("entity_label") or "")
+        else:
+            body = ai_schedules.validate({**cur, **payload, "template_id": cur["template_id"]},
+                                         await ai_templates.allowed_ids(user))
     except ai_schedules.ScheduleError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
     if "active" in payload:

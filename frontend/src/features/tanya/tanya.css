@@ -293,3 +293,24 @@ body.tanya-open [data-testid="help-tours-button"] span { display: none; }
 .tanya-source-open { white-space: nowrap; }
 .tanya-source-notes { margin: 0; padding-left: 18px; font-size: var(--fs-12); color: var(--kn-text-2); list-style: disc; }
 .tanya-finance-verify-bar { display: flex; flex-wrap: wrap; gap: var(--sp-2); }
+
+/* AG-T4 — Paket tutup buku (kartu grup Keuangan + hasil) dan jadwal ringkasan pagi keuangan. */
+.tanya-pack-card { display: flex; flex-direction: column; gap: var(--sp-2); padding: var(--sp-3); margin-bottom: var(--sp-2);
+  border: 1px solid var(--kn-divider); border-radius: var(--r-md); }
+.tanya-pack-title { display: flex; align-items: center; gap: 6px; color: var(--kn-text); }
+.tanya-pack-card .tanya-mode-scope { align-self: flex-start; overflow-wrap: anywhere; }
+.tanya-pack-actions, .tanya-morning-bar { display: flex; flex-wrap: wrap; align-items: center; gap: var(--sp-2); }
+.tanya-pack-actions .primary-button, .tanya-morning-bar .secondary-button { white-space: nowrap; }
+.tanya-morning-bar { margin-bottom: var(--sp-3); }
+.tanya-pack-verify { display: inline-flex; align-items: flex-start; gap: 6px; font-size: var(--fs-12); font-weight: 600;
+  color: var(--kn-neutral); background: var(--kn-neutral-soft); border-radius: 8px; padding: 3px 8px; max-width: 100%; }
+.tanya-pack-verify.ok { color: var(--kn-success-text); background: var(--kn-success-soft); }
+.tanya-pack-summary-text { margin: var(--sp-2) 0 0; font-size: var(--fs-14); line-height: 1.6; color: var(--kn-text); }
+.tanya-pack-sheets { display: flex; flex-direction: column; gap: 6px; margin: 0; padding: 0; list-style: none; }
+.tanya-pack-sheet { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 4px var(--sp-2);
+  padding: 6px 0; border-bottom: 1px solid var(--kn-divider); }
+.tanya-pack-sheet:last-child { border-bottom: 0; }
+.tanya-pack-sheet-name { font-size: var(--fs-13); font-weight: 600; color: var(--kn-text); }
+.tanya-pack-sheet-state { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; min-width: 0; }
+.tanya-pack-sheet-reason { font-size: var(--fs-12); color: var(--kn-text-2); overflow-wrap: anywhere; }
+.tanya-pack-error { display: flex; align-items: center; gap: 6px; font-size: var(--fs-13); color: var(--kn-danger-text); }

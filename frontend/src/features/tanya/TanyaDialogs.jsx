@@ -64,6 +64,43 @@ export function TanyaScheduleDialog({ target, periodPresets, onClose, onSaved })
   );
 }
 
+/** AG-T4 — jadwalkan ringkasan pagi keuangan: harian, satu PT (PT aktif), jam kirim pilihan pengguna (bawaan 07.00). */
+export function TanyaFinanceMorningDialog({ open, ptLabel, onClose, onSaved }) {
+  const [time, setTime] = useState("07:00");
+  const [busy, setBusy] = useState(false);
+  useEffect(() => { if (open) setTime("07:00"); }, [open]);
+  const save = async () => {
+    setBusy(true);
+    try {
+      await createSchedule({ kind: "finance_morning", frequency: "daily", time });
+      toast({ title: "Jadwal tersimpan", description: "Ringkasan pagi keuangan dikirim ke notifikasi Anda setiap hari." });
+      onSaved?.(); onClose();
+    } catch (e) {
+      toast({ title: "Jadwal gagal disimpan", description: e?.response?.data?.detail || "", variant: "destructive" });
+    } finally { setBusy(false); }
+  };
+  return (
+    <Dialog open={!!open} onOpenChange={(o) => !o && onClose()}>
+      <DialogContent data-testid="tanya-morning-dialog">
+        <DialogHeader><DialogTitle>Jadwalkan ringkasan pagi keuangan</DialogTitle></DialogHeader>
+        <div className="tanya-form">
+          <p className="tanya-note" data-testid="tanya-morning-pt">PT: {ptLabel || "PT aktif"}</p>
+          <Label>Jam kirim (WIB)</Label>
+          <Input type="time" value={time} onChange={(e) => setTime(e.target.value)} data-testid="tanya-morning-time" />
+          <p className="tanya-note">Setiap hari: piutang dan hutang jatuh tempo hari itu, uang masuk yang belum cocok dengan bank,
+            posting gagal, dan selisih rekonsiliasi. Dikirim sebagai notifikasi dengan hak akses Anda sendiri.</p>
+        </div>
+        <DialogFooter>
+          <button type="button" className="secondary-button btn-sm" onClick={onClose} data-testid="tanya-morning-cancel">Batal</button>
+          <button type="button" className="primary-button btn-sm" onClick={save} disabled={!time || busy} data-testid="tanya-morning-save">
+            Simpan jadwal
+          </button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 /** Simpan pertanyaan chat sebagai template pribadi (mode llm). */
 export function TanyaSaveTemplateDialog({ question, onClose, onSaved }) {
   const [title, setTitle] = useState("");

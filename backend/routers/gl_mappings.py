@@ -32,8 +32,14 @@ async def _check_entity(request: Request, entity_id: str) -> None:
 
 
 @router.get("/gl/account-mappings")
-async def list_mappings(request: Request, entity_id: Optional[str] = Query(None)) -> Any:
+async def list_mappings(request: Request, entity_id: Optional[str] = Query(None),
+                        active_entity: bool = Query(False)) -> Any:
     await require_permission(request, "gl_mapping", "view")
+    if active_entity and not entity_id:
+        # AG-T4 — pembaca yang PT-nya dari sesi (pintu asisten tidak boleh mengirim `entity_id`, N1): pemetaan efektif
+        # PT aktif. Mode "Semua PT" tetap lapisan global.
+        ctx = await entity_ctx(request)
+        entity_id = None if getattr(ctx, "view_all", False) else ctx.active_entity_id
     await _check_entity(request, entity_id or "")
     return await svc.list_mappings(entity_id)
 

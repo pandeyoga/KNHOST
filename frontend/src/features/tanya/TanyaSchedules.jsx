@@ -1,8 +1,9 @@
 import { useCallback, useEffect, useState } from "react";
-import { CalendarClock, Loader2, Play, Trash2 } from "lucide-react";
+import { CalendarClock, Loader2, Play, Sunrise, Trash2 } from "lucide-react";
 import { Button } from "../../components/ui/button";
 import { Switch } from "../../components/ui/switch";
 import { toast } from "../../hooks/use-toast";
+import { TanyaFinanceMorningDialog } from "./TanyaDialogs";
 import { deleteSchedule, fetchScheduleRuns, fetchSchedules, runScheduleNow, updateSchedule } from "./tanyaApi";
 import { fmtDateTime, scheduleLabel } from "./tanyaFormat";
 
@@ -31,10 +32,28 @@ function ScheduleRow({ s, onChange, onRun, onDelete }) {
   );
 }
 
-/** Kelola laporan terjadwal + riwayat kiriman (buka laporan lengkap). */
-export function TanyaSchedules({ refreshKey, onOpenRun }) {
+/** AG-T4 — tombol jadwal ringkasan pagi keuangan (hanya bila Asisten Keuangan menyala); "Semua PT" → mati + alasan. */
+function FinanceMorningBar({ finance, onOpen }) {
+  return (
+    <div className="tanya-morning-bar" data-testid="tanya-morning-bar">
+      <button type="button" className="secondary-button btn-sm" onClick={onOpen} disabled={finance.combined}
+        data-testid="tanya-morning-open">
+        <Sunrise className="h-3.5 w-3.5" aria-hidden="true" /> Jadwalkan ringkasan pagi keuangan
+      </button>
+      {finance.combined && (
+        <span className="text-fs-12 text-kn-text-2" data-testid="tanya-morning-combined-reason">
+          Pilih satu PT. Ringkasan pagi dibuat per PT.
+        </span>
+      )}
+    </div>
+  );
+}
+
+/** Kelola laporan terjadwal + riwayat kiriman (buka laporan lengkap). `finance` = {combined, label} bila Asisten Keuangan menyala. */
+export function TanyaSchedules({ refreshKey, onOpenRun, finance = null }) {
   const [items, setItems] = useState(null);
   const [runs, setRuns] = useState([]);
+  const [morning, setMorning] = useState(false);
   const load = useCallback(() => {
     fetchSchedules().then(setItems).catch(() => setItems([]));
     fetchScheduleRuns().then(setRuns).catch(() => setRuns([]));
@@ -57,6 +76,8 @@ export function TanyaSchedules({ refreshKey, onOpenRun }) {
   };
   return (
     <div className="tanya-schedules" data-testid="tanya-schedules">
+      {finance && <FinanceMorningBar finance={finance} onOpen={() => setMorning(true)} />}
+      {finance && <TanyaFinanceMorningDialog open={morning} ptLabel={finance.label} onClose={() => setMorning(false)} onSaved={load} />}
       {items === null && <div className="tanya-loading"><Loader2 className="h-4 w-4 animate-spin" /> Memuat jadwal…</div>}
       {items?.length === 0 && (
         <div className="tanya-note" data-testid="tanya-schedules-empty">

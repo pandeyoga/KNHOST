@@ -152,7 +152,7 @@ export function TanyaAnswer({ answer, entityLabel, onFollowup, aiEnabled, onSave
           <h2 className="tanya-answer-title">{title}</h2>
         </div>
         <div className="tanya-answer-actions">
-          {isTpl && onSchedule && <Button size="sm" variant="outline" onClick={() => onSchedule(answer.data)} data-testid="tanya-answer-schedule"><CalendarClock className="h-4 w-4" /> Jadwalkan</Button>}
+          {isTpl && onSchedule && answer.data.template?.kind !== "finance_morning" && <Button size="sm" variant="outline" onClick={() => onSchedule(answer.data)} data-testid="tanya-answer-schedule"><CalendarClock className="h-4 w-4" /> Jadwalkan</Button>}
           {!isTpl && onSaveTemplate && <Button size="sm" variant="outline" onClick={() => onSaveTemplate(answer.question)} data-testid="tanya-answer-save-template"><BookmarkPlus className="h-4 w-4" /> Simpan sebagai template saya</Button>}
           <ExportAll ids={Object.keys(results || {})} title={title} />
           <TanyaFeedback payload={{ template_id: answer.data?.template?.id, session_id: answer.sessionId, result_ids: Object.keys(results || {}) }} />

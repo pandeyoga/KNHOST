@@ -130,6 +130,9 @@ GROUP_LEVEL_EXACT: frozenset = frozenset({
     # gabungan sendiri, AG-T1); yang ditulis hanya sesi percakapan milik pengguna (`ai_chat_sessions`, per pengguna).
     # Mode Keuangan "Semua PT" menjawab angka gabungan berlabel "belum dieliminasi" (K-15, U6).
     "/api/ai/chat",
+    # AG-T4 — paket tutup buku hanya membaca (endpoint GET lewat pintu baca-saja); yang ditulis hanya paket milik
+    # pengguna (`ai_finance_packs`). Endpoint sendiri menolak "Semua PT" dengan pesannya ("Pilih satu PT…", 409).
+    "/api/ai/finance/closing-pack",
     # (P) pekerjaan pemeliharaan tingkat grup (dijalankan penjadwal/admin)
     "/api/finance-cases/scan", "/api/contra-bons/run-reminder",
     "/api/fixed-assets/run-depreciation", "/api/rnd/sla/escalate",

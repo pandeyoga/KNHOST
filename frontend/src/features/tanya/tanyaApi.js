@@ -80,6 +80,28 @@ export async function askChat(payload, onEvent) {
   consume(typeof res.data === "string" ? res.data : "", true);
 }
 
+/** AG-T4 — paket tutup buku: kemajuan per lembar lewat event (`progress` {done,total,title} lalu `done` {pack|error}). */
+export async function buildClosingPack(period, onEvent) {
+  let offset = 0;
+  const consume = (txt, final) => {
+    const cut = txt.lastIndexOf("\n\n");
+    const end = final ? txt.length : cut < 0 ? 0 : cut + 2;
+    if (end <= offset) return;
+    parseEvents(txt.slice(offset, end)).forEach(onEvent);
+    offset = end;
+  };
+  const res = await axios.post(`${API}/ai/finance/closing-pack`, { period }, {
+    params: { stream: 1 }, responseType: "text",
+    onDownloadProgress: (e) => consume(e.event?.target?.responseText || "", false),
+  });
+  consume(typeof res.data === "string" ? res.data : "", true);
+}
+export const fetchClosingPack = (id) => axios.get(`${API}/ai/finance/closing-pack/${id}`).then((r) => r.data);
+export async function downloadClosingPack(pack) {
+  const res = await axios.get(`${API}/ai/finance/closing-pack/${pack.id}/export.xlsx`, { responseType: "blob" });
+  saveBlob(res.data, `tutup-buku-${pack.entity_code || "pt"}-${pack.period}`);
+}
+
 export const fetchUsageDaily = (params) => axios.get(`${API}/ai/usage/daily`, { params }).then((r) => r.data);
 export const fetchAction = (id) => axios.get(`${API}/ai/actions/${id}`).then((r) => r.data);
 export const confirmAction = (id, edits) => axios.post(`${API}/ai/actions/${id}/confirm`, { edits }).then((r) => r.data);

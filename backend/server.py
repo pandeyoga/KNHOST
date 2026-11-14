@@ -250,6 +250,8 @@ from routers import ai_analytics  # noqa: E402  — Tanya KN F1: lapisan semanti
 app.include_router(ai_analytics.router)
 from routers import ai_assist  # noqa: E402  — Tanya KN: draf tindakan & peringatan anomali
 app.include_router(ai_assist.router)
+from routers import ai_finance_packs  # noqa: E402  — AG-T4: paket tutup buku Asisten Keuangan
+app.include_router(ai_finance_packs.router)
 from routers import data_hygiene  # noqa: E402  — Kebersihan Data (EYD/telepon otomatis) + peta giliran (2026-09)
 app.include_router(data_hygiene.router)
 from routers import sample_sales  # noqa: E402  — §3-C Jual Sample (2026-09)

@@ -66,6 +66,8 @@ CANONICAL_COLLECTIONS = {
     "payment_methods", "bank_account_changes",
     # ── AG-T1 (blueprint) — kartu tindakan Tanya KN (masa berlaku, gagal/kedaluwarsa) ──
     "ai_action_proposals",
+    # ── AG-T4 (blueprint) — paket tutup buku Asisten Keuangan ──
+    "ai_finance_packs",
     # ── PM-T2 (blueprint) — kode bayar pesanan / baris tagihan ──
     "payment_codes",
     # ── KP-T4 (blueprint) — satu tabel kebijakan persetujuan ──

@@ -11,7 +11,8 @@ export function TanyaNarrative({ data, aiEnabled }) {
   const ids = Object.keys(data.results || {}).join(",");
   useEffect(() => {
     setNarr({ text: data.narrative, source: data.narrative_source || "auto" });
-    if (!aiEnabled || mode === "none" || !ids || data.narrative_source === "ai") return;
+    // AG-T4 — "auto" (ringkasan pagi keuangan) = teks server saja; tidak meminta narasi AI.
+    if (!aiEnabled || mode === "none" || mode === "auto" || !ids || data.narrative_source === "ai") return;
     let alive = true;
     setLoading(true);
     fetchNarrative(data.template.id, ids.split(","))
