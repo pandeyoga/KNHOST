@@ -76,7 +76,10 @@ export default function CreditOverridesPanel({ currentUser }) {
             {loading ? (
               <div className="py-10 text-center text-[12px] text-[#6B6B73]" data-testid="overrides-loading">Memuat...</div>
             ) : rows.length === 0 ? (
-              <div className="py-12 text-center text-[12px] text-[#6B6B73]" data-testid="overrides-empty">Tidak ada permohonan {tab !== "all" ? `(${tab})` : ""}.</div>
+              <div className="py-12 text-center text-[12px] text-[#6B6B73]" data-testid="overrides-empty">
+                {/* Cek visual 14 Nov: dulu menampilkan kode tab mentah "(pending)". */}
+                Tidak ada permohonan{tab !== "all" ? ` berstatus ${(TABS.find((t) => t.key === tab)?.label || "").toLowerCase()}` : ""}.
+              </div>
             ) : (
               <div className="divide-y divide-[#EFF0F2] max-h-[560px] overflow-y-auto">
                 {srch.toolbar}

@@ -91,7 +91,7 @@ export default function Customer360Panel({ customerId, currentUser, salesUsers, 
             <div className="section-body grid grid-cols-2 gap-2">
               <KpiTile label="Plafon Kredit" value={limit > 0 ? formatCurrency(limit) : "Tanpa batas"} sub={limitSource} testId="customer-360-limit" />
               <KpiTile label="Belum Lunas" value={formatCurrency(credit.ar_outstanding)} tone="text-[#0058CC]" testId="customer-360-ar"
-                sub={`Piutang ledger ${formatCurrency(credit.ar_ledger || 0)} · eksposur ${formatCurrency(credit.exposure || 0)}`} />
+                sub={`Piutang tercatat ${formatCurrency(credit.ar_ledger || 0)} · pesanan belum dikirim ${formatCurrency(credit.exposure || 0)}`} />
               <KpiTile label="Jatuh Tempo (Lewat Tempo)" value={formatCurrency(credit.overdue_amount)} tone={Number(credit.overdue_amount) > 0 ? "text-[#C0392B]" : ""} sub={credit.max_overdue_days ? `${credit.max_overdue_days} hari` : ""} testId="customer-360-overdue" />
               <KpiTile label="Sisa Kredit" value={credit.available_credit != null ? formatCurrency(credit.available_credit) : "∞"} sub={`${credit.open_orders || 0} pesanan terbuka`} />
             </div>
