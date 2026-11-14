@@ -1,0 +1,32 @@
+============================= test session starts ==============================
+platform linux -- Python 3.11.18, pytest-9.1.1, pluggy-1.6.0
+rootdir: backend
+configfile: pytest.ini
+plugins: xdist-3.8.0, anyio-4.14.2
+collected 17 items
+
+tests_mem/test_PK32_nota_kredit.py [bootstrap] SANDI AWAL akun seed (ganti segera): y4EbXBxzxWJVonec
+[bootstrap] FASE F lifecycle backfill: 5 produk distempel 'produksi'
+[bootstrap] kebersihan data: 5 record dirapikan {'customers': 3, 'suppliers': 0, 'users': 0, 'hr_employees': 2, 'makloons': 0}
+.
+=== CETAKAN SKRIP MIGRASI PK-32 (baca-saja) ===
+Nota debit DN-PK32-LAMA-af95 · pesanan SO/PK32/002 · PT ent_ksc · open_amount 100.000
+Ringkasan: 1 nota debit menunggu ditagih · total 100.000
+Mode baca-saja: tidak ada yang diubah. Pakai --apply untuk menagihkan (data nyata = keputusan pemilik).
+
+
+=== --apply ===
+Nota debit DN-PK32-LAMA-af95 · pesanan SO/PK32/002 · PT ent_ksc · open_amount 100.000
+Ringkasan: 1 nota debit menunggu ditagih · total 100.000
+  DN-PK32-LAMA-af95: status posted · tagihan billed · jurnal posted
+Diterapkan: 1 nota debit ditagihkan.
+
+
+=== --apply (jalan ketiga) ===
+Ringkasan: 0 nota debit menunggu ditagih · total 0
+Tanpa perubahan: tidak ada nota debit yang menunggu ditagih.
+
+................
+
+
+======================== 17 passed, 1 warning in 11.01s ========================

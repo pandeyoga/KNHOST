@@ -1,0 +1,7 @@
+Test Suites: 35 failed, 113 passed, 148 total
+Tests:       919 passed, 919 total
+--- HEAD d07186e
+Test Suites: 35 failed, 112 passed, 147 total
+Tests:       912 passed, 912 total
+W (a) sebelum perbaikan roleReach: Test Suites: 36 failed, 110 passed, 146 total
+W (a) sebelum perbaikan roleReach: Tests:       3 failed, 887 passed, 890 total

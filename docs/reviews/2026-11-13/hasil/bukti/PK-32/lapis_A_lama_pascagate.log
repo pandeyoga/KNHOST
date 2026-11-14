@@ -1,0 +1,16 @@
+== tests/test_l02_ln022_t03_amendment_note.py
+..                                                                       [100%]
+2 passed in 1.13s
+== tests/test_l02_ln022_t03_amendment_note_extended.py
+tests/test_l02_ln022_t03_amendment_note_extended.py:226: AssertionError
+=========================== short test summary info ============================
+FAILED tests/test_l02_ln022_t03_amendment_note_extended.py::test_qty_decrease_below_shipped_blocked
+1 failed, 12 passed in 3.33s
+== tests/test_l02_ln022_t03_amendment_note_edge.py
+.........                                                                [100%]
+9 passed in 4.23s
+== tests/test_fe01_cancel_issued_credit_note.py
+=========================== short test summary info ============================
+ERROR tests/test_fe01_cancel_issued_credit_note.py - TypeError: 'NoneType' ob...
+!!!!!!!!!!!!!!!!!!!! Interrupted: 1 error during collection !!!!!!!!!!!!!!!!!!!!
+1 error in 0.23s

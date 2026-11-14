@@ -1,0 +1,43 @@
+E   ImportError: cannot import name 'incentive_facts' from 'services' ($S/wt32/backend/services/__init__.py)
+$S/wt32/backend/tests_mem/test_KMT1_data_insentif.py:52: ImportError: cannot import name 'incentive_facts' from 'services' ($S/wt32/backend/services/__init__.py)
+E   AssertionError: []
+$S/wt32/backend/tests_mem/test_KMT1_data_insentif.py:146: AssertionError: []
+E   AssertionError: {"detail":"Not Found"}
+$S/wt32/backend/tests_mem/test_KMT1_data_insentif.py:157: AssertionError: {"detail":"Not Found"}
+E   AssertionError: []
+$S/wt32/backend/tests_mem/test_KMT1_data_insentif.py:169: AssertionError: []
+E   AssertionError: {"detail":"Not Found"}
+$S/wt32/backend/tests_mem/test_KMT1_data_insentif.py:179: AssertionError: {"detail":"Not Found"}
+E   AssertionError: assert [] == [('deposit', ...isa', 500000)]
+$S/wt32/backend/tests_mem/test_KMT1_data_insentif.py:187: AssertionError: assert [] == [('deposit', ...isa', 500000)]
+E   ImportError: cannot import name 'incentive_facts' from 'services' ($S/wt32/backend/services/__init__.py)
+$S/wt32/backend/tests_mem/test_KMT1_data_insentif.py:195: ImportError: cannot import name 'incentive_facts' from 'services' ($S/wt32/backend/services/__init__.py)
+E   ImportError: cannot import name 'incentive_facts' from 'services' ($S/wt32/backend/services/__init__.py)
+$S/wt32/backend/tests_mem/test_KMT1_data_insentif.py:216: ImportError: cannot import name 'incentive_facts' from 'services' ($S/wt32/backend/services/__init__.py)
+E   AssertionError: {"detail":"Not Found"}
+$S/wt32/backend/tests_mem/test_KMT1_data_insentif.py:248: AssertionError: {"detail":"Not Found"}
+E   assert 404 == 200
+$S/wt32/backend/tests_mem/test_KMT1_data_insentif.py:280: assert 404 == 200
+E   ImportError: cannot import name 'incentive_periods' from 'services' ($S/wt32/backend/services/__init__.py)
+$S/wt32/backend/tests_mem/test_KMT1_data_insentif.py:301: ImportError: cannot import name 'incentive_periods' from 'services' ($S/wt32/backend/services/__init__.py)
+E   AssertionError: {"detail":"Sumber daya izin “incentive” tidak dikenal."}
+$S/wt32/backend/tests_mem/conftest.py:158: AssertionError: {"detail":"Sumber daya izin “incentive” tidak dikenal."}
+E   KeyError: "Setting 'insentif.dasar_omzet' tidak ada di registry"
+$S/wt32/backend/config_registry.py:395: KeyError: "Setting 'insentif.dasar_omzet' tidak ada di registry"
+E   KeyError: "Setting 'insentif.isi_pencairan' tidak ada di registry"
+$S/wt32/backend/config_registry.py:395: KeyError: "Setting 'insentif.isi_pencairan' tidak ada di registry"
+E   KeyError: "Setting 'insentif.pemilik_angka' tidak ada di registry"
+$S/wt32/backend/config_registry.py:395: KeyError: "Setting 'insentif.pemilik_angka' tidak ada di registry"
+E   KeyError: "Setting 'insentif.harga_acuan' tidak ada di registry"
+$S/wt32/backend/config_registry.py:395: KeyError: "Setting 'insentif.harga_acuan' tidak ada di registry"
+E   ImportError: cannot import name 'incentive_definitions' from 'services' ($S/wt32/backend/services/__init__.py)
+$S/wt32/backend/tests_mem/test_KMT1_data_insentif.py:359: ImportError: cannot import name 'incentive_definitions' from 'services' ($S/wt32/backend/services/__init__.py)
+E   ImportError: cannot import name 'incentive_facts' from 'services' ($S/wt32/backend/services/__init__.py)
+$S/wt32/backend/tests_mem/test_KMT1_data_insentif.py:384: ImportError: cannot import name 'incentive_facts' from 'services' ($S/wt32/backend/services/__init__.py)
+E   AssertionError: {"detail":"Not Found"}
+$S/wt32/backend/tests_mem/test_KMT1_data_insentif.py:422: AssertionError: {"detail":"Not Found"}
+E   KeyError: 'all_pt'
+$S/wt32/backend/tests_mem/test_KMT1_data_insentif.py:445: KeyError: 'all_pt'
+E   ImportError: cannot import name 'incentive_facts' from 'services' ($S/wt32/backend/services/__init__.py)
+$S/wt32/backend/tests_mem/test_KMT1_data_insentif.py:453: ImportError: cannot import name 'incentive_facts' from 'services' ($S/wt32/backend/services/__init__.py)
+21 failed, 1 warning in 1.50s

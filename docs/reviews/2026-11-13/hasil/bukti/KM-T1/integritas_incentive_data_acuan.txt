@@ -1,0 +1,14 @@
+[1m[96m================================================================[0m
+[1m  KN3 — DATA INTEGRITY GATE  (DB=test_database  API=http://localhost:8001)[0m
+[1m[93m  SUBSET --only: incentive  (klaim GLOBAL wajib pakai eksekusi LENGKAP)[0m
+[1m[96m================================================================[0m
+
+[96m[1mKM — Fakta insentif: omzet terkirim & pencairan (KM-T1)[0m
+  [92m[PASS][0m INV-KM-1: omzet fakta = pendapatan buku besar (1 PT-bulan)
+  [91m[FAIL][0m INV-KM-2: 1 PT-bulan berselisih: ['ent_ksc/2026-11 Δ5,961,000·kas Δ5,961,000']  [91m→ periksa kwitansi penyebabnya di Pencocokan angka[0m
+  [92m[PASS][0m INV-KM-3: isi fakta insentif = hasil bangun ulang penuh (jumlah baris & Σ nilai per PT per bulan)
+
+[1m================================================================[0m
+  [92mPASS 2[0m  |  [91mFAIL 1[0m  |  [93mWARN 0[0m
+  [91m[1mINTEGRITY VIOLATION — blokir seed/deploy sampai diperbaiki.[0m
+

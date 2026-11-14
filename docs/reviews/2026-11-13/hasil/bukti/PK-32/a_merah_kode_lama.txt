@@ -1,0 +1,18 @@
+FAILED tests_mem/test_PK32_nota_kredit.py::test_PK32_U13_status_lama_dibaca_kosakata_baru
+FAILED tests_mem/test_PK32_nota_kredit.py::test_PK32_U14_skrip_migrasi_nota_debit_menunggu
+FAILED tests_mem/test_PK32_nota_kredit.py::test_PK32_U7_nota_debit_sebelum_kirim
+FAILED tests_mem/test_PK32_nota_kredit.py::test_PK32_a_U1_mesin_terkirim_penuh
+FAILED tests_mem/test_PK32_nota_kredit.py::test_PK32_a_U3_mesin_dibayar_belum_dikirim
+FAILED tests_mem/test_PK32_nota_kredit.py::test_PK32_a_U5_mesin_terkirim_sebagian
+FAILED tests_mem/test_PK32_nota_kredit.py::test_PK32_a_nota_debit_dan_batal
+XFAIL tests_mem/test_PK32_nota_kredit.py::test_PK32_U1_koreksi_lalu_retur_harga_efektif - FX-12 — menunggu serah-terima (b): pembuat lama belum memakai mesin nota
+XFAIL tests_mem/test_PK32_nota_kredit.py::test_PK32_U2_koreksi_melebihi_nilai_pesanan_ditolak - FX-12 — menunggu serah-terima (b): pembuat lama belum memakai mesin nota
+XFAIL tests_mem/test_PK32_nota_kredit.py::test_PK32_U3_U4_dibayar_sebelum_kirim_lalu_kirim - FX-14 — menunggu serah-terima (b): pendapatan belum memakai nilai efektif
+XFAIL tests_mem/test_PK32_nota_kredit.py::test_PK32_U5_terkirim_sebagian_lalu_kirim_sisa - FX-14 — menunggu serah-terima (b): pendapatan belum memakai nilai efektif
+XFAIL tests_mem/test_PK32_nota_kredit.py::test_PK32_U6_nota_debit_terkirim_penuh - FX-15 — menunggu serah-terima (b): nota debit amandemen belum ditagihkan
+XFAIL tests_mem/test_PK32_nota_kredit.py::test_PK32_U8_jurnal_amandemen_gagal_lalu_ulang - FX-13 — menunggu serah-terima (b): pembuat lama belum memakai mesin nota
+XFAIL tests_mem/test_PK32_nota_kredit.py::test_PK32_U9_batal_item_jurnal_gagal_lalu_ulang - FX-13 — menunggu serah-terima (b): pembuat lama belum memakai mesin nota
+XFAIL tests_mem/test_PK32_nota_kredit.py::test_PK32_U10_batal_item_tanpa_pendapatan_diakui - FX-13 — menunggu serah-terima (b): pembuat lama belum memakai mesin nota
+XFAIL tests_mem/test_PK32_nota_kredit.py::test_PK32_U11_retur_per_roll_harga_efektif - FX-12 — menunggu serah-terima (b): pembuat lama belum memakai mesin nota
+XFAIL tests_mem/test_PK32_nota_kredit.py::test_PK32_U12_satu_penyisip_dan_penjaga_posting - FX-13 — menunggu serah-terima (b): pembuat lama belum memakai mesin nota
+7 failed, 10 xfailed, 1 warning in 4.01s

@@ -1,0 +1,9 @@
+E   AssertionError: {"detail":"Pesanan SO-PK25-2 milik PT lain. Piutangnya tidak bisa dilunasi dari dana PT ini."}
+/tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/pk25/merah_repo/backend/tests_mem/test_PK25_kasus_keuangan.py:314: AssertionError: {"detail":"Pesanan SO-PK25-2 milik PT lain. Piutangnya tidak bisa dilunasi dari dana PT ini."}
+E   KeyError: 'pinjaman'
+/tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/pk25/merah_repo/backend/tests_mem/test_PK25_kasus_keuangan.py:341: KeyError: 'pinjaman'
+E   AssertionError: {"detail":"Periode 2026-11 sudah DITUTUP (terkunci). Jurnal mundur ke tanggal 2026-11-15 memerlukan izin 'Buka Periode' yang disetujui dua orang. Ajukan di Keuangan → Buka Periode (Unlock)."}
+/tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/pk25/merah_repo/backend/tests_mem/test_PK25_kasus_keuangan.py:371: AssertionError: {"detail":"Periode 2026-11 sudah DITUTUP (terkunci). Jurnal mundur ke tanggal 2026-11-15 memerlukan izin 'Buka Periode' yang disetujui dua orang. Ajukan di Keuangan → Buka Periode (Unlock)."}
+E   AssertionError: assert [{'id': 'je_5...agihan', ...}] == []
+/tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/pk25/merah_repo/backend/tests_mem/test_PK25_kasus_keuangan.py:356: AssertionError: assert [{'id': 'je_5...agihan', ...}] == []
+4 failed, 11 deselected, 1 warning in 2.42s

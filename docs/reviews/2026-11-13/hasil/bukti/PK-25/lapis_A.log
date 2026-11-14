@@ -1,0 +1,14 @@
+== tests/test_bp_PK14_indeks_wajib.py
+.........                                                                [100%]
+9 passed in 55.33s
+== tests/test_bp_PK25_selesai_bersamaan.py
+=========================== short test summary info ============================
+FAILED tests/test_bp_PK25_selesai_bersamaan.py::test_PK25_U14_dua_penyelesaian_bersamaan
+1 failed in 1.10s
+== tests/test_bp_KMT1_target_bersamaan_mongo.py
+..                                                                       [100%]
+2 passed in 0.92s
+== tests/test_bp_PK32_nota_bersamaan_mongo.py
+.                                                                        [100%]
+1 passed in 1.32s
+1 passed in 1.61s

@@ -1,0 +1,52 @@
+E   KeyError: 'gl_status'
+/tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/pk25/merah_repo/backend/tests_mem/test_PK25_kasus_keuangan.py:147: KeyError: 'gl_status'
+E   AssertionError: {"detail":"Periode 2026-11 sudah DITUTUP (terkunci). Jurnal mundur ke tanggal 2026-11-15 memerlukan izin 'Buka Periode' yang disetujui dua orang. Ajukan di Keuangan → Buka Periode (Unlock)."}
+/tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/pk25/merah_repo/backend/tests_mem/test_PK25_kasus_keuangan.py:186: AssertionError: {"detail":"Periode 2026-11 sudah DITUTUP (terkunci). Jurnal mundur ke tanggal 2026-11-15 memerlukan izin 'Buka Periode' yang disetujui dua orang. Ajukan di Keuangan → Buka Periode (Unlock)."}
+E   AssertionError: {"detail":"Akun 6-8000 nonaktif"}
+/tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/pk25/merah_repo/backend/tests_mem/test_PK25_kasus_keuangan.py:199: AssertionError: {"detail":"Akun 6-8000 nonaktif"}
+E   AssertionError: assert [] == ['je_9823c3bd5d13']
+/tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/pk25/merah_repo/backend/tests_mem/test_PK25_kasus_keuangan.py:246: AssertionError: assert [] == ['je_9823c3bd5d13']
+E   AssertionError: {"detail":"Playbook ini wajib melahirkan jurnal, tetapi tidak ada jurnal yang terbit. Kasus tidak ditutup (INV-CASE-03)."}
+/tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/pk25/merah_repo/backend/tests_mem/test_PK25_kasus_keuangan.py:262: AssertionError: {"detail":"Playbook ini wajib melahirkan jurnal, tetapi tidak ada jurnal yang terbit. Kasus tidak ditutup (INV-CASE-03)."}
+E   AssertionError: {"detail":"Anda tidak ditugaskan di PT pemilik tagihan yang dipilih."}
+/tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/pk25/merah_repo/backend/tests_mem/test_PK25_kasus_keuangan.py:314: AssertionError: {"detail":"Anda tidak ditugaskan di PT pemilik tagihan yang dipilih."}
+E   KeyError: 'pinjaman'
+/tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/pk25/merah_repo/backend/tests_mem/test_PK25_kasus_keuangan.py:341: KeyError: 'pinjaman'
+E   AssertionError: {"detail":"Anda tidak ditugaskan di PT pemilik tagihan yang dipilih."}
+/tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/pk25/merah_repo/backend/tests_mem/test_PK25_kasus_keuangan.py:371: AssertionError: {"detail":"Anda tidak ditugaskan di PT pemilik tagihan yang dipilih."}
+E   assert '1-1250' in '{"detail":"Anda tidak ditugaskan di PT pemilik tagihan yang dipilih."}'
+/tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/pk25/merah_repo/backend/tests_mem/test_PK25_kasus_keuangan.py:384: assert '1-1250' in '{"detail":"Anda tidak ditugaskan di PT pemilik tagihan yang dipilih."}'
+E   AssertionError: {'enabled': True, 'holding_cases': 0, 'duplicate_cases': 1, 'escalated': 0, ...}
+/tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/pk25/merah_repo/backend/tests_mem/test_PK25_kasus_keuangan.py:423: AssertionError: {'enabled': True, 'holding_cases': 0, 'duplicate_cases': 1, 'escalated': 0, ...}
+E   AssertionError: {'enabled': True, 'holding_cases': 0, 'duplicate_cases': 1, 'escalated': 0, ...}
+/tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/pk25/merah_repo/backend/tests_mem/test_PK25_kasus_keuangan.py:438: AssertionError: {'enabled': True, 'holding_cases': 0, 'duplicate_cases': 1, 'escalated': 0, ...}
+E   assert 0 == 1
+/tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/pk25/merah_repo/backend/tests_mem/test_PK25_kasus_keuangan.py:462: assert 0 == 1
+FAILED tests_mem/test_PK25_kasus_keuangan.py::test_PK25_U1b_jawaban_memuat_status_jurnal
+FAILED tests_mem/test_PK25_kasus_keuangan.py::test_PK25_U2b_sakelar_kunci_dokumen_mati_tetap_diperiksa
+FAILED tests_mem/test_PK25_kasus_keuangan.py::test_PK25_U3_jurnal_gagal_lalu_ulang_dari_panel
+FAILED tests_mem/test_PK25_kasus_keuangan.py::test_PK25_U4_execute_diulang_mengadopsi
+FAILED tests_mem/test_PK25_kasus_keuangan.py::test_PK25_U5_penyelesaian_kedua_jurnal_kedua
+FAILED tests_mem/test_PK25_kasus_keuangan.py::test_PK25_U6_salah_pt_jurnal_dua_buku_dan_dokumen_antar_pt
+FAILED tests_mem/test_PK25_kasus_keuangan.py::test_PK25_U7_dokumen_antar_pt_dilunasi
+FAILED tests_mem/test_PK25_kasus_keuangan.py::test_PK25_U8_periode_pt_pemilik_tertutup
+FAILED tests_mem/test_PK25_kasus_keuangan.py::test_PK25_U9_akun_pt_pemilik_nonaktif
+FAILED tests_mem/test_PK25_kasus_keuangan.py::test_PK25_U10_kasus_dobel_selesai_tidak_lahir_lagi
+FAILED tests_mem/test_PK25_kasus_keuangan.py::test_PK25_U11_kasus_dobel_ditolak_tidak_lahir_lagi
+FAILED tests_mem/test_PK25_kasus_keuangan.py::test_PK25_U12_kembar_terbaru_di_balik_5001_kwitansi_lama
+12 failed, 3 passed, 1 warning in 170.73s (0:02:50)
+PASSED tests_mem/test_PK25_kasus_keuangan.py::test_PK25_U1_biaya_bank_satu_baris_satu_jurnal
+PASSED tests_mem/test_PK25_kasus_keuangan.py::test_PK25_U2_periode_tertutup_tanpa_tulisan
+PASSED tests_mem/test_PK25_kasus_keuangan.py::test_PK25_U13_titipan_menganggur_ditolak_lahir_lagi
+FAILED tests_mem/test_PK25_kasus_keuangan.py::test_PK25_U1b_jawaban_memuat_status_jurnal
+FAILED tests_mem/test_PK25_kasus_keuangan.py::test_PK25_U2b_sakelar_kunci_dokumen_mati_tetap_diperiksa
+FAILED tests_mem/test_PK25_kasus_keuangan.py::test_PK25_U3_jurnal_gagal_lalu_ulang_dari_panel
+FAILED tests_mem/test_PK25_kasus_keuangan.py::test_PK25_U4_execute_diulang_mengadopsi
+FAILED tests_mem/test_PK25_kasus_keuangan.py::test_PK25_U5_penyelesaian_kedua_jurnal_kedua
+FAILED tests_mem/test_PK25_kasus_keuangan.py::test_PK25_U6_salah_pt_jurnal_dua_buku_dan_dokumen_antar_pt
+FAILED tests_mem/test_PK25_kasus_keuangan.py::test_PK25_U7_dokumen_antar_pt_dilunasi
+FAILED tests_mem/test_PK25_kasus_keuangan.py::test_PK25_U8_periode_pt_pemilik_tertutup
+FAILED tests_mem/test_PK25_kasus_keuangan.py::test_PK25_U9_akun_pt_pemilik_nonaktif
+FAILED tests_mem/test_PK25_kasus_keuangan.py::test_PK25_U10_kasus_dobel_selesai_tidak_lahir_lagi
+FAILED tests_mem/test_PK25_kasus_keuangan.py::test_PK25_U11_kasus_dobel_ditolak_tidak_lahir_lagi
+FAILED tests_mem/test_PK25_kasus_keuangan.py::test_PK25_U12_kembar_terbaru_di_balik_5001_kwitansi_lama

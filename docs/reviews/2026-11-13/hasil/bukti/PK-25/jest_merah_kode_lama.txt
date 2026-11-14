@@ -1,0 +1,5 @@
+  ✕ PK-25 jurnal gagal: pita, lencana, dan tombol selesaikan mati beralasan (237 ms)
+  ✓ PK-25 kasus terbuka tanpa niat: tombol aktif, tanpa pita (57 ms)
+  ✕ PK-25 kasus salah PT selesai: lencana jurnal terbit + tautan dokumen antar-PT (51 ms)
+  ✕ PK-25 pinjaman antar-PT: dokumen salah transfer berlencana dan menaut ke kasus (73 ms)
+Tests:       3 failed, 1 passed, 4 total

@@ -1,0 +1,6 @@
+5 failed, 1734 passed, 2 skipped, 3 xfailed, 12 warnings in 593.19s (0:09:53)
+FAILED tests_mem/test_PRT9_izin_bawaan.py::test_U01_izin_efektif_sama_dengan_sebelum
+FAILED tests_mem/test_KFT1_izin_pengaturan.py::test_U04_lihat_saja_tidak_bisa_ubah
+FAILED tests_mem/test_KFT1_izin_pengaturan.py::test_U14_tab_pengaturan_mengikuti_izin_kuncinya
+FAILED tests_mem/test_KFT4_registry.py::test_KFT4_indeks_kunci_layar_sama_dengan_skrip
+FAILED tests_mem/test_PK14_indeks_wajib.py::test_U12_pembanding_indeks - Asse...

@@ -1,0 +1,3 @@
+    Cannot find module '../finance/amendments/CreditNoteBadges' from 'src/features/__tests__/pk32NotaKredit.test.js'
+Test Suites: 1 failed, 1 total
+Tests:       0 total

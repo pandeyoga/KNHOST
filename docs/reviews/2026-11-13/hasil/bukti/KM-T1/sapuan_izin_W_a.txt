@@ -1,0 +1,7 @@
+  tanpa_token      —                              1819      8     0      0    9.9
+  kosong           Tanpa Acuan Kosong             1744     82     0      1   17.9
+  sopir            Sopir                          1727     99     0      1   22.1
+  mgr0             Manajer Kosong                 1744     82     0      1   20.3
+  penuh            Tanpa Acuan Penuh                13    810     0      0   18.7
+  pelanggaran: 20 (M0 6, M1 14)
+MERAH — 20 pelanggaran (arti kode: lihat docstring).

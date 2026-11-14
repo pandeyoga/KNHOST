@@ -1,0 +1,9 @@
+E   AssertionError: {'id': 'cn_pk32_171f8a7c', 'number': 'CN-PK32-LAMA-8a7c', 'kind': 'credit_note', 'source': 'amendment', ...}
+    assert ('offset', 'credit_note') == ('posted', 'credit_note')
+backend/tests_mem/test_PK32_nota_kredit.py:211: AssertionError: {'id': 'cn_pk32_171f8a7c', 'number': 'CN-PK32-LAMA-8a7c', 'kind': 'credit_note', 'source': 'amendment', ...}
+E   FileNotFoundError: [Errno 2] No such file or directory: 'scripts/migrasi_pk32_nota_debit_menunggu.py'
+<frozen importlib._bootstrap_external>:1130: FileNotFoundError: [Errno 2] No such file or directory: 'scripts/migrasi_pk32_nota_debit_menunggu.py'
+E   ImportError: cannot import name 'credit_note_service' from 'services' (backend/services/__init__.py)
+backend/tests_mem/test_PK32_nota_kredit.py:409: ImportError: cannot import name 'credit_note_service' from 'services' (backend/services/__init__.py)
+E   ImportError: cannot import name 'credit_note_service' from 'services' (backend/services/__init__.py)
+backend/tests_mem/test_PK32_nota_kredit.py:632: ImportError: cannot import name 'credit_note_service' from 'services' (backend/services/__init__.py)

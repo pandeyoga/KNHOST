@@ -1,0 +1,23 @@
+E   KeyError: 'revenue_reversed_net'
+backend/tests_mem/test_PK32_nota_kredit.py:281: KeyError: 'revenue_reversed_net'
+E   AssertionError: lanjutan U1
+backend/tests_mem/test_PK32_nota_kredit.py:308: AssertionError: lanjutan U1
+E   KeyError: 'revenue_reversed_net'
+backend/tests_mem/test_PK32_nota_kredit.py:327: KeyError: 'revenue_reversed_net'
+E   KeyError: 'shipped_share'
+backend/tests_mem/test_PK32_nota_kredit.py:353: KeyError: 'shipped_share'
+E   KeyError: 'gl_status'
+backend/tests_mem/test_PK32_nota_kredit.py:376: KeyError: 'gl_status'
+E   AssertionError: Internal Server Error
+backend/tests_mem/test_PK32_nota_kredit.py:421: AssertionError: Internal Server Error
+E   AssertionError: Internal Server Error
+backend/tests_mem/test_PK32_nota_kredit.py:468: AssertionError: Internal Server Error
+E   KeyError: 'gl_status'
+backend/tests_mem/test_PK32_nota_kredit.py:484: KeyError: 'gl_status'
+E   AssertionError: [{'product_id': 'prd_pk32_05a0c654', 'product_name': 'Kain Uji PK-32', 'quantity': 50.0, 'unit': 'meter', ...}]
+backend/tests_mem/test_PK32_nota_kredit.py:509: AssertionError: [{'product_id': 'prd_pk32_05a0c654', 'product_name': 'Kain Uji PK-32', 'quantity': 50.0, 'unit': 'meter', ...}]
+E   AssertionError: ['services/return_service.py', 'services/amendment_service.py', 'services/return_roll_settlement_service.py', 'services/od_cancel_credit_note.py']
+backend/tests_mem/test_PK32_nota_kredit.py:535: AssertionError: ['services/return_service.py', 'services/amendment_service.py', 'services/return_roll_settlement_service.py', 'services/od_cancel_credit_note.py']
+E   AttributeError: module 'services.gl_service' has no attribute 'NOTE_BUCKETS'
+backend/tests_mem/test_PK32_nota_kredit.py:573: AttributeError: module 'services.gl_service' has no attribute 'NOTE_BUCKETS'
+11 failed, 6 passed, 1 warning in 6.10s

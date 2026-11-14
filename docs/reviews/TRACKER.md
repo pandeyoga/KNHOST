@@ -206,17 +206,17 @@ P14-K1 → Bima). Laporan hasil di `docs/uat/2026-10-21/hasil/UAT24-*.md`.
 | FX-06 | Hapus sisa pembayaran tanpa klaim; keputusan disimpan paling akhir | Tinggi | PK-19 | implemented_pending_review | ya — dijalankan (bukti merah U1–U9, U11–U14, U17 di kode lama; U15–U16 lapis A lulus) | `2a9f5dc` · `1204bac` · `39725cc` | [PK-19](2026-11-13/hasil/PK-19.md) |
 | FX-07 | Membatalkan keputusan selisih hutang tidak membalik jurnalnya | Tinggi | PK-19 | implemented_pending_review | ya — dijalankan (bukti merah U1–U9, U11–U14, U17 di kode lama; U15–U16 lapis A lulus) | `2a9f5dc` · `1204bac` · `39725cc` | [PK-19](2026-11-13/hasil/PK-19.md) |
 | FX-08 | Aksi kasus mengambil pesanan, kwitansi, rekening, pelanggan dari isi permintaan tanpa diadu dengan kasus atau cakupan pengguna | Tinggi | PK-09 | implemented_pending_review | ya — dijalankan (bukti merah 15/19 di kode lama) | `bdd8e40` | [PK-09](2026-11-13/hasil/PK-09.md) |
-| FX-09 | Kasus: efek dulu, syarat kemudian; jurnal ber-kunci sama dilewati diam-diam | Tinggi | PK-25 | open | belum dicek — diisi unit pemegang | — | — |
+| FX-09 | Kasus: efek dulu, syarat kemudian; jurnal ber-kunci sama dilewati diam-diam | Tinggi | PK-25 | implemented_pending_review | ya — dijalankan (bukti merah U1b–U12 lapis B, jest; U14 lapis A lulus) | `06fe1b7` | [PK-25](2026-11-13/hasil/PK-25.md) |
 | FX-10 | Batas wewenang kasus lebih longgar dari hapus sisa; penyelesai = penyetuju | Tinggi | PK-38 | implemented_pending_review | ya — dijalankan (bukti merah U2–U7, U13–U17 di kode lama) | `eef7bb9` | [PK-38](2026-11-13/hasil/PK-38.md) |
-| FX-11 | Kasus "salah entitas" menjurnal akun antar-PT tanpa dokumen antar-PT | Tinggi | PK-25 | open | belum dicek — diisi unit pemegang | — | — |
-| FX-12 | Nota kredit bisa melebihi faktur | Tinggi | PK-32 | open | belum dicek — diisi unit pemegang | — | — |
+| FX-11 | Kasus "salah entitas" menjurnal akun antar-PT tanpa dokumen antar-PT | Tinggi | PK-25 | implemented_pending_review | ya — dijalankan (bukti merah U1b–U12 lapis B, jest; U14 lapis A lulus) | `06fe1b7` | [PK-25](2026-11-13/hasil/PK-25.md) |
+| FX-12 | Nota kredit bisa melebihi faktur | Tinggi | PK-32 | implemented_pending_review | ya — dijalankan (bukti merah U1–U14 lapis B, jest; U15 lapis A lulus) | `a225940` · `7c13605` | [PK-32](2026-11-13/hasil/PK-32.md) |
 | FX-04 | Bayar denda langsung mendebit kas tanpa transaksi kas, rekening, kwitansi | Sedang | PK-08 | implemented_pending_review | ya — dijalankan (bukti merah 13/13 di kode lama) | `0b41a2b` | [PK-08](2026-11-13/hasil/PK-08.md) |
-| FX-13 | Nota kredit gagal di tengah tanpa penanda | Sedang | PK-32 | open | belum dicek — diisi unit pemegang | — | — |
-| FX-14 | Nota kredit amandemen selalu membalik pendapatan + PPN walau pendapatan belum diakui | Sedang | PK-32 | open | belum dicek — diisi unit pemegang | — | — |
-| FX-15 | Nota debit kenaikan harga berhenti di "menunggu aturan tagih" tanpa jurnal dan piutang | Sedang | PK-32 | open | belum dicek — diisi unit pemegang | — | — |
+| FX-13 | Nota kredit gagal di tengah tanpa penanda | Sedang | PK-32 | implemented_pending_review | ya — dijalankan (bukti merah U1–U14 lapis B, jest; U15 lapis A lulus) | `a225940` · `7c13605` | [PK-32](2026-11-13/hasil/PK-32.md) |
+| FX-14 | Nota kredit amandemen selalu membalik pendapatan + PPN walau pendapatan belum diakui | Sedang | PK-32 | implemented_pending_review | ya — dijalankan (bukti merah U1–U14 lapis B, jest; U15 lapis A lulus) | `a225940` · `7c13605` | [PK-32](2026-11-13/hasil/PK-32.md) |
+| FX-15 | Nota debit kenaikan harga berhenti di "menunggu aturan tagih" tanpa jurnal dan piutang | Sedang | PK-32 | implemented_pending_review | ya — dijalankan (bukti merah U1–U14 lapis B, jest; U15 lapis A lulus) | `a225940` · `7c13605` | [PK-32](2026-11-13/hasil/PK-32.md) |
 | FX-16 | Gerbang bayar-dulu bisa dilewati dengan mengganti termin; "terbayar" mencakup hapus sisa, kasus, nota kredit | Sedang | PK-38 | implemented_pending_review | ya — dijalankan (bukti merah U2–U7, U13–U17 di kode lama) | `eef7bb9` | [PK-38](2026-11-13/hasil/PK-38.md) |
 | FX-17 | Endpoint rencana bayar dan selisih bayar tanpa penjaga entitas; jadwal bisa digeser tanpa riwayat | Sedang | PK-09 | implemented_pending_review | ya — dijalankan (bukti merah 15/19 di kode lama) | `bdd8e40` | [PK-09](2026-11-13/hasil/PK-09.md) |
-| FX-18 | Pemindai kasus hanya mengecek kembar terhadap kasus terbuka; membaca 5.000 kwitansi tertua | Sedang | PK-25 | open | belum dicek — diisi unit pemegang | — | — |
+| FX-18 | Pemindai kasus hanya mengecek kembar terhadap kasus terbuka; membaca 5.000 kwitansi tertua | Sedang | PK-25 | implemented_pending_review | ya — dijalankan (bukti merah U1b–U12 lapis B, jest; U14 lapis A lulus) | `06fe1b7` | [PK-25](2026-11-13/hasil/PK-25.md) |
 | FX-19 | Tanpa indeks unik untuk nota denda per periode, rencana aktif per dokumen, kasus per sumber | Rendah | PK-14 | implemented_pending_review | ya — dijalankan (bukti merah 6/6 lapis B di kode lama; lapis A 9/9 di MongoDB asli) | `a42f3ef` | [PK-14](2026-11-13/hasil/PK-14.md) |
 | RC-01 | Laba-Rugi dan Neraca mode "Semua Entitas" menjumlah buku tiap PT tanpa eliminasi, tanpa keterangan di layar | Tinggi | PK-16 | implemented_pending_review | ya — dijalankan (bukti merah 22/22 server, 36/36 layar di kode lama) | `b735229` | [PK-16](2026-11-13/hasil/PK-16.md) |
 | RP-02 | Hal yang sama di BI Keuangan dan Control Tower | Tinggi | PK-16 | implemented_pending_review | ya — dijalankan (bukti merah 22/22 server, 36/36 layar di kode lama) | `b735229` | [PK-16](2026-11-13/hasil/PK-16.md) |
@@ -259,12 +259,12 @@ P14-K1 → Bima). Laporan hasil di `docs/uat/2026-10-21/hasil/UAT24-*.md`.
 
 | ID | Judul | Prio | Fase | Status | Berlaku di HEAD | Commit perbaikan | Laporan |
 |---|---|---|---|---|---|---|---|
-| KM-01 | Faktor diskon mesin komisi praktis mati | Tinggi | KM-T1 | open | belum dicek — diisi unit pemegang | — | — |
-| KM-02 | "Pencairan" memuat hapus sisa dan nota kredit | Tinggi | KM-T1 | open | belum dicek — diisi unit pemegang | — | — |
-| KM-03 | Tiga aturan atribusi sales hidup bersamaan | Sedang | KM-T1 | open | belum dicek — diisi unit pemegang | — | — |
-| KM-04 | Target tanpa PT; triwulan/tahun bukan angka tersendiri | Sedang | KM-T1 | open | belum dicek — diisi unit pemegang | — | — |
+| KM-01 | Faktor diskon mesin komisi praktis mati | Tinggi | KM-T1 | implemented_pending_review | ya — dijalankan (bukti merah U1–U18 lapis B, jest; U17 lapis A lulus; INV-KM-1/3 di data acuan) | `2ed5c53` · `b9753a3` | [KM-T1](2026-11-13/hasil/KM-T1.md) |
+| KM-02 | "Pencairan" memuat hapus sisa dan nota kredit | Tinggi | KM-T1 | implemented_pending_review | ya — dijalankan (bukti merah U1–U18 lapis B, jest; U17 lapis A lulus; INV-KM-1/3 di data acuan) | `2ed5c53` · `b9753a3` | [KM-T1](2026-11-13/hasil/KM-T1.md) |
+| KM-03 | Tiga aturan atribusi sales hidup bersamaan | Sedang | KM-T1 | implemented_pending_review | ya — dijalankan (bukti merah U1–U18 lapis B, jest; U17 lapis A lulus; INV-KM-1/3 di data acuan) | `2ed5c53` · `b9753a3` | [KM-T1](2026-11-13/hasil/KM-T1.md) |
+| KM-04 | Target tanpa PT; triwulan/tahun bukan angka tersendiri | Sedang | KM-T1 | implemented_pending_review | ya — dijalankan (bukti merah U1–U18 lapis B, jest; U17 lapis A lulus; INV-KM-1/3 di data acuan) | `2ed5c53` · `b9753a3` | [KM-T1](2026-11-13/hasil/KM-T1.md) |
 | KM-05 | Tanpa dokumen keputusan; angka sumber bergerak mundur | Sedang | KM-T3 | open | belum dicek — diisi unit pemegang | — | — |
-| KM-06 | Serah-terima pelanggan tidak memindah tim sales | Sedang | KM-T1 | open | belum dicek — diisi unit pemegang | — | — |
+| KM-06 | Serah-terima pelanggan tidak memindah tim sales | Sedang | KM-T1 | implemented_pending_review | ya — dijalankan (bukti merah U1–U18 lapis B, jest; U17 lapis A lulus; INV-KM-1/3 di data acuan) | `2ed5c53` · `b9753a3` | [KM-T1](2026-11-13/hasil/KM-T1.md) |
 | KM-07 | Field tak terpakai; daftar "sales" tidak seragam | Rendah | KM-T4 | open | belum dicek — diisi unit pemegang | — | — |
 | CR-01 | Sales bisa mengubah plafon dan status blokir pelanggannya | Tinggi | PK-45 | implemented_pending_review | ya — dijalankan (bukti merah 17/20 di kode lama) | `8d952cb` | [PK-45](2026-11-13/hasil/PK-45.md) |
 | CR-02 | Kredit hanya diperiksa saat pesanan lahir | Tinggi | CR-T3 | open | belum dicek — diisi unit pemegang | — | — |

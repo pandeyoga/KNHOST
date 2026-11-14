@@ -1,0 +1,20 @@
+2 passed in 0.92s
+== tests/test_bp_PK32_nota_bersamaan_mongo.py
+.                                                                        [100%]
+1 passed in 1.32s
+1 passed in 1.61s
+== tests/test_l02_ln022_t03_amendment_note.py
+ERROR tests/test_l02_ln022_t03_amendment_note.py::test_credit_note_posts_journal_and_reduces_ar_without_editing_order
+ERROR tests/test_l02_ln022_t03_amendment_note.py::test_debit_note_becomes_extra_billing_line
+2 errors in 0.14s
+== tests/test_l02_ln022_t03_amendment_note_extended.py
+ERROR tests/test_l02_ln022_t03_amendment_note_extended.py::test_repeat_same_price_correction_does_not_double_credit
+ERROR tests/test_l02_ln022_t03_amendment_note_extended.py::test_second_correction_credits_only_increment
+13 errors in 0.34s
+== tests/test_l02_ln022_t03_amendment_note_edge.py
+ERROR tests/test_l02_ln022_t03_amendment_note_edge.py - TypeError: 'NoneType'...
+!!!!!!!!!!!!!!!!!!!! Interrupted: 1 error during collection !!!!!!!!!!!!!!!!!!!!
+1 error in 0.22s
+== tests/test_fe01_cancel_issued_credit_note.py
+...                                                                      [100%]
+3 passed in 6.39s

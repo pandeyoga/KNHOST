@@ -1,0 +1,13 @@
+E   KeyError: 'list_price'
+$S/wt32/backend/tests_mem/test_KMT1_pengalihan.py:75: KeyError: 'list_price'
+E   KeyError: 'sales_attribution'
+$S/wt32/backend/tests_mem/test_KMT1_pengalihan.py:88: KeyError: 'sales_attribution'
+E   KeyError: 'detail'
+$S/wt32/backend/tests_mem/test_KMT1_pengalihan.py:106: KeyError: 'detail'
+E   AssertionError: [{'entity_id': 'ent_ksc', 'so_id': 'so_kmt1b_af', 'so_number': 'SO-AF', 'order_type': 'regular', ...}]
+$S/wt32/backend/tests_mem/test_KMT1_pengalihan.py:120: AssertionError: [{'entity_id': 'ent_ksc', 'so_id': 'so_kmt1b_af', 'so_number': 'SO-AF', 'order_type': 'regular', ...}]
+E   AssertionError: {'entity_id': 'ent_ksc', 'sales_id': 'usr_uji_12d3ac0042', 'period_type': 'month', 'period': '2026-12', ...}
+$S/wt32/backend/tests_mem/test_KMT1_pengalihan.py:144: AssertionError: {'entity_id': 'ent_ksc', 'sales_id': 'usr_uji_12d3ac0042', 'period_type': 'month', 'period': '2026-12', ...}
+E   ModuleNotFoundError: No module named 'migrate_sales_targets_km_t1'
+E   ModuleNotFoundError: No module named 'backfill_order_price_refs'
+7 failed, 1 warning in 2.97s

@@ -1,0 +1,2402 @@
+[visual-edits] @emergentbase/visual-edits not installed — visual editing disabled.
+[visual-edits] @emergentbase/visual-edits not installed — visual editing disabled.
+PASS src/features/__tests__/trial22Okt.test.js (15.071 s)
+PASS src/features/__tests__/pk16ScopeBanner.test.js (17.499 s)
+PASS src/features/__tests__/phase4R3.test.js (17.689 s)
+PASS src/features/__tests__/phase3P3b.test.js (5.775 s)
+PASS src/features/__tests__/prt6LayarPeran.test.js (7.365 s)
+PASS src/features/__tests__/kpt1ProfilPt.test.js (7.232 s)
+PASS src/features/__tests__/kft2KunciPengaturan.test.js
+PASS src/features/__tests__/kpt6CetakPerPt.test.js
+PASS src/features/__tests__/kpt9BagianLayar.test.js
+PASS src/features/__tests__/phase4R4.test.js (14.945 s)
+PASS src/features/__tests__/pk21RekonsiliasiSatuMekanisme.test.js
+PASS src/features/__tests__/pk44JejakDokumen.test.js
+PASS src/features/__tests__/phase4R5.test.js
+PASS src/features/__tests__/kpt8RahasiaPerangkat.test.js
+PASS src/features/__tests__/pk24KasKecil.test.js
+PASS src/features/__tests__/kpt4ApprovalPolicies.test.js
+PASS src/features/__tests__/pk25KasusKeuangan.test.js
+PASS src/features/__tests__/decisionsD4.test.js
+PASS src/features/__tests__/pk39Budget.test.js
+PASS src/features/__tests__/prepD2GateReview.test.js
+PASS src/features/__tests__/prepCWarehousePutaway.test.js
+PASS src/features/__tests__/pk23AsetTetap.test.js
+PASS src/features/__tests__/kpt2LengkapiPt.test.js
+PASS src/features/__tests__/pmt1CaraBayar.test.js
+PASS src/features/__tests__/returnPerRoll.test.js
+  ● Console
+
+    console.error
+      Error: Error: connect ECONNREFUSED 127.0.0.1:80
+          at Object.dispatchError (/tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/fe/node_modules/jsdom/lib/jsdom/living/xhr/xhr-utils.js:63:19)
+          at Request.<anonymous> (/tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/fe/node_modules/jsdom/lib/jsdom/living/xhr/XMLHttpRequest-impl.js:655:18)
+          at Request.emit (node:events:531:35)
+          at ClientRequest.<anonymous> (/tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/fe/node_modules/jsdom/lib/jsdom/living/helpers/http-request.js:121:14)
+          at ClientRequest.emit (node:events:519:28)
+          at emitErrorEvent (node:_http_client:108:11)
+          at Socket.socketErrorListener (node:_http_client:575:5)
+          at Socket.emit (node:events:519:28)
+          at emitErrorNT (node:internal/streams/destroy:170:8)
+          at emitErrorCloseNT (node:internal/streams/destroy:129:3)
+          at processTicksAndRejections (node:internal/process/task_queues:89:21) undefined
+
+      at VirtualConsole.<anonymous> (../fe/node_modules/jsdom/lib/jsdom/virtual-console.js:29:45)
+      at Object.dispatchError (../fe/node_modules/jsdom/lib/jsdom/living/xhr/xhr-utils.js:66:53)
+      at Request.<anonymous> (../fe/node_modules/jsdom/lib/jsdom/living/xhr/XMLHttpRequest-impl.js:655:18)
+      at ClientRequest.<anonymous> (../fe/node_modules/jsdom/lib/jsdom/living/helpers/http-request.js:121:14)
+
+    console.error
+      Error: Error: connect ECONNREFUSED 127.0.0.1:80
+          at Object.dispatchError (/tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/fe/node_modules/jsdom/lib/jsdom/living/xhr/xhr-utils.js:63:19)
+          at Request.<anonymous> (/tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/fe/node_modules/jsdom/lib/jsdom/living/xhr/XMLHttpRequest-impl.js:655:18)
+          at Request.emit (node:events:531:35)
+          at ClientRequest.<anonymous> (/tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/fe/node_modules/jsdom/lib/jsdom/living/helpers/http-request.js:121:14)
+          at ClientRequest.emit (node:events:519:28)
+          at emitErrorEvent (node:_http_client:108:11)
+          at Socket.socketErrorListener (node:_http_client:575:5)
+          at Socket.emit (node:events:519:28)
+          at emitErrorNT (node:internal/streams/destroy:170:8)
+          at emitErrorCloseNT (node:internal/streams/destroy:129:3)
+          at processTicksAndRejections (node:internal/process/task_queues:89:21) undefined
+
+      at VirtualConsole.<anonymous> (../fe/node_modules/jsdom/lib/jsdom/virtual-console.js:29:45)
+      at Object.dispatchError (../fe/node_modules/jsdom/lib/jsdom/living/xhr/xhr-utils.js:66:53)
+      at Request.<anonymous> (../fe/node_modules/jsdom/lib/jsdom/living/xhr/XMLHttpRequest-impl.js:655:18)
+      at ClientRequest.<anonymous> (../fe/node_modules/jsdom/lib/jsdom/living/helpers/http-request.js:121:14)
+
+PASS src/features/__tests__/pk12MoneyIntentC.test.js
+PASS src/features/__tests__/pk31KonsolidasiRefund.test.js (6.148 s)
+PASS src/config/__tests__/roleReach.test.js
+PASS src/features/__tests__/prt4SifatPeran.test.js
+PASS src/features/__tests__/fix5PerformaWms.test.js
+PASS src/features/__tests__/txt1PengaturanPajak.test.js
+PASS src/features/__tests__/pk28GrIr.test.js
+PASS src/features/__tests__/pk22Penggajian.test.js
+PASS src/features/__tests__/pk12MoneyIntentA.test.js
+PASS src/features/__tests__/pk30AntarPt.test.js
+PASS src/config/__tests__/viewAliases.test.js
+PASS src/components/__tests__/stockFigures.test.js
+PASS src/features/__tests__/f14SpkOneDecision.test.js
+PASS src/features/admin/scheduler/__tests__/kpt7Penjadwal.test.js
+PASS src/components/__tests__/linkParts.test.js
+PASS src/config/__tests__/kpt9HubPengaturan.test.js
+PASS src/features/__tests__/ret01DisposeResume.test.js
+PASS src/features/__tests__/prepFPrinter.test.js
+PASS src/features/__tests__/pmt2InstruksiBayar.test.js
+PASS src/features/__tests__/uat24F3.test.js
+PASS src/config/__tests__/navAccess.test.js
+PASS src/features/__tests__/fix4StandarUi.test.js
+  ● Console
+
+    console.error
+      Error: Not implemented: navigation (except hash changes)
+          at module.exports (/tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/fe/node_modules/jsdom/lib/jsdom/browser/not-implemented.js:9:17)
+          at navigateFetch (/tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/fe/node_modules/jsdom/lib/jsdom/living/window/navigation.js:76:3)
+          at exports.navigate (/tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/fe/node_modules/jsdom/lib/jsdom/living/window/navigation.js:54:3)
+          at Timeout._onTimeout (/tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/fe/node_modules/jsdom/lib/jsdom/living/nodes/HTMLHyperlinkElementUtils-impl.js:81:7)
+          at listOnTimeout (node:internal/timers:585:17)
+          at processTimers (node:internal/timers:521:7) undefined
+
+      at VirtualConsole.<anonymous> (../fe/node_modules/jsdom/lib/jsdom/virtual-console.js:29:45)
+      at module.exports (../fe/node_modules/jsdom/lib/jsdom/browser/not-implemented.js:12:26)
+      at navigateFetch (../fe/node_modules/jsdom/lib/jsdom/living/window/navigation.js:76:3)
+      at exports.navigate (../fe/node_modules/jsdom/lib/jsdom/living/window/navigation.js:54:3)
+      at Timeout._onTimeout (../fe/node_modules/jsdom/lib/jsdom/living/nodes/HTMLHyperlinkElementUtils-impl.js:81:7)
+
+PASS src/components/__tests__/responsiveTable.test.js
+PASS src/components/__tests__/pageTabs.test.js
+PASS src/config/__tests__/mnt1MenuKeuangan.test.js
+PASS src/config/__tests__/serverAccessReach.test.js
+PASS src/components/__tests__/formModalMobile.test.js
+PASS src/config/__tests__/prt4HalamanAwal.test.js
+PASS src/features/__tests__/uatV3NavWarehouseMakloon.test.js
+PASS src/features/__tests__/odItemCancel.test.js
+PASS src/features/__tests__/deskReturnQueue.test.js
+PASS src/features/__tests__/f06PodProgress.test.js
+PASS src/features/__tests__/phase4R8.test.js
+FAIL src/features/__tests__/phase4R2.test.js
+  ● Test suite failed to run
+
+    Cannot find module '@radix-ui/primitive/is-development' from '../fe/node_modules/cmdk/node_modules/@radix-ui/react-use-controllable-state/dist/index.js'
+
+    Require stack:
+      /tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/fe/node_modules/cmdk/node_modules/@radix-ui/react-use-controllable-state/dist/index.js
+      /tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/fe/node_modules/cmdk/node_modules/@radix-ui/react-dialog/dist/index.js
+      /tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/fe/node_modules/cmdk/dist/index.js
+      src/components/ui/command.jsx
+      src/components/KNSelect.jsx
+      src/features/purchasing/contrabon/DecisionModal.jsx
+      src/features/__tests__/phase4R2.test.js
+
+    [0m [90m 1 |[39m [36mimport[39m [33m*[39m [36mas[39m [33mReact[39m [36mfrom[39m [32m"react"[39m
+    [31m[1m>[22m[39m[90m 2 |[39m [36mimport[39m { [33mCommand[39m [36mas[39m [33mCommandPrimitive[39m } [36mfrom[39m [32m"cmdk"[39m
+     [90m   |[39m [31m[1m^[22m[39m
+     [90m 3 |[39m [36mimport[39m { [33mSearch[39m } [36mfrom[39m [32m"lucide-react"[39m
+     [90m 4 |[39m
+     [90m 5 |[39m [36mimport[39m { cn } [36mfrom[39m [32m"@/lib/utils"[39m[0m
+
+      at Resolver.resolveModule (../fe/node_modules/jest-resolve/build/resolver.js:324:11)
+      at Object.<anonymous> (../fe/node_modules/cmdk/node_modules/@radix-ui/react-use-controllable-state/src/use-controllable-state.tsx:2:32)
+      at Object.<anonymous> (../fe/node_modules/cmdk/node_modules/@radix-ui/react-dialog/src/dialog.tsx:6:38)
+      at Object.<anonymous> (../fe/node_modules/cmdk/dist/index.js:1:961)
+      at Object.<anonymous> (src/components/ui/command.jsx:2:1)
+      at Object.<anonymous> (src/components/KNSelect.jsx:43:1)
+      at Object.<anonymous> (src/features/purchasing/contrabon/DecisionModal.jsx:20:1)
+      at Object.<anonymous> (src/features/__tests__/phase4R2.test.js:5:1)
+
+FAIL src/features/__tests__/fix3bForms.test.js
+  ● Test suite failed to run
+
+    Cannot find module '@radix-ui/primitive/is-development' from '../fe/node_modules/cmdk/node_modules/@radix-ui/react-use-controllable-state/dist/index.js'
+
+    Require stack:
+      /tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/fe/node_modules/cmdk/node_modules/@radix-ui/react-use-controllable-state/dist/index.js
+      /tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/fe/node_modules/cmdk/node_modules/@radix-ui/react-dialog/dist/index.js
+      /tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/fe/node_modules/cmdk/dist/index.js
+      src/components/ui/command.jsx
+      src/components/KNSelect.jsx
+      src/features/mobile/MobileTaskActions.jsx
+      src/features/__tests__/fix3bForms.test.js
+
+    [0m [90m 1 |[39m [36mimport[39m [33m*[39m [36mas[39m [33mReact[39m [36mfrom[39m [32m"react"[39m
+    [31m[1m>[22m[39m[90m 2 |[39m [36mimport[39m { [33mCommand[39m [36mas[39m [33mCommandPrimitive[39m } [36mfrom[39m [32m"cmdk"[39m
+     [90m   |[39m [31m[1m^[22m[39m
+     [90m 3 |[39m [36mimport[39m { [33mSearch[39m } [36mfrom[39m [32m"lucide-react"[39m
+     [90m 4 |[39m
+     [90m 5 |[39m [36mimport[39m { cn } [36mfrom[39m [32m"@/lib/utils"[39m[0m
+
+      at Resolver.resolveModule (../fe/node_modules/jest-resolve/build/resolver.js:324:11)
+      at Object.<anonymous> (../fe/node_modules/cmdk/node_modules/@radix-ui/react-use-controllable-state/src/use-controllable-state.tsx:2:32)
+      at Object.<anonymous> (../fe/node_modules/cmdk/node_modules/@radix-ui/react-dialog/src/dialog.tsx:6:38)
+      at Object.<anonymous> (../fe/node_modules/cmdk/dist/index.js:1:961)
+      at Object.<anonymous> (src/components/ui/command.jsx:2:1)
+      at Object.<anonymous> (src/components/KNSelect.jsx:43:1)
+      at Object.<anonymous> (src/features/mobile/MobileTaskActions.jsx:10:1)
+      at Object.<anonymous> (src/features/__tests__/fix3bForms.test.js:6:1)
+
+FAIL src/features/__tests__/fix1Cakupan.test.js
+  ● Test suite failed to run
+
+    Cannot find module '@radix-ui/primitive/is-development' from '../fe/node_modules/cmdk/node_modules/@radix-ui/react-use-controllable-state/dist/index.js'
+
+    Require stack:
+      /tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/fe/node_modules/cmdk/node_modules/@radix-ui/react-use-controllable-state/dist/index.js
+      /tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/fe/node_modules/cmdk/node_modules/@radix-ui/react-dialog/dist/index.js
+      /tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/fe/node_modules/cmdk/dist/index.js
+      src/components/ui/command.jsx
+      src/components/KNSelect.jsx
+      src/features/samples/CatalogueCreateModal.jsx
+      src/components/SampleKindChooser.jsx
+      src/features/sales/mobile/MobileQuickView.jsx
+      src/features/sales/mobile/MobileCatalog.jsx
+      src/features/sales/mobile/MobileSalesApp.jsx
+      src/features/mobile/MobileAppSwitch.jsx
+      src/features/__tests__/fix1Cakupan.test.js
+
+    [0m [90m 1 |[39m [36mimport[39m [33m*[39m [36mas[39m [33mReact[39m [36mfrom[39m [32m"react"[39m
+    [31m[1m>[22m[39m[90m 2 |[39m [36mimport[39m { [33mCommand[39m [36mas[39m [33mCommandPrimitive[39m } [36mfrom[39m [32m"cmdk"[39m
+     [90m   |[39m [31m[1m^[22m[39m
+     [90m 3 |[39m [36mimport[39m { [33mSearch[39m } [36mfrom[39m [32m"lucide-react"[39m
+     [90m 4 |[39m
+     [90m 5 |[39m [36mimport[39m { cn } [36mfrom[39m [32m"@/lib/utils"[39m[0m
+
+      at Resolver.resolveModule (../fe/node_modules/jest-resolve/build/resolver.js:324:11)
+      at Object.<anonymous> (../fe/node_modules/cmdk/node_modules/@radix-ui/react-use-controllable-state/src/use-controllable-state.tsx:2:32)
+      at Object.<anonymous> (../fe/node_modules/cmdk/node_modules/@radix-ui/react-dialog/src/dialog.tsx:6:38)
+      at Object.<anonymous> (../fe/node_modules/cmdk/dist/index.js:1:961)
+      at Object.<anonymous> (src/components/ui/command.jsx:2:1)
+      at Object.<anonymous> (src/components/KNSelect.jsx:43:1)
+      at Object.<anonymous> (src/features/samples/CatalogueCreateModal.jsx:6:1)
+      at Object.<anonymous> (src/components/SampleKindChooser.jsx:6:1)
+      at Object.<anonymous> (src/features/sales/mobile/MobileQuickView.jsx:13:1)
+      at Object.<anonymous> (src/features/sales/mobile/MobileCatalog.jsx:8:1)
+
+PASS src/features/__tests__/kft6JurnalDuaOrang.test.js (7.414 s)
+FAIL src/features/__tests__/phase3P5.test.js
+  ● Test suite failed to run
+
+    Cannot find module '@radix-ui/primitive/is-development' from '../fe/node_modules/cmdk/node_modules/@radix-ui/react-use-controllable-state/dist/index.js'
+
+    Require stack:
+      /tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/fe/node_modules/cmdk/node_modules/@radix-ui/react-use-controllable-state/dist/index.js
+      /tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/fe/node_modules/cmdk/node_modules/@radix-ui/react-dialog/dist/index.js
+      /tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/fe/node_modules/cmdk/dist/index.js
+      src/components/ui/command.jsx
+      src/components/KNSelect.jsx
+      src/features/wms/StockOpnameTab.jsx
+      src/features/__tests__/phase3P5.test.js
+
+    [0m [90m 1 |[39m [36mimport[39m [33m*[39m [36mas[39m [33mReact[39m [36mfrom[39m [32m"react"[39m
+    [31m[1m>[22m[39m[90m 2 |[39m [36mimport[39m { [33mCommand[39m [36mas[39m [33mCommandPrimitive[39m } [36mfrom[39m [32m"cmdk"[39m
+     [90m   |[39m [31m[1m^[22m[39m
+     [90m 3 |[39m [36mimport[39m { [33mSearch[39m } [36mfrom[39m [32m"lucide-react"[39m
+     [90m 4 |[39m
+     [90m 5 |[39m [36mimport[39m { cn } [36mfrom[39m [32m"@/lib/utils"[39m[0m
+
+      at Resolver.resolveModule (../fe/node_modules/jest-resolve/build/resolver.js:324:11)
+      at Object.<anonymous> (../fe/node_modules/cmdk/node_modules/@radix-ui/react-use-controllable-state/src/use-controllable-state.tsx:2:32)
+      at Object.<anonymous> (../fe/node_modules/cmdk/node_modules/@radix-ui/react-dialog/src/dialog.tsx:6:38)
+      at Object.<anonymous> (../fe/node_modules/cmdk/dist/index.js:1:961)
+      at Object.<anonymous> (src/components/ui/command.jsx:2:1)
+      at Object.<anonymous> (src/components/KNSelect.jsx:43:1)
+      at Object.<anonymous> (src/features/wms/StockOpnameTab.jsx:18:1)
+      at Object.<anonymous> (src/features/__tests__/phase3P5.test.js:8:1)
+
+FAIL src/features/__tests__/mobileShell.test.js
+  ● Test suite failed to run
+
+    Cannot find module '@radix-ui/primitive/is-development' from '../fe/node_modules/cmdk/node_modules/@radix-ui/react-use-controllable-state/dist/index.js'
+
+    Require stack:
+      /tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/fe/node_modules/cmdk/node_modules/@radix-ui/react-use-controllable-state/dist/index.js
+      /tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/fe/node_modules/cmdk/node_modules/@radix-ui/react-dialog/dist/index.js
+      /tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/fe/node_modules/cmdk/dist/index.js
+      src/components/ui/command.jsx
+      src/components/KNSelect.jsx
+      src/components/NotificationCenter.jsx
+      src/features/sales/mobile/MobileNotifSheet.jsx
+      src/features/mobile/MobileShell.jsx
+      src/features/mobile/MobileOpsApp.jsx
+      src/features/__tests__/mobileShell.test.js
+
+    [0m [90m 1 |[39m [36mimport[39m [33m*[39m [36mas[39m [33mReact[39m [36mfrom[39m [32m"react"[39m
+    [31m[1m>[22m[39m[90m 2 |[39m [36mimport[39m { [33mCommand[39m [36mas[39m [33mCommandPrimitive[39m } [36mfrom[39m [32m"cmdk"[39m
+     [90m   |[39m [31m[1m^[22m[39m
+     [90m 3 |[39m [36mimport[39m { [33mSearch[39m } [36mfrom[39m [32m"lucide-react"[39m
+     [90m 4 |[39m
+     [90m 5 |[39m [36mimport[39m { cn } [36mfrom[39m [32m"@/lib/utils"[39m[0m
+
+      at Resolver.resolveModule (../fe/node_modules/jest-resolve/build/resolver.js:324:11)
+      at Object.<anonymous> (../fe/node_modules/cmdk/node_modules/@radix-ui/react-use-controllable-state/src/use-controllable-state.tsx:2:32)
+      at Object.<anonymous> (../fe/node_modules/cmdk/node_modules/@radix-ui/react-dialog/src/dialog.tsx:6:38)
+      at Object.<anonymous> (../fe/node_modules/cmdk/dist/index.js:1:961)
+      at Object.<anonymous> (src/components/ui/command.jsx:2:1)
+      at Object.<anonymous> (src/components/KNSelect.jsx:43:1)
+      at Object.<anonymous> (src/components/NotificationCenter.jsx:3:1)
+      at Object.<anonymous> (src/features/sales/mobile/MobileNotifSheet.jsx:3:1)
+      at Object.<anonymous> (src/features/mobile/MobileShell.jsx:23:1)
+      at Object.<anonymous> (src/features/mobile/MobileOpsApp.jsx:7:1)
+
+FAIL src/features/__tests__/phase3Settings.test.js
+  ● Test suite failed to run
+
+    Cannot find module '@radix-ui/primitive/is-development' from '../fe/node_modules/cmdk/node_modules/@radix-ui/react-use-controllable-state/dist/index.js'
+
+    Require stack:
+      /tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/fe/node_modules/cmdk/node_modules/@radix-ui/react-use-controllable-state/dist/index.js
+      /tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/fe/node_modules/cmdk/node_modules/@radix-ui/react-dialog/dist/index.js
+      /tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/fe/node_modules/cmdk/dist/index.js
+      src/components/ui/command.jsx
+      src/components/KNSelect.jsx
+      src/features/settings/masters/EntityMasterKindPanel.jsx
+      src/features/pettycash/ExpenseCategoriesView.jsx
+      src/features/__tests__/phase3Settings.test.js
+
+    [0m [90m 1 |[39m [36mimport[39m [33m*[39m [36mas[39m [33mReact[39m [36mfrom[39m [32m"react"[39m
+    [31m[1m>[22m[39m[90m 2 |[39m [36mimport[39m { [33mCommand[39m [36mas[39m [33mCommandPrimitive[39m } [36mfrom[39m [32m"cmdk"[39m
+     [90m   |[39m [31m[1m^[22m[39m
+     [90m 3 |[39m [36mimport[39m { [33mSearch[39m } [36mfrom[39m [32m"lucide-react"[39m
+     [90m 4 |[39m
+     [90m 5 |[39m [36mimport[39m { cn } [36mfrom[39m [32m"@/lib/utils"[39m[0m
+
+      at Resolver.resolveModule (../fe/node_modules/jest-resolve/build/resolver.js:324:11)
+      at Object.<anonymous> (../fe/node_modules/cmdk/node_modules/@radix-ui/react-use-controllable-state/src/use-controllable-state.tsx:2:32)
+      at Object.<anonymous> (../fe/node_modules/cmdk/node_modules/@radix-ui/react-dialog/src/dialog.tsx:6:38)
+      at Object.<anonymous> (../fe/node_modules/cmdk/dist/index.js:1:961)
+      at Object.<anonymous> (src/components/ui/command.jsx:2:1)
+      at Object.<anonymous> (src/components/KNSelect.jsx:43:1)
+      at Object.<anonymous> (src/features/settings/masters/EntityMasterKindPanel.jsx:25:1)
+      at Object.<anonymous> (src/features/pettycash/ExpenseCategoriesView.jsx:19:1)
+      at Object.<anonymous> (src/features/__tests__/phase3Settings.test.js:14:1)
+
+FAIL src/features/__tests__/uatV3SpecialOrder.test.js
+  ● Test suite failed to run
+
+    Cannot find module '@radix-ui/primitive/is-development' from '../fe/node_modules/cmdk/node_modules/@radix-ui/react-use-controllable-state/dist/index.js'
+
+    Require stack:
+      /tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/fe/node_modules/cmdk/node_modules/@radix-ui/react-use-controllable-state/dist/index.js
+      /tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/fe/node_modules/cmdk/node_modules/@radix-ui/react-dialog/dist/index.js
+      /tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/fe/node_modules/cmdk/dist/index.js
+      src/components/ui/command.jsx
+      src/components/KNSelect.jsx
+      src/features/rnd/DecideModal.jsx
+      src/features/__tests__/uatV3SpecialOrder.test.js
+
+    [0m [90m 1 |[39m [36mimport[39m [33m*[39m [36mas[39m [33mReact[39m [36mfrom[39m [32m"react"[39m
+    [31m[1m>[22m[39m[90m 2 |[39m [36mimport[39m { [33mCommand[39m [36mas[39m [33mCommandPrimitive[39m } [36mfrom[39m [32m"cmdk"[39m
+     [90m   |[39m [31m[1m^[22m[39m
+     [90m 3 |[39m [36mimport[39m { [33mSearch[39m } [36mfrom[39m [32m"lucide-react"[39m
+     [90m 4 |[39m
+     [90m 5 |[39m [36mimport[39m { cn } [36mfrom[39m [32m"@/lib/utils"[39m[0m
+
+      at Resolver.resolveModule (../fe/node_modules/jest-resolve/build/resolver.js:324:11)
+      at Object.<anonymous> (../fe/node_modules/cmdk/node_modules/@radix-ui/react-use-controllable-state/src/use-controllable-state.tsx:2:32)
+      at Object.<anonymous> (../fe/node_modules/cmdk/node_modules/@radix-ui/react-dialog/src/dialog.tsx:6:38)
+      at Object.<anonymous> (../fe/node_modules/cmdk/dist/index.js:1:961)
+      at Object.<anonymous> (src/components/ui/command.jsx:2:1)
+      at Object.<anonymous> (src/components/KNSelect.jsx:43:1)
+      at Object.<anonymous> (src/features/rnd/DecideModal.jsx:11:1)
+      at Object.<anonymous> (src/features/__tests__/uatV3SpecialOrder.test.js:9:1)
+
+FAIL src/features/__tests__/uatV3ReturnsOps.test.js
+  ● Test suite failed to run
+
+    Cannot find module '@radix-ui/primitive/is-development' from '../fe/node_modules/cmdk/node_modules/@radix-ui/react-use-controllable-state/dist/index.js'
+
+    Require stack:
+      /tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/fe/node_modules/cmdk/node_modules/@radix-ui/react-use-controllable-state/dist/index.js
+      /tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/fe/node_modules/cmdk/node_modules/@radix-ui/react-dialog/dist/index.js
+      /tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/fe/node_modules/cmdk/dist/index.js
+      src/components/ui/command.jsx
+      src/components/KNSelect.jsx
+      src/features/sales/ReturnSettleModal.jsx
+      src/features/__tests__/uatV3ReturnsOps.test.js
+
+    [0m [90m 1 |[39m [36mimport[39m [33m*[39m [36mas[39m [33mReact[39m [36mfrom[39m [32m"react"[39m
+    [31m[1m>[22m[39m[90m 2 |[39m [36mimport[39m { [33mCommand[39m [36mas[39m [33mCommandPrimitive[39m } [36mfrom[39m [32m"cmdk"[39m
+     [90m   |[39m [31m[1m^[22m[39m
+     [90m 3 |[39m [36mimport[39m { [33mSearch[39m } [36mfrom[39m [32m"lucide-react"[39m
+     [90m 4 |[39m
+     [90m 5 |[39m [36mimport[39m { cn } [36mfrom[39m [32m"@/lib/utils"[39m[0m
+
+      at Resolver.resolveModule (../fe/node_modules/jest-resolve/build/resolver.js:324:11)
+      at Object.<anonymous> (../fe/node_modules/cmdk/node_modules/@radix-ui/react-use-controllable-state/src/use-controllable-state.tsx:2:32)
+      at Object.<anonymous> (../fe/node_modules/cmdk/node_modules/@radix-ui/react-dialog/src/dialog.tsx:6:38)
+      at Object.<anonymous> (../fe/node_modules/cmdk/dist/index.js:1:961)
+      at Object.<anonymous> (src/components/ui/command.jsx:2:1)
+      at Object.<anonymous> (src/components/KNSelect.jsx:43:1)
+      at Object.<anonymous> (src/features/sales/ReturnSettleModal.jsx:11:1)
+      at Object.<anonymous> (src/features/__tests__/uatV3ReturnsOps.test.js:9:1)
+
+FAIL src/features/__tests__/decisionsD3.test.js
+  ● Test suite failed to run
+
+    Cannot find module '@radix-ui/primitive/is-development' from '../fe/node_modules/cmdk/node_modules/@radix-ui/react-use-controllable-state/dist/index.js'
+
+    Require stack:
+      /tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/fe/node_modules/cmdk/node_modules/@radix-ui/react-use-controllable-state/dist/index.js
+      /tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/fe/node_modules/cmdk/node_modules/@radix-ui/react-dialog/dist/index.js
+      /tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/fe/node_modules/cmdk/dist/index.js
+      src/components/ui/command.jsx
+      src/components/KNSelect.jsx
+      src/components/NotificationCenter.jsx
+      src/features/sales/mobile/MobileNotifSheet.jsx
+      src/features/mobile/MobileShell.jsx
+      src/features/mobile/MobileOpsApp.jsx
+      src/features/__tests__/decisionsD3.test.js
+
+    [0m [90m 1 |[39m [36mimport[39m [33m*[39m [36mas[39m [33mReact[39m [36mfrom[39m [32m"react"[39m
+    [31m[1m>[22m[39m[90m 2 |[39m [36mimport[39m { [33mCommand[39m [36mas[39m [33mCommandPrimitive[39m } [36mfrom[39m [32m"cmdk"[39m
+     [90m   |[39m [31m[1m^[22m[39m
+     [90m 3 |[39m [36mimport[39m { [33mSearch[39m } [36mfrom[39m [32m"lucide-react"[39m
+     [90m 4 |[39m
+     [90m 5 |[39m [36mimport[39m { cn } [36mfrom[39m [32m"@/lib/utils"[39m[0m
+
+      at Resolver.resolveModule (../fe/node_modules/jest-resolve/build/resolver.js:324:11)
+      at Object.<anonymous> (../fe/node_modules/cmdk/node_modules/@radix-ui/react-use-controllable-state/src/use-controllable-state.tsx:2:32)
+      at Object.<anonymous> (../fe/node_modules/cmdk/node_modules/@radix-ui/react-dialog/src/dialog.tsx:6:38)
+      at Object.<anonymous> (../fe/node_modules/cmdk/dist/index.js:1:961)
+      at Object.<anonymous> (src/components/ui/command.jsx:2:1)
+      at Object.<anonymous> (src/components/KNSelect.jsx:43:1)
+      at Object.<anonymous> (src/components/NotificationCenter.jsx:3:1)
+      at Object.<anonymous> (src/features/sales/mobile/MobileNotifSheet.jsx:3:1)
+      at Object.<anonymous> (src/features/mobile/MobileShell.jsx:23:1)
+      at Object.<anonymous> (src/features/mobile/MobileOpsApp.jsx:7:1)
+
+FAIL src/features/__tests__/phase3P6Kpi.test.js
+  ● Test suite failed to run
+
+    Cannot find module '@radix-ui/primitive/is-development' from '../fe/node_modules/cmdk/node_modules/@radix-ui/react-use-controllable-state/dist/index.js'
+
+    Require stack:
+      /tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/fe/node_modules/cmdk/node_modules/@radix-ui/react-use-controllable-state/dist/index.js
+      /tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/fe/node_modules/cmdk/node_modules/@radix-ui/react-dialog/dist/index.js
+      /tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/fe/node_modules/cmdk/dist/index.js
+      src/components/ui/command.jsx
+      src/components/KNSelect.jsx
+      src/features/designer/DesignerKpiView.jsx
+      src/features/__tests__/phase3P6Kpi.test.js
+
+    [0m [90m 1 |[39m [36mimport[39m [33m*[39m [36mas[39m [33mReact[39m [36mfrom[39m [32m"react"[39m
+    [31m[1m>[22m[39m[90m 2 |[39m [36mimport[39m { [33mCommand[39m [36mas[39m [33mCommandPrimitive[39m } [36mfrom[39m [32m"cmdk"[39m
+     [90m   |[39m [31m[1m^[22m[39m
+     [90m 3 |[39m [36mimport[39m { [33mSearch[39m } [36mfrom[39m [32m"lucide-react"[39m
+     [90m 4 |[39m
+     [90m 5 |[39m [36mimport[39m { cn } [36mfrom[39m [32m"@/lib/utils"[39m[0m
+
+      at Resolver.resolveModule (../fe/node_modules/jest-resolve/build/resolver.js:324:11)
+      at Object.<anonymous> (../fe/node_modules/cmdk/node_modules/@radix-ui/react-use-controllable-state/src/use-controllable-state.tsx:2:32)
+      at Object.<anonymous> (../fe/node_modules/cmdk/node_modules/@radix-ui/react-dialog/src/dialog.tsx:6:38)
+      at Object.<anonymous> (../fe/node_modules/cmdk/dist/index.js:1:961)
+      at Object.<anonymous> (src/components/ui/command.jsx:2:1)
+      at Object.<anonymous> (src/components/KNSelect.jsx:43:1)
+      at Object.<anonymous> (src/features/designer/DesignerKpiView.jsx:23:1)
+      at Object.<anonymous> (src/features/__tests__/phase3P6Kpi.test.js:6:1)
+
+FAIL src/features/__tests__/phase4R6.test.js
+  ● Test suite failed to run
+
+    Cannot find module '@radix-ui/primitive/is-development' from '../fe/node_modules/cmdk/node_modules/@radix-ui/react-use-controllable-state/dist/index.js'
+
+    Require stack:
+      /tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/fe/node_modules/cmdk/node_modules/@radix-ui/react-use-controllable-state/dist/index.js
+      /tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/fe/node_modules/cmdk/node_modules/@radix-ui/react-dialog/dist/index.js
+      /tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/fe/node_modules/cmdk/dist/index.js
+      src/components/ui/command.jsx
+      src/components/KNSelect.jsx
+      src/components/TableFilter.jsx
+      src/features/sales_admin/DeskQueueCard.jsx
+      src/features/desks/RoleDesk.jsx
+      src/features/__tests__/phase4R6.test.js
+
+    [0m [90m 1 |[39m [36mimport[39m [33m*[39m [36mas[39m [33mReact[39m [36mfrom[39m [32m"react"[39m
+    [31m[1m>[22m[39m[90m 2 |[39m [36mimport[39m { [33mCommand[39m [36mas[39m [33mCommandPrimitive[39m } [36mfrom[39m [32m"cmdk"[39m
+     [90m   |[39m [31m[1m^[22m[39m
+     [90m 3 |[39m [36mimport[39m { [33mSearch[39m } [36mfrom[39m [32m"lucide-react"[39m
+     [90m 4 |[39m
+     [90m 5 |[39m [36mimport[39m { cn } [36mfrom[39m [32m"@/lib/utils"[39m[0m
+
+      at Resolver.resolveModule (../fe/node_modules/jest-resolve/build/resolver.js:324:11)
+      at Object.<anonymous> (../fe/node_modules/cmdk/node_modules/@radix-ui/react-use-controllable-state/src/use-controllable-state.tsx:2:32)
+      at Object.<anonymous> (../fe/node_modules/cmdk/node_modules/@radix-ui/react-dialog/src/dialog.tsx:6:38)
+      at Object.<anonymous> (../fe/node_modules/cmdk/dist/index.js:1:961)
+      at Object.<anonymous> (src/components/ui/command.jsx:2:1)
+      at Object.<anonymous> (src/components/KNSelect.jsx:43:1)
+      at Object.<anonymous> (src/components/TableFilter.jsx:3:1)
+      at Object.<anonymous> (src/features/sales_admin/DeskQueueCard.jsx:27:1)
+      at Object.<anonymous> (src/features/desks/RoleDesk.jsx:12:1)
+      at Object.<anonymous> (src/features/__tests__/phase4R6.test.js:8:1)
+
+FAIL src/components/__tests__/knSelect.test.js
+  ● Test suite failed to run
+
+    Cannot find module '@radix-ui/primitive/is-development' from '../fe/node_modules/cmdk/node_modules/@radix-ui/react-use-controllable-state/dist/index.js'
+
+    Require stack:
+      /tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/fe/node_modules/cmdk/node_modules/@radix-ui/react-use-controllable-state/dist/index.js
+      /tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/fe/node_modules/cmdk/node_modules/@radix-ui/react-dialog/dist/index.js
+      /tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/fe/node_modules/cmdk/dist/index.js
+      src/components/ui/command.jsx
+      src/components/KNSelect.jsx
+      src/components/__tests__/knSelect.test.js
+
+    [0m [90m 1 |[39m [36mimport[39m [33m*[39m [36mas[39m [33mReact[39m [36mfrom[39m [32m"react"[39m
+    [31m[1m>[22m[39m[90m 2 |[39m [36mimport[39m { [33mCommand[39m [36mas[39m [33mCommandPrimitive[39m } [36mfrom[39m [32m"cmdk"[39m
+     [90m   |[39m [31m[1m^[22m[39m
+     [90m 3 |[39m [36mimport[39m { [33mSearch[39m } [36mfrom[39m [32m"lucide-react"[39m
+     [90m 4 |[39m
+     [90m 5 |[39m [36mimport[39m { cn } [36mfrom[39m [32m"@/lib/utils"[39m[0m
+
+      at Resolver.resolveModule (../fe/node_modules/jest-resolve/build/resolver.js:324:11)
+      at Object.<anonymous> (../fe/node_modules/cmdk/node_modules/@radix-ui/react-use-controllable-state/src/use-controllable-state.tsx:2:32)
+      at Object.<anonymous> (../fe/node_modules/cmdk/node_modules/@radix-ui/react-dialog/src/dialog.tsx:6:38)
+      at Object.<anonymous> (../fe/node_modules/cmdk/dist/index.js:1:961)
+      at Object.<anonymous> (src/components/ui/command.jsx:2:1)
+      at Object.<anonymous> (src/components/KNSelect.jsx:43:1)
+      at Object.<anonymous> (src/components/__tests__/knSelect.test.js:5:1)
+
+FAIL src/features/__tests__/phase3P4Finance.test.js
+  ● Test suite failed to run
+
+    Cannot find module '@radix-ui/primitive/is-development' from '../fe/node_modules/cmdk/node_modules/@radix-ui/react-use-controllable-state/dist/index.js'
+
+    Require stack:
+      /tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/fe/node_modules/cmdk/node_modules/@radix-ui/react-use-controllable-state/dist/index.js
+      /tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/fe/node_modules/cmdk/node_modules/@radix-ui/react-dialog/dist/index.js
+      /tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/fe/node_modules/cmdk/dist/index.js
+      src/components/ui/command.jsx
+      src/components/KNSelect.jsx
+      src/features/finance/ClosingView.jsx
+      src/features/__tests__/phase3P4Finance.test.js
+
+    [0m [90m 1 |[39m [36mimport[39m [33m*[39m [36mas[39m [33mReact[39m [36mfrom[39m [32m"react"[39m
+    [31m[1m>[22m[39m[90m 2 |[39m [36mimport[39m { [33mCommand[39m [36mas[39m [33mCommandPrimitive[39m } [36mfrom[39m [32m"cmdk"[39m
+     [90m   |[39m [31m[1m^[22m[39m
+     [90m 3 |[39m [36mimport[39m { [33mSearch[39m } [36mfrom[39m [32m"lucide-react"[39m
+     [90m 4 |[39m
+     [90m 5 |[39m [36mimport[39m { cn } [36mfrom[39m [32m"@/lib/utils"[39m[0m
+
+      at Resolver.resolveModule (../fe/node_modules/jest-resolve/build/resolver.js:324:11)
+      at Object.<anonymous> (../fe/node_modules/cmdk/node_modules/@radix-ui/react-use-controllable-state/src/use-controllable-state.tsx:2:32)
+      at Object.<anonymous> (../fe/node_modules/cmdk/node_modules/@radix-ui/react-dialog/src/dialog.tsx:6:38)
+      at Object.<anonymous> (../fe/node_modules/cmdk/dist/index.js:1:961)
+      at Object.<anonymous> (src/components/ui/command.jsx:2:1)
+      at Object.<anonymous> (src/components/KNSelect.jsx:43:1)
+      at Object.<anonymous> (src/features/finance/ClosingView.jsx:21:1)
+      at Object.<anonymous> (src/features/__tests__/phase3P4Finance.test.js:9:1)
+
+FAIL src/features/__tests__/phase3P8Activation.test.js
+  ● Test suite failed to run
+
+    Cannot find module '@radix-ui/primitive/is-development' from '../fe/node_modules/cmdk/node_modules/@radix-ui/react-use-controllable-state/dist/index.js'
+
+    Require stack:
+      /tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/fe/node_modules/cmdk/node_modules/@radix-ui/react-use-controllable-state/dist/index.js
+      /tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/fe/node_modules/cmdk/node_modules/@radix-ui/react-dialog/dist/index.js
+      /tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/fe/node_modules/cmdk/dist/index.js
+      src/components/ui/command.jsx
+      src/components/KNSelect.jsx
+      src/features/rnd/RndDesignsView.jsx
+      src/features/__tests__/phase3P8Activation.test.js
+
+    [0m [90m 1 |[39m [36mimport[39m [33m*[39m [36mas[39m [33mReact[39m [36mfrom[39m [32m"react"[39m
+    [31m[1m>[22m[39m[90m 2 |[39m [36mimport[39m { [33mCommand[39m [36mas[39m [33mCommandPrimitive[39m } [36mfrom[39m [32m"cmdk"[39m
+     [90m   |[39m [31m[1m^[22m[39m
+     [90m 3 |[39m [36mimport[39m { [33mSearch[39m } [36mfrom[39m [32m"lucide-react"[39m
+     [90m 4 |[39m
+     [90m 5 |[39m [36mimport[39m { cn } [36mfrom[39m [32m"@/lib/utils"[39m[0m
+
+      at Resolver.resolveModule (../fe/node_modules/jest-resolve/build/resolver.js:324:11)
+      at Object.<anonymous> (../fe/node_modules/cmdk/node_modules/@radix-ui/react-use-controllable-state/src/use-controllable-state.tsx:2:32)
+      at Object.<anonymous> (../fe/node_modules/cmdk/node_modules/@radix-ui/react-dialog/src/dialog.tsx:6:38)
+      at Object.<anonymous> (../fe/node_modules/cmdk/dist/index.js:1:961)
+      at Object.<anonymous> (src/components/ui/command.jsx:2:1)
+      at Object.<anonymous> (src/components/KNSelect.jsx:43:1)
+      at Object.<anonymous> (src/features/rnd/RndDesignsView.jsx:17:1)
+      at Object.<anonymous> (src/features/__tests__/phase3P8Activation.test.js:16:1)
+
+PASS src/features/__tests__/prt7TombolIzin.test.js
+PASS src/features/__tests__/pk13MoneyConfirm.test.js
+PASS src/features/__tests__/pk43AlurLayar.test.js (6.356 s)
+PASS src/features/__tests__/crt1ProfilKredit.test.js
+PASS src/features/__tests__/pk42LayarKeuangan.test.js
+PASS src/features/__tests__/pk17NominalBerizin.test.js
+PASS src/features/__tests__/kft5AturanKhusus.test.js
+PASS src/features/__tests__/agt2AsistenKeuangan.test.js
+PASS src/features/__tests__/uat26D2Decisions.test.js
+PASS src/features/__tests__/kpt5PenomoranDokumen.test.js (6.273 s)
+PASS src/features/__tests__/fix3aForms.test.js
+PASS src/features/__tests__/pk36AkunKontrol.test.js
+PASS src/features/__tests__/agt3KartuTindakan.test.js
+PASS src/features/__tests__/prepD1GateV2.test.js
+PASS src/features/__tests__/agt4PaketTutupBuku.test.js
+PASS src/features/__tests__/pk12MoneyIntentB.test.js
+PASS src/features/__tests__/pk40MasaPajak.test.js
+PASS src/features/settings/config/__tests__/kft4SettingCard.test.js
+PASS src/features/__tests__/pk45KreditPelanggan.test.js
+PASS src/features/__tests__/f15SamplePaymentReapproval.test.js
+PASS src/features/__tests__/phase5MakloonRolls.test.js
+PASS src/features/__tests__/uat24F0.test.js
+PASS src/features/__tests__/prepAMasterCleanup.test.js
+PASS src/features/__tests__/prt5EditorPeran.test.js
+PASS src/features/__tests__/fe0809ReturnForm.test.js
+PASS src/features/__tests__/mnt1Pembungkus.test.js
+PASS src/features/__tests__/rollSettle.test.js
+PASS src/features/settings/config/__tests__/kft3SettingCard.test.js
+PASS src/features/__tests__/pk19SimulasiBayar.test.js
+PASS src/features/settings/config/__tests__/settingCardBertanggal.test.js
+PASS src/features/__tests__/pk26LandedCost.test.js
+PASS src/features/__tests__/ui05UnitsStates.test.js
+PASS src/features/__tests__/kft6DualControl.test.js
+PASS src/features/__tests__/uat24F1.test.js
+PASS src/features/__tests__/pk15ReconHolding.test.js
+PASS src/features/__tests__/roleCrossEntity.test.js
+PASS src/features/__tests__/agt1KartuTindakan.test.js
+PASS src/features/__tests__/pk18PostingGagal.test.js
+PASS src/features/__tests__/pk29RekonPersediaan.test.js
+PASS src/utils/__tests__/g0SharedApi.test.js
+PASS src/features/__tests__/pk27BiayaRoll.test.js
+PASS src/features/__tests__/pk38Wewenang.test.js
+PASS src/features/__tests__/uat24F5.test.js
+PASS src/features/__tests__/pk20CashAccount.test.js
+PASS src/features/__tests__/auditUi2G5a.test.js
+PASS src/features/__tests__/pk11ClosingNotEnded.test.js
+PASS src/features/__tests__/prepHGatePolling.test.js
+PASS src/utils/__tests__/escapeLayers.test.js
+PASS src/features/__tests__/kft7NilaiPengaturan.test.js
+PASS src/features/__tests__/odCancelCreditNote.test.js
+PASS src/features/__tests__/kpt3ApprovalTiers.test.js
+PASS src/features/__tests__/uat24F2.test.js
+PASS src/features/__tests__/f04QtyByUnit.test.js
+PASS src/features/__tests__/f08CommercialInvoice.test.js
+FAIL src/features/wms/transfer/__tests__/TransferDetailModal.test.js
+  ● Test suite failed to run
+
+    Cannot find module '@radix-ui/primitive/is-development' from '../fe/node_modules/cmdk/node_modules/@radix-ui/react-use-controllable-state/dist/index.js'
+
+    Require stack:
+      /tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/fe/node_modules/cmdk/node_modules/@radix-ui/react-use-controllable-state/dist/index.js
+      /tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/fe/node_modules/cmdk/node_modules/@radix-ui/react-dialog/dist/index.js
+      /tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/fe/node_modules/cmdk/dist/index.js
+      src/components/ui/command.jsx
+      src/components/KNSelect.jsx
+      src/features/wms/transfer/TransferReceiptPanel.jsx
+      src/features/wms/transfer/TransferDetailModal.jsx
+      src/features/wms/transfer/__tests__/TransferDetailModal.test.js
+
+    [0m [90m 1 |[39m [36mimport[39m [33m*[39m [36mas[39m [33mReact[39m [36mfrom[39m [32m"react"[39m
+    [31m[1m>[22m[39m[90m 2 |[39m [36mimport[39m { [33mCommand[39m [36mas[39m [33mCommandPrimitive[39m } [36mfrom[39m [32m"cmdk"[39m
+     [90m   |[39m [31m[1m^[22m[39m
+     [90m 3 |[39m [36mimport[39m { [33mSearch[39m } [36mfrom[39m [32m"lucide-react"[39m
+     [90m 4 |[39m
+     [90m 5 |[39m [36mimport[39m { cn } [36mfrom[39m [32m"@/lib/utils"[39m[0m
+
+      at Resolver.resolveModule (../fe/node_modules/jest-resolve/build/resolver.js:324:11)
+      at Object.<anonymous> (../fe/node_modules/cmdk/node_modules/@radix-ui/react-use-controllable-state/src/use-controllable-state.tsx:2:32)
+      at Object.<anonymous> (../fe/node_modules/cmdk/node_modules/@radix-ui/react-dialog/src/dialog.tsx:6:38)
+      at Object.<anonymous> (../fe/node_modules/cmdk/dist/index.js:1:961)
+      at Object.<anonymous> (src/components/ui/command.jsx:2:1)
+      at Object.<anonymous> (src/components/KNSelect.jsx:43:1)
+      at Object.<anonymous> (src/features/wms/transfer/TransferReceiptPanel.jsx:9:1)
+      at Object.<anonymous> (src/features/wms/transfer/TransferDetailModal.jsx:8:1)
+      at Object.<anonymous> (src/features/wms/transfer/__tests__/TransferDetailModal.test.js:4:1)
+
+FAIL src/features/__tests__/uatV3S2Cbd.test.js
+  ● Test suite failed to run
+
+    Cannot find module '@radix-ui/primitive/is-development' from '../fe/node_modules/cmdk/node_modules/@radix-ui/react-use-controllable-state/dist/index.js'
+
+    Require stack:
+      /tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/fe/node_modules/cmdk/node_modules/@radix-ui/react-use-controllable-state/dist/index.js
+      /tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/fe/node_modules/cmdk/node_modules/@radix-ui/react-dialog/dist/index.js
+      /tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/fe/node_modules/cmdk/dist/index.js
+      src/components/ui/command.jsx
+      src/components/KNSelect.jsx
+      src/components/TableFilter.jsx
+      src/features/sales_admin/DeskQueueCard.jsx
+      src/features/__tests__/uatV3S2Cbd.test.js
+
+    [0m [90m 1 |[39m [36mimport[39m [33m*[39m [36mas[39m [33mReact[39m [36mfrom[39m [32m"react"[39m
+    [31m[1m>[22m[39m[90m 2 |[39m [36mimport[39m { [33mCommand[39m [36mas[39m [33mCommandPrimitive[39m } [36mfrom[39m [32m"cmdk"[39m
+     [90m   |[39m [31m[1m^[22m[39m
+     [90m 3 |[39m [36mimport[39m { [33mSearch[39m } [36mfrom[39m [32m"lucide-react"[39m
+     [90m 4 |[39m
+     [90m 5 |[39m [36mimport[39m { cn } [36mfrom[39m [32m"@/lib/utils"[39m[0m
+
+      at Resolver.resolveModule (../fe/node_modules/jest-resolve/build/resolver.js:324:11)
+      at Object.<anonymous> (../fe/node_modules/cmdk/node_modules/@radix-ui/react-use-controllable-state/src/use-controllable-state.tsx:2:32)
+      at Object.<anonymous> (../fe/node_modules/cmdk/node_modules/@radix-ui/react-dialog/src/dialog.tsx:6:38)
+      at Object.<anonymous> (../fe/node_modules/cmdk/dist/index.js:1:961)
+      at Object.<anonymous> (src/components/ui/command.jsx:2:1)
+      at Object.<anonymous> (src/components/KNSelect.jsx:43:1)
+      at Object.<anonymous> (src/components/TableFilter.jsx:3:1)
+      at Object.<anonymous> (src/features/sales_admin/DeskQueueCard.jsx:27:1)
+      at Object.<anonymous> (src/features/__tests__/uatV3S2Cbd.test.js:8:1)
+
+FAIL src/features/__tests__/uat24F4.test.js
+  ● Test suite failed to run
+
+    Cannot find module '@radix-ui/primitive/is-development' from '../fe/node_modules/cmdk/node_modules/@radix-ui/react-use-controllable-state/dist/index.js'
+
+    Require stack:
+      /tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/fe/node_modules/cmdk/node_modules/@radix-ui/react-use-controllable-state/dist/index.js
+      /tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/fe/node_modules/cmdk/node_modules/@radix-ui/react-dialog/dist/index.js
+      /tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/fe/node_modules/cmdk/dist/index.js
+      src/components/ui/command.jsx
+      src/components/KNSelect.jsx
+      src/features/purchasing/PrMergePanel.jsx
+      src/features/__tests__/uat24F4.test.js
+
+    [0m [90m 1 |[39m [36mimport[39m [33m*[39m [36mas[39m [33mReact[39m [36mfrom[39m [32m"react"[39m
+    [31m[1m>[22m[39m[90m 2 |[39m [36mimport[39m { [33mCommand[39m [36mas[39m [33mCommandPrimitive[39m } [36mfrom[39m [32m"cmdk"[39m
+     [90m   |[39m [31m[1m^[22m[39m
+     [90m 3 |[39m [36mimport[39m { [33mSearch[39m } [36mfrom[39m [32m"lucide-react"[39m
+     [90m 4 |[39m
+     [90m 5 |[39m [36mimport[39m { cn } [36mfrom[39m [32m"@/lib/utils"[39m[0m
+
+      at Resolver.resolveModule (../fe/node_modules/jest-resolve/build/resolver.js:324:11)
+      at Object.<anonymous> (../fe/node_modules/cmdk/node_modules/@radix-ui/react-use-controllable-state/src/use-controllable-state.tsx:2:32)
+      at Object.<anonymous> (../fe/node_modules/cmdk/node_modules/@radix-ui/react-dialog/src/dialog.tsx:6:38)
+      at Object.<anonymous> (../fe/node_modules/cmdk/dist/index.js:1:961)
+      at Object.<anonymous> (src/components/ui/command.jsx:2:1)
+      at Object.<anonymous> (src/components/KNSelect.jsx:43:1)
+      at Object.<anonymous> (src/features/purchasing/PrMergePanel.jsx:9:1)
+      at Object.<anonymous> (src/features/__tests__/uat24F4.test.js:5:1)
+
+FAIL src/features/__tests__/roleGateSweep.test.js
+  ● Test suite failed to run
+
+    Cannot find module '@radix-ui/primitive/is-development' from '../fe/node_modules/cmdk/node_modules/@radix-ui/react-use-controllable-state/dist/index.js'
+
+    Require stack:
+      /tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/fe/node_modules/cmdk/node_modules/@radix-ui/react-use-controllable-state/dist/index.js
+      /tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/fe/node_modules/cmdk/node_modules/@radix-ui/react-dialog/dist/index.js
+      /tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/fe/node_modules/cmdk/dist/index.js
+      src/components/ui/command.jsx
+      src/components/KNSelect.jsx
+      src/features/finance/payments/PenaltyPanel.jsx
+      src/features/__tests__/roleGateSweep.test.js
+
+    [0m [90m 1 |[39m [36mimport[39m [33m*[39m [36mas[39m [33mReact[39m [36mfrom[39m [32m"react"[39m
+    [31m[1m>[22m[39m[90m 2 |[39m [36mimport[39m { [33mCommand[39m [36mas[39m [33mCommandPrimitive[39m } [36mfrom[39m [32m"cmdk"[39m
+     [90m   |[39m [31m[1m^[22m[39m
+     [90m 3 |[39m [36mimport[39m { [33mSearch[39m } [36mfrom[39m [32m"lucide-react"[39m
+     [90m 4 |[39m
+     [90m 5 |[39m [36mimport[39m { cn } [36mfrom[39m [32m"@/lib/utils"[39m[0m
+
+      at Resolver.resolveModule (../fe/node_modules/jest-resolve/build/resolver.js:324:11)
+      at Object.<anonymous> (../fe/node_modules/cmdk/node_modules/@radix-ui/react-use-controllable-state/src/use-controllable-state.tsx:2:32)
+      at Object.<anonymous> (../fe/node_modules/cmdk/node_modules/@radix-ui/react-dialog/src/dialog.tsx:6:38)
+      at Object.<anonymous> (../fe/node_modules/cmdk/dist/index.js:1:961)
+      at Object.<anonymous> (src/components/ui/command.jsx:2:1)
+      at Object.<anonymous> (src/components/KNSelect.jsx:43:1)
+      at Object.<anonymous> (src/features/finance/payments/PenaltyPanel.jsx:16:1)
+      at Object.<anonymous> (src/features/__tests__/roleGateSweep.test.js:6:1)
+
+FAIL src/features/__tests__/permissionGates.test.js
+  ● Test suite failed to run
+
+    Cannot find module '@radix-ui/primitive/is-development' from '../fe/node_modules/cmdk/node_modules/@radix-ui/react-use-controllable-state/dist/index.js'
+
+    Require stack:
+      /tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/fe/node_modules/cmdk/node_modules/@radix-ui/react-use-controllable-state/dist/index.js
+      /tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/fe/node_modules/cmdk/node_modules/@radix-ui/react-dialog/dist/index.js
+      /tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/fe/node_modules/cmdk/dist/index.js
+      src/components/ui/command.jsx
+      src/components/KNSelect.jsx
+      src/components/LocationFields.jsx
+      src/features/wms/warehouses/WarehouseMasterView.jsx
+      src/features/__tests__/permissionGates.test.js
+
+    [0m [90m 1 |[39m [36mimport[39m [33m*[39m [36mas[39m [33mReact[39m [36mfrom[39m [32m"react"[39m
+    [31m[1m>[22m[39m[90m 2 |[39m [36mimport[39m { [33mCommand[39m [36mas[39m [33mCommandPrimitive[39m } [36mfrom[39m [32m"cmdk"[39m
+     [90m   |[39m [31m[1m^[22m[39m
+     [90m 3 |[39m [36mimport[39m { [33mSearch[39m } [36mfrom[39m [32m"lucide-react"[39m
+     [90m 4 |[39m
+     [90m 5 |[39m [36mimport[39m { cn } [36mfrom[39m [32m"@/lib/utils"[39m[0m
+
+      at Resolver.resolveModule (../fe/node_modules/jest-resolve/build/resolver.js:324:11)
+      at Object.<anonymous> (../fe/node_modules/cmdk/node_modules/@radix-ui/react-use-controllable-state/src/use-controllable-state.tsx:2:32)
+      at Object.<anonymous> (../fe/node_modules/cmdk/node_modules/@radix-ui/react-dialog/src/dialog.tsx:6:38)
+      at Object.<anonymous> (../fe/node_modules/cmdk/dist/index.js:1:961)
+      at Object.<anonymous> (src/components/ui/command.jsx:2:1)
+      at Object.<anonymous> (src/components/KNSelect.jsx:43:1)
+      at Object.<anonymous> (src/components/LocationFields.jsx:23:1)
+      at Object.<anonymous> (src/features/wms/warehouses/WarehouseMasterView.jsx:28:1)
+      at Object.<anonymous> (src/features/__tests__/permissionGates.test.js:4:1)
+
+FAIL src/features/__tests__/auditUi2G5b.test.js
+  ● Test suite failed to run
+
+    Cannot find module '@radix-ui/primitive/is-development' from '../fe/node_modules/cmdk/node_modules/@radix-ui/react-use-controllable-state/dist/index.js'
+
+    Require stack:
+      /tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/fe/node_modules/cmdk/node_modules/@radix-ui/react-use-controllable-state/dist/index.js
+      /tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/fe/node_modules/cmdk/node_modules/@radix-ui/react-dialog/dist/index.js
+      /tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/fe/node_modules/cmdk/dist/index.js
+      src/components/ui/command.jsx
+      src/components/KNSelect.jsx
+      src/components/NotificationCenter.jsx
+      src/features/sales/mobile/MobileNotifSheet.jsx
+      src/features/mobile/MobileShell.jsx
+      src/features/mobile/MobileOpsApp.jsx
+      src/features/__tests__/auditUi2G5b.test.js
+
+    [0m [90m 1 |[39m [36mimport[39m [33m*[39m [36mas[39m [33mReact[39m [36mfrom[39m [32m"react"[39m
+    [31m[1m>[22m[39m[90m 2 |[39m [36mimport[39m { [33mCommand[39m [36mas[39m [33mCommandPrimitive[39m } [36mfrom[39m [32m"cmdk"[39m
+     [90m   |[39m [31m[1m^[22m[39m
+     [90m 3 |[39m [36mimport[39m { [33mSearch[39m } [36mfrom[39m [32m"lucide-react"[39m
+     [90m 4 |[39m
+     [90m 5 |[39m [36mimport[39m { cn } [36mfrom[39m [32m"@/lib/utils"[39m[0m
+
+      at Resolver.resolveModule (../fe/node_modules/jest-resolve/build/resolver.js:324:11)
+      at Object.<anonymous> (../fe/node_modules/cmdk/node_modules/@radix-ui/react-use-controllable-state/src/use-controllable-state.tsx:2:32)
+      at Object.<anonymous> (../fe/node_modules/cmdk/node_modules/@radix-ui/react-dialog/src/dialog.tsx:6:38)
+      at Object.<anonymous> (../fe/node_modules/cmdk/dist/index.js:1:961)
+      at Object.<anonymous> (src/components/ui/command.jsx:2:1)
+      at Object.<anonymous> (src/components/KNSelect.jsx:43:1)
+      at Object.<anonymous> (src/components/NotificationCenter.jsx:3:1)
+      at Object.<anonymous> (src/features/sales/mobile/MobileNotifSheet.jsx:3:1)
+      at Object.<anonymous> (src/features/mobile/MobileShell.jsx:23:1)
+      at Object.<anonymous> (src/features/mobile/MobileOpsApp.jsx:7:1)
+
+FAIL src/features/__tests__/fe06PriceFocus.test.js
+  ● Test suite failed to run
+
+    Cannot find module '@radix-ui/primitive/is-development' from '../fe/node_modules/cmdk/node_modules/@radix-ui/react-use-controllable-state/dist/index.js'
+
+    Require stack:
+      /tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/fe/node_modules/cmdk/node_modules/@radix-ui/react-use-controllable-state/dist/index.js
+      /tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/fe/node_modules/cmdk/node_modules/@radix-ui/react-dialog/dist/index.js
+      /tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/fe/node_modules/cmdk/dist/index.js
+      src/components/ui/command.jsx
+      src/components/KNSelect.jsx
+      src/features/sales/priceApprovals/PriceApprovalForm.jsx
+      src/features/sales/PriceApprovals.jsx
+      src/features/__tests__/fe06PriceFocus.test.js
+
+    [0m [90m 1 |[39m [36mimport[39m [33m*[39m [36mas[39m [33mReact[39m [36mfrom[39m [32m"react"[39m
+    [31m[1m>[22m[39m[90m 2 |[39m [36mimport[39m { [33mCommand[39m [36mas[39m [33mCommandPrimitive[39m } [36mfrom[39m [32m"cmdk"[39m
+     [90m   |[39m [31m[1m^[22m[39m
+     [90m 3 |[39m [36mimport[39m { [33mSearch[39m } [36mfrom[39m [32m"lucide-react"[39m
+     [90m 4 |[39m
+     [90m 5 |[39m [36mimport[39m { cn } [36mfrom[39m [32m"@/lib/utils"[39m[0m
+
+      at Resolver.resolveModule (../fe/node_modules/jest-resolve/build/resolver.js:324:11)
+      at Object.<anonymous> (../fe/node_modules/cmdk/node_modules/@radix-ui/react-use-controllable-state/src/use-controllable-state.tsx:2:32)
+      at Object.<anonymous> (../fe/node_modules/cmdk/node_modules/@radix-ui/react-dialog/src/dialog.tsx:6:38)
+      at Object.<anonymous> (../fe/node_modules/cmdk/dist/index.js:1:961)
+      at Object.<anonymous> (src/components/ui/command.jsx:2:1)
+      at Object.<anonymous> (src/components/KNSelect.jsx:43:1)
+      at Object.<anonymous> (src/features/sales/priceApprovals/PriceApprovalForm.jsx:6:1)
+      at Object.<anonymous> (src/features/sales/PriceApprovals.jsx:5:1)
+      at Object.<anonymous> (src/features/__tests__/fe06PriceFocus.test.js:5:1)
+
+FAIL src/features/__tests__/phase3P6Rnd.test.js
+  ● Test suite failed to run
+
+    Cannot find module '@radix-ui/primitive/is-development' from '../fe/node_modules/cmdk/node_modules/@radix-ui/react-use-controllable-state/dist/index.js'
+
+    Require stack:
+      /tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/fe/node_modules/cmdk/node_modules/@radix-ui/react-use-controllable-state/dist/index.js
+      /tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/fe/node_modules/cmdk/node_modules/@radix-ui/react-dialog/dist/index.js
+      /tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/fe/node_modules/cmdk/dist/index.js
+      src/components/ui/command.jsx
+      src/components/KNSelect.jsx
+      src/features/rnd/RndSamplesView.jsx
+      src/features/__tests__/phase3P6Rnd.test.js
+
+    [0m [90m 1 |[39m [36mimport[39m [33m*[39m [36mas[39m [33mReact[39m [36mfrom[39m [32m"react"[39m
+    [31m[1m>[22m[39m[90m 2 |[39m [36mimport[39m { [33mCommand[39m [36mas[39m [33mCommandPrimitive[39m } [36mfrom[39m [32m"cmdk"[39m
+     [90m   |[39m [31m[1m^[22m[39m
+     [90m 3 |[39m [36mimport[39m { [33mSearch[39m } [36mfrom[39m [32m"lucide-react"[39m
+     [90m 4 |[39m
+     [90m 5 |[39m [36mimport[39m { cn } [36mfrom[39m [32m"@/lib/utils"[39m[0m
+
+      at Resolver.resolveModule (../fe/node_modules/jest-resolve/build/resolver.js:324:11)
+      at Object.<anonymous> (../fe/node_modules/cmdk/node_modules/@radix-ui/react-use-controllable-state/src/use-controllable-state.tsx:2:32)
+      at Object.<anonymous> (../fe/node_modules/cmdk/node_modules/@radix-ui/react-dialog/src/dialog.tsx:6:38)
+      at Object.<anonymous> (../fe/node_modules/cmdk/dist/index.js:1:961)
+      at Object.<anonymous> (src/components/ui/command.jsx:2:1)
+      at Object.<anonymous> (src/components/KNSelect.jsx:43:1)
+      at Object.<anonymous> (src/features/rnd/RndSamplesView.jsx:20:1)
+      at Object.<anonymous> (src/features/__tests__/phase3P6Rnd.test.js:6:1)
+
+FAIL src/features/__tests__/uatV3MobileSales.test.js
+  ● Test suite failed to run
+
+    Cannot find module '@radix-ui/primitive/is-development' from '../fe/node_modules/cmdk/node_modules/@radix-ui/react-use-controllable-state/dist/index.js'
+
+    Require stack:
+      /tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/fe/node_modules/cmdk/node_modules/@radix-ui/react-use-controllable-state/dist/index.js
+      /tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/fe/node_modules/cmdk/node_modules/@radix-ui/react-dialog/dist/index.js
+      /tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/fe/node_modules/cmdk/dist/index.js
+      src/components/ui/command.jsx
+      src/components/KNSelect.jsx
+      src/features/finance/amendments/AmendmentProposeModal.jsx
+      src/features/sales/mobile/MobileAmendSheet.jsx
+      src/features/sales/mobile/MobileAmendments.jsx
+      src/features/sales/mobile/MobileMore.jsx
+      src/features/__tests__/uatV3MobileSales.test.js
+
+    [0m [90m 1 |[39m [36mimport[39m [33m*[39m [36mas[39m [33mReact[39m [36mfrom[39m [32m"react"[39m
+    [31m[1m>[22m[39m[90m 2 |[39m [36mimport[39m { [33mCommand[39m [36mas[39m [33mCommandPrimitive[39m } [36mfrom[39m [32m"cmdk"[39m
+     [90m   |[39m [31m[1m^[22m[39m
+     [90m 3 |[39m [36mimport[39m { [33mSearch[39m } [36mfrom[39m [32m"lucide-react"[39m
+     [90m 4 |[39m
+     [90m 5 |[39m [36mimport[39m { cn } [36mfrom[39m [32m"@/lib/utils"[39m[0m
+
+      at Resolver.resolveModule (../fe/node_modules/jest-resolve/build/resolver.js:324:11)
+      at Object.<anonymous> (../fe/node_modules/cmdk/node_modules/@radix-ui/react-use-controllable-state/src/use-controllable-state.tsx:2:32)
+      at Object.<anonymous> (../fe/node_modules/cmdk/node_modules/@radix-ui/react-dialog/src/dialog.tsx:6:38)
+      at Object.<anonymous> (../fe/node_modules/cmdk/dist/index.js:1:961)
+      at Object.<anonymous> (src/components/ui/command.jsx:2:1)
+      at Object.<anonymous> (src/components/KNSelect.jsx:43:1)
+      at Object.<anonymous> (src/features/finance/amendments/AmendmentProposeModal.jsx:35:1)
+      at Object.<anonymous> (src/features/sales/mobile/MobileAmendSheet.jsx:2:1)
+      at Object.<anonymous> (src/features/sales/mobile/MobileAmendments.jsx:5:1)
+      at Object.<anonymous> (src/features/sales/mobile/MobileMore.jsx:5:1)
+
+FAIL src/features/__tests__/fe07ReturnErrors.test.js
+  ● Test suite failed to run
+
+    Cannot find module '@radix-ui/primitive/is-development' from '../fe/node_modules/cmdk/node_modules/@radix-ui/react-use-controllable-state/dist/index.js'
+
+    Require stack:
+      /tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/fe/node_modules/cmdk/node_modules/@radix-ui/react-use-controllable-state/dist/index.js
+      /tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/fe/node_modules/cmdk/node_modules/@radix-ui/react-dialog/dist/index.js
+      /tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/fe/node_modules/cmdk/dist/index.js
+      src/components/ui/command.jsx
+      src/components/KNSelect.jsx
+      src/features/sales/ReturnShipmentPanel.jsx
+      src/features/sales/ReturnDetail.jsx
+      src/features/sales/SalesReturns.jsx
+      src/features/__tests__/fe07ReturnErrors.test.js
+
+    [0m [90m 1 |[39m [36mimport[39m [33m*[39m [36mas[39m [33mReact[39m [36mfrom[39m [32m"react"[39m
+    [31m[1m>[22m[39m[90m 2 |[39m [36mimport[39m { [33mCommand[39m [36mas[39m [33mCommandPrimitive[39m } [36mfrom[39m [32m"cmdk"[39m
+     [90m   |[39m [31m[1m^[22m[39m
+     [90m 3 |[39m [36mimport[39m { [33mSearch[39m } [36mfrom[39m [32m"lucide-react"[39m
+     [90m 4 |[39m
+     [90m 5 |[39m [36mimport[39m { cn } [36mfrom[39m [32m"@/lib/utils"[39m[0m
+
+      at Resolver.resolveModule (../fe/node_modules/jest-resolve/build/resolver.js:324:11)
+      at Object.<anonymous> (../fe/node_modules/cmdk/node_modules/@radix-ui/react-use-controllable-state/src/use-controllable-state.tsx:2:32)
+      at Object.<anonymous> (../fe/node_modules/cmdk/node_modules/@radix-ui/react-dialog/src/dialog.tsx:6:38)
+      at Object.<anonymous> (../fe/node_modules/cmdk/dist/index.js:1:961)
+      at Object.<anonymous> (src/components/ui/command.jsx:2:1)
+      at Object.<anonymous> (src/components/KNSelect.jsx:43:1)
+      at Object.<anonymous> (src/features/sales/ReturnShipmentPanel.jsx:9:1)
+      at Object.<anonymous> (src/features/sales/ReturnDetail.jsx:19:1)
+      at Object.<anonymous> (src/features/sales/SalesReturns.jsx:24:1)
+      at Object.<anonymous> (src/features/__tests__/fe07ReturnErrors.test.js:5:1)
+
+FAIL src/features/__tests__/phase3P3.test.js
+  ● Test suite failed to run
+
+    Cannot find module '@radix-ui/primitive/is-development' from '../fe/node_modules/cmdk/node_modules/@radix-ui/react-use-controllable-state/dist/index.js'
+
+    Require stack:
+      /tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/fe/node_modules/cmdk/node_modules/@radix-ui/react-use-controllable-state/dist/index.js
+      /tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/fe/node_modules/cmdk/node_modules/@radix-ui/react-dialog/dist/index.js
+      /tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/fe/node_modules/cmdk/dist/index.js
+      src/components/ui/command.jsx
+      src/components/KNSelect.jsx
+      src/components/LocationFields.jsx
+      src/features/crm/CustomerFormModal.jsx
+      src/features/pos/CreateCustomerModal.jsx
+      src/features/__tests__/phase3P3.test.js
+
+    [0m [90m 1 |[39m [36mimport[39m [33m*[39m [36mas[39m [33mReact[39m [36mfrom[39m [32m"react"[39m
+    [31m[1m>[22m[39m[90m 2 |[39m [36mimport[39m { [33mCommand[39m [36mas[39m [33mCommandPrimitive[39m } [36mfrom[39m [32m"cmdk"[39m
+     [90m   |[39m [31m[1m^[22m[39m
+     [90m 3 |[39m [36mimport[39m { [33mSearch[39m } [36mfrom[39m [32m"lucide-react"[39m
+     [90m 4 |[39m
+     [90m 5 |[39m [36mimport[39m { cn } [36mfrom[39m [32m"@/lib/utils"[39m[0m
+
+      at Resolver.resolveModule (../fe/node_modules/jest-resolve/build/resolver.js:324:11)
+      at Object.<anonymous> (../fe/node_modules/cmdk/node_modules/@radix-ui/react-use-controllable-state/src/use-controllable-state.tsx:2:32)
+      at Object.<anonymous> (../fe/node_modules/cmdk/node_modules/@radix-ui/react-dialog/src/dialog.tsx:6:38)
+      at Object.<anonymous> (../fe/node_modules/cmdk/dist/index.js:1:961)
+      at Object.<anonymous> (src/components/ui/command.jsx:2:1)
+      at Object.<anonymous> (src/components/KNSelect.jsx:43:1)
+      at Object.<anonymous> (src/components/LocationFields.jsx:23:1)
+      at Object.<anonymous> (src/features/crm/CustomerFormModal.jsx:2:1)
+      at Object.<anonymous> (src/features/pos/CreateCustomerModal.jsx:3:1)
+      at Object.<anonymous> (src/features/__tests__/phase3P3.test.js:6:1)
+
+FAIL src/features/__tests__/prepBInitialRegistration.test.js
+  ● Test suite failed to run
+
+    Cannot find module '@radix-ui/primitive/is-development' from '../fe/node_modules/cmdk/node_modules/@radix-ui/react-use-controllable-state/dist/index.js'
+
+    Require stack:
+      /tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/fe/node_modules/cmdk/node_modules/@radix-ui/react-use-controllable-state/dist/index.js
+      /tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/fe/node_modules/cmdk/node_modules/@radix-ui/react-dialog/dist/index.js
+      /tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/fe/node_modules/cmdk/dist/index.js
+      src/components/ui/command.jsx
+      src/components/KNSelect.jsx
+      src/features/wms/StockOpnameTab.jsx
+      src/features/__tests__/prepBInitialRegistration.test.js
+
+    [0m [90m 1 |[39m [36mimport[39m [33m*[39m [36mas[39m [33mReact[39m [36mfrom[39m [32m"react"[39m
+    [31m[1m>[22m[39m[90m 2 |[39m [36mimport[39m { [33mCommand[39m [36mas[39m [33mCommandPrimitive[39m } [36mfrom[39m [32m"cmdk"[39m
+     [90m   |[39m [31m[1m^[22m[39m
+     [90m 3 |[39m [36mimport[39m { [33mSearch[39m } [36mfrom[39m [32m"lucide-react"[39m
+     [90m 4 |[39m
+     [90m 5 |[39m [36mimport[39m { cn } [36mfrom[39m [32m"@/lib/utils"[39m[0m
+
+      at Resolver.resolveModule (../fe/node_modules/jest-resolve/build/resolver.js:324:11)
+      at Object.<anonymous> (../fe/node_modules/cmdk/node_modules/@radix-ui/react-use-controllable-state/src/use-controllable-state.tsx:2:32)
+      at Object.<anonymous> (../fe/node_modules/cmdk/node_modules/@radix-ui/react-dialog/src/dialog.tsx:6:38)
+      at Object.<anonymous> (../fe/node_modules/cmdk/dist/index.js:1:961)
+      at Object.<anonymous> (src/components/ui/command.jsx:2:1)
+      at Object.<anonymous> (src/components/KNSelect.jsx:43:1)
+      at Object.<anonymous> (src/features/wms/StockOpnameTab.jsx:18:1)
+      at Object.<anonymous> (src/features/__tests__/prepBInitialRegistration.test.js:7:1)
+
+FAIL src/features/__tests__/phase4R1.test.js
+  ● Test suite failed to run
+
+    Cannot find module '@radix-ui/primitive/is-development' from '../fe/node_modules/cmdk/node_modules/@radix-ui/react-use-controllable-state/dist/index.js'
+
+    Require stack:
+      /tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/fe/node_modules/cmdk/node_modules/@radix-ui/react-use-controllable-state/dist/index.js
+      /tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/fe/node_modules/cmdk/node_modules/@radix-ui/react-dialog/dist/index.js
+      /tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/fe/node_modules/cmdk/dist/index.js
+      src/components/ui/command.jsx
+      src/components/KNSelect.jsx
+      src/features/crm/ARReceiptModal.jsx
+      src/features/__tests__/phase4R1.test.js
+
+    [0m [90m 1 |[39m [36mimport[39m [33m*[39m [36mas[39m [33mReact[39m [36mfrom[39m [32m"react"[39m
+    [31m[1m>[22m[39m[90m 2 |[39m [36mimport[39m { [33mCommand[39m [36mas[39m [33mCommandPrimitive[39m } [36mfrom[39m [32m"cmdk"[39m
+     [90m   |[39m [31m[1m^[22m[39m
+     [90m 3 |[39m [36mimport[39m { [33mSearch[39m } [36mfrom[39m [32m"lucide-react"[39m
+     [90m 4 |[39m
+     [90m 5 |[39m [36mimport[39m { cn } [36mfrom[39m [32m"@/lib/utils"[39m[0m
+
+      at Resolver.resolveModule (../fe/node_modules/jest-resolve/build/resolver.js:324:11)
+      at Object.<anonymous> (../fe/node_modules/cmdk/node_modules/@radix-ui/react-use-controllable-state/src/use-controllable-state.tsx:2:32)
+      at Object.<anonymous> (../fe/node_modules/cmdk/node_modules/@radix-ui/react-dialog/src/dialog.tsx:6:38)
+      at Object.<anonymous> (../fe/node_modules/cmdk/dist/index.js:1:961)
+      at Object.<anonymous> (src/components/ui/command.jsx:2:1)
+      at Object.<anonymous> (src/components/KNSelect.jsx:43:1)
+      at Object.<anonymous> (src/features/crm/ARReceiptModal.jsx:18:1)
+      at Object.<anonymous> (src/features/__tests__/phase4R1.test.js:6:1)
+
+FAIL src/features/__tests__/f11LayarOperatorView.test.js
+  ● Test suite failed to run
+
+    Cannot find module '@radix-ui/primitive/is-development' from '../fe/node_modules/cmdk/node_modules/@radix-ui/react-use-controllable-state/dist/index.js'
+
+    Require stack:
+      /tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/fe/node_modules/cmdk/node_modules/@radix-ui/react-use-controllable-state/dist/index.js
+      /tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/fe/node_modules/cmdk/node_modules/@radix-ui/react-dialog/dist/index.js
+      /tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/fe/node_modules/cmdk/dist/index.js
+      src/components/ui/command.jsx
+      src/components/KNSelect.jsx
+      src/features/sales/ReturnShipmentPanel.jsx
+      src/features/sales/ReturnDetail.jsx
+      src/features/sales/SalesReturns.jsx
+      src/features/__tests__/f11LayarOperatorView.test.js
+
+    [0m [90m 1 |[39m [36mimport[39m [33m*[39m [36mas[39m [33mReact[39m [36mfrom[39m [32m"react"[39m
+    [31m[1m>[22m[39m[90m 2 |[39m [36mimport[39m { [33mCommand[39m [36mas[39m [33mCommandPrimitive[39m } [36mfrom[39m [32m"cmdk"[39m
+     [90m   |[39m [31m[1m^[22m[39m
+     [90m 3 |[39m [36mimport[39m { [33mSearch[39m } [36mfrom[39m [32m"lucide-react"[39m
+     [90m 4 |[39m
+     [90m 5 |[39m [36mimport[39m { cn } [36mfrom[39m [32m"@/lib/utils"[39m[0m
+
+      at Resolver.resolveModule (../fe/node_modules/jest-resolve/build/resolver.js:324:11)
+      at Object.<anonymous> (../fe/node_modules/cmdk/node_modules/@radix-ui/react-use-controllable-state/src/use-controllable-state.tsx:2:32)
+      at Object.<anonymous> (../fe/node_modules/cmdk/node_modules/@radix-ui/react-dialog/src/dialog.tsx:6:38)
+      at Object.<anonymous> (../fe/node_modules/cmdk/dist/index.js:1:961)
+      at Object.<anonymous> (src/components/ui/command.jsx:2:1)
+      at Object.<anonymous> (src/components/KNSelect.jsx:43:1)
+      at Object.<anonymous> (src/features/sales/ReturnShipmentPanel.jsx:9:1)
+      at Object.<anonymous> (src/features/sales/ReturnDetail.jsx:19:1)
+      at Object.<anonymous> (src/features/sales/SalesReturns.jsx:24:1)
+      at Object.<anonymous> (src/features/__tests__/f11LayarOperatorView.test.js:7:1)
+
+FAIL src/features/__tests__/uatV3UiGaps.test.js
+  ● Test suite failed to run
+
+    Cannot find module '@radix-ui/primitive/is-development' from '../fe/node_modules/cmdk/node_modules/@radix-ui/react-use-controllable-state/dist/index.js'
+
+    Require stack:
+      /tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/fe/node_modules/cmdk/node_modules/@radix-ui/react-use-controllable-state/dist/index.js
+      /tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/fe/node_modules/cmdk/node_modules/@radix-ui/react-dialog/dist/index.js
+      /tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/fe/node_modules/cmdk/dist/index.js
+      src/components/ui/command.jsx
+      src/components/KNSelect.jsx
+      src/components/TableFilter.jsx
+      src/features/sales_admin/DeskQueueCard.jsx
+      src/features/__tests__/uatV3UiGaps.test.js
+
+    [0m [90m 1 |[39m [36mimport[39m [33m*[39m [36mas[39m [33mReact[39m [36mfrom[39m [32m"react"[39m
+    [31m[1m>[22m[39m[90m 2 |[39m [36mimport[39m { [33mCommand[39m [36mas[39m [33mCommandPrimitive[39m } [36mfrom[39m [32m"cmdk"[39m
+     [90m   |[39m [31m[1m^[22m[39m
+     [90m 3 |[39m [36mimport[39m { [33mSearch[39m } [36mfrom[39m [32m"lucide-react"[39m
+     [90m 4 |[39m
+     [90m 5 |[39m [36mimport[39m { cn } [36mfrom[39m [32m"@/lib/utils"[39m[0m
+
+      at Resolver.resolveModule (../fe/node_modules/jest-resolve/build/resolver.js:324:11)
+      at Object.<anonymous> (../fe/node_modules/cmdk/node_modules/@radix-ui/react-use-controllable-state/src/use-controllable-state.tsx:2:32)
+      at Object.<anonymous> (../fe/node_modules/cmdk/node_modules/@radix-ui/react-dialog/src/dialog.tsx:6:38)
+      at Object.<anonymous> (../fe/node_modules/cmdk/dist/index.js:1:961)
+      at Object.<anonymous> (src/components/ui/command.jsx:2:1)
+      at Object.<anonymous> (src/components/KNSelect.jsx:43:1)
+      at Object.<anonymous> (src/components/TableFilter.jsx:3:1)
+      at Object.<anonymous> (src/features/sales_admin/DeskQueueCard.jsx:27:1)
+      at Object.<anonymous> (src/features/__tests__/uatV3UiGaps.test.js:6:1)
+
+FAIL src/features/__tests__/audit2G2.test.js
+  ● Test suite failed to run
+
+    Cannot find module '@radix-ui/primitive/is-development' from '../fe/node_modules/cmdk/node_modules/@radix-ui/react-use-controllable-state/dist/index.js'
+
+    Require stack:
+      /tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/fe/node_modules/cmdk/node_modules/@radix-ui/react-use-controllable-state/dist/index.js
+      /tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/fe/node_modules/cmdk/node_modules/@radix-ui/react-dialog/dist/index.js
+      /tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/fe/node_modules/cmdk/dist/index.js
+      src/components/ui/command.jsx
+      src/components/KNSelect.jsx
+      src/components/LocationFields.jsx
+      src/features/crm/CustomerFormModal.jsx
+      src/features/pos/CreateCustomerModal.jsx
+      src/features/__tests__/audit2G2.test.js
+
+    [0m [90m 1 |[39m [36mimport[39m [33m*[39m [36mas[39m [33mReact[39m [36mfrom[39m [32m"react"[39m
+    [31m[1m>[22m[39m[90m 2 |[39m [36mimport[39m { [33mCommand[39m [36mas[39m [33mCommandPrimitive[39m } [36mfrom[39m [32m"cmdk"[39m
+     [90m   |[39m [31m[1m^[22m[39m
+     [90m 3 |[39m [36mimport[39m { [33mSearch[39m } [36mfrom[39m [32m"lucide-react"[39m
+     [90m 4 |[39m
+     [90m 5 |[39m [36mimport[39m { cn } [36mfrom[39m [32m"@/lib/utils"[39m[0m
+
+      at Resolver.resolveModule (../fe/node_modules/jest-resolve/build/resolver.js:324:11)
+      at Object.<anonymous> (../fe/node_modules/cmdk/node_modules/@radix-ui/react-use-controllable-state/src/use-controllable-state.tsx:2:32)
+      at Object.<anonymous> (../fe/node_modules/cmdk/node_modules/@radix-ui/react-dialog/src/dialog.tsx:6:38)
+      at Object.<anonymous> (../fe/node_modules/cmdk/dist/index.js:1:961)
+      at Object.<anonymous> (src/components/ui/command.jsx:2:1)
+      at Object.<anonymous> (src/components/KNSelect.jsx:43:1)
+      at Object.<anonymous> (src/components/LocationFields.jsx:23:1)
+      at Object.<anonymous> (src/features/crm/CustomerFormModal.jsx:2:1)
+      at Object.<anonymous> (src/features/pos/CreateCustomerModal.jsx:3:1)
+      at Object.<anonymous> (src/features/__tests__/audit2G2.test.js:5:1)
+
+FAIL src/features/__tests__/decisionsD1.test.js
+  ● Test suite failed to run
+
+    Cannot find module '@radix-ui/primitive/is-development' from '../fe/node_modules/cmdk/node_modules/@radix-ui/react-use-controllable-state/dist/index.js'
+
+    Require stack:
+      /tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/fe/node_modules/cmdk/node_modules/@radix-ui/react-use-controllable-state/dist/index.js
+      /tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/fe/node_modules/cmdk/node_modules/@radix-ui/react-dialog/dist/index.js
+      /tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/fe/node_modules/cmdk/dist/index.js
+      src/components/ui/command.jsx
+      src/components/KNSelect.jsx
+      src/features/finance/cases/CaseCreateModal.jsx
+      src/features/__tests__/decisionsD1.test.js
+
+    [0m [90m 1 |[39m [36mimport[39m [33m*[39m [36mas[39m [33mReact[39m [36mfrom[39m [32m"react"[39m
+    [31m[1m>[22m[39m[90m 2 |[39m [36mimport[39m { [33mCommand[39m [36mas[39m [33mCommandPrimitive[39m } [36mfrom[39m [32m"cmdk"[39m
+     [90m   |[39m [31m[1m^[22m[39m
+     [90m 3 |[39m [36mimport[39m { [33mSearch[39m } [36mfrom[39m [32m"lucide-react"[39m
+     [90m 4 |[39m
+     [90m 5 |[39m [36mimport[39m { cn } [36mfrom[39m [32m"@/lib/utils"[39m[0m
+
+      at Resolver.resolveModule (../fe/node_modules/jest-resolve/build/resolver.js:324:11)
+      at Object.<anonymous> (../fe/node_modules/cmdk/node_modules/@radix-ui/react-use-controllable-state/src/use-controllable-state.tsx:2:32)
+      at Object.<anonymous> (../fe/node_modules/cmdk/node_modules/@radix-ui/react-dialog/src/dialog.tsx:6:38)
+      at Object.<anonymous> (../fe/node_modules/cmdk/dist/index.js:1:961)
+      at Object.<anonymous> (src/components/ui/command.jsx:2:1)
+      at Object.<anonymous> (src/components/KNSelect.jsx:43:1)
+      at Object.<anonymous> (src/features/finance/cases/CaseCreateModal.jsx:17:1)
+      at Object.<anonymous> (src/features/__tests__/decisionsD1.test.js:8:1)
+
+FAIL src/features/__tests__/roleGateSweep2.test.js
+  ● Test suite failed to run
+
+    Cannot find module '@radix-ui/primitive/is-development' from '../fe/node_modules/cmdk/node_modules/@radix-ui/react-use-controllable-state/dist/index.js'
+
+    Require stack:
+      /tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/fe/node_modules/cmdk/node_modules/@radix-ui/react-use-controllable-state/dist/index.js
+      /tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/fe/node_modules/cmdk/node_modules/@radix-ui/react-dialog/dist/index.js
+      /tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/fe/node_modules/cmdk/dist/index.js
+      src/components/ui/command.jsx
+      src/components/KNSelect.jsx
+      src/features/pettycash/CashAdvanceDetail.jsx
+      src/features/__tests__/roleGateSweep2.test.js
+
+    [0m [90m 1 |[39m [36mimport[39m [33m*[39m [36mas[39m [33mReact[39m [36mfrom[39m [32m"react"[39m
+    [31m[1m>[22m[39m[90m 2 |[39m [36mimport[39m { [33mCommand[39m [36mas[39m [33mCommandPrimitive[39m } [36mfrom[39m [32m"cmdk"[39m
+     [90m   |[39m [31m[1m^[22m[39m
+     [90m 3 |[39m [36mimport[39m { [33mSearch[39m } [36mfrom[39m [32m"lucide-react"[39m
+     [90m 4 |[39m
+     [90m 5 |[39m [36mimport[39m { cn } [36mfrom[39m [32m"@/lib/utils"[39m[0m
+
+      at Resolver.resolveModule (../fe/node_modules/jest-resolve/build/resolver.js:324:11)
+      at Object.<anonymous> (../fe/node_modules/cmdk/node_modules/@radix-ui/react-use-controllable-state/src/use-controllable-state.tsx:2:32)
+      at Object.<anonymous> (../fe/node_modules/cmdk/node_modules/@radix-ui/react-dialog/src/dialog.tsx:6:38)
+      at Object.<anonymous> (../fe/node_modules/cmdk/dist/index.js:1:961)
+      at Object.<anonymous> (src/components/ui/command.jsx:2:1)
+      at Object.<anonymous> (src/components/KNSelect.jsx:43:1)
+      at Object.<anonymous> (src/features/pettycash/CashAdvanceDetail.jsx:9:1)
+      at Object.<anonymous> (src/features/__tests__/roleGateSweep2.test.js:6:1)
+
+FAIL src/features/__tests__/f10DispatchPaymentGate.test.js
+  ● Test suite failed to run
+
+    Cannot find module '@radix-ui/primitive/is-development' from '../fe/node_modules/cmdk/node_modules/@radix-ui/react-use-controllable-state/dist/index.js'
+
+    Require stack:
+      /tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/fe/node_modules/cmdk/node_modules/@radix-ui/react-use-controllable-state/dist/index.js
+      /tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/fe/node_modules/cmdk/node_modules/@radix-ui/react-dialog/dist/index.js
+      /tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/fe/node_modules/cmdk/dist/index.js
+      src/components/ui/command.jsx
+      src/components/KNSelect.jsx
+      src/features/crm/ARReceiptModal.jsx
+      src/features/orders/DispatchPaymentGatePanel.jsx
+      src/features/__tests__/f10DispatchPaymentGate.test.js
+
+    [0m [90m 1 |[39m [36mimport[39m [33m*[39m [36mas[39m [33mReact[39m [36mfrom[39m [32m"react"[39m
+    [31m[1m>[22m[39m[90m 2 |[39m [36mimport[39m { [33mCommand[39m [36mas[39m [33mCommandPrimitive[39m } [36mfrom[39m [32m"cmdk"[39m
+     [90m   |[39m [31m[1m^[22m[39m
+     [90m 3 |[39m [36mimport[39m { [33mSearch[39m } [36mfrom[39m [32m"lucide-react"[39m
+     [90m 4 |[39m
+     [90m 5 |[39m [36mimport[39m { cn } [36mfrom[39m [32m"@/lib/utils"[39m[0m
+
+      at Resolver.resolveModule (../fe/node_modules/jest-resolve/build/resolver.js:324:11)
+      at Object.<anonymous> (../fe/node_modules/cmdk/node_modules/@radix-ui/react-use-controllable-state/src/use-controllable-state.tsx:2:32)
+      at Object.<anonymous> (../fe/node_modules/cmdk/node_modules/@radix-ui/react-dialog/src/dialog.tsx:6:38)
+      at Object.<anonymous> (../fe/node_modules/cmdk/dist/index.js:1:961)
+      at Object.<anonymous> (src/components/ui/command.jsx:2:1)
+      at Object.<anonymous> (src/components/KNSelect.jsx:43:1)
+      at Object.<anonymous> (src/features/crm/ARReceiptModal.jsx:18:1)
+      at Object.<anonymous> (src/features/orders/DispatchPaymentGatePanel.jsx:13:1)
+      at Object.<anonymous> (src/features/__tests__/f10DispatchPaymentGate.test.js:6:1)
+
+FAIL src/features/__tests__/phase3P4Popups.test.js
+  ● Test suite failed to run
+
+    Cannot find module '@radix-ui/primitive/is-development' from '../fe/node_modules/cmdk/node_modules/@radix-ui/react-use-controllable-state/dist/index.js'
+
+    Require stack:
+      /tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/fe/node_modules/cmdk/node_modules/@radix-ui/react-use-controllable-state/dist/index.js
+      /tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/fe/node_modules/cmdk/node_modules/@radix-ui/react-dialog/dist/index.js
+      /tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/fe/node_modules/cmdk/dist/index.js
+      src/components/ui/command.jsx
+      src/components/KNSelect.jsx
+      src/features/finance/FixedAssetsParts.jsx
+      src/features/finance/FixedAssetsView.jsx
+      src/features/__tests__/phase3P4Popups.test.js
+
+    [0m [90m 1 |[39m [36mimport[39m [33m*[39m [36mas[39m [33mReact[39m [36mfrom[39m [32m"react"[39m
+    [31m[1m>[22m[39m[90m 2 |[39m [36mimport[39m { [33mCommand[39m [36mas[39m [33mCommandPrimitive[39m } [36mfrom[39m [32m"cmdk"[39m
+     [90m   |[39m [31m[1m^[22m[39m
+     [90m 3 |[39m [36mimport[39m { [33mSearch[39m } [36mfrom[39m [32m"lucide-react"[39m
+     [90m 4 |[39m
+     [90m 5 |[39m [36mimport[39m { cn } [36mfrom[39m [32m"@/lib/utils"[39m[0m
+
+      at Resolver.resolveModule (../fe/node_modules/jest-resolve/build/resolver.js:324:11)
+      at Object.<anonymous> (../fe/node_modules/cmdk/node_modules/@radix-ui/react-use-controllable-state/src/use-controllable-state.tsx:2:32)
+      at Object.<anonymous> (../fe/node_modules/cmdk/node_modules/@radix-ui/react-dialog/src/dialog.tsx:6:38)
+      at Object.<anonymous> (../fe/node_modules/cmdk/dist/index.js:1:961)
+      at Object.<anonymous> (src/components/ui/command.jsx:2:1)
+      at Object.<anonymous> (src/components/KNSelect.jsx:43:1)
+      at Object.<anonymous> (src/features/finance/FixedAssetsParts.jsx:18:1)
+      at Object.<anonymous> (src/features/finance/FixedAssetsView.jsx:29:1)
+      at Object.<anonymous> (src/features/__tests__/phase3P4Popups.test.js:5:1)
+
+FAIL src/features/__tests__/mkl02RecapPaging.test.js
+  ● Test suite failed to run
+
+    Cannot find module '@radix-ui/primitive/is-development' from '../fe/node_modules/cmdk/node_modules/@radix-ui/react-use-controllable-state/dist/index.js'
+
+    Require stack:
+      /tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/fe/node_modules/cmdk/node_modules/@radix-ui/react-use-controllable-state/dist/index.js
+      /tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/fe/node_modules/cmdk/node_modules/@radix-ui/react-dialog/dist/index.js
+      /tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/fe/node_modules/cmdk/dist/index.js
+      src/components/ui/command.jsx
+      src/components/KNSelect.jsx
+      src/features/purchasing/makloon/MakloonClaimRecapView.jsx
+      src/features/__tests__/mkl02RecapPaging.test.js
+
+    [0m [90m 1 |[39m [36mimport[39m [33m*[39m [36mas[39m [33mReact[39m [36mfrom[39m [32m"react"[39m
+    [31m[1m>[22m[39m[90m 2 |[39m [36mimport[39m { [33mCommand[39m [36mas[39m [33mCommandPrimitive[39m } [36mfrom[39m [32m"cmdk"[39m
+     [90m   |[39m [31m[1m^[22m[39m
+     [90m 3 |[39m [36mimport[39m { [33mSearch[39m } [36mfrom[39m [32m"lucide-react"[39m
+     [90m 4 |[39m
+     [90m 5 |[39m [36mimport[39m { cn } [36mfrom[39m [32m"@/lib/utils"[39m[0m
+
+      at Resolver.resolveModule (../fe/node_modules/jest-resolve/build/resolver.js:324:11)
+      at Object.<anonymous> (../fe/node_modules/cmdk/node_modules/@radix-ui/react-use-controllable-state/src/use-controllable-state.tsx:2:32)
+      at Object.<anonymous> (../fe/node_modules/cmdk/node_modules/@radix-ui/react-dialog/src/dialog.tsx:6:38)
+      at Object.<anonymous> (../fe/node_modules/cmdk/dist/index.js:1:961)
+      at Object.<anonymous> (src/components/ui/command.jsx:2:1)
+      at Object.<anonymous> (src/components/KNSelect.jsx:43:1)
+      at Object.<anonymous> (src/features/purchasing/makloon/MakloonClaimRecapView.jsx:5:1)
+      at Object.<anonymous> (src/features/__tests__/mkl02RecapPaging.test.js:5:1)
+
+A worker process has failed to exit gracefully and has been force exited. This is likely caused by tests leaking due to improper teardown. Try running with --detectOpenHandles to find leaks. Active timers can also cause this, ensure that .unref() was called on them.
+Summary of all failing tests
+FAIL src/features/__tests__/phase4R2.test.js
+  ● Test suite failed to run
+
+    Cannot find module '@radix-ui/primitive/is-development' from '../fe/node_modules/cmdk/node_modules/@radix-ui/react-use-controllable-state/dist/index.js'
+
+    Require stack:
+      /tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/fe/node_modules/cmdk/node_modules/@radix-ui/react-use-controllable-state/dist/index.js
+      /tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/fe/node_modules/cmdk/node_modules/@radix-ui/react-dialog/dist/index.js
+      /tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/fe/node_modules/cmdk/dist/index.js
+      src/components/ui/command.jsx
+      src/components/KNSelect.jsx
+      src/features/purchasing/contrabon/DecisionModal.jsx
+      src/features/__tests__/phase4R2.test.js
+
+    [0m [90m 1 |[39m [36mimport[39m [33m*[39m [36mas[39m [33mReact[39m [36mfrom[39m [32m"react"[39m
+    [31m[1m>[22m[39m[90m 2 |[39m [36mimport[39m { [33mCommand[39m [36mas[39m [33mCommandPrimitive[39m } [36mfrom[39m [32m"cmdk"[39m
+     [90m   |[39m [31m[1m^[22m[39m
+     [90m 3 |[39m [36mimport[39m { [33mSearch[39m } [36mfrom[39m [32m"lucide-react"[39m
+     [90m 4 |[39m
+     [90m 5 |[39m [36mimport[39m { cn } [36mfrom[39m [32m"@/lib/utils"[39m[0m
+
+      at Resolver.resolveModule (../fe/node_modules/jest-resolve/build/resolver.js:324:11)
+      at Object.<anonymous> (../fe/node_modules/cmdk/node_modules/@radix-ui/react-use-controllable-state/src/use-controllable-state.tsx:2:32)
+      at Object.<anonymous> (../fe/node_modules/cmdk/node_modules/@radix-ui/react-dialog/src/dialog.tsx:6:38)
+      at Object.<anonymous> (../fe/node_modules/cmdk/dist/index.js:1:961)
+      at Object.<anonymous> (src/components/ui/command.jsx:2:1)
+      at Object.<anonymous> (src/components/KNSelect.jsx:43:1)
+      at Object.<anonymous> (src/features/purchasing/contrabon/DecisionModal.jsx:20:1)
+      at Object.<anonymous> (src/features/__tests__/phase4R2.test.js:5:1)
+
+FAIL src/features/__tests__/fix3bForms.test.js
+  ● Test suite failed to run
+
+    Cannot find module '@radix-ui/primitive/is-development' from '../fe/node_modules/cmdk/node_modules/@radix-ui/react-use-controllable-state/dist/index.js'
+
+    Require stack:
+      /tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/fe/node_modules/cmdk/node_modules/@radix-ui/react-use-controllable-state/dist/index.js
+      /tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/fe/node_modules/cmdk/node_modules/@radix-ui/react-dialog/dist/index.js
+      /tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/fe/node_modules/cmdk/dist/index.js
+      src/components/ui/command.jsx
+      src/components/KNSelect.jsx
+      src/features/mobile/MobileTaskActions.jsx
+      src/features/__tests__/fix3bForms.test.js
+
+    [0m [90m 1 |[39m [36mimport[39m [33m*[39m [36mas[39m [33mReact[39m [36mfrom[39m [32m"react"[39m
+    [31m[1m>[22m[39m[90m 2 |[39m [36mimport[39m { [33mCommand[39m [36mas[39m [33mCommandPrimitive[39m } [36mfrom[39m [32m"cmdk"[39m
+     [90m   |[39m [31m[1m^[22m[39m
+     [90m 3 |[39m [36mimport[39m { [33mSearch[39m } [36mfrom[39m [32m"lucide-react"[39m
+     [90m 4 |[39m
+     [90m 5 |[39m [36mimport[39m { cn } [36mfrom[39m [32m"@/lib/utils"[39m[0m
+
+      at Resolver.resolveModule (../fe/node_modules/jest-resolve/build/resolver.js:324:11)
+      at Object.<anonymous> (../fe/node_modules/cmdk/node_modules/@radix-ui/react-use-controllable-state/src/use-controllable-state.tsx:2:32)
+      at Object.<anonymous> (../fe/node_modules/cmdk/node_modules/@radix-ui/react-dialog/src/dialog.tsx:6:38)
+      at Object.<anonymous> (../fe/node_modules/cmdk/dist/index.js:1:961)
+      at Object.<anonymous> (src/components/ui/command.jsx:2:1)
+      at Object.<anonymous> (src/components/KNSelect.jsx:43:1)
+      at Object.<anonymous> (src/features/mobile/MobileTaskActions.jsx:10:1)
+      at Object.<anonymous> (src/features/__tests__/fix3bForms.test.js:6:1)
+
+FAIL src/features/__tests__/fix1Cakupan.test.js
+  ● Test suite failed to run
+
+    Cannot find module '@radix-ui/primitive/is-development' from '../fe/node_modules/cmdk/node_modules/@radix-ui/react-use-controllable-state/dist/index.js'
+
+    Require stack:
+      /tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/fe/node_modules/cmdk/node_modules/@radix-ui/react-use-controllable-state/dist/index.js
+      /tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/fe/node_modules/cmdk/node_modules/@radix-ui/react-dialog/dist/index.js
+      /tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/fe/node_modules/cmdk/dist/index.js
+      src/components/ui/command.jsx
+      src/components/KNSelect.jsx
+      src/features/samples/CatalogueCreateModal.jsx
+      src/components/SampleKindChooser.jsx
+      src/features/sales/mobile/MobileQuickView.jsx
+      src/features/sales/mobile/MobileCatalog.jsx
+      src/features/sales/mobile/MobileSalesApp.jsx
+      src/features/mobile/MobileAppSwitch.jsx
+      src/features/__tests__/fix1Cakupan.test.js
+
+    [0m [90m 1 |[39m [36mimport[39m [33m*[39m [36mas[39m [33mReact[39m [36mfrom[39m [32m"react"[39m
+    [31m[1m>[22m[39m[90m 2 |[39m [36mimport[39m { [33mCommand[39m [36mas[39m [33mCommandPrimitive[39m } [36mfrom[39m [32m"cmdk"[39m
+     [90m   |[39m [31m[1m^[22m[39m
+     [90m 3 |[39m [36mimport[39m { [33mSearch[39m } [36mfrom[39m [32m"lucide-react"[39m
+     [90m 4 |[39m
+     [90m 5 |[39m [36mimport[39m { cn } [36mfrom[39m [32m"@/lib/utils"[39m[0m
+
+      at Resolver.resolveModule (../fe/node_modules/jest-resolve/build/resolver.js:324:11)
+      at Object.<anonymous> (../fe/node_modules/cmdk/node_modules/@radix-ui/react-use-controllable-state/src/use-controllable-state.tsx:2:32)
+      at Object.<anonymous> (../fe/node_modules/cmdk/node_modules/@radix-ui/react-dialog/src/dialog.tsx:6:38)
+      at Object.<anonymous> (../fe/node_modules/cmdk/dist/index.js:1:961)
+      at Object.<anonymous> (src/components/ui/command.jsx:2:1)
+      at Object.<anonymous> (src/components/KNSelect.jsx:43:1)
+      at Object.<anonymous> (src/features/samples/CatalogueCreateModal.jsx:6:1)
+      at Object.<anonymous> (src/components/SampleKindChooser.jsx:6:1)
+      at Object.<anonymous> (src/features/sales/mobile/MobileQuickView.jsx:13:1)
+      at Object.<anonymous> (src/features/sales/mobile/MobileCatalog.jsx:8:1)
+
+FAIL src/features/__tests__/phase3P5.test.js
+  ● Test suite failed to run
+
+    Cannot find module '@radix-ui/primitive/is-development' from '../fe/node_modules/cmdk/node_modules/@radix-ui/react-use-controllable-state/dist/index.js'
+
+    Require stack:
+      /tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/fe/node_modules/cmdk/node_modules/@radix-ui/react-use-controllable-state/dist/index.js
+      /tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/fe/node_modules/cmdk/node_modules/@radix-ui/react-dialog/dist/index.js
+      /tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/fe/node_modules/cmdk/dist/index.js
+      src/components/ui/command.jsx
+      src/components/KNSelect.jsx
+      src/features/wms/StockOpnameTab.jsx
+      src/features/__tests__/phase3P5.test.js
+
+    [0m [90m 1 |[39m [36mimport[39m [33m*[39m [36mas[39m [33mReact[39m [36mfrom[39m [32m"react"[39m
+    [31m[1m>[22m[39m[90m 2 |[39m [36mimport[39m { [33mCommand[39m [36mas[39m [33mCommandPrimitive[39m } [36mfrom[39m [32m"cmdk"[39m
+     [90m   |[39m [31m[1m^[22m[39m
+     [90m 3 |[39m [36mimport[39m { [33mSearch[39m } [36mfrom[39m [32m"lucide-react"[39m
+     [90m 4 |[39m
+     [90m 5 |[39m [36mimport[39m { cn } [36mfrom[39m [32m"@/lib/utils"[39m[0m
+
+      at Resolver.resolveModule (../fe/node_modules/jest-resolve/build/resolver.js:324:11)
+      at Object.<anonymous> (../fe/node_modules/cmdk/node_modules/@radix-ui/react-use-controllable-state/src/use-controllable-state.tsx:2:32)
+      at Object.<anonymous> (../fe/node_modules/cmdk/node_modules/@radix-ui/react-dialog/src/dialog.tsx:6:38)
+      at Object.<anonymous> (../fe/node_modules/cmdk/dist/index.js:1:961)
+      at Object.<anonymous> (src/components/ui/command.jsx:2:1)
+      at Object.<anonymous> (src/components/KNSelect.jsx:43:1)
+      at Object.<anonymous> (src/features/wms/StockOpnameTab.jsx:18:1)
+      at Object.<anonymous> (src/features/__tests__/phase3P5.test.js:8:1)
+
+FAIL src/features/__tests__/mobileShell.test.js
+  ● Test suite failed to run
+
+    Cannot find module '@radix-ui/primitive/is-development' from '../fe/node_modules/cmdk/node_modules/@radix-ui/react-use-controllable-state/dist/index.js'
+
+    Require stack:
+      /tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/fe/node_modules/cmdk/node_modules/@radix-ui/react-use-controllable-state/dist/index.js
+      /tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/fe/node_modules/cmdk/node_modules/@radix-ui/react-dialog/dist/index.js
+      /tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/fe/node_modules/cmdk/dist/index.js
+      src/components/ui/command.jsx
+      src/components/KNSelect.jsx
+      src/components/NotificationCenter.jsx
+      src/features/sales/mobile/MobileNotifSheet.jsx
+      src/features/mobile/MobileShell.jsx
+      src/features/mobile/MobileOpsApp.jsx
+      src/features/__tests__/mobileShell.test.js
+
+    [0m [90m 1 |[39m [36mimport[39m [33m*[39m [36mas[39m [33mReact[39m [36mfrom[39m [32m"react"[39m
+    [31m[1m>[22m[39m[90m 2 |[39m [36mimport[39m { [33mCommand[39m [36mas[39m [33mCommandPrimitive[39m } [36mfrom[39m [32m"cmdk"[39m
+     [90m   |[39m [31m[1m^[22m[39m
+     [90m 3 |[39m [36mimport[39m { [33mSearch[39m } [36mfrom[39m [32m"lucide-react"[39m
+     [90m 4 |[39m
+     [90m 5 |[39m [36mimport[39m { cn } [36mfrom[39m [32m"@/lib/utils"[39m[0m
+
+      at Resolver.resolveModule (../fe/node_modules/jest-resolve/build/resolver.js:324:11)
+      at Object.<anonymous> (../fe/node_modules/cmdk/node_modules/@radix-ui/react-use-controllable-state/src/use-controllable-state.tsx:2:32)
+      at Object.<anonymous> (../fe/node_modules/cmdk/node_modules/@radix-ui/react-dialog/src/dialog.tsx:6:38)
+      at Object.<anonymous> (../fe/node_modules/cmdk/dist/index.js:1:961)
+      at Object.<anonymous> (src/components/ui/command.jsx:2:1)
+      at Object.<anonymous> (src/components/KNSelect.jsx:43:1)
+      at Object.<anonymous> (src/components/NotificationCenter.jsx:3:1)
+      at Object.<anonymous> (src/features/sales/mobile/MobileNotifSheet.jsx:3:1)
+      at Object.<anonymous> (src/features/mobile/MobileShell.jsx:23:1)
+      at Object.<anonymous> (src/features/mobile/MobileOpsApp.jsx:7:1)
+
+FAIL src/features/__tests__/phase3Settings.test.js
+  ● Test suite failed to run
+
+    Cannot find module '@radix-ui/primitive/is-development' from '../fe/node_modules/cmdk/node_modules/@radix-ui/react-use-controllable-state/dist/index.js'
+
+    Require stack:
+      /tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/fe/node_modules/cmdk/node_modules/@radix-ui/react-use-controllable-state/dist/index.js
+      /tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/fe/node_modules/cmdk/node_modules/@radix-ui/react-dialog/dist/index.js
+      /tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/fe/node_modules/cmdk/dist/index.js
+      src/components/ui/command.jsx
+      src/components/KNSelect.jsx
+      src/features/settings/masters/EntityMasterKindPanel.jsx
+      src/features/pettycash/ExpenseCategoriesView.jsx
+      src/features/__tests__/phase3Settings.test.js
+
+    [0m [90m 1 |[39m [36mimport[39m [33m*[39m [36mas[39m [33mReact[39m [36mfrom[39m [32m"react"[39m
+    [31m[1m>[22m[39m[90m 2 |[39m [36mimport[39m { [33mCommand[39m [36mas[39m [33mCommandPrimitive[39m } [36mfrom[39m [32m"cmdk"[39m
+     [90m   |[39m [31m[1m^[22m[39m
+     [90m 3 |[39m [36mimport[39m { [33mSearch[39m } [36mfrom[39m [32m"lucide-react"[39m
+     [90m 4 |[39m
+     [90m 5 |[39m [36mimport[39m { cn } [36mfrom[39m [32m"@/lib/utils"[39m[0m
+
+      at Resolver.resolveModule (../fe/node_modules/jest-resolve/build/resolver.js:324:11)
+      at Object.<anonymous> (../fe/node_modules/cmdk/node_modules/@radix-ui/react-use-controllable-state/src/use-controllable-state.tsx:2:32)
+      at Object.<anonymous> (../fe/node_modules/cmdk/node_modules/@radix-ui/react-dialog/src/dialog.tsx:6:38)
+      at Object.<anonymous> (../fe/node_modules/cmdk/dist/index.js:1:961)
+      at Object.<anonymous> (src/components/ui/command.jsx:2:1)
+      at Object.<anonymous> (src/components/KNSelect.jsx:43:1)
+      at Object.<anonymous> (src/features/settings/masters/EntityMasterKindPanel.jsx:25:1)
+      at Object.<anonymous> (src/features/pettycash/ExpenseCategoriesView.jsx:19:1)
+      at Object.<anonymous> (src/features/__tests__/phase3Settings.test.js:14:1)
+
+FAIL src/features/__tests__/uatV3SpecialOrder.test.js
+  ● Test suite failed to run
+
+    Cannot find module '@radix-ui/primitive/is-development' from '../fe/node_modules/cmdk/node_modules/@radix-ui/react-use-controllable-state/dist/index.js'
+
+    Require stack:
+      /tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/fe/node_modules/cmdk/node_modules/@radix-ui/react-use-controllable-state/dist/index.js
+      /tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/fe/node_modules/cmdk/node_modules/@radix-ui/react-dialog/dist/index.js
+      /tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/fe/node_modules/cmdk/dist/index.js
+      src/components/ui/command.jsx
+      src/components/KNSelect.jsx
+      src/features/rnd/DecideModal.jsx
+      src/features/__tests__/uatV3SpecialOrder.test.js
+
+    [0m [90m 1 |[39m [36mimport[39m [33m*[39m [36mas[39m [33mReact[39m [36mfrom[39m [32m"react"[39m
+    [31m[1m>[22m[39m[90m 2 |[39m [36mimport[39m { [33mCommand[39m [36mas[39m [33mCommandPrimitive[39m } [36mfrom[39m [32m"cmdk"[39m
+     [90m   |[39m [31m[1m^[22m[39m
+     [90m 3 |[39m [36mimport[39m { [33mSearch[39m } [36mfrom[39m [32m"lucide-react"[39m
+     [90m 4 |[39m
+     [90m 5 |[39m [36mimport[39m { cn } [36mfrom[39m [32m"@/lib/utils"[39m[0m
+
+      at Resolver.resolveModule (../fe/node_modules/jest-resolve/build/resolver.js:324:11)
+      at Object.<anonymous> (../fe/node_modules/cmdk/node_modules/@radix-ui/react-use-controllable-state/src/use-controllable-state.tsx:2:32)
+      at Object.<anonymous> (../fe/node_modules/cmdk/node_modules/@radix-ui/react-dialog/src/dialog.tsx:6:38)
+      at Object.<anonymous> (../fe/node_modules/cmdk/dist/index.js:1:961)
+      at Object.<anonymous> (src/components/ui/command.jsx:2:1)
+      at Object.<anonymous> (src/components/KNSelect.jsx:43:1)
+      at Object.<anonymous> (src/features/rnd/DecideModal.jsx:11:1)
+      at Object.<anonymous> (src/features/__tests__/uatV3SpecialOrder.test.js:9:1)
+
+FAIL src/features/__tests__/uatV3ReturnsOps.test.js
+  ● Test suite failed to run
+
+    Cannot find module '@radix-ui/primitive/is-development' from '../fe/node_modules/cmdk/node_modules/@radix-ui/react-use-controllable-state/dist/index.js'
+
+    Require stack:
+      /tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/fe/node_modules/cmdk/node_modules/@radix-ui/react-use-controllable-state/dist/index.js
+      /tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/fe/node_modules/cmdk/node_modules/@radix-ui/react-dialog/dist/index.js
+      /tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/fe/node_modules/cmdk/dist/index.js
+      src/components/ui/command.jsx
+      src/components/KNSelect.jsx
+      src/features/sales/ReturnSettleModal.jsx
+      src/features/__tests__/uatV3ReturnsOps.test.js
+
+    [0m [90m 1 |[39m [36mimport[39m [33m*[39m [36mas[39m [33mReact[39m [36mfrom[39m [32m"react"[39m
+    [31m[1m>[22m[39m[90m 2 |[39m [36mimport[39m { [33mCommand[39m [36mas[39m [33mCommandPrimitive[39m } [36mfrom[39m [32m"cmdk"[39m
+     [90m   |[39m [31m[1m^[22m[39m
+     [90m 3 |[39m [36mimport[39m { [33mSearch[39m } [36mfrom[39m [32m"lucide-react"[39m
+     [90m 4 |[39m
+     [90m 5 |[39m [36mimport[39m { cn } [36mfrom[39m [32m"@/lib/utils"[39m[0m
+
+      at Resolver.resolveModule (../fe/node_modules/jest-resolve/build/resolver.js:324:11)
+      at Object.<anonymous> (../fe/node_modules/cmdk/node_modules/@radix-ui/react-use-controllable-state/src/use-controllable-state.tsx:2:32)
+      at Object.<anonymous> (../fe/node_modules/cmdk/node_modules/@radix-ui/react-dialog/src/dialog.tsx:6:38)
+      at Object.<anonymous> (../fe/node_modules/cmdk/dist/index.js:1:961)
+      at Object.<anonymous> (src/components/ui/command.jsx:2:1)
+      at Object.<anonymous> (src/components/KNSelect.jsx:43:1)
+      at Object.<anonymous> (src/features/sales/ReturnSettleModal.jsx:11:1)
+      at Object.<anonymous> (src/features/__tests__/uatV3ReturnsOps.test.js:9:1)
+
+FAIL src/features/__tests__/decisionsD3.test.js
+  ● Test suite failed to run
+
+    Cannot find module '@radix-ui/primitive/is-development' from '../fe/node_modules/cmdk/node_modules/@radix-ui/react-use-controllable-state/dist/index.js'
+
+    Require stack:
+      /tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/fe/node_modules/cmdk/node_modules/@radix-ui/react-use-controllable-state/dist/index.js
+      /tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/fe/node_modules/cmdk/node_modules/@radix-ui/react-dialog/dist/index.js
+      /tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/fe/node_modules/cmdk/dist/index.js
+      src/components/ui/command.jsx
+      src/components/KNSelect.jsx
+      src/components/NotificationCenter.jsx
+      src/features/sales/mobile/MobileNotifSheet.jsx
+      src/features/mobile/MobileShell.jsx
+      src/features/mobile/MobileOpsApp.jsx
+      src/features/__tests__/decisionsD3.test.js
+
+    [0m [90m 1 |[39m [36mimport[39m [33m*[39m [36mas[39m [33mReact[39m [36mfrom[39m [32m"react"[39m
+    [31m[1m>[22m[39m[90m 2 |[39m [36mimport[39m { [33mCommand[39m [36mas[39m [33mCommandPrimitive[39m } [36mfrom[39m [32m"cmdk"[39m
+     [90m   |[39m [31m[1m^[22m[39m
+     [90m 3 |[39m [36mimport[39m { [33mSearch[39m } [36mfrom[39m [32m"lucide-react"[39m
+     [90m 4 |[39m
+     [90m 5 |[39m [36mimport[39m { cn } [36mfrom[39m [32m"@/lib/utils"[39m[0m
+
+      at Resolver.resolveModule (../fe/node_modules/jest-resolve/build/resolver.js:324:11)
+      at Object.<anonymous> (../fe/node_modules/cmdk/node_modules/@radix-ui/react-use-controllable-state/src/use-controllable-state.tsx:2:32)
+      at Object.<anonymous> (../fe/node_modules/cmdk/node_modules/@radix-ui/react-dialog/src/dialog.tsx:6:38)
+      at Object.<anonymous> (../fe/node_modules/cmdk/dist/index.js:1:961)
+      at Object.<anonymous> (src/components/ui/command.jsx:2:1)
+      at Object.<anonymous> (src/components/KNSelect.jsx:43:1)
+      at Object.<anonymous> (src/components/NotificationCenter.jsx:3:1)
+      at Object.<anonymous> (src/features/sales/mobile/MobileNotifSheet.jsx:3:1)
+      at Object.<anonymous> (src/features/mobile/MobileShell.jsx:23:1)
+      at Object.<anonymous> (src/features/mobile/MobileOpsApp.jsx:7:1)
+
+FAIL src/features/__tests__/phase3P6Kpi.test.js
+  ● Test suite failed to run
+
+    Cannot find module '@radix-ui/primitive/is-development' from '../fe/node_modules/cmdk/node_modules/@radix-ui/react-use-controllable-state/dist/index.js'
+
+    Require stack:
+      /tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/fe/node_modules/cmdk/node_modules/@radix-ui/react-use-controllable-state/dist/index.js
+      /tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/fe/node_modules/cmdk/node_modules/@radix-ui/react-dialog/dist/index.js
+      /tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/fe/node_modules/cmdk/dist/index.js
+      src/components/ui/command.jsx
+      src/components/KNSelect.jsx
+      src/features/designer/DesignerKpiView.jsx
+      src/features/__tests__/phase3P6Kpi.test.js
+
+    [0m [90m 1 |[39m [36mimport[39m [33m*[39m [36mas[39m [33mReact[39m [36mfrom[39m [32m"react"[39m
+    [31m[1m>[22m[39m[90m 2 |[39m [36mimport[39m { [33mCommand[39m [36mas[39m [33mCommandPrimitive[39m } [36mfrom[39m [32m"cmdk"[39m
+     [90m   |[39m [31m[1m^[22m[39m
+     [90m 3 |[39m [36mimport[39m { [33mSearch[39m } [36mfrom[39m [32m"lucide-react"[39m
+     [90m 4 |[39m
+     [90m 5 |[39m [36mimport[39m { cn } [36mfrom[39m [32m"@/lib/utils"[39m[0m
+
+      at Resolver.resolveModule (../fe/node_modules/jest-resolve/build/resolver.js:324:11)
+      at Object.<anonymous> (../fe/node_modules/cmdk/node_modules/@radix-ui/react-use-controllable-state/src/use-controllable-state.tsx:2:32)
+      at Object.<anonymous> (../fe/node_modules/cmdk/node_modules/@radix-ui/react-dialog/src/dialog.tsx:6:38)
+      at Object.<anonymous> (../fe/node_modules/cmdk/dist/index.js:1:961)
+      at Object.<anonymous> (src/components/ui/command.jsx:2:1)
+      at Object.<anonymous> (src/components/KNSelect.jsx:43:1)
+      at Object.<anonymous> (src/features/designer/DesignerKpiView.jsx:23:1)
+      at Object.<anonymous> (src/features/__tests__/phase3P6Kpi.test.js:6:1)
+
+FAIL src/features/__tests__/phase4R6.test.js
+  ● Test suite failed to run
+
+    Cannot find module '@radix-ui/primitive/is-development' from '../fe/node_modules/cmdk/node_modules/@radix-ui/react-use-controllable-state/dist/index.js'
+
+    Require stack:
+      /tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/fe/node_modules/cmdk/node_modules/@radix-ui/react-use-controllable-state/dist/index.js
+      /tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/fe/node_modules/cmdk/node_modules/@radix-ui/react-dialog/dist/index.js
+      /tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/fe/node_modules/cmdk/dist/index.js
+      src/components/ui/command.jsx
+      src/components/KNSelect.jsx
+      src/components/TableFilter.jsx
+      src/features/sales_admin/DeskQueueCard.jsx
+      src/features/desks/RoleDesk.jsx
+      src/features/__tests__/phase4R6.test.js
+
+    [0m [90m 1 |[39m [36mimport[39m [33m*[39m [36mas[39m [33mReact[39m [36mfrom[39m [32m"react"[39m
+    [31m[1m>[22m[39m[90m 2 |[39m [36mimport[39m { [33mCommand[39m [36mas[39m [33mCommandPrimitive[39m } [36mfrom[39m [32m"cmdk"[39m
+     [90m   |[39m [31m[1m^[22m[39m
+     [90m 3 |[39m [36mimport[39m { [33mSearch[39m } [36mfrom[39m [32m"lucide-react"[39m
+     [90m 4 |[39m
+     [90m 5 |[39m [36mimport[39m { cn } [36mfrom[39m [32m"@/lib/utils"[39m[0m
+
+      at Resolver.resolveModule (../fe/node_modules/jest-resolve/build/resolver.js:324:11)
+      at Object.<anonymous> (../fe/node_modules/cmdk/node_modules/@radix-ui/react-use-controllable-state/src/use-controllable-state.tsx:2:32)
+      at Object.<anonymous> (../fe/node_modules/cmdk/node_modules/@radix-ui/react-dialog/src/dialog.tsx:6:38)
+      at Object.<anonymous> (../fe/node_modules/cmdk/dist/index.js:1:961)
+      at Object.<anonymous> (src/components/ui/command.jsx:2:1)
+      at Object.<anonymous> (src/components/KNSelect.jsx:43:1)
+      at Object.<anonymous> (src/components/TableFilter.jsx:3:1)
+      at Object.<anonymous> (src/features/sales_admin/DeskQueueCard.jsx:27:1)
+      at Object.<anonymous> (src/features/desks/RoleDesk.jsx:12:1)
+      at Object.<anonymous> (src/features/__tests__/phase4R6.test.js:8:1)
+
+FAIL src/components/__tests__/knSelect.test.js
+  ● Test suite failed to run
+
+    Cannot find module '@radix-ui/primitive/is-development' from '../fe/node_modules/cmdk/node_modules/@radix-ui/react-use-controllable-state/dist/index.js'
+
+    Require stack:
+      /tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/fe/node_modules/cmdk/node_modules/@radix-ui/react-use-controllable-state/dist/index.js
+      /tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/fe/node_modules/cmdk/node_modules/@radix-ui/react-dialog/dist/index.js
+      /tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/fe/node_modules/cmdk/dist/index.js
+      src/components/ui/command.jsx
+      src/components/KNSelect.jsx
+      src/components/__tests__/knSelect.test.js
+
+    [0m [90m 1 |[39m [36mimport[39m [33m*[39m [36mas[39m [33mReact[39m [36mfrom[39m [32m"react"[39m
+    [31m[1m>[22m[39m[90m 2 |[39m [36mimport[39m { [33mCommand[39m [36mas[39m [33mCommandPrimitive[39m } [36mfrom[39m [32m"cmdk"[39m
+     [90m   |[39m [31m[1m^[22m[39m
+     [90m 3 |[39m [36mimport[39m { [33mSearch[39m } [36mfrom[39m [32m"lucide-react"[39m
+     [90m 4 |[39m
+     [90m 5 |[39m [36mimport[39m { cn } [36mfrom[39m [32m"@/lib/utils"[39m[0m
+
+      at Resolver.resolveModule (../fe/node_modules/jest-resolve/build/resolver.js:324:11)
+      at Object.<anonymous> (../fe/node_modules/cmdk/node_modules/@radix-ui/react-use-controllable-state/src/use-controllable-state.tsx:2:32)
+      at Object.<anonymous> (../fe/node_modules/cmdk/node_modules/@radix-ui/react-dialog/src/dialog.tsx:6:38)
+      at Object.<anonymous> (../fe/node_modules/cmdk/dist/index.js:1:961)
+      at Object.<anonymous> (src/components/ui/command.jsx:2:1)
+      at Object.<anonymous> (src/components/KNSelect.jsx:43:1)
+      at Object.<anonymous> (src/components/__tests__/knSelect.test.js:5:1)
+
+FAIL src/features/__tests__/phase3P4Finance.test.js
+  ● Test suite failed to run
+
+    Cannot find module '@radix-ui/primitive/is-development' from '../fe/node_modules/cmdk/node_modules/@radix-ui/react-use-controllable-state/dist/index.js'
+
+    Require stack:
+      /tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/fe/node_modules/cmdk/node_modules/@radix-ui/react-use-controllable-state/dist/index.js
+      /tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/fe/node_modules/cmdk/node_modules/@radix-ui/react-dialog/dist/index.js
+      /tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/fe/node_modules/cmdk/dist/index.js
+      src/components/ui/command.jsx
+      src/components/KNSelect.jsx
+      src/features/finance/ClosingView.jsx
+      src/features/__tests__/phase3P4Finance.test.js
+
+    [0m [90m 1 |[39m [36mimport[39m [33m*[39m [36mas[39m [33mReact[39m [36mfrom[39m [32m"react"[39m
+    [31m[1m>[22m[39m[90m 2 |[39m [36mimport[39m { [33mCommand[39m [36mas[39m [33mCommandPrimitive[39m } [36mfrom[39m [32m"cmdk"[39m
+     [90m   |[39m [31m[1m^[22m[39m
+     [90m 3 |[39m [36mimport[39m { [33mSearch[39m } [36mfrom[39m [32m"lucide-react"[39m
+     [90m 4 |[39m
+     [90m 5 |[39m [36mimport[39m { cn } [36mfrom[39m [32m"@/lib/utils"[39m[0m
+
+      at Resolver.resolveModule (../fe/node_modules/jest-resolve/build/resolver.js:324:11)
+      at Object.<anonymous> (../fe/node_modules/cmdk/node_modules/@radix-ui/react-use-controllable-state/src/use-controllable-state.tsx:2:32)
+      at Object.<anonymous> (../fe/node_modules/cmdk/node_modules/@radix-ui/react-dialog/src/dialog.tsx:6:38)
+      at Object.<anonymous> (../fe/node_modules/cmdk/dist/index.js:1:961)
+      at Object.<anonymous> (src/components/ui/command.jsx:2:1)
+      at Object.<anonymous> (src/components/KNSelect.jsx:43:1)
+      at Object.<anonymous> (src/features/finance/ClosingView.jsx:21:1)
+      at Object.<anonymous> (src/features/__tests__/phase3P4Finance.test.js:9:1)
+
+FAIL src/features/__tests__/phase3P8Activation.test.js
+  ● Test suite failed to run
+
+    Cannot find module '@radix-ui/primitive/is-development' from '../fe/node_modules/cmdk/node_modules/@radix-ui/react-use-controllable-state/dist/index.js'
+
+    Require stack:
+      /tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/fe/node_modules/cmdk/node_modules/@radix-ui/react-use-controllable-state/dist/index.js
+      /tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/fe/node_modules/cmdk/node_modules/@radix-ui/react-dialog/dist/index.js
+      /tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/fe/node_modules/cmdk/dist/index.js
+      src/components/ui/command.jsx
+      src/components/KNSelect.jsx
+      src/features/rnd/RndDesignsView.jsx
+      src/features/__tests__/phase3P8Activation.test.js
+
+    [0m [90m 1 |[39m [36mimport[39m [33m*[39m [36mas[39m [33mReact[39m [36mfrom[39m [32m"react"[39m
+    [31m[1m>[22m[39m[90m 2 |[39m [36mimport[39m { [33mCommand[39m [36mas[39m [33mCommandPrimitive[39m } [36mfrom[39m [32m"cmdk"[39m
+     [90m   |[39m [31m[1m^[22m[39m
+     [90m 3 |[39m [36mimport[39m { [33mSearch[39m } [36mfrom[39m [32m"lucide-react"[39m
+     [90m 4 |[39m
+     [90m 5 |[39m [36mimport[39m { cn } [36mfrom[39m [32m"@/lib/utils"[39m[0m
+
+      at Resolver.resolveModule (../fe/node_modules/jest-resolve/build/resolver.js:324:11)
+      at Object.<anonymous> (../fe/node_modules/cmdk/node_modules/@radix-ui/react-use-controllable-state/src/use-controllable-state.tsx:2:32)
+      at Object.<anonymous> (../fe/node_modules/cmdk/node_modules/@radix-ui/react-dialog/src/dialog.tsx:6:38)
+      at Object.<anonymous> (../fe/node_modules/cmdk/dist/index.js:1:961)
+      at Object.<anonymous> (src/components/ui/command.jsx:2:1)
+      at Object.<anonymous> (src/components/KNSelect.jsx:43:1)
+      at Object.<anonymous> (src/features/rnd/RndDesignsView.jsx:17:1)
+      at Object.<anonymous> (src/features/__tests__/phase3P8Activation.test.js:16:1)
+
+FAIL src/features/wms/transfer/__tests__/TransferDetailModal.test.js
+  ● Test suite failed to run
+
+    Cannot find module '@radix-ui/primitive/is-development' from '../fe/node_modules/cmdk/node_modules/@radix-ui/react-use-controllable-state/dist/index.js'
+
+    Require stack:
+      /tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/fe/node_modules/cmdk/node_modules/@radix-ui/react-use-controllable-state/dist/index.js
+      /tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/fe/node_modules/cmdk/node_modules/@radix-ui/react-dialog/dist/index.js
+      /tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/fe/node_modules/cmdk/dist/index.js
+      src/components/ui/command.jsx
+      src/components/KNSelect.jsx
+      src/features/wms/transfer/TransferReceiptPanel.jsx
+      src/features/wms/transfer/TransferDetailModal.jsx
+      src/features/wms/transfer/__tests__/TransferDetailModal.test.js
+
+    [0m [90m 1 |[39m [36mimport[39m [33m*[39m [36mas[39m [33mReact[39m [36mfrom[39m [32m"react"[39m
+    [31m[1m>[22m[39m[90m 2 |[39m [36mimport[39m { [33mCommand[39m [36mas[39m [33mCommandPrimitive[39m } [36mfrom[39m [32m"cmdk"[39m
+     [90m   |[39m [31m[1m^[22m[39m
+     [90m 3 |[39m [36mimport[39m { [33mSearch[39m } [36mfrom[39m [32m"lucide-react"[39m
+     [90m 4 |[39m
+     [90m 5 |[39m [36mimport[39m { cn } [36mfrom[39m [32m"@/lib/utils"[39m[0m
+
+      at Resolver.resolveModule (../fe/node_modules/jest-resolve/build/resolver.js:324:11)
+      at Object.<anonymous> (../fe/node_modules/cmdk/node_modules/@radix-ui/react-use-controllable-state/src/use-controllable-state.tsx:2:32)
+      at Object.<anonymous> (../fe/node_modules/cmdk/node_modules/@radix-ui/react-dialog/src/dialog.tsx:6:38)
+      at Object.<anonymous> (../fe/node_modules/cmdk/dist/index.js:1:961)
+      at Object.<anonymous> (src/components/ui/command.jsx:2:1)
+      at Object.<anonymous> (src/components/KNSelect.jsx:43:1)
+      at Object.<anonymous> (src/features/wms/transfer/TransferReceiptPanel.jsx:9:1)
+      at Object.<anonymous> (src/features/wms/transfer/TransferDetailModal.jsx:8:1)
+      at Object.<anonymous> (src/features/wms/transfer/__tests__/TransferDetailModal.test.js:4:1)
+
+FAIL src/features/__tests__/uatV3S2Cbd.test.js
+  ● Test suite failed to run
+
+    Cannot find module '@radix-ui/primitive/is-development' from '../fe/node_modules/cmdk/node_modules/@radix-ui/react-use-controllable-state/dist/index.js'
+
+    Require stack:
+      /tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/fe/node_modules/cmdk/node_modules/@radix-ui/react-use-controllable-state/dist/index.js
+      /tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/fe/node_modules/cmdk/node_modules/@radix-ui/react-dialog/dist/index.js
+      /tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/fe/node_modules/cmdk/dist/index.js
+      src/components/ui/command.jsx
+      src/components/KNSelect.jsx
+      src/components/TableFilter.jsx
+      src/features/sales_admin/DeskQueueCard.jsx
+      src/features/__tests__/uatV3S2Cbd.test.js
+
+    [0m [90m 1 |[39m [36mimport[39m [33m*[39m [36mas[39m [33mReact[39m [36mfrom[39m [32m"react"[39m
+    [31m[1m>[22m[39m[90m 2 |[39m [36mimport[39m { [33mCommand[39m [36mas[39m [33mCommandPrimitive[39m } [36mfrom[39m [32m"cmdk"[39m
+     [90m   |[39m [31m[1m^[22m[39m
+     [90m 3 |[39m [36mimport[39m { [33mSearch[39m } [36mfrom[39m [32m"lucide-react"[39m
+     [90m 4 |[39m
+     [90m 5 |[39m [36mimport[39m { cn } [36mfrom[39m [32m"@/lib/utils"[39m[0m
+
+      at Resolver.resolveModule (../fe/node_modules/jest-resolve/build/resolver.js:324:11)
+      at Object.<anonymous> (../fe/node_modules/cmdk/node_modules/@radix-ui/react-use-controllable-state/src/use-controllable-state.tsx:2:32)
+      at Object.<anonymous> (../fe/node_modules/cmdk/node_modules/@radix-ui/react-dialog/src/dialog.tsx:6:38)
+      at Object.<anonymous> (../fe/node_modules/cmdk/dist/index.js:1:961)
+      at Object.<anonymous> (src/components/ui/command.jsx:2:1)
+      at Object.<anonymous> (src/components/KNSelect.jsx:43:1)
+      at Object.<anonymous> (src/components/TableFilter.jsx:3:1)
+      at Object.<anonymous> (src/features/sales_admin/DeskQueueCard.jsx:27:1)
+      at Object.<anonymous> (src/features/__tests__/uatV3S2Cbd.test.js:8:1)
+
+FAIL src/features/__tests__/uat24F4.test.js
+  ● Test suite failed to run
+
+    Cannot find module '@radix-ui/primitive/is-development' from '../fe/node_modules/cmdk/node_modules/@radix-ui/react-use-controllable-state/dist/index.js'
+
+    Require stack:
+      /tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/fe/node_modules/cmdk/node_modules/@radix-ui/react-use-controllable-state/dist/index.js
+      /tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/fe/node_modules/cmdk/node_modules/@radix-ui/react-dialog/dist/index.js
+      /tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/fe/node_modules/cmdk/dist/index.js
+      src/components/ui/command.jsx
+      src/components/KNSelect.jsx
+      src/features/purchasing/PrMergePanel.jsx
+      src/features/__tests__/uat24F4.test.js
+
+    [0m [90m 1 |[39m [36mimport[39m [33m*[39m [36mas[39m [33mReact[39m [36mfrom[39m [32m"react"[39m
+    [31m[1m>[22m[39m[90m 2 |[39m [36mimport[39m { [33mCommand[39m [36mas[39m [33mCommandPrimitive[39m } [36mfrom[39m [32m"cmdk"[39m
+     [90m   |[39m [31m[1m^[22m[39m
+     [90m 3 |[39m [36mimport[39m { [33mSearch[39m } [36mfrom[39m [32m"lucide-react"[39m
+     [90m 4 |[39m
+     [90m 5 |[39m [36mimport[39m { cn } [36mfrom[39m [32m"@/lib/utils"[39m[0m
+
+      at Resolver.resolveModule (../fe/node_modules/jest-resolve/build/resolver.js:324:11)
+      at Object.<anonymous> (../fe/node_modules/cmdk/node_modules/@radix-ui/react-use-controllable-state/src/use-controllable-state.tsx:2:32)
+      at Object.<anonymous> (../fe/node_modules/cmdk/node_modules/@radix-ui/react-dialog/src/dialog.tsx:6:38)
+      at Object.<anonymous> (../fe/node_modules/cmdk/dist/index.js:1:961)
+      at Object.<anonymous> (src/components/ui/command.jsx:2:1)
+      at Object.<anonymous> (src/components/KNSelect.jsx:43:1)
+      at Object.<anonymous> (src/features/purchasing/PrMergePanel.jsx:9:1)
+      at Object.<anonymous> (src/features/__tests__/uat24F4.test.js:5:1)
+
+FAIL src/features/__tests__/roleGateSweep.test.js
+  ● Test suite failed to run
+
+    Cannot find module '@radix-ui/primitive/is-development' from '../fe/node_modules/cmdk/node_modules/@radix-ui/react-use-controllable-state/dist/index.js'
+
+    Require stack:
+      /tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/fe/node_modules/cmdk/node_modules/@radix-ui/react-use-controllable-state/dist/index.js
+      /tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/fe/node_modules/cmdk/node_modules/@radix-ui/react-dialog/dist/index.js
+      /tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/fe/node_modules/cmdk/dist/index.js
+      src/components/ui/command.jsx
+      src/components/KNSelect.jsx
+      src/features/finance/payments/PenaltyPanel.jsx
+      src/features/__tests__/roleGateSweep.test.js
+
+    [0m [90m 1 |[39m [36mimport[39m [33m*[39m [36mas[39m [33mReact[39m [36mfrom[39m [32m"react"[39m
+    [31m[1m>[22m[39m[90m 2 |[39m [36mimport[39m { [33mCommand[39m [36mas[39m [33mCommandPrimitive[39m } [36mfrom[39m [32m"cmdk"[39m
+     [90m   |[39m [31m[1m^[22m[39m
+     [90m 3 |[39m [36mimport[39m { [33mSearch[39m } [36mfrom[39m [32m"lucide-react"[39m
+     [90m 4 |[39m
+     [90m 5 |[39m [36mimport[39m { cn } [36mfrom[39m [32m"@/lib/utils"[39m[0m
+
+      at Resolver.resolveModule (../fe/node_modules/jest-resolve/build/resolver.js:324:11)
+      at Object.<anonymous> (../fe/node_modules/cmdk/node_modules/@radix-ui/react-use-controllable-state/src/use-controllable-state.tsx:2:32)
+      at Object.<anonymous> (../fe/node_modules/cmdk/node_modules/@radix-ui/react-dialog/src/dialog.tsx:6:38)
+      at Object.<anonymous> (../fe/node_modules/cmdk/dist/index.js:1:961)
+      at Object.<anonymous> (src/components/ui/command.jsx:2:1)
+      at Object.<anonymous> (src/components/KNSelect.jsx:43:1)
+      at Object.<anonymous> (src/features/finance/payments/PenaltyPanel.jsx:16:1)
+      at Object.<anonymous> (src/features/__tests__/roleGateSweep.test.js:6:1)
+
+FAIL src/features/__tests__/permissionGates.test.js
+  ● Test suite failed to run
+
+    Cannot find module '@radix-ui/primitive/is-development' from '../fe/node_modules/cmdk/node_modules/@radix-ui/react-use-controllable-state/dist/index.js'
+
+    Require stack:
+      /tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/fe/node_modules/cmdk/node_modules/@radix-ui/react-use-controllable-state/dist/index.js
+      /tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/fe/node_modules/cmdk/node_modules/@radix-ui/react-dialog/dist/index.js
+      /tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/fe/node_modules/cmdk/dist/index.js
+      src/components/ui/command.jsx
+      src/components/KNSelect.jsx
+      src/components/LocationFields.jsx
+      src/features/wms/warehouses/WarehouseMasterView.jsx
+      src/features/__tests__/permissionGates.test.js
+
+    [0m [90m 1 |[39m [36mimport[39m [33m*[39m [36mas[39m [33mReact[39m [36mfrom[39m [32m"react"[39m
+    [31m[1m>[22m[39m[90m 2 |[39m [36mimport[39m { [33mCommand[39m [36mas[39m [33mCommandPrimitive[39m } [36mfrom[39m [32m"cmdk"[39m
+     [90m   |[39m [31m[1m^[22m[39m
+     [90m 3 |[39m [36mimport[39m { [33mSearch[39m } [36mfrom[39m [32m"lucide-react"[39m
+     [90m 4 |[39m
+     [90m 5 |[39m [36mimport[39m { cn } [36mfrom[39m [32m"@/lib/utils"[39m[0m
+
+      at Resolver.resolveModule (../fe/node_modules/jest-resolve/build/resolver.js:324:11)
+      at Object.<anonymous> (../fe/node_modules/cmdk/node_modules/@radix-ui/react-use-controllable-state/src/use-controllable-state.tsx:2:32)
+      at Object.<anonymous> (../fe/node_modules/cmdk/node_modules/@radix-ui/react-dialog/src/dialog.tsx:6:38)
+      at Object.<anonymous> (../fe/node_modules/cmdk/dist/index.js:1:961)
+      at Object.<anonymous> (src/components/ui/command.jsx:2:1)
+      at Object.<anonymous> (src/components/KNSelect.jsx:43:1)
+      at Object.<anonymous> (src/components/LocationFields.jsx:23:1)
+      at Object.<anonymous> (src/features/wms/warehouses/WarehouseMasterView.jsx:28:1)
+      at Object.<anonymous> (src/features/__tests__/permissionGates.test.js:4:1)
+
+FAIL src/features/__tests__/auditUi2G5b.test.js
+  ● Test suite failed to run
+
+    Cannot find module '@radix-ui/primitive/is-development' from '../fe/node_modules/cmdk/node_modules/@radix-ui/react-use-controllable-state/dist/index.js'
+
+    Require stack:
+      /tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/fe/node_modules/cmdk/node_modules/@radix-ui/react-use-controllable-state/dist/index.js
+      /tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/fe/node_modules/cmdk/node_modules/@radix-ui/react-dialog/dist/index.js
+      /tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/fe/node_modules/cmdk/dist/index.js
+      src/components/ui/command.jsx
+      src/components/KNSelect.jsx
+      src/components/NotificationCenter.jsx
+      src/features/sales/mobile/MobileNotifSheet.jsx
+      src/features/mobile/MobileShell.jsx
+      src/features/mobile/MobileOpsApp.jsx
+      src/features/__tests__/auditUi2G5b.test.js
+
+    [0m [90m 1 |[39m [36mimport[39m [33m*[39m [36mas[39m [33mReact[39m [36mfrom[39m [32m"react"[39m
+    [31m[1m>[22m[39m[90m 2 |[39m [36mimport[39m { [33mCommand[39m [36mas[39m [33mCommandPrimitive[39m } [36mfrom[39m [32m"cmdk"[39m
+     [90m   |[39m [31m[1m^[22m[39m
+     [90m 3 |[39m [36mimport[39m { [33mSearch[39m } [36mfrom[39m [32m"lucide-react"[39m
+     [90m 4 |[39m
+     [90m 5 |[39m [36mimport[39m { cn } [36mfrom[39m [32m"@/lib/utils"[39m[0m
+
+      at Resolver.resolveModule (../fe/node_modules/jest-resolve/build/resolver.js:324:11)
+      at Object.<anonymous> (../fe/node_modules/cmdk/node_modules/@radix-ui/react-use-controllable-state/src/use-controllable-state.tsx:2:32)
+      at Object.<anonymous> (../fe/node_modules/cmdk/node_modules/@radix-ui/react-dialog/src/dialog.tsx:6:38)
+      at Object.<anonymous> (../fe/node_modules/cmdk/dist/index.js:1:961)
+      at Object.<anonymous> (src/components/ui/command.jsx:2:1)
+      at Object.<anonymous> (src/components/KNSelect.jsx:43:1)
+      at Object.<anonymous> (src/components/NotificationCenter.jsx:3:1)
+      at Object.<anonymous> (src/features/sales/mobile/MobileNotifSheet.jsx:3:1)
+      at Object.<anonymous> (src/features/mobile/MobileShell.jsx:23:1)
+      at Object.<anonymous> (src/features/mobile/MobileOpsApp.jsx:7:1)
+
+FAIL src/features/__tests__/fe06PriceFocus.test.js
+  ● Test suite failed to run
+
+    Cannot find module '@radix-ui/primitive/is-development' from '../fe/node_modules/cmdk/node_modules/@radix-ui/react-use-controllable-state/dist/index.js'
+
+    Require stack:
+      /tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/fe/node_modules/cmdk/node_modules/@radix-ui/react-use-controllable-state/dist/index.js
+      /tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/fe/node_modules/cmdk/node_modules/@radix-ui/react-dialog/dist/index.js
+      /tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/fe/node_modules/cmdk/dist/index.js
+      src/components/ui/command.jsx
+      src/components/KNSelect.jsx
+      src/features/sales/priceApprovals/PriceApprovalForm.jsx
+      src/features/sales/PriceApprovals.jsx
+      src/features/__tests__/fe06PriceFocus.test.js
+
+    [0m [90m 1 |[39m [36mimport[39m [33m*[39m [36mas[39m [33mReact[39m [36mfrom[39m [32m"react"[39m
+    [31m[1m>[22m[39m[90m 2 |[39m [36mimport[39m { [33mCommand[39m [36mas[39m [33mCommandPrimitive[39m } [36mfrom[39m [32m"cmdk"[39m
+     [90m   |[39m [31m[1m^[22m[39m
+     [90m 3 |[39m [36mimport[39m { [33mSearch[39m } [36mfrom[39m [32m"lucide-react"[39m
+     [90m 4 |[39m
+     [90m 5 |[39m [36mimport[39m { cn } [36mfrom[39m [32m"@/lib/utils"[39m[0m
+
+      at Resolver.resolveModule (../fe/node_modules/jest-resolve/build/resolver.js:324:11)
+      at Object.<anonymous> (../fe/node_modules/cmdk/node_modules/@radix-ui/react-use-controllable-state/src/use-controllable-state.tsx:2:32)
+      at Object.<anonymous> (../fe/node_modules/cmdk/node_modules/@radix-ui/react-dialog/src/dialog.tsx:6:38)
+      at Object.<anonymous> (../fe/node_modules/cmdk/dist/index.js:1:961)
+      at Object.<anonymous> (src/components/ui/command.jsx:2:1)
+      at Object.<anonymous> (src/components/KNSelect.jsx:43:1)
+      at Object.<anonymous> (src/features/sales/priceApprovals/PriceApprovalForm.jsx:6:1)
+      at Object.<anonymous> (src/features/sales/PriceApprovals.jsx:5:1)
+      at Object.<anonymous> (src/features/__tests__/fe06PriceFocus.test.js:5:1)
+
+FAIL src/features/__tests__/phase3P6Rnd.test.js
+  ● Test suite failed to run
+
+    Cannot find module '@radix-ui/primitive/is-development' from '../fe/node_modules/cmdk/node_modules/@radix-ui/react-use-controllable-state/dist/index.js'
+
+    Require stack:
+      /tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/fe/node_modules/cmdk/node_modules/@radix-ui/react-use-controllable-state/dist/index.js
+      /tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/fe/node_modules/cmdk/node_modules/@radix-ui/react-dialog/dist/index.js
+      /tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/fe/node_modules/cmdk/dist/index.js
+      src/components/ui/command.jsx
+      src/components/KNSelect.jsx
+      src/features/rnd/RndSamplesView.jsx
+      src/features/__tests__/phase3P6Rnd.test.js
+
+    [0m [90m 1 |[39m [36mimport[39m [33m*[39m [36mas[39m [33mReact[39m [36mfrom[39m [32m"react"[39m
+    [31m[1m>[22m[39m[90m 2 |[39m [36mimport[39m { [33mCommand[39m [36mas[39m [33mCommandPrimitive[39m } [36mfrom[39m [32m"cmdk"[39m
+     [90m   |[39m [31m[1m^[22m[39m
+     [90m 3 |[39m [36mimport[39m { [33mSearch[39m } [36mfrom[39m [32m"lucide-react"[39m
+     [90m 4 |[39m
+     [90m 5 |[39m [36mimport[39m { cn } [36mfrom[39m [32m"@/lib/utils"[39m[0m
+
+      at Resolver.resolveModule (../fe/node_modules/jest-resolve/build/resolver.js:324:11)
+      at Object.<anonymous> (../fe/node_modules/cmdk/node_modules/@radix-ui/react-use-controllable-state/src/use-controllable-state.tsx:2:32)
+      at Object.<anonymous> (../fe/node_modules/cmdk/node_modules/@radix-ui/react-dialog/src/dialog.tsx:6:38)
+      at Object.<anonymous> (../fe/node_modules/cmdk/dist/index.js:1:961)
+      at Object.<anonymous> (src/components/ui/command.jsx:2:1)
+      at Object.<anonymous> (src/components/KNSelect.jsx:43:1)
+      at Object.<anonymous> (src/features/rnd/RndSamplesView.jsx:20:1)
+      at Object.<anonymous> (src/features/__tests__/phase3P6Rnd.test.js:6:1)
+
+FAIL src/features/__tests__/uatV3MobileSales.test.js
+  ● Test suite failed to run
+
+    Cannot find module '@radix-ui/primitive/is-development' from '../fe/node_modules/cmdk/node_modules/@radix-ui/react-use-controllable-state/dist/index.js'
+
+    Require stack:
+      /tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/fe/node_modules/cmdk/node_modules/@radix-ui/react-use-controllable-state/dist/index.js
+      /tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/fe/node_modules/cmdk/node_modules/@radix-ui/react-dialog/dist/index.js
+      /tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/fe/node_modules/cmdk/dist/index.js
+      src/components/ui/command.jsx
+      src/components/KNSelect.jsx
+      src/features/finance/amendments/AmendmentProposeModal.jsx
+      src/features/sales/mobile/MobileAmendSheet.jsx
+      src/features/sales/mobile/MobileAmendments.jsx
+      src/features/sales/mobile/MobileMore.jsx
+      src/features/__tests__/uatV3MobileSales.test.js
+
+    [0m [90m 1 |[39m [36mimport[39m [33m*[39m [36mas[39m [33mReact[39m [36mfrom[39m [32m"react"[39m
+    [31m[1m>[22m[39m[90m 2 |[39m [36mimport[39m { [33mCommand[39m [36mas[39m [33mCommandPrimitive[39m } [36mfrom[39m [32m"cmdk"[39m
+     [90m   |[39m [31m[1m^[22m[39m
+     [90m 3 |[39m [36mimport[39m { [33mSearch[39m } [36mfrom[39m [32m"lucide-react"[39m
+     [90m 4 |[39m
+     [90m 5 |[39m [36mimport[39m { cn } [36mfrom[39m [32m"@/lib/utils"[39m[0m
+
+      at Resolver.resolveModule (../fe/node_modules/jest-resolve/build/resolver.js:324:11)
+      at Object.<anonymous> (../fe/node_modules/cmdk/node_modules/@radix-ui/react-use-controllable-state/src/use-controllable-state.tsx:2:32)
+      at Object.<anonymous> (../fe/node_modules/cmdk/node_modules/@radix-ui/react-dialog/src/dialog.tsx:6:38)
+      at Object.<anonymous> (../fe/node_modules/cmdk/dist/index.js:1:961)
+      at Object.<anonymous> (src/components/ui/command.jsx:2:1)
+      at Object.<anonymous> (src/components/KNSelect.jsx:43:1)
+      at Object.<anonymous> (src/features/finance/amendments/AmendmentProposeModal.jsx:35:1)
+      at Object.<anonymous> (src/features/sales/mobile/MobileAmendSheet.jsx:2:1)
+      at Object.<anonymous> (src/features/sales/mobile/MobileAmendments.jsx:5:1)
+      at Object.<anonymous> (src/features/sales/mobile/MobileMore.jsx:5:1)
+
+FAIL src/features/__tests__/fe07ReturnErrors.test.js
+  ● Test suite failed to run
+
+    Cannot find module '@radix-ui/primitive/is-development' from '../fe/node_modules/cmdk/node_modules/@radix-ui/react-use-controllable-state/dist/index.js'
+
+    Require stack:
+      /tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/fe/node_modules/cmdk/node_modules/@radix-ui/react-use-controllable-state/dist/index.js
+      /tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/fe/node_modules/cmdk/node_modules/@radix-ui/react-dialog/dist/index.js
+      /tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/fe/node_modules/cmdk/dist/index.js
+      src/components/ui/command.jsx
+      src/components/KNSelect.jsx
+      src/features/sales/ReturnShipmentPanel.jsx
+      src/features/sales/ReturnDetail.jsx
+      src/features/sales/SalesReturns.jsx
+      src/features/__tests__/fe07ReturnErrors.test.js
+
+    [0m [90m 1 |[39m [36mimport[39m [33m*[39m [36mas[39m [33mReact[39m [36mfrom[39m [32m"react"[39m
+    [31m[1m>[22m[39m[90m 2 |[39m [36mimport[39m { [33mCommand[39m [36mas[39m [33mCommandPrimitive[39m } [36mfrom[39m [32m"cmdk"[39m
+     [90m   |[39m [31m[1m^[22m[39m
+     [90m 3 |[39m [36mimport[39m { [33mSearch[39m } [36mfrom[39m [32m"lucide-react"[39m
+     [90m 4 |[39m
+     [90m 5 |[39m [36mimport[39m { cn } [36mfrom[39m [32m"@/lib/utils"[39m[0m
+
+      at Resolver.resolveModule (../fe/node_modules/jest-resolve/build/resolver.js:324:11)
+      at Object.<anonymous> (../fe/node_modules/cmdk/node_modules/@radix-ui/react-use-controllable-state/src/use-controllable-state.tsx:2:32)
+      at Object.<anonymous> (../fe/node_modules/cmdk/node_modules/@radix-ui/react-dialog/src/dialog.tsx:6:38)
+      at Object.<anonymous> (../fe/node_modules/cmdk/dist/index.js:1:961)
+      at Object.<anonymous> (src/components/ui/command.jsx:2:1)
+      at Object.<anonymous> (src/components/KNSelect.jsx:43:1)
+      at Object.<anonymous> (src/features/sales/ReturnShipmentPanel.jsx:9:1)
+      at Object.<anonymous> (src/features/sales/ReturnDetail.jsx:19:1)
+      at Object.<anonymous> (src/features/sales/SalesReturns.jsx:24:1)
+      at Object.<anonymous> (src/features/__tests__/fe07ReturnErrors.test.js:5:1)
+
+FAIL src/features/__tests__/phase3P3.test.js
+  ● Test suite failed to run
+
+    Cannot find module '@radix-ui/primitive/is-development' from '../fe/node_modules/cmdk/node_modules/@radix-ui/react-use-controllable-state/dist/index.js'
+
+    Require stack:
+      /tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/fe/node_modules/cmdk/node_modules/@radix-ui/react-use-controllable-state/dist/index.js
+      /tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/fe/node_modules/cmdk/node_modules/@radix-ui/react-dialog/dist/index.js
+      /tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/fe/node_modules/cmdk/dist/index.js
+      src/components/ui/command.jsx
+      src/components/KNSelect.jsx
+      src/components/LocationFields.jsx
+      src/features/crm/CustomerFormModal.jsx
+      src/features/pos/CreateCustomerModal.jsx
+      src/features/__tests__/phase3P3.test.js
+
+    [0m [90m 1 |[39m [36mimport[39m [33m*[39m [36mas[39m [33mReact[39m [36mfrom[39m [32m"react"[39m
+    [31m[1m>[22m[39m[90m 2 |[39m [36mimport[39m { [33mCommand[39m [36mas[39m [33mCommandPrimitive[39m } [36mfrom[39m [32m"cmdk"[39m
+     [90m   |[39m [31m[1m^[22m[39m
+     [90m 3 |[39m [36mimport[39m { [33mSearch[39m } [36mfrom[39m [32m"lucide-react"[39m
+     [90m 4 |[39m
+     [90m 5 |[39m [36mimport[39m { cn } [36mfrom[39m [32m"@/lib/utils"[39m[0m
+
+      at Resolver.resolveModule (../fe/node_modules/jest-resolve/build/resolver.js:324:11)
+      at Object.<anonymous> (../fe/node_modules/cmdk/node_modules/@radix-ui/react-use-controllable-state/src/use-controllable-state.tsx:2:32)
+      at Object.<anonymous> (../fe/node_modules/cmdk/node_modules/@radix-ui/react-dialog/src/dialog.tsx:6:38)
+      at Object.<anonymous> (../fe/node_modules/cmdk/dist/index.js:1:961)
+      at Object.<anonymous> (src/components/ui/command.jsx:2:1)
+      at Object.<anonymous> (src/components/KNSelect.jsx:43:1)
+      at Object.<anonymous> (src/components/LocationFields.jsx:23:1)
+      at Object.<anonymous> (src/features/crm/CustomerFormModal.jsx:2:1)
+      at Object.<anonymous> (src/features/pos/CreateCustomerModal.jsx:3:1)
+      at Object.<anonymous> (src/features/__tests__/phase3P3.test.js:6:1)
+
+FAIL src/features/__tests__/prepBInitialRegistration.test.js
+  ● Test suite failed to run
+
+    Cannot find module '@radix-ui/primitive/is-development' from '../fe/node_modules/cmdk/node_modules/@radix-ui/react-use-controllable-state/dist/index.js'
+
+    Require stack:
+      /tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/fe/node_modules/cmdk/node_modules/@radix-ui/react-use-controllable-state/dist/index.js
+      /tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/fe/node_modules/cmdk/node_modules/@radix-ui/react-dialog/dist/index.js
+      /tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/fe/node_modules/cmdk/dist/index.js
+      src/components/ui/command.jsx
+      src/components/KNSelect.jsx
+      src/features/wms/StockOpnameTab.jsx
+      src/features/__tests__/prepBInitialRegistration.test.js
+
+    [0m [90m 1 |[39m [36mimport[39m [33m*[39m [36mas[39m [33mReact[39m [36mfrom[39m [32m"react"[39m
+    [31m[1m>[22m[39m[90m 2 |[39m [36mimport[39m { [33mCommand[39m [36mas[39m [33mCommandPrimitive[39m } [36mfrom[39m [32m"cmdk"[39m
+     [90m   |[39m [31m[1m^[22m[39m
+     [90m 3 |[39m [36mimport[39m { [33mSearch[39m } [36mfrom[39m [32m"lucide-react"[39m
+     [90m 4 |[39m
+     [90m 5 |[39m [36mimport[39m { cn } [36mfrom[39m [32m"@/lib/utils"[39m[0m
+
+      at Resolver.resolveModule (../fe/node_modules/jest-resolve/build/resolver.js:324:11)
+      at Object.<anonymous> (../fe/node_modules/cmdk/node_modules/@radix-ui/react-use-controllable-state/src/use-controllable-state.tsx:2:32)
+      at Object.<anonymous> (../fe/node_modules/cmdk/node_modules/@radix-ui/react-dialog/src/dialog.tsx:6:38)
+      at Object.<anonymous> (../fe/node_modules/cmdk/dist/index.js:1:961)
+      at Object.<anonymous> (src/components/ui/command.jsx:2:1)
+      at Object.<anonymous> (src/components/KNSelect.jsx:43:1)
+      at Object.<anonymous> (src/features/wms/StockOpnameTab.jsx:18:1)
+      at Object.<anonymous> (src/features/__tests__/prepBInitialRegistration.test.js:7:1)
+
+FAIL src/features/__tests__/phase4R1.test.js
+  ● Test suite failed to run
+
+    Cannot find module '@radix-ui/primitive/is-development' from '../fe/node_modules/cmdk/node_modules/@radix-ui/react-use-controllable-state/dist/index.js'
+
+    Require stack:
+      /tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/fe/node_modules/cmdk/node_modules/@radix-ui/react-use-controllable-state/dist/index.js
+      /tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/fe/node_modules/cmdk/node_modules/@radix-ui/react-dialog/dist/index.js
+      /tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/fe/node_modules/cmdk/dist/index.js
+      src/components/ui/command.jsx
+      src/components/KNSelect.jsx
+      src/features/crm/ARReceiptModal.jsx
+      src/features/__tests__/phase4R1.test.js
+
+    [0m [90m 1 |[39m [36mimport[39m [33m*[39m [36mas[39m [33mReact[39m [36mfrom[39m [32m"react"[39m
+    [31m[1m>[22m[39m[90m 2 |[39m [36mimport[39m { [33mCommand[39m [36mas[39m [33mCommandPrimitive[39m } [36mfrom[39m [32m"cmdk"[39m
+     [90m   |[39m [31m[1m^[22m[39m
+     [90m 3 |[39m [36mimport[39m { [33mSearch[39m } [36mfrom[39m [32m"lucide-react"[39m
+     [90m 4 |[39m
+     [90m 5 |[39m [36mimport[39m { cn } [36mfrom[39m [32m"@/lib/utils"[39m[0m
+
+      at Resolver.resolveModule (../fe/node_modules/jest-resolve/build/resolver.js:324:11)
+      at Object.<anonymous> (../fe/node_modules/cmdk/node_modules/@radix-ui/react-use-controllable-state/src/use-controllable-state.tsx:2:32)
+      at Object.<anonymous> (../fe/node_modules/cmdk/node_modules/@radix-ui/react-dialog/src/dialog.tsx:6:38)
+      at Object.<anonymous> (../fe/node_modules/cmdk/dist/index.js:1:961)
+      at Object.<anonymous> (src/components/ui/command.jsx:2:1)
+      at Object.<anonymous> (src/components/KNSelect.jsx:43:1)
+      at Object.<anonymous> (src/features/crm/ARReceiptModal.jsx:18:1)
+      at Object.<anonymous> (src/features/__tests__/phase4R1.test.js:6:1)
+
+FAIL src/features/__tests__/f11LayarOperatorView.test.js
+  ● Test suite failed to run
+
+    Cannot find module '@radix-ui/primitive/is-development' from '../fe/node_modules/cmdk/node_modules/@radix-ui/react-use-controllable-state/dist/index.js'
+
+    Require stack:
+      /tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/fe/node_modules/cmdk/node_modules/@radix-ui/react-use-controllable-state/dist/index.js
+      /tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/fe/node_modules/cmdk/node_modules/@radix-ui/react-dialog/dist/index.js
+      /tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/fe/node_modules/cmdk/dist/index.js
+      src/components/ui/command.jsx
+      src/components/KNSelect.jsx
+      src/features/sales/ReturnShipmentPanel.jsx
+      src/features/sales/ReturnDetail.jsx
+      src/features/sales/SalesReturns.jsx
+      src/features/__tests__/f11LayarOperatorView.test.js
+
+    [0m [90m 1 |[39m [36mimport[39m [33m*[39m [36mas[39m [33mReact[39m [36mfrom[39m [32m"react"[39m
+    [31m[1m>[22m[39m[90m 2 |[39m [36mimport[39m { [33mCommand[39m [36mas[39m [33mCommandPrimitive[39m } [36mfrom[39m [32m"cmdk"[39m
+     [90m   |[39m [31m[1m^[22m[39m
+     [90m 3 |[39m [36mimport[39m { [33mSearch[39m } [36mfrom[39m [32m"lucide-react"[39m
+     [90m 4 |[39m
+     [90m 5 |[39m [36mimport[39m { cn } [36mfrom[39m [32m"@/lib/utils"[39m[0m
+
+      at Resolver.resolveModule (../fe/node_modules/jest-resolve/build/resolver.js:324:11)
+      at Object.<anonymous> (../fe/node_modules/cmdk/node_modules/@radix-ui/react-use-controllable-state/src/use-controllable-state.tsx:2:32)
+      at Object.<anonymous> (../fe/node_modules/cmdk/node_modules/@radix-ui/react-dialog/src/dialog.tsx:6:38)
+      at Object.<anonymous> (../fe/node_modules/cmdk/dist/index.js:1:961)
+      at Object.<anonymous> (src/components/ui/command.jsx:2:1)
+      at Object.<anonymous> (src/components/KNSelect.jsx:43:1)
+      at Object.<anonymous> (src/features/sales/ReturnShipmentPanel.jsx:9:1)
+      at Object.<anonymous> (src/features/sales/ReturnDetail.jsx:19:1)
+      at Object.<anonymous> (src/features/sales/SalesReturns.jsx:24:1)
+      at Object.<anonymous> (src/features/__tests__/f11LayarOperatorView.test.js:7:1)
+
+FAIL src/features/__tests__/uatV3UiGaps.test.js
+  ● Test suite failed to run
+
+    Cannot find module '@radix-ui/primitive/is-development' from '../fe/node_modules/cmdk/node_modules/@radix-ui/react-use-controllable-state/dist/index.js'
+
+    Require stack:
+      /tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/fe/node_modules/cmdk/node_modules/@radix-ui/react-use-controllable-state/dist/index.js
+      /tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/fe/node_modules/cmdk/node_modules/@radix-ui/react-dialog/dist/index.js
+      /tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/fe/node_modules/cmdk/dist/index.js
+      src/components/ui/command.jsx
+      src/components/KNSelect.jsx
+      src/components/TableFilter.jsx
+      src/features/sales_admin/DeskQueueCard.jsx
+      src/features/__tests__/uatV3UiGaps.test.js
+
+    [0m [90m 1 |[39m [36mimport[39m [33m*[39m [36mas[39m [33mReact[39m [36mfrom[39m [32m"react"[39m
+    [31m[1m>[22m[39m[90m 2 |[39m [36mimport[39m { [33mCommand[39m [36mas[39m [33mCommandPrimitive[39m } [36mfrom[39m [32m"cmdk"[39m
+     [90m   |[39m [31m[1m^[22m[39m
+     [90m 3 |[39m [36mimport[39m { [33mSearch[39m } [36mfrom[39m [32m"lucide-react"[39m
+     [90m 4 |[39m
+     [90m 5 |[39m [36mimport[39m { cn } [36mfrom[39m [32m"@/lib/utils"[39m[0m
+
+      at Resolver.resolveModule (../fe/node_modules/jest-resolve/build/resolver.js:324:11)
+      at Object.<anonymous> (../fe/node_modules/cmdk/node_modules/@radix-ui/react-use-controllable-state/src/use-controllable-state.tsx:2:32)
+      at Object.<anonymous> (../fe/node_modules/cmdk/node_modules/@radix-ui/react-dialog/src/dialog.tsx:6:38)
+      at Object.<anonymous> (../fe/node_modules/cmdk/dist/index.js:1:961)
+      at Object.<anonymous> (src/components/ui/command.jsx:2:1)
+      at Object.<anonymous> (src/components/KNSelect.jsx:43:1)
+      at Object.<anonymous> (src/components/TableFilter.jsx:3:1)
+      at Object.<anonymous> (src/features/sales_admin/DeskQueueCard.jsx:27:1)
+      at Object.<anonymous> (src/features/__tests__/uatV3UiGaps.test.js:6:1)
+
+FAIL src/features/__tests__/audit2G2.test.js
+  ● Test suite failed to run
+
+    Cannot find module '@radix-ui/primitive/is-development' from '../fe/node_modules/cmdk/node_modules/@radix-ui/react-use-controllable-state/dist/index.js'
+
+    Require stack:
+      /tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/fe/node_modules/cmdk/node_modules/@radix-ui/react-use-controllable-state/dist/index.js
+      /tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/fe/node_modules/cmdk/node_modules/@radix-ui/react-dialog/dist/index.js
+      /tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/fe/node_modules/cmdk/dist/index.js
+      src/components/ui/command.jsx
+      src/components/KNSelect.jsx
+      src/components/LocationFields.jsx
+      src/features/crm/CustomerFormModal.jsx
+      src/features/pos/CreateCustomerModal.jsx
+      src/features/__tests__/audit2G2.test.js
+
+    [0m [90m 1 |[39m [36mimport[39m [33m*[39m [36mas[39m [33mReact[39m [36mfrom[39m [32m"react"[39m
+    [31m[1m>[22m[39m[90m 2 |[39m [36mimport[39m { [33mCommand[39m [36mas[39m [33mCommandPrimitive[39m } [36mfrom[39m [32m"cmdk"[39m
+     [90m   |[39m [31m[1m^[22m[39m
+     [90m 3 |[39m [36mimport[39m { [33mSearch[39m } [36mfrom[39m [32m"lucide-react"[39m
+     [90m 4 |[39m
+     [90m 5 |[39m [36mimport[39m { cn } [36mfrom[39m [32m"@/lib/utils"[39m[0m
+
+      at Resolver.resolveModule (../fe/node_modules/jest-resolve/build/resolver.js:324:11)
+      at Object.<anonymous> (../fe/node_modules/cmdk/node_modules/@radix-ui/react-use-controllable-state/src/use-controllable-state.tsx:2:32)
+      at Object.<anonymous> (../fe/node_modules/cmdk/node_modules/@radix-ui/react-dialog/src/dialog.tsx:6:38)
+      at Object.<anonymous> (../fe/node_modules/cmdk/dist/index.js:1:961)
+      at Object.<anonymous> (src/components/ui/command.jsx:2:1)
+      at Object.<anonymous> (src/components/KNSelect.jsx:43:1)
+      at Object.<anonymous> (src/components/LocationFields.jsx:23:1)
+      at Object.<anonymous> (src/features/crm/CustomerFormModal.jsx:2:1)
+      at Object.<anonymous> (src/features/pos/CreateCustomerModal.jsx:3:1)
+      at Object.<anonymous> (src/features/__tests__/audit2G2.test.js:5:1)
+
+FAIL src/features/__tests__/decisionsD1.test.js
+  ● Test suite failed to run
+
+    Cannot find module '@radix-ui/primitive/is-development' from '../fe/node_modules/cmdk/node_modules/@radix-ui/react-use-controllable-state/dist/index.js'
+
+    Require stack:
+      /tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/fe/node_modules/cmdk/node_modules/@radix-ui/react-use-controllable-state/dist/index.js
+      /tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/fe/node_modules/cmdk/node_modules/@radix-ui/react-dialog/dist/index.js
+      /tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/fe/node_modules/cmdk/dist/index.js
+      src/components/ui/command.jsx
+      src/components/KNSelect.jsx
+      src/features/finance/cases/CaseCreateModal.jsx
+      src/features/__tests__/decisionsD1.test.js
+
+    [0m [90m 1 |[39m [36mimport[39m [33m*[39m [36mas[39m [33mReact[39m [36mfrom[39m [32m"react"[39m
+    [31m[1m>[22m[39m[90m 2 |[39m [36mimport[39m { [33mCommand[39m [36mas[39m [33mCommandPrimitive[39m } [36mfrom[39m [32m"cmdk"[39m
+     [90m   |[39m [31m[1m^[22m[39m
+     [90m 3 |[39m [36mimport[39m { [33mSearch[39m } [36mfrom[39m [32m"lucide-react"[39m
+     [90m 4 |[39m
+     [90m 5 |[39m [36mimport[39m { cn } [36mfrom[39m [32m"@/lib/utils"[39m[0m
+
+      at Resolver.resolveModule (../fe/node_modules/jest-resolve/build/resolver.js:324:11)
+      at Object.<anonymous> (../fe/node_modules/cmdk/node_modules/@radix-ui/react-use-controllable-state/src/use-controllable-state.tsx:2:32)
+      at Object.<anonymous> (../fe/node_modules/cmdk/node_modules/@radix-ui/react-dialog/src/dialog.tsx:6:38)
+      at Object.<anonymous> (../fe/node_modules/cmdk/dist/index.js:1:961)
+      at Object.<anonymous> (src/components/ui/command.jsx:2:1)
+      at Object.<anonymous> (src/components/KNSelect.jsx:43:1)
+      at Object.<anonymous> (src/features/finance/cases/CaseCreateModal.jsx:17:1)
+      at Object.<anonymous> (src/features/__tests__/decisionsD1.test.js:8:1)
+
+FAIL src/features/__tests__/roleGateSweep2.test.js
+  ● Test suite failed to run
+
+    Cannot find module '@radix-ui/primitive/is-development' from '../fe/node_modules/cmdk/node_modules/@radix-ui/react-use-controllable-state/dist/index.js'
+
+    Require stack:
+      /tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/fe/node_modules/cmdk/node_modules/@radix-ui/react-use-controllable-state/dist/index.js
+      /tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/fe/node_modules/cmdk/node_modules/@radix-ui/react-dialog/dist/index.js
+      /tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/fe/node_modules/cmdk/dist/index.js
+      src/components/ui/command.jsx
+      src/components/KNSelect.jsx
+      src/features/pettycash/CashAdvanceDetail.jsx
+      src/features/__tests__/roleGateSweep2.test.js
+
+    [0m [90m 1 |[39m [36mimport[39m [33m*[39m [36mas[39m [33mReact[39m [36mfrom[39m [32m"react"[39m
+    [31m[1m>[22m[39m[90m 2 |[39m [36mimport[39m { [33mCommand[39m [36mas[39m [33mCommandPrimitive[39m } [36mfrom[39m [32m"cmdk"[39m
+     [90m   |[39m [31m[1m^[22m[39m
+     [90m 3 |[39m [36mimport[39m { [33mSearch[39m } [36mfrom[39m [32m"lucide-react"[39m
+     [90m 4 |[39m
+     [90m 5 |[39m [36mimport[39m { cn } [36mfrom[39m [32m"@/lib/utils"[39m[0m
+
+      at Resolver.resolveModule (../fe/node_modules/jest-resolve/build/resolver.js:324:11)
+      at Object.<anonymous> (../fe/node_modules/cmdk/node_modules/@radix-ui/react-use-controllable-state/src/use-controllable-state.tsx:2:32)
+      at Object.<anonymous> (../fe/node_modules/cmdk/node_modules/@radix-ui/react-dialog/src/dialog.tsx:6:38)
+      at Object.<anonymous> (../fe/node_modules/cmdk/dist/index.js:1:961)
+      at Object.<anonymous> (src/components/ui/command.jsx:2:1)
+      at Object.<anonymous> (src/components/KNSelect.jsx:43:1)
+      at Object.<anonymous> (src/features/pettycash/CashAdvanceDetail.jsx:9:1)
+      at Object.<anonymous> (src/features/__tests__/roleGateSweep2.test.js:6:1)
+
+FAIL src/features/__tests__/f10DispatchPaymentGate.test.js
+  ● Test suite failed to run
+
+    Cannot find module '@radix-ui/primitive/is-development' from '../fe/node_modules/cmdk/node_modules/@radix-ui/react-use-controllable-state/dist/index.js'
+
+    Require stack:
+      /tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/fe/node_modules/cmdk/node_modules/@radix-ui/react-use-controllable-state/dist/index.js
+      /tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/fe/node_modules/cmdk/node_modules/@radix-ui/react-dialog/dist/index.js
+      /tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/fe/node_modules/cmdk/dist/index.js
+      src/components/ui/command.jsx
+      src/components/KNSelect.jsx
+      src/features/crm/ARReceiptModal.jsx
+      src/features/orders/DispatchPaymentGatePanel.jsx
+      src/features/__tests__/f10DispatchPaymentGate.test.js
+
+    [0m [90m 1 |[39m [36mimport[39m [33m*[39m [36mas[39m [33mReact[39m [36mfrom[39m [32m"react"[39m
+    [31m[1m>[22m[39m[90m 2 |[39m [36mimport[39m { [33mCommand[39m [36mas[39m [33mCommandPrimitive[39m } [36mfrom[39m [32m"cmdk"[39m
+     [90m   |[39m [31m[1m^[22m[39m
+     [90m 3 |[39m [36mimport[39m { [33mSearch[39m } [36mfrom[39m [32m"lucide-react"[39m
+     [90m 4 |[39m
+     [90m 5 |[39m [36mimport[39m { cn } [36mfrom[39m [32m"@/lib/utils"[39m[0m
+
+      at Resolver.resolveModule (../fe/node_modules/jest-resolve/build/resolver.js:324:11)
+      at Object.<anonymous> (../fe/node_modules/cmdk/node_modules/@radix-ui/react-use-controllable-state/src/use-controllable-state.tsx:2:32)
+      at Object.<anonymous> (../fe/node_modules/cmdk/node_modules/@radix-ui/react-dialog/src/dialog.tsx:6:38)
+      at Object.<anonymous> (../fe/node_modules/cmdk/dist/index.js:1:961)
+      at Object.<anonymous> (src/components/ui/command.jsx:2:1)
+      at Object.<anonymous> (src/components/KNSelect.jsx:43:1)
+      at Object.<anonymous> (src/features/crm/ARReceiptModal.jsx:18:1)
+      at Object.<anonymous> (src/features/orders/DispatchPaymentGatePanel.jsx:13:1)
+      at Object.<anonymous> (src/features/__tests__/f10DispatchPaymentGate.test.js:6:1)
+
+FAIL src/features/__tests__/phase3P4Popups.test.js
+  ● Test suite failed to run
+
+    Cannot find module '@radix-ui/primitive/is-development' from '../fe/node_modules/cmdk/node_modules/@radix-ui/react-use-controllable-state/dist/index.js'
+
+    Require stack:
+      /tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/fe/node_modules/cmdk/node_modules/@radix-ui/react-use-controllable-state/dist/index.js
+      /tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/fe/node_modules/cmdk/node_modules/@radix-ui/react-dialog/dist/index.js
+      /tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/fe/node_modules/cmdk/dist/index.js
+      src/components/ui/command.jsx
+      src/components/KNSelect.jsx
+      src/features/finance/FixedAssetsParts.jsx
+      src/features/finance/FixedAssetsView.jsx
+      src/features/__tests__/phase3P4Popups.test.js
+
+    [0m [90m 1 |[39m [36mimport[39m [33m*[39m [36mas[39m [33mReact[39m [36mfrom[39m [32m"react"[39m
+    [31m[1m>[22m[39m[90m 2 |[39m [36mimport[39m { [33mCommand[39m [36mas[39m [33mCommandPrimitive[39m } [36mfrom[39m [32m"cmdk"[39m
+     [90m   |[39m [31m[1m^[22m[39m
+     [90m 3 |[39m [36mimport[39m { [33mSearch[39m } [36mfrom[39m [32m"lucide-react"[39m
+     [90m 4 |[39m
+     [90m 5 |[39m [36mimport[39m { cn } [36mfrom[39m [32m"@/lib/utils"[39m[0m
+
+      at Resolver.resolveModule (../fe/node_modules/jest-resolve/build/resolver.js:324:11)
+      at Object.<anonymous> (../fe/node_modules/cmdk/node_modules/@radix-ui/react-use-controllable-state/src/use-controllable-state.tsx:2:32)
+      at Object.<anonymous> (../fe/node_modules/cmdk/node_modules/@radix-ui/react-dialog/src/dialog.tsx:6:38)
+      at Object.<anonymous> (../fe/node_modules/cmdk/dist/index.js:1:961)
+      at Object.<anonymous> (src/components/ui/command.jsx:2:1)
+      at Object.<anonymous> (src/components/KNSelect.jsx:43:1)
+      at Object.<anonymous> (src/features/finance/FixedAssetsParts.jsx:18:1)
+      at Object.<anonymous> (src/features/finance/FixedAssetsView.jsx:29:1)
+      at Object.<anonymous> (src/features/__tests__/phase3P4Popups.test.js:5:1)
+
+FAIL src/features/__tests__/mkl02RecapPaging.test.js
+  ● Test suite failed to run
+
+    Cannot find module '@radix-ui/primitive/is-development' from '../fe/node_modules/cmdk/node_modules/@radix-ui/react-use-controllable-state/dist/index.js'
+
+    Require stack:
+      /tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/fe/node_modules/cmdk/node_modules/@radix-ui/react-use-controllable-state/dist/index.js
+      /tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/fe/node_modules/cmdk/node_modules/@radix-ui/react-dialog/dist/index.js
+      /tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/fe/node_modules/cmdk/dist/index.js
+      src/components/ui/command.jsx
+      src/components/KNSelect.jsx
+      src/features/purchasing/makloon/MakloonClaimRecapView.jsx
+      src/features/__tests__/mkl02RecapPaging.test.js
+
+    [0m [90m 1 |[39m [36mimport[39m [33m*[39m [36mas[39m [33mReact[39m [36mfrom[39m [32m"react"[39m
+    [31m[1m>[22m[39m[90m 2 |[39m [36mimport[39m { [33mCommand[39m [36mas[39m [33mCommandPrimitive[39m } [36mfrom[39m [32m"cmdk"[39m
+     [90m   |[39m [31m[1m^[22m[39m
+     [90m 3 |[39m [36mimport[39m { [33mSearch[39m } [36mfrom[39m [32m"lucide-react"[39m
+     [90m 4 |[39m
+     [90m 5 |[39m [36mimport[39m { cn } [36mfrom[39m [32m"@/lib/utils"[39m[0m
+
+      at Resolver.resolveModule (../fe/node_modules/jest-resolve/build/resolver.js:324:11)
+      at Object.<anonymous> (../fe/node_modules/cmdk/node_modules/@radix-ui/react-use-controllable-state/src/use-controllable-state.tsx:2:32)
+      at Object.<anonymous> (../fe/node_modules/cmdk/node_modules/@radix-ui/react-dialog/src/dialog.tsx:6:38)
+      at Object.<anonymous> (../fe/node_modules/cmdk/dist/index.js:1:961)
+      at Object.<anonymous> (src/components/ui/command.jsx:2:1)
+      at Object.<anonymous> (src/components/KNSelect.jsx:43:1)
+      at Object.<anonymous> (src/features/purchasing/makloon/MakloonClaimRecapView.jsx:5:1)
+      at Object.<anonymous> (src/features/__tests__/mkl02RecapPaging.test.js:5:1)
+
+
+Test Suites: 35 failed, 113 passed, 148 total
+Tests:       916 passed, 916 total
+Snapshots:   0 total
+Time:        105.963 s, estimated 240 s
+Ran all test suites.
