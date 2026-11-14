@@ -130,8 +130,9 @@ async def list_credit_notes(
     if return_id:   q["return_id"] = return_id
     q = resolve_list_scope("credit_notes", q, ctx, entity_id)
     docs = await db.credit_notes.find(q, sort=[("created_at", -1)]).to_list(500)
-    for d in docs:
-        d.pop("_id", None)
+    # PK-32 — status kosakata baru untuk data lama (`offset` = posted; tanpa `kind`/`source` = nota kredit sumbernya)
+    from services.credit_note_service import normalize
+    docs = [normalize(d) for d in docs]
     total = round(sum(float(d.get("gross_amount", 0) or 0) for d in docs), 2)
     return {"items": strip_cost_fields(docs, ctx.user.get("role")), "total": len(docs), "total_amount": total}
 
@@ -145,7 +146,8 @@ async def get_credit_note(cn_id: str, request: Request) -> Dict[str, Any]:
         raise HTTPException(status_code=404, detail="Credit Note tidak ditemukan")
     doc.pop("_id", None)
     assert_entity_access(doc, "credit_notes", ctx)
-    return strip_cost_fields(doc, ctx.user.get("role"))
+    from services.credit_note_service import normalize   # PK-32 — status kosakata baru
+    return strip_cost_fields(normalize(doc), ctx.user.get("role"))
 
 
 # ─── CREATE ──────────────────────────────────────────────────────────────────

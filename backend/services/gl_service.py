@@ -1241,6 +1241,32 @@ async def order_revenue_recognized(order_id: str) -> Dict[str, float]:
     return {"revenue": rev, "ppn": ppn, "ar": round(ar, 2)}
 
 
+async def order_effective_totals(order: Dict[str, Any]) -> Dict[str, float]:
+    """PK-32 (`02` D1) — NILAI EFEKTIF PENDAPATAN pesanan `{grand, ppn, net}`: nilai tagihan (grand total + tagihan
+    tambahan nota debit, `order_grand_total`) dikurangi Σ nota kredit amandemen yang tidak `void` (bagian yang menutup
+    nota debit lama yang belum ditagih, `debit_note_offset`, tidak dihitung); PPN dengan cara yang sama. Dasar
+    pendapatan surat jalan dan jurnal per pesanan. Pesanan tanpa nota dan tanpa tagihan tambahan = grand total & PPN
+    mentah (tidak berubah satu rupiah pun). Nota batal item tidak dihitung: total pesanannya sudah turun saat batal."""
+    grand = round(order_grand_total(order), 2)
+    ppn = float(order.get("ppn_amount", order.get("tax", 0)) or 0) + sum(
+        float(x.get("ppn") or 0) for x in (order.get("extra_billing_lines") or []) if isinstance(x, dict))
+    oid = order.get("id")
+    if oid:
+        async for cn in db.credit_notes.find({"order_id": oid, "source": "amendment", "status": {"$ne": "void"}},
+                                             {"_id": 0, "kind": 1, "gross_amount": 1, "ppn_amount": 1,
+                                              "debit_note_offset": 1}):
+            if (cn.get("kind") or "credit_note") != "credit_note":
+                continue
+            g = float(cn.get("gross_amount") or 0)
+            part = g - float(cn.get("debit_note_offset") or 0)
+            if part <= EPS or g <= EPS:
+                continue
+            grand -= part
+            ppn -= float(cn.get("ppn_amount") or 0) * part / g
+    grand, ppn = round(grand, 2), round(ppn, 2)
+    return {"grand": grand, "ppn": ppn, "net": round(grand - ppn, 2)}
+
+
 def order_advance_total(order: Dict[str, Any]) -> float:
     """Σ pembayaran ber-`gl_bucket=advance` (kas yang masuk lewat 2-1400)."""
     return round(sum(float(p.get("amount") or 0) for p in (order.get("payments") or [])
@@ -3027,7 +3053,12 @@ async def post_amendment_credit_note(note: Dict[str, Any], *, ar_part: float,
     nid = note.get("id")
     if not nid or await _already_posted("amendment_credit_note", nid):
         return None
-    net, ppn = round(float(note.get("net_amount") or 0), 2), round(float(note.get("ppn_amount") or 0), 2)
+    # PK-32 (FX-14) — nota dari mesin nota (`credit_note_service`) hanya membalik pendapatan yang SUDAH diakui
+    # (`revenue_reversed_*`); nota lama tanpa field itu = seluruh nilainya (perilaku lama).
+    if "revenue_reversed_net" in note:
+        net, ppn = round(float(note.get("revenue_reversed_net") or 0), 2), round(float(note.get("revenue_reversed_ppn") or 0), 2)
+    else:
+        net, ppn = round(float(note.get("net_amount") or 0), 2), round(float(note.get("ppn_amount") or 0), 2)
     ar_part, sc_part = round(float(ar_part or 0), 2), round(float(store_credit_part or 0), 2)
     if net + ppn <= EPS:
         return None
@@ -3049,6 +3080,36 @@ async def post_amendment_credit_note(note: Dict[str, Any], *, ar_part: float,
         created_by="system", source_label=label,
         ref={"order_id": note.get("order_id"), "order_number": note.get("order_number")})
 
+
+
+async def post_amendment_debit_note(note: Dict[str, Any]) -> Optional[Dict[str, Any]]:
+    """PK-32 (FX-15, K-14) — Nota Debit amandemen (harga/qty naik setelah terbit) yang sudah menjadi tagihan tambahan:
+      Dr 1-1200 Piutang (`revenue_added_net + revenue_added_ppn`) / Cr 4-1000 Pendapatan (`revenue_added_net`)
+      / Cr 2-1200 PPN Keluaran (`revenue_added_ppn`).
+    Hanya bagian yang barangnya sudah terkirim (`credit_note_service.recognition_split`); sisanya diakui surat jalan
+    berikutnya lewat nilai efektif. Nol → tanpa jurnal. Idempotent (source_type='amendment_debit_note', source_id=note.id,
+    ref.order_id)."""
+    nid = note.get("id")
+    if not nid or await _already_posted("amendment_debit_note", nid):
+        return None
+    net = round(float(note.get("revenue_added_net") or 0), 2)
+    ppn = round(float(note.get("revenue_added_ppn") or 0), 2)
+    if net + ppn <= EPS:
+        return None
+    label = note.get("number", nid)
+    lines = [{"account_code": ACC_PIUTANG, "debit": round(net + ppn, 2), "credit": 0.0,
+              "description": f"Tagihan tambahan {label}"}]
+    if net > EPS:
+        lines.append({"account_code": ACC_PENDAPATAN, "debit": 0.0, "credit": net,
+                      "description": f"Koreksi penjualan {label}"})
+    if ppn > EPS:
+        lines.append({"account_code": ACC_PPN_OUT, "debit": 0.0, "credit": ppn,
+                      "description": f"Koreksi PPN Keluaran {label}"})
+    return await _insert_entry(
+        lines=lines, description=f"Nota Debit amandemen {label}", date=note.get("issued_at") or note.get("created_at")
+        or now_iso(), source_type="amendment_debit_note", source_id=nid, entity_id=note.get("entity_id", ""),
+        created_by="system", source_label=label,
+        ref={"order_id": note.get("order_id"), "order_number": note.get("order_number")})
 
 
 async def post_store_credit_redemption(*, redemption_id: str, entity_id: str, amount: float,

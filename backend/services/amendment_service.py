@@ -492,6 +492,24 @@ async def _note_baseline(order: Dict[str, Any], exclude_id: str = ""
     return items, disc, applied, pending
 
 
+async def effective_order(order: Dict[str, Any]) -> Dict[str, Any]:
+    """PK-32 (FX-12) — pesanan pada NILAI EFEKTIF: baris asal + perubahan nota amandemen yang SUDAH terbit (kredit
+    dan debit), dihitung ulang dengan mesin harga yang sama seperti pratinjau amandemen (`compute_order_pricing`, potret
+    pajak pesanan). Dipakai harga per baris dan rasio PPN nota retur. Pesanan tanpa nota terbit → salinan apa adanya
+    (tanpa hitung ulang). `grand_total`/`items` pesanan di database tidak pernah diubah."""
+    items, disc, applied, _ = await _note_baseline(order)
+    if not applied:
+        return dict(order)
+    priced = await config_service.compute_order_pricing(
+        items, entity_id=order.get("entity_id") or "", order_discount_percent=disc,
+        tax_override=(order.get("tax_override") or None), snapshot=potret_dokumen(order))
+    out = dict(order)
+    out.update({k: v for k, v in priced.items() if k not in ("settings", "tax_snapshot")})
+    out["order_discount_percent"] = disc
+    out["is_effective"] = True
+    return out
+
+
 # ── Pratinjau (tanpa menyimpan apa pun) ─────────────────────────────────────
 async def preview(doc_type: str, doc_id: str, changes: List[Dict[str, Any]],
                   reason_code: str = "",

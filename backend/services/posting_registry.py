@@ -457,6 +457,10 @@ async def _retry_fixed_asset_disposal(doc: Dict[str, Any], actor: Dict[str, Any]
 
 
 async def _retry_credit_note(doc: Dict[str, Any], actor: Dict[str, Any]) -> None:
+    if doc.get("effects"):   # PK-32 — nota dari mesin nota: ulang = tuntaskan langkah yang belum `done`
+        from services.credit_note_service import settle
+        await settle(doc["id"], actor, raise_on_fail=True)
+        return
     ret = await db.sales_returns.find_one({"id": doc.get("return_id")}, {"_id": 0})
     if not ret:
         raise RuntimeError("Retur asal nota kredit tidak ditemukan.")
@@ -577,7 +581,8 @@ KINDS: Dict[str, Dict[str, Any]] = {
         "label": "Nota Kredit", "collection": "credit_notes", "failed_query": {"gl_status": "failed"},
         "entity_field": "entity_id", "number_field": "number", "amount_field": "gross_amount",
         "status_field": "gl_status", "error_field": "gl_error", "failed_at_field": "gl_failed_at",
-        "doc_type": "credit_note", "posters": ("post_sales_return", "post_sales_return_settlement"),
+        "doc_type": "credit_note",
+        "posters": ("post_sales_return", "post_sales_return_settlement", "post_amendment_debit_note"),
         "retry": _retry_credit_note},
     "vendor_bill": {
         "label": "Faktur Pemasok", "collection": "vendor_bills", "failed_query": {"gl_status": "failed"},

@@ -131,7 +131,12 @@ def _parse_dt(value: Any) -> Optional[datetime]:
 
 
 def _order_grand_total(o: Dict[str, Any]) -> float:
-    return float(o.get("grand_total", o.get("total_amount", 0)) or 0)
+    """NILAI TAGIHAN pesanan = grand total + Σ tagihan tambahan nota debit (`extra_billing_lines[].gross`, PK-32 · K-14).
+    Satu-satunya pembaca nilai tagihan untuk sisa tagihan, status bayar, alokasi, dan umur piutang; `grand_total` dan
+    `items[]` pesanan sendiri tidak pernah diubah nota."""
+    base = float(o.get("grand_total", o.get("total_amount", 0)) or 0)
+    extra = sum(float(x.get("gross") or 0) for x in (o.get("extra_billing_lines") or []) if isinstance(x, dict))
+    return round(base + extra, 2) if extra else base
 
 
 def _order_paid(o: Dict[str, Any]) -> float:
