@@ -119,8 +119,8 @@ pemakaian tetap diterima. Sebelum koneksi tunggal ada, kedua endpoint bekerja se
 `integration.manage`. `GET /api/admin/integrations` menambah `secrets_key_configured`. `hr.manage_settings` tetap
 menjaga pengaturan SDM.
 
-Pesan 403 (Z6): "Anda belum punya akses untuk mengatur integrasi. Minta Admin menambahkan akses 'Pengaturan, Pengguna
-& Hak Akses'."
+Pesan 403 (Z6): "Anda belum punya akses untuk mengatur integrasi. Minta Admin menambahkan akses 'Pusat
+Pengaturan'."
 
 ### Pengaturan
 
@@ -142,14 +142,14 @@ hari ini (`system_settings{scope: "integrations"}.anthropic.enabled|model`) — 
 | `consumers` | `services/hr_ai_service.py:is_enabled` | `services/hr_ai_service.py:autotag_image` |
 
 `PUT /api/admin/integrations` berhenti menerima `anthropic_enabled` dan `anthropic_model` (400 "Hidup/mati dan model
-diatur di Pusat Pengaturan › Asisten."); kunci penyedia tetap di sana. Uji putaran `t1_config.py` wajib lulus untuk
+diatur di Pengaturan › Integrasi & Sistem › AI & Tampilan."); kunci penyedia tetap di sana. Uji putaran `t1_config.py` wajib lulus untuk
 kedua kunci.
 
 ### Izin dan peran
 
 | Pasangan | Peran bawaan | Modul akses | Id menu |
 |---|---|---|---|
-| `integration.manage` (label aksi "Kelola") | `admin` | "Pengaturan, Pengguna & Hak Akses" (`admin`) — `resources` ditambah `integration` | `admin`, `settings-system` (sudah ada di `nav` modul itu) |
+| `integration.manage` (label aksi "Kelola") | `admin` | "Pusat Pengaturan" (`settings`; sejak PR-T5 pecahan modul `admin`) — `resources` ditambah `integration` | `admin`, `settings-system` (sudah ada di `nav` modul itu) |
 
 Empat tempat (`02` §3.2): `permissions_config.DEFAULT_PERMISSIONS`, `access_modules.MODULE_CATALOG`, delapan endpoint
 integrasi (empat yang ada + empat koneksi WhatsApp), tombol layar (`can(perms, "integration", "manage")`).
@@ -170,7 +170,7 @@ integrasi (empat yang ada + empat koneksi WhatsApp), tombol layar (`can(perms, "
 - Bila `secrets_key_configured` salah: peringatan "Kunci enkripsi server belum dipasang. Rahasia yang disimpan
   sekarang belum terenkripsi."
 - Sakelar hidup/mati dan pilihan model pengenal gambar dibuang dari kartu penyedia; gantinya tautan "Hidup/mati dan
-  model diatur di Pusat Pengaturan › Asisten."
+  model diatur di Pengaturan › Integrasi & Sistem › AI & Tampilan."
 - Tab WhatsApp di Penjadwal & Notifikasi dan pop-up WhatsApp di Pusat Dokumen: setelah koneksi tunggal ada, isian
   koneksi diganti ringkasan hanya-baca + tautan **Atur koneksi di Integrasi**; isian pemakaian tetap.
 
