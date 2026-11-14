@@ -8,8 +8,8 @@ import re
 import uuid
 from permissions_config import DEFAULT_PERMISSIONS
 
-# SEC-2 — umur session (jam). Sliding renewal saat sisa < setengah TTL.
-SESSION_TTL_HOURS = 24
+# SEC-2 — umur session (jam): KF-T7 (#68) kini pengaturan `keamanan.umur_sesi_jam` (bawaan 24), dibaca saat login
+# (`routers/auth.py`) dan disimpan di sesi (`ttl_hours`); sliding renewal saat sisa < setengah umur sesi itu.
 
 
 def now_iso() -> str:

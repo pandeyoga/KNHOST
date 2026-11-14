@@ -35,6 +35,16 @@ class DispositionError(ValueError):
     pass
 
 
+def _hari(a: Dict[str, Any], leaf: str) -> int:
+    """KF-T7 — angka hari dari `return_assumptions`; tidak ada → bawaan registry `returns.<leaf>` (dulu literal di kode).
+    0 tetap 0 (tidak lagi dibaca sebagai nilai lain)."""
+    v = a.get(leaf)
+    if v is None:
+        from config_registry import default_of
+        v = default_of(f"returns.{leaf}")
+    return int(v)
+
+
 def _today() -> str:
     return now_iso()[:10]
 
@@ -98,7 +108,7 @@ async def _heal_cancelled(r: Dict[str, Any]) -> None:
 
 async def view(ret: Dict[str, Any]) -> Dict[str, Any]:
     a = await return_assumptions(ret.get("entity_id", ""))
-    window = int(a.get("supplier_window_days") or 21)
+    window = _hari(a, "supplier_window_days")   # KF-T7 — cadangan = bawaan registry (dulu literal 21)
     rolls = await _rolls(ret["id"])
     dl = {rid: g for g in await supplier_deadlines(rolls, window) for rid in g["roll_ids"]}
     names = {e["id"]: e.get("short_name") or e["id"] async for e in
@@ -467,7 +477,8 @@ async def desk_summary(scope_ids: List[str]) -> Dict[str, Any]:
                 continue
             a = await return_assumptions(r["owner_entity_id"])
             left = (date.fromisoformat(r["supplier_deadline"]) - today).days
-            if 0 <= left <= int(a.get("supplier_reminder_days") or 3):
+            days = _hari(a, "supplier_reminder_days")   # KF-T7 — cadangan = bawaan registry (dulu literal 3)
+            if days > 0 and 0 <= left <= days:   # 0 = tanpa pengingat (sama dengan job pengingat)
                 due.append({"roll_no": r["roll_no"], "deadline": r["supplier_deadline"], "days_left": left,
                             "return_number": c["return_number"]})
     return {"incoming": box["counts"]["incoming"], "rolls": box["counts"]["rolls"],

@@ -111,7 +111,9 @@ async def create_customer(payload: CustomerCreate, request: Request) -> Dict[str
                                      {"_id": 0, "name": 1})
         assigned_name = (su or {}).get("name", "")
     # SALES REVAMP V2 — sales team (PIC + co-sales + split). PIC menentukan kepemilikan.
-    sales_team = normalize_sales_team(payload.sales_team, assigned_id, assigned_name)
+    from services.customer_service import group_sales_max   # KF-T7 — batas anggota tim per PT pelanggan
+    sales_team = normalize_sales_team(payload.sales_team, assigned_id, assigned_name, max_members=await group_sales_max(
+        payload.entity_id or active_entity_or(DEFAULT_ENTITY_ID)))
     if sales_team:
         pic = pic_of(sales_team)
         if pic and pic.get("sales_id"):
@@ -205,7 +207,9 @@ async def update_customer(customer_id: str, payload: GenericPatch, request: Requ
     if "sales_team" in data:
         aid = existing.get("assigned_sales_id", "")
         aname = existing.get("assigned_sales_name", "")
-        team = normalize_sales_team(data.get("sales_team") or [], aid, aname)
+        from services.customer_service import group_sales_max   # KF-T7 — batas anggota tim per PT pelanggan
+        team = normalize_sales_team(data.get("sales_team") or [], aid, aname, max_members=await group_sales_max(
+            data.get("entity_id") or existing.get("entity_id")))
         if aid and team:
             if not any(m["sales_id"] == aid for m in team):
                 raise HTTPException(status_code=400, detail="Tim sales harus menyertakan pemilik (PIC) saat ini. Ubah pemilik via Reassign.")

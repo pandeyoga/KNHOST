@@ -3,7 +3,7 @@ from datetime import datetime, timedelta, timezone
 from typing import Any, Dict, List, Optional, Tuple
 from fastapi import HTTPException, Request
 from db import db
-from core_utils import safe_doc, now_iso, new_id, SESSION_TTL_HOURS
+from core_utils import safe_doc, now_iso, new_id
 from permissions_config import DEFAULT_PERMISSIONS
 
 SESSION_COOKIE = "session_token"
@@ -12,8 +12,24 @@ SESSION_COOKIE = "session_token"
 MUTATING_METHODS = {"POST", "PUT", "PATCH", "DELETE"}
 
 
-def session_expiry() -> datetime:
-    return datetime.now(timezone.utc) + timedelta(hours=SESSION_TTL_HOURS)
+def session_expiry(hours: int) -> datetime:
+    """Kedaluwarsa sesi `hours` jam dari sekarang. KF-T7 — `hours` = `keamanan.umur_sesi_jam` yang dibaca pemanggil
+    saat sesi dibuat (disimpan di sesi sebagai `ttl_hours`)."""
+    return datetime.now(timezone.utc) + timedelta(hours=int(hours))
+
+
+def session_ttl_hours(session: Dict[str, Any]) -> int:
+    """KF-T7 — umur sesi INI (jam): `ttl_hours` yang dicatat saat login. Sesi yang dibuat sebelum umur sesi bisa diatur
+    tidak mencatatnya → bawaan registry (24 jam, nilai yang berlaku saat sesi itu dibuat). Sesi yang sudah ada tidak
+    ikut berubah saat pengaturan diubah; perpanjangan memakai umur sesinya sendiri."""
+    try:
+        ttl = int(session.get("ttl_hours") or 0)
+    except (TypeError, ValueError):
+        ttl = 0
+    if ttl > 0:
+        return ttl
+    from config_registry import default_of
+    return int(default_of("keamanan.umur_sesi_jam"))
 
 
 def _as_utc(dt: Any) -> Optional[datetime]:
@@ -48,15 +64,16 @@ async def current_user(request: Request) -> Dict[str, Any]:
         raise HTTPException(status_code=401, detail="Session tidak valid")
     now = datetime.now(timezone.utc)
     expires_at = _as_utc(session.get("expires_at"))
+    ttl = session_ttl_hours(session)   # KF-T7 — umur sesi ini (dicatat saat login)
     if expires_at is None:
         # sesi pra-TTL: beri masa berlaku agar ikut kebijakan kedaluwarsa
-        await db.sessions.update_one({"token": token}, {"$set": {"expires_at": session_expiry()}})
+        await db.sessions.update_one({"token": token}, {"$set": {"expires_at": session_expiry(ttl)}})
     elif expires_at <= now:
         await db.sessions.delete_one({"token": token})
         raise HTTPException(status_code=401, detail="Session kedaluwarsa — silakan login ulang")
-    elif (expires_at - now) < timedelta(hours=SESSION_TTL_HOURS / 2):
+    elif (expires_at - now) < timedelta(hours=ttl / 2):
         # sliding renewal: perpanjang saat sisa < setengah TTL
-        await db.sessions.update_one({"token": token}, {"$set": {"expires_at": session_expiry()}})
+        await db.sessions.update_one({"token": token}, {"$set": {"expires_at": session_expiry(ttl)}})
     user = safe_doc(await db.users.find_one({"id": session["user_id"], "status": "active"}, {"_id": 0, "password_hash": 0}))
     if not user:
         raise HTTPException(status_code=401, detail="User tidak aktif")

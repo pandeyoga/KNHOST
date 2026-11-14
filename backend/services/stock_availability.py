@@ -10,8 +10,10 @@ Dipakai: papan stok (`fulfillment_service.build_supply_index(registered_only=Tru
 (`purchase_requisition_service.reorder_suggestions` → juga kartu "Stok Rendah/Perlu reorder" Control Tower),
 "Stok rendah" Dasbor Manajer & Operasi Gudang (`low_stock_summary`).
 
-Stok rendah = per PRODUK per badan usaha: 0 < Tersedia < LOW_STOCK_QTY (satuan dasar produk). Tersedia 0 = "habis",
-bukan "rendah" (sama dengan penanda baris di Operasi Gudang).
+Stok rendah = per PRODUK per badan usaha: 0 < Tersedia < batas stok menipis (satuan dasar produk). Tersedia 0 = "habis",
+bukan "rendah" (sama dengan penanda baris di Operasi Gudang). KF-T7 (#46) — batasnya pengaturan
+`inventory.low_stock_default_qty` (bawaan 100, satu angka dengan pemberitahuan stok menipis barang tanpa titik pesan
+ulang; dulu konstanta `LOW_STOCK_QTY` di sini dan salinan 100 di `notification_service`), dibaca `low_stock_qty`.
 """
 from typing import Any, Dict, Iterable, List, Optional, Set
 
@@ -19,14 +21,22 @@ from db import db
 from core_utils import DEFAULT_ENTITY_ID
 
 EPS = 0.001
-LOW_STOCK_QTY = 100.0
 AVAILABLE_LABEL = ("Tersedia = roll siap jual (tidak diblokir, karantina, atau ditahan) dikurangi yang sudah "
                    "dipesan & cadangan makloon — sama dengan papan stok")
-LOW_STOCK_LABEL = f"produk dengan tersedia di atas 0 dan di bawah {int(LOW_STOCK_QTY)} (satuan dasar), per badan usaha"
 
 
-def is_low_stock(available: float, threshold: float = LOW_STOCK_QTY) -> bool:
-    """Satu aturan "Stok rendah": masih ada (> 0) tetapi di bawah ambang. 0 = habis (bukan rendah)."""
+async def low_stock_qty() -> float:
+    """KF-T7 — batas "Stok rendah" (satuan dasar): pengaturan `inventory.low_stock_default_qty` (grup)."""
+    from services.nilai_pengaturan import nilai
+    return float(await nilai("inventory.low_stock_default_qty"))
+
+
+def low_stock_label(threshold: float) -> str:
+    return f"produk dengan tersedia di atas 0 dan di bawah {threshold:g} (satuan dasar), per badan usaha"
+
+
+def is_low_stock(available: float, threshold: float) -> bool:
+    """Satu aturan "Stok rendah": masih ada (> 0) tetapi di bawah batas (`low_stock_qty`). 0 = habis (bukan rendah)."""
     return EPS < float(available or 0) < float(threshold)
 
 
@@ -99,6 +109,7 @@ async def available_by_product(owner_entity_id: Optional[str] = None,
 async def low_stock_summary(owner_entity_ids: Optional[Iterable[str]] = None, limit: int = 50) -> Dict[str, Any]:
     """"Stok rendah" per produk per badan usaha (definisi tunggal K-04). Item diurutkan dari yang paling sedikit."""
     idx = await available_index(None, list(owner_entity_ids) if owner_entity_ids is not None else None)
+    batas = await low_stock_qty()
     pids = list(idx)
     prods = {p["id"]: p for p in await db.products.find(
         {"id": {"$in": pids}}, {"_id": 0, "id": 1, "sku": 1, "name": 1, "base_unit": 1}).to_list(None)} if pids else {}
@@ -106,11 +117,11 @@ async def low_stock_summary(owner_entity_ids: Optional[Iterable[str]] = None, li
     for pid, by_ent in idx.items():
         for eid, ent in by_ent.items():
             av = round(max(ent["available"], 0.0), 2)
-            if is_low_stock(av):
+            if is_low_stock(av, batas):
                 p = prods.get(pid, {})
                 items.append({"product_id": pid, "entity_id": eid, "sku": p.get("sku", ""),
                               "product_name": p.get("name", ""), "unit": p.get("base_unit") or "",
                               "available": av})
     items.sort(key=lambda r: (r["available"], r["sku"]))
-    return {"count": len(items), "items": items[:limit], "threshold": LOW_STOCK_QTY,
-            "label": LOW_STOCK_LABEL, "available_label": AVAILABLE_LABEL}
+    return {"count": len(items), "items": items[:limit], "threshold": batas,
+            "label": low_stock_label(batas), "available_label": AVAILABLE_LABEL}

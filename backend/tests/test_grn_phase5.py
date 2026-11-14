@@ -53,13 +53,14 @@ def test_profile_locale_evidence_alias_and_items():
              {"qty_text": "1.250", "role": "delivered_length"}, {"qty_text": "2,00", "role": "delivered_count"}]}},
         {"verified": False, "decision": "accept", "read": {"source": "ocr", "quantities": [{"qty_text": "3.5"}]}}]}
     assert P._locale_evidence(grn) == {"id": 2, "en": 0}      # baris belum dicek tidak dihitung
-    assert P._decide_locale({"id": 2, "en": 0}) == "id" and P._decide_locale({"id": 3, "en": 2}) == "unknown"
+    # KF-T7 — batas kini pengaturan `receiving.dn_profile_min_*` (bawaan 3 SJ · 80 %) → parameter.
+    assert P._decide_locale({"id": 2, "en": 0}, 0.8) == "id" and P._decide_locale({"id": 3, "en": 2}, 0.8) == "unknown"
     assert P._alias_to_add({"aliases": []}, grn) == "PT MEGA JAYA TEKSTIL"
     assert P._alias_to_add({"aliases": ["PT MEGA JAYA TEKSTIL"]}, grn) == ""
     assert P._item_learnings(grn) == {"desc:batik mega": {"product_id": "p1", "product_name": "Batik", "text": "BATIK MEGA"}}
-    assert P.active_locale({"number_locale": "id", "confirmed_count": 2}) == "unknown"
-    assert P.active_locale({"number_locale": "id", "confirmed_count": 3}) == "id"
-    assert P.active_locale({"number_locale": "en", "locale_locked": True}) == "en"
+    assert P.active_locale({"number_locale": "id", "confirmed_count": 2}, 3) == "unknown"
+    assert P.active_locale({"number_locale": "id", "confirmed_count": 3}, 3) == "id"
+    assert P.active_locale({"number_locale": "en", "locale_locked": True}, 3) == "en"
 
 
 # ── alur makloon penuh ───────────────────────────────────────────────────────

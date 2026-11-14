@@ -281,19 +281,19 @@ async def entity_names() -> Dict[str, str]:
 
 # ── Dua angka ────────────────────────────────────────────────────────────────
 
-def stock_state(qty: float) -> str:
-    """"habis" (0) · "rendah" (0 < Tersedia < ambang K-04, `stock_availability.LOW_STOCK_QTY`) · "ada" — SATU aturan;
-    FE tidak lagi memakai ambang sendiri (B3a STK-10: ≤ 40 di POS vs < 100 di server)."""
+def stock_state(qty: float, low_qty: float) -> str:
+    """"habis" (0) · "rendah" (0 < Tersedia < batas K-04 `low_qty` = `stock_availability.low_stock_qty()`) · "ada" —
+    SATU aturan; FE tidak lagi memakai ambang sendiri (B3a STK-10: ≤ 40 di POS vs < 100 di server)."""
     from services.stock_availability import is_low_stock
     q = float(qty or 0)
     if q <= EPS:
         return "habis"
-    return "rendah" if is_low_stock(q) else "ada"
+    return "rendah" if is_low_stock(q, low_qty) else "ada"
 
 
-def _pair(tot: Dict[str, Any]) -> Dict[str, Any]:
+def _pair(tot: Dict[str, Any], low_qty: float) -> Dict[str, Any]:
     qty = round(float(tot.get("available_qty") or 0), 2)
-    return {"rolls": int(tot.get("available_rolls") or 0), "qty": qty, "state": stock_state(qty)}
+    return {"rolls": int(tot.get("available_rolls") or 0), "qty": qty, "state": stock_state(qty, low_qty)}
 
 
 async def figures_for(product_ids: List[str], scope: Dict[str, Any],
@@ -313,9 +313,10 @@ async def figures_for(product_ids: List[str], scope: Dict[str, Any],
         slot["global"].append(s)
         if in_local(s, scope):
             slot["local"].append(s)
-    from services.stock_availability import LOW_STOCK_QTY
-    return {pid: {"unit": units.get(pid, ""), "low_stock_qty": LOW_STOCK_QTY, "local": _pair(sum_segments(v["local"])),
-                  "global": _pair(sum_segments(v["global"]))} for pid, v in per.items()}
+    from services.stock_availability import low_stock_qty
+    batas = await low_stock_qty()   # KF-T7 — pengaturan `inventory.low_stock_default_qty`
+    return {pid: {"unit": units.get(pid, ""), "low_stock_qty": batas, "local": _pair(sum_segments(v["local"]), batas),
+                  "global": _pair(sum_segments(v["global"]), batas)} for pid, v in per.items()}
 
 
 def scope_public(scope: Dict[str, Any]) -> Dict[str, Any]:
@@ -566,9 +567,11 @@ async def detail(product_id: str, scope: Dict[str, Any], visible_entity_ids: Opt
             for k in ("doc_id", "number", "source_order_id", "source_order_number"):
                 r[k] = ""
     atp = await atp_pair(product_id, segs, incoming, scope)
+    from services.stock_availability import low_stock_qty
+    batas = await low_stock_qty()   # KF-T7 — batas "Stok rendah" dari pengaturan
     return {"product_id": product_id, "sku": prod.get("sku", ""), "product_name": prod.get("name", ""),
             "unit": prod.get("base_unit") or "", "scope": scope_public(scope),
-            "local": _pair(tot_l), "global": _pair(tot_g),
+            "local": _pair(tot_l, batas), "global": _pair(tot_g, batas),
             "local_status": status_rows(tot_l), "global_status": status_rows(tot_g),
             "on_hand": {"local": {"qty": tot_l["on_hand_qty"], "rolls": tot_l["on_hand_rolls"]},
                         "global": {"qty": tot_g["on_hand_qty"], "rolls": tot_g["on_hand_rolls"]}},

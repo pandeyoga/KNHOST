@@ -12,22 +12,28 @@ from core_utils import safe_doc, DEFAULT_ENTITY_ID, rupiah
 from role_registry import CROSS_ENTITY_ROLES
 from services.data_scope import in_clause, own_scoped, owner_ids, owner_ids_now   # PR-T4 — cakupan data peran
 
-# Ambang kontrol kredit (KN_17 §5.2)
-WARNING_RATIO = 0.8          # ar >= 80% limit -> warning
-OVERDUE_BLOCK_DAYS = 14      # overdue terlama > 14 hari -> blocked (overdue ringan <=14 = warning)
+# KF-T7 (CR-03) — ambang kontrol kredit (KN_17 §5.2) dulu dua salinan konstanta di sini dan di `ar_aging_service`
+# (80 % plafon → peringatan; telat terlama > 14 hari → diblokir). Kini pengaturan `ar.credit_warning_pct` dan
+# `ar.overdue_block_days` per PT, dibaca SATU fungsi (`credit_thresholds`) yang hasilnya dikirim ke penghitung status.
 NON_AR_METHODS = {"kontan", "tunai", "cash"}
 DEAD_STATUSES = {"cancelled", "draft", "expired", "rejected"}
 
 
 # ─── SALES REVAMP V2 — Sales team (PIC + co-sales + split) di level CUSTOMER ───
-MAX_GROUP_SALES = 2
+async def group_sales_max(entity_id: Optional[str]) -> int:
+    """KF-T7 — maksimum anggota tim sales per pelanggan/pesanan (`sales.group_sales_max_members`, per PT; dulu
+    konstanta 2). Dipanggil pemanggil asinkron lalu dikirim ke `apply_group_sales_rule`."""
+    from services.nilai_pengaturan import nilai
+    return int(await nilai("sales.group_sales_max_members", entity_id))
 
 
-def apply_group_sales_rule(members: List[Dict[str, Any]]) -> None:
-    """K-5 (feedback klien 2026-09) — group sales maksimal 2 orang; bila split tidak diisi
-    (semua 0) dibagi rata otomatis (2 orang → 50-50, 1 orang → 100)."""
-    if len(members) > MAX_GROUP_SALES:
-        raise HTTPException(status_code=400, detail=f"Group sales maksimal {MAX_GROUP_SALES} orang (1 PIC + 1 co-sales).")
+def apply_group_sales_rule(members: List[Dict[str, Any]], max_members: int) -> None:
+    """K-5 (feedback klien 2026-09) — group sales maksimal `max_members` orang (KF-T7: pengaturan
+    `sales.group_sales_max_members`, bawaan 2); bila split tidak diisi (semua 0) dibagi rata otomatis
+    (2 orang → 50-50, 1 orang → 100)."""
+    if len(members) > max_members:
+        raise HTTPException(status_code=400, detail=f"Group sales maksimal {max_members} orang "
+                                                    f"(1 PIC + {max(max_members - 1, 0)} co-sales).")
     if members and all(m["split_pct"] <= 0 for m in members):
         share = round(100.0 / len(members), 2)
         for m in members:
@@ -35,7 +41,8 @@ def apply_group_sales_rule(members: List[Dict[str, Any]]) -> None:
         members[-1]["split_pct"] = round(100.0 - share * (len(members) - 1), 2)
 
 
-def normalize_sales_team(raw: Any, assigned_sales_id: str = "", assigned_sales_name: str = "") -> List[Dict[str, Any]]:
+def normalize_sales_team(raw: Any, assigned_sales_id: str = "", assigned_sales_name: str = "", *,
+                         max_members: int) -> List[Dict[str, Any]]:
     """Validasi + normalisasi tim sales customer/order (join/group sales).
 
     - PIC.sales_id = kunci kepemilikan (== assigned_sales_id).
@@ -58,7 +65,7 @@ def normalize_sales_team(raw: Any, assigned_sales_id: str = "", assigned_sales_n
         if assigned_sales_id:
             return [{"sales_id": assigned_sales_id, "name": assigned_sales_name or "", "role": "pic", "split_pct": 100.0}]
         return []
-    apply_group_sales_rule(members)
+    apply_group_sales_rule(members, max_members)
     ids = [m["sales_id"] for m in members]
     if len(set(ids)) != len(ids):
         raise HTTPException(status_code=400, detail="Anggota sales tim tidak boleh duplikat.")
@@ -207,9 +214,47 @@ def order_due(customer: Dict[str, Any], order: Dict[str, Any], ctx: Dict[str, An
     return base + timedelta(days=_term_days(customer, order, (ctx or {}).get("terms")))
 
 
-async def compute_customer_credit(customer: Dict[str, Any], entity_id: Optional[str] = None) -> Dict[str, Any]:
+async def credit_thresholds(entity_id: Optional[str],
+                            cache: Optional[Dict[str, Dict[str, Any]]] = None) -> Dict[str, Any]:
+    """KF-T7 (CR-03) — SATU-SATUNYA pembaca dua ambang kredit untuk PT `entity_id` (PT pelanggan):
+    `{"block_days": ar.overdue_block_days, "warning_ratio": ar.credit_warning_pct ÷ 100}`. Hasilnya dikirim ke
+    `credit_status` (kartu pelanggan, pemeriksaan kredit pesanan) dan `ar_aging_service._credit_status` (umur piutang).
+    `cache` (opsional, per panggilan daftar) = satu kali baca per PT."""
+    key = entity_id if entity_id and entity_id != "all" else ""
+    if cache is not None and key in cache:
+        return cache[key]
+    from services.nilai_pengaturan import nilai
+    out = {"block_days": int(await nilai("ar.overdue_block_days", key)),
+           "warning_ratio": round(float(await nilai("ar.credit_warning_pct", key)) / 100.0, 6)}
+    if cache is not None:
+        cache[key] = out
+    return out
+
+
+def credit_status(credit_limit: float, ar_outstanding: float, max_overdue_days: int, manual_status: str,
+                  thresholds: Dict[str, Any]) -> str:
+    """Status kredit `active|warning|blocked` (KN_17 §5.2) — satu rumus untuk kartu pelanggan dan umur piutang.
+    Peringatan: piutang ≥ persen peringatan × plafon, atau ada tagihan telat. Diblokir: piutang ≥ plafon, telat
+    terlama > hari blokir, atau status manual `blocked`. Plafon 0 = tanpa plafon."""
+    status = "active"
+    near = credit_limit > 0 and ar_outstanding >= thresholds["warning_ratio"] * credit_limit
+    over = credit_limit > 0 and ar_outstanding >= credit_limit
+    if near or max_overdue_days > 0:
+        status = "warning"
+    if over or max_overdue_days > thresholds["block_days"]:
+        status = "blocked"
+    if manual_status == "blocked":
+        status = "blocked"
+    return status
+
+
+async def compute_customer_credit(customer: Dict[str, Any], entity_id: Optional[str] = None,
+                                  thresholds: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
     """AR outstanding, overdue, dan status kredit (active|warning|blocked).
-    `entity_id` (opsional) membatasi AR ke SO badan usaha itu (KPI per entitas = AR Aging)."""
+    `entity_id` (opsional) membatasi AR ke SO badan usaha itu (KPI per entitas = AR Aging).
+    KF-T7 — ambang dari `credit_thresholds` PT pelanggan (pemanggil daftar boleh mengirimnya lewat `thresholds`)."""
+    if thresholds is None:
+        thresholds = await credit_thresholds(customer.get("entity_id"))
     cid = customer["id"]
     credit_limit = float(customer.get("credit_limit", 0) or 0)
     oq: Dict[str, Any] = {"customer_id": cid}
@@ -247,16 +292,8 @@ async def compute_customer_credit(customer: Dict[str, Any], entity_id: Optional[
         if days_late > 0:
             overdue += outstanding
             max_overdue_days = max(max_overdue_days, days_late)
-    status = "active"
-    near_limit = credit_limit > 0 and ar >= WARNING_RATIO * credit_limit
-    over_limit = credit_limit > 0 and ar >= credit_limit
-    if near_limit or overdue > 0:
-        status = "warning"
-    if over_limit or max_overdue_days > OVERDUE_BLOCK_DAYS:
-        status = "blocked"
-    # status manual 'blocked'/'inactive' di kolom customer.status menang utk blokir
-    if customer.get("status") == "blocked":
-        status = "blocked"
+    # status manual 'blocked' di kolom customer.status menang utk blokir; telat > 0 hari ⇔ overdue > 0
+    status = credit_status(credit_limit, ar, max_overdue_days, customer.get("status") or "", thresholds)
     # L02 LN-023-T01 — pecah belum lunas: piutang ledger (sudah diakui) vs eksposur (belum dikirim)
     ledger = 0.0
     if ar_rows:
@@ -290,12 +327,14 @@ async def enrich_customer(customer: Dict[str, Any], with_credit: bool = True) ->
 
 async def check_credit_for_order(customer: Dict[str, Any], new_amount: float) -> Dict[str, Any]:
     """Gate kredit saat buat SO (KN_17 §5.2). allowed=False bila blocked."""
-    credit = await compute_customer_credit(customer)
+    thr = await credit_thresholds(customer.get("entity_id"))   # KF-T7 — ambang PT pelanggan
+    credit = await compute_customer_credit(customer, thresholds=thr)
     limit = credit["credit_limit"]
     projected = credit["ar_outstanding"] + float(new_amount or 0)
     blocked = credit["status"] == "blocked" or (limit > 0 and projected > limit)
     warn = (not blocked) and (
-        credit["status"] == "warning" or (limit > 0 and projected >= WARNING_RATIO * limit) or credit["overdue_amount"] > 0
+        credit["status"] == "warning" or (limit > 0 and projected >= thr["warning_ratio"] * limit)
+        or credit["overdue_amount"] > 0
     )
     reasons = []
     if limit > 0 and projected > limit:

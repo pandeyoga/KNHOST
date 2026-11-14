@@ -1,5 +1,5 @@
 <!-- DIHASILKAN OTOMATIS oleh scripts/gen_codebase_map.py — JANGAN EDIT TANGAN -->
-<!-- Dihasilkan dari commit: aea3cec pada 2026-11-14 -->
+<!-- Dihasilkan dari commit: 1392969 pada 2026-11-14 -->
 # CODEBASE MAP — Kain Nusantara (dihasilkan otomatis)
 
 Peta ini dihitung dari kode oleh `scripts/gen_codebase_map.py`. Kalau angka di sini
@@ -14,7 +14,7 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 |---|---:|
 | Router (`backend/routers/*.py`) | 163 |
 | Endpoint (`@router.<method>`) | 1774 |
-| Service (`backend/services/*.py`) | 388 |
+| Service (`backend/services/*.py`) | 389 |
 | Koleksi MongoDB disentuh kode produksi | 202 |
 | Direktori fitur frontend (`src/features/*`) | 39 |
 
@@ -27,12 +27,12 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 | `core_utils.py` | 394 |
 | `schemas.py` | 1123 |
 | `schemas_purchasing.py` | 625 |
-| `dependencies.py` | 269 |
+| `dependencies.py` | 286 |
 | `permissions_config.py` | 801 |
 | `entity_scope.py` | 728 |
 | `pagination.py` | 145 |
 | `indexes.py` | 792 |
-| `bootstrap.py` | 2146 |
+| `bootstrap.py` | 2150 |
 | `login_only_endpoints.py` | 80 |
 
 ### Fungsi utilitas — JANGAN re-implementasi
@@ -65,7 +65,8 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 
 | Fungsi | Ringkas (baris pertama docstring) |
 |---|---|
-| `session_expiry()` |  |
+| `session_expiry()` | Kedaluwarsa sesi `hours` jam dari sekarang. KF-T7 — `hours` = `keamanan.umur_sesi_jam` yang dibaca p |
+| `session_ttl_hours()` | KF-T7 — umur sesi INI (jam): `ttl_hours` yang dicatat saat login. Sesi yang dibuat sebelum umur sesi |
 | `extract_token()` | Token sesi permintaan ini — SATU aturan: header Bearer DIUTAMAKAN, cookie HttpOnly hanya cadangan. |
 | `current_user()` |  |
 | `permission_matrix()` |  |
@@ -123,7 +124,7 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 |---|---:|---:|---|
 | `access_review.py` | 2 | 87 | `/access/role-reality`, `/access/role-reality/{user_id}/apply` |
 | `access_roles.py` | 13 | 228 | `/labels`, `/modules`, `/roles`, `/roles/preview`, `/roles/{rid}`, `/roles/{rid}/follow-base` … |
-| `admin.py` | 10 | 562 | `/admin/seed-demo`, `/master-data/export-customers`, `/master-data/export-products`, `/master-data/export-warehouses`, `/master-data/export-yarn`, `/master-data/import-customers` … |
+| `admin.py` | 10 | 563 | `/admin/seed-demo`, `/master-data/export-customers`, `/master-data/export-products`, `/master-data/export-warehouses`, `/master-data/export-yarn`, `/master-data/import-customers` … |
 | `ai_analytics.py` | 32 | 436 | `/analyze-change`, `/catalog`, `/chat`, `/export.xlsx`, `/facts/rebuild`, `/facts/status` … |
 | `ai_assist.py` | 5 | 44 | `/actions/{pid}`, `/actions/{pid}/confirm`, `/actions/{pid}/dismiss`, `/insights`, `/insights/scan` |
 | `amendments.py` | 10 | 185 | `/amendment-reasons`, `/amendments`, `/amendments/doc/{doc_type}/{doc_id}`, `/amendments/preview`, `/amendments/stats/summary`, `/amendments/{amd_id}` … |
@@ -134,7 +135,7 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 | `ar_aging.py` | 4 | 103 | `/ar/advance-report`, `/ar/aging`, `/ar/aging/{customer_id}`, `/ar/aging/{customer_id}/accrue-penalties` |
 | `ar_receipts.py` | 7 | 141 | `/ar-receipts`, `/ar-receipts/deposit`, `/ar-receipts/open-orders`, `/ar-receipts/{receipt_id}`, `/ar-receipts/{receipt_id}/repost`, `/ar-receipts/{receipt_id}/void` |
 | `audit.py` | 2 | 98 | `/audit-logs`, `/audit-logs/resource` |
-| `auth.py` | 5 | 214 | `/auth/context`, `/auth/login`, `/auth/logout`, `/auth/me`, `/roles` |
+| `auth.py` | 5 | 220 | `/auth/context`, `/auth/login`, `/auth/logout`, `/auth/me`, `/roles` |
 | `bank.py` | 6 | 136 | `/bank-accounts`, `/bank-accounts/position`, `/bank-accounts/{account_id}`, `/bank-accounts/{account_id}/ledger`, `/cash-transactions/{txn_id}/reconcile` |
 | `bank_reconciliation.py` | 23 | 436 | `/bank-reconciliation/auto-match`, `/bank-reconciliation/formats`, `/bank-reconciliation/formats/{format_id}`, `/bank-reconciliation/holding`, `/bank-reconciliation/import`, `/bank-reconciliation/import-file` … |
 | `budgets.py` | 9 | 175 | `/finance/budget-check`, `/finance/budget-keys`, `/finance/budget-rules`, `/finance/budget-vs-actual`, `/finance/budgets`, `/finance/budgets/{budget_id}` |
@@ -152,7 +153,7 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 | `crm_omnichannel.py` | 10 | 206 | `/crm/interactions`, `/crm/interactions/{intx_id}`, `/crm/leads`, `/crm/leads/board`, `/crm/leads/{lead_id}`, `/crm/leads/{lead_id}/convert` … |
 | `customer_feedback.py` | 5 | 95 | `/customer-feedback`, `/customer-feedback/meta`, `/customer-feedback/summary`, `/customer-feedback/{fb_id}` |
 | `customer_prices.py` | 9 | 221 | `/customer-prices`, `/customer-prices/export`, `/customer-prices/floor`, `/customer-prices/import`, `/customer-prices/quote`, `/customer-prices/records` … |
-| `customers.py` | 7 | 348 | `/customers`, `/customers/{customer_id}`, `/customers/{customer_id}/addresses`, `/customers/{customer_id}/credit`, `/customers/{customer_id}/merge`, `/customers/{customer_id}/merge-preview` |
+| `customers.py` | 7 | 352 | `/customers`, `/customers/{customer_id}`, `/customers/{customer_id}/addresses`, `/customers/{customer_id}/credit`, `/customers/{customer_id}/merge`, `/customers/{customer_id}/merge-preview` |
 | `cutting.py` | 5 | 79 | `/desk`, `/locations`, `/locations/{wid}`, `/orders/{order_id}/receive`, `/tasks/{task_id}/receive` |
 | `cycle_count.py` | 14 | 620 | `/cycle-count/sessions`, `/cycle-count/sessions/{session_id}`, `/cycle-count/sessions/{session_id}/approve`, `/cycle-count/sessions/{session_id}/items`, `/cycle-count/sessions/{session_id}/items/{item_id}`, `/cycle-count/sessions/{session_id}/reject` … |
 | `dashboard.py` | 1 | 198 | `/dashboard` |
@@ -252,12 +253,12 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 | `rnd.py` ⚠️>800 | 46 | 1060 | `/rnd/base-fabrics`, `/rnd/labdip-history`, `/rnd/lifecycle-board`, `/rnd/meta`, `/rnd/products/{product_id}/supplier-eligibility`, `/rnd/reports/designer-kpi` … |
 | `rnd_org.py` | 3 | 70 | `/rnd/divisions`, `/rnd/divisions/members` |
 | `saga_locks.py` | 3 | 121 | `/saga-locks`, `/saga-locks/{collection}/{doc_id}/inspect`, `/saga-locks/{collection}/{doc_id}/release` |
-| `sales_orders.py` ⚠️>800 | 3 | 805 | `/sales-orders`, `/sales-orders/{order_id}` |
-| `sales_orders_extra.py` ⚠️>800 | 21 | 1010 | `/sales-orders`, `/sales-orders/frequent-products`, `/sales-orders/preview-allocation`, `/sales-orders/preview-lots`, `/sales-orders/preview-roll-reconcile`, `/sales-orders/stats/summary` … |
+| `sales_orders.py` ⚠️>800 | 3 | 807 | `/sales-orders`, `/sales-orders/{order_id}` |
+| `sales_orders_extra.py` ⚠️>800 | 21 | 1014 | `/sales-orders`, `/sales-orders/frequent-products`, `/sales-orders/preview-allocation`, `/sales-orders/preview-lots`, `/sales-orders/preview-roll-reconcile`, `/sales-orders/stats/summary` … |
 | `sales_p04.py` | 5 | 75 | `/customers/{customer_id}/grade-rules`, `/sales-orders/{order_id}/items/{product_id}/roll-candidates`, `/sales/keep-pending`, `/sales/stock-summary` |
 | `sales_return_exceptions.py` | 15 | 293 | `/sales-returns/cutloss/simulate`, `/sales-returns/discount/simulate`, `/sales-returns/{return_id}/compensation`, `/sales-returns/{return_id}/cutloss`, `/sales-returns/{return_id}/cutloss/{ctl_id}/return-shipment`, `/sales-returns/{return_id}/cutloss/{ctl_id}/split` … |
 | `sales_returns.py` ⚠️>800 | 41 | 1309 | `/credit-notes`, `/credit-notes/{cn_id}`, `/returns/chain/{doc_id}`, `/sales-returns`, `/sales-returns/eligible-orders`, `/sales-returns/meta/complaint-reasons` … |
-| `sample_orders.py` | 11 | 257 | `/sample-orders`, `/sample-orders/catalogue/preview`, `/sample-orders/catalogue/templates`, `/sample-orders/desk`, `/sample-orders/kinds`, `/sample-orders/limits` … |
+| `sample_orders.py` | 11 | 258 | `/sample-orders`, `/sample-orders/catalogue/preview`, `/sample-orders/catalogue/templates`, `/sample-orders/desk`, `/sample-orders/kinds`, `/sample-orders/limits` … |
 | `sample_sales.py` | 5 | 102 | `/outbound/so/{order_id}/cut-samples`, `/outbound/tasks/{task_id}/cut-sample`, `/sample-prices`, `/sample-prices/{template_id}`, `/sample-quote` |
 | `scheduler.py` | 10 | 222 | `/scheduler/digest-preview`, `/scheduler/jobs`, `/scheduler/jobs/{job_id}/run`, `/scheduler/runs`, `/scheduler/settings`, `/scheduler/summary` … |
 | `settings.py` | 10 | 165 | `/payment-terms`, `/payment-terms/{term_id}`, `/payment-terms/{term_id}/override`, `/settings`, `/settings/compute-tax`, `/settings/effective` … |
@@ -319,7 +320,7 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 | `approval_policy_service.py` | 758 | services/approval_policy_service.py — SATU tabel kebijakan persetujuan untuk semua antrean (unit KP-T4). |
 | `approval_reminder.py` | 135 | services/approval_reminder.py — PENGINGAT HARIAN "keputusan yang menunggu Anda". |
 | `approval_service.py` | 138 | services/approval_service.py — **ATURAN AMBANG PERSETUJUAN** (`approval_rules`). |
-| `ar_aging_service.py` | 516 | EPIC7-A — AR / Piutang Aging (read/derived report). |
+| `ar_aging_service.py` | 514 | EPIC7-A — AR / Piutang Aging (read/derived report). |
 | `ar_receipt_service.py` | 811 | AR Receipt service (EPIC3B) — Penerimaan pembayaran customer + aplikasi ke SO. |
 | `atomic_claim.py` | 63 | Klaim atomik dokumen induk untuk endpoint tulis multi-koleksi (T-01 Opsi B — saga). |
 | `atp_policy.py` | 127 | KN-D11 (audit 2026-09-21) — SATU definisi ATP (Available-to-Promise) untuk seluruh sistem. |
@@ -338,7 +339,7 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 | `catalog_access.py` | 53 | Pagar bersama template, SKU, media dan relasi R&D. Produk tetap SHARED. |
 | `catalog_rules.py` | 102 | Kontrak murni induk/axis/SKU; digunakan R&D, generator, editor dan impor. |
 | `client_dataset_service.py` | 291 | L01 LN-011 — IMPOR DATASET CLIENT (DATA-01): artikel · tahap · jenis kain · supplier/warna. |
-| `closing_service.py` | 606 | FINANCE — Tutup Buku (Period Closing) bulanan & tahunan. |
+| `closing_service.py` | 614 | FINANCE — Tutup Buku (Period Closing) bulanan & tahunan. |
 | `color_card_pdf.py` | 76 | Kartu Warna Pelanggan (PDF) — swatch, kode, versi supplier per warna + kop badan usaha aktif. |
 | `color_lock_service.py` | 165 | Kunci Warna Eksklusif + Penanda Warna Otomatis. |
 | `color_service.py` | 410 | M0 — Color Library service (Pantone-style master warna). |
@@ -363,8 +364,8 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 | `customer_feedback_service.py` | 153 | FEEDBACK / KOMPLAIN PELANGGAN per Sales Order (2026-09, sesi #075). |
 | `customer_merge_service.py` | 99 | P18 MASTER-05 / COMM-01 — gabung pelanggan duplikat (sumber → target) tanpa memutus riwayat. |
 | `customer_price_service.py` | 568 | F1b (D-14) — **Daftar Harga per Pelanggan** (customer pricelist) dengan histori, |
-| `customer_service.py` | 570 | Customer/CRM service (KN_17 CRM-lite). |
-| `cutting_service.py` | 303 | L06 LN-061 — Meja Cutting/Admin Cutting: kemampuan lokasi, antrean potong, serah-terima hasil potong. |
+| `customer_service.py` | 609 | Customer/CRM service (KN_17 CRM-lite). |
+| `cutting_service.py` | 305 | L06 LN-061 — Meja Cutting/Admin Cutting: kemampuan lokasi, antrean potong, serah-terima hasil potong. |
 | `cycle_count_service.py` | 184 | CYCLE COUNT RFID — stock opname kilat via sweep handheld. |
 | `data_hygiene_service.py` | 204 | Kebersihan Data (K-1/K-2 otomatis) — normalisasi EYD nama & nomor telepon pada data LAMA. |
 | `data_scope.py` | 113 | PR-T4 — CAKUPAN DATA per peran: dokumen ber-pemilik siapa yang terlihat dan bisa diubah (di dalam PT yang bole |
@@ -391,7 +392,7 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 | `epc.py` | 45 | RF-01/RF-11 — SATU kontrak EPC: disimpan & dicocokkan sebagai 24 hex UPPERCASE tanpa pemisah. |
 | `equity_statement_service.py` | 65 | FINANCE — Laporan Perubahan Ekuitas (Statement of Changes in Equity). |
 | `escalation_service.py` | 241 | R6.6 — ESKALASI BERTINGKAT alert yang belum ditindak. |
-| `esign_service.py` | 205 | esign_service.py — Logika e-sign: request OTP, verifikasi + simpan tanda tangan, |
+| `esign_service.py` | 208 | esign_service.py — Logika e-sign: request OTP, verifikasi + simpan tanda tangan, |
 | `export_engine.py` | 755 | L11 LN-110/LN-113 — mesin Pusat Export: validasi kolom/filter, kueri ber-scope, join to-one, |
 | `export_registry.py` | 332 | L11 LN-110 — registry dataset bisnis untuk Pusat Export. |
 | `export_registry_more.py` | 383 | L11 lanjutan — dataset tambahan: analitik Finance (LN-111), rapor staf (LN-112), dan pemetaan sisa koleksi bis |
@@ -421,7 +422,7 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 | `gemini_image_service.py` | 193 | FB-01 — Ilustrasi AI Galeri Desain via Google Gemini "Nano Banana Pro" (SDK google-genai LANGSUNG). |
 | `gl_mapping_registry.py` | 178 | GL-01 — registri kebutuhan akun (SSOT di kode). Satu baris = satu kebutuhan fitur. |
 | `gl_mapping_service.py` | 208 | GL-01 — pemetaan akun terpusat. Resolver: mapping PT → mapping global → bawaan registri. |
-| `gl_service.py` | 3947 | EPIC7-C — General Ledger & Chart of Accounts (akuntansi inti). |
+| `gl_service.py` | 3951 | EPIC7-C — General Ledger & Chart of Accounts (akuntansi inti). |
 | `goods_receipt_close_service.py` | 595 | GRN Fase 2 — rekonsiliasi (§4.4), penyelesaian selisih, penutupan (§4.5), sisa PO, tolak & batal. |
 | `goods_receipt_ocr_service.py` | 604 | GRN Fase 4 — baca surat jalan dengan OpenAI: praproses, panggil, pembaca kedua, log biaya, rem anggaran, pemet |
 | `goods_receipt_service.py` | 1003 | GRN Fase 2 — Kedatangan Barang (satu surat jalan · satu mitra): buat, berkas, kepala SJ, baris, hitung. |
@@ -433,7 +434,7 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 | `handheld_sync.py` | 419 | PREP-G — kiriman batch C72 (idempoten) + penyelesaian dokumen + potong sampel. |
 | `handheld_tags.py` | 313 | PREP-G — EPC dibuat sistem lalu DITULIS ke tag oleh C72 (K-OPN-05: EPC bawaan tag dianggap TIDAK unik). |
 | `handheld_tasks.py` | 446 | PREP-G — daftar tugas per jenis + unduhan "yang diharapkan" per dokumen untuk C72 (pencocokan di perangkat & o |
-| `home_service.py` | 514 | EPIC 1 — Agregasi Home/landing per role (Control Tower / Performa Saya). |
+| `home_service.py` | 517 | EPIC 1 — Agregasi Home/landing per role (Control Tower / Performa Saya). |
 | `hr_ai_service.py` | 117 | H5 service — AI auto-tag motif via Anthropic Claude (SDK LANGSUNG, bukan Emergent). |
 | `hr_analytics_service.py` | 210 | HRD H6 service — HR Analytics (Dashboard BI SDM). |
 | `hr_attendance_service.py` | 273 | HRD H1 services — Absensi (attendance). |
@@ -450,7 +451,7 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 | `initial_registration_plan.py` | 215 | PREP-B — rencana & rekonsiliasi pendaftaran awal gedung (K-OPN-01/02). |
 | `initial_registration_service.py` | 285 | PREP-B — mode "pendaftaran awal gedung" (KEPUTUSAN_GATE_RFID §8, K-OPN-01..05): siklus sesi. |
 | `input_tax_service.py` | 170 | Faktur Pajak Masukan (tax_invoices_in) service — Fase 5.5 / P0-3. |
-| `inspection_service.py` | 1869 | FASE I — **INSPEKSI & QC SEBAGAI DOKUMEN** (`<ENT>/INS-#####`). |
+| `inspection_service.py` | 1888 | FASE I — **INSPEKSI & QC SEBAGAI DOKUMEN** (`<ENT>/INS-#####`). |
 | `integrations_service.py` | 159 | H5 service — Integrasi pihak ketiga (config runtime di system_settings). |
 | `interco_loan_service.py` | 267 | FASE E-7 (E7f) — **PINJAMAN UANG ANTAR-PT** (`<ENT>/ICL-#####`). |
 | `interco_margin.py` | 427 | FASE G-6b — **RAPOR MARGIN GRUP** antar-PT (realized vs unrealized). |
@@ -462,7 +463,7 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 | `interco_tax_service.py` | 394 | FASE G-6b — **FAKTUR PAJAK INTERNAL** untuk transaksi antar-PT ber-PPN. |
 | `internal_request_service.py` | 516 | FASE E-7 (E7.1 · gelombang 2 “E7d”) — **PERMINTAAN INTERNAL** (`<ENT>/PIN-#####`). |
 | `inventory_drift_watch.py` | 129 | services/inventory_drift_watch.py — PEMANTAU DRIFT PERSEDIAAN (INV-GL-DRIFT). |
-| `inventory_service.py` | 229 | Inventory service: reservation expiry projections & document rendering. |
+| `inventory_service.py` | 237 | Inventory service: reservation expiry projections & document rendering. |
 | `journal_proposal_service.py` | 104 | KF-T6 (GL-06) — usulan jurnal manual yang menunggu orang kedua (`journal_proposals`). |
 | `label_decoder_service.py` | 268 | FASE SL — Decoder LABEL SUPPLIER (GS1-128 · QR JSON · teks berpemisah · regex). |
 | `label_printer_service.py` | 198 | Label printer service: Generate ZPL and ESC/POS commands for barcode labels. |
@@ -498,11 +499,12 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 | `material_reservation_service.py` | 191 | W2-REQ-07 — reservasi bahan makloon sejak PR makloon disetujui (soft-reservation, tanpa jurnal). |
 | `mdq_cut_service.py` | 109 | L04 LN-042 — POTONG MD QUALITY (default 0,25 yard) sebagai MUTASI PEMAKAIAN tersendiri. |
 | `movement_label_service.py` | 269 | movement_label_service — nomor dokumen yang LAYAK DIBACA pada mutasi stok. |
+| `nilai_pengaturan.py` | 25 | KF-T7 — pembaca SATU nilai pengaturan untuk mesin; galat baca = bawaan registry (`02_STANDAR.md` §2.2, KF-06). |
 | `notification_audience.py` | 189 | notification_audience — SATU penyelesai "siapa yang harus diberi tahu". |
 | `notification_doc_ref.py` | 94 | notification_doc_ref — DOKUMEN yang dituju sebuah notifikasi (bukan hanya layarnya). |
 | `notification_read.py` | 35 | Status DIBACA per orang. |
 | `notification_scope.py` | 56 | notification_scope — SATU aturan "notifikasi mana yang relevan untuk pengguna ini". |
-| `notification_service.py` | 484 | Notification service — pembuatan notifikasi + generator dari event REAL. |
+| `notification_service.py` | 487 | Notification service — pembuatan notifikasi + generator dari event REAL. |
 | `ocr_openai_client.py` | 168 | GRN Fase 4 — satu-satunya modul yang meng-import `openai` (§4.8). |
 | `ocr_sample_service.py` | 245 | Sample Uji OCR — foto SJ nyata + kunci jawaban yang dicek manusia, untuk mengukur ketepatan baca sebelum dipak |
 | `ocr_sj_v2.py` | 159 | GRN Fase 4 — prompt & JSON Schema `sj-v2` (disalin persis dari Lampiran A & B spesifikasi GRN/OCR). |
@@ -540,10 +542,10 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 | `purchase_requisition_service.py` | 572 | Depth #2 — Purchase Requisition (PR) service + Reorder/Replenishment. |
 | `purchase_return_service.py` | 1107 | Depth #1 — Retur Beli (Purchase Return / Nota Debit). |
 | `purchase_return_state.py` | 66 | R4 — Supplier RMA lifecycle untuk Retur Beli (Purchase Return). |
-| `putaway_arrival_service.py` | 285 | PREP-C (K-GDG-10, K-RFID-10 — keputusan pemilik 8 Nov 2026) — TIBA BERTAHAP Putaway Order per trip. |
+| `putaway_arrival_service.py` | 288 | PREP-C (K-GDG-10, K-RFID-10 — keputusan pemilik 8 Nov 2026) — TIBA BERTAHAP Putaway Order per trip. |
 | `putaway_draft_service.py` | 415 | PREP-C (K-GDG-10 + K-GDG-04, keputusan pemilik 8 Nov 2026) — DRAF Putaway Order otomatis. |
 | `putaway_order_service.py` | 671 | FASE R2 — PUTAWAY ORDER (PA): dokumen pemindahan roll dari gedung transit ke |
-| `qc_inspection_service.py` | 397 | QC 4-Point Inspection service — Fase 6.2 (P1). |
+| `qc_inspection_service.py` | 409 | QC 4-Point Inspection service — Fase 6.2 (P1). |
 | `qc_service.py` | 556 | Depth #3a — QC Hold / Quarantine saat Goods Receipt. |
 | `receiving_mode_service.py` | 84 | GRN Fase 7 — beralih penuh: mode penerimaan per badan usaha (`receiving.mode` = legacy | grn). |
 | `receiving_roll_service.py` | 426 | Kelahiran roll `receiving` saat penerimaan (GRN Fase 1: dipindah dari `routers/inbound_scan_label.py`). |
@@ -557,7 +559,7 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 | `return_chain_service.py` | 328 | FASE E-9 (E9.6) — **JEJAK RANTAI RETUR**. |
 | `return_compensation_service.py` | 143 | LN-092 — cutloss & diskon retur (KLR-01/02/06/07, owner 2026-10-19). |
 | `return_cutloss_split_service.py` | 248 | CUT-01..05 — pemecahan fisik roll cutloss setelah QC: potongan baik / BS / dibuang. |
-| `return_disposition_service.py` | 474 | LN-093 — tujuan barang retur berantai Sukacita → CST → supplier. |
+| `return_disposition_service.py` | 485 | LN-093 — tujuan barang retur berantai Sukacita → CST → supplier. |
 | `return_evidence_service.py` | 48 | L08 LN-080-T03 — kewajiban bukti (lampiran) retur per tahap, dapat dikonfigurasi per badan usaha. |
 | `return_exception_service.py` | 78 | LN-083/LN-092 — pengecualian retur (alasan + bukti foto + keputusan berwenang) dan gerbang settle. |
 | `return_grade_impairment.py` | 78 | LN-091-T02 — kerugian turun grade barang retur. |
@@ -565,7 +567,7 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 | `return_journey_service.py` | 192 | L08 LN-081 — perjalanan fisik barang retur per roll (terima → kirim/dalam perjalanan → tiba), |
 | `return_logistics_service.py` | 159 | GL-01 × KLR-11 — biaya logistik retur: cara kirim, penanggung, dan jurnal otomatis. |
 | `return_operator_view.py` | 84 | F-11-layar (uji pra-UAT 2026-10-21) — Gudang & QC membuka retur pelanggan untuk scan & QC. |
-| `return_policy_service.py` | 480 | R0 — Return Policy Engine (Master Data). |
+| `return_policy_service.py` | 475 | R0 — Return Policy Engine (Master Data). |
 | `return_replacement_service.py` | 239 | LN-090 T02/T03 — pesanan pengganti nyata untuk retur tukar barang (KLR-03/04/05, owner 2026-10-19). |
 | `return_roll_settlement_service.py` | 534 | UAT 23 Okt (permintaan pemilik) — PENYELESAIAN RETUR PER ROLL, boleh bertahap. |
 | `return_rolls_service.py` | 272 | L08 LN-080 — retur hanya dari barang yang BENAR-BENAR terkirim (roll per SJ) + batas kumulatif atomik per SO. |
@@ -610,17 +612,17 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 | `role_reality_service.py` | 691 | **CEK KENYATAAN PERAN** — utang migrasi (ii) FASE E-8/E-6. |
 | `roll_cost_history.py` | 88 | services/roll_cost_history.py — JEJAK setiap perubahan HPP satu roll. |
 | `roll_hold_service.py` | 126 | QC-06 — Tahan (HOLD) & Lepas (RELEASE) manual satu roll. |
-| `roll_service.py` | 2715 | Roll service (Fase 0.5) — Roll-as-SSOT inventory engine. |
+| `roll_service.py` | 2718 | Roll service (Fase 0.5) — Roll-as-SSOT inventory engine. |
 | `roll_timeline_service.py` | 174 | JEJAK BARANG (Item Passport) — timeline satu roll lintas SEMUA dokumen. |
 | `saga_lock_watch.py` | 93 | services/saga_lock_watch.py — PEMANTAU KUNCI SAGA MENGGANTUNG (T-01 Opsi B). |
-| `sales_force_service.py` | 468 | Sales Force service (KN_17 §6) — KPI per salesperson + komisi (pencairan + tiered). |
+| `sales_force_service.py` | 471 | Sales Force service (KN_17 §6) — KPI per salesperson + komisi (pencairan + tiered). |
 | `sales_order_dashboard.py` | 99 | Dasbor Pesanan HP sales — omzet, status, tren 8 minggu, pelanggan teratas & pesanan butuh tindakan (data milik |
-| `sales_order_helpers.py` | 311 | Helper functions extracted from routers/sales_orders.py. |
+| `sales_order_helpers.py` | 312 | Helper functions extracted from routers/sales_orders.py. |
 | `sales_ownership.py` | 129 | FASE E-8 (E8.4 · US11) — **SATU definisi "Pesanan Saya"**. |
 | `sales_p04_service.py` | 429 | P04 — Keep/Pending, aturan grade pelanggan, kandidat roll berkelayakan, ringkasan stok Sales. |
 | `sales_stock_service.py` | 97 | Stok GLOBAL untuk layar sales (Kasir/POS, katalog): sales tidak memilah per entitas — |
-| `sample_sale_service.py` | 547 | §3-C Jual Sample — SATU alur dengan pesanan roll (keputusan pemilik 2026-09-16). |
-| `scheduler_service.py` | 726 | R6.5 — Scheduler (APScheduler) untuk alert & notifikasi terjadwal. |
+| `sample_sale_service.py` | 563 | §3-C Jual Sample — SATU alur dengan pesanan roll (keputusan pemilik 2026-09-16). |
+| `scheduler_service.py` | 727 | R6.5 — Scheduler (APScheduler) untuk alert & notifikasi terjadwal. |
 | `shipment_service.py` | 182 | Shipment service (Sub-fase 1.8) — partial/multi shipment, SSOT-safe. |
 | `site_receiving_service.py` | 120 | UAT 24 Okt (P9, fase F1) — LOKASI (site) sebagai tujuan kirim & konteks kerja. |
 | `site_stock_service.py` | 54 | UAT 24 Okt (P8, fase F1) — stok per LOKASI untuk katalog POS / HP. |
@@ -637,19 +639,19 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 | `special_order_fulfillment.py` | 742 | L03 LN-033 — rute pemenuhan per item Pesanan Khusus: supplier (PR→PO) atau makloon (PR→MKO). |
 | `special_order_items.py` | 171 | L03 LN-030 — item Pesanan Khusus: multi-produk, sumber desain per item, redesign. |
 | `special_order_link.py` | 80 | Tautan Pesanan Khusus (OD) ↔ SKU hasil R&D: SKU yang lahir dari OD otomatis jadi katalog eksklusif pelanggan. |
-| `special_order_phase2.py` | 938 | special_order_phase2.py — Fase 2 Special Order (OD): |
+| `special_order_phase2.py` | 977 | special_order_phase2.py — Fase 2 Special Order (OD): |
 | `special_order_routing.py` | 388 | special_order_routing.py — Fase 1 Special Order (OD) terstruktur: |
 | `special_order_service.py` | 413 | Special Order Service - Sub-fase 1.12 |
 | `status_history.py` | 50 | SSOT bentuk satu entri `status_history[]` — dipakai SEMUA koleksi. |
-| `stock_analytics_service.py` | 470 | Stock Analytics service (Fase 5) — kelas laju jual + aging + nilai persediaan. |
-| `stock_availability.py` | 116 | K-04 (keputusan pemilik 26 Okt 2026) — SATU definisi stok "Tersedia" & "Stok rendah". |
+| `stock_analytics_service.py` | 478 | Stock Analytics service (Fase 5) — kelas laju jual + aging + nilai persediaan. |
+| `stock_availability.py` | 127 | K-04 (keputusan pemilik 26 Okt 2026) — SATU definisi stok "Tersedia" & "Stok rendah". |
 | `stock_bucket_service.py` | 721 | F2 — Multi-bucket Stock: operasi WIP & Hold (Pending SO) + papan bucket. |
 | `stock_count_roll_service.py` | 466 | L10 LN-101 — opname per roll: snapshot scope node → scan → rekonsiliasi → finalisasi. |
 | `stock_count_service.py` | 163 | P10 — stock opname: scope hitung per bin, adjustment per baris (CAS) + jurnal selisih. |
-| `stock_figures.py` | 632 | FIX-2 (audit 9 Nov 2026 — B3a STK-1…14/SSOT-4/DUP-1…4, B1 UI-06/07/40) — SATU layanan angka stok. |
+| `stock_figures.py` | 635 | FIX-2 (audit 9 Nov 2026 — B3a STK-1…14/SSOT-4/DUP-1…4, B1 UI-06/07/40) — SATU layanan angka stok. |
 | `storage_service.py` | 146 | Local filesystem storage wrapper (FASE 5 — keputusan owner: storage LOKAL). |
 | `store_credit_service.py` | 513 | R5.2 — Store Credit (Saldo Kredit Pelanggan) ledger service. |
-| `supplier_dn_profile_service.py` | 237 | GRN — profil surat jalan per mitra (`supplier_dn_profiles`): format angka, nama lain, pemetaan barang. |
+| `supplier_dn_profile_service.py` | 247 | GRN — profil surat jalan per mitra (`supplier_dn_profiles`): format angka, nama lain, pemetaan barang. |
 | `supplier_item_service.py` | 578 | FASE E — SERVICE `supplier_items` (Barang Supplier / katalog versi supplier). |
 | `supplier_service.py` | 485 | Depth #3 — Supplier Intelligence: Price-List resolution + Scorecard. |
 | `tax_center_service.py` | 219 | EPIC 7 — Pusat Pajak (PPN + PPh) service. |
@@ -686,7 +688,7 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 
 | Fitur (`src/features/`) | Berkas | Baris |
 |---|---:|---:|
-| `__tests__` | 95 | 14377 |
+| `__tests__` | 96 | 14449 |
 | `admin` | 35 | 6764 |
 | `approvals` | 9 | 1719 |
 | `catalog` | 24 | 1450 |
@@ -700,7 +702,7 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 | `finance` | 94 | 21091 |
 | `home` | 5 | 1130 |
 | `hr` | 33 | 5350 |
-| `inspections` | 12 | 2173 |
+| `inspections` | 12 | 2181 |
 | `interco_prices` | 4 | 287 |
 | `internal_requests` | 3 | 854 |
 | `inventory` | 21 | 4443 |
@@ -709,7 +711,7 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 | `marketing` | 13 | 1283 |
 | `mobile` | 13 | 1758 |
 | `notifications` | 1 | 33 |
-| `orders` | 23 | 3855 |
+| `orders` | 23 | 3856 |
 | `pdf` | 5 | 901 |
 | `pettycash` | 11 | 1623 |
 | `pos` | 23 | 2632 |
@@ -742,11 +744,11 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 | `backend/routers/sales_returns.py` | 1309 | 800 |
 | `backend/routers/rnd.py` | 1060 | 800 |
 | `backend/routers/purchase_orders.py` | 1035 | 800 |
-| `backend/routers/sales_orders_extra.py` | 1010 | 800 |
+| `backend/routers/sales_orders_extra.py` | 1014 | 800 |
 | `backend/routers/transfers.py` | 860 | 800 |
 | `backend/routers/inventory.py` | 838 | 800 |
 | `backend/routers/rfid.py` | 817 | 800 |
-| `backend/routers/sales_orders.py` | 805 | 800 |
+| `backend/routers/sales_orders.py` | 807 | 800 |
 | `frontend/src/features/orders/OrderDetailPanel.jsx` | 702 | 500 |
 | `frontend/src/features/purchasing/PurchaseReturns.jsx` | 630 | 500 |
 | `frontend/src/features/wms/OutboundScanInterface.jsx` | 624 | 500 |

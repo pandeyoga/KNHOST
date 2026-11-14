@@ -139,6 +139,22 @@ GROUPS: List[Dict[str, Any]] = [
                   _S("rfid-proses", "RFID & proses macet", advanced=True),
                   _S("menu", "Menu & halaman awal")]},
 ]
+
+
+# ── KF-T7 — kelompok & sub-judul untuk nilai bisnis yang dulu ditulis mati (`config_catalog_nilai.py`) ──────────────
+def _sisip_sub_kft7(gid: str, sub: Dict[str, Any], sesudah: str = "") -> None:
+    secs = next(g for g in GROUPS if g["id"] == gid)["sections"]
+    i = next((n + 1 for n, s in enumerate(secs) if s["id"] == sesudah), len(secs))
+    secs.insert(i, sub)
+
+
+_sisip_sub_kft7("pembayaran-pelanggan", _S("kredit", "Peringatan & blokir kredit"))
+_sisip_sub_kft7("penjualan", _S("pesanan-khusus", "Pesanan khusus & katalog sample"), sesudah="alur-pesanan")
+_sisip_sub_kft7("persetujuan", _S("tanda-tangan", "Tanda tangan elektronik"), sesudah="rujukan-dokumen")
+GROUPS.append({"id": "keamanan", "label": "Keamanan akun & sesi", "order": 14,
+               "question": "Berapa kali salah sandi sebelum akun dikunci, dan berapa lama sesi masuk berlaku?",
+               "sections": [_S("masuk", "Salah sandi & lama sesi")]})
+# ── akhir blok KF-T7 ──
 GROUP_IDS = {g["id"] for g in GROUPS}
 SECTION_IDS: Dict[str, Dict[str, Dict[str, Any]]] = {g["id"]: {x["id"]: x for x in g["sections"]} for g in GROUPS}
 
@@ -828,3 +844,4 @@ import config_catalog_rfid  # noqa: E402,F401  (PREP-H — masa simpan bukti gat
 import config_catalog_rnd  # noqa: E402,F401  (FASE F — R&D & Desain: lifecycle, sample, kontrak)
 import config_catalog_approval_matrix  # noqa: E402,F401  (PS-20/D-14 — penegakan matriks persetujuan divisi)
 import config_catalog_kontrol  # noqa: E402,F401  (KF-T6 — kontrol "harus dua orang" per PT)
+import config_catalog_nilai  # noqa: E402,F401  (KF-T7 — nilai bisnis yang dulu ditulis mati di kode)

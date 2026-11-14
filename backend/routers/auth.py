@@ -13,7 +13,7 @@ from fastapi import APIRouter, HTTPException, Request, Response
 from pymongo import ReturnDocument
 from db import db
 from dependencies import current_user, audit, extract_token, session_expiry, SESSION_COOKIE, permission_matrix
-from core_utils import hash_password, verify_password, is_legacy_hash, new_id, now_iso, safe_doc, SESSION_TTL_HOURS
+from core_utils import hash_password, verify_password, is_legacy_hash, new_id, now_iso, safe_doc
 from schemas import LoginRequest
 from services.entity_context_service import build_entity_context
 from role_registry import role_label
@@ -25,8 +25,8 @@ COOKIE_SAMESITE = os.environ.get("SESSION_COOKIE_SAMESITE", "lax")
 
 router = APIRouter(prefix="/api")
 
-MAX_LOGIN_ATTEMPTS = 5
-LOCKOUT_MINUTES = 15
+# KF-T7 (#67) — batas salah sandi (dulu 5 kali) dan lama akun dikunci (dulu 15 menit) kini pengaturan
+# `keamanan.maks_salah_sandi` / `keamanan.lama_kunci_menit` (kelompok "Keamanan akun & sesi"), dibaca `_register_failure`.
 
 
 async def _my_permissions(user: Dict[str, Any]) -> Dict[str, Any]:
@@ -97,14 +97,16 @@ async def _check_lockout(identifier: str) -> None:
 
 
 async def _register_failure(identifier: str) -> None:
+    from services.nilai_pengaturan import nilai
     rec = await db.login_attempts.find_one_and_update(
         {"identifier": identifier},
         {"$inc": {"count": 1}, "$set": {"last_attempt_at": datetime.now(timezone.utc)}},
         upsert=True, return_document=ReturnDocument.AFTER)
-    if rec and rec.get("count", 0) >= MAX_LOGIN_ATTEMPTS:
+    if rec and rec.get("count", 0) >= int(await nilai("keamanan.maks_salah_sandi")):
+        menit = int(await nilai("keamanan.lama_kunci_menit"))
         await db.login_attempts.update_one(
             {"identifier": identifier},
-            {"$set": {"locked_until": datetime.now(timezone.utc) + timedelta(minutes=LOCKOUT_MINUTES),
+            {"$set": {"locked_until": datetime.now(timezone.utc) + timedelta(minutes=menit),
                       "count": 0}})
 
 
@@ -144,11 +146,15 @@ async def login(payload: LoginRequest, request: Request, response: Response) -> 
     _old_cookie = request.cookies.get(SESSION_COOKIE) or ""
     if _old_cookie:
         await db.sessions.delete_one({"token": _old_cookie})
+    # KF-T7 (#68) — umur sesi = `keamanan.umur_sesi_jam` saat sesi dibuat; dicatat di sesi (`ttl_hours`) supaya
+    # perpanjangan memakai umur sesinya sendiri (sesi yang sudah ada tidak ikut berubah saat pengaturan diubah).
+    from services.nilai_pengaturan import nilai
+    ttl_jam = int(await nilai("keamanan.umur_sesi_jam"))
     await db.sessions.insert_one(
         {"id": new_id("session"), "token": token, "user_id": user["id"],
-         "created_at": now_iso(), "expires_at": session_expiry()})
+         "created_at": now_iso(), "expires_at": session_expiry(ttl_jam), "ttl_hours": ttl_jam})
     response.set_cookie(SESSION_COOKIE, token, httponly=True, secure=COOKIE_SECURE, samesite=COOKIE_SAMESITE,
-                        max_age=SESSION_TTL_HOURS * 3600, path="/")
+                        max_age=ttl_jam * 3600, path="/")
     user.pop("password_hash", None)
     # FASE E-0 (L7) — jejak login distempel ke entitas HOME pengguna. Tanpa ini baris
     # login menumpuk sebagai "tingkat grup" dan laporan audit per entitas jadi bolong.

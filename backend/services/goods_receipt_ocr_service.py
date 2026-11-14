@@ -307,7 +307,7 @@ async def map_extraction(grn: Dict[str, Any], data: Dict[str, Any], cfg: Dict[st
     from services.goods_receipt_service import resolve_target
     ctx = await _context(grn)
     prof = ctx["profile"]
-    locale = P.active_locale(prof)
+    locale = P.active_locale(prof, **await P.profile_rules())   # KF-T7 — batas dari Pengaturan
     h = data.get("header") or {}
     raw_lines = [dict(x) for x in data.get("lines") or []]
     _parse_quantities(raw_lines, data.get("totals") or [], locale)

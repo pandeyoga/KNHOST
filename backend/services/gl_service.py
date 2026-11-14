@@ -3453,8 +3453,8 @@ async def gl_summary(scope: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
 # ═════════════════════════════════════════════════════════════════════════════
 
 #: Ambang PEMBULATAN SEN rekonsiliasi persediaan — SATU angka untuk layar & penjelas
-#: selisih (gap iterasi 256: layar memakai 0.01, penjelas memakai Rp 1).
-ROUNDING_TOLERANCE = 1.0
+#: selisih (gap iterasi 256: layar memakai 0.01, penjelas memakai Rp 1). KF-T7 (#64) — angkanya pengaturan
+#: `finance.rounding_tolerance_rupiah` (bawaan Rp 1, grup), dibaca kedua fungsi di bawah.
 
 #: NILAI satu roll dalam SEN BULAT — SSOT-nya di `services/roll_service` supaya
 #: rekonsiliasi, penjelas selisih, dan true-up saldo awal mustahil memakai rumus
@@ -3478,6 +3478,8 @@ async def inventory_reconciliation() -> Dict[str, Any]:
     sendiri (dulu 0.01 di layar): satu angka tidak boleh punya dua definisi "sinkron"
     (INV-HOME-01). Karena itu ambangnya dikirim dari sini.
     """
+    from services.nilai_pengaturan import nilai
+    toleransi = float(await nilai("finance.rounding_tolerance_rupiah"))   # KF-T7
     ents = await db.business_entities.find(
         {}, {"_id": 0, "id": 1, "name": 1, "legal_name": 1}).to_list(100)
     rows: List[Dict[str, Any]] = []
@@ -3495,12 +3497,12 @@ async def inventory_reconciliation() -> Dict[str, Any]:
                      "entity_name": e.get("legal_name") or e.get("name") or e["id"],
                      "subledger_value": sub, "gl_balance": gl_bal,
                      "difference": diff,
-                     "rounding_only": bool(0 < abs(diff) <= ROUNDING_TOLERANCE)})
+                     "rounding_only": bool(0 < abs(diff) <= toleransi)})
     total = from_cents(sum(to_cents(r["difference"]) for r in rows))
     return {"rows": rows,
             "total_difference": total,
-            "rounding_tolerance": ROUNDING_TOLERANCE,
-            "reconciled": abs(total) <= ROUNDING_TOLERANCE,
+            "rounding_tolerance": toleransi,
+            "reconciled": abs(total) <= toleransi,
             "as_of": now_iso()}
 
 
@@ -3576,6 +3578,8 @@ async def inventory_drift_explain(entity_id: str) -> Dict[str, Any]:
     totalnya tak mungkin berbeda dari angka di layar. Sisi GL dari baris jurnal
     berakun `1-1300` (`journal_entries.lines`), dikelompokkan per `source_type`.
     """
+    from services.nilai_pengaturan import nilai
+    toleransi = float(await nilai("finance.rounding_tolerance_rupiah"))   # KF-T7 — sama dengan rekonsiliasi
     ent = await db.business_entities.find_one(
         {"id": entity_id}, {"_id": 0, "id": 1, "name": 1, "legal_name": 1}) or {}
     rolls = await db.inventory_rolls.find(
@@ -3717,15 +3721,15 @@ async def inventory_drift_explain(entity_id: str) -> Dict[str, Any]:
                     "Besar akun 1-1300.",
             "ref": {"kind": "account", "id": ACC_PERSEDIAAN, "number": ACC_PERSEDIAAN,
                     "q": ACC_PERSEDIAAN, "view": "general-ledger"}})
-    if 0 < abs(difference) <= ROUNDING_TOLERANCE:
+    if 0 < abs(difference) <= toleransi:
         suspects.append({
             "kind": "pembulatan", "value": difference,
-            "label": "Selisihnya di bawah Rp 1 — pembulatan sen",
+            "label": f"Selisihnya paling banyak {rupiah(toleransi)} — pembulatan sen",
             "hint": "Tidak perlu true-up; ambang peringatan sudah menyaringnya."})
     # Selisih yang MASIH belum tertunjuk tidak boleh berakhir tanpa arah: sebutkan
     # roll yang paling baru masuk supaya ada dokumen konkret untuk diperiksa.
     tertunjuk = {"tanpa_jurnal", "nilai_cocok_selisih", "roll_tanpa_hpp", "pembulatan"}
-    if abs(difference) > ROUNDING_TOLERANCE and not any(s["kind"] in tertunjuk for s in suspects):
+    if abs(difference) > toleransi and not any(s["kind"] in tertunjuk for s in suspects):
         terbaru = sorted(
             ({"roll_no": r.get("roll_no") or "(tanpa nomor)",
               "via": ((r.get("acquired") or {}).get("via")

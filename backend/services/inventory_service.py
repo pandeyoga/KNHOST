@@ -4,7 +4,7 @@ Alokasi/reservasi stok kini SEPENUHNYA berbasis roll (roll-as-SSOT, KN_15) —
 lihat services/roll_service.py. Fungsi lama berbasis $inc balance (allocate_stock/
 atomic_reserve/rollback_reservations) telah DIHAPUS (D4) karena melanggar SSOT.
 """
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from typing import Any, Dict, Optional
 from fastapi import HTTPException
 from db import db
@@ -24,13 +24,21 @@ async def product_summary(product_id: str) -> Dict[str, float]:
 
 
 EXPIRABLE_SO_STATUSES = ("reserved", "waiting_approval")
-"""FIX-3b (ANOM-06, keputusan K-B2b-12) — kedaluwarsa reservasi 3 hari HANYA untuk pesanan yang belum disetujui.
-SO `approved` (sudah diputus atasan) dan `waiting_stock` (menunggu barang/backorder) TIDAK pernah kedaluwarsa otomatis
-— dulu ikut dilepas diam-diam saat seseorang membuka daftar SO/dasbor/katalog."""
+"""FIX-3b (ANOM-06, keputusan K-B2b-12) — kedaluwarsa reservasi (masa reservasi menurut pengaturan, bawaan 3 hari) HANYA
+untuk pesanan yang belum disetujui. SO `approved` (sudah diputus atasan) dan `waiting_stock` (menunggu barang/backorder)
+TIDAK pernah kedaluwarsa otomatis — dulu ikut dilepas diam-diam saat seseorang membuka daftar SO/dasbor/katalog."""
+
+
+async def reservation_expires_at(entity_id: Optional[str], now: Optional[datetime] = None) -> datetime:
+    """KF-T7 (#5) — kapan reservasi stok pesanan baru di PT `entity_id` kedaluwarsa: `now` + `sales.reservation_days`
+    (per PT; dulu `timedelta(days=3)` tertulis di `routers/sales_orders.py`). Pesanan lama tetap pada tanggalnya."""
+    from services.nilai_pengaturan import nilai
+    hari = int(await nilai("sales.reservation_days", entity_id))
+    return (now or datetime.now(timezone.utc)) + timedelta(days=hari)
 
 
 async def expire_old_reservations() -> int:
-    """Expire reservations older than 3 days (release di level ROLL — KN_15).
+    """Expire reservations yang `reservation_expires_at`-nya lewat (release di level ROLL — KN_15).
 
     FIX-3b (B3a STK-11, ANOM-06) — dijalankan PENJADWAL (`reservation_expiry`), tidak lagi dari GET daftar SO /
     ringkasan / dasbor / katalog (GET tidak boleh menulis). Per pesanan diklaim (saga, prasyarat status sama seperti

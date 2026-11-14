@@ -20,9 +20,12 @@ pytestmark = pytest.mark.anyio
 ROOT = Path(__file__).resolve().parents[2]
 POTRET = Path(__file__).resolve().parent / "data" / "potret_registry_sebelum_KFT4.json"
 
-#: Tabel (c) unit — 13 kelompok.
+#: Tabel (c) unit — 13 kelompok. KF-T7 (digabung sesudah unit ini) menambah kelompok ke-14 "Keamanan akun & sesi"
+#: (`keamanan`, spesifikasi KF-T7; layar Integrasi & Sistem bersama `sistem`).
 KELOMPOK_BARU = ["penjualan", "pembayaran-pelanggan", "retur-koreksi", "pembelian", "penerimaan", "kualitas", "stok",
-                 "persetujuan", "pajak-pembukuan", "bank-kasus", "sdm", "rnd", "sistem"]
+                 "persetujuan", "pajak-pembukuan", "bank-kasus", "sdm", "rnd", "sistem", "keamanan"]
+#: KF-T7 — dua kunci kredit baru (`ar.overdue_block_days`, `ar.credit_warning_pct`) di "Pembayaran pelanggan".
+KFT7_PEMBAYARAN_PELANGGAN = 2
 #: Editor KF-T4 (tabel "Editor baru") memberi PILIHAN pada daftar yang dulu tanpa pilihan: urutan alokasi dan sumbu
 #: varian. Nilai pilihan kunci lain tidak boleh berubah.
 PILIHAN_BARU = {"allocation.priority_order", "rnd.variant_axes_default", "rnd.variant_axes_optional"}
@@ -107,8 +110,9 @@ def test_KFT4_U3b_aliases_dan_penempatan_kunci_baru():
     hitung = {t: sum(1 for e in registry.all_entries() if t in registry.themes_for(e["key"]))
               for t in ("persetujuan", "pengingat", "toleransi")}
     # KP-T7 (digabung sesudah unit ini dikerjakan) menambah 19 kunci pengingat: +1 bertema persetujuan
-    # (`approval.reminder_max_listed`) dan +5 bertema pengingat.
-    assert hitung == {"persetujuan": 35 + 1, "pengingat": 20 + 5, "toleransi": 15}
+    # (`approval.reminder_max_listed`) dan +5 bertema pengingat. KF-T7 menambah +1 bertema toleransi
+    # (`finance.rounding_tolerance_rupiah`).
+    assert hitung == {"persetujuan": 35 + 1, "pengingat": 20 + 5, "toleransi": 15 + 1}
 
 
 # ── U4 — id kelompok lama di GET /effective ───────────────────────────────────────────────────────────────────────────
@@ -117,7 +121,7 @@ async def test_KFT4_U4_effective_menerima_id_kelompok_lama(klien, kepala_admin):
     assert r.status_code == 200, r.text
     items = r.json()["items"]
     assert items and {it["group"] for it in items} == {"pembayaran-pelanggan"}
-    assert len(items) == len(registry.by_group("pembayaran-pelanggan")) == 24
+    assert len(items) == len(registry.by_group("pembayaran-pelanggan")) == 24 + KFT7_PEMBAYARAN_PELANGGAN
     r = await klien.get("/api/config/effective", headers=kepala_admin, params={"group": "dokumen"})
     assert r.status_code == 200, r.text
     assert {it["group"] for it in r.json()["items"]} == {"persetujuan"}
@@ -172,4 +176,5 @@ def test_KFT4_layar_kelompok_tepat_satu_layar():
         "settings-cfg-approval": ["persetujuan"], "settings-cfg-sales": ["penjualan", "retur-koreksi"],
         "settings-cfg-warehouse": ["penerimaan", "kualitas", "stok"], "settings-cfg-purchasing": ["pembelian"],
         "settings-cfg-finance": ["pembayaran-pelanggan", "pajak-pembukuan", "bank-kasus"],
-        "settings-cfg-hr": ["sdm"], "settings-cfg-rnd": ["rnd"], "settings-cfg-system": ["sistem"]}
+        "settings-cfg-hr": ["sdm"], "settings-cfg-rnd": ["rnd"],
+        "settings-cfg-system": ["sistem", "keamanan"]}   # KF-T7 — kelompok Keamanan akun & sesi

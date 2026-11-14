@@ -291,13 +291,9 @@ async def _linked_supplier_deadline(order: Dict[str, Any],
             "origin_untraceable": True}
 
 
-RETURN_ASSUMPTION_DEFAULTS: Dict[str, Any] = {
-    "customer_window_days": 21, "supplier_window_days": 21,
-    "bill_first": True,                 # LN-091 disepakati: potong tagihan SO asal dulu (KLR-10: cakupan = SO asal)
-    # LN-091-T02 — % harga daftar per grade (selisih lama vs baru = kerugian turun grade)
-    "grade_price_factors": {"A": 100, "A1": 95, "A2": 90, "B": 70, "B1": 60, "C": 40, "BS": 10},
-    "supplier_reminder_days": 3,        # LN-093 — pengingat ke PT pemasok sebelum masa retur supplier habis
-}
+# KF-T7 (#54) — salinan bawaan di kode (21 · 21 · potong tagihan dulu · faktor grade · 3) dihapus: kelimanya kunci
+# registry `returns.*` (KF-T2) dan bawaan satu-satunya ada di sana. LN-091: potong tagihan SO asal dulu (KLR-10);
+# LN-091-T02: % harga daftar per grade; LN-093: pengingat ke PT pemasok sebelum masa retur supplier habis.
 _RECEIPT_VIA = ("inbound", "grn", "goods_receipt", "purchase", "receiving")
 
 
@@ -310,8 +306,7 @@ async def return_assumptions(entity_id: str = "") -> Dict[str, Any]:
     """Batas retur umum yang berlaku untuk PT ini (lapisan global → PT, dengan riwayat). Bentuk jawaban tetap."""
     from services.config_resolver import value_of
     ctx = {"entity_id": entity_id or ""}
-    return {**RETURN_ASSUMPTION_DEFAULTS,
-            **{k: await value_of(f"returns.{k}", ctx) for k in RETURN_ASSUMPTION_KEYS}}
+    return {k: await value_of(f"returns.{k}", ctx) for k in RETURN_ASSUMPTION_KEYS}
 
 
 async def customer_reference(order: Dict[str, Any]) -> Dict[str, Any]:

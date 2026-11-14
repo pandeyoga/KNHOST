@@ -16,6 +16,11 @@
      "advanced": false
     },
     {
+     "id": "pesanan-khusus",
+     "label": "Pesanan khusus & katalog sample",
+     "advanced": false
+    },
+    {
      "id": "komisi",
      "label": "Komisi sales",
      "advanced": false
@@ -44,6 +49,11 @@
     {
      "id": "selisih-bayar",
      "label": "Selisih bayar",
+     "advanced": false
+    },
+    {
+     "id": "kredit",
+     "label": "Peringatan & blokir kredit",
      "advanced": false
     }
    ]
@@ -180,6 +190,11 @@
     {
      "id": "rujukan-dokumen",
      "label": "Rujukan antar dokumen",
+     "advanced": false
+    },
+    {
+     "id": "tanda-tangan",
+     "label": "Tanda tangan elektronik",
      "advanced": false
     },
     {
@@ -335,6 +350,17 @@
     {
      "id": "menu",
      "label": "Menu & halaman awal",
+     "advanced": false
+    }
+   ]
+  },
+  {
+   "id": "keamanan",
+   "label": "Keamanan akun & sesi",
+   "sections": [
+    {
+     "id": "masuk",
+     "label": "Salah sandi & lama sesi",
      "advanced": false
     }
    ]
@@ -2022,6 +2048,110 @@
   "kontrol.admin_tetap_dua_orang": [
    "persetujuan",
    "dua-orang-admin"
+  ],
+  "ar.overdue_block_days": [
+   "pembayaran-pelanggan",
+   "kredit"
+  ],
+  "ar.credit_warning_pct": [
+   "pembayaran-pelanggan",
+   "kredit"
+  ],
+  "sales.reservation_days": [
+   "penjualan",
+   "alur-pesanan"
+  ],
+  "sales.group_sales_max_members": [
+   "penjualan",
+   "alur-pesanan"
+  ],
+  "sales.special_order_margin_pct": [
+   "penjualan",
+   "pesanan-khusus"
+  ],
+  "sales.special_order_multi_item_min": [
+   "penjualan",
+   "pesanan-khusus"
+  ],
+  "sales.sample_catalogue_base_qty": [
+   "penjualan",
+   "pesanan-khusus"
+  ],
+  "sales.sample_catalogue_soft_qty": [
+   "penjualan",
+   "pesanan-khusus"
+  ],
+  "inventory.low_stock_default_qty": [
+   "stok",
+   "laris-lambat"
+  ],
+  "inventory.stock_analytics.trend_window_days": [
+   "stok",
+   "laris-lambat"
+  ],
+  "inventory.stock_analytics.trend_band_pct": [
+   "stok",
+   "laris-lambat"
+  ],
+  "inventory.split_roll_max_length": [
+   "stok",
+   "kerja-gudang"
+  ],
+  "putaway.close_reason_min_chars": [
+   "stok",
+   "kerja-gudang"
+  ],
+  "notif.reservation_expiry_warn_hours": [
+   "persetujuan",
+   "tenggat-pengingat"
+  ],
+  "receiving.dn_profile_min_confirmed": [
+   "penerimaan",
+   "menerima"
+  ],
+  "receiving.dn_profile_min_share_pct": [
+   "penerimaan",
+   "menerima"
+  ],
+  "qc.inspection_interval_yard": [
+   "kualitas",
+   "inspeksi"
+  ],
+  "qc.inspection_min_points": [
+   "kualitas",
+   "inspeksi"
+  ],
+  "qc.hold_reason_min_chars": [
+   "kualitas",
+   "inspeksi"
+  ],
+  "finance.rounding_tolerance_rupiah": [
+   "pajak-pembukuan",
+   "tutup-buku"
+  ],
+  "periode.suspense_reason_min_chars": [
+   "pajak-pembukuan",
+   "tutup-buku"
+  ],
+  "keamanan.maks_salah_sandi": [
+   "keamanan",
+   "masuk"
+  ],
+  "keamanan.lama_kunci_menit": [
+   "keamanan",
+   "masuk"
+  ],
+  "keamanan.umur_sesi_jam": [
+   "keamanan",
+   "masuk"
+  ],
+  "esign.otp_ttl_minutes": [
+   "persetujuan",
+   "tanda-tangan"
+  ],
+  "esign.max_attempts": [
+   "persetujuan",
+   "tanda-tangan"
   ]
  }
 }

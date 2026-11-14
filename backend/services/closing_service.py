@@ -37,7 +37,13 @@ RETAINED_EARNINGS = "3-2000"  # Laba Ditahan
 EPS = 0.005
 # Keputusan pemilik K-15 (26 Okt) — tutup buku DIBLOKIR selama saldo Suspense (1-9999) ≠ 0; hanya admin yang boleh
 # menembus, wajib dengan alasan (panjang minimum seragam K-14 = 5 huruf) yang tersimpan di record & jejak audit.
-SUSPENSE_OVERRIDE_MIN_LEN = 5
+# KF-T7 (#65) — panjang minimumnya pengaturan `periode.suspense_reason_min_chars` (bawaan 5, grup).
+
+
+async def suspense_reason_min_chars() -> int:
+    """KF-T7 — panjang minimum alasan menembus blokir Suspense saat tutup buku."""
+    from services.nilai_pengaturan import nilai
+    return int(await nilai("periode.suspense_reason_min_chars"))
 
 
 class SuspenseNotZero(ValueError):
@@ -287,7 +293,7 @@ async def preview(period_type: str, period_key: str, entity_id: str) -> Dict[str
         "suspense_warning": abs(suspense) > EPS,
         # K-15 — suspense ≠ 0 MEMBLOKIR tutup buku (bukan sekadar peringatan); admin dapat menembus dengan alasan.
         "suspense_blocks_close": abs(suspense) > EPS,
-        "suspense_override_min_len": SUSPENSE_OVERRIDE_MIN_LEN,
+        "suspense_override_min_len": await suspense_reason_min_chars(),
     }
 
 
@@ -302,7 +308,8 @@ async def check_suspense_gate(entity_id: str, end: str, override_reason: str = "
     """K-15 — gerbang suspense untuk tutup buku.
 
     Saldo 0 → None (lolos). Saldo ≠ 0 tanpa alasan → `SuspenseNotZero`. Alasan dari non-admin →
-    `SuspenseOverrideForbidden`. Alasan < 5 huruf → ValueError. Lolos dengan alasan → dict catatan tembus.
+    `SuspenseOverrideForbidden`. Alasan lebih pendek dari `suspense_reason_min_chars()` (bawaan 5 huruf) → ValueError.
+    Lolos dengan alasan → dict catatan tembus.
     """
     balance = await gl_service.suspense_balance(entity_id, as_of=end)
     if abs(balance) <= EPS:
@@ -312,8 +319,9 @@ async def check_suspense_gate(entity_id: str, end: str, override_reason: str = "
         raise SuspenseNotZero(balance, _suspense_message(balance))
     if not can_override:
         raise SuspenseOverrideForbidden("Hanya admin yang dapat menembus blokir Suspense saat tutup buku.")
-    if len(reason) < SUSPENSE_OVERRIDE_MIN_LEN:
-        raise ValueError(f"Alasan menembus blokir Suspense minimal {SUSPENSE_OVERRIDE_MIN_LEN} huruf.")
+    minimal = await suspense_reason_min_chars()
+    if len(reason) < minimal:
+        raise ValueError(f"Alasan menembus blokir Suspense minimal {minimal} huruf.")
     return {"reason": reason, "suspense_balance": balance, "by": actor_name or "system", "at": now_iso()}
 
 

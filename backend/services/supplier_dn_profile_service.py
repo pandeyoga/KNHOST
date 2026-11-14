@@ -11,8 +11,8 @@ from core_utils import new_id, now_iso
 from db import db
 from services import dn_rules as R
 
-MIN_CONFIRMED = 3          # locale dipakai otomatis sesudah ≥ 3 SJ terkonfirmasi (§4.8)
-LOCALE_SHARE = 0.8         # dan ≥ 80% bukti menunjuk format yang sama
+# KF-T7 (#50) — format angka dipakai otomatis sesudah ≥ N SJ terkonfirmasi (dulu 3, §4.8) dan ≥ P % bukti menunjuk format
+# yang sama (dulu 80 %): pengaturan `receiving.dn_profile_min_confirmed` / `receiving.dn_profile_min_share_pct`.
 MAX_ALIASES = 10
 MAX_CORRECTIONS = 30       # koreksi manusia terakhir per mitra yang disimpan
 HINT_CORRECTIONS = 12      # yang dikirim ke AI sebagai petunjuk
@@ -20,17 +20,25 @@ _DN_FIELDS = (("number", "Nomor SJ"), ("date", "Tanggal SJ"), ("supplier_name_pr
               ("po_refs", "Nomor PO di kepala SJ"))
 
 
-def active_locale(prof: Dict[str, Any]) -> str:
+async def profile_rules() -> Dict[str, Any]:
+    """KF-T7 — `{"min_confirmed": jumlah SJ terkonfirmasi, "min_share": kesamaan format (pecahan)}` dari Pengaturan."""
+    from services.nilai_pengaturan import nilai
+    return {"min_confirmed": int(await nilai("receiving.dn_profile_min_confirmed")),
+            "min_share": round(float(await nilai("receiving.dn_profile_min_share_pct")) / 100.0, 6)}
+
+
+def active_locale(prof: Dict[str, Any], min_confirmed: int, min_share: float = 0.0) -> str:
+    """Format angka yang DIPAKAI untuk mitra ini. `min_confirmed`/`min_share` dari `profile_rules()`."""
     loc = prof.get("number_locale") or "unknown"
     if prof.get("locale_locked"):
         return loc
-    return loc if int(prof.get("confirmed_count") or 0) >= MIN_CONFIRMED else "unknown"
+    return loc if int(prof.get("confirmed_count") or 0) >= int(min_confirmed) else "unknown"
 
 
-def _decide_locale(votes: Dict[str, int]) -> str:
+def _decide_locale(votes: Dict[str, int], min_share: float) -> str:
     total = sum(votes.values())
     for loc in ("id", "en"):
-        if total >= 2 and votes.get(loc, 0) / total >= LOCALE_SHARE:
+        if total >= 2 and votes.get(loc, 0) / total >= float(min_share):
             return loc
     return "unknown"
 
@@ -132,7 +140,7 @@ async def hints_for(entity_id: str, partner_id: str, exclude_grn_id: str = "") -
     parts: List[str] = []
     if prof.get("aliases"):
         parts.append("Nama pengirim yang pernah tercetak di SJ mitra ini: " + ", ".join(prof["aliases"]) + ".")
-    loc = active_locale(prof) if prof else "unknown"
+    loc = active_locale(prof, **await profile_rules()) if prof else "unknown"
     if loc != "unknown":
         parts.append("Format angka mitra ini: " + ("Indonesia (titik = ribuan, koma = desimal)." if loc == "id"
                                                     else "Inggris (koma = ribuan, titik = desimal)."))
@@ -166,7 +174,7 @@ async def learn_from_grn(grn: Dict[str, Any]) -> Dict[str, Any]:
     set_: Dict[str, Any] = {"locale_votes": votes, "updated_at": now_iso(), "partner_type": grn.get("partner_type"),
                             "partner_name": grn.get("partner_name", ""), "last_grn_number": grn.get("number", "")}
     if not prof.get("locale_locked"):
-        set_["number_locale"] = _decide_locale(votes)
+        set_["number_locale"] = _decide_locale(votes, (await profile_rules())["min_share"])
     for key, val in _item_learnings(grn).items():
         prev = (prof.get("item_map") or {}).get(key) or {}
         n = int(prev.get("count") or 0) + 1 if prev.get("product_id") == val["product_id"] else 1
@@ -185,12 +193,13 @@ async def learn_from_grn(grn: Dict[str, Any]) -> Dict[str, Any]:
     return await db.supplier_dn_profiles.find_one(flt, {"_id": 0})
 
 
-def public(prof: Dict[str, Any]) -> Dict[str, Any]:
+def public(prof: Dict[str, Any], rules: Dict[str, Any]) -> Dict[str, Any]:
+    """`rules` = `profile_rules()` (dibaca pemanggil asinkron)."""
     total = int(prof.get("ocr_lines_total") or 0)
     items = [{"key": k, **v} for k, v in (prof.get("item_map") or {}).items()]
     return {"partner_id": prof["partner_id"], "partner_name": prof.get("partner_name", ""),
             "partner_type": prof.get("partner_type", ""), "number_locale": prof.get("number_locale") or "unknown",
-            "active_locale": active_locale(prof), "locale_locked": bool(prof.get("locale_locked")),
+            "active_locale": active_locale(prof, **rules), "locale_locked": bool(prof.get("locale_locked")),
             "locale_votes": prof.get("locale_votes") or {"id": 0, "en": 0},
             "confirmed_count": int(prof.get("confirmed_count") or 0), "aliases": prof.get("aliases") or [],
             "item_map": sorted(items, key=lambda x: -int(x.get("count") or 0)),
@@ -204,12 +213,13 @@ def public(prof: Dict[str, Any]) -> Dict[str, Any]:
 
 async def list_profiles(entity_id: str) -> List[Dict[str, Any]]:
     rows = await db.supplier_dn_profiles.find({"entity_id": entity_id}, {"_id": 0}).sort("updated_at", -1).to_list(500)
-    return [public(r) for r in rows]
+    rules = await profile_rules()
+    return [public(r, rules) for r in rows]
 
 
 async def get_profile(entity_id: str, partner_id: str) -> Optional[Dict[str, Any]]:
     prof = await db.supplier_dn_profiles.find_one({"entity_id": entity_id, "partner_id": partner_id}, {"_id": 0})
-    return public(prof) if prof else None
+    return public(prof, await profile_rules()) if prof else None
 
 
 async def patch_profile(entity_id: str, partner_id: str, body: Any) -> Dict[str, Any]:
@@ -234,4 +244,4 @@ async def patch_profile(entity_id: str, partner_id: str, body: Any) -> Dict[str,
     if body.remove_item_key:
         unset[f"item_map.{body.remove_item_key}"] = ""
     await db.supplier_dn_profiles.update_one(flt, {"$set": set_, **({"$unset": unset} if unset else {})})
-    return public(await db.supplier_dn_profiles.find_one(flt, {"_id": 0}))
+    return public(await db.supplier_dn_profiles.find_one(flt, {"_id": 0}), await profile_rules())

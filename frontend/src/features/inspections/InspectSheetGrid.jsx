@@ -7,13 +7,12 @@ import KNSelect from "../../components/KNSelect";
 
 /**
  * Lembar Inspect — Trial 22 Okt 2026 (F5, permintaan pemilik): form QC 4-point MENYERUPAI kertas "DATA HASIL INSPECT".
- * Satu lembar banyak roll: baris = roll, kolom = interval 15 yard, sel = kode cacat + poin (mis. "CG2 KO1"); kanan:
+ * Satu lembar banyak roll: baris = roll, kolom = interval (bawaan 15 yard, KF-T7: pengaturan), sel = kode cacat + poin (mis. "CG2 KO1"); kanan:
  * Poin, STDRT (poin × 3600 ÷ (yard × lebar inci)), Grade roll, Grade A / A1 / B (yard), Perbaikan, Keterangan. Disimpan
  * lewat jalur yang SAMA dengan pop-up per roll (`inspectLine`, bagian QC) — tidak ada sumber angka kedua.
  * Keputusan pemilik (F5): grade roll DIISI PETUGAS dari total poin — sistem tidak mengisi otomatis (kecuali
  * `qc.grade_from_points` dinyalakan); kode cacat bebas, artinya ditafsirkan pengguna; yard per grade = catatan.
  */
-const IV = 15;
 const MIN_COLS = 8;            // kertas: 0-15 … 105-120
 const TOKEN = /^([A-Za-z]{1,4})([1-4])$/;
 const n2 = (v) => (v === "" || v == null || Number.isNaN(Number(v)) ? "" : String(v));
@@ -56,6 +55,8 @@ export default function InspectSheetGrid({ doc, meta, editable, onSaved }) {
   const [err, setErr] = useState("");
   const [grades, setGrades] = useState([]);
   const gradeAuto = Boolean(meta?.grade_auto);
+  // KF-T7 — jarak titik inspeksi dari Pengaturan (`policy.inspection_points`, sama dengan server); 15 = cadangan.
+  const IV = Number(meta?.policy?.inspection_points?.interval_yard) > 0 ? Number(meta.policy.inspection_points.interval_yard) : 15;
   useEffect(() => { setRows(Object.fromEntries(lines.map((ln) => [ln.id, rowFromLine(ln)]))); }, [lines]);
   useEffect(() => {
     axios.get(`${API}/master/grades`).then((r) => setGrades((r.data || []).filter((g) => g.active !== false))).catch(() => setGrades([]));

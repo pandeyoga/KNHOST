@@ -56,9 +56,9 @@ def compute_points(defects: List[Dict[str, Any]]) -> float:
     return round(total, 2)
 
 
-# ─── L05 LN-051/052 — form inspect per interval 15 yard (tanpa batas 150) + versi aturan ──────
-INTERVAL_YARD = 15.0
-MIN_INTERVALS = 10           # form kertas: 0–150 yard; roll lebih panjang → interval berlanjut
+# ─── L05 LN-051/052 — form inspect per interval (bawaan 15 yard, tanpa batas 150) + versi aturan ──────
+# KF-T7 (#52) — jarak titik (dulu 15 yard) dan jumlah titik minimum (dulu 10: form kertas 0–150 yard; roll lebih panjang
+# → interval berlanjut) kini pengaturan `qc.inspection_interval_yard` / `qc.inspection_min_points` per PT pemilik roll.
 RULE_VERSION = "4point_sum_v1"
 # KLX-02 (owner 2026-10-19): kode cacat, poin & grade DIISI USER di form; sistem hanya menyimpan + memberi saran.
 RULE_STATUS = "manual_user_input"
@@ -68,15 +68,25 @@ class IntervalError(ValueError):
     pass
 
 
-def interval_count(inspect_length_yard: Optional[float]) -> int:
+async def interval_rules(entity_id: Optional[str]) -> Dict[str, Any]:
+    """KF-T7 — `{"interval_yard", "min_points"}` lembar inspeksi 4-point untuk PT `entity_id` (pemilik roll)."""
+    from services.nilai_pengaturan import nilai
+    return {"interval_yard": float(await nilai("qc.inspection_interval_yard", entity_id)),
+            "min_points": int(await nilai("qc.inspection_min_points", entity_id))}
+
+
+def interval_count(inspect_length_yard: Optional[float], interval_yard: float, min_points: int) -> int:
+    """Jumlah titik inspeksi: ⌈panjang ÷ jarak titik⌉, paling sedikit `min_points` (`interval_rules`)."""
     import math
-    n = math.ceil(float(inspect_length_yard or 0) / INTERVAL_YARD - 1e-9)
-    return max(MIN_INTERVALS, n)
+    n = math.ceil(float(inspect_length_yard or 0) / float(interval_yard) - 1e-9)
+    return max(int(min_points), n)
 
 
-def normalize_interval_defects(defects: List[Dict[str, Any]], inspect_length_yard: Optional[float]) -> List[Dict[str, Any]]:
-    """Setiap kejadian disimpan apa adanya (tidak digabung/ditimpa). `interval` = indeks 0-based (0 = 0–15 yd)."""
-    n = interval_count(inspect_length_yard)
+def normalize_interval_defects(defects: List[Dict[str, Any]], inspect_length_yard: Optional[float],
+                               interval_yard: float, min_points: int) -> List[Dict[str, Any]]:
+    """Setiap kejadian disimpan apa adanya (tidak digabung/ditimpa). `interval` = indeks 0-based (0 = 0–`interval_yard`
+    yd). `interval_yard`/`min_points` dari `interval_rules` PT pemilik roll."""
+    n = interval_count(inspect_length_yard, interval_yard, min_points)
     out = []
     for d in defects or []:
         pv, cnt = int(d.get("point_value", 0) or 0), int(d.get("count", 0) or 0)
@@ -89,8 +99,9 @@ def normalize_interval_defects(defects: List[Dict[str, Any]], inspect_length_yar
         if d.get("interval") not in (None, ""):
             iv = int(d["interval"])
             if iv < 0 or iv >= n:
-                raise IntervalError(f"Interval {iv + 1} di luar panjang inspect ({n} interval × 15 yard).")
-            row.update({"interval": iv, "from_yard": iv * INTERVAL_YARD, "to_yard": (iv + 1) * INTERVAL_YARD})
+                raise IntervalError(f"Interval {iv + 1} di luar panjang inspect ({n} interval × {interval_yard:g} "
+                                    f"yard).")
+            row.update({"interval": iv, "from_yard": iv * interval_yard, "to_yard": (iv + 1) * interval_yard})
         out.append(row)
     return out
 
@@ -270,7 +281,8 @@ async def inspect_roll(roll: Dict[str, Any], defects: List[Dict[str, Any]],
     from services import grade_service as _gs
     grade = _gs.normalize_or_raise(grade_input, "Grade QC") if (grade_input or "").strip() else suggested
 
-    norm_defects = normalize_interval_defects(defects, inspect_length_yard)
+    titik = await interval_rules(roll.get("owner_entity_id"))   # KF-T7 — lembar inspeksi PT pemilik roll
+    norm_defects = normalize_interval_defects(defects, inspect_length_yard, **titik)
 
     # ─── FASE I — banding terhadap sample yang di-ACC + kebijakan tahan/peringatkan ──
     prev = roll.get("inspection") or {}
@@ -291,7 +303,7 @@ async def inspect_roll(roll: Dict[str, Any], defects: List[Dict[str, Any]],
     import domain_registry as _dr
     form = {   # LN-051 — satuan stok TIDAK diubah; posisi cacat selalu yard
         "inspect_length_yard": (round(float(inspect_length_yard), 2) if inspect_length_yard not in (None, "") else None),
-        "interval_yard": INTERVAL_YARD, "intervals": interval_count(inspect_length_yard),
+        "interval_yard": titik["interval_yard"], "intervals": interval_count(inspect_length_yard, **titik),
         "stock_qty": float(roll.get("length_remaining") or 0), "stock_unit": roll.get("unit", ""),
         "header": {k: v for k, v in (header or {}).items() if v not in (None, "")},
     }

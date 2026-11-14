@@ -27,12 +27,14 @@ from services.customer_service import (
     order_due,
     DEAD_STATUSES,
     NON_AR_METHODS,
+    credit_status,
+    credit_thresholds,
 )
 
 EPS = 0.01
 BUCKET_KEYS = ["current", "b1_30", "b31_60", "b61_90", "b90_plus"]
-WARNING_RATIO = 0.8
-OVERDUE_BLOCK_DAYS = 14
+# KF-T7 (CR-03) — ambang peringatan & blokir kredit (dulu konstanta 0,8 dan 14 hari, salinan kedua dari
+# `customer_service`) dibaca `customer_service.credit_thresholds` per PT pelanggan.
 
 
 async def get_ar_config(entity_id: Optional[str] = None,
@@ -88,17 +90,10 @@ def _empty_buckets() -> Dict[str, float]:
 
 
 def _credit_status(credit_limit: float, ar_outstanding: float, max_overdue_days: int,
-                   manual_status: str) -> str:
-    status = "active"
-    near = credit_limit > 0 and ar_outstanding >= WARNING_RATIO * credit_limit
-    over = credit_limit > 0 and ar_outstanding >= credit_limit
-    if near or max_overdue_days > 0:
-        status = "warning"
-    if over or max_overdue_days > OVERDUE_BLOCK_DAYS:
-        status = "blocked"
-    if manual_status == "blocked":
-        status = "blocked"
-    return status
+                   manual_status: str, thresholds: Dict[str, Any]) -> str:
+    """KF-T7 — rumus yang sama dengan kartu pelanggan (`customer_service.credit_status`); `thresholds` dari
+    `credit_thresholds` PT pelanggan."""
+    return credit_status(credit_limit, ar_outstanding, max_overdue_days, manual_status, thresholds)
 
 
 async def _load_scope(entity_id: Optional[Any], sales_id: Optional[str]):
@@ -256,6 +251,7 @@ async def aging_report(entity_id: Optional[str] = None, sales_id: Optional[str] 
                     "penalty_waived": 0.0, "penalty_paid": 0.0, "penalty_actual": 0.0,
                     "ar_ledger": 0.0, "exposure": 0.0,
                     "_manual_status": cust.get("status", ""),
+                    "_entity_id": cust.get("entity_id") or "",
                 }
                 per_customer[cid] = row
             row[bucket] = round(row[bucket] + outstanding, 2)
@@ -285,9 +281,11 @@ async def aging_report(entity_id: Optional[str] = None, sales_id: Optional[str] 
             totals["denda"] = round(totals["denda"] + denda, 2)
 
     rows: List[Dict[str, Any]] = []
+    thr_cache: Dict[str, Dict[str, Any]] = {}   # KF-T7 — ambang kredit dibaca sekali per PT pelanggan
     for row in per_customer.values():
+        thr = await credit_thresholds(row.pop("_entity_id", ""), thr_cache)
         row["credit_status"] = _credit_status(
-            row["credit_limit"], row["outstanding"], row["oldest_days"], row.pop("_manual_status", ""))
+            row["credit_limit"], row["outstanding"], row["oldest_days"], row.pop("_manual_status", ""), thr)
         row["available_credit"] = (round(max(row["credit_limit"] - row["outstanding"], 0), 2)
                                    if row["credit_limit"] > 0 else None)
         # Selisih antara denda ESTIMASI dan denda yang benar-benar sudah jadi dokumen —

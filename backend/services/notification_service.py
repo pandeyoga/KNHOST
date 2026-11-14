@@ -2,7 +2,7 @@
 
 Tidak ada data mock: notifikasi dihitung dari kondisi nyata di
 `inventory_balances` (stok menipis) dan `sales_orders` (reservasi mendekati
-kedaluwarsa 3 hari). Dedupe berbasis `ref` agar tidak menumpuk duplikat.
+kedaluwarsa). Dedupe berbasis `ref` agar tidak menumpuk duplikat.
 """
 import logging
 from typing import Any, Dict, List, Optional
@@ -12,8 +12,8 @@ from core_utils import new_id, now_iso, safe_doc, rupiah
 from services.inventory_service import product_summary
 logger = logging.getLogger(__name__)
 
-
-LOW_STOCK_THRESHOLD = 100.0  # meter — ambang batas default stok menipis
+# KF-T7 (#45, #47) — batas stok menipis barang tanpa titik pesan ulang (dulu 100) dan jendela "reservasi mendekati
+# kedaluwarsa" (dulu 24 jam) kini pengaturan `inventory.low_stock_default_qty` / `notif.reservation_expiry_warn_hours`.
 
 
 async def _has_unread(notif_type: str, ref: str) -> bool:
@@ -192,11 +192,13 @@ async def generate_system_notifications() -> int:
     #    ALAMAT (FASE N): pemegang `purchase_order.create` — karena pertanyaannya
     #    "siapa yang bisa BERTINDAK atas pesan ini?" — plus divisi tambahan bila
     #    pemilik mengisinya (`notif.low_stock_division`, bawaan kosong).
+    from services.nilai_pengaturan import nilai
     division = str(await value_of("notif.low_stock_division", {"entity_id": ""}) or "").strip()
+    bawaan_qty = float(await nilai("inventory.low_stock_default_qty"))   # KF-T7 — barang tanpa titik pesan ulang
     products = await db.products.find({"status": "active"}, {"_id": 0}).to_list(300)
     for product in products:
         summary = await product_summary(product["id"])
-        threshold = float(product.get("reorder_point") or 0) or LOW_STOCK_THRESHOLD
+        threshold = float(product.get("reorder_point") or 0) or bawaan_qty
         if summary["available_qty"] < threshold:
             notes = await create_addressed(
                 permission=("purchase_order", "create"), division=division,
@@ -210,13 +212,14 @@ async def generate_system_notifications() -> int:
             )
             created += len(notes)
 
-    # 2) Reservasi mendekati kedaluwarsa (<= 24 jam) dari sales_orders
+    # 2) Reservasi mendekati kedaluwarsa (<= `notif.reservation_expiry_warn_hours`, bawaan 24 jam) dari sales_orders
     #    ALAMAT: yang boleh MENGONFIRMASI pesanan (`order.confirm`) + sales pemegang
     #    akunnya. Dulu "all" — padahal gudang & finance tak bisa berbuat apa pun.
-    soon = (datetime.now(timezone.utc) + timedelta(hours=24)).isoformat()
+    jam_ingat = int(await nilai("notif.reservation_expiry_warn_hours"))
+    soon = (datetime.now(timezone.utc) + timedelta(hours=jam_ingat)).isoformat()
     orders = await db.sales_orders.find(
         # KN-D13 — selaras dengan penyapu kedaluwarsa (inventory_service): pesanan
-        # backorder `waiting_stock` juga diperingatkan 24 jam sebelum mati.
+        # backorder `waiting_stock` juga diperingatkan sebelum mati (jendela yang sama).
         {"status": {"$in": ["reserved", "waiting_approval", "approved", "waiting_stock"]},
          "reservation_expires_at": {"$lte": soon}}, {"_id": 0}
     ).to_list(200)
@@ -235,7 +238,7 @@ async def generate_system_notifications() -> int:
         kw = dict(notif_type="reservation_expiring", ref=f"resv:{order['id']}",
                   title=f"Booking stok segera habis: {order.get('number', '')}",
                   body=(f"{order.get('number', '')} ({order.get('customer_name', '')}) {nasib}. Booking stok berakhir "
-                        f"{_wib(order.get('reservation_expires_at')) or '≤ 24 jam'} — lewat batas, pesanan gugur "
+                        f"{_wib(order.get('reservation_expires_at')) or f'≤ {jam_ingat} jam'} — lewat batas, pesanan gugur "
                         f"dan stok dilepas."),
                   severity="warning", link="orders", entity_id=order.get("entity_id"))
         sales_user = order.get("sales_id") or order.get("assigned_sales_id") or ""

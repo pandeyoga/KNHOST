@@ -34,7 +34,7 @@ SOURCES = ("gate", "handheld", "manual")
 SOURCE_LABEL = {"gate": "Gate IN", "handheld": "Handheld", "manual": "Manual (tanpa scan)"}
 TERMINAL = ("completed", "completed_with_exception", "exception", "returned")
 CLOSE_ACTIONS = ("return_transit", "exception")
-MIN_CLOSE_REASON = 10
+# KF-T7 (#66) — panjang minimum alasan menutup sisa PA (dulu konstanta 10): pengaturan `putaway.close_reason_min_chars`.
 MAX_TRIP_READS = 2000
 
 
@@ -253,7 +253,8 @@ async def gate_session_hook(order: Dict[str, Any]) -> None:
 async def close_remaining(order_id: str, action: str, reason: str, scope_ids: Optional[List[str]],
                           actor: Union[str, Dict[str, Any], None]) -> Dict[str, Any]:
     """Tutup PA: roll yang MASIH menunggu diputuskan — `return_transit` (kembali siap-putaway di gudang asal) atau
-    `exception` (cek ulang handheld lewat resolve-exception). Alasan wajib (min. 10 huruf)."""
+    `exception` (cek ulang handheld lewat resolve-exception). Alasan wajib (minimal `putaway.close_reason_min_chars`
+    huruf, bawaan 10)."""
     actor_name = _actor_name(actor)
     order = await _load(order_id, scope_ids)
     if order["status"] not in pa.ARRIVAL_STATUSES:
@@ -261,8 +262,10 @@ async def close_remaining(order_id: str, action: str, reason: str, scope_ids: Op
     if action not in CLOSE_ACTIONS:
         raise HTTPException(status_code=400, detail="Keputusan sisa harus 'return_transit' atau 'exception'.")
     why = (reason or "").strip()
-    if len(why) < MIN_CLOSE_REASON:
-        raise HTTPException(status_code=400, detail=f"Alasan menutup PA wajib (minimal {MIN_CLOSE_REASON} huruf).")
+    from services.nilai_pengaturan import nilai
+    minimal = int(await nilai("putaway.close_reason_min_chars"))
+    if len(why) < minimal:
+        raise HTTPException(status_code=400, detail=f"Alasan menutup PA wajib (minimal {minimal} huruf).")
     if not any(i.get("status") == "pending" for i in order["items"]):
         raise HTTPException(status_code=400, detail="Tidak ada roll yang masih menunggu di PA ini.")
     from services import registration_freeze as _rfz   # PREP-B K-OPN-03 — area beku pendaftaran awal (integrasi)

@@ -103,6 +103,8 @@ Key Fields:
   token       string   format: "sess_[hex12]"
   user_id     string   FK → users.id
   created_at  string
+  expires_at  datetime kedaluwarsa (indeks TTL); diperpanjang saat sisa < ½ umur sesi
+  ttl_hours   int      KF-T7 — umur sesi saat dibuat (`keamanan.umur_sesi_jam`); kosong pada sesi lama = 24
 
 ⚠️ JANGAN query sessions langsung dari router lain
 ⚠️ Gunakan current_user() dari dependencies.py

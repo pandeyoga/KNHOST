@@ -12,7 +12,8 @@ import requests
 
 BASE = os.environ.get("REACT_APP_BACKEND_URL", "http://localhost:8001").rstrip("/") + "/api"
 KELOMPOK = ["penjualan", "pembayaran-pelanggan", "retur-koreksi", "pembelian", "penerimaan", "kualitas", "stok",
-            "persetujuan", "pajak-pembukuan", "bank-kasus", "sdm", "rnd", "sistem"]
+            "persetujuan", "pajak-pembukuan", "bank-kasus", "sdm", "rnd", "sistem",
+            "keamanan"]   # KF-T7 — kelompok ke-14 "Keamanan akun & sesi"
 
 
 def _login(email="admin@kainnusantara.id", ent="ent_ksc"):

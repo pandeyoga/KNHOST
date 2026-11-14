@@ -35,8 +35,8 @@ SAMPLE_KINDS = {
     "hanger": {"label": "Hanger", "limits": {"woven": 0.5, "knit": 2.0}},
     "catalogue": {"label": "Catalogue", "limits": {}},
 }
-CATALOGUE_BASE_QTY = 1.0    # yard per warna tersedia
-CATALOGUE_SOFT_QTY = 2.0    # tambahan satu warna soft (komponen TERPISAH)
+# KF-T7 (#51) — isi katalog sample: yard per warna tersedia (dulu 1) dan tambahan satu warna soft (komponen TERPISAH,
+# dulu 2) kini pengaturan `sales.sample_catalogue_base_qty` / `sales.sample_catalogue_soft_qty` per PT (`catalogue_qty`).
 SAMPLE_BILLINGS = ("free", "paid")
 # PR-T2 — penyetuju bayar sample = izin `sample_order.approve_payment` (daftar peran SAMPLE_PAYMENT_APPROVERS dihapus).
 
@@ -106,12 +106,24 @@ async def _free_by_product(product_ids: List[str], entity_id: str, wh_ids: List[
     return out
 
 
+async def catalogue_qty(entity_id: Optional[str]) -> Dict[str, float]:
+    """KF-T7 — `{"base": yard per warna, "soft": tambahan warna soft}` katalog sample PT `entity_id`."""
+    from services.nilai_pengaturan import nilai
+    return {"base": float(await nilai("sales.sample_catalogue_base_qty", entity_id)),
+            "soft": float(await nilai("sales.sample_catalogue_soft_qty", entity_id))}
+
+
+def _yd(v: float) -> str:
+    return f"{v:g}".replace(".", ",")
+
+
 async def catalogue_templates_for(entity_id: str) -> List[Dict[str, Any]]:
     wh_ids = await warehouses_for("catalogue")
+    base_qty = (await catalogue_qty(entity_id))["base"]
     pids = set()
     async for r in db.inventory_rolls.find({"status": "available", "owner_entity_id": entity_id, "warehouse_id": {"$in": wh_ids}},
                                            {"_id": 0, "product_id": 1, "length_remaining": 1, "length_reserved": 1}):
-        if float(r.get("length_remaining") or 0) - float(r.get("length_reserved") or 0) >= CATALOGUE_BASE_QTY - 0.0001:
+        if float(r.get("length_remaining") or 0) - float(r.get("length_reserved") or 0) >= base_qty - 0.0001:
             pids.add(r["product_id"])
     tids = set()
     async for p in db.products.find({"id": {"$in": list(pids)}, "template_id": {"$nin": ["", None]}},
@@ -126,27 +138,31 @@ async def build_catalogue(template_id: str, entity_id: str, soft_product_id: str
     prods = await db.products.find({"template_id": template_id}, {"_id": 0}).sort("color", 1).to_list(500)
     if not prods:
         raise HTTPException(status_code=404, detail="Artikel (template) tidak ditemukan / belum punya warna.")
+    q = await catalogue_qty(entity_id)   # KF-T7 — isi katalog PT ini
+    base_qty, soft_qty = q["base"], q["soft"]
     if any((p.get("base_unit") or "yard") != "yard" for p in prods):
         raise HTTPException(status_code=400, detail={"code": "CATALOGUE_UNIT",
-                            "message": "Catalogue memakai 1 yard per warna — artikel ini bukan satuan yard (pakai sample standar/hanger)."})
+                            "message": f"Catalogue memakai {_yd(base_qty)} yard per warna — artikel ini bukan satuan "
+                                       "yard (pakai sample standar/hanger)."})
     free = await _free_by_product([p["id"] for p in prods], entity_id, await warehouses_for("catalogue"))
-    avail = [p for p in prods if free.get(p["id"], 0) >= CATALOGUE_BASE_QTY - 0.0001]
+    avail = [p for p in prods if free.get(p["id"], 0) >= base_qty - 0.0001]
     if not avail:
         raise HTTPException(status_code=409, detail="Tidak ada warna artikel ini yang tersedia di lokasi catalogue badan usaha ini.")
     soft = next((p for p in avail if p["id"] == soft_product_id), None) if soft_product_id else None
     if soft_product_id and not soft:
         raise HTTPException(status_code=400, detail="Warna soft harus salah satu warna yang tersedia.")
-    if soft and free.get(soft["id"], 0) < CATALOGUE_BASE_QTY + CATALOGUE_SOFT_QTY - 0.0001:
-        raise HTTPException(status_code=409, detail=f"Stok bebas {soft.get('color') or soft['name']} kurang dari 3 yard untuk warna soft.")
+    if soft and free.get(soft["id"], 0) < base_qty + soft_qty - 0.0001:
+        raise HTTPException(status_code=409, detail=f"Stok bebas {soft.get('color') or soft['name']} kurang dari "
+                                                    f"{_yd(base_qty + soft_qty)} yard untuk warna soft.")
 
     def comp(p, role, qty):
         return {"product_id": p["id"], "sku": p.get("sku", ""), "product_name": p.get("name", ""),
                 "color": p.get("color") or p.get("color_name") or "", "role": role, "quantity": qty, "unit": "yard"}
-    base = [comp(p, "base", CATALOGUE_BASE_QTY) for p in avail]
-    return {"template_id": template_id, "base": base, "soft": comp(soft, "soft", CATALOGUE_SOFT_QTY) if soft else None,
+    base = [comp(p, "base", base_qty) for p in avail]
+    return {"template_id": template_id, "base": base, "soft": comp(soft, "soft", soft_qty) if soft else None,
             "colors_total": len(prods), "colors_available": len(avail),
             "unavailable": [p.get("color") or p["name"] for p in prods if p not in avail],
-            "total_qty": round(len(base) * CATALOGUE_BASE_QTY + (CATALOGUE_SOFT_QTY if soft else 0), 2)}
+            "total_qty": round(len(base) * base_qty + (soft_qty if soft else 0), 2)}
 
 
 def catalogue_items(cat: Dict[str, Any]) -> Dict[str, float]:

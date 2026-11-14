@@ -45,7 +45,7 @@ export const CONFIG_GROUP_VIEWS = {
     groups: ["pembayaran-pelanggan", "pajak-pembukuan", "bank-kasus"] },
   "settings-cfg-hr":         { nav: "settings-hr", groups: ["sdm"] },
   "settings-cfg-rnd":        { nav: "settings-rnd", groups: ["rnd"] },
-  "settings-cfg-system":     { nav: "settings-system", groups: ["sistem"] },
+  "settings-cfg-system":     { nav: "settings-system", groups: ["sistem", "keamanan"] },   // KF-T7 — + Keamanan akun & sesi
 };
 
 export const CONFIG_GROUP_VIEW_IDS = Object.keys(CONFIG_GROUP_VIEWS);

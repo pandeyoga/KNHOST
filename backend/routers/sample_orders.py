@@ -59,8 +59,9 @@ class SoftIn(BaseModel):
 @router.get("/sample-orders/kinds")
 async def sample_kinds(request: Request) -> Dict[str, Any]:
     await require_permission(request, "order", "view")
-    from services.sample_sale_service import CATALOGUE_BASE_QTY, CATALOGUE_SOFT_QTY, SAMPLE_KINDS
-    return {"kinds": SAMPLE_KINDS, "catalogue": {"base_qty": CATALOGUE_BASE_QTY, "soft_qty": CATALOGUE_SOFT_QTY, "unit": "yard"}}
+    from services.sample_sale_service import SAMPLE_KINDS, catalogue_qty
+    q = await catalogue_qty((await entity_ctx(request)).active_entity_id)   # KF-T7 — isi katalog PT aktif
+    return {"kinds": SAMPLE_KINDS, "catalogue": {"base_qty": q["base"], "soft_qty": q["soft"], "unit": "yard"}}
 
 
 @router.get("/sample-orders/catalogue/preview")

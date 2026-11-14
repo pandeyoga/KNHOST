@@ -29,7 +29,8 @@ def _item(pid, unit="yard", sold=0.0, trend=None, on_hand=10.0, age=400):
 
 
 def _classify(items, **kw):
-    args = {"window_days": 90, "best_pct": 20, "slow_pct": 20, "new_age_days": 90, "trend_days": 30}
+    # KF-T7 — jendela & pita tren kini parameter wajib (pengaturan `inventory.stock_analytics.trend_*`, bawaan 30 / 10 %).
+    args = {"window_days": 90, "best_pct": 20, "slow_pct": 20, "new_age_days": 90, "trend_days": 30, "trend_band": 0.10}
     args.update(kw)
     return classify_velocity(items, **args)
 
@@ -99,8 +100,9 @@ def test_k05_dead_stock_vs_nothing():
 
 
 def test_k05_trend_and_coverage():
-    assert trend_of(0, 5) is None
-    assert trend_of(1.0, 1.5) == "naik" and trend_of(1.0, 0.5) == "turun" and trend_of(1.0, 1.05) == "stabil"
+    assert trend_of(0, 5, 0.10) is None
+    assert trend_of(1.0, 1.5, 0.10) == "naik" and trend_of(1.0, 0.5, 0.10) == "turun" \
+        and trend_of(1.0, 1.05, 0.10) == "stabil"
     res = _classify([_item("a", sold=90, trend=60, on_hand=500)])     # MA90 1/hari, MA30 2/hari
     a = res["a"]
     assert a["ma_daily"] == 1.0 and a["ma_trend_daily"] == 2.0 and a["trend"] == "naik"
@@ -137,7 +139,8 @@ def test_k05_registry_keys():
     sa = DEFAULT_GLOBAL_SETTINGS["inventory"]["stock_analytics"]
     for leaf in ("velocity_window_days", "best_seller_pct", "slow_moving_pct", "new_sku_age_days"):
         e = reg.get(f"inventory.stock_analytics.{leaf}")
-        assert e and e["status"] == "active" and e["group"] == "stok-satuan", leaf
+        # KF-T4 — kelompok lama `stok-satuan` kini kelompok `stok` (GROUP_ALIASES).
+        assert e and e["status"] == "active" and e["group"] == "stok", leaf
         assert e["default"] == sa[leaf], leaf
     for leaf in ("fast_max_days", "slow_max_days"):
         assert reg.get(f"inventory.stock_analytics.{leaf}")["status"] == "not_used"
@@ -246,10 +249,13 @@ def test_k05_service_so_based_classes(clean_db, monkeypatch):
 
 # ── K-04 — definisi tunggal "Tersedia" & "Stok rendah" ───────────────────────────
 def test_k04_is_low_stock_rule():
-    from services.stock_availability import LOW_STOCK_QTY, is_low_stock
-    assert LOW_STOCK_QTY == 100
-    assert is_low_stock(1) and is_low_stock(99.9)
-    assert not is_low_stock(0) and not is_low_stock(100) and not is_low_stock(-5)   # 0 = habis, bukan rendah
+    # KF-T7 — batas "Stok rendah" kini pengaturan `inventory.low_stock_default_qty` (bawaan 100) → parameter wajib.
+    import config_registry as reg
+    from services.stock_availability import is_low_stock
+    batas = reg.default_of("inventory.low_stock_default_qty")
+    assert batas == 100
+    assert is_low_stock(1, batas) and is_low_stock(99.9, batas)
+    assert not is_low_stock(0, batas) and not is_low_stock(100, batas) and not is_low_stock(-5, batas)   # 0 = habis
 
 
 @needs_db

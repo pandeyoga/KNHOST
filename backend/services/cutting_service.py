@@ -255,8 +255,10 @@ async def change_catalogue_soft(order: Dict[str, Any], soft_product_id: str, act
     if soft_product_id not in {c["product_id"] for c in cat["base"]}:
         raise HTTPException(status_code=400, detail="Warna soft harus salah satu warna dasar catalogue.")
     fresh = await smp.build_catalogue(cat["template_id"], order.get("entity_id", ""), soft_product_id)
+    # KF-T7 — komponen dasar TIDAK disentuh: jumlahnya dibaca dari komponen yang tersimpan; soft dari katalog baru.
     new_cat = {**cat, "soft": fresh["soft"],
-               "total_qty": round(len(cat["base"]) * smp.CATALOGUE_BASE_QTY + smp.CATALOGUE_SOFT_QTY, 2)}
+               "total_qty": round(sum(float(c.get("quantity") or 0) for c in cat["base"])
+                                  + float((fresh["soft"] or {}).get("quantity") or 0), 2)}
     want = smp.catalogue_items(new_cat)
     items = [dict(i) for i in order.get("items", [])]
     for it in items:

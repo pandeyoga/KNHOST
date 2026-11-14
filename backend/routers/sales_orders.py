@@ -4,7 +4,7 @@ Endpoint read/preview/stats & lifecycle-action (submit/approve/confirm/cancel/�
 dipindah ke `routers/sales_orders_extra.py` agar file di bawah batas guardrail.
 `create_order` sengaja tetap di sini karena di-import oleh `routers/special_orders.py`.
 """
-from datetime import datetime, timedelta, timezone
+from datetime import datetime
 import logging
 from typing import Any, Dict, List
 from fastapi import APIRouter, HTTPException, Request
@@ -24,7 +24,7 @@ from services.config_service import (
 from services import so_approvals
 from routers.price_approvals import get_effective_special_price
 from services.uom_service import to_base, load_fixed_factors
-from services.customer_service import evaluate_credit_gate, resolve_customer_sales_team
+from services.customer_service import evaluate_credit_gate, group_sales_max, resolve_customer_sales_team
 from entity_scope import entity_ctx, assert_entity_access
 from services import costing_service
 from services import pricelist_service
@@ -569,7 +569,8 @@ async def create_order(payload: SalesOrderCreate, request: Request) -> Dict[str,
             await _release_rolls_by_ref_id(_tid)
         await _rollback_created_transfers(created_transfer_ids)
         raise HTTPException(status_code=500, detail=str(e))
-    expires = (datetime.now(timezone.utc) + timedelta(days=3)).isoformat()
+    from services.inventory_service import reservation_expires_at   # KF-T7 — masa reservasi PT pesanan (pengaturan)
+    expires = (await reservation_expires_at(entity_id)).isoformat()
     # Status awal (Sub-fase 1.6.1 — decouple status & backorder):
     #   - reserved      : ada porsi ter-reservasi / menunggu transfer antar-entitas
     #   - waiting_stock : 0 reserved (pure backorder — menunggu stok masuk)
@@ -662,7 +663,8 @@ async def create_order(payload: SalesOrderCreate, request: Request) -> Dict[str,
         "is_split_warehouse": is_split, "sales_name": payload.sales_name,
         # SALES REVAMP V2 → REVISI: tim sales (PIC + co-sales + split) di-set PER ORDER dari
         # checkout (payload.sales_team, tervalidasi). Bila kosong → fallback WARISAN customer.
-        "sales_team": normalize_sales_team(payload.sales_team) or resolve_customer_sales_team(customer),
+        "sales_team": normalize_sales_team(payload.sales_team, max_members=await group_sales_max(entity_id))
+        or resolve_customer_sales_team(customer),   # KF-T7 — batas anggota tim per PT pesanan
         # EPIC6 — link eksplisit asal Special Order (bila order dikonversi dari OD).
         "source_special_order_id": (getattr(payload, "source_special_order_id", "") or "").strip() or None,
         "shipment_policy": _shipment_policy,

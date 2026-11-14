@@ -1,13 +1,18 @@
-/** L05 LN-051 — form cacat per interval 15 yard (0–150, berlanjut bila roll lebih panjang). Satu baris = satu kejadian. */
+/** L05 LN-051 — form cacat per interval (bawaan 15 yard, 0–150, berlanjut bila roll lebih panjang). Satu baris = satu
+ * kejadian. KF-T7 — jarak titik & jumlah minimum dari server (`/inspections/meta` → `policy.inspection_points`,
+ * pengaturan `qc.inspection_interval_yard` / `qc.inspection_min_points`); 15 / 10 hanya cadangan bila belum dimuat. */
 import { Plus, Trash2 } from "lucide-react";
 import KNSelect from "../../components/KNSelect";
 
-const IV = 15;
-export const intervalCount = (len) => Math.max(10, Math.ceil((Number(len) || 0) / IV - 1e-9));
-const ivLabel = (i) => `${i * IV}–${(i + 1) * IV}`;
+export const intervalCount = (len, iv = 15, minPoints = 10) =>
+  Math.max(minPoints, Math.ceil((Number(len) || 0) / iv - 1e-9));
 
-export default function IntervalDefectGrid({ length, setLength, rows, setRows, stockUnit, stockQty }) {
-  const n = intervalCount(length);
+export default function IntervalDefectGrid({ length, setLength, rows, setRows, stockUnit, stockQty,
+  intervalYard, minPoints }) {
+  const IV = Number(intervalYard) > 0 ? Number(intervalYard) : 15;
+  const MIN = Number(minPoints) > 0 ? Number(minPoints) : 10;
+  const ivLabel = (i) => `${i * IV}–${(i + 1) * IV}`;
+  const n = intervalCount(length, IV, MIN);
   const upd = (i, patch) => setRows(rows.map((r, k) => (k === i ? { ...r, ...patch } : r)));
   const byIv = rows.reduce((m, r) => { if (r.interval !== "" && Number(r.count) > 0) m[r.interval] = (m[r.interval] || 0) + Number(r.count); return m; }, {});
   return (
@@ -17,13 +22,13 @@ export default function IntervalDefectGrid({ length, setLength, rows, setRows, s
           <span className="field-label">Panjang diinspeksi (yard)</span>
           <input data-testid="ins-inspect-length" type="number" min="0" step="0.01" className="field" value={length}
             onChange={(e) => {
-              const m = intervalCount(e.target.value);
+              const m = intervalCount(e.target.value, IV, MIN);
               setLength(e.target.value);
               if (rows.some((r) => r.interval !== "" && r.interval >= m)) setRows(rows.map((r) => (r.interval !== "" && r.interval >= m ? { ...r, interval: "" } : r)));
             }} placeholder="mis. 124" />
         </label>
         <p className="self-end text-[11px] text-[#6B6B73]" data-testid="ins-stock-unit-note">
-          Stok roll tetap {stockQty} {stockUnit || ""} — posisi cacat selalu dalam yard. {n} interval × 15 yard{n > 10 ? " (berlanjut melewati 150)" : ""}.
+          Stok roll tetap {stockQty} {stockUnit || ""} — posisi cacat selalu dalam yard. {n} interval × {IV} yard{n > MIN ? ` (berlanjut melewati ${MIN * IV})` : ""}.
         </p>
       </div>
       <div className="flex flex-wrap gap-1" data-testid="ins-interval-summary">

@@ -120,7 +120,15 @@ MISMATCH_ACTIONS: Dict[str, str] = {
 #: tetapi tidak menjawab apa pun bagi supplier yang menerima klaimnya, maupun bagi
 #: manajer yang setahun kemudian bertanya "kenapa barang ini dulu ditolak?". Alasan
 #: yang tidak bisa dipakai orang lain sama saja dengan kolom kosong yang terisi.
-MIN_REASON = 15
+#: KF-T7 (#66) — panjangnya (dulu konstanta 15) kini pengaturan `qc.hold_reason_min_chars` (grup), dibaca
+#: `min_reason_len` dan dikirim ke layar lewat `meta()["policy"]["min_reason_length"]`.
+
+
+async def min_reason_len() -> int:
+    """Panjang minimum alasan keputusan inspeksi (tolak barang, buka ulang, lepas/tolak tahanan)."""
+    from services.nilai_pengaturan import nilai
+    return int(await nilai("qc.hold_reason_min_chars"))
+
 #: Yang boleh melepas tahanan (keputusan pemilik #5: **manajer**) = izin `inspection.release` (PR-T2; bawaan admin &
 #: manajer) — atau `md_quality.decide` untuk jenis penerimaan PO/hasil makloon.
 
@@ -1080,7 +1088,8 @@ async def inspect_line(ins_id: str, line_id: str, payload: Dict[str, Any],
         from services import qc_inspection_service as qc
         hdr = await _form_header(doc, roll)
         try:
-            qc.normalize_interval_defects(payload.get("defects") or [], payload.get("inspect_length_yard"))
+            qc.normalize_interval_defects(payload.get("defects") or [], payload.get("inspect_length_yard"),
+                                          **await qc.interval_rules(roll.get("owner_entity_id")))
         except qc.IntervalError as exc:
             raise InspectionError(str(exc)) from exc
         if str(payload.get("grade") or "").strip():   # KLX-02 — grade diisi user, wajib dari master aktif
@@ -1214,8 +1223,10 @@ async def _inspect_return_roll(doc: Dict[str, Any], line: Dict[str, Any], payloa
             _journey.assert_ready_for_qc(ret)
         except ValueError as exc:
             raise InspectionError(str(exc)) from exc
+    titik = await qc.interval_rules(ret.get("entity_id"))   # KF-T7 — lembar inspeksi PT retur
     try:
-        defects = qc.normalize_interval_defects(payload.get("defects") or [], payload.get("inspect_length_yard"))
+        defects = qc.normalize_interval_defects(payload.get("defects") or [], payload.get("inspect_length_yard"),
+                                                **titik)
     except qc.IntervalError as exc:
         raise InspectionError(str(exc)) from exc
     points = qc.compute_points(defects)
@@ -1247,7 +1258,8 @@ async def _inspect_return_roll(doc: Dict[str, Any], line: Dict[str, Any], payloa
         "defects": defects, "points_snapshot": points, "grade_after": grade, "condition": cond, "actual_qty": actual,
         "gsm_actual": num(payload.get("gsm_actual")), "width_actual": num(payload.get("width_actual")),
         "inspect_form": {"inspect_length_yard": num(payload.get("inspect_length_yard")),
-                         "interval_yard": qc.INTERVAL_YARD, "intervals": qc.interval_count(payload.get("inspect_length_yard"))},
+                         "interval_yard": titik["interval_yard"],
+                         "intervals": qc.interval_count(payload.get("inspect_length_yard"), **titik)},
         "grade_rule": {"version": qc.RULE_VERSION, "status": qc.RULE_STATUS,
                        "grade_source": "user" if grade_in else "system_suggestion",
                        "suggested_grade": qc.grade_from_points(points, th), "thresholds": th},
@@ -1365,10 +1377,11 @@ async def finish(ins_id: str, decision: str, remark: str,
     if dec not in DECISIONS:
         raise InspectionError(f"Keputusan harus salah satu: {', '.join(DECISIONS)}.")
     note = (remark or "").strip()
-    if dec == "tolak" and len(note) < MIN_REASON:
+    min_reason = await min_reason_len()   # KF-T7
+    if dec == "tolak" and len(note) < min_reason:
         raise InspectionError(
             "Menolak hasil inspeksi WAJIB ber-alasan — tulis satu kalimat utuh "
-            f"(minimal {MIN_REASON} huruf). Alasan ini dibaca supplier/mitra dan "
+            f"(minimal {min_reason} huruf). Alasan ini dibaca supplier/mitra dan "
             "menjadi dasar klaim, jadi “jelek” tidak cukup.")
     lines = doc.get("lines") or []
     if lines and not any(ln.get("inspected_at") for ln in lines):
@@ -1651,10 +1664,11 @@ async def reopen(ins_id: str, reason: str, actor: Dict[str, Any]) -> Dict[str, A
             "Keputusan SPK ini sudah memutus karantina (stok diterima/ditolak) — tidak bisa dibuka kembali. "
             "Koreksi lewat retur pembelian atau penyesuaian stok.")
     why = (reason or "").strip()
-    if len(why) < MIN_REASON:
+    min_reason = await min_reason_len()   # KF-T7
+    if len(why) < min_reason:
         raise InspectionError(
             "Membuka kembali inspeksi WAJIB ber-alasan — tulis satu kalimat utuh "
-            f"(minimal {MIN_REASON} huruf). Keputusan yang dianulir tanpa alasan "
+            f"(minimal {min_reason} huruf). Keputusan yang dianulir tanpa alasan "
             "menghapus jejak tanggung jawab.")
     out = await _save(doc, "reopened", "Dibuka kembali", actor, why,
                        status=STATUS_IN_PROGRESS, reopen_reason=why,
@@ -1693,10 +1707,11 @@ async def release_hold(ins_id: str, line_id: str, reason: str,
     if not line.get("hold"):
         raise InspectionError("Baris ini tidak sedang ditahan.")
     why = (reason or "").strip()
-    if len(why) < MIN_REASON:
+    min_reason = await min_reason_len()   # KF-T7
+    if len(why) < min_reason:
         raise InspectionError(
             "Melepas tahanan WAJIB ber-alasan — tulis satu kalimat utuh (minimal "
-            f"{MIN_REASON} huruf). Inilah satu-satunya catatan mengapa barang yang "
+            f"{min_reason} huruf). Inilah satu-satunya catatan mengapa barang yang "
             "menyimpang tetap masuk gudang.")
     if doc.get("kind") == KIND_RANDOM_CHECK:
         raise InspectionError("Tahanan random check dilepas saat SPK diputuskan (roll lulus otomatis dilepas).")
@@ -1733,8 +1748,9 @@ async def reject_hold(ins_id: str, line_id: str, reason: str, actor: Dict[str, A
     if not line.get("hold"):
         raise InspectionError("Baris ini tidak sedang ditahan.")
     why = (reason or "").strip()
-    if len(why) < MIN_REASON:
-        raise InspectionError(f"Menolak barang WAJIB ber-alasan — minimal {MIN_REASON} huruf.")
+    min_reason = await min_reason_len()   # KF-T7
+    if len(why) < min_reason:
+        raise InspectionError(f"Menolak barang WAJIB ber-alasan — minimal {min_reason} huruf.")
     lines = [({**ln, "decision": "tolak",
                "md_quality_decision": {"action": "reject", "reason": why, "by": actor.get("name", ""),
                                        "role": actor.get("role", ""), "at": now_iso()}}
@@ -1860,8 +1876,11 @@ async def meta(entity_id: str = "") -> Dict[str, Any]:
             # KOSONG, jadi alasan "pendek" (6 huruf) lolos di layar lalu dijawab
             # **400** oleh server. Pengguna melihat galat merah untuk aturan yang
             # seharusnya sudah terlihat SEBELUM tombolnya bisa ditekan. Ambangnya
-            # tetap milik server (`MIN_REASON`); layar hanya menampilkannya.
-            "min_reason_length": MIN_REASON,
+            # tetap milik server (`min_reason_len`, pengaturan); layar hanya menampilkannya.
+            "min_reason_length": await min_reason_len(),
+            # KF-T7 — jarak & jumlah minimum titik inspeksi 4-point PT ini (pengaturan) — lembar di layar memakai angka
+            # yang sama dengan server (dulu 15 yard / 10 titik ditulis di kedua sisi).
+            "inspection_points": await _qc.interval_rules(entity_id),
             # B1 (26 Okt 2026) — "Diterima seluruhnya" saat masih ada roll ditahan: peringatan (bawaan) / blokir.
             "accept_all_with_hold_action": acc,
             "accept_all_with_hold_label": ACCEPT_ALL_HOLD_ACTIONS[acc],

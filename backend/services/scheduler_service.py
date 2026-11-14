@@ -109,7 +109,8 @@ JOBS: List[Dict[str, Any]] = [
      "link": "operations"},
     # ── FIX-3b (B3a STK-11, B2b ANOM-06 / K-B2b-12) ─────────────────────────
     {"id": "reservation_expiry", "label": "Kedaluwarsa Reservasi Pesanan",
-     "description": "Pesanan yang BELUM disetujui (Dicadangkan / Menunggu persetujuan) dan masa reservasinya (3 hari) "
+     "description": "Pesanan yang BELUM disetujui (Dicadangkan / Menunggu persetujuan) dan masa reservasinya "
+                    "(menurut pengaturan masa reservasi) "
                     "lewat dibuat Kedaluwarsa; roll yang dicadangkan dilepas kembali ke stok. Pesanan yang sudah "
                     "disetujui atau menunggu barang (backorder) TIDAK pernah kedaluwarsa otomatis. Dulu dijalankan "
                     "diam-diam saat daftar pesanan/dasbor dibuka.",

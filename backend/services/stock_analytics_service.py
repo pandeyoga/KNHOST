@@ -36,8 +36,8 @@ PHYSICAL_STATUSES = set(PHYSICAL_STATUS_TO_BUCKET.keys())
 CLASS_ORDER = ("best", "normal", "slow", "dead", "new")
 CLASS_LABEL = {"best": "Best seller", "normal": "Normal", "slow": "Slow moving",
                "dead": "Tidak bergerak", "new": "Baru"}
-TREND_WINDOW_DAYS = 30        # MA pendek untuk arah tren (naik/turun)
-TREND_BAND = 0.10             # MA 30 hari dalam ±10% MA jendela → "stabil"
+# KF-T7 (#48) — jendela MA pendek arah tren (dulu 30 hari) dan pita "stabil" (dulu ±10 %) kini pengaturan
+# `inventory.stock_analytics.trend_window_days` / `trend_band_pct` per PT, dibaca `trend_rules`.
 COVERAGE_CAP_DAYS = 365       # tampilan coverage dibatasi ("> 365 hari")
 
 
@@ -69,21 +69,28 @@ def class_from_percentile(pct: float, best_pct: float, slow_pct: float) -> str:
     return "normal"
 
 
-def trend_of(ma_daily: float, ma_trend_daily: float) -> Optional[str]:
-    """Arah tren: MA 30 hari dibanding MA jendela (±TREND_BAND = stabil). None bila MA jendela 0."""
+async def trend_rules(entity_id: Optional[str]) -> Dict[str, Any]:
+    """KF-T7 — `{"trend_days": hari jendela tren, "band": pita stabil (pecahan)}` untuk PT `entity_id`."""
+    from services.nilai_pengaturan import nilai
+    return {"trend_days": int(await nilai("inventory.stock_analytics.trend_window_days", entity_id)),
+            "band": round(float(await nilai("inventory.stock_analytics.trend_band_pct", entity_id)) / 100.0, 6)}
+
+
+def trend_of(ma_daily: float, ma_trend_daily: float, band: float) -> Optional[str]:
+    """Arah tren: MA jendela tren dibanding MA jendela (±`band` = stabil; `trend_rules`). None bila MA jendela 0."""
     if ma_daily <= 0:
         return None
     ratio = ma_trend_daily / ma_daily
-    if ratio > 1 + TREND_BAND:
+    if ratio > 1 + band:
         return "naik"
-    if ratio < 1 - TREND_BAND:
+    if ratio < 1 - band:
         return "turun"
     return "stabil"
 
 
 def classify_velocity(items: Iterable[Dict[str, Any]], *, window_days: int, best_pct: float,
                       slow_pct: float, new_age_days: int,
-                      trend_days: int = TREND_WINDOW_DAYS) -> Dict[str, Dict[str, Any]]:
+                      trend_days: int, trend_band: float) -> Dict[str, Dict[str, Any]]:
     """FUNGSI MURNI K-05 — kelas laju jual per SKU.
 
     `items`: {product_id, unit, sold_window, sold_trend, on_hand, age_days} — `sold_window` = qty terjual dalam
@@ -105,7 +112,7 @@ def classify_velocity(items: Iterable[Dict[str, Any]], *, window_days: int, best
         on_hand = float(it.get("on_hand") or 0)
         age = it.get("age_days")
         unit = str(it.get("unit") or "").strip().lower()
-        row = {"ma_daily": round(ma, 4), "ma_trend_daily": round(ma_t, 4), "trend": trend_of(ma, ma_t),
+        row = {"ma_daily": round(ma, 4), "ma_trend_daily": round(ma_t, 4), "trend": trend_of(ma, ma_t, trend_band),
                "percentile": None, "rank_unit": unit, "rank_group_size": 0,
                "coverage_days": (round(on_hand / ma, 1) if ma > 0 else None)}
         if age is not None and age < new_age:
@@ -266,7 +273,8 @@ async def compute_stock_analytics(
     best_pct = _num("best_seller_pct", 20)
     slow_pct = _num("slow_moving_pct", 20)
     new_age = max(int(_num("new_sku_age_days", 90)), 0)
-    trend_days = min(TREND_WINDOW_DAYS, window)
+    tren = await trend_rules(entity_id)   # KF-T7 — jendela & pita tren dari Pengaturan (per PT)
+    trend_days = min(tren["trend_days"], window)
 
     # ── Master maps ──────────────────────────────────────────────────────────
     warehouses = {w["id"]: w for w in await db.warehouses.find({}, {"_id": 0}).to_list(200)}
@@ -371,7 +379,7 @@ async def compute_stock_analytics(
             "on_hand": (prod_rows[pid]["on_hand_qty"] if pid in prod_rows else 0.0),
             "age_days": ages[pid]})
     cls_map = classify_velocity(cls_items, window_days=window, best_pct=best_pct, slow_pct=slow_pct,
-                                new_age_days=new_age, trend_days=trend_days)
+                                new_age_days=new_age, trend_days=trend_days, trend_band=tren["band"])
     rank_groups: Dict[str, int] = {}
     for c in cls_map.values():
         if c.get("percentile") is not None:
@@ -441,7 +449,7 @@ async def compute_stock_analytics(
         "generated_at": now.isoformat(),
         "thresholds": {"velocity_window_days": window, "trend_window_days": trend_days,
                        "best_seller_pct": best_pct, "slow_moving_pct": slow_pct, "new_sku_age_days": new_age,
-                       "coverage_cap_days": COVERAGE_CAP_DAYS, "trend_band_pct": round(TREND_BAND * 100, 1)},
+                       "coverage_cap_days": COVERAGE_CAP_DAYS, "trend_band_pct": round(tren["band"] * 100, 1)},
         "filters": {"entity_id": entity_id or "all", "warehouse_id": warehouse_id, "category": category},
         "method": {
             "basis": "moving_average_so",

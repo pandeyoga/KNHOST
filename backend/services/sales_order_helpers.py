@@ -21,8 +21,9 @@ from services.so_status import (
 from services import so_approvals
 
 
-def normalize_sales_team(raw: List[Any]) -> List[Dict[str, Any]]:
-    """F-4c — validasi & normalisasi tim sales (join/group sales).
+def normalize_sales_team(raw: List[Any], *, max_members: int) -> List[Dict[str, Any]]:
+    """F-4c — validasi & normalisasi tim sales (join/group sales). KF-T7 — `max_members` = pengaturan
+    `sales.group_sales_max_members` PT pesanan (`customer_service.group_sales_max`).
     Kosong → [] (atribusi insentif default via assigned_sales). Bila diisi:
     Σ split_pct == 100 (toleransi 0.01), tepat 1 PIC, tiap anggota punya sales_id & split_pct > 0."""
     members = []
@@ -40,7 +41,7 @@ def normalize_sales_team(raw: List[Any]) -> List[Dict[str, Any]]:
     if not members:
         return []
     from services.customer_service import apply_group_sales_rule
-    apply_group_sales_rule(members)   # K-5 — maks 2 orang, split rata otomatis bila kosong
+    apply_group_sales_rule(members, max_members)   # K-5 — maks anggota per PT, split rata otomatis bila kosong
     ids = [m["sales_id"] for m in members]
     if len(set(ids)) != len(ids):
         raise HTTPException(status_code=400, detail="Anggota sales tim tidak boleh duplikat.")

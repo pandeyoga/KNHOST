@@ -221,7 +221,7 @@ async def import_customers(
     # paralel) dan unik; sales penanggung jawab ikut diimpor (kolom sales_email / sales_name).
     from core_utils import next_doc_number as _ndn
     from services import group_partner_service as _grp
-    from services.customer_service import normalize_sales_team
+    from services.customer_service import group_sales_max, normalize_sales_team   # KF-T7 — batas tim per PT
     sales_users = [u async for u in db.users.find({"role": {"$in": roles_in_category("sales")}},
                                                   {"_id": 0, "id": 1, "name": 1, "email": 1})]
     by_email = {(u.get("email") or "").strip().lower(): u for u in sales_users if u.get("email")}
@@ -296,7 +296,8 @@ async def import_customers(
         sales_set = {}
         if sales:
             sales_set = {"assigned_sales_id": sales["id"], "assigned_sales_name": sales.get("name", ""),
-                         "sales_team": normalize_sales_team(None, sales["id"], sales.get("name", ""))}
+                         "sales_team": normalize_sales_team(None, sales["id"], sales.get("name", ""),
+                                                            max_members=await group_sales_max(ent))}
         if existing:
             await db.customers.update_one(
                 {"id": existing["id"]},

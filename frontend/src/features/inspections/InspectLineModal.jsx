@@ -176,7 +176,9 @@ export default function InspectLineModal({ open, onClose, doc, line, meta, onSav
         {line.roll_id && showQc ? (
           <div>
             <IntervalDefectGrid length={inspectLen} setLength={setInspectLen} rows={ivRows} setRows={setIvRows}
-              stockUnit={line.unit} stockQty={line.quantity} />
+              stockUnit={line.unit} stockQty={line.quantity}
+              intervalYard={policy.inspection_points?.interval_yard}
+              minPoints={policy.inspection_points?.min_points} />{/* KF-T7 — titik inspeksi dari Pengaturan */}
             <span className="field-label mt-2 block">Ringkasan cepat tanpa posisi (jumlah per nilai poin)</span>
             <div className="grid gap-2 sm:grid-cols-4">
               {POINT_ROWS.map((r) => (

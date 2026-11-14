@@ -53,6 +53,10 @@ KPT7_KUNCI = 19
 # terhitung di katalog (U04) tetapi tidak bisa diubah pemegang `settings.manage` saja (U02 tetap). Tab "keuangan-dasar"
 # kini juga terbuka bagi pemegang izin `accounting` (U14, `VIEW_RESOURCE_OVERRIDES`).
 PK36_KUNCI = 1
+# KF-T7 — 26 kunci baru (nilai bisnis yang dulu ditulis mati), semuanya berizin `settings.manage` dan aktif: ikut
+# terhitung di U02 (bisa diubah pemegang `settings.manage`) dan di katalog (U04). Kelompok baru `keamanan` tinggal di
+# layar `settings-cfg-system` bersama `sistem` (izin kuncinya `settings` → U14 tetap).
+KFT7_KUNCI = 26
 
 
 def _put(key, value, scope_type="entity", scope_id="ent_ksc"):
@@ -91,7 +95,7 @@ async def test_U02_bisa_ubah_232_kunci(klien, akun, sesi, peran_tanpa_acuan):
     # salah satu dari tiga kunci persetujuan KP-T4.
     assert sum(1 for it in r.json()["items"] if it["can_edit"]) == \
         229 + KFT6_KUNCI - KFT6_TIDAK_DIPAKAI - PRT4_TIDAK_DIPAKAI - KFT2_TIDAK_DIPAKAI - KPT4_TIDAK_DIPAKAI \
-        - KFT3_TIDAK_DIPAKAI
+        - KFT3_TIDAK_DIPAKAI + KFT7_KUNCI
 
 
 async def test_U03_lapisan_grup_tetap_untuk_lintas_pt(klien, akun, sesi, peran_tanpa_acuan):
@@ -113,8 +117,8 @@ async def test_U04_lihat_saja_tidak_bisa_ubah(klien, akun, sesi, peran_tanpa_acu
     r = await klien.get("/api/config/registry", headers=h)
     assert r.status_code == 200, r.text
     # PK-46 menambah lima kunci PPh 21 bertanggal; KF-T6 kunci kontrol.*; KF-T2 kunci retur & jadwal bayar antar-PT;
-    # KP-T7 kunci pengingat & penjadwal; PK-36 kunci akun kontrol.
-    assert r.json()["total"] == 310 + 5 + KFT6_KUNCI + KFT2_KUNCI + KPT7_KUNCI + PK36_KUNCI
+    # KP-T7 kunci pengingat & penjadwal; PK-36 kunci akun kontrol; KF-T7 nilai yang dulu ditulis mati.
+    assert r.json()["total"] == 310 + 5 + KFT6_KUNCI + KFT2_KUNCI + KPT7_KUNCI + PK36_KUNCI + KFT7_KUNCI
 
 
 async def test_U05_manajer_kosong_tidak_lagi_lewat_nama_peran(klien, akun, sesi, peran_manajer_kosong):

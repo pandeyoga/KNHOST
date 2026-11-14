@@ -4,7 +4,7 @@ Semua fungsi aman dijalankan berulang (idempotent)."""
 from typing import Any, Dict, List, Optional
 
 from db import db
-from core_utils import hash_password, new_id, now_iso, next_doc_number, DEFAULT_ENTITY_ID, SESSION_TTL_HOURS
+from core_utils import hash_password, new_id, now_iso, next_doc_number, DEFAULT_ENTITY_ID
 from permissions_config import DEFAULT_PERMISSIONS
 from services import roll_cost_history
 from services.uom_service import UOM_SEED_ROWS
@@ -1843,8 +1843,10 @@ async def seed_sales_extras_foundation() -> None:
 
 
 async def ensure_auth_indexes() -> None:
-    """SEC-2 — TTL index sessions + index login_attempts + backfill expires_at (idempotent)."""
-    from datetime import datetime, timedelta, timezone
+    """SEC-2 — TTL index sessions + index login_attempts + backfill expires_at (idempotent).
+    KF-T7 (#68) — sesi pra-TTL diberi masa berlaku `keamanan.umur_sesi_jam` (dulu konstanta 24 jam)."""
+    from dependencies import session_expiry
+    from services.nilai_pengaturan import nilai
     from services.rnd_sample_service import ensure_revalidation_index
     await ensure_revalidation_index()
     await db.sessions.create_index("expires_at", expireAfterSeconds=0)
@@ -1852,7 +1854,7 @@ async def ensure_auth_indexes() -> None:
     await db.login_attempts.create_index("identifier")
     await db.sessions.update_many(
         {"expires_at": {"$exists": False}},
-        {"$set": {"expires_at": datetime.now(timezone.utc) + timedelta(hours=SESSION_TTL_HOURS)}})
+        {"$set": {"expires_at": session_expiry(int(await nilai("keamanan.umur_sesi_jam")))}})
 
 
 # ─── Fase A — util domain untuk data seed (PS-01/02/03) ──────────────────────
@@ -1924,6 +1926,8 @@ async def run_bootstrap() -> None:
     await migrate_kft1_settings_permissions()
     from services.dual_control import migrasi_sakelar_lama as _kft6_migrasi   # KF-T6 — sakelar SoD lama → kontrol.*
     await _kft6_migrasi()
+    from services.special_order_phase2 import migrasi_margin_lama as _kft7_margin   # KF-T7 — margin pesanan khusus lama
+    await _kft7_margin()
     await sync_uom_factors()
     await sync_product_uom_examples()
     await backfill_inventory_owner()

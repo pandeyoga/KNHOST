@@ -68,8 +68,11 @@ async def sales_home(sales_id: str, entity_id: Optional[str] = None,
     customers = await db.customers.find(cust_filter, {"_id": 0}).to_list(2000)
     cust_rows: List[Dict[str, Any]] = []
     ent_scope = entity_id if entity_id and entity_id != "all" else None
+    from services.customer_service import credit_thresholds
+    thr_cache: Dict[str, Dict[str, Any]] = {}   # KF-T7 — ambang kredit dibaca sekali per PT pelanggan
     for c in customers:
-        cc = await compute_customer_credit(c, ent_scope)  # G3 D4-SALES-02 — AR hanya entitas aktif
+        cc = await compute_customer_credit(c, ent_scope,  # G3 D4-SALES-02 — AR hanya entitas aktif
+                                           thresholds=await credit_thresholds(c.get("entity_id"), thr_cache))
         cust_rows.append({
             "id": c["id"], "name": c.get("name", ""),
             "credit_limit": cc["credit_limit"], "ar_outstanding": cc["ar_outstanding"],

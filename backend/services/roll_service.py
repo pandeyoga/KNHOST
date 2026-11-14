@@ -235,7 +235,8 @@ ORDER_HELD_STATUSES = ["reserved", "committed", "picked", "packed", "in_transit_
 # pelepasan reservasi (batal/kedaluwarsa/eskalasi/override).
 RELEASABLE_HELD_STATUSES = ["reserved", "committed", "picked", "packed"]
 
-MAX_AVAILABLE_ROLL_LEN = 150.0  # potong sintetis available jadi roll realistis
+# KF-T7 (#49) — panjang maksimum roll sintetis saat stok lama tanpa rincian roll dipecah (dulu konstanta 150) kini
+# pengaturan `inventory.split_roll_max_length`, dibaca `generate_rolls_from_balances`.
 
 
 def _domain_snapshot(prod: Optional[Dict[str, Any]]) -> Dict[str, Any]:
@@ -449,6 +450,8 @@ async def generate_rolls_from_balances(created_by: str = "seed") -> Dict[str, in
     """
     if await db.inventory_rolls.count_documents({}) > 0:
         return {"rolls": 0, "skipped": 1}
+    from services.nilai_pengaturan import nilai
+    panjang_maks = float(await nilai("inventory.split_roll_max_length"))   # potong sintetis available jadi roll realistis
 
     # 1) Backfill owner_entity_id pada movements lama (default entitas utama)
     await db.inventory_movements.update_many(
@@ -550,7 +553,7 @@ async def generate_rolls_from_balances(created_by: str = "seed") -> Dict[str, in
         # Available rolls — potong jadi roll realistis
         remaining_avail = available_qty
         while remaining_avail > 0.01:
-            take = min(remaining_avail, MAX_AVAILABLE_ROLL_LEN)
+            take = min(remaining_avail, panjang_maks)
             roll_docs.append(_make_roll(product_id, warehouse_id, owner, lot, take, "available"))
             remaining_avail -= take
 

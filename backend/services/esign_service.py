@@ -17,8 +17,8 @@ from services import pdf_service as pdfsvc
 from services.pdf_resolvers import DOC_REGISTRY
 from services.otp import get_otp_channel
 
-OTP_TTL_MIN = 10
-MAX_ATTEMPTS = 5
+# KF-T7 (#69) — masa berlaku kode (dulu 10 menit) dan batas salah kode (dulu 5 kali): pengaturan `esign.otp_ttl_minutes`
+# (dibaca `create_request`) dan `esign.max_attempts` (dibaca `verify_and_sign`).
 
 
 def _now() -> datetime:
@@ -77,13 +77,15 @@ async def create_request(doc_type: str, source_id: str, entity_id: Optional[str]
     if not source:
         raise LookupError("Dokumen sumber tidak ditemukan")
     eid = entity_id or source.get("entity_id")
+    from services.nilai_pengaturan import nilai
+    ttl_menit = int(await nilai("esign.otp_ttl_minutes"))
     otp = gen_otp()
     req = {
         "id": new_id("esreq"), "doc_type": doc_type, "source_id": source_id, "entity_id": eid,
         "signer_name": signer_name.strip(), "signer_role": (signer_role or "").strip(),
         "signer_contact": (signer_contact or "").strip(),
         "otp_hash": hash_otp(otp),
-        "otp_expires_at": (_now() + timedelta(minutes=OTP_TTL_MIN)).isoformat(),
+        "otp_expires_at": (_now() + timedelta(minutes=ttl_menit)).isoformat(),
         "status": "pending", "attempts": 0, "channel": (channel or "simulated"),
         "requested_by": requested_by, "created_at": now_iso(),
     }
@@ -116,7 +118,8 @@ async def verify_and_sign(request_id: str, otp: str, signature_b64: str, ip: str
     if exp <= _now():
         await db.esign_requests.update_one({"id": request_id}, {"$set": {"status": "expired"}})
         raise ValueError("Kode OTP kedaluwarsa — minta OTP ulang")
-    if req.get("attempts", 0) >= MAX_ATTEMPTS:
+    from services.nilai_pengaturan import nilai
+    if req.get("attempts", 0) >= int(await nilai("esign.max_attempts")):
         await db.esign_requests.update_one({"id": request_id}, {"$set": {"status": "cancelled"}})
         raise ValueError("Terlalu banyak percobaan salah — minta OTP ulang")
     if hash_otp(str(otp).strip()) != req["otp_hash"]:

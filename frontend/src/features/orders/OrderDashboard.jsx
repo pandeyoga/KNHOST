@@ -38,6 +38,7 @@ function OrderDashboard({ orders = [], loading = false, summary = null }) {
         pendingOrders: summary.pending_count ?? (summary.by_status?.waiting_approval?.count || 0),
         pendingBasis: summary.pending_basis || "",
         expiringSoon: summary.expiring_soon_count ?? 0,
+        expiringHours: summary.expiring_soon_hours ?? 24,   // KF-T7 — jendela dari Pengaturan (server)
         avgOrderValue: srv.avg_order_value,
         topCustomers: srv.top_customers || [],
         statusTotal: srv.orders,
@@ -156,7 +157,7 @@ function OrderDashboard({ orders = [], loading = false, summary = null }) {
             <p className="text-[10px] font-bold uppercase tracking-wide text-[#6B6B73]">Reservasi hampir habis</p>
           </div>
           <p className="text-[18px] font-bold text-red-500" data-testid="order-dashboard-expiring">{metrics.expiringSoon}</p>
-          <p className="text-[10px] text-[#8E8E93] mt-1">Berakhir dalam &lt; 24 jam</p>
+          <p className="text-[10px] text-[#8E8E93] mt-1">Berakhir dalam &lt; {metrics.expiringHours ?? 24} jam</p>
         </div>
         
         <div className="section-card !p-3">

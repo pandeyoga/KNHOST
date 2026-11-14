@@ -92,11 +92,13 @@ describe("P16-K1 — menu Pengaturan 7 kelompok", () => {
 });
 
 describe("kelompok registri → layar domain (tanpa yatim)", () => {
-  test("13 kelompok registri masing-masing tepat di SATU layar settings-cfg-*", () => {
+  test("14 kelompok registri masing-masing tepat di SATU layar settings-cfg-*", () => {
     // KF-T4 — 13 kelompok bersub-judul; daftar dibaca dari configKeyIndex.json (dibangkitkan dari registry; uji
-    // backend test_KFT4_registry.py menegaskan berkas = keluaran skrip).
+    // backend test_KFT4_registry.py menegaskan berkas = keluaran skrip). KF-T7 — + "Keamanan akun & sesi"
+    // (`keamanan`) di layar Integrasi & Sistem bersama `sistem`.
     const ids = CONFIG_GROUPS.map((g) => g.id);
-    expect(ids).toHaveLength(13);
+    expect(ids).toHaveLength(14);
+    expect(configViewForGroup("keamanan")).toBe("settings-cfg-system");
     const owners = ids.map((g) => [g, CONFIG_GROUP_VIEW_IDS.filter((v) => CONFIG_GROUP_VIEWS[v].groups.includes(g))]);
     expect(owners.filter(([, v]) => v.length !== 1)).toEqual([]);
     expect(configViewForGroup("penerimaan")).toBe("settings-cfg-warehouse");

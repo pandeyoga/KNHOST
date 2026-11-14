@@ -230,7 +230,10 @@ async def get_orders_stats(request: Request, entity_id: str = None,
         for alloc in order.get("allocations", [])
     )
 
-    # Expiring soon (dalam 24 jam ke depan, belum lewat)
+    # Expiring soon (dalam `notif.reservation_expiry_warn_hours` jam ke depan — bawaan 24 — belum lewat). KF-T7 — satu
+    # jendela dengan pemberitahuan "reservasi mendekati kedaluwarsa" (`notification_service`).
+    from services.nilai_pengaturan import nilai
+    _jam = int(await nilai("notif.reservation_expiry_warn_hours"))
     _n = datetime.now(timezone.utc)
 
     def _exp(o):
@@ -239,7 +242,7 @@ async def get_orders_stats(request: Request, entity_id: str = None,
             dt = dt if dt.tzinfo else dt.replace(tzinfo=timezone.utc)
         except (TypeError, ValueError):
             return False
-        return _n < dt < _n + timedelta(hours=24)
+        return _n < dt < _n + timedelta(hours=_jam)
     expiring_soon = sum(1 for order in reserved_orders if order.get("reservation_expires_at") and _exp(order))
 
     # KN-D18 — omzet dihitung di SERVER atas SELURUH pesanan ter-scope (bukan 20 baris
@@ -281,6 +284,7 @@ async def get_orders_stats(request: Request, entity_id: str = None,
         "by_status": status_counts,
         "total_reserved_qty": total_reserved_qty,
         "expiring_soon_count": expiring_soon,
+        "expiring_soon_hours": _jam,   # KF-T7 — jendela "segera berakhir" yang dipakai (pengaturan)
         # P2 — kartu "Backorder" di layar Pesanan dulu dihitung dari SELURUH daftar yang
         # ada di memori peramban (`orders.filter(o => o.has_backorder)`). Begitu daftarnya
         # dipaginasi, angka itu akan diam-diam mengecil mengikuti isi halaman. Dihitung di

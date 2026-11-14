@@ -1352,7 +1352,7 @@ async def convert_special_order_to_so(order_id: str, request: Request) -> Dict[s
         raise HTTPException(
             status_code=400,
             detail="Konversi hanya untuk special order yang sudah disetujui (confirmed/in_production/ready).")
-    if (so.get("request_types") or p2.is_multi_item(so)) and not (so.get("pricing") or {}).get("locked"):
+    if (so.get("request_types") or p2.is_multi_item(so, await p2.multi_item_min())) and not (so.get("pricing") or {}).get("locked"):
         raise HTTPException(status_code=400, detail="Kunci harga final (ACC pelanggan + margin) dulu sebelum konversi ke SO.")
 
     # FE-01 — retry sesudah SO sempat lahir (mis. gagal sebelum tautan tersimpan): pakai SO yang sama, jangan buat lagi.
@@ -1364,7 +1364,7 @@ async def convert_special_order_to_so(order_id: str, request: Request) -> Dict[s
         return {"special_order": safe_doc(await db.special_orders.find_one({"id": order_id}, {"_id": 0})),
                 "sales_order": safe_doc(await db.sales_orders.find_one({"id": prior["id"]}, {"_id": 0})), "reused": True}
 
-    if p2.is_multi_item(so):
+    if p2.is_multi_item(so, await p2.multi_item_min()):
         # FE-01 — setiap item membawa produk hasil, qty/satuan & harga terkunci-nya sendiri; tidak dilebur ke header.
         pr = so.get("pricing") or {}
         if pr.get("mode") != "items":

@@ -24,8 +24,10 @@ logger = logging.getLogger(__name__)
 
 
 DECISIONS = ("acc", "revisi", "tolak")
-DEFAULT_MARGIN_PCT = 30.0
+#: KF-T7 (#8) — dokumen lama `system_settings{scope: "special_order"}.default_margin_pct` (tanpa penulis di aplikasi);
+#: isinya dipindah sekali ke `sales.special_order_margin_pct` (`migrasi_margin_lama`) dan tidak dibaca lagi.
 SETTINGS_SCOPE = "special_order"
+MARKER_MIGRASI_MARGIN = "kft7_margin_pesanan_khusus"
 
 
 class ODError(ValueError):
@@ -49,12 +51,42 @@ def _label(od: Dict[str, Any]) -> str:
     return f"Pesanan khusus {od.get('number')} · {od.get('customer_name', '')}"
 
 
-async def default_margin_pct() -> float:
-    doc = await db.system_settings.find_one({"scope": SETTINGS_SCOPE}, {"_id": 0, "default_margin_pct": 1}) or {}
+async def default_margin_pct(entity_id: Optional[str] = "") -> float:
+    """KF-T7 (#8) — margin bawaan pesanan khusus PT `entity_id`: pengaturan `sales.special_order_margin_pct` (dulu
+    dokumen `system_settings{scope: "special_order"}` tanpa penulis + cadangan 30 di kode)."""
+    from config_registry import default_of
+    from services.nilai_pengaturan import nilai
     try:
-        return float(doc.get("default_margin_pct") if doc.get("default_margin_pct") is not None else DEFAULT_MARGIN_PCT)
+        return float(await nilai("sales.special_order_margin_pct", entity_id))
     except (TypeError, ValueError):
-        return DEFAULT_MARGIN_PCT
+        return float(default_of("sales.special_order_margin_pct"))
+
+
+async def migrasi_margin_lama() -> Dict[str, int]:
+    """KF-T7 — sekali jalan (penanda `system_settings{scope: "__migrations__"}.kft7_margin_pesanan_khusus`): bila dokumen
+    lama memuat `default_margin_pct`, nilainya disalin ke `sales.special_order_margin_pct` lapisan grup dengan alasan
+    "Pindahan dari penyimpanan lama". Dokumen lama tidak dihapus."""
+    from services import config_resolver as resolver
+    marker = {"scope": "__migrations__"}
+    done = await db.system_settings.find_one(marker, {"_id": 0, MARKER_MIGRASI_MARGIN: 1})
+    if done and done.get(MARKER_MIGRASI_MARGIN):
+        return {"ditulis": 0}
+    doc = await db.system_settings.find_one({"scope": SETTINGS_SCOPE}, {"_id": 0, "default_margin_pct": 1}) or {}
+    ditulis = 0
+    if doc.get("default_margin_pct") is not None:
+        try:
+            await resolver.set_value("sales.special_order_margin_pct", doc["default_margin_pct"], scope_type="global",
+                                     actor="sistem (pindahan KF-T7)", reason="Pindahan dari penyimpanan lama")
+        except resolver.ConfigWriteError as exc:
+            # Nilai lama tidak sah (mis. di luar 0–500 %): server tetap menyala, penanda TIDAK dipasang supaya pemilik
+            # melihat peringatan ini dan memutuskan nilainya di Pengaturan.
+            logger.warning("[KF-T7] margin pesanan khusus lama %r tidak dipindah: %s", doc["default_margin_pct"], exc)
+            return {"ditulis": 0}
+        ditulis = 1
+        logger.warning("[KF-T7] margin bawaan pesanan khusus lama (%s %%) dipindah ke Pengaturan",
+                       doc["default_margin_pct"])
+    await db.system_settings.update_one(marker, {"$set": {MARKER_MIGRASI_MARGIN: now_iso()}}, upsert=True)
+    return {"ditulis": ditulis}
 
 
 # ─── Sample pemenang / desain ACC ─────────────────────────────────────────────
@@ -277,7 +309,13 @@ async def evidence_bytes(od: Dict[str, Any], file_id: str):
 
 
 # ─── FE-01 — harga per item untuk OD multi-produk ─────────────────────────────
-MULTI_ITEM_MIN = 2
+async def multi_item_min() -> int:
+    """KF-T7 (#9) — jumlah barang minimum pesanan khusus "multi-barang": `sales.special_order_multi_item_min` (grup;
+    dulu konstanta 2). Dikirim ke `is_multi_item`."""
+    from services.nilai_pengaturan import nilai
+    return int(await nilai("sales.special_order_multi_item_min"))
+
+
 PRICE_LINE_KEYS = ("key", "item_id", "line_no", "description", "product_id", "product_sku", "product_name",
                    "quantity", "unit", "base_unit", "unit_factor", "cost_price", "margin_pct", "final_unit_price",
                    "price_per_unit", "total", "supplier_id", "supplier_name", "contract_number", "contract_id",
@@ -287,10 +325,11 @@ PRICE_LINE_KEYS = ("key", "item_id", "line_no", "description", "product_id", "pr
                    "pic_unit_price", "comparator_unit_price", "margin_actual_pct", "loss", "has_parent")
 
 
-def is_multi_item(od: Dict[str, Any]) -> bool:
-    """OD ≥2 item memakai harga per item. OD lama / satu item tetap jalur header (custom_item = item itu).
-    Dihitung dari SEMUA item (termasuk yang dibatalkan): membatalkan satu item tidak mengubah jalur harga OD."""
-    return len(od.get("items") or []) >= MULTI_ITEM_MIN
+def is_multi_item(od: Dict[str, Any], min_items: int) -> bool:
+    """OD ≥ `min_items` item (pengaturan, bawaan 2 — `multi_item_min`) memakai harga per item. OD lama / satu item tetap
+    jalur header (custom_item = item itu). Dihitung dari SEMUA item (termasuk yang dibatalkan): membatalkan satu item
+    tidak mengubah jalur harga OD."""
+    return len(od.get("items") or []) >= int(min_items)
 
 
 def _clean_margins(item_margins: Optional[Dict[str, Any]]) -> Dict[str, float]:
@@ -386,7 +425,7 @@ async def item_price_lines(od: Dict[str, Any], margin: float, item_margins: Opti
 async def _items_preview(od: Dict[str, Any], margin_pct: Optional[float], item_margins: Optional[Dict[str, Any]],
                          item_prices: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
     saved = od.get("pricing") or {}
-    meta = {"default_margin_pct": await default_margin_pct(), "customer_decision": od.get("customer_decision", "")}
+    meta = {"default_margin_pct": await default_margin_pct(od.get("entity_id")), "customer_decision": od.get("customer_decision", "")}
     if saved.get("locked") and saved.get("mode") == "items":
         return {**saved, **meta, "ready": True, "blockers": []}
     margin = float(margin_pct) if margin_pct is not None else \
@@ -444,7 +483,7 @@ def _pic_input_set(od: Dict[str, Any], payload: Dict[str, Any], actor: Dict[str,
 
 
 async def _lock_items(od: Dict[str, Any], margin: Optional[float], payload: Dict[str, Any], actor: Dict[str, Any]) -> Dict[str, Any]:
-    base_margin = margin if margin is not None else await default_margin_pct()
+    base_margin = margin if margin is not None else await default_margin_pct(od.get("entity_id"))
     res = await item_price_lines(od, base_margin, payload.get("item_margins"), payload.get("item_prices"))
     if not res["ready"]:
         raise ODError("Harga belum bisa dikunci — semua item harus siap; tidak ada item yang dihilangkan dari SO. "
@@ -522,7 +561,7 @@ async def pricing_preview(od: Dict[str, Any], margin_pct: Optional[float] = None
                           item_margins: Optional[Dict[str, Any]] = None, item_prices: Optional[Dict[str, Any]] = None,
                           unit_price: Optional[float] = None) -> Dict[str, Any]:
     """`item_prices` (multi-item) / `unit_price` (satu item) = harga PIC per SATUAN ITEM untuk item tanpa induk."""
-    if is_multi_item(od):
+    if is_multi_item(od, await multi_item_min()):
         return await _items_preview(od, margin_pct, item_margins, item_prices)
     decided = await _decided_samples(od)
     winner = decided[-1] if decided else None
@@ -531,8 +570,8 @@ async def pricing_preview(od: Dict[str, Any], margin_pct: Optional[float] = None
     saved = od.get("pricing") or {}
     if saved.get("locked"):
         return {**saved, "target_price": float((od.get("custom_item") or {}).get("target_price") or 0),
-                "default_margin_pct": await default_margin_pct(), "customer_decision": od.get("customer_decision", "")}
-    margin = float(margin_pct) if margin_pct is not None else float(saved.get("margin_pct") if saved.get("margin_pct") is not None else await default_margin_pct())
+                "default_margin_pct": await default_margin_pct(od.get("entity_id")), "customer_decision": od.get("customer_decision", "")}
+    margin = float(margin_pct) if margin_pct is not None else float(saved.get("margin_pct") if saved.get("margin_pct") is not None else await default_margin_pct(od.get("entity_id")))
     ci = od.get("custom_item") or {}
     qty = float(ci.get("quantity") or 0)
     unit_name = ci.get("unit", "meter")
@@ -561,7 +600,7 @@ async def pricing_preview(od: Dict[str, Any], margin_pct: Optional[float] = None
             **{k: basis.get(k) for k in ("basis", "basis_label", "basis_note", "ref_sku", "ref_product_id", "ref_price",
                                          "ref_unit", "pic_unit_price", "comparator_unit_price", "margin_actual_pct",
                                          "loss", "has_parent", "needs_pic")},
-            "default_margin_pct": await default_margin_pct(), "locked": bool(saved.get("locked")),
+            "default_margin_pct": await default_margin_pct(od.get("entity_id")), "locked": bool(saved.get("locked")),
             "locked_by": saved.get("locked_by", ""), "locked_at": saved.get("locked_at", ""),
             "unlocked_by": saved.get("unlocked_by", ""), "unlocked_at": saved.get("unlocked_at", ""),
             "customer_decision": od.get("customer_decision", "")}
@@ -607,7 +646,7 @@ async def lock_price(od: Dict[str, Any], payload: Dict[str, Any], actor: Dict[st
         from services import warehouse_scope_service as _whs
         await _whs.assert_usable(payload["warehouse_id"], od.get("entity_id", ""), action="menerima barang di sini",
                                  field_label="Gudang tujuan")
-    if is_multi_item(od):
+    if is_multi_item(od, await multi_item_min()):
         pricing = await _lock_items(od, margin, payload, actor)
         if payload.get("warehouse_id"):
             await db.special_orders.update_one({"id": od["id"]}, {"$set": {"procurement_warehouse_id": payload["warehouse_id"]}})
