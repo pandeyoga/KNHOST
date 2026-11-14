@@ -1,5 +1,5 @@
 <!-- DIHASILKAN OTOMATIS oleh scripts/gen_codebase_map.py — JANGAN EDIT TANGAN -->
-<!-- Dihasilkan dari commit: 3beddfe pada 2026-11-14 -->
+<!-- Dihasilkan dari commit: cc33293 pada 2026-11-14 -->
 # CODEBASE MAP — Kain Nusantara (dihasilkan otomatis)
 
 Peta ini dihitung dari kode oleh `scripts/gen_codebase_map.py`. Kalau angka di sini
