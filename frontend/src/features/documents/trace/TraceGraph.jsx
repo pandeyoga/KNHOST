@@ -16,6 +16,12 @@ import { downloadFile } from "../../../hooks/useBlobUrl";
 import { API } from "../../../services/apiClient";
 import { formatCurrency } from "../../../utils/formatters";
 import { HIDDEN_AMOUNT, HIDDEN_AMOUNT_HINT, canOpenNode, isAmountHidden, relTone, shortDate } from "./traceApi";
+import { docStatusLabel } from "../../../utils/docStatus";
+import { sourceLabel } from "../../finance/glSourceLabels";
+
+// Cek visual 14 Nov: catatan relasi jurnal dulu tampil sebagai kode (`shipment_revenue`, `finance_case`); kode jenis
+// sumber jurnal kini memakai label buku besar, teks bebas tetap apa adanya.
+const noteLabel = (n) => (/^[a-z][a-z0-9_]*$/.test(String(n || "")) ? sourceLabel(n) : n);
 
 /** UAT 24 Okt (P16.2) — PDF dokumen node (pratinjau di halaman / unduh) tanpa pindah layar. */
 const pdfUrl = (node) => `${API}/pdf/render/${node.pdf_doc_type}/${node.doc_id}?format=pdf${node.entity_id ? `&entity_id=${node.entity_id}` : ""}`;
@@ -55,8 +61,8 @@ function NodeCard({ node, isAnchor, onAnchor, onOpen }) {
       <div className="mt-1 flex flex-wrap items-center gap-1.5 text-[9.5px] text-[#8E8E93]">
         <span>{shortDate(node.date)}</span>
         {node.status && (
-          <span className="rounded bg-[#F1F2F4] px-1.5 py-0.5 font-semibold uppercase tracking-wide text-[#4A4B52]">
-            {node.status}
+          <span className="rounded bg-[#F1F2F4] px-1.5 py-0.5 font-semibold text-[#4A4B52]">
+            {docStatusLabel(node.status)}
           </span>
         )}
         {isAnchor && (
@@ -175,7 +181,7 @@ export default function TraceGraph({ trace, loading = false, onAnchor, onOpen })
                       style={{ background: tone.bg, color: tone.fg }}>{e.rel_label || e.rel}</span>
                     <ArrowRight size={12} className="text-[#C4C5CC]" />
                     <span className="font-semibold text-[#1C1C1E]">{b?.number || e.to}</span>
-                    {e.note && <span className="text-[10px] text-[#8E8E93]">· {e.note}</span>}
+                    {e.note && <span className="text-[10px] text-[#8E8E93]">· {noteLabel(e.note)}</span>}
                   </li>
                 );
               })}

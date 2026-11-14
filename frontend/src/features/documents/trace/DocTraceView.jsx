@@ -27,6 +27,7 @@ import {
   HIDDEN_AMOUNT, HIDDEN_AMOUNT_HINT, canOpenNode, errText, fetchTrace, isAmountHidden, shortDate, traceUrl,
 } from "./traceApi";
 import { can } from "../../../config/roles";
+import { docStatusLabel } from "../../../utils/docStatus";
 
 const DEPTHS = [1, 2, 3, 4, 6, 8];
 
@@ -146,12 +147,12 @@ export default function DocTraceView({
           </div>
           <div className="flex items-center gap-2">
             {canOpenConfig && (
-              <button className="secondary-button" data-testid="trace-open-config"
+              <button className="secondary-button btn-sm whitespace-nowrap" data-testid="trace-open-config"
                 onClick={() => openConfig({ group: "dokumen" })}>
                 <Settings2 size={13} /> Aturan Relasi & Cetak
               </button>
             )}
-            <button className="secondary-button" data-testid="trace-refresh"
+            <button className="secondary-button btn-sm whitespace-nowrap" data-testid="trace-refresh"
               onClick={() => cur && load(cur, depth)} disabled={!cur}>
               <RefreshCw size={13} className={loading ? "animate-spin" : ""} /> Muat ulang
             </button>
@@ -197,33 +198,35 @@ export default function DocTraceView({
           {!loading && a && (
             <>
               <section className="section-card" data-testid="trace-anchor-card">
-                <div className="section-head">
-                  <div className="flex min-w-0 items-center gap-2">
+                {/* Cek visual 14 Nov: nomor jangkar dulu terpotong "SO-…" karena tombol memakan lebar — kini tombol turun
+                    ke baris berikut bila sempit, nomor tidak pernah dipotong. */}
+                <div className="section-head flex-wrap gap-2">
+                  <div className="flex items-center gap-2">
                     <span className="rounded bg-[#EFF4FF] px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide text-[#0058CC]">
                       {a.label}
                     </span>
-                    <h3 data-testid="trace-anchor-number" className="truncate text-[13px] font-bold text-[#0B1B3B]">
+                    <h3 data-testid="trace-anchor-number" className="whitespace-nowrap text-[13px] font-bold text-[#0B1B3B]">
                       {a.number}
                     </h3>
                     <EntityBadge entityId={a.entity_id} />
                   </div>
-                  <div className="flex items-center gap-2">
+                  <div className="ml-auto flex flex-wrap items-center justify-end gap-2">
                     {history.length > 0 && (
-                      <button className="secondary-button" onClick={back} data-testid="trace-back">
+                      <button className="secondary-button btn-sm whitespace-nowrap" onClick={back} data-testid="trace-back">
                         Kembali
                       </button>
                     )}
                     {a.link?.view && onOpenDocument && (
-                      <button className="secondary-button" data-testid="trace-open-anchor"
+                      <button className="secondary-button btn-sm whitespace-nowrap" data-testid="trace-open-anchor"
                         disabled={!canOpenNode(a)} title={canOpenNode(a) ? undefined : HIDDEN_AMOUNT_HINT}
                         onClick={() => canOpenNode(a) && onOpenDocument(a.link)}>
                         <ExternalLink size={13} /> Buka dokumen
                       </button>
                     )}
-                    <button className="secondary-button" data-testid="trace-copy-link" onClick={copyLink}>
+                    <button className="secondary-button btn-sm whitespace-nowrap" data-testid="trace-copy-link" onClick={copyLink}>
                       {copied ? <QrCode size={13} /> : <Copy size={13} />} {copied ? "Tersalin" : "Salin tautan"}
                     </button>
-                    <button className="secondary-button" data-testid="trace-print-pdf" onClick={printPdf} disabled={printing}>
+                    <button className="secondary-button btn-sm whitespace-nowrap" data-testid="trace-print-pdf" onClick={printPdf} disabled={printing}>
                       {printing ? <Loader2 size={13} className="animate-spin" /> : <Printer size={13} />} Cetak Jejak (PDF)
                     </button>
                   </div>
@@ -233,7 +236,7 @@ export default function DocTraceView({
                     <Kpi testId="trace-kpi-docs" label="Dokumen terkait" value={String(trace.node_count || 0)} />
                     <Kpi testId="trace-kpi-edges" label="Relasi" value={String(trace.edge_count || 0)} tone="#0058CC" />
                     <Kpi testId="trace-kpi-depth" label="Kedalaman" value={String(trace.depth || 0)} />
-                    <Kpi testId="trace-kpi-status" label="Status dokumen" value={a.status || "—"} />
+                    <Kpi testId="trace-kpi-status" label="Status dokumen" value={a.status ? docStatusLabel(a.status) : "—"} />
                     <Kpi testId="trace-kpi-amount" label="Nilai dokumen"
                       value={isAmountHidden(a) ? HIDDEN_AMOUNT : Number(a.amount) > 0 ? formatCurrency(a.amount) : "—"}
                       tone={isAmountHidden(a) ? "#8E8E93" : "#1B7A43"} />
