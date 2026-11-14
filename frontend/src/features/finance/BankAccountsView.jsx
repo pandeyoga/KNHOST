@@ -371,13 +371,15 @@ function LedgerPanel({ ledger, loading, onClose, onMatch = null, onEdit = null, 
 function Kpi({ label, value, icon: Icon, tone = "", testId, sub = "" }) {
   // Audit UI 24 Okt (060 HP): nilai dulu `truncate` → "Rp 775.00…". Di HP ikon disembunyikan
   // dan angka boleh turun baris, tidak pernah dipotong. K-02 — `sub` = label sumber/cakupan angka.
+  // Cek visual 14 Nov: `break-words` memotong DI TENGAH angka di 1280 px ("Rp 146.625.6" / "88"). Kini angka tidak pindah
+  // baris; di lebar menengah (lima kartu sebaris, lg–2xl) ikon disembunyikan agar angka 17 px muat utuh.
   return (
     <div className="section-card" data-testid={testId}>
       <div className="section-body flex items-center gap-3 py-3">
-        <div className="hidden w-9 h-9 flex-shrink-0 rounded-lg bg-[#EFF4FF] items-center justify-center sm:flex"><Icon size={17} className="text-[#0058CC]" /></div>
+        <div className="hidden w-9 h-9 flex-shrink-0 rounded-lg bg-[#EFF4FF] items-center justify-center sm:flex lg:hidden 2xl:flex"><Icon size={17} className="text-[#0058CC]" /></div>
         <div className="min-w-0">
           <p className="text-[11px] font-bold uppercase tracking-wide text-[#8E8E93]">{label}</p>
-          <p className={`text-[15px] sm:text-[17px] font-bold tabular-nums break-words ${tone || "text-[#1C1C1E]"}`} data-testid={`${testId}-value`}>{value}</p>
+          <p className={`text-[15px] sm:text-[17px] font-bold tabular-nums whitespace-nowrap ${tone || "text-[#1C1C1E]"}`} data-testid={`${testId}-value`}>{value}</p>
           {sub && <p className="text-[10.5px] leading-tight text-[#8E8E93]" data-testid={`${testId}-sub`}>{sub}</p>}
         </div>
       </div>
