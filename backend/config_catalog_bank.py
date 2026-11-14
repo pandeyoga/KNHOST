@@ -18,7 +18,7 @@ E("bank.match_weight_amount", group="bank", type="int", default=40, min=0, max=1
        "Nominal adalah petunjuk terkuat, jadi bobotnya paling besar.",
   impact="Menaikkan angka ini membuat pasangan yang nominalnya sama lebih mudah dianggap cocok.",
   example="Bobot 40 · transfer Rp 12.500.000 = kwitansi Rp 12.500.000 → +40 poin",
-  consumers=("services/bank_recon_service.py:score_pair",), risk="medium",
+  consumers=("services/bank_recon_service.py:load_cfg",), risk="medium",
   related=("bank.auto_match_min_score",))
 
 E("bank.match_weight_date", group="bank", type="int", default=20, min=0, max=100, step=5,
@@ -28,7 +28,7 @@ E("bank.match_weight_date", group="bank", type="int", default=20, min=0, max=100
        "'Selisih hari yang masih wajar'.",
   impact="Membedakan dua kwitansi bernominal sama: yang tanggalnya paling dekat menang.",
   example="Bobot 20 · jendela 3 hari · selisih 1 hari → +13 poin",
-  consumers=("services/bank_recon_service.py:score_pair",), risk="medium",
+  consumers=("services/bank_recon_service.py:load_cfg",), risk="medium",
   related=("bank.date_window_days",))
 
 E("bank.match_weight_ref", group="bank", type="int", default=25, min=0, max=100, step=5,
@@ -38,7 +38,7 @@ E("bank.match_weight_ref", group="bank", type="int", default=25, min=0, max=100,
        "Setengah poin bila hanya sebagian angkanya sama.",
   impact="Membuat pelanggan yang menulis nomor pesanan di berita transfer langsung tercocok otomatis.",
   example="Bobot 25 · berita transfer 'BYR SO-0007' & kwitansi untuk SO-0007 → +25 poin",
-  consumers=("services/bank_recon_service.py:score_pair",), risk="medium")
+  consumers=("services/bank_recon_service.py:load_cfg",), risk="medium")
 
 E("bank.match_weight_name", group="bank", type="int", default=15, min=0, max=100, step=5,
   unit="poin", scopes=G,
@@ -47,7 +47,7 @@ E("bank.match_weight_name", group="bank", type="int", default=15, min=0, max=100
        "Kemiripan dihitung, jadi 'PT MAJU JAYA' tetap dikenali walau ditulis 'PT MAJU JAYA TBK'.",
   impact="Menolong saat pelanggan tidak menulis nomor dokumen apa pun.",
   example="Bobot 15 · 'TRSF E-BANKING CR PT MAJU JAYA' vs pelanggan 'PT Maju Jaya' → +15 poin",
-  consumers=("services/bank_recon_service.py:score_pair",), risk="medium")
+  consumers=("services/bank_recon_service.py:load_cfg",), risk="medium")
 
 E("bank.auto_match_min_score", group="bank", type="int", default=80, min=0, max=200, step=5,
   unit="poin", scopes=G,
@@ -56,7 +56,7 @@ E("bank.auto_match_min_score", group="bank", type="int", default=80, min=0, max=
        "Naikkan bila Anda ingin lebih hati-hati.",
   impact="Terlalu rendah = salah cocok; terlalu tinggi = semuanya harus dikerjakan manual.",
   example="Ambang 80 · pasangan berskor 85 → langsung tertaut; berskor 70 → jadi usulan",
-  consumers=("services/bank_recon_service.py:auto_match",), risk="high",
+  consumers=("services/bank_recon_service.py:load_cfg",), risk="high",
   related=("bank.suggest_min_score",))
 
 E("bank.suggest_min_score", group="bank", type="int", default=60, min=0, max=200, step=5,
@@ -66,8 +66,7 @@ E("bank.suggest_min_score", group="bank", type="int", default=60, min=0, max=200
        "yang bisa Anda terima 1 klik. Di bawahnya: murni manual.",
   impact="Menentukan seberapa banyak usulan yang muncul di layar.",
   example="Ambang usulan 60 · pasangan berskor 62 → tampil sebagai usulan",
-  consumers=("services/bank_recon_service.py:auto_match",
-             "services/bank_recon_service.py:candidates"), risk="medium")
+  consumers=("services/bank_recon_service.py:load_cfg",), risk="medium")
 
 E("bank.date_window_days", group="bank", type="duration", default=3, min=0, max=60, step=1,
   unit="hari", scopes=G,
@@ -76,8 +75,7 @@ E("bank.date_window_days", group="bank", type="duration", default=3, min=0, max=
        "pasangan tidak dipertimbangkan.",
   impact="Terlalu sempit = transfer akhir pekan tidak ketemu; terlalu lebar = salah pasangan.",
   example="Jendela 3 hari · buku 12 Juli, bank 14 Juli → masih dipertimbangkan",
-  consumers=("services/bank_recon_service.py:auto_match",
-             "services/bank_recon_service.py:score_pair"), risk="medium")
+  consumers=("services/bank_recon_service.py:load_cfg",), risk="medium")
 
 E("bank.amount_tolerance", group="bank", type="money", default=0, min=0, max=1000000, step=1000,
   unit="Rp", scopes=G,
@@ -86,7 +84,7 @@ E("bank.amount_tolerance", group="bank", type="money", default=0, min=0, max=100
        "Selisih di atas ini menurunkan skor, bukan langsung ditolak.",
   impact="Menaikkan angka ini membuat transfer yang dipotong biaya bank tetap tercocok otomatis.",
   example="Toleransi Rp 6.500 · tagihan Rp 5.000.000, masuk Rp 4.993.500 → tetap dianggap sama",
-  consumers=("services/bank_recon_service.py:score_pair",), risk="medium")
+  consumers=("services/bank_recon_service.py:load_cfg",), risk="medium")
 
 E("bank.rule_learn_after", group="bank", type="int", default=3, min=2, max=20, step=1,
   unit="kali", scopes=G,
@@ -95,7 +93,7 @@ E("bank.rule_learn_after", group="bank", type="int", default=3, min=2, max=20, s
        "menawarkan aturan otomatis. Aturan baru berlaku setelah Anda setujui.",
   impact="Mengurangi pekerjaan berulang tanpa pernah mencocokkan diam-diam.",
   example="Nilai 3 · Anda mencocokkan 'TRSF CR PT MAJU' ketiga kalinya → sistem menawarkan aturan",
-  consumers=("services/bank_recon_service.py:learn_from_manual",), risk="low")
+  consumers=("services/bank_recon_service.py:load_cfg",), risk="low")
 
 E("bank.rule_bonus_score", group="bank", type="int", default=15, min=0, max=100, step=5,
   unit="poin", scopes=G,
@@ -103,7 +101,7 @@ E("bank.rule_bonus_score", group="bank", type="int", default=15, min=0, max=100,
   help="Poin tambahan bila pola berita transfer cocok dengan aturan yang sudah Anda setujui.",
   impact="Membuat transfer berulang dari pihak yang sama tercocok otomatis walau tanpa nomor dokumen.",
   example="Bonus 15 · pasangan berskor 70 + aturan aktif → 85 → tercocok otomatis",
-  consumers=("services/bank_recon_service.py:score_pair",), risk="medium",
+  consumers=("services/bank_recon_service.py:load_cfg",), risk="medium",
   related=("bank.rule_learn_after",))
 
 # KF-T2 (KP-30, standar §1 P9) — tiga akun rekonsiliasi bank kini dibaca dari Pemetaan Akun (`kas_bank.titipan_dana`,

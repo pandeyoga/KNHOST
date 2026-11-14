@@ -37,10 +37,10 @@ E("payment.plan_required_above_amount", group="uang-masuk", type="money", defaul
   related=("payment.plan_tolerance_rupiah",))
 
 E("payment.plan_tolerance_rupiah", group="uang-masuk", type="money", default=1,
-  min=0, max=100000, step=1, unit="Rp", scopes=G,
+  min=1, max=100000, step=1, unit="Rp", scopes=G,   # KF-T3 (KF-10) — 0 dulu diganti diam-diam menjadi 1
   label="Toleransi pembulatan rencana pembayaran",
   help="Selisih rupiah yang masih diterima antara jumlah seluruh baris cicilan dengan nilai "
-       "dokumen. Dibutuhkan karena persen sering menghasilkan pecahan rupiah.",
+       "dokumen. Dibutuhkan karena persen sering menghasilkan pecahan rupiah. Paling kecil Rp 1.",
   impact="Terlalu besar membuat rencana yang tidak pas ikut lolos; terlalu kecil membuat "
          "pembulatan persen ditolak terus.",
   example="Toleransi Rp 1 · Σ baris Rp 9.999.999 untuk order Rp 10.000.000 → DITOLAK",

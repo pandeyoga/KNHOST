@@ -201,6 +201,14 @@
   background: #fff7ed; border: 1px solid #fed7aa; border-radius: var(--r-md);
   font-size: .8rem; color: #9a3412;
 }
+/* KF-T3 — satu baris per jadwal (nilai · mulai · cakupan) + tombol Batalkan jadwal; catatan "Ditimpa oleh". */
+.cfg-sched-list { display: flex; flex-direction: column; gap: 4px; }
+.cfg-sched-text { flex: 1 1 auto; }
+.cfg-override-box {
+  display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin: 0;
+  padding: 7px 10px; border-radius: var(--r-md);
+  background: #fef2f2; border: 1px solid #fecaca; color: #991b1b; font-size: .8rem;
+}
 
 /* ── Zona edit ───────────────────────────────────────────────────────────── */
 .cfg-edit-zone { display: flex; flex-direction: column; gap: 8px; padding-top: 6px; border-top: 1px dashed var(--line); }

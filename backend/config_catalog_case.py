@@ -18,7 +18,7 @@ E("case.sla_hours", group="kasus", type="int", default=24, min=1, max=720, step=
        "Kasus yang lewat batas ditandai merah di Inbox dan bisa dinaikkan ke atasan.",
   impact="Semakin kecil, semakin cepat kasus terlihat terlambat — antrean jadi lebih disiplin.",
   example="SLA 24 jam · kasus dibuka kemarin 09:00 dan belum selesai → ditandai TERLAMBAT",
-  consumers=("services/finance_case_service.py:sla_hours_of",), risk="low",   # KF-T2 — dulu `sla_of` (tidak ada)
+  consumers=("services/finance_case_service.py:policy",), risk="low",   # KF-T2 — dulu `sla_of` (tidak ada)
   related=("case.sla_hours_high", "case.escalate_on_sla_breach"))
 
 E("case.sla_hours_high", group="kasus", type="int", default=8, min=1, max=720, step=1,
@@ -28,7 +28,7 @@ E("case.sla_hours_high", group="kasus", type="int", default=8, min=1, max=720, s
        "yang lebih pendek karena risikonya lebih besar.",
   impact="Uang besar tidak boleh menunggu selama uang kecil.",
   example="SLA besar 8 jam · kasus Rp 50.000.000 dibuka 09:00 → terlambat setelah 17:00",
-  consumers=("services/finance_case_service.py:sla_hours_of",), risk="low",   # KF-T2 — dulu `sla_of` (tidak ada)
+  consumers=("services/finance_case_service.py:policy",), risk="low",   # KF-T2 — dulu `sla_of` (tidak ada)
   related=("case.high_amount_threshold",))
 
 E("case.high_amount_threshold", group="kasus", type="money", default=10000000,
@@ -38,7 +38,7 @@ E("case.high_amount_threshold", group="kasus", type="money", default=10000000,
        "batas waktunya lebih pendek dan urutannya di atas.",
   impact="Menentukan kasus mana yang naik ke atas antrean.",
   example="Ambang Rp 10.000.000 · kasus Rp 25.000.000 → prioritas TINGGI",
-  consumers=("services/finance_case_service.py:priority_of",), risk="low")
+  consumers=("services/finance_case_service.py:policy",), risk="low")
 
 E("case.require_evidence", group="kasus", type="bool", default=True, scopes=G,
   label="Wajib lampirkan bukti sebelum kasus ditutup",
@@ -57,7 +57,7 @@ E("case.require_approval_above", group="kasus", type="money", default=5000000,
        "menutup sendiri.",
   impact="Menaikkan angka ini mempercepat kerja tetapi mengurangi kontrol berlapis.",
   example="Ambang Rp 5.000.000 · refund Rp 7.500.000 → wajib manager/admin",
-  consumers=("services/finance_case_service.py:_assert_authority",), risk="high",
+  consumers=("services/finance_case_service.py:policy",), risk="high",
   related=("case.approver_role", "case.refund_max_amount"))
 
 E("case.approver_role", group="kasus", type="enum", default="manager", scopes=G,
@@ -66,7 +66,7 @@ E("case.approver_role", group="kasus", type="enum", default="manager", scopes=G,
   help="Siapa yang berwenang menutup kasus yang nominalnya di atas ambang persetujuan.",
   impact="Menentukan siapa yang boleh menutup kasus besar.",
   example="Manager · refund Rp 7.500.000 hanya bisa ditutup manager atau admin",
-  consumers=("services/finance_case_service.py:_assert_authority",), risk="high")
+  consumers=("services/finance_case_service.py:policy",), risk="high")
 
 E("case.refund_max_amount", group="kasus", type="money", default=25000000,
   min=0, step=1000000, unit="Rp", scopes=G,
@@ -75,7 +75,7 @@ E("case.refund_max_amount", group="kasus", type="money", default=25000000,
        "penyetuju. Di atas ini wajib admin/direksi. 0 = tanpa batas.",
   impact="Menjaga uang keluar besar tetap di tangan pemilik keputusan tertinggi.",
   example="Batas Rp 25.000.000 · refund Rp 40.000.000 oleh manager → ditolak, harus admin",
-  consumers=("services/finance_case_service.py:_assert_authority",), risk="high")
+  consumers=("services/finance_case_service.py:policy",), risk="high")
 
 E("case.duplicate_window_days", group="kasus", type="int", default=7, min=1, max=90, step=1,
   unit="hari", scopes=G,
@@ -84,9 +84,9 @@ E("case.duplicate_window_days", group="kasus", type="int", default=7, min=1, max
        "dicurigai sebagai pembayaran dobel dan otomatis dibuatkan kasus.",
   impact="Semakin lebar, semakin banyak dugaan dobel yang tertangkap (bisa lebih banyak alarm).",
   example="Jendela 7 hari · Rp 3.750.000 dari pelanggan yang sama pada 1 & 5 Juli → 1 kasus",
-  consumers=("services/finance_case_service.py:scan",), risk="medium")
+  consumers=("services/finance_case_service.py:policy",), risk="medium")
 
-E("case.holding_case_after_days", group="kasus", type="int", default=3, min=0, max=365, step=1,
+E("case.holding_case_after_days", group="kasus", type="int", default=3, min=1, max=365, step=1,   # KF-T3 — 0 dulu → 3
   unit="hari", scopes=G,
   label="Titipan dana menganggur berapa hari sebelum jadi kasus",
   help="Dana masuk tak dikenal yang ditampung di akun titipan (Rekonsiliasi Bank) akan "
@@ -94,7 +94,7 @@ E("case.holding_case_after_days", group="kasus", type="int", default=3, min=0, m
        "uang yang terlupakan tanpa penanggung jawab.",
   impact="Semakin kecil, semakin cepat uang tak dikenal ditindaklanjuti orang.",
   example="3 hari · titipan Rp 5.131.200 masuk 26 Juli, pada 29 Juli otomatis jadi kasus",
-  consumers=("services/finance_case_service.py:scan",), risk="medium",
+  consumers=("services/finance_case_service.py:policy",), risk="medium",
   related=("bank.holding_max_age_days",))
 
 E("case.auto_bank_charge_max", group="kasus", type="money", default=50000, min=0, step=5000,
@@ -114,7 +114,7 @@ E("case.escalate_on_sla_breach", group="kasus", type="bool", default=True, scope
        "lalu admin, memakai mesin eskalasi yang sama dengan alert operasional.",
   impact="Kalau dimatikan, kasus terlambat hanya terlihat di Inbox tanpa memberi tahu siapa pun.",
   example="Nyala · kasus lewat 24 jam → notifikasi 'ESKALASI: Kasus keuangan terlambat'",
-  consumers=("services/finance_case_service.py:scan",), risk="low")
+  consumers=("services/finance_case_service.py:policy",), risk="low")
 
 E("case.auto_scan_enabled", group="kasus", type="bool", default=True, scopes=G,
   label="Buat kasus otomatis dari temuan sistem",
@@ -122,4 +122,4 @@ E("case.auto_scan_enabled", group="kasus", type="bool", default=True, scopes=G,
        "lalu membuat kasusnya sendiri. Kalau dimatikan, kasus hanya bisa dibuat manual.",
   impact="Mematikan ini membuat antrean bergantung pada kerajinan orang mengetik kasus.",
   example="Nyala · pemindai harian menemukan 1 titipan tua → 1 kasus baru bernomor KSC/CASE-00001",
-  consumers=("services/finance_case_service.py:scan",), risk="medium")
+  consumers=("services/finance_case_service.py:policy",), risk="medium")

@@ -66,9 +66,16 @@ export function WhyThisValueDrawer({ entry, ctx, onClose }) {
         <>
           <div className="cfg-why-answer" data-testid="cfg-why-answer">
             <span className="cfg-why-value">{formatValue(entry, data.value)}</span>
-            <span className={`badge-${LAYER_TONE[data.source_layer] || "muted"}`}>
-              ditentukan oleh: {data.source_label}
-            </span>
+            {/* KF-T3 — nilai yang dipakai mesin ditentukan penimpa terdaftar, bukan lapisan tersimpan. */}
+            {data.overridden_by ? (
+              <span className={`badge-${LAYER_TONE.override}`} data-testid="cfg-why-overridden">
+                ditentukan oleh: {data.overridden_by.label}
+              </span>
+            ) : (
+              <span className={`badge-${LAYER_TONE[data.source_layer] || "muted"}`}>
+                ditentukan oleh: {data.source_label}
+              </span>
+            )}
           </div>
           <p className="cfg-hint">
             Sistem membaca nilai dari lapisan paling umum ke paling khusus. Lapisan paling
@@ -317,6 +324,10 @@ export function ChangeHistoryDrawer({ entry, onClose }) {
                   {r.scheduled ? (
                     <span className="badge-orange cfg-ml">terjadwal</span>
                   ) : null}
+                  {r.cancelled ? (
+                    <span className="badge-muted cfg-ml" data-testid={`cfg-history-cancelled-${r.id}`}
+                      title={r.cancel_reason ? `Alasan pembatalan: ${r.cancel_reason}` : undefined}>dibatalkan</span>
+                  ) : null}
                 </td>
                 <td>{r.label}</td>
                 <td>
@@ -380,6 +391,7 @@ export function ChangeHistoryInline() {
               <tr key={r.id}>
                 <td className="cfg-nowrap">
                   {formatDateTime(r.changed_at)}
+                  {r.cancelled ? <span className="badge-muted cfg-ml">dibatalkan</span> : null}
                 </td>
                 <td>{r.label}</td>
                 <td>

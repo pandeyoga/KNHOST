@@ -22,7 +22,7 @@ E("amendment.approval_threshold_amount", group="amandemen", type="money",
   impact="Menentukan koreksi mana yang boleh langsung diterapkan pengusul dan mana "
          "yang masuk antrean persetujuan.",
   example="Ambang Rp 5.000.000 · koreksi menurunkan tagihan Rp 7.500.000 → WAJIB disetujui",
-  consumers=("services/amendment_service.py:evaluate_policy",), risk="high",
+  consumers=("services/amendment_service.py:policy_snapshot",), risk="high",
   related=("amendment.approval_threshold_pct", "amendment.approver_role"))
 
 E("amendment.approval_threshold_pct", group="amandemen", type="pct",
@@ -32,7 +32,7 @@ E("amendment.approval_threshold_pct", group="amandemen", type="pct",
        "lebih besar dari persen ini. Cukup salah satu terlampaui.",
   impact="Menjaring koreksi kecil-nilai pada dokumen kecil yang secara persentase besar.",
   example="Ambang 5% · dokumen Rp 20.000.000 turun Rp 2.000.000 (10%) → WAJIB disetujui",
-  consumers=("services/amendment_service.py:evaluate_policy",), risk="high",
+  consumers=("services/amendment_service.py:policy_snapshot",), risk="high",
   related=("amendment.approval_threshold_amount",))
 
 E("amendment.approver_role", group="amandemen", type="enum", default="manager",
@@ -76,7 +76,7 @@ E("amendment.require_note_above", group="amandemen", type="money",
        "penjelasan bebas yang tersimpan permanen.",
   impact="Menolak pengajuan koreksi besar yang tidak menyertakan penjelasan.",
   example="Ambang Rp 10.000.000 · koreksi Rp 12.000.000 tanpa catatan → DITOLAK",
-  consumers=("services/amendment_service.py:propose",), risk="medium")
+  consumers=("services/amendment_service.py:policy_snapshot",), risk="medium")
 
 E("amendment.issued_doc_policy", group="amandemen", type="enum", default="note_only",
   options=({"value": "note_only",
@@ -90,4 +90,4 @@ E("amendment.issued_doc_policy", group="amandemen", type="enum", default="note_o
        "Nota Debit (nilai naik) yang tertaut ke dokumen asal.",
   impact="Menentukan apakah koreksi menghasilkan nota baru atau menimpa dokumen asal.",
   example="'note_only' · SO sudah dibayar lalu harga dikoreksi turun Rp 500.000 → terbit Nota Kredit",
-  consumers=("services/amendment_service.py:evaluate_policy",), risk="high")
+  consumers=("services/amendment_service.py:policy_snapshot",), risk="high")

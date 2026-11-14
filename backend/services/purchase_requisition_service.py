@@ -40,7 +40,7 @@ async def _wh_name(warehouse_id: str) -> str:
     return (wh or {}).get("name", "")
 
 
-async def _enrich_items(raw_items: List[Any]) -> (List[Dict[str, Any]], float):
+async def _enrich_items(raw_items: List[Any], entity_id: str = "") -> (List[Dict[str, Any]], float):
     """Bangun baris PR + subtotal. product_id opsional (non-katalog/special order).
 
     FASE B (D-07) — setiap baris berkatalog WAJIB membawa **jejak konversi**
@@ -50,7 +50,7 @@ async def _enrich_items(raw_items: List[Any]) -> (List[Dict[str, Any]], float):
     products = {p["id"]: p for p in await db.products.find({}, {"_id": 0}).to_list(2000)}
     from services import uom_rules_service as uomr
     from services.pr_sourcing_service import normalize_mode
-    engine = await uomr.load_engine()
+    engine = await uomr.load_engine(entity_id or "")   # KF-T3 — toleransi satuan PT dokumen
     items: List[Dict[str, Any]] = []
     total = 0.0
     for idx, it in enumerate(raw_items, start=1):
@@ -151,7 +151,7 @@ async def create_requisition(payload, created_by: str, created_by_id: str = "") 
             raise ValueError(exc.detail)
         warehouse_id, site_id, site_name = dest["warehouse"]["id"], dest["site_id"], dest["site_name"]
 
-    items, total = await _enrich_items(payload.items)
+    items, total = await _enrich_items(payload.items, entity_id)
     if not items:
         raise ValueError("Minimal satu item kebutuhan")
     # P05 DEC-07 — jalur restock per artikel (supplier/makloon/keduanya) divalidasi server.

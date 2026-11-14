@@ -379,8 +379,9 @@ async def create_order(payload: SalesOrderCreate, request: Request) -> Dict[str,
     # Term pembayaran: pilihan user → fallback default settings
     term_code = (payload.payment_term_code or "").strip()
     if not term_code:
-        gs = await db.system_settings.find_one({"scope": "global"}, {"_id": 0}) or {}
-        term_code = (gs.get("finance", {}) or {}).get("default_payment_term_code", "NET30")
+        # KF-T3 (KP-11) — termin bawaan PT pesanan (dulu dokumen grup dibaca langsung; nilai khusus PT diabaikan).
+        from services.config_service import default_payment_term_code
+        term_code = await default_payment_term_code(entity_id)
     # FASE E-4 (E4.3) — syarat bayar BERLAPIS: override badan usaha menang atas global.
     # Tanpa ini pesanan CV Kanda Suka bisa memakai net_days milik baris global.
     from services import entity_master_service as _ems

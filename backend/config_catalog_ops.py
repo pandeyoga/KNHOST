@@ -194,7 +194,7 @@ E("receiving.require_supplier_item_for_supplier_uom", group="penerimaan", type="
   impact="Bila mati, sistem boleh memakai faktor konversi umum — lebih longgar tetapi "
        "berisiko salah untuk barang tertentu.",
   example="Aktif → satuan 'cone' tanpa data barang supplier ditolak dengan petunjuk perbaikan",
-  consumers=("services/receiving_uom_service.py:convert_doc_qty",), risk="medium")
+  consumers=("services/receiving_uom_service.py:uom_options",), risk="medium")
 
 E("receiving.supplier_dn_mode", group="penerimaan", type="enum", default="warn",
   options=({"value": "off", "label": "Tidak diperiksa"},
@@ -247,7 +247,7 @@ E("receiving.blind_count", group="penerimaan", type="bool", default=True, scopes
        "selisih, maupun foto SJ dari server.",
   impact="Aktif = hitungan fisik independen dari klaim supplier. Mati = penghitung bisa menyalin angka SJ.",
   example="Aktif → layar Hitung hanya menampilkan barang & target, tanpa '21 pcs · 2.186 yd'",
-  consumers=("services/goods_receipt_service.py:public_view",), risk="medium")
+  consumers=("services/goods_receipt_service.py:is_blind_for",), risk="medium")
 
 # ── GRN Fase 4 — OCR surat jalan (§4.9) ──────────────────────────────────────
 _OCR_C = ("services/goods_receipt_ocr_service.py:ocr_config",)
@@ -322,7 +322,7 @@ E("receiving.label_variance_tolerance_percent", group="penerimaan", type="pct", 
        "ditandai 'selisih label vs aktual' dan masuk antrean QC.",
   impact="Makin kecil, makin banyak roll masuk QC; makin besar, selisih stok baru ketahuan saat potong.",
   example="Label 100 yd · aktual 97 yd · toleransi 2% → selisih 3% → ditandai QC",
-  consumers=("routers/inbound_scan_label.py:confirm_measure",),
+  consumers=("routers/inbound_scan_label.py:_tolerance_pct",),
   related=("purchasing.receive_tolerance_percent",), risk="medium")
 
 E("receiving.auto_rfid_on_scan", group="penerimaan", type="bool", default=True, scopes=G,
@@ -331,7 +331,7 @@ E("receiving.auto_rfid_on_scan", group="penerimaan", type="bool", default=True, 
        "(petugas cukup menempel tag). Bila mati, petugas menekan 'Tag RFID' per roll / menulis EPC dari handheld.",
   impact="Aktif = identitas roll KN siap ditelusuri RFID sejak menit pertama. Mati = tagging manual.",
   example="Aktif → scan label → RL-00061 + EPC 3034… tercetak di label KN",
-  consumers=("services/receiving_roll_service.py:receiving_cfg",), risk="low")
+  consumers=("services/receiving_roll_service.py:build_receiving_roll",), risk="low")
 
 # ═══════════════════════════════════════════════════════════════════════════
 # PRODUKSI & MAKLOON (scope `makloon`)
@@ -645,7 +645,7 @@ E("catalog.sales_hidden_stages", group="stok-satuan", type="list", default=["gre
        "Kode: yarn, grey, pfd, pfp, finished, remnant, byproduct.",
   impact="Sales tidak melihat dan tidak bisa memesan barang dengan tahap di daftar ini — juga lewat API langsung.",
   example="['grey','yarn'] (bawaan) → Sales melihat PFD/PFP, barang jadi, sisa potong, produk samping; greige tidak pernah",
-  consumers=("services/product_exclusivity.py:visibility_query", "routers/sales_orders.py"),
+  consumers=("services/product_exclusivity.py:refresh_hidden_stages",),
   risk="medium")
 
 E("wms.location_scope_enforced", group="stok-satuan", type="bool", default=False, scopes=("global",),
@@ -655,7 +655,7 @@ E("wms.location_scope_enforced", group="stok-satuan", type="bool", default=False
        "Supervisor (warehouse admin, manajer, admin) melihat semua lokasi.",
   impact="Mengaktifkan tanpa memetakan akun membuat petugas gudang kehilangan antrean kerjanya. Petakan dulu, lalu aktifkan.",
   example="Petugas Soreang tidak melihat antrean Jakarta walau badan usahanya sama",
-  consumers=("services/location_scope.py:warehouse_ids_for", "entity_scope.py:resolve_list_scope"),
+  consumers=("services/location_scope.py:enforced",),
   risk="high")
 
 
@@ -705,7 +705,7 @@ E("cutting.wait_warn_minutes", group="stok-satuan", type="int", default=120, min
   help="Hasil potong yang menunggu diterima Admin Cutting lebih lama dari batas ini diberi tanda kuning.",
   impact="Hanya mengubah warna penanda dan urutan perhatian di Meja Cutting; tidak mengubah stok atau tugas.",
   example="120 → potongan yang sudah 2 jam belum diterima tampil kuning",
-  consumers=("services/cutting_service.py:desk",), related=("cutting.wait_late_minutes",), risk="low")
+  consumers=("services/cutting_service.py:wait_thresholds",), related=("cutting.wait_late_minutes",), risk="low")
 
 E("cutting.wait_late_minutes", group="stok-satuan", type="int", default=240, min=1, max=10080, step=10,
   unit="menit", scopes=("global", "entity"),
@@ -714,7 +714,7 @@ E("cutting.wait_late_minutes", group="stok-satuan", type="int", default=240, min
        "Bila lebih kecil dari batas kuning, batas kuning ikut dipakai sebagai batas merah.",
   impact="Mengubah jumlah 'terlambat' di spanduk Meja Cutting; tidak mengubah stok atau tugas.",
   example="240 → potongan yang sudah 4 jam belum diterima tampil merah",
-  consumers=("services/cutting_service.py:desk",), related=("cutting.wait_warn_minutes",), risk="low")
+  consumers=("services/cutting_service.py:wait_thresholds",), related=("cutting.wait_warn_minutes",), risk="low")
 
 
 # FIX-3b (B2b CUT-4 / K-B2b-05, CUT-2 / K-B2b-06 / K-B3b-07) — sisa potong & susut potong, satu aturan untuk potong SO
@@ -756,28 +756,28 @@ E("returns.evidence_required_submit", group="retur", type="bool", default=False,
   help="Bila aktif, retur tanpa satu pun lampiran bukti tidak bisa diajukan untuk persetujuan. Bila mati, bukti boleh dilengkapi kemudian.",
   impact="Menahan langkah 'diajukan untuk persetujuan' sampai ada minimal satu foto/dokumen di panel Lampiran bukti.",
   example="Aktif → Sales wajib mengunggah foto kain cacat sebelum retur diajukan untuk persetujuan",
-  consumers=("services/return_evidence_service.py:assert_evidence", "routers/sales_returns.py:submit_return"), risk="low")
+  consumers=("services/return_evidence_service.py:policy",), risk="low")
 
 E("returns.evidence_required_approve", group="retur", type="bool", default=False, scopes=("global", "entity"),
   label="Bukti foto wajib sebelum retur disetujui",
   help="Bila aktif, retur tanpa satu pun lampiran bukti tidak bisa disetujui. Bila mati, bukti boleh dilengkapi kemudian.",
   impact="Menahan langkah 'disetujui' sampai ada minimal satu foto/dokumen di panel Lampiran bukti.",
   example="Aktif → Sales wajib mengunggah foto kain cacat sebelum retur disetujui",
-  consumers=("services/return_evidence_service.py:assert_evidence", "routers/sales_returns.py:approve_return"), risk="low")
+  consumers=("services/return_evidence_service.py:policy",), risk="low")
 
 E("returns.evidence_required_inspect", group="retur", type="bool", default=False, scopes=("global", "entity"),
   label="Bukti foto wajib sebelum retur inspeksi diselesaikan",
   help="Bila aktif, retur tanpa satu pun lampiran bukti tidak bisa inspeksi diselesaikan. Bila mati, bukti boleh dilengkapi kemudian.",
   impact="Menahan langkah 'inspeksi diselesaikan' sampai ada minimal satu foto/dokumen di panel Lampiran bukti.",
   example="Aktif → Sales wajib mengunggah foto kain cacat sebelum retur inspeksi diselesaikan",
-  consumers=("services/return_evidence_service.py:assert_evidence", "routers/sales_returns.py:complete_inspection"), risk="low")
+  consumers=("services/return_evidence_service.py:policy",), risk="low")
 
 E("returns.evidence_required_settle", group="retur", type="bool", default=False, scopes=("global", "entity"),
   label="Bukti foto wajib sebelum retur diselesaikan (refund/store credit/nego)",
   help="Bila aktif, retur tanpa satu pun lampiran bukti tidak bisa diselesaikan (refund/store credit/nego). Bila mati, bukti boleh dilengkapi kemudian.",
   impact="Menahan langkah 'diselesaikan (refund/store credit/nego)' sampai ada minimal satu foto/dokumen di panel Lampiran bukti.",
   example="Aktif → Sales wajib mengunggah foto kain cacat sebelum retur diselesaikan (refund/store credit/nego)",
-  consumers=("services/return_evidence_service.py:assert_evidence", "routers/sales_returns.py:settle_return"), risk="low")
+  consumers=("services/return_evidence_service.py:policy",), risk="low")
 
 E("returns.block_resend_to_origin_customer", group="retur", type="bool", default=True, scopes=("global", "entity"),
   label="Larang kirim ulang roll retur (dan potongannya) ke pelanggan asal",
@@ -841,7 +841,7 @@ E("returns.supplier_reminder_days", group="retur", type="duration", default=3, m
   help="Pengingat dikirim sekian hari sebelum batas. 0 = tanpa pengingat.",
   impact="Mengubah kapan PT pemasok menerima pengingat klaim retur yang hampir lewat batas.",
   example="3 hari → batas 22 Maret, pengingat dikirim mulai 19 Maret",
-  consumers=("services/return_disposition_service.py:job_supplier_deadline_reminder",))
+  consumers=("services/return_policy_service.py:return_assumptions",))
 
 E("returns.bill_first", group="retur", type="bool", default=True,
   scopes=G, sensitif_baca=False, permission=_RETUR_PERM, risk="medium",
@@ -850,7 +850,7 @@ E("returns.bill_first", group="retur", type="bool", default=True,
   impact="Bila dimatikan, nilai retur langsung dikembalikan atau menjadi saldo walau tagihan pesanan asal masih terbuka.",
   example="Ya → retur Rp 500.000 atas pesanan bersisa tagihan Rp 300.000: Rp 300.000 memotong tagihan, "
           "Rp 200.000 dikembalikan",
-  consumers=("services/return_service.py:_source_bill_split", "services/return_roll_settlement_service.py:plan_event"))
+  consumers=("services/return_policy_service.py:return_assumptions",))
 
 E("returns.grade_price_factors", group="retur", type="table", row_shape="map",
   default={"A": 100, "A1": 95, "A2": 90, "B": 70, "B1": 60, "C": 40, "BS": 10},

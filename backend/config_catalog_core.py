@@ -48,14 +48,17 @@ E("tax.ppn_mode", sensitif_baca=False,  # KF-T1 — dibaca layar semua pengguna
   example="Rp 11.100.000 · included → DPP Rp 10.000.000 + PPN Rp 1.100.000",
   consumers=("services/config_service.py:compute_tax",), risk="high")
 
+# KF-T3 (KF-11) — sakelar ini tidak pernah dibaca saat menghitung PPN maupun menerbitkan faktur; sumbernya status PKP
+# di profil PT (keputusan K-08). Pusat Pajak kini mengirim `efaktur_enabled = is_pkp`.
 E("tax.efaktur_enabled", group="pajak", type="bool", default=True,
   scopes=("global", "entity"),
   label="Terbitkan Faktur Pajak (PKP)",
   help="Aktif bila entitas sudah Pengusaha Kena Pajak dan wajib menerbitkan Faktur Pajak.",
   impact="Bila dimatikan, menu Faktur Keluaran tidak menerbitkan e-Faktur dan PPN jadi 0.",
   example="Entitas non-PKP → PPN Rp 0 dan tidak ada nomor Faktur Pajak",
-  consumers=("services/config_service.py:compute_tax", "services/tax_invoice_service.py"),
-  risk="high")
+  consumers=("services/tax_center_service.py:tax_summary",),
+  risk="high",
+  status="not_used", not_used_reason="Penerbitan faktur pajak mengikuti status PKP di profil PT.")
 
 E("tax.pph_items", group="pajak", type="table", default=[],
   scopes=("global", "entity"),
@@ -111,7 +114,9 @@ E("finance.default_payment_term_code", sensitif_baca=False,  # KF-T1 — dibaca 
   help="Term yang otomatis terpilih saat membuat pesanan baru bila pelanggan belum punya term khusus.",
   impact="Mengubah tanggal jatuh tempo default pada pesanan & invoice baru.",
   example="NET30 → invoice tanggal 1 Juli jatuh tempo 31 Juli",
-  consumers=("routers/sales_orders.py", "services/ar_aging_service.py"), risk="medium")
+  # KF-T3 (KP-11) — pembaca nyata: termin bawaan PT pesanan; `ar_aging_service.py` tidak membacanya.
+  consumers=("services/config_service.py:default_payment_term_code", "routers/sales_orders.py:create_order"),
+  risk="medium")
 
 E("finance.dispatch_payment_gate", group="uang-masuk", type="enum", default="block",
   options=({"value": "block", "label": "Tahan kirim sampai termin terbayar (blok keras)"},
@@ -475,7 +480,7 @@ E("purchasing.restock_source_unknown", group="pembelian", type="enum", default="
        "selalu ditolak, apa pun setelan ini.",
   impact="Pembuatan PR, PO manual, dan Order Makloon barang jadi.",
   example="block → PR artikel KNT-0067 ditolak sampai MD memilih supplier/makloon",
-  consumers=("services/restock_source_service.py:check_lines",), risk="medium")
+  consumers=("services/restock_source_service.py:unknown_policy",), risk="medium")
 E("purchasing.require_supplier_master", group="pembelian", type="bool", default=False,
   scopes=("global", "entity"), simulate="po_supplier",
   label="PO wajib memilih supplier master",
@@ -808,7 +813,7 @@ E("qc.grade_from_points", group="kualitas", type="bool", default=False,
   impact="Bila mati, hasil 4-point yang disimpan tanpa grade ditolak dengan pesan 'isi grade roll'. "
          "Bila hidup, grade kosong = saran sistem dari total poin.",
   example="Mati → roll 18 poin, petugas memilih sendiri Grade A di Lembar Inspect",
-  consumers=("services/qc_inspection_service.py:inspect_roll",), risk="high")
+  consumers=("services/qc_inspection_service.py:grade_auto",), risk="high")
 
 E("qc.color_mismatch_action", group="kualitas", type="enum", default="tahan",
   scopes=("global", "entity"),
@@ -867,7 +872,7 @@ E("qc.md_sampling_pct", group="kualitas", type="int", default=0,
   impact="Roll yang tidak dicek tetap lepas karantina, tetapi ditandai 'MDQ sampling' (bukan 'MDQ ✓') — "
          "terlihat di daftar roll dan bisa disaring di stok.",
   example="20% · kedatangan 10 roll → minimal 2 roll dicek; 8 roll lain bertanda MDQ sampling",
-  consumers=("services/inspection_service.py:finish",), related=("qc.md_sampling_min",), risk="medium")
+  consumers=("services/inspection_service.py:sampling_rule",), related=("qc.md_sampling_min",), risk="medium")
 
 E("qc.md_sampling_min", group="kualitas", type="int", default=1,
   min=1, max=1000, step=1, unit="roll", scopes=("global", "entity"),
@@ -875,7 +880,7 @@ E("qc.md_sampling_min", group="kualitas", type="int", default=1,
   help="Batas bawah jumlah roll yang dicek MD Quality per SPK (dipakai bersama persen di atas).",
   impact="SPK MD tidak bisa ditutup sebelum jumlah ini tercapai (atau semua roll bila kedatangannya lebih sedikit).",
   example="min 1 → kedatangan 3 roll dengan sampling 0% cukup 1 roll dicek",
-  consumers=("services/inspection_service.py:finish",), related=("qc.md_sampling_pct",), risk="low")
+  consumers=("services/inspection_service.py:sampling_rule",), related=("qc.md_sampling_pct",), risk="low")
 
 E("qc.sampling_pct", group="kualitas", type="int", default=100,
   min=0, max=100, step=5, unit="%", scopes=("global", "entity"),
@@ -884,7 +889,7 @@ E("qc.sampling_pct", group="kualitas", type="int", default=100,
        "dicek; roll yang tidak dicek DIKELUARKAN dari SPK (tetap bertanda 'belum 4-point'), tidak diluluskan.",
   impact="Menentukan kapan SPK QC 4-point boleh ditutup. Pilih roll yang mau diperiksa saat membuat SPK.",
   example="30% · SPK 10 roll → cukup 3 roll dicek; 7 roll lain keluar dari SPK dan tetap 'belum 4-point'",
-  consumers=("services/inspection_service.py:finish",), related=("qc.sampling_min",), risk="medium")
+  consumers=("services/inspection_service.py:sampling_rule",), related=("qc.sampling_min",), risk="medium")
 
 E("qc.sampling_min", group="kualitas", type="int", default=1,
   min=1, max=1000, step=1, unit="roll", scopes=("global", "entity"),
@@ -892,7 +897,7 @@ E("qc.sampling_min", group="kualitas", type="int", default=1,
   help="Batas bawah jumlah roll yang dicek per SPK QC 4-point bila sampling di bawah 100%.",
   impact="SPK QC 4-point tidak bisa ditutup sebelum jumlah ini tercapai.",
   example="min 2 · SPK 3 roll dengan sampling 30% → wajib 2 roll dicek",
-  consumers=("services/inspection_service.py:finish",), related=("qc.sampling_pct",), risk="low")
+  consumers=("services/inspection_service.py:sampling_rule",), related=("qc.sampling_pct",), risk="low")
 
 # ═══════════════════════════════════════════════════════════════════════════
 # TAMPILAN & NAVIGASI
@@ -968,7 +973,7 @@ for _role, _default_view, _label in (
 # tiba-tiba menerima pemberitahuan yang tidak diminta.
 
 E("notif.low_stock_division", group="notifikasi", type="text", default="",
-  scopes=("global", "entity"),
+  scopes=("global",),   # KF-T3 (KF-10) — pindai stok tidak per PT: lapisan PT tidak pernah dibaca, jadi dicabut
   label="Divisi yang ikut diberi tahu saat stok menipis",
   help="Kosongkan bila cukup pemegang wewenang pesanan pembelian saja. Bila diisi, "
        "seluruh karyawan pada departemen itu yang punya akun akan ikut menerima "
@@ -989,4 +994,4 @@ E("notif.po_stage_stuck_days", group="notifikasi", type="duration", default=7,
   impact="Ambang ini menentukan kapan pemberitahuan 'tahap PO macet' muncul. Angka "
          "kecil = lebih cepat mengingatkan, tetapi lebih berisik.",
   example="7 → tahap 'Tenun' yang mulai 8 hari lalu dan belum selesai akan diberitakan",
-  consumers=("services/notification_service.py:generate_system_notifications",), risk="low")
+  consumers=("services/notification_service.py:_notify_stuck_po_stages",), risk="low")   # KF-T3 — dibaca per PT tiap PO

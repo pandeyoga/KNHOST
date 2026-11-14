@@ -48,7 +48,8 @@ E("contra_bon.value_tolerance_rupiah", group="kontrabon", type="money", default=
        "supaya petugas tidak dipaksa menulis alasan untuk uang receh.",
   impact="Menyaring pengecualian bernilai kecil agar antrean keputusan tetap bermakna.",
   example="Ambang Rp 50.000 · selisih 0,4 meter senilai Rp 18.000 → diabaikan (lolos)",
-  consumers=("services/contra_bon_service.py:tolerances",), risk="medium",
+  consumers=("services/three_way_policy.py:tolerances",
+             "services/contra_bon_service.py:policy"), risk="medium",
   related=("contra_bon.qty_tolerance_percent",))
 
 E("contra_bon.require_reason_out_of_tolerance", group="kontrabon", type="bool", default=True,
@@ -58,7 +59,7 @@ E("contra_bon.require_reason_out_of_tolerance", group="kontrabon", type="bool", 
        "toleransi yang belum diputus (terima / potong / sengketakan) beserta label alasannya.",
   impact="Mencegah selisih diterima diam-diam — aturan #1 model keamanan Fase G.",
   example="Aktif · ada 1 selisih belum diputus → tombol Verifikasi ditolak dengan penjelasan",
-  consumers=("services/contra_bon_service.py:verify",), risk="high")
+  consumers=("services/contra_bon_service.py:policy",), risk="high")
 
 E("contra_bon.approval_threshold_rupiah", group="kontrabon", type="money", default=50000000,
   min=0, step=1000000, unit="Rp", scopes=G,
@@ -100,7 +101,7 @@ E("contra_bon.reminder_days_before", group="kontrabon", type="int", default=1,
        "penerimaan barang yang belum ditagih dan tagihan yang siap dikontrabon.",
   impact="Mencegah siklus tukar faktur terlewat dan faktur supplier menumpuk tanpa dibayar.",
   example="H-1 · jadwal Selasa → pengingat terkirim Senin pagi",
-  consumers=("services/contra_bon_reminder.py:job_contra_bon_reminder",), risk="low",
+  consumers=("services/contra_bon_service.py:policy",), risk="low",
   related=("contra_bon.unbilled_gr_age_days",))
 
 E("contra_bon.unbilled_gr_age_days", group="kontrabon", type="int", default=3,
@@ -110,7 +111,7 @@ E("contra_bon.unbilled_gr_age_days", group="kontrabon", type="int", default=3,
        "ditandai TERTUNGGAK di daftar 'GR Belum Ditagih' dan ikut disebut di pengingat.",
   impact="Membuat barang yang sudah masuk gudang tetapi belum ada fakturnya kelihatan.",
   example="Batas 3 hari · GR 5 hari lalu belum ditagih → ditandai tertunggak",
-  consumers=("services/contra_bon_service.py:unbilled_receipts",), risk="low")
+  consumers=("services/contra_bon_service.py:policy",), risk="low")
 
 E("contra_bon.verify_sla_days", group="kontrabon", type="int", default=2,
   min=1, max=60, step=1, unit="hari", scopes=G,
@@ -119,8 +120,7 @@ E("contra_bon.verify_sla_days", group="kontrabon", type="int", default=2,
        "terlambat dan dinaikkan ke atasan.",
   impact="Supplier tidak menunggu tanpa kejelasan; antrean kontrabon jadi disiplin.",
   example="SLA 2 hari · kontrabon disubmit 3 hari lalu belum diverifikasi → TERLAMBAT",
-  consumers=("services/contra_bon_service.py:decorate",
-             "services/contra_bon_reminder.py:job_contra_bon_reminder"), risk="low")
+  consumers=("services/contra_bon_service.py:policy",), risk="low")
 
 E("contra_bon.block_pay_before_approval", group="kontrabon", type="bool", default=True,
   scopes=G,
@@ -130,4 +130,4 @@ E("contra_bon.block_pay_before_approval", group="kontrabon", type="bool", defaul
        "(dipakai perusahaan kecil yang pemiliknya sendiri yang membayar).",
   impact="Menentukan apakah persetujuan adalah gerbang wajib sebelum uang keluar.",
   example="Aktif · kontrabon berstatus Terverifikasi ditolak saat dibayar dengan penjelasan",
-  consumers=("services/contra_bon_service.py:pay",), risk="high")
+  consumers=("services/contra_bon_service.py:policy",), risk="high")

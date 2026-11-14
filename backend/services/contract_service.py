@@ -427,7 +427,7 @@ async def compute_tariff(*, product: Dict[str, Any], qty_base: Any,
 
     qty = parse_decimal(qty_base)
     base_unit = uomr.normalize_unit(product.get("base_unit") or "meter")
-    eng = engine or await uomr.load_engine()
+    eng = engine or await uomr.load_engine((contract or {}).get("entity_id") or "")   # KF-T3 — PT kontrak
     explain: List[str] = []
     warnings: List[str] = []
     conversion: Dict[str, Any] = {}
@@ -560,7 +560,7 @@ async def tariff_preview(payload: Dict[str, Any]) -> Dict[str, Any]:
     qty = parse_decimal(payload.get("qty"))
     unit = uomr.normalize_unit(payload.get("unit") or product.get("base_unit") or "meter")
     base_unit = uomr.normalize_unit(product.get("base_unit") or "meter")
-    eng = await uomr.load_engine()
+    eng = await uomr.load_engine((contract or {}).get("entity_id") or payload.get("entity_id") or "")   # KF-T3
     input_trail = None
     if unit != base_unit:
         input_trail = await uomr.convert_with_trail(product, qty, unit, base_unit,

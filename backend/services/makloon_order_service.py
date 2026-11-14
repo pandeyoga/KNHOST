@@ -250,7 +250,7 @@ async def create_makloon_order(payload: Dict[str, Any], *, entity_id: str,
     # `get_settings()` tanpa entitas sementara routernya memakai versi ber-entitas,
     # jadi setelan khusus satu PT tidak pernah sampai ke mesin yang mengeksekusinya.
     settings = await cs.get_settings(entity_id)
-    engine = await uomr.load_engine()
+    engine = await uomr.load_engine(entity_id or "")   # KF-T3 — toleransi satuan PT dokumen
     order_warnings: List[str] = []
 
     # PS-03 — diperiksa SEBELUM satu langkah pun dibangun: menolak di tengah
@@ -1773,7 +1773,7 @@ async def estimate_step_preview(payload: Dict[str, Any]) -> Dict[str, Any]:
     # menampilkan angka yang berbeda dari yang tersimpan — persis kelas galat yang
     # paling sulit dipercaya pengguna ("di layar 109, tersimpan 112").
     settings = await cs.get_settings(payload.get("entity_id") or "")
-    engine = await uomr.load_engine()
+    engine = await uomr.load_engine(payload.get("entity_id") or "")   # KF-T3 — toleransi satuan PT dokumen
     process_type = payload.get("process_type") or ""
     mk_id = payload.get("makloon_id") or ""
     # ── FASE T — tahap dari master menentukan APAKAH kain berubah & bergerak ──

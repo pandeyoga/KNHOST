@@ -112,8 +112,15 @@ async def create_product(payload: ProductPayload, request: Request) -> Dict[str,
     # FASE G-0 — `inventory.default_uom` DULU tidak dibaca kode mana pun. Sekarang benar-benar
     # menjadi satuan dasar bawaan produk baru bila pengguna tidak mengisinya.
     if not (product.get("base_unit") or "").strip():
+        # KF-T3 (KF-10) — satuan bawaan PT AKTIF pembuatnya (lapisan PT Pusat Pengaturan berlaku).
+        from config_registry import default_of
         from services.config_resolver import value_of
-        product["base_unit"] = str(await value_of("inventory.default_uom") or "meter")
+        try:
+            _pt_pembuat = getattr(await entity_ctx(request), "active_entity_id", "") or ""
+        except Exception:                   # noqa: BLE001 — tanpa konteks = nilai grup
+            _pt_pembuat = ""
+        product["base_unit"] = str(await value_of("inventory.default_uom", {"entity_id": _pt_pembuat})
+                                   or default_of("inventory.default_uom"))
     check = _apply_domain(product)
     # PS-20 — normalisasi + validasi eksklusivitas (owner wajib sales aktif bila eksklusif).
     await pexcl.normalize(db, product)

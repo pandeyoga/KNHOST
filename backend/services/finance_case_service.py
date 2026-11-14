@@ -31,6 +31,7 @@ from fastapi import HTTPException
 from core_utils import new_id, next_doc_number, now_iso, safe_doc, rupiah
 from db import db
 from services import finance_case_actions as acts
+from config_registry import default_of   # KF-T3 — cadangan = bawaan registry
 from services.config_resolver import value_of
 from services.finance_case_playbooks import (
     BY_CODE, CASE_TYPES, PLAYBOOKS, action_or_fail, playbook_or_fail,
@@ -82,7 +83,8 @@ async def policy(entity_id: str = "") -> Dict[str, Any]:
         "approver_role": str(raw.get("approver_role") or "manager").lower(),
         "refund_max": float(raw.get("refund_max_amount") or 0),
         "dup_window_days": int(raw.get("duplicate_window_days") or 7),
-        "holding_days": int(raw.get("holding_case_after_days") or 3),
+        # KF-T3 (KF-10) — registry `min=1`: 0 tidak bisa disimpan; cadangan = bawaan registry (bukan angka sendiri).
+        "holding_days": int(raw.get("holding_case_after_days") or default_of("case.holding_case_after_days")),
         "auto_charge_max": float(raw.get("auto_bank_charge_max") or 0),
         "escalate": bool(raw.get("escalate_on_sla_breach")),
         "auto_scan": bool(raw.get("auto_scan_enabled")),

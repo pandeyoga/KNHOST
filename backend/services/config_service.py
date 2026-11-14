@@ -311,6 +311,16 @@ async def get_effective_settings(entity_id: Optional[str] = None) -> Dict[str, A
     return {"scope": entity_id or "all", **sections}
 
 
+async def default_payment_term_code(entity_id: Optional[str] = None) -> str:
+    """KF-T3 (KP-11) — termin bawaan pesanan baru UNTUK PT ITU (lapisan PT Pusat Pengaturan berlaku).
+
+    Dulu pesanan membaca dokumen grup `system_settings` langsung, sehingga nilai khusus PT diabaikan."""
+    from services.config_resolver import value_of
+    ent = entity_id if entity_id and entity_id != "all" else ""
+    return str(await value_of("finance.default_payment_term_code", {"entity_id": ent})
+               or _reg_default("finance.default_payment_term_code"))
+
+
 # ── Kalkulasi pajak (PPN) ────────────────────────────────────────────────────
 
 async def compute_tax(subtotal: float, entity_id: Optional[str] = None,

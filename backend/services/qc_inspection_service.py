@@ -231,7 +231,7 @@ async def inspect_roll(roll: Dict[str, Any], defects: List[Dict[str, Any]],
         raise GradeRequired(f"Isi grade roll {roll.get('roll_no') or ''} — grade ditentukan petugas QC dari total poin "
                             f"({compute_points(defects)} poin); sistem tidak mengisi grade otomatis.")
     from services import lot_service as lots
-    lot_settings = await lots.get_settings()
+    lot_settings = await lots.get_settings(roll.get("owner_entity_id") or "")   # KF-T3 — kebijakan lot PT pemilik roll
     lot_doc: Dict[str, Any] = {}
     if roll.get("lot_id"):
         try:

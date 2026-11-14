@@ -24,7 +24,9 @@ from services.inbound_complete_service import grade_or_400 as _grade_or_400  # n
 
 
 async def _tolerance_pct(entity_id: str) -> float:
-    return float(await _receiving_cfg("label_variance_tolerance_percent", entity_id) or 0)
+    # KF-T3 — kunci ditulis utuh (sama dengan `receiving_cfg`): pemeriksa kesehatan pengaturan memindai badan pembacanya.
+    from services.config_resolver import value_of
+    return float(await value_of("receiving.label_variance_tolerance_percent", {"entity_id": entity_id or ""}) or 0)
 
 
 async def _load_task(task_id: str, request: Request, perm: str = "update") -> Dict[str, Any]:

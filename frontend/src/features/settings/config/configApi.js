@@ -33,6 +33,9 @@ export const configApi = {
   /** FASE E-4 (E4.6) — cabut nilai pada satu lapisan → kembali mewarisi lapisan di atasnya. */
   clear: (body) => axios.post(`${BASE}/values/clear`, body).then((r) => r.data),
 
+  /** KF-T3 — batalkan satu perubahan berjadwal yang belum berlaku: `{ id, reason }`. */
+  cancelScheduled: (body) => axios.post(`${BASE}/values/cancel-scheduled`, body).then((r) => r.data),
+
   /** Riwayat perubahan (siapa, kapan, dari→ke, alasan). */
   history: (params = {}) => axios.get(`${BASE}/history`, { params }).then((r) => r.data),
 
@@ -157,6 +160,7 @@ export const LAYER_TONE = {
   code_default: "muted", legacy_global: "blue", global: "blue",
   legacy_entity: "purple", entity: "purple", supplier: "teal",
   customer: "teal", product: "orange", document: "orange", hypothetical: "orange",
+  override: "red",   // KF-T3 — ditimpa aturan lain (penimpaan terdaftar)
 };
 
 export const WIRING_TONE = { OK: "green", STALE: "orange", MISSING: "red", NOT_USED: "muted" };

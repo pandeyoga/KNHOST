@@ -76,7 +76,7 @@ E("ai.daily_question_limit", group="asisten-analitik", type="int", default=60, m
 E("ai.model_fast", group="asisten-analitik", type="text", default="gpt-6-luna", scopes=_G,
   label="Model narasi singkat template", help="Dipakai untuk ringkasan 3–5 kalimat di atas grafik template (narasi 'luna').",
   impact="Model tak tersedia → ringkasan jatuh ke ringkasan otomatis dari angka server.", example="gpt-6-luna",
-  consumers=("services/ai_narrative.py:narrate",), risk="low")
+  consumers=("services/ai_narrative.py:_ai_text",), risk="low")
 E("ai.enabled_roles", group="asisten-analitik", type="list",
   default=["admin", "manager", "sales_admin", "finance", "md", "warehouse_admin", "sales"], scopes=_G,
   label="Peran yang boleh memakai asisten", help="Admin selalu boleh. Peran lain di luar daftar tidak melihat Tanya KN.",
@@ -106,7 +106,7 @@ E("ai.glossary", group="asisten-analitik", type="text", default="", scopes=_G,
   label="Kamus istilah perusahaan",
   help="Satu istilah per baris dengan format `istilah = arti`. Dikirim ke asisten agar memahami bahasa sehari-hari tim (mis. `bon = piutang pelanggan`, `gulungan = roll`).",
   impact="Istilah yang salah arti membuat asisten memilih metrik yang salah.",
-  example="bon = piutang pelanggan\ngulungan = roll", consumers=("services/ai_chat_service.py:_session_context",), risk="low")
+  example="bon = piutang pelanggan\ngulungan = roll", consumers=("services/ai_chat_service.py:_glossary",), risk="low")
 E("ai.anomaly_enabled", group="asisten-analitik", type="bool", default=True, scopes=_G,
   label="Peringatan anomali otomatis",
   help="Tiap pagi 07.00 WIB memindai penjualan turun, piutang mulai macet, stok akan habis, dan PO terlambat, lalu mengirim notifikasi. Tanpa biaya AI.",

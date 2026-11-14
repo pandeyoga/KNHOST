@@ -5,6 +5,10 @@
  *   1. Label awam + nilai efektif  2. "Artinya:"  3. "Kalau diubah:"
  *   4. Contoh angka konkret        5. Badge lapisan asal + status wiring
  * Plus 4 aksi: Kenapa nilainya begini? · Coba dulu · Riwayat · Berlaku sejak.
+ *
+ * KF-T3 (L6) — nilai yang tampil = nilai yang DIPAKAI MESIN. Bila aturan lain menimpanya (`item.overridden_by`, mis.
+ * PT bukan PKP → tarif PPN 0), kartu menulis siapa yang menimpa dan nilai tersimpan yang tidak dipakai. Tiap baris
+ * jadwal menyebut cakupannya dan bisa dibatalkan (`onCancelScheduled`) oleh yang boleh mengubah kunci itu.
  */
 import { useState } from "react";
 import {
@@ -14,15 +18,28 @@ import {
 import SettingEditor from "./SettingEditor";
 import { ScopedRulesSummary } from "./ScopedRulesSection";   // KF-T5
 import KNDateTimePicker from "@/components/KNDateTimePicker";
-import { formatDate } from "../../../utils/formatters";
+import { formatDateTime } from "../../../utils/formatters";
+import { entityShortById } from "../../../utils/entityLabel";
+import { useAppNav } from "../../../context/AppNavContext";
+import { openConfig } from "./configDeepLink";
 import {
   cleanCfgText, formatValue, isDeprecatedSetting, LAYER_TONE, RISK_LABEL, SCOPE_LABEL, WIRING_LABEL, WIRING_TONE,
 } from "./configApi";
 
+/** KF-T3 — cakupan satu baris jadwal untuk manusia: "Global" atau nama PT (bukan id). */
+const SCHED_SCOPE = { customer: "Pelanggan tertentu", supplier: "Pemasok tertentu", product: "Produk tertentu",
+  document: "Dokumen tertentu" };
+function scheduleScopeLabel(s, entities = []) {
+  if (!s?.scope_type || s.scope_type === "global") return "Global";
+  if (s.scope_type === "entity") return entityShortById(entities, s.scope_id, "PT");
+  return SCHED_SCOPE[s.scope_type] || "Cakupan khusus";
+}
+
 export default function SettingCard({
   item, scopeType, scopeId, scopeLabel = "", wiring, canEdit, onSave, onReset,
-  onClearEntity, onWhy, onSimulate, onHistory,
+  onClearEntity, onWhy, onSimulate, onHistory, onCancelScheduled, entities = [],
 }) {
+  const nav = useAppNav();
   const [draft, setDraft] = useState(undefined);
   const [reason, setReason] = useState("");
   const [effFrom, setEffFrom] = useState("");
@@ -32,7 +49,10 @@ export default function SettingCard({
 
   // G5-61 — setting usang berlabel "(Lama) … TIDAK DIPAKAI LAGI" dulu tetap berlencana hijau "Aktif & tersambung".
   const notUsed = isDeprecatedSetting(item);
-  const dirty = draft !== undefined && JSON.stringify(draft) !== JSON.stringify(item.value);
+  // KF-T3 — yang diubah adalah nilai TERSIMPAN; bila ditimpa aturan lain, nilai tampil (mesin) ≠ nilai tersimpan.
+  const over = item.overridden_by || null;
+  const baseValue = over ? item.stored_value : item.value;
+  const dirty = draft !== undefined && JSON.stringify(draft) !== JSON.stringify(baseValue);
   const editable = canEdit && !notUsed;
   const wStatus = notUsed ? "NOT_USED" : (wiring?.wiring_status || "OK");
   const scopeSupported = (item.scopes || []).includes(scopeType);
@@ -44,6 +64,13 @@ export default function SettingCard({
     && ["entity", "legacy_entity"].includes(item.source_layer);
   const inheritedGlobal = scopeType === "entity" && Boolean(scopeId) && !ownedByEntity;
   const globalOnly = (item.scopes || []).length === 1 && (item.scopes || [])[0] === "global";
+  // KF-T3 — penimpa terdaftar (server `config_overrides`): tautan ke kunci lain atau ke layar sumbernya.
+  const overLink = over?.link || {};
+  const canOpenSource = Boolean(overLink.key) || Boolean(overLink.view && nav.canOpen(overLink.view));
+  const openSource = () => {
+    if (overLink.key) openConfig({ key: overLink.key });
+    else if (overLink.view) nav.go(overLink.view);
+  };
 
   const submit = async () => {
     setBusy(true);
@@ -86,7 +113,11 @@ export default function SettingCard({
         <span className="cfg-value" data-testid={`cfg-value-${item.key}`}>
           {formatValue(item, item.value)}
         </span>
-        {item.is_default ? <span className="badge-muted">bawaan sistem</span> : null}
+        {over ? (
+          <span className="badge-red" data-testid={`cfg-overridden-${item.key}`}
+            title="Nilai ini ditentukan aturan lain, bukan nilai yang tersimpan">Ditimpa</span>
+        ) : null}
+        {item.is_default && !over ? <span className="badge-muted">bawaan sistem</span> : null}
         {ownedByEntity ? (
           <span className="badge-purple" data-testid={`cfg-owned-${item.key}`}>
             nilai {scopeLabel || "badan usaha ini"}
@@ -98,6 +129,19 @@ export default function SettingCard({
           </span>
         ) : null}
       </div>
+      {over ? (
+        <p className="cfg-override-box" data-testid={`cfg-override-note-${item.key}`}>
+          <span>
+            Ditimpa oleh: {over.label}. Nilai yang tersimpan ({formatValue(item, item.stored_value)}) tidak dipakai.
+          </span>
+          {canOpenSource ? (
+            <button type="button" className="cfg-link-btn" onClick={openSource}
+              data-testid={`cfg-override-open-${item.key}`}>
+              Buka sumbernya
+            </button>
+          ) : null}
+        </p>
+      ) : null}
       {globalOnly ? (
         <p className="cfg-hint-sm" data-testid={`cfg-global-only-${item.key}`}>
           Pengaturan ini <b>berlaku untuk seluruh sistem</b> — tidak bisa dibedakan per
@@ -143,17 +187,23 @@ export default function SettingCard({
       ) : null}
 
       {(item.scheduled || []).length > 0 ? (
-        <div className="cfg-sched-box" data-testid={`cfg-scheduled-${item.key}`}>
-          <CalendarClock size={13} />
-          <span>
-            Terjadwal:{" "}
-            {item.scheduled.map((s, i) => (
-              <b key={i}>
-                {formatValue(item, s.value)} mulai {formatDate(s.effective_from)}
-                {i < item.scheduled.length - 1 ? " · " : ""}
-              </b>
-            ))}
-          </span>
+        <div className="cfg-sched-list" data-testid={`cfg-scheduled-${item.key}`}>
+          {/* KF-T3 — satu baris per jadwal: nilai · mulai (WIB) · cakupan, + Batalkan jadwal bagi yang boleh mengubah. */}
+          {item.scheduled.map((s, i) => (
+            <div key={s.id || i} className="cfg-sched-box" data-testid={`cfg-sched-row-${item.key}-${i}`}>
+              <CalendarClock size={13} />
+              <span className="cfg-sched-text">
+                Terjadwal: <b>{formatValue(item, s.value)}</b> mulai {formatDateTime(s.effective_from)}
+                {" · "}{scheduleScopeLabel(s, entities)}
+              </span>
+              {canEdit && s.id && onCancelScheduled ? (
+                <button type="button" className="cfg-link-btn" disabled={busy}
+                  onClick={() => onCancelScheduled(item, s)} data-testid={`cfg-sched-cancel-${item.key}-${i}`}>
+                  Batalkan jadwal
+                </button>
+              ) : null}
+            </div>
+          ))}
         </div>
       ) : null}
 
@@ -169,7 +219,7 @@ export default function SettingCard({
               <div className="cfg-edit-row">
                 <SettingEditor
                   entry={item}
-                  value={draft !== undefined ? draft : item.value}
+                  value={draft !== undefined ? draft : baseValue}
                   onChange={setDraft}
                   disabled={busy}
                 />
@@ -197,7 +247,7 @@ export default function SettingCard({
               {dirty ? (
                 <div className="cfg-dirty-box" data-testid={`cfg-dirty-${item.key}`}>
                   <p className="cfg-dirty-line">
-                    Akan berubah: <b>{formatValue(item, item.value)}</b> →{" "}
+                    Akan berubah: <b>{formatValue(item, baseValue)}</b> →{" "}
                     <b className="cfg-new">{formatValue(item, draft)}</b>
                     {" "}pada cakupan <b>{scopeType === "entity" ? (scopeLabel || SCOPE_LABEL.entity) : SCOPE_LABEL.global}</b>
                   </p>

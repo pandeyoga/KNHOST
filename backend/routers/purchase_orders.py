@@ -438,7 +438,7 @@ async def _create_po_core(payload: PurchaseOrderCreate, actor: Dict[str, Any], *
     from services.uom_service import load_fixed_factors
     from services import uom_rules_service as uomr
     _uom_factors = await load_fixed_factors()
-    _uom_engine = await uomr.load_engine()
+    _uom_engine = await uomr.load_engine(payload.entity_id or active_entity_id or "")   # KF-T3 — PT PO
 
     for item_in in payload.items:
         product = products.get(item_in.product_id)

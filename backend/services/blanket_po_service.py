@@ -74,7 +74,7 @@ async def create_blanket(payload, actor: Dict[str, Any]) -> Dict[str, Any]:
     # Satuan kontrak WAJIB dari master (sama seperti PO standar): tanpa ini drawdown
     # called/remaining membandingkan qty beda satuan tanpa konversi.
     from services import uom_rules_service as uomr
-    _uom_engine = await uomr.load_engine()
+    _uom_engine = await uomr.load_engine(getattr(payload, "entity_id", "") or "")   # KF-T3 — PT kontrak
     items: List[Dict[str, Any]] = []
     seen = set()
     for it in payload.items:

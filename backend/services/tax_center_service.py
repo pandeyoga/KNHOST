@@ -171,7 +171,8 @@ async def tax_summary(entity_id: Optional[str], period: Optional[str],
         "config": {
             "ppn_rate": float(tax_cfg.get("ppn_rate", 0) or 0),
             "ppn_mode": tax_cfg.get("ppn_mode", "excluded"),
-            "efaktur_enabled": bool(tax_cfg.get("efaktur_enabled", False)),
+            # KF-T3 (KF-11) — e-Faktur mengikuti status PKP di profil PT; `tax.efaktur_enabled` tidak dipakai (not_used).
+            "efaktur_enabled": is_pkp,
             "is_pkp": is_pkp,
             "pph_items": tax_cfg.get("pph_items", []),
         },

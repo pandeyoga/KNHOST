@@ -185,7 +185,7 @@ async def convert_doc_qty(task: Dict[str, Any], doc_uom: str, doc_qty: Any,
     waktu — sehingga angka di stok selalu bisa dipertanggungjawabkan (D-07).
     """
     c = ctx or await task_context(task)
-    st = settings or await get_settings()
+    st = settings or await get_settings(task.get("entity_id") or "")   # KF-T3 — kebijakan PT tugas
     product, sup_item = c["product"], c["supplier_item"]
     task_uom, base_uom = c["task_uom"], c["base_uom"]
     src_uom = _n(doc_uom)
@@ -201,7 +201,7 @@ async def convert_doc_qty(task: Dict[str, Any], doc_uom: str, doc_qty: Any,
             f"Masukkan qty dalam satuan {task_uom}, atau aktifkan di "
             "Pengaturan → Penerimaan → Satuan Supplier.")
 
-    engine = await _uomr.load_engine()
+    engine = await _uomr.load_engine(task.get("entity_id") or "")      # KF-T3 — presisi/toleransi PT tugas
     precision = int(engine["settings"].get("precision", 2))
     sup_uom = _n((sup_item or {}).get("supplier_uom"))
     conv = parse_decimal((sup_item or {}).get("conv_factor") or 0, 6)
@@ -306,7 +306,7 @@ async def _value_of(key: str, ctx: Dict[str, Any]) -> Any:
 async def uom_options(task: Dict[str, Any]) -> Dict[str, Any]:
     """Satuan yang sah + faktor + hint + sisa dalam dua satuan untuk 1 inbound task."""
     c = await task_context(task)
-    st = await get_settings()
+    st = await get_settings(task.get("entity_id") or "")   # KF-T3 — kebijakan PT tugas
     product, sup_item = c["product"], c["supplier_item"]
     task_uom, base_uom = c["task_uom"], c["base_uom"]
     rem = remaining_qty(task)
@@ -387,7 +387,7 @@ async def uom_options(task: Dict[str, Any]) -> Dict[str, Any]:
 async def preview(task: Dict[str, Any], doc_uom: str, doc_qty: Any,
                   tolerance_pct: float = 0.0) -> Dict[str, Any]:
     c = await task_context(task)
-    st = await get_settings()
+    st = await get_settings(task.get("entity_id") or "")   # KF-T3 — kebijakan PT tugas
     trail = await convert_doc_qty(task, doc_uom, doc_qty, ctx=c, settings=st)
     rem = remaining_qty(task)
     rem_doc = await to_doc_uom(task, rem, trail["doc_uom"], ctx=c)
@@ -491,7 +491,7 @@ async def preflight_scan(task: Dict[str, Any], payload: Any, *, can_override: bo
     siap-tampil (termasuk pesan dua satuan F1-06 bila over-receipt).
     """
     prep = await prepare_scan(task, payload)
-    st = await get_settings()
+    st = await get_settings(task.get("entity_id") or "")   # KF-T3 — `block_over_remaining` milik PT tugas
     expected = parse_decimal(task.get("expected_qty") or 0)
     new_received = round(parse_decimal(task.get("received_qty") or 0) + prep["qty"], 4)
     tol_pct = await receive_tolerance_pct(task)

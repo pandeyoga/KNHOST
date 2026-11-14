@@ -20,7 +20,7 @@ E("docref.autolink_enabled", group="dokumen", type="bool", default=True, scopes=
   impact="Bila dimatikan, dokumen baru tidak lagi mencatat referensi otomatis dan "
          "Jejak Dokumen hanya berisi relasi yang dibuat lewat backfill.",
   example="Aktif · Surat Jalan SJ-00007 lahir dari SO-0006 → keduanya saling menunjuk",
-  consumers=("services/doc_refs_service.py:link",), risk="high",
+  consumers=("services/doc_refs_service.py:autolink_enabled",), risk="high",
   related=("docref.require_parent",))
 
 E("docref.trace_max_depth", group="dokumen", type="int", default=4, min=1, max=8, step=1,

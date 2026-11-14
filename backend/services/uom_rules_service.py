@@ -296,11 +296,14 @@ async def load_pair_rules() -> Dict[Tuple[str, str], Dict[str, Any]]:
     return out
 
 
-async def load_engine() -> Dict[str, Any]:
-    """Muat sekali per request: faktor FIXED (uoms) + aturan pasangan GLOBAL + setting."""
+async def load_engine(entity_id: str = "") -> Dict[str, Any]:
+    """Muat sekali per request: faktor FIXED (uoms) + aturan pasangan GLOBAL + setting.
+
+    KF-T3 (KF-10) — `entity_id` = PT dokumen yang sedang diproses: toleransi/presisi khusus PT (`uom.*` lapisan PT)
+    berlaku. Pemanggil tanpa dokumen mengosongkannya (nilai grup)."""
     fixed = await uom_service.load_fixed_factors()
     pairs = await load_pair_rules()
-    settings = await get_settings()
+    settings = await get_settings(entity_id or "")
     return {"fixed": fixed, "pairs": pairs, "settings": settings}
 
 
@@ -413,13 +416,13 @@ def variance_pct(expected: Any, actual: Any) -> Optional[float]:
 
 
 async def check_variance(expected: Any, actual: Any, settings: Optional[Dict[str, Any]] = None,
-                         label: str = "hasil konversi") -> Dict[str, Any]:
+                         label: str = "hasil konversi", entity_id: str = "") -> Dict[str, Any]:
     """Bandingkan hasil konversi vs ukur/timbang AKTUAL memakai toleransi configurable.
 
     Level: `ok` · `warn` (≥ warn_pct → tandai `needs_review`) · `block` (≥ block_pct →
-    ditolak, kecuali `allow_override` + alasan).
+    ditolak, kecuali `allow_override` + alasan). KF-T3 — `entity_id` = PT dokumen (toleransi khusus PT).
     """
-    st = settings or await get_settings()
+    st = settings or await get_settings(entity_id or "")
     pct = variance_pct(expected, actual)
     if pct is None:
         return {"level": "ok", "variance_pct": None, "message": "",

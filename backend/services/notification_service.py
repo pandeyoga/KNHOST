@@ -395,12 +395,20 @@ async def _notify_stuck_po_stages() -> int:
     from services.config_resolver import value_of
 
     created = 0
-    try:
-        limit_days = int(float(await value_of("notif.po_stage_stuck_days", {"entity_id": ""}) or 7))
-    except (TypeError, ValueError):
-        limit_days = 7
-    limit_days = max(1, limit_days)
-    batas = (datetime.now(timezone.utc) - timedelta(days=limit_days)).isoformat()
+    from config_registry import default_of
+    # KF-T3 (KF-10) — ambang dibaca PER PT tiap PO (lapisan PT berlaku), disimpan sementara selama satu putaran job.
+    _ambang: Dict[str, tuple] = {}
+
+    async def _ambang_pt(entity_id: str) -> tuple:
+        if entity_id not in _ambang:
+            try:
+                hari = int(float(await value_of("notif.po_stage_stuck_days", {"entity_id": entity_id})
+                                 or default_of("notif.po_stage_stuck_days")))
+            except (TypeError, ValueError):
+                hari = int(default_of("notif.po_stage_stuck_days"))
+            hari = max(1, hari)
+            _ambang[entity_id] = (hari, (datetime.now(timezone.utc) - timedelta(days=hari)).isoformat())
+        return _ambang[entity_id]
 
     stages = await db.process_stages.find({}, {"_id": 0, "code": 1, "name": 1}).to_list(200)
     label_of = {str(s.get("code")): str(s.get("name") or s.get("code")) for s in stages}
@@ -411,6 +419,7 @@ async def _notify_stuck_po_stages() -> int:
          "stage_progress": 1},
     ).to_list(500)
     for po in rows:
+        limit_days, batas = await _ambang_pt(str(po.get("entity_id") or ""))
         for st in (po.get("stage_progress") or []):
             if str(st.get("status") or "") != "in_progress":
                 continue

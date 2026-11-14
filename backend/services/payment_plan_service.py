@@ -67,6 +67,12 @@ class PlanError(ValueError):
 
 
 # ── Kebijakan (registry FASE G-0 — tidak ada angka hardcode) ───────────────
+def _float_or_default(v: Any, key: str) -> float:
+    """KF-T3 — nilai kosong/0 → bawaan registry (standar §2.2), bukan cadangan kode sendiri."""
+    from config_registry import default_of
+    return float(v) if v else float(default_of(key))
+
+
 async def plan_policy(entity_id: str = "", customer_id: str = "") -> Dict[str, Any]:
     ctx = {"entity_id": entity_id or "", "customer_id": customer_id or ""}
 
@@ -75,7 +81,8 @@ async def plan_policy(entity_id: str = "", customer_id: str = "") -> Dict[str, A
 
     return {
         "required_above_amount": float(await val("payment.plan_required_above_amount") or 0),
-        "tolerance": float(await val("payment.plan_tolerance_rupiah") or 1),
+        # KF-T3 (KF-10) — registry `min=1`: 0 tidak bisa disimpan; cadangan = bawaan registry (bukan angka sendiri).
+        "tolerance": _float_or_default(await val("payment.plan_tolerance_rupiah"), "payment.plan_tolerance_rupiah"),
         "dp_percent": float(await val("payment.default_dp_percent") or 0),
         "installments": int(await val("payment.default_installments") or 1),
         "interval": str(await val("payment.default_installment_interval") or "monthly"),

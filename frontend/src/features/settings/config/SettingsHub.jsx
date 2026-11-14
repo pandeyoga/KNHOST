@@ -41,6 +41,7 @@ import { LEGACY_DEEPLINK, groupForKey } from "./configDeepLink";
 import { COMMISSION_PREFIX } from "./configGroupViews";
 import { entityShortById } from "../../../utils/entityLabel";
 import { can, canCurrent } from "../../../config/roles";
+import { askReason } from "../../../services/confirmService";
 
 const TABS = [
   { k: "settings", label: "Pengaturan", icon: SlidersHorizontal },
@@ -252,10 +253,36 @@ export function useSettingsBrowser({
     } catch (e) { flash(errMsg(e, "Gagal mengembalikan ke nilai global."), "err"); }
   };
 
+  // KF-T3 — batalkan satu perubahan berjadwal (nilai yang berlaku sekarang tidak berubah). Alasan wajib bila kuncinya
+  // berisiko tinggi (sama dengan aturan server).
+  const onCancelScheduled = async (item, sched) => {
+    const reason = await askReason({
+      title: "Batalkan jadwal",
+      message: "Batalkan perubahan terjadwal ini? Nilai yang berlaku sekarang tidak berubah.",
+      reasonLabel: "Alasan pembatalan",
+      reasonRequired: !!item.requires_reason,
+      confirmLabel: "Batalkan jadwal",
+      cancelLabel: "Kembali",
+      danger: true,
+      testId: "cfg-sched-cancel-confirm",
+    });
+    if (reason === null) return false;
+    try {
+      await configApi.cancelScheduled({ id: sched.id, reason });
+      flash("Jadwal dibatalkan.");
+      await load();
+      return true;
+    } catch (e) {
+      flash(errMsg(e, "Gagal membatalkan jadwal."), "err");
+      return false;
+    }
+  };
+
   return {
     groups, group, setGroup, items, hiddenCount, q, setQ, term, scopeType, setScopeType, scopeId, setScopeId,
     health, caps, loading, error, denied, notice, setNotice, why, setWhy, sim, setSim, hist, setHist, cardRefs,
-    highlight, lockedGroup, setLockedGroup, ctx, load, onSave, onReset, onClearEntity, locked: !!allow,
+    highlight, lockedGroup, setLockedGroup, ctx, load, onSave, onReset, onClearEntity, onCancelScheduled,
+    locked: !!allow,
   };
 }
 
@@ -370,7 +397,8 @@ export function SettingsBrowser({ s, entities = [], groupNav = "side", excludeLi
                   wiring={s.health[item.key]} canEdit={item.can_edit !== false}
                   onSave={s.onSave} onReset={s.onReset} onClearEntity={s.onClearEntity}
                   onWhy={(it) => s.setWhy(it)} onSimulate={(it, draft) => s.setSim({ entry: it, draft })}
-                  onHistory={(it) => s.setHist({ entry: it })} />
+                  onHistory={(it) => s.setHist({ entry: it })}
+                  onCancelScheduled={s.onCancelScheduled} entities={entities} />
               </div>
             ))}
           </div>
