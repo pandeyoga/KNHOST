@@ -1,0 +1,68 @@
+# backend/tests_mem/test_PK45_penjaga_cepat.py dengan sumber backend versi HEAD (30e3f28); berkas uji versi akhir
+E       assert 900000000 == 5000000
+E       AssertionError: {"detail": "Not Found"}
+E       assert 404 == 403
+E        +  where 404 = <Response [404 Not Found]>.status_code
+E       AssertionError: {"detail":"Not Found"}
+E       assert 404 == 200
+E        +  where 404 = <Response [404 Not Found]>.status_code
+E           AssertionError: ({'credit_limit': 30000000}, '{"detail":"Not Found"}')
+E           assert 404 == 400
+E            +  where 404 = <Response [404 Not Found]>.status_code
+E       assert 50000000.0 == 0
+E       AssertionError: {"detail":"Not Found"}
+E       assert False
+E        +  where False = _bukan_rute_hilang(<Response [404 Not Found]>)
+E       AssertionError: assert 'cro_pk45' not in ['cro_pk45']
+E       AssertionError: {"id": "cro_65c0c18a1838", "customer_id": "cus_s", "customer_name": "Toko Milik Sales", "order_id": "", "amount": 0.0, "reason": "pesanan besar", "evidence_url": "", "credit_snapshot": {"credit_limit": 900000000.0, "ar_outstanding": 0.0, "ar_ledger": 0.0, "exposure": 0.0, "overdue_amount": 0.0, "max_overdue_days": 0, "open_orders": 0, "available_credit": 900000000.0, "deposit_balance": 0.0, "status": "active"}, "entity_id": "ent_ksc", "status": "pending", "requested_by": "Ayu Marketing", "requested_by_id": "user_sales_01", "created_at": "2026-11-14T00:19:20.421254+00:00"}
+E       assert 200 == 400
+E        +  where 200 = <Response [200 OK]>.status_code
+E       AssertionError: assert {'ppn': 22000...0, 'count': 2} == {'ppn': 11000...0, 'count': 1}
+E         Differing items:
+E         {'dpp': 2000000.0} != {'dpp': 1000000}
+E         {'count': 2} != {'count': 1}
+E         {'ppn': 220000.0} != {'ppn': 110000}
+E         Use -v to get more diff
+E       assert True is False
+E           AssertionError: ('/api/tax-invoices/fkt_999011990f55/nsfp', '{"id":"fkt_999011990f55","number":"KSC/FKT-00004","nsfp":"010000261234567..."doc_id":"so_u12","doc_number":"SO_U12","note":"faktur pajak atas pesanan","at":"2026-11-14T00:19:20.511727+00:00"}]}')
+E           assert not 200 < 300
+E            +  where 200 = <Response [200 OK]>.status_code
+E       AssertionError: {"detail": "Produk prd_pk45_tidak_ada tidak ditemukan"}
+E       assert 404 == 403
+E        +  where 404 = <Response [404 Not Found]>.status_code
+E       AssertionError: assert 'emp_pk45_a' in ['emp_59ef18a7a837', 'emp_d5928c98c8a8', 'emp_27d593ee5494', 'emp_4214fa08b923', 'emp_729392b33d35', 'emp_937d490c9a57']
+E       AssertionError: assert '' == 'ent_ksc'
+E         - ent_ksc
+E       AssertionError: {"detail":"Aksi ['manage_credit'] tidak berlaku untuk “Pelanggan”."}
+E       assert 400 == 200
+E        +  where 400 = <Response [400 Bad Request]>.status_code
+E       AssertionError: {"detail":"Aksi ['tax_override'] tidak berlaku untuk “Pesanan Penjualan (SO)”."}
+E       assert 400 == 200
+E        +  where 400 = <Response [400 Bad Request]>.status_code
+E           AssertionError: admin
+E           assert set() == {('customer',...ax_override')}
+E             Extra items in the right set:
+E             ('order', 'tax_override')
+E             ('customer', 'manage_credit')
+E             Use -v to get more diff
+PASSED test_PK45_U5b_pelanggan_baru_oleh_pemegang_izin_kredit_tetap_berplafon
+PASSED test_PK45_U10_pengganti_dibatalkan_faktur_asli_dihitung_lagi
+PASSED test_PK45_U15_data_lama_end_date_tetap_terbaca
+FAILED test_PK45_U1_patch_sales_tidak_mengubah_plafon_dan_status
+FAILED test_PK45_U2_sales_tanpa_izin_kredit_403
+FAILED test_PK45_U3_finance_ubah_plafon_dan_buka_blokir
+FAILED test_PK45_U4_isian_kredit_tidak_sah_400
+FAILED test_PK45_U5_pelanggan_baru_oleh_sales_tanpa_plafon
+FAILED test_PK45_U6_finance_pt_lain_ditolak
+FAILED test_PK45_U7_izin_lewat_batas_pt_lain
+FAILED test_PK45_U8_permohonan_nominal_nol_400
+FAILED test_PK45_U9_faktur_diganti_tidak_dihitung_dua_kali
+FAILED test_PK45_U11_faktur_batal_membuka_kunci_amandemen
+FAILED test_PK45_U12_faktur_pt_lain_tidak_bisa_diubah
+FAILED test_PK45_U13_pesanan_tanpa_ppn_butuh_izin_dan_alasan
+FAILED test_PK45_U14_karyawan_keluar_ikut_gaji_bulan_terakhir
+FAILED test_PK45_U16_pratinjau_gaji_tidak_membuka_pt_lain
+FAILED test_PK45_izin_kredit_peran_tanpa_acuan_dan_manajer_kosong
+FAILED test_PK45_izin_non_ppn_peran_tanpa_acuan_dan_manajer_kosong
+FAILED test_PK45_izin_bawaan_sampai_ke_matriks_tersimpan
+17 failed, 3 passed, 1 warning in 1.79s

@@ -3,14 +3,15 @@ from typing import Any, Dict
 from fastapi import APIRouter, HTTPException, Request
 from pymongo import ReturnDocument
 from db import db
-from dependencies import require_permission, audit
+from dependencies import require_permission, has_permission, audit
 from core_utils import new_id, now_iso, safe_doc, DEFAULT_ENTITY_ID
 from schemas import CustomerAddress, CustomerCreate, GenericPatch, PaymentProfile
+from schemas_crm import CustomerCreditUpdate
 from services.customer_service import (
     enrich_customer, scope_query, can_access_customer,
     normalize_sales_team, pic_of, resolve_team_names,
 )
-from entity_scope import entity_ctx, resolve_list_scope
+from entity_scope import entity_ctx, guard_doc, resolve_list_scope
 from pagination import is_paged, get_page_params, build_search, merge_query, fetch_page, envelope, paginate_list
 from request_context import active_entity_or
 from services.text_normalize import nama_orang, nama_usaha, phone_id
@@ -133,7 +134,8 @@ async def create_customer(payload: CustomerCreate, request: Request) -> Dict[str
         "city": payload.city,
         **normalize_location(payload.model_dump()),
         "npwp": payload.npwp,
-        "credit_limit": payload.credit_limit,
+        # PK-45 (K-28) — plafon awal hanya dari pemegang izin kredit; selain itu 0 (status selalu "active").
+        "credit_limit": payload.credit_limit if await has_permission(actor, "customer", "manage_credit") else 0,
         "sales_pic": assigned_name or payload.sales_pic,
         # FASE E-1 (E1.10) — pelanggan milik badan usaha PEMBUATNYA. Dulu jatuh ke
         # DEFAULT_ENTITY_ID sehingga sales CV Kanda Suka membuat pelanggan yang
@@ -174,8 +176,10 @@ async def update_customer(customer_id: str, payload: GenericPatch, request: Requ
         raise HTTPException(status_code=404, detail="Customer tidak ditemukan")
     if not await can_access_customer(actor, existing):
         raise HTTPException(status_code=403, detail="Customer ini bukan milik Anda")
-    allowed = ["name", "pic_name", "phone", "email", "type", "city", "status", "addresses", *LOCATION_KEYS,
-               "npwp", "credit_limit", "sales_pic", "entity_id",
+    # PK-45 (CR-01, K-28) — `status` dan `credit_limit` TIDAK lagi lewat sini (diabaikan seperti field tak dikenal);
+    # keduanya hanya lewat PUT /customers/{id}/credit oleh pemegang `customer.manage_credit`.
+    allowed = ["name", "pic_name", "phone", "email", "type", "city", "addresses", *LOCATION_KEYS,
+               "npwp", "sales_pic", "entity_id",
                "enforce_single_dye_lot", "lot_policy", "allocation_policy",
                # CRM-lite
                "segment", "tags", "contacts", "payment_profile", "customer_group_id",
@@ -225,6 +229,64 @@ async def update_customer(customer_id: str, payload: GenericPatch, request: Requ
     )
     await audit(actor["name"], "customer_updated", "customer", customer_id,
                 {k: customer.get(k) for k in data}, before={k: existing.get(k) for k in data})
+    return await enrich_customer(customer, with_credit=True)
+
+
+# ── PK-45 (CR-01, K-28) — plafon & status blokir hanya lewat pemegang izin kredit ──────────────────────────
+_PESAN_IZIN_KREDIT = ("Anda belum punya akses untuk mengubah plafon dan status blokir pelanggan. "
+                      "Minta Admin menambahkan akses 'Pelanggan & CRM'.")
+_STATUS_KREDIT = ("active", "inactive", "blocked")
+
+
+async def _izin_kredit(request: Request) -> Dict[str, Any]:
+    """`customer.manage_credit` dengan pesan 403 untuk manusia (02_STANDAR §3.1 Z6)."""
+    try:
+        return await require_permission(request, "customer", "manage_credit")
+    except HTTPException as exc:
+        if exc.status_code != 403:
+            raise
+        raise HTTPException(status_code=403, detail=_PESAN_IZIN_KREDIT) from None
+
+
+def _plafon_sah(v: Any) -> bool:
+    import math
+    return isinstance(v, (int, float)) and not isinstance(v, bool) and math.isfinite(v) and v >= 0
+
+
+@router.put("/customers/{customer_id}/credit")
+async def update_customer_credit(customer_id: str, payload: CustomerCreditUpdate, request: Request) -> Dict[str, Any]:
+    """Ubah plafon kredit dan/atau status pelanggan (aktif · nonaktif · blokir) dengan alasan; tercatat di jejak."""
+    actor = await _izin_kredit(request)
+    existing = safe_doc(await db.customers.find_one({"id": customer_id}, {"_id": 0}))
+    if not existing:
+        raise HTTPException(status_code=404, detail="Pelanggan tidak ditemukan.")
+    await guard_doc(request, "customers", existing, strict=False)
+    if existing.get("status") == "merged":   # P18 MASTER-05 — duplikat yang sudah digabung tidak dihidupkan lagi
+        raise HTTPException(status_code=409, detail=("Pelanggan ini sudah digabung ke pelanggan lain — "
+                                                     "ubah plafon dan status di pelanggan hasil gabungan."))
+    from input_rules import MIN_REASON_LETTERS, count_letters
+    if payload.credit_limit is None and payload.status is None:
+        raise HTTPException(status_code=400, detail="Isi plafon atau status yang ingin diubah.")
+    data: Dict[str, Any] = {}
+    if payload.credit_limit is not None:
+        if not _plafon_sah(payload.credit_limit):
+            raise HTTPException(status_code=400, detail="Plafon harus angka nol atau lebih.")
+        data["credit_limit"] = round(float(payload.credit_limit), 2)
+    if payload.status is not None:
+        if payload.status not in _STATUS_KREDIT:
+            raise HTTPException(status_code=400, detail="Status pelanggan tidak dikenal.")
+        data["status"] = payload.status
+    reason = str(payload.reason or "").strip()
+    if count_letters(reason) < MIN_REASON_LETTERS:
+        raise HTTPException(status_code=400,
+                            detail=f"Alasan perubahan wajib diisi (minimal {MIN_REASON_LETTERS} huruf).")
+    before = {k: existing.get(k) for k in data}
+    customer = await db.customers.find_one_and_update(
+        {"id": customer_id}, {"$set": {**data, "updated_at": now_iso()}},
+        projection={"_id": 0}, return_document=ReturnDocument.AFTER)
+    # Jenis sumber daya "customer" = sama dengan jejak pelanggan lain (tab Riwayat di detail pelanggan).
+    await audit(actor["name"], "customer_credit_changed", "customer", customer_id, dict(data),
+                reason=reason[:1000], before=before)
     return await enrich_customer(customer, with_credit=True)
 
 

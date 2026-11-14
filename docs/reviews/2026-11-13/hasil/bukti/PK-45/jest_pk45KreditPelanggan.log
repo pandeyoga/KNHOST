@@ -1,0 +1,16 @@
+# frontend/src/features/__tests__/pk45KreditPelanggan.test.js — CustomerFormModal.jsx versi HEAD (30e3f28)
+  ✕ PK-45 U17 (sales): plafon & status hanya-baca + keterangan; PATCH tanpa plafon/status; tanpa PUT (102 ms)
+  ✕ PK-45 U17 (finance): ubah plafon & buka blokir → alasan wajib → PUT kredit (tanpa PATCH: tidak punya izin ubah) (25 ms)
+  ✕ PK-45 U17 (manajer): PATCH isian lain dulu, lalu PUT hanya isian kredit yang berubah; galat PUT tampil di form (31 ms)
+  ✕ PK-45 (pelanggan baru): pemegang izin → POST plafon 0 lalu PUT kredit beralasan; tanpa izin → hanya-baca, tanpa PUT (47 ms)
+    Expected: "true"
+    Received: null
+    Received: null
+Tests:       4 failed, 4 total
+
+# … CustomerFormModal.jsx versi PK-45
+  ✓ PK-45 U17 (sales): plafon & status hanya-baca + keterangan; PATCH tanpa plafon/status; tanpa PUT (119 ms)
+  ✓ PK-45 U17 (finance): ubah plafon & buka blokir → alasan wajib → PUT kredit (tanpa PATCH: tidak punya izin ubah) (86 ms)
+  ✓ PK-45 U17 (manajer): PATCH isian lain dulu, lalu PUT hanya isian kredit yang berubah; galat PUT tampil di form (73 ms)
+  ✓ PK-45 (pelanggan baru): pemegang izin → POST plafon 0 lalu PUT kredit beralasan; tanpa izin → hanya-baca, tanpa PUT (109 ms)
+Tests:       4 passed, 4 total

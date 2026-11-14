@@ -46,11 +46,14 @@ export const ACTION_LABEL = {
   review_credit_note: "Tinjau Nota Kredit", set: "Atur", set_price: "Tetapkan Harga", exact_cut: "Potong Roll",
   untagged_override: "Izinkan Roll Tanpa Tag", override_fail: "Kecualikan Hasil Gagal", tax: "Pajak", report: "Laporan",
   invoice: "Tagihkan", pegging: "Alokasi Stok", cycle_count: "Stock Opname",
+  // PK-45 — izin kredit pelanggan & pesanan tanpa PPN.
+  manage_credit: "Ubah Plafon & Blokir Kredit", tax_override: "Buat Pesanan Tanpa PPN",
 };
 
 // Aksi audit (audit_logs.action). Awalan modul dipakai untuk kunci yang belum terdaftar.
 export const AUDIT_ACTION_LABEL = {
   login: "Masuk", logout: "Keluar", CREATE: "Dibuat", APPROVE: "Disetujui", COMPLETE: "Diselesaikan",
+  customer_credit_changed: "Plafon/status kredit pelanggan diubah",   // PK-45
   ESCALATE: "Dieskalasi", RESOLVE_ESCALATION: "Eskalasi diselesaikan",
   order_created: "Pesanan dibuat", order_verified: "Pesanan diverifikasi", order_confirmed: "Pesanan dikonfirmasi",
   order_auto_approved: "Pesanan disetujui otomatis", sales_order_verified: "Pesanan diverifikasi",

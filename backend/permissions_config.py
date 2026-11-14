@@ -692,3 +692,13 @@ for _role in ("admin", "manager", "finance"):
 for _role in ("admin", "manager", "finance"):
     _cur = DEFAULT_PERMISSIONS[_role].setdefault("order", ["view"])
     DEFAULT_PERMISSIONS[_role]["order"] = list(_cur) + [x for x in ("release_unpaid",) if x not in _cur]
+# PK-45 (K-28) — plafon & status blokir pelanggan hanya diubah pemegang `customer.manage_credit` (PUT
+# /api/customers/{id}/credit; POST /api/customers tanpa izin ini menyimpan plafon 0). Sales TIDAK memegangnya.
+# PK-45 (K-33) — pesanan penjualan tanpa PPN (`tax_override: "non_ppn"`) butuh `order.tax_override` + alasan.
+# Bawaan dapat diatur per peran di Peran & Hak Akses; tersalin sekali ke matriks tersimpan (sync_permission_modules).
+for _role, _pairs in {"admin": (("customer", "manage_credit"), ("order", "tax_override")),
+                      "manager": (("customer", "manage_credit"), ("order", "tax_override")),
+                      "finance": (("customer", "manage_credit"),)}.items():
+    for _res, _act in _pairs:
+        _cur = DEFAULT_PERMISSIONS[_role].setdefault(_res, ["view"])
+        DEFAULT_PERMISSIONS[_role][_res] = list(_cur) + [x for x in (_act,) if x not in _cur]

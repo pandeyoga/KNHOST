@@ -8,6 +8,7 @@ jurnal SEIMBANG, komisi accrue_then_settle (anti double-count). Config-driven vi
 TER tables = PMK 168/2023 (bulanan), kategori A/B/C menurut PTKP. Disimpan sebagai
 (batas_atas_inklusif, tarif). Penghasilan bruto <= batas → tarif tsb. (lapis pertama match).
 """
+import re
 from typing import Any, Dict, List, Optional, Tuple
 
 from db import db
@@ -237,8 +238,14 @@ async def _prior_year_slips(emp_id: str, period: str) -> List[Dict[str, Any]]:
         {"_id": 0, "period": 1, "gross": 1, "tax_gross": 1, "pph21": 1, "bpjs_emp": 1}).to_list(24)
 
 
+def _tanggal_keluar(emp: Dict[str, Any]) -> str:
+    """PK-45 (PY-05) — tanggal keluar karyawan: `separation_date` (ditulis master karyawan, routers/hr.py) → bila
+    kosong `end_date` (data lama) → bila kosong `resign_date`. 10 huruf pertama (YYYY-MM-DD); "" bila tidak ada."""
+    return str(emp.get("separation_date") or emp.get("end_date") or emp.get("resign_date") or "")[:10]
+
+
 def _is_final_tax_period(emp: Dict[str, Any], period: str) -> bool:
-    end = str(emp.get("end_date") or emp.get("resign_date") or "")
+    end = _tanggal_keluar(emp)
     return period.endswith("-12") or (bool(end) and end[:7] == period)
 
 
@@ -334,8 +341,11 @@ def _round_totals(t: Dict[str, float]) -> Dict[str, float]:
 
 async def _active_employees(entity_id: str, period: str = "") -> List[Dict[str, Any]]:
     # HR-01 — karyawan yang berhenti pada periode ini tetap digaji (masa pajak terakhir).
+    # PK-45 (PY-05) — master karyawan menulis `separation_date`; `end_date` tetap dibaca untuk data lama.
+    awal = {"$regex": f"^{re.escape(period)}"}
+    keluar = [{"separation_date": awal}, {"end_date": awal}]
     q: Dict[str, Any] = {"$or": [{"status": "active"}, {"status": {"$in": ["resigned", "inactive"]},
-                                                       "end_date": {"$regex": f"^{period}"}}]} \
+                                                       "$or": keluar}]} \
         if period else {"status": "active"}
     if entity_id and entity_id != "all":
         q["entity_id"] = entity_id

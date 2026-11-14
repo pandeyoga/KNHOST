@@ -115,7 +115,7 @@ async def eligible_vendor_bills(entity_id: str = "", entity_ids: Optional[List[s
 async def vat_summary(period: str = "", entity_id: str = "", entity_ids: Optional[List[str]] = None) -> Dict[str, Any]:
     """Rekap PPN Masukan vs Keluaran untuk satu periode (YYYY-MM).
 
-    Keluaran = Σ ppn_amount Faktur Pajak Jual (tax_invoices, status != batal).
+    Keluaran = Σ ppn_amount Faktur Pajak Jual aktif (tax_invoices: bukan batal, belum diganti — PK-45 TX-01).
     Masukan  = Σ ppn_amount Faktur Pajak Masukan (tax_invoices_in, status recorded).
     Net      = Keluaran − Masukan → >0 KURANG BAYAR (setor), <0 LEBIH BAYAR (kredit).
     """
@@ -124,7 +124,8 @@ async def vat_summary(period: str = "", entity_id: str = "", entity_ids: Optiona
     def _in_period(doc: Dict[str, Any]) -> bool:
         return (doc.get("faktur_date", "") or "")[:7] == period
 
-    out_q: Dict[str, Any] = {"status": {"$ne": "batal"}}
+    from services.tax_invoice_service import saringan_keluaran_aktif
+    out_q: Dict[str, Any] = saringan_keluaran_aktif()   # PK-45 (TX-01) — faktur yang sudah diganti tidak dihitung
     in_q: Dict[str, Any] = {"status": {"$in": list(ACTIVE_INPUT_STATUSES)}}
     if entity_id and entity_id != "all":
         out_q["entity_id"] = entity_id

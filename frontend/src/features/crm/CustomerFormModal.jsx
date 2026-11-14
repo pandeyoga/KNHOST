@@ -8,13 +8,20 @@ import KNSelect from "../../components/KNSelect";
 import FormModal from "../../components/FormModal";
 import FormSection from "../../components/FormSection";
 import { CustomerSalesTeam, customerTeamError } from "./CustomerSalesTeam";
-import { roleIs } from "../../config/roles";
+import { can, roleIs } from "../../config/roles";
 import { apiErrorText } from "../../utils/apiError";
+import { formatCurrency } from "../../utils/formatters";
+import { parseDecimal } from "../../utils/decimalInput";
 import { PAYMENT_METHODS as METHODS, LOT_POLICY_OPTIONS, lotPolicyLabel, paymentMethodLabel } from "./crmUtils";
 
 const LOC_KEYS = ["country", "country_code", "province", "province_code", "city", "city_code", "district", "district_code", "postal_code"];
 const pickLoc = (o = {}) => Object.fromEntries(LOC_KEYS.map((k) => [k, o[k] || ""]));
 const SEGMENTS = ["Retail", "Wholesale", "Distributor", "VIP"];
+// PK-45 (K-28) — plafon & status blokir hanya diubah pemegang izin kredit, lewat PUT /customers/{id}/credit + alasan.
+const CREDIT_STATUS = [{ value: "active", label: "Aktif" }, { value: "inactive", label: "Nonaktif" }, { value: "blocked", label: "Blokir" }];
+const CREDIT_REASON_MIN_LETTERS = 5;   // K-14 — dihitung HURUF, sama dengan server (input_rules.count_letters)
+const countLetters = (t) => (String(t || "").match(/\p{L}/gu) || []).length;
+const toLimit = (v) => { const n = parseDecimal(v); return Number.isFinite(n) ? n : 0; };
 
 /**
  * CustomerFormModal — SATU-SATUNYA form pelanggan (CRM-lite KN_17; fase 3 · P3 D-05).
@@ -40,6 +47,9 @@ export default function CustomerFormModal({
   const isSales = roleIs(role, ["sales"]);   // Sisir lanjutan gerbang peran (2026-10-21) — = pemilik otomatis di server (role_in)
   const isManager = !isSales;   // admin/manager/sales_admin/… — wajib memilih sales penanggung jawab
   const pos = variant === "pos";
+  // PK-45 — izin dari server (bukan nama peran): kredit = plafon & status; ubah = isian lain (PATCH).
+  const canCredit = can(currentUser?.permissions, "customer", "manage_credit");
+  const canUpdate = can(currentUser?.permissions, "customer", "update");
 
   const [f, setF] = useState(blank());
   const [methods, setMethods] = useState(["tunai", "tempo"]);
@@ -49,6 +59,8 @@ export default function CustomerFormModal({
   // UAT 24 Okt (audit UI tahap 2) — setelah simpan gagal validasi, blok alamat ikut menampilkan kekurangannya
   // (`showErrors` LocationFields — API G0) dan daftar "Lengkapi: …" tampil di kaki pop-up.
   const [tried, setTried] = useState(false);
+  const [creditReason, setCreditReason] = useState("");
+  const [created, setCreated] = useState(null);   // pelanggan baru sudah tersimpan; simpan ulang hanya mengulang kredit
 
   function blank() {
     return { name: "", segment: "Retail", assigned_sales_id: "", pic_name: "", phone: "", email: "",
@@ -67,6 +79,8 @@ export default function CustomerFormModal({
     if (!open) return;
     setTried(false);
     setError("");
+    setCreditReason("");
+    setCreated(null);
     if (editTarget) {
       const pp = editTarget.payment_profile || {};
       setF({
@@ -118,6 +132,13 @@ export default function CustomerFormModal({
   const usesTempo = methods.includes("tempo");
   const usesDp = methods.includes("dp");
   const addressRequired = !isEdit || !!primaryAddr;
+  // PK-45 — nilai awal plafon/status (yang dipakai mesin) vs isian; perubahan oleh pemegang izin wajib beralasan.
+  const initialLimit = isEdit ? toLimit(editTarget?.credit_limit) : 0;
+  const initialStatus = isEdit ? (editTarget?.status || "active") : "active";
+  const limitNow = toLimit(f.credit_limit);
+  const limitChanged = canCredit && limitNow !== initialLimit;
+  const statusChanged = canCredit && f.status !== initialStatus;
+  const creditChanged = limitChanged || statusChanged;
 
   // Kekurangan isian WAJIB — satu daftar untuk kaki pop-up (dulu POS & CRM punya pesan berbeda).
   const missing = [
@@ -127,7 +148,42 @@ export default function CustomerFormModal({
     !!locationIncomplete(pickLoc(f)) && "wilayah alamat",
     addressRequired && f.address.trim().length < 3 && "jalan/nomor",
     !isEdit && isManager && !f.assigned_sales_id && "sales penanggung jawab",
+    creditChanged && countLetters(creditReason) < CREDIT_REASON_MIN_LETTERS && "alasan perubahan kredit",
   ].filter(Boolean);
+
+  // PK-45 — kirim plafon/status lewat endpoint kredit (hanya isian yang berubah) beserta alasannya.
+  async function saveCredit(customerId) {
+    const body = { reason: creditReason.trim() };
+    if (limitChanged) body.credit_limit = limitNow;
+    if (statusChanged) body.status = f.status;
+    const r = await axios.put(`${API}/customers/${customerId}/credit`, body);
+    return r.data;
+  }
+
+  // Isian selain plafon/status (PK-45: keduanya tidak lagi lewat PATCH).
+  async function patchCustomer(payment_profile, tags) {
+    const body = { data: {
+      name: f.name, segment: f.segment, pic_name: f.pic_name, phone: f.phone, email: f.email,
+      ...pickLoc(f), npwp: f.npwp, tags, payment_profile,
+      enforce_single_dye_lot: !!f.enforce_single_dye_lot, lot_policy: f.lot_policy || "",
+      sales_team: salesTeam,
+    }};
+    // G2-09 — alamat & lokasi diubah → alamat UTAMA ikut diperbarui (alamat lain tidak disentuh).
+    const loc = pickLoc(f);
+    const addrChanged = primaryAddr && (f.address.trim() !== (primaryAddr.address || "")
+      || LOC_KEYS.some((k) => (loc[k] || "") !== (primaryAddr[k] || "")));
+    if (addrChanged) {
+      body.data.addresses = (editTarget.addresses || []).map((a) => (a.id === primaryAddr.id
+        ? { ...a, ...loc, address: f.address.trim(), city: loc.city || a.city } : a));
+    }
+    const r = await axios.patch(`${API}/customers/${editTarget.id}`, body);
+    if (!primaryAddr && f.address.trim().length >= 3) {
+      await axios.post(`${API}/customers/${editTarget.id}/addresses`, {
+        label: "Alamat Utama", recipient_name: f.pic_name, phone: f.phone, city: loc.city || f.city,
+        address: f.address.trim(), is_primary: true, ...loc });
+    }
+    return r.data;
+  }
 
   async function submit() {
     setTried(true);
@@ -145,40 +201,37 @@ export default function CustomerFormModal({
     setBusy(true);
     try {
       if (isEdit) {
-        const body = { data: {
-          name: f.name, segment: f.segment, pic_name: f.pic_name, phone: f.phone, email: f.email,
-          ...pickLoc(f), npwp: f.npwp, credit_limit: Number(f.credit_limit) || 0, tags,
-          payment_profile, status: f.status,
-          enforce_single_dye_lot: !!f.enforce_single_dye_lot, lot_policy: f.lot_policy || "",
-          sales_team: salesTeam,
-        }};
-        // G2-09 — alamat & lokasi diubah → alamat UTAMA ikut diperbarui (alamat lain tidak disentuh).
-        const loc = pickLoc(f);
-        const addrChanged = primaryAddr && (f.address.trim() !== (primaryAddr.address || "")
-          || LOC_KEYS.some((k) => (loc[k] || "") !== (primaryAddr[k] || "")));
-        if (addrChanged) {
-          body.data.addresses = (editTarget.addresses || []).map((a) => (a.id === primaryAddr.id
-            ? { ...a, ...loc, address: f.address.trim(), city: loc.city || a.city } : a));
+        let saved = editTarget;
+        // PK-45 — pemegang izin kredit TANPA izin ubah pelanggan: hanya plafon/status yang dikirim (PATCH pasti ditolak).
+        if (canUpdate || !canCredit) saved = await patchCustomer(payment_profile, tags);
+        if (creditChanged) {
+          try { saved = await saveCredit(editTarget.id); } catch (e) {
+            setError(apiErrorText(e, "Plafon dan status kredit belum tersimpan.")); return;
+          }
         }
-        const r = await axios.patch(`${API}/customers/${editTarget.id}`, body);
-        if (!primaryAddr && f.address.trim().length >= 3) {
-          await axios.post(`${API}/customers/${editTarget.id}/addresses`, {
-            label: "Alamat Utama", recipient_name: f.pic_name, phone: f.phone, city: loc.city || f.city,
-            address: f.address.trim(), is_primary: true, ...loc });
-        }
-        await onSaved?.(r.data, true);
+        await onSaved?.(saved, true);
       } else {
         const body = {
           name: f.name, pic_name: f.pic_name, phone: f.phone, email: f.email,
           type: f.segment, segment: f.segment, ...pickLoc(f), address: f.address,
-          npwp: f.npwp, credit_limit: Number(f.credit_limit) || 0,
+          // PK-45 — plafon & status pelanggan baru dikirim lewat endpoint kredit (beralasan) sesudah pelanggan terbuat.
+          npwp: f.npwp, credit_limit: 0,
           assigned_sales_id: f.assigned_sales_id, tags, payment_profile,
           enforce_single_dye_lot: !!f.enforce_single_dye_lot, lot_policy: f.lot_policy || "",
           sales_team: salesTeam,
           entity_id: (selectedEntity && selectedEntity !== "all") ? selectedEntity : "",
         };
-        const r = await axios.post(`${API}/customers`, body);
-        await onSaved?.(r.data, false);
+        const cust = created || (await axios.post(`${API}/customers`, body)).data;
+        setCreated(cust);
+        let saved = cust;
+        if (creditChanged) {
+          try { saved = await saveCredit(cust.id); } catch (e) {
+            setError(`Pelanggan ${cust.name || ""} sudah tersimpan, tetapi plafon/status kredit belum: `
+              + `${apiErrorText(e, "coba simpan lagi.")}`);
+            return;
+          }
+        }
+        await onSaved?.(saved, false);
       }
     } catch (e) {
       setError(apiErrorText(e, "Gagal menyimpan pelanggan."));
@@ -280,14 +333,42 @@ export default function CustomerFormModal({
           <Field label="NPWP" optional>
             <input data-testid="customer-npwp" value={f.npwp} onChange={(e) => set("npwp", e.target.value)} className="field" placeholder="00.000.000.0-000.000" />
           </Field>
-          <Field label="Limit kredit (Rp)" hint="0 = tanpa limit">
-            <MoneyInput testId="customer-credit-limit" value={f.credit_limit} onChange={(v) => set("credit_limit", v)} className="field" placeholder="0 = tanpa limit" />
-          </Field>
-          {isEdit && (
-            <Field label="Status">
-              <KNSelect value={f.status} onValueChange={(v) => set("status", v)} className="field" data-testid="customer-status"
-                options={[{ value: "active", label: "Aktif" }, { value: "inactive", label: "Nonaktif" }, { value: "blocked", label: "Blokir" }]} />
-            </Field>
+          {canCredit ? (
+            <>
+              <Field label="Limit kredit (Rp)" hint="0 = tanpa limit">
+                <MoneyInput testId="customer-credit-limit" value={f.credit_limit} onChange={(v) => set("credit_limit", v)} className="field" placeholder="0 = tanpa limit" />
+              </Field>
+              <Field label="Status">
+                <KNSelect value={f.status} onValueChange={(v) => set("status", v)} className="field" data-testid="customer-status"
+                  options={CREDIT_STATUS} />
+              </Field>
+              {creditChanged && (
+                <div className="sm:col-span-2">
+                  <Field label="Alasan perubahan kredit" req
+                    hint={`Wajib bila plafon atau status diubah — tercatat di riwayat pelanggan (minimal ${CREDIT_REASON_MIN_LETTERS} huruf).`}>
+                    <input data-testid="customer-credit-reason" value={creditReason} onChange={(e) => setCreditReason(e.target.value)}
+                      className="field" placeholder="mis. tinjauan triwulan, pembayaran lancar" />
+                  </Field>
+                </div>
+              )}
+              {isEdit && !canUpdate && (
+                <p className="sm:col-span-2 text-fs-12 text-kn-text-2" data-testid="customer-credit-only-note">
+                  Anda hanya bisa mengubah plafon dan status pelanggan; isian lain tidak ikut tersimpan.
+                </p>
+              )}
+            </>
+          ) : (
+            <div className="sm:col-span-2 grid gap-1 rounded-md border border-kn-divider bg-kn-neutral-soft px-3 py-2 text-fs-12 text-kn-text">
+              <p data-testid="customer-credit-limit" data-readonly="true">
+                Plafon kredit: <b>{initialLimit > 0 ? formatCurrency(initialLimit) : `${formatCurrency(0)} (tanpa batas)`}</b>
+              </p>
+              <p data-testid="customer-status" data-readonly="true">
+                Status: <b>{(CREDIT_STATUS.find((o) => o.value === initialStatus) || {}).label || initialStatus}</b>
+              </p>
+              <p className="text-fs-12 text-kn-text-2" data-testid="customer-credit-readonly-note">
+                Plafon dan status blokir diubah oleh pemegang akses kredit.
+              </p>
+            </div>
           )}
           <Field label="Tag (pisah koma)" optional>
             <input data-testid="customer-tags" value={f.tags} onChange={(e) => set("tags", e.target.value)} className="field" placeholder="grosir, premium" />

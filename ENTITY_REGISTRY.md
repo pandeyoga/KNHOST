@@ -1250,6 +1250,9 @@ Key Fields:
 
 ⚠️ scoped entity_id (customer terpisah per entitas; customer sama boleh lintas-entitas; kunci=assigned_sales_id)
 ⚠️ RBAC row-level: role=sales hanya lihat/kelola customer assigned_sales_id==dirinya (enforce backend)
+⚠️ PK-45 (K-28): `credit_limit` & `status` HANYA ditulis `PUT /api/customers/{id}/credit` (izin `customer.manage_credit`,
+   alasan wajib, jejak `audit_logs.action = customer_credit_changed`); PATCH mengabaikan keduanya; POST tanpa izin itu
+   menyimpan `credit_limit` 0.
 ⚠️ JANGAN BUAT: clients, buyers, pembeli, pelanggan_toko, crm_customers
 ```
 
@@ -1328,6 +1331,8 @@ Key Fields:
   dpp float   ppn_rate float   ppn_mode enum(excluded|included)   is_pkp bool
   ppn_amount float   grand_total float  (= yang dibayar customer)
   payment_term_code string   payment_term_name string   payment_status enum(pending|paid_partial|paid)
+  tax_override string  "" (ikut PKP PT) | "non_ppn" — PK-45 (K-33): "non_ppn" butuh izin `order.tax_override`
+  tax_override_reason string  PK-45 — alasan pesanan tanpa PPN (≥ 10 huruf); terisi HANYA bila tax_override == "non_ppn"
   # Fase 1B — approval dinamis (dari approval_rules):
   approval_required bool   required_approval_role string|null   approval_amount float
   sales_name   string

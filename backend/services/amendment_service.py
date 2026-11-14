@@ -274,8 +274,10 @@ async def is_issued(order: Dict[str, Any]) -> Tuple[bool, str]:
     ATAU sudah masuk tahap penyelesaian. Alasannya dikembalikan agar bisa
     ditampilkan ke user (bukan penolakan tanpa penjelasan).
     """
+    # PK-45 (TX-02) — faktur batal berstatus "batal" (tax_invoice_service.cancel_tax_invoice); "cancelled" ikut
+    # disaring untuk data lama/antar-PT.
     inv = await db.tax_invoices.find_one(
-        {"order_id": order["id"], "status": {"$ne": "cancelled"}}, {"_id": 0, "number": 1})
+        {"order_id": order["id"], "status": {"$nin": ["batal", "cancelled"]}}, {"_id": 0, "number": 1})
     if inv:
         return True, f"sudah terbit Faktur Pajak {inv.get('number', '')}".strip()
     if float(order.get("paid_total", 0) or 0) > 0 or order.get("payment_status") in {"paid", "partial"}:

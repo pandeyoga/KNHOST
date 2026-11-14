@@ -27,6 +27,12 @@ for _r in ("admin", "manager", "finance"):   # PK-17 — kelola rekening kas & b
 # Pencabutan izin bawaan yang SENGAJA dibuat unit sesudah PR-T9.
 DICABUT_SESUDAH = {r: {"vendor_bill": {"view"}, "landed_cost": {"view"}, "input_tax": {"view"}}
                    for r in ("warehouse", "warehouse_admin")}   # PK-17 (IA-02)
+# PK-45 — izin kredit pelanggan (K-28) dan pesanan tanpa PPN (K-33).
+for _r, _tambah in {"admin": {"customer": {"manage_credit"}, "order": {"tax_override"}},
+                    "manager": {"customer": {"manage_credit"}, "order": {"tax_override"}},
+                    "finance": {"customer": {"manage_credit"}}}.items():
+    for _res, _aksi in _tambah.items():
+        TAMBAHAN_SESUDAH.setdefault(_r, {}).setdefault(_res, set()).update(_aksi)
 
 
 def _himpunan(perms: dict) -> dict:

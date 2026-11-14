@@ -35,6 +35,16 @@ def _entity_is_pkp(entity: Dict[str, Any], order: Dict[str, Any]) -> bool:
     return bool(order.get("is_pkp")) and float(order.get("ppn_amount", 0) or 0) > 0
 
 
+def saringan_keluaran_aktif() -> Dict[str, Any]:
+    """PK-45 (TX-01) — saringan faktur keluaran yang DIJUMLAH (rekap PPN): bukan batal dan belum punya pengganti.
+
+    Faktur asli yang sudah diganti tidak dihitung (penggantinya yang dihitung). Bila penggantinya dibatalkan,
+    `cancel_tax_invoice` mengosongkan `replaced_by_id` faktur asli sehingga faktur asli dihitung lagi.
+    `replaced_by_id: None` juga cocok untuk dokumen tanpa field itu. Daftar/riwayat faktur TIDAK memakai saringan ini.
+    """
+    return {"status": {"$ne": "batal"}, "replaced_by_id": None}
+
+
 def format_nsfp_display(fkt: Dict[str, Any]) -> str:
     """Kode & Nomor Seri Faktur Pajak resmi: {kode}{status_code}.{NNN-NN.NNNNNNNN}."""
     kode = fkt.get("kode_transaksi", "01")

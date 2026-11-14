@@ -11,7 +11,7 @@ from fastapi import APIRouter, HTTPException, Request
 from pymongo import ReturnDocument
 from db import db
 from services import dual_qty_service as _dual  # FASE U — dua satuan (roll + ukuran)
-from dependencies import require_permission, audit
+from dependencies import require_permission, has_permission, audit
 from core_utils import new_id, now_iso, safe_doc, DEFAULT_ENTITY_ID, next_doc_number, strip_cost_fields, rupiah
 from schemas import GenericPatch, SalesOrderCreate, SalesOrderItemIn
 from services.roll_service import (
@@ -93,11 +93,38 @@ async def _fulfillment_site(payload, actor: Dict[str, Any], entity_id: str) -> s
     return srs.default_site_for_user(actor) or await srs.default_site_for_entity(entity_id)
 
 
+#: PK-45 (K-33) — panjang minimal alasan pesanan tanpa PPN (huruf, bukan karakter; spesifikasi unit PK-45).
+NON_PPN_MIN_REASON_LETTERS = 10
+
+
+async def _periksa_tax_override(actor: Dict[str, Any], payload: SalesOrderCreate) -> "tuple[str, str]":
+    """PK-45 (TX-04, K-33) — pilihan pajak pesanan penjualan: "" (ikut PT) atau "non_ppn" (butuh izin + alasan).
+
+    Satu pintu untuk semua pemakaian `tax_override` pesanan penjualan (perhitungan harga & dokumen pesanan).
+    Mengembalikan `(mode, alasan)`; alasan hanya terisi bila mode "non_ppn"."""
+    from input_rules import count_letters
+    mode = (payload.tax_override or "").strip().lower()
+    if mode not in ("", "non_ppn"):
+        raise HTTPException(status_code=400, detail="Pilihan pajak pesanan tidak dikenal.")
+    if mode != "non_ppn":
+        return "", ""
+    if not await has_permission(actor, "order", "tax_override"):
+        raise HTTPException(status_code=403, detail=(
+            "Anda belum punya akses untuk membuat pesanan tanpa PPN. "
+            "Minta Admin menambahkan akses 'Pesanan Penjualan'."))
+    reason = (payload.tax_override_reason or "").strip()
+    if count_letters(reason) < NON_PPN_MIN_REASON_LETTERS:
+        raise HTTPException(status_code=400, detail=(
+            f"Alasan pesanan tanpa PPN wajib diisi (minimal {NON_PPN_MIN_REASON_LETTERS} huruf)."))
+    return mode, reason[:1000]
+
+
 @router.post("/sales-orders")
 async def create_order(payload: SalesOrderCreate, request: Request) -> Dict[str, Any]:
     # L06 — Pesanan Sample cukup izin sample_order.create (Admin Sample tidak membuat SO roll biasa).
     is_sample_order = (payload.order_type or "").strip().lower() == "sample"
     actor = await require_permission(request, *(("sample_order", "create") if is_sample_order else ("order", "create")))
+    tax_mode, tax_reason = await _periksa_tax_override(actor, payload)   # PK-45 — sebelum apa pun dihitung/dinomori
     # Diskon manual DIHAPUS untuk SEMUA role — potongan harga HANYA via "Ajukan Harga
     # Khusus" (special-price) yang disetujui manager/admin. Payload discount diabaikan.
     customer = safe_doc(await db.customers.find_one({"id": payload.customer_id}, {"_id": 0}))
@@ -305,7 +332,7 @@ async def create_order(payload: SalesOrderCreate, request: Request) -> Dict[str,
     number = await next_doc_number("sales_orders", "number", "SOS-" if is_sample_order else "SO-", entity_id=entity_id)
     customer_city = address.get("city", customer.get("city", ""))
     # Fase 1B — pricing engine (diskon item/order + PPN, ikut PKP entitas). INVARIAN-SAFE.
-    pricing = await compute_order_pricing(raw_items, entity_id, 0, tax_override=(payload.tax_override or "").strip().lower() or None)
+    pricing = await compute_order_pricing(raw_items, entity_id, 0, tax_override=tax_mode or None)
     items = pricing["items"]
     # Sub-fase 1.8 (UOM-safe, forward-compat 1.13): simpan base_unit + base_quantity per item.
     for it in items:
@@ -613,7 +640,8 @@ async def create_order(payload: SalesOrderCreate, request: Request) -> Dict[str,
         "grand_total": pricing["grand_total"],
         # F6 — Faktur Pajak per-order + mode pajak efektif (ikut entitas atau override)
         "needs_tax_invoice": bool(getattr(payload, "needs_tax_invoice", False)),
-        "tax_override": (getattr(payload, "tax_override", "") or "").strip().lower(),
+        "tax_override": tax_mode,
+        "tax_override_reason": tax_reason,   # PK-45 (K-33) — terisi hanya bila tax_override == "non_ppn"
         "tax_mode": "non_ppn" if not pricing["is_pkp"] else "ppn",
         # Term pembayaran
         "payment_term_code": term_code,
@@ -718,6 +746,7 @@ async def create_order(payload: SalesOrderCreate, request: Request) -> Dict[str,
         "has_backorder": has_backorder,
         "backorder_lines": len(backorders),
         "special_price_lines": special_count,
+        **({"tax_override": tax_mode, "tax_override_reason": tax_reason} if tax_mode else {}),
     })
     return strip_cost_fields(safe_doc(order), actor.get("role"))
 

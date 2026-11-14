@@ -1,0 +1,17 @@
+# Contoh hitung PY-05 (database tiruan; aplikasi utuh). Karyawan TK0, gaji pokok 8.000.000, ent_ksc.
+# Jan–Apr 2026 aktif (slip dihitung compute_payslip, disimpan sebagai slip run "paid"); keluar 20 Mei 2026:
+# status "resigned", separation_date "2026-05-20" (bentuk yang ditulis master karyawan), tanpa end_date.
+== SEBELUM (hr_payroll_service.py versi HEAD 30e3f28)
+2026-01: bruto pajak 8,387,200 · PPh21 TER 125,808
+2026-02: bruto pajak 8,387,200 · PPh21 TER 125,808
+2026-03: bruto pajak 8,387,200 · PPh21 TER 125,808
+2026-04: bruto pajak 8,387,200 · PPh21 TER 125,808
+ikut proses gaji 2026-05: False        → gaji 1–20 Mei tidak masuk proses gaji; tidak ada hitung ulang pajak akhir
+== SESUDAH (PK-45)
+2026-01 … 2026-04: sama
+ikut proses gaji 2026-05: True
+2026-05: metode annual_pasal17 · bruto pajak 8,387,200 · PPh21 -503,232 · pajak setahun 0 − sudah dipotong 503,232 · bulan 5 · neto 8,183,232
+   (bila dihitung TER biasa: PPh21 125,808)
+# Hitungan: bruto pajak 5 bulan 41.936.000 di bawah PTKP TK0 setahun → pajak masa kerja 0; potongan TER Jan–Apr
+# 4 × 125.808 = 503.232 dikembalikan lewat slip Mei (selisih negatif, sesuai _is_final_tax_period yang sudah ada).
+# Tarif/PTKP tidak diubah unit ini (tabel PPh 21 → PK-46).

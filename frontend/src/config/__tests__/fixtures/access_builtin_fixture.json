@@ -70,7 +70,8 @@
     "update",
     "delete",
     "import",
-    "export"
+    "export",
+    "manage_credit"
    ],
    "data_export": [
     "view",
@@ -292,7 +293,8 @@
     "override",
     "cancel",
     "approve_price_edit",
-    "release_unpaid"
+    "release_unpaid",
+    "tax_override"
    ],
    "payment_plan": [
     "view",
@@ -616,7 +618,8 @@
     "submit"
    ],
    "customer": [
-    "view"
+    "view",
+    "manage_credit"
    ],
    "data_export": [
     "view",
@@ -798,7 +801,8 @@
     "view",
     "create",
     "update",
-    "export"
+    "export",
+    "manage_credit"
    ],
    "data_export": [
     "view",
@@ -999,7 +1003,8 @@
     "override",
     "cancel",
     "approve_price_edit",
-    "release_unpaid"
+    "release_unpaid",
+    "tax_override"
    ],
    "payment_plan": [
     "view",

@@ -9,7 +9,7 @@ from fastapi.responses import HTMLResponse
 from db import db
 from dependencies import require_permission, audit
 from core_utils import safe_doc
-from entity_scope import entity_ctx, resolve_list_scope, assert_entity_access
+from entity_scope import entity_ctx, guard_doc, resolve_list_scope, assert_entity_access
 from schemas import (
     TaxInvoiceCreate, TaxInvoiceNsfpUpdate, TaxInvoiceReplace, TaxInvoiceCancel,
 )
@@ -34,6 +34,12 @@ async def list_tax_invoices(request: Request, order_id: str = None,
         query["status"] = status
     query = resolve_list_scope("tax_invoices", query, ctx, entity_id)
     return await db.tax_invoices.find(query, {"_id": 0}).sort("created_at", -1).to_list(500)
+
+
+async def _faktur_milik_pt(request: Request, fkt_id: str) -> None:
+    """PK-45 (TX-03) — faktur hanya diubah/diganti/dibatalkan dari PT pemiliknya (02_STANDAR §3.4 N1)."""
+    fkt = await db.tax_invoices.find_one({"id": fkt_id}, {"_id": 0})
+    await guard_doc(request, "tax_invoices", fkt, not_found="Faktur Pajak tidak ditemukan")
 
 
 @router.get("/tax-invoices/{fkt_id}")
@@ -62,6 +68,7 @@ async def issue_for_order(order_id: str, payload: TaxInvoiceCreate, request: Req
 async def update_nsfp(fkt_id: str, payload: TaxInvoiceNsfpUpdate, request: Request) -> Dict[str, Any]:
     """Isi/ubah NSFP resmi 16-digit (menyusul dari e-Faktur/Coretax)."""
     actor = await require_permission(request, "tax_invoice", "update")
+    await _faktur_milik_pt(request, fkt_id)
     fkt = await set_nsfp(fkt_id, payload.nsfp, payload.kode_transaksi)
     await audit(actor["name"], "tax_invoice_nsfp_set", "tax_invoice", fkt_id,
                 {"nsfp": payload.nsfp})
@@ -72,6 +79,7 @@ async def update_nsfp(fkt_id: str, payload: TaxInvoiceNsfpUpdate, request: Reque
 async def replace_faktur(fkt_id: str, payload: TaxInvoiceReplace, request: Request) -> Dict[str, Any]:
     """Terbitkan Faktur Pajak PENGGANTI (revisi)."""
     actor = await require_permission(request, "tax_invoice", "replace")
+    await _faktur_milik_pt(request, fkt_id)
     fkt = await replace_tax_invoice(fkt_id, payload.reason, payload.kode_transaksi,
                                     payload.nsfp, actor["name"])
     await audit(actor["name"], "tax_invoice_replaced", "tax_invoice", fkt["id"],
@@ -83,6 +91,7 @@ async def replace_faktur(fkt_id: str, payload: TaxInvoiceReplace, request: Reque
 async def cancel_faktur(fkt_id: str, payload: TaxInvoiceCancel, request: Request) -> Dict[str, Any]:
     """Batalkan Faktur Pajak (wajib alasan)."""
     actor = await require_permission(request, "tax_invoice", "cancel")
+    await _faktur_milik_pt(request, fkt_id)
     fkt = await cancel_tax_invoice(fkt_id, payload.reason, actor["name"])
     await audit(actor["name"], "tax_invoice_cancelled", "tax_invoice", fkt_id,
                 {"reason": payload.reason})

@@ -20,7 +20,7 @@ from services.customer_service import (
 )
 from services.sales_force_service import sales_kpi, compute_commission, leaderboard, commission_history
 from services import gl_service
-from entity_scope import entity_ctx, resolve_list_scope
+from entity_scope import entity_ctx, guard_doc, resolve_list_scope
 from role_registry import role_in  # peran acuan dikenali (keputusan owner 2026-10-21)
 
 router = APIRouter(prefix="/api")
@@ -96,6 +96,10 @@ async def request_credit_override(customer_id: str, payload: CreditOverrideCreat
         raise HTTPException(status_code=404, detail="Customer tidak ditemukan")
     if not await can_access_customer(actor, customer):
         raise HTTPException(status_code=403, detail="Customer ini bukan milik Anda")
+    # PK-45 (CR-04) — nominal 0 dulu berarti "tanpa batas"; permohonan baru wajib bernominal. Izin lama yang sudah
+    # disetujui dengan nominal 0 tetap dibaca seperti sebelumnya (customer_service.evaluate_credit_gate) sampai CR-T3.
+    if float(payload.amount or 0) <= 0:
+        raise HTTPException(status_code=400, detail="Nominal izin wajib lebih dari 0.")
     credit = await compute_customer_credit(customer)
     doc = {
         "id": new_id("cro"),
@@ -125,6 +129,7 @@ async def list_credit_overrides(request: Request, status: str = None) -> List[Di
         query["status"] = status
     if role_in(actor.get("role"), ("sales",)):
         query["requested_by_id"] = actor["id"]
+    query = resolve_list_scope("credit_overrides", query, await entity_ctx(request))   # PK-45 (CR-04) — per PT
     return await db.credit_overrides.find(query, {"_id": 0}).sort("created_at", -1).to_list(200)
 
 
@@ -134,6 +139,7 @@ async def get_credit_override(override_id: str, request: Request) -> Dict[str, A
     doc = await db.credit_overrides.find_one({"id": override_id}, {"_id": 0})
     if not doc or (role_in(actor.get("role"), ("sales",)) and doc.get("requested_by_id") != actor["id"]):
         raise HTTPException(status_code=404, detail="Permohonan override kredit tidak ditemukan")
+    await guard_doc(request, "credit_overrides", doc, strict=False)   # PK-45 (CR-04) — PT lain → 404
     return doc
 
 
@@ -143,6 +149,9 @@ async def decide_credit_override(override_id: str, payload: CreditOverrideDecisi
     if payload.decision not in ("approve", "reject"):
         raise HTTPException(status_code=400, detail="decision harus approve|reject")
     new_status = "approved" if payload.decision == "approve" else "rejected"
+    # PK-45 (CR-04) — PT dokumen diadu dengan penugasan pemutus sebelum keputusan ditulis.
+    await guard_doc(request, "credit_overrides", await db.credit_overrides.find_one({"id": override_id}, {"_id": 0}),
+                    strict=False, not_found="Permohonan tidak ditemukan / sudah diputuskan")
     updated = await db.credit_overrides.find_one_and_update(
         {"id": override_id, "status": "pending"},
         {"$set": {"status": new_status, "decided_by": actor["name"], "decided_by_id": actor["id"],

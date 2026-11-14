@@ -3,7 +3,7 @@
 Dipisah dari schemas.py untuk menjaga batas ukuran file. Di-reekspor oleh
 schemas.py agar `from schemas import ContactInfo, ...` tetap berfungsi.
 """
-from typing import List
+from typing import Any, List, Optional
 from pydantic import BaseModel, Field
 from services.text_normalize import PhoneStr
 
@@ -67,9 +67,19 @@ class CreditOverrideCreate(BaseModel):
     """Permohonan bypass blokir kredit (KN_17 §5.2 / S37)."""
     customer_id: str
     order_id: str = ""
+    # PK-45 (CR-04) — nominal 0 (= tanpa batas) ditolak 400 berpesan di handler; negatif tetap ditolak skema.
     amount: float = Field(0, ge=0)
     reason: str
     evidence_url: str = ""
+
+
+class CustomerCreditUpdate(BaseModel):
+    """PK-45 (CR-01) — ubah plafon dan/atau status blokir pelanggan (PUT /api/customers/{id}/credit).
+
+    Tipe longgar disengaja: isian yang salah dijawab 400 berpesan Indonesia oleh handler, bukan 422 skema."""
+    credit_limit: Optional[Any] = None     # angka ≥ 0
+    status: Optional[Any] = None           # active | inactive | blocked
+    reason: Optional[Any] = ""             # wajib, minimal 5 huruf (K-14)
 
 
 class CreditOverrideDecision(BaseModel):

@@ -335,6 +335,8 @@ ACTION_LABEL = {
     # Label khusus satu pasangan `<sumber daya>.<aksi>` (didahulukan editor peran atas label aksi umum).
     "cash.configure": "Kelola rekening kas & bank",   # PK-17
 }
+# PK-45 — izin kredit pelanggan (modul Pelanggan & CRM) dan pesanan tanpa PPN (modul Pesanan Penjualan).
+ACTION_LABEL.update({"manage_credit": "Ubah plafon & blokir kredit", "tax_override": "Buat pesanan tanpa PPN"})
 
 
 def clean_permissions(perms: Any) -> Dict[str, List[str]]:

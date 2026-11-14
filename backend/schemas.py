@@ -540,6 +540,7 @@ class SalesOrderCreate(BaseModel):
     qc_sample_pct: float = Field(10, ge=1, le=100)
     needs_tax_invoice: bool = False        # F6 — minta Faktur Pajak untuk order ini
     tax_override: str = ""                 # F6 — paksa mode pajak: "" (ikut entitas) | "non_ppn"
+    tax_override_reason: str = ""          # PK-45 (K-33) — wajib (≥ 10 huruf) bila tax_override == "non_ppn"
     fulfillment_method: str = "kirim"      # "kirim" (dikirim) | "ambil" (Order Pengambilan di gudang)
     fulfillment_site_id: str = ""          # UAT 24 Okt (P8/P9) — lokasi gudang penjualan (POS); kosong = lokasi akun/PT
     pickup_date: str = ""                  # ISO date; wajib bila fulfillment_method=="ambil" (hold picking s/d tgl ini)

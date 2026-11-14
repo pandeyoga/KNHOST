@@ -1,0 +1,12 @@
+# Skrip bukti audit (arsip, tidak diubah) dijalankan di kode PK-45 — docs/audit/konfigurasi-peran-2026-11-13/bukti/
+== t8_cr01_plafon_oleh_sales.py
+sebelum: plafon 5.000.000, status blocked
+Sales PATCH plafon → 900.000.000 dan status → active: 200
+sesudah di database: {'status': 'blocked', 'credit_limit': 5000000}
+== t7_tx01_faktur_pengganti.py
+rekap awal: (200, {'ppn': 0, 'dpp': 0, 'count': 0}, '')
+terbit faktur: 200 KSC/FKT-00001 | PPN: 110000.0
+rekap setelah terbit: (200, {'ppn': 110000.0, 'dpp': 1000000.0, 'count': 1}, '') | seharusnya 110.000
+terbit faktur PENGGANTI: 200 KSC/FKT-00002 | status: pengganti
+faktur untuk pesanan ini (nomor, status, PPN, sudah diganti?): [('KSC/FKT-00001', 'normal', 110000.0, True), ('KSC/FKT-00002', 'pengganti', 110000.0, False)]
+rekap setelah diganti: (200, {'ppn': 110000.0, 'dpp': 1000000.0, 'count': 1}, '') | seharusnya tetap 110.000 (satu penyerahan)

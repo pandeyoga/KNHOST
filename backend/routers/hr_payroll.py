@@ -106,6 +106,9 @@ async def list_payroll_runs(request: Request, entity_id: Optional[str] = Query(N
 @router.post("/hr/payroll/runs/preview")
 async def preview_payroll_run(request: Request, body: PayrollRunInput):
     await require_permission(request, "hr", "manage_payroll")
+    from entity_scope import resolve_requested_entity
+    # PK-45 (PY-10) — sama dengan proses buat: PT dari penugasan, bukan isi permintaan mentah (kosong → PT aktif).
+    body.entity_id = resolve_requested_entity(await entity_ctx(request), body.entity_id)
     try:
         return await pay.preview_run(body.entity_id, body.period)
     except ValueError as e:
