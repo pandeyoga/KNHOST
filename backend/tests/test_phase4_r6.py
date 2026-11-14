@@ -216,10 +216,13 @@ def test_e4_poc_ocr_exception_matches_registry_and_consumer():
     import inspect
     import config_registry as cr
     from services import goods_receipt_ocr_service as ocr
-    from test_core_e4_master_layers_poc import OCR_GLOBAL_BY_DESIGN
+    from test_core_e4_master_layers_poc import OCR_GLOBAL_BY_DESIGN, PPH21_GLOBAL_BY_DESIGN
     ops = [e for e in cr.all_entries() if e["key"].split(".")[0] in ("hr", "uom", "lot", "receiving", "makloon")]
     only_global = {e["key"] for e in ops if "entity" not in (e.get("scopes") or [])}
-    assert only_global == set(OCR_GLOBAL_BY_DESIGN), sorted(only_global ^ set(OCR_GLOBAL_BY_DESIGN))
+    pengecualian = set(OCR_GLOBAL_BY_DESIGN) | set(PPH21_GLOBAL_BY_DESIGN)
+    assert only_global == pengecualian, sorted(only_global ^ pengecualian)
+    # PK-46 — tabel PPh 21 nasional: semuanya bertanggal (dibaca `aturan_pph21` tanpa konteks PT)
+    assert all(cr.get(k).get("bertanggal") for k in PPH21_GLOBAL_BY_DESIGN)
     # konsumen membaca kunci-kunci ini TANPA konteks badan usaha (alasan pengecualian masih berlaku)
     src = inspect.getsource(ocr.ocr_config)
     assert 'e if k in ("ocr_enabled", "ocr_extract_packing_list",' in src

@@ -60,6 +60,14 @@ OCR_GLOBAL_BY_DESIGN = frozenset({
     "receiving.ocr_image_max_side", "receiving.ocr_max_pages", "receiving.ocr_monthly_budget_usd",
     "receiving.ocr_budget_warn_pct", "receiving.ocr_price_table",
 })
+# PK-46 — tabel pajak NASIONAL bertanggal berlaku (PPh 21: TER, kategori PTKP, PTKP, pasal 17, biaya jabatan) sengaja
+# lapisan GRUP saja: peraturannya sama untuk semua PT (spesifikasi `docs/blueprint/unit/PK-46.md`, ASUMSI "tabel berlaku
+# nasional"); mesin gaji (`hr_payroll_service.aturan_pph21`) membacanya tanpa konteks PT, jadi lapisan per PT tidak akan
+# pernah dibaca → menyesatkan. Hanya kunci `bertanggal` ini; setelan SDM lain tetap wajib berlapis.
+PPH21_GLOBAL_BY_DESIGN = frozenset({
+    "hr.pph21.ter_table", "hr.pph21.ptkp_to_ter", "hr.ptkp_table", "hr.pph21.pasal17_table",
+    "hr.pph21.biaya_jabatan_pct", "hr.pph21.biaya_jabatan_maks_bulanan",
+})
 
 
 def ok(cond: bool, label: str, extra: str = "") -> bool:
@@ -360,18 +368,19 @@ def main() -> int:
     ops_keys = [e for e in (reg.get("entries") or [])
                 if e["key"].split(".")[0] in ("hr", "uom", "lot", "receiving", "makloon")]
     # Fase 4 · R6 — setelan mesin OCR tingkat instalasi dikecualikan dengan alasan (lihat `OCR_GLOBAL_BY_DESIGN`).
-    GLOBAL_BY_DESIGN = OCR_GLOBAL_BY_DESIGN
+    GLOBAL_BY_DESIGN = OCR_GLOBAL_BY_DESIGN | PPH21_GLOBAL_BY_DESIGN
     no_entity = [e["key"] for e in ops_keys
                  if "entity" not in (e.get("scopes") or []) and e["key"] not in GLOBAL_BY_DESIGN]
     ok(not no_entity,
        f"seluruh {len(ops_keys) - len(GLOBAL_BY_DESIGN)} setelan hr./uom./lot./receiving./makloon. "
-       f"(di luar {len(GLOBAL_BY_DESIGN)} setelan mesin OCR tingkat instalasi) bisa per badan usaha",
+       f"(di luar {len(OCR_GLOBAL_BY_DESIGN)} setelan mesin OCR tingkat instalasi dan {len(PPH21_GLOBAL_BY_DESIGN)} tabel "
+       "PPh 21 nasional bertanggal) bisa per badan usaha",
        f"masih hanya-global: {no_entity[:6]}")
-    ocr_keys = {e["key"]: e for e in ops_keys if e["key"] in GLOBAL_BY_DESIGN}
-    ok(set(ocr_keys) == GLOBAL_BY_DESIGN
+    ocr_keys = {e["key"]: e for e in ops_keys if e["key"] in OCR_GLOBAL_BY_DESIGN}
+    ok(set(ocr_keys) == OCR_GLOBAL_BY_DESIGN
        and all("entity" not in (e.get("scopes") or []) for e in ocr_keys.values()),
        "pengecualian OCR tingkat instalasi masih terdaftar & tetap global (daftar pengecualian tidak basi)",
-       f"hilang={sorted(GLOBAL_BY_DESIGN - set(ocr_keys))} "
+       f"hilang={sorted(OCR_GLOBAL_BY_DESIGN - set(ocr_keys))} "
        f"kini-berlapis={sorted(k for k, e in ocr_keys.items() if 'entity' in (e.get('scopes') or []))}")
 
     def lot_mode(ent: str) -> str:
