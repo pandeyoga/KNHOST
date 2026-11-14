@@ -1,0 +1,8 @@
+# jest pk36AkunKontrol.test.js — komponen HEAD (JournalEntryModal, SuspensePanel, ChartOfAccounts, GeneralLedger, JournalDetailModal dari c1b2888)
+  ✕ Jurnal Manual Baru: akun kontrol tidak ditawarkan + kalimat keterangan (77 ms)
+  ✓ Jurnal Manual Baru: PT mengizinkan (tidak ada akun disembunyikan) → kalimat tidak tampil (22 ms)
+  ✕ Suspense: akun tujuan reklasifikasi tanpa akun kontrol (16 ms)
+  ✓ Rincian jurnal: galat 422 pembalikan tampil di dalam pop-up alasan pembalikan (31 ms)
+  ✕ Bagan Akun: lencana Akun kontrol dengan petunjuk dokumen buku pembantunya (26 ms)
+  ✕ Buku Besar: bagan akun dimuat untuk PT yang sedang dibuka; Semua PT = lapisan global (24 ms)
+Tests:       4 failed, 2 passed, 6 total

@@ -1,0 +1,9 @@
+[1] POST /api/gl/journal Dr 1-1200 500.000 / Cr 4-9000 500.000 → 422
+    pesan: Akun 1-1200 · Piutang Usaha adalah akun kontrol piutang usaha dan tidak menerima jurnal manual. Koreksi lewat Kwitansi, Nota Kredit, atau Kasus Keuangan.
+    saldo 1-1200 ent_ksc: 0 → 0; jumlah jurnal 5 → 5
+[2] jurnal manual lama KSC/JE-00005: D 1-1200 100.000 / K 4-9000 100.000 → saldo 1-1200 0 → 100,000
+    balik → 200 KSC/JE-00006: K 1-1200 100,000 · D 4-9000 100,000
+    saldo 1-1200 sesudah balik: 0 (= 0 + 100.000 − 100.000)
+[3] jurnal antar-PT KSC/JE-00007 D 1-1250 100.000 / K 4-1000 100.000 → balik manual 422
+    pesan: Jurnal KSC/JE-00007 berasal dari Antar-PT dan menyentuh akun kontrol antar-PT. Batalkan atau koreksi dokumen sumbernya; pembalikan manual ditolak.
+    saldo 1-1250 ent_ksc tetap 100,000 → 100,000

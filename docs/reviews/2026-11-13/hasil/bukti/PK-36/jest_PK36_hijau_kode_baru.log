@@ -1,0 +1,7 @@
+  ✓ Jurnal Manual Baru: akun kontrol tidak ditawarkan + kalimat keterangan (78 ms)
+  ✓ Jurnal Manual Baru: PT mengizinkan (tidak ada akun disembunyikan) → kalimat tidak tampil (20 ms)
+  ✓ Suspense: akun tujuan reklasifikasi tanpa akun kontrol (30 ms)
+  ✓ Rincian jurnal: galat 422 pembalikan tampil di dalam pop-up alasan pembalikan (39 ms)
+  ✓ Bagan Akun: lencana Akun kontrol dengan petunjuk dokumen buku pembantunya (20 ms)
+  ✓ Buku Besar: bagan akun dimuat untuk PT yang sedang dibuka; Semua PT = lapisan global (54 ms)
+Tests:       6 passed, 6 total

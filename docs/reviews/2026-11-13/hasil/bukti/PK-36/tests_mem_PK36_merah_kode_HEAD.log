@@ -1,0 +1,25 @@
+# tests_mem/test_PK36_akun_kontrol.py di kode HEAD c1b2888 (sebelum perubahan apa pun; hanya berkas uji baru)
+PASSED tests_mem/test_PK36_akun_kontrol.py::test_PK36_U3_akun_biasa_tetap_diterima
+PASSED tests_mem/test_PK36_akun_kontrol.py::test_PK36_U7_jurnal_manual_lama_boleh_dibalik
+PASSED tests_mem/test_PK36_akun_kontrol.py::test_PK36_U8_pembalikan_jurnal_kas_tanpa_akun_kontrol
+PASSED tests_mem/test_PK36_akun_kontrol.py::test_PK36_U11_akun_khusus_pt_kosong_bisa_dihapus
+PASSED tests_mem/test_PK36_akun_kontrol.py::test_PK36_U12_hapus_penimpa_laporan_kembali_ke_templat
+PASSED tests_mem/test_PK36_akun_kontrol.py::test_PK36_P10_jurnal_dokumen_dan_pembalik_dokumen_tetap_jalan
+FAILED tests_mem/test_PK36_akun_kontrol.py::test_PK36_U1_jurnal_manual_ke_piutang_ditolak
+FAILED tests_mem/test_PK36_akun_kontrol.py::test_PK36_U2_empat_akun_kontrol_lain[2-1100-6-4000-2-1100-Tagihan Pemasok]
+FAILED tests_mem/test_PK36_akun_kontrol.py::test_PK36_U2_empat_akun_kontrol_lain[1-1300-1-1300-4-9000-Stock Opname]
+FAILED tests_mem/test_PK36_akun_kontrol.py::test_PK36_U2_empat_akun_kontrol_lain[1-1250-1-1250-4-9000-dokumen Antar-PT]
+FAILED tests_mem/test_PK36_akun_kontrol.py::test_PK36_U2_empat_akun_kontrol_lain[2-1250-6-4000-2-1250-dokumen Antar-PT]
+FAILED tests_mem/test_PK36_akun_kontrol.py::test_PK36_U4_pemetaan_pt_menjadi_akun_kontrol
+FAILED tests_mem/test_PK36_akun_kontrol.py::test_PK36_U5_izinkan_di_satu_pt
+FAILED tests_mem/test_PK36_akun_kontrol.py::test_PK36_U5b_izinkan_juga_membuka_pembalikan
+FAILED tests_mem/test_PK36_akun_kontrol.py::test_PK36_U6_pembalikan_manual_jurnal_antar_pt_ditolak
+FAILED tests_mem/test_PK36_akun_kontrol.py::test_PK36_U9_reklas_suspense_ke_akun_kontrol
+FAILED tests_mem/test_PK36_akun_kontrol.py::test_PK36_U10_akun_khusus_pt_berjurnal_tidak_bisa_dihapus
+FAILED tests_mem/test_PK36_akun_kontrol.py::test_PK36_U13_akun_terpetakan_tidak_bisa_dihapus
+FAILED tests_mem/test_PK36_akun_kontrol.py::test_PK36_U4b_kode_lama_dari_riwayat_tetap_akun_kontrol
+FAILED tests_mem/test_PK36_akun_kontrol.py::test_PK36_U14_putaran_pengaturan
+FAILED tests_mem/test_PK36_akun_kontrol.py::test_PK36_U15_daftar_akun_menandai_akun_kontrol
+FAILED tests_mem/test_PK36_akun_kontrol.py::test_PK36_U16_peran_tanpa_acuan_kena_penjaga_bukan_403
+FAILED tests_mem/test_PK36_akun_kontrol.py::test_PK36_U16b_usulan_jurnal_dua_orang_kena_penjaga
+17 failed, 6 passed, 1 warning in 2.02s

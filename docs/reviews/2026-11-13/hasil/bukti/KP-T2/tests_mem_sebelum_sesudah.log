@@ -1,0 +1,5 @@
+# tests_mem seluruhnya (cd backend && python -m pytest tests_mem -q -p no:cacheprovider)
+## sebelum (HEAD 0a91095, tanpa perubahan KP-T2)
+545 passed, 2 skipped, 3 xfailed in 134.31s (0:02:14)
+## sesudah (KP-T2, +19 uji test_KPT2_kesiapan_arsip.py)
+564 passed, 2 skipped, 3 xfailed in 122.02s (0:02:02)

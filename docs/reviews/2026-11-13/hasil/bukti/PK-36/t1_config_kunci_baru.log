@@ -1,0 +1,5 @@
+docs/audit/konfigurasi-peran-2026-11-13/bukti/t1_config.py pada worktree (database tiruan) — kunci baru PK-36
+kunci diuji seluruhnya: 403
+gl.jurnal_manual_akun_kontrol {"awal_sama_api_resolver": true, "awal_sama_legacy": false, "awal": {"api": "tolak", "legacy": "<tak ada>"}, "tulis_global": 200, "global_terbaca_api": true, "global_terbaca_resolver": true, "global_terbaca_legacy": true, "tulis_pt": 200, "pt_terbaca_resolver": true, "pt_lain_tetap_resolver": true, "pt_terbaca_legacy": true, "pt_lain_tetap_legacy": true, "pt_terbaca_api": true, "cabut_pt": 200, "setelah_cabut_kembali": true, "setelah_cabut_legacy": true, "nilai_tak_sah_ditolak": true, "nilai_tak_sah_status": 400, "tanpa_alasan_ditolak": true, "pulihkan": 200, "setelah_pulih_default": true}
+ringkas: tulis grup 344/345 terbaca; tulis PT 298/300 terbaca & PT lain tetap; not_used ditolak 36/36; galat []
+simpang (sudah ada sebelum unit ini, bukan kunci PK-36): tax.ppn_rate (KF-04, lapisan PT non-PKP), allocation.allow_intercompany (dicatat KF-T3), notif.wa_pic_number (nilai uji skrip ditolak pemeriksa nomor, dicatat KP-T7)

@@ -34,7 +34,7 @@ Papan kerja agen pelaksana. Aturan mengubahnya: `00_ATURAN_EKSEKUSI.md` §5. Uru
 | 27 | KP-T4 | Satu tabel kebijakan persetujuan untuk semua antrean | KF-T6, KP-T3, PR-T2 | selesai | `ff73676` · `0c5486e` | [KP-T4](../reviews/2026-11-13/hasil/KP-T4.md) | H3: --apply migrate_kpt4_kebijakan_persetujuan wajib saat pemasangan di data nyata |
 | 28 | PR-T4 | Sifat peran yang bisa diatur: cakupan data, beranda, penerima notifikasi | PR-T2 | selesai | `6d7dacf` · `39cdd4b` | [PR-T4](../reviews/2026-11-13/hasil/PR-T4.md) | H3: migrasi prt4:sifat-peran & prt4:izin-kpi-sales berjalan saat proses awal |
 | 29 | PR-T5 | Katalog izin dirapikan; modul akses dipecah | PR-T2 | selesai | `b8bd0a2` | [PR-T5](../reviews/2026-11-13/hasil/PR-T5.md) | Keputusan pemilik: API Ringkasan kini 403 bagi Sales/Gudang/MD/Admin Gudang/Admin Sample (layar sudah tersembunyi). H3: migrasi prt5:katalog saat proses awal |
-| 30 | PR-T6 | Layar Peran & Hak Akses dan Akun & Akses | PR-T4, PR-T5 | siap |  |  |  |
+| 30 | PR-T6 | Layar Peran & Hak Akses dan Akun & Akses | PR-T4, PR-T5 | selesai | `1392969` | [PR-T6](../reviews/2026-11-13/hasil/PR-T6.md) |  |
 | 31 | PR-T7 | Layar memakai izin, bukan nama peran | PR-T2 | selesai | `2d164c9` | [PR-T7](../reviews/2026-11-13/hasil/PR-T7.md) |  |
 | 32 | PR-T8 | Penjaga matriks izin berjalan (peran × endpoint) | PR-T3 | selesai | `303e709` | [PR-T8](../reviews/2026-11-13/hasil/PR-T8.md) | guard:matriks_izin (--full) MERAH 20 baris pada 14 rute — diserahkan ke unit pemilik rute (lihat laporan) |
 | 33 | KF-T2 | Kunci pengaturan mati, ganda, dan tersembunyi | KF-T1 | selesai | `1dcb06c` | [KF-T2](../reviews/2026-11-13/hasil/KF-T2.md) | H3: --apply migrate_kft2_akun_bank sebelum dipasang di data nyata |
@@ -44,7 +44,7 @@ Papan kerja agen pelaksana. Aturan mengubahnya: `00_ATURAN_EKSEKUSI.md` §5. Uru
 | 37 | KF-T7 | Nilai bisnis yang ditulis mati menjadi pengaturan | KF-T2 | siap |  |  |  |
 | 38 | KF-T8 | Penjaga pengaturan: uji putaran semua kunci menjadi gate | KF-T2 | siap |  |  |  |
 | 39 | KP-T1 | Profil PT yang jujur dan bisa diubah | KF-T1 | selesai | `69cc4e3` | [KP-T1](../reviews/2026-11-13/hasil/KP-T1.md) | H3: --apply migrate_kpt1_profil_pt di data nyata |
-| 40 | KP-T2 | Kesiapan PT, wizard lanjutan, dan arsip PT | KP-T1 | siap |  |  |  |
+| 40 | KP-T2 | Kesiapan PT, wizard lanjutan, dan arsip PT | KP-T1 | selesai | `aea3cec` | [KP-T2](../reviews/2026-11-13/hasil/KP-T2.md) |  |
 | 41 | KP-T5 | Penomoran dokumen per PT | KP-T1 | siap |  |  | Titik henti H3 untuk dokumen lama |
 | 42 | KP-T6 | Dokumen dan cetak per PT | KP-T1 | siap |  |  |  |
 | 43 | KP-T7 | Pengingat dan penjadwal yang bisa diatur | KF-T1 | selesai | `0a91095` | [KP-T7](../reviews/2026-11-13/hasil/KP-T7.md) |  |
@@ -69,7 +69,7 @@ Papan kerja agen pelaksana. Aturan mengubahnya: `00_ATURAN_EKSEKUSI.md` §5. Uru
 | 62 | PK-33 | Hijaukan penjaga atomisitas | PK-19, PK-20 | menunggu |  |  |  |
 | 63 | PK-34 | Replica set satu anggota, transaksi di jalur uang, pustaka database | gelombang 3 tervalidasi (PK-18 … PK-25; dengan sendirinya PK-05, PK-06) | tahan |  |  | Titik henti H2 |
 | 64 | PK-35 | Uang sebagai bilangan bulat; validator; penomoran jurnal | PK-34 | tahan |  |  | Titik henti H2, H3 |
-| 65 | PK-36 | Akun kontrol tertutup dari jurnal manual | PK-10 | siap |  |  |  |
+| 65 | PK-36 | Akun kontrol tertutup dari jurnal manual | PK-10 | selesai | `16b50fe` | [PK-36](../reviews/2026-11-13/hasil/PK-36.md) |  |
 | 66 | PK-37 | Tanggal buku WIB dan kunci periode untuk dokumen | PK-11 | siap |  |  |  |
 | 67 | PK-38 | Satu batas wewenang; izin bayar terpisah; ganti termin | KF-T6, PR-T2 | siap |  |  |  |
 | 68 | PK-39 | Anggaran | PK-18 | menunggu |  |  |  |

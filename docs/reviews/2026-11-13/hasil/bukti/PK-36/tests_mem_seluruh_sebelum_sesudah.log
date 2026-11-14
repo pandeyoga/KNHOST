@@ -1,0 +1,5 @@
+# backend/tests_mem seluruhnya — HEAD c1b2888
+545 passed, 2 skipped, 3 xfailed, 11 warnings in 122.38s (0:02:02)
+
+# sesudah PK-36 (worktree)
+568 passed, 2 skipped, 3 xfailed, 11 warnings in 150.58s (0:02:30)

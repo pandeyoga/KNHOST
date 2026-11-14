@@ -1,0 +1,99 @@
+# Penjaga statik — sebelum (HEAD 0a91095 / salinan git archive) vs sesudah (KP-T2)
+## hitung_penjaga.sh sebelum
+verify_auth_coverage: [FAIL] 28 pelanggaran :
+verify_ui_standard: [FAIL] 23 pelanggaran :
+verify_approval_queues: 
+audit_i18n_id:   ✗ 111 temuan di 64 berkas.
+audit_create_modal: [FAIL] 6 pelanggaran :
+verify_page_tabs: [FAIL] 1 pelanggaran :
+verify_to_list_bound: [FAIL] 6 pelanggaran :
+verify_list_export: [PASS] 0 pelanggaran.
+verify_error_notice: [PASS] 0 pelanggaran.
+verify_custom_modals: [PASS] 0 pelanggaran.
+verify_knselect_contract: verify_knselect_contract: 0 temuan
+verify_entity_label:   ✗ 2 pelanggaran:
+verify_access_catalog_nav: verify_access_catalog_nav: 0 temuan
+verify_money_idempotency: [PASS] 0 pelanggaran.
+verify_codebase_map: [PASS] 0 pelanggaran.
+verify_scope_guard: 
+## hitung_penjaga.sh sesudah
+verify_auth_coverage: [FAIL] 28 pelanggaran :
+verify_ui_standard: [FAIL] 23 pelanggaran :
+verify_approval_queues: 
+audit_i18n_id:   ✗ 111 temuan di 64 berkas.
+audit_create_modal: [FAIL] 6 pelanggaran :
+verify_page_tabs: [FAIL] 1 pelanggaran :
+verify_to_list_bound: [FAIL] 6 pelanggaran :
+verify_list_export: [PASS] 0 pelanggaran.
+verify_error_notice: [PASS] 0 pelanggaran.
+verify_custom_modals: [PASS] 0 pelanggaran.
+verify_knselect_contract: verify_knselect_contract: 0 temuan
+verify_entity_label:   ✗ 2 pelanggaran:
+verify_access_catalog_nav: verify_access_catalog_nav: 0 temuan
+verify_money_idempotency: [PASS] 0 pelanggaran.
+verify_codebase_map: [PASS] 0 pelanggaran.
+verify_scope_guard: 
+## verify_ui_standard rincian sebelum
+  font_lt12      sekarang   6944 di  764 berkas · baseline   6937 · turun di 6 berkas
+  hp_font_lt14   sekarang     15 di    3 berkas · baseline     15
+  hex            sekarang  16820 di  823 berkas · baseline  16810 · turun di 8 berkas
+  btn_custom     sekarang    783 di  349 berkas · baseline    784 · turun di 1 berkas
+  btn_force      sekarang    580 di  164 berkas · baseline    577 · turun di 1 berkas
+  hp_touch       sekarang     13 di    4 berkas · baseline     13
+  list_no_excel  sekarang     12 di   11 berkas · baseline     12
+  hex berbeda    sekarang 704 · baseline 703
+  kontrak Unduh  37 tombol diperiksa · 0 masalah
+## verify_ui_standard rincian sesudah
+  font_lt12      sekarang   6932 di  763 berkas · baseline   6937 · turun di 8 berkas
+  hp_font_lt14   sekarang     15 di    3 berkas · baseline     15
+  hex            sekarang  16783 di  822 berkas · baseline  16810 · turun di 10 berkas
+  btn_custom     sekarang    781 di  347 berkas · baseline    784 · turun di 3 berkas
+  btn_force      sekarang    577 di  163 berkas · baseline    577 · turun di 2 berkas
+  hp_touch       sekarang     13 di    4 berkas · baseline     13
+  list_no_excel  sekarang     12 di   11 berkas · baseline     12
+  hex berbeda    sekarang 704 · baseline 703
+  kontrak Unduh  37 tombol diperiksa · 0 masalah
+## verify_role_gate_ui sebelum/sesudah
+[PASS] 33 cek lolos, 0 pelanggaran.
+[PASS] 33 cek lolos, 0 pelanggaran.
+## audit_config_wiring --strict (salinan berjalur $W) sebelum/sesudah
+
+✅ INV-CFG: setiap setting terdeklarasi punya pembaca kode DAN jalur ubah yang nyata; tidak ada editor ganda.
+✅ INV-CFG: setiap setting terdeklarasi punya pembaca kode DAN jalur ubah yang nyata; tidak ada editor ganda.
+acw exit 0
+## penjaga statik lain sebelum
+verify_modal_dismiss: rc=0 [PASS] 0 pelanggaran.
+verify_blocking_dialogs: rc=0 [PASS] 0 pelanggaran.
+verify_escape_layers: rc=0 [PASS] 0 pelanggaran.
+verify_role_label: rc=0   [PASS] 1225 berkas layar diperiksa · 0 pelanggaran
+verify_permission_checked: rc=0 [PASS] 0 pelanggaran.
+verify_derived_fields: rc=0 [PASS] 0 pelanggaran.
+ux_audit: rc=0 
+check_nav_map: rc=0 ✓ NAV MAP: PASS
+verify_view_aliases: rc=0 [PASS] 0 pelanggaran.
+verify_desk_targets: rc=0 verify_desk_targets: 33 target diperiksa, 0 temuan
+verify_detail_modal: rc=0 [PASS] 0 pelanggaran.
+verify_picker_portal: rc=0 [PASS] 0 pelanggaran.
+verify_atomic_claim: rc=0   ✗ BELUM DITINJAU = 95 > baseline 0. Endpoint multi-koleksi BARU wajib memakai atomic_claim.claim()/CAS dan dicatat di REVIEWED: client_d
+verify_status_history: rc=0 [PASS] 0 pelanggaran.
+verify_notification_audience: rc=0 
+verify_ref_unlink: rc=0   ✗ services/ar_receipt_service.py:504 — `db.ar_receipts.delete_one()` menghapus dokumen ber-`refs` ('ar_receipts') di `_rollback_unfini
+verify_line_scope: rc=0   ✗ services/sales_order_helpers.py: tidak menyebut `line_scope` — transfer dari pemenuhan SO (stamp_doc)
+## penjaga statik lain sesudah
+verify_modal_dismiss: rc=0 [PASS] 0 pelanggaran.
+verify_blocking_dialogs: rc=0 [PASS] 0 pelanggaran.
+verify_escape_layers: rc=0 [PASS] 0 pelanggaran.
+verify_role_label: rc=0   [PASS] 1227 berkas layar diperiksa · 0 pelanggaran
+verify_permission_checked: rc=0 [PASS] 0 pelanggaran.
+verify_derived_fields: rc=0 [PASS] 0 pelanggaran.
+ux_audit: rc=0 
+check_nav_map: rc=0 ✓ NAV MAP: PASS
+verify_view_aliases: rc=0 [PASS] 0 pelanggaran.
+verify_desk_targets: rc=0 verify_desk_targets: 33 target diperiksa, 0 temuan
+verify_detail_modal: rc=0 [PASS] 0 pelanggaran.
+verify_picker_portal: rc=0 [PASS] 0 pelanggaran.
+verify_atomic_claim: rc=0   ✗ BELUM DITINJAU = 95 > baseline 0. Endpoint multi-koleksi BARU wajib memakai atomic_claim.claim()/CAS dan dicatat di REVIEWED: client_d
+verify_status_history: rc=0 [PASS] 0 pelanggaran.
+verify_notification_audience: rc=0 
+verify_ref_unlink: rc=0   ✗ services/ar_receipt_service.py:504 — `db.ar_receipts.delete_one()` menghapus dokumen ber-`refs` ('ar_receipts') di `_rollback_unfini
+verify_line_scope: rc=0   ✗ services/sales_order_helpers.py: tidak menyebut `line_scope` — transfer dari pemenuhan SO (stamp_doc)

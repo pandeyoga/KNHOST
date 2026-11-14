@@ -1,0 +1,6 @@
+('/api/access/modules', 'Permission ditolak: permission.view')
+('/api/access/role-reality', 'Permission ditolak: user.view')
+('/api/access/roles', 'Permission ditolak: permission.view')
+('/api/access/roles/{rid}', 'Permission ditolak: permission.view')
+('/api/admin/integrations', 'Permission ditolak: hr.manage_settings')
+('/api/ai/facts/status', 'Permission ditolak: ai.manage')

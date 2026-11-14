@@ -1,0 +1,109 @@
+# Jest — KP-T2 (folder salinan lokal; radix/cmdk tidak termuat = kendala lingkungan)
+
+## Suite baru kpt2LengkapiPt di src LAMA (HEAD 0a91095) — komponen belum ada
+  ● Test suite failed to run
+    Cannot find module '../settings/entities/EntityCompletionSteps' from 'src/features/__tests__/kpt2LengkapiPt.test.js'
+Test Suites: 1 failed, 1 total
+Tests:       0 total
+
+## Suite baru di src LAMA + hanya EntityCompletionSteps.jsx & entityApi.js baru disalin (layar lama)
+  ✓ Lengkapi PT: 16 langkah bernomor, ringkasan, petunjuk hanya untuk yang belum siap (91 ms)
+  ✓ Lengkapi: mengganti PT aktif lebih dulu lalu membuka layar (dengan preset tab bila ada) (97 ms)
+  ✓ Ulangi penyiapan: POST retry, kesiapan baru dikirim ke pemanggil; kosong & memuat dibedakan (70 ms)
+  ✕ Wizard: simpan → langkah 5 Lengkapi PT (tidak menutup); Lengkapi Gudang → PT baru aktif + Master Gudang; Selesai (107 ms)
+  ✕ Panel Kesiapan PT: judul baru, pilihan awal = PT aktif, daftar dari komponen yang sama (28 ms)
+  ✕ Dialog arsip: daftar centang 'Sebelum mengarsipkan' = checks server; jumlah, contoh, rupiah; tombol mati tanpa paksa (23 ms)
+    Expected substring: "Lengkapi PT"
+    Received string:    "Ringkasan sebelum disimpanJenisPTNama legalPT Baru JayaNama singkatBARUKota—Status pajakPKP (memungut PPN)NPWP01.234.567.8-901.000Mata uang pembukuanMengikuti pengaturan grupTahun bukuMengikuti pengaturan grupPT induk (konsolidasi)TidakPersen kepemilikan100 %Kode dokumenBARUContoh nomorBARU/SO-00001Setelah disimpanBadan usaha langsung siap dipakai: bagan akun tersedia, penomoran aktif, dan lapisan konfigurasinya dibuat. Layar berikutnya menampilkan daftar kesiapan — pengguna, gudang, rekening, harga jual, saldo awal, dan kop surat — supaya Anda tahu apa lagi yang perlu dilengkapi."
+    Expected: "Kesiapan PT"
+    Received: "Kesiapan Badan Usaha"
+Test Suites: 1 failed, 1 total
+Tests:       3 failed, 3 passed, 6 total
+
+## Suite baru + kpt1ProfilPt + phase4R6 (tiruan pemilih lokal) di src BARU
+PASS src/features/__tests__/kpt1ProfilPt.test.js
+PASS src/features/__tests__/kpt2LengkapiPt.test.js
+PASS src/features/__tests__/phase4R6.test.js
+Test Suites: 3 passed, 3 total
+Tests:       20 passed, 20 total
+
+## Seluruh suite (src/features src/config src/hooks src/components)
+HEAD:
+Test Suites: 35 failed, 72 passed, 107 total
+Tests:       514 passed, 514 total
+KP-T2:
+Test Suites: 35 failed, 73 passed, 108 total
+Tests:       520 passed, 520 total
+Suite gagal dimuat (sama di HEAD dan KP-T2; semuanya @radix-ui/cmdk):
+FAIL src/components/__tests__/knSelect.test.js
+FAIL src/components/__tests__/knSelect.test.js
+FAIL src/features/__tests__/audit2G2.test.js
+FAIL src/features/__tests__/audit2G2.test.js
+FAIL src/features/__tests__/auditUi2G5b.test.js
+FAIL src/features/__tests__/auditUi2G5b.test.js
+FAIL src/features/__tests__/decisionsD1.test.js
+FAIL src/features/__tests__/decisionsD1.test.js
+FAIL src/features/__tests__/decisionsD3.test.js
+FAIL src/features/__tests__/decisionsD3.test.js
+FAIL src/features/__tests__/f10DispatchPaymentGate.test.js
+FAIL src/features/__tests__/f10DispatchPaymentGate.test.js
+FAIL src/features/__tests__/f11LayarOperatorView.test.js
+FAIL src/features/__tests__/f11LayarOperatorView.test.js
+FAIL src/features/__tests__/fe06PriceFocus.test.js
+FAIL src/features/__tests__/fe06PriceFocus.test.js
+FAIL src/features/__tests__/fe07ReturnErrors.test.js
+FAIL src/features/__tests__/fe07ReturnErrors.test.js
+FAIL src/features/__tests__/fix1Cakupan.test.js
+FAIL src/features/__tests__/fix1Cakupan.test.js
+FAIL src/features/__tests__/fix3bForms.test.js
+FAIL src/features/__tests__/fix3bForms.test.js
+FAIL src/features/__tests__/mkl02RecapPaging.test.js
+FAIL src/features/__tests__/mkl02RecapPaging.test.js
+FAIL src/features/__tests__/mobileShell.test.js
+FAIL src/features/__tests__/mobileShell.test.js
+FAIL src/features/__tests__/permissionGates.test.js
+FAIL src/features/__tests__/permissionGates.test.js
+FAIL src/features/__tests__/phase3P3.test.js
+FAIL src/features/__tests__/phase3P3.test.js
+FAIL src/features/__tests__/phase3P4Finance.test.js
+FAIL src/features/__tests__/phase3P4Finance.test.js
+FAIL src/features/__tests__/phase3P4Popups.test.js
+FAIL src/features/__tests__/phase3P4Popups.test.js
+FAIL src/features/__tests__/phase3P5.test.js
+FAIL src/features/__tests__/phase3P5.test.js
+FAIL src/features/__tests__/phase3P6Kpi.test.js
+FAIL src/features/__tests__/phase3P6Kpi.test.js
+FAIL src/features/__tests__/phase3P6Rnd.test.js
+FAIL src/features/__tests__/phase3P6Rnd.test.js
+FAIL src/features/__tests__/phase3P8Activation.test.js
+FAIL src/features/__tests__/phase3P8Activation.test.js
+FAIL src/features/__tests__/phase3Settings.test.js
+FAIL src/features/__tests__/phase3Settings.test.js
+FAIL src/features/__tests__/phase4R1.test.js
+FAIL src/features/__tests__/phase4R1.test.js
+FAIL src/features/__tests__/phase4R2.test.js
+FAIL src/features/__tests__/phase4R2.test.js
+FAIL src/features/__tests__/phase4R6.test.js
+FAIL src/features/__tests__/phase4R6.test.js
+FAIL src/features/__tests__/prepBInitialRegistration.test.js
+FAIL src/features/__tests__/prepBInitialRegistration.test.js
+FAIL src/features/__tests__/roleGateSweep.test.js
+FAIL src/features/__tests__/roleGateSweep.test.js
+FAIL src/features/__tests__/roleGateSweep2.test.js
+FAIL src/features/__tests__/roleGateSweep2.test.js
+FAIL src/features/__tests__/uat24F4.test.js
+FAIL src/features/__tests__/uat24F4.test.js
+FAIL src/features/__tests__/uatV3MobileSales.test.js
+FAIL src/features/__tests__/uatV3MobileSales.test.js
+FAIL src/features/__tests__/uatV3ReturnsOps.test.js
+FAIL src/features/__tests__/uatV3ReturnsOps.test.js
+FAIL src/features/__tests__/uatV3S2Cbd.test.js
+FAIL src/features/__tests__/uatV3S2Cbd.test.js
+FAIL src/features/__tests__/uatV3SpecialOrder.test.js
+FAIL src/features/__tests__/uatV3SpecialOrder.test.js
+FAIL src/features/__tests__/uatV3UiGaps.test.js
+FAIL src/features/__tests__/uatV3UiGaps.test.js
+FAIL src/features/wms/transfer/__tests__/TransferDetailModal.test.js
+FAIL src/features/wms/transfer/__tests__/TransferDetailModal.test.js
+
+## ESLint berkas layar yang berubah: bersih (exit 0)

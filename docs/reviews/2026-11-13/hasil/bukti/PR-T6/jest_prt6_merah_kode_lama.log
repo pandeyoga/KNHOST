@@ -1,0 +1,301 @@
+FAIL src/features/__tests__/prt6LayarPeran.test.js
+  ✕ U18 — peran baru: Peran dasar dan Salin hak akses dari… dua kontrol; menyalin tidak mengganti peran dasar (79 ms)
+  ✕ ganti peran dasar peran kustom: konfirmasi berisi sebelum & sesudah; simpan mengirim base_role (76 ms)
+  ✕ hapus mati dengan petunjuk akun aktif & nonaktif; judul duplikat menyebut peran dasar (33 ms)
+  ✕ U19 — mode baca (tanpa permission.update): judul 'Lihat Hak Akses', isian mati, tanpa simpan/hapus/pindah; tab Riwayat (34 ms)
+  ✕ riwayat kosong; ringkasan galat → 'Coba lagi' (22 ms)
+  ✕ lintas PT dimatikan → dialog Tinjau penugasan PT berisi akun dan tombol Buka Akun & Akses (92 ms)
+  ✕ ringkasan: batas persetujuan dan kalimat halaman (3 ms)
+  ✕ 'Menu & tab yang tampil': id grup sidebar/hub tidak tampil sebagai centang (2 ms)
+  ✕ menu peran bawaan bertambah dari nav.add server (tidak diwariskan ke peran kustom) (2 ms)
+  ✕ formulir akun: tanpa peran awal ('Pilih peran…', wajib); kalimat lintas PT dari server; label peran dasar (10 ms)
+  ✕ formulir akun: melepas tautan karyawan meminta konfirmasi 'Lepas tautan ke {nama}?' (2 ms)
+  ✕ galat layar peran & akun lewat penerjemah pusat; label jejak audit peran (1 ms)
+  ✕ tab Peran & Hak Akses dan Cek Peran hanya bagi pemegang permission.view; Akun & Akses bagi user.view (18 ms)
+  ✕ peran berubah di tengah sesi → ke halaman awal peran baru + pemberitahuan (3 ms)
+
+  ● U18 — peran baru: Peran dasar dan Salin hak akses dari… dua kontrol; menyalin tidak mengganti peran dasar
+
+    expect(received).not.toBeNull()
+
+    Received: null
+
+      121 |   api.createAccessRole.mockResolvedValue({ id: "cr_baru", label: "Baru" });
+      122 |   await mount(<RoleEditorDrawer role={null} roles={ROLES} modules={MODULES} labels={{}} onClose={() => {}} onSaved={() => {}} />);
+    > 123 |   expect(q("role-editor-base-select")).not.toBeNull();
+          |                                            ^
+      124 |   expect(q("role-editor-copy-from")).not.toBeNull();
+      125 |   await pick(q("role-editor-base-select"), "sales");
+      126 |   await pick(q("role-editor-copy-from"), "finance");
+
+      at Object.<anonymous> (src/features/__tests__/prt6LayarPeran.test.js:123:44)
+
+  ● ganti peran dasar peran kustom: konfirmasi berisi sebelum & sesudah; simpan mengirim base_role
+
+    TypeError: 'set value' called on an object that is not a valid instance of HTMLSelectElement.
+
+      77 | async function pick(el, value) {
+      78 |   await act(async () => {
+    > 79 |     Object.getOwnPropertyDescriptor(HTMLSelectElement.prototype, "value").set.call(el, value);
+         |                                                                               ^
+      80 |     el.dispatchEvent(new Event("change", { bubbles: true }));
+      81 |   });
+      82 |   await flush();
+
+      at call (../fe/node_modules/jsdom/lib/jsdom/living/generated/HTMLSelectElement.js:640:15)
+      at src/features/__tests__/prt6LayarPeran.test.js:79:79
+      at Object.<anonymous>.process.env.NODE_ENV.exports.act (../fe/node_modules/react/cjs/react.development.js:1081:22)
+      at pick (src/features/__tests__/prt6LayarPeran.test.js:78:12)
+      at Object.<anonymous> (src/features/__tests__/prt6LayarPeran.test.js:141:9)
+
+  ● hapus mati dengan petunjuk akun aktif & nonaktif; judul duplikat menyebut peran dasar
+
+    TypeError: Cannot read properties of null (reading 'textContent')
+
+      156 |   await mount(<RoleEditorDrawer role={K} roles={ROLES} modules={MODULES} labels={{}} onClose={() => {}} onSaved={() => {}} />);
+      157 |   expect(q("role-editor-delete").disabled).toBe(true);
+    > 158 |   expect(q("role-editor-delete-hint").textContent).toBe("Masih dipakai 3 akun (1 nonaktif) — pindahkan akunnya dulu.");
+          |                                      ^
+      159 |   roots.forEach((r) => act(() => r.unmount())); roots = []; document.body.innerHTML = "";
+      160 |   await mount(<RoleEditorDrawer role={null} template={K} roles={ROLES} modules={MODULES} labels={{}} onClose={() => {}} onSaved={() => {}} />);
+      161 |   expect(q("role-editor-title").textContent).toBe("Duplikat Peran · K Uji (peran dasar: Finance)");
+
+      at Object.<anonymous> (src/features/__tests__/prt6LayarPeran.test.js:158:38)
+
+  ● U19 — mode baca (tanpa permission.update): judul 'Lihat Hak Akses', isian mati, tanpa simpan/hapus/pindah; tab Riwayat
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: "Lihat Hak Akses · K Uji"
+    Received: "Hak Akses · K Uji"
+
+      166 |     action_label: "Hak akses diubah", added: [], removed: ["Kwitansi: Batalkan (void)"], other: [], users: 2 }]);
+      167 |   await mount(<RoleEditorDrawer role={K} roles={ROLES} modules={MODULES} labels={{}} canManage={false} onClose={() => {}} onSaved={() => {}} />);
+    > 168 |   expect(q("role-editor-title").textContent).toBe("Lihat Hak Akses · K Uji");
+          |                                              ^
+      169 |   expect(q("role-editor-save")).toBeNull();
+      170 |   expect(q("role-editor-delete")).toBeNull();
+      171 |   expect(q("role-editor-label").disabled).toBe(true);
+
+      at Object.<anonymous> (src/features/__tests__/prt6LayarPeran.test.js:168:46)
+
+  ● riwayat kosong; ringkasan galat → 'Coba lagi'
+
+    expect(received).not.toBeNull()
+
+    Received: null
+
+      183 |   api.previewAccessRole.mockRejectedValue(new Error("x"));
+      184 |   await mount(<RoleEditorDrawer role={K} roles={ROLES} modules={MODULES} labels={{}} onClose={() => {}} onSaved={() => {}} />);
+    > 185 |   expect(q("role-summary-loading")).not.toBeNull();
+          |                                         ^
+      186 |   await waitPreview();
+      187 |   expect(q("role-summary-error").textContent).toContain("Ringkasan tidak bisa dimuat.");
+      188 |   api.previewAccessRole.mockResolvedValue({ summary: { ...SUMMARY_FIN, modules: [] }, nav_added: [], turn_alerts: [] });
+
+      at Object.<anonymous> (src/features/__tests__/prt6LayarPeran.test.js:185:41)
+
+  ● lintas PT dimatikan → dialog Tinjau penugasan PT berisi akun dan tombol Buka Akun & Akses
+
+    TypeError: Cannot read properties of null (reading 'textContent')
+
+      203 |   await click(q("role-editor-save"));
+      204 |   await click(q("role-editor-confirm-save"));
+    > 205 |   expect(q("role-editor-review").textContent).toContain("Rina — KSC, Kanda");
+          |                                 ^
+      206 |   expect(q("role-editor-review-confirm").textContent).toBe("Buka Akun & Akses");
+      207 |   await click(q("role-editor-review-confirm"));
+      208 |   expect(onSaved).toHaveBeenCalled();
+
+      at Object.<anonymous> (src/features/__tests__/prt6LayarPeran.test.js:205:33)
+
+  ● ringkasan: batas persetujuan dan kalimat halaman
+
+    expect(received).toEqual(expected) // deep equality
+
+    - Expected  - 4
+    + Received  + 1
+
+    - Array [
+    -   "Pesanan Pembelian — Persetujuan 1, sampai Rp 5.000.000",
+    -   "Tagihan — Pimpinan, tanpa batas",
+    - ]
+    + Array []
+
+      213 |   expect(approvalLines([{ label: "Pesanan Pembelian", level: "Persetujuan 1", max_amount: 5000000 },
+      214 |     { label: "Tagihan", level: "Pimpinan", max_amount: null }]))
+    > 215 |     .toEqual(["Pesanan Pembelian — Persetujuan 1, sampai Rp 5.000.000", "Tagihan — Pimpinan, tanpa batas"]);
+          |      ^
+      216 |   expect(approvalLines({ follows_rank_of: "Manajer" })).toEqual(["Mengikuti tingkat Manajer; diatur di Aturan Persetujuan."]);
+      217 |   expect(pageLine({ label: "SO", can: ["Lihat", "Buat"], cannot: [] })).toBe("SO: bisa Lihat, Buat.");
+      218 | });
+
+      at Object.<anonymous> (src/features/__tests__/prt6LayarPeran.test.js:215:6)
+      at TestScheduler.scheduleTests (../fe/node_modules/@jest/core/build/TestScheduler.js:333:13)
+      at runJest (../fe/node_modules/@jest/core/build/runJest.js:404:19)
+      at _run10000 (../fe/node_modules/@jest/core/build/cli/index.js:320:7)
+      at runCLI (../fe/node_modules/@jest/core/build/cli/index.js:173:3)
+
+  ● 'Menu & tab yang tampil': id grup sidebar/hub tidak tampil sebagai centang
+
+    expect(received).not.toContain(expected) // indexOf
+
+    Expected value: not "settings-hub"
+    Received array:     ["price-corrections", "settings-hub", "penjualan", "gudang"]
+
+      221 |   const menus = navTree({ id: "x", nav: ["settings-hub", "penjualan", "gudang", "price-corrections"] });
+      222 |   const ids = menus.flatMap((m) => m.tabs.map((t) => t.id));
+    > 223 |   expect(ids).not.toContain("settings-hub");
+          |                   ^
+      224 |   expect(ids).not.toContain("penjualan");
+      225 |   expect(ids).not.toContain("gudang");
+      226 |   expect(ids).toContain("price-corrections");
+
+      at Object.<anonymous> (src/features/__tests__/prt6LayarPeran.test.js:223:19)
+      at TestScheduler.scheduleTests (../fe/node_modules/@jest/core/build/TestScheduler.js:333:13)
+      at runJest (../fe/node_modules/@jest/core/build/runJest.js:404:19)
+      at _run10000 (../fe/node_modules/@jest/core/build/cli/index.js:320:7)
+      at runCLI (../fe/node_modules/@jest/core/build/cli/index.js:173:3)
+
+  ● menu peran bawaan bertambah dari nav.add server (tidak diwariskan ke peran kustom)
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: true
+    Received: false
+
+      231 |   registerDynamicRoles([{ id: "finance", label: "Finance", custom: false, home_view: "finance-desk", nav: { add: ["hrd", "hr-people"], remove: [] } },
+      232 |     { id: "cr_fin", label: "Fin", custom: true, base_role: "finance", nav: { add: [], remove: [] } }]);
+    > 233 |   expect(roleCanSee(["admin", "manager"], "finance", "hr-people")).toBe(true);
+          |                                                                    ^
+      234 |   expect(roleCanSee(["admin", "manager"], "cr_fin", "hr-people")).toBe(false);
+      235 |   registerDynamicRoles([{ id: "finance", label: "Finance", custom: false, home_view: "finance-desk", nav: { add: [], remove: [] } }]);
+      236 |   expect(roleCanSee(["admin", "manager"], "finance", "hr-people")).toBe(false);
+
+      at Object.<anonymous> (src/features/__tests__/prt6LayarPeran.test.js:233:68)
+      at TestScheduler.scheduleTests (../fe/node_modules/@jest/core/build/TestScheduler.js:333:13)
+      at runJest (../fe/node_modules/@jest/core/build/runJest.js:404:19)
+      at _run10000 (../fe/node_modules/@jest/core/build/cli/index.js:320:7)
+      at runCLI (../fe/node_modules/@jest/core/build/cli/index.js:173:3)
+
+  ● formulir akun: tanpa peran awal ('Pilih peran…', wajib); kalimat lintas PT dari server; label peran dasar
+
+    TypeError: Cannot read properties of undefined (reading 'includes')
+
+      47 |
+      48 |   const set = (patch) => setForm((f) => ({ ...f, ...patch }));
+    > 49 |   const isCross = CROSS_ROLES.includes(form.role);
+         |                               ^
+      50 |   // PR-T1 — pilihan peran hanya yang boleh dikelola pelaku (null = semua). Peran akun yang sedang diubah tetap
+      51 |   // tampil supaya isian tidak kosong.
+      52 |   const [allowedRoles, setAllowedRoles] = useState(null);
+
+      at AccountFormDrawer (src/features/settings/entities/AccountFormDrawer.jsx:49:31)
+      at Object.react-stack-bottom-frame (../fe/node_modules/react-dom/cjs/react-dom-client.development.js:22428:20)
+      at renderWithHooks (../fe/node_modules/react-dom/cjs/react-dom-client.development.js:5757:22)
+      at updateFunctionComponent (../fe/node_modules/react-dom/cjs/react-dom-client.development.js:8018:19)
+      at beginWork (../fe/node_modules/react-dom/cjs/react-dom-client.development.js:9683:18)
+      at runWithFiberInDEV (../fe/node_modules/react-dom/cjs/react-dom-client.development.js:543:16)
+      at performUnitOfWork (../fe/node_modules/react-dom/cjs/react-dom-client.development.js:15052:22)
+      at workLoopSync (../fe/node_modules/react-dom/cjs/react-dom-client.development.js:14870:41)
+      at renderRootSync (../fe/node_modules/react-dom/cjs/react-dom-client.development.js:14850:11)
+      at performWorkOnRoot (../fe/node_modules/react-dom/cjs/react-dom-client.development.js:14384:44)
+      at performWorkOnRootViaSchedulerTask (../fe/node_modules/react-dom/cjs/react-dom-client.development.js:15931:7)
+      at flushActQueue (../fe/node_modules/react/cjs/react.development.js:862:34)
+      at ../fe/node_modules/react/cjs/react.development.js:1114:21
+
+  ● formulir akun: melepas tautan karyawan meminta konfirmasi 'Lepas tautan ke {nama}?'
+
+    TypeError: Cannot read properties of undefined (reading 'includes')
+
+      47 |
+      48 |   const set = (patch) => setForm((f) => ({ ...f, ...patch }));
+    > 49 |   const isCross = CROSS_ROLES.includes(form.role);
+         |                               ^
+      50 |   // PR-T1 — pilihan peran hanya yang boleh dikelola pelaku (null = semua). Peran akun yang sedang diubah tetap
+      51 |   // tampil supaya isian tidak kosong.
+      52 |   const [allowedRoles, setAllowedRoles] = useState(null);
+
+      at AccountFormDrawer (src/features/settings/entities/AccountFormDrawer.jsx:49:31)
+      at Object.react-stack-bottom-frame (../fe/node_modules/react-dom/cjs/react-dom-client.development.js:22428:20)
+      at renderWithHooks (../fe/node_modules/react-dom/cjs/react-dom-client.development.js:5757:22)
+      at updateFunctionComponent (../fe/node_modules/react-dom/cjs/react-dom-client.development.js:8018:19)
+      at beginWork (../fe/node_modules/react-dom/cjs/react-dom-client.development.js:9683:18)
+      at runWithFiberInDEV (../fe/node_modules/react-dom/cjs/react-dom-client.development.js:543:16)
+      at performUnitOfWork (../fe/node_modules/react-dom/cjs/react-dom-client.development.js:15052:22)
+      at workLoopSync (../fe/node_modules/react-dom/cjs/react-dom-client.development.js:14870:41)
+      at renderRootSync (../fe/node_modules/react-dom/cjs/react-dom-client.development.js:14850:11)
+      at performWorkOnRoot (../fe/node_modules/react-dom/cjs/react-dom-client.development.js:14384:44)
+      at performWorkOnRootViaSchedulerTask (../fe/node_modules/react-dom/cjs/react-dom-client.development.js:15931:7)
+      at flushActQueue (../fe/node_modules/react/cjs/react.development.js:862:34)
+      at ../fe/node_modules/react/cjs/react.development.js:1114:21
+
+  ● galat layar peran & akun lewat penerjemah pusat; label jejak audit peran
+
+    expect(received).not.toMatch(expected)
+
+    Expected pattern: not /permission\.view|Permission/
+    Received string:      "Permission ditolak: permission.view"
+
+      280 | test("galat layar peran & akun lewat penerjemah pusat; label jejak audit peran", () => {
+      281 |   const e = { response: { status: 403, data: { detail: "Permission ditolak: permission.view" } } };
+    > 282 |   expect(api.errText(e, "x")).not.toMatch(/permission\.view|Permission/);
+          |                                   ^
+      283 |   const blk = { response: { status: 409, data: { detail: { message: "Tidak bisa diarsip", blockers: ["Ada stok"] } } } };
+      284 |   expect(api.errText(blk, "x")).toBe("Tidak bisa diarsip · Ada stok");
+      285 |   expect(auditActionInfo("custom_role_created").label).toBe("Peran dibuat");
+
+      at Object.<anonymous> (src/features/__tests__/prt6LayarPeran.test.js:282:35)
+      at TestScheduler.scheduleTests (../fe/node_modules/@jest/core/build/TestScheduler.js:333:13)
+      at runJest (../fe/node_modules/@jest/core/build/runJest.js:404:19)
+      at _run10000 (../fe/node_modules/@jest/core/build/cli/index.js:320:7)
+      at runCLI (../fe/node_modules/@jest/core/build/cli/index.js:173:3)
+
+  ● tab Peran & Hak Akses dan Cek Peran hanya bagi pemegang permission.view; Akun & Akses bagi user.view
+
+    expect(received).toEqual(expected) // deep equality
+
+    - Expected  - 0
+    + Received  + 3
+
+      Array [
+        "entities",
+    +   "accounts",
+    +   "roles",
+    +   "role-reality",
+        "readiness",
+      ]
+
+      292 |   const tabs = () => [...document.body.querySelectorAll('[data-testid^="entities-access-tab-"]')].map((n) => n.getAttribute("data-testid").replace("entities-access-tab-", ""));
+      293 |   await mount(<EntitiesAccessView currentUser={{ role: "cr_x", permissions: { entity: ["view"] } }} initialTab="roles" />);
+    > 294 |   expect(tabs()).toEqual(["entities", "readiness"]);
+          |                  ^
+      295 |   expect(q("tab-isi-roles")).toBeNull();
+      296 |   expect(q("tab-isi-entities")).not.toBeNull();   // tab awal yang tidak boleh dibuka → tab pertama yang boleh
+      297 |   roots.forEach((r) => act(() => r.unmount())); roots = []; document.body.innerHTML = "";
+
+      at Object.<anonymous> (src/features/__tests__/prt6LayarPeran.test.js:294:18)
+
+  ● peran berubah di tengah sesi → ke halaman awal peran baru + pemberitahuan
+
+    expect(jest.fn()).toHaveBeenCalledWith(...expected)
+
+    Expected: "operations"
+
+    Number of calls: 0
+
+      315 |   expect(onView).not.toHaveBeenCalled();
+      316 |   await act(async () => { root.render(<SessionProbe user={{ id: "u1", role: "warehouse", role_label: "Gudang" }} onView={onView} />); });
+    > 317 |   expect(onView).toHaveBeenCalledWith("operations");
+          |                  ^
+      318 |   expect(mockToast).toHaveBeenCalledWith({ title: "Peran Anda berubah menjadi Gudang." });
+      319 | });
+      320 |
+
+      at Object.<anonymous> (src/features/__tests__/prt6LayarPeran.test.js:317:18)
+
+Test Suites: 1 failed, 1 total
+Tests:       14 failed, 14 total
+Snapshots:   0 total
+Time:        2.452 s
+Ran all test suites matching /src\/features\/__tests__\/prt6LayarPeran.test.js/i.

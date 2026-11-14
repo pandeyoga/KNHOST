@@ -1,0 +1,78 @@
+# KP-T2 — uji penerimaan di KODE LAMA: berkas uji akhir dijalankan dengan routers/entities.py + 3 layanan PT dari HEAD 0a91095 (git show HEAD:<berkas>), lalu dikembalikan
+FAILED tests_mem/test_KPT2_kesiapan_arsip.py::test_KPT2_U1_enam_belas_butir_berurutan
+FAILED tests_mem/test_KPT2_kesiapan_arsip.py::test_KPT2_U2_gudang_ke_master_gudang
+FAILED tests_mem/test_KPT2_kesiapan_arsip.py::test_KPT2_U3_kas_terpisah_dari_bank
+FAILED tests_mem/test_KPT2_kesiapan_arsip.py::test_KPT2_U4_rekening_grup_tidak_dihitung
+FAILED tests_mem/test_KPT2_kesiapan_arsip.py::test_KPT2_U5_pemetaan_wajib_belum_beres
+FAILED tests_mem/test_KPT2_kesiapan_arsip.py::test_KPT2_U6_periode_hari_ini_tertutup
+FAILED tests_mem/test_KPT2_kesiapan_arsip.py::test_KPT2_U7_termin_bawaan_tidak_ada
+FAILED tests_mem/test_KPT2_kesiapan_arsip.py::test_KPT2_U8_pengguna_keuangan_dari_izin
+FAILED tests_mem/test_KPT2_kesiapan_arsip.py::test_KPT2_U9_penanda_tangan - A...
+FAILED tests_mem/test_KPT2_kesiapan_arsip.py::test_KPT2_U10_bagan_akun_gagal_pt_tidak_tersimpan
+FAILED tests_mem/test_KPT2_kesiapan_arsip.py::test_KPT2_U11_ulangi_penyiapan
+FAILED tests_mem/test_KPT2_kesiapan_arsip.py::test_KPT2_U12_ulangi_dua_kali_aman
+FAILED tests_mem/test_KPT2_kesiapan_arsip.py::test_KPT2_U12b_ulangi_penyiapan_ikut_izin
+FAILED tests_mem/test_KPT2_kesiapan_arsip.py::test_KPT2_U18b_pt_baru_langsung_bisa_dipilih
+FAILED tests_mem/test_KPT2_kesiapan_arsip.py::test_KPT2_U13_pesanan_batal_bukan_piutang
+FAILED tests_mem/test_KPT2_kesiapan_arsip.py::test_KPT2_U14_hutang_pemasok - ...
+FAILED tests_mem/test_KPT2_kesiapan_arsip.py::test_KPT2_U15_saldo_kas_bank - ...
+FAILED tests_mem/test_KPT2_kesiapan_arsip.py::test_KPT2_U16_uang_muka_dan_karyawan_menghalangi
+FAILED tests_mem/test_KPT2_kesiapan_arsip.py::test_KPT2_U17_paksa_arsip_dengan_alasan
+19 failed in 1.71s
+
+## Sebab per uji (baris E pertama yang bermakna)
+___________________ test_KPT2_U1_enam_belas_butir_berurutan ____________________
+E       AssertionError: ['users', 'warehouses', 'bank_accounts', 'prices', 'opening_balance', 'branding', ...]
+E       assert 8 == 16
+_____________________ test_KPT2_U2_gudang_ke_master_gudang _____________________
+E       AssertionError: assert 'admin' == 'md-warehouses'
+_____________________ test_KPT2_U3_kas_terpisah_dari_bank ______________________
+E       AssertionError: butir 'cash_account' tidak ada: ['users', 'warehouses', 'bank_accounts', 'prices', 'opening_balance', 'branding', 'tax', 'fiscal_year']
+E       assert []
+__________________ test_KPT2_U4_rekening_grup_tidak_dihitung ___________________
+E       AssertionError: butir 'bank_account' tidak ada: ['users', 'warehouses', 'bank_accounts', 'prices', 'opening_balance', 'branding', 'tax', 'fiscal_year']
+E       assert []
+___________________ test_KPT2_U5_pemetaan_wajib_belum_beres ____________________
+E       AssertionError: butir 'gl_mappings' tidak ada: ['users', 'warehouses', 'bank_accounts', 'prices', 'opening_balance', 'branding', 'tax', 'fiscal_year']
+E       assert []
+____________________ test_KPT2_U6_periode_hari_ini_tertutup ____________________
+E       AssertionError: butir 'period' tidak ada: ['users', 'warehouses', 'bank_accounts', 'prices', 'opening_balance', 'branding', 'tax', 'fiscal_year']
+E       assert []
+_____________________ test_KPT2_U7_termin_bawaan_tidak_ada _____________________
+E       AssertionError: butir 'payment_term' tidak ada: ['users', 'warehouses', 'bank_accounts', 'prices', 'opening_balance', 'branding', 'tax', 'fiscal_year']
+E       assert []
+___________________ test_KPT2_U8_pengguna_keuangan_dari_izin ___________________
+E       AssertionError: butir 'finance_user' tidak ada: ['users', 'warehouses', 'bank_accounts', 'prices', 'opening_balance', 'branding', 'tax', 'fiscal_year']
+E       assert []
+_________________________ test_KPT2_U9_penanda_tangan __________________________
+E       AssertionError: butir 'signers' tidak ada: ['users', 'warehouses', 'bank_accounts', 'prices', 'opening_balance', 'branding', 'tax', 'fiscal_year']
+E       assert []
+______________ test_KPT2_U10_bagan_akun_gagal_pt_tidak_tersimpan _______________
+E       assert 4 == 3
+________________________ test_KPT2_U11_ulangi_penyiapan ________________________
+E       AssertionError: None
+E       assert None is True
+______________________ test_KPT2_U12_ulangi_dua_kali_aman ______________________
+E       AssertionError: ('{"detail":"Not Found"}', '{"detail":"Not Found"}')
+E       assert (404, 404) == (200, 200)
+__________________ test_KPT2_U12b_ulangi_penyiapan_ikut_izin ___________________
+E       AssertionError: {"detail": "Not Found"}
+E       assert 404 == 403
+_________________ test_KPT2_U18b_pt_baru_langsung_bisa_dipilih _________________
+E       AssertionError: {"detail":"Badan usaha “ent_e0efad402c1c” tidak ada (mungkin sudah dihapus). Pilih badan usaha lain di pemilih entitas."}
+E       assert 403 == 200
+__________________ test_KPT2_U13_pesanan_batal_bukan_piutang ___________________
+E       AssertionError: [{'key': 'piutang', 'label': 'Piutang pelanggan belum lunas', 'amount': 1000000.0}]
+E       assert [{'key': 'piu...': 1000000.0}] == []
+_________________________ test_KPT2_U14_hutang_pemasok _________________________
+E       AssertionError: [{'key': 'piutang', 'label': 'Piutang pelanggan belum lunas', 'amount': 1000000.0}]
+E       assert (0 == 1)
+_________________________ test_KPT2_U15_saldo_kas_bank _________________________
+E       AssertionError: [{'key': 'piutang', 'label': 'Piutang pelanggan belum lunas', 'amount': 1000000.0}]
+E       assert (0 == 1)
+_______________ test_KPT2_U16_uang_muka_dan_karyawan_menghalangi _______________
+E       AssertionError: []
+E       assert (0 == 1)
+___________________ test_KPT2_U17_paksa_arsip_dengan_alasan ____________________
+E       AssertionError: {"detail":"Not Found"}
+E       assert (404 == 409)

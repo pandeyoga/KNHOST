@@ -1,0 +1,9 @@
+PASS src/features/__tests__/prt6LayarPeran.test.js
+PASS src/features/__tests__/prt4SifatPeran.test.js
+PASS src/config/__tests__/serverAccessReach.test.js
+PASS src/features/__tests__/prt5EditorPeran.test.js
+PASS src/config/__tests__/navAccess.test.js
+PASS src/features/__tests__/roleCrossEntity.test.js
+PASS src/utils/__tests__/g0SharedApi.test.js
+Test Suites: 7 passed, 7 total
+Tests:       70 passed, 70 total

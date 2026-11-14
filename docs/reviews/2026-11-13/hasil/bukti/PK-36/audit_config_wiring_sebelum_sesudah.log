@@ -1,0 +1,53 @@
+# audit_config_wiring.py --strict (salinan berjalur), HEAD c1b2888 dan PK-36 dijalankan BERURUTAN pada keadaan database yang sama
+# (bagian 'scope non-global' membaca system_settings database backend/.env; isinya berubah selama sesi karena lingkungan A dipakai integrator — hanya perbandingan berurutan yang sah)
+## HEAD
+================================================================================================
+AUDIT WIRING KONFIGURASI — apakah setiap setting benar-benar berfungsi?
+================================================================================================
+Total kunci terdeklarasi : 84
+  OK           76   wiring lengkap (dibaca kode + bisa diubah user)
+  NOT_USED      8   registry menyatakan tidak dipakai + alasan (SAH)
+  HIDDEN        0   dibaca kode TAPI TANPA UI (hanya via DB/API)
+  ORPHAN_UI     0   ADA UI TAPI TIDAK DIBACA KODE  <-- tombol palsu
+  DEAD          0   tidak dibaca & tidak ada UI
+
+Pusat Pengaturan (UI generik): TERSAMBUNG
+Editor konfigurasi di luar Pusat Pengaturan: TIDAK ADA (satu sumber kebenaran)
+
+Per scope:
+  global         total= 71  OK= 64 HIDDEN=  0 ORPHAN_UI=  0 DEAD=  0 NOT_USED=  7
+  lot            total=  8  OK=  7 HIDDEN=  0 ORPHAN_UI=  0 DEAD=  0 NOT_USED=  1
+  uom            total=  5  OK=  5 HIDDEN=  0 ORPHAN_UI=  0 DEAD=  0 NOT_USED=  0
+
+── NOT_USED (8) ────────────────────────────────────────────────────────────────────
+  [global] tax.efaktur_enabled                                  default=True  alasan: Penerbitan faktur pajak mengikuti status PKP di profil PT.
+  [global] sales.quotation_enabled                              default=False  alasan: Alur Penawaran (Quotation) BELUM ADA di sistem — tidak ada satu pun en
+  [global] approval.extra_levels.purchase_order                 default='<complex>'  alasan: Dipindah ke Aturan Persetujuan (Pengaturan › Persetujuan › Aturan Pers
+## PK-36
+================================================================================================
+AUDIT WIRING KONFIGURASI — apakah setiap setting benar-benar berfungsi?
+================================================================================================
+Total kunci terdeklarasi : 84
+  OK           76   wiring lengkap (dibaca kode + bisa diubah user)
+  NOT_USED      8   registry menyatakan tidak dipakai + alasan (SAH)
+  HIDDEN        0   dibaca kode TAPI TANPA UI (hanya via DB/API)
+  ORPHAN_UI     0   ADA UI TAPI TIDAK DIBACA KODE  <-- tombol palsu
+  DEAD          0   tidak dibaca & tidak ada UI
+
+Pusat Pengaturan (UI generik): TERSAMBUNG
+Editor konfigurasi di luar Pusat Pengaturan: TIDAK ADA (satu sumber kebenaran)
+
+Per scope:
+  global         total= 71  OK= 64 HIDDEN=  0 ORPHAN_UI=  0 DEAD=  0 NOT_USED=  7
+  lot            total=  8  OK=  7 HIDDEN=  0 ORPHAN_UI=  0 DEAD=  0 NOT_USED=  1
+  uom            total=  5  OK=  5 HIDDEN=  0 ORPHAN_UI=  0 DEAD=  0 NOT_USED=  0
+
+── NOT_USED (8) ────────────────────────────────────────────────────────────────────
+  [global] tax.efaktur_enabled                                  default=True  alasan: Penerbitan faktur pajak mengikuti status PKP di profil PT.
+  [global] sales.quotation_enabled                              default=False  alasan: Alur Penawaran (Quotation) BELUM ADA di sistem — tidak ada satu pun en
+  [global] approval.extra_levels.purchase_order                 default='<complex>'  alasan: Dipindah ke Aturan Persetujuan (Pengaturan › Persetujuan › Aturan Pers
+## diff HEAD vs PK-36:
+(tidak ada beda)
+
+## config_health.check_entry('gl.jurnal_manual_akun_kontrol')
+wiring_status OK; consumers_ok = services/gl_service.py:assert_no_control_accounts, services/gl_service.py:list_accounts
