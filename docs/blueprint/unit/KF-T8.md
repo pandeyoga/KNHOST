@@ -52,7 +52,7 @@ sama-sama muncul; keluarga `kontrol.<aksi>.*` cocok lewat literal nama aksinya).
 | Perintah | `python -m pytest backend/tests_mem/test_KFT8_putaran_pengaturan.py -n 0 -q` (± 1 menit) |
 | Di gate | Baris baru di `scripts/gate.sh`, kelompok yang tidak ikut `--quick`: `"config_roundtrip (INV-CFG-08, tiap kunci tulis→baca tiga jalur)|python -m pytest backend/tests_mem/test_KFT8_putaran_pengaturan.py -n 0 -q"`. Bila `mongomock_motor` tidak terpasang gate **merah** dengan pesan "pasang mongomock-motor (lihat 03_LINGKUNGAN_UJI §3)", bukan dilewati |
 | Bentuk | Satu kasus `pytest` per kunci (`parametrize` atas `config_registry.all_entries()`), bernama `test_KFT8_putaran[<kunci>]`; tiap kasus memulihkan kunci ke bawaan di akhir |
-| Pembangkit baru | `list`: tambah/buang satu butir sah (untuk `value_format="regex"` butir `"uji\\d+"`); `table` ber-`columns`: tambah satu baris berisi bawaan kolom; `table` peta: tambah pasangan `"UJI": 1`; `table` JSON: simpan ulang. Dengan ini hanya tabel JSON yang tetap simpan-ulang |
+| Pembangkit baru | `list`: tambah/buang satu butir sah (untuk `value_format="regex"` butir `"uji\\d+"`); `table` ber-`columns`: tambah satu baris berisi bawaan kolom; `table` peta: tambah pasangan `"UJI": 1`; `table` JSON: simpan ulang. Dengan ini hanya tabel JSON yang tetap simpan-ulang. Tabel `tarif_berjenjang`: tarif baris terakhir ± 1. Calon yang ditolak 400 oleh pemeriksa domain diganti calon berikutnya (buang butir/baris, ubah pasangan, contoh registry, bawaan) |
 
 Yang membuat gate merah, per kunci aktif:
 
@@ -116,16 +116,16 @@ Tidak ada. (Layar Kesehatan Pengaturan otomatis memakai `check_entry` yang lebih
 | U1 | B | — | Perintah uji putaran | Lulus; jumlah kasus = `len(config_registry.all_entries())`; tidak ada kasus dilewati |
 | U2 | B (bukti-merah) | `monkeypatch` `config_resolver._project` menjadi tanpa-kerja | Jalankan kasus `tax.ppn_mode` | Gagal dengan kode P1 menyebut "pembaca lama" |
 | U3 | B (bukti-merah) | `monkeypatch` `config_registry._bounded` mengembalikan nilai apa adanya | Kasus `ar.grace_days` | Gagal P4 |
-| U4 | B (bukti-merah) | `monkeypatch` `build_layers` membuang lapisan `entity` | Kasus `sales.allow_partial_shipment` | Gagal P2 |
+| U4 | B (bukti-merah) | `monkeypatch` `build_layers` membuang lapisan PT (`entity` dan `legacy_entity`) | Kasus `sales.allow_partial_shipment` | Gagal P2 |
 | U5 | B (bukti-merah) | `monkeypatch` `set_value` melewati pemeriksaan alasan | Kasus satu kunci berisiko tinggi | Gagal P5 |
 | U6 | statik | — | `python scripts/audit_config_wiring.py` | Baris "Total kunci terdeklarasi: N (registry R)", R = jumlah entri registry, N ≥ R; pelanggaran 0 |
-| U7 | statik | — | `python scripts/audit_config_wiring.py --self-test` | PASS dengan butir [1]–[9] |
+| U7 | statik | — | `python scripts/audit_config_wiring.py --self-test` | PASS dengan butir [1]–[10] (butir [7] PK-46 lama menjadi [10]; [7]–[9] baru) |
 | U8 | statik (bukti-merah) | Tambah sementara `E("uji.kunci_palsu", …, consumers=("services/config_service.py:compute_tax",))` di berkas uji | `--strict` | Keluar 1; `uji.kunci_palsu` berstatus `ORPHAN_UI` |
-| U9 | statik | — | `python scripts/guardrails/verify_config_fallback.py` | Keluar 0; 0 temuan; pengecualian = 1 butir |
+| U9 | statik | — | `python scripts/guardrails/verify_config_fallback.py` | Keluar 0; 0 temuan tersisa; pengecualian = 1 butir bukan pengaturan dari spesifikasi + butir bukan pengaturan lain dan garis dasar beralasan yang ditemukan saat penjaga lahir (di `a323bb0`: 10 bukan pengaturan, 125 garis dasar `sama_bawaan`/`hanya_bila_kosong`); butir basi = merah |
 | U10 | statik (bukti-merah historis) | `git worktree add <tmp> 3132cc4` | `verify_config_fallback.py --root <tmp>` | Keluar 1; temuan memuat sedikitnya `tax.ppn_rate`, `tax.dpp_nilai_lain`, `sales.allow_item_discount`, `inventory.intercompany_transfer_required`, `ar.denda_rate_pct_per_month`, `commission.discount_threshold`, `commission.discount_factor`, `sales.require_so_validation`, `allocation.lot_selection`, `approval.po_custom_direksi_min` |
 | U11 | statik | — | `verify_config_fallback.py --self-test` | PASS: suntikan `tax.get("ppn_rate", 0)` terdeteksi; pengecualian basi terdeteksi |
 | U12 | statik | — | `verify_config_fallback.py --entity` dan uji-dirinya | Keluar 0 dengan pengecualian beralasan saja; suntikan `value_of("inventory.default_uom")` terdeteksi |
-| U13 | statik | — | `bash scripts/gate.sh --quick` | Empat baris statik baru tampil (cadangan, cadangan uji-diri, PT diteruskan, kabel pengaturan uji-diri); tidak ada gate yang tadinya hijau menjadi merah |
+| U13 | statik | — | `bash scripts/gate.sh --quick` | Empat baris statik baru tampil (cadangan, cadangan uji-diri, PT diteruskan, PT diteruskan uji-diri); tidak ada gate yang tadinya hijau menjadi merah |
 | U14 | B | — | `config_health.report()` | `broken == []`; jumlah baris = jumlah entri registry |
 
 ## Langkah kerja
