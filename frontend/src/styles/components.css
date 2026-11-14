@@ -1135,3 +1135,6 @@ thead .col-sticky-end { background: #F7F7F9; z-index: 2; }
   }
   .kn-detail-close { top: calc(8px + env(safe-area-inset-top)) !important; right: 8px !important; }
 }
+/* Cek layar 14 Nov — sub-bagian form berlatar abu muda (sama dengan blok "Badan usaha tambahan"/"Lini produk" di form akun)
+   untuk kode baru tanpa hex di JSX. */
+.form-subsection { border: 1px solid #EFF0F2; background: #FAFBFC; border-radius: 6px; padding: 10px; }

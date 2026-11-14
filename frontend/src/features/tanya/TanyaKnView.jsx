@@ -27,6 +27,13 @@ const initialTab = () => {
   return typeof window !== "undefined" && window.matchMedia?.(MOBILE_Q).matches ? "chat" : "reports";
 };
 
+const FINANCE_PROMPTS = [
+  "Berapa laba rugi bulan ini dibanding bulan lalu?",
+  "Piutang mana yang sudah lewat jatuh tempo?",
+  "Berapa saldo kas dan bank hari ini?",
+  "Tagihan pemasok apa yang jatuh tempo minggu ini?",
+];
+
 export default function TanyaKnView({ selectedEntity, entities }) {
   const [status, setStatus] = useState(null);
   const [catalog, setCatalog] = useState(null);
@@ -97,7 +104,7 @@ export default function TanyaKnView({ selectedEntity, entities }) {
   }, [period]);
 
   const onPeriod = (p) => { setPeriod(p); if (active?.has_period) run(active, p); };
-  const askMode = status?.finance_enabled && mode === "keuangan" ? "keuangan" : "umum";
+  const askMode = status?.finance_enabled && status?.chat_enabled && mode === "keuangan" ? "keuangan" : "umum";
   const ask = (q) => { toMain(); setTplAnswer(null); setActive(null); chat.ask(q, docCtx, askMode); };
   const removeMine = async (id) => { await deleteMyTemplate(id).catch(() => null); loadMine(); toast({ title: "Template pribadi dihapus" }); };
   const onSchedule = (data) => setScheduleTarget({ template: data.template, params: data.params,
@@ -135,7 +142,9 @@ export default function TanyaKnView({ selectedEntity, entities }) {
     {view === "cost" && <TanyaBudgetCard budget={status?.budget} />}
   </>);
   const scrollKey = `${chat.thread.length}|${lastEntry?.pending}|${(lastEntry?.streamText || "").length >> 7}|${!!lastEntry?.answer}|${lastEntry?.error || ""}|${tplAnswer ? 1 : 0}|${tplBusy}`;
-  const prompts = catalog.templates.slice(0, 4).map((t) => ({ label: t.prompt || t.title, tpl: t }));
+  // Cek layar 14 Nov — mode Keuangan: saran pembuka berupa pertanyaan keuangan (bukan laporan umum gudang/penjualan).
+  const prompts = askMode === "keuangan" ? FINANCE_PROMPTS.map((label) => ({ label }))
+    : catalog.templates.slice(0, 4).map((t) => ({ label: t.prompt || t.title, tpl: t }));
   const pick = (p) => (status?.chat_enabled ? ask(p.label) : (toMain(), run(p.tpl)));
   const financeScope = { combined: selectedEntity === "all", label: entityFullById(entities || [], selectedEntity, "PT aktif") };
   const composer = { status, busy, entityLabel, onAsk: ask, context: docCtx, onClearContext: () => setDocCtx(null),

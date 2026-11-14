@@ -25,7 +25,9 @@ from services.ai_schedules import ctx_for  # noqa: E402
 
 HERE = Path(__file__).parent
 EMAIL = {"admin": "admin@kainnusantara.id", "sales": "sales@kainnusantara.id", "finance": "finance@kainnusantara.id",
-         "warehouse_admin": "warehouse@kainnusantara.id", "sales_admin": "salesadmin@kainnusantara.id", "md": "md@kainnusantara.id"}
+         "warehouse_admin": "warehouse@kainnusantara.id", "sales_admin": "salesadmin@kainnusantara.id", "md": "md@kainnusantara.id",
+         # AG-T2 — pertanyaan anggaran set keuangan memakai Manajer (Finance tidak memegang `budget.view`).
+         "manager": "manager@kainnusantara.id"}
 KEY_ARGS = ("metrics", "group_by", "record_type", "report", "time_grain", "compare", "kind")
 
 

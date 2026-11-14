@@ -4,17 +4,25 @@ import { AlertTriangle, ArrowUp, Building2, FileText, Loader2, X } from "lucide-
 const MODES = [["umum", "Umum"], ["keuangan", "Keuangan"]];
 
 /** AG-T2 — pilihan mode (hanya bila Asisten Keuangan menyala untuk akun ini) + banner PT mode Keuangan. */
-function TanyaModeBar({ mode, onMode, financeScope }) {
+function TanyaModeBar({ mode, onMode, financeScope, chatOn = true }) {
   const combined = financeScope?.combined;
+  // Cek layar 14 Nov — mode Keuangan hanya menjawab lewat chat AI: selama chat belum menyala pilihannya mati dengan
+  // alasan tertulis (bukan aktif lalu gagal saat dikirim).
   return (
     <div className="tanya-mode-bar" data-testid="tanya-mode-bar">
       <div className="tanya-mode" role="radiogroup" aria-label="Mode tanya" data-testid="tanya-mode">
         {MODES.map(([k, label]) => (
           <button key={k} type="button" role="radio" aria-checked={mode === k} data-testid={`tanya-mode-${k}`}
+            disabled={k === "keuangan" && !chatOn}
             className={`tanya-mode-opt btn-sm ${mode === k ? "active" : ""}`} onClick={() => onMode(k)}>{label}</button>
         ))}
       </div>
-      {mode === "keuangan" && (
+      {!chatOn && (
+        <span className="text-fs-12 text-kn-text-2" data-testid="tanya-finance-off-reason">
+          Mode Keuangan aktif setelah chat AI menyala.
+        </span>
+      )}
+      {mode === "keuangan" && chatOn && (
         <div className={`tanya-mode-scope ${combined ? "combined" : ""}`} data-testid="tanya-finance-scope">
           {combined ? <AlertTriangle className="h-3.5 w-3.5" aria-hidden="true" /> : <Building2 className="h-3.5 w-3.5" aria-hidden="true" />}
           <span>{combined ? "Semua PT — angka gabungan belum dieliminasi" : `Menjawab untuk: ${financeScope?.label || "PT aktif"}`}</span>
@@ -42,7 +50,7 @@ export function TanyaChatBox({ status, busy, statusText, onAsk, entityLabel, con
     onAsk(q.trim());
     setQ("");
   };
-  const finance = Boolean(status?.finance_enabled) && mode === "keuangan";
+  const finance = Boolean(status?.finance_enabled && status?.chat_enabled) && mode === "keuangan";
   const note = busy ? statusText || "Memproses…"
     : finance ? "Angka diperiksa terhadap data sebelum jawaban ditampilkan."
       : status?.chat_enabled ? `Jawaban memakai data ${entityLabel || "entitas aktif"} sesuai hak akses Anda.`
@@ -52,7 +60,9 @@ export function TanyaChatBox({ status, busy, statusText, onAsk, entityLabel, con
       : "Tanya apa saja tentang penjualan, stok, piutang…";
   return (
     <form className="tanya-composer" onSubmit={submit} data-testid="tanya-chat-form">
-      {status?.finance_enabled && onMode && <TanyaModeBar mode={mode} onMode={onMode} financeScope={financeScope} />}
+      {status?.finance_enabled && onMode && (
+        <TanyaModeBar mode={mode} onMode={onMode} financeScope={financeScope} chatOn={Boolean(status?.chat_enabled)} />
+      )}
       {context && (
         <div className="tanya-context-chip" data-testid="tanya-context-chip">
           <FileText className="h-3.5 w-3.5" />

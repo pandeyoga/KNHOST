@@ -422,12 +422,14 @@ export default function AccountFormDrawer({ user, entities = [], selectedEntity,
           </div>
 
           {editing && (
-            <div className="rounded-md border border-kn-divider p-2.5" data-testid="account-form-ai-finance">
+            // Cek layar 14 Nov — gaya blok sama dengan tetangganya (judul `kicker`, latar abu), tanpa hex baru.
+            <div className="form-subsection" data-testid="account-form-ai-finance">
+              <p className="kicker mb-1">Asisten keuangan (Tanya KN)</p>
               <label className="flex items-center gap-2">
                 <input type="checkbox" role="switch" className="h-4 w-4" data-testid="account-form-ai-finance-switch"
                        checked={aiFinance} disabled={!canConfigureAi}
                        onChange={(e) => setAiFinance(e.target.checked)} />
-                <span className="text-fs-13 font-semibold text-kn-text">Asisten Keuangan</span>
+                <span className="text-fs-13 font-semibold text-kn-text">Boleh bertanya soal keuangan</span>
                 <span className="text-fs-12 text-kn-text-2" data-testid="account-form-ai-finance-state">
                   {aiFinance ? "Menyala" : "Mati"}
                 </span>
