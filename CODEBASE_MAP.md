@@ -1,5 +1,5 @@
 <!-- DIHASILKAN OTOMATIS oleh scripts/gen_codebase_map.py — JANGAN EDIT TANGAN -->
-<!-- Dihasilkan dari commit: 07d55be pada 2026-11-14 -->
+<!-- Dihasilkan dari commit: e72134c pada 2026-11-14 -->
 # CODEBASE MAP — Kain Nusantara (dihasilkan otomatis)
 
 Peta ini dihitung dari kode oleh `scripts/gen_codebase_map.py`. Kalau angka di sini
@@ -14,7 +14,7 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 |---|---:|
 | Router (`backend/routers/*.py`) | 169 |
 | Endpoint (`@router.<method>`) | 1826 |
-| Service (`backend/services/*.py`) | 420 |
+| Service (`backend/services/*.py`) | 421 |
 | Koleksi MongoDB disentuh kode produksi | 205 |
 | Direktori fitur frontend (`src/features/*`) | 40 |
 
@@ -587,6 +587,7 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 | `registration_freeze.py` | 156 | PREP-B (K-OPN-03) — pembekuan gerakan roll selama pendaftaran awal gedung. |
 | `reminder_policy.py` | 334 | KP-T7 — pengingat terjadwal yang bisa diatur: PENERIMA dan AMBANG per PT. |
 | `repair_order_service.py` | 382 | UAT 24 Okt (P7) — dokumen Perbaikan (`repair_orders`, nomor RPR-…): roll jadi yang cacat / warnanya meleset |
+| `report_basis.py` | 268 | PK-41 (RP-01, RP-03, RP-05, RP-06, RP-11, RP-12; keputusan K-16) — dasar hitung laporan pendukung. |
 | `restock_service.py` | 288 | PS-21(a) — Repeat/Restock 1-klik dari Sales Order → Purchase Requisition. |
 | `restock_source_service.py` | 133 | P05 IMP-19 — sumber restock per ARTIKEL (product_templates) dan penegakan jalur PR/PO/MKO. |
 | `return_attachment_service.py` | 57 | Lampiran bukti retur — satu jalur untuk retur ke supplier & retur antar-PT (permintaan pemilik 23 Okt 2026). |
