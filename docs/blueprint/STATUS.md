@@ -35,7 +35,7 @@ Papan kerja agen pelaksana. Aturan mengubahnya: `00_ATURAN_EKSEKUSI.md` §5. Uru
 | 28 | PR-T4 | Sifat peran yang bisa diatur: cakupan data, beranda, penerima notifikasi | PR-T2 | selesai | `6d7dacf` · `39cdd4b` | [PR-T4](../reviews/2026-11-13/hasil/PR-T4.md) | H3: migrasi prt4:sifat-peran & prt4:izin-kpi-sales berjalan saat proses awal |
 | 29 | PR-T5 | Katalog izin dirapikan; modul akses dipecah | PR-T2 | siap |  |  |  |
 | 30 | PR-T6 | Layar Peran & Hak Akses dan Akun & Akses | PR-T4, PR-T5 | menunggu |  |  |  |
-| 31 | PR-T7 | Layar memakai izin, bukan nama peran | PR-T2 | siap |  |  |  |
+| 31 | PR-T7 | Layar memakai izin, bukan nama peran | PR-T2 | selesai | `2d164c9` | [PR-T7](../reviews/2026-11-13/hasil/PR-T7.md) |  |
 | 32 | PR-T8 | Penjaga matriks izin berjalan (peran × endpoint) | PR-T3 | siap |  |  |  |
 | 33 | KF-T2 | Kunci pengaturan mati, ganda, dan tersembunyi | KF-T1 | siap |  |  |  |
 | 34 | KF-T3 | Layar menampilkan nilai yang dipakai mesin; jadwal diaktifkan penjadwal | KF-T1 | siap |  |  |  |

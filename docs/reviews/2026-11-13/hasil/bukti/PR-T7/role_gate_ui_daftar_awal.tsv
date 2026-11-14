@@ -1,0 +1,96 @@
+App.js:310	includes(role)	.includes(user?.role)
+App.js:324	roleIs	roleIs(
+components/AskKnButton.jsx:20	includes(role)	.includes(JSON.parse(localStorage.getItem("kn_user") || "nul
+components/NotificationCenter.jsx:12	includes(role)	.includes(userRole)
+features/admin/po/POCompactPanel.jsx:33	roleSatisfies	roleSatisfies(
+features/admin/po/PODetailPanel.jsx:91	roleSatisfies	roleSatisfies(
+features/catalog/CatalogWorkspace.jsx:44	includes(role)	.includes(currentUser?.role)
+features/crm/CrmView.jsx:19	roleIs	roleIs(
+features/crm/Customer360Panel.jsx:36	roleIs	roleIs(
+features/crm/CustomerFormModal.jsx:47	roleIs	roleIs(
+features/crm/CustomerList.jsx:52	roleIs	roleIs(
+features/crm/IncentiveSchemeEditor.jsx:18	roleIs	roleIs(
+features/crm/SalesForceDashboard.jsx:16	roleIs	roleIs(
+features/design/DesignRequestDetailPanel.jsx:72	roleIs	roleIs(
+features/design/DesignRequestDetailPanel.jsx:74	roleIs	roleIs(
+features/design/DesignRequestDetailPanel.jsx:75	roleIs	roleIs(
+features/design/DesignRequestsView.jsx:132	roleIs	roleIs(
+features/design/DesignRequestsView.jsx:133	roleIs	roleIs(
+features/designer/DesignerKpiView.jsx:68	roleIs	roleIs(
+features/designer/DivisionsView.jsx:56	roleIs	roleIs(
+features/desks/RoleDesk.jsx:38	role === id	role === "admin"
+features/documents/DocumentActionsBar.jsx:45	includes(role)	.includes(currentUser?.role)
+features/documents/DocumentCenter.jsx:48	includes(role)	.includes(currentUser?.role)
+features/documents/DocumentCenter.jsx:49	includes(role)	.includes(currentUser?.role)
+features/finance/ClosingView.jsx:60	role === id	role === "admin"
+features/finance/amendments/AmendmentDetailPanel.jsx:125	role === id	role === "admin"
+features/finance/amendments/AmendmentTrailPanel.jsx:35	includes(role)	.includes(currentUser?.role)
+features/finance/cases/CasePlaybookWizard.jsx:358	role === id	approver_role === "admin"
+features/hr/AiIllustrationPanel.jsx:147	role === id	role === "admin"
+features/hr/AiIllustrationPanel.jsx:169	role === id	role === "designer"
+features/hr/AiIllustrationPanel.jsx:170	role === id	role === "designer"
+features/hr/MyDesignerKpiSection.jsx:25	roleIs	roleIs(
+features/hr/MyDesignerKpiSection.jsx:30	roleIs	roleIs(
+features/hr/MyDesignerKpiSection.jsx:31	roleIs	roleIs(
+features/hr/VisitsView.jsx:193	roleIs	roleIs(
+features/logistics/LogisticsView.jsx:41	roleIs	roleIs(
+features/marketing/Campaigns.jsx:33	includes(role)	.includes(currentUser?.role)
+features/marketing/PostDetailModal.jsx:29	roleIs	roleIs(
+features/marketing/TemplatePicker.jsx:16	includes(role)	.includes(currentUser?.role)
+features/mobile/MobileAppSwitch.jsx:48	roleIs	roleIs(
+features/mobile/MobileAppSwitch.jsx:50	roleIs	roleIs(
+features/mobile/MobileAppSwitch.jsx:52	roleIs	roleIs(
+features/mobile/MobileAppSwitch.jsx:53	roleIs	roleIs(
+features/mobile/MobileOpsApp.jsx:151	roleIs	roleIs(
+features/mobile/MobileOpsApp.jsx:198	includes(role)	.includes(user?.role)
+features/mobile/MobileOpsApp.jsx:206	role === id	role !== "md"
+features/mobile/MobileOpsApp.jsx:214	includes(role)	.includes(user?.role)
+features/mobile/MobileRoleSummary.jsx:21	roleIs	roleIs(
+features/mobile/MobileRoleSummary.jsx:22	roleIs	roleIs(
+features/orders/SoApprovalsPanel.jsx:33	roleIs	roleIs(
+features/pettycash/CashAdvanceDetail.jsx:47	role === id	role === "admin"
+features/pettycash/CashAdvanceDetail.jsx:47	roleIs	roleIs(
+features/production/ProductionParts.jsx:13	includes(role)	.includes(role)
+features/purchasing/LandedCostView.jsx:50	roleSatisfies	roleSatisfies(
+features/purchasing/PurchaseApprovalView.jsx:360	role === id	role !== "admin"
+features/purchasing/PurchaseApprovalView.jsx:84	roleSatisfies	roleSatisfies(
+features/purchasing/PurchaseApprovalView.jsx:86	role === id	role !== "admin"
+features/purchasing/PurchaseApprovalView.jsx:93	roleSatisfies	roleSatisfies(
+features/purchasing/VendorBillsView.jsx:76	roleSatisfies	roleSatisfies(
+features/rfid/RfidDevicesView.jsx:61	role === id	role === "admin"
+features/rfid/RfidGateMonitorView.jsx:180	role === id	role === "admin"
+features/rfid/RfidTagsView.jsx:144	role === id	role === "admin"
+features/rnd/RndDesignsView.jsx:75	roleIs	roleIs(
+features/rnd/RndReportsView.jsx:48	roleIs	roleIs(
+features/rnd/RndSamplesView.jsx:80	roleIs	roleIs(
+features/rnd/RndSamplesView.jsx:81	roleIs	roleIs(
+features/rnd/SampleDetailPanel.jsx:143	includes(role)	.includes(role)
+features/rnd/SampleDetailPanel.jsx:147	includes(role)	.includes(role)
+features/rnd/SampleDetailPanel.jsx:87	roleIs	roleIs(
+features/rnd/SampleDetailPanel.jsx:88	roleIs	roleIs(
+features/rnd/SampleDetailPanel.jsx:89	roleIs	roleIs(
+features/rnd/SampleDetailPanel.jsx:90	roleIs	roleIs(
+features/rnd/SampleDetailPanel.jsx:91	roleIs	roleIs(
+features/rnd/SampleDetailPanel.jsx:92	roleIs	roleIs(
+features/rnd/design/DesignDetailPage.jsx:48	roleIs	roleIs(
+features/rnd/design/FeedbackThread.jsx:49	role === id	role === "designer"
+features/sales/SalesPortal.jsx:319	role === id	role === "sales"
+features/sales/SpecialOrderPricingPanel.jsx:167	roleIs	roleIs(
+features/sales/SpecialOrderPricingPanel.jsx:178	roleIs	roleIs(
+features/sales/mobile/MobileMore.jsx:194	roleIs	roleIs(
+features/sales/mobile/MobileMore.jsx:62	includes(role)	.includes(role)
+features/sales/mobile/MobileOrders.jsx:42	roleIs	roleIs(
+features/sales/mobile/MobileSalesApp.jsx:36	roleIs	roleIs(
+features/sales/mobile/MobileSalesHome.jsx:81	roleIs	roleIs(
+features/samples/SampleOrdersView.jsx:71	roleIs	roleIs(
+features/settings/ReceivingOcrSettings.jsx:19	includes(role)	.includes(currentUser?.role)
+features/settings/config/PriceCorrectionsView.jsx:17	role === id	role === "admin"
+features/settings/config/SettingsHub.jsx:391	role === id	role === "admin"
+features/settings/entities/AccountFormDrawer.jsx:49	includes(role)	.includes(form.role)
+features/settings/entities/AccountLocationScope.jsx:46	roleIs	roleIs(
+features/wms/LocationPutawayView.jsx:47	roleIs	roleIs(
+features/wms/StockOpnameTab.jsx:32	roleIs	roleIs(
+features/wms/grn/GoodsReceiptsView.jsx:42	includes(role)	.includes(currentUser?.role)
+features/wms/grn/GoodsReceiptsView.jsx:88	includes(role)	.includes(currentUser?.role)
+features/wms/transfer/TransferReceiptPanel.jsx:30	roleIs	roleIs(
+features/wms/warehouses/WarehouseMasterView.jsx:63	roleIs	roleIs(

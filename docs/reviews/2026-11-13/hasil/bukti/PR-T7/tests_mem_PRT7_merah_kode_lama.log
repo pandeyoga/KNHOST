@@ -1,0 +1,15 @@
+E       AssertionError: login tanpa view_resources
+E       assert (False)
+E        +  where False = isinstance(None, dict)
+E        +    where None = <built-in method get of dict object at 0x7fb9044ed940>('view_resources')
+E        +      where <built-in method get of dict object at 0x7fb9044ed940> = {'token': 'C-LjfgZl0sGxBNxIFLRWIx6JEM4_FZ9dUBOpx2bjFfI', 'user': {'id': 'usr_uji_7cc3fb90b0', 'name': 'Uji cr_staf_pen...d': 'ent_ksc', 'allowed_entity_ids': ['ent_ksc'], 'active_entity_id': 'ent_ksc', 'can_switch_entity': False, ...}, ...}.get
+E       AssertionError: assert None == ''
+E        +  where None = <built-in method get of dict object at 0x7fb90426b100>('employee_id')
+E        +    where <built-in method get of dict object at 0x7fb90426b100> = {'id': 'usr_uji_0cc46c41cf', 'name': 'Uji sales 2', 'email': 'uji2.usr_uji_0cc46c41cf@uji.id', 'role': 'sales', ...}.get
+E       KeyError: 'caps'
+E       KeyError: 'caps'
+FAILED tests_mem/test_PRT7_layar_izin.py::test_PRT7_U3_login_membawa_konteks_izin_dan_daftar_peran
+FAILED tests_mem/test_PRT7_layar_izin.py::test_PRT7_U3b_employee_id_mengikuti_tautan_karyawan
+FAILED tests_mem/test_PRT7_layar_izin.py::test_PRT7_U4_bendera_pick_winner_dari_pemeriksa_server
+FAILED tests_mem/test_PRT7_layar_izin.py::test_PRT7_U4b_approve_spec_dan_uji_ulang
+4 failed, 1 warning in 2.48s

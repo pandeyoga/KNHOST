@@ -1,0 +1,26 @@
+  berkas bergerbang nama peran: 23 (garis dasar 23) · gerbang: 29 (garis dasar 29)
+    · components/NotificationCenter.jsx: 1 — KP-T4 — jenjang persetujuan per dokumen (bendera `can_decide` server): setujui dari lonceng (PO menurut peringkat, tagihan kampanye)
+    · features/admin/po/POCompactPanel.jsx: 1 — KP-T4 — jenjang persetujuan per dokumen (bendera `can_decide` server) — PO (#10)
+    · features/admin/po/PODetailPanel.jsx: 1 — KP-T4 — jenjang persetujuan per dokumen (bendera `can_decide` server) — PO (#10)
+    · features/crm/CustomerFormModal.jsx: 1 — PR-T4 — cakupan data: pemilik pelanggan otomatis = sales (`role_in` server)
+    · features/crm/CustomerList.jsx: 1 — PR-T4 — cakupan data: 'Semua' vs 'Milik Saya' + saringan sales (`role_in` server)
+    · features/finance/amendments/AmendmentDetailPanel.jsx: 1 — KP-T4 — jenjang persetujuan per dokumen (bendera `can_decide` server) — amandemen (`amendment.approver_role`, baris 7 KP-T4)
+    · features/hr/AiIllustrationPanel.jsx: 3 — Berkas yatim (tidak diimpor; `phase4R4.test.js`) — aturan servernya `design_gallery_service.py:620` masih nama peran (PR-T6)
+    · features/hr/VisitsView.jsx: 1 — PR-T4 — cakupan data: sales melihat kunjungan miliknya (`/hr/visits/mine`)
+    · features/logistics/LogisticsView.jsx: 1 — PR-T4 — cakupan data: pagar sopir (`role_in` server)
+    · features/marketing/Campaigns.jsx: 1 — KP-T4 — jenjang persetujuan per dokumen (bendera `can_decide` server) — tagihan kampanye (#16)
+    · features/pettycash/CashAdvanceDetail.jsx: 2 — KP-T4 — jenjang persetujuan per dokumen (bendera `can_decide` server) — tahap persetujuan kas kecil (#18)
+    · features/purchasing/LandedCostView.jsx: 1 — KP-T4 — jenjang persetujuan per dokumen (bendera `can_decide` server) — voucher biaya masuk (#11)
+    · features/purchasing/PurchaseApprovalView.jsx: 4 — KP-T4 — jenjang persetujuan per dokumen (bendera `can_decide` server) — PO (#10), termasuk aturan pembuat ≠ penyetuju
+    · features/purchasing/VendorBillsView.jsx: 1 — KP-T4 — jenjang persetujuan per dokumen (bendera `can_decide` server) — tagihan pemasok (#11)
+    · features/rfid/RfidDevicesView.jsx: 1 — Titik henti H7 (RFID) — alat khusus Admin perangkat RFID; ganti `rfid_device.configure` setelah pemilik melepas H7
+    · features/rfid/RfidGateMonitorView.jsx: 1 — Titik henti H7 (gerbang RFID) — operasi U300 khusus Admin
+    · features/rfid/RfidTagsView.jsx: 1 — Titik henti H7 (RFID) — antrean printer tag khusus Admin
+    · features/sales/SalesPortal.jsx: 1 — PR-T4 — kategori kerja `sales` (#19); sementara `roleIs(role, ["sales"])` = `role_in` server
+    · features/sales/mobile/MobileSalesHome.jsx: 1 — PR-T4 — cakupan data: papan 'PO custom pelanggan Anda' untuk sales (owner_scope server)
+    · features/settings/entities/AccountFormDrawer.jsx: 1 — PR-T6 — formulir akun (#25, CROSS_ROLES)
+    · features/settings/entities/AccountLocationScope.jsx: 1 — PR-T6 — formulir akun (teks bantuan cakupan lokasi peran akun; sifat cakupan dari PR-T4)
+    · features/wms/StockOpnameTab.jsx: 1 — Titik henti H7 (RFID) — metode Sapu RFID dikecualikan untuk Manajer (keputusan D-15)
+    · features/wms/warehouses/WarehouseMasterView.jsx: 1 — PR-T4 — cakupan data: lingkup master gudang (`routers/warehouses.py`)
+== INV-ROLE-02 — tombol & panggilan data di layar mengikuti izin, bukan nama peran ==
+[PASS] 47 cek lolos, 0 pelanggaran.

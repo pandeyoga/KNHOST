@@ -1,0 +1,12 @@
+== jest_full_lama.txt
+Test Suites: 35 failed, 63 passed, 98 total
+Tests:       442 passed, 442 total
+== jest_full_baru2.txt
+Test Suites: 35 failed, 64 passed, 99 total
+Tests:       465 passed, 465 total
+== jest_stub_lama.txt
+Test Suites: 2 failed, 96 passed, 98 total
+Tests:       691 passed, 691 total
+== jest_stub_baru2.txt
+Test Suites: 2 failed, 97 passed, 99 total
+Tests:       714 passed, 714 total

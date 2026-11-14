@@ -1,0 +1,65 @@
+=== verify_auth_coverage
+  ✗ handheld.py: `GET /registration/catalog` TIDAK menegakkan auth (require_permission/require_any_permission/require_role/current_user/entity_ctx) → dapat diakses TANPA login. Tambah enforcer atau daftarkan di PUBLIC_ALLOWLIST bila memang publik.
+  ✗ handheld.py: `POST /registration/{sid}/epc-pool` TIDAK menegakkan auth (require_permission/require_any_permission/require_role/current_user/entity_ctx) → dapat diakses TANPA login. Tambah enforcer atau daftarkan di PUBLIC_ALLOWLIST bila memang publik.
+  ✗ handheld.py: `POST /registration/{sid}/lines/mark-written` TIDAK menegakkan auth (require_permission/require_any_permission/require_role/current_user/entity_ctx) → dapat diakses TANPA login. Tambah enforcer atau daftarkan di PUBLIC_ALLOWLIST bila memang publik.
+  ✗ handheld.py: `POST /registration/{sid}/label-decode` TIDAK menegakkan auth (require_permission/require_any_permission/require_role/current_user/entity_ctx) → dapat diakses TANPA login. Tambah enforcer atau daftarkan di PUBLIC_ALLOWLIST bila memang publik.
+  ✗ handheld.py: `POST /registration/{sid}/racks/{rack_id}` TIDAK menegakkan auth (require_permission/require_any_permission/require_role/current_user/entity_ctx) → dapat diakses TANPA login. Tambah enforcer atau daftarkan di PUBLIC_ALLOWLIST bila memang publik.
+→ Perbaiki sesuai INVARIANT INV-AUTH-01 (detail: memory/INVARIANTS.md).
+rc=1
+=== verify_access_catalog_nav
+verify_access_catalog_nav: 0 temuan
+rc=0
+=== verify_money_idempotency
+== INV-MONEY-IDEM-01 — form uang lewat moneyRequest.js ber-Idempotency-Key ==
+[PASS] 17 cek lolos, 0 pelanggaran.
+rc=0
+=== verify_custom_modals
+  berkas berpola: 49 (baseline 49) · pola: 51 (baseline 51)
+== INV-UI-11 — pop-up buatan sendiri hanya boleh berkurang (pakai FormModal/DetailModal) ==
+[PASS] 98 cek lolos, 0 pelanggaran.
+rc=0
+=== verify_ui_standard
+  ✗ [hex] features/settings/ApprovalEffectiveTiers.jsx berkas BARU memakai pola usang (4×) — warna lewat token/kelas baku (text-kn-*, bg-kn-*, var(--kn-*)), bukan hex lepas.
+  ✗ [btn_custom] features/settings/ApprovalEffectiveTiers.jsx berkas BARU memakai pola usang (1×) — tombol pakai kelas baku primary/secondary/danger/ghost/icon-button (+ btn-sm/btn-touch).
+  ✗ [btn_force] features/settings/entities/RoleEditorDrawer.jsx NAIK 2 → 3 — jangan paksa ukuran tombol baku dengan !py/!h/!text — pakai pengubah resmi btn-sm / btn-touch.
+  ✗ [btn_force] features/purchasing/apPayment.jsx berkas BARU memakai pola usang (3×) — jangan paksa ukuran tombol baku dengan !py/!h/!text — pakai pengubah resmi btn-sm / btn-touch.
+  ✗ [hex] 2 warna hex BARU di aplikasi: #1F5FBF, #F5D9B0 — pakai token --kn-* / kelas kn-* (styles/tokens.css, tailwind `kn`).
+→ Perbaiki sesuai INVARIANT G-UI (Standar UI Gudang v1) (detail: memory/INVARIANTS.md).
+rc=1
+=== verify_error_notice
+  utang teknis (baseline aturan C): 6 modal lama belum punya bilah error sendiri — lihat MODAL_BASELINE.
+== INV-UI-03 — Kegagalan backend harus terlihat di layar (anti error senyap) ==
+[PASS] 283 cek lolos, 0 pelanggaran.
+rc=0
+=== verify_knselect_contract
+verify_knselect_contract: 0 temuan
+rc=0
+=== verify_role_label
+== INV-ROLE-01 — peran dari registry, wewenang dari izin ==
+  [PASS] 1209 berkas layar diperiksa · 0 pelanggaran
+rc=0
+=== verify_codebase_map
+== INV-DOC-01 — CODEBASE_MAP.md selaras kode (selisih ≤10%) ==
+[PASS] 5 cek lolos, 0 pelanggaran.
+rc=0
+=== audit_i18n_id
+  frontend/src/features/wms/transfer/TransferReceiptPanel.jsx
+     baris   97  “Simpan nanti (masuk antrean putaway)”
+                 putaway → Simpan ke Rak
+
+  ✗ 113 temuan di 66 berkas.
+
+rc=0
+=== verify_role_label --self-test
+  [PASS] kode nyata saat ini HIJAU
+
+  HIJAU — 0 pemeriksaan gagal.
+=== verify_role_gate_ui
+== INV-ROLE-02 — tombol & panggilan data di layar mengikuti izin, bukan nama peran ==
+[PASS] 47 cek lolos, 0 pelanggaran.
+rc=0
+=== verify_role_gate_ui --self-test
+  ✓ turun = hijau + dicatat
+  ✓ --update hanya menurunkan
+  SELF-TEST HIJAU (0 gagal)
+rc=0

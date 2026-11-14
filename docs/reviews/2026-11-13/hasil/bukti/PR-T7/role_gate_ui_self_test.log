@@ -1,0 +1,21 @@
+  ✓ 13 id peran terbaca dari backend/role_registry.py  · admin manager sales_admin finance sales warehouse designer driver md warehouse_admin sample_admin md_quality qc
+  ✓ ada berkas bersih untuk disalin
+  ✓ 2 sisipan tertangkap (roleIs + [..].includes(user.role))  · 2 terhitung di salinan AppViewRouter.jsx
+  ✓ salinan bersisipan MEMERAH sebagai berkas baru
+  ✓ 1 baris `// tata-letak:` lolos
+  ✓ penanda tanpa alasan tidak diakui
+  ✓ komentar tidak dihitung
+  ✓ role === "admin" terhitung
+  ✓ "sales" !== user.role terhitung
+  ✓ perbandingan peran DOKUMEN berakhiran role terhitung
+  ✓ id bukan peran tidak dihitung
+  ✓ can(...) tidak dihitung
+  ✓ X_ROLES.includes(userRole) terhitung
+  ✓ [..].includes(JSON.parse(…)?.role) terhitung
+  ✓ JSON.parse(…)?.role === "admin" terhitung
+  ✓ roles.includes(x) bukan peran tidak dihitung
+  ✓ naik terdeteksi
+  ✓ berkas baru terdeteksi
+  ✓ turun = hijau + dicatat
+  ✓ --update hanya menurunkan
+  SELF-TEST HIJAU (0 gagal)

@@ -1,0 +1,25 @@
+    ✓ konteks belum dimuat, peran bukan Admin → tidak (4 ms)
+    ✓ peran Admin → boleh; izin termuat → mengikuti izin (1 ms)
+    ✓ {production: [view, create]} → hanya Buat WO (2 ms)
+    ✓ peran kustom tanpa peran dasar dengan semua aksi Produksi → semua tombol (1 ms)
+    ✓ U7 peran kustom tanpa peran dasar + credit_override.approve → tab Persetujuan Kredit, tanpa Skema (9 ms)
+    ✓ U8 peran kustom berdasar Manajer dengan izin {customer: [view]} → kedua tab tidak ada (2 ms)
+    ✓ Manajer bawaan (izin bawaan) tetap melihat kedua tab (1 ms)
+    ✓ peran kustom dengan {ai: [view]} → tampil (1 ms)
+    ✓ Manajer tanpa izin ai → tidak tampil (1 ms)
+    ✓ Keep & Pending: tanpa order.verify/order.view → tidak memanggil dan tidak menggambar (21 ms)
+    ✓ Keep & Pending: dengan order.view → memanggil (23 ms)
+    ✓ Profil Saya: akun tanpa employee_id → tidak memanggil /hr/employees/me dan memberi petunjuk (6 ms)
+    ✓ Profil Saya: akun tertaut → memanggil /hr/employees/me (52 ms)
+    ✓ Pusat Persetujuan: hanya kategori yang izin lihatnya dipegang yang dipanggil; sisanya bukan 'belum lengkap' (1 ms)
+    ✓ Tanpa Acuan dengan semua aksi R&D + caps server → semua tombol kerja
+    ✓ berdasar MD dengan R&D 'Lihat saja' → tidak ada tombol (dulu Nilai/Putuskan/Batalkan tampil lewat peran dasar) (1 ms)
+    ✓ aksi per jenis uji: assess_<jenis> untuk SEMUA jenis sample (= _require_typed server)
+    ✓ boleh memilih pemenang = bendera server caps.pick_winner, bukan daftar peran di pengaturan
+    ✓ 13 peran bawaan → aplikasi yang sama dengan pemilihan lama (1 ms)
+    ✓ peran kustom: ikut halaman awal peran dasar; tanpa peran dasar → aplikasi umum (5 ms)
+    ✓ 13 peran bawaan termuat dari katalog (1 ms)
+    ✓ Manajer & Admin: tidak ada tombol yang hilang
+    ✓ tombol yang hilang hanya yang pasti ditolak server (izinnya tidak dipegang peran itu)
+Test Suites: 1 passed, 1 total
+Tests:       23 passed, 23 total

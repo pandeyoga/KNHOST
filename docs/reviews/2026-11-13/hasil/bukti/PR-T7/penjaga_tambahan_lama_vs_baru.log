@@ -1,0 +1,19 @@
+verify_view_aliases | lama: [PASS] 84 cek lolos, 0 pelanggaran. | baru: [PASS] 84 cek lolos, 0 pelanggaran.
+verify_scope_guard | lama:  | baru: 
+verify_escape_layers | lama: [PASS] 1214 cek lolos, 0 pelanggaran. | baru: [PASS] 1216 cek lolos, 0 pelanggaran.
+verify_page_tabs | lama: [FAIL] 1 pelanggaran (dari 13 cek): | baru: [FAIL] 1 pelanggaran (dari 13 cek):
+verify_blocking_dialogs | lama: [PASS] 1 cek lolos, 0 pelanggaran. | baru: [PASS] 1 cek lolos, 0 pelanggaran.
+verify_modal_dismiss | lama: [PASS] 10 cek lolos, 0 pelanggaran. | baru: [PASS] 10 cek lolos, 0 pelanggaran.
+verify_derived_fields | lama: [PASS] 3 cek lolos, 0 pelanggaran. | baru: [PASS] 3 cek lolos, 0 pelanggaran.
+verify_detail_modal | lama: [PASS] 28 cek lolos, 0 pelanggaran. | baru: [PASS] 28 cek lolos, 0 pelanggaran.
+verify_entity_label | lama:  | baru: 
+verify_picker_portal | lama: [PASS] 315 cek lolos, 0 pelanggaran. | baru: [PASS] 315 cek lolos, 0 pelanggaran.
+verify_desk_targets | lama: verify_desk_targets: 33 target diperiksa, 0 temuan | baru: verify_desk_targets: 33 target diperiksa, 0 temuan
+verify_home_kpi | lama:  | baru: 
+verify_approval_queues | lama:  | baru: 
+verify_notification_audience | lama:  | baru: 
+verify_scope_guard | lama rc=0 | baru: G-SCOPE-01 — endpoint /{id} WMS-RFID wajib berpenjaga cakupan (20 router) HIJAU: semua endpoint ber-parameter path memanggil penjaga (pengecualian beralasan: 7)  rc=0
+verify_entity_label | lama rc=1 | baru:   → Perbaiki dengan `entityShort/entityFull/entityShortById/entityFullById/entityOptions` dari `utils/entityLabel.js`.   rc=1
+verify_home_kpi | lama rc=1 | baru:     ^^^^^^^^^^^^ ModuleNotFoundError: No module named 'httpx'  rc=1
+verify_approval_queues | lama rc=0 | baru:   Gate error (dianggap SKIP): No module named 'motor'  rc=0
+verify_notification_audience | lama rc=0 | baru:   ✓ nol peristiwa ber-pemilik yang disiarkan ke "all"; nol `recipient_role` + `recipient_user` bersamaan.   (9 peristiwa ber-pemilik dijaga di kode DAN data)  rc=0

@@ -1,0 +1,242 @@
+[visual-edits] @emergentbase/visual-edits not installed — visual editing disabled.
+[visual-edits] @emergentbase/visual-edits not installed — visual editing disabled.
+FAIL src/features/__tests__/prt7TombolIzin.test.js
+  U5 — canCurrent tanpa konteks izin
+    ✕ konteks belum dimuat, peran bukan Admin → tidak (5 ms)
+    ✕ peran Admin → boleh; izin termuat → mengikuti izin (10 ms)
+  U6 — prodPerms dari izin
+    ✕ {production: [view, create]} → hanya Buat WO (1 ms)
+    ✕ peran kustom tanpa peran dasar dengan semua aksi Produksi → semua tombol (3 ms)
+  U7/U8 — tab CRM dari izin
+    ✕ U7 peran kustom tanpa peran dasar + credit_override.approve → tab Persetujuan Kredit, tanpa Skema (11 ms)
+    ✕ U8 peran kustom berdasar Manajer dengan izin {customer: [view]} → kedua tab tidak ada (3 ms)
+    ✓ Manajer bawaan (izin bawaan) tetap melihat kedua tab (2 ms)
+  U9 — tombol Tanya KN dari izin ai.view
+    ✕ peran kustom dengan {ai: [view]} → tampil (2 ms)
+    ✕ Manajer tanpa izin ai → tidak tampil (2 ms)
+  Tabel 2 — panggilan kerangka aplikasi dijaga izin
+    ✕ Keep & Pending: tanpa order.verify/order.view → tidak memanggil dan tidak menggambar (38 ms)
+    ✓ Keep & Pending: dengan order.view → memanggil (9 ms)
+    ✕ Profil Saya: akun tanpa employee_id → tidak memanggil /hr/employees/me dan memberi petunjuk (46 ms)
+    ✓ Profil Saya: akun tertaut → memanggil /hr/employees/me (30 ms)
+    ✕ Pusat Persetujuan: hanya kategori yang izin lihatnya dipegang yang dipanggil; sisanya bukan 'belum lengkap' (9 ms)
+
+  ● U5 — canCurrent tanpa konteks izin › konteks belum dimuat, peran bukan Admin → tidak
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: false
+    Received: true
+
+      84 |   test("konteks belum dimuat, peran bukan Admin → tidak", () => {
+      85 |     setAccessContext(null);
+    > 86 |     expect(canCurrent("accounting", "view")).toBe(false);
+         |                                              ^
+      87 |     setAccessContext({ role: "manager" });   // akun tanpa izin termuat
+      88 |     expect(canCurrent("accounting", "view")).toBe(false);
+      89 |   });
+
+
+  ● U5 — canCurrent tanpa konteks izin › peran Admin → boleh; izin termuat → mengikuti izin
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: false
+    Received: true
+
+      93 |     setAccessContext({ role: "cr_tagih", permissions: { ar: ["view"] } });
+      94 |     expect(canCurrent("ar", "view")).toBe(true);
+    > 95 |     expect(canCurrent("accounting", "view")).toBe(false);
+         |                                              ^
+      96 |   });
+      97 | });
+      98 |
+
+
+  ● U6 — prodPerms dari izin › {production: [view, create]} → hanya Buat WO
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: true
+    Received: false
+
+      100 |   test("{production: [view, create]} → hanya Buat WO", () => {
+      101 |     const p = prodPerms({ production: ["view", "create"] });
+    > 102 |     expect(p.createWo).toBe(true);
+          |                        ^
+      103 |     expect([p.manageBom, p.release, p.complete, p.cancel]).toEqual([false, false, false, false]);
+      104 |   });
+      105 |   test("peran kustom tanpa peran dasar dengan semua aksi Produksi → semua tombol", () => {
+
+
+  ● U6 — prodPerms dari izin › peran kustom tanpa peran dasar dengan semua aksi Produksi → semua tombol
+
+    expect(received).toEqual(expected) // deep equality
+
+    - Expected  - 5
+    + Received  + 5
+
+      Array [
+    -   true,
+    -   true,
+    -   true,
+    -   true,
+    -   true,
+    +   false,
+    +   false,
+    +   false,
+    +   false,
+    +   false,
+      ]
+
+      105 |   test("peran kustom tanpa peran dasar dengan semua aksi Produksi → semua tombol", () => {
+      106 |     const p = prodPerms({ production: ["view", "manage_bom", "create", "release", "complete", "cancel"] });
+    > 107 |     expect(Object.values(p)).toEqual([true, true, true, true, true]);
+          |                              ^
+      108 |   });
+      109 | });
+      110 |
+
+
+  ● U7/U8 — tab CRM dari izin › U7 peran kustom tanpa peran dasar + credit_override.approve → tab Persetujuan Kredit, tanpa Skema
+
+    expect(received).toEqual(expected) // deep equality
+
+    - Expected  - 1
+    + Received  + 1
+
+      Object {
+    -   "kredit": true,
+    +   "kredit": false,
+        "skema": false,
+      }
+
+      117 |     registerDynamicRoles([{ id: "cr_tagih", custom: true, base_role: "", label: "Staf Penagihan Uji" }]);
+      118 |     expect(tabs({ role: "cr_tagih", permissions: { customer: ["view"], credit_override: ["approve"] } }))
+    > 119 |       .toEqual({ kredit: true, skema: false });
+          |        ^
+      120 |   });
+      121 |   test("U8 peran kustom berdasar Manajer dengan izin {customer: [view]} → kedua tab tidak ada", () => {
+      122 |     registerDynamicRoles([{ id: "cr_mgr", custom: true, base_role: "manager", label: "Manajer Kosong" }]);
+
+
+  ● U7/U8 — tab CRM dari izin › U8 peran kustom berdasar Manajer dengan izin {customer: [view]} → kedua tab tidak ada
+
+    expect(received).toEqual(expected) // deep equality
+
+    - Expected  - 2
+    + Received  + 2
+
+      Object {
+    -   "kredit": false,
+    -   "skema": false,
+    +   "kredit": true,
+    +   "skema": true,
+      }
+
+      121 |   test("U8 peran kustom berdasar Manajer dengan izin {customer: [view]} → kedua tab tidak ada", () => {
+      122 |     registerDynamicRoles([{ id: "cr_mgr", custom: true, base_role: "manager", label: "Manajer Kosong" }]);
+    > 123 |     expect(tabs({ role: "cr_mgr", permissions: { customer: ["view"] } })).toEqual({ kredit: false, skema: false });
+          |                                                                           ^
+      124 |   });
+      125 |   test("Manajer bawaan (izin bawaan) tetap melihat kedua tab", () => {
+      126 |     expect(tabs({ role: "manager", permissions: { customer: ["view"], credit_override: ["approve"], sales_force: ["view", "update"] } }))
+
+
+  ● U9 — tombol Tanya KN dari izin ai.view › peran kustom dengan {ai: [view]} → tampil
+
+    expect(received).toContain(expected) // indexOf
+
+    Expected substring: "data-testid=\"ask-kn-customer\""
+    Received string:    ""
+
+      134 |   test("peran kustom dengan {ai: [view]} → tampil", () => {
+      135 |     masuk({ role: "cr_ai", permissions: { ai: ["view"] } });
+    > 136 |     expect(html()).toContain('data-testid="ask-kn-customer"');
+          |                    ^
+      137 |   });
+      138 |   test("Manajer tanpa izin ai → tidak tampil", () => {
+      139 |     masuk({ role: "manager", permissions: { customer: ["view"] } });
+
+
+  ● U9 — tombol Tanya KN dari izin ai.view › Manajer tanpa izin ai → tidak tampil
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: ""
+    Received: "<div><div><button type=\"button\" class=\"secondary-button\" data-testid=\"ask-kn-customer\"><svg xmlns=\"http://www.w3.org/2000/svg\" width=\"13\" height=\"13\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-sparkles\" aria-hidden=\"true\"><path d=\"M9.937 15.5A2 2 0 0 0 8.5 14.063l-6.135-1.582a.5.5 0 0 1 0-.962L8.5 9.936A2 2 0 0 0 9.937 8.5l1.582-6.135a.5.5 0 0 1 .963 0L14.063 8.5A2 2 0 0 0 15.5 9.937l6.135 1.581a.5.5 0 0 1 0 .964L15.5 14.063a2 2 0 0 0-1.437 1.437l-1.582 6.135a.5.5 0 0 1-.963 0z\"></path><path d=\"M20 3v4\"></path><path d=\"M22 5h-4\"></path><path d=\"M4 17v2\"></path><path d=\"M5 18H3\"></path></svg> Tanya KN</button></div><div><div>Tanyakan tentang Toko A</div><div>Kenapa penjualan pelanggan ini naik/turun 3 bulan terakhir?</div><div>Berapa piutang pelanggan ini dan mana yang lewat jatuh tempo?</div><div>Produk apa yang paling sering dibeli pelanggan ini 12 bulan terakhir?</div><div>Seberapa besar risiko pelanggan ini berhenti order?</div><div><svg xmlns=\"http://www.w3.org/2000/svg\" width=\"13\" height=\"13\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-pen-line mr-1.5\" aria-hidden=\"true\"><path d=\"M12 20h9\"></path><path d=\"M16.376 3.622a1 1 0 0 1 3.002 3.002L7.368 18.635a2 2 0 0 1-.855.506l-2.872.838a.5.5 0 0 1-.62-.62l.838-2.872a2 2 0 0 1 .506-.854z\"></path></svg> Tulis pertanyaan sendiri…</div></div></div>"
+
+      138 |   test("Manajer tanpa izin ai → tidak tampil", () => {
+      139 |     masuk({ role: "manager", permissions: { customer: ["view"] } });
+    > 140 |     expect(html()).toBe("");
+          |                    ^
+      141 |   });
+      142 | });
+      143 |
+
+
+  ● Tabel 2 — panggilan kerangka aplikasi dijaga izin › Keep & Pending: tanpa order.verify/order.view → tidak memanggil dan tidak menggambar
+
+    expect(received).not.toContain(expected) // indexOf
+
+    Expected value: not "/sales/keep-pending"
+    Received array:     ["/sales/keep-pending"]
+
+      146 |     setAccessContext({ role: "cr_tagih", permissions: { ar: ["view", "create"], customer: ["view"], approval: ["view"] } });
+      147 |     const host = await mount(<KeepPendingPanel selectedEntity="ent_ksc" />);
+    > 148 |     expect(calledPaths()).not.toContain("/sales/keep-pending");
+          |                               ^
+      149 |     expect(host.innerHTML).toBe("");
+      150 |   });
+      151 |   test("Keep & Pending: dengan order.view → memanggil", async () => {
+
+
+  ● Tabel 2 — panggilan kerangka aplikasi dijaga izin › Profil Saya: akun tanpa employee_id → tidak memanggil /hr/employees/me dan memberi petunjuk
+
+    expect(received).not.toContain(expected) // indexOf
+
+    Expected value: not "/hr/employees/me"
+    Received array:     ["/hr/employees/me", "/hr/attendance/me"]
+
+      156 |   test("Profil Saya: akun tanpa employee_id → tidak memanggil /hr/employees/me dan memberi petunjuk", async () => {
+      157 |     const host = await mount(<EmployeeSelfService currentUser={{ id: "u1", role: "cr_tagih", employee_id: "" }} />);
+    > 158 |     expect(calledPaths()).not.toContain("/hr/employees/me");
+          |                               ^
+      159 |     expect(host.textContent).toContain("Akun ini belum ditautkan ke data karyawan. Minta Admin menautkannya di Akun & Akses.");
+      160 |   });
+      161 |   test("Profil Saya: akun tertaut → memanggil /hr/employees/me", async () => {
+
+
+  ● Tabel 2 — panggilan kerangka aplikasi dijaga izin › Pusat Persetujuan: hanya kategori yang izin lihatnya dipegang yang dipanggil; sisanya bukan 'belum lengkap'
+
+    expect(received).toEqual(expected) // deep equality
+
+    - Expected  - 0
+    + Received  + 6
+
+      Array [
+    +   "/amendments",
+        "/approvals/backlog",
+        "/approvals/queue",
+        "/credit-overrides",
+    +   "/cycle-count/sessions",
+    +   "/price-approvals",
+    +   "/purchase-orders",
+    +   "/purchase-returns",
+    +   "/sales-returns",
+      ]
+
+      171 |       ? Promise.resolve({ data: [] }) : Promise.reject(Object.assign(new Error("403"), { response: { status: 403 } }))));
+      172 |     const res = await loadInbox(izin);
+    > 173 |     expect(calledPaths().sort()).toEqual([...boleh].sort());
+          |                                  ^
+      174 |     expect(res.unavailable).toEqual([]);
+      175 |   });
+      176 | });
+
+
+Test Suites: 1 failed, 1 total
+Tests:       11 failed, 3 passed, 14 total
+Snapshots:   0 total
+Time:        0.883 s, estimated 2 s
+Ran all test suites matching /prt7TombolIzin/i.

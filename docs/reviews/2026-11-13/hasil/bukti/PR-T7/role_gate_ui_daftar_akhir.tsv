@@ -1,0 +1,29 @@
+components/NotificationCenter.jsx:12	includes(role)	.includes(userRole)
+features/admin/po/POCompactPanel.jsx:33	roleSatisfies	roleSatisfies(
+features/admin/po/PODetailPanel.jsx:91	roleSatisfies	roleSatisfies(
+features/crm/CustomerFormModal.jsx:47	roleIs	roleIs(
+features/crm/CustomerList.jsx:52	roleIs	roleIs(
+features/finance/amendments/AmendmentDetailPanel.jsx:125	role === id	role === "admin"
+features/hr/AiIllustrationPanel.jsx:147	role === id	role === "admin"
+features/hr/AiIllustrationPanel.jsx:169	role === id	role === "designer"
+features/hr/AiIllustrationPanel.jsx:170	role === id	role === "designer"
+features/hr/VisitsView.jsx:193	roleIs	roleIs(
+features/logistics/LogisticsView.jsx:41	roleIs	roleIs(
+features/marketing/Campaigns.jsx:33	includes(role)	.includes(currentUser?.role)
+features/pettycash/CashAdvanceDetail.jsx:47	roleIs	roleIs(
+features/pettycash/CashAdvanceDetail.jsx:47	role === id	role === "admin"
+features/purchasing/LandedCostView.jsx:50	roleSatisfies	roleSatisfies(
+features/purchasing/PurchaseApprovalView.jsx:84	roleSatisfies	roleSatisfies(
+features/purchasing/PurchaseApprovalView.jsx:86	role === id	role !== "admin"
+features/purchasing/PurchaseApprovalView.jsx:93	roleSatisfies	roleSatisfies(
+features/purchasing/PurchaseApprovalView.jsx:360	role === id	role !== "admin"
+features/purchasing/VendorBillsView.jsx:76	roleSatisfies	roleSatisfies(
+features/rfid/RfidDevicesView.jsx:61	role === id	role === "admin"
+features/rfid/RfidGateMonitorView.jsx:180	role === id	role === "admin"
+features/rfid/RfidTagsView.jsx:144	role === id	role === "admin"
+features/sales/SalesPortal.jsx:322	roleIs	roleIs(
+features/sales/mobile/MobileSalesHome.jsx:81	roleIs	roleIs(
+features/settings/entities/AccountFormDrawer.jsx:49	includes(role)	.includes(form.role)
+features/settings/entities/AccountLocationScope.jsx:46	roleIs	roleIs(
+features/wms/StockOpnameTab.jsx:32	roleIs	roleIs(
+features/wms/warehouses/WarehouseMasterView.jsx:63	roleIs	roleIs(
