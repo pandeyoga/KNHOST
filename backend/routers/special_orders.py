@@ -817,11 +817,13 @@ class FulfillmentCancelBody(BaseModel):
 @router.post("/special-orders/{order_id}/fulfillment/{item_key}/cancel")
 async def fulfillment_cancel(order_id: str, item_key: str, payload: FulfillmentCancelBody, request: Request) -> Dict[str, Any]:
     """L03 LN-033 T08 — batalkan PO/MKO aktif satu item OD lewat aturan modul asal; histori tetap."""
-    user = await current_user(request)
+    # PR-T8b (Z1, pola S8 PR-T3) — gerbang di baris pertama; dulu pesanan dimuat dulu (tanpa izin → 404), lalu
+    # `ful._can(user, "cancel")` — pemeriksaan yang sama (`od_fulfillment.cancel`), kini sebelum dokumen dimuat.
+    user = await require_permission(request, "od_fulfillment", "cancel",
+                                    detail="Anda belum punya akses untuk membatalkan dokumen pengadaan item pesanan "
+                                           "khusus. Minta Admin menambahkan akses 'Pesanan Penjualan'.")
     od = await _od_or_404(order_id, request)
     from services import special_order_fulfillment as ful
-    if not await ful._can(user, "cancel"):  # noqa: SLF001
-        raise HTTPException(status_code=403, detail="Permission ditolak: od_fulfillment.cancel (membatalkan dokumen pengadaan OD).")
     try:
         n = ful._need((await ful.progress(od))["items"], item_key)  # noqa: SLF001
     except ValueError as exc:

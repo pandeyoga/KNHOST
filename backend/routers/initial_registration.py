@@ -80,6 +80,18 @@ class RegApproveIn(KNIn):
 # FIX-3a — izin BACA sesi pendaftaran: petugas/penyetuju hitung ATAU Finance (penyetuju nilai & jurnal).
 _READ_PERMS = [("inventory", "cycle_count"), ("inventory", "approve_value")]
 
+# PR-T8b (Z1) — gerbang PERTAMA rute yang izinnya baru bisa dipilih sesudah sesi dimuat (status sesi / setelan PT):
+# sesi + salah satu izin yang mungkin diminta, sebelum `_session` (dulu tanpa sesi / tanpa izin → 404 sesi tidak
+# ditemukan). Izin persisnya tetap dipilih sesudah sesi dimuat — aturannya tidak berubah.
+_LINE_PERMS = [("inventory", "cycle_count"), ("inventory", "approve_count")]
+_DECIDE_PERMS = [("inventory", "approve_count"), ("inventory", "approve_value")]
+_LINE_DENIED = ("Anda belum punya akses untuk mengubah baris pendaftaran stok awal. Minta Admin menambahkan akses "
+                "'Stok & Persediaan'.")
+_RETURN_DENIED = ("Anda belum punya akses untuk mengembalikan sesi pendaftaran stok awal. Minta Admin menambahkan akses "
+                  "'Stok & Persediaan'.")
+_APPROVE_DENIED = ("Anda belum punya akses untuk menyetujui pendaftaran stok awal. Minta Admin menambahkan akses "
+                   "'Stok & Persediaan'.")
+
 
 async def _session(sid: str, request: Request) -> Dict[str, Any]:
     s = safe_doc(await db.cycle_count_sessions.find_one({"id": sid, "mode": "registration"}, {"_id": 0}))
@@ -94,8 +106,10 @@ async def _ctx_owners(request: Request) -> Optional[List[str]]:
 async def _line_actor(request: Request, session: Dict[str, Any]) -> Dict[str, Any]:
     """Saat menunggu persetujuan hanya penyetuju yang boleh memetakan/membatalkan baris."""
     if session.get("status") == "pending_approval":
-        return await require_permission(request, "inventory", "approve_count")
-    return await require_permission(request, "inventory", "cycle_count")
+        return await require_permission(request, "inventory", "approve_count", detail=(
+            "Anda belum punya akses untuk mengubah baris sesi yang menunggu persetujuan. Minta Admin menambahkan akses "
+            "'Stok & Persediaan'."))
+    return await require_permission(request, "inventory", "cycle_count", detail=_LINE_DENIED)
 
 
 @router.post("/registration/sessions")
@@ -190,6 +204,7 @@ async def add_reg_line(sid: str, payload: RegLineIn, request: Request) -> Dict[s
 
 @router.patch("/registration/sessions/{sid}/lines/{line_id}")
 async def update_reg_line(sid: str, line_id: str, payload: RegLineIn, request: Request) -> Dict[str, Any]:
+    await require_any_permission(request, _LINE_PERMS, detail=_LINE_DENIED)
     s = await _session(sid, request)
     actor = await _line_actor(request, s)
     irs.assert_status(s, "running", "pending_approval")
@@ -201,6 +216,7 @@ async def update_reg_line(sid: str, line_id: str, payload: RegLineIn, request: R
 
 @router.delete("/registration/sessions/{sid}/lines/{line_id}")
 async def void_reg_line(sid: str, line_id: str, request: Request) -> Dict[str, Any]:
+    await require_any_permission(request, _LINE_PERMS, detail=_LINE_DENIED)
     s = await _session(sid, request)
     actor = await _line_actor(request, s)
     irs.assert_status(s, "running", "pending_approval")
@@ -268,11 +284,12 @@ async def reconcile_reg_session(sid: str, request: Request) -> Dict[str, Any]:
 
 @router.post("/registration/sessions/{sid}/return")
 async def return_reg_session(sid: str, payload: RegReason, request: Request) -> Dict[str, Any]:
+    await require_any_permission(request, _DECIDE_PERMS, detail=_RETURN_DENIED)
     s0 = await _session(sid, request)
     # FIX-3a — saat menunggu Finance, Finance juga boleh mengembalikan sesi ke gudang (angka perlu diperbaiki).
-    actor = (await require_any_permission(request, [("inventory", "approve_count"), ("inventory", "approve_value")])
+    actor = (await require_any_permission(request, _DECIDE_PERMS, detail=_RETURN_DENIED)
              if (s0.get("registration") or {}).get("count_approval") else
-             await require_permission(request, "inventory", "approve_count"))
+             await require_permission(request, "inventory", "approve_count", detail=_RETURN_DENIED))
     s = await irs.return_to_running(s0, payload.reason.strip(), actor)
     await audit(actor["name"], "registration_returned", "cycle_count", sid, {"reason": payload.reason.strip()})
     return await irs.detail(s)
@@ -301,13 +318,16 @@ async def approve_reg_session(sid: str, payload: RegApproveIn, request: Request)
     """Persetujuan massal per produk×PT (`group_keys`) atau seluruh sesi. Idempoten & aman diulang.
     FIX-3a — bila `registration.finance_approval` aktif (bawaan) ini LANGKAH 2: Finance (`inventory.approve_value`,
     orang berbeda dari penyetuju hitungan) menyetujui nilai & jurnal → roll lama dihapus & jurnal diposting."""
+    await require_any_permission(request, _DECIDE_PERMS, detail=_APPROVE_DENIED)
     from services import initial_registration_approve as ira
     s = await _session(sid, request)
     if await irs.finance_step_required(s.get("entity_id") or ""):
-        actor = await require_permission(request, "inventory", "approve_value")
+        actor = await require_permission(request, "inventory", "approve_value", detail=(
+            "Anda belum punya akses untuk menyetujui nilai dan jurnal pendaftaran stok awal. Minta Admin menambahkan "
+            "akses 'Stok & Persediaan'."))
         await irs.assert_finance_ready(s, actor)
     else:
-        actor = await require_permission(request, "inventory", "approve_count")
+        actor = await require_permission(request, "inventory", "approve_count", detail=_APPROVE_DENIED)
     out = await ira.approve(s, [k for k in payload.group_keys if k], actor["name"], await _ctx_owners(request),
                             reason=payload.reason.strip(), zero_cost_reason=payload.zero_cost_reason.strip(),
                             accept_exceptions=payload.accept_exceptions)

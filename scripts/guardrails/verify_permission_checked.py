@@ -48,8 +48,9 @@ Pair = Tuple[str, str]
 DINAMIS: Dict[Pair, Tuple[str, str]] = {
     **{("field_visibility", a): ("services/field_visibility.py", "def hidden_for") for a in ("grade", "lot", "origin")},
     **{("goods_receipt", a): ("routers/goods_receipts.py", "async def _act(") for a in ("create", "count", "close")},
+    # PR-T8b — `cancel` kini diperiksa literal di baris pertama `fulfillment_cancel` (routers/special_orders.py)
     **{("od_fulfillment", a): ("services/special_order_fulfillment.py", '"od_fulfillment", action')
-       for a in ("view", "override_default", "cancel")},
+       for a in ("view", "override_default")},
     **{("rnd", f"{a}_{t}"): ("routers/rnd.py", "async def _require_typed(")
        for a in ("assess", "decide") for t in ("labdip", "handfeel", "proofing")},
     ("sales_return", "split_cutloss"): ("routers/sales_return_exceptions.py", '"split_cutloss")'),
