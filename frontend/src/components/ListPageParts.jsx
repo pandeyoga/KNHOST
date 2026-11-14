@@ -21,7 +21,8 @@ export function isZeroMetric(value) {
 }
 
 export function MetricRow({ items, testId }) {
-  const cols = { 3: "sm:grid-cols-3", 4: "sm:grid-cols-4", 5: "sm:grid-cols-5" }[items.length] || "sm:grid-cols-4";
+  const cols = { 3: "sm:grid-cols-3", 4: "sm:grid-cols-4", 5: "sm:grid-cols-5",
+    6: "sm:grid-cols-3 lg:grid-cols-6" }[items.length] || "sm:grid-cols-4";   // PK-41 — enam kartu (umur hutang)
   return (
     <div data-testid={testId} className={`grid grid-cols-2 gap-2 ${cols}`}>
       {items.map(({ label, value, icon: Icon, hint, tone, testId: tid }, i) => (

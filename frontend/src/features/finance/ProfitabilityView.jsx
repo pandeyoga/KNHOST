@@ -8,6 +8,8 @@
  * realisasi dijaga izin akuntansi di server (/finance/profitability → accounting.view).
  * PK-16 — tab Realisasi menyebut PT angkanya (`scope_meta`), gagal memuat → data dikosongkan, nama berkas Excel
  * memuat PT / `gabungan`.
+ * PK-41 (RP-08) — pendapatan & HPP sudah dikurangi nota kredit (sub-teks kartu Pendapatan) dan panel "Pencocokan ke
+ * Laba-Rugi" (lima baris `reconciliation`; hanya untuk pemegang izin HPP & Margin — server tidak mengirimnya untuk lainnya).
  */
 import { apiErrorText } from "../../utils/apiError";
 import KNDatePicker from "@/components/KNDatePicker";
@@ -17,7 +19,7 @@ import {
   Legend, ResponsiveContainer,
 } from "recharts";
 import {
-  RefreshCw, TrendingUp, Coins, Percent, Boxes, Package, Layers3, Users, UserCog, Building2, Download,
+  RefreshCw, TrendingUp, Coins, Percent, Boxes, Package, Layers3, Users, UserCog, Building2, Download, Scale,
 } from "lucide-react";
 import axios, { API } from "../../services/apiClient";
 import ErrorNotice from "../../components/ErrorNotice";
@@ -119,7 +121,7 @@ function RealisasiPanel({ selectedEntity }) {
     <div data-testid="prof-realisasi">
       <EntityScopeBanner meta={scope} />
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-3">
-        <KpiCard testId="prof-kpi-revenue" label="Pendapatan (Realisasi · terkirim)" value={formatCurrency(tot.revenue)} icon={TrendingUp} accent={FC.revenue} tone="text-[#1B7F4B]" sub={`Estimasi nilai pesanan ${compactIDR(est.revenue || 0)}`} />
+        <KpiCard testId="prof-kpi-revenue" label="Pendapatan (Realisasi · terkirim)" value={formatCurrency(tot.revenue)} icon={TrendingUp} accent={FC.revenue} tone="text-[#1B7F4B]" sub={`sesudah nota kredit ${formatCurrency(tot.credit_notes || 0)} · estimasi nilai pesanan ${compactIDR(est.revenue || 0)}`} />
         <KpiCard testId="prof-kpi-cogs" label="HPP (saat kirim)" value={formatCurrency(tot.cogs)} icon={Coins} accent={FC.amber} tone="text-[#C77700]" sub={tot.landed_included ? `termasuk biaya masuk (landed) ${compactIDR(tot.cogs_landed || 0)}` : "belum ada biaya masuk (landed) yang dibebankan"} />
         <KpiCard testId="prof-kpi-margin" label="Marjin Kotor" value={formatCurrency(tot.margin)} icon={Boxes} accent={FC.net} tone={(tot.margin ?? 0) >= 0 ? "text-[#6B219A]" : "text-[#C0392B]"} />
         <KpiCard testId="prof-kpi-marginpct" label="Marjin %" value={fmtPct(tot.margin_pct)} icon={Percent} accent={FC.teal} sub={`${tot.orders || 0} pesanan terkirim`} />
@@ -181,6 +183,27 @@ function RealisasiPanel({ selectedEntity }) {
             </Panel>
           </div>
 
+          {Array.isArray(data?.reconciliation) && data.reconciliation.length > 0 && (
+            <Panel title="Pencocokan ke Laba-Rugi" icon={Scale} testId="prof-reconciliation" className="mb-3">
+              <table className="data-table" data-testid="prof-reconciliation-table">
+                <tbody>
+                  {data.reconciliation.map((r, i) => {
+                    const ujung = i === 0 || i === data.reconciliation.length - 1;
+                    const beda = r.key === "unexplained" && Math.abs(Number(r.amount || 0)) >= 0.005;
+                    return (
+                      <tr key={r.key || r.label} data-testid={`prof-rec-${r.key || i}`}>
+                        <td className={ujung ? "font-semibold text-kn-text" : "text-kn-text-2"}>{r.label}</td>
+                        <td className={`text-right tabular-nums whitespace-nowrap ${ujung ? "font-semibold" : ""} ${beda ? "text-kn-danger-text" : ""}`}>
+                          {formatCurrency(r.amount)}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </Panel>
+          )}
+
           <Panel title="Rincian Profitabilitas" icon={Boxes} testId="prof-table-panel">
             {/* Fase 3 · P4 (L-01/L-08) — pil ungu buatan sendiri → FilterChips baku (dimensi = saringan, bukan tab);
                 di badan panel supaya di HP chip bergulir sendiri, tidak melebarkan kepala panel. */}
@@ -227,9 +250,9 @@ function RealisasiPanel({ selectedEntity }) {
           </Panel>
         </>
       )}
-      <p className="mt-2 text-[11px] text-[#9A9BA3]">Marjin = Pendapatan baris SO − (WAC × qty). HPP memakai Weighted Average Cost per produk/entitas{tot.landed_included
-          ? <>, <b>termasuk biaya masuk (landed cost)</b> (kolom Landed memisah komponen freight/bea/handling)</>
-          : <> — <b>belum ada biaya masuk (landed cost)</b> yang dibebankan pada periode ini</>}. Dimensi <b>Per-PT</b> menampilkan margin per entitas.</p>
+      <p className="mt-2 text-[11px] text-[#9A9BA3]" data-testid="prof-footnote">Marjin = pendapatan barang terkirim (tanpa PPN, dikurangi nota kredit) − biaya roll saat dikirim (dikurangi barang retur yang kembali ke stok). Pesanan lama tanpa surat jalan memakai harga pokok rata-rata.{tot.landed_included
+          ? <> HPP <b>termasuk biaya masuk (landed cost)</b> (kolom Landed memisah komponen freight/bea/handling).</>
+          : <> <b>Belum ada biaya masuk (landed cost)</b> yang dibebankan pada periode ini.</>} Dimensi <b>Per-PT</b> menampilkan margin per entitas.</p>
     </div>
   );
 }

@@ -91,13 +91,16 @@ function AgingBars({ data, testId }) {
 
 export function ArAgingPanel({ ar }) {
   const a = ar?.aging || {};
+  // PK-41 (RP-12) — judul kelompok dari `bucket_labels` server (batas `ar.aging_buckets`); bawaan 30/60/90 hari.
+  const lbl = Object.fromEntries((ar?.bucket_labels || []).map((b) => [b.key, b.label]));
+  const pakai = (k) => !(ar?.bucket_labels || []).length || k in lbl;   // kolom yang tidak dipakai batas PT disembunyikan
   const data = [
-    { name: "Lancar", value: a.current || 0, color: FC.revenue },
-    { name: "1-30", value: a.b1_30 || 0, color: FC.teal },
-    { name: "31-60", value: a.b31_60 || 0, color: FC.amber },
-    { name: "61-90", value: a.b61_90 || 0, color: "#E67E22" },
-    { name: ">90", value: a.b90_plus || 0, color: FC.expense },
-  ];
+    { key: "current", name: lbl.current || "Belum jatuh tempo", value: a.current || 0, color: FC.revenue },
+    { key: "b1_30", name: lbl.b1_30 || "1–30 hari", value: a.b1_30 || 0, color: FC.teal },
+    { key: "b31_60", name: lbl.b31_60 || "31–60 hari", value: a.b31_60 || 0, color: FC.amber },
+    { key: "b61_90", name: lbl.b61_90 || "61–90 hari", value: a.b61_90 || 0, color: "#E67E22" },
+    { key: "b90_plus", name: lbl.b90_plus || "> 90 hari", value: a.b90_plus || 0, color: FC.expense },
+  ].filter((d) => pakai(d.key));
   return (
     <Panel title="Umur Piutang (AR Aging)" icon={Users} testId="tower-ar-aging">
       <AgingBars data={data} testId="tower-ar-aging-chart" />

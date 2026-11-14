@@ -55,6 +55,34 @@ function StatusPill({ status }) {
   const [cls, label] = map[status] || ["pill-muted", status];
   return <span className={`status-pill ${cls}`}>{label}</span>;
 }
+// PK-41 (RP-07) — judul kelompok umur hutang dari server (`aging_labels`); cadangan = judul baku.
+const AP_LABELS = { not_due: "Belum jatuh tempo", "1-30": "1–30 hari", "31-60": "31–60 hari", "61-90": "61–90 hari", ">90": "> 90 hari" };
+function apLabel(summary, key) {
+  return (summary?.aging_labels || []).find((b) => b.key === key)?.label || AP_LABELS[key];
+}
+
+/** PK-41 (RP-07) — kartu pencocokan sisa tagihan ↔ saldo akun hutang (angka rupiah utuh satu baris). */
+function ApReconciliation({ rec }) {
+  const rp = (v, testId) => <b className="whitespace-nowrap tabular-nums text-kn-text" data-testid={testId}>{formatCurrency(v || 0)}</b>;
+  const beda = Math.abs(Number(rec.unexplained || 0)) >= 0.005;
+  return (
+    <div className="section-card section-pad mt-2 text-fs-12 text-kn-text-2" data-testid="vb-ap-reconciliation">
+      <p className="flex flex-wrap items-center gap-x-1.5 gap-y-0.5">
+        <span>Tagihan belum lunas</span>{" "}{rp(rec.bills_outstanding, "vb-rec-bills")}
+        {" "}<span>+ Biaya masuk belum dibayar</span>{" "}{rp(rec.landed_cost_outstanding, "vb-rec-landed")}
+        {" "}<span>− Nota debit belum dipotong</span>{" "}{rp(rec.debit_notes_open, "vb-rec-debit")}
+        {" "}<span>=</span>{" "}{rp(rec.expected_gl, "vb-rec-expected")}
+        {" "}<span aria-hidden="true">·</span>{" "}<span>Saldo akun hutang</span>{" "}{rp(rec.gl_balance, "vb-rec-gl")}
+      </p>
+      <p className={`mt-0.5 ${beda ? "text-kn-danger-text" : "text-kn-success-text"}`} data-testid="vb-rec-unexplained">
+        {beda
+          ? <>Selisih belum dijelaskan <b className="whitespace-nowrap tabular-nums">{formatCurrency(rec.unexplained)}</b> — telusuri jurnal ke akun hutang di luar tagihan, biaya masuk, dan retur beli.</>
+          : "Cocok dengan saldo akun hutang."}
+      </p>
+    </div>
+  );
+}
+
 function MatchPill({ status }) {
   const map = { matched: ["pill-success", "Cocok"], warning: ["pill-warning", "Selisih"], blocked: ["pill-danger", "Lebih tagih"] };
   const [cls, label] = map[status] || ["pill-muted", "—"];
@@ -183,15 +211,18 @@ export default function VendorBillsView({ currentUser, selectedEntity, focusDoc,
           </EntityGatedButton>
         )} />
 
+      {/* PK-41 (RP-07) — kelompok umur = hari LEWAT jatuh tempo; kelompok pertama "Belum jatuh tempo" (judul dari server). */}
       {summary && (
         <MetricRow testId="vb-summary" items={[
           { label: "Total hutang (AP)", value: formatCurrency(summary.total_outstanding), icon: Wallet, tone: "#C0392B", hint: "belum dibayar", testId: "vb-summary-total" },
-          { label: "Umur 0–30 hari", value: formatCurrency(summary.aging?.["0-30"]), icon: Clock },
-          { label: "31–60 hari", value: formatCurrency(summary.aging?.["31-60"]), icon: Clock },
-          { label: "61–90 hari", value: formatCurrency(summary.aging?.["61-90"]), icon: AlertTriangle, tone: "#B26A00" },
-          { label: "> 90 hari", value: formatCurrency(summary.aging?.[">90"]), icon: AlertTriangle, tone: "#C0392B" },
+          { label: apLabel(summary, "not_due"), value: formatCurrency(summary.aging?.not_due), icon: Clock, testId: "vb-summary-not-due" },
+          { label: `Lewat ${apLabel(summary, "1-30")}`, value: formatCurrency(summary.aging?.["1-30"]), icon: Clock, testId: "vb-summary-1-30" },
+          { label: `Lewat ${apLabel(summary, "31-60")}`, value: formatCurrency(summary.aging?.["31-60"]), icon: Clock },
+          { label: `Lewat ${apLabel(summary, "61-90")}`, value: formatCurrency(summary.aging?.["61-90"]), icon: AlertTriangle, tone: "#B26A00" },
+          { label: `Lewat ${apLabel(summary, ">90")}`, value: formatCurrency(summary.aging?.[">90"]), icon: AlertTriangle, tone: "#C0392B" },
         ]} />
       )}
+      {summary?.reconciliation && <ApReconciliation rec={summary.reconciliation} />}
 
       <SearchBox value={search} onChange={setSearch} testId="vb-search" placeholder="Cari no. tagihan / supplier / PO / inv. supplier…" />
       <StatusTabs value={tab} onChange={setTab} testId={(k) => `vb-tab-${k}`}

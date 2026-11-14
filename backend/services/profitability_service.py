@@ -7,15 +7,22 @@ G3 D4-FIN-04 (keputusan user) — dua metrik terpisah:
   shipped/done diakui per pesanan (tanggal kirim/`delivered_at`, HPP WAC — ditandai `legacy`).
 - **Estimasi nilai pesanan** (`estimate`): SO confirmed/reserved/dikirim menurut tanggal pesanan,
   HPP WAC kini. Tidak dicampur dengan realisasi.
+
+PK-41 (RP-08) — nota kredit (bukan nota debit, bukan batal) bertanggal dalam periode MENGURANGI pendapatan sebesar
+`net_amount` dan HPP sebesar `cogs_amount` (barang retur yang kembali ke stok) di semua dimensi; jawaban membawa
+`totals.credit_notes`, `totals.cogs_returned`, dan `reconciliation` (marjin layar ini → laba kotor Laba-Rugi).
 """
 from typing import Any, Dict, List, Optional, Tuple
 
 from db import db
-from core_utils import now_iso
+from core_utils import from_cents, now_iso, to_cents
 from services.costing_service import wac_for_product
 from services.analytics_time import to_wib_date
 
 EPS = 0.005
+#: PK-41 — status nota kredit yang tidak (lagi/belum) mengurangi penjualan: batal, atau menunggu putusan Finance (belum
+#: berjurnal, `od_cancel_credit_note`).
+CN_SKIP_STATUSES = ("void", "pending_finance")
 # Status SO untuk ESTIMASI nilai pesanan (booked).
 SOLD_STATUSES = ["confirmed", "reserved", "partially_shipped", "shipped", "done"]
 SHIPPED_STATUSES = ["partially_shipped", "shipped", "done"]
@@ -38,7 +45,7 @@ def _date_filter(start: Optional[str], end: Optional[str]) -> Dict[str, str]:
 
 def _new_acc() -> Dict[str, Any]:
     return {**{d: {} for d in DIMS}, "monthly": {}, "orders": set(),
-            "rev": 0.0, "base": 0.0, "landed": 0.0, "qty": 0.0, "qty_by_unit": {}}
+            "rev": 0.0, "base": 0.0, "landed": 0.0, "qty": 0.0, "qty_by_unit": {}, "cn": 0.0, "cn_cogs": 0.0}
 
 
 def _bump(bucket: Dict[str, Dict[str, Any]], key: str, name: str, r: Dict[str, Any]) -> None:
@@ -49,7 +56,8 @@ def _bump(bucket: Dict[str, Dict[str, Any]], key: str, name: str, r: Dict[str, A
     row["cogs_base"] += r["cogs_base"]
     row["cogs_landed"] += r["cogs_landed"]
     row["qty"] += r["qty"]
-    row["orders"].add(r["oid"])
+    if r["oid"]:   # PK-41 — baris nota kredit tidak menambah hitungan pesanan
+        row["orders"].add(r["oid"])
 
 
 def _add(acc: Dict[str, Any], r: Dict[str, Any]) -> None:
@@ -68,7 +76,10 @@ def _add(acc: Dict[str, Any], r: Dict[str, Any]) -> None:
     acc["landed"] += r["cogs_landed"]
     acc["qty"] += r["qty"]
     acc["qty_by_unit"][r["unit"]] = acc["qty_by_unit"].get(r["unit"], 0.0) + r["qty"]
-    acc["orders"].add(r["oid"])
+    if r["oid"]:
+        acc["orders"].add(r["oid"])
+    acc["cn"] += r.get("cn", 0.0)
+    acc["cn_cogs"] += r.get("cn_cogs", 0.0)
 
 
 def _finalize(bucket: Dict[str, Dict[str, Any]]) -> List[Dict[str, Any]]:
@@ -107,7 +118,9 @@ def _totals(acc: Dict[str, Any]) -> Dict[str, Any]:
             "landed_included": landed > EPS, "margin": gross, "margin_pct": _pct(gross, rev),
             "qty": round(acc["qty"], 2), "orders": len(acc["orders"]),
             # UAT 24 Okt (audit UI 072) — `qty` menjumlah satuan dasar berbeda (yard + kg); tampilan memakai per satuan.
-            "qty_by_unit": {u: round(q, 2) for u, q in acc["qty_by_unit"].items()}}
+            "qty_by_unit": {u: round(q, 2) for u, q in acc["qty_by_unit"].items()},
+            # PK-41 (RP-08) — nota kredit yang SUDAH dikurangkan dari `revenue` / `cogs` di atas
+            "credit_notes": round(acc["cn"], 2), "cogs_returned": round(acc["cn_cogs"], 2)}
 
 
 def _order_net_alloc(o: Dict[str, Any]) -> Tuple[List[Dict[str, Any]], List[float]]:
@@ -202,6 +215,92 @@ async def _shipment_row(ctx: _Ctx, o: Dict[str, Any], sh: Dict[str, Any]) -> Opt
     return ctx.row(o, it, revenue, cb, cl, qty, sh.get("created_at") or "")
 
 
+async def _credit_note_rows(ctx: _Ctx, date_f: Dict[str, str], scope: Optional[Dict[str, Any]]):
+    """PK-41 (RP-08) — baris NEGATIF per produk untuk nota kredit dalam periode: pendapatan −`net_amount`, HPP
+    −`cogs_amount`, qty −jumlah retur; dibagi ke `lines[]` menurut `line_total` (tanpa nilai baris → rata per baris,
+    tanpa baris → satu baris tanpa produk). Pelanggan, sales, PT, dan kategori dari pesanan asal."""
+    from services import gl_service as gl
+    q: Dict[str, Any] = {"status": {"$nin": list(CN_SKIP_STATUSES)}, "kind": {"$ne": "debit_note"},
+                         "direction": {"$ne": "increase"}, **(scope or {})}
+    if date_f:
+        q["created_at"] = date_f
+    notes = [c async for c in db.credit_notes.find(q, {"_id": 0})]
+    if not notes:
+        return
+    oids = list({c.get("order_id") for c in notes if c.get("order_id")})
+    orders = {o["id"]: o async for o in db.sales_orders.find({"id": {"$in": oids}}, {"_id": 0})} if oids else {}
+    await ctx.load(list(orders.values()))
+    for cn in notes:
+        o = orders.get(cn.get("order_id") or "") or {
+            "id": "", "entity_id": cn.get("entity_id"), "customer_id": cn.get("customer_id") or "",
+            "customer_name": cn.get("customer_name") or ""}
+        if not orders.get(cn.get("order_id") or ""):
+            await ctx.load([o])
+        net, cogs = to_cents(float(cn.get("net_amount") or 0)), to_cents(float(cn.get("cogs_amount") or 0))
+        if net <= 0 and cogs <= 0:
+            continue
+        lines = [ln for ln in cn.get("lines") or [] if ln.get("product_id")] or [{}]
+        bobot = [to_cents(float(ln.get("line_total") or 0)) for ln in lines]
+        if sum(bobot) <= 0:
+            bobot = [1] * len(lines)
+        tot = sum(bobot)
+        sisa_net, sisa_cogs = net, cogs
+        for i, (ln, w) in enumerate(zip(lines, bobot)):
+            last = i == len(lines) - 1
+            n = sisa_net if last else net * w // tot
+            g = sisa_cogs if last else cogs * w // tot
+            sisa_net -= n
+            sisa_cogs -= g
+            src = gl._order_item_for(o, ln.get("product_id", "")) if ln.get("product_id") and o.get("items") else {}
+            it = {"product_id": ln.get("product_id") or "", "product_name": ln.get("product_name") or (src or {}).get(
+                "product_name") or "(Tanpa Produk)", "category": (src or {}).get("category") or "",
+                  "base_unit": ln.get("unit") or (src or {}).get("base_unit") or (src or {}).get("unit") or ""}
+            qty = -float(ln.get("quantity") or 0)
+            r = ctx.row({**o, "id": ""}, it, -from_cents(n), -from_cents(g), 0.0, qty, cn.get("created_at") or "")
+            r["cn"], r["cn_cogs"] = from_cents(n), from_cents(g)
+            yield r
+
+
+async def _reconciliation(start: Optional[str], end: Optional[str], scope: Optional[Dict[str, Any]],
+                          margin: float) -> List[Dict[str, Any]]:
+    """PK-41 (RP-08) — pencocokan marjin layar ini ke laba kotor Laba-Rugi periode & cakupan yang sama, berurutan:
+    marjin layar → penghapusan/penyesuaian persediaan (akun beban pokok selain HPP, mengurangi) → penjualan antar-PT
+    (laba kotor jurnal antar-PT, tidak dihitung layar ini) → selisih belum dijelaskan → laba kotor Laba-Rugi."""
+    from services import financial_statement_service as fs
+    from services.gl_mapping_service import known_codes
+    pl = await fs.income_statement(start, end, scope)
+    gross_pl = to_cents(float(pl.get("gross_profit") or 0))
+    hpp = set(await known_codes("persediaan.hpp", fs.scope_entity(scope)))
+    cogs_lines = [ln for sec in pl.get("sections") or [] if sec.get("key") == "cogs" for ln in sec.get("lines") or []]
+    lain = -sum(to_cents(float(ln.get("amount") or 0)) for ln in cogs_lines if ln.get("code") not in hpp)
+    amap = await fs._accounts_map(scope)   # noqa: SLF001 — bagan akun efektif laporan (pembantu yang sama)
+    jq: Dict[str, Any] = {"status": {"$ne": "void"}, "source_type": {"$regex": "^interco_(transaction|return)"},
+                          **(scope or {})}
+    df: Dict[str, str] = {}
+    if start:
+        df["$gte"] = fs._day_start(start)
+    if end:
+        df["$lte"] = fs._day_end(end)
+    if df:
+        jq["date"] = df
+    interco = 0
+    async for je in db.journal_entries.find(jq, {"_id": 0, "lines": 1}):
+        for ln in je.get("lines") or []:
+            code = ln.get("account_code") or ""
+            t = (amap.get(code) or {}).get("type") or ""
+            sen = to_cents(float(ln.get("credit") or 0)) - to_cents(float(ln.get("debit") or 0))
+            if t == "income" or (t == "expense" and code.startswith("5")):
+                interco += sen
+    layar = to_cents(margin)
+    selisih = gross_pl - (layar + lain + interco)
+    return [{"key": "margin", "label": "Marjin kotor layar ini", "amount": from_cents(layar)},
+            {"key": "inventory_adjustments",
+             "label": "Penghapusan dan penyesuaian persediaan (akun beban pokok selain HPP)", "amount": from_cents(lain)},
+            {"key": "interco", "label": "Penjualan antar-PT (tidak termasuk di layar ini)", "amount": from_cents(interco)},
+            {"key": "unexplained", "label": "Selisih belum dijelaskan", "amount": from_cents(selisih)},
+            {"key": "gross_profit_pl", "label": "Laba kotor menurut Laba-Rugi", "amount": from_cents(gross_pl)}]
+
+
 def _section(acc: Dict[str, Any]) -> Dict[str, Any]:
     return {"totals": _totals(acc), **{d: _finalize(acc[d]) for d in DIMS}, "monthly": _trend(acc["monthly"])}
 
@@ -257,19 +356,23 @@ async def profitability(start: Optional[str] = None, end: Optional[str] = None,
     for o, d in legacy:
         async for r in _order_rows(ctx, o, d):
             _add(real, r)
+    async for r in _credit_note_rows(ctx, date_f, scope):   # PK-41 (RP-08) — nota kredit periode ini
+        _add(real, r)
     est = _new_acc()
     for o in booked:
         async for r in _order_rows(ctx, o, o.get("created_at") or ""):
             _add(est, r)
 
+    real_section = _section(real)
     return {
         "period": {"start": start or "", "end": end or ""},
         "metric": "realised_shipped",
-        "metric_label": "Realisasi = barang terkirim (tanggal & HPP saat kirim)",
-        **_section(real),
+        "metric_label": "Realisasi = barang terkirim (tanggal & HPP saat kirim), dikurangi nota kredit",
+        **real_section,
+        "reconciliation": await _reconciliation(start, end, scope, real_section["totals"]["margin"]),
         "legacy_orders": len(legacy),
         "estimate": {"label": "Nilai pesanan (estimasi, tanggal pesanan · HPP WAC kini)", **_section(est)},
-        "cost_basis": "HPP snapshot roll saat kirim (fallback WAC)",
+        "cost_basis": "HPP snapshot roll saat kirim (fallback WAC), dikurangi barang retur yang kembali ke stok",
         "tz": "Asia/Jakarta",
         "generated_at": now_iso(),
     }

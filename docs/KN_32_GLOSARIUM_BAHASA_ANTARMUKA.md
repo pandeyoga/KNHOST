@@ -505,3 +505,17 @@ Istilah Keuangan › Koreksi & Amandemen, jejak koreksi di rincian pesanan, nota
 | **melebihi nilai pesanan** | 409 "Nota kredit {rupiah} akan membuat total nota kredit pesanan {nomor} menjadi {rupiah}, melebihi nilai pesanan {rupiah}. Periksa nota yang sudah terbit." | Total nota kredit (retur + koreksi) satu pesanan tidak boleh melebihi nilai tagihannya |
 | **tidak bisa dibatalkan** (nota) | 409 "Nota {nomor} sudah mengurangi tagihan atau sudah dijurnal, jadi tidak bisa dibatalkan." · 400 "Alasan pembatalan nota wajib (minimal 5 huruf)." | Nota hanya bisa dibatalkan sebelum satu efek pun tuntas |
 
+### 9.16 Laporan pendukung: umur piutang per surat jalan, umur hutang, arus kas, profitabilitas (PK-41)
+
+Istilah Keuangan › Piutang, Keuangan › Hutang (Tagihan), Laporan Keuangan › Arus Kas, Profitabilitas, dan Control
+Tower (`docs/blueprint/unit/PK-41.md`, keputusan K-16).
+
+| Istilah | Teks layar | Arti |
+|---|---|---|
+| **piutang tercatat** | "Piutang tercatat (buku besar)" · baris di bawah total Piutang "Piutang tercatat {Rp} · Saldo akun piutang {Rp} · Selisih {Rp}" · kartu Control Tower "tercatat {Rp} · belum dikirim {Rp}" · Modal Kerja "Kas + piutang tercatat − hutang" | Nilai surat jalan yang sudah dijurnal dikurangi pembayaran yang dialokasikan ke surat jalan itu (jatuh tempo tertua dulu). Inilah yang dicocokkan dengan saldo akun piutang; selisihnya biasanya jurnal manual ke akun piutang, nota denda, atau jurnal pendapatan yang gagal |
+| **belum dikirim** | Baris rincian pesanan "Belum dikirim" · status umur "Belum dikirim" · "belum dikirim {Rp}" | Bagian nilai pesanan yang barangnya belum keluar lewat surat jalan (dikurangi uang muka yang melebihi nilai terkirim). Belum punya jatuh tempo, tidak pernah telat, dan belum masuk buku besar piutang |
+| **belum jatuh tempo** | Kolom pertama umur piutang dan umur hutang "Belum jatuh tempo" · status umur "Belum jatuh tempo" | Tagihan yang jatuh temponya hari ini atau sesudahnya (hari lewat ≤ 0), dihitung per tanggal kalender WIB. Umur piutang: jatuh tempo = tanggal surat jalan + termin; umur hutang: jatuh tempo tagihan, atau tanggal tagihan + termin pemasok bila kosong. Pengganti kata "Lancar" di dua laporan ini |
+| **hari lewat jatuh tempo** | Kolom "Hari Lewat" (rincian surat jalan) · kolom "Hari lewat jatuh tempo" (lembar Umur Hutang) · "{n} hari lagi" | Selisih tanggal hari ini (atau tanggal posisi laporan) dengan jatuh tempo; positif = sudah lewat, "n hari lagi" = belum jatuh tempo |
+| **saldo awal rekening yang didaftarkan periode ini** | Baris Arus Kas di bawah "Kas Awal Periode" | Saldo awal rekening bank/kas baru yang dicatat dalam periode laporan. Menambah kas awal, bukan arus pendanaan |
+| **pencocokan ke Laba-Rugi** | Panel Profitabilitas "Pencocokan ke Laba-Rugi" (lima baris) | Jembatan dari marjin layar Profitabilitas (barang terkirim dikurangi nota kredit) ke laba kotor Laba-Rugi: penghapusan/penyesuaian persediaan dan penjualan antar-PT tidak dihitung di layar Profitabilitas |
+| **nota debit belum dipotong** | Kartu pencocokan hutang "− Nota debit belum dipotong {Rp}" | Retur beli yang sudah menurunkan akun hutang tetapi belum mengurangi sisa tagihan mana pun (potongannya baru mengurangi tagihan saat kontrabon yang memuatnya lunas) |

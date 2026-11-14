@@ -37,6 +37,17 @@ def _iso(dt: datetime) -> str:
     return dt.isoformat()
 
 
+async def _jurnal_kirim(oid: str, entitas: str, nilai: float, tanggal: str, sj: str) -> None:
+    """PK-41 (K-16) — fixture jurnal pendapatan surat jalan (Dr piutang / Cr pendapatan, bentuk `post_shipment_revenue`):
+    piutang kini berumur per surat jalan BERJURNAL, jadi fixture "sudah dikirim" memuat jurnalnya juga."""
+    from services import gl_service as gl
+    await gl._insert_entry(lines=[{"account_code": "1-1200", "debit": nilai, "credit": 0.0},
+                                  {"account_code": "4-1000", "debit": 0.0, "credit": nilai}],
+                           description=f"Pengakuan penjualan {oid} · {sj}", date=tanggal, source_type="shipment_revenue",
+                           source_id=sj, entity_id=entitas, created_by="uji", source_label=sj,
+                           ref={"order_id": oid, "order_number": f"SO-{oid}"})
+
+
 async def siapkan(db) -> None:
     """Fixture sisip. Waktu relatif terhadap sekarang supaya umur/selisih hari tetap sama kapan pun dijalankan."""
     from services.analytics_time import now_wib
@@ -83,6 +94,11 @@ async def siapkan(db) -> None:
         {"id": "u5_sj2", "order_id": "u5_so_h3", "status": "delivered", "created_at": _iso(now - timedelta(days=27))},
         {"id": "u5_sj3", "order_id": "u5_so_h0", "status": "delivered", "created_at": _iso(now - timedelta(days=30))},
     ])
+    from services.book_date import tanggal_buku   # PK-41 — jurnal pendapatan surat jalan (umur per surat jalan berjurnal)
+    for oid, ent, nilai, sj, hari in (("u5_so_lewat", "ent_ksc", 1_500_000, "u5_sj1", 40),
+                                      ("u5_so_h3", "ent_kanda", 700_000, "u5_sj2", 27),
+                                      ("u5_so_h0", "ent_ksc", 800_000, "u5_sj3", 30)):
+        await _jurnal_kirim(oid, ent, nilai, tanggal_buku(now - timedelta(days=hari)), sj)
     await db.fin_fixed_assets.insert_one({"id": "u5_fa1", "number": "FA-U5-1", "name": "Mesin U5", "status": "active",
                                          "entity_id": "ent_ksc", "monthly_depreciation": 250_000})
     await db.mfg_work_orders.insert_many([

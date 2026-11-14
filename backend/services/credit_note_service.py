@@ -468,10 +468,10 @@ async def _alokasi(note: Dict[str, Any], order: Dict[str, Any], actor: Any) -> T
 
 async def due_date_of(note: Dict[str, Any], order: Dict[str, Any]) -> str:
     """Jatuh tempo tagihan tambahan = tanggal nota + hari termin pesanan (aturan termin yang sama dengan umur piutang)."""
-    from services.customer_service import _term_days, due_context
+    from services.customer_service import _term_days
+    from services.report_basis import peta_termin   # PK-41 — `due_context` dihapus; peta termin dari modul dasar laporan
     customer = await db.customers.find_one({"id": order.get("customer_id")}, {"_id": 0}) or {}
-    ctx = await due_context([order])
-    days = _term_days(customer, order, ctx.get("terms"))
+    days = _term_days(customer, order, await peta_termin([order]))
     from services.book_date import tanggal_buku
     base = datetime.fromisoformat(tanggal_buku(note.get("issued_at") or note.get("created_at") or ""))
     return (base + timedelta(days=days)).date().isoformat()

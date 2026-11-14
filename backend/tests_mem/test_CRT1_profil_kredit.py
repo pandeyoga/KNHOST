@@ -87,6 +87,17 @@ async def _cabut(klien, h, key, scope_id=KSC):
     assert r.status_code == 200, r.text
 
 
+async def _jurnal_kirim(oid: str, entitas: str, nilai: float, tanggal: str, sj: str) -> None:
+    """PK-41 (K-16) — fixture jurnal pendapatan surat jalan (Dr piutang / Cr pendapatan, bentuk `post_shipment_revenue`):
+    piutang kini berumur per surat jalan BERJURNAL, jadi fixture "sudah dikirim" memuat jurnalnya juga."""
+    from services import gl_service as gl
+    await gl._insert_entry(lines=[{"account_code": "1-1200", "debit": nilai, "credit": 0.0},
+                                  {"account_code": "4-1000", "debit": 0.0, "credit": nilai}],
+                           description=f"Pengakuan penjualan {oid} · {sj}", date=tanggal, source_type="shipment_revenue",
+                           source_id=sj, entity_id=entitas, created_by="uji", source_label=sj,
+                           ref={"order_id": oid, "order_number": f"SO-{oid}"})
+
+
 async def _pesanan(db, cid: str, entitas: str, *, total: float, telat_hari: int, oid: str) -> None:
     """Fixture: satu pesanan kredit belum lunas. `telat_hari` > 0 → surat jalan pertama sekian hari (+1 jam) lalu dengan
     syarat bayar 0 hari (jatuh tempo = tanggal surat jalan) → telat `telat_hari` hari penuh; 0 → belum dikirim."""
@@ -100,6 +111,10 @@ async def _pesanan(db, cid: str, entitas: str, *, total: float, telat_hari: int,
         await db.shipments.insert_one({"id": f"sj_{oid}", "shipment_no": f"SJ-{oid}", "order_id": oid,
                                        "status": "dispatched",
                                        "created_at": _iso(now - timedelta(days=telat_hari, hours=1))})
+        # PK-41 — jurnal pendapatan surat jalan bertanggal buku WIB `telat_hari` hari lalu (syarat 0 hari → telat tepat)
+        from services.book_date import tanggal_buku
+        tgl = (datetime.fromisoformat(tanggal_buku()) - timedelta(days=telat_hari)).date().isoformat()
+        await _jurnal_kirim(oid, entitas, total, tgl, f"sj_{oid}")
 
 
 async def _status(klien, h, cid: str) -> dict:

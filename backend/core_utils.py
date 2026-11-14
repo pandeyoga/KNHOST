@@ -408,6 +408,7 @@ COST_FIELDS = {
     "unit_cost", "base_unit_cost", "harga_pokok", "hpp", "hpp_source", "landed_cost_total",
     "landed_cost_refs", "cogs_amount", "cogs", "wac", "margin", "margin_pct",
     "cogs_base", "cogs_landed",   # Tanya KN F0.4 — pecahan HPP di /finance/profitability
+    "cogs_returned",              # PK-41 — HPP barang retur yang dikurangkan di /finance/profitability
 }
 #: PR-T2 — peran pemegang izin `costing.view` (HPP & Margin Produk). Himpunan ini DIISI ULANG DI TEMPAT dari matriks
 #: izin oleh `custom_role_service.sync_registry` (pola `role_registry.CROSS_ENTITY_ROLES`) supaya semua modul yang

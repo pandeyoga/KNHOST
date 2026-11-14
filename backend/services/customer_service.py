@@ -7,7 +7,7 @@ from typing import Any, Dict, List, Optional
 from datetime import datetime, timezone, timedelta
 from fastapi import HTTPException
 from db import db
-from core_utils import safe_doc, DEFAULT_ENTITY_ID, rupiah
+from core_utils import safe_doc, DEFAULT_ENTITY_ID, rupiah, to_cents, from_cents
 # PR-T6 — lintas PT dari himpunan HIDUP `CROSS_ENTITY_ROLES` (pengaturan per peran), bukan daftar nama admin/manager.
 from role_registry import CROSS_ENTITY_ROLES
 from services.data_scope import in_clause, own_scoped, owner_ids, owner_ids_now   # PR-T4 — cakupan data peran
@@ -156,7 +156,7 @@ def _term_days(customer: Dict[str, Any], order: Dict[str, Any],
                terms: Optional[Dict[Any, Optional[int]]] = None) -> int:
     """Termin snapshot SO menang; G3 D4-FIN-02 — termin 0 (tunai/COD) tetap 0, bukan jadi 30.
 
-    F-16 — bila `terms` (peta `(kode, entitas) → net_days` dari `due_context`) diberikan, kode termin SO
+    F-16 — bila `terms` (peta `(kode, entitas) → net_days` dari `report_basis.peta_termin`) diberikan, kode termin SO
     (CBD = 0, NET30 = 30, DP50 = 14, …) dipakai SEBELUM profil pelanggan: SO CBD tidak lagi tampil
     "30 hari lagi" hanya karena profil pelanggannya NET30."""
     pp = customer.get("payment_profile") or {}
@@ -176,48 +176,6 @@ def _term_days(customer: Dict[str, Any], order: Dict[str, Any],
         except (TypeError, ValueError):
             pass
     return 30
-
-
-SJ_INACTIVE = ("cancelled", "void", "voided")
-
-
-async def due_context(orders: List[Dict[str, Any]]) -> Dict[str, Any]:
-    """F-16 (uji pra-UAT 2026-10-21, keputusan owner Q-05a) — bahan hitung jatuh tempo piutang, SATU kali per daftar.
-
-    * Dasar jatuh tempo = tanggal **Surat Jalan pertama** SO (bukan tanggal SO): pesanan backorder / menunggu ACC /
-      belum dikirim BELUM punya jatuh tempo → tidak masuk daftar jatuh tempo, tidak telat, tanpa denda.
-    * Lama termin = kode termin SO (lapisan PT menang atas global) — lihat `_term_days`.
-    Dipakai SEMUA penghitung (status kredit, daftar tagih/Meja Finance, umur piutang, pengingat H-x, Tanya KN,
-    proyeksi kas) supaya angka tidak drift."""
-    ids = [o["id"] for o in orders if o.get("id")]
-    first: Dict[str, datetime] = {}
-    if ids:
-        async for r in db.shipments.aggregate([
-                {"$match": {"order_id": {"$in": ids}, "status": {"$nin": list(SJ_INACTIVE)}}},
-                {"$group": {"_id": "$order_id", "first": {"$min": "$created_at"}}}]):
-            dt = _parse_dt(r.get("first"))
-            if dt:
-                first[r["_id"]] = dt
-    terms: Dict[Any, Optional[int]] = {}
-    from services import entity_master_service as ems
-    for o in orders:
-        code = o.get("payment_term_code") or ""
-        key = (code, o.get("entity_id") or "")
-        if code and key not in terms:
-            row = await ems.resolve_row("payment-terms", code, o.get("entity_id") or "", include_inactive=True)
-            try:
-                terms[key] = int(row["net_days"]) if row and row.get("net_days") not in (None, "") else None
-            except (TypeError, ValueError):
-                terms[key] = None
-    return {"first_sj": first, "terms": terms}
-
-
-def order_due(customer: Dict[str, Any], order: Dict[str, Any], ctx: Dict[str, Any]) -> Optional[datetime]:
-    """Jatuh tempo SO = SJ pertama + termin; None = belum dikirim (belum jatuh tempo)."""
-    base = (ctx or {}).get("first_sj", {}).get(order.get("id"))
-    if base is None:
-        return None
-    return base + timedelta(days=_term_days(customer, order, (ctx or {}).get("terms")))
 
 
 async def credit_thresholds(entity_id: Optional[str],
@@ -251,55 +209,40 @@ async def compute_customer_credit(customer: Dict[str, Any], entity_id: Optional[
     eff = await cps.effective(customer["id"], pt, customer=customer, cache=cache)
     cid = customer["id"]
     credit_limit = float(eff["credit_limit"] or 0)
-    oq: Dict[str, Any] = {"customer_id": cid}
+    # PK-41 (RP-01, RP-03) — kursor tanpa batas (dulu 2.000 pesanan), status mati & pesanan lunas disaring di kueri;
+    # jatuh tempo, lewat tempo, dan telat terlama dari BARIS TAGIHAN TERKIRIM (per surat jalan, `report_basis`), bukan
+    # seluruh sisa pesanan pada jatuh tempo surat jalan pertama. Bagian yang belum dikirim tidak pernah telat.
+    oq: Dict[str, Any] = {"customer_id": cid, "status": {"$nin": sorted(DEAD_STATUSES)},
+                          "payment_status": {"$ne": "paid"}}
     if entity_id and entity_id != "all":
         oq["entity_id"] = entity_id
-    orders = await db.sales_orders.find(oq, {"_id": 0}).to_list(2000)
-    now = datetime.now(timezone.utc)
-    ar = 0.0
-    overdue = 0.0
+    orders = [o async for o in db.sales_orders.find(oq, {"_id": 0})]
+    from services import report_basis as rb
+    from services.book_date import tanggal_buku
+    lines_by_order = await rb.baris_tagihan(orders, {cid: customer}, per=tanggal_buku())
+    ar = ledger = overdue = 0   # sen bulat (`02` D5)
     max_overdue_days = 0
     open_orders = 0
-    ar_rows: List[Any] = []
-    dctx = await due_context(orders)   # F-16 — jatuh tempo dari SJ pertama
-    for o in orders:
-        if o.get("status") in DEAD_STATUSES:
+    for rows in lines_by_order.values():
+        if not rows:
             continue
-        if o.get("payment_status") == "paid":
-            continue
-        outstanding = max(_order_grand_total(o) - _order_paid(o), 0.0)
-        if outstanding <= 0.01:
-            continue
-        # Kontan/tunai bukan AR
-        method = order_payment_method(o)
-        if method in NON_AR_METHODS:
-            continue
-        ar += outstanding
-        ar_rows.append((o, outstanding))
         open_orders += 1
-        due = order_due(customer, o, dctx)
+        sm = rb.ringkas_baris(rows)
+        ar += to_cents(sm["total"])
+        ledger += to_cents(sm["ar_ledger"])
         # Keputusan pemilik K-01 (26 Okt) — "lewat tempo" = definisi layar Piutang (`ar_aging_service`) & daftar tagih
-        # (`collection_worklist`): mulai 1 hari PENUH setelah jatuh tempo. Dulu sejak detik pertama (`due < now`) →
-        # Performa Saya / Customer 360 / status kredit menulis "lewat tempo" untuk tagihan yang di Piutang masih
-        # "Belum jatuh tempo" (selisih pada hari jatuh tempo).
-        days_late = (now - due).days if due is not None else 0
-        if days_late > 0:
-            overdue += outstanding
-            max_overdue_days = max(max_overdue_days, days_late)
+        # (`collection_worklist`): mulai 1 hari PENUH setelah jatuh tempo (`report_basis.hari_antara`, tanggal WIB).
+        overdue += to_cents(sm["overdue"])
+        max_overdue_days = max(max_overdue_days, sm["oldest_days"])
+    ar, ledger, overdue = from_cents(ar), from_cents(ledger), from_cents(overdue)
     # CR-T1 — blokir manual kini di profil kredit (dulu `customers.status == "blocked"`); telat > 0 hari ⇔ overdue > 0
     status = cps.status_from(eff, ar, max_overdue_days)
-    # L02 LN-023-T01 — pecah belum lunas: piutang ledger (sudah diakui) vs eksposur (belum dikirim)
-    ledger = 0.0
-    if ar_rows:
-        from services.ar_aging_service import recognized_by_order, split_outstanding
-        rec = await recognized_by_order([o["id"] for o, _ in ar_rows])
-        ledger = sum(split_outstanding(o, amt, rec.get(o["id"], 0.0))["ar_ledger"] for o, amt in ar_rows)
     return {
         "credit_limit": credit_limit,
-        "ar_outstanding": round(ar, 2),
-        "ar_ledger": round(ledger, 2),
-        "exposure": round(ar - ledger, 2),
-        "overdue_amount": round(overdue, 2),
+        "ar_outstanding": ar,
+        "ar_ledger": ledger,
+        "exposure": from_cents(to_cents(ar) - to_cents(ledger)),
+        "overdue_amount": overdue,
         "max_overdue_days": max_overdue_days,
         "open_orders": open_orders,
         "available_credit": round(max(credit_limit - ar, 0), 2) if credit_limit > 0 else None,
@@ -509,9 +452,9 @@ async def collection_worklist(
         cust_filter["assigned_sales_id"] = sales_id
     if entity_id and entity_id != "all":
         cust_filter["entity_id"] = entity_id
-    customers = await db.customers.find(
-        cust_filter, {"_id": 0, "id": 1, "name": 1, "assigned_sales_id": 1, "payment_profile": 1}
-    ).to_list(3000)
+    # PK-41 (RP-01) — pelanggan & pesanan dibaca dengan kursor tanpa batas (dulu 3.000 / 8.000).
+    customers = [c async for c in db.customers.find(
+        cust_filter, {"_id": 0, "id": 1, "name": 1, "assigned_sales_id": 1, "payment_profile": 1})]
     cmap = {c["id"]: c for c in customers}
     cust_ids = list(cmap.keys())
     rows: List[Dict[str, Any]] = []
@@ -521,37 +464,33 @@ async def collection_worklist(
     oq: Dict[str, Any] = {"customer_id": {"$in": cust_ids}}
     if own_sales:
         oq = {"$or": [{"customer_id": {"$in": assigned_ids}}, {"customer_id": {"$in": cust_ids}, "sales_id": own_sales}]}
-    orders = await db.sales_orders.find(
+    oq = {"$and": [oq, {"status": {"$nin": sorted(DEAD_STATUSES)}, "payment_status": {"$ne": "paid"}}]}
+    orders = [o async for o in db.sales_orders.find(
         oq,
         {"_id": 0, "id": 1, "number": 1, "customer_id": 1, "customer_name": 1,
          "status": 1, "payment_status": 1, "grand_total": 1, "total_amount": 1, "extra_billing_lines": 1,
          "payments": 1, "created_at": 1, "sales_name": 1, "payment_term_code": 1,
-         "payment_term_days": 1, "payment_profile_method": 1, "entity_id": 1},
-    ).to_list(8000)
-    now = datetime.now(timezone.utc)
-    dctx = await due_context(orders)   # F-16 — jatuh tempo dari SJ pertama
+         "payment_term_days": 1, "payment_profile_method": 1, "entity_id": 1})]
+    # PK-41 (RP-03) — yang ditagih = BARIS TERKIRIM (per surat jalan) yang masih bersisa: jatuh tempo = jatuh tempo
+    # tertua, `days_late` = telat terlama, `outstanding` = sisa bagian terkirim; bagian belum dikirim (`exposure`) belum
+    # punya jatuh tempo (F-16) dan tidak ditagih.
+    from services import report_basis as rb
+    from services.book_date import tanggal_buku
+    lines_by_order = await rb.baris_tagihan(orders, cmap, per=tanggal_buku())
     for o in orders:
-        if o.get("status") in DEAD_STATUSES or o.get("payment_status") == "paid":
-            continue
-        outstanding = max(_order_grand_total(o) - _order_paid(o), 0.0)
-        if outstanding <= 0.01:
-            continue
-        method = order_payment_method(o)
-        if method in NON_AR_METHODS:
-            continue
-        c = cmap.get(o["customer_id"], {})
-        due = order_due(c, o, dctx)
-        if due is None:
+        sm = rb.ringkas_baris(lines_by_order.get(o["id"]) or [])
+        if sm["due_date"] is None:
             continue   # F-16 — belum dikirim: belum punya jatuh tempo (bukan "30 hari lagi")
-        days_late = (now - due).days
+        c = cmap.get(o["customer_id"], {})
         rows.append({
             "order_id": o.get("id"), "order_number": o.get("number"),
             "customer_id": o.get("customer_id"), "customer_name": o.get("customer_name"),
             "assigned_sales_id": c.get("assigned_sales_id", ""),
-            "outstanding": round(outstanding, 2),
-            "due_date": due.date().isoformat(),
-            "days_late": days_late,
-            "overdue": days_late > 0,
+            "outstanding": sm["ar_ledger"],
+            "exposure": sm["exposure"],
+            "due_date": sm["due_date"],
+            "days_late": sm["max_days"],
+            "overdue": sm["max_days"] > 0,
             "sales_name": o.get("sales_name", ""),
             "via_own_order": bool(own_sales and c.get("assigned_sales_id") != own_sales),
         })

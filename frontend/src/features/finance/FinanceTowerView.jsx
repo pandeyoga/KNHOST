@@ -3,6 +3,8 @@
  * KPI posisi kas/AR/AP/modal kerja + Laba-Rugi MTD/YTD + tren + aging + rasio.
  * Sumber: /api/finance/tower. Panel dipisah ke FinanceTowerParts.jsx.
  * PK-16 — banner PT (`scope_meta`); gagal memuat → data dikosongkan (bukan "belum ada data").
+ * PK-41 (RP-09) — kartu Piutang memecah "tercatat · belum dikirim"; Modal Kerja = kas + piutang TERCATAT − hutang
+ * (keterangan dari server `working_capital_basis`).
  */
 import { apiErrorText } from "../../utils/apiError";
 import { useCallback, useEffect, useState } from "react";
@@ -75,11 +77,11 @@ export default function FinanceTowerView({ selectedEntity }) {
                 (angka utama "Kas & Bank"); piutang = sub-buku dokumen belum lunas, semua pelanggan (= layar Piutang). */}
             <KpiCard testId="tower-kpi-cash" label="Posisi Kas" value={formatCurrency(data.cash?.total)} icon={Wallet} accent={FC.cash} tone="text-[#0058CC]" sub="Saldo buku besar akun kas & bank"
               onClick={tujuan("bank-accounts")} actionLabel="Buka Rekening & Saldo" />
-            <KpiCard testId="tower-kpi-ar" label="Piutang (AR)" value={formatCurrency(data.ar?.outstanding)} icon={Users} accent={FC.revenue} tone="text-[#1B7F4B]" sub={`Sub-buku (dokumen belum lunas) · lewat jatuh tempo ${formatCurrency(data.ar?.overdue)}`}
+            <KpiCard testId="tower-kpi-ar" label="Piutang (AR)" value={formatCurrency(data.ar?.outstanding)} icon={Users} accent={FC.revenue} tone="text-[#1B7F4B]" sub={`tercatat ${formatCurrency(data.ar?.ar_ledger || 0)} · belum dikirim ${formatCurrency(data.ar?.exposure || 0)}`}
               onClick={tujuan("ar-aging")} actionLabel="Buka Piutang" />
             <KpiCard testId="tower-kpi-ap" label="Hutang (AP)" value={formatCurrency(data.ap?.outstanding)} icon={Truck} accent={FC.expense} tone="text-[#C0392B]"
               onClick={tujuan("vendor-bills")} actionLabel="Buka Tagihan Pemasok" />
-            <KpiCard testId="tower-kpi-wc" label="Modal Kerja Bersih" value={formatCurrency(data.working_capital)} icon={Coins} accent={FC.purple} tone={(data.working_capital ?? 0) >= 0 ? "text-[#6B219A]" : "text-[#C0392B]"} sub="Kas + AR − AP" />
+            <KpiCard testId="tower-kpi-wc" label="Modal Kerja Bersih" value={formatCurrency(data.working_capital)} icon={Coins} accent={FC.purple} tone={(data.working_capital ?? 0) >= 0 ? "text-[#6B219A]" : "text-[#C0392B]"} sub={data.working_capital_basis || "Kas + piutang tercatat − hutang"} />
           </div>
 
           {/* Fase 3 · P4 (D-10) — dulu 4 kartu KPI Laba-Rugi (Pendapatan/Laba/Marjin Bersih/Pendapatan bulan ini);

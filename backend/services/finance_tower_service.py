@@ -33,9 +33,13 @@ async def _cash_position(scope: Optional[Dict[str, Any]]) -> Dict[str, Any]:
 
 
 async def _ap_summary(scope: Optional[Dict[str, Any]]) -> Dict[str, Any]:
-    now = datetime.now(timezone.utc)
-    q: Dict[str, Any] = {"status": {"$in": PAYABLE_BILL_STATUSES}, **(scope or {})}
-    bills = await db.vendor_bills.find(q, {"_id": 0}).to_list(20000)
+    from services import report_basis as rb
+    today = rb.tanggal_buku()
+    # PK-41 (RP-01) — kursor tanpa batas (dulu 20.000 tagihan) dengan saringan "belum lunas" di kueri; umur =
+    # `report_basis.hari_antara(jatuh tempo, hari ini)`, jatuh tempo kosong = tanggal tagihan + termin pemasok.
+    q: Dict[str, Any] = {"status": {"$in": PAYABLE_BILL_STATUSES}, "payment_status": {"$ne": "paid"}, **(scope or {})}
+    bills = [b async for b in db.vendor_bills.find(q, {"_id": 0})]
+    term_cache: Dict[str, int] = {}
     aging = {"d0_30": 0.0, "d31_60": 0.0, "d61_90": 0.0, "d90_plus": 0.0}
     total = 0.0
     top: List[Dict[str, Any]] = []
@@ -44,14 +48,8 @@ async def _ap_summary(scope: Optional[Dict[str, Any]]) -> Dict[str, Any]:
         if out <= EPS:
             continue
         total += out
-        ref = b.get("due_date") or b.get("bill_date") or b.get("created_at") or ""
-        days = 0
-        try:
-            d = datetime.fromisoformat(str(ref).replace("Z", "+00:00"))
-            d = d if d.tzinfo else d.replace(tzinfo=timezone.utc)
-            days = (now - d).days
-        except (ValueError, TypeError):
-            days = 0
+        due, _basis = await rb.jatuh_tempo_tagihan(b, term_cache)
+        days = rb.hari_antara(due, today) if due else 0
         bk = "d0_30" if days <= 30 else "d31_60" if days <= 60 else "d61_90" if days <= 90 else "d90_plus"
         aging[bk] = round(aging[bk] + out, 2)
         top.append({"number": b.get("bill_number"), "party": b.get("supplier_name", ""),
@@ -95,7 +93,10 @@ async def finance_tower(scope: Optional[Dict[str, Any]] = None,
     mtd = _pl_snapshot(await fs.income_statement(month_start, today, scope))
     ytd = _pl_snapshot(await fs.income_statement(year_start, today, scope))
     ap = await _ap_summary(scope)
-    ar_rep = await ar.aging_report(entity_id if entity_id and entity_id != "all" else None)
+    # PK-41 (RP-09) — umur piutang dengan saringan PT yang SAMA dengan `scope` (mode gabungan `{"$in": entity_ids}`);
+    # dulu dipanggil tanpa saringan sehingga piutang PT di luar penugasan ikut terhitung.
+    ar_rep = await ar.aging_report((scope or {}).get("entity_id")
+                                   or (entity_id if entity_id and entity_id != "all" else None))
     ar_tot = ar_rep.get("totals", {})
     bi_data = await bi.finance_bi(year, scope, entity_ids or ([entity_id] if entity_id else []))
 
@@ -110,6 +111,8 @@ async def finance_tower(scope: Optional[Dict[str, Any]] = None,
         "cash": cash,
         "ar": {
             "outstanding": ar_tot.get("total", 0),
+            "ar_ledger": ar_tot.get("ar_ledger", 0),   # PK-41 — piutang tercatat (surat jalan berjurnal)
+            "exposure": ar_tot.get("exposure", 0),      # PK-41 — pesanan belum dikirim
             "overdue": ar_tot.get("overdue", 0),
             "aging": {
                 "current": ar_tot.get("current", 0), "b1_30": ar_tot.get("b1_30", 0),
@@ -117,9 +120,12 @@ async def finance_tower(scope: Optional[Dict[str, Any]] = None,
                 "b90_plus": ar_tot.get("b90_plus", 0),
             },
             "top": ar_top,
+            "bucket_labels": ar_rep.get("bucket_labels") or [],   # PK-41 (RP-12) — judul kolom umur PT
         },
         "ap": ap,
-        "working_capital": round(cash["total"] + ar_tot.get("total", 0) - ap["outstanding"], 2),
+        # PK-41 (RP-09) — modal kerja memakai piutang TERCATAT (bukan total belum lunas yang memuat pesanan belum dikirim).
+        "working_capital": round(cash["total"] + ar_tot.get("ar_ledger", 0) - ap["outstanding"], 2),
+        "working_capital_basis": "Kas + piutang tercatat − hutang",
         "pl": {"mtd": mtd, "ytd": ytd},
         "monthly": bi_data.get("monthly", []),
         "ratios": bi_data.get("ratios", {}),

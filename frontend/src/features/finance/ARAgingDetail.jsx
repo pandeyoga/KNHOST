@@ -9,8 +9,13 @@
  * PK-43 (UX-15) — **Catat Pembayaran** (`ar-aging-pay`, di bilah aksi kepala panel) dan **Bayar** per pesanan
  * (`ar-aging-pay-{id}`, kolom aksi menempel kanan) membuka form kwitansi baku (`onPay`). Tampil hanya bagi pemegang
  * `ar_receipt.create`; di "Semua PT" mati dengan alasan tertulis di bilah sendiri.
+ * PK-41 (K-16) — tiap pesanan bisa dibuka menjadi baris per surat jalan (Surat Jalan, Tanggal, Jatuh Tempo, Nilai,
+ * Terbayar, Sisa, Hari Lewat) + satu baris "Belum dikirim"; status umur = ikon + teks + warna (`status-pill`).
  */
-import { FileText, Loader2, Receipt, X, BadgeDollarSign, Wallet } from "lucide-react";
+import { useState } from "react";
+import {
+  FileText, Loader2, Receipt, X, BadgeDollarSign, Wallet, ChevronDown, ChevronRight, AlertTriangle, CheckCircle2, Truck,
+} from "lucide-react";
 import { formatCurrency, formatDate } from "../../utils/formatters";
 import StoreCreditBadge from "../../components/StoreCreditBadge";
 import PenaltyPanel from "./payments/PenaltyPanel";
@@ -31,6 +36,8 @@ export default function ARAgingDetail({ detail, customerId, loading, currentUser
   // INV-ROLE-01 — sama seperti di layar induk: izin, bukan nama peran.
   const canAccrue = can(currentUser?.permissions || {}, "penalty", "issue");
   const canPay = Boolean(onPay) && can(currentUser?.permissions || {}, "ar_receipt", "create");   // PK-43
+  const [open, setOpen] = useState({});   // PK-41 — pesanan yang rincian surat jalannya dibuka
+  const toggle = (oid) => setOpen((o) => ({ ...o, [oid]: !o[oid] }));
   const t = detail?.totals || {};
   return (
     <div className="section-card mt-3" data-testid="ar-aging-detail">
@@ -101,23 +108,25 @@ export default function ARAgingDetail({ detail, customerId, loading, currentUser
                 </thead>
                 <tbody>
                   {detail.items.map((it) => (
-                    <tr key={it.order_id} data-testid={`ar-detail-row-${it.order_id}`}>
+                    <OrderRows key={it.order_id} it={it} open={!!open[it.order_id]} cols={canPay ? 10 : 9}>
+                    <tr data-testid={`ar-detail-row-${it.order_id}`}>
                       <td className="px-3 py-2 font-semibold text-[#0058CC] whitespace-nowrap">
+                        <button type="button" className="icon-button mr-1 align-middle" onClick={() => toggle(it.order_id)}
+                          aria-expanded={!!open[it.order_id]} data-testid={`ar-detail-toggle-${it.order_id}`}
+                          aria-label={`${open[it.order_id] ? "Tutup" : "Buka"} rincian surat jalan ${it.order_number}`}>
+                          {open[it.order_id] ? <ChevronDown size={14} aria-hidden="true" /> : <ChevronRight size={14} aria-hidden="true" />}
+                        </button>
                         {it.order_number}
                         {it.has_plan && (
                           <span className="ml-1 rounded bg-[#EFF4FF] px-1 text-[9px] font-bold text-[#0058CC]"
                             title={`Rencana pembayaran ${it.plan_number}`}>RPB</span>
                         )}
                       </td>
-                      {/* F-16 — jatuh tempo = Surat Jalan pertama + termin; belum dikirim = belum jatuh tempo */}
+                      {/* PK-41 — jatuh tempo surat jalan tertua yang masih bersisa (per surat jalan + termin) */}
                       <td className="px-3 py-2 text-[#3C3C43]" data-testid={`ar-detail-due-${it.order_id}`}>
                         {it.due_date ? fmtDate(it.due_date) : <span className="text-[#8E8E93]">belum dikirim</span>}
                       </td>
-                      <td className="px-3 py-2 text-center">
-                        {it.overdue
-                          ? <span className="rounded bg-[#FCEBEA] px-1.5 py-0.5 text-[10px] font-bold text-[#C0392B]">telat {it.days_late} hr</span>
-                          : <span className="rounded bg-[#E6F6EC] px-1.5 py-0.5 text-[10px] font-bold text-[#1B7F4B]">lancar</span>}
-                      </td>
+                      <td className="px-3 py-2 text-center"><AgeStatus it={it} /></td>
                       <td className="px-3 py-2 text-right tabular-nums">{formatCurrency(it.grand_total)}</td>
                       <td className="px-3 py-2 text-right tabular-nums text-[#1B7F4B]">{formatCurrency(it.paid_total)}</td>
                       <td className="px-3 py-2 text-right tabular-nums font-bold">{formatCurrency(it.outstanding)}</td>
@@ -161,6 +170,7 @@ export default function ARAgingDetail({ detail, customerId, loading, currentUser
                         </td>
                       )}
                     </tr>
+                    </OrderRows>
                   ))}
                 </tbody>
               </table>
@@ -189,5 +199,85 @@ export default function ARAgingDetail({ detail, customerId, loading, currentUser
         )}
       </div>
     </div>
+  );
+}
+
+/** PK-41 — status umur pesanan: ikon + teks + warna (bukan warna saja). */
+function AgeStatus({ it }) {
+  if (!it.due_date) {
+    return (
+      <span className="status-pill pill-muted inline-flex items-center gap-1 whitespace-nowrap" data-testid={`ar-detail-age-${it.order_id}`}>
+        <Truck size={12} aria-hidden="true" />Belum dikirim
+      </span>
+    );
+  }
+  return it.overdue ? (
+    <span className="status-pill pill-danger inline-flex items-center gap-1 whitespace-nowrap" data-testid={`ar-detail-age-${it.order_id}`}>
+      <AlertTriangle size={12} aria-hidden="true" />Telat {it.days_late} hari
+    </span>
+  ) : (
+    <span className="status-pill pill-success inline-flex items-center gap-1 whitespace-nowrap" data-testid={`ar-detail-age-${it.order_id}`}>
+      <CheckCircle2 size={12} aria-hidden="true" />Belum jatuh tempo
+    </span>
+  );
+}
+
+const SUMBER_LABEL = { surat_jalan: "", pesanan: "Pesanan (jurnal lama)", belum_dikirim: "Belum dikirim" };
+/** Judul baris: nomor surat jalan; tagihan tambahan nota debit (PK-32) "Nota debit {nomor}". */
+const lineTitle = (ln) => (ln.sumber === "nota_debit" ? `Nota debit ${ln.ref_number}` : (SUMBER_LABEL[ln.sumber] || ln.ref_number));
+
+function hariLewat(ln) {
+  if (ln.sumber === "belum_dikirim") return "—";
+  if (ln.hari_lewat > 0) return `${ln.hari_lewat} hari`;
+  if (ln.hari_lewat === 0) return "0 hari";
+  return `${-ln.hari_lewat} hari lagi`;
+}
+
+/** Baris pesanan + (bila dibuka) tabel baris per surat jalan dan baris "Belum dikirim". */
+function OrderRows({ it, open, cols = 9, children }) {
+  return (
+    <>
+      {children}
+      {open && (
+        <tr data-testid={`ar-detail-lines-${it.order_id}`}>
+          <td colSpan={cols} className="bg-kn-neutral-soft px-3 py-2">
+            <table className="data-table" data-testid={`ar-detail-lines-table-${it.order_id}`}>
+              <thead>
+                <tr>
+                  <th>Surat Jalan</th>
+                  <th>Tanggal</th>
+                  <th>Jatuh Tempo</th>
+                  <th className="text-right">Nilai</th>
+                  <th className="text-right">Terbayar</th>
+                  <th className="text-right">Sisa</th>
+                  <th className="text-right">Hari Lewat</th>
+                </tr>
+              </thead>
+              <tbody>
+                {(it.lines || []).map((ln) => (
+                  <tr key={`${ln.sumber}:${ln.ref_id}:${ln.jurnal_id || ""}`} data-testid={`ar-line-${it.order_id}-${ln.sumber}`}>
+                    <td className="font-medium">{lineTitle(ln)}</td>
+                    <td>{ln.tanggal ? formatDate(ln.tanggal) : "—"}</td>
+                    <td>{ln.jatuh_tempo ? formatDate(ln.jatuh_tempo) : "—"}</td>
+                    <td className="text-right tabular-nums">{formatCurrency(ln.nilai)}</td>
+                    <td className="text-right tabular-nums">{formatCurrency(ln.terbayar)}</td>
+                    <td className="text-right tabular-nums font-semibold">{formatCurrency(ln.sisa)}</td>
+                    <td className={`text-right tabular-nums ${ln.hari_lewat > 0 ? "text-kn-danger-text font-semibold" : "text-kn-text-2"}`}>
+                      {hariLewat(ln)}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+            {(it.lines || []).some((ln) => ln.sumber === "belum_dikirim" && ln.uang_muka > 0) && (
+              <p className="mt-1 text-fs-12 text-kn-text-2">
+                Uang muka <b className="whitespace-nowrap tabular-nums">{formatCurrency((it.lines || []).find((ln) => ln.sumber === "belum_dikirim").uang_muka)}</b> sudah
+                dikurangkan dari nilai yang belum dikirim.
+              </p>
+            )}
+          </td>
+        </tr>
+      )}
+    </>
   );
 }

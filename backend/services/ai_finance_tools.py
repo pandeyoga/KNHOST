@@ -293,9 +293,12 @@ async def fin_cash_flow(args, fc: FinCall):
             for k in ("operating", "investing", "financing")]
     totals = {"operating": rows[0]["amount"], "investing": rows[1]["amount"], "financing": rows[2]["amount"],
               "net_change": _num(cf.get("net_change")), "begin_cash": _num(cf.get("begin_cash")),
+              "opening_balance_additions": _num(cf.get("opening_balance_additions")),
               "end_cash": _num(cf.get("end_cash"))}
     rows += [{"activity": "Kenaikan (penurunan) kas", "amount": totals["net_change"]},
              {"activity": "Kas awal periode", "amount": totals["begin_cash"]},
+             {"activity": cf.get("opening_balance_label") or "Saldo awal rekening yang didaftarkan periode ini",
+              "amount": totals["opening_balance_additions"]},
              {"activity": "Kas akhir periode", "amount": totals["end_cash"]}]
     return await _result(fc, "fin_cash_flow", args, title="Arus kas", columns=[_txt("activity", "Aktivitas"),
                                                                             _col("amount", "Jumlah", "idr")],
@@ -320,7 +323,9 @@ async def fin_equity_changes(args, fc: FinCall):
 
 
 # ── piutang & hutang ──────────────────────────────────────────────────────────────────────────────────────────────────
-_AR_DUE_NOTE = "Jatuh tempo dihitung dari surat jalan pertama ditambah termin; pesanan belum dikirim belum jatuh tempo"
+# PK-41 (K-16) — jatuh tempo per surat jalan, bukan surat jalan pertama untuk seluruh pesanan.
+_AR_DUE_NOTE = ("Jatuh tempo dihitung per surat jalan ditambah termin; bagian pesanan yang belum dikirim belum jatuh "
+                "tempo")
 _BUCKETS = (("current", "Belum jatuh tempo"), ("b1_30", "1–30 hari"), ("b31_60", "31–60 hari"),
             ("b61_90", "61–90 hari"), ("b90_plus", "> 90 hari"))
 
@@ -365,7 +370,7 @@ async def fin_ar_customer(args, fc: FinCall):
     tot = d.get("totals") or {}
     lbl = _day_label(as_of)
     basis = {o.get("due_basis") for o in d.get("items") or []}
-    notes = [f"Posisi per {lbl}", _AR_DUE_NOTE if "first_sj" in basis or not basis else
+    notes = [f"Posisi per {lbl}", _AR_DUE_NOTE if "per_sj" in basis or not basis else
              "Pesanan belum dikirim, jadi belum jatuh tempo"]
     return await _result(fc, "fin_ar_customer", args, title="Piutang pelanggan", columns=[
         _txt("customer", "Pelanggan"), _txt("number", "Nomor pesanan"), _txt("due_date", "Jatuh tempo"),

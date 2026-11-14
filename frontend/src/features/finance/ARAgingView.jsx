@@ -1,7 +1,8 @@
 /**
  * ARAgingView (EPIC7-A) — Piutang / Accounts Receivable Aging.
  * Akses admin/manager. Sumber: GET /api/ar/aging (+ /ar/aging/{customer_id}).
- * Aging buckets: Lancar / 1-30 / 31-60 / 61-90 / 90+ hari.
+ * PK-41 — kolom umur dari `bucket_labels` server (batas `ar.aging_buckets` PT; kolom pertama "Belum jatuh tempo"),
+ * umur per surat jalan, dan baris pencocokan "Piutang tercatat · Saldo akun piutang · Selisih" di bawah total.
  *
  * FASE G-3 (permintaan #2 pemilik) — kolom denda **tidak lagi angka mati**:
  *   • estimasi tetap ditampilkan (informasional, dari kebijakan bunga & tenggang);
@@ -25,14 +26,16 @@ import { formatCurrency } from "../../utils/formatters";
 import { CreditStatusPill } from "../crm/crmUtils";
 import { MetricRow } from "../../components/ListPageParts";
 import ARAgingDetail from "./ARAgingDetail";
-// Fase 3 · P4 (D-12 B) — kelompok umur dari util bersama (sama dengan Uang Muka Pelanggan).
-import { AGING_BUCKETS } from "./agingBuckets";
+// Fase 3 · P4 (D-12 B) — kelompok umur dari util bersama (sama dengan Uang Muka Pelanggan). PK-41 — judul dari server.
+import { bucketColumns } from "./agingBuckets";
 // INV-ROLE-01 — wewenang dibaca dari IZIN, bukan dari daftar nama peran.
 import { can } from "../../config/roles";
 import DetailModal from "../../components/DetailModal";
 import ARReceiptModal from "../crm/ARReceiptModal";   // PK-43 — form kwitansi baku
 
-const BUCKETS = AGING_BUCKETS;
+// PK-41 — nada sel per kolom umur (kunci tetap; judul kolom dari server).
+const WARN_KEYS = new Set(["b1_30", "b31_60"]);
+const DANGER_KEYS = new Set(["b61_90", "b90_plus"]);
 
 const BASE_LABEL = {
   installment: "nilai cicilan yang telat",
@@ -113,6 +116,7 @@ export default function ARAgingView({ selectedEntity, currentUser, focusDoc, onC
   }, [load]);
 
   const totals = data?.totals || {};
+  const cols = useMemo(() => bucketColumns(data?.bucket_labels), [data]);
   const dendaRate = data?.config?.denda_rate_pct_per_month || 0;
   const penaltyPolicy = data?.penalty_policy || {};
 
@@ -175,7 +179,7 @@ export default function ARAgingView({ selectedEntity, currentUser, focusDoc, onC
         <MetricRow testId="ar-kpi" items={[
           { label: "Total Belum Lunas", value: formatCurrency(totals.total), icon: Wallet, testId: "ar-kpi-total" },
           { label: `Jatuh Tempo (${overduePct}%)`, value: formatCurrency(totals.overdue), icon: AlertTriangle, tone: "#C0392B", testId: "ar-kpi-overdue" },
-          { label: "Lancar (Belum JT)", value: formatCurrency(totals.current), icon: Clock3, tone: "#1B7F4B", testId: "ar-kpi-current" },
+          { label: "Belum jatuh tempo", value: formatCurrency(totals.current), icon: Clock3, tone: "#1B7F4B", testId: "ar-kpi-current" },
           { label: `Est. Denda (${dendaRate}%/bln)`, value: formatCurrency(totals.denda), icon: TrendingDown, tone: "#B45309", testId: "ar-kpi-denda" },
           { label: `Nota Denda (${totals.penalty_docs || 0} dok)`, value: formatCurrency(totals.penalty_actual), icon: BadgeDollarSign, tone: "#0058CC", testId: "ar-kpi-denda-doc" },
         ]} />
@@ -196,7 +200,7 @@ export default function ARAgingView({ selectedEntity, currentUser, focusDoc, onC
             <h3 className="text-[12px] font-bold text-[#1C1C1E]">Sebaran Umur Piutang</h3>
             <span className="text-[10.5px] text-[#9A9BA3] ml-auto" data-testid="ar-aging-customers">{totals.customers || 0} pelanggan · {totals.orders || 0} pesanan</span>
           </div>
-          <AgingBar totals={totals} />
+          <AgingBar totals={totals} cols={cols} />
         </div>
       </div>
 
@@ -237,11 +241,11 @@ export default function ARAgingView({ selectedEntity, currentUser, focusDoc, onC
             /* Fase 3 · P4 (L-07) — tabel mentah → `.table-wrap` + `.data-table` baku. Kepala kelompok umur dari util
                bersama (D-12). Di HP tabel bergulir di dalam wadahnya; pesan kosong & pager di luar wadah gulir. */
             <div className="table-wrap">
-              <table className="data-table min-w-[860px]" data-testid="ar-aging-table">
+              <table className="data-table head-wrap min-w-[860px]" data-testid="ar-aging-table">
                 <thead>
                   <tr>
                     <th>Pelanggan</th>
-                    {BUCKETS.map((b) => <th key={b.key} className="text-right">{b.short}</th>)}
+                    {cols.map((b) => <th key={b.key} className="text-right" data-testid={`ar-aging-col-${b.key}`}>{b.label}</th>)}
                     <th className="text-right">Belum Lunas</th>
                     <th className="text-right">Denda</th>
                     <th className="text-center">Kredit</th>
@@ -259,11 +263,7 @@ export default function ARAgingView({ selectedEntity, currentUser, focusDoc, onC
                         <p className="font-semibold text-[#1C1C1E]">{c.customer_name}</p>
                         <p className="text-[10px] text-[#9A9BA3]">{c.assigned_sales_name || "—"}{c.oldest_days > 0 ? ` · telat ${c.oldest_days} hr` : ""}</p>
                       </td>
-                      <Cell v={c.current} />
-                      <Cell v={c.b1_30} warn />
-                      <Cell v={c.b31_60} warn />
-                      <Cell v={c.b61_90} danger />
-                      <Cell v={c.b90_plus} danger />
+                      {cols.map((b) => <Cell key={b.key} v={c[b.key]} warn={WARN_KEYS.has(b.key)} danger={DANGER_KEYS.has(b.key)} />)}
                       <td className="px-3 py-2 text-right tabular-nums font-bold text-[#1C1C1E]">{formatCurrency(c.outstanding)}</td>
                       <td className="px-3 py-2 text-right" data-testid={`ar-denda-cell-${c.customer_id}`}>
                         {(c.penalty_docs || 0) > 0 ? (
@@ -304,11 +304,7 @@ export default function ARAgingView({ selectedEntity, currentUser, focusDoc, onC
                     <td className="px-3 py-2 text-[#6B6B73] uppercase text-[10px]" data-testid="ar-aging-total-label">
                       {filtered ? `Total yang tampil (${rows.length} pelanggan)` : "Total"}
                     </td>
-                    <td className="px-3 py-2 text-right tabular-nums">{formatCurrency(foot.current)}</td>
-                    <td className="px-3 py-2 text-right tabular-nums">{formatCurrency(foot.b1_30)}</td>
-                    <td className="px-3 py-2 text-right tabular-nums">{formatCurrency(foot.b31_60)}</td>
-                    <td className="px-3 py-2 text-right tabular-nums">{formatCurrency(foot.b61_90)}</td>
-                    <td className="px-3 py-2 text-right tabular-nums">{formatCurrency(foot.b90_plus)}</td>
+                    {cols.map((b) => <td key={b.key} className="px-3 py-2 text-right tabular-nums">{formatCurrency(foot[b.key])}</td>)}
                     <td className="px-3 py-2 text-right tabular-nums" data-testid="ar-aging-total">{formatCurrency(foot.total)}</td>
                     <td className="px-3 py-2 text-right tabular-nums text-[#0058CC]" data-testid="ar-aging-denda-total">
                       {formatCurrency(foot.penalty_actual)}
@@ -321,7 +317,7 @@ export default function ARAgingView({ selectedEntity, currentUser, focusDoc, onC
                   {filtered && (
                     <tr className="bg-[#FAFBFC] text-[10.5px] text-[#6B6B73]" data-testid="ar-aging-total-all-row">
                       <td className="px-3 py-1.5 uppercase text-[10px]">Total semua pelanggan</td>
-                      <td colSpan={5} />
+                      <td colSpan={cols.length} />
                       <td className="px-3 py-1.5 text-right tabular-nums" data-testid="ar-aging-total-all">{formatCurrency(totals.total)}</td>
                       <td colSpan={2} />
                     </tr>
@@ -330,8 +326,10 @@ export default function ARAgingView({ selectedEntity, currentUser, focusDoc, onC
               </table>
             </div>
           )}
+          <ReconciliationLine rec={data?.reconciliation} />
           <p className="text-[10.5px] text-[#9A9BA3] mt-2">
-            Umur dihitung dari tanggal pesanan + termin pembayaran. Kolom <b>Denda</b> menampilkan
+            Umur dihitung per surat jalan: tanggal surat jalan + termin pembayaran; bagian pesanan yang belum dikirim
+            belum jatuh tempo. Kolom <b>Denda</b> menampilkan
             <b> nota denda nyata</b> (dokumen yang bisa ditagih/dinegosiasikan); angka{" "}
             <i>est.</i> adalah estimasi {dendaRate}%/bulan yang <b>belum</b> dibuatkan nota.
             Nota denda dihitung atas dasar <b>{BASE_LABEL[penaltyPolicy.base] || penaltyPolicy.base || "kebijakan"}</b>
@@ -377,12 +375,12 @@ function Cell({ v, warn, danger }) {
   return <td className={`px-3 py-2 text-right tabular-nums ${tone}`}>{(v || 0) > 0.01 ? formatCurrency(v) : "—"}</td>;
 }
 
-function AgingBar({ totals }) {
+function AgingBar({ totals, cols }) {
   const total = totals.total || 0;
   return (
     <div data-testid="ar-aging-bar">
       <div className="flex h-3 w-full overflow-hidden rounded-full bg-[#F2F2F7]">
-        {BUCKETS.map((b) => {
+        {cols.map((b) => {
           const v = totals[b.key] || 0;
           const pct = total > 0 ? (v / total) * 100 : 0;
           if (pct <= 0) return null;
@@ -390,7 +388,7 @@ function AgingBar({ totals }) {
         })}
       </div>
       <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1">
-        {BUCKETS.map((b) => (
+        {cols.map((b) => (
           <span key={b.key} className="flex items-center gap-1.5 text-[10.5px] text-[#6B6B73]" data-testid={`ar-bucket-${b.key}`}>
             <span className="h-2.5 w-2.5 rounded-sm" style={{ background: b.tone }} />
             {b.label}: <b className="tabular-nums text-[#1C1C1E]">{formatCurrency(totals[b.key])}</b>
@@ -404,7 +402,7 @@ function AgingBar({ totals }) {
 // Audit UI 24 Okt (128): definisi dari server memuat kode akun mentah ("saldo 1-1200") —
 // layar memakai kalimat sendiri tanpa kode akun.
 const AR_DEFS_UI = {
-  ar_ledger: "Pendapatan yang sudah diakui (surat jalan/jurnal penjualan) dikurangi pembayaran — sama dengan saldo akun Piutang Usaha.",
+  ar_ledger: "Nilai surat jalan yang sudah dijurnal dikurangi pembayaran — dicocokkan dengan saldo akun piutang di bawah tabel.",
   exposure: "Nilai pesanan yang belum dikirim/diakui; belum masuk buku besar piutang.",
 };
 
@@ -424,6 +422,32 @@ function LedgerExposureStrip({ totals }) {
           <p className="text-[11px] text-[#8E8E93]">{d.exposure}</p>
         </div>
       </div>
+    </div>
+  );
+}
+
+/** PK-41 — pencocokan piutang tercatat dengan saldo akun piutang (angka utuh, tidak dipatah). */
+function ReconciliationLine({ rec }) {
+  if (!rec) return null;
+  const money = (v, testId) => (
+    <b className="whitespace-nowrap tabular-nums text-kn-text" data-testid={testId}>{formatCurrency(v || 0)}</b>
+  );
+  const beda = rec.difference != null && Math.abs(Number(rec.difference)) >= 0.005;
+  return (
+    <div className="mt-2 rounded-md border border-kn-divider bg-kn-neutral-soft px-3 py-2 text-fs-12 text-kn-text-2"
+      data-testid="ar-aging-reconciliation">
+      <p className="flex flex-wrap items-center gap-x-1.5 gap-y-0.5">
+        <span>Piutang tercatat</span>{" "}{money(rec.ar_ledger_total, "ar-rec-ledger")}
+        {rec.gl_balance != null && (
+          <>
+            {" "}<span aria-hidden="true">·</span>{" "}<span>Saldo akun piutang</span>{" "}{money(rec.gl_balance, "ar-rec-gl")}
+            {" "}<span aria-hidden="true">·</span>{" "}<span>Selisih</span>{" "}
+            <b className={`whitespace-nowrap tabular-nums ${beda ? "text-kn-danger-text" : "text-kn-success-text"}`}
+              data-testid="ar-rec-diff">{formatCurrency(rec.difference || 0)}</b>
+          </>
+        )}
+      </p>
+      {rec.note && <p className="mt-0.5" data-testid="ar-rec-note">{rec.note}</p>}
     </div>
   );
 }

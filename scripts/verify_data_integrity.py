@@ -1141,6 +1141,7 @@ async def layer_gl_invariants(db):
       GL-2 (FAIL): trial balance seimbang per entitas.
       GL-3 (WARN): rekonsiliasi persediaan per PT = `gl_service.inventory_reconciliation()` (INV-GL-DRIFT, PK-29).
       GL-4 (WARN): order berpendapatan tanpa jurnal HPP (COGS-ZERO detector).
+      GL-8 (WARN): piutang tercatat umur piutang per PT = saldo akun piutang (INV-AR-03, PK-41).
     """
     from collections import defaultdict
     print(f"\n{C}{B}L4-GL — Invarian General Ledger (keseimbangan & rekonsiliasi){X}")
@@ -1287,6 +1288,33 @@ async def layer_gl_invariants(db):
     else:
         results["pass"] += 1
         line("PASS", G, "GL: roll scrap yang sudah dihapus-buku bernilai 0 (GL-SCRAP)")
+
+
+    # GL-8 (INV-AR-03, PK-41 — 02 D2, WARN): piutang tercatat umur piutang (Σ sisa baris surat jalan berjurnal,
+    #   `report_basis.baris_tagihan`) per PT = saldo akun piutang (`penjualan.piutang`, semua akun yang pernah dipakai)
+    #   PT itu. Baca-saja: selisih DILAPORKAN, tidak menggagalkan (jurnal manual ke akun piutang, nota denda, atau jurnal
+    #   pendapatan yang gagal menjelaskannya). Angka diambil dari `ar_aging_service.aging_report` (satu rumus dengan layar).
+    try:
+        from services import ar_aging_service as _ara
+        ar_diff = []
+        for e in ents:
+            rec = (await _ara.aging_report(entity_id=e["id"])).get("reconciliation") or {}
+            if rec.get("difference") not in (None, 0, 0.0):
+                ar_diff.append(f"{e['id']}(tercatat {rec.get('ar_ledger_total'):,.0f} · akun {rec.get('gl_balance'):,.0f} "
+                               f"· Δ{rec.get('difference'):,.0f})")
+    except Exception as exc:  # noqa: BLE001 — penjaga tidak boleh buta diam-diam
+        ar_diff = None
+        results["warn"] += 1
+        line("WARN", Y, f"GL: piutang tercatat vs saldo akun piutang tidak bisa dihitung ({exc.__class__.__name__}: {exc})")
+    if ar_diff is None:
+        pass
+    elif ar_diff:
+        results["warn"] += 1
+        line("WARN", Y, f"GL: {len(ar_diff)} PT piutang tercatat ≠ saldo akun piutang (INV-AR-03): {ar_diff[:5]}",
+             "→ buka Keuangan › Piutang (baris pencocokan) lalu Buku Besar akun piutang untuk jurnal di luar surat jalan")
+    else:
+        results["pass"] += 1
+        line("PASS", G, "GL: piutang tercatat (per surat jalan) == saldo akun piutang per PT (INV-AR-03)")
 
 
 async def layer_fixed_asset_invariants(db):
@@ -4891,7 +4919,7 @@ def _layer_registry():
         ("collections", layer1_collection_reconciliation, True,  ()),
         ("db",          layer2_db_invariants,             True,  ("INV-DB",)),
         ("movement",    layer_movement_ledger_invariants, True,  ("INV-MOV",)),
-        ("gl",          layer_gl_invariants,              True,  ("INV-GL",)),
+        ("gl",          layer_gl_invariants,              True,  ("INV-GL", "INV-AR-03")),
         ("gl_audit",    layer_gl_audit_2026_09_invariants, True, ("INV-GL-DUP", "INV-CASH-02", "INV-AR-02", "INV-GL-REV")),
         ("numbering",   layer_numbering_invariants,       True,  ("INV-NUM",)),
         ("domain",      layer_domain_invariants,          True,  ("INV-DOM",)),

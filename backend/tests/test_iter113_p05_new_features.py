@@ -13,7 +13,7 @@ Covers:
     parent_roll_no, ref_number).
   - GET /api/finance/balance-sheet (no as_of → as_of == today, excludes future
     JEs) — smoke.
-  - GET /api/finance/cash-flow → method 'journal_cash_classification' and
+  - GET /api/finance/cash-flow → method 'direct_by_source' (PK-41) and
     noncash_disclosure present, reconciled true — smoke.
   - GET /api/finance/consolidation/summary works (no auto-sync side effects).
   - POST /api/gl/journal (manual journal with global account still posts).
@@ -329,7 +329,7 @@ class TestFinance:
                          headers=admin_h, timeout=30)
         assert r.status_code == 200, r.text[:200]
         d = r.json()
-        assert d.get("method") == "journal_cash_classification", d.get("method")
+        assert d.get("method") == "direct_by_source", d.get("method")
         assert "noncash_disclosure" in d
         assert d.get("reconciled") is True, f"reconciled={d.get('reconciled')}"
 

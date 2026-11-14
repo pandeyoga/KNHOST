@@ -40,8 +40,9 @@ def _worklist(u):
 
 
 def _first_sj_date(so_id):
+    # PK-41 — jatuh tempo per surat jalan memakai TANGGAL BUKU WIB jurnal pendapatan surat jalan (dulu tanggal UTC).
     s = DB.shipments.find_one({"order_id": so_id}, {"_id": 0, "created_at": 1}, sort=[("created_at", 1)])
-    return datetime.fromisoformat(s["created_at"].replace("Z", "+00:00")).date()
+    return datetime.fromisoformat(s["created_at"].replace("Z", "+00:00")).astimezone(timezone(timedelta(hours=7))).date()
 
 
 def test_belum_dikirim_tidak_masuk_daftar_jatuh_tempo(u):
@@ -66,7 +67,7 @@ def test_jatuh_tempo_dari_sj_pertama_bukan_tanggal_so(u):
     assert row["due_date"] == expect.isoformat() and not row["overdue"], row
     c, det = u["fin"].call("GET", f"/ar/aging/{base.CUST}")
     it = next(x for x in det["items"] if x["order_id"] == so["id"])
-    assert it["due_date"] == expect.isoformat() and it["due_basis"] == "first_sj", it
+    assert it["due_date"] == expect.isoformat() and it["due_basis"] == "per_sj", it   # PK-41 — per surat jalan
 
 
 def test_cbd_jatuh_tempo_mengikuti_termin_bukan_30_hari(u):

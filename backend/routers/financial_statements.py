@@ -76,7 +76,9 @@ async def get_cash_flow(
     end: Optional[str] = Query(None, description="Tanggal akhir periode (YYYY-MM-DD)"),
     entity_id: Optional[str] = Query(None),
 ) -> Dict[str, Any]:
-    """Laporan Arus Kas (Cash Flow Statement) metode tak langsung — per entitas."""
+    """Laporan Arus Kas (Cash Flow Statement) metode langsung, digolongkan per jenis transaksi — per entitas.
+
+    PK-41 (RP-12) — keterangan dulu "metode tak langsung" padahal hitungannya per jurnal kas."""
     await require_permission(request, "accounting", "view")
     scope = await _je_scope(request, entity_id)
     return {**(await cf.cash_flow_statement(start=start, end=end, scope=scope)), "scope_meta": await _meta(request, entity_id)}   # PK-16
@@ -217,13 +219,13 @@ async def export_cash_flow(
     end: Optional[str] = Query(None),
     entity_id: Optional[str] = Query(None),
 ) -> Response:
-    """Unduh Laporan Arus Kas sebagai CSV (metode tak langsung)."""
+    """Unduh Laporan Arus Kas sebagai CSV (metode langsung, digolongkan per jenis transaksi)."""
     await require_permission(request, "accounting", "view")
     scope = await _je_scope(request, entity_id)
     data = await cf.cash_flow_statement(start=start, end=end, scope=scope)
 
     period = data.get("period", {})
-    rows: List[List[Any]] = [["Laporan Arus Kas (Cash Flow Statement)"]]
+    rows: List[List[Any]] = [["Laporan Arus Kas — metode langsung, digolongkan per jenis transaksi"]]
     rows.append([scope_line(await _meta(request, entity_id))])   # PK-16 — baris 2: PT / cakupan
     rows.append([f"Periode: {period.get('start') or '-'} s/d {period.get('end') or '-'}"])
     rows.append([])
@@ -243,6 +245,9 @@ async def export_cash_flow(
         rows.append([])
     rows.append(["KENAIKAN/(PENURUNAN) KAS BERSIH", "", "", data.get("net_change", 0)])
     rows.append(["Kas Awal Periode", "", "", data.get("begin_cash", 0)])
+    # PK-41 (RP-06) — saldo awal rekening yang didaftarkan dalam periode menambah kas awal (bukan arus pendanaan)
+    rows.append([data.get("opening_balance_label") or "Saldo awal rekening yang didaftarkan periode ini", "", "",
+                 data.get("opening_balance_additions", 0)])
     rows.append(["Kas Akhir Periode", "", "", data.get("end_cash", 0)])
     return _csv_response(rows, "arus-kas.csv")
 

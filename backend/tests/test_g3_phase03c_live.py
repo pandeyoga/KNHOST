@@ -62,7 +62,7 @@ def test_cashflow_method_allocation_reconciled(admin):
     r = requests.get(f"{BASE}/api/finance/cash-flow", params={"start": start, "end": end}, headers=admin, timeout=60)
     assert r.status_code == 200, r.text
     j = r.json()
-    assert j.get("method") == "journal_cash_classification", j
+    assert j.get("method") == "direct_by_source", j
     assert j.get("allocation") == "pro_rata_cash_side", j
     assert j.get("reconciled") is True, {"reconciled": j.get("reconciled"), "diff": j.get("end_cash"), "computed_end": j.get("computed_end")}
 

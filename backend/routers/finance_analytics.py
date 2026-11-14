@@ -12,7 +12,7 @@ from typing import Any, Dict, Optional
 
 from fastapi import APIRouter, Request, Query
 
-from dependencies import require_permission
+from dependencies import has_permission, require_permission
 from core_utils import strip_cost_fields
 from entity_scope import entity_ctx, resolve_list_scope, scope_line, scope_meta
 from services import profitability_service as prof
@@ -41,6 +41,8 @@ async def get_profitability(
     # Tanya KN F0.4 — HPP/margin hanya untuk admin/manager (finance menerima pendapatan & qty).
     out = strip_cost_fields(await prof.profitability(start=start, end=end, scope=scope, entity_id=ent),
                             actor.get("role"))
+    if not await has_permission(actor, "costing", "view"):
+        out.pop("reconciliation", None)   # PK-41 — pencocokan memuat marjin & laba kotor (izin HPP & Margin Produk)
     return {**out, "scope_meta": await scope_meta(await entity_ctx(request), entity_id)}   # PK-16
 
 

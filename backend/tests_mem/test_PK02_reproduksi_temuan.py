@@ -204,21 +204,27 @@ async def test_PK02_RC01_gabungan_tanpa_eliminasi(aplikasi):
     assert cocok(pl["revenue_total"] - pl0["revenue_total"], 70 * JT)
 
 
-@pytest.mark.xfail(strict=True, reason="RP-06 — klasifikasi arus kas menyimpang dari hitungan baku")
 async def test_PK02_RP06_klasifikasi_arus_kas(aplikasi):
+    # PK-41 (RP-06) — tanda "diharapkan gagal" dicabut; jurnal memakai `source_type` asli (pelepasan aset, pinjaman
+    # antar-PT, saldo awal rekening) sehingga golongan per jenis transaksi berlaku. Saldo awal rekening 200 = kas awal.
     from services import cash_flow_service as cf
+    from services import gl_service as gl
     eid = await pt_uji("P06")
-    for args in [
-        ("2026-09-30", [("1-1100", 1000, 0), ("3-1000", 0, 1000)], "Setor modal", "p06m1"),
-        ("2026-09-30", [("1-2100", 100, 0), ("1-1100", 0, 100)], "Beli mesin", "p06m2"),
-        ("2026-09-30", [("6-6000", 20, 0), ("1-2900", 0, 20)], "Akumulasi susut", "p06m3"),
-        ("2026-10-05", [("1-1100", 300, 0), ("4-1000", 0, 300)], "Jual tunai", "p06o1"),
-        ("2026-10-06", [("6-2000", 50, 0), ("1-1100", 0, 50)], "Sewa", "p06o2"),
-        ("2026-10-10", [("1-1100", 130, 0), ("1-2900", 20, 0), ("1-2100", 0, 100), ("4-9100", 0, 50)], "Jual mesin", "p06o3"),
-        ("2026-10-12", [("1-1100", 500, 0), ("2-1250", 0, 500)], "Pinjaman PT lain", "p06o4"),
-        ("2026-10-15", [("1-1100", 200, 0), ("3-2900", 0, 200)], "Saldo awal rekening", "p06o5"),
+    for tgl, baris, ket, sid, st in [
+        ("2026-09-30", [("1-1100", 1000, 0), ("3-1000", 0, 1000)], "Setor modal", "p06m1", "uji"),
+        ("2026-09-30", [("1-2100", 100, 0), ("1-1100", 0, 100)], "Beli mesin", "p06m2", "fixed_asset_acquisition"),
+        ("2026-09-30", [("6-6000", 20, 0), ("1-2900", 0, 20)], "Akumulasi susut", "p06m3", "uji"),
+        ("2026-10-05", [("1-1100", 300, 0), ("4-1000", 0, 300)], "Jual tunai", "p06o1", "uji"),
+        ("2026-10-06", [("6-2000", 50, 0), ("1-1100", 0, 50)], "Sewa", "p06o2", "uji"),
+        ("2026-10-10", [("1-1100", 130, 0), ("1-2900", 20, 0), ("1-2100", 0, 100), ("4-9100", 0, 50)], "Jual mesin",
+         "p06o3", "fixed_asset_disposal"),
+        ("2026-10-12", [("1-1100", 500, 0), ("2-1250", 0, 500)], "Pinjaman PT lain", "p06o4", "interco_loan"),
+        ("2026-10-15", [("1-1100", 200, 0), ("3-2900", 0, 200)], "Saldo awal rekening", "p06o5", "bank_opening_balance"),
     ]:
-        await jurnal(eid, *args)
+        await gl._insert_entry(lines=[{"account_code": k, "debit": d, "credit": c} for k, d, c in baris],
+                               description=ket, date=tgl, source_type=st, source_id=sid, entity_id=eid,
+                               created_by="uji")
     r = await cf.cash_flow_statement("2026-10-01", "2026-10-31", {"entity_id": eid})
     got = {k: r[k]["total"] for k in ("operating", "investing", "financing")}
+    assert cocok(r["opening_balance_additions"], 200) and cocok(r["begin_cash_adjusted"], 1100), r
     assert cocok(got["operating"], 250) and cocok(got["investing"], 130) and cocok(got["financing"], 500), got

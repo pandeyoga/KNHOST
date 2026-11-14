@@ -56,6 +56,13 @@ export function kpiValueParts(value) {
   return (<>{m[1]}{" "}<span className="whitespace-nowrap">{m[2]}</span></>);
 }
 
+/** PK-41 — sub-teks kartu: angka rupiah ("Rp 1.234.567", "Rp 1,2 jt") utuh satu baris; teks lain boleh turun baris. */
+export function kpiSubParts(sub) {
+  if (typeof sub !== "string") return sub;
+  const parts = sub.split(/(-?Rp[\s\u00a0]+[\d.,]+(?:[\s\u00a0](?:rb|jt|M|T)\b)?)/);
+  return parts.map((p, i) => (i % 2 === 1 ? <span key={i} className="whitespace-nowrap">{p}</span> : p));
+}
+
 export function KpiCard({ label, value, icon: Icon, tone, sub, accent = "#6B219A", testId, onClick, actionLabel = "Lihat rincian" }) {
   const zero = isZeroMetric(value);
   return (
@@ -75,7 +82,9 @@ export function KpiCard({ label, value, icon: Icon, tone, sub, accent = "#6B219A
               turun baris; angkanya utuh satu baris. */}
           <p className={`text-[15px] sm:text-[17px] font-bold tabular-nums ${zero ? "text-[#8E8E93]" : (tone || "text-[#1C1C1E]")}`}
              data-testid={testId ? `${testId}-value` : undefined}>{kpiValueParts(value)}</p>
-          {sub && <p className="text-[10px] text-[#9A9BA3] mt-0.5 truncate" title={sub}>{sub}</p>}
+          {/* PK-41 — sub-teks tidak lagi dipotong "…": angka rupiah di dalamnya utuh (kpiSubParts), teks lain turun baris. */}
+          {sub && <p className="text-[10px] text-[#9A9BA3] mt-0.5 break-words" title={typeof sub === "string" ? sub : undefined}
+                     data-testid={testId ? `${testId}-sub` : undefined}>{kpiSubParts(sub)}</p>}
           {/* PK-44 (IA-11) — kartu bertujuan: tombol tautan baku (bukan seluruh kartu sebagai tombol buatan sendiri). */}
           {onClick && (
             <button type="button" className="link-button mt-1" onClick={onClick}

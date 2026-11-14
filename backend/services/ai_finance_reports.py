@@ -246,13 +246,18 @@ async def _sheet_cash_flow(api: SelfApi, sec: _Section, start: str, end: str) ->
               "investing": _num((cf.get("investing") or {}).get("total")),
               "financing": _num((cf.get("financing") or {}).get("total")),
               "net_change": _num(cf.get("net_change")), "begin_cash": _num(cf.get("begin_cash")),
+              "opening_balance_additions": _num(cf.get("opening_balance_additions")),
               "end_cash": _num(cf.get("end_cash"))}
+    # PK-41 (RP-06) — saldo awal rekening yang didaftarkan periode ini menambah kas awal (bukan arus pendanaan)
     rows += [{"activity": "Ringkasan", "line": "Kenaikan (penurunan) kas", "amount": totals["net_change"]},
              {"activity": "Ringkasan", "line": "Kas awal periode", "amount": totals["begin_cash"]},
+             {"activity": "Ringkasan", "line": cf.get("opening_balance_label")
+              or "Saldo awal rekening yang didaftarkan periode ini", "amount": totals["opening_balance_additions"]},
              {"activity": "Ringkasan", "line": "Kas akhir periode", "amount": totals["end_cash"]}]
     sec.rows, sec.totals = rows, totals
-    sec.notes = [f"Periode {_day(start)} – {_day(end)}"] + (
+    sec.notes = [f"Periode {_day(start)} – {_day(end)}", cf.get("method_label") or ""] + (
         [] if cf.get("reconciled", True) else ["Kas akhir belum cocok dengan saldo akun kas"])
+    sec.notes = [n for n in sec.notes if n]
     sec.link = _link("financial-statements", "fin-reports", "cf")
 
 
@@ -263,9 +268,11 @@ _BUCKETS = (("current", "Belum jatuh tempo"), ("b1_30", "1–30 hari"), ("b31_60
 async def _sheet_ar(api: SelfApi, sec: _Section, end: str) -> None:
     from services.ai_finance_tools import _AR_DUE_NOTE   # satu kalimat dasar jatuh tempo dengan alat keuangan
     ag = await api.call("GET", "/api/ar/aging", params={"as_of": end})
-    sec.columns = [_txt("customer", "Pelanggan"), *[_col(k, lbl, "idr") for k, lbl in _BUCKETS],
+    # PK-41 (RP-12) — judul kolom umur dari `bucket_labels` (batas `ar.aging_buckets` PT itu)
+    labels = {b.get("key"): b.get("label") for b in ag.get("bucket_labels") or []}
+    sec.columns = [_txt("customer", "Pelanggan"), *[_col(k, labels.get(k) or lbl, "idr") for k, lbl in _BUCKETS],
                    _col("outstanding", "Sisa tagihan", "idr"), _col("overdue", "Lewat jatuh tempo", "idr"),
-                   _col("ar_ledger", "Sudah diakui (buku besar)", "idr"), _col("oldest_days", "Telat terlama (hari)", "count")]
+                   _col("ar_ledger", "Piutang tercatat", "idr"), _col("oldest_days", "Telat terlama (hari)", "count")]
     sec.rows = [{"customer": r.get("customer_name") or "", **{k: _num(r.get(k)) for k, _ in _BUCKETS},
                  "outstanding": _num(r.get("outstanding")), "overdue": _num(r.get("overdue")),
                  "ar_ledger": _num(r.get("ar_ledger")), "oldest_days": int(r.get("oldest_days") or 0)}
@@ -275,17 +282,21 @@ async def _sheet_ar(api: SelfApi, sec: _Section, end: str) -> None:
                   "exposure": _num(tot.get("exposure")), **{k: _num(tot.get(k)) for k, _ in _BUCKETS},
                   "customers": int(tot.get("customers") or 0), "orders": int(tot.get("orders") or 0)}
     defs = ag.get("definitions") or {}
-    sec.notes = [f"Posisi per {_day(end)}", _AR_DUE_NOTE] + [str(v) for v in defs.values() if v]
+    rec = ag.get("reconciliation") or {}
+    sec.notes = [f"Posisi per {_day(end)}", _AR_DUE_NOTE] + [str(v) for v in defs.values() if v] + (
+        [str(rec.get("note"))] if rec.get("note") else [])
     sec.link = _link("ar-aging", "ar-aging")
 
 
 async def _sheet_ap(api: SelfApi, sec: _Section, today: str) -> None:
     ap = await api.call("GET", "/api/vendor-bills/payables/summary")
+    # PK-41 (RP-07) — "Umur" diganti hari lewat jatuh tempo; kelompok pertama "Belum jatuh tempo" (label dari server)
     sec.columns = [_txt("bill_number", "Nomor tagihan"), _txt("supplier", "Pemasok"), _txt("due_date", "Jatuh tempo"),
-                   _col("days", "Umur (hari)", "count"), _txt("bucket", "Kelompok umur"), _col("outstanding", "Sisa hutang", "idr")]
+                   _col("days", "Hari lewat jatuh tempo", "count"), _txt("bucket", "Kelompok umur"),
+                   _col("outstanding", "Sisa hutang", "idr")]
     sec.rows = [{"bill_number": b.get("bill_number") or "", "supplier": b.get("supplier_name") or "",
-                 "due_date": str(b.get("due_date") or "")[:10], "days": int(b.get("days_outstanding") or 0),
-                 "bucket": f"{b.get('aging_bucket') or ''} hari".strip(), "outstanding": _num(b.get("outstanding"))}
+                 "due_date": str(b.get("due_date") or "")[:10], "days": int(b.get("days_past_due") or 0),
+                 "bucket": b.get("aging_label") or "", "outstanding": _num(b.get("outstanding"))}
                 for b in ap.get("bills") or []]
     sec.totals = {"total_outstanding": _num(ap.get("total_outstanding")),
                   **{f"aging_{k}": _num(v) for k, v in (ap.get("aging") or {}).items()},
@@ -629,9 +640,13 @@ async def _brief_ar(api: SelfApi, sec: _Section, today: str) -> str:
     rows: List[Dict[str, Any]] = []
     for c in cands[:CUSTOMER_SCAN_LIMIT]:
         d = await api.call("GET", f"/api/ar/aging/{c.get('customer_id')}", params={"as_of": today})
-        rows += [{"customer": c.get("customer_name") or "", "number": it.get("order_number") or "",
-                  "outstanding": _num(it.get("outstanding"))}
-                 for it in d.get("items") or [] if str(it.get("due_date") or "")[:10] == today]
+        # PK-41 (K-16) — jatuh tempo per surat jalan: yang jatuh tempo hari ini = baris tagihan (`lines[]`) ber-jatuh tempo
+        # hari ini; sisa tagihan = Σ sisa baris itu (bukan seluruh sisa pesanan).
+        for it in d.get("items") or []:
+            hari_ini = [ln for ln in it.get("lines") or [] if str(ln.get("jatuh_tempo") or "")[:10] == today]
+            if hari_ini:
+                rows.append({"customer": c.get("customer_name") or "", "number": it.get("order_number") or "",
+                             "outstanding": round(sum(_cents(ln.get("sisa")) for ln in hari_ini) / 100, 2)})
     total = round(sum(_cents(r["outstanding"]) for r in rows) / 100, 2)
     sec.columns = [_txt("customer", "Pelanggan"), _txt("number", "Nomor pesanan"), _col("outstanding", "Sisa tagihan", "idr")]
     sec.rows, sec.totals = rows[:BRIEF_ROWS], {"count": len(rows), "total": total}

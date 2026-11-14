@@ -1,7 +1,9 @@
 /**
- * CashFlowTab (FINANCE) — Laporan Arus Kas (metode tak langsung).
+ * CashFlowTab (FINANCE) — Laporan Arus Kas (metode langsung, digolongkan per jenis transaksi — PK-41).
  * Sumber: /api/finance/cash-flow (+ export.csv). Dipakai di FinancialStatementsView.
  * PK-16 — banner PT (`scope_meta`), gagal memuat → data dikosongkan, nama unduhan memuat PT / `gabungan`.
+ * PK-41 (RP-06) — baris "Saldo awal rekening yang didaftarkan periode ini" di bawah Kas Awal (menambah kas awal, bukan
+ * arus pendanaan) dan keterangan metode dari server.
  */
 import { apiErrorText } from "../../utils/apiError";
 import KNDatePicker from "@/components/KNDatePicker";
@@ -67,7 +69,8 @@ export default function CashFlowTab({ selectedEntity }) {
     <div data-testid="fs-cash-flow">
       <EntityScopeBanner meta={scope} />
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-3">
-        <KpiCard testId="cf-kpi-begin" label="Kas Awal Periode" value={formatCurrency(data?.begin_cash)} icon={Wallet} accent={FC.muted} />
+        <KpiCard testId="cf-kpi-begin" label="Kas Awal Periode" value={formatCurrency(data?.begin_cash)} icon={Wallet} accent={FC.muted}
+          sub={(data?.opening_balance_additions || 0) !== 0 ? `ditambah saldo awal rekening baru ${formatCurrency(data.opening_balance_additions)}` : undefined} />
         <KpiCard testId="cf-kpi-operating" label="Kas Bersih Operasi" value={formatCurrency(op.total)} icon={TrendingUp} accent={FC.revenue} tone={(op.total ?? 0) >= 0 ? "text-[#1B7F4B]" : "text-[#C0392B]"} />
         <KpiCard testId="cf-kpi-netchange" label="Perubahan Kas Bersih" value={formatCurrency(data?.net_change)} icon={Waves} accent={FC.purple} tone={(data?.net_change ?? 0) >= 0 ? "text-[#1B7F4B]" : "text-[#C0392B]"} />
         <KpiCard testId="cf-kpi-end" label="Kas Akhir Periode" value={formatCurrency(data?.end_cash)} icon={Landmark} accent={FC.cash} tone="text-[#0058CC]" />
@@ -128,6 +131,10 @@ export default function CashFlowTab({ selectedEntity }) {
                     <td className="px-3 py-2.5 text-right tabular-nums font-bold text-[#6B219A]" data-testid="cf-net-change">{formatCurrency(data.net_change)}</td>
                   </tr>
                   <tr className="border-b border-[#F5F5F7]"><td className="px-3 py-1.5 pl-6 text-[#6B6B73]">Kas Awal Periode</td><td className="px-3 py-1.5 text-right tabular-nums text-[#6B6B73]">{formatCurrency(data.begin_cash)}</td></tr>
+                  <tr className="border-b border-kn-divider" data-testid="cf-opening-row">
+                    <td className="px-3 py-1.5 pl-6 text-kn-text-2">{data.opening_balance_label || "Saldo awal rekening yang didaftarkan periode ini"}</td>
+                    <td className="px-3 py-1.5 text-right tabular-nums text-kn-text-2" data-testid="cf-opening">{formatCurrency(data.opening_balance_additions || 0)}</td>
+                  </tr>
                   <tr><td className="px-3 py-2 font-bold text-[#1C1C1E]">Kas Akhir Periode</td><td className="px-3 py-2 text-right tabular-nums font-bold text-[#0058CC]" data-testid="cf-end-cash">{formatCurrency(data.end_cash)}</td></tr>
                 </tbody>
               </table>
@@ -142,7 +149,7 @@ export default function CashFlowTab({ selectedEntity }) {
             <div key={l.code} className="flex justify-between py-0.5 text-[#6B6B73]">
               <span>{l.code} · {l.name}</span><span className="tabular-nums">{formatCurrency(l.amount)}</span></div>))}
         </div>)}
-      <p className="mt-2 text-[11px] text-[#9A9BA3]">Klasifikasi per jurnal kas — hanya jurnal yang menyentuh kas yang dihitung; lawan akunnya menentukan aktivitas. Jurnal nonkas (penyusutan, reklasifikasi, beli aset kredit) tidak menjadi arus kas.</p>
+      <p className="mt-2 text-[11px] text-[#9A9BA3]" data-testid="cf-method">{data?.method_label || "Metode langsung: tiap jurnal kas digolongkan menurut jenis transaksinya."} Saldo awal rekening yang didaftarkan dalam periode menambah kas awal, bukan arus pendanaan. Jurnal nonkas (penyusutan, reklasifikasi, beli aset kredit) tidak menjadi arus kas.</p>
     </div>
   );
 }

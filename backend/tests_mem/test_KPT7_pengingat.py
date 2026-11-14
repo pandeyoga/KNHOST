@@ -272,6 +272,17 @@ async def test_KPT7_U8_peran_tak_dikenal_ditolak(klien, kepala_admin, db):
 
 
 # ── U9 — hari pengingat piutang ────────────────────────────────────────────────────────────────────────────────────
+async def _jurnal_kirim(oid: str, entitas: str, nilai: float, tanggal: str, sj: str) -> None:
+    """PK-41 (K-16) — fixture jurnal pendapatan surat jalan (Dr piutang / Cr pendapatan, bentuk `post_shipment_revenue`):
+    piutang kini berumur per surat jalan BERJURNAL, jadi fixture "sudah dikirim" memuat jurnalnya juga."""
+    from services import gl_service as gl
+    await gl._insert_entry(lines=[{"account_code": "1-1200", "debit": nilai, "credit": 0.0},
+                                  {"account_code": "4-1000", "debit": 0.0, "credit": nilai}],
+                           description=f"Pengakuan penjualan {oid} · {sj}", date=tanggal, source_type="shipment_revenue",
+                           source_id=sj, entity_id=entitas, created_by="uji", source_label=sj,
+                           ref={"order_id": oid, "order_number": f"SO-{oid}"})
+
+
 async def test_KPT7_U9_hari_pengingat_piutang(klien, kepala_admin, db):
     from services import alert_ops_service
     now = datetime.now(timezone.utc)
@@ -285,6 +296,9 @@ async def test_KPT7_U9_hari_pengingat_piutang(klien, kepala_admin, db):
     await db.shipments.insert_many([
         {"id": "u9_sj7", "order_id": "u9_so7", "status": "delivered", "created_at": (now - timedelta(days=23)).isoformat()},
         {"id": "u9_sj3", "order_id": "u9_so3", "status": "delivered", "created_at": (now - timedelta(days=27)).isoformat()}])
+    from services.book_date import tanggal_buku   # PK-41 — jurnal pendapatan surat jalan (umur per surat jalan berjurnal)
+    for oid, sj, hari in (("u9_so7", "u9_sj7", 23), ("u9_so3", "u9_sj3", 27)):
+        await _jurnal_kirim(oid, KSC, 900_000, tanggal_buku(now - timedelta(days=hari)), sj)
     await _simpan(klien, kepala_admin, "notif.ar_due_soon_offsets", [-7, 0])
     await db.notifications.delete_many({})
     await alert_ops_service.job_ar_due_soon()

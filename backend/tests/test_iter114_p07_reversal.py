@@ -334,7 +334,7 @@ def test_regression_cash_flow(admin_h):
     r = requests.get(f"{BASE_URL}/api/finance/cash-flow", headers=admin_h, timeout=20)
     assert r.status_code == 200, r.text[:200]
     data = r.json()
-    assert data.get("method") == "journal_cash_classification"
+    assert data.get("method") == "direct_by_source"
     assert "noncash_disclosure" in data
 
 

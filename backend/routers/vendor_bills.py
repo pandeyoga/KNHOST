@@ -3,13 +3,14 @@
 Koleksi kanonik: `vendor_bills` (prefix vbill_). AP berbasis bill *posted*.
 Lifecycle: draft → pending_approval → posted → paid (+ cancelled).
 """
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
 from fastapi import APIRouter, HTTPException, Request
 from pymongo import ReturnDocument
 from pymongo.errors import DuplicateKeyError
 from db import db
 from dependencies import require_permission, current_user, audit
-from core_utils import new_id, now_iso, safe_doc, DEFAULT_ENTITY_ID, timeline_entry, next_doc_number, rupiah
+from core_utils import new_id, now_iso, safe_doc, DEFAULT_ENTITY_ID, timeline_entry, next_doc_number, rupiah, \
+    to_cents, from_cents
 from entity_scope import entity_ctx, resolve_list_scope, assert_entity_access, guard_doc
 from pagination import is_paged, get_page_params, build_search, merge_query, fetch_page, envelope
 from schemas import VendorBillCreate, VendorBillPaymentCreate, VendorBillDecision
@@ -56,35 +57,34 @@ async def po_billing_context(po_id: str, request: Request) -> Dict[str, Any]:
 
 @router.get("/vendor-bills/payables/summary")
 async def vendor_bill_payables(request: Request, entity_id: str = None) -> Dict[str, Any]:
-    """Ringkasan hutang (AP) berbasis Vendor Bill posted + aging per bill."""
+    """Ringkasan hutang (AP) berbasis Vendor Bill posted + aging per bill.
+
+    PK-41 (RP-01, RP-07) — kueri menyaring status hutang DAN `payment_status` belum lunas, kursor tanpa batas (dulu 2.000
+    tagihan tanpa urutan lalu yang lunas dibuang). Hari lewat = `report_basis.hari_antara(jatuh tempo, hari ini)`;
+    jatuh tempo = `due_date`, atau tanggal tagihan + termin pemasok bila kosong (`due_basis: "bill_date"`). Kelompok:
+    `not_due` (belum jatuh tempo), `1-30`, `31-60`, `61-90`, `>90`. `reconciliation` mencocokkan sisa tagihan + biaya
+    masuk belum dibayar − nota debit belum dipotong dengan saldo akun hutang."""
     await require_permission(request, "vendor_bill", "view")
-    from datetime import datetime, timezone
+    from services import report_basis as rb
     ctx = await entity_ctx(request)
-    q: Dict[str, Any] = {"status": {"$in": list(PAYABLE_BILL_STATUSES)}}
+    q: Dict[str, Any] = {"status": {"$in": sorted(PAYABLE_BILL_STATUSES)}, "payment_status": {"$ne": "paid"}}
     q = resolve_list_scope("vendor_bills", q, ctx, entity_id)
-    bills = await db.vendor_bills.find(q, {"_id": 0}).to_list(2000)
-    now = datetime.now(timezone.utc)
+    today = rb.tanggal_buku()
     by_supplier: Dict[str, Dict[str, Any]] = {}
-    aging = {"0-30": 0.0, "31-60": 0.0, "61-90": 0.0, ">90": 0.0}
-    total_outstanding = 0.0
+    aging_sen = {k: 0 for k in AP_AGING_KEYS}
+    total_sen = 0
     rows = []
-    for b in bills:
+    term_cache: Dict[str, int] = {}
+    async for b in db.vendor_bills.find(q, {"_id": 0}):
         fin = bill_financials(b)
         out = fin["outstanding"]
         if out <= 0.01:
             continue
-        total_outstanding += out
-        ref_date = b.get("due_date") or b.get("bill_date") or b.get("created_at") or ""
-        days = 0
-        try:
-            d = datetime.fromisoformat(str(ref_date).replace("Z", "+00:00"))
-            if d.tzinfo is None:
-                d = d.replace(tzinfo=timezone.utc)
-            days = (now - d).days
-        except Exception:  # noqa: BLE001
-            days = 0
-        bucket = "0-30" if days <= 30 else "31-60" if days <= 60 else "61-90" if days <= 90 else ">90"
-        aging[bucket] += out
+        total_sen += to_cents(out)
+        due, basis = await rb.jatuh_tempo_tagihan(b, term_cache)
+        days = rb.hari_antara(due, today) if due else 0
+        bucket = ap_aging_bucket(days)
+        aging_sen[bucket] += to_cents(out)
         sid = b.get("supplier_id") or b.get("supplier_name") or "—"
         sup = by_supplier.setdefault(sid, {
             "supplier_id": b.get("supplier_id", ""), "supplier_name": b.get("supplier_name", "—"),
@@ -98,16 +98,89 @@ async def vendor_bill_payables(request: Request, entity_id: str = None) -> Dict[
             "supplier_id": b.get("supplier_id", ""), "status": b.get("status"),
             "grand_total": fin["grand_total"], "amount_paid": fin["amount_paid"],
             "outstanding": out, "payment_status": fin["payment_status"],
-            "days_outstanding": days, "aging_bucket": bucket,
-            "due_date": b.get("due_date", ""), "match_status": b.get("match_status", ""),
+            "days_past_due": days, "days_outstanding": days, "aging_bucket": bucket,
+            "aging_label": AP_AGING_LABELS[bucket],
+            "due_date": due or "", "due_basis": basis, "match_status": b.get("match_status", ""),
         })
-    rows.sort(key=lambda r: (-r["days_outstanding"], -r["outstanding"]))
+    rows.sort(key=lambda r: (-r["days_past_due"], -r["outstanding"]))
+    ent_ids = _scope_entity_ids(q)
     return {
-        "total_outstanding": round(total_outstanding, 2),
-        "aging": {k: round(v, 2) for k, v in aging.items()},
+        "total_outstanding": from_cents(total_sen),
+        "aging": {k: from_cents(v) for k, v in aging_sen.items()},
+        "aging_labels": [{"key": k, "label": AP_AGING_LABELS[k]} for k in AP_AGING_KEYS],
         "by_supplier": sorted(by_supplier.values(), key=lambda s: -s["outstanding"]),
         "bills": rows,
+        "reconciliation": await _ap_reconciliation(ent_ids, total_sen),
     }
+
+
+#: PK-41 (RP-07) — kelompok umur hutang (hari lewat jatuh tempo) dan judul kolomnya.
+AP_AGING_KEYS = ("not_due", "1-30", "31-60", "61-90", ">90")
+AP_AGING_LABELS = {"not_due": "Belum jatuh tempo", "1-30": "1–30 hari", "31-60": "31–60 hari",
+                   "61-90": "61–90 hari", ">90": "> 90 hari"}
+
+
+def ap_aging_bucket(days_past_due: int) -> str:
+    """≤ 0 → belum jatuh tempo; lalu 1–30, 31–60, 61–90, > 90 hari lewat jatuh tempo."""
+    if days_past_due <= 0:
+        return "not_due"
+    return "1-30" if days_past_due <= 30 else "31-60" if days_past_due <= 60 else "61-90" if days_past_due <= 90 else ">90"
+
+
+def _scope_entity_ids(q: Dict[str, Any]) -> Optional[List[str]]:
+    """PT dari saringan `resolve_list_scope` (str / `$in`); None = semua PT."""
+    v = q.get("entity_id")
+    if isinstance(v, str) and v:
+        return [v]
+    if isinstance(v, dict) and v.get("$in") is not None:
+        return list(v["$in"])
+    return None
+
+
+async def _ap_reconciliation(ent_ids: Optional[List[str]], bills_sen: int) -> Dict[str, Any]:
+    """PK-41 (RP-07) — `expected_gl = bills + landed − debit_notes` dibanding saldo akun hutang (`pembelian.hutang`,
+    semua akun yang pernah dipakai) saat ini.
+
+    * `landed_cost_outstanding` — sisa voucher biaya masuk berstatus hutang (`applied`/`paid`) yang belum dibayar: jurnal
+      voucher sudah mengkredit akun hutang, tetapi tidak ada tagihannya.
+    * `debit_notes_open` — retur beli yang sudah menurunkan akun hutang (jurnal `purchase_return` mendebit akun hutang,
+      dasar `ap_basis = "hutang"`) tetapi belum menurunkan sisa tagihan mana pun: potongannya baru mengurangi tagihan saat
+      kontrabon yang memuatnya LUNAS (`contra_bon_service`: potongan = pelunasan non-kas faktur). Nilai = Σ (debit − kredit)
+      akun hutang jurnal retur itu − Σ potongan retur itu di kontrabon berstatus `paid`.
+    """
+    from services import report_basis as rb
+    from services.gl_mapping_service import known_codes
+    from services.landed_cost_service import PAYABLE_VOUCHER_STATUSES, voucher_financials
+    ent_q: Dict[str, Any] = {"entity_id": {"$in": ent_ids}} if ent_ids else {}
+    landed = 0
+    async for v in db.landed_cost_vouchers.find({"status": {"$in": sorted(PAYABLE_VOUCHER_STATUSES)}, **ent_q},
+                                                {"_id": 0}):
+        landed += to_cents(voucher_financials(v)["outstanding"])
+    hutang_by_pt: Dict[str, set] = {}
+    by_return: Dict[str, int] = {}
+    async for je in db.journal_entries.find(
+            {"status": {"$ne": "void"}, "source_type": {"$in": ["purchase_return", "purchase_return_reversal"]}, **ent_q},
+            {"_id": 0, "source_id": 1, "entity_id": 1, "lines": 1}):
+        eid = je.get("entity_id") or ""
+        if eid not in hutang_by_pt:
+            hutang_by_pt[eid] = set(await known_codes("pembelian.hutang", eid or None))
+        sen = sum(to_cents(float(ln.get("debit") or 0)) - to_cents(float(ln.get("credit") or 0))
+                  for ln in je.get("lines") or [] if ln.get("account_code") in hutang_by_pt[eid])
+        if sen:
+            by_return[je.get("source_id") or ""] = by_return.get(je.get("source_id") or "", 0) + sen
+    applied: Dict[str, int] = {}
+    if by_return:
+        async for cb in db.contra_bons.find({"status": "paid", "deductions.ref_id": {"$in": list(by_return)}},
+                                            {"_id": 0, "deductions": 1}):
+            for d in cb.get("deductions") or []:
+                if d.get("kind") == "purchase_return" and d.get("ref_id") in by_return:
+                    applied[d["ref_id"]] = applied.get(d["ref_id"], 0) + to_cents(float(d.get("amount") or 0))
+    debit_open = sum(max(0, v - applied.get(rid, 0)) for rid, v in by_return.items())
+    expected = bills_sen + landed - debit_open
+    gl = await rb.saldo_akun_sen("pembelian.hutang", ent_ids, None, kredit=True)
+    return {"bills_outstanding": from_cents(bills_sen), "landed_cost_outstanding": from_cents(landed),
+            "debit_notes_open": from_cents(debit_open), "expected_gl": from_cents(expected),
+            "gl_balance": from_cents(gl), "unexplained": from_cents(gl - expected)}
 
 
 # ── List & detail ─────────────────────────────────────────────────────────────
@@ -261,6 +334,15 @@ async def create_vendor_bill(payload: VendorBillCreate, request: Request) -> Dic
         await _saga.release("purchase_orders", po["id"])
 
 
+async def _due_from_supplier_term(po: Dict[str, Any], bill_date: str, entity_id: str) -> str:
+    """PK-41 (RP-07) — jatuh tempo tagihan tanpa `due_date` = tanggal tagihan + `net_days` termin pemasok PO itu
+    (master Syarat Bayar lapisan PT; pemasok tanpa termin = 0 hari, perilaku ringkasan hutang sebelumnya)."""
+    from services import report_basis as rb
+    due, _basis = await rb.jatuh_tempo_tagihan(
+        {"bill_date": bill_date, "supplier_id": po.get("supplier_id", ""), "entity_id": entity_id}, {})
+    return due or ""
+
+
 async def _create_bill_locked(payload, po, pricing, tol, match_mode, entity_id, inv_no, actor) -> Dict[str, Any]:
     billed_so_far = await already_billed_map(po["id"])
     match = evaluate_match(po, pricing["items"], match_mode, billed_so_far, tol["qty"], tol["price"], value_tol=tol["value"],
@@ -285,7 +367,8 @@ async def _create_bill_locked(payload, po, pricing, tol, match_mode, entity_id, 
         "warehouse_name": po.get("warehouse_name", ""),
         "entity_id": entity_id,
         "bill_date": payload.bill_date or now_iso(),
-        "due_date": payload.due_date or "",
+        # PK-41 (RP-07) — jatuh tempo kosong diisi dari termin pemasok (tanggal tagihan + net_days), tidak ditolak.
+        "due_date": payload.due_date or await _due_from_supplier_term(po, payload.bill_date or now_iso(), entity_id),
         "match_mode": match_mode,
         "items": match["items"],
         # breakdown harga (invariant-safe, mirror PO P0-1)

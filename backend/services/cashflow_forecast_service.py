@@ -1,13 +1,15 @@
 """FINANCE — Proyeksi Arus Kas (Cash Flow Forecast) (EPIC P1-3).
 
 Proyeksi likuiditas ke depan dari:
-- INFLOW  : piutang (AR) belum lunas dari sales_orders, jatuh tempo = created_at
-            + term_days (customer/order).
+- INFLOW  : piutang (AR) belum lunas per BARIS TAGIHAN (PK-41, `report_basis.baris_tagihan`): baris surat jalan
+            jatuh tempo = tanggal surat jalan + termin; bagian belum dikirim = perkiraan dikirim hari ini + termin.
 - OUTFLOW : hutang (AP) belum lunas dari vendor_bills (posted/paid partial),
-            jatuh tempo = due_date.
+            jatuh tempo = due_date, atau tanggal tagihan + termin pemasok bila kosong.
+Hari ke jatuh tempo = `report_basis.hari_antara(hari ini, jatuh tempo)` (tanggal WIB; RP-11). Pesanan dan tagihan
+dibaca tanpa batas dengan saringan "belum lunas" di kueri (RP-01).
 Dikelompokkan ke bucket waktu + posisi kas kumulatif dari saldo kas GL awal.
 """
-from datetime import datetime, timezone, timedelta
+from datetime import date, timedelta
 from typing import Any, Dict, List, Optional
 
 from db import db
@@ -30,16 +32,6 @@ BUCKETS = [
 ]
 
 
-def _parse(dt: Any) -> Optional[datetime]:
-    if not dt:
-        return None
-    try:
-        d = datetime.fromisoformat(str(dt).replace("Z", "+00:00"))
-        return d if d.tzinfo else d.replace(tzinfo=timezone.utc)
-    except (ValueError, TypeError):
-        return None
-
-
 def _bucket_key(days: int) -> str:
     for key, _lbl, lo, hi in BUCKETS:
         if lo <= days <= hi:
@@ -58,14 +50,10 @@ async def _cash_now(scope: Optional[Dict[str, Any]]) -> float:
 
 async def cashflow_forecast(scope: Optional[Dict[str, Any]] = None,
                             entity_id: Optional[str] = None) -> Dict[str, Any]:
-    now = datetime.now(timezone.utc)
+    from services import report_basis as rb
+    from services.customer_service import DEAD_STATUSES, _term_days
+    today = rb.tanggal_buku()
     cash_now = await _cash_now(scope)
-
-    # G3 D4-FIN-02 — basis AR & termin = AR kanonis (ar_aging_service): metode tunai dikecualikan,
-    # termin dari snapshot SO (payment_term_days) dulu, termin 0 tetap 0.
-    from services.ar_aging_service import _eligible_outstanding, term_days, due_context, order_due
-    cust_rows = await db.customers.find({}, {"_id": 0, "id": 1, "payment_profile": 1}).to_list(20000)
-    cmap = {c["id"]: c for c in cust_rows}
 
     buckets: Dict[str, Dict[str, Any]] = {
         k: {"key": k, "label": lbl, "inflow": 0.0, "outflow": 0.0}
@@ -74,41 +62,48 @@ async def cashflow_forecast(scope: Optional[Dict[str, Any]] = None,
     ar_items: List[Dict[str, Any]] = []
     ap_items: List[Dict[str, Any]] = []
 
-    # ── INFLOW (AR) ──
-    soq: Dict[str, Any] = {**(scope or {})}
-    orders = await db.sales_orders.find(soq, {"_id": 0}).to_list(50000)
-    dctx = await due_context(orders)   # F-16 — jatuh tempo dari Surat Jalan pertama
+    # ── INFLOW (AR) ── G3 D4-FIN-02 — basis AR & termin = AR kanonis: metode tunai dikecualikan, termin dari snapshot SO
+    # (payment_term_days) dulu, termin 0 tetap 0. PK-41 — per baris tagihan (surat jalan) posisi hari ini.
+    soq: Dict[str, Any] = {**(scope or {}), "status": {"$nin": sorted(DEAD_STATUSES)}, "payment_status": {"$ne": "paid"}}
+    orders = [o async for o in db.sales_orders.find(soq, {"_id": 0})]
+    cids = list({o.get("customer_id") for o in orders if o.get("customer_id")})
+    cmap: Dict[str, Dict[str, Any]] = {}
+    for i in range(0, len(cids), rb.KELOMPOK):
+        async for c in db.customers.find({"id": {"$in": cids[i:i + rb.KELOMPOK]}}, {"_id": 0, "id": 1, "payment_profile": 1}):
+            cmap[c["id"]] = c
+    lines_by_order = await rb.baris_tagihan(orders, cmap, per=today)
+    terms = await rb.peta_termin(orders)
     for o in orders:
-        outstanding = _eligible_outstanding(o)
-        if outstanding is None:
-            continue
         cust = cmap.get(o.get("customer_id"), {})
-        due = order_due(cust, o, dctx)
-        basis = "first_sj"
-        if due is None:   # belum dikirim: perkiraan paling cepat = dikirim hari ini + termin (bukan "lewat")
-            due, basis = now + timedelta(days=term_days(cust, o, dctx["terms"])), "estimate_not_shipped"
-        days = (due - now).days
-        bk = _bucket_key(days)
-        buckets[bk]["inflow"] = round(buckets[bk]["inflow"] + outstanding, 2)
-        ar_items.append({"number": o.get("number"), "party": o.get("customer_name", ""),
-                         "amount": outstanding, "due_date": due.date().isoformat(),
-                         "days_to_due": days, "bucket": bk, "due_basis": basis})
+        for ln in lines_by_order.get(o.get("id")) or []:
+            if ln["sumber"] == rb.SUMBER_BELUM_DIKIRIM:
+                # belum dikirim: perkiraan paling cepat = dikirim hari ini + termin (bukan "lewat")
+                due = (date.fromisoformat(today) + timedelta(days=_term_days(cust, o, terms))).isoformat()
+                basis = "estimate_not_shipped"
+            else:
+                due, basis = ln["jatuh_tempo"], "per_sj"
+            days = rb.hari_antara(today, due)
+            bk = _bucket_key(days)
+            buckets[bk]["inflow"] = round(buckets[bk]["inflow"] + ln["sisa"], 2)
+            ar_items.append({"number": o.get("number"), "party": o.get("customer_name", ""),
+                             "ref_number": ln["ref_number"], "amount": ln["sisa"], "due_date": due,
+                             "days_to_due": days, "bucket": bk, "due_basis": basis})
 
     # ── OUTFLOW (AP) ──
-    vbq: Dict[str, Any] = {"status": {"$in": PAYABLE_BILL_STATUSES}, **(scope or {})}
-    bills = await db.vendor_bills.find(vbq, {"_id": 0}).to_list(20000)
-    for b in bills:
+    vbq: Dict[str, Any] = {"status": {"$in": PAYABLE_BILL_STATUSES}, "payment_status": {"$ne": "paid"}, **(scope or {})}
+    term_cache: Dict[str, int] = {}
+    async for b in db.vendor_bills.find(vbq, {"_id": 0}):
         fin = bill_financials(b)
         out = fin["outstanding"]
         if out <= EPS:
             continue
-        due = _parse(b.get("due_date")) or _parse(b.get("bill_date")) or now
-        days = (due - now).days
+        due, _basis = await rb.jatuh_tempo_tagihan(b, term_cache)
+        due = due or today
+        days = rb.hari_antara(today, due)
         bk = _bucket_key(days)
         buckets[bk]["outflow"] = round(buckets[bk]["outflow"] + out, 2)
         ap_items.append({"number": b.get("bill_number"), "party": b.get("supplier_name", ""),
-                         "amount": out, "due_date": (due.date().isoformat() if due else ""),
-                         "days_to_due": days, "bucket": bk})
+                         "amount": out, "due_date": due, "days_to_due": days, "bucket": bk})
 
     ordered = []
     running = cash_now

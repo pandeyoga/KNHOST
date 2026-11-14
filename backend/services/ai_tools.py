@@ -16,7 +16,7 @@ from dependencies import audit
 from services import analytics_catalog as cat
 from services import analytics_engine as engine
 from services.analytics_time import now_wib, period_from_args
-from services.ar_aging_service import _eligible_outstanding, due_context, order_due
+from services import report_basis as _rb
 from services.sales_ownership import apply_scope, assert_may_open
 
 Q_DEFAULT = {"group_by": [], "time_grain": None, "compare": "none", "filters": [],
@@ -63,22 +63,23 @@ async def _ar_orders(sc: engine.Scope, overdue_only: bool, limit: int,
     if sc.sales_only:
         cq["assigned_sales_id"] = sc.sales_only
     custs = {c["id"]: c async for c in db.customers.find(cq, {"_id": 0})}
-    now = datetime.now(timezone.utc)
     out = []
     orders = await db.sales_orders.find({"customer_id": {"$in": list(custs)}},
                                         {"_id": 0, "items": 0, "status_history": 0}).to_list(20000)
-    dctx = await due_context(orders)   # F-16 — jatuh tempo dari Surat Jalan pertama; belum dikirim = belum jatuh tempo
+    # PK-41 (RP-03) — jatuh tempo per surat jalan (`report_basis.baris_tagihan`): jatuh tempo = baris terkirim tertua yang
+    # masih bersisa, telat = telat terlama; bagian belum dikirim belum jatuh tempo.
+    lines_by_order = await _rb.baris_tagihan(orders, custs, per=_rb.tanggal_buku())
     for o in orders:
-        amt = _eligible_outstanding(o)
-        if amt is None:
+        rows = lines_by_order.get(o.get("id"))
+        if not rows:
             continue
-        due = order_due(custs[o["customer_id"]], o, dctx)
-        late = (now - due).days if due else 0
+        sm = _rb.ringkas_baris(rows)
+        late = sm["max_days"] if sm["due_date"] else 0
         if overdue_only and late <= 0:
             continue
         out.append({"number": o.get("number"), "customer": o.get("customer_name"),
-                    "due_date": due.date().isoformat() if due else "belum dikirim",
-                    "days_overdue": max(late, 0), "outstanding": round(amt, 2), "payment_status": o.get("payment_status")})
+                    "due_date": sm["due_date"] or "belum dikirim",
+                    "days_overdue": max(late, 0), "outstanding": sm["total"], "payment_status": o.get("payment_status")})
     return out
 
 

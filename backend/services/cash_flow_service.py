@@ -16,6 +16,11 @@ Klasifikasi:
               non-kas 1-1xxx & kewajiban lancar 2-1xxx).
 - Investasi : perubahan aset tetap/non-lancar (1-2xxx dst).
 - Pendanaan : perubahan ekuitas (3-xxxx) + kewajiban jangka panjang (2-2xxx+).
+
+PK-41 (RP-06) — metode langsung, digolongkan per JENIS TRANSAKSI: tiap jurnal kas lebih dulu ditanya ke
+`report_basis.golongan_arus_kas` (saldo awal rekening → kas awal, bukan arus periode; aset tetap / akun aset tidak lancar →
+seluruh kasnya investasi; pinjaman antar-PT → pendanaan bagi peminjam, investasi bagi pemberi pinjaman); jurnal lain
+memakai aturan akun lawan di atas. Akun kas dari `report_basis.kode_kas` (pemetaan akun + tanda di bagan akun).
 """
 from typing import Any, Dict, List, Optional
 
@@ -23,7 +28,10 @@ from core_utils import now_iso
 from services import financial_statement_service as fs
 
 EPS = 0.005
-CASH_CODES = {"1-1100", "1-1110"}  # Kas Besar/Bank + Kas Kecil (kas & setara kas)
+# Kas Besar/Bank + Kas Kecil (kas & setara kas) — kode bawaan, dipakai posisi kas Dasbor/Proyeksi/Rekening. Laporan Arus
+# Kas memakai `report_basis.kode_kas` (bawaan ∪ pemetaan ∪ riwayat ∪ tanda `is_cash`).
+CASH_CODES = {"1-1100", "1-1110"}
+METHOD_LABEL = "Metode langsung: tiap jurnal kas digolongkan menurut jenis transaksinya."
 
 
 def _is_cash(code: str) -> bool:
@@ -45,11 +53,6 @@ def _section(atype: str, code: str) -> str:
     if atype == "equity":
         return "financing"
     return "operating"
-
-
-async def _cash_codes(amap: Dict[str, Dict[str, Any]]) -> set:
-    """Kas & setara kas: akun baku + akun yang ditandai `is_cash`/`cash_equivalent` di COA."""
-    return CASH_CODES | {c for c, a in amap.items() if a.get("is_cash") or a.get("cash_equivalent")}
 
 
 def split_journal_cash(lines: List[Dict[str, Any]], cash: set) -> List[tuple]:
@@ -76,14 +79,37 @@ def split_journal_cash(lines: List[Dict[str, Any]], cash: set) -> List[tuple]:
     return out
 
 
+def _paksa_golongan(lines: List[Dict[str, Any]], cash: set, section: str,
+                    amap: Dict[str, Dict[str, Any]]) -> List[tuple]:
+    """PK-41 — SELURUH kas jurnal masuk golongan `section`: dibagi pro-rata ke akun lawan searah kas yang golongan
+    akunnya `section` (mis. aset tetap untuk hasil pelepasan), atau — bila tidak ada — ke semua akun lawan searah kas.
+    Σ porsi = kas bersih jurnal; laba/rugi pelepasan tidak lagi dipecah ke operasi."""
+    rows = split_journal_cash(lines, cash)
+    c = sum(float(ln.get("debit", 0) or 0) - float(ln.get("credit", 0) or 0)
+            for ln in lines if ln["account_code"] in cash)
+    eff = {code: cash_amt + noncash for code, cash_amt, noncash in rows}
+    same = {code: v for code, v in eff.items() if v * c > 0}
+    pilih = {code: v for code, v in same.items() if _section(amap.get(code, {}).get("type", ""), code) == section} \
+        or same or ({max(eff, key=lambda k: abs(eff[k])): 1.0} if eff else {})
+    base = sum(pilih.values())
+    if not pilih or abs(base) <= 1e-12:
+        return []
+    return [(code, c * v / base) for code, v in pilih.items()]
+
+
 async def cash_flow_statement(start: Optional[str] = None, end: Optional[str] = None,
                               scope: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
     """FN-04 — klasifikasi PER JURNAL: hanya jurnal yang menyentuh akun kas yang menghasilkan
     arus kas; lawan akunnya menentukan aktivitas. Jurnal nonkas (penyusutan, reclass, beli aset
-    kredit, akrual) = 0 dan diungkapkan terpisah bila menyentuh akun investasi/pendanaan."""
+    kredit, akrual) = 0 dan diungkapkan terpisah bila menyentuh akun investasi/pendanaan.
+
+    PK-41 (RP-06) — tiap jurnal kas lebih dulu ditanya ke `report_basis.golongan_arus_kas`; kas jurnal saldo awal
+    rekening yang bertanggal di periode ini = `opening_balance_additions` (menambah kas awal: `begin_cash_adjusted`),
+    bukan arus pendanaan; `net_change` tidak memuatnya."""
     from db import db
+    from services import report_basis as rb
     amap = await fs._accounts_map(scope)
-    cash = await _cash_codes(amap)
+    cash = await rb.kode_kas(scope)
 
     begin_agg: Dict[str, Dict[str, float]] = {}
     if start:
@@ -103,8 +129,19 @@ async def cash_flow_statement(start: Optional[str] = None, end: Optional[str] = 
         q["date"] = df
     buckets: Dict[str, Dict[str, float]] = {"pnl": {}, "operating": {}, "investing": {}, "financing": {}}
     noncash: Dict[str, float] = {}
-    async for je in db.journal_entries.find(q, {"_id": 0, "lines": 1}):
+    opening_add = 0.0
+    async for je in db.journal_entries.find(q, {"_id": 0, "lines": 1, "source_type": 1}):
         lines = [ln for ln in je.get("lines", []) if ln.get("account_code")]
+        kas_jurnal = sum(float(ln.get("debit", 0) or 0) - float(ln.get("credit", 0) or 0)
+                         for ln in lines if ln["account_code"] in cash)
+        gol = rb.golongan_arus_kas({**je, "lines": lines}, cash, amap) if abs(kas_jurnal) > EPS else None
+        if gol == "saldo_awal":
+            opening_add += kas_jurnal
+            continue
+        if gol in ("investing", "financing"):
+            for code, amt in _paksa_golongan(lines, cash, gol, amap):
+                buckets[gol][code] = buckets[gol].get(code, 0.0) + amt
+            continue
         for code, cash_amt, noncash_amt in split_journal_cash(lines, cash):
             sec = _section(amap.get(code, {}).get("type", ""), code)
             if abs(cash_amt) > 1e-9:
@@ -127,12 +164,16 @@ async def cash_flow_statement(start: Optional[str] = None, end: Optional[str] = 
     net_change = round(operating_total + investing_total + financing_total, 2)
     end_cash_r = round(end_cash, 2)
     begin_cash_r = round(begin_cash, 2)
-    computed_end = round(begin_cash_r + net_change, 2)
+    opening_add_r = round(opening_add, 2)
+    begin_adj = round(begin_cash_r + opening_add_r, 2)
+    computed_end = round(begin_adj + net_change, 2)
 
     return {
         "period": {"start": start or "", "end": end or ""},
-        "method": "journal_cash_classification",
+        "method": "direct_by_source",
+        "method_label": METHOD_LABEL,
         "allocation": "pro_rata_cash_side",
+        "cash_accounts": sorted(cash),
         "operating": {
             "label": "Arus Kas dari Aktivitas Operasi",
             "net_income": net_income,
@@ -147,6 +188,9 @@ async def cash_flow_statement(start: Optional[str] = None, end: Optional[str] = 
             "lines": _lines(noncash)},
         "net_change": net_change,
         "begin_cash": begin_cash_r,
+        "opening_balance_additions": opening_add_r,
+        "opening_balance_label": "Saldo awal rekening yang didaftarkan periode ini",
+        "begin_cash_adjusted": begin_adj,
         "end_cash": computed_end,
         "end_cash_actual": end_cash_r,
         "reconciled": abs(computed_end - end_cash_r) < 0.5,

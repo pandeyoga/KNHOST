@@ -1,5 +1,5 @@
 <!-- DIHASILKAN OTOMATIS oleh scripts/gen_codebase_map.py — JANGAN EDIT TANGAN -->
-<!-- Dihasilkan dari commit: e72134c pada 2026-11-14 -->
+<!-- Dihasilkan dari commit: 21bc446 pada 2026-11-14 -->
 # CODEBASE MAP — Kain Nusantara (dihasilkan otomatis)
 
 Peta ini dihitung dari kode oleh `scripts/gen_codebase_map.py`. Kalau angka di sini
@@ -24,7 +24,7 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 |---|---:|
 | `server.py` | 443 |
 | `db.py` | 12 |
-| `core_utils.py` | 438 |
+| `core_utils.py` | 439 |
 | `schemas.py` | 1134 |
 | `schemas_purchasing.py` | 628 |
 | `dependencies.py` | 287 |
@@ -172,10 +172,10 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 | `esign.py` | 4 | 91 | `/request`, `/signatures/{doc_type}/{source_id}`, `/verify`, `/verify/{code}` |
 | `export_center.py` | 15 | 396 | `/coverage`, `/datasets`, `/jobs`, `/jobs/{job_id}`, `/jobs/{job_id}/download`, `/jobs/{job_id}/retry` … |
 | `fabric_type_master.py` | 2 | 31 | `/master/fabric-types` |
-| `finance_analytics.py` | 4 | 144 | `/finance/cashflow-forecast`, `/finance/profitability`, `/finance/profitability/export.xlsx`, `/finance/tower` |
+| `finance_analytics.py` | 4 | 146 | `/finance/cashflow-forecast`, `/finance/profitability`, `/finance/profitability/export.xlsx`, `/finance/tower` |
 | `finance_bi.py` | 1 | 36 | `/finance/bi` |
 | `finance_cases.py` | 13 | 201 | `/finance-cases`, `/finance-cases/playbooks`, `/finance-cases/policy`, `/finance-cases/reasons`, `/finance-cases/scan`, `/finance-cases/stats` … |
-| `financial_statements.py` | 8 | 270 | `/finance/balance-sheet`, `/finance/balance-sheet/export.csv`, `/finance/cash-flow`, `/finance/cash-flow/export.csv`, `/finance/equity-changes`, `/finance/equity-changes/export.csv` … |
+| `financial_statements.py` | 8 | 275 | `/finance/balance-sheet`, `/finance/balance-sheet/export.csv`, `/finance/cash-flow`, `/finance/cash-flow/export.csv`, `/finance/equity-changes`, `/finance/equity-changes/export.csv` … |
 | `fixed_assets.py` | 10 | 216 | `/fixed-assets`, `/fixed-assets/meta`, `/fixed-assets/run-depreciation`, `/fixed-assets/summary`, `/fixed-assets/{asset_id}`, `/fixed-assets/{asset_id}/dispose` … |
 | `fulfillment.py` | 3 | 49 | `/fulfillment/wizard/{so_id}`, `/fulfillment/wizard/{so_id}/create-interco`, `/fulfillment/wizard/{so_id}/create-pr` |
 | `gl.py` | 24 | 500 | `/gl/accounts`, `/gl/accounts/{code}`, `/gl/accounts/{code}/ledger`, `/gl/cash-accounts`, `/gl/consolidation`, `/gl/inventory-drift-explain` … |
@@ -285,7 +285,7 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 | `uoms.py` | 5 | 186 | `/uoms`, `/uoms/vocab`, `/uoms/{uom_id}` |
 | `users.py` | 11 | 273 | `/hr-employees-available`, `/users`, `/users/count`, `/users/manageable-roles`, `/users/{user_id}`, `/users/{user_id}/reactivate` … |
 | `vehicle_logs.py` | 9 | 214 | `/vehicle-usage-logs`, `/vehicle-usage-logs/summary`, `/vehicle-usage-logs/{log_id}`, `/vehicles`, `/vehicles/{veh_id}` |
-| `vendor_bills.py` | 12 | 678 | `/purchase-orders/{po_id}/billing-context`, `/vendor-bills`, `/vendor-bills/payables/summary`, `/vendor-bills/status-counts`, `/vendor-bills/{bill_id}`, `/vendor-bills/{bill_id}/approve` … |
+| `vendor_bills.py` | 12 | 761 | `/purchase-orders/{po_id}/billing-context`, `/vendor-bills`, `/vendor-bills/payables/summary`, `/vendor-bills/status-counts`, `/vendor-bills/{bill_id}`, `/vendor-bills/{bill_id}/approve` … |
 | `warehouse_sites.py` | 6 | 91 | `/warehouse-sites`, `/warehouse-sites/seed-blueprint`, `/warehouse-sites/{site_id}`, `/warehouse-sites/{site_id}/receiving` |
 | `warehouses.py` | 11 | 382 | `/warehouse-sites/{site_id}/stock-tree`, `/warehouses`, `/warehouses/{warehouse_id}`, `/warehouses/{warehouse_id}/gate-policy`, `/warehouses/{warehouse_id}/locations`, `/warehouses/{warehouse_id}/occupancy` … |
 | `wilayah.py` | 8 | 55 | `/wilayah/countries`, `/wilayah/districts`, `/wilayah/postal-code/{code}`, `/wilayah/provinces`, `/wilayah/regencies`, `/wilayah/search` … |
@@ -302,8 +302,8 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 | `ai_cards.py` | 965 | AG-T3 — mesin kartu tindakan asisten golongan A dan B lewat pintu aplikasi sendiri (K-44, K-45). |
 | `ai_chat_service.py` | 557 | Tanya KN F2.2 — orkestrator chat bebas (pemanggilan alat lewat penyedia model). |
 | `ai_cost.py` | 37 | Tanya KN F2.5 — biaya per panggilan model + rem anggaran bulanan (`ai.monthly_budget_usd`). |
-| `ai_finance_reports.py` | 737 | AG-T4 — Asisten Keuangan: paket tutup buku bulanan dan ringkasan pagi keuangan. |
-| `ai_finance_tools.py` | 594 | AG-T2 (AG-03) — alat baca Asisten Keuangan: tiap alat = satu atau dua `GET` ke endpoint layar lewat `SelfApi`. |
+| `ai_finance_reports.py` | 752 | AG-T4 — Asisten Keuangan: paket tutup buku bulanan dan ringkasan pagi keuangan. |
+| `ai_finance_tools.py` | 599 | AG-T2 (AG-03) — alat baca Asisten Keuangan: tiap alat = satu atau dua `GET` ke endpoint layar lewat `SelfApi`. |
 | `ai_forecast.py` | 112 | Tanya KN — perkiraan: kebutuhan stok 4–8 minggu + saran reorder, risiko pelanggan berhenti order. |
 | `ai_insights.py` | 147 | Tanya KN — peringatan anomali otomatis (tanpa model; angka & penyebab dihitung server). |
 | `ai_narrative.py` | 119 | Tanya KN F4 — narasi template: ringkasan otomatis dari angka server, atau AI (luna/sol) bila aktif. |
@@ -315,7 +315,7 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 | `ai_schedules.py` | 198 | Tanya KN F4 — laporan terjadwal (in-app) + pemeliharaan harian (retensi sesi chat). |
 | `ai_self_api.py` | 196 | AG-T2 (AG-03) — asisten membaca data lewat pintu aplikasi sendiri, dengan sesi pengguna yang bertanya. |
 | `ai_templates.py` | 158 | Tanya KN F4 (dasar) — template laporan `tpl-v1`: resep dijalankan server TANPA model. |
-| `ai_tools.py` | 537 | Tanya KN F2.1 — eksekusi 6 tool (Lampiran C). Semua baca-saja, identitas pengguna asli. |
+| `ai_tools.py` | 538 | Tanya KN F2.1 — eksekusi 6 tool (Lampiran C). Semua baca-saja, identitas pengguna asli. |
 | `ai_usage_report.py` | 112 | Halaman Biaya AI — pemakaian harian per fitur, per pengguna, per model (tanggal WIB). |
 | `alert_ops_service.py` | 368 | PS-21 — Generator ALERT OPERASIONAL (quick win di atas mesin R6.5/R6.6). |
 | `alert_service.py` | 335 | R6.5 — Generator ALERT untuk Scheduler & Notifikasi (Kain Nusantara). |
@@ -333,7 +333,7 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 | `approval_policy_service.py` | 758 | services/approval_policy_service.py — SATU tabel kebijakan persetujuan untuk semua antrean (unit KP-T4). |
 | `approval_reminder.py` | 135 | services/approval_reminder.py — PENGINGAT HARIAN "keputusan yang menunggu Anda". |
 | `approval_service.py` | 138 | services/approval_service.py — **ATURAN AMBANG PERSETUJUAN** (`approval_rules`). |
-| `ar_aging_service.py` | 529 | EPIC7-A — AR / Piutang Aging (read/derived report). |
+| `ar_aging_service.py` | 576 | EPIC7-A — AR / Piutang Aging (read/derived report). |
 | `ar_allocation_service.py` | 407 | PK-19 (SL-05, SL-06, SL-08, SL-14, FX-05, FX-06, FX-07, IA-07) — SATU fungsi alokasi pembayaran pesanan. |
 | `ar_receipt_service.py` | 858 | AR Receipt service (EPIC3B) — Penerimaan pembayaran customer + aplikasi ke SO. |
 | `ar_reduction_guard.py` | 105 | PK-38 (FX-10, K-11) — satu pintu pemeriksaan **pengurang piutang tanpa uang masuk**. |
@@ -350,9 +350,9 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 | `budget_service.py` | 867 | R6.3 — Budget Control penuh: Anggaran vs Komitmen vs Realisasi + enforcement. |
 | `cash_advance_service.py` | 1020 | Service — Cash Advance (Form PD) + Pertanggungjawaban (Settlement) + Expense Categories. |
 | `cash_entity_service.py` | 98 | FASE E-7 (E7.4 · keputusan pemilik 3a) — **KAS TINGKAT GRUP DIHAPUS**. |
-| `cash_flow_service.py` | 154 | FINANCE — Laporan Arus Kas (Cash Flow Statement). FN-04: klasifikasi per jurnal kas |
+| `cash_flow_service.py` | 198 | FINANCE — Laporan Arus Kas (Cash Flow Statement). FN-04: klasifikasi per jurnal kas |
 | `cash_ledger.py` | 280 | PK-20 (SL-11, `02_STANDAR.md` §1 P5) — SATU pembuat transaksi kas (`cash_transactions`). |
-| `cashflow_forecast_service.py` | 136 | FINANCE — Proyeksi Arus Kas (Cash Flow Forecast) (EPIC P1-3). |
+| `cashflow_forecast_service.py` | 131 | FINANCE — Proyeksi Arus Kas (Cash Flow Forecast) (EPIC P1-3). |
 | `catalog_access.py` | 53 | Pagar bersama template, SKU, media dan relasi R&D. Produk tetap SHARED. |
 | `catalog_rules.py` | 102 | Kontrak murni induk/axis/SKU; digunakan R&D, generator, editor dan impor. |
 | `client_dataset_service.py` | 291 | L01 LN-011 — IMPOR DATASET CLIENT (DATA-01): artikel · tahap · jenis kain · supplier/warna. |
@@ -384,7 +384,7 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 | `customer_feedback_service.py` | 153 | FEEDBACK / KOMPLAIN PELANGGAN per Sales Order (2026-09, sesi #075). |
 | `customer_merge_service.py` | 99 | P18 MASTER-05 / COMM-01 — gabung pelanggan duplikat (sumber → target) tanpa memutus riwayat. |
 | `customer_price_service.py` | 568 | F1b (D-14) — **Daftar Harga per Pelanggan** (customer pricelist) dengan histori, |
-| `customer_service.py` | 610 | Customer/CRM service (KN_17 CRM-lite). |
+| `customer_service.py` | 549 | Customer/CRM service (KN_17 CRM-lite). |
 | `cutting_service.py` | 307 | L06 LN-061 — Meja Cutting/Admin Cutting: kemampuan lokasi, antrean potong, serah-terima hasil potong. |
 | `cycle_count_service.py` | 184 | CYCLE COUNT RFID — stock opname kilat via sweep handheld. |
 | `data_hygiene_service.py` | 204 | Kebersihan Data (K-1/K-2 otomatis) — normalisasi EYD nama & nomor telepon pada data LAMA. |
@@ -426,7 +426,7 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 | `finance_case_playbooks.py` | 245 | FASE G-9 — REGISTRY 11 PLAYBOOK KASUS KEUANGAN. |
 | `finance_case_scan.py` | 288 | FASE G-9 — PEMINDAI KASUS OTOMATIS + PEMERIKSA INVARIAN. |
 | `finance_case_service.py` | 761 | FASE G-9 — PUSAT KASUS KEUANGAN (Finance Exception Desk). |
-| `finance_tower_service.py` | 128 | FINANCE — Control Tower (Dashboard Keuangan terpadu) (EPIC P1-5). |
+| `finance_tower_service.py` | 134 | FINANCE — Control Tower (Dashboard Keuangan terpadu) (EPIC P1-5). |
 | `financial_statement_service.py` | 313 | FINANCE — Laporan Keuangan (Laba-Rugi & Neraca) diturunkan dari GL. |
 | `fixed_asset_service.py` | 826 | R6.2 — Fixed Assets & Depresiasi (straight-line) + disposal gain/loss. |
 | `fixed_asset_transfer_service.py` | 408 | PK-23 (FY-04) — pindah aset tetap antar-PT dan pembayarannya: dua PT atau tidak sama sekali, tidak dua kali. |
@@ -572,7 +572,7 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 | `product_template_service.py` | 398 | F1b — Product Templates & Variants (pendekatan ADDITIVE/non-destruktif). |
 | `product_variant_service.py` | 253 | Satu induk, SKU tetap: jalur bersama untuk seluruh penulis produk. |
 | `production_service.py` | 568 | R6.4 — Produksi In-House (BOM + Work Order). |
-| `profitability_service.py` | 275 | FINANCE — Analisis Profitabilitas / Margin (EPIC P0-2 · R5.6). |
+| `profitability_service.py` | 378 | FINANCE — Analisis Profitabilitas / Margin (EPIC P0-2 · R5.6). |
 | `purchase_requisition_service.py` | 574 | Depth #2 — Purchase Requisition (PR) service + Reorder/Replenishment. |
 | `purchase_return_service.py` | 1154 | Depth #1 — Retur Beli (Purchase Return / Nota Debit). |
 | `purchase_return_state.py` | 66 | R4 — Supplier RMA lifecycle untuk Retur Beli (Purchase Return). |
@@ -587,7 +587,7 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 | `registration_freeze.py` | 156 | PREP-B (K-OPN-03) — pembekuan gerakan roll selama pendaftaran awal gedung. |
 | `reminder_policy.py` | 334 | KP-T7 — pengingat terjadwal yang bisa diatur: PENERIMA dan AMBANG per PT. |
 | `repair_order_service.py` | 382 | UAT 24 Okt (P7) — dokumen Perbaikan (`repair_orders`, nomor RPR-…): roll jadi yang cacat / warnanya meleset |
-| `report_basis.py` | 268 | PK-41 (RP-01, RP-03, RP-05, RP-06, RP-11, RP-12; keputusan K-16) — dasar hitung laporan pendukung. |
+| `report_basis.py` | 359 | PK-41 (RP-01, RP-03, RP-05, RP-06, RP-11, RP-12; keputusan K-16) — dasar hitung laporan pendukung. |
 | `restock_service.py` | 288 | PS-21(a) — Repeat/Restock 1-klik dari Sales Order → Purchase Requisition. |
 | `restock_source_service.py` | 133 | P05 IMP-19 — sumber restock per ARTIKEL (product_templates) dan penegakan jalur PR/PO/MKO. |
 | `return_attachment_service.py` | 57 | Lampiran bukti retur — satu jalur untuk retur ke supplier & retur antar-PT (permintaan pemilik 23 Okt 2026). |
@@ -726,7 +726,7 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 
 | Fitur (`src/features/`) | Berkas | Baris |
 |---|---:|---:|
-| `__tests__` | 131 | 21370 |
+| `__tests__` | 132 | 21631 |
 | `admin` | 36 | 6981 |
 | `approvals` | 9 | 1720 |
 | `catalog` | 24 | 1459 |
@@ -737,7 +737,7 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 | `desks` | 2 | 229 |
 | `documents` | 18 | 2580 |
 | `export` | 9 | 700 |
-| `finance` | 104 | 23869 |
+| `finance` | 104 | 24047 |
 | `home` | 5 | 1136 |
 | `hr` | 34 | 5799 |
 | `incentive` | 1 | 500 |
@@ -756,7 +756,7 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 | `pos` | 25 | 2807 |
 | `pricing` | 1 | 151 |
 | `production` | 3 | 753 |
-| `purchasing` | 88 | 18842 |
+| `purchasing` | 88 | 18873 |
 | `rfid` | 21 | 3556 |
 | `rnd` | 66 | 7906 |
 | `sales` | 97 | 15826 |

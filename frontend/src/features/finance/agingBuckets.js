@@ -45,3 +45,23 @@ export function sumByBucket(items, daysOf, amountOf) {
   }
   return out;
 }
+
+/**
+ * PK-41 (RP-12) — kolom umur PIUTANG dari `bucket_labels` jawaban server (judul mengikuti batas `ar.aging_buckets` PT
+ * itu; kolom pertama "Belum jatuh tempo"). Warna tetap dari `AGING_BUCKETS`. Tanpa jawaban server → judul bawaan
+ * batas 30/60/90 hari. Kolom yang tidak dikirim server (batas kurang dari tiga) tidak ditampilkan.
+ */
+export const AR_DEFAULT_LABELS = [
+  { key: "current", label: "Belum jatuh tempo" },
+  { key: "b1_30", label: "1–30 hari" },
+  { key: "b31_60", label: "31–60 hari" },
+  { key: "b61_90", label: "61–90 hari" },
+  { key: "b90_plus", label: "> 90 hari" },
+];
+
+export function bucketColumns(labels) {
+  const src = Array.isArray(labels) && labels.length ? labels : AR_DEFAULT_LABELS;
+  return src
+    .filter((b) => AGING_KEYS.includes(b.key))
+    .map((b) => ({ ...bucketMeta(b.key), key: b.key, label: b.label, short: b.label }));
+}
