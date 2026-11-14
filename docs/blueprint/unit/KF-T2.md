@@ -32,6 +32,7 @@ Semua `[dibaca]`; angka gate dari menjalankan `scripts/audit_config_wiring.py` t
 | KP-13: `lot.number_format` tidak dibaca saat membuat nomor lot | Nomor selalu `LOT-YYMM-####`; satu-satunya pembaca kunci adalah simulator | `backend/services/lot_service.py:133` (`next_lot_number`); `backend/config_catalog_ops.py:158` (`lot.number_format`); `backend/services/config_simulator.py:315` (`lot.number_format`) |
 | KP-30: akun biaya bank, titipan dana, dan bunga bank diatur di dua tempat | Rekonsiliasi bank membaca tiga kunci registry; Pemetaan Akun punya `kas_bank.beban_bank` dan `kas_bank.titipan_dana` dengan kode bawaan yang sama | `backend/services/bank_recon_service.py:86` (`holding_account_code`), `backend/services/bank_recon_service.py:91` (`charge_account_code`), `backend/services/bank_recon_service.py:92` (`interest_account_code`); `backend/services/gl_mapping_registry.py:40` (`kas_bank.beban_bank`), `backend/services/gl_mapping_registry.py:42` (`kas_bank.titipan_dana`) |
 | 3 rujukan pemakai menunjuk fungsi yang tidak ada | `finance_case_service.py:sla_of` (yang ada `sla_hours_of`); `ai_chat_service.py:ask` (yang ada `chat_events`) | `backend/config_catalog_case.py:21` (`sla_of`), `backend/services/finance_case_service.py:97` (`sla_hours_of`); `backend/config_catalog_ai.py:88` (`ai_chat_service.py:ask`), `backend/services/ai_chat_service.py:162` (`route_threshold_pct`) |
+| 4 rujukan pemakai basi `returns.evidence_required_*` (koreksi KF-T2) | Pembaca merangkai kunci (`f"returns.evidence_required_{s}"`), jadi `config_health` menilai STALE dan U11 (`broken == []`) merah | `backend/services/return_evidence_service.py:15` (`policy`) |
 
 KF-06 — nilai cadangan di kode berbeda dari bawaan registry (dicek ulang per baris):
 
@@ -70,8 +71,10 @@ perubahan.
 |---|---|
 | `return_policy_service.return_assumptions(entity_id)` | Membaca lima kunci `returns.*` lewat `config_resolver.value_of(key, {"entity_id": entity_id})`; bentuk jawaban tetap |
 | `return_grade_impairment.grade_factors` | Tidak lagi menggabung `DEFAULT_FACTORS`; memakai nilai `returns.grade_price_factors` apa adanya (bawaannya sudah lengkap) |
+| `config_service.DEFAULT_GLOBAL_SETTINGS` (koreksi KF-T2) | `returns.grade_price_factors` dibuang (bawaan hanya di registry); tanpa ini 7 daun tabel menjadi ORPHAN_UI di gate (daun < 3 huruf tidak dicari pembacanya) |
+| `return_evidence_service.policy` (koreksi KF-T2) | Kunci per tahap ditulis utuh |
 | `interco_service.payment_settings(entity_id)` | Membaca enam kunci `interco_payment.*` lewat `value_of`; `cutoff_day`/`payment_day` bernilai 0 dan `basis` "" dikembalikan sebagai `None` (arti hari ini) |
-| `PUT /api/settings` | Dimatikan: 410 "Pengaturan kini disimpan lewat Pusat Pengaturan." tanpa menulis apa pun. Sebelum itu semua pemanggil di `backend/`, `scripts/`, `frontend/src` dicari dan dialihkan ke `PUT /api/config/values` (diketahui: `backend/tests/test_p13_audit.py`, `scripts/audit/b3b_api_probe.py`). `GET` tetap |
+| `PUT /api/settings` | Dimatikan: 410 "Pengaturan kini disimpan lewat Pusat Pengaturan." tanpa menulis apa pun. Sebelum itu semua pemanggil di `backend/`, `scripts/`, `frontend/src` dicari dan dialihkan ke `PUT /api/config/values` (diketahui: `backend/tests/test_p13_audit.py`, `backend/tests/test_lanjutan_sched_returns_interco.py`, `backend/tests/test_audit_bagian_iii.py`, `backend/tests/test_role01_matrix_defaults.py`, `scripts/audit/b3b_api_probe.py`, dua layar — koreksi KF-T2). `GET` tetap |
 | `config_service.saring_bagi_pembaca` (lahir di KF-T1) | `returns` dan `interco_payment` dicabut dari `BUKA_SEMENTARA`; keterbacaannya kini dari `sensitif_baca=False` pada kunci |
 | `config_registry.default_of(key) -> Any` — baru | `require(key)["default"]`; dipakai sebagai satu-satunya cadangan |
 | 10 baris cadangan di tabel KF-06 | Literal diganti `default_of("<kunci>")`. Di `compute_order_pricing` kuncinya `f"{cfg_section}.allow_item_discount"` / `…allow_order_discount` (bagian `purchasing` berbawaan `True`, `sales` `False`) |
@@ -86,9 +89,9 @@ Kunci baru (semua `scopes=("global", "entity")`, `sensitif_baca=False`, `risk="m
 
 | key | group | type | default | min · max · unit | permission | label | help | consumers |
 |---|---|---|---|---|---|---|---|---|
-| `returns.customer_window_days` | `retur` | `duration` | 21 | 1 · 365 · hari | `("sales_return", "policy")` | Batas retur pelanggan sejak surat jalan (hari) | Pelanggan boleh mengajukan retur sampai sekian hari sesudah tanggal surat jalan. Kebijakan retur per kategori atau pelanggan boleh menimpa angka ini. | `services/return_policy_service.py:return_assumptions` |
-| `returns.supplier_window_days` | `retur` | `duration` | 21 | 1 · 365 · hari | sama | Batas retur ke pemasok sejak barang diterima (hari) | Klaim ke pemasok harus dikirim sebelum sekian hari sejak roll diterima gudang. | sama |
-| `returns.supplier_reminder_days` | `retur` | `duration` | 3 | 0 · 60 · hari | sama | Ingatkan sebelum batas retur pemasok habis (hari) | Pengingat dikirim sekian hari sebelum batas. 0 = tanpa pengingat. | `services/return_disposition_service.py:job_supplier_deadline_reminder` |
+| `returns.customer_window_days` | `retur` | `duration` | 21 | 1 · 365 · hari | `("sales_return", "policy")` | Batas retur pelanggan sejak surat jalan | Pelanggan boleh mengajukan retur sampai sekian hari sesudah tanggal surat jalan. Kebijakan retur per kategori atau pelanggan boleh menimpa angka ini. | `services/return_policy_service.py:return_assumptions` |
+| `returns.supplier_window_days` | `retur` | `duration` | 21 | 1 · 365 · hari | sama | Batas retur ke pemasok sejak barang diterima | Klaim ke pemasok harus dikirim sebelum sekian hari sejak roll diterima gudang. | sama |
+| `returns.supplier_reminder_days` | `retur` | `duration` | 3 | 0 · 60 · hari | sama | Ingatkan sebelum batas retur pemasok habis | Pengingat dikirim sekian hari sebelum batas. 0 = tanpa pengingat. | `services/return_disposition_service.py:job_supplier_deadline_reminder` |
 | `returns.bill_first` | `retur` | `bool` | True | — | sama | Potong tagihan pesanan asal lebih dulu | Nilai retur dipakai mengurangi tagihan pesanan asal; sisanya baru dikembalikan atau menjadi saldo. | `services/return_service.py`, `services/return_roll_settlement_service.py` |
 | `returns.grade_price_factors` | `retur` | `table` (`row_shape="map"`) | `{"A": 100, "A1": 95, "A2": 90, "B": 70, "B1": 60, "C": 40, "BS": 10}` | — | sama | Harga per grade (% dari harga produk) | Dasar menghitung kerugian saat barang retur turun grade: selisih persen grade lama dan baru dikali harga daftar. | `services/return_grade_impairment.py:grade_factors` |
 | `interco_payment.allow_netting` | `antar-entitas` | `bool` | False | — | `("entity", "update")` | Izinkan saling hapus hutang antar-PT | Bila tidak, tiap transaksi antar-PT dibayar penuh lewat transfer atau kas. | `services/interco_service.py:create_settlement` |
@@ -96,7 +99,7 @@ Kunci baru (semua `scopes=("global", "entity")`, `sensitif_baca=False`, `risk="m
 | `interco_payment.cutoff_day` | `antar-entitas` | `int` | 0 | 0 · 31 · tanggal | sama | Tanggal tutup tagihan antar-PT | Transaksi sampai tanggal ini masuk jadwal bayar bulan itu. 0 = belum diatur (jadwal dan pengingat tidak berjalan). | `services/interco_service.py:payment_schedule` |
 | `interco_payment.payment_day` | `antar-entitas` | `int` | 0 | 0 · 31 · tanggal | sama | Tanggal bayar antar-PT | 0 = akhir bulan. | sama |
 | `interco_payment.basis` | `antar-entitas` | `enum` ("" Belum diatur · `receipt` Tanggal barang diterima · `invoice` Tanggal invoice · `document` Tanggal dokumen) | "" | — | sama | Tanggal acuan jadwal bayar antar-PT | Tanggal mana yang dibandingkan dengan tanggal tutup. | sama |
-| `interco_payment.reminder_days` | `antar-entitas` | `duration` | 3 | 0 · 30 · hari | sama | Ingatkan sebelum tanggal bayar antar-PT (hari) | 0 = tanpa pengingat. | `services/interco_service.py:job_interco_payment_reminder` |
+| `interco_payment.reminder_days` | `antar-entitas` | `duration` | 3 | 0 · 30 · hari | sama | Ingatkan sebelum tanggal bayar antar-PT | 0 = tanpa pengingat. | `services/interco_service.py:job_interco_payment_reminder` |
 
 `impact` dan `example` ditulis pelaksana mengikuti `02` §2.1 (contoh memakai angka bawaan di atas). `requires_reason`
 tidak diwajibkan (perilaku hari ini). Ini sekaligus menutup butir #55 Lampiran A audit.
@@ -149,7 +152,7 @@ Tidak ada pasangan baru. Menyimpan asumsi retur tetap butuh `sales_return.policy
 
 ## Langkah kerja
 
-1. `backend/tests_mem/test_KFT2_kunci_pengaturan.py`: U2–U13 merah.
+1. `backend/tests_mem/test_KFT2_kunci_pengaturan.py`: U2–U13 merah kecuali U7 (bawaan yang sama dengan perilaku hari ini; koreksi KF-T2).
 2. Daftarkan 11 kunci; alihkan tiga pembaca ke resolver; U3–U7 hijau.
 3. Alihkan dua layar; matikan `PUT /api/settings` setelah pencarian pemanggil bersih (U8, U14).
 4. Tandai 5 kunci `not_used`; alihkan pembaca akun bank; skrip migrasi (U9, U12, U13).
@@ -158,8 +161,8 @@ Tidak ada pasangan baru. Menyimpan asumsi retur tetap butuh `sales_return.policy
 
 ## Dokumen ikut berubah
 
-`memory/PRD.md` (asumsi retur dan jadwal bayar antar-PT kini di Pusat Pengaturan); `CODEBASE_MAP.md` (hapus
-`ReturnAssumptionsPanel.jsx`, tambah `scripts/migrate_kft2_akun_bank.py`); `docs/KN_32_GLOSARIUM_BAHASA_ANTARMUKA.md`
+`memory/PRD.md` (asumsi retur dan jadwal bayar antar-PT kini di Pusat Pengaturan); `CODEBASE_MAP.md` (dibangkitkan ulang
+`scripts/gen_codebase_map.py`; koreksi KF-T2); `docs/KN_32_GLOSARIUM_BAHASA_ANTARMUKA.md`
 bila "Batas retur umum" belum ada.
 
 ## Di luar lingkup
