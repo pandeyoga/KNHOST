@@ -4,35 +4,59 @@ Kepala gudang (warehouse_admin) + manager entitas diberi tahu; satu notifikasi p
 selama antrean belum bersih (dedupe ref `printer_stuck:<wh>` scope unread).
 """
 from datetime import datetime, timedelta, timezone
-from typing import Any, Dict
+from typing import Any, Dict, Optional
 
 from db import db
 from core_utils import now_iso
 from services.notification_service import create_notification
 
-STUCK_MINUTES = 30
+# KP-T7 (KP-20) — batas "label tertahan" (dulu konstanta STUCK_MINUTES 30) kini `notif.printer_stuck_minutes` per PT
+# pemilik antrean. Perilaku job (antrean & printer tidak diubah) tetap.
 HEARTBEAT_MINUTES = 5
 
 
-async def scan(stuck_minutes: int = STUCK_MINUTES) -> Dict[str, Any]:
-    now = datetime.now(timezone.utc)
-    hb_cutoff = (now - timedelta(minutes=HEARTBEAT_MINUTES)).isoformat()
-    age_cutoff = (now - timedelta(minutes=stuck_minutes)).isoformat()
-    online_wh = {d["warehouse_id"] for d in await db.rfid_devices.find(
-        {"type": "printer", "last_heartbeat": {"$gte": hb_cutoff}}, {"_id": 0, "warehouse_id": 1}).to_list(500)}
-    pipeline = [
-        {"$match": {"status": "queued", "created_at": {"$lte": age_cutoff}}},
+def _pipeline(age_cutoff: str, warehouse_id: Any = None) -> list:
+    match: Dict[str, Any] = {"status": "queued", "created_at": {"$lte": age_cutoff}}
+    if warehouse_id is not None:
+        match["warehouse_id"] = warehouse_id
+    return [
+        {"$match": match},
         {"$group": {"_id": "$warehouse_id", "labels": {"$sum": "$item_count"}, "jobs": {"$sum": 1},
                     "oldest": {"$min": "$created_at"}, "entity_id": {"$first": "$owner_entity_id"},
                     "warehouse_name": {"$first": "$warehouse_name"}}},
     ]
-    rows = await db.rfid_print_jobs.aggregate(pipeline).to_list(500)
+
+
+async def scan(stuck_minutes: Optional[int] = None) -> Dict[str, Any]:
+    """`stuck_minutes` diisi = satu batas untuk semua gudang; kosong = `notif.printer_stuck_minutes` per PT antrean.
+
+    KP-T7 — kueri memakai batas TERKECIL di antara grup + PT aktif; gudang yang PT-nya berbatas lebih besar dihitung
+    ulang dengan batasnya sendiri (bawaan semua 30 → satu kueri, hasil sama dengan sebelum unit ini)."""
+    from services import reminder_policy as policy
+    batas = policy.per_pt("notif.printer_stuck_minutes")
+    now = datetime.now(timezone.utc)
+    if stuck_minutes is None:
+        terkecil = min([int(await batas(e)) for e in ["", *await policy.active_entity_ids()]])
+    else:
+        terkecil = int(stuck_minutes)
+    hb_cutoff = (now - timedelta(minutes=HEARTBEAT_MINUTES)).isoformat()
+    age_cutoff = (now - timedelta(minutes=terkecil)).isoformat()
+    online_wh = {d["warehouse_id"] for d in await db.rfid_devices.find(
+        {"type": "printer", "last_heartbeat": {"$gte": hb_cutoff}}, {"_id": 0, "warehouse_id": 1}).to_list(500)}
+    rows = await db.rfid_print_jobs.aggregate(_pipeline(age_cutoff)).to_list(500)
     notified = 0
     stuck = []
     for r in rows:
         wh = r["_id"]
         if wh in online_wh:
             continue
+        menit = terkecil if stuck_minutes is not None else int(await batas(r.get("entity_id")))
+        if menit != terkecil:
+            ulang = await db.rfid_print_jobs.aggregate(
+                _pipeline((now - timedelta(minutes=menit)).isoformat(), wh)).to_list(1)
+            if not ulang:
+                continue
+            r = ulang[0]
         age_min = int((now - datetime.fromisoformat(r["oldest"])).total_seconds() // 60)
         stuck.append({"warehouse_id": wh, "labels": r["labels"], "jobs": r["jobs"], "age_minutes": age_min})
         n = await create_notification(
@@ -50,7 +74,7 @@ async def scan(stuck_minutes: int = STUCK_MINUTES) -> Dict[str, Any]:
                 body=f"{r['labels']} label menunggu {age_min} menit; printer gudang offline.",
                 severity="warning", link="operations", entity_id=r.get("entity_id"),
                 recipient_role="manager", dedupe=True, dedupe_scope="unread")
-    return {"checked_at": now_iso(), "stuck": stuck, "notified": notified, "threshold_minutes": stuck_minutes}
+    return {"checked_at": now_iso(), "stuck": stuck, "notified": notified, "threshold_minutes": terkecil}
 
 
 async def job_printer_stuck_watch() -> Dict[str, Any]:

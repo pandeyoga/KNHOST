@@ -28,7 +28,8 @@ from datetime import datetime, timedelta, timezone
 from typing import Any, Dict, Optional
 
 from db import db
-from services.notification_service import create_notification, create_addressed
+from services.notification_service import create_notification
+from services import reminder_policy as policy
 from core_utils import rupiah
 
 # FASE N butir 1 — FINANCE akhirnya ikut diberi tahu soal piutang jatuh tempo.
@@ -43,16 +44,14 @@ from core_utils import rupiah
 # pengingat piutang ikut berubah tanpa ada baris kode yang diedit. Memakai satu
 # panggilan ber-izin (bukan satu untuk manager + satu untuk finance) sekaligus
 # menghindari manajer menerima pesan yang SAMA dua kali.
-_AR_TEAM_PERMISSION = ("ar_receipt", "create")
+# KP-T7 — izin itu kini bawaan baris `ar_due_soon` di `notif.reminder_recipients` (bisa diubah per PT); konstanta
+# `_AR_TEAM_PERMISSION` tidak dipakai lagi.
 
 logger = logging.getLogger("alert_ops")
 
-# Jendela pindai job po_arrival (jam). GR yang selesai dalam jendela ini dianggap
-# "baru datang" — mencegah notifikasi lama muncul ulang tiap hari.
-PO_ARRIVAL_LOOKBACK_HOURS = 24
-# PS-21 — offset hari notifikasi jatuh tempo AR (negatif = sebelum jatuh tempo).
-AR_DUE_SOON_OFFSETS = [-3, -1, 0, 1]
-MAX_ALERTS_PER_JOB = 40
+# KP-T7 (KP-20) — jendela pindai `po_arrival` (dulu 24 jam), hari pengingat piutang (dulu [-3, -1, 0, 1]), dan pagar
+# jumlah per jalan (dulu 40) kini pengaturan: `notif.po_arrival_lookback_hours`, `notif.ar_due_soon_offsets`,
+# `notif.max_alerts_per_run` (dibaca lewat `services/reminder_policy.py`).
 EPS = 0.01
 
 # ── Fase 4 · R5 (keputusan pemilik #2, 26 Okt) — SATU definisi "menunggu stok" untuk layar Pesanan & notifikasi.
@@ -144,22 +143,18 @@ async def notify_po_arrival(task: Dict[str, Any]) -> int:
             + " Cek kualitas/putaway & lanjutkan alokasi order pendingan.")
     created = 0
     ref = f"po_arrival:{task.get('id', '')}"
-    note = await create_notification(
+    created += len(await policy.notify(   # KP-T7 — penerima per PT (bawaan Manajer)
+        "po_arrival", task.get("entity_id"),
         notif_type="po_arrival", ref=ref,
         title=f"Barang PO datang: {po_number or prod_name}",
-        body=body, severity="info", link="purchasing",
-        entity_id=task.get("entity_id"), recipient_role="manager", dedupe_scope="day",
-    )
-    if note:
-        created += 1
-    note_wh = await create_notification(
+        body=body, severity="info", link="purchasing", dedupe_scope="day",
+    ))
+    created += len(await policy.notify(   # KP-T7 — bawaan Gudang
+        "po_arrival_gudang", task.get("entity_id"),
         notif_type="po_arrival", ref=f"po_arrival_wh:{task.get('id', '')}",
         title=f"Penerimaan selesai: {po_number or prod_name}",
-        body=body, severity="info", link="operations",
-        entity_id=task.get("entity_id"), recipient_role="warehouse", dedupe_scope="day",
-    )
-    if note_wh:
-        created += 1
+        body=body, severity="info", link="operations", dedupe_scope="day",
+    ))
 
     # Sales yang punya order pendingan atas produk ini perlu tahu barang sudah masuk.
     pid = task.get("product_id") or ""
@@ -190,18 +185,31 @@ async def notify_po_arrival(task: Dict[str, Any]) -> int:
 
 
 async def job_po_arrival() -> Dict[str, Any]:
-    """Pindai tugas inbound PO yang SELESAI dalam 24 jam terakhir."""
-    cutoff = (_now() - timedelta(hours=PO_ARRIVAL_LOOKBACK_HOURS)).isoformat()
+    """Pindai tugas inbound PO yang SELESAI dalam jendela `notif.po_arrival_lookback_hours` (per PT tugas).
+
+    KP-T7 — kueri memakai jendela TERLEBAR di antara grup + PT aktif, lalu tiap tugas disaring dengan jendela PT-nya
+    (bawaan semua 24 jam → kueri & hasil sama dengan sebelum unit ini)."""
+    jendela = policy.per_pt("notif.po_arrival_lookback_hours")
+    now = _now()
+    terlebar = max([int(await jendela(e)) for e in ["", *await policy.active_entity_ids()]])
+    cutoff = (now - timedelta(hours=terlebar)).isoformat()
     tasks = await db.wms_tasks.find(
         {"flow_type": "inbound", "source_type": "purchase_order",
          "status": {"$in": ["completed", "qc_pending"]},
          "$or": [{"completed_at": {"$gte": cutoff}}, {"updated_at": {"$gte": cutoff}}]},
         {"_id": 0}).to_list(500)
+    sah = []
+    for t in tasks:
+        batas = (now - timedelta(hours=int(await jendela(t.get("entity_id"))))).isoformat()
+        if any(isinstance(t.get(f), str) and t[f] >= batas for f in ("completed_at", "updated_at")):
+            sah.append(t)
+    tasks = sah
     created = 0
-    for t in tasks[:MAX_ALERTS_PER_JOB]:
+    maks = int(await policy.threshold("notif.max_alerts_per_run"))
+    for t in tasks[:maks]:
         created += await notify_po_arrival(t)
     return {"created": created, "scanned": len(tasks),
-            "detail": f"{len(tasks)} penerimaan PO selesai < {PO_ARRIVAL_LOOKBACK_HOURS} jam"}
+            "detail": f"{len(tasks)} penerimaan PO selesai dalam jendela pindai"}
 
 
 # ═══ JOB 11 — barang pendingan siap (backorder_ready) ════════════════════════
@@ -240,14 +248,12 @@ async def notify_backorder_ready(order: Dict[str, Any], product_id: str = "",
     )
     if note:
         created += 1
-    note_m = await create_notification(
+    created += len(await policy.notify(   # KP-T7 — penerima per PT (bawaan Manajer)
+        "backorder_ready", order.get("entity_id"),
         notif_type="backorder_ready",
         ref=f"backorder_{kind}_mgr:{order.get('id')}:{product_id}",
-        title=title, body=body, severity="info", link="orders",
-        entity_id=order.get("entity_id"), recipient_role="manager", dedupe_scope="day",
-    )
-    if note_m:
-        created += 1
+        title=title, body=body, severity="info", link="orders", dedupe_scope="day",
+    ))
     return created
 
 
@@ -258,6 +264,7 @@ async def job_backorder_ready() -> Dict[str, Any]:
         {"_id": 0, "id": 1, "number": 1, "customer_id": 1, "customer_name": 1,
          "entity_id": 1, "backorders": 1, "status": 1}).to_list(2000)
     created, scanned = 0, 0
+    maks = int(await policy.threshold("notif.max_alerts_per_run"))
     for o in orders:
         for bo in (o.get("backorders") or []):
             need = float(bo.get("backorder_qty", 0) or 0)
@@ -268,7 +275,7 @@ async def job_backorder_ready() -> Dict[str, Any]:
             scanned += 1
             if avail <= EPS:
                 continue
-            if created >= MAX_ALERTS_PER_JOB:
+            if created >= maks:
                 break
             created += await notify_backorder_ready(
                 o, pid, kind="stock_available", qty=min(avail, need))
@@ -284,9 +291,15 @@ async def job_ar_due_soon() -> Dict[str, Any]:
     laporan aging & credit gate) — bukan hitungan sendiri (R3).
     """
     from services.ar_aging_service import orders_due_soon
-    rows = await orders_due_soon(AR_DUE_SOON_OFFSETS)
+    # KP-T7 — hari pengingat per PT pesanan: kueri memakai gabungan hari grup + PT aktif, lalu tiap baris disaring dengan
+    # hari PT-nya (bawaan semua [-3, -1, 0, 1] → kueri & hasil sama dengan sebelum unit ini).
+    hari = policy.per_pt("notif.ar_due_soon_offsets")
+    semua = await policy.union_over_entities("notif.ar_due_soon_offsets", hari)
+    rows = [r for r in await orders_due_soon(semua)
+            if int(r.get("offset", 0)) in {int(o) for o in (await hari(r.get("entity_id")) or [])}]
     created = 0
-    for r in rows[:MAX_ALERTS_PER_JOB]:
+    maks = int(await policy.threshold("notif.max_alerts_per_run"))
+    for r in rows[:maks]:
         offset = int(r.get("offset", 0))
         outstanding = float(r.get("outstanding", 0) or 0)
         due = str(r.get("due_date", ""))
@@ -314,16 +327,16 @@ async def job_ar_due_soon() -> Dict[str, Any]:
         )
         if note:
             created += 1
-        note_m = await create_addressed(
-            permission=_AR_TEAM_PERMISSION,
+        note_m = await policy.notify(   # KP-T7 — bawaan: semua pemegang izin ar_receipt.create di PT itu
+            "ar_due_soon", r.get("entity_id"),
             notif_type="ar_due_soon",
             ref=f"ar_due_team:{r.get('order_id')}:H{offset:+d}",
             title=f"Piutang {when}: {r.get('number', '')}",
-            body=body, severity=sev, link="ar-aging", entity_id=r.get("entity_id"),
+            body=body, severity=sev, link="ar-aging",
             dedupe_scope="day",
         )
         created += len(note_m)
-    offsets = ", ".join(f"H{o:+d}".replace("H+0", "H") for o in AR_DUE_SOON_OFFSETS)
+    offsets = ", ".join(f"H{int(o):+d}".replace("H+0", "H") for o in semua)
     return {"created": created, "scanned": len(rows),
             "detail": f"{len(rows)} order pada offset {offsets}"}
 

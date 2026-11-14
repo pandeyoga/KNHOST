@@ -262,7 +262,7 @@ async def reject_campaign_bill(bill: Dict[str, Any], reason: str, actor: Dict[st
 
 
 # ─── Grafik anggaran vs realisasi per bulan + peringatan hampir habis ───────────────────────
-NEAR_PCT = 80.0
+# KP-T7 (KP-20) — ambang "hampir habis" (dulu konstanta NEAR_PCT 80) kini `notif.campaign_budget_near_pct` per PT kampanye.
 
 
 def _months_between(start: str, end: str) -> List[str]:
@@ -296,18 +296,22 @@ async def budget_summary(campaigns: List[Dict[str, Any]]) -> Dict[str, Any]:
     for b in bills:
         bump((b.get("bill_date") or "")[:7], "realized", bill_expense(b))
     realized = await realized_by_campaign(ids)
+    from services.reminder_policy import per_pt   # KP-T7
+    hampir = per_pt("notif.campaign_budget_near_pct")
+    pts = {str(c.get("entity_id") or "") for c in campaigns}
+    near_pct = float(await hampir(next(iter(pts)) if len(pts) == 1 else ""))
     alerts = []
     for c in campaigns:
         budget, used = float(c.get("budget") or 0), realized.get(c["id"], 0.0)
         if budget <= 0:
             continue
         pct = round(used / budget * 100, 1)
-        if pct >= NEAR_PCT:
+        if pct >= float(await hampir(c.get("entity_id"))):
             alerts.append({"campaign_id": c["id"], "name": c.get("name", ""), "budget": _r(budget), "realized": used,
                            "pct": pct, "level": "over" if pct > 100 else "near",
                            "remaining": _r(budget - used)})
     alerts.sort(key=lambda a: -a["pct"])
     rows = [{"month": k, **v} for k, v in sorted(months.items()) if k]
-    return {"months": rows, "alerts": alerts, "near_pct": NEAR_PCT,
+    return {"months": rows, "alerts": alerts, "near_pct": near_pct,
             "total_budget": _r(sum(float(c.get("budget") or 0) for c in campaigns)),
             "total_realized": _r(sum(realized.values()))}

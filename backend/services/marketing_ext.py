@@ -8,7 +8,7 @@ import logging
 
 import html
 from datetime import datetime, timedelta, timezone
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
 
 from db import db
 from core_utils import new_id, now_iso
@@ -17,7 +17,8 @@ logger = logging.getLogger(__name__)
 
 
 WIB = timezone(timedelta(hours=7))
-ON_TIME_GRACE_MIN = 60
+# KP-T7 (KP-20) — toleransi tepat waktu (dulu konstanta ON_TIME_GRACE_MIN 60) kini `notif.content_on_time_grace_minutes`
+# per PT posting, dibaca `_toleransi_per_pt` dan diteruskan ke `_kpi`.
 MONTHS_ID = ["Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember"]
 
 
@@ -94,7 +95,18 @@ def _eng(m: Dict[str, Any]) -> float:
     return sum(float((m or {}).get(k) or 0) for k in ("likes", "comments", "shares", "saves"))
 
 
-def _kpi(rows: List[Dict[str, Any]]) -> Dict[str, float]:
+async def _toleransi_per_pt(rows: List[Dict[str, Any]]) -> Dict[str, int]:
+    """Menit toleransi tayang tepat waktu per PT posting (kunci "" = nilai grup)."""
+    from services.reminder_policy import per_pt
+    toleransi = per_pt("notif.content_on_time_grace_minutes")
+    return {eid: int(await toleransi(eid)) for eid in {"", *(str(r.get("entity_id") or "") for r in rows)}}
+
+
+def _kpi(rows: List[Dict[str, Any]], grace: Optional[Dict[str, int]] = None) -> Dict[str, float]:
+    """`grace` = menit toleransi per PT (`_toleransi_per_pt`); kosong = bawaan registry."""
+    if grace is None:
+        from config_registry import default_of
+        grace = {"": int(default_of("notif.content_on_time_grace_minutes"))}
     pub = [r for r in rows if r["status"] == "published"]
     out = {"posts": len(rows), "published": len(pub), "reach": 0.0, "engagement": 0.0, "clicks": 0.0, "leads": 0.0, "on_time": 0, "late": 0}
     for r in pub:
@@ -104,7 +116,8 @@ def _kpi(rows: List[Dict[str, Any]]) -> Dict[str, float]:
             try:
                 sched = datetime.strptime(r["publish_at"][:16], "%Y-%m-%dT%H:%M").replace(tzinfo=WIB)
                 actual = datetime.fromisoformat(r["published_at"].replace("Z", "+00:00"))
-                out["on_time" if actual <= sched + timedelta(minutes=ON_TIME_GRACE_MIN) else "late"] += 1
+                menit = grace.get(str(r.get("entity_id") or ""), grace.get("", 0))
+                out["on_time" if actual <= sched + timedelta(minutes=menit) else "late"] += 1
             except ValueError as exc:
                 logger.warning("[_kpi] efek samping gagal diabaikan: %s", exc)  # KN-C10
     judged = out["on_time"] + out["late"]
@@ -129,6 +142,7 @@ async def dashboard(scope: Dict[str, Any], month: str) -> Dict[str, Any]:
     start = f"{months[0]}-01"
     six = await db.mkt_posts.find({**scope, "status": {"$ne": "cancelled"}, "publish_at": {"$gte": start, "$lt": _next_month(month)}},
                                   {"_id": 0, "publish_at": 1, "status": 1, "metrics": 1}).to_list(10000)
+    grace = await _toleransi_per_pt([*cur, *prev])   # KP-T7
     trend = []
     for mm in months:
         rows = [r for r in six if (r.get("publish_at") or "")[:7] == mm]
@@ -159,7 +173,8 @@ async def dashboard(scope: Dict[str, Any], month: str) -> Dict[str, Any]:
     upcoming = [{**r, "entity_name": names.get(r.get("entity_id"), "")} for r in live if now_s <= r["publish_at"] <= week][:20]
     overdue = [{**r, "entity_name": names.get(r.get("entity_id"), "")} for r in live if r["status"] == "scheduled" and r["publish_at"] < now_s][:20]
     top = sorted([r for r in cur if r["status"] == "published"], key=lambda r: _eng(r.get("metrics")), reverse=True)[:5]
-    return {"month": month, "prev_month": _prev_month(month), "kpi": _kpi(cur), "kpi_prev": _kpi(prev), "trend": trend,
+    return {"month": month, "prev_month": _prev_month(month), "kpi": _kpi(cur, grace), "kpi_prev": _kpi(prev, grace),
+            "trend": trend,
             "by_platform": by_platform, "by_account": by_account, "by_entity": by_entity,
             # G3 D4-MKT-01 — metrik tersimpan per POST; per platform/akun = atribusi bersama (bukan
             # pengukuran per kanal) sehingga TIDAK boleh dijumlah ulang menjadi total.

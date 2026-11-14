@@ -31,7 +31,10 @@ VALID_SEVERITY = ("info", "warning", "critical")
 @router.get("/scheduler/jobs")
 async def list_jobs(request: Request) -> Dict[str, Any]:
     await require_permission(request, "scheduler", "view")
-    return await sched.jobs_status()
+    # KP-T7 — penerima & ambang tiap pengingat untuk PT aktif ("Semua PT" = nilai grup)
+    from entity_scope import entity_ctx
+    ctx = await entity_ctx(request)
+    return await sched.jobs_status("" if ctx.view_all else (ctx.active_entity_id or ""))
 
 
 @router.get("/scheduler/summary")
@@ -99,6 +102,9 @@ async def update_settings(payload: SchedulerSettingsUpdate, request: Request) ->
             if jid not in sched.JOB_MAP:
                 raise HTTPException(status_code=400, detail=f"Job '{jid}' tidak dikenal.")
             patch = {k: v for k, v in cfg.model_dump(exclude_unset=True).items() if v is not None}
+            salah = sched.job_patch_error(sched.JOB_MAP[jid], patch)   # KP-T7 — satuan selang per job
+            if salah:
+                raise HTTPException(status_code=400, detail=salah)
             jobs[jid] = {**(jobs.get(jid) or {}), **patch}
         set_doc["jobs"] = jobs
 

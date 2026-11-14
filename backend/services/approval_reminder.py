@@ -36,8 +36,8 @@ from services import approval_backlog_service as abl
 from services.config_resolver import value_of
 from services.notification_service import create_notification
 
-#: Maksimal dokumen yang disebut di badan notifikasi (sisanya diringkas "+N lagi").
-MAX_DISEBUT = 3
+# KP-T7 (KP-20) — jumlah dokumen yang disebut di badan notifikasi (dulu konstanta MAX_DISEBUT 3) kini
+# `approval.reminder_max_listed` per PT; sisanya diringkas "+N lagi".
 
 
 async def _min_days(entity_id: Optional[str]) -> int:
@@ -59,12 +59,14 @@ async def _entities() -> List[str]:
         return []
 
 
-def _ringkas(rows: List[Dict[str, Any]]) -> str:
+async def _ringkas(rows: List[Dict[str, Any]], entity_id: Optional[str] = None) -> str:
     """Badan notifikasi: sebut dokumennya, bukan sekadar jumlah."""
+    from services.reminder_policy import threshold   # KP-T7
+    maks = int(await threshold("approval.reminder_max_listed", entity_id))
     baris = [f"• {r['number']} · {r['queue_label'].replace(' menunggu ACC', '')} · "
              f"{r['title'][:38]} — menunggu {r['days_waiting']} hari"
-             for r in rows[:MAX_DISEBUT]]
-    sisa = len(rows) - MAX_DISEBUT
+             for r in rows[:maks]]
+    sisa = len(rows) - maks
     if sisa > 0:
         baris.append(f"• +{sisa} dokumen lain menunggu")
     return "\n".join(baris)
@@ -95,7 +97,7 @@ async def remind_entity(entity_id: str) -> Dict[str, Any]:
     tertua = tua[0]
     title = (f"{len(tua)} dokumen menunggu keputusan — tertua "
              f"{tertua['days_waiting']} hari")
-    body = (_ringkas(tua) + f"\n\nBuka Pusat Persetujuan untuk memutuskan "
+    body = (await _ringkas(tua, entity_id) + f"\n\nBuka Pusat Persetujuan untuk memutuskan "
             f"({data.get('total', 0)} dokumen menunggu di badan usaha ini).")
     # `critical` bila sudah 2× ambang: antrean bukan lagi "menumpuk", tapi mandek.
     escalate = tertua["days_waiting"] >= max(1, min_days) * 2

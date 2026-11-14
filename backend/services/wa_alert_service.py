@@ -27,8 +27,8 @@ logger = logging.getLogger("alerts.whatsapp")
 
 SETTINGS_SCOPE = "alerts"
 SEVERITY_RANK = {"info": 1, "warning": 2, "critical": 3}
-# Role yang menerima broadcast saat notifikasi ditujukan ke "all" (batasi spam).
-BROADCAST_ROLES = ["admin", "manager"]
+# KP-T7 (KP-21) — peran penerima siaran (dulu konstanta BROADCAST_ROLES ["admin", "manager"]) dan nomor PIC per PT kini
+# pengaturan `notif.wa_broadcast_roles` / `notif.wa_pic_number`, dibaca di `resolve_recipients`.
 
 DEFAULT_WA = {
     "enabled": False,
@@ -114,6 +114,8 @@ async def resolve_recipients(notif: Dict[str, Any], wa: Dict[str, Any]) -> List[
         seen.add(p)
         out.append({"name": name, "role": role, "phone": p})
 
+    from services import reminder_policy as policy   # KP-T7
+    entity_id = notif.get("entity_id") or ""
     if wa.get("send_to_roles", True):
         target_user = notif.get("recipient_user")
         role = notif.get("recipient_role") or "all"
@@ -121,7 +123,7 @@ async def resolve_recipients(notif: Dict[str, Any], wa: Dict[str, Any]) -> List[
         if target_user:
             q["id"] = target_user
         elif role == "all":
-            q["role"] = {"$in": BROADCAST_ROLES}
+            q["role"] = {"$in": list(await policy.threshold("notif.wa_broadcast_roles") or [])}
         else:
             # role penerima + admin (admin selalu tahu kondisi kritikal)
             q["role"] = {"$in": list({role, "admin"})}
@@ -130,8 +132,10 @@ async def resolve_recipients(notif: Dict[str, Any], wa: Dict[str, Any]) -> List[
         for u in users:
             _add(u.get("name", ""), u.get("role", ""), await _phone_for_user(u))
 
-    if wa.get("pic_number"):
-        _add("PIC Notifikasi", "pic", wa["pic_number"])
+    # KP-T7 — nomor PIC milik PT notifikasi (lapisan PT/grup `notif.wa_pic_number`) menggantikan nomor PIC umum.
+    pic = str(await policy.threshold("notif.wa_pic_number", entity_id) or "").strip() or wa.get("pic_number")
+    if pic:
+        _add("PIC Notifikasi", "pic", pic)
     return out
 
 

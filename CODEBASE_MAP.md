@@ -1,5 +1,5 @@
 <!-- DIHASILKAN OTOMATIS oleh scripts/gen_codebase_map.py — JANGAN EDIT TANGAN -->
-<!-- Dihasilkan dari commit: 311c8f3 pada 2026-11-14 -->
+<!-- Dihasilkan dari commit: 3c459d9 pada 2026-11-14 -->
 # CODEBASE MAP — Kain Nusantara (dihasilkan otomatis)
 
 Peta ini dihitung dari kode oleh `scripts/gen_codebase_map.py`. Kalau angka di sini
@@ -14,7 +14,7 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 |---|---:|
 | Router (`backend/routers/*.py`) | 163 |
 | Endpoint (`@router.<method>`) | 1771 |
-| Service (`backend/services/*.py`) | 386 |
+| Service (`backend/services/*.py`) | 387 |
 | Koleksi MongoDB disentuh kode produksi | 201 |
 | Direktori fitur frontend (`src/features/*`) | 39 |
 
@@ -257,7 +257,7 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 | `sales_returns.py` ⚠️>800 | 41 | 1308 | `/credit-notes`, `/credit-notes/{cn_id}`, `/returns/chain/{doc_id}`, `/sales-returns`, `/sales-returns/eligible-orders`, `/sales-returns/meta/complaint-reasons` … |
 | `sample_orders.py` | 11 | 257 | `/sample-orders`, `/sample-orders/catalogue/preview`, `/sample-orders/catalogue/templates`, `/sample-orders/desk`, `/sample-orders/kinds`, `/sample-orders/limits` … |
 | `sample_sales.py` | 5 | 102 | `/outbound/so/{order_id}/cut-samples`, `/outbound/tasks/{task_id}/cut-sample`, `/sample-prices`, `/sample-prices/{template_id}`, `/sample-quote` |
-| `scheduler.py` | 10 | 216 | `/scheduler/digest-preview`, `/scheduler/jobs`, `/scheduler/jobs/{job_id}/run`, `/scheduler/runs`, `/scheduler/settings`, `/scheduler/summary` … |
+| `scheduler.py` | 10 | 222 | `/scheduler/digest-preview`, `/scheduler/jobs`, `/scheduler/jobs/{job_id}/run`, `/scheduler/runs`, `/scheduler/settings`, `/scheduler/summary` … |
 | `settings.py` | 10 | 165 | `/payment-terms`, `/payment-terms/{term_id}`, `/payment-terms/{term_id}/override`, `/settings`, `/settings/compute-tax`, `/settings/effective` … |
 | `so_approvals.py` | 8 | 553 | `/approvals/backlog`, `/approvals/queue`, `/approvals/queue-board/{key}`, `/sales-orders/{order_id}/approvals/{approval_id}/decide`, `/sales-orders/{order_id}/approvals/{approval_id}/evidence`, `/sales-orders/{order_id}/approvals/{approval_id}/evidence/{att_id}/download` … |
 | `so_override.py` | 2 | 45 | `/sales-orders/{order_id}/override`, `/sales-orders/{order_id}/override-context` |
@@ -301,8 +301,8 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 | `ai_templates.py` | 158 | Tanya KN F4 (dasar) — template laporan `tpl-v1`: resep dijalankan server TANPA model. |
 | `ai_tools.py` | 504 | Tanya KN F2.1 — eksekusi 6 tool (Lampiran C). Semua baca-saja, identitas pengguna asli. |
 | `ai_usage_report.py` | 112 | Halaman Biaya AI — pemakaian harian per fitur, per pengguna, per model (tanggal WIB). |
-| `alert_ops_service.py` | 355 | PS-21 — Generator ALERT OPERASIONAL (quick win di atas mesin R6.5/R6.6). |
-| `alert_service.py` | 331 | R6.5 — Generator ALERT untuk Scheduler & Notifikasi (Kain Nusantara). |
+| `alert_ops_service.py` | 368 | PS-21 — Generator ALERT OPERASIONAL (quick win di atas mesin R6.5/R6.6). |
+| `alert_service.py` | 335 | R6.5 — Generator ALERT untuk Scheduler & Notifikasi (Kain Nusantara). |
 | `amendment_service.py` | 1085 | FASE G-1 — **FONDASI AMANDEMEN**: tidak ada lagi perubahan angka secara diam-diam. |
 | `analytics_catalog.py` | 148 | Tanya KN F1.2 — katalog semantik `cat-v1` sebagai DATA (satu-satunya tempat definisi). |
 | `analytics_config.py` | 15 | Tanya KN F0.5 — kebijakan data asisten analitik (keputusan klien §7) dari konfigurasi. |
@@ -315,7 +315,7 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 | `approval_backlog_service.py` | 880 | services/approval_backlog_service.py — SATU sumber "apa yang menunggu keputusan". |
 | `approval_matrix_service.py` | 520 | PS-20 (D-14) — **Penegakan matriks persetujuan divisi** + antrean "Persetujuan Saya". |
 | `approval_policy_service.py` | 758 | services/approval_policy_service.py — SATU tabel kebijakan persetujuan untuk semua antrean (unit KP-T4). |
-| `approval_reminder.py` | 133 | services/approval_reminder.py — PENGINGAT HARIAN "keputusan yang menunggu Anda". |
+| `approval_reminder.py` | 135 | services/approval_reminder.py — PENGINGAT HARIAN "keputusan yang menunggu Anda". |
 | `approval_service.py` | 138 | services/approval_service.py — **ATURAN AMBANG PERSETUJUAN** (`approval_rules`). |
 | `ar_aging_service.py` | 516 | EPIC7-A — AR / Piutang Aging (read/derived report). |
 | `ar_receipt_service.py` | 811 | AR Receipt service (EPIC3B) — Penerimaan pembayaran customer + aplikasi ke SO. |
@@ -344,7 +344,7 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 | `config_health.py` | 200 | FASE G-0 — KESEHATAN KONFIGURASI: apakah setiap setting benar-benar tersambung? |
 | `config_impact_service.py` | 258 | FASE G-0 — DAFTAR DAMPAK (Blast-Radius Picker). |
 | `config_overrides.py` | 89 | KF-T3 (KF-04, standar §2.2 / L6) — PENIMPAAN TERDAFTAR: aturan lain yang menimpa nilai sebuah pengaturan. |
-| `config_resolver.py` | 757 | FASE G-0 — CONFIG RESOLVER: nilai efektif berlapis + jejak "kenapa begini" + berlaku-sejak. |
+| `config_resolver.py` | 759 | FASE G-0 — CONFIG RESOLVER: nilai efektif berlapis + jejak "kenapa begini" + berlaku-sejak. |
 | `config_scoped_rules.py` | 133 | KF-T5 — aturan khusus per pelanggan dan per barang (`docs/blueprint/unit/KF-T5.md`). |
 | `config_service.py` | 818 | Config service (Fase 1A) — Configuration Foundation. |
 | `config_simulator.py` | 628 | FASE G-0 — SIMULATOR KONFIGURASI ("Coba dulu"). |
@@ -370,7 +370,7 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 | `demo_seed_service.py` | 97 | Demo Seed Service |
 | `design_gallery_service.py` | 721 | HRD H5 services — Design Gallery (motif kain) + upload gambar (storage lokal). |
 | `design_ownership_service.py` | 267 | UAT 24 Okt (P1 + P6) — KEPEMILIKAN DESAIN & rantai desain → SKU. |
-| `design_request_service.py` | 895 | FASE D — **PERMINTAAN DESAIN** (`<ENT>/DSR-#####`) + rapor desainer. |
+| `design_request_service.py` | 903 | FASE D — **PERMINTAAN DESAIN** (`<ENT>/DSR-#####`) + rapor desainer. |
 | `design_studio_service.py` | 762 | Design Studio — pengembangan master desain (`design_gallery`) menjadi siklus hidup utuh. |
 | `digest_service.py` | 231 | R6.6 — RINGKASAN HARIAN (Daily Digest) untuk kanal WhatsApp. |
 | `dispatch_payment_gate.py` | 160 | F-10 (uji pra-UAT 2026-10-21, keputusan owner Q-02) — termin bayar-sebelum-kirim MENAHAN pengiriman. |
@@ -459,7 +459,7 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 | `interco_service.py` | 2033 | FASE G-6 — Layanan **TRANSAKSI ANTAR ENTITAS** (jual-beli antar-PT dalam grup). |
 | `interco_tax_service.py` | 394 | FASE G-6b — **FAKTUR PAJAK INTERNAL** untuk transaksi antar-PT ber-PPN. |
 | `internal_request_service.py` | 516 | FASE E-7 (E7.1 · gelombang 2 “E7d”) — **PERMINTAAN INTERNAL** (`<ENT>/PIN-#####`). |
-| `inventory_drift_watch.py` | 127 | services/inventory_drift_watch.py — PEMANTAU DRIFT PERSEDIAAN (INV-GL-DRIFT). |
+| `inventory_drift_watch.py` | 129 | services/inventory_drift_watch.py — PEMANTAU DRIFT PERSEDIAAN (INV-GL-DRIFT). |
 | `inventory_service.py` | 229 | Inventory service: reservation expiry projections & document rendering. |
 | `journal_proposal_service.py` | 104 | KF-T6 (GL-06) — usulan jurnal manual yang menunggu orang kedua (`journal_proposals`). |
 | `label_decoder_service.py` | 268 | FASE SL — Decoder LABEL SUPPLIER (GS1-128 · QR JSON · teks berpemisah · regex). |
@@ -483,9 +483,9 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 | `makloon_recap_service.py` | 106 | L01 — REKAP SUSUT & KLAIM PER MITRA MAKLOON (baca saja). |
 | `makloon_receipt_qc.py` | 199 | Hasil langkah TERAKHIR Order Makloon = barang masuk gudang, diperlakukan seperti barang PO. |
 | `makloon_service.py` | 150 | M1 — Makloon service: Makloon 360 + scorecard proses (dari data nyata). |
-| `marketing_cost_service.py` | 313 | COMM-04 (keputusan PG04) — realisasi biaya kampanye marketing → jurnal Beban Pemasaran. |
-| `marketing_ext.py` | 299 | marketing_ext.py — Marketing lanjutan: master Akun Sosmed per badan usaha, dashboard analitik |
-| `marketing_service.py` | 379 | marketing_service.py — Sosial Media & Konten: kampanye, kalender/perencana post, lampiran, |
+| `marketing_cost_service.py` | 317 | COMM-04 (keputusan PG04) — realisasi biaya kampanye marketing → jurnal Beban Pemasaran. |
+| `marketing_ext.py` | 314 | marketing_ext.py — Marketing lanjutan: master Akun Sosmed per badan usaha, dashboard analitik |
+| `marketing_service.py` | 387 | marketing_service.py — Sosial Media & Konten: kampanye, kalender/perencana post, lampiran, |
 | `master_cleanup_refs.py` | 234 | PREP-A — data rujukan lembar perbaikan master produk (hanya MEMBACA). |
 | `master_cleanup_service.py` | 326 | PREP-A (K-OPN-06) — terapkan lembar perbaikan master produk sebagai SATU batch berjejak + rollback. |
 | `master_cleanup_sheet.py` | 240 | PREP-A — lembar perbaikan master produk: susun baris (unduh) & baca unggahan. |
@@ -526,7 +526,7 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 | `price_approval_service.py` | 268 | Sub-fase 1.7 + F1b — bagian **BERSAMA** alur Harga Khusus (`price_approvals`). |
 | `price_guard_service.py` | 172 | F1b — SATU definisi **batas bawah harga jual** (price floor) untuk seluruh sistem. |
 | `pricelist_service.py` | 418 | F1a — Pricelist per-entitas (harga jual per-PT) dengan histori & tanggal efektif. |
-| `printer_stuck_watch.py` | 60 | Sesi 15 — label tertahan: antrean label menunggu > N menit tanpa printer online di gudang itu. |
+| `printer_stuck_watch.py` | 84 | Sesi 15 — label tertahan: antrean label menunggu > N menit tanpa printer online di gudang itu. |
 | `process_recipe_service.py` | 114 | M1 — Process Recipe service: CRUD helper + forecast konversi (aman). |
 | `product_exclusivity.py` | 150 | PS-20 — Produk eksklusif per sales ("PO sendiri"). |
 | `product_media_service.py` | 111 | Media per SKU, lokal, ber-versi CAS. Foto nyata/mockup ditinjau sebelum sales melihat. |
@@ -547,6 +547,7 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 | `receiving_roll_service.py` | 426 | Kelahiran roll `receiving` saat penerimaan (GRN Fase 1: dipindah dari `routers/inbound_scan_label.py`). |
 | `receiving_uom_service.py` | 525 | FASE F-1 — PENERIMAAN BERBASIS **SATUAN SUPPLIER** (lanjutan Fase B & Fase E). |
 | `registration_freeze.py` | 156 | PREP-B (K-OPN-03) — pembekuan gerakan roll selama pendaftaran awal gedung. |
+| `reminder_policy.py` | 327 | KP-T7 — pengingat terjadwal yang bisa diatur: PENERIMA dan AMBANG per PT. |
 | `repair_order_service.py` | 382 | UAT 24 Okt (P7) — dokumen Perbaikan (`repair_orders`, nomor RPR-…): roll jadi yang cacat / warnanya meleset |
 | `restock_service.py` | 288 | PS-21(a) — Repeat/Restock 1-klik dari Sales Order → Purchase Requisition. |
 | `restock_source_service.py` | 133 | P05 IMP-19 — sumber restock per ARTIKEL (product_templates) dan penegakan jalur PR/PO/MKO. |
@@ -616,7 +617,7 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 | `sales_p04_service.py` | 429 | P04 — Keep/Pending, aturan grade pelanggan, kandidat roll berkelayakan, ringkasan stok Sales. |
 | `sales_stock_service.py` | 97 | Stok GLOBAL untuk layar sales (Kasir/POS, katalog): sales tidak memilah per entitas — |
 | `sample_sale_service.py` | 547 | §3-C Jual Sample — SATU alur dengan pesanan roll (keputusan pemilik 2026-09-16). |
-| `scheduler_service.py` | 618 | R6.5 — Scheduler (APScheduler) untuk alert & notifikasi terjadwal. |
+| `scheduler_service.py` | 726 | R6.5 — Scheduler (APScheduler) untuk alert & notifikasi terjadwal. |
 | `shipment_service.py` | 182 | Shipment service (Sub-fase 1.8) — partial/multi shipment, SSOT-safe. |
 | `site_receiving_service.py` | 120 | UAT 24 Okt (P9, fase F1) — LOKASI (site) sebagai tujuan kirim & konteks kerja. |
 | `site_stock_service.py` | 54 | UAT 24 Okt (P8, fase F1) — stok per LOKASI untuk katalog POS / HP. |
@@ -657,14 +658,14 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 | `tracking_service.py` | 134 | HRD H2 services — Live Field Tracking (WebSocket). |
 | `transfer_receipt_service.py` | 658 | P03 (IMP-26/27) + sisa P02 — transfer terkait SO, penerimaan AKTUAL per roll, exception, cek ulang aturan tuju |
 | `trip_service.py` | 140 | L07 LN-070/071 — picking list multi-gudang, cek kesiapan trip multi-SO, manifest armada. |
-| `turn_notification_service.py` | 212 | Notifikasi "giliran Anda" — setiap dokumen berpindah tahap, peran yang harus bertindak |
+| `turn_notification_service.py` | 214 | Notifikasi "giliran Anda" — setiap dokumen berpindah tahap, peran yang harus bertindak |
 | `twin_journal.py` | 118 | PK-06 — Jurnal KEMBAR (dua buku PT) yang utuh dan bisa diulang per sisi (docs/blueprint/02_STANDAR.md §1 P6). |
 | `uom_rules_service.py` | 485 | FASE B — REGISTRY KONVERSI SATUAN **GLOBAL** + TOLERANSI (D-06/D-07). |
 | `uom_service.py` | 503 | Sub-fase 1.13 — UOM Conversion Engine (Multi-UOM). |
 | `user_admin_service.py` | 396 | FASE E-2 — AKUN PENGGUNA TERTAUT BADAN USAHA (via HR) & PENEGAKAN AKSES. |
 | `variant_axes.py` | 56 | Sumbu varian yang dapat dikonfigurasi pemilik (rnd.variant_axes_default / _optional). |
 | `vendor_bill_service.py` | 307 | Vendor Bill service (Fase 5.2 — P0-2) — 3-Way Matching PO ↔ GR ↔ Bill. |
-| `wa_alert_service.py` | 278 | R6.5 — Kanal WhatsApp untuk notifikasi/alert (Kain Nusantara). |
+| `wa_alert_service.py` | 282 | R6.5 — Kanal WhatsApp untuk notifikasi/alert (Kain Nusantara). |
 | `warehouse_profile_service.py` | 364 | FASE R0 — Profil gudang: site (lokasi), peran gedung, rules penyimpanan, gate config. |
 | `warehouse_scope_service.py` | 288 | FASE E-4 (E4.1) — GUDANG BERSAMA vs GUDANG KHUSUS BADAN USAHA. |
 | `web_push_service.py` | 110 | Web Push (PWA) — kirim notifikasi lonceng ke HP walau aplikasi sedang ditutup. |
@@ -683,7 +684,7 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 | Fitur (`src/features/`) | Berkas | Baris |
 |---|---:|---:|
 | `__tests__` | 92 | 13636 |
-| `admin` | 34 | 6586 |
+| `admin` | 35 | 6762 |
 | `approvals` | 9 | 1719 |
 | `catalog` | 24 | 1450 |
 | `costing` | 1 | 150 |
@@ -717,7 +718,7 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 | `sales` | 97 | 15798 |
 | `sales_admin` | 11 | 1880 |
 | `samples` | 8 | 776 |
-| `settings` | 58 | 10964 |
+| `settings` | 58 | 11010 |
 | `tanya` | 25 | 1592 |
 | `transfers` | 1 | 20 |
 | `wms` | 99 | 13196 |

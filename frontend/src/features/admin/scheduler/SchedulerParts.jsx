@@ -7,6 +7,7 @@ import { X, Play, Clock, CheckCircle2, AlertTriangle, Loader2, Save, ExternalLin
 import { Badge } from "../../finance/financeShared";
 import useListSearch from "@/hooks/useListSearch";
 import { can } from "../../../config/roles";
+import { openConfig } from "../../settings/config/configDeepLink";   // KP-T7 — tautan Ubah ke Penerima Notifikasi
 
 export const inputCls = "w-full rounded-lg border border-[#E2E2E7] bg-white px-2.5 py-1.5 text-[12px] text-[#1C1C1E] focus:border-[#6B219A] focus:outline-none";
 export const labelCls = "block text-[11px] font-bold text-[#3A3A3C] mb-1";
@@ -73,15 +74,27 @@ export function RunStatusBadge({ status }) {
   return <Badge tone="neutral">Belum pernah</Badge>;
 }
 
-// ── Editor jadwal 1 job (harian jam:menit ATAU interval jam) ────────────────
-function ScheduleEditor({ job, onSave, saving }) {
+// ── Editor jadwal 1 job (harian jam:menit ATAU selang menit/jam) ────────────
+// KP-T7 (KP-09) — satuan selang dari server (`interval_unit`); nilai awal = selang yang DIPAKAI pemicu
+// (`interval_value`). Dulu semua job berselang mengirim `interval_hours` dan menampilkan "jam", sehingga job bersatuan
+// menit tidak pernah bisa diubah. Job teknis (`locked`) hanya-baca.
+export function ScheduleEditor({ job, onSave, saving }) {
+  const menit = job.interval_unit === "menit";
+  const awal = job.interval_value ?? (menit ? job.interval_minutes : job.interval_hours) ?? 4;
   const [hour, setHour] = useState(job.hour ?? 8);
   const [minute, setMinute] = useState(job.minute ?? 0);
-  const [interval, setInterval] = useState(job.interval_hours ?? 4);
+  const [interval, setInterval] = useState(awal);
   useEffect(() => {
-    setHour(job.hour ?? 8); setMinute(job.minute ?? 0); setInterval(job.interval_hours ?? 4);
-  }, [job.hour, job.minute, job.interval_hours]);
+    setHour(job.hour ?? 8); setMinute(job.minute ?? 0); setInterval(awal);
+  }, [job.hour, job.minute, awal]);
 
+  if (job.locked) {
+    return (
+      <span className="text-fs-12 text-kn-text-2" data-testid={`job-locked-${job.id}`}>
+        Jadwal teknis — tidak diubah dari layar.
+      </span>
+    );
+  }
   return (
     <div className="flex items-center gap-1.5">
       {job.kind === "daily" ? (
@@ -98,21 +111,54 @@ function ScheduleEditor({ job, onSave, saving }) {
       ) : (
         <>
           <span className="text-[11px] text-[#8E8E93]">tiap</span>
-          <input data-testid={`job-interval-${job.id}`} type="number" min="1" max="24"
+          <input data-testid={`job-interval-${job.id}`} type="number" min="1" max={menit ? 1440 : 24}
                  value={interval} onChange={(e) => setInterval(e.target.value)}
                  className="w-14 rounded-lg border border-[#E2E2E7] bg-white px-1.5 py-1 text-center text-[11.5px]" />
-          <span className="text-[10px] text-[#9A9BA3]">jam</span>
+          <span className="text-[10px] text-[#9A9BA3]" data-testid={`job-interval-unit-${job.id}`}>{menit ? "menit" : "jam"}</span>
         </>
       )}
       <button data-testid={`job-schedule-save-${job.id}`} disabled={saving}
               onClick={() => onSave(job.kind === "daily"
                 ? { hour: Number(hour), minute: Number(minute) }
-                : { interval_hours: Number(interval) })}
+                : menit ? { interval_minutes: Number(interval) } : { interval_hours: Number(interval) })}
               title="Simpan jadwal"
               className="rounded-lg border border-[#E2E2E7] p-1 text-[#6B219A] hover:bg-[#F7F2FB] disabled:opacity-40">
         <Save size={13} />
       </button>
     </div>
+  );
+}
+
+// ── KP-T7 — kolom Penerima & Ambang (nilai untuk PT aktif; Ubah → Pengaturan › Penerima Notifikasi) ─────────
+function PolicyCell({ text, title, cfgKey, group, canEdit, testId }) {
+  if (!text) return <span className="text-kn-text-2" data-testid={testId}>—</span>;
+  return (
+    <div className="text-fs-12 text-kn-text" data-testid={testId}>
+      <span title={title || undefined}>{text}</span>
+      {canEdit && cfgKey ? (
+        <button type="button" className="link-button ml-1" data-testid={`${testId}-edit`}
+                onClick={() => openConfig({ key: cfgKey, group })}>
+          Ubah
+        </button>
+      ) : null}
+    </div>
+  );
+}
+
+export function JobPolicyCells({ job, canEdit }) {
+  const th = job.thresholds || [];
+  return (
+    <>
+      <td className="px-3 py-2.5">
+        <PolicyCell text={job.recipients} cfgKey={job.recipient_key} group="notifikasi" canEdit={canEdit}
+                    testId={`job-recipients-${job.id}`} />
+      </td>
+      <td className="px-3 py-2.5">
+        <PolicyCell text={th.map((t) => t.text).join(" · ")} title={th.map((t) => `${t.label}: ${t.text}`).join("\n")}
+                    cfgKey={th[0]?.key} group={th[0]?.group} canEdit={canEdit}
+                    testId={`job-thresholds-${job.id}`} />
+      </td>
+    </>
   );
 }
 
@@ -126,6 +172,8 @@ export function JobTable({ jobs, perms, busyId, onRun, onPatch, onOpenDetail }) 
           <tr className="bg-[#FAFAFC] text-left text-[10.5px] uppercase tracking-wide text-[#8E8E93]">
             <th className="px-3 py-2.5 font-bold">Job</th>
             <th className="px-3 py-2.5 font-bold">Jadwal</th>
+            <th className="px-3 py-2.5 font-bold">Penerima</th>
+            <th className="px-3 py-2.5 font-bold">Ambang</th>
             <th className="px-3 py-2.5 font-bold">Berikutnya</th>
             <th className="px-3 py-2.5 font-bold">Terakhir Jalan</th>
             <th className="px-3 py-2.5 font-bold text-center">Hasil</th>
@@ -159,6 +207,7 @@ export function JobTable({ jobs, perms, busyId, onRun, onPatch, onOpenDetail }) 
                   <span className="text-[#3A3A3C]">{j.schedule_label}</span>
                 )}
               </td>
+              <JobPolicyCells job={j} canEdit={perms.configure} />
               <td className="px-3 py-2.5 text-[#3A3A3C]">
                 {j.enabled ? fmtWaktu(j.next_run) : <span className="text-[#9A9BA3]">Nonaktif</span>}
               </td>

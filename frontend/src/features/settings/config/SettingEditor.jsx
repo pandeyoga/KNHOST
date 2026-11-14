@@ -7,7 +7,7 @@
  */
 import { useEffect, useState } from "react";
 import KNSelect from "../../../components/KNSelect";
-import SettingTableEditor from "./SettingTableEditor";
+import SettingTableEditor, { MultiChoice } from "./SettingTableEditor";
 
 function NumberField({ entry, value, onChange, disabled, testId }) {
   const step = entry.step ?? (entry.type === "int" || entry.type === "duration" ? 1 : 0.1);
@@ -140,6 +140,11 @@ export default function SettingEditor({ entry, value, onChange, disabled, testId
       );
     case "list":
       if (entry.value_format === "regex") return <LinesField value={value} onChange={onChange} disabled={disabled} testId={tid} />;
+      // KP-T7 — daftar berpilihan (mis. peran penerima WhatsApp): kotak centang, bukan teks berkoma berisi id
+      if ((entry.options || []).length) {
+        return <MultiChoice options={entry.options} value={value} onChange={onChange} disabled={disabled}
+          testId={tid} label={entry.label} />;
+      }
       return <ListField value={value} onChange={onChange} disabled={disabled} testId={tid} />;
     case "table":
       return <TableField entry={entry} value={value} onChange={onChange} disabled={disabled} testId={tid} />;

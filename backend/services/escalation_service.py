@@ -22,7 +22,7 @@ from __future__ import annotations
 
 import logging
 from datetime import datetime, timedelta, timezone
-from typing import Any, Dict
+from typing import Any, Dict, Optional
 
 from db import db
 from core_utils import now_iso
@@ -32,16 +32,9 @@ from role_registry import notify_addresses, role_in, role_label  # PR-T4 — ala
 
 logger = logging.getLogger("alerts.escalation")
 
-# Rantai eskalasi peran (role penerima notifikasi → role di atasnya).
-ESCALATION_CHAIN = {
-    "sales": "manager",
-    "warehouse": "manager",
-    "manager": "admin",
-    "all": "admin",
-    "": "admin",
-}
+# KP-T7 (KP-20) — rantai eskalasi (peran penerima → peran di atasnya) dan pagar jumlah per jalan kini pengaturan
+# `notif.escalation_chain` (bawaan sales/gudang → manager → admin) dan `notif.max_alerts_per_run` (bawaan 40).
 TOP_ROLES = ("admin",)
-MAX_PER_RUN = 40          # pagar anti-flood per eksekusi
 
 DEFAULT_ESCALATION = {
     "enabled": True,
@@ -96,7 +89,7 @@ def _recipient(n: Dict[str, Any], users: Dict[str, Dict[str, Any]]) -> tuple:
 
 
 def plan_escalations(candidates, users: Dict[str, Dict[str, Any]], *, min_rank: int,
-                     max_level: int) -> Dict[str, Any]:
+                     max_level: int, chain: Optional[Dict[str, str]] = None) -> Dict[str, Any]:
     """Rencana eskalasi MURNI (tanpa DB, mudah diuji): satu eskalasi per (sumber, kedalaman, peran tujuan).
 
     Return `{"groups": [{lead, siblings, next_role, depth, who, key}], "skipped_top", "skipped_depth"}`;
@@ -104,6 +97,9 @@ def plan_escalations(candidates, users: Dict[str, Dict[str, Any]], *, min_rank: 
     """
     groups: Dict[str, Dict[str, Any]] = {}
     skipped_top = skipped_depth = 0
+    if chain is None:   # KP-T7 — rantai dari pengaturan; pemanggil tanpa rantai = bawaan registry
+        from config_registry import default_of
+        chain = default_of("notif.escalation_chain")
     for n in candidates:
         if SEVERITY_RANK.get(n.get("severity", "info"), 1) < min_rank:
             continue
@@ -113,7 +109,7 @@ def plan_escalations(candidates, users: Dict[str, Dict[str, Any]], *, min_rank: 
             continue
         # PR-T4 — peran di luar rantai memakai alamat notifikasi pertamanya (bawaan peran kustom = peran dasarnya).
         addr = notify_addresses(role)
-        next_role = ESCALATION_CHAIN.get(role) or (ESCALATION_CHAIN.get(addr[0]) if addr else None)
+        next_role = chain.get(role) or (chain.get(addr[0]) if addr else None)
         if not next_role and n.get("recipient_user"):
             next_role = "admin"   # salinan per orang dulu selalu naik ke admin (peran "") — perilaku dipertahankan
         if not next_role:
@@ -165,12 +161,16 @@ async def job_escalation_scan() -> Dict[str, Any]:
     if uids:
         users = {u["id"]: u for u in await db.users.find(
             {"id": {"$in": uids}}, {"_id": 0, "id": 1, "role": 1, "name": 1}).to_list(len(uids))}
-    plan = plan_escalations(candidates, users, min_rank=min_rank, max_level=max_level)
+    from services import reminder_policy as policy   # KP-T7
+    chain = await policy.threshold("notif.escalation_chain")
+    maks = int(await policy.threshold("notif.max_alerts_per_run"))
+    plan = plan_escalations(candidates, users, min_rank=min_rank, max_level=max_level,
+                            chain=chain if isinstance(chain, dict) else None)
     skipped_top, skipped_depth = plan["skipped_top"], plan["skipped_depth"]
 
     created = merged = 0
     for g in plan["groups"]:
-        if created >= MAX_PER_RUN:
+        if created >= maks:
             break
         n, next_role, depth = g["lead"], g["next_role"], g["depth"]
         copies = [n, *g["siblings"]]

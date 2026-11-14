@@ -594,6 +594,11 @@ VIEW_RESOURCE_OVERRIDES["settings-dual-control"] = ["settings"]
 # KF-T2 — kunci `interco_payment.*` (kelompok "antar-entitas") diubah pemegang `entity.update`; aturan KF-T1 (U14): tab
 # kelompok itu juga terbuka bagi pemegang izin pengubah kuncinya.
 VIEW_RESOURCE_OVERRIDES["settings-cfg-finance"] = ["settings", "entity"]
+# KP-T7 — kunci pengingat/penjadwal (izin `scheduler.configure`) masuk kelompok "notifikasi", "keuangan-dasar",
+# "persetujuan", dan "rnd"; aturan KF-T1 (U14): tab kelompok itu juga terbuka bagi pemegang izin pengubah kuncinya.
+for _v in ("settings-cfg-notify", "settings-cfg-finance", "settings-cfg-approval", "settings-cfg-rnd"):
+    VIEW_RESOURCE_OVERRIDES[_v] = [*VIEW_RESOURCE_OVERRIDES[_v], "scheduler"]
+del _v
 
 
 #: PR-T5 — menu yang butuh AKSI tertentu (bukan sekadar "ada aksi apa pun pada sumber daya modulnya"). Dikirim

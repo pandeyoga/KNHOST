@@ -385,6 +385,8 @@ async def set_value(key: str, value: Any, *, scope_type: str = "global", scope_i
         if key == "approval.extra_levels":   # KP-T3 — isi jenjang tambahan: peran dikenal, nilai minimal ≥ 0
             from services.config_service import validate_extra_levels
             validate_extra_levels(clean)
+        from services.reminder_policy import periksa_nilai   # KP-T7 — penerima/rantai/peran/hari/nomor PIC pengingat
+        clean = periksa_nilai(key, clean)
     except ValueError as exc:
         raise ConfigWriteError(str(exc)) from exc
 

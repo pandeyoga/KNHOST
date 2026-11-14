@@ -36,8 +36,8 @@ from services.notification_service import create_addressed
 
 #: Ambang bawaan bila setelannya belum pernah diisi (rupiah, nilai absolut).
 DEFAULT_THRESHOLD = 1000.0
-#: Selisih ≥ KRITIS × ambang bukan lagi "perlu dirapikan" — ada yang salah jalan.
-KRITIS = 10
+# KP-T7 (KP-20) — selisih ≥ kelipatan × ambang bukan lagi "perlu dirapikan" — ada yang salah jalan. Kelipatannya (dulu
+# konstanta KRITIS 10) kini `inventory.drift_critical_multiplier` per PT.
 
 
 def rupiah(v: float) -> str:
@@ -89,6 +89,8 @@ def _body(row: Dict[str, Any], amb: float, terakhir: Dict[str, Any]) -> str:
 
 async def scan() -> Dict[str, Any]:
     """Ukur drift tiap buku, beri tahu yang berwenang bila di luar ambang."""
+    from services.reminder_policy import per_pt   # KP-T7
+    kritis = per_pt("inventory.drift_critical_multiplier")
     recon = await gl_service.inventory_reconciliation()
     drifting: List[Dict[str, Any]] = []
     created = 0
@@ -105,7 +107,7 @@ async def scan() -> Dict[str, Any]:
             title=(f"Persediaan berselisih {rupiah(diff)} — "
                    f"{row.get('entity_name') or row['entity_id']}"),
             body=_body(row, amb, terakhir),
-            severity="critical" if abs(diff) >= amb * KRITIS else "warning",
+            severity="critical" if abs(diff) >= amb * int(await kritis(row["entity_id"])) else "warning",
             link="general-ledger", entity_id=row["entity_id"], dedupe_scope="day",
         )
         created += len(notes)

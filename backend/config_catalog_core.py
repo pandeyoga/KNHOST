@@ -995,3 +995,180 @@ E("notif.po_stage_stuck_days", group="notifikasi", type="duration", default=7,
          "kecil = lebih cepat mengingatkan, tetapi lebih berisik.",
   example="7 → tahap 'Tenun' yang mulai 8 hari lalu dan belum selesai akan diberitakan",
   consumers=("services/notification_service.py:_notify_stuck_po_stages",), risk="low")   # KF-T3 — dibaca per PT tiap PO
+
+# ── KP-T7 (KP-09, KP-20, KP-21) — pengingat terjadwal: ambang dan penerima per PT ─────────────────────────────────────
+# Dulu konstanta di `services/alert_service.py`, `alert_ops_service.py`, `escalation_service.py`, `wa_alert_service.py`,
+# dan jalur pengingat lain. Bawaan = nilai yang berjalan sebelum unit ini (tidak ada pengingat yang berubah saat dipasang).
+# Wewenang mengubah = izin `scheduler.configure` (izin yang menjaga seluruh pengaturan penjadwal; bawaan hanya Admin).
+from services.reminder_policy import (  # noqa: E402 — pilihan editor tabel penerima
+    BAWAAN_ESKALASI as _KPT7_ESKALASI, BAWAAN_PENERIMA as _KPT7_PENERIMA, MODE_LABEL as _KPT7_MODE,
+    PENGINGAT as _KPT7_PENGINGAT, permission_options as _kpt7_izin, role_options as _kpt7_peran)
+
+_KPT7 = {"permission": ("scheduler", "configure"), "risk": "low"}
+_KPT7_PERAN = tuple(_kpt7_peran())
+
+E("notif.ap_due_soon_days", group="notifikasi", type="duration", default=7, min=0, max=90, step=1, unit="hari",
+  label="Ingatkan hutang jatuh tempo dalam (hari)",
+  help="Tagihan pemasok yang jatuh tempo dalam sekian hari atau sudah lewat diingatkan. 0 = hanya yang sudah "
+       "lewat jatuh tempo (dan jatuh tempo hari ini).",
+  impact="Makin besar, makin awal tagihan diingatkan ke penerima pengingat hutang.",
+  example="7 → tagihan yang jatuh tempo 5 hari lagi ikut diingatkan",
+  consumers=("services/alert_service.py:job_ap_due",), **_KPT7)
+
+E("notif.wo_released_stale_days", group="notifikasi", type="duration", default=3, min=1, max=90, step=1, unit="hari",
+  label="Perintah kerja dirilis tertunda setelah",
+  help="Umur perintah kerja berstatus dirilis yang belum selesai sebelum gudang diingatkan.",
+  impact="Menentukan kapan perintah kerja dirilis masuk pengingat 'Perintah Kerja Produksi Tertunda'.",
+  example="3 → perintah kerja yang dirilis 4 hari lalu dan belum selesai ikut diingatkan",
+  consumers=("services/alert_service.py:job_production_stalled",), **_KPT7)
+
+E("notif.wo_draft_stale_days", group="notifikasi", type="duration", default=7, min=1, max=180, step=1, unit="hari",
+  label="Perintah kerja draf dianggap tertunda setelah",
+  help="Umur draf perintah kerja yang belum dirilis sebelum gudang diingatkan.",
+  impact="Menentukan kapan draf perintah kerja masuk pengingat 'Perintah Kerja Produksi Tertunda'.",
+  example="7 → draf yang dibuat 8 hari lalu ikut diingatkan",
+  consumers=("services/alert_service.py:job_production_stalled",), **_KPT7)
+
+E("notif.warehouse_task_stale_days", group="notifikasi", type="duration", default=2, min=1, max=60, step=1,
+  unit="hari",
+  label="Tugas gudang dianggap tertunda setelah",
+  help="Umur tugas barang masuk/keluar yang masih terbuka sebelum diringkas ke gudang.",
+  impact="Menentukan kapan tugas gudang masuk pengingat 'Tugas Gudang Tertunda'.",
+  example="2 → tugas yang dibuat 3 hari lalu dan masih terbuka ikut diringkas",
+  consumers=("services/alert_service.py:job_ops_stalled",), **_KPT7)
+
+E("notif.ar_due_soon_offsets", group="notifikasi", type="list", default=[-3, -1, 0, 1], unit="hari",
+  label="Hari pengingat piutang terhadap jatuh tempo",
+  help="Angka negatif = sebelum jatuh tempo, 0 = hari jatuh tempo, positif = sesudahnya. Tiap butir −30 sampai 30. "
+       "Kosong = tidak ada pengingat piutang mendekati jatuh tempo.",
+  impact="Menentukan pada hari apa saja pengingat piutang dikirim ke sales pemegang akun dan tim piutang.",
+  example="[-7, 0] → pengingat dikirim 7 hari sebelum jatuh tempo dan pada hari jatuh tempo",
+  consumers=("services/alert_ops_service.py:job_ar_due_soon",), **_KPT7)
+
+E("notif.po_arrival_lookback_hours", group="notifikasi", type="int", default=24, min=1, max=168, step=1, unit="jam",
+  label="Barang PO dianggap baru datang selama",
+  help="Penerimaan barang PO yang selesai dalam jendela ini diberitakan oleh pemindai berkala.",
+  impact="Jendela pendek mencegah berita lama terulang; jendela panjang menangkap penerimaan yang terlewat.",
+  example="24 → penerimaan yang selesai 20 jam lalu masih diberitakan, yang 30 jam lalu tidak",
+  consumers=("services/alert_ops_service.py:job_po_arrival",), **_KPT7)
+
+E("notif.max_alerts_per_run", group="notifikasi", type="int", default=40, min=1, max=500, step=1,
+  unit="peringatan", scopes=("global",),
+  label="Paling banyak peringatan per sekali jalan",
+  help="Pagar supaya satu pengingat tidak membanjiri kotak masuk. Berlaku untuk semua PT sekaligus.",
+  impact="Peringatan di atas batas ini menunggu jalan berikutnya.",
+  example="40 → bila 55 tagihan jatuh tempo, 40 diingatkan sekarang, sisanya di jalan berikutnya",
+  consumers=("services/alert_service.py:job_ar_overdue", "services/alert_service.py:job_ap_due",
+             "services/alert_service.py:job_budget_alert", "services/alert_service.py:job_production_stalled",
+             "services/alert_ops_service.py:job_po_arrival", "services/alert_ops_service.py:job_backorder_ready",
+             "services/alert_ops_service.py:job_ar_due_soon", "services/escalation_service.py:job_escalation_scan"),
+  **_KPT7)
+
+E("notif.turn_stale_days", group="notifikasi", type="duration", default=7, min=1, max=90, step=1, unit="hari",
+  label="Jangan ingatkan giliran bila dokumen diam",
+  help="Dokumen yang tidak bergerak lebih dari sekian hari tidak diingatkan ulang oleh pemindai giliran.",
+  impact="Makin kecil, makin sedikit dokumen lama yang memunculkan pemberitahuan 'Giliran Anda'.",
+  example="7 → pesanan yang terakhir berubah 10 hari lalu ditandai tanpa pemberitahuan",
+  consumers=("services/turn_notification_service.py:scan",), **_KPT7)
+
+E("notif.content_reminder_window_minutes", group="notifikasi", type="int", default=60, min=5, max=1440, step=5,
+  unit="menit",
+  label="Ingatkan tayang konten sebelum (menit)",
+  help="Jarak sebelum jadwal tayang ketika PIC konten media sosial diingatkan.",
+  impact="Makin besar, makin awal PIC diingatkan untuk memposting.",
+  example="60 → posting yang dijadwalkan 10.00 diingatkan sejak 09.00",
+  consumers=("services/marketing_service.py:job_content_reminder",), **_KPT7)
+
+E("notif.content_on_time_grace_minutes", group="notifikasi", type="int", default=60, min=0, max=1440, step=5,
+  unit="menit",
+  label="Toleransi tayang tepat waktu (menit)",
+  help="Konten yang tayang dalam toleransi ini sesudah jadwalnya dihitung tepat waktu. 0 = tanpa toleransi.",
+  impact="Mengubah angka 'tepat waktu' dan 'terlambat' di dasbor pemasaran.",
+  example="60 → dijadwalkan 10.00, tayang 10.45 = tepat waktu; tayang 11.15 = terlambat",
+  consumers=("services/marketing_ext.py:_toleransi_per_pt",), **_KPT7)
+
+E("notif.campaign_budget_near_pct", group="notifikasi", type="pct", default=80, min=1, max=100, step=1, unit="%",
+  label="Anggaran kampanye dianggap hampir habis pada",
+  help="Persen realisasi anggaran kampanye yang memunculkan peringatan 'hampir habis'.",
+  impact="Makin kecil, makin awal kampanye ditandai hampir habis.",
+  example="80 → terpakai Rp8 jt dari Rp10 jt ditandai hampir habis",
+  consumers=("services/marketing_cost_service.py:budget_summary",), **_KPT7)
+
+E("notif.printer_stuck_minutes", group="notifikasi", type="int", default=30, min=5, max=1440, step=5, unit="menit",
+  label="Label dianggap tertahan setelah (menit)",
+  help="Lama antrean cetak label menunggu tanpa printer menyala di gudang itu sebelum diberitakan.",
+  impact="Makin kecil, makin cepat kepala gudang dan manajer diberi tahu label tertahan.",
+  example="30 → antrean yang menunggu 35 menit tanpa printer menyala diberitakan",
+  consumers=("services/printer_stuck_watch.py:scan",), **_KPT7)
+
+E("inventory.drift_critical_multiplier", group="keuangan-dasar", type="int", default=10, min=2, max=1000, step=1,
+  unit="kali",
+  label="Selisih persediaan kritis pada (× ambang)",
+  help="Kelipatan 'Selisih persediaan yang diperingatkan' yang menaikkan peringatan selisih persediaan menjadi "
+       "kritis.",
+  impact="Peringatan kritis tetap dikirim seketika (WhatsApp) walau mode pengiriman ringkasan.",
+  example="10 × Rp1.000 = selisih Rp10.000 atau lebih ditandai kritis",
+  consumers=("services/inventory_drift_watch.py:scan",), **_KPT7)
+
+E("approval.reminder_max_listed", group="persetujuan", type="int", default=3, min=1, max=20, step=1, unit="dokumen",
+  label="Dokumen yang disebut di pengingat persetujuan",
+  help="Jumlah dokumen terlama yang ditulis nomornya di pengingat harian keputusan yang menunggu; sisanya diringkas "
+       "'+N dokumen lain'.",
+  impact="Makin besar, makin panjang isi pengingat harian.",
+  example="3 → tiga dokumen terlama disebut, sisanya '+5 dokumen lain menunggu'",
+  consumers=("services/approval_reminder.py:_ringkas",), **_KPT7)
+
+E("rnd.design_due_soon_days", group="rnd", type="duration", default=3, min=1, max=30, step=1, unit="hari",
+  label="Tenggat permintaan desain dekat dalam",
+  help="Batas 'tenggat dekat' di ringkasan desainer (hari kalender, termasuk hari ini).",
+  impact="Makin besar, makin banyak permintaan desain yang dihitung 'tenggat dekat'.",
+  example="3 → tenggat lusa dihitung dekat, tenggat 5 hari lagi tidak",
+  consumers=("services/design_request_service.py:summary",), **_KPT7)
+
+E("notif.reminder_recipients", group="notifikasi", type="table", row_shape="list",
+  default=[dict(r) for r in _KPT7_PENERIMA],
+  label="Penerima tiap pengingat",
+  help="Siapa yang menerima tiap pengingat terjadwal: peran yang dipilih, atau semua pemegang sebuah izin di PT itu. "
+       "Tabel PT menggantikan tabel grup; pengingat yang tidak ada di tabel PT memakai baris grup, lalu bawaan. "
+       "Piutang jatuh tempo dan penyusutan aset berlaku untuk semua PT sekaligus, jadi hanya mengikuti tabel grup.",
+  impact="Mengubah kotak masuk siapa yang terisi pengingat itu. Penerima per izin dihitung saat pengingat dikirim.",
+  example="Hutang pemasok jatuh tempo → semua pemegang izin Tagihan Supplier — Bayar",
+  columns=({"name": "reminder", "label": "Pengingat", "type": "enum", "default": "ap_due",
+            "options": [{"value": k, "label": v} for k, v in _KPT7_PENGINGAT.items()]},
+           {"name": "mode", "label": "Cara menentukan", "type": "enum", "default": "peran", "width": "170px",
+            "options": [{"value": k, "label": v} for k, v in _KPT7_MODE.items()]},
+           {"name": "roles", "label": "Peran", "type": "multi", "default": [], "options": list(_KPT7_PERAN),
+            "options_source": "roles", "disabled_when": {"field": "mode", "equals": "izin"}},
+           {"name": "permission", "label": "Izin", "type": "enum", "default": "",
+            "options": _kpt7_izin(), "disabled_when": {"field": "mode", "equals": "peran"}}),
+  consumers=("services/reminder_policy.py:recipients_for",), permission=("scheduler", "configure"), risk="medium")
+
+E("notif.escalation_chain", group="notifikasi", type="table", row_shape="map", default=dict(_KPT7_ESKALASI),
+  scopes=("global",),
+  label="Naik ke siapa bila peringatan tidak ditindak",
+  help="Peran penerima peringatan → peran di atasnya, dipakai eskalasi peringatan yang belum dibaca melewati batas "
+       "waktu. 'all' = peringatan untuk semua; kosong = salinan per orang.",
+  impact="Mengubah kotak masuk siapa yang menerima eskalasi.",
+  example="gudang → manajer → admin",
+  columns=({"name": "__key", "label": "Peran penerima", "type": "text"},
+           {"name": "__value", "label": "Naik ke", "type": "enum", "options": list(_KPT7_PERAN),
+            "options_source": "roles"}),
+  consumers=("services/escalation_service.py:job_escalation_scan",), permission=("scheduler", "configure"),
+  risk="medium")
+
+E("notif.wa_broadcast_roles", group="notifikasi", type="list", default=["admin", "manager"], scopes=("global",),
+  options=_KPT7_PERAN,
+  label="Peran penerima WhatsApp pemberitahuan umum",
+  help="Pemberitahuan yang ditujukan ke semua orang hanya dikirim lewat WhatsApp ke pemegang peran ini.",
+  impact="Menambah atau mengurangi orang yang menerima WhatsApp pemberitahuan umum.",
+  example="Admin dan Manajer → pemberitahuan umum masuk WhatsApp keduanya",
+  consumers=("services/wa_alert_service.py:resolve_recipients",), **_KPT7)
+
+E("notif.wa_pic_number", group="notifikasi", type="text", default="",
+  label="Nomor WhatsApp PIC pengingat PT ini",
+  help="Kosong = memakai nomor PIC di pengaturan WhatsApp. Bila diisi pada PT, pengingat PT itu dikirim ke nomor ini "
+       "sebagai pengganti nomor PIC umum.",
+  impact="PT yang mengisi menerima pengingatnya di nomor sendiri.",
+  example="081234567890 → pengingat PT ini masuk ke nomor tersebut",
+  consumers=("services/wa_alert_service.py:resolve_recipients",), **_KPT7)
+# ── akhir blok KP-T7 ────────────────────────────────────────────────────────────────────────────────────────────────

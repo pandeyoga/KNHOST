@@ -18,6 +18,40 @@
 import { useState } from "react";
 import { AlertTriangle, Plus, Trash2 } from "lucide-react";
 import KNSelect from "../../../components/KNSelect";
+import { ROLE_REGISTRY, roleLabel } from "../../../config/roles";   // KP-T7 — pilihan peran kustom
+
+/**
+ * KP-T7 — pilihan kolom. `options_source: "roles"` = peran bawaan dari server + peran kustom yang sedang terdaftar di
+ * layar (daftar peran dari `GET /api/roles`), supaya penerima pengingat bisa diarahkan ke peran kustom tanpa id teknis.
+ */
+export function colOptions(col) {
+  const base = col.options || [];
+  if (col.options_source !== "roles") return base;
+  const seen = new Set(base.map((o) => o.value));
+  const extra = Object.keys(ROLE_REGISTRY)
+    .filter((id) => ROLE_REGISTRY[id]?.custom && !seen.has(id))
+    .map((id) => ({ value: id, label: roleLabel(id, true) }));
+  return [...base, ...extra];
+}
+
+/** KP-T7 — pilihan GANDA (mis. beberapa peran penerima): kotak centang per pilihan; nilai = daftar. */
+export function MultiChoice({ options, value, disabled, onChange, testId, label }) {
+  const picked = Array.isArray(value) ? value : (value ? [value] : []);
+  const known = new Set(options.map((o) => o.value));
+  const all = [...options, ...picked.filter((v) => !known.has(v)).map((v) => ({ value: v, label: roleLabel(v, true) }))];
+  const toggle = (v) => onChange(picked.includes(v) ? picked.filter((x) => x !== v) : [...picked, v]);
+  return (
+    <div className="flex flex-wrap gap-x-3 gap-y-1" data-testid={testId} role="group" aria-label={label}>
+      {all.map((o) => (
+        <label key={o.value} className="inline-flex items-center gap-1 text-fs-12 text-kn-text">
+          <input type="checkbox" checked={picked.includes(o.value)} disabled={disabled}
+            onChange={() => toggle(o.value)} data-testid={`${testId}-${o.value}`} />
+          {o.label}
+        </label>
+      ))}
+    </div>
+  );
+}
 
 const num = (v) => (v === "" || v === null || v === undefined ? "" : Number(v));
 
@@ -43,12 +77,16 @@ function CellInput({ col, value, disabled, onChange, testId }) {
       />
     );
   }
+  if (col.type === "multi") {   // KP-T7
+    return <MultiChoice options={colOptions(col)} value={value} disabled={disabled} onChange={onChange}
+      testId={testId} label={col.label} />;
+  }
   if (col.type === "enum") {
     return (
       <KNSelect
         value={value ?? ""}
         onValueChange={onChange}
-        options={col.options || []}
+        options={colOptions(col)}
         className="field cfg-tbl-select"
         disabled={disabled}
         placeholder="Pilih…"

@@ -1116,7 +1116,9 @@ sys_wa_outbox fields:
   status ("simulated"|"sent"|"failed"), error, message_id, entity_id, created_at, sent_at, retried_at,
   digest_groups / digest_alerts (hanya baris ringkasan harian — jumlah kelompok & alert)
 system_settings scope="alerts" fields:
-  jobs{<job_id>: {enabled, hour, minute | interval_hours}}, updated_at,
+  jobs{<job_id>: {enabled, hour, minute | interval_hours | interval_minutes}}, updated_at,
+    (KP-T7: `interval_minutes` 1–1440 hanya untuk job bersatuan menit, `interval_hours` hanya untuk job bersatuan jam;
+     sisa `interval_hours` pada job bersatuan menit dibuang `scripts/migrate_kpt7_jadwal.py --apply`)
   wa{enabled, provider, phone_number_id, template_name, template_lang, sender, pic_number,
      send_to_roles, min_severity, access_token*, fonnte_token*,
      delivery_mode ("instant"|"digest", R6.6), critical_bypass (bool, R6.6)},

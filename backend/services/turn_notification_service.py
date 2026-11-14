@@ -82,7 +82,7 @@ async def turn_roles(rule: Dict[str, Any]) -> tuple:
     return tuple(sorted(holders))
 ALIASES = {"sales_order": "sales_orders", "purchase_order": "purchase_orders", "sales_return": "sales_returns",
            "purchase_return": "purchase_returns"}
-STALE_DAYS = 7   # sapuan terjadwal: dokumen yang tidak bergerak > 7 hari tidak dinotifikasi ulang
+# KP-T7 (KP-20) — batas "dokumen diam" sapuan terjadwal (dulu konstanta STALE_DAYS 7) kini `notif.turn_stale_days` per PT.
 OWNER_FIELDS = ("created_by", "requested_by", "sales_id", "sales_user_id", "requested_by_id")
 
 
@@ -192,12 +192,14 @@ async def _safe_check(coll: str, doc_id: str) -> None:
 
 
 async def scan(limit_per_coll: int = 500) -> Dict[str, Any]:
+    from services import reminder_policy as policy   # KP-T7 — per PT dokumen
+    diam = policy.per_pt("notif.turn_stale_days")
     created, scanned = 0, 0
     for coll, rules in TURN_MAP.items():
         cur = db[coll].find({"status": {"$in": list(rules)}}, {"_id": 0}).sort("updated_at", -1).limit(limit_per_coll)
         async for doc in cur:
             scanned += 1
-            created += await notify_turn(coll, doc, stale_days=STALE_DAYS)
+            created += await notify_turn(coll, doc, stale_days=int(await diam(doc.get("entity_id"))))
     return {"scanned": scanned, "created": created}
 
 

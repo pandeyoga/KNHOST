@@ -10,11 +10,13 @@ from pydantic import BaseModel, Field
 
 class JobConfig(BaseModel):
     """Konfigurasi 1 job. `hour`/`minute` untuk jadwal harian (zona Asia/Jakarta),
-    `interval_hours` untuk job berulang."""
+    `interval_hours` untuk job berulang bersatuan jam, `interval_minutes` untuk job bersatuan menit (KP-T7)."""
     enabled: Optional[bool] = None
     hour: Optional[int] = Field(default=None, ge=0, le=23)
     minute: Optional[int] = Field(default=None, ge=0, le=59)
     interval_hours: Optional[int] = Field(default=None, ge=1, le=24)
+    # KP-T7 (KP-09) — dulu tidak ada: job bersatuan menit tidak bisa diubah selangnya.
+    interval_minutes: Optional[int] = Field(default=None, ge=1, le=1440)
 
 
 class WaConfig(BaseModel):

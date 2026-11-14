@@ -19,14 +19,12 @@ from typing import Any, Dict, List, Optional
 
 from db import db
 from services.notification_service import create_notification, generate_system_notifications
+from services import reminder_policy as policy
 from core_utils import rupiah
 
-# Ambang batas default (dapat dioverride lewat pengaturan job di masa depan).
-AP_DUE_SOON_DAYS = 7      # tagihan supplier yang jatuh tempo <= 7 hari → peringatan
-WO_RELEASED_STALE_DAYS = 3  # WO dirilis > 3 hari belum selesai → tertunda
-WO_DRAFT_STALE_DAYS = 7     # WO draft > 7 hari belum dirilis → tertunda
-TASK_STALE_DAYS = 2         # tugas gudang terbuka > 2 hari → tertunda
-MAX_ALERTS_PER_JOB = 40     # pagar anti-spam per job per run
+# KP-T7 (KP-20) — ambang & penerima kini pengaturan per PT (Pusat Pengaturan › Notifikasi), dibaca lewat
+# `services/reminder_policy.py`: dulu konstanta AP_DUE_SOON_DAYS 7, WO_RELEASED_STALE_DAYS 3, WO_DRAFT_STALE_DAYS 7,
+# TASK_STALE_DAYS 2, MAX_ALERTS_PER_JOB 40, dan `recipient_role="manager"/"warehouse"` di titik kirim.
 
 TASK_OPEN_STATUSES = ["created", "pending", "picking", "packing", "qc_pending",
                       "waiting_goods", "receiving", "partially_shipped"]
@@ -73,20 +71,20 @@ async def job_ar_overdue() -> Dict[str, Any]:
     rows = [r for r in (report.get("customers") or []) if float(r.get("overdue", 0) or 0) > 0]
     rows.sort(key=lambda r: float(r.get("overdue", 0) or 0), reverse=True)
     created = 0
-    for r in rows[:MAX_ALERTS_PER_JOB]:
+    maks = int(await policy.threshold("notif.max_alerts_per_run"))
+    for r in rows[:maks]:
         days = int(r.get("oldest_days", 0) or 0)
         overdue = float(r.get("overdue", 0) or 0)
         sev = "critical" if days > 30 else "warning"
         body = (f"{_rp(overdue)} lewat jatuh tempo (tertua {days} hari) dari "
                 f"{r.get('orders', 0)} order. Segera tagih / follow-up.")
-        note = await create_notification(
+        created += len(await policy.notify(
+            "ar_overdue", None,
             notif_type="ar_overdue", ref=f"ar_overdue:{r.get('customer_id')}",
             title=f"Piutang jatuh tempo: {r.get('customer_name', '-')}",
-            body=body, severity=sev, link="ar-aging", recipient_role="manager",
+            body=body, severity=sev, link="ar-aging",
             dedupe_scope="day",
-        )
-        if note:
-            created += 1
+        ))
         # Salinan untuk sales pemegang akun (bila ada) agar bisa langsung follow-up.
         sid = r.get("assigned_sales_id") or ""
         if sid:
@@ -134,6 +132,8 @@ async def job_ap_due() -> Dict[str, Any]:
     from services.vendor_bill_service import bill_financials
     today = now_wib().date()
     created, scanned = 0, 0
+    batas_hari = policy.per_pt("notif.ap_due_soon_days")   # KP-T7 — per PT tagihan
+    maks = int(await policy.threshold("notif.max_alerts_per_run"))
     for b in bills:
         # G3 D4-ALERT-AMT-01 — saldo dari SSOT AP (grand − dibayar); lunas tidak diperingatkan.
         fin = bill_financials(b)
@@ -153,28 +153,26 @@ async def job_ap_due() -> Dict[str, Any]:
         days = tmaps[ent].get(sup_term.get(b.get("supplier_id", ""), ""), 0)
         due = bd + timedelta(days=days)
         left = (due - today).days
-        if left > AP_DUE_SOON_DAYS:
+        if left > int(await batas_hari(ent)):
             continue
         scanned += 1
-        if scanned > MAX_ALERTS_PER_JOB:
+        if scanned > maks:
             break
         overdue = left < 0
         sev = "critical" if overdue else "warning"
         when = f"LEWAT {abs(left)} hari" if overdue else ("jatuh tempo HARI INI" if left == 0
                                                           else f"jatuh tempo {left} hari lagi")
-        note = await create_notification(
+        created += len(await policy.notify(
+            "ap_due", b.get("entity_id"),
             notif_type="ap_due", ref=f"ap_due:{b.get('id')}",
             title=f"Tagihan supplier {when}: {b.get('bill_number', '')}",
             body=(f"{b.get('supplier_name', '')} · sisa {_rp(fin['outstanding'])}"
                   + (f" dari {_rp(fin['grand_total'])}" if fin["amount_paid"] > 0.01 else "")
                   + f" · jatuh tempo {due.isoformat()} (term {days} hari)."),
-            severity=sev, link="vendor-bills", entity_id=b.get("entity_id"),
-            recipient_role="manager", dedupe_scope="day",
-        )
-        if note:
-            created += 1
+            severity=sev, link="vendor-bills", dedupe_scope="day",
+        ))
     return {"created": created, "scanned": scanned,
-            "detail": f"{scanned} tagihan jatuh tempo <= {AP_DUE_SOON_DAYS} hari"}
+            "detail": f"{scanned} tagihan jatuh tempo dalam batas hari pengingat"}
 
 
 # ═══ JOB 3 — Reminder penyusutan aset tetap ══════════════════════════════════
@@ -193,15 +191,16 @@ async def job_depreciation_due() -> Dict[str, Any]:
         return {"created": 0, "scanned": len(assets),
                 "detail": f"penyusutan periode {period} sudah lengkap"}
     total = sum(float(a.get("monthly_depreciation", 0) or 0) for a in pending)
-    note = await create_notification(
+    notes = await policy.notify(
+        "depreciation_due", None,
         notif_type="depreciation_due", ref=f"dep_due:{period}",
         title=f"Penyusutan aset periode {period} belum dijalankan",
         body=(f"{len(pending)} aset aktif menunggu penyusutan (estimasi {_rp(total)}). "
               f"Buka Kas & Aset → Aset Tetap → Jalankan Penyusutan Bulanan."),
-        severity="warning", link="fixed-assets", recipient_role="manager",
+        severity="warning", link="fixed-assets",
         dedupe_scope="day",
     )
-    return {"created": 1 if note else 0, "scanned": len(assets),
+    return {"created": len(notes), "scanned": len(assets),
             "detail": f"{len(pending)} aset menunggu periode {period}"}
 
 
@@ -210,6 +209,7 @@ async def job_budget_alert() -> Dict[str, Any]:
     from services import budget_service
     year = _now().year
     created, scanned = 0, 0
+    maks = int(await policy.threshold("notif.max_alerts_per_run"))
     for ent in await _active_entities():
         try:
             rep = await budget_service.budget_vs_actual({"entity_id": ent}, year, ent)
@@ -217,13 +217,14 @@ async def job_budget_alert() -> Dict[str, Any]:
             continue
         for row in (rep.get("alerts") or []):
             scanned += 1
-            if created >= MAX_ALERTS_PER_JOB:
+            if created >= maks:
                 break
             over = row.get("status") == "over"
             pct = float(row.get("used_pct", 0) or 0)
             month = int(row.get("month", 0) or 0)
             per = f"{year}-{month:02d}" if month else str(year)
-            note = await create_notification(
+            created += len(await policy.notify(
+                "budget_alert", ent,
                 notif_type="budget_alert", ref=f"budget:{ent}:{row.get('key')}:{per}",
                 title=(f"Anggaran {'TERLAMPAUI' if over else 'mendekati batas'}: "
                        f"{row.get('label') or row.get('key')}"),
@@ -231,10 +232,8 @@ async def job_budget_alert() -> Dict[str, Any]:
                       f"(realisasi {_rp(row.get('actual'))} + komitmen {_rp(row.get('committed'))}). "
                       f"Sisa {_rp(row.get('remaining'))}."),
                 severity="critical" if over else "warning", link="budget",
-                entity_id=ent, recipient_role="manager", dedupe_scope="day",
-            )
-            if note:
-                created += 1
+                dedupe_scope="day",
+            ))
     return {"created": created, "scanned": scanned,
             "detail": f"{scanned} baris anggaran over/mendekati batas"}
 
@@ -245,18 +244,21 @@ async def job_production_stalled() -> Dict[str, Any]:
     wos = await db.mfg_work_orders.find(
         {"status": {"$in": ["draft", "released"]}}, {"_id": 0}).to_list(5000)
     created, scanned = 0, 0
+    batas_rilis = policy.per_pt("notif.wo_released_stale_days")   # KP-T7 — per PT perintah kerja
+    batas_draf = policy.per_pt("notif.wo_draft_stale_days")
+    maks = int(await policy.threshold("notif.max_alerts_per_run"))
     for w in wos:
         status = w.get("status")
         ref_dt = _parse(w.get("released_at") if status == "released" else w.get("created_at"))
         if not ref_dt:
             continue
         age = (now - ref_dt).days
-        limit = WO_RELEASED_STALE_DAYS if status == "released" else WO_DRAFT_STALE_DAYS
+        limit = int(await (batas_rilis if status == "released" else batas_draf)(w.get("entity_id")))
         short = [p for p in (w.get("material_plan") or []) if not p.get("sufficient")]
         if age < limit and not short:
             continue
         scanned += 1
-        if created >= MAX_ALERTS_PER_JOB:
+        if created >= maks:
             break
         if short:
             names = ", ".join((p.get("name") or p.get("material_product_id", "")) for p in short[:3])
@@ -270,28 +272,33 @@ async def job_production_stalled() -> Dict[str, Any]:
                     f"{'DIRILIS' if status == 'released' else 'DRAFT'} setelah {age} hari. "
                     f"Selesaikan atau batalkan.")
             sev = "warning"
-        note = await create_notification(
+        created += len(await policy.notify(
+            "production_stalled", w.get("entity_id"),
             notif_type="production_stalled", ref=f"wo_stalled:{w.get('id')}",
             title=f"Work Order tertunda: {w.get('wo_number', '')}",
-            body=body, severity=sev, link="production", entity_id=w.get("entity_id"),
-            recipient_role="warehouse", dedupe_scope="day",
-        )
-        if note:
-            created += 1
+            body=body, severity=sev, link="production", dedupe_scope="day",
+        ))
     return {"created": created, "scanned": scanned,
             "detail": f"{scanned} Work Order tertunda / bahan kurang"}
 
 
 # ═══ JOB 6 — Tugas gudang (WMS) tertunda ═════════════════════════════════════
 async def job_ops_stalled() -> Dict[str, Any]:
-    cutoff = (_now() - timedelta(days=TASK_STALE_DAYS)).isoformat()
+    # KP-T7 — batas hari per PT tugas: kueri memakai batas TERKECIL di antara grup + PT aktif, lalu tiap tugas disaring
+    # dengan batas PT-nya (bawaan semua 2 → kueri & hasil sama dengan sebelum unit ini).
+    batas = policy.per_pt("notif.warehouse_task_stale_days")
+    terkecil = min([int(await batas(e)) for e in ["", *await policy.active_entity_ids()]])
+    now = _now()
+    cutoff = (now - timedelta(days=terkecil)).isoformat()
     tasks = await db.wms_tasks.find(
         {"status": {"$in": TASK_OPEN_STATUSES}, "created_at": {"$lt": cutoff}},
         {"_id": 0, "id": 1, "flow_type": 1, "warehouse_id": 1, "warehouse_name": 1,
          "order_number": 1, "entity_id": 1, "created_at": 1}).to_list(20000)
+    tasks = [t for t in tasks
+             if str(t.get("created_at") or "") < (now - timedelta(days=int(await batas(t.get("entity_id"))))).isoformat()]
     if not tasks:
         return {"created": 0, "scanned": 0,
-                "detail": f"tidak ada tugas gudang menganggur > {TASK_STALE_DAYS} hari"}
+                "detail": f"tidak ada tugas gudang menganggur > {terkecil} hari"}
     # Agregasi per (gudang, arah) agar tidak membanjiri bell dengan 1 notif per tugas.
     groups: Dict[tuple, Dict[str, Any]] = {}
     for t in tasks:
@@ -306,20 +313,17 @@ async def job_ops_stalled() -> Dict[str, Any]:
         if t.get("order_number") and len(g["orders"]) < 4:
             g["orders"].append(t["order_number"])
     created = 0
-    now = _now()
     for (wid, flow, _ent), g in groups.items():   # G3 D4-ALERT-WMS-01 — key kini 3-tuple
-        age = (now - g["oldest"]).days if g["oldest"] else TASK_STALE_DAYS
+        age = (now - g["oldest"]).days if g["oldest"] else int(await batas(g.get("entity_id")))
         arah = "Outbound (pengiriman)" if flow == "outbound" else "Inbound (penerimaan)"
-        note = await create_notification(
+        created += len(await policy.notify(
+            "ops_stalled", g.get("entity_id"),
             notif_type="ops_stalled", ref=f"task_stalled:{wid}:{flow}",
             title=f"Tugas gudang tertunda: {g['warehouse_name'] or wid}",
             body=(f"{g['count']} tugas {arah} belum selesai (tertua {age} hari). "
                   + (f"Order: {', '.join(g['orders'])}." if g["orders"] else "")),
-            severity="warning", link="operations", entity_id=g.get("entity_id"),
-            recipient_role="warehouse", dedupe_scope="day",
-        )
-        if note:
-            created += 1
+            severity="warning", link="operations", dedupe_scope="day",
+        ))
     return {"created": created, "scanned": len(tasks),
             "detail": f"{len(tasks)} tugas menganggur di {len(groups)} gudang/arah"}
 

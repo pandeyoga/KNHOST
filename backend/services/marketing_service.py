@@ -32,7 +32,7 @@ TRANSITIONS = {
     "published": set(), "cancelled": {"idea"},
 }
 METRIC_FIELDS = ["likes", "comments", "shares", "saves", "reach", "impressions", "clicks", "followers_gained", "sales_leads"]
-REMINDER_WINDOW_MIN = 60
+# KP-T7 (KP-20) — jarak pengingat tayang (dulu konstanta REMINDER_WINDOW_MIN 60) kini `notif.content_reminder_window_minutes`.
 WIB = timezone(timedelta(hours=7))
 
 
@@ -362,10 +362,18 @@ def _next_month(month: str) -> str:
 
 # ─── Pengingat tayang (job scheduler) ────────────────────────────────────────
 async def job_content_reminder() -> Dict[str, Any]:
-    """Post 'scheduled' yang tayang dalam ≤60 menit (atau sudah lewat & belum ditandai) → ingatkan PIC."""
+    """Post 'scheduled' yang tayang dalam jarak menit yang diatur (bawaan 60) atau sudah lewat & belum ditandai →
+    ingatkan PIC.
+
+    KP-T7 — jarak per PT posting: kueri memakai jarak TERLEBAR di antara grup + PT aktif, lalu tiap posting disaring
+    dengan jarak PT-nya (bawaan semua 60 → kueri & hasil sama dengan sebelum unit ini)."""
+    from services import reminder_policy as policy
+    jarak = policy.per_pt("notif.content_reminder_window_minutes")
     now = datetime.now(WIB)
-    horizon = (now + timedelta(minutes=REMINDER_WINDOW_MIN)).strftime("%Y-%m-%dT%H:%M")
+    terlebar = max([int(await jarak(e)) for e in ["", *await policy.active_entity_ids()]])
+    horizon = (now + timedelta(minutes=terlebar)).strftime("%Y-%m-%dT%H:%M")
     rows = await db.mkt_posts.find({"status": "scheduled", "publish_at": {"$ne": "", "$lte": horizon}, "reminder_sent_at": ""}, {"_id": 0}).to_list(200)
+    rows = [r for r in rows if r["publish_at"] <= (now + timedelta(minutes=int(await jarak(r.get("entity_id"))))).strftime("%Y-%m-%dT%H:%M")]
     sent = 0
     for r in rows:
         late = r["publish_at"] < now.strftime("%Y-%m-%dT%H:%M")

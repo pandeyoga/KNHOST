@@ -689,12 +689,17 @@ async def cancel(req_id: str, actor: Dict[str, Any], reason: str) -> Dict[str, A
 #: Keputusan pemilik K-14 (26 Okt) — panjang minimum alasan seragam (layar `confirmService.REASON_MIN_LENGTH`).
 REASON_MIN = 5
 
-#: K-12 (26 Okt) — batas "tenggat dekat" untuk tab Ringkas HP desainer (hari kalender, termasuk hari ini).
-DUE_SOON_DAYS = 3
+# K-12 (26 Okt) — batas "tenggat dekat" untuk tab Ringkas HP desainer (hari kalender, termasuk hari ini).
+# KP-T7 (KP-20) — dulu konstanta DUE_SOON_DAYS 3; kini `rnd.design_due_soon_days` per PT, dibaca `summary`.
 
 
-def due_soon(doc: Dict[str, Any], today: str = "", days: int = DUE_SOON_DAYS) -> bool:
-    """Tenggat dekat = ada tenggat, BELUM lewat, jatuh dalam `days` hari ke depan, pekerjaan belum selesai."""
+def due_soon(doc: Dict[str, Any], today: str = "", days: Optional[int] = None) -> bool:
+    """Tenggat dekat = ada tenggat, BELUM lewat, jatuh dalam `days` hari ke depan, pekerjaan belum selesai.
+
+    `days` kosong = bawaan registry `rnd.design_due_soon_days` (KP-T7)."""
+    if days is None:
+        from config_registry import default_of
+        days = int(default_of("rnd.design_due_soon_days"))
     due = (doc.get("due_date") or "").strip()[:10]
     if not due or doc.get("status") in TERMINAL_STATUSES:
         return False
@@ -743,18 +748,21 @@ async def summary(query: Dict[str, Any]) -> Dict[str, Any]:
     late = 0
     soon = 0
     today = _today()
+    from services.reminder_policy import threshold   # KP-T7 — per PT ringkasan (satu PT = nilainya; lainnya = grup)
+    pt = (query or {}).get("entity_id")
+    dekat = int(await threshold("rnd.design_due_soon_days", pt if isinstance(pt, str) else ""))
     async for d in db[COLL].find(query, {"_id": 0, "status": 1, "due_date": 1}):
         total += 1
         out[d.get("status", "")] = out.get(d.get("status", ""), 0) + 1
         if overdue(d, today):
             late += 1
-        elif due_soon(d, today):
+        elif due_soon(d, today, dekat):
             soon += 1
     out["total"] = total
     out["overdue"] = late
-    # Keputusan pemilik K-12 (26 Okt) — tab Ringkas HP desainer: "tenggat dekat" (belum lewat, ≤ DUE_SOON_DAYS hari).
+    # Keputusan pemilik K-12 (26 Okt) — tab Ringkas HP desainer: "tenggat dekat" (belum lewat, ≤ batas hari).
     out["due_soon"] = soon
-    out["due_soon_days"] = DUE_SOON_DAYS
+    out["due_soon_days"] = dekat
     out["open"] = sum(out.get(s, 0) for s in OPEN_STATUSES)
     return out
 

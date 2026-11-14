@@ -88,7 +88,7 @@ JOBS: List[Dict[str, Any]] = [
      "kind": "daily", "hour": 8, "minute": 0, "fn": alerts.job_ar_overdue,
      "link": "ar-aging"},
     {"id": "ap_due", "label": "Hutang Supplier Jatuh Tempo (AP)",
-     "description": "Tagihan supplier terposting yang jatuh tempo <= 7 hari atau sudah lewat (berdasarkan termin pembayaran supplier).",
+     "description": "Tagihan supplier terposting yang jatuh tempo dalam batas hari yang diatur (bawaan 7 hari) atau sudah lewat (berdasarkan termin pembayaran supplier).",  # KP-T7
      "kind": "daily", "hour": 8, "minute": 5, "fn": alerts.job_ap_due,
      "link": "vendor-bills"},
     {"id": "depreciation_due", "label": "Reminder Penyusutan Aset",
@@ -100,11 +100,11 @@ JOBS: List[Dict[str, Any]] = [
      "kind": "daily", "hour": 8, "minute": 15, "fn": alerts.job_budget_alert,
      "link": "budget"},
     {"id": "production_stalled", "label": "Perintah Kerja Produksi Tertunda",
-     "description": "WO dirilis > 3 hari belum selesai, WO draf > 7 hari, atau WO dengan bahan kurang.",
+     "description": "WO dirilis melewati batas hari yang diatur (bawaan 3) belum selesai, WO draf melewati batasnya (bawaan 7), atau WO dengan bahan kurang.",  # KP-T7
      "kind": "daily", "hour": 8, "minute": 20, "fn": alerts.job_production_stalled,
      "link": "production"},
     {"id": "ops_stalled", "label": "Tugas Gudang Tertunda",
-     "description": "Tugas barang masuk/keluar terbuka > 2 hari, diringkas per gudang & arah.",
+     "description": "Tugas barang masuk/keluar terbuka melewati batas hari yang diatur (bawaan 2), diringkas per gudang & arah.",  # KP-T7
      "kind": "interval", "interval_hours": 4, "fn": alerts.job_ops_stalled,
      "link": "operations"},
     # ── FIX-3b (B3a STK-11, B2b ANOM-06 / K-B2b-12) ─────────────────────────
@@ -125,7 +125,7 @@ JOBS: List[Dict[str, Any]] = [
      "kind": "interval", "interval_hours": 2, "fn": escalation.job_escalation_scan,
      "link": ""},
     {"id": "content_reminder", "label": "Pengingat Tayang Konten Sosial Media",
-     "description": "Post terjadwal yang tayang dalam 60 menit (atau terlambat) → ingatkan PIC (in-app & WA) agar diposting dan ditandai Tayang.",
+     "description": "Post terjadwal yang tayang dalam jarak menit yang diatur (bawaan 60) atau terlambat → ingatkan PIC (in-app & WA) agar diposting dan ditandai Tayang.",  # KP-T7
      "kind": "interval", "interval_minutes": 15, "fn": _mkt.job_content_reminder,
      "link": "mkt-calendar"},
     {"id": "daily_digest", "label": "Ringkasan Harian (WhatsApp)",
@@ -134,15 +134,15 @@ JOBS: List[Dict[str, Any]] = [
      "link": ""},
     # ── PS-21 (quick win operasional) ─────────────────────────────────────
     {"id": "po_arrival", "label": "Barang PO Datang",
-     "description": "Penerimaan barang PO (GR) yang selesai dalam 24 jam terakhir → beri tahu MD/manager, gudang, dan sales yang punya pesanan pendingan atas produk itu.",
+     "description": "Penerimaan barang PO (GR) yang selesai dalam jendela jam yang diatur (bawaan 24) → beri tahu MD/manager, gudang, dan sales yang punya pesanan pendingan atas produk itu.",  # KP-T7
      "kind": "interval", "interval_hours": 2, "fn": ops.job_po_arrival,
      "link": "purchasing"},
     {"id": "backorder_ready", "label": "Barang Pendingan Siap",
      "description": "Order dengan pendingan (backorder) yang stoknya sudah tersedia di gudang → beri tahu sales pemegang akun agar bisa follow-up pelanggan.",
      "kind": "interval", "interval_hours": 2, "fn": ops.job_backorder_ready,
      "link": "orders"},
-    {"id": "ar_due_soon", "label": "Piutang Mendekati Jatuh Tempo (H-3/H-1/H/H+1)",
-     "description": "Ingatkan piutang tepat pada H-3, H-1, hari-H, dan H+1 (melengkapi 'Piutang Jatuh Tempo' yang memindai umur piutang lama). Penyaringan ganda harian mencegah pesan dobel.",
+    {"id": "ar_due_soon", "label": "Piutang Mendekati Jatuh Tempo",   # KP-T7 — hari pengingat kini pengaturan
+     "description": "Ingatkan piutang tepat pada hari yang diatur (bawaan H-3, H-1, hari-H, dan H+1; melengkapi 'Piutang Jatuh Tempo' yang memindai umur piutang lama). Penyaringan ganda harian mencegah pesan dobel.",
      "kind": "daily", "hour": 7, "minute": 55, "fn": ops.job_ar_due_soon,
      "link": "ar-aging"},
     # ── FASE G-2 ──────────────────────────────────────────────────────────
@@ -219,7 +219,7 @@ JOBS: List[Dict[str, Any]] = [
      "link": "settings-config"},
     # ── Sesi 15 — label tertahan ─────────────────────────────────────────
     {"id": "printer_stuck_watch", "label": "Label Tertahan di Printer",
-     "description": "Antrean label (QR/RFID) yang menunggu > 30 menit di gudang tanpa printer "
+     "description": "Antrean label (QR/RFID) yang menunggu melewati batas menit yang diatur (bawaan 30) di gudang tanpa printer "  # KP-T7
                     "online (heartbeat > 5 menit) diberitahukan ke kepala gudang & manager: "
                     "jumlah label, umur antrean, gudang. Satu notifikasi per gudang sampai "
                     "antrean bersih (dedupe unread). Job ini TIDAK mengubah antrean.",
@@ -317,6 +317,110 @@ def job_defaults(job: Dict[str, Any]) -> Dict[str, Any]:
     return {"enabled": True, "interval_hours": job["interval_hours"]}
 
 
+# ── KP-T7 (KP-09) — satuan selang per job, job teknis terkunci, penerima & ambang tiap pengingat ─────────────────────
+# Dulu pemicu memilih `interval_minutes` lebih dulu dan nilai itu selalu ada dari bawaan job, sehingga `interval_hours`
+# yang dikirim layar untuk job bersatuan menit tersimpan tetapi tidak pernah dipakai. Kini satuan job menentukan field.
+#: Job gerbang RFID: selangnya tidak diubah dari layar (titik henti H7 — ASUMSI spesifikasi KP-T7). Perilaku job tetap.
+LOCKED_JOBS = ("rfid_reader_health_watch", "rfid_gate_txn_retry")
+
+#: Pengingat (`reminder_policy.PENGINGAT`) yang dikirim tiap job → kolom "Penerima".
+JOB_REMINDERS: Dict[str, tuple] = {
+    "ar_overdue": ("ar_overdue",), "ap_due": ("ap_due",), "depreciation_due": ("depreciation_due",),
+    "budget_alert": ("budget_alert",), "production_stalled": ("production_stalled",), "ops_stalled": ("ops_stalled",),
+    "po_arrival": ("po_arrival", "po_arrival_gudang"), "backorder_ready": ("backorder_ready",),
+    "ar_due_soon": ("ar_due_soon",),
+}
+#: Kunci pengaturan yang menjadi ambang tiap job → kolom "Ambang" (kunci yang tidak terdaftar dilewati).
+JOB_THRESHOLDS: Dict[str, tuple] = {
+    "ar_overdue": ("notif.max_alerts_per_run",),
+    "ap_due": ("notif.ap_due_soon_days", "notif.max_alerts_per_run"),
+    "budget_alert": ("notif.max_alerts_per_run",),
+    "production_stalled": ("notif.wo_released_stale_days", "notif.wo_draft_stale_days", "notif.max_alerts_per_run"),
+    "ops_stalled": ("notif.warehouse_task_stale_days",),
+    "po_arrival": ("notif.po_arrival_lookback_hours", "notif.max_alerts_per_run"),
+    "backorder_ready": ("notif.max_alerts_per_run",),
+    "ar_due_soon": ("notif.ar_due_soon_offsets", "notif.max_alerts_per_run"),
+    "escalation_scan": ("notif.max_alerts_per_run",),
+    "content_reminder": ("notif.content_reminder_window_minutes",),
+    "turn_scan": ("notif.turn_stale_days",),
+    "printer_stuck_watch": ("notif.printer_stuck_minutes",),
+    "inventory_drift_watch": ("inventory.drift_alert_rupiah", "inventory.drift_critical_multiplier"),
+    "approval_backlog_reminder": ("approval.reminder_min_days", "approval.reminder_max_listed"),
+    "saga_lock_watch": ("saga.stuck_lock_minutes",),
+    "rnd_sla_escalation": ("rnd.sla_escalate_admin_days",),
+    "interco_settlement_reminder": ("antar_entitas.settlement_reminder_days",),
+    "period_unlock_auto_close": ("periode.unlock_window_hours",),
+    "return_supplier_deadline_reminder": ("returns.supplier_reminder_days",),
+    "interco_payment_reminder": ("interco_payment.reminder_days",),
+    "contra_bon_reminder": ("contra_bon.reminder_days_before",),
+}
+
+
+def interval_unit(job: Dict[str, Any]) -> str:
+    """"menit" bila bawaan job `interval_minutes`, "jam" untuk job berselang lain, "" untuk job harian."""
+    if job["kind"] == "daily":
+        return ""
+    return "menit" if job.get("interval_minutes") else "jam"
+
+
+def interval_value(job: Dict[str, Any], cfg: Dict[str, Any]) -> Optional[int]:
+    """Selang yang DIPAKAI pemicu (satuan `interval_unit`); None untuk job harian."""
+    unit = interval_unit(job)
+    if unit == "menit":
+        return int(cfg.get("interval_minutes") or job["interval_minutes"])
+    if unit == "jam":
+        return int(cfg.get("interval_hours") or job.get("interval_hours") or 4)
+    return None
+
+
+def job_patch_error(job: Dict[str, Any], patch: Dict[str, Any]) -> str:
+    """Pesan 400 bila selang yang dikirim tidak cocok dengan satuan job ("" = sah)."""
+    menit, jam = patch.get("interval_minutes") is not None, patch.get("interval_hours") is not None
+    if not (menit or jam):
+        return ""
+    label = job["label"]
+    if job["id"] in LOCKED_JOBS:
+        return f"Jadwal “{label}” tidak bisa diubah dari layar."
+    unit = interval_unit(job)
+    if not unit:
+        return f"Jadwal “{label}” diatur dengan jam dan menit harian."
+    if unit == "menit" and jam:
+        return f"Jadwal “{label}” diatur dalam menit."
+    if unit == "jam" and menit:
+        return f"Jadwal “{label}” diatur dalam jam."
+    return ""
+
+
+def _teks_ambang(key: str, entry: Dict[str, Any], value: Any) -> str:
+    unit = entry.get("unit") or ""
+    if key == "notif.ar_due_soon_offsets":
+        return ", ".join(("H" if int(o) == 0 else f"H{int(o):+d}") for o in (value or [])) or "tidak ada"
+    if entry.get("type") == "money":
+        return "Rp" + f"{float(value or 0):,.0f}".replace(",", ".")
+    if isinstance(value, list):
+        return ", ".join(str(v) for v in value)
+    return f"{value} {unit}".strip()
+
+
+async def job_policy(job_id: str, entity_id: str) -> Dict[str, Any]:
+    """`recipients` (ringkasan penerima efektif) + `thresholds` (`[{key, label, value, unit, text, group}]`) untuk PT
+    `entity_id` ("" = nilai grup)."""
+    import config_registry as registry
+    from services import reminder_policy
+    reminders = JOB_REMINDERS.get(job_id) or ()
+    recipients = await reminder_policy.ringkasan_penerima(reminders, entity_id) if reminders else ""
+    thresholds: List[Dict[str, Any]] = []
+    for key in JOB_THRESHOLDS.get(job_id) or ():
+        entry = registry.get(key)
+        if not entry or entry.get("status") != "active":
+            continue
+        value = await reminder_policy.threshold(key, entity_id)
+        thresholds.append({"key": key, "label": entry["label"], "value": value, "unit": entry.get("unit") or "",
+                           "text": _teks_ambang(key, entry, value), "group": entry["group"]})
+    return {"recipients": recipients, "recipient_key": reminder_policy.KUNCI_PENERIMA if reminders else "",
+            "thresholds": thresholds}
+
+
 async def effective_config() -> Dict[str, Dict[str, Any]]:
     """Gabungan default kode + override tersimpan (per job)."""
     st = await wa.raw_settings()
@@ -331,9 +435,8 @@ async def effective_config() -> Dict[str, Dict[str, Any]]:
 def schedule_label(job: Dict[str, Any], cfg: Dict[str, Any]) -> str:
     if job["kind"] == "daily":
         return f"Harian {int(cfg.get('hour', 0)):02d}:{int(cfg.get('minute', 0)):02d} WIB"
-    if cfg.get("interval_minutes"):
-        return f"Setiap {int(cfg.get('interval_minutes'))} menit"
-    return f"Setiap {int(cfg.get('interval_hours', 4))} jam"
+    # KP-T7 — label = selang yang dipakai pemicu, menurut satuan job
+    return f"Setiap {interval_value(job, cfg)} {interval_unit(job)}"
 
 
 # ═══ Histori eksekusi ═══════════════════════════════════════════════════════
@@ -458,10 +561,10 @@ async def _apply_jobs() -> int:
         if job["kind"] == "daily":
             trigger = CronTrigger(hour=int(cfg.get("hour", 8)),
                                   minute=int(cfg.get("minute", 0)), timezone=TZ)
-        elif cfg.get("interval_minutes"):
-            trigger = IntervalTrigger(minutes=int(cfg["interval_minutes"]), timezone=TZ)
+        elif interval_unit(job) == "menit":   # KP-T7 — satuan job menentukan field yang dipakai
+            trigger = IntervalTrigger(minutes=interval_value(job, cfg), timezone=TZ)
         else:
-            trigger = IntervalTrigger(hours=int(cfg.get("interval_hours", 4)), timezone=TZ)
+            trigger = IntervalTrigger(hours=interval_value(job, cfg), timezone=TZ)
         _scheduler.add_job(run_job, trigger=trigger, id=jid, args=[jid],
                            kwargs={"trigger": "schedule"}, replace_existing=True,
                            max_instances=1, coalesce=True, misfire_grace_time=3600)
@@ -549,8 +652,10 @@ def _next_run(job_id: str) -> str:
     return j.next_run_time.isoformat()
 
 
-async def jobs_status() -> Dict[str, Any]:
-    """Status lengkap untuk UI admin: jadwal, on/off, run terakhir, run berikutnya."""
+async def jobs_status(entity_id: str = "") -> Dict[str, Any]:
+    """Status lengkap untuk UI admin: jadwal, on/off, run terakhir, run berikutnya.
+
+    KP-T7 — `entity_id` = PT aktif layar ("" = nilai grup) untuk ringkasan penerima & ambang."""
     cfg_all = await effective_config()
     lasts = await last_runs()
     rows: List[Dict[str, Any]] = []
@@ -564,6 +669,9 @@ async def jobs_status() -> Dict[str, Any]:
             "enabled": bool(cfg.get("enabled", True)),
             "hour": cfg.get("hour"), "minute": cfg.get("minute"),
             "interval_hours": cfg.get("interval_hours"),
+            # KP-T7 — satuan + selang yang DIPAKAI pemicu, kunci job teknis, penerima & ambang untuk PT aktif
+            "interval_unit": interval_unit(job), "interval_value": interval_value(job, cfg),
+            "locked": jid in LOCKED_JOBS, **(await job_policy(jid, entity_id)),
             "schedule_label": schedule_label(job, cfg),
             "next_run": _next_run(jid),
             "last_run_at": last.get("started_at", ""),

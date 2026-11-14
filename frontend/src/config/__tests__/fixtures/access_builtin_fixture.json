@@ -3381,6 +3381,7 @@
   ],
   "settings-cfg-approval": [
    "rnd",
+   "scheduler",
    "settings"
   ],
   "settings-cfg-documents": [
@@ -3388,6 +3389,7 @@
   ],
   "settings-cfg-finance": [
    "entity",
+   "scheduler",
    "settings"
   ],
   "settings-cfg-hr": [
@@ -3395,6 +3397,7 @@
    "settings"
   ],
   "settings-cfg-notify": [
+   "scheduler",
    "settings"
   ],
   "settings-cfg-purchasing": [
@@ -3403,6 +3406,7 @@
   ],
   "settings-cfg-rnd": [
    "rnd",
+   "scheduler",
    "settings"
   ],
   "settings-cfg-sales": [

@@ -98,8 +98,11 @@ export function formatValue(entry, value) {
       const opt = (entry.options || []).find((o) => o.value === value);
       return opt ? opt.label : String(value);
     }
-    case "list":
-      return Array.isArray(value) ? value.join(" · ") : String(value);
+    case "list": {
+      // KP-T7 — daftar berpilihan ditampilkan dengan labelnya (bukan id teknis)
+      const lbl = (v) => (entry.options || []).find((o) => o.value === v)?.label ?? v;
+      return Array.isArray(value) ? value.map(lbl).join(" · ") : String(value);
+    }
     case "table":
       return Array.isArray(value)
         ? `${value.length} baris`
