@@ -47,14 +47,14 @@ Papan kerja agen pelaksana. Aturan mengubahnya: `00_ATURAN_EKSEKUSI.md` §5. Uru
 | 40 | KP-T2 | Kesiapan PT, wizard lanjutan, dan arsip PT | KP-T1 | siap |  |  |  |
 | 41 | KP-T5 | Penomoran dokumen per PT | KP-T1 | siap |  |  | Titik henti H3 untuk dokumen lama |
 | 42 | KP-T6 | Dokumen dan cetak per PT | KP-T1 | siap |  |  |  |
-| 43 | KP-T7 | Pengingat dan penjadwal yang bisa diatur | KF-T1 | siap |  |  |  |
+| 43 | KP-T7 | Pengingat dan penjadwal yang bisa diatur | KF-T1 | selesai | `0a91095` | [KP-T7](../reviews/2026-11-13/hasil/KP-T7.md) |  |
 | 44 | KP-T8 | Rahasia dan perangkat | KF-T1 | siap |  |  |  |
 | 45 | MN-T1 | Menu keuangan dan SDM: pindah dan kelompokkan | PR-T5 | siap |  |  |  |
 | 46 | KP-T9 | Susunan hub Pengaturan | MN-T1, KF-T4 | menunggu |  |  |  |
 | 47 | PK-18 | Penanda gagal dan panel untuk semua jenis dokumen | PK-05, PK-06 tervalidasi | menunggu |  |  |  |
 | 48 | PK-19 | Kwitansi, deposit, selisih bayar: satu fungsi alokasi | PK-18 | menunggu |  |  |  |
 | 49 | PK-20 | Kas dibuat lewat satu pembuat | PK-18 | menunggu |  |  |  |
-| 50 | PK-21 | Rekonsiliasi bank satu mekanisme | PK-15 | siap |  |  |  |
+| 50 | PK-21 | Rekonsiliasi bank satu mekanisme | PK-15 | selesai | `3c459d9` | [PK-21](../reviews/2026-11-13/hasil/PK-21.md) |  |
 | 51 | PK-22 | Penggajian: tanggal buku, hitung ulang, batal, setoran kewajiban | PK-18 | menunggu |  |  |  |
 | 52 | PK-23 | Aset tetap | PK-06, PK-18 | menunggu |  |  |  |
 | 53 | PK-24 | Kas kecil dan pertanggungjawaban | PK-18 | menunggu |  |  |  |

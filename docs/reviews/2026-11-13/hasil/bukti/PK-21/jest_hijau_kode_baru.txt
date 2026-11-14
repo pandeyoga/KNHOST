@@ -1,0 +1,4 @@
+PASS src/features/__tests__/pk15ReconHolding.test.js
+PASS src/features/__tests__/pk21RekonsiliasiSatuMekanisme.test.js
+PASS src/features/__tests__/pk16ScopeBanner.test.js
+Tests:       44 passed, 44 total

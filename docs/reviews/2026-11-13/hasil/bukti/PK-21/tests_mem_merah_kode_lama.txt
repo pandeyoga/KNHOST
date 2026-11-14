@@ -1,0 +1,39 @@
+tests_mem/test_PK21_rekonsiliasi_satu_mekanisme.py::test_PK21_U1_cocok_satu_satu PASSED [  6%]
+tests_mem/test_PK21_rekonsiliasi_satu_mekanisme.py::test_PK21_U2_lepas PASSED [ 12%]
+tests_mem/test_PK21_rekonsiliasi_satu_mekanisme.py::test_PK21_U3_lepas_kedua_ditolak FAILED [ 18%]
+tests_mem/test_PK21_rekonsiliasi_satu_mekanisme.py::test_PK21_U3b_salinan_basi_tidak_mengurangi_dua_kali FAILED [ 25%]
+tests_mem/test_PK21_rekonsiliasi_satu_mekanisme.py::test_PK21_U4_gabung_lalu_lepas_sebagian PASSED [ 31%]
+tests_mem/test_PK21_rekonsiliasi_satu_mekanisme.py::test_PK21_U5_bangun_ulang_tanpa_perubahan FAILED [ 37%]
+tests_mem/test_PK21_rekonsiliasi_satu_mekanisme.py::test_PK21_U6_bangun_ulang_memperbaiki_angka_rusak FAILED [ 43%]
+tests_mem/test_PK21_rekonsiliasi_satu_mekanisme.py::test_PK21_U7_tanda_manual_410 FAILED [ 50%]
+tests_mem/test_PK21_rekonsiliasi_satu_mekanisme.py::test_PK21_U8_tanpa_izin_403 PASSED [ 56%]
+tests_mem/test_PK21_rekonsiliasi_satu_mekanisme.py::test_PK21_U9_lepas_biaya_bank PASSED [ 62%]
+tests_mem/test_PK21_rekonsiliasi_satu_mekanisme.py::test_PK21_U9b_pembalik_gagal_baris_tetap_tercocok PASSED [ 68%]
+tests_mem/test_PK21_rekonsiliasi_satu_mekanisme.py::test_PK21_U10_titipan FAILED [ 75%]
+tests_mem/test_PK21_rekonsiliasi_satu_mekanisme.py::test_PK21_U11_invarian FAILED [ 81%]
+tests_mem/test_PK21_rekonsiliasi_satu_mekanisme.py::test_PK21_X1_pembaca_menurunkan_dari_angka FAILED [ 87%]
+tests_mem/test_PK21_rekonsiliasi_satu_mekanisme.py::test_PK21_X2_invarian_tanda_manual_lama_peringatan FAILED [ 93%]
+tests_mem/test_PK21_rekonsiliasi_satu_mekanisme.py::test_PK21_X3_batal_kas_bertanda_manual_tidak_buntu FAILED [100%]
+E       assert (200 == 409)
+E       assert 200 == 409
+E       AttributeError: module 'services.bank_recon_service' has no attribute 'rebuild_reconciled'
+E       AttributeError: module 'services.bank_recon_service' has no attribute 'rebuild_reconciled'
+E       assert 200 == 410
+E       AttributeError: module 'services.bank_recon_service' has no attribute 'rebuild_reconciled'
+E       AssertionError: 
+E       assert None
+E       assert True is False
+E       AssertionError: 
+E       assert (["  [FAIL] INV-BNK-02: 1 transaksi buku tidak seimbang dgn tautannya  ['CASH-PK21-K3: tercatat 100000.0 vs Σ alokasi 300000.0']"] and '[PASS]' in "  [FAIL] INV-BNK-02: 1 transaksi buku tidak seimbang dgn tautannya  ['CASH-PK21-K3: tercatat 100000.0 vs Σ alokasi 300000.0']")
+E       assert 409 == 200
+FAILED tests_mem/test_PK21_rekonsiliasi_satu_mekanisme.py::test_PK21_U3_lepas_kedua_ditolak
+FAILED tests_mem/test_PK21_rekonsiliasi_satu_mekanisme.py::test_PK21_U3b_salinan_basi_tidak_mengurangi_dua_kali
+FAILED tests_mem/test_PK21_rekonsiliasi_satu_mekanisme.py::test_PK21_U5_bangun_ulang_tanpa_perubahan
+FAILED tests_mem/test_PK21_rekonsiliasi_satu_mekanisme.py::test_PK21_U6_bangun_ulang_memperbaiki_angka_rusak
+FAILED tests_mem/test_PK21_rekonsiliasi_satu_mekanisme.py::test_PK21_U7_tanda_manual_410
+FAILED tests_mem/test_PK21_rekonsiliasi_satu_mekanisme.py::test_PK21_U10_titipan
+FAILED tests_mem/test_PK21_rekonsiliasi_satu_mekanisme.py::test_PK21_U11_invarian
+FAILED tests_mem/test_PK21_rekonsiliasi_satu_mekanisme.py::test_PK21_X1_pembaca_menurunkan_dari_angka
+FAILED tests_mem/test_PK21_rekonsiliasi_satu_mekanisme.py::test_PK21_X2_invarian_tanda_manual_lama_peringatan
+FAILED tests_mem/test_PK21_rekonsiliasi_satu_mekanisme.py::test_PK21_X3_batal_kas_bertanda_manual_tidak_buntu
+=================== 10 failed, 6 passed, 1 warning in 1.77s ====================

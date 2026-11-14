@@ -1,0 +1,5 @@
+== KP-T7 jadwal penjadwal — mode lapor (2 job tersimpan) ==
+Job bersatuan menit yang menyimpan selang jam (tidak pernah dipakai): 1 (belum dibuang — mode lapor)
+  - turn_scan (Pemberitahuan Giliran Anda): tersimpan 4 jam; pemicu memakai 5 menit (tidak berubah)
+(mode lapor; jalankan dengan --apply untuk membuang sisa selang jam)
+1 passed, 1 warning in 1.19s

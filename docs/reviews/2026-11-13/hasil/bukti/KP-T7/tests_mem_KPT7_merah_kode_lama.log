@@ -1,0 +1,264 @@
+FFFFFFFFFFFFFFFFFF.                                                      [100%]
+=================================== FAILURES ===================================
+E   AssertionError: assert 30.0 == 120
+     +  where 30.0 = _menit(<test_KPT7_pengingat._Penjadwal object at 0x7ff8a3beb410>, 'reservation_expiry')
+---------------------------- Captured stdout setup -----------------------------
+[bootstrap] SANDI AWAL akun seed (ganti segera): z9d3qZgXAOCt7h4N
+[bootstrap] FASE F lifecycle backfill: 5 produk distempel 'produksi'
+[bootstrap] kebersihan data: 5 record dirapikan {'customers': 3, 'suppliers': 0, 'users': 0, 'hr_employees': 2, 'makloons': 0}
+------------------------------ Captured log setup ------------------------------
+WARNING  scheduler:scheduler_service.py:455 [_apply_jobs] efek samping gagal diabaikan: 'ar_overdue'
+WARNING  scheduler:scheduler_service.py:455 [_apply_jobs] efek samping gagal diabaikan: 'ap_due'
+WARNING  scheduler:scheduler_service.py:455 [_apply_jobs] efek samping gagal diabaikan: 'depreciation_due'
+WARNING  scheduler:scheduler_service.py:455 [_apply_jobs] efek samping gagal diabaikan: 'budget_alert'
+WARNING  scheduler:scheduler_service.py:455 [_apply_jobs] efek samping gagal diabaikan: 'production_stalled'
+WARNING  scheduler:scheduler_service.py:455 [_apply_jobs] efek samping gagal diabaikan: 'ops_stalled'
+WARNING  scheduler:scheduler_service.py:455 [_apply_jobs] efek samping gagal diabaikan: 'reservation_expiry'
+WARNING  scheduler:scheduler_service.py:455 [_apply_jobs] efek samping gagal diabaikan: 'event_scan'
+WARNING  scheduler:scheduler_service.py:455 [_apply_jobs] efek samping gagal diabaikan: 'escalation_scan'
+WARNING  scheduler:scheduler_service.py:455 [_apply_jobs] efek samping gagal diabaikan: 'content_reminder'
+WARNING  scheduler:scheduler_service.py:455 [_apply_jobs] efek samping gagal diabaikan: 'daily_digest'
+WARNING  scheduler:scheduler_service.py:455 [_apply_jobs] efek samping gagal diabaikan: 'po_arrival'
+WARNING  scheduler:scheduler_service.py:455 [_apply_jobs] efek samping gagal diabaikan: 'backorder_ready'
+WARNING  scheduler:scheduler_service.py:455 [_apply_jobs] efek samping gagal diabaikan: 'ar_due_soon'
+WARNING  scheduler:scheduler_service.py:455 [_apply_jobs] efek samping gagal diabaikan: 'penalty_accrual'
+WARNING  scheduler:scheduler_service.py:455 [_apply_jobs] efek samping gagal diabaikan: 'finance_case_scan'
+WARNING  scheduler:scheduler_service.py:455 [_apply_jobs] efek samping gagal diabaikan: 'contra_bon_reminder'
+WARNING  scheduler:scheduler_service.py:455 [_apply_jobs] efek samping gagal diabaikan: 'interco_settlement_reminder'
+WARNING  scheduler:scheduler_service.py:455 [_apply_jobs] efek samping gagal diabaikan: 'period_unlock_auto_close'
+WARNING  scheduler:scheduler_service.py:455 [_apply_jobs] efek samping gagal diabaikan: 'rnd_sla_escalation'
+WARNING  scheduler:scheduler_service.py:455 [_apply_jobs] efek samping gagal diabaikan: 'approval_backlog_reminder'
+WARNING  scheduler:scheduler_service.py:455 [_apply_jobs] efek samping gagal diabaikan: 'inventory_drift_watch'
+WARNING  scheduler:scheduler_service.py:455 [_apply_jobs] efek samping gagal diabaikan: 'saga_lock_watch'
+WARNING  scheduler:scheduler_service.py:455 [_apply_jobs] efek samping gagal diabaikan: 'printer_stuck_watch'
+WARNING  scheduler:scheduler_service.py:455 [_apply_jobs] efek samping gagal diabaikan: 'rfid_reader_health_watch'
+WARNING  scheduler:scheduler_service.py:455 [_apply_jobs] efek samping gagal diabaikan: 'rfid_gate_txn_retry'
+WARNING  scheduler:scheduler_service.py:455 [_apply_jobs] efek samping gagal diabaikan: 'rfid_evidence_retention'
+WARNING  scheduler:scheduler_service.py:455 [_apply_jobs] efek samping gagal diabaikan: 'turn_scan'
+WARNING  scheduler:scheduler_service.py:455 [_apply_jobs] efek samping gagal diabaikan: 'ai_fact_sync'
+WARNING  scheduler:scheduler_service.py:455 [_apply_jobs] efek samping gagal diabaikan: 'ai_fact_nightly'
+WARNING  scheduler:scheduler_service.py:455 [_apply_jobs] efek samping gagal diabaikan: 'ai_schedule_dispatch'
+WARNING  scheduler:scheduler_service.py:455 [_apply_jobs] efek samping gagal diabaikan: 'ai_snapshot_daily'
+WARNING  scheduler:scheduler_service.py:455 [_apply_jobs] efek samping gagal diabaikan: 'ai_maintenance'
+WARNING  scheduler:scheduler_service.py:455 [_apply_jobs] efek samping gagal diabaikan: 'ai_prewarm'
+WARNING  scheduler:scheduler_service.py:455 [_apply_jobs] efek samping gagal diabaikan: 'interco_payment_reminder'
+WARNING  scheduler:scheduler_service.py:455 [_apply_jobs] efek samping gagal diabaikan: 'return_supplier_deadline_reminder'
+WARNING  scheduler:scheduler_service.py:455 [_apply_jobs] efek samping gagal diabaikan: 'export_schedule_dispatch'
+WARNING  scheduler:scheduler_service.py:455 [_apply_jobs] efek samping gagal diabaikan: 'entity_tax_status_due'
+WARNING  scheduler:scheduler_service.py:455 [_apply_jobs] efek samping gagal diabaikan: 'ai_anomaly_scan'
+WARNING  scheduler:scheduler_service.py:455 [_apply_jobs] efek samping gagal diabaikan: 'config_apply_due'
+<scratch>/kpt7/head/backend/tests_mem/test_KPT7_pengingat.py:120: AssertionError: assert 30.0 == 120
+E   AssertionError: {"jobs":{"ar_overdue":{"enabled":true,"hour":8,"minute":0},"ap_due":{"enabled":true,"hour":8,"minute":5},"depreciation_due":{"enabled":true,"hour":8,"minute":10},"budget_alert":{"enabled":true,"hour":8,"minute":15},"production_stalled":{"enabled":true,"hour":8,"minute":20},"ops_stalled":{"enabled":true,"interval_hours":4},"reservation_expiry":{"enabled":true,"interval_minutes":30,"interval_hours":2},"event_scan":{"enabled":true,"interval_hours":4},"escalation_scan":{"enabled":true,"interval_hours":2},"content_reminder":{"enabled":true,"interval_minutes":15},"daily_digest":{
+    assert 200 == 400
+     +  where 200 = <Response [200 OK]>.status_code
+------------------------------ Captured log setup ------------------------------
+WARNING  scheduler:scheduler_service.py:455 [_apply_jobs] efek samping gagal diabaikan: 'ar_overdue'
+WARNING  scheduler:scheduler_service.py:455 [_apply_jobs] efek samping gagal diabaikan: 'ap_due'
+WARNING  scheduler:scheduler_service.py:455 [_apply_jobs] efek samping gagal diabaikan: 'depreciation_due'
+WARNING  scheduler:scheduler_service.py:455 [_apply_jobs] efek samping gagal diabaikan: 'budget_alert'
+WARNING  scheduler:scheduler_service.py:455 [_apply_jobs] efek samping gagal diabaikan: 'production_stalled'
+WARNING  scheduler:scheduler_service.py:455 [_apply_jobs] efek samping gagal diabaikan: 'ops_stalled'
+WARNING  scheduler:scheduler_service.py:455 [_apply_jobs] efek samping gagal diabaikan: 'reservation_expiry'
+WARNING  scheduler:scheduler_service.py:455 [_apply_jobs] efek samping gagal diabaikan: 'event_scan'
+WARNING  scheduler:scheduler_service.py:455 [_apply_jobs] efek samping gagal diabaikan: 'escalation_scan'
+WARNING  scheduler:scheduler_service.py:455 [_apply_jobs] efek samping gagal diabaikan: 'content_reminder'
+WARNING  scheduler:scheduler_service.py:455 [_apply_jobs] efek samping gagal diabaikan: 'daily_digest'
+WARNING  scheduler:scheduler_service.py:455 [_apply_jobs] efek samping gagal diabaikan: 'po_arrival'
+WARNING  scheduler:scheduler_service.py:455 [_apply_jobs] efek samping gagal diabaikan: 'backorder_ready'
+WARNING  scheduler:scheduler_service.py:455 [_apply_jobs] efek samping gagal diabaikan: 'ar_due_soon'
+WARNING  scheduler:scheduler_service.py:455 [_apply_jobs] efek samping gagal diabaikan: 'penalty_accrual'
+WARNING  scheduler:scheduler_service.py:455 [_apply_jobs] efek samping gagal diabaikan: 'finance_case_scan'
+WARNING  scheduler:scheduler_service.py:455 [_apply_jobs] efek samping gagal diabaikan: 'contra_bon_reminder'
+WARNING  scheduler:scheduler_service.py:455 [_apply_jobs] efek samping gagal diabaikan: 'interco_settlement_reminder'
+WARNING  scheduler:scheduler_service.py:455 [_apply_jobs] efek samping gagal diabaikan: 'period_unlock_auto_close'
+WARNING  scheduler:scheduler_service.py:455 [_apply_jobs] efek samping gagal diabaikan: 'rnd_sla_escalation'
+WARNING  scheduler:scheduler_service.py:455 [_apply_jobs] efek samping gagal diabaikan: 'approval_backlog_reminder'
+WARNING  scheduler:scheduler_service.py:455 [_apply_jobs] efek samping gagal diabaikan: 'inventory_drift_watch'
+WARNING  scheduler:scheduler_service.py:455 [_apply_jobs] efek samping gagal diabaikan: 'saga_lock_watch'
+WARNING  scheduler:scheduler_service.py:455 [_apply_jobs] efek samping gagal diabaikan: 'printer_stuck_watch'
+WARNING  scheduler:scheduler_service.py:455 [_apply_jobs] efek samping gagal diabaikan: 'rfid_reader_health_watch'
+WARNING  scheduler:scheduler_service.py:455 [_apply_jobs] efek samping gagal diabaikan: 'rfid_gate_txn_retry'
+WARNING  scheduler:scheduler_service.py:455 [_apply_jobs] efek samping gagal diabaikan: 'rfid_evidence_retention'
+WARNING  scheduler:scheduler_service.py:455 [_apply_jobs] efek samping gagal diabaikan: 'turn_scan'
+WARNING  scheduler:scheduler_service.py:455 [_apply_jobs] efek samping gagal diabaikan: 'ai_fact_sync'
+WARNING  scheduler:scheduler_service.py:455 [_apply_jobs] efek samping gagal diabaikan: 'ai_fact_nightly'
+WARNING  scheduler:scheduler_service.py:455 [_apply_jobs] efek samping gagal diabaikan: 'ai_schedule_dispatch'
+WARNING  scheduler:scheduler_service.py:455 [_apply_jobs] efek samping gagal diabaikan: 'ai_snapshot_daily'
+WARNING  scheduler:scheduler_service.py:455 [_apply_jobs] efek samping gagal diabaikan: 'ai_maintenance'
+WARNING  scheduler:scheduler_service.py:455 [_apply_jobs] efek samping gagal diabaikan: 'ai_prewarm'
+WARNING  scheduler:scheduler_service.py:455 [_apply_jobs] efek samping gagal diabaikan: 'interco_payment_reminder'
+WARNING  scheduler:scheduler_service.py:455 [_apply_jobs] efek samping gagal diabaikan: 'return_supplier_deadline_reminder'
+WARNING  scheduler:scheduler_service.py:455 [_apply_jobs] efek samping gagal diabaikan: 'export_schedule_dispatch'
+WARNING  scheduler:scheduler_service.py:455 [_apply_jobs] efek samping gagal diabaikan: 'entity_tax_status_due'
+WARNING  scheduler:scheduler_service.py:455 [_apply_jobs] efek samping gagal diabaikan: 'ai_anomaly_scan'
+WARNING  scheduler:scheduler_service.py:455 [_apply_jobs] efek samping gagal diabaikan: 'config_apply_due'
+<scratch>/kpt7/head/backend/tests_mem/test_KPT7_pengingat.py:136: AssertionError: {"jobs":{"ar_overdue":{"enabled":true,"hour":8,"minute":0},"ap_due":{"enabled":true,"hour":8,"minute":5},"depreciation_due":{"enabled":true,"hour":8,"minute":10},"budget_alert":{"enabled":true,"hour":8,"minute":15},"production_stalled":{"enabled":true,"hour":8,"minute":20},"ops_stalled":{"enabled":true,"interval_hours":4},"reservation_expiry":{"enabled":true,"interval_minutes":30,"interval_hours":2},"event_scan":{"enabled":true,"interval_hours":4},"escalation_scan":{"enabled":true,"interval_hours":2},"content_rem
+E   AssertionError: {"jobs":{"ar_overdue":{"enabled":true,"hour":8,"minute":0},"ap_due":{"enabled":true,"hour":8,"minute":5},"depreciation_due":{"enabled":true,"hour":8,"minute":10},"budget_alert":{"enabled":true,"hour":8,"minute":15},"production_stalled":{"enabled":true,"hour":8,"minute":20},"ops_stalled":{"enabled":true,"interval_hours":4},"reservation_expiry":{"enabled":true,"interval_minutes":30},"event_scan":{"enabled":true,"interval_hours":4},"escalation_scan":{"enabled":true,"interval_hours":2},"content_reminder":{"enabled":true,"interval_minutes":15},"daily_digest":{"enabled":true,"hou
+    assert 200 == 400
+     +  where 200 = <Response [200 OK]>.status_code
+------------------------------ Captured log setup ------------------------------
+WARNING  scheduler:scheduler_service.py:455 [_apply_jobs] efek samping gagal diabaikan: 'ar_overdue'
+WARNING  scheduler:scheduler_service.py:455 [_apply_jobs] efek samping gagal diabaikan: 'ap_due'
+WARNING  scheduler:scheduler_service.py:455 [_apply_jobs] efek samping gagal diabaikan: 'depreciation_due'
+WARNING  scheduler:scheduler_service.py:455 [_apply_jobs] efek samping gagal diabaikan: 'budget_alert'
+WARNING  scheduler:scheduler_service.py:455 [_apply_jobs] efek samping gagal diabaikan: 'production_stalled'
+WARNING  scheduler:scheduler_service.py:455 [_apply_jobs] efek samping gagal diabaikan: 'ops_stalled'
+WARNING  scheduler:scheduler_service.py:455 [_apply_jobs] efek samping gagal diabaikan: 'reservation_expiry'
+WARNING  scheduler:scheduler_service.py:455 [_apply_jobs] efek samping gagal diabaikan: 'event_scan'
+WARNING  scheduler:scheduler_service.py:455 [_apply_jobs] efek samping gagal diabaikan: 'escalation_scan'
+WARNING  scheduler:scheduler_service.py:455 [_apply_jobs] efek samping gagal diabaikan: 'content_reminder'
+WARNING  scheduler:scheduler_service.py:455 [_apply_jobs] efek samping gagal diabaikan: 'daily_digest'
+WARNING  scheduler:scheduler_service.py:455 [_apply_jobs] efek samping gagal diabaikan: 'po_arrival'
+WARNING  scheduler:scheduler_service.py:455 [_apply_jobs] efek samping gagal diabaikan: 'backorder_ready'
+WARNING  scheduler:scheduler_service.py:455 [_apply_jobs] efek samping gagal diabaikan: 'ar_due_soon'
+WARNING  scheduler:scheduler_service.py:455 [_apply_jobs] efek samping gagal diabaikan: 'penalty_accrual'
+WARNING  scheduler:scheduler_service.py:455 [_apply_jobs] efek samping gagal diabaikan: 'finance_case_scan'
+WARNING  scheduler:scheduler_service.py:455 [_apply_jobs] efek samping gagal diabaikan: 'contra_bon_reminder'
+WARNING  scheduler:scheduler_service.py:455 [_apply_jobs] efek samping gagal diabaikan: 'interco_settlement_reminder'
+WARNING  scheduler:scheduler_service.py:455 [_apply_jobs] efek samping gagal diabaikan: 'period_unlock_auto_close'
+WARNING  scheduler:scheduler_service.py:455 [_apply_jobs] efek samping gagal diabaikan: 'rnd_sla_escalation'
+WARNING  scheduler:scheduler_service.py:455 [_apply_jobs] efek samping gagal diabaikan: 'approval_backlog_reminder'
+WARNING  scheduler:scheduler_service.py:455 [_apply_jobs] efek samping gagal diabaikan: 'inventory_drift_watch'
+WARNING  scheduler:scheduler_service.py:455 [_apply_jobs] efek samping gagal diabaikan: 'saga_lock_watch'
+WARNING  scheduler:scheduler_service.py:455 [_apply_jobs] efek samping gagal diabaikan: 'printer_stuck_watch'
+WARNING  scheduler:scheduler_service.py:455 [_apply_jobs] efek samping gagal diabaikan: 'rfid_reader_health_watch'
+WARNING  scheduler:scheduler_service.py:455 [_apply_jobs] efek samping gagal diabaikan: 'rfid_gate_txn_retry'
+WARNING  scheduler:scheduler_service.py:455 [_apply_jobs] efek samping gagal diabaikan: 'rfid_evidence_retention'
+WARNING  scheduler:scheduler_service.py:455 [_apply_jobs] efek samping gagal diabaikan: 'turn_scan'
+WARNING  scheduler:scheduler_service.py:455 [_apply_jobs] efek samping gagal diabaikan: 'ai_fact_sync'
+WARNING  scheduler:scheduler_service.py:455 [_apply_jobs] efek samping gagal diabaikan: 'ai_fact_nightly'
+WARNING  scheduler:scheduler_service.py:455 [_apply_jobs] efek samping gagal diabaikan: 'ai_schedule_dispatch'
+WARNING  scheduler:scheduler_service.py:455 [_apply_jobs] efek samping gagal diabaikan: 'ai_snapshot_daily'
+WARNING  scheduler:scheduler_service.py:455 [_apply_jobs] efek samping gagal diabaikan: 'ai_maintenance'
+WARNING  scheduler:scheduler_service.py:455 [_apply_jobs] efek samping gagal diabaikan: 'ai_prewarm'
+WARNING  scheduler:scheduler_service.py:455 [_apply_jobs] efek samping gagal diabaikan: 'interco_payment_reminder'
+WARNING  scheduler:scheduler_service.py:455 [_apply_jobs] efek samping gagal diabaikan: 'return_supplier_deadline_reminder'
+WARNING  scheduler:scheduler_service.py:455 [_apply_jobs] efek samping gagal diabaikan: 'export_schedule_dispatch'
+WARNING  scheduler:scheduler_service.py:455 [_apply_jobs] efek samping gagal diabaikan: 'entity_tax_status_due'
+WARNING  scheduler:scheduler_service.py:455 [_apply_jobs] efek samping gagal diabaikan: 'ai_anomaly_scan'
+WARNING  scheduler:scheduler_service.py:455 [_apply_jobs] efek samping gagal diabaikan: 'config_apply_due'
+<scratch>/kpt7/head/backend/tests_mem/test_KPT7_pengingat.py:146: AssertionError: {"jobs":{"ar_overdue":{"enabled":true,"hour":8,"minute":0},"ap_due":{"enabled":true,"hour":8,"minute":5},"depreciation_due":{"enabled":true,"hour":8,"minute":10},"budget_alert":{"enabled":true,"hour":8,"minute":15},"production_stalled":{"enabled":true,"hour":8,"minute":20},"ops_stalled":{"enabled":true,"interval_hours":4},"reservation_expiry":{"enabled":true,"interval_minutes":30},"event_scan":{"enabled":true,"interval_hours":4},"escalation_scan":{"enabled":true,"interval_hours":2},"content_reminder":{"enabled":t
+E   FileNotFoundError: [Errno 2] No such file or directory: '<scratch>/kpt7/head/scripts/migrate_kpt7_jadwal.py'
+------------------------------ Captured log setup ------------------------------
+WARNING  scheduler:scheduler_service.py:455 [_apply_jobs] efek samping gagal diabaikan: 'ar_overdue'
+WARNING  scheduler:scheduler_service.py:455 [_apply_jobs] efek samping gagal diabaikan: 'ap_due'
+WARNING  scheduler:scheduler_service.py:455 [_apply_jobs] efek samping gagal diabaikan: 'depreciation_due'
+WARNING  scheduler:scheduler_service.py:455 [_apply_jobs] efek samping gagal diabaikan: 'budget_alert'
+WARNING  scheduler:scheduler_service.py:455 [_apply_jobs] efek samping gagal diabaikan: 'production_stalled'
+WARNING  scheduler:scheduler_service.py:455 [_apply_jobs] efek samping gagal diabaikan: 'ops_stalled'
+WARNING  scheduler:scheduler_service.py:455 [_apply_jobs] efek samping gagal diabaikan: 'reservation_expiry'
+WARNING  scheduler:scheduler_service.py:455 [_apply_jobs] efek samping gagal diabaikan: 'event_scan'
+WARNING  scheduler:scheduler_service.py:455 [_apply_jobs] efek samping gagal diabaikan: 'escalation_scan'
+WARNING  scheduler:scheduler_service.py:455 [_apply_jobs] efek samping gagal diabaikan: 'content_reminder'
+WARNING  scheduler:scheduler_service.py:455 [_apply_jobs] efek samping gagal diabaikan: 'daily_digest'
+WARNING  scheduler:scheduler_service.py:455 [_apply_jobs] efek samping gagal diabaikan: 'po_arrival'
+WARNING  scheduler:scheduler_service.py:455 [_apply_jobs] efek samping gagal diabaikan: 'backorder_ready'
+WARNING  scheduler:scheduler_service.py:455 [_apply_jobs] efek samping gagal diabaikan: 'ar_due_soon'
+WARNING  scheduler:scheduler_service.py:455 [_apply_jobs] efek samping gagal diabaikan: 'penalty_accrual'
+WARNING  scheduler:scheduler_service.py:455 [_apply_jobs] efek samping gagal diabaikan: 'finance_case_scan'
+WARNING  scheduler:scheduler_service.py:455 [_apply_jobs] efek samping gagal diabaikan: 'contra_bon_reminder'
+WARNING  scheduler:scheduler_service.py:455 [_apply_jobs] efek samping gagal diabaikan: 'interco_settlement_reminder'
+WARNING  scheduler:scheduler_service.py:455 [_apply_jobs] efek samping gagal diabaikan: 'period_unlock_auto_close'
+WARNING  scheduler:scheduler_service.py:455 [_apply_jobs] efek samping gagal diabaikan: 'rnd_sla_escalation'
+WARNING  scheduler:scheduler_service.py:455 [_apply_jobs] efek samping gagal diabaikan: 'approval_backlog_reminder'
+WARNING  scheduler:scheduler_service.py:455 [_apply_jobs] efek samping gagal diabaikan: 'inventory_drift_watch'
+WARNING  scheduler:scheduler_service.py:455 [_apply_jobs] efek samping gagal diabaikan: 'saga_lock_watch'
+WARNING  scheduler:scheduler_service.py:455 [_apply_jobs] efek samping gagal diabaikan: 'printer_stuck_watch'
+WARNING  scheduler:scheduler_service.py:455 [_apply_jobs] efek samping gagal diabaikan: 'rfid_reader_health_watch'
+WARNING  scheduler:scheduler_service.py:455 [_apply_jobs] efek samping gagal diabaikan: 'rfid_gate_txn_retry'
+WARNING  scheduler:scheduler_service.py:455 [_apply_jobs] efek samping gagal diabaikan: 'rfid_evidence_retention'
+WARNING  scheduler:scheduler_service.py:455 [_apply_jobs] efek samping gagal diabaikan: 'turn_scan'
+WARNING  scheduler:scheduler_service.py:455 [_apply_jobs] efek samping gagal diabaikan: 'ai_fact_sync'
+WARNING  scheduler:scheduler_service.py:455 [_apply_jobs] efek samping gagal diabaikan: 'ai_fact_nightly'
+WARNING  scheduler:scheduler_service.py:455 [_apply_jobs] efek samping gagal diabaikan: 'ai_schedule_dispatch'
+WARNING  scheduler:scheduler_service.py:455 [_apply_jobs] efek samping gagal diabaikan: 'ai_snapshot_daily'
+WARNING  scheduler:scheduler_service.py:455 [_apply_jobs] efek samping gagal diabaikan: 'ai_maintenance'
+WARNING  scheduler:scheduler_service.py:455 [_apply_jobs] efek samping gagal diabaikan: 'ai_prewarm'
+WARNING  scheduler:scheduler_service.py:455 [_apply_jobs] efek samping gagal diabaikan: 'interco_payment_reminder'
+WARNING  scheduler:scheduler_service.py:455 [_apply_jobs] efek samping gagal diabaikan: 'return_supplier_deadline_reminder'
+WARNING  scheduler:scheduler_service.py:455 [_apply_jobs] efek samping gagal diabaikan: 'export_schedule_dispatch'
+WARNING  scheduler:scheduler_service.py:455 [_apply_jobs] efek samping gagal diabaikan: 'entity_tax_status_due'
+WARNING  scheduler:scheduler_service.py:455 [_apply_jobs] efek samping gagal diabaikan: 'ai_anomaly_scan'
+WARNING  scheduler:scheduler_service.py:455 [_apply_jobs] efek samping gagal diabaikan: 'config_apply_due'
+<frozen importlib._bootstrap_external>:1130: FileNotFoundError: [Errno 2] No such file or directory: '<scratch>/kpt7/head/scripts/migrate_kpt7_jadwal.py'
+E   AssertionError: {"detail":"Setting 'notif.ap_due_soon_days' tidak ada di registry"}
+    assert 404 == 200
+     +  where 404 = <Response [404 Not Found]>.status_code
+<scratch>/kpt7/head/backend/tests_mem/test_KPT7_pengingat.py:80: AssertionError: {"detail":"Setting 'notif.ap_due_soon_days' tidak ada di registry"}
+E   AssertionError: {"detail":"Setting 'notif.reminder_recipients' tidak ada di registry"}
+    assert 404 == 200
+     +  where 404 = <Response [404 Not Found]>.status_code
+<scratch>/kpt7/head/backend/tests_mem/test_KPT7_pengingat.py:80: AssertionError: {"detail":"Setting 'notif.reminder_recipients' tidak ada di registry"}
+E   AssertionError: {"detail":"Setting 'notif.reminder_recipients' tidak ada di registry"}
+    assert 404 == 400
+     +  where 404 = <Response [404 Not Found]>.status_code
+<scratch>/kpt7/head/backend/tests_mem/test_KPT7_pengingat.py:255: AssertionError: {"detail":"Setting 'notif.reminder_recipients' tidak ada di registry"}
+E   AssertionError: {"detail":"Setting 'notif.ar_due_soon_offsets' tidak ada di registry"}
+    assert 404 == 200
+     +  where 404 = <Response [404 Not Found]>.status_code
+<scratch>/kpt7/head/backend/tests_mem/test_KPT7_pengingat.py:80: AssertionError: {"detail":"Setting 'notif.ar_due_soon_offsets' tidak ada di registry"}
+E   AssertionError: {"detail":"Setting 'notif.escalation_chain' tidak ada di registry"}
+    assert 404 == 200
+     +  where 404 = <Response [404 Not Found]>.status_code
+<scratch>/kpt7/head/backend/tests_mem/test_KPT7_pengingat.py:80: AssertionError: {"detail":"Setting 'notif.escalation_chain' tidak ada di registry"}
+E   AssertionError: {"detail":"Setting 'notif.wa_pic_number' tidak ada di registry"}
+    assert 404 == 200
+     +  where 404 = <Response [404 Not Found]>.status_code
+<scratch>/kpt7/head/backend/tests_mem/test_KPT7_pengingat.py:80: AssertionError: {"detail":"Setting 'notif.wa_pic_number' tidak ada di registry"}
+E   AssertionError: {"detail": "Setting 'notif.ap_due_soon_days' tidak ada di registry"}
+    assert 404 == 403
+     +  where 404 = <Response [404 Not Found]>.status_code
+<scratch>/kpt7/head/backend/tests_mem/test_KPT7_pengingat.py:348: AssertionError: {"detail": "Setting 'notif.ap_due_soon_days' tidak ada di registry"}
+E   KeyError: "Setting 'notif.ap_due_soon_days' tidak ada di registry"
+<scratch>/kpt7/head/backend/config_registry.py:278: KeyError: "Setting 'notif.ap_due_soon_days' tidak ada di registry"
+E   AssertionError: {"detail":"Setting 'notif.wo_released_stale_days' tidak ada di registry"}
+    assert 404 == 200
+     +  where 404 = <Response [404 Not Found]>.status_code
+<scratch>/kpt7/head/backend/tests_mem/test_KPT7_pengingat.py:80: AssertionError: {"detail":"Setting 'notif.wo_released_stale_days' tidak ada di registry"}
+E   AssertionError: {"detail":"Setting 'notif.po_arrival_lookback_hours' tidak ada di registry"}
+    assert 404 == 200
+     +  where 404 = <Response [404 Not Found]>.status_code
+<scratch>/kpt7/head/backend/tests_mem/test_KPT7_pengingat.py:80: AssertionError: {"detail":"Setting 'notif.po_arrival_lookback_hours' tidak ada di registry"}
+E   AssertionError: {"detail":"Setting 'notif.turn_stale_days' tidak ada di registry"}
+    assert 404 == 200
+     +  where 404 = <Response [404 Not Found]>.status_code
+<scratch>/kpt7/head/backend/tests_mem/test_KPT7_pengingat.py:80: AssertionError: {"detail":"Setting 'notif.turn_stale_days' tidak ada di registry"}
+E   AssertionError: {"detail":"Setting 'notif.campaign_budget_near_pct' tidak ada di registry"}
+    assert 404 == 200
+     +  where 404 = <Response [404 Not Found]>.status_code
+<scratch>/kpt7/head/backend/tests_mem/test_KPT7_pengingat.py:80: AssertionError: {"detail":"Setting 'notif.campaign_budget_near_pct' tidak ada di registry"}
+E   AssertionError: {"detail":"Setting 'approval.reminder_max_listed' tidak ada di registry"}
+    assert 404 == 200
+     +  where 404 = <Response [404 Not Found]>.status_code
+<scratch>/kpt7/head/backend/tests_mem/test_KPT7_pengingat.py:80: AssertionError: {"detail":"Setting 'approval.reminder_max_listed' tidak ada di registry"}
+E   ImportError: cannot import name 'reminder_policy' from 'services' (<scratch>/kpt7/head/backend/services/__init__.py)
+<scratch>/kpt7/head/backend/tests_mem/test_KPT7_pengingat.py:566: ImportError: cannot import name 'reminder_policy' from 'services' (<scratch>/kpt7/head/backend/services/__init__.py)
+=============================== warnings summary ===============================
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+==================================== PASSES ====================================
+___________________ test_KPT7_U5_penerima_bawaan_sama_persis ___________________
+---------------------------- Captured stdout setup -----------------------------
+[bootstrap] FASE F lifecycle backfill: 5 produk distempel 'produksi'
+[bootstrap] kebersihan data: 5 record dirapikan {'customers': 3, 'suppliers': 0, 'users': 0, 'hr_employees': 2, 'makloons': 0}
+=========================== short test summary info ============================
+PASSED tests_mem/test_KPT7_setara.py::test_KPT7_U5_penerima_bawaan_sama_persis
+FAILED tests_mem/test_KPT7_pengingat.py::test_KPT7_U1_selang_menit_disimpan_dan_dipakai_pemicu
+FAILED tests_mem/test_KPT7_pengingat.py::test_KPT7_U2_job_menit_menolak_selang_jam
+FAILED tests_mem/test_KPT7_pengingat.py::test_KPT7_U3_job_jam_dan_job_terkunci_menolak
+FAILED tests_mem/test_KPT7_pengingat.py::test_KPT7_U4_migrasi_membuang_sisa_selang_jam
+FAILED tests_mem/test_KPT7_pengingat.py::test_KPT7_U6_ambang_hutang_per_pt - ...
+FAILED tests_mem/test_KPT7_pengingat.py::test_KPT7_U7_penerima_pemegang_izin_per_pt
+FAILED tests_mem/test_KPT7_pengingat.py::test_KPT7_U8_peran_tak_dikenal_ditolak
+FAILED tests_mem/test_KPT7_pengingat.py::test_KPT7_U9_hari_pengingat_piutang
+FAILED tests_mem/test_KPT7_pengingat.py::test_KPT7_U10_rantai_eskalasi_dari_pengaturan
+FAILED tests_mem/test_KPT7_pengingat.py::test_KPT7_U11_nomor_pic_per_pt - Ass...
+FAILED tests_mem/test_KPT7_pengingat.py::test_KPT7_U12_wewenang_dari_izin - A...
+FAILED tests_mem/test_KPT7_pengingat.py::test_KPT7_U13_putaran_t1_config_19_kunci
+FAILED tests_mem/test_KPT7_pengingat.py::test_KPT7_U15_perintah_kerja_dan_tugas_gudang_per_pt
+FAILED tests_mem/test_KPT7_pengingat.py::test_KPT7_U16_jendela_barang_po_dan_batas_per_jalan
+FAILED tests_mem/test_KPT7_pengingat.py::test_KPT7_U17_giliran_konten_dan_toleransi_per_pt
+FAILED tests_mem/test_KPT7_pengingat.py::test_KPT7_U18_anggaran_kampanye_label_dan_selisih_persediaan
+FAILED tests_mem/test_KPT7_pengingat.py::test_KPT7_U19_pengingat_persetujuan_tenggat_desain_peran_siaran
+FAILED tests_mem/test_KPT7_pengingat.py::test_KPT7_U20_pengingat_lintas_pt_hanya_tabel_grup
+18 failed, 1 passed, 1 warning in 2.75s

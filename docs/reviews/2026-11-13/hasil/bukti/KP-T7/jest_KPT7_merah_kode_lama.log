@@ -1,0 +1,166 @@
+  console.error
+    React.jsx: type is invalid -- expected a string (for built-in components) or a class/function (for composite components) but got: undefined. You likely forgot to export your component from the file it's defined in, or you might have mixed up default and named imports.
+
+    [0m [90m 41 |[39m test([32m"U14 — job bersatuan menit: isian 'menit', nilai awal = selang pemicu, simpan mengirim interval_minutes"[39m[33m,[39m [36masync[39m () [33m=>[39m {
+     [90m 42 |[39m   [36mconst[39m simpan [33m=[39m jest[33m.[39mfn()[33m;[39m
+    [31m[1m>[22m[39m[90m 43 |[39m   [36mconst[39m host [33m=[39m [36mawait[39m pasang([33m<[39m[33mScheduleEditor[39m job[33m=[39m{[33mRESERVASI[39m} onSave[33m=[39m{simpan} saving[33m=[39m{[36mfalse[39m} [33m/[39m[33m>[39m)[33m;[39m
+     [90m    |[39m                             [31m[1m^[22m[39m
+     [90m 44 |[39m   [36mconst[39m isian [33m=[39m q(host[33m,[39m [32m"job-interval-reservation_expiry"[39m)[33m;[39m
+     [90m 45 |[39m   expect(isian[33m.[39mvalue)[33m.[39mtoBe([32m"30"[39m)[33m;[39m
+     [90m 46 |[39m   expect(isian[33m.[39mgetAttribute([32m"max"[39m))[33m.[39mtoBe([32m"1440"[39m)[33m;[39m[0m
+
+      at jsxDEVImpl (../fe/node_modules/react/cjs/react-jsx-dev-runtime.development.js:479:17)
+      at Object.<anonymous>.process.env.NODE_ENV.exports.jsxDEV (../fe/node_modules/react/cjs/react-jsx-dev-runtime.development.js:658:14)
+      at Object.<anonymous> (src/features/admin/scheduler/__tests__/kpt7Penjadwal.test.js:43:29)
+      at TestScheduler.scheduleTests (../fe/node_modules/@jest/core/build/TestScheduler.js:333:13)
+      at runJest (../fe/node_modules/@jest/core/build/runJest.js:404:19)
+      at _run10000 (../fe/node_modules/@jest/core/build/cli/index.js:320:7)
+      at runCLI (../fe/node_modules/@jest/core/build/cli/index.js:173:3)
+
+  console.error
+    React.jsx: type is invalid -- expected a string (for built-in components) or a class/function (for composite components) but got: undefined. You likely forgot to export your component from the file it's defined in, or you might have mixed up default and named imports.
+
+    [0m [90m 53 |[39m test([32m"job bersatuan jam tetap 'jam' + interval_hours; job teknis hanya-baca"[39m[33m,[39m [36masync[39m () [33m=>[39m {
+     [90m 54 |[39m   [36mconst[39m simpan [33m=[39m jest[33m.[39mfn()[33m;[39m
+    [31m[1m>[22m[39m[90m 55 |[39m   [36mconst[39m host [33m=[39m [36mawait[39m pasang([33m<[39m[33mScheduleEditor[39m job[33m=[39m{{ id[33m:[39m [32m"ops_stalled"[39m[33m,[39m kind[33m:[39m [32m"interval"[39m[33m,[39m interval_unit[33m:[39m [32m"jam"[39m[33m,[39m
+     [90m    |[39m                             [31m[1m^[22m[39m
+     [90m 56 |[39m     interval_value[33m:[39m [35m4[39m[33m,[39m interval_hours[33m:[39m [35m4[39m }} onSave[33m=[39m{simpan} saving[33m=[39m{[36mfalse[39m} [33m/[39m[33m>[39m)[33m;[39m
+     [90m 57 |[39m   expect(q(host[33m,[39m [32m"job-interval-unit-ops_stalled"[39m)[33m.[39mtextContent)[33m.[39mtoBe([32m"jam"[39m)[33m;[39m
+     [90m 58 |[39m   expect(q(host[33m,[39m [32m"job-interval-ops_stalled"[39m)[33m.[39mgetAttribute([32m"max"[39m))[33m.[39mtoBe([32m"24"[39m)[33m;[39m[0m
+
+      at jsxDEVImpl (../fe/node_modules/react/cjs/react-jsx-dev-runtime.development.js:479:17)
+      at Object.<anonymous>.process.env.NODE_ENV.exports.jsxDEV (../fe/node_modules/react/cjs/react-jsx-dev-runtime.development.js:658:14)
+      at Object.<anonymous> (src/features/admin/scheduler/__tests__/kpt7Penjadwal.test.js:55:29)
+      at TestScheduler.scheduleTests (../fe/node_modules/@jest/core/build/TestScheduler.js:333:13)
+      at runJest (../fe/node_modules/@jest/core/build/runJest.js:404:19)
+      at _run10000 (../fe/node_modules/@jest/core/build/cli/index.js:320:7)
+      at runCLI (../fe/node_modules/@jest/core/build/cli/index.js:173:3)
+
+  console.error
+    React.jsx: type is invalid -- expected a string (for built-in components) or a class/function (for composite components) but got: undefined. You likely forgot to export your component from the file it's defined in, or you might have mixed up default and named imports.
+
+    [0m [90m 72 |[39m     { key[33m:[39m [32m"notif.max_alerts_per_run"[39m[33m,[39m label[33m:[39m [32m"Paling banyak peringatan per sekali jalan"[39m[33m,[39m value[33m:[39m [35m40[39m[33m,[39m
+     [90m 73 |[39m       unit[33m:[39m [32m"peringatan"[39m[33m,[39m text[33m:[39m [32m"40 peringatan"[39m[33m,[39m group[33m:[39m [32m"notifikasi"[39m }] }[33m;[39m
+    [31m[1m>[22m[39m[90m 74 |[39m   [36mconst[39m host [33m=[39m [36mawait[39m pasang([33m<[39m[33mtable[39m[33m>[39m[33m<[39m[33mtbody[39m[33m>[39m[33m<[39m[33mtr[39m[33m>[39m[33m<[39m[33mJobPolicyCells[39m job[33m=[39m{ap} canEdit [33m/[39m[33m>[39m[33m<[39m[33m/[39m[33mtr[39m[33m>[39m[33m<[39m[33m/[39m[33mtbody[39m[33m>[39m[33m<[39m[33m/[39m[33mtable[39m[33m>[39m)[33m;[39m
+     [90m    |[39m                                               [31m[1m^[22m[39m
+     [90m 75 |[39m   expect(q(host[33m,[39m [32m"job-recipients-ap_due"[39m)[33m.[39mtextContent)[33m.[39mtoBe([32m"ManajerUbah"[39m)[33m;[39m
+     [90m 76 |[39m   expect(q(host[33m,[39m [32m"job-thresholds-ap_due"[39m)[33m.[39mtextContent)[33m.[39mtoBe([32m"7 hari · 40 peringatanUbah"[39m)[33m;[39m
+     [90m 77 |[39m   [36mconst[39m dibuka [33m=[39m [][33m;[39m[0m
+
+      at jsxDEVImpl (../fe/node_modules/react/cjs/react-jsx-dev-runtime.development.js:479:17)
+      at Object.<anonymous>.process.env.NODE_ENV.exports.jsxDEV (../fe/node_modules/react/cjs/react-jsx-dev-runtime.development.js:658:14)
+      at Object.<anonymous> (src/features/admin/scheduler/__tests__/kpt7Penjadwal.test.js:74:47)
+      at TestScheduler.scheduleTests (../fe/node_modules/@jest/core/build/TestScheduler.js:333:13)
+      at runJest (../fe/node_modules/@jest/core/build/runJest.js:404:19)
+      at _run10000 (../fe/node_modules/@jest/core/build/cli/index.js:320:7)
+      at runCLI (../fe/node_modules/@jest/core/build/cli/index.js:173:3)
+
+FAIL src/features/admin/scheduler/__tests__/kpt7Penjadwal.test.js
+  ✕ U14 — job bersatuan menit: isian 'menit', nilai awal = selang pemicu, simpan mengirim interval_minutes (31 ms)
+  ✕ job bersatuan jam tetap 'jam' + interval_hours; job teknis hanya-baca (24 ms)
+  ✕ U14 — kolom Penerima & Ambang terisi untuk Hutang Supplier; Ubah membuka kuncinya; tanpa nilai = — (14 ms)
+  ✕ tabel penerima: kolom Peran = pilihan ganda (peran bawaan + peran kustom), mati bila cara = izin (45 ms)
+  ✕ daftar berpilihan (peran penerima WhatsApp): kotak centang + label, bukan id teknis (6 ms)
+
+  ● U14 — job bersatuan menit: isian 'menit', nilai awal = selang pemicu, simpan mengirim interval_minutes
+
+    Element type is invalid: expected a string (for built-in components) or a class/function (for composite components) but got: undefined. You likely forgot to export your component from the file it's defined in, or you might have mixed up default and named imports.
+
+      at createFiberFromTypeAndProps (../fe/node_modules/react-dom/cjs/react-dom-client.development.js:13350:28)
+      at createFiberFromElement (../fe/node_modules/react-dom/cjs/react-dom-client.development.js:13364:14)
+      at reconcileChildFibersImpl (../fe/node_modules/react-dom/cjs/react-dom-client.development.js:5238:31)
+      at ../fe/node_modules/react-dom/cjs/react-dom-client.development.js:5415:33
+      at reconcileChildren (../fe/node_modules/react-dom/cjs/react-dom-client.development.js:7739:13)
+      at beginWork (../fe/node_modules/react-dom/cjs/react-dom-client.development.js:9798:15)
+      at runWithFiberInDEV (../fe/node_modules/react-dom/cjs/react-dom-client.development.js:543:16)
+      at performUnitOfWork (../fe/node_modules/react-dom/cjs/react-dom-client.development.js:15052:22)
+      at workLoopSync (../fe/node_modules/react-dom/cjs/react-dom-client.development.js:14870:41)
+      at renderRootSync (../fe/node_modules/react-dom/cjs/react-dom-client.development.js:14850:11)
+      at performWorkOnRoot (../fe/node_modules/react-dom/cjs/react-dom-client.development.js:14384:44)
+      at performWorkOnRootViaSchedulerTask (../fe/node_modules/react-dom/cjs/react-dom-client.development.js:15931:7)
+      at flushActQueue (../fe/node_modules/react/cjs/react.development.js:862:34)
+      at ../fe/node_modules/react/cjs/react.development.js:1114:21
+
+  ● job bersatuan jam tetap 'jam' + interval_hours; job teknis hanya-baca
+
+    Element type is invalid: expected a string (for built-in components) or a class/function (for composite components) but got: undefined. You likely forgot to export your component from the file it's defined in, or you might have mixed up default and named imports.
+
+      at createFiberFromTypeAndProps (../fe/node_modules/react-dom/cjs/react-dom-client.development.js:13350:28)
+      at createFiberFromElement (../fe/node_modules/react-dom/cjs/react-dom-client.development.js:13364:14)
+      at reconcileChildFibersImpl (../fe/node_modules/react-dom/cjs/react-dom-client.development.js:5238:31)
+      at ../fe/node_modules/react-dom/cjs/react-dom-client.development.js:5415:33
+      at reconcileChildren (../fe/node_modules/react-dom/cjs/react-dom-client.development.js:7739:13)
+      at beginWork (../fe/node_modules/react-dom/cjs/react-dom-client.development.js:9798:15)
+      at runWithFiberInDEV (../fe/node_modules/react-dom/cjs/react-dom-client.development.js:543:16)
+      at performUnitOfWork (../fe/node_modules/react-dom/cjs/react-dom-client.development.js:15052:22)
+      at workLoopSync (../fe/node_modules/react-dom/cjs/react-dom-client.development.js:14870:41)
+      at renderRootSync (../fe/node_modules/react-dom/cjs/react-dom-client.development.js:14850:11)
+      at performWorkOnRoot (../fe/node_modules/react-dom/cjs/react-dom-client.development.js:14384:44)
+      at performWorkOnRootViaSchedulerTask (../fe/node_modules/react-dom/cjs/react-dom-client.development.js:15931:7)
+      at flushActQueue (../fe/node_modules/react/cjs/react.development.js:862:34)
+      at ../fe/node_modules/react/cjs/react.development.js:1114:21
+
+  ● U14 — kolom Penerima & Ambang terisi untuk Hutang Supplier; Ubah membuka kuncinya; tanpa nilai = —
+
+    Element type is invalid: expected a string (for built-in components) or a class/function (for composite components) but got: undefined. You likely forgot to export your component from the file it's defined in, or you might have mixed up default and named imports.
+
+      at createFiberFromTypeAndProps (../fe/node_modules/react-dom/cjs/react-dom-client.development.js:13350:28)
+      at createFiberFromElement (../fe/node_modules/react-dom/cjs/react-dom-client.development.js:13364:14)
+      at reconcileChildFibersImpl (../fe/node_modules/react-dom/cjs/react-dom-client.development.js:5238:31)
+      at ../fe/node_modules/react-dom/cjs/react-dom-client.development.js:5415:33
+      at reconcileChildren (../fe/node_modules/react-dom/cjs/react-dom-client.development.js:7738:13)
+      at beginWork (../fe/node_modules/react-dom/cjs/react-dom-client.development.js:9951:13)
+      at runWithFiberInDEV (../fe/node_modules/react-dom/cjs/react-dom-client.development.js:543:16)
+      at performUnitOfWork (../fe/node_modules/react-dom/cjs/react-dom-client.development.js:15052:22)
+      at workLoopSync (../fe/node_modules/react-dom/cjs/react-dom-client.development.js:14870:41)
+      at renderRootSync (../fe/node_modules/react-dom/cjs/react-dom-client.development.js:14850:11)
+      at performWorkOnRoot (../fe/node_modules/react-dom/cjs/react-dom-client.development.js:14384:44)
+      at performWorkOnRootViaSchedulerTask (../fe/node_modules/react-dom/cjs/react-dom-client.development.js:15931:7)
+      at flushActQueue (../fe/node_modules/react/cjs/react.development.js:862:34)
+      at ../fe/node_modules/react/cjs/react.development.js:1114:21
+
+  ● tabel penerima: kolom Peran = pilihan ganda (peran bawaan + peran kustom), mati bila cara = izin
+
+    expect(received).toEqual(expected) // deep equality
+
+    - Expected  - 5
+    + Received  + 1
+
+    - Array [
+    -   "Manajer",
+    -   "Gudang",
+    -   "Bayar Tagihan",
+    - ]
+    + Array []
+
+    [0m [90m 108 |[39m   [36mconst[39m host [33m=[39m [36mawait[39m pasang([33m<[39m[33mSettingTableEditor[39m entry[33m=[39m{[33mPENERIMA[39m} value[33m=[39m{nilai} onChange[33m=[39m{ubah} disabled[33m=[39m{[36mfalse[39m} [33m/[39m[33m>[39m)[33m;[39m
+     [90m 109 |[39m   [36mconst[39m grup [33m=[39m q(host[33m,[39m [32m"cfg-input-notif.reminder_recipients-0-roles"[39m)[33m;[39m
+    [31m[1m>[22m[39m[90m 110 |[39m   expect([33mArray[39m[33m.[39m[36mfrom[39m(grup[33m.[39mquerySelectorAll([32m"label"[39m))[33m.[39mmap((l) [33m=>[39m l[33m.[39mtextContent))[33m.[39mtoEqual(
+     [90m     |[39m                                                                                [31m[1m^[22m[39m
+     [90m 111 |[39m     [[32m"Manajer"[39m[33m,[39m [32m"Gudang"[39m[33m,[39m [32m"Bayar Tagihan"[39m])[33m;[39m
+     [90m 112 |[39m   expect(q(host[33m,[39m [32m"cfg-input-notif.reminder_recipients-0-roles-manager"[39m)[33m.[39mchecked)[33m.[39mtoBe([36mtrue[39m)[33m;[39m
+     [90m 113 |[39m   [36mawait[39m act([36masync[39m () [33m=>[39m { q(host[33m,[39m [32m"cfg-input-notif.reminder_recipients-0-roles-warehouse"[39m)[33m.[39mclick()[33m;[39m })[33m;[39m[0m
+
+      at Object.<anonymous> (src/features/admin/scheduler/__tests__/kpt7Penjadwal.test.js:110:80)
+
+  ● daftar berpilihan (peran penerima WhatsApp): kotak centang + label, bukan id teknis
+
+    TypeError: Cannot read properties of null (reading 'click')
+
+    [0m [90m 121 |[39m   [36mconst[39m ubah [33m=[39m jest[33m.[39mfn()[33m;[39m
+     [90m 122 |[39m   [36mconst[39m host [33m=[39m [36mawait[39m pasang([33m<[39m[33mSettingEditor[39m entry[33m=[39m{entry} value[33m=[39m{[[32m"manager"[39m]} onChange[33m=[39m{ubah} disabled[33m=[39m{[36mfalse[39m} [33m/[39m[33m>[39m)[33m;[39m
+    [31m[1m>[22m[39m[90m 123 |[39m   [36mawait[39m act([36masync[39m () [33m=>[39m { q(host[33m,[39m [32m"cfg-input-notif.wa_broadcast_roles-warehouse"[39m)[33m.[39mclick()[33m;[39m })[33m;[39m
+     [90m     |[39m                                                                                  [31m[1m^[22m[39m
+     [90m 124 |[39m   expect(ubah)[33m.[39mtoHaveBeenLastCalledWith([[32m"manager"[39m[33m,[39m [32m"warehouse"[39m])[33m;[39m
+     [90m 125 |[39m   expect(formatValue(entry[33m,[39m [[32m"manager"[39m[33m,[39m [32m"warehouse"[39m]))[33m.[39mtoBe([32m"Manajer · Gudang"[39m)[33m;[39m
+     [90m 126 |[39m   expect(formatValue({ type[33m:[39m [32m"list"[39m }[33m,[39m [[33m-[39m[35m3[39m[33m,[39m [35m0[39m]))[33m.[39mtoBe([32m"-3 · 0"[39m)[33m;[39m[0m
+
+      at src/features/admin/scheduler/__tests__/kpt7Penjadwal.test.js:123:82
+      at Object.<anonymous>.process.env.NODE_ENV.exports.act (../fe/node_modules/react/cjs/react.development.js:1081:22)
+      at Object.<anonymous> (src/features/admin/scheduler/__tests__/kpt7Penjadwal.test.js:123:12)
+
+Test Suites: 1 failed, 1 total
+Tests:       5 failed, 5 total
+Snapshots:   0 total
+Time:        2.54 s
+Ran all test suites matching /kpt7Penjadwal/i.

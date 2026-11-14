@@ -1,0 +1,13 @@
+tests_mem/test_PK21_rekonsiliasi_satu_mekanisme.py::test_PK21_U1_cocok_satu_satu PASSED [ 25%]
+tests_mem/test_PK21_rekonsiliasi_satu_mekanisme.py::test_PK21_U2_lepas PASSED [ 50%]
+tests_mem/test_PK21_rekonsiliasi_satu_mekanisme.py::test_PK21_U4_gabung_lalu_lepas_sebagian PASSED [ 75%]
+tests_mem/test_PK21_rekonsiliasi_satu_mekanisme.py::test_PK21_U11_invarian FAILED [100%]
+>           assert baris and "[FAIL]" in baris[0] and "CASH-PK21-K2" in baris[0], keluar[-2000:]
+E               [PASS] INV-BNK-01: 7 baris mutasi berstatus sah & tautannya utuh  {'holding': 0, 'ignored': 0, 'matched': 1, 'unmatched': 6}
+E               [PASS] INV-BNK-02: 1 transaksi buku tertaut — Σ rekonsiliasi == Σ alokasi & tidak melebihi nominal
+E               [PASS] INV-BNK-03: saldo titipan 2-1950 = Rp 0 sama dgn 0 baris titipan belum teralokasi
+E               [PASS] INV-BNK-04: 0 baris biaya/bunga bank punya kas + jurnal aktif pada akun yang benar
+E               [PASS] INV-BNK-05: 0 alokasi titipan menunjuk pesanan yang ADA dan berada di entitas rekeningnya sendiri
+E           assert (['  [PASS] INV-BNK-02: 1 transaksi buku tertaut — Σ rekonsiliasi == Σ alokasi & tidak melebihi nominal'] and '[FAIL]' in '  [PASS] INV-BNK-02: 1 transaksi buku tertaut — Σ rekonsiliasi == Σ alokasi & tidak melebihi nominal')
+FAILED tests_mem/test_PK21_rekonsiliasi_satu_mekanisme.py::test_PK21_U11_invarian
+============ 1 failed, 3 passed, 12 deselected, 1 warning in 1.90s =============

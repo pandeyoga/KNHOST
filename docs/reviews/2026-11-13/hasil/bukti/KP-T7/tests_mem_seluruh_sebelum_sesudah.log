@@ -1,0 +1,4 @@
+== HEAD 69cc4e3 (sebelum) ==
+494 passed, 2 skipped, 3 xfailed, 11 warnings in 182.26s (0:03:02)
+== KP-T7 (sesudah) ==
+513 passed, 2 skipped, 3 xfailed, 11 warnings in 133.10s (0:02:13)

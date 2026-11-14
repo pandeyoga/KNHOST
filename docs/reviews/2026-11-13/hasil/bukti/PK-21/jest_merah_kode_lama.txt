@@ -1,0 +1,13 @@
+  ✕ U14: lencana baca-saja Belum / Sebagian / Terekonsiliasi; kolom tanpa tombol; tanpa kiriman tanda manual (145 ms)
+  ✕ U14: tautan Cocokkan di Rekonsiliasi Bank membuka tab rekonsiliasi untuk rekening ini (55 ms)
+  ✕ tautan hanya untuk pemegang cash.create (31 ms)
+  ✕ Rekonsiliasi Bank: preset rekening dipakai; lepas-cocok 409 → galat tampil dan daftar dimuat ulang (41 ms)
+  ✓ Rekonsiliasi Bank: galat 400 tidak memuat ulang (kendali) (38 ms)
+  ● U14: lencana baca-saja Belum / Sebagian / Terekonsiliasi; kolom tanpa tombol; tanpa kiriman tanda manual
+  ● U14: tautan Cocokkan di Rekonsiliasi Bank membuka tab rekonsiliasi untuk rekening ini
+  ● tautan hanya untuk pemegang cash.create
+    Received: null
+  ● Rekonsiliasi Bank: preset rekening dipakai; lepas-cocok 409 → galat tampil dan daftar dimuat ulang
+    Expected: true
+    Received: false
+Tests:       4 failed, 1 passed, 5 total

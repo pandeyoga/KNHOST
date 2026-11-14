@@ -1,0 +1,12 @@
+PASS src/features/admin/scheduler/__tests__/kpt7Penjadwal.test.js
+  ✓ U14 — job bersatuan menit: isian 'menit', nilai awal = selang pemicu, simpan mengirim interval_minutes (79 ms)
+  ✓ job bersatuan jam tetap 'jam' + interval_hours; job teknis hanya-baca (114 ms)
+  ✓ U14 — kolom Penerima & Ambang terisi untuk Hutang Supplier; Ubah membuka kuncinya; tanpa nilai = — (69 ms)
+  ✓ tabel penerima: kolom Peran = pilihan ganda (peran bawaan + peran kustom), mati bila cara = izin (42 ms)
+  ✓ daftar berpilihan (peran penerima WhatsApp): kotak centang + label, bukan id teknis (7 ms)
+
+Test Suites: 1 passed, 1 total
+Tests:       5 passed, 5 total
+Snapshots:   0 total
+Time:        1.097 s, estimated 2 s
+Ran all test suites matching /kpt7Penjadwal/i.
