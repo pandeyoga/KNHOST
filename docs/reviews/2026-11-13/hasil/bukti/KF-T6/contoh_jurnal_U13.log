@@ -1,0 +1,10 @@
+POST /api/gl/journal (pengusul): 202 {'status': 'menunggu_orang_kedua', 'proposal_id': 'jprop_fa0ce8d2d6f3'}
+journal_entries sesudah usulan: 0
+saldo 1-1100 / 3-1000 sesudah usulan: 100000000.0 100000000.0
+approve oleh pengusul: 403 Jurnal manual harus diputuskan orang lain: Anda yang mengajukannya. Minta rekan yang berwenang. Admin dapat mengubah aturan ini di Pengaturan › Persetujuan › Kontrol dua orang.
+approve oleh orang kedua: 200 jurnal KSC/JE-00005 posted created_by Uji manager 1 approved_by Uji manager 2
+  baris 1-1100 Kas Besar / Bank D 1000000.0 K 0.0
+  baris 3-1000 Modal Disetor D 0.0 K 1000000.0
+saldo 1-1100: 100,000,000.00 -> 101,000,000.00 (selisih 1,000,000.00)
+saldo 3-1000: 100,000,000.00 -> 101,000,000.00 (selisih 1,000,000.00)
+1 passed, 1 warning in 1.35s

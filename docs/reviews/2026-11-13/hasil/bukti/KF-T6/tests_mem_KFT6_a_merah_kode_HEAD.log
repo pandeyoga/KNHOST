@@ -1,0 +1,21 @@
+# Serah-terima (a): test_KFT6_kontrol.py di kode HEAD (modul baru belum ada)
+E       ModuleNotFoundError: No module named 'config_catalog_kontrol'
+tests_mem/test_KFT6_kontrol.py:28: ModuleNotFoundError
+E       ModuleNotFoundError: No module named 'services.dual_control'
+tests_mem/test_KFT6_kontrol.py:65: ModuleNotFoundError
+E       ModuleNotFoundError: No module named 'services.dual_control'
+tests_mem/test_KFT6_kontrol.py:74: ModuleNotFoundError
+E       ModuleNotFoundError: No module named 'services.dual_control'
+tests_mem/test_KFT6_kontrol.py:86: ModuleNotFoundError
+E       ModuleNotFoundError: No module named 'services.dual_control'
+tests_mem/test_KFT6_kontrol.py:108: ModuleNotFoundError
+E       AssertionError: {"detail":"Not Found"}
+tests_mem/test_KFT6_kontrol.py:130: AssertionError
+E       ModuleNotFoundError: No module named 'services.dual_control'
+tests_mem/test_KFT6_kontrol.py:146: ModuleNotFoundError
+E       AssertionError: {"detail":"Not Found"}
+tests_mem/test_KFT6_kontrol.py:170: AssertionError
+E       AssertionError: {"detail": "Not Found"}
+tests_mem/test_KFT6_kontrol.py:181: AssertionError
+tests_mem/test_KFT6_kontrol.py:202: AssertionError
+FAILED tests_mem/test_KFT6_kontrol.py::test_katalog_35_aksi_20_bernominal - M...

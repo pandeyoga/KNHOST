@@ -29,7 +29,7 @@ Papan kerja agen pelaksana. Aturan mengubahnya: `00_ATURAN_EKSEKUSI.md` §5. Uru
 | 22 | PK-46 | Tabel tarif PPh 21 dari pengaturan bertanggal berlaku | PK-02 | tahan | `c38ab35` | [PK-46](../reviews/2026-11-13/hasil/PK-46.md) | Titik henti H4: menunggu berkas pph21_terverifikasi.json (langkah 1–4 selesai) |
 | 23 | PR-T2 | Wewenang dari izin, bukan nama peran acuan | PR-T1, PR-T9 | selesai | `45a9d73` · `653e87e` | [PR-T2](../reviews/2026-11-13/hasil/PR-T2.md) |  |
 | 24 | PR-T3 | Endpoint yang hanya butuh login: dipilah dan dijaga | PR-T2 | siap |  |  |  |
-| 25 | KF-T6 | Kontrol dua orang yang bisa diatur per PT | KF-T1 | dikerjakan |  |  |  |
+| 25 | KF-T6 | Kontrol dua orang yang bisa diatur per PT | KF-T1 | selesai | `a053a94` · `4844181` | [KF-T6](../reviews/2026-11-13/hasil/KF-T6.md) | H3: migrasi sakelar lama berjalan saat proses awal — tinjau sebelum data nyata |
 | 26 | KP-T3 | Aturan Persetujuan: buang pilihan palsu, tampilkan jenjang efektif | KF-T1 | siap |  |  |  |
 | 27 | KP-T4 | Satu tabel kebijakan persetujuan untuk semua antrean | KF-T6, KP-T3, PR-T2 | menunggu |  |  |  |
 | 28 | PR-T4 | Sifat peran yang bisa diatur: cakupan data, beranda, penerima notifikasi | PR-T2 | siap |  |  |  |
@@ -71,7 +71,7 @@ Papan kerja agen pelaksana. Aturan mengubahnya: `00_ATURAN_EKSEKUSI.md` §5. Uru
 | 64 | PK-35 | Uang sebagai bilangan bulat; validator; penomoran jurnal | PK-34 | tahan |  |  | Titik henti H2, H3 |
 | 65 | PK-36 | Akun kontrol tertutup dari jurnal manual | PK-10 | siap |  |  |  |
 | 66 | PK-37 | Tanggal buku WIB dan kunci periode untuk dokumen | PK-11 | siap |  |  |  |
-| 67 | PK-38 | Satu batas wewenang; izin bayar terpisah; ganti termin | KF-T6, PR-T2 | menunggu |  |  |  |
+| 67 | PK-38 | Satu batas wewenang; izin bayar terpisah; ganti termin | KF-T6, PR-T2 | siap |  |  |  |
 | 68 | PK-39 | Anggaran | PK-18 | menunggu |  |  |  |
 | 69 | PK-40 | Pajak: keunikan, masa pajak, basis | PK-14 | siap |  |  |  |
 | 70 | PK-41 | Laporan pendukung | PK-19 | menunggu |  |  |  |

@@ -1,0 +1,20 @@
+# Penjaga statik — jumlah temuan (✗) HEAD 2965eb5 → keadaan (a) → (a)+(b). Dijalankan dari salinan kerja (ROOT relatif).
+verify_auth_coverage            28 → 28 → 28
+verify_access_catalog_nav        0 →  0 →  0
+verify_money_idempotency         0 →  0 →  0   (17 cek → 17+; PASS)
+verify_custom_modals             0 →  0 →  0
+verify_error_notice              0 →  0 →  0
+verify_page_tabs                 1 →  1 →  1   (InventoryStockView, garis dasar)
+verify_to_list_bound             6 →  6 →  6
+verify_ui_standard              23 →  — → 23   (baris identik dengan HEAD; sempat 30 di tengah (b), dibereskan: token kn-*, text-fs-*, tombol baku, FilterChips, exportSpec)
+verify_list_export               0 →  — →  0
+verify_atomic_claim              6 →  — →  6
+verify_numeric_bounds            3 →  — →  3
+verify_entity_label              3 →  — →  3
+verify_scope_guard / approval_queues / role_label / codebase_map / cross_entity: tetap (0 / PASS)
+audit_i18n_id                  113 →  — → 113
+audit_create_modal               6 →  — →  6   (baris identik)
+audit_config_wiring (salinan skrip, jalur /app → salinan kerja)   "9 kunci bermasalah + 2 editor ganda" → sama
+config_health (BACKEND = salinan kerja)   HEAD OK 302 / NOT_USED 4 / STALE 4 → OK 357 / NOT_USED 6 / STALE 4
+                                          (57 kunci kontrol.* OK; 2 sakelar lama NOT_USED; 4 STALE = returns.evidence_* garis dasar)
+verify_contract --all            exit 0 → exit 0 (journal_proposals didaftarkan di CANONICAL_COLLECTIONS)

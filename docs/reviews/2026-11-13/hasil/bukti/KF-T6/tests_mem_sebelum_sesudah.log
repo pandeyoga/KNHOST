@@ -1,0 +1,6 @@
+# HEAD 2965eb5 (sebelum)
+283 passed, 3 xfailed, 5 warnings in 23.94s
+# keadaan (a) saja
+293 passed, 3 xfailed (dicatat saat (a) selesai, sebelum (b))
+# (a)+(b)
+319 passed, 3 xfailed, 5 warnings in 32.20s

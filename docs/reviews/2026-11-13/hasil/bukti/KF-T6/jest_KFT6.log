@@ -1,0 +1,16 @@
+# Jest — kode baru
+navAccess: Tests:       12 passed, 12 total 
+serverAccessReach: Tests:       17 passed, 17 total 
+roleReach: Tests:       28 passed, 28 total 
+viewAliases: Tests:       31 passed, 31 total 
+kft6DualControl: Tests:       6 passed, 6 total 
+kft6JurnalDuaOrang: Tests:       4 passed, 4 total 
+pk16ScopeBanner: Tests:       36 passed, 36 total 
+phase4R5: Tests:       4 passed, 4 total 
+uatV3NavWarehouseMakloon: Tests:       5 passed, 5 total 
+pk12MoneyIntentA: Tests:       3 passed, 3 total 
+pk11ClosingNotEnded: Tests:       3 passed, 3 total 
+pk13MoneyConfirm: Tests:       15 passed, 15 total 
+# Jest — uji KF-T6 di frontend HEAD
+kft6DualControl (kode lama):   ● Test suite failed to run     Cannot find module '../settings/kontrol/DualControlView' from 'src/features/__tests__/kft6DualControl.test.js' 
+kft6JurnalDuaOrang (kode lama):   ● Test suite failed to run     Cannot find module '../finance/JournalProposalsPanel' from 'src/features/__tests__/kft6JurnalDuaOrang.test.js' 
