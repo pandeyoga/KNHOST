@@ -204,7 +204,7 @@ export default function AppViewRouter(props) {
       {activeView === "customer-credit" && <CustomerCreditView currentUser={user} selectedEntity={selectedEntity} onOpenDocument={openDocument} />}
       {activeView === "credit-overrides" && <><CreditOverridesPanel currentUser={user} /><CreditProfileRequestsPanel currentUser={user} /></>}
       {activeView === "bank-accounts" && <BankAccountsView selectedEntity={selectedEntity} currentUser={user} />}
-      {activeView === "bank-reconciliation" && <BankReconciliationView selectedEntity={selectedEntity} />}
+      {activeView === "bank-reconciliation" && <BankReconciliationView selectedEntity={selectedEntity} user={user} />}
       {activeView === "finance-cases" && <FinanceCasesView currentUser={user} selectedEntity={selectedEntity} entities={entities}
         focusCase={caseFocus || (focusDoc?.focus_type === "finance_case" && focusDoc.focus_id   // PK-44 — tautan dokumen → jalur kasus
           ? { caseId: focusDoc.focus_id, number: focusDoc.number || "", nonce: `doc:${focusDoc.nonce || focusDoc.focus_id}` } : null)}

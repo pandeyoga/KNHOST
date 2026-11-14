@@ -19,6 +19,26 @@ GL-01: registri `services/gl_mapping_registry.py` (54 kebutuhan) → koleksi `gl
 
 - 2026-11-13/14 (blueprint `docs/blueprint/`, laporan `docs/reviews/2026-11-13/hasil/`): PK-01 garis dasar gate + 256 temuan di tracker; PK-02 kerangka uji `backend/tests_mem/` (database tiruan); PK-05 bayar hutang lewat satu pintu niat bayar (`ap_payment_intents`): periksa tanpa tulis → niat → faktur → kas (rekening wajib, milik PT tagihan) → dokumen kontrabon berversi → jurnal tahan-gagal; kunci idempotensi pada bayar faktur/kontrabon; niat menggantung bisa dilanjutkan/dibatalkan dari form. PR-T9: izin peran bawaan tidak lagi ditimpa saat server start (cabut/atur ulang lama jadi migrasi sekali-jalan tercatat di `permission_settings.migrations_applied`); peran kustom ikut izin baru peran dasarnya bila modulnya belum diubah, selain itu tombol "Ikuti peran dasar". KF-T1: Pusat Pengaturan — ubah = izin kunci (`settings.manage`, `inventory/goods_receipt/makloon.configure`, `rnd.manage`, …; tanpa jalur nama peran), baca = `settings.view` atau yang boleh mengubah kunci itu; `GET /api/settings/effective` tanpa `settings.view` hanya memuat kunci `sensitif_baca=False`.
 - AG-T2 (2026-11-14): **Asisten Keuangan** di Tanya KN — mode "Keuangan" (izin `ai_finance.view` + sakelar per akun `users.ai_finance.enabled` yang dinyalakan pemegang `ai.configure`, K-45). 22 alat baca `fin_*` (`services/ai_finance_tools.py`) memanggil endpoint layar lewat pintu aplikasi sendiri (`services/ai_self_api.py`, sesi & PT permintaan, baca-saja) sehingga angka dan hak akses = layar; jawaban tidak dialirkan: pemeriksa angka sebagai penghalang (satu putaran ulang, lalu kalimat baku); bagian Sumber (PT, periode, catatan, "Buka di layar") disusun server; nama pihak disamarkan ke penyedia model (`services/ai_privacy.py`, pengaturan `ai.samarkan_nama` per PT, K-43), gaji selalu dibuang; alat tindakan ditolak sesudah alat teks bebas pada giliran yang sama. Set evaluasi 60 pertanyaan `tools/ai_eval/questions_keuangan_v1.json` (`run_eval.py --set keuangan`). Serah-terima (b): laporan asisten `income_statement`/`cash_position`/`cashflow_forecast` membaca endpoint layarnya (gerbang nama peran dicabut), izin metrik piutang/uang masuk/hutang/pendapatan diakui = izin layarnya (Sales, Admin Sales, MD, Admin Gudang tidak lagi melihat piutang lewat asisten), penyamaran nama juga di mode umum dan narasi templat.
+- 2026-11-14 PM-T3 (PM-02, PM-04; K-20, K-34, K-35 — kwitansi ber-rekening, terverifikasi bank): kwitansi menyimpan
+  **rekening penerima** + potretnya (`account_id`, `account_snapshot`), cara bayar kanonik (`payment_method_code`), **No.
+  referensi**, jatuh tempo giro, tautan bukti, dan tanda **Tidak sesuai instruksi** (`instruction_mismatch`, catatan alasan
+  wajib ≥ 5 huruf bila rekening ≠ rekening tujuan pesanan yang dialokasi). PERIKSA sebelum tulisan
+  (`ar_receipt_service.periksa_uang_masuk`): rekening = dikirim → rekening tujuan pesanan → bawaan PT untuk cara bayar
+  (PM-T1) → rekening tunggal (PK-20) → 409; rekening PT lain 400; bukan penerimaan / tidak melayani cara bayar 400;
+  referensi wajib bila `payment.wajib_nomor_referensi` (bawaan mati) menyala. Kas kwitansi lewat `create_cash` ke rekening
+  itu, ber-`counterparty_name` + keterangan memuat referensi & kode bayar; `_cash_routing` dihapus. Status
+  **Terverifikasi bank** (`bank_verified*`, `bank_line_ids`) diisi rekonsiliasi saat kas cocok penuh dan dicabut saat
+  dilepas; kwitansi terverifikasi (atau sebagian cocok) tidak bisa dibatalkan (409). Rekonsiliasi: impor menyimpan
+  `pay_code_hits` (kode bayar PM-T2 milik PT mutasi); skor — kode menunjuk pesanan kwitansi → nominal sama minimal ambang
+  otomatis, nominal beda usulan saja ("Kode bayar cocok, nominal berbeda Rp …"); kandidat hanya kas rekening mutasi (kas
+  lama tanpa rekening hanya di rekening tunggal PT-nya). Daftar `GET /api/ar-receipts?bank_verified=&older_than_days=&method=`
+  (batas `payment.hari_wajar_verifikasi_bank`, bawaan 3 hari; tunai & titipan tidak pernah "belum terverifikasi"). Pagar
+  kirim: `finance.tahan_kirim_dasar_bayar` = tercatat (bawaan) | terverifikasi. Layar: form kwitansi (desktop & HP)
+  Rekening penerima / No. referensi / Jatuh tempo giro / Bukti (tautan) / peringatan instruksi + konfirmasi nominal · PT ·
+  rekening; Riwayat Pembayaran kolom Rekening & No. referensi, lencana Tercatat · Terverifikasi bank · Tunai · Dianulir,
+  saringan "Belum terverifikasi lebih dari N hari"; Rekonsiliasi Bank lencana "Kode bayar {kode}" + **Catat kwitansi dari
+  mutasi ini** (form terisi, lalu mutasi ditautkan); cetakan kwitansi baru memuat Cara bayar, Rekening, No. referensi. Kas
+  kwitansi lama tanpa rekening: `scripts/backfill_receipt_accounts.py` (bawaan lapor; `--terapkan` = H3).
 - 2026-11-14 PK-23 (FY-01, FY-03, FY-04, FY-05, FY-20 — aset tetap): **perolehan** = PERIKSA (akun aset tetap aktif PT,
   sumber dana, periode) → aset `pending` (id dari kunci idempotensi) → kas keluar lewat `cash_ledger.create_cash`
   (sumber kas, ber-rekening, `ref_type="fixed_asset"`) → jurnal `post_durable`. **Sumber dana wajib** (`funding_source`:

@@ -1,5 +1,5 @@
 <!-- DIHASILKAN OTOMATIS oleh scripts/gen_codebase_map.py — JANGAN EDIT TANGAN -->
-<!-- Dihasilkan dari commit: 976aaca pada 2026-11-14 -->
+<!-- Dihasilkan dari commit: 07d55be pada 2026-11-14 -->
 # CODEBASE MAP — Kain Nusantara (dihasilkan otomatis)
 
 Peta ini dihitung dari kode oleh `scripts/gen_codebase_map.py`. Kalau angka di sini
@@ -32,7 +32,7 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 | `entity_scope.py` | 749 |
 | `pagination.py` | 145 |
 | `indexes.py` | 1001 |
-| `bootstrap.py` | 2159 |
+| `bootstrap.py` | 2162 |
 | `login_only_endpoints.py` | 81 |
 
 ### Fungsi utilitas — JANGAN re-implementasi
@@ -335,13 +335,13 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 | `approval_service.py` | 138 | services/approval_service.py — **ATURAN AMBANG PERSETUJUAN** (`approval_rules`). |
 | `ar_aging_service.py` | 529 | EPIC7-A — AR / Piutang Aging (read/derived report). |
 | `ar_allocation_service.py` | 407 | PK-19 (SL-05, SL-06, SL-08, SL-14, FX-05, FX-06, FX-07, IA-07) — SATU fungsi alokasi pembayaran pesanan. |
-| `ar_receipt_service.py` | 814 | AR Receipt service (EPIC3B) — Penerimaan pembayaran customer + aplikasi ke SO. |
+| `ar_receipt_service.py` | 858 | AR Receipt service (EPIC3B) — Penerimaan pembayaran customer + aplikasi ke SO. |
 | `ar_reduction_guard.py` | 105 | PK-38 (FX-10, K-11) — satu pintu pemeriksaan **pengurang piutang tanpa uang masuk**. |
 | `atomic_claim.py` | 63 | Klaim atomik dokumen induk untuk endpoint tulis multi-koleksi (T-01 Opsi B — saga). |
 | `atp_policy.py` | 127 | KN-D11 (audit 2026-09-21) — SATU definisi ATP (Available-to-Promise) untuk seluruh sistem. |
 | `backorder_service.py` | 232 | Backorder service (Sub-fase 1.6) — auto-fulfill lifecycle. |
 | `bank_account_change_service.py` | 307 | PM-T1 — membuat & mengubah rekening kas/bank: langsung berlaku, atau diajukan dan menunggu orang kedua. |
-| `bank_recon_service.py` | 1749 | FASE G-8 — REKONSILIASI BANK OTOMATIS (skor berbobot · split · aturan · titipan). |
+| `bank_recon_service.py` | 1770 | FASE G-8 — REKONSILIASI BANK OTOMATIS (skor berbobot · split · aturan · titipan). |
 | `bank_service.py` | 391 | Bank/Cash Accounts service (EPIC7-B) — multi-akun kas & bank + rekonsiliasi. |
 | `bank_statement_parser.py` | 536 | FASE G-8 — PARSER MUTASI BANK MULTI-FORMAT. |
 | `base_fabric.py` | 26 | Kain dasar — rujukan induk master data (mis. kain polos woven yang menjadi bahan printing). |
@@ -725,18 +725,18 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 
 | Fitur (`src/features/`) | Berkas | Baris |
 |---|---:|---:|
-| `__tests__` | 130 | 21124 |
+| `__tests__` | 131 | 21370 |
 | `admin` | 36 | 6981 |
 | `approvals` | 9 | 1720 |
 | `catalog` | 24 | 1459 |
 | `costing` | 1 | 150 |
-| `crm` | 22 | 4641 |
+| `crm` | 23 | 4941 |
 | `design` | 8 | 1585 |
 | `designer` | 8 | 1628 |
 | `desks` | 2 | 229 |
 | `documents` | 18 | 2580 |
 | `export` | 9 | 700 |
-| `finance` | 104 | 23807 |
+| `finance` | 104 | 23869 |
 | `home` | 5 | 1136 |
 | `hr` | 34 | 5799 |
 | `incentive` | 1 | 500 |

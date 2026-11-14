@@ -29,6 +29,9 @@ jest.mock("../../services/apiClient", () => ({
 }));
 jest.mock("../../utils/offlineQueue", () => ({ ...jest.requireActual("../../utils/offlineQueue"), offlinePost: (...a) => mockOfflinePost(...a) }));
 jest.mock("../sales/mobile/MobilePendingQueue", () => () => null);
+// PM-T3 — simpan kwitansi kini meminta konfirmasi (nominal · PT · rekening, `02` N5): disetujui di uji ini.
+jest.mock("../../services/confirmService", () => ({
+  ...jest.requireActual("../../services/confirmService"), askConfirm: () => Promise.resolve(true) }));
 jest.mock("../finance/payments/paymentApi", () => ({
   assessVariance: async () => ({ needs_decision: false, direction: "none" }),
   varianceMeta: async () => ({ reasons: [] }),
@@ -90,6 +93,8 @@ afterEach(() => {
 });
 
 const OPEN = [{ order_id: "so1", number: "KSC/SO-0001", outstanding: 50000 }, { order_id: "so2", number: "KSC/SO-0002", outstanding: 75000 }];
+// PM-T3 — kas kwitansi wajib berekening penerima (PT kwitansi, melayani cara bayar): satu rekening bawaan transfer.
+const PENERIMA = [{ id: "rek_a", name: "BCA KSC", bank_name: "BCA", account_number: "123", holder_name: "PT KSC", is_default: true }];
 
 test("Kwitansi HP = ARReceiptModal (FormModal): tanggal, deposit, mode alokasi, SO asal di atas & teralokasi", async () => {
   routeGet({ "/ar-receipts/open-orders": OPEN, "/ar-receipts/deposit": { deposit_balance: 20000 } });
@@ -108,7 +113,7 @@ test("Kwitansi HP = ARReceiptModal (FormModal): tanggal, deposit, mode alokasi, 
 });
 
 test("Kwitansi HP offline-aware lewat prop `offline`: antrean → pesan offline; online → onDone(pesan, kwitansi)", async () => {
-  routeGet({ "/ar-receipts/open-orders": OPEN, "/ar-receipts/deposit": {} });
+  routeGet({ "/ar-receipts/open-orders": OPEN, "/ar-receipts/deposit": {}, "/bank-accounts/receiving": PENERIMA });
   const onDone = jest.fn();
   mockOfflinePost.mockResolvedValueOnce({ queued: true, key: "k1" });
   const a = await mount(<MobileArReceipt customer={{ id: "c1", name: "Toko A" }} onClose={() => {}} onDone={onDone} />);
@@ -116,7 +121,8 @@ test("Kwitansi HP offline-aware lewat prop `offline`: antrean → pesan offline;
   expect(mockOfflinePost).toHaveBeenCalledTimes(1);
   const [url, body, opts] = mockOfflinePost.mock.calls[0];
   expect(url).toBe("/api/ar-receipts");
-  expect(body).toMatchObject({ customer_id: "c1", amount: 125000, method: "transfer", use_deposit_amount: 0 });
+  expect(body).toMatchObject({ customer_id: "c1", amount: 125000, method: "transfer", use_deposit_amount: 0,
+    account_id: "rek_a" });
   expect(body.receipt_date).toBeTruthy();                                    // tanggal terima ikut dikirim dari HP
   expect(opts.idempotencyKey).toBeTruthy();
   expect(onDone).toHaveBeenCalledWith(expect.stringMatching(/^Offline/), null);
@@ -129,7 +135,7 @@ test("Kwitansi HP offline-aware lewat prop `offline`: antrean → pesan offline;
 });
 
 test("Kwitansi desktop: FormModal, POST ber-Idempotency-Key (tanpa antrean offline), galat server di DALAM pop-up", async () => {
-  routeGet({ "/ar-receipts/open-orders": OPEN, "/ar-receipts/deposit": {} });
+  routeGet({ "/ar-receipts/open-orders": OPEN, "/ar-receipts/deposit": {}, "/bank-accounts/receiving": PENERIMA });
   mockPost.mockRejectedValueOnce({ response: { status: 400, data: { detail: "Periode terkunci" } } });
   const onError = jest.fn();
   const { host } = await mount(<ARReceiptModal customerId="c1" customerName="Toko A" onClose={() => {}} onDone={() => {}} onError={onError} />);

@@ -243,6 +243,26 @@ async def test_PMT3_U7_kode_bayar_mencocokkan_otomatis(klien, db, siap):
     SIMPAN["l7"] = lid
 
 
+async def test_PMT3_contoh_angka_U1_ke_U7(db, siap):
+    """Contoh angka laporan (`00` §9): kwitansi U1 → kas ber-rekening A → jurnal → mutasi tertaut (U7) → saldo rekening.
+
+    Hitung tangan: kas U1 Rp 1.500.000 di A (Dr 1-1100 Bank 1.500.000; Cr 1.500.000 ke pelanggan — pesanan fixture belum
+    dikirim → uang muka 2-1400 / piutang 1-1200 menurut ruang piutang pesanan, total kredit = 1.500.000). Saldo rekening A
+    sebelum U8 = saldo awal 0 + U1 1.500.000 + U4 1.234.000 = 2.734.000; saldo terekonsiliasi = 1.500.000 (hanya U1
+    yang cocok dengan mutasi)."""
+    from services import bank_service
+    kas = await db.cash_transactions.find_one({"id": SIMPAN["kas_u1"]}, {"_id": 0})
+    je = await db.journal_entries.find_one({"source_type": "cash_transaction", "source_id": kas["id"],
+                                            "status": {"$ne": "void"}}, {"_id": 0})
+    baris = [(b["account_code"], round(b.get("debit", 0), 2), round(b.get("credit", 0), 2)) for b in je["lines"]]
+    assert ("1-1100", 1_500_000, 0) in baris
+    assert round(sum(c for _, _, c in baris), 2) == 1_500_000 and je["entity_id"] == KSC
+    led = await bank_service.account_ledger(siap["A"])
+    assert led["balance"] == 2_734_000 and led["reconciled_balance"] == 1_500_000
+    SIMPAN["contoh"] = {"jurnal": baris, "saldo": led["balance"], "terekonsiliasi": led["reconciled_balance"]}
+    print("CONTOH", SIMPAN["contoh"])
+
+
 async def test_PMT3_U8_kode_bayar_nominal_berbeda_hanya_usulan(klien, db, siap):
     so = await _pesanan(db, siap, rek=siap["A"], kode="KN-8H4M3")
     r = await _kwitansi(klien, siap["h"], so, 1_500_000)
@@ -386,3 +406,147 @@ async def test_PMT3_cetak_kwitansi_memuat_cara_bayar_rekening_referensi(db, siap
             "customer_name": "X", "allocations": []}
     labels = [m["label"] for m in (await pdf_resolvers.resolve_ar_receipt(lama, db))["meta"]]
     assert labels == ["Metode", "Jumlah Diterima", "Dialokasikan", "Sisa/Deposit"]
+
+
+# ═════════════════════════════════ serah-terima (b) ═════════════════════════════════════════════════════════════
+# ── U6: kandidat hanya kas rekening mutasi ──────────────────────────────────────────────────────────────────────
+async def test_PMT3_U6_kandidat_mutasi_hanya_kas_rekening_itu(klien, db, siap):
+    # Kas U1 (rekening A) sudah dilepas di U9 → belum cocok lagi. Mutasi Rp 1.500.000 di A2 dan di A (tanpa kode bayar).
+    l_a2 = await _impor(klien, siap["h"], siap["A2"], _hari(0), 1_500_000, "SETORAN TOKO MAJU")
+    l_a = await _impor(klien, siap["h"], siap["A"], _hari(0), 1_500_000, "SETORAN TOKO MAJU")
+    r = await klien.get(f"{BASE_REC}/lines/{l_a2}/candidates", headers=siap["h"], params={"limit": 50})
+    assert r.status_code == 200, r.text
+    assert SIMPAN["kas_u1"] not in [c["id"] for c in r.json()["candidates"]]
+    r = await klien.get(f"{BASE_REC}/lines/{l_a}/candidates", headers=siap["h"], params={"limit": 50})
+    assert SIMPAN["kas_u1"] in [c["id"] for c in r.json()["candidates"]]
+    # Pencocokan manual ke rekening lain ditolak dengan pesan yang sama seperti dulu (validator tunggal).
+    r = await klien.post(f"{BASE_REC}/lines/{l_a2}/match", headers=siap["h"], json={"txn_id": SIMPAN["kas_u1"]})
+    assert r.status_code == 400 and "bukan milik buku rekening mutasi ini" in r.json()["detail"], r.text
+
+
+# ── U10: kas lama tanpa rekening hanya untuk rekening tunggal PT-nya ───────────────────────────────────────────
+async def test_PMT3_U10_kas_lama_tanpa_rekening_hanya_di_rekening_tunggal(klien, db, siap):
+    # FIXTURE — kas lama (sebelum PK-20) tanpa `account_id`, kas besar, Rp 1.212.000: satu di ent_ksc (tiga rekening
+    # bank: A, A2, C → tidak ada rekening tunggal), satu di ent_kanda (satu rekening bank: B).
+    for kid, ent in (("kas_pmt3_lama_ksc", KSC), ("kas_pmt3_lama_kanda", KANDA)):
+        await db.cash_transactions.insert_one({
+            "id": kid, "number": f"CASH-LAMA-{ent}", "cash_type": "kas_besar", "direction": "in",
+            "amount": 1_212_000.0, "category": "penagihan", "description": "Penerimaan lama Toko Maju",
+            "entity_id": ent, "ref_type": "ar_receipt", "ref_id": f"arc_lama_{ent}", "txn_date": _hari(0),
+            "status": "posted", "gl_status": "posted", "reconciled_amount": 0.0, "created_at": now_iso()})
+    hasil = {}
+    for kunci, rek, h in (("A", siap["A"], siap["h"]), ("A2", siap["A2"], siap["h"]), ("B", siap["B"], siap["h_kanda"])):
+        lid = await _impor(klien, h, rek, _hari(0), 1_212_000, f"SETORAN LAMA {kunci}")
+        r = await klien.get(f"{BASE_REC}/lines/{lid}/candidates", headers=h, params={"limit": 50})
+        assert r.status_code == 200, r.text
+        hasil[kunci] = {c["id"] for c in r.json()["candidates"]}
+    assert "kas_pmt3_lama_ksc" not in hasil["A"] | hasil["A2"]
+    assert "kas_pmt3_lama_kanda" not in hasil["A"] | hasil["A2"]
+    assert "kas_pmt3_lama_kanda" in hasil["B"]
+    assert "kas_pmt3_lama_ksc" not in hasil["B"]   # dulu ikut tampil lintas PT (cakupan pengguna, bukan PT rekening)
+
+
+# ── U11: dasar tahan-kirim ──────────────────────────────────────────────────────────────────────────────────────
+async def test_PMT3_U11_tahan_kirim_menunggu_verifikasi_bank(klien, db, siap):
+    from fastapi import HTTPException
+    from services import loading_check_service as lcs
+    await _setel(klien, siap["h"], K_DASAR, "terverifikasi", KSC)
+    try:
+        # Hitung tangan: CBD (DP 100 %) Rp 2.000.000 → wajib Rp 2.000.000; kwitansi transfer Rp 2.000.000 tercatat
+        # tetapi belum cocok mutasi → terbayar terverifikasi Rp 0 → kurang Rp 2.000.000.
+        so = await _pesanan(db, siap, sisa=2_000_000, rek=siap["A"], kode="KN-6P7Q8", term="CBD")
+        r = await _kwitansi(klien, siap["h"], so, 2_000_000)
+        assert r.status_code == 200, r.text
+        kas = await db.cash_transactions.find_one({"ref_type": "ar_receipt", "ref_id": r.json()["id"]}, {"_id": 0})
+        with pytest.raises(HTTPException) as e:
+            await lcs.dispatch_guard(so["id"])
+        assert e.value.status_code == 409 and "kurang Rp 2.000.000" in e.value.detail, e.value.detail
+        lid = await _impor(klien, siap["h"], siap["A"], _hari(0), 2_000_000, "TRSF KN-6P7Q8 TOKO MAJU")
+        r = await klien.post(f"{BASE_REC}/lines/{lid}/match", headers=siap["h"], json={"txn_id": kas["id"]})
+        assert r.status_code == 200, r.text
+        await lcs.dispatch_guard(so["id"])   # lolos
+        # PT lain (dasar bawaan "tercatat"): pesanan CBD serupa lolos tanpa pencocokan.
+        so_k = await _pesanan(db, siap, sisa=2_000_000, ent=KANDA, cus=siap["P_kanda"], term="CBD")
+        r = await _kwitansi(klien, siap["h_kanda"], so_k, 2_000_000)
+        assert r.status_code == 200, r.text
+        await lcs.dispatch_guard(so_k["id"])
+    finally:
+        await _setel(klien, siap["h"], K_DASAR, "tercatat", KSC)
+
+
+async def test_PMT3_U11b_tunai_dihitung_terbayar_pada_dasar_terverifikasi(klien, db, siap):
+    from services import dispatch_payment_gate as gate
+    await _setel(klien, siap["h"], K_DASAR, "terverifikasi", KSC)
+    try:
+        so = await _pesanan(db, siap, sisa=750_000, term="CBD")
+        r = await _kwitansi(klien, siap["h"], so, 750_000, method="cash")
+        assert r.status_code == 200, r.text
+        assert r.json()["account_id"] == siap["K"]
+        st = await gate.evaluate(await db.sales_orders.find_one({"id": so["id"]}, {"_id": 0}))
+        assert st["basis"] == "terverifikasi" and st["paid"] == 750_000 and not st["blocked"], st
+    finally:
+        await _setel(klien, siap["h"], K_DASAR, "tercatat", KSC)
+
+
+# ── U16: skrip isi-ulang rekening kas kwitansi lama ───────────────────────────────────────────────────────────
+async def test_PMT3_U16_isi_rekening_kwitansi_lama(db, siap, capsys):
+    import importlib.util
+    from pathlib import Path
+    from services import ar_receipt_service as ars
+    # FIXTURE — kwitansi + kas lama tanpa rekening: ent_kanda (rekening bank tunggal B) dan ent_ksc (bank ganda).
+    for ent in (KANDA, KSC):
+        rid, kid = f"arc_pmt3_u16_{ent}", f"kas_pmt3_u16_{ent}"
+        await db.ar_receipts.insert_one({"id": rid, "number": f"AR-U16-{ent}", "entity_id": ent, "amount": 300_000,
+                                         "method": "transfer", "status": "posted", "cash_txn_id": kid,
+                                         "customer_id": "cus_x", "receipt_date": _hari(30)})
+        await db.cash_transactions.insert_one({
+            "id": kid, "number": f"CASH-U16-{ent}", "cash_type": "kas_besar", "direction": "in", "amount": 300_000.0,
+            "entity_id": ent, "ref_type": "ar_receipt", "ref_id": rid, "status": "posted", "txn_date": _hari(30),
+            "created_at": now_iso()})
+    hasil = await ars.isi_rekening_kwitansi_lama(tulis=True)
+    diisi = {r["cash_id"]: r for r in hasil["diisi"]}
+    assert diisi["kas_pmt3_u16_ent_kanda"]["account_id"] == siap["B"]
+    assert "kas_pmt3_u16_ent_ksc" in {r["cash_id"] for r in hasil["diputus_orang"]}
+    kas_k = await db.cash_transactions.find_one({"id": "kas_pmt3_u16_ent_kanda"}, {"_id": 0})
+    rc_k = await db.ar_receipts.find_one({"id": "arc_pmt3_u16_ent_kanda"}, {"_id": 0})
+    assert kas_k["account_id"] == siap["B"] and rc_k["account_id"] == siap["B"]
+    assert rc_k["account_snapshot"]["account_number"] == "987-654-3210"
+    kas_s = await db.cash_transactions.find_one({"id": "kas_pmt3_u16_ent_ksc"}, {"_id": 0})
+    assert not kas_s.get("account_id")
+    # Putaran kedua: tidak ada perubahan; kas PT ganda tetap tercantum.
+    kedua = await ars.isi_rekening_kwitansi_lama(tulis=True)
+    assert kedua["diubah"] == 0 and "kas_pmt3_u16_ent_kanda" not in {r["cash_id"] for r in kedua["diisi"]}
+    assert "kas_pmt3_u16_ent_ksc" in {r["cash_id"] for r in kedua["diputus_orang"]}
+    # Skrip: bawaan = lapor saja (tidak menulis), keluaran menyebut kas yang perlu diputus orang.
+    await db.cash_transactions.update_one({"id": "kas_pmt3_u16_ent_kanda"}, {"$set": {"account_id": ""}})
+    spec = importlib.util.spec_from_file_location(
+        "pmt3_isi", Path(__file__).resolve().parents[2] / "scripts" / "backfill_receipt_accounts.py")
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    assert await mod.jalankan(["--dry-run"]) == 0
+    out = capsys.readouterr().out
+    assert "CASH-U16-ent_ksc" in out and "Mode lapor" in out
+    assert not (await db.cash_transactions.find_one({"id": "kas_pmt3_u16_ent_kanda"}, {"_id": 0})).get("account_id")
+
+
+# ── Layar rekonsiliasi: lencana kode bayar & "Catat kwitansi dari mutasi ini" ───────────────────────────────────
+async def test_PMT3_daftar_mutasi_memuat_kode_bayar_dan_tanda_kwitansi(klien, db, siap):
+    so = await _pesanan(db, siap, sisa=990_000, rek=siap["A"], kode="KN-5R6S7")
+    lid = await _impor(klien, siap["h"], siap["A"], _hari(0), 990_000, "TRSF KN5R6S7 TOKO MAJU")
+    r = await klien.get(f"{BASE_REC}/lines", headers=siap["h"], params={"bank_account_id": siap["A"]})
+    assert r.status_code == 200, r.text
+    ln = next(x for x in r.json() if x["id"] == lid)
+    hit = ln["pay_code_hits"][0]
+    assert (hit["code"], hit["order_id"], hit["customer_name"], hit["has_open_receipt"]) == \
+        ("KN-5R6S7", so["id"], "Toko Maju", False)
+    # Kwitansi dicatat → tanda berubah (layar tidak lagi menawarkan "Catat kwitansi dari mutasi ini").
+    r = await _kwitansi(klien, siap["h"], so, 990_000, account_id=siap["A"], reference_no="KN-5R6S7")
+    assert r.status_code == 200, r.text
+    r = await klien.get(f"{BASE_REC}/lines", headers=siap["h"], params={"bank_account_id": siap["A"]})
+    ln = next(x for x in r.json() if x["id"] == lid)
+    assert ln["pay_code_hits"][0]["has_open_receipt"] is True
+    # Pesanan terbuka membawa rekening tujuan (bahan isian "Rekening penerima" & peringatan instruksi di form).
+    so2 = await _pesanan(db, siap, sisa=10_000, rek=siap["A"], kode="KN-4T5U6")
+    r = await klien.get("/api/ar-receipts/open-orders", headers=siap["h"], params={"customer_id": siap["P"]})
+    row = next(x for x in r.json() if x["order_id"] == so2["id"])
+    assert (row["receiving_account_id"], row["payment_code"]) == (siap["A"], "KN-4T5U6")

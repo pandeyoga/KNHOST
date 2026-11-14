@@ -1090,7 +1090,10 @@ async def backfill_ar_cash_postings() -> None:
     Idempotent: lewati bila sudah ada cash_transaction ref_type=ar_receipt utk receipt.
     Routing: tunai→kas_kecil(entitas), transfer/giro/qris→kas_besar(bank gabungan).
     """
-    from services.ar_receipt_service import _cash_routing
+    # PM-T3 — `ar_receipt_service._cash_routing` dihapus (kwitansi baru: jenis kas dari rekening penerimanya). Kwitansi
+    # lama tanpa kas (sebelum P0-1) tetap memakai jenis dari cara bayar seperti dulu; rekeningnya diisi lewat
+    # `scripts/backfill_receipt_accounts.py` (H3).
+    from services.payment_method_service import is_cash
     receipts = await db.ar_receipts.find(
         {"status": {"$ne": "void"}}, {"_id": 0}).to_list(5000)
     for r in receipts:
@@ -1101,7 +1104,7 @@ async def backfill_ar_cash_postings() -> None:
             {"ref_type": "ar_receipt", "ref_id": r["id"], "status": {"$ne": "void"}})
         if exists:
             continue
-        cash_type, force_all = await _cash_routing(r.get("method", ""), r.get("entity_id") or "")
+        cash_type = "kas_kecil" if await is_cash(r.get("entity_id") or "", r.get("method", "")) else "kas_besar"
         # FASE E-7 (E7.4) — backfill ikut aturan baru: kas selalu milik satu badan usaha.
         entity_id = r.get("entity_id") or DEFAULT_ENTITY_ID
         if entity_id in ("all", "", None):

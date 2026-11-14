@@ -8,11 +8,15 @@
  *
  * Fase 4 · R2 (L-03) — pop-up "Gabung ke 1 transaksi" `.modal-card` buatan sendiri → `FormModal` baku (layar penuh
  * di HP). Testid tetap (`recon-group-modal`, `recon-group-cand-*`, `recon-group-error`).
+ *
+ * PM-T3 — mutasi yang memuat kode bayar pesanan (`pay_code_hits`) diberi lencana "Kode bayar {kode}"; bila pesanan itu
+ * belum punya kwitansi yang menunggu dicocokkan, tombol **Catat kwitansi dari mutasi ini** (`onRecordReceipt`) membuka
+ * form kwitansi terisi. Lencana & tombol ada di sel Keterangan (kolom Tindakan tidak melebar).
  */
 import { useMemo, useState } from "react";
 import {
   Link2, Unlink, EyeOff, Eye, ArrowDownLeft, ArrowUpRight, PiggyBank, Info, Layers,
-  Receipt, Percent,
+  Receipt, Percent, Hash, FilePlus2,
 } from "lucide-react";
 import axios, { API } from "../../../services/apiClient";
 import { formatCurrency, formatDate } from "../../../utils/formatters";
@@ -66,7 +70,7 @@ function ScoreBadge({ score, explain, testId }) {
 }
 
 export default function ReconLinesTable({ lines, busy, onAction, onOpenMatch, onReload,
-  onError, onNotify }) {
+  onError, onNotify, onRecordReceipt = null, recordBlockReason = "" }) {
   const srch = useListSearch(lines || [], null, { testId: "recon-lines", pageSize: 50, placeholder: "Cari keterangan / nominal / status…" });
   const [picked, setPicked] = useState([]);
   const [groupTxn, setGroupTxn] = useState(null);   // { candidates, total }
@@ -174,6 +178,32 @@ export default function ReconLinesTable({ lines, busy, onAction, onOpenMatch, on
                       <p className="text-[10px] text-[#8E8E93] truncate">Pihak: {l.counterparty}</p>
                     )}
                     {l.ref && <p className="text-[10px] text-[#0058CC]">Referensi: {l.ref}</p>}
+                    {/* PM-T3 — kode bayar pesanan di berita transfer */}
+                    {(l.pay_code_hits || []).length > 0 && (
+                      <div className="mt-1 flex flex-wrap items-center gap-1" data-testid={`recon-paycodes-${l.id}`}>
+                        {(l.pay_code_hits || []).map((h) => (
+                          <span key={h.code} className="status-pill bg-kn-special-soft text-kn-special-text"
+                            data-testid={`recon-paycode-${l.id}-${h.code}`}
+                            title={`Pesanan ${h.order_number || ""}${h.customer_name ? ` · ${h.customer_name}` : ""}`}>
+                            <Hash size={12} aria-hidden="true" />Kode bayar {h.code}
+                          </span>
+                        ))}
+                      </div>
+                    )}
+                    {l.status === "unmatched" && onRecordReceipt && (l.pay_code_hits || []).some((h) => !h.has_open_receipt) && (
+                      <div className="mt-1 flex flex-wrap items-center gap-2">
+                        <button type="button" className="secondary-button btn-sm whitespace-nowrap"
+                          data-testid={`recon-record-receipt-${l.id}`} disabled={Boolean(recordBlockReason)}
+                          onClick={() => onRecordReceipt(l, (l.pay_code_hits || []).find((h) => !h.has_open_receipt))}>
+                          <FilePlus2 size={12} aria-hidden="true" /> Catat kwitansi dari mutasi ini
+                        </button>
+                        {recordBlockReason && (
+                          <span className="text-fs-12 text-kn-text-2" data-testid={`recon-record-receipt-reason-${l.id}`}>
+                            {recordBlockReason}
+                          </span>
+                        )}
+                      </div>
+                    )}
                     {sugs.length > 0 && (
                       <div className="mt-1 flex flex-wrap gap-1" data-testid={`recon-suggestions-${l.id}`}>
                         {sugs.map((s) => (

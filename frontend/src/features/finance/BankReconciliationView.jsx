@@ -12,6 +12,10 @@
  * muncul). L-03: panel impor yang diselipkan → pop-up `ReconImportPanel` (FormModal).
  * PK-21 — dibuka dari Rekening & Saldo dengan preset `{ bank_account_id }` → rekening itu terpilih. Lepas-cocok yang
  * dijawab 409 (baris baru saja dilepas/diubah proses lain) → pesan tampil sebagai galat biasa dan daftar dimuat ulang.
+ * PM-T3 — kandidat = kas rekening ini saja (kas lama tanpa rekening hanya bila rekening ini satu-satunya PT untuk
+ * jenisnya). Mutasi berkode bayar tanpa kwitansi → "Catat kwitansi dari mutasi ini" (izin `ar_receipt.create`):
+ * form kwitansi terisi (pelanggan, pesanan, nominal, rekening mutasi, referensi); sesudah tersimpan mutasi ditautkan ke
+ * kas kwitansi itu sehingga kwitansinya langsung "Terverifikasi bank".
  */
 import KNDatePicker from "@/components/KNDatePicker";
 import { useCallback, useEffect, useMemo, useState } from "react";
@@ -35,6 +39,9 @@ import DesktopOnlyNotice from "../../components/DesktopOnlyNotice";
 import useIntentKey from "../../hooks/useIntentKey";
 import useViewPreset from "../../hooks/useViewPreset";
 import { moneyPost } from "../../utils/moneyRequest";
+import ARReceiptModal from "../crm/ARReceiptModal";
+import { can } from "../../config/roles";
+import { useEntityScope } from "../../context/EntityScopeContext";
 
 const TABS = [
   { id: "lines", label: "Mutasi & Pencocokan", icon: ListChecks },
@@ -50,8 +57,12 @@ const STATUS_FILTERS = [
   { value: "ignored", label: "Diabaikan" },
 ];
 
-export default function BankReconciliationView() {
+export default function BankReconciliationView({ user = null }) {
   const [accounts, setAccounts] = useState([]);
+  // PM-T3 — kwitansi dari mutasi berkode bayar: { line, hit }.
+  const [receiptFor, setReceiptFor] = useState(null);
+  const { canWrite, writeBlockHint } = useEntityScope();
+  const canRecordReceipt = can(user?.permissions || {}, "ar_receipt", "create");
   const [acctId, setAcctId] = useState("");
   useViewPreset("bank-reconciliation", (p) => { if (p?.bank_account_id) setAcctId(p.bank_account_id); });   // PK-21
   const [tab, setTab] = useState("lines");
@@ -210,9 +221,9 @@ export default function BankReconciliationView() {
             <p className="stat-value tabular-nums whitespace-nowrap">{formatCurrency(summary.book.net)}</p>
             {/* K-02 (26 Okt) — kolam "buku" di sini ikut memuat transaksi kas TANPA rekening berjenis kas sama, jadi bisa
                 lebih banyak dari jumlah transaksi di kartu Rekening & Saldo. Disebut terang. */}
-            <p className="text-[11px] text-[#8E8E93]" data-testid="recon-unmatched-book"
-              title="Transaksi buku rekening ini + transaksi kas tanpa rekening berjenis kas sama yang belum dicocokkan ke mutasi bank.">
-              {summary.unmatched_book_txns} transaksi belum tertaut · termasuk kas tanpa rekening
+            <p className="text-fs-12 text-kn-text-2" data-testid="recon-unmatched-book">
+              {summary.unmatched_book_txns} transaksi belum tertaut
+              {summary.book_includes_unlinked ? " · termasuk kas lama tanpa rekening (rekening tunggal PT ini)" : ""}
             </p>
           </div>
           <div className="stat-card">
@@ -318,7 +329,8 @@ export default function BankReconciliationView() {
 
               <ReconLinesTable lines={lines} busy={busy} onAction={lineAction}
                 onOpenMatch={(l) => setMatchFor(l)} onReload={loadData} onError={fail}
-                onNotify={notify} />
+                onNotify={notify} onRecordReceipt={canRecordReceipt ? (line, hit) => setReceiptFor({ line, hit }) : null}
+                recordBlockReason={canWrite ? "" : writeBlockHint} />
             </>
           )}
 
@@ -332,6 +344,26 @@ export default function BankReconciliationView() {
       {showImport && (
         <ReconImportPanel accountId={acctId} formats={formats} onClose={() => setShowImport(false)}
           onDone={async (info) => { setShowImport(false); notify(info); await loadData(); }} />
+      )}
+
+      {receiptFor && (
+        <ARReceiptModal customerId={receiptFor.hit.customer_id} customerName={receiptFor.hit.customer_name}
+          preselectOrderId={receiptFor.hit.order_id} testId="recon-receipt-modal"
+          preset={{ amount: receiptFor.line.amount, accountId: receiptFor.line.bank_account_id,
+            reference: receiptFor.line.ref || receiptFor.hit.code, date: receiptFor.line.stmt_date }}
+          onClose={() => setReceiptFor(null)} onError={() => {}}
+          onDone={async (pesan, rc) => {
+            const line = receiptFor.line;
+            setReceiptFor(null);
+            if (rc?.cash_txn_id) {
+              // Kas kwitansi baru = pasangan mutasi ini → tautkan sekarang (kwitansi menjadi "Terverifikasi bank").
+              await lineAction(line.id, "match", { txn_id: rc.cash_txn_id },
+                `${pesan} Mutasi ditautkan ke kwitansi ${rc.number || ""} — kwitansi terverifikasi bank.`);
+            } else {
+              notify(pesan);
+              await loadData();
+            }
+          }} />
       )}
 
       {matchFor && (

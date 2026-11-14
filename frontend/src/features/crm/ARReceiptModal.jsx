@@ -9,6 +9,12 @@
  *   · `offline`  — simpan lewat antrean offline HP (`offlinePost`, kunci idempotensi sama) bila sinyal putus.
  *   · `testId`   — akar pop-up (bawaan `ar-receipt-modal`; isian tetap ber-testid `ar-receipt-*`).
  * `onDone(pesan, kwitansi)` — argumen kedua baru (data kwitansi dari server; `null` bila masuk antrean offline).
+ *
+ * PM-T3 — rekening penerima (`ReceiptPaymentFields`: dari rekening tujuan pesanan yang dialokasi atau bawaan PT), nomor
+ * referensi (bertanda wajib bila `payment.wajib_nomor_referensi` menyala untuk PT ini), jatuh tempo giro, tautan bukti,
+ * dan catatan alasan bila rekening ≠ instruksi bayar pesanan. Simpan meminta konfirmasi yang menyebut nominal, PT, dan
+ * rekening (`02` N5). `preset` = { amount, accountId, reference, date } — form dibuka dari mutasi bank berkode bayar
+ * (Rekonsiliasi Bank › "Catat kwitansi dari mutasi ini").
  */
 import KNDatePicker from "@/components/KNDatePicker";
 import { useCallback, useEffect, useMemo, useState } from "react";
@@ -27,16 +33,18 @@ import { assessVariance, directionMeta, varianceMeta } from "../finance/payments
 
 // PM-T1 — pilihan cara bayar dari daftar induk (master "Cara Bayar", per PT); titipan dipakai lewat kotak deposit.
 import { usePaymentMethods } from "../../config/paymentMethods";
-// PK-20 — kas wajib berekening: isian Rekening (rekening aktif PT kwitansi untuk jenis kas cara bayarnya).
-import CashAccountField, { cashAccountBlocked, cashAccountBlockReason } from "../../components/CashAccountField";
+// PK-20 + PM-T3 — kas wajib berekening: rekening penerima PT kwitansi yang melayani cara bayarnya, referensi, instruksi.
+import ReceiptPaymentFields, { receiptBlockReason } from "./ReceiptPaymentFields";
 import { useEntityScope } from "../../context/EntityScopeContext";
+import { askConfirm } from "../../services/confirmService";
+import { entityShortById } from "../../utils/entityLabel";
 const LABEL = "text-[11px] font-bold uppercase tracking-wide text-[#6B6B73]";
 
 // Cek UI UAT v3 — tanggal LOKAL (dulu toISOString = UTC: 00.00–07.00 WIB jadi tanggal kemarin).
 function today() { const d = new Date(); return new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 10); }
 
 export default function ARReceiptModal({ customerId, customerName, preselectOrderId, onClose, onDone, onError,
-  offline = false, testId = "ar-receipt-modal" }) {
+  offline = false, testId = "ar-receipt-modal", preset = null }) {
   const [openOrders, setOpenOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const newKey = () => (window.crypto?.randomUUID?.() || `${Date.now()}-${Math.random()}`);
@@ -47,16 +55,20 @@ export default function ARReceiptModal({ customerId, customerName, preselectOrde
   const [amount, setAmount] = useState("");
   const [method, setMethod] = useState("transfer");
   const pm = usePaymentMethods("masuk");
-  const { selectedEntity } = useEntityScope();   // PK-20 — kwitansi dibukukan di PT kepala aplikasi (server, PK-09)
-  const [accountId, setAccountId] = useState("");
-  const [accState, setAccState] = useState("memuat");
+  const { selectedEntity, entities } = useEntityScope();   // PK-20 — kwitansi dibukukan di PT kepala aplikasi (PK-09)
+  // PM-T3 — isian uang masuk + keadaan pemeriksaannya (alasan tombol simpan mati ditulis di samping tombol).
+  const [pay, setPay] = useState(() => ({
+    accountId: preset?.accountId || "", accountTouched: Boolean(preset?.accountId), reference: preset?.reference || "",
+    giroDue: "", proofUrl: "", mismatchNote: "" }));
+  const [payState, setPayState] = useState(null);
+  const [refRequired, setRefRequired] = useState(false);
   const methodOptions = useMemo(() => pm.methods.filter((m) => m.needs_account !== "tidak")
     .map((m) => ({ value: m.code, label: m.name })), [pm.methods]);
   // Cara bayar yang tidak aktif untuk PT ini tidak boleh tetap terpilih (mis. QRIS dimatikan khusus PT).
   useEffect(() => {
     if (methodOptions.length && !methodOptions.some((o) => o.value === method)) setMethod(methodOptions[0].value);
   }, [methodOptions, method]);
-  const [date, setDate] = useState(today());
+  const [date, setDate] = useState(() => (preset?.date ? String(preset.date).slice(0, 10) : today()));
   const [notes, setNotes] = useState("");
   const [alloc, setAlloc] = useState({}); // order_id -> amount
   const [busy, setBusy] = useState(false);
@@ -84,8 +96,12 @@ export default function ARReceiptModal({ customerId, customerName, preselectOrde
       setDeposit(Number(rd.data?.deposit_balance || 0));
       if (pre) {
         setMode("manual");
-        setAlloc({ [pre.order_id]: pre.outstanding });
-        setAmount(String(pre.outstanding));
+        // PM-T3 — dari mutasi bank: nominal mutasi (paling banyak sisa tagihan pesanan itu).
+        const take = preset?.amount ? Math.min(Number(preset.amount) || 0, Number(pre.outstanding) || 0) : pre.outstanding;
+        setAlloc({ [pre.order_id]: take });
+        setAmount(String(take));
+      } else if (preset?.amount) {
+        setAmount(String(preset.amount));
       } else {
         const total = list.reduce((s, o) => s + Number(o.outstanding || 0), 0);
         setAmount(String(total));
@@ -97,6 +113,16 @@ export default function ARReceiptModal({ customerId, customerName, preselectOrde
   }, [customerId, preselectOrderId]);
 
   useEffect(() => { load(); }, [load]);
+
+  // PM-T3 — tanda wajib "No. referensi" mengikuti pengaturan PT (server tetap menolak bila kosong).
+  useEffect(() => {
+    let alive = true;
+    const params = selectedEntity && selectedEntity !== "all" ? { entity_id: selectedEntity } : {};
+    axios.get(`${API}/settings/effective`, { params })
+      .then((r) => { if (alive) setRefRequired(Boolean(r.data?.payment?.wajib_nomor_referensi)); })
+      .catch(() => { if (alive) setRefRequired(false); });
+    return () => { alive = false; };
+  }, [selectedEntity]);
 
   useEffect(() => {
     (async () => {
@@ -112,6 +138,21 @@ export default function ARReceiptModal({ customerId, customerName, preselectOrde
   const effectiveAmount = mode === "manual" ? allocTotal : Number(amount) || 0;
   const depositUse = useDeposit ? Math.min(Number(depositAmt) || 0, deposit) : 0;
   const totalFunds = effectiveAmount + depositUse;
+  // PM-T3 — pesanan yang akan menerima alokasi (manual = yang diisi; otomatis = pratinjau FIFO seperti server): bahan
+  // rekening penerima bawaan dan peringatan "Tidak sesuai instruksi bayar pesanan".
+  const allocatedOrders = useMemo(() => {
+    if (mode === "manual") return openOrders.filter((o) => Number(alloc[o.order_id]) > 0);
+    let sisa = totalFunds;
+    const out = [];
+    for (const o of openOrders) {
+      if (sisa <= 0.01) break;
+      const take = Math.min(sisa, Number(o.outstanding) || 0);
+      if (take > 0.01) { out.push(o); sisa -= take; }
+    }
+    return out;
+  }, [mode, openOrders, alloc, totalFunds]);
+  const methodRow = pm.methods.find((m) => m.code === method) || null;
+  const needsAccount = effectiveAmount > 0;   // deposit saja = tanpa kas baru (tanpa rekening)
 
   // Takar selisih setiap kali nominal / alokasi berubah (debounce) — angka `seharusnya`
   // dihitung server dari tagihan yang jatuh tempo, bukan dari sisi layar.
@@ -156,7 +197,11 @@ export default function ARReceiptModal({ customerId, customerName, preselectOrde
       receipt_date: new Date(date).toISOString(),
       notes,
       use_deposit_amount: depositUse,
-      ...(accountId ? { account_id: accountId } : {}),
+      ...(needsAccount && pay.accountId ? { account_id: pay.accountId } : {}),
+      ...(pay.reference.trim() ? { reference_no: pay.reference.trim() } : {}),
+      ...(methodRow?.needs_due_date && pay.giroDue ? { giro_due_date: pay.giroDue } : {}),
+      ...(pay.proofUrl.trim() ? { proof_url: pay.proofUrl.trim() } : {}),
+      ...((payState?.mismatch || []).length ? { mismatch_note: pay.mismatchNote.trim() } : {}),
     };
     if (vp) body.variance = vp;
     if (mode === "manual") {
@@ -165,6 +210,16 @@ export default function ARReceiptModal({ customerId, customerName, preselectOrde
         .map(([order_id, v]) => ({ order_id, amount: Number(v) }));
       if (body.allocations.length === 0) { setError("Isi alokasi minimal satu order."); return; }
     }
+    // N5 — konfirmasi uang masuk menyebut nominal, PT, dan rekening penerima.
+    const pt = entityShortById(entities, selectedEntity, "PT aktif");
+    const rek = needsAccount ? (payState?.accountLabel || "rekening bawaan PT") : "deposit pelanggan (tanpa uang baru)";
+    const ok = await askConfirm({
+      title: `Catat pembayaran ${formatCurrency(totalFunds)}?`,
+      message: `Dari ${customerName || "pelanggan"} untuk ${pt}, masuk ke ${rek}.`,
+      confirmLabel: "Ya, catat pembayaran",
+      testId: "ar-receipt-confirm",
+    });
+    if (!ok) return;
     setBusy(true); setError("");
     try {
       let data;
@@ -197,9 +252,8 @@ export default function ARReceiptModal({ customerId, customerName, preselectOrde
     } finally { setBusy(false); }
   }
 
-  const cashType = pm.isCash(method) ? "kas_kecil" : "kas_besar";
-  const needsAccount = effectiveAmount > 0;   // deposit saja = tanpa kas baru
-  const accBlocked = needsAccount && cashAccountBlocked(accState, accountId);
+  const blockReason = needsAccount ? receiptBlockReason(payState) : "";
+  const accBlocked = Boolean(blockReason);
   const cashHint = pm.isCash(method)
     ? `${pm.labelOf(method)} → masuk Kas Kecil (per PT).`
     : `${pm.labelOf(method)} → masuk Kas Besar (bank).`;
@@ -221,9 +275,7 @@ export default function ARReceiptModal({ customerId, customerName, preselectOrde
       </div>
       <div className="ml-auto flex items-center gap-2">
         {accBlocked && (
-          <span className="text-fs-12 text-kn-text-2" data-testid="ar-receipt-account-reason">
-            {cashAccountBlockReason(accState)}
-          </span>
+          <span className="text-fs-12 text-kn-text-2" data-testid="ar-receipt-account-reason">{blockReason}</span>
         )}
         <button type="button" onClick={onClose} className="secondary-button" disabled={busy} data-testid="ar-receipt-cancel">Batal</button>
         <button type="button" data-testid="ar-receipt-submit" disabled={busy || totalFunds <= 0 || accBlocked} onClick={() => submit()} className="primary-button">
@@ -253,8 +305,8 @@ export default function ARReceiptModal({ customerId, customerName, preselectOrde
           </div>
           <p className="text-[10.5px] text-[#9A9BA3] -mt-1" data-testid="ar-receipt-cash-hint">{cashHint}</p>
           {needsAccount && (
-            <CashAccountField entityId={selectedEntity} cashType={cashType} value={accountId}
-              onChange={setAccountId} onState={setAccState} testId="ar-receipt-account" />
+            <ReceiptPaymentFields entityId={selectedEntity} method={method} methodRow={methodRow}
+              orders={allocatedOrders} refRequired={refRequired} value={pay} onChange={setPay} onState={setPayState} />
           )}
 
           {deposit > 0 && (
@@ -306,6 +358,14 @@ export default function ARReceiptModal({ customerId, customerName, preselectOrde
                         )}
                       </p>
                       <p className="text-[10px] text-[#6B6B73] tabular-nums">Belum Lunas {formatCurrency(o.outstanding)}</p>
+                      {/* PM-T3 — instruksi bayar pesanan (rekening tujuan & kode bayar PM-T2) */}
+                      {(o.receiving_account?.account_number || o.payment_code) && (
+                        <p className="text-fs-12 text-kn-text-2" data-testid={`ar-receipt-instruction-${o.order_id}`}>
+                          {o.receiving_account?.account_number
+                            ? `Instruksi: ${o.receiving_account.bank_name || ""} ${o.receiving_account.account_number}`.trim() : "Instruksi bayar"}
+                          {o.payment_code ? ` · kode ${o.payment_code}` : ""}
+                        </p>
+                      )}
                     </div>
                     {mode === "manual" ? (
                       <MoneyInput testId={`ar-receipt-alloc-${o.order_id}`} className="field w-36 py-1 text-[12px]"
@@ -322,7 +382,7 @@ export default function ARReceiptModal({ customerId, customerName, preselectOrde
 
           <div>
             <label className={LABEL}>Catatan</label>
-            <input data-testid="ar-receipt-notes" className="field" value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="No. referensi / bank..." />
+            <input data-testid="ar-receipt-notes" className="field" value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="Catatan tambahan (opsional)" />
           </div>
 
           {/* FASE G-3 — pengingat selisih pembayaran SEBELUM disimpan (tidak ada kejutan) */}

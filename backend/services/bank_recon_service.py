@@ -458,6 +458,26 @@ async def _isi_hits(lines: List[Dict[str, Any]]) -> None:
             ln["pay_code_hits"] = await pay_code_hits(ln)
 
 
+async def _lengkapi_hits(lines: List[Dict[str, Any]]) -> None:
+    """PM-T3 (layar) — tiap butir `pay_code_hits` diberi `customer_name` dan `has_open_receipt` (sudah ada kwitansi
+    tidak batal untuk pesanan itu yang belum terverifikasi bank → cocokkan, jangan catat kwitansi baru)."""
+    oids = sorted({h.get("order_id") for ln in lines for h in (ln.get("pay_code_hits") or []) if h.get("order_id")})
+    if not oids:
+        return
+    cids = sorted({h.get("customer_id") for ln in lines for h in (ln.get("pay_code_hits") or []) if h.get("customer_id")})
+    nama = {c["id"]: c.get("name", "") async for c in db.customers.find({"id": {"$in": cids}}, {"_id": 0, "id": 1,
+                                                                                               "name": 1})}
+    terbuka = set()
+    async for rc in db.ar_receipts.find({"allocations.order_id": {"$in": oids}, "status": {"$ne": "void"},
+                                         "bank_verified": {"$ne": True}, "amount": {"$gt": EPS}},
+                                        {"_id": 0, "allocations.order_id": 1}):
+        terbuka |= {a.get("order_id") for a in rc.get("allocations") or []}
+    for ln in lines:
+        for h in ln.get("pay_code_hits") or []:
+            h["customer_name"] = nama.get(h.get("customer_id"), "")
+            h["has_open_receipt"] = h.get("order_id") in terbuka
+
+
 async def _tandai_pesanan_kwitansi(txns: List[Dict[str, Any]]) -> None:
     """PM-T3 — kas kwitansi diberi `_kwitansi_pesanan` = {id pesanan: nomor} dari alokasi kwitansinya (bahan langkah
     kode bayar `score_pair`; field berawalan `_` tidak pernah dikirim ke layar)."""
@@ -629,25 +649,23 @@ def _skor_kode(line: Dict[str, Any], txn: Dict[str, Any], cfg: Dict[str, Any], r
 # ═════════════════════════════════════════════════════════════════════════════
 #  KANDIDAT & PENCOCOKAN
 # ═════════════════════════════════════════════════════════════════════════════
-def _book_query(acc: Dict[str, Any], entity_ids: Optional[List[str]]) -> Dict[str, Any]:
-    """Transaksi BUKU milik satu akun bank.
+async def _book_query(acc: Dict[str, Any], entity_ids: Optional[List[str]]) -> Dict[str, Any]:
+    """Transaksi BUKU milik satu rekening.
 
-    JEMBATAN KOMPATIBILITAS (terukur 2026-07-29): `ar_receipt_service._post_cash_in`
-    membuat `cash_transactions` **tanpa** `account_id` (hanya `cash_type`), sehingga
-    penerimaan pelanggan — justru transaksi yang paling sering direkonsiliasi — tidak
-    pernah muncul sebagai kandidat. Jadi kandidat = transaksi ber-`account_id` akun ini
-    **atau** transaksi tanpa akun yang jenis kasnya sama (kolam kas besar/kecil).
-    """
-    kind = acc.get("cash_type") or "kas_besar"
-    return {
-        "status": {"$ne": "void"},
-        "$or": [
-            {"account_id": acc["id"]},
-            {"account_id": {"$in": ["", None]}, "cash_type": kind},
-            {"account_id": {"$exists": False}, "cash_type": kind},
-        ],
-        **_scope_q(entity_ids),
-    }
+    PM-T3 (PM-04) — hanya kas ber-`account_id` rekening ini. Kas lama TANPA rekening (sebelum PK-20) ikut ditawarkan
+    HANYA bila rekening ini satu-satunya rekening aktif PT-nya untuk jenis kas itu (`bank_service.sole_account_id`,
+    aturan yang sama dengan saldo rekening `_txns_for`), dan hanya kas PT pemilik rekening. Dulu kas tanpa rekening
+    berjenis sama ditawarkan ke SEMUA rekening (kwitansi rekening mana pun ikut muncul, bahkan lintas PT dalam cakupan
+    pengguna). Kas lama di PT berekening ganda diisi lewat `scripts/backfill_receipt_accounts.py` (H3) atau diputus
+    orang dari keluarannya."""
+    from services.bank_service import account_cash_type, sole_account_id
+    kind = account_cash_type(acc)
+    pilihan: List[Dict[str, Any]] = [{"account_id": acc["id"]}]
+    owner = acc.get("entity_id") or ""
+    if owner and owner != GROUP_ENTITY and await sole_account_id(owner, kind) == acc["id"]:
+        pilihan += [{"account_id": {"$in": ["", None]}, "cash_type": kind, "entity_id": owner},
+                    {"account_id": {"$exists": False}, "cash_type": kind, "entity_id": owner}]
+    return {"status": {"$ne": "void"}, "$or": pilihan, **_scope_q(entity_ids)}
 
 
 async def _candidate_txns(bank_account_id: str, entity_ids: Optional[List[str]],
@@ -655,7 +673,7 @@ async def _candidate_txns(bank_account_id: str, entity_ids: Optional[List[str]],
     acc = await db.bank_accounts.find_one({"id": bank_account_id}, {"_id": 0})
     if not acc:
         return []
-    rows = await db.cash_transactions.find(_book_query(acc, entity_ids), {"_id": 0}).to_list(20000)
+    rows = await db.cash_transactions.find(await _book_query(acc, entity_ids), {"_id": 0}).to_list(20000)
     out = []
     for t in rows:
         # PK-21 — dari angka, bukan tanda `reconciled` tersimpan (tanda manual lama tidak menyembunyikan/menampilkan).
@@ -719,7 +737,7 @@ async def _assert_target(ln: Dict[str, Any], t: Dict[str, Any], entity_ids: Opti
         raise ValueError(f"Arah dana transaksi {t.get('number')} berbeda dgn mutasi")
     acc = await db.bank_accounts.find_one({"id": ln.get("bank_account_id")}, {"_id": 0})
     if not acc or not await db.cash_transactions.find_one(
-            {"$and": [{"id": t["id"]}, _book_query(acc, entity_ids)]}, {"_id": 0, "id": 1}):
+            {"$and": [{"id": t["id"]}, await _book_query(acc, entity_ids)]}, {"_id": 0, "id": 1}):
         raise ValueError(f"Transaksi {t.get('number')} bukan milik buku rekening mutasi ini")
 
 
@@ -1695,6 +1713,7 @@ async def list_lines(bank_account_id: str, entity_ids: Optional[List[str]] = Non
         q["stmt_date"] = rng
     lines = await db.bank_statement_lines.find(q, {"_id": 0}).sort("stmt_date", -1).to_list(20000)
     await _isi_hits(lines)   # PM-T3 — tiap mutasi memuat `pay_code_hits`
+    await _lengkapi_hits(lines)
     tids = [a["txn_id"] for l in lines for a in (l.get("allocations") or [])]
     tmap: Dict[str, Dict[str, Any]] = {}
     if tids:
@@ -1723,8 +1742,8 @@ async def summary(bank_account_id: str, entity_ids: Optional[List[str]] = None,
     suggested = sum(1 for l in lines if l["status"] == "unmatched" and (l.get("suggestions") or []))
     unrec_txns = len(await _candidate_txns(bank_account_id, entity_ids))
     book_in = book_out = 0.0
-    for t in await db.cash_transactions.find(
-            _book_query(acc, entity_ids), {"_id": 0}).to_list(20000):
+    bq = await _book_query(acc, entity_ids)
+    for t in await db.cash_transactions.find(bq, {"_id": 0}).to_list(20000):
         amt = _round(t.get("amount"))
         if t.get("direction") == "in":
             book_in += amt
@@ -1743,6 +1762,8 @@ async def summary(bank_account_id: str, entity_ids: Optional[List[str]] = None,
         "holding": {"count": len(holding), "balance": hold["balance"],
                     "needs_action": hold["needs_action"], "account_code": hold["account_code"]},
         "unmatched_book_txns": unrec_txns,
+        # PM-T3 — kolam buku memuat kas lama tanpa rekening hanya bila rekening ini satu-satunya PT untuk jenisnya.
+        "book_includes_unlinked": len(bq.get("$or") or []) > 1,
         "difference": _round(stmt_net - book_net),
         "fully_reconciled": unmatched == 0 and unrec_txns == 0 and len(lines) > 0,
         "generated_at": now_iso(),

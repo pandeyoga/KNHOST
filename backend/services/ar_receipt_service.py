@@ -7,8 +7,11 @@ ter-update tanpa perubahan lapisan lain (lihat customer_service.compute_customer
 
 Integrasi tambahan (audit fix):
   - P0-1: setiap penerimaan KAS (amount > 0) di-posting ke `cash_transactions`
-    (direction=in, ref_type=ar_receipt). Routing: tunai → kas_kecil (per entitas),
-    transfer/giro/qris → kas_besar (bank gabungan).
+    (direction=in, ref_type=ar_receipt) lewat `cash_ledger.create_cash` (PK-20) ke REKENING PENERIMA kwitansi
+    (PM-T3: dikirim / rekening tujuan pesanan / bawaan PT untuk cara bayar / rekening tunggal); jenis kas = jenis
+    rekening itu.
+  - PM-T3: status "terverifikasi bank" (`bank_verified`) diisi rekonsiliasi saat kas kwitansi cocok penuh dengan
+    mutasi rekening yang sama; kwitansi terverifikasi tidak bisa dibatalkan sebelum pencocokannya dilepas.
   - P2-5: kelebihan bayar (unapplied) → `customers.deposit_balance`; deposit dapat
     dipakai mendanai alokasi via `use_deposit_amount`.
   - P2-6: void/reversal — membalik payments[], void cash, dan koreksi deposit.
@@ -186,21 +189,8 @@ def _payment_status(grand_total: float, paid: float) -> str:
 
 
 # ─── Cash posting (P0-1) ─────────────────────────────────────────────────────
-async def _cash_routing(method: str, entity_id: str = "") -> tuple:
-    """(cash_type, force_all_entity) berdasar metode pembayaran (P0-1/P3-9).
-
-    Tunai (cara bayar ber-rekening kas, `payment_method_service.is_cash` — PM-T1; kata lama `tunai`/`kontan` ikut
-    lewat alias) → kas_kecil (per entitas). Transfer/giro/qris → kas_besar (bank).
-
-    FASE E-7 (E7.4): elemen kedua **selalu False** sekarang. `kas_besar` berarti
-    "buku bank", BUKAN "milik grup" — uangnya tetap milik badan usaha penerbit
-    kwitansi. Sebelum ini penerimaan `KSC/AR-0000x` tercatat `entity_id="all"`
-    sehingga kas PT Kain Suka Cita terlihat kosong padahal uangnya masuk.
-    """
-    from services.payment_method_service import is_cash
-    if await is_cash(entity_id, method):
-        return "kas_kecil", False
-    return "kas_besar", False
+# PM-T3 — `_cash_routing` (jenis kas dari cara bayar) DIHAPUS: jenis kas kwitansi = jenis rekening penerimanya
+# (`periksa_uang_masuk` → `cash_ledger.periksa_rekening`), bukan tebakan dari kata cara bayar.
 
 
 def keterangan_kas(receipt: Dict[str, Any], pay_codes: Optional[List[str]] = None) -> str:
@@ -216,7 +206,7 @@ def keterangan_kas(receipt: Dict[str, Any], pay_codes: Optional[List[str]] = Non
 
 
 async def _post_cash_in(receipt: Dict[str, Any], actor: Dict[str, Any],
-                        pay_codes: Optional[List[str]] = None) -> Optional[str]:
+                        pay_codes: Optional[List[str]] = None, cash_type: str = "") -> Optional[str]:
     """Kas masuk penerimaan AR lewat pembuat kas satu pintu (PK-20). Mengembalikan id cash_transaction.
 
     Rekening = `receipt.account_id` (sudah diperiksa `create_receipt` sebelum tulisan; kosong = rekening tunggal PT untuk
@@ -227,7 +217,6 @@ async def _post_cash_in(receipt: Dict[str, Any], actor: Dict[str, Any],
     amt = round(float(receipt.get("amount", 0) or 0), 2)
     if amt <= EPS:
         return None
-    cash_type, force_all = await _cash_routing(receipt.get("method", ""), receipt.get("entity_id") or "")
     # E7.4 — pemilik uang = badan usaha kwitansinya (tidak ada lagi kas grup).
     from services.cash_entity_service import resolve_owner
     entity_id = resolve_owner(receipt.get("entity_id"), DEFAULT_ENTITY_ID,
@@ -350,6 +339,11 @@ async def list_open_orders(customer_id: str, entity_id: Any = None) -> List[Dict
             "outstanding": outstanding,
             "payment_status": o.get("payment_status") or _payment_status(gt, paid),
             "created_at": o.get("created_at"),
+            # PM-T3 — instruksi bayar pesanan (PM-T2): bahan isian "Rekening penerima" form kwitansi dan peringatan
+            # "Tidak sesuai instruksi bayar pesanan {nomor} ({rekening instruksi})".
+            "receiving_account_id": o.get("receiving_account_id") or "",
+            "receiving_account": dict(o.get("receiving_account") or {}),
+            "payment_code": o.get("payment_code") or "",
         })
     rows.sort(key=lambda r: str(r.get("created_at") or ""))
     return rows
@@ -564,7 +558,7 @@ async def _create_receipt_after_reserve(payload, actor, customer, amount, use_de
             # FASE G-2 — jadwal pembayaran (rencana) sudah dihitung ulang oleh `allocate` (PK-19).
 
     # P0-1 — posting kas masuk (hanya untuk kas baru; deposit bukan kas baru).
-    cash_txn_id = await _post_cash_in(doc, actor, uang.get("pay_codes"))
+    cash_txn_id = await _post_cash_in(doc, actor, uang.get("pay_codes"), uang.get("cash_type") or "")
     if cash_txn_id:
         doc["cash_txn_id"] = cash_txn_id
         await db.ar_receipts.update_one({"id": receipt_id}, {"$set": {"cash_txn_id": cash_txn_id}})
@@ -812,3 +806,53 @@ async def list_receipts_page(customer_id: Optional[str], scope: Optional[Dict[st
 
 async def get_receipt(receipt_id: str) -> Optional[Dict[str, Any]]:
     return safe_doc(await db.ar_receipts.find_one({"id": receipt_id}, {"_id": 0}))
+
+
+async def isi_rekening_kwitansi_lama(tulis: bool = False, entity_id: str = "") -> Dict[str, Any]:
+    """PM-T3 (H3) — isi `account_id` kas kwitansi LAMA tanpa rekening (sebelum PK-20) dan `account_id` +
+    `account_snapshot` kwitansinya, HANYA bila PT kas itu punya tepat satu rekening aktif untuk jenis kasnya
+    (`bank_service.sole_account_id` — aturan saldo rekening). Sisanya (PT berekening ganda / tanpa rekening) didaftar
+    di `diputus_orang` untuk diputus manusia. `tulis=False` (bawaan) = lapor saja. Idempoten: syarat tulis = field masih
+    kosong, jadi putaran kedua tidak mengubah apa pun.
+
+    → `{mode, diisi: [{cash_id, cash_number, receipt_id, receipt_number, entity_id, cash_type, amount, account_id,
+    account_name}], diputus_orang: [{… tanpa account, alasan}], diubah}`."""
+    from services import bank_service as bs
+    kosong = [{"account_id": {"$exists": False}}, {"account_id": {"$in": ["", None]}}]
+    q: Dict[str, Any] = {"ref_type": "ar_receipt", "status": {"$ne": "void"}, "$or": kosong}
+    if entity_id:
+        q["entity_id"] = entity_id
+    tunggal: Dict[tuple, str] = {}
+    rekening: Dict[str, Dict[str, Any]] = {}
+    diisi: List[Dict[str, Any]] = []
+    putus: List[Dict[str, Any]] = []
+    diubah = 0
+    async for t in db.cash_transactions.find(q, {"_id": 0}).sort("txn_date", 1):
+        ent, ct = t.get("entity_id") or "", t.get("cash_type") or ""
+        kunci = (ent, ct)
+        if kunci not in tunggal:
+            tunggal[kunci] = await bs.sole_account_id(ent, ct) if ct in bs.CASH_TYPES else ""
+        rc = await db.ar_receipts.find_one({"id": t.get("ref_id")}, {"_id": 0, "id": 1, "number": 1}) or {}
+        baris = {"cash_id": t["id"], "cash_number": t.get("number", ""), "receipt_id": t.get("ref_id", ""),
+                 "receipt_number": rc.get("number", ""), "entity_id": ent, "cash_type": ct,
+                 "amount": round(float(t.get("amount") or 0), 2)}
+        sole = tunggal[kunci]
+        if not sole:
+            n = await db.bank_accounts.count_documents({"entity_id": ent, "is_active": {"$ne": False}})
+            putus.append({**baris, "alasan": (f"PT punya {n} rekening aktif — pilih rekening kas ini secara manual"
+                                              if n else "PT belum punya rekening aktif")})
+            continue
+        if sole not in rekening:
+            rekening[sole] = await db.bank_accounts.find_one({"id": sole}, {"_id": 0}) or {}
+        acc = rekening[sole]
+        diisi.append({**baris, "account_id": sole, "account_name": acc.get("name", "")})
+        if tulis:
+            res = await db.cash_transactions.update_one({"id": t["id"], "$or": kosong},
+                                                        {"$set": {"account_id": sole, "updated_at": now_iso()}})
+            diubah += res.modified_count
+            if rc:
+                await db.ar_receipts.update_one(
+                    {"id": rc["id"], "$or": kosong},
+                    {"$set": {"account_id": sole, "account_snapshot": potret_rekening(acc), "updated_at": now_iso()}})
+    return {"mode": "tulis" if tulis else "lapor", "diisi": diisi, "diputus_orang": putus,
+            "diubah": diubah if tulis else 0}
