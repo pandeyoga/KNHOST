@@ -170,7 +170,7 @@ unit ini 11.
 | Kode | Endpoint | Aturan |
 |---|---|---|
 | S1 | `GET /api/dashboard` | Tetap 200 untuk semua yang login (dipanggil sekali untuk seluruh aplikasi), tetapi tiap bagian hanya diisi bila peran memegang izinnya: `orders` dan `metrics.active_orders` ← `order.view`; `customers` dan `metrics.customers` ← `customer.view`; `products` dan `metrics.products` ← `product.view`; `warehouses` dan `metrics.warehouses` ← `warehouse.view`; angka stok (`available_qty`, `reserved_qty`, `available_by_unit`, `reserved_by_unit`, `available_rolls`, `unitless_product_ids`, `stock_scope`) ← `inventory.view`. Bagian tanpa izin = daftar kosong atau 0, kuncinya tetap ada. Kueri bagian yang tidak diizinkan tidak dijalankan |
-| S2 | `GET /api/entities` | Tetap 200 (pemilih PT dan nama PT lawan dipakai banyak layar). Tanpa `entity.view`: tiap baris hanya memuat `id`, `code`, `name`, `short_name`, `legal_name`, `type`, `is_pkp`, `currency`, `status`, `doc_prefix`, `logo_url`; `user_count` dan `readiness` tidak dikirim dan `with_readiness` diabaikan |
+| S2 | `GET /api/entities` | Tetap 200 (pemilih PT dan nama PT lawan dipakai banyak layar). Tanpa `entity.view`: tiap baris hanya memuat `id`, `code`, `name`, `short_name`, `legal_name`, `type`, `is_pkp`, `currency`, `status`, `doc_prefix`, `logo_url` + (koreksi PR-T3, langkah kerja 5) `is_group`, `write_locked`, `city`; `user_count` dan `readiness` tidak dikirim dan `with_readiness` diabaikan |
 | S3 | `GET /api/sales-targets`, `GET /api/sales-incentives` | `require_permission(request, "order", "view")`. Isi: pemegang `sales_force.view` melihat semua (dalam PT-nya); selain itu memakai aturan yang sama dengan KPI dan komisi (`backend/routers/crm.py:240`, `_kpi_scope`): hanya miliknya kecuali peran pengawas |
 | S4 | `GET /api/sales-users` | `require_any_permission(request, [("customer", "view"), ("order", "view"), ("sales_force", "view")])` |
 | S5 | `GET /api/entities/count`, `GET /api/entities/{entity_id}`, `GET /api/entities/{entity_id}/readiness` | `require_permission(request, "entity", "view")` |
@@ -189,7 +189,7 @@ atau tidak oleh unit itu. Daftar ini dibaca penjaga matriks (PR-T8): rute login-
 
 | Metode | Jalur | Jangkar | Izin sekarang | Putusan |
 |---|---|---|---|---|
-| POST | `/api/lots/{lot_id}/label` | `backend/routers/lots.py:185` (`lot_label`) | `inventory.view` | Naik ke `label.generate` (izin lama: Admin, Manajer, Gudang, Admin Gudang) |
+| POST | `/api/lots/{lot_id}/label` | `backend/routers/lots.py:185` (`lot_label`) | `inventory.view` | Tetap (koreksi PR-T3: asumsi di bawah gugur — Admin Sales, pemegang `inventory.view` tanpa `label.generate`, membuka Lot & Silsilah lewat menu warisan Sales dan tombol "Label / QR" memanggil endpoint ini). Hanya membangkitkan perintah cetak; tidak menulis selain jejak audit |
 | POST | `/api/rfid/roll-scans` | `backend/routers/rfid.py:225` (`post_roll_scan`) | `wms.view` | Tetap — hanya mencatat jejak pindai milik pengguna itu; tidak mengubah stok |
 | POST | `/api/color-library/{color_id}/use-requests` | `backend/routers/color_library.py:82` (`create_use_request`) | `color.view` | Tetap — pengajuan yang diputus pemegang `color.approve` |
 | PATCH | `/api/products/{product_id}/media/{media_id}` | `backend/routers/product_media.py:89` (`update`) | `product.view` + kemampuan foto | Tetap — izin ubah/tinjau foto diperiksa di dalam (`capabilities`) |
@@ -223,25 +223,25 @@ bawaan untuk rute S3–S8 dan baris pertama tabel B.
 |---|---|---|---|---|
 | U1 | B | "Tanpa Acuan" + `customer.view` | `GET /api/sales-users` oleh Tanpa Acuan, Manajer Kosong, Sopir | 200 · 403 · 403 |
 | U2 | B | `adm` membuat satu target untuk `sls` dan satu untuk akun sales kedua | `GET /api/sales-targets` oleh Sopir, `sls`, "Tanpa Acuan" + `order.view`, lalu "Tanpa Acuan" + `order.view` + `sales_force.view` | 403 · 1 baris (miliknya) · 0 baris · 2 baris |
-| U3 | B | — | `GET /api/entities` oleh Sopir dan oleh `adm` | Keduanya 200 dengan jumlah baris sama; baris Sopir hanya berisi 11 kunci S2; baris `adm` memuat `user_count` |
+| U3 | B | — | `GET /api/entities` oleh Sopir dan oleh `adm` | Keduanya 200 dengan jumlah baris sama; baris Sopir hanya berisi 14 kunci S2 (koreksi PR-T3); baris `adm` memuat `user_count` |
 | U4 | B | "Tanpa Acuan" + `entity.view` | `GET /api/entities/ent_ksc` dan `…/readiness` oleh Tanpa Acuan, Manajer Kosong, Sopir | 200, 200 · 403, 403 · 403, 403 |
 | U5 | B | satu pesanan dan satu pelanggan milik `sls` (fixture) | `GET /api/dashboard` oleh Sopir | 200; `orders`, `customers`, `products`, `warehouses` = `[]`; `metrics.active_orders` = 0 |
 | U6 | B | seperti U5; "Tanpa Acuan" + `order.view` | `GET /api/dashboard` | `orders` berisi 1; `customers` = `[]`; `products` = `[]` |
 | U7 | B | "Tanpa Acuan" + `period.unlock` | `GET /api/finance/period-unlocks` oleh Tanpa Acuan, Manajer Kosong, Sopir; `GET /api/finance/period-unlocks/active` oleh Sopir | 200 · 403 · 403; 200 |
 | U8 | B | "Tanpa Acuan" + `purchase_order.create` | `GET /api/purchase-orders/resolve-sourcing?product_id=x` oleh Tanpa Acuan dan Sopir | bukan 403 · 403 |
 | U9 | B | — | `POST /api/special-orders/tidak-ada/fulfillment/k/route` dengan isi sah oleh Sopir, lalu oleh "Tanpa Acuan" + `od_fulfillment.choose_route` | 403 (sebelum unit: 404) · 404 |
-| U10 | B | "Tanpa Acuan" + `inventory.view` + `field_visibility.lot` | `POST /api/lots/tidak-ada/label` dengan isi sah, sebelum dan sesudah ditambah `label.generate` | 403 · bukan 403 |
+| U10 | B | "Tanpa Acuan" + `inventory.view` + `field_visibility.lot` | `POST /api/lots/tidak-ada/label` dengan isi sah, sebelum dan sesudah ditambah `label.generate` | Koreksi PR-T3 (putusan baris "tetap"): bukan 403 · bukan 403; tanpa `inventory.view` 403 |
 | U11 | B | catat jumlah dokumen semua koleksi | `adm` memanggil tiap endpoint pratinjau/simulasi tabel B dengan isi sah atau kosong | Jumlah dokumen tiap koleksi tidak berubah (selain `audit_logs` dan `sessions`) |
 | U12 | B | — | Sopir: `GET /api/enums`, `/api/wilayah/provinces`, `/api/notifications`, `/api/roles`, `/api/payment-terms`, `/api/auth/me`, `/api/onboarding`, `/api/stock/my-site` | Tidak ada yang 403 |
 | U13 | B | — | Bandingkan `LOGIN_ONLY` dengan `server.app.routes` | 53 entri; tiap entri menunjuk rute yang ada dengan metode yang sama |
-| U14 | B | berkas "sebelum" | Sapu ulang rute yang sama oleh 13 peran bawaan | Admin dan Manajer: kode sama di semua rute. Selisih yang diizinkan hanya dari 200 ke 403 pada: S4 dan S3 untuk Desainer, Sopir, MD Quality, QC; S5 untuk semua selain Admin dan Manajer; S6 untuk semua selain Admin, Manajer, Finance; S7 untuk semua selain Admin dan Manajer; label lot untuk peran tanpa `label.generate` |
+| U14 | B | berkas "sebelum" | Sapu ulang rute yang sama oleh 13 peran bawaan | Admin dan Manajer: kode sama di semua rute. Selisih yang diizinkan hanya dari 200 ke 403 pada: S4 dan S3 untuk Desainer, Sopir, MD Quality, QC; S5 untuk semua selain Admin dan Manajer; S6 untuk semua selain Admin, Manajer, Finance; S7 untuk semua selain Admin dan Manajer. Koreksi PR-T3: S8 (id tidak ada) dari 404 ke 403 untuk peran tanpa `od_fulfillment.choose_route` / `od_fulfillment.realize` (semua selain Admin, Manajer, MD); label lot tidak berubah (putusan "tetap") |
 | U15 | B | isi `GET /api/dashboard` Manajer sebelum unit (jumlah butir tiap bagian, fixture U5) | `GET /api/dashboard` oleh manajer seed | Jumlah butir tiap bagian sama |
 
 Setelah unit selesai, `t3_escalation.py` baris (f3) dan (f4) menampilkan 403; baris (f5) tetap 200.
 
 ## Langkah kerja
 
-1. Berkas "sebelum"; `backend/tests_mem/test_PRT3_login_saja.py` (U1–U15). Merah: U1–U10, U13, U14.
+1. Berkas "sebelum"; `backend/tests_mem/test_PRT3_login_saja.py` (U1–U15). Merah: U1–U9, U13, U14 (koreksi PR-T3: U10 tidak merah karena putusan label lot "tetap").
 2. S4–S8 dan baris pertama tabel B (satu baris gerbang per handler). Hijau: U1, U4, U7–U10.
 3. S3 (pakai `_kpi_scope`), S2, S1. Hijau: U2, U3, U5, U6, U15.
 4. `login_only_endpoints.py`. Hijau: U13. U11 dan U12 sebagai penjaga.
@@ -259,7 +259,8 @@ Setelah unit selesai, `t3_escalation.py` baris (f3) dan (f4) menampilkan 403; ba
 - `/api/ai/*` → PR-T2 (`ai.view`, `ai.manage`).
 - `/api/desks/me` dan cakupan "milik sendiri" berdasarkan sifat peran → PR-T4.
 - Endpoint tanpa sesi (perangkat, login, verifikasi publik; `LAMPIRAN_DAFTAR.md` §D) tidak diubah.
-- `GET /api/entities/count` yang selalu galat 500 → PK-47; unit ini hanya menambah gerbangnya.
+- `GET /api/entities/count` yang selalu galat 500 → PK-47; unit ini hanya menambah gerbangnya (koreksi PR-T3: uji PK-47 U5
+  "Sopir 200, cukup login" ikut diganti menjadi 403).
 
 ## Asumsi dan risiko
 
@@ -267,7 +268,7 @@ Setelah unit selesai, `t3_escalation.py` baris (f3) dan (f4) menampilkan 403; ba
   Langkah kerja 5 memeriksanya.
 - `ASUMSI:` peran pemegang `inventory.view` tanpa `label.generate` (Sales, Admin Sales, MD, Admin Sample, MD Quality,
   QC) tidak mencetak label lot; tidak ada layar mereka yang memanggilnya. Bila ternyata ada, putusan baris itu menjadi
-  "tetap" dan dicatat.
+  "tetap" dan dicatat. (Koreksi PR-T3: gugur untuk Admin Sales — putusan "tetap".)
 - `ASUMSI:` Lampiran F menyebut 32 endpoint tetapi merinci 30 (7 menulis + 23 pratinjau); tabel B mengikuti rinciannya.
 - `ASUMSI:` peran selain pengawas tidak perlu melihat target dan skema insentif orang lain; aturan `_kpi_scope` yang
   sudah berlaku untuk KPI dan komisi dipakai apa adanya.
