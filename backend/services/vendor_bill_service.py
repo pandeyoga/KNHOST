@@ -203,13 +203,17 @@ def evaluate_match(
 
 
 def bill_financials(bill: Dict[str, Any]) -> Dict[str, Any]:
-    """Hitung AP per bill: grand_total (incl PPN) − amount_paid = outstanding."""
+    """Hitung AP per bill: grand_total (incl PPN) − amount_paid − ap_variance_closed = outstanding.
+
+    PK-19 (FX-07) — sisa yang DITUTUP keputusan selisih bayar ("Tutup sisa hutang", `ap_variance_closed`, berjurnal
+    Dr 2-1100 / Cr 4-9000) bukan hutang lagi; dibatalkan → kembali jadi sisa (field dikosongkan)."""
     grand = float(bill.get("grand_total", 0) or 0)
     if grand <= 0:
         grand = float(bill.get("total_amount", 0) or 0)
     paid = float(bill.get("amount_paid", 0) or 0)
-    outstanding = round(max(grand - paid, 0.0), 2)
-    if paid <= 0.01:
+    closed = float(bill.get("ap_variance_closed", 0) or 0)
+    outstanding = round(max(grand - paid - closed, 0.0), 2)
+    if paid <= 0.01 and closed <= 0.01:
         pay_status = "unpaid"
     elif outstanding <= 0.01:
         pay_status = "paid"

@@ -871,7 +871,7 @@ def test_charge_and_guards(admin: str) -> Dict[str, Any]:
        f"HTTP {r.status_code}")
 
     # ── BUKTI-MERAH: titipan PT-A tidak boleh melunasi pesanan PT-B ────────────
-    # `_apply_to_order` mencari pesanan HANYA dengan id, jadi sebelum perbaikan cukup
+    # Fungsi alokasi lama mencari pesanan HANYA dengan id, jadi sebelum perbaikan cukup
     # mengirim id pesanan PT lain untuk membuat uang PT-A melunasi piutang PT-B.
     fake_id = f"so_{POC_TAG.lower()}_b"
     fake_order = {

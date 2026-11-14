@@ -4768,15 +4768,24 @@ async def layer_gl_audit_2026_09_invariants(db):
         results["pass"] += 1
         line("PASS", G, f"INV-CASH-02: {len(posted_cash_ids)} kas ber-gl_posted — tak ada JE cash_transaction ganda")
 
-    receipt_ids = {r["id"] for r in await db.ar_receipts.find(
-        {"status": {"$ne": "void"}}, {"_id": 0, "id": 1}).to_list(50000)}
+    # PK-19 — kwitansi yang DIBATALKAN tidak lagi menghapus barisnya: baris asal + baris pembalik tetap ada (Σ per
+    # pesanan = 0). Yatim = kwitansinya tidak ada, atau kwitansinya void tetapi barisnya belum dibalik penuh.
+    receipt_status = {r["id"]: r.get("status") for r in await db.ar_receipts.find(
+        {}, {"_id": 0, "id": 1, "status": 1}).to_list(50000)}
     orphan = []
     async for o in db.sales_orders.find({"payments.receipt_id": {"$exists": True}},
                                         {"_id": 0, "number": 1, "payments": 1}):
+        net_void: Dict[str, float] = defaultdict(float)
         for p in o.get("payments") or []:
             rid = p.get("receipt_id")
-            if rid and str(rid).startswith("arc") and rid not in receipt_ids:
+            if not rid or not str(rid).startswith("arc"):
+                continue
+            if rid not in receipt_status:
                 orphan.append(f"{o.get('number')}:{p.get('receipt_number') or rid}")
+            elif receipt_status[rid] == "void":
+                net_void[rid] += float(p.get("amount") or 0)
+        orphan += [f"{o.get('number')}:{rid} (kwitansi batal, belum dibalik {v:,.0f})"
+                   for rid, v in net_void.items() if abs(v) > 0.01]
     if orphan:
         results["fail"] += 1
         line("FAIL", R, f"INV-AR-02: {len(orphan)} pembayaran yatim (receipt_id tanpa kwitansi)", str(orphan[:5]))

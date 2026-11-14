@@ -131,6 +131,8 @@ CANONICAL_COLLECTIONS = {
     "credit_notes", "fin_fixed_assets",
     # ── PK-23 — entri penyusutan menjurnal (jenis `asset_depreciation` registri posting) ──
     "fin_depreciation_entries",
+    # ── PK-19 — keputusan selisih bayar menjurnal lewat pintu tahan-gagal (jenis registri `payment_variance`) ──
+    "payment_variance_decisions",
 }
 
 # ── Alias TERLARANG → koleksi kanonik (dari bagian FORBIDDEN ENTITY_REGISTRY) ──

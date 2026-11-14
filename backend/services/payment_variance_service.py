@@ -60,6 +60,8 @@ import logging
 from datetime import date, datetime, timedelta, timezone
 from typing import Any, Dict, List, Optional
 
+from fastapi import HTTPException
+
 from core_utils import DEFAULT_ENTITY_ID, new_id, next_doc_number, now_iso, safe_doc, rupiah
 from db import db
 from services import gl_service
@@ -112,12 +114,19 @@ async def _periksa_periode(entity_id: str) -> None:
 
 
 class VarianceError(ValueError):
-    """Kesalahan selisih pembayaran dengan pesan siap tampil (Bahasa Indonesia)."""
+    """Kesalahan selisih pembayaran dengan pesan siap tampil (Bahasa Indonesia). `status_code` = kode jawaban router."""
+    status_code = 400
 
 
 class VarianceForbidden(VarianceError):
     """PK-38 — keputusan ditolak karena wewenang (dua orang); router menjawab 403. Turunan `VarianceError` supaya
     keputusan saat kwitansi dibuat tetap tidak membatalkan uang yang sudah masuk (`ar_receipt_service`)."""
+    status_code = 403
+
+
+class VarianceConflict(VarianceError):
+    """PK-19 — keputusan kalah klaim / sedang atau sudah diputus / keadaan berubah; router menjawab 409."""
+    status_code = 409
 
 
 # ── Kebijakan (registry FASE G-0 — tidak ada angka hardcode) ───────────────
@@ -459,64 +468,175 @@ def variance_block(assessment: Dict[str, Any]) -> Dict[str, Any]:
 
 
 # ── Efek keputusan (masing-masing punya jejak jurnal sendiri) ──────────────
-async def _write_off_orders(order_ids: List[str], amount: float, *, decision_id: str,
-                            decision_number: str, receipt_number: str,
-                            reason_label: str, actor: Dict[str, Any]) -> List[Dict[str, Any]]:
-    """Tutup sisa piutang pesanan (berurutan) lewat entri pembayaran ber-jenis `writeoff`.
+# PK-19 — efek keputusan melewati SATU fungsi alokasi (`ar_allocation_service`): hapus sisa = baris `hapus_sisa`,
+# alih deposit = baris `deposit` per pesanan, pembatalan = baris pembalik. Jurnalnya lewat pintu tahan-gagal
+# (`posting_registry.durable_variance_decision`), bukan dipanggil telanjang.
+WRITEOFF_KINDS = ("writeoff", "rounding_writeoff")
+AP_WRITEOFF_KINDS = ("ap_writeoff", "ap_rounding_writeoff")
+#: Pilihan yang menerbitkan jurnal keputusan (selain itu `gl_status="not_required"`).
+JOURNAL_KINDS = WRITEOFF_KINDS + ("allocate", "refund") + AP_WRITEOFF_KINDS
 
-    Memakai guard $expr yang sama dengan alokasi kwitansi supaya tidak mungkin
-    menutup lebih dari sisa tagihan (anti balapan / dobel-tutup).
-    """
-    from pymongo import ReturnDocument
-    from services.customer_service import (_order_grand_total as gt_of,
-                                           _order_paid as paid_of)
+
+def _dari_http(exc: HTTPException) -> "VarianceError":
+    """Galat pemeriksa alokasi (HTTP 400/403/404/409) → galat keputusan berkode sama (pesan siap tampil)."""
+    pesan = exc.detail if isinstance(exc.detail, str) else str((exc.detail or {}).get("message") or exc.detail)
+    if exc.status_code == 403:
+        return VarianceForbidden(pesan)
+    if exc.status_code == 409:
+        return VarianceConflict(pesan)
+    return VarianceError(pesan)
+
+
+async def _rencana_hapus_sisa(order_ids: List[str], amount: float, entity_id: str = "") -> List[Dict[str, Any]]:
+    """Bagi nominal hapus sisa ke pesanan tujuan berurutan menurut sisa tagihannya (tanpa tulisan). Hanya pesanan PT
+    kwitansi (`entity_id`) — pesanan tujuan FIFO bisa memuat pesanan pelanggan di PT lain (PK-19 FX-05)."""
+    from services.customer_service import _order_grand_total as gt_of, _order_paid as paid_of
     left = round(float(amount or 0), 2)
-    done: List[Dict[str, Any]] = []
+    rows: List[Dict[str, Any]] = []
     for oid in order_ids:
         if left <= EPS:
             break
         order = await db.sales_orders.find_one({"id": oid}, {"_id": 0})
-        if not order:
+        if not order or (entity_id and (order.get("entity_id") or "") != entity_id):
             continue
-        gt = round(gt_of(order), 2)
-        outstanding = round(gt - paid_of(order), 2)
-        take = min(left, outstanding)
+        take = min(left, round(gt_of(order) - paid_of(order), 2))
         if take <= EPS:
             continue
-        entry = {
-            "id": new_id("pay"), "amount": round(take, 2), "method": "writeoff",
-            "kind": "writeoff", "receipt_number": receipt_number,
-            "variance_decision_id": decision_id,
-            "variance_decision_number": decision_number,
-            "note": f"Selisih kurang bayar dihapus · {reason_label}",
-            "date": now_iso(), "created_at": now_iso(),
-            "created_by": actor.get("name", "system"),
-        }
-        updated = await db.sales_orders.find_one_and_update(
-            {"id": oid, "$expr": {"$lte": [{"$add": [{"$sum": "$payments.amount"},
-                                                     round(take, 2)]}, gt + EPS]}},
-            {"$push": {"payments": entry}, "$inc": {"paid_total": round(take, 2)},
-             "$set": {"updated_at": now_iso()}},
-            projection={"_id": 0}, return_document=ReturnDocument.AFTER)
-        if not updated:
-            raise VarianceError(
-                f"Gagal menutup sisa pesanan {order.get('number')} — sisa tagihan berubah "
-                "(kemungkinan pembayaran paralel). Muat ulang lalu coba lagi.")
-        new_paid = round(paid_of(updated), 2)
-        status = "paid" if new_paid >= gt - EPS else ("partial" if new_paid > EPS else "unpaid")
-        await db.sales_orders.update_one({"id": oid}, {"$set": {"payment_status": status}})
-        try:
-            await plans.recompute_for_doc("sales_order", oid)
-        except Exception as exc:  # noqa: BLE001 — turunan, tak boleh menggagalkan keputusan
-            logger.warning("[_write_off_orders] efek samping gagal diabaikan: %s", exc)  # KN-C10
-        done.append({"order_id": oid, "order_number": order.get("number", oid),
-                     "amount": round(take, 2), "payment_status": status})
+        rows.append({"order_id": oid, "order_number": order.get("number", oid), "amount": round(take, 2),
+                     "entity_id": order.get("entity_id", "")})
         left = round(left - take, 2)
     if left > EPS:
         raise VarianceError(
             f"Sisa {_rp(left)} tidak bisa dihapus — tidak ada tagihan terbuka sebesar itu "
             "pada pesanan tujuan.")
-    return done
+    return rows
+
+
+def _rencana_alokasi(allocations: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    """Baris alih deposit (gabung per pesanan, urutan pertama muncul) — tiap baris punya penanda langkahnya."""
+    per: Dict[str, float] = {}
+    for al in allocations or []:
+        oid = str(al.get("order_id") or "").strip()
+        amt = round(float(al.get("amount") or 0), 2)
+        if oid and amt > EPS:
+            per[oid] = round(per.get(oid, 0.0) + amt, 2)
+    return [{"order_id": oid, "amount": amt, "deposit_taken": False, "allocated": False, "ar": False}
+            for oid, amt in per.items()]
+
+
+async def _tandai(decision_id: str, fields: Dict[str, Any]) -> None:
+    await db[COLL].update_one({"id": decision_id}, {"$set": {**fields, "updated_at": now_iso()}})
+
+
+async def _jalankan_hapus_sisa(d: Dict[str, Any], actor: Dict[str, Any]) -> Dict[str, Any]:
+    """Tutup sisa piutang pesanan lewat baris `hapus_sisa` (satu per pesanan, id dari keputusan → aman diulang)."""
+    from services import ar_allocation_service as aas
+    done: List[Dict[str, Any]] = []
+    for row in d.get("plan") or []:
+        try:
+            res = await aas.allocate(
+                kind="hapus_sisa", order_id=row["order_id"], amount=row["amount"], source_id=d["id"],
+                source_number=d.get("receipt_number") or d["number"], customer_id=d.get("customer_id", ""),
+                entity_id=d.get("entity_id", ""), date=d.get("decided_at") or now_iso(), actor=actor,
+                method="writeoff",
+                extra={"variance_decision_id": d["id"], "variance_decision_number": d["number"],
+                       "note": f"Selisih kurang bayar dihapus · {d.get('reason_label', '')}"})
+        except HTTPException as exc:
+            raise _dari_http(exc) from exc
+        done.append({"order_id": row["order_id"], "order_number": res["order_number"], "amount": row["amount"],
+                     "payment_status": res["payment_status"], "entity_id": res["entity_id"]})
+    return {"orders": done, "effect": {"written_off": done, "account": gl_service.ACC_SELISIH_BAYAR}}
+
+
+async def _jalankan_alokasi(d: Dict[str, Any], actor: Dict[str, Any]) -> Dict[str, Any]:
+    """Kelebihan bayar dipakai melunasi pesanan lain, PER BARIS: kurangi deposit (bersyarat saldo cukup) →
+    `allocate(kind="deposit", seq=id pesanan)`; gagal → deposit baris itu dikembalikan dan galat dilempar (baris
+    sebelumnya tetap). Penanda per baris (`plan.<i>.deposit_taken/allocated`) membuat panggilan ulang meneruskan."""
+    from services import ar_allocation_service as aas
+    from services import ar_receipt_service as ars
+    plan = [dict(r) for r in d.get("plan") or []]
+    for i, row in enumerate(plan):
+        if row.get("allocated"):
+            continue
+        oid, amt = row["order_id"], round(float(row["amount"]), 2)
+        if not row.get("deposit_taken"):
+            try:
+                await ars.adjust_deposit(d.get("customer_id", ""), -amt)
+            except HTTPException as exc:
+                raise VarianceConflict(
+                    f"Deposit pelanggan tidak cukup untuk alokasi ke pesanan {row.get('order_number') or oid} "
+                    "(baru saja terpakai proses lain).") from exc
+            row["deposit_taken"] = True
+            await _tandai(d["id"], {f"plan.{i}.deposit_taken": True})
+        try:
+            res = await aas.allocate(
+                kind="deposit", order_id=oid, amount=amt, source_id=d["id"],
+                source_number=f"{d['number']} (dari kelebihan bayar {d.get('receipt_number', '')})",
+                customer_id=d.get("customer_id", ""), entity_id=d.get("entity_id", ""),
+                date=d.get("decided_at") or now_iso(), actor=actor, method="deposit", seq=oid)
+        except Exception as exc:
+            await ars.adjust_deposit(d.get("customer_id", ""), amt)   # deposit baris ini dikembalikan
+            await _tandai(d["id"], {f"plan.{i}.deposit_taken": False})
+            if isinstance(exc, HTTPException):
+                raise _dari_http(exc) from exc
+            raise
+        # KEB-PDPT — pesanan tujuan belum dikirim → dananya tetap uang muka (2-1400), tanpa jurnal alih.
+        ar = await gl_service.order_revenue_posted(oid)
+        if not ar:
+            await gl_service.tag_advance_payment(oid, d["id"])
+        row.update({"allocated": True, "ar": ar, "order_number": res["order_number"],
+                    "payment_status": res["payment_status"], "outstanding_after": res["outstanding_after"]})
+        await _tandai(d["id"], {f"plan.{i}": row})
+    total = round(sum(r["amount"] for r in plan if r.get("allocated")), 2)
+    ar_total = round(sum(r["amount"] for r in plan if r.get("allocated") and r.get("ar")), 2)
+    rows = [{"order_id": r["order_id"], "order_number": r.get("order_number", r["order_id"]), "applied": r["amount"],
+             "payment_status": r.get("payment_status"), "outstanding_after": r.get("outstanding_after")}
+            for r in plan if r.get("allocated")]
+    return {"orders": rows, "amount": total,
+            "effect": {"allocated": rows, "ar_total": ar_total, "advance_total": round(total - ar_total, 2)}}
+
+
+async def _jalankan_refund(d: Dict[str, Any], actor: Dict[str, Any]) -> Dict[str, Any]:
+    """Kelebihan bayar dikembalikan (SL-14): deposit dikurangi DULU (bersyarat saldo cukup), lalu kas keluar lewat
+    pembuat kas satu pintu (PK-20, rujukan `ar_refund` = id keputusan, rekening dari `decide_receipt`). Kas gagal
+    DIBUAT → deposit dikembalikan dan galat dilempar. Kas tercatat tetapi jurnalnya gagal → uang sudah keluar: deposit
+    tetap berkurang, kas `failed` tampil di panel Posting Gagal."""
+    from services import ar_receipt_service as ars
+    from services import cash_ledger
+    ref = dict((d.get("effect") or {}).get("refund") or {})
+    amt = round(float(d.get("amount") or 0), 2)
+    if not ref.get("deposit_taken"):
+        try:
+            await ars.adjust_deposit(d.get("customer_id", ""), -amt)
+        except HTTPException as exc:
+            raise VarianceConflict("Saldo kelebihan bayar pelanggan tidak cukup untuk dikembalikan "
+                                   "(baru saja terpakai proses lain).") from exc
+        ref["deposit_taken"] = True
+        await _tandai(d["id"], {"effect.refund.deposit_taken": True})
+    from services.cash_entity_service import resolve_owner as _cash_owner
+    entity_id = d.get("entity_id") or DEFAULT_ENTITY_ID
+    gl_error = ""
+    try:
+        cdoc = await cash_ledger.create_cash(
+            entity_id=_cash_owner(entity_id, DEFAULT_ENTITY_ID, what="Kas pengembalian dana pelanggan"),
+            direction="out", amount=amt, ref_type="ar_refund", ref_id=d["id"],
+            account_id=ref.get("account_id") or "", cash_type=ref.get("cash_type") or "kas_besar",
+            category="pengembalian dana pelanggan",
+            description=(f"Pengembalian kelebihan bayar {d['number']} · "
+                         f"{d.get('customer_name', '')} ({d.get('reason_label', '')})"),
+            owner_entity_id=entity_id, actor=actor.get("name", "system"))
+    except cash_ledger.CashPostingError as exc:
+        cdoc, gl_error = exc.txn, exc.error
+    except Exception as exc:
+        await ars.adjust_deposit(d.get("customer_id", ""), amt)   # kas tidak lahir → deposit dikembalikan
+        await _tandai(d["id"], {"effect.refund.deposit_taken": False})
+        if isinstance(exc, cash_ledger.CashRejected):
+            raise _dari_http(exc) from exc
+        raise
+    ref.update({"amount": amt, "cash_txn_id": cdoc["id"], "cash_txn_number": cdoc.get("number", ""),
+                "account_id": cdoc.get("account_id", ""), "gl_status": cdoc.get("gl_status", ""),
+                "gl_error": gl_error})
+    return {"orders": [], "effect": {"refund": ref}}
 
 
 async def _reschedule(target: Dict[str, Any], amount: float, due_date: str,
@@ -559,90 +679,6 @@ async def _reschedule(target: Dict[str, Any], amount: float, due_date: str,
             f"Sisa {_rp(left)} melebihi baris jadwal yang bisa digeser pada rencana ini.")
     return moved
 
-
-async def _allocate_from_deposit(customer_id: str, allocations: List[Dict[str, Any]], *,
-                                 decision_id: str, decision_number: str, entity_id: str,
-                                 receipt_number: str, actor: Dict[str, Any]) -> Dict[str, Any]:
-    """Kelebihan bayar dipakai melunasi pesanan terbuka lain (Dr 2-1400 / Cr 1-1200)."""
-    from services import ar_receipt_service as ars
-    wanted = round(sum(round(float(a.get("amount") or 0), 2) for a in allocations or []), 2)
-    if wanted <= EPS:
-        raise VarianceError("Pilih minimal satu pesanan dan nominal alokasinya.")
-    avail = await ars.get_deposit_balance(customer_id)
-    if wanted > avail + EPS:
-        raise VarianceError(f"Deposit pelanggan tidak cukup (tersedia {_rp(avail)}).")
-    rows: List[Dict[str, Any]] = []
-    total = 0.0
-    ar_total = 0.0
-    for al in allocations or []:
-        amt = round(float(al.get("amount") or 0), 2)
-        oid = str(al.get("order_id") or "")
-        if not oid or amt <= EPS:
-            continue
-        applied = await ars.apply_from_deposit(
-            oid, amt, decision_id, decision_number, receipt_number, actor)
-        rows.append(applied)
-        total = round(total + amt, 2)
-        # KEB-PDPT — pesanan tujuan belum dikirim → dananya tetap uang muka (2-1400),
-        # tidak ada perpindahan ke Piutang sampai barang dikirim.
-        if await gl_service.order_revenue_posted(oid):
-            ar_total = round(ar_total + amt, 2)
-        else:
-            await gl_service.tag_advance_payment(oid, decision_id)
-    await ars.adjust_deposit(customer_id, -total)
-    je = await gl_service.post_variance_reallocation(
-        decision_id=decision_id, entity_id=entity_id, amount=ar_total,
-        label=f"{decision_number} · kelebihan bayar dialihkan", created_by=actor.get("name", ""))
-    return {"rows": rows, "total": total, "je_id": (je or {}).get("id", ""),
-            "je_number": (je or {}).get("number", ""),
-            # KEB-PDPT — porsi ke pesanan belum dikirim tetap di 2-1400 (tanpa jurnal).
-            "ar_total": ar_total, "advance_total": round(total - ar_total, 2)}
-
-
-async def _refund(customer: Dict[str, Any], amount: float, method: str, *,
-                  decision_id: str, decision_number: str, entity_id: str,
-                  receipt_number: str, reason_label: str,
-                  actor: Dict[str, Any], account_id: str = "") -> Dict[str, Any]:
-    """Kelebihan bayar dikembalikan: kas keluar + Dr 2-1400 Uang Muka Pelanggan.
-
-    PK-20 — kas lewat pembuat kas satu pintu (`cash_ledger.create_cash`, rujukan `ar_refund` = id keputusan,
-    rekening `account_id` yang sudah diperiksa `decide_receipt`). Jurnal kas gagal → kas tersimpan `failed` (panel
-    Posting Gagal), deposit tetap dikurangi (uangnya sudah keluar); urutan deposit-dulu milik PK-19."""
-    from services import ar_receipt_service as ars
-    amt = round(float(amount or 0), 2)
-    if amt <= EPS:
-        raise VarianceError("Nominal pengembalian harus lebih dari nol.")
-    avail = await ars.get_deposit_balance(customer["id"])
-    if amt > avail + EPS:
-        raise VarianceError(
-            f"Saldo kelebihan bayar pelanggan tidak cukup untuk dikembalikan "
-            f"(tersedia {_rp(avail)}).")
-    from services.payment_method_service import is_cash   # PM-T1 — satu pembeda tunai
-    cash_type = "kas_kecil" if await is_cash(entity_id or "", method) else "kas_besar"
-    # FASE E-7 (E7.4) — pengembalian dana pelanggan adalah uang badan usaha penjualnya.
-    from services.cash_entity_service import resolve_owner as _cash_owner
-    cash_entity = _cash_owner(entity_id, DEFAULT_ENTITY_ID,
-                              what="Kas pengembalian dana pelanggan")
-    from services import cash_ledger
-    gl_error = ""
-    try:
-        cdoc = await cash_ledger.create_cash(
-            entity_id=cash_entity, direction="out", amount=amt, ref_type="ar_refund", ref_id=decision_id,
-            account_id=account_id, cash_type=cash_type, category="pengembalian dana pelanggan",
-            description=(f"Pengembalian kelebihan bayar {decision_number} · "
-                         f"{customer.get('name', '')} ({reason_label})"),
-            owner_entity_id=entity_id or DEFAULT_ENTITY_ID, actor=actor.get("name", "system"))
-    except cash_ledger.CashRejected as exc:
-        raise VarianceError(str(exc.detail)) from exc
-    except cash_ledger.CashPostingError as exc:
-        cdoc, gl_error = exc.txn, exc.error
-    je = await db.journal_entries.find_one({"source_type": "cash_transaction", "source_id": cdoc["id"],
-                                            "status": {"$ne": "void"}}, {"_id": 0, "id": 1, "number": 1})
-    await ars.adjust_deposit(customer["id"], -amt)
-    return {"amount": amt, "cash_txn_id": cdoc["id"], "cash_txn_number": cdoc.get("number", ""),
-            "account_id": cdoc.get("account_id", ""), "method": method or "transfer",
-            "je_id": (je or {}).get("id", ""), "je_number": (je or {}).get("number", ""),
-            "gl_status": cdoc.get("gl_status", ""), "gl_error": gl_error}
 
 
 # ── Wewenang ──────────────────────────────────────────────────────────────
@@ -717,9 +753,20 @@ async def get(decision_id: str) -> Optional[Dict[str, Any]]:
 
 
 # ── Keputusan sisi AR ─────────────────────────────────────────────────────
+def _pesan_klaim(receipt: Dict[str, Any], kind: str) -> str:
+    return (f"Selisih kwitansi {receipt.get('number', '')} sedang atau sudah diputus "
+            f"({KIND_LABEL.get(kind, kind) or 'keputusan lain'}).")
+
+
 async def decide_receipt(receipt_id: str, payload: Dict[str, Any],
                          actor: Dict[str, Any]) -> Dict[str, Any]:
-    """Terapkan keputusan selisih pada satu kwitansi (saat dibuat ATAU belakangan)."""
+    """Terapkan keputusan selisih pada satu kwitansi (saat dibuat ATAU belakangan) — urutan `02_STANDAR.md` §1
+    (PK-19, FX-06).
+
+    PERIKSA (pilihan, wewenang, pesanan tujuan lewat `ar_allocation_service.validate_targets`, saldo deposit,
+    periode) → NIAT: `variance.decision_id` ditulis pada kwitansi DENGAN SYARAT masih kosong (kalah → 409) lalu
+    keputusan `pending` ber-id itu disimpan → EFEK → JURNAL lewat pintu tahan-gagal → `done`. Panggilan ulang atas
+    keputusan `pending`/`failed` dengan pilihan yang sama meneruskan; pilihan berbeda → 409."""
     receipt = await db.ar_receipts.find_one({"id": receipt_id}, {"_id": 0})
     if not receipt:
         raise VarianceError("Kwitansi tidak ditemukan.")
@@ -730,15 +777,16 @@ async def decide_receipt(receipt_id: str, payload: Dict[str, Any],
     if not v:
         raise VarianceError(
             "Kwitansi ini tidak punya catatan selisih pembayaran (dibuat sebelum FASE G-3).")
-    if v.get("decision_id"):
-        raise VarianceError(
-            f"Selisih kwitansi {receipt.get('number')} sudah diputus "
-            f"({KIND_LABEL.get(v.get('decision_kind'), v.get('decision_kind'))}).")
     direction = v.get("direction") or DIR_NONE
+    kind = str(payload.get("kind") or "").strip()
+    if v.get("decision_id"):
+        d = await get(v["decision_id"])
+        if d and d.get("status") in ("pending", "failed") and d.get("kind") == kind:
+            return await _jalankan_ar(d, actor, receipt=receipt)   # ULANG — teruskan dari langkah terakhir yang tercatat
+        raise VarianceConflict(_pesan_klaim(receipt, (d or {}).get("kind") or v.get("decision_kind") or ""))
     if direction in (DIR_NONE,):
         raise VarianceError("Kwitansi ini tidak punya selisih yang perlu diputus.")
 
-    kind = str(payload.get("kind") or "").strip()
     allowed = (AR_UNDER_KINDS if direction in (DIR_UNDER,) else AR_OVER_KINDS)
     if direction == DIR_ROUNDING:
         allowed = ("rounding_writeoff", "rounding_deposit")
@@ -758,14 +806,13 @@ async def decide_receipt(receipt_id: str, payload: Dict[str, Any],
     approver_role = await _assert_authority(kind, amount, policy, actor, entity_id)
     from services import ar_reduction_guard as _arg
     if _arg.berlaku("payment_variance", kind):
-        # PK-38 — hapus sisa = pengurang piutang tanpa uang masuk: satu batas + orang kedua (sebelum `_write_off_orders`).
+        # PK-38 — hapus sisa = pengurang piutang tanpa uang masuk: satu batas + orang kedua (sebelum efek apa pun).
         # `VarianceForbidden` (turunan `VarianceError`): jalur antrean menjawab 403; keputusan saat kwitansi dibuat
         # tidak membatalkan uang yang sudah masuk — selisih masuk antrean.
-        from fastapi import HTTPException as _HE
         try:
             await _arg.periksa(sumber="payment_variance", jenis=kind, entity_id=entity_id, nominal=amount,
                                dokumen=receipt, aktor=actor, pengaju=[receipt.get("created_by")])
-        except _HE as exc:
+        except HTTPException as exc:
             raise VarianceForbidden(str(exc.detail)) from exc
     elif not payload.get("auto"):
         # KF-T6 — pencatat kwitansi ≠ pemutus selisih dari `kontrol.pengurang_piutang.*`. Di sini `VarianceError` (bukan
@@ -779,7 +826,7 @@ async def decide_receipt(receipt_id: str, payload: Dict[str, Any],
             raise VarianceError(_dcr["pesan"])
     if kind not in ("outstanding", "reschedule"):   # PK-37 — dua pilihan ini tanpa perubahan pembukuan
         await _periksa_periode(entity_id)
-    refund_method = refund_account_id = ""
+    refund: Dict[str, Any] = {}
     if kind == "refund":   # PM-T1 — cara pengembalian dari daftar induk cara bayar (arah keluar), sebelum menulis
         from services import payment_method_service as _pms
         try:
@@ -787,30 +834,59 @@ async def decide_receipt(receipt_id: str, payload: Dict[str, Any],
                                               arah="keluar"))["code"]
         except _pms.CaraBayarError as exc:
             raise VarianceError(str(exc)) from exc
-        # PK-20 — rekening sumber pengembalian (isian baru `account_id`; kosong = rekening tunggal PT jenis kas itu)
+        # PK-20 — rekening sumber pengembalian (isian `account_id`; kosong = rekening tunggal PT jenis kas itu)
         # diperiksa SEBELUM menulis apa pun.
         from services import cash_ledger as _cl
+        cash_type = "kas_kecil" if await _pms.is_cash(entity_id or "", refund_method) else "kas_besar"
         try:
-            refund_account_id = (await _cl.periksa_rekening(
-                entity_id or DEFAULT_ENTITY_ID, payload.get("account_id") or "",
-                "kas_kecil" if await _pms.is_cash(entity_id or "", refund_method) else "kas_besar"))["account_id"]
+            acc = (await _cl.periksa_rekening(entity_id or DEFAULT_ENTITY_ID, payload.get("account_id") or "",
+                                              cash_type))["account_id"]
         except _cl.CashRejected as exc:
             raise VarianceError(str(exc.detail)) from exc
+        refund = {"method": refund_method or "transfer", "cash_type": cash_type, "account_id": acc,
+                  "deposit_taken": False}
 
-    number = await next_doc_number(COLL, "number", "SLB-", entity_id=entity_id or None)
-    decision_id = new_id("pvd")
-    orders_touched: List[Dict[str, Any]] = []
-    effect: Dict[str, Any] = {}
-    je_id = je_number = ""
     target_ids = list(v.get("target_order_ids") or [])
     tg = await _targets(receipt.get("customer_id", ""),
                         [{"order_id": oid} for oid in target_ids] or None,
                         str(receipt.get("receipt_date") or now_iso())[:10])
     targets = tg["targets"]
-
-    if kind in ("outstanding",):
-        effect = {"note": "Sisa tetap ditagih — tidak ada perubahan pembukuan."}
-    elif kind == "reschedule":
+    # PERIKSA tujuan & saldo — tanpa tulisan (PK-19 FX-05/SL-08: pemeriksa alokasi yang sama dengan kwitansi).
+    from services import ar_allocation_service as aas
+    plan: List[Dict[str, Any]] = []
+    effect: Dict[str, Any] = {}
+    orders_touched: List[Dict[str, Any]] = []
+    try:
+        if kind in WRITEOFF_KINDS:
+            plan = await _rencana_hapus_sisa([t["order_id"] for t in targets] or target_ids, amount, entity_id)
+            await aas.validate_targets("hapus_sisa", plan, customer_id=receipt.get("customer_id", ""),
+                                       entity_id=entity_id)
+        elif kind == "allocate":
+            plan = _rencana_alokasi(payload.get("allocations") or [])
+            total = round(sum(r["amount"] for r in plan), 2)
+            if total <= EPS:
+                raise VarianceError("Pilih minimal satu pesanan dan nominal alokasinya.")
+            if total > gap + EPS:
+                raise VarianceError(f"Total alokasi {_rp(total)} melebihi kelebihan bayar {_rp(gap)}.")
+            from services import ar_receipt_service as ars
+            avail = await ars.get_deposit_balance(receipt.get("customer_id", ""))
+            if total > avail + EPS:
+                raise VarianceError(f"Deposit pelanggan tidak cukup (tersedia {_rp(avail)}).")
+            await aas.validate_targets("deposit", plan, customer_id=receipt.get("customer_id", ""),
+                                       entity_id=entity_id)
+            amount = total
+        elif kind == "refund":
+            from services import ar_receipt_service as ars
+            avail = await ars.get_deposit_balance(receipt.get("customer_id", ""))
+            if amount <= EPS:
+                raise VarianceError("Nominal pengembalian harus lebih dari nol.")
+            if amount > avail + EPS:
+                raise VarianceError(f"Saldo kelebihan bayar pelanggan tidak cukup untuk dikembalikan "
+                                    f"(tersedia {_rp(avail)}).")
+            effect = {"refund": refund}
+    except HTTPException as exc:
+        raise _dari_http(exc) from exc
+    if kind == "reschedule":
         due = str(payload.get("due_date") or "")[:10] or (
             datetime.now(timezone.utc)
             + timedelta(days=int(policy["reschedule_days"]))).date().isoformat()
@@ -821,50 +897,22 @@ async def decide_receipt(receipt_id: str, payload: Dict[str, Any],
             raise VarianceError(
                 "Tidak ada pesanan tujuan yang punya rencana pembayaran — "
                 "susun jadwal dulu atau pilih 'sisa tetap piutang'.")
-        moved = await _reschedule(chosen, amount, due, reason["label"],
-                                  payload.get("note", ""), actor)
-        effect = {"rescheduled": moved, "due_date": due}
-        orders_touched = [{"order_id": chosen["order_id"], "order_number": chosen["number"],
-                           "amount": amount}]
-    elif kind in ("writeoff", "rounding_writeoff"):
-        ids = [t["order_id"] for t in targets] or target_ids
-        orders_touched = await _write_off_orders(
-            ids, amount, decision_id=decision_id, decision_number=number,
-            receipt_number=receipt.get("number", ""), reason_label=reason["label"],
-            actor=actor)
-        je = await gl_service.post_variance_writeoff(
-            decision_id=decision_id,
-            entity_id=(orders_touched[0].get("entity_id") if orders_touched else "") or entity_id,
-            amount=amount, label=f"{number} · {receipt.get('number', '')}",
-            created_by=actor.get("name", "system"))
-        je_id, je_number = (je or {}).get("id", ""), (je or {}).get("number", "")
-        effect = {"written_off": orders_touched, "account": gl_service.ACC_SELISIH_BAYAR}
-    elif kind in ("deposit", "rounding_deposit"):
-        effect = {"deposit_added": amount,
-                  "note": "Kelebihan bayar tetap sebagai saldo/deposit pelanggan."}
-    elif kind == "allocate":
-        res = await _allocate_from_deposit(
-            receipt.get("customer_id", ""), payload.get("allocations") or [],
-            decision_id=decision_id, decision_number=number, entity_id=entity_id,
-            receipt_number=receipt.get("number", ""), actor=actor)
-        if round(res["total"], 2) > gap + EPS:
-            raise VarianceError(
-                f"Total alokasi {_rp(res['total'])} melebihi kelebihan bayar {_rp(gap)}.")
-        amount = round(res["total"], 2)
-        orders_touched = res["rows"]
-        je_id, je_number = res["je_id"], res["je_number"]
-        effect = {"allocated": res["rows"], "ar_total": res["ar_total"],
-                  "advance_total": res["advance_total"]}
-    elif kind == "refund":
-        res = await _refund(
-            customer or {"id": receipt.get("customer_id"), "name": receipt.get("customer_name")},
-            amount, refund_method,
-            decision_id=decision_id, decision_number=number, entity_id=entity_id,
-            receipt_number=receipt.get("number", ""), reason_label=reason["label"], actor=actor,
-            account_id=refund_account_id)
-        je_id, je_number = res["je_id"], res["je_number"]
-        effect = {"refund": res}
+        effect = {"due_date": due, "reschedule_target": chosen}
+        orders_touched = [{"order_id": chosen["order_id"], "order_number": chosen["number"], "amount": amount}]
 
+    # NIAT — klaim kwitansi (`variance.decision_id` masih kosong) lalu keputusan `pending` ber-id itu.
+    number = await next_doc_number(COLL, "number", "SLB-", entity_id=entity_id or None)
+    decision_id = new_id("pvd")
+    klaim = await db.ar_receipts.update_one(
+        {"id": receipt_id, "status": {"$ne": "void"},
+         "$or": [{"variance.decision_id": ""}, {"variance.decision_id": None},
+                 {"variance.decision_id": {"$exists": False}}]},
+        {"$set": {"variance.decision_id": decision_id, "variance.decision_kind": kind,
+                  "variance.decision_number": number, "variance.decision_status": "pending",
+                  "updated_at": now_iso()}})
+    if not klaim.modified_count:
+        fresh = await db.ar_receipts.find_one({"id": receipt_id}, {"_id": 0, "number": 1, "variance": 1}) or receipt
+        raise VarianceConflict(_pesan_klaim(fresh, ((fresh.get("variance") or {}).get("decision_kind")) or ""))
     doc = {
         "id": decision_id, "number": number, "side": "ar", "entity_id": entity_id,
         "receipt_id": receipt["id"], "receipt_number": receipt.get("number", ""),
@@ -880,8 +928,11 @@ async def decide_receipt(receipt_id: str, payload: Dict[str, Any],
         "note": str(payload.get("note") or ""),
         "decided_by": actor.get("name", "system"), "decided_by_role": actor.get("role", ""),
         "decided_at": now_iso(), "approver_role_required": approver_role,
+        "status": "pending", "plan": plan,
+        "gl_status": "pending" if kind in JOURNAL_KINDS else "not_required", "gl_error": "",
+        "journal_entry_id": "",
         "orders": orders_touched, "effect": effect,
-        "je_id": je_id, "je_number": je_number,
+        "je_id": "", "je_number": "",
         "policy_snapshot": policy, "refs": [],
         "explain": (v.get("explain") or []) + [
             f"Keputusan: {KIND_LABEL.get(kind, kind)} sebesar {_rp(amount)}",
@@ -891,16 +942,100 @@ async def decide_receipt(receipt_id: str, payload: Dict[str, Any],
         ],
         "created_at": now_iso(), "updated_at": now_iso(),
     }
+    # Keputusan lahir TERKUNCI milik permintaan ini (INV-ATOMIC-01): panggilan ulang bersamaan tidak bisa ikut
+    # menjalankan efeknya sebelum permintaan ini selesai (kalah → 409).
+    from services import atomic_claim as _saga
+    token = new_id("lk")
+    doc[_saga.LOCK] = {"action": "variance_decide", "by": actor.get("name", ""), "started_at": now_iso(),
+                       "token": token}
     saved = await _insert_decision(doc)
-    await db.ar_receipts.update_one({"id": receipt["id"]}, {"$set": {
-        "variance.decision_id": decision_id, "variance.decision_kind": kind,
-        "variance.decision_number": number, "variance.resolved": True,
-        "variance.needs_decision": False,
-        "variance.decided_by": actor.get("name", ""), "variance.decided_at": now_iso(),
-        "variance.reason_label": reason["label"], "variance.decision_amount": amount,
-        "updated_at": now_iso()}})
-    await _notify(saved)
+    return await _jalankan_ar(saved, actor, receipt=receipt, token=token)
+
+
+async def _jalankan_ar(d: Dict[str, Any], actor: Dict[str, Any], *, receipt: Dict[str, Any],
+                       token: str = "") -> Dict[str, Any]:
+    """Klaim keputusan (bila belum dipegang) → EFEK → JURNAL → SELESAI; kunci dilepas di `finally`."""
+    from services import atomic_claim as _saga
+    if not token:
+        try:
+            lk = await _saga.claim(COLL, d["id"], "variance_decide",
+                                   precondition={"status": {"$in": ["pending", "failed"]}},
+                                   actor=actor.get("name", ""))
+        except HTTPException as exc:
+            raise VarianceConflict(_pesan_klaim(receipt, d.get("kind", ""))) from exc
+        token = (lk.get(_saga.LOCK) or {}).get("token", "")
+        d = safe_doc({k: v for k, v in lk.items() if k != _saga.LOCK})
+    try:
+        await _jalankan_ar_inti(d, actor)
+    finally:
+        await _saga.release(COLL, d["id"], token)
+    saved = await get(d["id"]) or d
+    if saved.get("status") == "done":
+        await _notify(saved)
     return saved
+
+
+async def _jalankan_ar_inti(d: Dict[str, Any], actor: Dict[str, Any]) -> None:
+    """EFEK → JURNAL → SELESAI satu keputusan sisi AR (dipakai keputusan baru dan panggilan ulang)."""
+    from services import posting_registry as _preg
+    kind = d.get("kind", "")
+    hasil: Dict[str, Any] = {}
+    try:
+        if kind in WRITEOFF_KINDS:
+            hasil = await _jalankan_hapus_sisa(d, actor)
+        elif kind == "allocate":
+            hasil = await _jalankan_alokasi(d, actor)
+        elif kind == "refund":
+            hasil = await _jalankan_refund(d, actor)
+        elif kind == "reschedule":
+            ef = d.get("effect") or {}
+            if not ef.get("rescheduled"):
+                moved = await _reschedule(ef.get("reschedule_target") or {}, float(d.get("amount") or 0),
+                                          ef.get("due_date", ""), d.get("reason_label", ""), d.get("note", ""),
+                                          actor)
+                hasil = {"effect": {"rescheduled": moved, "due_date": ef.get("due_date", "")}}
+        elif kind in ("deposit", "rounding_deposit"):
+            hasil = {"effect": {"deposit_added": d.get("amount"),
+                                "note": "Kelebihan bayar tetap sebagai saldo/deposit pelanggan."}}
+        else:   # outstanding
+            hasil = {"effect": {"note": "Sisa tetap ditagih — tidak ada perubahan pembukuan."}}
+    except Exception as exc:
+        pesan = str(getattr(exc, "detail", "") or exc)[:300]
+        await _tandai(d["id"], {"status": "failed", "error": pesan, "failed_at": now_iso()})
+        await db.ar_receipts.update_one({"id": d.get("receipt_id")}, {"$set": {
+            "variance.decision_status": "failed", "updated_at": now_iso()}})
+        if kind == "allocate":   # baris yang sudah jadi tetap berjurnal (Dr 2-1400 / Cr 1-1200 per baris)
+            fresh = await get(d["id"]) or d
+            await _preg.durable_variance_decision(fresh)
+        if isinstance(exc, VarianceError):
+            raise
+        if isinstance(exc, HTTPException):
+            raise _dari_http(exc) from exc
+        raise VarianceError(f"Keputusan {d.get('number', '')} gagal di tengah: {pesan}. Kirim keputusan yang sama "
+                            "lagi untuk melanjutkan.") from exc
+    upd: Dict[str, Any] = {"error": ""}
+    if "orders" in hasil:
+        upd["orders"] = hasil["orders"]
+    if "amount" in hasil:
+        upd["amount"] = hasil["amount"]
+    if hasil.get("effect"):
+        upd["effect"] = hasil["effect"]
+    await _tandai(d["id"], upd)
+    fresh = await get(d["id"]) or d
+    # JURNAL — PK-18/PK-19: pintu tahan-gagal; gagal → `gl_status="failed"` (panel Posting Gagal), keputusan tetap jadi.
+    if kind in JOURNAL_KINDS:
+        jr = await _preg.durable_variance_decision(fresh)
+        je = jr.get("journal") or {}
+        if jr.get("journal_entry_id") and not je.get("number"):
+            je = await db.journal_entries.find_one({"id": jr["journal_entry_id"]}, {"_id": 0, "id": 1, "number": 1}) or {}
+        await _tandai(d["id"], {"je_id": je.get("id", ""), "je_number": je.get("number", "")})
+    # SELESAI
+    await _tandai(d["id"], {"status": "done", "done_at": now_iso()})
+    await db.ar_receipts.update_one({"id": d.get("receipt_id")}, {"$set": {
+        "variance.decision_status": "done", "variance.resolved": True, "variance.needs_decision": False,
+        "variance.decided_by": d.get("decided_by", ""), "variance.decided_at": d.get("decided_at", ""),
+        "variance.reason_label": d.get("reason_label", ""), "variance.decision_amount": fresh.get("amount"),
+        "updated_at": now_iso()}})
 
 
 async def auto_resolve_receipt(receipt: Dict[str, Any], actor: Dict[str, Any]) -> Optional[Dict[str, Any]]:
@@ -924,6 +1059,11 @@ async def reverse_decision(decision_id: str, reason: str,
     Dipanggil otomatis saat kwitansinya dibatalkan (`void_receipt`) sehingga tidak
     mungkin ada piutang yang sudah "dihapus" atau dana yang sudah "dikembalikan"
     padahal uangnya ternyata tidak pernah ada.
+
+    PK-19 — baris pembayaran hapus sisa / alih deposit DIBALIK lewat `ar_allocation_service.reverse` (baris pembalik
+    bertanggal, bukan dihapus); sisi hutang (`ap_writeoff`) kini benar-benar dibalik (FX-07): jurnal kebalikan persis
+    Dr 4-9000 / Cr 2-1100 dan faktur kembali terbuka. Jurnal pembalik lewat pintu tahan-gagal
+    (`reversal_gl_status`). Penanda langkah (`reversal_steps`) membuat panggilan ulang tidak menggandakan efek.
     """
     d = await get(decision_id)
     if not d:
@@ -932,118 +1072,85 @@ async def reverse_decision(decision_id: str, reason: str,
         return d
     if not (reason or "").strip():
         raise VarianceError("Alasan pembatalan keputusan wajib diisi.")
+    if d.get("kind") in WRITEOFF_KINDS + ("allocate",):   # PK-19 — PERIKSA: pembalik tidak membuat terbayar negatif
+        from services import ar_allocation_service as _aas
+        await _aas.reverse_check(decision_id)
     # T-01 Opsi B (INV-ATOMIC-01) — klaim keputusan sebelum payments SO / deposit / kas / JE dibalik;
     # dua pembatalan bersamaan (tombol + void kwitansi) tidak membalik jurnal dua kali.
     from services import atomic_claim as _saga
-    await _saga.claim(COLL, decision_id, "variance_reverse",
-                      precondition={"status": {"$ne": "reversed"}}, actor=actor.get("name", "system"))
-    from services import ar_receipt_service as ars
-    kind = d.get("kind", "")
-    amount = round(float(d.get("amount") or 0), 2)
-    entity_id = d.get("entity_id") or DEFAULT_ENTITY_ID
-    rev_je = None
-    undone: Dict[str, Any] = {}
+    lk = await _saga.claim(COLL, decision_id, "variance_reverse",
+                           precondition={"status": {"$ne": "reversed"}}, actor=actor.get("name", "system"))
+    token = (lk.get(_saga.LOCK) or {}).get("token", "")
+    try:
+        from services import ar_allocation_service as aas
+        from services import ar_receipt_service as ars
+        from services import posting_registry as _preg
+        d = safe_doc(lk)
+        steps = dict(d.get("reversal_steps") or {})
+        kind = d.get("kind", "")
+        undone: Dict[str, Any] = {}
+        label = f"{d.get('number')} · {reason.strip()}"
 
-    if kind in ("writeoff", "rounding_writeoff"):
-        for row in d.get("orders") or []:
-            oid = row.get("order_id")
-            if not oid:
-                continue
-            order = await db.sales_orders.find_one({"id": oid}, {"_id": 0})
-            if not order:
-                continue
-            keep = [p for p in (order.get("payments") or [])
-                    if p.get("variance_decision_id") != decision_id]
-            paid = round(sum(float(p.get("amount") or 0) for p in keep), 2)
-            from services.customer_service import _order_grand_total as gt_of
-            gt = round(gt_of(order), 2)
-            await db.sales_orders.update_one({"id": oid}, {"$set": {
-                "payments": keep, "paid_total": paid,
-                "payment_status": ("paid" if paid >= gt - EPS
-                                   else "partial" if paid > EPS else "unpaid"),
-                "updated_at": now_iso()}})
-            try:
-                await plans.recompute_for_doc("sales_order", oid)
-            except Exception as exc:  # noqa: BLE001
-                logger.warning("[reverse_decision] efek samping gagal diabaikan: %s", exc)  # KN-C10
-        rev_je = await gl_service.post_variance_reversal(
-            decision_id=decision_id, entity_id=entity_id, amount=amount,
-            debit_acc=gl_service.ACC_PIUTANG, credit_acc=gl_service.ACC_SELISIH_BAYAR,
-            label=f"{d.get('number')} · {reason}", created_by=actor.get("name", "system"))
-        undone = {"orders_restored": [r.get("order_number") for r in d.get("orders") or []]}
-    elif kind == "allocate":
-        moved_to_ar = 0.0   # KEB-PDPT — hanya porsi yang benar-benar sudah pindah ke Piutang
-        for row in d.get("orders") or []:
-            oid = row.get("order_id")
-            if not oid:
-                continue
-            order = await db.sales_orders.find_one({"id": oid}, {"_id": 0})
-            if not order:
-                continue
-            for p in (order.get("payments") or []):
-                if p.get("receipt_id") != decision_id:
-                    continue
-                if p.get("gl_bucket") != gl_service.ADVANCE_BUCKET:
-                    moved_to_ar = round(moved_to_ar + float(p.get("amount") or 0), 2)
-                elif await gl_service._already_posted("advance_reclass", oid):
-                    await gl_service.post_advance_reclass_reversal(
-                        order, decision_id, float(p.get("amount") or 0),
-                        label=f"{d.get('number')} · {reason}")
-            keep = [p for p in (order.get("payments") or [])
-                    if p.get("receipt_id") != decision_id]
-            paid = round(sum(float(p.get("amount") or 0) for p in keep), 2)
-            from services.customer_service import _order_grand_total as gt_of
-            gt = round(gt_of(order), 2)
-            await db.sales_orders.update_one({"id": oid}, {"$set": {
-                "payments": keep, "paid_total": paid,
-                "payment_status": ("paid" if paid >= gt - EPS
-                                   else "partial" if paid > EPS else "unpaid"),
-                "updated_at": now_iso()}})
-            try:
-                await plans.recompute_for_doc("sales_order", oid)
-            except Exception as exc:  # noqa: BLE001
-                logger.warning("[reverse_decision] efek samping gagal diabaikan: %s", exc)  # KN-C10
-        await ars.adjust_deposit(d.get("customer_id", ""), amount)
-        rev_je = await gl_service.post_variance_reversal(
-            decision_id=decision_id, entity_id=entity_id, amount=moved_to_ar,
-            debit_acc=gl_service.ACC_PIUTANG,
-            credit_acc=gl_service.ACC_UANG_MUKA_PELANGGAN,
-            label=f"{d.get('number')} · {reason}", created_by=actor.get("name", "system"))
-        undone = {"deposit_restored": amount}
-    elif kind == "refund":
-        ref = (d.get("effect") or {}).get("refund") or {}
-        cash_id = ref.get("cash_txn_id", "")
-        from services.payment_method_service import is_cash   # PM-T1 — satu pembeda tunai
-        cash_acc = gl_service.ACC_KAS_KECIL if await is_cash(entity_id or "", ref.get("method") or "") \
-            else gl_service.ACC_KAS_BESAR
-        if cash_id:
-            await db.cash_transactions.update_one(
-                {"id": cash_id}, {"$set": {"status": "void", "updated_at": now_iso()}})
-        await ars.adjust_deposit(d.get("customer_id", ""), amount)
-        rev_je = await gl_service.post_variance_reversal(
-            decision_id=decision_id, entity_id=entity_id, amount=amount,
-            debit_acc=cash_acc, credit_acc=gl_service.ACC_UANG_MUKA_PELANGGAN,
-            label=f"{d.get('number')} · {reason}", created_by=actor.get("name", "system"))
-        undone = {"cash_voided": cash_id, "deposit_restored": amount}
-    else:
-        # `outstanding` / `deposit` / `reschedule` tidak memindahkan uang. Jadwal yang
-        # sudah digeser TIDAK dipaksa kembali (itu kesepakatan dengan pelanggan) —
-        # cukup dicatat supaya terlihat di jejak.
-        undone = {"note": "Keputusan tidak memindahkan uang; tidak ada jurnal untuk dibalik."}
+        if kind in WRITEOFF_KINDS + ("allocate",):
+            hasil = await aas.reverse(source_id=decision_id, date=now_iso(), actor=actor, reason=label)
+            undone = {"orders_restored": [h["order_number"] for h in hasil if h.get("reversed")]}
+            if kind == "allocate":
+                kembali = round(sum(float(r.get("amount") or 0) for r in d.get("plan") or [] if r.get("deposit_taken"))
+                                if d.get("plan") else float(d.get("amount") or 0), 2)
+                if kembali > EPS and not steps.get("deposit_restored"):
+                    await ars.adjust_deposit(d.get("customer_id", ""), kembali)
+                    await _tandai(decision_id, {"reversal_steps.deposit_restored": True})
+                undone["deposit_restored"] = kembali
+        elif kind == "refund":
+            ref = (d.get("effect") or {}).get("refund") or {}
+            cash_id = ref.get("cash_txn_id", "")
+            if cash_id:
+                await db.cash_transactions.update_one(
+                    {"id": cash_id, "status": {"$ne": "void"}}, {"$set": {"status": "void", "updated_at": now_iso()}})
+            amt = round(float(d.get("amount") or 0), 2)
+            if (ref.get("deposit_taken", True)) and not steps.get("deposit_restored"):
+                await ars.adjust_deposit(d.get("customer_id", ""), amt)
+                await _tandai(decision_id, {"reversal_steps.deposit_restored": True})
+            undone = {"cash_voided": cash_id, "deposit_restored": amt}
+        elif kind in AP_WRITEOFF_KINDS:
+            # FX-07 — dulu jatuh ke cabang "tidak memindahkan uang" padahal jurnal Dr 2-1100 / Cr 4-9000 pernah terbit.
+            bill = await db.vendor_bills.find_one({"id": d.get("bill_id")}, {"_id": 0}) or {}
+            if bill.get("ap_variance_decision_id") == decision_id:
+                from services.vendor_bill_service import bill_financials
+                sisa = bill_financials({**bill, "ap_variance_closed": 0})["outstanding"]
+                await db.vendor_bills.update_one(
+                    {"id": bill["id"], "ap_variance_decision_id": decision_id},
+                    {"$set": {"ap_variance_closed": 0.0, "ap_variance_decision_id": "", "updated_at": now_iso(),
+                              **({"status": "posted"} if sisa > EPS and bill.get("status") == "paid" else {})}})
+            undone = {"bill_reopened": d.get("bill_number", ""), "closed_amount": round(float(d.get("amount") or 0), 2)}
+        else:
+            # `outstanding` / `deposit` / `reschedule` / `ap_advance` tidak memindahkan uang di sini. Jadwal yang
+            # sudah digeser TIDAK dipaksa kembali (itu kesepakatan dengan pelanggan) — cukup dicatat.
+            undone = {"note": "Keputusan tidak memindahkan uang; tidak ada jurnal untuk dibalik."}
 
-    await db[COLL].update_one({"id": decision_id}, _saga.finish_set({
-        "status": "reversed", "reversed_reason": reason.strip(),
-        "reversed_by": actor.get("name", "system"), "reversed_at": now_iso(),
-        "reversal_je_id": (rev_je or {}).get("id", ""),
-        "reversal_je_number": (rev_je or {}).get("number", ""),
-        "reversal_effect": undone, "updated_at": now_iso()}))
-    if d.get("receipt_id"):
-        await db.ar_receipts.update_one({"id": d["receipt_id"]}, {"$set": {
-            "variance.decision_id": "", "variance.decision_kind": "",
-            "variance.decision_number": "", "variance.resolved": False,
-            "variance.reversed_decision_id": decision_id,
-            "variance.needs_decision": (d.get("direction") in (DIR_UNDER, DIR_OVER)),
-            "updated_at": now_iso()}})
+        await _tandai(decision_id, {"reversal_effect": undone, "reversed_reason": reason.strip(),
+                                    "reversed_by": actor.get("name", "system"), "reversed_at": now_iso(),
+                                    "reversal_gl_status": "pending" if kind in JOURNAL_KINDS else "not_required"})
+        # JURNAL — pembalik lewat pintu tahan-gagal (`reversal_gl_status`; ulang dari panel Posting Gagal).
+        rev_je: Dict[str, Any] = {}
+        if kind in JOURNAL_KINDS:
+            jr = await _preg.durable_variance_reversal(await get(decision_id) or d, actor.get("name", "system"))
+            rev_je = jr.get("journal") or {}
+            if jr.get("journal_entry_id") and not rev_je.get("number"):
+                rev_je = await db.journal_entries.find_one({"id": jr["journal_entry_id"]},
+                                                           {"_id": 0, "id": 1, "number": 1}) or {}
+        await db[COLL].update_one({"id": decision_id}, _saga.finish_set({
+            "status": "reversed", "reversal_je_id": rev_je.get("id", ""),
+            "reversal_je_number": rev_je.get("number", ""), "updated_at": now_iso()}))
+        if d.get("receipt_id"):
+            await db.ar_receipts.update_one({"id": d["receipt_id"], "variance.decision_id": decision_id}, {"$set": {
+                "variance.decision_id": "", "variance.decision_kind": "",
+                "variance.decision_number": "", "variance.decision_status": "", "variance.resolved": False,
+                "variance.reversed_decision_id": decision_id,
+                "variance.needs_decision": (d.get("direction") in (DIR_UNDER, DIR_OVER)),
+                "updated_at": now_iso()}})
+    finally:
+        await _saga.release(COLL, decision_id, token)
     return await get(decision_id)
 
 
@@ -1131,30 +1238,16 @@ async def decide_bill(bill: Dict[str, Any], assessment: Dict[str, Any],
 
     number = await next_doc_number(COLL, "number", "SLB-", entity_id=entity_id or None)
     decision_id = new_id("pvd")
-    je_id = je_number = ""
-    effect: Dict[str, Any] = {}
-
-    if kind in ("ap_writeoff", "ap_rounding_writeoff"):
-        je = await gl_service.post_ap_variance_writeoff(
-            decision_id=decision_id, entity_id=entity_id, amount=gap,
-            label=f"{number} · {bill.get('bill_number', '')}",
-            created_by=actor.get("name", "system"))
-        je_id, je_number = (je or {}).get("id", ""), (je or {}).get("number", "")
-        await db.vendor_bills.update_one({"id": bill["id"]}, {"$set": {
-            "status": "paid", "ap_variance_closed": gap,
-            "ap_variance_decision_id": decision_id, "updated_at": now_iso()}})
-        effect = {"closed_amount": gap, "bill_status": "paid"}
+    if kind in AP_WRITEOFF_KINDS:
+        effect: Dict[str, Any] = {"closed_amount": gap, "bill_status": "paid"}
     elif kind in ("ap_advance", "ap_rounding_advance"):
         effect = {"advance_amount": gap,
                   "cash_txn_number": (advance_cash or {}).get("number", ""),
                   "account": gl_service.ACC_UANG_MUKA}
-        if bill.get("supplier_id"):
-            await db.suppliers.update_one({"id": bill["supplier_id"]},
-                                          {"$inc": {"advance_balance": gap},
-                                           "$set": {"updated_at": now_iso()}})
     else:  # ap_outstanding
         effect = {"note": "Sisa tetap hutang supplier — tidak ada perubahan pembukuan."}
 
+    # PK-19 — NIAT dulu (keputusan `pending`), lalu EFEK, JURNAL lewat pintu tahan-gagal, SELESAI (`02` §1).
     doc = {
         "id": decision_id, "number": number, "side": "ap", "entity_id": entity_id,
         "bill_id": bill.get("id"), "bill_number": bill.get("bill_number", ""),
@@ -1167,7 +1260,9 @@ async def decide_bill(bill: Dict[str, Any], assessment: Dict[str, Any],
         "note": str(payload.get("note") or ""),
         "decided_by": actor.get("name", "system"), "decided_by_role": actor.get("role", ""),
         "decided_at": now_iso(), "approver_role_required": approver_role,
-        "orders": [], "effect": effect, "je_id": je_id, "je_number": je_number,
+        "status": "pending", "gl_status": "pending" if kind in AP_WRITEOFF_KINDS else "not_required",
+        "gl_error": "", "journal_entry_id": "",
+        "orders": [], "effect": effect, "je_id": "", "je_number": "",
         "policy_snapshot": policy, "refs": [],
         "explain": (assessment.get("explain") or []) + [
             f"Keputusan: {KIND_LABEL.get(kind, kind)} sebesar {_rp(gap)}",
@@ -1185,7 +1280,25 @@ async def decide_bill(bill: Dict[str, Any], assessment: Dict[str, Any],
                                   note="selisih pembayaran tagihan supplier")
     except Exception as exc:  # noqa: BLE001
         logger.warning("[decide_bill] efek samping gagal diabaikan: %s", exc)  # KN-C10
-    return saved
+    # EFEK
+    if kind in AP_WRITEOFF_KINDS:
+        await db.vendor_bills.update_one({"id": bill["id"]}, {"$set": {
+            "status": "paid", "ap_variance_closed": gap,
+            "ap_variance_decision_id": decision_id, "updated_at": now_iso()}})
+    elif kind in ("ap_advance", "ap_rounding_advance") and bill.get("supplier_id"):
+        await db.suppliers.update_one({"id": bill["supplier_id"]},
+                                      {"$inc": {"advance_balance": gap},
+                                       "$set": {"updated_at": now_iso()}})
+    # JURNAL — Dr 2-1100 / Cr 4-9000 (potongan supplier); gagal → `gl_status="failed"`, keputusan tetap jadi.
+    if kind in AP_WRITEOFF_KINDS:
+        from services import posting_registry as _preg
+        jr = await _preg.durable_variance_decision(saved)
+        je = jr.get("journal") or {}
+        await _tandai(decision_id, {"je_id": je.get("id", "") or jr.get("journal_entry_id", ""),
+                                    "je_number": je.get("number", "")})
+    # SELESAI
+    await _tandai(decision_id, {"status": "done", "done_at": now_iso()})
+    return await get(decision_id) or saved
 
 
 # ── Pembacaan untuk UI, antrean & invarian ────────────────────────────────
@@ -1215,9 +1328,11 @@ async def list_decisions(entity_id: Any = "", side: str = "", kind: str = "",
 
 async def pending(entity_id: Any = "", limit: int = 200) -> List[Dict[str, Any]]:
     """Kwitansi yang selisihnya BELUM diputus — antrean kerja finance."""
+    # PK-19 — keputusan yang belum tuntas (`pending`/`failed`) tetap di antrean: kirim pilihan yang sama untuk melanjutkan.
     flt: Dict[str, Any] = {"status": {"$ne": "void"},
                            "variance.needs_decision": True,
-                           "variance.decision_id": ""}
+                           "$or": [{"variance.decision_id": ""},
+                                   {"variance.decision_status": {"$in": ["pending", "failed"]}}]}
     if isinstance(entity_id, dict):
         flt["entity_id"] = entity_id
     elif entity_id and entity_id != "all":
@@ -1239,6 +1354,8 @@ async def pending(entity_id: Any = "", limit: int = 200) -> List[Dict[str, Any]]
             "delta": round(float(v.get("delta") or 0), 2),
             "direction": v.get("direction", ""),
             "target_order_ids": v.get("target_order_ids") or [],
+            "decision_id": v.get("decision_id") or "", "decision_kind": v.get("decision_kind") or "",
+            "decision_status": v.get("decision_status") or "",
             "explain": v.get("explain") or [],
             "age_days": _age_days(r.get("created_at", "")),
         })

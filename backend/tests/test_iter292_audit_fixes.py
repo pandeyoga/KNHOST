@@ -82,12 +82,12 @@ class TestArReceiptGuards:
         assert after == before, "orphan payment written on so_008"
 
 
-# ---------- F-07: simulate-payment overpay guard ----------
+# ---------- F-07: simulate-payment overpay guard → PK-19: jalur dimatikan (410) ----------
 class TestSimulatePaymentGuard:
     def test_overpay_paid_order_rejected(self, admin_token):
         r = requests.post(f"{BASE}/sales-orders/so_007/simulate-payment", headers=H(admin_token),
                           json={"amount": 1000000, "method": "transfer"}, timeout=60)
-        assert r.status_code == 400, f"expected 400 got {r.status_code}: {r.text[:300]}"
+        assert r.status_code == 410, f"expected 410 got {r.status_code}: {r.text[:300]}"
 
     def test_payments_not_exceeding_grand_total(self, db):
         so = db.sales_orders.find_one({"id": "so_007"}, {"_id": 0})

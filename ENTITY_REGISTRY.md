@@ -459,11 +459,28 @@ Key Fields:
   amount          float    nominal diterima
   applied_total   float    total ter-alokasi ke order
   unapplied_amount float   sisa (amount - applied_total)
-  allocations     array    [{order_id, order_number, applied, outstanding_after, payment_status}]
+  allocations     array    [{order_id, order_number, applied, outstanding_after, payment_status,
+                            parts: [{kind: kas|deposit, amount, payment_id}]}]   (PK-19 — pecahan sumber dana)
   notes           string
   status          enum     posted | void
+  void_intent     object   PK-19 — niat pembatalan: {status: pending|done, reason, by, at, done_at,
+                            steps: {deposit_pulled, decision_reversed, orders: [id pesanan], cash: [id kas],
+                            deposit_restored}}; panggilan ulang meneruskan dari langkah yang belum bertanda
+  reversed_orders array    PK-19 — [{order_id, reversed, outstanding_after, payment_status}] per pesanan yang dibalik
+  variance.decision_status  pending | failed | done — PK-19, cermin status keputusan selisih kwitansi ini
   created_by / created_by_name / created_at / updated_at
 
+ℹ️ PK-19 — baris `sales_orders.payments[]` HANYA ditulis lewat `services/ar_allocation_service.py` (`allocate`,
+   `reverse`, `withdraw`, `remove_unborn`; pemeriksa `validate_targets`: pelanggan, PT, status pesanan, sisa tagihan).
+   Bentuk baris baru (baris lama tidak diubah; tanpa `kind` → `payment_kind(row)` dari `method`):
+     id               "pay_" + 24 heksadesimal SHA-1 dari "kind|source_id|order_id|seq" (rujukan sama → id sama)
+     kind             kas | deposit | titipan_bank | saldo_kredit | nota_kredit | hapus_sisa | kasus
+     amount           positif = alokasi; negatif = pembalik (atau penarikan `withdrawal: true` kasus realokasi)
+     receipt_id, receipt_number   dokumen sumber (kwitansi, keputusan, baris mutasi, penebusan, nota kredit, kasus)
+     method, date, created_at, plan_line_seq, gl_bucket   seperti sebelumnya (`date` pembalik = tanggal pembatalan)
+     reverses         (hanya pembalik) id baris yang dibalik — menyalin kind/method/gl_bucket/plan_line_seq asalnya
+     reversed_by      (pada baris asal) id pembaliknya
+   Pembatalan MENAMBAH baris pembalik bertanggal (tidak menghapus), jadi angka periode lalu tidak berubah mundur.
 ℹ️ EFEK SAMPING: meng-apply ke sales_orders.payments[] (+paid_total, +payment_status).
    payment_status: unpaid | partial | paid. Credit gate & Collection Worklist membaca payments[] → auto-update.
 ℹ️ Alokasi eksplisit (allocations) atau auto-FIFO (order terbuka tertua) bila kosong.
@@ -1347,6 +1364,7 @@ terdaftar di **`backend/services/posting_registry.py::KINDS`** (dibaca `routers/
 | `shipments` | dokumen (sudah ada) | `posted` hanya bila jurnal `shipment_revenue` surat jalan itu ada (GL-12); `journal_entry_id` baru |
 | `cash_transactions` | dokumen (sudah ada) | `gl_failed_at` baru |
 | `purchase_orders` | tiap unsur **`grir_clearings[]`** (`grir_clearings.$.gl_status`, …) — PK-28 | jenis registri `grir_clearing` ("Kliring GR/IR"), baris panel `<po_id>:<seq>` |
+| `payment_variance_decisions` | dokumen (`gl_status` = jurnal keputusan; **`reversal_gl_status`** = jurnal pembaliknya) — PK-19 | jenis registri `payment_variance` ("Keputusan Selisih Bayar"); ulang hanya untuk keputusan `done`/`reversed` |
 
 ### Sisa GR/IR per PO, selisih harga faktur, dan kliring  [PK-28 · IV-03]
 
@@ -3700,7 +3718,7 @@ Key Fields:  id, epc, tag_id, roll_id, sku, product_name, roll_no, device_id, de
 | amendment_reasons | amr_ | services/amendment_service.py, services/penalty_service.py | FASE G-1/G-2 — taksonomi label alasan koreksi & keputusan denda (dikelola admin). |
 | payment_plans | pyp_ | services/payment_plan_service.py, routers/payment_plans.py | FASE G-2 — rencana pembayaran fleksibel per dokumen (DP/cicilan/milestone), nomor `<ENT>/RPB-#####`. Scoped `entity_id`. PK-09: `schedule_history[]` (`at` · `by` · `reason` · `lines_before`) — satu butir tiap ubah baris jadwal; status & terbayar baris tidak dari klien. PM-T2: `lines[].pay_code` = kode bayar baris tagihan (`payment_codes`, diisi `payment_code_service.ensure_for_line`). |
 | penalties | pnl_ | services/penalty_service.py, routers/payment_plans.py | FASE G-2 — nota denda keterlambatan (`draft` tanpa jurnal → `issued`/`waived`/`adjusted`/`paid`), nomor `<ENT>/DN-DENDA-#####`. Scoped `entity_id`. PK-08: `days_prior` (hari yang sudah dimuat nota sebelumnya untuk baris yang sama; `billable_days` = hari nota ini saja, `days_late` kumulatif), `payments[]` (`id` pnp_ · `amount` · `method` · `account_id` · `cash_txn_id` · `status` pending→applied→done · `at` · `by` · `cash_doc`), `adjustments[]` (`seq` · `from` · `to` · `delta` · `reason_code` · `je_id` · `at` · `by`; jurnal pembalik `<id>:adjust:<seq>`). Bayar denda = kas `cash_transactions` `cash_pnl_<id pembayaran>` (`ref_type: "penalty"`, `ref_id` = nota, lawan 1-1270). |
-| payment_variance_decisions | pvd_ | services/payment_variance_service.py, routers/payment_variance.py | FASE G-3 — keputusan **selisih pembayaran** (lebih/kurang bayar), nomor `<ENT>/SLB-#####`. Jenis: `outstanding`/`reschedule`/`writeoff`/`deposit`/`allocate`/`refund` (+`rounding_*` otomatis, +`ap_*` sisi supplier). Wajib `reason_code` & pemutus; pemindahan uang selalu ber-jurnal; `status: reversed` bila dianulir. Scoped `entity_id`. |
+| payment_variance_decisions | pvd_ | services/payment_variance_service.py, routers/payment_variance.py | FASE G-3 — keputusan **selisih pembayaran** (lebih/kurang bayar), nomor `<ENT>/SLB-#####`. Jenis: `outstanding`/`reschedule`/`writeoff`/`deposit`/`allocate`/`refund` (+`rounding_*` otomatis, +`ap_*` sisi supplier). Wajib `reason_code` & pemutus; pemindahan uang selalu ber-jurnal; `status: reversed` bila dianulir. Scoped `entity_id`. PK-19: `status` `pending` → `done` · `failed` · `reversed` (niat dulu; ulang dengan pilihan sama meneruskan), `plan[]` (baris rencana efek: `{order_id, amount, deposit_taken, allocated, ar}` untuk alih deposit; `{order_id, amount}` untuk hapus sisa), `gl_status`/`gl_error`/`journal_entry_id` (jurnal keputusan, PK-18; jenis registri `payment_variance`), `reversal_gl_status`/`reversal_gl_error` + `reversal_steps.deposit_restored` (pembatalan), `error` (galat efek terakhir). Jurnal alih deposit per baris `source_id = <id>:<id pesanan>`. |
 | credit_overrides | cro_ | routers/sales_orders.py, so_approvals | Override limit kredit (pending→approved). |
 | collection_followups | cf_ | routers/crm.py | Follow-up penagihan AR. |
 | sales_targets | st_ | routers/hr_kpi, home | Target penjualan per sales/periode. |

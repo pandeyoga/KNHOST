@@ -1270,7 +1270,7 @@ async def allocate_holding(line_id: str, allocations: List[Dict[str, Any]], cust
                            entity_ids: Optional[List[str]] = None) -> Dict[str, Any]:
     """Titipan teridentifikasi → lunasi pesanan pelanggan.
 
-    Piutang pesanan berkurang (pola `apply_from_deposit` FASE G-3) dan jurnalnya
+    Piutang pesanan berkurang (satu fungsi alokasi PK-19, jenis `titipan_bank`) dan jurnalnya
     `Dr Titipan / Cr Piutang` — **tanpa kas dobel**, karena kasnya sudah diakui saat
     dana dititipkan.
     """
@@ -1290,37 +1290,25 @@ async def allocate_holding(line_id: str, allocations: List[Dict[str, Any]], cust
     if total > remaining + EPS:
         raise ValueError(f"Σ alokasi {rupiah(total)} melebihi sisa titipan {rupiah(remaining)}")
 
-    from services import ar_receipt_service as ar
     from services import gl_service as gl
-    # Validasi SELURUH alokasi (pesanan ada · entitas · pelanggan) SEBELUM klaim saga:
-    # penolakan yang belum menulis apa pun tidak boleh meninggalkan kunci saga gagal
-    # (dulu 403/400 di sini membuat baris terkunci 409 sampai dilepas admin).
+    # Validasi SELURUH alokasi SEBELUM klaim saga: penolakan yang belum menulis apa pun tidak boleh meninggalkan kunci
+    # saga gagal (dulu 403/400 di sini membuat baris terkunci 409 sampai dilepas admin).
+    # KN-G8-ALLOC-CROSSPT / PK-19 (FX-05, SL-08) — pesanan tujuan diperiksa SATU pemeriksa alokasi: milik pelanggan
+    # yang dipilih (400), PT rekening titipan (403), status hidup (409), dan muat di sisa tagihannya (400). Dulu
+    # fungsi alokasi lama mencari pesanan hanya dengan id, jadi titipan PT-A bisa melunasi piutang PT-B.
     orders: List[Dict[str, Any]] = []
     for a in allocations:
         order_id, amt = a.get("order_id"), _round(a.get("amount"))
         if not order_id or amt <= 0:
             raise ValueError("Alokasi tidak sah (order_id/amount kosong)")
-        # KN-G8-ALLOC-CROSSPT (temuan penutupan fase): alokasi hanya memeriksa BARIS-nya,
-        # tidak pernah memeriksa PESANAN tujuannya. Karena `_apply_to_order` mencari pesanan
-        # hanya dengan id, titipan PT-A bisa diarahkan melunasi pesanan PT-B lewat id yang
-        # dikirim tangan — uang PT-A membayar piutang PT-B, dan jurnalnya pecah di dua buku
-        # (Cr Piutang di buku PT-B, Cr Titipan di buku PT-A). Tutup di sini.
-        order = await db.sales_orders.find_one({"id": order_id}, {"_id": 0})
-        if not order:
-            raise ValueError("Pesanan tidak ditemukan")
-        oent = order.get("entity_id") or ""
-        lent = ln.get("entity_id") or ""
-        if entity_ids is not None and oent and oent != GROUP_ENTITY and oent not in entity_ids:
-            raise HTTPException(status_code=403, detail="Pesanan milik entitas lain")
-        if lent and oent and oent != lent and GROUP_ENTITY not in (oent, lent):
-            raise HTTPException(
-                status_code=403,
-                detail=f"Pesanan {order.get('number', order_id)} berada di entitas lain — "
-                       "titipan dana hanya boleh melunasi pesanan pada entitas rekening itu")
-        if customer_id and order.get("customer_id") and order["customer_id"] != customer_id:
-            raise ValueError(
-                f"Pesanan {order.get('number', order_id)} bukan milik pelanggan yang dipilih")
-        orders.append((order_id, amt, order))
+    from services import ar_allocation_service as aas
+    docs = await aas.validate_targets("titipan_bank",
+                                      [{"order_id": a.get("order_id"), "amount": _round(a.get("amount"))}
+                                       for a in allocations],
+                                      customer_id=customer_id, entity_id=ln.get("entity_id") or "")
+    by_id = {o["id"]: o for o in docs}
+    for a in allocations:
+        orders.append((a["order_id"], _round(a.get("amount")), by_id[a["order_id"]]))
     # PK-37 (K-03) — PERIKSA periode buku hari ini (jurnal alokasi bertanggal hari ini); pemeriksa PK-15 tetap.
     from services.book_date import periksa_periode_dokumen
     await periksa_periode_dokumen(ln.get("entity_id") or "", None, jenis="transaksi bank")
@@ -1372,7 +1360,7 @@ async def _alloc_steps(line_id: str, item: Dict[str, Any], ln: Dict[str, Any], a
     EFEK-1: pesanan dilunasi (sekali; pembayaran membawa `alloc_id`). EFEK-2: sisa titipan berkurang + butir
     `applied` dalam satu pembaruan bersyarat. JURNAL: Dr 2-1950 / Cr 1-1200 ber-`source_id` `<baris>:<id alokasi>`;
     gagal → butir tetap `applied` ber-`gl_status` `failed`."""
-    from services import ar_receipt_service as ar
+    from services import ar_allocation_service as aas
     from services import gl_service as gl
     iid, amt, order_id = item["id"], _round(item.get("amount")), item["order_id"]
     if item.get("status") == "pending":
@@ -1380,9 +1368,16 @@ async def _alloc_steps(line_id: str, item: Dict[str, Any], ln: Dict[str, Any], a
         res: Dict[str, Any] = {}
         if not paid:
             try:
-                res = await ar.apply_from_bank_holding(order_id, amt, ln["id"],
-                                                       (ln.get("holding") or {}).get("cash_number", ""),
-                                                       {"name": actor}, alloc_id=iid)
+                # PK-19 — satu fungsi alokasi; id baris dari (titipan_bank, baris mutasi, pesanan, id alokasi PK-15).
+                cash_number = (ln.get("holding") or {}).get("cash_number", "")
+                # Butir lama (sebelum PK-19) tanpa `customer_id`: sudah diperiksa saat dicatat — pakai pelanggan baris.
+                cus = item.get("customer_id") or ln.get("customer_id") or (await db.sales_orders.find_one(
+                    {"id": order_id}, {"_id": 0, "customer_id": 1}) or {}).get("customer_id", "")
+                res = await aas.allocate(
+                    kind="titipan_bank", order_id=order_id, amount=amt, source_id=ln["id"],
+                    source_number=f"{cash_number or ln['id']} (titipan dana bank)",
+                    customer_id=cus, entity_id=ln.get("entity_id") or "",
+                    date=now_iso(), actor=actor, method="bank_holding", seq=iid, extra={"alloc_id": iid})
             except Exception:
                 await db.bank_statement_lines.update_one(
                     {"id": line_id}, {"$pull": {"holding_allocated": {"id": iid, "status": "pending"}}})

@@ -93,16 +93,29 @@ async def _order_or_fail(order_id: str) -> Dict[str, Any]:
     return o
 
 
+def _pay_seq() -> str:
+    """PK-19 — urutan baris pembayaran dalam satu aksi kasus: id baris tetap per (kasus, aksi, langkah, urutan), jadi
+    aksi yang diulang memakai baris yang sama (pola `cash_case_{op}_{n}` di `_cash_txn`)."""
+    op = _CASE_OP.get()
+    if not op:
+        return new_id("seq")
+    n = _CASE_PAY_SEQ.get() + 1
+    _CASE_PAY_SEQ.set(n)
+    return f"{op}:{n}"
+
+
 async def _apply_payment(order_id: str, amount: float, case: Dict[str, Any],
-                         method: str) -> List[Dict[str, Any]]:
-    """Tempelkan pelunasan ke pesanan (piutang berkurang) TANPA kas baru."""
-    from services import ar_receipt_service as ar
-    res = await ar.apply_from_case(order_id, amount, case["id"], case["number"], method)
-    try:
-        from services import payment_plan_service as plans
-        await plans.recompute_for_doc("sales_order", order_id)
-    except Exception as exc:  # noqa: BLE001 — jadwal bayar bersifat pelengkap
-        logger.warning("[_apply_payment] efek samping gagal diabaikan: %s", exc)  # KN-C10
+                         method: str, *, customer_id: str = "") -> List[Dict[str, Any]]:
+    """Tempelkan pelunasan ke pesanan (piutang berkurang) TANPA kas baru — lewat SATU fungsi alokasi (PK-19): pesanan
+    harus milik pelanggan kasus & PT kasus, berstatus hidup, dan muat di sisa tagihannya."""
+    from services import ar_allocation_service as aas
+    o = await _order_or_fail(order_id)
+    res = await aas.allocate(
+        kind="kasus", order_id=order_id, amount=amount, source_id=case["id"],
+        source_number=f"{case.get('number') or case['id']} (kasus keuangan)",
+        customer_id=customer_id or case.get("customer_id") or o.get("customer_id") or "",
+        entity_id=case.get("entity_id") or o.get("entity_id") or "", date=now_iso(), actor="kasus keuangan",
+        method=method, seq=_pay_seq())
     return [_doc("order_payment", order_id, res.get("order_number", order_id),
                  f"Pelunasan {_rp(amount)} menempel di pesanan "
                  f"{res.get('order_number', order_id)}")]
@@ -186,7 +199,7 @@ async def act_alokasi_uang_muka(case: Dict[str, Any], p: Dict[str, Any],
             f"Alokasi {_rp(total)} melebihi saldo uang muka pelanggan {_rp(dep)}")
     docs: List[Dict[str, Any]] = []
     for a in allocs:
-        docs += await _apply_payment(a["order_id"], float(a["amount"]), case, "deposit")
+        docs += await _apply_payment(a["order_id"], float(a["amount"]), case, "deposit", customer_id=cust)
     await ar.adjust_deposit(cust, -total)
     je = await gl.post_finance_case(
         case_id=case["id"], entity_id=case.get("entity_id", ""), amount=total,
@@ -370,7 +383,6 @@ async def act_setor_dari_karyawan(case: Dict[str, Any], p: Dict[str, Any],
 async def act_realokasi_pesanan(case: Dict[str, Any], p: Dict[str, Any],
                                 actor: Dict[str, Any]) -> Dict[str, Any]:
     """Alokasi pembayaran berpindah antar pesanan (ledger tambah-saja, tanpa void)."""
-    from services import ar_receipt_service as ar
     amount = round(float(p.get("amount") or 0), 2)
     src_id, dst_id = p.get("from_order_id") or "", p.get("to_order_id") or ""
     if not (src_id and dst_id) or src_id == dst_id:
@@ -384,11 +396,17 @@ async def act_realokasi_pesanan(case: Dict[str, Any], p: Dict[str, Any],
         raise CaseActionError(
             "Realokasi hanya boleh antar pesanan pada PT yang sama — perpindahan uang "
             "antar PT memakai playbook 'Pelanggan bayar ke PT yang salah'.")
-    pulled = await ar.unapply_for_case(src_id, amount, case["id"], case["number"])
+    # PK-19 — penarikan dari pesanan asal = baris negatif ber-sumber kasus (append-only) lewat modul alokasi.
+    from services import ar_allocation_service as aas
+    pulled = await aas.withdraw(
+        kind="kasus", order_id=src_id, amount=amount, source_id=case["id"],
+        source_number=f"{case.get('number') or case['id']} (dipindahkan lewat kasus)",
+        customer_id=src.get("customer_id") or "", entity_id=src.get("entity_id") or "", date=now_iso(),
+        actor=actor.get("name", "system"), method="realokasi", seq=_pay_seq(), note="dipindahkan lewat kasus")
     docs = [_doc("order_payment", src_id, pulled.get("order_number", src_id),
                  f"Pengurang alokasi −{_rp(amount)} di pesanan "
                  f"{pulled.get('order_number', '')}")]
-    docs += await _apply_payment(dst_id, amount, case, "realokasi")
+    docs += await _apply_payment(dst_id, amount, case, "realokasi", customer_id=src.get("customer_id") or "")
     return {"documents": docs, "amount": amount,
             "extra": {"from_order": src.get("number"), "to_order": dst.get("number")}}
 
@@ -566,6 +584,7 @@ EXECUTORS = {
 
 _CASE_OP: contextvars.ContextVar = contextvars.ContextVar("case_op", default="")
 _CASE_OP_SEQ: contextvars.ContextVar = contextvars.ContextVar("case_op_seq", default=0)
+_CASE_PAY_SEQ: contextvars.ContextVar = contextvars.ContextVar("case_pay_seq", default=0)   # PK-19
 
 
 async def execute(action: str, case: Dict[str, Any], payload: Dict[str, Any],
@@ -575,6 +594,7 @@ async def execute(action: str, case: Dict[str, Any], payload: Dict[str, Any],
         raise CaseActionError(f"Aksi '{action}' belum punya pelaksana")
     t1 = _CASE_OP.set(f"{case['id']}_{action}_{len(case.get('documents') or [])}")
     t2 = _CASE_OP_SEQ.set(0)
+    t3 = _CASE_PAY_SEQ.set(0)
     try:
         return await fn(case, payload, actor)
     except HTTPException as e:                      # pesan service lain tetap tampil apa adanya
@@ -582,3 +602,4 @@ async def execute(action: str, case: Dict[str, Any], payload: Dict[str, Any],
     finally:
         _CASE_OP.reset(t1)
         _CASE_OP_SEQ.reset(t2)
+        _CASE_PAY_SEQ.reset(t3)

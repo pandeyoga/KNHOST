@@ -45,8 +45,10 @@ class ReverseBody(BaseModel):
     reason: str = Field(..., min_length=5)
 
 
-def _err(exc: Exception, code: int = 400) -> HTTPException:
-    return HTTPException(status_code=code, detail=str(exc))
+def _err(exc: Exception, code: int = 0) -> HTTPException:
+    """Galat keputusan → HTTP; kode dari jenis galatnya (`VarianceError` 400 · `VarianceForbidden` 403 ·
+    `VarianceConflict` 409 — PK-19)."""
+    return HTTPException(status_code=code or int(getattr(exc, "status_code", 400) or 400), detail=str(exc))
 
 
 @router.get("/payment-variances/meta")
@@ -122,7 +124,8 @@ async def by_receipt(receipt_id: str, request: Request) -> Dict[str, Any]:
     v = r.get("variance") or {}
     decision = await pvs.get(v.get("decision_id")) if v.get("decision_id") else None
     assessment = None
-    if v.get("needs_decision") and not v.get("decision_id"):
+    # PK-19 — keputusan yang belum tuntas (`pending`/`failed`) bisa diteruskan dari dialog yang sama.
+    if v.get("needs_decision") and (not v.get("decision_id") or v.get("decision_status") in ("pending", "failed")):
         # Takar ulang memakai angka kwitansi supaya dialog "putus belakangan" punya
         # pilihan & dampak yang sama dengan saat kwitansi dibuat.
         assessment = await pvs.pre_assess(
@@ -168,9 +171,7 @@ async def decide(receipt_id: str, body: DecideBody, request: Request) -> Dict[st
         await periksa_periode_dokumen_409((rcpt or {}).get("entity_id") or "", None, jenis="keputusan selisih bayar")
     try:
         row = await pvs.decide_receipt(receipt_id, body.model_dump(), actor)
-    except pvs.VarianceForbidden as exc:
-        raise _err(exc, 403) from exc
-    except pvs.VarianceError as exc:
+    except pvs.VarianceError as exc:   # 400 · 403 (wewenang) · 409 (sedang/sudah diputus, kalah balapan)
         raise _err(exc) from exc
     await audit(actor.get("name", ""), "payment_variance_decided",
                 "payment_variance_decisions", row["id"],

@@ -1253,10 +1253,17 @@ async def order_ar_room(order_id: str, exclude_receipt_id: str = "") -> float:
 
 
 async def tag_advance_payment(order_id: str, receipt_id: str) -> None:
-    """Tandai pembayaran (payments[].receipt_id) sebagai uang muka yang belum diakui."""
-    await db.sales_orders.update_one(
-        {"id": order_id, "payments.receipt_id": receipt_id},
-        {"$set": {"payments.$.gl_bucket": ADVANCE_BUCKET}})
+    """Tandai pembayaran (payments[].receipt_id) sebagai uang muka yang belum diakui.
+
+    PK-19 — satu dokumen sumber bisa punya LEBIH dari satu baris di pesanan yang sama (kwitansi kas + deposit), jadi
+    SEMUA barisnya ditandai (dulu hanya baris pertama lewat `payments.$`)."""
+    for _ in range(50):
+        res = await db.sales_orders.update_one(
+            {"id": order_id, "payments": {"$elemMatch": {"receipt_id": receipt_id,
+                                                         "gl_bucket": {"$ne": ADVANCE_BUCKET}}}},
+            {"$set": {"payments.$.gl_bucket": ADVANCE_BUCKET}})
+        if not res.modified_count:
+            break
 
 
 async def order_advance_reclassed(order_id: str) -> float:

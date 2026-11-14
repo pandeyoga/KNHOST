@@ -5,17 +5,9 @@
    "pemilik": "PK-22",
    "alasan": "bayar gaji"
   },
-  "post_advance_reclass_reversal": {
-   "pemilik": "belum ada",
-   "alasan": "pembalik reklas uang muka saat kwitansi/keputusan selisih dibatalkan"
-  },
   "post_amendment_credit_note": {
    "pemilik": "PK-32",
    "alasan": "nota kredit amandemen dan batal item"
-  },
-  "post_ap_variance_writeoff": {
-   "pemilik": "PK-19",
-   "alasan": "keputusan selisih bayar sisi hutang"
   },
   "post_bank_holding_allocation": {
    "pemilik": "PK-20",
@@ -89,18 +81,6 @@
    "pemilik": "belum ada",
    "alasan": "jasa makloon tak terserap (tingkat order, bukan langkah)"
   },
-  "post_variance_reallocation": {
-   "pemilik": "PK-19",
-   "alasan": "keputusan selisih bayar: alih deposit"
-  },
-  "post_variance_reversal": {
-   "pemilik": "PK-19",
-   "alasan": "pembalik keputusan selisih bayar"
-  },
-  "post_variance_writeoff": {
-   "pemilik": "PK-19",
-   "alasan": "keputusan selisih bayar: hapus sisa"
-  },
   "reverse_document": {
    "pemilik": "belum ada",
    "alasan": "pembalik generik jurnal dokumen"
@@ -121,20 +101,6 @@
    "jumlah": 1,
    "pemilik": "PK-22",
    "alasan": "akrual insentif"
-  },
-  {
-   "lokasi": "routers/invoices.py:simulate_payment",
-   "fungsi_gl": "post_order_cogs",
-   "jumlah": 1,
-   "pemilik": "belum ada",
-   "alasan": "simulasi pembayaran (jalur uji lama)"
-  },
-  {
-   "lokasi": "routers/invoices.py:simulate_payment",
-   "fungsi_gl": "post_sales_order",
-   "jumlah": 1,
-   "pemilik": "belum ada",
-   "alasan": "simulasi pembayaran (jalur uji lama)"
   },
   {
    "lokasi": "routers/sales_orders_extra.py:cancel_order",
@@ -198,13 +164,6 @@
    "jumlah": 1,
    "pemilik": "belum ada",
    "alasan": "pemulihan kwitansi yang terhenti"
-  },
-  {
-   "lokasi": "services/ar_receipt_service.py:void_receipt",
-   "fungsi_gl": "post_advance_reclass_reversal",
-   "jumlah": 1,
-   "pemilik": "belum ada",
-   "alasan": "pembalik reklas uang muka"
   },
   {
    "lokasi": "services/bank_recon_service.py:_alloc_steps",
@@ -338,41 +297,6 @@
    "jumlah": 1,
    "pemilik": "PK-32",
    "alasan": "nota kredit batal item"
-  },
-  {
-   "lokasi": "services/payment_variance_service.py:_allocate_from_deposit",
-   "fungsi_gl": "post_variance_reallocation",
-   "jumlah": 1,
-   "pemilik": "PK-19",
-   "alasan": "keputusan selisih bayar"
-  },
-  {
-   "lokasi": "services/payment_variance_service.py:decide_bill",
-   "fungsi_gl": "post_ap_variance_writeoff",
-   "jumlah": 1,
-   "pemilik": "PK-19",
-   "alasan": "keputusan selisih bayar"
-  },
-  {
-   "lokasi": "services/payment_variance_service.py:decide_receipt",
-   "fungsi_gl": "post_variance_writeoff",
-   "jumlah": 1,
-   "pemilik": "PK-19",
-   "alasan": "keputusan selisih bayar"
-  },
-  {
-   "lokasi": "services/payment_variance_service.py:reverse_decision",
-   "fungsi_gl": "post_advance_reclass_reversal",
-   "jumlah": 1,
-   "pemilik": "PK-19",
-   "alasan": "keputusan selisih bayar"
-  },
-  {
-   "lokasi": "services/payment_variance_service.py:reverse_decision",
-   "fungsi_gl": "post_variance_reversal",
-   "jumlah": 3,
-   "pemilik": "PK-19",
-   "alasan": "keputusan selisih bayar"
   },
   {
    "lokasi": "services/penalty_service.py:adjust",
@@ -565,8 +489,8 @@
   }
  },
  "total": {
-  "fungsi": 29,
-  "panggilan": 64,
+  "fungsi": 23,
+  "panggilan": 53,
   "insert_entry": 12
  }
 }

@@ -55,10 +55,13 @@ def main():
     print(f"[create] group order {onum} ok; stored sales_team={so.get('sales_team')}")
     assert len(so.get("sales_team") or []) == 2, "sales_team not stored"
 
-    # bayar penuh agar komisi terkumpul (engine on-collection)
-    rp = requests.post(f"{BASE}/sales-orders/{oid}/simulate-payment", json={"amount": 0}, headers=H)
-    assert rp.status_code == 200, f"simulate-payment failed: {rp.status_code} {rp.text}"
-    print("[pay] full payment simulated")
+    # bayar penuh agar komisi terkumpul (engine on-collection). PK-19 — simulasi bayar dimatikan (410): pembayaran
+    # dicatat lewat kwitansi (satu fungsi alokasi).
+    rp = requests.post(f"{BASE}/ar-receipts", headers=H, json={
+        "customer_id": so["customer_id"], "amount": so["grand_total"], "method": "transfer",
+        "entity_id": so.get("entity_id"), "allocations": [{"order_id": oid, "amount": so["grand_total"]}]})
+    assert rp.status_code == 200, f"kwitansi gagal: {rp.status_code} {rp.text}"
+    print("[pay] full payment via kwitansi")
 
     after_pic = comm(admin, PIC)
     after_co = comm(admin, CO)

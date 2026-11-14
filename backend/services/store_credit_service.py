@@ -21,11 +21,7 @@ from fastapi import HTTPException
 from db import db
 from core_utils import new_id, now_iso, next_doc_number, safe_doc, DEFAULT_ENTITY_ID, rupiah
 from services import gl_service
-from services.ar_receipt_service import _apply_to_order, _validate_allocation_target, list_open_orders
-from services.customer_service import (
-    order_payment_method, NON_AR_METHODS,
-    _order_grand_total as order_grand_total, _order_paid as order_paid,
-)
+from services.ar_receipt_service import list_open_orders
 
 EPS = 0.01
 
@@ -199,6 +195,7 @@ async def _redeem_locked(*, customer_id: str, entity_id: Optional[str], amount: 
     number = await next_doc_number("store_credit_redemptions", "number", "SCR-", entity_id=entity_id)
     now = now_iso()
 
+    from services import ar_allocation_service as _aas   # PK-19 — satu fungsi alokasi
     applied: List[Dict[str, Any]] = []
     remaining = amount
     if allocations:
@@ -215,25 +212,29 @@ async def _redeem_locked(*, customer_id: str, entity_id: Optional[str], amount: 
         if abs(alloc_total - amount) > EPS:
             raise HTTPException(status_code=400, detail=(
                 f"Σ alokasi {rupiah(alloc_total)} harus sama dengan nominal penebusan {rupiah(amount)}"))
-        planned = []
-        for oid, amt in merged.items():
-            oo = await _validate_allocation_target(oid, amt, customer_id=customer_id, entity_id=entity_id or "")
-            if order_payment_method(oo) in NON_AR_METHODS:
-                raise HTTPException(status_code=400,
-                                    detail=f"Order {oo.get('number')} bukan penjualan kredit (tanpa piutang)")
-            planned.append((oo["id"], amt))
-        for order_id, amt in planned:
-            applied.append(await _apply_to_order(order_id, amt, redemption_id, number, "store_credit", now))
-            remaining = round(remaining - amt, 2)
+        # PK-19 — satu pemeriksa alokasi (pelanggan, PT, status pesanan, sisa tagihan, pesanan tunai tanpa piutang).
+        planned = [(oid, amt) for oid, amt in merged.items()]
+        await _aas.validate_targets("saldo_kredit", [{"order_id": oid, "amount": amt} for oid, amt in planned],
+                                    customer_id=customer_id, entity_id=entity_id or "")
     else:
+        planned = []
         for oo in await list_open_orders(customer_id, entity_id=entity_id):
             if remaining <= EPS:
                 break
             take = round(min(remaining, oo["outstanding"]), 2)
             if take <= EPS:
                 continue
-            applied.append(await _apply_to_order(oo["order_id"], take, redemption_id, number, "store_credit", now))
+            planned.append((oo["order_id"], take))
             remaining = round(remaining - take, 2)
+    for i, (order_id, amt) in enumerate(planned):
+        try:
+            applied.append(await _aas.allocate(
+                kind="saldo_kredit", order_id=order_id, amount=amt, source_id=redemption_id, source_number=number,
+                customer_id=customer_id, entity_id=entity_id or "", date=now, actor=actor, method="store_credit",
+                seq=str(i)))
+        except HTTPException:
+            await _aas.remove_unborn(redemption_id)   # penebusan belum lahir → barisnya dicabut
+            raise
 
     applied_total = round(sum(a["applied"] for a in applied), 2)
     if applied_total <= EPS:
@@ -248,8 +249,7 @@ async def _redeem_locked(*, customer_id: str, entity_id: Optional[str], amount: 
             redemption_id=redemption_id, entity_id=entity_id, amount=applied_total,
             customer_label=label, date=now)
     except Exception as exc:
-        from services.ar_receipt_service import _unapply_receipt
-        await _unapply_receipt(redemption_id, applied)
+        await _aas.remove_unborn(redemption_id)   # PK-19 — penebusan tidak pernah sah → barisnya dicabut
         raise HTTPException(status_code=409, detail=f"Jurnal store credit gagal, penebusan dibatalkan: {exc}")
 
     entry = await _append(
@@ -350,22 +350,6 @@ def _actor_name(actor: Any) -> str:
     return actor.get("name") if isinstance(actor, dict) else (str(actor) if actor else "system")
 
 
-async def _recompute_order_payment(order_id: str, drop_receipt_id: str) -> None:
-    """Buang payments[] milik `drop_receipt_id` dari order lalu recompute paid_total/status.
-    Dipakai saat membatalkan redeem store credit (kembalikan outstanding order)."""
-    o = await db.sales_orders.find_one({"id": order_id}, {"_id": 0})
-    if not o:
-        return
-    payments = [p for p in (o.get("payments") or []) if p.get("receipt_id") != drop_receipt_id]
-    gt = order_grand_total(o)
-    paid = round(sum(float(p.get("amount", 0) or 0) for p in payments), 2)
-    status = "paid" if paid >= gt - EPS else ("partial" if paid > EPS else "unpaid")
-    await db.sales_orders.update_one(
-        {"id": order_id},
-        {"$set": {"payments": payments, "paid_total": paid,
-                  "payment_status": status, "updated_at": now_iso()}})
-
-
 async def reverse_redemption(redemption_id: str, *, reason: str = "",
                              actor: Any = None) -> Dict[str, Any]:
     """Batalkan pemakaian (redeem) store credit: kembalikan outstanding order, balik GL redeem
@@ -377,11 +361,11 @@ async def reverse_redemption(redemption_id: str, *, reason: str = "",
         return safe_doc(red)   # idempotent
 
     applied_total = round(float(red.get("applied_amount", 0) or 0), 2)
-    # 1) Kembalikan outstanding tiap order yang sempat dilunasi via redemption ini.
-    for a in (red.get("allocations") or []):
-        oid = a.get("order_id")
-        if oid:
-            await _recompute_order_payment(oid, redemption_id)
+    # 1) Kembalikan outstanding tiap order yang sempat dilunasi via redemption ini. PK-19 (SL-06) — baris DIBALIK
+    #    (baris pembalik bertanggal hari ini), tidak dihapus; periode lalu tidak berubah mundur.
+    from services import ar_allocation_service as _aas
+    await _aas.reverse(source_id=redemption_id, date=now_iso(), actor=_actor_name(actor),
+                       reason=reason or "Pembatalan pemakaian store credit")
 
     # 2) Balik GL redeem (Dr 1-1200 / Cr 2-1450) — idempotent.
     rev_jes = await gl_service.reverse_document(

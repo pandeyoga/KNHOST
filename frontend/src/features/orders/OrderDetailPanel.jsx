@@ -1,6 +1,6 @@
 import { AskKnButton } from "../../components/AskKnButton";
 import { useEffect, useState } from "react";
-import { XCircle, Clock3, Truck, CreditCard, PackageX, ShieldAlert, Send, FileText, AlertTriangle, PackageCheck, ClipboardCheck, PackageSearch, Repeat, Unlock, PencilLine } from "lucide-react";
+import { XCircle, Clock3, Truck, PackageX, ShieldAlert, Send, FileText, AlertTriangle, PackageCheck, ClipboardCheck, PackageSearch, Repeat, Unlock, PencilLine } from "lucide-react";
 import { can, roleLabel } from "../../config/roles";
 import { formatCurrency, formatDateTime, formatQty } from "../../utils/formatters";
 import { taxBreakdownRows, taxRuleRows } from "../../utils/taxBreakdown";   // K-03 (26 Okt) — rincian PPN seragam layar & PDF
@@ -51,7 +51,6 @@ export function OrderDetailPanel({
   onApprove,
   onConfirm,
   onCancel,
-  onPay,
   onGenerateDocument,
   onReleaseReservation,
   onSubmitForApproval,
@@ -98,7 +97,6 @@ export function OrderDetailPanel({
   // Sekarang: tidak dipanggil bila tak berhak, dan layarnya menunjuk ke tab
   // "Perjalanan Pesanan" (E8.14) yang memang dirancang untuk sales.
   const canSeeShipments = can(perms, "wms", "view");
-  const canTakeMoney = can(perms, "ar_receipt", "create");   // Finance
   // 2026-10 — override SO (Admin Sales/Manager/Admin) & pembatalan ber-alasan — izin bisa diatur di matriks peran.
   const canOverride = can(perms, "order", "override") && sel?.order_type !== "sample" &&
     ["draft", "reserved", "waiting_approval", "approved", "waiting_stock", "confirmed"].includes(sel?.status);
@@ -644,11 +642,7 @@ export function OrderDetailPanel({
               <FileText size={13} /> Setujui{sel.required_approval_role ? ` (${roleLabel(sel.required_approval_role)})` : ""}
             </button>
           )}
-          {sel.status === "confirmed" && sel.payment_status !== "paid" && canTakeMoney && (
-            <button data-testid={`simulate-payment-button-${sel.id}`} className="secondary-button" onClick={() => onPay(sel.id)}>
-              <CreditCard size={13} /> Simulasi Pembayaran
-            </button>
-          )}
+          {/* PK-19 (SL-05) — tombol simulasi bayar dihapus: pembayaran pesanan dicatat lewat kwitansi. */}
           {["reserved", "waiting_approval", "approved", "waiting_stock"].includes(sel.status) && (
             <button data-testid={`release-reservation-button-${sel.id}`} className="secondary-button" onClick={() => onReleaseReservation(sel.id)}>
               <PackageX size={13} /> Lepas Reservasi

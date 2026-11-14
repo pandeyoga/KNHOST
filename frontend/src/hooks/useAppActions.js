@@ -492,19 +492,6 @@ export function useAppActions(state) {
     }
   };
 
-  const payInvoice = async (orderId, amount) => {
-    try {
-      // Fase 1B — amount opsional; backend pakai grand_total order (sudah termasuk PPN)
-      const body = { method: "Transfer Simulasi", created_by: user?.name || "Admin Demo" };
-      if (amount && Number(amount) > 0) body.amount = Number(amount);
-      const response = await axios.post(`${API}/sales-orders/${orderId}/simulate-payment`, body);
-      setNotice(`Invoice ${response.data.number} dibuat (Rp ${formatQty(response.data.grand_total)} incl. PPN). SIMULATED payment.`);
-      await loadAll();
-    } catch (error) {
-      setNotice(error.response?.data?.detail || "Simulasi pembayaran gagal.");
-    }
-  };
-
   const approvePurchaseOrder = async (poId) => {
     try {
       const response = await axios.post(`${API}/purchase-orders/${poId}/approve`);
@@ -872,7 +859,7 @@ export function useAppActions(state) {
   return {
     login, logout, showMetricDetail, loadAll,
     inspectProduct, addToCart, createCustomer, submitOrder, mutateOrder,
-    payInvoice, releaseReservation, markDelivered, generateDocument, generateLabel,
+    releaseReservation, markDelivered, generateDocument, generateLabel,
     issueTaxInvoice,
     approvePurchaseOrder,
     adminCreate, adminPatch, adminDelete, importMaster, exportMaster,

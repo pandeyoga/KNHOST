@@ -1,14 +1,10 @@
-"""Invoices router: invoices and payment simulation."""
+"""Invoices router: daftar faktur (invoices). PK-19 — jalur "simulasi pembayaran" dimatikan (410)."""
 import logging
 from typing import Any, Dict, List
 from fastapi import APIRouter, HTTPException, Request
 from db import db
-from dependencies import require_permission, audit
-from core_utils import new_id, now_iso, safe_doc, DEFAULT_ENTITY_ID
-from schemas import PaymentSimulationCreate
-from services import gl_service
-from services.customer_service import order_payment_method, NON_AR_METHODS
-from services.ar_receipt_service import _cash_routing
+from dependencies import require_permission
+from core_utils import safe_doc
 from entity_scope import entity_ctx, assert_entity_access, scope_value
 
 logger = logging.getLogger(__name__)
@@ -35,114 +31,10 @@ async def order_invoices(order_id: str, request: Request) -> List[Dict[str, Any]
 
 
 @router.post("/sales-orders/{order_id}/simulate-payment")
-async def simulate_payment(order_id: str, payload: PaymentSimulationCreate, request: Request) -> Dict[str, Any]:
-    actor = await require_permission(request, "order", "update")
-    order = safe_doc(await db.sales_orders.find_one({"id": order_id}, {"_id": 0}))
-    if not order:
-        raise HTTPException(status_code=404, detail="Order tidak ditemukan")
-    assert_entity_access(order, "sales_orders", await entity_ctx(request))  # S#074 IDOR-WRITE
-    # D-01 — nomor invoice per order dari sequence atomik (dulu count()+1, rawan kembar).
-    from core_utils import next_doc_number as _ndn
-    _inv_prefix = f"INV-{order['number'].replace('SO-', '')}-"
-    invoice_number = await _ndn("invoices", "number", _inv_prefix, width=2)
-    # Fase 1B — invoice mengikuti breakdown pajak order (server-authoritative).
-    grand_total = float(order.get("grand_total", order.get("total_amount", 0)) or 0)
-    amount = float(payload.amount) if (payload.amount and float(payload.amount) > 0) else grand_total
-    # F-07 (audit 2026-09-02) — jalur legacy ini dulu tanpa pagar lebih-bayar & tidak
-    # menyentuh `paid_total`, sehingga Σpayments > grand_total dan dua angka "terbayar"
-    # berbeda di layar. Sekarang: tolak lebih-bayar, default = sisa outstanding.
-    prev_paid = round(sum(float(p.get("amount", 0) or 0)
-                          for p in (order.get("payments") or [])), 2)
-    outstanding = round(grand_total - prev_paid, 2)
-    if outstanding <= 0.01:
-        raise HTTPException(status_code=400,
-                            detail=f"Order {order.get('number')} sudah lunas — tidak ada outstanding.")
-    if not (payload.amount and float(payload.amount) > 0):
-        amount = outstanding
-    if amount > outstanding + 0.01:
-        raise HTTPException(
-            status_code=400,
-            detail=f"Pembayaran melebihi outstanding order {order.get('number')} "
-                   f"(sisa {outstanding:,.0f}). Gunakan Penerimaan AR untuk kelebihan bayar.")
-    invoice = {
-        "id": new_id("inv"),
-        "number": invoice_number,
-        "order_id": order_id,
-        "order_number": order["number"],
-        "customer_id": order["customer_id"],
-        "customer_name": order["customer_name"],
-        "entity_id": order.get("entity_id"),
-        "amount": amount,
-        # Rincian pajak (untuk dokumen Faktur/Invoice)
-        "total_amount": float(order.get("total_amount", 0) or 0),
-        "discount_total": float(order.get("discount_total", 0) or 0),
-        "net_subtotal": float(order.get("net_subtotal", grand_total) or 0),
-        "dpp": float(order.get("dpp", 0) or 0),
-        "ppn_rate": float(order.get("ppn_rate", 0) or 0),
-        "ppn_mode": order.get("ppn_mode", "excluded"),
-        "ppn_amount": float(order.get("ppn_amount", 0) or 0),
-        "grand_total": grand_total,
-        "payment_term_code": order.get("payment_term_code", ""),
-        "payment_term_name": order.get("payment_term_name", ""),
-        "method": payload.method,
-        "status": "paid",
-        "created_by": payload.created_by,
-        "created_at": now_iso(),
-    }
-    # Pagar klik-ganda (sesi 9): pembayaran IDENTIK (nominal+metode) dalam 10 detik terakhir
-    # ditolak — klaim saga hanya menutup jalur yang tumpang-tindih, bukan yang berurutan cepat.
-    from datetime import datetime, timedelta, timezone
-    _last = (order.get("payments") or [])[-1] if order.get("payments") else None
-    if _last and abs(float(_last.get("amount") or 0) - amount) < 0.01 and _last.get("method") == payload.method:
-        try:
-            _age = datetime.now(timezone.utc) - datetime.fromisoformat(str(_last.get("created_at")).replace("Z", "+00:00"))
-        except Exception:  # noqa: BLE001
-            _age = timedelta(days=1)
-        if _age < timedelta(seconds=10):
-            raise HTTPException(status_code=409, detail={"code": "DUPLICATE_PAYMENT",
-                                "message": f"Pembayaran identik {amount:,.0f} ({payload.method}) baru saja dicatat "
-                                           f"({_last.get('number', '')}). Tunggu 10 detik bila memang pembayaran kedua."})
-    # INV-ATOMIC-01 — klaim pesanan SEBELUM invoice ditulis. Pagar klik-ganda ikut dalam
-    # PRASYARAT klaim (atomik di Mongo): pembayaran identik ≤10 dtk terakhir → klaim gagal 409,
-    # sehingga dua permintaan yang membaca snapshot lama pun tidak bisa sama-sama menang.
-    from services import atomic_claim as _saga
-    _cutoff = (datetime.now(timezone.utc) - timedelta(seconds=10)).isoformat()
-    await _saga.claim("sales_orders", order_id, "simulate_payment", actor=actor.get("name", ""),
-                      precondition={"payments": {"$not": {"$elemMatch": {
-                          "amount": amount, "method": payload.method, "created_at": {"$gte": _cutoff}}}}})
-    await db.invoices.insert_one(dict(invoice))   # insert COPY → _id tak mencemari original
-    # Status pembayaran: lunas bila menutup grand_total, jika tidak parsial
-    total_paid = sum(float(p.get("amount", 0) or 0)
-                     for p in order.get("payments", [])) + amount
-    pay_status = "paid" if total_paid + 0.01 >= grand_total else "paid_partial"
-    _upd = _saga.finish_set({"payment_status": pay_status, "updated_at": now_iso()})
-    _upd["$inc"] = {"paid_total": amount}
-    _upd["$push"] = {"payments": invoice}     # invoice masih bersih (tanpa _id)
-    await db.sales_orders.update_one({"id": order_id}, _upd)
-    await audit(actor["name"], "payment_simulated", "invoice", invoice["id"],
-                {"amount": amount, "method": payload.method, "ppn_amount": invoice["ppn_amount"]})
-    # F3 — Auto-posting penjualan → GL (idempotent per SO). Best-effort: kegagalan GL
-    # tidak boleh menggagalkan pencatatan pembayaran.
-    try:
-        fresh = safe_doc(await db.sales_orders.find_one({"id": order_id}, {"_id": 0})) or order
-        order_for_gl = {**fresh, "method": payload.method}
-        await gl_service.post_sales_order(order_for_gl)
-        await gl_service.post_order_cogs(order_for_gl)
-        # Gelombang 1 F-4 — settlement pembayaran order AR: kas masuk (Dr Kas / Cr Piutang).
-        # Order tunai (NON_AR) tidak perlu — jurnal pendapatannya sudah mendebit Kas.
-        if order_payment_method(order_for_gl) not in NON_AR_METHODS:
-            cash_type, force_all = await _cash_routing(payload.method, order.get("entity_id") or "")
-            # FASE E-7 (E7.4) — kas grup dihapus: uang masuk milik badan usaha pesanannya.
-            from services.cash_entity_service import resolve_owner as _cash_owner
-            cash_entity = _cash_owner(order.get("entity_id"), DEFAULT_ENTITY_ID,
-                                      what="Kas masuk pembayaran faktur")
-            # PK-20 — kas lewat pembuat kas satu pintu (rekening tunggal PT jenis kas itu; tanpa rekening → galat
-            # dicatat di log seperti kegagalan GL lain di jalur simulasi ini — jalur dimatikan PK-19).
-            from services import cash_ledger
-            await cash_ledger.create_cash(
-                entity_id=cash_entity, direction="in", amount=amount, ref_type="ar_receipt", ref_id=invoice["id"],
-                cash_type=cash_type, category="penagihan", actor=payload.created_by or actor["name"],
-                description=f"Pembayaran {invoice['number']} — {order.get('customer_name', '')}")
-    except Exception as exc:  # noqa: BLE001
-        logger.error("Gagal posting GL penjualan utk order %s: %s", order_id, exc)
-    return safe_doc(invoice)
+async def simulate_payment(order_id: str, request: Request) -> Dict[str, Any]:
+    """PK-19 (SL-05, IA-07) — "Simulasi bayar" DIMATIKAN: dulu menulis dokumen faktur utuh ke `payments[]` dengan izin
+    ubah pesanan dan menelan galat jurnal. Pembayaran pesanan dicatat lewat kwitansi (satu fungsi alokasi). Selalu 410
+    sesudah pemeriksaan izin; isi permintaan diabaikan dan tidak ada yang ditulis."""
+    await require_permission(request, "order", "view")
+    raise HTTPException(status_code=410, detail=(
+        "Simulasi pembayaran sudah tidak dipakai. Catat pembayaran lewat kwitansi (Catat Penerimaan)."))

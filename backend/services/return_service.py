@@ -431,8 +431,13 @@ async def _create_credit_note_and_post_gl(
         await db.credit_notes.update_one({"id": cn["id"]}, {"$set": {"excess_amount": cn["excess_amount"],
                                                                      "bill_scope": "source_order", "ar_applied": 0}})
         if ar_amt > 0:
-            from services import ar_receipt_service as _ar
-            await _ar.apply_from_case(ret["order_id"], ar_amt, cn["id"], cn_number, method="credit_note")
+            # PK-19 — nota kredit menempel ke pesanan asal lewat SATU fungsi alokasi (pelanggan, PT, status, sisa).
+            from services import ar_allocation_service as _aas
+            await _aas.allocate(kind="nota_kredit", order_id=ret["order_id"], amount=ar_amt, source_id=cn["id"],
+                                source_number=cn_number,
+                                customer_id=cn.get("customer_id") or order.get("customer_id") or "",
+                                entity_id=eid, date=now, actor=cn.get("created_by") or "system",
+                                method="credit_note")
             await db.credit_notes.update_one({"id": cn["id"]}, {"$set": {"ar_applied": ar_amt}})
             cn["ar_applied"] = ar_amt
     await _post_cn_gl(ret, cn)
@@ -1996,9 +2001,11 @@ async def reverse_settlement(return_id: str, actor: str, reason: str = "") -> Di
     # e) Void Credit Note (+ tarik pengurang piutang SO yang diterapkan nota ini).
     async for _cn in db.credit_notes.find({"return_id": return_id, "status": {"$ne": "void"},
                                           "ar_applied": {"$gt": 0}}, {"_id": 0}):
-        from services import ar_receipt_service as _ar
-        await _ar.unapply_for_case(ret["order_id"], float(_cn["ar_applied"]), _cn["id"], _cn["number"],
-                                   method="credit_note_void", note="nota kredit dibatalkan")
+        # PK-19 — pengurang piutang nota kredit DIBALIK (baris pembalik bertanggal), tidak ditarik diam-diam.
+        from services import ar_allocation_service as _aas
+        await _aas.reverse(source_id=_cn["id"], date=now, actor=actor,
+                           reason=f"nota kredit {_cn.get('number', '')} dibatalkan · {reason}",
+                           order_id=ret["order_id"])
     await db.credit_notes.update_many(
         {"return_id": return_id, "status": {"$ne": "void"}},
         {"$set": {"status": "void", "reversed": True, "reversed_at": now,

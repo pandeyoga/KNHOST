@@ -63,9 +63,9 @@ ok("melebihi outstanding → 400", r.status_code == 400, f"{r.status_code} {r.te
 so8c = db.sales_orders.find_one({"id": "so_008"}, {"_id": 0, "payments": 1})
 ok("payments[] so_008 tidak bertambah", len(so8c.get("payments") or []) == len(so8.get("payments") or []))
 
-print("\n== F-07: simulate-payment menolak lebih-bayar & sinkron paid_total ==")
+print("\n== F-07: simulate-payment dimatikan (PK-19) & sinkron paid_total ==")
 r = admin.post(f"{API}/sales-orders/so_007/simulate-payment", json={"amount": 1000000, "method": "transfer"})
-ok("order lunas → 400", r.status_code == 400, f"{r.status_code} {r.text[:100]}")
+ok("simulasi bayar dimatikan → 410", r.status_code == 410, f"{r.status_code} {r.text[:100]}")
 so7 = db.sales_orders.find_one({"id": "so_007"}, {"_id": 0, "grand_total": 1, "payments": 1})
 ok("Σpayments so_007 ≤ grand_total",
    sum(float(p.get("amount", 0) or 0) for p in so7["payments"]) <= float(so7["grand_total"]) + 0.01)

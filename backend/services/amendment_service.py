@@ -1012,8 +1012,12 @@ async def _settle_credit_note(note: Dict[str, Any], order: Dict[str, Any]) -> No
     ar_part = round(min(gross, max(open_amt, 0.0)), 2)
     sc_part = round(gross - ar_part, 2)
     if ar_part > 0:
-        from services import ar_receipt_service as _ar
-        await _ar.apply_from_case(order["id"], ar_part, note["id"], note["number"], method="credit_note")
+        # PK-19 — nota kredit amandemen menempel lewat SATU fungsi alokasi.
+        from services import ar_allocation_service as _aas
+        await _aas.allocate(kind="nota_kredit", order_id=order["id"], amount=ar_part, source_id=note["id"],
+                            source_number=note["number"], customer_id=order.get("customer_id") or "",
+                            entity_id=order.get("entity_id") or note.get("entity_id") or "", date=now_iso(),
+                            actor=note.get("created_by") or "system", method="credit_note")
     je = (await gl_service.post_amendment_credit_note(note, ar_part=ar_part, store_credit_part=sc_part)
           if gross > 0.005 else None)
     if sc_part > 0:

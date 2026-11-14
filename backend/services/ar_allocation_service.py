@@ -289,6 +289,31 @@ async def withdraw(*, kind: str, order_id: str, amount: float, source_id: str, s
     return {**_hasil(updated, row, replayed=False), "withdrawn": amt}
 
 
+def _sisa_pembalik(order: Dict[str, Any], source_id: str) -> tuple:
+    """(baris positif `source_id` yang belum dibalik, Σ terbayar sesudah semuanya dibalik)."""
+    asal = [p for p in order.get("payments") or []
+            if _milik(p, source_id) and float(p.get("amount") or 0) > EPS
+            and not p.get("reverses") and not p.get("reversed_by") and p.get("id")]
+    return asal, round(order_paid(order) - sum(float(p["amount"]) for p in asal), 2)
+
+
+async def reverse_check(source_id: str, order_ids: Optional[List[str]] = None) -> None:
+    """PERIKSA tanpa tulisan sebelum `reverse` (dipanggil di langkah PERIKSA pembatalan): membalik semua baris
+    `source_id` tidak boleh membuat terbayar pesanan mana pun negatif (pembayarannya sudah dipindah lewat dokumen lain
+    — mis. kasus realokasi) → 409 dengan pesan yang sama dengan `reverse`."""
+    if not source_id:
+        return
+    flt: Dict[str, Any] = {"$or": [{"payments.receipt_id": source_id}, {"payments.variance_decision_id": source_id}]}
+    if order_ids is not None:
+        flt["id"] = {"$in": list(order_ids)}
+    async for o in db.sales_orders.find(flt, {"_id": 0}):
+        asal, sesudah = _sisa_pembalik(o, source_id)
+        if asal and sesudah < -EPS:
+            raise HTTPException(status_code=409, detail=(
+                f"Pembayaran {asal[0].get('receipt_number') or source_id} pada pesanan {_nomor(o)} sudah dipindahkan "
+                "lewat dokumen lain. Batalkan pemindahan itu dulu."))
+
+
 async def reverse(*, source_id: str, date: str, actor: Any, reason: str, order_id: str = "") -> List[Dict[str, Any]]:
     """Balik semua baris POSITIF milik `source_id` yang belum dibalik (opsional: hanya di pesanan `order_id`).
 
@@ -309,9 +334,7 @@ async def reverse(*, source_id: str, date: str, actor: Any, reason: str, order_i
         o = await db.sales_orders.find_one({"id": oid}, {"_id": 0}) or {"id": oid}
         dibalik: List[str] = []
         total = 0.0
-        asal = [p for p in o.get("payments") or []
-                if _milik(p, source_id) and float(p.get("amount") or 0) > EPS
-                and not p.get("reverses") and not p.get("reversed_by") and p.get("id")]
+        asal, _ = _sisa_pembalik(o, source_id)
         for p in asal:
             amt = round(float(p.get("amount") or 0), 2)
             rev_id = payment_id(payment_kind(p), source_id, oid, f"balik:{p['id']}")

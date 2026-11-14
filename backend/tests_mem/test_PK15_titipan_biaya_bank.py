@@ -14,7 +14,6 @@ from pathlib import Path
 import pytest
 
 from pembantu import tutup_periode
-from services import ar_receipt_service as ar
 from services import gl_service as gl
 
 pytestmark = pytest.mark.anyio
@@ -120,7 +119,10 @@ async def test_U02_satu_panggilan_dua_butir_ke_pesanan_sama(klien, db, kepala_ad
 
 async def test_U03_U04_gagal_di_tengah_lalu_dilanjutkan(klien, db, kepala_admin, monkeypatch):
     lid, so = await _siap(klien, db, kepala_admin)
-    asli = ar.apply_from_bank_holding
+    # PK-19 — pelunasan pesanan dari titipan kini lewat SATU fungsi alokasi (`ar_allocation_service.allocate`);
+    # pembungkus lama di layanan kwitansi dihapus. Paksaan gagal dipasang di fungsi alokasi itu.
+    from services import ar_allocation_service as aas
+    asli = aas.allocate
     hit = {"n": 0}
 
     async def _kedua_gagal(*a, **kw):
@@ -128,7 +130,7 @@ async def test_U03_U04_gagal_di_tengah_lalu_dilanjutkan(klien, db, kepala_admin,
         if hit["n"] == 2:
             raise RuntimeError("uji: pelunasan pesanan gagal")
         return await asli(*a, **kw)
-    monkeypatch.setattr(ar, "apply_from_bank_holding", _kedua_gagal)
+    monkeypatch.setattr(aas, "allocate", _kedua_gagal)
     r = await _alokasi(klien, kepala_admin, lid, [(so["x"], 3_000_000), (so["y"], 4_000_000)])
     assert r.status_code >= 400, r.text
     b = await _baris_doc(db, lid)
@@ -137,7 +139,7 @@ async def test_U03_U04_gagal_di_tengah_lalu_dilanjutkan(klien, db, kepala_admin,
     assert await _terbayar(db, so["y"]) == 0
     assert len(await _jurnal_alokasi(db, lid)) == 1
     assert "saga_lock" not in b
-    monkeypatch.setattr(ar, "apply_from_bank_holding", asli)
+    monkeypatch.setattr(aas, "allocate", asli)
     # U4 — paksaan dicabut, alokasi so_y
     r = await _alokasi(klien, kepala_admin, lid, [(so["y"], 4_000_000)])
     assert r.status_code == 200, r.text
@@ -199,7 +201,8 @@ async def test_U08_lintas_pt_ditolak(klien, db, kepala_admin, akun, sesi, peran_
                                       "customer_id": "cus_x", "grand_total": 5_000_000, "status": "confirmed",
                                       "payments": []})
     r = await _alokasi(klien, kepala_admin, lid, [("so_k_pk15", 1_000_000)])
-    assert r.status_code == 403 and "entitas lain" in r.text, r.text
+    # PK-19 — pesan satu pemeriksa alokasi (dulu "…berada di entitas lain…").
+    assert r.status_code == 403 and "milik PT lain" in r.text, r.text
     rid = await peran_tanpa_acuan({"cash": ["view", "create"]}, label="Kas Kanda PK15")
     h = await sesi(await akun(rid, entitas=("ent_kanda",)), entitas="ent_kanda")
     r = await _alokasi(klien, h, lid, [(so["x"], 1_000_000)])

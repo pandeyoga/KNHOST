@@ -173,12 +173,24 @@ async def _receipt_cash_ids(receipt_id: str) -> List[str]:
 
 
 async def post_receipt_void(receipt: Dict[str, Any], created_by: str = "system") -> Optional[Dict[str, Any]]:
-    """Pembalik kwitansi yang dibatalkan: jurnal pembalik tiap kas kwitansi, lalu pembalik reklas deposit. → jurnal
-    pembalik pertama (termasuk pembalik yang SUDAH ada, mis. dibalik manual lebih dulu — PK-10)."""
+    """Pembalik kwitansi yang dibatalkan: (PK-19) pembalik reklas uang muka tiap pesanan yang uang mukanya sudah
+    direklas ke Piutang (KEB-PDPT), jurnal pembalik tiap kas kwitansi, lalu pembalik reklas deposit. → jurnal
+    pembalik pertama (termasuk pembalik yang SUDAH ada, mis. dibalik manual lebih dulu — PK-10). Semua fungsinya
+    idempoten per sumber, jadi ulang dari panel tidak menggandakan jurnal."""
     from services import gl_service as gl
     label = f"void {receipt.get('number', '')}"
-    hasil = [await gl.post_cash_void(cid, label=label, created_by=created_by)
-             for cid in await _receipt_cash_ids(receipt["id"])]
+    hasil: List[Optional[Dict[str, Any]]] = []
+    for oid in dict.fromkeys(a.get("order_id") for a in receipt.get("allocations") or [] if a.get("order_id")):
+        order = await db.sales_orders.find_one({"id": oid}, {"_id": 0})
+        if not order:
+            continue
+        adv = round(sum(float(p.get("amount") or 0) for p in order.get("payments") or []
+                        if p.get("receipt_id") == receipt["id"] and p.get("gl_bucket") == gl.ADVANCE_BUCKET
+                        and float(p.get("amount") or 0) > 0 and not p.get("reverses")), 2)
+        if adv > 0.01:
+            hasil.append(await gl.post_advance_reclass_reversal(order, receipt["id"], adv, label=label))
+    hasil += [await gl.post_cash_void(cid, label=label, created_by=created_by)
+              for cid in await _receipt_cash_ids(receipt["id"])]
     hasil.append(await gl.reverse_deposit_only_receipt(receipt["id"], label=label, created_by=created_by))
     return next((je for je in hasil if isinstance(je, dict) and je.get("id")), None)
 
@@ -190,6 +202,158 @@ async def durable_receipt_void(receipt: Dict[str, Any], created_by: str = "syste
     st, sid = ("cash_transaction_void", kas[0]) if kas else ("ar_receipt_deposit_void", receipt["id"])
     return await gl.post_durable("ar_receipts", receipt["id"], lambda: post_receipt_void(receipt, created_by),
                                  source_type=st, source_id=sid, field="void_gl_status", raise_on_fail=raise_on_fail)
+
+
+# ── PK-19 — keputusan selisih bayar (`payment_variance_decisions`) ───────────────────────────────────────────────────
+async def _je(source_type: str, source_id: str) -> Optional[Dict[str, Any]]:
+    return await db.journal_entries.find_one({"source_type": source_type, "source_id": source_id,
+                                              "status": {"$ne": "void"}}, {"_id": 0, "id": 1, "number": 1})
+
+
+def _variance_label(d: Dict[str, Any]) -> str:
+    return f"{d.get('number', '')} · {d.get('receipt_number') or d.get('bill_number') or ''}"
+
+
+def _alloc_rows(d: Dict[str, Any]) -> List[Dict[str, Any]]:
+    """Baris alih deposit keputusan: rencana PK-19 yang sudah teralokasi; keputusan lama → `orders`."""
+    if d.get("plan"):
+        return [r for r in d["plan"] if r.get("allocated")]
+    return [{"order_id": o.get("order_id"), "amount": float(o.get("applied") or o.get("amount") or 0)}
+            for o in d.get("orders") or [] if o.get("order_id")]
+
+
+def variance_decision_source(d: Dict[str, Any]) -> tuple:
+    """(source_type, source_id) jurnal UTAMA keputusan — untuk `post_durable`."""
+    kind = d.get("kind")
+    if kind in ("writeoff", "rounding_writeoff"):
+        return "payment_variance_writeoff", d["id"]
+    if kind == "allocate":
+        ar = next((r["order_id"] for r in _alloc_rows(d) if r.get("ar")), "-")
+        return "payment_variance_alloc", f"{d['id']}:{ar}"
+    if kind == "refund":
+        return "cash_transaction", ((d.get("effect") or {}).get("refund") or {}).get("cash_txn_id") or "-"
+    return "ap_variance_writeoff", d["id"]
+
+
+async def post_variance_decision(d: Dict[str, Any]) -> Optional[Dict[str, Any]]:
+    """Jurnal keputusan selisih dari isi keputusan yang TERSIMPAN (dipakai keputusan dan ulang): hapus sisa Dr 6-9100 /
+    Cr 1-1200 satu per keputusan; alih deposit Dr 2-1400 / Cr 1-1200 per baris (`<id>:<id pesanan>`) untuk pesanan
+    yang pendapatannya sudah diakui; refund = jurnal kas `ar_refund` (Dr 2-1400 / Cr kas) lewat pembuat kas; tutup sisa
+    hutang Dr 2-1100 / Cr 4-9000. Semua fungsi idempoten per sumber."""
+    from services import gl_service as gl
+    kind, eid, by = d.get("kind"), d.get("entity_id") or "", d.get("decided_by") or "system"
+    if kind in ("writeoff", "rounding_writeoff"):
+        return await gl.post_variance_writeoff(decision_id=d["id"], entity_id=eid, amount=float(d.get("amount") or 0),
+                                               label=_variance_label(d), created_by=by) \
+            or await _je("payment_variance_writeoff", d["id"])
+    if kind == "allocate":
+        first = None
+        for row in _alloc_rows(d):
+            if not row.get("ar"):
+                continue
+            sid = f"{d['id']}:{row['order_id']}"
+            je = await gl.post_variance_reallocation(
+                decision_id=sid, entity_id=eid, amount=float(row.get("amount") or 0),
+                label=f"{d.get('number', '')} · kelebihan bayar dialihkan ke {row.get('order_number') or row['order_id']}",
+                created_by=by) or await _je("payment_variance_alloc", sid)
+            first = first or je
+        return first
+    if kind == "refund":
+        cash_id = ((d.get("effect") or {}).get("refund") or {}).get("cash_txn_id") or ""
+        if not cash_id:
+            return None
+        from services import cash_ledger
+        await cash_ledger.ensure_posted(cash_id)
+        return await _je("cash_transaction", cash_id)
+    if kind in ("ap_writeoff", "ap_rounding_writeoff"):
+        return await gl.post_ap_variance_writeoff(decision_id=d["id"], entity_id=eid,
+                                                  amount=float(d.get("amount") or 0), label=_variance_label(d),
+                                                  created_by=by) or await _je("ap_variance_writeoff", d["id"])
+    return None
+
+
+async def durable_variance_decision(d: Dict[str, Any], *, raise_on_fail: bool = False) -> Dict[str, Any]:
+    from services import gl_service as gl
+    st, sid = variance_decision_source(d)
+    return await gl.post_durable("payment_variance_decisions", d["id"], lambda: post_variance_decision(d),
+                                 source_type=st, source_id=sid, raise_on_fail=raise_on_fail)
+
+
+async def post_variance_decision_reversal(d: Dict[str, Any], created_by: str = "system") -> Optional[Dict[str, Any]]:
+    """Pembalik jurnal keputusan — hanya yang pernah terbit, kebalikan persis jurnal asalnya: hapus sisa Dr 1-1200 /
+    Cr 6-9100; alih deposit Dr 1-1200 / Cr 2-1400 (Σ baris berjurnal) + pembalik reklas uang muka untuk baris yang
+    uang mukanya sudah direklas; refund = pembalik jurnal kasnya (PK-10); tutup sisa hutang Dr 4-9000 / Cr 2-1100."""
+    from services import gl_service as gl
+    kind, eid, did = d.get("kind"), d.get("entity_id") or "", d["id"]
+    amount = round(float(d.get("amount") or 0), 2)
+    label = f"{d.get('number', '')} · {d.get('reversed_reason') or 'keputusan dianulir'}"
+    rev = ("payment_variance_reversal", f"{did}:rev")
+    if kind in ("writeoff", "rounding_writeoff"):
+        if not await gl._already_posted("payment_variance_writeoff", did):
+            return None
+        return await gl.post_variance_reversal(decision_id=did, entity_id=eid, amount=amount,
+                                               debit_acc=gl.ACC_PIUTANG, credit_acc=gl.ACC_SELISIH_BAYAR,
+                                               label=label, created_by=created_by) or await _je(*rev)
+    if kind == "allocate":
+        first, moved = None, 0.0
+        legacy = await gl._already_posted("payment_variance_alloc", did)
+        for row in _alloc_rows(d):
+            oid, amt = row["order_id"], round(float(row.get("amount") or 0), 2)
+            if await gl._already_posted("payment_variance_alloc", f"{did}:{oid}"):
+                moved = round(moved + amt, 2)
+                continue
+            order = await db.sales_orders.find_one({"id": oid}, {"_id": 0})
+            if not order:
+                continue
+            asal = [p for p in order.get("payments") or [] if p.get("receipt_id") == did
+                    and float(p.get("amount") or 0) > 0 and not p.get("reverses")]
+            adv = round(sum(float(p["amount"]) for p in asal if p.get("gl_bucket") == gl.ADVANCE_BUCKET), 2)
+            if legacy:
+                moved = round(moved + sum(float(p["amount"]) for p in asal if p.get("gl_bucket") != gl.ADVANCE_BUCKET), 2)
+            if adv > 0.01 and await gl._already_posted("advance_reclass", oid):
+                first = first or await gl.post_advance_reclass_reversal(order, did, adv, label=label)
+        if moved > 0.01:
+            je = await gl.post_variance_reversal(decision_id=did, entity_id=eid, amount=moved,
+                                                 debit_acc=gl.ACC_PIUTANG, credit_acc=gl.ACC_UANG_MUKA_PELANGGAN,
+                                                 label=label, created_by=created_by) or await _je(*rev)
+            first = je or first
+        return first
+    if kind == "refund":
+        cash_id = ((d.get("effect") or {}).get("refund") or {}).get("cash_txn_id") or ""
+        return await gl.post_cash_void(cash_id, label=label, created_by=created_by) if cash_id else None
+    if kind in ("ap_writeoff", "ap_rounding_writeoff"):
+        if not await gl._already_posted("ap_variance_writeoff", did):
+            return None
+        return await gl.post_variance_reversal(decision_id=did, entity_id=eid, amount=amount,
+                                               debit_acc=gl.ACC_PENDAPATAN_LAIN, credit_acc=gl.ACC_HUTANG,
+                                               label=label, created_by=created_by) or await _je(*rev)
+    return None
+
+
+async def durable_variance_reversal(d: Dict[str, Any], created_by: str = "system", *,
+                                    raise_on_fail: bool = False) -> Dict[str, Any]:
+    from services import gl_service as gl
+    if d.get("kind") == "refund":
+        st, sid = "cash_transaction_void", ((d.get("effect") or {}).get("refund") or {}).get("cash_txn_id") or "-"
+    else:
+        st, sid = "payment_variance_reversal", f"{d['id']}:rev"
+    return await gl.post_durable("payment_variance_decisions", d["id"],
+                                 lambda: post_variance_decision_reversal(d, created_by),
+                                 source_type=st, source_id=sid, field="reversal_gl_status", raise_on_fail=raise_on_fail)
+
+
+async def _retry_payment_variance(doc: Dict[str, Any], actor: Dict[str, Any]) -> None:
+    if doc.get("gl_status") == "failed":
+        if doc.get("status") in ("pending", "failed"):
+            raise RuntimeError("Keputusan ini belum tuntas. Kirim keputusan yang sama lagi dari antrean Selisih Bayar "
+                               "untuk melanjutkannya.")
+        jr = await durable_variance_decision(doc, raise_on_fail=True)
+        je = jr.get("journal") or await db.journal_entries.find_one(
+            {"id": jr.get("journal_entry_id") or "-"}, {"_id": 0, "id": 1, "number": 1}) or {}
+        await db.payment_variance_decisions.update_one({"id": doc["id"]}, {"$set": {
+            "je_id": je.get("id", ""), "je_number": je.get("number", "")}})
+    if doc.get("reversal_gl_status") == "failed":
+        await durable_variance_reversal(doc, actor.get("name", "system"), raise_on_fail=True)
 
 
 async def _retry_vendor_bill(doc: Dict[str, Any], actor: Dict[str, Any]) -> None:
@@ -400,7 +564,8 @@ KINDS: Dict[str, Dict[str, Any]] = {
         "label": "Pembatalan Kwitansi", "collection": "ar_receipts", "failed_query": {"void_gl_status": "failed"},
         "entity_field": "entity_id", "number_field": "number", "amount_field": "amount",
         "status_field": "void_gl_status", "error_field": "void_gl_error", "failed_at_field": "void_gl_failed_at",
-        "doc_type": "ar_receipt", "posters": ("post_cash_void", "reverse_deposit_only_receipt"),
+        "doc_type": "ar_receipt",
+        "posters": ("post_cash_void", "reverse_deposit_only_receipt", "post_advance_reclass_reversal"),
         "retry": _retry_receipt_void},
     "fixed_asset": {
         "label": "Aset Tetap", "collection": "fin_fixed_assets", "failed_query": {"gl_status": "failed"},
@@ -456,6 +621,16 @@ KINDS: Dict[str, Dict[str, Any]] = {
         "error_field": "gl_error_settle_payee", "failed_at_field": "updated_at", "doc_type": "",
         "link": {"view": "fixed-assets", "tab": "", "focus_type": "fixed_asset"},
         "posters": (), "retry": _retry_fixed_asset_settlement},
+    # ── PK-19 — keputusan selisih bayar: jurnal keputusan (`gl_status`) dan pembaliknya (`reversal_gl_status`) ──
+    "payment_variance": {
+        "label": "Keputusan Selisih Bayar", "collection": "payment_variance_decisions",
+        "failed_query": {"$or": [{"gl_status": "failed"}, {"reversal_gl_status": "failed"}]},
+        "entity_field": "entity_id", "number_field": "number", "amount_field": "amount",
+        "status_field": "gl_status", "error_field": "gl_error", "failed_at_field": "updated_at",
+        "doc_type": "payment_variance",
+        "posters": ("post_variance_writeoff", "post_variance_reallocation", "post_ap_variance_writeoff",
+                    "post_variance_reversal"),
+        "retry": _retry_payment_variance},
     # ── PK-28 — kliring sisa GR/IR: satu baris panel per unsur `grir_clearings[]` yang gagal ──
     "grir_clearing": {
         "label": "Kliring GR/IR", "collection": "purchase_orders", "failed_query": {"grir_clearings.gl_status": "failed"},
@@ -508,7 +683,7 @@ def rows_of(kind: str, doc: Dict[str, Any]) -> List[Dict[str, Any]]:
                  "failed_at": st.get("gl_failed_at") or base["updated_at"]}
                 for st in doc.get(_items_field(spec)) or [] if st.get("gl_status") == "failed"]
     return [{**base, "id": doc["id"], "number": number, "amount": _amount(spec, doc),
-             "error": pick(doc, spec["error_field"]) or doc.get("gl_error") or "",
+             "error": pick(doc, spec["error_field"]) or doc.get("gl_error") or doc.get("reversal_gl_error") or "",
              "failed_at": pick(doc, spec["failed_at_field"]) or base["updated_at"]}]
 
 

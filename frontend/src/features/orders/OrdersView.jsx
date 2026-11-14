@@ -63,7 +63,6 @@ export default function OrdersView({
   onApprove,
   onConfirm,
   onCancel,
-  onPay,
   onGenerateDocument,
   onShowDetail,
   onReleaseReservation,
@@ -259,7 +258,6 @@ export default function OrdersView({
                     onApprove={withRefresh(onApprove)}
                     onConfirm={withRefresh(onConfirm)}
                     onCancel={withRefresh(onCancel)}
-                    onPay={withRefresh(onPay)}
                     onGenerateDocument={onGenerateDocument}
                     onReleaseReservation={withRefresh(onReleaseReservation)}
                     onSubmitForApproval={withRefresh(onSubmitForApproval)}

@@ -406,8 +406,13 @@ async def _apply(return_id: str, settlement_id: str, actor: Dict[str, Any]) -> D
     if cn:
         # 3) Potong sisa tagihan SO asal.
         if plan["bill_total"] > 0 and not float(cn.get("ar_applied") or 0):
-            from services import ar_receipt_service as _ar
-            await _ar.apply_from_case(ret["order_id"], plan["bill_total"], cn["id"], cn["number"], method="credit_note")
+            # PK-19 — satu fungsi alokasi (id baris dari nota kredit → aman diulang saat penyelesaian dilanjutkan).
+            from services import ar_allocation_service as _aas
+            await _aas.allocate(kind="nota_kredit", order_id=ret["order_id"], amount=plan["bill_total"],
+                                source_id=cn["id"], source_number=cn["number"],
+                                customer_id=cn.get("customer_id") or ret.get("customer_id") or "",
+                                entity_id=cn.get("entity_id") or "", date=now, actor=actor.get("name", ""),
+                                method="credit_note")
             await db.credit_notes.update_one({"id": cn["id"]}, {"$set": {"ar_applied": plan["bill_total"]}})
         # 4) Jurnal. PK-18 — lewat pintu tahan-gagal: gagal → `gl_status: failed` di nota kredit, penyelesaian TETAP
         #    dilanjutkan (stok, tagihan sudah berubah); refund & saldo memakai id jurnal bila ada, ulang menautkannya.
@@ -505,9 +510,10 @@ async def reverse_all(ret: Dict[str, Any], actor: str, reason: str) -> Dict[str,
         await _sc.void_issue_entry(return_id=ref_id, reason=reason, actor=actor)
     async for cn in db.credit_notes.find({"return_id": rid, "settlement_id": {"$exists": True}, "status": {"$ne": "void"}}, {"_id": 0}):
         if float(cn.get("ar_applied") or 0) > 0:
-            from services import ar_receipt_service as _ar
-            await _ar.unapply_for_case(ret["order_id"], float(cn["ar_applied"]), cn["id"], cn["number"],
-                                       method="credit_note_void", note="nota kredit dibatalkan")
+            from services import ar_allocation_service as _aas   # PK-19 — dibalik, bukan ditarik diam-diam
+            await _aas.reverse(source_id=cn["id"], date=now, actor=actor,
+                               reason=f"nota kredit {cn.get('number', '')} dibatalkan · {reason}",
+                               order_id=ret["order_id"])
         await db.credit_notes.update_one({"id": cn["id"]}, {"$set": {"status": "void", "reversed": True, "reversed_at": now,
                                                                   "reversal_reason": reason, "updated_at": now}})
     combos = set()
