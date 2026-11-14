@@ -23,7 +23,9 @@ def test_U15_dua_anulir_bersamaan_satu_pembalik():
         await gl_service.seed_default_coa()
         for _ in range(3):   # beberapa putaran: balapan tidak selalu muncul di satu percobaan
             ent = f"ent_bp22_{uuid.uuid4().hex[:6]}"
-            await db.business_entities.insert_one({"id": ent, "code": "BP22", "short_name": "PT Uji BP22",
+            # Kode PT unik per putaran: nomor jurnal berawalan kode PT dan `uq_number` global — kode sama di dua PT uji
+            # membuat nomor jurnal bertabrakan (bukan balapan yang diuji di sini).
+            await db.business_entities.insert_one({"id": ent, "code": f"B{ent[-6:].upper()}", "short_name": "PT Uji BP22",
                                                    "status": "active"})
             rid = f"prun_bp22_{uuid.uuid4().hex[:8]}"
             slips = [("A", 5_000_000, 200_000, 300_000, 100_000), ("B", 4_000_000, 160_000, 240_000, 50_000)]
