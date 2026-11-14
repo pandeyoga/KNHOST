@@ -81,24 +81,24 @@ Papan kerja agen pelaksana. Aturan mengubahnya: `00_ATURAN_EKSEKUSI.md` §5. Uru
 | 74 | PM-T1 | Induk cara bayar dan rekening ber-peruntukan | KF-T1 | selesai | `fd606e5` | [PM-T1](../reviews/2026-11-13/hasil/PM-T1.md) |  |
 | 75 | CR-T1 | Profil kredit per pelanggan per PT | PK-45, KF-T6, KF-T7 | selesai | 281374f | [CR-T1](../reviews/2026-11-13/hasil/CR-T1.md) |  |
 | 76 | KM-T1 | Data insentif: omzet terkirim, pencairan, harga acuan, target | PK-19 | selesai | b9753a3 | [KM-T1](../reviews/2026-11-13/hasil/KM-T1.md) | H3: migrasi target lama (migrate_sales_targets_km_t1.py) & isi harga acuan pesanan lama di data nyata; H6: kunci target kembar |
-| 77 | KM-T2 | Layar Capaian (cari dan jumlahkan) | KM-T1, PK-41 | siap |  |  |  |
+| 77 | KM-T2 | Layar Capaian (cari dan jumlahkan) | KM-T1, PK-41 | dikerjakan |  |  | Dikerjakan paralel (worktree terpisah), 15 Nov |
 | 78 | AG-T1 | Asisten: rapikan kartu tindakan yang ada | PK-02 | selesai | 3e1a42c | [AG-T1](../reviews/2026-11-13/hasil/AG-T1.md) |  |
 | 79 | AG-T2 | Asisten: baca keuangan lewat pintu aplikasi | AG-T1, PK-09, PK-16, PK-17, PR-T3 | selesai | 4ffc907 | [AG-T2](../reviews/2026-11-13/hasil/AG-T2.md) |  |
 | 80 | PY-T1 | Komponen gaji per PT, antrean masukan, jenis proses gaji | PK-22 | selesai | 64143aa | [PY-T1](../reviews/2026-11-13/hasil/PY-T1.md) | H4: tarif PPh 21 tabel bawaan PK-46 belum diverifikasi; H3/H6: migrasi proses gaji lama (migrasi_pyt1_proses_gaji.py --apply) |
-| 81 | PY-T2 | Riwayat kompensasi dan penugasan PT | PY-T1 | siap |  |  |  |
+| 81 | PY-T2 | Riwayat kompensasi dan penugasan PT | PY-T1 | dikerjakan |  |  | Dikerjakan paralel (worktree terpisah), 15 Nov |
 | 82 | PY-T3 | Aturan hitung gaji dari pengaturan | PY-T1 | siap |  |  |  |
 | 83 | PY-T4 | Bayar gaji dan setor kewajiban | PY-T1, PM-T1 | siap |  |  |  |
 | 84 | KM-T3 | Lembar Insentif (dokumen keputusan) | KM-T2, KF-T6 | menunggu |  |  |  |
 | 85 | KM-T4 | Lembar Insentif masuk gaji dan buku besar | KM-T3, PY-T1 | menunggu |  |  | Titik henti H5 |
 | 86 | KM-T5 | Kartu "Capaian & Insentif Saya"; layar lama dipindah | KM-T4, MN-T1 | menunggu |  |  |  |
 | 87 | PY-T5 | Swalayan karyawan: slip setelah dibayar | PY-T1 | siap |  |  |  |
-| 88 | CR-T2 | Jadwal tagihan dan saldo piutang tersimpan | PK-19, PK-41 | siap |  |  |  |
+| 88 | CR-T2 | Jadwal tagihan dan saldo piutang tersimpan | PK-19, PK-41 | dikerjakan |  |  | Dikerjakan paralel (worktree terpisah), 15 Nov |
 | 89 | CR-T3 | Gerbang kredit di empat titik; izin kredit | CR-T1, CR-T2, PK-38 | menunggu |  |  | Titik henti H5 |
 | 90 | CR-T4 | Denda berlapis PT → pelanggan | PK-08, CR-T2 | menunggu |  |  |  |
 | 91 | CR-T5 | Daftar kerja kredit dan rekening koran pelanggan | CR-T2 | menunggu |  |  |  |
 | 92 | PM-T2 | Cara bayar dan rekening tujuan di pesanan; instruksi bayar | PM-T1 | selesai | 73314a8 | [PM-T2](../reviews/2026-11-13/hasil/PM-T2.md) |  |
 | 93 | PM-T3 | Kwitansi ber-rekening; terverifikasi bank | PK-19, PK-20, PK-21, PM-T2 | selesai | a2c1e19 | [PM-T3](../reviews/2026-11-13/hasil/PM-T3.md) | H3: isi rekening kas kwitansi lama (backfill_receipt_accounts.py --terapkan) di data nyata sebelum (b) dipakai PT berekening ganda |
-| 94 | PM-T4 | Titipan tunai sales dan setoran | PM-T3 | siap |  |  | Titik henti H5 |
+| 94 | PM-T4 | Titipan tunai sales dan setoran | PM-T3 | dikerjakan |  |  | Dikerjakan paralel (worktree terpisah), 15 Nov |
 | 95 | PM-T5 | Virtual account / QRIS | PM-T3 | tahan |  |  | Titik henti H8 (K-35) |
 | 96 | TX-T1 | Pengaturan pajak bertanggal berlaku dan data pajak pelanggan | PK-40 | selesai | 9707664 | [TX-T1](../reviews/2026-11-13/hasil/TX-T1.md) |  |
 | 97 | TX-T2 | Pemicu faktur pajak dan daur hidupnya | TX-T1, PK-32 | dikerjakan |  |  | Titik henti H5 (bawaan pemicu = pesanan); dikerjakan paralel 15 Nov |
