@@ -115,6 +115,7 @@ export const ContractsView = lazy(() => import("./features/purchasing/contracts/
 export const InternalPricesView = lazy(() => import("./features/interco_prices/InternalPricesView"));
 export const AmendmentReasonsPanel = lazy(() => import("./features/finance/amendments/AmendmentReasonsPanel"));
 export const IncentiveRatesEditor = lazy(() => import("./features/crm/IncentiveRatesEditor"));
+export const IncentiveSetupView = lazy(() => import("./features/incentive/IncentiveSetupView"));   // KM-T1
 export const BankRulesSettingsView = lazy(() => import("./features/finance/bank/BankRulesSettingsView"));
 export const SupplierItemsView = lazy(() => import("./features/purchasing/supplier-items/SupplierItemsView"));
 export const PurchaseApprovalView = lazy(() => import("./features/purchasing/PurchaseApprovalView"));

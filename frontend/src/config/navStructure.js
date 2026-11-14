@@ -329,13 +329,13 @@ export const NAV_STRUCTURE = [
     label:   "SDM",
     icon:    Users,
     // MN-T1 — + sales: SDM › Kinerja & Insentif › Kinerja Sales (dulu sub-tab CRM) sampai KM-T5 menggantinya.
-    roles:   ["admin", "manager", "sales"],
+    roles:   ["admin", "manager", "sales", "finance"],   // KM-T1 — + finance: Kinerja & Insentif › Target & Aturan (lihat)
     items: [
       { id: "hr-people",         label: "Karyawan", icon: UserCheck,  roles: ["admin", "manager"], hub: "hr-people" },
       { id: "hr-attendance-hub", label: "Kehadiran",      icon: Clock,      roles: ["admin", "manager"], hub: "hr-attendance-hub" },
       { id: "hr-payroll-hub",    label: "Penggajian",               icon: Calculator, roles: ["admin", "manager"], hub: "hr-payroll-hub" },
       // MN-T1 — "KPI" → "Kinerja & Insentif": menyerap Kinerja Sales & Skema (CRM) + Komisi & Insentif (Pengaturan).
-      { id: "hr-kpi-hub",        label: "Kinerja & Insentif", icon: Target, roles: ["admin", "manager", "sales"], hub: "hr-kpi-hub" },
+      { id: "hr-kpi-hub",        label: "Kinerja & Insentif", icon: Target, roles: ["admin", "manager", "sales", "finance"], hub: "hr-kpi-hub" },
     ],
   },
 

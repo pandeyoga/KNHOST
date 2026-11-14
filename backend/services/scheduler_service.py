@@ -46,6 +46,7 @@ from services import gate_txn_service as gatetxn          # PREP-H — ulang tra
 from services import rfid_v2_retention as rfidretention   # PREP-H — masa simpan bukti gate (arsip → hapus)
 from services import wa_alert_service as wa
 from services import analytics_facts as _facts           # Tanya KN F1 — fakta penjualan
+from services import incentive_facts as _incentive_facts  # KM-T1 — fakta insentif (omzet terkirim & pencairan)
 from services import ai_schedules as _aisched            # Tanya KN F4 — laporan terjadwal
 from services import analytics_snapshots as _snaps       # Tanya KN F5 — snapshot stok & piutang
 from services import ai_chat_service as _aichat          # Tanya KN §7.3 — prewarm cache prompt
@@ -264,6 +265,17 @@ JOBS: List[Dict[str, Any]] = [
     {"id": "ai_fact_nightly", "label": "Fakta Penjualan Analitik (bangun ulang 90 hari)",
      "description": "Membangun ulang fakta penjualan 90 hari terakhir setiap malam sebagai jaring pengaman.",
      "kind": "daily", "hour": 2, "minute": 0, "fn": _facts.job_fact_nightly, "link": "notifications"},
+    # KM-T1 — fakta insentif (omzet terkirim & pencairan) untuk Meja Insentif.
+    {"id": "incentive_fact_sync", "label": "Fakta Insentif (inkremental)",
+     "description": "Memperbarui fakta omzet terkirim dan pencairan per sales (fact_shipment_sales, fact_collections) "
+                    "dari pesanan, surat jalan, nota kredit, dan kwitansi yang berubah sejak sinkron terakhir, lalu "
+                    "mencatat versi definisi angka insentif tiap PT. Dipakai Kinerja & Insentif.",
+     "kind": "interval", "interval_minutes": 5, "fn": _incentive_facts.job_incentive_fact_sync,
+     "link": "notifications"},
+    {"id": "incentive_fact_nightly", "label": "Fakta Insentif (bangun ulang 90 hari)",
+     "description": "Membangun ulang fakta insentif 90 hari terakhir setiap malam sebagai jaring pengaman.",
+     "kind": "daily", "hour": 2, "minute": 30, "fn": _incentive_facts.job_incentive_fact_nightly,
+     "link": "notifications"},
     {"id": "ai_schedule_dispatch", "label": "Laporan Terjadwal Tanya KN",
      "description": "Menjalankan laporan template yang dijadwalkan pengguna (harian/mingguan) dengan hak akses "
                     "pemilik jadwal, lalu mengirim ringkasannya sebagai notifikasi aplikasi.",

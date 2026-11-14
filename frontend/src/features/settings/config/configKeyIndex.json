@@ -2282,6 +2282,22 @@
   "budget.mode": [
    "pajak-pembukuan",
    "tutup-buku"
+  ],
+  "insentif.dasar_omzet": [
+   "penjualan",
+   "komisi"
+  ],
+  "insentif.isi_pencairan": [
+   "penjualan",
+   "komisi"
+  ],
+  "insentif.pemilik_angka": [
+   "penjualan",
+   "komisi"
+  ],
+  "insentif.harga_acuan": [
+   "penjualan",
+   "komisi"
   ]
  }
 }

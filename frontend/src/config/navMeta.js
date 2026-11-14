@@ -123,6 +123,7 @@ export const PAGE_META = {
   "amendment-reasons":    { kicker: "Pengaturan · Penjualan", title: "Alasan Koreksi" },
   // Fase 3 · P2 (D-03) — tarif per kategori + bawaan komisi (`commission.*`) digabung di satu layar.
   "incentive-rates":      { kicker: "SDM · Kinerja & Insentif", title: "Komisi & Insentif \u00b7 Bawaan Komisi & Tarif per Kategori" },
+  "incentive-setup":      { kicker: "SDM · Kinerja & Insentif", title: "Target & Aturan Insentif" },   // KM-T1
   "bank-recon-rules":     { kicker: "Pengaturan · Keuangan & Pajak", title: "Bank" },
   "cs-bom":               { kicker: "Pembelian",      title: "BOM Printing" },
   "cs-stock-analytics":   { kicker: "Gudang",         title: "Analitik Stok (Cepat/Lambat/Mati)" },

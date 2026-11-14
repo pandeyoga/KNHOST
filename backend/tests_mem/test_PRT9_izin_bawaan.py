@@ -90,6 +90,11 @@ for _r, _tambah in _pc.PK24_DEFAULT_PAIRS.items():
 for _r, _tambah in _pc.PK22_DEFAULT_PAIRS.items():
     for _res, _aksi in _tambah.items():
         TAMBAHAN_SESUDAH.setdefault(_r, {}).setdefault(_res, set()).update(_aksi)
+# KM-T1 — Meja Insentif `incentive.view` (Admin, Manajer, Finance) dan `incentive.configure` (Admin, Manajer)
+# (`permissions_config.KMT1_DEFAULT_PAIRS`).
+for _r, _tambah in _pc.KMT1_DEFAULT_PAIRS.items():
+    for _res, _aksi in _tambah.items():
+        TAMBAHAN_SESUDAH.setdefault(_r, {}).setdefault(_res, set()).update(_aksi)
 
 
 def _himpunan(perms: dict) -> dict:

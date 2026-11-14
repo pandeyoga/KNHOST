@@ -52,7 +52,7 @@ describe("U2 — jumlah tab tampak per hub (admin)", () => {
   test.each([
     // PK-28 — Hutang mendapat tab ketiga GR/IR (Diterima Belum Ditagih).
     ["finance-tower", 3], ["ar-aging", 6], ["accounts-payable", 3], ["cash-bank", 4], ["closing", 3], ["ledger", 2],
-    ["hr-kpi-hub", 4], ["purchase-orders", 7],
+    ["hr-kpi-hub", 5], ["purchase-orders", 7],   // KM-T1 — + Target & Aturan (Meja Insentif)
   ])("%s = %i tab", (hub, n) => {
     expect(hubTabsForRole(hub, "admin")).toHaveLength(n);
   });
@@ -67,7 +67,8 @@ describe("U2 — jumlah tab tampak per hub (admin)", () => {
     expect(labels("fin-reports")).toEqual(["Laba-Rugi, Neraca & Arus Kas", "Profitabilitas", "Proyeksi Kas", "Anggaran", "Konsolidasi"]);
     expect(labels("tax-hub")).toEqual(["Faktur Keluaran", "Faktur Masukan", "PPN & PPh"]);
     expect(labels("hr-payroll-hub")).toEqual(["Proses Gaji", "Slip Gaji", "Setoran Kewajiban"]);   // PK-22
-    expect(labels("hr-kpi-hub")).toEqual(["Kinerja Sales", "Target & Aturan", "Skema (Arsip)", "KPI Karyawan"]);
+    // KM-T1 — tab Meja Insentif "Target & Aturan" (`incentive-setup`); tab lama `incentive-rates` berlabel "Komisi Otomatis".
+    expect(labels("hr-kpi-hub")).toEqual(["Kinerja Sales", "Target & Aturan", "Komisi Otomatis", "Skema (Arsip)", "KPI Karyawan"]);
     expect(HUB_TABS["purchase-orders"].map((t) => t.view)).toContain("landed-cost");
     expect(HUB_TABS["settings-sales"].map((t) => t.view)).not.toContain("incentive-rates");
     expect(HUB_TABS["petty-cash"]).toBeUndefined();
@@ -177,7 +178,7 @@ describe("U7–U10 — menu per peran", () => {
   test("Manajer: Perlu Tindakan (Meja Finance) dan semua tab Kinerja & Insentif", () => {
     const m = menu("manager");
     expect(m.keuangan["finance-tower"]).toEqual(["finance-desk", "finance-tower", "bi-finance"]);
-    expect(m.hrd["hr-kpi-hub"]).toEqual(["sales-performance", "incentive-rates", "incentive-schemes", "cs-kpi"]);
+    expect(m.hrd["hr-kpi-hub"]).toEqual(["sales-performance", "incentive-setup", "incentive-rates", "incentive-schemes", "cs-kpi"]);   // KM-T1
     expect(m.akuntansi.closing).toEqual(["closing", "period-unlock", "posting-failures"]);
   });
 });

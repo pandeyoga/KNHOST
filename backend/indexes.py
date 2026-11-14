@@ -124,6 +124,20 @@ INDEX_SPECS: Dict[str, List[IndexKeys]] = {
         [("entity_id", A), ("product_id", A), ("date_wib", A)],
         [("so_id", A)],
     ],
+    # KM-T1 — fakta insentif (turunan, dibangun ulang `services/incentive_facts.py`) dan target per PT.
+    "fact_shipment_sales": [
+        [("entity_id", A), ("date_wib", A)],
+        [("entity_id", A), ("sales_id", A), ("date_wib", A)],
+        [("so_id", A)],
+    ],
+    "fact_collections": [
+        [("entity_id", A), ("date_wib", A)],
+        [("entity_id", A), ("sales_id", A), ("date_wib", A)],
+        [("so_id", A)],
+    ],
+    "sales_targets": [
+        [("entity_id", A), ("period_type", A), ("period", A)],
+    ],
     "purchase_orders": [
         [("entity_id", A), ("status", A), ("created_at", D)],
         [("supplier_id", A), ("created_at", D)],
@@ -850,6 +864,31 @@ REQUIRED_UNIQUE_INDEXES += [
      "label": "satu kartu tindakan asisten menunggu per percakapan", "keys": [("session_id", 1)],
      "partial": {"status": "pending", "session_id": {"$gt": ""}},
      "finder": _finder_dup("ai_action_proposals", '{status:"pending",session_id:{$gt:""}}', '"$session_id"', "$id")},
+]
+
+
+# KM-T1 (D7) — target per (PT, sales, jenis periode, periode) — kunci baru `sales_targets`; komponen insentif unik per
+# (PT, kode); versi definisi angka unik per (PT, versi). Target lama tanpa `period_type`/`entity_id` belum ikut sampai
+# `scripts/migrate_sales_targets_km_t1.py` mengisinya (data nyata = H3; kunci kembar sesudah migrasi = H6). Dua simpan
+# bersamaan → satu kena DuplicateKeyError lalu diulang sebagai pembaruan (`services/incentive_targets.save_target`).
+REQUIRED_UNIQUE_INDEXES += [
+    {"collection": "sales_targets", "name": "uq_target_pt_sales_periode",
+     "label": "satu target per PT per sales per jenis periode per periode",
+     "keys": [("entity_id", 1), ("sales_id", 1), ("period_type", 1), ("period", 1)],
+     "partial": {"entity_id": dict(_NONEMPTY), "sales_id": dict(_NONEMPTY), "period_type": dict(_NONEMPTY),
+                 "period": dict(_NONEMPTY)},
+     "finder": _finder_dup("sales_targets",
+                           '{entity_id:{$type:"string",$gt:""},sales_id:{$type:"string",$gt:""},'
+                           'period_type:{$type:"string",$gt:""},period:{$type:"string",$gt:""}}',
+                           '{e:"$entity_id",s:"$sales_id",t:"$period_type",p:"$period"}', "$id")},
+    {"collection": "incentive_components", "name": "uq_component_code", "label": "kode komponen insentif per PT",
+     "keys": [("entity_id", 1), ("code", 1)], "partial": {"code": dict(_NONEMPTY)},
+     "finder": _finder_dup("incentive_components", '{code:{$type:"string",$gt:""}}', '{e:"$entity_id",c:"$code"}',
+                           "$id")},
+    {"collection": "incentive_definitions", "name": "uq_definition_version", "label": "versi definisi angka per PT",
+     "keys": [("entity_id", 1), ("version", 1)], "partial": {"entity_id": dict(_NONEMPTY)},
+     "finder": _finder_dup("incentive_definitions", '{entity_id:{$type:"string",$gt:""}}',
+                           '{e:"$entity_id",v:"$version"}', "$id")},
 ]
 
 

@@ -80,6 +80,8 @@ CANONICAL_COLLECTIONS = {
     "budget_history",
     # ── PK-22 (blueprint) — proses gaji (jenis `payroll_run` registri posting) + setoran kewajiban (BPJS, PPh 21) ──
     "hr_payroll_runs", "hr_statutory_remittances",
+    # ── KM-T1 (blueprint) — Meja Insentif: target per PT (kunci baru), komponen, versi definisi, dua fakta turunan ──
+    "sales_targets", "incentive_components", "incentive_definitions", "fact_shipment_sales", "fact_collections",
     "cash_transactions",
     # ── Depth #1 (Retur Beli / Nota Debit) ──
     "purchase_returns",

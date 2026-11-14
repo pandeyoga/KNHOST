@@ -1,5 +1,5 @@
 /**
- * IncentiveRatesEditor (EPIC4) — SDM › Kinerja & Insentif › **Target & Aturan** (MN-T1; dulu Pengaturan › Penjualan).
+ * IncentiveRatesEditor (EPIC4) — SDM › Kinerja & Insentif › **Komisi Otomatis** (MN-T1; dulu Pengaturan › Penjualan; KM-T1 — label tab).
  *
  * Fase 3 · P2 (D-03, keputusan pemilik 26 Okt) — tarif insentif dulu di TIGA tempat: tabel tarif (layar ini),
  * kunci bawaan `commission.*` (Pusat Pengaturan › Harga, Diskon & Komisi — di sini hanya kartu "pindah rumah") dan

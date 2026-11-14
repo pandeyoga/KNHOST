@@ -360,6 +360,17 @@ for _m in MODULE_CATALOG:
     _m["nav"] = list(dict.fromkeys(_nav))
 del _m, _rep, _nav
 
+# ─── KM-T1 — Meja Insentif: modul akses "Kinerja & Insentif" (docs/blueprint/unit/KM-T1.md, "Izin dan peran") ──────
+# Sumber daya `incentive` (target per PT per jenis periode, komponen insentif, definisi angka, pencocokan angka); tab
+# SDM › Kinerja & Insentif › Target & Aturan (`incentive-setup`). Ditaruh sesudah modul SDM & Penggajian (grup sama).
+MODULE_CATALOG.insert(next(i for i, m in enumerate(MODULE_CATALOG) if m["id"] == "hr") + 1, {
+    "id": "incentive", "group": "Organisasi", "label": "Kinerja & Insentif",
+    "description": "Target omzet dan pencairan per sales per PT (bulan, triwulan, tahun), komponen insentif, definisi "
+                   "angka, dan pencocokan omzet dengan buku besar serta pencairan dengan kas masuk.",
+    "resources": ["incentive"], "nav": ["hrd", "hr-kpi-hub", "incentive-setup",
+                                        # definisi angka `insentif.*` diubah di Pengaturan › Penjualan › Aturan
+                                        "settings-hub", "settings-sales", "settings-cfg-sales"]})
+
 MODULE_BY_ID = {m["id"]: m for m in MODULE_CATALOG}
 #: PR-T5 — id modul lama → id modul penggantinya. `apply_levels`/`nav_for_levels` menerima id lama (permintaan, uji, dan
 #: `custom_roles.levels` lama); jawaban selalu memakai id baru.
@@ -627,6 +638,9 @@ ACTION_LABEL.update({"payroll.create": "Siapkan: buat, hitung ulang, ajukan, bat
                      "payroll.post": "Posting jurnal gaji",
                      "payroll.void": "Anulir gaji yang sudah diposting (jurnal dibalik)",
                      "payroll.pay": "Bayar gaji dan setor BPJS/PPh 21"})
+# KM-T1 — Meja Insentif (modul Kinerja & Insentif).
+RESOURCE_LABEL["incentive"] = "Kinerja & Insentif"
+ACTION_LABEL.update({"incentive.view": "Lihat", "incentive.configure": "Konfigurasi"})
 # PR-T4 — KPI & komisi sales lain (modul Pesanan Penjualan; dulu daftar nama peran di `_kpi_scope`).
 ACTION_LABEL.update({"order.view_sales_kpi": "Lihat KPI & komisi sales lain"})
 # KP-T8 — kunci layanan luar & koneksi WhatsApp (modul Pusat Pengaturan).
@@ -752,6 +766,9 @@ VIEW_RESOURCE_OVERRIDES["settings-cfg-finance"] = [*VIEW_RESOURCE_OVERRIDES["set
 # PK-39 — kunci `budget.mode` (kelompok "Pajak, pembukuan & antar-PT") diubah pemegang `budget.configure`; aturan KF-T1
 # (U14): tab kelompok itu juga terbuka bagi pemegang izin pengubah kuncinya.
 VIEW_RESOURCE_OVERRIDES["settings-cfg-finance"] = [*VIEW_RESOURCE_OVERRIDES["settings-cfg-finance"], "budget"]
+# KM-T1 — empat kunci `insentif.*` (kelompok "Penjualan & harga", sub-judul "Komisi sales") diubah pemegang
+# `incentive.configure`; aturan KF-T1 (U14): tab kelompok itu juga terbuka bagi pemegang izin pengubah kuncinya.
+VIEW_RESOURCE_OVERRIDES["settings-cfg-sales"] = [*VIEW_RESOURCE_OVERRIDES["settings-cfg-sales"], "incentive"]
 # PK-26 — kunci `inventory.landed_cost_porsi_terjual` (kelompok "Pembelian, makloon & tagihan pemasok") diubah pemegang
 # `accounting.manage`; aturan KF-T1 (U14): tab kelompok itu juga terbuka bagi pemegang izin pengubah kuncinya.
 VIEW_RESOURCE_OVERRIDES["settings-cfg-purchasing"] = [*VIEW_RESOURCE_OVERRIDES["settings-cfg-purchasing"], "accounting"]

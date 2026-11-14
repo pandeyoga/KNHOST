@@ -1451,6 +1451,53 @@ async def layer_budget_invariants(db):
         line("PASS", G, f"BG-4: kebijakan over-budget valid ({len(rules)} entitas terkonfigurasi)")
 
 
+async def layer_incentive_invariants(db):
+    """KM-T1 (`02_STANDAR.md` §5 D2) — fakta insentif sejalan dengan dokumen dan buku besar, per PT per bulan WIB.
+
+    INV-KM-1  omzet = buku: Σ `fact_shipment_sales.net` (semua sales, termasuk tanpa sales) = Σ (kredit − debit) akun
+              pendapatan penjualan (pemetaan PT) pada jurnal tidak batal ber-sumber `shipment_revenue`, `sales_order`,
+              `sales_return`, `amendment_credit_note`; lulus bila selisih < Rp 1 × jumlah pesanan bulan itu.
+    INV-KM-2  pencairan = kas: Σ fakta jenis `kas` (termasuk pembalik) + kas kwitansi belum dialokasikan = Σ kwitansi bulan
+              itu − kwitansi batal bulan itu = Σ kas masuk kwitansi (aturan batal sama); toleransi < Rp 1.
+    INV-KM-3  hasil bangun ulang penuh (dihitung di memori) = isi koleksi: jumlah baris dan Σ `net`/`amount` per PT per bulan.
+    Rumus satu tempat: `services/incentive_facts.py` (`reconcile`, `rebuild_diff`) — sama dengan layar Target & Aturan."""
+    print(f"\n{C}{B}KM — Fakta insentif: omzet terkirim & pencairan (KM-T1){X}")
+    sys.path.insert(0, str(ROOT / "backend"))
+    try:
+        from services import incentive_facts as _ifc
+        months = await _ifc.months_with_facts()
+        bad1, bad2 = [], []
+        for ent, per in months:
+            rec = await _ifc.reconcile(ent, per)
+            if not rec["omzet"]["ok"]:
+                bad1.append(f"{ent}/{per} Δ{rec['omzet']['selisih']:,.0f}")
+            if not rec["pencairan"]["ok"]:
+                bad2.append(f"{ent}/{per} Δ{rec['pencairan']['selisih']:,.0f}·kas Δ{rec['pencairan']['selisih_kas']:,.0f}")
+        diff3 = await _ifc.rebuild_diff()
+    except Exception as exc:  # noqa: BLE001 — penjaga tidak boleh buta diam-diam
+        results["fail"] += 1
+        line("FAIL", R, f"INV-KM: fakta insentif tidak bisa diperiksa ({exc.__class__.__name__}: {exc})")
+        return
+    for tag, bad, ok_msg, hint in (
+            ("INV-KM-1", bad1, f"INV-KM-1: omzet fakta = pendapatan buku besar ({len(months)} PT-bulan)",
+             "→ Kinerja & Insentif › Target & Aturan › Pencocokan angka menampilkan pesanan penyebabnya"),
+            ("INV-KM-2", bad2, f"INV-KM-2: pencairan + kas belum dialokasikan = kwitansi = kas masuk ({len(months)} PT-bulan)",
+             "→ periksa kwitansi penyebabnya di Pencocokan angka")):
+        if bad:
+            results["fail"] += 1
+            line("FAIL", R, f"{tag}: {len(bad)} PT-bulan berselisih: {bad[:5]}", hint)
+        else:
+            results["pass"] += 1
+            line("PASS", G, ok_msg)
+    if diff3:
+        results["fail"] += 1
+        line("FAIL", R, f"INV-KM-3: {len(diff3)} PT-bulan fakta ≠ hasil bangun ulang: {diff3[:3]}",
+             "→ bangun ulang fakta (POST /api/incentive/facts/rebuild) lalu cari penulis yang melewati pembangun")
+    else:
+        results["pass"] += 1
+        line("PASS", G, "INV-KM-3: isi fakta insentif = hasil bangun ulang penuh (jumlah baris & Σ nilai per PT per bulan)")
+
+
 async def layer_production_invariants(db):
     """R6.4 — Produksi In-House (BOM + Work Order): resep valid, HPP konsisten,
     konsumsi bahan == movement, roll barang jadi ada, overhead terkapitalisasi di GL."""
@@ -4857,6 +4904,7 @@ def _layer_registry():
         ("inspection",  layer_inspection_invariants,      True,  ("INV-QC",)),
         ("asset",       layer_fixed_asset_invariants,     True,  ("INV-FA",)),
         ("budget",      layer_budget_invariants,          True,  ("INV-BUD",)),
+        ("incentive",   layer_incentive_invariants,       True,  ("INV-KM",)),
         ("production",  layer_production_invariants,      True,  ("INV-PROD",)),
         ("scheduler",   layer_scheduler_invariants,       True,  ("SCH-",)),
         ("ps21",        layer_ps21_invariants,            True,  ("PS21-",)),

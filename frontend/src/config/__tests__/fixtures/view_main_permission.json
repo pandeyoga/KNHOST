@@ -38,6 +38,7 @@
   "hr-payslips": {"izin": [["hr", "view"]], "endpoint": "/api/hr/payslips"},
   "hr-payroll-remittances": {"izin": [["hr", "view"]], "endpoint": "/api/hr/payroll/remittances"},
   "sales-performance": {"izin": [["order", "view"]], "endpoint": "/api/sales/kpi"},
+  "incentive-setup": {"izin": [["incentive", "view"]], "endpoint": "/api/incentive/targets"},
   "incentive-rates": {"izin": [["sales_force", "view"]], "endpoint": "/api/incentive-rates"},
   "incentive-schemes": {"izin": [["sales_force", "view"]], "endpoint": "/api/sales-users"},
   "cs-kpi": {"izin": [["hr", "view"]], "endpoint": "/api/hr/kpi"},

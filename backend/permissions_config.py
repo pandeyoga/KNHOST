@@ -955,3 +955,21 @@ for _role, _mods in PK22_DEFAULT_PAIRS.items():
     for _res, _acts in _mods.items():
         _cur = list(DEFAULT_PERMISSIONS[_role].get(_res) or [])
         DEFAULT_PERMISSIONS[_role][_res] = _cur + [a for a in _acts if a not in _cur]
+
+# ═══════════════════════════════════════════════════════════════════════════
+# KM-T1 (KM-04, keputusan K-19 … K-24) — Meja Insentif: data dasar insentif per PT (`docs/blueprint/unit/KM-T1.md`, bagian
+# "Izin dan peran"). Sumber daya baru `incentive` (modul "Kinerja & Insentif"): `view` melihat target, komponen, definisi
+# angka, dan pencocokan angka; `configure` mengatur target, komponen, dan membangun ulang fakta. Pemegang `configure` =
+# yang hari ini boleh mengatur target (Admin, Manajer); Finance melihat saja. Aksi lain ditambahkan unit yang memeriksanya
+# (KM-T2 … KM-T4). Instalasi lama menerima pasangan baru sekali lewat `bootstrap.sync_permission_modules`
+# (`defaults_applied`, PR-T9).
+# ═══════════════════════════════════════════════════════════════════════════
+KMT1_DEFAULT_PAIRS = {
+    "admin": {"incentive": ("view", "configure")},
+    "manager": {"incentive": ("view", "configure")},
+    "finance": {"incentive": ("view",)},
+}
+for _role, _mods in KMT1_DEFAULT_PAIRS.items():
+    for _res, _acts in _mods.items():
+        _cur = list(DEFAULT_PERMISSIONS[_role].get(_res) or [])
+        DEFAULT_PERMISSIONS[_role][_res] = _cur + [a for a in _acts if a not in _cur]

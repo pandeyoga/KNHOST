@@ -227,6 +227,10 @@
     "manage_attendance",
     "manage_payroll"
    ],
+   "incentive": [
+    "view",
+    "configure"
+   ],
    "input_tax": [
     "view",
     "create",
@@ -772,6 +776,9 @@
    "goods_receipt": [
     "view"
    ],
+   "incentive": [
+    "view"
+   ],
    "interco": [
     "view"
    ],
@@ -1062,6 +1069,10 @@
     "manage_org",
     "manage_attendance",
     "manage_payroll"
+   ],
+   "incentive": [
+    "view",
+    "configure"
    ],
    "input_tax": [
     "view",
@@ -2918,6 +2929,7 @@
   "hr-kpi-hub": [
    "credit_override",
    "hr",
+   "incentive",
    "internal_request",
    "od_fulfillment",
    "od_pricing",
@@ -2968,6 +2980,7 @@
   "hrd": [
    "credit_override",
    "hr",
+   "incentive",
    "internal_request",
    "od_fulfillment",
    "od_pricing",
@@ -2981,6 +2994,9 @@
   ],
   "incentive-schemes": [
    "sales_force"
+  ],
+  "incentive-setup": [
+   "incentive"
   ],
   "input-tax": [
    "contra_bon",
@@ -3597,6 +3613,7 @@
    "settings"
   ],
   "settings-cfg-sales": [
+   "incentive",
    "sales_return",
    "settings"
   ],
@@ -3686,6 +3703,7 @@
    "goods_receipt",
    "grade_master",
    "hr",
+   "incentive",
    "input_tax",
    "inspection",
    "integration",
@@ -3753,6 +3771,7 @@
    "cash",
    "finance_amendment",
    "finance_case",
+   "incentive",
    "internal_request",
    "od_fulfillment",
    "od_pricing",

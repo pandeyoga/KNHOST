@@ -208,8 +208,11 @@ export const HUB_TABS = {
   // Penjualan › Komisi & Insentif) + KPI Karyawan. Komponen lama dirender tanpa perubahan.
   "hr-kpi-hub": [
     { view: "sales-performance", label: "Kinerja Sales",         roles: ["admin", "manager", "sales"] },
-    // D-03 — tarif per kategori + bawaan komisi (`commission.*`) di satu layar (view sama).
-    { view: "incentive-rates",   label: "Target & Aturan",       roles: ["admin", "manager"] },
+    // KM-T1 — Meja Insentif: target per PT per jenis periode, komponen, definisi angka, pencocokan (`incentive.*`).
+    { view: "incentive-setup",   label: "Target & Aturan",       roles: ["admin", "manager", "finance"] },
+    // D-03 — tarif per kategori + bawaan komisi (`commission.*`) di satu layar (view sama). KM-T1 — label "Komisi
+    // Otomatis" (dulu "Target & Aturan", kini tab Meja Insentif); dihapus/dialiaskan KM-T5.
+    { view: "incentive-rates",   label: "Komisi Otomatis",       roles: ["admin", "manager"] },
     { view: "incentive-schemes", label: "Skema (Arsip)",         roles: ["admin", "manager"] },
     { view: "cs-kpi",            label: "KPI Karyawan",          roles: ["admin", "manager"] },
   ],
