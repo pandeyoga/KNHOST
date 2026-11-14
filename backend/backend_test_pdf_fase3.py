@@ -228,12 +228,12 @@ class PdfTemplateTest:
             self.log("branding response invalid", "fail")
 
         # ── 8. PUT /api/pdf/branding/ent_ksc (save branding) ────────────────
-        self.log("\n[8] PUT /api/pdf/branding/ent_ksc (save branding)", "info")
+        # KP-T6 — kop hanya menyimpan logo/gambar/tanda tangan; teks identitas (nama, alamat, NPWP, kontak) diubah di
+        # Profil PT → PUT berisi teks = 400.
+        self.log("\n[8] PUT /api/pdf/branding/ent_ksc (teks ditolak, logo disimpan)", "info")
+        self.test("PUT branding teks ent_ksc → 400", "PUT", "/api/pdf/branding/ent_ksc", 400,
+                  token=self.admin_token, data={"company_name": "PT Uji Coba", "phone": "021"})
         test_branding = {
-            "company_name": "PT Uji Coba",
-            "address": "Jl. Test",
-            "phone": "021",
-            "npwp": "00.000",
             "logo_b64": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCA",
         }
         success, saved_brand = self.test(
@@ -245,10 +245,10 @@ class PdfTemplateTest:
             data=test_branding
         )
         if success and isinstance(saved_brand, dict):
-            if saved_brand.get("company_name") == "PT Uji Coba" and saved_brand.get("phone") == "021":
+            if saved_brand.get("logo_src") == test_branding["logo_b64"]:
                 self.log("Branding saved correctly", "pass")
             else:
-                self.log(f"Branding mismatch: company={saved_brand.get('company_name')}, phone={saved_brand.get('phone')}", "fail")
+                self.log(f"Branding mismatch: logo_src={str(saved_brand.get('logo_src'))[:40]}", "fail")
                 self.failures.append("PUT branding mismatch")
         else:
             self.log("PUT branding response invalid", "fail")
@@ -263,10 +263,10 @@ class PdfTemplateTest:
             token=self.admin_token
         )
         if success and isinstance(branding2, dict):
-            if branding2.get("company_name") == "PT Uji Coba" and branding2.get("phone") == "021":
+            if branding2.get("logo_src") == test_branding["logo_b64"] and "identity_conflicts" in branding2:
                 self.log("Branding persisted correctly", "pass")
             else:
-                self.log(f"Branding NOT persisted: company={branding2.get('company_name')}, phone={branding2.get('phone')}", "fail")
+                self.log(f"Branding NOT persisted: logo_src={str(branding2.get('logo_src'))[:40]}", "fail")
                 self.failures.append("Branding not persisted")
         else:
             self.log("GET branding (verify) response invalid", "fail")

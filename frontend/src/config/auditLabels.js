@@ -93,6 +93,7 @@ export const AUDIT_ACTION_LABEL = {
   // KP-T1 — tindakan "Ubah status PKP" (bertanggal berlaku, beralasan).
   entity_tax_status_changed: "Status PKP diubah", entity_tax_status_scheduled: "Perubahan status PKP dijadwalkan",
   entity_tax_status_cancelled: "Jadwal status PKP dibatalkan",
+  branding_identity_resolved: "Identitas kop PT diselesaikan",   // KP-T6
   entity_provisioning_retried: "Penyiapan PT diulang",   // KP-T2 — tombol "Ulangi penyiapan"
   // Keputusan pemilik K-15 (26 Okt) — admin menutup buku walau saldo Suspense ≠ 0 (alasan wajib, baris audit terpisah).
   period_close_suspense_override: "Tutup buku menembus blokir Suspense",

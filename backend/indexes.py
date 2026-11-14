@@ -692,6 +692,11 @@ REQUIRED_UNIQUE_INDEXES: List[Dict[str, Any]] = [
      "keys": [("kind", 1), ("entity_id", 1)], "partial": {"kind": dict(_NONEMPTY)},
      "finder": _finder_dup("doc_number_formats", '{kind:{$type:"string",$gt:""}}', '{k:"$kind",e:"$entity_id"}',
                            "$id")},
+    # KP-T6 (D7) — satu lapisan template cetak per (jenis dokumen, PT | "all"); baris lama tanpa `entity_id` = null.
+    {"collection": "pdf_templates", "name": "uq_doctype_entity", "label": "lapisan template cetak per jenis per PT",
+     "keys": [("doc_type", 1), ("entity_id", 1)], "partial": {"doc_type": dict(_NONEMPTY)},
+     "finder": _finder_dup("pdf_templates", '{doc_type:{$type:"string",$gt:""}}', '{d:"$doc_type",e:"$entity_id"}',
+                           "$updated_at")},
 ]
 
 

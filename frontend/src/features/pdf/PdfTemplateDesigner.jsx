@@ -1,12 +1,18 @@
 // PdfTemplateDesigner — Fase 3: Advanced PDF Configuration UI.
 // Editor template per doc_type + branding per entitas + pratinjau HTML live (debounced)
 // + unduh PDF. Konsumsi endpoint /api/pdf/* (lihat routers/pdf.py).
+//
+// KP-T6 (KP-18, KP-19, KP-34) — identitas kop (nama, alamat, NPWP, kontak) hanya-baca dari Profil PT; kop yang masih
+// memakai teks lama diselesaikan lewat dua tombol (alasan + konfirmasi yang menyebut PT). Pemilih **Berlaku untuk**:
+// "Semua PT" atau PT terpilih — lapisan PT hanya untuk naskah, tempat & tanggal, tanda tangan, tanda air.
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import axios, { API } from "../../services/apiClient";
 import KNSelect from "../../components/KNSelect";
 import PdfEditorTabs from "./PdfEditorTabs";
 import { DEFAULT_CODE } from "./pdfConstants";
-import { askConfirm } from "../../services/confirmService";
+import { askConfirm, askReason } from "../../services/confirmService";
+import { can } from "../../config/roles";
+import { useAppNav } from "../../context/AppNavContext";
 import {
   FileText, Download, Save, RotateCcw, Loader2, RefreshCw, FileWarning, Layers,
 } from "lucide-react";
@@ -20,6 +26,10 @@ export default function PdfTemplateDesigner({ currentUser, selectedEntity, entit
   const [meta, setMeta] = useState(null);             // {customized, version, updated_at, updated_by, override_keys}
   const [defaultEffective, setDefaultEffective] = useState(null);
   const [placeholders, setPlaceholders] = useState([]);
+  const [keyLabels, setKeyLabels] = useState({});      // KP-T6 — label isian (bukan nama field)
+  const [scope, setScope] = useState("all");          // KP-T6 — "all" (semua PT) | "pt" (PT terpilih)
+  const [groupConfig, setGroupConfig] = useState(null);
+  const [ptLayerKeys, setPtLayerKeys] = useState([]);
   const [newImages, setNewImages] = useState({});     // {header_image_b64|footer_image_b64|stamp_b64: dataURL|""}
   const isDefault = docType === DEFAULT_CODE;
   // Pratinjau __default__ memakai dokumen nyata jenis pertama yang punya data.
@@ -39,7 +49,12 @@ export default function PdfTemplateDesigner({ currentUser, selectedEntity, entit
   const [err, setErr] = useState("");
   const [brandingMsg, setBrandingMsg] = useState("");
   const [brandingErr, setBrandingErr] = useState("");
+  const [resolving, setResolving] = useState(false);
   const flash = useRef(null);
+  const nav = useAppNav();
+  const perms = currentUser?.permissions;
+  const ptScope = scope === "pt";
+  const layerEntity = ptScope ? entityId : "";
 
   const docTypeOptions = useMemo(
     () => docTypes.map((d) => ({ value: d.doc_type,
@@ -47,6 +62,11 @@ export default function PdfTemplateDesigner({ currentUser, selectedEntity, entit
       group: d.doc_type === DEFAULT_CODE ? "Bawaan" : (d.module || "Lainnya") })), [docTypes]);
   const entityOptions = useMemo(
     () => entities.map((e) => ({ value: e.id, label: e.legal_name || e.short_name || e.id })), [entities]);
+  const ptName = entityOptions.find((o) => o.value === entityId)?.label || "PT ini";
+  const scopeOptions = useMemo(() => [
+    { value: "all", label: "Semua PT" },
+    { value: "pt", label: entityId ? `Hanya ${ptName}` : "PT terpilih" },
+  ], [entityId, ptName]);
 
   const flashMsg = useCallback((text) => {
     setMsg(text); setErr("");
@@ -71,18 +91,25 @@ export default function PdfTemplateDesigner({ currentUser, selectedEntity, entit
   }, []);
   useEffect(() => { loadTargets(); }, [loadTargets]);
 
-  // muat template cfg saat docType berubah
+  // muat template cfg saat docType / lapisan (semua PT | PT terpilih) berubah
+  const applyTemplate = useCallback((d) => {
+    setConfig(d.config); setMeta(d.meta || null);
+    setGroupConfig(d.group_config || null); setPtLayerKeys(d.pt_layer_keys || []);
+    if (d.defaults) setDefaults(d.defaults);
+    if (d.default_effective) setDefaultEffective(d.default_effective);
+    if (d.placeholders) setPlaceholders(d.placeholders);
+    if (d.key_labels) setKeyLabels(d.key_labels);
+  }, []);
   useEffect(() => {
-    if (!docType) return;
+    if (!docType || (ptScope && !layerEntity)) return;
     (async () => {
       try {
-        const r = await axios.get(`${API}/pdf/templates/${docType}`);
-        setConfig(r.data.config); setDefaults(r.data.defaults); setMeta(r.data.meta || null);
-        setDefaultEffective(r.data.default_effective || null);
-        if (r.data.placeholders) setPlaceholders(r.data.placeholders);
+        const r = await axios.get(`${API}/pdf/templates/${docType}`,
+          { params: layerEntity ? { entity_id: layerEntity } : undefined });
+        applyTemplate(r.data);
       } catch (e) { setErr(e.response?.data?.detail || "Gagal memuat template."); }
     })();
-  }, [docType]);
+  }, [docType, ptScope, layerEntity, applyTemplate]);
 
   // muat branding saat entitas berubah
   useEffect(() => {
@@ -115,9 +142,11 @@ export default function PdfTemplateDesigner({ currentUser, selectedEntity, entit
     setPreviewLoading(true); setPreviewError("");
     const t = setTimeout(async () => {
       try {
+        // KP-T6 — saat menyunting aturan semua PT, aturan khusus PT terpilih tetap diterapkan di atasnya
+        // (pratinjau = yang benar-benar tercetak untuk PT itu).
         const r = await axios.post(`${API}/pdf/preview`, {
           doc_type: previewDocType, source_id: sample.source_id,
-          entity_id: entityId || sample.entity_id, config,
+          entity_id: entityId || sample.entity_id, config, layer: ptScope ? undefined : "all",
         }, { headers: { Accept: "text/html" } });
         setPreviewHtml(typeof r.data === "string" ? r.data : String(r.data || ""));
       } catch (e) {
@@ -126,10 +155,9 @@ export default function PdfTemplateDesigner({ currentUser, selectedEntity, entit
       } finally { setPreviewLoading(false); }
     }, 550);
     return () => clearTimeout(t);
-  }, [cfgKey, previewDocType, entityId, sample?.source_id, previewNonce]); // eslint-disable-line
+  }, [cfgKey, previewDocType, entityId, sample?.source_id, previewNonce, ptScope]); // eslint-disable-line
 
   const patch = useCallback((k, v) => setConfig((c) => ({ ...(c || {}), [k]: v })), []);
-  const patchBranding = useCallback((k, v) => setBranding((b) => ({ ...(b || {}), [k]: v })), []);
 
   const onLogoFile = useCallback((file) => {
     if (file.size > 1024 * 1024) { setBrandingErr("Ukuran logo maksimal 1 MB."); return; }
@@ -154,9 +182,11 @@ export default function PdfTemplateDesigner({ currentUser, selectedEntity, entit
     if (!docType || !config) return;
     setSavingTpl(true); setErr("");
     try {
-      const r = await axios.put(`${API}/pdf/templates/${docType}`, { config });
-      setConfig(r.data.config); setMeta(r.data.meta || null);
-      flashMsg(isDefault ? "Bawaan seluruh dokumen tersimpan — semua jenis yang tidak menimpanya ikut berubah." : "Template tersimpan (hanya perbedaan dari bawaan yang disimpan).");
+      const r = await axios.put(`${API}/pdf/templates/${docType}`, { config },
+        { params: layerEntity ? { entity_id: layerEntity } : undefined });
+      applyTemplate(r.data);
+      flashMsg(ptScope ? `Aturan khusus ${ptName} tersimpan — PT lain tidak berubah.`
+        : isDefault ? "Bawaan seluruh dokumen tersimpan — semua jenis yang tidak menimpanya ikut berubah." : "Template tersimpan (hanya perbedaan dari bawaan yang disimpan).");
       loadTargets();
     } catch (e) { setErr(e.response?.data?.detail || "Gagal menyimpan template."); }
     finally { setSavingTpl(false); }
@@ -166,37 +196,60 @@ export default function PdfTemplateDesigner({ currentUser, selectedEntity, entit
     if (!entityId) return;
     setSavingBrand(true); setBrandingErr(""); setBrandingMsg("");
     try {
-      const payload = {
-        company_name: branding?.company_name || "",
-        tagline: branding?.tagline || "",
-        address: branding?.address || "",
-        phone: branding?.phone || "",
-        email: branding?.email || "",
-        website: branding?.website || "",
-        npwp: branding?.npwp || "",
-      };
+      // KP-T6 — hanya logo & gambar; nama, alamat, NPWP, dan kontak diubah di Profil PT.
+      const payload = {};
       if (newLogo !== null) payload.logo_b64 = newLogo; // data-url atau "" (hapus)
       Object.entries(newImages).forEach(([k, v]) => { payload[k] = v; });
       const r = await axios.put(`${API}/pdf/branding/${entityId}`, payload);
       setBranding(r.data); setNewLogo(null); setNewImages({});
-      setBrandingMsg("Branding tersimpan.");
+      setBrandingMsg("Logo & gambar kop tersimpan.");
       setPreviewNonce((n) => n + 1);                  // segarkan pratinjau (branding server-side)
-    } catch (e) { setBrandingErr(e.response?.data?.detail || "Gagal menyimpan branding."); }
+    } catch (e) { setBrandingErr(e.response?.data?.detail || "Gagal menyimpan logo & gambar kop."); }
     finally { setSavingBrand(false); }
   }
 
+  // KP-T6 — kop yang masih memakai teks lama: pemilik memilih sumbernya (alasan wajib, konfirmasi menyebut PT).
+  async function resolveIdentity(action) {
+    if (!entityId) return;
+    const pakai = action === "pakai_profil";
+    const reason = await askReason({
+      title: pakai ? `Pakai data Profil PT untuk kop ${ptName}?` : `Salin teks kop ${ptName} ke Profil PT?`,
+      description: pakai
+        ? `Kop semua dokumen ${ptName} akan mencetak nama, alamat, NPWP, dan kontak dari Profil PT. Teks kop lama tidak dipakai lagi. Dokumen yang sudah terbit tidak berubah.`
+        : `Teks yang tercetak sekarang ditulis ke Profil PT ${ptName} (isian yang kosong tidak menghapus Profil PT), lalu kop memakai Profil PT.`,
+      confirmLabel: pakai ? "Pakai data Profil PT" : "Salin ke Profil PT",
+      reasonLabel: "Alasan", testId: "pdf-identity-confirm",
+    });
+    if (reason === null) return;
+    setResolving(true); setBrandingErr(""); setBrandingMsg("");
+    try {
+      const r = await axios.post(`${API}/pdf/branding/${entityId}/identity`, { action, reason });
+      setBranding(r.data);
+      setBrandingMsg(pakai ? "Kop kini memakai data Profil PT." : "Teks kop disalin ke Profil PT.");
+      setPreviewNonce((n) => n + 1);
+    } catch (e) { setBrandingErr(e.response?.data?.detail || "Gagal menyelesaikan identitas kop."); }
+    finally { setResolving(false); }
+  }
+  const canOpenProfile = nav.canOpen("entities-access");
+  const openProfile = () => nav.go("entities-access", { preset: { tab: "entities", entity_id: entityId } });
+
   async function resetDefaults() {
     // Pola sipro: reset = BUANG override di server; dokumen yang sudah terbit tidak berubah.
-    const ok = await askConfirm({
-      title: isDefault ? "Kembalikan bawaan seluruh dokumen ke setelan pabrik?" : `Buang setelan khusus "${docTypes.find((d) => d.doc_type === docType)?.label || docType}"?`,
+    const docLabel = docTypes.find((d) => d.doc_type === docType)?.label || docType;
+    const ok = await askConfirm(ptScope ? {
+      title: `Kembalikan ${docLabel} ${ptName} ke aturan semua PT?`,
+      description: `Naskah, tempat, tanda tangan, dan tanda air khusus ${ptName} untuk jenis dokumen ini dibuang. PT lain dan dokumen yang sudah terbit tidak berubah.`,
+      confirmLabel: "Kembalikan", danger: true } : {
+      title: isDefault ? "Kembalikan bawaan seluruh dokumen ke setelan pabrik?" : `Buang setelan khusus "${docLabel}"?`,
       description: isDefault ? "Semua jenis dokumen yang tidak menimpanya akan kembali ke gaya pabrik. Dokumen yang sudah terbit tidak berubah."
         : "Jenis dokumen ini akan kembali mengikuti bawaan seluruh dokumen. Dokumen yang sudah terbit tidak berubah.",
       confirmLabel: "Kembalikan", danger: true });
     if (!ok) return;
     try {
-      const r = await axios.delete(`${API}/pdf/templates/${docType}`);
-      setConfig(r.data.config); setMeta(r.data.meta || null);
-      flashMsg("Dikembalikan ke bawaan."); loadTargets();
+      const r = await axios.delete(`${API}/pdf/templates/${docType}`,
+        { params: layerEntity ? { entity_id: layerEntity } : undefined });
+      applyTemplate(r.data);
+      flashMsg(ptScope ? `${ptName} kembali mengikuti aturan semua PT.` : "Dikembalikan ke bawaan."); loadTargets();
     } catch (e) { setErr(e.response?.data?.detail || "Gagal mengembalikan ke bawaan."); }
   }
 
@@ -219,6 +272,8 @@ export default function PdfTemplateDesigner({ currentUser, selectedEntity, entit
   }
 
   const hasSample = !!(sample && sample.source_id);
+  const labelOf = (k) => keyLabels[k] || k;
+  const overrideText = (meta?.override_keys || []).map(labelOf).join(", ");
 
   return (
     <div className="grid gap-4" data-testid="pdf-template-designer">
@@ -231,36 +286,52 @@ export default function PdfTemplateDesigner({ currentUser, selectedEntity, entit
               className="field !w-[240px]" searchable placeholder="Pilih dokumen…" data-testid="pdf-doctype-select" />
           </div>
           <div className="grid gap-1">
-            <label className="kicker">Entitas (PT)</label>
+            <label className="kicker">PT</label>
             <KNSelect value={entityId} onValueChange={setEntityId} options={entityOptions}
-              className="field !w-[220px]" placeholder="Pilih entitas…" data-testid="pdf-entity-select" />
+              className="field !w-[220px]" placeholder="Pilih PT…" data-testid="pdf-entity-select" />
+          </div>
+          <div className="grid gap-1">
+            <label className="kicker">Berlaku untuk</label>
+            <KNSelect value={scope} onValueChange={setScope} options={scopeOptions}
+              className="field !w-[220px]" data-testid="pdf-scope-select" />
           </div>
           <div className="ml-auto flex flex-wrap items-center gap-2">
             <button className="btn-secondary flex items-center gap-1.5" onClick={resetDefaults} data-testid="pdf-reset-default" disabled={!meta?.customized}
-              title={meta?.customized ? "Buang setelan & kembali ke bawaan" : "Belum ada setelan khusus"}>
-              <RotateCcw size={14} /> {isDefault ? "Setelan Pabrik" : "Ikuti Bawaan"}
+              title={meta?.customized ? (ptScope ? "Buang aturan khusus PT ini" : "Buang setelan & kembali ke bawaan") : "Belum ada setelan khusus"}>
+              <RotateCcw size={14} /> {ptScope ? "Kembali ke aturan semua PT" : isDefault ? "Setelan Pabrik" : "Ikuti Bawaan"}
             </button>
+
             <button className="btn-secondary flex items-center gap-1.5" onClick={downloadPdf}
               disabled={downloading || !hasSample} data-testid="pdf-download">
               {downloading ? <Loader2 size={14} className="animate-spin" /> : <Download size={14} />} Unduh PDF
             </button>
             {/* UAT 24 Okt (audit UI tahap 2, G5-53) — dua tombol simpan berbeda cakupan kini dijelaskan. */}
             <button className="btn-primary flex items-center gap-1.5" onClick={saveTemplate}
-              title="Menyimpan tata letak, tabel, field tambahan & tanda tangan untuk jenis dokumen ini. Kop/logo/kontak disimpan di tab Kop Surat (Simpan Branding)."
+              title={ptScope ? `Menyimpan naskah, tempat, tanda tangan & tanda air khusus ${ptName} untuk jenis dokumen ini.` : "Menyimpan tata letak, tabel, field tambahan & tanda tangan untuk jenis dokumen ini. Logo & gambar kop disimpan di tab Kop Surat."}
               disabled={savingTpl || !config} data-testid="pdf-save-template">
               {savingTpl ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />} Simpan Template
             </button>
           </div>
         </div>
+        {/* Standar UI — tombol yang mati diberi alasan tertulis (bukan hanya tooltip). */}
+        {(!meta?.customized || !hasSample) && (
+          <p className="px-4 pb-1 text-fs-12 text-kn-text-2" data-testid="pdf-toolbar-reasons">
+            {!meta?.customized && <span data-testid="pdf-reset-reason">{ptScope ? "Kembali ke aturan semua PT: belum ada aturan khusus PT ini." : `${isDefault ? "Setelan Pabrik" : "Ikuti Bawaan"}: belum ada setelan khusus.`}</span>}
+            {!meta?.customized && !hasSample && " · "}
+            {!hasSample && <span data-testid="pdf-download-reason">Unduh PDF: belum ada dokumen contoh untuk PT ini.</span>}
+          </p>
+        )}
         <p className="px-4 pb-1 text-[11px] text-[#6B6B73]" data-testid="pdf-save-scope-hint">
-          <b>Simpan Template</b> = tata letak, tabel, field &amp; tanda tangan jenis dokumen ini · <b>Simpan Branding</b> (tab Kop Surat) = kop, logo &amp; kontak badan usaha untuk semua dokumen.
+          <b>Simpan Template</b> = tata letak, tabel, field &amp; tanda tangan jenis dokumen ini · <b>Simpan Logo &amp; Gambar</b> (tab Kop Surat) = logo, gambar kop &amp; cap PT untuk semua dokumen. Nama, alamat, NPWP &amp; kontak diambil dari Profil PT.
         </p>
         <div className="px-4 pb-3 flex flex-wrap items-center gap-2 text-[11.5px]" data-testid="pdf-layer-info">
-          <Layers size={13} className="text-[#0058CC]" />
-          {isDefault ? (
+          <Layers size={13} className="text-kn-action" />
+          {ptScope ? (
+            <span className="text-kn-text" data-testid="pdf-layer-info-pt">Aturan khusus <b>{ptName}</b>: hanya naskah, tempat &amp; tanggal, tanda tangan, dan tanda air. Bagian lain diatur untuk semua PT{overrideText ? <> · khusus PT ini: {overrideText}</> : " · saat ini mengikuti aturan semua PT"}.</span>
+          ) : isDefault ? (
             <span className="text-[#3C3C43]">Gaya & kop di sini dipakai <b>SEMUA</b> dokumen. Pilih jenis dokumen untuk menimpanya (mis. kolom tanda tangan Surat Jalan berbeda dari Faktur).</span>
           ) : (
-            <span className="text-[#3C3C43]">Hanya <b>perbedaan</b> dari bawaan yang disimpan untuk jenis ini{meta?.override_keys?.length ? <>: <span className="font-mono text-[10.5px]">{meta.override_keys.join(", ")}</span></> : " — saat ini mengikuti bawaan sepenuhnya"}.</span>
+            <span className="text-[#3C3C43]">Hanya <b>perbedaan</b> dari bawaan yang disimpan untuk jenis ini{overrideText ? <>: {overrideText}</> : " — saat ini mengikuti bawaan sepenuhnya"}.</span>
           )}
           {meta?.customized && <span className="ml-auto rounded-full bg-[#EAF2FF] px-2 py-0.5 text-[10.5px] font-semibold text-[#0058CC]" data-testid="pdf-meta-version">v{meta.version} · {formatDateTime(meta.updated_at)} · {meta.updated_by}</span>}
         </div>
@@ -277,12 +348,16 @@ export default function PdfTemplateDesigner({ currentUser, selectedEntity, entit
         {config ? (
           <PdfEditorTabs
             config={config} patch={patch}
-            branding={branding} patchBranding={patchBranding}
+            branding={branding}
             onLogoFile={onLogoFile} onRemoveLogo={onRemoveLogo} onSaveBranding={saveBranding}
             savingBrand={savingBrand} brandingMsg={brandingMsg} brandingErr={brandingErr}
             newLogoPreview={newLogo}
             onImageFile={onImageFile} newImages={newImages} placeholders={placeholders}
             defaultEffective={defaultEffective} isDefault={isDefault}
+            ptScope={ptScope} ptLayerKeys={ptLayerKeys} groupConfig={groupConfig} ptName={ptName}
+            onResolveIdentity={resolveIdentity} resolving={resolving}
+            canResolveIdentity={can(perms, "entity", "update") && can(perms, "pdf_template", "manage")}
+            onOpenProfile={canOpenProfile ? openProfile : null}
           />
         ) : (
           <section className="section-card"><div className="section-body text-[12px] text-[#9A9BA3] py-6">Memuat konfigurasi…</div></section>

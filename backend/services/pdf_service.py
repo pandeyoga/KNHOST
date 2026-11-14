@@ -1,6 +1,12 @@
 """
 pdf_service.py — Orkestrasi render dokumen: template config + branding entitas +
 resolver context + (opsional) blok e-sign → HTML → PDF.
+
+KP-T6 (KP-18, KP-19, KP-34) — identitas kop (nama, alamat, NPWP, kontak, slogan, situs) dari **Profil PT**
+(`business_entities`); `document_branding` hanya menyimpan gambar & tanda tangan (teks lama tetap dibaca sampai PT itu
+diselesaikan lewat `resolve_identity`). Konfigurasi template punya lapisan PT (`pdf_templates.entity_id`) khusus untuk
+naskah, tempat, tanda tangan, dan tanda air (`PT_LAYER_KEYS`). Token `{{rekening_bank}}` diisi penyedia yang bisa diganti
+(`register_token_provider`).
 """
 from __future__ import annotations
 import base64
@@ -53,6 +59,34 @@ PLACEHOLDERS = {
     "pihak": "Nama pihak tujuan (pelanggan/supplier)", "alamat_pihak": "Alamat pihak tujuan",
     "grand_total": "Nilai total dokumen", "terbilang": "Total dalam huruf",
     "jumlah_baris": "Jumlah baris rincian", "hari_ini": "Tanggal cetak (WIB)",
+    # KP-T6 (KP-34) — nilainya dari penyedia token (`register_token_provider`), bukan dari konteks dokumen.
+    "rekening_bank": "Rekening bank pembayaran PT",
+}
+#: KP-T6 — keterangan token di layar naskah (dikirim bersama daftar token).
+PLACEHOLDER_NOTES = {
+    "rekening_bank": ("Rekening bank pembayaran PT. Kosong bila PT punya lebih dari satu rekening dan belum ada "
+                      "rekening tujuan di pesanan."),
+}
+
+# KP-T6 (KP-19) — lapisan PT hanya boleh memuat naskah, tempat-tanggal, tanda tangan, dan tanda air. Tata letak (kertas,
+# margin, huruf, warna, kolom) tetap satu untuk semua PT.
+PT_LAYER_KEYS = ("intro_text", "closing_note", "footer_text", "show_place_date", "place",
+                 "signature_slots", "watermark_text", "watermark_opacity")
+GROUP_SCOPE = "all"
+_GROUP_VALUES = [GROUP_SCOPE, "", None]   # baris lama tanpa `entity_id` = lapisan grup (sampai dimigrasi)
+#: Label isian template untuk pesan galat (L1 — tanpa nama field).
+TEMPLATE_KEY_LABELS = {
+    "paper_size": "Ukuran kertas", "orientation": "Orientasi", "margin_top": "Margin atas",
+    "margin_right": "Margin kanan", "margin_bottom": "Margin bawah", "margin_left": "Margin kiri",
+    "font_family": "Huruf", "font_size": "Ukuran huruf", "color_primary": "Warna utama",
+    "color_accent": "Warna aksen", "show_logo": "Tampilkan logo", "show_terbilang": "Tampilkan terbilang",
+    "watermark_text": "Tanda air", "watermark_opacity": "Ketebalan tanda air", "footer_text": "Teks footer",
+    "show_page_numbers": "Nomor halaman", "title_override": "Judul dokumen", "custom_fields": "Field tambahan",
+    "signature_slots": "Slot tanda tangan", "hidden_fields": "Baris info yang disembunyikan",
+    "header_mode": "Mode kop surat", "footer_mode": "Mode footer", "intro_text": "Teks pembuka",
+    "closing_note": "Teks penutup", "show_place_date": "Tempat & tanggal sebelum tanda tangan", "place": "Tempat",
+    "show_materai": "Catatan meterai", "materai_note": "Teks meterai",
+    "show_generated_note": "Catatan dihasilkan sistem", "sections": "Bagian dokumen", "table": "Gaya tabel",
 }
 _TOKEN_RE = None
 
@@ -69,8 +103,8 @@ def unknown_tokens(text: str) -> list:
     return sorted({t for t in _token_re().findall(text or "") if t not in PLACEHOLDERS})
 
 
-def render_text(text: str, doc: dict, branding: dict) -> str:
-    """Isi {{token}} dari konteks dokumen. Token tak dikenal dibiarkan apa adanya."""
+def render_text(text: str, doc: dict, branding: dict, extra: dict | None = None) -> str:
+    """Isi {{token}} dari konteks dokumen (+ `extra` dari penyedia token). Token tak dikenal dibiarkan apa adanya."""
     if not text:
         return ""
     from datetime import datetime
@@ -91,6 +125,7 @@ def render_text(text: str, doc: dict, branding: dict) -> str:
         "jumlah_baris": str(len(doc.get("items") or [])),
         "hari_ini": datetime.now(ZoneInfo("Asia/Jakarta")).strftime("%d %b %Y"),
     }
+    vals.update(extra or {})
     return _token_re().sub(lambda m: str(vals.get(m.group(1), m.group(0))), text)
 
 
@@ -140,67 +175,147 @@ def qr_data_url(payload: str) -> str:
     return "data:image/png;base64," + base64.b64encode(buf.getvalue()).decode()
 
 
+# ─── Lapisan template: bawaan kode → `__default__` grup → jenis grup → `__default__` PT → jenis PT ──────────────────
+def _is_group(entity_id: str | None) -> bool:
+    return entity_id in (None, "", GROUP_SCOPE)
+
+
+def _layer_filter(doc_type: str, entity_id: str | None = None) -> dict:
+    """Saringan satu baris lapisan. Grup = `entity_id` "all" atau baris lama tanpa `entity_id` (KP-T6)."""
+    if _is_group(entity_id):
+        return {"doc_type": doc_type, "entity_id": {"$in": list(_GROUP_VALUES)}}
+    return {"doc_type": doc_type, "entity_id": entity_id}
+
+
+async def _layer_row(doc_type: str, entity_id: str | None = None, projection: dict | None = None) -> dict:
+    return await db.pdf_templates.find_one(_layer_filter(doc_type, entity_id), projection or {"_id": 0}) or {}
+
+
+def _pt_only(config: dict) -> dict:
+    """Lapisan PT hanya membawa `PT_LAYER_KEYS` (kunci lain di baris PT diabaikan saat dibaca)."""
+    return {k: v for k, v in _clean_cfg(config).items() if k in PT_LAYER_KEYS}
+
+
 async def _default_effective() -> dict:
-    row = await db.pdf_templates.find_one({"doc_type": DEFAULT_CODE}, {"_id": 0})
+    row = await _layer_row(DEFAULT_CODE)
     cfg = merge_cfg(DEFAULT_TEMPLATE_CFG, {})
     if row and isinstance(row.get("config"), dict):
         cfg = merge_cfg(cfg, _clean_cfg(row["config"]))
     return cfg
 
 
-async def get_template_cfg(doc_type: str) -> dict:
-    """Konfigurasi EFEKTIF: bawaan kode → `__default__` → override jenis dokumen."""
+async def _group_cfg(doc_type: str) -> dict:
+    """Hasil lapisan grup saja (tanpa PT): bawaan kode → `__default__` → jenis dokumen."""
     cfg = await _default_effective()
     if doc_type != DEFAULT_CODE:
-        row = await db.pdf_templates.find_one({"doc_type": doc_type}, {"_id": 0})
+        row = await _layer_row(doc_type)
         if row and isinstance(row.get("config"), dict):
             cfg = merge_cfg(cfg, _clean_cfg(row["config"]))
     return cfg
 
 
-async def template_meta(doc_type: str) -> dict:
-    row = await db.pdf_templates.find_one({"doc_type": doc_type}, {"_id": 0, "config": 0}) or {}
-    override = await db.pdf_templates.find_one({"doc_type": doc_type}, {"_id": 0, "config": 1}) or {}
+async def _pt_base(doc_type: str, entity_id: str) -> dict:
+    """Konfigurasi di BAWAH lapisan PT `doc_type` — pembanding saat menyimpan lapisan itu."""
+    if doc_type == DEFAULT_CODE:
+        return await _default_effective()
+    cfg = await _group_cfg(doc_type)
+    row = await _layer_row(DEFAULT_CODE, entity_id)
+    if isinstance(row.get("config"), dict):
+        cfg = merge_cfg(cfg, _pt_only(row["config"]))
+    return cfg
+
+
+async def get_template_cfg(doc_type: str, entity_id: str | None = None) -> dict:
+    """Konfigurasi EFEKTIF. Tanpa `entity_id` = hasil grup (perilaku sebelum KP-T6).
+
+    KP-T6 (`ASUMSI` spesifikasi) — `__default__` PT di atas jenis dokumen grup: PT yang menetapkan kota sekali untuk
+    semua dokumennya tidak tertimpa aturan grup per jenis dokumen."""
+    return await _with_pt_layers(await _group_cfg(doc_type), doc_type, entity_id)
+
+
+def _pt_layer_types(doc_type: str) -> tuple:
+    return (DEFAULT_CODE,) if doc_type == DEFAULT_CODE else (DEFAULT_CODE, doc_type)
+
+
+async def _with_pt_layers(cfg: dict, doc_type: str, entity_id: str | None) -> dict:
+    """Terapkan lapisan `__default__` PT lalu jenis dokumen PT di atas `cfg` (tanpa PT: `cfg` apa adanya)."""
+    if _is_group(entity_id):
+        return cfg
+    for dt in _pt_layer_types(doc_type):
+        row = await _layer_row(dt, entity_id)
+        if isinstance(row.get("config"), dict):
+            cfg = merge_cfg(cfg, _pt_only(row["config"]))
+    return cfg
+
+
+async def pt_override_keys(doc_type: str, entity_id: str) -> list:
+    """Kunci yang ditimpa PT untuk jenis dokumen ini (lapisan `__default__` PT + jenis PT)."""
+    keys: set = set()
+    for dt in _pt_layer_types(doc_type):
+        row = await _layer_row(dt, entity_id, {"_id": 0, "config": 1})
+        keys |= set(_pt_only(row.get("config") or {}))
+    return sorted(keys)
+
+
+async def template_meta(doc_type: str, entity_id: str | None = None) -> dict:
+    row = await _layer_row(doc_type, entity_id)
     return {"customized": bool(row), "version": row.get("version") or 0,
             "updated_at": row.get("updated_at") or "", "updated_by": row.get("updated_by") or "",
-            "override_keys": sorted((override.get("config") or {}).keys())}
+            "override_keys": sorted((row.get("config") or {}).keys())}
 
 
-async def save_template_cfg(doc_type: str, config: dict, actor: str = "") -> dict:
-    """`__default__` menyimpan konfigurasi penuh; jenis dokumen hanya menyimpan PERBEDAAN
-    terhadap bawaan efektif, sehingga mengganti warna di `__default__` ikut mengubah semua
-    dokumen yang tidak menimpanya (pola sipro)."""
-    from core_utils import now_iso
-    clean = _clean_cfg(config)
+def _assert_known_tokens(clean: dict) -> None:
     for t in ("intro_text", "closing_note"):
         bad = unknown_tokens(clean.get(t, ""))
         if bad:
             raise ValueError(f"Placeholder tidak dikenal di naskah: {', '.join('{{' + b + '}}' for b in bad)}. "
                              f"Yang sah: {', '.join('{{' + k + '}}' for k in PLACEHOLDERS)}")
-    if doc_type == DEFAULT_CODE:
+
+
+async def save_template_cfg(doc_type: str, config: dict, actor: str = "", entity_id: str | None = GROUP_SCOPE) -> dict:
+    """`__default__` grup menyimpan konfigurasi penuh; jenis dokumen hanya menyimpan PERBEDAAN terhadap bawaan efektif,
+    sehingga mengganti warna di `__default__` ikut mengubah semua dokumen yang tidak menimpanya (pola sipro).
+
+    KP-T6 — `entity_id` PT: hanya `PT_LAYER_KEYS`, disimpan bila berbeda dari lapisan di bawahnya (`_pt_base`). Kunci
+    lain yang dikirim dengan nilai SAMA dengan aturan semua PT dibuang diam-diam (layar mengirim konfigurasi penuh);
+    yang nilainya BERBEDA → `ValueError` "Bagian ini hanya bisa diatur untuk semua PT: …"."""
+    from core_utils import now_iso
+    clean = _clean_cfg(config)
+    _assert_known_tokens(clean)
+    group = _is_group(entity_id)
+    if group and doc_type == DEFAULT_CODE:
         stored = merge_cfg(DEFAULT_TEMPLATE_CFG, clean)
+    elif group:
+        base = await _default_effective()
+        stored = diff_cfg(base, merge_cfg(base, clean))
     else:
-        full = merge_cfg(await _default_effective(), clean)
-        stored = diff_cfg(await _default_effective(), full)
-    cur = await db.pdf_templates.find_one({"doc_type": doc_type}, {"_id": 0, "version": 1}) or {}
+        base = await _pt_base(doc_type, entity_id)
+        outside = [k for k, v in clean.items() if k not in PT_LAYER_KEYS and diff_cfg(base, {k: v})]
+        if outside:
+            raise ValueError("Bagian ini hanya bisa diatur untuk semua PT: "
+                             f"{', '.join(TEMPLATE_KEY_LABELS.get(k, k) for k in outside)}.")
+        stored = diff_cfg(base, {k: v for k, v in clean.items() if k in PT_LAYER_KEYS})
+    scope = GROUP_SCOPE if group else entity_id
+    cur = await _layer_row(doc_type, scope, {"_id": 0, "version": 1})
     await db.pdf_templates.update_one(
-        {"doc_type": doc_type},
-        {"$set": {"doc_type": doc_type, "config": stored, "updated_by": actor,
+        _layer_filter(doc_type, scope),
+        {"$set": {"doc_type": doc_type, "entity_id": scope, "config": stored, "updated_by": actor,
                   "updated_at": now_iso(), "version": int(cur.get("version") or 0) + 1}},
         upsert=True,
     )
-    return await get_template_cfg(doc_type)
+    return await get_template_cfg(doc_type, None if group else scope)
 
 
-async def reset_template_cfg(doc_type: str) -> dict:
-    """Buang override-nya saja; dokumen yang sudah terbit tidak berubah."""
-    await db.pdf_templates.delete_one({"doc_type": doc_type})
-    return await get_template_cfg(doc_type)
+async def reset_template_cfg(doc_type: str, entity_id: str | None = GROUP_SCOPE) -> dict:
+    """Buang lapisan itu saja (grup ATAU satu PT); dokumen yang sudah terbit tidak berubah."""
+    await db.pdf_templates.delete_many(_layer_filter(doc_type, entity_id))
+    return await get_template_cfg(doc_type, None if _is_group(entity_id) else entity_id)
 
 
 async def list_templates() -> list:
     rows = {r["doc_type"]: r for r in await db.pdf_templates.find(
-        {}, {"_id": 0, "doc_type": 1, "version": 1, "updated_at": 1, "updated_by": 1}).to_list(500)}
+        {"entity_id": {"$in": list(_GROUP_VALUES)}},
+        {"_id": 0, "doc_type": 1, "version": 1, "updated_at": 1, "updated_by": 1}).to_list(500)}
     out = [{"doc_type": DEFAULT_CODE, "label": "Bawaan seluruh dokumen (gaya & kop)",
             "module": "__default__", "customized": DEFAULT_CODE in rows,
             **{k: (rows.get(DEFAULT_CODE) or {}).get(k) for k in ("version", "updated_at", "updated_by")}}]
@@ -213,6 +328,92 @@ async def list_templates() -> list:
     return out
 
 
+def placeholder_list() -> list:
+    return [{"token": k, "label": v, **({"note": PLACEHOLDER_NOTES[k]} if k in PLACEHOLDER_NOTES else {})}
+            for k, v in PLACEHOLDERS.items()]
+
+
+# ─── KP-T6 (KP-34) — penyedia token yang bisa diganti (PM-T2 mengganti `rekening_bank`) ──────────────────────────────
+_TOKEN_PROVIDERS: dict = {}
+
+
+def register_token_provider(name: str, fn) -> None:
+    """`fn(entity_id, doc) -> str` (async). Hanya untuk token yang terdaftar di `PLACEHOLDERS`."""
+    if name not in PLACEHOLDERS:
+        raise ValueError(f"Token '{name}' tidak terdaftar di PLACEHOLDERS")
+    _TOKEN_PROVIDERS[name] = fn
+
+
+async def default_bank_text(entity_id: str | None, doc: dict) -> str:
+    """Bawaan KP-T6: PT dengan TEPAT SATU rekening bank aktif → "{bank} {nomor} ({nama})"; selain itu kosong.
+    (`ASUMSI` spesifikasi — belum ada penanda rekening utama; rekening tujuan per pesanan = unit PM-T2.)"""
+    if not entity_id:
+        return ""
+    rows = await db.bank_accounts.find(
+        {"entity_id": entity_id, "account_type": "bank", "is_active": {"$ne": False}},
+        {"_id": 0, "bank_name": 1, "account_number": 1, "name": 1}).to_list(2)
+    if len(rows) != 1:
+        return ""
+    a = rows[0]
+    head = " ".join(x for x in (str(a.get("bank_name") or "").strip(), str(a.get("account_number") or "").strip()) if x)
+    name = str(a.get("name") or "").strip()
+    return f"{head} ({name})" if head and name else (head or name)
+
+
+register_token_provider("rekening_bank", default_bank_text)
+
+
+async def token_values(cfg: dict, entity_id: str | None, doc: dict) -> dict:
+    """Nilai token dari penyedia — hanya token yang dipakai naskah konfigurasi ini."""
+    used = set(_token_re().findall(f"{cfg.get('intro_text') or ''}\n{cfg.get('closing_note') or ''}"))
+    return {name: str(await fn(entity_id, doc) or "") for name, fn in _TOKEN_PROVIDERS.items() if name in used}
+
+
+# ─── KP-T6 (KP-18) — identitas kop: satu sumber = Profil PT ────────────────────────────────────────────────────────
+#: (kunci kop, label) — urutan tampil di tabel selisih layar.
+IDENTITY_FIELDS = (("company_name", "Nama di kop"), ("address", "Alamat"), ("npwp", "NPWP"), ("phone", "Telepon"),
+                   ("email", "Email"), ("tagline", "Slogan"), ("website", "Situs web"))
+LEGACY_TEXT_KEYS = tuple(k for k, _ in IDENTITY_FIELDS)
+BRANDING_IMAGE_KEYS = ("logo_b64", "header_image_b64", "footer_image_b64", "stamp_b64", "signatures")
+TEXT_FIELDS_MESSAGE = "Nama, alamat, NPWP, dan kontak diubah di Profil PT."
+IDENTITY_ACTIONS = ("pakai_profil", "salin_ke_profil")
+IDENTITY_RESOLVED_MESSAGE = "Identitas kop PT ini sudah diselesaikan."
+
+
+class IdentityConflict(Exception):
+    """409 — identitas kop PT sudah diselesaikan sebelumnya."""
+
+
+def _txt(v) -> str:
+    return str(v or "").strip()
+
+
+def _profile_address(ent: dict) -> str:
+    return ", ".join(x for x in (_txt(ent.get("address")), _txt(ent.get("city"))) if x)
+
+
+def profile_identity(ent: dict) -> dict:
+    """Identitas kop dari Profil PT (`print_name` → nama legal)."""
+    return {"company_name": _txt(ent.get("print_name")) or _txt(ent.get("legal_name")) or _txt(ent.get("short_name"))
+            or "Perusahaan",
+            "address": _profile_address(ent), "npwp": _txt(ent.get("npwp")), "phone": _txt(ent.get("phone")),
+            "email": _txt(ent.get("email")), "tagline": _txt(ent.get("tagline")), "website": _txt(ent.get("website"))}
+
+
+def legacy_identity(row: dict, ent: dict) -> dict:
+    """Rumus kop sebelum KP-T6 (teks `document_branding` menang) — dipakai sampai PT diselesaikan."""
+    return {"company_name": _txt(row.get("company_name")) or _txt(ent.get("legal_name")) or _txt(ent.get("short_name"))
+            or "Perusahaan",
+            "address": _txt(row.get("address")) or _profile_address(ent),
+            "npwp": _txt(row.get("npwp")) or _txt(ent.get("npwp")), "phone": _txt(row.get("phone")),
+            "email": _txt(row.get("email")) or _txt(ent.get("email")), "tagline": _txt(row.get("tagline")),
+            "website": _txt(row.get("website"))}
+
+
+def has_legacy_text(row: dict) -> bool:
+    return any(_txt((row or {}).get(k)) for k in LEGACY_TEXT_KEYS)
+
+
 async def get_branding(entity_id: str | None) -> dict:
     ent = await db.business_entities.find_one({"id": entity_id}, {"_id": 0}) if entity_id else None
     ent = ent or {}
@@ -223,40 +424,104 @@ async def get_branding(entity_id: str | None) -> dict:
         logo_src = f"data:image/png;base64,{row['logo_b64']}" if not str(row["logo_b64"]).startswith("data:") else row["logo_b64"]
     elif ent.get("logo_url"):
         logo_src = ent["logo_url"]
-    addr = row.get("address") or ", ".join(x for x in [ent.get("address"), ent.get("city")] if x)
+
     def _img(key):
         v = row.get(key) or ""
         return v if (not v or str(v).startswith("data:")) else f"data:image/png;base64,{v}"
+    profile = profile_identity(ent)
+    legacy_mode = bool(row) and not row.get("identity_resolved_at") and has_legacy_text(row)
+    ident = legacy_identity(row, ent) if legacy_mode else profile
+    conflicts = [{"field": k, "label": lbl, "print_value": ident[k], "profile_value": profile[k]}
+                 for k, lbl in IDENTITY_FIELDS if legacy_mode and ident[k] != profile[k]]
     return {
         "entity_id": entity_id,
-        "company_name": row.get("company_name") or ent.get("legal_name") or ent.get("short_name") or "Perusahaan",
-        "tagline": row.get("tagline") or "",
-        "address": addr or "-",
-        "phone": row.get("phone") or "",
-        "email": row.get("email") or ent.get("email") or "",
-        "website": row.get("website") or "",
-        "npwp": row.get("npwp") or ent.get("npwp") or "",
+        **ident,
+        "address": ident["address"] or "-",
         "logo_src": logo_src,
         "header_image_src": _img("header_image_b64"),   # kop gambar buatan desainer
         "footer_image_src": _img("footer_image_b64"),
         "stamp_src": _img("stamp_b64"),                 # cap perusahaan
         "signatures": row.get("signatures") or [],   # [{label, role, name, signature_b64}]
+        # KP-T6 — dari mana identitas kop dibaca + selisih teks lama ↔ Profil PT (kosong bila sudah memakai Profil PT)
+        "identity_source": "teks_lama" if legacy_mode else "profil",
+        "identity_conflicts": conflicts,
+        "identity_resolved_at": row.get("identity_resolved_at") or "",
+        "identity_resolved_by": row.get("identity_resolved_by") or "",
     }
 
 
 async def save_branding(entity_id: str, data: dict, actor: str = "") -> dict:
-    allowed = {k: data.get(k) for k in ["company_name", "tagline", "address", "phone", "email", "website",
-                                        "npwp", "logo_b64", "header_image_b64", "footer_image_b64",
-                                        "stamp_b64", "signatures"] if k in data}
+    """KP-T6 — hanya gambar & tanda tangan. Teks identitas (field lama) → `ValueError` (400 di router)."""
+    from core_utils import now_iso
+    if any(k in data and data.get(k) is not None for k in LEGACY_TEXT_KEYS):
+        raise ValueError(TEXT_FIELDS_MESSAGE)
+    allowed = {k: data.get(k) for k in BRANDING_IMAGE_KEYS if k in data}
     await db.document_branding.update_one(
         {"entity_id": entity_id},
-        {"$set": {"entity_id": entity_id, **allowed, "updated_by": actor}},
+        {"$set": {"entity_id": entity_id, **allowed, "updated_by": actor, "updated_at": now_iso()}},
         upsert=True,
     )
     return await get_branding(entity_id)
 
 
-def _apply_cfg_to_doc(doc: dict, cfg: dict, branding: dict) -> dict:
+def legacy_to_profile(row: dict, ent: dict) -> dict:
+    """Isian Profil PT dari teks kop lama yang TERISI ("Salin teks kop ke Profil PT").
+
+    - nama di kop → `print_name` (kosong bila sama dengan nama legal);
+    - alamat → `address`; akhiran ", {kota PT}" dibuang karena kop mencetak alamat + kota;
+    - NPWP, telepon, email, slogan, situs → isian bernama sama. Teks lama yang kosong tidak menghapus Profil PT."""
+    out: dict = {}
+    name = _txt(row.get("company_name"))
+    if name:
+        out["print_name"] = "" if name == _txt(ent.get("legal_name")) else name
+    addr = _txt(row.get("address"))
+    if addr:
+        city = _txt(ent.get("city"))
+        if city and addr.lower().endswith(f", {city}".lower()):
+            addr = addr[: -len(f", {city}")].rstrip(" ,")
+        out["address"] = addr
+    for k in ("npwp", "phone", "email", "tagline", "website"):
+        if _txt(row.get(k)):
+            out[k] = _txt(row.get(k))
+    return out
+
+
+async def resolve_identity(entity_id: str, action: str, reason: str, actor: dict) -> dict:
+    """KP-T6 — selesaikan identitas kop PT: `pakai_profil` (tandai selesai) atau `salin_ke_profil` (teks lama → Profil
+    PT lewat `validate_entity_input` KP-T1, lalu tandai selesai). 400 alasan kosong / pilihan salah / validasi;
+    `IdentityConflict` bila sudah diselesaikan. Kembali: `{branding, copied}` (`copied` = isian Profil PT yang ditulis)."""
+    from core_utils import now_iso
+    from services import entity_lifecycle_service as lifecycle
+    from services import entity_provisioning_service as provisioning
+    reason = _txt(reason)
+    if not reason:
+        raise ValueError("Alasan wajib diisi.")
+    if action not in IDENTITY_ACTIONS:
+        raise ValueError("Pilihan tidak dikenal. Pilih 'Pakai data Profil PT' atau 'Salin teks kop ke Profil PT'.")
+    ent = await lifecycle.get_entity_or_404(entity_id)
+    row = await db.document_branding.find_one({"entity_id": entity_id}, {"_id": 0}) or {}
+    if row.get("identity_resolved_at"):
+        raise IdentityConflict(IDENTITY_RESOLVED_MESSAGE)
+    clean: dict = {}
+    if action == "salin_ke_profil":
+        data = legacy_to_profile(row, ent)
+        if data:   # validasi dulu (400 sebelum menulis apa pun)
+            clean = await provisioning.validate_entity_input(data, entity_id=entity_id, existing=ent)
+    if not row:
+        await db.document_branding.update_one({"entity_id": entity_id}, {"$setOnInsert": {"entity_id": entity_id}},
+                                              upsert=True)
+    res = await db.document_branding.update_one(
+        {"entity_id": entity_id, "identity_resolved_at": {"$in": [None, ""]}},
+        {"$set": {"identity_resolved_at": now_iso(), "identity_resolved_by": actor.get("name", ""),
+                  "identity_resolved_action": action, "identity_resolved_reason": reason}})
+    if not res.modified_count:
+        raise IdentityConflict(IDENTITY_RESOLVED_MESSAGE)
+    if clean:
+        await db.business_entities.update_one({"id": entity_id}, {"$set": {**clean, "updated_at": now_iso()}})
+    return {"branding": await get_branding(entity_id), "copied": clean}
+
+
+def _apply_cfg_to_doc(doc: dict, cfg: dict, branding: dict, tokens: dict | None = None) -> dict:
     if cfg.get("title_override"):
         doc["title"] = cfg["title_override"]
     # custom fields → tambah ke meta
@@ -297,8 +562,8 @@ def _apply_cfg_to_doc(doc: dict, cfg: dict, branding: dict) -> dict:
         doc["signatures"] = []
     doc["_hide_refs"] = not sec.get("refs")
     # Naskah pembuka/penutup + tempat-tanggal (placeholder diisi dari konteks nyata).
-    doc["intro_text"] = render_text(cfg.get("intro_text") or "", doc, branding)
-    doc["closing_note"] = render_text(cfg.get("closing_note") or "", doc, branding)
+    doc["intro_text"] = render_text(cfg.get("intro_text") or "", doc, branding, tokens)
+    doc["closing_note"] = render_text(cfg.get("closing_note") or "", doc, branding, tokens)
     if cfg.get("show_place_date"):
         from datetime import datetime
         from zoneinfo import ZoneInfo
@@ -410,12 +675,17 @@ async def attach_document_refs(doc: dict, doc_type: str, source_id: str,
 
 
 async def build_document(doc_type: str, source_id: str, entity_id: str | None,
-                         cfg_override: dict | None = None, public_base: str = "") -> dict:
+                         cfg_override: dict | None = None, public_base: str = "",
+                         override_layer: str = "") -> dict:
     """Return {source, cfg, branding, doc} — dipakai render html/pdf.
 
     FASE G-4 — `public_base` kosong (render dari job/penjadwal/WhatsApp/skrip) TIDAK
     boleh menghasilkan QR tanpa host: kertas yang dipegang orang jadi tidak bisa
     dibuka. Karena itu di sini ada fallback ke URL aplikasi yang terkonfigurasi.
+
+    KP-T6 — konfigurasi berlapis PT (`get_template_cfg(doc_type, eid)`). `override_layer="all"` (pratinjau perancang
+    saat menyunting aturan semua PT): `cfg_override` menggantikan hasil grup, lalu lapisan PT tetap diterapkan di
+    atasnya — pratinjau = yang benar-benar tercetak untuk PT itu. Selain itu `cfg_override` ditaruh paling atas.
     """
     from services.app_url import configured_app_url
     public_base = (public_base or configured_app_url() or "").rstrip("/")
@@ -431,14 +701,18 @@ async def build_document(doc_type: str, source_id: str, entity_id: str | None,
     from services.config_currency import base_currency
     from services.pdf_engine import set_document_currency
     set_document_currency(await base_currency(eid))
-    cfg = await get_template_cfg(doc_type)
-    if cfg_override:
-        cfg = merge_cfg(cfg, _clean_cfg(cfg_override))
+    if cfg_override and override_layer == GROUP_SCOPE:
+        cfg = await _with_pt_layers(merge_cfg(await _group_cfg(doc_type), _clean_cfg(cfg_override)), doc_type, eid)
+    else:
+        cfg = await get_template_cfg(doc_type, eid)
+        if cfg_override:
+            cfg = merge_cfg(cfg, _clean_cfg(cfg_override))
     branding = await get_branding(eid)
     doc = await reg["resolver"](source, db)
     chash = content_hash(doc)  # CX-10 — hash isi sebelum template/branding/esign/refs
     snapshot = canonical_content(doc)
-    doc = _apply_cfg_to_doc(doc, cfg, branding)
+    tokens = await token_values(cfg, eid, doc)   # KP-T6 — sebelum naskah diisi
+    doc = _apply_cfg_to_doc(doc, cfg, branding, tokens)
     doc = await _attach_esign(doc, doc_type, source_id, public_base, chash)
     if not doc.get("_hide_refs"):
         doc = await attach_document_refs(doc, doc_type, source_id, source, public_base)
@@ -448,8 +722,8 @@ async def build_document(doc_type: str, source_id: str, entity_id: str | None,
 
 async def render_document(doc_type: str, source_id: str, entity_id: str | None,
                           fmt: str = "pdf", cfg_override: dict | None = None, public_base: str = "",
-                          hidden: set | None = None):
-    built = await build_document(doc_type, source_id, entity_id, cfg_override, public_base)
+                          hidden: set | None = None, override_layer: str = ""):
+    built = await build_document(doc_type, source_id, entity_id, cfg_override, public_base, override_layer)
     if hidden:  # L01 LN-012 — atribut tersembunyi untuk peran pencetak diganti "—"
         from services.field_visibility import ensure_product_grades, redact
         await ensure_product_grades()

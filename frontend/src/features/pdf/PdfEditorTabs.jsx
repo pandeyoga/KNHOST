@@ -3,6 +3,8 @@
 // Fase 3 · P2 (L-01) — layar ini kini tab "Desainer PDF" di Template Dokumen (tingkat 1 = hub Dokumen & Cetak,
 // tingkat 2 = PageTabs Template Dokumen). Bagian editor (Naskah/Layout/Kop/…) = tingkat 3 → FilterChips, bukan
 // pil-tab ke-3; testid `pdf-tab-<id>` dipertahankan.
+// KP-T6 — tab Kop Surat: identitas hanya-baca dari Profil PT (+ kotak teks kop lama dengan dua pilihan); saat
+// "Berlaku untuk" = satu PT, hanya isian lapisan PT (`ptLayerKeys`) yang aktif — sisanya abu-abu "Diatur untuk semua PT.".
 import { useRef, useState } from "react";
 import { Tabs, TabsContent } from "@/components/ui/tabs";
 import FilterChips from "../../components/FilterChips";
@@ -13,14 +15,94 @@ import {
   HEADER_MODES, FOOTER_MODES, TABLE_GRIDS, SECTION_LABELS,
 } from "./pdfConstants";
 import PdfScriptTab from "./PdfScriptTab";
-import { Plus, Trash2, Upload, ImageOff, Save, Loader2, Info } from "lucide-react";
+import { Plus, Trash2, Upload, ImageOff, Save, Loader2, Info, AlertTriangle, ExternalLink, Undo2, CheckCircle2,
+  Building2 } from "lucide-react";
 
-function Toggle({ label, checked, onChange, testId, hint }) {
+function Toggle({ label, checked, onChange, testId, hint, disabled = false }) {
   return (
-    <label className="flex items-center justify-between gap-3 rounded-lg border border-[#EDEEF1] px-3 py-2">
+    <label className={`flex items-center justify-between gap-3 rounded-lg border border-[#EDEEF1] px-3 py-2 ${disabled ? "opacity-60" : ""}`}>
       <span className="text-[12.5px] font-medium">{label}{hint && <span className="block text-[10.5px] font-normal text-[#9A9BA3]">{hint}</span>}</span>
-      <Switch checked={!!checked} onCheckedChange={onChange} data-testid={testId} />
+      <Switch checked={!!checked} onCheckedChange={onChange} data-testid={testId} disabled={disabled} />
     </label>
+  );
+}
+
+/** KP-T6 — keterangan isian yang tidak bisa diatur per PT. */
+function GroupOnlyNote({ testId }) {
+  return (
+    <p className="flex items-center gap-1.5 rounded-md bg-kn-neutral-soft px-2.5 py-1.5 text-fs-12 text-kn-text-2" data-testid={testId}>
+      <Info size={13} className="shrink-0" /> Diatur untuk semua PT.
+    </p>
+  );
+}
+
+/** KP-T6 — identitas kop yang tercetak (hanya-baca, dari Profil PT) + kotak teks kop lama. */
+function IdentityBlock({ branding, ptName, onResolve, resolving, canResolve, onOpenProfile }) {
+  const conflicts = branding?.identity_conflicts || [];
+  const rows = [["company_name", "Nama"], ["address", "Alamat"], ["npwp", "NPWP"], ["phone", "Telepon"],
+    ["email", "Email"], ["tagline", "Slogan"], ["website", "Situs web"]];
+  const fromProfile = branding?.identity_source !== "teks_lama";
+  return (
+    <div className="grid gap-2" data-testid="pdf-brand-identity">
+      <div className="rounded-lg border border-kn-divider px-3 py-2">
+        <div className="mb-1 flex flex-wrap items-center gap-2">
+          <span className="text-fs-12 font-bold uppercase tracking-wide text-kn-text-2">Identitas di kop</span>
+          {onOpenProfile && (
+            <button type="button" className="secondary-button btn-sm ml-auto" onClick={onOpenProfile}
+              data-testid="pdf-brand-open-profile"><ExternalLink size={12} /> Ubah di Profil PT</button>
+          )}
+        </div>
+        <dl className="grid grid-cols-[96px_minmax(0,1fr)] gap-x-2 gap-y-0.5 text-fs-12">
+          {rows.map(([k, lbl]) => (
+            <div key={k} className="contents" data-testid={`pdf-brand-identity-${k}`}>
+              <dt className="text-kn-text-2">{lbl}</dt>
+              <dd className="break-words text-kn-text">{(branding?.[k] && branding[k] !== "-") ? branding[k] : "—"}</dd>
+            </div>
+          ))}
+        </dl>
+        <p className={`mt-1 flex items-center gap-1 text-fs-12 ${fromProfile ? "text-kn-success-text" : "text-kn-warning-text"}`}
+          data-testid="pdf-brand-identity-source">
+          {fromProfile ? <CheckCircle2 size={13} className="shrink-0" /> : <AlertTriangle size={13} className="shrink-0" />}
+          <span>{fromProfile ? "Diambil dari Profil PT." : "Masih memakai teks kop lama sampai dipilih di bawah."}</span>
+        </p>
+      </div>
+      {conflicts.length > 0 && (
+        <div className="rounded-lg border border-kn-warning-text bg-kn-warning-soft px-3 py-2" data-testid="pdf-brand-conflicts">
+          <p className="flex items-center gap-1.5 text-fs-13 font-bold text-kn-warning-text">
+            <AlertTriangle size={14} /> Kop PT ini masih memakai teks lama
+          </p>
+          <p className="mt-0.5 text-fs-12 text-kn-text">
+            Teks kop {ptName} berbeda dari Profil PT. Sampai Anda memilih, dokumen tetap mencetak teks lama.
+          </p>
+          <table className="mt-1.5 w-full table-fixed text-fs-12" data-testid="pdf-brand-conflicts-table">
+            <thead>
+              <tr className="text-left text-kn-text-2"><th className="py-0.5 pr-2">Isian</th><th className="py-0.5 pr-2">Yang tercetak sekarang</th><th className="py-0.5">Di Profil PT</th></tr>
+            </thead>
+            <tbody>
+              {conflicts.map((c) => (
+                <tr key={c.field} className="border-t border-kn-divider align-top" data-testid={`pdf-brand-conflict-${c.field}`}>
+                  <td className="break-words py-0.5 pr-2 font-semibold">{c.label}</td>
+                  <td className="break-words py-0.5 pr-2">{c.print_value || "—"}</td>
+                  <td className="break-words py-0.5">{c.profile_value || "—"}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+          {canResolve ? (
+            <div className="mt-2 flex flex-wrap gap-2">
+              <button type="button" className="btn-primary" disabled={resolving} onClick={() => onResolve("pakai_profil")}
+                data-testid="pdf-brand-use-profile">Pakai data Profil PT</button>
+              <button type="button" className="btn-secondary" disabled={resolving} onClick={() => onResolve("salin_ke_profil")}
+                data-testid="pdf-brand-copy-to-profile">Salin teks kop ke Profil PT</button>
+            </div>
+          ) : (
+            <p className="mt-1.5 text-fs-12 text-kn-text-2" data-testid="pdf-brand-conflicts-noaccess">
+              Pemilihan butuh akses ubah Template PDF dan Profil PT.
+            </p>
+          )}
+        </div>
+      )}
+    </div>
   );
 }
 
@@ -79,9 +161,11 @@ function ColorField({ value, onChange, testId }) {
 }
 
 export default function PdfEditorTabs({
-  config, patch, branding, patchBranding,
+  config, patch, branding,
   onLogoFile, onRemoveLogo, onSaveBranding, savingBrand, brandingMsg, brandingErr, newLogoPreview,
   onImageFile, newImages = {}, placeholders = [], defaultEffective = null, isDefault = false,
+  ptScope = false, ptLayerKeys = [], groupConfig = null, ptName = "PT ini",
+  onResolveIdentity, resolving = false, canResolveIdentity = false, onOpenProfile = null,
 }) {
   const fileRef = useRef(null);
   const [part, setPart] = useState("layout");
@@ -90,8 +174,21 @@ export default function PdfEditorTabs({
   const tb = cf.table || {};
   const sec = cf.sections || {};
   // Penanda "berbeda dari bawaan" per kunci (pola override sipro) — hanya di jenis dokumen.
-  const differs = (k) => !isDefault && defaultEffective && JSON.stringify(cf[k]) !== JSON.stringify(defaultEffective[k]);
+  const differs = (k) => !ptScope && !isDefault && defaultEffective && JSON.stringify(cf[k]) !== JSON.stringify(defaultEffective[k]);
   const Diff = ({ k }) => differs(k) ? <span className="ml-1 rounded bg-[#FFF3D6] px-1 text-[9px] font-bold text-[#8C4A00]" title="Menimpa bawaan seluruh dokumen">menimpa</span> : null;
+  // KP-T6 — lapisan PT: isian di luar `ptLayerKeys` dikunci; yang berbeda dari aturan semua PT diberi tanda.
+  const locked = (k) => ptScope && !ptLayerKeys.includes(k);
+  const ptDiffers = (k) => ptScope && ptLayerKeys.includes(k) && groupConfig
+    && JSON.stringify(cf[k] ?? null) !== JSON.stringify(groupConfig[k] ?? null);
+  const PtMark = ({ k }) => (ptDiffers(k) ? (
+    <span className="ml-1 inline-flex items-center gap-1 normal-case tracking-normal" data-testid={`pdf-pt-mark-${k}`}>
+      <span className="status-pill normal-case bg-kn-special-soft text-kn-special-text"><Building2 size={11} /> khusus PT ini</span>
+      <button type="button" className="link-button btn-sm"
+        onClick={() => patch(k, groupConfig[k])} data-testid={`pdf-pt-revert-${k}`}>
+        <Undo2 size={10} /> Kembali ke aturan semua PT
+      </button>
+    </span>
+  ) : null);
   const img = (key) => (newImages[key] !== undefined ? newImages[key] : branding?.[`${key.replace("_b64", "")}_src`] || "");
 
   // ── custom fields helpers ───────────────────────────────
@@ -126,11 +223,13 @@ export default function PdfEditorTabs({
         <div className="section-body grid gap-3">
           {/* ── NASKAH (placeholder) ───────────────────────── */}
           <TabsContent value="naskah" className="mt-0">
-            <PdfScriptTab config={cf} patch={patch} placeholders={placeholders} />
+            <PdfScriptTab config={cf} patch={patch} placeholders={placeholders} mark={(k) => <PtMark k={k} />} />
           </TabsContent>
 
           {/* ── LAYOUT ─────────────────────────────────────── */}
-          <TabsContent value="layout" className="grid gap-3 mt-0">
+          <TabsContent value="layout" className="mt-0">
+            {ptScope && <GroupOnlyNote testId="pdf-group-only-layout" />}
+            <fieldset disabled={ptScope} className={`grid gap-3 ${ptScope ? "mt-2 opacity-60" : ""}`} data-testid="pdf-fieldset-layout">
             <Row label={<>Mode kop surat<Diff k="header_mode" /></>} hint="'Tanpa kop' untuk kertas berkop cetakan sendiri.">
               <KNSelect value={cf.header_mode || "system"} onValueChange={(v) => patch("header_mode", v)} options={HEADER_MODES} className="field" data-testid="pdf-header-mode" />
             </Row>
@@ -174,41 +273,17 @@ export default function PdfEditorTabs({
               <span className="text-[12.5px] font-medium">Tampilkan “terbilang” (nominal huruf)</span>
               <Switch checked={!!cf.show_terbilang} onCheckedChange={(v) => patch("show_terbilang", v)} data-testid="pdf-show-terbilang" />
             </label>
+            </fieldset>
           </TabsContent>
 
           {/* ── KOP SURAT (branding per entitas) ───────────── */}
           <TabsContent value="kop" className="grid gap-3 mt-0">
             <div className="flex items-start gap-2 rounded-lg bg-[#EFF4FF] px-3 py-2 text-[11.5px] text-[#0058CC]">
               <Info size={14} className="mt-0.5 shrink-0" />
-              <span>Kop surat disimpan per <b>entitas (PT)</b>. Simpan branding untuk melihat perubahan di pratinjau.</span>
+              <span>Kop surat per <b>PT</b>: nama, alamat, NPWP, dan kontak dari Profil PT; logo, gambar kop, dan cap disimpan di sini.</span>
             </div>
-            <Row label="Nama Perusahaan">
-              <input type="text" className="form-input" value={branding?.company_name || ""}
-                onChange={(e) => patchBranding("company_name", e.target.value)} data-testid="pdf-brand-name" />
-            </Row>
-            <Row label="Alamat">
-              <textarea className="form-input min-h-[60px]" value={branding?.address || ""}
-                onChange={(e) => patchBranding("address", e.target.value)} data-testid="pdf-brand-address" />
-            </Row>
-            <Row label="Tagline (opsional)">
-              <input type="text" className="form-input" value={branding?.tagline || ""} onChange={(e) => patchBranding("tagline", e.target.value)} data-testid="pdf-brand-tagline" placeholder="mis. Tekstil Nusantara Berkualitas" />
-            </Row>
-            <div className="grid grid-cols-2 gap-2">
-              <Row label="Telepon">
-                <input type="text" className="form-input" value={branding?.phone || ""}
-                  onChange={(e) => patchBranding("phone", e.target.value)} data-testid="pdf-brand-phone" />
-              </Row>
-              <Row label="NPWP">
-                <input type="text" className="form-input" value={branding?.npwp || ""}
-                  onChange={(e) => patchBranding("npwp", e.target.value)} data-testid="pdf-brand-npwp" />
-              </Row>
-              <Row label="Email">
-                <input type="text" className="form-input" value={branding?.email || ""} onChange={(e) => patchBranding("email", e.target.value)} data-testid="pdf-brand-email" />
-              </Row>
-              <Row label="Website">
-                <input type="text" className="form-input" value={branding?.website || ""} onChange={(e) => patchBranding("website", e.target.value)} data-testid="pdf-brand-website" />
-              </Row>
-            </div>
+            <IdentityBlock branding={branding} ptName={ptName} onResolve={onResolveIdentity} resolving={resolving}
+              canResolve={canResolveIdentity} onOpenProfile={onOpenProfile} />
             <ImageUpload label="Gambar kop (mode 'Gambar kop')" hint="PNG/JPG lebar penuh, ≤ 1 MB. Dipakai bila Layout → Mode kop = Gambar." src={img("header_image_b64")} onFile={(f) => onImageFile("header_image_b64", f)} onRemove={() => onImageFile("header_image_b64", null)} testId="pdf-brand-header-image" />
             <ImageUpload label="Gambar footer (mode 'Gambar footer')" hint="Strip bawah halaman, ≤ 1 MB." src={img("footer_image_b64")} onFile={(f) => onImageFile("footer_image_b64", f)} onRemove={() => onImageFile("footer_image_b64", null)} testId="pdf-brand-footer-image" />
             <ImageUpload label="Cap perusahaan (stempel)" hint="PNG transparan; muncul di slot tanda tangan yang mencentang 'Cap'." src={img("stamp_b64")} onFile={(f) => onImageFile("stamp_b64", f)} onRemove={() => onImageFile("stamp_b64", null)} testId="pdf-brand-stamp" />
@@ -230,16 +305,18 @@ export default function PdfEditorTabs({
             </Row>
             <div className="flex items-center gap-2 pt-1">
               <button className="btn-primary flex items-center gap-1.5" onClick={onSaveBranding} disabled={savingBrand} data-testid="pdf-brand-save">
-                {savingBrand ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />} Simpan Branding
+                {savingBrand ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />} Simpan Logo &amp; Gambar
               </button>
-              <span className="text-[10.5px] text-[#6B6B73]">Kop, logo &amp; kontak berlaku untuk semua dokumen badan usaha ini; pratinjau memakai kop baru setelah disimpan.</span>
+              <span className="text-[10.5px] text-[#6B6B73]">Logo, gambar kop &amp; cap berlaku untuk semua dokumen PT ini; pratinjau memakai gambar baru setelah disimpan.</span>
               {brandingMsg && <span className="text-[11.5px] font-semibold text-[#1F7A45]">{brandingMsg}</span>}
               {brandingErr && <span className="text-[11.5px] font-semibold text-[#C0392B]">{brandingErr}</span>}
             </div>
           </TabsContent>
 
           {/* ── FONT & WARNA ───────────────────────────────── */}
-          <TabsContent value="typografi" className="grid gap-3 mt-0">
+          <TabsContent value="typografi" className="mt-0">
+            {ptScope && <GroupOnlyNote testId="pdf-group-only-typografi" />}
+            <fieldset disabled={ptScope} className={`grid gap-3 ${ptScope ? "mt-2 opacity-60" : ""}`}>
             <Row label="Font">
               <KNSelect value={cf.font_family || "'DejaVu Sans'"} onValueChange={(v) => patch("font_family", v)}
                 options={FONT_FAMILIES} className="field" data-testid="pdf-font-family" />
@@ -254,10 +331,13 @@ export default function PdfEditorTabs({
             <Row label="Warna Aksen" hint="Teks isi & label.">
               <ColorField value={cf.color_accent} onChange={(v) => patch("color_accent", v)} testId="pdf-color-accent" />
             </Row>
+            </fieldset>
           </TabsContent>
 
           {/* ── TABEL (gaya tabel rincian) ─────────────────── */}
-          <TabsContent value="tabel" className="grid gap-3 mt-0">
+          <TabsContent value="tabel" className="mt-0">
+            {ptScope && <GroupOnlyNote testId="pdf-group-only-tabel" />}
+            <fieldset disabled={ptScope} className={`grid gap-3 ${ptScope ? "mt-2 opacity-60" : ""}`}>
             <Row label={<>Garis tabel<Diff k="table" /></>} hint="Transparan cocok untuk kertas berkop dengan garis cetakan sendiri.">
               <KNSelect value={tb.grid || "full"} onValueChange={(v) => patchNested("table", "grid", v)} options={TABLE_GRIDS} className="field" data-testid="pdf-table-grid" />
             </Row>
@@ -273,10 +353,13 @@ export default function PdfEditorTabs({
                 <ColorField value={tb.grid_color || "#bbbbbb"} onChange={(v) => patchNested("table", "grid_color", v)} testId="pdf-table-grid-color" />
               </Row>
             </div>
+            </fieldset>
           </TabsContent>
 
           {/* ── FIELD (custom + hidden) ────────────────────── */}
-          <TabsContent value="field" className="grid gap-3 mt-0">
+          <TabsContent value="field" className="mt-0">
+            {ptScope && <GroupOnlyNote testId="pdf-group-only-field" />}
+            <fieldset disabled={ptScope} className={`grid gap-3 ${ptScope ? "mt-2 opacity-60" : ""}`}>
             <div className="flex items-center justify-between">
               <span className="text-[11px] font-bold uppercase tracking-[0.03em] text-[#6B6B73]">Field Tambahan</span>
               <button type="button" className="btn-secondary flex items-center gap-1" onClick={addCustom} data-testid="pdf-custom-add"><Plus size={13} /> Tambah</button>
@@ -299,12 +382,13 @@ export default function PdfEditorTabs({
             <Row label="Sembunyikan baris info dokumen" hint="Tulis label baris info (di bawah judul dokumen) yang tidak ingin dicetak, pisahkan dengan koma. mis: Termin, Referensi">
               <input className="form-input" value={hiddenStr} onChange={(e) => setHidden(e.target.value)} data-testid="pdf-hidden-fields" />
             </Row>
+            </fieldset>
           </TabsContent>
 
           {/* ── TANDA TANGAN (slots) ───────────────────────── */}
           <TabsContent value="ttd" className="grid gap-3 mt-0">
             <div className="flex items-center justify-between">
-              <span className="text-[11px] font-bold uppercase tracking-[0.03em] text-[#6B6B73]">Slot Tanda Tangan</span>
+              <span className="text-[11px] font-bold uppercase tracking-[0.03em] text-[#6B6B73]">Slot Tanda Tangan<PtMark k="signature_slots" /></span>
               <button type="button" className="btn-secondary flex items-center gap-1" onClick={addSig} data-testid="pdf-sig-add"><Plus size={13} /> Tambah Slot</button>
             </div>
             {sigs.length === 0 && <p className="text-[11.5px] text-[#9A9BA3]">Kosong = pakai slot tanda tangan bawaan dokumen. Tambahkan untuk override.</p>}
@@ -328,21 +412,21 @@ export default function PdfEditorTabs({
 
           {/* ── FOOTER / WATERMARK ─────────────────────────── */}
           <TabsContent value="footer" className="grid gap-3 mt-0">
-            <Toggle label="Nomor halaman (Hal. 1 / 2)" checked={cf.show_page_numbers !== false} onChange={(v) => patch("show_page_numbers", v)} testId="pdf-show-page-numbers" />
-            <Toggle label="Tempat & tanggal sebelum tanda tangan" hint="mis. 'Bandung, 03 Sep 2026'" checked={!!cf.show_place_date} onChange={(v) => patch("show_place_date", v)} testId="pdf-show-place-date" />
-            {cf.show_place_date && <Row label="Tempat"><input className="form-input" value={cf.place || ""} onChange={(e) => patch("place", e.target.value)} placeholder="Bandung" data-testid="pdf-place" /></Row>}
-            <Toggle label="Catatan meterai di slot tanda tangan pertama" checked={!!cf.show_materai} onChange={(v) => patch("show_materai", v)} testId="pdf-show-materai" />
-            {cf.show_materai && <Row label="Teks meterai"><input className="form-input" value={cf.materai_note || ""} onChange={(e) => patch("materai_note", e.target.value)} data-testid="pdf-materai-note" /></Row>}
-            <Toggle label="Catatan 'dihasilkan oleh sistem' di kaki dokumen" checked={!!cf.show_generated_note} onChange={(v) => patch("show_generated_note", v)} testId="pdf-show-generated-note" />
-            <Row label="Teks Footer" hint="Muncul di bagian bawah setiap halaman.">
+            <Toggle label="Nomor halaman (Hal. 1 / 2)" checked={cf.show_page_numbers !== false} onChange={(v) => patch("show_page_numbers", v)} testId="pdf-show-page-numbers" hint={locked("show_page_numbers") ? "Diatur untuk semua PT." : undefined} disabled={locked("show_page_numbers")} />
+            <Toggle label={<>Tempat &amp; tanggal sebelum tanda tangan<PtMark k="show_place_date" /></>} hint="mis. 'Bandung, 03 Sep 2026'" checked={!!cf.show_place_date} onChange={(v) => patch("show_place_date", v)} testId="pdf-show-place-date" />
+            {cf.show_place_date && <Row label={<>Tempat<PtMark k="place" /></>}><input className="form-input" value={cf.place || ""} onChange={(e) => patch("place", e.target.value)} placeholder="Bandung" data-testid="pdf-place" /></Row>}
+            <Toggle label="Catatan meterai di slot tanda tangan pertama" checked={!!cf.show_materai} onChange={(v) => patch("show_materai", v)} testId="pdf-show-materai" hint={locked("show_materai") ? "Diatur untuk semua PT." : undefined} disabled={locked("show_materai")} />
+            {cf.show_materai && <Row label="Teks meterai" hint={locked("materai_note") ? "Diatur untuk semua PT." : undefined}><input className="form-input" value={cf.materai_note || ""} onChange={(e) => patch("materai_note", e.target.value)} data-testid="pdf-materai-note" disabled={locked("materai_note")} /></Row>}
+            <Toggle label="Catatan 'dihasilkan oleh sistem' di kaki dokumen" checked={!!cf.show_generated_note} onChange={(v) => patch("show_generated_note", v)} testId="pdf-show-generated-note" hint={locked("show_generated_note") ? "Diatur untuk semua PT." : undefined} disabled={locked("show_generated_note")} />
+            <Row label={<>Teks Footer<PtMark k="footer_text" /></>} hint="Muncul di bagian bawah setiap halaman.">
               <input className="form-input" value={cf.footer_text || ""} onChange={(e) => patch("footer_text", e.target.value)}
                 placeholder="mis. Dokumen ini sah tanpa tanda tangan basah." data-testid="pdf-footer-text" />
             </Row>
-            <Row label="Watermark" hint="Teks miring transparan di tengah halaman. Kosongkan untuk menonaktifkan.">
+            <Row label={<>Tanda air<PtMark k="watermark_text" /></>} hint="Teks miring transparan di tengah halaman. Kosongkan untuk menonaktifkan.">
               <input className="form-input" value={cf.watermark_text || ""} onChange={(e) => patch("watermark_text", e.target.value)}
                 placeholder="mis. SALINAN / LUNAS" data-testid="pdf-watermark-text" />
             </Row>
-            {cf.watermark_text && <Row label={`Ketebalan watermark (${cf.watermark_opacity ?? 6}%)`}>
+            {cf.watermark_text && <Row label={<>{`Ketebalan tanda air (${cf.watermark_opacity ?? 6}%)`}<PtMark k="watermark_opacity" /></>}>
               <input type="range" min="1" max="40" value={cf.watermark_opacity ?? 6} onChange={(e) => patch("watermark_opacity", Number(e.target.value))} data-testid="pdf-watermark-opacity" className="w-full" />
             </Row>}
           </TabsContent>

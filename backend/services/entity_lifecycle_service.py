@@ -46,10 +46,13 @@ WRITE_LOCKED_STATUSES = {STATUS_ARCHIVED, STATUS_INACTIVE}
 # KP-T1 (KP-01, KP-02) — isian mati (`currency`, `parent_entity_id`, `coa_template`, `fiscal_year_start`,
 # `incentive_payer`, `numbering_scheme`) tidak lagi bisa diubah; `default_tax_mode` diubah lewat tindakan
 # "Ubah status PKP" (`POST /api/entities/{id}/tax-status`), bukan PATCH; `ownership_pct` (K-10) ditambahkan.
+# KP-T6 (KP-18) — identitas kop surat satu sumber: `print_name` (nama di kop; kosong = nama legal), `tagline` (slogan),
+# `website` (situs) — dulu hanya ada sebagai teks di `document_branding`.
 EDITABLE_FIELDS = [
     "legal_name", "short_name", "type", "npwp", "address", "city",
     "doc_prefix", "logo_url", "is_group", "ownership_pct",
     "owner_name", "business_label", "phone", "email",
+    "print_name", "tagline", "website",
 ] + [k for k in LOCATION_FIELDS if k != "city"]
 
 # (koleksi, field nomor, label manusiawi) — sumber "entitas sudah menerbitkan dokumen".
@@ -150,6 +153,10 @@ def uniform_entity(entity: Dict[str, Any]) -> Dict[str, Any]:
         "location_status": e.get("location_status", ""),
         "phone": e.get("phone", ""),
         "email": e.get("email", ""),
+        # KP-T6 — identitas kop surat (Profil PT = satu sumber kop)
+        "print_name": e.get("print_name", "") or "",
+        "tagline": e.get("tagline", "") or "",
+        "website": e.get("website", "") or "",
         "owner_name": e.get("owner_name", ""),
         "business_label": e.get("business_label", ""),
         "default_tax_mode": e.get("default_tax_mode", ""),

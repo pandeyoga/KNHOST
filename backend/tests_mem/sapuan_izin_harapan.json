@@ -26,6 +26,7 @@
   "POST /api/customers/{customer_id}/merge": {"json": {"data": {"source_id": "x", "reason": "Uji sapuan izin otomatis"}}, "alasan": "alasan < 5 karakter → 400 sebelum gerbang"},
   "GET /api/documents/relations/{doc_type}/{doc_id}": {"path": {"doc_type": "sales_order"}, "alasan": "`doc_type` di luar sales_order/purchase_order → 400 sebelum gerbang (izin dipilih dari jenis dokumen)"},
   "GET /api/gl/inventory-drift-explain": {"query": {"entity_id": "ent_ksc"}, "alasan": "`entity_id` wajib PT yang ditugaskan; nilai contoh 'uji' → 403 cakupan PT, bukan izin"},
+  "GET /api/pdf/branding/{entity_id}": {"path": {"entity_id": "ent_ksc"}, "alasan": "KP-T6 (N1) — PT kop wajib PT yang ditugaskan; nilai contoh 'x' → 403 cakupan PT, bukan izin"},
   "GET /api/config/explain": {"query": {"key": "tax.ppn_rate"}, "alasan": "izin baca per kunci registri (KF-T1): kunci contoh tidak dikenal → 404 sebelum gerbang"},
   "GET /api/config/layers": {"query": {"key": "tax.ppn_rate"}, "alasan": "idem explain"},
   "POST /api/config/simulate": {"json": {"key": "tax.ppn_rate"}, "alasan": "simulator dipilih dari kunci registri; kunci contoh → 404 sebelum gerbang"},

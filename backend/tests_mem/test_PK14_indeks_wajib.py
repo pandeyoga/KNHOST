@@ -56,7 +56,8 @@ def test_U12_pembanding_indeks():
     assert [x["problem"] for x in indexes.diff_required(f)] == ["kunci berbeda"]
     # KP-T5 — + `doc_number_formats.uq_kind_entity` (satu format nomor per jenis per PT/grup): 8 → 9.
     # PK-40 menambah 5 indeks wajib (faktur keluaran/masukan aktif & NSFP, kunci masa pajak): 9 + 5.
-    assert len(indexes.REQUIRED_UNIQUE_INDEXES) == 9 + PK40_INDEKS
+    # KP-T6 — + `pdf_templates.uq_doctype_entity` (satu lapisan template cetak per jenis per PT/grup): + 1.
+    assert len(indexes.REQUIRED_UNIQUE_INDEXES) == 9 + PK40_INDEKS + 1
 
 
 async def test_U13_mode_enforce_dan_warn(aplikasi, monkeypatch):

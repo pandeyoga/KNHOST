@@ -7,7 +7,7 @@ from pydantic import BaseModel
 
 from db import db
 from dependencies import require_permission, audit
-from entity_scope import entity_ctx, assert_entity_access, resolve_list_scope
+from entity_scope import entity_ctx, assert_entity_access, resolve_list_scope, resolve_requested_entity
 from services import pdf_service as svc
 from services.pdf_resolvers import DOC_REGISTRY
 import json as _json
@@ -67,6 +67,7 @@ class TemplateSave(BaseModel):
 
 
 class BrandingSave(BaseModel):
+    # KP-T6 — field teks identitas tetap dikenali skema HANYA supaya bisa ditolak 400 dengan petunjuk (bukan 200 diam).
     company_name: str | None = None
     tagline: str | None = None
     address: str | None = None
@@ -86,6 +87,27 @@ class PreviewReq(BaseModel):
     source_id: str | None = None
     entity_id: str | None = None
     config: Dict[str, Any] | None = None
+    # KP-T6 — "all" = `config` adalah aturan semua PT yang sedang disunting (lapisan PT tetap diterapkan di atasnya).
+    layer: str | None = None
+
+
+class IdentityResolve(BaseModel):
+    action: str
+    reason: str = ""
+
+
+def _one_pt(ctx, entity_id: str) -> str:
+    """KP-T6 (N1) — satu PT dalam penugasan pengguna. "all"/kosong → 400; di luar penugasan → 403."""
+    if (entity_id or "").strip() in ("", "all"):
+        raise HTTPException(status_code=400, detail="Pilih satu PT.")
+    return resolve_requested_entity(ctx, entity_id)
+
+
+async def _layer_scope(request: Request, entity_id: str | None) -> str:
+    """Lapisan template: tanpa `entity_id` / "all" = semua PT; selain itu satu PT dalam penugasan (403 bila tidak)."""
+    if (entity_id or "").strip() in ("", svc.GROUP_SCOPE):
+        return svc.GROUP_SCOPE
+    return resolve_requested_entity(await entity_ctx(request), entity_id)
 
 
 @router.get("/doc-types")
@@ -111,11 +133,16 @@ async def render_document(doc_type: str, source_id: str, request: Request,
     if not source:
         raise HTTPException(status_code=404, detail="Dokumen sumber tidak ditemukan")
     assert_entity_access(source, reg["collection"], ctx)
+    # KP-T6 (N1) — kop = PT pemilik dokumen; `entity_id` permintaan hanya untuk dokumen tanpa PT (koleksi bersama) dan
+    # harus dalam penugasan pengguna. Dulu `entity_id` mentah bisa mencetak dokumen PT A dengan kop & tanda tangan PT B.
+    eid = source.get("entity_id") if source.get("entity_id") not in (None, "", "all") else None
+    if not eid and (entity_id or "").strip() not in ("", "all"):
+        eid = resolve_requested_entity(ctx, entity_id)
     from services.pdf_resolvers import WO_SUPPLIER
     WO_SUPPLIER.set(supplier_id or "")
     try:
         content, media, built = await svc.render_document(
-            doc_type, source_id, entity_id or source.get("entity_id"),
+            doc_type, source_id, eid or source.get("entity_id"),
             fmt=format, public_base=_origin(request), hidden=hidden)
     except Exception as e:  # noqa: BLE001
         raise HTTPException(status_code=500, detail=f"Gagal render dokumen: {e}")
@@ -134,9 +161,9 @@ async def get_sample(doc_type: str, request: Request, entity_id: str = Query(Non
     reg = DOC_REGISTRY.get(doc_type)
     if not reg:
         raise HTTPException(status_code=404, detail="Jenis dokumen tidak dikenal")
-    q: Dict[str, Any] = {}
-    if entity_id and entity_id != "all":
-        q["entity_id"] = entity_id
+    # KP-T6 (N1) — PT contoh lewat `resolve_requested_entity` (kosong = PT aktif; di luar penugasan → 403).
+    entity_id = resolve_requested_entity(await entity_ctx(request), entity_id)
+    q: Dict[str, Any] = {"entity_id": entity_id}
     sample = await db[reg["collection"]].find_one(q, {"_id": 0, "id": 1, "entity_id": 1, "number": 1})
     if not sample:
         return {"doc_type": doc_type, "source_id": None, "entity_id": entity_id, "number": None,
@@ -209,42 +236,60 @@ def _known(doc_type: str) -> None:
 async def list_templates(request: Request) -> Dict[str, Any]:
     """Semua jenis dokumen + mana yang sudah disetel (pola sipro `list_targets`)."""
     await require_permission(request, "pdf_template", "view")
-    return {"data": await svc.list_templates(),
-            "placeholders": [{"token": k, "label": v} for k, v in svc.PLACEHOLDERS.items()]}
+    return {"data": await svc.list_templates(), "placeholders": svc.placeholder_list()}
+
+
+async def _template_out(doc_type: str, scope: str) -> Dict[str, Any]:
+    """Jawaban satu lapisan. KP-T6 — `scope` ("all" | id PT), `pt_layer_keys`, `pt_override_keys` (kunci yang ditimpa PT
+    itu), `group_config` (hasil tanpa lapisan PT)."""
+    pt = None if scope == svc.GROUP_SCOPE else scope
+    group_cfg = await svc.get_template_cfg(doc_type)
+    return {"doc_type": doc_type, "scope": scope,
+            "config": await svc.get_template_cfg(doc_type, pt) if pt else group_cfg,
+            "group_config": group_cfg, "pt_layer_keys": list(svc.PT_LAYER_KEYS),
+            "pt_override_keys": await svc.pt_override_keys(doc_type, pt) if pt else [],
+            "meta": await svc.template_meta(doc_type, scope)}
 
 
 @router.get("/templates/{doc_type}")
-async def get_template(doc_type: str, request: Request) -> Dict[str, Any]:
+async def get_template(doc_type: str, request: Request, entity_id: str = Query(None)) -> Dict[str, Any]:
     await require_permission(request, "pdf_template", "view")
     _known(doc_type)
-    return {"doc_type": doc_type, "config": await svc.get_template_cfg(doc_type),
-            "defaults": svc.DEFAULT_TEMPLATE_CFG, "meta": await svc.template_meta(doc_type),
+    scope = await _layer_scope(request, entity_id)
+    return {**await _template_out(doc_type, scope), "defaults": svc.DEFAULT_TEMPLATE_CFG,
             "default_effective": await svc.get_template_cfg(svc.DEFAULT_CODE),
-            "placeholders": [{"token": k, "label": v} for k, v in svc.PLACEHOLDERS.items()]}
+            "placeholders": svc.placeholder_list(), "key_labels": svc.TEMPLATE_KEY_LABELS}
 
 
 @router.put("/templates/{doc_type}")
-async def put_template(doc_type: str, payload: TemplateSave, request: Request) -> Dict[str, Any]:
+async def put_template(doc_type: str, payload: TemplateSave, request: Request,
+                       entity_id: str = Query(None)) -> Dict[str, Any]:
+    """Tanpa `entity_id` = lapisan semua PT (perilaku lama). Dengan `entity_id` = lapisan PT (KP-T6; cakupan diperiksa)."""
     actor = await require_permission(request, "pdf_template", "manage")
     _known(doc_type)
+    scope = await _layer_scope(request, entity_id)
     try:
-        cfg = await svc.save_template_cfg(doc_type, payload.config, actor.get("name", ""))
+        await svc.save_template_cfg(doc_type, payload.config, actor.get("name", ""), entity_id=scope)
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
-    meta = await svc.template_meta(doc_type)
+    out = await _template_out(doc_type, scope)
+    meta = out["meta"]
     await audit(actor["name"], "pdf_template_saved", "pdf_templates", doc_type,
-                {"version": meta.get("version"), "override_keys": meta.get("override_keys")})
-    return {"doc_type": doc_type, "config": cfg, "meta": meta}
+                {"version": meta.get("version"), "override_keys": meta.get("override_keys"), "scope": scope},
+                scope_entity_id="" if scope == svc.GROUP_SCOPE else scope)
+    return out
 
 
 @router.delete("/templates/{doc_type}")
-async def reset_template(doc_type: str, request: Request) -> Dict[str, Any]:
-    """Kembalikan ke bawaan (buang override). Dokumen yang sudah terbit tidak berubah."""
+async def reset_template(doc_type: str, request: Request, entity_id: str = Query(None)) -> Dict[str, Any]:
+    """Kembalikan ke bawaan (buang override lapisan itu saja). Dokumen yang sudah terbit tidak berubah."""
     actor = await require_permission(request, "pdf_template", "manage")
     _known(doc_type)
-    cfg = await svc.reset_template_cfg(doc_type)
-    await audit(actor["name"], "pdf_template_reset", "pdf_templates", doc_type, {})
-    return {"doc_type": doc_type, "config": cfg, "meta": await svc.template_meta(doc_type)}
+    scope = await _layer_scope(request, entity_id)
+    await svc.reset_template_cfg(doc_type, entity_id=scope)
+    await audit(actor["name"], "pdf_template_reset", "pdf_templates", doc_type, {"scope": scope},
+                scope_entity_id="" if scope == svc.GROUP_SCOPE else scope)
+    return await _template_out(doc_type, scope)
 
 
 @router.post("/templates/validate-script")
@@ -258,13 +303,41 @@ async def validate_script(payload: Dict[str, Any], request: Request) -> Dict[str
 @router.get("/branding/{entity_id}")
 async def get_branding(entity_id: str, request: Request) -> Dict[str, Any]:
     await require_permission(request, "pdf_template", "view")
-    return await svc.get_branding(entity_id)
+    return await svc.get_branding(_one_pt(await entity_ctx(request), entity_id))
 
 
 @router.put("/branding/{entity_id}")
 async def put_branding(entity_id: str, payload: BrandingSave, request: Request) -> Dict[str, Any]:
+    """KP-T6 — hanya logo, gambar kop/footer, cap, dan tanda tangan. Identitas teks diubah di Profil PT."""
     actor = await require_permission(request, "pdf_template", "manage")
-    return await svc.save_branding(entity_id, payload.model_dump(exclude_none=True), actor.get("name", ""))
+    eid = _one_pt(await entity_ctx(request), entity_id)
+    try:
+        return await svc.save_branding(eid, payload.model_dump(exclude_none=True), actor.get("name", ""))
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+
+@router.post("/branding/{entity_id}/identity")
+async def resolve_branding_identity(entity_id: str, payload: IdentityResolve, request: Request) -> Dict[str, Any]:
+    """KP-T6 (KP-18) — pemilik memilih sumber identitas kop PT yang masih memakai teks lama: `pakai_profil` atau
+    `salin_ke_profil` (teks lama → Profil PT, validasi KP-T1). Butuh `pdf_template.manage` DAN `entity.update`."""
+    actor = await require_permission(request, "pdf_template", "manage")
+    await require_permission(request, "entity", "update")
+    eid = _one_pt(await entity_ctx(request), entity_id)
+    try:
+        out = await svc.resolve_identity(eid, payload.action, payload.reason, actor)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except svc.IdentityConflict as e:
+        raise HTTPException(status_code=409, detail=str(e))
+    copied = out["copied"]
+    await audit(actor["name"], "branding_identity_resolved", "document_branding", eid,
+                {"action": payload.action, "reason": payload.reason.strip(), "copied": sorted(copied)},
+                reason=payload.reason.strip(), scope_entity_id=eid)
+    if copied:   # jejak Profil PT ikut mencatat isian yang berubah (riwayat detail PT)
+        await audit(actor["name"], "entity_updated", "business_entity", eid, copied,
+                    reason="Salin teks kop ke Profil PT", scope_entity_id=eid)
+    return out["branding"]
 
 
 @router.post("/preview")
@@ -275,21 +348,26 @@ async def preview(payload: PreviewReq, request: Request):
     if not reg:
         raise HTTPException(status_code=404, detail="Jenis dokumen tidak dikenal")
     source_id = payload.source_id
-    entity_id = payload.entity_id
+    # KP-T6 (N1) — PT lewat `resolve_requested_entity` (kosong = PT aktif; di luar penugasan → 403).
+    entity_id = resolve_requested_entity(ctx, payload.entity_id)
     if not source_id:
-        # ambil contoh dokumen pertama yang bisa diakses user
-        q = {}
-        if entity_id and entity_id != "all":
-            q["entity_id"] = entity_id
-        sample = await db[reg["collection"]].find_one(q, {"_id": 0, "id": 1, "entity_id": 1})
+        # ambil contoh dokumen pertama milik PT itu
+        sample = await db[reg["collection"]].find_one({"entity_id": entity_id}, {"_id": 0, "id": 1, "entity_id": 1})
         if not sample:
             raise HTTPException(status_code=404, detail=f"Belum ada data '{reg['label']}' untuk pratinjau. Buat dokumen dulu.")
         source_id = sample["id"]
-        entity_id = entity_id or sample.get("entity_id")
+    else:
+        source = await db[reg["collection"]].find_one({"id": source_id}, {"_id": 0, "id": 1, "entity_id": 1})
+        if not source:
+            raise HTTPException(status_code=404, detail="Dokumen sumber tidak ditemukan")
+        assert_entity_access(source, reg["collection"], ctx)
+        if source.get("entity_id") not in (None, "", "all", entity_id):
+            raise HTTPException(status_code=400, detail="Dokumen contoh milik PT lain. Pilih dokumen PT ini.")
     try:
         html, _, _ = await svc.render_document(
             payload.doc_type, source_id, entity_id, fmt="html",
-            cfg_override=payload.config, public_base=_origin(request))
+            cfg_override=payload.config, public_base=_origin(request),
+            override_layer=svc.GROUP_SCOPE if payload.layer == svc.GROUP_SCOPE else "")
     except Exception as e:  # noqa: BLE001
         raise HTTPException(status_code=500, detail=f"Gagal pratinjau: {e}")
     return HTMLResponse(content=html)

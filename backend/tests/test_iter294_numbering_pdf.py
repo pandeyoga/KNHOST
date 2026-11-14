@@ -153,21 +153,29 @@ class TestPdfRender:
         assert r.content[:4] == b"%PDF", r.content[:20]
 
     def test_branding_extra_fields(self, admin):
+        # KP-T6 — slogan, email, dan situs di kop kini isian Profil PT (`PATCH /api/entities`); PUT kop berisi teks → 400.
+        r = admin.put(f"{API}/pdf/branding/{ENT}", json={"tagline": "QA Tagline"}, timeout=60)
+        assert r.status_code == 400, r.text[:300]
+        assert "Profil PT" in r.json().get("detail", ""), r.text[:300]
+        lama = admin.get(f"{API}/entities/{ENT}", timeout=60).json()
         try:
-            r = admin.put(f"{API}/pdf/branding/{ENT}",
-                          json={"tagline": "QA Tagline", "email": "qa@kn.id", "website": "kn.id"}, timeout=60)
+            r = admin.patch(f"{API}/entities/{ENT}",
+                            json={"data": {"tagline": "QA Tagline", "website": "kn.id"}}, timeout=60)
             assert r.status_code == 200, r.text[:300]
-            d = r.json()
-            assert d["tagline"] == "QA Tagline" and d["email"] == "qa@kn.id" and d["website"] == "kn.id"
-
-            s = admin.get(f"{API}/pdf/sample/invoice", params={"entity_id": ENT}, timeout=60).json()
-            r = admin.post(f"{API}/pdf/preview",
-                           json={"doc_type": "invoice", "source_id": s["source_id"], "entity_id": ENT,
-                                 "config": {"header_mode": "system"}}, timeout=90)
-            assert r.status_code == 200, r.text[:300]
-            assert "QA Tagline" in r.text
+            d = admin.get(f"{API}/pdf/branding/{ENT}", timeout=60).json()
+            if d["identity_source"] == "profil":
+                assert d["tagline"] == "QA Tagline" and d["website"] == "kn.id", d
+                s = admin.get(f"{API}/pdf/sample/invoice", params={"entity_id": ENT}, timeout=60).json()
+                r = admin.post(f"{API}/pdf/preview",
+                               json={"doc_type": "invoice", "source_id": s["source_id"], "entity_id": ENT,
+                                     "config": {"header_mode": "system"}}, timeout=90)
+                assert r.status_code == 200, r.text[:300]
+                assert "QA Tagline" in r.text
+            else:   # kop PT ini masih memakai teks lama (belum diselesaikan pemilik): selisihnya dilaporkan
+                assert {"tagline", "website"} <= {c["field"] for c in d["identity_conflicts"]}, d["identity_conflicts"]
         finally:
-            admin.put(f"{API}/pdf/branding/{ENT}", json={"tagline": "", "email": "", "website": ""}, timeout=60)
+            admin.patch(f"{API}/entities/{ENT}", json={"data": {"tagline": lama.get("tagline", ""),
+                                                               "website": lama.get("website", "")}}, timeout=60)
 
 
 # ─── Regresi cepat ──────────────────────────────────────────────────────

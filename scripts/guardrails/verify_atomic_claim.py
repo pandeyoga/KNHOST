@@ -134,6 +134,8 @@ REVIEWED: dict[tuple[str, str], tuple[str, str]] = {
     ("entities.py", "/entities"): ("service", "POST: id badan usaha baru per permintaan; insert lalu seed COA (idempoten) + upsert system_settings; sinkron partner grup best-effort — tak ada saldo bersama, aman diulang"),
     ("entities.py", "/entities/{entity_id}/archive"): ("service_cas", "find_one_and_update business_entities berprasyarat status ≠ archived → 409 STATE_CHANGED; sesi pengguna dicabut idempoten (delete_many)", "entity_lifecycle_service.archive_entity"),
     ("entities.py", "/entities/{entity_id}"): ("service_cas", "DELETE (=archive): CAS status ≠ archived di lifecycle.archive_entity → 409 bila kalah", "entity_lifecycle_service.archive_entity"),
+    # ── KP-T6 (14 Nov 2026) ──
+    ("pdf.py", "/branding/{entity_id}/identity"): ("service", "validasi Profil PT (400) SEBELUM menulis; klaim = update_one document_branding berprasyarat identity_resolved_at kosong (kalah → 409, tanpa tulisan lain); baru sesudah menang $set isian Profil PT (idempoten, nilai sama bila diulang) + jejak append-only — tak ada saldo/stok"),
     ("config.py", "/impact-apply"): ("service", "klaim products sesudah validasi alasan/cakupan (ImpactError), master + SO ditulis ulang di dalam klaim; mark_failed bila gagal; release di finally", "config_impact_service.apply"),
     ("auth.py", "/auth/login"): ("service", "login_attempts + sessions + users(last_login): tulisan independen, tidak ada saldo/stok — aman diulang"),
     ("categories.py", "/product-categories/{category_id}"): ("claim", "PATCH: klaim product_categories sesudah validasi nama/duplikat, sebelum products.update_many (rename kaskade); mark_failed bila gagal; finish_set"),

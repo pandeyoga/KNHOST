@@ -13,6 +13,9 @@
  *
  * KP-T2 — bagian "Kesiapan" memakai `EntityCompletionSteps` (16 butir bernomor, tombol Lengkapi yang mengganti PT
  * aktif lalu membuka layar tujuan, Ulangi penyiapan) — satu sumber tautan & teks dengan wizard dan tab Kesiapan.
+ *
+ * KP-T6 — Profil PT = satu sumber identitas kop surat: isian baru **Nama di kop surat** (kosong = nama legal),
+ * **Slogan**, **Situs web** (dulu teks terpisah di perancang dokumen).
  */
 import { useCallback, useEffect, useState } from "react";
 import { X, Save, Loader2, Lock, History, ClipboardCheck,
@@ -32,11 +35,14 @@ import EntityCompletionSteps from "./EntityCompletionSteps";
 const EDITABLE = [
   ["legal_name", "Nama legal"],
   ["short_name", "Nama singkat"],
+  ["print_name", "Nama di kop surat", "Kosongkan untuk memakai nama legal."],   // KP-T6
   ["owner_name", "Nama pemilik (perorangan)"],
   ["business_label", "Label usaha (perorangan)"],
   ["address", "Alamat"],
   ["phone", "Telepon"],
   ["email", "Email"],
+  ["website", "Situs web"],                                                       // KP-T6
+  ["tagline", "Slogan"],                                                          // KP-T6
   ["npwp", "NPWP"],
   ["logo_url", "URL logo (kop surat)"],
 ];
@@ -235,7 +241,7 @@ export default function EntityDetailDrawer({ entityId, canManage, onClose, onCha
                   <p className="kicker mb-2">Identitas & kontak</p>
                   <div className="grid gap-2 sm:grid-cols-2">
                     {EDITABLE.filter(([key]) => PERSONAL_TYPES.includes(entity?.type)
-                      || !PERSONAL_FIELDS.includes(key)).map(([key, label]) => (
+                      || !PERSONAL_FIELDS.includes(key)).map(([key, label, hint]) => (
                       <div key={key} className="grid gap-1">
                         <label className="text-[10px] font-bold uppercase tracking-wide text-[#8E8E93]">
                           {label}
@@ -245,8 +251,10 @@ export default function EntityDetailDrawer({ entityId, canManage, onClose, onCha
                           data-testid={`entity-detail-${key}-input`}
                           disabled={!canManage || entity?.status !== "active"}
                           value={form[key] ?? ""}
+                          placeholder={key === "print_name" ? (entity?.legal_name || "") : undefined}
                           onChange={(e) => setForm((f) => ({ ...f, [key]: e.target.value }))}
                         />
+                        {hint && <p className="text-fs-12 text-kn-text-2" data-testid={`entity-detail-${key}-hint`}>{hint}</p>}
                       </div>
                     ))}
                   </div>

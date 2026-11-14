@@ -123,6 +123,10 @@ async def validate_entity_input(data: Dict[str, Any], *, entity_id: str = "",
     def changed(key: str) -> bool:
         return key in out and (not is_patch or out[key] != prev.get(key))
 
+    # KP-T6 — isian kop surat: teks bebas, disimpan dipangkas (kosong = pakai nama legal / tidak dicetak).
+    for key in ("print_name", "tagline", "website"):
+        if key in out:
+            out[key] = str(out.get(key) or "").strip()
     if "npwp" in out:
         out["npwp"] = str(out.get("npwp") or "").strip()
         if changed("npwp") and out["npwp"] and not lifecycle.npwp_valid(out["npwp"]):

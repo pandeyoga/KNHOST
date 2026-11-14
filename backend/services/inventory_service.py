@@ -151,11 +151,15 @@ async def render_order_html(
     orientation = template.get("orientation", "portrait")
     margin_mm = int(template.get("margin_mm", 12))
     paper_size = template.get("paper_size", "A4")
-    logo_html = (
-        f"<img src='{template.get('logo_url')}' style='height:48px;object-fit:contain'/>"
-        if template.get("logo_url")
-        else "<h1>Kain Nusantara</h1>"
-    )
+    if template.get("logo_url"):
+        logo_html = f"<img src='{template.get('logo_url')}' style='height:48px;object-fit:contain'/>"
+    else:
+        # KP-T6 — tanpa logo di template: logo & nama dari kop PT pemilik dokumen (Profil PT), bukan nama tertulis mati.
+        from html import escape
+        from services.pdf_service import get_branding
+        brand = await get_branding(order.get("entity_id") or None)
+        logo_html = (f"<img src='{escape(brand['logo_src'], quote=True)}' style='height:48px;object-fit:contain'/>"
+                     if brand.get("logo_src") else "") + f"<h1>{escape(brand.get('company_name') or '')}</h1>"
     # Defensive rendering: dokumen TIDAK BOLEH 500 karena field display opsional
     # hilang (mis. allocation tanpa warehouse_city). Selalu pakai .get() + fallback.
     def _money(v):
