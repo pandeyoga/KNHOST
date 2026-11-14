@@ -1,5 +1,5 @@
 <!-- DIHASILKAN OTOMATIS oleh scripts/gen_codebase_map.py — JANGAN EDIT TANGAN -->
-<!-- Dihasilkan dari commit: 2121202 pada 2026-11-14 -->
+<!-- Dihasilkan dari commit: 16b50fe pada 2026-11-14 -->
 # CODEBASE MAP — Kain Nusantara (dihasilkan otomatis)
 
 Peta ini dihitung dari kode oleh `scripts/gen_codebase_map.py`. Kalau angka di sini
@@ -13,7 +13,7 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 | Ukuran | Nilai |
 |---|---:|
 | Router (`backend/routers/*.py`) | 163 |
-| Endpoint (`@router.<method>`) | 1771 |
+| Endpoint (`@router.<method>`) | 1772 |
 | Service (`backend/services/*.py`) | 387 |
 | Koleksi MongoDB disentuh kode produksi | 201 |
 | Direktori fitur frontend (`src/features/*`) | 39 |
@@ -160,7 +160,7 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 | `design_requests.py` | 20 | 407 | `/design-requests`, `/design-requests-for-so/{so_id}`, `/design-requests/meta`, `/design-requests/{req_id}`, `/design-requests/{req_id}/approve`, `/design-requests/{req_id}/assign` … |
 | `design_studio.py` | 25 | 344 | `/design-gallery/{gallery_id}/colorways`, `/design-gallery/{gallery_id}/colorways/{cw_id}`, `/design-gallery/{gallery_id}/feedback`, `/design-gallery/{gallery_id}/files-kind/{kind}`, `/design-gallery/{gallery_id}/history`, `/design-gallery/{gallery_id}/lifecycle/activate` … |
 | `documents.py` | 17 | 435 | `/document-templates`, `/document-templates/{template_id}`, `/document-templates/{template_id}/preview`, `/documents/barcode`, `/documents/generate`, `/documents/preview/{order_id}` … |
-| `entities.py` | 14 | 322 | `/entities`, `/entities/count`, `/entities/{entity_id}`, `/entities/{entity_id}/archive`, `/entities/{entity_id}/audit`, `/entities/{entity_id}/deactivation-impact` … |
+| `entities.py` | 15 | 342 | `/entities`, `/entities/count`, `/entities/{entity_id}`, `/entities/{entity_id}/archive`, `/entities/{entity_id}/audit`, `/entities/{entity_id}/deactivation-impact` … |
 | `entity_masters.py` | 7 | 103 | `/entity-masters`, `/entity-masters/{kind}`, `/entity-masters/{kind}/effective`, `/entity-masters/{kind}/{row_id}`, `/entity-masters/{kind}/{row_id}/override` |
 | `enums.py` | 5 | 124 | `/enums`, `/enums/products/validate`, `/enums/stage-transitions`, `/enums/stage-transitions/validate`, `/enums/{name}` |
 | `esign.py` | 4 | 91 | `/request`, `/signatures/{doc_type}/{source_id}`, `/verify`, `/verify/{code}` |
@@ -381,11 +381,11 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 | `dual_control.py` | 253 | KF-T6 — satu pembantu untuk kontrol "harus dua orang" (`docs/blueprint/unit/KF-T6.md`, `02_STANDAR.md` §2.3). |
 | `dual_qty_service.py` | 318 | FASE U — DUA SATUAN (jumlah roll + ukuran) · satu pintu untuk semua dokumen. |
 | `entity_context_service.py` | 174 | F0-A — Entity identity & context helper (Multi-Entity foundation). |
-| `entity_lifecycle_service.py` | 845 | FASE E-1 — SIKLUS HIDUP BADAN USAHA (satu pintu untuk semua pagar). |
+| `entity_lifecycle_service.py` | 912 | FASE E-1 — SIKLUS HIDUP BADAN USAHA (satu pintu untuk semua pagar). |
 | `entity_location_service.py` | 32 | entity_location_service — lokasi tervalidasi pada UBAH badan usaha (Fase 4 · R6, G5-25). |
 | `entity_master_service.py` | 611 | entity_master_service (FASE E-4 · E4a) — MASTER BERLAPIS: **global → badan usaha**. |
-| `entity_provisioning_service.py` | 252 | F0-F + FASE E-1 — Provisioning & VALIDASI badan usaha (SATU JALUR). |
-| `entity_readiness_service.py` | 145 | FASE E-1 (E1.9) — DAFTAR KESIAPAN BADAN USAHA. |
+| `entity_provisioning_service.py` | 307 | F0-F + FASE E-1 — Provisioning & VALIDASI badan usaha (SATU JALUR). |
+| `entity_readiness_service.py` | 220 | FASE E-1 (E1.9) — DAFTAR KESIAPAN BADAN USAHA. |
 | `epc.py` | 45 | RF-01/RF-11 — SATU kontrak EPC: disimpan & dicocokkan sebagai 24 hex UPPERCASE tanpa pemisah. |
 | `equity_statement_service.py` | 65 | FINANCE — Laporan Perubahan Ekuitas (Statement of Changes in Equity). |
 | `escalation_service.py` | 241 | R6.6 — ESKALASI BERTINGKAT alert yang belum ditindak. |
@@ -683,7 +683,7 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 
 | Fitur (`src/features/`) | Berkas | Baris |
 |---|---:|---:|
-| `__tests__` | 93 | 13813 |
+| `__tests__` | 94 | 14058 |
 | `admin` | 35 | 6764 |
 | `approvals` | 9 | 1719 |
 | `catalog` | 24 | 1450 |
@@ -718,7 +718,7 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 | `sales` | 97 | 15798 |
 | `sales_admin` | 11 | 1880 |
 | `samples` | 8 | 776 |
-| `settings` | 60 | 11808 |
+| `settings` | 61 | 11972 |
 | `tanya` | 25 | 1592 |
 | `transfers` | 1 | 20 |
 | `wms` | 99 | 13196 |
@@ -751,7 +751,7 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 | `frontend/src/features/internal_requests/InternalRequestsView.jsx` | 561 | 500 |
 | `frontend/src/features/purchasing/makloon/MakloonWizard.jsx` | 542 | 500 |
 | `frontend/src/features/pos/CheckoutDrawer.jsx` | 535 | 500 |
-| `frontend/src/features/settings/entities/EntityDetailDrawer.jsx` | 523 | 500 |
 | `frontend/src/features/settings/entities/RoleRealityPanel.jsx` | 511 | 500 |
+| `frontend/src/features/settings/entities/EntityDetailDrawer.jsx` | 510 | 500 |
 | `frontend/src/features/wms/warehouses/WarehouseMasterView.jsx` | 502 | 500 |
 | `frontend/src/features/purchasing/contrabon/ContraBonCreateWizard.jsx` | 502 | 500 |

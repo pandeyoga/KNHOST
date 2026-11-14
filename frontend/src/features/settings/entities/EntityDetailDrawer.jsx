@@ -10,9 +10,12 @@
  * tindakan "Ubah status PKP" bertanggal berlaku, beralasan, dengan pratinjau dampak; jadwal bisa dibatalkan),
  * **Tahun buku & mata uang** (nilai Pusat Pengaturan yang dipakai mesin + sumbernya; diubah lewat editor baku pada
  * lapisan PT), **Grup & konsolidasi** (PT induk + persen kepemilikan).
+ *
+ * KP-T2 — bagian "Kesiapan" memakai `EntityCompletionSteps` (16 butir bernomor, tombol Lengkapi yang mengganti PT
+ * aktif lalu membuka layar tujuan, Ulangi penyiapan) — satu sumber tautan & teks dengan wizard dan tab Kesiapan.
  */
 import { useCallback, useEffect, useState } from "react";
-import { X, Save, Loader2, Lock, History, ClipboardCheck, ExternalLink,
+import { X, Save, Loader2, Lock, History, ClipboardCheck,
   ShieldCheck, Building2, CalendarClock, Landmark, Network } from "lucide-react";
 
 import ErrorNotice from "../../../components/ErrorNotice";
@@ -24,6 +27,7 @@ import { getEntity, patchEntity, getReadiness, getEntityAudit, errText, cancelTa
   NPWP_MESSAGE, npwpValid, profileSettingItems, sourceText, TAX_STATUS_LABEL } from "./entityApi";
 import TaxStatusDialog from "./TaxStatusDialog";
 import ProfileSettingDialog from "./ProfileSettingDialog";
+import EntityCompletionSteps from "./EntityCompletionSteps";
 
 const EDITABLE = [
   ["legal_name", "Nama legal"],
@@ -422,37 +426,20 @@ export default function EntityDetailDrawer({ entityId, canManage, onClose, onCha
                 </div>
               </div>
 
-              {/* Kesiapan singkat */}
+              {/* Kesiapan — KP-T2: satu komponen dengan langkah "Lengkapi PT" wizard dan tab Kesiapan */}
               <div className="section-card">
                 <div className="section-body py-3">
                   <div className="mb-2 flex items-center gap-2">
-                    <ClipboardCheck size={14} className="text-[#6B219A]" />
+                    <ClipboardCheck size={14} className="text-kn-special-text" />
                     <p className="kicker !mb-0">Kesiapan</p>
-                    <span className="ml-auto text-[11px] font-bold tabular-nums"
+                    <span className="ml-auto text-fs-12 font-bold tabular-nums text-kn-text"
                           data-testid="entity-detail-readiness-percent">
                       {readiness?.percent ?? 0}% ({readiness?.ready ?? 0}/{readiness?.total ?? 0})
                     </span>
                   </div>
-                  <div className="grid gap-1.5">
-                    {(readiness?.items || []).map((it) => (
-                      <div key={it.key}
-                           data-testid={`entity-detail-readiness-${it.key}`}
-                           className="flex flex-wrap items-center gap-2 rounded-md border border-[#EFF0F2] px-2.5 py-1.5">
-                        <span className={`h-2 w-2 shrink-0 rounded-full ${
-                          it.ready ? "bg-[#1B7F4B]" : "bg-[#C0392B]"}`} />
-                        <span className="text-[11.5px] font-semibold text-[#1C1C1E]">{it.label}</span>
-                        <span className="text-[10.5px] text-[#6B6B73]">{it.detail}</span>
-                        {!it.ready && it.view && onNavigate && (
-                          <button type="button"
-                                  data-testid={`entity-detail-goto-${it.key}`}
-                                  className="ml-auto inline-flex items-center gap-1 text-[10.5px] font-bold text-[#0058CC] hover:underline"
-                                  onClick={() => onNavigate(it.view)}>
-                            Lengkapi <ExternalLink size={10} />
-                          </button>
-                        )}
-                      </div>
-                    ))}
-                  </div>
+                  <EntityCompletionSteps entityId={entityId} data={readiness} canRetry={canWrite}
+                    onUpdated={(r) => { if (r) setReadiness(r); else load(); }}
+                    testId="entity-detail-completion" />
                 </div>
               </div>
 

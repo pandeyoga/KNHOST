@@ -2843,6 +2843,12 @@ Collection: business_entities            Prefix: ent_    Fase 0  [IMPLEMENTED]
                               {from, to, effective_date YYYY-MM-DD, reason, by, by_id, at[, scheduled_at]}
   tax_status_pending  obj?    KP-T1 — perubahan status PKP bertanggal berlaku maju:
                               {to, effective_date, reason, by, by_id, at}; diterapkan job `entity_tax_status_due`
+  provisioning        obj?    KP-T2 — langkah penyiapan awal yang sudah berhasil:
+                              {coa: bool, config_layer: bool, group_partners: bool, at: iso}. Ditulis saat PT dibuat
+                              (bagan akun bersama dipastikan SEBELUM PT disimpan → {coa: true, …}) dan oleh
+                              POST /api/entities/{id}/provisioning/retry (izin entity.update; tiap langkah aman diulang).
+                              Hanya catatan: butir kesiapan "Penyiapan awal" dihitung dari DATA (gl_accounts bersama > 0
+                              + system_settings{scope: id}), jadi PT lama tanpa field ini tetap terbaca. Tanpa migrasi.
   ⚠️ default_tax_mode TETAP nilai yang dibaca mesin (K-08); diubah HANYA lewat POST /api/entities/{id}/tax-status
      (PATCH ditolak 400). Tanpa indeks baru.
   ⚠️ KP-T1 — TIDAK DIPAKAI LAGI (tidak dibaca, ditulis, atau dikirim; field lama di dokumen tidak dihapus):

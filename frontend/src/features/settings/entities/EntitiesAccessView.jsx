@@ -8,6 +8,10 @@
  *
  * Tiga tab:
  *   Badan Usaha · Akun & Akses · Kesiapan
+ *
+ * KP-T2 — tombol "Lengkapi" (`EntityCompletionSteps`) membuka layar ini lewat preset navigasi `{tab, entity_id}`:
+ * tab tujuan dipilih dan, untuk tab Badan Usaha, detail PT itu dibuka. Wizard tidak menutup setelah simpan — ia
+ * menampilkan langkah "Lengkapi PT"; Selesai menutup dan membuka detail PT baru.
  */
 import { useCallback, useEffect, useState } from "react";
 import { can } from "../../../config/roles";
@@ -24,6 +28,7 @@ import RoleRealityPanel from "./RoleRealityPanel";
 import RoleAccessPanel from "./RoleAccessPanel";
 import EntityReadinessPanel from "./EntityReadinessPanel";
 import { listEntities, errText } from "./entityApi";
+import useViewPreset from "../../../hooks/useViewPreset";
 
 const TABS = [
   { key: "entities", label: "Badan Usaha", icon: Building2 },
@@ -71,6 +76,14 @@ export default function EntitiesAccessView({ currentUser, selectedEntity, onNavi
   useEffect(() => { load(); }, [load, reloadKey]);
 
   const refreshAll = () => setReloadKey((k) => k + 1);
+
+  // KP-T2 — tautan "Lengkapi" dari daftar kesiapan: tab tujuan (+ detail PT untuk tab Badan Usaha). Detail hanya dibuka
+  // bila PT itu memang PT aktif (preset juga diterapkan ulang saat layar dipasang ulang karena ganti PT).
+  useViewPreset("entities-access", (p) => {
+    if (p.tab && TABS.some((t) => t.key === p.tab)) setTab(p.tab);
+    setWizardOpen(false);
+    setDetailId(p.tab === "entities" && p.entity_id && p.entity_id === selectedEntity ? p.entity_id : "");
+  });
 
   return (
     <div data-testid="entities-access-view">
@@ -175,7 +188,8 @@ export default function EntitiesAccessView({ currentUser, selectedEntity, onNavi
       {tab === "readiness" && (
         <EntityReadinessPanel
           entities={entities}
-          onNavigate={onNavigate}
+          selectedEntity={selectedEntity}
+          canManage={canEditEntity}
           onError={setError}
         />
       )}
@@ -183,15 +197,19 @@ export default function EntitiesAccessView({ currentUser, selectedEntity, onNavi
       {wizardOpen && (
         <EntityWizard
           entities={entities}
+          canManage={canEditEntity}
           onClose={() => setWizardOpen(false)}
           onCreated={(ent) => {
-            setWizardOpen(false);
+            // KP-T2 — wizard tetap terbuka (langkah "Lengkapi PT"); daftar dimuat ulang supaya PT baru ikut tampil.
             setFlash(
               `Badan usaha “${ent.legal_name || ent.name}” dibuat. Nomor dokumennya akan ` +
               `berawalan ${ent.provisioning?.number_preview || ent.doc_prefix}.`
             );
             refreshAll();
-            setDetailId(ent.id);
+          }}
+          onDone={(ent) => {
+            setWizardOpen(false);
+            if (ent?.id) setDetailId(ent.id);
           }}
         />
       )}

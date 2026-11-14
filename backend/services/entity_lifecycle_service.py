@@ -11,7 +11,10 @@ Isi:
           menerbitkan dokumen; pesan menyebut dokumen PERTAMA yang terbit
   * E1.6  pagar deaktivasi — hitung dampak (pengguna aktif, dokumen terbuka,
           saldo, periode belum tutup) → 409 berisi rincian; bila dipaksa
-          (admin + alasan) status menjadi `archived` → **kunci-tulis**
+          (admin + alasan) status menjadi `archived` → **kunci-tulis**.
+          KP-T2: + uang muka, SPK makloon, permintaan pembelian, pesanan khusus,
+          penerimaan barang; saldo dari buku pembantu (piutang, hutang, kas & bank);
+          karyawan; daftar centang `checks`
   * E1.8  bentuk data entitas SERAGAM dengan `/auth/context`
 """
 import json
@@ -77,6 +80,19 @@ CLOSED_STATUSES = {
     "paid", "settled", "void", "voided", "archived", "posted", "recorded",
     "normal", "issued_paid", "finished",
 }
+
+# KP-T2 (KP-22) — dokumen yang juga menahan ARSIP (bukan kunci kode dokumen E1.3): uang muka & LPJ-nya, SPK makloon,
+# permintaan pembelian, pesanan khusus, penerimaan barang. `RISIKO` spesifikasi: status "terbuka" = di luar
+# `CLOSED_STATUSES`, jadi bisa terhitung lebih banyak (mis. permintaan yang sudah menjadi PO) — akibatnya hanya arsip
+# yang tertahan; admin tetap bisa memaksa dengan alasan. Membatalkan: kosongkan daftar ini.
+ARCHIVE_EXTRA_SOURCES: List[Tuple[str, str, str]] = [
+    ("cash_advances", "number", "Uang muka"),
+    ("cash_advance_settlements", "number", "Pertanggungjawaban uang muka"),
+    ("makloon_orders", "mko_number", "SPK makloon"),
+    ("purchase_requisitions", "number", "Permintaan pembelian"),
+    ("special_orders", "number", "Pesanan khusus"),
+    ("goods_receipts", "number", "Penerimaan barang"),
+]
 
 
 # ─── Pembacaan dasar ────────────────────────────────────────────────
@@ -223,43 +239,86 @@ async def assert_unique(field: str, value: str, exclude_id: str = "") -> None:
 
 # ─── E1.6 — dampak deaktivasi ───────────────────────────────────────
 async def _open_documents(entity_id: str) -> List[Dict[str, Any]]:
+    """KP-T2 (D4) — dihitung di kueri (`count_documents`) + tiga contoh nomor; dulu dipotong diam-diam 2.000 baris."""
     out: List[Dict[str, Any]] = []
-    for coll, field, label in DOC_SOURCES:
-        rows = await db[coll].find(
-            {"entity_id": entity_id}, {"_id": 0, field: 1, "status": 1}).to_list(2000)
-        open_rows = [r for r in rows if _norm(r.get("status")) not in CLOSED_STATUSES]
-        if open_rows:
-            out.append({
-                "collection": coll, "label": label, "count": len(open_rows),
-                "examples": [r.get(field) for r in open_rows[:3] if r.get(field)],
-            })
+    for coll, field, label in DOC_SOURCES + ARCHIVE_EXTRA_SOURCES:
+        q = {"entity_id": entity_id, "status": {"$nin": sorted(CLOSED_STATUSES)}}
+        n = await db[coll].count_documents(q)
+        if not n:
+            continue
+        rows = await db[coll].find(q, {"_id": 0, field: 1}).sort("created_at", 1).limit(3).to_list(3)
+        out.append({"collection": coll, "label": label, "count": n,
+                    "examples": [r.get(field) for r in rows if r.get(field)]})
     return out
 
 
 async def _open_balances(entity_id: str) -> List[Dict[str, Any]]:
-    """Saldo yang masih hidup: piutang belum lunas, saldo antar-PT, stok dimiliki."""
+    """Saldo yang masih hidup — KP-T2 (KP-22): dari buku pembantunya masing-masing.
+
+    piutang = umur piutang PT (`ar_aging_service.aging_report`, pesanan batal/lunas tidak ikut — dulu Σ semua pesanan);
+    hutang = Σ sisa tagihan pemasok `posted` (`vendor_bill_service.bill_financials`); kas & bank = Σ |saldo| tiap
+    rekening/akun kas PT (`bank_service._balance`: saldo awal + masuk − keluar, transaksi tidak batal); antar-PT dan
+    stok seperti sebelumnya.
+    """
+    from services import bank_service
+    from services.ar_aging_service import aging_report
+    from services.vendor_bill_service import bill_financials
     out: List[Dict[str, Any]] = []
-    ar = await db.sales_orders.aggregate([
-        {"$match": {"entity_id": entity_id}},
-        {"$group": {"_id": None,
-                    "total": {"$sum": {"$ifNull": ["$grand_total", 0]}},
-                    "paid": {"$sum": {"$ifNull": ["$paid_total", 0]}}}},
-    ]).to_list(1)
-    outstanding = round(float((ar[0]["total"] - ar[0]["paid"]) if ar else 0), 2)
-    if outstanding > 0.01:
-        out.append({"key": "piutang", "label": "Piutang pelanggan belum lunas",
-                    "amount": outstanding})
+    piutang = round(float(((await aging_report(entity_id=entity_id)).get("totals") or {}).get("total") or 0), 2)
+    if piutang > 0.01:
+        out.append({"key": "piutang", "label": "Piutang pelanggan belum lunas", "amount": piutang})
+    hutang = 0.0
+    async for b in db.vendor_bills.find({"entity_id": entity_id, "status": "posted"}, {"_id": 0}):
+        hutang += bill_financials(b)["outstanding"]
+    hutang = round(hutang, 2)
+    if hutang > 0.01:
+        out.append({"key": "hutang", "label": "Hutang pemasok belum lunas", "amount": hutang})
+    kas = 0.0
+    async for acc in db.bank_accounts.find({"entity_id": entity_id}, {"_id": 0, "id": 1, "opening_balance": 1}):
+        kas += abs(bank_service._balance(acc.get("opening_balance") or 0,   # noqa: SLF001 — rumus saldo rekening
+                                         await bank_service._txns_for(acc["id"])))   # noqa: SLF001
+    kas = round(kas, 2)
+    if kas > 0.01:
+        out.append({"key": "kas_bank", "label": "Saldo kas dan bank", "amount": kas})
     ic = await db.interco_accounts.find({"entity_id": entity_id}, {"_id": 0}).to_list(50)
     ic_total = round(sum(abs(float(r.get("balance") or 0)) for r in ic), 2)
     if ic_total > 0.01:
-        out.append({"key": "antar_pt", "label": "Saldo antar badan usaha (IC-AR/IC-AP)",
-                    "amount": ic_total})
+        out.append({"key": "antar_pt", "label": "Saldo antar-PT", "amount": ic_total})
     rolls = await db.inventory_rolls.count_documents(
         {"owner_entity_id": entity_id, "status": {"$nin": ["consumed", "sold", "scrapped"]}})
     if rolls:
         out.append({"key": "stok", "label": "Roll stok masih dimiliki", "amount": rolls,
                     "unit": "roll"})
     return out
+
+
+def _balance_text(b: Dict[str, Any]) -> str:
+    from core_utils import rupiah
+    return f"{b['label']} {b['amount']} {b['unit']}" if b.get("unit") else f"{b['label']} {rupiah(b['amount'])}"
+
+
+def _archive_checks(home_users: List[Dict[str, Any]], open_docs: List[Dict[str, Any]],
+                    balances: List[Dict[str, Any]], employees: int, periods: Dict[str, Any]) -> List[Dict[str, Any]]:
+    """KP-T2 — daftar centang yang SAMA dengan yang diperiksa server (lima kelompok), untuk dialog arsip."""
+    total_open = sum(d["count"] for d in open_docs)
+    docs_text = "; ".join(
+        f"{d['label']} {d['count']}" + (f" ({', '.join(str(x) for x in d['examples'])})" if d["examples"] else "")
+        for d in open_docs)
+    journals = periods.get("journals_after_last_closing") or 0
+    return [
+        {"key": "pengguna", "label": "Pengguna ber-PT utama di sini", "ok": not home_users,
+         "detail": (f"{len(home_users)} pengguna: " + ", ".join(u.get("name", "?") for u in home_users[:5])
+                    if home_users else "Tidak ada")},
+        {"key": "dokumen", "label": "Dokumen terbuka", "ok": not total_open,
+         "detail": f"{total_open} dokumen: {docs_text}" if total_open else "Tidak ada"},
+        {"key": "saldo", "label": "Saldo yang masih hidup", "ok": not balances,
+         "detail": "; ".join(_balance_text(b) for b in balances) if balances else "Tidak ada"},
+        {"key": "karyawan", "label": "Karyawan terdaftar", "ok": not employees,
+         "detail": f"{employees} karyawan belum dipindahkan atau diakhiri" if employees else "Tidak ada"},
+        {"key": "periode", "label": "Tutup buku", "ok": not journals,
+         "detail": (f"{journals} jurnal belum masuk periode tertutup" if journals
+                    else "Semua jurnal sudah masuk periode tertutup")},
+    ]
 
 
 async def _open_periods(entity_id: str) -> Dict[str, Any]:
@@ -287,6 +346,8 @@ async def deactivation_impact(entity_id: str) -> Dict[str, Any]:
     balances = await _open_balances(entity_id)
     periods = await _open_periods(entity_id)
     issued = await first_issued_document(entity_id)
+    # KP-T2 (KP-22) — karyawan yang masih terdaftar di PT ini (bukan `resigned`) ikut menahan arsip.
+    employees = await db.hr_employees.count_documents({"entity_id": entity_id, "status": {"$ne": "resigned"}})
 
     blockers: List[str] = []
     if home_users:
@@ -295,10 +356,14 @@ async def deactivation_impact(entity_id: str) -> Dict[str, Any]:
             "pindahkan dulu (" + ", ".join(u.get("name", "?") for u in home_users[:5]) + ")")
     total_open = sum(d["count"] for d in open_docs)
     if total_open:
-        blockers.append(f"{total_open} dokumen masih terbuka — selesaikan atau batalkan dulu")
+        blockers.append(f"{total_open} dokumen masih terbuka ("
+                        + ", ".join(f"{d['label']} {d['count']}" for d in open_docs[:4])
+                        + (", …" if len(open_docs) > 4 else "") + ") — selesaikan atau batalkan dulu")
     if balances:
         blockers.append(
             "Masih ada saldo hidup: " + ", ".join(b["label"].lower() for b in balances))
+    if employees:
+        blockers.append(f"{employees} karyawan masih terdaftar di PT ini — pindahkan atau akhiri dulu")
     if periods["journals_after_last_closing"]:
         blockers.append(
             f"{periods['journals_after_last_closing']} jurnal belum masuk periode tertutup — "
@@ -315,6 +380,8 @@ async def deactivation_impact(entity_id: str) -> Dict[str, Any]:
         "periods": periods,
         "has_issued_documents": bool(issued),
         "first_document": issued,
+        "employees": employees,
+        "checks": _archive_checks(home_users, open_docs, balances, employees, periods),
         "blockers": blockers,
         "can_archive": not blockers,
         "force_requires": ["akses hapus Badan Usaha (bawaan Admin)", "alasan tertulis"],

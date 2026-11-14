@@ -12,13 +12,16 @@
  * templat bagan akun). Mata uang dan tahun buku dipilih dari kunci Pusat Pengaturan (`finance.base_currency`,
  * `finance.fiscal_year_end_month`) berbawaan nilai grup; server menulisnya ke lapisan PT hanya bila berbeda. NPWP
  * diperiksa di tempat dengan pola yang sama dengan server; sakelar PT induk + persen kepemilikan (K-10).
+ * KP-T2 (KP-10, KP-24) — sesudah simpan wizard TIDAK menutup: langkah ke-5 **Lengkapi PT** (`WizardCompletionStep`). `onCreated`
+ * = PT tersimpan (daftar dimuat ulang), `onDone` = **Selesai** (tutup + buka detail); langkah 1–4 terkunci (cegah simpan ganda).
  */
 import { useEffect, useMemo, useState } from "react";
+import { WizardCompletionStep } from "./EntityCompletionSteps";
 import LocationFields from "../../../components/LocationFields";
 const LOC_KEYS = ["country", "country_code", "province", "province_code", "city", "city_code", "district", "district_code", "postal_code"];
 const pickLoc = (o = {}) => Object.fromEntries(LOC_KEYS.map((k) => [k, o[k] || ""]));
 import { Building2, Loader2, X, ArrowLeft, ArrowRight, Save, ShieldCheck,
-  Hash, ClipboardCheck, AlertTriangle } from "lucide-react";
+  Hash, ClipboardCheck, AlertTriangle, ListChecks, Check } from "lucide-react";
 
 import KNSelect from "../../../components/KNSelect";
 import { BULAN_ID, createEntity, entityTypes, errText, fiscalYearText, NPWP_MESSAGE, npwpValid,
@@ -29,7 +32,9 @@ const STEPS = [
   { key: 2, label: "Pajak & Keuangan", icon: ShieldCheck },
   { key: 3, label: "Penomoran & Dokumen", icon: Hash },
   { key: 4, label: "Ringkasan & Kesiapan", icon: ClipboardCheck },
+  { key: 5, label: "Lengkapi PT", icon: ListChecks },   // KP-T2 — sesudah PT tersimpan
 ];
+const LAST_STEP = STEPS.length;
 
 const PERSONAL_TYPES = ["Perorangan", "UD"];
 
@@ -68,7 +73,7 @@ function Field({ label, hint, children, testId }) {
   );
 }
 
-export default function EntityWizard({ entities = [], onClose, onCreated }) {
+export default function EntityWizard({ entities = [], onClose, onCreated, onDone, canManage = false }) {
   const [step, setStep] = useState(1);
   const [form, setForm] = useState(EMPTY);
   const [types, setTypes] = useState([]);
@@ -76,6 +81,7 @@ export default function EntityWizard({ entities = [], onClose, onCreated }) {
   const [error, setError] = useState("");
   // KP-T1 — entri registry dua kunci profil PT; null = tidak bisa dibaca (pemilih disembunyikan, PT mengikuti grup).
   const [profile, setProfile] = useState(undefined);
+  const [created, setCreated] = useState(null);   // KP-T2 — PT yang sudah tersimpan (langkah 5)
 
   useEffect(() => {
     entityTypes().then(setTypes).catch(() => setTypes([]));
@@ -152,8 +158,10 @@ export default function EntityWizard({ entities = [], onClose, onCreated }) {
       if (profile && cur) body.base_currency = cur;
       if (profile && fy) body.fiscal_year_end_month = Number(fy);
       if (isPersonal) body.legal_name = "";   // server yang menyusun dari nama pemilik
-      const created = await createEntity(body);
-      onCreated?.(created);
+      const saved = await createEntity(body);
+      setCreated(saved);            // KP-T2 — wizard tidak menutup: pindah ke langkah 5 "Lengkapi PT"
+      setStep(LAST_STEP);
+      onCreated?.(saved);
     } catch (e) {
       setError(errText(e, "Gagal membuat badan usaha."));
     } finally {
@@ -161,20 +169,23 @@ export default function EntityWizard({ entities = [], onClose, onCreated }) {
     }
   };
 
+  const finish = () => (onDone ? onDone(created) : onClose?.());   // KP-T2 — sesudah tersimpan: tutup = Selesai
+  const close = () => (created ? finish() : onClose?.());
+
   return (
     <div className="modal-overlay" data-testid="entity-wizard"
-         onClick={(e) => { if (e.target === e.currentTarget) onClose?.(); }}>
+         onClick={(e) => { if (e.target === e.currentTarget) close(); }}>
       <div className="modal-card" style={{ maxWidth: 720, width: "95vw" }}>
         <div className="flex items-start gap-2 border-b border-[#EFF0F2] px-4 py-3">
           <Building2 size={16} className="mt-0.5 text-[#0058CC]" />
           <div className="min-w-0 flex-1">
             <h3 className="text-[13.5px] font-bold">Tambah Badan Usaha</h3>
             <p className="text-[11px] text-[#6B6B73]">
-              Langkah {step} dari 4 · {STEPS[step - 1].label}
+              Langkah {step} dari {LAST_STEP} · {STEPS[step - 1].label}
             </p>
           </div>
           <button type="button" className="icon-button" aria-label="Tutup"
-                  data-testid="entity-wizard-close" onClick={onClose}>
+                  data-testid="entity-wizard-close" onClick={close}>
             <X size={14} />
           </button>
         </div>
@@ -191,7 +202,7 @@ export default function EntityWizard({ entities = [], onClose, onCreated }) {
                 key={s.key}
                 type="button"
                 data-testid={`entity-wizard-step-${s.key}`}
-                disabled={s.key > step}
+                disabled={created ? s.key !== LAST_STEP : s.key > step}
                 onClick={() => setStep(s.key)}
                 className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[11px] font-semibold disabled:opacity-45 ${
                   active ? "border-[#0058CC] bg-[#EAF2FF] text-[#0058CC]"
@@ -422,13 +433,15 @@ export default function EntityWizard({ entities = [], onClose, onCreated }) {
                 <p className="text-[11.5px] font-bold text-[#1C1C1E]">Setelah disimpan</p>
                 <p className="text-[10.5px] text-[#6B6B73]">
                   Badan usaha langsung siap dipakai: bagan akun tersedia, penomoran aktif,
-                  dan lapisan konfigurasinya dibuat. Layar berikutnya menampilkan
-                  <b> daftar kesiapan</b> — pengguna, gudang, rekening, harga jual, saldo awal,
-                  dan kop surat — supaya Anda tahu apa lagi yang perlu dilengkapi.
+                  dan lapisan konfigurasinya dibuat. Langkah berikutnya, <b>Lengkapi PT</b>, menampilkan
+                  daftar kesiapan — alamat, pengguna, gudang, rekening, akun kas, pemetaan akun, kop, penanda
+                  tangan, dan lainnya — beserta tombol yang mengantar ke layar pengisiannya.
                 </p>
               </div>
             </div>
           )}
+
+          {step === LAST_STEP && created && <WizardCompletionStep created={created} canManage={canManage} />}
 
           {stepErrors.length > 0 && (
             <ul className="space-y-1 rounded-md border border-[#F0B5AE] bg-[#FCEBEA] p-2.5"
@@ -445,6 +458,10 @@ export default function EntityWizard({ entities = [], onClose, onCreated }) {
           )}
         </div>
 
+        {created ? (<div className="flex items-center justify-end gap-2 border-t border-kn-divider px-4 py-3">
+          <button type="button" className="primary-button" data-testid="entity-wizard-done" onClick={finish}>
+            <Check size={13} /> Selesai</button></div>
+        ) : (
         <div className="flex items-center justify-between gap-2 border-t border-[#EFF0F2] px-4 py-3">
           <button type="button" className="secondary-button"
                   data-testid="entity-wizard-back"
@@ -475,6 +492,7 @@ export default function EntityWizard({ entities = [], onClose, onCreated }) {
             )}
           </div>
         </div>
+        )}
       </div>
     </div>
   );

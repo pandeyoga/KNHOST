@@ -206,9 +206,10 @@ async def fase_e1(cl: httpx.AsyncClient, adm: str) -> Dict[str, Any]:
     r = await cl.get(f"{BASE}/api/entities/ent_ksc/readiness", headers=H(adm))
     d = r.json()
     keys = {i["key"] for i in d.get("items", [])}
-    need = {"users", "warehouses", "bank_accounts", "prices", "opening_balance",
-            "branding", "tax", "fiscal_year"}
-    check("E1.9", "daftar kesiapan lengkap & terhitung (8 butir + persen)",
+    # KP-T2 — 16 butir (rekening bank & akun kas terpisah; `fiscal_year` dibuang: tahun buku selalu bernilai sejak KP-T1)
+    need = {"provisioning", "address", "tax", "doc_prefix", "users", "finance_user", "warehouses", "bank_account",
+            "cash_account", "gl_mappings", "period", "payment_term", "prices", "opening_balance", "branding", "signers"}
+    check("E1.9", "daftar kesiapan lengkap & terhitung (16 butir + persen)",
           r.status_code == 200 and need.issubset(keys) and isinstance(d.get("percent"), int),
           f"percent={d.get('percent')} ready={d.get('ready')}/{d.get('total')}")
 

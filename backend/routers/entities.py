@@ -17,6 +17,9 @@ FASE E-1 menambahkan:
 KP-T1 — jawaban PT memuat tahun buku & mata uang dari registry (`lifecycle.profile_settings`; `currency` =
 `base_currency` supaya bentuk daftar tetap), dan tindakan "Ubah status PKP" bertanggal + beralasan
 (`GET …/tax-status/preview`, `POST …/tax-status`, `DELETE …/tax-status/pending`).
+
+KP-T2 — penyiapan PT yang bisa diulang (`POST …/provisioning/retry`); kesiapan 16 butir dan pemeriksaan sebelum arsip
+tinggal di layanan (`entity_readiness_service`, `entity_lifecycle_service.deactivation_impact`).
 """
 from typing import Any, Dict, List, Optional
 
@@ -43,6 +46,8 @@ _S5_DITOLAK = ("Anda belum punya akses untuk melihat rincian badan usaha. Minta 
                "'Badan Usaha (PT)'.")   # PR-T5 — modul pemilik `entity`
 _PKP_DITOLAK = ("Anda belum punya akses untuk mengubah status PKP badan usaha. Minta Admin menambahkan akses "
                 "'Badan Usaha (PT)'.")   # PR-T5
+_ULANG_DITOLAK = ("Anda belum punya akses untuk mengulang penyiapan PT. Minta Admin menambahkan akses "
+                  "'Badan Usaha (PT)'.")   # KP-T2 — pesan Z6, modul pemilik `entity` (PR-T5)
 
 
 async def _with_profile(out: Dict[str, Any]) -> Dict[str, Any]:
@@ -320,3 +325,18 @@ async def cancel_tax_status(entity_id: str, request: Request) -> Dict[str, Any]:
     await audit(actor["name"], "entity_tax_status_cancelled", "business_entity", entity_id,
                 {"cancelled": pending}, scope_entity_id=entity_id)
     return {**(await _entity_out(doc)), "tax_status_history": doc.get("tax_status_history") or []}
+
+
+# ─── KP-T2 (KP-24) — ulangi langkah penyiapan PT (bagan akun, penanda lapisan, pemasok antar-PT) ────────────────────
+@router.post("/entities/{entity_id}/provisioning/retry")
+async def retry_provisioning(entity_id: str, request: Request) -> Dict[str, Any]:
+    """Tanpa isi. Tiap langkah aman diulang; 404 bila PT tidak ada, 409 "PT ini sudah diarsipkan." bila terkunci."""
+    actor = await require_permission(request, "entity", "update", detail=_ULANG_DITOLAK)
+    await _guard_tax_scope(request, entity_id)   # N1 — PT sasaran dalam penugasan pemanggil (sama dengan status PKP)
+    await lifecycle.active_entity_or_409(entity_id)
+    result = await provisioning.run_provisioning_steps(entity_id, actor["name"])
+    await audit(actor["name"], "entity_provisioning_retried", "business_entity", entity_id,
+                {"provisioning": result["provisioning"], "errors": result["errors"]}, scope_entity_id=entity_id)
+    entity = await lifecycle.get_entity_or_404(entity_id)
+    return {"entity_id": entity_id, "provisioning": result["provisioning"], "errors": result["errors"],
+            "readiness": await readiness_svc.readiness(entity_id, entity)}

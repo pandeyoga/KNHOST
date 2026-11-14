@@ -7,8 +7,9 @@ Membuat badan usaha siap-pakai dalam satu langkah:
   - lengkapi default badan usaha (`ENTITY_DEFAULTS`); tahun buku & mata uang yang dipilih saat dibuat ditulis ke
     lapisan PT registry (`finance.fiscal_year_end_month`, `finance.base_currency` — KP-T1),
   - pastikan bagan akun (CoA) tersedia — CoA SHARED by-code, buku terpisah lewat
-    `journal_entries.entity_id` (lihat `gl_service`),
-  - siapkan penanda config override per-badan-usaha.
+    `journal_entries.entity_id` (lihat `gl_service`) — KP-T2: SEBELUM PT disimpan,
+  - siapkan penanda config override per-badan-usaha dan pemasok antar-PT — KP-T2: langkah yang
+    bisa diulang (`run_provisioning_steps`, `POST /api/entities/{id}/provisioning/retry`).
 Penomoran (CODE/PREFIX-NNNNN) & buku besar otomatis aktif begitu dipakai.
 """
 import re
@@ -199,6 +200,15 @@ async def provision_entity(payload: Dict[str, Any], actor_name: str) -> Dict[str
     data.setdefault("doc_prefix", "")   # dorong ke jalur validasi/normalisasi prefix
     clean = await validate_entity_input(data)
 
+    # KP-T2 (KP-24) — urutan: validasi → bagan akun bersama → simpan PT → langkah penyiapan yang bisa diulang.
+    # Bagan akun bersama tidak menulis apa pun atas nama PT, jadi bila gagal PT belum lahir (dulu PT tersimpan lebih
+    # dulu lalu tertinggal tanpa penanda lapisan dan tanpa cara mengulang).
+    try:
+        coa_added = await gl_service.seed_default_coa()   # idempotent — semua PT memakai bagan akun yang sama by-code
+    except Exception as exc:  # noqa: BLE001 — galat apa pun di sini = PT tidak dibuat
+        print(f"[provision] bagan akun bersama gagal disiapkan, PT tidak dibuat: {exc}")
+        raise HTTPException(status_code=500, detail=COA_FAILED_MESSAGE) from None
+
     entity: Dict[str, Any] = dict(ENTITY_DEFAULTS)
     entity.update(data)
     entity.update(clean)
@@ -210,34 +220,21 @@ async def provision_entity(payload: Dict[str, Any], actor_name: str) -> Dict[str
         "created_by": actor_name,
         "created_at": now_iso(),
         "updated_at": now_iso(),
+        "provisioning": {"coa": True, "config_layer": False, "group_partners": False, "at": now_iso()},
     })
     await db.business_entities.insert_one(entity)
     invalidate_entity_code(entity["id"])   # E1.4
+    # KP-T2 — PT baru langsung bisa dipilih sebagai PT aktif (langkah "Lengkapi PT"): cache status PT (20 detik) dibuang,
+    # kalau tidak permintaan ber-`X-Entity-Id` PT baru ditolak 403 "tidak ada" sampai cache kedaluwarsa.
+    lifecycle.invalidate_status_cache()
 
-    # Bagan akun bersama (idempotent) — semua badan usaha pakai chart yang sama by-code.
-    coa_added = await gl_service.seed_default_coa()
-    # Penanda config override per-badan-usaha (efektif via get_effective_settings).
-    await db.system_settings.update_one(
-        {"scope": entity["id"]},
-        {"$setOnInsert": {"scope": entity["id"], "created_at": now_iso()},
-         "$set": {"updated_at": now_iso()}},
-        upsert=True,
-    )
+    steps = await run_provisioning_steps(entity["id"], actor_name)
+    entity["provisioning"] = steps["provisioning"]
 
     await _write_profile_layers(entity["id"], profile, actor_name)
 
     entity.pop("_id", None)
     prefix = entity.get("doc_prefix", "")
-    # FASE E-7 (E7.7) — badan usaha baru langsung SALING TERLIHAT sebagai pemasok
-    # bertipe "Entitas grup". Tanpa ini, badan usaha yang lahir sesudah fase E-7 tidak
-    # punya jangkar pemasoknya dan pagar PO/SO hanya bisa mengenalinya lewat
-    # pencocokan nama/NPWP (lapis kedua) — cukup, tapi layarnya jadi kosong.
-    group_partners = {}
-    try:
-        from services import group_partner_service as _grp
-        group_partners = await _grp.sync_group_entity_suppliers(actor_name=actor_name)
-    except Exception as exc:  # noqa: BLE001 — badan usaha tetap sah walau sinkronisasi gagal
-        print(f"[provision] sync pemasok entitas grup dilewati: {exc}")
     return {
         "entity": entity,
         "provisioning": {
@@ -246,7 +243,65 @@ async def provision_entity(payload: Dict[str, Any], actor_name: str) -> Dict[str
             "is_pkp": entity.get("default_tax_mode") == "ppn",
             "coa_accounts_added": coa_added,
             "coa_shared": True,
-            "config_override_created": True,
-            "group_partner_suppliers": group_partners,
+            "config_override_created": bool(steps["provisioning"].get("config_layer")),
+            "group_partner_suppliers": steps.get("group_partner_suppliers") or {},
+            "steps": steps["provisioning"],   # KP-T2 — langkah penyiapan yang berhasil
+            "errors": steps["errors"],
         },
     }
+
+
+# ─── KP-T2 (KP-24) — langkah penyiapan PT yang masing-masing aman diulang ─────────────────────────────────────────
+COA_FAILED_MESSAGE = "Bagan akun bersama gagal disiapkan, jadi PT belum dibuat. Coba simpan lagi."
+PROVISIONING_STEPS = ("coa", "config_layer", "group_partners")
+STEP_LABEL = {"coa": "Bagan akun bersama", "config_layer": "Lapisan pengaturan PT",
+              "group_partners": "Pemasok antar-PT (entitas grup)"}
+
+
+async def _step_coa(entity_id: str, actor_name: str) -> Dict[str, Any]:
+    return {"accounts_added": await gl_service.seed_default_coa()}
+
+
+async def _step_config_layer(entity_id: str, actor_name: str) -> Dict[str, Any]:
+    """Penanda lapisan pengaturan per PT (efektif via `get_effective_settings`); upsert → tetap satu dokumen."""
+    await db.system_settings.update_one(
+        {"scope": entity_id},
+        {"$setOnInsert": {"scope": entity_id, "created_at": now_iso()}, "$set": {"updated_at": now_iso()}},
+        upsert=True,
+    )
+    return {}
+
+
+async def _step_group_partners(entity_id: str, actor_name: str) -> Dict[str, Any]:
+    # FASE E-7 (E7.7) — badan usaha baru langsung SALING TERLIHAT sebagai pemasok bertipe "Entitas grup". Tanpa ini,
+    # badan usaha yang lahir sesudah fase E-7 tidak punya jangkar pemasoknya dan pagar PO/SO hanya bisa mengenalinya
+    # lewat pencocokan nama/NPWP (lapis kedua) — cukup, tetapi layarnya jadi kosong. Idempotent.
+    from services import group_partner_service as _grp
+    return {"suppliers": await _grp.sync_group_entity_suppliers(actor_name=actor_name)}
+
+
+_STEP_FUNCS = {"coa": _step_coa, "config_layer": _step_config_layer, "group_partners": _step_group_partners}
+
+
+async def run_provisioning_steps(entity_id: str, actor_name: str) -> Dict[str, Any]:
+    """Jalankan tiga langkah penyiapan PT (bagan akun, penanda lapisan, pemasok antar-PT); aman diulang.
+
+    Langkah yang berhasil ditandai `true` di `business_entities.provisioning` (yang sudah pernah berhasil tidak dicabut
+    oleh kegagalan berikutnya). Kegagalan satu langkah tidak membatalkan PT dan tidak menghentikan langkah lain; ia
+    dilaporkan di `errors`. → `{provisioning, errors, group_partner_suppliers}`.
+    """
+    cur = await db.business_entities.find_one({"id": entity_id}, {"_id": 0, "provisioning": 1}) or {}
+    state = {k: bool((cur.get("provisioning") or {}).get(k)) for k in PROVISIONING_STEPS}
+    errors: Dict[str, str] = {}
+    extra: Dict[str, Any] = {}
+    for step in PROVISIONING_STEPS:
+        try:
+            extra[step] = await _STEP_FUNCS[step](entity_id, actor_name)
+            state[step] = True
+        except Exception as exc:  # noqa: BLE001 — satu langkah gagal tidak membatalkan PT; dilaporkan
+            print(f"[provision] langkah {step} untuk {entity_id} gagal: {exc}")
+            errors[step] = f"{STEP_LABEL[step]} gagal disiapkan. Tekan Ulangi penyiapan untuk mencoba lagi."
+    provisioning = {**state, "at": now_iso()}
+    await db.business_entities.update_one({"id": entity_id}, {"$set": {"provisioning": provisioning}})
+    return {"provisioning": provisioning, "errors": errors,
+            "group_partner_suppliers": (extra.get("group_partners") or {}).get("suppliers") or {}}

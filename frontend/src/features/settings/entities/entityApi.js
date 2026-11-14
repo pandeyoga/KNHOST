@@ -49,6 +49,10 @@ export const patchEntity = (id, data) =>
 export const getReadiness = (id) =>
   axios.get(`${API}/entities/${id}/readiness`).then((r) => r.data);
 
+// KP-T2 — ulangi langkah penyiapan PT (bagan akun, penanda lapisan, pemasok antar-PT); jawaban memuat kesiapan baru.
+export const retryProvisioning = (id) =>
+  axios.post(`${API}/entities/${id}/provisioning/retry`).then((r) => r.data);
+
 export const getDeactivationImpact = (id) =>
   axios.get(`${API}/entities/${id}/deactivation-impact`).then((r) => r.data);
 

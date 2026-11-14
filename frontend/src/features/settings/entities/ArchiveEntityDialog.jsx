@@ -6,14 +6,49 @@
  * (pengguna aktif, dokumen terbuka, saldo hidup, periode belum tutup); tombol
  * “Arsipkan” baru aktif kalau bersih. Bila memang harus dipaksa, alasan WAJIB dan
  * hanya admin yang boleh — sama seperti aturan servernya, jadi tidak ada kejutan.
+ *
+ * KP-T2 (KP-22) — daftar centang **Sebelum mengarsipkan** = `checks` server (pengguna, dokumen, saldo, karyawan,
+ * periode) — persis yang diperiksa saat arsip. Baris yang belum beres menyebut jumlah dan contohnya (dokumen per jenis
+ * + tiga nomor; saldo per jenis dalam rupiah berpemisah ribuan).
  */
 import { useEffect, useState } from "react";
-import { AlertTriangle, Archive, Loader2, X, Users, FileText, Wallet, CalendarClock } from "lucide-react";
+import { AlertTriangle, Archive, Loader2, X, Users, FileText, Wallet, CalendarClock, CheckCircle2, XCircle,
+  UserCheck } from "lucide-react";
 
 import { getDeactivationImpact, archiveEntity, errText, errBlockers } from "./entityApi";
 import { formatCurrency } from "../../../utils/formatters";
 
-const ICONS = { pengguna: Users, dokumen: FileText, saldo: Wallet, periode: CalendarClock };
+const ICONS = { pengguna: Users, dokumen: FileText, saldo: Wallet, karyawan: UserCheck, periode: CalendarClock };
+
+/** KP-T2 — rincian baris yang belum beres dari data terstruktur (jumlah + contoh; nominal berpemisah ribuan). */
+function CheckDetail({ check, impact }) {
+  if (check.ok) return <p className="text-fs-12 text-kn-text-2">{check.detail}</p>;
+  if (check.key === "dokumen" && (impact?.open_documents || []).length) {
+    return (
+      <ul className="grid gap-0.5 text-fs-12 text-kn-text" data-testid="entity-archive-check-docs">
+        {impact.open_documents.map((d) => (
+          <li key={d.collection}>
+            {d.label}: <b className="tabular-nums">{d.count}</b>
+            {(d.examples || []).length > 0 && <span className="text-kn-text-2"> — mis. {d.examples.join(", ")}</span>}
+          </li>
+        ))}
+      </ul>
+    );
+  }
+  if (check.key === "saldo" && (impact?.balances || []).length) {
+    return (
+      <ul className="grid gap-0.5 text-fs-12 text-kn-text" data-testid="entity-archive-check-balances">
+        {impact.balances.map((b) => (
+          <li key={b.key} className="flex justify-between gap-2" data-testid={`entity-archive-balance-${b.key}`}>
+            <span>{b.label}</span>
+            <b className="tabular-nums">{b.unit ? `${b.amount.toLocaleString("id-ID")} ${b.unit}` : formatCurrency(b.amount)}</b>
+          </li>
+        ))}
+      </ul>
+    );
+  }
+  return <p className="text-fs-12 text-kn-text">{check.detail}</p>;
+}
 
 export default function ArchiveEntityDialog({ entity, onClose, onDone }) {
   const [impact, setImpact] = useState(null);
@@ -98,23 +133,32 @@ export default function ArchiveEntityDialog({ entity, onClose, onDone }) {
               >
                 <p className="flex items-center gap-1.5 text-[11.5px] font-bold text-[#1C1C1E]">
                   {clean ? "Aman diarsipkan — tidak ada yang tertinggal."
-                         : "Belum bisa diarsipkan — masih dipakai:"}
+                         : "Belum bisa diarsipkan — masih ada yang belum beres (lihat daftar di bawah)."}
                 </p>
-                {!clean && (
-                  <ul className="mt-1 space-y-1" data-testid="entity-archive-blockers">
-                    {(impact?.blockers || []).map((b, i) => {
-                      const key = Object.keys(ICONS).find((k) => b.toLowerCase().includes(k));
-                      const Icon = ICONS[key] || AlertTriangle;
-                      return (
-                        <li key={i} className="flex items-start gap-1.5 text-[11px] text-[#3C3C43]"
-                            data-testid={`entity-archive-blocker-${i}`}>
-                          <Icon size={12} className="mt-0.5 shrink-0 text-[#8C4A00]" />
-                          <span>{b}</span>
-                        </li>
-                      );
-                    })}
-                  </ul>
-                )}
+              </div>
+
+              {/* KP-T2 — daftar centang yang sama dengan pemeriksaan server */}
+              <div className="rounded-md border border-kn-divider p-2.5" data-testid="entity-archive-checks">
+                <p className="kicker mb-1.5">Sebelum mengarsipkan</p>
+                <ul className="grid gap-1.5">
+                  {(impact?.checks || []).map((c) => {
+                    const Icon = ICONS[c.key] || AlertTriangle;
+                    return (
+                      <li key={c.key} className="flex items-start gap-2" data-testid={`entity-archive-check-${c.key}`}
+                          data-ok={c.ok ? "ya" : "tidak"}>
+                        {c.ok
+                          ? <CheckCircle2 size={14} className="mt-0.5 shrink-0 text-kn-success-text" aria-label="Beres" />
+                          : <XCircle size={14} className="mt-0.5 shrink-0 text-kn-danger-text" aria-label="Belum beres" />}
+                        <div className="min-w-0 flex-1">
+                          <p className="flex items-center gap-1.5 text-fs-13 font-bold text-kn-text">
+                            <Icon size={12} className="shrink-0 text-kn-text-2" /> {c.label}
+                          </p>
+                          <CheckDetail check={c} impact={impact} />
+                        </div>
+                      </li>
+                    );
+                  })}
+                </ul>
               </div>
 
               <div className="grid gap-2 sm:grid-cols-2">
@@ -131,34 +175,13 @@ export default function ArchiveEntityDialog({ entity, onClose, onDone }) {
                       : ""}
                   </p>
                 </div>
-                <div className="rounded-md border border-[#EFF0F2] bg-[#FAFBFC] p-2.5"
-                     data-testid="entity-archive-docs">
-                  <p className="kicker">Dokumen terbuka</p>
-                  <p className="text-[15px] font-bold tabular-nums">
-                    {impact?.open_documents_total ?? 0}
-                  </p>
-                  <p className="text-[10px] text-[#6B6B73]">
-                    {(impact?.open_documents || []).slice(0, 3)
-                      .map((d) => `${d.label} (${d.count})`).join(" · ") || "Tidak ada"}
-                  </p>
+                <div className="rounded-md border border-kn-divider bg-kn-neutral-soft p-2.5"
+                     data-testid="entity-archive-employees">
+                  <p className="kicker">Karyawan terdaftar</p>
+                  <p className="text-fs-16 font-bold tabular-nums">{impact?.employees ?? 0}</p>
+                  <p className="text-fs-12 text-kn-text-2">Karyawan yang belum berhenti di PT ini (data SDM)</p>
                 </div>
               </div>
-
-              {(impact?.balances || []).length > 0 && (
-                <div className="rounded-md border border-[#EFF0F2] p-2.5"
-                     data-testid="entity-archive-balances">
-                  <p className="kicker mb-1">Saldo yang masih hidup</p>
-                  {impact.balances.map((b) => (
-                    <p key={b.key} className="flex justify-between text-[11.5px]"
-                       data-testid={`entity-archive-balance-${b.key}`}>
-                      <span className="text-[#3C3C43]">{b.label}</span>
-                      <b className="tabular-nums">
-                        {b.unit ? `${b.amount} ${b.unit}` : formatCurrency(b.amount)}
-                      </b>
-                    </p>
-                  ))}
-                </div>
-              )}
 
               {impact?.first_document && (
                 <p className="text-[10.5px] text-[#6B6B73]" data-testid="entity-archive-first-doc">
