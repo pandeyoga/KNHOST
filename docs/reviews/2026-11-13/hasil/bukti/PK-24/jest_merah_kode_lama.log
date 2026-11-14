@@ -1,0 +1,15 @@
+    ✕ ringkasan, pop-up baku, konfirmasi, satu POST; sesudahnya Sisa Dikembalikan · nomor kas (45 ms)
+    ✕ sesudah dikembalikan: label memuat nomor kas; tombol hilang (8 ms)
+    ✕ tanpa izin bayar: tidak ada tombol, alasan tertulis di bilah (9 ms)
+    ✕ draf: Ubah, Ajukan, Unggah Bukti; tanpa Setujui (17 ms)
+    ✓ diajukan: Setujui & Tolak; tanpa Ubah & unggah (12 ms)
+    ✕ pembuat: POST reopen lalu form ubah (ajukan lagi) (7 ms)
+    ✕ bukan pembuat: tanpa tombol, alasan tertulis (6 ms)
+    ✕ diajukan bersisa → Sisa Uang Muka; lebih bayar → Kekurangan Dana (5 ms)
+    ✕ pemegang izin bayar: tombol Bayar → pop-up yang sama dengan rincian LPJ (21 ms)
+    ✓ tanpa izin bayar: tidak ada tombol Bayar (21 ms)
+    ✕ Periode = pilihan bulan, bawaan bulan ini (23 ms)
+    ✕ ubah draf = PATCH; Simpan & Ajukan Lagi = PATCH lalu POST submit (17 ms)
+    ✕ pop-up → konfirmasi → satu POST disburse (46 ms)
+Test Suites: 1 failed, 1 total
+Tests:       11 failed, 2 passed, 13 total

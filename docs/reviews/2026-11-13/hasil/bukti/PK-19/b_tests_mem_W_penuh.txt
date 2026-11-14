@@ -1,0 +1,15 @@
+
+tests_mem/test_PRT3_login_saja.py::test_PRT3_U11_pratinjau_tidak_menulis
+tests_mem/test_PRT3_login_saja.py::test_PRT3_U11_pratinjau_tidak_menulis
+  /tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/wt21/backend/routers/sales_return_exceptions.py:284: PydanticDeprecatedSince20: The `dict` method is deprecated; use `model_dump` instead. Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.13/migration/
+    return await rsp.simulate_cutloss(payload.dict(), ctx.active_entity_id)
+
+tests_mem/test_PRT3_login_saja.py::test_PRT3_U11_pratinjau_tidak_menulis
+tests_mem/test_PRT3_login_saja.py::test_PRT3_U11_pratinjau_tidak_menulis
+  /tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/wt21/backend/routers/sales_return_exceptions.py:293: PydanticDeprecatedSince20: The `dict` method is deprecated; use `model_dump` instead. Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.13/migration/
+    return await rsp.simulate_discount(payload.dict(), ctx.active_entity_id)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests_mem/test_PK19_alur.py::test_PK19_U17_simulasi_bayar_dimatikan - ...
+1 failed, 1591 passed, 2 skipped, 3 xfailed, 11 warnings in 809.01s (0:13:29)

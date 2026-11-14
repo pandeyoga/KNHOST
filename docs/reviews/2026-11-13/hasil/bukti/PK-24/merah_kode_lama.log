@@ -1,0 +1,302 @@
+FFFFFFFFFFFFFFFFFFFFF                                                    [100%]
+=================================== FAILURES ===================================
+________ test_PK24_U1_setujui_akun_pt_sendiri_dan_sisa_terbuka[asyncio] ________
+
+klien = <httpx.AsyncClient object at 0x7fdf9372bb10>
+db = <motor.motor_asyncio.AsyncIOMotorDatabase object at 0x7fdfa5dd0990>
+kepala_admin = {'Authorization': 'Bearer tok_uji_71573a25a8524b8e8c427dff4cb81321', 'X-Entity-Id': 'ent_ksc'}
+siap = True
+
+>       assert _baris(je) == sorted([("6-4600", 500_000, 0), ("6-4100", 300_000, 0), ("1-1400", 0, 800_000)]), je["lines"]
+E       AssertionError: [{'account_code': '6-4900', 'account_name': 'Beban Petty Cash Lainnya', 'debit': 500000.0, 'credit': 0.0, ...}, {'acco... {'account_code': '1-1400', 'account_name': 'Uang Muka & Biaya Dibayar Dimuka', 'debit': 0.0, 'credit': 800000.0, ...}]
+E       assert [('1-1400', 0...00000.0, 0.0)] == [('1-1400', 0...', 500000, 0)]
+E         
+E         At index 2 diff: ('6-4900', 500000.0, 0.0) != ('6-4600', 500000, 0)
+E         Use -v to get more diff
+
+tests_mem/test_PK24_kas_kecil.py:116: AssertionError
+---------------------------- Captured stdout setup -----------------------------
+[bootstrap] SANDI AWAL akun seed (ganti segera): hEIIL5aJGmZ-y5cn
+[bootstrap] migrasi bentuk status_history lot skip: No module named 'migrate_lot_status_history_keys'
+[bootstrap] FASE F lifecycle backfill: 5 produk distempel 'produksi'
+[bootstrap] kebersihan data: 5 record dirapikan {'customers': 3, 'suppliers': 0, 'users': 0, 'hr_employees': 2, 'makloons': 0}
+______________ test_PK24_U2_kembalikan_sisa_ke_kas_kecil[asyncio] ______________
+
+klien = <httpx.AsyncClient object at 0x7fdf9372bb10>
+db = <motor.motor_asyncio.AsyncIOMotorDatabase object at 0x7fdfa5dd0990>
+kepala_admin = {'Authorization': 'Bearer tok_uji_71573a25a8524b8e8c427dff4cb81321', 'X-Entity-Id': 'ent_ksc'}
+
+>       ca, sid = SIMPAN["u1"]
+E       KeyError: 'u1'
+
+tests_mem/test_PK24_kas_kecil.py:127: KeyError
+________________ test_PK24_U3_kembalikan_lagi_ditolak[asyncio] _________________
+
+klien = <httpx.AsyncClient object at 0x7fdf9372bb10>
+db = <motor.motor_asyncio.AsyncIOMotorDatabase object at 0x7fdfa5dd0990>
+kepala_admin = {'Authorization': 'Bearer tok_uji_71573a25a8524b8e8c427dff4cb81321', 'X-Entity-Id': 'ent_ksc'}
+
+>       _, sid = SIMPAN["u1"]
+E       KeyError: 'u1'
+
+tests_mem/test_PK24_kas_kecil.py:147: KeyError
+_______________ test_PK24_U4_ubah_lpj_diajukan_ditolak[asyncio] ________________
+
+klien = <httpx.AsyncClient object at 0x7fdf9372bb10>
+db = <motor.motor_asyncio.AsyncIOMotorDatabase object at 0x7fdfa5dd0990>
+kepala_admin = {'Authorization': 'Bearer tok_uji_71573a25a8524b8e8c427dff4cb81321', 'X-Entity-Id': 'ent_ksc'}
+siap = True
+
+>       assert r.status_code == 409, r.text
+E       AssertionError: {"id":"stl_48fced281b42","number":"KSC/STL-00002","entity_id":"ent_ksc","cash_advance_id":"ca_pk24_efe151ef","cash_advance_number":"PD-efe151ef","divisi":"Umum","periode":"2026-11","dibuat_oleh":"Budi Santoso","disetujui_oleh":"","catatan":"","status":"submitted","journal_entry_id":"","created_by":"Budi Santoso","created_by_id":"user_admin_01","created_at":"2026-11-14T15:36:26.435425+00:00","updated_at":"2026-11-14T15:36:26.492523+00:00","expense_lines":[{"date":"2026-11-14","description":"ubah","category":"transportasi","amount":50000.0}],"category_totals":{"transportasi":50000.0},"total_pengeluaran":50000.0,"total_pettycash":400000.0,"sisa_kurang_dana":350000.0,"refs":[{"rel":"parent","doc_type":"cash_advance","doc_id":"ca_pk24_efe151ef","doc_number":"PD-efe151ef","note":"pertanggungjawaban PD","at":"2026-11-14T15:36:26.435856+00:00"}],"budget_check":{"mode":"warn","mode_label":"Peringatkan","when":"lpj_submit","checked_at":"2026-11-14T15:36:26.459888+00:00","warnings":[],"checks":[{"entity_id":"ent_ksc","dimension":"category","key":"transportasi","label":"Transportasi (Service Mobil/Taxi/BBM/Tol/Parkir)","year":2026,"month":11,"period_basis":"annual","has_budget":false,"budget_id":"","budget":0.0,"actual":500000.0,"committed":0.0,"spent":500000.0,"available":-500000.0,"amount":300000.0,"available_after":-800000.0,"over":false,"over_amount":0.0,"used_pct_after":null,"mode":"warn","mode_label":"Peringatkan","unbudgeted_action":"allow","warn_threshold_pct":85.0,"blocked":false,"warning":""}],"blocked":false,"skipped":false}}
+E       assert 200 == 409
+E        +  where 200 = <Response [200 OK]>.status_code
+
+tests_mem/test_PK24_kas_kecil.py:160: AssertionError
+_____________ test_PK24_U4b_lampiran_lpj_diajukan_ditolak[asyncio] _____________
+
+klien = <httpx.AsyncClient object at 0x7fdf9372bb10>
+kepala_admin = {'Authorization': 'Bearer tok_uji_71573a25a8524b8e8c427dff4cb81321', 'X-Entity-Id': 'ent_ksc'}
+simpan_lokal = PosixPath('/tmp/pytest-of-root/pytest-546/test_PK24_U4b_lampiran_lpj_dia0')
+
+>       _, stl = SIMPAN["u4"]
+E       KeyError: 'u4'
+
+tests_mem/test_PK24_kas_kecil.py:169: KeyError
+________________ test_PK24_U5_setujui_lpj_draf_ditolak[asyncio] ________________
+
+klien = <httpx.AsyncClient object at 0x7fdf9372bb10>
+db = <motor.motor_asyncio.AsyncIOMotorDatabase object at 0x7fdfa5dd0990>
+kepala_admin = {'Authorization': 'Bearer tok_uji_71573a25a8524b8e8c427dff4cb81321', 'X-Entity-Id': 'ent_ksc'}
+siap = True
+
+>       assert (r.status_code, r.json()["detail"]) == (409, f"LPJ {stl['number']} belum diajukan."), r.text
+E       KeyError: 'detail'
+
+tests_mem/test_PK24_kas_kecil.py:179: KeyError
+_____________ test_PK24_U6_periode_tertutup_tanpa_tulisan[asyncio] _____________
+
+klien = <httpx.AsyncClient object at 0x7fdf9372bb10>
+db = <motor.motor_asyncio.AsyncIOMotorDatabase object at 0x7fdfa5dd0990>
+kepala_admin = {'Authorization': 'Bearer tok_uji_71573a25a8524b8e8c427dff4cb81321', 'X-Entity-Id': 'ent_ksc'}
+siap = True
+paksa_jurnal_gagal = <function paksa_jurnal_gagal.<locals>._paksa at 0x7fdf923d3100>
+
+>       _, stl = SIMPAN["u4"]
+E       KeyError: 'u4'
+
+tests_mem/test_PK24_kas_kecil.py:189: KeyError
+___________ test_PK24_U7_jurnal_gagal_ke_panel_lalu_diulang[asyncio] ___________
+
+klien = <httpx.AsyncClient object at 0x7fdf9372bb10>
+db = <motor.motor_asyncio.AsyncIOMotorDatabase object at 0x7fdfa5dd0990>
+kepala_admin = {'Authorization': 'Bearer tok_uji_71573a25a8524b8e8c427dff4cb81321', 'X-Entity-Id': 'ent_ksc'}
+siap = True
+paksa_jurnal_gagal = <function paksa_jurnal_gagal.<locals>._paksa at 0x7fdf923d2c00>
+
+>       ca, stl = SIMPAN["u4"]
+E       KeyError: 'u4'
+
+tests_mem/test_PK24_kas_kecil.py:199: KeyError
+________ test_PK24_U8_finance_bayar_reimburse_dengan_rekening[asyncio] _________
+
+klien = <httpx.AsyncClient object at 0x7fdf9372bb10>
+db = <motor.motor_asyncio.AsyncIOMotorDatabase object at 0x7fdfa5dd0990>
+kepala_admin = {'Authorization': 'Bearer tok_uji_71573a25a8524b8e8c427dff4cb81321', 'X-Entity-Id': 'ent_ksc'}
+akun = <function akun.<locals>._akun at 0x7fdf923d3240>
+sesi = <function sesi.<locals>._sesi at 0x7fdf92322980>, siap = True
+
+>       assert r.json()["sisa_dikembalikan"]["status"] == "none"
+E       KeyError: 'sisa_dikembalikan'
+
+tests_mem/test_PK24_kas_kecil.py:230: KeyError
+________ test_PK24_U8b_bayar_reimburse_tanpa_izin_pay_ditolak[asyncio] _________
+
+klien = <httpx.AsyncClient object at 0x7fdf9372bb10>
+db = <motor.motor_asyncio.AsyncIOMotorDatabase object at 0x7fdfa5dd0990>
+kepala_admin = {'Authorization': 'Bearer tok_uji_71573a25a8524b8e8c427dff4cb81321', 'X-Entity-Id': 'ent_ksc'}
+akun = <function akun.<locals>._akun at 0x7fdf923d3240>
+sesi = <function sesi.<locals>._sesi at 0x7fdf92322980>
+peran_tanpa_acuan = <function peran_tanpa_acuan.<locals>._peran at 0x7fdf923d34c0>
+siap = True
+
+>       assert r.status_code == 403, r.text
+E       AssertionError: {"detail": "Pertanggungjawaban tidak ditemukan"}
+E       assert 404 == 403
+E        +  where 404 = <Response [404 Not Found]>.status_code
+
+tests_mem/test_PK24_kas_kecil.py:251: AssertionError
+___________ test_PK24_U9_cairkan_finance_boleh_sales_tidak[asyncio] ____________
+
+klien = <httpx.AsyncClient object at 0x7fdf9372bb10>
+db = <motor.motor_asyncio.AsyncIOMotorDatabase object at 0x7fdfa5dd0990>
+akun = <function akun.<locals>._akun at 0x7fdf923d3240>
+sesi = <function sesi.<locals>._sesi at 0x7fdf92322980>, siap = True
+
+>       assert pd["status"] == "disbursed" and pd["disbursed_by_id"] == keu["id"]
+E       KeyError: 'disbursed_by_id'
+
+tests_mem/test_PK24_kas_kecil.py:265: KeyError
+_____________ test_PK24_U9b_cairkan_dua_orang_bila_diatur[asyncio] _____________
+
+klien = <httpx.AsyncClient object at 0x7fdf9372bb10>
+db = <motor.motor_asyncio.AsyncIOMotorDatabase object at 0x7fdfa5dd0990>
+akun = <function akun.<locals>._akun at 0x7fdf923d3240>
+sesi = <function sesi.<locals>._sesi at 0x7fdf92322980>, siap = True
+
+>       await resolver.set_value(key, "2", scope_type="entity", scope_id=KSC, reason="uji PK-24", actor="uji")
+
+tests_mem/test_PK24_kas_kecil.py:275: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+services/config_resolver.py:519: in set_value
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+key = 'kontrol.cairkan_uang_muka.min_orang'
+
+>           raise KeyError(f"Setting '{key}' tidak ada di registry")
+E           KeyError: "Setting 'kontrol.cairkan_uang_muka.min_orang' tidak ada di registry"
+
+config_registry.py:395: KeyError
+_______________ test_PK24_U10_izin_terima_pengembalian[asyncio] ________________
+
+klien = <httpx.AsyncClient object at 0x7fdf9372bb10>
+db = <motor.motor_asyncio.AsyncIOMotorDatabase object at 0x7fdfa5dd0990>
+kepala_admin = {'Authorization': 'Bearer tok_uji_71573a25a8524b8e8c427dff4cb81321', 'X-Entity-Id': 'ent_ksc'}
+akun = <function akun.<locals>._akun at 0x7fdf923d3240>
+sesi = <function sesi.<locals>._sesi at 0x7fdf92322980>
+peran_tanpa_acuan = <function peran_tanpa_acuan.<locals>._peran at 0x7fdf923d34c0>
+peran_manajer_kosong = <function peran_manajer_kosong.<locals>._peran at 0x7fdf923eafc0>
+siap = True
+
+>       assert r.status_code == 200 and r.json()["sisa_dikembalikan"]["status"] == "open", r.text
+E       KeyError: 'sisa_dikembalikan'
+
+tests_mem/test_PK24_kas_kecil.py:295: KeyError
+_____________ test_PK24_U10b_izin_bawaan_bayar_kas_kecil[asyncio] ______________
+
+klien = <httpx.AsyncClient object at 0x7fdf9372bb10>
+kepala_admin = {'Authorization': 'Bearer tok_uji_71573a25a8524b8e8c427dff4cb81321', 'X-Entity-Id': 'ent_ksc'}
+
+>           assert "pay" in p["cash_settlement"], (peran, p.get("cash_settlement"))
+E           AssertionError: ('admin', ['view', 'create', 'update', 'submit', 'approve', 'reject', ...])
+E           assert 'pay' in ['view', 'create', 'update', 'submit', 'approve', 'reject', ...]
+
+tests_mem/test_PK24_kas_kecil.py:311: AssertionError
+_________________ test_PK24_U11_wajib_lampiran_per_pt[asyncio] _________________
+
+klien = <httpx.AsyncClient object at 0x7fdf9372bb10>
+db = <motor.motor_asyncio.AsyncIOMotorDatabase object at 0x7fdfa5dd0990>
+kepala_admin = {'Authorization': 'Bearer tok_uji_71573a25a8524b8e8c427dff4cb81321', 'X-Entity-Id': 'ent_ksc'}
+sesi = <function sesi.<locals>._sesi at 0x7fdf92322980>, siap = True
+simpan_lokal = PosixPath('/tmp/pytest-of-root/pytest-546/test_PK24_U11_wajib_lampiran_p0')
+
+>       assert r.status_code == 200, r.text
+E       AssertionError: {"detail":"Setting 'finance.lpj_wajib_lampiran' tidak ada di registry"}
+E       assert 404 == 200
+E        +  where 404 = <Response [404 Not Found]>.status_code
+
+tests_mem/test_PK24_kas_kecil.py:326: AssertionError
+______ test_PK24_U11b_lampiran_hanya_saat_draf_dan_bisa_dihapus[asyncio] _______
+
+klien = <httpx.AsyncClient object at 0x7fdf9372bb10>
+db = <motor.motor_asyncio.AsyncIOMotorDatabase object at 0x7fdfa5dd0990>
+kepala_admin = {'Authorization': 'Bearer tok_uji_71573a25a8524b8e8c427dff4cb81321', 'X-Entity-Id': 'ent_ksc'}
+siap = True
+simpan_lokal = PosixPath('/tmp/pytest-of-root/pytest-546/test_PK24_U11b_lampiran_hanya_0')
+
+>       assert r.status_code == 400, r.text
+E       AssertionError: {"detail":"Not Found"}
+E       assert 404 == 400
+E        +  where 404 = <Response [404 Not Found]>.status_code
+
+tests_mem/test_PK24_kas_kecil.py:353: AssertionError
+_________________ test_PK24_U12_buka_lagi_ubah_ajukan[asyncio] _________________
+
+klien = <httpx.AsyncClient object at 0x7fdf9372bb10>
+db = <motor.motor_asyncio.AsyncIOMotorDatabase object at 0x7fdfa5dd0990>
+kepala_admin = {'Authorization': 'Bearer tok_uji_71573a25a8524b8e8c427dff4cb81321', 'X-Entity-Id': 'ent_ksc'}
+akun = <function akun.<locals>._akun at 0x7fdf923d3240>
+sesi = <function sesi.<locals>._sesi at 0x7fdf92322980>, siap = True
+
+>       assert r.status_code == 403, r.text
+E       AssertionError: {"detail":"Not Found"}
+E       assert 404 == 403
+E        +  where 404 = <Response [404 Not Found]>.status_code
+
+tests_mem/test_PK24_kas_kecil.py:376: AssertionError
+_____________ test_PK24_U12b_buka_lagi_hanya_lpj_ditolak[asyncio] ______________
+
+klien = <httpx.AsyncClient object at 0x7fdf9372bb10>
+db = <motor.motor_asyncio.AsyncIOMotorDatabase object at 0x7fdfa5dd0990>
+kepala_admin = {'Authorization': 'Bearer tok_uji_71573a25a8524b8e8c427dff4cb81321', 'X-Entity-Id': 'ent_ksc'}
+siap = True
+
+>       assert r.status_code == 409, r.text
+E       AssertionError: {"detail":"Not Found"}
+E       assert 404 == 409
+E        +  where 404 = <Response [404 Not Found]>.status_code
+
+tests_mem/test_PK24_kas_kecil.py:394: AssertionError
+_________________ test_PK24_periode_lpj_berupa_bulan[asyncio] __________________
+
+klien = <httpx.AsyncClient object at 0x7fdf9372bb10>
+db = <motor.motor_asyncio.AsyncIOMotorDatabase object at 0x7fdfa5dd0990>
+kepala_admin = {'Authorization': 'Bearer tok_uji_71573a25a8524b8e8c427dff4cb81321', 'X-Entity-Id': 'ent_ksc'}
+siap = True
+
+>       assert r.status_code == 400 and "bulan" in r.json()["detail"].lower(), r.text
+E       AssertionError: {"id":"stl_7efecc8eb9c4","number":"KSC/STL-00010","entity_id":"ent_ksc","cash_advance_id":"ca_pk24_20b8ef51","cash_advance_number":"PD-20b8ef51","divisi":"Umum","periode":"Juli 2026","dibuat_oleh":"Budi Santoso","disetujui_oleh":"","catatan":"","status":"draft","journal_entry_id":"","created_by":"Budi Santoso","created_by_id":"user_admin_01","created_at":"2026-11-14T15:36:28.505088+00:00","updated_at":"2026-11-14T15:36:28.505093+00:00","expense_lines":[{"date":"2026-11-14","description":"x","category":"atk","amount":10000.0}],"category_totals":{"atk":10000.0},"total_pengeluaran":10000.0,"total_pettycash":70000.0,"sisa_kurang_dana":60000.0}
+E       assert (200 == 400)
+E        +  where 200 = <Response [200 OK]>.status_code
+
+tests_mem/test_PK24_kas_kecil.py:403: AssertionError
+________ test_PK24_pengembalian_gagal_jurnal_diulang_satu_kas[asyncio] _________
+
+klien = <httpx.AsyncClient object at 0x7fdf9372bb10>
+db = <motor.motor_asyncio.AsyncIOMotorDatabase object at 0x7fdfa5dd0990>
+kepala_admin = {'Authorization': 'Bearer tok_uji_71573a25a8524b8e8c427dff4cb81321', 'X-Entity-Id': 'ent_ksc'}
+siap = True
+paksa_jurnal_gagal = <function paksa_jurnal_gagal.<locals>._paksa at 0x7fdf923d2020>
+
+>       assert r.status_code == 200 and r.json()["sisa_dikembalikan"]["amount"] == 200_000, r.text
+E       KeyError: 'sisa_dikembalikan'
+
+tests_mem/test_PK24_kas_kecil.py:412: KeyError
+_________ test_PK24_U13_padanan_b_dua_pengembalian_bersamaan[asyncio] __________
+
+klien = <httpx.AsyncClient object at 0x7fdf9372bb10>
+db = <motor.motor_asyncio.AsyncIOMotorDatabase object at 0x7fdfa5dd0990>
+kepala_admin = {'Authorization': 'Bearer tok_uji_71573a25a8524b8e8c427dff4cb81321', 'X-Entity-Id': 'ent_ksc'}
+siap = True
+
+>       assert r.status_code == 200 and r.json()["sisa_dikembalikan"]["amount"] == 300_000, r.text
+E       KeyError: 'sisa_dikembalikan'
+
+tests_mem/test_PK24_kas_kecil.py:437: KeyError
+=============================== warnings summary ===============================
+../../venv311/lib/python3.11/site-packages/starlette/formparsers.py:12
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests_mem/test_PK24_kas_kecil.py::test_PK24_U1_setujui_akun_pt_sendiri_dan_sisa_terbuka[asyncio]
+FAILED tests_mem/test_PK24_kas_kecil.py::test_PK24_U2_kembalikan_sisa_ke_kas_kecil[asyncio]
+FAILED tests_mem/test_PK24_kas_kecil.py::test_PK24_U3_kembalikan_lagi_ditolak[asyncio]
+FAILED tests_mem/test_PK24_kas_kecil.py::test_PK24_U4_ubah_lpj_diajukan_ditolak[asyncio]
+FAILED tests_mem/test_PK24_kas_kecil.py::test_PK24_U4b_lampiran_lpj_diajukan_ditolak[asyncio]
+FAILED tests_mem/test_PK24_kas_kecil.py::test_PK24_U5_setujui_lpj_draf_ditolak[asyncio]
+FAILED tests_mem/test_PK24_kas_kecil.py::test_PK24_U6_periode_tertutup_tanpa_tulisan[asyncio]
+FAILED tests_mem/test_PK24_kas_kecil.py::test_PK24_U7_jurnal_gagal_ke_panel_lalu_diulang[asyncio]
+FAILED tests_mem/test_PK24_kas_kecil.py::test_PK24_U8_finance_bayar_reimburse_dengan_rekening[asyncio]
+FAILED tests_mem/test_PK24_kas_kecil.py::test_PK24_U8b_bayar_reimburse_tanpa_izin_pay_ditolak[asyncio]
+FAILED tests_mem/test_PK24_kas_kecil.py::test_PK24_U9_cairkan_finance_boleh_sales_tidak[asyncio]
+FAILED tests_mem/test_PK24_kas_kecil.py::test_PK24_U9b_cairkan_dua_orang_bila_diatur[asyncio]
+FAILED tests_mem/test_PK24_kas_kecil.py::test_PK24_U10_izin_terima_pengembalian[asyncio]
+FAILED tests_mem/test_PK24_kas_kecil.py::test_PK24_U10b_izin_bawaan_bayar_kas_kecil[asyncio]
+FAILED tests_mem/test_PK24_kas_kecil.py::test_PK24_U11_wajib_lampiran_per_pt[asyncio]
+FAILED tests_mem/test_PK24_kas_kecil.py::test_PK24_U11b_lampiran_hanya_saat_draf_dan_bisa_dihapus[asyncio]
+FAILED tests_mem/test_PK24_kas_kecil.py::test_PK24_U12_buka_lagi_ubah_ajukan[asyncio]
+FAILED tests_mem/test_PK24_kas_kecil.py::test_PK24_U12b_buka_lagi_hanya_lpj_ditolak[asyncio]
+FAILED tests_mem/test_PK24_kas_kecil.py::test_PK24_periode_lpj_berupa_bulan[asyncio]
+FAILED tests_mem/test_PK24_kas_kecil.py::test_PK24_pengembalian_gagal_jurnal_diulang_satu_kas[asyncio]
+FAILED tests_mem/test_PK24_kas_kecil.py::test_PK24_U13_padanan_b_dua_pengembalian_bersamaan[asyncio]
+21 failed, 1 warning in 7.59s

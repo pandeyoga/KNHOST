@@ -1,0 +1,3 @@
+# tests_mem penuh di W (basis 654119a)
+sebelum: 1568 passed, 2 skipped, 3 xfailed, 11 warnings in 764.67s (0:12:44)
+sesudah: 1592 passed, 2 skipped, 3 xfailed, 11 warnings in 821.12s (0:13:41)

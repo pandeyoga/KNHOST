@@ -1,0 +1,40 @@
+HEAD tujuan: 9d29e77 (basis B 3883cda)
+Berkas: SALIN = HEAD sama dengan B; GABUNG = git merge-file tanpa bentrok; BENTROK = dibangkitkan ulang; BARU = disalin
+BENTROK CODEBASE_MAP.md -> python3 scripts/gen_codebase_map.py
+GABUNG ENTITY_REGISTRY.md, docs/KN_32_GLOSARIUM_BAHASA_ANTARMUKA.md (PK-27 + AG-T4 berdampingan)
+SALIN/BARU: lainnya (25 berkas)
+
+tests_mem T: 1607 passed, 2 skipped, 3 xfailed, 12 warnings in 760.18s (0:12:40)  (HEAD = 1568 + 18 PK-27 = 1586; + 21 AG-T4)
+jest T: Test Suites: 35 failed, 105 passed, 140 total Tests:       850 passed, 850 total  (HEAD = 836 + 4 PK-27 = 840; + 10 AG-T4; 35 suite gagal dimuat cmdk/@radix-ui = lingkungan)
+
+verify_auth_coverage: [FAIL] 27 pelanggaran :
+verify_ui_standard: [FAIL] 13 pelanggaran :
+verify_approval_queues: 
+audit_i18n_id:   ✗ 103 temuan di 60 berkas.
+audit_create_modal: [FAIL] 6 pelanggaran :
+verify_page_tabs: [FAIL] 1 pelanggaran total (INV-UI-12 1 · INV-UI-13 0 · INV-UI-14 0)
+verify_to_list_bound: [FAIL] 6 pelanggaran :
+verify_list_export: [PASS] 0 pelanggaran.
+verify_error_notice: [PASS] 0 pelanggaran.
+verify_custom_modals: [PASS] 0 pelanggaran.
+verify_knselect_contract: verify_knselect_contract: 0 temuan
+verify_entity_label:   ✗ 2 pelanggaran:
+verify_access_catalog_nav: verify_access_catalog_nav: 0 temuan
+verify_money_idempotency: [PASS] 0 pelanggaran.
+verify_codebase_map: [PASS] 0 pelanggaran.
+verify_scope_guard: 
+verify_role_gate_ui.py: [PASS] 31 cek lolos, 0 pelanggaran.
+verify_config_fallback.py: [PASS] 153 cek lolos, 0 pelanggaran.
+verify_config_fallback.py --entity: [PASS] 153 cek lolos, 0 pelanggaran.
+verify_payment_vocab.py: [PASS] 1785 cek lolos, 0 pelanggaran.
+verify_access_catalog_nav.py: verify_access_catalog_nav: 0 temuan
+verify_permission_checked.py: [PASS] 590 cek lolos, 0 pelanggaran.
+verify_posting_coverage.py: [PASS] 145 cek lolos, 0 pelanggaran.
+verify_cash_single_door.py: [PASS] 710 cek lolos, 0 pelanggaran.
+verify_config_text.py: [PASS] 3178 cek lolos, 0 pelanggaran.
+verify_codebase_map.py: [PASS] 5 cek lolos, 0 pelanggaran.
+✅ INV-CFG: setiap setting terdeklarasi punya pembaca kode DAN jalur ubah yang nyata; tidak ada editor ganda.
+
+check_nav_map: PASS
+gen_config_key_index --check: selaras
+entity_write_guard --self-test: HIJAU

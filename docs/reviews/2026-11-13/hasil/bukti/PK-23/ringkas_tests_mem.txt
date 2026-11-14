@@ -1,0 +1,6 @@
+B (654119a): 1568 passed, 2 skipped, 3 xfailed, 11 warnings in 752.98s (0:12:32)
+(a) W: 1580 passed, 2 skipped, 8 xfailed, 11 warnings in 287.99s (0:04:47)
+(b) W: 1588 passed, 2 skipped, 3 xfailed, 11 warnings in 893.95s (0:14:53)
+(a) T 9d29e77: 1598 passed, 2 skipped, 8 xfailed, 12 warnings in 551.95s (0:09:11)
+(b) T 9d29e77: 1606 passed, 2 skipped, 3 xfailed, 12 warnings in 929.37s (0:15:29)
+HEAD 9d29e77 bersih: 1586 passed, 2 skipped, 3 xfailed, 12 warnings in 646.35s (0:10:46)

@@ -1,0 +1,21 @@
+FAILED test_AGT4_paket.py::test_AGT4_U2_batas_bulan - ModuleNotFoun...
+FAILED test_AGT4_paket.py::test_AGT4_U1_laba_rugi_sama_dengan_layar[asyncio]
+FAILED test_AGT4_paket.py::test_AGT4_U3_pencocokan_piutang[asyncio]
+FAILED test_AGT4_paket.py::test_AGT4_U3b_akun_kontrol_belum_dipetakan_tidak_ditebak[asyncio]
+FAILED test_AGT4_paket.py::test_AGT4_U4_tanpa_izin_hutang_dilewati[asyncio]
+FAILED test_AGT4_paket.py::test_AGT4_U5_semua_pt_409[asyncio] - Ass...
+FAILED test_AGT4_paket.py::test_AGT4_U6_pt_lain[asyncio] - Assertio...
+FAILED test_AGT4_paket.py::test_AGT4_U9_jurnal_manual[asyncio] - Ke...
+FAILED test_AGT4_paket.py::test_AGT4_U10_unduh_excel[asyncio] - Key...
+FAILED test_AGT4_paket.py::test_AGT4_U11_bulan_tidak_sah[asyncio]
+FAILED test_AGT4_paket.py::test_AGT4_U15_paket_orang_lain_404[asyncio]
+FAILED test_AGT4_paket.py::test_AGT4_gerbang_asisten_keuangan[asyncio]
+FAILED test_AGT4_paket.py::test_AGT4_kemajuan_per_lembar[asyncio]
+FAILED test_AGT4_paket.py::test_AGT4_U7_angka_karangan_ditolak[asyncio]
+FAILED test_AGT4_paket.py::test_AGT4_U8_angka_cocok_dipakai[asyncio]
+FAILED test_AGT4_paket.py::test_AGT4_modul_tanpa_db_dan_tanpa_alat_tindakan
+FAILED test_AGT4_ringkasan_pagi.py::test_AGT4_U12_ringkasan_pagi[asyncio]
+FAILED test_AGT4_ringkasan_pagi.py::test_AGT4_U12b_hutang_jatuh_tempo_hari_ini[asyncio]
+FAILED test_AGT4_ringkasan_pagi.py::test_AGT4_jadwal_hanya_harian_dan_berizin[asyncio]
+FAILED test_AGT4_ringkasan_pagi.py::test_AGT4_U14_sisipan_perintah[asyncio]
+FAILED test_AGT4_ringkasan_pagi.py::test_AGT4_U13_sakelar_dicabut[asyncio]

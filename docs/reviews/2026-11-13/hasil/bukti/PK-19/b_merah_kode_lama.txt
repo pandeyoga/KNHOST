@@ -1,0 +1,27 @@
+E   AssertionError: {"id":"pvd_093358d8a59a","number":"KSC/SLB-00001","side":"ar","entity_id":"ent_ksc","receipt_id":"arc_pk19_40c26df0","receipt_number":"KW-PK19-2","customer_id":"cusa_pk19_ae792db2","customer_name":"Toko PK19","direction":"over","kind":"allo
+/tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/wt21/backend/tests_mem/test_PK19_alur.py:149: AssertionError: {"id":"pvd_093358d8a59a","number":"KSC/SLB-00001","side":"ar","entity_id":"ent_ksc","receipt_id":"arc_pk19_40c26df0","
+E   AssertionError: {"id":"pvd_82d50fe2f351","number":"KSC/SLB-00002","side":"ar","entity_id":"ent_ksc","receipt_id":"arc_pk19_692dd9f0","receipt_number":"KW-PK19-4","customer_id":"cusa_pk19_ae792db2","customer_name":"Toko PK19","direction":"over","kind":"allo
+/tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/wt21/backend/tests_mem/test_PK19_alur.py:162: AssertionError: {"id":"pvd_82d50fe2f351","number":"KSC/SLB-00002","side":"ar","entity_id":"ent_ksc","receipt_id":"arc_pk19_692dd9f0","
+E   AssertionError: {"id":"arc_2d79a6cdd491","number":"KSC/AR-00001","customer_id":"cusa_pk19_ae792db2","customer_name":"Toko A PK19","entity_id":"ent_ksc","receipt_date":"2026-11-14T15:20:19.097721+00:00","method":"transfer","amount":500000.0,"used_deposit":0
+/tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/wt21/backend/tests_mem/test_PK19_alur.py:172: AssertionError: {"id":"arc_2d79a6cdd491","number":"KSC/AR-00001","customer_id":"cusa_pk19_ae792db2","customer_name":"Toko A PK19","ent
+E   AssertionError: {"id":"pvd_84e20fe0b300","number":"KSC/SLB-00003","side":"ar","entity_id":"ent_ksc","receipt_id":"arc_pk19_bbf0dcad","receipt_number":"KW-PK19-8","customer_id":"cusa_pk19_ae792db2","customer_name":"Toko PK19","direction":"over","kind":"allo
+/tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/wt21/backend/tests_mem/test_PK19_alur.py:194: AssertionError: {"id":"pvd_84e20fe0b300","number":"KSC/SLB-00003","side":"ar","entity_id":"ent_ksc","receipt_id":"arc_pk19_bbf0dcad","
+E   AssertionError: {"id":"arc_58c177b53d0a","number":"KSC/AR-00002","customer_id":"cusa_pk19_ae792db2","customer_name":"Toko A PK19","entity_id":"ent_ksc","receipt_date":"2026-11-14T15:20:19.150585+00:00","method":"cash","amount":1200000.0,"used_deposit":0.0,
+/tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/wt21/backend/tests_mem/test_PK19_alur.py:232: AssertionError: {"id":"arc_58c177b53d0a","number":"KSC/AR-00002","customer_id":"cusa_pk19_ae792db2","customer_name":"Toko A PK19","ent
+E   ValueError: not enough values to unpack (expected 2, got 0)
+/tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/wt21/backend/tests_mem/test_PK19_alur.py:257: ValueError: not enough values to unpack (expected 2, got 0)
+E   AssertionError: {"detail":"Selisih kwitansi KSC/AR-00004 sudah diputus (Hapus sisa kurang bayar)."}
+/tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/wt21/backend/tests_mem/test_PK19_alur.py:274: AssertionError: {"detail":"Selisih kwitansi KSC/AR-00004 sudah diputus (Hapus sisa kurang bayar)."}
+E   AssertionError: Internal Server Error
+/tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/wt21/backend/tests_mem/test_PK19_alur.py:295: AssertionError: Internal Server Error
+E   KeyError: 'gl_status'
+/tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/wt21/backend/tests_mem/test_PK19_alur.py:351: KeyError: 'gl_status'
+E   AssertionError: {"detail":"Pesanan SO-PK19-B1-14 bukan milik pelanggan yang dipilih"}
+/tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/wt21/backend/tests_mem/test_PK19_alur.py:383: AssertionError: {"detail":"Pesanan SO-PK19-B1-14 bukan milik pelanggan yang dipilih"}
+E   KeyError: 'kind'
+/tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/wt21/backend/tests_mem/test_PK19_alur.py:397: KeyError: 'kind'
+E   assert (None)
+/tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/wt21/backend/tests_mem/test_PK19_alur.py:416: assert (None)
+E   AssertionError: {"id":"inv_0813f8ce99b8","number":"INV-PK19-A1-17-01","order_id":"so_pk19_5da640af","order_number":"SO-PK19-A1-17","customer_id":"cusa_pk19_ae792db2","customer_name":"Toko PK19","entity_id":"ent_ksc","amount":1000000.0,"total_amount":0.0,"d
+/tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/wt21/backend/tests_mem/test_PK19_alur.py:432: AssertionError: {"id":"inv_0813f8ce99b8","number":"INV-PK19-A1-17-01","order_id":"so_pk19_5da640af","order_number":"SO-PK19-A1-17","cu
+13 failed, 1 passed, 1 warning in 1.76s

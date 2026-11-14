@@ -1,0 +1,4 @@
+# jest penuh di W
+Test Suites: 35 failed, 104 passed, 139 total
+Tests:       850 passed, 850 total
+suite gagal dimuat: 35 (semua: Cannot find module '@radix-ui/primitive/is-development')

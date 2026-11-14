@@ -1,0 +1,76 @@
+{
+ "sections": [
+  [
+   "ringkasan",
+   "ok"
+  ],
+  [
+   "laba_rugi",
+   "ok"
+  ],
+  [
+   "neraca",
+   "ok"
+  ],
+  [
+   "arus_kas",
+   "ok"
+  ],
+  [
+   "umur_piutang",
+   "ok"
+  ],
+  [
+   "umur_hutang",
+   "ok"
+  ],
+  [
+   "pencocokan",
+   "ok"
+  ],
+  [
+   "antar_pt",
+   "ok"
+  ],
+  [
+   "kas_bank",
+   "ok"
+  ],
+  [
+   "posting_gagal",
+   "ok"
+  ],
+  [
+   "jurnal_manual",
+   "ok"
+  ],
+  [
+   "status_periode",
+   "ok"
+  ]
+ ],
+ "summary": "Laba bersih: Rp 300.000. Total aset: Rp 8.330.000. Kas akhir periode: Rp 330.000. Total piutang: Rp 7.500.000. Dokumen gagal posting: 0.",
+ "pencocokan": [
+  {
+   "item": "Piutang usaha (1-1200)",
+   "gl": 8000000.0,
+   "sub": 7500000.0,
+   "difference": 500000.0,
+   "note": "Umur Piutang (sudah diakui) per 28 Feb 2026"
+  },
+  {
+   "item": "Hutang usaha (2-1100)",
+   "gl": 0.0,
+   "sub": 0.0,
+   "difference": 0.0,
+   "note": "Umur Hutang saat paket dibuat (14 Nov 2026)"
+  },
+  {
+   "item": "Persediaan",
+   "gl": 0.0,
+   "sub": 0.0,
+   "difference": 0.0,
+   "note": "Nilai roll vs saldo buku besar saat paket dibuat (14 Nov 2026)"
+  }
+ ]
+}

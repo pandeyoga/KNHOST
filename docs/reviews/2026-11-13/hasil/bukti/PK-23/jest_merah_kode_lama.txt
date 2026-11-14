@@ -1,0 +1,27 @@
+  ✕ U15: sumber dana wajib; hutang mati beralasan; kas/bank memunculkan Rekening; simpan mengirim rekening (200 ms)
+  ✕ PT tanpa rekening: kas/bank dipilih → simpan mati dengan alasan rekening (100 ms)
+  ✕ Daftar: tabel baku; aset sudah pindah → Pindah PT & Lepas mati dengan alasan tertulis, Catat Pembayaran ada (167 ms)
+  ✕ Kartu ringkasan: angka rupiah tidak dipotong (tanpa truncate; angka satu baris utuh) (24 ms)
+  ✕ Jalankan Penyusutan: jumlah gagal dijurnal ditampilkan (136 ms)
+    expect(received).toContain(expected) // indexOf
+    Expected substring: "Perolehan dijurnal otomatis: debit akun aset, kredit sesuai sumber dana."
+    Received string:    "Tambah Aset TetapPerolehan otomatis diposting ke GL: Dr akun aset / Cr Kas-Bank.Nama Aset *KategoriPeralatan & MesinAkun GL Aset(default kategori)1-2100 · Peralatan & MesinHarga Perolehan (Rp) *RpTanggal PerolehanMasa Manfaat (bulan) *Nilai Residu (Rp)RpCatatanEstimasi penyusutan bulanan: Rp 0 selama 60 bulanBatal Simpan Aset"
+    [31m[1m>[22m[39m[90m  97 |[39m   expect(document[33m.[39mbody[33m.[39mtextContent)[33m.[39mtoContain([32m"Perolehan dijurnal otomatis: debit akun aset, kredit sesuai sumber dana."[39m)[33m;[39m
+     [90m  98 |[39m   expect(document[33m.[39mbody[33m.[39mtextContent)[33m.[39mnot[33m.[39mtoContain([32m"Cr Kas-Bank"[39m)[33m;[39m
+     [90m  99 |[39m   expect(q([32m"asset-entity-line"[39m)[33m.[39mtextContent)[33m.[39mtoContain([32m"CV Kanda Suka"[39m)[33m;[39m
+    TypeError: Cannot read properties of null (reading 'dispatchEvent')
+    expect(received).toContain(expected) // indexOf
+    Expected substring: "data-table"
+    Received string:    "w-full text-[12px]"
+    [31m[1m>[22m[39m[90m 170 |[39m     expect(tabel[33m.[39mclassName)[33m.[39mtoContain([32m"data-table"[39m)[33m;[39m
+     [90m 171 |[39m     expect(tabel[33m.[39mclassName)[33m.[39mtoContain([32m"head-wrap"[39m)[33m;[39m
+     [90m 172 |[39m     expect(tabel[33m.[39mquerySelector([32m"th:last-child"[39m)[33m.[39mclassName)[33m.[39mtoContain([32m"col-sticky-end"[39m)[33m;[39m
+    expect(received).not.toContain(expected) // indexOf
+    Expected substring: not "truncate"
+    Received string:        "text-[16px] font-bold tabular-nums truncate text-[#1C1C1E]"
+    [31m[1m>[22m[39m[90m 190 |[39m   expect(nilai[33m.[39mclassName)[33m.[39mnot[33m.[39mtoContain([32m"truncate"[39m)[33m;[39m
+     [90m 193 |[39m   expect(q([32m"summary-net-book-value-value"[39m)[33m.[39mclassName)[33m.[39mtoContain([32m"text-kn-text-2"[39m)[33m;[39m   [90m// nol tidak mendominasi[39m[0m
+    TypeError: Cannot read properties of null (reading 'textContent')
+    [31m[1m>[22m[39m[90m 205 |[39m   expect(q([32m"fa-dep-failed"[39m)[33m.[39mtextContent)[33m.[39mtoContain([32m"1 gagal dijurnal"[39m)[33m;[39m
+     [90m 206 |[39m   expect(q([32m"fa-dep-failed"[39m)[33m.[39mtextContent)[33m.[39mtoContain([32m"KSC/FA-00003"[39m)[33m;[39m
+Tests:       5 failed, 5 total

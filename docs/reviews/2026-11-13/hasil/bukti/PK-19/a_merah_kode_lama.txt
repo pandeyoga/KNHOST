@@ -1,0 +1,12 @@
+tests_mem/test_PK19_alokasi.py:124: ImportError
+E       ImportError: cannot import name 'ar_allocation_service' from 'services' (/tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/wt21/backend/services/__init__.py)
+tests_mem/test_PK19_alokasi.py:143: ImportError
+E       ImportError: cannot import name 'ar_allocation_service' from 'services' (/tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/wt21/backend/services/__init__.py)
+tests_mem/test_PK19_alokasi.py:160: ImportError
+E       ImportError: cannot import name 'ar_allocation_service' from 'services' (/tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/wt21/backend/services/__init__.py)
+tests_mem/test_PK19_alokasi.py:174: ImportError
+E       ImportError: cannot import name 'ar_allocation_service' from 'services' (/tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/wt21/backend/services/__init__.py)
+tests_mem/test_PK19_alokasi.py:190: ImportError
+E       ImportError: cannot import name 'ar_allocation_service' from 'services' (/tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/wt21/backend/services/__init__.py)
+tests_mem/test_PK19_alokasi.py:203: ImportError
+10 failed, 1 warning in 2.44s

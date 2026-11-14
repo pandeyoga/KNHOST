@@ -1,0 +1,6 @@
+  ✕ PK-19 U17 (layar): tombol Simulasi Pembayaran tidak ada untuk pesanan terkonfirmasi yang belum lunas (129 ms)
+    expect(received).toBeNull()
+    Received: <button class="secondary-button" data-testid="simulate-payment-button-so_pk19"><svg aria-hidden="true" class="lucide lucide-credit-card" fill="none" height="13" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" viewBox="0 0 24 24" width="13" xmlns="http://www.w3.org/2000/svg"><rect height="14" rx="2" width="20" x="2" y="5" /><line x1="2" x2="22" y1="10" y2="10" /></svg> Simulasi Pembayaran</button>
+    [31m[1m>[22m[39m[90m 65 |[39m   expect(host[33m.[39mquerySelector([32m`[data-testid="simulate-payment-button-${SO.id}"]`[39m))[33m.[39mtoBeNull()[33m;[39m
+     [90m 67 |[39m   expect(host[33m.[39mquerySelector([32m`[data-testid="generate-invoice-button-${SO.id}"]`[39m))[33m.[39mnot[33m.[39mtoBeNull()[33m;[39m
+Tests:       1 failed, 1 total

@@ -52,21 +52,21 @@ Papan kerja agen pelaksana. Aturan mengubahnya: `00_ATURAN_EKSEKUSI.md` §5. Uru
 | 45 | MN-T1 | Menu keuangan dan SDM: pindah dan kelompokkan | PR-T5 | selesai | `5e94a1d` | [MN-T1](../reviews/2026-11-13/hasil/MN-T1.md) |  |
 | 46 | KP-T9 | Susunan hub Pengaturan | MN-T1, KF-T4 | selesai | `b95bd0d` | [KP-T9](../reviews/2026-11-13/hasil/KP-T9.md) |  |
 | 47 | PK-18 | Penanda gagal dan panel untuk semua jenis dokumen | PK-05, PK-06 tervalidasi | selesai | a48a0a9 | [PK-18](../reviews/2026-11-13/hasil/PK-18.md) | Prasyarat "PK-05, PK-06 tervalidasi" dilepas atas keputusan pemilik 14 Nov (H1; lihat Menunggu pemilik) |
-| 48 | PK-19 | Kwitansi, deposit, selisih bayar: satu fungsi alokasi | PK-18 | dikerjakan |  |  | Dikerjakan paralel (worktree terpisah), 14 Nov |
+| 48 | PK-19 | Kwitansi, deposit, selisih bayar: satu fungsi alokasi | PK-18 | selesai | 1204bac | [PK-19](../reviews/2026-11-13/hasil/PK-19.md) |  |
 | 49 | PK-20 | Kas dibuat lewat satu pembuat | PK-18 | selesai | 7f9a527 | [PK-20](../reviews/2026-11-13/hasil/PK-20.md) |  |
 | 50 | PK-21 | Rekonsiliasi bank satu mekanisme | PK-15 | selesai | `3c459d9` | [PK-21](../reviews/2026-11-13/hasil/PK-21.md) |  |
 | 51 | PK-22 | Penggajian: tanggal buku, hitung ulang, batal, setoran kewajiban | PK-18 | dikerjakan |  |  | Dikerjakan paralel (worktree terpisah), 14 Nov |
-| 52 | PK-23 | Aset tetap | PK-06, PK-18 | dikerjakan |  |  | Dikerjakan paralel (worktree terpisah), 14 Nov |
-| 53 | PK-24 | Kas kecil dan pertanggungjawaban | PK-18 | dikerjakan |  |  | Dikerjakan paralel (worktree terpisah), 14 Nov |
-| 54 | PK-25 | Kasus keuangan: periksa dulu, efek kemudian | PK-09, PK-19 | menunggu |  |  |  |
+| 52 | PK-23 | Aset tetap | PK-06, PK-18 | selesai | 5a635ec | [PK-23](../reviews/2026-11-13/hasil/PK-23.md) | H4: akun lawan perolehan hutang/saldo awal belum diatur pemilik |
+| 53 | PK-24 | Kas kecil dan pertanggungjawaban | PK-18 | selesai | edce0af | [PK-24](../reviews/2026-11-13/hasil/PK-24.md) |  |
+| 54 | PK-25 | Kasus keuangan: periksa dulu, efek kemudian | PK-09, PK-19 | siap |  |  |  |
 | 55 | PK-26 | Landed cost untuk roll yang sudah terjual | PK-18 | selesai | 550c400 | [PK-26](../reviews/2026-11-13/hasil/PK-26.md) |  |
 | 56 | PK-27 | Biaya roll pada scrap, retur, dan HPP | PK-18 | selesai | 9d29e77 | [PK-27](../reviews/2026-11-13/hasil/PK-27.md) | H4: akun selisih retur beli belum diatur pemilik |
 | 57 | PK-28 | GR/IR: varians, umur, kliring | PK-18 | selesai | 3267c09 | [PK-28](../reviews/2026-11-13/hasil/PK-28.md) | H4: akun Selisih harga pembelian belum diatur pemilik (kliring GR/IR menunggu) |
 | 58 | PK-29 | Rekonsiliasi persediaan per PT; true-up dibatasi | PK-27 | dikerjakan |  |  | Dikerjakan paralel (worktree terpisah), 14 Nov |
 | 59 | PK-30 | Antar-PT: panjang aktual, jalur lama, harga dan PPN | PK-06 | selesai | `a4b7c8d` · `a0ae755` | [PK-30](../reviews/2026-11-13/hasil/PK-30.md) | H4 PPN masukan pembeli non-PKP → Menunggu pemilik |
 | 60 | PK-31 | Eliminasi per periode; rantai A→B→C; retur setelah lunas | PK-30 | selesai | dae12fc | [PK-31](../reviews/2026-11-13/hasil/PK-31.md) |  |
-| 61 | PK-32 | Nota kredit satu mesin | PK-19 | menunggu |  |  |  |
-| 62 | PK-33 | Hijaukan penjaga atomisitas | PK-19, PK-20 | menunggu |  |  |  |
+| 61 | PK-32 | Nota kredit satu mesin | PK-19 | siap |  |  |  |
+| 62 | PK-33 | Hijaukan penjaga atomisitas | PK-19, PK-20 | siap |  |  |  |
 | 63 | PK-34 | Replica set satu anggota, transaksi di jalur uang, pustaka database | gelombang 3 tervalidasi (PK-18 … PK-25; dengan sendirinya PK-05, PK-06) | tahan |  |  | Titik henti H2 |
 | 64 | PK-35 | Uang sebagai bilangan bulat; validator; penomoran jurnal | PK-34 | tahan |  |  | Titik henti H2, H3 |
 | 65 | PK-36 | Akun kontrol tertutup dari jurnal manual | PK-10 | selesai | `16b50fe` | [PK-36](../reviews/2026-11-13/hasil/PK-36.md) |  |
@@ -74,13 +74,13 @@ Papan kerja agen pelaksana. Aturan mengubahnya: `00_ATURAN_EKSEKUSI.md` §5. Uru
 | 67 | PK-38 | Satu batas wewenang; izin bayar terpisah; ganti termin | KF-T6, PR-T2 | selesai | `eef7bb9` | [PK-38](../reviews/2026-11-13/hasil/PK-38.md) |  |
 | 68 | PK-39 | Anggaran | PK-18 | selesai | d5c466d | [PK-39](../reviews/2026-11-13/hasil/PK-39.md) |  |
 | 69 | PK-40 | Pajak: keunikan, masa pajak, basis | PK-14 | selesai | `a78f552` | [PK-40](../reviews/2026-11-13/hasil/PK-40.md) |  |
-| 70 | PK-41 | Laporan pendukung | PK-19 | menunggu |  |  |  |
+| 70 | PK-41 | Laporan pendukung | PK-19 | siap |  |  |  |
 | 71 | PK-42 | Layar: perbaikan cepat per berkas | PK-12 | selesai | `5e747b2` | [PK-42](../reviews/2026-11-13/hasil/PK-42.md) |  |
-| 72 | PK-43 | Layar: struktural | PK-06, PK-19 | menunggu |  |  |  |
+| 72 | PK-43 | Layar: struktural | PK-06, PK-19 | siap |  |  |  |
 | 73 | PK-44 | Jejak dokumen dan relasi dokumen | MN-T1 | selesai | `5ef71e8` | [PK-44](../reviews/2026-11-13/hasil/PK-44.md) |  |
 | 74 | PM-T1 | Induk cara bayar dan rekening ber-peruntukan | KF-T1 | selesai | `fd606e5` | [PM-T1](../reviews/2026-11-13/hasil/PM-T1.md) |  |
 | 75 | CR-T1 | Profil kredit per pelanggan per PT | PK-45, KF-T6, KF-T7 | selesai | 281374f | [CR-T1](../reviews/2026-11-13/hasil/CR-T1.md) |  |
-| 76 | KM-T1 | Data insentif: omzet terkirim, pencairan, harga acuan, target | PK-19 | menunggu |  |  |  |
+| 76 | KM-T1 | Data insentif: omzet terkirim, pencairan, harga acuan, target | PK-19 | siap |  |  |  |
 | 77 | KM-T2 | Layar Capaian (cari dan jumlahkan) | KM-T1, PK-41 | menunggu |  |  |  |
 | 78 | AG-T1 | Asisten: rapikan kartu tindakan yang ada | PK-02 | selesai | 3e1a42c | [AG-T1](../reviews/2026-11-13/hasil/AG-T1.md) |  |
 | 79 | AG-T2 | Asisten: baca keuangan lewat pintu aplikasi | AG-T1, PK-09, PK-16, PK-17, PR-T3 | selesai | 4ffc907 | [AG-T2](../reviews/2026-11-13/hasil/AG-T2.md) |  |
@@ -97,14 +97,14 @@ Papan kerja agen pelaksana. Aturan mengubahnya: `00_ATURAN_EKSEKUSI.md` §5. Uru
 | 90 | CR-T4 | Denda berlapis PT → pelanggan | PK-08, CR-T2 | menunggu |  |  |  |
 | 91 | CR-T5 | Daftar kerja kredit dan rekening koran pelanggan | CR-T2 | menunggu |  |  |  |
 | 92 | PM-T2 | Cara bayar dan rekening tujuan di pesanan; instruksi bayar | PM-T1 | selesai | 73314a8 | [PM-T2](../reviews/2026-11-13/hasil/PM-T2.md) |  |
-| 93 | PM-T3 | Kwitansi ber-rekening; terverifikasi bank | PK-19, PK-20, PK-21, PM-T2 | menunggu |  |  |  |
+| 93 | PM-T3 | Kwitansi ber-rekening; terverifikasi bank | PK-19, PK-20, PK-21, PM-T2 | siap |  |  |  |
 | 94 | PM-T4 | Titipan tunai sales dan setoran | PM-T3 | menunggu |  |  | Titik henti H5 |
 | 95 | PM-T5 | Virtual account / QRIS | PM-T3 | tahan |  |  | Titik henti H8 (K-35) |
 | 96 | TX-T1 | Pengaturan pajak bertanggal berlaku dan data pajak pelanggan | PK-40 | selesai | 9707664 | [TX-T1](../reviews/2026-11-13/hasil/TX-T1.md) |  |
 | 97 | TX-T2 | Pemicu faktur pajak dan daur hidupnya | TX-T1, PK-32 | menunggu |  |  | Titik henti H5 |
 | 98 | TX-T3 | Ekspor Coretax, PPh 23, bukti potong | TX-T2 | tahan |  |  | Titik henti H8 (K-08) |
 | 99 | AG-T3 | Asisten: kartu tindakan golongan A dan B | AG-T2, PK-15, PK-18, PK-21 | dikerjakan |  |  | Dikerjakan paralel (worktree terpisah), 14 Nov |
-| 100 | AG-T4 | Asisten: paket tutup buku dan ringkasan pagi | AG-T2, PK-18 | dikerjakan |  |  | Dikerjakan paralel (worktree terpisah), 14 Nov |
+| 100 | AG-T4 | Asisten: paket tutup buku dan ringkasan pagi | AG-T2, PK-18 | selesai | f94f6bc | [AG-T4](../reviews/2026-11-13/hasil/AG-T4.md) |  |
 | 101 | AG-T5 | Asisten: kartu tindakan uang keluar dan jurnal | AG-T3, PK-05, PK-10, PK-12, PK-20, PK-36, KF-T6 | menunggu |  |  | Titik henti H5 |
 | 102 | MN-T2 | Penyatuan layar keuangan | MN-T1, PK-18, PK-24, PK-43, PY-T1 | menunggu |  |  |  |
 | 103 | MN-T3 | Satu form pembayaran, kartu pelanggan, kartu pemasok | PK-05, PK-19, PK-43, PM-T3, CR-T5 | menunggu |  |  |  |
@@ -119,6 +119,7 @@ Diisi agen saat sebuah unit masuk `tahan`: satu kalimat pertanyaan, pilihan yang
 | PK-30 (H4) | Transaksi antar-PT ke pembeli **bukan PKP** yang ber-PPN: PPN masukan pembeli dijurnal sebagai apa? Sementara jurnal tetap seperti lama (Dr 1-1500 PPN Masukan) dan rincian menampilkan tanda peringatan (`tax_warning`) | Tetap PPN masukan · tambah ke nilai persediaan · beban | Putuskan bersama konsultan pajak; perubahan cukup di rencana jurnal `interco_service` (lihat `hasil/PK-30.md` "Menunggu pemilik"). Selisih panjang: roll pendek menurunkan tagihan tanpa membuat ulang sisa pesanan; kenaikan nilai tidak mengulang ambang persetujuan — mengikuti spesifikasi, mohon dikonfirmasi |
 | PK-28 (H4) | Akun **Selisih harga pembelian** (`pembelian.selisih_harga`) per PT belum dipilih — bawaan sengaja kosong (isi pemetaan akun = keputusan pemilik). Akibatnya selisih harga faktur vs PO tetap di GR/IR, kliring GR/IR belum bisa dilakukan, dan kesiapan PT "Pemetaan akun" belum beres di setiap PT | Pilih akun (mis. akun beban/varians pembelian) · tunda | Pemilik/akuntan memilih akun di Pengaturan › Keuangan & Pajak › Pemetaan Akun untuk tiap PT; tidak ada kode yang perlu diubah (`hasil/PK-28.md`) |
 | PK-27 (H4) | Akun **Selisih nilai retur beli** (`retur.selisih_retur_beli`) per PT belum dipilih — bawaan sengaja kosong. Selisih nilai nota debit vs nilai buku roll yang diretur belum punya akun; kesiapan PT "Pemetaan akun" belum beres sampai diisi | Pilih akun · tunda | Pemilik/akuntan memilih akun di Pengaturan › Keuangan & Pajak › Pemetaan Akun untuk tiap PT (`hasil/PK-27.md`) |
+| PK-23 (H4) | Akun lawan perolehan aset **secara hutang** (`aset.sumber_hutang`) dan **saldo awal aset lama** (`aset.sumber_saldo_awal`) per PT belum dipilih (usulan pelaksana 2-1100 / 3-2900); juga: apakah perolehan secara hutang wajib lewat faktur pemasok? Sampai diisi, dua pilihan sumber dana itu mati di form Tambah Aset | Pilih akun · wajib faktur? · tunda | Pemilik/akuntan memilih akun di Pengaturan › Keuangan & Pajak › Pemetaan Akun (`hasil/PK-23.md`) |
 | PK-05, PK-06 (H1) — **diputuskan 14 Nov** | Pola posting (periksa tanpa tulis → niat → efek idempoten → jurnal tahan-gagal; jurnal kembar `preflight_twin`/`post_twin`) disetujui sebagai acuan unit gelombang 3? | Setujui · minta ubah | **Pemilik menyetujui (14 Nov, di sesi): PK-18 dan rantainya dimulai sebelum PK-05/PK-06 `tervalidasi`**; reviewer tetap memvalidasi `hasil/PK-05.md`, `hasil/PK-06.md` — bila pola ditolak, unit gelombang 3 disesuaikan |
 
 ## Catatan sesi

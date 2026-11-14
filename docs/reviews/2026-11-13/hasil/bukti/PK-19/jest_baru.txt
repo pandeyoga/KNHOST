@@ -1,0 +1,2 @@
+  ✓ PK-19 U17 (layar): tombol Simulasi Pembayaran tidak ada untuk pesanan terkonfirmasi yang belum lunas (170 ms)
+Tests:       1 passed, 1 total

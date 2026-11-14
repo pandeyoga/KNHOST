@@ -1,0 +1,10 @@
+U2 jurnal [('1-2100', 12000000.0, 0.0), ('1-1100', 0.0, 12000000.0)]
+U2 kas out 12000000.0 rek_b1 not_required
+U2 saldo R-B1 (buku rekening, termasuk kas lama seed 100 jt diserap rekening tunggal) 138000000.0
+U7 bulan 1..3 [20833.33, 20833.33, 20833.33] Σ1-47 979166.51 bulan 48 20833.49 Σ 1000000.0
+U7 register 1000000.0 0.0 fully_depreciated
+U8 pengirim ent_ksc [('1-2900', 3000000.0, 0.0), ('1-1250', 9000000.0, 0.0), ('1-2100', 0.0, 12000000.0)]
+U8 penerima ent_kanda [('1-2100', 9000000.0, 0.0), ('2-1250', 0.0, 9000000.0)]
+U8 aset baru True 9000000.0 antar_pt
+U13 bayar {'asset_id': 'fasset_5cfaebdd71d6', 'paid': 9000000.0, 'cash': ['KANDA/CASH-00006', 'KSC/CASH-00006']}
+1 passed, 1 warning in 4.02s
