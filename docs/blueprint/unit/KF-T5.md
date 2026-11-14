@@ -143,7 +143,7 @@ grup = bawaan registry.
 ## Langkah kerja
 
 1. `backend/tests_mem/test_KFT5_aturan_khusus.py`: U1–U13; U1–U6 sudah hijau untuk bagian "terbaca mesin" (resolver
-   sudah mendukung) — tes tetap ditulis sebagai penjaga; U7–U13 merah.
+   sudah mendukung) — tes tetap ditulis sebagai penjaga; U7–U13 merah kecuali U10 (sudah benar sejak KF-T1; koreksi KF-T5).
 2. Cabut lapisan dua kunci `allocation.*`; perbarui `help` 13 kunci.
 3. `_assert_scope_write` untuk pelanggan/barang; parameter `scope`; endpoint `layers`.
 4. `ScopedRulesSection.jsx`; pasang di dua layar; ganti baris "Bisa diatur pada level".
