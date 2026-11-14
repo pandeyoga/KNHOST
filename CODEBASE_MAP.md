@@ -1,5 +1,5 @@
 <!-- DIHASILKAN OTOMATIS oleh scripts/gen_codebase_map.py — JANGAN EDIT TANGAN -->
-<!-- Dihasilkan dari commit: 242a765 pada 2026-11-14 -->
+<!-- Dihasilkan dari commit: dd49018 pada 2026-11-14 -->
 # CODEBASE MAP — Kain Nusantara (dihasilkan otomatis)
 
 Peta ini dihitung dari kode oleh `scripts/gen_codebase_map.py`. Kalau angka di sini
@@ -710,13 +710,13 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 | `approvals` | 9 | 1720 |
 | `catalog` | 24 | 1459 |
 | `costing` | 1 | 150 |
-| `crm` | 22 | 4621 |
+| `crm` | 22 | 4622 |
 | `design` | 8 | 1585 |
 | `designer` | 8 | 1628 |
 | `desks` | 2 | 229 |
 | `documents` | 18 | 2580 |
 | `export` | 9 | 700 |
-| `finance` | 99 | 22534 |
+| `finance` | 99 | 22543 |
 | `home` | 5 | 1136 |
 | `hr` | 33 | 5403 |
 | `inspections` | 12 | 2181 |
