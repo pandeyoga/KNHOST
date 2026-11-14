@@ -433,9 +433,11 @@ def e_finance(fin):
     # Yang dijaga E8.2 tetap: Finance tidak membuat/mengubah/mengonfirmasi/mengirim pesanan.
     # PR-T4 (K-47) — `view_sales_kpi` (lihat KPI & komisi sales lain; dulu daftar nama peran pengawas yang memuat
     # Finance) adalah izin LIHAT, bukan buat/ubah/konfirmasi.
+    # PR-T5 (PR-07) — `order.print` dihapus dari katalog (tidak pernah diperiksa server; cetak dokumen pesanan cukup
+    # `order.view`), jadi yang dituntut tinggal `view`.
     order_perms = set(perms.get("order") or [])
     check("izin efektif Finance: pesanan hanya lihat/cetak + keputusan keuangan (tanpa buat/ubah/konfirmasi)",
-          {"view", "print"} <= order_perms
+          {"view"} <= order_perms
           and order_perms <= {"view", "print", "approve_price_edit", "release_unpaid", "view_sales_kpi"},
           str(perms.get("order")))
     # KP-T4 (K-47) — Finance memegang `vendor_bill.approve|reject` sebagai pengganti gerbang nama peran tagihan vendor
