@@ -1,7 +1,7 @@
 import MoneyInput from "../../components/MoneyInput";
 import { useState } from "react";
 import axios, { API } from "../../services/apiClient";
-import { X, CheckCircle2, Wallet, Send, XCircle, Ban, Layers } from "lucide-react";
+import { X, CheckCircle2, Wallet, Send, XCircle, Ban, Layers, Warehouse, Factory, Truck, Info } from "lucide-react";
 import { formatCurrency, formatQty } from "../../utils/formatters";
 import KNSelect from "../../components/KNSelect";
 import { isZeroMetric } from "../../components/ListPageParts";
@@ -11,7 +11,41 @@ import { usePaymentMethods } from "../../config/paymentMethods";   // PM-T1 — 
 
 /**
  * LandedCostDetailPanel (Fase 5.4) — detail voucher: biaya, alokasi HPP roll, aksi.
+ * PK-26 (IV-01, K-05) — kolom Perlakuan (golongan roll dari server `treatment`), ringkasan pembukuan dari
+ * `capitalization` sesudah disetujui, dan kalimat peringatan sebelum disetujui bila ada roll yang sudah keluar.
  */
+
+/** PK-26 — golongan roll saat voucher disetujui (`allocations[].treatment`; pratinjau: `allocation_preview[].treatment`). */
+export const PERLAKUAN = {
+  persediaan: { label: "Persediaan", Icon: Warehouse },
+  wip: { label: "Di makloon", Icon: Factory },
+  keluar: { label: "Sudah keluar", Icon: Truck },
+};
+export const KALIMAT_KELUAR =
+  "Roll yang sudah terkirim ke pelanggan tidak menambah nilai persediaan; bagiannya langsung menjadi beban.";
+
+/** PK-26 — baris ringkas pembukuan voucher yang sudah disetujui; baris bernilai 0 disembunyikan. */
+export function capitalizationRows(cap) {
+  if (!cap) return [];
+  const beban = cap.expensed_to === "varians" ? "Dicatat sebagai biaya masuk pembelian" : "Dibebankan ke HPP";
+  return [
+    { key: "inventory", label: "Menambah nilai persediaan", value: Number(cap.inventory_amount || 0) },
+    { key: "wip", label: "Menambah nilai barang di makloon", value: Number(cap.wip_amount || 0) },
+    { key: "expensed", label: beban, value: Number(cap.expensed_amount || 0) },
+  ].filter((r) => Math.abs(r.value) >= 0.005);
+}
+
+function Perlakuan({ treatment }) {
+  const t = PERLAKUAN[treatment];
+  if (!t) return <span className="text-kn-text-2">—</span>;
+  const { Icon, label } = t;
+  return (
+    <span className="inline-flex items-center gap-1 min-w-0" data-treatment={treatment}>
+      <Icon size={12} aria-hidden="true" className="shrink-0 text-kn-text-2" />
+      <span className="truncate">{label}</span>
+    </span>
+  );
+}
 function StatusPill({ status }) {
   const map = {
     draft: ["pill-muted", "Draft"], pending_approval: ["pill-warning", "Menunggu Approval"],
@@ -36,6 +70,8 @@ export default function LandedCostDetailPanel({ voucher, canApprove, decideHint 
   const fin = voucher.financials || { total_cost: voucher.total_cost, outstanding: 0, amount_paid: voucher.amount_paid };
   const allocs = (voucher.allocations && voucher.allocations.length) ? voucher.allocations : (voucher.allocation_preview || []);
   const isApplied = voucher.status === "applied" || voucher.status === "paid";
+  const capRows = isApplied ? capitalizationRows(voucher.capitalization) : [];
+  const adaKeluar = !isApplied && voucher.status !== "cancelled" && allocs.some((a) => a.treatment === "keluar");
 
   async function act(action, body) {
     setBusy(true); setErr("");
@@ -125,14 +161,16 @@ export default function LandedCostDetailPanel({ voucher, canApprove, decideHint 
               <div className="py-5 text-center text-[11.5px] text-[#9A9BA3]">Belum ada alokasi.</div>
             ) : (
               <div className="max-h-[260px] overflow-auto">
-                <div className="min-w-[600px]">
-                  <div className="grid grid-cols-[90px_1.4fr_80px_100px_100px_110px] px-2.5 py-1 bg-white text-[9.5px] font-bold uppercase text-[#9A9BA3] border-b border-[#EFF0F2] sticky top-0">
-                    <span>Roll</span><span>Produk</span><span className="text-right">Panjang</span><span className="text-right">Biaya</span><span className="text-right">+ /unit</span><span className="text-right">HPP Baru</span>
+                {/* PK-26 — 7 kolom (+ Perlakuan) = 720 px ⊂ kartu 900 px; di HP bergulir di wadahnya. Huruf 12 px (KN_37). */}
+                <div className="min-w-[720px]">
+                  <div className="grid grid-cols-[90px_1.4fr_120px_80px_100px_100px_110px] gap-x-1 px-2.5 py-1 bg-white text-fs-12 font-bold uppercase text-kn-text-2 border-b border-kn-divider sticky top-0">
+                    <span>Roll</span><span>Produk</span><span>Perlakuan</span><span className="text-right">Panjang</span><span className="text-right">Biaya</span><span className="text-right">+ /unit</span><span className="text-right">HPP Baru</span>
                   </div>
                   {allocs.map((a, i) => (
-                    <div key={a.roll_id || i} data-testid={`lc-detail-alloc-${i}`} className="grid grid-cols-[90px_1.4fr_80px_100px_100px_110px] items-center px-2.5 py-1 border-b border-[#F2F3F5] last:border-0 text-[10.5px]">
+                    <div key={a.roll_id || i} data-testid={`lc-detail-alloc-${i}`} className="grid grid-cols-[90px_1.4fr_120px_80px_100px_100px_110px] gap-x-1 items-center px-2.5 py-1 border-b border-kn-divider last:border-0 text-fs-12">
                       <span className="font-mono">{a.roll_no}</span>
                       <span className="truncate">{a.product_name || a.sku || "—"}</span>
+                      <span data-testid={`lc-detail-alloc-${i}-treatment`}><Perlakuan treatment={a.treatment} /></span>
                       <span className="tabular-nums text-right">{formatQty(a.length)}</span>
                       <span className="tabular-nums text-right">{formatCurrency(a.alloc_amount)}</span>
                       <span className="tabular-nums text-right text-[#0058CC]">+{formatCurrency(a.per_unit)}</span>
@@ -141,6 +179,16 @@ export default function LandedCostDetailPanel({ voucher, canApprove, decideHint 
                   ))}
                 </div>
               </div>
+            )}
+            {capRows.length > 0 && (
+              <dl className="border-t border-kn-divider px-3 py-2 space-y-1 text-fs-12" data-testid="lc-capitalization">
+                {capRows.map((r) => (
+                  <div key={r.key} className="flex items-center justify-between gap-3" data-testid={`lc-cap-${r.key}`}>
+                    <dt className="text-kn-text-2">{r.label}</dt>
+                    <dd className="tabular-nums font-semibold text-kn-text">{formatCurrency(r.value)}</dd>
+                  </div>
+                ))}
+              </dl>
             )}
           </div>
 
@@ -183,28 +231,35 @@ export default function LandedCostDetailPanel({ voucher, canApprove, decideHint 
           )}
         </div>
 
-        {/* Actions footer */}
-        <div className="flex items-center justify-end gap-2 px-4 py-3 border-t border-[#EFF0F2] sticky bottom-0 bg-white">
-          {voucher.status === "draft" && (
-            <>
-              <button data-testid="lc-action-cancel" onClick={() => act("cancel", { notes: "" })} disabled={busy} className="secondary-button"><Ban size={13} /> Batalkan</button>
-              <button data-testid="lc-action-submit" onClick={() => act("submit")} disabled={busy} className="primary-button"><Send size={13} /> Kirim</button>
-            </>
+        {/* Actions footer — PK-26: kalimat roll keluar di bilahnya sendiri, di atas tombol Setujui */}
+        <div className="px-4 py-3 border-t border-kn-divider sticky bottom-0 bg-white space-y-2">
+          {adaKeluar && (
+            <p className="flex items-start gap-1.5 text-fs-12 text-kn-text-2" data-testid="lc-keluar-note">
+              <Info size={14} aria-hidden="true" className="shrink-0 mt-px" /><span>{KALIMAT_KELUAR}</span>
+            </p>
           )}
-          {voucher.status === "pending_approval" && canApprove && (
-            <>
-              <button data-testid="lc-action-reject" onClick={() => act("reject", { notes: "Ditolak dari detail" })} disabled={busy} className="danger-button"><XCircle size={13} /> Tolak</button>
-              <button data-testid="lc-action-approve" onClick={() => act("approve")} disabled={busy} className="primary-button"><CheckCircle2 size={13} /> Setujui & Alokasikan HPP</button>
-            </>
-          )}
-          {voucher.status === "pending_approval" && !canApprove && (   /* KP-T4 — petunjuk dari Aturan Persetujuan */
-            <span className="text-[11px] text-[#9A9BA3]" data-testid="lc-decide-hint">{decideHint || "Menunggu persetujuan."}</span>
-          )}
-          {voucher.status === "applied" && (
-            <button data-testid="lc-action-pay" onClick={() => setShowPay((s) => !s)} disabled={busy} className="primary-button"><Wallet size={13} /> Bayar</button>
-          )}
-          {voucher.status === "paid" && <span className="text-[11.5px] font-semibold text-green-700 flex items-center gap-1"><CheckCircle2 size={14} /> Biaya lunas.</span>}
-          {voucher.status === "cancelled" && <span className="text-[11.5px] text-[#9A9BA3]">Voucher dibatalkan.</span>}
+          <div className="flex items-center justify-end gap-2 flex-wrap">
+            {voucher.status === "draft" && (
+              <>
+                <button data-testid="lc-action-cancel" onClick={() => act("cancel", { notes: "" })} disabled={busy} className="secondary-button"><Ban size={13} /> Batalkan</button>
+                <button data-testid="lc-action-submit" onClick={() => act("submit")} disabled={busy} className="primary-button"><Send size={13} /> Kirim</button>
+              </>
+            )}
+            {voucher.status === "pending_approval" && canApprove && (
+              <>
+                <button data-testid="lc-action-reject" onClick={() => act("reject", { notes: "Ditolak dari detail" })} disabled={busy} className="danger-button"><XCircle size={13} /> Tolak</button>
+                <button data-testid="lc-action-approve" onClick={() => act("approve")} disabled={busy} className="primary-button"><CheckCircle2 size={13} /> Setujui & Alokasikan HPP</button>
+              </>
+            )}
+            {voucher.status === "pending_approval" && !canApprove && (   /* KP-T4 — petunjuk dari Aturan Persetujuan */
+              <span className="text-[11px] text-[#9A9BA3]" data-testid="lc-decide-hint">{decideHint || "Menunggu persetujuan."}</span>
+            )}
+            {voucher.status === "applied" && (
+              <button data-testid="lc-action-pay" onClick={() => setShowPay((s) => !s)} disabled={busy} className="primary-button"><Wallet size={13} /> Bayar</button>
+            )}
+            {voucher.status === "paid" && <span className="text-[11.5px] font-semibold text-green-700 flex items-center gap-1"><CheckCircle2 size={14} /> Biaya lunas.</span>}
+            {voucher.status === "cancelled" && <span className="text-[11.5px] text-[#9A9BA3]">Voucher dibatalkan.</span>}
+          </div>
         </div>
       </div>
     </div>

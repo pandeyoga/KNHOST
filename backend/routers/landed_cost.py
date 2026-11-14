@@ -15,7 +15,8 @@ from schemas import LandedCostCreate, LandedCostPaymentCreate, LandedCostDecisio
 from services.landed_cost_service import (
     next_voucher_number, total_cost_of, voucher_financials, resolve_target_rolls,
     compute_allocation, apply_allocation_to_rolls, build_landed_cost_context,
-    attach_allocation_names,
+    attach_allocation_names, split_allocation, capitalization_of, with_treatment, preview_treatment,
+    expensed_to_for,
     ACTIVE_VOUCHER_STATUSES, PAYABLE_VOUCHER_STATUSES, COST_CATEGORIES,
 )
 
@@ -171,7 +172,8 @@ async def create_landed_cost(payload: LandedCostCreate, request: Request) -> Dic
         "voucher_date": payload.voucher_date or now_iso(),
         "due_date": payload.due_date or "",
         "target_roll_count": preview["roll_count"],
-        "allocation_preview": preview["allocations"],
+        # PK-26 — pratinjau memuat golongan roll (`treatment`) untuk tampilan; persetujuan menghitung ulang.
+        "allocation_preview": preview_treatment(rolls, preview["allocations"]),
         "allocations": [],
         # lifecycle
         "status": "draft",
@@ -256,13 +258,23 @@ async def approve_landed_cost(voucher_id: str, request: Request) -> Dict[str, An
     if not rolls:
         raise HTTPException(status_code=400, detail="Tidak ada roll target untuk dialokasi (mungkin sudah dihapus).")
     alloc = compute_allocation(rolls, v.get("total_cost", 0), v.get("basis", "value"))
+    # PK-26 (IV-01, K-05) — PERIKSA: nominal dipecah menurut golongan roll SEBELUM biaya roll dinaikkan (persediaan →
+    # 1-1300, di makloon → 1-1350, sudah keluar → beban menurut `inventory.landed_cost_porsi_terjual` PT voucher).
+    # Hitungan rusak → 409 tanpa tulisan. Potretnya (`capitalization`) ditulis bersama status `applied` (`02` D3).
+    expensed_to = await expensed_to_for(v.get("entity_id") or DEFAULT_ENTITY_ID)
+    try:
+        split = split_allocation(rolls, alloc["allocations"], alloc["allocated_total"])
+    except ValueError as exc:
+        raise HTTPException(status_code=409, detail=str(exc)) from exc
+    capitalization = capitalization_of(split, expensed_to)
+    allocations = with_treatment(alloc["allocations"], split)
     # INV-ATOMIC-01 — klaim voucher (masih pending approval) SESUDAH validasi, sebelum HPP roll
     # ditulis: klik ganda / dua approver → satu 409, bukan alokasi dobel ke roll.
     from services import atomic_claim as _saga
     await _saga.claim("landed_cost_vouchers", voucher_id, "landed_cost_approve",
                       precondition={"status": v.get("status")}, actor=actor["name"])
     try:
-        applied_count = await apply_allocation_to_rolls(v["voucher_number"], alloc["allocations"])
+        applied_count = await apply_allocation_to_rolls(v["voucher_number"], allocations)
     except Exception as exc:  # noqa: BLE001
         await _saga.mark_failed("landed_cost_vouchers", voucher_id, str(exc))
         raise
@@ -270,16 +282,19 @@ async def approve_landed_cost(voucher_id: str, request: Request) -> Dict[str, An
         {"id": voucher_id},
         {**_saga.finish_set({"status": "applied", "approval_status": "approved",
                              "approved_by": actor["name"], "approved_at": now_iso(), "applied_at": now_iso(),
-                             "effective_basis": alloc["basis"], "allocations": alloc["allocations"],
+                             "effective_basis": alloc["basis"], "allocations": allocations,
                              "target_roll_count": alloc["roll_count"],
                              # PK-18 — nominal yang dikapitalisasi disimpan: ulang posting memakai angka yang sama
-                             "allocated_total": alloc["allocated_total"], "gl_status": "pending",
+                             # PK-26 — beserta pecahannya (`capitalization`): jurnal & ulang posting dari potret ini
+                             "allocated_total": alloc["allocated_total"], "capitalization": capitalization,
+                             "gl_status": "pending",
                              "payment_status": "unpaid", "updated_at": now_iso()}),
          "$push": {"timeline": timeline_entry(
              "applied", "Disetujui & dialokasikan ke HPP roll", actor["name"],
              f"{applied_count} roll · {rupiah(alloc['allocated_total'])} · basis {alloc['basis']}")}},
         projection={"_id": 0}, return_document=ReturnDocument.AFTER)
-    # S#074 (LC-APPLY-GL): kapitalisasi landed cost ke GL (Dr Persediaan / Cr Hutang). PK-18 — lewat pintu tahan-gagal:
+    # S#074 (LC-APPLY-GL): jurnal landed cost — PK-26: Dr Persediaan / Dr WIP makloon / Dr HPP|biaya masuk (porsi roll
+    # keluar) / Cr Hutang dari `capitalization` tersimpan. PK-18 — lewat pintu tahan-gagal:
     # HPP roll sudah berubah, jadi jurnal gagal tidak membatalkan voucher dan tidak 500 (tampil di Posting Gagal).
     from services import gl_service
     jr = await gl_service.post_durable(
@@ -291,7 +306,7 @@ async def approve_landed_cost(voucher_id: str, request: Request) -> Dict[str, An
                     "journal_entry_id": jr["journal_entry_id"]})
     await audit(actor["name"], "landed_cost_applied", "landed_cost", voucher_id, {
         "voucher_number": v.get("voucher_number"), "rolls": applied_count,
-        "allocated": alloc["allocated_total"], "basis": alloc["basis"]})
+        "allocated": alloc["allocated_total"], "basis": alloc["basis"], "capitalization": capitalization})
     return _hydrate(safe_doc(updated))
 
 

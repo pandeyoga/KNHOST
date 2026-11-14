@@ -18,6 +18,20 @@ GL-01: registri `services/gl_mapping_registry.py` (54 kebutuhan) → koleksi `gl
 - 2026-10-19 (sesi E): Fase A registri+resolver+API Pemetaan Akun; Fase B UI `?view=gl-account-mappings` (Pengaturan → Keuangan); Fase C pembaca saldo (suspense, piutang denda, uang muka, selisih bayar, persediaan, AR aging) memakai akun pemetaan; Fase D jurnal ongkir retur (cara kirim, akun bayar Finance, PT pembeban, PPN via `returns.logistics_vat_enabled`, jurnal balik saat ubah/tolak); Fase E pemecahan roll cutloss (posisi cacat, BS/Dibuang oleh peran `returns.cutloss_treatment_roles`, pratinjau, SJ potongan baik merujuk SJ & SO asal); Fase F uji (iteration_244: 100%), ACC-KP-01, filter `?stage=` produk, judul/qty kartu tugas gudang Meja Saya. Detail: evidence/HANDOFF_SESI_2026-10-19E.md.
 
 - 2026-11-13/14 (blueprint `docs/blueprint/`, laporan `docs/reviews/2026-11-13/hasil/`): PK-01 garis dasar gate + 256 temuan di tracker; PK-02 kerangka uji `backend/tests_mem/` (database tiruan); PK-05 bayar hutang lewat satu pintu niat bayar (`ap_payment_intents`): periksa tanpa tulis → niat → faktur → kas (rekening wajib, milik PT tagihan) → dokumen kontrabon berversi → jurnal tahan-gagal; kunci idempotensi pada bayar faktur/kontrabon; niat menggantung bisa dilanjutkan/dibatalkan dari form. PR-T9: izin peran bawaan tidak lagi ditimpa saat server start (cabut/atur ulang lama jadi migrasi sekali-jalan tercatat di `permission_settings.migrations_applied`); peran kustom ikut izin baru peran dasarnya bila modulnya belum diubah, selain itu tombol "Ikuti peran dasar". KF-T1: Pusat Pengaturan — ubah = izin kunci (`settings.manage`, `inventory/goods_receipt/makloon.configure`, `rnd.manage`, …; tanpa jalur nama peran), baca = `settings.view` atau yang boleh mengubah kunci itu; `GET /api/settings/effective` tanpa `settings.view` hanya memuat kunci `sensitif_baca=False`.
+- 2026-11-14 PK-26 (IV-01, IV-10, K-05 — landed cost untuk roll yang sudah keluar): saat voucher biaya masuk disetujui,
+  nominalnya dipecah menurut golongan roll SEBELUM biaya roll dinaikkan (`landed_cost_service.split_allocation`, murni):
+  roll di gudang (status lain) → kenaikan nilai roll menambah persediaan (`persediaan.persediaan`), roll di mitra
+  makloon (`subcon`) → persediaan dalam proses makloon (`makloon.wip_subcon`), sisanya (roll terkirim/diretur ke
+  pemasok/antar-PT, bagian roll yang sudah susut, pembulatan) → beban periode berjalan: HPP (`persediaan.hpp`, bawaan K-05)
+  atau akun biaya masuk pembelian (`pembelian.landed_cost`) menurut pengaturan baru **"Biaya masuk untuk barang yang sudah
+  terjual"** (`inventory.landed_cost_porsi_terjual`, kelompok Pembelian › Tagihan pemasok, global/PT, izin
+  `accounting.manage`, beralasan). Potret `capitalization` + `allocations[].treatment/capitalized_amount` ditulis bersama
+  status `applied`; satu jurnal `landed_cost` (Dr persediaan / Dr WIP makloon / Dr beban / Cr hutang, akun dari Pemetaan
+  Akun) lewat `post_durable`; ulang posting memakai potret tersimpan; voucher lama tanpa potret tetap seluruhnya ke
+  persediaan (tanpa migrasi). Hitungan rusak → 409 tanpa tulisan. Rekonsiliasi persediaan tidak lagi tergeser (dulu porsi
+  roll terjual mengendap di 1-1300). Susut potong dan potong uji mutu dinilai `unit_cost` roll (termasuk landed cost),
+  `base_unit_cost` hanya bila biaya roll kosong. Layar rincian voucher: kolom **Perlakuan**, tiga baris ringkas
+  pembukuan, dan kalimat peringatan sebelum disetujui bila ada roll yang sudah keluar.
 - 2026-11-14 PK-39 (FY-10, FY-11, FY-12, K-12 — angka anggaran, pagu terkunci, cakupan pemeriksaan): Anggaran vs
   Realisasi dihitung **per PT pemilik pagu** (mode gabungan: kolom PT + pita "belum dieliminasi"); komitmen PO = **sisa
   PO** (`po_open_value`, PO `partial` ikut, `receiving` tidak dihitung dua kali); realisasi akun persediaan = penerimaan

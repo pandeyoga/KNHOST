@@ -102,18 +102,21 @@ def capitalization_of(split: Dict[str, Any], expensed_to: str) -> Dict[str, Any]
             "expensed_to": expensed_to if expensed_to in EXPENSE_ACCOUNT_KEY else "hpp", "computed_at": now_iso()}
 
 
-def with_treatment(allocations: List[Dict[str, Any]], split: Dict[str, Any], *,
-                   capitalized: bool = True) -> List[Dict[str, Any]]:
-    """Baris alokasi + `treatment` (+ `capitalized_amount` bila `capitalized`) dari hasil `split_allocation`."""
+def with_treatment(allocations: List[Dict[str, Any]], split: Dict[str, Any]) -> List[Dict[str, Any]]:
+    """Baris alokasi voucher yang disetujui + `treatment` dan `capitalized_amount` dari hasil `split_allocation`."""
     per = {p["roll_id"]: p for p in split.get("per_roll") or []}
     out = []
     for a in allocations or []:
         p = per.get(a.get("roll_id")) or {}
-        extra = {"treatment": p.get("treatment", TREATMENT_PERSEDIAAN)}
-        if capitalized:
-            extra["capitalized_amount"] = p.get("capitalized_amount", 0.0)
-        out.append({**a, **extra})
+        out.append({**a, "treatment": p.get("treatment", TREATMENT_PERSEDIAAN),
+                    "capitalized_amount": p.get("capitalized_amount", 0.0)})
     return out
+
+
+def preview_treatment(rolls: List[Dict[str, Any]], allocations: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    """Pratinjau alokasi + `treatment` (hanya tampilan saat voucher dibuat; persetujuan menghitung ulang)."""
+    by_id = {r.get("id"): r for r in rolls or []}
+    return [{**a, "treatment": treatment_of(by_id.get(a.get("roll_id")) or {})} for a in allocations or []]
 
 
 async def next_voucher_number(entity_id: Optional[str] = None) -> str:

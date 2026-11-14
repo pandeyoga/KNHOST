@@ -1,5 +1,5 @@
 <!-- DIHASILKAN OTOMATIS oleh scripts/gen_codebase_map.py — JANGAN EDIT TANGAN -->
-<!-- Dihasilkan dari commit: d5c466d pada 2026-11-14 -->
+<!-- Dihasilkan dari commit: ccfa7b4 pada 2026-11-14 -->
 # CODEBASE MAP — Kain Nusantara (dihasilkan otomatis)
 
 Peta ini dihitung dari kode oleh `scripts/gen_codebase_map.py`. Kalau angka di sini
@@ -206,7 +206,7 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 | `invoices.py` | 3 | 155 | `/invoices`, `/sales-orders/{order_id}/invoices`, `/sales-orders/{order_id}/simulate-payment` |
 | `kontrol.py` | 1 | 35 | `/aturan` |
 | `label_printer.py` | 2 | 144 | `/labels/generate`, `/labels/preview` |
-| `landed_cost.py` | 10 | 408 | `/landed-costs`, `/landed-costs/payables/summary`, `/landed-costs/{voucher_id}`, `/landed-costs/{voucher_id}/approve`, `/landed-costs/{voucher_id}/cancel`, `/landed-costs/{voucher_id}/pay` … |
+| `landed_cost.py` | 10 | 423 | `/landed-costs`, `/landed-costs/payables/summary`, `/landed-costs/{voucher_id}`, `/landed-costs/{voucher_id}/approve`, `/landed-costs/{voucher_id}/cancel`, `/landed-costs/{voucher_id}/pay` … |
 | `logistics.py` | 27 | 348 | `/dashboard`, `/deliveries`, `/deliveries/{delivery_id}`, `/deliveries/{delivery_id}/manifest`, `/deliveries/{delivery_id}/photos`, `/deliveries/{delivery_id}/photos/{photo_id}` … |
 | `lots.py` | 18 | 372 | `/lots`, `/lots/identity-trace`, `/lots/merge`, `/lots/settings`, `/lots/stats`, `/lots/unassigned-rolls` … |
 | `makloon_orders.py` | 24 | 432 | `/makloon-orders`, `/makloon-orders/claims`, `/makloon-orders/claims/stats`, `/makloon-orders/estimate`, `/makloon-orders/{mko_id}`, `/makloon-orders/{mko_id}/cancel` … |
@@ -478,7 +478,7 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 | `journal_proposal_service.py` | 104 | KF-T6 (GL-06) — usulan jurnal manual yang menunggu orang kedua (`journal_proposals`). |
 | `label_decoder_service.py` | 268 | FASE SL — Decoder LABEL SUPPLIER (GS1-128 · QR JSON · teks berpemisah · regex). |
 | `label_printer_service.py` | 198 | Label printer service: Generate ZPL and ESC/POS commands for barcode labels. |
-| `landed_cost_service.py` | 334 | Landed Cost service (Fase 5.4 — P0-5). |
+| `landed_cost_service.py` | 337 | Landed Cost service (Fase 5.4 — P0-5). |
 | `line_scope.py` | 434 | FASE L — PAGAR LINI PRODUK (woven · knit · printing · dan lini baru berikutnya). |
 | `loading_check_service.py` | 440 | FASE R4 — FINAL LOADING CHECK: sweep handheld vs manifest SO sebelum naik mobil. |
 | `location_scope.py` | 357 | IMP-20 (P01) — cakupan LOKASI KERJA pengguna gudang (site → gudang). |
@@ -508,7 +508,7 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 | `master_registry.py` | 466 | master_registry (FASE L, diperluas FASE T) — JEMBATAN master ↔ `domain_registry`. |
 | `master_usage_service.py` | 89 | IMP-14 (P01) — jejak pemakaian master & kebijakan hapus. |
 | `material_reservation_service.py` | 191 | W2-REQ-07 — reservasi bahan makloon sejak PR makloon disetujui (soft-reservation, tanpa jurnal). |
-| `mdq_cut_service.py` | 113 | L04 LN-042 — POTONG MD QUALITY (default 0,25 yard) sebagai MUTASI PEMAKAIAN tersendiri. |
+| `mdq_cut_service.py` | 114 | L04 LN-042 — POTONG MD QUALITY (default 0,25 yard) sebagai MUTASI PEMAKAIAN tersendiri. |
 | `movement_label_service.py` | 269 | movement_label_service — nomor dokumen yang LAYAK DIBACA pada mutasi stok. |
 | `nilai_pengaturan.py` | 25 | KF-T7 — pembaca SATU nilai pengaturan untuk mesin; galat baca = bawaan registry (`02_STANDAR.md` §2.2, KF-06). |
 | `notification_audience.py` | 189 | notification_audience — SATU penyelesai "siapa yang harus diberi tahu". |
@@ -626,7 +626,7 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 | `role_reality_service.py` | 691 | **CEK KENYATAAN PERAN** — utang migrasi (ii) FASE E-8/E-6. |
 | `roll_cost_history.py` | 88 | services/roll_cost_history.py — JEJAK setiap perubahan HPP satu roll. |
 | `roll_hold_service.py` | 126 | QC-06 — Tahan (HOLD) & Lepas (RELEASE) manual satu roll. |
-| `roll_service.py` | 2731 | Roll service (Fase 0.5) — Roll-as-SSOT inventory engine. |
+| `roll_service.py` | 2733 | Roll service (Fase 0.5) — Roll-as-SSOT inventory engine. |
 | `roll_timeline_service.py` | 174 | JEJAK BARANG (Item Passport) — timeline satu roll lintas SEMUA dokumen. |
 | `saga_lock_watch.py` | 93 | services/saga_lock_watch.py — PEMANTAU KUNCI SAGA MENGGANTUNG (T-01 Opsi B). |
 | `sales_force_service.py` | 471 | Sales Force service (KN_17 §6) — KPI per salesperson + komisi (pencairan + tiered). |
@@ -705,7 +705,7 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 
 | Fitur (`src/features/`) | Berkas | Baris |
 |---|---:|---:|
-| `__tests__` | 114 | 18192 |
+| `__tests__` | 115 | 18302 |
 | `admin` | 36 | 6981 |
 | `approvals` | 9 | 1720 |
 | `catalog` | 24 | 1459 |
@@ -734,7 +734,7 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 | `pos` | 25 | 2807 |
 | `pricing` | 1 | 151 |
 | `production` | 3 | 753 |
-| `purchasing` | 86 | 18437 |
+| `purchasing` | 86 | 18492 |
 | `rfid` | 21 | 3556 |
 | `rnd` | 66 | 7906 |
 | `sales` | 97 | 15798 |

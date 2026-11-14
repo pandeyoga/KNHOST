@@ -11,7 +11,11 @@ Hitungan tangan dasar U1: dua roll berbobot sama (10.000 × 100) → 3.000.000 /
 `r_stok` (sisa 100): 100 × (10.000 + 15.000) − 100 × 10.000 = 1.500.000 → 1-1300; `r_jual` (`delivered`, sisa 0) → 0;
 keluar = 3.000.000 − 1.500.000 = 1.500.000 → HPP 5-1000. Cr 2-1100 3.000.000.
 """
+import importlib
+import re
+import sys
 import uuid
+from pathlib import Path
 from typing import Dict, List, Tuple
 
 import pytest
@@ -28,9 +32,6 @@ PANEL = "/api/finance/posting-failures"
 #: status roll yang dihitung rekonsiliasi 1-1300 (`gl_service.OWNED_ROLL_STATUSES`) — dipakai menghitung saldo awal fixture
 STOK = {"available", "reserved", "committed", "picked", "packed", "hold", "wip", "quarantine", "blocked", "damaged",
         "in_transit_transfer"}
-
-MENUNGGU_B = "IV-01 — jurnal landed cost dipecah saat persetujuan baru di serah-terima (b)"
-MENUNGGU_B_SUSUT = "IV-10 — susut potong dan potong uji mutu dinilai biaya roll di serah-terima (b)"
 
 
 def uid(awalan: str) -> str:
@@ -258,7 +259,6 @@ async def alur_u1(klien, db, manajer, admin):
     return {"po": po, "ids": ids, "v": v, "r": r, "sebelum": sebelum, "sesudah": sesudah}
 
 
-@pytest.mark.xfail(strict=True, reason=MENUNGGU_B)
 async def test_PK26_U1_roll_terjual_ke_hpp(alur_u1, db):
     r, ids = alur_u1["r"], alur_u1["ids"]
     assert r.status_code == 200, r.text
@@ -282,7 +282,6 @@ async def test_PK26_U1_roll_terjual_ke_hpp(alur_u1, db):
         ids["r_jual"]: "keluar", ids["r_stok"]: "persediaan"}
 
 
-@pytest.mark.xfail(strict=True, reason=MENUNGGU_B)
 async def test_PK26_U8_setujui_lagi_ditolak(alur_u1, klien, db, admin):
     vid = alur_u1["v"]["id"]
     r = await setujui(klien, admin[KSC], vid)
@@ -294,7 +293,6 @@ async def test_PK26_U8_setujui_lagi_ditolak(alur_u1, klien, db, admin):
     assert {a["treatment"] for a in g.json()["allocations"]} == {"keluar", "persediaan"}
 
 
-@pytest.mark.xfail(strict=True, reason=MENUNGGU_B)
 async def test_PK26_U9_rekonsiliasi_tetap_nol(alur_u1):
     """Aplikasi uji membawa jurnal seed 1-1300 Rp 750.000 di `ent_ksc` tanpa roll (selisih awal −750.000, bukan dari
     unit ini — laporan: usulan koreksi U9). Yang diuji: nilai roll naik 1.500.000 (`r_stok`), saldo 1-1300 naik
@@ -306,7 +304,6 @@ async def test_PK26_U9_rekonsiliasi_tetap_nol(alur_u1):
     assert s1["difference"] == s0["difference"]
 
 
-@pytest.mark.xfail(strict=True, reason=MENUNGGU_B)
 async def test_PK26_U2_tiga_golongan(klien, db, manajer, admin):
     po, ids = await siapkan(db, [("r_stok", "available", 100.0), ("r_mitra", "subcon", 100.0),
                                  ("r_jual", "delivered", 0.0)])
@@ -324,7 +321,6 @@ async def test_PK26_U2_tiga_golongan(klien, db, manajer, admin):
         ids["r_stok"]: 100_000, ids["r_mitra"]: 100_000, ids["r_jual"]: 0}
 
 
-@pytest.mark.xfail(strict=True, reason=MENUNGGU_B)
 async def test_PK26_U3_bagian_susut_dibebankan(klien, db, manajer, admin):
     po, _ = await siapkan(db, [("r_susut", "available", 98.0)])
     v = await buat_voucher(klien, manajer[KSC], po, 100_000)
@@ -334,7 +330,6 @@ async def test_PK26_U3_bagian_susut_dibebankan(klien, db, manajer, admin):
     assert len(jes) == 1 and baris(jes[0]) == {"1-1300": (98_000, 0), "5-1000": (2_000, 0), "2-1100": (0, 100_000)}
 
 
-@pytest.mark.xfail(strict=True, reason=MENUNGGU_B)
 async def test_PK26_U4_varians_hanya_pt_yang_diatur(klien, db, manajer, admin, kepala_admin):
     await atur(klien, kepala_admin, KUNCI, "varians", "entity", KSC)
     try:
@@ -357,7 +352,6 @@ async def test_PK26_U4_varians_hanya_pt_yang_diatur(klien, db, manajer, admin, k
     assert (await db.landed_cost_vouchers.find_one({"id": v_d["id"]}))["capitalization"]["expensed_to"] == "hpp"
 
 
-@pytest.mark.xfail(strict=True, reason=MENUNGGU_B)
 async def test_PK26_U5_akun_hpp_dari_pemetaan_pt(klien, db, manajer, admin, kepala_admin):
     r = await klien.post("/api/gl/accounts", headers=kepala_admin, params={"entity_id": KSC},
                          json={"code": "5-1900", "name": "HPP Biaya Masuk Uji PK-26", "type": "expense",
@@ -398,7 +392,6 @@ async def test_PK26_U6_periode_tertutup_tanpa_tulisan(klien, db, manajer, admin)
     assert await jurnal_aktif("landed_cost", v["id"]) == []
 
 
-@pytest.mark.xfail(strict=True, reason=MENUNGGU_B)
 async def test_PK26_U7_ulang_posting_memakai_angka_tersimpan(klien, db, manajer, admin, kepala_admin,
                                                              paksa_jurnal_gagal):
     po, ids = await siapkan(db, [("r_jual", "delivered", 0.0), ("r_stok", "available", 100.0)])
@@ -418,7 +411,6 @@ async def test_PK26_U7_ulang_posting_memakai_angka_tersimpan(klien, db, manajer,
     assert baris(je) == {"1-1300": (1.5 * JT, 0), "5-1000": (1.5 * JT, 0), "2-1100": (0, 3 * JT)}
 
 
-@pytest.mark.xfail(strict=True, reason=MENUNGGU_B)
 async def test_PK26_U10_pembulatan_sen_lewat_api(klien, db, manajer, admin):
     po, _ = await siapkan(db, [("ra", "available", 33.33, 33.33), ("rb", "available", 33.33, 33.33),
                                ("rc", "available", 33.34, 33.34)])
@@ -448,7 +440,6 @@ async def _roll_berlanded(db, **lain) -> str:
     return rid
 
 
-@pytest.mark.xfail(strict=True, reason=MENUNGGU_B_SUSUT)
 async def test_PK26_U11_susut_potong_dinilai_biaya_roll(klien, db, kepala_admin):
     rsv = uid("rsv")
     rid = await _roll_berlanded(db, length_reserved=10, length_reservations=[
@@ -461,7 +452,6 @@ async def test_PK26_U11_susut_potong_dinilai_biaya_roll(klien, db, kepala_admin)
     assert baris(je) == {"5-9500": (22_000, 0), "1-1300": (0, 22_000)}
 
 
-@pytest.mark.xfail(strict=True, reason=MENUNGGU_B_SUSUT)
 async def test_PK26_U12_potong_uji_mutu_dinilai_biaya_roll(klien, db, kepala_admin):
     rid = await _roll_berlanded(db)
     ins = uid("ins")
@@ -507,3 +497,23 @@ async def test_PK26_U13_putaran_t1_config(klien, kepala_admin):
     assert r.status_code == 400, r.text
     await pulihkan(klien, kepala_admin, KUNCI, "global")
     assert await value_of(KUNCI) == "hpp"
+
+
+# ═══ Invarian data (`02` D2) — `scripts/verify_data_integrity.py` GL-6 / INV-LC-01 ════════════════════════════════════
+async def test_PK26_invarian_INV_LC_01(db, capsys):
+    """Sesudah alur di modul ini: tiap voucher ber-`capitalization` = nominal teralokasi = jurnalnya → PASS. Fixture
+    voucher rusak (60 + 0 + 30 ≠ 100) → FAIL menyebut nomornya."""
+    sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "scripts"))
+    vdi = importlib.import_module("verify_data_integrity")
+    await vdi.layer_gl_invariants(db)
+    assert re.search(r"PASS.*INV-LC-01", capsys.readouterr().out)
+    await db.landed_cost_vouchers.insert_one({
+        "id": "lcv_pk26_rusak", "voucher_number": "LCV-PK26-RUSAK", "status": "applied", "allocated_total": 100.0,
+        "gl_status": "pending", "capitalization": {"inventory_amount": 60.0, "wip_amount": 0.0, "expensed_amount": 30.0,
+                                                   "expensed_to": "hpp"}})
+    try:
+        await vdi.layer_gl_invariants(db)
+        keluar = capsys.readouterr().out
+        assert re.search(r"FAIL.*1 voucher biaya masuk.*INV-LC-01", keluar) and "LCV-PK26-RUSAK" in keluar, keluar[-800:]
+    finally:
+        await db.landed_cost_vouchers.delete_one({"id": "lcv_pk26_rusak"})

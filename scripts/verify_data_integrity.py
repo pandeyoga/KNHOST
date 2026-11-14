@@ -1246,6 +1246,33 @@ async def layer_gl_invariants(db):
         results["pass"] += 1
         line("PASS", G, "GL: Piutang 1-1200 ter-rekonsiliasi per entitas (tak bocor ke 'all', tak negatif)")
 
+    # GL-6 (INV-LC-01, PK-26 — 02 D2/D5): voucher biaya masuk ber-`capitalization` (potret D3, tidak dihitung ulang):
+    #   (a) FAIL: persediaan + makloon + beban ≠ `allocated_total` (dalam sen);
+    #   (b) FAIL: jurnal `landed_cost` voucher terposting ≠ potretnya (Σ kredit = allocated_total).
+    def _sen(x):
+        return int(round(float(x or 0) * 100))
+    je_lc = {je.get("source_id"): je for je in jes if je.get("source_type") == "landed_cost"}
+    lc_viol, lc_je_viol = [], []
+    async for v in db.landed_cost_vouchers.find(
+            {"capitalization": {"$exists": True}, "status": {"$in": ["applied", "paid"]}},
+            {"_id": 0, "id": 1, "voucher_number": 1, "allocated_total": 1, "capitalization": 1, "gl_status": 1}):
+        cap = v.get("capitalization") or {}
+        jumlah = sum(_sen(cap.get(k)) for k in ("inventory_amount", "wip_amount", "expensed_amount"))
+        if jumlah != _sen(v.get("allocated_total")) or min(_sen(cap.get(k)) for k in (
+                "inventory_amount", "wip_amount", "expensed_amount")) < 0:
+            lc_viol.append(v.get("voucher_number") or v["id"])
+        je = je_lc.get(v["id"])
+        if v.get("gl_status") == "posted" and (
+                not je or _sen(sum(float(l.get("credit", 0) or 0) for l in je.get("lines", []))) != jumlah):
+            lc_je_viol.append(v.get("voucher_number") or v["id"])
+    if lc_viol or lc_je_viol:
+        results["fail"] += 1
+        line("FAIL", R, f"GL: {len(lc_viol)} voucher biaya masuk pecahannya ≠ nominal teralokasi, "
+                        f"{len(lc_je_viol)} jurnalnya ≠ potret (INV-LC-01)", str((lc_viol + lc_je_viol)[:5]))
+    else:
+        results["pass"] += 1
+        line("PASS", G, "GL: voucher biaya masuk — persediaan + makloon + beban = nominal teralokasi = jurnal (INV-LC-01)")
+
 
 async def layer_fixed_asset_invariants(db):
     """R6.2 — Fixed Assets: konsistensi subledger↔GL (straight-line + disposal gain/loss)."""

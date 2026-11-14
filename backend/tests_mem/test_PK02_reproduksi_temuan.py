@@ -128,8 +128,10 @@ async def test_PK02_IC05_entitas_dari_isi(aplikasi):
     assert await jumlah("journal_entries", {"entity_id": b, "source_type": "manual"}) == 0
 
 
-@pytest.mark.xfail(strict=True, reason="IV-01 — landed cost ke roll terjual menambah persediaan buku besar")
 async def test_PK02_IV01_landed_cost_roll_terjual(db):
+    """IV-01 — ditutup PK-26: jurnal voucher dibentuk dari pecahan `split_allocation` (roll SEBELUM biaya dinaikkan)
+    yang disimpan sebagai `capitalization`, seperti `approve_landed_cost`; voucher tanpa `capitalization` (lama) tetap
+    seluruhnya ke persediaan."""
     from services import landed_cost_service as lcs
     from services.roll_service import roll_value_cents
     eid = await pt_uji("V01")
@@ -147,8 +149,10 @@ async def test_PK02_IV01_landed_cost_roll_terjual(db):
     s0, g0 = await nilai_roll(), await saldo_akun("1-1300", eid)
     rolls = await lcs.resolve_target_rolls(["po_iv01"], eid)
     alloc = lcs.compute_allocation(rolls, 3 * JT, "length")
+    split = lcs.split_allocation(rolls, alloc["allocations"], alloc["allocated_total"])
     await lcs.apply_allocation_to_rolls("LC-IV01", alloc["allocations"])
-    await gl.post_landed_cost({"id": "lc_iv01", "entity_id": eid}, amount=alloc["allocated_total"], label="LC-IV01")
+    await gl.post_landed_cost({"id": "lc_iv01", "entity_id": eid, "capitalization": lcs.capitalization_of(split, "hpp")},
+                              amount=alloc["allocated_total"], label="LC-IV01")
     s1, g1 = await nilai_roll(), await saldo_akun("1-1300", eid)
     assert cocok(g1 - g0, s1 - s0), f"persediaan naik {g1 - g0:,.2f}, nilai roll naik {s1 - s0:,.2f}"
 

@@ -1308,7 +1308,7 @@ terdaftar di **`backend/services/posting_registry.py::KINDS`** (dibaca `routers/
 |---|---|---|
 | `credit_notes` | dokumen (dicerminkan ke `sales_returns` untuk nota kredit retur) | — |
 | `vendor_bills` | dokumen | — |
-| `landed_cost_vouchers` | dokumen | **`allocated_total`** (angka, wajib saat `applied`): nominal yang dikapitalisasi — ulang posting memakai angka ini |
+| `landed_cost_vouchers` | dokumen | **`allocated_total`** (angka, wajib saat `applied`): nominal voucher yang dialokasikan — ulang posting memakai angka ini; sejak PK-26 beserta pecahannya **`capitalization`** (lihat bagian koleksi) |
 | `makloon_orders` | tiap unsur **`steps[]`** (`steps.$.gl_status`, `…gl_error`, `…gl_failed_at`, `…journal_entry_id`) | `steps[].material_returns[].gl_part` = akhiran `source_id` jurnal pembalik retur bahan |
 | `inventory_movements` | baris `movement_type: cut_waste` | `gl_amount` (susut × biaya roll), `gl_source_id` (`cutw:<op>`), `gl_reason`, `gl_label` |
 | `ar_receipts` | **`void_gl_status`**, `void_gl_error`, `void_gl_failed_at`, `void_journal_entry_id` | status jurnal PEMBALIK saat kwitansi dibatalkan (`gl_status` tetap milik jurnal penerimaan) |
@@ -2821,8 +2821,10 @@ Key Fields:
   basis (value|quantity), effective_basis,
   cost_lines[{category(freight|duty|insurance|handling|other), description, amount}],
   total_cost, voucher_date, due_date, target_roll_count,
-  allocation_preview[], allocations[{roll_id, roll_no, product_id, length, weight,
-    base_unit_cost, current_unit_cost, alloc_amount, per_unit, new_unit_cost}],
+  allocation_preview[{… , treatment}], allocations[{roll_id, roll_no, product_id, length, weight,
+    base_unit_cost, current_unit_cost, alloc_amount, per_unit, new_unit_cost,
+    treatment, capitalized_amount}],
+  capitalization{inventory_amount, wip_amount, expensed_amount, expensed_to, computed_at},
   approval_required(true), required_approval_role(manager), approval_status,
   approved_by, approved_at, applied_at,
   amount_paid, payment_status (n/a|unpaid|partial|paid), payments[],
@@ -2838,6 +2840,16 @@ Alokasi:     biaya total dibagi ke roll (acquired.ref_id ∈ po_ids). Basis valu
 Efek apply:  HANYA saat APPROVE (manager+, SoD pembuat≠approver, idempotent via status).
              roll.unit_cost += per_unit (additive); roll.landed_cost_total += alloc;
              roll.landed_cost_refs += voucher_number.
+PK-26:       (IV-01, K-05) golongan roll saat disetujui → `allocations[].treatment`:
+             `persediaan` (status lain) · `wip` (`subcon`) · `keluar` (`in_transit_sales`, `delivered`,
+             `returned_supplier`, `in_transit_intercompany`). `allocations[].capitalized_amount` = kenaikan nilai
+             roll itu (sisa × per_unit dalam sen; 0 untuk `keluar`). `capitalization` (wajib saat `applied`,
+             ditulis bersama status, tidak dihitung ulang — 02 D3): `inventory_amount` (Dr persediaan),
+             `wip_amount` (Dr WIP makloon), `expensed_amount` (sisa = roll keluar + bagian roll yang sudah susut +
+             pembulatan; Dr HPP bila `expensed_to="hpp"`, Dr `pembelian.landed_cost` bila `varians` — pengaturan
+             `inventory.landed_cost_porsi_terjual` PT voucher); jumlah ketiganya = `allocated_total` = Cr hutang.
+             `allocation_preview[].treatment` hanya tampilan (dihitung saat dibuat). Voucher lama tanpa
+             `capitalization`: jurnal & ulang posting seperti dulu (seluruhnya Dr persediaan). Tanpa migrasi.
 Pay:         cash_transaction(out, ref_type=landed_cost) (opsional, setelah applied).
 ⚠️ JANGAN BUAT: landed_costs, import_costs, freight_vouchers, biaya_impor, hpp_adjustments
 ```

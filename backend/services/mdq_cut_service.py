@@ -100,7 +100,8 @@ async def cut(ins_id: str, line_id: str, *, cut_yard: float = 0.25, weight_kg: O
         "unit": unit, "lot": roll.get("lot", ""), "roll_id": roll["id"], "qty_rolls": None,
         "source_document": ins_id, "timestamp": now_iso()})
     await rebuild_balance(roll["product_id"], roll["warehouse_id"], roll.get("owner_entity_id"))
-    value = round(qty * float(roll.get("base_unit_cost") or 0), 2)
+    # PK-26 (IV-10) — biaya roll TERMASUK landed cost (`unit_cost`; `base_unit_cost` hanya bila biaya roll kosong).
+    value = round(qty * float(roll.get("unit_cost") or roll.get("base_unit_cost") or 0), 2)
     await gl.post_inventory_writeoff(roll_id=roll["id"], entity_id=roll.get("owner_entity_id") or ins.get("entity_id") or "",
                                      amount=value, reason="potong uji MD Quality (waste)",
                                      label=f"{ins.get('number') or ins_id} {roll.get('roll_no') or roll['id']}",

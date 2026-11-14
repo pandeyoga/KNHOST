@@ -740,7 +740,9 @@ async def _finish_cut(parent: Dict[str, Any], op: Dict[str, Any],
     waste_gl: Optional[Dict[str, Any]] = None
     if waste > 0:
         # PK-18 — nominal & sumber jurnal susut disimpan di baris mutasinya (ulang posting memakai angka yang sama).
-        uc = float(parent.get("base_unit_cost") or parent.get("unit_cost") or 0)
+        # PK-26 (IV-10) — biaya roll TERMASUK landed cost (`unit_cost`; `base_unit_cost` hanya bila biaya roll kosong),
+        # sama dengan nilai yang dihitung rekonsiliasi 1-1300 (`roll_value_cents`).
+        uc = float(parent.get("unit_cost") or parent.get("base_unit_cost") or 0)
         moves.append({**base, "id": f"mov_cutw_{op['op']}", "movement_type": "cut_waste", "quantity": -waste,
                       "roll_id": roll_id, "qty_rolls": None, "gl_status": "pending",
                       "gl_amount": round(waste * uc, 2), "gl_source_id": f"cutw:{op['op']}",
