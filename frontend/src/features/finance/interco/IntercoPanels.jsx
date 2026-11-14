@@ -49,7 +49,7 @@ export function TransactionsPanel({
                 <th className="text-left px-4 py-3 font-medium">Status</th>
                 <th className="text-left px-4 py-3 font-medium">Barang Fisik</th>
                 <th className="text-left px-4 py-3 font-medium">Pajak</th>
-                <th className="text-right px-4 py-3 font-medium">Aksi</th>
+                <th className="col-sticky-end text-right px-4 py-3 font-medium">Aksi</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-[#F2F2F5]">
@@ -133,7 +133,9 @@ export function TransactionsPanel({
                         <span className="text-xs text-[#B26A00]">belum difakturkan pajak</span>
                       )}
                     </td>
-                    <td className="px-4 py-3 text-right">
+                    {/* Cek visual 14 Nov: tabel min 960 px lebih lebar dari kartu di 1280 px → tombol langkah terpotong;
+                        kolom aksi lekat di kanan supaya tetap tampak saat tabel bergulir. */}
+                    <td className="col-sticky-end px-4 py-3 text-right">
                       <div className="inline-flex items-center gap-1">
                         <button onClick={() => onView?.(r)} data-testid={`interco-view-${r.id}`}
                                 title="Lihat detail dokumen kembar"

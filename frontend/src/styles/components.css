@@ -995,10 +995,11 @@
 .rt .data-table th.rt-actions, .rt .data-table td.rt-actions { text-align: right; white-space: nowrap; }
 .rt .data-table .rt-sticky { position: sticky; right: 0; background: #fff; box-shadow: -6px 0 8px -6px rgba(0,0,0,.12); }
 .rt .data-table thead .rt-sticky { background: #FAFBFC; z-index: 2; }
-/* Kolom aksi lekat di kanan untuk `.data-table` biasa (bukan ResponsiveTable): tombol Ubah tetap tampak saat tabel
+/* Kolom aksi lekat di kanan untuk tabel biasa (bukan ResponsiveTable): tombol Ubah tetap tampak saat tabel
    lebar bergulir di wadahnya (Penomoran Dokumen KP-T5 — cek visual 14 Nov). */
-.data-table .col-sticky-end { position: sticky; right: 0; background: #fff; box-shadow: -6px 0 8px -6px rgba(0,0,0,.12); }
-.data-table thead .col-sticky-end { background: #FAFBFC; z-index: 2; }
+.col-sticky-end { position: sticky; right: 0; background: #fff; box-shadow: -6px 0 8px -6px rgba(0,0,0,.12); }
+thead .col-sticky-end { background: #F7F7F9; z-index: 2; }
+.data-table thead .col-sticky-end { background: #FAFBFC; }
 .data-table tbody tr:hover .col-sticky-end { background: #FAFBFC; }
 /* Tabel bernaskah kolom panjang: judul kolom boleh dua baris agar tabel muat tanpa bergulir di 1280 px. */
 .data-table.head-wrap thead th { white-space: normal; vertical-align: bottom; }
