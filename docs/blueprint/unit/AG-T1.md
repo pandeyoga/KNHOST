@@ -192,12 +192,12 @@ dipakai `ent_ksc` dan satu gudang khusus `ent_kanda`; akun `adm` (admin seed). K
 | U8 | B | Kartu `ent_ksc` | `confirm` dengan `X-Entity-Id: ent_kanda`; lalu dengan `X-Entity-Id: all` | Keduanya 409 "Draf ini disiapkan untuk …"; `status` tetap `pending` |
 | U9 | B | Kartu `ent_ksc`; `allowed_entity_ids` pembuat diubah menjadi hanya `ent_kanda` | `confirm` | 403; `status` tetap `pending`; jumlah PO = 0 |
 | U10 | B | — | `propose_action` dengan `X-Entity-Id: all` | 400 "Pilih satu PT dulu…"; tidak ada dokumen kartu baru |
-| U11 | B | Kartu draf PO berisi P1 | `confirm` dengan semua qty 0; lalu `confirm` dengan qty 5 | Pertama 400 dan `status` tetap `pending`; kedua 200 `confirmed` |
+| U11 | B | Kartu draf PO berisi P1 | `confirm` dengan semua qty 0; lalu `confirm` dengan qty 5 | Pertama 400 dan status tidak pernah berubah selama permintaan (kode lama: `running` lalu `pending`); kedua 200 `confirmed` |
 | U12 | B | Akun sales ber-PT `ent_ksc` | `POST /api/ai/tools/find_entities` `{"kind": "supplier", "query": "s"}` | Kandidat memuat S1, S2, S4; tidak memuat S3 |
 | U13 | B | Sama | `find_entities` jenis `warehouse` dan `sales_person` | Gudang khusus `ent_kanda` dan akun sales ber-PT `ent_kanda` saja tidak muncul |
 | U14 | B | — | Uji statik: tiap nilai `enum` `doc_type`, `report`, `kind` (alat `find_entities`) dibandingkan dengan yang dilayani kode | Jumlah nilai: 7, 18, 5; tidak ada nilai tanpa pelaksana |
 | U15 | B | `ai.enabled` = ya; `set_test_provider(ScriptedProvider([{"tool": "find_entities", "args": {"kind": "supplier", "query": "s1"}}, {"text": "Ada satu pemasok."}]))` | `POST /api/ai/chat` | Event memuat `tool` bernama `find_entities` dan `done` berteks "Ada satu pemasok."; `.calls` berisi 2 permintaan; satu baris `ai_usage_log` berstatus `done` |
-| U16 | B | — | Uji statik: berkas di `backend/services/` yang mengimpor pustaka klien penyedia model | Hanya modul pelaksana penyedia |
+| U16 | B | — | Uji statik: berkas di `backend/services/` yang mengimpor pustaka klien penyedia model | Hanya modul pelaksana penyedia: `ai_provider.py` (Tanya KN), ditambah pelaksana fitur lain yang sudah ada (`ocr_openai_client.py`, `hr_ai_service.py`); `ai_chat_service.py` dan `ai_narrative.py` tidak lagi mengimpor |
 | U17 | B | — | Putaran `t1_config.py` untuk `ai.kartu_masa_berlaku_jam` (nilai 0 dan 200) | Tulis global terbaca; lapisan PT hanya PT itu; 0 dan 200 → 400 |
 | U18 | layar (uji jalan) | Kartu dari U1 | Buka percakapannya di Tanya KN | Tampil "Gagal: …", "Sudah dibuat sebelum gagal: …", tanpa tombol setujui |
 
