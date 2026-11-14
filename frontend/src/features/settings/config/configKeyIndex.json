@@ -650,6 +650,10 @@
    "pembelian",
    "tagihan"
   ],
+  "inventory.landed_cost_porsi_terjual": [
+   "pembelian",
+   "tagihan"
+  ],
   "inventory.default_uom": [
    "stok",
    "kerja-gudang"

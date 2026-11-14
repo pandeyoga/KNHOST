@@ -20,12 +20,100 @@ tidak bisa di-apply ulang). Pembuat ≠ approver (SoD).
 """
 from typing import Any, Dict, List, Optional
 from db import db
-from core_utils import now_iso
+from core_utils import now_iso, to_cents, from_cents
 from services import roll_cost_history
+from services.roll_service import OFFSITE_OWNED_STATUS_TO_BUCKET, roll_value_cents
 
 ACTIVE_VOUCHER_STATUSES = {"draft", "pending_approval", "applied", "paid"}
 PAYABLE_VOUCHER_STATUSES = {"applied", "paid"}
 COST_CATEGORIES = {"freight", "duty", "insurance", "handling", "other"}
+
+# PK-26 (IV-01, K-05) — GOLONGAN roll saat voucher disetujui menentukan ke mana biaya masuk dibukukan:
+#   persediaan → nilai roll di gudang naik (1-1300); wip → roll di mitra makloon (1-1350, sama dengan kirim bahan);
+#   keluar     → roll sudah meninggalkan PT (terkirim/retur ke pemasok/antar-PT): bagiannya langsung beban periode
+#                berjalan (pengaturan `inventory.landed_cost_porsi_terjual`: HPP atau akun biaya masuk pembelian).
+# Status di luar dua daftar (mis. `receiving`) = persediaan — sama dengan perilaku sebelum PK-26.
+TREATMENT_PERSEDIAAN, TREATMENT_WIP, TREATMENT_KELUAR = "persediaan", "wip", "keluar"
+WIP_ROLL_STATUSES = frozenset(OFFSITE_OWNED_STATUS_TO_BUCKET)          # {"subcon"} — satu sumber dengan bucket roll
+OUT_ROLL_STATUSES = frozenset({"in_transit_sales", "delivered", "returned_supplier", "in_transit_intercompany"})
+#: golongan → kunci Pemetaan Akun baris debit (P9: akun dari pemetaan per PT, bukan kode tetap)
+TREATMENT_ACCOUNT_KEY = {TREATMENT_PERSEDIAAN: "persediaan.persediaan", TREATMENT_WIP: "makloon.wip_subcon"}
+#: nilai `inventory.landed_cost_porsi_terjual` → kunci Pemetaan Akun baris porsi keluar (tanpa akun/kunci baru)
+EXPENSE_ACCOUNT_KEY = {"hpp": "persediaan.hpp", "varians": "pembelian.landed_cost"}
+
+
+def treatment_of(roll: Dict[str, Any]) -> str:
+    """Golongan satu roll: `persediaan` · `wip` · `keluar` (dari `status` roll)."""
+    status = (roll or {}).get("status") or ""
+    if status in WIP_ROLL_STATUSES:
+        return TREATMENT_WIP
+    if status in OUT_ROLL_STATUSES:
+        return TREATMENT_KELUAR
+    return TREATMENT_PERSEDIAAN
+
+
+def split_allocation(rolls: List[Dict[str, Any]], allocations: List[Dict[str, Any]],
+                     allocated_total: float) -> Dict[str, Any]:
+    """PK-26 — pecah nominal voucher menjadi porsi persediaan, makloon (WIP), dan beban. Murni (tanpa tulisan).
+
+    `rolls` = dokumen roll SEBELUM biaya dinaikkan (`apply_allocation_to_rolls`). Per alokasi roll golongan persediaan/
+    wip: kenaikan = `to_cents(sisa × (biaya + per_unit)) − roll_value_cents(roll)` — persis kenaikan nilai roll yang
+    dihitung rekonsiliasi sesudah `$inc unit_cost`. Roll keluar = 0. Sisa (`allocated_total` − Σ kenaikan) = beban:
+    memuat roll keluar, bagian roll hidup yang sudah susut (panjang awal − sisa), dan pembulatan.
+
+    Kenaikan satu roll yang melebihi alokasinya tepat 1 sen = pembulatan dua nilai yang masing-masing dibulatkan ke sen
+    (biaya roll yang sudah memuat landed cost lama berpecahan sen), bukan kenaikan nyata: dibatasi ke alokasinya supaya
+    persetujuan tidak ditolak. Lebih dari itu (sisa > panjang awal = data roll rusak) dibiarkan → beban negatif →
+    `ValueError` (persetujuan 409 tanpa tulisan)."""
+    by_id = {r.get("id"): r for r in rolls or []}
+    sen = {TREATMENT_PERSEDIAAN: 0, TREATMENT_WIP: 0}
+    per_roll: List[Dict[str, Any]] = []
+    for a in allocations or []:
+        r = by_id.get(a.get("roll_id")) or {}
+        golongan = treatment_of(r)
+        naik = 0
+        if golongan != TREATMENT_KELUAR:
+            biaya = float(r.get("unit_cost") or r.get("base_unit_cost") or 0)
+            sesudah = to_cents(float(r.get("length_remaining") or 0) * (biaya + float(a.get("per_unit") or 0)))
+            naik = sesudah - roll_value_cents(r)
+            jatah = to_cents(a.get("alloc_amount") or 0)
+            if 0 < naik - jatah <= 1:
+                naik = jatah
+            sen[golongan] += naik
+        per_roll.append({"roll_id": a.get("roll_id"), "treatment": golongan, "capitalized_amount": from_cents(naik)})
+    beban = to_cents(allocated_total) - sen[TREATMENT_PERSEDIAAN] - sen[TREATMENT_WIP]
+    if beban < 0:
+        raise ValueError("Hitungan pembebanan landed cost negatif")
+    return {"inventory_amount": from_cents(sen[TREATMENT_PERSEDIAAN]), "wip_amount": from_cents(sen[TREATMENT_WIP]),
+            "expensed_amount": from_cents(beban), "per_roll": per_roll}
+
+
+async def expensed_to_for(entity_id: str) -> str:
+    """Pengaturan `inventory.landed_cost_porsi_terjual` untuk PT voucher (`hpp` · `varians`; bawaan K-05 `hpp`)."""
+    from services.config_resolver import value_of
+    nilai = await value_of("inventory.landed_cost_porsi_terjual", {"entity_id": entity_id or ""})
+    return nilai if nilai in EXPENSE_ACCOUNT_KEY else "hpp"
+
+
+def capitalization_of(split: Dict[str, Any], expensed_to: str) -> Dict[str, Any]:
+    """Potret `capitalization` voucher (`02` D3: ditulis sekali bersama status `applied`, tidak dihitung ulang)."""
+    return {"inventory_amount": split["inventory_amount"], "wip_amount": split["wip_amount"],
+            "expensed_amount": split["expensed_amount"],
+            "expensed_to": expensed_to if expensed_to in EXPENSE_ACCOUNT_KEY else "hpp", "computed_at": now_iso()}
+
+
+def with_treatment(allocations: List[Dict[str, Any]], split: Dict[str, Any], *,
+                   capitalized: bool = True) -> List[Dict[str, Any]]:
+    """Baris alokasi + `treatment` (+ `capitalized_amount` bila `capitalized`) dari hasil `split_allocation`."""
+    per = {p["roll_id"]: p for p in split.get("per_roll") or []}
+    out = []
+    for a in allocations or []:
+        p = per.get(a.get("roll_id")) or {}
+        extra = {"treatment": p.get("treatment", TREATMENT_PERSEDIAAN)}
+        if capitalized:
+            extra["capitalized_amount"] = p.get("capitalized_amount", 0.0)
+        out.append({**a, **extra})
+    return out
 
 
 async def next_voucher_number(entity_id: Optional[str] = None) -> str:

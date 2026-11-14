@@ -2721,18 +2721,52 @@ async def post_purchase_return(ret: Dict[str, Any], *, amount: float, ppn: float
         source_id=rid, entity_id=ret.get("entity_id", ""), created_by="system", source_label=label)
 
 
-async def post_landed_cost(voucher: Dict[str, Any], *, amount: float,
+def landed_cost_lines(capitalization: Dict[str, Any], label: str = "") -> List[Dict[str, Any]]:
+    """PK-26 (IV-01, K-05) — baris jurnal voucher biaya masuk dari potret `capitalization` (murni, belum dipetakan).
+
+    Dr persediaan (`inventory_amount`) · Dr persediaan dalam proses makloon (`wip_amount`) · Dr porsi sudah keluar
+    (`expensed_amount`: HPP bila `expensed_to="hpp"`, akun biaya masuk pembelian bila `varians`) / Cr hutang (jumlah
+    ketiganya = `allocated_total`). Akun lewat kunci Pemetaan Akun per PT (P9); baris bernilai 0 tidak ditulis."""
+    from services.landed_cost_service import (EXPENSE_ACCOUNT_KEY, TREATMENT_ACCOUNT_KEY, TREATMENT_PERSEDIAAN,
+                                              TREATMENT_WIP)
+    cap = capitalization or {}
+    porsi = [(TREATMENT_ACCOUNT_KEY[TREATMENT_PERSEDIAAN], to_cents(cap.get("inventory_amount")),
+              f"Kapitalisasi landed cost {label} ke persediaan"),
+             (TREATMENT_ACCOUNT_KEY[TREATMENT_WIP], to_cents(cap.get("wip_amount")),
+              f"Kapitalisasi landed cost {label} ke barang di makloon"),
+             (EXPENSE_ACCOUNT_KEY.get(cap.get("expensed_to"), EXPENSE_ACCOUNT_KEY["hpp"]),
+              to_cents(cap.get("expensed_amount")), f"Landed cost {label} untuk roll yang sudah keluar")]
+    lines = [{"account_key": key, "debit": from_cents(sen), "credit": 0.0, "description": desc}
+             for key, sen, desc in porsi if sen > 0]
+    total = sum(sen for _, sen, _ in porsi if sen > 0)
+    if total <= 0:
+        return []
+    lines.append({"account_key": "pembelian.hutang", "debit": 0.0, "credit": from_cents(total),
+                  "description": f"Hutang landed cost {label}"})
+    return lines
+
+
+async def post_landed_cost(voucher: Dict[str, Any], *, amount: float = 0.0,
                            label: str = "") -> Optional[Dict[str, Any]]:
-    """Session #074 (LC-APPLY-GL) — kapitalisasi landed cost ke GL.
-      Dr Persediaan(1-1300) / Cr Hutang(2-1100).
-    Konsisten dgn LC-PAY (bayar = Dr Hutang / Cr Kas). Idempotent (source_type='landed_cost')."""
+    """Session #074 (LC-APPLY-GL) — jurnal voucher landed cost. Idempotent (source_type='landed_cost').
+
+    PK-26 — voucher ber-`capitalization` (disetujui sejak PK-26): baris dari potret itu (`landed_cost_lines`); ulang
+    posting memakai potret yang sama. Voucher lama tanpa `capitalization`: perilaku lama, Dr Persediaan(1-1300) /
+    Cr Hutang(2-1100) sebesar `amount`. Konsisten dgn LC-PAY (bayar = Dr Hutang / Cr Kas)."""
     vid = voucher.get("id")
-    amount = round(float(amount or 0), 2)
-    if not vid or amount <= EPS or await _already_posted("landed_cost", vid):
+    label = label or voucher.get("voucher_number") or vid or ""
+    if not vid or await _already_posted("landed_cost", vid):
         return None
+    if voucher.get("capitalization"):
+        lines = landed_cost_lines(voucher["capitalization"], label)
+        if not lines:
+            return None
+    else:
+        amount = round(float(amount or 0), 2)
+        if amount <= EPS:
+            return None
+        lines = _balanced_pair(ACC_PERSEDIAAN, ACC_HUTANG, amount, f"Kapitalisasi landed cost {label}")
     await seed_default_coa()
-    lines = _balanced_pair(ACC_PERSEDIAAN, ACC_HUTANG, amount,
-                           f"Kapitalisasi landed cost {label}")
     return await _insert_entry(
         lines=lines, description=f"Landed cost {label}", date=now_iso(),
         source_type="landed_cost", source_id=vid, entity_id=voucher.get("entity_id", ""),

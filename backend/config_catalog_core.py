@@ -620,6 +620,22 @@ E("purchasing.bill_price_tolerance_percent", sensitif_baca=False,  # KF-T1 — d
   example="Harga PO Rp 100.000 · ditagih Rp 108.000 (+8%) · toleransi 5% → ditandai selisih",
   consumers=("services/three_way_policy.py",), risk="medium")
 
+# PK-26 (IV-01, K-05) — porsi voucher biaya masuk untuk roll yang sudah keluar (terkirim, retur ke pemasok, antar-PT)
+# tidak lagi mengendap di persediaan: dibebankan ke HPP (bawaan K-05) atau ke akun biaya masuk pembelian
+# (`pembelian.landed_cost`, Pemetaan Akun yang sudah ada — tanpa akun/kunci pemetaan baru).
+E("inventory.landed_cost_porsi_terjual", group="pembelian", section="tagihan", type="enum", default="hpp",
+  options=({"value": "hpp", "label": "Bebankan ke HPP periode berjalan"},
+           {"value": "varians", "label": "Catat di akun biaya masuk pembelian"}),
+  scopes=("global", "entity"),
+  label="Biaya masuk untuk barang yang sudah terjual",
+  help="Menentukan ke mana biaya angkut/bea dibukukan untuk roll yang sudah terkirim ke pelanggan saat voucher biaya "
+       "masuk disetujui. Roll yang masih di gudang selalu menambah nilai persediaan.",
+  impact="Mengubah akun beban pada jurnal voucher biaya masuk berikutnya. Voucher yang sudah disetujui tidak berubah.",
+  example="Voucher Rp 3.000.000 untuk dua roll senilai sama, satu sudah terjual: Rp 1.500.000 ke persediaan, "
+          "Rp 1.500.000 ke HPP (atau ke akun biaya masuk pembelian).",
+  risk="high", requires_reason=True, permission=("accounting", "manage"),
+  consumers=("services/landed_cost_service.py:expensed_to_for",))   # dibaca `approve_landed_cost` (PERIKSA)
+
 # ═══════════════════════════════════════════════════════════════════════════
 # STOK, SATUAN & ALOKASI
 # ═══════════════════════════════════════════════════════════════════════════
