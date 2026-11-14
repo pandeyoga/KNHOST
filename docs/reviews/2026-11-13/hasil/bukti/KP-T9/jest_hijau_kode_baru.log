@@ -1,0 +1,19 @@
+# KP-T9 — jest kode baru: uji baru + uji lama yang disesuaikan (navAccess, roleReach, serverAccessReach, kpt2LengkapiPt) + suite config lain
+PASS src/components/__tests__/pageTabs.test.js
+PASS src/features/__tests__/kpt2LengkapiPt.test.js
+PASS src/features/__tests__/kpt9BagianLayar.test.js
+PASS src/config/__tests__/serverAccessReach.test.js
+PASS src/features/__tests__/prt6LayarPeran.test.js
+PASS src/config/__tests__/viewAliases.test.js
+PASS src/config/__tests__/roleReach.test.js
+PASS src/config/__tests__/kpt9HubPengaturan.test.js
+PASS src/config/__tests__/navAccess.test.js
+PASS src/config/__tests__/prt4HalamanAwal.test.js
+PASS src/config/__tests__/mnt1MenuKeuangan.test.js
+Test Suites: 11 passed, 11 total
+Tests:       224 passed, 224 total
+
+# jest seluruhnya (folder kerja terpisah)
+HEAD a742da9 : Test Suites: 35 failed, 86 passed, 121 total · Tests:       662 passed, 662 total
+kode baru    : Test Suites: 35 failed, 88 passed, 123 total · Tests:       715 passed, 715 total
+35 suite gagal dimuat (@radix-ui/primitive/is-development) identik di kedua pohon

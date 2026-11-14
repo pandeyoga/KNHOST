@@ -1,0 +1,94 @@
+# hitung_penjaga.sh — sebelum (a742da9)
+verify_auth_coverage: [FAIL] 28 pelanggaran :
+verify_ui_standard: [FAIL] 15 pelanggaran :
+verify_approval_queues: 
+audit_i18n_id:   ✗ 109 temuan di 62 berkas.
+audit_create_modal: [FAIL] 6 pelanggaran :
+verify_page_tabs: [FAIL] 1 pelanggaran total (INV-UI-12 1 · INV-UI-13 0 · INV-UI-14 0)
+verify_to_list_bound: [FAIL] 6 pelanggaran :
+verify_list_export: [PASS] 0 pelanggaran.
+verify_error_notice: [PASS] 0 pelanggaran.
+verify_custom_modals: [PASS] 0 pelanggaran.
+verify_knselect_contract: verify_knselect_contract: 0 temuan
+verify_entity_label:   ✗ 2 pelanggaran:
+verify_access_catalog_nav: verify_access_catalog_nav: 0 temuan
+verify_money_idempotency: [PASS] 0 pelanggaran.
+verify_codebase_map: [PASS] 0 pelanggaran.
+verify_scope_guard: 
+
+# hitung_penjaga.sh — sesudah (kode baru)
+verify_auth_coverage: [FAIL] 28 pelanggaran :
+verify_ui_standard: [FAIL] 15 pelanggaran :
+verify_approval_queues: 
+audit_i18n_id:   ✗ 109 temuan di 62 berkas.
+audit_create_modal: [FAIL] 6 pelanggaran :
+verify_page_tabs: [FAIL] 1 pelanggaran total (INV-UI-12 1 · INV-UI-13 0 · INV-UI-14 0)
+verify_to_list_bound: [FAIL] 6 pelanggaran :
+verify_list_export: [PASS] 0 pelanggaran.
+verify_error_notice: [PASS] 0 pelanggaran.
+verify_custom_modals: [PASS] 0 pelanggaran.
+verify_knselect_contract: verify_knselect_contract: 0 temuan
+verify_entity_label:   ✗ 2 pelanggaran:
+verify_access_catalog_nav: verify_access_catalog_nav: 0 temuan
+verify_money_idempotency: [PASS] 0 pelanggaran.
+verify_codebase_map: [PASS] 0 pelanggaran.
+verify_scope_guard: 
+
+# diff
+IDENTIK
+
+# verify_page_tabs (rinci)
+  ✗ features/wms/InventoryStockView.jsx — berkas BARU memakai tab/pil buatan sendiri (1×). Pakai components/PageTabs.jsx (tab) atau components/FilterChips.jsx (saringan).
+→ Perbaiki sesuai INVARIANT INV-UI-12 (detail: memory/INVARIANTS.md).
+  hub > 6 tab: {'products-pricing': 8, 'purchase-orders': 7} (baseline {'products-pricing': 8, 'purchase-orders': 7})
+  berkas tab tingkat ketiga: 41 (baseline 41)
+== INV-UI-13 — paling banyak 6 tab tampak per hub (baseline hanya boleh turun) ==
+[PASS] 38 cek lolos, 0 pelanggaran.
+== INV-UI-14 — tanpa tab tingkat ketiga — komponen tab hub tampak tanpa PageTabs/kelas tab-bar ==
+[PASS] 140 cek lolos, 0 pelanggaran.
+[FAIL] 1 pelanggaran total (INV-UI-12 1 · INV-UI-13 0 · INV-UI-14 0)
+
+# verify_access_catalog_nav + --self-test
+verify_access_catalog_nav: 0 temuan
+  ✓ katalog sah → 0 temuan
+  ✓ butir grup Pengaturan terbaca (2 hub)
+  ✓ (1) id tak dikenal → merah
+  ✓ (2) hub tanpa tab tampaknya → merah
+  ✓ (3) tab tampak tanpa modul → tepat 1 temuan
+  ✓ (3) tab tersembunyi tidak dituntut
+  ✓ (4) tanpa settings-hub → merah
+  ✓ (4) tanpa hub induk → merah
+  ✓ rute `[...].includes(activeView)` dikenal
+  SELF-TEST HIJAU (0 gagal)
+
+# verify_view_aliases + --self-test
+== INV-NAV-02 — alias layar tidak memutus pintu/hak (registri config/viewAliases.js) ==
+[PASS] 162 cek lolos, 0 pelanggaran.
+  SELF-TEST HIJAU (0 gagal)
+
+# check_nav_map (salinan berjalur worktree)
+✓ Config valid: 25 entri (8 grup), 63 id unik, konvensi testid render OK
+✓ Semua 3 tab WMS hadir + konvensi testid OK
+✓ overlay ROLE_NAV terbaca untuk 9 peran baru: designer(+5/-2) · driver(+2/-0) · finance(+46/-0) · md(+41/-5) · md_quality(+7/-0) · qc(+7/-0) · sales_admin(+12/-3, warisi sales) · sample_admin(+12/-7) · warehouse_admin(+7/-1, warisi warehouse)
+✓ Role matrix konsisten (item ter-reach → admin:59, manager:53, sales_admin:27, finance:20, sales:22, warehouse:21, designer:5, driver:3, md:16, warehouse_admin:24, sample_admin:9, md_quality:5, qc:5)
+✓ Kedalaman IA = 3 (Grup→Menu→Tab) ≤ 4 — sesuai KN_13
+✓ 158 layar semuanya punya judul & kicker (PAGE_META: 190 entri)
+✓ label/title/kicker di navStructure.js, hubTabs.js, navMeta.js memakai istilah PT
+✓ Navigation map COMPLIANT dengan KN_13 (grouped IA)
+✓ NAV MAP: PASS
+
+# verify_role_gate_ui + --self-test
+[PASS] 31 cek lolos, 0 pelanggaran.
+  SELF-TEST HIJAU (0 gagal)
+
+# audit_config_wiring --strict (salinan berjalur)
+Total kunci terdeklarasi: 442 (registry 434)
+✅ INV-CFG: setiap setting terdeklarasi punya pembaca kode DAN jalur ubah yang nyata; tidak ada editor ganda.
+rc=0
+
+# verify_config_text / verify_config_fallback (+ --entity)
+[PASS] 3052 cek lolos, 0 pelanggaran.
+[PASS] 145 cek lolos, 0 pelanggaran.
+[PASS] 145 cek lolos, 0 pelanggaran.
+verify_desk_targets: 33 target diperiksa, 0 temuan
+[PASS] 5 cek lolos, 0 pelanggaran.

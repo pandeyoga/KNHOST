@@ -1,0 +1,414 @@
+{
+ "tanpa_izin": {
+  "admin": [
+   "admin",
+   "amendment-reasons",
+   "approval-rules",
+   "bank-recon-rules",
+   "client-dataset-import",
+   "domain-registry",
+   "entities-access",
+   "entity-masters",
+   "expense-categories",
+   "gl-account-mappings",
+   "grade-master",
+   "hr-attendance-setup",
+   "pdf-templates",
+   "return-policies",
+   "rnd-divisions",
+   "scheduler",
+   "settings-cfg-approval",
+   "settings-cfg-finance",
+   "settings-cfg-hr",
+   "settings-cfg-purchasing",
+   "settings-cfg-rnd",
+   "settings-cfg-sales",
+   "settings-cfg-system",
+   "settings-cfg-warehouse",
+   "settings-config",
+   "settings-devices",
+   "settings-doc-numbering",
+   "settings-dual-control",
+   "settings-receiving-ocr"
+  ],
+  "manager": [
+   "amendment-reasons",
+   "approval-rules",
+   "bank-recon-rules",
+   "domain-registry",
+   "entities-access",
+   "entity-masters",
+   "expense-categories",
+   "gl-account-mappings",
+   "grade-master",
+   "hr-attendance-setup",
+   "pdf-templates",
+   "return-policies",
+   "rnd-divisions",
+   "scheduler",
+   "settings-cfg-approval",
+   "settings-cfg-finance",
+   "settings-cfg-hr",
+   "settings-cfg-purchasing",
+   "settings-cfg-rnd",
+   "settings-cfg-sales",
+   "settings-cfg-system",
+   "settings-cfg-warehouse",
+   "settings-config",
+   "settings-devices",
+   "settings-doc-numbering",
+   "settings-dual-control",
+   "settings-receiving-ocr"
+  ],
+  "sales_admin": [
+   "grade-master",
+   "return-policies"
+  ],
+  "finance": [
+   "gl-account-mappings"
+  ],
+  "sales": [],
+  "warehouse": [],
+  "designer": [],
+  "driver": [],
+  "md": [],
+  "warehouse_admin": [
+   "grade-master",
+   "settings-receiving-ocr"
+  ],
+  "sample_admin": [],
+  "md_quality": [],
+  "qc": []
+ },
+ "dengan_izin": {
+  "admin": [
+   "admin",
+   "amendment-reasons",
+   "approval-rules",
+   "bank-recon-rules",
+   "client-dataset-import",
+   "domain-registry",
+   "entities-access",
+   "entity-masters",
+   "expense-categories",
+   "gl-account-mappings",
+   "grade-master",
+   "hr-attendance-setup",
+   "pdf-templates",
+   "return-policies",
+   "rnd-divisions",
+   "scheduler",
+   "settings-cfg-approval",
+   "settings-cfg-finance",
+   "settings-cfg-hr",
+   "settings-cfg-purchasing",
+   "settings-cfg-rnd",
+   "settings-cfg-sales",
+   "settings-cfg-system",
+   "settings-cfg-warehouse",
+   "settings-config",
+   "settings-devices",
+   "settings-doc-numbering",
+   "settings-dual-control",
+   "settings-receiving-ocr"
+  ],
+  "manager": [
+   "amendment-reasons",
+   "approval-rules",
+   "bank-recon-rules",
+   "domain-registry",
+   "entities-access",
+   "entity-masters",
+   "expense-categories",
+   "gl-account-mappings",
+   "grade-master",
+   "hr-attendance-setup",
+   "pdf-templates",
+   "return-policies",
+   "rnd-divisions",
+   "scheduler",
+   "settings-cfg-approval",
+   "settings-cfg-finance",
+   "settings-cfg-hr",
+   "settings-cfg-purchasing",
+   "settings-cfg-rnd",
+   "settings-cfg-sales",
+   "settings-cfg-system",
+   "settings-cfg-warehouse",
+   "settings-config",
+   "settings-devices",
+   "settings-doc-numbering",
+   "settings-dual-control",
+   "settings-receiving-ocr"
+  ],
+  "sales_admin": [
+   "grade-master",
+   "return-policies"
+  ],
+  "finance": [
+   "gl-account-mappings"
+  ],
+  "sales": [],
+  "warehouse": [],
+  "designer": [],
+  "driver": [],
+  "md": [],
+  "warehouse_admin": [
+   "grade-master",
+   "settings-receiving-ocr"
+  ],
+  "sample_admin": [],
+  "md_quality": [],
+  "qc": []
+ },
+ "aliases": [
+  "advance-report",
+  "approvals",
+  "cash-advances",
+  "costing",
+  "cs-design-gallery",
+  "cs-rfid-devices",
+  "doc-templates-basic",
+  "finance",
+  "interco-transfers",
+  "kas-aset",
+  "my-approvals",
+  "purchase-orders",
+  "reimburse-payables",
+  "rnd-handfeel",
+  "rnd-labdip",
+  "rnd-proofing",
+  "settings-cfg-documents",
+  "settings-cfg-notify",
+  "settings-hub",
+  "settlements",
+  "store-credit",
+  "uom-conversions"
+ ],
+ "hub_tabs": {
+  "settings-company": [
+   "entities-access",
+   "permission-matrix(h)"
+  ],
+  "settings-approval": [
+   "approval-rules",
+   "rnd-divisions",
+   "settings-cfg-approval",
+   "settings-dual-control"
+  ],
+  "settings-sales": [
+   "settings-cfg-sales",
+   "amendment-reasons",
+   "return-policies"
+  ],
+  "settings-warehouse": [
+   "settings-cfg-warehouse",
+   "settings-receiving-ocr",
+   "grade-master"
+  ],
+  "settings-purchasing": [
+   "settings-cfg-purchasing"
+  ],
+  "settings-finance": [
+   "settings-cfg-finance",
+   "gl-account-mappings",
+   "expense-categories",
+   "bank-recon-rules"
+  ],
+  "settings-hr": [
+   "settings-cfg-hr",
+   "hr-attendance-setup"
+  ],
+  "settings-rnd": [
+   "settings-cfg-rnd"
+  ],
+  "settings-masters": [
+   "entity-masters",
+   "domain-registry",
+   "client-dataset-import"
+  ],
+  "settings-documents": [
+   "pdf-templates",
+   "settings-doc-numbering"
+  ],
+  "settings-notify": [
+   "scheduler"
+  ],
+  "settings-system": [
+   "settings-config",
+   "settings-cfg-system",
+   "settings-devices",
+   "admin"
+  ]
+ },
+ "deeplink_admin": {
+  "entities-access": {
+   "navId": "settings-company",
+   "view": "entities-access"
+  },
+  "permission-matrix": {
+   "navId": "settings-company",
+   "view": "permission-matrix"
+  },
+  "approval-rules": {
+   "navId": "settings-approval",
+   "view": "approval-rules"
+  },
+  "rnd-divisions": {
+   "navId": "settings-approval",
+   "view": "rnd-divisions"
+  },
+  "settings-cfg-approval": {
+   "navId": "settings-approval",
+   "view": "settings-cfg-approval"
+  },
+  "settings-dual-control": {
+   "navId": "settings-approval",
+   "view": "settings-dual-control"
+  },
+  "settings-cfg-sales": {
+   "navId": "settings-sales",
+   "view": "settings-cfg-sales"
+  },
+  "amendment-reasons": {
+   "navId": "settings-sales",
+   "view": "amendment-reasons"
+  },
+  "return-policies": {
+   "navId": "settings-sales",
+   "view": "return-policies"
+  },
+  "settings-cfg-warehouse": {
+   "navId": "settings-warehouse",
+   "view": "settings-cfg-warehouse"
+  },
+  "settings-receiving-ocr": {
+   "navId": "settings-warehouse",
+   "view": "settings-receiving-ocr"
+  },
+  "grade-master": {
+   "navId": "settings-warehouse",
+   "view": "grade-master"
+  },
+  "settings-cfg-purchasing": {
+   "navId": "settings-purchasing",
+   "view": "settings-cfg-purchasing"
+  },
+  "settings-cfg-finance": {
+   "navId": "settings-finance",
+   "view": "settings-cfg-finance"
+  },
+  "gl-account-mappings": {
+   "navId": "settings-finance",
+   "view": "gl-account-mappings"
+  },
+  "expense-categories": {
+   "navId": "settings-finance",
+   "view": "expense-categories"
+  },
+  "bank-recon-rules": {
+   "navId": "settings-finance",
+   "view": "bank-recon-rules"
+  },
+  "settings-cfg-hr": {
+   "navId": "settings-hr",
+   "view": "settings-cfg-hr"
+  },
+  "hr-attendance-setup": {
+   "navId": "settings-hr",
+   "view": "hr-attendance-setup"
+  },
+  "settings-cfg-rnd": {
+   "navId": "settings-rnd",
+   "view": "settings-cfg-rnd"
+  },
+  "entity-masters": {
+   "navId": "settings-masters",
+   "view": "entity-masters"
+  },
+  "domain-registry": {
+   "navId": "settings-masters",
+   "view": "domain-registry"
+  },
+  "client-dataset-import": {
+   "navId": "settings-masters",
+   "view": "client-dataset-import"
+  },
+  "pdf-templates": {
+   "navId": "settings-documents",
+   "view": "pdf-templates"
+  },
+  "settings-doc-numbering": {
+   "navId": "settings-documents",
+   "view": "settings-doc-numbering"
+  },
+  "scheduler": {
+   "navId": "settings-notify",
+   "view": "scheduler"
+  },
+  "settings-config": {
+   "navId": "settings-system",
+   "view": "settings-config"
+  },
+  "settings-cfg-system": {
+   "navId": "settings-system",
+   "view": "settings-cfg-system"
+  },
+  "settings-devices": {
+   "navId": "settings-system",
+   "view": "settings-devices"
+  },
+  "admin": {
+   "navId": "settings-system",
+   "view": "admin"
+  },
+  "settings-company": {
+   "navId": "settings-company",
+   "view": "entities-access"
+  },
+  "settings-approval": {
+   "navId": "settings-approval",
+   "view": "approval-rules"
+  },
+  "settings-sales": {
+   "navId": "settings-sales",
+   "view": "settings-cfg-sales"
+  },
+  "settings-warehouse": {
+   "navId": "settings-warehouse",
+   "view": "settings-cfg-warehouse"
+  },
+  "settings-purchasing": {
+   "navId": "settings-purchasing",
+   "view": "settings-cfg-purchasing"
+  },
+  "settings-finance": {
+   "navId": "settings-finance",
+   "view": "settings-cfg-finance"
+  },
+  "settings-hr": {
+   "navId": "settings-hr",
+   "view": "settings-cfg-hr"
+  },
+  "settings-rnd": {
+   "navId": "settings-rnd",
+   "view": "settings-cfg-rnd"
+  },
+  "settings-masters": {
+   "navId": "settings-masters",
+   "view": "entity-masters"
+  },
+  "settings-documents": {
+   "navId": "settings-documents",
+   "view": "pdf-templates"
+  },
+  "settings-notify": {
+   "navId": "settings-notify",
+   "view": "scheduler"
+  },
+  "settings-system": {
+   "navId": "settings-system",
+   "view": "settings-config"
+  }
+ }
+}

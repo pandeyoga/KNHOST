@@ -1,0 +1,62 @@
+# KP-T9 — uji jest final dijalankan pada kode lama (frontend/src dari git archive a742da9 + dua berkas uji baru)
+FAIL src/config/__tests__/kpt9HubPengaturan.test.js
+  ✕ U4 — 44 alamat (31 tab lama, 4 hub hilang, 5 alias, 4 hub) mendarat di layar & hub tabel lama → baru (11 ms)
+  ✕ U5 — manajer dengan izin server: tab Peran & Hak Akses / Cek Peran tersembunyi (tanpa izin permission)
+    ✕ butir grup settings-hub = sembilan hub dengan label baru; tanpa sub-judul (4 ms)
+    ✕ tab tiap hub persis tabel unit; 3–6 tab tampak per hub; 35 tab (8 ms)
+    ✕ tab pecahan wadah lama membawa inheritsHiddenFrom (1 ms)
+    ✓ tanpa izin server (rancangan menu) = potret (1 ms)
+    ✓ dengan izin server (view_resources) = potret
+    ✓ tanpa izin server (rancangan menu) = potret
+    ✓ dengan izin server (view_resources) = potret (1 ms)
+    ✓ tanpa izin server (rancangan menu) = potret
+    ✓ dengan izin server (view_resources) = potret (1 ms)
+    ✓ tanpa izin server (rancangan menu) = potret
+    ✓ dengan izin server (view_resources) = potret (1 ms)
+    ✓ tanpa izin server (rancangan menu) = potret
+    ✓ dengan izin server (view_resources) = potret
+    ✓ tanpa izin server (rancangan menu) = potret
+    ✓ dengan izin server (view_resources) = potret (1 ms)
+    ✓ tanpa izin server (rancangan menu) = potret
+    ✓ dengan izin server (view_resources) = potret
+    ✓ tanpa izin server (rancangan menu) = potret (1 ms)
+    ✓ dengan izin server (view_resources) = potret
+    ✓ tanpa izin server (rancangan menu) = potret
+    ✓ dengan izin server (view_resources) = potret
+    ✓ tanpa izin server (rancangan menu) = potret (1 ms)
+    ✓ dengan izin server (view_resources) = potret
+    ✓ tanpa izin server (rancangan menu) = potret (1 ms)
+    ✓ dengan izin server (view_resources) = potret
+    ✓ tanpa izin server (rancangan menu) = potret
+    ✓ dengan izin server (view_resources) = potret
+    ✓ tanpa izin server (rancangan menu) = potret (1 ms)
+    ✓ dengan izin server (view_resources) = potret
+    ✕ hidden_views [entities-access] → lima tab pecahan tidak tampil; Master per PT tetap (1 ms)
+    ✕ hidden_views [settings-devices] → Mesin Absen ikut; [scheduler] → WhatsApp ikut; [cs-rfid-devices] → Perangkat RFID (4 ms)
+    ✕ peran kustom: `remove` hasil tingkat modul (bukan pilihan sembunyi) tidak menyembunyikan tab pecahan
+FAIL src/features/__tests__/kpt9BagianLayar.test.js
+    Cannot find module '../settings/cfg/SettingsLinkCards' from 'src/features/__tests__/kpt9BagianLayar.test.js'
+Test Suites: 2 failed, 2 total
+Tests:       8 failed, 26 passed, 34 total
+
+# Varian bukti: SettingsLinkCards (berkas baru) ditiru kosong supaya uji lain di kpt9BagianLayar bisa jalan di kode lama
+  ✕ pemilih PT: 'Semua PT' (bukan 'Semua Entitas'); teks cadangan 'PT' (5 ms)
+  ✕ Lengkapi: tujuan tab hub baru; id lama `entities-access` + tab dari data lama tetap dipetakan
+  ✕ editor peran: tab ber-inheritsHiddenFrom yang ikut tersembunyi → centang mati + alasan di samping
+    ✕ only=entities → hanya isi-entities (45 ms)
+    ✕ only=readiness → hanya isi-readiness (20 ms)
+    ✕ only=accounts → hanya isi-accounts (13 ms)
+    ✕ only=roles → hanya isi-roles (13 ms)
+    ✕ only=role-reality → hanya isi-role-reality (10 ms)
+    ✓ tanpa `only` (rute lama tidak dipakai lagi) bilah tab dalam tetap ada (19 ms)
+    ✕ Peran & Hak Akses → tombol buka akun berpindah ke tab Akun (jalur navigasi baku) (10 ms)
+    ✕ Profil PT membaca preset id PT (Lengkapi) dan membuka detail PT aktif (19 ms)
+    ✕ bagian tanpa izin: kalimat akses, bukan isi bagian lain (11 ms)
+    ✕ Mesin Absen (only=absen) dan Perangkat RFID (only=rfid) tanpa bilah tab dalam (7 ms)
+    ✕ Pengingat Otomatis (only=jobs,runs): dua tab dalam, tanpa WhatsApp (29 ms)
+    ✕ WhatsApp (only=wa): tanpa bilah tab dalam, tanpa KPI & tombol job (34 ms)
+    ✕ letak tiap tautan = nama menu tujuannya (breadcrumb menu) (1 ms)
+    ✕ Aturan Keuangan & Pajak sebagai admin: tiga kartu tautan (5 ms)
+    ✕ peran tanpa izin kas: kartu Rekening bank dan kas tidak tampil (5 ms)
+    ✕ Aturan Gudang & Mutu: tautan Daftar gudang; WhatsApp: tautan Pusat Dokumen (4 ms)
+Tests:       18 failed, 1 passed, 19 total

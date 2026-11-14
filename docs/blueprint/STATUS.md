@@ -50,7 +50,7 @@ Papan kerja agen pelaksana. Aturan mengubahnya: `00_ATURAN_EKSEKUSI.md` §5. Uru
 | 43 | KP-T7 | Pengingat dan penjadwal yang bisa diatur | KF-T1 | selesai | `0a91095` | [KP-T7](../reviews/2026-11-13/hasil/KP-T7.md) |  |
 | 44 | KP-T8 | Rahasia dan perangkat | KF-T1 | selesai | `a742da9` | [KP-T8](../reviews/2026-11-13/hasil/KP-T8.md) |  |
 | 45 | MN-T1 | Menu keuangan dan SDM: pindah dan kelompokkan | PR-T5 | selesai | `5e94a1d` | [MN-T1](../reviews/2026-11-13/hasil/MN-T1.md) |  |
-| 46 | KP-T9 | Susunan hub Pengaturan | MN-T1, KF-T4 | siap |  |  |  |
+| 46 | KP-T9 | Susunan hub Pengaturan | MN-T1, KF-T4 | selesai | `b95bd0d` | [KP-T9](../reviews/2026-11-13/hasil/KP-T9.md) |  |
 | 47 | PK-18 | Penanda gagal dan panel untuk semua jenis dokumen | PK-05, PK-06 tervalidasi | menunggu |  |  |  |
 | 48 | PK-19 | Kwitansi, deposit, selisih bayar: satu fungsi alokasi | PK-18 | menunggu |  |  |  |
 | 49 | PK-20 | Kas dibuat lewat satu pembuat | PK-18 | menunggu |  |  |  |

@@ -1,0 +1,31 @@
+# KP-T9 — uji tests_mem final dijalankan pada kode lama (salinan git archive a742da9 + berkas uji baru)
+E   AssertionError: []
+$LAMA/backend/tests_mem/test_KPT9_hub_pengaturan.py:75: AssertionError: []
+E   AttributeError: module 'verify_access_catalog_nav' has no attribute 'self_test'
+$LAMA/backend/tests_mem/test_KPT9_hub_pengaturan.py:98: AttributeError: module 'verify_access_catalog_nav' has no attribute 'self_test'
+E   AttributeError: module 'check_nav_map' has no attribute 'check_terms'
+$LAMA/backend/tests_mem/test_KPT9_hub_pengaturan.py:119: AttributeError: module 'check_nav_map' has no attribute 'check_terms'
+E   AssertionError: ['cs-kpi', 'hr-attendance', 'hr-attendance-hub', 'hr-attendance-setup', 'hr-employees', 'hr-kpi-hub', ...]
+$LAMA/backend/tests_mem/test_KPT9_hub_pengaturan.py:135: AssertionError: ['cs-kpi', 'hr-attendance', 'hr-attendance-hub', 'hr-attendance-setup', 'hr-employees', 'hr-kpi-hub', ...]
+E   AssertionError: ['entities-access', 'entity-masters', 'hr-my-profile', 'settings-company', 'settings-hub', 'settings-masters']
+$LAMA/backend/tests_mem/test_KPT9_hub_pengaturan.py:143: AssertionError: ['entities-access', 'entity-masters', 'hr-my-profile', 'settings-company', 'settings-hub', 'settings-masters']
+E   AssertionError: assert ['settings-ac...devices', ...] == []
+$LAMA/backend/tests_mem/test_KPT9_hub_pengaturan.py:161: AssertionError: assert ['settings-ac...devices', ...] == []
+E   AssertionError: {"detail":"Menu/tab tidak dikenal: settings-accounts"}
+$LAMA/backend/tests_mem/test_KPT9_hub_pengaturan.py:168: AssertionError: {"detail":"Menu/tab tidak dikenal: settings-accounts"}
+E   assert ['frontend/sr...an kone', ...] == []
+E   AssertionError: assert 'Badan Usaha' == 'PT'
+$LAMA/backend/tests_mem/test_KPT9_hub_pengaturan.py:215: AssertionError: assert 'Badan Usaha' == 'PT'
+E   AssertionError: assert 'entities-access' == 'settings-pt-profile'
+$LAMA/backend/tests_mem/test_KPT9_hub_pengaturan.py:228: AssertionError: assert 'entities-access' == 'settings-pt-profile'
+FAILED tests_mem/test_KPT9_hub_pengaturan.py::test_KPT9_U01_katalog_selaras_termasuk_aturan_3_dan_4
+FAILED tests_mem/test_KPT9_hub_pengaturan.py::test_KPT9_U01b_uji_diri_penjaga_katalog
+FAILED tests_mem/test_KPT9_hub_pengaturan.py::test_KPT9_U02_judul_istilah_alias_dan_batas_tab
+FAILED tests_mem/test_KPT9_hub_pengaturan.py::test_KPT9_U06_modul_sdm_membuka_mesin_absen_tanpa_hub_sistem
+FAILED tests_mem/test_KPT9_hub_pengaturan.py::test_KPT9_U07_modul_pt_dan_modul_peran_tidak_saling_bocor
+FAILED tests_mem/test_KPT9_hub_pengaturan.py::test_KPT9_U08_manajer_kosong_tanpa_menu_pengaturan
+FAILED tests_mem/test_KPT9_hub_pengaturan.py::test_KPT9_U09_hidden_views_id_baru_diterima_id_asing_ditolak
+FAILED tests_mem/test_KPT9_hub_pengaturan.py::test_KPT9_U11_teks_letak_tanpa_nama_hub_lama
+FAILED tests_mem/test_KPT9_hub_pengaturan.py::test_KPT9_istilah_pt_di_katalog_modul
+FAILED tests_mem/test_KPT9_hub_pengaturan.py::test_KPT9_kesiapan_pt_menuju_tab_hub_baru
+10 failed, 3 warnings in 12.94s
