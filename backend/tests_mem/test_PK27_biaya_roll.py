@@ -38,7 +38,6 @@ PERSEDIAAN, HUTANG, PPN_IN, HPP, PIUTANG, PENDAPATAN, HAPUS = (
 #: status roll yang dihitung rekonsiliasi 1-1300 (`gl_service.OWNED_ROLL_STATUSES`) — dasar jurnal saldo awal fixture
 STOK = {"available", "reserved", "committed", "picked", "packed", "hold", "wip", "quarantine", "blocked", "damaged",
         "in_transit_transfer"}
-B = "PK-27 — menunggu serah-terima (b): pemanggil lama belum dialihkan ke jalur baru"
 #: id dokumen yang dipakai uji lanjutan (U2 ← U1, U8 ← U7)
 BAG: Dict[str, str] = {}
 
@@ -125,7 +124,6 @@ async def terpetakan():
 
 
 # ═══ U1–U2 — scrap roll retur dan batal scrap (IV-02) ═══════════════════════════════════════════════════════════════
-@pytest.mark.xfail(strict=True, reason=B)
 async def test_PK27_U1_scrap_menolkan_biaya_roll(klien, kepala_admin, db, bahan):
     # Roll RTN 80 m × 12.000 (dasar 11.000) di karantina; saldo awal fixture Dr 1-1300 960.000.
     # Scrap → jurnal hapus-buku 80 × 12.000 = 960.000; nilai roll 960.000 → 0; saldo 1-1300 −960.000 → selisih tetap.
@@ -150,7 +148,6 @@ async def test_PK27_U1_scrap_menolkan_biaya_roll(klien, kepala_admin, db, bahan)
     assert await rekon(klien, kepala_admin) == awal
 
 
-@pytest.mark.xfail(strict=True, reason=B)
 async def test_PK27_U2_batal_scrap_memulihkan_biaya(klien, kepala_admin, db, bahan):
     # Lanjutan U1: pembalik Dr 1-1300 / Cr 5-9500 960.000; roll kembali `available` 12.000 (dasar 11.000) → selisih tetap.
     sr, rid = BAG["u1_ret"], BAG["u1_roll"]
@@ -202,7 +199,6 @@ async def setujui_retur_beli(klien, h, ret_id: str):
     return await klien.post(f"/api/purchase-returns/{ret_id}/approve", headers=h, json={})
 
 
-@pytest.mark.xfail(strict=True, reason=B)
 async def test_PK27_U3_retur_beli_nilai_buku_dan_selisih_terpetakan(klien, kepala_admin, db, bahan):
     # Nota 50 × 10.000 = 500.000 + PPN 11 % 55.000 = 555.000. Nilai buku 50 × 10.500 = 525.000; selisih = 525.000 −
     # 500.000 = 25.000 (Dr). Jurnal: Dr 2-1100 555.000 + Dr 5-9910 25.000 = 580.000 = Cr 1-1300 525.000 + Cr 1-1500 55.000.
@@ -220,7 +216,6 @@ async def test_PK27_U3_retur_beli_nilai_buku_dan_selisih_terpetakan(klien, kepal
     assert await rekon(klien, kepala_admin) == awal
 
 
-@pytest.mark.xfail(strict=True, reason=B)
 async def test_PK27_U4_tanpa_pemetaan_jurnal_lama_selisih_tercatat(klien, kepala_admin, db, bahan):
     # Kunci belum terpetakan → jurnal lama: Dr 2-1100 555.000 / Cr 1-1300 500.000 / Cr 1-1500 55.000; selisih 25.000
     # hanya tercatat di dokumen (`book_value_posted=false`).
@@ -233,7 +228,6 @@ async def test_PK27_U4_tanpa_pemetaan_jurnal_lama_selisih_tercatat(klien, kepala
     assert (d["book_value"], d["book_value_diff"], d["book_value_posted"]) == (525_000, 25_000, False), d
 
 
-@pytest.mark.xfail(strict=True, reason=B)
 async def test_PK27_U5_harga_nota_di_atas_nilai_buku(klien, kepala_admin, db, bahan):
     # Nota 50 × 11.000 = 550.000 + PPN 60.500 = 610.500; selisih 525.000 − 550.000 = −25.000 (Cr).
     # Dr 2-1100 610.500 = Cr 1-1300 525.000 + Cr 1-1500 60.500 + Cr 5-9910 25.000.
@@ -248,7 +242,6 @@ async def test_PK27_U5_harga_nota_di_atas_nilai_buku(klien, kepala_admin, db, ba
     assert (d["book_value_diff"], d["book_value_posted"]) == (-25_000, True), d
 
 
-@pytest.mark.xfail(strict=True, reason=B)
 async def test_PK27_U6_jurnal_gagal_lalu_setujui_ulang(klien, kepala_admin, db, bahan, paksa_jurnal_gagal):
     # Pertama: stok & nota debit tercatat, jurnal gagal → `gl_status=failed`, nilai buku 525.000 sudah tersimpan.
     # Kedua: jurnal U3 dari nilai tersimpan; roll tidak dikonsumsi dua kali (satu mutasi keluar).
@@ -298,7 +291,6 @@ async def kirim(db, bahan, pid: str, rolls: List[Tuple[str, float, float]], *, h
     return {"so": so, "number": num, "rolls": ids, "shipment": shp}
 
 
-@pytest.mark.xfail(strict=True, reason=B)
 async def test_PK27_U7_hpp_surat_jalan_memuat_roll_berbiaya_nol(db, bahan):
     # r1 100 m × 10.000 + r2 100 m × 0 = 1.000.000 (kode lama: rata-rata roll berbiaya > 0 = 10.000 × 200 = 2.000.000).
     from services import gl_service
@@ -400,7 +392,6 @@ async def _retur_jual(db, bahan, k, *, qty: float, roll_ids=(), per_roll: bool =
     return sr
 
 
-@pytest.mark.xfail(strict=True, reason=B)
 async def test_PK27_U10_retur_roll_dinilai_potret_surat_jalan(klien, kepala_admin, db, bahan):
     # Retur r2 100 m kondisi baik, selesai sebagai pengurang piutang: nota kredit 100 × 20.000 = 2.000.000
     # (Dr 4-1000 / Cr 1-1200). HPP balik = 100 × 14.000 (potret r2) = 1.400.000, bukan 100 × 16.000 (rata-rata kini).
@@ -423,7 +414,6 @@ async def test_PK27_U10_retur_roll_dinilai_potret_surat_jalan(klien, kepala_admi
     assert await rekon(klien, kepala_admin) == awal
 
 
-@pytest.mark.xfail(strict=True, reason=B)
 async def test_PK27_U11_retur_tanpa_roll_rata_rata_surat_jalan(klien, kepala_admin, db, bahan):
     # Baris tanpa `roll_ids`, 50 m: biaya = Σ potret 2.400.000 ÷ 200 m = 12.000 → HPP balik 50 × 12.000 = 600.000.
     k = await _terkirim(db, bahan)
@@ -440,7 +430,6 @@ async def test_PK27_U11_retur_tanpa_roll_rata_rata_surat_jalan(klien, kepala_adm
     assert (baru["unit_cost"], baru["length_remaining"]) == (12_000, 50), baru
 
 
-@pytest.mark.xfail(strict=True, reason=B)
 async def test_PK27_U12_penyelesaian_per_roll(db, bahan):
     # Penyelesaian per roll: r2 kembali ke stok → HPP balik 100 × 14.000 = 1.400.000 (bukan 1.600.000).
     # Lapis B = rencana penyelesaian (`plan_event`): angka rencana disalin apa adanya ke nota kredit (`cogs_amount`,
@@ -597,3 +586,21 @@ async def test_PK27_a_return_unit_cost_tiga_sumber(db, bahan):
     assert await return_unit_cost(ret, {**it, "roll_ids": [r1], "condition": "damaged"}) == (0.0, 0.0, "surat_jalan")
     assert cogs_source_of(["surat_jalan", "rata_surat_jalan"]) == "rata_surat_jalan"
     assert cogs_source_of(["surat_jalan", "wac", ""]) == "wac" and cogs_source_of([]) == ""
+
+
+# ═══ Invarian data (`02` D2) — `scripts/verify_data_integrity.py` GL-7 / GL-SCRAP ═══════════════════════════════════
+async def test_PK27_invarian_GL_SCRAP(db, bahan, capsys):
+    """Sesudah alur modul ini (U1 scrap → biaya 0; U2 batal scrap) → PASS. Fixture roll scrap lama (biaya utuh, jurnal
+    hapus-buku belum dibalik) → WARN menyebut nomornya."""
+    sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "scripts"))
+    vdi = importlib.import_module("verify_data_integrity")
+    await vdi.layer_gl_invariants(db)
+    assert re.search(r"PASS.*GL-SCRAP", capsys.readouterr().out)
+    rid = await roll(db, bahan, "lama", panjang=80, biaya=12_000, status="damaged", saldo=False,
+                     writeoff_je_id="je_pk27_lama", roll_no="RTN-PK27-LAMA")
+    try:
+        await vdi.layer_gl_invariants(db)
+        keluar = capsys.readouterr().out
+        assert re.search(r"WARN.*1 roll scrap .*GL-SCRAP", keluar) and "RTN-PK27-LAMA" in keluar, keluar[-800:]
+    finally:
+        await db.inventory_rolls.delete_one({"id": rid})

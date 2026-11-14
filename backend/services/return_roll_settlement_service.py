@@ -174,11 +174,14 @@ async def plan_event(ret: Dict[str, Any], decisions: List[Dict[str, Any]], payou
         {"order": order, "lines": [], "net": 0.0, "ppn": 0.0, "gross": 0.0, "ppn_rate": float(order.get("ppn_rate") or 0)}
     eid = ret.get("entity_id", "")
     group_net: Dict[str, float] = {g: 0.0 for g in BILL_ORDER}
-    lines, cogs = [], 0.0
+    lines, cogs, sources = [], 0.0, []
     for (row, oc, item), ln in zip(eff, fig["lines"]):
         c = 0.0
         if OUTCOMES[oc]["stock"] and row["condition"] != "damaged":
-            c = round(row["actual_qty"] * await gl_service._avg_unit_cost(row["product_id"], eid), 2)
+            # PK-27 (IV-08) — biaya roll ini saat dijual (potret surat jalan), fungsi yang sama dengan restock roll.
+            uc, _base, src = await rs.return_unit_cost(ret, {**item, "roll_ids": [row["roll_id"]]}, roll_id=row["roll_id"])
+            c = round(row["actual_qty"] * uc, 2)
+            sources.append(src)
         cogs += c
         group_net[OUTCOMES[oc]["group"]] += ln["line_total"]
         lines.append({**ln, "roll_id": row["roll_id"], "roll_no": row["roll_no"], "outcome": oc,
@@ -249,7 +252,8 @@ async def plan_event(ret: Dict[str, Any], decisions: List[Dict[str, Any]], payou
                          "credit_amount": ln.get("line_total", 0.0), "cogs": ln.get("cogs", 0.0),
                          "received_at": row["received_at"], "condition": row["condition"]})
     return {"rolls": per_roll, "lines": lines, "net_amount": net, "ppn_amount": ppn, "gross_amount": gross,
-            "ppn_rate": fig.get("ppn_rate", 0.0), "cogs_amount": round(cogs, 2), "split": split, "journal": journal,
+            "ppn_rate": fig.get("ppn_rate", 0.0), "cogs_amount": round(cogs, 2), "cogs_source": rs.cogs_source_of(sources),
+            "split": split, "journal": journal,
             "problem": problem, "payout": payout, "refund_account_code": cash_acc if cash > 0 else "",
             "bill_total": bill_total, "cash_total": round(cash, 2), "saldo_total": round(saldo, 2), "ar_rest": round(ar_rest, 2),
             "exchange_credit": rest["exchange"], "order_number": ret.get("order_number", ""), "source_open": max(open_amt, 0.0),
@@ -384,6 +388,7 @@ async def _apply(return_id: str, settlement_id: str, actor: Dict[str, Any]) -> D
               "return_type": ret.get("return_type", "retur"), "settlement_id": settlement_id, "settlement_seq": seq,
               "lines": plan["lines"], "net_amount": plan["net_amount"], "ppn_rate": plan["ppn_rate"],
               "ppn_amount": plan["ppn_amount"], "gross_amount": plan["gross_amount"], "cogs_amount": plan["cogs_amount"],
+              "cogs_source": plan.get("cogs_source", ""),   # PK-27
               "settlement": "per_roll", "split": plan["split"], "bill_scope": "source_order", "ar_applied": 0,
               "excess_amount": round(plan["gross_amount"] - plan["bill_total"], 2),
               "refund_account_code": plan["refund_account_code"], "outcome": "per_roll", "status": "posted",

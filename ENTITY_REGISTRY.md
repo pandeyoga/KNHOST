@@ -1310,7 +1310,7 @@ terdaftar di **`backend/services/posting_registry.py::KINDS`** (dibaca `routers/
 
 | Koleksi | Letak penanda | Tambahan |
 |---|---|---|
-| `credit_notes` | dokumen (dicerminkan ke `sales_returns` untuk nota kredit retur) | — |
+| `credit_notes` | dokumen (dicerminkan ke `sales_returns` untuk nota kredit retur) | PK-27: **`cogs_source`** (`surat_jalan` · `rata_surat_jalan` · `wac`) — dari mana HPP balik (`cogs_amount`) diambil (`return_service.return_unit_cost`); nota dengan baris campuran memakai sumber paling kasar |
 | `vendor_bills` | dokumen | — |
 | `landed_cost_vouchers` | dokumen | **`allocated_total`** (angka, wajib saat `applied`): nominal voucher yang dialokasikan — ulang posting memakai angka ini; sejak PK-26 beserta pecahannya **`capitalization`** (lihat bagian koleksi) |
 | `makloon_orders` | tiap unsur **`steps[]`** (`steps.$.gl_status`, `…gl_error`, `…gl_failed_at`, `…journal_entry_id`) | `steps[].material_returns[].gl_part` = akhiran `source_id` jurnal pembalik retur bahan |
@@ -1707,6 +1707,11 @@ Key Fields:
   base_unit_cost   float?   P0-5 — HPP dasar per unit dari harga PO saat GR (sebelum landed cost)
   landed_cost_total float   P0-5 — Σ biaya landed cost yang dialokasikan ke roll ini (audit; default 0)
   landed_cost_refs list     P0-5 — daftar voucher landed cost (LCV-NNNNN) yang sudah di-apply
+  writeoff_je_id, writeoff_je_number, writeoff_amount  — jurnal hapus-buku scrap retur (R5.1)
+  writeoff_unit_cost, writeoff_base_unit_cost  float  [PK-27 · IV-02] biaya roll sesaat sebelum di-scrap; scrap
+                            menolkan `unit_cost`/`base_unit_cost` (nilai sudah keluar dari 1-1300), batal scrap
+                            (`reverse_writeoff`) memulihkannya dari dua field ini. Roll scrap lama: skrip
+                            `scripts/migrasi_pk27_biaya_roll_scrap.py` (H3); invarian GL-SCRAP
   acquired         object   {via: po|transfer|initial|adjustment|return, ref_id, date}
   grade            string?  Grade tekstil (A|A+|B|C|BS) — P0-4 / di-set objektif oleh inspeksi 4-Point (6.2)
   defects          list     profil cacat; P0-4 free-text atau 6.2 [{point_value 1..4, count, note}]
@@ -2799,6 +2804,13 @@ Endpoints:   GET/POST /purchase-returns · GET /purchase-returns/{id} ·
              POST /{id}/submit · /{id}/approve · /{id}/reject
 Efek approve: KURANGI inventory_rolls available (FIFO, status→returned_supplier),
              movement return_out, terbitkan Nota Debit, KURANGI AP (PO.returned_amount).
+PK-27:       (IV-06) nilai buku roll yang keluar, potret ditulis SEKALI bersama `stock_adjusted: true` (`02` D3):
+             `book_value` = Σ (panjang diretur × biaya roll) dalam sen → rupiah 2 desimal;
+             `book_value_rolls[{roll_id, qty, unit_cost, value}]`; sesudah jurnal: `book_value_diff` (nilai buku −
+             nilai nota tanpa PPN) dan `book_value_posted` (selisih nol, atau jurnal memuat baris
+             `retur.selisih_retur_beli`). Jurnal: Cr persediaan = nilai buku + baris selisih bila kunci
+             `retur.selisih_retur_beli` terpetakan untuk PT; belum terpetakan / retur lama tanpa `book_value` =
+             jurnal lama (Cr persediaan = nilai nota tanpa PPN).
 ⚠️ JANGAN BUAT: retur_beli, debit_notes, po_returns, vendor_returns
 ```
 

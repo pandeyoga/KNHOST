@@ -1273,6 +1273,23 @@ async def layer_gl_invariants(db):
         results["pass"] += 1
         line("PASS", G, "GL: voucher biaya masuk — persediaan + makloon + beban = nominal teralokasi = jurnal (INV-LC-01)")
 
+    # GL-7 (GL-SCRAP, PK-27 — 02 D2, WARN): roll `damaged` yang jurnal hapus-bukunya (scrap retur) belum dibalik harus
+    #   bernilai 0 — nilainya sudah keluar dari 1-1300. Pembangun ulang: `scripts/migrasi_pk27_biaya_roll_scrap.py`
+    #   (`--apply`; data nyata = keputusan pemilik, H3).
+    scrap_viol = []
+    async for r in db.inventory_rolls.find(
+            {"status": "damaged", "writeoff_je_id": {"$nin": [None, ""]}, "writeoff_reversed": {"$ne": True}},
+            {"_id": 0, "id": 1, "roll_no": 1, "length_remaining": 1, "unit_cost": 1, "base_unit_cost": 1}):
+        if _sen(float(r.get("length_remaining") or 0) * float(r.get("unit_cost") or r.get("base_unit_cost") or 0)) > 0:
+            scrap_viol.append(r.get("roll_no") or r["id"])
+    if scrap_viol:
+        results["warn"] += 1
+        line("WARN", Y, f"GL: {len(scrap_viol)} roll scrap (sudah dihapus-buku) masih bernilai (GL-SCRAP)",
+             f"{scrap_viol[:5]} → python scripts/migrasi_pk27_biaya_roll_scrap.py (baca-saja dulu)")
+    else:
+        results["pass"] += 1
+        line("PASS", G, "GL: roll scrap yang sudah dihapus-buku bernilai 0 (GL-SCRAP)")
+
 
 async def layer_fixed_asset_invariants(db):
     """R6.2 — Fixed Assets: konsistensi subledger↔GL (straight-line + disposal gain/loss)."""

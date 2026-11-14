@@ -1435,10 +1435,13 @@ async def post_shipment_cogs(shipment: Dict[str, Any],
     if not it or qty <= 0:
         return None
     snap = shipment.get("rolls") or []
-    if snap and all(float(r.get("unit_cost") or 0) > 0 for r in snap):
-        # FN-11 — snapshot biaya per roll yang BENAR-BENAR keluar pada surat jalan ini.
-        cogs = round(sum(float(r.get("extended_cost") or float(r["unit_cost"]) * float(r.get("length") or 0))
-                         for r in snap), 2)
+    if snap:
+        # FN-11 — snapshot biaya per roll yang BENAR-BENAR keluar pada surat jalan ini. PK-27 (IV-07) — SEMUA roll,
+        # termasuk yang berbiaya 0 (dulu satu roll berbiaya 0 menjatuhkan seluruh surat jalan ke rata-rata roll
+        # pesanan berbiaya > 0 × qty → HPP lebih besar dari nilai roll yang keluar). Σ dalam sen (`02` D5).
+        cogs = from_cents(sum(
+            to_cents(r["extended_cost"]) if r.get("extended_cost") is not None
+            else to_cents(float(r.get("unit_cost") or 0) * float(r.get("length") or 0)) for r in snap))
     else:  # surat jalan lama tanpa snapshot → rata-rata roll pesanan (perilaku lama)
         cogs = round(qty * await _order_item_unit_cost(order, it), 2)
     if cogs <= EPS:
@@ -1541,14 +1544,6 @@ async def _order_item_unit_cost(order: Dict[str, Any], item: Dict[str, Any]) -> 
     if snap > 0:
         return snap
     w = await costing_service.wac_for_product(pid, entity_id=order.get("entity_id") or None)
-    return float(w.get("wac") or 0)
-
-
-async def _avg_unit_cost(product_id: str, entity_id: str = "") -> float:
-    """WAC per produk untuk COGS reversal retur (F3). Fallback 0 bila cost tak diketahui.
-    Session #074 (RET-2): helper ini sebelumnya HILANG sehingga return_service.py:75
-    melempar AttributeError (ditelan try/except) → Credit Note & jurnal retur tak terbentuk."""
-    w = await costing_service.wac_for_product(product_id, entity_id=entity_id or None)
     return float(w.get("wac") or 0)
 
 
@@ -3874,7 +3869,8 @@ async def inventory_drift_explain(entity_id: str) -> Dict[str, Any]:
     rolls = await db.inventory_rolls.find(
         {"owner_entity_id": entity_id, "status": {"$in": OWNED_ROLL_STATUSES}},
         {"_id": 0, "id": 1, "roll_no": 1, "length_remaining": 1, "unit_cost": 1,
-         "base_unit_cost": 1, "acquired": 1, "origin_type": 1}).to_list(100000)
+         "base_unit_cost": 1, "acquired": 1, "origin_type": 1, "writeoff_je_id": 1,
+         "writeoff_reversed": 1}).to_list(100000)
 
     per_origin: Dict[str, Dict[str, Any]] = {}
     zero_cost: Dict[str, Any] = {"count": 0, "length": 0.0, "examples": []}
@@ -3900,7 +3896,7 @@ async def inventory_drift_explain(entity_id: str) -> Dict[str, Any]:
         slot["value"] = from_cents(slot["value_cents"])
         if value > float((biggest_per_origin.get(via) or {}).get("value") or 0):
             biggest_per_origin[via] = {"roll": r, "value": value}
-        if cost <= 0:
+        if cost <= 0 and not (r.get("writeoff_je_id") and not r.get("writeoff_reversed")):   # PK-27 — scrap
             zero_cost["count"] += 1
             zero_cost["length"] = round(zero_cost["length"] + length, 2)
             if len(zero_cost["examples"]) < 5:

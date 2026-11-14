@@ -13,6 +13,7 @@ import { originLabel, sourceLabel, ROLL_STATUS_LABELS } from "./glSourceLabels";
 import { docStatusLabel } from "../../utils/docStatus";
 import useIntentKey from "../../hooks/useIntentKey";
 import { moneyPost } from "../../utils/moneyRequest";
+import ZeroCostRollsSection from "./ZeroCostRollsSection";
 
 export default function InventoryReconTab({ refreshKey, onError, onNotice, onChanged,
                                            selectedEntity = "all", entities = [] }) {
@@ -433,6 +434,9 @@ export default function InventoryReconTab({ refreshKey, onError, onNotice, onCha
           </div>
         )}
       </div>
+
+      {/* PK-27 (IV-07) — roll berbiaya 0 (di gudang & sudah terkirim), di bawah riwayat true-up. */}
+      <ZeroCostRollsSection refreshKey={refreshKey} />
     </div>
   );
 }

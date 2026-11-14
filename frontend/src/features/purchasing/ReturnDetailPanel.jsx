@@ -12,6 +12,7 @@ import ReturnRollsPanel from "../sales/ReturnRollsPanel";
 import DetailModal from "../../components/DetailModal";
 import FormModal from "../../components/FormModal";
 import CashAccountField from "../../components/CashAccountField";   // PK-20 — rekening penerima refund pemasok
+import ReturnBookValue from "./ReturnBookValue";
 import { REASON_MIN_LENGTH } from "../../services/confirmService";   // 23 Okt — detail & keputusan PER ROLL (sama dgn retur jual)
 
 const STATUS_PILL = {
@@ -171,6 +172,8 @@ export default function ReturnDetailPanel({ ret, supName, canApprove, canDelete,
         <Cell label="Alasan">{REASON_LABEL[ret.reason] || ret.reason || "—"}</Cell>
         <Cell label="Total" tone="#0058CC">{formatCurrency(ret.total_amount)}</Cell>
       </div>
+      {/* PK-27 (IV-06) — nilai buku roll yang keluar dari persediaan vs nilai nota debit (retur yang sudah disetujui). */}
+      <ReturnBookValue ret={ret} />
       <div className="grid grid-cols-2 gap-x-3 gap-y-1.5 text-[11px] mb-2.5 empty:hidden">
         {ret.supplier_flow ? <Meta label="Alur" value={`RMA Supplier${ret.origin_type === "import" ? " · Impor" : ""}`} /> : null}
         {ret.origin_sales_return_number ? <Meta label="Asal Retur Jual" value={ret.origin_sales_return_number} /> : null}

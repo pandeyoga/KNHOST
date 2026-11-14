@@ -301,11 +301,11 @@ async def _cn_figures(ret: Dict[str, Any], items: List[Dict] = None, post_stock:
         for ln in cn.get("lines", []):
             _consume_lines(lines_by_pid.get(ln.get("product_id"), []), float(ln.get("quantity", 0) or 0))
 
-    eid = ret.get("entity_id", "")
     src_items = items if items is not None else ret.get("items", [])
     lines: List[Dict[str, Any]] = []
     net = 0.0
     cogs = 0.0
+    sources: List[str] = []   # PK-27 — sumber biaya baris yang masuk stok
     for item in src_items:
         pid = item.get("product_id")
         qty = float(item.get("quantity_returned", 0) or 0)
@@ -320,11 +320,13 @@ async def _cn_figures(ret: Dict[str, Any], items: List[Dict] = None, post_stock:
         else:
             unit_price = price_by_pid.get(pid, 0.0)
             line_net = round(qty * unit_price, 2)
-        unit_cost = await gl_service._avg_unit_cost(pid, eid)
+        # PK-27 (IV-08) — HPP balik = biaya saat dijual (potret surat jalan), bukan rata-rata produk saat ini.
+        unit_cost, _base, src = await return_unit_cost(ret, item)
         net += line_net
         # COGS reversal hanya bila barang benar-benar masuk stok (post_stock) & kondisi bukan rusak.
         if post_stock and item.get("condition", "ok") != "damaged":
             cogs += qty * unit_cost
+            sources.append(src)
         lines.append({"product_id": pid, "product_name": item.get("product_name", ""),
                       "quantity": round(qty, 2), "unit": item.get("unit") or "",   # satuan dasar (dinormalisasi)
                       "unit_price": unit_price, "line_total": line_net,
@@ -342,7 +344,8 @@ async def _cn_figures(ret: Dict[str, Any], items: List[Dict] = None, post_stock:
     ppn = round(net * eff_frac, 2) if has_ppn else 0.0
     gross = round(net + ppn, 2)
 
-    return {"order": order, "lines": lines, "net": net, "cogs": cogs, "ppn_rate": ppn_rate, "ppn": ppn, "gross": gross}
+    return {"order": order, "lines": lines, "net": net, "cogs": cogs, "ppn_rate": ppn_rate, "ppn": ppn, "gross": gross,
+            "cogs_source": cogs_source_of(sources)}
 
 
 def _default_settlement(order: Dict[str, Any]) -> str:
@@ -406,6 +409,7 @@ async def _create_credit_note_and_post_gl(
         "entity_id": eid, "return_type": ret.get("return_type", "retur"),
         "lines": lines, "net_amount": net, "ppn_rate": ppn_rate, "ppn_amount": ppn,
         "gross_amount": gross, "cogs_amount": cogs,
+        "cogs_source": fig.get("cogs_source", ""),   # PK-27 — surat_jalan | rata_surat_jalan | wac
         "settlement": settlement,   # cash | ar | store_credit | nego
         "refund_account_code": (refund_account_code or "1-1100") if settlement == "cash" else "",
         "outcome": ret.get("outcome", ""),
@@ -1197,17 +1201,15 @@ async def _restock_returned_items(ret: Dict[str, Any], items: List[Dict], now: s
         condition = item.get("condition", "ok")
         insp = item.get("inspection") or {}
         grade = insp.get("grade") or item.get("grade") or "A"
-        # R2/R5 — nilai roll = WAC produk (0 bila damaged, konsisten dgn COGS reversal CN)
-        #   agar subledger persediaan rekonsiliasi dengan GL 1-1300 (anti INV-GL-DRIFT).
-        #   WAC diambil dari entitas PEMILIK (owner) tujuan.
-        # R5.5 — simpan pecahan basis: unit_cost = WAC penuh (base+landed), base_unit_cost = komponen
+        # R2/R5 — nilai roll = biaya HPP balik nota kredit (0 bila damaged) agar subledger persediaan rekonsiliasi
+        #   dengan GL 1-1300 (anti INV-GL-DRIFT). PK-27 (IV-08) — biaya = potret surat jalan saat dijual
+        #   (`return_unit_cost`, fungsi yang sama dengan `_cn_figures`), cadangan rata-rata produk.
+        # R5.5 — simpan pecahan basis: unit_cost = biaya penuh (base+landed), base_unit_cost = komponen
         #   dasar → memungkinkan audit/label "incl. landed" tanpa mengubah nilai total (GL-safe).
         if condition == "damaged":
             avg_cost, base_cost = 0.0, 0.0
         else:
-            _w = await costing_service.wac_for_product(product_id, entity_id=owner_entity_id or None)
-            avg_cost = float(_w.get("wac") or 0)
-            base_cost = float(_w.get("wac_base") or avg_cost)
+            avg_cost, base_cost, _src = await return_unit_cost(ret, item)
         # FASE C (D-10) — retur masuk = batch tersendiri: 1 lot per nomor retur × produk
         from services import lot_service as _lots
         _rtn_lot = await _lots.resolve_or_create(
@@ -1402,10 +1404,21 @@ async def release_quarantine(return_id: str, actor: str,
                         roll_set["writeoff_je_id"] = prior.get("id")
                         roll_set["writeoff_je_number"] = prior.get("number")
                         roll_set["writeoff_amount"] = wo_amount
+            if roll_set.get("writeoff_je_id"):
+                # PK-27 (IV-02) — jurnal hapus-buku sudah mengeluarkan nilai roll dari 1-1300 → roll bernilai 0 di
+                # tulisan yang sama (status `damaged` tetap dinilai rekonsiliasi). Biaya sebelum scrap disimpan untuk
+                # batal scrap (`reverse_writeoff`).
+                roll_set.update({"writeoff_unit_cost": float(r.get("unit_cost") or 0),
+                                 "writeoff_base_unit_cost": float(r.get("base_unit_cost") or 0),
+                                 "unit_cost": 0.0, "base_unit_cost": 0.0})
         _roll_update: Dict[str, Any] = {"$set": roll_set}
         if grade_hist_entry:
             _roll_update["$push"] = {"grade_history": grade_hist_entry}
         await db.inventory_rolls.update_one({"id": r["id"]}, _roll_update)
+        if "writeoff_unit_cost" in roll_set:
+            from services import roll_cost_history as _rch
+            await _rch.record(r, 0.0, "scrap_writeoff", actor=actor, ref_type="sales_return", ref_id=return_id,
+                              ref_number=ret_number, note=f"jurnal hapus-buku {roll_set.get('writeoff_je_number') or ''}")
         # UAT 23 Okt — kerugian turun grade dibanding grade SAAT DIJUAL: penyelesaian retur sudah menurunkan roll ke grade
         # QC (mis. A→B) sebelum release, sehingga dulu release B→B tidak pernah mencatat kerugian dan persediaan grade B
         # tetap bernilai seperti grade A.
@@ -2050,13 +2063,24 @@ async def reverse_writeoff(return_id: str, actor: str, roll_ids: List[str] = Non
             reason=reason or "Batalkan write-off (un-scrap) roll retur", actor_name=actor)
         rev_je = rev[0] if rev else {}
         qty = round(float(r.get("length_remaining", r.get("length", 0)) or 0), 2)
+        # PK-27 (IV-02) — scrap menolkan biaya roll; batal scrap memulihkannya dari biaya yang disimpan saat scrap.
+        # Roll scrap lama (sebelum PK-27, tanpa field simpanan) biayanya memang tidak pernah dinolkan.
+        pulih = ({"unit_cost": float(r.get("writeoff_unit_cost") or 0),
+                  "base_unit_cost": float(r.get("writeoff_base_unit_cost") or 0)}
+                 if "writeoff_unit_cost" in r else {})
         await db.inventory_rolls.update_one({"id": rid}, {"$set": {
+            **pulih,
             "status": restore_status, "qc_status": "released",
             "writeoff_reversed": True, "writeoff_reversed_at": now, "writeoff_reversed_by": actor,
             "writeoff_reversal_reason": reason,
             "writeoff_reversal_je_id": rev_je.get("id", ""),
             "writeoff_reversal_je_number": rev_je.get("number", ""),
             "unscrapped_from": "damaged", "updated_at": now}})
+        if pulih:
+            from services import roll_cost_history as _rch
+            await _rch.record(r, pulih["unit_cost"], "scrap_writeoff_reversal", actor=actor, ref_type="sales_return",
+                              ref_id=return_id, ref_number=ret.get("number", ""),
+                              note=f"jurnal pembalik {rev_je.get('number', '')}")
         await db.inventory_movements.insert_one({
             "id": new_id("mov"), "product_id": r.get("product_id"),
             "warehouse_id": r.get("warehouse_id"), "owner_entity_id": r.get("owner_entity_id"),

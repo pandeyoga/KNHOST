@@ -14,7 +14,7 @@ import re
 from typing import Any, Dict, List, Optional, Tuple
 from db import db
 from services import dual_qty_service as _dual  # FASE U — dua satuan (roll + ukuran)
-from core_utils import now_iso, new_id, DEFAULT_ENTITY_ID, safe_doc
+from core_utils import now_iso, new_id, DEFAULT_ENTITY_ID, safe_doc, to_cents, from_cents
 from services.roll_service import rebuild_balance
 from services import purchase_return_state as prs
 from request_context import active_entity_or
@@ -349,6 +349,13 @@ async def _finalize_supplier_return_financials(ret: Dict[str, Any], actor: str, 
             segments.add((e["product_id"], e["warehouse_id"], entity_id))
         for (pid, wid, eid) in segments:
             await rebuild_balance(pid, wid, eid)
+        # PK-27 (IV-06) — nilai buku roll yang keluar (potret, ditulis sekali bersama `stock_adjusted`, `02` D3);
+        # panggilan ulang (stok sudah disesuaikan) memakai nilai tersimpan.
+        book = {"book_value": from_cents(sum(e["value_sen"] for e in effects)),
+                "book_value_rolls": [{"roll_id": e["roll_id"], "qty": e["qty"], "unit_cost": e["unit_cost"],
+                                      "value": from_cents(e["value_sen"])} for e in effects]}
+    else:
+        book = {}
 
     debit_note = ret.get("debit_note_number") or await next_debit_note_number(entity_id)   # KP-T5 — PT dokumen (N1)
     # PK-28 (IV-03) — dasar jurnal retur (akun yang didebit) ditentukan SEKALI dan disimpan bersama niatnya; ulang
@@ -361,7 +368,7 @@ async def _finalize_supplier_return_financials(ret: Dict[str, Any], actor: str, 
         "decision_notes": notes, "updated_at": now,
         "supplier_status": prs.ACCEPTED, "supplier_outcome": outcome,
         "accepted_at": ret.get("accepted_at") or now, "accepted_by": ret.get("accepted_by") or actor,
-        "gl_status": "pending", "ap_basis": ap_basis,
+        "gl_status": "pending", "ap_basis": ap_basis, **book,
     }})
 
     is_refund = (outcome or "").lower() == prs.OUTCOME_REFUND
@@ -391,7 +398,8 @@ async def _finalize_supplier_return_financials(ret: Dict[str, Any], actor: str, 
         je = await gl_service.post_purchase_return(
             fresh, amount=gross_value,
             ppn=float(fresh.get("ppn_amount", 0) or fresh.get("ppn", 0) or 0), label=debit_note,
-            outcome=outcome, cash_account_code=(acc if is_refund else ""), ap_basis=ap_basis)
+            outcome=outcome, cash_account_code=(acc if is_refund else ""), ap_basis=ap_basis,
+            book_value=fresh.get("book_value"))
     except Exception as exc:  # noqa: BLE001
         await db.purchase_returns.update_one({"id": return_id}, {"$set": {
             "gl_status": "failed", "gl_error": str(exc)[:300], "updated_at": now_iso()}})
@@ -401,6 +409,7 @@ async def _finalize_supplier_return_financials(ret: Dict[str, Any], actor: str, 
     await db.purchase_returns.update_one({"id": return_id}, {"$set": {
         "gl_status": "posted" if posted else "not_required", "gl_error": "",
         "journal_entry_id": (posted or {}).get("id", "")}})
+    await _record_book_value_posting(fresh, gross_value)   # PK-27
     # refund tunai → catat kas MASUK (buku kas/bank).
     if is_refund:
         try:
@@ -422,6 +431,23 @@ async def _finalize_supplier_return_financials(ret: Dict[str, Any], actor: str, 
                 "Gagal catat kas refund retur beli %s: %s", return_id, e)
     fresh = await db.purchase_returns.find_one({"id": return_id}, {"_id": 0})
     return safe_doc(fresh)
+
+
+async def _record_book_value_posting(ret: Dict[str, Any], gross_value: float) -> None:
+    """PK-27 (IV-06) — `book_value_diff` (nilai buku roll − nilai nota tanpa PPN) dan `book_value_posted` (selisih itu
+    sudah ada di jurnal retur: nol, atau jurnal memuat baris `retur.selisih_retur_beli`). Retur lama tanpa
+    `book_value` tidak disentuh."""
+    from services import gl_service
+    if ret.get("book_value") is None:
+        return
+    ppn = float(ret.get("ppn_amount", 0) or ret.get("ppn", 0) or 0)
+    diff = gl_service.purchase_return_book_diff(amount=gross_value, ppn=ppn, book_value=ret["book_value"])
+    je = await db.journal_entries.find_one(
+        {"source_type": "purchase_return", "source_id": ret["id"], "status": {"$ne": "void"}}, {"_id": 0, "lines": 1})
+    posted = to_cents(diff) == 0 or any(ln.get("mapping_key") == gl_service.PURCHASE_RETURN_VARIANCE_KEY
+                                        for ln in (je or {}).get("lines") or [])
+    await db.purchase_returns.update_one({"id": ret["id"]}, {"$set": {
+        "book_value_diff": diff, "book_value_posted": bool(posted)}})
 
 
 # ─── R4 — Supplier RMA lifecycle ─────────────────────────────────────────────
@@ -916,9 +942,12 @@ async def _consume_return_rolls(item: Dict[str, Any], warehouse_id: str, owner: 
                 "notes": (f"Retur beli {ret['number']} (roll {r.get('roll_no', '')}"
                           f"{' → potongan' if parent_id else ''}) → {ret.get('supplier_name', '')}"),
                 "timestamp": now_iso()})
+            # PK-27 (IV-06) — biaya roll yang keluar (nilai buku), dipakai jurnal retur beli.
+            uc = float(r.get("unit_cost") or r.get("base_unit_cost") or 0)
             effects.append({"roll_id": piece_id, "parent_roll_id": parent_id, "qty": take, "movement_id": mov_id,
                             "prev_status": r["status"], "product_id": r["product_id"],
-                            "warehouse_id": r.get("warehouse_id", "")})
+                            "warehouse_id": r.get("warehouse_id", ""),
+                            "unit_cost": uc, "value_sen": to_cents(take * uc)})
             applied = round(applied + take, 2)
         if need - applied <= 0.01:
             break
