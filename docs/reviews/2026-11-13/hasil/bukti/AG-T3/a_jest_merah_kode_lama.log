@@ -1,0 +1,27 @@
+[visual-edits] @emergentbase/visual-edits not installed — visual editing disabled.
+[visual-edits] @emergentbase/visual-edits not installed — visual editing disabled.
+FAIL src/features/__tests__/agt3KartuTindakan.test.js
+  ● Test suite failed to run
+
+    Cannot find module '../tanya/TanyaActions' from 'src/features/__tests__/agt3KartuTindakan.test.js'
+
+    [0m [90m 34 |[39m [36mimport[39m { [33mTanyaActionCard[39m } [36mfrom[39m [32m"../tanya/TanyaActionCard"[39m[33m;[39m
+     [90m 35 |[39m [90m// eslint-disable-next-line import/first[39m
+    [31m[1m>[22m[39m[90m 36 |[39m [36mimport[39m { [33mTanyaActions[39m } [36mfrom[39m [32m"../tanya/TanyaActions"[39m[33m;[39m
+     [90m    |[39m [31m[1m^[22m[39m
+     [90m 37 |[39m [90m// eslint-disable-next-line import/first[39m
+     [90m 38 |[39m [36mimport[39m { [33mAskKnButton[39m } [36mfrom[39m [32m"../../components/AskKnButton"[39m[33m;[39m
+     [90m 39 |[39m [90m// eslint-disable-next-line import/first[39m[0m
+
+      at Resolver.resolveModule (../fe/node_modules/jest-resolve/build/resolver.js:324:11)
+      at Object.<anonymous> (src/features/__tests__/agt3KartuTindakan.test.js:36:1)
+      at TestScheduler.scheduleTests (../fe/node_modules/@jest/core/build/TestScheduler.js:333:13)
+      at runJest (../fe/node_modules/@jest/core/build/runJest.js:404:19)
+      at _run10000 (../fe/node_modules/@jest/core/build/cli/index.js:320:7)
+      at runCLI (../fe/node_modules/@jest/core/build/cli/index.js:173:3)
+
+Test Suites: 1 failed, 1 total
+Tests:       0 total
+Snapshots:   0 total
+Time:        0.576 s, estimated 2 s
+Ran all test suites matching /agt3KartuTindakan/i.

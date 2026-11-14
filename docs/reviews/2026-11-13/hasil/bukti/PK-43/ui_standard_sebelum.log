@@ -1,0 +1,26 @@
+  font_lt12      sekarang   6741 di  749 berkas · baseline   6937 · turun di 39 berkas
+  hp_font_lt14   sekarang     15 di    3 berkas · baseline     15
+  hex            sekarang  16330 di  807 berkas · baseline  16810 · turun di 42 berkas
+  btn_custom     sekarang    770 di  340 berkas · baseline    784 · turun di 11 berkas
+  btn_force      sekarang    563 di  160 berkas · baseline    577 · turun di 5 berkas
+  hp_touch       sekarang     13 di    4 berkas · baseline     13
+  list_no_excel  sekarang     12 di   11 berkas · baseline     12
+  hex berbeda    sekarang 697 · baseline 703
+  kontrak Unduh  39 tombol diperiksa · 0 masalah
+  → standar: docs/KN_37_STANDAR_UI_GUDANG.md
+== G-UI (Standar UI Gudang v1) — pola di luar standar hanya boleh berkurang + daftar WMS-RFID wajib Unduh ==
+[FAIL] 13 pelanggaran (dari 4272 cek):
+  ✗ [font_lt12] features/documents/trace/TraceGraph.jsx NAIK 16 → 18 — huruf minimum 12 px (text-fs-12 … text-fs-24; HP info ≥ 16, pendukung ≥ 14).
+  ✗ [font_lt12] features/documents/trace/TraceSearch.jsx NAIK 5 → 6 — huruf minimum 12 px (text-fs-12 … text-fs-24; HP info ≥ 16, pendukung ≥ 14).
+  ✗ [font_lt12] features/finance/ClosingView.jsx NAIK 19 → 20 — huruf minimum 12 px (text-fs-12 … text-fs-24; HP info ≥ 16, pendukung ≥ 14).
+  ✗ [font_lt12] features/finance/payments/PenaltyPanel.jsx NAIK 9 → 11 — huruf minimum 12 px (text-fs-12 … text-fs-24; HP info ≥ 16, pendukung ≥ 14).
+  ✗ [font_lt12] features/purchasing/VendorBillDetailPanel.jsx NAIK 22 → 23 — huruf minimum 12 px (text-fs-12 … text-fs-24; HP info ≥ 16, pendukung ≥ 14).
+  ✗ [hex] features/documents/trace/DocTraceView.jsx NAIK 35 → 36 — warna lewat token/kelas baku (text-kn-*, bg-kn-*, var(--kn-*)), bukan hex lepas.
+  ✗ [hex] features/documents/trace/TraceGraph.jsx NAIK 36 → 38 — warna lewat token/kelas baku (text-kn-*, bg-kn-*, var(--kn-*)), bukan hex lepas.
+  ✗ [hex] features/documents/trace/TraceSearch.jsx NAIK 16 → 17 — warna lewat token/kelas baku (text-kn-*, bg-kn-*, var(--kn-*)), bukan hex lepas.
+  ✗ [hex] features/finance/ClosingView.jsx NAIK 63 → 68 — warna lewat token/kelas baku (text-kn-*, bg-kn-*, var(--kn-*)), bukan hex lepas.
+  ✗ [hex] features/finance/payments/PenaltyPanel.jsx NAIK 10 → 12 — warna lewat token/kelas baku (text-kn-*, bg-kn-*, var(--kn-*)), bukan hex lepas.
+  ✗ [hex] features/purchasing/VendorBillDetailPanel.jsx NAIK 29 → 30 — warna lewat token/kelas baku (text-kn-*, bg-kn-*, var(--kn-*)), bukan hex lepas.
+  ✗ [btn_force] features/purchasing/apPayment.jsx berkas BARU memakai pola usang (3×) — jangan paksa ukuran tombol baku dengan !py/!h/!text — pakai pengubah resmi btn-sm / btn-touch.
+  ✗ [hex] 1 warna hex BARU di aplikasi: #F5D9B0 — pakai token --kn-* / kelas kn-* (styles/tokens.css, tailwind `kn`).
+→ Perbaiki sesuai INVARIANT G-UI (Standar UI Gudang v1) (detail: memory/INVARIANTS.md).

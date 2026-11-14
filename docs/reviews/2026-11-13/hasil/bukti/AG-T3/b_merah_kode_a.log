@@ -1,0 +1,64 @@
+F..F                                                                     [100%]
+=================================== FAILURES ===================================
+__________ test_AGT3_b1_draf_po_lewat_endpoint_layar_berkunci_per_po ___________
+
+klien = <httpx.AsyncClient object at 0x7fd5d850b5d0>
+db = <motor.motor_asyncio.AsyncIOMotorDatabase object at 0x7fd5ea5df0d0>
+kepala_admin = {'Authorization': 'Bearer tok_uji_92b3fc50e6804d35a436946e27dc337f', 'X-Entity-Id': 'ent_ksc'}
+siap = True
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7fd5d6e08710>
+
+    async def test_AGT3_b1_draf_po_lewat_endpoint_layar_berkunci_per_po(klien, db, kepala_admin, siap, monkeypatch):
+        import routers.purchase_orders as po_mod
+        lewat_endpoint = []
+        # Endpoint terdaftar di router saat aplikasi dibuat; pengintai dipasang di fungsi inti yang dipanggilnya.
+        asli_inti = po_mod._create_po_core
+    
+        async def _inti(payload, actor, **kw):
+            lewat_endpoint.append(kw.get("active_entity_id"))
+            return await asli_inti(payload, actor, **kw)
+        monkeypatch.setattr(po_mod, "_create_po_core", _inti)
+        alasan = f"uji AG-T3 b1 {uuid.uuid4().hex[:6]}"
+        pid = await _kartu(klien, kepala_admin, alasan)
+        r = await klien.post(f"/api/ai/actions/{pid}/confirm", headers=kepala_admin, json={"edits": None})
+        assert r.status_code == 200, r.text
+        d = r.json()
+        assert d["status"] == "confirmed" and len(d["result"]) == 2, d
+        pos = await _po(db, alasan)
+        assert len(pos) == 2 and {p["entity_id"] for p in pos} == {KSC}
+        assert sorted(p["po_number"] for p in pos) == sorted(d["result"])
+        assert lewat_endpoint == [KSC, KSC]                 # dua kali lewat endpoint, PT dari header PT kartu
+        kunci = await db.idempotency_keys.find({"key": {"$regex": f"^{re.escape(pid)}:"}}, {"_id": 0}).to_list(10)
+>       assert sorted(k["key"] for k in kunci) == [f"{pid}:0", f"{pid}:1"]
+E       AssertionError: assert [] == ['aiact_7df7c...f7c22ae7cd:1']
+E         
+E         Right contains 2 more items, first extra item: 'aiact_7df7c22ae7cd:0'
+E         Use -v to get more diff
+
+tests_mem/test_AGT3_pengalihan.py:83: AssertionError
+---------------------------- Captured stdout setup -----------------------------
+[bootstrap] SANDI AWAL akun seed (ganti segera): udARgvD1Fw2COd7y
+[bootstrap] migrasi bentuk status_history lot skip: No module named 'migrate_lot_status_history_keys'
+[bootstrap] FASE F lifecycle backfill: 5 produk distempel 'produksi'
+[bootstrap] kebersihan data: 5 record dirapikan {'customers': 3, 'suppliers': 0, 'users': 0, 'hr_employees': 2, 'makloons': 0}
+________________ test_AGT3_b4_tidak_ada_jalan_pintas_pembuat_po ________________
+
+    def test_AGT3_b4_tidak_ada_jalan_pintas_pembuat_po():
+        """Statik: `ai_actions` tidak lagi memanggil `_create_po_core`; `create_notification` hanya di pengingat ke sales."""
+        src = (BACKEND / "services" / "ai_actions.py").read_text(encoding="utf-8")
+        pohon = ast.parse(src)
+        nama = {getattr(n, "attr", getattr(n, "id", "")) for n in ast.walk(pohon) if isinstance(n, (ast.Name, ast.Attribute))}
+>       assert "_create_po_core" not in nama
+E       AssertionError: assert '_create_po_core' not in {'AnalyticsError', 'Any', 'Awaitable', 'Callable', 'Dict', 'Exception', ...}
+
+tests_mem/test_AGT3_pengalihan.py:126: AssertionError
+=============================== warnings summary ===============================
+../../../venv311/lib/python3.11/site-packages/starlette/formparsers.py:12
+  /tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/venv311/lib/python3.11/site-packages/starlette/formparsers.py:12: PendingDeprecationWarning: Please use `import python_multipart` instead.
+    import multipart
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests_mem/test_AGT3_pengalihan.py::test_AGT3_b1_draf_po_lewat_endpoint_layar_berkunci_per_po
+FAILED tests_mem/test_AGT3_pengalihan.py::test_AGT3_b4_tidak_ada_jalan_pintas_pembuat_po
+2 failed, 2 passed, 1 warning in 1.58s

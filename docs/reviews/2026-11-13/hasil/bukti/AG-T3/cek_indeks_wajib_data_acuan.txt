@@ -1,0 +1,4 @@
+ai_action_proposals.uq_pending_session (satu kartu tindakan asisten menunggu per percakapan): tidak ada · 0 kelompok kembar
+  Cari data kembar: db.ai_action_proposals.aggregate([{$match:{status:"pending",session_id:{$gt:""}}},{$group:{_id:"$session_id",n:{$sum:1},nomor:{$push:"$id"}}},{$match:{n:{$gt:1}}}])
+
+22 dari 23 indeks wajib beres.

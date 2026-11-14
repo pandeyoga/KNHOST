@@ -1,0 +1,25 @@
+journal_entries.uq_je_source_active (jurnal per sumber): terpasang · 0 kelompok kembar
+interco_transactions.uq_number (nomor transaksi antar-PT): terpasang · 0 kelompok kembar
+interco_settlements.uq_number (nomor settlement antar-PT): terpasang · 0 kelompok kembar
+interco_returns.uq_number (nomor retur antar-PT): terpasang · 0 kelompok kembar
+interco_loans.uq_number (nomor pinjaman antar-PT): terpasang · 0 kelompok kembar
+penalties.uq_penalty_line_period (nota denda per baris per periode): terpasang · 0 kelompok kembar
+payment_plans.uq_plan_active_doc (satu rencana bayar aktif per dokumen): terpasang · 0 kelompok kembar
+finance_cases.uq_case_open_source (satu kasus terbuka per sumber): terpasang · 0 kelompok kembar
+doc_number_formats.uq_kind_entity (format nomor per jenis per PT): terpasang · 0 kelompok kembar
+pdf_templates.uq_doctype_entity (lapisan template cetak per jenis per PT): terpasang · 0 kelompok kembar
+tax_invoices.uq_fkt_active (satu faktur pajak keluaran aktif per pesanan): terpasang · 0 kelompok kembar
+tax_invoices.uq_fkt_nsfp (satu nomor seri per faktur pajak keluaran aktif): terpasang · 0 kelompok kembar
+tax_invoices_in.uq_fpm_active (satu faktur pajak masukan aktif per tagihan): terpasang · 0 kelompok kembar
+tax_invoices_in.uq_fpm_nsfp (satu nomor seri per faktur pajak masukan aktif): terpasang · 0 kelompok kembar
+tax_period_locks.uq_tax_period (satu kunci masa pajak per PT per masa): terpasang · 0 kelompok kembar
+bank_accounts.uq_default_receiving (satu rekening bawaan per PT per cara bayar): terpasang · 0 kelompok kembar
+customer_credit_profiles.uq_customer_entity (satu profil kredit per pelanggan per PT): terpasang · 0 kelompok kembar
+credit_profile_requests.uq_open_request (satu pengajuan perubahan kredit terbuka per pelanggan per PT): terpasang · 0 kelompok kembar
+intercompany_eliminations.uq_pair_period (satu eliminasi otomatis antar-PT per pasangan per bulan): terpasang · 0 kelompok kembar
+payment_codes.uq_pay_code (kode bayar unik lintas PT): terpasang · 0 kelompok kembar
+payment_codes.uq_pay_code_line (satu kode bayar per pesanan per baris tagihan): terpasang · 0 kelompok kembar
+budgets.uq_budget_key (satu pagu per PT per tahun per bulan per akun/kategori): terpasang · 0 kelompok kembar
+ai_action_proposals.uq_pending_session (satu kartu tindakan asisten menunggu per percakapan): terpasang · 0 kelompok kembar
+
+23 dari 23 indeks wajib beres.

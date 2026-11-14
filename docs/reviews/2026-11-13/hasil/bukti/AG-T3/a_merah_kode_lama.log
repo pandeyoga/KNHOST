@@ -1,0 +1,1015 @@
+EEEEEEEEEEEEEEEEEEEEEEEEE                                                [100%]
+==================================== ERRORS ====================================
+________ ERROR at setup of test_AGT3_U1_siapkan_kwitansi_tanpa_tulisan _________
+
+klien = <httpx.AsyncClient object at 0x7f647f8c74d0>
+db = <motor.motor_asyncio.AsyncIOMotorDatabase object at 0x7f6491583650>
+kepala_admin = {'Authorization': 'Bearer tok_uji_639eab50b2cb41668e20f0036cbb0451', 'X-Entity-Id': 'ent_ksc'}
+akun = <function akun.<locals>._akun at 0x7f647e086c00>
+sesi = <function sesi.<locals>._sesi at 0x7f647e0868e0>
+peran_tanpa_acuan = <function peran_tanpa_acuan.<locals>._peran at 0x7f647e086d40>
+
+    @pytest.fixture(scope="module")
+    async def siap(klien, db, kepala_admin, akun, sesi, peran_tanpa_acuan):
+        if SIMPAN:
+            return SIMPAN
+        await db.bank_accounts.insert_one({"id": REK, "name": "BCA KSC AGT3", "entity_id": KSC, "account_type": "bank",
+                                           "cash_type": "kas_besar", "is_active": True, "opening_balance": 0})
+        for cid, nama, ent in (("cus_agt3_c", "Toko Cahaya", KSC), ("cus_agt3_d", "Toko Dirga", KANDA)):
+            await db.customers.insert_one({"id": cid, "name": nama, "entity_id": ent, "status": "active",
+                                           "deposit_balance": 0.0, "payment_profile": {}, "created_at": now_iso()})
+        izin = {"ai": ["view"], "ai_finance": ["view", "create"], "ar_receipt": ["view", "create"],
+                "order": ["view", "update"]}
+>       rid = await peran_tanpa_acuan(izin, label="AGT3 fin")
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests_mem/test_AGT3_kartu_tindakan.py:70: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+izin = {'ai': ['view'], 'ai_finance': ['view', 'create'], 'ar_receipt': ['view', 'create'], 'order': ['view', 'update']}
+label = 'AGT3 fin'
+
+    async def _peran(izin: Dict[str, list], *, label: str = "") -> str:
+        r = await klien.post("/api/access/roles", headers=kepala_admin,
+                             json={"label": label or f"Tanpa Acuan {next(nomor)}", "base_role": "",
+                                   "permissions": izin, "description": "peran uji"})
+>       assert r.status_code == 200, r.text
+E       AssertionError: {"detail":"Aksi ['create'] tidak berlaku untuk “Asisten Keuangan”."}
+E       assert 400 == 200
+E        +  where 400 = <Response [400 Bad Request]>.status_code
+
+tests_mem/conftest.py:158: AssertionError
+---------------------------- Captured stdout setup -----------------------------
+[bootstrap] SANDI AWAL akun seed (ganti segera): X8DNUiUP2pWg2fHZ
+[bootstrap] migrasi bentuk status_history lot skip: No module named 'migrate_lot_status_history_keys'
+[bootstrap] FASE F lifecycle backfill: 5 produk distempel 'produksi'
+[bootstrap] kebersihan data: 5 record dirapikan {'customers': 3, 'suppliers': 0, 'users': 0, 'hr_employees': 2, 'makloons': 0}
+_________ ERROR at setup of test_AGT3_U2_alasan_dan_ketik_ulang_wajib __________
+
+klien = <httpx.AsyncClient object at 0x7f647f8c74d0>
+db = <motor.motor_asyncio.AsyncIOMotorDatabase object at 0x7f6491583650>
+kepala_admin = {'Authorization': 'Bearer tok_uji_639eab50b2cb41668e20f0036cbb0451', 'X-Entity-Id': 'ent_ksc'}
+akun = <function akun.<locals>._akun at 0x7f647e086c00>
+sesi = <function sesi.<locals>._sesi at 0x7f647e0868e0>
+peran_tanpa_acuan = <function peran_tanpa_acuan.<locals>._peran at 0x7f647e086d40>
+
+    @pytest.fixture(scope="module")
+    async def siap(klien, db, kepala_admin, akun, sesi, peran_tanpa_acuan):
+        if SIMPAN:
+            return SIMPAN
+        await db.bank_accounts.insert_one({"id": REK, "name": "BCA KSC AGT3", "entity_id": KSC, "account_type": "bank",
+                                           "cash_type": "kas_besar", "is_active": True, "opening_balance": 0})
+        for cid, nama, ent in (("cus_agt3_c", "Toko Cahaya", KSC), ("cus_agt3_d", "Toko Dirga", KANDA)):
+            await db.customers.insert_one({"id": cid, "name": nama, "entity_id": ent, "status": "active",
+                                           "deposit_balance": 0.0, "payment_profile": {}, "created_at": now_iso()})
+        izin = {"ai": ["view"], "ai_finance": ["view", "create"], "ar_receipt": ["view", "create"],
+                "order": ["view", "update"]}
+>       rid = await peran_tanpa_acuan(izin, label="AGT3 fin")
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests_mem/test_AGT3_kartu_tindakan.py:70: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+izin = {'ai': ['view'], 'ai_finance': ['view', 'create'], 'ar_receipt': ['view', 'create'], 'order': ['view', 'update']}
+label = 'AGT3 fin'
+
+    async def _peran(izin: Dict[str, list], *, label: str = "") -> str:
+        r = await klien.post("/api/access/roles", headers=kepala_admin,
+                             json={"label": label or f"Tanpa Acuan {next(nomor)}", "base_role": "",
+                                   "permissions": izin, "description": "peran uji"})
+>       assert r.status_code == 200, r.text
+E       AssertionError: {"detail":"Aksi ['create'] tidak berlaku untuk “Asisten Keuangan”."}
+E       assert 400 == 200
+E        +  where 400 = <Response [400 Bad Request]>.status_code
+
+tests_mem/conftest.py:158: AssertionError
+_________ ERROR at setup of test_AGT3_U3_setujui_membuat_satu_kwitansi _________
+
+klien = <httpx.AsyncClient object at 0x7f647f8c74d0>
+db = <motor.motor_asyncio.AsyncIOMotorDatabase object at 0x7f6491583650>
+kepala_admin = {'Authorization': 'Bearer tok_uji_639eab50b2cb41668e20f0036cbb0451', 'X-Entity-Id': 'ent_ksc'}
+akun = <function akun.<locals>._akun at 0x7f647e086c00>
+sesi = <function sesi.<locals>._sesi at 0x7f647e0868e0>
+peran_tanpa_acuan = <function peran_tanpa_acuan.<locals>._peran at 0x7f647e086d40>
+
+    @pytest.fixture(scope="module")
+    async def siap(klien, db, kepala_admin, akun, sesi, peran_tanpa_acuan):
+        if SIMPAN:
+            return SIMPAN
+        await db.bank_accounts.insert_one({"id": REK, "name": "BCA KSC AGT3", "entity_id": KSC, "account_type": "bank",
+                                           "cash_type": "kas_besar", "is_active": True, "opening_balance": 0})
+        for cid, nama, ent in (("cus_agt3_c", "Toko Cahaya", KSC), ("cus_agt3_d", "Toko Dirga", KANDA)):
+            await db.customers.insert_one({"id": cid, "name": nama, "entity_id": ent, "status": "active",
+                                           "deposit_balance": 0.0, "payment_profile": {}, "created_at": now_iso()})
+        izin = {"ai": ["view"], "ai_finance": ["view", "create"], "ar_receipt": ["view", "create"],
+                "order": ["view", "update"]}
+>       rid = await peran_tanpa_acuan(izin, label="AGT3 fin")
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests_mem/test_AGT3_kartu_tindakan.py:70: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+izin = {'ai': ['view'], 'ai_finance': ['view', 'create'], 'ar_receipt': ['view', 'create'], 'order': ['view', 'update']}
+label = 'AGT3 fin'
+
+    async def _peran(izin: Dict[str, list], *, label: str = "") -> str:
+        r = await klien.post("/api/access/roles", headers=kepala_admin,
+                             json={"label": label or f"Tanpa Acuan {next(nomor)}", "base_role": "",
+                                   "permissions": izin, "description": "peran uji"})
+>       assert r.status_code == 200, r.text
+E       AssertionError: {"detail":"Aksi ['create'] tidak berlaku untuk “Asisten Keuangan”."}
+E       assert 400 == 200
+E        +  where 400 = <Response [400 Bad Request]>.status_code
+
+tests_mem/conftest.py:158: AssertionError
+_____________ ERROR at setup of test_AGT3_U4_setujui_lagi_ditolak ______________
+
+klien = <httpx.AsyncClient object at 0x7f647f8c74d0>
+db = <motor.motor_asyncio.AsyncIOMotorDatabase object at 0x7f6491583650>
+kepala_admin = {'Authorization': 'Bearer tok_uji_639eab50b2cb41668e20f0036cbb0451', 'X-Entity-Id': 'ent_ksc'}
+akun = <function akun.<locals>._akun at 0x7f647e086c00>
+sesi = <function sesi.<locals>._sesi at 0x7f647e0868e0>
+peran_tanpa_acuan = <function peran_tanpa_acuan.<locals>._peran at 0x7f647e086d40>
+
+    @pytest.fixture(scope="module")
+    async def siap(klien, db, kepala_admin, akun, sesi, peran_tanpa_acuan):
+        if SIMPAN:
+            return SIMPAN
+        await db.bank_accounts.insert_one({"id": REK, "name": "BCA KSC AGT3", "entity_id": KSC, "account_type": "bank",
+                                           "cash_type": "kas_besar", "is_active": True, "opening_balance": 0})
+        for cid, nama, ent in (("cus_agt3_c", "Toko Cahaya", KSC), ("cus_agt3_d", "Toko Dirga", KANDA)):
+            await db.customers.insert_one({"id": cid, "name": nama, "entity_id": ent, "status": "active",
+                                           "deposit_balance": 0.0, "payment_profile": {}, "created_at": now_iso()})
+        izin = {"ai": ["view"], "ai_finance": ["view", "create"], "ar_receipt": ["view", "create"],
+                "order": ["view", "update"]}
+>       rid = await peran_tanpa_acuan(izin, label="AGT3 fin")
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests_mem/test_AGT3_kartu_tindakan.py:70: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+izin = {'ai': ['view'], 'ai_finance': ['view', 'create'], 'ar_receipt': ['view', 'create'], 'order': ['view', 'update']}
+label = 'AGT3 fin'
+
+    async def _peran(izin: Dict[str, list], *, label: str = "") -> str:
+        r = await klien.post("/api/access/roles", headers=kepala_admin,
+                             json={"label": label or f"Tanpa Acuan {next(nomor)}", "base_role": "",
+                                   "permissions": izin, "description": "peran uji"})
+>       assert r.status_code == 200, r.text
+E       AssertionError: {"detail":"Aksi ['create'] tidak berlaku untuk “Asisten Keuangan”."}
+E       assert 400 == 200
+E        +  where 400 = <Response [400 Bad Request]>.status_code
+
+tests_mem/conftest.py:158: AssertionError
+__________________ ERROR at setup of test_AGT3_U6_kedaluwarsa __________________
+
+klien = <httpx.AsyncClient object at 0x7f647f8c74d0>
+db = <motor.motor_asyncio.AsyncIOMotorDatabase object at 0x7f6491583650>
+kepala_admin = {'Authorization': 'Bearer tok_uji_639eab50b2cb41668e20f0036cbb0451', 'X-Entity-Id': 'ent_ksc'}
+akun = <function akun.<locals>._akun at 0x7f647e086c00>
+sesi = <function sesi.<locals>._sesi at 0x7f647e0868e0>
+peran_tanpa_acuan = <function peran_tanpa_acuan.<locals>._peran at 0x7f647e086d40>
+
+    @pytest.fixture(scope="module")
+    async def siap(klien, db, kepala_admin, akun, sesi, peran_tanpa_acuan):
+        if SIMPAN:
+            return SIMPAN
+        await db.bank_accounts.insert_one({"id": REK, "name": "BCA KSC AGT3", "entity_id": KSC, "account_type": "bank",
+                                           "cash_type": "kas_besar", "is_active": True, "opening_balance": 0})
+        for cid, nama, ent in (("cus_agt3_c", "Toko Cahaya", KSC), ("cus_agt3_d", "Toko Dirga", KANDA)):
+            await db.customers.insert_one({"id": cid, "name": nama, "entity_id": ent, "status": "active",
+                                           "deposit_balance": 0.0, "payment_profile": {}, "created_at": now_iso()})
+        izin = {"ai": ["view"], "ai_finance": ["view", "create"], "ar_receipt": ["view", "create"],
+                "order": ["view", "update"]}
+>       rid = await peran_tanpa_acuan(izin, label="AGT3 fin")
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests_mem/test_AGT3_kartu_tindakan.py:70: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+izin = {'ai': ['view'], 'ai_finance': ['view', 'create'], 'ar_receipt': ['view', 'create'], 'order': ['view', 'update']}
+label = 'AGT3 fin'
+
+    async def _peran(izin: Dict[str, list], *, label: str = "") -> str:
+        r = await klien.post("/api/access/roles", headers=kepala_admin,
+                             json={"label": label or f"Tanpa Acuan {next(nomor)}", "base_role": "",
+                                   "permissions": izin, "description": "peran uji"})
+>       assert r.status_code == 200, r.text
+E       AssertionError: {"detail":"Aksi ['create'] tidak berlaku untuk “Asisten Keuangan”."}
+E       assert 400 == 200
+E        +  where 400 = <Response [400 Bad Request]>.status_code
+
+tests_mem/conftest.py:158: AssertionError
+______________ ERROR at setup of test_AGT3_U7_data_berubah_stale _______________
+
+klien = <httpx.AsyncClient object at 0x7f647f8c74d0>
+db = <motor.motor_asyncio.AsyncIOMotorDatabase object at 0x7f6491583650>
+kepala_admin = {'Authorization': 'Bearer tok_uji_639eab50b2cb41668e20f0036cbb0451', 'X-Entity-Id': 'ent_ksc'}
+akun = <function akun.<locals>._akun at 0x7f647e086c00>
+sesi = <function sesi.<locals>._sesi at 0x7f647e0868e0>
+peran_tanpa_acuan = <function peran_tanpa_acuan.<locals>._peran at 0x7f647e086d40>
+
+    @pytest.fixture(scope="module")
+    async def siap(klien, db, kepala_admin, akun, sesi, peran_tanpa_acuan):
+        if SIMPAN:
+            return SIMPAN
+        await db.bank_accounts.insert_one({"id": REK, "name": "BCA KSC AGT3", "entity_id": KSC, "account_type": "bank",
+                                           "cash_type": "kas_besar", "is_active": True, "opening_balance": 0})
+        for cid, nama, ent in (("cus_agt3_c", "Toko Cahaya", KSC), ("cus_agt3_d", "Toko Dirga", KANDA)):
+            await db.customers.insert_one({"id": cid, "name": nama, "entity_id": ent, "status": "active",
+                                           "deposit_balance": 0.0, "payment_profile": {}, "created_at": now_iso()})
+        izin = {"ai": ["view"], "ai_finance": ["view", "create"], "ar_receipt": ["view", "create"],
+                "order": ["view", "update"]}
+>       rid = await peran_tanpa_acuan(izin, label="AGT3 fin")
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests_mem/test_AGT3_kartu_tindakan.py:70: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+izin = {'ai': ['view'], 'ai_finance': ['view', 'create'], 'ar_receipt': ['view', 'create'], 'order': ['view', 'update']}
+label = 'AGT3 fin'
+
+    async def _peran(izin: Dict[str, list], *, label: str = "") -> str:
+        r = await klien.post("/api/access/roles", headers=kepala_admin,
+                             json={"label": label or f"Tanpa Acuan {next(nomor)}", "base_role": "",
+                                   "permissions": izin, "description": "peran uji"})
+>       assert r.status_code == 200, r.text
+E       AssertionError: {"detail":"Aksi ['create'] tidak berlaku untuk “Asisten Keuangan”."}
+E       assert 400 == 200
+E        +  where 400 = <Response [400 Bad Request]>.status_code
+
+tests_mem/conftest.py:158: AssertionError
+________________ ERROR at setup of test_AGT3_U8_pt_lain_ditolak ________________
+
+klien = <httpx.AsyncClient object at 0x7f647f8c74d0>
+db = <motor.motor_asyncio.AsyncIOMotorDatabase object at 0x7f6491583650>
+kepala_admin = {'Authorization': 'Bearer tok_uji_639eab50b2cb41668e20f0036cbb0451', 'X-Entity-Id': 'ent_ksc'}
+akun = <function akun.<locals>._akun at 0x7f647e086c00>
+sesi = <function sesi.<locals>._sesi at 0x7f647e0868e0>
+peran_tanpa_acuan = <function peran_tanpa_acuan.<locals>._peran at 0x7f647e086d40>
+
+    @pytest.fixture(scope="module")
+    async def siap(klien, db, kepala_admin, akun, sesi, peran_tanpa_acuan):
+        if SIMPAN:
+            return SIMPAN
+        await db.bank_accounts.insert_one({"id": REK, "name": "BCA KSC AGT3", "entity_id": KSC, "account_type": "bank",
+                                           "cash_type": "kas_besar", "is_active": True, "opening_balance": 0})
+        for cid, nama, ent in (("cus_agt3_c", "Toko Cahaya", KSC), ("cus_agt3_d", "Toko Dirga", KANDA)):
+            await db.customers.insert_one({"id": cid, "name": nama, "entity_id": ent, "status": "active",
+                                           "deposit_balance": 0.0, "payment_profile": {}, "created_at": now_iso()})
+        izin = {"ai": ["view"], "ai_finance": ["view", "create"], "ar_receipt": ["view", "create"],
+                "order": ["view", "update"]}
+>       rid = await peran_tanpa_acuan(izin, label="AGT3 fin")
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests_mem/test_AGT3_kartu_tindakan.py:70: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+izin = {'ai': ['view'], 'ai_finance': ['view', 'create'], 'ar_receipt': ['view', 'create'], 'order': ['view', 'update']}
+label = 'AGT3 fin'
+
+    async def _peran(izin: Dict[str, list], *, label: str = "") -> str:
+        r = await klien.post("/api/access/roles", headers=kepala_admin,
+                             json={"label": label or f"Tanpa Acuan {next(nomor)}", "base_role": "",
+                                   "permissions": izin, "description": "peran uji"})
+>       assert r.status_code == 200, r.text
+E       AssertionError: {"detail":"Aksi ['create'] tidak berlaku untuk “Asisten Keuangan”."}
+E       assert 400 == 200
+E        +  where 400 = <Response [400 Bad Request]>.status_code
+
+tests_mem/conftest.py:158: AssertionError
+_____________ ERROR at setup of test_AGT3_U9_setujui_dari_pt_lain ______________
+
+klien = <httpx.AsyncClient object at 0x7f647f8c74d0>
+db = <motor.motor_asyncio.AsyncIOMotorDatabase object at 0x7f6491583650>
+kepala_admin = {'Authorization': 'Bearer tok_uji_639eab50b2cb41668e20f0036cbb0451', 'X-Entity-Id': 'ent_ksc'}
+akun = <function akun.<locals>._akun at 0x7f647e086c00>
+sesi = <function sesi.<locals>._sesi at 0x7f647e0868e0>
+peran_tanpa_acuan = <function peran_tanpa_acuan.<locals>._peran at 0x7f647e086d40>
+
+    @pytest.fixture(scope="module")
+    async def siap(klien, db, kepala_admin, akun, sesi, peran_tanpa_acuan):
+        if SIMPAN:
+            return SIMPAN
+        await db.bank_accounts.insert_one({"id": REK, "name": "BCA KSC AGT3", "entity_id": KSC, "account_type": "bank",
+                                           "cash_type": "kas_besar", "is_active": True, "opening_balance": 0})
+        for cid, nama, ent in (("cus_agt3_c", "Toko Cahaya", KSC), ("cus_agt3_d", "Toko Dirga", KANDA)):
+            await db.customers.insert_one({"id": cid, "name": nama, "entity_id": ent, "status": "active",
+                                           "deposit_balance": 0.0, "payment_profile": {}, "created_at": now_iso()})
+        izin = {"ai": ["view"], "ai_finance": ["view", "create"], "ar_receipt": ["view", "create"],
+                "order": ["view", "update"]}
+>       rid = await peran_tanpa_acuan(izin, label="AGT3 fin")
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests_mem/test_AGT3_kartu_tindakan.py:70: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+izin = {'ai': ['view'], 'ai_finance': ['view', 'create'], 'ar_receipt': ['view', 'create'], 'order': ['view', 'update']}
+label = 'AGT3 fin'
+
+    async def _peran(izin: Dict[str, list], *, label: str = "") -> str:
+        r = await klien.post("/api/access/roles", headers=kepala_admin,
+                             json={"label": label or f"Tanpa Acuan {next(nomor)}", "base_role": "",
+                                   "permissions": izin, "description": "peran uji"})
+>       assert r.status_code == 200, r.text
+E       AssertionError: {"detail":"Aksi ['create'] tidak berlaku untuk “Asisten Keuangan”."}
+E       assert 400 == 200
+E        +  where 400 = <Response [400 Bad Request]>.status_code
+
+tests_mem/conftest.py:158: AssertionError
+_____________ ERROR at setup of test_AGT3_U10_sakelar_akun_dan_pt ______________
+
+klien = <httpx.AsyncClient object at 0x7f647f8c74d0>
+db = <motor.motor_asyncio.AsyncIOMotorDatabase object at 0x7f6491583650>
+kepala_admin = {'Authorization': 'Bearer tok_uji_639eab50b2cb41668e20f0036cbb0451', 'X-Entity-Id': 'ent_ksc'}
+akun = <function akun.<locals>._akun at 0x7f647e086c00>
+sesi = <function sesi.<locals>._sesi at 0x7f647e0868e0>
+peran_tanpa_acuan = <function peran_tanpa_acuan.<locals>._peran at 0x7f647e086d40>
+
+    @pytest.fixture(scope="module")
+    async def siap(klien, db, kepala_admin, akun, sesi, peran_tanpa_acuan):
+        if SIMPAN:
+            return SIMPAN
+        await db.bank_accounts.insert_one({"id": REK, "name": "BCA KSC AGT3", "entity_id": KSC, "account_type": "bank",
+                                           "cash_type": "kas_besar", "is_active": True, "opening_balance": 0})
+        for cid, nama, ent in (("cus_agt3_c", "Toko Cahaya", KSC), ("cus_agt3_d", "Toko Dirga", KANDA)):
+            await db.customers.insert_one({"id": cid, "name": nama, "entity_id": ent, "status": "active",
+                                           "deposit_balance": 0.0, "payment_profile": {}, "created_at": now_iso()})
+        izin = {"ai": ["view"], "ai_finance": ["view", "create"], "ar_receipt": ["view", "create"],
+                "order": ["view", "update"]}
+>       rid = await peran_tanpa_acuan(izin, label="AGT3 fin")
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests_mem/test_AGT3_kartu_tindakan.py:70: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+izin = {'ai': ['view'], 'ai_finance': ['view', 'create'], 'ar_receipt': ['view', 'create'], 'order': ['view', 'update']}
+label = 'AGT3 fin'
+
+    async def _peran(izin: Dict[str, list], *, label: str = "") -> str:
+        r = await klien.post("/api/access/roles", headers=kepala_admin,
+                             json={"label": label or f"Tanpa Acuan {next(nomor)}", "base_role": "",
+                                   "permissions": izin, "description": "peran uji"})
+>       assert r.status_code == 200, r.text
+E       AssertionError: {"detail":"Aksi ['create'] tidak berlaku untuk “Asisten Keuangan”."}
+E       assert 400 == 200
+E        +  where 400 = <Response [400 Bad Request]>.status_code
+
+tests_mem/conftest.py:158: AssertionError
+________________ ERROR at setup of test_AGT3_U11_pintu_menolak _________________
+
+klien = <httpx.AsyncClient object at 0x7f647f8c74d0>
+db = <motor.motor_asyncio.AsyncIOMotorDatabase object at 0x7f6491583650>
+kepala_admin = {'Authorization': 'Bearer tok_uji_639eab50b2cb41668e20f0036cbb0451', 'X-Entity-Id': 'ent_ksc'}
+akun = <function akun.<locals>._akun at 0x7f647e086c00>
+sesi = <function sesi.<locals>._sesi at 0x7f647e0868e0>
+peran_tanpa_acuan = <function peran_tanpa_acuan.<locals>._peran at 0x7f647e086d40>
+
+    @pytest.fixture(scope="module")
+    async def siap(klien, db, kepala_admin, akun, sesi, peran_tanpa_acuan):
+        if SIMPAN:
+            return SIMPAN
+        await db.bank_accounts.insert_one({"id": REK, "name": "BCA KSC AGT3", "entity_id": KSC, "account_type": "bank",
+                                           "cash_type": "kas_besar", "is_active": True, "opening_balance": 0})
+        for cid, nama, ent in (("cus_agt3_c", "Toko Cahaya", KSC), ("cus_agt3_d", "Toko Dirga", KANDA)):
+            await db.customers.insert_one({"id": cid, "name": nama, "entity_id": ent, "status": "active",
+                                           "deposit_balance": 0.0, "payment_profile": {}, "created_at": now_iso()})
+        izin = {"ai": ["view"], "ai_finance": ["view", "create"], "ar_receipt": ["view", "create"],
+                "order": ["view", "update"]}
+>       rid = await peran_tanpa_acuan(izin, label="AGT3 fin")
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests_mem/test_AGT3_kartu_tindakan.py:70: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+izin = {'ai': ['view'], 'ai_finance': ['view', 'create'], 'ar_receipt': ['view', 'create'], 'order': ['view', 'update']}
+label = 'AGT3 fin'
+
+    async def _peran(izin: Dict[str, list], *, label: str = "") -> str:
+        r = await klien.post("/api/access/roles", headers=kepala_admin,
+                             json={"label": label or f"Tanpa Acuan {next(nomor)}", "base_role": "",
+                                   "permissions": izin, "description": "peran uji"})
+>       assert r.status_code == 200, r.text
+E       AssertionError: {"detail":"Aksi ['create'] tidak berlaku untuk “Asisten Keuangan”."}
+E       assert 400 == 200
+E        +  where 400 = <Response [400 Bad Request]>.status_code
+
+tests_mem/conftest.py:158: AssertionError
+___________ ERROR at setup of test_AGT3_U12_kartu_baru_menggantikan ____________
+
+klien = <httpx.AsyncClient object at 0x7f647f8c74d0>
+db = <motor.motor_asyncio.AsyncIOMotorDatabase object at 0x7f6491583650>
+kepala_admin = {'Authorization': 'Bearer tok_uji_639eab50b2cb41668e20f0036cbb0451', 'X-Entity-Id': 'ent_ksc'}
+akun = <function akun.<locals>._akun at 0x7f647e086c00>
+sesi = <function sesi.<locals>._sesi at 0x7f647e0868e0>
+peran_tanpa_acuan = <function peran_tanpa_acuan.<locals>._peran at 0x7f647e086d40>
+
+    @pytest.fixture(scope="module")
+    async def siap(klien, db, kepala_admin, akun, sesi, peran_tanpa_acuan):
+        if SIMPAN:
+            return SIMPAN
+        await db.bank_accounts.insert_one({"id": REK, "name": "BCA KSC AGT3", "entity_id": KSC, "account_type": "bank",
+                                           "cash_type": "kas_besar", "is_active": True, "opening_balance": 0})
+        for cid, nama, ent in (("cus_agt3_c", "Toko Cahaya", KSC), ("cus_agt3_d", "Toko Dirga", KANDA)):
+            await db.customers.insert_one({"id": cid, "name": nama, "entity_id": ent, "status": "active",
+                                           "deposit_balance": 0.0, "payment_profile": {}, "created_at": now_iso()})
+        izin = {"ai": ["view"], "ai_finance": ["view", "create"], "ar_receipt": ["view", "create"],
+                "order": ["view", "update"]}
+>       rid = await peran_tanpa_acuan(izin, label="AGT3 fin")
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests_mem/test_AGT3_kartu_tindakan.py:70: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+izin = {'ai': ['view'], 'ai_finance': ['view', 'create'], 'ar_receipt': ['view', 'create'], 'order': ['view', 'update']}
+label = 'AGT3 fin'
+
+    async def _peran(izin: Dict[str, list], *, label: str = "") -> str:
+        r = await klien.post("/api/access/roles", headers=kepala_admin,
+                             json={"label": label or f"Tanpa Acuan {next(nomor)}", "base_role": "",
+                                   "permissions": izin, "description": "peran uji"})
+>       assert r.status_code == 200, r.text
+E       AssertionError: {"detail":"Aksi ['create'] tidak berlaku untuk “Asisten Keuangan”."}
+E       assert 400 == 200
+E        +  where 400 = <Response [400 Bad Request]>.status_code
+
+tests_mem/conftest.py:158: AssertionError
+______ ERROR at setup of test_AGT3_U14_teks_bebas_menutup_prepare_action _______
+
+klien = <httpx.AsyncClient object at 0x7f647f8c74d0>
+db = <motor.motor_asyncio.AsyncIOMotorDatabase object at 0x7f6491583650>
+kepala_admin = {'Authorization': 'Bearer tok_uji_639eab50b2cb41668e20f0036cbb0451', 'X-Entity-Id': 'ent_ksc'}
+akun = <function akun.<locals>._akun at 0x7f647e086c00>
+sesi = <function sesi.<locals>._sesi at 0x7f647e0868e0>
+peran_tanpa_acuan = <function peran_tanpa_acuan.<locals>._peran at 0x7f647e086d40>
+
+    @pytest.fixture(scope="module")
+    async def siap(klien, db, kepala_admin, akun, sesi, peran_tanpa_acuan):
+        if SIMPAN:
+            return SIMPAN
+        await db.bank_accounts.insert_one({"id": REK, "name": "BCA KSC AGT3", "entity_id": KSC, "account_type": "bank",
+                                           "cash_type": "kas_besar", "is_active": True, "opening_balance": 0})
+        for cid, nama, ent in (("cus_agt3_c", "Toko Cahaya", KSC), ("cus_agt3_d", "Toko Dirga", KANDA)):
+            await db.customers.insert_one({"id": cid, "name": nama, "entity_id": ent, "status": "active",
+                                           "deposit_balance": 0.0, "payment_profile": {}, "created_at": now_iso()})
+        izin = {"ai": ["view"], "ai_finance": ["view", "create"], "ar_receipt": ["view", "create"],
+                "order": ["view", "update"]}
+>       rid = await peran_tanpa_acuan(izin, label="AGT3 fin")
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests_mem/test_AGT3_kartu_tindakan.py:70: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+izin = {'ai': ['view'], 'ai_finance': ['view', 'create'], 'ar_receipt': ['view', 'create'], 'order': ['view', 'update']}
+label = 'AGT3 fin'
+
+    async def _peran(izin: Dict[str, list], *, label: str = "") -> str:
+        r = await klien.post("/api/access/roles", headers=kepala_admin,
+                             json={"label": label or f"Tanpa Acuan {next(nomor)}", "base_role": "",
+                                   "permissions": izin, "description": "peran uji"})
+>       assert r.status_code == 200, r.text
+E       AssertionError: {"detail":"Aksi ['create'] tidak berlaku untuk “Asisten Keuangan”."}
+E       assert 400 == 200
+E        +  where 400 = <Response [400 Bad Request]>.status_code
+
+tests_mem/conftest.py:158: AssertionError
+_______ ERROR at setup of test_AGT3_U14b_prepare_action_lewat_percakapan _______
+
+klien = <httpx.AsyncClient object at 0x7f647f8c74d0>
+db = <motor.motor_asyncio.AsyncIOMotorDatabase object at 0x7f6491583650>
+kepala_admin = {'Authorization': 'Bearer tok_uji_639eab50b2cb41668e20f0036cbb0451', 'X-Entity-Id': 'ent_ksc'}
+akun = <function akun.<locals>._akun at 0x7f647e086c00>
+sesi = <function sesi.<locals>._sesi at 0x7f647e0868e0>
+peran_tanpa_acuan = <function peran_tanpa_acuan.<locals>._peran at 0x7f647e086d40>
+
+    @pytest.fixture(scope="module")
+    async def siap(klien, db, kepala_admin, akun, sesi, peran_tanpa_acuan):
+        if SIMPAN:
+            return SIMPAN
+        await db.bank_accounts.insert_one({"id": REK, "name": "BCA KSC AGT3", "entity_id": KSC, "account_type": "bank",
+                                           "cash_type": "kas_besar", "is_active": True, "opening_balance": 0})
+        for cid, nama, ent in (("cus_agt3_c", "Toko Cahaya", KSC), ("cus_agt3_d", "Toko Dirga", KANDA)):
+            await db.customers.insert_one({"id": cid, "name": nama, "entity_id": ent, "status": "active",
+                                           "deposit_balance": 0.0, "payment_profile": {}, "created_at": now_iso()})
+        izin = {"ai": ["view"], "ai_finance": ["view", "create"], "ar_receipt": ["view", "create"],
+                "order": ["view", "update"]}
+>       rid = await peran_tanpa_acuan(izin, label="AGT3 fin")
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests_mem/test_AGT3_kartu_tindakan.py:70: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+izin = {'ai': ['view'], 'ai_finance': ['view', 'create'], 'ar_receipt': ['view', 'create'], 'order': ['view', 'update']}
+label = 'AGT3 fin'
+
+    async def _peran(izin: Dict[str, list], *, label: str = "") -> str:
+        r = await klien.post("/api/access/roles", headers=kepala_admin,
+                             json={"label": label or f"Tanpa Acuan {next(nomor)}", "base_role": "",
+                                   "permissions": izin, "description": "peran uji"})
+>       assert r.status_code == 200, r.text
+E       AssertionError: {"detail":"Aksi ['create'] tidak berlaku untuk “Asisten Keuangan”."}
+E       assert 400 == 200
+E        +  where 400 = <Response [400 Bad Request]>.status_code
+
+tests_mem/conftest.py:158: AssertionError
+_________________ ERROR at setup of test_AGT3_U15_janji_bayar __________________
+
+klien = <httpx.AsyncClient object at 0x7f647f8c74d0>
+db = <motor.motor_asyncio.AsyncIOMotorDatabase object at 0x7f6491583650>
+kepala_admin = {'Authorization': 'Bearer tok_uji_639eab50b2cb41668e20f0036cbb0451', 'X-Entity-Id': 'ent_ksc'}
+akun = <function akun.<locals>._akun at 0x7f647e086c00>
+sesi = <function sesi.<locals>._sesi at 0x7f647e0868e0>
+peran_tanpa_acuan = <function peran_tanpa_acuan.<locals>._peran at 0x7f647e086d40>
+
+    @pytest.fixture(scope="module")
+    async def siap(klien, db, kepala_admin, akun, sesi, peran_tanpa_acuan):
+        if SIMPAN:
+            return SIMPAN
+        await db.bank_accounts.insert_one({"id": REK, "name": "BCA KSC AGT3", "entity_id": KSC, "account_type": "bank",
+                                           "cash_type": "kas_besar", "is_active": True, "opening_balance": 0})
+        for cid, nama, ent in (("cus_agt3_c", "Toko Cahaya", KSC), ("cus_agt3_d", "Toko Dirga", KANDA)):
+            await db.customers.insert_one({"id": cid, "name": nama, "entity_id": ent, "status": "active",
+                                           "deposit_balance": 0.0, "payment_profile": {}, "created_at": now_iso()})
+        izin = {"ai": ["view"], "ai_finance": ["view", "create"], "ar_receipt": ["view", "create"],
+                "order": ["view", "update"]}
+>       rid = await peran_tanpa_acuan(izin, label="AGT3 fin")
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests_mem/test_AGT3_kartu_tindakan.py:70: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+izin = {'ai': ['view'], 'ai_finance': ['view', 'create'], 'ar_receipt': ['view', 'create'], 'order': ['view', 'update']}
+label = 'AGT3 fin'
+
+    async def _peran(izin: Dict[str, list], *, label: str = "") -> str:
+        r = await klien.post("/api/access/roles", headers=kepala_admin,
+                             json={"label": label or f"Tanpa Acuan {next(nomor)}", "base_role": "",
+                                   "permissions": izin, "description": "peran uji"})
+>       assert r.status_code == 200, r.text
+E       AssertionError: {"detail":"Aksi ['create'] tidak berlaku untuk “Asisten Keuangan”."}
+E       assert 400 == 200
+E        +  where 400 = <Response [400 Bad Request]>.status_code
+
+tests_mem/conftest.py:158: AssertionError
+__________ ERROR at setup of test_AGT3_A_tindak_lanjut_dan_pengingat ___________
+
+klien = <httpx.AsyncClient object at 0x7f647f8c74d0>
+db = <motor.motor_asyncio.AsyncIOMotorDatabase object at 0x7f6491583650>
+kepala_admin = {'Authorization': 'Bearer tok_uji_639eab50b2cb41668e20f0036cbb0451', 'X-Entity-Id': 'ent_ksc'}
+akun = <function akun.<locals>._akun at 0x7f647e086c00>
+sesi = <function sesi.<locals>._sesi at 0x7f647e0868e0>
+peran_tanpa_acuan = <function peran_tanpa_acuan.<locals>._peran at 0x7f647e086d40>
+
+    @pytest.fixture(scope="module")
+    async def siap(klien, db, kepala_admin, akun, sesi, peran_tanpa_acuan):
+        if SIMPAN:
+            return SIMPAN
+        await db.bank_accounts.insert_one({"id": REK, "name": "BCA KSC AGT3", "entity_id": KSC, "account_type": "bank",
+                                           "cash_type": "kas_besar", "is_active": True, "opening_balance": 0})
+        for cid, nama, ent in (("cus_agt3_c", "Toko Cahaya", KSC), ("cus_agt3_d", "Toko Dirga", KANDA)):
+            await db.customers.insert_one({"id": cid, "name": nama, "entity_id": ent, "status": "active",
+                                           "deposit_balance": 0.0, "payment_profile": {}, "created_at": now_iso()})
+        izin = {"ai": ["view"], "ai_finance": ["view", "create"], "ar_receipt": ["view", "create"],
+                "order": ["view", "update"]}
+>       rid = await peran_tanpa_acuan(izin, label="AGT3 fin")
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests_mem/test_AGT3_kartu_tindakan.py:70: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+izin = {'ai': ['view'], 'ai_finance': ['view', 'create'], 'ar_receipt': ['view', 'create'], 'order': ['view', 'update']}
+label = 'AGT3 fin'
+
+    async def _peran(izin: Dict[str, list], *, label: str = "") -> str:
+        r = await klien.post("/api/access/roles", headers=kepala_admin,
+                             json={"label": label or f"Tanpa Acuan {next(nomor)}", "base_role": "",
+                                   "permissions": izin, "description": "peran uji"})
+>       assert r.status_code == 200, r.text
+E       AssertionError: {"detail":"Aksi ['create'] tidak berlaku untuk “Asisten Keuangan”."}
+E       assert 400 == 200
+E        +  where 400 = <Response [400 Bad Request]>.status_code
+
+tests_mem/conftest.py:158: AssertionError
+______________ ERROR at setup of test_AGT3_U16_ulang_jurnal_gagal ______________
+
+klien = <httpx.AsyncClient object at 0x7f647f8c74d0>
+db = <motor.motor_asyncio.AsyncIOMotorDatabase object at 0x7f6491583650>
+kepala_admin = {'Authorization': 'Bearer tok_uji_639eab50b2cb41668e20f0036cbb0451', 'X-Entity-Id': 'ent_ksc'}
+akun = <function akun.<locals>._akun at 0x7f647e086c00>
+sesi = <function sesi.<locals>._sesi at 0x7f647e0868e0>
+peran_tanpa_acuan = <function peran_tanpa_acuan.<locals>._peran at 0x7f647e086d40>
+
+    @pytest.fixture(scope="module")
+    async def siap(klien, db, kepala_admin, akun, sesi, peran_tanpa_acuan):
+        if SIMPAN:
+            return SIMPAN
+        await db.bank_accounts.insert_one({"id": REK, "name": "BCA KSC AGT3", "entity_id": KSC, "account_type": "bank",
+                                           "cash_type": "kas_besar", "is_active": True, "opening_balance": 0})
+        for cid, nama, ent in (("cus_agt3_c", "Toko Cahaya", KSC), ("cus_agt3_d", "Toko Dirga", KANDA)):
+            await db.customers.insert_one({"id": cid, "name": nama, "entity_id": ent, "status": "active",
+                                           "deposit_balance": 0.0, "payment_profile": {}, "created_at": now_iso()})
+        izin = {"ai": ["view"], "ai_finance": ["view", "create"], "ar_receipt": ["view", "create"],
+                "order": ["view", "update"]}
+>       rid = await peran_tanpa_acuan(izin, label="AGT3 fin")
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests_mem/test_AGT3_kartu_tindakan.py:70: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+izin = {'ai': ['view'], 'ai_finance': ['view', 'create'], 'ar_receipt': ['view', 'create'], 'order': ['view', 'update']}
+label = 'AGT3 fin'
+
+    async def _peran(izin: Dict[str, list], *, label: str = "") -> str:
+        r = await klien.post("/api/access/roles", headers=kepala_admin,
+                             json={"label": label or f"Tanpa Acuan {next(nomor)}", "base_role": "",
+                                   "permissions": izin, "description": "peran uji"})
+>       assert r.status_code == 200, r.text
+E       AssertionError: {"detail":"Aksi ['create'] tidak berlaku untuk “Asisten Keuangan”."}
+E       assert 400 == 200
+E        +  where 400 = <Response [400 Bad Request]>.status_code
+
+tests_mem/conftest.py:158: AssertionError
+_____________ ERROR at setup of test_AGT3_B_ulang_jurnal_berhasil ______________
+
+klien = <httpx.AsyncClient object at 0x7f647f8c74d0>
+db = <motor.motor_asyncio.AsyncIOMotorDatabase object at 0x7f6491583650>
+kepala_admin = {'Authorization': 'Bearer tok_uji_639eab50b2cb41668e20f0036cbb0451', 'X-Entity-Id': 'ent_ksc'}
+akun = <function akun.<locals>._akun at 0x7f647e086c00>
+sesi = <function sesi.<locals>._sesi at 0x7f647e0868e0>
+peran_tanpa_acuan = <function peran_tanpa_acuan.<locals>._peran at 0x7f647e086d40>
+
+    @pytest.fixture(scope="module")
+    async def siap(klien, db, kepala_admin, akun, sesi, peran_tanpa_acuan):
+        if SIMPAN:
+            return SIMPAN
+        await db.bank_accounts.insert_one({"id": REK, "name": "BCA KSC AGT3", "entity_id": KSC, "account_type": "bank",
+                                           "cash_type": "kas_besar", "is_active": True, "opening_balance": 0})
+        for cid, nama, ent in (("cus_agt3_c", "Toko Cahaya", KSC), ("cus_agt3_d", "Toko Dirga", KANDA)):
+            await db.customers.insert_one({"id": cid, "name": nama, "entity_id": ent, "status": "active",
+                                           "deposit_balance": 0.0, "payment_profile": {}, "created_at": now_iso()})
+        izin = {"ai": ["view"], "ai_finance": ["view", "create"], "ar_receipt": ["view", "create"],
+                "order": ["view", "update"]}
+>       rid = await peran_tanpa_acuan(izin, label="AGT3 fin")
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests_mem/test_AGT3_kartu_tindakan.py:70: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+izin = {'ai': ['view'], 'ai_finance': ['view', 'create'], 'ar_receipt': ['view', 'create'], 'order': ['view', 'update']}
+label = 'AGT3 fin'
+
+    async def _peran(izin: Dict[str, list], *, label: str = "") -> str:
+        r = await klien.post("/api/access/roles", headers=kepala_admin,
+                             json={"label": label or f"Tanpa Acuan {next(nomor)}", "base_role": "",
+                                   "permissions": izin, "description": "peran uji"})
+>       assert r.status_code == 200, r.text
+E       AssertionError: {"detail":"Aksi ['create'] tidak berlaku untuk “Asisten Keuangan”."}
+E       assert 400 == 200
+E        +  where 400 = <Response [400 Bad Request]>.status_code
+
+tests_mem/conftest.py:158: AssertionError
+______________ ERROR at setup of test_AGT3_B_cocokkan_mutasi_bank ______________
+
+klien = <httpx.AsyncClient object at 0x7f647f8c74d0>
+db = <motor.motor_asyncio.AsyncIOMotorDatabase object at 0x7f6491583650>
+kepala_admin = {'Authorization': 'Bearer tok_uji_639eab50b2cb41668e20f0036cbb0451', 'X-Entity-Id': 'ent_ksc'}
+akun = <function akun.<locals>._akun at 0x7f647e086c00>
+sesi = <function sesi.<locals>._sesi at 0x7f647e0868e0>
+peran_tanpa_acuan = <function peran_tanpa_acuan.<locals>._peran at 0x7f647e086d40>
+
+    @pytest.fixture(scope="module")
+    async def siap(klien, db, kepala_admin, akun, sesi, peran_tanpa_acuan):
+        if SIMPAN:
+            return SIMPAN
+        await db.bank_accounts.insert_one({"id": REK, "name": "BCA KSC AGT3", "entity_id": KSC, "account_type": "bank",
+                                           "cash_type": "kas_besar", "is_active": True, "opening_balance": 0})
+        for cid, nama, ent in (("cus_agt3_c", "Toko Cahaya", KSC), ("cus_agt3_d", "Toko Dirga", KANDA)):
+            await db.customers.insert_one({"id": cid, "name": nama, "entity_id": ent, "status": "active",
+                                           "deposit_balance": 0.0, "payment_profile": {}, "created_at": now_iso()})
+        izin = {"ai": ["view"], "ai_finance": ["view", "create"], "ar_receipt": ["view", "create"],
+                "order": ["view", "update"]}
+>       rid = await peran_tanpa_acuan(izin, label="AGT3 fin")
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests_mem/test_AGT3_kartu_tindakan.py:70: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+izin = {'ai': ['view'], 'ai_finance': ['view', 'create'], 'ar_receipt': ['view', 'create'], 'order': ['view', 'update']}
+label = 'AGT3 fin'
+
+    async def _peran(izin: Dict[str, list], *, label: str = "") -> str:
+        r = await klien.post("/api/access/roles", headers=kepala_admin,
+                             json={"label": label or f"Tanpa Acuan {next(nomor)}", "base_role": "",
+                                   "permissions": izin, "description": "peran uji"})
+>       assert r.status_code == 200, r.text
+E       AssertionError: {"detail":"Aksi ['create'] tidak berlaku untuk “Asisten Keuangan”."}
+E       assert 400 == 200
+E        +  where 400 = <Response [400 Bad Request]>.status_code
+
+tests_mem/conftest.py:158: AssertionError
+________________ ERROR at setup of test_AGT3_B_alokasi_titipan _________________
+
+klien = <httpx.AsyncClient object at 0x7f647f8c74d0>
+db = <motor.motor_asyncio.AsyncIOMotorDatabase object at 0x7f6491583650>
+kepala_admin = {'Authorization': 'Bearer tok_uji_639eab50b2cb41668e20f0036cbb0451', 'X-Entity-Id': 'ent_ksc'}
+akun = <function akun.<locals>._akun at 0x7f647e086c00>
+sesi = <function sesi.<locals>._sesi at 0x7f647e0868e0>
+peran_tanpa_acuan = <function peran_tanpa_acuan.<locals>._peran at 0x7f647e086d40>
+
+    @pytest.fixture(scope="module")
+    async def siap(klien, db, kepala_admin, akun, sesi, peran_tanpa_acuan):
+        if SIMPAN:
+            return SIMPAN
+        await db.bank_accounts.insert_one({"id": REK, "name": "BCA KSC AGT3", "entity_id": KSC, "account_type": "bank",
+                                           "cash_type": "kas_besar", "is_active": True, "opening_balance": 0})
+        for cid, nama, ent in (("cus_agt3_c", "Toko Cahaya", KSC), ("cus_agt3_d", "Toko Dirga", KANDA)):
+            await db.customers.insert_one({"id": cid, "name": nama, "entity_id": ent, "status": "active",
+                                           "deposit_balance": 0.0, "payment_profile": {}, "created_at": now_iso()})
+        izin = {"ai": ["view"], "ai_finance": ["view", "create"], "ar_receipt": ["view", "create"],
+                "order": ["view", "update"]}
+>       rid = await peran_tanpa_acuan(izin, label="AGT3 fin")
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests_mem/test_AGT3_kartu_tindakan.py:70: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+izin = {'ai': ['view'], 'ai_finance': ['view', 'create'], 'ar_receipt': ['view', 'create'], 'order': ['view', 'update']}
+label = 'AGT3 fin'
+
+    async def _peran(izin: Dict[str, list], *, label: str = "") -> str:
+        r = await klien.post("/api/access/roles", headers=kepala_admin,
+                             json={"label": label or f"Tanpa Acuan {next(nomor)}", "base_role": "",
+                                   "permissions": izin, "description": "peran uji"})
+>       assert r.status_code == 200, r.text
+E       AssertionError: {"detail":"Aksi ['create'] tidak berlaku untuk “Asisten Keuangan”."}
+E       assert 400 == 200
+E        +  where 400 = <Response [400 Bad Request]>.status_code
+
+tests_mem/conftest.py:158: AssertionError
+____________ ERROR at setup of test_AGT3_U17_header_palsu_diabaikan ____________
+
+klien = <httpx.AsyncClient object at 0x7f647f8c74d0>
+db = <motor.motor_asyncio.AsyncIOMotorDatabase object at 0x7f6491583650>
+kepala_admin = {'Authorization': 'Bearer tok_uji_639eab50b2cb41668e20f0036cbb0451', 'X-Entity-Id': 'ent_ksc'}
+akun = <function akun.<locals>._akun at 0x7f647e086c00>
+sesi = <function sesi.<locals>._sesi at 0x7f647e0868e0>
+peran_tanpa_acuan = <function peran_tanpa_acuan.<locals>._peran at 0x7f647e086d40>
+
+    @pytest.fixture(scope="module")
+    async def siap(klien, db, kepala_admin, akun, sesi, peran_tanpa_acuan):
+        if SIMPAN:
+            return SIMPAN
+        await db.bank_accounts.insert_one({"id": REK, "name": "BCA KSC AGT3", "entity_id": KSC, "account_type": "bank",
+                                           "cash_type": "kas_besar", "is_active": True, "opening_balance": 0})
+        for cid, nama, ent in (("cus_agt3_c", "Toko Cahaya", KSC), ("cus_agt3_d", "Toko Dirga", KANDA)):
+            await db.customers.insert_one({"id": cid, "name": nama, "entity_id": ent, "status": "active",
+                                           "deposit_balance": 0.0, "payment_profile": {}, "created_at": now_iso()})
+        izin = {"ai": ["view"], "ai_finance": ["view", "create"], "ar_receipt": ["view", "create"],
+                "order": ["view", "update"]}
+>       rid = await peran_tanpa_acuan(izin, label="AGT3 fin")
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests_mem/test_AGT3_kartu_tindakan.py:70: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+izin = {'ai': ['view'], 'ai_finance': ['view', 'create'], 'ar_receipt': ['view', 'create'], 'order': ['view', 'update']}
+label = 'AGT3 fin'
+
+    async def _peran(izin: Dict[str, list], *, label: str = "") -> str:
+        r = await klien.post("/api/access/roles", headers=kepala_admin,
+                             json={"label": label or f"Tanpa Acuan {next(nomor)}", "base_role": "",
+                                   "permissions": izin, "description": "peran uji"})
+>       assert r.status_code == 200, r.text
+E       AssertionError: {"detail":"Aksi ['create'] tidak berlaku untuk “Asisten Keuangan”."}
+E       assert 400 == 200
+E        +  where 400 = <Response [400 Bad Request]>.status_code
+
+tests_mem/conftest.py:158: AssertionError
+________ ERROR at setup of test_AGT3_pintu_tulis_hanya_jalur_terdaftar _________
+
+klien = <httpx.AsyncClient object at 0x7f647f8c74d0>
+db = <motor.motor_asyncio.AsyncIOMotorDatabase object at 0x7f6491583650>
+kepala_admin = {'Authorization': 'Bearer tok_uji_639eab50b2cb41668e20f0036cbb0451', 'X-Entity-Id': 'ent_ksc'}
+akun = <function akun.<locals>._akun at 0x7f647e086c00>
+sesi = <function sesi.<locals>._sesi at 0x7f647e0868e0>
+peran_tanpa_acuan = <function peran_tanpa_acuan.<locals>._peran at 0x7f647e086d40>
+
+    @pytest.fixture(scope="module")
+    async def siap(klien, db, kepala_admin, akun, sesi, peran_tanpa_acuan):
+        if SIMPAN:
+            return SIMPAN
+        await db.bank_accounts.insert_one({"id": REK, "name": "BCA KSC AGT3", "entity_id": KSC, "account_type": "bank",
+                                           "cash_type": "kas_besar", "is_active": True, "opening_balance": 0})
+        for cid, nama, ent in (("cus_agt3_c", "Toko Cahaya", KSC), ("cus_agt3_d", "Toko Dirga", KANDA)):
+            await db.customers.insert_one({"id": cid, "name": nama, "entity_id": ent, "status": "active",
+                                           "deposit_balance": 0.0, "payment_profile": {}, "created_at": now_iso()})
+        izin = {"ai": ["view"], "ai_finance": ["view", "create"], "ar_receipt": ["view", "create"],
+                "order": ["view", "update"]}
+>       rid = await peran_tanpa_acuan(izin, label="AGT3 fin")
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests_mem/test_AGT3_kartu_tindakan.py:70: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+izin = {'ai': ['view'], 'ai_finance': ['view', 'create'], 'ar_receipt': ['view', 'create'], 'order': ['view', 'update']}
+label = 'AGT3 fin'
+
+    async def _peran(izin: Dict[str, list], *, label: str = "") -> str:
+        r = await klien.post("/api/access/roles", headers=kepala_admin,
+                             json={"label": label or f"Tanpa Acuan {next(nomor)}", "base_role": "",
+                                   "permissions": izin, "description": "peran uji"})
+>       assert r.status_code == 200, r.text
+E       AssertionError: {"detail":"Aksi ['create'] tidak berlaku untuk “Asisten Keuangan”."}
+E       assert 400 == 200
+E        +  where 400 = <Response [400 Bad Request]>.status_code
+
+tests_mem/conftest.py:158: AssertionError
+______________ ERROR at setup of test_AGT3_izin_kartu_golongan_b _______________
+
+klien = <httpx.AsyncClient object at 0x7f647f8c74d0>
+db = <motor.motor_asyncio.AsyncIOMotorDatabase object at 0x7f6491583650>
+kepala_admin = {'Authorization': 'Bearer tok_uji_639eab50b2cb41668e20f0036cbb0451', 'X-Entity-Id': 'ent_ksc'}
+akun = <function akun.<locals>._akun at 0x7f647e086c00>
+sesi = <function sesi.<locals>._sesi at 0x7f647e0868e0>
+peran_tanpa_acuan = <function peran_tanpa_acuan.<locals>._peran at 0x7f647e086d40>
+
+    @pytest.fixture(scope="module")
+    async def siap(klien, db, kepala_admin, akun, sesi, peran_tanpa_acuan):
+        if SIMPAN:
+            return SIMPAN
+        await db.bank_accounts.insert_one({"id": REK, "name": "BCA KSC AGT3", "entity_id": KSC, "account_type": "bank",
+                                           "cash_type": "kas_besar", "is_active": True, "opening_balance": 0})
+        for cid, nama, ent in (("cus_agt3_c", "Toko Cahaya", KSC), ("cus_agt3_d", "Toko Dirga", KANDA)):
+            await db.customers.insert_one({"id": cid, "name": nama, "entity_id": ent, "status": "active",
+                                           "deposit_balance": 0.0, "payment_profile": {}, "created_at": now_iso()})
+        izin = {"ai": ["view"], "ai_finance": ["view", "create"], "ar_receipt": ["view", "create"],
+                "order": ["view", "update"]}
+>       rid = await peran_tanpa_acuan(izin, label="AGT3 fin")
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests_mem/test_AGT3_kartu_tindakan.py:70: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+izin = {'ai': ['view'], 'ai_finance': ['view', 'create'], 'ar_receipt': ['view', 'create'], 'order': ['view', 'update']}
+label = 'AGT3 fin'
+
+    async def _peran(izin: Dict[str, list], *, label: str = "") -> str:
+        r = await klien.post("/api/access/roles", headers=kepala_admin,
+                             json={"label": label or f"Tanpa Acuan {next(nomor)}", "base_role": "",
+                                   "permissions": izin, "description": "peran uji"})
+>       assert r.status_code == 200, r.text
+E       AssertionError: {"detail":"Aksi ['create'] tidak berlaku untuk “Asisten Keuangan”."}
+E       assert 400 == 200
+E        +  where 400 = <Response [400 Bad Request]>.status_code
+
+tests_mem/conftest.py:158: AssertionError
+_______________ ERROR at setup of test_AGT3_batas_harian_per_pt ________________
+
+klien = <httpx.AsyncClient object at 0x7f647f8c74d0>
+db = <motor.motor_asyncio.AsyncIOMotorDatabase object at 0x7f6491583650>
+kepala_admin = {'Authorization': 'Bearer tok_uji_639eab50b2cb41668e20f0036cbb0451', 'X-Entity-Id': 'ent_ksc'}
+akun = <function akun.<locals>._akun at 0x7f647e086c00>
+sesi = <function sesi.<locals>._sesi at 0x7f647e0868e0>
+peran_tanpa_acuan = <function peran_tanpa_acuan.<locals>._peran at 0x7f647e086d40>
+
+    @pytest.fixture(scope="module")
+    async def siap(klien, db, kepala_admin, akun, sesi, peran_tanpa_acuan):
+        if SIMPAN:
+            return SIMPAN
+        await db.bank_accounts.insert_one({"id": REK, "name": "BCA KSC AGT3", "entity_id": KSC, "account_type": "bank",
+                                           "cash_type": "kas_besar", "is_active": True, "opening_balance": 0})
+        for cid, nama, ent in (("cus_agt3_c", "Toko Cahaya", KSC), ("cus_agt3_d", "Toko Dirga", KANDA)):
+            await db.customers.insert_one({"id": cid, "name": nama, "entity_id": ent, "status": "active",
+                                           "deposit_balance": 0.0, "payment_profile": {}, "created_at": now_iso()})
+        izin = {"ai": ["view"], "ai_finance": ["view", "create"], "ar_receipt": ["view", "create"],
+                "order": ["view", "update"]}
+>       rid = await peran_tanpa_acuan(izin, label="AGT3 fin")
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests_mem/test_AGT3_kartu_tindakan.py:70: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+izin = {'ai': ['view'], 'ai_finance': ['view', 'create'], 'ar_receipt': ['view', 'create'], 'order': ['view', 'update']}
+label = 'AGT3 fin'
+
+    async def _peran(izin: Dict[str, list], *, label: str = "") -> str:
+        r = await klien.post("/api/access/roles", headers=kepala_admin,
+                             json={"label": label or f"Tanpa Acuan {next(nomor)}", "base_role": "",
+                                   "permissions": izin, "description": "peran uji"})
+>       assert r.status_code == 200, r.text
+E       AssertionError: {"detail":"Aksi ['create'] tidak berlaku untuk “Asisten Keuangan”."}
+E       assert 400 == 200
+E        +  where 400 = <Response [400 Bad Request]>.status_code
+
+tests_mem/conftest.py:158: AssertionError
+______________ ERROR at setup of test_AGT3_daftar_kartu_per_kotak ______________
+
+klien = <httpx.AsyncClient object at 0x7f647f8c74d0>
+db = <motor.motor_asyncio.AsyncIOMotorDatabase object at 0x7f6491583650>
+kepala_admin = {'Authorization': 'Bearer tok_uji_639eab50b2cb41668e20f0036cbb0451', 'X-Entity-Id': 'ent_ksc'}
+akun = <function akun.<locals>._akun at 0x7f647e086c00>
+sesi = <function sesi.<locals>._sesi at 0x7f647e0868e0>
+peran_tanpa_acuan = <function peran_tanpa_acuan.<locals>._peran at 0x7f647e086d40>
+
+    @pytest.fixture(scope="module")
+    async def siap(klien, db, kepala_admin, akun, sesi, peran_tanpa_acuan):
+        if SIMPAN:
+            return SIMPAN
+        await db.bank_accounts.insert_one({"id": REK, "name": "BCA KSC AGT3", "entity_id": KSC, "account_type": "bank",
+                                           "cash_type": "kas_besar", "is_active": True, "opening_balance": 0})
+        for cid, nama, ent in (("cus_agt3_c", "Toko Cahaya", KSC), ("cus_agt3_d", "Toko Dirga", KANDA)):
+            await db.customers.insert_one({"id": cid, "name": nama, "entity_id": ent, "status": "active",
+                                           "deposit_balance": 0.0, "payment_profile": {}, "created_at": now_iso()})
+        izin = {"ai": ["view"], "ai_finance": ["view", "create"], "ar_receipt": ["view", "create"],
+                "order": ["view", "update"]}
+>       rid = await peran_tanpa_acuan(izin, label="AGT3 fin")
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests_mem/test_AGT3_kartu_tindakan.py:70: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+izin = {'ai': ['view'], 'ai_finance': ['view', 'create'], 'ar_receipt': ['view', 'create'], 'order': ['view', 'update']}
+label = 'AGT3 fin'
+
+    async def _peran(izin: Dict[str, list], *, label: str = "") -> str:
+        r = await klien.post("/api/access/roles", headers=kepala_admin,
+                             json={"label": label or f"Tanpa Acuan {next(nomor)}", "base_role": "",
+                                   "permissions": izin, "description": "peran uji"})
+>       assert r.status_code == 200, r.text
+E       AssertionError: {"detail":"Aksi ['create'] tidak berlaku untuk “Asisten Keuangan”."}
+E       assert 400 == 200
+E        +  where 400 = <Response [400 Bad Request]>.status_code
+
+tests_mem/conftest.py:158: AssertionError
+_________________ ERROR at setup of test_AGT3_ubah_isian_kartu _________________
+
+klien = <httpx.AsyncClient object at 0x7f647f8c74d0>
+db = <motor.motor_asyncio.AsyncIOMotorDatabase object at 0x7f6491583650>
+kepala_admin = {'Authorization': 'Bearer tok_uji_639eab50b2cb41668e20f0036cbb0451', 'X-Entity-Id': 'ent_ksc'}
+akun = <function akun.<locals>._akun at 0x7f647e086c00>
+sesi = <function sesi.<locals>._sesi at 0x7f647e0868e0>
+peran_tanpa_acuan = <function peran_tanpa_acuan.<locals>._peran at 0x7f647e086d40>
+
+    @pytest.fixture(scope="module")
+    async def siap(klien, db, kepala_admin, akun, sesi, peran_tanpa_acuan):
+        if SIMPAN:
+            return SIMPAN
+        await db.bank_accounts.insert_one({"id": REK, "name": "BCA KSC AGT3", "entity_id": KSC, "account_type": "bank",
+                                           "cash_type": "kas_besar", "is_active": True, "opening_balance": 0})
+        for cid, nama, ent in (("cus_agt3_c", "Toko Cahaya", KSC), ("cus_agt3_d", "Toko Dirga", KANDA)):
+            await db.customers.insert_one({"id": cid, "name": nama, "entity_id": ent, "status": "active",
+                                           "deposit_balance": 0.0, "payment_profile": {}, "created_at": now_iso()})
+        izin = {"ai": ["view"], "ai_finance": ["view", "create"], "ar_receipt": ["view", "create"],
+                "order": ["view", "update"]}
+>       rid = await peran_tanpa_acuan(izin, label="AGT3 fin")
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests_mem/test_AGT3_kartu_tindakan.py:70: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+izin = {'ai': ['view'], 'ai_finance': ['view', 'create'], 'ar_receipt': ['view', 'create'], 'order': ['view', 'update']}
+label = 'AGT3 fin'
+
+    async def _peran(izin: Dict[str, list], *, label: str = "") -> str:
+        r = await klien.post("/api/access/roles", headers=kepala_admin,
+                             json={"label": label or f"Tanpa Acuan {next(nomor)}", "base_role": "",
+                                   "permissions": izin, "description": "peran uji"})
+>       assert r.status_code == 200, r.text
+E       AssertionError: {"detail":"Aksi ['create'] tidak berlaku untuk “Asisten Keuangan”."}
+E       assert 400 == 200
+E        +  where 400 = <Response [400 Bad Request]>.status_code
+
+tests_mem/conftest.py:158: AssertionError
+=============================== warnings summary ===============================
+../../../venv311/lib/python3.11/site-packages/starlette/formparsers.py:12
+  /tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/venv311/lib/python3.11/site-packages/starlette/formparsers.py:12: PendingDeprecationWarning: Please use `import python_multipart` instead.
+    import multipart
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+ERROR tests_mem/test_AGT3_kartu_tindakan.py::test_AGT3_U1_siapkan_kwitansi_tanpa_tulisan
+ERROR tests_mem/test_AGT3_kartu_tindakan.py::test_AGT3_U2_alasan_dan_ketik_ulang_wajib
+ERROR tests_mem/test_AGT3_kartu_tindakan.py::test_AGT3_U3_setujui_membuat_satu_kwitansi
+ERROR tests_mem/test_AGT3_kartu_tindakan.py::test_AGT3_U4_setujui_lagi_ditolak
+ERROR tests_mem/test_AGT3_kartu_tindakan.py::test_AGT3_U6_kedaluwarsa - Asser...
+ERROR tests_mem/test_AGT3_kartu_tindakan.py::test_AGT3_U7_data_berubah_stale
+ERROR tests_mem/test_AGT3_kartu_tindakan.py::test_AGT3_U8_pt_lain_ditolak - A...
+ERROR tests_mem/test_AGT3_kartu_tindakan.py::test_AGT3_U9_setujui_dari_pt_lain
+ERROR tests_mem/test_AGT3_kartu_tindakan.py::test_AGT3_U10_sakelar_akun_dan_pt
+ERROR tests_mem/test_AGT3_kartu_tindakan.py::test_AGT3_U11_pintu_menolak - As...
+ERROR tests_mem/test_AGT3_kartu_tindakan.py::test_AGT3_U12_kartu_baru_menggantikan
+ERROR tests_mem/test_AGT3_kartu_tindakan.py::test_AGT3_U14_teks_bebas_menutup_prepare_action
+ERROR tests_mem/test_AGT3_kartu_tindakan.py::test_AGT3_U14b_prepare_action_lewat_percakapan
+ERROR tests_mem/test_AGT3_kartu_tindakan.py::test_AGT3_U15_janji_bayar - Asse...
+ERROR tests_mem/test_AGT3_kartu_tindakan.py::test_AGT3_A_tindak_lanjut_dan_pengingat
+ERROR tests_mem/test_AGT3_kartu_tindakan.py::test_AGT3_U16_ulang_jurnal_gagal
+ERROR tests_mem/test_AGT3_kartu_tindakan.py::test_AGT3_B_ulang_jurnal_berhasil
+ERROR tests_mem/test_AGT3_kartu_tindakan.py::test_AGT3_B_cocokkan_mutasi_bank
+ERROR tests_mem/test_AGT3_kartu_tindakan.py::test_AGT3_B_alokasi_titipan - As...
+ERROR tests_mem/test_AGT3_kartu_tindakan.py::test_AGT3_U17_header_palsu_diabaikan
+ERROR tests_mem/test_AGT3_kartu_tindakan.py::test_AGT3_pintu_tulis_hanya_jalur_terdaftar
+ERROR tests_mem/test_AGT3_kartu_tindakan.py::test_AGT3_izin_kartu_golongan_b
+ERROR tests_mem/test_AGT3_kartu_tindakan.py::test_AGT3_batas_harian_per_pt - ...
+ERROR tests_mem/test_AGT3_kartu_tindakan.py::test_AGT3_daftar_kartu_per_kotak
+ERROR tests_mem/test_AGT3_kartu_tindakan.py::test_AGT3_ubah_isian_kartu - Ass...
+1 warning, 25 errors in 2.26s

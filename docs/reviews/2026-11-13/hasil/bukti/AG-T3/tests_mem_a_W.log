@@ -1,0 +1,224 @@
+bringing up nodes...
+bringing up nodes...
+
+........................................................................ [  4%]
+........................................................................ [  8%]
+.................FFFF................................................... [ 12%]
+.x...................................................................... [ 16%]
+........................................................................ [ 21%]
+........................................................................ [ 25%]
+...........................x............................................ [ 29%]
+........................................................................ [ 33%]
+.......................F................................................ [ 37%]
+........................................................................ [ 42%]
+........................................................................ [ 46%]
+........................................................................ [ 50%]
+........................................................................ [ 54%]
+........................................................................ [ 59%]
+........................................................................ [ 63%]
+........................................................................ [ 67%]
+........................................................................ [ 71%]
+........................................................................ [ 75%]
+........................................................................ [ 80%]
+........................................................................ [ 84%]
+....F.F...................................ss............................ [ 88%]
+............x........................................................... [ 92%]
+........................................................................ [ 96%]
+....................................................                     [100%]
+=================================== FAILURES ===================================
+________________ test_PK36_U5b_izinkan_juga_membuka_pembalikan _________________
+[gw0] linux -- Python 3.11.18 /tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/venv311/bin/python
+
+klien = <httpx.AsyncClient object at 0x7fe3cf1e9890>
+db = <motor.motor_asyncio.AsyncIOMotorDatabase object at 0x7fe3e8394690>
+kepala_admin = {'Authorization': 'Bearer tok_uji_0b7b8403037d4a07a495f0c953ca0ab2', 'X-Entity-Id': 'ent_ksc'}
+
+    async def test_PK36_U5b_izinkan_juga_membuka_pembalikan(klien, db, kepala_admin):
+        """Tambahan (02 §2.4 butir 2): `izinkan` di PT itu membuka pembalikan manual jurnal otomatis ke akun kontrol."""
+        je = await _fixture([("1-1250", N, 0), ("4-1000", 0, N)], "interco_transaction", "pk36_u5b")
+        r = await klien.put("/api/config/values", headers=kepala_admin, json=_isi("izinkan", "entity", KSC))
+        assert r.status_code == 200, r.text
+        try:
+            r = await _balik(klien, kepala_admin, je["id"])
+>           assert r.status_code == 200, r.text
+E           AssertionError: {"detail":"Tanggal pembalik tidak boleh sebelum tanggal jurnal asli."}
+E           assert 400 == 200
+E            +  where 400 = <Response [400 Bad Request]>.status_code
+
+tests_mem/test_PK36_akun_kontrol.py:133: AssertionError
+____________ test_PK36_U6_pembalikan_manual_jurnal_antar_pt_ditolak ____________
+[gw0] linux -- Python 3.11.18 /tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/venv311/bin/python
+
+klien = <httpx.AsyncClient object at 0x7fe3cf1e9890>
+db = <motor.motor_asyncio.AsyncIOMotorDatabase object at 0x7fe3e8394690>
+kepala_admin = {'Authorization': 'Bearer tok_uji_0b7b8403037d4a07a495f0c953ca0ab2', 'X-Entity-Id': 'ent_ksc'}
+
+    async def test_PK36_U6_pembalikan_manual_jurnal_antar_pt_ditolak(klien, db, kepala_admin):
+        je = await _fixture([("1-1250", N, 0), ("4-1000", 0, N)], "interco_transaction", "pk36_u6")
+        r = await _balik(klien, kepala_admin, je["id"])
+>       assert r.status_code == 422, r.text
+E       AssertionError: {"detail":"Tanggal pembalik tidak boleh sebelum tanggal jurnal asli."}
+E       assert 400 == 422
+E        +  where 400 = <Response [400 Bad Request]>.status_code
+
+tests_mem/test_PK36_akun_kontrol.py:142: AssertionError
+________________ test_PK36_U7_jurnal_manual_lama_boleh_dibalik _________________
+[gw0] linux -- Python 3.11.18 /tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/venv311/bin/python
+
+klien = <httpx.AsyncClient object at 0x7fe3cf1e9890>
+db = <motor.motor_asyncio.AsyncIOMotorDatabase object at 0x7fe3e8394690>
+kepala_admin = {'Authorization': 'Bearer tok_uji_0b7b8403037d4a07a495f0c953ca0ab2', 'X-Entity-Id': 'ent_ksc'}
+
+    async def test_PK36_U7_jurnal_manual_lama_boleh_dibalik(klien, db, kepala_admin):
+        # Fixture "data lama": jurnal manual Dr 1-1200 100.000 / Cr 4-9000 100.000 (sebelum PK-36 diterima).
+        je = await _fixture([("1-1200", N, 0), ("4-9000", 0, N)], "manual", "")
+        r = await _balik(klien, kepala_admin, je["id"])
+>       assert r.status_code == 200, r.text
+E       AssertionError: {"detail":"Tanggal pembalik tidak boleh sebelum tanggal jurnal asli."}
+E       assert 400 == 200
+E        +  where 400 = <Response [400 Bad Request]>.status_code
+
+tests_mem/test_PK36_akun_kontrol.py:155: AssertionError
+____________ test_PK36_U8_pembalikan_jurnal_kas_tanpa_akun_kontrol _____________
+[gw0] linux -- Python 3.11.18 /tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/venv311/bin/python
+
+klien = <httpx.AsyncClient object at 0x7fe3cf1e9890>
+kepala_admin = {'Authorization': 'Bearer tok_uji_0b7b8403037d4a07a495f0c953ca0ab2', 'X-Entity-Id': 'ent_ksc'}
+
+    async def test_PK36_U8_pembalikan_jurnal_kas_tanpa_akun_kontrol(klien, kepala_admin):
+        # Sebelum unit ini (PK-10): pembalikan manual jurnal kas otomatis = 200. Tetap begitu; tidak ada galat akun kontrol.
+        je = await _fixture([("6-4000", N, 0), ("1-1100", 0, N)], "cash_transaction", "pk36_u8")
+        r = await _balik(klien, kepala_admin, je["id"])
+>       assert r.status_code == 200, r.text
+E       AssertionError: {"detail":"Tanggal pembalik tidak boleh sebelum tanggal jurnal asli."}
+E       assert 400 == 200
+E        +  where 400 = <Response [400 Bad Request]>.status_code
+
+tests_mem/test_PK36_akun_kontrol.py:169: AssertionError
+_________________ test_CRT1_kontrol_dan_idempotensi_terdaftar __________________
+[gw0] linux -- Python 3.11.18 /tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/venv311/bin/python
+
+    def test_CRT1_kontrol_dan_idempotensi_terdaftar():
+        import config_registry as registry
+        from config_catalog_kontrol import AKSI_BY_ID
+        from idempotency import is_idempotent_path
+        a = AKSI_BY_ID["ubah_profil_kredit"]
+        assert (a["label"], a["kelompok"], a["awal"], a["punya_nominal"]) == ("Ubah profil kredit pelanggan", "C", "1", True)
+        assert registry.require("kontrol.ubah_profil_kredit.min_orang")["default"] == "1"
+        assert registry.require("kontrol.ubah_profil_kredit.batas_nominal")["default"] == 0
+        e = registry.require("ar.default_credit_limit")
+        assert (e["group"], e["type"], e["default"], e["min"], e["max"], e["unit"]) == \
+            ("pembayaran-pelanggan", "money", 0, 0, 1_000_000_000_000, "Rp")
+        assert tuple(e["scopes"]) == ("global", "entity") and tuple(e["permission"]) == ("credit_profile", "approve")
+        assert (e["risk"], e["requires_reason"], e["label"]) == ("high", True, "Plafon bawaan pelanggan baru")
+        for path in ("/api/customers/cus_x/credit-profile-requests", "/api/credit-profile-requests/cpr_1/decision",
+                     "/api/credit-profile-requests/cpr_1/cancel"):
+            assert is_idempotent_path(path), path
+>       assert not is_idempotent_path("/api/customers/cus_x")
+E       AssertionError: assert not True
+E        +  where True = <function is_idempotent_path at 0x7fe3d2db4720>('/api/customers/cus_x')
+
+tests_mem/test_CRT1_profil_kredit.py:434: AssertionError
+_____________________ test_U04_balik_manual_lalu_batal_kas _____________________
+[gw0] linux -- Python 3.11.18 /tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/venv311/bin/python
+
+klien = <httpx.AsyncClient object at 0x7fe3bcb97890>
+db = <motor.motor_asyncio.AsyncIOMotorDatabase object at 0x7fe3e8394690>
+kepala_admin = {'Authorization': 'Bearer tok_uji_5f06703c684544f587a278fa3515603a', 'X-Entity-Id': 'ent_ksc'}
+rek = 'ba_pk10_1'
+
+    async def test_U04_balik_manual_lalu_batal_kas(klien, db, kepala_admin, rek):
+        s0 = await _saldo(db)
+        kas, j = await _kas_masuk(klien, kepala_admin, db, rek, 10_000_000)
+        assert await _saldo(db) == s0 + 10_000_000
+        r = await _balik(klien, kepala_admin, j["id"])
+>       assert r.status_code == 200, r.text
+E       AssertionError: {"detail":"Tanggal pembalik tidak boleh sebelum tanggal jurnal asli."}
+E       assert 400 == 200
+E        +  where 400 = <Response [400 Bad Request]>.status_code
+
+tests_mem/test_PK10_jurnal_pembalik.py:105: AssertionError
+_________________________ test_U07_manual_lalu_dokumen _________________________
+[gw0] linux -- Python 3.11.18 /tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/venv311/bin/python
+
+db = <motor.motor_asyncio.AsyncIOMotorDatabase object at 0x7fe3e8394690>
+
+    async def test_U07_manual_lalu_dokumen(db):
+        s = await _jurnal_sca("sca_1")
+>       rev = await gl.reverse_entry(s["id"], HARI_INI, "uji balik manual", AKTOR_UJI)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests_mem/test_PK10_jurnal_pembalik.py:142: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+entry_id = 'je_65f8f77cf287', date = '2026-11-14', reason = 'uji balik manual'
+actor = {'id': 'user_admin_01', 'name': 'Budi Santoso', 'role': 'admin'}
+periksa_akun_kontrol = True
+
+    async def reverse_entry(entry_id: str, date: str, reason: str,
+                            actor: Dict[str, Any], *, periksa_akun_kontrol: bool = True) -> Optional[Dict[str, Any]]:
+        """Kebijakan 2026-10-05 — jurnal pembalik (debit↔kredit) bertanggal pilihan user yang WAJIB di
+        periode terbuka (jendela unlock tidak dipakai). Manual + otomatis; jurnal asli & dokumen sumber
+        tidak berubah. Satu jurnal hanya bisa dibalik sekali (CAS), jurnal penutup/pembalik tidak.
+    
+        PK-36 — jurnal otomatis yang menyentuh akun kontrol tidak bisa dibalik manual (dokumennya yang dibatalkan).
+        `periksa_akun_kontrol=False` hanya untuk pemilik dokumen yang membalik jurnalnya sendiri (P10)."""
+        je = await db.journal_entries.find_one({"id": entry_id}, {"_id": 0})
+        if not je:
+            return None
+        reason = (reason or "").strip()
+        if len(reason) < 5:   # K-14 (26 Okt) — minimum seragam 5 huruf
+            raise ValueError("Alasan pembalikan wajib diisi (minimal 5 huruf).")
+        d = (date or "").strip()[:10]
+        if len(d) != 10:
+            raise ValueError("Tanggal jurnal pembalik wajib diisi (YYYY-MM-DD).")
+        if je.get("status") == "void":
+            raise ValueError("Jurnal sudah dianulir — tidak bisa dibalik.")
+        if is_reversal_type(je.get("source_type")):
+            raise ValueError("Jurnal penutup / jurnal pembalik tidak dapat dibalik.")
+        prior = await reversal_of(je)
+        if prior:
+            raise ValueError(f"Jurnal sudah dibalik oleh {prior.get('number') or prior.get('id')}.")
+        if d < (je.get("date") or "")[:10]:
+>           raise ValueError("Tanggal pembalik tidak boleh sebelum tanggal jurnal asli.")
+E           ValueError: Tanggal pembalik tidak boleh sebelum tanggal jurnal asli.
+
+services/gl_service.py:1030: ValueError
+=============================== warnings summary ===============================
+../../venv311/lib/python3.11/site-packages/starlette/formparsers.py:12
+../../venv311/lib/python3.11/site-packages/starlette/formparsers.py:12
+../../venv311/lib/python3.11/site-packages/starlette/formparsers.py:12
+  /tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/venv311/lib/python3.11/site-packages/starlette/formparsers.py:12: PendingDeprecationWarning: Please use `import python_multipart` instead.
+    import multipart
+
+tests_mem/test_PK27_biaya_roll.py::test_PK27_U1_scrap_menolkan_biaya_roll[asyncio]
+  /tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/wt21/backend/routers/sales_returns.py:982: PydanticDeprecatedSince20: The `dict` method is deprecated; use `model_dump` instead. Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.13/migration/
+    decisions=[d.dict() for d in payload.decisions], notes=payload.notes)
+
+tests_mem/test_PK17_nominal_berizin.py::test_PK17_U08_ekspor_tagihan_tertutup_bagi_gudang
+tests_mem/test_PK17_nominal_berizin.py::test_PK17_U08_ekspor_tagihan_tertutup_bagi_gudang
+tests_mem/test_PRT3_login_saja.py::test_PRT3_U11_pratinjau_tidak_menulis
+tests_mem/test_PRT3_login_saja.py::test_PRT3_U11_pratinjau_tidak_menulis
+  /tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/wt21/backend/routers/export_center.py:99: PydanticDeprecatedSince20: The `dict` method is deprecated; use `model_dump` instead. Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.13/migration/
+    plan = await eng.build_plan(payload.dict(), user, ctx)
+
+tests_mem/test_PRT3_login_saja.py::test_PRT3_U11_pratinjau_tidak_menulis
+tests_mem/test_PRT3_login_saja.py::test_PRT3_U11_pratinjau_tidak_menulis
+  /tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/wt21/backend/routers/sales_return_exceptions.py:284: PydanticDeprecatedSince20: The `dict` method is deprecated; use `model_dump` instead. Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.13/migration/
+    return await rsp.simulate_cutloss(payload.dict(), ctx.active_entity_id)
+
+tests_mem/test_PRT3_login_saja.py::test_PRT3_U11_pratinjau_tidak_menulis
+tests_mem/test_PRT3_login_saja.py::test_PRT3_U11_pratinjau_tidak_menulis
+  /tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/wt21/backend/routers/sales_return_exceptions.py:293: PydanticDeprecatedSince20: The `dict` method is deprecated; use `model_dump` instead. Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.13/migration/
+    return await rsp.simulate_discount(payload.dict(), ctx.active_entity_id)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests_mem/test_PK36_akun_kontrol.py::test_PK36_U5b_izinkan_juga_membuka_pembalikan
+FAILED tests_mem/test_PK36_akun_kontrol.py::test_PK36_U6_pembalikan_manual_jurnal_antar_pt_ditolak
+FAILED tests_mem/test_PK36_akun_kontrol.py::test_PK36_U7_jurnal_manual_lama_boleh_dibalik
+FAILED tests_mem/test_PK36_akun_kontrol.py::test_PK36_U8_pembalikan_jurnal_kas_tanpa_akun_kontrol
+FAILED tests_mem/test_CRT1_profil_kredit.py::test_CRT1_kontrol_dan_idempotensi_terdaftar
+FAILED tests_mem/test_PK10_jurnal_pembalik.py::test_U04_balik_manual_lalu_batal_kas
+FAILED tests_mem/test_PK10_jurnal_pembalik.py::test_U07_manual_lalu_dokumen
+7 failed, 1696 passed, 2 skipped, 3 xfailed, 12 warnings in 319.17s (0:05:19)

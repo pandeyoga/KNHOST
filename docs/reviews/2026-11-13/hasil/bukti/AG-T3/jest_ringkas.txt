@@ -1,0 +1,9 @@
+/tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/agt3/jest_T.txt:Test Suites: 35 failed, 111 passed, 146 total
+/tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/agt3/jest_T.txt:Tests:       898 passed, 898 total
+/tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/agt3/jest_HEAD.txt:Test Suites: 35 failed, 110 passed, 145 total
+/tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/agt3/jest_HEAD.txt:Tests:       884 passed, 884 total
+/tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/agt3/jest_B.txt:Test Suites: 35 failed, 108 passed, 143 total
+/tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/agt3/jest_B.txt:Tests:       870 passed, 870 total
+/tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/agt3/jest_W.txt:Test Suites: 35 failed, 109 passed, 144 total
+/tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/agt3/jest_W.txt:Tests:       884 passed, 884 total
+PASS src/features/__tests__/agt3KartuTindakan.test.js

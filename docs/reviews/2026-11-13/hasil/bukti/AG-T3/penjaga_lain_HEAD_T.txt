@@ -1,0 +1,31 @@
+penjaga T = HEAD
+verify_auth_coverage: [FAIL] 27 pelanggaran :
+verify_ui_standard: [FAIL] 13 pelanggaran :
+verify_approval_queues: 
+audit_i18n_id:   ✗ 103 temuan di 60 berkas.
+audit_create_modal: [FAIL] 6 pelanggaran :
+verify_page_tabs: [FAIL] 1 pelanggaran total (INV-UI-12 1 · INV-UI-13 0 · INV-UI-14 0)
+verify_to_list_bound: [FAIL] 6 pelanggaran :
+verify_list_export: [PASS] 0 pelanggaran.
+== head_full
+verify_role_gate_ui: [PASS] 31 cek lolos, 0 pelanggaran.
+verify_config_fallback: [PASS] 154 cek lolos, 0 pelanggaran.
+verify_payment_vocab: [PASS] 1791 cek lolos, 0 pelanggaran.
+verify_access_catalog_nav: verify_access_catalog_nav: 0 temuan
+verify_permission_checked: [PASS] 602 cek lolos, 0 pelanggaran.
+verify_posting_coverage: [PASS] 138 cek lolos, 0 pelanggaran.
+verify_cash_single_door: [PASS] 714 cek lolos, 0 pelanggaran.
+verify_config_text: [PASS] 3213 cek lolos, 0 pelanggaran.
+fallback --entity: [PASS] 154 cek lolos, 0 pelanggaran.
+== wt22
+verify_role_gate_ui: [PASS] 31 cek lolos, 0 pelanggaran.
+verify_config_fallback: [PASS] 155 cek lolos, 0 pelanggaran.
+verify_payment_vocab: [PASS] 1794 cek lolos, 0 pelanggaran.
+verify_access_catalog_nav: verify_access_catalog_nav: 0 temuan
+verify_permission_checked: [PASS] 603 cek lolos, 0 pelanggaran.
+verify_posting_coverage: [PASS] 138 cek lolos, 0 pelanggaran.
+verify_cash_single_door: [PASS] 716 cek lolos, 0 pelanggaran.
+verify_config_text: [PASS] 3227 cek lolos, 0 pelanggaran.
+fallback --entity: [PASS] 155 cek lolos, 0 pelanggaran.
+
+[exited with code 0]

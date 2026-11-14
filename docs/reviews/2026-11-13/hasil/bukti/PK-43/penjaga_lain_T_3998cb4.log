@@ -1,0 +1,18 @@
+SAMA_DENGAN_B
+[PASS] 31 cek lolos, 0 pelanggaran.
+[PASS] 155 cek lolos, 0 pelanggaran.
+[PASS] 155 cek lolos, 0 pelanggaran.
+[PASS] 1797 cek lolos, 0 pelanggaran.
+verify_access_catalog_nav: 0 temuan
+acw rc=0
+
+verify_posting_coverage: [PASS] 138 cek lolos, 0 pelanggaran.
+verify_cash_single_door: [PASS] 717 cek lolos, 0 pelanggaran.
+verify_permission_checked: [PASS] 603 cek lolos, 0 pelanggaran.
+  font_lt12      sekarang   6737 di  749 berkas · baseline   6937 · turun di 41 berkas
+  hex            sekarang  16289 di  806 berkas · baseline  16810 · turun di 47 berkas
+  btn_custom     sekarang    769 di  341 berkas · baseline    784 · turun di 12 berkas
+  hex berbeda    sekarang 697 · baseline 703
+[FAIL] 13 pelanggaran (dari 4272 cek):
+
+[exited with code 0]

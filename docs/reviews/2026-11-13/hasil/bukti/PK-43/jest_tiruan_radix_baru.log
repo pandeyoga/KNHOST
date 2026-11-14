@@ -1,0 +1,9 @@
+FAIL src/features/__tests__/roleGateSweep2.test.js
+FAIL src/features/__tests__/phase3P8Activation.test.js
+PASS src/features/__tests__/roleGateSweep.test.js
+PASS src/features/__tests__/permissionGates.test.js
+PASS src/features/__tests__/phase3P4Finance.test.js
+PASS src/features/__tests__/phase4R2.test.js
+PASS src/features/__tests__/phase3P4Popups.test.js
+PASS src/features/__tests__/decisionsD1.test.js
+Tests:       2 failed, 76 passed, 78 total

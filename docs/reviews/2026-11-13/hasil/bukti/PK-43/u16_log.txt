@@ -1,0 +1,18 @@
+(a) tombol baris tidak ada → tombol atas
+(a) pilihan PT penerima: ["Pilih PT penerima","Sukacita","Cipta Sandang"]
+(a) PT penerima Pilih PT penerima: kandidat 0
+(a) PT penerima Sukacita: kandidat 0
+(a) PT penerima Cipta Sandang: kandidat 0
+(a) kandidat: 0
+(a) alasan tombol: "Centang minimal satu tagihan yang mau dilunasi." · jumlah: "Rp 0"
+(b) akun diklik: fs-line-6-4000
+(b) buku besar akun: "6-4000 — Beban Operasional Lainnya" · tombol kembali: true
+(b) jurnal KANDA/JE-00006: Dokumen sumberTransaksi Kas / Bank KANDA/CASH-00006 Buka Dokumen Sumber
+(b) dokumen sumber terbuka: ?view=cash-management&entity=ent_kanda
+(b) tombol "Kembali ke Buku Besar": true
+(b) sesudah kembali: ?view=general-ledger&entity=ent_kanda · buku besar akun: "6-4000 — Beban Operasional Lainnya"
+(b) tombol kembali ke laporan → true
+(c) belum lunas sebelum: 65.952.600
+(c) dialog selisih: pilih "Sisa tetap jadi piutang" (disarankan) → lanjutkan
+(c) belum lunas sesudah: 64.952.600
+(d) ringkasan: "9 beres · 0 perlu dilihat · 2 harus diselesaikan" · butir: 11

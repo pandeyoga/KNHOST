@@ -1,0 +1,53 @@
+E       KeyError: 'outstanding'
+E       AssertionError: {"rows": [{"interco_id": "ict1_s", "number": "ICT-1", "counterpart_number": "B/ict1", "payer_entity_id": "ent_kanda", "payer_entity_name": "PT Pembeli", "payee_entity_id": "ent_ksc", "payee_entity_name": "PT Penjual", "status": "confirmed", "grand_total": 22200000.0, "remaining": 17200000.0, "received_at": "", "invoiced_at": "", "doc_date": "2026-10-05", "due_date": "2026-11-04", "basis_date": "", "period": null, "pay_date": null, "age_days": 41}], "pairs": [{"payer_entity_id": "ent_kanda", "payer_entity_name": "PT Pembeli", "payee_entity_id": "ent_ksc", "payee_entity_name": "PT Penjual", "count": 1, "remaining": 17200000.0}], "config": {"allow_netting": false, "require_full_payment": true, "cutoff_day": null, "payment_day": null, "basis": null, "reminder_days": 3}, "cutoff_status": "not_configured", "basis_label": null, "netting": "disabled", "note": "Cutoff & acuan periode pembayaran belum diatur — periode bayar & pengingat belum jalan. Atur di bagian Aturan jadwal bayar di bawah (semua PT atau per PT pembayar)."}
+E       assert 200 == 403
+E        +  where 200 = <Response [200 OK]>.status_code
+E       AssertionError: assert 'Rekening itu...dah nonaktif.' == 'Rekening buk... PT pembayar.'
+E         
+E         - Rekening bukan milik PT pembayar.
+E         + Rekening itu bukan milik Kanda Fabric atau sudah nonaktif.
+E       KeyError: 'opening_balance'
+E       assert 3 == 2
+E       KeyError: 'source_doc'
+E       KeyError: 'source_doc'
+                                               "gl_status": "failed", "gl_error": "uji", "created_at": now_iso()})
+E       AssertionError: {"detail":"Not Found"}
+E       assert 404 == 200
+E        +  where 404 = <Response [404 Not Found]>.status_code
+E       AssertionError: {"detail":"Not Found"}
+E       assert 404 == 200
+E        +  where 404 = <Response [404 Not Found]>.status_code
+E       AssertionError: {"detail":"Not Found"}
+E       assert 404 == 200
+E        +  where 404 = <Response [404 Not Found]>.status_code
+E       AssertionError: {"detail":"Not Found"}
+E       assert 404 == 200
+E        +  where 404 = <Response [404 Not Found]>.status_code
+E       AssertionError: {"detail": "Not Found"}
+E       assert 404 == 200
+E        +  where 404 = <Response [404 Not Found]>.status_code
+E       AssertionError: {"detail":"Not Found"}
+E       assert 404 == 200
+E        +  where 404 = <Response [404 Not Found]>.status_code
+E       assert (404 == 400)
+E        +  where 404 = <Response [404 Not Found]>.status_code
+E       ImportError: cannot import name 'closing_checklist' from 'services' (/tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/wt30/backend/services/__init__.py)
+        await db.interco_transactions.update_one({"id": "ict_gagal_b"}, {"$set": {"gl_status": "failed"}})
+E       KeyError: 'settleable'
+FAILED tests_mem/test_PK43_alur_layar.py::test_PK43_U1_pembayar_melihat_tagihan_terbuka
+FAILED tests_mem/test_PK43_alur_layar.py::test_PK43_U2_pt_ketiga_ditolak - As...
+FAILED tests_mem/test_PK43_alur_layar.py::test_PK43_U3_rekening_bukan_milik_pembayar
+FAILED tests_mem/test_PK43_alur_layar.py::test_PK43_U5_buku_besar_berentang_bersaldo_awal
+FAILED tests_mem/test_PK43_alur_layar.py::test_PK43_U7_daftar_jurnal_disaring_tanggal
+FAILED tests_mem/test_PK43_alur_layar.py::test_PK43_U8_dokumen_sumber_jurnal
+FAILED tests_mem/test_PK43_alur_layar.py::test_PK43_U9_dokumen_sumber_di_luar_pt_pelaku
+FAILED tests_mem/test_PK43_alur_layar.py::test_PK43_U10_ceklis_posting_gagal_hanya_peringatan
+FAILED tests_mem/test_PK43_alur_layar.py::test_PK43_U11_suspense_menghalangi
+FAILED tests_mem/test_PK43_alur_layar.py::test_PK43_U12_saldo_antar_pt_buku_vs_dokumen
+FAILED tests_mem/test_PK43_alur_layar.py::test_PK43_U13_bulan_berjalan_menghalangi
+FAILED tests_mem/test_PK43_alur_layar.py::test_PK43_U14_izin_daftar_periksa
+FAILED tests_mem/test_PK43_alur_layar.py::test_PK43_tambahan_urutan_butir_dan_tahunan
+FAILED tests_mem/test_PK43_alur_layar.py::test_PK43_tambahan_semua_pt_dan_periode_tidak_sah
+FAILED tests_mem/test_PK43_alur_layar.py::test_PK43_tambahan_butir_gagal_dihitung_tidak_menggagalkan_lainnya
+FAILED tests_mem/test_PK43_alur_layar.py::test_PK43_tambahan_kandidat_berjurnal_gagal_tidak_bisa_dilunasi
+16 failed, 1 passed, 1 warning in 2.65s

@@ -1,0 +1,16 @@
+  ✕ U4 — Pelunasan Antar-PT: PT aktif pembayar, kandidat dari server, kirim bertanggal & berekening (94 ms)
+  ✕ U4 (b) — kandidat: memuat, galat + Coba lagi, kosong; baris berjurnal gagal tidak bisa dicentang (11 ms)
+  ✕ U15 — Catat Pembayaran: tampil aktif berizin; tersembunyi tanpa izin; Semua PT mati + alasan tertulis (8 ms)
+  ✕ U15 (b) — pemberitahuan sukses form kwitansi tampil di rincian (16 ms)
+  ✕ Telusur — baris akun Laba-Rugi/Neraca menjadi tautan; tanpa onLine tetap teks (11 ms)
+  ✕ Telusur — buku besar dari Laporan Keuangan: rentang, saldo awal, baris → rincian → dokumen sumber, kembali (42 ms)
+  ✕ Telusur — buku besar tanpa asal laporan: tanpa tombol kembali; rentang kosong → teks kosong rentang (29 ms)
+  ✕ Telusur — rincian jurnal: dokumen di luar PT → teks; jurnal manual → tanpa bilah; dimuat bila belum ada (12 ms)
+  ✓ Daftar periksa — ringkasan, status ikon + teks, nilai antar-PT, Buka membawa asal Tutup Buku (47 ms)
+  ✓ Daftar periksa — memuat, galat + Coba lagi, kosong dibedakan; belum dimuat = tidak tampil (13 ms)
+  ✕ Telusur — Laba-Rugi: rentang yang dikembalikan buku besar dipakai, klik akun membawa rentangnya (44 ms)
+  ✕ Telusur — Neraca: tanggal neraca dikembalikan; klik akun mengirim end tanpa start (34 ms)
+  ✕ Telusur — kembali dari dokumen sumber membuka buku besar dengan preset yang sama (11 ms)
+  ✕ Tutup Buku — Pratinjau memuat daftar periksa; konfirmasi menyebut butir 'perlu dilihat' (59 ms)
+Test Suites: 1 failed, 1 total
+Tests:       12 failed, 2 passed, 14 total
