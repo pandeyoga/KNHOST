@@ -148,7 +148,7 @@ export default function PostingFailuresView() {
                     <td className="col-sticky-end text-right">
                       <button type="button" data-testid={`pf-retry-${it.id}`} disabled={busy === it.id || !canRetry}
                         onClick={() => retry(it)} title={canRetry ? "" : ALASAN_TANPA_IZIN}
-                        className="primary-button btn-sm whitespace-nowrap">
+                        className="secondary-button btn-sm whitespace-nowrap">
                         {busy === it.id ? "Memproses…" : "Ulang Posting"}</button>
                     </td>
                   </tr>

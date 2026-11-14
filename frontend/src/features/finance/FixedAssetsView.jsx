@@ -329,7 +329,7 @@ export default function FixedAssetsView({ selectedEntity, entities = [], focusDo
                     <th className="px-3 py-2 text-right">Akumulasi</th>
                     <th className="px-3 py-2 text-right">Nilai Buku</th>
                     <th className="px-3 py-2 text-center">Status</th>
-                    <th className="px-3 py-2 text-right">Aksi</th>
+                    <th className="px-3 py-2 text-right col-sticky-end">Aksi</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -353,8 +353,9 @@ export default function FixedAssetsView({ selectedEntity, entities = [], focusDo
                         {formatCurrency(a.book_value)}
                       </td>
                       <td className="px-3 py-2 text-center"><AssetStatusPill asset={a} /></td>
-                      <td className="px-3 py-2 text-right whitespace-nowrap">
-                        <div className="flex items-center gap-2 justify-end">
+                      <td className="px-3 py-2 text-right whitespace-nowrap col-sticky-end">
+                        {/* Tombol boleh turun baris (bukan labelnya) supaya tabel muat di 1280 px tanpa menutup kolom Status. */}
+                        <div className="flex flex-wrap items-center gap-2 justify-end max-w-[210px] ml-auto">
                           <button data-testid={`schedule-btn-${a.id}`} className="secondary-button !py-1 !px-2 text-[11px]"
                             onClick={() => openSchedule(a)}>
                             <CalendarClock size={12} /> Jadwal

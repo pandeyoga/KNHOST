@@ -234,25 +234,25 @@ export default function TaxInvoices({ currentUser = {}, focusDoc, onClearFocus }
           </div>
 
           <div className="overflow-x-auto rounded-md border border-kn-divider">
-            {/* Cek layar KN_37 — 9 kolom: judul boleh dua baris (`head-wrap`), kolom aksi lekat di kanan. */}
+            {/* Cek layar KN_37 — 8 kolom (status di bawah nomor) agar muat di 1280 px: judul boleh dua baris
+                (`head-wrap`), nomor & "belum diisi" tidak dipatah, ikon aksi 2×2, kolom aksi lekat di kanan. */}
             <table className="data-table head-wrap" data-testid="fkt-table">
               <thead>
                 <tr>
-                  <th>No. Faktur</th>
+                  <th>No. Faktur · Status</th>
                   <th>NSFP</th>
                   <th>Pesanan</th>
                   <th>Pembeli</th>
                   <th className="text-right">DPP</th>
                   <th className="text-right">PPN</th>
                   <th className="text-right" data-testid="fkt-col-total">Total (termasuk PPN)</th>
-                  <th>Status</th>
                   <th className="col-sticky-end text-right">Aksi</th>
                 </tr>
               </thead>
               <tbody>
                 {filtered.length === 0 ? (
                   <tr>
-                    <td colSpan={9} className="py-6 text-center text-kn-text-2">
+                    <td colSpan={8} className="py-6 text-center text-kn-text-2">
                       {loading ? "Memuat…" : (rows.length ? "Tidak ada faktur yang cocok dengan saringan." : "Belum ada Faktur Pajak.")}
                     </td>
                   </tr>
@@ -261,12 +261,15 @@ export default function TaxInvoices({ currentUser = {}, focusDoc, onClearFocus }
                     const isActive = f.status !== "batal" && !f.replaced_by_id;
                     return (
                       <tr key={f.id} data-testid={`fkt-row-${f.id}`} className={f.id === sorot ? "row-focus" : undefined}>
-                        <td className="font-bold text-kn-action">{f.number}</td>
+                        <td>
+                          <span className="block whitespace-nowrap font-bold text-kn-action">{f.number}</span>
+                          <span className="mt-1 inline-block"><StatusPill status={f.status} /></span>
+                        </td>
                         <td>
                           {f.nsfp ? (
                             <span className="tabular-nums">{f.nsfp}</span>
                           ) : (
-                            <span className="text-kn-warning-text">belum diisi</span>
+                            <span className="whitespace-nowrap text-kn-warning-text">belum diisi</span>
                           )}
                         </td>
                         <td>{f.order_number}</td>
@@ -280,14 +283,17 @@ export default function TaxInvoices({ currentUser = {}, focusDoc, onClearFocus }
                         <td className="text-right tabular-nums" data-testid={`fkt-dpp-${f.id}`}>
                           {formatCurrency(docDpp(f))}
                           {usesDppNilaiLain(f) && (
-                            <span className="block whitespace-nowrap text-fs-12 text-kn-text-2">nilai lain ({dppFactorText(f)}) {formatCurrency(f.dpp)}</span>
+                            <span className="block whitespace-normal text-fs-12 text-kn-text-2">
+                              <span className="whitespace-nowrap">nilai lain ({dppFactorText(f)})</span>{" "}
+                              <span className="whitespace-nowrap">{formatCurrency(f.dpp)}</span>
+                            </span>
                           )}
                         </td>
                         <td className="text-right tabular-nums">{formatCurrency(f.ppn_amount)}</td>
                         <td className="text-right tabular-nums font-semibold">{formatCurrency(f.grand_total)}</td>
-                        <td><StatusPill status={f.status} /></td>
                         <td className="col-sticky-end">
-                          <div className="flex items-center justify-end gap-1">
+                          {/* Lebar minimum = ikon rincian + dua kisi 2×2, supaya kisi tidak runtuh jadi satu kolom. */}
+                          <div className="flex min-w-[172px] flex-nowrap items-center justify-end gap-1">
                             <button type="button" data-testid={`fkt-detail-${f.id}`} className="icon-button" title="Rincian faktur & aturan pajak"
                               aria-label="Rincian faktur" onClick={() => setDetail(f)}>
                               <Info size={13} />
@@ -295,6 +301,7 @@ export default function TaxInvoices({ currentUser = {}, focusDoc, onClearFocus }
                             <DocumentActionsBar docType="tax_invoice" sourceId={f.id} entityId={f.entity_id}
                               number={f.number} label="Faktur Pajak" currentUser={currentUser}
                               compact autoCheckSignature={false} />
+                            <div className="grid grid-cols-2 gap-1">
                             <button data-testid={`fkt-print-${f.id}`} className="icon-button" title="Cetak Faktur (format lama)" onClick={() => openDoc(f.id)}>
                               <Printer size={13} />
                             </button>
@@ -313,6 +320,7 @@ export default function TaxInvoices({ currentUser = {}, focusDoc, onClearFocus }
                                 <Ban size={13} />
                               </button>
                             )}
+                            </div>
                           </div>
                         </td>
                       </tr>

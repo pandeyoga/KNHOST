@@ -50,7 +50,8 @@ export function taxProfileFromForm(f) {
 function Field({ label, req = false, optional = false, hint = "", children }) {
   return (
     <div>
-      <label className="field-label">{label}{req && <span className="text-kn-danger-text"> *</span>}
+      {/* Huruf biasa seperti label bagian lain di form pelanggan yang sama (bukan `field-label` kapital). */}
+      <label className="mb-1 block text-fs-12 font-semibold text-kn-text-2">{label}{req && <span className="text-kn-danger-text"> *</span>}
         {optional && !req && <span className="font-normal text-kn-text-2"> (opsional)</span>}</label>
       {children}
       {hint && <p className="mt-0.5 text-fs-12 text-kn-text-2">{hint}</p>}
