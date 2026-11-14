@@ -20,10 +20,17 @@ export default function PaymentBadge({ order, showRemaining = false, className =
     );
   }
   if (partial) {
+    // Cek visual 14 Nov: "Bayar Sebagian · sisa Rp …" di dalam satu pil membulat dan di kolom sempit (daftar pesanan)
+    // pecah menjadi gumpalan oval tiga baris. Kini pil hanya "Bayar Sebagian" (tidak pindah baris); sisanya teks biasa
+    // di sampingnya, boleh turun baris.
     return (
-      <span data-testid={testId}
-            className={`inline-flex items-center gap-0.5 rounded-full border border-[#F5D9A8] bg-[#FFF4E5] px-1.5 py-0.5 text-[9.5px] font-bold text-[#8A5300] ${className}`}>
-        Bayar Sebagian{showRemaining && remaining > 0 ? ` · sisa ${formatCurrency(remaining)}` : ""}
+      <span data-testid={testId} className={`inline-flex flex-wrap items-center gap-x-1 ${className}`}>
+        <span className="inline-flex items-center whitespace-nowrap rounded-full border border-[#F5D9A8] bg-[#FFF4E5] px-1.5 py-0.5 text-[9.5px] font-bold text-[#8A5300]">
+          Bayar Sebagian
+        </span>
+        {showRemaining && remaining > 0 && (
+          <span className="whitespace-nowrap text-fs-12 font-semibold text-kn-warning-text">sisa {formatCurrency(remaining)}</span>
+        )}
       </span>
     );
   }

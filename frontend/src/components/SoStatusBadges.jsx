@@ -29,7 +29,7 @@ export function SubStatusChips({ order, subs, testIdPrefix = "substatus", classN
         <span
           key={k}
           data-testid={`${testIdPrefix}-${k}`}
-          className="rounded bg-[#F2F2F7] px-1.5 py-0.5 text-[9px] font-semibold text-[#3C3C43] whitespace-nowrap"
+          className="rounded bg-[#F2F2F7] px-1.5 py-0.5 text-[9px] font-semibold text-[#3C3C43] whitespace-normal leading-tight"
         >
           {subStatusLabel(k)}
         </span>
