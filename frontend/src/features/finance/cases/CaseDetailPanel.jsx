@@ -8,7 +8,7 @@
 import { useMemo, useState } from "react";
 import {
   X, Landmark, Paperclip, FileCheck2, History, Link2, UserCog, Ban, Wand2, ShieldCheck,
-  RotateCcw, AlertTriangle, ArrowLeftRight,
+  RotateCcw, AlertTriangle, ArrowLeftRight, CheckCircle2, CircleDot, Clock3, XCircle,
 } from "lucide-react";
 import { API } from "../../../services/apiClient";
 import JournalStatusBadge, { JournalStatusBar } from "../../../components/JournalStatusBadge";
@@ -19,10 +19,14 @@ import { apiErrorText } from "../../../utils/apiError";
 import { moneyPost } from "../../../utils/moneyRequest";
 import useIntentKey from "../../../hooks/useIntentKey";
 import KNSelect from "../../../components/KNSelect";
+import { relLabel } from "../amendments/AmendmentDetailPanel";
 import {
   DOC_KIND_LABEL, EVENT_LABEL, SOURCE_LABEL, STATUS_CLASS, STATUS_LABEL, fmtDateTime,
   humanAge, slaText,
 } from "./caseApi";
+
+// Cek layar PK-25 (15 Nov): status ikon + teks + warna (KN_37).
+const CASE_STATUS_ICON = { open: CircleDot, in_progress: Clock3, resolved: CheckCircle2, rejected: XCircle };
 
 export default function CaseDetailPanel({ caseData: c, reasons, canResolve, onClose,
   onChanged, onOpenWizard, onError, onNotify }) {
@@ -80,8 +84,9 @@ export default function CaseDetailPanel({ caseData: c, reasons, canResolve, onCl
         <div>
           <div className="flex items-center gap-2">
             <h3 className="text-[14px] font-bold text-[#1C1C1E]">{c.number}</h3>
-            <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${
+            <span className={`inline-flex items-center gap-1 whitespace-nowrap rounded-full px-2 py-0.5 text-[11px] font-bold ${
               STATUS_CLASS[c.status]}`} data-testid="case-detail-status">
+              {(() => { const Ic = CASE_STATUS_ICON[c.status] || CircleDot; return <Ic size={11} aria-hidden="true" />; })()}
               {STATUS_LABEL[c.status]}
             </span>
             {c.priority === "tinggi" && (
@@ -91,7 +96,7 @@ export default function CaseDetailPanel({ caseData: c, reasons, canResolve, onCl
             )}
           </div>
           <p className="mt-0.5 text-[12px] font-semibold text-[#1C1C1E]">{c.case_type_label}</p>
-          <p className="text-[12px] text-[#6B6B73]">{c.title}</p>
+          {c.title && c.title !== c.case_type_label && <p className="text-[12px] text-[#6B6B73]">{c.title}</p>}
         </div>
         <button className="icon-button" data-testid="case-detail-close" onClick={onClose}>
           <X size={15} />
@@ -249,7 +254,7 @@ export default function CaseDetailPanel({ caseData: c, reasons, canResolve, onCl
           </p>
           <ul className="space-y-0.5 text-[12px] text-[#1C1C1E]" data-testid="case-detail-refs">
             {c.refs.map((r, i) => (
-              <li key={i}>• {r.doc_number || r.doc_id} <span className="text-[#8E8E93]">({r.rel})</span></li>
+              <li key={i}>• {r.doc_number || r.doc_id} <span className="text-[#8E8E93]" title={r.note || ""}>— {relLabel(r.rel)}</span></li>
             ))}
           </ul>
         </div>

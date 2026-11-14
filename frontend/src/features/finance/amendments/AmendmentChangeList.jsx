@@ -8,6 +8,7 @@
  */
 import { ArrowRight } from "lucide-react";
 import { formatCurrency, formatQty } from "../../../utils/formatters";
+import { FIELD_LABEL } from "./amendmentApi";
 
 function renderValue(field, value, unit = "") {
   if (typeof value === "string" && value.trim() !== "" && Number.isNaN(Number(value))) return value;
@@ -52,7 +53,7 @@ export default function AmendmentChangeList({ changes = [], testId = "amd-change
             </div>
           ) : (
             <div className="flex items-center gap-1.5 text-[10.5px]">
-              <span className="text-[#6B6B73]">{c.label || c.field}</span>
+              <span className="text-[#6B6B73]">{c.label || FIELD_LABEL[c.field] || c.field}</span>
               <span className="tabular-nums text-[#8E8E93] line-through">{renderValue(c.field, c.from, c.unit)}</span>
               <ArrowRight size={10} className="text-[#0058CC] shrink-0" />
               <span className="tabular-nums font-bold text-[#0058CC]">{renderValue(c.field, c.to, c.unit)}</span>

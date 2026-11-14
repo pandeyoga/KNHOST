@@ -43,7 +43,8 @@ const humanCode = (v) => {
   const t = String(v || "").replace(/_/g, " ").trim().toLowerCase();
   return t ? t.charAt(0).toUpperCase() + t.slice(1) : "";
 };
-const relLabel = (v) => REL_LABEL[String(v || "").toLowerCase()] || humanCode(v);
+/** Label relasi dokumen (dipakai juga rincian Kasus Keuangan — kode mentah `parent`/`settles` tidak tampil). */
+export const relLabel = (v) => REL_LABEL[String(v || "").toLowerCase()] || humanCode(v);
 const docTypeLabel = (v) => DOC_TYPE_LABEL[String(v || "").toLowerCase()] || humanCode(v);
 
 
@@ -257,11 +258,11 @@ export default function AmendmentDetailPanel({ amdId, currentUser, onDecided, on
             <textarea data-testid="amd-decision-note" rows="2" value={note} onChange={(e) => setNote(e.target.value)}
               className="field" placeholder="Catatan keputusan (tersimpan permanen pada jejak audit)" />
             <div className="flex gap-2">
-              <button data-testid="amd-approve-btn" className="primary-button !py-1.5 flex-1" disabled={!canDecide || !!busy}
+              <button data-testid="amd-approve-btn" className="primary-button !py-1.5 flex-1 whitespace-nowrap" disabled={!canDecide || !!busy}
                 onClick={() => decide("approve")}>
                 <CheckCircle2 size={13} /> {busy === "approve" ? "Memproses…" : "Setujui & Terapkan"}
               </button>
-              <button data-testid="amd-reject-btn" className="danger-button !py-1.5 flex-1" disabled={!canDecide || !!busy}
+              <button data-testid="amd-reject-btn" className="danger-button !py-1.5 flex-1 whitespace-nowrap" disabled={!canDecide || !!busy}
                 onClick={() => decide("reject")}>
                 <XCircle size={13} /> {busy === "reject" ? "Memproses…" : "Tolak"}
               </button>

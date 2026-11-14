@@ -4,12 +4,15 @@
  * Urutan datang dari backend (terlambat → prioritas tinggi → tertua) supaya layar
  * MENUNTUN, bukan sekadar menampilkan daftar acak.
  */
-import { AlertTriangle, ArrowUpRight, Flame } from "lucide-react";
+import { AlertTriangle, ArrowUpRight, CheckCircle2, CircleDot, Clock3, Flame, XCircle } from "lucide-react";
 import { formatCurrency } from "../../../utils/formatters";
 import { STATUS_CLASS, STATUS_LABEL, humanAge, slaText } from "./caseApi";
 
 import PagedRows from "@/components/PagedRows";
 import useListSearch from "@/hooks/useListSearch";
+
+// Cek layar PK-25 (15 Nov): status wajib ikon + teks + warna (KN_37), bukan warna + teks saja.
+const STATUS_ICON = { open: CircleDot, in_progress: Clock3, resolved: CheckCircle2, rejected: XCircle };
 
 export default function CaseInboxTable({ cases, loading, activeId, onOpen }) {
   const srch = useListSearch(cases, null, { testId: "case-inbox", placeholder: "Cari nomor / jenis / pihak…" });
@@ -52,7 +55,7 @@ export default function CaseInboxTable({ cases, loading, activeId, onOpen }) {
             <th className="px-3 py-2 text-right">Nominal</th>
             <th className="px-3 py-2">Status</th>
             <th className="px-3 py-2">Batas waktu</th>
-            <th className="px-3 py-2">Penanggung jawab</th>
+            <th className="px-3 py-2 whitespace-normal">Penanggung jawab</th>
             <th className="px-3 py-2" />
           </tr>
         </thead>
@@ -73,15 +76,18 @@ export default function CaseInboxTable({ cases, loading, activeId, onOpen }) {
                   )}
                   <span className="font-semibold text-[#1C1C1E]">{c.case_type_label}</span>
                 </div>
-                <p className="max-w-[380px] truncate text-[11px] text-[#6B6B73]" title={c.title}>
-                  {c.title}
-                </p>
+                {c.title && c.title !== c.case_type_label && (
+                  <p className="max-w-[300px] truncate text-[11px] text-[#6B6B73]" title={c.title}>
+                    {c.title}
+                  </p>
+                )}
               </td>
               <td className="px-3 py-2 text-right font-semibold tabular-nums">{formatCurrency(c.amount)}</td>
               <td className="px-3 py-2">
-                <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${
+                <span className={`inline-flex items-center gap-1 whitespace-nowrap rounded-full px-2 py-0.5 text-[11px] font-bold ${
                   STATUS_CLASS[c.status] || "bg-[#F2F2F5] text-[#6B6B73]"}`}
                   data-testid={`case-status-${c.id}`}>
+                  {(() => { const Ic = STATUS_ICON[c.status] || CircleDot; return <Ic size={11} aria-hidden="true" />; })()}
                   {STATUS_LABEL[c.status] || c.status}
                 </span>
                 {c.escalation_level > 0 && (
