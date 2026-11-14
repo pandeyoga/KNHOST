@@ -442,10 +442,15 @@ def e_finance(fin):
           str(perms.get("order")))
     # KP-T4 (K-47) — Finance memegang `vendor_bill.approve|reject` sebagai pengganti gerbang nama peran tagihan vendor
     # KAMPANYE (dulu `BILL_APPROVER_ROLES`); jenis mana yang boleh ia putus ditentukan Aturan Persetujuan (bawaan:
-    # hanya `vendor_bill.kampanye`). Yang dijaga E8.2 tetap: Finance tidak membuat/mengubah/membayar sisi hutang.
-    check("izin efektif Finance: TANPA sisi hutang (vendor_bill/contra_bon/landed_cost) selain putus tagihan",
-          set(perms.get("vendor_bill") or []) <= {"approve", "reject"}
-          and not any(perms.get(m) for m in ("contra_bon", "landed_cost")), str(perms.get("vendor_bill")))
+    # hanya `vendor_bill.kampanye`). (Membayar ditambahkan MN-T1/PK-38 — lihat di bawah.)
+    # MN-T1 / PK-38 (K-09, K-17 keputusan pemilik) — membayar hutang = pemegang izin bayar (bawaan Finance & Manajer):
+    # Finance kini memegang `vendor_bill.view|pay` dan `contra_bon.view|pay`. Yang tetap dijaga E8.2: Finance tidak
+    # MEMBUAT/MENGUBAH sisi hutang (tagihan, kontrabon, landed cost) dan tidak memverifikasi/menyetujui kontrabon.
+    check("izin efektif Finance: sisi hutang hanya lihat/bayar + putus tagihan (tanpa buat/ubah, tanpa landed cost)",
+          set(perms.get("vendor_bill") or []) <= {"view", "pay", "approve", "reject"}
+          and set(perms.get("contra_bon") or []) <= {"view", "pay"}
+          and not perms.get("landed_cost"),
+          f"vendor_bill={perms.get('vendor_bill')} contra_bon={perms.get('contra_bon')}")
     check("izin efektif Finance: batal faktur pajak TETAP manajer",
           "cancel" not in (perms.get("tax_invoice") or []), str(perms.get("tax_invoice")))
 

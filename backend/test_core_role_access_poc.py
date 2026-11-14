@@ -19,7 +19,8 @@ G2. PAGAR TIDAK IKUT LONGGAR (yang penting justru ini):
     · `sales`/`warehouse` → `/ar/aging` TETAP 403 (aging memuat piutang SEMUA
       pelanggan; sales dibatasi kepemilikan datanya sendiri — E8.4)
     · `sales`/`sales_admin`/`finance`/`warehouse` → `/users` TETAP 403
-    · `finance` → `/vendor-bills` TETAP 403 (sisi HUTANG tetap manajer/admin)
+    · `finance` → `POST /vendor-bills` TETAP 403 (MN-T1/K-17: Finance kini MELIHAT dan MEMBAYAR hutang —
+      `GET /vendor-bills` 200 di G1 — tetapi tidak membuat/mengubah tagihan pemasok)
     · `warehouse` → `POST /suppliers` TETAP 403 (hanya BACA yang diberikan)
 G3. KPI BERANDA TIDAK BOLEH BERBOHONG (INV-HOME-01):
     · `approvals_pending` == `approvals.total` (dulu 0 vs 6 di layar yang sama)
@@ -98,6 +99,9 @@ def g1_izin_baca_diberikan(cl):
         ("warehouse", "/suppliers", "RFQ/PR/Retur Beli: dropdown Supplier"),
         ("manager", "/users", "layar Karyawan: kolom akun tertaut"),
         ("finance", "/ar/aging?entity_id=ent_ksc", "aging tersaring badan usaha"),
+        # MN-T1 (K-09, K-17 keputusan pemilik): membayar hutang = pemegang izin bayar (bawaan Finance & Manajer),
+        # jadi Finance kini berizin `vendor_bill.view|pay` — dulu pagar G2 menuntut 403 di sini.
+        ("finance", "/vendor-bills", "Hutang: Finance melihat & membayar (MN-T1, K-17)"),
     ]
     for role, path, why in cases:
         r = cl[role].get(f"/api{path}")
@@ -113,11 +117,14 @@ def g2_pagar_tidak_longgar(cl):
         ("sales_admin", "GET", "/users", "daftar akun bukan wilayah Admin Sales"),
         ("finance", "GET", "/users", "daftar akun bukan wilayah kasir"),
         ("warehouse", "GET", "/users", "daftar akun bukan wilayah gudang"),
-        ("finance", "GET", "/vendor-bills", "sisi HUTANG tetap manajer/admin (E8.1b)"),
+        # MN-T1 (K-17): Finance melihat & membayar hutang, tetapi MEMBUAT tagihan pemasok tetap bukan wilayahnya
+        # (izin dicek sebelum PO dibaca → 403 tanpa menyentuh data).
+        ("finance", "POST", "/vendor-bills", "membuat tagihan pemasok tetap Pembelian/Manajer (E8.1b, K-17)"),
         ("sales", "GET", "/suppliers", "sales tidak berurusan dengan supplier"),
     ]
     for role, method, path, why in tolak:
-        r = cl[role].request(method, f"/api{path}")
+        body = {"po_id": "PO-UJI-PAGAR-TIDAK-ADA", "items": []} if method == "POST" else None
+        r = cl[role].request(method, f"/api{path}", json=body)
         ok(r.status_code == 403, f"{role:11s} {method} {path:30s} 403", f"({why}) → {r.status_code}")
 
     # HANYA BACA: menulis master supplier tetap tertutup untuk peran baru pembacanya.
