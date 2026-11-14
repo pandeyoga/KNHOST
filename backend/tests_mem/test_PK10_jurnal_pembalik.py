@@ -19,7 +19,10 @@ from services import gl_service as gl
 
 pytestmark = pytest.mark.anyio
 E1 = "ent_ksc"
-HARI_INI = datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%d")
+# Tanggal buku (WIB, `book_date.tanggal_buku`), bukan tanggal UTC: antara 00.00–07.00 WIB tanggal UTC masih kemarin
+# sedangkan jurnal bertanggal buku hari ini — uji yang memakai tanggal UTC merah pada jam itu.
+from services.book_date import tanggal_buku as _tanggal_buku  # noqa: E402
+HARI_INI = _tanggal_buku()
 _n = itertools.count(1)
 
 

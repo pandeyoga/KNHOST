@@ -14,7 +14,9 @@ from services import gl_service as gl
 
 pytestmark = pytest.mark.anyio
 E1 = "ent_ksc"
-HARI_INI = datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%d")
+# Tanggal buku WIB (bukan UTC) — sama dengan uji PK-10/PK-36.
+from services.book_date import tanggal_buku as _tanggal_buku  # noqa: E402
+HARI_INI = _tanggal_buku()
 _n = itertools.count(1)
 
 
