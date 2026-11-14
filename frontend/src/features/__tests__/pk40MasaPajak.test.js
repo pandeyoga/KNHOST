@@ -141,6 +141,9 @@ describe("PK-40 — masa pajak di Pusat Pajak", () => {
     await mount(<TaxCenterView currentUser={MGR} selectedEntity="all" />, "all");
     expect(q("tax-lock-btn").disabled).toBe(true);
     expect(q("tax-lock-btn").getAttribute("title")).toBe("Pilih satu PT untuk menandai masa pajak");
+    // Alasan juga tertulis di samping tombol (tooltip tidak terbaca di layar sentuh).
+    expect(q("tax-lock-hint").textContent).toBe("Pilih satu PT untuk menandai masa pajak");
+    expect(q("tax-masa-badge").querySelector("svg")).not.toBeNull();   // status = ikon + teks + warna
     for (const r of roots) await act(async () => { r.unmount(); });
     roots = [];
     document.body.innerHTML = "";

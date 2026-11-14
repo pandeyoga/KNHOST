@@ -21,7 +21,7 @@ import MoneyInput from "../../components/MoneyInput";
 import { useCallback, useEffect, useState } from "react";
 import {
   Receipt, ShieldCheck, Wallet, TrendingUp, TrendingDown, RefreshCw, Plus,
-  Trash2, Settings, Building2, AlertTriangle, Landmark, ScrollText, Info, FileText,
+  Trash2, Settings, Building2, AlertTriangle, Landmark, ScrollText, Info, FileText, CheckCircle2, Clock,
 } from "lucide-react";
 import KNSelect from "../../components/KNSelect";
 import ErrorNotice from "../../components/ErrorNotice";
@@ -162,15 +162,22 @@ export default function TaxCenterView({ currentUser, selectedEntity }) {
           <div className="flex items-center gap-2 ml-auto">
             <KNSelect data-testid="tax-center-period" value={period} onValueChange={setPeriod}
               options={periodOpts} className="field !py-1 !px-2 text-[12px] w-auto" placeholder="Periode" />
-            <MasaBadge info={lockInfo} />
-            {canManage && (
-              <MasaActions info={lockInfo} entSpecific={entSpecific} masaBerakhir={masaBerakhir} period={period}
-                busy={lockBusy} onLock={tandaiDilaporkan} onUnlock={bukaMasa} />
-            )}
             <button data-testid="tax-center-refresh" className="icon-button" onClick={() => load(period)} aria-label="Muat ulang">
               <RefreshCw size={14} className={loading ? "animate-spin" : ""} />
             </button>
           </div>
+        </div>
+        {/* PK-40 — keadaan masa pajak di bilah sendiri (cek visual 14 Nov: di kepala kartu judul, NPWP, dan tombol
+            pecah dua baris). */}
+        <div className="flex flex-wrap items-center gap-2 border-b border-kn-divider px-4 py-2" data-testid="tax-masa-bar">
+          <span className="text-fs-13 text-kn-text-2">Masa {fmtPeriod(period)}</span>
+          <MasaBadge info={lockInfo} />
+          {canManage && (
+            <div className="ml-auto flex flex-wrap items-center justify-end gap-2">
+              <MasaActions info={lockInfo} entSpecific={entSpecific} masaBerakhir={masaBerakhir} period={period}
+                busy={lockBusy} onLock={tandaiDilaporkan} onUnlock={bukaMasa} />
+            </div>
+          )}
         </div>
         <div className="section-body py-0">
           {/* Tabs — Audit UI 24 Okt (068): tab standar biru (dulu garis bawah ungu buatan sendiri). */}
@@ -236,7 +243,9 @@ function MasaBadge({ info }) {
   const hint = locked && info?.reported_by ? `oleh ${info.reported_by}, ${formatDate(info.reported_at)}` : undefined;
   return (
     <span data-testid="tax-masa-badge" title={hint}
-      className={`rounded px-1.5 py-0.5 text-fs-12 font-bold ${locked ? "bg-kn-success-soft text-kn-success-text" : "bg-kn-neutral-soft text-kn-text-2"}`}>
+      className={`status-pill inline-flex items-center gap-1 ${locked ? "bg-kn-success-soft text-kn-success-text" : "bg-kn-neutral-soft text-kn-text-2"}`}>
+      {/* KN_37 §1.3 — status = ikon + teks + warna, tidak pernah warna saja. */}
+      {locked ? <CheckCircle2 size={12} aria-hidden="true" /> : <Clock size={12} aria-hidden="true" />}
       {locked ? "Sudah dilaporkan" : "Belum dilaporkan"}
     </span>
   );
@@ -252,9 +261,14 @@ function MasaActions({ info, entSpecific, masaBerakhir, period, busy, onLock, on
   }
   const hint = !entSpecific ? "Pilih satu PT untuk menandai masa pajak"
     : !masaBerakhir ? `Masa ${fmtPeriod(period)} belum berakhir` : undefined;
+  // Alasan tombol mati ditulis di samping tombol (bukan hanya tooltip): tooltip tidak terbaca di layar sentuh dan
+  // tombol mati tanpa keterangan membuat pengguna menebak (cek visual 14 Nov).
   return (
-    <button type="button" data-testid="tax-lock-btn" className="btn-primary btn-sm"
-      disabled={busy || !!hint} title={hint} onClick={onLock}>Tandai Sudah Dilaporkan</button>
+    <>
+      {hint ? <span className="text-fs-12 text-kn-text-2" data-testid="tax-lock-hint">{hint}</span> : null}
+      <button type="button" data-testid="tax-lock-btn" className="btn-primary btn-sm"
+        disabled={busy || !!hint} title={hint} onClick={onLock}>Tandai Sudah Dilaporkan</button>
+    </>
   );
 }
 
