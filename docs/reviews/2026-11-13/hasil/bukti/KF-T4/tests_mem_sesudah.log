@@ -1,0 +1,3 @@
+FAILED tests_mem/test_PRT3_login_saja.py::test_PRT3_U13_daftar_login_only_menunjuk_rute
+1 failed, 515 passed, 2 skipped, 3 xfailed, 9 warnings in 248.21s (0:04:08)
+done

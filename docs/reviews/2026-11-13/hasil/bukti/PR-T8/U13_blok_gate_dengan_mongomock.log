@@ -1,0 +1,67 @@
+
+▶ guard:matriks_izin SELF-TEST (bukti-merah penilai M0–M8)
+== SELF-TEST INV-PERM-02 (penilai matriks izin harus bisa MEMERAH) ==
+  [PASS] hasil bersih → hijau  (dapat=[])
+  [PASS] tanpa_token 200 → M0 (+M1 karena kosong juga lolos)  (dapat=['M0', 'M1'])
+  [PASS] kosong 200 → M1  (dapat=['M1'])
+  [PASS] kosong 200 di LOGIN_ONLY → hijau  (dapat=[])
+  [PASS] kosong 200 di menunggu_unit → hijau  (dapat=[])
+  [PASS] penuh 403 → M2  (dapat=['M2'])
+  [PASS] penuh 403 di tolak_bukan_izin → hijau  (dapat=[])
+  [PASS] mgr0 200 → M3 bertanda Sopir  (dapat=['M3'])
+  [PASS] {peran} Kosong 200 → M4  (dapat=['M4'])
+  [PASS] peran bawaan: Sales lolos tanpa izin, Finance ditolak padahal memegang → M5 ×2  (dapat=['M5', 'M5'])
+  [PASS] 422 → M6  (dapat=['M6'])
+  [PASS] 500 → M6  (dapat=['M6'])
+  [PASS] 500 di galat_dikenal → hijau  (dapat=[])
+  [PASS] tolak_bukan_izin untuk rute yang tidak ada → M7  (dapat=['M7'])
+  [PASS] baris harapan tanpa alasan → M7  (dapat=['M7'])
+  [PASS] menunggu_unit yang kini menolak kosong → M7  (dapat=['M7'])
+  [PASS] LOGIN_ONLY tanpa rute → M7  (dapat=['M7'])
+  [PASS] PUBLIC_ALLOWLIST tanpa rute → M7  (dapat=['M7'])
+  [PASS] sesi mati → M8  (dapat=['M8'])
+  [PASS] akun bertambah → M8  (dapat=['M8'])
+  [PASS] rute PUBLIC_ALLOWLIST: 429 bagi {peran} Kosong bukan M4  (dapat=[])
+  [PASS] izin rantai 'salah satu dari': Sales memegang pasangan pertama → bukan M5  (dapat=[])
+  [PASS] izin dari teks lama  (dapat=[['order.view', 'customer.view'], ['accounting.view'], ['c.d'], ['hr.view', 'rnd.view'], None])
+  HIJAU — penilai terbukti memerah untuk M0–M8.
+  ✓ guard:matriks_izin SELF-TEST (bukti-merah penilai M0–M8) PASS (0s)
+
+▶ guard:matriks_izin (INV-PERM-02, peran × endpoint)
+== INV-PERM-02 — matriks izin berjalan (peran × endpoint) ==
+mode cepat · awalan /api/ · 1773 rute (800 GET) · 7892 permintaan · 64.3 dtk
+  akun             peran                       ditolak  lolos   422  galat    dtk
+  tanpa_token      —                              1765      8     0      0    7.0
+  kosong           Tanpa Acuan Kosong             1691     81     0      1   13.1
+  sopir            Sopir                          1674     98     0      1   13.8
+  mgr0             Manajer Kosong                 1691     81     0      1   13.6
+  penuh            Tanpa Acuan Penuh                13    787     0      0   13.9
+  sesi akhir GET /api/auth/me: kosong 200 · sopir 200 · mgr0 200 · penuh 200
+  jumlah dokumen: users 4 seed + 4 sapuan = 8 (terhitung 8) · custom_roles 0 seed + 3 sapuan = 3 (terhitung 3)
+  pelanggaran: 20 (M0 6, M1 14)
+  M0 POST   /api/ap-payments/{intent_id}/cancel                          tanpa_token   404  'Pembayaran tidak ditemukan'
+  M1 POST   /api/ap-payments/{intent_id}/cancel                          kosong        404  'Pembayaran tidak ditemukan'
+  M0 POST   /api/ap-payments/{intent_id}/resume                          tanpa_token   404  'Pembayaran tidak ditemukan'
+  M1 POST   /api/ap-payments/{intent_id}/resume                          kosong        404  'Pembayaran tidak ditemukan'
+  M1 GET    /api/approval-policies/can-decide/me                         kosong        400  'Jenis dokumen tidak dikenal.'
+  M1 POST   /api/config/values/cancel-scheduled                          kosong        404  'Jadwal perubahan tidak ditemukan.'
+  M1 GET    /api/dashboard                                               kosong        200  ''
+  M1 POST   /api/hr/leave-requests/{leave_id}/cancel                     kosong        404  'Pengajuan cuti tidak ditemukan.'
+  M1 GET    /api/hr/payslips/{slip_id}                                   kosong        404  'Slip gaji tidak ditemukan.'
+  M1 GET    /api/hr/payslips/{slip_id}/pdf                               kosong        404  'Slip gaji tidak ditemukan.'
+  M1 GET    /api/interco/prices/access                                   kosong        200  ''
+  M0 POST   /api/registration/sessions/{sid}/approve                     tanpa_token   404  'Sesi pendaftaran tidak ditemukan'
+  M1 POST   /api/registration/sessions/{sid}/approve                     kosong        404  'Sesi pendaftaran tidak ditemukan'
+  M0 DELETE /api/registration/sessions/{sid}/lines/{line_id}             tanpa_token   404  'Sesi pendaftaran tidak ditemukan'
+  M1 DELETE /api/registration/sessions/{sid}/lines/{line_id}             kosong        404  'Sesi pendaftaran tidak ditemukan'
+  M0 PATCH  /api/registration/sessions/{sid}/lines/{line_id}             tanpa_token   404  'Sesi pendaftaran tidak ditemukan'
+  M1 PATCH  /api/registration/sessions/{sid}/lines/{line_id}             kosong        404  'Sesi pendaftaran tidak ditemukan'
+  M0 POST   /api/registration/sessions/{sid}/return                      tanpa_token   404  'Sesi pendaftaran tidak ditemukan'
+  M1 POST   /api/registration/sessions/{sid}/return                      kosong        404  'Sesi pendaftaran tidak ditemukan'
+  M1 POST   /api/special-orders/{order_id}/fulfillment/{item_key}/cancel kosong        404  'Special order tidak ditemukan'
+MERAH — 20 pelanggaran (arti kode: lihat docstring).
+  ✗ guard:matriks_izin (INV-PERM-02, peran × endpoint) FAIL (rc=1) (71s)
+== hasil harness ==
+guard:matriks_izin SELF-TEST (bukti-merah penilai M0–M8) :: PASS (0s)
+guard:matriks_izin (INV-PERM-02, peran × endpoint) :: FAIL (71s)
+OVERALL=1

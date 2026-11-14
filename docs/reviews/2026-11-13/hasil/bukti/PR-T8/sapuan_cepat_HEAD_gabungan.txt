@@ -1,0 +1,32 @@
+== INV-PERM-02 — matriks izin berjalan (peran × endpoint) ==
+mode cepat · awalan /api/ · 1773 rute (800 GET) · 7892 permintaan · 64.4 dtk
+  akun             peran                       ditolak  lolos   422  galat    dtk
+  tanpa_token      —                              1765      8     0      0    7.1
+  kosong           Tanpa Acuan Kosong             1691     81     0      1   13.7
+  sopir            Sopir                          1674     98     0      1   13.5
+  mgr0             Manajer Kosong                 1691     81     0      1   13.4
+  penuh            Tanpa Acuan Penuh                13    787     0      0   13.6
+  sesi akhir GET /api/auth/me: kosong 200 · sopir 200 · mgr0 200 · penuh 200
+  jumlah dokumen: users 4 seed + 4 sapuan = 8 (terhitung 8) · custom_roles 0 seed + 3 sapuan = 3 (terhitung 3)
+  pelanggaran: 20 (M0 6, M1 14)
+  M0 POST   /api/ap-payments/{intent_id}/cancel                          tanpa_token   404  'Pembayaran tidak ditemukan'
+  M1 POST   /api/ap-payments/{intent_id}/cancel                          kosong        404  'Pembayaran tidak ditemukan'
+  M0 POST   /api/ap-payments/{intent_id}/resume                          tanpa_token   404  'Pembayaran tidak ditemukan'
+  M1 POST   /api/ap-payments/{intent_id}/resume                          kosong        404  'Pembayaran tidak ditemukan'
+  M1 GET    /api/approval-policies/can-decide/me                         kosong        400  'Jenis dokumen tidak dikenal.'
+  M1 POST   /api/config/values/cancel-scheduled                          kosong        404  'Jadwal perubahan tidak ditemukan.'
+  M1 GET    /api/dashboard                                               kosong        200  ''
+  M1 POST   /api/hr/leave-requests/{leave_id}/cancel                     kosong        404  'Pengajuan cuti tidak ditemukan.'
+  M1 GET    /api/hr/payslips/{slip_id}                                   kosong        404  'Slip gaji tidak ditemukan.'
+  M1 GET    /api/hr/payslips/{slip_id}/pdf                               kosong        404  'Slip gaji tidak ditemukan.'
+  M1 GET    /api/interco/prices/access                                   kosong        200  ''
+  M0 POST   /api/registration/sessions/{sid}/approve                     tanpa_token   404  'Sesi pendaftaran tidak ditemukan'
+  M1 POST   /api/registration/sessions/{sid}/approve                     kosong        404  'Sesi pendaftaran tidak ditemukan'
+  M0 DELETE /api/registration/sessions/{sid}/lines/{line_id}             tanpa_token   404  'Sesi pendaftaran tidak ditemukan'
+  M1 DELETE /api/registration/sessions/{sid}/lines/{line_id}             kosong        404  'Sesi pendaftaran tidak ditemukan'
+  M0 PATCH  /api/registration/sessions/{sid}/lines/{line_id}             tanpa_token   404  'Sesi pendaftaran tidak ditemukan'
+  M1 PATCH  /api/registration/sessions/{sid}/lines/{line_id}             kosong        404  'Sesi pendaftaran tidak ditemukan'
+  M0 POST   /api/registration/sessions/{sid}/return                      tanpa_token   404  'Sesi pendaftaran tidak ditemukan'
+  M1 POST   /api/registration/sessions/{sid}/return                      kosong        404  'Sesi pendaftaran tidak ditemukan'
+  M1 POST   /api/special-orders/{order_id}/fulfillment/{item_key}/cancel kosong        404  'Special order tidak ditemukan'
+MERAH — 20 pelanggaran (arti kode: lihat docstring).

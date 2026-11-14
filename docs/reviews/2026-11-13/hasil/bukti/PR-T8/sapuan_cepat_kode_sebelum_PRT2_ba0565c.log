@@ -1,0 +1,144 @@
+== INV-PERM-02 — matriks izin berjalan (peran × endpoint) ==
+mode cepat · awalan /api/ · 1756 rute (790 GET) · 7814 permintaan · 61.2 dtk
+  akun             peran                       ditolak  lolos   422  galat    dtk
+  tanpa_token      —                              1748      8     0      0    7.5
+  kosong           Tanpa Acuan Kosong             1667     88     0      1   13.8
+  sopir            Sopir                          1650    105     0      1   14.1
+  mgr0             Manajer Kosong                 1609    146     0      1   14.3
+  penuh            Tanpa Acuan Penuh                53    737     0      0    8.2
+  sesi akhir GET /api/auth/me: kosong 200 · sopir 200 · mgr0 200 · penuh 200
+  jumlah dokumen: users 4 seed + 4 sapuan = 8 (terhitung 8) · custom_roles 0 seed + 3 sapuan = 3 (terhitung 3)
+  pelanggaran: 128 (M0 6, M1 22, M2 40, M3 58, M7 2)
+  M2 GET    /api/ai/actions/{pid}                                        penuh         403  'Asisten analitik belum dibuka untuk peran Anda'  [izin: —]
+  M3 GET    /api/ai/actions/{pid}                                        mgr0          404  'Draf tindakan tidak ditemukan'  [juga tertutup bagi Sopir]
+  M3 POST   /api/ai/actions/{pid}/confirm                                mgr0          404  'Draf tindakan tidak ditemukan'  [juga tertutup bagi Sopir]
+  M3 POST   /api/ai/actions/{pid}/dismiss                                mgr0          404  'Draf tindakan tidak ditemukan'  [juga tertutup bagi Sopir]
+  M3 POST   /api/ai/analyze-change                                       mgr0          400  'Metrik/dimensi analisis tidak dikenal.'  [juga tertutup bagi Sopir]
+  M2 GET    /api/ai/catalog                                              penuh         403  'Asisten analitik belum dibuka untuk peran Anda'  [izin: —]
+  M3 GET    /api/ai/catalog                                              mgr0          200  ''  [juga tertutup bagi Sopir]
+  M3 POST   /api/ai/chat                                                 mgr0          400  'Pertanyaan kosong'  [juga tertutup bagi Sopir]
+  M2 GET    /api/ai/export.xlsx                                          penuh         403  'Asisten analitik belum dibuka untuk peran Anda'  [izin: —]
+  M3 GET    /api/ai/export.xlsx                                          mgr0          404  'Hasil tidak ditemukan atau sudah kedaluwarsa'  [juga tertutup bagi Sopir]
+  M2 GET    /api/ai/facts/status                                         penuh         403  'Role Anda tidak memiliki izin untuk aksi ini'  [izin: —]
+  M3 GET    /api/ai/facts/status                                         mgr0          200  ''  [juga tertutup bagi Sopir]
+  M3 POST   /api/ai/feedback                                             mgr0          400  'Penilaian harus up atau down'  [juga tertutup bagi Sopir]
+  M2 GET    /api/ai/insights                                             penuh         403  'Asisten analitik belum dibuka untuk peran Anda'  [izin: —]
+  M3 GET    /api/ai/insights                                             mgr0          200  ''  [juga tertutup bagi Sopir]
+  M3 POST   /api/ai/insights/scan                                        mgr0          200  ''  [juga tertutup bagi Sopir]
+  M2 GET    /api/ai/my-templates                                         penuh         403  'Asisten analitik belum dibuka untuk peran Anda'  [izin: —]
+  M3 GET    /api/ai/my-templates                                         mgr0          200  ''  [juga tertutup bagi Sopir]
+  M3 POST   /api/ai/my-templates                                         mgr0          400  'Pertanyaan template terlalu pendek'  [juga tertutup bagi Sopir]
+  M3 DELETE /api/ai/my-templates/{template_id}                           mgr0          404  'Template tidak ditemukan'  [juga tertutup bagi Sopir]
+  M3 POST   /api/ai/narrative                                            mgr0          404  'Template tidak ditemukan'  [juga tertutup bagi Sopir]
+  M3 POST   /api/ai/query                                                mgr0          400  'Pilih 1–6 metrik.'  [juga tertutup bagi Sopir]
+  M2 GET    /api/ai/results/{result_id}                                  penuh         403  'Asisten analitik belum dibuka untuk peran Anda'  [izin: —]
+  M3 GET    /api/ai/results/{result_id}                                  mgr0          404  'Hasil tidak ditemukan atau sudah kedaluwarsa'  [juga tertutup bagi Sopir]
+  M2 GET    /api/ai/results/{result_id}/export.xlsx                      penuh         403  'Asisten analitik belum dibuka untuk peran Anda'  [izin: —]
+  M3 GET    /api/ai/results/{result_id}/export.xlsx                      mgr0          404  'Hasil tidak ditemukan atau sudah kedaluwarsa'  [juga tertutup bagi Sopir]
+  M2 GET    /api/ai/schedule-runs                                        penuh         403  'Asisten analitik belum dibuka untuk peran Anda'  [izin: —]
+  M3 GET    /api/ai/schedule-runs                                        mgr0          200  ''  [juga tertutup bagi Sopir]
+  M2 GET    /api/ai/schedule-runs/{run_id}                               penuh         403  'Asisten analitik belum dibuka untuk peran Anda'  [izin: —]
+  M3 GET    /api/ai/schedule-runs/{run_id}                               mgr0          404  'Riwayat laporan tidak ditemukan'  [juga tertutup bagi Sopir]
+  M2 GET    /api/ai/schedules                                            penuh         403  'Asisten analitik belum dibuka untuk peran Anda'  [izin: —]
+  M3 GET    /api/ai/schedules                                            mgr0          200  ''  [juga tertutup bagi Sopir]
+  M3 POST   /api/ai/schedules                                            mgr0          400  'Template tidak ditemukan untuk peran Anda.'  [juga tertutup bagi Sopir]
+  M3 DELETE /api/ai/schedules/{schedule_id}                              mgr0          404  'Jadwal tidak ditemukan'  [juga tertutup bagi Sopir]
+  M3 PATCH  /api/ai/schedules/{schedule_id}                              mgr0          404  'Jadwal tidak ditemukan'  [juga tertutup bagi Sopir]
+  M3 POST   /api/ai/schedules/{schedule_id}/run                          mgr0          404  'Jadwal tidak ditemukan'  [juga tertutup bagi Sopir]
+  M2 GET    /api/ai/sessions                                             penuh         403  'Asisten analitik belum dibuka untuk peran Anda'  [izin: —]
+  M3 GET    /api/ai/sessions                                             mgr0          200  ''  [juga tertutup bagi Sopir]
+  M3 DELETE /api/ai/sessions/{session_id}                                mgr0          404  'Sesi tidak ditemukan'  [juga tertutup bagi Sopir]
+  M2 GET    /api/ai/sessions/{session_id}                                penuh         403  'Asisten analitik belum dibuka untuk peran Anda'  [izin: —]
+  M3 GET    /api/ai/sessions/{session_id}                                mgr0          404  'Sesi tidak ditemukan'  [juga tertutup bagi Sopir]
+  M2 GET    /api/ai/snapshots/status                                     penuh         403  'Role Anda tidak memiliki izin untuk aksi ini'  [izin: —]
+  M3 GET    /api/ai/snapshots/status                                     mgr0          200  ''  [juga tertutup bagi Sopir]
+  M2 GET    /api/ai/status                                               penuh         403  'Asisten analitik belum dibuka untuk peran Anda'  [izin: —]
+  M3 GET    /api/ai/status                                               mgr0          200  ''  [juga tertutup bagi Sopir]
+  M2 GET    /api/ai/templates                                            penuh         403  'Asisten analitik belum dibuka untuk peran Anda'  [izin: —]
+  M3 GET    /api/ai/templates                                            mgr0          200  ''  [juga tertutup bagi Sopir]
+  M3 POST   /api/ai/templates/{template_id}/run                          mgr0          400  'Template tidak ditemukan untuk peran Anda.'  [juga tertutup bagi Sopir]
+  M3 POST   /api/ai/tools/{tool}                                         mgr0          400  'Tool tidak dikenal: x'  [juga tertutup bagi Sopir]
+  M2 GET    /api/ai/usage                                                penuh         403  'Role Anda tidak memiliki izin untuk aksi ini'  [izin: —]
+  M3 GET    /api/ai/usage                                                mgr0          200  ''  [juga tertutup bagi Sopir]
+  M2 GET    /api/ai/usage/daily                                          penuh         403  'Asisten analitik belum dibuka untuk peran Anda'  [izin: —]
+  M3 GET    /api/ai/usage/daily                                          mgr0          200  ''  [juga tertutup bagi Sopir]
+  M0 POST   /api/ap-payments/{intent_id}/cancel                          tanpa_token   404  'Pembayaran tidak ditemukan'
+  M1 POST   /api/ap-payments/{intent_id}/cancel                          kosong        404  'Pembayaran tidak ditemukan'
+  M0 POST   /api/ap-payments/{intent_id}/resume                          tanpa_token   404  'Pembayaran tidak ditemukan'
+  M1 POST   /api/ap-payments/{intent_id}/resume                          kosong        404  'Pembayaran tidak ditemukan'
+  M2 GET    /api/costing/wac                                             penuh         403  'Role Anda tidak memiliki izin untuk aksi ini'  [izin: —]
+  M3 GET    /api/costing/wac                                             mgr0          200  ''  [juga tertutup bagi Sopir]
+  M2 GET    /api/costing/wac/{product_id}                                penuh         403  'Role Anda tidak memiliki izin untuk aksi ini'  [izin: —]
+  M3 GET    /api/costing/wac/{product_id}                                mgr0          200  ''  [juga tertutup bagi Sopir]
+  M3 POST   /api/credit-overrides/{override_id}/decision                 mgr0          400  'decision harus approve|reject'  [juga tertutup bagi Sopir]
+  M3 POST   /api/customers/{customer_id}/reassign                        mgr0          400  'Salesperson tujuan tidak valid'  [juga tertutup bagi Sopir]
+  M1 GET    /api/dashboard                                               kosong        200  ''
+  M3 POST   /api/data-hygiene/location/{collection}/{doc_id}             mgr0          404  'Koleksi tidak dikenal.'  [juga tertutup bagi Sopir]
+  M2 GET    /api/data-hygiene/log                                        penuh         403  'Role Anda tidak memiliki izin untuk aksi ini'  [izin: —]
+  M3 GET    /api/data-hygiene/log                                        mgr0          200  ''  [juga tertutup bagi Sopir]
+  M2 GET    /api/data-hygiene/preview                                    penuh         403  'Role Anda tidak memiliki izin untuk aksi ini'  [izin: —]
+  M3 GET    /api/data-hygiene/preview                                    mgr0          200  ''  [juga tertutup bagi Sopir]
+  M2 GET    /api/data-hygiene/summary                                    penuh         403  'Role Anda tidak memiliki izin untuk aksi ini'  [izin: —]
+  M3 GET    /api/data-hygiene/summary                                    mgr0          200  ''  [juga tertutup bagi Sopir]
+  M2 GET    /api/data-hygiene/unverified-locations                       penuh         403  'Role Anda tidak memiliki izin untuk aksi ini'  [izin: —]
+  M3 GET    /api/data-hygiene/unverified-locations                       mgr0          200  ''  [juga tertutup bagi Sopir]
+  M1 GET    /api/entities/count                                          kosong        200  ''
+  M1 GET    /api/entities/{entity_id}                                    kosong        404  'Badan usaha tidak ditemukan'
+  M1 GET    /api/entities/{entity_id}/readiness                          kosong        404  'Badan usaha tidak ditemukan'
+  M1 GET    /api/finance/period-unlocks                                  kosong        200  ''
+  M2 GET    /api/home/admin                                              penuh         403  'Role Anda tidak memiliki izin untuk aksi ini'  [izin: —]
+  M3 GET    /api/home/admin                                              mgr0          200  ''  [juga tertutup bagi Sopir]
+  M2 GET    /api/home/manager                                            penuh         403  'Role Anda tidak memiliki izin untuk aksi ini'  [izin: —]
+  M3 GET    /api/home/manager                                            mgr0          200  ''  [juga tertutup bagi Sopir]
+  M1 POST   /api/hr/leave-requests/{leave_id}/cancel                     kosong        404  'Pengajuan cuti tidak ditemukan.'
+  M1 GET    /api/hr/payslips/{slip_id}                                   kosong        404  'Slip gaji tidak ditemukan.'
+  M1 GET    /api/hr/payslips/{slip_id}/pdf                               kosong        404  'Slip gaji tidak ditemukan.'
+  M2 GET    /api/incentive-rates                                         penuh         403  'Role Anda tidak memiliki izin untuk aksi ini'  [izin: —]
+  M3 GET    /api/incentive-rates                                         mgr0          200  ''  [juga tertutup bagi Sopir]
+  M3 POST   /api/incentive-rates                                         mgr0          200  ''  [juga tertutup bagi Sopir]
+  M3 DELETE /api/incentive-rates/{rate_id}                               mgr0          404  'Rate tidak ditemukan'  [juga tertutup bagi Sopir]
+  M3 PATCH  /api/incentive-rates/{rate_id}                               mgr0          400  'Tidak ada field valid untuk diupdate'  [juga tertutup bagi Sopir]
+  M1 GET    /api/interco/prices/access                                   kosong        200  ''
+  M2 GET    /api/internal-requests/{req_id}/sources                      penuh         403  'Rincian stok badan usaha lain bukan wewenang peran Anda. Ajukan permintaannya sa'  [izin: —]
+  M3 POST   /api/notifications/generate                                  mgr0          200  ''  [juga tertutup bagi Sopir]
+  M1 GET    /api/purchase-orders/resolve-sourcing                        kosong        400  'product_id wajib diisi.'
+  M0 POST   /api/registration/sessions/{sid}/approve                     tanpa_token   404  'Sesi pendaftaran tidak ditemukan'
+  M1 POST   /api/registration/sessions/{sid}/approve                     kosong        404  'Sesi pendaftaran tidak ditemukan'
+  M0 DELETE /api/registration/sessions/{sid}/lines/{line_id}             tanpa_token   404  'Sesi pendaftaran tidak ditemukan'
+  M1 DELETE /api/registration/sessions/{sid}/lines/{line_id}             kosong        404  'Sesi pendaftaran tidak ditemukan'
+  M0 PATCH  /api/registration/sessions/{sid}/lines/{line_id}             tanpa_token   404  'Sesi pendaftaran tidak ditemukan'
+  M1 PATCH  /api/registration/sessions/{sid}/lines/{line_id}             kosong        404  'Sesi pendaftaran tidak ditemukan'
+  M0 POST   /api/registration/sessions/{sid}/return                      tanpa_token   404  'Sesi pendaftaran tidak ditemukan'
+  M1 POST   /api/registration/sessions/{sid}/return                      kosong        404  'Sesi pendaftaran tidak ditemukan'
+  M2 GET    /api/rnd/divisions                                           penuh         403  'Hanya admin/manager yang dapat mengelola divisi R&D.'  [izin: —]
+  M2 GET    /api/rnd/divisions/members                                   penuh         403  'Hanya admin/manager yang dapat mengelola divisi R&D.'  [izin: —]
+  M2 GET    /api/rnd/reports/designer-kpi                                penuh         403  'Laporan penilaian desainer hanya untuk manager & admin. Peran lain tetap bisa me'  [izin: —]
+  M2 GET    /api/rnd/reports/designer-kpi/export                         penuh         403  'Laporan penilaian desainer hanya untuk manager & admin. Peran lain tetap bisa me'  [izin: —]
+  M2 GET    /api/rnd/reports/designer-kpi/report                         penuh         403  'Laporan penilaian desainer hanya untuk manager & admin. Peran lain tetap bisa me'  [izin: —]
+  M2 GET    /api/rnd/reports/designer-kpi/trend                          penuh         403  'Laporan penilaian desainer hanya untuk manager & admin. Peran lain tetap bisa me'  [izin: —]
+  M2 GET    /api/rnd/sla/board                                           penuh         403  'Laporan penilaian desainer hanya untuk manager & admin. Peran lain tetap bisa me'  [izin: —]
+  M2 GET    /api/saga-locks                                              penuh         403  'Role Anda tidak memiliki izin untuk aksi ini'  [izin: —]
+  M2 GET    /api/saga-locks/{collection}/{doc_id}/inspect                penuh         403  'Role Anda tidak memiliki izin untuk aksi ini'  [izin: —]
+  M1 GET    /api/sales-incentives                                        kosong        200  ''
+  M3 POST   /api/sales-incentives                                        mgr0          400  'Salesperson tidak valid'  [juga tertutup bagi Sopir]
+  M1 GET    /api/sales-targets                                           kosong        200  ''
+  M3 POST   /api/sales-targets                                           mgr0          400  'Salesperson tidak valid'  [juga tertutup bagi Sopir]
+  M1 GET    /api/sales-users                                             kosong        200  ''
+  M2 GET    /api/sales/incentive/gl-status                               penuh         403  'Role Anda tidak memiliki izin untuk aksi ini'  [izin: —]
+  M3 GET    /api/sales/incentive/gl-status                               mgr0          200  ''  [juga tertutup bagi Sopir]
+  M3 POST   /api/sales/incentive/post-gl                                 mgr0          200  ''  [juga tertutup bagi Sopir]
+  M2 GET    /api/sales/leaderboard                                       penuh         403  'Role Anda tidak memiliki izin untuk aksi ini'  [izin: —]
+  M3 GET    /api/sales/leaderboard                                       mgr0          200  ''  [juga tertutup bagi Sopir]
+  M1 POST   /api/special-orders/{order_id}/fulfillment/{item_key}/cancel kosong        404  'Special order tidak ditemukan'
+  M1 POST   /api/special-orders/{order_id}/fulfillment/{item_key}/realize kosong        404  'Special order tidak ditemukan'
+  M1 POST   /api/special-orders/{order_id}/fulfillment/{item_key}/route  kosong        404  'Special order tidak ditemukan'
+  M3 PUT    /api/supplier-contracts/policy                               mgr0          200  ''  [juga tertutup bagi Sopir]
+  M2 GET    /api/turn-notifications/map                                  penuh         403  'Role Anda tidak memiliki izin untuk aksi ini'  [izin: —]
+  M3 GET    /api/turn-notifications/map                                  mgr0          200  ''  [juga tertutup bagi Sopir]
+  M7 GET    /api/config/layers                                           —               —  ''  [isi_contoh: rute tidak ada]
+  M7 GET    /api/access/labels                                           —               —  ''  [LOGIN_ONLY: rute tidak ada]
+MERAH — 128 pelanggaran (arti kode: lihat docstring).
+
+real	1m8.847s
+user	1m6.726s
+sys	0m0.757s

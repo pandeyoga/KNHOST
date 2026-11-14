@@ -1,0 +1,63 @@
+Sat Nov 14 05:41:28 UTC 2026
+== INV-PERM-02 — matriks izin berjalan (peran × endpoint) ==
+mode penuh · awalan /api/ · 1773 rute (800 GET) · 37795 permintaan · 339.9 dtk
+  akun             peran                       ditolak  lolos   422  galat    dtk
+  tanpa_token      —                              1765      8     0      0    7.7
+  kosong           Tanpa Acuan Kosong             1691     81     0      1   14.1
+  sopir            Sopir                          1674     98     0      1   14.9
+  mgr0             Manajer Kosong                 1691     81     0      1   14.8
+  sales_admin0     Admin Sales Kosong             1691     81     0      1   13.8
+  finance0         Finance Kosong                 1690     82     0      1   14.8
+  sales0           Sales Kosong                   1690     82     0      1   14.4
+  warehouse0       Gudang Kosong                  1690     82     0      1   14.2
+  designer0        Desainer Kosong                1690     82     0      1   13.6
+  driver0          Sopir Kosong                   1690     82     0      1   14.1
+  md0              MD Kosong                      1690     82     0      1   14.3
+  warehouse_admin0 Admin Gudang Kosong            1690     82     0      1   12.4
+  sample_admin0    Admin Sample Kosong            1690     82     0      1   13.1
+  md_quality0      MD Quality Kosong              1690     82     0      1   14.7
+  qc0              QC Kosong                      1690     82     0      1   14.8
+  penuh            Tanpa Acuan Penuh                13    787     0      0   13.2
+  admin            Admin                            13    787     0      0   13.3
+  manager          Manajer                          40    760     0      0   12.1
+  sales_admin      Admin Sales                     299    501     0      0    8.4
+  finance          Finance                         404    396     0      0    7.2
+  sales            Sales                           434    366     0      0    7.6
+  warehouse        Gudang                          363    437     0      0    7.4
+  designer         Desainer                        660    140     0      0    6.9
+  driver           Sopir                           740     60     0      0    6.7
+  md               MD                              435    365     0      0    7.4
+  warehouse_admin  Admin Gudang                    343    457     0      0    6.9
+  sample_admin     Admin Sample                    516    284     0      0    7.2
+  md_quality       MD Quality                      605    195     0      0    6.5
+  qc               QC                              622    178     0      0    6.6
+  sesi akhir GET /api/auth/me: kosong 200 · sopir 200 · mgr0 200 · sales_admin0 200 · finance0 200 · sales0 200 · warehouse0 200 · designer0 200 · driver0 200 · md0 200 · warehouse_admin0 200 · sample_admin0 200 · md_quality0 200 · qc0 200 · penuh 200 · admin 200 · manager 200 · sales_admin 200 · finance 200 · sales 200 · warehouse 200 · designer 200 · driver 200 · md 200 · warehouse_admin 200 · sample_admin 200 · md_quality 200 · qc 200
+  jumlah dokumen: users 4 seed + 28 sapuan = 32 (terhitung 32) · custom_roles 0 seed + 14 sapuan = 14 (terhitung 14)
+  pelanggaran: 20 (M0 6, M1 14)
+  M0 POST   /api/ap-payments/{intent_id}/cancel                          tanpa_token   404  'Pembayaran tidak ditemukan'
+  M1 POST   /api/ap-payments/{intent_id}/cancel                          kosong        404  'Pembayaran tidak ditemukan'
+  M0 POST   /api/ap-payments/{intent_id}/resume                          tanpa_token   404  'Pembayaran tidak ditemukan'
+  M1 POST   /api/ap-payments/{intent_id}/resume                          kosong        404  'Pembayaran tidak ditemukan'
+  M1 GET    /api/approval-policies/can-decide/me                         kosong        400  'Jenis dokumen tidak dikenal.'
+  M1 POST   /api/config/values/cancel-scheduled                          kosong        404  'Jadwal perubahan tidak ditemukan.'
+  M1 GET    /api/dashboard                                               kosong        200  ''
+  M1 POST   /api/hr/leave-requests/{leave_id}/cancel                     kosong        404  'Pengajuan cuti tidak ditemukan.'
+  M1 GET    /api/hr/payslips/{slip_id}                                   kosong        404  'Slip gaji tidak ditemukan.'
+  M1 GET    /api/hr/payslips/{slip_id}/pdf                               kosong        404  'Slip gaji tidak ditemukan.'
+  M1 GET    /api/interco/prices/access                                   kosong        200  ''
+  M0 POST   /api/registration/sessions/{sid}/approve                     tanpa_token   404  'Sesi pendaftaran tidak ditemukan'
+  M1 POST   /api/registration/sessions/{sid}/approve                     kosong        404  'Sesi pendaftaran tidak ditemukan'
+  M0 DELETE /api/registration/sessions/{sid}/lines/{line_id}             tanpa_token   404  'Sesi pendaftaran tidak ditemukan'
+  M1 DELETE /api/registration/sessions/{sid}/lines/{line_id}             kosong        404  'Sesi pendaftaran tidak ditemukan'
+  M0 PATCH  /api/registration/sessions/{sid}/lines/{line_id}             tanpa_token   404  'Sesi pendaftaran tidak ditemukan'
+  M1 PATCH  /api/registration/sessions/{sid}/lines/{line_id}             kosong        404  'Sesi pendaftaran tidak ditemukan'
+  M0 POST   /api/registration/sessions/{sid}/return                      tanpa_token   404  'Sesi pendaftaran tidak ditemukan'
+  M1 POST   /api/registration/sessions/{sid}/return                      kosong        404  'Sesi pendaftaran tidak ditemukan'
+  M1 POST   /api/special-orders/{order_id}/fulfillment/{item_key}/cancel kosong        404  'Special order tidak ditemukan'
+MERAH — 20 pelanggaran (arti kode: lihat docstring).
+
+real	5m47.311s
+user	5m42.263s
+sys	0m2.821s
+rc=1
+Sat Nov 14 05:47:15 UTC 2026

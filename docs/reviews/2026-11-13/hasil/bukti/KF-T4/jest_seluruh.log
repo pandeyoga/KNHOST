@@ -1,0 +1,11 @@
+== jest seluruh suite, kode lama (69cc4e3)
+Test Suites: 35 failed, 71 passed, 106 total
+Tests:       507 passed, 507 total
+== jest seluruh suite, kode baru (akhir)
+Test Suites: 35 failed, 72 passed, 107 total
+Tests:       518 passed, 518 total
+== beda daftar suite (lama → baru)
+103a104
+> PASS src/features/settings/config/__tests__/kft4SettingCard.test.js
+== suite gagal dimuat (keduanya; @radix-ui/cmdk tidak termuat lokal)
+35

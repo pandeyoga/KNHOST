@@ -1,0 +1,26 @@
+  383 kunci · 13 kelompok · pelanggaran per aturan: 0
+== INV-CFG-TXT — teks Pengaturan berbahasa awam (label ≤ 45, satuan, arti 0, glosarium, sub-judul) ==
+[PASS] 2694 cek lolos, 0 pelanggaran.
+  ✓ kunci bersih → hijau
+  ✓ T1 label 46 huruf → merah
+  ✓ T2 dua label sama (huruf besar beda) → merah
+  ✓ T3 kata 'threshold' → merah
+  ✓ T3 nama isian 'supplier_id' → merah
+  ✓ T3 kode HTTP '(400)' → merah
+  ✓ T3 kode keputusan 'DEC-01' → merah
+  ✓ T3 nama izin 'settings.manage' → merah
+  ✓ T4 angka tanpa satuan → merah
+  ✓ T4 pengecualian bercatatan → hijau
+  ✓ T5 boleh 0 tanpa arti 0 → merah
+  ✓ T5 '10' bukan '0' berdiri sendiri → merah
+  ✓ T5 min 1 tidak wajib → hijau
+  ✓ T6 'supplier' → merah
+  ✓ T6 'Manager' (huruf besar) → merah
+  ✓ T6 frasa label menu dikecualikan → hijau
+  ✓ T6 label 'ambang' → merah
+  ✓ T6 'ambang' di penjelasan boleh → hijau
+  ✓ T7 sub-judul tak terdaftar → merah
+  ✓ T7 sub-judul biasa 15 kunci → merah
+  ✓ T7 sub-judul Lanjutan 15 kunci → hijau
+  SELF-TEST HIJAU (0 gagal)
+configKeyIndex.json selaras registry

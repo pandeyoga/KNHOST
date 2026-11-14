@@ -1,0 +1,9 @@
+  383 kunci · 23 kelompok · pelanggaran per aturan: T1=61, T3=65, T4=23, T5=68, T6=225, T7=383
+== INV-CFG-TXT — teks Pengaturan berbahasa awam (label ≤ 45, satuan, arti 0, glosarium, sub-judul) ==
+[FAIL] 825 pelanggaran (dari 2704 cek):
+     61 [T1]
+     65 [T3]
+     23 [T4]
+     68 [T5]
+    225 [T6]
+    383 [T7]

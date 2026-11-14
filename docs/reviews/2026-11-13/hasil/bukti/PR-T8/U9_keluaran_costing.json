@@ -1,0 +1,158 @@
+{
+ "akun": {
+  "kosong": {
+   "hanya_get": false,
+   "label": "Tanpa Acuan Kosong",
+   "lama_detik": 0.0,
+   "peran": "cr_tanpa_acuan_kosong",
+   "peran_dasar": ""
+  },
+  "mgr0": {
+   "hanya_get": false,
+   "label": "Manajer Kosong",
+   "lama_detik": 0.0,
+   "peran": "cr_manajer_kosong",
+   "peran_dasar": "manager"
+  },
+  "penuh": {
+   "hanya_get": true,
+   "label": "Tanpa Acuan Penuh",
+   "lama_detik": 0.0,
+   "peran": "cr_tanpa_acuan_penuh",
+   "peran_dasar": ""
+  },
+  "sopir": {
+   "hanya_get": false,
+   "label": "Sopir",
+   "lama_detik": 0.0,
+   "peran": "driver",
+   "peran_dasar": "driver"
+  },
+  "tanpa_token": {
+   "hanya_get": false,
+   "label": "",
+   "lama_detik": 0.0,
+   "peran": "",
+   "peran_dasar": ""
+  }
+ },
+ "awalan": "/api/costing",
+ "hasil": {
+  "kosong": {
+   "GET /api/costing/wac": [
+    403,
+    "ditolak",
+    [
+     "costing.view"
+    ]
+   ],
+   "GET /api/costing/wac/{product_id}": [
+    403,
+    "ditolak",
+    [
+     "costing.view"
+    ]
+   ]
+  },
+  "mgr0": {
+   "GET /api/costing/wac": [
+    403,
+    "ditolak",
+    [
+     "costing.view"
+    ]
+   ],
+   "GET /api/costing/wac/{product_id}": [
+    403,
+    "ditolak",
+    [
+     "costing.view"
+    ]
+   ]
+  },
+  "penuh": {
+   "GET /api/costing/wac": [
+    200,
+    "lolos",
+    null
+   ],
+   "GET /api/costing/wac/{product_id}": [
+    200,
+    "lolos",
+    null
+   ]
+  },
+  "sopir": {
+   "GET /api/costing/wac": [
+    403,
+    "ditolak",
+    [
+     "costing.view"
+    ]
+   ],
+   "GET /api/costing/wac/{product_id}": [
+    403,
+    "ditolak",
+    [
+     "costing.view"
+    ]
+   ]
+  },
+  "tanpa_token": {
+   "GET /api/costing/wac": [
+    401,
+    "ditolak",
+    null
+   ],
+   "GET /api/costing/wac/{product_id}": [
+    401,
+    "ditolak",
+    null
+   ]
+  }
+ },
+ "jumlah": {
+  "custom_roles": {
+   "buatan_sapuan": 3,
+   "nyata": 3,
+   "seed": 0
+  },
+  "users": {
+   "buatan_sapuan": 4,
+   "nyata": 8,
+   "seed": 4
+  }
+ },
+ "lama_detik": 3.0,
+ "mode": "cepat",
+ "pelanggaran": [],
+ "permintaan": 10,
+ "pesan": {
+  "kosong": {
+   "GET /api/costing/wac": "Permission ditolak: costing.view",
+   "GET /api/costing/wac/{product_id}": "Permission ditolak: costing.view"
+  },
+  "mgr0": {
+   "GET /api/costing/wac": "Permission ditolak: costing.view",
+   "GET /api/costing/wac/{product_id}": "Permission ditolak: costing.view"
+  },
+  "penuh": {},
+  "sopir": {
+   "GET /api/costing/wac": "Permission ditolak: costing.view",
+   "GET /api/costing/wac/{product_id}": "Permission ditolak: costing.view"
+  },
+  "tanpa_token": {
+   "GET /api/costing/wac": "Login diperlukan",
+   "GET /api/costing/wac/{product_id}": "Login diperlukan"
+  }
+ },
+ "rute": 2,
+ "rute_get": 2,
+ "sesi_akhir": {
+  "kosong": 200,
+  "mgr0": 200,
+  "penuh": 200,
+  "sopir": 200
+ },
+ "versi": 1
+}

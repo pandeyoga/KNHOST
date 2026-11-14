@@ -1,0 +1,24 @@
+FAIL src/features/settings/config/__tests__/kft4SettingCard.test.js
+  ✕ U14 — Satu PT, nilai warisan: tanpa Default/Ikuti nilai grup; keterangan Mengikuti nilai grup; contoh langsung tampil (63 ms)
+  ✕ U14 — Satu PT, nilai khusus PT: Ikuti nilai grup memanggil pencabut; lencana Khusus KANDA (20 ms)
+  ✕ U14 — berisiko tinggi: Simpan mati sampai alasan terisi; draf kosong sesudah ganti PT (27 ms)
+  ✕ Semua PT: Pakai nilai bawaan sistem + daftar PT bernilai sendiri yang bisa diklik (15 ms)
+  ✕ kartu hanya-grup, terkunci, dan diubah di layar lain (10 ms)
+  ✕ kartu ringkas satu baris terbuka saat diklik (9 ms)
+  ✕ daftar peran = kotak centang berlabel nama peran (3 ms)
+  ✕ daftar berurutan: PT pemilik stok terkunci di urutan pertama (5 ms)
+  ✕ deret angka menaik dengan pratinjau kolom; rujukan master = daftar pilih (4 ms)
+  ✕ tabel berkelompok: baris jenis dokumen tanpa pembaca tampil hanya-baca 'belum dipakai' (6 ms)
+  ✕ tautan langsung membaca indeks registry; id kelompok lama diterjemahkan (1 ms)
+  ● U14 — Satu PT, nilai warisan: tanpa Default/Ikuti nilai grup; keterangan Mengikuti nilai grup; contoh langsung tampil
+  ● U14 — Satu PT, nilai khusus PT: Ikuti nilai grup memanggil pencabut; lencana Khusus KANDA
+  ● U14 — berisiko tinggi: Simpan mati sampai alasan terisi; draf kosong sesudah ganti PT
+  ● Semua PT: Pakai nilai bawaan sistem + daftar PT bernilai sendiri yang bisa diklik
+  ● kartu hanya-grup, terkunci, dan diubah di layar lain
+  ● kartu ringkas satu baris terbuka saat diklik
+  ● daftar peran = kotak centang berlabel nama peran
+  ● daftar berurutan: PT pemilik stok terkunci di urutan pertama
+  ● deret angka menaik dengan pratinjau kolom; rujukan master = daftar pilih
+  ● tabel berkelompok: baris jenis dokumen tanpa pembaca tampil hanya-baca 'belum dipakai'
+  ● tautan langsung membaca indeks registry; id kelompok lama diterjemahkan
+Tests:       11 failed, 11 total

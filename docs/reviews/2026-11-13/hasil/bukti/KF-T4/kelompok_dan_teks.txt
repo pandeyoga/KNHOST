@@ -1,0 +1,70 @@
+== Jumlah kunci per kelompok · sub-judul (HEAD kerja KF-T4, 383 kunci)
+penjualan · Penjualan & harga — 25 kunci (24 aktif)
+    harga · Harga & diskon: 6
+    alur-pesanan · Alur pesanan: 5
+    komisi · Komisi sales: 8
+    saran-pos · Saran produk di kasir (POS): 6
+pembayaran-pelanggan · Pembayaran pelanggan — 24 kunci (23 aktif)
+    syarat-bayar · Syarat bayar, DP & cicilan: 8
+    denda · Denda telat bayar: 8
+    selisih-bayar · Selisih bayar: 8
+retur-koreksi · Retur & koreksi dokumen — 19 kunci (15 aktif)
+    retur · Retur penjualan: 12
+    koreksi · Koreksi dokumen: 7
+pembelian · Pembelian, makloon & tagihan pemasok — 25 kunci (20 aktif)
+    memesan · Memesan ke pemasok: 5
+    makloon · Makloon: 7
+    tagihan · Tagihan pemasok & kontrabon: 13
+penerimaan · Penerimaan barang & lot — 24 kunci (23 aktif)
+    menerima · Menghitung & menerima: 11
+    nomor-lot · Nomor lot: 8
+    konversi-satuan · Konversi satuan: 5
+kualitas · Mutu kain (QC) — 11 kunci (11 aktif)
+    inspeksi · Inspeksi & grade: 4
+    tidak-sesuai · Bila tidak sesuai sample: 3
+    jumlah-cek · Berapa roll yang dicek: 4
+stok · Stok, alokasi & potong — 31 kunci (29 aktif)
+    memilih-stok · Memilih stok untuk pesanan: 14
+    potong · Potong & sisa potong: 5
+    laris-lambat · Laris/lambat & pesan ulang: 8
+    kerja-gudang · Kerja gudang: 4
+persetujuan · Persetujuan, pengingat & dokumen — 72 kunci (66 aktif)
+    umum · Persetujuan umum: 2
+    rnd · Persetujuan R&D: 5
+    pemberitahuan · Pemberitahuan: 2
+    rujukan-dokumen · Rujukan antar dokumen: 6
+    dua-orang-pembelian · Dua orang: pembelian: 7
+    dua-orang-hutang · Dua orang: tagihan pemasok: 8
+    dua-orang-penjualan · Dua orang: penjualan & retur: 11
+    dua-orang-piutang · Dua orang: piutang: 4
+    dua-orang-gudang · Dua orang: gudang, produksi & R&D: 11
+    dua-orang-sdm · Dua orang: SDM: 8
+    dua-orang-buku · Dua orang: pembukuan: 6
+    dua-orang-admin · Dua orang: pengecualian Admin: 2
+pajak-pembukuan · Pajak, pembukuan & antar-PT — 23 kunci (19 aktif)
+    pajak · Pajak: 5
+    tutup-buku · Mata uang & tutup buku: 5
+    antar-pt · Jual-beli antar-PT: 13
+bank-kasus · Bank & uang yang nyangkut — 26 kunci (23 aktif)
+    bank · Mencocokkan mutasi bank: 14
+    kasus · Kasus keuangan: 12
+sdm · Gaji & SDM — 25 kunci (25 aktif)
+    bpjs · BPJS: 12
+    pph21 · PPh 21: 9
+    lembur · Lembur, komisi & kepegawaian: 4
+rnd · R&D & desain — 27 kunci (25 aktif)
+    boleh-dijual · Kapan produk boleh dijual: 5
+    sample · Sample & pemasok pemenang: 10
+    kode-desain · Kode & nilai desain: 6
+    nilai-desainer · Nilai desainer: 6
+sistem · Sistem, AI & tampilan — 51 kunci (44 aktif)
+    tanya-kn · Tanya KN: arti angka & hak lihat: 12
+    tanya-kn-teknis [lanjutan] · Tanya KN: model & anggaran: 11
+    baca-sj [lanjutan] · Baca surat jalan otomatis: 17
+    rfid-proses [lanjutan] · RFID & proses macet: 5
+    menu · Menu & halaman awal: 6
+
+== Bidang teks yang berubah (jumlah kunci): {'label': 208, 'help': 241, 'impact': 75, 'example': 103, 'unit': 26, 'options': 25} · kunci tersentuh: 293
+
+== Kunci yang teks arti-0-nya ditulis baru (68):
+tax.ppn_rate, ar.denda_rate_pct_per_month, ar.grace_days, sales.sample_payment_tolerance_pct, commission.default_margin_cap_pct, commission.discount_threshold, commission.discount_factor, commission.discount_potong_rp, purchasing.price_deviation_approval_percent, purchasing.receive_tolerance_percent, purchasing.bill_qty_tolerance_percent, purchasing.bill_price_tolerance_percent, inventory.min_cut_qty, inventory.reorder.safety_days, qc.grade_thresholds.a_max, qc.grade_thresholds.b_max, qc.sampling_pct, uom.warn_pct, uom.block_pct, uom.precision, receiving.line_qty_tolerance_pct, receiving.min_photo_short_side_px, receiving.ocr_max_output_tokens, receiving.ocr_image_max_side, receiving.ocr_monthly_budget_usd, receiving.ocr_budget_warn_pct, receiving.label_variance_tolerance_percent, makloon.variance_tolerance_pct, makloon.default_shrinkage_pct, hr.bpjs.kes_rate_employee, hr.bpjs.kes_rate_employer, hr.bpjs.jht_rate_employee, hr.bpjs.jht_rate_employer, hr.bpjs.jp_rate_employee, hr.bpjs.jp_rate_employer, hr.bpjs.jkm_rate_employer, hr.bpjs.kes_ceiling, hr.bpjs.jp_ceiling, cutting.waste_limit_pct, amendment.approval_threshold_amount, amendment.approval_threshold_pct, amendment.require_note_above, payment.default_dp_percent, payment.penalty_min_amount, payment.variance_tolerance_rupiah, payment.variance_ap_tolerance_rupiah, bank.match_weight_amount, bank.match_weight_date, bank.match_weight_ref, bank.match_weight_name, bank.auto_match_min_score, bank.suggest_min_score, bank.date_window_days, bank.amount_tolerance, bank.rule_bonus_score, case.high_amount_threshold, case.require_approval_above, case.auto_bank_charge_max, contra_bon.value_tolerance_rupiah, contra_bon.reminder_days_before, contra_bon.unbilled_gr_age_days, antar_entitas.settlement_reminder_days, ai.monthly_budget_usd, ai.template_cache_minutes, rnd.kpi_weight_on_time, rnd.kpi_weight_acc, rnd.kpi_penalty_rework, rnd.kpi_penalty_overdue

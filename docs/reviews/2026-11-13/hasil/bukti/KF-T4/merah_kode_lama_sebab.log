@@ -1,0 +1,44 @@
+E   FileNotFoundError: [Errno 2] No such file or directory: 'scripts/guardrails/verify_config_text.py'
+<frozen importlib._bootstrap_external>:1130: FileNotFoundError: [Errno 2] No such file or directory: 'scripts/guardrails/verify_config_text.py'
+E   assert 'python scripts/guardrails/verify_config_text.py --self-test' in '#!/usr/bin/env bash\n###############################################################################\n# gate.sh — ORK...; fi\necho -e "${CYAN}${BOLD}==
+backend/tests_mem/test_KFT4_registry.py:51: assert 'python scripts/guardrails/verify_config_text.py --self-test' in '#!/usr/bin/env bash\n###############################################################################\n# gate.sh �
+E   AssertionError: allocation.priority_order
+backend/tests_mem/test_KFT4_registry.py:67: AssertionError: allocation.priority_order
+E   AssertionError: assert ['uang-masuk'...mbelian', ...] == ['penjualan',...ualitas', ...]
+backend/tests_mem/test_KFT4_registry.py:78: AssertionError: assert ['uang-masuk'...mbelian', ...] == ['penjualan',...ualitas', ...]
+E   AssertionError: assert 'antar-entitas' == 'pajak-pembukuan'
+backend/tests_mem/test_KFT4_registry.py:97: AssertionError: assert 'antar-entitas' == 'pajak-pembukuan'
+E   AssertionError: assert ([{'key': 'finance.default_payment_term_code', 'group': 'uang-masuk', 'label': 'Term pembayaran default', 'help': 'Term...rencana pembayaran (DP/cicilan/milestone) supaya jadwal tagihnya jelas. Isi 0 bil
+backend/tests_mem/test_KFT4_registry.py:117: AssertionError: assert ([{'key': 'finance.default_payment_term_code', 'group': 'uang-masuk', 'label': 'Term pembayaran default', 'help': 'Term...rencana pembayaran (DP/cicilan/milestone
+E   AssertionError: {"detail":"Anda belum punya akses untuk melihat pengaturan “sistem”. Minta Admin menambahkan akses 'Pengaturan, Pengguna & Hak Akses'."}
+backend/tests_mem/test_KFT4_registry.py:126: AssertionError: {"detail":"Anda belum punya akses untuk melihat pengaturan “sistem”. Minta Admin menambahkan akses 'Pengaturan, Pengguna & Hak Akses'."}
+E   AssertionError: ('supplier', 'pemasok', {'contra_bon.approval_role', 'contra_bon.approval_threshold_rupiah', 'contra_bon.reminder_days_before', 'contra_bon.unbilled_gr_age_days', 'contra_bon.verify_sla_days', 'docref.autolink_
+backend/tests_mem/test_KFT4_registry.py:147: AssertionError: ('supplier', 'pemasok', {'contra_bon.approval_role', 'contra_bon.approval_threshold_rupiah', 'contra_bon.reminder_days_before', 'contra_bon.unbilled_gr_age_days', 'contr
+E   subprocess.CalledProcessError: Command '['/tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/venv311/bin/python', 'scripts/gen_config_key_index.py', '--print']' returned non-zero exit status 2.
+/usr/lib/python3.11/subprocess.py:571: subprocess.CalledProcessError: Command '['/tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/venv311/bin/python', 'scripts/gen_config_key_index.py', '--print']' r
+E   AssertionError: assert {'settings-cf...trabon'], ...} == {'settings-cf...belian'], ...}
+backend/tests_mem/test_KFT4_registry.py:169: AssertionError: assert {'settings-cf...trabon'], ...} == {'settings-cf...belian'], ...}
+E   AssertionError: {"id":"cfgv_7c44120846b9","key":"tax.ppn_rate","scope_type":"global","scope_id":"","value":12.0,"prev_value":11.0,"prev_source_layer":"global","effective_from":"2026-11-14T05:20:58.592245+00:00","effective_to":
+backend/tests_mem/test_KFT4_pengembalian.py:41: AssertionError: {"id":"cfgv_7c44120846b9","key":"tax.ppn_rate","scope_type":"global","scope_id":"","value":12.0,"prev_value":11.0,"prev_source_layer":"global","effective_from":"2026-
+E   AssertionError: assert 'Kembalikan ke nilai global' == 'Kembali mengikuti nilai grup'
+backend/tests_mem/test_KFT4_pengembalian.py:74: AssertionError: assert 'Kembalikan ke nilai global' == 'Kembali mengikuti nilai grup'
+E   AssertionError: assert 'Kembalikan ke default sistem' == 'Dikembalikan...bawaan sistem'
+backend/tests_mem/test_KFT4_pengembalian.py:87: AssertionError: assert 'Kembalikan ke default sistem' == 'Dikembalikan...bawaan sistem'
+E   AssertionError: {"detail":"Anda belum punya akses untuk melihat pengaturan “pajak-pembukuan”. Minta Admin menambahkan akses 'Pengaturan, Pengguna & Hak Akses'."}
+backend/tests_mem/test_KFT4_pengembalian.py:105: AssertionError: {"detail":"Anda belum punya akses untuk melihat pengaturan “pajak-pembukuan”. Minta Admin menambahkan akses 'Pengaturan, Pengguna & Hak Akses'."}
+E   AssertionError: assert (9 >= 6 and 9 == 2)
+backend/tests_mem/test_KFT4_pengembalian.py:124: AssertionError: assert (9 >= 6 and 9 == 2)
+E   ImportError: cannot import name 'thresholds_from' from 'services.qc_inspection_service' (backend/services/qc_inspection_service.py)
+backend/tests_mem/test_KFT4_simulator_validasi.py:30: ImportError: cannot import name 'thresholds_from' from 'services.qc_inspection_service' (/tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/kft4/he
+E   ImportError: cannot import name 'ppn_breakdown' from 'services.config_service' (backend/services/config_service.py)
+backend/tests_mem/test_KFT4_simulator_validasi.py:45: ImportError: cannot import name 'ppn_breakdown' from 'services.config_service' (/tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/kft4/head_full/b
+E   AttributeError: module 'services.config_service' has no attribute 'ppn_breakdown'
+backend/tests_mem/test_KFT4_simulator_validasi.py:68: AttributeError: module 'services.config_service' has no attribute 'ppn_breakdown'
+E   AssertionError: ([30, 20], '{"saved":[{"id":"cfgv_f37ce7b3d096","key":"ar.aging_buckets","scope_type":"global","scope_id":"","value":[...7+00:00","created_at":"2026-11-14T05:20:59.833092+00:00","applied_at":"2026-11-14T05:20:5
+backend/tests_mem/test_KFT4_simulator_validasi.py:81: AssertionError: ([30, 20], '{"saved":[{"id":"cfgv_f37ce7b3d096","key":"ar.aging_buckets","scope_type":"global","scope_id":"","value":[...7+00:00","created_at":"2026-11-14T05:20
+E   assert "'ar.grace_da...0 (diberi -1)" == "'Masa tengga...kecil 0 hari."
+backend/tests_mem/test_KFT4_simulator_validasi.py:105: assert "'ar.grace_da...0 (diberi -1)" == "'Masa tengga...kecil 0 hari."
+E   Failed: DID NOT RAISE ValueError
+backend/tests_mem/test_KFT4_simulator_validasi.py:114: Failed: DID NOT RAISE ValueError
+E   KeyError: 'ref'
+backend/tests_mem/test_KFT4_simulator_validasi.py:132: KeyError: 'ref'

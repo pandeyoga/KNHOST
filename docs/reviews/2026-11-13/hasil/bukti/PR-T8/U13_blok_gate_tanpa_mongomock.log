@@ -1,0 +1,34 @@
+
+▶ guard:matriks_izin SELF-TEST (bukti-merah penilai M0–M8)
+== SELF-TEST INV-PERM-02 (penilai matriks izin harus bisa MEMERAH) ==
+  [PASS] hasil bersih → hijau  (dapat=[])
+  [PASS] tanpa_token 200 → M0 (+M1 karena kosong juga lolos)  (dapat=['M0', 'M1'])
+  [PASS] kosong 200 → M1  (dapat=['M1'])
+  [PASS] kosong 200 di LOGIN_ONLY → hijau  (dapat=[])
+  [PASS] kosong 200 di menunggu_unit → hijau  (dapat=[])
+  [PASS] penuh 403 → M2  (dapat=['M2'])
+  [PASS] penuh 403 di tolak_bukan_izin → hijau  (dapat=[])
+  [PASS] mgr0 200 → M3 bertanda Sopir  (dapat=['M3'])
+  [PASS] {peran} Kosong 200 → M4  (dapat=['M4'])
+  [PASS] peran bawaan: Sales lolos tanpa izin, Finance ditolak padahal memegang → M5 ×2  (dapat=['M5', 'M5'])
+  [PASS] 422 → M6  (dapat=['M6'])
+  [PASS] 500 → M6  (dapat=['M6'])
+  [PASS] 500 di galat_dikenal → hijau  (dapat=[])
+  [PASS] tolak_bukan_izin untuk rute yang tidak ada → M7  (dapat=['M7'])
+  [PASS] baris harapan tanpa alasan → M7  (dapat=['M7'])
+  [PASS] menunggu_unit yang kini menolak kosong → M7  (dapat=['M7'])
+  [PASS] LOGIN_ONLY tanpa rute → M7  (dapat=['M7'])
+  [PASS] PUBLIC_ALLOWLIST tanpa rute → M7  (dapat=['M7'])
+  [PASS] sesi mati → M8  (dapat=['M8'])
+  [PASS] akun bertambah → M8  (dapat=['M8'])
+  [PASS] rute PUBLIC_ALLOWLIST: 429 bagi {peran} Kosong bukan M4  (dapat=[])
+  [PASS] izin rantai 'salah satu dari': Sales memegang pasangan pertama → bukan M5  (dapat=[])
+  [PASS] izin dari teks lama  (dapat=[['order.view', 'customer.view'], ['accounting.view'], ['c.d'], ['hr.view', 'rnd.view'], None])
+  HIJAU — penilai terbukti memerah untuk M0–M8.
+  ✓ guard:matriks_izin SELF-TEST (bukti-merah penilai M0–M8) PASS (0s)
+
+▶ guard:matriks_izin (INV-PERM-02, peran × endpoint) — SKIP (mongomock-motor belum terpasang (backend/tests_mem/requirements.txt))
+== hasil harness ==
+guard:matriks_izin SELF-TEST (bukti-merah penilai M0–M8) :: PASS (0s)
+guard:matriks_izin (INV-PERM-02, peran × endpoint) :: SKIP
+OVERALL=0

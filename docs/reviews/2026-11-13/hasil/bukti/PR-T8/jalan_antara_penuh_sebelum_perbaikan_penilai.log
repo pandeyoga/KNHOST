@@ -1,0 +1,104 @@
+Sat Nov 14 05:19:41 UTC 2026
+== INV-PERM-02 — matriks izin berjalan (peran × endpoint) ==
+mode penuh · awalan /api/ · 1773 rute (800 GET) · 37795 permintaan · 349.6 dtk
+  akun             peran                       ditolak  lolos   422  galat    dtk
+  tanpa_token      —                              1765      8     0      0    8.2
+  kosong           Tanpa Acuan Kosong             1691     81     0      1   14.8
+  sopir            Sopir                          1674     98     0      1   15.6
+  mgr0             Manajer Kosong                 1691     81     0      1   14.3
+  sales_admin0     Admin Sales Kosong             1691     81     0      1   13.6
+  finance0         Finance Kosong                 1690     82     0      1   13.6
+  sales0           Sales Kosong                   1690     82     0      1   14.6
+  warehouse0       Gudang Kosong                  1690     82     0      1   15.6
+  designer0        Desainer Kosong                1690     82     0      1   14.8
+  driver0          Sopir Kosong                   1690     82     0      1   15.3
+  md0              MD Kosong                      1690     82     0      1   15.3
+  warehouse_admin0 Admin Gudang Kosong            1690     82     0      1   15.1
+  sample_admin0    Admin Sample Kosong            1690     82     0      1   14.3
+  md_quality0      MD Quality Kosong              1690     82     0      1   15.1
+  qc0              QC Kosong                      1690     82     0      1   15.5
+  penuh            Tanpa Acuan Penuh                13    787     0      0   13.5
+  admin            Admin                            13    787     0      0   12.3
+  manager          Manajer                          40    760     0      0   13.2
+  sales_admin      Admin Sales                     299    501     0      0    7.9
+  finance          Finance                         404    396     0      0    7.5
+  sales            Sales                           434    366     0      0    7.4
+  warehouse        Gudang                          363    437     0      0    7.3
+  designer         Desainer                        660    140     0      0    7.1
+  driver           Sopir                           740     60     0      0    6.8
+  md               MD                              435    365     0      0    7.1
+  warehouse_admin  Admin Gudang                    343    457     0      0    6.9
+  sample_admin     Admin Sample                    516    284     0      0    7.0
+  md_quality       MD Quality                      605    195     0      0    6.2
+  qc               QC                              622    178     0      0    7.1
+  sesi akhir GET /api/auth/me: kosong 200 · sopir 200 · mgr0 200 · sales_admin0 200 · finance0 200 · sales0 200 · warehouse0 200 · designer0 200 · driver0 200 · md0 200 · warehouse_admin0 200 · sample_admin0 200 · md_quality0 200 · qc0 200 · penuh 200 · admin 200 · manager 200 · sales_admin 200 · finance 200 · sales 200 · warehouse 200 · designer 200 · driver 200 · md 200 · warehouse_admin 200 · sample_admin 200 · md_quality 200 · qc 200
+  jumlah dokumen: users 4 seed + 28 sapuan = 32 (terhitung 32) · custom_roles 0 seed + 14 sapuan = 14 (terhitung 14)
+  pelanggaran: 62 (M0 6, M1 14, M4 10, M5 32)
+  M0 POST   /api/ap-payments/{intent_id}/cancel                          tanpa_token   404  'Pembayaran tidak ditemukan'
+  M1 POST   /api/ap-payments/{intent_id}/cancel                          kosong        404  'Pembayaran tidak ditemukan'
+  M0 POST   /api/ap-payments/{intent_id}/resume                          tanpa_token   404  'Pembayaran tidak ditemukan'
+  M1 POST   /api/ap-payments/{intent_id}/resume                          kosong        404  'Pembayaran tidak ditemukan'
+  M1 GET    /api/approval-policies/can-decide/me                         kosong        400  'Jenis dokumen tidak dikenal.'
+  M4 POST   /api/auth/login                                              finance0      429  'Terlalu banyak percobaan login gagal. Coba lagi dalam 15 menit.'
+  M4 POST   /api/auth/login                                              sales0        429  'Terlalu banyak percobaan login gagal. Coba lagi dalam 15 menit.'
+  M4 POST   /api/auth/login                                              warehouse0    429  'Terlalu banyak percobaan login gagal. Coba lagi dalam 15 menit.'
+  M4 POST   /api/auth/login                                              designer0     429  'Terlalu banyak percobaan login gagal. Coba lagi dalam 15 menit.'
+  M4 POST   /api/auth/login                                              driver0       429  'Terlalu banyak percobaan login gagal. Coba lagi dalam 14 menit.'
+  M4 POST   /api/auth/login                                              md0           429  'Terlalu banyak percobaan login gagal. Coba lagi dalam 14 menit.'
+  M4 POST   /api/auth/login                                              warehouse_admin0  429  'Terlalu banyak percobaan login gagal. Coba lagi dalam 14 menit.'
+  M4 POST   /api/auth/login                                              sample_admin0  429  'Terlalu banyak percobaan login gagal. Coba lagi dalam 14 menit.'
+  M4 POST   /api/auth/login                                              md_quality0   429  'Terlalu banyak percobaan login gagal. Coba lagi dalam 13 menit.'
+  M4 POST   /api/auth/login                                              qc0           429  'Terlalu banyak percobaan login gagal. Coba lagi dalam 13 menit.'
+  M1 POST   /api/config/values/cancel-scheduled                          kosong        404  'Jadwal perubahan tidak ditemukan.'
+  M1 GET    /api/dashboard                                               kosong        200  ''
+  M5 GET    /api/design-gallery                                          sales_admin   200  ''  [lolos tanpa memegang hr.view]
+  M5 GET    /api/design-gallery                                          sales         200  ''  [lolos tanpa memegang hr.view]
+  M5 GET    /api/design-gallery                                          warehouse     200  ''  [lolos tanpa memegang hr.view]
+  M5 GET    /api/design-gallery                                          designer      200  ''  [lolos tanpa memegang hr.view]
+  M5 GET    /api/design-gallery                                          md            200  ''  [lolos tanpa memegang hr.view]
+  M5 GET    /api/design-gallery                                          warehouse_admin  200  ''  [lolos tanpa memegang hr.view]
+  M5 GET    /api/design-gallery                                          md_quality    200  ''  [lolos tanpa memegang hr.view]
+  M5 GET    /api/design-gallery                                          qc            200  ''  [lolos tanpa memegang hr.view]
+  M5 GET    /api/design-gallery-ai/status                                sales_admin   200  ''  [lolos tanpa memegang hr.view]
+  M5 GET    /api/design-gallery-ai/status                                sales         200  ''  [lolos tanpa memegang hr.view]
+  M5 GET    /api/design-gallery-ai/status                                warehouse     200  ''  [lolos tanpa memegang hr.view]
+  M5 GET    /api/design-gallery-ai/status                                designer      200  ''  [lolos tanpa memegang hr.view]
+  M5 GET    /api/design-gallery-ai/status                                md            200  ''  [lolos tanpa memegang hr.view]
+  M5 GET    /api/design-gallery-ai/status                                warehouse_admin  200  ''  [lolos tanpa memegang hr.view]
+  M5 GET    /api/design-gallery-ai/status                                md_quality    200  ''  [lolos tanpa memegang hr.view]
+  M5 GET    /api/design-gallery-ai/status                                qc            200  ''  [lolos tanpa memegang hr.view]
+  M5 GET    /api/design-gallery/{gallery_id}                             sales_admin   404  'Entri galeri tidak ditemukan.'  [lolos tanpa memegang hr.view]
+  M5 GET    /api/design-gallery/{gallery_id}                             sales         404  'Entri galeri tidak ditemukan.'  [lolos tanpa memegang hr.view]
+  M5 GET    /api/design-gallery/{gallery_id}                             warehouse     404  'Entri galeri tidak ditemukan.'  [lolos tanpa memegang hr.view]
+  M5 GET    /api/design-gallery/{gallery_id}                             designer      404  'Entri galeri tidak ditemukan.'  [lolos tanpa memegang hr.view]
+  M5 GET    /api/design-gallery/{gallery_id}                             md            404  'Entri galeri tidak ditemukan.'  [lolos tanpa memegang hr.view]
+  M5 GET    /api/design-gallery/{gallery_id}                             warehouse_admin  404  'Entri galeri tidak ditemukan.'  [lolos tanpa memegang hr.view]
+  M5 GET    /api/design-gallery/{gallery_id}                             md_quality    404  'Entri galeri tidak ditemukan.'  [lolos tanpa memegang hr.view]
+  M5 GET    /api/design-gallery/{gallery_id}                             qc            404  'Entri galeri tidak ditemukan.'  [lolos tanpa memegang hr.view]
+  M5 GET    /api/design-gallery/{gallery_id}/files/{file_id}             sales_admin   404  'Entri galeri tidak ditemukan.'  [lolos tanpa memegang hr.view]
+  M5 GET    /api/design-gallery/{gallery_id}/files/{file_id}             sales         404  'Entri galeri tidak ditemukan.'  [lolos tanpa memegang hr.view]
+  M5 GET    /api/design-gallery/{gallery_id}/files/{file_id}             warehouse     404  'Entri galeri tidak ditemukan.'  [lolos tanpa memegang hr.view]
+  M5 GET    /api/design-gallery/{gallery_id}/files/{file_id}             designer      404  'Entri galeri tidak ditemukan.'  [lolos tanpa memegang hr.view]
+  M5 GET    /api/design-gallery/{gallery_id}/files/{file_id}             md            404  'Entri galeri tidak ditemukan.'  [lolos tanpa memegang hr.view]
+  M5 GET    /api/design-gallery/{gallery_id}/files/{file_id}             warehouse_admin  404  'Entri galeri tidak ditemukan.'  [lolos tanpa memegang hr.view]
+  M5 GET    /api/design-gallery/{gallery_id}/files/{file_id}             md_quality    404  'Entri galeri tidak ditemukan.'  [lolos tanpa memegang hr.view]
+  M5 GET    /api/design-gallery/{gallery_id}/files/{file_id}             qc            404  'Entri galeri tidak ditemukan.'  [lolos tanpa memegang hr.view]
+  M1 POST   /api/hr/leave-requests/{leave_id}/cancel                     kosong        404  'Pengajuan cuti tidak ditemukan.'
+  M1 GET    /api/hr/payslips/{slip_id}                                   kosong        404  'Slip gaji tidak ditemukan.'
+  M1 GET    /api/hr/payslips/{slip_id}/pdf                               kosong        404  'Slip gaji tidak ditemukan.'
+  M1 GET    /api/interco/prices/access                                   kosong        200  ''
+  M0 POST   /api/registration/sessions/{sid}/approve                     tanpa_token   404  'Sesi pendaftaran tidak ditemukan'
+  M1 POST   /api/registration/sessions/{sid}/approve                     kosong        404  'Sesi pendaftaran tidak ditemukan'
+  M0 DELETE /api/registration/sessions/{sid}/lines/{line_id}             tanpa_token   404  'Sesi pendaftaran tidak ditemukan'
+  M1 DELETE /api/registration/sessions/{sid}/lines/{line_id}             kosong        404  'Sesi pendaftaran tidak ditemukan'
+  M0 PATCH  /api/registration/sessions/{sid}/lines/{line_id}             tanpa_token   404  'Sesi pendaftaran tidak ditemukan'
+  M1 PATCH  /api/registration/sessions/{sid}/lines/{line_id}             kosong        404  'Sesi pendaftaran tidak ditemukan'
+  M0 POST   /api/registration/sessions/{sid}/return                      tanpa_token   404  'Sesi pendaftaran tidak ditemukan'
+  M1 POST   /api/registration/sessions/{sid}/return                      kosong        404  'Sesi pendaftaran tidak ditemukan'
+  M1 POST   /api/special-orders/{order_id}/fulfillment/{item_key}/cancel kosong        404  'Special order tidak ditemukan'
+MERAH — 62 pelanggaran (arti kode: lihat docstring).
+
+real	5m57.439s
+user	5m50.332s
+sys	0m2.862s
+Sat Nov 14 05:25:39 UTC 2026

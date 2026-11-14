@@ -1,0 +1,5 @@
+# tests_mem pada kode 69cc4e3 (git archive), dijalankan ulang 14 Nov sesudah repo utama (/app) memuat PR-T5
+E        +    where {('GET', '/api/auth/me'): 'sesi', ('GET', '/api/auth/context'): 'sesi', ('GET', '/api/push/public-key'): 'sesi', ('GET', '/api/roles'): 'rujukan', ...} = <module 'login_only_endpoints' from '/app/backend/login_only_endpoints.py'>.LOGIN_ONLY
+FAILED tests_mem/test_PRT3_login_saja.py::test_PRT3_U13_daftar_login_only_menunjuk_rute
+1 failed, 493 passed, 2 skipped, 3 xfailed, 9 warnings in 184.21s (0:03:04)
+done

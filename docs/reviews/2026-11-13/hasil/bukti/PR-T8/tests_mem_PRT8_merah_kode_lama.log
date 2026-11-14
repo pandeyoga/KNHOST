@@ -1,0 +1,22 @@
+
+==================================== ERRORS ====================================
+_____________ ERROR collecting tests_mem/test_PRT8_sapuan_izin.py ______________
+ImportError while importing test module '<scratchpad>/head_tree/backend/tests_mem/test_PRT8_sapuan_izin.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+/usr/lib/python3.11/importlib/__init__.py:126: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests_mem/test_PRT8_sapuan_izin.py:21: in <module>
+    import sapuan_izin as si
+E   ModuleNotFoundError: No module named 'sapuan_izin'
+=============================== warnings summary ===============================
+../../../venv311/lib/python3.11/site-packages/starlette/formparsers.py:12
+  <venv311>/lib/python3.11/site-packages/starlette/formparsers.py:12: PendingDeprecationWarning: Please use `import python_multipart` instead.
+    import multipart
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+ERROR tests_mem/test_PRT8_sapuan_izin.py
+!!!!!!!!!!!!!!!!!!!! Interrupted: 1 error during collection !!!!!!!!!!!!!!!!!!!!
+1 warning, 1 error in 0.14s

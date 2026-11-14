@@ -1,0 +1,78 @@
+== INV-PERM-02 — matriks izin berjalan (peran × endpoint) ==
+mode cepat · awalan /api/ · 1773 rute (800 GET) · 7892 permintaan · 67.4 dtk
+  akun             peran                       ditolak  lolos   422  galat    dtk
+  tanpa_token      —                              1755     18     0      0    7.3
+  kosong           Tanpa Acuan Kosong             1675     97     0      1   13.6
+  sopir            Sopir                          1658    114     0      1   15.3
+  mgr0             Manajer Kosong                 1675     97     0      1   14.6
+  penuh            Tanpa Acuan Penuh                12    788     0      0   13.5
+  sesi akhir GET /api/auth/me: kosong 200 · sopir 200 · mgr0 200 · penuh 200
+  jumlah dokumen: users 4 seed + 4 sapuan = 8 (terhitung 8) · custom_roles 0 seed + 3 sapuan = 3 (terhitung 3)
+  pelanggaran: 62 (M0 17, M1 43, M2 1, M6 1)
+  M0 GET    /api/                                                        tanpa_token   200  ''
+  M1 GET    /api/                                                        kosong        200  ''
+  M0 GET    /api/ai/export.xlsx                                          tanpa_token   400  'Tidak ada hasil untuk diunduh'
+  M1 GET    /api/ai/export.xlsx                                          kosong        400  'Tidak ada hasil untuk diunduh'
+  M0 GET    /api/ap-payments/accounts                                    tanpa_token   400  'Jenis dokumen harus vendor_bill atau contra_bon.'
+  M1 GET    /api/ap-payments/accounts                                    kosong        400  'Jenis dokumen harus vendor_bill atau contra_bon.'
+  M0 GET    /api/ap-payments/pending                                     tanpa_token   400  'Jenis dokumen harus vendor_bill atau contra_bon.'
+  M1 GET    /api/ap-payments/pending                                     kosong        400  'Jenis dokumen harus vendor_bill atau contra_bon.'
+  M0 POST   /api/ap-payments/{intent_id}/cancel                          tanpa_token   404  'Pembayaran tidak ditemukan'
+  M1 POST   /api/ap-payments/{intent_id}/cancel                          kosong        404  'Pembayaran tidak ditemukan'
+  M0 POST   /api/ap-payments/{intent_id}/resume                          tanpa_token   404  'Pembayaran tidak ditemukan'
+  M1 POST   /api/ap-payments/{intent_id}/resume                          kosong        404  'Pembayaran tidak ditemukan'
+  M1 GET    /api/approval-policies/can-decide/me                         kosong        400  'Jenis dokumen tidak dikenal.'
+  M1 GET    /api/config/explain                                          kosong        404  "Setting 'uji' tidak ada di registry"
+  M1 GET    /api/config/layers                                           kosong        404  'Pengaturan tidak ditemukan.'
+  M1 POST   /api/config/simulate                                         kosong        404  'Sebutkan `simulator` atau `key` yang sah'
+  M1 PUT    /api/config/values                                           kosong        400  'Tidak ada perubahan yang dikirim'
+  M1 POST   /api/config/values/cancel-scheduled                          kosong        404  'Jadwal perubahan tidak ditemukan.'
+  M1 POST   /api/config/values/clear                                     kosong        404  "Setting 'uji' tidak ada di registry"
+  M1 POST   /api/config/values/reset                                     kosong        404  "Setting 'uji' tidak ada di registry"
+  M0 POST   /api/customers/{customer_id}/merge                           tanpa_token   400  'Alasan penggabungan wajib (min. 5 karakter).'
+  M1 POST   /api/customers/{customer_id}/merge                           kosong        400  'Alasan penggabungan wajib (min. 5 karakter).'
+  M1 GET    /api/dashboard                                               kosong        200  ''
+  M1 GET    /api/desks/me                                                kosong        404  'Peran Anda belum punya meja kerja. Buka menu yang tersedia di samping.'
+  M0 GET    /api/documents/relations/{doc_type}/{doc_id}                 tanpa_token   400  'doc_type tidak didukung (sales_order|purchase_order)'
+  M1 GET    /api/documents/relations/{doc_type}/{doc_id}                 kosong        400  'doc_type tidak didukung (sales_order|purchase_order)'
+  M2 GET    /api/gl/inventory-drift-explain                              penuh         403  'Tidak berwenang atas entitas ini'  [izin: —]
+  M0 POST   /api/handheld/batches                                        tanpa_token   404  '{"code": "KIND_UNKNOWN", "message": "Jenis tugas \'uji\' tidak dikenal.", "retryab'
+  M1 POST   /api/handheld/batches                                        kosong        404  '{"code": "KIND_UNKNOWN", "message": "Jenis tugas \'uji\' tidak dikenal.", "retryab'
+  M0 GET    /api/handheld/tasks                                          tanpa_token   404  '{"code": "KIND_UNKNOWN", "message": "Jenis tugas \'uji\' tidak dikenal.", "retryab'
+  M1 GET    /api/handheld/tasks                                          kosong        404  '{"code": "KIND_UNKNOWN", "message": "Jenis tugas \'uji\' tidak dikenal.", "retryab'
+  M0 POST   /api/handheld/tasks/{kind}/{doc_id}/complete                 tanpa_token   404  '{"code": "KIND_UNKNOWN", "message": "Jenis tugas \'x\' tidak dikenal.", "retryable'
+  M1 POST   /api/handheld/tasks/{kind}/{doc_id}/complete                 kosong        404  '{"code": "KIND_UNKNOWN", "message": "Jenis tugas \'x\' tidak dikenal.", "retryable'
+  M0 GET    /api/handheld/tasks/{kind}/{doc_id}/expected                 tanpa_token   404  '{"code": "KIND_UNKNOWN", "message": "Jenis tugas \'x\' tidak dikenal.", "retryable'
+  M1 GET    /api/handheld/tasks/{kind}/{doc_id}/expected                 kosong        404  '{"code": "KIND_UNKNOWN", "message": "Jenis tugas \'x\' tidak dikenal.", "retryable'
+  M1 GET    /api/home/sales                                              kosong        200  ''
+  M1 GET    /api/home/warehouse                                          kosong        200  ''
+  M1 POST   /api/hr/leave-requests/{leave_id}/cancel                     kosong        404  'Pengajuan cuti tidak ditemukan.'
+  M1 GET    /api/hr/payslips/{slip_id}                                   kosong        404  'Slip gaji tidak ditemukan.'
+  M1 GET    /api/hr/payslips/{slip_id}/pdf                               kosong        404  'Slip gaji tidak ditemukan.'
+  M1 GET    /api/interco/prices/access                                   kosong        200  ''
+  M1 POST   /api/landed-costs/{voucher_id}/approve                       kosong        404  'Landed Cost Voucher tidak ditemukan'
+  M1 POST   /api/landed-costs/{voucher_id}/reject                        kosong        404  'Landed Cost Voucher tidak ditemukan'
+  M1 POST   /api/purchase-orders/{po_id}/approve                         kosong        404  'Purchase Order tidak ditemukan'
+  M1 POST   /api/purchase-orders/{po_id}/reject                          kosong        404  'Purchase Order tidak ditemukan'
+  M6 POST   /api/push/subscribe                                          kosong        503  'Notifikasi push belum dikonfigurasi di server.'  [galat (juga 2 akun lain)]
+  M0 POST   /api/registration/sessions/{sid}/approve                     tanpa_token   404  'Sesi pendaftaran tidak ditemukan'
+  M1 POST   /api/registration/sessions/{sid}/approve                     kosong        404  'Sesi pendaftaran tidak ditemukan'
+  M0 DELETE /api/registration/sessions/{sid}/lines/{line_id}             tanpa_token   404  'Sesi pendaftaran tidak ditemukan'
+  M1 DELETE /api/registration/sessions/{sid}/lines/{line_id}             kosong        404  'Sesi pendaftaran tidak ditemukan'
+  M0 PATCH  /api/registration/sessions/{sid}/lines/{line_id}             tanpa_token   404  'Sesi pendaftaran tidak ditemukan'
+  M1 PATCH  /api/registration/sessions/{sid}/lines/{line_id}             kosong        404  'Sesi pendaftaran tidak ditemukan'
+  M0 POST   /api/registration/sessions/{sid}/return                      tanpa_token   404  'Sesi pendaftaran tidak ditemukan'
+  M1 POST   /api/registration/sessions/{sid}/return                      kosong        404  'Sesi pendaftaran tidak ditemukan'
+  M0 POST   /api/rfid/v2/passages/{passage_id}/acknowledge               tanpa_token   400  '{"code": "INVALID_JSON", "message": "JSON tidak valid.", "retryable": false}'
+  M1 POST   /api/rfid/v2/passages/{passage_id}/acknowledge               kosong        400  '{"code": "INVALID_JSON", "message": "JSON tidak valid.", "retryable": false}'
+  M1 GET    /api/settings/compute-tax                                    kosong        200  ''
+  M1 GET    /api/settings/effective                                      kosong        200  ''
+  M1 GET    /api/settings/evaluate-approval                              kosong        200  ''
+  M1 POST   /api/special-orders/{order_id}/fulfillment/{item_key}/cancel kosong        404  'Special order tidak ditemukan'
+  M1 POST   /api/vendor-bills/{bill_id}/approve                          kosong        404  'Vendor Bill tidak ditemukan'
+  M1 POST   /api/vendor-bills/{bill_id}/reject                           kosong        404  'Vendor Bill tidak ditemukan'
+MERAH — 62 pelanggaran (arti kode: lihat docstring).
+
+real	1m14.395s
+user	1m11.469s
+sys	0m0.930s
