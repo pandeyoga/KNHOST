@@ -1,5 +1,5 @@
 <!-- DIHASILKAN OTOMATIS oleh scripts/gen_codebase_map.py — JANGAN EDIT TANGAN -->
-<!-- Dihasilkan dari commit: 550c400 pada 2026-11-14 -->
+<!-- Dihasilkan dari commit: 4ffc907 pada 2026-11-14 -->
 # CODEBASE MAP — Kain Nusantara (dihasilkan otomatis)
 
 Peta ini dihitung dari kode oleh `scripts/gen_codebase_map.py`. Kalau angka di sini
@@ -719,7 +719,7 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 | `desks` | 2 | 229 |
 | `documents` | 18 | 2580 |
 | `export` | 9 | 700 |
-| `finance` | 100 | 22721 |
+| `finance` | 100 | 22732 |
 | `home` | 5 | 1136 |
 | `hr` | 33 | 5403 |
 | `inspections` | 12 | 2181 |
@@ -779,5 +779,5 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 | `frontend/src/features/settings/entities/EntityDetailDrawer.jsx` | 518 | 500 |
 | `frontend/src/features/finance/interco/IntercoView.jsx` | 515 | 500 |
 | `frontend/src/features/settings/entities/RoleRealityPanel.jsx` | 511 | 500 |
-| `frontend/src/features/wms/warehouses/WarehouseMasterView.jsx` | 502 | 500 |
 | `frontend/src/features/purchasing/contrabon/ContraBonCreateWizard.jsx` | 502 | 500 |
+| `frontend/src/features/wms/warehouses/WarehouseMasterView.jsx` | 502 | 500 |
