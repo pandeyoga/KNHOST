@@ -1,5 +1,5 @@
 <!-- DIHASILKAN OTOMATIS oleh scripts/gen_codebase_map.py — JANGAN EDIT TANGAN -->
-<!-- Dihasilkan dari commit: 6d22f0c pada 2026-11-14 -->
+<!-- Dihasilkan dari commit: 5746b0a pada 2026-11-14 -->
 # CODEBASE MAP — Kain Nusantara (dihasilkan otomatis)
 
 Peta ini dihitung dari kode oleh `scripts/gen_codebase_map.py`. Kalau angka di sini
@@ -31,7 +31,7 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 | `permissions_config.py` | 904 |
 | `entity_scope.py` | 745 |
 | `pagination.py` | 145 |
-| `indexes.py` | 928 |
+| `indexes.py` | 934 |
 | `bootstrap.py` | 2157 |
 | `login_only_endpoints.py` | 81 |
 
@@ -346,7 +346,7 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 | `cash_advance_service.py` | 697 | Service — Cash Advance (Form PD) + Pertanggungjawaban (Settlement) + Expense Categories. |
 | `cash_entity_service.py` | 98 | FASE E-7 (E7.4 · keputusan pemilik 3a) — **KAS TINGKAT GRUP DIHAPUS**. |
 | `cash_flow_service.py` | 154 | FINANCE — Laporan Arus Kas (Cash Flow Statement). FN-04: klasifikasi per jurnal kas |
-| `cash_ledger.py` | 73 | R5.3 — Cash ledger helper untuk refund retur (sales & purchase). |
+| `cash_ledger.py` | 306 | PK-20 (SL-11, `02_STANDAR.md` §1 P5) — SATU pembuat transaksi kas (`cash_transactions`). |
 | `cashflow_forecast_service.py` | 136 | FINANCE — Proyeksi Arus Kas (Cash Flow Forecast) (EPIC P1-3). |
 | `catalog_access.py` | 53 | Pagar bersama template, SKU, media dan relasi R&D. Produk tetap SHARED. |
 | `catalog_rules.py` | 102 | Kontrak murni induk/axis/SKU; digunakan R&D, generator, editor dan impor. |

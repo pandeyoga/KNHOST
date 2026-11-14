@@ -297,6 +297,10 @@ STATIK=(
   # `baselines/posting_coverage.json` hanya boleh turun; unit pemilik menghapus barisnya.
   "guard:posting_coverage SELF-TEST (bukti-merah dua arah, 13 kasus)|python scripts/guardrails/verify_posting_coverage.py --self-test"
   "guard:posting_coverage (INV-POST-01, jurnal dokumen lewat pintu tahan-gagal)|python scripts/guardrails/verify_posting_coverage.py"
+  # PK-20 (SL-11) — INV-CASH-01. Kas hanya lahir dari `services/cash_ledger.create_cash` (rekening wajib, id tetap,
+  # jurnal tahan-gagal); sisipan `cash_transactions`, pintu jurnal kas lama, dan salinan pemberi nomor kas = MERAH.
+  "guard:cash_single_door SELF-TEST (bukti-merah dua arah, 15 kasus)|python scripts/guardrails/verify_cash_single_door.py --self-test"
+  "guard:cash_single_door (INV-CASH-01, kas lewat satu pembuat)|python scripts/guardrails/verify_cash_single_door.py"
   # FASE P5 — baseline UX (loading/empty/chart) akhirnya jadi GATE. Sebelum ini
   # `ux_audit.py` hanya dijalankan manual, tak punya `--self-test`, dan angkanya tak
   # pernah dibuktikan: dari 22 "ERROR" yang dilaporkannya, 17 ternyata TUDUHAN PALSU

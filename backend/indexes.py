@@ -395,6 +395,10 @@ INDEX_SPECS: Dict[str, List[IndexKeys]] = {
     "ai_action_proposals": [
         [("user_id", A), ("status", A), ("created_at", D)],
     ],
+    # PK-20 — kas dicari per rujukan dokumen induknya (`cash_ledger.create_cash`); id kas tetap dijaga `uq_id`.
+    "cash_transactions": [
+        [("ref_type", A), ("ref_id", A), ("direction", A)],
+    ],
 }
 
 
@@ -457,6 +461,8 @@ ID_INDEX_COLLECTIONS: List[str] = [
     "ai_action_proposals",
     # PM-T2 — kode bayar (`pyc_…`).
     "payment_codes",
+    # PK-20 — id kas turunan rujukan (`cash_` + SHA-1 `ref_type|ref_id|direction|seq`): upsert bersamaan = satu kas.
+    "cash_transactions",
 ]
 
 # FIX-5 — rujukan bersarang roll yang dicari per nilai (B3a SCH-9: index `reserved_ref` utuh tidak terpakai oleh

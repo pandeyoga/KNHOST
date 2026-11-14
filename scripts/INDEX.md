@@ -99,6 +99,7 @@ Hasil selalu ditulis ke `memory/GATE_RECEIPT.md`. **Klaim “selesai” tanpa re
 | `guardrails/verify_blocking_dialogs.py` | ~250 | INV-UI-06 | `alert`/`confirm`/`prompt` bawaan peramban dilarang + `<ConfirmHost/>` wajib ter-mount (self-test 17 kasus, termasuk anti tuduh-palsu) |
 | `guardrails/verify_error_notice.py` | ~180 | **INV-UI-03** | `<ErrorNotice>` wajib prop `message`; modal penulis API wajib punya bilah error sendiri |
 | `guardrails/verify_posting_coverage.py` | ~345 | **INV-POST-01** | **BARU (PK-18)** — jurnal dokumen lewat pintu tahan-gagal `gl_service.post_durable` dan jenisnya terdaftar di `services/posting_registry.py` (panel Posting Gagal). Statik (`ast`): fungsi `post_*`/`reverse_*` tanpa jenis, pemanggilan telanjang, `_insert_entry` dari luar `gl_service`, koleksi/`retry` registri. Ratchet ber-pemilik `baselines/posting_coverage.json`; `--self-test` 13 kasus dua arah; `--lapor` |
+| `guardrails/verify_cash_single_door.py` | ~240 | **INV-CASH-01** | **BARU (PK-20)** — kas hanya lahir dari `services/cash_ledger.create_cash`. Statik (`ast`): sisipan/upsert `cash_transactions` di luar pembuat, pintu jurnal kas lama `post_cash_transaction`, `post_cash_durable` di luar pembuat/registri, salinan `_next_cash_number`. Garis dasar opsional `baselines/cash_single_door.json` (hanya serah-terima (a)); `--self-test` 15 kasus dua arah; `--lapor` |
 | `guardrails/_common.py` | ~190 | — | `Guard`, **`DbSnapshot`**, **`run_with_restore`** |
 
 ### 4.2 Alat ad-hoc (TIDAK di gate — jalankan bila perlu)

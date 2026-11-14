@@ -1,0 +1,243 @@
+{
+ "_catatan": "PK-20 serah-terima (a) — garis dasar INV-CASH-01 (scripts/guardrails/verify_cash_single_door.py): tempat yang membuat kas atau memanggil pintu jurnal kas di luar `cash_ledger.create_cash`, baris 1–17 tabel \"Keadaan sekarang\" unit PK-20. Hanya boleh turun; serah-terima (b) mengosongkannya dan menghapus berkas ini.",
+ "baris": [
+  {
+   "lokasi": "routers/cash.py:_next_cash_number",
+   "aturan": 4,
+   "jumlah": 1,
+   "baris": "—",
+   "alasan": "salinan pemberi nomor kas (empat salinan `_next_cash_number`)"
+  },
+  {
+   "lokasi": "routers/cash.py:create_cash_transaction",
+   "aturan": 1,
+   "jumlah": 1,
+   "baris": "13",
+   "alasan": "kas manual"
+  },
+  {
+   "lokasi": "routers/cash.py:create_cash_transaction",
+   "aturan": 3,
+   "jumlah": 1,
+   "baris": "13",
+   "alasan": "kas manual"
+  },
+  {
+   "lokasi": "routers/cash.py:void_cash_transaction",
+   "aturan": 2,
+   "jumlah": 1,
+   "baris": "14",
+   "alasan": "batal kas manual: memastikan jurnal asal ada"
+  },
+  {
+   "lokasi": "routers/invoices.py:simulate_payment",
+   "aturan": 1,
+   "jumlah": 1,
+   "baris": "15",
+   "alasan": "simulasi bayar (dimatikan PK-19)"
+  },
+  {
+   "lokasi": "routers/invoices.py:simulate_payment",
+   "aturan": 2,
+   "jumlah": 1,
+   "baris": "15",
+   "alasan": "simulasi bayar (dimatikan PK-19)"
+  },
+  {
+   "lokasi": "routers/landed_cost.py:pay_landed_cost",
+   "aturan": 1,
+   "jumlah": 1,
+   "baris": "12",
+   "alasan": "bayar landed cost"
+  },
+  {
+   "lokasi": "routers/landed_cost.py:pay_landed_cost",
+   "aturan": 2,
+   "jumlah": 1,
+   "baris": "12",
+   "alasan": "bayar landed cost"
+  },
+  {
+   "lokasi": "routers/vendor_bills.py:void_vendor_bill_payment",
+   "aturan": 2,
+   "jumlah": 1,
+   "baris": "11",
+   "alasan": "batal bayar faktur: memastikan jurnal asal ada"
+  },
+  {
+   "lokasi": "services/ap_payment_service.py:_insert_cash",
+   "aturan": 1,
+   "jumlah": 1,
+   "baris": "9, 10",
+   "alasan": "langkah sisip kas niat bayar hutang (PK-05)"
+  },
+  {
+   "lokasi": "services/ap_payment_service.py:_post_journals",
+   "aturan": 3,
+   "jumlah": 1,
+   "baris": "9, 10",
+   "alasan": "jurnal kas niat bayar hutang (PK-05)"
+  },
+  {
+   "lokasi": "services/ar_receipt_service.py:_post_cash_in",
+   "aturan": 1,
+   "jumlah": 1,
+   "baris": "1",
+   "alasan": "kwitansi piutang"
+  },
+  {
+   "lokasi": "services/ar_receipt_service.py:_post_cash_in",
+   "aturan": 3,
+   "jumlah": 1,
+   "baris": "1",
+   "alasan": "kwitansi piutang"
+  },
+  {
+   "lokasi": "services/ar_receipt_service.py:repost_receipt",
+   "aturan": 3,
+   "jumlah": 1,
+   "baris": "19",
+   "alasan": "ulang jurnal kwitansi"
+  },
+  {
+   "lokasi": "services/bank_recon_service.py:book_charge",
+   "aturan": 1,
+   "jumlah": 1,
+   "baris": "7",
+   "alasan": "biaya/bunga bank"
+  },
+  {
+   "lokasi": "services/bank_recon_service.py:book_charge",
+   "aturan": 3,
+   "jumlah": 1,
+   "baris": "7",
+   "alasan": "biaya/bunga bank"
+  },
+  {
+   "lokasi": "services/bank_recon_service.py:to_holding",
+   "aturan": 1,
+   "jumlah": 1,
+   "baris": "8",
+   "alasan": "titipan dana bank"
+  },
+  {
+   "lokasi": "services/bank_recon_service.py:to_holding",
+   "aturan": 2,
+   "jumlah": 1,
+   "baris": "8",
+   "alasan": "titipan dana bank"
+  },
+  {
+   "lokasi": "services/cash_advance_service.py:_disburse_locked",
+   "aturan": 1,
+   "jumlah": 1,
+   "baris": "5",
+   "alasan": "pencairan uang muka"
+  },
+  {
+   "lokasi": "services/cash_advance_service.py:_disburse_locked",
+   "aturan": 3,
+   "jumlah": 2,
+   "baris": "5",
+   "alasan": "pencairan uang muka"
+  },
+  {
+   "lokasi": "services/cash_advance_service.py:_next_cash_number",
+   "aturan": 4,
+   "jumlah": 1,
+   "baris": "—",
+   "alasan": "salinan pemberi nomor kas (empat salinan `_next_cash_number`)"
+  },
+  {
+   "lokasi": "services/cash_advance_service.py:pay_reimburse",
+   "aturan": 1,
+   "jumlah": 1,
+   "baris": "6",
+   "alasan": "bayar reimburse"
+  },
+  {
+   "lokasi": "services/cash_advance_service.py:pay_reimburse",
+   "aturan": 3,
+   "jumlah": 1,
+   "baris": "6",
+   "alasan": "bayar reimburse"
+  },
+  {
+   "lokasi": "services/cash_ledger.py:_next_cash_number",
+   "aturan": 4,
+   "jumlah": 1,
+   "baris": "17",
+   "alasan": "salinan pemberi nomor kas (empat salinan `_next_cash_number`)"
+  },
+  {
+   "lokasi": "services/finance_case_actions.py:_cash_txn",
+   "aturan": 1,
+   "jumlah": 1,
+   "baris": "3",
+   "alasan": "aksi kasus keuangan"
+  },
+  {
+   "lokasi": "services/finance_case_actions.py:_cash_txn",
+   "aturan": 2,
+   "jumlah": 2,
+   "baris": "3",
+   "alasan": "aksi kasus keuangan"
+  },
+  {
+   "lokasi": "services/finance_case_actions.py:_next_cash_number",
+   "aturan": 4,
+   "jumlah": 1,
+   "baris": "—",
+   "alasan": "salinan pemberi nomor kas (empat salinan `_next_cash_number`)"
+  },
+  {
+   "lokasi": "services/interco_money_service.py:twin_cash",
+   "aturan": 1,
+   "jumlah": 1,
+   "baris": "16",
+   "alasan": "pinjaman dan pelunasan antar-PT"
+  },
+  {
+   "lokasi": "services/marketing_cost_service.py:record_cost",
+   "aturan": 1,
+   "jumlah": 1,
+   "baris": "4",
+   "alasan": "biaya kampanye"
+  },
+  {
+   "lokasi": "services/marketing_cost_service.py:record_cost",
+   "aturan": 3,
+   "jumlah": 1,
+   "baris": "4",
+   "alasan": "biaya kampanye"
+  },
+  {
+   "lokasi": "services/payment_variance_service.py:_refund",
+   "aturan": 1,
+   "jumlah": 1,
+   "baris": "2",
+   "alasan": "pengembalian kelebihan bayar"
+  },
+  {
+   "lokasi": "services/payment_variance_service.py:_refund",
+   "aturan": 2,
+   "jumlah": 1,
+   "baris": "2",
+   "alasan": "pengembalian kelebihan bayar"
+  },
+  {
+   "lokasi": "services/penalty_service.py:_resume_payment",
+   "aturan": 1,
+   "jumlah": 1,
+   "baris": "baru (PK-08)",
+   "alasan": "bayar nota denda — lahir sesudah spesifikasi ditulis"
+  },
+  {
+   "lokasi": "services/penalty_service.py:_resume_payment",
+   "aturan": 3,
+   "jumlah": 1,
+   "baris": "baru (PK-08)",
+   "alasan": "bayar nota denda — lahir sesudah spesifikasi ditulis"
+  }
+ ]
+}
