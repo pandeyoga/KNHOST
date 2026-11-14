@@ -283,7 +283,7 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 | `uoms.py` | 5 | 186 | `/uoms`, `/uoms/vocab`, `/uoms/{uom_id}` |
 | `users.py` | 11 | 255 | `/hr-employees-available`, `/users`, `/users/count`, `/users/manageable-roles`, `/users/{user_id}`, `/users/{user_id}/reactivate` … |
 | `vehicle_logs.py` | 9 | 214 | `/vehicle-usage-logs`, `/vehicle-usage-logs/summary`, `/vehicle-usage-logs/{log_id}`, `/vehicles`, `/vehicles/{veh_id}` |
-| `vendor_bills.py` | 12 | 671 | `/purchase-orders/{po_id}/billing-context`, `/vendor-bills`, `/vendor-bills/payables/summary`, `/vendor-bills/status-counts`, `/vendor-bills/{bill_id}`, `/vendor-bills/{bill_id}/approve` … |
+| `vendor_bills.py` | 12 | 677 | `/purchase-orders/{po_id}/billing-context`, `/vendor-bills`, `/vendor-bills/payables/summary`, `/vendor-bills/status-counts`, `/vendor-bills/{bill_id}`, `/vendor-bills/{bill_id}/approve` … |
 | `warehouse_sites.py` | 6 | 91 | `/warehouse-sites`, `/warehouse-sites/seed-blueprint`, `/warehouse-sites/{site_id}`, `/warehouse-sites/{site_id}/receiving` |
 | `warehouses.py` | 11 | 382 | `/warehouse-sites/{site_id}/stock-tree`, `/warehouses`, `/warehouses/{warehouse_id}`, `/warehouses/{warehouse_id}/gate-policy`, `/warehouses/{warehouse_id}/locations`, `/warehouses/{warehouse_id}/occupancy` … |
 | `wilayah.py` | 8 | 55 | `/wilayah/countries`, `/wilayah/districts`, `/wilayah/postal-code/{code}`, `/wilayah/provinces`, `/wilayah/regencies`, `/wilayah/search` … |
@@ -436,7 +436,7 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 | `gemini_image_service.py` | 193 | FB-01 — Ilustrasi AI Galeri Desain via Google Gemini "Nano Banana Pro" (SDK google-genai LANGSUNG). |
 | `gl_mapping_registry.py` | 184 | GL-01 — registri kebutuhan akun (SSOT di kode). Satu baris = satu kebutuhan fitur. |
 | `gl_mapping_service.py` | 208 | GL-01 — pemetaan akun terpusat. Resolver: mapping PT → mapping global → bawaan registri. |
-| `gl_service.py` | 4106 | EPIC7-C — General Ledger & Chart of Accounts (akuntansi inti). |
+| `gl_service.py` | 4143 | EPIC7-C — General Ledger & Chart of Accounts (akuntansi inti). |
 | `goods_receipt_close_service.py` | 596 | GRN Fase 2 — rekonsiliasi (§4.4), penyelesaian selisih, penutupan (§4.5), sisa PO, tolak & batal. |
 | `goods_receipt_ocr_service.py` | 604 | GRN Fase 4 — baca surat jalan dengan OpenAI: praproses, panggil, pembaca kedua, log biaya, rem anggaran, pemet |
 | `goods_receipt_service.py` | 1003 | GRN Fase 2 — Kedatangan Barang (satu surat jalan · satu mitra): buat, berkas, kepala SJ, baris, hitung. |
@@ -540,7 +540,7 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 | `placement_rules.py` | 304 | P02 (IMP-22/24/25) — evaluator penempatan BERSAMA untuk semua jalur (putaway manual, scan |
 | `po_amendment_service.py` | 381 | Phase 7.2 — PO Amendment / Version History (logic extracted from router). |
 | `po_board_service.py` | 640 | FASE P — **PAPAN PO PER LINI** (progres tahap seperti kertas kerja MD). |
-| `po_close_settlement_service.py` | 85 | L02 LN-023-T02 — rekonsiliasi PO saat ditutup-kurang: sisa order, tagihan (AP) dan kelebihan bayar. |
+| `po_close_settlement_service.py` | 92 | L02 LN-023-T02 — rekonsiliasi PO saat ditutup-kurang: sisa order, tagihan (AP) dan kelebihan bayar. |
 | `po_line_guard.py` | 16 | KN-B15 — satu produk hanya boleh muncul di SATU baris PO (semua jalur: buat PO, PR→PO, amandemen). |
 | `po_pricing.py` | 39 | PK-28 (IV-03) — harga neto satu baris PO: SATU hitungan untuk nilai penerimaan barang (Dr Persediaan / Cr GR/I |
 | `po_variance_task_service.py` | 194 | W2-REQ-06 — tugas keputusan MD atas selisih penerimaan PO (tunggu / amendment / short-close). |
@@ -560,7 +560,7 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 | `production_service.py` | 568 | R6.4 — Produksi In-House (BOM + Work Order). |
 | `profitability_service.py` | 275 | FINANCE — Analisis Profitabilitas / Margin (EPIC P0-2 · R5.6). |
 | `purchase_requisition_service.py` | 574 | Depth #2 — Purchase Requisition (PR) service + Reorder/Replenishment. |
-| `purchase_return_service.py` | 1111 | Depth #1 — Retur Beli (Purchase Return / Nota Debit). |
+| `purchase_return_service.py` | 1114 | Depth #1 — Retur Beli (Purchase Return / Nota Debit). |
 | `purchase_return_state.py` | 66 | R4 — Supplier RMA lifecycle untuk Retur Beli (Purchase Return). |
 | `putaway_arrival_service.py` | 288 | PREP-C (K-GDG-10, K-RFID-10 — keputusan pemilik 8 Nov 2026) — TIBA BERTAHAP Putaway Order per trip. |
 | `putaway_draft_service.py` | 415 | PREP-C (K-GDG-10 + K-GDG-04, keputusan pemilik 8 Nov 2026) — DRAF Putaway Order otomatis. |
@@ -691,7 +691,7 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 | `uom_service.py` | 503 | Sub-fase 1.13 — UOM Conversion Engine (Multi-UOM). |
 | `user_admin_service.py` | 407 | FASE E-2 — AKUN PENGGUNA TERTAUT BADAN USAHA (via HR) & PENEGAKAN AKSES. |
 | `variant_axes.py` | 56 | Sumbu varian yang dapat dikonfigurasi pemilik (rnd.variant_axes_default / _optional). |
-| `vendor_bill_service.py` | 425 | Vendor Bill service (Fase 5.2 — P0-2) — 3-Way Matching PO ↔ GR ↔ Bill. |
+| `vendor_bill_service.py` | 497 | Vendor Bill service (Fase 5.2 — P0-2) — 3-Way Matching PO ↔ GR ↔ Bill. |
 | `wa_alert_service.py` | 297 | R6.5 — Kanal WhatsApp untuk notifikasi/alert (Kain Nusantara). |
 | `wa_connection.py` | 276 | KP-T8 (KP-16) — satu koneksi WhatsApp untuk dua pemakai: Pengingat (`alerts`) dan Kirim Dokumen (`documents`). |
 | `warehouse_profile_service.py` | 364 | FASE R0 — Profil gudang: site (lokasi), peran gedung, rules penyimpanan, gate config. |
@@ -711,7 +711,7 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 
 | Fitur (`src/features/`) | Berkas | Baris |
 |---|---:|---:|
-| `__tests__` | 116 | 18492 |
+| `__tests__` | 117 | 18697 |
 | `admin` | 36 | 6981 |
 | `approvals` | 9 | 1720 |
 | `catalog` | 24 | 1459 |
@@ -722,7 +722,7 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 | `desks` | 2 | 229 |
 | `documents` | 18 | 2580 |
 | `export` | 9 | 700 |
-| `finance` | 100 | 22732 |
+| `finance` | 100 | 22735 |
 | `home` | 5 | 1136 |
 | `hr` | 33 | 5403 |
 | `inspections` | 12 | 2181 |
@@ -740,7 +740,7 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 | `pos` | 25 | 2807 |
 | `pricing` | 1 | 151 |
 | `production` | 3 | 753 |
-| `purchasing` | 86 | 18492 |
+| `purchasing` | 87 | 18765 |
 | `rfid` | 21 | 3556 |
 | `rnd` | 66 | 7906 |
 | `sales` | 97 | 15798 |

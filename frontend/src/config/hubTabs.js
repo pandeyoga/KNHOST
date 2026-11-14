@@ -88,6 +88,8 @@ export const HUB_TABS = {
     // pembayaran. Gudang ikut MELIHAT karena tab "GR Belum Ditagih" adalah pekerjaan
     // mereka (barang sudah diterima tapi faktur supplier belum datang).
     { view: "contra-bons",       label: "Kontrabon",             roles: ["admin", "manager", "warehouse"] },
+    // PK-28 (IV-03) — sisa GR/IR per PO + umur + kliring. Finance lewat ROLE_NAV (lihat; kliring butuh accounting.manage).
+    { view: "gr-ir",             label: "GR/IR (Diterima Belum Ditagih)", roles: ["admin", "manager"] },
     // MN-T1 — Landed Cost PINDAH ke Pembelian › Pesanan Pembelian (view sama).
   ],
   // L08 LN-080 — menu Retur terpadu: semua arah retur di satu tempat (tiap tab = layar aslinya).

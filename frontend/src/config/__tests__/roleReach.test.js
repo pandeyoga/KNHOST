@@ -35,6 +35,8 @@ const KFT6_DUAL_CONTROL = ["settings-dual-control"];
 // KP-T5 — tab Pengaturan › Dokumen & Notifikasi › Penomoran Dokumen (baca `settings.view`; ubah `settings.manage`).
 const KPT5_DOC_NUMBERING = ["settings-doc-numbering"];
 const MNT1_CRM_TABS = ["collection-worklist", "credit-overrides", "sales-performance", "incentive-schemes"];
+// PK-28 (IV-03) — layar BARU Keuangan › Hutang › GR/IR (Diterima Belum Ditagih): admin, manajer, Finance (vendor_bill.view).
+const PK28_GRIR = ["gr-ir"];
 // KP-T9 — id layar BARU untuk bagian layar yang SUDAH ADA: layar wadah Badan Usaha & Akses, Perangkat, dan Penjadwal &
 // Notifikasi dibuka satu bagian per tab hub (komponen sama, prop `only`). `settings-pt-profile` = tujuan alias
 // `entities-access` (sudah di baseline). Manajer: Peran & Hak Akses / Cek Peran hanya tampil menurut rancangan menu — izin
@@ -43,9 +45,9 @@ const KPT9_PART_TABS = ["settings-pt-readiness", "settings-accounts", "settings-
   "settings-whatsapp"];
 export const ROLE_REACH_ADDITIONS = {
   admin: [...P2_SETTINGS_VIEWS, ...P8_SUPPLIER_INTERNAL, ...KFT6_DUAL_CONTROL, ...KPT5_DOC_NUMBERING, ...MNT1_CRM_TABS,
-    ...KPT9_PART_TABS],
+    ...KPT9_PART_TABS, ...PK28_GRIR],
   manager: [...P2_SETTINGS_VIEWS, ...P8_SUPPLIER_INTERNAL, ...KFT6_DUAL_CONTROL, ...KPT5_DOC_NUMBERING, ...MNT1_CRM_TABS,
-    ...KPT9_PART_TABS,
+    ...KPT9_PART_TABS, ...PK28_GRIR,
     "finance-desk",       // MN-T1 — Beranda Keuangan › Perlu Tindakan (Meja Finance; manajer memegang payment_variance.decide)
     "approval-rules",     // D-04 — manajer membaca aturan (dulu lewat Master per Badan Usaha), tulis tetap settings.manage
     "pdf-templates",      // D-01 — tab "Kop & tata letak dasar" (dulu Master per BU kind document-templates); Desainer PDF tetap admin
@@ -70,7 +72,8 @@ export const ROLE_REACH_ADDITIONS = {
   // bayar (K-17), Analisis/BI Keuangan (`accounting.view`), Pemetaan Akun (IA-06; `gl_mapping.view/update`), dan dua tab
   // Piutang yang dulu sub-tab CRM (Penagihan & Penerimaan; Kredit & Plafon tanpa hak memutus).
   finance: ["bank-accounts", "bank-reconciliation", "petty-cash", "general-ledger", "chart-of-accounts",
-    "vendor-bills", "contra-bons", "bi-finance", "gl-account-mappings", "collection-worklist", "credit-overrides"],
+    "vendor-bills", "contra-bons", "bi-finance", "gl-account-mappings", "collection-worklist", "credit-overrides",
+    ...PK28_GRIR],
 };
 /** Id MENU/HUB yang kini mendarat di tab pertama LAIN di hub yang sama (urutan/isi tab baru), sementara layar lamanya tetap
  *  terjangkau (diperiksa): { peran: { id: "view baru" } } + alasan.

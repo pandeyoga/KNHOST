@@ -2101,7 +2101,13 @@ async def reverse_subcon_issue(*, mko_id: str, step_seq: int, entity_id: str,
 
 
 async def post_vendor_bill(bill: Dict[str, Any]) -> Optional[Dict[str, Any]]:
-    """Gelombang 1 F-5 — Vendor Bill posted → Dr GR-IR + Dr PPN Masukan / Cr Hutang Usaha."""
+    """Gelombang 1 F-5 — Vendor Bill posted → Dr GR-IR + Dr PPN Masukan / Cr Hutang Usaha.
+
+    PK-28 (IV-03) — faktur ber-PO yang menyimpan `grir_amount` (Σ qty tagih × harga neto baris PO) dan
+    `price_variance_amount` (neto faktur − `grir_amount`): GR/IR dihapus sebesar `grir_amount`, selisihnya ke akun
+    `pembelian.selisih_harga` (selisih > 0 debit, < 0 kredit) — bila akun itu terpetakan untuk PT faktur; jurnal yang
+    memuat selisih menandai `price_variance_posted=true`. Akun belum terpetakan, faktur lama tanpa `grir_amount`, atau
+    selisih ≤ 0,005 → perilaku lama (Dr GR/IR sebesar neto). `ref.po_id` diisi untuk faktur ber-PO."""
     bid = bill.get("id")
     if not bid or bill.get("status") not in ("posted", "paid"):
         return None
@@ -2122,14 +2128,24 @@ async def post_vendor_bill(bill: Dict[str, Any]) -> Optional[Dict[str, Any]]:
     # COMM-04 lanjutan — tagihan vendor kampanye (tanpa PO): Dr Beban Pemasaran, bukan GR-IR.
     is_campaign = bill.get("bill_type") == "campaign_expense"
     debit_acc = (bill.get("expense_account_code") or ACC_BEBAN_PEMASARAN) if is_campaign else ACC_GRIR
+    variance = round(float(bill.get("price_variance_amount") or 0), 2)
+    split = (not is_campaign and bill.get("grir_amount") is not None and abs(variance) > 0.005
+             and bool(await account_for("pembelian.selisih_harga", bill.get("entity_id") or None)))
+    selisih_desc = f"Selisih harga terhadap PO {bill.get('po_number') or ''} — {num}".replace("  ", " ")
     lines: List[Dict[str, Any]] = [
-        {"account_code": debit_acc, "debit": net, "credit": 0.0,
+        {"account_code": debit_acc, "debit": round(float(bill["grir_amount"]), 2) if split else net, "credit": 0.0,
          "description": (f"Biaya kampanye {bill.get('campaign_name', '')} {num}" if is_campaign
                          else f"Tagihan supplier {num}")}]
+    if split and variance > 0:
+        lines.append({"account_key": "pembelian.selisih_harga", "debit": variance, "credit": 0.0,
+                      "description": selisih_desc})
     if ppn > EPS:
         lines.append({"account_code": ACC_PPN_IN, "debit": ppn, "credit": 0.0,
                       "description": f"PPN Masukan {num}"})
-    diff = round(grand - net - (ppn if ppn > EPS else 0), 2)
+    if split and variance < 0:
+        lines.append({"account_key": "pembelian.selisih_harga", "debit": 0.0, "credit": -variance,
+                      "description": selisih_desc})
+    diff = round(grand - sum(float(ln["debit"]) for ln in lines) + sum(float(ln["credit"]) for ln in lines), 2)
     if abs(diff) > EPS:
         if diff > 0:
             lines.append({"account_code": ACC_SUSPENSE, "debit": diff, "credit": 0.0,
@@ -2139,11 +2155,14 @@ async def post_vendor_bill(bill: Dict[str, Any]) -> Optional[Dict[str, Any]]:
                           "description": "Selisih pembulatan"})
     lines.append({"account_code": ACC_HUTANG, "debit": 0.0, "credit": grand,
                   "description": f"Hutang usaha {num} — {bill.get('supplier_name', '')}".strip()})
-    return await _insert_entry(
+    je = await _insert_entry(
         lines=lines, description=f"Vendor Bill {num}",
         date=bill.get("posted_at") or bill.get("bill_date") or now_iso(),
         source_type="vendor_bill", source_id=bid, entity_id=bill.get("entity_id", ""),
-        created_by="system", source_label=num)
+        created_by="system", source_label=num, ref={"po_id": bill["po_id"]} if bill.get("po_id") else None)
+    if split:   # PK-28 — selisih sudah pindah dari GR/IR ke akun selisih harga
+        await db.vendor_bills.update_one({"id": bid}, {"$set": {"price_variance_posted": True}})
+    return je
 
 
 async def reverse_vendor_bill(bill: Dict[str, Any], reason: str = "",
@@ -2715,14 +2734,31 @@ async def post_asset_disposal(*, asset_id: str, entity_id: str, acquisition_cost
 
 
 
+#: PK-28 — dasar jurnal retur beli (`purchase_returns.ap_basis`): akun yang didebit.
+PURCHASE_RETURN_BASES = ("gr_ir", "hutang", "kas")
+
+
+async def purchase_return_basis(ret: Dict[str, Any], outcome: str = "ap_credit") -> str:
+    """PK-28 — aturan memilih dasar retur beli (TIDAK berubah dari sebelumnya): refund → `kas`; PO retur sudah punya
+    faktur terposting/lunas → `hutang`; selain itu → `gr_ir` (barang belum ditagih)."""
+    if (outcome or "").lower() == "refund":
+        return "kas"
+    po_id = ret.get("po_id")
+    if po_id and await db.vendor_bills.find_one(
+            {"po_id": po_id, "status": {"$in": ["posted", "paid"]}}, {"_id": 0, "id": 1}):
+        return "hutang"
+    return "gr_ir"
+
+
 async def post_purchase_return(ret: Dict[str, Any], *, amount: float, ppn: float = 0.0,
                                label: str = "", outcome: str = "ap_credit",
-                               cash_account_code: str = "") -> Optional[Dict[str, Any]]:
-    """Session #074 (PRET-GL) — Retur beli (Nota Debit) → balik GL.
-      ap_credit (default): Dr Hutang(2-1100)|GR-IR(2-1150) / Cr Persediaan(1-1300) [+ Cr PPN Masukan].
-      refund   (R5.3)    : Dr Kas/Bank (supplier kembalikan dana) / Cr Persediaan [+ Cr PPN Masukan].
-    Pilih debit Hutang bila PO sudah ditagih (ada vendor_bill posted), else GR/IR.
-    Idempotent (source_type='purchase_return')."""
+                               cash_account_code: str = "", ap_basis: str = "") -> Optional[Dict[str, Any]]:
+    """Session #074 (PRET-GL) — Retur beli (Nota Debit) → balik GL. Dasar (`ap_basis`, lihat `purchase_return_basis`):
+      hutang : Dr Hutang(2-1100) sebesar nilai + PPN / Cr Persediaan(1-1300) neto + Cr PPN Masukan.
+      kas    : Dr Kas/Bank (supplier kembalikan dana) / Cr Persediaan [+ Cr PPN Masukan].
+      gr_ir  : PK-28 — Dr GR/IR(2-1150) sebesar nilai TANPA PPN / Cr Persediaan; PPN masukan tidak dibalik (barang
+               belum ditagih → PPN masukannya belum pernah dicatat).
+    `ap_basis` kosong → dihitung saat ini (pemanggil lama). Idempotent (source_type='purchase_return'); `ref.po_id`."""
     rid = ret.get("id")
     amount = round(float(amount or 0), 2)
     if not rid or amount <= EPS or await _already_posted("purchase_return", rid):
@@ -2730,27 +2766,28 @@ async def post_purchase_return(ret: Dict[str, Any], *, amount: float, ppn: float
     await seed_default_coa()
     ppn = round(float(ppn or 0), 2)
     net = round(amount - ppn, 2)
-    if (outcome or "").lower() == "refund":
-        debit_acc = cash_account_code or ACC_KAS_BESAR
+    basis = ap_basis if ap_basis in PURCHASE_RETURN_BASES else await purchase_return_basis(ret, outcome)
+    if basis == "kas":
+        debit_acc, debit_amt = cash_account_code or ACC_KAS_BESAR, amount
         debit_desc = f"Refund tunai supplier — retur beli {label}"
-    else:
-        debit_acc = ACC_GRIR
-        po_id = ret.get("po_id")
-        if po_id and await db.vendor_bills.find_one(
-                {"po_id": po_id, "status": {"$in": ["posted", "paid"]}}, {"_id": 0, "id": 1}):
-            debit_acc = ACC_HUTANG
+    elif basis == "hutang":
+        debit_acc, debit_amt = ACC_HUTANG, amount
         debit_desc = f"Retur beli {label} (Nota Debit)"
-    lines = [{"account_code": debit_acc, "debit": amount, "credit": 0.0,
+    else:
+        debit_acc, debit_amt = ACC_GRIR, net
+        debit_desc = f"Retur beli {label} (Nota Debit) — barang belum ditagih"
+    lines = [{"account_code": debit_acc, "debit": debit_amt, "credit": 0.0,
               "description": debit_desc},
              {"account_code": ACC_PERSEDIAAN, "debit": 0.0, "credit": net,
               "description": f"Barang keluar retur beli {label}"}]
-    if ppn > EPS:
+    if ppn > EPS and basis != "gr_ir":
         lines.append({"account_code": ACC_PPN_IN, "debit": 0.0, "credit": ppn,
                       "description": f"Reversal PPN Masukan {label}"})
     return await _insert_entry(
         lines=lines, description=f"Retur beli {label}",
         date=ret.get("approved_at") or now_iso(), source_type="purchase_return",
-        source_id=rid, entity_id=ret.get("entity_id", ""), created_by="system", source_label=label)
+        source_id=rid, entity_id=ret.get("entity_id", ""), created_by="system", source_label=label,
+        ref={"po_id": ret["po_id"]} if ret.get("po_id") else None)
 
 
 def landed_cost_lines(capitalization: Dict[str, Any], label: str = "") -> List[Dict[str, Any]]:

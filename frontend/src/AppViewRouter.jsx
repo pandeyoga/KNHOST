@@ -32,7 +32,7 @@ import { SalesPortal, PriceApprovals, OrdersView, CrmView, OperationsView, QcHub
   GradeMasterView, EntitiesAccessView, WarehouseMasterView, SettingsHub, SuppliersView, MakloonsView,
   ProcessRecipesView, MakloonOrdersView, MakloonClaimsView, ContractsView, InternalPricesView,
   AmendmentReasonsPanel, IncentiveRatesEditor, BankRulesSettingsView, SupplierItemsView, PurchaseApprovalView,
-  CashManagementView, PurchaseReturns, VendorBillsView, ContraBonsView, IntercoView, InternalRequestsView,
+  CashManagementView, PurchaseReturns, VendorBillsView, GrIrView, ContraBonsView, IntercoView, InternalRequestsView,
   KeepPendingPanel, RepairOrdersView, DesignRequestsView, LogisticsView, LandedCostView, InputTaxView, RFQView,
   PurchaseRequisitions, ReorderSuggestions, EmployeesView, OrgUnitsView, EmployeeSelfService, AttendanceView,
   AttendanceSetupView, LiveTrackingView, VisitsView, PayrollRunsView, PayslipsView, LeaveView, OvertimeView,
@@ -391,6 +391,7 @@ export default function AppViewRouter(props) {
       {activeView === "cash-management" && <CashManagementView currentUser={user} selectedEntity={selectedEntity} {...focusDocProps} />}
       {activeView === "purchase-returns" && <PurchaseReturns currentUser={user} selectedEntity={selectedEntity} {...focusDocProps} />}
       {activeView === "vendor-bills" && <VendorBillsView currentUser={user} selectedEntity={selectedEntity} {...focusDocProps} onOpenDocument={openDocument} />}
+      {activeView === "gr-ir" && <GrIrView />}
       {activeView === "contra-bons" && <ContraBonsView currentUser={user} selectedEntity={selectedEntity} entities={entities} {...focusDocProps} onOpenDocument={openDocument} />}
       {activeView === "interco-transactions" && <IntercoView currentUser={user} selectedEntity={selectedEntity} entities={entities} {...focusDocProps} />}
       {activeView === "interco-returns" && <IntercoView key="interco-returns" currentUser={user} selectedEntity={selectedEntity} entities={entities} only={["returns", "return-inbox"]} {...focusDocProps} />}

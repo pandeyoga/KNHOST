@@ -159,6 +159,7 @@ export default function VendorBillDetailPanel({ bill, canApprove, decideHint = "
             <Card label="Sisa Hutang" value={formatCurrency(fin.outstanding)} testId="vb-fin-outstanding" tone="text-red-600" />
             <Card label="PPN Masukan" value={formatCurrency(bill.ppn_amount)} testId="vb-fin-ppn" />
           </div>
+          <PriceVarianceRow bill={bill} />
 
           {/* Match exceptions */}
           {exceptions.length > 0 && (
@@ -291,6 +292,25 @@ export default function VendorBillDetailPanel({ bill, canApprove, decideHint = "
           {bill.status === "cancelled" && <span className="text-[11.5px] text-[#9A9BA3]">Bill dibatalkan.</span>}
         </div>
       </div>
+    </div>
+  );
+}
+
+/** PK-28 (IV-03) — selisih harga faktur terhadap harga neto PO (disembunyikan bila 0). Bila akun "Selisih harga
+ *  pembelian" belum diatur saat faktur dijurnal, selisihnya masih di akun GR/IR — ditulis terang di sini. */
+export function PriceVarianceRow({ bill }) {
+  const v = Number(bill?.price_variance_amount) || 0;
+  if (Math.abs(v) <= 0.005) return null;
+  return (
+    <div className="rounded-md border border-kn-divider px-3 py-2 text-[12px]" data-testid="vb-price-variance">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <span className="font-semibold">Selisih harga terhadap PO</span>
+        <span className="tabular-nums font-semibold" data-testid="vb-price-variance-amount">{formatCurrency(v)}</span>
+      </div>
+      {bill.price_variance_posted === false && (
+        <p className="mt-1 text-kn-warning-text" data-testid="vb-price-variance-unposted">
+          Selisih ini masih berada di akun GR/IR karena akun "Selisih harga pembelian" belum diatur di Pemetaan Akun.</p>
+      )}
     </div>
   );
 }

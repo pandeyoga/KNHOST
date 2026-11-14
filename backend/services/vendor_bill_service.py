@@ -102,6 +102,7 @@ def evaluate_match(
     qty_tol: float,
     price_tol: float,
     value_tol: float = 0.0,
+    returned_unbilled: Optional[Dict[str, float]] = None,
 ) -> Dict[str, Any]:
     """Hitung 3-way match per item + agregat. PURE (tak menyentuh DB).
 
@@ -110,7 +111,8 @@ def evaluate_match(
       { items: [...enriched dgn `match`], match_status, exceptions, within_tolerance }
 
     Aturan:
-      - base_qty = received_qty (mode 'received', 3-way ketat) atau ordered (mode 'ordered').
+      - base_qty = received_qty (mode 'received', 3-way ketat) atau ordered (mode 'ordered'), dikurangi qty yang
+        diretur sebelum ditagih (`returned_unbilled`, per baris PO — PK-28; dasar retur GR/IR) di kedua mode.
       - remaining = base_qty − already_billed. billed > remaining + tol → OVER_BILLED (blocked).
       - |price − po_price| / po_price > price_tol → PRICE_VARIANCE (warning, butuh approval).
     """
@@ -131,7 +133,8 @@ def evaluate_match(
         billed = float(bi.get("billed_qty", bi.get("quantity", 0)) or 0)
         po_price = float(po_it.get("price", 0) or 0)
         price = float(bi.get("price", po_price) or 0)
-        base_qty = received if match_mode == "received" else ordered
+        returned = float((returned_unbilled or {}).get(lk, 0) or 0)
+        base_qty = (received if match_mode == "received" else ordered) - returned
         remaining = round(base_qty - prior, 4)
 
         messages: List[str] = []
@@ -177,6 +180,7 @@ def evaluate_match(
             "ordered_qty": ordered,
             "received_qty": received,
             "already_billed_qty": prior,
+            "returned_unbilled_qty": round(returned, 4),
             "remaining_qty": remaining,
             "po_price": po_price,
             "match": {
@@ -266,6 +270,7 @@ async def build_billing_context(po: Dict[str, Any]) -> Dict[str, Any]:
     ordered / received / already_billed / billable)."""
     po = await ensure_line_ids(po)
     billed = await already_billed_map(po["id"])
+    returned = await returned_unbilled_map(po["id"])   # PK-28 — retur sebelum ditagih tidak boleh ditagih lagi
     po_items = po.get("items", [])
     items = []
     for idx, it in enumerate(po_items):
@@ -275,6 +280,7 @@ async def build_billing_context(po: Dict[str, Any]) -> Dict[str, Any]:
         # FN-02 — sudah-ditagih dibaca per BARIS PO (kunci sama dengan already_billed_map)
         lid = po_line_id(it, idx)
         prior = float(billed.get(lid, 0) or 0)
+        ret_q = float(returned.get(lid, 0) or 0)
         items.append({
             "po_line_id": lid,
             "line_code": it.get("line_code") or "",
@@ -287,8 +293,9 @@ async def build_billing_context(po: Dict[str, Any]) -> Dict[str, Any]:
             "ordered_qty": ordered,
             "received_qty": received,
             "already_billed_qty": round(prior, 4),
-            "billable_received": round(max(received - prior, 0.0), 4),
-            "billable_ordered": round(max(ordered - prior, 0.0), 4),
+            "returned_unbilled_qty": round(ret_q, 4),
+            "billable_received": round(max(received - prior - ret_q, 0.0), 4),
+            "billable_ordered": round(max(ordered - prior - ret_q, 0.0), 4),
             "po_price": float(it.get("price", 0) or 0),
             "discount_percent": float(it.get("discount_percent", 0) or 0),
         })
@@ -311,8 +318,73 @@ async def build_billing_context(po: Dict[str, Any]) -> Dict[str, Any]:
 
 
 # ═════════════════════════════════════════════════════════════════════════════
-#  PK-28 (IV-03) — sisa GR/IR per PO
+#  PK-28 (IV-03) — retur sebelum ditagih, nilai GR/IR faktur, sisa GR/IR per PO
 # ═════════════════════════════════════════════════════════════════════════════
+async def _qty_in_po_unit(po_line: Dict[str, Any], item: Dict[str, Any]) -> float:
+    """Qty baris retur (satuan dasar produk) → satuan baris PO: `quantity_input` bila `unit_input` = satuan PO, qty
+    apa adanya bila satuannya sama, selain itu konversi master satuan (`uom_service.convert`)."""
+    from services import uom_service as _u
+    po_unit = _u._norm(po_line.get("unit") or "")
+    qty = float(item.get("quantity") or 0)
+    if item.get("unit_input") and _u._norm(item["unit_input"]) == po_unit and item.get("quantity_input") is not None:
+        return float(item["quantity_input"] or 0)
+    unit = _u._norm(item.get("unit") or "")
+    if not po_unit or not unit or unit == po_unit:
+        return qty
+    prod = await db.products.find_one({"id": item.get("product_id")}, {"_id": 0}) or {}
+    return float(_u.convert(prod, qty, unit, po_unit, await _u.load_fixed_factors(), precision=4))
+
+
+async def returned_unbilled_map(po_id: str) -> Dict[str, float]:
+    """Σ qty per baris PO (kunci `line_key`, satuan baris PO) dari retur beli PO itu yang stoknya sudah keluar
+    (`stock_adjusted`), tidak dibalik, dan berdasar GR/IR (`ap_basis == "gr_ir"` — retur SEBELUM ada faktur). Retur
+    lama tanpa `ap_basis`: dianggap GR/IR bila jurnal `purchase_return`-nya mendebit akun GR/IR."""
+    po = await db.purchase_orders.find_one({"id": po_id}, {"_id": 0, "items": 1}) or {}
+    rets = [r async for r in db.purchase_returns.find(
+        {"po_id": po_id, "stock_adjusted": True, "reversed": {"$ne": True}, "status": {"$ne": "cancelled"}},
+        {"_id": 0, "id": 1, "ap_basis": 1, "items": 1})]
+    lama = [r["id"] for r in rets if not r.get("ap_basis")]
+    lama_grir: set = set()
+    if lama:
+        from services.gl_mapping_service import known_codes
+        codes = [c for c in await known_codes("pembelian.gr_ir") if c]
+        async for je in db.journal_entries.find(
+                {"source_type": "purchase_return", "source_id": {"$in": lama}, "status": {"$ne": "void"},
+                 "lines": {"$elemMatch": {"account_code": {"$in": codes}, "debit": {"$gt": 0}}}},
+                {"_id": 0, "source_id": 1}):
+            lama_grir.add(je["source_id"])
+    lines = po_line_index(po)
+    out: Dict[str, float] = {}
+    for r in rets:
+        if (r.get("ap_basis") or ("gr_ir" if r["id"] in lama_grir else "")) != "gr_ir":
+            continue
+        for it in r.get("items") or []:
+            k = line_key(po, it)
+            out[k] = out.get(k, 0.0) + await _qty_in_po_unit(lines.get(k) or {}, it)
+    return {k: round(v, 4) for k, v in out.items()}
+
+
+async def grir_fields(bill: Dict[str, Any]) -> Dict[str, Any]:
+    """`grir_amount` (Σ `billed_qty` × harga neto baris PO), `price_variance_amount` (neto faktur − `grir_amount`) dan
+    `price_variance_posted` awal untuk faktur ber-PO; ditulis SEKALI pada tulisan `posted` (`routers/vendor_bills._post_bill`).
+    Faktur kampanye, jasa makloon, dan tanpa PO → `{}` (jurnalnya tidak berubah)."""
+    if not bill.get("po_id") or bill.get("bill_type") in ("campaign_expense", "makloon_service"):
+        return {}
+    po = await db.purchase_orders.find_one({"id": bill["po_id"]}, {"_id": 0, "items": 1, "order_discount_percent": 1})
+    if not po:
+        return {}
+    from services.po_pricing import po_line_net_unit_price
+    grir = round(sum(float(it.get("billed_qty", it.get("quantity", 0)) or 0)
+                     * po_line_net_unit_price(po, product_id=it.get("product_id") or "",
+                                              line_id=it.get("po_line_id") or "")
+                     for it in bill.get("items") or []), 2)
+    grand = round(float(bill.get("grand_total", bill.get("total_amount", 0)) or 0), 2)
+    neto = round(grand - round(float(bill.get("ppn_amount", 0) or 0), 2), 2)
+    variance = round(neto - grir, 2)
+    return {"grir_amount": grir, "price_variance_amount": variance, "price_variance_posted": abs(variance) <= 0.005}
+
+
+# ── Sisa GR/IR per PO ────────────────────────────────────────────────────────
 #: Jenis jurnal yang menyentuh GR/IR → (koleksi dokumen sumber, kategori nilai). Jurnal lama tanpa `ref.po_id`
 #: dihubungkan ke PO lewat dokumen sumbernya; sumber berakhiran `_reversal` mengikuti dokumen asalnya.
 GRIR_SOURCES: Dict[str, tuple] = {

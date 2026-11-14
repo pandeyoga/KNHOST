@@ -18,6 +18,7 @@ from services import gl_service
 from services.vendor_bill_service import (
     evaluate_match, bill_financials, next_bill_number, sync_po_billing,
     already_billed_map, build_billing_context, ACTIVE_BILL_STATUSES, ensure_line_ids, po_line_id,
+    returned_unbilled_map, grir_fields,
 )
 from request_context import active_entity_or
 
@@ -262,7 +263,8 @@ async def create_vendor_bill(payload: VendorBillCreate, request: Request) -> Dic
 
 async def _create_bill_locked(payload, po, pricing, tol, match_mode, entity_id, inv_no, actor) -> Dict[str, Any]:
     billed_so_far = await already_billed_map(po["id"])
-    match = evaluate_match(po, pricing["items"], match_mode, billed_so_far, tol["qty"], tol["price"], value_tol=tol["value"])
+    match = evaluate_match(po, pricing["items"], match_mode, billed_so_far, tol["qty"], tol["price"], value_tol=tol["value"],
+                           returned_unbilled=await returned_unbilled_map(po["id"]))   # PK-28
 
     bill_number = await next_bill_number(entity_id)   # KP-T5 — PT dokumen (N1)
     actor_name = payload.created_by or actor.get("name", "Admin")
@@ -364,7 +366,8 @@ async def _do_submit(bill_id: str, actor: Dict[str, Any], locked: bool = False) 
         tol = await _tolerances(bill.get("entity_id"))
         billed_so_far = await already_billed_map(bill["po_id"], exclude_bill_id=bill_id)
         match = evaluate_match(po, bill.get("items", []), bill.get("match_mode", "received"),
-                               billed_so_far, tol["qty"], tol["price"], value_tol=tol["value"])
+                               billed_so_far, tol["qty"], tol["price"], value_tol=tol["value"],
+                               returned_unbilled=await returned_unbilled_map(bill["po_id"]))   # PK-28
         needs_approval = match["match_status"] == "warning"
         await db.vendor_bills.update_one({"id": bill_id}, {"$set": {
             "items": match["items"], "match_status": match["match_status"],
@@ -395,14 +398,17 @@ async def _do_submit(bill_id: str, actor: Dict[str, Any], locked: bool = False) 
 async def _post_bill(bill_id: str, actor: Dict[str, Any], note: str = "") -> Dict[str, Any]:
     # PK-37 (K-03) — PERIKSA periode buku hari ini sebelum tagihan berubah status (jalur ajukan → langsung posting).
     from services.book_date import periksa_periode_dokumen_409
-    _b = await db.vendor_bills.find_one({"id": bill_id}, {"_id": 0, "entity_id": 1}) or {}
+    _b = await db.vendor_bills.find_one({"id": bill_id}, {"_id": 0}) or {}
     await periksa_periode_dokumen_409(_b.get("entity_id") or DEFAULT_ENTITY_ID, None, jenis="tagihan pemasok")
+    # PK-28 (IV-03) — nilai GR/IR yang dihapus faktur + selisih harga terhadap PO, dihitung SEBELUM status berubah dan
+    # ditulis sekali pada tulisan `posted` (jurnal & ulang posting membaca angka tersimpan ini).
+    _grir = await grir_fields(_b)
     # KN-B05 — posting berprasyarat status: dua submit/approve bersamaan → tepat satu jurnal AP.
     updated = await db.vendor_bills.find_one_and_update(
         {"id": bill_id, "status": {"$in": ["draft", "pending_approval"]}},
         {"$set": {"status": "posted", "approval_status": "approved" if note.startswith("disetujui") else "not_required",
                   "posted_by": actor.get("name", ""), "posted_at": now_iso(), "updated_at": now_iso(),
-                  "gl_status": "pending"},   # PK-18 — efek ditulis, jurnal belum dicoba
+                  "gl_status": "pending", **_grir},   # PK-18 — efek ditulis, jurnal belum dicoba
          "$push": {"timeline": timeline_entry("posted", "Bill di-posting (AP diakui)", actor.get("name", ""), note)}},
         projection={"_id": 0}, return_document=ReturnDocument.AFTER)
     if not updated:

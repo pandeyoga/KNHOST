@@ -17,7 +17,9 @@ export function MappingRow({ row, canEdit, scoped, onEdit, onHistory }) {
           <span className="min-w-0"><span className="block text-[12px] font-semibold">{row.label}</span>
             <span className="block text-[10.5px] text-[#9A9BA3]">Dipakai saat {row.used_when}</span></span>
         </button>
-        <span className="text-[12px]" data-testid={`glmap-account-${row.key}`}><b>{row.account_code}</b> · {row.account_name || "—"}</span>
+        {/* PK-28 — kebutuhan tanpa akun bawaan (mis. "Selisih harga pembelian") tampil "Belum dipilih", bukan kode kosong. */}
+        <span className="text-[12px]" data-testid={`glmap-account-${row.key}`}>{row.account_code
+          ? <><b>{row.account_code}</b> · {row.account_name || "—"}</> : <b>Belum dipilih</b>}</span>
         <span><span data-testid={`glmap-source-${row.key}`} className={`rounded px-1.5 py-0.5 text-[10.5px] font-semibold ${srcCls}`}>{src}</span></span>
         <span data-testid={`glmap-status-${row.key}`} className={`text-[11px] font-semibold ${stCls}`}>{st}</span>
         <span className="flex justify-end gap-1">
@@ -44,7 +46,7 @@ function RowDetail({ row }) {
       <div className="grid gap-1">
         <p><span className="text-[#6B6B73]">Fitur pemakai:</span> {row.used_by.join(", ")}</p>
         <p><span className="text-[#6B6B73]">Jenis akun diizinkan:</span> {row.allowed_type_labels.join(", ")}</p>
-        <p><span className="text-[#6B6B73]">Akun bawaan:</span> {row.default}{row.source === "entity" ? ` · Global: ${row.global_code}` : ""}</p>
+        <p><span className="text-[#6B6B73]">Akun bawaan:</span> {row.default || "tidak ada — dipilih pemilik"}{row.source === "entity" ? ` · Global: ${row.global_code || "belum dipilih"}` : ""}</p>
         {row.updated_by && <p className="text-[10.5px] text-[#9A9BA3]">Terakhir diubah {row.updated_by} · {formatDateTime(row.updated_at)}</p>}
       </div>
     </div>

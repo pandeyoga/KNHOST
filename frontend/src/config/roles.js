@@ -278,7 +278,7 @@ export const ROLE_NAV = {
       // sub-tab CRM, Analisis (BI Keuangan), Pengaturan › Keuangan & Pajak › Pemetaan Akun (izin gl_mapping, IA-06).
       "bank-accounts", "bank-reconciliation", "petty-cash",
       "ledger", "general-ledger", "chart-of-accounts",
-      "accounts-payable", "vendor-bills", "contra-bons",
+      "accounts-payable", "vendor-bills", "contra-bons", "gr-ir",
       "collection-worklist", "customer-credit", "credit-overrides", "bi-finance",
       "settings-hub", "settings-finance", "gl-account-mappings",
     ],

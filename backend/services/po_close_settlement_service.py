@@ -1,6 +1,8 @@
 """L02 LN-023-T02 — rekonsiliasi PO saat ditutup-kurang: sisa order, tagihan (AP) dan kelebihan bayar.
 
 Hanya menghitung & mencatat tindak lanjut eksplisit; tidak menulis jurnal maupun mengubah receiving aktual.
+PK-28 (IV-03) — ikut menghitung sisa GR/IR PO (`grir_balance`, dari buku besar); sisa yang tidak akan tertagih menjadi
+tindak lanjut Finance (kliring eksplisit di Hutang › GR/IR), bukan jurnal otomatis.
 """
 from typing import Any, Dict, List
 
@@ -47,6 +49,8 @@ async def build(po: Dict[str, Any]) -> Dict[str, Any]:
     }
     s["balanced"] = abs(round(s["ordered_value"] - s["cancelled_value"] - s["received_value"], 2)) < EPS and \
         abs(round(s["billed_total"] - s["over_billed"] + s["unbilled_received"] - s["payable_value"], 2)) < EPS
+    from services.grir_service import grir_balance_of
+    s["grir_balance"] = await grir_balance_of(po)
     s["follow_ups"] = _follow_ups(s)
     return s
 
@@ -65,6 +69,9 @@ def _follow_ups(s: Dict[str, Any]) -> List[Dict[str, Any]]:
     if s["over_paid"] > EPS:
         out.append({"code": "overpayment", "owner": "finance", "amount": s["over_paid"],
                     "label": "Pembayaran melebihi nilai terima — minta refund atau catat sebagai uang muka supplier."})
+    if abs(s.get("grir_balance") or 0) > EPS and s["unbilled_received"] <= EPS:   # PK-28
+        out.append({"code": "grir_clearing", "owner": "finance", "amount": round(abs(s["grir_balance"]), 2),
+                    "label": "Sisa GR/IR PO ini tidak akan tertagih — kliring di Keuangan › Hutang › GR/IR."})
     return out
 
 

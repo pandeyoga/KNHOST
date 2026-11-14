@@ -65,6 +65,7 @@ MODULE_CATALOG: List[Dict[str, Any]] = [
      "description": "Tagihan supplier, kontrabon (tukar faktur), landed cost, dan faktur pajak masukan.",
      "resources": ["vendor_bill", "contra_bon", "landed_cost", "input_tax"],
      "nav": ["pembelian", "accounts-payable", "vendor-bills", "contra-bons", "landed-cost",
+             "gr-ir",   # PK-28 — tab Hutang › GR/IR (Diterima Belum Ditagih)
              "keuangan", "akuntansi", "tax-hub", "input-tax",   # fase 3 · P8: Pajak ada di grup Akuntansi & Pajak
              "settings-hub", "settings-purchasing", "settings-cfg-purchasing"]},   # fase 3 · P8 — aturan kontrabon
     {"id": "interco", "group": "Pembelian", "label": "Transaksi Antar-PT",   # KP-T9 — istilah PT (dulu "Antar Badan Usaha")
@@ -742,6 +743,9 @@ VIEW_RESOURCE_OVERRIDES["settings-cfg-purchasing"] = [*VIEW_RESOURCE_OVERRIDES["
 # daftarnya tetap menuntut `customer.view` (`GET /api/customers`): sumber izin menu tetap `customer`, supaya pemegang
 # izin piutang tanpa izin pelanggan tidak mendapat menu yang langsung menolak.
 VIEW_RESOURCE_OVERRIDES["customers-crm"] = ["customer"]
+# PK-28 — tab Hutang › GR/IR dibuka izin `vendor_bill` (GET /api/finance/gr-ir = `vendor_bill.view`), bukan seluruh modul
+# Hutang Supplier & Kontrabon (pemegang izin kontrabon/landed cost saja tidak mendapat tab yang langsung menolak).
+VIEW_RESOURCE_OVERRIDES["gr-ir"] = ["vendor_bill"]
 
 
 #: PR-T5 — menu yang butuh AKSI tertentu (bukan sekadar "ada aksi apa pun pada sumber daya modulnya"). Dikirim

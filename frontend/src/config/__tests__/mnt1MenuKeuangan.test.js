@@ -50,7 +50,8 @@ describe("U1 — Keuangan 5 entri + Akuntansi & Pajak 5 entri (admin); grup Kas 
 
 describe("U2 — jumlah tab tampak per hub (admin)", () => {
   test.each([
-    ["finance-tower", 3], ["ar-aging", 6], ["accounts-payable", 2], ["cash-bank", 4], ["closing", 3], ["ledger", 2],
+    // PK-28 — Hutang mendapat tab ketiga GR/IR (Diterima Belum Ditagih).
+    ["finance-tower", 3], ["ar-aging", 6], ["accounts-payable", 3], ["cash-bank", 4], ["closing", 3], ["ledger", 2],
     ["hr-kpi-hub", 4], ["purchase-orders", 7],
   ])("%s = %i tab", (hub, n) => {
     expect(hubTabsForRole(hub, "admin")).toHaveLength(n);
@@ -59,7 +60,7 @@ describe("U2 — jumlah tab tampak per hub (admin)", () => {
     expect(labels("finance-tower")).toEqual(["Perlu Tindakan", "Posisi", "Analisis"]);
     expect(labels("ar-aging")).toEqual(["Saldo & Umur", "Penagihan & Penerimaan", "Rencana & Denda",
       "Titipan & Saldo Kredit", "Kredit & Plafon", "Kasus"]);
-    expect(labels("accounts-payable")).toEqual(["Tagihan", "Kontrabon"]);
+    expect(labels("accounts-payable")).toEqual(["Tagihan", "Kontrabon", "GR/IR (Diterima Belum Ditagih)"]);   // PK-28
     expect(labels("cash-bank")).toEqual(["Rekening & Saldo", "Transaksi Kas", "Rekonsiliasi", "Kas Kecil"]);
     expect(labels("closing")).toEqual(["Daftar Periksa & Tutup", "Buka Periode", "Posting Gagal"]);
     expect(labels("ledger")).toEqual(["Jurnal", "Bagan Akun"]);
@@ -139,12 +140,12 @@ describe("U6 — alamat lama tetap mendarat (admin)", () => {
 });
 
 describe("U7–U10 — menu per peran", () => {
-  test("U7 Finance: Keuangan (Beranda 3, Piutang 6, Hutang 2, Kas & Bank 4, Antar-PT) + Akuntansi (Buku Besar 2, Pajak › Faktur Keluaran)", () => {
+  test("U7 Finance: Keuangan (Beranda 3, Piutang 6, Hutang 3, Kas & Bank 4, Antar-PT) + Akuntansi (Buku Besar 2, Pajak › Faktur Keluaran)", () => {
     const m = menu("finance");
     expect(m.keuangan).toEqual({
       "finance-tower": ["finance-desk", "finance-tower", "bi-finance"],
       "ar-aging": ["ar-aging", "collection-worklist", "payment-plans", "customer-credit", "credit-overrides", "finance-cases"],
-      "accounts-payable": ["vendor-bills", "contra-bons"],
+      "accounts-payable": ["vendor-bills", "contra-bons", "gr-ir"],   // PK-28 — GR/IR: lihat (vendor_bill.view)
       "cash-bank": ["bank-accounts", "cash-management", "bank-reconciliation", "petty-cash"],
       "interco-transactions": [],
     });

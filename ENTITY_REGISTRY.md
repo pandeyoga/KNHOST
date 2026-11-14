@@ -1319,6 +1319,27 @@ terdaftar di **`backend/services/posting_registry.py::KINDS`** (dibaca `routers/
 | `fin_fixed_assets` | dokumen | `acquisition_je` (nomor jurnal perolehan) diisi saat `posted` |
 | `shipments` | dokumen (sudah ada) | `posted` hanya bila jurnal `shipment_revenue` surat jalan itu ada (GL-12); `journal_entry_id` baru |
 | `cash_transactions` | dokumen (sudah ada) | `gl_failed_at` baru |
+| `purchase_orders` | tiap unsur **`grir_clearings[]`** (`grir_clearings.$.gl_status`, …) — PK-28 | jenis registri `grir_clearing` ("Kliring GR/IR"), baris panel `<po_id>:<seq>` |
+
+### Sisa GR/IR per PO, selisih harga faktur, dan kliring  [PK-28 · IV-03]
+
+Sumber angka sisa GR/IR = **buku besar** akun `pembelian.gr_ir` (semua kode yang pernah dipakai kebutuhan itu), dikelompokkan
+per PO oleh `services/vendor_bill_service.grir_by_po(entity_id, po_id="")` (satu agregasi, tanpa batas `to_list`). Tidak ada
+angka GR/IR yang disimpan di PO (D1). Daftar: `GET /api/finance/gr-ir` (`vendor_bill.view`, satu PT); kliring:
+`POST /api/finance/gr-ir/{po_id}/clear` (`accounting.manage`, `services/grir_service.py`). Tanpa migrasi.
+
+| Koleksi · field | Tipe | Arti |
+|---|---|---|
+| `vendor_bills.grir_amount` | angka | Σ `billed_qty` × harga neto baris PO (`services/po_pricing.po_line_net_unit_price`); ditulis sekali pada tulisan `posted` (faktur ber-PO; bukan kampanye/jasa makloon) |
+| `vendor_bills.price_variance_amount` | angka | neto faktur (grand − PPN) − `grir_amount`; positif = faktur lebih mahal dari PO |
+| `vendor_bills.price_variance_posted` | boolean | `true` = selisih sudah masuk akun `pembelian.selisih_harga` (atau selisih nol); `false` = akun belum dipetakan saat faktur dijurnal → selisih masih di GR/IR (tampil di daftar GR/IR) |
+| `purchase_returns.ap_basis` | `gr_ir` · `hutang` · `kas` | akun yang didebit jurnal retur; ditentukan sekali dan ditulis bersama `gl_status: pending` (ulang memakai dasar tersimpan). `gr_ir` = retur sebelum ada faktur terposting: Dr GR/IR **tanpa PPN**, PPN masukan tidak dibalik; qty-nya mengurangi boleh-tagih (`returned_unbilled_map`). Retur lama tanpa field: `gr_ir` bila jurnalnya mendebit akun GR/IR |
+| `purchase_orders.grir_clearings[]` | larik `{id, seq, amount, direction: debit_grir\|kredit_grir, reason, by, by_id, at, gl_status, gl_error, gl_failed_at, journal_entry_id}` | tiap kliring sisa GR/IR; lahir `pending` (bersyarat: tidak ada unsur `pending`/`failed`, larik tidak berubah sejak saldo dibaca), jurnal `grir_clearing` (`source_id = <po_id>:<seq>`) lewat `posting_registry.durable_grir_clearing` |
+| `journal_entries.ref.po_id` | teks | diisi pada jurnal **baru** ber-sumber `goods_receipt`, `vendor_bill` (ber-PO), `purchase_return` (ber-PO), `grir_clearing`. Jurnal lama dihubungkan lewat `wms_tasks.po_id` / `vendor_bills.po_id` / `purchase_returns.po_id` (sumber `…_reversal` mengikuti asalnya); sisanya = "tidak terhubung ke PO" |
+| `purchase_orders.close_settlement.grir_balance` | angka | sisa GR/IR saat tutup-kurang; tindak lanjut `grir_clearing` (Finance) bila sisa ≠ 0 dan tidak ada lagi nilai terima yang belum ditagih. Tidak ada jurnal otomatis |
+
+Kunci pemetaan akun baru `pembelian.selisih_harga` (`gl_mapping_registry`, bawaan **kosong** — akun dipilih pemilik, titik
+henti H4; jenis beban/pendapatan; wajib).
 
 ### Peta jenis dokumen Jejak Dokumen (`services/doc_refs_service.py::DOC_TYPES`)  [PK-44]
 Bukan koleksi: SATU peta jenis dokumen → koleksi · field nomor · label · tujuan layar (`view` · `tab` · `focus_type` ·
@@ -2589,6 +2610,7 @@ Key Fields:
   price_deviation {flagged bool, threshold_pct, max_deviation_pct, items:[{sku,price,ref_price,unit,deviation_pct}]}
   last_received_at string|null   # Depth #3 — timestamp penerimaan (scorecard)
   # Setting terkait: settings.purchasing.price_deviation_approval_percent (default 10.0)
+  grir_clearings[]   # PK-28 — kliring sisa GR/IR (lihat "Sisa GR/IR per PO …" di bagian penanda jurnal)
 
 ⚠️ Supplier adalah STRING saat ini — belum ada supplier master collection
 ⚠️ Supplier: gunakan FK `supplier_id` → suppliers.id (Fase 3). `supplier_name`/
@@ -2751,6 +2773,7 @@ Key Fields:
   warehouse_id, warehouse_name, entity_id, items[{product_id, sku, product_name,
   quantity, unit, price, subtotal, reason, condition}], total_amount, reason,
   status, debit_note_number (DN-NNNNN saat approved), stock_adjusted,
+  ap_basis (gr_ir|hutang|kas — PK-28: akun yang didebit jurnal retur),
   created_by, approved_by, rejected_by, ...
 Endpoints:   GET/POST /purchase-returns · GET /purchase-returns/{id} ·
              POST /{id}/submit · /{id}/approve · /{id}/reject
@@ -2813,6 +2836,7 @@ Key Fields:
   match_status (matched|warning|blocked), match_exceptions[], within_tolerance,
   approval_required, required_approval_role, approval_status, approved_by,
   amount_paid, outstanding, payment_status (unpaid|partial|paid), payments[],
+  grir_amount, price_variance_amount, price_variance_posted   # PK-28 — nilai GR/IR & selisih harga terhadap PO
   timeline[], created_by, created_by_id, created_at, updated_at
 Endpoints:   GET/POST /vendor-bills · GET /vendor-bills/{id} ·
              GET /vendor-bills/payables/summary ·

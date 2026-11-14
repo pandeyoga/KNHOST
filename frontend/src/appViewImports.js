@@ -121,6 +121,7 @@ export const PurchaseApprovalView = lazy(() => import("./features/purchasing/Pur
 export const CashManagementView = lazy(() => import("./features/purchasing/CashManagementView"));
 export const PurchaseReturns = lazy(() => import("./features/purchasing/PurchaseReturns"));
 export const VendorBillsView = lazy(() => import("./features/purchasing/VendorBillsView"));
+export const GrIrView = lazy(() => import("./features/purchasing/GrIrView"));   // PK-28
 // FASE G-7 — Kontrabon (siklus tukar faktur supplier): gabung banyak faktur jadi satu
 // tanda terima + satu pembayaran, plus "GR belum ditagih" & jadwal tukar faktur.
 export const ContraBonsView = lazy(() => import("./features/purchasing/contrabon/ContraBonsView"));

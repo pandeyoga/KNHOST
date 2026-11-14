@@ -12,6 +12,7 @@
   "finance-cases": {"izin": [["finance_case", "view"]], "endpoint": "/api/finance-cases"},
   "vendor-bills": {"izin": [["vendor_bill", "view"]], "endpoint": "/api/vendor-bills"},
   "contra-bons": {"izin": [["contra_bon", "view"]], "endpoint": "/api/contra-bons"},
+  "gr-ir": {"izin": [["vendor_bill", "view"]], "endpoint": "/api/finance/gr-ir"},
   "bank-accounts": {"izin": [["cash", "view"]], "endpoint": "/api/bank-accounts"},
   "cash-management": {"izin": [["cash", "view"]], "endpoint": "/api/cash-transactions"},
   "bank-reconciliation": {"izin": [["cash", "view"]], "endpoint": "/api/bank-reconciliation/lines?bank_account_id=rek_uji"},

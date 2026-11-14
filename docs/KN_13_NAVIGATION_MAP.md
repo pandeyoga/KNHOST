@@ -536,6 +536,7 @@ dalam 4 grup); grup "Kas & Aset" dihapus.
 | Keuangan › Piutang (`ar-aging`) | Kasus (`finance-cases`) | A M F S SA |
 | Keuangan › Hutang (`accounts-payable`) | Tagihan (`vendor-bills`) | A M F |
 | Keuangan › Hutang (`accounts-payable`) | Kontrabon (`contra-bons`) | A M F G GA |
+| Keuangan › Hutang (`accounts-payable`) | GR/IR (Diterima Belum Ditagih) (`gr-ir`) — PK-28; kliring butuh `accounting.manage` | A M F |
 | Keuangan › Kas & Bank (`cash-bank`) | Rekening & Saldo (`bank-accounts`) | A M F |
 | Keuangan › Kas & Bank (`cash-bank`) | Transaksi Kas (`cash-management`) | A M F |
 | Keuangan › Kas & Bank (`cash-bank`) | Rekonsiliasi (`bank-reconciliation`) | A M F |

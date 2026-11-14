@@ -192,11 +192,7 @@ async def kliring(klien, h, po, alasan="satu meter tidak ditagih pemasok"):
     return await klien.post(f"{DAFTAR}/{po['id']}/clear", headers=h, json={"reason": alasan})
 
 
-MENUNGGU_B = pytest.mark.xfail(strict=True, reason="IV-03 — serah-terima (b) PK-28 belum mengalihkan pemanggil")
-
-
 # ── U1–U4 — selisih harga faktur ─────────────────────────────────────────────────────────────────────────────────────
-@MENUNGGU_B
 async def test_PK28_U1_faktur_lebih_mahal_selisih_ke_akun_selisih(klien, kepala_admin, db, bahan):
     """Terima 100 m × 10.000 = 1.000.000 (Dr 1-1300 / Cr 2-1150). Faktur 100 m @ 11.000 = 1.100.000 (tanpa PPN):
     GR/IR dihapus 100 × 10.000 = 1.000.000; selisih 1.100.000 − 1.000.000 = 100.000 → Dr 5-9920. Saldo 2-1150 PO = 0."""
@@ -216,7 +212,6 @@ async def test_PK28_U1_faktur_lebih_mahal_selisih_ke_akun_selisih(klien, kepala_
         assert await sisa_po(po["id"]) == 0
 
 
-@MENUNGGU_B
 async def test_PK28_U2_faktur_ber_ppn_selisih_dan_ppn_masukan(klien, kepala_admin, db, bahan):
     """PO ber-PPN 11 %. Faktur 100 m @ 11.000: neto 1.100.000, PPN 11 % = 121.000, total 1.221.000.
     Jurnal: Dr 2-1150 1.000.000 + Dr 5-9920 100.000 + Dr 1-1500 121.000 = Cr 2-1100 1.221.000."""
@@ -233,7 +228,6 @@ async def test_PK28_U2_faktur_ber_ppn_selisih_dan_ppn_masukan(klien, kepala_admi
         assert await sisa_po(po["id"]) == 0
 
 
-@MENUNGGU_B
 async def test_PK28_U3_faktur_lebih_murah_selisih_dikredit(klien, kepala_admin, db, bahan):
     """Faktur 100 m @ 9.500 = 950.000: GR/IR 1.000.000 dihapus; selisih 950.000 − 1.000.000 = −50.000 → Cr 5-9920."""
     async with terpetakan():
@@ -248,7 +242,6 @@ async def test_PK28_U3_faktur_lebih_murah_selisih_dikredit(klien, kepala_admin, 
         assert await sisa_po(po["id"]) == 0
 
 
-@MENUNGGU_B
 async def test_PK28_U4_tanpa_pemetaan_perilaku_lama_dan_terlihat_di_daftar(klien, kepala_admin, db, bahan):
     """Akun selisih belum diatur → jurnal lama Dr 2-1150 1.100.000 / Cr 2-1100 1.100.000; sisa PO = 1.000.000 −
     1.100.000 = −100.000 (saldo debit) dan selisih belum terposting 100.000 tampil di daftar GR/IR."""
@@ -267,7 +260,6 @@ async def test_PK28_U4_tanpa_pemetaan_perilaku_lama_dan_terlihat_di_daftar(klien
 
 
 # ── U5–U7 — retur beli sebelum/sesudah ditagih ───────────────────────────────────────────────────────────────────────
-@MENUNGGU_B
 async def test_PK28_U5_retur_sebelum_ditagih_dasar_grir_tanpa_ppn(klien, kepala_admin, db, bahan):
     """PO ber-PPN 11 %, terima 100 m (GR/IR kredit 1.000.000). Retur 20 m × 10.000 = 200.000 sebelum ada faktur → dasar
     GR/IR: Dr 2-1150 200.000 / Cr 1-1300 200.000, TANPA PPN (PPN masukan belum pernah dicatat). Boleh tagih = 100 − 20
@@ -294,7 +286,6 @@ async def test_PK28_U5_retur_sebelum_ditagih_dasar_grir_tanpa_ppn(klien, kepala_
     assert round(await saldo_akun(PPN_IN, KSC) - ppn0, 2) == 88_000
 
 
-@MENUNGGU_B
 async def test_PK28_U6_retur_sesudah_ditagih_penuh_dasar_hutang(klien, kepala_admin, db, bahan):
     """Terima 100 m, faktur 100 m @ 10.000 + PPN 11 % diposting. Retur 20 m: dasar hutang, jurnal seperti sekarang —
     Dr 2-1100 222.000 / Cr 1-1300 200.000 / Cr 1-1500 22.000 (pembalik PPN). Boleh tagih tetap 100 − 100 = 0."""
@@ -311,7 +302,6 @@ async def test_PK28_U6_retur_sesudah_ditagih_penuh_dasar_hutang(klien, kepala_ad
     assert (ctx["items"][0]["returned_unbilled_qty"], ctx["items"][0]["billable_received"]) == (0, 0)
 
 
-@MENUNGGU_B
 async def test_PK28_U7_retur_sesudah_ditagih_sebagian_dasar_hutang(klien, kepala_admin, db, bahan):
     """Terima 100 m, faktur 60 m diposting, retur 20 m → dasar hutang (ada faktur terposting); retur tidak mengurangi
     boleh-tagih: 100 − 60 = 40."""
@@ -529,3 +519,68 @@ async def test_PK28_U14_harga_neto_baris_po_dipakai_penerimaan(klien, kepala_adm
     assert po_line_net_unit_price(tanpa_lt, line_id="L1") == 9_310
     assert po_line_net_unit_price(fresh, line_id="L9", product_id=bahan["pid"]) == 9_310   # baris tak dikenal → produk
     assert po_line_net_unit_price(fresh, line_id="L9", product_id="prd_lain") == 0
+
+
+# ── Langkah kerja 6 — tutup-kurang memuat sisa GR/IR dan tindak lanjut kliring (tanpa jurnal otomatis) ─────────────────
+async def test_PK28_tutup_kurang_memuat_sisa_grir_dan_tindak_lanjut(klien, kepala_admin, db, bahan):
+    """(1) Sisa satu meter (U9): terima 600.000, tagih 590.000 → `grir_balance` 10.000; `unbilled_received` 10.000 > 0
+    (masih mungkin ditagih) → TIDAK ada tindak lanjut kliring. (2) Terima 60 m (600.000), faktur 60 m @ 10.050 tanpa
+    pemetaan (603.000, Dr 2-1150 603.000) → sisa −3.000; tagihan ≥ nilai terima (`unbilled_received` 0) → tindak lanjut
+    `grir_clearing` 3.000. Tutup-kurang tidak menerbitkan jurnal kliring."""
+    po = await _po_sisa_satu_meter(klien, kepala_admin, db, bahan)
+    st = (await db.purchase_orders.find_one({"id": po["id"]}))["close_settlement"]
+    assert st["grir_balance"] == 10_000 and st["unbilled_received"] == 10_000
+    assert "grir_clearing" not in {f["code"] for f in st["follow_ups"]}
+    await lepas_peta()
+    po2 = await buat_po(db, bahan)
+    await terima(klien, kepala_admin, db, bahan, po2, 60)
+    r = await tagih(klien, bahan, po2, 60, 10_050)
+    assert r.status_code == 200 and r.json()["status"] == "posted", r.text
+    je0 = await jumlah("journal_entries", {"source_type": "grir_clearing"})
+    hasil = await tutup_kurang(klien, kepala_admin, po2)
+    st2 = hasil["close_settlement"]
+    assert (st2["grir_balance"], st2["unbilled_received"]) == (-3_000, 0)
+    fu = {f["code"]: f for f in st2["follow_ups"]}
+    assert fu["grir_clearing"] == {"code": "grir_clearing", "owner": "finance", "amount": 3_000,
+                                   "label": "Sisa GR/IR PO ini tidak akan tertagih — kliring di Keuangan › Hutang › GR/IR."}
+    assert await jumlah("journal_entries", {"source_type": "grir_clearing"}) == je0
+    cur = (await klien.get(f"/api/purchase-orders/{po2['id']}/close-settlement", headers=kepala_admin)).json()
+    assert cur["current"]["grir_balance"] == -3_000
+
+
+async def test_PK28_retur_satuan_po_beda_dikonversi(db, bahan):
+    """RISIKO spesifikasi — satuan baris PO ≠ satuan dasar: retur 20 m dicatat `quantity_input=20, unit_input="meter"`
+    (satuan dasar yard) → boleh-tagih PO (meter) berkurang 20, bukan qty yard. Tanpa `unit_input`: konversi master
+    satuan (1 yard = 0,9144 m → 21,8723 yard = 20 m)."""
+    from services.vendor_bill_service import returned_unbilled_map
+    po = await buat_po(db, bahan)
+    base = {"po_id": po["id"], "stock_adjusted": True, "status": "approved", "ap_basis": "gr_ir", "entity_id": KSC}
+    await db.purchase_returns.insert_one({**base, "id": uid("pret"), "items": [
+        {"product_id": bahan["pid"], "quantity": 21.8723, "unit": "yard", "quantity_input": 20, "unit_input": "meter"}]})
+    assert (await returned_unbilled_map(po["id"])) == {"L1": 20}
+    await db.purchase_returns.insert_one({**base, "id": uid("pret"), "items": [
+        {"product_id": bahan["pid"], "quantity": 21.8723, "unit": "yard"}]})
+    assert (await returned_unbilled_map(po["id"]))["L1"] == pytest.approx(40, abs=0.001)
+    # dasar hutang / dibalik / belum keluar stok → tidak dihitung
+    await db.purchase_returns.insert_many([
+        {**base, "id": uid("pret"), "ap_basis": "hutang", "items": [{"product_id": bahan["pid"], "quantity": 5, "unit": "meter"}]},
+        {**base, "id": uid("pret"), "reversed": True, "items": [{"product_id": bahan["pid"], "quantity": 5, "unit": "meter"}]},
+        {**base, "id": uid("pret"), "stock_adjusted": False, "items": [{"product_id": bahan["pid"], "quantity": 5, "unit": "meter"}]}])
+    assert (await returned_unbilled_map(po["id"]))["L1"] == pytest.approx(40, abs=0.001)
+
+
+async def test_PK28_retur_lama_tanpa_dasar_dibaca_dari_jurnal(db, bahan):
+    """Retur lama tanpa `ap_basis`: GR/IR bila jurnal `purchase_return`-nya mendebit 2-1150, selain itu tidak."""
+    from services.vendor_bill_service import returned_unbilled_map
+    po = await buat_po(db, bahan)
+    base = {"po_id": po["id"], "stock_adjusted": True, "status": "approved", "entity_id": KSC}
+    r1, r2 = uid("pret"), uid("pret")
+    await db.purchase_returns.insert_many([
+        {**base, "id": r1, "items": [{"product_id": bahan["pid"], "quantity": 7, "unit": "meter"}]},
+        {**base, "id": r2, "items": [{"product_id": bahan["pid"], "quantity": 3, "unit": "meter"}]}])
+    await db.journal_entries.insert_many([
+        {"id": uid("je"), "source_type": "purchase_return", "source_id": r1, "status": "posted", "entity_id": KSC,
+         "lines": [{"account_code": GRIR, "debit": 70_000, "credit": 0}, {"account_code": PERSEDIAAN, "debit": 0, "credit": 70_000}]},
+        {"id": uid("je"), "source_type": "purchase_return", "source_id": r2, "status": "posted", "entity_id": KSC,
+         "lines": [{"account_code": HUTANG, "debit": 30_000, "credit": 0}, {"account_code": PERSEDIAAN, "debit": 0, "credit": 30_000}]}])
+    assert await returned_unbilled_map(po["id"]) == {"L1": 7}

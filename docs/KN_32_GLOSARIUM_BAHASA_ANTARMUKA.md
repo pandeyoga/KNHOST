@@ -403,3 +403,15 @@ Istilah mode Keuangan di Tanya KN, sakelar akun di Pengaturan › Akun & Akses, 
 | **Memeriksa angka** | status "Memeriksa angka…" · lencana "Angka diperiksa: semua cocok dengan data" / "Angka tidak bisa dipastikan" · kalimat "Saya tidak bisa memastikan angka untuk pertanyaan ini. Data yang berhasil diambil ada di tabel di bawah." | Jawaban mode Keuangan baru ditampilkan sesudah setiap angkanya cocok dengan data yang diambil; bila tetap tidak cocok, teks diganti kalimat baku dan tabel datanya tetap tampil |
 | **Sumber** | bagian "Sumber": "{judul} · {PT} · {periode}", catatan di bawahnya, tombol "Buka di layar" | Data yang dipakai jawaban, disusun server (bukan ditulis asisten); tombol membuka layar laporannya |
 | **Samarkan nama pihak** | pengaturan "Samarkan nama pihak yang dikirim ke asisten" | Nama pelanggan, pemasok, dan karyawan diganti kode (mis. "PLG-001") sebelum dikirim ke penyedia model, lalu dikembalikan ke nama asli di layar. Nominal dan nama PT tetap dikirim. Diatur per PT |
+
+### 9.9 Sisa GR/IR, selisih harga faktur, dan kliring (PK-28)
+
+Istilah tab Keuangan › Hutang › GR/IR (Diterima Belum Ditagih), rincian tagihan pemasok, dan rekonsiliasi tutup-kurang PO
+(`docs/blueprint/unit/PK-28.md`).
+
+| Istilah | Teks layar | Arti |
+|---|---|---|
+| **GR/IR** | Tab "GR/IR (Diterima Belum Ditagih)" · kolom "Sisa GR/IR" · kaki tabel "Total sisa GR/IR" dan "Saldo akun GR/IR di buku besar" | Akun "Barang diterima belum ditagih" (2-1150): naik saat barang PO diterima, turun saat pemasok menagih atau barang diretur sebelum ditagih. Sisa positif = barang sudah diterima, faktur belum datang; sisa negatif = sudah ditagih lebih dari nilai terima. Singkatan dipertahankan (bahasa kerja keuangan), selalu bersama penjelasnya |
+| **kliring** (GR/IR) | Tombol "Kliring" · dialog "Kliring sisa GR/IR?" · isian wajib "Alasan" · tindak lanjut tutup-kurang "Sisa GR/IR PO ini tidak akan tertagih — kliring di Keuangan › Hutang › GR/IR." | Memindahkan sisa GR/IR satu PO yang tidak akan tertagih ke akun selisih harga pembelian; menerbitkan jurnal. Hanya untuk PO yang sudah selesai, ditutup-kurang, atau dibatalkan. Bukan pembatalan faktur dan bukan pembayaran |
+| **selisih harga pembelian** | Pemetaan Akun "Selisih harga pembelian" · rincian faktur "Selisih harga terhadap PO" · "Selisih ini masih berada di akun GR/IR karena akun "Selisih harga pembelian" belum diatur di Pemetaan Akun." | Neto faktur pemasok dikurangi nilai GR/IR menurut harga neto baris PO (positif = faktur lebih mahal). Akunnya dipilih pemilik; selama belum dipilih, selisih tetap di GR/IR |
+| **jurnal tidak terhubung ke PO** | Kaki tabel merah "Rp {nominal} berasal dari jurnal yang tidak terhubung ke PO." | Bagian saldo akun GR/IR yang bukan dari penerimaan/tagihan/retur/kliring sebuah PO (mis. jurnal manual, potongan kontrabon) |

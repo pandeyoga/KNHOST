@@ -2860,6 +2860,9 @@
    "warehouse",
    "wms"
   ],
+  "gr-ir": [
+   "vendor_bill"
+  ],
   "grade-master": [
    "grade_master"
   ],

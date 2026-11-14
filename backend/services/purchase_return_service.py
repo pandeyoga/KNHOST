@@ -343,6 +343,9 @@ async def _finalize_supplier_return_financials(ret: Dict[str, Any], actor: str, 
             await rebuild_balance(pid, wid, eid)
 
     debit_note = ret.get("debit_note_number") or await next_debit_note_number(entity_id)   # KP-T5 — PT dokumen (N1)
+    # PK-28 (IV-03) — dasar jurnal retur (akun yang didebit) ditentukan SEKALI dan disimpan bersama niatnya; ulang
+    # posting memakai dasar tersimpan (faktur yang terbit sesudahnya tidak mengubah dasar retur ini).
+    ap_basis = ret.get("ap_basis") or await _glp.purchase_return_basis(ret, outcome)
     await db.purchase_returns.update_one({"id": return_id}, {"$unset": {"saga_lock": ""}, "$set": {
         "status": "approved", "stock_adjusted": True, "debit_note_number": debit_note,
         "approved_by": ret.get("approved_by") or actor,
@@ -350,7 +353,7 @@ async def _finalize_supplier_return_financials(ret: Dict[str, Any], actor: str, 
         "decision_notes": notes, "updated_at": now,
         "supplier_status": prs.ACCEPTED, "supplier_outcome": outcome,
         "accepted_at": ret.get("accepted_at") or now, "accepted_by": ret.get("accepted_by") or actor,
-        "gl_status": "pending",
+        "gl_status": "pending", "ap_basis": ap_basis,
     }})
 
     is_refund = (outcome or "").lower() == prs.OUTCOME_REFUND
@@ -380,7 +383,7 @@ async def _finalize_supplier_return_financials(ret: Dict[str, Any], actor: str, 
         je = await gl_service.post_purchase_return(
             fresh, amount=gross_value,
             ppn=float(fresh.get("ppn_amount", 0) or fresh.get("ppn", 0) or 0), label=debit_note,
-            outcome=outcome, cash_account_code=(acc if is_refund else ""))
+            outcome=outcome, cash_account_code=(acc if is_refund else ""), ap_basis=ap_basis)
     except Exception as exc:  # noqa: BLE001
         await db.purchase_returns.update_one({"id": return_id}, {"$set": {
             "gl_status": "failed", "gl_error": str(exc)[:300], "updated_at": now_iso()}})

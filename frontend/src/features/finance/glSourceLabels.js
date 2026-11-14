@@ -8,6 +8,7 @@ export const SOURCE_LABELS = {
   sales_invoice: "Faktur Penjualan", sales_return: "Retur Penjualan", sales_return_reversal: "Pembalik Retur Jual",
   purchase_order: "Pembelian (PO)", po: "Pembelian (PO)", purchase: "Pembelian", purchase_return: "Retur Pembelian",
   goods_receipt: "Penerimaan Barang", vendor_bill: "Tagihan Supplier", vendor_bill_reversal: "Pembalik Tagihan Supplier",
+  grir_clearing: "Kliring GR/IR",   // PK-28
   landed_cost: "Biaya Masuk", contra_bon_deduction: "Potongan Kontrabon", ap_variance_writeoff: "Hapus Selisih Hutang",
   interco_transaction: "Antar-PT", interco: "Antar-PT", interco_return: "Retur Antar-PT",
   interco_settlement: "Pelunasan Antar-PT", interco_loan: "Pinjaman Antar-PT", interco_loan_repayment: "Cicilan Pinjaman Antar-PT",
