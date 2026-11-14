@@ -255,9 +255,11 @@ export default function PayrollRunsView({ selectedEntity, focusDoc, onClearFocus
             <div className="divide-y divide-kn-divider max-h-[560px] overflow-y-auto">
               {sortedRuns.map((r) => (
                 <button type="button" key={r.id} data-testid={`payroll-run-${r.id}`} onClick={() => openRun(r.id)}
-                  className={`link-button block w-full text-left px-3 py-2 no-underline ${sel?.id === r.id ? "bg-kn-action-soft" : ""}`}>
-                  <span className="flex items-center justify-between gap-2"><span className="text-fs-13 font-semibold text-kn-text">{r.number}</span><PayrollRunStatus status={r.status} /></span>
-                  <span className="flex items-center gap-2 mt-1 text-fs-12 text-kn-text-2"><EntityBadge entityId={r.entity_id} /><span>{formatPeriod(r.period)}</span><span className="ml-auto tabular-nums">{rp(r.totals?.net)}</span></span>
+                  // Cek layar 15 Nov — bukan `link-button` (inline-flex tanpa bantalan membuat baris menempel tepi dan nomor patah):
+                  // baris blok berbantalan, nomor utuh, status & PT boleh turun baris.
+                  className={`block w-full text-left px-3 py-2 hover:bg-kn-neutral-soft ${sel?.id === r.id ? "bg-kn-action-soft" : ""}`}>
+                  <span className="flex flex-wrap items-center justify-between gap-2"><span className="whitespace-nowrap text-fs-13 font-semibold text-kn-text">{r.number}</span><PayrollRunStatus status={r.status} /></span>
+                  <span className="flex flex-wrap items-center gap-2 mt-1 text-fs-12 text-kn-text-2"><EntityBadge entityId={r.entity_id} /><span className="whitespace-nowrap">{formatPeriod(r.period)}</span><span className="ml-auto whitespace-nowrap tabular-nums">{rp(r.totals?.net)}</span></span>
                 </button>
               ))}
             </div>

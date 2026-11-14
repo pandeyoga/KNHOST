@@ -37,9 +37,11 @@ const KIND_ICON = { bpjs: Landmark, pph21: ReceiptText };
 const JENIS = [{ key: "semua", label: "Semua jenis" }, { key: "bpjs", label: "BPJS" }, { key: "pph21", label: "PPh 21" }];
 
 /** Alasan tombol Catat Setoran mati (ditulis di samping tombol — bukan tooltip). */
-export function alasanTidakBisaSetor({ canWrite, canPay }) {
+export function alasanTidakBisaSetor({ canWrite, canPay, sisaTotal = null }) {
   if (!canWrite) return TEKS_SEMUA_PT;
   if (!canPay) return TEKS_TANPA_IZIN;
+  // Cek layar 15 Nov — tombol tidak aktif bila tidak ada yang bisa disetor (dulu aktif lalu ditolak saat simpan).
+  if (sisaTotal != null && sisaTotal <= 0.005) return "Tidak ada sisa kewajiban untuk masa ini.";
   return "";
 }
 
@@ -150,7 +152,8 @@ export default function PayrollRemittancesView() {
     } finally { setBusy(false); }
   };
 
-  const alasan = alasanTidakBisaSetor({ canWrite, canPay });
+  const sisaTotal = out ? (sisaOf("bpjs") || 0) + (sisaOf("pph21") || 0) : null;
+  const alasan = alasanTidakBisaSetor({ canWrite, canPay, sisaTotal });
   const monthOpts = recentMonths().map((m) => ({ value: m, label: formatPeriod(m) }));
   const rows = list.items || [];
   const blokRekening = cashAccountBlocked(accState, acc);
@@ -204,7 +207,7 @@ export default function PayrollRemittancesView() {
         ) : listState === "error" ? (
           <div className="section-pad"><ErrorNotice testId="remit-list-error" message={`Riwayat setoran tidak bisa dimuat. ${listErr}`.trim()} onRetry={loadList} /></div>
         ) : rows.length === 0 ? (
-          <div className="section-pad text-center text-fs-13 text-kn-text-2" data-testid="remit-list-empty">
+          <div className="section-pad py-6 text-center text-fs-13 text-kn-text-2" data-testid="remit-list-empty">
             {kind !== "semua" ? `Belum ada setoran ${KIND_LABEL[kind]} untuk masa ini.` : "Belum ada setoran untuk masa ini."}</div>
         ) : (
           <>
