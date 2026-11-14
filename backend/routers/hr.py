@@ -371,7 +371,10 @@ async def get_employee_360(employee_id: str, request: Request) -> Dict[str, Any]
 
     _PAY_PII = {"net", "gross", "base_salary", "allowances", "pph21", "bpjs_emp",
                 "bpjs_er", "bpjs_emp_total", "bpjs_er_total", "overtime", "commission",
-                "salary_earnings", "bank"}
+                "salary_earnings", "bank",
+                # PY-T1 — daftar komponen & kolom baru slip juga nominal gaji
+                "components", "other_earnings", "other_deductions", "tax_gross", "pph21_month",
+                "pph21_month_detail", "pph21_annual", "overtime_events"}
     if not can_pii:
         payslips = [{k: (None if k in _PAY_PII else v) for k, v in p.items()} for p in payslips]
 

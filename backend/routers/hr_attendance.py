@@ -496,6 +496,18 @@ async def patch_attendance(att_id: str, payload: GenericPatch, request: Request)
         updates["approved"] = bool(updates["approved"])
         if updates["approved"]:
             updates["outside_geofence"] = False
+    if ("clock_in" in updates and updates["clock_in"] != cur.get("clock_in")) or \
+            ("clock_out" in updates and updates["clock_out"] != cur.get("clock_out")):
+        # PY-T1 (PY-14) — jam diubah → menit kerja, telat, pulang cepat, dan lembur dihitung ulang dengan shift rekaman
+        # itu (dulu tetap angka lama, sehingga lembur yang dibayar tidak mengikuti koreksi jam).
+        sh = await db.hr_shifts.find_one({"id": cur.get("shift_id")}, {"_id": 0}) if cur.get("shift_id") else None
+        if not sh:
+            emp = await db.hr_employees.find_one({"id": cur.get("employee_id")}, {"_id": 0, "shift_id": 1})
+            sh = await att.resolve_shift(emp, cur.get("entity_id", ""))
+        m = att.compute_metrics(updates.get("clock_in", cur.get("clock_in")) or "",
+                                updates.get("clock_out", cur.get("clock_out")) or "", sh)
+        for k in ("work_min", "late_min", "early_leave_min", "overtime_min", "std_min"):
+            updates[k] = m[k]
     updates["updated_at"] = now_iso()
     updated = await db.hr_attendance.find_one_and_update(
         {"id": att_id}, {"$set": updates}, projection={"_id": 0}, return_document=ReturnDocument.AFTER)

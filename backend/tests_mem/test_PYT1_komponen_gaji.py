@@ -23,7 +23,6 @@ KANDA = "ent_kanda"
 OKT, NOV, DES = "2026-10", "2026-11", "2026-12"
 HARI_INI = datetime.datetime(2026, 12, 15, 3, 0, tzinfo=datetime.timezone.utc)   # 15 Des 2026 10.00 WIB
 SIMPAN: dict = {}
-TUNDA_B = "PY-01 — serah-terima (b): kolom lama slip diturunkan dari komponen, masukan ikut proses, jenis proses"
 
 
 async def pt_uji(kode: str) -> str:
@@ -158,7 +157,6 @@ async def test_PYT1_U1_proses_reguler_komponen_dan_kolom_lama(klien, db, adm, ka
 
 
 # ── U12 — baris PDF dari komponen ─────────────────────────────────────────────────────────────────────────────────────
-@pytest.mark.xfail(strict=True, reason=TUNDA_B)
 async def test_PYT1_U12_baris_pdf_dari_komponen(kanda):
     from services import hr_payroll_pdf as pdf
     slip = _slip(SIMPAN["u1"], kanda["e1"])
@@ -173,7 +171,6 @@ async def test_PYT1_U12_baris_pdf_dari_komponen(kanda):
 
 
 # ── U14 (lapis B) — permintaan kedua proses reguler mengembalikan proses yang sama ──────────────────────────────────
-@pytest.mark.xfail(strict=True, reason=TUNDA_B)
 async def test_PYT1_U14_reguler_kedua_proses_sama(klien, db, adm, kanda):
     r = await klien.post("/api/hr/payroll/runs", json={"entity_id": KANDA, "period": OKT, "run_type": "regular"},
                          headers=await adm())
@@ -185,7 +182,6 @@ async def test_PYT1_U14_reguler_kedua_proses_sama(klien, db, adm, kanda):
 
 
 # ── U4 — proses THR: PPh 21 gabungan bulan ────────────────────────────────────────────────────────────────────────────
-@pytest.mark.xfail(strict=True, reason=TUNDA_B)
 async def test_PYT1_U4_proses_thr_pph21_gabungan_bulan(klien, db, adm, kanda):
     h = await adm()
     r = await klien.post("/api/hr/payroll/runs", json={"entity_id": KANDA, "period": OKT, "run_type": "thr"},
@@ -217,7 +213,6 @@ async def test_PYT1_U4_proses_thr_pph21_gabungan_bulan(klien, db, adm, kanda):
 
 
 # ── U5 — posting THR: jurnal per proses ──────────────────────────────────────────────────────────────────────────────
-@pytest.mark.xfail(strict=True, reason=TUNDA_B)
 async def test_PYT1_U5_posting_thr_jurnal_sendiri(klien, db, adm, kanda):
     h = await adm()
     thr = SIMPAN["u4"]
@@ -240,7 +235,6 @@ async def test_PYT1_U5_posting_thr_jurnal_sendiri(klien, db, adm, kanda):
 
 
 # ── U13 — rekap PPh 21 periode memuat kedua proses ───────────────────────────────────────────────────────────────────
-@pytest.mark.xfail(strict=True, reason=TUNDA_B)
 async def test_PYT1_U13_rekap_pph21_dua_proses(klien, adm, kanda):
     r = await klien.get("/api/tax/summary", params={"period": OKT, "entity_id": KANDA}, headers=await adm())
     assert r.status_code == 200, r.text
@@ -250,7 +244,6 @@ async def test_PYT1_U13_rekap_pph21_dua_proses(klien, adm, kanda):
 
 
 # ── U3 — dua masukan bonus = dua baris; masukan terpakai ─────────────────────────────────────────────────────────────
-@pytest.mark.xfail(strict=True, reason=TUNDA_B)
 async def test_PYT1_U3_dua_bonus_dua_baris(klien, db, adm, kanda):
     h = await adm()
     r = await klien.post("/api/hr/payroll/components", headers=h, json={
@@ -274,7 +267,6 @@ async def test_PYT1_U3_dua_bonus_dua_baris(klien, db, adm, kanda):
 
 
 # ── U6 — anulir melepas masukan ──────────────────────────────────────────────────────────────────────────────────────
-@pytest.mark.xfail(strict=True, reason=TUNDA_B)
 async def test_PYT1_U6_anulir_melepas_masukan(klien, db, adm, kanda):
     h = await adm()
     run = SIMPAN["u3"]
@@ -288,7 +280,6 @@ async def test_PYT1_U6_anulir_melepas_masukan(klien, db, adm, kanda):
 
 
 # ── U7 — hitung ulang mengikuti antrean ──────────────────────────────────────────────────────────────────────────────
-@pytest.mark.xfail(strict=True, reason=TUNDA_B)
 async def test_PYT1_U7_hitung_ulang_mengikuti_antrean(klien, db, adm):
     eid = await pt_uji("PYT7")
     e = await _siapkan_pt(db, eid, "emp_pyt1_u7")
@@ -320,7 +311,6 @@ async def test_PYT1_U7_hitung_ulang_mengikuti_antrean(klien, db, adm):
 
 
 # ── U8 — masukan manual: pending tidak ikut; sesudah disahkan ikut; terpakai di proses yang diajukan → 409 ─────────
-@pytest.mark.xfail(strict=True, reason=TUNDA_B)
 async def test_PYT1_U8_masukan_manual(klien, db, adm, akun, sesi, peran_tanpa_acuan):
     eid = await pt_uji("PYT8")
     e = await _siapkan_pt(db, eid, "emp_pyt1_u8")
@@ -358,7 +348,6 @@ async def test_PYT1_U9_kunci_sumber_sama_satu_dokumen(db, kanda):
 
 
 # ── U10 — komponen potongan berakun ──────────────────────────────────────────────────────────────────────────────────
-@pytest.mark.xfail(strict=True, reason=TUNDA_B)
 async def test_PYT1_U10_potongan_berakun_jurnal(klien, db, adm):
     eid = await pt_uji("PYT10")
     e = await _siapkan_pt(db, eid, "emp_pyt1_u10")
@@ -405,7 +394,6 @@ async def test_PYT1_U10b_validasi_komponen(klien, adm, kanda):
 
 
 # ── U11 — format periode ─────────────────────────────────────────────────────────────────────────────────────────────
-@pytest.mark.xfail(strict=True, reason=TUNDA_B)
 async def test_PYT1_U11_format_periode(klien, adm, kanda):
     for p in ("2026-13", "Okt"):
         r = await klien.post("/api/hr/payroll/runs", json={"entity_id": KANDA, "period": p}, headers=await adm())
@@ -414,7 +402,6 @@ async def test_PYT1_U11_format_periode(klien, adm, kanda):
 
 
 # ── U15 — ubah jam absen menghitung ulang lembur ─────────────────────────────────────────────────────────────────────
-@pytest.mark.xfail(strict=True, reason="PY-14 — serah-terima (b): ubah jam absen menghitung ulang menit lembur")
 async def test_PYT1_U15_ubah_jam_absen_hitung_ulang_lembur(klien, db, adm, kanda):
     await db.hr_shifts.insert_one({"id": "shift_pyt1", "entity_id": KANDA, "name": "Pagi", "jam_in": "08:00",
                                    "jam_out": "17:00", "grace_late_min": 0, "status": "active",
@@ -451,3 +438,36 @@ async def test_PYT1_U16_izin_masukan(klien, db, adm, akun, sesi, peran_tanpa_acu
     assert r.status_code == 400 and r.json()["detail"] == "Komponen GAJI_POKOK bukan komponen masukan.", r.text
     r = await klien.post(f"/api/hr/payroll/inputs/{inp['id']}/approve", headers=await adm())
     assert r.status_code == 200 and r.json()["status"] == "approved", r.text
+
+
+# ── tambahan — skrip migrasi proses lama (lapis B; data nyata = H3, tidak dijalankan di sini) ──────────────────────────
+async def test_PYT1_migrasi_proses_lama_mode_lapor_lalu_terapkan(db, capsys):
+    import importlib.util
+    from pathlib import Path
+    spec = importlib.util.spec_from_file_location(
+        "migrasi_pyt1", Path(__file__).resolve().parents[2] / "scripts/migrasi_pyt1_proses_gaji.py")
+    mig = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mig)
+    ent = "ent_uji_pyt1mig"
+    lama = [("prun_mig_a", "2026-08", "posted", "2026-09-01T00:00:00+00:00"),
+            ("prun_mig_b", "2026-09", "cancelled", "2026-10-01T00:00:00+00:00"),
+            ("prun_mig_c", "2026-09", "approved", "2026-10-02T00:00:00+00:00"),
+            ("prun_mig_d", "2026-07", "draft", "2026-08-01T00:00:00+00:00"),     # kembar dengan _e (H6)
+            ("prun_mig_e", "2026-07", "approved", "2026-08-02T00:00:00+00:00")]
+    for rid, per, st, at in lama:
+        await db.hr_payroll_runs.insert_one({"id": rid, "number": rid.upper(), "entity_id": ent, "period": per,
+                                             "status": st, "created_at": at})
+    assert await mig.jalankan([], db=db) == 0
+    out = capsys.readouterr().out
+    assert "KEMBAR (H6, tidak diberi kunci): ent_uji_pyt1mig:2026-07:regular" in out
+    assert "Mode baca-saja" in out
+    assert await jumlah("hr_payroll_runs", {"entity_id": ent, "run_type": {"$exists": True}}) == 0
+    assert await mig.jalankan(["--apply"], db=db) == 1
+    docs = {d["id"]: d async for d in db.hr_payroll_runs.find({"entity_id": ent})}
+    assert {d["run_type"] for d in docs.values()} == {"regular"}
+    assert (docs["prun_mig_b"]["seq"], docs["prun_mig_c"]["seq"]) == (1, 2)
+    assert docs["prun_mig_a"]["active_key"] == f"{ent}:2026-08:regular"
+    assert docs["prun_mig_c"]["active_key"] == f"{ent}:2026-09:regular" and "active_key" not in docs["prun_mig_b"]
+    assert "active_key" not in docs["prun_mig_d"] and "active_key" not in docs["prun_mig_e"]
+    assert await mig.jalankan(["--apply"], db=db) == 1   # aman diulang: tanpa perubahan baru
+    assert "Diterapkan: 0 proses diberi jenis · 0 proses diberi kunci" in capsys.readouterr().out

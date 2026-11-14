@@ -1,3 +1,11 @@
+/**
+ * PayslipsView — daftar & rincian slip gaji. PY-T1: dipakai panel "Cari slip" di Proses Gaji (`embedded`), menggantikan
+ * tab Slip Gaji (id lama `hr-payslips` = alias ke Proses Gaji; rute cadangan merender Proses Gaji dengan panel terbuka).
+ *
+ * Rincian slip = DAFTAR KOMPONEN (Pendapatan · Potongan · Tanggungan perusahaan), bukan empat baris tetap; slip lama tanpa
+ * komponen disusun dari kolomnya. Cari per nama karyawan atau periode; saringan periode di server. Sumber:
+ * GET /api/hr/payslips?entity_id&period · GET /api/hr/payslips/{id}/pdf.
+ */
 import { useEffect, useMemo, useState } from "react";
 import apiErrorText from "../../utils/apiError";
 import axios, { API } from "../../services/apiClient";
@@ -6,21 +14,44 @@ import KNSelect from "../../components/KNSelect";
 import EntityBadge from "../../components/EntityBadge";
 import ErrorNotice from "../../components/ErrorNotice";
 import useListSearch from "@/hooks/useListSearch";
-import { rp, pct, recentMonths, openPayslipPdf } from "./payrollUtils";
+import { rp, pct, recentMonths, openPayslipPdf, runTypeLabel, slipDeductions, slipGroups } from "./payrollUtils";
 import { formatPeriod } from "../../utils/formatters";
 
-function DRow({ label, value, strong, color }) {
+/** Rincian satu slip: komponen dikelompokkan, total, gaji bersih. Diekspor untuk uji. */
+export function SlipDetail({ slip, busy, onPdf }) {
+  const groups = slipGroups(slip);
   return (
-    <div className="flex items-center justify-between py-1">
-      <span className={`text-[11.5px] ${strong ? "font-bold" : "text-[#6B6B73]"}`}>{label}</span>
-      <span className={`text-[11.5px] tabular-nums ${strong ? "font-bold" : ""}`} style={color ? { color } : undefined}>{rp(value)}</span>
+    <div data-testid="payslip-detail">
+      <div className="px-3 py-3 border-b border-kn-divider">
+        <p className="text-fs-14 font-bold flex items-center gap-1"><Building2 size={14} className="text-kn-text-2" aria-hidden="true" /> {slip.employee_name}</p>
+        <p className="text-fs-12 text-kn-text-2">{slip.number} · {formatPeriod(slip.period)} · {runTypeLabel(slip.run_type)} · PTKP {slip.ptkp_status}{slip.ter_category ? ` · kategori TER ${slip.ter_category}` : ""}</p>
+      </div>
+      <div className="px-3 py-2 space-y-2">
+        {groups.map((g) => (
+          <div key={g.key} data-testid={`payslip-detail-group-${g.key}`}>
+            <p className="text-fs-12 font-bold text-kn-text-2 mt-1">{g.label}</p>
+            {g.rows.length === 0 ? <p className="text-fs-12 text-kn-text-2">—</p> : g.rows.map((c, i) => (
+              <div key={`${c.code}-${i}`} className="flex items-start justify-between gap-2 py-0.5 text-fs-13">
+                <span className="min-w-0 break-words text-kn-text">{c.label}{c.code === "PPH21" && slip.pph21_method !== "annual_pasal17" && c.rate != null ? ` (${pct(Number(c.rate) / 100)})` : ""}{c.code === "PPH21" && slip.pph21_method === "annual_pasal17" ? " (hitung ulang tahunan)" : ""}</span>
+                <span className="tabular-nums whitespace-nowrap">{rp(c.amount)}</span>
+              </div>
+            ))}
+          </div>
+        ))}
+        <div className="flex items-center justify-between border-t border-kn-divider pt-2 text-fs-13 font-bold"><span>Penghasilan bruto</span><span className="tabular-nums text-kn-action">{rp(slip.gross)}</span></div>
+        <div className="rounded-lg bg-kn-action px-3 py-2 flex items-center justify-between">
+          <span className="text-fs-13 font-bold text-white">Gaji bersih diterima</span>
+          <span className="text-fs-14 font-bold text-white tabular-nums" data-testid="payslip-detail-net">{rp(slip.net)}</span>
+        </div>
+        <button type="button" data-testid="payslip-detail-pdf" disabled={busy} onClick={() => onPdf(slip.id)} className="primary-button btn-sm w-full justify-center whitespace-nowrap"><FileText size={13} /> {busy ? "Membuka..." : "Unduh / Lihat PDF"}</button>
+      </div>
     </div>
   );
 }
 
-export default function PayslipsView({ currentUser, selectedEntity }) {
+export default function PayslipsView({ selectedEntity, embedded = false }) {
   const [rows, setRows] = useState([]);
-  const srch = useListSearch(rows, null, { testId: "payslips", placeholder: "Cari karyawan / periode…" });
+  const srch = useListSearch(rows, ["employee_name", "period", "number"], { testId: "payslips", placeholder: "Cari slip: nama karyawan atau periode (mis. 2026-10)…" });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [period, setPeriod] = useState("");
@@ -36,87 +67,57 @@ export default function PayslipsView({ currentUser, selectedEntity }) {
     catch (e) { setError(apiErrorText(e, "Gagal memuat slip gaji.")); }
     finally { setLoading(false); }
   }
-  async function pdf(id) { setBusy(true); try { await openPayslipPdf(id); } catch (_) { /* noop */ } finally { setBusy(false); } }
+  async function pdf(id) { setBusy(true); try { await openPayslipPdf(id); } catch (e) { setError(apiErrorText(e, "PDF slip gagal dibuka.")); } finally { setBusy(false); } }
 
-  const periodOpts = [{ value: "", label: "Semua Periode" }, ...recentMonths().map((m) => ({ value: m, label: formatPeriod(m) }))];
-  const empB = sel?.bpjs_emp || {};
-  const erB = sel?.bpjs_er || {};
+  const periodOpts = [{ value: "", label: "Semua periode" }, ...recentMonths().map((m) => ({ value: m, label: formatPeriod(m) }))];
 
   return (
     <div data-testid="payslips-view">
       <ErrorNotice message={error} onRetry={load} onDismiss={() => setError("")} testId="payslips-error" />
-      <div className="section-card mb-3">
-        <div className="section-head"><div className="flex items-center gap-2"><Receipt size={16} className="text-[#0058CC]" /><h2 data-testid="payslips-title">Slip Gaji Karyawan</h2></div>
-          <div className="flex items-center gap-2">
-            <div className="w-[160px]"><KNSelect data-testid="payslips-period" value={period} onValueChange={setPeriod} className="field !py-1" options={periodOpts} /></div>
-            <button data-testid="payslips-refresh" onClick={load} className="icon-button" title="Muat ulang"><RefreshCw size={15} /></button>
-          </div>
-        </div>
+      <div className={`flex flex-wrap items-end gap-2 ${embedded ? "mb-2" : "section-card section-pad mb-3"}`}>
+        {!embedded && <h2 className="flex items-center gap-2 mr-auto" data-testid="payslips-title"><Receipt size={16} className="text-kn-action" aria-hidden="true" />Slip Gaji Karyawan</h2>}
+        <div className="w-[180px]"><label className="field-label">Periode</label>
+          <KNSelect data-testid="payslips-period" value={period} onValueChange={setPeriod} className="field" options={periodOpts} /></div>
+        <button type="button" data-testid="payslips-refresh" onClick={load} className="secondary-button btn-sm whitespace-nowrap"><RefreshCw size={13} /> Muat ulang</button>
       </div>
 
-      <div className="grid grid-cols-1 gap-3 lg:grid-cols-[1fr_360px]">
+      <div className="grid grid-cols-1 gap-3 lg:grid-cols-[1fr_340px]">
         <div className="section-card min-w-0">
           {srch.toolbar}
-          {/* Audit UI 24 Okt (HP): tabel grid diberi lebar minimum + gulir samping di dalam kartu (dulu judul kolom bertumpuk & nama hilang di 390px). */}
-          <div className="overflow-x-auto"><div className="min-w-[600px]">
-          <div className="grid grid-cols-[1.6fr_72px_1fr_1fr_1fr] whitespace-nowrap px-3 py-1.5 bg-[#FAFBFC] text-[11px] font-bold uppercase text-[#6B6B73] border-b border-[#EFF0F2]">
-            <span>Karyawan</span><span>Periode</span><span className="text-right">Bruto</span><span className="text-right">Potongan</span><span className="text-right">Net</span>
-          </div>
           {loading ? (
-            <div className="py-10 text-center text-[12px] text-[#6B6B73]" data-testid="payslips-loading">Memuat...</div>
+            <div className="section-pad text-center text-fs-12 text-kn-text-2" data-testid="payslips-loading" role="status">Memuat...</div>
           ) : srch.shown.length === 0 ? (
-            <div className="py-12 text-center text-[12px] text-[#6B6B73]" data-testid="payslips-empty"><Receipt className="mx-auto mb-2 text-gray-300" size={28} /><p>Belum ada slip gaji. Buat & posting payroll run dulu.</p></div>
+            <div className="section-pad text-center text-fs-12 text-kn-text-2" data-testid="payslips-empty"><Receipt className="mx-auto mb-2 text-kn-text-2" size={26} aria-hidden="true" />
+              <p>{rows.length === 0 ? "Belum ada slip gaji. Hitung penggajian dulu di atas." : "Tidak ada slip yang cocok dengan pencarian."}</p></div>
           ) : (
-            <div className="divide-y divide-[#EFF0F2] max-h-[560px] overflow-y-auto">
-              {srch.pageRows.map((s) => (
-                <button key={s.id} data-testid={`payslip-row-${s.id}`} onClick={() => setSel(s)}
-                  className={`w-full grid grid-cols-[1.6fr_72px_1fr_1fr_1fr] items-center px-3 py-2.5 text-left hover:bg-[#FAFBFC] ${sel?.id === s.id ? "bg-[#EEF4FF]" : ""}`}>
-                  <span className="flex items-center gap-1 min-w-0"><EntityBadge entityId={s.entity_id} /><span className="text-[12px] font-semibold truncate">{s.employee_name}</span></span>
-                  <span className="text-[11px] text-[#6B6B73]">{formatPeriod(s.period)}</span>
-                  <span className="text-[11.5px] tabular-nums text-right text-[#0058CC]">{rp(s.gross)}</span>
-                  <span className="text-[11.5px] tabular-nums text-right text-[#C0392B]">{rp((s.bpjs_emp_total || 0) + (s.pph21 || 0))}</span>
-                  <span className="text-[11.5px] tabular-nums text-right font-bold text-[#1F7A45]">{rp(s.net)}</span>
-                </button>
-              ))}
+            <div className="overflow-x-auto">
+              <table className="data-table head-wrap w-full tabular-nums" data-testid="payslips-table">
+                <thead><tr>
+                  <th className="text-left">Karyawan</th><th className="text-left">Periode</th><th className="text-left">Jenis</th>
+                  <th className="text-right">Pendapatan</th><th className="text-right">Potongan + PPh 21</th><th className="text-right">Gaji bersih</th>
+                </tr></thead>
+                <tbody>
+                  {srch.pageRows.map((s) => (
+                    <tr key={s.id} data-testid={`payslip-row-${s.id}`} className={`cursor-pointer ${sel?.id === s.id ? "bg-kn-action-soft" : ""}`} onClick={() => setSel(s)}>
+                      <td className="text-left"><span className="flex items-center gap-1 min-w-0"><EntityBadge entityId={s.entity_id} /><button type="button" className="link-button text-left font-semibold break-words" onClick={(e) => { e.stopPropagation(); setSel(s); }}>{s.employee_name}</button></span></td>
+                      <td className="text-left whitespace-nowrap">{formatPeriod(s.period)}</td>
+                      <td className="text-left whitespace-nowrap">{runTypeLabel(s.run_type)}</td>
+                      <td className="text-right text-kn-action">{rp(s.gross)}</td>
+                      <td className="text-right text-kn-danger-text">{rp(slipDeductions(s) + Number(s.pph21 || 0))}</td>
+                      <td className="text-right font-bold text-kn-success-text">{rp(s.net)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
           )}
-          </div></div>
+          {srch.pager && <div className="px-3 py-2 border-t border-kn-divider">{srch.pager}</div>}
         </div>
 
-        {/* Detail slip */}
         <div className="section-card">
           {!sel ? (
-            <div className="py-16 text-center text-[12px] text-[#6B6B73]" data-testid="payslip-detail-empty"><FileText className="mx-auto mb-2 text-gray-300" size={26} /><p>Pilih slip untuk rincian.</p></div>
-          ) : (
-            <div data-testid="payslip-detail">
-              <div className="px-3 py-3 border-b border-[#EFF0F2]">
-                <p className="text-[13px] font-bold flex items-center gap-1"><Building2 size={14} className="text-[#6B6B73]" /> {sel.employee_name}</p>
-                <p className="text-[11px] text-[#6B6B73]">{sel.number} · {formatPeriod(sel.period)} · PTKP {sel.ptkp_status} · Kategori TER {sel.ter_category}</p>
-              </div>
-              <div className="px-3 py-2">
-                <p className="text-[10px] uppercase font-bold text-[#0058CC] mt-1">Penerimaan</p>
-                <DRow label="Gaji Pokok" value={sel.base_salary} />
-                <DRow label="Tunjangan" value={sel.allowances} />
-                <DRow label="Lembur" value={sel.overtime} />
-                {sel.commission > 0 && <DRow label="Komisi / Insentif" value={sel.commission} />}
-                <DRow label="Bruto" value={sel.gross} strong color="#0058CC" />
-                <p className="text-[10px] uppercase font-bold text-[#C0392B] mt-2">Potongan</p>
-                <DRow label="BPJS Kesehatan" value={empB.kesehatan} />
-                <DRow label="BPJS JHT" value={empB.jht} />
-                <DRow label="BPJS JP" value={empB.jp} />
-                {/* G5-66: dasar pengenaan disebut — tarif efektif (TER) × penghasilan bruto. */}
-                <DRow label={`PPh 21 (${pct(sel.pph21_rate)} × bruto)`} value={sel.pph21} />
-                <DRow label="Total Potongan" value={(sel.bpjs_emp_total || 0) + (sel.pph21 || 0)} strong color="#C0392B" />
-                <div className="mt-2 rounded-lg px-3 py-2 flex items-center justify-between" style={{ background: "#0058CC" }}>
-                  <span className="text-[12px] font-bold text-white">Gaji Bersih Diterima</span>
-                  <span className="text-[14px] font-bold text-white tabular-nums" data-testid="payslip-detail-net">{rp(sel.net)}</span>
-                </div>
-                <p className="text-[10px] uppercase font-bold text-[#6B6B73] mt-2">Kontribusi Perusahaan</p>
-                <DRow label="BPJS (Kes+JHT+JP+JKK+JKM)" value={sel.bpjs_er_total} />
-                <button data-testid="payslip-detail-pdf" disabled={busy} onClick={() => pdf(sel.id)} className="primary-button w-full justify-center mt-3"><FileText size={13} /> {busy ? "Membuka..." : "Unduh / Lihat PDF"}</button>
-              </div>
-            </div>
-          )}
+            <div className="section-pad text-center text-fs-12 text-kn-text-2" data-testid="payslip-detail-empty"><FileText className="mx-auto mb-2 text-kn-text-2" size={26} aria-hidden="true" /><p>Pilih slip untuk melihat komponennya.</p></div>
+          ) : <SlipDetail slip={sel} busy={busy} onPdf={pdf} />}
         </div>
       </div>
     </div>

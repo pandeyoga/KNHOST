@@ -249,6 +249,18 @@ async def release_inputs(ids: Iterable[str], run_id: str) -> int:
     return res.modified_count
 
 
+async def retake_inputs(ids: Iterable[str], run_id: str, run_number: str = "") -> int:
+    """Kompensasi hitung ulang yang gagal: masukan yang tadinya dipakai proses itu (dan masih `approved`) diambil lagi."""
+    ids = [i for i in ids if i]
+    if not ids:
+        return 0
+    res = await db.hr_pay_inputs.update_many(
+        {"id": {"$in": ids}, "status": "approved"},
+        {"$set": {"status": "used", "used_run_id": run_id, "used_run_number": run_number, "used_at": now_iso(),
+                  "updated_at": now_iso()}})
+    return res.modified_count
+
+
 async def release_for_run(run_id: str) -> int:
     """`used` → `approved` untuk semua masukan proses itu (hitung ulang, batal, anulir). → jumlah yang dilepas."""
     res = await db.hr_pay_inputs.update_many(

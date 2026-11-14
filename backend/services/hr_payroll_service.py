@@ -150,19 +150,6 @@ def _pct(v: Any) -> float:
     return float(v or 0) / 100.0
 
 
-def _sum_allowances(allowances: Any) -> float:
-    if isinstance(allowances, (int, float)):
-        return round(float(allowances), 2)
-    total = 0.0
-    if isinstance(allowances, list):
-        for a in allowances:
-            if isinstance(a, dict):
-                total += float(a.get("amount", 0) or 0)
-            elif isinstance(a, (int, float)):
-                total += float(a)
-    return round(total, 2)
-
-
 def bpjs_breakdown(base: float, emp: Dict[str, Any], cfg: Dict[str, Any]) -> Tuple[Dict, Dict, float, float]:
     b = cfg.get("bpjs", {})
     # FASE G-0 — `hr.feature_toggles.bpjs_kesehatan` & `bpjs_ketenagakerjaan` DULU tidak
@@ -294,9 +281,10 @@ async def _prior_year_slips(emp_id: str, period: str) -> List[Dict[str, Any]]:
     year = period[:4]
     dead = [r["id"] async for r in db.hr_payroll_runs.find(
         {"status": {"$in": ["void", "cancelled", "rejected"]}}, {"_id": 0, "id": 1})]
+    # PY-T1 — satu bulan bisa memuat beberapa proses (reguler, THR, susulan): batas 12 bulan × beberapa slip.
     return await db.hr_payslips.find(
         {"employee_id": emp_id, "period": {"$regex": f"^{year}-", "$lt": period}, "run_id": {"$nin": dead}},
-        {"_id": 0, "period": 1, "gross": 1, "tax_gross": 1, "pph21": 1, "bpjs_emp": 1}).to_list(24)
+        {"_id": 0, "period": 1, "gross": 1, "tax_gross": 1, "pph21": 1, "bpjs_emp": 1}).to_list(240)
 
 
 def _tanggal_keluar(emp: Dict[str, Any]) -> str:
@@ -333,71 +321,151 @@ async def _components_map(entity_id: str) -> Dict[str, Dict[str, Any]]:
     return await _pc.components_for(entity_id)
 
 
+async def _month_prior_index(entity_id: str, period: str, run: Optional[Dict[str, Any]] = None,
+                             employee_ids: Optional[List[str]] = None) -> Dict[str, List[Dict[str, Any]]]:
+    """PY-T1 — {karyawan: slip-slipnya pada proses LAIN periode itu yang tidak dibatalkan/dianulir dan dibuat lebih dulu
+    dari proses `run`} (tanpa `run` = pratinjau proses baru: semua proses hidup periode itu). Urut dibuat lebih dulu.
+    Dua kueri per proses gaji (bukan per karyawan)."""
+    q: Dict[str, Any] = {"period": period, "status": {"$nin": list(DEAD_STATUSES)}}
+    if entity_id and entity_id != "all":
+        q["entity_id"] = entity_id
+    if run:
+        q["id"] = {"$ne": run.get("id")}
+        q["created_at"] = {"$lt": run.get("created_at") or now_iso()}
+    runs = {r["id"]: r async for r in db.hr_payroll_runs.find(q, {"_id": 0, "id": 1, "number": 1, "created_at": 1})}
+    if not runs:
+        return {}
+    sq: Dict[str, Any] = {"run_id": {"$in": list(runs)}}
+    if employee_ids is not None:
+        sq["employee_id"] = {"$in": list(employee_ids)}
+    out: Dict[str, List[Dict[str, Any]]] = {}
+    async for r in db.hr_payslips.find(sq, {"_id": 0, "id": 1, "run_id": 1, "employee_id": 1, "period": 1, "gross": 1,
+                                            "tax_gross": 1, "pph21": 1, "bpjs_emp": 1}):
+        r["run_number"] = runs[r["run_id"]].get("number", "")
+        r["_order"] = runs[r["run_id"]].get("created_at", "")
+        out.setdefault(r["employee_id"], []).append(r)
+    for v in out.values():
+        v.sort(key=lambda r: r["_order"])
+    return out
+
+
+def _amt(doc: Dict[str, Any], field: str) -> float:
+    """Nominal kolom slip (kosong = 0)."""
+    return float(doc.get(field) or 0)
+
+
+def _slip_tax_gross(doc: Dict[str, Any]) -> float:
+    """Bruto pajak slip; slip lama tanpa `tax_gross` → `gross`."""
+    return _amt(doc, "tax_gross") if doc.get("tax_gross") is not None else _amt(doc, "gross")
+
+
+def _run_type(run: Optional[Dict[str, Any]], run_type: Optional[str]) -> str:
+    rt = (run or {}).get("run_type") or run_type or "regular"
+    return rt if rt in ("regular", "thr", "susulan") else "regular"
+
+
 async def compute_payslip(emp: Dict[str, Any], period: str, entity_id: str,
                           cfg: Dict[str, Any], aturan: Optional[Dict[str, Any]] = None, *,
-                          comps: Optional[Dict[str, Dict[str, Any]]] = None) -> Dict[str, Any]:
+                          comps: Optional[Dict[str, Dict[str, Any]]] = None, run: Optional[Dict[str, Any]] = None,
+                          run_type: Optional[str] = None, inputs: Optional[List[Dict[str, Any]]] = None,
+                          month_prior: Optional[List[Dict[str, Any]]] = None) -> Dict[str, Any]:
+    """Slip satu karyawan sebagai DAFTAR KOMPONEN (PY-T1); kolom lama slip diturunkan dari komponen
+    (`hr_pay_components.derive_columns`), sehingga jurnal, PDF, ekspor, dan rekap pajak membaca angka yang sama.
+
+    Proses reguler: gaji pokok, tunjangan per nama, lembur, komisi mesin, BPJS, PPh 21, dan masukan antrean. Proses THR /
+    susulan: hanya masukan antrean + PPh 21 (tanpa BPJS — ASUMSI spesifikasi). `inputs` = masukan karyawan ini yang dimuat
+    (proses: yang terambil `take_for_run`; pratinjau: yang `approved`); kosong + `run` = masukan yang dipakai proses itu.
+
+    PPh 21 gabungan bulan: bruto pajak bulan = bruto pajak slip ini + Σ bruto pajak slip karyawan yang sama di proses lain
+    periode itu yang hidup dan dibuat lebih dulu (`month_prior`); `pph21_month` = bruto pajak bulan × tarif(kategori,
+    bruto pajak bulan); `pph21` slip ini = `pph21_month` − Σ `pph21` slip terdahulu bulan itu. Masa pajak terakhir
+    (Desember / bulan keluar) = hitung ulang tahunan yang ikut memuat slip terdahulu bulan itu. Tarif dari tabel yang
+    berlaku (PK-46, `aturan_pph21`); unit ini tidak mengubah isinya."""
+    from services import hr_pay_components as _pc
+    from services import hr_pay_inputs as _pi
     # PK-46 — `aturan` = aturan_pph21(akhir periode gaji); proses gaji membacanya sekali dan meneruskannya ke sini.
     if aturan is None:
         aturan = await aturan_pph21(akhir_periode_gaji(period))
     if comps is None:
         comps = await _components_map(entity_id)
+    rt = _run_type(run, run_type)
+    if inputs is None:
+        inputs = [i for i in await _pi.inputs_for_run(run["id"]) if i.get("employee_id") == emp["id"]] if run else []
+    if month_prior is None:
+        month_prior = (await _month_prior_index(entity_id, period, run, [emp["id"]])).get(emp["id"], [])
     base = float(emp.get("base_salary") or 0)
-    allowances = _sum_allowances(emp.get("allowances"))
-    events = await overtime_events(emp["id"], period, entity_id, cfg)
+    events: List[Dict[str, Any]] = []
+    overtime, commission = 0.0, 0.0
+    if rt == "regular":
+        events = await overtime_events(emp["id"], period, entity_id, cfg)
+        overtime = _overtime_amount(base, events, cfg)
+        commission = await _commission_for(emp, period, entity_id)
     ot_auto = sum(e["minutes"] for e in events if e["source"] == "attendance")
     ot_filed = sum(e["minutes"] for e in events if e["source"] == "filed")
     ot_min = ot_auto + ot_filed
-    overtime = _overtime_amount(base, events, cfg)
-    commission = await _commission_for(emp, period, entity_id)
-    salary_earnings = round(base + allowances + overtime, 2)
-    gross = round(salary_earnings + commission, 2)
-    emp_b, er_b, emp_total, er_total = bpjs_breakdown(base, emp, cfg)
-    # HR-01 — bruto pajak memuat premi JKK, JKM & BPJS Kesehatan yang dibayar pemberi kerja.
-    tax_gross = round(gross + er_b["jkk"] + er_b["jkm"] + er_b["kesehatan"], 2)
+    earn = _pc.earning_components(comps, run_type=rt, base=base, allowances=emp.get("allowances"),
+                                  overtime=overtime, overtime_min=ot_min, commission=commission, inputs=inputs)
+    rates, on = bpjs_info(emp, cfg)
+    if rt == "regular":
+        emp_b, er_b, _, _ = bpjs_breakdown(base, emp, cfg)
+    else:   # ASUMSI spesifikasi — iuran BPJS hanya di proses reguler
+        emp_b = {"kesehatan": 0.0, "jht": 0.0, "jp": 0.0}
+        er_b = {"kesehatan": 0.0, "jht": 0.0, "jp": 0.0, "jkk": 0.0, "jkm": 0.0}
+        on = {"kes": False, "tk": False}
+    bpjs_lines = _pc.statutory_components(comps, run_type=rt, bpjs_emp=emp_b, bpjs_er=er_b, bpjs_rates=rates,
+                                          bpjs_on=on)
+    # HR-01 — bruto pajak memuat premi JKK, JKM & BPJS Kesehatan yang dibayar pemberi kerja (komponen tanggungan itu
+    # bertanda kena pajak); potongan tidak pernah.
+    tax_gross = _pc.derive_columns(earn + bpjs_lines)["tax_gross"]
     ptkp = emp.get("ptkp_status") or "TK0"
     category = aturan["ptkp_ke_ter"].get(ptkp, "A")   # PK-46 — kategori dari pengaturan bertanggal
     # FASE G-0 — `hr.feature_toggles.pph21` kini benar-benar mengendalikan pemotongan PPh 21
     # (sebelumnya toggle ini tersimpan tetapi tidak pernah diperiksa mesin payroll).
     _pph21_on = bool((cfg.get("feature_toggles", {}) or {}).get("pph21", True))
     tax_on = bool(cfg.get("ter_enabled", True) and _pph21_on)
-    rate = ter_rate(category, tax_gross, aturan) if tax_on else 0.0
-    pph21 = round(tax_gross * rate, 2)
+    prior_tg = round(sum(_slip_tax_gross(p) for p in month_prior), 2)
+    prior_pph = round(sum(_amt(p, "pph21") for p in month_prior), 2)
+    tg_month = round(tax_gross + prior_tg, 2)
+    rate = ter_rate(category, tg_month, aturan) if tax_on else 0.0
+    pph21_month = round(tg_month * rate, 2)
+    pph21 = round(pph21_month - prior_pph, 2) if tax_on else 0.0
     pph21_method, annual = "ter", None
     if tax_on and _is_final_tax_period(emp, period):
-        prior = await _prior_year_slips(emp["id"], period)
+        prior = await _prior_year_slips(emp["id"], period) + month_prior
         pension = lambda s: float((s.get("bpjs_emp") or {}).get("jht", 0) or 0) + \
             float((s.get("bpjs_emp") or {}).get("jp", 0) or 0)  # noqa: E731
+        months = len({str(p.get("period") or "") for p in prior} | {period})
         annual = annual_pph21(
             tax_gross=tax_gross + sum(float(s.get("tax_gross", s.get("gross", 0)) or 0) for s in prior),
             pension_deduction=pension({"bpjs_emp": emp_b}) + sum(pension(s) for s in prior),
-            months=len(prior) + 1, ptkp_status=ptkp, aturan=aturan)
+            months=months, ptkp_status=ptkp, aturan=aturan)
         annual["prior_withheld"] = round(sum(float(s.get("pph21", 0) or 0) for s in prior), 2)
-        annual["months"] = len(prior) + 1
+        annual["months"] = months
         # selisih negatif = lebih potong dikembalikan lewat slip ini (jurnal mendebit Hutang PPh 21)
         pph21 = round(annual["annual_tax"] - annual["prior_withheld"], 2)
+        pph21_month = round(pph21 + prior_pph, 2)
         pph21_method, rate = "annual_pasal17", 0.0
-    net = round(gross - emp_total - pph21, 2)
-    # PY-T1 (a) — daftar komponen slip dibangun DI SAMPING kolom lama (kolom lama belum diturunkan darinya); uji PY-T1
-    # U1/U2 membuktikan Σ komponen per kolom = kolom lama.
-    from services import hr_pay_components as _pc
-    rates, on = bpjs_info(emp, cfg)
-    components = _pc.sort_components(
-        _pc.earning_components(comps, base=base, allowances=emp.get("allowances"), overtime=overtime,
-                               overtime_min=ot_min, commission=commission)
-        + _pc.statutory_components(comps, bpjs_emp=emp_b, bpjs_er=er_b, bpjs_rates=rates, bpjs_on=on, pph21=pph21,
-                                   pph21_rate_pct=rate * 100, pph21_method=pph21_method), comps)
+    pph_lines = _pc.statutory_components(comps, run_type=rt, pph21=pph21, pph21_rate_pct=rate * 100,
+                                         pph21_method=pph21_method)
+    components = _pc.sort_components(earn + bpjs_lines + pph_lines, comps)
+    cols = _pc.derive_columns(components)
     return {
         "employee_id": emp["id"], "employee_name": emp.get("name", ""),
         "user_id": emp.get("user_id", ""), "position": emp.get("position_name", ""),
-        "ptkp_status": ptkp, "ter_category": category, "pph21_rate": rate,
-        "base_salary": round(base, 2), "allowances": allowances,
+        "run_type": rt, "ptkp_status": ptkp, "ter_category": category, "pph21_rate": rate,
+        "base_salary": cols["base_salary"], "allowances": cols["allowances"],
         "overtime_min": ot_min, "overtime_auto_min": ot_auto, "overtime_filed_min": ot_filed,
-        "overtime": overtime, "overtime_events": events, "commission": commission,
-        "salary_earnings": salary_earnings, "gross": gross, "tax_gross": tax_gross,
-        "pph21_method": pph21_method, "pph21_annual": annual,
-        "bpjs_emp": emp_b, "bpjs_er": er_b,
-        "bpjs_emp_total": emp_total, "bpjs_er_total": er_total,
-        "pph21": pph21, "net": net, "components": components,
+        "overtime": cols["overtime"], "overtime_events": events, "commission": cols["commission"],
+        "other_earnings": cols["other_earnings"], "salary_earnings": cols["salary_earnings"], "gross": cols["gross"],
+        "tax_gross": cols["tax_gross"], "pph21_method": pph21_method, "pph21_annual": annual,
+        "bpjs_emp": cols["bpjs_emp"], "bpjs_er": cols["bpjs_er"],
+        "bpjs_emp_total": cols["bpjs_emp_total"], "bpjs_er_total": cols["bpjs_er_total"],
+        "pph21": cols["pph21"], "pph21_month": pph21_month,
+        "pph21_month_detail": {"tax_gross_month": tg_month, "rate": rate, "prior_pph21": prior_pph,
+                               "prior": [{"run_id": p["run_id"], "run_number": p.get("run_number", ""),
+                                          "slip_id": p.get("id", ""), "tax_gross": _slip_tax_gross(p),
+                                          "pph21": _amt(p, "pph21")} for p in month_prior]},
+        "other_deductions": cols["other_deductions"], "net": cols["net"], "components": components,
         "bank": {"bank_name": emp.get("bank_name", ""), "acc_no": emp.get("bank_acc_no", ""),
                  "acc_name": emp.get("bank_acc_name", "")},
     }
@@ -405,7 +473,7 @@ async def compute_payslip(emp: Dict[str, Any], period: str, entity_id: str,
 
 def _empty_totals() -> Dict[str, float]:
     return {"employees": 0, "salary_earnings": 0.0, "commission": 0.0, "gross": 0.0,
-            "bpjs_emp": 0.0, "bpjs_er": 0.0, "pph21": 0.0, "net": 0.0}
+            "bpjs_emp": 0.0, "bpjs_er": 0.0, "pph21": 0.0, "other_deductions": 0.0, "net": 0.0}
 
 
 def _accumulate(totals: Dict[str, float], s: Dict[str, Any]) -> None:
@@ -416,6 +484,7 @@ def _accumulate(totals: Dict[str, float], s: Dict[str, Any]) -> None:
     totals["bpjs_emp"] += s["bpjs_emp_total"]
     totals["bpjs_er"] += s["bpjs_er_total"]
     totals["pph21"] += s["pph21"]
+    totals["other_deductions"] += float(s.get("other_deductions") or 0)   # PY-T1 — potongan lain (komponen)
     totals["net"] += s["net"]
 
 
@@ -437,77 +506,159 @@ async def _active_employees(entity_id: str, period: str = "") -> List[Dict[str, 
     return [safe_doc(r) for r in rows]
 
 
-async def preview_run(entity_id: str, period: str) -> Dict[str, Any]:
+async def _build_slips(entity_id: str, period: str, run_type: str, *, run: Optional[Dict[str, Any]] = None,
+                       inputs: Optional[List[Dict[str, Any]]] = None) -> Dict[str, Any]:
+    """PY-T1 — slip satu proses. Reguler: semua karyawan yang digaji periode itu (+ masukan mereka); THR/susulan: hanya
+    karyawan yang punya masukan. `inputs` = masukan yang dimuat (terambil untuk proses / `approved` untuk pratinjau)."""
     # FASE E-4 (E4.5) — BPJS/PPh21/lembur mengikuti badan usaha yang digaji.
     cfg = await hr_service.get_hr_settings(entity_id)
     aturan = await aturan_pph21(akhir_periode_gaji(period))   # PK-46 — sekali per proses gaji
     comps = await _components_map(entity_id)                  # PY-T1 — komponen PT, sekali per proses gaji
-    emps = await _active_employees(entity_id, period)
+    per_emp: Dict[str, List[Dict[str, Any]]] = {}
+    for inp in inputs or []:
+        per_emp.setdefault(inp["employee_id"], []).append(inp)
+    if run_type == "regular":
+        emps = await _active_employees(entity_id, period)
+    else:
+        emps = [safe_doc(e) for e in await db.hr_employees.find(
+            {"id": {"$in": list(per_emp)}, "entity_id": entity_id}, {"_id": 0}).to_list(len(per_emp) + 1)]
+    prior = await _month_prior_index(entity_id, period, run)   # PPh 21 gabungan bulan — sekali per proses gaji
     slips: List[Dict[str, Any]] = []
     totals = _empty_totals()
     for emp in emps:
-        s = await compute_payslip(emp, period, entity_id, cfg, aturan, comps=comps)
+        s = await compute_payslip(emp, period, entity_id, cfg, aturan, comps=comps, run=run, run_type=run_type,
+                                  inputs=per_emp.get(emp["id"], []), month_prior=prior.get(emp["id"], []))
         slips.append(s)
         _accumulate(totals, s)
     slips.sort(key=lambda x: x["employee_name"])
-    return {"entity_id": entity_id, "period": period,
+    return {"entity_id": entity_id, "period": period, "run_type": run_type,
             "commission_mode": cfg.get("payroll_commission_mode", "accrue_then_settle"),
             "payslips": slips, "totals": _round_totals(totals), "count": len(slips)}
 
 
+def _check_run_input(period: str, run_type: str) -> Tuple[str, str]:
+    from services import hr_pay_inputs as _pi
+    p = _pi.check_period(period)   # PY-13 — "Periode harus berbentuk TTTT-BB, mis. 2026-10."
+    rt = run_type or "regular"
+    if rt not in ("regular", "thr", "susulan"):
+        raise ValueError("Jenis proses gaji harus Reguler, THR, atau Susulan.")
+    return p, rt
+
+
+def _no_input_msg(period: str, run_type: str) -> str:
+    from services import periodic_posting
+    lbl = periodic_posting.label_periode(period)
+    if run_type == "thr":
+        return f"Tidak ada masukan THR yang disahkan untuk {lbl}."
+    return f"Tidak ada masukan yang belum terpakai untuk {lbl}."
+
+
+async def preview_run(entity_id: str, period: str, run_type: str = "regular") -> Dict[str, Any]:
+    """Pratinjau tanpa menandai masukan (masukan `approved` periode itu ikut dihitung).
+
+    Reguler yang SUDAH ada untuk periode itu = pratinjau hitung ulang proses itu (masukan yang dipakainya ikut; PPh 21
+    gabungan bulan hanya memuat proses yang dibuat lebih dulu darinya). Selain itu proses baru dianggap dibuat terakhir:
+    semua proses hidup periode itu menjadi "slip terdahulu bulan itu"."""
+    from services import hr_pay_inputs as _pi
+    period, run_type = _check_run_input(period, run_type)
+    emp_ids = [e["id"] for e in await _active_employees(entity_id, period)] if run_type == "regular" else None
+    inputs = await _pi.approved_for(entity_id, period, run_type, emp_ids)
+    existing = await existing_run(entity_id, period) if run_type == "regular" else None
+    if existing:
+        inputs = await _pi.inputs_for_run(existing["id"]) + inputs
+    return await _build_slips(entity_id, period, run_type, run=existing, inputs=inputs)
+
+
 async def existing_run(entity_id: str, period: str) -> Optional[Dict[str, Any]]:
-    """Proses gaji yang masih hidup untuk PT+periode (PK-22: `cancelled`/`void` tidak menghalangi proses baru)."""
+    """Proses gaji REGULER yang masih hidup untuk PT+periode (PK-22: `cancelled`/`void` tidak menghalangi proses baru;
+    PY-T1: proses THR dan susulan tidak dihitung — proses lama tanpa `run_type` = reguler)."""
     return safe_doc(await db.hr_payroll_runs.find_one(
-        {"entity_id": entity_id, "period": period, "status": {"$nin": list(DEAD_STATUSES)}}, {"_id": 0}))
+        {"entity_id": entity_id, "period": period, "status": {"$nin": list(DEAD_STATUSES)},
+         "run_type": {"$in": ["regular", None]}}, {"_id": 0}))
 
 
-async def create_run(entity_id: str, period: str, actor: Dict[str, Any]) -> Dict[str, Any]:
+def active_key_of(entity_id: str, period: str) -> str:
+    """PY-T1 (D7) — kunci unik proses reguler hidup (`hr_payroll_runs.uq_active_key`)."""
+    return f"{entity_id}:{period}:regular"
+
+
+async def _next_seq(entity_id: str, period: str, run_type: str) -> int:
+    q: Dict[str, Any] = {"entity_id": entity_id, "period": period}
+    q["run_type"] = {"$in": ["regular", None]} if run_type == "regular" else run_type
+    return await db.hr_payroll_runs.count_documents(q) + 1
+
+
+async def _slip_docs(run: Dict[str, Any], slips: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    out = []
+    for s in slips:
+        snum = await next_doc_number("hr_payslips", "number", "SLIP-", entity_id=run["entity_id"])
+        out.append({"id": new_id("slip"), "number": snum, "run_id": run["id"], "entity_id": run["entity_id"],
+                    "period": run["period"], "status": "draft", "pdf_url": "", **s,
+                    "created_at": now_iso(), "updated_at": now_iso()})
+    return out
+
+
+async def create_run(entity_id: str, period: str, actor: Dict[str, Any], run_type: str = "regular") -> Dict[str, Any]:
+    """Buat proses gaji (PY-T1): `regular` (satu per PT per periode — permintaan kedua mengembalikan proses yang ada,
+    dijamin indeks unik parsial `active_key`), `thr` (karyawan yang punya masukan THR), `susulan` (karyawan yang punya
+    masukan belum terpakai). Masukan `approved` → `used` (`take_for_run`) SEBELUM slip dihitung, jadi slip memuat persis
+    masukan yang ditandai proses ini; gagal → masukan dilepas dan proses dihapus (INV-ATOMIC-01)."""
+    from pymongo.errors import DuplicateKeyError
+    from services import hr_pay_inputs as _pi
     if not entity_id or entity_id == "all" or not period:
         raise ValueError("Payroll run butuh entitas spesifik & periode (mis. 2026-06).")
+    period, run_type = _check_run_input(period, run_type)
     from services import periodic_posting
     periodic_posting.assert_period_started(period)   # PK-22 (FY-02) — periode yang belum dimulai ditolak
-    found = await existing_run(entity_id, period)
-    if found:
-        return await get_run(found["id"])
-    prev = await preview_run(entity_id, period)
-    if prev["count"] == 0:
-        raise ValueError("Tidak ada karyawan aktif pada entitas ini.")
+    emp_ids = None
+    if run_type == "regular":
+        found = await existing_run(entity_id, period)
+        if found:
+            return await get_run(found["id"])
+        emp_ids = [e["id"] for e in await _active_employees(entity_id, period)]
+        if not emp_ids:
+            raise ValueError("Tidak ada karyawan aktif pada entitas ini.")
+    elif not await _pi.approved_for(entity_id, period, run_type):
+        raise ValueError(_no_input_msg(period, run_type))
     # Keputusan pemilik K-09 (26 Okt) — awalan "PR-" dulu sama dengan Permintaan Pembelian (KSC/PR-00002 · Payroll).
     # Penggajian BARU memakai "PAY-" (deret per badan usaha sendiri: KSC/PAY-00001); nomor lama TIDAK diubah.
     number = await next_doc_number("hr_payroll_runs", "number", PAYROLL_PREFIX, entity_id=entity_id)
+    cfg = await hr_service.get_hr_settings(entity_id)
     run_id = new_id("prun")
     run = {
-        "id": run_id, "number": number, "entity_id": entity_id, "period": period,
-        "status": "draft", "commission_mode": prev["commission_mode"],
-        "totals": prev["totals"], "gl_posted": False, "journal_id": "", "journal_number": "",
+        "id": run_id, "number": number, "entity_id": entity_id, "period": period, "run_type": run_type,
+        "seq": await _next_seq(entity_id, period, run_type),
+        "status": "draft", "commission_mode": cfg.get("payroll_commission_mode", "accrue_then_settle"),
+        "totals": _round_totals(_empty_totals()), "gl_posted": False, "journal_id": "", "journal_number": "",
         "incentive_journal_id": "", "paid_journal_id": "", "paid_journal_number": "",
         "approved_by": "", "approved_at": "", "posted_at": "", "paid_at": "",
         "created_by": actor.get("name", "system"), "created_by_id": actor.get("id", ""),
         "created_at": now_iso(), "updated_at": now_iso(),
     }
-    await db.hr_payroll_runs.insert_one(run)
-    # INV-ATOMIC-01 — kompensasi saga: run adalah dokumen baru per permintaan. Bila balapan
-    # melahirkan run kedua untuk entitas+periode yang sama, atau slip gagal ditulis, run
-    # milik permintaan ini dihapus lagi (tanpa slip yatim).
-    dup = await db.hr_payroll_runs.find_one(
-        {"entity_id": entity_id, "period": period, "id": {"$ne": run_id},
-         "status": {"$nin": list(DEAD_STATUSES)}}, {"_id": 0, "id": 1, "created_at": 1})
-    if dup and dup.get("created_at", "") <= run["created_at"]:
-        await _refs.safe_unlink_all("payroll_run", run_id)   # PK-44 — INV-REF-04 (run kini jenis dokumen ber-refs)
-        await db.hr_payroll_runs.delete_one({"id": run_id})
-        return await get_run(dup["id"])
+    if run_type == "regular":
+        run["active_key"] = active_key_of(entity_id, period)
     try:
-        slip_docs = []
-        for s in prev["payslips"]:
-            sid = new_id("slip")
-            snum = await next_doc_number("hr_payslips", "number", "SLIP-", entity_id=entity_id)
-            slip_docs.append({
-                "id": sid, "number": snum, "run_id": run_id, "entity_id": entity_id, "period": period,
-                "status": "draft", "pdf_url": "", **s,
-                "created_at": now_iso(), "updated_at": now_iso(),
-            })
+        await db.hr_payroll_runs.insert_one(dict(run))
+    except DuplicateKeyError:
+        # PY-T1 (D7) — dua permintaan reguler bersamaan: indeks unik `active_key` menolak yang kalah; yang kalah
+        # mengembalikan proses pemenang (perilaku "permintaan kedua mengembalikan proses yang ada").
+        win = await db.hr_payroll_runs.find_one({"active_key": run["active_key"]}, {"_id": 0, "id": 1})
+        if win:
+            return await get_run(win["id"])
+        raise
+    try:
+        taken = await _pi.take_for_run(entity_id, period, run_type, run_id, run_number=number, employee_ids=emp_ids)
+        built = await _build_slips(entity_id, period, run_type, run=run, inputs=taken)
+        ada = {s["employee_id"] for s in built["payslips"]}
+        await _pi.release_inputs([i["id"] for i in taken if i["employee_id"] not in ada], run_id)
+        if built["count"] == 0:
+            raise ValueError("Tidak ada karyawan aktif pada entitas ini." if run_type == "regular"
+                             else _no_input_msg(period, run_type))
+        slip_docs = await _slip_docs(run, built["payslips"])
         if slip_docs:
             await db.hr_payslips.insert_many(slip_docs)
+        await db.hr_payroll_runs.update_one({"id": run_id}, {"$set": {
+            "totals": built["totals"], "commission_mode": built["commission_mode"], "updated_at": now_iso()}})
     except Exception:
         await rollback_run(run_id)
         raise
@@ -515,7 +666,9 @@ async def create_run(entity_id: str, period: str, actor: Dict[str, Any]) -> Dict
 
 
 async def rollback_run(run_id: str) -> None:
-    """Kompensasi: hapus run + slip yang lahir dari permintaan yang gagal."""
+    """Kompensasi: lepas masukan + hapus run + slip yang lahir dari permintaan yang gagal."""
+    from services import hr_pay_inputs as _pi
+    await _pi.release_for_run(run_id)
     await db.hr_payslips.delete_many({"run_id": run_id})
     await _refs.safe_unlink_all("payroll_run", run_id)   # PK-44 — INV-REF-04
     await db.hr_payroll_runs.delete_one({"id": run_id})
@@ -568,9 +721,14 @@ async def submit_run(run_id: str, actor: Dict[str, Any]) -> Dict[str, Any]:
                          f"'{run['status']}').")
     if not await db.hr_payslips.count_documents({"run_id": run_id}):
         raise ValueError("Payroll ini belum punya slip gaji — hitung dulu sebelum diajukan.")
+    if run.get("inputs_stale_at"):   # PY-T1 — masukan yang dipakai dibatalkan sesudah dihitung
+        raise PayrollConflict(f"Ada masukan yang dibatalkan sesudah penggajian {run.get('number')} dihitung — "
+                              f"hitung ulang dulu sebelum diajukan.")
     # PK-22 — bersyarat status lama (dan tidak sedang dihitung ulang): pengajuan tidak menyalip hitung ulang/batal.
+    # PY-T1 — juga tidak menyalip pembatalan masukan yang menandai proses ini perlu dihitung ulang.
     if not (await db.hr_payroll_runs.update_one(
-            {"id": run_id, "status": "draft", "recalc_claim": {"$exists": False}},
+            {"id": run_id, "status": "draft", "recalc_claim": {"$exists": False},
+             "inputs_stale_at": {"$exists": False}},
             {"$set": {"status": "pending_approval"}})).modified_count:
         raise ValueError("Payroll ini sedang dihitung ulang / sudah berubah — muat ulang.")
     return await _set_run(run_id, {
@@ -581,17 +739,27 @@ async def submit_run(run_id: str, actor: Dict[str, Any]) -> Dict[str, Any]:
 
 
 async def recalculate_run(run_id: str, actor: Dict[str, Any]) -> Dict[str, Any]:
-    """PK-22 (FY-06) — hitung ulang proses `draft` dari `preview_run` (data karyawan, lembur, komisi terbaru). Slip per
-    karyawan diperbarui DI TEMPAT (id & nomor slip tetap), karyawan baru ditambah slip baru, yang tidak lagi termasuk
-    dihapus; `totals` diperbarui; jejak `recalculated_at/_by`, `recalc_count`. → proses + slip."""
+    """PK-22 (FY-06) — hitung ulang proses `draft` (data karyawan, lembur, komisi terbaru). Slip per karyawan diperbarui
+    DI TEMPAT (id & nomor slip tetap), karyawan baru ditambah slip baru, yang tidak lagi termasuk dihapus; `totals`
+    diperbarui; jejak `recalculated_at/_by`, `recalc_count`. → proses + slip.
+
+    PY-T1 — masukan proses ini dilepas lebih dulu (`release_for_run`), lalu diambil lagi bersama masukan yang baru
+    disahkan (`take_for_run`); masukan yang dibatalkan tidak ikut. Tanda "perlu dihitung ulang" dihapus. Gagal → masukan
+    yang tadinya dipakai diambil kembali."""
+    from services import hr_pay_inputs as _pi
     run = await db.hr_payroll_runs.find_one({"id": run_id}, {"_id": 0})
     if not run:
         raise ValueError("Payroll run tidak ditemukan.")
     if run["status"] != "draft":
         raise _status_conflict(run, "dihitung ulang")
-    prev = await preview_run(run["entity_id"], run["period"])
-    if prev["count"] == 0:
-        raise ValueError("Tidak ada karyawan aktif pada entitas ini.")
+    rt = _run_type(run, None)
+    emp_ids = None
+    if rt == "regular":
+        emp_ids = [e["id"] for e in await _active_employees(run["entity_id"], run["period"])]
+        if not emp_ids:
+            raise ValueError("Tidak ada karyawan aktif pada entitas ini.")
+    elif not (await _pi.inputs_for_run(run_id) or await _pi.approved_for(run["entity_id"], run["period"], rt)):
+        raise ValueError(_no_input_msg(run["period"], rt))
     # INV-ATOMIC-01 — klaim bersyarat (draf & tidak sedang dihitung ulang); ajukan/batal menunggu klaim lepas.
     claimed = await db.hr_payroll_runs.find_one_and_update(
         {"id": run_id, "status": "draft", "recalc_claim": {"$exists": False}},
@@ -601,6 +769,21 @@ async def recalculate_run(run_id: str, actor: Dict[str, Any]) -> Dict[str, Any]:
         if fresh.get("status") != "draft":
             raise _status_conflict(fresh, "dihitung ulang")
         raise PayrollConflict(f"Penggajian {run.get('number')} sedang dihitung ulang — muat ulang.")
+    dipakai = [i["id"] for i in await _pi.inputs_for_run(run_id)]
+    try:
+        await _pi.release_for_run(run_id)
+        taken = await _pi.take_for_run(run["entity_id"], run["period"], rt, run_id, run_number=run.get("number", ""),
+                                       employee_ids=emp_ids)
+        prev = await _build_slips(run["entity_id"], run["period"], rt, run=run, inputs=taken)
+        if prev["count"] == 0:
+            raise ValueError(_no_input_msg(run["period"], rt))
+        ada = {s["employee_id"] for s in prev["payslips"]}
+        await _pi.release_inputs([i["id"] for i in taken if i["employee_id"] not in ada], run_id)
+    except Exception:
+        await _pi.release_for_run(run_id)
+        await _pi.retake_inputs(dipakai, run_id, run.get("number", ""))
+        await db.hr_payroll_runs.update_one({"id": run_id}, {"$unset": {"recalc_claim": ""}})
+        raise
     try:
         lama = {sl["employee_id"]: sl async for sl in db.hr_payslips.find({"run_id": run_id}, {"_id": 0})}
         baru = set()
@@ -624,7 +807,7 @@ async def recalculate_run(run_id: str, actor: Dict[str, Any]) -> Dict[str, Any]:
             "$set": {"totals": prev["totals"], "commission_mode": prev["commission_mode"],
                      "recalculated_at": now_iso(), "recalculated_by": actor.get("name", "system"),
                      "recalculated_by_id": actor.get("id", ""), "updated_at": now_iso()},
-            "$inc": {"recalc_count": 1}})
+            "$inc": {"recalc_count": 1}, "$unset": {"inputs_stale_at": ""}})
     finally:
         await db.hr_payroll_runs.update_one({"id": run_id}, {"$unset": {"recalc_claim": ""}})
     return await get_run(run_id)
@@ -643,9 +826,13 @@ async def cancel_run(run_id: str, actor: Dict[str, Any], reason: str) -> Dict[st
     flt: Dict[str, Any] = {"id": run_id, "status": run["status"]}
     if run["status"] == "draft":
         flt["recalc_claim"] = {"$exists": False}
-    if not (await db.hr_payroll_runs.update_one(flt, {"$set": {"status": "cancelled"}})).modified_count:
+    # PY-T1 — proses yang batal melepas kunci "satu reguler hidup per PT per periode" dan masukan yang dipakainya.
+    if not (await db.hr_payroll_runs.update_one(flt, {"$set": {"status": "cancelled"},
+                                                      "$unset": {"active_key": ""}})).modified_count:
         fresh = await db.hr_payroll_runs.find_one({"id": run_id}, {"_id": 0}) or run
         raise _status_conflict(fresh, "dibatalkan")
+    from services import hr_pay_inputs as _pi
+    await _pi.release_for_run(run_id)
     hist = list(run.get("decision_history") or [])
     hist.append({"action": "cancelled", "by": actor.get("name", "system"), "at": now_iso(), "reason": alasan,
                  "from_status": run["status"], "to_status": "cancelled"})
@@ -804,6 +991,10 @@ async def void_run(run_id: str, actor: Dict[str, Any], reason: str) -> Dict[str,
     hist = list(run.get("decision_history") or [])
     hist.append({"action": "void", "by": name, "at": now_iso(), "reason": alasan,
                  "from_status": "posted", "to_status": "void"})
+    # PY-T1 — proses yang dianulir melepas kunci reguler hidup dan masukannya (kembali `approved`, bisa dipakai lagi).
+    from services import hr_pay_inputs as _pi
+    await db.hr_payroll_runs.update_one({"id": run_id}, {"$unset": {"active_key": ""}})
+    await _pi.release_for_run(run_id)
     return await _set_run(run_id, {
         "status": "void", "void_reason": alasan, "voided_by": name, "voided_by_id": actor.get("id", ""),
         "voided_at": now_iso(), "void_journal_id": rev.get("id", ""), "void_journal_number": rev.get("number", ""),

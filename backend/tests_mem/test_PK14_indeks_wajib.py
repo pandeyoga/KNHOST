@@ -41,8 +41,8 @@ AGT3_INDEKS = 1
 # `incentive_components.uq_component_code` (kode komponen per PT), `incentive_definitions.uq_definition_version`.
 KMT1_INDEKS = 3
 # PY-T1 (D7) — `hr_pay_components.uq_entity_code` (satu kode komponen gaji per PT) + `hr_pay_inputs.uq_source_key`
-# (satu masukan gaji per baris sumber).
-PYT1_INDEKS = 2
+# (satu masukan gaji per baris sumber) + `hr_payroll_runs.uq_active_key` (satu proses reguler hidup per PT per periode).
+PYT1_INDEKS = 3
 
 
 def _info_lengkap() -> dict:
@@ -82,7 +82,8 @@ def test_U12_pembanding_indeks():
     # PK-39 — + `budgets.uq_budget_key` (satu pagu per PT, tahun, bulan, dimensi, kunci): + PK39_INDEKS.
     # AG-T3 — + `ai_action_proposals.uq_pending_session` (satu kartu asisten menunggu per percakapan): + AGT3_INDEKS.
     # KM-T1 — + target per PT, kode komponen per PT, versi definisi per PT: + KMT1_INDEKS.
-    # PY-T1 — + `hr_pay_components.uq_entity_code`, `hr_pay_inputs.uq_source_key`: + PYT1_INDEKS.
+    # PY-T1 — + `hr_pay_components.uq_entity_code`, `hr_pay_inputs.uq_source_key`, `hr_payroll_runs.uq_active_key`:
+    # + PYT1_INDEKS.
     assert len(indexes.REQUIRED_UNIQUE_INDEXES) == (9 + PK40_INDEKS + 1 + PMT1_INDEKS + CRT1_INDEKS + PK31_INDEKS
                                                     + PMT2_INDEKS + PK39_INDEKS + AGT3_INDEKS + KMT1_INDEKS
                                                     + PYT1_INDEKS)

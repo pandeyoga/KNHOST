@@ -22,6 +22,37 @@ export const RUN_STATUS = {
   voiding: { cls: "pill-warning", label: "Sedang dianulir" },
   void: { cls: "pill-danger", label: "Dianulir" },
 };
+// PY-T1 — jenis proses gaji (server: `hr_pay_components.RUN_TYPE_LABEL`); proses lama tanpa jenis = Reguler.
+export const RUN_TYPE_LABEL = { regular: "Reguler", thr: "THR", susulan: "Susulan" };
+export const RUN_TYPE_OPTIONS = Object.entries(RUN_TYPE_LABEL).map(([value, label]) => ({ value, label }));
+export const runTypeLabel = (t) => RUN_TYPE_LABEL[t || "regular"] || RUN_TYPE_LABEL.regular;
+
+/** Potongan slip tanpa PPh 21 = BPJS karyawan + potongan lain (komponen). */
+export const slipDeductions = (s) => Number(s?.bpjs_emp_total || 0) + Number(s?.other_deductions || 0);
+
+const GROUPS = [["pendapatan", "Pendapatan"], ["potongan", "Potongan"], ["tanggungan_perusahaan", "Tanggungan perusahaan"]];
+/** PY-T1 — komponen slip dikelompokkan Pendapatan · Potongan · Tanggungan perusahaan. Slip lama tanpa `components`
+ *  disusun dari kolomnya (baris bernilai 0 dilewati, kecuali gaji pokok). */
+export function slipGroups(s) {
+  let rows = Array.isArray(s?.components) ? s.components : null;
+  if (!rows || rows.length === 0) {
+    const b = s?.bpjs_emp || {};
+    const n = (v) => Number(v || 0);
+    rows = [
+      { code: "GAJI_POKOK", label: "Gaji Pokok", kind: "pendapatan", amount: n(s?.base_salary) },
+      { code: "TUNJANGAN", label: "Tunjangan", kind: "pendapatan", amount: n(s?.allowances) },
+      { code: "LEMBUR", label: "Lembur", kind: "pendapatan", amount: n(s?.overtime) },
+      { code: "KOMISI", label: "Komisi / insentif penjualan", kind: "pendapatan", amount: n(s?.commission) },
+      { code: "BPJS_KES", label: "BPJS Kesehatan", kind: "potongan", amount: n(b.kesehatan) },
+      { code: "BPJS_JHT", label: "BPJS JHT", kind: "potongan", amount: n(b.jht) },
+      { code: "BPJS_JP", label: "BPJS JP", kind: "potongan", amount: n(b.jp) },
+      { code: "PPH21", label: "PPh 21", kind: "potongan", amount: n(s?.pph21) },
+      { code: "BPJS_PT", label: "BPJS (perusahaan)", kind: "tanggungan_perusahaan", amount: n(s?.bpjs_er_total) },
+    ].filter((r) => r.code === "GAJI_POKOK" || r.code === "PPH21" || r.amount !== 0);
+  }
+  return GROUPS.map(([key, label]) => ({ key, label, rows: rows.filter((r) => r.kind === key) }));
+}
+
 /** Aksi yang boleh menurut status (sama dengan server PK-22). */
 export const CAN_RECALC = ["draft"];
 export const CAN_CANCEL = ["draft", "pending_approval", "approved"];

@@ -208,7 +208,7 @@ export const PAGE_META = {
   "hr-live-tracking":     { kicker: "SDM (HRD)",      title: "Lacak Lapangan · Live Tracking Sales" },
   "hr-visits":            { kicker: "Penjualan",      title: "Kunjungan Sales (Visit)" },
   "hr-payroll-runs":      { kicker: "SDM (HRD)",      title: "Penggajian \u00b7 Proses Gaji" },   // MN-T1
-  "hr-payslips":          { kicker: "SDM (HRD)",      title: "Slip Gaji (Payslip)" },
+  "hr-payslips":          { kicker: "SDM (HRD)",      title: "Penggajian \u00b7 Proses Gaji" },   // PY-T1 — alias ke Proses Gaji (Cari slip)
   "hr-payroll-remittances": { kicker: "SDM (HRD)",    title: "Penggajian \u00b7 Setoran Kewajiban" },   // PK-22
   "hr-pay-components":    { kicker: "SDM (HRD)",      title: "Penggajian \u00b7 Komponen & Masukan" },   // PY-T1
   "hr-leave":             { kicker: "SDM (HRD)",      title: "Cuti & Izin" },

@@ -1,6 +1,10 @@
 /**
  * PayrollRunsView — SDM › Penggajian › Proses Gaji.
  *
+ * PY-T1 — jenis proses (Reguler · THR · Susulan); tabel slip per karyawan "Pendapatan · Potongan · PPh 21 · Gaji bersih"
+ * yang bisa dibuka menjadi daftar komponen (Pendapatan · Potongan · Tanggungan perusahaan); panel "Cari slip" (nama atau
+ * periode, `PayslipsView` mode tertanam) menggantikan tab Slip Gaji (id lama `hr-payslips` = alias ke layar ini).
+ *
  * Daur proses (PK-22): Draf → Diajukan → Disahkan → Diposting → Dibayar; Batalkan dari tiga status pertama; Anulir dari
  * Diposting (jurnal gaji dibalik; izin `payroll.void`). Tiap tombol mengikuti izin `payroll.*` (`canCurrent`), bukan nama peran:
  *   create = Hitung gaji · Hitung Ulang · Ajukan · Batalkan draf   approve = Sahkan · Kembalikan · Batalkan yang diajukan
@@ -11,8 +15,8 @@
 import { useEffect, useMemo, useState } from "react";
 import { apiErrorText } from "../../utils/apiError";
 import axios, { API } from "../../services/apiClient";
-import { Ban, Banknote, BookCheck, Calculator, CheckCircle2, Circle, Clock, FileText, Plus, RefreshCw, RotateCcw,
-  Send, Undo2, XCircle } from "lucide-react";
+import { Ban, Banknote, BookCheck, Calculator, CheckCircle2, ChevronDown, ChevronRight, Circle, Clock, FileText, Plus,
+  RefreshCw, RotateCcw, Search, Send, Undo2, XCircle } from "lucide-react";
 import { askConfirm, askReason } from "../../services/confirmService";
 import KNSelect from "../../components/KNSelect";
 import EntityBadge from "../../components/EntityBadge";
@@ -21,9 +25,13 @@ import FocusNotice from "../../components/FocusNotice";
 import { JournalStatusBar } from "../../components/JournalStatusBadge";
 import useFocusDoc from "../../hooks/useFocusDoc";
 import useIntentKey from "../../hooks/useIntentKey";
+import useViewPreset from "../../hooks/useViewPreset";
+import { useAppNav } from "../../context/AppNavContext";
+import PayslipsView from "./PayslipsView";
 import { moneyPost } from "../../utils/moneyRequest";
 import { canCurrent } from "../../config/roles";
-import { rp, pct, RUN_STATUS, CAN_CANCEL, CAN_RECALC, CAN_VOID, recentMonths, curMonth } from "./payrollUtils";
+import { rp, pct, RUN_STATUS, CAN_CANCEL, CAN_RECALC, CAN_VOID, RUN_TYPE_OPTIONS, recentMonths, curMonth, runTypeLabel,
+  slipGroups, slipDeductions } from "./payrollUtils";
 import { entityFullById, entityOptions } from "../../utils/entityLabel";
 import { formatDate, formatPeriod } from "../../utils/formatters";
 
@@ -64,13 +72,66 @@ export function nextStepHint(status, perms) {
   return "";
 }
 
-export default function PayrollRunsView({ selectedEntity, focusDoc, onClearFocus }) {
+/** PY-T1 — teks konfirmasi sahkan & kembalikan (spesifikasi PY-14). */
+export const TEKS_SAHKAN = "Setelah disahkan, penggajian ini tidak bisa diubah. Bila ada koreksi, batalkan lalu hitung lagi.";
+export const TEKS_KEMBALIKAN = "Penggajian kembali menjadi draf dan bisa dihitung ulang. Alasannya tersimpan di dokumen.";
+export const TEKS_PERLU_HITUNG_ULANG = "Ada masukan yang dibatalkan sesudah penggajian ini dihitung — hitung ulang sebelum diajukan.";
+
+/** Baris slip yang bisa dibuka menjadi daftar komponen (dikelompokkan Pendapatan · Potongan · Tanggungan perusahaan). */
+export function SlipRow({ s, open, onToggle }) {
+  const groups = slipGroups(s);
+  return (
+    <>
+      <tr data-testid={`payslip-${s.id}`}>
+        <td className="text-left">
+          <button type="button" className="link-button gap-1 text-left font-semibold" aria-expanded={open}
+            data-testid={`payslip-toggle-${s.id}`} onClick={onToggle}>
+            {open ? <ChevronDown size={14} aria-hidden="true" /> : <ChevronRight size={14} aria-hidden="true" />}{s.employee_name}</button>
+        </td>
+        <td className="text-right text-kn-action">{rp(s.gross)}</td>
+        <td className="text-right text-kn-danger-text">{rp(slipDeductions(s))}</td>
+        <td className="text-right text-kn-danger-text" title={s.ter_category ? `Tarif efektif PPh 21 kategori ${s.ter_category}` : undefined}>{rp(s.pph21)}{s.pph21_method !== "annual_pasal17" && <span className="text-fs-12 text-kn-text-2"> {pct(s.pph21_rate)}</span>}</td>
+        <td className="text-right font-bold text-kn-success-text">{rp(s.net)}</td>
+      </tr>
+      {open && (
+        <tr data-testid={`payslip-detail-${s.id}`}>
+          <td colSpan={5} className="bg-kn-neutral-soft">
+            <div className="grid grid-cols-1 gap-3 md:grid-cols-3 text-fs-12">
+              {groups.map((g) => (
+                <div key={g.key} data-testid={`payslip-group-${s.id}-${g.key}`}>
+                  <p className="font-bold text-kn-text-2 mb-1">{g.label}</p>
+                  {g.rows.length === 0 ? <p className="text-kn-text-2">—</p> : g.rows.map((c, i) => (
+                    <div key={`${c.code}-${i}`} className="flex items-start justify-between gap-2 py-0.5">
+                      <span className="text-kn-text min-w-0 break-words">{c.label}</span>
+                      <span className="tabular-nums whitespace-nowrap">{rp(c.amount)}</span>
+                    </div>
+                  ))}
+                </div>
+              ))}
+            </div>
+            {s.pph21_month_detail?.prior_pph21 > 0 && (
+              <p className="mt-2 text-fs-12 text-kn-text-2" data-testid={`payslip-pph-month-${s.id}`}>PPh 21 bulan ini {rp(s.pph21_month)} atas bruto sebulan {rp(s.pph21_month_detail.tax_gross_month)}, dikurangi {rp(s.pph21_month_detail.prior_pph21)} yang sudah dipotong di proses sebelumnya.</p>
+            )}
+          </td>
+        </tr>
+      )}
+    </>
+  );
+}
+
+export default function PayrollRunsView({ selectedEntity, focusDoc, onClearFocus, cariAwal = false }) {
   const [runs, setRuns] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
   const [entities, setEntities] = useState([]);
-  const [form, setForm] = useState({ entity_id: "", period: curMonth() });
+  const [form, setForm] = useState({ entity_id: "", period: curMonth(), run_type: "regular" });
+  const [openSlip, setOpenSlip] = useState({});
+  const [cari, setCari] = useState(!!cariAwal);
+  const { canOpen } = useAppNav();
+  // Id lama `hr-payslips` (alias) — gerbang panel Cari slip memakai id lama supaya `hidden_views` peran kustom dipatuhi.
+  const bisaCariSlip = canOpen("hr-payslips");
+  useViewPreset("hr-payroll-runs", (p) => { if (p?.cari) setCari(true); });
   const [busy, setBusy] = useState("");
   const [sel, setSel] = useState(null);
   const intent = useIntentKey("gaji");
@@ -101,21 +162,21 @@ export default function PayrollRunsView({ selectedEntity, focusDoc, onClearFocus
     if (!form.entity_id || !form.period) { setError("Pilih PT & periode."); return; }
     setBusy("create");
     try {
-      const r = await axios.post(`${API}/hr/payroll/runs`, { entity_id: form.entity_id, period: form.period });
-      setNotice(`Penggajian ${r.data.number} siap (${r.data.totals.employees} karyawan).`); setError("");
+      const r = await axios.post(`${API}/hr/payroll/runs`, { entity_id: form.entity_id, period: form.period, run_type: form.run_type });
+      setNotice(`Penggajian ${r.data.number} (${runTypeLabel(r.data.run_type)}) siap (${r.data.totals.employees} karyawan).`); setError("");
       await loadRuns(); setSel(r.data);
     } catch (e) { setError(apiErrorText(e, "Gagal menghitung penggajian.")); }
     finally { setBusy(""); }
   }
 
   const ptName = (run) => entityFullById(entities, run?.entity_id, "PT ini");
-  const ringkas = (run) => `${formatPeriod(run.period)} · ${run.totals?.employees ?? 0} karyawan · gaji bersih `
+  const ringkas = (run) => `${formatPeriod(run.period)}${run.run_type && run.run_type !== "regular" ? ` · proses ${runTypeLabel(run.run_type)}` : ""} · ${run.totals?.employees ?? 0} karyawan · gaji bersih `
     + `${rp(run.totals?.net)} · ${ptName(run)}.`;
 
   // UAT 24 Okt (audit UI tahap 2) — G5-33: Sahkan / Posting / Bayar menulis jurnal & mengunci gaji → konfirmasi dulu
   // dengan periode, total, PT, dan akibatnya (PK-22: `02` N5).
   const ACT_CONFIRM = {
-    approve: { title: "Sahkan penggajian", effect: "Gaji periode ini dikunci; perubahan berikutnya harus lewat pengembalian ke draf.", label: "Sahkan" },
+    approve: { title: "Sahkan penggajian", effect: TEKS_SAHKAN, label: "Sahkan" },
     "post-gl": { title: "Posting jurnal gaji", effect: "Jurnal beban gaji & utang gaji dibuat di buku besar, bertanggal akhir periode gajinya.", label: "Posting" },
     pay: { title: "Catat pembayaran gaji", effect: "Jurnal pembayaran gaji dan kas keluar dibuat.", label: "Catat pembayaran" },
     recalculate: { title: "Hitung ulang penggajian", effect: "Slip dihitung lagi dari data karyawan, lembur, dan komisi terbaru.", label: "Hitung ulang" },
@@ -154,7 +215,7 @@ export default function PayrollRunsView({ selectedEntity, focusDoc, onClearFocus
   async function rejectRun(id) {
     const reason = await askReason({
       title: "Kembalikan penggajian ini ke draf?",
-      description: "Penggajian akan kembali bisa diubah HR. Alasannya tersimpan di dokumen.",
+      description: TEKS_KEMBALIKAN,
       confirmLabel: "Kembalikan ke draf",
       reasonPlaceholder: "Contoh: tunjangan transport 3 karyawan belum masuk",
       danger: true,
@@ -232,16 +293,32 @@ export default function PayrollRunsView({ selectedEntity, focusDoc, onClearFocus
         <div className="section-head"><div className="flex items-center gap-2"><Calculator size={16} className="text-kn-action" /><h2 data-testid="payroll-runs-title">Penggajian</h2></div>
           <button type="button" data-testid="payroll-runs-refresh" onClick={loadRuns} className="icon-button" title="Muat ulang" aria-label="Muat ulang"><RefreshCw size={15} /></button>
         </div>
-        <div className="section-body grid grid-cols-1 gap-2 md:grid-cols-[1fr_180px_auto] items-end">
+        <div className="section-body grid grid-cols-1 gap-2 md:grid-cols-[1fr_180px_160px_auto] items-end">
           <div><label className="field-label">PT <span className="req">*</span></label>
             <KNSelect data-testid="payroll-create-entity" value={form.entity_id} onValueChange={(v) => setForm((f) => ({ ...f, entity_id: v }))} className="field" options={entOpts} placeholder="Pilih PT" /></div>
           <div><label className="field-label">Periode <span className="req">*</span></label>
             <KNSelect data-testid="payroll-create-period" value={form.period} onValueChange={(v) => setForm((f) => ({ ...f, period: v }))} className="field" options={monthOpts} placeholder="Pilih periode" /></div>
+          <div><label className="field-label">Jenis proses <span className="req">*</span></label>
+            <KNSelect data-testid="payroll-create-type" value={form.run_type} onValueChange={(v) => setForm((f) => ({ ...f, run_type: v }))} className="field" options={RUN_TYPE_OPTIONS} /></div>
           <button type="button" data-testid="payroll-create-submit" disabled={busy === "create" || !form.entity_id || !form.period || !perms.create} onClick={createRun} className="primary-button justify-center whitespace-nowrap">
-            <Plus size={14} /> {busy === "create" ? "Memproses..." : form.period ? `Hitung gaji ${formatPeriod(form.period)}` : "Hitung gaji"}</button>
+            <Plus size={14} /> {busy === "create" ? "Memproses..." : form.period ? `Hitung ${form.run_type === "regular" ? "gaji" : runTypeLabel(form.run_type)} ${formatPeriod(form.period)}` : "Hitung gaji"}</button>
         </div>
         {!perms.create && <p className="section-body !pt-0 text-fs-12 text-kn-text-2" data-testid="payroll-create-no-perm">Menghitung gaji baru butuh izin menyiapkan gaji.</p>}
+        {form.run_type !== "regular" && <p className="section-body !pt-0 text-fs-12 text-kn-text-2" data-testid="payroll-create-type-hint">{form.run_type === "thr" ? "Proses THR memuat karyawan yang punya masukan THR yang sudah disahkan (tab Komponen & Masukan)." : "Proses susulan memuat masukan yang sudah disahkan tetapi belum terpakai di proses lain periode ini."}</p>}
       </div>
+
+      {/* PY-T1 — Cari slip (menggantikan tab Slip Gaji) */}
+      {bisaCariSlip && (
+        <div className="section-card mb-3" data-testid="payroll-slip-search">
+          <div className="section-head">
+            <h3 className="flex items-center gap-2 text-fs-14 font-bold"><Search size={15} className="text-kn-action" aria-hidden="true" />Cari slip</h3>
+            <button type="button" data-testid="payroll-slip-search-toggle" className="secondary-button btn-sm whitespace-nowrap" aria-expanded={cari} onClick={() => setCari((v) => !v)}>
+              {cari ? "Tutup" : "Buka pencarian"}</button>
+          </div>
+          {cari ? <div className="section-body"><PayslipsView selectedEntity={selectedEntity} embedded /></div>
+            : <p className="section-body !pt-0 text-fs-12 text-kn-text-2">Cari slip gaji per nama karyawan atau periode, lengkap dengan rincian komponen dan PDF-nya.</p>}
+        </div>
+      )}
 
       <div className="grid grid-cols-1 gap-3 lg:grid-cols-[300px_1fr]">
         {/* Daftar proses */}
@@ -259,6 +336,7 @@ export default function PayrollRunsView({ selectedEntity, focusDoc, onClearFocus
                   // baris blok berbantalan, nomor utuh, status & PT boleh turun baris.
                   className={`block w-full text-left px-3 py-2 hover:bg-kn-neutral-soft ${sel?.id === r.id ? "bg-kn-action-soft" : ""}`}>
                   <span className="flex flex-wrap items-center justify-between gap-2"><span className="whitespace-nowrap text-fs-13 font-semibold text-kn-text">{r.number}</span><PayrollRunStatus status={r.status} /></span>
+                  {r.run_type && r.run_type !== "regular" && <span className="mt-1 inline-block text-fs-12 font-semibold text-kn-text-2" data-testid={`payroll-run-type-${r.id}`}>{runTypeLabel(r.run_type)}{r.seq > 1 ? ` ke-${r.seq}` : ""}</span>}
                   <span className="flex flex-wrap items-center gap-2 mt-1 text-fs-12 text-kn-text-2"><EntityBadge entityId={r.entity_id} /><span className="whitespace-nowrap">{formatPeriod(r.period)}</span><span className="ml-auto whitespace-nowrap tabular-nums">{rp(r.totals?.net)}</span></span>
                 </button>
               ))}
@@ -273,13 +351,13 @@ export default function PayrollRunsView({ selectedEntity, focusDoc, onClearFocus
           ) : (
             <div data-testid="payroll-run-detail">
               <div className="section-head">
-                <div className="flex flex-wrap items-center gap-2"><h2>{sel.number} · {formatPeriod(sel.period)}</h2><PayrollRunStatus status={st} testId="payroll-detail-status" /></div>
+                <div className="flex flex-wrap items-center gap-2"><h2>{sel.number} · {formatPeriod(sel.period)} · {runTypeLabel(sel.run_type)}</h2><PayrollRunStatus status={st} testId="payroll-detail-status" /></div>
               </div>
               <div className="section-body">
                 {/* Bilah aksi sendiri (bukan di kepala kartu) */}
                 <div className="flex flex-wrap items-center gap-2 mb-3" data-testid="payroll-actions">
                   {st === "draft" && perms.create && <>
-                    <button type="button" data-testid="payroll-submit" disabled={!!busy} onClick={() => act(sel.id, "submit", "Ajukan")} className="primary-button btn-sm whitespace-nowrap"><Send size={13} /> Ajukan</button>
+                    <button type="button" data-testid="payroll-submit" disabled={!!busy || !!sel.inputs_stale_at} onClick={() => act(sel.id, "submit", "Ajukan")} className="primary-button btn-sm whitespace-nowrap"><Send size={13} /> Ajukan</button>
                     {CAN_RECALC.includes(st) && <button type="button" data-testid="payroll-recalc" disabled={!!busy} onClick={() => act(sel.id, "recalculate", "Hitung ulang")} className="secondary-button btn-sm whitespace-nowrap"><RotateCcw size={13} /> {busy === "recalculate" ? "Menghitung..." : "Hitung Ulang"}</button>}
                   </>}
                   {st === "pending_approval" && perms.approve && <>
@@ -291,12 +369,13 @@ export default function PayrollRunsView({ selectedEntity, focusDoc, onClearFocus
                   {bisaBatal && <button type="button" data-testid="payroll-cancel" disabled={!!busy} onClick={() => cancelRun(sel)} className="secondary-button btn-sm whitespace-nowrap"><Ban size={13} /> Batalkan</button>}
                   {CAN_VOID.includes(st) && perms.void && <button type="button" data-testid="payroll-void" disabled={!!busy} onClick={() => voidRun(sel)} className="danger-button btn-sm whitespace-nowrap"><XCircle size={13} /> Anulir</button>}
                   {hint && <span className="text-fs-12 text-kn-text-2" data-testid="payroll-next-hint">{hint}</span>}
+                  {st === "draft" && sel.inputs_stale_at && <span className="text-fs-12 text-kn-warning-text" data-testid="payroll-stale-hint">{TEKS_PERLU_HITUNG_ULANG}</span>}
                   {st === "paid" && <span className="text-fs-12 text-kn-text-2" data-testid="payroll-paid-hint">Gaji yang sudah dibayar tidak bisa dianulir; koreksinya lewat proses susulan.</span>}
                 </div>
                 <div className="grid gap-2 grid-cols-2 md:grid-cols-4 mb-3">
                   <Stat label="Karyawan" value={sel.totals?.employees ?? 0} />
                   <Stat label="Bruto" value={rp(sel.totals?.gross)} tone="text-kn-action" />
-                  <Stat label="Potongan + pajak" value={rp((sel.totals?.bpjs_emp || 0) + (sel.totals?.pph21 || 0))} tone="text-kn-danger-text" />
+                  <Stat label="Potongan + pajak" value={rp((sel.totals?.bpjs_emp || 0) + (sel.totals?.other_deductions || 0) + (sel.totals?.pph21 || 0))} tone="text-kn-danger-text" />
                   <Stat label="Gaji bersih" value={rp(sel.totals?.net)} tone="text-kn-success-text" />
                 </div>
                 {sel.status === "approved" && <JournalStatusBar doc={sel} testId="payroll-gl-status" />}
@@ -327,20 +406,16 @@ export default function PayrollRunsView({ selectedEntity, focusDoc, onClearFocus
                 <div className="overflow-x-auto">
                   <table className="data-table head-wrap w-full tabular-nums" data-testid="payroll-payslips-table">
                     <thead><tr>
-                      <th className="text-left">Karyawan</th><th className="text-right">Pokok</th><th className="text-right">Tunjangan</th><th className="text-right">Lembur</th><th className="text-right">Komisi</th><th className="text-right">Bruto</th><th className="text-right">BPJS</th><th className="text-right">PPh 21</th><th className="text-right">Bersih</th>
+                      <th className="text-left">Karyawan</th><th className="text-right">Pendapatan</th><th className="text-right">Potongan</th><th className="text-right">PPh 21</th><th className="text-right">Gaji bersih</th>
                     </tr></thead>
                     <tbody>
                       {(sel.payslips || []).map((s) => (
-                        <tr key={s.id} data-testid={`payslip-${s.id}`}>
-                          <td className="text-left font-semibold">{s.employee_name}</td>
-                          <td className="text-right">{rp(s.base_salary)}</td><td className="text-right">{rp(s.allowances)}</td><td className="text-right">{rp(s.overtime)}</td><td className="text-right">{rp(s.commission)}</td>
-                          <td className="text-right font-semibold text-kn-action">{rp(s.gross)}</td><td className="text-right text-kn-danger-text">{rp(s.bpjs_emp_total)}</td><td className="text-right text-kn-danger-text" title={s.ter_category ? `Tarif efektif PPh 21 kategori ${s.ter_category}` : undefined}>{rp(s.pph21)} <span className="text-fs-12 text-kn-text-2">{pct(s.pph21_rate)}</span></td>
-                          <td className="text-right font-bold text-kn-success-text">{rp(s.net)}</td>
-                        </tr>
+                        <SlipRow key={s.id} s={s} open={!!openSlip[s.id]} onToggle={() => setOpenSlip((o) => ({ ...o, [s.id]: !o[s.id] }))} />
                       ))}
                     </tbody>
                   </table>
                 </div>
+                <p className="mt-1 text-fs-12 text-kn-text-2">Buka nama karyawan untuk melihat komponen slipnya. Potongan = BPJS karyawan dan potongan lain (tanpa PPh 21).</p>
               </div>
             </div>
           )}

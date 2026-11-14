@@ -197,7 +197,8 @@ export const HUB_TABS = {
   ],
   "hr-payroll-hub": [
     { view: "hr-payroll-runs",   label: "Proses Gaji",           roles: ["admin", "manager"] },
-    { view: "hr-payslips",       label: "Slip Gaji",             roles: ["admin", "manager"] },
+    // PY-T1 (PY-14) — tab "Slip Gaji" (tabel yang sama dengan rincian proses) dihapus: panel "Cari slip" di Proses Gaji;
+    // id lama `hr-payslips` = alias (viewAliases.js).
     // PK-22 (FY-07) — setoran hutang BPJS & PPh 21 (izin bayar `payroll.pay`; lihat `hr.view`).
     { view: "hr-payroll-remittances", label: "Setoran Kewajiban", roles: ["admin", "manager"] },
     // PY-T1 (K-37) — komponen gaji per PT + antrean masukan (lihat `hr.view`; ubah komponen `hr.manage_payroll`;

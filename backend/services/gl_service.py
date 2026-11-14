@@ -3589,6 +3589,78 @@ async def payroll_source_id(run: Dict[str, Any]) -> str:
     return run["id"]
 
 
+def payroll_journal_lines(slips: List[Dict[str, Any]], mode: str = "accrue_then_settle") -> List[Dict[str, Any]]:
+    """PY-T1 — baris jurnal gaji dari KOMPONEN slip (slip lama tanpa `components` dari kolomnya), akun dan arah tetap:
+
+      pendapatan (selain kolom komisi) → Dr Beban Gaji 6-1000, atau Dr `account_code` komponen bila diisi
+      kolom komisi                      → Dr Hutang Insentif 2-1500 [accrue_then_settle] / Dr Beban Insentif 6-5000
+      tanggungan perusahaan (BPJS)      → Dr Beban BPJS 6-1100
+      bersih                            → Cr Hutang Gaji 2-1600
+      BPJS karyawan + perusahaan        → Cr Hutang BPJS 2-1700
+      PPh 21                            → Cr Hutang PPh 21 2-1800 (negatif = lebih potong dikembalikan → Dr)
+      potongan lain                     → Cr `account_code` komponennya (negatif → Dr)
+    Untuk slip berisi komponen bawaan saja, barisnya SAMA dengan jurnal gaji sebelum PY-T1 (Σ salary_earnings → 6-1000)."""
+    salary = er_total = emp_total = pph21 = net = commission = 0.0
+    extra: Dict[str, float] = {}       # akun → nominal bertanda (+ = debit) untuk pendapatan berakun & potongan lain
+    extra_desc: Dict[str, str] = {}
+    for s in slips:
+        er_total += float(s.get("bpjs_er_total", 0) or 0)
+        emp_total += float(s.get("bpjs_emp_total", 0) or 0)
+        pph21 += float(s.get("pph21", 0) or 0)
+        net += float(s.get("net", 0) or 0)
+        commission += float(s.get("commission", 0) or 0)
+        comps = s.get("components")
+        if not comps:
+            salary += float(s.get("salary_earnings", 0) or 0)
+            continue
+        for c in comps:
+            amt = float(c.get("amount") or 0)
+            if c.get("kind") == "pendapatan" and c.get("bucket") != "commission":
+                acc = (c.get("account_code") or "").strip()
+                if acc:
+                    extra[acc] = extra.get(acc, 0.0) + amt
+                    extra_desc.setdefault(acc, f"Beban {c.get('name') or c.get('code')}")
+                else:
+                    salary += amt
+            elif c.get("kind") == "potongan" and c.get("bucket") == "other_deductions":
+                acc = (c.get("account_code") or "").strip()
+                extra[acc] = extra.get(acc, 0.0) - amt
+                extra_desc.setdefault(acc, f"Potongan gaji — {c.get('name') or c.get('code')}")
+    salary, er_total, emp_total = round(salary, 2), round(er_total, 2), round(emp_total, 2)
+    pph21, net, commission = round(pph21, 2), round(net, 2), round(commission, 2)
+
+    def L(code, dr, cr, d=""):
+        return {"account_code": code, "debit": round(dr, 2), "credit": round(cr, 2), "description": d}
+
+    lines: List[Dict[str, Any]] = []
+    if salary > EPS:
+        lines.append(L(ACC_BEBAN_GAJI, salary, 0, "Beban gaji, tunjangan & lembur"))
+    elif salary < -EPS:
+        lines.append(L(ACC_BEBAN_GAJI, 0, -salary, "Koreksi beban gaji"))
+    if er_total > EPS:
+        lines.append(L(ACC_BEBAN_BPJS, er_total, 0, "Kontribusi BPJS perusahaan"))
+    if commission > EPS:
+        if mode == "accrue_then_settle":
+            lines.append(L(ACC_HUTANG_INSENTIF, commission, 0, "Pelunasan hutang insentif via payroll"))
+        else:
+            lines.append(L(ACC_BEBAN_INSENTIF, commission, 0, "Beban insentif penjualan (payroll)"))
+    for acc, amt in extra.items():
+        if amt > EPS and acc:
+            lines.append(L(acc, round(amt, 2), 0, extra_desc[acc]))
+    if net > EPS:
+        lines.append(L(ACC_HUTANG_GAJI, 0, net, "Take-home pay terhutang"))
+    if (emp_total + er_total) > EPS:
+        lines.append(L(ACC_HUTANG_BPJS, 0, round(emp_total + er_total, 2), "Hutang BPJS (employee+employer)"))
+    if pph21 > EPS:
+        lines.append(L(ACC_HUTANG_PPH21, 0, pph21, "Hutang PPh 21"))
+    elif pph21 < -EPS:  # HR-01 — lebih potong masa terakhir dikembalikan ke karyawan
+        lines.append(L(ACC_HUTANG_PPH21, -pph21, 0, "Pengembalian lebih potong PPh 21"))
+    for acc, amt in extra.items():
+        if amt < -EPS and acc:
+            lines.append(L(acc, 0, round(-amt, 2), extra_desc[acc]))
+    return lines
+
+
 async def post_payroll_run(run: Dict[str, Any], slips: List[Dict[str, Any]],
                            created_by: str = "system", *, date: str = "") -> Optional[Dict[str, Any]]:
     """Posting jurnal payroll run (SEIMBANG, idempotent per proses — `payroll_source_id`).
@@ -3606,6 +3678,9 @@ async def post_payroll_run(run: Dict[str, Any], slips: List[Dict[str, Any]],
     PK-22 — akrual insentif (mode accrue) TIDAK lagi diposting diam-diam di sini (galatnya dulu ditelan): resep
     `posting_registry.post_payroll` mengakru Σ komisi slip lebih dulu dan galatnya menggagalkan posting. `date` =
     tanggal buku jurnal periodik (`periodic_posting.journal_date`); kosong = hari ini. Akun dan arah tidak berubah.
+
+    PY-T1 — baris dibangun dari komponen slip (`payroll_journal_lines`): pendapatan berakun sendiri dan potongan lain
+    (Cr akun komponennya) ikut; untuk komponen bawaan saja barisnya sama dengan sebelumnya.
     """
     entity_id = run.get("entity_id")
     period = run.get("period")
@@ -3616,38 +3691,10 @@ async def post_payroll_run(run: Dict[str, Any], slips: List[Dict[str, Any]],
         return safe_doc(existing)
     await seed_default_coa()
 
-    salary = round(sum(float(s.get("salary_earnings", 0) or 0) for s in slips), 2)
-    er_total = round(sum(float(s.get("bpjs_er_total", 0) or 0) for s in slips), 2)
-    emp_total = round(sum(float(s.get("bpjs_emp_total", 0) or 0) for s in slips), 2)
-    pph21 = round(sum(float(s.get("pph21", 0) or 0) for s in slips), 2)
-    net = round(sum(float(s.get("net", 0) or 0) for s in slips), 2)
-    commission = round(sum(float(s.get("commission", 0) or 0) for s in slips), 2)
     mode = run.get("commission_mode", "accrue_then_settle")
     label = run.get("number", f"PAY-{period}")   # K-09 — payroll memakai awalan PAY- (bukan PR- = Permintaan Pembelian)
     desc = f"Payroll {period} ({label})"
-
-    def L(code, dr, cr, d=""):
-        return {"account_code": code, "debit": round(dr, 2), "credit": round(cr, 2), "description": d}
-
-    lines: List[Dict[str, Any]] = []
-    if salary > EPS:
-        lines.append(L(ACC_BEBAN_GAJI, salary, 0, "Beban gaji, tunjangan & lembur"))
-    if er_total > EPS:
-        lines.append(L(ACC_BEBAN_BPJS, er_total, 0, "Kontribusi BPJS perusahaan"))
-    if commission > EPS:
-        if mode == "accrue_then_settle":
-            lines.append(L(ACC_HUTANG_INSENTIF, commission, 0, "Pelunasan hutang insentif via payroll"))
-        else:
-            lines.append(L(ACC_BEBAN_INSENTIF, commission, 0, "Beban insentif penjualan (payroll)"))
-    if net > EPS:
-        lines.append(L(ACC_HUTANG_GAJI, 0, net, "Take-home pay terhutang"))
-    if (emp_total + er_total) > EPS:
-        lines.append(L(ACC_HUTANG_BPJS, 0, round(emp_total + er_total, 2), "Hutang BPJS (employee+employer)"))
-    if pph21 > EPS:
-        lines.append(L(ACC_HUTANG_PPH21, 0, pph21, "Hutang PPh 21"))
-    elif pph21 < -EPS:  # HR-01 — lebih potong masa terakhir dikembalikan ke karyawan
-        lines.append(L(ACC_HUTANG_PPH21, -pph21, 0, "Pengembalian lebih potong PPh 21"))
-
+    lines = payroll_journal_lines(slips, mode)
     total_debit = round(sum(l["debit"] for l in lines), 2)
     total_credit = round(sum(l["credit"] for l in lines), 2)
     if abs(total_debit - total_credit) > 0.5:

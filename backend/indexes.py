@@ -847,6 +847,12 @@ REQUIRED_UNIQUE_INDEXES += [
     {"collection": "hr_pay_inputs", "name": "uq_source_key", "label": "satu masukan gaji per baris sumber",
      "keys": [("source_key", 1)], "partial": {"source_key": dict(_NONEMPTY)},
      "finder": _finder_dup("hr_pay_inputs", '{source_key:{$type:"string",$gt:""}}', '"$source_key"', "$id")},
+    # PY-T1 (FY-06 → PY-13) — satu proses gaji REGULER hidup per (PT, periode): `active_key` = "<PT>:<periode>:regular"
+    # hanya pada proses reguler yang tidak dibatalkan/dianulir (THR dan susulan tanpa kunci → tidak dibatasi). Proses
+    # lama belum berkunci → isi lewat `scripts/migrasi_pyt1_proses_gaji.py --apply` (kembar = titik henti H6).
+    {"collection": "hr_payroll_runs", "name": "uq_active_key", "label": "satu proses gaji reguler hidup per PT per periode",
+     "keys": [("active_key", 1)], "partial": {"active_key": dict(_NONEMPTY)},
+     "finder": _finder_dup("hr_payroll_runs", '{active_key:{$type:"string",$gt:""}}', '"$active_key"')},
 ]
 
 # PM-T2 (D7) — kode bayar unik LINTAS PT (berita transfer tidak ambigu, mutasi yang salah masuk rekening PT lain tetap

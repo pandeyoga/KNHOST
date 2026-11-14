@@ -126,8 +126,9 @@ async def preview_payroll_run(request: Request, body: PayrollRunInput):
     body.entity_id = resolve_requested_entity(await entity_ctx(request), body.entity_id)
     try:
         from services import periodic_posting
-        periodic_posting.assert_period_started(body.period)   # PK-22 (FY-02)
-        return await pay.preview_run(body.entity_id, body.period)
+        from services.hr_pay_inputs import check_period
+        periodic_posting.assert_period_started(check_period(body.period))   # PK-22 (FY-02) · PY-T1 (PY-13)
+        return await pay.preview_run(body.entity_id, body.period, body.run_type)
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
 
@@ -138,11 +139,12 @@ async def create_payroll_run(request: Request, body: PayrollRunInput):
     from entity_scope import resolve_requested_entity
     body.entity_id = resolve_requested_entity(await entity_ctx(request), body.entity_id)  # KN-B30
     try:
-        run = await pay.create_run(body.entity_id, body.period, actor)
+        run = await pay.create_run(body.entity_id, body.period, actor, body.run_type)
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
     await audit(actor["name"], "hr.payroll.run_create", "hr_payroll_runs", run["id"],
-                {"entity_id": body.entity_id, "period": body.period})
+                {"entity_id": body.entity_id, "period": body.period, "run_type": run.get("run_type", "regular"),
+                 "seq": run.get("seq")})
     return run
 
 
@@ -166,7 +168,7 @@ async def submit_payroll_run(request: Request, run_id: str):
     try:
         run = await pay.submit_run(run_id, actor)
     except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        raise _http(e)   # PY-T1 — proses yang perlu dihitung ulang (masukan dibatalkan) = 409
     await audit(actor["name"], "hr.payroll.run_submit", "hr_payroll_runs", run_id,
                 {"period": run.get("period")})
     return run

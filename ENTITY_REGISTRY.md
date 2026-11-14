@@ -4245,8 +4245,23 @@ Jurnal baru `amendment_debit_note` (Dr 1-1200 / Cr 4-1000 / Cr 2-1200, `ref.orde
 | `hr_pay_components` | `pcomp_` | `services/hr_pay_components.py:ensure_defaults` (isi awal tiap PT, saat server menyala dan saat daftar PT pertama dibaca) · `create_component` / `update_component` | `GET /api/hr/payroll/components`; `hr_payroll_service.compute_payslip`; `PayComponentsView` | **PY-T1 (K-37)** komponen gaji per PT: `entity_id`, `code` (huruf besar), `name` (tampil di slip), `kind` (`pendapatan`·`potongan`·`tanggungan_perusahaan`), `calc` (`tetap_bulanan`·`per_jam`·`masukan`·`undang_undang`), `bucket` (kolom lama slip tempat nominalnya dijumlahkan: `base_salary`·`allowances`·`overtime`·`commission`·`other_earnings`·`bpjs_emp`·`bpjs_er`·`pph21`·`other_deductions`), `taxable`, `in_bpjs_base`/`in_overtime_base`/`prorate` (disimpan; **belum dipakai mesin** sampai PY-T3), `statutory_code` (BPJS & PPh 21), `account_code` (wajib untuk potongan non-undang-undang = akun yang dikredit; opsional untuk pendapatan), `allowed_run_types` (`regular`·`thr`·`susulan`), `sort`, `is_active`, `system` (komponen bawaan: tidak bisa dihapus, diganti jenis, atau dinonaktifkan). Isi awal 14 komponen menghasilkan slip yang sama persis dengan hitungan kolom lama. Unik `(entity_id, code)` (`uq_entity_code`, REQUIRED_UNIQUE_INDEXES). **SCOPED**. |
 | `hr_pay_inputs` | `pinp_` | `services/hr_pay_inputs.py:enqueue_input` (modul sumber, langsung `approved`) · `create_manual_input` (`pending`) · `approve_input` · `cancel_input(_by_id)` · `take_for_run` · `release_for_run` | `GET /api/hr/payroll/inputs`; proses gaji (serah-terima b); `PayComponentsView` | **PY-T1 (K-37, K-40)** antrean masukan komponen: `employee_id`(+`employee_name`), `pay_period` (`YYYY-MM`, proses gaji PT itu yang dituju), `component_code`(+`component_name`, harus `masukan` & aktif), `label` (teks baris slip), `basis_period`, `amount` (rupiah bulat ≠ 0, boleh negatif), `source_type` (`incentive_sheet`·`overtime`·`cash_advance`·`rapel`·`manual`), `source_key` (unik per baris sumber; kirim ulang = dokumen sama), `source_ref`, `status` (`pending` → `approved` → `used` ⇄ `approved`; `cancelled`), `reason` (wajib untuk manual), `created_by(_id)`, `approved_by(_id)/_at`, `used_run_id`, `used_run_number`, `used_at`, `cancelled_by(_id)/_at`, `cancel_reason`, `cancelled_from`. Pindah status bersyarat status lama. Indeks: unik `source_key` (`uq_source_key`), `(entity_id, pay_period, status)`, `(used_run_id)`. **SCOPED**. |
 
-`hr_payslips.components[]` (serah-terima a: dibangun DI SAMPING kolom lama) = `{code, name, label, kind, bucket, amount,
-taxable, statutory_code?, account_code?, qty?, rate? (persen), method? (PPh 21), basis_period?, source?: {type, key, id,
-number?}}` — satu baris per komponen (tunjangan satu baris per nama di master karyawan, masukan satu baris per masukan).
-Σ `amount` per `bucket` = kolom lama (`hr_pay_components.derive_columns` / `components_match_columns`). Slip lama tanpa
-`components` tetap dibaca dari kolomnya.
+`hr_payslips.components[]` = `{code, name, label, kind, bucket, amount, taxable, statutory_code?, account_code?, qty?,
+rate? (persen), method? (PPh 21), basis_period?, source?: {type, key, id, number?}}` — satu baris per komponen (tunjangan
+satu baris per nama di master karyawan, masukan satu baris per masukan). **Kolom lama slip diturunkan dari komponen**
+(`hr_pay_components.derive_columns`): tiap kolom = Σ `amount` komponen ber-`bucket` itu; `salary_earnings = base_salary +
+allowances + overtime + other_earnings`; `gross = salary_earnings + commission`; `net = gross − bpjs_emp_total − pph21 −
+other_deductions`; `tax_gross` = Σ komponen kena pajak. Slip lama tanpa `components` tetap dibaca dari kolomnya.
+
+| Field baru | Arti | Ditulis oleh |
+|---|---|---|
+| `hr_payroll_runs.run_type` | `regular` · `thr` · `susulan` (proses lama tanpa field = reguler) | `create_run` |
+| `hr_payroll_runs.seq` | Urutan proses per PT, periode, jenis | `create_run` |
+| `hr_payroll_runs.active_key` | "<PT>:<periode>:regular" — hanya proses reguler yang tidak dibatalkan/dianulir; unik parsial `uq_active_key` (REQUIRED_UNIQUE_INDEXES, menggantikan penjaga baca-lalu-hapus); dilepas saat batal/anulir. Proses lama: `scripts/migrasi_pyt1_proses_gaji.py` | `create_run`, `cancel_run`, `void_run` |
+| `hr_payroll_runs.inputs_stale_at` | Masukan yang dipakai proses draf dibatalkan → ajukan ditolak (409) sampai dihitung ulang | `hr_pay_inputs._cancel` / dihapus `recalculate_run` |
+| `hr_payroll_runs.totals.other_deductions` | Σ potongan lain (komponen) | `_accumulate` |
+| `hr_payslips.run_type`, `other_earnings`, `other_deductions` | Jenis proses; Σ pendapatan lain (THR, bonus, …); Σ potongan lain (berakun) | `compute_payslip` |
+| `hr_payslips.pph21_month`, `pph21_month_detail` | PPh 21 gabungan bulan (bruto pajak slip ini + slip terdahulu bulan itu di proses lain yang hidup dan dibuat lebih dulu) dan rinciannya `{tax_gross_month, rate, prior_pph21, prior[]}`; `pph21` slip = `pph21_month − prior_pph21` | `compute_payslip` |
+
+Jurnal gaji dari komponen (`gl_service.payroll_journal_lines`): pendapatan → Dr 6-1000 (atau `account_code` komponen),
+komisi menurut `commission_mode`, tanggungan → Dr 6-1100, BPJS → Cr 2-1700, PPh 21 → Cr/Dr 2-1800, potongan lain → Cr
+`account_code` komponen, bersih → Cr 2-1600; kunci = id proses (PK-22). PDF slip dari `hr_payroll_pdf.payslip_pdf_rows`.

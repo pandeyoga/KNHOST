@@ -35,7 +35,7 @@ import { SalesPortal, PriceApprovals, OrdersView, CrmView, OperationsView, QcHub
   CashManagementView, PurchaseReturns, VendorBillsView, GrIrView, ContraBonsView, IntercoView, InternalRequestsView,
   KeepPendingPanel, RepairOrdersView, DesignRequestsView, LogisticsView, LandedCostView, InputTaxView, RFQView,
   PurchaseRequisitions, ReorderSuggestions, EmployeesView, OrgUnitsView, EmployeeSelfService, AttendanceView,
-  AttendanceSetupView, LiveTrackingView, VisitsView, PayrollRunsView, PayrollRemittancesView, PayComponentsView, PayslipsView, LeaveView, OvertimeView,
+  AttendanceSetupView, LiveTrackingView, VisitsView, PayrollRunsView, PayrollRemittancesView, PayComponentsView, LeaveView, OvertimeView,
   KpiView, DesignGalleryView, HrAnalyticsView, StockAnalyticsView, ExportCenterView, LocationPutawayView,
   GoodsReceiptsView, OutboundView, CuttingOpsView, ReceivingOcrSettings, RfidTagsView,
   RfidGateMonitorView, RfidLocationsView, CashAdvancesView, SettlementsView, ExpenseCategoriesView,
@@ -419,7 +419,8 @@ export default function AppViewRouter(props) {
       {activeView === "hr-live-tracking" && <LiveTrackingView currentUser={user} selectedEntity={selectedEntity} />}
       {activeView === "hr-visits" && <VisitsView currentUser={user} selectedEntity={selectedEntity} />}
       {activeView === "hr-payroll-runs" && <PayrollRunsView currentUser={user} selectedEntity={selectedEntity} {...focusDocProps} />}
-      {activeView === "hr-payslips" && <PayslipsView currentUser={user} selectedEntity={selectedEntity} />}
+      {/* PY-T1 — `hr-payslips` = alias ke Proses Gaji (panel Cari slip terbuka); rute cadangan = layar yang sama. */}
+      {activeView === "hr-payslips" && <PayrollRunsView currentUser={user} selectedEntity={selectedEntity} cariAwal {...focusDocProps} />}
       {activeView === "hr-payroll-remittances" && <PayrollRemittancesView />}
       {activeView === "hr-pay-components" && <PayComponentsView />}
       {activeView === "hr-leave" && <LeaveView currentUser={user} selectedEntity={selectedEntity} />}

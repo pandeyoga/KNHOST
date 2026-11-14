@@ -5,7 +5,8 @@ from pydantic import BaseModel, Field
 
 class PayrollRunInput(BaseModel):
     entity_id: str
-    period: str  # YYYY-MM
+    period: str  # YYYY-MM — format diperiksa layanan (PY-13: 400 "Periode harus berbentuk TTTT-BB, mis. 2026-10.")
+    run_type: str = "regular"   # PY-T1 — "regular" | "thr" | "susulan"
 
 
 class PayRunInput(BaseModel):

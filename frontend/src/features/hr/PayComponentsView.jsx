@@ -80,6 +80,12 @@ export function galatMasukan(f) {
   return "";
 }
 
+/** Tiga tanda yang disimpan tetapi belum dipakai hitungan gaji, dalam satu sel ("Dasar BPJS · Dasar lembur" / "—"). */
+export function tandaBelumDipakai(c) {
+  const on = [c.in_bpjs_base && "Dasar BPJS", c.in_overtime_base && "Dasar lembur", c.prorate && "Diprorata"].filter(Boolean);
+  return on.length ? on.join(" · ") : "—";
+}
+
 function YaTidak({ v, testId }) {
   return v ? <span className="inline-flex items-center gap-1 whitespace-nowrap text-kn-text" data-testid={testId}><CheckCircle2 size={12} aria-hidden="true" />Ya</span>
     : <span className="inline-flex items-center gap-1 whitespace-nowrap text-kn-text-2" data-testid={testId}><Circle size={12} aria-hidden="true" />Tidak</span>;
@@ -263,22 +269,21 @@ export default function PayComponentsView() {
           <>
             <div className="overflow-x-auto">
               <table className="data-table head-wrap w-full" data-testid="paycomp-table">
+                {/* Cek layar — muat di 1024 px tanpa bergulir: Jenis + Cara hitung satu sel dua baris; tiga tanda yang
+                    belum dipakai (Dasar BPJS, Dasar lembur, Diprorata) satu kolom bertanda. */}
                 <thead><tr>
-                  <th>Kode</th><th>Nama</th><th>Jenis</th><th>Cara hitung</th><th>Kena pajak</th>
-                  <th>Dasar BPJS*</th><th>Dasar lembur*</th><th>Diprorata*</th><th>Akun</th><th>Aktif</th>
+                  <th>Kode</th><th>Nama</th><th>Jenis · cara hitung</th><th>Kena pajak</th>
+                  <th>Dasar BPJS · lembur · diprorata*</th><th>Akun</th><th>Aktif</th>
                   {canManage && <th className="col-sticky-end">Aksi</th>}
                 </tr></thead>
                 <tbody>
                   {comps.map((c) => (
                     <tr key={c.id} data-testid={`paycomp-row-${c.code}`}>
                       <td className="font-mono whitespace-nowrap">{c.code}</td>
-                      <td className="min-w-[140px]">{c.name}{c.system && <span className="block text-fs-12 text-kn-text-2">Bawaan</span>}</td>
-                      <td>{KIND_LABEL[c.kind] || "—"}</td>
-                      <td>{CALC_LABEL[c.calc] || "—"}</td>
+                      <td>{c.name}{c.system && <span className="block text-fs-12 text-kn-text-2">Bawaan</span>}</td>
+                      <td>{KIND_LABEL[c.kind] || "—"}<span className="block text-fs-12 text-kn-text-2">{CALC_LABEL[c.calc] || "—"}</span></td>
                       <td><YaTidak v={c.taxable} /></td>
-                      <td><YaTidak v={c.in_bpjs_base} /></td>
-                      <td><YaTidak v={c.in_overtime_base} /></td>
-                      <td><YaTidak v={c.prorate} /></td>
+                      <td data-testid={`paycomp-flags-${c.code}`}>{tandaBelumDipakai(c)}</td>
                       <td className="font-mono whitespace-nowrap">{c.account_code || <span className="font-sans text-kn-text-2">Bawaan</span>}</td>
                       <td>{c.is_active !== false
                         ? <span className="status-pill status-done inline-flex items-center gap-1 whitespace-nowrap"><CheckCircle2 size={12} aria-hidden="true" />Aktif</span>
@@ -289,7 +294,7 @@ export default function PayComponentsView() {
                 </tbody>
               </table>
             </div>
-            <p className="section-pad !pt-2 text-fs-12 text-kn-text-2" data-testid="paycomp-unused-note">* Dasar BPJS, Dasar lembur, dan Diprorata disimpan tetapi belum dipakai hitungan gaji: iuran BPJS dan upah lembur masih dihitung dari gaji pokok, dan gaji belum diprorata.</p>
+            <p className="section-pad !pt-2 text-fs-12 text-kn-text-2" data-testid="paycomp-unused-note">* Tanda Dasar BPJS, Dasar lembur, dan Diprorata disimpan tetapi belum dipakai hitungan gaji: iuran BPJS dan upah lembur masih dihitung dari gaji pokok, dan gaji belum diprorata.</p>
           </>
         )}
       </div>

@@ -104,8 +104,12 @@ describe("Komponen & Masukan", () => {
     api();
     const { host } = await mount(<PayComponentsView />);
     const heads = [...q(host, "paycomp-table").querySelectorAll("thead th")].map((th) => th.textContent);
-    expect(heads).toEqual(["Kode", "Nama", "Jenis", "Cara hitung", "Kena pajak", "Dasar BPJS*", "Dasar lembur*", "Diprorata*",
-      "Akun", "Aktif", "Aksi"]);
+    // Sepuluh isian spesifikasi dalam 7 kolom (+ Aksi) supaya tabel muat di kartu pada 1024 px.
+    expect(heads).toEqual(["Kode", "Nama", "Jenis · cara hitung", "Kena pajak", "Dasar BPJS · lembur · diprorata*", "Akun",
+      "Aktif", "Aksi"]);
+    expect(q(host, "paycomp-row-GAJI_POKOK").textContent).toContain("Tetap bulanan");
+    expect(q(host, "paycomp-flags-GAJI_POKOK").textContent).toBe("Dasar BPJS · Dasar lembur");
+    expect(q(host, "paycomp-flags-BONUS").textContent).toBe("—");
     expect(q(host, "paycomp-table").querySelector("thead th:last-child").className).toContain("col-sticky-end");
     expect(q(host, "paycomp-table").className).toContain("head-wrap");
     expect(q(host, "paycomp-unused-note").textContent).toMatch(/belum dipakai/);

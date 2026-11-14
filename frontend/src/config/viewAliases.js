@@ -123,6 +123,13 @@ export const VIEW_ALIASES = {
   // Id grup lama "Kas & Aset" (bookmark/`?view=kas-aset`) tanpa layar sendiri → Kas & Bank › Kas Kecil.
   "kas-aset": { to: "petty-cash", nav: "cash-bank", label: "Kas & Aset", legacy: true, since: "MN-T1" },
 
+  // ── PY-T1 (PY-14) — tab Slip Gaji menampilkan tabel yang sama dengan rincian proses; kini panel "Cari slip" di Proses
+  // Gaji (dibuka lewat preset). Rute cadangan `activeView === "hr-payslips"` merender Proses Gaji dengan panel terbuka;
+  // id lama tetap di access_modules (hidden_views peran kustom menyembunyikan panelnya — `canOpen("hr-payslips")`).
+  "hr-payslips": {
+    to: "hr-payroll-runs", nav: "hr-payroll-hub", preset: { cari: true }, label: "Slip Gaji", since: "PY-T1",
+  },
+
   // ── KP-T9 — menu Pengaturan sembilan hub (docs/blueprint/unit/KP-T9.md). Layar Badan Usaha & Akses dipecah menjadi
   // lima tab (Profil PT, Kesiapan PT, Akun, Peran & Hak Akses, Cek Peran); id lamanya mendarat di Profil PT dan rute
   // cadangan `activeView === "entities-access"` tetap. Empat id hub yang hilang (tanpa layar sendiri) → tab barunya.
