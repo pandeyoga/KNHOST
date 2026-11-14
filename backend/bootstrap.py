@@ -1926,6 +1926,8 @@ async def run_bootstrap() -> None:
     await _prt4_kpi()
     from services.custom_role_service import migrate_prt5_catalog as _prt5_katalog   # PR-T5 — izin mati, modul dipecah
     await _prt5_katalog()
+    from services.custom_role_service import migrate_crt1_catalog as _crt1_katalog   # CR-T1 — customer.manage_credit
+    await _crt1_katalog()
     await sync_permission_modules()
     await sync_permission_revocations()
     await migrate_kft1_settings_permissions()

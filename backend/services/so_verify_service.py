@@ -134,7 +134,7 @@ async def build_checklist(order: Dict[str, Any]) -> List[Dict[str, Any]]:
     npwp = ""
     if order.get("customer_id"):
         cust = safe_doc(await db.customers.find_one(
-            {"id": order["customer_id"]}, {"_id": 0, "npwp": 1, "credit_limit": 1})) or {}
+            {"id": order["customer_id"]}, {"_id": 0, "npwp": 1})) or {}   # CR-T1 — plafon tidak dibaca di sini
         npwp = str(cust.get("npwp") or "").strip()
     minta_faktur = bool(order.get("needs_tax_invoice"))
     checks.append({

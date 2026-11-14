@@ -53,6 +53,7 @@ Sebelum membuat apapun yang baru, tanya: **"Apakah ini sudah ada di sini?"**
 | Usulan Jurnal Manual *(KF-T6)* | `journal_proposals` | `routers/gl.py` (`POST /gl/journal` → 202, `/gl/journal-proposals*`), `services/journal_proposal_service.py` | `JournalEntryCreate`, `ProposalReject` | `JournalProposalsPanel` (Buku Besar › Jurnal › Menunggu persetujuan) |
 | Cara Bayar *(PM-T1)* | `payment_methods` (master berlapis `payment-methods`) | `routers/payment_methods.py` (`GET /api/payment-methods`), `routers/entity_masters.py` (kelola, `cash.configure`), `services/payment_method_service.py` (`normalize`, `get`, `active_for`, `is_cash` — dipanggil kwitansi, bayar hutang, kontrabon, biaya masuk, uang muka, denda, selisih bayar, antar-PT) | — | `config/paymentMethods.js` (`usePaymentMethods`), `EntityMastersView` (Pengaturan › Keuangan & Pajak › Master per Badan Usaha) |
 | Perubahan Rekening *(PM-T1)* | `bank_account_changes` | `routers/bank.py` (`POST/PATCH /bank-accounts` → 202 bila dua orang, `GET /bank-account-changes`, `POST …/{id}/decision`), `services/bank_account_change_service.py` | `BankAccountCreate`, `BankAccountUpdate`, `BankAccountChangeDecision` | `BankAccountChangesPanel`, `BankAccountForm` (Keuangan › Kas & Bank › Rekening & Saldo) |
+| Profil Kredit Pelanggan *(CR-T1)* | `customer_credit_profiles` (satu per pelanggan × PT pesanan), `credit_profile_requests` | `routers/credit_profiles.py` (`GET /customers/{id}/credit-profile`, `POST /customers/{id}/credit-profile-requests`, `GET /credit-profile-requests`, `POST …/{id}/decision`, `POST …/{id}/cancel`), `services/credit_profile_service.py` (`effective`, `status_from` — dipakai `customer_service.compute_customer_credit`, `ar_aging_service`) | `CreditProfileRequestCreate`, `CreditProfileDecision`, `CreditProfileCancel` | `CustomerCreditTab` + `CreditProfileRequestModal` (kartu pelanggan › Kredit), `CreditProfileRequestsPanel` (Keuangan › Piutang › Kredit & Plafon) |
 | Kunci Masa Pajak *(PK-40)* | `tax_period_locks` | `routers/tax_center.py` (`/api/tax/periods*`), `services/tax_center_service.py` (`assert_masa_terbuka` dipanggil layanan faktur & PPh) | `TaxPeriodLockInput`, `TaxPeriodUnlockInput` | `TaxCenterView` (Akuntansi & Pajak › Pusat Pajak) |
 | Niat Bayar Hutang *(PK-05)* | `ap_payment_intents` | `routers/ap_payments.py`, `services/ap_payment_service.py` (dipanggil bayar faktur & bayar kontrabon) | `VendorBillPaymentCreate`, `ContraBonPayIn` | `VendorBillDetailPanel` & `contrabon/PayModal` (panel bayar, `features/purchasing/apPayment.jsx`) |
 | Kontrabon *(FASE G-7)* | `contra_bons` | `routers/contra_bons.py`, `services/contra_bon_service.py`, `services/contra_bon_reminder.py` | `ContraBonCreate`, `ContraBonDeductionIn`, `ContraBonDecisionIn`, `ContraBonScheduleIn`, `ContraBonPayIn`, `InvoiceExchangeIn` | `ContraBonsView` (Pembelian → Hutang Supplier (AP) → Kontrabon) |
@@ -1318,6 +1319,9 @@ Key Fields:
   status      enum     active | inactive
   addresses   list     [{id, label, recipient_name, phone, city, address, is_primary}]
   npwp, credit_limit, sales_pic, entity_id   (sudah ada)
+  credit_limit       USANG (CR-T1) — tidak ditulis lagi (POST selalu 0) dan tidak dibaca mesin; plafon = profil kredit
+                     `customer_credit_profiles` (dibaca sebagai cadangan `data_lama` HANYA sampai skrip
+                     `scripts/migrate_credit_profiles.py --terapkan` dijalankan pemilik — H3; cadangan dihapus CR-T3)
   --- CRM-LITE [PROPOSED KN_17] ---
   assigned_sales_id  string  FK users (salesperson pemilik) — WAJIB (kunci manajemen; sales kelola miliknya)
   segment            enum    Retail|Wholesale|Distributor|VIP  (KLASIFIKASI saja, BUKAN penentu harga)
@@ -1327,18 +1331,19 @@ Key Fields:
   enforce_single_dye_lot  bool  P0-4 — bila true → alokasi SO dipaksa 1 dye_lot (dye_lot_strict)
   payment_profile    object  {allowed_methods:[kontan|tunai|tempo|dp|bertahap], default_method,
                               term_days, dp_percent, installment:{count,interval_days}}
-  credit             object  {credit_limit, ar_outstanding(derived), overdue_amount(derived),
-                              status: active|warning|blocked}
+  credit             object  {credit_limit (= profil kredit EFEKTIF, CR-T1), limit_source, ar_outstanding(derived),
+                              overdue_amount(derived), status: active|warning|blocked (`credit_profile_service.status_from`)}
   customer_group_id  string? penghubung customer sama lintas-entitas (DISIAPKAN, default kosong) [KN_17 S38]
-  status      enum     active | inactive | blocked
+  status      enum     active | inactive | blocked (USANG sejak CR-T1: blokir kredit = profil kredit `blokir_manual`;
+                       PATCH menerima active/inactive saja; migrasi mengubah `blocked` → `active`) | merged
   created_by  string
   created_at  string
 
 ⚠️ scoped entity_id (customer terpisah per entitas; customer sama boleh lintas-entitas; kunci=assigned_sales_id)
 ⚠️ RBAC row-level: role=sales hanya lihat/kelola customer assigned_sales_id==dirinya (enforce backend)
-⚠️ PK-45 (K-28): `credit_limit` & `status` HANYA ditulis `PUT /api/customers/{id}/credit` (izin `customer.manage_credit`,
-   alasan wajib, jejak `audit_logs.action = customer_credit_changed`); PATCH mengabaikan keduanya; POST tanpa izin itu
-   menyimpan `credit_limit` 0.
+⚠️ PK-45 (K-28) → CR-T1: plafon & blokir kredit HANYA lewat pengajuan profil kredit (`credit_profile_requests`, diputus
+   pemegang `credit_profile.approve`). `PUT /api/customers/{id}/credit` (jalur sementara PK-45) dijawab 410;
+   `customer.manage_credit` dicabut. POST menyimpan `credit_limit` 0; isian > 0 → pengajuan `diajukan` atas nama pembuat.
 ⚠️ JANGAN BUAT: clients, buyers, pembeli, pelanggan_toko, crm_customers
 ```
 
@@ -1748,6 +1753,48 @@ Index:       uq_id (unik) · (entity_id, status, created_at)
   requested_by(_id) · decided_by(_id) · decision_note · created_at · decided_at
 Setujui: pengaju ≠ pemutus bila `kontrol.ubah_rekening.min_orang` = 2; diterapkan hanya bila nilai `from` masih
 sama (beda → 409 "…sudah diputus atau datanya sudah berubah. Ajukan ulang.").
+```
+
+### customer_credit_profiles  [CR-T1 — profil kredit per pelanggan per PT]
+```
+Collection:  customer_credit_profiles   Prefix: ccp_
+Service:     services/credit_profile_service.py (effective, status_from, migrasi_data_lama)
+Index:       uq_id (unik) · uq_customer_entity (customer_id, entity_id) UNIK, WAJIB-ADA (D7)
+**SCOPED** (`entity_id` = PT PESANAN, bukan PT pemilik data pelanggan). Tidak ada dokumen = semua nilai ikut bawaan PT.
+
+  id · customer_id · entity_id
+  limit_mode          ikut_pt | khusus | tanpa_batas   ("tanpa batas" pilihan tersendiri, bukan angka 0)
+  credit_limit        angka ≥ 0 (wajib bila khusus)
+  limit_valid_until   YYYY-MM-DD | ""   (lewat tanggal → plafon efektif = `ar.default_credit_limit` PT, asal "kedaluwarsa")
+  allowed_term_codes  [kode termin]  (kosong = semua termin aktif PT; ditegakkan CR-T3)
+  default_term_code   string (anggota allowed_term_codes bila terisi)
+  overdue_block_days  int ≥ 0 | null  (null = `ar.overdue_block_days` PT)
+  credit_status       normal | blokir_manual   (awas/tahan DIHITUNG, tidak disimpan)
+  block_reason        string (≥ 5 huruf bila blokir_manual)
+  penalty_rule        {mode, rate_pct_per_month, base, cap_pct, grace_days, reason, valid_until} (dibaca CR-T4)
+  credit_group_id     string (K-29, belum dihitung mesin)
+  version             int (naik 1 tiap perubahan; syarat tulis)
+  updated_at · updated_by(_id) · last_request_id · created_at
+Ditulis HANYA `credit_profile_service.decide` (pengajuan disetujui) dan skrip migrasi.
+```
+
+### credit_profile_requests  [CR-T1 — pengajuan perubahan profil kredit]
+```
+Collection:  credit_profile_requests    Prefix: cpr_    Nomor: {KODE PT}/PKR-NNNNN (`next_doc_number`, jenis `pkr`)
+Router:      routers/credit_profiles.py
+Index:       uq_id (unik) · uq_open_request (customer_id, entity_id) UNIK parsial status "diajukan", WAJIB-ADA ·
+             (entity_id, status, created_at) · (customer_id, entity_id, status, decided_at)
+**SCOPED** (`entity_id` = PT profil yang diubah).
+
+  id · number · customer_id · customer_name · entity_id
+  changes[]        {field, from, to}   (`from` = nilai tersimpan saat diajukan; null bila belum ada profil)
+  base_version     versi profil saat diajukan
+  reason (≥ 5 huruf) · attachment_url
+  credit_snapshot  potret `compute_customer_credit` saat diajukan (D3; tidak dihitung ulang)
+  status           diajukan → disetujui | ditolak | dibatalkan
+  requested_by(_id) · created_at · decided_by(_id) · decided_at · decision_note · profile_version
+Putus: `credit_profile.approve` + `kontrol.ubah_profil_kredit.*` (nominal = plafon baru). `from` berbeda dari profil
+sekarang → 409 "Profil kredit sudah berubah sejak pengajuan dibuat. Buat pengajuan baru." (pengajuan dibatalkan otomatis).
 ```
 
 ### payment_terms  [Fase 1A IMPLEMENTED]
@@ -2945,6 +2992,8 @@ set_    → system_settings           [Fase 1A IMPLEMENTED]
 pterm_  → payment_terms             [Fase 1A IMPLEMENTED]
 pmeth_  → payment_methods           [PM-T1]
 bac_    → bank_account_changes      [PM-T1]
+ccp_    → customer_credit_profiles  [CR-T1]
+cpr_    → credit_profile_requests   [CR-T1]
 aprule_ → approval_rules            [Fase 1A IMPLEMENTED]
 ```
 > Prefix PLANNED (lihat bagian PLANNED ENTITIES): `pra_` price_approvals (= "special price"),

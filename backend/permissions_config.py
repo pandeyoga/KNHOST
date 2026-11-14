@@ -700,13 +700,12 @@ for _role in ("admin", "manager", "finance"):
 for _role in ("admin", "manager", "finance"):
     _cur = DEFAULT_PERMISSIONS[_role].setdefault("order", ["view"])
     DEFAULT_PERMISSIONS[_role]["order"] = list(_cur) + [x for x in ("release_unpaid",) if x not in _cur]
-# PK-45 (K-28) — plafon & status blokir pelanggan hanya diubah pemegang `customer.manage_credit` (PUT
-# /api/customers/{id}/credit; POST /api/customers tanpa izin ini menyimpan plafon 0). Sales TIDAK memegangnya.
 # PK-45 (K-33) — pesanan penjualan tanpa PPN (`tax_override: "non_ppn"`) butuh `order.tax_override` + alasan.
 # Bawaan dapat diatur per peran di Peran & Hak Akses; tersalin sekali ke matriks tersimpan (sync_permission_modules).
-for _role, _pairs in {"admin": (("customer", "manage_credit"), ("order", "tax_override")),
-                      "manager": (("customer", "manage_credit"), ("order", "tax_override")),
-                      "finance": (("customer", "manage_credit"),)}.items():
+# CR-T1 — `customer.manage_credit` (jalur sementara PK-45 `PUT /api/customers/{id}/credit`) DICABUT: plafon & blokir
+# kini lewat pengajuan profil kredit (`credit_profile.*`, blok CR-T1 di bawah; `CRT1_REMOVED_PAIRS`).
+for _role, _pairs in {"admin": (("order", "tax_override"),),
+                      "manager": (("order", "tax_override"),)}.items():
     for _res, _act in _pairs:
         _cur = DEFAULT_PERMISSIONS[_role].setdefault(_res, ["view"])
         DEFAULT_PERMISSIONS[_role][_res] = list(_cur) + [x for x in (_act,) if x not in _cur]
@@ -859,3 +858,31 @@ for _role, _mods in PMT1_DEFAULT_PAIRS.items():
     for _res, _acts in _mods.items():
         _cur = list(DEFAULT_PERMISSIONS[_role].get(_res) or [])
         DEFAULT_PERMISSIONS[_role][_res] = _cur + [a for a in _acts if a not in _cur]
+
+# ═══════════════════════════════════════════════════════════════════════════
+# CR-T1 (K-27, K-28, K-29) — profil kredit per pelanggan per PT, diubah hanya lewat pengajuan
+# (`docs/blueprint/unit/CR-T1.md`, tabel "Izin dan peran"). Sumber daya baru `credit_profile` (modul "Uang Masuk, Piutang
+# & Faktur Pajak"): `view` melihat plafon/status kredit & riwayatnya, `update` mengajukan perubahan, `approve` memutus
+# pengajuan dan mengubah plafon bawaan PT (`ar.default_credit_limit`). Sales mengajukan, tidak memutus (K-28); Finance
+# mengajukan (ASUMSI unit, `06` §3.7). Instalasi lama menerima pasangan baru sekali lewat
+# `bootstrap.sync_permission_modules` (`defaults_applied`, PR-T9).
+# `customer.manage_credit` (PK-45) dicabut dari katalog: matriks tersimpan dibersihkan sekali lewat migrasi
+# `crt1:izin-kredit` (`services/custom_role_service.migrate_crt1_catalog`) — tanpa itu editor peran menolak simpan
+# ("aksi tidak berlaku") untuk peran yang masih menyimpannya.
+# ═══════════════════════════════════════════════════════════════════════════
+CRT1_DEFAULT_PAIRS = {
+    "admin": {"credit_profile": ("view", "update", "approve")},
+    "manager": {"credit_profile": ("view", "update", "approve")},
+    "finance": {"credit_profile": ("view", "update")},
+    "sales_admin": {"credit_profile": ("view", "update")},
+    "sales": {"credit_profile": ("view", "update")},
+}
+for _role, _mods in CRT1_DEFAULT_PAIRS.items():
+    for _res, _acts in _mods.items():
+        _cur = list(DEFAULT_PERMISSIONS[_role].get(_res) or [])
+        DEFAULT_PERMISSIONS[_role][_res] = _cur + [a for a in _acts if a not in _cur]
+CRT1_REMOVED_PAIRS = (("customer", "manage_credit"),)
+for _mods in DEFAULT_PERMISSIONS.values():
+    for _res, _act in CRT1_REMOVED_PAIRS:
+        if _act in (_mods.get(_res) or []):
+            _mods[_res] = [a for a in _mods[_res] if a != _act]

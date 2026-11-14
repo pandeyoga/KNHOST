@@ -117,11 +117,11 @@ async def sales_kpi(sales_id: str, period: Optional[str] = None, entity_id: Opti
     # `compute_customer_credit`; cakupan tetap pelanggan milik sales ini (`assigned_sales_id`).
     ar = overdue = ledger = 0.0
     blocked = warning = 0
-    from services.customer_service import credit_thresholds
-    thr_cache: Dict[str, Dict[str, Any]] = {}   # KF-T7 — ambang kredit dibaca sekali per PT pelanggan
+    from services import credit_profile_service as _cps
+    kc = _cps.cache_baru()   # KF-T7/CR-T1 — ambang & plafon bawaan dibaca sekali per PT; profil kredit satu kueri
+    await _cps.muat_profil(kc, [c.get("id") for c in customers])
     for c in customers:
-        cc = await compute_customer_credit(c, entity_id,
-                                           thresholds=await credit_thresholds(c.get("entity_id"), thr_cache))
+        cc = await compute_customer_credit(c, entity_id, cache=kc)
         ar += cc["ar_outstanding"]
         ledger += cc["ar_ledger"]
         overdue += cc["overdue_amount"]

@@ -173,7 +173,9 @@ export default function AdminView({
     const facts = tab === "customers" ? [
       { label: "PIC toko", value: row.pic_name || "—" }, { label: "HP/WhatsApp", value: row.phone || "—" },
       { label: "Kota", value: row.city || "—" }, { label: "Sales penanggung jawab", value: row.assigned_sales_name || row.sales_pic || "—" },
-      { label: "Batas kredit", value: Number(row.credit_limit) > 0 ? formatCurrency(row.credit_limit) : "Tanpa batas" },
+      // CR-T1 — plafon yang BERLAKU (profil kredit PT pelanggan), bukan `customers.credit_limit` (usang).
+      { label: "Plafon kredit", value: !row.credit ? "Lihat tab Kredit di kartu pelanggan"
+        : Number(row.credit.credit_limit) > 0 ? formatCurrency(row.credit.credit_limit) : "Tanpa batas" },
     ] : [];
     return { title: row.name || row.legal_name || row.code || row.email,
       body: `${TAB_SINGULAR[tab] || "Data"} — ${isInactive(row) ? "Aktifkan" : "Nonaktifkan"} ada di baris daftar.`,

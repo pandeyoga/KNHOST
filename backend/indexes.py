@@ -181,6 +181,10 @@ INDEX_SPECS: Dict[str, List[IndexKeys]] = {
     "bank_account_changes": [        # PM-T1 — perubahan rekening menunggu orang kedua (antrean per PT)
         [("entity_id", A), ("status", A), ("created_at", D)],
     ],
+    "credit_profile_requests": [     # CR-T1 — pengajuan perubahan profil kredit (antrean per PT, riwayat per pelanggan)
+        [("entity_id", A), ("status", A), ("created_at", A)],
+        [("customer_id", A), ("entity_id", A), ("status", A), ("decided_at", D)],
+    ],
     "payment_methods": [             # PM-T1 — master cara bayar berlapis (baris efektif per kode × PT)
         [("code", A), ("entity_id", A)],
     ],
@@ -437,6 +441,8 @@ ID_INDEX_COLLECTIONS: List[str] = [
     "doc_number_formats",
     # PM-T1 — master cara bayar (`pmeth_…`) dan perubahan rekening (`bac_…`).
     "payment_methods", "bank_account_changes",
+    # CR-T1 — profil kredit (`ccp_…`) dan pengajuan perubahannya (`cpr_…`).
+    "customer_credit_profiles", "credit_profile_requests",
 ]
 
 # FIX-5 — rujukan bersarang roll yang dicari per nilai (B3a SCH-9: index `reserved_ref` utuh tidak terpakai oleh
@@ -746,6 +752,21 @@ REQUIRED_UNIQUE_INDEXES += [
                 'm:"$default_receiving_methods"},n:{$sum:1},rekening:{$push:"$id"}}},{$match:{n:{$gt:1}}}])')},
 ]
 
+
+# CR-T1 (D7) — satu profil kredit per (pelanggan, PT) dan satu pengajuan TERBUKA per (pelanggan, PT). Koleksi baru, jadi
+# data lama tidak bisa kembar; dua pengajuan bersamaan → satu kena DuplicateKeyError → 409 (`credit_profile_service`).
+REQUIRED_UNIQUE_INDEXES += [
+    {"collection": "customer_credit_profiles", "name": "uq_customer_entity",
+     "label": "satu profil kredit per pelanggan per PT", "keys": [("customer_id", 1), ("entity_id", 1)],
+     "partial": {"customer_id": dict(_NONEMPTY)},
+     "finder": _finder_dup("customer_credit_profiles", '{customer_id:{$type:"string",$gt:""}}',
+                           '{c:"$customer_id",e:"$entity_id"}', "$id")},
+    {"collection": "credit_profile_requests", "name": "uq_open_request",
+     "label": "satu pengajuan perubahan kredit terbuka per pelanggan per PT",
+     "keys": [("customer_id", 1), ("entity_id", 1)], "partial": {"status": "diajukan"},
+     "finder": _finder_dup("credit_profile_requests", '{status:"diajukan"}', '{c:"$customer_id",e:"$entity_id"}',
+                           "$id")},
+]
 
 class RequiredIndexError(RuntimeError):
     """Indeks unik wajib tidak terpasang — aplikasi tidak dijalankan (mode `enforce`)."""

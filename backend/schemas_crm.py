@@ -73,13 +73,25 @@ class CreditOverrideCreate(BaseModel):
     evidence_url: str = ""
 
 
-class CustomerCreditUpdate(BaseModel):
-    """PK-45 (CR-01) — ubah plafon dan/atau status blokir pelanggan (PUT /api/customers/{id}/credit).
+class CreditProfileRequestCreate(BaseModel):
+    """CR-T1 — pengajuan perubahan profil kredit (POST /api/customers/{id}/credit-profile-requests).
 
-    Tipe longgar disengaja: isian yang salah dijawab 400 berpesan Indonesia oleh handler, bukan 422 skema."""
-    credit_limit: Optional[Any] = None     # angka ≥ 0
-    status: Optional[Any] = None           # active | inactive | blocked
+    Tipe longgar disengaja: isian yang salah dijawab 400 berkalimat oleh `credit_profile_service`, bukan 422 skema."""
+    entity_id: Optional[str] = None        # PT pesanan; kosong = PT aktif (resolve_requested_entity)
+    changes: Optional[Any] = None          # {isian: nilai baru}
     reason: Optional[Any] = ""             # wajib, minimal 5 huruf (K-14)
+    attachment_url: Optional[Any] = ""
+
+
+class CreditProfileDecision(BaseModel):
+    """CR-T1 — POST /api/credit-profile-requests/{id}/decision. `note` wajib saat menolak."""
+    decision: Optional[Any] = None         # approve | reject
+    note: Optional[Any] = ""
+
+
+class CreditProfileCancel(BaseModel):
+    """CR-T1 — POST /api/credit-profile-requests/{id}/cancel."""
+    reason: Optional[Any] = ""
 
 
 class CreditOverrideDecision(BaseModel):

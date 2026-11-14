@@ -40,6 +40,18 @@ E("ar.credit_warning_pct", group="uang-masuk", section="kredit", type="pct", def
   example="80 → plafon Rp 10.000.000, piutang Rp 8.000.000 → peringatan; piutang Rp 7.000.000 → aktif",
   consumers=_KREDIT, related=("ar.overdue_block_days",), **_P)
 
+# CR-T1 (K-27–K-29) — plafon bawaan PT untuk pelanggan yang belum punya plafon khusus di profil kredit. Bawaan 0 = tanpa
+# batas (= perilaku hari ini: `customers.credit_limit` 0 berarti tanpa plafon). Diubah pemegang izin kredit
+# (`credit_profile.approve`), bukan `settings.manage`. Satu pembaca: `credit_profile_service.effective`.
+E("ar.default_credit_limit", group="uang-masuk", section="kredit", type="money", default=0, min=0,
+  max=1000000000000, step=1000000, unit="Rp", scopes=_GE,
+  label="Plafon bawaan pelanggan baru",
+  help="Dipakai untuk pelanggan yang belum punya plafon khusus. 0 = tanpa batas.",
+  impact="Mengisi angka membuat semua pelanggan tanpa plafon khusus mulai dibatasi.",
+  example="Rp 25.000.000 · piutang Rp 26.000.000 → terblokir",
+  consumers=("services/credit_profile_service.py:effective",), risk="high", requires_reason=True,
+  permission=("credit_profile", "approve"), related=("ar.credit_warning_pct", "ar.overdue_block_days"))
+
 # ── Penjualan (#5, #6, #8, #9, #51) ────────────────────────────────────────────────────────────────────────────────
 E("sales.reservation_days", group="harga-diskon", section="alur-pesanan", type="duration", default=3, min=1, max=60,
   step=1, unit="hari", scopes=_GE,

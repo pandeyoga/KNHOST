@@ -27,6 +27,11 @@ export const ACTION_LABEL = {};
 export const AUDIT_ACTION_LABEL = {
   login: "Masuk", logout: "Keluar", CREATE: "Dibuat", APPROVE: "Disetujui", COMPLETE: "Diselesaikan",
   customer_credit_changed: "Plafon/status kredit pelanggan diubah",   // PK-45
+  // CR-T1 — profil kredit pelanggan lewat pengajuan
+  credit_profile_requested: "Perubahan kredit diajukan",
+  credit_profile_changed: "Profil kredit pelanggan diubah (pengajuan disetujui)",
+  credit_profile_request_rejected: "Pengajuan perubahan kredit ditolak",
+  credit_profile_request_cancelled: "Pengajuan perubahan kredit dibatalkan",
   ESCALATE: "Dieskalasi", RESOLVE_ESCALATION: "Eskalasi diselesaikan",
   order_created: "Pesanan dibuat", order_verified: "Pesanan diverifikasi", order_confirmed: "Pesanan dikonfirmasi",
   order_auto_approved: "Pesanan disetujui otomatis", sales_order_verified: "Pesanan diverifikasi",

@@ -135,9 +135,11 @@ MODULE_CATALOG: List[Dict[str, Any]] = [
      "resources": ["logistics", "vehicle_log"],
      "nav": ["gudang", "logistics", "kas-aset", "vehicle-logs"]},
     {"id": "ar", "group": "Keuangan", "label": "Uang Masuk, Piutang & Faktur Pajak",
-     "description": "Kwitansi AR, piutang, rencana bayar, denda, selisih bayar, faktur pajak keluaran.",
-     "resources": ["ar_receipt", "tax_invoice", "payment_plan", "penalty", "payment_variance"],
-     "nav": ["keuangan", "ar-aging", "advance-report", "payment-plans", "store-credit",
+     "description": "Kwitansi AR, piutang, rencana bayar, denda, selisih bayar, faktur pajak keluaran, profil kredit "
+                    "pelanggan (plafon, blokir, pengajuan perubahan kredit).",
+     # CR-T1 — `credit_profile` (profil kredit per pelanggan per PT); layarnya tab Kredit di kartu pelanggan.
+     "resources": ["ar_receipt", "tax_invoice", "payment_plan", "penalty", "payment_variance", "credit_profile"],
+     "nav": ["keuangan", "ar-aging", "advance-report", "payment-plans", "store-credit", "customers-crm",
              "akuntansi", "tax-hub", "tax-invoices", "cs-pajak",   # fase 3 · P8: Pajak ada di grup Akuntansi & Pajak
              "settings-hub", "settings-finance", "settings-cfg-finance"]},   # fase 3 · P8 — aturan piutang & pajak
     {"id": "finance_ops", "group": "Keuangan", "label": "Kas, Bank & Kasus Keuangan",
@@ -596,8 +598,13 @@ ACTION_LABEL = {
     "rfid_device.configure": "Daftarkan & atur perangkat", "ai.manage": "Lihat pemakaian & atur aturan asisten",
     "ai.configure": "Pengaturan teknis asisten & buka riwayat pengguna lain",
 }
-# PK-45 — izin kredit pelanggan (modul Pelanggan & CRM) dan pesanan tanpa PPN (modul Pesanan Penjualan).
-ACTION_LABEL.update({"manage_credit": "Ubah plafon & blokir kredit", "tax_override": "Buat pesanan tanpa PPN"})
+# PK-45 — pesanan tanpa PPN (modul Pesanan Penjualan). CR-T1 — label `manage_credit` dicabut bersama izinnya.
+ACTION_LABEL.update({"tax_override": "Buat pesanan tanpa PPN"})
+# CR-T1 — profil kredit pelanggan (modul Uang Masuk, Piutang & Faktur Pajak).
+RESOURCE_LABEL["credit_profile"] = "Profil Kredit Pelanggan"
+ACTION_LABEL.update({"credit_profile.view": "Lihat plafon, status kredit & riwayatnya",
+                     "credit_profile.update": "Ajukan perubahan kredit",
+                     "credit_profile.approve": "Putuskan pengajuan kredit & ubah plafon bawaan PT"})
 # PR-T4 — KPI & komisi sales lain (modul Pesanan Penjualan; dulu daftar nama peran di `_kpi_scope`).
 ACTION_LABEL.update({"order.view_sales_kpi": "Lihat KPI & komisi sales lain"})
 # KP-T8 — kunci layanan luar & koneksi WhatsApp (modul Pusat Pengaturan).
@@ -711,6 +718,13 @@ VIEW_RESOURCE_OVERRIDES["settings-cfg-finance"] = [*VIEW_RESOURCE_OVERRIDES["set
 # KP-T8 — kunci `integrations.anthropic.*` (kelompok "sistem") diubah pemegang `integration.manage`; aturan KF-T1 (U14):
 # tab kelompok itu juga terbuka bagi pemegang izin pengubah kuncinya.
 VIEW_RESOURCE_OVERRIDES["settings-cfg-system"] = [*VIEW_RESOURCE_OVERRIDES["settings-cfg-system"], "integration"]
+# CR-T1 — kunci `ar.default_credit_limit` (kelompok "Pembayaran pelanggan") diubah pemegang `credit_profile.approve`;
+# aturan KF-T1 (U14): tab kelompok itu juga terbuka bagi pemegang izin pengubah kuncinya.
+VIEW_RESOURCE_OVERRIDES["settings-cfg-finance"] = [*VIEW_RESOURCE_OVERRIDES["settings-cfg-finance"], "credit_profile"]
+# CR-T1 — menu Pelanggan (`customers-crm`) kini juga di `nav` modul piutang (tab Kredit di kartu pelanggan), tetapi
+# daftarnya tetap menuntut `customer.view` (`GET /api/customers`): sumber izin menu tetap `customer`, supaya pemegang
+# izin piutang tanpa izin pelanggan tidak mendapat menu yang langsung menolak.
+VIEW_RESOURCE_OVERRIDES["customers-crm"] = ["customer"]
 
 
 #: PR-T5 — menu yang butuh AKSI tertentu (bukan sekadar "ada aksi apa pun pada sumber daya modulnya"). Dikirim

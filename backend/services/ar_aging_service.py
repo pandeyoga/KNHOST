@@ -11,7 +11,7 @@ Buckets aging (berdasar hari telat jatuh tempo):
 Denda (late fee) = **ESTIMASI informasional** (tidak posting ke order/GL),
 configurable via `system_settings.ar` (`denda_rate_pct_per_month`, `grace_days`).
 """
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Tuple
 from datetime import datetime, timezone, timedelta
 import math
 
@@ -27,14 +27,13 @@ from services.customer_service import (
     order_due,
     DEAD_STATUSES,
     NON_AR_METHODS,
-    credit_status,
-    credit_thresholds,
 )
 
 EPS = 0.01
 BUCKET_KEYS = ["current", "b1_30", "b31_60", "b61_90", "b90_plus"]
 # KF-T7 (CR-03) — ambang peringatan & blokir kredit (dulu konstanta 0,8 dan 14 hari, salinan kedua dari
-# `customer_service`) dibaca `customer_service.credit_thresholds` per PT pelanggan.
+# `customer_service`) dibaca `customer_service.credit_thresholds` per PT pelanggan. CR-T1 — plafon, hari blokir, dan
+# blokir manual dari profil kredit yang berlaku (`credit_profile_service.effective`), status dari `status_from`.
 
 
 async def get_ar_config(entity_id: Optional[str] = None,
@@ -89,11 +88,17 @@ def _empty_buckets() -> Dict[str, float]:
     return {k: 0.0 for k in BUCKET_KEYS}
 
 
-def _credit_status(credit_limit: float, ar_outstanding: float, max_overdue_days: int,
-                   manual_status: str, thresholds: Dict[str, Any]) -> str:
-    """KF-T7 — rumus yang sama dengan kartu pelanggan (`customer_service.credit_status`); `thresholds` dari
-    `credit_thresholds` PT pelanggan."""
-    return credit_status(credit_limit, ar_outstanding, max_overdue_days, manual_status, thresholds)
+async def _credit_status(customer: Dict[str, Any], ar_outstanding: float, max_overdue_days: int,
+                         entity_id: Optional[str] = None,
+                         cache: Optional[Dict[str, Any]] = None) -> Tuple[str, Dict[str, Any]]:
+    """CR-T1 — (status, profil efektif) memakai rumus yang SAMA dengan kartu pelanggan: profil kredit (pelanggan, PT)
+    yang berlaku (`credit_profile_service.effective`; PT = `entity_id`, atau PT pemilik data pelanggan) lalu
+    `credit_profile_service.status_from`. KF-T7 — ambang PT dibaca `credit_thresholds` di dalam `effective`."""
+    from services import credit_profile_service as cps
+    pt = entity_id if isinstance(entity_id, str) and entity_id and entity_id != "all" else \
+        (customer.get("entity_id") or "")
+    eff = await cps.effective(customer["id"], pt, customer=customer, cache=cache)
+    return cps.status_from(eff, ar_outstanding, max_overdue_days), eff
 
 
 async def _load_scope(entity_id: Optional[Any], sales_id: Optional[str]):
@@ -242,7 +247,7 @@ async def aging_report(entity_id: Optional[str] = None, sales_id: Optional[str] 
                     "customer_name": o.get("customer_name") or cust.get("name", ""),
                     "assigned_sales_id": cust.get("assigned_sales_id", ""),
                     "assigned_sales_name": smap.get(cust.get("assigned_sales_id", ""), ""),
-                    "credit_limit": round(float(cust.get("credit_limit", 0) or 0), 2),
+                    "credit_limit": 0.0,   # CR-T1 — diisi dari profil kredit efektif di bawah
                     "deposit_balance": round(float(cust.get("deposit_balance", 0) or 0), 2),
                     **_empty_buckets(),
                     "outstanding": 0.0, "overdue": 0.0, "denda": 0.0,
@@ -250,8 +255,6 @@ async def aging_report(entity_id: Optional[str] = None, sales_id: Optional[str] 
                     "penalty_docs": 0, "penalty_draft": 0.0, "penalty_issued": 0.0,
                     "penalty_waived": 0.0, "penalty_paid": 0.0, "penalty_actual": 0.0,
                     "ar_ledger": 0.0, "exposure": 0.0,
-                    "_manual_status": cust.get("status", ""),
-                    "_entity_id": cust.get("entity_id") or "",
                 }
                 per_customer[cid] = row
             row[bucket] = round(row[bucket] + outstanding, 2)
@@ -281,11 +284,15 @@ async def aging_report(entity_id: Optional[str] = None, sales_id: Optional[str] 
             totals["denda"] = round(totals["denda"] + denda, 2)
 
     rows: List[Dict[str, Any]] = []
-    thr_cache: Dict[str, Dict[str, Any]] = {}   # KF-T7 — ambang kredit dibaca sekali per PT pelanggan
+    from services import credit_profile_service as _cps
+    kc = _cps.cache_baru()   # KF-T7/CR-T1 — ambang & plafon bawaan sekali per PT; profil kredit satu kueri
+    await _cps.muat_profil(kc, list(per_customer))
     for row in per_customer.values():
-        thr = await credit_thresholds(row.pop("_entity_id", ""), thr_cache)
-        row["credit_status"] = _credit_status(
-            row["credit_limit"], row["outstanding"], row["oldest_days"], row.pop("_manual_status", ""), thr)
+        st, eff = await _credit_status(cmap.get(row["customer_id"]) or {"id": row["customer_id"]}, row["outstanding"],
+                                       row["oldest_days"], _cfg_entity, kc)
+        row["credit_status"] = st
+        row["credit_limit"] = round(float(eff["credit_limit"] or 0), 2)
+        row["limit_source"] = eff["limit_source"]
         row["available_credit"] = (round(max(row["credit_limit"] - row["outstanding"], 0), 2)
                                    if row["credit_limit"] > 0 else None)
         # Selisih antara denda ESTIMASI dan denda yang benar-benar sudah jadi dokumen —
@@ -385,6 +392,11 @@ async def orders_due_soon(offsets: List[int], entity_id: Optional[str] = None,
     return rows
 
 
+async def _plafon(customer: Dict[str, Any]) -> Dict[str, Any]:
+    from services import credit_profile_service as cps
+    return await cps.effective(customer["id"], customer.get("entity_id") or "", customer=customer)
+
+
 async def customer_aging_detail(customer_id: str, as_of: Optional[str] = None,
                                entity_ids: Optional[List[str]] = None) -> Optional[Dict[str, Any]]:
     """Rincian per-order untuk satu customer (untuk drill-down).
@@ -402,7 +414,7 @@ async def customer_aging_detail(customer_id: str, as_of: Optional[str] = None,
     customer = await db.customers.find_one(
         cust_q,
         {"_id": 0, "id": 1, "name": 1, "assigned_sales_id": 1, "payment_profile": 1,
-         "credit_limit": 1, "status": 1, "deposit_balance": 1, "entity_id": 1},
+         "credit_limit": 1, "status": 1, "deposit_balance": 1, "entity_id": 1},   # CR-T1: credit_limit/status → data lama
     )
     if not customer:
         return None
@@ -502,7 +514,8 @@ async def customer_aging_detail(customer_id: str, as_of: Optional[str] = None,
     return {
         "customer_id": customer["id"],
         "customer_name": customer.get("name", ""),
-        "credit_limit": round(float(customer.get("credit_limit", 0) or 0), 2),
+        # CR-T1 — plafon yang BERLAKU (profil kredit PT pemilik data pelanggan), bukan `customers.credit_limit`.
+        "credit_limit": round(float((await _plafon(customer))["credit_limit"] or 0), 2),
         "deposit_balance": round(float(customer.get("deposit_balance", 0) or 0), 2),
         "config": cfg,
         "definitions": AR_DEFINITIONS,

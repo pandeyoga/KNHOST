@@ -86,6 +86,9 @@ SCOPE_FIELD: Dict[str, Optional[str]] = {
     # PM-T1 — master CARA BAYAR (berlapis global → PT) dan pengajuan perubahan rekening (milik PT rekeningnya).
     "payment_methods": "entity_id",
     "bank_account_changes": "entity_id",
+    # CR-T1 — profil kredit dan pengajuannya milik PT PESANAN (bukan PT pemilik data pelanggan).
+    "customer_credit_profiles": "entity_id",
+    "credit_profile_requests": "entity_id",
     "number_sequences": SHARED,
     "counters": SHARED,
     "user_onboarding": SHARED,
@@ -253,6 +256,8 @@ SCOPED_COLLECTIONS = {
     "data_hygiene_log",
     # KF-T6 — usulan jurnal manual yang menunggu orang kedua: buku satu PT.
     "journal_proposals",
+    # CR-T1 — profil kredit per (pelanggan, PT) dan pengajuan perubahannya: plafon satu PT tidak terbaca PT lain.
+    "customer_credit_profiles", "credit_profile_requests",
 }
 
 # Temuan lama #19 — koleksi Tanya KN (ai_*) TIDAK disaring per entitas melainkan per PENGGUNA

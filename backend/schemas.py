@@ -104,7 +104,7 @@ class CustomerCreate(BaseModel):
     district_code: str = ""
     postal_code: str = ""
     npwp: str = ""
-    credit_limit: float = Field(0, ge=0)
+    credit_limit: float = Field(0, ge=0)   # CR-T1 — USULAN plafon: pelanggan selalu disimpan 0; > 0 → pengajuan kredit
     sales_pic: str = ""
     entity_id: str = ""
     enforce_single_dye_lot: bool = False  # P0-4 — paksa alokasi 1 dye lot untuk customer ini

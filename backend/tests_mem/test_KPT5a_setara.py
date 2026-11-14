@@ -41,6 +41,9 @@ AWALAN_TAMBAHAN = {"CUST-"}
 # di sini tidak pernah membuat nomor itu, jadi tidak bisa menjadi oracle).
 AWALAN_KP35 = {"VBM-", "EMP-", "SORD-"}
 JENIS_KP35 = {"vbm", "emp", "sord"}
+# CR-T1 — deret baru `PKR-` (pengajuan perubahan kredit, per PT) lahir sesudah KP-T5: tidak ada di daftar spesifikasi
+# maupun fungsi lama. Setara dengan jalur lama karena katalog bawaannya = argumen titik panggil (diuji U2 seperti lainnya).
+AWALAN_SESUDAH_KPT5 = {"PKR-"}
 
 
 # ── Fungsi LAMA (salinan utuh `backend/core_utils.py` di 1392969; oracle setara) ──────────────────────────────────
@@ -210,8 +213,9 @@ def test_KPT5_U1_semua_titik_panggil_dikenali_katalog():
     assert not beda, "bawaan katalog ≠ titik panggil:\n" + "\n".join(beda)
     # Spesifikasi menulis 59 (+3 KP-35 = 62); HEAD punya 60 (+3 = 63): CUST- lewat alias `_ndn` — laporan "Menyimpang".
     assert AWALAN_SPESIFIKASI <= awalan, sorted(AWALAN_SPESIFIKASI - awalan)
-    assert awalan - AWALAN_SPESIFIKASI == AWALAN_TAMBAHAN | AWALAN_KP35, sorted(awalan - AWALAN_SPESIFIKASI)
-    assert len(awalan) == 63
+    assert awalan - AWALAN_SPESIFIKASI == AWALAN_TAMBAHAN | AWALAN_KP35 | AWALAN_SESUDAH_KPT5, \
+        sorted(awalan - AWALAN_SPESIFIKASI)
+    assert len(awalan) == 63 + len(AWALAN_SESUDAH_KPT5)
 
 
 def _kasus() -> List[Dict[str, Any]]:
@@ -334,7 +338,7 @@ async def test_KPT5_U2_contoh_hitung_tangan_dan_cakupan_jenis(db):
     # KP-35 (`vbm`, `emp`, `sord`) lewat `next_doc_number` sejak serah-terima (b) — setara generator lama di `test_KPT5b_*`.
     assert JENIS_KP35.isdisjoint(dicakup)
     assert dicakup | JENIS_KP35 == {k["kind"] for k in dnk.KINDS_LIST if not k["derived"]}
-    assert len(dicakup) == 62 and len(dicakup | JENIS_KP35) == 65
+    assert len(dicakup) == 62 + len(AWALAN_SESUDAH_KPT5) and len(dicakup | JENIS_KP35) == 65 + len(AWALAN_SESUDAH_KPT5)
     titik_kp35 = {dnk.lookup(t["collection"], t["field"], t["prefixes"][0], t["scheme"], t["kind"])[0]["kind"]
                   for t in TITIK if t["kind"] in JENIS_KP35}
     assert titik_kp35 == JENIS_KP35

@@ -22,13 +22,16 @@ BERNOMINAL = {"po_custom", "permintaan_pembelian", "amandemen", "setujui_po", "t
               "kontrabon", "tagihan_kampanye", "retur_antar_pt", "susut_makloon", "retur_penjualan",
               "retur_pembelian", "proses_gaji", "uang_muka", "lpj_uang_muka", "pengurang_piutang",
               "lewat_batas_kredit", "klaim_makloon", "nilai_pesanan", "jurnal_manual",
-              "bayar_hutang"}   # PK-38 (K-17)
+              "bayar_hutang",   # PK-38 (K-17)
+              "ubah_profil_kredit"}   # CR-T1 (K-28) — nominal = plafon baru
 # PK-38 — aksi ke-36 `bayar_hutang` (bayar kontrabon; bawaan satu orang, bernominal) → 36 aksi, 21 bernominal,
 # 59 kunci `kontrol.*`. Batas pengurang piutang: bawaan Rp 1.000.000, maksimum Rp 1.000.000.000 (K-11).
 # PM-T1 — aksi ke-37 `ubah_rekening` (ubah/buat rekening kas-bank; bawaan satu orang, TANPA nominal) → 37 aksi,
 # 21 bernominal, 60 kunci `kontrol.*`.
-N_AKSI = 37
-N_KUNCI = 60
+# CR-T1 — aksi ke-38 `ubah_profil_kredit` (putus pengajuan perubahan kredit; bawaan satu orang, bernominal) → 38 aksi,
+# 22 bernominal, 62 kunci `kontrol.*`.
+N_AKSI = 38   # CR-T1 — aksi ke-38 `ubah_profil_kredit` (bernominal)
+N_KUNCI = 62   # CR-T1 — `kontrol.ubah_profil_kredit.{min_orang,batas_nominal}`
 BATAS_KHUSUS = {"pengurang_piutang": (1000000, 1000000000)}
 
 

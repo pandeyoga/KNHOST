@@ -2069,6 +2069,14 @@
    "persetujuan",
    "dua-orang-buku"
   ],
+  "kontrol.ubah_profil_kredit.min_orang": [
+   "persetujuan",
+   "dua-orang-piutang"
+  ],
+  "kontrol.ubah_profil_kredit.batas_nominal": [
+   "persetujuan",
+   "dua-orang-piutang"
+  ],
   "kontrol.admin_boleh_sendiri": [
    "persetujuan",
    "dua-orang-admin"
@@ -2082,6 +2090,10 @@
    "kredit"
   ],
   "ar.credit_warning_pct": [
+   "pembayaran-pelanggan",
+   "kredit"
+  ],
+  "ar.default_credit_limit": [
    "pembayaran-pelanggan",
    "kredit"
   ],

@@ -260,9 +260,14 @@ async def test_KFT7_U5_umur_piutang_dan_kartu_pelanggan_satu_pembaca(klien, kepa
         await _simpan(klien, kepala_admin, "ar.overdue_block_days", nilai, "entity", KSC)
         assert await _status_kredit(a) == harap == await _status_umur_piutang(a), nilai
     await _pulihkan(klien, kepala_admin, "ar.overdue_block_days", KSC)
-    # Kedua pembaca memakai `credit_thresholds` (satu-satunya yang membaca dua kunci kredit).
-    assert "credit_thresholds" in inspect.getsource(ar_aging_service.aging_report)
-    assert "credit_thresholds" in inspect.getsource(customer_service.compute_customer_credit)
+    # Kedua pembaca memakai `credit_thresholds` (satu-satunya yang membaca dua kunci kredit). CR-T1 — lewat SATU jalur:
+    # keduanya memanggil `credit_profile_service.effective` (umur piutang lewat `_credit_status`), yang membaca
+    # `credit_thresholds` lalu menimpanya dengan profil kredit pelanggan.
+    from services import credit_profile_service
+    assert "_credit_status" in inspect.getsource(ar_aging_service.aging_report)
+    assert "cps.effective" in inspect.getsource(ar_aging_service._credit_status)
+    assert "cps.effective" in inspect.getsource(customer_service.compute_customer_credit)
+    assert "credit_thresholds" in inspect.getsource(credit_profile_service.effective)
 
 
 # ── U6 — masa reservasi stok pesanan per PT ────────────────────────────────────────────────────────────────────────

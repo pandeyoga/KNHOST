@@ -89,6 +89,8 @@ KINDS_LIST: List[Dict[str, Any]] = [
     _k("pd", "Uang muka karyawan", "Keuangan", "cash_advances", "number", "PD-"),
     _k("stl", "Pertanggungjawaban uang muka", "Keuangan", "cash_advance_settlements", "number", "STL-"),
     _k("mcc", "Biaya kampanye pemasaran", "Keuangan", "mkt_campaign_costs", "number", "MCC-"),
+    # CR-T1 — pengajuan perubahan profil kredit pelanggan (per PT pesanan).
+    _k("pkr", "Pengajuan perubahan kredit", "Keuangan", "credit_profile_requests", "number", "PKR-"),
     # ── Gudang ─────────────────────────────────────────────────────────────────────────────────────────────────────
     _k("trf", "Mutasi gudang", "Gudang", "warehouse_transfers", "code", "TRF-"),
     _k("grn", "Penerimaan barang", "Gudang", "goods_receipts", "number", "GRN-"),

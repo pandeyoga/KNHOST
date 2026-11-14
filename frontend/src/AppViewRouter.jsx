@@ -44,7 +44,7 @@ import { SalesPortal, PriceApprovals, OrdersView, CrmView, OperationsView, QcHub
   RndSamplesView, SampleTypeGalleryView, RndDesignsView, RndReportsView, DesignerKpiView, ContentCalendar,
   MktCampaigns, MarketingAnalytics, SocialAccounts, DivisionsView,
   SettingsGroupView, SettingsLinkCards, DevicesView, PriceCorrectionsView, DocTemplatesView, DualControlView, DocNumberingView,
-  CollectionWorklist, CreditOverridesPanel, SalesForceDashboard, IncentiveSchemeEditor, CustomerCreditView, PettyCashView,
+  CollectionWorklist, CreditOverridesPanel, CreditProfileRequestsPanel, SalesForceDashboard, IncentiveSchemeEditor, CustomerCreditView, PettyCashView,
 } from "./appViewImports";
 
 // KP-T9 — bagian layar Penjadwal & Notifikasi per tab hub (konstanta: `only` dibandingkan per render).
@@ -202,7 +202,7 @@ export default function AppViewRouter(props) {
           `advance-report`/`store-credit` = alias ke `customer-credit` (viewAliases.js); dua rute di atas = rute cadangan. */}
       {activeView === "collection-worklist" && <CollectionWorklist currentUser={user} selectedEntity={selectedEntity} {...focusDocProps} />}
       {activeView === "customer-credit" && <CustomerCreditView currentUser={user} selectedEntity={selectedEntity} onOpenDocument={openDocument} />}
-      {activeView === "credit-overrides" && <CreditOverridesPanel currentUser={user} />}
+      {activeView === "credit-overrides" && <><CreditOverridesPanel currentUser={user} /><CreditProfileRequestsPanel currentUser={user} /></>}
       {activeView === "bank-accounts" && <BankAccountsView selectedEntity={selectedEntity} currentUser={user} />}
       {activeView === "bank-reconciliation" && <BankReconciliationView selectedEntity={selectedEntity} />}
       {activeView === "finance-cases" && <FinanceCasesView currentUser={user} selectedEntity={selectedEntity} entities={entities}

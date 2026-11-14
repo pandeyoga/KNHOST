@@ -115,14 +115,18 @@
    "credit_override": [
     "approve"
    ],
+   "credit_profile": [
+    "view",
+    "update",
+    "approve"
+   ],
    "customer": [
     "view",
     "create",
     "update",
     "delete",
     "import",
-    "export",
-    "manage_credit"
+    "export"
    ],
    "data_export": [
     "view",
@@ -705,9 +709,12 @@
     "view",
     "pay"
    ],
-   "customer": [
+   "credit_profile": [
     "view",
-    "manage_credit"
+    "update"
+   ],
+   "customer": [
+    "view"
    ],
    "data_export": [
     "view",
@@ -940,12 +947,16 @@
    "credit_override": [
     "approve"
    ],
+   "credit_profile": [
+    "view",
+    "update",
+    "approve"
+   ],
    "customer": [
     "view",
     "create",
     "update",
-    "export",
-    "manage_credit"
+    "export"
    ],
    "data_export": [
     "view",
@@ -1670,6 +1681,10 @@
     "view",
     "create"
    ],
+   "credit_profile": [
+    "view",
+    "update"
+   ],
    "customer": [
     "view",
     "create",
@@ -1830,6 +1845,10 @@
    ],
    "color": [
     "view"
+   ],
+   "credit_profile": [
+    "view",
+    "update"
    ],
    "customer": [
     "view",
@@ -2439,6 +2458,7 @@
   ],
   "advance-report": [
    "ar_receipt",
+   "credit_profile",
    "payment_plan",
    "payment_variance",
    "penalty",
@@ -2451,6 +2471,7 @@
    "budget",
    "contra_bon",
    "costing",
+   "credit_profile",
    "fixed_asset",
    "gl_mapping",
    "input_tax",
@@ -2497,6 +2518,7 @@
   "ar-aging": [
    "ar_receipt",
    "cash",
+   "credit_profile",
    "customer",
    "finance_amendment",
    "finance_case",
@@ -2640,6 +2662,7 @@
   ],
   "cs-pajak": [
    "ar_receipt",
+   "credit_profile",
    "payment_plan",
    "payment_variance",
    "penalty",
@@ -2687,6 +2710,7 @@
   ],
   "customer-credit": [
    "ar_receipt",
+   "credit_profile",
    "payment_plan",
    "payment_variance",
    "penalty",
@@ -2772,6 +2796,7 @@
   ],
   "finance-desk": [
    "ar_receipt",
+   "credit_profile",
    "payment_plan",
    "payment_variance",
    "penalty",
@@ -2781,6 +2806,7 @@
    "accounting",
    "ar_receipt",
    "budget",
+   "credit_profile",
    "fixed_asset",
    "gl_mapping",
    "payment_plan",
@@ -2964,6 +2990,7 @@
    "cash_advance",
    "cash_settlement",
    "contra_bon",
+   "credit_profile",
    "customer",
    "finance_amendment",
    "finance_case",
@@ -3125,6 +3152,7 @@
   ],
   "payment-plans": [
    "ar_receipt",
+   "credit_profile",
    "payment_plan",
    "payment_variance",
    "penalty",
@@ -3491,6 +3519,7 @@
   ],
   "settings-cfg-finance": [
    "accounting",
+   "credit_profile",
    "entity",
    "scheduler",
    "settings"
@@ -3563,6 +3592,7 @@
    "cash",
    "cash_advance",
    "cash_settlement",
+   "credit_profile",
    "finance_amendment",
    "finance_case",
    "fixed_asset",
@@ -3585,6 +3615,7 @@
    "cash_settlement",
    "color",
    "contra_bon",
+   "credit_profile",
    "design_ownership",
    "design_request",
    "document",
@@ -3746,6 +3777,7 @@
   ],
   "store-credit": [
    "ar_receipt",
+   "credit_profile",
    "payment_plan",
    "payment_variance",
    "penalty",
@@ -3793,6 +3825,7 @@
   "tax-hub": [
    "ar_receipt",
    "contra_bon",
+   "credit_profile",
    "input_tax",
    "landed_cost",
    "payment_plan",
@@ -3803,6 +3836,7 @@
   ],
   "tax-invoices": [
    "ar_receipt",
+   "credit_profile",
    "payment_plan",
    "payment_variance",
    "penalty",

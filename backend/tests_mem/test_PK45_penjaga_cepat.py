@@ -23,8 +23,6 @@ from pembantu import jumlah
 
 pytestmark = pytest.mark.anyio
 
-PESAN_403_KREDIT = ("Anda belum punya akses untuk mengubah plafon dan status blokir pelanggan. "
-                    "Minta Admin menambahkan akses 'Pelanggan & CRM'.")
 PESAN_403_NON_PPN = ("Anda belum punya akses untuk membuat pesanan tanpa PPN. "
                      "Minta Admin menambahkan akses 'Pesanan Penjualan'.")
 SIMPAN: dict = {}
@@ -88,44 +86,23 @@ async def test_PK45_U1_patch_sales_tidak_mengubah_plafon_dan_status(klien, db, u
     assert c["pic_name"] == "Budi"
 
 
-async def test_PK45_U2_sales_tanpa_izin_kredit_403(klien, db, uji):
-    r = await klien.put("/api/customers/cus_s/credit", headers=uji["sls"],
-                        json={"credit_limit": 900_000_000, "reason": "naikkan plafon"})
-    assert r.status_code == 403, r.text
-    assert r.json()["detail"] == PESAN_403_KREDIT
-    assert (await _pelanggan(db))["credit_limit"] == 5_000_000
+# CR-T1 (perilaku SENGAJA diubah) — jalur sementara PK-45 `PUT /api/customers/{id}/credit` kini dijawab 410: plafon &
+# blokir hanya lewat pengajuan profil kredit (uji pengganti: `test_CRT1_profil_kredit.py` U2–U13). Tiga pemanggil yang dulu
+# diuji di sini (Sales tanpa izin = U2, Finance berizin = U3/U4, Finance PT lain = U6) kini sama-sama 410 dan data tetap.
+PESAN_410 = "Plafon dan blokir kredit diubah lewat pengajuan perubahan kredit."
 
 
-async def test_PK45_U3_finance_ubah_plafon_dan_buka_blokir(klien, db, uji):
-    r = await klien.put("/api/customers/cus_s/credit", headers=uji["fin"],
-                        json={"credit_limit": 20_000_000, "status": "active", "reason": "tinjauan triwulan"})
-    assert r.status_code == 200, r.text
-    assert r.json()["id"] == "cus_s"
+async def test_PK45_U2_U3_U4_U6_jalur_kredit_lama_410(klien, db, uji):
+    for h, isi in ((uji["sls"], {"credit_limit": 900_000_000, "reason": "naikkan plafon"}),
+                   (uji["fin"], {"credit_limit": 20_000_000, "status": "active", "reason": "tinjauan triwulan"}),
+                   (uji["fin"], {"credit_limit": -1, "reason": "koreksi plafon"}),
+                   (uji["fin_k"], {"credit_limit": 1, "status": "blocked", "reason": "uji pt lain"})):
+        r = await klien.put("/api/customers/cus_s/credit", headers=h, json=isi)
+        assert r.status_code == 410, r.text
+        assert r.json()["detail"] == PESAN_410
     c = await _pelanggan(db)
-    assert c["credit_limit"] == 20_000_000
-    assert c["status"] == "active"
-    jejak = [x async for x in db.audit_logs.find({"action": "customer_credit_changed", "entity_id": "cus_s"})]
-    assert len(jejak) == 1
-    assert jejak[0]["before"]["credit_limit"] == 5_000_000
-    assert jejak[0]["before"]["status"] == "blocked"
-    assert jejak[0]["after"] == {"credit_limit": 20_000_000, "status": "active"}
-    assert jejak[0]["reason"] == "tinjauan triwulan"
-
-
-async def test_PK45_U4_isian_kredit_tidak_sah_400(klien, db, uji):
-    kasus = [({"credit_limit": 30_000_000}, "Alasan perubahan wajib diisi (minimal 5 huruf)."),
-             ({"credit_limit": -1, "reason": "koreksi plafon"}, "Plafon harus angka nol atau lebih."),
-             ({"reason": "alasan saja"}, "Isi plafon atau status yang ingin diubah."),
-             ({"credit_limit": "banyak", "reason": "koreksi plafon"}, "Plafon harus angka nol atau lebih."),
-             ({"status": "beku", "reason": "koreksi status"}, "Status pelanggan tidak dikenal."),
-             ({"status": "blocked", "reason": "1234 .."}, "Alasan perubahan wajib diisi (minimal 5 huruf).")]
-    for isi, pesan in kasus:
-        r = await klien.put("/api/customers/cus_s/credit", headers=uji["fin"], json=isi)
-        assert r.status_code == 400, (isi, r.text)
-        assert r.json()["detail"] == pesan, isi
-    c = await _pelanggan(db)
-    assert (c["credit_limit"], c["status"]) == (20_000_000, "active")
-    assert await jumlah("audit_logs", {"action": "customer_credit_changed", "entity_id": "cus_s"}) == 1
+    assert (c["credit_limit"], c["status"]) == (5_000_000, "blocked")
+    assert await jumlah("audit_logs", {"action": "customer_credit_changed", "entity_id": "cus_s"}) == 0
 
 
 async def test_PK45_U5_pelanggan_baru_oleh_sales_tanpa_plafon(klien, db, uji):
@@ -138,22 +115,17 @@ async def test_PK45_U5_pelanggan_baru_oleh_sales_tanpa_plafon(klien, db, uji):
     assert c["status"] == "active"
 
 
-async def test_PK45_U5b_pelanggan_baru_oleh_pemegang_izin_kredit_tetap_berplafon(klien, db, uji):
-    # Pembanding U5: Admin memegang `customer.manage_credit` → plafon dari isian tetap tersimpan (perilaku lama).
+async def test_PK45_U5b_pelanggan_baru_oleh_admin_plafon_jadi_pengajuan(klien, db, uji):
+    # CR-T1 (SENGAJA diubah) — dulu Admin (`customer.manage_credit`) menyimpan plafon 50 jt langsung. Kini pelanggan selalu
+    # plafon 0 dan isiannya menjadi pengajuan perubahan kredit `diajukan` atas nama Admin.
     r = await klien.post("/api/customers", headers=uji["adm"], json={
         "name": "Toko Baru Admin PK45", "pic_name": "Rina", "phone": "081234567846", "city": "Bandung",
         "address": "Jl. Uji No. 46", "credit_limit": 50_000_000, "assigned_sales_id": uji["sales_id"]})
     assert r.status_code == 200, r.text
-    assert (await _pelanggan(db, r.json()["id"]))["credit_limit"] == 50_000_000
-
-
-async def test_PK45_U6_finance_pt_lain_ditolak(klien, db, uji):
-    r = await klien.put("/api/customers/cus_s/credit", headers=uji["fin_k"],
-                        json={"credit_limit": 1, "status": "blocked", "reason": "uji pt lain"})
-    assert r.status_code in (403, 404), r.text
-    assert _bukan_rute_hilang(r), r.text
-    c = await _pelanggan(db)
-    assert (c["credit_limit"], c["status"]) == (20_000_000, "active")
+    cid = r.json()["id"]
+    assert (await _pelanggan(db, cid))["credit_limit"] == 0
+    req = await db.credit_profile_requests.find_one({"customer_id": cid}, {"_id": 0})
+    assert req["status"] == "diajukan" and {c["field"]: c["to"] for c in req["changes"]}["credit_limit"] == 50_000_000
 
 
 async def test_PK45_U7_izin_lewat_batas_pt_lain(klien, db, uji):
@@ -318,18 +290,14 @@ async def test_PK45_U16_pratinjau_gaji_tidak_membuka_pt_lain(klien, db, uji):
 
 
 # ── Izin baru (02_STANDAR §3.2 butir 4) ─────────────────────────────────────
-async def test_PK45_izin_kredit_peran_tanpa_acuan_dan_manajer_kosong(klien, db, akun, sesi, peran_tanpa_acuan,
-                                                                   peran_manajer_kosong, uji):
-    rid = await peran_tanpa_acuan({"customer": ["view", "manage_credit"]}, label="Hanya Kredit Pelanggan")
-    h = await sesi(await akun(rid))
-    r = await klien.put("/api/customers/cus_s/credit", headers=h, json={"status": "blocked", "reason": "uji peran"})
-    assert r.status_code == 200, r.text
-    assert (await _pelanggan(db))["status"] == "blocked"
-    h = await sesi(await akun(await peran_manajer_kosong()))
-    r = await klien.put("/api/customers/cus_s/credit", headers=h, json={"status": "active", "reason": "uji peran"})
-    assert r.status_code == 403, r.text
-    assert r.json()["detail"] == PESAN_403_KREDIT
-    assert (await _pelanggan(db))["status"] == "blocked"
+async def test_PK45_izin_kredit_lama_tidak_dikenal_lagi(klien, peran_tanpa_acuan, kepala_admin, uji):
+    # CR-T1 (SENGAJA diubah) — `customer.manage_credit` dicabut dari katalog: peran baru dengan pasangan itu ditolak.
+    # Uji izin pengganti (`credit_profile.*`, Tanpa Acuan / Manajer Kosong / Sopir): `test_CRT1_profil_kredit.py::U12`.
+    r = await klien.post("/api/access/roles", headers=kepala_admin, json={
+        "label": "Hanya Kredit Pelanggan", "base_role": "", "permissions": {"customer": ["view", "manage_credit"]},
+        "description": "peran uji"})
+    assert r.status_code == 400, r.text
+    assert "tidak berlaku" in r.json()["detail"]
 
 
 async def test_PK45_izin_non_ppn_peran_tanpa_acuan_dan_manajer_kosong(klien, akun, sesi, peran_tanpa_acuan,
@@ -353,7 +321,8 @@ async def test_PK45_izin_bawaan_sampai_ke_matriks_tersimpan(klien, db, kepala_ad
     `sync_permission_modules` (PR-T9). K-28: Sales tidak menerimanya. K-47: peran kustom beracuan Finance yang modul
     pelanggannya belum diubah ikut otomatis; peran kustom beracuan Manajer yang modul pelanggannya sudah diubah TIDAK
     diberi diam-diam — pasangannya tertunda ("Ikuti peran dasar")."""
-    baru = {("customer", "manage_credit"), ("order", "tax_override")}
+    # CR-T1 — `customer.manage_credit` dicabut; yang tersisa dari PK-45 hanya `order.tax_override`.
+    baru = {("order", "tax_override")}
     r = await klien.post("/api/access/roles", headers=kepala_admin, json={
         "label": "Finance Cabang", "base_role": "finance", "description": "uji PK-45"})
     assert r.status_code == 200, r.text
@@ -381,14 +350,14 @@ async def test_PK45_izin_bawaan_sampai_ke_matriks_tersimpan(klien, db, kepala_ad
         r = await klien.get(f"/api/access/roles/{rid}", headers=kepala_admin)
         assert r.status_code == 200, r.text
         return r.json()
-    for peran, harus in (("admin", baru), ("manager", baru), ("finance", {("customer", "manage_credit")}),
+    for peran, harus in (("admin", baru), ("manager", baru), ("finance", set()),
                          ("sales", set()), ("sales_admin", set())):
         p = (await izin(peran))["permissions"]
         punya = {(res, a) for res, a in baru if a in (p.get(res) or [])}
         assert punya == harus, peran
     fc = await izin(fin_cabang)
-    assert "manage_credit" in fc["permissions"]["customer"]
+    assert "manage_credit" not in (fc["permissions"].get("customer") or [])
     ml = await izin(mgr_lihat)
     assert "manage_credit" not in (ml["permissions"].get("customer") or [])
-    assert "manage_credit" in (ml["pending_from_base"].get("customer") or [])
+    assert "manage_credit" not in (ml["pending_from_base"].get("customer") or [])
     assert "tax_override" in ml["permissions"]["order"]   # modul Pesanan Penjualan tidak diubah → ikut

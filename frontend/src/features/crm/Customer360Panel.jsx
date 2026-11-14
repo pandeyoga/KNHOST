@@ -15,6 +15,7 @@ import CustomerMergeSection from "./CustomerMergeSection";
 import AuditHistoryPanel from "../../components/AuditHistoryPanel";
 import { can } from "../../config/roles";
 import ScopedRulesSection from "../settings/config/ScopedRulesSection";   // KF-T5
+import CustomerCreditTab from "./CustomerCreditTab";   // CR-T1
 
 const HIST_TABS = [
   { key: "orders", label: "Pesanan" },
@@ -26,7 +27,7 @@ const HIST_TABS = [
 ];
 
 /** Detail pelanggan 360 — profil + kredit + riwayat + aksi. */
-export default function Customer360Panel({ customerId, currentUser, salesUsers, onBack, onChanged, onError }) {
+export default function Customer360Panel({ customerId, currentUser, salesUsers, selectedEntity, onBack, onChanged, onError }) {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [tab, setTab] = useState("orders");
@@ -35,6 +36,7 @@ export default function Customer360Panel({ customerId, currentUser, salesUsers, 
 
   const canReassign = can(currentUser?.permissions, "sales_force", "assign");   // PR-T7 (#13) — = POST /customers/{id}/reassign
   const canAudit = can(currentUser?.permissions, "audit", "view");
+  const canCredit = can(currentUser?.permissions, "credit_profile", "view");   // CR-T1 — tab Kredit
 
   useEffect(() => { load(); }, [customerId]); // eslint-disable-line
 
@@ -53,7 +55,9 @@ export default function Customer360Panel({ customerId, currentUser, salesUsers, 
   if (!data) return null;
 
   const credit = data.credit || {};
-  const limit = Number(credit.credit_limit || 0);
+  const limit = Number(credit.credit_limit || 0);   // CR-T1 — plafon yang BERLAKU (profil kredit), bukan data pelanggan
+  const limitSource = credit.limit_source === "khusus" || credit.limit_source === "tanpa_batas" ? "khusus"
+    : credit.limit_source === "data_lama" ? "data lama" : "ikut PT";
 
   return (
     <div data-testid="customer-360-panel">
@@ -85,7 +89,7 @@ export default function Customer360Panel({ customerId, currentUser, salesUsers, 
           <div className="section-card">
             <div className="section-head"><div className="flex items-center gap-2"><CreditCard size={14} className="text-[#0058CC]" /><h3 className="text-[12.5px] font-bold">Kontrol Kredit</h3></div></div>
             <div className="section-body grid grid-cols-2 gap-2">
-              <KpiTile label="Limit Kredit" value={limit > 0 ? formatCurrency(limit) : "Tanpa limit"} />
+              <KpiTile label="Plafon Kredit" value={limit > 0 ? formatCurrency(limit) : "Tanpa batas"} sub={limitSource} testId="customer-360-limit" />
               <KpiTile label="Belum Lunas" value={formatCurrency(credit.ar_outstanding)} tone="text-[#0058CC]" testId="customer-360-ar"
                 sub={`Piutang ledger ${formatCurrency(credit.ar_ledger || 0)} · eksposur ${formatCurrency(credit.exposure || 0)}`} />
               <KpiTile label="Jatuh Tempo (Lewat Tempo)" value={formatCurrency(credit.overdue_amount)} tone={Number(credit.overdue_amount) > 0 ? "text-[#C0392B]" : ""} sub={credit.max_overdue_days ? `${credit.max_overdue_days} hari` : ""} testId="customer-360-overdue" />
@@ -186,15 +190,22 @@ export default function Customer360Panel({ customerId, currentUser, salesUsers, 
                   {t.label}<span className="tab-badge">{listFor(data, t.key).length}</span>
                 </button>
               ))}
+              {canCredit && (
+                <button data-testid="customer-360-tab-credit" className={`tab-button ${tab === "credit" ? "active" : ""}`} onClick={() => setTab("credit")}>
+                  Kredit
+                </button>
+              )}
               {canAudit && (
                 <button data-testid="customer-360-tab-changes" className={`tab-button ${tab === "changes" ? "active" : ""}`} onClick={() => setTab("changes")}>
                   Riwayat Perubahan
                 </button>
               )}
             </div>
-            {tab === "changes" && canAudit
-              ? <AuditHistoryPanel entityType="customer" entityId={customerId} testIdPrefix="customer-360-changes" />
-              : <HistoryTable data={data} tab={tab} />}
+            {tab === "credit" && canCredit
+              ? <CustomerCreditTab customer={data} currentUser={currentUser} selectedEntity={selectedEntity} onChanged={load} />
+              : tab === "changes" && canAudit
+                ? <AuditHistoryPanel entityType="customer" entityId={customerId} testIdPrefix="customer-360-changes" />
+                : <HistoryTable data={data} tab={tab} />}
           </div>
         </div>
       </div>

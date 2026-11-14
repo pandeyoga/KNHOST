@@ -18,7 +18,7 @@ const CSV_COLUMNS = [
   { key: "assigned_sales_name", header: "Sales" },
   { header: "Piutang", type: "num", get: (r) => Number(r.credit?.ar_outstanding || 0) },
   { header: "Limit Kredit", type: "num",
-    get: (r) => Number(r.credit?.credit_limit || r.credit_limit || 0) },
+    get: (r) => Number(r.credit?.credit_limit || 0) },   // CR-T1 — plafon yang berlaku (profil kredit)
   { header: "Tunggakan", type: "num", get: (r) => Number(r.credit?.overdue_amount || 0) },
   { header: "Status Kredit", get: (r) => r.credit?.status || "active" },
 ];
@@ -84,7 +84,7 @@ export default function CustomerList({ currentUser, selectedEntity, focusDoc, on
 
   if (selectedId) {
     return (
-      <Customer360Panel customerId={selectedId} currentUser={currentUser} salesUsers={salesUsers}
+      <Customer360Panel customerId={selectedId} currentUser={currentUser} salesUsers={salesUsers} selectedEntity={selectedEntity}
         onBack={() => setSelectedId(null)}
         onChanged={(msg) => { if (msg) setNotice(msg); load(); }}
         onError={(m) => setOpError(m)} />
@@ -154,7 +154,7 @@ export default function CustomerList({ currentUser, selectedEntity, focusDoc, on
               <div className="divide-y divide-[#EFF0F2]">
                 {rows.map((c) => {
                   const credit = c.credit || {};
-                  const limit = Number(credit.credit_limit || c.credit_limit || 0);
+                  const limit = Number(credit.credit_limit || 0);   // CR-T1 — plafon yang berlaku (profil kredit)
                   const ar = Number(credit.ar_outstanding || 0);
                   const over = limit > 0 && ar >= limit;
                   return (

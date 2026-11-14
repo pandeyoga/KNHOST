@@ -81,6 +81,9 @@ KONTROL_AKSI: List[Dict[str, Any]] = [
     # PM-T1 — membuat rekening dan mengubah field peka rekening (nomor, bank, atas nama, peruntukan, cara bayar,
     # bawaan penerimaan, tampil di dokumen, aktif); tanpa nominal, bawaan satu orang.
     _a("ubah_rekening", "Ubah rekening kas/bank", "C", "1", False, _BB),
+    # CR-T1 (K-28) — memutus pengajuan perubahan profil kredit pelanggan (plafon, termin, hari blokir, blokir manual);
+    # bernominal = plafon BARU (0 bila plafon tidak diubah), bawaan satu orang.
+    _a("ubah_profil_kredit", "Ubah profil kredit pelanggan", "C", "1", True, _PJ),
 ]
 
 #: KF-T6 serah-terima (b) — titik pasang tiap aksi (`berkas.py:fungsi`).
@@ -123,6 +126,7 @@ _TITIK: Dict[str, Tuple[str, ...]] = {
     "bayar_hutang": ("services/contra_bon_service.py:pay",),   # PK-38
     "ubah_rekening": ("services/bank_account_change_service.py:_dua_orang",
                       "services/bank_account_change_service.py:putuskan"),   # PM-T1
+    "ubah_profil_kredit": ("services/credit_profile_service.py:decide",),   # CR-T1
 }
 for _x in KONTROL_AKSI:
     _x["titik"] = _TITIK.get(_x["aksi"], ())
@@ -131,7 +135,7 @@ for _x in KONTROL_AKSI:
 _SUB_JUDUL: Dict[str, Tuple[str, ...]] = {
     "dua-orang-pembelian": ("permintaan_pembelian", "setujui_po", "po_tingkat_berikut", "retur_pembelian"),
     "dua-orang-hutang": ("tagihan_pemasok", "biaya_masuk", "kontrabon", "tagihan_kampanye", "bayar_hutang"),
-    "dua-orang-piutang": ("pengurang_piutang", "lewat_batas_kredit"),
+    "dua-orang-piutang": ("pengurang_piutang", "lewat_batas_kredit", "ubah_profil_kredit"),   # CR-T1 + 1
 }
 _SUB_BAGIAN = {_PJ: "dua-orang-penjualan", _GD: "dua-orang-gudang", _SDM: "dua-orang-sdm", _BB: "dua-orang-buku"}
 #: KF-T4 (T1) — nama pendek untuk label Pengaturan (≤ 45 huruf); nama panjang tetap dipakai tab Kontrol dua orang.
@@ -141,6 +145,7 @@ _PENDEK: Dict[str, str] = {
     "registrasi_stok_awal": "Nilai stok awal", "lpj_uang_muka": "Laporan uang muka",
     "pengurang_piutang": "Pengurang piutang", "lewat_batas_kredit": "Lewat batas kredit",   # PK-38
     "nilai_pesanan": "Nilai pesanan",
+    "ubah_profil_kredit": "Profil kredit pelanggan",   # CR-T1
 }
 for _x in KONTROL_AKSI:
     _x["sub_judul"] = next((s for s, aksi in _SUB_JUDUL.items() if _x["aksi"] in aksi), _SUB_BAGIAN.get(_x["bagian"], ""))

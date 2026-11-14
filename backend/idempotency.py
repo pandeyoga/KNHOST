@@ -5,6 +5,7 @@ Hanya aktif bila klien mengirim header `Idempotency-Key` pada POST. Kunci diikat
 user_id sesi sah+entitas; payload berbeda dengan kunci sama → 409 (GN-01). Rekaman kedaluwarsa 7 hari.
 """
 import hashlib
+import re
 import json
 from datetime import datetime, timedelta, timezone
 from typing import Any, Dict
@@ -37,7 +38,16 @@ IDEMPOTENT_PREFIXES = ("/api/inbound/", "/api/outbound/", "/api/wms/tasks/",
                        "/api/tax/pph-records", "/api/input-tax-invoices", "/api/tax-invoices",
                        "/api/bank-reconciliation/lines/",
                        # PM-T1 — rekening kas/bank dan putusan perubahannya: kirim ulang = satu rekening / satu putusan.
-                       "/api/bank-accounts", "/api/bank-account-changes")
+                       "/api/bank-accounts", "/api/bank-account-changes",
+                       # CR-T1 — putusan/pembatalan pengajuan perubahan kredit.
+                       "/api/credit-profile-requests")
+#: CR-T1 — jalur ber-id di tengah yang tidak bisa dinyatakan sebagai awalan (`/api/customers/{id}/credit-profile-requests`:
+#: mengajukan perubahan kredit). Dicocokkan penuh terhadap jalur permintaan.
+IDEMPOTENT_PATTERNS = (re.compile(r"^/api/customers/[^/]+/credit-profile-requests/?$"),)
+
+
+def is_idempotent_path(path: str) -> bool:
+    return path.startswith(IDEMPOTENT_PREFIXES) or any(p.match(path) for p in IDEMPOTENT_PATTERNS)
 
 
 async def _session_user_id(request: Request) -> str:
@@ -59,7 +69,7 @@ class IdempotencyMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request: Request, call_next):
         key = request.headers.get(HEADER, "").strip()
         if not key or request.method not in ("POST", "PUT", "PATCH", "DELETE") \
-                or not request.url.path.startswith(IDEMPOTENT_PREFIXES):
+                or not is_idempotent_path(request.url.path):
             return await call_next(request)
         user_id = await _session_user_id(request)
         if not user_id:

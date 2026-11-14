@@ -18,6 +18,20 @@ GL-01: registri `services/gl_mapping_registry.py` (54 kebutuhan) → koleksi `gl
 - 2026-10-19 (sesi E): Fase A registri+resolver+API Pemetaan Akun; Fase B UI `?view=gl-account-mappings` (Pengaturan → Keuangan); Fase C pembaca saldo (suspense, piutang denda, uang muka, selisih bayar, persediaan, AR aging) memakai akun pemetaan; Fase D jurnal ongkir retur (cara kirim, akun bayar Finance, PT pembeban, PPN via `returns.logistics_vat_enabled`, jurnal balik saat ubah/tolak); Fase E pemecahan roll cutloss (posisi cacat, BS/Dibuang oleh peran `returns.cutloss_treatment_roles`, pratinjau, SJ potongan baik merujuk SJ & SO asal); Fase F uji (iteration_244: 100%), ACC-KP-01, filter `?stage=` produk, judul/qty kartu tugas gudang Meja Saya. Detail: evidence/HANDOFF_SESI_2026-10-19E.md.
 
 - 2026-11-13/14 (blueprint `docs/blueprint/`, laporan `docs/reviews/2026-11-13/hasil/`): PK-01 garis dasar gate + 256 temuan di tracker; PK-02 kerangka uji `backend/tests_mem/` (database tiruan); PK-05 bayar hutang lewat satu pintu niat bayar (`ap_payment_intents`): periksa tanpa tulis → niat → faktur → kas (rekening wajib, milik PT tagihan) → dokumen kontrabon berversi → jurnal tahan-gagal; kunci idempotensi pada bayar faktur/kontrabon; niat menggantung bisa dilanjutkan/dibatalkan dari form. PR-T9: izin peran bawaan tidak lagi ditimpa saat server start (cabut/atur ulang lama jadi migrasi sekali-jalan tercatat di `permission_settings.migrations_applied`); peran kustom ikut izin baru peran dasarnya bila modulnya belum diubah, selain itu tombol "Ikuti peran dasar". KF-T1: Pusat Pengaturan — ubah = izin kunci (`settings.manage`, `inventory/goods_receipt/makloon.configure`, `rnd.manage`, …; tanpa jalur nama peran), baca = `settings.view` atau yang boleh mengubah kunci itu; `GET /api/settings/effective` tanpa `settings.view` hanya memuat kunci `sensitif_baca=False`.
+- 2026-11-14 CR-T1 (K-27, K-28, K-29 — profil kredit per pelanggan per PT): plafon, berlaku-sampai, termin yang
+  diizinkan, hari telat yang menahan pesanan, dan blokir manual disimpan per (pelanggan, PT pesanan) di
+  `customer_credit_profiles` dan HANYA berubah lewat pengajuan `credit_profile_requests` (`{PT}/PKR-NNNNN`, satu terbuka
+  per pelanggan per PT, potret kredit saat diajukan) yang diputus pemegang izin baru `credit_profile.approve` (bawaan
+  Admin, Manajer; `view`/`update` juga Finance, Admin Sales, Sales — K-28); kontrol dua orang `kontrol.ubah_profil_kredit.*`
+  (bawaan satu orang, nominal = plafon baru). Satu penentu status `credit_profile_service.status_from` dipakai kartu
+  pelanggan, pemeriksaan kredit pesanan, umur piutang, dan beranda; plafon bawaan PT `ar.default_credit_limit` (0 = tanpa
+  batas, izin `credit_profile.approve`). Layar: tab **Kredit** di kartu pelanggan (banner PT, pemilih PT, nilai berlaku
+  bertanda "ikut PT"/"khusus", "Ajukan perubahan" / "Ajukan & setujui", "Menunggu keputusan", riwayat) dan antrean di
+  Keuangan › Piutang › Kredit & Plafon. Jalur lama dimatikan: `PUT /api/customers/{id}/credit` → 410, izin
+  `customer.manage_credit` dicabut (matriks tersimpan dibersihkan sekali, `crt1:izin-kredit`), form pelanggan tanpa plafon
+  & tanpa "Diblokir" (PATCH status aktif/nonaktif kembali), plafon di pelanggan baru → pengajuan. Data lama dipindahkan
+  `scripts/migrate_credit_profiles.py` (bawaan lapor, `--terapkan` = keputusan pemilik H3); sampai itu dijalankan,
+  plafon/blokir lama dibaca sebagai cadangan "data lama".
 - 2026-11-14 PK-44 (IA-04/IA-10/IA-11/IA-13/IA-14, K-18 — jejak dokumen membuka dokumennya): satu pembentuk tautan
   `doc_refs_service.link_of` (`view` · `tab` · `focus_type` · `focus_id`; tanpa `nav_id`) untuk Jejak Dokumen, panel
   Dokumen Terkait, dan linimasa proses; empat `view` tanpa layar diperbaiki (retur jual → `returns`, transfer/opname →

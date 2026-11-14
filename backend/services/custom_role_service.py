@@ -378,18 +378,41 @@ async def migrate_prt5_catalog() -> Dict[str, Any]:
     server, jadi tidak ada akses yang berubah. Dipanggil `bootstrap.run_bootstrap` sesudah `ensure_permission_ledger`,
     sebelum `sync_permission_modules`."""
     from permissions_config import PRT5_REMOVED_PAIRS, PRT5_REMOVED_RESOURCES
+    return await _buang_pasangan_tersimpan(
+        PRT5_MIGRATION_ID, PRT5_REMOVED_PAIRS, PRT5_REMOVED_RESOURCES, pelaku="Sistem (migrasi PR-T5)",
+        alasan="PR-T5 — izin yang tidak pernah diperiksa server dihapus dari katalog")
+
+
+CRT1_MIGRATION_ID = "crt1:izin-kredit"
+
+
+async def migrate_crt1_catalog() -> Dict[str, Any]:
+    """CR-T1 — sekali jalan (`crt1:izin-kredit`): `customer.manage_credit` (jalur sementara PK-45, kini dijawab 410)
+    dibuang dari matriks tersimpan, `defaults_applied`, dan `pending_defaults` — sama seperti PR-T5. Tanpa ini editor
+    peran mengirim balik pasangan yang tidak lagi dikenal katalog dan simpan ditolak 400. Penggantinya
+    (`credit_profile.*`) diteruskan `sync_permission_modules` seperti izin bawaan baru lain."""
+    from permissions_config import CRT1_REMOVED_PAIRS
+    return await _buang_pasangan_tersimpan(
+        CRT1_MIGRATION_ID, CRT1_REMOVED_PAIRS, (), pelaku="Sistem (migrasi CR-T1)",
+        alasan="CR-T1 — plafon & blokir kredit kini lewat pengajuan profil kredit (izin credit_profile)")
+
+
+async def _buang_pasangan_tersimpan(migration_id: str, pairs: Any, resources: Any, *, pelaku: str,
+                                    alasan: str) -> Dict[str, Any]:
+    """Buang pasangan izin `pairs` (dan seluruh sumber daya `resources`) dari matriks tersimpan sekali jalan
+    (`migration_id` di `migrations_applied`). Dipakai PR-T5 dan CR-T1."""
     record = await db.permission_settings.find_one({"id": "default"}, {"_id": 0})
     if not record or record.get("migrations_applied") is None or \
-            PRT5_MIGRATION_ID in (record.get("migrations_applied") or []):
+            migration_id in (record.get("migrations_applied") or []):
         return {"dibuang": {}}
 
     def bersihkan(perms: Dict[str, Any]) -> Dict[str, List[str]]:
         """Pasangan yang dibuang dari `perms` (diubah di tempat)."""
         out: Dict[str, List[str]] = {}
-        for res in PRT5_REMOVED_RESOURCES:
+        for res in resources:
             if res in perms:
                 out[res] = list(perms.pop(res) or [])
-        for res, act in PRT5_REMOVED_PAIRS:
+        for res, act in pairs:
             acts = perms.get(res)
             if isinstance(acts, list) and act in acts:
                 perms[res] = [a for a in acts if a != act]
@@ -408,7 +431,7 @@ async def migrate_prt5_catalog() -> Dict[str, Any]:
         patch.update({"matrix": matrix, "updated_at": now_iso()})
     if applied_hit:
         patch["defaults_applied"] = applied
-    update: Dict[str, Any] = {"$addToSet": {"migrations_applied": PRT5_MIGRATION_ID}}
+    update: Dict[str, Any] = {"$addToSet": {"migrations_applied": migration_id}}
     if patch:
         update["$set"] = patch
     await db.permission_settings.update_one({"id": "default"}, update)
@@ -420,8 +443,7 @@ async def migrate_prt5_catalog() -> Dict[str, Any]:
             "pending_defaults": {k: v for k, v in pending.items() if v}}})
     if removed:
         from dependencies import audit
-        await audit("Sistem (migrasi PR-T5)", "role_catalog_cleaned", "permission_settings", "default", removed,
-                    reason="PR-T5 — izin yang tidak pernah diperiksa server dihapus dari katalog")
+        await audit(pelaku, "role_catalog_cleaned", "permission_settings", "default", removed, reason=alasan)
     return {"dibuang": removed}
 
 

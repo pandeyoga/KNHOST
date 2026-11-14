@@ -14,7 +14,8 @@ from services.data_scope import in_clause, own_scoped, owner_ids, owner_ids_now 
 
 # KF-T7 (CR-03) — ambang kontrol kredit (KN_17 §5.2) dulu dua salinan konstanta di sini dan di `ar_aging_service`
 # (80 % plafon → peringatan; telat terlama > 14 hari → diblokir). Kini pengaturan `ar.credit_warning_pct` dan
-# `ar.overdue_block_days` per PT, dibaca SATU fungsi (`credit_thresholds`) yang hasilnya dikirim ke penghitung status.
+# `ar.overdue_block_days` per PT, dibaca SATU fungsi (`credit_thresholds`). CR-T1 — fungsi itu dibaca
+# `credit_profile_service.effective` (ditimpa profil kredit pelanggan per PT); status = `credit_profile_service.status_from`.
 NON_AR_METHODS = {"kontan", "tunai", "cash"}
 DEAD_STATUSES = {"cancelled", "draft", "expired", "rejected"}
 
@@ -216,9 +217,10 @@ def order_due(customer: Dict[str, Any], order: Dict[str, Any], ctx: Dict[str, An
 
 async def credit_thresholds(entity_id: Optional[str],
                             cache: Optional[Dict[str, Dict[str, Any]]] = None) -> Dict[str, Any]:
-    """KF-T7 (CR-03) — SATU-SATUNYA pembaca dua ambang kredit untuk PT `entity_id` (PT pelanggan):
-    `{"block_days": ar.overdue_block_days, "warning_ratio": ar.credit_warning_pct ÷ 100}`. Hasilnya dikirim ke
-    `credit_status` (kartu pelanggan, pemeriksaan kredit pesanan) dan `ar_aging_service._credit_status` (umur piutang).
+    """KF-T7 (CR-03) — SATU-SATUNYA pembaca dua ambang kredit untuk PT `entity_id`:
+    `{"block_days": ar.overdue_block_days, "warning_ratio": ar.credit_warning_pct ÷ 100}`. CR-T1 — dibaca
+    `credit_profile_service.effective` (nilai bawaan PT; profil kredit pelanggan boleh menimpa hari blokir), yang
+    hasilnya dipakai `status_from` (kartu pelanggan, pemeriksaan kredit pesanan, umur piutang, beranda).
     `cache` (opsional, per panggilan daftar) = satu kali baca per PT."""
     key = entity_id if entity_id and entity_id != "all" else ""
     if cache is not None and key in cache:
@@ -231,32 +233,19 @@ async def credit_thresholds(entity_id: Optional[str],
     return out
 
 
-def credit_status(credit_limit: float, ar_outstanding: float, max_overdue_days: int, manual_status: str,
-                  thresholds: Dict[str, Any]) -> str:
-    """Status kredit `active|warning|blocked` (KN_17 §5.2) — satu rumus untuk kartu pelanggan dan umur piutang.
-    Peringatan: piutang ≥ persen peringatan × plafon, atau ada tagihan telat. Diblokir: piutang ≥ plafon, telat
-    terlama > hari blokir, atau status manual `blocked`. Plafon 0 = tanpa plafon."""
-    status = "active"
-    near = credit_limit > 0 and ar_outstanding >= thresholds["warning_ratio"] * credit_limit
-    over = credit_limit > 0 and ar_outstanding >= credit_limit
-    if near or max_overdue_days > 0:
-        status = "warning"
-    if over or max_overdue_days > thresholds["block_days"]:
-        status = "blocked"
-    if manual_status == "blocked":
-        status = "blocked"
-    return status
-
-
 async def compute_customer_credit(customer: Dict[str, Any], entity_id: Optional[str] = None,
-                                  thresholds: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+                                  cache: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
     """AR outstanding, overdue, dan status kredit (active|warning|blocked).
     `entity_id` (opsional) membatasi AR ke SO badan usaha itu (KPI per entitas = AR Aging).
-    KF-T7 — ambang dari `credit_thresholds` PT pelanggan (pemanggil daftar boleh mengirimnya lewat `thresholds`)."""
-    if thresholds is None:
-        thresholds = await credit_thresholds(customer.get("entity_id"))
+    CR-T1 — plafon, hari blokir, dan blokir manual dari profil kredit (pelanggan, PT) yang BERLAKU
+    (`credit_profile_service.effective`; PT = `entity_id`, atau PT pemilik data pelanggan bila tidak diberikan), status
+    dari `credit_profile_service.status_from`. `cache` (opsional, `credit_profile_service.cache_baru()`) = pemanggil daftar
+    membaca ambang & plafon bawaan sekali per PT."""
+    from services import credit_profile_service as cps
+    pt = entity_id if entity_id and entity_id != "all" else (customer.get("entity_id") or "")
+    eff = await cps.effective(customer["id"], pt, customer=customer, cache=cache)
     cid = customer["id"]
-    credit_limit = float(customer.get("credit_limit", 0) or 0)
+    credit_limit = float(eff["credit_limit"] or 0)
     oq: Dict[str, Any] = {"customer_id": cid}
     if entity_id and entity_id != "all":
         oq["entity_id"] = entity_id
@@ -292,8 +281,8 @@ async def compute_customer_credit(customer: Dict[str, Any], entity_id: Optional[
         if days_late > 0:
             overdue += outstanding
             max_overdue_days = max(max_overdue_days, days_late)
-    # status manual 'blocked' di kolom customer.status menang utk blokir; telat > 0 hari ⇔ overdue > 0
-    status = credit_status(credit_limit, ar, max_overdue_days, customer.get("status") or "", thresholds)
+    # CR-T1 — blokir manual kini di profil kredit (dulu `customers.status == "blocked"`); telat > 0 hari ⇔ overdue > 0
+    status = cps.status_from(eff, ar, max_overdue_days)
     # L02 LN-023-T01 — pecah belum lunas: piutang ledger (sudah diakui) vs eksposur (belum dikirim)
     ledger = 0.0
     if ar_rows:
@@ -311,6 +300,11 @@ async def compute_customer_credit(customer: Dict[str, Any], entity_id: Optional[
         "available_credit": round(max(credit_limit - ar, 0), 2) if credit_limit > 0 else None,
         "deposit_balance": round(float(customer.get("deposit_balance", 0) or 0), 2),
         "status": status,
+        # CR-T1 (L6) — asal nilai yang dipakai mesin: kartu pelanggan & pemeriksaan kredit pesanan menuliskannya.
+        "limit_source": eff["limit_source"], "profile_entity_id": eff["entity_id"],
+        "overdue_block_days": eff["overdue_block_days"], "block_days_source": eff["block_days_source"],
+        "warning_ratio": eff["warning_ratio"], "credit_status_manual": eff["credit_status"],
+        "block_reason": eff["block_reason"],
     }
 
 
@@ -326,14 +320,14 @@ async def enrich_customer(customer: Dict[str, Any], with_credit: bool = True) ->
 
 
 async def check_credit_for_order(customer: Dict[str, Any], new_amount: float) -> Dict[str, Any]:
-    """Gate kredit saat buat SO (KN_17 §5.2). allowed=False bila blocked."""
-    thr = await credit_thresholds(customer.get("entity_id"))   # KF-T7 — ambang PT pelanggan
-    credit = await compute_customer_credit(customer, thresholds=thr)
+    """Gate kredit saat buat SO (KN_17 §5.2). allowed=False bila blocked.
+    CR-T1 — plafon & rasio peringatan dari profil kredit yang berlaku (PT pemilik data pelanggan; PT pesanan = CR-T3)."""
+    credit = await compute_customer_credit(customer)
     limit = credit["credit_limit"]
     projected = credit["ar_outstanding"] + float(new_amount or 0)
     blocked = credit["status"] == "blocked" or (limit > 0 and projected > limit)
     warn = (not blocked) and (
-        credit["status"] == "warning" or (limit > 0 and projected >= thr["warning_ratio"] * limit)
+        credit["status"] == "warning" or (limit > 0 and projected >= credit["warning_ratio"] * limit)
         or credit["overdue_amount"] > 0
     )
     reasons = []
@@ -341,8 +335,9 @@ async def check_credit_for_order(customer: Dict[str, Any], new_amount: float) ->
         reasons.append(f"Proyeksi AR {rupiah(projected)} melebihi limit {rupiah(limit)}")
     if credit["overdue_amount"] > 0:
         reasons.append(f"Ada tunggakan jatuh tempo {rupiah(credit['overdue_amount'])} ({credit['max_overdue_days']} hari)")
-    if customer.get("status") == "blocked":
-        reasons.append("Customer berstatus blocked manual")
+    if credit.get("credit_status_manual") == "blokir_manual":
+        alasan = credit.get("block_reason") or ""
+        reasons.append("Pelanggan diblokir manual" + (f": {alasan}" if alasan else ""))
     return {
         "allowed": not blocked,
         "level": "blocked" if blocked else ("warning" if warn else "ok"),

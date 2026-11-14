@@ -68,6 +68,8 @@ CANONICAL_COLLECTIONS = {
     "approval_policies",
     # ── KP-T5 (blueprint) — tabel Penomoran Dokumen (format yang diubah saja) ──
     "doc_number_formats",
+    # ── CR-T1 (blueprint) — profil kredit per pelanggan per PT + pengajuan perubahannya ──
+    "customer_credit_profiles", "credit_profile_requests",
     "cash_transactions",
     # ── Depth #1 (Retur Beli / Nota Debit) ──
     "purchase_returns",

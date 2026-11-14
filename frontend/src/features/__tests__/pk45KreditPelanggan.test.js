@@ -1,10 +1,10 @@
-// PK-45 (CR-01, K-28) — form pelanggan: plafon kredit & status blokir hanya diubah pemegang izin
-// `customer.manage_credit`, lewat PUT /customers/{id}/credit dengan alasan (spesifikasi docs/blueprint/unit/PK-45.md,
-// bagian Layar; uji jalan U17 diwakili di sini dengan izin dari server: `currentUser.permissions`).
-//   (a) tanpa izin: plafon & status hanya-baca + keterangan; PATCH tidak membawa keduanya; tidak ada PUT;
-//   (b) dengan izin: mengubah plafon/status memunculkan isian wajib "Alasan perubahan kredit"; simpan memanggil PUT
-//       sesudah PATCH; galat PUT tampil di form;
-//   (c) pelanggan baru oleh pemegang izin: plafon & status dikirim lewat endpoint kredit sesudah pelanggan terbuat.
+// PK-45 (CR-01, K-28) → CR-T1 — form pelanggan TIDAK lagi memuat plafon kredit maupun pilihan status "Diblokir"
+// (perilaku SENGAJA diubah unit CR-T1: plafon & blokir diajukan di tab Kredit kartu pelanggan, jalur PUT
+// /customers/{id}/credit dijawab 410). Uji ini menjaga pengganti PK-45:
+//   (a) form ubah: tanpa isian plafon, tanpa "Diblokir"; PATCH tidak membawa `credit_limit`; tidak ada PUT;
+//   (b) status Aktif/Nonaktif lewat PATCH hanya bila diubah (status lama "blocked" tidak dikirim balik);
+//   (c) pelanggan baru: pemegang `credit_profile.update` mengisi "Usulan plafon" → POST membawa `credit_limit` (server
+//       membuat pengajuan); tanpa izin itu isian tidak tampil dan POST membawa 0.
 import React, { act } from "react";
 import { createRoot } from "react-dom/client";
 import CustomerFormModal from "../crm/CustomerFormModal";
@@ -62,35 +62,35 @@ afterEach(async () => {
   [mockGet, mockPost, mockPatch, mockPut].forEach((m) => m.mockReset());
 });
 
-// Pelanggan `cus_s` milik Sales: diblokir, plafon 5.000.000 (fixture uji PK-45).
+// Pelanggan `cus_s` milik Sales: status lama "blocked", plafon lama 5.000.000 (fixture uji PK-45, sebelum migrasi CR-T1).
 const CUS_S = {
   id: "cus_s", name: "Toko Milik Sales", segment: "Retail", pic_name: "Andi", phone: "081234567890",
   credit_limit: 5000000, status: "blocked", assigned_sales_id: "u_sls", entity_id: "ent_ksc",
   province_code: "32", city_code: "3273", postal_code: "40111",
   addresses: [{ id: "a1", address: "Jl. Uji No. 1", is_primary: true, province_code: "32", city_code: "3273", postal_code: "40111" }],
 };
-const SLS = { id: "u_sls", name: "Ayu", role: "sales", permissions: { customer: ["view", "create", "update"] } };
-const FIN = { id: "u_fin", name: "Fina", role: "finance", permissions: { customer: ["view", "manage_credit"] } };
+const CUS_A = { ...CUS_S, id: "cus_a", status: "active" };
+const SLS = { id: "u_sls", name: "Ayu", role: "sales",
+  permissions: { customer: ["view", "create", "update"], credit_profile: ["view", "update"] } };
+const SLS_TANPA_KREDIT = { id: "u_sls2", name: "Budi", role: "sales", permissions: { customer: ["view", "create", "update"] } };
 const MGR = { id: "u_mgr", name: "Mira", role: "manager",
-  permissions: { customer: ["view", "create", "update", "export", "manage_credit"] } };
+  permissions: { customer: ["view", "create", "update", "export"], credit_profile: ["view", "update", "approve"] } };
 
 function form(user, { editTarget = CUS_S, onSaved = jest.fn() } = {}) {
   return <CustomerFormModal open editTarget={editTarget} currentUser={user} salesUsers={[{ id: "u_sls", name: "Ayu" }]}
     selectedEntity="ent_ksc" onClose={() => {}} onSaved={onSaved} />;
 }
 
-test("PK-45 U17 (sales): plafon & status hanya-baca + keterangan; PATCH tanpa plafon/status; tanpa PUT", async () => {
+test("CR-T1 (form ubah): tanpa isian plafon & tanpa 'Diblokir'; PATCH tanpa plafon/status; tanpa PUT", async () => {
   mockPatch.mockResolvedValue({ data: { ...CUS_S, pic_name: "Budi" } });
   const onSaved = jest.fn();
-  await mount(form(SLS, { onSaved }));
-  const limit = q("customer-credit-limit");
-  expect(limit.getAttribute("data-readonly")).toBe("true");
-  expect(limit.tagName).not.toBe("INPUT");
-  expect(limit.textContent).toMatch(/Plafon kredit:\s*Rp\s5\.000\.000/);
-  expect(q("customer-status").getAttribute("data-readonly")).toBe("true");
-  expect(q("customer-status").textContent).toMatch(/Status:\s*Blokir/);
-  expect(q("customer-credit-readonly-note").textContent).toBe("Plafon dan status blokir diubah oleh pemegang akses kredit.");
+  await mount(form(MGR, { onSaved }));
+  expect(q("customer-credit-limit")).toBeNull();
   expect(q("customer-credit-reason")).toBeNull();
+  expect(q("customer-credit-note").textContent).toBe("Plafon dan blokir kredit diatur lewat pengajuan di tab Kredit pada kartu pelanggan.");
+  // Status lama "blocked" (sebelum migrasi profil kredit) hanya-baca: tidak bisa dibuka lewat form ini.
+  expect(q("customer-status").getAttribute("data-readonly")).toBe("true");
+  expect(q("customer-status").textContent).toMatch(/Diblokir \(data lama\)/);
   await type(q("customer-pic"), "Budi");
   await click(q("customer-form-submit"));
   expect(mockPatch).toHaveBeenCalledTimes(1);
@@ -98,86 +98,44 @@ test("PK-45 U17 (sales): plafon & status hanya-baca + keterangan; PATCH tanpa pl
   expect(url).toBe("/api/customers/cus_s");
   expect(body.data.pic_name).toBe("Budi");
   expect(body.data).not.toHaveProperty("credit_limit");
-  expect(body.data).not.toHaveProperty("status");
+  expect(body.data).not.toHaveProperty("status");       // status lama "blocked" tidak dikirim balik
   expect(mockPut).not.toHaveBeenCalled();
   expect(onSaved).toHaveBeenCalledWith(expect.objectContaining({ pic_name: "Budi" }), true);
 });
 
-test("PK-45 U17 (finance): ubah plafon & buka blokir → alasan wajib → PUT kredit (tanpa PATCH: tidak punya izin ubah)", async () => {
-  mockPut.mockResolvedValue({ data: { ...CUS_S, credit_limit: 20000000, status: "active" } });
-  const onSaved = jest.fn();
-  await mount(form(FIN, { onSaved }));
-  const limit = q("customer-credit-limit");
-  expect(limit.tagName).toBe("INPUT");
-  expect(q("customer-credit-readonly-note")).toBeNull();
-  expect(q("customer-credit-only-note")).not.toBeNull();
-  expect(q("customer-credit-reason")).toBeNull();               // belum ada perubahan → belum diminta alasan
-  await type(limit, "20000000");
-  await type(q("customer-status"), "active");
-  expect(q("customer-credit-reason")).not.toBeNull();
-  await click(q("customer-form-submit"));
-  expect(q("customer-form-modal-missing").textContent).toMatch(/alasan perubahan kredit/);
-  expect(mockPut).not.toHaveBeenCalled();
-  await type(q("customer-credit-reason"), "1234");                // tanpa huruf → tetap kurang
-  await click(q("customer-form-submit"));
-  expect(mockPut).not.toHaveBeenCalled();
-  await type(q("customer-credit-reason"), "tinjauan triwulan");
-  await click(q("customer-form-submit"));
-  expect(mockPatch).not.toHaveBeenCalled();
-  expect(mockPut).toHaveBeenCalledTimes(1);
-  expect(mockPut).toHaveBeenCalledWith("/api/customers/cus_s/credit",
-    { reason: "tinjauan triwulan", credit_limit: 20000000, status: "active" });
-  expect(onSaved).toHaveBeenCalledWith(expect.objectContaining({ credit_limit: 20000000, status: "active" }), true);
-});
-
-test("PK-45 U17 (manajer): PATCH isian lain dulu, lalu PUT hanya isian kredit yang berubah; galat PUT tampil di form", async () => {
-  const urutan = [];
-  mockPatch.mockImplementation(async () => { urutan.push("patch"); return { data: CUS_S }; });
-  mockPut.mockImplementation(async () => {
-    urutan.push("put");
-    const err = new Error("400");
-    err.response = { status: 400, data: { detail: "Alasan perubahan wajib diisi (minimal 5 huruf)." } };
-    throw err;
-  });
-  const onSaved = jest.fn();
-  await mount(form(MGR, { onSaved }));
+test("CR-T1 (status): Aktif → Nonaktif dikirim lewat PATCH", async () => {
+  mockPatch.mockResolvedValue({ data: { ...CUS_A, status: "inactive" } });
+  await mount(form(SLS, { editTarget: CUS_A }));
+  expect([...q("customer-status").querySelectorAll("option")].map((o) => o.textContent)).toEqual(["Aktif", "Nonaktif"]);
   await type(q("customer-status"), "inactive");
-  await type(q("customer-credit-reason"), "toko tutup sementara");
   await click(q("customer-form-submit"));
-  expect(urutan).toEqual(["patch", "put"]);
-  expect(mockPatch.mock.calls[0][1].data).not.toHaveProperty("status");
-  expect(mockPut.mock.calls[0][1]).toEqual({ reason: "toko tutup sementara", status: "inactive" });
-  expect(q("customer-form-modal-error").textContent).toContain("Alasan perubahan wajib diisi (minimal 5 huruf).");
-  expect(onSaved).not.toHaveBeenCalled();
+  expect(mockPatch.mock.calls[0][1].data.status).toBe("inactive");
+  expect(mockPut).not.toHaveBeenCalled();
 });
 
-test("PK-45 (pelanggan baru): pemegang izin → POST plafon 0 lalu PUT kredit beralasan; tanpa izin → hanya-baca, tanpa PUT", async () => {
-  mockPost.mockResolvedValue({ data: { id: "cust_baru", name: "Toko Baru" } });
-  mockPut.mockResolvedValue({ data: { id: "cust_baru", name: "Toko Baru", credit_limit: 50000000, status: "blocked" } });
+test("CR-T1 (pelanggan baru): usulan plafon dikirim di POST; tanpa izin mengajukan → tidak tampil, POST 0", async () => {
+  mockPost.mockResolvedValue({ data: { id: "cust_baru", name: "Toko Baru", credit_limit: 0 } });
   const onSaved = jest.fn();
   await mount(form(MGR, { editTarget: null, onSaved }));
+  expect(q("customer-status")).toBeNull();
   await type(q("customer-name"), "Toko Baru");
   await type(q("customer-pic"), "Sinta");
   await type(q("customer-phone"), "081234567845");
   await type(q("customer-address"), "Jl. Uji No. 45");
   await type(q("customer-assigned-sales"), "u_sls");
-  await type(q("customer-credit-limit"), "50000000");
-  await type(q("customer-status"), "blocked");
-  await type(q("customer-credit-reason"), "pelanggan baru grosir");
+  await type(q("customer-credit-limit"), "25000000");
   await click(q("customer-form-submit"));
   expect(mockPost).toHaveBeenCalledTimes(1);
   expect(mockPost.mock.calls[0][0]).toBe("/api/customers");
-  expect(mockPost.mock.calls[0][1].credit_limit).toBe(0);
-  expect(mockPut).toHaveBeenCalledWith("/api/customers/cust_baru/credit",
-    { reason: "pelanggan baru grosir", credit_limit: 50000000, status: "blocked" });
-  expect(onSaved).toHaveBeenCalledWith(expect.objectContaining({ credit_limit: 50000000 }), false);
+  expect(mockPost.mock.calls[0][1].credit_limit).toBe(25000000);
+  expect(mockPut).not.toHaveBeenCalled();
+  expect(onSaved).toHaveBeenCalledWith(expect.objectContaining({ id: "cust_baru" }), false);
 
   for (const { root, host } of roots) { await act(async () => { root.unmount(); }); host.remove(); }
   roots = [];
-  [mockPost, mockPut].forEach((m) => m.mockClear());
-  await mount(form(SLS, { editTarget: null }));
-  expect(q("customer-credit-limit").getAttribute("data-readonly")).toBe("true");
-  expect(q("customer-credit-limit").textContent).toMatch(/tanpa batas/);
+  mockPost.mockClear();
+  await mount(form(SLS_TANPA_KREDIT, { editTarget: null }));
+  expect(q("customer-credit-limit")).toBeNull();
   await type(q("customer-name"), "Toko Sales");
   await type(q("customer-pic"), "Rina");
   await type(q("customer-phone"), "081234567846");
@@ -185,5 +143,4 @@ test("PK-45 (pelanggan baru): pemegang izin → POST plafon 0 lalu PUT kredit be
   await click(q("customer-form-submit"));
   expect(mockPost).toHaveBeenCalledTimes(1);
   expect(mockPost.mock.calls[0][1].credit_limit).toBe(0);
-  expect(mockPut).not.toHaveBeenCalled();
 });

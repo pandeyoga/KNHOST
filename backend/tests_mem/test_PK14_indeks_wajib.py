@@ -26,6 +26,9 @@ SEKARANG = datetime.datetime.now(datetime.timezone.utc).isoformat()
 PK40_INDEKS = 5
 # PM-T1: `bank_accounts.uq_default_receiving` (satu rekening bawaan per PT per cara bayar).
 PMT1_INDEKS = 1
+# CR-T1: `customer_credit_profiles.uq_customer_entity` (satu profil per pelanggan per PT) dan
+# `credit_profile_requests.uq_open_request` (satu pengajuan terbuka per pelanggan per PT).
+CRT1_INDEKS = 2
 
 
 def _info_lengkap() -> dict:
@@ -60,7 +63,7 @@ def test_U12_pembanding_indeks():
     # PK-40 menambah 5 indeks wajib (faktur keluaran/masukan aktif & NSFP, kunci masa pajak): 9 + 5.
     # KP-T6 — + `pdf_templates.uq_doctype_entity` (satu lapisan template cetak per jenis per PT/grup): + 1.
     # PM-T1 — + `bank_accounts.uq_default_receiving` (satu rekening penerima bawaan per cara bayar per PT): + PMT1_INDEKS.
-    assert len(indexes.REQUIRED_UNIQUE_INDEXES) == 9 + PK40_INDEKS + 1 + PMT1_INDEKS
+    assert len(indexes.REQUIRED_UNIQUE_INDEXES) == 9 + PK40_INDEKS + 1 + PMT1_INDEKS + CRT1_INDEKS
 
 
 async def test_U13_mode_enforce_dan_warn(aplikasi, monkeypatch):

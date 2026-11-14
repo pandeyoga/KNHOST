@@ -28,8 +28,8 @@ for _r in DEFAULT_PERMISSIONS:   # PR-T2 — izin pengganti gerbang nama peran (
     for _res, _acts in bootstrap._prt2_default_pairs(_r).items():
         TAMBAHAN_SESUDAH.setdefault(_r, {}).setdefault(_res, set()).update(_acts)
 # Butir di `migrations_applied`: 15 butir PR-T9 + `prt2:gerbang-peran` (PR-T2) + `prt4:sifat-peran` dan
-# `prt4:izin-kpi-sales` (PR-T4) + `prt5:katalog` (PR-T5).
-JUMLAH_MIGRASI = 19
+# `prt4:izin-kpi-sales` (PR-T4) + `prt5:katalog` (PR-T5) + `crt1:izin-kredit` (CR-T1 — `customer.manage_credit` dibuang).
+JUMLAH_MIGRASI = 20
 # Pencabutan izin bawaan yang SENGAJA dibuat unit sesudah PR-T9.
 DICABUT_SESUDAH = {r: {"vendor_bill": {"view"}, "landed_cost": {"view"}, "input_tax": {"view"}}
                    for r in ("warehouse", "warehouse_admin")}   # PK-17 (IA-02)
@@ -43,10 +43,9 @@ for _r, _perms in SEBELUM.items():
             DICABUT_SESUDAH.setdefault(_r, {}).setdefault(_res, set()).add(_act)
 # KP-T4 (K-47) — Finance menyetujui/menolak tagihan vendor kampanye (dulu lewat nama peran, pintu tanpa izin).
 TAMBAHAN_SESUDAH.setdefault("finance", {}).setdefault("vendor_bill", set()).update({"approve", "reject"})
-# PK-45 — izin kredit pelanggan (K-28) dan pesanan tanpa PPN (K-33).
-for _r, _tambah in {"admin": {"customer": {"manage_credit"}, "order": {"tax_override"}},
-                    "manager": {"customer": {"manage_credit"}, "order": {"tax_override"}},
-                    "finance": {"customer": {"manage_credit"}}}.items():
+# PK-45 — pesanan tanpa PPN (K-33). Izin kredit PK-45 `customer.manage_credit` dicabut CR-T1 (blok CR-T1 di bawah).
+for _r, _tambah in {"admin": {"order": {"tax_override"}},
+                    "manager": {"order": {"tax_override"}}}.items():
     for _res, _aksi in _tambah.items():
         TAMBAHAN_SESUDAH.setdefault(_r, {}).setdefault(_res, set()).update(_aksi)
 # MN-T1 (K-09, K-17) — Finance melihat & membayar hutang, Finance & Manajer mencairkan uang muka
@@ -65,6 +64,11 @@ for _r in _pc.PK30_OVERRIDE_TERMS_ROLES:
     TAMBAHAN_SESUDAH.setdefault(_r, {}).setdefault("interco", set()).add("override_terms")
 # PM-T1 (K-34) — Admin & Manajer menyetujui perubahan rekening kas/bank (`cash.approve`, `PMT1_DEFAULT_PAIRS`).
 for _r, _tambah in _pc.PMT1_DEFAULT_PAIRS.items():
+    for _res, _aksi in _tambah.items():
+        TAMBAHAN_SESUDAH.setdefault(_r, {}).setdefault(_res, set()).update(_aksi)
+# CR-T1 (K-27–K-29) — profil kredit pelanggan: lihat & ajukan (Admin, Manajer, Finance, Admin Sales, Sales), putus (Admin,
+# Manajer; Sales tidak — K-28) — `permissions_config.CRT1_DEFAULT_PAIRS`.
+for _r, _tambah in _pc.CRT1_DEFAULT_PAIRS.items():
     for _res, _aksi in _tambah.items():
         TAMBAHAN_SESUDAH.setdefault(_r, {}).setdefault(_res, set()).update(_aksi)
 
