@@ -221,8 +221,10 @@ async def decide_claim(design_id: str, claim_id: str, approve: bool, actor: Dict
     cl = next((x for x in d.get("claims") or [] if x.get("id") == claim_id), None)
     if not cl or cl.get("status") != "pending":
         raise OwnershipError("Klaim tidak ditemukan atau sudah diputus.")
-    if cl.get("by_id") and cl["by_id"] == actor.get("id"):
-        raise OwnershipError("Pengaju klaim tidak boleh memutus klaimnya sendiri.")
+    # KF-T6 — pengaju ≠ pemutus dari `kontrol.klaim_desain.*` (403; Admin tetap dua orang secara bawaan).
+    from services import dual_control as _dc
+    await _dc.tolak_bila_pelaku_sama("klaim_desain", {**cl, "number": d.get("code", "")}, actor,
+                                     d.get("entity_id", ""), pengaju=[cl.get("by_id")])
     if not approve and len((reason or "").strip()) < 5:
         raise OwnershipError("Menolak klaim wajib ber-alasan (minimal 5 huruf).")
     await db.design_gallery.update_one(

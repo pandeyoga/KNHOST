@@ -293,6 +293,7 @@ async def create_transfer(payload: TransferCreate, request: Request) -> Dict[str
             })
             items_out.append(item_doc)
         transfer = _build_transfer_doc(transfer_id, code, payload, prefer_owner, ctx, items_out)
+        transfer["requested_by_id"] = actor.get("id", "")   # KF-T6 — pengaju andal (nama dari isian bisa apa saja)
         if so_doc:
             transfer.update({"sales_order_id": so_id, "sales_order_number": so_doc.get("number", ""),
                              "sales_order_customer": so_doc.get("customer_name", "")})
@@ -444,6 +445,7 @@ async def create_inter_company_transfer(payload: InterCompanyTransferCreate, req
             "interco_number": interco_number,
             "notes": payload.notes,
             "requested_by": payload.requested_by or actor["name"],
+            "requested_by_id": actor.get("id", ""),   # KF-T6 — pengaju andal untuk kontrol dua orang
             "approved_by": None, "approved_at": None,
             "rejected_by": None, "rejected_at": None, "rejected_reason": None,
             "created_at": now_iso(), "updated_at": now_iso(),
@@ -558,6 +560,11 @@ async def approve_transfer(transfer_id: str, payload: TransferApprove, request: 
     transfer, _ctx = await _guard_transfer(request, transfer_id, side="source")  # FASE E-0 (L13)
     if transfer["status"] != "waiting_approval":
         raise HTTPException(status_code=400, detail=f"Transfer tidak bisa diapprove (status: {transfer['status']})")
+    # KF-T6 — pengaju ≠ penyetuju dari `kontrol.transfer_gudang.*` (bawaan satu orang). Dokumen lama hanya menyimpan
+    # nama pengaju (`requested_by`) → pembanding nama.
+    from services import dual_control as _dc
+    await _dc.tolak_bila_pelaku_sama("transfer_gudang", transfer, actor, transfer.get("entity_id", ""),
+                                     pengaju=[transfer.get("requested_by_id"), transfer.get("requested_by")])
     # P02 sisa — antar badan usaha: gudang tempat barang berada wajib boleh dipakai PEMILIK BARU + lolos rules.
     rule_exc = None
     if transfer.get("transfer_kind") == "inter_entity":

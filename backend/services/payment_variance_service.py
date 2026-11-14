@@ -714,6 +714,15 @@ async def decide_receipt(receipt_id: str, payload: Dict[str, Any],
         raise VarianceError(f"Nominal keputusan {_rp(amount)} melebihi selisih {_rp(gap)}.")
     reason = await _reason_or_fail(payload.get("reason_code", ""))
     approver_role = _assert_authority(kind, amount, policy, actor)
+    if not payload.get("auto"):
+        # KF-T6 — pencatat kwitansi ≠ pemutus selisih dari `kontrol.pengurang_piutang.*`. Di sini `VarianceError` (bukan
+        # 403): keputusan saat kwitansi dibuat tidak boleh membatalkan uang yang sudah masuk — selisih masuk antrean.
+        # Jalur antrean (`routers/payment_variance.py`) sudah menolak 403 lebih dulu.
+        from services import dual_control as _dc
+        _dcr = await _dc.periksa("pengurang_piutang", receipt, actor, entity_id, nominal=amount,
+                                 pengaju=[receipt.get("created_by")])
+        if _dcr["ditolak"]:
+            raise VarianceError(_dcr["pesan"])
 
     number = await next_doc_number(COLL, "number", "SLB-", entity_id=entity_id or None)
     decision_id = new_id("pvd")
@@ -1034,6 +1043,14 @@ async def decide_bill(bill: Dict[str, Any], assessment: Dict[str, Any],
     reason = await _reason_or_fail(reason_code)
     approver_role = _assert_authority(
         "ap_writeoff" if kind in ("ap_writeoff",) else kind, gap, policy, actor)
+    if direction != DIR_ROUNDING:
+        # KF-T6 — pembuat tagihan ≠ pemutus selisih bayar dari `kontrol.pengurang_piutang.*`. `VarianceError` (bukan
+        # 403): keputusan ini diambil SESUDAH uang keluar; pemanggil mencatat kegagalannya di linimasa tagihan.
+        from services import dual_control as _dc
+        _dcr = await _dc.periksa("pengurang_piutang", bill, actor, entity_id, nominal=gap,
+                                 pengaju=[bill.get("created_by_id")])
+        if _dcr["ditolak"]:
+            raise VarianceError(_dcr["pesan"])
 
     number = await next_doc_number(COLL, "number", "SLB-", entity_id=entity_id or None)
     decision_id = new_id("pvd")

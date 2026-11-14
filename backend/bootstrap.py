@@ -1911,6 +1911,8 @@ async def run_bootstrap() -> None:
     await sync_permission_modules()
     await sync_permission_revocations()
     await migrate_kft1_settings_permissions()
+    from services.dual_control import migrasi_sakelar_lama as _kft6_migrasi   # KF-T6 — sakelar SoD lama → kontrol.*
+    await _kft6_migrasi()
     await sync_uom_factors()
     await sync_product_uom_examples()
     await backfill_inventory_owner()

@@ -330,13 +330,14 @@ async def approve_requisition(pr_id: str, actor: Dict[str, Any], notes: str = ""
     required = pr.get("required_approval_role")
     if not role_satisfies(actor.get("role"), required):
         raise ValueError(f"Approval PR butuh role minimal '{required or 'manager'}'. Role Anda: '{actor.get('role')}'.")
-    # H2 → PS-20: pemisahan tugas kini SATU SUMBER di matriks persetujuan sehingga
-    # bisa diatur pemilik di Pusat Pengaturan (termasuk kebijakan dokumen lama).
-    from services import approval_matrix_service as amx  # impor lokal: hindari siklus
-    if await amx.sod_blocked(pr, actor):
-        raise ValueError("Pemisahan tugas (SoD): pembuat PR tidak boleh menyetujui PR sendiri. "
-                         "Minta approver lain — aturan ini dapat diubah di Pusat Pengaturan → "
-                         "Persetujuan & Ambang.")
+    # KF-T6 — pengaju ≠ pemutus dari `kontrol.permintaan_pembelian.*` (satu pembantu). Jalur HTTP sudah ditolak 403
+    # oleh `approval_matrix_service.guard`; di sini penjaga untuk pemanggil lain (persetujuan otomatis pemenuhan
+    # pesanan khusus menangkap `ValueError`). Penilaian tanpa jejak: jejak Admin dicatat sekali oleh `guard`.
+    from services import dual_control as _dc  # impor lokal: hindari siklus
+    _dcr = await _dc.periksa("permintaan_pembelian", pr, actor, pr.get("entity_id", ""),
+                             nominal=float(pr.get("total_est_amount") or 0))
+    if _dcr["ditolak"]:
+        raise ValueError(_dcr["pesan"])
     now = now_iso()
     await db.purchase_requisitions.update_one({"id": pr_id}, {"$set": {
         "status": "approved", "approval_status": "approved",

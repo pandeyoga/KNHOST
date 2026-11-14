@@ -460,11 +460,11 @@ async def approve_vendor_bill(bill_id: str, request: Request) -> Dict[str, Any]:
     if not role_satisfies(actor.get("role"), required):
         raise HTTPException(status_code=403,
                             detail=f"Approval bill butuh role minimal '{required}'. Role Anda: '{actor.get('role')}'.")
-    from services import approval_matrix_service as _amx
-    if bill.get("created_by_id") and bill["created_by_id"] == actor.get("id") and not await _amx.admin_override(
-            "vendor_bill_approve", actor, bill, bill.get("entity_id", "")):
-        raise HTTPException(status_code=403,
-                            detail="Pemisahan tugas (SoD): pembuat bill tidak boleh menyetujui bill sendiri.")
+    # KF-T6 — pembuat ≠ penyetuju dari `kontrol.tagihan_pemasok.*` (satu pembantu).
+    from services import dual_control as _dc
+    await _dc.tolak_bila_pelaku_sama("tagihan_pemasok", bill, actor, bill.get("entity_id", ""),
+                                     nominal=float(bill.get("grand_total") or bill.get("total_amount") or 0),
+                                     pengaju=[bill.get("created_by_id")])
     await db.vendor_bills.update_one(
         {"id": bill_id},
         {"$set": {"approval_status": "approved", "approved_by": actor["name"], "approved_at": now_iso()}})

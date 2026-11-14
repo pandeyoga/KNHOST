@@ -340,6 +340,18 @@ async def submit_return(return_id: str, request: Request) -> Dict[str, Any]:
 
 # ─── APPROVE (manager) : pending_approval → approved ─────────────────────────
 
+def _nilai_retur(ret: Dict[str, Any]) -> float:
+    """KF-T6 — nilai retur untuk `kontrol.retur_penjualan.batas_nominal` (Σ nilai baris)."""
+    total = 0.0
+    for it in ret.get("items") or []:
+        try:
+            total += float(it.get("line_total") or (float(it.get("quantity") or 0)
+                                                    * float(it.get("unit_price") or it.get("price") or 0)))
+        except (TypeError, ValueError):
+            continue
+    return round(total, 2)
+
+
 @router.post("/sales-returns/{return_id}/approve")
 async def approve_return(
     return_id: str,
@@ -353,6 +365,12 @@ async def approve_return(
         raise HTTPException(status_code=404, detail="Return tidak ditemukan")
     existing.pop("_id", None)
     assert_entity_access(existing, "sales_returns", ctx)
+    # KF-T6 — pembuat ≠ penyetuju dari `kontrol.retur_penjualan.*` (bawaan satu orang); hanya retur yang menunggu ACC.
+    if existing.get("status") == st.PENDING_APPROVAL:
+        from services import dual_control as _dc
+        await _dc.tolak_bila_pelaku_sama("retur_penjualan", existing, user, existing.get("entity_id", ""),
+                                         nominal=_nilai_retur(existing),
+                                         pengaju=[existing.get("created_by_id"), existing.get("created_by")])
     await _need_evidence(existing, "approve")
     if payload.roll_decisions:   # terima/tolak per roll di langkah ACC yang sama
         if not await has_permission(user, "sales_return", "decide_rolls"):

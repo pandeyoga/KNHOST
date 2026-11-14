@@ -516,6 +516,17 @@ const ordersTabs = [
 
 ## 📝 CHANGELOG
 
+### KF-T6 — 14 Nov 2026 (tab Kontrol dua orang)
+- Pengaturan › **Persetujuan** (hub `settings-approval`) mendapat tab ke-4 **Kontrol dua orang** (view
+  `settings-dual-control`, `features/settings/kontrol/DualControlView.jsx`; testid `dual-control-view`). Modul akses:
+  Admin (`nav` modul `admin`); layar dibuka izin `settings` (`VIEW_RESOURCE_OVERRIDES`). Baca `settings.view`, ubah
+  `settings.manage` (lewat `PUT /api/config/values`). Kunci `kontrol.*` disembunyikan dari tab "Persetujuan & Ambang"
+  (tautan ke tab baru); deep link kunci `kontrol.*` mendarat di tab ini.
+- Buku Besar › **Jurnal**: saringan **Menunggu persetujuan** (`gl-journal-pending-filter`) + pita
+  "{n} jurnal manual menunggu orang kedua" (`gl-proposal-banner`); tombol Setujui/Tolak per usulan (bukan menu baru).
+- Tutup Buku: label "Menunggu orang kedua — diajukan {nama}" (`closing-reopen-pending-{id}`) pada periode yang
+  pengajuan buka kembalinya menunggu orang kedua.
+
 ### v1.0 — 23 Mei 2026 (Initial Navigation Map)
 - Created navigation hierarchy untuk 9 major sections
 - Defined role-based access matrix (4 roles)

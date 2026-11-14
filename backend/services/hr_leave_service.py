@@ -247,12 +247,31 @@ async def _clear_attendance_for_leave(lv: Dict[str, Any]) -> None:
                  {"leave_request_id": {"$in": [None, ""]}, "note": {"$regex": f"·{lv.get('number', '')}:"}}]})
 
 
+async def akun_karyawan(employee_id: str) -> List[str]:
+    """KF-T6 — id akun yang tertaut ke karyawan (`hr_employees.user_id` dan `users.employee_id`): "pengaju" cuti/lembur
+    untuk kontrol dua orang. Karyawan tanpa akun → daftar kosong (tidak ada yang dianggap pengaju)."""
+    if not employee_id:
+        return []
+    ids = set()
+    emp = await db.hr_employees.find_one({"id": employee_id}, {"_id": 0, "user_id": 1})
+    if (emp or {}).get("user_id"):
+        ids.add(emp["user_id"])
+    for u in await db.users.find({"employee_id": employee_id}, {"_id": 0, "id": 1}).to_list(20):
+        if u.get("id"):
+            ids.add(u["id"])
+    return sorted(ids)
+
+
 async def approve_leave(leave_id: str, actor: Dict[str, Any]) -> Dict[str, Any]:
     lv = await db.hr_leave_requests.find_one({"id": leave_id}, {"_id": 0})
     if not lv:
         raise ValueError("Pengajuan cuti tidak ditemukan.")
     if lv["status"] != "pending":
         raise ValueError(f"Status '{lv['status']}' tidak bisa di-approve.")
+    # KF-T6 — karyawan pengaju ≠ penyetuju dari `kontrol.cuti.*` (bawaan satu orang).
+    from services import dual_control as _dc
+    await _dc.tolak_bila_pelaku_sama("cuti", lv, actor, lv.get("entity_id", ""),
+                                     pengaju=await akun_karyawan(lv.get("employee_id", "")))
     if lv.get("leave_type") in DEDUCT_TYPES:
         # HR-03 — cek ulang saldo saat approve: terpakai (approved lain) + request ini ≤ jatah
         for yr, n in _days_per_year(_dates_of(lv)).items():
@@ -366,6 +385,10 @@ async def approve_overtime(ot_id: str, actor: Dict[str, Any]) -> Dict[str, Any]:
         raise ValueError("Pengajuan lembur tidak ditemukan.")
     if ot["status"] != "pending":
         raise ValueError(f"Status '{ot['status']}' tidak bisa di-approve.")
+    # KF-T6 — karyawan pengaju ≠ penyetuju dari `kontrol.lembur.*` (bawaan satu orang).
+    from services import dual_control as _dc
+    await _dc.tolak_bila_pelaku_sama("lembur", ot, actor, ot.get("entity_id", ""),
+                                     pengaju=await akun_karyawan(ot.get("employee_id", "")))
     await db.hr_overtime.update_one({"id": ot_id}, {"$set": {
         "status": "approved", "approver": actor.get("name", "system"),
         "approved_at": now_iso(), "updated_at": now_iso()}})

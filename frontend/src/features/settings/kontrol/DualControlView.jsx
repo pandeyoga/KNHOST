@@ -143,7 +143,7 @@ export default function DualControlView({ selectedEntity, entities = [] }) {
   return (
     <div className="cfg-hub" data-testid="dual-control-view">
       <p className="cfg-group-intro">
-        <ShieldCheck size={13} className="mr-1 inline align-[-2px] text-[#0058CC]" aria-hidden="true" />
+        <ShieldCheck size={13} className="mr-1 inline align-[-2px] text-kn-action" aria-hidden="true" />
         Atur aksi mana yang <b>harus diputuskan orang lain</b> selain pengajunya. "Cukup satu orang" berarti pengaju boleh
         memutuskan dokumennya sendiri; di atas batas nominal, dokumen selalu butuh orang kedua.
       </p>
@@ -181,7 +181,7 @@ export default function DualControlView({ selectedEntity, entities = [] }) {
             if (!baris.length) return null;
             return (
               <section key={b} className="section-card mt-3" data-testid={`dual-section-${b}`}>
-                <h3 className="text-[13px] font-semibold mb-2">{b}</h3>
+                <h3 className="text-fs-13 font-semibold mb-2">{b}</h3>
                 <table className="data-table">
                   <thead>
                     <tr><th>Aksi</th><th>Jumlah orang</th><th>Dua orang di atas (Rp)</th><th>Sumber</th></tr>
@@ -201,7 +201,7 @@ export default function DualControlView({ selectedEntity, entities = [] }) {
                               <MoneyInput value={nilai(r, "batas_nominal")} disabled={busy}
                                 onChange={(v) => ubahBaris(r.aksi, { batas_nominal: v })} testId={`dual-limit-${r.aksi}`} />
                             ) : <span data-testid={`dual-limit-${r.aksi}`}>{formatCurrency(r.batas_nominal || 0)}</span>
-                          ) : <span className="text-[#8E8E93]" data-testid={`dual-limit-${r.aksi}`}>—</span>}
+                          ) : <span className="text-kn-text-2" data-testid={`dual-limit-${r.aksi}`}>—</span>}
                         </td>
                         <td data-testid={`dual-source-${r.aksi}`}>{sumberLabel(r.sumber, layerAll)}</td>
                       </tr>
@@ -213,16 +213,16 @@ export default function DualControlView({ selectedEntity, entities = [] }) {
           })}
 
           <section className="section-card mt-3" data-testid="dual-admin">
-            <h3 className="text-[13px] font-semibold mb-2">Pengecualian Admin</h3>
-            <label className="flex items-center gap-2 text-[13px]">
+            <h3 className="text-fs-13 font-semibold mb-2">Pengecualian Admin</h3>
+            <label className="flex items-center gap-2 text-fs-13">
               <input type="checkbox" checked={!!adminBoleh} disabled={!canEdit || busy} data-testid="dual-admin-self"
                 onChange={(e) => { setOk(""); setDraft((d) => ({ ...d, admin_boleh_sendiri: e.target.checked })); }} />
               Admin boleh memutuskan dokumennya sendiri (tiap kejadian dicatat di jejak persetujuan)
             </label>
-            <p className="text-[12px] text-[#6B6B73] mt-2 mb-1">Tetap dua orang walau Admin:</p>
+            <p className="text-fs-12 text-kn-text-2 mt-2 mb-1">Tetap dua orang walau Admin:</p>
             <div className="grid gap-1 sm:grid-cols-2">
               {data.rows.map((r) => (
-                <label key={r.aksi} className="flex items-center gap-2 text-[12px]">
+                <label key={r.aksi} className="flex items-center gap-2 text-fs-12">
                   <input type="checkbox" checked={adminTetap.includes(r.aksi)} disabled={!canEdit || busy}
                     data-testid={`dual-admin-keep-${r.aksi}`}
                     onChange={(e) => {

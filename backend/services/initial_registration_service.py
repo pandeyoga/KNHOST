@@ -207,9 +207,10 @@ async def assert_finance_ready(session: Dict[str, Any], actor: Dict[str, Any]) -
         raise HTTPException(status_code=400, detail=(
             "Langkah 1 belum: gudang belum menyetujui HITUNGAN sesi ini (Setujui hitungan). Nilai & jurnal disetujui "
             "Finance sesudahnya."))
-    if (ca.get("by_id") and ca.get("by_id") == actor.get("id")) or (not ca.get("by_id") and ca.get("by") == actor.get("name")):
-        raise HTTPException(status_code=403, detail=(
-            "Persetujuan nilai & jurnal wajib oleh orang yang berbeda dari penyetuju hitungan (dua langkah)."))
+    # KF-T6 — penyetuju nilai ≠ penyetuju hitungan dari `kontrol.registrasi_stok_awal.*` (Admin tetap dua orang).
+    from services import dual_control as _dc
+    await _dc.tolak_bila_pelaku_sama("registrasi_stok_awal", session, actor, session.get("entity_id", ""),
+                                     pengaju=[ca.get("by_id")] if ca.get("by_id") else [ca.get("by")])
 
 
 async def detail(session: Dict[str, Any]) -> Dict[str, Any]:

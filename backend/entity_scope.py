@@ -244,6 +244,8 @@ SCOPED_COLLECTIONS = {
     # Gate audit_entity_isolation — jejak perubahan data hygiene mewarisi `entity_id`
     # dari master (pelanggan/supplier) yang diubah; baris tanpa entitas = master bersama.
     "data_hygiene_log",
+    # KF-T6 — usulan jurnal manual yang menunggu orang kedua: buku satu PT.
+    "journal_proposals",
 }
 
 # Temuan lama #19 — koleksi Tanya KN (ai_*) TIDAK disaring per entitas melainkan per PENGGUNA

@@ -79,8 +79,8 @@ export default function JournalEntryModal({ accounts, onClose, onSaved }) {
     setSaving(true);
     try {
       const body = { date, description, lines: payloadLines };
-      await intent.send(body, (k) => moneyPost(`${API}/gl/journal`, body, k));
-      await onSaved();
+      const res = await intent.send(body, (k) => moneyPost(`${API}/gl/journal`, body, k));
+      await onSaved(res?.data);   // KF-T6 — 202 `menunggu_orang_kedua` = usulan, belum diposting
     } catch (err) {
       setError(apiErrorText(err, "Gagal menyimpan jurnal."));
     } finally {

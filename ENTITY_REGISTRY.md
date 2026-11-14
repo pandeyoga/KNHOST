@@ -48,6 +48,7 @@ Sebelum membuat apapun yang baru, tanya: **"Apakah ini sudah ada di sini?"**
 | KPI Design *(FASE H5)* | `hr_kpi` | `routers/hr_kpi.py` | `KpiInput`, `KpiUpdate` | `KpiView`, `MyKpiCard` (ESS) |
 | Design Gallery *(FASE H5)* | `design_gallery` | `routers/design_gallery.py` | `GalleryInput`, `GalleryUpdate` | `DesignGalleryView` |
 | AI Integrations *(FASE H5)* | `system_settings` *(scope=integrations)* | `routers/integrations.py` | `IntegrationsUpdate` | `IntegrationsPanel` (AdminView tab Integrasi AI) |
+| Usulan Jurnal Manual *(KF-T6)* | `journal_proposals` | `routers/gl.py` (`POST /gl/journal` → 202, `/gl/journal-proposals*`), `services/journal_proposal_service.py` | `JournalEntryCreate`, `ProposalReject` | `JournalProposalsPanel` (Buku Besar › Jurnal › Menunggu persetujuan) |
 | Niat Bayar Hutang *(PK-05)* | `ap_payment_intents` | `routers/ap_payments.py`, `services/ap_payment_service.py` (dipanggil bayar faktur & bayar kontrabon) | `VendorBillPaymentCreate`, `ContraBonPayIn` | `VendorBillDetailPanel` & `contrabon/PayModal` (panel bayar, `features/purchasing/apPayment.jsx`) |
 | Kontrabon *(FASE G-7)* | `contra_bons` | `routers/contra_bons.py`, `services/contra_bon_service.py`, `services/contra_bon_reminder.py` | `ContraBonCreate`, `ContraBonDeductionIn`, `ContraBonDecisionIn`, `ContraBonScheduleIn`, `ContraBonPayIn`, `InvoiceExchangeIn` | `ContraBonsView` (Pembelian → Hutang Supplier (AP) → Kontrabon) |
 | Transaksi Antar Entitas *(FASE G-6)* | `interco_transactions`, `interco_accounts`, `interco_settlements` | `routers/interco.py`, `services/interco_service.py`, `services/consolidation_service.py` (eliminasi margin) | `IntercoCreate`, `IntercoActionIn`, `IntercoSettlementCreate` | `IntercoView` (Pembelian → Hutang Supplier (AP) → Antar Entitas (Jual-Beli)) · `GroupConsolidationView` (eliminasi AUTO G-6) |
@@ -672,6 +673,26 @@ PDF:         doc_type `contra_bon` → "Tanda Terima Kontrabon" (esignable)
 
 PK-05 — field tambahan: `version` (bilangan; simpan berprasyarat versi, kalah → 409), `gl_status`/`gl_error`
 (jurnal potongan; panel Posting Gagal jenis `contra_bon`), `payments[].payment_intent_id`.
+
+### journal_proposals  [KF-T6 — jurnal manual yang menunggu orang kedua]
+Bila `kontrol.jurnal_manual.min_orang` PT itu = "2" (atau nilai jurnal di atas `kontrol.jurnal_manual.batas_nominal`),
+`POST /api/gl/journal` memvalidasi isi + periode (`gl_service.create_manual_entry(hanya_periksa=True)`) lalu menyimpan
+USULAN (202 `menunggu_orang_kedua`); tidak ada baris `journal_entries`. Orang lain yang berwenang menyetujui → jurnal
+diposting lewat `create_manual_entry` (periode diperiksa ulang) dengan `created_by` = pengusul, `approved_by` = penyetuju.
+**SCOPED** (`entity_id` = PT buku). Dataset Pusat Export `journal_proposals`.
+```
+Collection:  journal_proposals          Prefix: jprop_
+Router:      routers/gl.py              (GET /gl/journal-proposals?status=, POST {id}/approve, POST {id}/reject)
+Service:     services/journal_proposal_service.py  (ajukan, daftar, setujui, tolak)
+Index:       uq_id (unik) · (entity_id, status, proposed_at)
+
+  id · entity_id · payload (isi JournalEntryCreate) · total_debit
+  status            pending | posting (klaim sementara) | posted | rejected
+  proposed_by_id · proposed_by · proposed_at · decided_by_id · decided_by · decided_at
+  reject_reason · journal_id · journal_number · updated_at
+```
+`journal_entries` jurnal manual dua orang mendapat `created_by_id`, `approved_by`, `approved_by_id`, `approved_at`,
+`proposal_id`.
 
 ### ap_payment_intents  [PK-05 — niat bayar hutang: satu pintu bayar faktur pemasok & kontrabon]
 Setiap pembayaran hutang (faktur langsung, kontrabon, kontrabon dari mutasi bank) lahir sebagai NIAT dengan id tetap
@@ -2833,6 +2854,9 @@ period_closings    Prefix: close_  — Tutup Buku per PT (services/closing_servi
                                     yang mengunci), journal_entry_id (jurnal source_type `closing`),
                                     stale/stale_at/stale_reason ("Perlu tutup ulang"), suspense_override.
                                     Tutup hanya bila akhir periode < hari ini (WIB).
+                                    KF-T6: reopen_request {by_id, by, at} = pengajuan buka kembali yang menunggu
+                                    orang kedua (`kontrol.buka_kembali_tutup_buku.min_orang` = 2); dihapus saat
+                                    dijalankan orang kedua.
 period_close_locks _id = id PT     — kunci proses tutup buku per PT: token (pemilik; hanya pemilik yang
                                     melepas — PK-11), period, by, started_at (diambil alih bila > 600 dtk)
 INDEKS UNIK WAJIB (PK-14, `backend/indexes.py` REQUIRED_UNIQUE_INDEXES — aplikasi tidak mulai bila tak terpasang;
@@ -3336,3 +3360,25 @@ sampel + ringkasan akurasi per field (gerbang: nomor SJ ≥98%, qty & satuan ≥
 `backend/services/ocr_sample_service.py`, router `/api/ocr-samples`.
 `supplier_dn_profiles` — field baru: `corrections[]` (koreksi manusia terakhir, maks 30) & `format_notes`
 (catatan admin) → dikirim ke AI sebagai petunjuk saat membaca SJ mitra yang sama (belajar dari koreksi).
+
+## KF-T6 — kontrol "harus dua orang" (field pengaju & potret aturan)
+
+Aturan "pengaju tidak boleh memutuskan sendiri" dibaca dari `kontrol.<aksi>.min_orang` / `.batas_nominal`
+(`backend/config_catalog_kontrol.py`, pembantu `services/dual_control.py`). Titik pengajuan yang dulu hanya menyimpan
+NAMA pengaju kini juga menyimpan id akun (pembanding nama tetap dipakai untuk dokumen lama):
+
+| Koleksi · field baru | Diisi oleh |
+|---|---|
+| `warehouse_transfers.requested_by_id` | `POST /transfers`, `POST /transfers/inter-company` |
+| `cycle_count_sessions.submitted_by_id` | submit sesi opname |
+| `purchase_returns.created_by_id` | `POST /purchase-returns` |
+| `hr_payroll_runs.submitted_by_id` | `submit_run` |
+| `cash_advances.created_by_id`, `cash_advance_settlements.created_by_id` | buat pengajuan dana / LPJ |
+| `makloon_orders.steps[].claim.proposed_by_id` | `propose_claim` |
+
+Potret aturan saat diputus (dibaca invarian `scripts/verify_data_integrity.py`): `period_unlock_requests.kontrol_dua_orang`
+(INV-CLS-02) dan `doc_amendments.kontrol_dua_orang` (INV-AMD-02) = `{dua_orang, sendiri, admin_sendiri}`. Sakelar lama
+`approval.matrix_sod` dan `amendment.dual_control` berstatus `not_used` (dipindahkan sekali jalan, penanda
+`system_settings{scope:"__migrations__"}.kft6_kontrol`). Jejak Admin yang memutuskan sendiri: `approval_matrix_log`
+`outcome = "diputuskan sendiri oleh admin"` (`stage` = nama aksi).
+

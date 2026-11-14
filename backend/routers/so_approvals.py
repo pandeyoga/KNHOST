@@ -295,14 +295,13 @@ async def decide_approval(order_id: str, approval_id: str, payload: SoApprovalDe
             detail=f"Keputusan butuh role minimal '{entry.get('required_role')}'.")
     new_status = "approved" if decision == "approve" else "rejected"
     if entry.get("type") == "special_price":
-        from services import approval_matrix_service as matrix
+        # KF-T6 — pengaju ≠ pemutus dari `kontrol.harga_khusus.*` (satu pembantu, 403).
+        from services import dual_control
         pra_doc = await db.price_approvals.find_one({"id": entry.get("ref_id")}, {"_id": 0}) or {}
-        sod_doc = {**pra_doc, "requested_by_id": entry.get("requested_by_id") or pra_doc.get("requested_by_id"),
-                   "entity_id": order.get("entity_id", "")}
-        if await matrix.sod_blocked(sod_doc, actor, order.get("entity_id", "")):
-            raise HTTPException(status_code=403, detail=(
-                "Pemisahan tugas: pengaju harga tidak boleh memutuskan pengajuannya sendiri. "
-                "Minta approver lain."))
+        await dual_control.tolak_bila_pelaku_sama(
+            "harga_khusus", {**pra_doc, "entity_id": order.get("entity_id", "")}, actor, order.get("entity_id", ""),
+            pengaju=[entry.get("requested_by_id") or pra_doc.get("requested_by_id") or "",
+                     pra_doc.get("requested_by") or ""])
     # T-01 Opsi B (INV-ATOMIC-01) — klaim SO atas entri approval INI: dua penyetuju yang
     # menekan bersamaan tidak boleh sama-sama menulis harga/kredit + memutuskan entri.
     from services import atomic_claim as _saga

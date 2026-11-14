@@ -794,6 +794,14 @@ async def _assert_fresh_decision(po: Dict[str, Any], request: Request, body: Opt
             f"PO sudah berubah (v{exp} → v{po.get('version', 1)}) sejak Anda membukanya. Muat ulang dan tinjau versi terbaru."))
 
 
+def _po_nominal(po: Dict[str, Any]) -> float:
+    """KF-T6 — nilai PO untuk `kontrol.setujui_po.batas_nominal`."""
+    try:
+        return float(po.get("grand_total") or po.get("total_amount") or 0)
+    except (TypeError, ValueError):
+        return 0.0
+
+
 @router.post("/purchase-orders/{po_id}/approve")
 async def approve_purchase_order(po_id: str, request: Request) -> Dict[str, Any]:
     """Fase 1B — approve PO (role dinamis dari matriks). Setelah approve, PO
@@ -812,16 +820,14 @@ async def approve_purchase_order(po_id: str, request: Request) -> Dict[str, Any]
         raise HTTPException(
             status_code=403,
             detail=f"Approval PO butuh role minimal '{required}'. Role Anda: '{actor.get('role')}'.")
-    # H2 — Segregation of Duties: pembuat PO tidak boleh menyetujui PO-nya sendiri.
-    # 2026-10 — admin melewati SoD & menyetujui SEMUA tingkat sekaligus (dicatat di jejak).
+    # KF-T6 — pembuat ≠ penyetuju dari `kontrol.setujui_po.*` (satu pembantu; Admin boleh sendiri bila diatur, dicatat).
+    # 2026-10 — admin menyetujui SEMUA tingkat sekaligus.
     from services import approval_matrix_service as _amx
+    from services import dual_control as _dc
     is_admin = _amx.is_admin(actor)
-    creator_id = po.get("created_by_id")
-    if creator_id and creator_id == actor.get("id") and not await _amx.admin_override(
-            "po_approve", actor, {**po, "number": po.get("po_number")}, po.get("entity_id", "")):
-        raise HTTPException(
-            status_code=403,
-            detail="Pemisahan tugas (SoD): pembuat PO tidak boleh menyetujui PO sendiri. Minta approver lain.")
+    await _dc.tolak_bila_pelaku_sama("setujui_po", {**po, "number": po.get("po_number")}, actor,
+                                     po.get("entity_id", ""), nominal=_po_nominal(po),
+                                     pengaju=[po.get("created_by_id")])
 
     # R6.3 — Budget Control: cek anggaran SEBELUM approval diproses (semua tingkat).
     # Komitmen PO ini sendiri dikecualikan agar tidak dihitung ganda.
@@ -837,13 +843,11 @@ async def approve_purchase_order(po_id: str, request: Request) -> Dict[str, Any]
     pending = current_pending_level(chain)
     if pending is None:
         raise HTTPException(status_code=409, detail="Semua tingkat approval sudah disetujui.")
-    # KN-D05 — satu orang tidak boleh menandatangani dua tingkat: penyetuju tingkat
-    # sebelumnya ditolak di tingkat berikutnya (rantai berjenjang = orang berbeda).
-    if not is_admin and any(lv.get("status") == "approved" and lv.get("approved_by_id")
-           and lv.get("approved_by_id") == actor.get("id") for lv in chain):
-        raise HTTPException(
-            status_code=403,
-            detail="Anda sudah menyetujui tingkat sebelumnya — tingkat ini harus disetujui orang lain.")
+    # KN-D05 → KF-T6 — satu orang tidak menandatangani dua tingkat: penyetuju tingkat sebelumnya = "pengaju" tingkat
+    # berikutnya (`kontrol.po_tingkat_berikut.*`; Admin menyetujui semua tingkat sekaligus).
+    await _dc.tolak_bila_pelaku_sama("po_tingkat_berikut", {**po, "number": po.get("po_number")}, actor,
+                                     po.get("entity_id", ""),
+                                     pengaju=[lv.get("approved_by_id") for lv in chain if lv.get("status") == "approved"])
     # KN-B04 — CAS: tulisan berprasyarat status + tingkat berjalan; dua manajer yang
     # menyetujui bersamaan → tepat satu 200, sisanya 409 (bukan tugas penerimaan ganda).
     _cas = {"id": po_id, "status": "waiting_approval"}

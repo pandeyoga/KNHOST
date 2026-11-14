@@ -371,3 +371,13 @@ EXCLUDED_MORE.update({
     "design_categories": "Kamus kategori desain", "client_dataset_imports": "Log impor dataset (teknis)",
     "approval_matrix_log": "Jejak audit matriks persetujuan",
 })
+
+# KF-T6 — usulan jurnal manual yang menunggu orang kedua (Buku Besar › Jurnal › Menunggu persetujuan).
+MORE += [
+    S("journal_proposals", "Usulan Jurnal Manual", "Keuangan", "journal_proposals", ("accounting", "view"),
+      "total_debit:Nilai:m|status:Status|proposed_by:Diajukan oleh|proposed_at:Tanggal diajukan:t"
+      "|decided_by:Diputus oleh|reject_reason:Alasan tolak|journal_number:No. jurnal|entity_id:ID badan usaha",
+      date="proposed_at:Tanggal diajukan:t",
+      extra=[C("journal_date", "Tanggal jurnal", "date", path="payload.date"),
+             C("description", "Keterangan", path="payload.description")]),
+]

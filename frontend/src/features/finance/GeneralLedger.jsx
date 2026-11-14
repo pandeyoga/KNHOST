@@ -28,6 +28,8 @@ import { SOURCE_LABELS, sourceLabel } from "./glSourceLabels";
 import { askConfirm } from "../../services/confirmService";
 import useIntentKey from "../../hooks/useIntentKey";
 import { moneyPost } from "../../utils/moneyRequest";
+import JournalProposalsPanel, { JournalProposalBanner } from "./JournalProposalsPanel";   // KF-T6
+import FilterChips from "../../components/FilterChips";
 
 const TONE_GRAY = "bg-gray-100 text-gray-600";
 const SOURCE_META_BASE = {
@@ -166,7 +168,7 @@ export default function GeneralLedger({ selectedEntity, entities = [], focusDoc,
           )}
 
           {tab === "journal" && <JournalTab refreshKey={refreshKey} onChanged={refreshAll} onError={setError} entities={entities} selectedEntity={selectedEntity}
-            sources={summary?.sources} voidCount={summary?.void_count || 0}
+            sources={summary?.sources} voidCount={summary?.void_count || 0} onNotice={setNotice}
             focusJe={focusJe} onFocusShown={() => setFocusJe(null)} />}
           {tab === "trial" && <TrialBalanceTab refreshKey={refreshKey} onError={setError} onDrill={(code) => { setTab("ledger"); setLedgerCode(code); }} />}
           {tab === "ledger" && <LedgerTab accounts={accounts} refreshKey={refreshKey} code={ledgerCode} setCode={setLedgerCode} onError={setError} />}
@@ -177,7 +179,14 @@ export default function GeneralLedger({ selectedEntity, entities = [], focusDoc,
 
       {showModal && (
         <JournalEntryModal accounts={accounts} onClose={() => setShowModal(false)}
-          onSaved={async () => { setShowModal(false); setNotice("Jurnal manual berhasil diposting."); refreshAll(); }} />
+          onSaved={async (res) => {
+            setShowModal(false);
+            // KF-T6 — aturan dua orang: jurnal tersimpan sebagai usulan (202), belum masuk buku.
+            setNotice(res?.status === "menunggu_orang_kedua"
+              ? "Jurnal manual tersimpan sebagai usulan — menunggu persetujuan orang kedua."
+              : "Jurnal manual berhasil diposting.");
+            refreshAll();
+          }} />
       )}
     </div>
   );
@@ -185,7 +194,9 @@ export default function GeneralLedger({ selectedEntity, entities = [], focusDoc,
 
 // ─── JURNAL TAB ──────────────────────────────────────────────────────────────
 function JournalTab({ refreshKey, onChanged, onError, entities = [], selectedEntity, focusJe, onFocusShown,
-  sources = null, voidCount = 0 }) {
+  sources = null, voidCount = 0, onNotice }) {
+  // KF-T6 — saringan "Menunggu persetujuan": usulan jurnal manual yang menunggu orang kedua.
+  const [pendingView, setPendingView] = useState(false);
   // G1-26 — opsi sumber dari jenis yang benar-benar ada di buku (dulu hanya Manual/Penjualan/Kas).
   const sourceOptions = [{ value: "", label: "Semua sumber" },
     ...(sources && sources.length ? sources : ["manual", "sales_order", "cash_transaction"])
@@ -235,7 +246,13 @@ function JournalTab({ refreshKey, onChanged, onError, entities = [], selectedEnt
 
   return (
     <div>
+      {!pendingView && <JournalProposalBanner refreshKey={refreshKey} onOpen={() => setPendingView(true)} />}
       <div className="flex flex-wrap items-center gap-2 mb-2">
+        <FilterChips testId="gl-journal-view" ariaLabel="Saringan jurnal" value={pendingView ? "pending" : "posted"}
+          onChange={(k) => setPendingView(k === "pending")}
+          options={[{ key: "posted", label: "Buku jurnal" },
+            { key: "pending", label: "Menunggu persetujuan", testId: "gl-journal-pending-filter" }]} />
+        {pendingView ? null : <>
         <div className="w-[200px]">
           <KNSelect data-testid="gl-journal-source-filter" className="field py-1 text-[12px]" value={sourceFilter} onValueChange={setSourceFilter}
             placeholder="Semua sumber" searchable options={sourceOptions} />
@@ -253,8 +270,11 @@ function JournalTab({ refreshKey, onChanged, onError, entities = [], selectedEnt
         <span className="text-[11px] text-[#9A9BA3] tabular-nums" data-testid="gl-journal-total">
           {paged.total} jurnal{voidCount > 0 && !sourceFilter && !search ? ` (termasuk ${voidCount} dianulir)` : ""}
         </span>
+        </>}
       </div>
-      {loading ? (
+      {pendingView ? (
+        <JournalProposalsPanel refreshKey={refreshKey} entities={entities} onChanged={onChanged} onNotice={onNotice} />
+      ) : loading ? (
         <div className="grid gap-2" data-testid="gl-journal-loading">{[0, 1, 2, 3].map((i) => <div key={i} className="h-10 bg-[#F5F5F7] rounded animate-pulse" />)}</div>
       ) : entries.length === 0 ? (
         <div data-testid="gl-journal-empty" className="py-12 text-center text-[12px] text-[#8E8E93]">
@@ -300,7 +320,7 @@ function JournalTab({ refreshKey, onChanged, onError, entities = [], selectedEnt
         </div>
       )}
       {/* P2 — kontrol halaman jurnal */}
-      {!loading && entries.length > 0 && (
+      {!pendingView && !loading && entries.length > 0 && (
         <div className="mt-2">
           <PaginationBar
             page={paged.page} pageSize={paged.pageSize} total={paged.total}

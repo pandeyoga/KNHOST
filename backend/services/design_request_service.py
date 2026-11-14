@@ -421,6 +421,10 @@ async def deliver(req_id: str, actor: Dict[str, Any], gallery_id: str,
 async def approve(req_id: str, actor: Dict[str, Any], note: str = "") -> Dict[str, Any]:
     doc = await _load(req_id)
     _assert_status(doc, (STATUS_DELIVERED,), "disetujui")
+    # KF-T6 — peminta desain ≠ yang meng-ACC dari `kontrol.permintaan_desain.*` (bawaan satu orang).
+    from services import dual_control as _dc
+    await _dc.tolak_bila_pelaku_sama("permintaan_desain", doc, actor, doc.get("entity_id", ""),
+                                     pengaju=[doc.get("requested_by_id")])
     if await _has_studio_design(doc):
         raise DesignRequestError(
             "Permintaan ini tertaut ke desain di Design Studio \u2014 beri nilai dan putuskan ACC "

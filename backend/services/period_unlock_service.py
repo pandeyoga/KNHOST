@@ -16,7 +16,8 @@ periode `closed` DITOLAK (hard-lock) — bukan sekadar peringatan seperti dulu.
 Invarian:
 - **INV-CLS-01**: tak ada JE di periode `closed` (dibuat SETELAH tutup) tanpa
   `backdated_in_unlock` — dijaga guard + gate.
-- **INV-CLS-02**: tiap unlock yang disetujui punya `reason` + pengusul ≠ penyetuju.
+- **INV-CLS-02**: tiap unlock yang disetujui punya `reason` + pengusul ≠ penyetuju bila saat disetujui aturannya dua
+  orang (KF-T6: `kontrol.buka_periode.min_orang`, bawaan satu orang; potret di `kontrol_dua_orang`).
 """
 import logging
 from datetime import datetime, timedelta, timezone
@@ -192,13 +193,10 @@ async def approve_request(plu_id: str, actor: Dict[str, Any]) -> Dict[str, Any]:
         raise ValueError("Usul buka periode tidak ditemukan.")
     if rec.get("status") != "pending":
         raise ValueError(f"Usul ini berstatus '{rec.get('status')}' — hanya usul 'pending' yang bisa disetujui.")
-    # DUAL CONTROL: pengusul tidak boleh menyetujui usulnya sendiri.
-    from services import approval_matrix_service as _amx
-    if actor.get("id") and actor.get("id") == rec.get("requested_by_id") \
-            and not await _amx.admin_override("period_unlock", actor, rec, rec.get("entity_id", "")):
-        raise ValueError(
-            "Kontrol ganda: pengusul tidak boleh menyetujui usulnya sendiri. "
-            "Minta admin/manager LAIN untuk menyetujui.")
+    # KF-T6 — pengusul ≠ penyetuju dari `kontrol.buka_periode.*` (bawaan SATU orang — keputusan pemilik; 403 bila 2).
+    from services import dual_control as _dc
+    kontrol = await _dc.tolak_bila_pelaku_sama("buka_periode", rec, actor, rec.get("entity_id", ""),
+                                               pengaju=[rec.get("requested_by_id")])
 
     hours = await _cfg_int("periode.unlock_window_hours", rec.get("entity_id"), 24)
     approved_at = _now()
@@ -211,6 +209,8 @@ async def approve_request(plu_id: str, actor: Dict[str, Any]) -> Dict[str, Any]:
         "window_hours": hours,
         "window_until": window_until.isoformat(),
         "updated_at": now_iso(),
+        # KF-T6 — potret aturan dua orang SAAT disetujui (dibaca INV-CLS-02: setuju-sendiri sah bila aturannya 1 orang).
+        "kontrol_dua_orang": kontrol,
     }
     # IX-08 — keputusan terminal tunggal: CAS atas status pending.
     won = await db[COLL].find_one_and_update(

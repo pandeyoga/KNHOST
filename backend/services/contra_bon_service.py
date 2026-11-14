@@ -1010,11 +1010,10 @@ async def approve(cb_id: str, actor: Dict[str, Any],
             + (f" (di atas ambang {_rp(pol['approval_threshold'])})"
                if net >= pol["approval_threshold"] > 0 else "")
             + f". Peran Anda: '{actor.get('role')}'.")
-    from services import approval_matrix_service as _amx
-    if cb.get("created_by_id") and cb["created_by_id"] == actor.get("id") \
-            and not await _amx.admin_override("contra_bon_approve", actor, cb, cb.get("entity_id", "")):
-        raise ContraBonError(
-            "Pemisahan tugas: pembuat kontrabon tidak boleh menyetujui kontrabon sendiri.")
+    # KF-T6 — pembuat ≠ penyetuju dari `kontrol.kontrabon.*` (satu pembantu, 403).
+    from services import dual_control as _dc
+    await _dc.tolak_bila_pelaku_sama("kontrabon", cb, actor, cb.get("entity_id", ""), nominal=float(net or 0),
+                                     pengaju=[cb.get("created_by_id")])
     cb["status"] = "approved"
     cb["approved_at"] = now_iso()
     cb["approved_by"] = actor.get("name", "")

@@ -99,7 +99,7 @@ async def notify_claim_opened(order: Dict[str, Any], step: Dict[str, Any]) -> No
 
 
 async def propose_claim(mko_id: str, seq: int, *, action: str, amount: Any = None,
-                        reason: str = "", actor: str = "system") -> Dict[str, Any]:
+                        reason: str = "", actor: str = "system", actor_id: str = "") -> Dict[str, Any]:
     """Ajukan tindakan klaim (butuh persetujuan manager/admin sebelum dieksekusi)."""
     action = (action or "").strip().lower()
     if action not in ACTIONS:
@@ -117,7 +117,8 @@ async def propose_claim(mko_id: str, seq: int, *, action: str, amount: Any = Non
     if action == "terima_catatan":
         amt = 0.0
     claim.update({"status": "pending_approval", "action": action, "amount": amt,
-                  "reason": reason.strip(), "proposed_by": actor, "proposed_at": now_iso()})
+                  "reason": reason.strip(), "proposed_by": actor, "proposed_at": now_iso(),
+                  "proposed_by_id": actor_id})   # KF-T6 — pengusul andal untuk kontrol dua orang
     claim.setdefault("history", []).append(
         {"at": now_iso(), "event": "proposed", "actor": actor,
          "note": f"{dr.label_of('claim_action', action)} · {rupiah(amt)} · {reason.strip()}"})

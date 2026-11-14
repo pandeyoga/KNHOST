@@ -687,7 +687,12 @@ async def _mark_stale_closings(entity_id: str, date_iso: str) -> None:
 
 async def create_manual_entry(payload, actor: Dict[str, Any],
                               entity_id: Optional[str] = None,
-                              can_backdate: bool = True) -> Dict[str, Any]:
+                              can_backdate: bool = True, *,
+                              hanya_periksa: bool = False,
+                              disetujui: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+    """Jurnal manual. KF-T6 — `hanya_periksa=True`: validasi + periksa periode SAJA (tanpa nomor, tanpa sisip) untuk
+    usulan jurnal yang menunggu orang kedua; `disetujui` = penyetuju usulan (`approved_by` di jurnal; `actor` =
+    pengusul sebagai `created_by`)."""
     raw = [ln.model_dump() if hasattr(ln, "model_dump") else dict(ln) for ln in (payload.lines or [])]
     if len(raw) < 2:
         raise ValueError("Jurnal minimal 2 baris (debit & kredit).")
@@ -725,6 +730,10 @@ async def create_manual_entry(payload, actor: Dict[str, Any],
     total_credit = round(sum(l["credit"] for l in lines), 2)
     # PK-10 (GL-07) — seimbang lewat VALIDATOR PUSAT (sen bulat), sebelum nomor jurnal diambil.
     await _validate_entry_lines(lines, eid)
+    if hanya_periksa:   # KF-T6 — usulan: periode diperiksa dengan aturan yang sama, tidak ada yang ditulis
+        await enforce_closed_period_guard(eid, payload.date or now_iso(), source_type="manual",
+                                          can_backdate=can_backdate)
+        return {"entity_id": eid, "lines": lines, "total_debit": total_debit, "total_credit": total_credit}
     # FASE E-1 (E1.10) — jurnal manual masuk buku badan usaha konteks bila tak disebut (eid di atas).
     number = await next_doc_number("journal_entries", "number", "JE-", entity_id=eid)
     doc = {
@@ -745,6 +754,10 @@ async def create_manual_entry(payload, actor: Dict[str, Any],
         "created_at": now_iso(),
         "updated_at": now_iso(),
     }
+    if disetujui:   # KF-T6 — jurnal manual dua orang: pengusul (created_by) ≠ penyetuju (approved_by)
+        doc.update({"created_by_id": actor.get("id", ""), "approved_by": disetujui.get("name", ""),
+                    "approved_by_id": disetujui.get("id", ""), "approved_at": now_iso(),
+                    "proposal_id": disetujui.get("proposal_id", "")})
     # FASE G-5 — jurnal manual mundur ke periode tertutup butuh jendela unlock aktif.
     plu = await enforce_closed_period_guard(
         eid, doc["date"], source_type="manual", can_backdate=can_backdate)

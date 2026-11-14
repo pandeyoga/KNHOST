@@ -80,6 +80,9 @@ async def create_purchase_return(payload: PurchaseReturnCreate, request: Request
         doc = await svc.create_purchase_return(payload, created_by=user.get("name", "Admin"))
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
+    # KF-T6 — pengaju andal untuk kontrol dua orang (dokumen lama hanya menyimpan nama pembuat).
+    await db.purchase_returns.update_one({"id": doc["id"]}, {"$set": {"created_by_id": user.get("id", "")}})
+    doc["created_by_id"] = user.get("id", "")
     await audit(user.get("name", ""), "purchase_return_created", "purchase_return", doc["id"],
                 {"number": doc["number"], "supplier": doc["supplier_name"], "total": doc["total_amount"]})
     return doc
@@ -128,7 +131,14 @@ async def submit_purchase_return(return_id: str, request: Request) -> Dict[str, 
 async def approve_purchase_return(return_id: str, request: Request,
                                   payload: PurchaseReturnDecision = PurchaseReturnDecision()) -> Dict[str, Any]:
     user = await require_permission(request, "purchase_return", "approve")
-    await _guard(return_id, request)
+    cur = await _guard(return_id, request)
+    # KF-T6 — pembuat ≠ penyetuju dari `kontrol.retur_pembelian.*` (bawaan satu orang). Hanya keputusan baru
+    # (draf/menunggu); lanjutan jurnal gagal (IX-17) bukan keputusan.
+    if (cur or {}).get("status") in ("draft", "pending_approval"):
+        from services import dual_control as _dc
+        await _dc.tolak_bila_pelaku_sama("retur_pembelian", cur, user, cur.get("entity_id", ""),
+                                         nominal=float(cur.get("grand_total") or cur.get("total_amount") or 0),
+                                         pengaju=[cur.get("created_by_id"), cur.get("created_by")])
     try:
         doc = await svc.approve_and_adjust_stock(return_id, approved_by=user.get("name", "Admin"), notes=payload.notes)
     except ValueError as e:

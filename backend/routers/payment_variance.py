@@ -148,8 +148,15 @@ async def decide(receipt_id: str, body: DecideBody, request: Request) -> Dict[st
     """Putuskan selisih satu kwitansi (bisa saat dibuat, bisa belakangan dari antrean)."""
     actor = await require_permission(request, "payment_variance", "decide")
     from db import db
-    await guard_doc(request, "ar_receipts", await db.ar_receipts.find_one({"id": receipt_id}, {"_id": 0}),
-                    not_found="Kwitansi tidak ditemukan")   # PK-09 E23
+    rcpt = await db.ar_receipts.find_one({"id": receipt_id}, {"_id": 0})
+    await guard_doc(request, "ar_receipts", rcpt, not_found="Kwitansi tidak ditemukan")   # PK-09 E23
+    # KF-T6 — pencatat kwitansi ≠ pemutus selisih dari `kontrol.pengurang_piutang.*` (403 di jalur antrean).
+    from services import dual_control as _dc
+    _v = (rcpt or {}).get("variance") or {}
+    await _dc.tolak_bila_pelaku_sama(
+        "pengurang_piutang", rcpt or {}, actor, (rcpt or {}).get("entity_id", ""),
+        nominal=float(body.model_dump().get("amount") or 0) or abs(float(_v.get("delta") or 0)),
+        pengaju=[(rcpt or {}).get("created_by")])
     try:
         row = await pvs.decide_receipt(receipt_id, body.model_dump(), actor)
     except pvs.VarianceError as exc:

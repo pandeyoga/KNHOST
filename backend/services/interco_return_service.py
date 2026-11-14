@@ -429,13 +429,12 @@ async def approve(ret_id: str, actor_user: Dict[str, Any]) -> Dict[str, Any]:
             f"Hanya draf yang bisa disetujui (status sekarang: "
             f"{STATUS_LABEL.get(doc['status'], doc['status'])}).")
     approver = (actor_user or {}).get("name", "")
-    creator = (doc.get("created_by") or "").strip()
-    from services import approval_matrix_service as _amx
-    if creator and approver and creator == approver \
-            and not await _amx.admin_override("interco_return_approve", actor_user or {}, doc, doc.get("entity_id", "")):
-        raise IntercoReturnError(
-            "Pembuat retur tidak boleh menyetujui returnya sendiri (pemisahan tugas). "
-            "Minta rekan lain dengan wewenang persetujuan.")
+    # KF-T6 — pembuat ≠ penyetuju dari `kontrol.retur_antar_pt.*` (satu pembantu, 403). Dokumen menyimpan NAMA
+    # pembuat (`created_by`); `created_by_id` ikut dibandingkan bila ada.
+    from services import dual_control as _dc
+    await _dc.tolak_bila_pelaku_sama("retur_antar_pt", doc, actor_user or {}, doc.get("entity_id", ""),
+                                     nominal=float(doc.get("grand_total") or 0),
+                                     pengaju=[doc.get("created_by_id"), (doc.get("created_by") or "").strip()])
 
     rp = doc["return_pair_id"]
     returner, receiver = await _pair_docs(rp)

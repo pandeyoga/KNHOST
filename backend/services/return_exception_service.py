@@ -44,8 +44,10 @@ async def decide(ret: Dict[str, Any], exc_id: str, approve: bool, note: str, act
         raise LookupError("Pengecualian tidak ditemukan")
     if exc["status"] != "pending":
         raise ValueError(f"Pengecualian sudah {exc['status']}")
-    if exc.get("requested_by_id") and exc["requested_by_id"] == actor.get("id"):
-        raise ValueError("Pengaju tidak boleh memutuskan pengecualiannya sendiri")
+    # KF-T6 — pengaju ≠ pemutus dari `kontrol.pengecualian_retur.*` (403; Admin tetap dua orang secara bawaan).
+    from services import dual_control as _dc
+    await _dc.tolak_bila_pelaku_sama("pengecualian_retur", {**exc, "number": ret.get("number", "")}, actor,
+                                     ret.get("entity_id", ""), pengaju=[exc.get("requested_by_id")])
     if not approve and len((note or "").strip()) < 5:
         raise ValueError("Alasan penolakan wajib diisi")
     upd = {"status": "approved" if approve else "rejected", "decided_by": actor.get("name", ""),

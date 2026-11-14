@@ -182,3 +182,72 @@ async def aturan(entity_id: str = "") -> Dict[str, Any]:
             "admin_tetap_dua_orang": [str(x) for x in (tetap if isinstance(tetap, list) else [])],
             "sumber_admin": {"admin_boleh_sendiri": _SUMBER.get(res[K_ADMIN_BOLEH]["source_layer"], "default"),
                              "admin_tetap_dua_orang": _SUMBER.get(res[K_ADMIN_TETAP]["source_layer"], "default")}}
+
+
+# ── Migrasi sekali jalan: sakelar lama → kontrol.* (serah-terima (b)) ─────────────────────────────────────────────
+#: Lima aksi yang dulu diatur `approval.matrix_sod` (bersama `approval.matrix_enforcement`).
+AKSI_SAKELAR_MATRIKS = ("acc_desain", "acc_sample", "po_custom", "permintaan_pembelian", "harga_khusus")
+MARKER_MIGRASI = "kft6_kontrol"
+ALASAN_MIGRASI = "Pindahan dari sakelar pemisahan tugas"
+PELAKU_MIGRASI = "Sistem (pindahan KF-T6)"
+
+
+def _ya(v: Any) -> bool:
+    if isinstance(v, bool):
+        return v
+    if v is None or v == "":
+        return True
+    return str(v).strip().lower() in ("1", "true", "yes", "y", "on", "aktif", "ya")
+
+
+async def _sakelar_lama(ctx: Dict[str, Any]) -> Dict[str, bool]:
+    """Apakah pemisahan tugas LAMA melarang (True) pada konteks ini: matriks dan amandemen."""
+    sod = _ya(await value_of("approval.matrix_sod", ctx))
+    mode = str(await value_of("approval.matrix_enforcement", ctx) or "enforce").strip().lower()
+    return {"matriks": sod and mode != "off",   # ASUMSI unit: mode `warn` dipindahkan sebagai "2"
+            "amandemen": _ya(await value_of("amendment.dual_control", ctx))}
+
+
+async def migrasi_sakelar_lama() -> Dict[str, int]:
+    """KF-T6 — sekali jalan (penanda `system_settings{scope: "__migrations__"}.kft6_kontrol`).
+
+    Lapisan grup: sakelar lama tidak melarang → `kontrol.<aksi>.min_orang = "1"` di lapisan grup. Tiap PT: hanya bila
+    PT itu BERBEDA dari grupnya (dulu diatur khusus di PT) → nilai PT ditulis di lapisan PT ("1" atau "2"); PT yang
+    mengikuti grup tetap mengikuti grup. Tanpa sakelar yang dimatikan tidak ada baris yang ditulis (bawaan "2").
+    Sakelar lama sendiri kini `not_used` (katalog) dan `approval_matrix_service.settings()["sod"]` /
+    `amendment_service.policy_snapshot()["dual_control"]` dihitung dari `butuh_orang_kedua`."""
+    from core_utils import now_iso
+    from db import db
+    from services import config_resolver as resolver
+    marker = {"scope": "__migrations__"}
+    done = await db.system_settings.find_one(marker, {"_id": 0, MARKER_MIGRASI: 1})
+    if done and done.get(MARKER_MIGRASI):
+        return {"ditulis": 0}
+    ditulis = 0
+
+    async def _tulis(aksi_list, nilai, scope_type, scope_id):
+        nonlocal ditulis
+        for aksi in aksi_list:
+            await resolver.set_value(kunci_min_orang(aksi), nilai, scope_type=scope_type, scope_id=scope_id,
+                                     actor=PELAKU_MIGRASI, reason=ALASAN_MIGRASI)
+            ditulis += 1
+
+    grup = await _sakelar_lama({})
+    if not grup["matriks"]:
+        await _tulis(AKSI_SAKELAR_MATRIKS, "1", "global", "")
+    if not grup["amandemen"]:
+        await _tulis(("amandemen",), "1", "global", "")
+    ents = await db.business_entities.find({}, {"_id": 0, "id": 1}).to_list(1000)
+    for e in ents:
+        eid = e.get("id") or ""
+        if not eid or eid == "all":
+            continue
+        pt = await _sakelar_lama({"entity_id": eid})
+        if pt["matriks"] != grup["matriks"]:
+            await _tulis(AKSI_SAKELAR_MATRIKS, "2" if pt["matriks"] else "1", "entity", eid)
+        if pt["amandemen"] != grup["amandemen"]:
+            await _tulis(("amandemen",), "2" if pt["amandemen"] else "1", "entity", eid)
+    await db.system_settings.update_one(marker, {"$set": {MARKER_MIGRASI: now_iso()}}, upsert=True)
+    if ditulis:
+        logger.warning("[KF-T6] sakelar pemisahan tugas lama dipindahkan: %s nilai kontrol.* ditulis", ditulis)
+    return {"ditulis": ditulis}

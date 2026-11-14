@@ -47,6 +47,11 @@ def _mentions(text: str, key: str) -> bool:
         return False
     leaf = key.split(".")[-1]
     pats = [re.escape(key), r"[\"']%s[\"']" % re.escape(leaf), r"\.%s\b" % re.escape(leaf)]
+    parts = key.split(".")
+    if parts[0] == "kontrol" and len(parts) == 3:
+        # KF-T6 — keluarga `kontrol.<aksi>.<x>`: kuncinya dibentuk pembantu `dual_control` dari NAMA AKSI, jadi titik
+        # pasang cukup menyebut literal aksinya (`tolak_bila_pelaku_sama("setujui_po", …)`).
+        pats.append(r"[\"']%s[\"']" % re.escape(parts[1]))
     return any(re.search(p, text) for p in pats)
 
 

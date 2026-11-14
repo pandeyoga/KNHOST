@@ -245,6 +245,11 @@ async def _cfg(key: str, entity_id: str = "") -> Any:
     return res["value"]
 
 
+async def _dual_control_aktif(entity_id: str = "") -> bool:
+    from services import dual_control as _dc   # KF-T6
+    return await _dc.butuh_orang_kedua("amandemen", entity_id or "")
+
+
 async def policy_snapshot(entity_id: str = "") -> Dict[str, Any]:
     """Rekam ambang yang BERLAKU SAAT ITU, supaya keputusan bisa diaudit ulang nanti."""
     return {
@@ -252,7 +257,8 @@ async def policy_snapshot(entity_id: str = "") -> Dict[str, Any]:
         "approval_threshold_pct": float(await _cfg("amendment.approval_threshold_pct", entity_id)),
         "approver_role": str(await _cfg("amendment.approver_role", entity_id)),
         "admin_approval_above": float(await _cfg("amendment.admin_approval_above", entity_id)),
-        "dual_control": bool(await _cfg("amendment.dual_control", entity_id)),
+        # KF-T6 — alias: sakelar lama `not_used`; nilainya kini `kontrol.amandemen.min_orang` (dual_control).
+        "dual_control": await _dual_control_aktif(entity_id),
         "require_note_above": float(await _cfg("amendment.require_note_above", entity_id)),
         "issued_doc_policy": str(await _cfg("amendment.issued_doc_policy", entity_id)),
         "captured_at": now_iso(),
@@ -731,19 +737,18 @@ async def decide(amd_id: str, action: str, actor: Dict[str, Any],
     if not amd.get("approval_permission") and role != "admin" and not role_in(role, (need,)):
         raise AmendmentError(
             f"Amandemen ini harus diputus oleh {need}. Peran Anda: {role or 'tidak dikenal'}.")
-    from services import approval_matrix_service as _amx
-    if policy.get("dual_control") and actor.get("id") and actor["id"] == amd.get("proposed_by_id") \
-            and not await _amx.admin_override("amendment_approve", actor, amd, amd.get("entity_id", "")):
-        raise AmendmentError(
-            "Kontrol ganda aktif: pengusul tidak boleh menyetujui usulannya sendiri. "
-            "Minta rekan dengan wewenang yang sama untuk memutus.")
+    # KF-T6 — pengusul ≠ pemutus dari `kontrol.amandemen.*` (403; berlaku juga untuk menolak, seperti sebelumnya).
+    from services import dual_control as _dc
+    kontrol = await _dc.tolak_bila_pelaku_sama("amandemen", amd, actor, amd.get("entity_id", ""),
+                                     nominal=abs(float(((amd.get("impact") or {}).get("delta")) or 0)),
+                                     pengaju=[amd.get("proposed_by_id")])
 
     now = now_iso()
     if action == "reject":
         res = await db[AMD_COLL].update_one({"id": amd_id, "status": "pending_approval"}, {"$set": {
             "status": "rejected", "decided_by": actor.get("name", ""),
             "decided_by_id": actor.get("id", ""), "decided_at": now,
-            "decision_note": note, "updated_at": now}})
+            "decision_note": note, "updated_at": now, "kontrol_dua_orang": kontrol}})
         if not res.modified_count:
             raise AmendmentError(f"Amandemen {amd['number']} sudah diputus pihak lain.")
         await _close_approval_notice(amd_id, "ditolak", actor)
@@ -757,7 +762,7 @@ async def decide(amd_id: str, action: str, actor: Dict[str, Any],
     res = await db[AMD_COLL].update_one({"id": amd_id, "status": "pending_approval"}, {"$set": {
         "status": "approved", "decided_by": actor.get("name", ""),
         "decided_by_id": actor.get("id", ""), "decided_at": now,
-        "decision_note": note, "updated_at": now}})
+        "decision_note": note, "updated_at": now, "kontrol_dua_orang": kontrol}})
     if not res.modified_count:   # KN-E04(c) — klik ganda / dua penyetuju
         raise AmendmentError(f"Amandemen {amd['number']} sudah diputus pihak lain.")
     amd = safe_doc(await db[AMD_COLL].find_one({"id": amd_id}, {"_id": 0}))

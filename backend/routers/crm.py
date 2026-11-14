@@ -150,8 +150,15 @@ async def decide_credit_override(override_id: str, payload: CreditOverrideDecisi
         raise HTTPException(status_code=400, detail="decision harus approve|reject")
     new_status = "approved" if payload.decision == "approve" else "rejected"
     # PK-45 (CR-04) — PT dokumen diadu dengan penugasan pemutus sebelum keputusan ditulis.
-    await guard_doc(request, "credit_overrides", await db.credit_overrides.find_one({"id": override_id}, {"_id": 0}),
-                    strict=False, not_found="Permohonan tidak ditemukan / sudah diputuskan")
+    co = await db.credit_overrides.find_one({"id": override_id}, {"_id": 0})
+    await guard_doc(request, "credit_overrides", co, strict=False,
+                    not_found="Permohonan tidak ditemukan / sudah diputuskan")
+    # KF-T6 — pemohon ≠ pemutus dari `kontrol.lewat_batas_kredit.*` (bawaan satu orang).
+    if (co or {}).get("status") == "pending":
+        from services import dual_control as _dc
+        await _dc.tolak_bila_pelaku_sama("lewat_batas_kredit", co, actor, co.get("entity_id", ""),
+                                         nominal=float(co.get("amount") or 0),
+                                         pengaju=[co.get("requested_by_id")])
     updated = await db.credit_overrides.find_one_and_update(
         {"id": override_id, "status": "pending"},
         {"$set": {"status": new_status, "decided_by": actor["name"], "decided_by_id": actor["id"],

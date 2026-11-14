@@ -7,6 +7,7 @@ cash_transactions) via /api/gl/sync — idempotent.
 from typing import Any, Dict, List, Optional
 
 from fastapi import APIRouter, Request, Query, HTTPException
+from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 
 from dependencies import require_permission, audit
@@ -166,6 +167,17 @@ async def create_journal(payload: JournalEntryCreate, request: Request) -> Dict[
     from dependencies import permission_matrix
     matrix = await permission_matrix()
     can_backdate = "backdate" in matrix.get(actor.get("role"), {}).get("period", [])
+    # KF-T6 (GL-06) — jurnal manual dua orang: usulan menunggu orang kedua (202), tidak ada baris `journal_entries`.
+    from services import dual_control as _dc
+    if await _dc.butuh_orang_kedua("jurnal_manual", eid, sum(float(ln.debit or 0) for ln in payload.lines or [])):
+        from services import journal_proposal_service as jps
+        try:
+            prop = await jps.ajukan(payload, actor, eid, can_backdate)
+        except ValueError as e:
+            raise HTTPException(status_code=400, detail=str(e))
+        await audit(actor["name"], "journal_proposal_created", "journal_proposal", prop["id"],
+                    {"total": prop["total_debit"], "entity_id": prop["entity_id"]})
+        return JSONResponse(status_code=202, content={"status": "menunggu_orang_kedua", "proposal_id": prop["id"]})
     try:
         je = await gl_service.create_manual_entry(payload, actor,
                                                   entity_id=eid,
@@ -175,6 +187,62 @@ async def create_journal(payload: JournalEntryCreate, request: Request) -> Dict[
     await audit(actor["name"], "journal_entry_created", "journal_entry", je["id"],
                 {"number": je["number"], "total": je["total_debit"]})
     return je
+
+
+# ─── KF-T6 (GL-06) — usulan jurnal manual yang menunggu orang kedua ─────────────────────────────────────────────────
+class ProposalReject(BaseModel):
+    reason: str = ""
+
+
+async def _proposal_guarded(request: Request, pid: str) -> Dict[str, Any]:
+    from services import journal_proposal_service as jps
+    prop = await jps.ambil(pid)
+    await guard_doc(request, "journal_proposals", prop, not_found="Usulan jurnal tidak ditemukan.")
+    return prop
+
+
+@router.get("/gl/journal-proposals")
+async def list_journal_proposals(request: Request, status: Optional[str] = Query(None),
+                                 entity_id: Optional[str] = Query(None)) -> Dict[str, Any]:
+    """Daftar berhalaman usulan jurnal manual (bawaan: PT aktif)."""
+    await require_permission(request, "accounting", "view")
+    from services import journal_proposal_service as jps
+    scope = resolve_list_scope("journal_proposals", {}, await entity_ctx(request), entity_id)
+    page, page_size, _q, _sort = get_page_params(request)
+    return await jps.daftar(scope, (status or "").strip(), page, page_size)
+
+
+@router.post("/gl/journal-proposals/{proposal_id}/approve")
+async def approve_journal_proposal(proposal_id: str, request: Request) -> Dict[str, Any]:
+    """Setujui usulan → jurnal diposting (pengusul = `created_by`, penyetuju = `approved_by`)."""
+    actor = await require_permission(request, "accounting", "create")
+    await _proposal_guarded(request, proposal_id)
+    from dependencies import permission_matrix
+    from services import journal_proposal_service as jps
+    matrix = await permission_matrix()
+    can_backdate = "backdate" in matrix.get(actor.get("role"), {}).get("period", [])
+    try:
+        res = await jps.setujui(proposal_id, actor, can_backdate)
+    except gl_service.ClosedPeriodError as e:
+        raise HTTPException(status_code=409, detail=str(e))
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    je = res.get("journal") or {}
+    await audit(actor["name"], "journal_proposal_approved", "journal_proposal", proposal_id,
+                {"journal_id": je.get("id"), "number": je.get("number"), "total": je.get("total_debit"),
+                 "proposed_by": res.get("proposed_by")})
+    return res
+
+
+@router.post("/gl/journal-proposals/{proposal_id}/reject")
+async def reject_journal_proposal(proposal_id: str, payload: ProposalReject, request: Request) -> Dict[str, Any]:
+    actor = await require_permission(request, "accounting", "create")
+    await _proposal_guarded(request, proposal_id)
+    from services import journal_proposal_service as jps
+    res = await jps.tolak(proposal_id, actor, payload.reason)
+    await audit(actor["name"], "journal_proposal_rejected", "journal_proposal", proposal_id,
+                {"total": res.get("total_debit")}, reason=payload.reason)
+    return res
 
 
 @router.get("/gl/journal/{entry_id}")

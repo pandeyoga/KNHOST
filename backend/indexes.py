@@ -175,6 +175,9 @@ INDEX_SPECS: Dict[str, List[IndexKeys]] = {
         [("kind", A), ("target_id", A), ("status", A)],
         [("entity_id", A), ("status", A), ("created_at", D)],
     ],
+    "journal_proposals": [           # KF-T6 — usulan jurnal manual menunggu orang kedua (antrean per PT)
+        [("entity_id", A), ("status", A), ("proposed_at", D)],
+    ],
     "vendor_bills": [
         [("entity_id", A), ("status", A), ("created_at", D)],
         [("supplier_id", A)],
@@ -414,6 +417,8 @@ ID_INDEX_COLLECTIONS: List[str] = [
     "ap_payment_intents",
     # PK-06 — id settlement antar-PT turunan kunci idempotensi.
     "interco_settlements",
+    # KF-T6 — usulan jurnal manual (`jprop_…`).
+    "journal_proposals",
 ]
 
 # FIX-5 — rujukan bersarang roll yang dicari per nilai (B3a SCH-9: index `reserved_ref` utuh tidak terpakai oleh

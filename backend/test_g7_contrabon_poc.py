@@ -562,7 +562,7 @@ def test_cycle(admin: str, mgr: str, cb: Dict[str, Any]) -> Dict[str, Any]:
        "pembayaran SEBELUM disetujui ditolak (kebijakan Pusat Pengaturan)", early.text[:120])
 
     self_ap = api("POST", f"/contra-bons/{cb['id']}/approve", mgr, ENT_A)
-    ok(self_ap.status_code == 403 and "Pemisahan tugas" in self_ap.text,
+    ok(self_ap.status_code == 403 and "diputuskan orang lain" in self_ap.text,   # KF-T6 — pesan kontrol dua orang
        "pembuat kontrabon TIDAK boleh menyetujui kontrabon sendiri (SoD)", self_ap.text[:120])
 
     ok(cfg_set(admin, "contra_bon.approval_threshold_rupiah", 1000, "entity", ENT_A),

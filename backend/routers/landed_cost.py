@@ -246,11 +246,10 @@ async def approve_landed_cost(voucher_id: str, request: Request) -> Dict[str, An
     if not role_satisfies(actor.get("role"), required):
         raise HTTPException(status_code=403,
                             detail=f"Approval butuh role minimal '{required}'. Role Anda: '{actor.get('role')}'.")
-    from services import approval_matrix_service as _amx
-    if v.get("created_by_id") and v["created_by_id"] == actor.get("id") and not await _amx.admin_override(
-            "landed_cost_approve", actor, v, v.get("entity_id", "")):
-        raise HTTPException(status_code=403,
-                            detail="Pemisahan tugas (SoD): pembuat voucher tidak boleh menyetujui sendiri.")
+    # KF-T6 — pembuat ≠ penyetuju dari `kontrol.biaya_masuk.*` (satu pembantu).
+    from services import dual_control as _dc
+    await _dc.tolak_bila_pelaku_sama("biaya_masuk", v, actor, v.get("entity_id", ""),
+                                     nominal=float(v.get("total_cost") or 0), pengaju=[v.get("created_by_id")])
     # Recompute alokasi terhadap kondisi roll TERKINI (anti-drift), lalu terapkan.
     rolls = await resolve_target_rolls(v.get("po_ids", []), v.get("entity_id", ""))
     if not rolls:

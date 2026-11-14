@@ -497,6 +497,7 @@ async def submit_run(run_id: str, actor: Dict[str, Any]) -> Dict[str, Any]:
     return await _set_run(run_id, {
         "status": "pending_approval",
         "submitted_by": actor.get("name", "system"), "submitted_at": now_iso(),
+        "submitted_by_id": actor.get("id", ""),   # KF-T6 — pengaju andal untuk kontrol dua orang
         "reject_reason": "", "rejected_by": "", "rejected_at": ""})
 
 
@@ -510,6 +511,12 @@ async def approve_run(run_id: str, actor: Dict[str, Any]) -> Dict[str, Any]:
             f"'{run['status']}'). Ajukan dulu dari layar Payroll."
             if run["status"] == "draft" else
             f"Run status '{run['status']}' tidak bisa di-approve.")
+    # KF-T6 — pengaju (yang mengajukan proses) ≠ pengesah dari `kontrol.proses_gaji.*` (bawaan satu orang); nominal =
+    # total gaji bersih proses ini.
+    from services import dual_control as _dc
+    await _dc.tolak_bila_pelaku_sama("proses_gaji", run, actor, run.get("entity_id", ""),
+                                     nominal=float((run.get("totals") or {}).get("net") or 0),
+                                     pengaju=[run.get("submitted_by_id") or run.get("submitted_by")])
     return await _set_run(run_id, {"status": "approved", "approved_by": actor.get("name", "system"),
                                    "approved_at": now_iso()})
 

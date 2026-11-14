@@ -23,8 +23,10 @@ KUNCI_TERBUKA = ["finance.default_payment_term_code", "inventory.min_cut_qty", "
                  "allocation.roll_pick_sales", "purchasing.allow_item_discount", "purchasing.allow_order_discount",
                  "purchasing.bill_price_tolerance_percent", "purchasing.bill_qty_tolerance_percent",
                  "ui.show_coming_soon", "ui.coming_soon_collapsed"]
-# KF-T6 — 57 kunci `kontrol.*` (izin `settings.manage`) didaftarkan sesudah KF-T1: ikut terhitung di U02/U04.
+# KF-T6 — 57 kunci `kontrol.*` (izin `settings.manage`) didaftarkan sesudah KF-T1: ikut terhitung di U02/U04. Sakelar
+# lama `amendment.dual_control` (izin `settings.manage`) menjadi `not_used` → tidak bisa diubah siapa pun (−1 di U02).
 KFT6_KUNCI = 57
+KFT6_TIDAK_DIPAKAI = 1
 
 
 def _put(key, value, scope_type="entity", scope_id="ent_ksc"):
@@ -56,8 +58,9 @@ async def test_U02_bisa_ubah_232_kunci(klien, akun, sesi, peran_tanpa_acuan):
     r = await klien.get("/api/config/effective", headers=h)
     assert r.status_code == 200, r.text
     # PR-T2 — 232 kunci aktif berizin `settings.manage` saat KF-T1; tiga kunci `ai.*_roles` kini tidak dipakai
-    # (diatur di Peran & Hak Akses) → 232 − 3 = 229. KF-T6 menambah kunci `kontrol.*` (KFT6_KUNCI).
-    assert sum(1 for it in r.json()["items"] if it["can_edit"]) == 229 + KFT6_KUNCI
+    # (diatur di Peran & Hak Akses) → 232 − 3 = 229. KF-T6 menambah kunci `kontrol.*` (KFT6_KUNCI) dan mematikan
+    # sakelar lama (KFT6_TIDAK_DIPAKAI).
+    assert sum(1 for it in r.json()["items"] if it["can_edit"]) == 229 + KFT6_KUNCI - KFT6_TIDAK_DIPAKAI
 
 
 async def test_U03_lapisan_grup_tetap_untuk_lintas_pt(klien, akun, sesi, peran_tanpa_acuan):

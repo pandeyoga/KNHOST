@@ -2819,6 +2819,14 @@ async def layer_amendment_invariants(db):
         line("PASS", G, f"INV-AMD-01: {len(applied)} amandemen diterapkan — semuanya bernomor, "
                         "ber-alasan dikenal, ber-dampak, ber-pengusul, ber-jejak")
 
+    def _amd_wajib_dua(a):
+        """KF-T6 — potret aturan dua orang SAAT diputus (`kontrol_dua_orang`) menang; amandemen lama tanpa potret
+        memakai `policy_snapshot.dual_control` (aturan lama)."""
+        kd = a.get("kontrol_dua_orang")
+        if kd:
+            return bool(kd.get("dua_orang")) and not kd.get("admin_sendiri")
+        return bool((a.get("policy_snapshot") or {}).get("dual_control"))
+
     bad_appr = []
     for a in amds:
         if not a.get("requires_approval"):
@@ -2826,8 +2834,7 @@ async def layer_amendment_invariants(db):
         if a.get("status") in {"applied", "approved", "rejected"}:
             if not a.get("decided_by_id"):
                 bad_appr.append(f"{a.get('number')}: tanpa penyetuju")
-            elif (a.get("policy_snapshot") or {}).get("dual_control") and \
-                    a["decided_by_id"] == a.get("proposed_by_id"):
+            elif _amd_wajib_dua(a) and a["decided_by_id"] == a.get("proposed_by_id"):
                 bad_appr.append(f"{a.get('number')}: pengusul = penyetuju (kontrol ganda dilanggar)")
         elif a.get("status") == "auto_applied":
             bad_appr.append(f"{a.get('number')}: butuh approval tapi diterapkan otomatis")
@@ -4483,7 +4490,8 @@ async def layer_closing_invariants(db):
                 Jurnal operasional yang lahir SEBELUM tutup buku tidak dituduh (memang
                 sah — closing-lah yang merangkumnya).
     INV-CLS-02  Setiap usul buka periode yang pernah DISETUJUI (approved/reclosed/expired)
-                punya `reason` DAN pengusul ≠ penyetuju (kontrol ganda dua orang).
+                punya `reason` DAN pengusul ≠ penyetuju bila saat disetujui aturannya dua orang
+                (KF-T6 `kontrol_dua_orang`; usul lama tanpa potret = aturan lama, selalu dua orang).
     """
     print(f"\n{C}{B}L4-CLS — Invarian Unlock Periode Tertutup (FASE G-5){X}")
 
@@ -4532,7 +4540,11 @@ async def layer_closing_invariants(db):
         if not (r.get("reason") or "").strip():
             v2.append(f"{r.get('id')}: tanpa alasan")
         rq, ap = r.get("requested_by_id"), r.get("approved_by_id")
-        if rq and ap and rq == ap:
+        # KF-T6 — buka periode bawaan SATU orang (keputusan pemilik): setuju-sendiri hanya pelanggaran bila potret
+        # aturan saat disetujui (`kontrol_dua_orang`) menuntut dua orang dan bukan pengecualian Admin. Usul lama tanpa
+        # potret dinilai dengan aturan lama (selalu dua orang).
+        kd = r.get("kontrol_dua_orang") or {"dua_orang": True}
+        if rq and ap and rq == ap and kd.get("dua_orang") and not kd.get("admin_sendiri"):
             v2.append(f"{r.get('id')}: pengusul == penyetuju (kontrol ganda gagal)")
         if not ap:
             v2.append(f"{r.get('id')}: berstatus {r.get('status')} tanpa penyetuju")

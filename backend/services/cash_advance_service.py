@@ -170,6 +170,7 @@ async def create_cash_advance(payload, ctx: EntityContext, actor: Dict[str, Any]
         "rejected_reason": "",
         "catatan": (payload.catatan or "").strip(),
         "created_by": actor.get("name", ""),
+        "created_by_id": actor.get("id", ""),   # KF-T6 — pemohon andal untuk kontrol dua orang
         "created_at": now_iso(),
         "updated_at": now_iso(),
     }
@@ -247,6 +248,11 @@ async def approve_cash_advance(ca_id: str, note: str, ctx: EntityContext, actor:
     if role != "admin" and not role_in(role, stage["roles"]):
         raise HTTPException(status_code=403,
                             detail=f"Tahap '{stage['label']}' hanya untuk: {', '.join(stage['roles'])}")
+    # KF-T6 — pemohon ≠ penyetuju dari `kontrol.uang_muka.*` (bawaan satu orang; di atas batas nominal dua orang).
+    from services import dual_control as _dc
+    await _dc.tolak_bila_pelaku_sama("uang_muka", doc, actor, doc.get("entity_id", ""),
+                                     nominal=float(doc.get("total_amount") or 0),
+                                     pengaju=[doc.get("created_by_id"), doc.get("created_by")])
     approval = {"stage": stage["stage"], "label": stage["label"], "decision": "approved",
                 "by": actor.get("name", ""), "role": role, "note": (note or "").strip(),
                 "at": now_iso()}
@@ -420,6 +426,7 @@ async def create_settlement(payload, ctx: EntityContext, actor: Dict[str, Any]) 
         "status": "draft",
         "journal_entry_id": "",
         "created_by": actor.get("name", ""),
+        "created_by_id": actor.get("id", ""),   # KF-T6 — pemohon andal untuk kontrol dua orang
         "created_at": now_iso(),
         "updated_at": now_iso(),
         **calc,
@@ -485,6 +492,11 @@ async def approve_settlement(stl_id: str, ctx: EntityContext, actor: Dict[str, A
     doc = await get_settlement(stl_id, ctx)
     if doc["status"] not in ("submitted", "draft"):
         raise HTTPException(status_code=409, detail="Hanya draft/submitted yang bisa disetujui")
+    # KF-T6 — pemohon ≠ penyetuju dari `kontrol.lpj_uang_muka.*` (bawaan satu orang).
+    from services import dual_control as _dc
+    await _dc.tolak_bila_pelaku_sama("lpj_uang_muka", doc, actor, doc.get("entity_id", ""),
+                                     nominal=float(doc.get("total_pengeluaran") or 0),
+                                     pengaju=[doc.get("created_by_id"), doc.get("created_by")])
     # CX-05 — tutup PD induk atomik LEBIH DULU (disbursed→settling): LPJ kedua tidak dapat memposting.
     try:
         await gl_service.preflight_posting(doc["entity_id"], now_iso())

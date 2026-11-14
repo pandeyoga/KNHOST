@@ -244,6 +244,7 @@ async def submit_session(session_id: str, request: Request) -> Dict[str, Any]:
             "status": "submitted",
             "discrepancies": discrepancies,
             "submitted_by": actor["name"],
+            "submitted_by_id": actor.get("id", ""),   # KF-T6 — pengaju andal untuk kontrol dua orang
             "submitted_at": now_iso(),
             "updated_at": now_iso(),
         }},
@@ -295,6 +296,10 @@ async def approve_session(session_id: str, payload: CycleCountApprove, request: 
     session = await _load_session(session_id, request)
     if session["status"] != "submitted":
         raise HTTPException(status_code=400, detail="Session belum disubmit")
+    # KF-T6 — pengaju (penyetor hitungan) ≠ penyetuju dari `kontrol.stok_opname.*` (bawaan satu orang).
+    from services import dual_control as _dc
+    await _dc.tolak_bila_pelaku_sama("stok_opname", session, actor, session.get("entity_id", ""),
+                                     pengaju=[session.get("submitted_by_id"), session.get("submitted_by")])
     _assert_item_owners(session, await entity_ctx(request))
     # FIX-3a (B2a OPN-05) — pembekuan bisa mulai sesudah item ditambah: cek ulang sebelum selisih diterapkan.
     for _it in session.get("items", []):

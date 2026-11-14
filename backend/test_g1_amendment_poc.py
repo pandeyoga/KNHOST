@@ -120,7 +120,7 @@ def main() -> int:
 
     # Simpan ambang awal supaya bisa dipulihkan di akhir.
     keys = ["amendment.approval_threshold_amount", "amendment.approval_threshold_pct",
-            "amendment.admin_approval_above", "amendment.dual_control",
+            "amendment.admin_approval_above", "kontrol.amandemen.min_orang",   # KF-T6 — pengganti amendment.dual_control
             "amendment.require_note_above", "amendment.issued_doc_policy",
             "amendment.approver_role"]
     original = {k: cfg_get(admin, k) for k in keys}
@@ -225,7 +225,7 @@ def main() -> int:
     ok(cfg_set(admin, "amendment.approval_threshold_amount", 100000),
        "turunkan ambang jadi Rp 100.000 (uji jalur persetujuan)")
     ok(cfg_set(admin, "amendment.approver_role", "manager"), "penyetuju = manager")
-    ok(cfg_set(admin, "amendment.dual_control", True), "kontrol ganda AKTIF")
+    ok(cfg_set(admin, "kontrol.amandemen.min_orang", "2"), "kontrol ganda AKTIF (KF-T6: kontrol dua orang)")
     ok(cfg_set(admin, "amendment.require_note_above", 100000),
        "catatan wajib di atas Rp 100.000")
 
@@ -271,7 +271,7 @@ def main() -> int:
        "manager mengajukan usulannya sendiri")
     r = requests.post(f"{BASE}/amendments/{amd3['id']}/decision", headers=H(manager),
                       timeout=30, json={"action": "approve"})
-    ok(r.status_code == 400 and "sendiri" in r.text.lower(),
+    ok(r.status_code == 403 and "diputuskan orang lain" in r.text.lower(),   # KF-T6 — 403 dari dual_control
        "KONTROL GANDA: pengusul ditolak menyetujui usulannya sendiri",
        r.json().get("detail", "")[:70])
 

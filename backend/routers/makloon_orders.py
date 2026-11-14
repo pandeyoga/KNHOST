@@ -250,7 +250,7 @@ async def propose_claim(mko_id: str, payload: MakloonClaimIn, request: Request) 
     try:
         order = await mclaim.propose_claim(mko_id, payload.step_seq, action=payload.action,
                                            amount=payload.amount, reason=payload.reason,
-                                           actor=actor.get("name", ""))
+                                           actor=actor.get("name", ""), actor_id=actor.get("id", ""))
     except mclaim.ClaimError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
     await audit(actor.get("name", ""), "makloon_claim_proposed", "makloon_order", mko_id,
@@ -265,6 +265,14 @@ async def approve_claim(mko_id: str, payload: MakloonClaimDecisionIn,
     actor = await require_permission(request, "makloon_order", "claim_approve")
     ctx = await entity_ctx(request)
     await _assert_access(mko_id, ctx)
+    # KF-T6 — pengusul klaim ≠ penyetuju dari `kontrol.klaim_makloon.*` (bawaan satu orang).
+    mko = await db.makloon_orders.find_one({"id": mko_id}, {"_id": 0, "entity_id": 1, "mko_number": 1, "steps": 1}) or {}
+    cl = next(((s.get("claim") or {}) for s in mko.get("steps") or [] if s.get("seq") == payload.step_seq), {})
+    if cl.get("status") == "pending_approval":
+        from services import dual_control as _dc
+        await _dc.tolak_bila_pelaku_sama("klaim_makloon", {**cl, "id": mko_id, "number": mko.get("mko_number", "")},
+                                         actor, mko.get("entity_id", ""), nominal=float(cl.get("amount") or 0),
+                                         pengaju=[cl.get("proposed_by_id"), cl.get("proposed_by")])
     try:
         order = await mclaim.approve_claim(mko_id, payload.step_seq, actor=actor.get("name", ""),
                                            actor_role=actor.get("role", ""), note=payload.note)

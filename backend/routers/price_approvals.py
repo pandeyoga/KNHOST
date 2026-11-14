@@ -24,7 +24,12 @@ from services.notification_service import create_notification
 from role_registry import role_in  # peran acuan dikenali (keputusan owner 2026-10-21)
 # F1b — bagian BERSAMA alur harga khusus (bentuk dokumen, keberlakuan, efek keputusan)
 # dipakai juga oleh Daftar Harga per Pelanggan supaya tidak ada dua definisi.
-from services import approval_matrix_service as matrix
+from services import dual_control   # KF-T6 — kontrol "harus dua orang" (dulu `approval_matrix_service.sod_blocked`)
+
+
+def _pengaju_harga(doc: Dict[str, Any]) -> List[str]:
+    """KF-T6 — pengaju pengajuan harga: `requested_by` menyimpan id akun (field lama), `requested_by_id` bila ada."""
+    return [doc.get("requested_by_id") or "", doc.get("requested_by") or ""]
 from services import price_approval_service as pas
 from services import price_guard_service as guard
 
@@ -377,14 +382,9 @@ async def approve_price_approval(approval_id: str, payload: PriceApprovalDecisio
     doc = await _get_or_404(approval_id, request)
     if doc["status"] not in DECIDABLE_STATUSES:
         raise HTTPException(status_code=409, detail=f"Status '{doc['status']}' tidak dapat disetujui")
-    # PS-20 — Pemisahan tugas SATU SUMBER (ikut Pusat Pengaturan, bukan hardcode):
-    # pengaju tidak boleh menyetujui pengajuannya sendiri.
-    if await matrix.sod_blocked(doc, user, doc.get("entity_id", "")):
-        raise HTTPException(
-            status_code=403,
-            detail="Pemisahan tugas: pengaju harga tidak boleh menyetujui pengajuannya "
-                   "sendiri. Minta approver lain, atau ubah sakelar pemisahan tugas di "
-                   "Pusat Pengaturan → Persetujuan & Ambang.")
+    # KF-T6 — pengaju ≠ pemutus dari `kontrol.harga_khusus.*` (satu pembantu, 403).
+    await dual_control.tolak_bila_pelaku_sama("harga_khusus", doc, user, doc.get("entity_id", ""),
+                                              pengaju=_pengaju_harga(doc))
     if _so_bound(doc):
         return await _decide_via_so(doc, "approve", payload, request)
     update = {
@@ -472,12 +472,8 @@ async def reject_price_approval(approval_id: str, payload: PriceApprovalDecision
     doc = await _get_or_404(approval_id, request)
     if doc["status"] not in DECIDABLE_STATUSES:
         raise HTTPException(status_code=409, detail=f"Status '{doc['status']}' tidak dapat ditolak")
-    if await matrix.sod_blocked(doc, user, doc.get("entity_id", "")):
-        raise HTTPException(
-            status_code=403,
-            detail="Pemisahan tugas: pengaju harga tidak boleh memutuskan pengajuannya "
-                   "sendiri. Minta approver lain, atau ubah sakelar pemisahan tugas di "
-                   "Pusat Pengaturan → Persetujuan & Ambang.")
+    await dual_control.tolak_bila_pelaku_sama("harga_khusus", doc, user, doc.get("entity_id", ""),   # KF-T6
+                                              pengaju=_pengaju_harga(doc))
     if _so_bound(doc):
         via = await _decide_via_so(doc, "reject", payload, request)
         if via is not None:

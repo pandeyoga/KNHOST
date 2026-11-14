@@ -58,7 +58,9 @@ E("amendment.dual_control", group="amandemen", type="bool", default=True, scopes
        "walaupun perannya berwenang.",
   impact="Mencegah satu orang mengubah angka uang sendirian tanpa mata kedua.",
   example="Aktif · manager mengajukan koreksi → harus manager/admin LAIN yang menyetujui",
-  consumers=("services/amendment_service.py:decide",), risk="high")
+  consumers=("services/amendment_service.py:decide",), risk="high",
+  # KF-T6 — nilai yang berlaku dipindahkan sekali jalan ke `kontrol.amandemen.min_orang`.
+  status="not_used", not_used_reason="Dipindahkan ke Pengaturan › Persetujuan › Kontrol dua orang.")
 
 E("amendment.require_note_above", group="amandemen", type="money",
   default=10000000, min=0, max=100000000000, step=1000000, unit="Rp", scopes=G,

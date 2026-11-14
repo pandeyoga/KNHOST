@@ -460,6 +460,11 @@ async def waive(penalty_id: str, reason_code: str, note: str,
     rest = round(float(p.get("amount") or 0) - paid, 2)
     if rest <= EPS:
         raise PenaltyError("Nota denda sudah lunas — tidak ada sisa yang bisa dibebaskan.")
+    # KF-T6 — penerbit nota denda ≠ yang membebaskannya dari `kontrol.pengurang_piutang.*` (bawaan satu orang; di atas
+    # batas nominal dua orang). Diperiksa sebelum jurnal pembalik.
+    from services import dual_control as _dc
+    await _dc.tolak_bila_pelaku_sama("pengurang_piutang", p, actor, p.get("entity_id", ""), nominal=rest,
+                                     pengaju=[p.get("created_by_id"), p.get("created_by")])
     je = None
     if p["status"] in ("issued", "adjusted"):
         je = await gl_service.post_penalty_reversal(

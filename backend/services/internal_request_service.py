@@ -400,6 +400,10 @@ async def convert(req_id: str, actor: Dict[str, Any], *, source_entity_id: str =
     """
     req = await _load(req_id)
     _assert_open(req, "diproses")
+    # KF-T6 — peminta ≠ yang memproses dari `kontrol.permintaan_internal.*` (bawaan satu orang).
+    from services import dual_control as _dc
+    await _dc.tolak_bila_pelaku_sama("permintaan_internal", req, actor, req.get("entity_id", ""),
+                                     pengaju=[req.get("requested_by_id")])
     seller = (source_entity_id or req.get("source_entity_id") or "").strip()
     if not seller:
         raise InternalRequestError(

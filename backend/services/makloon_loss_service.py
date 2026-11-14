@@ -6,7 +6,7 @@ Bahan yang tidak kembali dari mitra dicatat per roll:
     mitra (Dr 1-1260 Piutang Klaim Mitra) dan bagian dalam toleransi tetap beban.
 Toleransi = `step.tolerance_pct` (kontrak mitra × jenis proses → fallback pengaturan kontrak).
 Hak terpisah: `makloon_order.record_loss` (catat) dan `makloon_order.approve_loss` (setujui);
-pencatat tidak boleh menyetujui catatannya sendiri.
+pencatat ≠ pemutus diatur `kontrol.susut_makloon.*` (KF-T6; bawaan dua orang, Admin pun).
 """
 from typing import Any, Dict, List, Optional
 
@@ -239,8 +239,11 @@ async def decide_loss(mko_id: str, seq: int, loss_id: str, *, approve: bool, not
             raise HTTPException(status_code=404, detail="Catatan susut tidak ditemukan.")
         if loss["status"] != "pending_approval":
             raise HTTPException(status_code=409, detail="Catatan susut ini sudah diputuskan.")
-        if loss.get("recorded_by_id") and loss["recorded_by_id"] == actor.get("id"):
-            raise HTTPException(status_code=403, detail="Pencatat tidak boleh menyetujui catatan susutnya sendiri.")
+        # KF-T6 — pencatat ≠ pemutus dari `kontrol.susut_makloon.*` (Admin tetap dua orang: `admin_tetap_dua_orang`).
+        from services import dual_control as _dc
+        await _dc.tolak_bila_pelaku_sama("susut_makloon", {**loss, "id": loss_id}, actor,
+                                         order.get("entity_id", ""), nominal=float(loss.get("value") or 0),
+                                         pengaju=[loss.get("recorded_by_id")])
         loss.update({"decided_by": name, "decided_at": now_iso(), "decision_note": (note or "").strip()})
         if approve:
             if settle == "potong_bon":

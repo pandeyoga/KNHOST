@@ -68,7 +68,9 @@ E("approval.matrix_sod", group="persetujuan", type="bool", default=True, scopes=
   example="Manager Dewi mengajukan PR bahan sample → Dewi tidak bisa menyetujuinya sendiri",
   consumers=(f"{_SVC}:evaluate", f"{_SVC}:is_requester"),
   related=("approval.matrix_enforcement",), risk="high",
-  permission=("rnd", "manage"))
+  permission=("rnd", "manage"),
+  # KF-T6 — nilai yang berlaku dipindahkan sekali jalan (`dual_control.migrasi_sakelar_lama`) ke kontrol.*.min_orang.
+  status="not_used", not_used_reason="Dipindahkan ke Pengaturan › Persetujuan › Kontrol dua orang.")
 
 E("approval.po_custom_direksi_min", group="persetujuan", type="money", default=50000000,
   min=0, step=1000000, unit="Rp", scopes=G,

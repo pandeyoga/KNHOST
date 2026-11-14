@@ -60,6 +60,8 @@ CANONICAL_COLLECTIONS = {
     "suppliers",
     # ── PK-05 (blueprint) — niat bayar hutang ──
     "ap_payment_intents",
+    # ── KF-T6 (blueprint) — usulan jurnal manual yang menunggu orang kedua ──
+    "journal_proposals",
     "cash_transactions",
     # ── Depth #1 (Retur Beli / Nota Debit) ──
     "purchase_returns",

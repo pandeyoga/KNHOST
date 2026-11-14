@@ -216,14 +216,15 @@ async def create_campaign_bill(campaign: Dict[str, Any], payload: Dict[str, Any]
 
 async def approve_campaign_bill(bill: Dict[str, Any], actor: Dict[str, Any]) -> Dict[str, Any]:
     from routers.vendor_bills import _post_bill
-    from services import approval_matrix_service as _amx
     if not role_in(actor.get("role"), BILL_APPROVER_ROLES):
         raise HTTPException(status_code=403, detail="Persetujuan tagihan kampanye hanya Finance/Manager/Admin.")
     if bill.get("status") != "pending_approval":
         raise HTTPException(status_code=409, detail=f"Tagihan berstatus '{bill.get('status')}', tidak menunggu persetujuan.")
-    if bill.get("created_by_id") == actor.get("id") and not await _amx.admin_override(
-            "vendor_bill_approve", actor, bill, bill.get("entity_id", "")):
-        raise HTTPException(status_code=403, detail="Pemisahan tugas (SoD): pembuat tagihan tidak boleh menyetujui sendiri.")
+    # KF-T6 — pembuat ≠ penyetuju dari `kontrol.tagihan_kampanye.*` (satu pembantu).
+    from services import dual_control as _dc
+    await _dc.tolak_bila_pelaku_sama("tagihan_kampanye", bill, actor, bill.get("entity_id", ""),
+                                     nominal=float(bill.get("grand_total") or bill.get("total_amount") or 0),
+                                     pengaju=[bill.get("created_by_id")])
     try:
         await gl.preflight_posting(bill.get("entity_id", ""), bill.get("bill_date") or now_iso())
     except gl.ClosedPeriodError as exc:

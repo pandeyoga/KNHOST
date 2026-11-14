@@ -461,6 +461,11 @@ async def approve_order(order_id: str, request: Request) -> Dict[str, Any]:
     if not role_satisfies(actor.get("role"), required):
         raise HTTPException(status_code=403,
             detail=f"Approval butuh role minimal '{required}'. Role Anda: '{actor.get('role')}'.")
+    # KF-T6 — pembuat pesanan ≠ penyetuju nilai dari `kontrol.nilai_pesanan.*` (bawaan satu orang; `created_by` = id).
+    from services import dual_control as _dc
+    await _dc.tolak_bila_pelaku_sama("nilai_pesanan", order, actor, order.get("entity_id", ""),
+                                     nominal=float(order.get("grand_total") or 0),
+                                     pengaju=[order.get("created_by_id"), order.get("created_by")])
     # F5 — blokir bila masih ada approval harga/kredit menunggu (putuskan dulu di Pusat Persetujuan).
     summ = so_approvals.summarize(order)
     blockers = sorted({t for t in summ["pending_types"] if t in ("kredit", "special_price", "makloon")})

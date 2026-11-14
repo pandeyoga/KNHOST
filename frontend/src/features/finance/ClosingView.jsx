@@ -205,8 +205,11 @@ export default function ClosingView({ selectedEntity, entities = [], currentUser
       confirmLabel: "Buka Kembali" }))) return;
     setError(""); setNotice(""); setBusy(true);
     try {
-      await axios.post(`${API}/finance/closing/${rec.id}/reopen`);
-      setNotice(`Periode ${rec.period_label} dibuka kembali (jurnal penutup di-void).`);
+      const res = await axios.post(`${API}/finance/closing/${rec.id}/reopen`);
+      // KF-T6 — aturan dua orang: panggilan pertama hanya mencatat pengajuan (202); orang kedua yang menjalankan.
+      setNotice(res?.status === 202
+        ? `Pengajuan buka kembali ${rec.period_label} tercatat — menunggu orang kedua untuk menjalankannya.`
+        : `Periode ${rec.period_label} dibuka kembali (jurnal penutup di-void).`);
       load();
     } catch (e) {
       setError(apiErrorText(e, "Gagal membuka kembali periode."));
@@ -411,6 +414,13 @@ export default function ClosingView({ selectedEntity, entities = [], currentUser
                               : c.status === "closing"
                               ? <span data-testid={`closing-in-progress-${c.id}`} className="text-[10px] font-bold rounded-full px-2 py-0.5 bg-[#EEF4FF] text-[#0058CC] inline-flex items-center gap-1"><Lock size={10} /> Sedang ditutup</span>
                               : <span className="text-[10px] font-bold rounded-full px-2 py-0.5 bg-[#FDF3E7] text-[#B26B00] inline-flex items-center gap-1"><Unlock size={10} /> Dibuka</span>}
+                            {/* KF-T6 — pengajuan buka kembali yang menunggu orang kedua */}
+                            {c.status === "closed" && c.reopen_request && (
+                              <span data-testid={`closing-reopen-pending-${c.id}`}
+                                className="ml-1 text-fs-12 font-bold rounded-full px-1.5 py-0.5 bg-kn-warning-soft text-kn-warning-text inline-flex items-center gap-1">
+                                Menunggu orang kedua — diajukan {c.reopen_request.by || "—"}
+                              </span>
+                            )}
                             {c.stale && c.status === "closed" && (
                               <span data-testid={`closing-stale-${c.id}`} title={c.stale_reason || "Angka berubah setelah periode ditutup"}
                                 className="ml-1 text-[9px] font-bold rounded-full px-1.5 py-0.5 bg-[#FDEDE7] text-[#C0392B] inline-flex items-center gap-1">

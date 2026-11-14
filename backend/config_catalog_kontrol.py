@@ -34,7 +34,8 @@ def _a(aksi: str, label: str, kelompok: str, awal: str, punya_nominal: bool, bag
 _PB, _PJ, _GD, _SDM, _BB = BAGIAN
 
 #: 35 aksi (tabel A–C spesifikasi). `kelompok`: A = dulu diatur sakelar, B = dulu ditulis mati melarang,
-#: C = dulu tanpa pemeriksaan. `titik` = fungsi yang memanggil `tolak_bila_pelaku_sama("<aksi>", …)`.
+#: C = dulu tanpa pemeriksaan. `titik` (diisi serah-terima (b), `_TITIK` di bawah) = fungsi yang memanggil
+#: `tolak_bila_pelaku_sama("<aksi>", …)` — jadi `consumers` registry dan dikenali `config_health`.
 KONTROL_AKSI: List[Dict[str, Any]] = [
     # A — dulu sakelar `approval.matrix_sod` / `amendment.dual_control`
     _a("acc_desain", "ACC desain", "A", "2", False, _GD),
@@ -75,6 +76,47 @@ KONTROL_AKSI: List[Dict[str, Any]] = [
     _a("buka_kembali_tutup_buku", "Buka kembali tutup buku", "C", "1", False, _BB),
     _a("jurnal_manual", "Jurnal manual", "C", "1", True, _BB),
 ]
+
+#: KF-T6 serah-terima (b) — titik pasang tiap aksi (`berkas.py:fungsi`).
+_TITIK: Dict[str, Tuple[str, ...]] = {
+    "acc_desain": ("services/approval_matrix_service.py:guard",),
+    "acc_sample": ("services/approval_matrix_service.py:guard",),
+    "po_custom": ("services/approval_matrix_service.py:guard",),
+    "permintaan_pembelian": ("services/approval_matrix_service.py:guard", "services/purchase_requisition_service.py:approve_requisition"),
+    "harga_khusus": ("routers/price_approvals.py:approve_price_approval", "routers/price_approvals.py:reject_price_approval", "routers/so_approvals.py:decide_approval"),
+    "amandemen": ("services/amendment_service.py:decide",),
+    "setujui_po": ("routers/purchase_orders.py:approve_purchase_order",),
+    "po_tingkat_berikut": ("routers/purchase_orders.py:approve_purchase_order",),
+    "tagihan_pemasok": ("routers/vendor_bills.py:approve_vendor_bill",),
+    "biaya_masuk": ("routers/landed_cost.py:approve_landed_cost",),
+    "kontrabon": ("services/contra_bon_service.py:approve",),
+    "tagihan_kampanye": ("services/marketing_cost_service.py:approve_campaign_bill",),
+    "retur_antar_pt": ("services/interco_return_service.py:approve",),
+    "buka_periode": ("services/period_unlock_service.py:approve_request",),
+    "susut_makloon": ("services/makloon_loss_service.py:decide_loss",),
+    "pengecualian_retur": ("services/return_exception_service.py:decide",),
+    "klaim_desain": ("services/design_ownership_service.py:decide_claim",),
+    "registrasi_stok_awal": ("services/initial_registration_service.py:assert_finance_ready",),
+    "transfer_gudang": ("routers/transfers.py:approve_transfer",),
+    "stok_opname": ("routers/cycle_count.py:approve_session",),
+    "retur_penjualan": ("routers/sales_returns.py:approve_return",),
+    "retur_pembelian": ("routers/purchase_returns.py:approve_purchase_return",),
+    "cuti": ("services/hr_leave_service.py:approve_leave",),
+    "lembur": ("services/hr_leave_service.py:approve_overtime",),
+    "proses_gaji": ("services/hr_payroll_service.py:approve_run",),
+    "uang_muka": ("services/cash_advance_service.py:approve_cash_advance",),
+    "lpj_uang_muka": ("services/cash_advance_service.py:approve_settlement",),
+    "pengurang_piutang": ("services/penalty_service.py:waive", "services/payment_variance_service.py:decide_receipt", "services/payment_variance_service.py:decide_bill", "routers/payment_variance.py:decide"),
+    "lewat_batas_kredit": ("routers/crm.py:decide_credit_override",),
+    "klaim_makloon": ("routers/makloon_orders.py:approve_claim",),
+    "permintaan_internal": ("services/internal_request_service.py:convert",),
+    "permintaan_desain": ("services/design_request_service.py:approve",),
+    "nilai_pesanan": ("routers/sales_orders_extra.py:approve_order",),
+    "buka_kembali_tutup_buku": ("routers/closing.py:_reopen_dua_orang",),
+    "jurnal_manual": ("routers/gl.py:create_journal", "services/journal_proposal_service.py:setujui"),
+}
+for _x in KONTROL_AKSI:
+    _x["titik"] = _TITIK.get(_x["aksi"], ())
 AKSI_BY_ID: Dict[str, Dict[str, Any]] = {a["aksi"]: a for a in KONTROL_AKSI}
 
 #: Empat titik † yang dulu TIDAK mengecualikan Admin (ASUMSI unit: dipertahankan lewat daftar ini).

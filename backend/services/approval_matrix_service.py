@@ -13,7 +13,7 @@ Kebijakan (Pusat Pengaturan → Persetujuan & Ambang; lihat `config_catalog_appr
   approval.matrix_enforcement   off | warn | enforce      (bawaan enforce)
   approval.matrix_scope         all_pending | new_only     (bawaan all_pending)
   approval.matrix_effective_from  TTTT-BB-HH               (dipakai bila new_only)
-  approval.matrix_sod           bool                       (bawaan aktif)
+  approval.matrix_sod           bool  — KF-T6: TIDAK DIPAKAI; pemisahan tugas kini `kontrol.<aksi>.min_orang`
   approval.po_custom_direksi_min money                      (ambang tingkat 2 Direksi)
 
 Catatan: "Direksi" = peran **admin** (keputusan pemilik) — tidak ada peran baru.
@@ -37,7 +37,11 @@ LOG_COLL = "approval_matrix_log"
 K_MODE = "approval.matrix_enforcement"
 K_SCOPE = "approval.matrix_scope"
 K_FROM = "approval.matrix_effective_from"
-K_SOD = "approval.matrix_sod"
+K_SOD = "approval.matrix_sod"   # KF-T6 — not_used; alias `settings()["sod"]` dihitung dari `dual_control`
+
+# KF-T6 — tahap matriks → aksi kontrol dua orang (`config_catalog_kontrol.KONTROL_AKSI`).
+STAGE_AKSI = {"design_acc": "acc_desain", "sample_acc": "acc_sample", "po_custom": "po_custom",
+              "purchase_request": "permintaan_pembelian"}
 
 MODES = ("off", "warn", "enforce")
 SCOPES = ("all_pending", "new_only")
@@ -65,7 +69,13 @@ async def settings(entity_id: str = "") -> Dict[str, Any]:
     mode = str(await value_of(K_MODE, ctx) or "enforce").strip().lower()
     scope = str(await value_of(K_SCOPE, ctx) or "all_pending").strip().lower()
     eff = str(await value_of(K_FROM, ctx) or "").strip()[:10]
-    sod = _as_bool(await value_of(K_SOD, ctx), True)
+    # KF-T6 — alias: "pemisahan tugas aktif" = salah satu tahap matriks butuh orang kedua di PT ini.
+    from services import dual_control as _dc
+    sod = False
+    for _aksi in STAGE_AKSI.values():
+        if await _dc.butuh_orang_kedua(_aksi, entity_id or ""):
+            sod = True
+            break
     direksi_min = _as_float(await value_of(DIREKSI_MIN_KEY, ctx), 0.0)
     if mode not in MODES:
         mode = "enforce"
@@ -178,33 +188,8 @@ def is_admin(actor: Dict[str, Any]) -> bool:
     return str((actor or {}).get("role") or "").strip().lower() == "admin"
 
 
-async def admin_override(stage: str, actor: Dict[str, Any], doc: Dict[str, Any],
-                         entity_id: str = "", note: str = "") -> bool:
-    """True bila aktor admin (pemisahan tugas dilewati) — dicatat di jejak persetujuan."""
-    if not is_admin(actor):
-        return False
-    try:
-        await record(stage=stage, action="approve", actor=actor, doc=doc, entity_id=entity_id,
-                     outcome="disetujui sendiri oleh admin (lewati pemisahan tugas)",
-                     note=note or "Admin menyetujui dokumen yang ia buat/ajukan sendiri.",
-                     enforced=False, violation=False)
-    except Exception:  # noqa: BLE001 — jejak tidak boleh menggagalkan persetujuan
-        pass
-    return True
-
-
-async def sod_blocked(doc: Dict[str, Any], actor: Dict[str, Any],
-                      entity_id: str = "") -> bool:
-    """Pemisahan tugas SATU SUMBER: dipakai juga oleh layanan lama (mis. PR) supaya
-    aturan SoD mereka ikut kebijakan Pusat Pengaturan, bukan hardcode."""
-    if is_admin(actor):
-        return False
-    cfg = await settings(entity_id or (doc or {}).get("entity_id", ""))
-    if cfg.get("mode") == "off" or not cfg.get("sod"):
-        return False
-    if is_legacy_doc(doc or {}, cfg):
-        return False
-    return is_requester(doc or {}, actor or {})
+# KF-T6 — `admin_override` dan `sod_blocked` (pemisahan tugas lama, 15 pemanggil) dihapus: semua titik kini memanggil
+# `services/dual_control.tolak_bila_pelaku_sama` (pengecualian Admin = `kontrol.admin_boleh_sendiri`, dicatat di jejak).
 
 
 # ─── Inti keputusan ───────────────────────────────────────────────
@@ -242,7 +227,6 @@ def evaluate(stage: str, actor: Dict[str, Any], doc: Dict[str, Any],
 
     if role == "admin":
         res["admin_bypass"] = True
-        res["admin_self"] = is_requester(doc or {}, actor or {})
         res["blocked"] = False
         return res
     if roles and role not in roles:
@@ -253,14 +237,7 @@ def evaluate(stage: str, actor: Dict[str, Any], doc: Dict[str, Any],
                         f"({cur.get('label', '')}) hanya boleh diputuskan oleh "
                         f"{roles_label(roles)} sesuai matriks persetujuan divisi. "
                         f"Peran Anda: {role_label(role)}.")})
-    if cfg.get("sod") and is_requester(doc or {}, actor or {}):
-        res["allowed"] = False
-        res["reasons"].append({
-            "code": "sod",
-            "message": ("Pemisahan tugas: Anda yang mengajukan dokumen "
-                        f"{(doc or {}).get('number', '')} sehingga tidak boleh "
-                        "menyetujuinya sendiri. Minta approver lain — aturan ini bisa "
-                        "diubah di Pusat Pengaturan → Persetujuan & Ambang.")})
+    # KF-T6 — pemisahan tugas TIDAK lagi dinilai di sini: `guard` memanggil `dual_control` (aksi = `STAGE_AKSI`).
     res["blocked"] = bool(not res["allowed"] and cfg.get("mode") == "enforce")
     return res
 
@@ -273,8 +250,6 @@ async def guard(stage: str, actor: Dict[str, Any], doc: Dict[str, Any],
     cfg = await settings(entity_id)
     res = evaluate(stage, actor, doc, cfg, amount=amount, level=level)
     res["config"] = cfg
-    if res.get("admin_self") and action == "approve":
-        await admin_override(stage, actor, doc, entity_id)
     if not res.get("allowed"):
         detail = " ".join(r["message"] for r in res.get("reasons") or [])
         await record(stage=stage, action=action, actor=actor, doc=doc, entity_id=entity_id,
@@ -285,6 +260,12 @@ async def guard(stage: str, actor: Dict[str, Any], doc: Dict[str, Any],
                      violation=True, reasons=res.get("reasons") or [])
         if cfg.get("mode") == "enforce":
             raise HTTPException(status_code=403, detail=detail)
+    # KF-T6 — pengaju ≠ pemutus: satu pembantu, aksi tahap ini (berlaku juga untuk menolak, seperti sebelumnya).
+    if stage in STAGE_AKSI:
+        from services import dual_control as _dc
+        amt = _as_float(amount if amount is not None else (doc or {}).get("total_amount")
+                        or (doc or {}).get("total_est_amount"), 0.0)
+        await _dc.tolak_bila_pelaku_sama(STAGE_AKSI[stage], doc or {}, actor or {}, entity_id, nominal=amt)
     return res
 
 
@@ -408,6 +389,7 @@ async def my_queue(actor: Dict[str, Any], entity_id: str = "",
     cfg = await settings(entity_id)
     base = _scope(entity_id)
     items: List[Dict[str, Any]] = []
+    from services import dual_control as _dc
 
     async def _add(stage_id: str, doc: Dict[str, Any], *, title: str, amount: float,
                    requester: str, since: str, ready: bool = True,
@@ -418,6 +400,15 @@ async def my_queue(actor: Dict[str, Any], entity_id: str = "",
         can = bool(ev.get("allowed")) or not ev.get("enforced", True)
         if cfg.get("mode") == "warn" and not ev.get("allowed"):
             can = True  # mode peringatan: tetap boleh, pelanggaran dicatat
+        # KF-T6 — pengaju ≠ pemutus dari `dual_control` (penilaian tanpa efek; I/O hanya untuk dokumen milik aktor).
+        aksi = STAGE_AKSI.get(stage_id) or ("klaim_makloon" if stage_id == "makloon_claim" else "")
+        pengaju = [requester] if stage_id == "makloon_claim" else None
+        if aksi and _dc.pelaku_sama(doc, actor or {}, pengaju):
+            dc = await _dc.periksa(aksi, doc, actor or {}, doc.get("entity_id", "") or entity_id,
+                                   nominal=_as_float(amount), pengaju=pengaju)
+            if dc["ditolak"]:
+                can = False
+                reasons = reasons + [{"code": "sod", "message": dc["pesan"]}]
         if not ready:
             can = False
             reasons = reasons + [{"code": "not_ready", "message": ready_note}]
