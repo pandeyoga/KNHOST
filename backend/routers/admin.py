@@ -14,7 +14,7 @@ import domain_registry as _dr        # Fase A · R7 — SSOT domain (stamp defau
 from schemas import PermissionUpdate
 from permissions_config import DEFAULT_PERMISSIONS
 from services.demo_seed_service import run_demo_seed
-from role_registry import role_in  # peran acuan dikenali (keputusan owner 2026-10-21)
+from role_registry import category_of, roles_in_category  # PR-T4 — kategori kerja dari sifat peran
 
 try:
     import openpyxl
@@ -222,7 +222,8 @@ async def import_customers(
     from core_utils import next_doc_number as _ndn
     from services import group_partner_service as _grp
     from services.customer_service import normalize_sales_team
-    sales_users = [u async for u in db.users.find({"role": "sales"}, {"_id": 0, "id": 1, "name": 1, "email": 1})]
+    sales_users = [u async for u in db.users.find({"role": {"$in": roles_in_category("sales")}},
+                                                  {"_id": 0, "id": 1, "name": 1, "email": 1})]
     by_email = {(u.get("email") or "").strip().lower(): u for u in sales_users if u.get("email")}
     by_name: Dict[str, List[Dict[str, Any]]] = {}
     for u in sales_users:
@@ -266,7 +267,7 @@ async def import_customers(
         s_email = (row.get("sales_email") or "").strip().lower()
         s_name = (row.get("sales_name") or row.get("assigned_sales") or "").strip().lower()
         sales = None
-        if role_in(actor.get("role"), ("sales",)):
+        if category_of(actor.get("role")) == "sales":   # PR-T4 — kategori kerja, bukan nama peran
             sales = {"id": actor["id"], "name": actor.get("name", "")}
         elif s_email:
             sales = by_email.get(s_email)
@@ -426,7 +427,8 @@ async def export_customers(request: Request) -> Response:
     ctx = await entity_ctx(request)   # hanya pelanggan PT yang berhak (dulu lintas-PT)
     customers = await db.customers.find({"entity_id": {"$in": list(ctx.allowed_entity_ids or [])}},
                                         {"_id": 0}).to_list(20000)
-    users = {u["id"]: u async for u in db.users.find({"role": "sales"}, {"_id": 0, "id": 1, "name": 1, "email": 1})}
+    users = {u["id"]: u async for u in db.users.find({"role": {"$in": roles_in_category("sales")}},
+                                                     {"_id": 0, "id": 1, "name": 1, "email": 1})}
     for c in customers:   # kolom sama dengan format impor → ekspor bisa langsung diimpor ulang
         u = users.get(c.get("assigned_sales_id") or "") or {}
         c["sales_email"], c["sales_name"] = u.get("email", ""), c.get("assigned_sales_name") or u.get("name", "")

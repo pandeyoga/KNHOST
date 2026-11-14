@@ -18,8 +18,6 @@ import bootstrap
 from pembantu import pt_uji
 
 pytestmark = pytest.mark.anyio
-# Serah-terima (a): pemakai lama belum dialihkan → uji serah-terima (b) "diharapkan gagal" (dicabut di (b)).
-BELUM_B = pytest.mark.xfail(strict=True, reason="PR-06 — pemakai lama sifat peran dialihkan di serah-terima (b)")
 
 BACKEND = Path(__file__).resolve().parent.parent
 WAKTU = "2026-11-10T03:00:00+00:00"
@@ -194,7 +192,6 @@ async def test_PRT4_U15_migrasi_peran_desain_tanpa_acuan(klien, kepala_admin, db
 
 
 # ─── Serah-terima (b) ─────────────────────────────────────────────────────────────────────────────────────────────────
-@BELUM_B
 async def test_PRT4_U2_cakupan_milik_sendiri_peran_tanpa_acuan(klien, kepala_admin, peran_tanpa_acuan, akun, sesi,
                                                                siap):
     rid = await peran_tanpa_acuan({"customer": ["view"]}, label="Tanpa Acuan U2")
@@ -204,7 +201,6 @@ async def test_PRT4_U2_cakupan_milik_sendiri_peran_tanpa_acuan(klien, kepala_adm
     assert await _pelanggan(klien, h) == []
 
 
-@BELUM_B
 async def test_PRT4_U3_peran_berdasar_sales_ikut_daftar_pilih(klien, akun, siap, db):
     r = await klien.post("/api/access/roles", headers=siap["adm"], json={"label": "Sales Senior", "base_role": "sales"})
     assert r.status_code == 200, r.text
@@ -222,7 +218,6 @@ async def test_PRT4_U3_peran_berdasar_sales_ikut_daftar_pilih(klien, akun, siap,
     await db.customers.update_one({"id": "cust_prt4_A"}, {"$set": {"assigned_sales_id": siap["sA"]["id"]}})
 
 
-@BELUM_B
 async def test_PRT4_U4_papan_peringkat_semua_akun_kategori_sales(klien, siap, db):
     r = await klien.get("/api/sales/leaderboard", headers=siap["adm"])
     assert r.status_code == 200, r.text
@@ -234,7 +229,6 @@ async def test_PRT4_U4_papan_peringkat_semua_akun_kategori_sales(klien, siap, db
     assert siap["sS"]["id"] in {x["sales_id"] for x in r.json()}
 
 
-@BELUM_B
 async def test_PRT4_U5_kurir_tanpa_acuan_sebagai_sopir(klien, kepala_admin, akun, sesi, siap, db):
     r = await klien.post("/api/access/roles", headers=kepala_admin, json={
         "label": "Kurir", "permissions": {"logistics": ["view", "update"]},
@@ -253,7 +247,6 @@ async def test_PRT4_U5_kurir_tanpa_acuan_sebagai_sopir(klien, kepala_admin, akun
     assert _detail(r).startswith("Pengiriman ini bukan tugas Anda")
 
 
-@BELUM_B
 async def test_PRT4_U6_sales_diperluas_bertahan_nyala_ulang(klien, kepala_admin, sesi, siap):
     hA = await sesi(siap["sA"], entitas=siap["pt"])
     assert await _pelanggan(klien, hA) == ["cust_prt4_A"]
@@ -266,7 +259,6 @@ async def test_PRT4_U6_sales_diperluas_bertahan_nyala_ulang(klien, kepala_admin,
     assert await _pelanggan(klien, hA) == ["cust_prt4_A"]
 
 
-@BELUM_B
 async def test_PRT4_U7_cakupan_tim_lewat_kepala_unit(klien, kepala_admin, sesi, siap, db):
     await db.hr_employees.insert_many([
         {"id": "emp_prt4_a", "name": "Karyawan sA", "user_id": siap["sA"]["id"], "entity_id": siap["pt"],
@@ -285,7 +277,6 @@ async def test_PRT4_U7_cakupan_tim_lewat_kepala_unit(klien, kepala_admin, sesi, 
         assert (await _sifat(klien, kepala_admin, "sales", {"data_scope": None})).status_code == 200
 
 
-@BELUM_B
 async def test_PRT4_U9_ikut_menerima_notifikasi_peran_lain(klien, kepala_admin, peran_tanpa_acuan, akun, sesi, db):
     await db.notifications.insert_one({"id": "ntf_prt4_wh", "type": "info", "title": "Uji PR-T4 gudang", "body": "",
                                        "recipient_role": "warehouse", "recipient_user": "", "entity_id": "ent_ksc",
@@ -303,7 +294,6 @@ async def test_PRT4_U9_ikut_menerima_notifikasi_peran_lain(klien, kepala_admin, 
     assert "ntf_prt4_wh" in await ids()
 
 
-@BELUM_B
 async def test_PRT4_U10_peran_berdasar_manajer_bukan_pelaksana_giliran(klien, kepala_admin):
     r = await klien.post("/api/access/roles", headers=kepala_admin, json={
         "label": "Manajer Cabang", "base_role": "manager", "permissions": {"order": ["view", "deliver"]}})
@@ -319,7 +309,6 @@ async def test_PRT4_U10_peran_berdasar_manajer_bukan_pelaksana_giliran(klien, ke
     assert "manager" in roles and rid in roles
 
 
-@BELUM_B
 async def test_PRT4_U11_meja_saya_dari_kategori(klien, kepala_admin, peran_tanpa_acuan, akun, sesi):
     rid = await peran_tanpa_acuan({"customer": ["view"]}, label="Tanpa Acuan U11")
     h = await sesi(await akun(rid))
@@ -335,7 +324,6 @@ async def test_PRT4_U11_meja_saya_dari_kategori(klien, kepala_admin, peran_tanpa
     assert r.json()["title"] == "Meja Operator Gudang"
 
 
-@BELUM_B
 async def test_PRT4_U12_kpi_sales_lain_butuh_izin(klien, peran_tanpa_acuan, peran_manajer_kosong, peran_sopir, akun,
                                                   sesi, siap):
     rid = await peran_tanpa_acuan({"order": ["view", "view_sales_kpi"]}, label="Tanpa Acuan U12")
@@ -405,7 +393,6 @@ def _sumber_fungsi(berkas: str, nama: str) -> str:
     raise AssertionError(f"{berkas}: fungsi {nama} tidak ditemukan")
 
 
-@BELUM_B
 async def test_PRT4_U16_tidak_ada_nama_peran_di_jangkar():
     sisa = []
     for berkas, fungsi in TABEL_1.items():

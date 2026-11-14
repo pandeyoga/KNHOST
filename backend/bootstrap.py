@@ -1910,6 +1910,8 @@ async def run_bootstrap() -> None:
     await migrate_role_gates_to_permissions()   # PR-T2 — sesudah buku catatan, sebelum bawaan baru diteruskan
     from services.custom_role_service import migrate_role_traits as _prt4_sifat   # PR-T4 — sifat peran, sekali jalan
     await _prt4_sifat()
+    from services.custom_role_service import migrate_kpi_permission as _prt4_kpi   # PR-T4 — izin KPI sales lain
+    await _prt4_kpi()
     await sync_permission_modules()
     await sync_permission_revocations()
     await migrate_kft1_settings_permissions()

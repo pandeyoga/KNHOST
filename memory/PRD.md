@@ -25,6 +25,13 @@ GL-01: registri `services/gl_mapping_registry.py` (54 kebutuhan) → koleksi `gl
   mengikuti peran dasarnya). Editor peran bagian "Sifat peran"; `PATCH/POST /api/access/roles` field `traits`
   (penjaga: tidak bisa memberi cakupan lebih luas dari milik sendiri); halaman awal layar dari `GET /api/roles`.
   Pembantu `services/data_scope.py` (`own_scoped`, `owner_ids`, `owns`); migrasi sekali `prt4:sifat-peran`.
+  Pemakai lama dialihkan: 35 cek nama peran bermakna cakupan data (pesanan, pelanggan & tagihan, permohonan kredit,
+  KPI/target/insentif, prospek & interaksi, pengajuan harga, sample, permintaan desain, ekspor, asisten, pagar sopir,
+  lokasi kerja gudang, daftar seluruh gudang) dan 13 kueri `users.role` persis (daftar pilih sales/sopir/desainer,
+  papan peringkat, komisi, akrual insentif) kini membaca sifat peran — peran kustom berdasar Sales/Sopir/Desainer ikut
+  daftar pilih & hitungan. Izin baru `order.view_sales_kpi` "Lihat KPI & komisi sales lain" (bawaan Admin, Manajer,
+  Admin Sales, Finance; migrasi `prt4:izin-kpi-sales`). Meja Saya dari kategori kerja (antrean berizin); notifikasi
+  `audience_roles`/giliran/eskalasi dari `notify_addresses`/kategori. Empat kunci `role_home.*` → tidak dipakai.
 - 2026-11-14 KF-T6 (kontrol "harus dua orang" per PT): satu pembantu `services/dual_control.py`
   (`butuh_orang_kedua`, `pelaku_sama`, `tolak_bila_pelaku_sama`) membaca `kontrol.<aksi>.min_orang` ("1"/"2") dan
   `kontrol.<aksi>.batas_nominal` (35 aksi, katalog `config_catalog_kontrol.py`) plus `kontrol.admin_boleh_sendiri` /

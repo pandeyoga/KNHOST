@@ -4,12 +4,28 @@ Pola sama dengan Meja Admin Sales/Finance/MD/Gudang (`_queue`/`_row`), ditambah 
 "Giliran saya" dari notifikasi giliran (turn) yang belum dibaca — sehingga setiap peran
 membuka satu layar tiap pagi dan melihat apa yang menunggu keputusannya.
 """
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
 
 from db import db
 from services.work_desk_service import _queue, _row, _age_days
 
 ROLES = ("admin", "manager", "sales", "warehouse", "designer", "driver")
+#: PR-T4 — jenis meja dari KATEGORI KERJA peran (`role_registry.category_of`), bukan peran dasarnya.
+DESK_BY_CATEGORY = {"pengawas": "manager", "sales": "sales", "gudang": "warehouse", "desainer": "designer",
+                    "sopir": "driver"}
+#: PR-T4 — izin lihat dokumen yang ditampilkan tiap antrean (salah satu cukup). Antrean yang izinnya tidak dipegang
+#: pelaku dilewati. "Giliran saya" selalu tampil (notifikasi yang ditujukan ke orangnya).
+QUEUE_PERMISSIONS = {
+    "so_acc": (("order", "view"),), "po_acc": (("purchase_order", "view"),),
+    "retur_acc": (("sales_return", "view"), ("purchase_return", "view")),
+    "harga_khusus": (("price_approval", "view"),),
+    "so_menunggu": (("order", "view"),), "so_konfirmasi": (("order", "view"),), "so_ditolak": (("order", "view"),),
+    "sampel_saya": (("order", "view"),),
+    "tugas_wms": (("wms", "view"),), "po_terima": (("purchase_order", "view"), ("goods_receipt", "view")),
+    "sampel_potong": (("wms", "view"),), "retur_terima_qc": (("sales_return", "view"), ("inspection", "view")),
+    "desain_saya": (("design_request", "view"),), "desain_bebas": (("design_request", "view"),),
+    "kiriman": (("logistics", "view"),),
+}
 # Keputusan pemilik K-03 (26 Okt) — kolom nilai SO/PO di Meja Saya = grand total → diberi label tegas (sama dengan
 # Pusat Dokumen, Persetujuan Pembelian & PDF: "Total" = termasuk PPN, DPP = rincian).
 TOTAL_LABEL = "Total (termasuk PPN)"
@@ -229,7 +245,25 @@ def _days_ago(n: int) -> str:
     return (datetime.now(timezone.utc) - timedelta(days=n)).isoformat()
 
 
-async def role_desk(role: str, actor: Dict[str, Any], scope: Dict[str, Any], ids: List[str]) -> Dict[str, Any]:
+def desk_of(actor: Dict[str, Any]) -> str:
+    """PR-T4 — jenis meja pelaku: Admin (peran terkunci) = meja Admin; selain itu dari kategori kerja ("" = tidak ada)."""
+    import role_registry as reg
+    role = str((actor or {}).get("role") or "")
+    if role == "admin":   # peran Admin terkunci: meja manajer + antrean gudang (perilaku sebelum PR-T4)
+        return "admin"
+    return DESK_BY_CATEGORY.get(reg.category_of(role), "")
+
+
+def _queue_allowed(q: Dict[str, Any], perms: Dict[str, List[str]]) -> bool:
+    need = QUEUE_PERMISSIONS.get(q.get("id") or "")
+    if not need:
+        return True
+    return any(act in (perms.get(res) or []) or "*" in (perms.get(res) or []) for res, act in need)
+
+
+async def role_desk(role: str, actor: Dict[str, Any], scope: Dict[str, Any], ids: List[str],
+                    perms: Optional[Dict[str, List[str]]] = None) -> Dict[str, Any]:
+    """`role` = jenis meja (`desk_of`). `perms` (izin pelaku) — PR-T4: antrean yang izinnya tidak dipegang dilewati."""
     queues = [await _turn_queue(actor)]
     if role == "manager":
         queues += await manager_queues(scope, ids)
@@ -244,5 +278,7 @@ async def role_desk(role: str, actor: Dict[str, Any], scope: Dict[str, Any], ids
     elif role == "admin":
         queues += await manager_queues(scope, ids)
         queues += await warehouse_queues(scope, ids)
+    if perms is not None:
+        queues = [q for q in queues if _queue_allowed(q, perms)]
     return {"role": role, "title": LABEL.get(role, "Meja Saya"), "queues": queues,
             "total_items": sum(len(q["rows"]) for q in queues), "generated_at": _days_ago(0)}

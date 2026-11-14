@@ -5,7 +5,6 @@ from fastapi import HTTPException, Request
 from db import db
 from core_utils import safe_doc, now_iso, new_id, SESSION_TTL_HOURS
 from permissions_config import DEFAULT_PERMISSIONS
-from role_registry import role_in  # peran acuan dikenali (keputusan owner 2026-10-21)
 
 SESSION_COOKIE = "session_token"
 
@@ -65,9 +64,14 @@ async def current_user(request: Request) -> Dict[str, Any]:
     # mengubah 62 pemanggilnya satu-satu.
     from request_context import resolve_from_user, set_active_entity, set_actor
     set_actor(user)
-    if role_in(user.get("role"), ("sales",)):
+    # PR-T4 — sifat peran: kategori kerja "sales" dibatasi tahap produk tersembunyi; cakupan "tim" menyiapkan daftar
+    # anggota timnya untuk permintaan ini (`services/data_scope.prime`).
+    from role_registry import category_of
+    if category_of(user.get("role")) == "sales":
         from services.product_exclusivity import refresh_hidden_stages
         await refresh_hidden_stages()
+    from services.data_scope import prime as _prime_scope
+    await _prime_scope(user)
     # FASE E-1 (E1.5) — konteks entitas yang diminta WAJIB sah untuk SEMUA metode.
     # Dipasang sebelum resolusi supaya tidak ada lagi "jatuh diam-diam ke HOME".
     from services.entity_lifecycle_service import archived_read_target, assert_requested_entity_allowed

@@ -8,7 +8,7 @@ import KNSelect from "../../components/KNSelect";
 import FormModal from "../../components/FormModal";
 import FormSection from "../../components/FormSection";
 import { CustomerSalesTeam, customerTeamError } from "./CustomerSalesTeam";
-import { can, roleIs } from "../../config/roles";
+import { can, categoryOf } from "../../config/roles";
 import { apiErrorText } from "../../utils/apiError";
 import { formatCurrency } from "../../utils/formatters";
 import { parseDecimal } from "../../utils/decimalInput";
@@ -44,7 +44,7 @@ export default function CustomerFormModal({
 }) {
   const isEdit = !!editTarget;
   const role = currentUser?.role;
-  const isSales = roleIs(role, ["sales"]);   // Sisir lanjutan gerbang peran (2026-10-21) — = pemilik otomatis di server (role_in)
+  const isSales = categoryOf(role) === "sales";   // PR-T4 — = pemilik otomatis di server (kategori kerja "sales")
   const isManager = !isSales;   // admin/manager/sales_admin/… — wajib memilih sales penanggung jawab
   const pos = variant === "pos";
   // PK-45 — izin dari server (bukan nama peran): kredit = plafon & status; ubah = isian lain (PATCH).

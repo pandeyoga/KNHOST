@@ -32,21 +32,28 @@ itu ketiganya diperiksa (`$or`).
 
 BATAS WEWENANG
 --------------
-Pembatasan ini **keras** untuk peran `sales` (bukan sakelar layar yang bisa
-dimatikan): peran lain — `sales_admin`, `finance`, `manager`, `admin`, `warehouse` —
-memang harus melihat keseluruhan pesanan, tetapi tetap bisa MEMINTA penyaringan
-"punya saya" lewat parameter `mine=true`.
+Pembatasan ini **keras** untuk peran yang cakupan datanya bukan "semua" (bukan sakelar layar yang bisa
+dimatikan). PR-T4: cakupan dibaca dari sifat peran `data_scope` (`services/data_scope.py`) — bawaan Sales
+"milik sendiri", peran lain "semua" (keputusan pemilik E8.10, kini bisa diatur per peran: "milik sendiri dan
+timnya" ikut membuka pesanan anggota tim). Peran bercakupan "semua" tetap bisa MEMINTA penyaringan "punya saya"
+lewat parameter `mine=true`.
 """
 from typing import Any, Dict, List, Optional
-from role_registry import role_in  # peran acuan dikenali (keputusan owner 2026-10-21)
 
-#: Peran yang WAJIB dibatasi ke pesanan miliknya sendiri (keputusan pemilik E8.10).
-OWNER_LOCKED_ROLES = ("sales",)
+from services.data_scope import in_clause, own_scoped, owner_ids_now
 
 
 def is_owner_locked(actor: Optional[Dict[str, Any]]) -> bool:
-    """Benar bila peran aktor hanya boleh melihat pesanan miliknya."""
-    return role_in(str((actor or {}).get("role") or ""), OWNER_LOCKED_ROLES)
+    """Benar bila cakupan data peran aktor bukan "semua" (hanya pesanan miliknya / timnya)."""
+    return own_scoped(actor)
+
+
+def _owner_ids(actor: Optional[Dict[str, Any]]) -> List[str]:
+    """Pemilik yang dihitung "punya aktor": cakupan terbatas → `owner_ids` (dirinya + tim); selain itu dirinya."""
+    uid = str((actor or {}).get("id") or "")
+    if not uid:
+        return []
+    return (owner_ids_now(actor) or [uid]) if own_scoped(actor) else [uid]
 
 
 def owner_clause(actor: Optional[Dict[str, Any]]) -> Dict[str, Any]:
@@ -57,12 +64,14 @@ def owner_clause(actor: Optional[Dict[str, Any]]) -> Dict[str, Any]:
     sudah ada di query — mis. penyaringan pencarian.
     """
     # KN-E01 — nama tidak unik; kepemilikan HANYA lewat id (pembuat, sales_id, anggota tim).
-    uid = str((actor or {}).get("id") or "")
+    # PR-T4 — id pemilik = `owner_ids` aktor (cakupan "tim" ikut memuat anggota timnya).
+    ids = _owner_ids(actor)
     ors: List[Dict[str, Any]] = []
-    if uid:
-        ors.append({"created_by": uid})
-        ors.append({"sales_id": uid})
-        ors.append({"sales_team.sales_id": uid})
+    if ids:
+        v = in_clause(ids)
+        ors.append({"created_by": v})
+        ors.append({"sales_id": v})
+        ors.append({"sales_team.sales_id": v})
     if not ors:
         # Tidak ada jejak identitas sama sekali → jangan buka semuanya diam-diam.
         return {"id": "__tanpa_pemilik__"}
@@ -85,8 +94,8 @@ def apply_scope(query: Dict[str, Any], actor: Optional[Dict[str, Any]],
                 mine: Optional[bool] = None) -> Dict[str, Any]:
     """Terapkan aturan kepemilikan pada query daftar pesanan.
 
-    * peran `sales` → SELALU dibatasi (nilai `mine` diabaikan; ini pagar, bukan tampilan)
-    * peran lain    → dibatasi hanya bila `mine=True` diminta layar
+    * cakupan data bukan "semua" → SELALU dibatasi (nilai `mine` diabaikan; ini pagar, bukan tampilan)
+    * cakupan "semua"            → dibatasi hanya bila `mine=True` diminta layar
     """
     if is_owner_locked(actor) or mine is True:
         return merge(query, owner_clause(actor))
@@ -96,11 +105,11 @@ def apply_scope(query: Dict[str, Any], actor: Optional[Dict[str, Any]],
 def owns(order: Dict[str, Any], actor: Optional[Dict[str, Any]]) -> bool:
     """Benar bila `order` memang milik aktor (dibaca dari tiga jejak yang sama)."""
     o = order or {}
-    uid = str((actor or {}).get("id") or "")
-    if not uid:
+    ids = set(_owner_ids(actor))
+    if not ids:
         return False
-    return (str(o.get("created_by") or "") == uid or str(o.get("sales_id") or "") == uid
-            or any(str(m.get("sales_id") or "") == uid for m in (o.get("sales_team") or [])))
+    return (str(o.get("created_by") or "") in ids or str(o.get("sales_id") or "") in ids
+            or any(str(m.get("sales_id") or "") in ids for m in (o.get("sales_team") or [])))
 
 
 def assert_may_open(order: Dict[str, Any], actor: Optional[Dict[str, Any]]) -> None:
@@ -116,5 +125,5 @@ def assert_may_open(order: Dict[str, Any], actor: Optional[Dict[str, Any]]) -> N
     raise HTTPException(
         status_code=403,
         detail=(f"Pesanan {order.get('number') or ''} bukan pesanan Anda. "
-                "Peran sales hanya membuka pesanan miliknya sendiri — minta Admin "
+                "Peran Anda hanya membuka pesanan miliknya sendiri — minta Admin "
                 "Sales bila Anda perlu menindaknya.").strip())

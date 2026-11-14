@@ -27,6 +27,9 @@ KUNCI_TERBUKA = ["finance.default_payment_term_code", "inventory.min_cut_qty", "
 # lama `amendment.dual_control` (izin `settings.manage`) menjadi `not_used` → tidak bisa diubah siapa pun (−1 di U02).
 KFT6_KUNCI = 57
 KFT6_TIDAK_DIPAKAI = 1
+# PR-T4 — empat kunci `role_home.*` (izin `settings.manage`) kini `not_used`: halaman awal diatur per peran di Peran &
+# Hak Akses › Sifat peran → tidak bisa diubah siapa pun di Pusat Pengaturan (−4 di U02).
+PRT4_TIDAK_DIPAKAI = 4
 
 
 def _put(key, value, scope_type="entity", scope_id="ent_ksc"):
@@ -59,8 +62,9 @@ async def test_U02_bisa_ubah_232_kunci(klien, akun, sesi, peran_tanpa_acuan):
     assert r.status_code == 200, r.text
     # PR-T2 — 232 kunci aktif berizin `settings.manage` saat KF-T1; tiga kunci `ai.*_roles` kini tidak dipakai
     # (diatur di Peran & Hak Akses) → 232 − 3 = 229. KF-T6 menambah kunci `kontrol.*` (KFT6_KUNCI) dan mematikan
-    # sakelar lama (KFT6_TIDAK_DIPAKAI).
-    assert sum(1 for it in r.json()["items"] if it["can_edit"]) == 229 + KFT6_KUNCI - KFT6_TIDAK_DIPAKAI
+    # sakelar lama (KFT6_TIDAK_DIPAKAI). PR-T4 mematikan empat kunci halaman awal (PRT4_TIDAK_DIPAKAI).
+    assert sum(1 for it in r.json()["items"] if it["can_edit"]) == \
+        229 + KFT6_KUNCI - KFT6_TIDAK_DIPAKAI - PRT4_TIDAK_DIPAKAI
 
 
 async def test_U03_lapisan_grup_tetap_untuk_lintas_pt(klien, akun, sesi, peran_tanpa_acuan):

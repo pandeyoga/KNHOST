@@ -21,7 +21,7 @@ from entity_scope import entity_ctx, resolve_list_scope, assert_entity_access
 from schemas import PriceApprovalCreate, PriceApprovalDecision, GenericPatch
 from services import storage_service as storage
 from services.notification_service import create_notification
-from role_registry import role_in  # peran acuan dikenali (keputusan owner 2026-10-21)
+from services.data_scope import in_clause, own_scoped, owner_ids  # PR-T4 — cakupan data peran
 # F1b — bagian BERSAMA alur harga khusus (bentuk dokumen, keberlakuan, efek keputusan)
 # dipakai juga oleh Daftar Harga per Pelanggan supaya tidak ada dua definisi.
 from services import dual_control   # KF-T6 — kontrol "harus dua orang" (dulu `approval_matrix_service.sod_blocked`)
@@ -181,8 +181,8 @@ async def list_price_approvals(
         query["product_id"] = product_id
     query = resolve_list_scope("price_approvals", query, ctx, entity_id)
     # Row-level: sales hanya melihat pengajuannya sendiri
-    if role_in(user.get("role"), ("sales",)):
-        query["requested_by"] = user.get("id")
+    if own_scoped(user):   # PR-T4 — cakupan data peran
+        query["requested_by"] = in_clause(await owner_ids(user))
     rows = await db.price_approvals.find(query, {"_id": 0}).sort("created_at", -1).to_list(300)
     return [_decorate(safe_doc(r)) for r in rows]
 
@@ -217,8 +217,8 @@ async def price_approval_stats(request: Request) -> Dict[str, Any]:
     user = await require_permission(request, "price_approval", "view")
     # G3 D4-PRICE-SCOPE-01 — statistik ikut lingkup entitas yang sama dengan daftar
     base: Dict[str, Any] = resolve_list_scope("price_approvals", {}, await entity_ctx(request), None)
-    if role_in(user.get("role"), ("sales",)):
-        base["requested_by"] = user.get("id")
+    if own_scoped(user):   # PR-T4 — cakupan data peran
+        base["requested_by"] = in_clause(await owner_ids(user))
     pipeline = [{"$match": base}] if base else []
     pipeline.append({"$group": {"_id": "$status", "count": {"$sum": 1}}})
     rows = await db.price_approvals.aggregate(pipeline).to_list(50)

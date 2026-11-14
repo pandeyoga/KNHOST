@@ -14,7 +14,7 @@ import DeliveryTable from "./DeliveryTable";
 import DispatchDashboard from "./DispatchDashboard";
 import HistoryPanel from "./HistoryPanel";
 import FleetPanel from "./FleetPanel";
-import { can, roleIs } from "../../config/roles";
+import { can, categoryOf } from "../../config/roles";
 import TripPlannerPanel from "./TripPlannerPanel";
 import ExportMenu from "../../components/ExportMenu";   // FIX-4 — tombol baku Unduh (Excel/CSV, Pusat Export)
 
@@ -38,7 +38,7 @@ const TABS = [
 export default function LogisticsView({ currentUser, selectedEntity, focusDelivery, onFocusConsumed }) {
   const role = currentUser?.role;
   const canManage = can(currentUser?.permissions || {}, "logistics", "manage");   // Sisir lanjutan gerbang peran (2026-10-21)
-  const isDriver = roleIs(role, ["driver"]);   // = pagar sopir server (role_in)
+  const isDriver = categoryOf(role) === "sopir";   // PR-T4 — kategori kerja "sopir" (pengemudi yang bisa ditugaskan)
   const readOnly = !canManage && !isDriver;   // sales / admin sales: hanya-lihat
   const canOpenOrder = can(currentUser?.permissions || {}, "order", "view");
   const [tab, setTab] = useState(isDriver ? "list" : "dashboard");

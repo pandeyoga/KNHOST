@@ -383,6 +383,8 @@ ACTION_LABEL = {
 }
 # PK-45 — izin kredit pelanggan (modul Pelanggan & CRM) dan pesanan tanpa PPN (modul Pesanan Penjualan).
 ACTION_LABEL.update({"manage_credit": "Ubah plafon & blokir kredit", "tax_override": "Buat pesanan tanpa PPN"})
+# PR-T4 — KPI & komisi sales lain (modul Pesanan Penjualan; dulu daftar nama peran di `_kpi_scope`).
+ACTION_LABEL.update({"order.view_sales_kpi": "Lihat KPI & komisi sales lain"})
 #: PR-T2 — label aksi templat laporan Tanya KN = judul templat.
 ACTION_LABEL.update({f"ai_template.{t['id']}": t["title"] for t in AI_TEMPLATES})
 

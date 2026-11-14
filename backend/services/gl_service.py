@@ -3008,8 +3008,9 @@ async def post_incentive_accrual(entity_id: str, period: str,
     src_id = f"{entity_id}:{period}"
     await seed_default_coa()
     from services import sales_force_service as sf
+    from role_registry import roles_in_category   # PR-T4 — akrual insentif: semua akun berkategori kerja "sales"
     sales_users = await db.users.find(
-        {"role": "sales", "status": "active"}, {"_id": 0, "id": 1}).to_list(500)
+        {"role": {"$in": roles_in_category("sales")}, "status": "active"}, {"_id": 0, "id": 1}).to_list(500)
     total = 0.0
     for u in sales_users:
         c = await sf.compute_commission(u["id"], period, entity_id=entity_id)

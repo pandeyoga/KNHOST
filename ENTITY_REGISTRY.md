@@ -2614,7 +2614,9 @@ Field lain:  hidden_views {role: [nav id]}, cross_entity {role: bool},
              tim · semua; `home_view` ∈ `role_registry.HOME_CHOICES`; `kategori_kerja` ∈ "" · sales · sopir ·
              desainer · gudang · pengawas; `notify_like` = daftar id peran bawaan. Kunci yang tidak ada = nilai
              turunan (peran bawaan → bawaan sistem; kustom → efektif peran dasarnya). Diterapkan ke registry oleh
-             `role_registry.apply_traits` (`custom_role_service.sync_registry`). Migrasi sekali `prt4:sifat-peran`.
+             `role_registry.apply_traits` (`custom_role_service.sync_registry`). Migrasi sekali `prt4:sifat-peran`
+             (peran kustom tanpa peran dasar yang hanya memegang `design_request.view` → `data_scope: milik_sendiri`)
+             dan `prt4:izin-kpi-sales` (`order.view_sales_kpi` untuk peran yang dulu melihat KPI sales lain lewat nama).
 
 ⚠️ Hanya ADA 1 document dengan id="default"
 ⚠️ Izin peran bawaan TIDAK lagi ditimpa saat start (PR-T9); bawaan tunggal = permissions_config.DEFAULT_PERMISSIONS

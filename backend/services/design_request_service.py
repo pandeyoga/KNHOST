@@ -145,7 +145,8 @@ async def designers() -> List[Dict[str, Any]]:
     """
     out: List[Dict[str, Any]] = []
     seen = set()
-    async for u in db.users.find({"role": "designer"},
+    from role_registry import roles_in_category   # PR-T4 — akun berkategori kerja "desainer"
+    async for u in db.users.find({"role": {"$in": roles_in_category("desainer")}},
                                 {"_id": 0, "id": 1, "name": 1, "email": 1, "status": 1}):
         if (u.get("status") or "active") != "active":
             continue

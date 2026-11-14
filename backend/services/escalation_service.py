@@ -28,7 +28,7 @@ from db import db
 from core_utils import now_iso
 from services.notification_service import create_notification
 from services.wa_alert_service import SEVERITY_RANK, raw_settings
-from role_registry import base_or_self, role_in, role_label  # peran acuan dikenali (keputusan owner 2026-10-21)
+from role_registry import notify_addresses, role_in, role_label  # PR-T4 — alamat notifikasi dari sifat peran
 
 logger = logging.getLogger("alerts.escalation")
 
@@ -111,7 +111,9 @@ def plan_escalations(candidates, users: Dict[str, Dict[str, Any]], *, min_rank: 
         if role_in(role, TOP_ROLES):
             skipped_top += 1
             continue
-        next_role = ESCALATION_CHAIN.get(role) or ESCALATION_CHAIN.get(base_or_self(role))
+        # PR-T4 — peran di luar rantai memakai alamat notifikasi pertamanya (bawaan peran kustom = peran dasarnya).
+        addr = notify_addresses(role)
+        next_role = ESCALATION_CHAIN.get(role) or (ESCALATION_CHAIN.get(addr[0]) if addr else None)
         if not next_role and n.get("recipient_user"):
             next_role = "admin"   # salinan per orang dulu selalu naik ke admin (peran "") — perilaku dipertahankan
         if not next_role:

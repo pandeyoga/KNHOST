@@ -236,8 +236,9 @@ async def list_sales_owners(request: Request) -> List[Dict[str, Any]]:
     jadi tidak membocorkan daftar user ke role lain.
     """
     await require_permission(request, "product", "update")
+    from role_registry import roles_in_category   # PR-T4 — kategori kerja "sales" (bukan nama peran persis)
     users = await db.users.find(
-        {"role": "sales", "status": "active"}, {"_id": 0, "id": 1, "name": 1, "email": 1}
+        {"role": {"$in": roles_in_category("sales")}, "status": "active"}, {"_id": 0, "id": 1, "name": 1, "email": 1}
     ).sort("name", 1).to_list(200)
     return users
 

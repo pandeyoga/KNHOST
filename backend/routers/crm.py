@@ -8,7 +8,7 @@ from typing import Any, Dict, List
 from fastapi import APIRouter, HTTPException, Request, Query
 from pymongo import ReturnDocument
 from db import db
-from dependencies import has_permission, require_any_permission, require_permission, audit
+from dependencies import has_permission, require_any_permission, require_permission, current_user, audit
 from core_utils import new_id, now_iso, safe_doc, DEFAULT_ENTITY_ID
 from schemas import (
     CustomerReassign, SalesTargetCreate, SalesIncentiveCreate,
@@ -21,7 +21,9 @@ from services.customer_service import (
 from services.sales_force_service import sales_kpi, compute_commission, leaderboard, commission_history
 from services import gl_service
 from entity_scope import entity_ctx, guard_doc, resolve_list_scope
-from role_registry import role_in  # peran acuan dikenali (keputusan owner 2026-10-21)
+# PR-T4 — cakupan data & kategori kerja dari sifat peran (bukan nama peran).
+from role_registry import roles_in_category
+from services.data_scope import in_clause, own_scoped, owner_ids, owns
 
 router = APIRouter(prefix="/api")
 
@@ -50,7 +52,7 @@ async def list_sales_users(request: Request, entity_id: str = None) -> List[Dict
            else [ctx.active_entity_id])
     ids = [i for i in ids if i in ctx.allowed_entity_ids] or list(ctx.allowed_entity_ids)
     rows = await db.users.find(
-        {"role": "sales", "status": "active",
+        {"role": {"$in": roles_in_category("sales")}, "status": "active",
          "$or": [{"allowed_entity_ids": {"$in": ids}},
                  {"home_entity_id": {"$in": ids}},
                  {"entity_id": {"$in": ids}}]},
@@ -75,7 +77,8 @@ async def get_customer_360(customer_id: str, request: Request) -> Dict[str, Any]
 @router.post("/customers/{customer_id}/reassign")
 async def reassign_customer(customer_id: str, payload: CustomerReassign, request: Request) -> Dict[str, Any]:
     actor = await require_permission(request, "sales_force", "assign")
-    sales = await db.users.find_one({"id": payload.assigned_sales_id, "role": "sales", "status": "active"}, {"_id": 0})
+    sales = await db.users.find_one({"id": payload.assigned_sales_id, "role": {"$in": roles_in_category("sales")},
+                                     "status": "active"}, {"_id": 0})
     if not sales:
         raise HTTPException(status_code=400, detail="Salesperson tujuan tidak valid")
     before = safe_doc(await db.customers.find_one({"id": customer_id}, {"_id": 0, "assigned_sales_id": 1}))
@@ -132,8 +135,8 @@ async def list_credit_overrides(request: Request, status: str = None) -> List[Di
     query: Dict[str, Any] = {}
     if status:
         query["status"] = status
-    if role_in(actor.get("role"), ("sales",)):
-        query["requested_by_id"] = actor["id"]
+    if own_scoped(actor):   # PR-T4 — cakupan data peran
+        query["requested_by_id"] = in_clause(await owner_ids(actor))
     query = resolve_list_scope("credit_overrides", query, await entity_ctx(request))   # PK-45 (CR-04) — per PT
     return await db.credit_overrides.find(query, {"_id": 0}).sort("created_at", -1).to_list(200)
 
@@ -142,7 +145,7 @@ async def list_credit_overrides(request: Request, status: str = None) -> List[Di
 async def get_credit_override(override_id: str, request: Request) -> Dict[str, Any]:
     actor = await require_permission(request, "customer", "view")
     doc = await db.credit_overrides.find_one({"id": override_id}, {"_id": 0})
-    if not doc or (role_in(actor.get("role"), ("sales",)) and doc.get("requested_by_id") != actor["id"]):
+    if not doc or (own_scoped(actor) and not await owns(actor, doc.get("requested_by_id"))):
         raise HTTPException(status_code=404, detail="Permohonan override kredit tidak ditemukan")
     await guard_doc(request, "credit_overrides", doc, strict=False)   # PK-45 (CR-04) — PT lain → 404
     return doc
@@ -258,18 +261,17 @@ async def add_followup(customer_id: str, payload: CollectionFollowupCreate, requ
 
 
 # ── Sales KPI / leaderboard / commission ─────────────────────────────────────
-def _sees_other_sales(actor: Dict[str, Any]) -> bool:
-    """KN-E38 — hanya peran pengawas yang boleh melihat KPI/komisi sales lain. Satu tempat untuk `_kpi_scope` dan
-    daftar target/insentif (PR-T3 S3); cakupan data dari sifat peran menggantikannya di PR-T4 (`02_STANDAR.md` Z5)."""
-    role = actor.get("role")
-    return not role_in(role, ("sales",)) and role_in(role, ("admin", "manager", "sales_admin", "finance"))
-
-
-async def _target_sales_filter(actor: Dict[str, Any], sales_id: str = None) -> str:
-    """PR-T3 (S3) — saringan `sales_id` daftar target & skema insentif: pemegang `sales_force.view` dan peran pengawas
-    (`_sees_other_sales`, aturan yang sama dengan KPI/komisi) melihat semua atau sales yang dipilih; selain itu hanya
-    miliknya sendiri. Kosong = tanpa saringan sales."""
-    if await has_permission(actor, "sales_force", "view") or _sees_other_sales(actor):
+async def _target_sales_query(actor: Dict[str, Any], sales_id: str = None):
+    """PR-T3 (S3) + PR-T4 — saringan `sales_id` daftar target & skema insentif (aturan yang sama dengan KPI/komisi):
+    pemegang `sales_force.view` melihat semua atau sales yang dipilih; peran bercakupan data bukan "semua" → dirinya
+    atau anggota timnya; pemegang `order.view_sales_kpi` (dulu daftar nama peran pengawas) melihat semua atau sales yang
+    dipilih; selain itu hanya miliknya sendiri. Kosong = tanpa saringan sales."""
+    if await has_permission(actor, "sales_force", "view"):
+        return sales_id or ""
+    if own_scoped(actor):
+        ids = await owner_ids(actor) or []
+        return sales_id if sales_id and sales_id in ids else in_clause(ids)
+    if await has_permission(actor, "order", "view_sales_kpi"):
         return sales_id or ""
     return actor["id"]
 
@@ -288,8 +290,14 @@ async def _kpi_scope(request: Request, sales_id: str, entity_id: str) -> tuple:
             raise HTTPException(status_code=403, detail="Tidak berwenang atas entitas ini")
     else:
         entity_id = ctx.active_entity_id
-    if not sales_id or not _sees_other_sales(actor):
-        sales_id = actor["id"]  # KN-E38 — hanya peran pengawas yang boleh melihat KPI/komisi sales lain
+    # KN-E38 — KPI/komisi sales lain hanya untuk yang berwenang. PR-T4: cakupan data bukan "semua" → dirinya atau
+    # anggota timnya; selain itu butuh izin `order.view_sales_kpi` (dulu daftar nama peran admin/manajer/admin sales/
+    # finance). Permintaan yang tidak berwenang = KPI dirinya (perilaku lama, bukan 403).
+    if own_scoped(actor):
+        if sales_id not in (await owner_ids(actor) or []):
+            sales_id = actor["id"]
+    elif not sales_id or not await has_permission(actor, "order", "view_sales_kpi"):
+        sales_id = actor["id"]
     return sales_id, entity_id
 
 
@@ -392,13 +400,13 @@ async def list_targets(request: Request, sales_id: str = None, period: str = Non
                        entity_id: str = None) -> List[Dict[str, Any]]:
     """FASE E-0 (L5) — target sales WAJIB ter-scope entitas: dulu target lintas-entitas
     terlihat karena penyaringan hanya per `sales_id`. PR-T3 (S3) — dulu cukup login; kini `order.view` + isi
-    tersaring `_target_sales_filter`."""
+    tersaring `_target_sales_query`."""
     actor = await require_permission(request, "order", "view", detail=_S3_DITOLAK)
     ctx = await entity_ctx(request)
     query: Dict[str, Any] = {}
-    sid = await _target_sales_filter(actor, sales_id)
-    if sid:
-        query["sales_id"] = sid
+    sq = await _target_sales_query(actor, sales_id)
+    if sq:
+        query["sales_id"] = sq
     if period:
         query["period"] = period
     query = resolve_list_scope("sales_targets", query, ctx, entity_id)
@@ -409,7 +417,7 @@ async def list_targets(request: Request, sales_id: str = None, period: str = Non
 async def create_target(payload: SalesTargetCreate, request: Request) -> Dict[str, Any]:
     actor = await require_permission(request, "sales_force", "update")
     ctx = await entity_ctx(request)
-    sales = await db.users.find_one({"id": payload.sales_id, "role": "sales"},
+    sales = await db.users.find_one({"id": payload.sales_id, "role": {"$in": roles_in_category("sales")}},
                                     {"_id": 0, "name": 1, "home_entity_id": 1})
     if not sales:
         raise HTTPException(status_code=400, detail="Salesperson tidak valid")
@@ -451,9 +459,9 @@ async def list_incentives(request: Request, sales_id: str = None, period: str = 
     actor = await require_permission(request, "order", "view", detail=_S3_DITOLAK)
     ctx = await entity_ctx(request)
     query: Dict[str, Any] = {}
-    sid = await _target_sales_filter(actor, sales_id)
-    if sid:
-        query["sales_id"] = sid
+    sq = await _target_sales_query(actor, sales_id)
+    if sq:
+        query["sales_id"] = sq
     if period:
         query["period"] = period
     query = resolve_list_scope("sales_incentives", query, ctx, entity_id)
@@ -464,7 +472,7 @@ async def list_incentives(request: Request, sales_id: str = None, period: str = 
 async def create_incentive(payload: SalesIncentiveCreate, request: Request) -> Dict[str, Any]:
     actor = await require_permission(request, "sales_force", "update")
     ctx = await entity_ctx(request)
-    sales = await db.users.find_one({"id": payload.sales_id, "role": "sales"},
+    sales = await db.users.find_one({"id": payload.sales_id, "role": {"$in": roles_in_category("sales")}},
                                     {"_id": 0, "name": 1, "home_entity_id": 1})
     if not sales:
         raise HTTPException(status_code=400, detail="Salesperson tidak valid")

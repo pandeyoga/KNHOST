@@ -9,6 +9,7 @@ from fastapi import HTTPException
 from db import db
 from core_utils import safe_doc, DEFAULT_ENTITY_ID, rupiah
 from role_registry import role_in  # peran acuan dikenali (keputusan owner 2026-10-21)
+from services.data_scope import in_clause, own_scoped, owner_ids, owner_ids_now   # PR-T4 — cakupan data peran
 
 # Ambang kontrol kredit (KN_17 §5.2)
 WARNING_RATIO = 0.8          # ar >= 80% limit -> warning
@@ -389,15 +390,17 @@ async def customer_360(customer_id: str) -> Optional[Dict[str, Any]]:
 
 def own_customer_clause(user: Dict[str, Any]) -> Dict[str, Any]:
     """Pelanggan "milik" sales: PIC (`assigned_sales_id`), anggota tim sales, atau pelanggan umum/walk-in PT
-    (`shared_walk_in`, keputusan pemilik P14-K2 24 Okt: satu per PT, boleh dipakai semua sales)."""
-    uid = (user or {}).get("id") or "__tanpa_pemilik__"
-    return {"$or": [{"assigned_sales_id": uid}, {"sales_team.sales_id": uid}, {"shared_walk_in": True}]}
+    (`shared_walk_in`, keputusan pemilik P14-K2 24 Okt: satu per PT, boleh dipakai semua sales).
+    PR-T4 — pemilik = `owner_ids` pengguna (cakupan "tim" ikut memuat anggota timnya)."""
+    v = in_clause(owner_ids_now(user) or [(user or {}).get("id") or "__tanpa_pemilik__"])
+    return {"$or": [{"assigned_sales_id": v}, {"sales_team.sales_id": v}, {"shared_walk_in": True}]}
 
 
 def scope_query(user: Dict[str, Any], base: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
-    """Row-level scoping (KN_17 §4, E8.10): role=sales hanya customer miliknya (+ walk-in PT)."""
+    """Row-level scoping (KN_17 §4, E8.10): cakupan data bukan "semua" (bawaan Sales) → hanya pelanggan
+    miliknya/timnya (+ walk-in PT). PR-T4: dibaca dari sifat peran `data_scope`."""
     q = dict(base or {})
-    if user and role_in(user.get("role"), ("sales",)):
+    if user and own_scoped(user):
         ands = list(q.pop("$and", []) or [])
         ands.append(own_customer_clause(user))
         q["$and"] = ands
@@ -416,10 +419,10 @@ async def can_access_customer(user: Dict[str, Any], customer: Dict[str, Any]) ->
     # (seed bisa meng-assign sales ke customer entitas lain — tetap tak boleh diakses lintas-PT).
     if not _entity_allowed(user, customer):
         return False
-    if role_in(role, ("sales",)):
-        uid = user.get("id")
-        return (customer.get("assigned_sales_id") == uid or bool(customer.get("shared_walk_in"))
-                or any(m.get("sales_id") == uid for m in customer.get("sales_team") or []))
+    if own_scoped(user):   # PR-T4 — cakupan data peran (bawaan Sales: milik sendiri)
+        ids = await owner_ids(user) or []
+        return (customer.get("assigned_sales_id") in ids or bool(customer.get("shared_walk_in"))
+                or any(m.get("sales_id") in ids for m in customer.get("sales_team") or []))
     return True
 
 
@@ -435,9 +438,11 @@ async def can_collect_customer(user: Dict[str, Any], customer: Dict[str, Any]) -
     """Penagihan: pelanggan milik sales ATAU pelanggan yang pernah ia pesankan (pesanan buatannya)."""
     if await can_access_customer(user, customer):
         return True
-    if not role_in(user.get("role"), ("sales",)) or not _entity_allowed(user, customer):
+    if not own_scoped(user) or not _entity_allowed(user, customer):
         return False
-    return bool(await db.sales_orders.find_one({"customer_id": customer.get("id"), "sales_id": user.get("id")}, {"_id": 1}))
+    ids = await owner_ids(user) or [user.get("id")]
+    return bool(await db.sales_orders.find_one({"customer_id": customer.get("id"), "sales_id": in_clause(ids)},
+                                               {"_id": 1}))
 
 
 def can_view_credit(user: Dict[str, Any], customer: Dict[str, Any]) -> bool:
@@ -452,7 +457,9 @@ async def collection_worklist(
 ) -> List[Dict[str, Any]]:
     """Daftar tagihan (order outstanding) untuk follow-up penagihan (KN_17 paragraf 7)."""
     cust_filter: Dict[str, Any] = {}
-    own_sales = user.get("id") if role_in(user.get("role"), ("sales",)) else None
+    # PR-T4 — cakupan data peran: pemilik = `owner_ids` (bawaan Sales: dirinya; "tim": + anggota timnya).
+    own = (await owner_ids(user) or None) if own_scoped(user) else None
+    own_sales = in_clause(own) if own else None
     if own_sales:
         # Pelanggan miliknya DITAMBAH pelanggan dari pesanan yang ia buat sendiri.
         own_cids = await db.sales_orders.distinct("customer_id", {"sales_id": own_sales})
@@ -469,7 +476,7 @@ async def collection_worklist(
     rows: List[Dict[str, Any]] = []
     if not cust_ids:
         return rows
-    assigned_ids = [c["id"] for c in customers if not own_sales or c.get("assigned_sales_id") == own_sales]
+    assigned_ids = [c["id"] for c in customers if not own or c.get("assigned_sales_id") in own]
     oq: Dict[str, Any] = {"customer_id": {"$in": cust_ids}}
     if own_sales:
         oq = {"$or": [{"customer_id": {"$in": assigned_ids}}, {"customer_id": {"$in": cust_ids}, "sales_id": own_sales}]}

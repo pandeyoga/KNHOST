@@ -16,7 +16,7 @@ from services import sales_ownership
 from services.customer_service import scope_query as customer_scope
 from services.export_registry import DATASET_BY_ID
 from services.field_visibility import ensure_product_grades, hidden_for_user, redact
-from role_registry import role_in  # peran acuan dikenali (keputusan owner 2026-10-21)
+from services.data_scope import in_clause, own_scoped, owner_ids   # PR-T4 — cakupan data peran
 
 CMP = {"eq", "ne", "contains", "not_contains", "starts", "gt", "gte", "lt", "lte", "in", "empty", "not_empty"}
 CMP_LABEL = {"eq": "=", "ne": "≠", "contains": "berisi", "not_contains": "tidak berisi", "starts": "diawali",
@@ -26,7 +26,6 @@ MAX_CONDITIONS, MAX_DEPTH = 40, 4
 MAX_EXPORT_ROWS = 2_000_000
 EXCEL_MAX_ROWS = 1_000_000
 FORMULA_PREFIX = ("=", "+", "-", "@", "\t", "\r")
-DESIGN_FULL_VIEW = ("admin", "manager", "sales_admin", "md")
 
 
 def _err(status: int, code: str, message: str, **extra) -> HTTPException:
@@ -58,7 +57,7 @@ def _col_denied(col: Dict[str, Any], user, perms, hidden) -> Optional[str]:
 #: dataset gudang yang izin lihatnya ia punya; bukan penjualan/keuangan/SDM atau riwayat nilai roll).
 def _role_whitelist(role: Optional[str]) -> Optional[frozenset]:
     from services.export_registry_wms import WAREHOUSE_ROLE_DATASETS
-    return WAREHOUSE_ROLE_DATASETS if reg.role_in(role, ("warehouse",)) else None
+    return WAREHOUSE_ROLE_DATASETS if reg.category_of(role) == "gudang" else None   # PR-T4 — kategori kerja
 
 
 async def dataset_access(user: Dict[str, Any], ds: Dict[str, Any]) -> Optional[str]:
@@ -218,19 +217,23 @@ def _date_bounds(col: Dict[str, Any], dfrom: str, dto: str) -> Dict[str, str]:
 
 
 async def _owner_clause(ds: Dict[str, Any], user: Dict[str, Any]) -> Optional[Dict[str, Any]]:
+    # PR-T4 — cakupan data peran (`data_scope`) untuk semua mode; pemilik = `owner_ids` (dirinya + anggota tim).
     mode, uid = ds.get("owner_scope"), str(user.get("id") or "")
-    locked = reg.role_in(user.get("role"), sales_ownership.OWNER_LOCKED_ROLES)
-    if mode == "sales_order" and locked:
+    locked = own_scoped(user)
+    if not locked:
+        return None
+    ids = await owner_ids(user) or [uid]
+    if mode == "sales_order":
         return sales_ownership.owner_clause(user)
-    if mode == "created_by" and locked:
-        return {"created_by": uid}
-    if mode == "customer" and locked:
-        return {"assigned_sales_id": uid} if not role_in(user.get("role"), ("sales",)) else customer_scope(user, {})
-    if mode == "via_order" and locked:
-        ids = await db.sales_orders.distinct("id", sales_ownership.owner_clause(user))
-        return {"order_id": {"$in": ids}}
-    if mode == "design" and not reg.role_in(user.get("role"), DESIGN_FULL_VIEW):
-        return {"assigned_to": uid}
+    if mode == "created_by":
+        return {"created_by": in_clause(ids)}
+    if mode == "customer":
+        return customer_scope(user, {})
+    if mode == "via_order":
+        order_ids = await db.sales_orders.distinct("id", sales_ownership.owner_clause(user))
+        return {"order_id": {"$in": order_ids}}
+    if mode == "design":
+        return {"assigned_to": in_clause(ids)}
     return None
 
 

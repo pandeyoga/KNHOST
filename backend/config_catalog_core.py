@@ -925,6 +925,8 @@ E("pos.best_sellers.window_days", group="tampilan", type="int", default=90, min=
   example="30 → terlaris bulan ini",
   consumers=("services/pos_recommendation_service.py:best_sellers",), risk="low")
 
+# PR-T4 — halaman awal kini SIFAT PERAN (`permission_settings.role_traits.<peran>.home_view`, editor Peran & Hak Akses
+# › Sifat peran) untuk semua peran bawaan & kustom; empat kunci lama tidak pernah dibaca layar → tidak dipakai.
 for _role, _default_view, _label in (
     ("admin", "admin", "Admin"),
     ("manager", "reports", "Manager"),
@@ -938,7 +940,8 @@ for _role, _default_view, _label in (
       help=f"Layar yang pertama dibuka ketika pengguna dengan peran {_label} masuk aplikasi.",
       impact="Mengubah halaman pendaratan setelah login untuk peran tersebut.",
       example=f"'{_default_view}' → {_label} langsung melihat layar tersebut setelah login",
-      consumers=("permissions_config.py", "routers/admin.py"), risk="low")
+      consumers=("permissions_config.py", "routers/admin.py"), risk="low",
+      status="not_used", not_used_reason="Diatur per peran di Peran & Hak Akses › Halaman awal")
 
 
 # ═══════════════════════════════════════════════════════════════════════════

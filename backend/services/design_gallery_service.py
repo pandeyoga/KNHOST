@@ -13,7 +13,7 @@ from core_utils import new_id, now_iso, safe_doc
 from services import storage_service as storage
 from services import hr_ai_service
 from services import line_scope as _lines      # FASE L — satu pintu normalisasi lini
-from role_registry import role_in  # peran acuan dikenali (keputusan owner 2026-10-21)
+from role_registry import category_of  # PR-T4 — "desainer" = kategori kerja (sifat peran), bukan nama peran
 
 
 def _clean_tags(tags) -> List[str]:
@@ -642,7 +642,7 @@ async def add_illustration_comment(gallery_id: str, file_id: str, actor: Dict[st
     # G-6 — desainer diberi tahu saat atasan menulis arahan (dan sebaliknya).
     try:
         from services import notification_service as notif
-        target_roles = ("designer",) if not role_in(actor.get("role"), ("designer",)) else ("manager", "admin")
+        target_roles = ("designer",) if category_of(actor.get("role")) != "desainer" else ("manager", "admin")
         await notif.create_addressed(
             roles=target_roles, entity_id=doc.get("entity_id"),
             notif_type="design_ai_comment",

@@ -17,7 +17,7 @@ from db import db
 from core_utils import new_id, now_iso, safe_doc, next_doc_number
 from services import storage_service as storage
 from services import fleet_service as fleet
-from role_registry import role_in  # peran acuan dikenali (keputusan owner 2026-10-21)
+from role_registry import category_of, role_in, roles_in_category  # peran acuan dikenali; PR-T4 kategori kerja
 logger = logging.getLogger(__name__)
 
 
@@ -143,13 +143,14 @@ async def _assert_driver_free(driver_user_id: str, exclude_delivery: str = "") -
 
 
 async def _assert_driver_valid(driver_user_id: str, entity_id: str) -> None:
-    """FIX-1 (B3b INP-18) — sopir yang ditugaskan wajib akun ber-peran `driver`, aktif, dan ditugaskan di PT
-    pengiriman (dulu id pengguna mana pun diterima — pengguna PT lain bisa menjadi "sopir" dan membuka POD-nya)."""
+    """FIX-1 (B3b INP-18) — sopir yang ditugaskan wajib akun berkategori kerja "sopir" (PR-T4; bawaan peran
+    `driver`), aktif, dan ditugaskan di PT pengiriman (dulu id pengguna mana pun diterima — pengguna PT lain bisa
+    menjadi "sopir" dan membuka POD-nya)."""
     if not driver_user_id:
         return
     u = await db.users.find_one({"id": driver_user_id}, {"_id": 0, "role": 1, "status": 1, "active": 1,
                                                        "home_entity_id": 1, "allowed_entity_ids": 1})
-    if not u or not role_in(u.get("role"), ("driver",)):
+    if not u or category_of(u.get("role")) != "sopir":
         raise ValueError("Sopir harus akun ber-peran Sopir.")
     if u.get("status") in ("inactive", "disabled", "archived") or u.get("active") is False:
         raise ValueError("Akun sopir tidak aktif.")
@@ -712,7 +713,7 @@ async def set_my_route(ids: List[str], actor_id: str) -> int:
 
 
 async def list_drivers(entity_id: str) -> List[Dict[str, Any]]:
-    q = {"role": "driver", "status": {"$ne": "inactive"},
+    q = {"role": {"$in": roles_in_category("sopir")}, "status": {"$ne": "inactive"},   # PR-T4 — kategori kerja
          "$or": [{"allowed_entity_ids": entity_id}, {"allowed_entity_ids": {"$in": [None, []]}}]}
     rows = await db.users.find(q, {"_id": 0, "id": 1, "name": 1, "phone": 1}).sort("name", 1).to_list(200)
     return [safe_doc(r) for r in rows]

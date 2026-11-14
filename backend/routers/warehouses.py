@@ -33,7 +33,8 @@ from services.location_service import warehouse_locations, save_warehouse_struct
 
 router = APIRouter(prefix="/api")
 
-MASTER_SCOPE_ROLES = {"admin", "manager", "warehouse"}
+#: PR-T4 — kategori kerja yang boleh meminta daftar SELURUH gudang (`scope=all`); dulu nama peran admin/manajer/gudang.
+MASTER_SCOPE_CATEGORIES = ("gudang", "pengawas")
 # FIX-1 (B3b FRM-01) — perubahan STRUKTUR/PROFIL gudang lewat PATCH (zona & bin, mode pemakaian, site, peran gedung,
 # aturan simpan, gate, mode stok, bentuk simpan, aktif/nonaktif) hanya admin & Admin Gudang. Operator `warehouse`
 # (pemegang `warehouse.update`) dulu bisa mengosongkan bin berisi 18.471 roll & mengubah gudang khusus PT lain.
@@ -180,10 +181,10 @@ async def list_warehouses(request: Request, scope: str = Query("usable"),
     actor = await require_permission(request, "warehouse", "view")
     ctx = await entity_ctx(request)
     want_all = str(scope or "").strip().lower() == "all"
-    from role_registry import role_in
-    # FE-05 — peran master (peran acuan dikenali). Peran lain memakai daftar bawaan (gudang yang boleh
-    # dipakai PT aktif) — layar Data Gudang memintanya tanpa `scope=all`; seluruh gudang tidak dibuka.
-    if want_all and not role_in(actor.get("role"), MASTER_SCOPE_ROLES):
+    from role_registry import category_of
+    # FE-05 — peran master (PR-T4: kategori kerja Petugas gudang / Pengawas). Peran lain memakai daftar bawaan
+    # (gudang yang boleh dipakai PT aktif) — layar Data Gudang memintanya tanpa `scope=all`; seluruh gudang tidak dibuka.
+    if want_all and category_of(actor.get("role")) not in MASTER_SCOPE_CATEGORIES:
         raise HTTPException(status_code=403,
                             detail="Hanya admin/manajer/gudang yang boleh melihat seluruh gudang.")
     return await whscope.list_for_entity(

@@ -756,3 +756,13 @@ for _role, _mods in DEFAULT_PERMISSIONS.items():
         _ids = [t["id"] for t in AI_TEMPLATES if _role in (t.get("roles") or [])]
         if _ids:
             _mods["ai_template"] = _ids
+
+# ═══════════════════════════════════════════════════════════════════════════
+# PR-T4 — melihat KPI & komisi sales LAIN (`routers/crm._kpi_scope`): dulu daftar nama peran admin/manajer/admin
+# sales/finance, kini izin `order.view_sales_kpi` (modul Pesanan Penjualan). Instalasi lama menerimanya sekali lewat
+# `custom_role_service.migrate_kpi_permission` (`prt4:izin-kpi-sales`) — juga peran kustom berdasar keempatnya.
+# ═══════════════════════════════════════════════════════════════════════════
+PRT4_KPI_ROLES = ("admin", "manager", "sales_admin", "finance")
+for _role in PRT4_KPI_ROLES:
+    _cur = list(DEFAULT_PERMISSIONS[_role].get("order") or [])
+    DEFAULT_PERMISSIONS[_role]["order"] = _cur + [x for x in ("view_sales_kpi",) if x not in _cur]

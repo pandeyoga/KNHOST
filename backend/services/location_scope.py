@@ -7,7 +7,7 @@ tidak melihat pekerjaan gudang mana pun saat pembatasan aktif. Supervisor (DEC-0
 melihat semua lokasi dan boleh mengambil alih tugas dengan alasan tercatat.
 
 FIX-1 (audit WMS-RFID 9 Nov 2026, K-B1-01) — DUA lapis yang sengaja dipisah:
-  * **Pagar keras** (`warehouse_ids_for`) — hanya peran `warehouse` saat setelan
+  * **Pagar keras** (`warehouse_ids_for`) — hanya kategori kerja "gudang" (PR-T4; bawaan peran `warehouse`) saat setelan
     `wms.location_scope_enforced` aktif. Dipakai SEMUA pemeriksa akses (daftar, detail,
     aksi tulis). Tidak bisa dilepas pengguna.
   * **Saringan tampilan** (`view_for`) — SEMUA akun yang punya lokasi kerja: daftar tugas &
@@ -28,7 +28,8 @@ from db import db
 from role_registry import role_in  # peran acuan dikenali (keputusan owner 2026-10-21)
 
 SETTING_KEY = "wms.location_scope_enforced"
-SCOPED_ROLES = {"warehouse"}
+#: PR-T4 — pagar keras lokasi kerja berlaku untuk kategori kerja ini (dulu nama peran `warehouse`).
+SCOPED_CATEGORY = "gudang"
 SUPERVISOR_ROLES = {"warehouse_admin", "manager", "admin"}
 VIEW_HEADER = "X-Location-Scope"
 TEST_FLAG = "is_test"    # K-B1-10 — penanda data uji (dipasang skrip, bisa dibalik)
@@ -71,7 +72,8 @@ def is_supervisor(user: Dict[str, Any]) -> bool:
 
 async def warehouse_ids_for(user: Dict[str, Any]) -> Optional[List[str]]:
     """None = tanpa batas lokasi; [] = tidak ada lokasi; selain itu daftar gudang."""
-    if not role_in((user or {}).get("role"), SCOPED_ROLES) or not await enforced():
+    from role_registry import category_of
+    if category_of((user or {}).get("role")) != SCOPED_CATEGORY or not await enforced():
         return None
     sites = user.get("location_site_ids") or []
     whs = user.get("location_warehouse_ids") or []

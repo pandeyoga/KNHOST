@@ -15,7 +15,7 @@ from typing import Any, Dict, List, Optional, Tuple
 from db import db
 from core_utils import new_id, now_iso, next_doc_number, safe_doc
 from services import hr_service
-from role_registry import role_in  # peran acuan dikenali (keputusan owner 2026-10-21)
+from role_registry import category_of   # PR-T4 — kategori kerja dari sifat peran
 
 INF = float("inf")
 WORK_HOURS_DIVISOR = 173  # jam kerja/bulan (rumus upah-sejam Kepmenaker)
@@ -268,7 +268,7 @@ async def _commission_for(emp: Dict[str, Any], period: str, entity_id: str) -> f
     if not uid:
         return 0.0
     u = await db.users.find_one({"id": uid}, {"_id": 0, "role": 1})
-    if not u or not role_in(u.get("role"), ("sales",)):
+    if not u or category_of(u.get("role")) != "sales":
         return 0.0
     try:
         from services import sales_force_service as sf

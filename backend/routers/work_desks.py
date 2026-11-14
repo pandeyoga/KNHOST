@@ -253,14 +253,17 @@ async def finance_desk(request: Request, entity_id: str = Query("")) -> Dict[str
 # ═══════════════════════════════════════════════════════════════════════════
 @router.get("/desks/me")
 async def my_desk(request: Request, entity_id: str = Query("")) -> Dict[str, Any]:
-    """Meja kerja sesuai peran pengguna yang login: antrean 'Giliran saya' + antrean khas peran."""
-    from dependencies import current_user
+    """Meja kerja sesuai peran pengguna yang login: antrean 'Giliran saya' + antrean khas peran.
+
+    PR-T4 — jenis meja dari KATEGORI KERJA peran (Peran & Hak Akses › Sifat peran; dulu peran dasarnya), dan tiap
+    antrean hanya tampil bila pelaku memegang izin lihat dokumennya. Tanpa kategori → 404 berkalimat manusia."""
+    from dependencies import current_user, permission_matrix
     from services import role_desk_service as rdesk
-    import role_registry as reg
     actor = await current_user(request)
-    # Keputusan owner 2026-10-21 — peran kustom memakai meja peran ACUANNYA (dulu 404 "meja khusus").
-    role = reg.base_or_self(actor.get("role", ""))
-    if role not in rdesk.ROLES:
-        raise HTTPException(status_code=404, detail=f"Peran '{role}' memakai meja khususnya sendiri.")
+    desk = rdesk.desk_of(actor)
+    if desk not in rdesk.ROLES:
+        raise HTTPException(status_code=404,
+                            detail="Peran Anda belum punya meja kerja. Buka menu yang tersedia di samping.")
     _, scope, ids = await _scope(request, entity_id or None)
-    return await rdesk.role_desk(role, actor, scope, ids)
+    perms = (await permission_matrix()).get(actor.get("role", ""), {}) or {}
+    return await rdesk.role_desk(desk, actor, scope, ids, perms)

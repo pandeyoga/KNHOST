@@ -411,6 +411,20 @@ function homeFromServer(r, fallback) {
   return { view: r.home_view, navId: r.home_nav_id || r.home_view };
 }
 
+// PR-T4 — kategori kerja per peran dari `kategori_kerja` jawaban `GET /api/roles` (Sifat peran). Nilai tertulis =
+// cadangan sebelum jawaban datang (= bawaan sistem `backend/role_registry.PRT4_BUILTIN_TRAITS`).
+const WRITTEN_CATEGORY = { sales: "sales", driver: "sopir", designer: "desainer", warehouse: "gudang",
+  admin: "pengawas", manager: "pengawas" };
+const ROLE_CATEGORY = { ...WRITTEN_CATEGORY };
+
+/** Kategori kerja peran: "" · "sales" · "sopir" · "desainer" · "gudang" · "pengawas" (bukan nama peran). */
+export function categoryOf(role) {
+  if (!role) return "";
+  if (Object.prototype.hasOwnProperty.call(ROLE_CATEGORY, role)) return ROLE_CATEGORY[role];
+  const base = ROLE_REGISTRY[role]?.baseRole;
+  return base ? (ROLE_CATEGORY[base] || "") : "";
+}
+
 /** Halaman awal peran ini berbeda dari nilai tertulis (diatur Admin)? */
 export function homeChangedByServer(role) {
   const w = WRITTEN_HOME[role];
@@ -437,9 +451,13 @@ export function registerDynamicRoles(list) {
   (list || []).filter((r) => r && r.id && !r.custom && WRITTEN_HOME[r.id]).forEach((r) => {
     ROLE_HOME_REGISTRY[r.id] = homeFromServer(r, WRITTEN_HOME[r.id]);
   });
+  (list || []).filter((r) => r && r.id && typeof r.kategori_kerja === "string").forEach((r) => {
+    ROLE_CATEGORY[r.id] = r.kategori_kerja;
+  });
   const before = JSON.stringify([...CUSTOM_IDS].sort().map((id) => [id, ROLE_NAV[id], ROLE_REGISTRY[id]?.label]));
   for (const id of [...CUSTOM_IDS]) {
     delete ROLE_REGISTRY[id]; delete ROLE_NAV[id]; delete ROLE_HOME_REGISTRY[id];
+    if (!incoming.some((r) => r.id === id)) delete ROLE_CATEGORY[id];
   }
   CUSTOM_IDS.clear();
   incoming.forEach((r, i) => {

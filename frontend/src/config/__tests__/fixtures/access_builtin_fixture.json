@@ -349,7 +349,8 @@
     "cancel",
     "approve_price_edit",
     "release_unpaid",
-    "tax_override"
+    "tax_override",
+    "view_sales_kpi"
    ],
    "payment_plan": [
     "view",
@@ -773,7 +774,8 @@
     "view",
     "print",
     "approve_price_edit",
-    "release_unpaid"
+    "release_unpaid",
+    "view_sales_kpi"
    ],
    "payment_plan": [
     "view",
@@ -1146,7 +1148,8 @@
     "cancel",
     "approve_price_edit",
     "release_unpaid",
-    "tax_override"
+    "tax_override",
+    "view_sales_kpi"
    ],
    "payment_plan": [
     "view",
@@ -1930,7 +1933,8 @@
     "verify",
     "exact_cut",
     "override",
-    "cancel"
+    "cancel",
+    "view_sales_kpi"
    ],
    "payment_plan": [
     "view",

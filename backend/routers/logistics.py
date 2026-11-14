@@ -16,7 +16,7 @@ from services import logistics_service as lg
 from services import fleet_service as fleet
 from services import trip_service as trips
 from pydantic import BaseModel
-from role_registry import role_in  # peran acuan dikenali (keputusan owner 2026-10-21)
+from services.data_scope import own_scoped, owns_now   # PR-T4 — cakupan data peran
 
 router = APIRouter(prefix="/api/logistics", tags=["logistics"])
 
@@ -33,8 +33,9 @@ async def _guard(delivery_id: str, ctx) -> Dict[str, Any]:
 
 def _guard_driver_write(doc: Dict[str, Any], actor: Dict[str, Any]) -> None:
     """P1-1 — sopir hanya boleh MENULIS (foto/posisi/tahapan) pada pengiriman yang ditugaskan padanya.
-    Melihat daftar & detail tetap seluas entitas (keputusan pemilik 2026-09-02)."""
-    if role_in(actor.get("role"), ("driver",)) and doc.get("driver_user_id") != actor.get("id"):
+    Melihat daftar & detail tetap seluas entitas (keputusan pemilik 2026-09-02).
+    PR-T4 — "sopir" = cakupan data peran bukan "semua" (bawaan Sopir: milik sendiri); pengemudi di luar `owner_ids`."""
+    if own_scoped(actor) and not owns_now(actor, doc.get("driver_user_id")):
         raise HTTPException(status_code=403, detail="Pengiriman ini bukan tugas Anda — hanya sopir yang ditugaskan yang boleh mengubahnya.")
 
 

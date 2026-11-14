@@ -69,11 +69,16 @@ async def turn_roles(rule: Dict[str, Any]) -> tuple:
         return tuple(rule.get("roles") or ())
     from services.notification_audience import roles_with_permission
     holders = set(await roles_with_permission(perm[0], perm[1]))
-    # Peran pengawas (admin/manajer) memegang hampir semua izin — mereka bukan pelaksana giliran,
-    # kecuali rule memang menyebutnya (mis. persetujuan).
-    for oversight in ("admin", "manager"):
-        if oversight not in (rule.get("roles") or ()):
-            holders.discard(oversight)
+    # Peran pengawas memegang hampir semua izin — mereka bukan pelaksana giliran, kecuali rule memang menyebutnya
+    # (mis. persetujuan). PR-T4: "pengawas" = kategori kerja (dulu nama persis admin/manager, sehingga peran kustom
+    # berdasar Manajer menerima semua giliran pelaksana); rule "menyebut" peran = id-nya atau alamat notifikasi yang
+    # ikut ia terima (`notify_addresses`, bawaan peran kustom = peran dasarnya).
+    import role_registry as reg
+    named = set(rule.get("roles") or ())
+    for h in list(holders):
+        if reg.category_of(h) == "pengawas" and h not in named \
+                and not named.intersection(reg.notify_addresses(h)):
+            holders.discard(h)
     return tuple(sorted(holders))
 ALIASES = {"sales_order": "sales_orders", "purchase_order": "purchase_orders", "sales_return": "sales_returns",
            "purchase_return": "purchase_returns"}

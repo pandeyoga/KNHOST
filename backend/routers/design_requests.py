@@ -35,18 +35,21 @@ from services import line_scope
 
 router = APIRouter(prefix="/api")
 
-#: Peran yang melihat SEMUA permintaan badan usahanya (bukan hanya tugasnya sendiri).
-FULL_VIEW_ROLES = ("admin", "manager", "sales_admin", "md")
-
-
 def _fail(exc: Exception) -> HTTPException:
     return HTTPException(status_code=400, detail=str(exc))
 
 
 def _own_only(actor: Dict[str, Any]) -> bool:
-    """Desainer (dan peran lain yang tidak berwenang penuh) hanya melihat tugasnya."""
-    import role_registry as reg
-    return not reg.role_in((actor or {}).get("role"), FULL_VIEW_ROLES)
+    """PR-T4 — cakupan data peran bukan "semua" (bawaan Desainer: milik sendiri) → hanya tugasnya (atau timnya).
+    Dulu: semua peran selain admin/manajer/admin sales/MD."""
+    from services.data_scope import own_scoped
+    return own_scoped(actor)
+
+
+def _assignees(actor: Dict[str, Any]) -> List[str]:
+    """Penerima tugas yang boleh dibuka pelaku bercakupan terbatas (`owner_ids`: dirinya + anggota timnya)."""
+    from services.data_scope import owner_ids_now
+    return owner_ids_now(actor) or [actor.get("id", "")]
 
 
 async def _get_guarded(req_id: str, request: Request, actor: Dict[str, Any]) -> Dict[str, Any]:
@@ -55,7 +58,7 @@ async def _get_guarded(req_id: str, request: Request, actor: Dict[str, Any]) -> 
     if not doc:
         raise HTTPException(status_code=404, detail="Permintaan desain tidak ditemukan.")
     assert_entity_access(doc, svc.COLL, ctx)
-    if _own_only(actor) and doc.get("assigned_to") != actor.get("id", ""):
+    if _own_only(actor) and doc.get("assigned_to") not in _assignees(actor):
         raise HTTPException(
             status_code=403,
             detail="Anda hanya bisa membuka permintaan desain yang ditugaskan kepada Anda.")
@@ -106,8 +109,11 @@ async def list_requests(request: Request,
         q["assigned_to"] = assigned_to
     if so_id:
         q["so_id"] = so_id
-    if mine or _own_only(actor):
+    if mine:
         q["assigned_to"] = actor.get("id", "")
+    elif _own_only(actor):
+        from services.data_scope import in_clause
+        q["assigned_to"] = in_clause(_assignees(actor))
     q = resolve_list_scope(svc.COLL, q, ctx, entity_id)
     q = line_scope.narrow(q, actor, line)
     page, page_size, text, _sort = pg.get_page_params(request)
@@ -393,6 +399,7 @@ async def requests_for_so(so_id: str, request: Request) -> List[Dict[str, Any]]:
     ctx = await entity_ctx(request)
     q = resolve_list_scope(svc.COLL, {"so_id": so_id}, ctx, None)
     if _own_only(actor):
-        q["assigned_to"] = actor.get("id", "")
+        from services.data_scope import in_clause
+        q["assigned_to"] = in_clause(_assignees(actor))
     rows = await db[svc.COLL].find(q, {"_id": 0}).sort("created_at", -1).to_list(50)
     return [svc.shape(r) for r in rows]

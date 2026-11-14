@@ -304,6 +304,59 @@ async def migrate_role_traits() -> Dict[str, Any]:
     return {"ditulis": written}
 
 
+PRT4_KPI_MIGRATION_ID = "prt4:izin-kpi-sales"
+
+
+async def migrate_kpi_permission() -> Dict[str, Any]:
+    """PR-T4 — sekali jalan (`prt4:izin-kpi-sales`): `order.view_sales_kpi` untuk Admin, Manajer, Admin Sales, Finance
+    dan peran kustom yang berdasar keempatnya, masing-masing hanya bila memegang `order.view` (hari ini mereka melihat
+    KPI sales lain lewat nama peran; tanpa `order.view` mereka memang tidak bisa membukanya). Pasangan bawaan dicatat di
+    `defaults_applied` supaya `sync_permission_modules` tidak meneruskannya lagi (pencabutan Admin sesudahnya
+    bertahan). Dipanggil `bootstrap.run_bootstrap` sesudah `ensure_permission_ledger`, sebelum
+    `sync_permission_modules`."""
+    from permissions_config import PRT4_KPI_ROLES
+    record = await db.permission_settings.find_one({"id": "default"}, {"_id": 0})
+    if not record or record.get("migrations_applied") is None or \
+            PRT4_KPI_MIGRATION_ID in (record.get("migrations_applied") or []):
+        return {"diberi": []}
+    matrix: Dict[str, Any] = record.get("matrix") or {}
+    customs = await db.custom_roles.find({"base_role": {"$in": list(PRT4_KPI_ROLES)}}, {"_id": 0}).to_list(500)
+    granted: List[str] = []
+    for rid in [*PRT4_KPI_ROLES, *[c["id"] for c in customs]]:
+        perms = matrix.get(rid)
+        acts = list((perms or {}).get("order") or [])
+        if perms is not None and "view" in acts and "view_sales_kpi" not in acts:
+            perms["order"] = acts + ["view_sales_kpi"]
+            granted.append(rid)
+    patch: Dict[str, Any] = {}
+    applied = record.get("defaults_applied")
+    if applied is not None:   # None = instalasi sebelum L01: garis dasar dibuat dari bawaan oleh sync_permission_modules
+        for rid in PRT4_KPI_ROLES:
+            done = applied.setdefault(rid, {})
+            cur = list(done.get("order") or [])
+            done["order"] = cur + [a for a in ("view_sales_kpi",) if a not in cur]
+        patch["defaults_applied"] = applied
+    if granted:
+        patch.update({"matrix": matrix, "updated_at": now_iso()})
+    update: Dict[str, Any] = {"$addToSet": {"migrations_applied": PRT4_KPI_MIGRATION_ID}}
+    if patch:
+        update["$set"] = patch
+    await db.permission_settings.update_one({"id": "default"}, update)
+    for c in customs:
+        if c["id"] in granted:
+            pending = {k: [a for a in v if not (k == "order" and a == "view_sales_kpi")]
+                       for k, v in (c.get("pending_defaults") or {}).items()}
+            await db.custom_roles.update_one({"id": c["id"]}, {"$set": {
+                "levels": {k: v["level"] for k, v in levels_of(matrix.get(c["id"]) or {}).items()},
+                "pending_defaults": {k: v for k, v in pending.items() if v}, "updated_at": now_iso()}})
+    if granted:
+        from dependencies import audit
+        await audit("Sistem (migrasi PR-T4)", "role_kpi_permission_migrated", "permission_settings", "default",
+                    {"order.view_sales_kpi": granted},
+                    reason="PR-T4 — KPI sales lain dulu lewat nama peran, kini izin yang terlihat dan bisa dicabut")
+    return {"diberi": granted}
+
+
 _HIDDEN: Dict[str, List[str]] = {}
 _ASSIGNABLE: Dict[str, List[str]] = {}
 

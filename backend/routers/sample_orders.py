@@ -20,7 +20,7 @@ from services.fulfillment_status import create_outbound_tasks_for_order, recompu
 from services.sales_order_helpers import norm_backorder, so_transition
 from services.sample_sale_service import SAMPLE_LIMITS
 from services.work_desk_service import _age_days, _queue, _row
-from role_registry import role_in  # peran acuan dikenali (keputusan owner 2026-10-21)
+from services.data_scope import own_scoped  # PR-T4 — cakupan data peran
 
 router = APIRouter(prefix="/api")
 
@@ -242,7 +242,7 @@ async def confirm_sample(order_id: str, request: Request) -> Dict[str, Any]:
 async def cancel_sample(order_id: str, payload: NoteIn, request: Request) -> Dict[str, Any]:
     actor = await require_permission(request, "sample_order", "cancel")
     order = await _load(order_id, request)
-    if role_in(actor.get("role"), ("sales",)):
+    if own_scoped(actor):   # PR-T4 — cakupan data peran
         sales_ownership.assert_may_open(order, actor)
     if order.get("status") not in ("waiting_approval", "approved"):
         raise HTTPException(status_code=409, detail=f"{order['number']} sudah diteruskan ke gudang ({order.get('status')}) — tidak bisa dibatalkan dari sini.")

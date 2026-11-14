@@ -16,7 +16,7 @@ from pagination import is_paged, get_page_params, build_search, merge_query, fet
 from request_context import active_entity_or
 from services.text_normalize import nama_orang, nama_usaha, phone_id
 from services.wilayah_service import normalize_location, LOCATION_KEYS
-from role_registry import role_in  # peran acuan dikenali (keputusan owner 2026-10-21)
+from role_registry import category_of, roles_in_category  # PR-T4 — kategori kerja dari sifat peran
 
 router = APIRouter(prefix="/api")
 
@@ -100,14 +100,15 @@ async def create_customer(payload: CustomerCreate, request: Request) -> Dict[str
     # assigned_sales: sales pembuat SELALU jadi pemilik (login = identitas, tak perlu memilih);
     # peran lain (admin/manager/sales_admin) WAJIB memilih sales penanggung jawab.
     assigned_id = payload.assigned_sales_id
-    if role_in(actor.get("role"), ("sales",)):
+    if category_of(actor.get("role")) == "sales":   # PR-T4 — kategori kerja, bukan nama peran
         assigned_id = actor["id"]
     team_pic = pic_of(payload.sales_team and [m.model_dump() for m in payload.sales_team] or [])
     if not assigned_id and not (team_pic or {}).get("sales_id"):
         raise HTTPException(status_code=400, detail="Pilih Sales penanggung jawab (PIC internal) untuk pelanggan ini.")
     assigned_name = ""
     if assigned_id:
-        su = await db.users.find_one({"id": assigned_id, "role": "sales"}, {"_id": 0, "name": 1})
+        su = await db.users.find_one({"id": assigned_id, "role": {"$in": roles_in_category("sales")}},
+                                     {"_id": 0, "name": 1})
         assigned_name = (su or {}).get("name", "")
     # SALES REVAMP V2 — sales team (PIC + co-sales + split). PIC menentukan kepemilikan.
     sales_team = normalize_sales_team(payload.sales_team, assigned_id, assigned_name)

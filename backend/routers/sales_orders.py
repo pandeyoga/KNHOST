@@ -40,7 +40,7 @@ from services.sales_order_helpers import (
 )
 from services.so_status import stage_fields
 from request_context import active_entity_or
-from role_registry import role_in  # peran acuan dikenali (keputusan owner 2026-10-21)
+from role_registry import category_of  # PR-T4 — kategori kerja dari sifat peran
 
 router = APIRouter(prefix="/api")
 
@@ -420,7 +420,7 @@ async def create_order(payload: SalesOrderCreate, request: Request) -> Dict[str,
     # KONFIG `allocation.roll_pick_sales` — bila dimatikan, role SALES tidak boleh memilih
     # roll saat checkout (mode qty tetap jalan, FEFO otomatis); pemilihan roll menjadi hak
     # Admin Sales lewat "Ganti Roll" di detail pesanan. Pagar SERVER, bukan hanya UI.
-    if roll_mode_map and role_in(actor.get("role"), ("sales",)) and not alloc_policy.get("roll_pick_sales", True):
+    if roll_mode_map and category_of(actor.get("role")) == "sales" and not alloc_policy.get("roll_pick_sales", True):
         raise HTTPException(
             status_code=400,
             detail="Pemilihan roll saat checkout sedang dinonaktifkan untuk sales. "
@@ -696,7 +696,8 @@ async def create_order(payload: SalesOrderCreate, request: Request) -> Dict[str,
         "order_type": order_type,
         "sample_billing": sample_billing if is_sample_order else "",
         "sample_payment_status": ("awaiting_approval" if sample_billing == "paid" else "not_required") if is_sample_order else "",
-        "created_by": actor.get("id"), "sales_id": actor.get("id") if role_in(actor.get("role"), ("sales",)) else None,
+        # PR-T4 — kategori kerja "sales": pesanan buatannya memakai dirinya sebagai sales.
+        "created_by": actor.get("id"), "sales_id": actor.get("id") if category_of(actor.get("role")) == "sales" else None,
         # SALES REVAMP V2 — transfer antar-entitas auto (Beli per Roll lintas-entitas, 1.b)
         "linked_transfer_ids": created_transfer_ids,
         "intercompany_pending_qty": round(total_pending_ic, 2),

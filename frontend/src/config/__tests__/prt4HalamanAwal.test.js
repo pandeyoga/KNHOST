@@ -1,7 +1,7 @@
 // PR-T4 — halaman awal semua peran (bawaan & kustom) diisi dari `home_view`/`home_nav_id` jawaban `GET /api/roles`;
 // nilai tertulis `ROLE_HOME_REGISTRY` = cadangan sebelum jawaban datang.
 import { ROLE_HOME_REGISTRY } from "../navMeta";
-import { homeChangedByServer, registerDynamicRoles } from "../roles";
+import { categoryOf, homeChangedByServer, registerDynamicRoles } from "../roles";
 import { defaultNavIdForRole, defaultViewForRole } from "../navigationConfig";
 
 const TERTULIS = JSON.parse(JSON.stringify(ROLE_HOME_REGISTRY));
@@ -38,4 +38,19 @@ test("peran kustom: halaman awal dari server; tanpa jawaban → peran dasar; tan
   expect(ROLE_HOME_REGISTRY.cr_sales_senior).toEqual(TERTULIS.sales);
   expect(ROLE_HOME_REGISTRY.cr_lama).toEqual(TERTULIS.warehouse);
   expect(ROLE_HOME_REGISTRY.cr_kosong).toEqual({ view: "hr-my-profile", navId: "hr-my-profile" });
+});
+
+test("kategori kerja dari server: peran kustom berdasar Sales = sales; Kurir tanpa peran dasar = sopir", () => {
+  expect(categoryOf("warehouse")).toBe("gudang");
+  expect(categoryOf("sales_admin")).toBe("");
+  registerDynamicRoles([...bawaan(),
+    { id: "cr_kurir", custom: true, label: "Kurir", base_role: "", kategori_kerja: "sopir" },
+    { id: "cr_sales_senior", custom: true, label: "Sales Senior", base_role: "sales", kategori_kerja: "sales" },
+    { id: "warehouse", custom: false, label: "Gudang", home_view: TERTULIS.warehouse.view, kategori_kerja: "" }]);
+  expect(categoryOf("cr_kurir")).toBe("sopir");
+  expect(categoryOf("cr_sales_senior")).toBe("sales");
+  expect(categoryOf("warehouse")).toBe("");   // diubah Admin
+  registerDynamicRoles([...bawaan(), { id: "warehouse", custom: false, home_view: TERTULIS.warehouse.view,
+                                       kategori_kerja: "gudang" }]);
+  expect(categoryOf("cr_kurir")).toBe("");    // peran kustom dihapus
 });

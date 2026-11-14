@@ -453,7 +453,9 @@ async def commission_history(
 
 async def leaderboard(period: Optional[str] = None, entity_id: Optional[str] = None) -> List[Dict[str, Any]]:
     """KPI semua salesperson, urut total_sales desc (Manager view)."""
-    sales_users = await db.users.find({"role": "sales", "status": "active"}, {"_id": 0, "id": 1, "name": 1}).to_list(100)
+    from role_registry import roles_in_category   # PR-T4 — semua akun berkategori kerja "sales"
+    sales_users = await db.users.find({"role": {"$in": roles_in_category("sales")}, "status": "active"},
+                                      {"_id": 0, "id": 1, "name": 1}).to_list(100)
     rows = []
     for u in sales_users:
         kpi = await sales_kpi(u["id"], period, entity_id)

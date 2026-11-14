@@ -17,7 +17,7 @@ Aturan visibilitas:
 from typing import Any, Dict, List, Optional
 
 from fastapi import HTTPException
-from role_registry import role_in  # peran acuan dikenali (keputusan owner 2026-10-21)
+from role_registry import category_of, roles_in_category   # PR-T4 — kategori kerja dari sifat peran
 
 EXCLUSIVE = "sales_tertentu"
 GENERAL = "umum"
@@ -56,8 +56,8 @@ def stage_hidden(actor: Optional[Dict[str, Any]], product: Optional[Dict[str, An
 
 
 def is_restricted_role(actor: Optional[Dict[str, Any]]) -> bool:
-    """Hanya role `sales` yang dibatasi. Selain itu (admin/manager/warehouse) lihat semua."""
-    return role_in((actor or {}).get("role"), ("sales",))
+    """Hanya kategori kerja "sales" (PR-T4; bawaan peran Sales) yang dibatasi. Selain itu lihat semua."""
+    return category_of((actor or {}).get("role")) == "sales"
 
 
 def visibility_query(actor: Optional[Dict[str, Any]]) -> Dict[str, Any]:
@@ -135,7 +135,8 @@ async def normalize(db, data: Dict[str, Any]) -> Dict[str, Any]:
     if ids:
         valid_ids = {
             u["id"] for u in await db.users.find(
-                {"id": {"$in": ids}, "role": "sales", "status": "active"}, {"_id": 0, "id": 1}
+                {"id": {"$in": ids}, "role": {"$in": roles_in_category("sales")}, "status": "active"},
+                {"_id": 0, "id": 1}
             ).to_list(len(ids) + 1)
         }
         ids = [i for i in ids if i in valid_ids]

@@ -3,9 +3,10 @@
 Dipakai kotak notifikasi (`routers/notifications.py`) dan ringkasan harian (`digest_service`).
 Dua lapis, keduanya mengikuti pengaturan Peran & Hak Akses (bukan nama peran yang diketik):
 
-1. AUDIENS — ditujukan ke perannya, ke "all", ke dirinya, atau (untuk peran kustom) ke
-   peran ACUANNYA. Notifikasi lama yang masih beralamat `recipient_role="manager"` tetap
-   sampai ke peran kustom yang disalin dari Manajer.
+1. AUDIENS — ditujukan ke perannya, ke "all", ke dirinya, atau ke peran bawaan yang notifikasinya
+   ikut diterima peran itu (PR-T4, sifat peran `notify_like`; bawaan peran kustom = peran ACUANNYA).
+   Notifikasi lama yang masih beralamat `recipient_role="manager"` tetap sampai ke peran kustom yang
+   disalin dari Manajer.
 2. RELEVANSI — layar tujuan (`link`) harus BOLEH dibuka pemegang peran itu (tingkat ≥ Lihat
    di katalog modul). Notifikasi tanpa `link`, atau yang ditujukan langsung ke orangnya,
    selalu lolos. Admin melihat semuanya.
@@ -19,11 +20,8 @@ async def audience_roles(user: Dict[str, Any]) -> List[str]:
     import role_registry as reg
 
     role = str(user.get("role") or "")
-    out = [role, "all"]
-    base = (reg.ROLES.get(role) or {}).get("base_role") or ""
-    if base:
-        out.append(base)
-    return out
+    # PR-T4 — `[peran, "all", *notify_addresses(peran)]` (dulu: peran acuan saja).
+    return [role, "all", *[a for a in reg.notify_addresses(role) if a not in (role, "all")]]
 
 
 async def allowed_links(user: Dict[str, Any]) -> List[str]:

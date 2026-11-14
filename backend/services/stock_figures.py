@@ -203,7 +203,6 @@ def status_rows(tot: Dict[str, Any]) -> List[Dict[str, Any]]:
 
 # ── Cakupan LOKAL ────────────────────────────────────────────────────────────
 
-SALES_ROLES = {"sales", "sales_admin"}
 
 
 async def _work_site_ids(user: Dict[str, Any]) -> Optional[List[str]]:
@@ -217,10 +216,13 @@ async def _work_site_ids(user: Dict[str, Any]) -> Optional[List[str]]:
             res = await res
         if res is not None:
             return list(res)
-    from role_registry import role_in
+    from dependencies import has_permission
+    from role_registry import category_of
     sites = [s for s in (user.get("location_site_ids") or []) if s]
     pos_site = (user.get("pos_site_id") or "").strip()
-    if role_in(user.get("role"), SALES_ROLES):
+    # PR-T4 — lokasi jualan bawaan untuk yang MENJUAL: pemegang `order.create` yang bukan pengawas (dulu nama peran
+    # sales/sales_admin).
+    if category_of(user.get("role")) != "pengawas" and await has_permission(user, "order", "create"):
         if pos_site:
             return [pos_site]
         return sites[:1] or None

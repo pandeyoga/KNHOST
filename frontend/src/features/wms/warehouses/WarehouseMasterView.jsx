@@ -32,7 +32,7 @@ import FormModal from "../../../components/FormModal";
 import WarehouseModeBadge from "../../../components/WarehouseModeBadge";
 import WarehouseStructure from "../inventory/WarehouseStructure";
 import { useEntityScope } from "../../../context/EntityScopeContext";
-import { can, roleIs } from "../../../config/roles";
+import { can, categoryOf } from "../../../config/roles";
 import { entityFullById, entityShort } from "../../../utils/entityLabel";
 import { formatQty } from "../../../utils/formatters";
 import {
@@ -51,16 +51,16 @@ const ROLE_LABELS = Object.fromEntries(WH_ROLES.map((r) => [r.key, r.label]));
 // PREP-C (K-GDG-07) — semua gedung dipakai bersama semua PT: bawaan form kini "bersama" (mode khusus tetap bisa dipilih).
 const EMPTY_FORM = { code: "", name: "", city: "", bin_code: "A1-01", bin_capacity: 1000, lat: "", lng: "", sharing_mode: "shared" };
 
-const MASTER_SCOPE_ROLES = ["admin", "manager", "warehouse"];   // = backend routers/warehouses.py
+const MASTER_SCOPE_CATEGORIES = ["gudang", "pengawas"];   // = backend routers/warehouses.py (PR-T4 — kategori kerja)
 
 const SCOPE_FILTERS = [{ key: "usable", label: "Boleh dipakai" }, { key: "all", label: "Semua gudang" }];
 
 export default function WarehouseMasterView({ entities = [], selectedEntity, currentUser }) {
   const { canWrite, writeBlockHint } = useEntityScope();
   // FE-05 — `scope=all` (semua gudang + lencana mode) hanya untuk peran master di server
-  // (MASTER_SCOPE_ROLES, peran acuan dikenali). Peran lain (mis. Admin Gudang) memuat gudang yang
+  // (MASTER_SCOPE_CATEGORIES, sifat peran). Peran lain (mis. Admin Gudang) memuat gudang yang
   // boleh dipakai PT aktif — scope sah dari server, BUKAN dibuka seluruhnya.
-  const masterScope = roleIs(currentUser?.role, MASTER_SCOPE_ROLES);
+  const masterScope = MASTER_SCOPE_CATEGORIES.includes(categoryOf(currentUser?.role));
   // FE-04 — izin efektif per aksi (POST → create · PATCH → update · DELETE/nonaktif → delete).
   const perms = currentUser?.permissions;
   const canCreate = can(perms, "warehouse", "create");

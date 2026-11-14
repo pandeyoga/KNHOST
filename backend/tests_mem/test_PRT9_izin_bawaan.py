@@ -27,11 +27,14 @@ for _r in ("admin", "manager", "finance"):   # PK-17 — kelola rekening kas & b
 for _r in DEFAULT_PERMISSIONS:   # PR-T2 — izin pengganti gerbang nama peran (sumber daya & aksi baru, templat asisten)
     for _res, _acts in bootstrap._prt2_default_pairs(_r).items():
         TAMBAHAN_SESUDAH.setdefault(_r, {}).setdefault(_res, set()).update(_acts)
-# Butir di `migrations_applied`: 15 butir PR-T9 + `prt2:gerbang-peran` (PR-T2) + `prt4:sifat-peran` (PR-T4).
-JUMLAH_MIGRASI = 17
+# Butir di `migrations_applied`: 15 butir PR-T9 + `prt2:gerbang-peran` (PR-T2) + `prt4:sifat-peran` dan
+# `prt4:izin-kpi-sales` (PR-T4).
+JUMLAH_MIGRASI = 18
 # Pencabutan izin bawaan yang SENGAJA dibuat unit sesudah PR-T9.
 DICABUT_SESUDAH = {r: {"vendor_bill": {"view"}, "landed_cost": {"view"}, "input_tax": {"view"}}
                    for r in ("warehouse", "warehouse_admin")}   # PK-17 (IA-02)
+for _r in ("admin", "manager", "sales_admin", "finance"):   # PR-T4 — KPI & komisi sales lain (dulu nama peran)
+    TAMBAHAN_SESUDAH.setdefault(_r, {}).setdefault("order", set()).add("view_sales_kpi")
 # PK-45 — izin kredit pelanggan (K-28) dan pesanan tanpa PPN (K-33).
 for _r, _tambah in {"admin": {"customer": {"manage_credit"}, "order": {"tax_override"}},
                     "manager": {"customer": {"manage_credit"}, "order": {"tax_override"}},

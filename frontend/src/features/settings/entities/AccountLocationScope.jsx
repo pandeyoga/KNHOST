@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { MapPin } from "lucide-react";
 import axios, { API } from "../../../services/apiClient";
-import { roleIs } from "../../../config/roles";
+import { categoryOf } from "../../../config/roles";
 
 const chip = (on) => `rounded-md border px-2 py-1 text-[11px] font-semibold ${on
   ? "border-[#0058CC] bg-[#EAF2FF] text-[#0058CC]" : "border-[#E5E5EA] bg-white text-[#6B6B73]"}`;
@@ -43,7 +43,7 @@ export function AccountLocationScope({ role, siteIds, warehouseIds, onChange }) 
         </div>
       )}
       <p className="mt-1 text-[10px] text-[#8E8E93]" data-testid="account-form-locations-help">
-        {roleIs(role, ["warehouse"])
+        {categoryOf(role) === "gudang"
           ? "Saat pembatasan lokasi aktif, petugas ini hanya melihat dan mengerjakan tugas, stok, putaway, dan transfer di lokasi terpilih. Tanpa lokasi = tidak melihat pekerjaan gudang mana pun."
           : "Lokasi kerja = saringan bawaan daftar tugas, stok & roll gudang untuk akun ini (bilah \"Lokasi\" di atas layar). Peran ini tidak dibatasi: ia boleh memilih \"Semua lokasi\" atau lokasi lain dengan sengaja. Tanpa lokasi kerja, layar menampilkan semua lokasi beserta anjuran mengisinya."}
       </p>

@@ -8,15 +8,17 @@ import { useEscapeClose } from "../../utils/escapeLayers";
 import KNSelect from "../../components/KNSelect";
 import ErrorNotice from "../../components/ErrorNotice";
 import { KpiTile, currentPeriod, pct } from "./crmUtils";
-import { roleIs } from "../../config/roles";
+import { can, roleIs } from "../../config/roles";
 
 /** Sales Force dashboard (KN_17 §6) — KPI + komisi + leaderboard + target. */
 export default function SalesForceDashboard({ currentUser, selectedEntity }) {
   const role = currentUser?.role;
   const isManager = roleIs(role, ["admin", "manager"]);   // Sisir lanjutan gerbang peran (2026-10-21) — = require_role(["manager"]) server
+  // PR-T4 — memilih sales lain (KPI & komisinya) = izin `order.view_sales_kpi` (server `_kpi_scope`), bukan nama peran.
+  const canPickSales = can(currentUser?.permissions, "order", "view_sales_kpi");
   const [period, setPeriod] = useState(currentPeriod());
   const [salesUsers, setSalesUsers] = useState([]);
-  const [salesId, setSalesId] = useState(isManager ? "" : currentUser?.id);
+  const [salesId, setSalesId] = useState(canPickSales ? "" : currentUser?.id);
   const [kpi, setKpi] = useState(null);
   const [commission, setCommission] = useState(null);
   const [history, setHistory] = useState([]);
@@ -29,7 +31,7 @@ export default function SalesForceDashboard({ currentUser, selectedEntity }) {
   const [postingGl, setPostingGl] = useState(false);
   const accrualEntity = (selectedEntity && selectedEntity !== "all") ? selectedEntity : null;
 
-  useEffect(() => { if (isManager) loadSales(); }, []); // eslint-disable-line
+  useEffect(() => { if (canPickSales || isManager) loadSales(); }, []); // eslint-disable-line
   useEffect(() => { load(); }, [period, salesId, selectedEntity]); // eslint-disable-line
   useEffect(() => { if (isManager) refreshGlStatus(); }, [period, selectedEntity]); // eslint-disable-line
 
@@ -58,7 +60,7 @@ export default function SalesForceDashboard({ currentUser, selectedEntity }) {
       const r = await axios.get(`${API}/sales-users`);
       const list = r.data || [];
       setSalesUsers(list);
-      if (isManager && !salesId && list.length) setSalesId(list[0].id);
+      if (canPickSales && !salesId && list.length) setSalesId(list[0].id);
     } catch (e) { /* */ }
   }
 
@@ -67,7 +69,7 @@ export default function SalesForceDashboard({ currentUser, selectedEntity }) {
     try {
       const entity = (selectedEntity && selectedEntity !== "all") ? selectedEntity : undefined;
       const reqs = [];
-      const targetSales = isManager ? (salesId || undefined) : currentUser?.id;
+      const targetSales = canPickSales ? (salesId || undefined) : currentUser?.id;
       reqs.push(axios.get(`${API}/sales/kpi`, { params: { sales_id: targetSales, period, entity_id: entity } }));
       reqs.push(axios.get(`${API}/sales/commission`, { params: { sales_id: targetSales, period, entity_id: entity } }));
       const histIdx = reqs.length;
@@ -99,7 +101,7 @@ export default function SalesForceDashboard({ currentUser, selectedEntity }) {
         <div className="section-head">
           <div className="flex items-center gap-2"><TrendingUp size={16} className="text-[#0058CC]" /><h2 data-testid="sf-title">Sales Force — KPI & Komisi</h2></div>
           <div className="flex items-center gap-2">
-            {isManager && <KNSelect value={salesId} onValueChange={setSalesId} className="field w-[170px]" data-testid="sf-sales-select" options={salesOptions} />}
+            {canPickSales && <KNSelect value={salesId} onValueChange={setSalesId} className="field w-[170px]" data-testid="sf-sales-select" options={salesOptions} />}
             <div className="w-[170px]"><KNMonthPicker data-testid="sf-period" value={period} onChange={setPeriod} /></div>
             {isManager && <button data-testid="sf-set-target" onClick={() => setShowTarget(true)} className="secondary-button"><Target size={13} /> Set Target</button>}
           </div>
