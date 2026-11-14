@@ -1,0 +1,30 @@
+Kode lama: git archive ccff778 + berkas uji baru
+backend/tests_mem/test_KFT5_aturan_khusus.py:119: AssertionError: {"saved":[{"id":"cfgv_cb11dbc573a5","key":"allocation.lot_mode","scope_type":"customer","scope_id":"cus_kft5_c1","value":"strict_single","prev_value":"prefer_single","prev_source_layer":"legacy_global","effective_from":"2026-11-14T03:25:26.971719+00:00","effective
+backend/tests_mem/test_KFT5_aturan_khusus.py:130: AssertionError: {"saved":[{"id":"cfgv_26c15849469a","key":"ar.grace_days","scope_type":"customer","scope_id":"tidak_ada","value":5,"prev_value":0,"prev_source_layer":"legacy_global","effective_from":"2026-11-14T03:25:26.983457+00:00","effective_to":"","reason":"uji KF-T5","change
+backend/tests_mem/test_KFT5_aturan_khusus.py:145: AssertionError: {"saved": [{"id": "cfgv_8986c2e2f3e2", "key": "ar.grace_days", "scope_type": "customer", "scope_id": "cus_kft5_c3", "value": 5, "prev_value": 0, "prev_source_layer": "legacy_global", "effective_from": "2026-11-14T03:25:27.011262+00:00", "effective_to": "", "reason
+backend/tests_mem/test_KFT5_aturan_khusus.py:172: AssertionError: assert (383 == 8)
+backend/tests_mem/test_KFT5_aturan_khusus.py:191: AssertionError: {"detail":"Not Found"}
+backend/tests_mem/test_KFT5_aturan_khusus.py:202: AssertionError: assert {'allocation....cap_pct', ...} == {'ar.denda_ra...default', ...}
+backend/tests_mem/test_KFT5_aturan_khusus.py:223: assert "'Masa tengga...ty, customer." == 'Aturan khusu...lum tersedia.'
+backend/tests_mem/test_KFT5_aturan_khusus.py:233: AssertionError: {"detail":"Not Found"}
+backend/tests_mem/test_KFT5_aturan_khusus.py:250: AssertionError: {"groups": [{"id": "uang-masuk", "label": "Uang Masuk & Piutang", "order": 1, "question": "Kapan pelanggan harus bayar, dan apa akibatnya kalau telat?", "count": 25, "active_count": 25}, {"id": "harga-diskon", "label": "Harga, Diskon & Komisi", "order": 2, "questi
+backend/tests_mem/test_KFT5_aturan_khusus.py:278: KeyError: 'scope_label'
+  venv311/lib/python3.11/site-packages/starlette/formparsers.py:12: PendingDeprecationWarning: Please use `import python_multipart` instead.
+PASSED tests_mem/test_KFT5_aturan_khusus.py::test_KFT5_U1_masa_tenggang_khusus_pelanggan_terbaca_mesin
+PASSED tests_mem/test_KFT5_aturan_khusus.py::test_KFT5_U2_kembali_ikut_aturan_pt
+PASSED tests_mem/test_KFT5_aturan_khusus.py::test_KFT5_U3_toleransi_selisih_bayar_per_pelanggan
+PASSED tests_mem/test_KFT5_aturan_khusus.py::test_KFT5_U4_perlakuan_denda_per_pelanggan
+PASSED tests_mem/test_KFT5_aturan_khusus.py::test_KFT5_U5_batas_susut_potong_per_barang
+PASSED tests_mem/test_KFT5_aturan_khusus.py::test_KFT5_U6_ambang_sisa_potong_per_barang
+PASSED tests_mem/test_KFT5_aturan_khusus.py::test_KFT5_U10_izin_pelanggan_saja_tidak_cukup
+FAILED tests_mem/test_KFT5_aturan_khusus.py::test_KFT5_U7_kebijakan_lot_tidak_lagi_per_pelanggan
+FAILED tests_mem/test_KFT5_aturan_khusus.py::test_KFT5_U8_sasaran_harus_ada
+FAILED tests_mem/test_KFT5_aturan_khusus.py::test_KFT5_U9_pelanggan_pt_lain_di_luar_cakupan
+FAILED tests_mem/test_KFT5_aturan_khusus.py::test_KFT5_U11_nilai_efektif_per_lapisan
+FAILED tests_mem/test_KFT5_aturan_khusus.py::test_KFT5_U12_daftar_pelanggan_beraturan_khusus
+FAILED tests_mem/test_KFT5_aturan_khusus.py::test_KFT5_U13_registry_lapisan_pelanggan_dan_barang
+FAILED tests_mem/test_KFT5_aturan_khusus.py::test_KFT5_tambahan_lapisan_pemasok_dokumen_belum_tersedia
+FAILED tests_mem/test_KFT5_aturan_khusus.py::test_KFT5_tambahan_daftar_tidak_menghitung_nisan
+FAILED tests_mem/test_KFT5_aturan_khusus.py::test_KFT5_tambahan_baca_pelanggan_pt_lain_ditolak
+FAILED tests_mem/test_KFT5_aturan_khusus.py::test_KFT5_tambahan_riwayat_menyebut_nama_bukan_id
+10 failed, 7 passed, 1 warning in 1.51s

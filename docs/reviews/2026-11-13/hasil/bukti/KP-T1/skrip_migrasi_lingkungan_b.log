@@ -1,0 +1,33 @@
+[bootstrap] FASE F lifecycle backfill: 5 produk distempel 'produksi'
+[bootstrap] kebersihan data: 5 record dirapikan {'customers': 3, 'suppliers': 0, 'users': 0, 'hr_employees': 2, 'makloons': 0}
+Argumen tidak dikenal atau bertentangan: --salah (tanpa argumen / --dry-run untuk lapor, --apply untuk menulis)
+Argumen tidak dikenal atau bertentangan: --apply --dry-run (tanpa argumen / --dry-run untuk lapor, --apply untuk menulis)
+== KP-T1 profil PT — mode lapor (6 PT) ==
+Persen kepemilikan diisi 100: 2 PT (belum ditulis — mode lapor)
+  - ent_uji_mig_a
+  - ent_uji_mig_c
+Tahun buku master ≠ registry: 1 PT (tidak diubah; mesin memakai registry)
+  - ent_uji_mig_a (PT Mig A): awal 04-01 → akhir bulan 3, registry bulan 12
+Tahun buku master tidak terbaca: 1 PT
+  - ent_uji_mig_c (PT Mig C): '13-45', registry bulan 12
+Mata uang master ≠ registry: 1 PT (tidak diubah; mesin memakai registry)
+  - ent_uji_mig_a (PT Mig A): master USD, registry IDR
+NPWP bukan 15/16 digit: 1 PT (perbaiki lewat layar detail PT)
+  - ent_uji_mig_a (PT Mig A): '12.345'
+(mode lapor; jalankan dengan --apply untuk mengisi persen kepemilikan)
+== KP-T1 profil PT — mode tulis (6 PT) ==
+Persen kepemilikan diisi 100: 2 PT
+  - ent_uji_mig_a
+  - ent_uji_mig_c
+Tahun buku master ≠ registry: 1 PT (tidak diubah; mesin memakai registry)
+  - ent_uji_mig_a (PT Mig A): awal 04-01 → akhir bulan 3, registry bulan 12
+Tahun buku master tidak terbaca: 1 PT
+  - ent_uji_mig_c (PT Mig C): '13-45', registry bulan 12
+Mata uang master ≠ registry: 1 PT (tidak diubah; mesin memakai registry)
+  - ent_uji_mig_a (PT Mig A): master USD, registry IDR
+NPWP bukan 15/16 digit: 1 PT (perbaiki lewat layar detail PT)
+  - ent_uji_mig_a (PT Mig A): '12.345'
+Ditulis: 2
+.
+=============================== warnings summary ===============================
+1 passed, 1 warning in 1.28s

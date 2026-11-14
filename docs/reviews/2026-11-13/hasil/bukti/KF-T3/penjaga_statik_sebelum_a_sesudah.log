@@ -1,0 +1,107 @@
+== sebelum (HEAD)
+verify_auth_coverage: [FAIL] 28 pelanggaran :
+verify_ui_standard: [FAIL] 23 pelanggaran :
+verify_approval_queues: 
+audit_i18n_id:   ✗ 113 temuan di 66 berkas.
+audit_create_modal: [FAIL] 6 pelanggaran :
+verify_page_tabs: [FAIL] 1 pelanggaran :
+verify_to_list_bound: [FAIL] 6 pelanggaran :
+verify_list_export: [PASS] 0 pelanggaran.
+verify_error_notice: [PASS] 0 pelanggaran.
+verify_custom_modals: [PASS] 0 pelanggaran.
+verify_knselect_contract: verify_knselect_contract: 0 temuan
+verify_entity_label:   ✗ 2 pelanggaran:
+verify_access_catalog_nav: verify_access_catalog_nav: 0 temuan
+verify_money_idempotency: [PASS] 0 pelanggaran.
+verify_codebase_map: [PASS] 0 pelanggaran.
+verify_scope_guard: 
+verify_auth_coverage exit=1
+verify_access_catalog_nav exit=0
+verify_ui_standard exit=1
+verify_custom_modals exit=0
+verify_codebase_map exit=0
+verify_money_idempotency exit=0
+verify_error_notice exit=0
+verify_knselect_contract exit=0
+verify_page_tabs exit=1
+verify_modal_dismiss exit=0
+verify_blocking_dialogs exit=0
+audit_i18n_id exit=0
+audit_i18n_id --strict exit=1
+audit_config_wiring exit=0
+audit_config_wiring --strict exit=1
+audit_config_wiring --self-test exit=1
+config_health exit=0
+verify_role_gate_ui: [PASS] 39 cek lolos, 0 pelanggaran. exit=0 
+
+== keadaan (a)
+verify_auth_coverage: [FAIL] 28 pelanggaran :
+verify_ui_standard: [FAIL] 23 pelanggaran :
+verify_approval_queues: 
+audit_i18n_id:   ✗ 113 temuan di 66 berkas.
+audit_create_modal: [FAIL] 6 pelanggaran :
+verify_page_tabs: [FAIL] 1 pelanggaran :
+verify_to_list_bound: [FAIL] 6 pelanggaran :
+verify_list_export: [PASS] 0 pelanggaran.
+verify_error_notice: [PASS] 0 pelanggaran.
+verify_custom_modals: [PASS] 0 pelanggaran.
+verify_knselect_contract: verify_knselect_contract: 0 temuan
+verify_entity_label:   ✗ 2 pelanggaran:
+verify_access_catalog_nav: verify_access_catalog_nav: 0 temuan
+verify_money_idempotency: [PASS] 0 pelanggaran.
+verify_codebase_map: [PASS] 0 pelanggaran.
+verify_scope_guard: 
+verify_auth_coverage exit=1
+verify_access_catalog_nav exit=0
+verify_ui_standard exit=1
+verify_custom_modals exit=0
+verify_codebase_map exit=0
+verify_money_idempotency exit=0
+verify_error_notice exit=0
+verify_knselect_contract exit=0
+verify_page_tabs exit=1
+verify_modal_dismiss exit=0
+verify_blocking_dialogs exit=0
+audit_i18n_id exit=0
+audit_i18n_id --strict exit=1
+audit_config_wiring exit=0
+audit_config_wiring --strict exit=1
+audit_config_wiring --self-test exit=1
+config_health exit=0
+verify_role_gate_ui: [PASS] 39 cek lolos, 0 pelanggaran. exit=0 
+
+== sesudah (a)+(b)
+verify_auth_coverage: [FAIL] 28 pelanggaran :
+verify_ui_standard: [FAIL] 23 pelanggaran :
+verify_approval_queues: 
+audit_i18n_id:   ✗ 113 temuan di 66 berkas.
+audit_create_modal: [FAIL] 6 pelanggaran :
+verify_page_tabs: [FAIL] 1 pelanggaran :
+verify_to_list_bound: [FAIL] 6 pelanggaran :
+verify_list_export: [PASS] 0 pelanggaran.
+verify_error_notice: [PASS] 0 pelanggaran.
+verify_custom_modals: [PASS] 0 pelanggaran.
+verify_knselect_contract: verify_knselect_contract: 0 temuan
+verify_entity_label:   ✗ 2 pelanggaran:
+verify_access_catalog_nav: verify_access_catalog_nav: 0 temuan
+verify_money_idempotency: [PASS] 0 pelanggaran.
+verify_codebase_map: [PASS] 0 pelanggaran.
+verify_scope_guard: 
+verify_auth_coverage exit=1
+verify_access_catalog_nav exit=0
+verify_ui_standard exit=1
+verify_custom_modals exit=0
+verify_codebase_map exit=0
+verify_money_idempotency exit=0
+verify_error_notice exit=0
+verify_knselect_contract exit=0
+verify_page_tabs exit=1
+verify_modal_dismiss exit=0
+verify_blocking_dialogs exit=0
+audit_i18n_id exit=0
+audit_i18n_id --strict exit=1
+audit_config_wiring exit=0
+audit_config_wiring --strict exit=1
+audit_config_wiring --self-test exit=1
+config_health exit=0
+verify_role_gate_ui: [PASS] 39 cek lolos, 0 pelanggaran. exit=0 

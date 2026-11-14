@@ -1,0 +1,8 @@
+  ✓ U17 — ditimpa: nilai mesin + lencana Ditimpa + nilai tersimpan; tautan ke layar sumbernya (70 ms)
+  ✓ ditimpa pengaturan lain: tautan membuka kartu kuncinya (14 ms)
+  ✓ tidak ditimpa: tanpa lencana dan catatan (10 ms)
+  ✓ U17 — baris jadwal menyebut cakupan; Batalkan jadwal memanggil pembatal dengan barisnya (31 ms)
+  ✓ Batalkan jadwal hanya bagi yang boleh mengubah (7 ms)
+  ✓ useSettingsBrowser.onCancelScheduled — alasan wajib bila berisiko tinggi; batal di konfirmasi = tidak memanggil API (32 ms)
+Test Suites: 1 passed, 1 total
+Tests:       6 passed, 6 total

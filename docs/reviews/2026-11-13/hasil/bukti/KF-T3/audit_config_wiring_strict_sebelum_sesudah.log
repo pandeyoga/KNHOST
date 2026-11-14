@@ -1,0 +1,53 @@
+== sebelum
+================================================================================================
+AUDIT WIRING KONFIGURASI — apakah setiap setting benar-benar berfungsi?
+================================================================================================
+Total kunci terdeklarasi : 71
+  OK           66   wiring lengkap (dibaca kode + bisa diubah user)
+  NOT_USED      5   registry menyatakan tidak dipakai + alasan (SAH)
+  HIDDEN        0   dibaca kode TAPI TANPA UI (hanya via DB/API)
+  ORPHAN_UI     0   ADA UI TAPI TIDAK DIBACA KODE  <-- tombol palsu
+  DEAD          0   tidak dibaca & tidak ada UI
+
+Pusat Pengaturan (UI generik): TERSAMBUNG
+Editor konfigurasi di luar Pusat Pengaturan: 1 berkas <-- sumber kebenaran ganda
+  ! features/sales/ReturnAssumptionsPanel.jsx → /settings
+
+Per scope:
+  global         total= 71  OK= 66 HIDDEN=  0 ORPHAN_UI=  0 DEAD=  0 NOT_USED=  5
+
+── NOT_USED (5) ────────────────────────────────────────────────────────────────────
+  [global] sales.quotation_enabled                              default=False  alasan: Alur Penawaran (Quotation) BELUM ADA di sistem — tidak ada satu pun en
+  [global] role_home.admin                                      default='admin'  alasan: Diatur per peran di Peran & Hak Akses › Halaman awal
+  [global] role_home.manager                                    default='reports'  alasan: Diatur per peran di Peran & Hak Akses › Halaman awal
+  [global] role_home.sales                                      default='sales'  alasan: Diatur per peran di Peran & Hak Akses › Halaman awal
+  [global] role_home.warehouse                                  default='operations'  alasan: Diatur per peran di Peran & Hak Akses › Halaman awal
+
+⚠️  0 kunci bermasalah + 1 editor ganda (INV-CFG).
+== sesudah
+================================================================================================
+AUDIT WIRING KONFIGURASI — apakah setiap setting benar-benar berfungsi?
+================================================================================================
+Total kunci terdeklarasi : 71
+  OK           65   wiring lengkap (dibaca kode + bisa diubah user)
+  NOT_USED      6   registry menyatakan tidak dipakai + alasan (SAH)
+  HIDDEN        0   dibaca kode TAPI TANPA UI (hanya via DB/API)
+  ORPHAN_UI     0   ADA UI TAPI TIDAK DIBACA KODE  <-- tombol palsu
+  DEAD          0   tidak dibaca & tidak ada UI
+
+Pusat Pengaturan (UI generik): TERSAMBUNG
+Editor konfigurasi di luar Pusat Pengaturan: 1 berkas <-- sumber kebenaran ganda
+  ! features/sales/ReturnAssumptionsPanel.jsx → /settings
+
+Per scope:
+  global         total= 71  OK= 65 HIDDEN=  0 ORPHAN_UI=  0 DEAD=  0 NOT_USED=  6
+
+── NOT_USED (6) ────────────────────────────────────────────────────────────────────
+  [global] tax.efaktur_enabled                                  default=True  alasan: Penerbitan faktur pajak mengikuti status PKP di profil PT.
+  [global] sales.quotation_enabled                              default=False  alasan: Alur Penawaran (Quotation) BELUM ADA di sistem — tidak ada satu pun en
+  [global] role_home.admin                                      default='admin'  alasan: Diatur per peran di Peran & Hak Akses › Halaman awal
+  [global] role_home.manager                                    default='reports'  alasan: Diatur per peran di Peran & Hak Akses › Halaman awal
+  [global] role_home.sales                                      default='sales'  alasan: Diatur per peran di Peran & Hak Akses › Halaman awal
+  [global] role_home.warehouse                                  default='operations'  alasan: Diatur per peran di Peran & Hak Akses › Halaman awal
+
+⚠️  0 kunci bermasalah + 1 editor ganda (INV-CFG).

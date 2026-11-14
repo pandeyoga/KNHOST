@@ -1,0 +1,4 @@
+== sebelum (HEAD 4db17eb, tanpa uji KP-T1)
+415 passed, 2 skipped, 3 xfailed, 11 warnings in 51.44s
+== sesudah (kode KP-T1 + 2 berkas uji KP-T1)
+435 passed, 2 skipped, 3 xfailed, 11 warnings in 53.15s

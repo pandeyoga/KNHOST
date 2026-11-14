@@ -1,0 +1,58 @@
+== hitung_penjaga.sh — sebelum (HEAD 4db17eb)
+verify_auth_coverage: [FAIL] 28 pelanggaran :
+verify_ui_standard: [FAIL] 23 pelanggaran :
+verify_approval_queues: 
+audit_i18n_id:   ✗ 112 temuan di 65 berkas.
+audit_create_modal: [FAIL] 6 pelanggaran :
+verify_page_tabs: [FAIL] 1 pelanggaran :
+verify_to_list_bound: [FAIL] 6 pelanggaran :
+verify_list_export: [PASS] 0 pelanggaran.
+verify_error_notice: [PASS] 0 pelanggaran.
+verify_custom_modals: [PASS] 0 pelanggaran.
+verify_knselect_contract: verify_knselect_contract: 0 temuan
+verify_entity_label:   ✗ 2 pelanggaran:
+verify_access_catalog_nav: verify_access_catalog_nav: 0 temuan
+verify_money_idempotency: [PASS] 0 pelanggaran.
+verify_codebase_map: [PASS] 0 pelanggaran.
+verify_scope_guard: 
+
+== hitung_penjaga.sh — sesudah (KP-T1)
+verify_auth_coverage: [FAIL] 28 pelanggaran :
+verify_ui_standard: [FAIL] 23 pelanggaran :
+verify_approval_queues: 
+audit_i18n_id:   ✗ 112 temuan di 65 berkas.
+audit_create_modal: [FAIL] 6 pelanggaran :
+verify_page_tabs: [FAIL] 1 pelanggaran :
+verify_to_list_bound: [FAIL] 6 pelanggaran :
+verify_list_export: [PASS] 0 pelanggaran.
+verify_error_notice: [PASS] 0 pelanggaran.
+verify_custom_modals: [PASS] 0 pelanggaran.
+verify_knselect_contract: verify_knselect_contract: 0 temuan
+verify_entity_label:   ✗ 2 pelanggaran:
+verify_access_catalog_nav: verify_access_catalog_nav: 0 temuan
+verify_money_idempotency: [PASS] 0 pelanggaran.
+verify_codebase_map: [PASS] 0 pelanggaran.
+verify_scope_guard: 
+
+== verify_role_gate_ui — sebelum / sesudah
+EXIT 0
+[PASS] 39 cek lolos, 0 pelanggaran.
+[PASS] 39 cek lolos, 0 pelanggaran.
+
+== audit_config_wiring.py --strict (salinan berjalur $W) — sebelum / sesudah
+✅ INV-CFG: setiap setting terdeklarasi punya pembaca kode DAN jalur ubah yang nyata; tidak ada editor ganda.
+✅ INV-CFG: setiap setting terdeklarasi punya pembaca kode DAN jalur ubah yang nyata; tidak ada editor ganda.
+
+== penjaga statik lain (MONGO_URL/API_BASE diarahkan ke port mati: hanya bagian statik) — HEAD vs KP-T1
+9,10c9,10
+< verify_picker_portal: rc=0 [PASS] 314 cek lolos, 0 pelanggaran.
+< verify_escape_layers: rc=0 [PASS] 1220 cek lolos, 0 pelanggaran.
+---
+> verify_picker_portal: rc=0 [PASS] 316 cek lolos, 0 pelanggaran.
+> verify_escape_layers: rc=0 [PASS] 1223 cek lolos, 0 pelanggaran.
+14c14
+< verify_role_label: rc=0   [PASS] 1213 berkas layar diperiksa · 0 pelanggaran
+---
+> verify_role_label: rc=0   [PASS] 1216 berkas layar diperiksa · 0 pelanggaran
+(selisih di atas = jumlah cek bertambah karena berkas baru; pelanggaran sama)
+verify_numeric_bounds STATIK: HEAD 'HARD 3 | SOFT 5' · KP-T1 'HARD 3 | SOFT 5'

@@ -1,0 +1,22 @@
+== sebelum
+[1] keadaan nyata          : wired=True pelanggaran=0
+[2] Hub diputus (simulasi) : HIDDEN=55 (harus > 0)
+[3] penulis config lama    : 1 berkas (harus 0)
+    - features/sales/ReturnAssumptionsPanel.jsx → /settings
+[4] penulis lama disuntik  : terdeteksi=2 (harus > 1)
+[5] kartu pengalih murni   : tidak dihitung editor (benar)
+[6] index == regex         : 213/213 sama (harus 100%)
+[7] daun lama kunci bertanggal: NOT_USED · bila tidak bertanggal: ORPHAN_UI (harus NOT_USED · pelanggaran)
+
+SELF-TEST: FAIL
+== sesudah
+[1] keadaan nyata          : wired=True pelanggaran=0
+[2] Hub diputus (simulasi) : HIDDEN=54 (harus > 0)
+[3] penulis config lama    : 1 berkas (harus 0)
+    - features/sales/ReturnAssumptionsPanel.jsx → /settings
+[4] penulis lama disuntik  : terdeteksi=2 (harus > 1)
+[5] kartu pengalih murni   : tidak dihitung editor (benar)
+[6] index == regex         : 213/213 sama (harus 100%)
+[7] daun lama kunci bertanggal: NOT_USED · bila tidak bertanggal: ORPHAN_UI (harus NOT_USED · pelanggaran)
+
+SELF-TEST: FAIL

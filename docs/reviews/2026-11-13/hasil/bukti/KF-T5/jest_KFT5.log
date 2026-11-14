@@ -1,0 +1,55 @@
+== Jest kft5AturanKhusus — KODE BARU
+  ✓ U14 (komponen): Atur khusus 10 hari → Simpan → Khusus pelanggan ini → Kembali ikut aturan PT (100 ms)
+  ✓ Batal di konfirmasi tidak mencabut apa pun (11 ms)
+  ✓ kunci berisiko tinggi: Simpan mati sampai alasan diisi; alasan ikut terkirim (19 ms)
+  ✓ tanpa izin ubah: kartu hanya-baca, tombol tidak tampil (5 ms)
+  ✓ 403 atau tanpa kartu: bagian tidak ditampilkan (7 ms)
+  ✓ galat memuat: ErrorNotice + Coba lagi (13 ms)
+  ✓ memuat: Memuat aturan… (3 ms)
+  ✓ U15 (komponen): barang — PT terpilih ikut dikirim; Semua PT → aturan semua PT (11 ms)
+  ✓ Pusat Pengaturan: 'Bisa dibedakan per pelanggan — 1 pelanggan diatur khusus' → klik → nama dan nilai (6 ms)
+  ✓ kartu Pusat Pengaturan: baris 'Bisa diatur pada level' hilang; kunci tanpa lapisan pelanggan/barang tanpa baris (17 ms)
+  ✓ label lapisan & cakupan riwayat tanpa id (1 ms)
+Test Suites: 1 passed, 1 total
+Tests:       11 passed, 11 total
+
+== Jest kft5AturanKhusus — KODE LAMA (git archive HEAD frontend/src + berkas uji baru)
+FAIL src/features/__tests__/kft5AturanKhusus.test.js
+    Cannot find module '../settings/config/ScopedRulesSection' from 'src/features/__tests__/kft5AturanKhusus.test.js'
+Test Suites: 1 failed, 1 total
+Tests:       0 total
+
+== Suite terkait — KODE BARU
+PASS src/features/__tests__/kft6DualControl.test.js
+FAIL src/features/__tests__/decisionsD3.test.js
+    Cannot find module '@radix-ui/primitive/is-development' from '../fe/node_modules/cmdk/node_modules/@radix-ui/react-use-controllable-state/dist/index.js'
+FAIL src/features/__tests__/phase3Settings.test.js
+    Cannot find module '@radix-ui/primitive/is-development' from '../fe/node_modules/cmdk/node_modules/@radix-ui/react-use-controllable-state/dist/index.js'
+FAIL src/features/__tests__/auditUi2G5b.test.js
+    Cannot find module '@radix-ui/primitive/is-development' from '../fe/node_modules/cmdk/node_modules/@radix-ui/react-use-controllable-state/dist/index.js'
+PASS src/config/__tests__/roleReach.test.js
+PASS src/config/__tests__/serverAccessReach.test.js
+PASS src/features/__tests__/kft5AturanKhusus.test.js
+PASS src/features/settings/config/__tests__/settingCardBertanggal.test.js
+FAIL src/features/__tests__/kft2KunciPengaturan.test.js (7.139 s)
+PASS src/features/__tests__/phase4R5.test.js (7.685 s)
+Test Suites: 4 failed, 6 passed, 10 total
+Tests:       1 failed, 72 passed, 73 total
+
+== Suite terkait — KODE LAMA
+PASS src/features/__tests__/kft6DualControl.test.js
+PASS src/config/__tests__/roleReach.test.js
+PASS src/config/__tests__/serverAccessReach.test.js
+PASS src/features/settings/config/__tests__/settingCardBertanggal.test.js
+FAIL src/features/__tests__/auditUi2G5b.test.js
+    Cannot find module '@radix-ui/primitive/is-development' from '../fe/node_modules/cmdk/node_modules/@radix-ui/react-use-controllable-state/dist/index.js'
+FAIL src/features/__tests__/phase3Settings.test.js
+    Cannot find module '@radix-ui/primitive/is-development' from '../fe/node_modules/cmdk/node_modules/@radix-ui/react-use-controllable-state/dist/index.js'
+FAIL src/features/__tests__/decisionsD3.test.js
+    Cannot find module '@radix-ui/primitive/is-development' from '../fe/node_modules/cmdk/node_modules/@radix-ui/react-use-controllable-state/dist/index.js'
+PASS src/features/__tests__/phase4R5.test.js
+FAIL src/features/__tests__/kft2KunciPengaturan.test.js
+Test Suites: 4 failed, 5 passed, 9 total
+Tests:       1 failed, 61 passed, 62 total
+
+Catatan: decisionsD3/phase3Settings/auditUi2G5b gagal dimuat di kedua kode (cmdk → @radix-ui/primitive/is-development tidak ada di node_modules lokal = kendala lingkungan). kft2KunciPengaturan gagal 1 uji di kedua kode (ReturnAssumptionsPanel.jsx masih ada di ccff778).

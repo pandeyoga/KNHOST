@@ -1,0 +1,26 @@
+Penjaga statik (bash hitung_penjaga.sh <repo>) — kiri SEBELUM (HEAD ccff778) | kanan SESUDAH (salinan kerja KF-T5)
+verify_auth_coverage: [FAIL] 28 pelanggaran :|verify_auth_coverage: [FAIL] 28 pelanggaran :
+verify_ui_standard: [FAIL] 23 pelanggaran :|verify_ui_standard: [FAIL] 23 pelanggaran :
+verify_approval_queues: |verify_approval_queues: 
+audit_i18n_id:   ✗ 113 temuan di 66 berkas.|audit_i18n_id:   ✗ 113 temuan di 66 berkas.
+audit_create_modal: [FAIL] 6 pelanggaran :|audit_create_modal: [FAIL] 6 pelanggaran :
+verify_page_tabs: [FAIL] 1 pelanggaran :|verify_page_tabs: [FAIL] 1 pelanggaran :
+verify_to_list_bound: [FAIL] 6 pelanggaran :|verify_to_list_bound: [FAIL] 6 pelanggaran :
+verify_list_export: [PASS] 0 pelanggaran.|verify_list_export: [PASS] 0 pelanggaran.
+verify_error_notice: [PASS] 0 pelanggaran.|verify_error_notice: [PASS] 0 pelanggaran.
+verify_custom_modals: [PASS] 0 pelanggaran.|verify_custom_modals: [PASS] 0 pelanggaran.
+verify_knselect_contract: verify_knselect_contract: 0 temuan|verify_knselect_contract: verify_knselect_contract: 0 temuan
+verify_entity_label:   ✗ 2 pelanggaran:|verify_entity_label:   ✗ 2 pelanggaran:
+verify_access_catalog_nav: verify_access_catalog_nav: 0 temuan|verify_access_catalog_nav: verify_access_catalog_nav: 0 temuan
+verify_money_idempotency: [PASS] 0 pelanggaran.|verify_money_idempotency: [PASS] 0 pelanggaran.
+verify_codebase_map: [PASS] 0 pelanggaran.|verify_codebase_map: [PASS] 0 pelanggaran.
+verify_scope_guard: |verify_scope_guard: 
+
+verify_approval_queues & verify_scope_guard: baris ringkas tidak tertangkap pola; verify_scope_guard dijalankan terpisah:
+  sebelum: HIJAU (pengecualian beralasan: 7) · sesudah: HIJAU (pengecualian beralasan: 7)
+verify_approval_queues bergantung isi database — tidak dibandingkan.
+
+verify_role_gate_ui.py: sebelum [PASS] 39 cek lolos, 0 pelanggaran. · sesudah [PASS] 39 cek lolos, 0 pelanggaran.
+
+Tambahan (lama_repo = git archive ccff778 | wt13 = salinan kerja):
+  verify_blocking_dialogs: PASS 0 | PASS 0 · verify_modal_dismiss: PASS 0 | PASS 0 · verify_role_label: PASS 0 (1214 berkas) | PASS 0 (1216 berkas) · verify_ui_contrast: PASS 0 | PASS 0 · verify_numeric_bounds: FAIL-HARD 3 | FAIL-HARD 3

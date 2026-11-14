@@ -1,0 +1,15 @@
+docs/audit/konfigurasi-peran-2026-11-13/bukti/t1_config.py — database tiruan (salinan kerja KF-T5), seluruh registry
+{'aktif': 365, 'tulis_grup_200': 344, 'grup_terbaca': 344, 'tulis_pt_200': 301, 'pt_terbaca_pt_lain_tetap': 301, 'tak_sah_ditolak': 329, 'not_used': 18, 'not_used_ditolak': 0}
+ar.denda_rate_pct_per_month ['global', 'entity', 'customer'] grup 200 True | pt 200 True True | tak sah 400 | pulih 200 True
+ar.grace_days ['global', 'entity', 'customer'] grup 200 True | pt 200 True True | tak sah 400 | pulih 200 True
+allocation.lot_mode ['global', 'entity'] grup 200 True | pt 200 True True | tak sah 400 | pulih 200 True
+allocation.dye_lot_strict ['global', 'entity'] grup 200 True | pt 200 True True | tak sah 400 | pulih 200 True
+cutting.remnant_threshold ['global', 'entity', 'product'] grup 200 True | pt 200 True True | tak sah 400 | pulih 200 True
+cutting.remnant_grade ['global', 'entity', 'product'] grup 200 True | pt 200 True True | tak sah 400 | pulih 200 True
+cutting.waste_limit_pct ['global', 'entity', 'product'] grup 200 True | pt 200 True True | tak sah 400 | pulih 200 True
+payment.penalty_mode ['global', 'entity', 'customer'] grup 200 True | pt 200 True True | tak sah 400 | pulih 200 True
+payment.penalty_base ['global', 'entity', 'customer'] grup 200 True | pt 200 True True | tak sah 400 | pulih 200 True
+payment.penalty_cap_pct ['global', 'entity', 'customer'] grup 200 True | pt 200 True True | tak sah 400 | pulih 200 True
+payment.variance_tolerance_rupiah ['global', 'entity', 'customer'] grup 200 True | pt 200 True True | tak sah 400 | pulih 200 True
+payment.variance_underpay_default ['global', 'entity', 'customer'] grup 200 True | pt 200 True True | tak sah 400 | pulih 200 True
+payment.variance_overpay_default ['global', 'entity', 'customer'] grup 200 True | pt 200 True True | tak sah 400 | pulih 200 True

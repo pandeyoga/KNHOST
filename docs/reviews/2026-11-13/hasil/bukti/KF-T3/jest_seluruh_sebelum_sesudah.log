@@ -1,0 +1,10 @@
+== lama (HEAD)
+Test Suites: 36 failed, 66 passed, 102 total
+Tests:       1 failed, 478 passed, 479 total
+== baru
+Test Suites: 36 failed, 67 passed, 103 total
+Tests:       1 failed, 484 passed, 485 total
+== selisih daftar suite (waktu dibuang)
+135a136
+> PASS src/features/settings/config/__tests__/kft3SettingCard.test.js
+Suite gagal dimuat (keduanya 36): @radix-ui/cmdk tidak termuat di lingkungan lokal + 1 uji gagal sama (KF-T2 U14 pelengkap, berkas ReturnAssumptionsPanel.jsx di basis sementara).

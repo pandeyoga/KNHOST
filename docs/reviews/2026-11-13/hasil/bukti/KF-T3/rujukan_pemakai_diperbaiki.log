@@ -1,0 +1,277 @@
+KF-T3 — rujukan pemakai (consumers) yang diarahkan ke pembaca nyata sesudah config_health diperketat.
+89 kunci memerah oleh aturan ketat (lihat config_health_sebelum_sesudah.log) + 2 kunci yang pembacanya diubah unit ini.
+Tidak ada kunci yang perlu ditandai not_used karena pengetatan: semua punya pembaca nyata.
+
+purchasing.restock_source_unknown
+   lama: services/restock_source_service.py:check_lines
+   baru: services/restock_source_service.py:unknown_policy
+qc.grade_from_points
+   lama: services/qc_inspection_service.py:inspect_roll
+   baru: services/qc_inspection_service.py:grade_auto
+qc.md_sampling_pct
+   lama: services/inspection_service.py:finish
+   baru: services/inspection_service.py:sampling_rule
+qc.md_sampling_min
+   lama: services/inspection_service.py:finish
+   baru: services/inspection_service.py:sampling_rule
+qc.sampling_pct
+   lama: services/inspection_service.py:finish
+   baru: services/inspection_service.py:sampling_rule
+qc.sampling_min
+   lama: services/inspection_service.py:finish
+   baru: services/inspection_service.py:sampling_rule
+receiving.require_supplier_item_for_supplier_uom
+   lama: services/receiving_uom_service.py:convert_doc_qty
+   baru: services/receiving_uom_service.py:uom_options
+receiving.blind_count
+   lama: services/goods_receipt_service.py:public_view
+   baru: services/goods_receipt_service.py:is_blind_for
+receiving.label_variance_tolerance_percent
+   lama: routers/inbound_scan_label.py:confirm_measure
+   baru: routers/inbound_scan_label.py:_tolerance_pct
+receiving.auto_rfid_on_scan
+   lama: services/receiving_roll_service.py:receiving_cfg
+   baru: services/receiving_roll_service.py:build_receiving_roll
+catalog.sales_hidden_stages
+   lama: services/product_exclusivity.py:visibility_query, routers/sales_orders.py
+   baru: services/product_exclusivity.py:refresh_hidden_stages
+wms.location_scope_enforced
+   lama: services/location_scope.py:warehouse_ids_for, entity_scope.py:resolve_list_scope
+   baru: services/location_scope.py:enforced
+cutting.wait_warn_minutes
+   lama: services/cutting_service.py:desk
+   baru: services/cutting_service.py:wait_thresholds
+cutting.wait_late_minutes
+   lama: services/cutting_service.py:desk
+   baru: services/cutting_service.py:wait_thresholds
+returns.evidence_required_submit
+   lama: services/return_evidence_service.py:assert_evidence, routers/sales_returns.py:submit_return
+   baru: services/return_evidence_service.py:policy
+returns.evidence_required_approve
+   lama: services/return_evidence_service.py:assert_evidence, routers/sales_returns.py:approve_return
+   baru: services/return_evidence_service.py:policy
+returns.evidence_required_inspect
+   lama: services/return_evidence_service.py:assert_evidence, routers/sales_returns.py:complete_inspection
+   baru: services/return_evidence_service.py:policy
+returns.evidence_required_settle
+   lama: services/return_evidence_service.py:assert_evidence, routers/sales_returns.py:settle_return
+   baru: services/return_evidence_service.py:policy
+returns.supplier_reminder_days
+   lama: services/return_disposition_service.py:job_supplier_deadline_reminder
+   baru: services/return_policy_service.py:return_assumptions
+returns.bill_first
+   lama: services/return_service.py:_source_bill_split, services/return_roll_settlement_service.py:plan_event
+   baru: services/return_policy_service.py:return_assumptions
+amendment.approval_threshold_amount
+   lama: services/amendment_service.py:evaluate_policy
+   baru: services/amendment_service.py:policy_snapshot
+amendment.approval_threshold_pct
+   lama: services/amendment_service.py:evaluate_policy
+   baru: services/amendment_service.py:policy_snapshot
+amendment.approver_role
+   lama: services/amendment_service.py:evaluate_policy
+   baru: services/amendment_service.py:policy_snapshot
+amendment.admin_approval_above
+   lama: services/amendment_service.py:evaluate_policy
+   baru: services/amendment_service.py:policy_snapshot
+amendment.require_note_above
+   lama: services/amendment_service.py:propose
+   baru: services/amendment_service.py:policy_snapshot
+amendment.issued_doc_policy
+   lama: services/amendment_service.py:evaluate_policy
+   baru: services/amendment_service.py:policy_snapshot
+docref.autolink_enabled
+   lama: services/doc_refs_service.py:link
+   baru: services/doc_refs_service.py:autolink_enabled
+bank.match_weight_amount
+   lama: services/bank_recon_service.py:score_pair
+   baru: services/bank_recon_service.py:load_cfg
+bank.match_weight_date
+   lama: services/bank_recon_service.py:score_pair
+   baru: services/bank_recon_service.py:load_cfg
+bank.match_weight_ref
+   lama: services/bank_recon_service.py:score_pair
+   baru: services/bank_recon_service.py:load_cfg
+bank.match_weight_name
+   lama: services/bank_recon_service.py:score_pair
+   baru: services/bank_recon_service.py:load_cfg
+bank.auto_match_min_score
+   lama: services/bank_recon_service.py:auto_match
+   baru: services/bank_recon_service.py:load_cfg
+bank.suggest_min_score
+   lama: services/bank_recon_service.py:auto_match, services/bank_recon_service.py:candidates
+   baru: services/bank_recon_service.py:load_cfg
+bank.date_window_days
+   lama: services/bank_recon_service.py:auto_match, services/bank_recon_service.py:score_pair
+   baru: services/bank_recon_service.py:load_cfg
+bank.amount_tolerance
+   lama: services/bank_recon_service.py:score_pair
+   baru: services/bank_recon_service.py:load_cfg
+bank.rule_learn_after
+   lama: services/bank_recon_service.py:learn_from_manual
+   baru: services/bank_recon_service.py:load_cfg
+bank.rule_bonus_score
+   lama: services/bank_recon_service.py:score_pair
+   baru: services/bank_recon_service.py:load_cfg
+case.sla_hours
+   lama: services/finance_case_service.py:sla_hours_of
+   baru: services/finance_case_service.py:policy
+case.sla_hours_high
+   lama: services/finance_case_service.py:sla_hours_of
+   baru: services/finance_case_service.py:policy
+case.high_amount_threshold
+   lama: services/finance_case_service.py:priority_of
+   baru: services/finance_case_service.py:policy
+case.require_approval_above
+   lama: services/finance_case_service.py:_assert_authority
+   baru: services/finance_case_service.py:policy
+case.approver_role
+   lama: services/finance_case_service.py:_assert_authority
+   baru: services/finance_case_service.py:policy
+case.refund_max_amount
+   lama: services/finance_case_service.py:_assert_authority
+   baru: services/finance_case_service.py:policy
+case.duplicate_window_days
+   lama: services/finance_case_service.py:scan
+   baru: services/finance_case_service.py:policy
+case.holding_case_after_days
+   lama: services/finance_case_service.py:scan
+   baru: services/finance_case_service.py:policy
+case.escalate_on_sla_breach
+   lama: services/finance_case_service.py:scan
+   baru: services/finance_case_service.py:policy
+case.auto_scan_enabled
+   lama: services/finance_case_service.py:scan
+   baru: services/finance_case_service.py:policy
+contra_bon.value_tolerance_rupiah
+   lama: services/contra_bon_service.py:tolerances
+   baru: services/three_way_policy.py:tolerances, services/contra_bon_service.py:policy
+contra_bon.require_reason_out_of_tolerance
+   lama: services/contra_bon_service.py:verify
+   baru: services/contra_bon_service.py:policy
+contra_bon.approval_threshold_rupiah
+   lama: services/contra_bon_service.py:approve
+   baru: services/contra_bon_service.py:policy
+contra_bon.approval_role
+   lama: services/contra_bon_service.py:approve
+   baru: services/contra_bon_service.py:policy
+contra_bon.high_value_approval_role
+   lama: services/contra_bon_service.py:approve
+   baru: services/contra_bon_service.py:policy
+contra_bon.reminder_days_before
+   lama: services/contra_bon_reminder.py:job_contra_bon_reminder
+   baru: services/contra_bon_service.py:policy
+contra_bon.unbilled_gr_age_days
+   lama: services/contra_bon_service.py:unbilled_receipts
+   baru: services/contra_bon_service.py:policy
+contra_bon.verify_sla_days
+   lama: services/contra_bon_service.py:decorate, services/contra_bon_reminder.py:job_contra_bon_reminder
+   baru: services/contra_bon_service.py:policy
+contra_bon.block_pay_before_approval
+   lama: services/contra_bon_service.py:pay
+   baru: services/contra_bon_service.py:policy
+antar_entitas.pricing_mode
+   lama: services/interco_service.py:_resolve_price
+   baru: services/interco_service.py:create
+antar_entitas.ppn_mode
+   lama: services/interco_service.py:_resolve_tax
+   baru: services/interco_service.py:create
+antar_entitas.approval_threshold_rupiah
+   lama: services/interco_service.py:confirm
+   baru: services/interco_service.py:_assert_may_release
+antar_entitas.approval_role
+   lama: services/interco_service.py:confirm
+   baru: services/interco_service.py:_assert_may_release
+antar_entitas.high_value_approval_role
+   lama: services/interco_service.py:confirm
+   baru: services/interco_service.py:_assert_may_release
+antar_entitas.ppn_rate_percent
+   lama: services/interco_service.py:_resolve_tax
+   baru: services/interco_service.py:_interco_rate
+interco_payment.allow_netting
+   lama: services/interco_service.py:create_settlement
+   baru: services/interco_service.py:payment_settings
+interco_payment.require_full_payment
+   lama: services/interco_service.py:create_settlement
+   baru: services/interco_service.py:payment_settings
+interco_payment.cutoff_day
+   lama: services/interco_service.py:payment_schedule
+   baru: services/interco_service.py:payment_settings
+interco_payment.payment_day
+   lama: services/interco_service.py:payment_schedule
+   baru: services/interco_service.py:payment_settings
+interco_payment.basis
+   lama: services/interco_service.py:payment_schedule
+   baru: services/interco_service.py:payment_settings
+interco_payment.reminder_days
+   lama: services/interco_service.py:job_interco_payment_reminder
+   baru: services/interco_service.py:payment_settings
+ai.model_fast
+   lama: services/ai_narrative.py:narrate
+   baru: services/ai_narrative.py:_ai_text
+ai.glossary
+   lama: services/ai_chat_service.py:_session_context
+   baru: services/ai_chat_service.py:_glossary
+rnd.lifecycle_enforcement
+   lama: services/rnd_gate.py:assert_orderable, routers/sales_orders.py, routers/purchase_orders.py, services/purchase_requisition_service.py
+   baru: services/rnd_gate.py:policy, services/rnd_gate.py:enforcement_mode
+rnd.spec_approval_roles
+   lama: services/rnd_spec_service.py:_assert_role, routers/rnd.py
+   baru: services/rnd_gate.py:policy, services/special_order_fulfillment.py:can_release
+rnd.require_design_for_proofing
+   lama: services/rnd_sample_service.py:create_sample
+   baru: services/rnd_gate.py:policy
+rnd.require_stage_chain
+   lama: services/rnd_flow_service.py:assert_stage_chain
+   baru: services/rnd_gate.py:policy
+rnd.labdip_max_colors
+   lama: routers/rnd.py:create_sample
+   baru: services/rnd_gate.py:policy
+rnd.design_code_pattern
+   lama: services/design_studio_service.py:next_code
+   baru: services/design_studio_service.py:code_config
+rnd.design_code_seq_digits
+   lama: services/design_studio_service.py:next_code
+   baru: services/design_studio_service.py:code_config
+rnd.design_prefix_motif
+   lama: services/design_studio_service.py:next_code
+   baru: services/design_studio_service.py:code_config
+rnd.design_prefix_pattern
+   lama: services/design_studio_service.py:next_code
+   baru: services/design_studio_service.py:code_config
+rnd.design_prefix_artwork
+   lama: services/design_studio_service.py:next_code
+   baru: services/design_studio_service.py:code_config
+rnd.design_acc_min_score
+   lama: services/design_studio_service.py:transition
+   baru: services/design_studio_service.py:code_config
+rnd.sla_escalate_admin_days
+   lama: services/rnd_sla_service.py:job_rnd_sla_escalation, services/rnd_kpi_service.py:weights
+   baru: services/rnd_gate.py:policy
+rnd.kpi_weight_on_time
+   lama: services/rnd_kpi_service.py:compute_grade
+   baru: services/rnd_gate.py:policy
+rnd.kpi_weight_score
+   lama: services/rnd_kpi_service.py:compute_grade
+   baru: services/rnd_gate.py:policy
+rnd.kpi_weight_acc
+   lama: services/rnd_kpi_service.py:compute_grade
+   baru: services/rnd_gate.py:policy
+rnd.kpi_weight_design
+   lama: services/rnd_kpi_service.py:compute_grade
+   baru: services/rnd_kpi_service.py:designer_kpi
+rnd.kpi_penalty_rework
+   lama: services/rnd_kpi_service.py:compute_grade
+   baru: services/rnd_gate.py:policy
+rnd.kpi_penalty_overdue
+   lama: services/rnd_kpi_service.py:compute_grade
+   baru: services/rnd_gate.py:policy
+rnd.sample_material_from_stock
+   lama: services/rnd_sample_service.py:issue_material
+   baru: services/rnd_gate.py:policy
+finance.default_payment_term_code
+   lama: routers/sales_orders.py, services/ar_aging_service.py
+   baru: services/config_service.py:default_payment_term_code, routers/sales_orders.py:create_order
+notif.po_stage_stuck_days
+   lama: services/notification_service.py:generate_system_notifications
+   baru: services/notification_service.py:_notify_stuck_po_stages

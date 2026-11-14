@@ -38,15 +38,15 @@ Papan kerja agen pelaksana. Aturan mengubahnya: `00_ATURAN_EKSEKUSI.md` §5. Uru
 | 31 | PR-T7 | Layar memakai izin, bukan nama peran | PR-T2 | selesai | `2d164c9` | [PR-T7](../reviews/2026-11-13/hasil/PR-T7.md) |  |
 | 32 | PR-T8 | Penjaga matriks izin berjalan (peran × endpoint) | PR-T3 | siap |  |  |  |
 | 33 | KF-T2 | Kunci pengaturan mati, ganda, dan tersembunyi | KF-T1 | selesai | `1dcb06c` | [KF-T2](../reviews/2026-11-13/hasil/KF-T2.md) | H3: --apply migrate_kft2_akun_bank sebelum dipasang di data nyata |
-| 34 | KF-T3 | Layar menampilkan nilai yang dipakai mesin; jadwal diaktifkan penjadwal | KF-T1 | siap |  |  |  |
+| 34 | KF-T3 | Layar menampilkan nilai yang dipakai mesin; jadwal diaktifkan penjadwal | KF-T1 | selesai | `dbe1633` · `9783875` | [KF-T3](../reviews/2026-11-13/hasil/KF-T3.md) |  |
 | 35 | KF-T4 | Bahasa, pengelompokan, dan editor Pusat Pengaturan | KF-T2 | siap |  |  |  |
-| 36 | KF-T5 | Pengaturan per pelanggan dan per barang punya layar | KF-T1 | siap |  |  |  |
+| 36 | KF-T5 | Pengaturan per pelanggan dan per barang punya layar | KF-T1 | selesai | `0da3656` | [KF-T5](../reviews/2026-11-13/hasil/KF-T5.md) |  |
 | 37 | KF-T7 | Nilai bisnis yang ditulis mati menjadi pengaturan | KF-T2 | siap |  |  |  |
 | 38 | KF-T8 | Penjaga pengaturan: uji putaran semua kunci menjadi gate | KF-T2 | siap |  |  |  |
-| 39 | KP-T1 | Profil PT yang jujur dan bisa diubah | KF-T1 | siap |  |  |  |
-| 40 | KP-T2 | Kesiapan PT, wizard lanjutan, dan arsip PT | KP-T1 | menunggu |  |  |  |
-| 41 | KP-T5 | Penomoran dokumen per PT | KP-T1 | menunggu |  |  | Titik henti H3 untuk dokumen lama |
-| 42 | KP-T6 | Dokumen dan cetak per PT | KP-T1 | menunggu |  |  |  |
+| 39 | KP-T1 | Profil PT yang jujur dan bisa diubah | KF-T1 | selesai | `69cc4e3` | [KP-T1](../reviews/2026-11-13/hasil/KP-T1.md) | H3: --apply migrate_kpt1_profil_pt di data nyata |
+| 40 | KP-T2 | Kesiapan PT, wizard lanjutan, dan arsip PT | KP-T1 | siap |  |  |  |
+| 41 | KP-T5 | Penomoran dokumen per PT | KP-T1 | siap |  |  | Titik henti H3 untuk dokumen lama |
+| 42 | KP-T6 | Dokumen dan cetak per PT | KP-T1 | siap |  |  |  |
 | 43 | KP-T7 | Pengingat dan penjadwal yang bisa diatur | KF-T1 | siap |  |  |  |
 | 44 | KP-T8 | Rahasia dan perangkat | KF-T1 | siap |  |  |  |
 | 45 | MN-T1 | Menu keuangan dan SDM: pindah dan kelompokkan | PR-T5 | menunggu |  |  |  |

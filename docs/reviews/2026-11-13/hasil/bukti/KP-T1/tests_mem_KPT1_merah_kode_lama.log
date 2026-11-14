@@ -1,0 +1,373 @@
+FFFFFF.FFFFFFFFFFFFF                                                     [100%]
+=================================== FAILURES ===================================
+___________________ test_KPT1_U1_detail_pt_tanpa_isian_mati ____________________
+
+klien = <httpx.AsyncClient object at 0x7efc22f66390>
+kepala_admin = {'Authorization': 'Bearer tok_uji_a745e79169614c14addeb529f09b35d9', 'X-Entity-Id': 'ent_ksc'}
+
+    async def test_KPT1_U1_detail_pt_tanpa_isian_mati(klien, kepala_admin):
+        r = await klien.get(f"/api/entities/{KSC}", headers=kepala_admin)
+        assert r.status_code == 200, r.text
+        d = r.json()
+        hadir = [k for k in MATI if k in d]
+>       assert hadir == [], hadir
+E       AssertionError: ['numbering_scheme', 'incentive_payer', 'coa_template', 'fiscal_year_start', 'parent_entity_id']
+E       assert ['numbering_s...nt_entity_id'] == []
+E         
+E         Left contains 5 more items, first extra item: 'numbering_scheme'
+E         Use -v to get more diff
+
+tests_mem/test_KPT1_profil_pt.py:58: AssertionError
+---------------------------- Captured stdout setup -----------------------------
+[bootstrap] SANDI AWAL akun seed (ganti segera): <disamarkan>
+[bootstrap] FASE F lifecycle backfill: 5 produk distempel 'produksi'
+[bootstrap] kebersihan data: 5 record dirapikan {'customers': 3, 'suppliers': 0, 'users': 0, 'hr_employees': 2, 'makloons': 0}
+___________________ test_KPT1_U2_buat_pt_isian_mati_dibuang ____________________
+
+klien = <httpx.AsyncClient object at 0x7efc22f66390>
+kepala_admin = {'Authorization': 'Bearer tok_uji_a745e79169614c14addeb529f09b35d9', 'X-Entity-Id': 'ent_ksc'}
+db = <motor.motor_asyncio.AsyncIOMotorDatabase object at 0x7efc34f9b150>
+
+    async def test_KPT1_U2_buat_pt_isian_mati_dibuang(klien, kepala_admin, db):
+        r = await _buat(klien, kepala_admin, legal_name="PT Uji KPT1 Dua", short_name="KPT1DUA", doc_prefix="KPTDUA",
+                        numbering_scheme="shared", incentive_payer="group")
+        assert r.status_code == 200, r.text
+        doc = await _pt(db, r.json()["id"])
+>       assert "numbering_scheme" not in doc and "incentive_payer" not in doc, sorted(doc)
+E       AssertionError: ['address', 'business_label', 'city', 'city_code', 'coa_template', 'country', ...]
+E       assert ('numbering_scheme' not in {'currency': 'IDR', 'parent_entity_id': '', 'is_group': False, 'coa_template': 'id_standard', ...})
+
+tests_mem/test_KPT1_profil_pt.py:69: AssertionError
+________________ test_KPT1_U3_buat_pt_tahun_buku_dan_mata_uang _________________
+
+klien = <httpx.AsyncClient object at 0x7efc22f66390>
+kepala_admin = {'Authorization': 'Bearer tok_uji_a745e79169614c14addeb529f09b35d9', 'X-Entity-Id': 'ent_ksc'}
+
+    async def test_KPT1_U3_buat_pt_tahun_buku_dan_mata_uang(klien, kepala_admin):
+        from services import closing_service
+        from services.config_resolver import value_of
+        r = await _buat(klien, kepala_admin, legal_name="PT Uji KPT1 Tiga", short_name="KPT1TIGA", doc_prefix="KPTTIGA",
+                        fiscal_year_end_month=3, base_currency="USD")
+        assert r.status_code == 200, r.text
+        baru = r.json()["id"]
+>       assert await value_of("finance.fiscal_year_end_month", {"entity_id": baru}) == 3
+E       assert 12 == 3
+
+tests_mem/test_KPT1_profil_pt.py:80: AssertionError
+________________________ test_KPT1_U4_bulan_13_ditolak _________________________
+
+klien = <httpx.AsyncClient object at 0x7efc22f66390>
+kepala_admin = {'Authorization': 'Bearer tok_uji_a745e79169614c14addeb529f09b35d9', 'X-Entity-Id': 'ent_ksc'}
+db = <motor.motor_asyncio.AsyncIOMotorDatabase object at 0x7efc34f9b150>
+
+    async def test_KPT1_U4_bulan_13_ditolak(klien, kepala_admin, db):
+        sebelum = await db.business_entities.count_documents({})
+        r = await _buat(klien, kepala_admin, legal_name="PT Uji KPT1 Empat", short_name="KPT1EMPAT",
+                        doc_prefix="KPTEMPAT", fiscal_year_end_month=13)
+>       assert r.status_code == 400, r.text
+E       AssertionError: {"id":"ent_cd2589fef6de","code":"KPTEMPAT","name":"PT Uji KPT1 Empat","short_name":"KPT1EMPAT","legal_name":"PT Uji KPT1 Empat","type":"PT","is_pkp":false,"currency":"IDR","status":"active","doc_prefix":"KPTEMPAT","logo_url":"","npwp":"","address":"","city":"","country":"Indonesia","country_code":"ID","province":"","province_code":"","city_code":"","district":"","district_code":"","postal_code":"","location_status":"unverified","phone":"","email":"","owner_name":"","business_label":"","default_tax_mode":"non_ppn","fiscal_year_start":"01-01","coa_template":"id_standard","incentive_payer":"sales_entity","numbering_scheme":"per_entity_prefix","parent_entity_id":"","is_group":false,"write_locked":false,"created_at":"2026-11-14T04:03:32.162507+00:00","updated_at":"2026-11-14T04:03:32.162520+00:00","provisioning":{"doc_prefix":"KPTEMPAT","number_preview":"KPTEMPAT/SO-00001","numbering_scheme":"per_entity_prefix","is_pkp":false,"coa_accounts_added":0,"coa_shared":true,"config_override_created":true,"group_partner_suppliers":{"created":10,"updated":0,"archived":0}},"readiness":{"entity_id":"ent_cd2589fef6de","items":[{"key":"users","label":"Pengguna","ready":false,"count":0,"detail":"Belum ada akun yang bekerja di badan usaha ini","how_to":"Buat akun di tab “Akun & Akses” dan pilih badan usaha ini sebagai utama.","view":"entities-access"},{"key":"warehouses","label":"Gudang yang boleh dipakai","ready":true,"count":3,"detail":"3 gudang tersedia","how_to":"Atur gudang bersama/khusus di Master Data → Gudang.","view":"admin"},{"key":"bank_accounts","label":"Rekening bank","ready":false,"count":0,"detail":"Belum ada rekening","how_to":"Tambah rekening di Keuangan → Rekening & Saldo.","view":"bank-accounts"},{"key":"prices","label":"Harga jual","ready":true,"count":0,"detail":"Belum ada harga khusus — memakai 5 harga global","how_to":"Buka Produk & Harga → Pricelist per-PT untuk menimpa harga global.","view":"pricelist"},{"key":"opening_balance","label":"Saldo awal","ready":false,"count":0,"detail":"Belum ada jurnal saldo awal (stok/kas/piutang pembuka)","how_to":"Catat saldo awal lewat Keuangan → Jurnal & Buku Besar.","view":"general-ledger"},{"key":"branding","label":"Kop surat & logo","ready":false,"count":0,"detail":"Dokumen cetak masih memakai kop bawaan","how_to":"Atur di Pengaturan → Template PDF (branding per badan usaha).","view":"pdf-templates"},{"key":"tax","label":"Konfigurasi pajak","ready":true,"count":1,"detail":"Non-PKP — tidak memungut PPN","how_to":"Lengkapi NPWP di detail badan usaha, atau ubah status PKP-nya.","view":"entities-access"},{"key":"fiscal_year","label":"Tahun fiskal","ready":true,"count":0,"detail":"Mulai 01-01","how_to":"Tetapkan awal tahun fiskal di detail badan usaha.","view":"entities-access"}],"ready":4,"total":8,"percent":50,"is_ready":false}}
+E       assert 200 == 400
+E        +  where 200 = <Response [200 OK]>.status_code
+
+tests_mem/test_KPT1_profil_pt.py:95: AssertionError
+________________________ test_KPT1_U5_npwp_salah_bentuk ________________________
+
+klien = <httpx.AsyncClient object at 0x7efc22f66390>
+kepala_admin = {'Authorization': 'Bearer tok_uji_a745e79169614c14addeb529f09b35d9', 'X-Entity-Id': 'ent_ksc'}
+db = <motor.motor_asyncio.AsyncIOMotorDatabase object at 0x7efc34f9b150>
+
+    async def test_KPT1_U5_npwp_salah_bentuk(klien, kepala_admin, db):
+        lama = (await _pt(db, KSC))["npwp"]
+        r = await klien.patch(f"/api/entities/{KSC}", headers=kepala_admin, json={"data": {"npwp": "12345"}})
+>       assert r.status_code == 400, r.text
+E       AssertionError: {"id":"ent_ksc","code":"KSC","name":"Sukacita Textile","short_name":"Sukacita","legal_name":"Sukacita Textile","type":"PT","is_pkp":true,"currency":"IDR","status":"active","doc_prefix":"KSC","logo_url":"","npwp":"12345","address":"Jl. Soekarno Hatta No. 100","city":"Bandung","country":"","country_code":"","province":"","province_code":"","city_code":"","district":"","district_code":"","postal_code":"","location_status":"","phone":"","email":"","owner_name":"","business_label":"","default_tax_mode":"ppn","fiscal_year_start":"01-01","coa_template":"id_standard","incentive_payer":"sales_entity","numbering_scheme":"per_entity_prefix","parent_entity_id":"","is_group":false,"write_locked":false,"created_at":"2026-11-14T04:03:31.821619+00:00","updated_at":"2026-11-14T04:03:32.189041+00:00","prefix_lock":{"locked":true,"first_document":{"collection":"cash_transactions","label":"Transaksi kas","number":"CASH-00001","created_at":"2026-11-14T04:03:31.973085+00:00"},"reason":"Kode dokumen tidak bisa diubah karena badan usaha ini sudah menerbitkan transaksi kas “CASH-00001”. Mengubah kode akan membuat nomor dokumen lama dan baru tidak bisa dibedakan lagi."}}
+E       assert 200 == 400
+E        +  where 200 = <Response [200 OK]>.status_code
+
+tests_mem/test_KPT1_profil_pt.py:105: AssertionError
+______________________ test_KPT1_U6_npwp_15_dan_16_digit _______________________
+
+klien = <httpx.AsyncClient object at 0x7efc22f66390>
+kepala_admin = {'Authorization': 'Bearer tok_uji_a745e79169614c14addeb529f09b35d9', 'X-Entity-Id': 'ent_ksc'}
+db = <motor.motor_asyncio.AsyncIOMotorDatabase object at 0x7efc34f9b150>
+
+    async def test_KPT1_U6_npwp_15_dan_16_digit(klien, kepala_admin, db):
+        for npwp in ("01.234.567.8-901.000", "1234567890123456", " 01.234.567.8-901.000 "):
+            r = await klien.patch(f"/api/entities/{KSC}", headers=kepala_admin, json={"data": {"npwp": npwp}})
+            assert r.status_code == 200, (npwp, r.text)
+>           assert (await _pt(db, KSC))["npwp"] == npwp.strip()
+E           AssertionError: assert ' 01.234.567.8-901.000 ' == '01.234.567.8-901.000'
+E             
+E             - 01.234.567.8-901.000
+E             +  01.234.567.8-901.000 
+E             ? +                    +
+
+tests_mem/test_KPT1_profil_pt.py:115: AssertionError
+__________________ test_KPT1_U8_status_pkp_tidak_lewat_patch ___________________
+
+klien = <httpx.AsyncClient object at 0x7efc22f66390>
+kepala_admin = {'Authorization': 'Bearer tok_uji_a745e79169614c14addeb529f09b35d9', 'X-Entity-Id': 'ent_ksc'}
+db = <motor.motor_asyncio.AsyncIOMotorDatabase object at 0x7efc34f9b150>
+
+    async def test_KPT1_U8_status_pkp_tidak_lewat_patch(klien, kepala_admin, db):
+        r = await klien.patch(f"/api/entities/{KANDA}", headers=kepala_admin, json={"data": {"default_tax_mode": "ppn"}})
+>       assert r.status_code == 400, r.text
+E       AssertionError: {"id":"ent_kanda","code":"KANDA","name":"Kanda Fabric","short_name":"Kanda Fabric","legal_name":"Kanda Fabric","type":"CV","is_pkp":true,"currency":"IDR","status":"active","doc_prefix":"KANDA","logo_url":"","npwp":"02.345.678.9-012.000","address":"Jl. Baru 1","city":"Jakarta","country":"","country_code":"","province":"","province_code":"","city_code":"","district":"","district_code":"","postal_code":"","location_status":"","phone":"","email":"","owner_name":"","business_label":"","default_tax_mode":"ppn","fiscal_year_start":"01-01","coa_template":"id_standard","incentive_payer":"sales_entity","numbering_scheme":"per_entity_prefix","parent_entity_id":"","is_group":false,"write_locked":false,"created_at":"2026-11-14T04:03:31.821626+00:00","updated_at":"2026-11-14T04:03:32.246934+00:00","prefix_lock":{"locked":true,"first_document":{"collection":"cash_transactions","label":"Transaksi kas","number":"CASH-00005","created_at":"2026-11-14T04:03:31.973121+00:00"},"reason":"Kode dokumen tidak bisa diubah karena badan usaha ini sudah menerbitkan transaksi kas “CASH-00005”. Mengubah kode akan membuat nomor dokumen lama dan baru tidak bisa dibedakan lagi."}}
+E       assert 200 == 400
+E        +  where 200 = <Response [200 OK]>.status_code
+
+tests_mem/test_KPT1_profil_pt.py:133: AssertionError
+________________________ test_KPT1_U9_pratinjau_dampak _________________________
+
+klien = <httpx.AsyncClient object at 0x7efc22f66390>
+kepala_admin = {'Authorization': 'Bearer tok_uji_a745e79169614c14addeb529f09b35d9', 'X-Entity-Id': 'ent_ksc'}
+db = <motor.motor_asyncio.AsyncIOMotorDatabase object at 0x7efc34f9b150>
+
+    async def test_KPT1_U9_pratinjau_dampak(klien, kepala_admin, db):
+        now = datetime.datetime.now(datetime.timezone.utc).isoformat()
+        await db.sales_orders.insert_one({   # fixture: satu pesanan penjualan draf milik Kanda (seed tidak punya pesanan)
+            "id": "so_uji_kpt1", "number": "KANDA/SO-KPT1-1", "entity_id": KANDA, "status": "draft", "items": [],
+            "grand_total": 0, "created_at": now})
+        hari = _iso(_hari_ini())
+        r = await klien.get(f"/api/entities/{KANDA}/tax-status/preview", headers=kepala_admin,
+                            params={"to": "ppn", "effective_date": hari})
+>       assert r.status_code == 200, r.text
+E       AssertionError: {"detail":"Not Found"}
+E       assert 404 == 200
+E        +  where 404 = <Response [404 Not Found]>.status_code
+
+tests_mem/test_KPT1_profil_pt.py:147: AssertionError
+_________________________ test_KPT1_U13_pkp_tanpa_npwp _________________________
+
+klien = <httpx.AsyncClient object at 0x7efc22f66390>
+kepala_admin = {'Authorization': 'Bearer tok_uji_a745e79169614c14addeb529f09b35d9', 'X-Entity-Id': 'ent_ksc'}
+db = <motor.motor_asyncio.AsyncIOMotorDatabase object at 0x7efc34f9b150>
+
+    async def test_KPT1_U13_pkp_tanpa_npwp(klien, kepala_admin, db):
+        asli = (await _pt(db, KANDA))["npwp"]
+        await db.business_entities.update_one({"id": KANDA}, {"$set": {"npwp": ""}})   # fixture: NPWP dikosongkan
+        try:
+            r = await klien.post(f"/api/entities/{KANDA}/tax-status", headers=kepala_admin,
+                                 json={"to": "ppn", "effective_date": _iso(_hari_ini()), "reason": "x"})
+>           assert r.status_code == 400, r.text
+E           AssertionError: {"detail":"Not Found"}
+E           assert 404 == 400
+E            +  where 404 = <Response [404 Not Found]>.status_code
+
+tests_mem/test_KPT1_profil_pt.py:165: AssertionError
+__________________________ test_KPT1_U10_alasan_wajib __________________________
+
+klien = <httpx.AsyncClient object at 0x7efc22f66390>
+kepala_admin = {'Authorization': 'Bearer tok_uji_a745e79169614c14addeb529f09b35d9', 'X-Entity-Id': 'ent_ksc'}
+db = <motor.motor_asyncio.AsyncIOMotorDatabase object at 0x7efc34f9b150>
+
+    async def test_KPT1_U10_alasan_wajib(klien, kepala_admin, db):
+        r = await klien.post(f"/api/entities/{KANDA}/tax-status", headers=kepala_admin,
+                             json={"to": "ppn", "effective_date": _iso(_hari_ini()), "reason": ""})
+>       assert r.status_code == 400, r.text
+E       AssertionError: {"detail":"Not Found"}
+E       assert 404 == 400
+E        +  where 404 = <Response [404 Not Found]>.status_code
+
+tests_mem/test_KPT1_profil_pt.py:181: AssertionError
+______________________ test_KPT1_U11_menjadi_pkp_hari_ini ______________________
+
+klien = <httpx.AsyncClient object at 0x7efc22f66390>
+kepala_admin = {'Authorization': 'Bearer tok_uji_a745e79169614c14addeb529f09b35d9', 'X-Entity-Id': 'ent_ksc'}
+db = <motor.motor_asyncio.AsyncIOMotorDatabase object at 0x7efc34f9b150>
+
+    async def test_KPT1_U11_menjadi_pkp_hari_ini(klien, kepala_admin, db):
+        from services.config_service import get_effective_settings
+        sebelum_kanda = (await get_effective_settings(KANDA))["tax"]
+        sebelum_ksc = (await get_effective_settings(KSC))["tax"]
+>       assert sebelum_kanda["ppn_rate"] == 0.0              # non-PKP dipaksa 0 (config_service.get_effective_settings)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       assert 12.0 == 0.0
+
+tests_mem/test_KPT1_profil_pt.py:191: AssertionError
+_______________ test_KPT1_U12_jadwal_diterapkan_pada_tanggalnya ________________
+
+klien = <httpx.AsyncClient object at 0x7efc22f66390>
+kepala_admin = {'Authorization': 'Bearer tok_uji_a745e79169614c14addeb529f09b35d9', 'X-Entity-Id': 'ent_ksc'}
+db = <motor.motor_asyncio.AsyncIOMotorDatabase object at 0x7efc34f9b150>
+
+    async def test_KPT1_U12_jadwal_diterapkan_pada_tanggalnya(klien, kepala_admin, db):
+        from services import entity_lifecycle_service as lifecycle
+        hari, besok = _hari_ini(), _hari_ini() + datetime.timedelta(days=1)
+        r = await klien.post(f"/api/entities/{KSC}/tax-status", headers=kepala_admin,
+                             json={"to": "non_ppn", "effective_date": _iso(besok), "reason": "Dicabut"})
+>       assert r.status_code == 200, r.text
+E       AssertionError: {"detail":"Not Found"}
+E       assert 404 == 200
+E        +  where 404 = <Response [404 Not Found]>.status_code
+
+tests_mem/test_KPT1_profil_pt.py:216: AssertionError
+________________________ test_KPT1_U12b_batalkan_jadwal ________________________
+
+klien = <httpx.AsyncClient object at 0x7efc22f66390>
+kepala_admin = {'Authorization': 'Bearer tok_uji_a745e79169614c14addeb529f09b35d9', 'X-Entity-Id': 'ent_ksc'}
+db = <motor.motor_asyncio.AsyncIOMotorDatabase object at 0x7efc34f9b150>
+
+    async def test_KPT1_U12b_batalkan_jadwal(klien, kepala_admin, db):
+        """Pelengkap U12 — `DELETE …/tax-status/pending`: 404 bila tidak ada jadwal; menghapus jadwal tanpa mengubah status."""
+        r = await klien.delete(f"/api/entities/{KSC}/tax-status/pending", headers=kepala_admin)
+        assert r.status_code == 404, r.text
+        besok = _iso(_hari_ini() + datetime.timedelta(days=1))
+        r = await klien.post(f"/api/entities/{KSC}/tax-status", headers=kepala_admin,
+                             json={"to": "ppn", "effective_date": besok, "reason": "Rencana dikukuhkan"})
+>       assert r.status_code == 200, r.text
+E       AssertionError: {"detail":"Not Found"}
+E       assert 404 == 200
+E        +  where 404 = <Response [404 Not Found]>.status_code
+
+tests_mem/test_KPT1_profil_pt.py:241: AssertionError
+____________________ test_KPT1_U14_pt_induk_dan_kepemilikan ____________________
+
+klien = <httpx.AsyncClient object at 0x7efc22f66390>
+kepala_admin = {'Authorization': 'Bearer tok_uji_a745e79169614c14addeb529f09b35d9', 'X-Entity-Id': 'ent_ksc'}
+db = <motor.motor_asyncio.AsyncIOMotorDatabase object at 0x7efc34f9b150>
+
+    async def test_KPT1_U14_pt_induk_dan_kepemilikan(klien, kepala_admin, db):
+        from services import consolidation_service
+        r = await klien.patch(f"/api/entities/{KSC}", headers=kepala_admin,
+                              json={"data": {"is_group": True, "ownership_pct": 60}})
+        assert r.status_code == 200, r.text
+        try:
+            rows = {e["id"]: e for e in (await klien.get("/api/entities", headers=kepala_admin)).json()}
+>           assert (rows[KSC]["is_group"], rows[KSC]["ownership_pct"]) == (True, 60)
+                                           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+E           KeyError: 'ownership_pct'
+
+tests_mem/test_KPT1_profil_pt.py:257: KeyError
+________________ test_KPT1_U15_persen_kepemilikan_di_luar_batas ________________
+
+klien = <httpx.AsyncClient object at 0x7efc22f66390>
+kepala_admin = {'Authorization': 'Bearer tok_uji_a745e79169614c14addeb529f09b35d9', 'X-Entity-Id': 'ent_ksc'}
+db = <motor.motor_asyncio.AsyncIOMotorDatabase object at 0x7efc34f9b150>
+
+    async def test_KPT1_U15_persen_kepemilikan_di_luar_batas(klien, kepala_admin, db):
+        for nilai in (0, 101):
+            r = await klien.patch(f"/api/entities/{KSC}", headers=kepala_admin, json={"data": {"ownership_pct": nilai}})
+            assert r.status_code == 400, (nilai, r.text)
+>           assert _detail(r) == PESAN_PERSEN, nilai
+E           AssertionError: 0
+E           assert 'Tidak ada fi...baruan biasa.' == 'Persen kepem...g banyak 100.'
+E             
+E             - Persen kepemilikan harus lebih dari 0 dan paling banyak 100.
+E             + Tidak ada field yang bisa diubah. Status badan usaha diubah lewat tombol Arsipkan / Aktifkan kembali, bukan lewat pembaruan biasa.
+
+tests_mem/test_KPT1_profil_pt.py:270: AssertionError
+________________________ test_KPT1_U16_izin_bukan_peran ________________________
+
+klien = <httpx.AsyncClient object at 0x7efc22f66390>
+akun = <function akun.<locals>._akun at 0x7efc21982d40>
+sesi = <function sesi.<locals>._sesi at 0x7efc21adc720>
+db = <motor.motor_asyncio.AsyncIOMotorDatabase object at 0x7efc34f9b150>
+kepala_admin = {'Authorization': 'Bearer tok_uji_a745e79169614c14addeb529f09b35d9', 'X-Entity-Id': 'ent_ksc'}
+peran_tanpa_acuan = <function peran_tanpa_acuan.<locals>._peran at 0x7efc21983100>
+peran_manajer_kosong = <function peran_manajer_kosong.<locals>._peran at 0x7efc21980400>
+
+    async def test_KPT1_U16_izin_bukan_peran(klien, akun, sesi, db, kepala_admin, peran_tanpa_acuan, peran_manajer_kosong):
+        ta = await sesi(await akun(await peran_tanpa_acuan({"entity": ["update"]}, label="TA KPT1 ubah PT")))
+        mk = await sesi(await akun(await peran_manajer_kosong()))
+        kini = (await _pt(db, KSC))["default_tax_mode"]
+        isi = {"to": "ppn" if kini == "non_ppn" else "non_ppn",
+               "effective_date": _iso(_hari_ini() + datetime.timedelta(days=1)), "reason": "uji izin KP-T1"}
+        r_mk = await klien.post(f"/api/entities/{KSC}/tax-status", headers=mk, json=isi)
+>       assert r_mk.status_code == 403, r_mk.text
+E       AssertionError: {"detail": "Not Found"}
+E       assert 404 == 403
+E        +  where 404 = <Response [404 Not Found]>.status_code
+
+tests_mem/test_KPT1_profil_pt.py:282: AssertionError
+_________________ test_KPT1_U16b_pratinjau_dan_batal_ikut_izin _________________
+
+klien = <httpx.AsyncClient object at 0x7efc22f66390>
+akun = <function akun.<locals>._akun at 0x7efc21982d40>
+sesi = <function sesi.<locals>._sesi at 0x7efc21adc720>
+peran_manajer_kosong = <function peran_manajer_kosong.<locals>._peran at 0x7efc21980400>
+
+    async def test_KPT1_U16b_pratinjau_dan_batal_ikut_izin(klien, akun, sesi, peran_manajer_kosong):
+        """Pelengkap U16 — pratinjau dan batal jadwal memakai izin yang sama (Manajer Kosong → 403)."""
+        mk = await sesi(await akun(await peran_manajer_kosong()))
+        r = await klien.get(f"/api/entities/{KSC}/tax-status/preview", headers=mk,
+                            params={"to": "ppn", "effective_date": _iso(_hari_ini())})
+>       assert r.status_code == 403, r.text
+E       AssertionError: {"detail": "Not Found"}
+E       assert 404 == 403
+E        +  where 404 = <Response [404 Not Found]>.status_code
+
+tests_mem/test_KPT1_profil_pt.py:294: AssertionError
+_________________ test_KPT1_U9b_tanggal_mundur_dan_pt_terarsip _________________
+
+klien = <httpx.AsyncClient object at 0x7efc22f66390>
+kepala_admin = {'Authorization': 'Bearer tok_uji_a745e79169614c14addeb529f09b35d9', 'X-Entity-Id': 'ent_ksc'}
+db = <motor.motor_asyncio.AsyncIOMotorDatabase object at 0x7efc34f9b150>
+
+    async def test_KPT1_U9b_tanggal_mundur_dan_pt_terarsip(klien, kepala_admin, db):
+        """Pelengkap U9 — tanggal mundur: `applies` "sekarang" dan `documents_since` terisi; PT terarsip → 409."""
+        kemarin = _iso(_hari_ini() - datetime.timedelta(days=1))
+        p = (await klien.get(f"/api/entities/{KANDA}/tax-status/preview", headers=kepala_admin,
+                             params={"to": "non_ppn", "effective_date": "2020-01-01"})).json()
+>       assert p["applies"] == "sekarang"
+               ^^^^^^^^^^^^
+E       KeyError: 'applies'
+
+tests_mem/test_KPT1_profil_pt.py:303: KeyError
+______________________ test_KPT1_migrasi_lapor_lalu_tulis ______________________
+
+db = <motor.motor_asyncio.AsyncIOMotorDatabase object at 0x7efc34f9b150>
+
+    async def test_KPT1_migrasi_lapor_lalu_tulis(db):
+>       mod = _skrip()
+              ^^^^^^^^
+
+tests_mem/test_KPT1_migrasi_profil_pt.py:27: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests_mem/test_KPT1_migrasi_profil_pt.py:22: in _skrip
+    spec.loader.exec_module(mod)
+<frozen importlib._bootstrap_external>:936: in exec_module
+    ???
+<frozen importlib._bootstrap_external>:1073: in get_code
+    ???
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <_frozen_importlib_external.SourceFileLoader object at 0x7efc21af4290>
+path = '<scratchpad>/kpt1/head_tree/scripts/migrate_kpt1_profil_pt.py'
+
+>   ???
+E   FileNotFoundError: [Errno 2] No such file or directory: '<scratchpad>/kpt1/head_tree/scripts/migrate_kpt1_profil_pt.py'
+
+<frozen importlib._bootstrap_external>:1130: FileNotFoundError
+---------------------------- Captured stdout setup -----------------------------
+[bootstrap] FASE F lifecycle backfill: 5 produk distempel 'produksi'
+[bootstrap] kebersihan data: 5 record dirapikan {'customers': 3, 'suppliers': 0, 'users': 0, 'hr_employees': 2, 'makloons': 0}
+=============================== warnings summary ===============================
+../../../venv311/lib/python3.11/site-packages/starlette/formparsers.py:12
+  <scratchpad>/venv311/lib/python3.11/site-packages/starlette/formparsers.py:12: PendingDeprecationWarning: Please use `import python_multipart` instead.
+    import multipart
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+==================================== PASSES ====================================
+=========================== short test summary info ============================
+PASSED tests_mem/test_KPT1_profil_pt.py::test_KPT1_U7_isian_lain_tidak_divalidasi_ulang
+FAILED tests_mem/test_KPT1_profil_pt.py::test_KPT1_U1_detail_pt_tanpa_isian_mati
+FAILED tests_mem/test_KPT1_profil_pt.py::test_KPT1_U2_buat_pt_isian_mati_dibuang
+FAILED tests_mem/test_KPT1_profil_pt.py::test_KPT1_U3_buat_pt_tahun_buku_dan_mata_uang
+FAILED tests_mem/test_KPT1_profil_pt.py::test_KPT1_U4_bulan_13_ditolak - Asse...
+FAILED tests_mem/test_KPT1_profil_pt.py::test_KPT1_U5_npwp_salah_bentuk - Ass...
+FAILED tests_mem/test_KPT1_profil_pt.py::test_KPT1_U6_npwp_15_dan_16_digit - ...
+FAILED tests_mem/test_KPT1_profil_pt.py::test_KPT1_U8_status_pkp_tidak_lewat_patch
+FAILED tests_mem/test_KPT1_profil_pt.py::test_KPT1_U9_pratinjau_dampak - Asse...
+FAILED tests_mem/test_KPT1_profil_pt.py::test_KPT1_U13_pkp_tanpa_npwp - Asser...
+FAILED tests_mem/test_KPT1_profil_pt.py::test_KPT1_U10_alasan_wajib - Asserti...
+FAILED tests_mem/test_KPT1_profil_pt.py::test_KPT1_U11_menjadi_pkp_hari_ini
+FAILED tests_mem/test_KPT1_profil_pt.py::test_KPT1_U12_jadwal_diterapkan_pada_tanggalnya
+FAILED tests_mem/test_KPT1_profil_pt.py::test_KPT1_U12b_batalkan_jadwal - Ass...
+FAILED tests_mem/test_KPT1_profil_pt.py::test_KPT1_U14_pt_induk_dan_kepemilikan
+FAILED tests_mem/test_KPT1_profil_pt.py::test_KPT1_U15_persen_kepemilikan_di_luar_batas
+FAILED tests_mem/test_KPT1_profil_pt.py::test_KPT1_U16_izin_bukan_peran - Ass...
+FAILED tests_mem/test_KPT1_profil_pt.py::test_KPT1_U16b_pratinjau_dan_batal_ikut_izin
+FAILED tests_mem/test_KPT1_profil_pt.py::test_KPT1_U9b_tanggal_mundur_dan_pt_terarsip
+FAILED tests_mem/test_KPT1_migrasi_profil_pt.py::test_KPT1_migrasi_lapor_lalu_tulis
+19 failed, 1 passed, 1 warning in 3.17s

@@ -1,0 +1,40 @@
+== merah: berkas uji baru di atas src HEAD 4db17eb
+  ✕ Wizard: isian mati hilang; mata uang & tahun buku dari Pusat Pengaturan; NPWP diperiksa; badan kirim bersih (109 ms)
+  ✕ Wizard: tanpa akses baca pengaturan → keterangan 'mengikuti pengaturan grup', tahun buku/mata uang tidak dikirim (35 ms)
+  ✕ Detail PT: Pajak, Tahun buku & mata uang (nilai mesin + sumber), tanpa isian 'Awal tahun fiskal' (27 ms)
+  ✕ Detail PT: pop-up Ubah Status PKP — panel Dampak, tombol mati tanpa alasan, simpan → lencana berubah (20 ms)
+  ✕ Detail PT: can_apply salah → tombol tetap mati; NPWP diminta bila kosong dan diperiksa di tempat (21 ms)
+  ✕ Detail PT: jadwal tampil 'Akan menjadi … mulai …' dan bisa dibatalkan (konfirmasi baku) (24 ms)
+  ✕ Detail PT: Ubah tahun buku = editor baku lapisan PT (alasan wajib); Grup & konsolidasi ikut Simpan (18 ms)
+  ✕ Detail PT tanpa izin ubah: tanpa tombol Ubah status PKP / Ubah; isian grup terkunci (14 ms)
+Test Suites: 1 failed, 1 total
+Tests:       8 failed, 8 total
+
+== hijau: kode KP-T1
+  ✓ Wizard: isian mati hilang; mata uang & tahun buku dari Pusat Pengaturan; NPWP diperiksa; badan kirim bersih (194 ms)
+  ✓ Wizard: tanpa akses baca pengaturan → keterangan 'mengikuti pengaturan grup', tahun buku/mata uang tidak dikirim (66 ms)
+  ✓ Detail PT: Pajak, Tahun buku & mata uang (nilai mesin + sumber), tanpa isian 'Awal tahun fiskal' (35 ms)
+  ✓ Detail PT: pop-up Ubah Status PKP — panel Dampak, tombol mati tanpa alasan, simpan → lencana berubah (62 ms)
+  ✓ Detail PT: can_apply salah → tombol tetap mati; NPWP diminta bila kosong dan diperiksa di tempat (32 ms)
+  ✓ Detail PT: jadwal tampil 'Akan menjadi … mulai …' dan bisa dibatalkan (konfirmasi baku) (24 ms)
+  ✓ Detail PT: Ubah tahun buku = editor baku lapisan PT (alasan wajib); Grup & konsolidasi ikut Simpan (76 ms)
+  ✓ Detail PT tanpa izin ubah: tanpa tombol Ubah status PKP / Ubah; isian grup terkunci (10 ms)
+Test Suites: 1 passed, 1 total
+Tests:       8 passed, 8 total
+
+== suite terkait di kode KP-T1 (phase4R6 dengan tiruan radix lokal, roleCrossEntity, fix3aForms, kpt1ProfilPt)
+PASS src/features/__tests__/roleCrossEntity.test.js
+PASS src/features/__tests__/phase4R6.test.js
+PASS src/features/__tests__/kpt1ProfilPt.test.js
+PASS src/features/__tests__/fix3aForms.test.js
+Test Suites: 4 passed, 4 total
+Tests:       21 passed, 21 total
+
+== seluruh suite: HEAD vs KP-T1 (suite gagal dimuat = @radix-ui/cmdk tidak termuat lokal)
+HEAD:
+Test Suites: 35 failed, 67 passed, 102 total
+Tests:       479 passed, 479 total
+KP-T1:
+Test Suites: 35 failed, 68 passed, 103 total
+Tests:       487 passed, 487 total
+Suite gagal dimuat: HEAD 35, KP-T1 35; selisih daftar: 0 baris

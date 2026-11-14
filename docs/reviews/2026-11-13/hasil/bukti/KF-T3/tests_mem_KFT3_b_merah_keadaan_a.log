@@ -1,0 +1,56 @@
+E       AttributeError: module 'services.config_service' has no attribute 'default_payment_term_code'
+E       AssertionError: assert {'ent_ksc': '...nda': 'meter'} == {'ent_ksc': '...nda': 'meter'}
+E         
+E         Omitting 1 identical items, use -vv to show
+E         Differing items:
+E         {'ent_ksc': 'meter'} != {'ent_ksc': 'yard'}
+E         Use -v to get more diff
+E       AssertionError: assert 'po_stuck:po_kft3_ent_ksc:tenun' in set()
+E       TypeError: check_variance() got an unexpected keyword argument 'entity_id'
+E       AssertionError: assert {'routers/pur..._output', ...} == {'routers/uom...t_with_trail'}
+E         
+E         Extra items in the left set:
+E         'services/contract_service.py:tariff_preview'
+E         'routers/purchase_orders.py:_create_po_core'
+E         'services/blanket_po_service.py:create_blanket'
+E         'services/receiving_uom_service.py:convert_doc_qty'
+E         'services/contract_service.py:compute_tariff'...
+E         
+E         ...Full output truncated (4 lines hidden), use '-vv' to show
+E               services.receiving_uom_service.ReceivingUomError: Qty terima (12) melebihi toleransi +2% dari PO (10, maks 10.2). Gunakan Eskalasi untuk penyesuaian manager.
+E       Failed: DID NOT RAISE ReceivingUomError
+E       AssertionError: assert [''] == ['ent_kanda']
+E         
+E         At index 0 diff: '' != 'ent_kanda'
+E         Use -v to get more diff
+E       AssertionError: {"saved":[{"id":"cfgv_f70984fa6b55","key":"notif.low_stock_division","scope_type":"entity","scope_id":"ent_ksc","value":"Penjualan","prev_value":"","prev_source_layer":"code_default","effective_from":"2026-11-14T04:10:55.547762+00:00","effective_to":"","reason":"uji KF-T3","changed_by":"Budi Santoso","changed_by_id":"user_admin_01","approved_by":"","risk":"low","changed_at"
+E       assert 200 == 400
+E        +  where 200 = <Response [200 OK]>.status_code
+E           AssertionError: services/payment_plan_service.py
+E           assert not <re.Match object; span=(2971, 2999), match='plan_tolerance_rupiah") or 1'>
+E            +  where <re.Match object; span=(2971, 2999), match='plan_tolerance_rupiah") or 1'> = <function search at 0x7f2a8376a2a0>('plan_tolerance_rupiah"\\) or 1\\b', '"""FASE G-2 — **RENCANA PEMBAYARAN FLEKSIBEL** (`payment_plans`).\n\nMASALAH NYATA PEMILIK\n---------------------\nTe...rce_total(order) < limit:\n        return False\n    return not await get_active("sales_order", order.get
+E            +    where <function search at 0x7f2a8376a2a0> = re.search
+E            +    and   '"""FASE G-2 — **RENCANA PEMBAYARAN FLEKSIBEL** (`payment_plans`).\n\nMASALAH NYATA PEMILIK\n---------------------\nTe...rce_total(order) < limit:\n        return False\n    return not await get_active("sales_order", order.get("id", ""))\n' = read_text(encoding='utf-8')
+E            +      where read_text = (PosixPath('/tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/kft3/tree_a/backend') / 'services/payment_plan_service.py').read_text
+E           AssertionError: tax.efaktur_enabled
+E           assert 'active' == 'not_used'
+E             
+E             - not_used
+E             + active
+E       AssertionError: assert 'OK' == 'STALE'
+E         
+E         - STALE
+E         + OK
+FAILED tests_mem/test_KFT3_pengalihan.py::test_KFT3_U10_termin_bawaan_per_pt
+FAILED tests_mem/test_KFT3_pengalihan.py::test_KFT3_U10b_satuan_bawaan_produk_baru_per_pt
+FAILED tests_mem/test_KFT3_pengalihan.py::test_KFT3_U10c_tahap_po_macet_per_pt
+FAILED tests_mem/test_KFT3_pengalihan.py::test_KFT3_U12_toleransi_satuan_per_pt
+FAILED tests_mem/test_KFT3_pengalihan.py::test_KFT3_U12b_pemanggil_mesin_satuan_mengirim_pt_dokumen
+FAILED tests_mem/test_KFT3_pengalihan.py::test_KFT3_U13_lebih_dari_sisa_mengikuti_pt_tugas
+FAILED tests_mem/test_KFT3_pengalihan.py::test_KFT3_U13b_mode_satuan_pemasok_mengikuti_pt_tugas
+FAILED tests_mem/test_KFT3_pengalihan.py::test_KFT3_U13c_inspeksi_qc_membaca_kebijakan_lot_pt_pemilik
+FAILED tests_mem/test_KFT3_pengalihan.py::test_KFT3_U14_lapisan_dicabut_dan_minimum_satu
+FAILED tests_mem/test_KFT3_pengalihan.py::test_KFT3_U14b_pembaca_nol_memakai_bawaan_registry
+FAILED tests_mem/test_KFT3_pengalihan.py::test_KFT3_U15_enam_kunci_tidak_dipakai
+FAILED tests_mem/test_KFT3_pengalihan.py::test_KFT3_U16_pemeriksa_kesehatan_diperketat
+12 failed, 2 passed, 1 warning in 7.51s

@@ -1,0 +1,11 @@
+== HEAD ccff778
+FAILED tests_mem/test_KFT2_kunci_pengaturan.py::test_KFT2_U14_tidak_ada_layar_menulis_settings_lama
+1 failed, 414 passed, 2 skipped, 3 xfailed, 11 warnings in 68.69s (0:01:08)
+== keadaan (a)
+FAILED tests_mem/test_KFT2_kunci_pengaturan.py::test_KFT2_U14_tidak_ada_layar_menulis_settings_lama
+1 failed, 424 passed, 2 skipped, 3 xfailed, 11 warnings in 52.21s
+== (a)+(b)
+FAILED tests_mem/test_KFT2_kunci_pengaturan.py::test_KFT2_U14_tidak_ada_layar_menulis_settings_lama
+1 failed, 438 passed, 2 skipped, 3 xfailed, 11 warnings in 59.10s
+
+Satu-satunya gagal (ketiga keadaan) = KF-T2 U14: berkas frontend/src/features/sales/ReturnAssumptionsPanel.jsx masih ada di commit basis sementara ccff778 (penghapusan KF-T2 tidak ikut); bukan perubahan unit ini.

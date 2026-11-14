@@ -1,0 +1,53 @@
+FF                                                                       [100%]
+=================================== FAILURES ===================================
+______________________ test_KPT1_U11_menjadi_pkp_hari_ini ______________________
+
+klien = <httpx.AsyncClient object at 0x7f3b1e6c5d90>
+kepala_admin = {'Authorization': 'Bearer tok_uji_6f551d414ff3403b9c781e20dc46d106', 'X-Entity-Id': 'ent_ksc'}
+db = <motor.motor_asyncio.AsyncIOMotorDatabase object at 0x7f3b300e4e90>
+
+    async def test_KPT1_U11_menjadi_pkp_hari_ini(klien, kepala_admin, db):
+        from services.config_service import get_effective_settings
+        sebelum_kanda = (await get_effective_settings(KANDA))["tax"]
+        sebelum_ksc = (await get_effective_settings(KSC))["tax"]
+        assert sebelum_kanda["ppn_rate"] == 0.0              # non-PKP dipaksa 0 (config_service.get_effective_settings)
+        r = await klien.post(f"/api/entities/{KANDA}/tax-status", headers=kepala_admin,
+                             json={"to": "ppn", "effective_date": _iso(_hari_ini()), "reason": "Dikukuhkan PKP"})
+>       assert r.status_code == 200, r.text
+E       AssertionError: {"detail":"Not Found"}
+E       assert 404 == 200
+E        +  where 404 = <Response [404 Not Found]>.status_code
+
+tests_mem/test_KPT1_profil_pt.py:194: AssertionError
+---------------------------- Captured stdout setup -----------------------------
+[bootstrap] SANDI AWAL akun seed (ganti segera): <disamarkan>
+[bootstrap] FASE F lifecycle backfill: 5 produk distempel 'produksi'
+[bootstrap] kebersihan data: 5 record dirapikan {'customers': 3, 'suppliers': 0, 'users': 0, 'hr_employees': 2, 'makloons': 0}
+____________________ test_KPT1_U14_pt_induk_dan_kepemilikan ____________________
+
+klien = <httpx.AsyncClient object at 0x7f3b1e6c5d90>
+kepala_admin = {'Authorization': 'Bearer tok_uji_6f551d414ff3403b9c781e20dc46d106', 'X-Entity-Id': 'ent_ksc'}
+db = <motor.motor_asyncio.AsyncIOMotorDatabase object at 0x7f3b300e4e90>
+
+    async def test_KPT1_U14_pt_induk_dan_kepemilikan(klien, kepala_admin, db):
+        from services import consolidation_service
+        r = await klien.patch(f"/api/entities/{KSC}", headers=kepala_admin,
+                              json={"data": {"is_group": True, "ownership_pct": 60}})
+        assert r.status_code == 200, r.text
+        try:
+            rows = {e["id"]: e for e in (await klien.get("/api/entities", headers=kepala_admin)).json()}
+>           assert (rows[KSC]["is_group"], rows[KSC]["ownership_pct"]) == (True, 60)
+                                           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+E           KeyError: 'ownership_pct'
+
+tests_mem/test_KPT1_profil_pt.py:257: KeyError
+=============================== warnings summary ===============================
+../../../venv311/lib/python3.11/site-packages/starlette/formparsers.py:12
+  <scratchpad>/venv311/lib/python3.11/site-packages/starlette/formparsers.py:12: PendingDeprecationWarning: Please use `import python_multipart` instead.
+    import multipart
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests_mem/test_KPT1_profil_pt.py::test_KPT1_U11_menjadi_pkp_hari_ini
+FAILED tests_mem/test_KPT1_profil_pt.py::test_KPT1_U14_pt_induk_dan_kepemilikan
+2 failed, 1 warning in 1.39s

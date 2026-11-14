@@ -1,0 +1,38 @@
+== t1_out_head.json: 383 kunci; galat 0
+   global_terbaca_api: benar 344 / salah 0
+   global_terbaca_resolver: benar 344 / salah 0
+   global_terbaca_legacy: benar 342 / salah 2
+   pt_terbaca_resolver: benar 301 / salah 0
+   pt_lain_tetap_resolver: benar 301 / salah 0
+   pt_terbaca_legacy: benar 299 / salah 2
+   pt_lain_tetap_legacy: benar 301 / salah 0
+   pt_terbaca_api: benar 301 / salah 0
+   setelah_cabut_kembali: benar 301 / salah 0
+   setelah_cabut_legacy: benar 300 / salah 1
+   nilai_tak_sah_ditolak: benar 329 / salah 0
+   tanpa_alasan_ditolak: benar 155 / salah 0
+   setelah_pulih_default: benar 365 / salah 0
+   tulis_not_used_ditolak: benar 18 / salah 0
+   SIMPANG tax.ppn_rate active ['pt_terbaca_legacy', 'setelah_cabut_legacy'] legacy_pt_dapat= 0.0
+   SIMPANG tax.efaktur_enabled active ['pt_terbaca_legacy'] legacy_pt_dapat= False
+   SIMPANG hr.pph21.biaya_jabatan_pct active ['global_terbaca_legacy'] legacy_pt_dapat= None
+   SIMPANG hr.pph21.biaya_jabatan_maks_bulanan active ['global_terbaca_legacy'] legacy_pt_dapat= None
+== t1_out.json: 383 kunci; galat 0
+   global_terbaca_api: benar 342 / salah 1
+   global_terbaca_resolver: benar 342 / salah 1
+   global_terbaca_legacy: benar 341 / salah 2
+   pt_terbaca_resolver: benar 298 / salah 1
+   pt_lain_tetap_resolver: benar 298 / salah 1
+   pt_terbaca_legacy: benar 298 / salah 1
+   pt_lain_tetap_legacy: benar 299 / salah 0
+   pt_terbaca_api: benar 298 / salah 1
+   setelah_cabut_kembali: benar 297 / salah 2
+   setelah_cabut_legacy: benar 298 / salah 1
+   nilai_tak_sah_ditolak: benar 328 / salah 0
+   tanpa_alasan_ditolak: benar 154 / salah 0
+   setelah_pulih_default: benar 363 / salah 1
+   tulis_not_used_ditolak: benar 19 / salah 0
+   SIMPANG tax.ppn_rate active ['pt_terbaca_resolver', 'pt_terbaca_legacy', 'pt_terbaca_api', 'setelah_cabut_kembali', 'setelah_cabut_legacy'] legacy_pt_dapat= 0.0
+   SIMPANG allocation.allow_intercompany active ['global_terbaca_api', 'global_terbaca_resolver', 'pt_lain_tetap_resolver', 'setelah_cabut_kembali', 'setelah_pulih_default'] legacy_pt_dapat= None
+   SIMPANG hr.pph21.biaya_jabatan_pct active ['global_terbaca_legacy'] legacy_pt_dapat= None
+   SIMPANG hr.pph21.biaya_jabatan_maks_bulanan active ['global_terbaca_legacy'] legacy_pt_dapat= None

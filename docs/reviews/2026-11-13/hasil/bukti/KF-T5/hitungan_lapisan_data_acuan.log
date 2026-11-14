@@ -1,0 +1,7 @@
+Hitungan baris config_values per scope_type (RISIKO spesifikasi) — database lokal backend/.env (`test_database`), HANYA BACA
+(count_documents / distinct; tidak ada penulisan, tidak ada skrip migrasi):
+customer 0 []
+product 0 []
+supplier 0 []
+document 0 []
+customers 8 · products 282 (estimated_document_count)
