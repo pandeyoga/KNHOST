@@ -11,6 +11,8 @@ import DetailModal from "../../components/DetailModal";
 import { can } from "../../config/roles";
 import { useCanDecideMap } from "../../hooks/useCanDecide";   // KP-T4
 import { isZeroMetric } from "../../components/ListPageParts";
+import useFocusDoc from "../../hooks/useFocusDoc";
+import FocusNotice from "../../components/FocusNotice";
 
 /**
  * LandedCostView (Fase 5.4 — P0-5) — Landed Cost Voucher → alokasi HPP roll.
@@ -41,7 +43,7 @@ function StatusPill({ status }) {
 const lcDecideParams = (v) => (v.status === "pending_approval"
   ? { docKind: "landed_cost", entityId: v.entity_id, amount: v.total_cost || 0 } : null);
 
-export default function LandedCostView({ currentUser, selectedEntity }) {
+export default function LandedCostView({ currentUser, selectedEntity, focusDoc, onClearFocus }) {
   const [vouchers, setVouchers] = useState([]);
   const [pos, setPos] = useState([]);
   const [summary, setSummary] = useState(null);
@@ -56,6 +58,11 @@ export default function LandedCostView({ currentUser, selectedEntity }) {
   const decide = useCanDecideMap(vouchers, lcDecideParams);
   const canApproveDoc = (v) => !!(v && decide[v.id]?.allowed);
   const canCreate = can(currentUser?.permissions, "landed_cost", "create");   // POST /landed-costs
+  // PK-44 (IA-04) — tautan dokumen membuka rincian biaya masuk ber-id itu.
+  const fokus = useFocusDoc(focusDoc, "landed_cost", async (id) => {
+    const r = await axios.get(`${API}/landed-costs/${id}`);
+    setDetail(r.data);
+  }, onClearFocus);
 
   useEffect(() => { loadAll(); }, [selectedEntity]); // eslint-disable-line
 
@@ -122,6 +129,7 @@ export default function LandedCostView({ currentUser, selectedEntity }) {
     <div data-testid="landed-cost-view">
       {notice && <div className="notice-bar success" data-testid="lc-notice"><span>{notice}</span><button onClick={() => setNotice("")}>×</button></div>}
       <ErrorNotice message={error} onRetry={loadAll} onDismiss={() => setError("")} testId="lc-error" />
+      <FocusNotice {...fokus} testId="lc-focus-notice" />
 
       {summary && (
         <div className="grid grid-cols-2 md:grid-cols-4 gap-2.5 mb-3" data-testid="lc-summary">

@@ -5,7 +5,7 @@ Tidak menyimpan apa pun; semua relasi diturunkan dari field penghubung yang suda
 
   Sales chain (anchor = sales_order):
     [SpecialOrder*] -> SalesOrder -> Shipment(order_id) -> TaxInvoice(order_id)
-      -> AR Receipt(allocations.order_id) -> Komisi (navigational, on-collection)
+      -> AR Receipt(allocations.order_id) -> Retur Jual(order_id) -> Komisi (on-collection, tanpa tautan)
 
   Purchase chain (anchor = purchase_order):
     PurchaseRequisition(po_id) -> PurchaseOrder -> GRN(wms_tasks po_id+inbound)
@@ -14,29 +14,27 @@ Tidak menyimpan apa pun; semua relasi diturunkan dari field penghubung yang suda
 Tiap node membawa `link` agar frontend dapat deep-link (navigasi view in-app atau buka
 dokumen/print via doc_url). Stage yang kosong tetap dikembalikan (no dead-end) dengan
 `docs: []` + `empty_hint`.
+
+PK-44 (IA-13) — `link` dibentuk `doc_refs_service.link_of` (satu peta tujuan dengan Jejak Dokumen); layar detail
+pesanan/PO kini memakai linimasa ini hanya sebagai GARIS TAHAPAN di kepala panel "Dokumen Terkait" (daftar &
+tautan dokumen = panel referensi tersimpan).
 """
 from typing import Any, Dict, List, Optional
 
 from db import db
 from core_utils import safe_doc
+from services import doc_refs_service as refs
 
 
-def _link(
-    kind: str = "view",
-    view: Optional[str] = None,
-    nav_id: Optional[str] = None,
-    focus_type: Optional[str] = None,
-    focus_id: Optional[str] = None,
-    doc_url: Optional[str] = None,
-) -> Dict[str, Any]:
-    return {
-        "kind": kind,                       # "view" | "url" | "none"
-        "view": view,                       # activeView target di App.js
-        "nav_id": nav_id or view,           # nav id sidebar (untuk active state)
-        "focus_type": focus_type,           # untuk auto-open di view tujuan
-        "focus_id": focus_id,
-        "doc_url": doc_url,                 # relatif ke /api (frontend prefix API base)
-    }
+def _link(doc_type: Optional[str] = None, doc: Optional[Dict[str, Any]] = None,
+          kind: str = "view", doc_url: Optional[str] = None) -> Dict[str, Any]:
+    """Tautan simpul linimasa. PK-44 (IA-13) — tujuan layar dari SATU peta (`doc_refs_service.link_of`); dulu berkas
+    ini menulis `view`/`nav_id` sendiri sehingga dua peta tujuan bisa berbeda (GRN → `operations`, peta jejak →
+    lain lagi). Tanpa jenis dokumen terdaftar (mis. komisi) → `kind="none"` (tidak bertaut)."""
+    if not doc_type or doc_type not in refs.DOC_TYPES or doc is None:
+        return {"kind": "none", "view": "", "tab": "", "focus_type": "", "focus_id": "", "number": "",
+                "doc_url": doc_url}
+    return {"kind": kind, **refs.link_of(doc_type, doc), "doc_url": doc_url}
 
 
 def _node(
@@ -92,7 +90,7 @@ async def _sales_order_stages(order: Dict[str, Any]) -> List[Dict[str, Any]]:
                     title=sso.get("customer_name") or sso.get("type") or "Pesanan Khusus",
                     status=sso.get("status"), date=sso.get("created_at"),
                     amount=sso.get("total_amount"),
-                    link=_link(view="special-orders", focus_type="special_order", focus_id=sso["id"]),
+                    link=_link("special_order", sso),
                 )],
             })
 
@@ -105,7 +103,7 @@ async def _sales_order_stages(order: Dict[str, Any]) -> List[Dict[str, Any]]:
             status=order.get("status"), date=order.get("created_at"),
             amount=order.get("grand_total", order.get("total_amount")),
             meta=f"Sales: {order.get('sales_name') or '—'}",
-            link=_link(view="orders", focus_type="sales_order", focus_id=oid),
+            link=_link("sales_order", order),
         )],
     })
 
@@ -120,8 +118,7 @@ async def _sales_order_stages(order: Dict[str, Any]) -> List[Dict[str, Any]]:
             status="parsial" if s.get("is_partial") else (s.get("status") or "shipped"),
             date=s.get("created_at"),
             meta=f"{s.get('qty')} {s.get('unit') or ''}".strip(),
-            link=_link(kind="url", doc_url=f"/shipments/{s['id']}/surat-jalan",
-                       view="orders", focus_type="sales_order", focus_id=oid),
+            link=_link("shipment", s, kind="url", doc_url=f"/shipments/{s['id']}/surat-jalan"),
         ) for s in shipments],
     })
 
@@ -135,8 +132,7 @@ async def _sales_order_stages(order: Dict[str, Any]) -> List[Dict[str, Any]]:
             title=t.get("nsfp") and f"NSFP {t.get('nsfp')}" or "Faktur Pajak",
             status=t.get("status"), date=t.get("created_at"),
             amount=t.get("ppn_amount"),
-            link=_link(view="tax-invoices", focus_type="tax_invoice", focus_id=t["id"],
-                       doc_url=f"/tax-invoices/{t['id']}/document"),
+            link=_link("tax_invoice", t, doc_url=f"/tax-invoices/{t['id']}/document"),
         ) for t in tax],
     })
 
@@ -154,12 +150,26 @@ async def _sales_order_stages(order: Dict[str, Any]) -> List[Dict[str, Any]]:
             status=r.get("status"), date=r.get("receipt_date"),
             amount=round(applied, 2),
             meta=f"Total terima {r.get('amount')}",
-            link=_link(view="customers-crm", focus_type="ar_receipt", focus_id=r["id"]),
+            link=_link("ar_receipt", r),
         ))
     stages.append({
-        "key": "payment", "label": "Pembayaran (AR)",
+        "key": "payment", "label": "Pembayaran (Kwitansi)",
         "empty_hint": "Belum ada pembayaran tercatat.",
         "docs": rec_docs,
+    })
+
+    # Stage 4b — PK-44 (IA-13) — Retur Jual atas pesanan ini (tautannya dari peta yang sama dengan Jejak Dokumen).
+    rets = await db.sales_returns.find({"order_id": oid}, {"_id": 0}).sort("created_at", 1).to_list(100)
+    stages.append({
+        "key": "return", "label": "Retur Jual",
+        "empty_hint": "Belum ada retur.",
+        "docs": [_node(
+            type="sales_return", id=x["id"], number=x.get("number"),
+            title=x.get("customer_name") or "Retur Jual",
+            status=x.get("status"), date=x.get("created_at"),
+            amount=x.get("total_amount") or x.get("grand_total"),
+            link=_link("sales_return", x),
+        ) for x in rets],
     })
 
     # Stage 5 — Komisi (navigational; on-collection per EPIC4 = level sales×periode).
@@ -172,8 +182,7 @@ async def _sales_order_stages(order: Dict[str, Any]) -> List[Dict[str, Any]]:
             title=f"Komisi on-collection · {order.get('sales_name') or 'Sales'}",
             status=order.get("payment_status"),
             meta="Lihat rincian komisi per-SKU (Performa Saya / Sales Force)",
-            link=_link(view="sales-home", nav_id="home", focus_type="commission",
-                       focus_id=order.get("sales_name") or ""),
+            link=_link(),   # PK-44 — komisi bukan dokumen di peta: tidak bertaut
         )] if paid else []),
     })
 
@@ -195,7 +204,7 @@ async def _purchase_order_stages(po: Dict[str, Any]) -> List[Dict[str, Any]]:
             title=pr.get("warehouse_name") or pr.get("reason") or "Requisition",
             status=pr.get("status"), date=pr.get("created_at"),
             amount=pr.get("total_est_amount"),
-            link=_link(view="purchase-requisitions", focus_type="purchase_requisition", focus_id=pr["id"]),
+            link=_link("purchase_requisition", pr),
         )] if pr else []),
     })
 
@@ -207,7 +216,7 @@ async def _purchase_order_stages(po: Dict[str, Any]) -> List[Dict[str, Any]]:
             title=po.get("supplier_name") or "Purchase Order",
             status=po.get("status"), date=po.get("created_at"),
             amount=_po_total(po),
-            link=_link(view="purchasing", focus_type="purchase_order", focus_id=poid),
+            link=_link("purchase_order", po),
         )],
     })
 
@@ -223,35 +232,35 @@ async def _purchase_order_stages(po: Dict[str, Any]) -> List[Dict[str, Any]]:
             title=f"{tk.get('product_name') or tk.get('sku') or 'Item'} · {tk.get('warehouse_name') or ''}".strip(" ·"),
             status=tk.get("status"), date=tk.get("completed_at") or tk.get("created_at"),
             meta=f"Diterima {tk.get('received_qty', 0)}/{tk.get('expected_qty', tk.get('quantity', 0))} {tk.get('unit') or ''}".strip(),
-            link=_link(view="operations", nav_id="operations", focus_type="grn", focus_id=tk["id"]),
+            link=_link("grn", tk),
         ) for tk in tasks],
     })
 
     # Stage 3 — Landed Cost (voucher po_ids).
     vouchers = await db.landed_cost_vouchers.find({"po_ids": poid}, {"_id": 0}).sort("created_at", 1).to_list(100)
     stages.append({
-        "key": "landed_cost", "label": "Landed Cost",
-        "empty_hint": "Belum ada voucher landed cost.",
+        "key": "landed_cost", "label": "Biaya Masuk (Landed Cost)",
+        "empty_hint": "Belum ada biaya masuk.",
         "docs": [_node(
             type="landed_cost", id=v["id"], number=v.get("number") or v.get("voucher_number"),
-            title=v.get("description") or "Landed Cost Voucher",
+            title=v.get("description") or "Biaya Masuk",
             status=v.get("status"), date=v.get("created_at"),
             amount=v.get("total_amount"),
-            link=_link(view="landed-cost", focus_type="landed_cost", focus_id=v["id"]),
+            link=_link("landed_cost", v),
         ) for v in vouchers],
     })
 
-    # Stage 4 — Vendor Bill (po_id).
+    # Stage 4 — Tagihan Pemasok (po_id).
     bills = await db.vendor_bills.find({"po_id": poid}, {"_id": 0}).sort("created_at", 1).to_list(100)
     stages.append({
-        "key": "bill", "label": "Vendor Bill",
-        "empty_hint": "Belum ada vendor bill.",
+        "key": "bill", "label": "Tagihan Pemasok",
+        "empty_hint": "Belum ada tagihan pemasok.",
         "docs": [_node(
             type="vendor_bill", id=b["id"], number=b.get("number") or b.get("bill_number"),
-            title=b.get("supplier_name") or "Vendor Bill",
+            title=b.get("supplier_name") or "Tagihan Pemasok",
             status=b.get("status") or b.get("payment_status"), date=b.get("created_at"),
             amount=b.get("total_amount") or b.get("amount"),
-            link=_link(view="vendor-bills", focus_type="vendor_bill", focus_id=b["id"]),
+            link=_link("vendor_bill", b),
         ) for b in bills],
     })
 

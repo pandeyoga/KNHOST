@@ -19,6 +19,8 @@ import {
 } from "lucide-react";
 import axios, { API } from "../../../services/apiClient";
 import ErrorNotice from "../../../components/ErrorNotice";
+import FocusNotice from "../../../components/FocusNotice";
+import useFocusDoc, { gulirKe } from "../../../hooks/useFocusDoc";
 import { formatCurrency } from "../../../utils/formatters";
 import { apiErrorText } from "../../../utils/apiError";
 import { moneyPost } from "../../../utils/moneyRequest";
@@ -63,7 +65,11 @@ const MONEY_TABS = ["balances", "settlements", "schedule", "loans", "margin"];
 // L08 — tab retur tampil di menu Retur terpadu (view `interco-returns`), bukan di layar transaksi.
 const RETURN_TABS = ["returns", "return-inbox"];
 
-export default function IntercoView({ currentUser, selectedEntity, entities = [], only = null }) {
+// PK-44 (IA-04) — jenis dokumen antar-PT → [tab = jalur API rincian, `data-testid` baris yang disorot].
+const FOCUS_TAB = { interco_transaction: ["transactions", ""], interco_settlement: ["settlements", "interco-set"],
+  interco_return: ["returns", "interco-ret"], interco_loan: ["loans", "loan-row"] };
+
+export default function IntercoView({ currentUser, selectedEntity, entities = [], only = null, focusDoc, onClearFocus }) {
   const [tab, setTab] = useState(() => {
     const hint = new URLSearchParams(window.location.search).get("tab") || sessionStorage.getItem("interco_tab");
     sessionStorage.removeItem("interco_tab");
@@ -236,6 +242,16 @@ export default function IntercoView({ currentUser, selectedEntity, entities = []
     finally { sending.current = false; setBusy(false); }
   };
 
+  // PK-44 (IA-04) — tautan dokumen: pindah ke tab jenisnya; transaksi → rinciannya, lainnya → baris disorot.
+  const [sorot, setSorot] = useState("");
+  const fokus = useFocusDoc(focusDoc, Object.keys(FOCUS_TAB), async (id, fd) => {
+    const [t, row] = FOCUS_TAB[fd.focus_type];
+    await axios.get(`${API}/interco/${t}/${id}`);
+    if (!tabs.some((x) => x.id === t)) return false;   // tab di luar izin/menu layar ini
+    setTab(t);
+    if (row) { setSorot(id); gulirKe(`${row}-${id}`, 600); } else setDetailId(id);
+  }, onClearFocus);
+
   return (
     <>
     {/* Fase 3 · P4 (L-04 kelas C) — akuntansi grup: di HP cukup banner "paling nyaman di desktop" (layar tetap
@@ -327,6 +343,7 @@ export default function IntercoView({ currentUser, selectedEntity, entities = []
       )}
 
       {err && <ErrorNotice message={err} onDismiss={() => setErr("")} />}
+      <FocusNotice {...fokus} testId="interco-focus-notice" />
       {msg && (
         <div className="flex items-center gap-2 px-4 py-2.5 rounded-lg bg-[#E8F6EE] text-[#1B7F4B] text-sm"
              data-testid="interco-msg">
@@ -373,11 +390,11 @@ export default function IntercoView({ currentUser, selectedEntity, entities = []
                                             to: a.to_entity_id })}
         />
       )}
-      {tab === "settlements" && <SettlementsPanel rows={settlements} />}
+      {tab === "settlements" && <SettlementsPanel rows={settlements} focusId={sorot} />}
       {tab === "schedule" && <IntercoPaymentSchedule selectedEntity={selectedEntity} entities={entities} />}
       {tab === "returns" && (
         <IntercoReturnsPanel
-          rows={returns} canWrite={canWrite}
+          rows={returns} canWrite={canWrite} focusId={sorot}
           canDecideRolls={can(perms, "interco", "decide_rolls")} activeEntityId={entityId}
           onChanged={refresh}
           onApprove={async (r) => {
@@ -401,7 +418,7 @@ export default function IntercoView({ currentUser, selectedEntity, entities = []
           canAct={can(perms, "interco", "approve") || can(perms, "interco", "receive") || can(perms, "sales_return", "approve")} />
       )}
       {tab === "loans" && (
-        <IntercoLoansPanel entities={entities} entityId={entityId} canWrite={canWrite} />
+        <IntercoLoansPanel entities={entities} entityId={entityId} canWrite={canWrite} focusId={sorot} />
       )}
       {tab === "margin" && <IntercoMarginPanel report={margin} entityId={entityId} />}
 

@@ -5,6 +5,8 @@ import { Wallet, Plus, RefreshCw, FileText } from "lucide-react";
 import { formatCurrency } from "../../utils/formatters";
 import ErrorNotice from "../../components/ErrorNotice";
 import EntityGatedButton from "../../components/EntityGatedButton";   // PK-42 (UX-05)
+import FocusNotice from "../../components/FocusNotice";
+import useFocusDoc from "../../hooks/useFocusDoc";
 import { SearchBox } from "../../components/ListControls";
 import FilterChips from "../../components/FilterChips";
 import ResponsiveTable from "../../components/ResponsiveTable";
@@ -38,7 +40,7 @@ const TABS = [
 ];
 const PENDING = ["pending_atasan", "pending_pimpinan", "pending_finance"];
 
-export default function CashAdvancesView({ currentUser, selectedEntity = "all", entities = [] }) {
+export default function CashAdvancesView({ currentUser, selectedEntity = "all", entities = [], focusDoc, onClearFocus }) {
   const [view, setView] = useState("list");     // list | create | edit | detail
   const [rows, setRows] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -96,11 +98,16 @@ export default function CashAdvancesView({ currentUser, selectedEntity = "all", 
 
   const entityName = (id) => entities.find((e) => e.id === id)?.short_name
     || entities.find((e) => e.id === id)?.legal_name || id || "—";
+  // PK-44 (IA-10) — tautan dokumen (Jejak Dokumen / rincian jurnal) membuka rincian PD ber-id itu.
+  const fokus = useFocusDoc(focusDoc, "cash_advance", async (id) => {
+    setSelected((await axios.get(`${API}/cash-advances/${id}`)).data); setView("detail");
+  }, onClearFocus);
 
   return (
     <div data-testid="cash-advances-view" className="grid gap-4">
       {toast && <div className="notice-bar success" data-testid="ca-toast"><span>{toast}</span><button onClick={() => setToast("")}>×</button></div>}
       <ErrorNotice message={error} onRetry={load} onDismiss={() => setError("")} testId="ca-error" />
+      <FocusNotice {...fokus} testId="ca-focus-notice" />
 
       <section className="section-card">
         <div className="section-head">

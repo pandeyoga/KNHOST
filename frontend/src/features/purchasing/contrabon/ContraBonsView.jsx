@@ -26,6 +26,8 @@ import { moneyPost } from "../../../utils/moneyRequest";
 import useIntentKey from "../../../hooks/useIntentKey";
 import ErrorNotice from "../../../components/ErrorNotice";
 import EntityGatedButton from "../../../components/EntityGatedButton";   // PK-42 (UX-05)
+import FocusNotice from "../../../components/FocusNotice";
+import useFocusDoc from "../../../hooks/useFocusDoc";
 import { KNSelect } from "../../../components/KNSelect";
 import FilterChips from "../../../components/FilterChips";
 import PageTabs from "../../../components/PageTabs";
@@ -52,7 +54,7 @@ const TABS = [
 /** PK-17 (IA-09) — nilai kontrabon hanya untuk pemegang `vendor_bill.view`; server mengirim `null` bagi yang lain. */
 const moneyOrDash = (v) => (v === null || v === undefined ? "—" : formatCurrency(v));
 
-export default function ContraBonsView({ currentUser, selectedEntity, entities = [] }) {
+export default function ContraBonsView({ currentUser, selectedEntity, entities = [], focusDoc, onClearFocus, onOpenDocument }) {
   // PK-17 — tanpa izin lihat tagihan pemasok, tab "Daftar Kontrabon" (isinya nominal) tidak ditampilkan.
   const canSeeValue = can(currentUser?.permissions, "vendor_bill", "view");
   const tabs = useMemo(() => (canSeeValue ? TABS : TABS.filter((t) => t.id !== "list")), [canSeeValue]);
@@ -197,6 +199,12 @@ export default function ContraBonsView({ currentUser, selectedEntity, entities =
   const statusCount = (v) => (v ? counts[v] || 0 : counts.all ?? Object.entries(counts)
     .filter(([k]) => k !== "total").reduce((acc, [, n]) => acc + (Number(n) || 0), 0));
   const filterOn = !!(fStatus || q);
+  // PK-44 (IA-04) — tautan dokumen membuka rincian kontrabon ber-id itu (tab Daftar).
+  const fokus = useFocusDoc(focusDoc, "contra_bon", async (id) => {
+    const r = await axios.get(`${API}/contra-bons/${id}`);
+    setTab("list");
+    setActive(r.data);
+  }, onClearFocus);
 
   return (
     <div className="view-container" data-testid="contra-bons-view">
@@ -219,6 +227,7 @@ export default function ContraBonsView({ currentUser, selectedEntity, entities =
 
       {err && <ErrorNotice message={err} onRetry={refreshAll} onDismiss={() => setErr("")}
         testId="cb-error" />}
+      <FocusNotice {...fokus} testId="cb-focus-notice" />
       {msg && (
         <div className={`notice-bar ${msgKind} !mb-0`} data-testid="cb-notice">
           {msgKind === "warning" ? <AlertTriangle size={14} /> : <CheckCircle2 size={14} />}
@@ -326,7 +335,7 @@ export default function ContraBonsView({ currentUser, selectedEntity, entities =
                     entityLabel={entityShortById(entities, active.entity_id, "")}
                     onClose={() => setActive(null)}
                     onChanged={async (updated) => { setActive(updated); await loadList(); }}
-                    onError={fail} onNotify={notify} />
+                    onError={fail} onNotify={notify} onOpenDocument={onOpenDocument} />
                 )}
               </div>
             </>

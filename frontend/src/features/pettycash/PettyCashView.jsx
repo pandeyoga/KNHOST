@@ -21,21 +21,25 @@ export const PETTY_CASH_PARTS = [
   { key: "reimburse", label: "Hutang reimburse", id: "reimburse-payables", izin: [["accounting", "view"]] },
 ];
 
-export default function PettyCashView({ currentUser, selectedEntity, entities }) {
+// PK-44 — tautan dokumen PD/LPJ membuka chip jenisnya (selain lewat preset alias `cash-advances`/`settlements`).
+const PART_OF_FOCUS = { cash_advance: "pengajuan", cash_settlement: "pertanggungjawaban" };
+
+export default function PettyCashView({ currentUser, selectedEntity, entities, focusDoc, onClearFocus }) {
   const perms = currentUser?.permissions || {};
   const parts = PETTY_CASH_PARTS.filter((b) => !navExplicitlyHidden(currentUser?.role, b.id)
     && b.izin.some(([r, a]) => can(perms, r, a)));
   const [part, setPart] = useState("");
   const preset = useViewPreset("petty-cash", (p) => { if (p.bagian) setPart(p.bagian); });
-  const wanted = part || preset?.bagian || "";
+  const wanted = PART_OF_FOCUS[focusDoc?.focus_type] || part || preset?.bagian || "";
+  const fokus = { focusDoc, onClearFocus };
   const active = parts.some((b) => b.key === wanted) ? wanted : parts[0]?.key;
 
   return (
     <div className="grid gap-3" data-testid="petty-cash-view">
       <FilterChips testId="petty-cash-bagian" ariaLabel="Bagian" value={active} onChange={setPart}
         options={parts.map((b) => ({ key: b.key, label: b.label }))} />
-      {active === "pengajuan" && <CashAdvancesView currentUser={currentUser} selectedEntity={selectedEntity} entities={entities} />}
-      {active === "pertanggungjawaban" && <SettlementsView currentUser={currentUser} selectedEntity={selectedEntity} entities={entities} />}
+      {active === "pengajuan" && <CashAdvancesView currentUser={currentUser} selectedEntity={selectedEntity} entities={entities} {...fokus} />}
+      {active === "pertanggungjawaban" && <SettlementsView currentUser={currentUser} selectedEntity={selectedEntity} entities={entities} {...fokus} />}
       {active === "reimburse" && <ReimbursePayablesView selectedEntity={selectedEntity} entities={entities} />}
       {!parts.length && (
         <div className="empty-state" data-testid="petty-cash-no-access">

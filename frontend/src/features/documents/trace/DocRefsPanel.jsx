@@ -1,20 +1,37 @@
 /**
- * DocRefsPanel — FASE G-4 · panel **Referensi Dokumen** untuk layar detail.
+ * DocRefsPanel — FASE G-4 · panel **Dokumen Terkait** untuk layar detail.
  *
- * Dipasang di detail SO / PO / Tagihan Supplier / Kwitansi / Penerimaan Barang.
+ * Dipasang di detail SO / PO / Tagihan Pemasok / Kontrabon / Penerimaan Barang.
  * Menjawab pertanyaan yang dulu harus dijawab manual: "surat ini berasal dari mana,
  * dan surat apa saja yang lahir darinya?" — plus satu klik ke **Jejak Dokumen**
  * untuk melihat seluruh rantainya.
  *
- * Sengaja ringan: hanya `GET /documents/refs/...` (bukan graf penuh).
+ * PK-44 (IA-13) — SATU-SATUNYA panel relasi di detail dokumen (dulu tiga: cetak, linimasa proses, referensi).
+ * Sumber daftar: `GET /documents/refs/...` (referensi tersimpan + jurnal/kas turunan); tujuan tombol **Buka** dari peta
+ * yang sama dengan Jejak Dokumen (`doc_refs_service.link_of`). `withStages` (pesanan & PO) menampilkan garis tahapan
+ * (`ProcessTimeline`, tanpa daftar/tautan) di bilah tersendiri di bawah judul. `onOpenDocument` dari layar induk;
+ * tanpa itu dipakai jalur navigasi bersama (`AppNavContext`) bila panel berada di dalam aplikasi desktop.
  */
 import { useCallback, useEffect, useState } from "react";
-import { ExternalLink, GitBranch, Loader2, RefreshCw } from "lucide-react";
-import { HIDDEN_AMOUNT_HINT, canOpenNode, errText, fetchRefs, relTone } from "./traceApi";
+import { ExternalLink, GitBranch, Loader2, Lock, RefreshCw, Route } from "lucide-react";
+import { canOpenNode, errText, fetchRefs, relFamily } from "./traceApi";
 import { openTrace } from "./traceDeepLink";
 import { docStatusLabel } from "../../../utils/docStatus";
+import { useAppNav } from "../../../context/AppNavContext";
+import ErrorNotice from "../../../components/ErrorNotice";
+import ProcessTimeline from "../ProcessTimeline";
 
-export default function DocRefsPanel({ docType, docId, onOpenDocument, compact = false }) {
+/** Nada relasi → kelas token (bukan hex): asal-usul = aksi, turunan = berhasil, koreksi = bahaya. */
+const REL_CLASS = {
+  upstream: "bg-kn-action-soft text-kn-action",
+  downstream: "bg-kn-success-soft text-kn-success-text",
+  correction: "bg-kn-danger-soft text-kn-danger-text",
+};
+const STAGE_TYPES = ["sales_order", "purchase_order"];
+
+export default function DocRefsPanel({ docType, docId, onOpenDocument, compact = false, withStages = false }) {
+  const nav = useAppNav();
+  const open = onOpenDocument || (nav.role ? nav.openDocument : null);
   const [rows, setRows] = useState([]);
   const [number, setNumber] = useState("");
   const [loading, setLoading] = useState(true);
@@ -29,110 +46,108 @@ export default function DocRefsPanel({ docType, docId, onOpenDocument, compact =
       setNumber(res.number || "");
       setErr("");
     } catch (e) {
-      setErr(errText(e, "Gagal memuat referensi dokumen."));
+      setErr(errText(e, "Gagal memuat dokumen terkait."));
       setRows([]);
     } finally { setLoading(false); }
   }, [docType, docId]);
 
   useEffect(() => { load(); }, [load]);
 
-  const upstream = rows.filter((r) => relTone(r.rel) !== "downstream");
-  const downstream = rows.filter((r) => relTone(r.rel) === "downstream");
+  const upstream = rows.filter((r) => relFamily(r.rel) !== "downstream");
+  const downstream = rows.filter((r) => relFamily(r.rel) === "downstream");
 
-  // 23 Okt — fungsi render (bukan komponen di dalam render): tombol "Buka dokumen" tidak dibuat ulang tiap render.
-  const renderRow = (r) => {
-    const tone = relTone(r.rel);
-    return (
-      <div key={`${r.rel}-${r.doc_id}`} data-testid={`docrefs-row-${r.doc_id}`}
-        className="flex items-center justify-between gap-2 rounded-md border border-[#EFF0F2] bg-white px-2 py-1.5">
-        <div className="min-w-0">
-          <div className="flex items-center gap-1.5">
-            <span className="rounded px-1.5 py-0.5 text-[8.5px] font-bold uppercase tracking-wide"
-              style={{ background: tone.bg, color: tone.fg }}>{r.rel_label || r.rel}</span>
-            {/* G5-51 — id teknis tidak ditampilkan bila dokumen tak bernomor; status berlabel. */}
-            <span className="truncate text-[11px] font-bold text-[#0058CC]" title={r.doc_number ? undefined : r.doc_id}>{r.doc_number || "(tanpa nomor)"}</span>
-          </div>
-          <p className="truncate text-[9.5px] text-[#8E8E93]">
-            {r.label}{r.status ? ` · ${docStatusLabel(r.status)}` : ""}{r.alive === false ? " · dokumen sudah tidak ada" : ""}
-            {r.note ? ` · ${r.note}` : ""}
-          </p>
+  // 23 Okt — fungsi render (bukan komponen di dalam render): tombol "Buka" tidak dibuat ulang tiap render.
+  const renderRow = (r) => (
+    <div key={`${r.rel}-${r.doc_id}`} data-testid={`docrefs-row-${r.doc_id}`}
+      className="flex items-center justify-between gap-2 rounded-md border border-kn-divider bg-white px-2 py-1.5">
+      <div className="min-w-0">
+        <div className="flex min-w-0 items-center gap-1.5">
+          <span className={`shrink-0 rounded px-1.5 py-0.5 text-fs-12 font-semibold ${REL_CLASS[relFamily(r.rel)]}`}>
+            {r.rel_label || r.rel}
+          </span>
+          {/* G5-51 — id teknis tidak ditampilkan bila dokumen tak bernomor; status berlabel. */}
+          <span className="truncate text-fs-13 font-bold text-kn-text" title={r.doc_number ? undefined : r.doc_id}>
+            {r.doc_number || "(tanpa nomor)"}
+          </span>
         </div>
-        {r.link?.view && onOpenDocument && (
-          /* PK-17 (K-18) — dokumen yang modulnya di luar izin peran: tombol buka mati. */
-          <button type="button" title={canOpenNode(r) ? "Buka dokumen" : HIDDEN_AMOUNT_HINT}
-            data-testid={`docrefs-open-${r.doc_id}`} disabled={!canOpenNode(r)}
-            onClick={() => canOpenNode(r) && onOpenDocument(r.link)}
-            className="shrink-0 rounded-md border border-[#EDEEF1] p-1 text-[#4A4B52] hover:bg-[#F2F3F5] disabled:cursor-not-allowed disabled:opacity-40">
-            <ExternalLink size={12} />
-          </button>
-        )}
+        <p className="truncate text-fs-12 text-kn-text-2">
+          {r.label}{r.status ? ` · ${docStatusLabel(r.status)}` : ""}{r.alive === false ? " · dokumen sudah tidak ada" : ""}
+          {r.note ? ` · ${r.note}` : ""}
+        </p>
       </div>
-    );
-  };
+      {r.link?.view && open && r.alive !== false && (canOpenNode(r) ? (
+        <button type="button" className="secondary-button btn-sm shrink-0" data-testid={`docrefs-open-${r.doc_id}`}
+          onClick={() => open(r.link)}>
+          <ExternalLink size={12} aria-hidden="true" /> Buka
+        </button>
+      ) : (
+        /* PK-17 (K-18) — dokumen yang modulnya di luar izin peran: alasannya ditulis, bukan tombol mati bertooltip. */
+        <span className="flex shrink-0 items-center gap-1 text-fs-12 text-kn-text-2" data-testid={`docrefs-noaccess-${r.doc_id}`}>
+          <Lock size={12} aria-hidden="true" /> Tanpa akses lihat
+        </span>
+      ))}
+    </div>
+  );
 
   return (
-    <div data-testid="doc-refs-panel"
-      className="rounded-lg border border-[#EDEEF1] bg-[#FAFBFC] p-2.5">
-      <div className="mb-2 flex items-center justify-between gap-2">
-        <p className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wide text-[#6B6B73]">
-          <GitBranch size={12} className="text-[#0058CC]" /> Referensi Dokumen
+    <div data-testid="doc-refs-panel" className="rounded-lg border border-kn-divider bg-white p-3">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <p className="flex items-center gap-1.5 text-fs-13 font-bold text-kn-text">
+          <GitBranch size={14} className="text-kn-action" aria-hidden="true" /> Dokumen Terkait
           {rows.length > 0 && (
-            <span className="rounded-full bg-[#EFF4FF] px-1.5 text-[9px] font-bold text-[#0058CC]">{rows.length}</span>
+            <span className="rounded-full bg-kn-action-soft px-1.5 text-fs-12 font-bold text-kn-action" data-testid="docrefs-count">
+              {rows.length}
+            </span>
           )}
         </p>
-        <div className="flex items-center gap-1">
-          <button type="button" title="Muat ulang referensi" data-testid="docrefs-refresh"
-            onClick={load} className="rounded-md border border-[#EDEEF1] bg-white p-1 text-[#4A4B52] hover:bg-[#F2F3F5]">
-            {loading ? <Loader2 size={11} className="animate-spin" /> : <RefreshCw size={11} />}
+        <div className="flex items-center gap-1.5">
+          <button type="button" className="icon-button" title="Muat ulang" aria-label="Muat ulang dokumen terkait"
+            data-testid="docrefs-refresh" onClick={load}>
+            {loading ? <Loader2 size={13} className="animate-spin" /> : <RefreshCw size={13} />}
           </button>
-          <button type="button" data-testid="docrefs-open-trace"
-            onClick={() => openTrace({ docType, docId, number })}
-            className="rounded-md border border-[#BBD3FF] bg-[#EAF2FF] px-2 py-1 text-[10px] font-semibold text-[#0058CC] hover:bg-[#DBEAFE]">
-            Buka Jejak Dokumen
+          <button type="button" className="secondary-button btn-sm" data-testid="docrefs-open-trace"
+            onClick={() => openTrace({ docType, docId, number })}>
+            <Route size={12} aria-hidden="true" /> Lihat seluruh jejak
           </button>
         </div>
       </div>
 
-      {loading && (
-        <p className="animate-pulse py-3 text-center text-[11px] text-[#6B6B73]">Memuat referensi…</p>
-      )}
-
-      {!loading && err && (
-        <div className="flex items-center justify-between gap-2 rounded-md border border-[#F5C2C7] bg-[#FDE2E2] px-2 py-1.5">
-          <span data-testid="docrefs-error" className="text-[10.5px] text-[#9B1C1C]">{err}</span>
-          <button type="button" onClick={load} data-testid="docrefs-retry"
-            className="rounded border border-[#E5A6AB] bg-white px-2 py-0.5 text-[10px] font-semibold text-[#9B1C1C]">
-            Coba lagi
-          </button>
+      {withStages && STAGE_TYPES.includes(docType) && (
+        <div className="mt-2 border-t border-kn-divider pt-2">
+          <ProcessTimeline docType={docType} docId={docId} />
         </div>
       )}
 
-      {!loading && !err && rows.length === 0 && (
-        <p data-testid="docrefs-empty" className="py-2 text-[10.5px] text-[#6B6B73]">
-          Belum ada surat lain yang tertaut ke dokumen ini.
-        </p>
-      )}
+      <div className="mt-2">
+        {loading && (
+          <p className="animate-pulse py-3 text-center text-fs-12 text-kn-text-2">Memuat dokumen terkait…</p>
+        )}
 
-      {!loading && !err && rows.length > 0 && (
-        <div className="space-y-2">
-          {upstream.length > 0 && (
-            <div className="space-y-1">
-              {!compact && (
-                <p className="text-[9px] font-bold uppercase tracking-wide text-[#8E8E93]">Berasal dari</p>
-              )}
-              {upstream.map((r) => renderRow(r))}
-            </div>
-          )}
-          {downstream.length > 0 && (
-            <div className="space-y-1">
-              {!compact && (
-                <p className="text-[9px] font-bold uppercase tracking-wide text-[#8E8E93]">Menurunkan</p>
-              )}
-              {downstream.map((r) => renderRow(r))}
-            </div>
-          )}
-        </div>
-      )}
+        {!loading && err && <ErrorNotice message={err} onRetry={load} testId="docrefs-error" />}
+
+        {!loading && !err && rows.length === 0 && (
+          <p data-testid="docrefs-empty" className="py-2 text-fs-12 text-kn-text-2">
+            Belum ada surat lain yang tertaut ke dokumen ini.
+          </p>
+        )}
+
+        {!loading && !err && rows.length > 0 && (
+          <div className="space-y-2">
+            {upstream.length > 0 && (
+              <div className="space-y-1">
+                {!compact && <p className="text-fs-12 font-bold text-kn-text-2">Berasal dari</p>}
+                {upstream.map((r) => renderRow(r))}
+              </div>
+            )}
+            {downstream.length > 0 && (
+              <div className="space-y-1">
+                {!compact && <p className="text-fs-12 font-bold text-kn-text-2">Menurunkan</p>}
+                {downstream.map((r) => renderRow(r))}
+              </div>
+            )}
+          </div>
+        )}
+      </div>
     </div>
   );
 }

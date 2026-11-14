@@ -328,7 +328,7 @@ export function BalancesPanel({ accounts, onNetting, onRemind, canWrite, netPair
   );
 }
 
-export function SettlementsPanel({ rows }) {
+export function SettlementsPanel({ rows, focusId = "" }) {
   return (
     <div className="rounded-xl border border-[#E5E5EA] bg-white overflow-hidden">
       <div className="overflow-x-auto">
@@ -350,7 +350,7 @@ export function SettlementsPanel({ rows }) {
               </td></tr>
             )}
             {rows.map((s) => (
-              <tr key={s.id} data-testid={`interco-set-${s.id}`} className="hover:bg-[#FAFAFB]">
+              <tr key={s.id} data-testid={`interco-set-${s.id}`} className={`hover:bg-[#FAFAFB] ${s.id === focusId ? "row-focus" : ""}`}>
                 <td className="px-4 py-3 font-medium text-[#1D1D1F]">{s.number}</td>
                 <td className="px-4 py-3">{s.payer_entity_name}</td>
                 <td className="px-4 py-3">{s.payee_entity_name}</td>

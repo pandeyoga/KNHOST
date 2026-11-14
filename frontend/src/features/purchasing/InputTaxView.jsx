@@ -15,6 +15,8 @@ import useViewPreset from "../../hooks/useViewPreset";
 import InputTaxCreateModal from "./InputTaxCreateModal";
 import useIntentKey from "../../hooks/useIntentKey";
 import { moneyPost } from "../../utils/moneyRequest";
+import useFocusDoc, { gulirKe } from "../../hooks/useFocusDoc";
+import FocusNotice from "../../components/FocusNotice";
 
 /**
  * InputTaxView (Fase 5.5 — P0-3) — Faktur Pajak Masukan (Input VAT).
@@ -51,7 +53,7 @@ function StatusPill({ status }) {
   return <span className={`status-pill ${cls}`}>{label}</span>;
 }
 
-export default function InputTaxView({ currentUser, selectedEntity }) {
+export default function InputTaxView({ currentUser, selectedEntity, focusDoc, onClearFocus }) {
   const [vouchers, setVouchers] = useState([]);
   const [bills, setBills] = useState([]);
   const [summary, setSummary] = useState(null);
@@ -73,6 +75,13 @@ export default function InputTaxView({ currentUser, selectedEntity }) {
   // PK-12 — batal faktur masukan ber-Idempotency-Key.
   const cancelIntent = useIntentKey("itxc");
   const [q, setQ] = useState("");
+  // PK-44 (IA-04) — tautan dokumen: faktur masukan tidak punya panel rincian → saring ke nomornya + sorot barisnya.
+  const [sorot, setSorot] = useState("");
+  const fokus = useFocusDoc(focusDoc, "input_tax_invoice", async (id) => {
+    const r = await axios.get(`${API}/input-tax-invoices/${id}`);
+    setTab("all"); setPeriodFilter(""); setQ(r.data?.number || r.data?.nsfp || ""); setSorot(id);
+    gulirKe(`it-row-${id}`);
+  }, onClearFocus);
 
   // FASE E-8 — pajak MASUKAN ada di sisi HUTANG: tetap manajer/admin (keputusan
   // pemilik: jangan diperluas ke Finance sendiri), tapi diputuskan oleh IZIN.
@@ -172,6 +181,7 @@ export default function InputTaxView({ currentUser, selectedEntity }) {
     <div data-testid="input-tax-view">
       {notice && <div className="notice-bar success" data-testid="it-notice"><span>{notice}</span><button onClick={() => setNotice("")}>×</button></div>}
       <ErrorNotice message={error} onRetry={loadAll} onDismiss={() => setError("")} testId="it-error" />
+      <FocusNotice {...fokus} testId="it-focus-notice" />
 
       {/* D-20 — SATU baris posisi PPN + tautan ke rekap PPN (Pajak › Pajak (PPN & PPh)). */}
       <div className="mb-3 flex flex-wrap items-center gap-2" data-testid="it-ppn-position">
@@ -228,7 +238,7 @@ export default function InputTaxView({ currentUser, selectedEntity }) {
         </div>
         <div className="px-3 pb-3">
           <ResponsiveTable testId="it-table" rows={filtered} rowKey="id" loading={loading}
-            rowTestId={(v) => `it-row-${v.id}`} columns={columns}
+            rowTestId={(v) => `it-row-${v.id}`} columns={columns} rowClassName={(v) => (v.id === sorot ? "row-focus" : "")}
             empty={(
               <div className="py-6 text-center text-[12px] text-[#6B6B73]" data-testid="it-empty">
                 <Layers className="mx-auto mb-2 text-gray-300" size={28} />

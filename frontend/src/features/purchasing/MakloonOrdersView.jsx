@@ -8,6 +8,8 @@ import { Boxes, Plus, ArrowRight, Factory, Clock, Loader2, CheckCircle2 } from "
 import { PageHeader, MetricRow, SearchBox, StatusTabs } from "../../components/ListPageParts";
 import EntityBadge from "../../components/EntityBadge";
 import ErrorNotice from "../../components/ErrorNotice";
+import FocusNotice from "../../components/FocusNotice";
+import useFocusDoc from "../../hooks/useFocusDoc";
 import LineFilter from "../../components/LineFilter";   // FASE L
 import { MKO_STATUS as MKO_STATUS_SHARED } from "./mkoStatus";
 import { formatQty } from "../../utils/formatters";
@@ -26,7 +28,7 @@ import PagedRows from "@/components/PagedRows";
 import { can } from "../../config/roles";
 import ExportMenu from "../../components/ExportMenu";   // FIX-4 — tombol baku Unduh (Excel/CSV, Pusat Export)
 
-export default function MakloonOrdersView({ currentUser, selectedEntity }) {
+export default function MakloonOrdersView({ currentUser, selectedEntity, focusDoc, onClearFocus }) {
   const [rows, setRows] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -58,6 +60,11 @@ export default function MakloonOrdersView({ currentUser, selectedEntity }) {
       && (!q || [o.mko_number, o.material_name, o.final_output_name].some((v) => (v || "").toLowerCase().includes(q))));
   }, [rows, search, statusFilter]);
   const cnt = (k) => rows.filter((o) => o.status === k).length;
+  // PK-44 (IA-04) — tautan dokumen membuka rincian order makloon ber-id itu (dicek ada dulu → pemberitahuan bila tidak).
+  const fokus = useFocusDoc(focusDoc, "makloon_order", async (id) => {
+    await axios.get(`${API}/makloon-orders/${id}`);
+    setDetailId(id);
+  }, onClearFocus);
 
   if (detailId) {
     return (
@@ -72,6 +79,7 @@ export default function MakloonOrdersView({ currentUser, selectedEntity }) {
   return (
     <div data-testid="makloon-orders-view" className="view-container">
       <ErrorNotice message={error} onRetry={loadAll} onDismiss={() => setError("")} testId="mko-error" />
+      <FocusNotice {...fokus} testId="mko-focus-notice" />
       <PageHeader icon={Boxes} title={<span data-testid="makloon-orders-title">Order Makloon (Subkontrak)</span>}
         subtitle="Kirim bahan ke mitra makloon (tenun, rajut, celup, printing…), pantau tiap langkah, lalu terima hasilnya."
         actions={canManage && <button data-testid="create-makloon-order-button" onClick={() => setShowCreate(true)} className="primary-button"><Plus size={14} /> Buat Order Makloon</button>} />

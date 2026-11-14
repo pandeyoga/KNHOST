@@ -33,7 +33,7 @@ const STATUS_CLASS = {
 
 const apiText = (e, f = "Terjadi kesalahan.") => e?.response?.data?.detail || e?.message || f;
 
-export default function IntercoLoansPanel({ entities = [], entityId = "", canWrite = false }) {
+export default function IntercoLoansPanel({ entities = [], entityId = "", canWrite = false, focusId = "" }) {
   const [items, setItems] = useState([]);
   const [summary, setSummary] = useState({});
   const [meta, setMeta] = useState({ statuses: [] });
@@ -135,7 +135,7 @@ export default function IntercoLoansPanel({ entities = [], entityId = "", canWri
               </td></tr>
             )}
             {!loading && items.map((l) => (
-              <tr key={l.id} data-testid={`loan-row-${l.id}`} className="hover:bg-[#FAFAFB]">
+              <tr key={l.id} data-testid={`loan-row-${l.id}`} className={`hover:bg-[#FAFAFB] ${l.id === focusId ? "row-focus" : ""}`}>
                 <td className="px-3 py-2 font-bold text-[#0058CC]">{l.number}</td>
                 <td className="px-3 py-2">
                   {l.role === "lender" ? "memberi →" : "menerima ←"}{" "}

@@ -16,6 +16,8 @@ import useIntentKey from "../../hooks/useIntentKey";
 import { moneyPost } from "../../utils/moneyRequest";
 import EntityScopeBanner from "../../components/EntityScopeBanner";
 import EntityGatedButton from "../../components/EntityGatedButton";   // PK-42 (UX-05)
+import FocusNotice from "../../components/FocusNotice";
+import useFocusDoc, { gulirKe } from "../../hooks/useFocusDoc";
 
 /**
  * CashManagementView (Fase 3 — Pengelolaan Kas).
@@ -68,7 +70,7 @@ const REF_LABEL = {
   cash_advance: "pengajuan dana", petty_cash_settlement: "LPJ kas kecil", refund: "pengembalian dana",
 };
 
-export default function CashManagementView({ currentUser, selectedEntity }) {
+export default function CashManagementView({ currentUser, selectedEntity, focusDoc, onClearFocus }) {
   const [summary, setSummary] = useState({ kas_kecil: {}, kas_besar: {}, kas_kecil_per_entity: {} });
   const [entities, setEntities] = useState([]);
   const [error, setError] = useState("");
@@ -179,11 +181,25 @@ export default function CashManagementView({ currentUser, selectedEntity }) {
   // PK-42 (UX-18) — satu pemformat tanggal WIB bersama ("23 Okt 2026").
   const fmtDate = (s) => formatDate(s);
   const txns = paged.items;
+  // PK-44 (IA-04) — tautan dokumen: transaksi kas tidak punya panel rincian → dicari lewat kotak cari SERVER (nomornya;
+  // halaman yang dimuat tidak harus memuatnya) lalu barisnya disorot. Tidak ada → "Dokumen … tidak ditemukan di PT ini."
+  const [sorot, setSorot] = useState("");
+  const fokus = useFocusDoc(focusDoc, "cash_transaction", async (id, fd) => {
+    const params = { ...(scoped ? { entity_id: selectedEntity } : {}), q: fd.number || id, page: 1, page_size: 20 };
+    const r = await axios.get(`${API}/cash-transactions`, { params });
+    const list = Array.isArray(r.data) ? r.data : (r.data?.items || []);
+    const t = list.find((x) => x.id === id);
+    if (!t) return false;
+    setFilter("all"); setSearch(t.number || fd.number || ""); setSorot(id);
+    gulirKe(`cash-row-${id}`, 700);
+    return true;
+  }, onClearFocus);
 
   return (
     <div data-testid="cash-management-view">
       {notice && <div className="notice-bar success" data-testid="cash-notice"><span>{notice}</span><button onClick={() => setNotice("")}><X size={13} /></button></div>}
       <ErrorNotice message={error} onRetry={reloadAll} onDismiss={() => setError("")} testId="cash-error" />
+      <FocusNotice {...fokus} testId="cash-focus-notice" />
       <EntityScopeBanner meta={summary.scope_meta} />
 
       {/* FASE E-7 (E7.4) — kas tingkat grup DIHAPUS (setiap uang wajib milik satu badan
@@ -311,7 +327,7 @@ export default function CashManagementView({ currentUser, selectedEntity }) {
           server; pager baku "Menampilkan a–b dari N transaksi" + Unduh. Memuat / galat / kosong dibedakan. */}
       <div className="section-card" data-testid="cash-list">
         <div className="flex flex-wrap items-center justify-between gap-2 px-3 py-2" data-testid="cash-txn-toolbar">
-          <SearchBox value={search} onChange={setSearch} placeholder="Cari nomor / keterangan / kategori…" testId="cash-txn-search" />
+          <SearchBox value={search} onChange={(v) => { setSearch(v); if (!v) setSorot(""); }} placeholder="Cari nomor / keterangan / kategori…" testId="cash-txn-search" />
         </div>
         {paged.error ? (
           <div className="px-3 pb-3">
@@ -335,7 +351,7 @@ export default function CashManagementView({ currentUser, selectedEntity }) {
               </thead>
               <tbody>
                 {txns.map((t) => (
-                  <tr key={t.id} data-testid={`cash-row-${t.id}`}>
+                  <tr key={t.id} data-testid={`cash-row-${t.id}`} className={t.id === sorot ? "row-focus" : undefined}>
                     <td className="font-mono whitespace-nowrap font-bold text-kn-action">{t.number}</td>
                     <td className="whitespace-nowrap text-kn-text-2" data-testid={`cash-row-date-${t.id}`}>{fmtDate(t.txn_date)}</td>
                     <td className="min-w-[200px]">

@@ -1,11 +1,12 @@
-// RelatedDocsPanel — grup dokumen turunan untuk sebuah record (SO/PO/PR/Faktur).
+// RelatedDocsPanel — grup dokumen CETAK turunan sebuah record (SO/PO/PR/Faktur).
 // Menampilkan beberapa DocumentActionsBar (Pratinjau · Unduh · E-Sign · WA) berlabel,
 // sehingga user bisa mencetak dokumen operasional langsung dari detail-view.
+// PK-44 (IA-13) — judul "Cetak Dokumen" (isinya daftar cetak, bukan relasi); relasi = panel "Dokumen Terkait".
 import DocumentActionsBar from "./DocumentActionsBar";
 import { FileStack } from "lucide-react";
 
 export default function RelatedDocsPanel({
-  title = "Dokumen Terkait",
+  title = "Cetak Dokumen",
   docs = [],
   sourceId,
   entityId,
@@ -16,21 +17,18 @@ export default function RelatedDocsPanel({
   const list = (docs || []).filter(Boolean);
   if (!sourceId || list.length === 0) return null;
   return (
-    <div
-      data-testid="related-docs-panel"
-      className="rounded-lg border border-[#EDEEF1] bg-[#FAFBFC] p-2.5"
-    >
-      <p className="mb-2 flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wide text-[#6B6B73]">
-        <FileStack size={12} className="text-[#0058CC]" /> {title}
+    <div data-testid="related-docs-panel" className="rounded-lg border border-kn-divider bg-white p-3">
+      <p className="mb-2 flex items-center gap-1.5 text-fs-13 font-bold text-kn-text">
+        <FileStack size={14} className="text-kn-action" aria-hidden="true" /> {title}
       </p>
       <div className="space-y-2">
         {list.map((d) => (
           <div
             key={d.docType}
             data-testid={`related-doc-${d.docType}`}
-            className="flex flex-wrap items-center justify-between gap-2 rounded-md border border-[#EFF0F2] bg-white px-2 py-1.5"
+            className="flex flex-wrap items-center justify-between gap-2 rounded-md border border-kn-divider bg-white px-2 py-1.5"
           >
-            <span className="min-w-[130px] text-[11px] font-semibold text-[#3C3C43]">
+            <span className="min-w-[130px] text-fs-12 font-semibold text-kn-neutral">
               {d.label}
             </span>
             <DocumentActionsBar

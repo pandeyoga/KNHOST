@@ -14,6 +14,8 @@ import {
 import axios, { API } from "../../services/apiClient";
 import ErrorNotice from "../../components/ErrorNotice";
 import EntityGatedButton, { EntityGateNote } from "../../components/EntityGatedButton";   // PK-42 (UX-05)
+import FocusNotice from "../../components/FocusNotice";
+import useFocusDoc from "../../hooks/useFocusDoc";
 import DesktopOnlyNotice from "../../components/DesktopOnlyNotice";
 import { formatCurrency, formatPeriod } from "../../utils/formatters";
 import { askConfirm } from "../../services/confirmService";
@@ -27,7 +29,7 @@ import { entityFullById } from "../../utils/entityLabel";
 
 const thisPeriod = () => new Date().toISOString().slice(0, 7);
 
-export default function FixedAssetsView({ selectedEntity, entities = [] }) {
+export default function FixedAssetsView({ selectedEntity, entities = [], focusDoc, onClearFocus }) {
   const [assets, setAssets] = useState([]);
   const [summary, setSummary] = useState(null);
   const [meta, setMeta] = useState(null);
@@ -211,6 +213,10 @@ export default function FixedAssetsView({ selectedEntity, entities = [] }) {
   }, [assets, q]);
 
   const s = summary || {};
+  // PK-44 (IA-10) — tautan dokumen (Jejak Dokumen / rincian jurnal penyusutan) membuka rincian aset ber-id itu.
+  const fokus = useFocusDoc(focusDoc, "fixed_asset", async (id) => {
+    setScheduleFor((await axios.get(`${API}/fixed-assets/${id}`)).data || null);
+  }, onClearFocus);
 
   return (
     <div data-testid="fixed-assets-view">
@@ -293,6 +299,7 @@ export default function FixedAssetsView({ selectedEntity, entities = [] }) {
           {/* PK-42 — kepala kartu sudah berisi judul, jumlah, kotak cari, dan dua tombol: alasan di bilah sendiri. */}
           <EntityGateNote selectedEntity={selectedEntity} what="menambah aset tetap" testId="add-asset-btn-scope-note" />
           <ErrorNotice message={error} onRetry={load} onDismiss={() => setError("")} testId="fixed-assets-error" />
+          <FocusNotice {...fokus} testId="fa-focus-notice" />
           {msg && (
             <div className="notice-bar success mb-2" data-testid="fa-notice">
               <CheckCircle2 size={14} /> <span>{msg}</span>

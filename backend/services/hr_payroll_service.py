@@ -14,6 +14,7 @@ from typing import Any, Dict, List, Optional, Tuple
 
 from db import db
 from core_utils import new_id, now_iso, next_doc_number, safe_doc
+from services import doc_refs_service as _refs   # PK-44 — INV-REF-04 sapu tautan sebelum hapus
 from services import hr_service
 from role_registry import category_of   # PR-T4 — kategori kerja dari sifat peran
 
@@ -421,6 +422,7 @@ async def create_run(entity_id: str, period: str, actor: Dict[str, Any]) -> Dict
         {"entity_id": entity_id, "period": period, "id": {"$ne": run_id},
          "status": {"$nin": ["cancelled", "rejected"]}}, {"_id": 0, "id": 1, "created_at": 1})
     if dup and dup.get("created_at", "") <= run["created_at"]:
+        await _refs.safe_unlink_all("payroll_run", run_id)   # PK-44 — INV-REF-04 (run kini jenis dokumen ber-refs)
         await db.hr_payroll_runs.delete_one({"id": run_id})
         return await get_run(dup["id"])
     try:
@@ -444,6 +446,7 @@ async def create_run(entity_id: str, period: str, actor: Dict[str, Any]) -> Dict
 async def rollback_run(run_id: str) -> None:
     """Kompensasi: hapus run + slip yang lahir dari permintaan yang gagal."""
     await db.hr_payslips.delete_many({"run_id": run_id})
+    await _refs.safe_unlink_all("payroll_run", run_id)   # PK-44 — INV-REF-04
     await db.hr_payroll_runs.delete_one({"id": run_id})
 
 

@@ -10,9 +10,11 @@ import { can } from "../../config/roles";
 import { KpiTile, fmtDate } from "./crmUtils";
 import ARReceiptModal from "./ARReceiptModal";
 import ARReceiptsHistory from "./ARReceiptsHistory";
+import FocusNotice from "../../components/FocusNotice";
+import useFocusDoc from "../../hooks/useFocusDoc";
 
 /** Collection worklist + reminder (KN_17 §7 / owner 4b). */
-export default function CollectionWorklist({ currentUser, selectedEntity }) {
+export default function CollectionWorklist({ currentUser, selectedEntity, focusDoc, onClearFocus }) {
   // FASE E-8 (E8.2) — mencatat UANG MASUK adalah wewenang peran `finance`. Dulu
   // tombolnya muncul untuk siapa pun yang bisa membuka worklist (termasuk sales),
   // lalu server menolak 403 di dalam modal — penolakan yang tak pernah dilihat
@@ -27,6 +29,12 @@ export default function CollectionWorklist({ currentUser, selectedEntity }) {
   const [marking, setMarking] = useState("");
   const [payRow, setPayRow] = useState(null);
   const [receiptRefresh, setReceiptRefresh] = useState(0);
+  // PK-44 (IA-04) — tautan kwitansi (Jejak / Dokumen Terkait): riwayat kwitansi mencari nomornya + menyorot barisnya.
+  const [receiptFocus, setReceiptFocus] = useState(null);
+  const fokus = useFocusDoc(focusDoc, "ar_receipt", async (id, fd) => {
+    const r = await axios.get(`${API}/ar-receipts/${id}`);
+    setReceiptFocus({ id, number: r.data?.number || fd.number || "", nonce: fd.nonce || Date.now() });
+  }, onClearFocus);
 
   useEffect(() => { load(); }, [selectedEntity]); // eslint-disable-line
 
@@ -67,6 +75,7 @@ export default function CollectionWorklist({ currentUser, selectedEntity }) {
     <div data-testid="collection-worklist">
       {notice && <div className="notice-bar success" data-testid="collection-notice"><span>{notice}</span><button onClick={() => setNotice("")}>×</button></div>}
       <ErrorNotice message={error} onRetry={load} onDismiss={() => setError("")} testId="collection-error" />
+      <FocusNotice {...fokus} testId="collection-focus-notice" />
 
       <div className="grid grid-cols-3 gap-3 mb-3">
         <KpiTile label="Total Tagihan (AR)" value={formatCurrency(totals.outstanding)} testId="collection-total" />
@@ -128,7 +137,7 @@ export default function CollectionWorklist({ currentUser, selectedEntity }) {
         </div>
       </div>
 
-      <ARReceiptsHistory refreshKey={receiptRefresh} selectedEntity={selectedEntity} currentUser={currentUser}
+      <ARReceiptsHistory refreshKey={receiptRefresh} selectedEntity={selectedEntity} currentUser={currentUser} focus={receiptFocus}
         onChanged={(m) => { setNotice(m); setReceiptRefresh((k) => k + 1); load(); }} />
 
       {payRow && <ARReceiptModal customerId={payRow.customer_id} customerName={payRow.customer_name}

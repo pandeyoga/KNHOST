@@ -7,6 +7,8 @@ import { formatCurrency, formatQty } from "../../utils/formatters";
 import { convFactor } from "../../utils/uom";
 import KNSelect from "../../components/KNSelect";
 import ErrorNotice from "../../components/ErrorNotice";
+import FocusNotice from "../../components/FocusNotice";
+import useFocusDoc from "../../hooks/useFocusDoc";
 import LineFilter from "../../components/LineFilter";   // FASE L
 import PaginationBar from "../../components/PaginationBar";
 import { usePagedList } from "../../hooks/usePagedList";
@@ -80,7 +82,7 @@ const SUP_LABEL = {
   goods_back: "RMA: Barang Kembali",
 };
 
-export default function PurchaseReturns({ currentUser, selectedEntity }) {
+export default function PurchaseReturns({ currentUser, selectedEntity, focusDoc, onClearFocus }) {
   const [suppliers, setSuppliers] = useState([]);
   const [warehouses, setWarehouses] = useState([]);
   const [products, setProducts] = useState([]);
@@ -325,11 +327,16 @@ export default function PurchaseReturns({ currentUser, selectedEntity }) {
   // Data untuk RollPickerModal (item aktif)
   const pickerItem = rollPicker != null ? form.items[rollPicker.itemIndex] : null;
   const pickerProduct = pickerItem ? products.find((p) => p.id === pickerItem.product_id) : null;
+  // PK-44 (IA-04) — tautan dokumen membuka rincian retur beli ber-id itu.
+  const fokus = useFocusDoc(focusDoc, "purchase_return", async (id) => {
+    setDetail((await axios.get(`${API}/purchase-returns/${id}`)).data);
+  }, onClearFocus);
 
   return (
     <div data-testid="purchase-returns-view" className="view-container">
       {notice && <div className="notice-bar success" data-testid="pret-notice"><span>{notice}</span><button onClick={() => setNotice("")}><X size={13} /></button></div>}
       <ErrorNotice message={error} onRetry={loadAll} onDismiss={() => setError("")} testId="pret-error" />
+      <FocusNotice {...fokus} testId="pret-focus-notice" />
       <ErrorNotice message={paged.error} onRetry={paged.refresh} testId="pret-list-error" />
 
       <PageHeader icon={RotateCcw} title={<span data-testid="purchase-returns-title">Retur ke Supplier (Nota Debit)</span>}

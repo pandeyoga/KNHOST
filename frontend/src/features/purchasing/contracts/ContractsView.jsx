@@ -9,6 +9,9 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { FileText, Plus, RefreshCw, Route, Search, Settings2, Trash2, Beaker, ArrowLeftRight } from "lucide-react";
 import ErrorNotice from "../../../components/ErrorNotice";
+import FocusNotice from "../../../components/FocusNotice";
+import useFocusDoc from "../../../hooks/useFocusDoc";
+import axios, { API } from "../../../services/apiClient";
 import LinkCard from "../../../components/LinkCard";
 import { useAppNav } from "../../../context/AppNavContext";
 import EntityBadge from "../../../components/EntityBadge";
@@ -41,7 +44,7 @@ const TYPE_FILTERS = [
   { key: "internal", label: "Harga Internal" },
 ];
 
-export default function ContractsView({ currentUser, selectedEntity }) {
+export default function ContractsView({ currentUser, selectedEntity, focusDoc, onClearFocus }) {
   const [rows, setRows] = useState([]);
   const [stats, setStats] = useState({});
   const [loading, setLoading] = useState(true);
@@ -143,9 +146,17 @@ export default function ContractsView({ currentUser, selectedEntity }) {
     } catch (e) { setError(e.response?.data?.detail || "Kontrak tidak bisa dihapus."); }
   };
 
+  // PK-44 (IA-04) — tautan dokumen membuka rincian kontrak ber-id itu (sama dengan klik nomornya di daftar).
+  const fokus = useFocusDoc(focusDoc, "supplier_contract", async (id) => {
+    const r = await axios.get(`${API}/supplier-contracts/${id}`);
+    setType(""); setQ(r.data?.contract_number || "");
+    setEditing(r.data); setShowForm(true);
+  }, onClearFocus);
+
   return (
     <div data-testid="supplier-contracts-view">
       <ErrorNotice message={error} onRetry={load} onDismiss={() => setError("")} testId="contracts-error" />
+      <FocusNotice {...fokus} testId="contracts-focus-notice" />
 
       <div className="section-card mb-3">
         <div className="section-head flex-wrap gap-2">

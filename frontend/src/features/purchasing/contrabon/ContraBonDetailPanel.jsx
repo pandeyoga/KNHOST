@@ -36,7 +36,7 @@ import { can } from "../../../config/roles";
 const EDITABLE = ["draft", "submitted", "disputed"];
 
 export default function ContraBonDetailPanel({ cb, meta, currentUser, entityLabel,
-  onClose, onChanged, onError, onNotify }) {
+  onClose, onChanged, onError, onNotify, onOpenDocument }) {
   const [busy, setBusy] = useState("");
   const [err, setErr] = useState("");
   const [modal, setModal] = useState("");            // deduction|pay|schedule|dispute|cancel
@@ -224,7 +224,7 @@ export default function ContraBonDetailPanel({ cb, meta, currentUser, entityLabe
           </p>
         </div>
 
-        <DocRefsPanel docType="contra_bon" docId={cb.id} />
+        <DocRefsPanel docType="contra_bon" docId={cb.id} onOpenDocument={onOpenDocument} />
 
         <TimelineSection cb={cb} />
       </div>

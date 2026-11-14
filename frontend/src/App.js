@@ -51,7 +51,7 @@ function App() {
   // Fase 3 · P1 — satu jalur navigasi (alias + preset): hooks/useAppNavigation.js.
   const {
     activeView, setActiveView, activeNavId, setActiveNavId, wmsInitialTab, focusDoc, setFocusDoc,
-    viewPreset, handleNavSelect, navigateTo, openDocument, lastFocusRef,
+    viewPreset, handleNavSelect, navigateTo, openDocument, lastFocusRef, backTo, goBack,
   } = useAppNavigation({ role: user?.role, setSidebarOpen });
   const [data, setData] = useState({ products: [], customers: [], orders: [], warehouses: [], metrics: {} });
   const [movements, setMovements] = useState([]);
@@ -434,7 +434,7 @@ function App() {
             paymentTerms={paymentTerms}
             focusDoc={focusDoc}
             setFocusDoc={setFocusDoc}
-            openDocument={openDocument}
+            openDocument={openDocument} backTo={backTo} onBack={goBack}
             configFocus={configFocus}
             onConfigFocusConsumed={clearConfigFocus}
             traceAnchor={traceAnchor}

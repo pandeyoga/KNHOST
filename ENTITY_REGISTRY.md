@@ -1269,6 +1269,31 @@ Laporan derived: Neraca Saldo (GET /api/gl/trial-balance) & Buku Besar per-akun
 ⚠️ JANGAN BUAT: journals, general_ledger, gl, jurnal, ledger (sebagai koleksi).
 ```
 
+### Peta jenis dokumen Jejak Dokumen (`services/doc_refs_service.py::DOC_TYPES`)  [PK-44]
+Bukan koleksi: SATU peta jenis dokumen → koleksi · field nomor · label · tujuan layar (`view` · `tab` · `focus_type` ·
+`focus_from`) · izin modul sumber (`perm`, dipakai penyaring nominal PK-17 `SOURCE_PERMISSION`). Tujuan tautan dibentuk
+`doc_refs_service.link_of(doc_type, doc)` — satu-satunya pembentuk tautan (Jejak Dokumen, panel Dokumen Terkait,
+linimasa proses `document_relations_service`); `nav_id` tidak dikirim server.
+```
+43 jenis (PK-44: 39 + 4). Jenis baru — koleksi yang SUDAH ada, tanpa field baru selain `refs[]` G-4:
+  payroll_run      hr_payroll_runs · number           "Penggajian"                      perm hr.view            → hr-payroll-runs
+  cash_advance     cash_advances · number             "Pengajuan Dana (PD)"             perm cash_advance.view  → cash-advances
+  cash_settlement  cash_advance_settlements · number  "Pertanggungjawaban Dana (LPJ)"   perm cash_settlement.view → settlements
+                   WAJIB berinduk PD (`source_fk` cash_advance_id): relasi `parent` ditulis saat LPJ lahir
+                   (`cash_advance_service.create_settlement`) + `backfill()`; LPJ lama: `scripts/apply_pk44_lpj_refs.py`
+                   (bawaan laporan baca-saja; `--apply` = keputusan pemilik H3)
+  fixed_asset      fin_fixed_assets · number          "Aset Tetap"                      perm fixed_asset.view   → fixed-assets
+Jurnal → dokumen (`JOURNAL_SOURCE_TYPE`, source_id berawalan id dokumen): petty_cash_settlement → cash_settlement ·
+  fixed_asset_acquisition/_depreciation/_disposal → fixed_asset · makloon_claim, makloon_material_loss,
+  subcon_service_unabsorbed, subcon_issue_reversal → makloon_order · penalty_reversal/_payment → penalty ·
+  payment_variance_writeoff/_alloc/_reversal, ap_variance_writeoff → payment_variance · cash_transaction_void →
+  cash_transaction · vendor_bill_reversal → vendor_bill. Gaji (payroll_run, payroll_pay) ber-source_id
+  "{entity_id}:{period}" → run dicari lewat journal_id/paid_journal_id lalu (entity_id, period) non-void.
+Label (satu dokumen satu nama): Tagihan Pemasok · Kontrak Pemasok · Permintaan Pembelian (PR) · Pesanan Pembelian (PO)
+  · Pesanan Penjualan (SO) · Biaya Masuk (Landed Cost) · Kwitansi Pelanggan · Pelunasan Antar-PT · Jurnal.
+⚠️ JANGAN BUAT peta tujuan kedua (dulu `document_relations_service._link` menulis `view` sendiri).
+```
+
 
 
 
@@ -3404,7 +3429,7 @@ Key Fields:  id, epc, tag_id, roll_id, sku, product_name, roll_no, device_id, de
 | Collection | Prefix/ID | Router utama | Catatan |
 |-----------|-----------|--------------|---------|
 | cash_advances | ca_ (number: {PT}/PD-#####) | routers/cash_advances.py | Form Pengajuan Dana (PD). State-machine draft→pending_atasan→pending_pimpinan→pending_finance→approved→disbursed→settled. SCOPED. |
-| cash_advance_settlements | stl_ (number: {PT}/STL-#####) | routers/cash_advances.py | Laporan Pertanggungjawaban (LPJ) atas PD. Posting GL saat approved (Dr beban/Cr Kas Kecil). SCOPED. |
+| cash_advance_settlements | stl_ (number: {PT}/STL-#####) | routers/cash_advances.py | Laporan Pertanggungjawaban (LPJ) atas PD. Posting GL saat approved (Dr beban/Cr Kas Kecil). SCOPED. PK-44: `refs[]` (G-4) — relasi `parent` ke PD-nya ditulis saat lahir (jenis dokumen `cash_settlement`). |
 | expense_categories | — (code kategori) | routers/cash_advances.py | Mapping kategori beban petty cash → akun COA (6-4100..6-4900). Config. |
 | vehicles | veh_ | routers/vehicle_logs.py | Master kendaraan ringan (no_polisi/nama/jenis). SCOPED. |
 | vehicle_usage_logs | vhl_ (number: {PT}/VHL-#####) | routers/vehicle_logs.py | Laporan Penggunaan & Biaya Kendaraan (km, BBM, tol, parkir). SCOPED. |

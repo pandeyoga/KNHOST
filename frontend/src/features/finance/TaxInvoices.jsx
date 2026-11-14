@@ -12,6 +12,8 @@ import FormModal from "../../components/FormModal";
 import FilterChips from "../../components/FilterChips";
 import useIntentKey from "../../hooks/useIntentKey";
 import { moneyPatch, moneyPost } from "../../utils/moneyRequest";
+import useFocusDoc, { gulirKe } from "../../hooks/useFocusDoc";
+import FocusNotice from "../../components/FocusNotice";
 
 /**
  * Faktur Pajak Jual (Sub-fase 1.9 — tax_invoices / fkt_).
@@ -38,7 +40,7 @@ const STATUS_STYLE = {
 
 import PagedRows from "@/components/PagedRows";
 
-export default function TaxInvoices({ currentUser = {} }) {
+export default function TaxInvoices({ currentUser = {}, focusDoc, onClearFocus }) {
   // FASE E-8 (E8.10b#2) — pajak keluaran adalah wilayah peran `finance`. Daftar peran
   // lama (`["manager","admin"]`) membuat Kasir/Finance melihat layarnya tetapi TANPA
   // satu pun tombol, padahal server sudah mengizinkan. Sekarang tiap tombol memakai
@@ -82,6 +84,14 @@ export default function TaxInvoices({ currentUser = {} }) {
   useEffect(() => {
     load();
   }, []);
+
+  // PK-44 (IA-04) — tautan dokumen: saring ke nomor faktur + sorot barisnya (faktur tidak punya panel rincian).
+  const [sorot, setSorot] = useState("");
+  const fokus = useFocusDoc(focusDoc, "tax_invoice", async (id) => {
+    const r = await axios.get(`${API}/tax-invoices/${id}`);
+    setFilter("all"); setSearch(r.data?.number || ""); setSorot(id);
+    gulirKe(`fkt-row-${id}`);
+  }, onClearFocus);
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
@@ -153,6 +163,7 @@ export default function TaxInvoices({ currentUser = {} }) {
         </div>
         <div className="section-body space-y-3">
           <ErrorNotice message={error} onRetry={load} onDismiss={() => setError("")} testId="fkt-error" />
+          <FocusNotice {...fokus} testId="fkt-focus-notice" />
           <p className="text-[11.5px] text-[#6B6B73]">
             Faktur Pajak diterbitkan dari <b>detail Pesanan</b> (opsional — pajak tidak wajib, hanya untuk entitas PKP & transaksi ber-PPN).
             Di sini Anda mengisi NSFP resmi, menerbitkan faktur pengganti, atau membatalkan.
@@ -200,7 +211,7 @@ export default function TaxInvoices({ currentUser = {} }) {
                   <PagedRows rows={filtered} testId="tax-invoices-pager">{(f) => {
                     const isActive = f.status !== "batal" && !f.replaced_by_id;
                     return (
-                      <tr key={f.id} data-testid={`fkt-row-${f.id}`} className="border-t border-[#EFF0F2] hover:bg-[#F8FAFD]">
+                      <tr key={f.id} data-testid={`fkt-row-${f.id}`} className={`border-t border-[#EFF0F2] hover:bg-[#F8FAFD] ${f.id === sorot ? "row-focus" : ""}`}>
                         <td className="px-2.5 py-2 font-bold text-[#0058CC]">{f.number}</td>
                         <td className="px-2.5 py-2 text-[#3C3C43]">
                           {f.nsfp ? (

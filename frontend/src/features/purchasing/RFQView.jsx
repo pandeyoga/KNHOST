@@ -3,6 +3,8 @@ import axios, { API } from "../../services/apiClient";
 import { ClipboardList, Plus, Layers } from "lucide-react";
 import { formatDate } from "../../utils/formatters";
 import ErrorNotice from "../../components/ErrorNotice";
+import FocusNotice from "../../components/FocusNotice";
+import useFocusDoc from "../../hooks/useFocusDoc";
 import { SearchBox } from "../../components/ListControls";
 import RFQCreateModal from "./RFQCreateModal";
 import RFQDetailPanel from "./RFQDetailPanel";
@@ -59,7 +61,7 @@ const RFQ_COLUMNS = [
   { key: "created_at", header: "Dibuat", align: "right", priority: 3, render: (r) => formatDate(r.created_at) },
 ];
 
-export default function RFQView({ currentUser, selectedEntity }) {
+export default function RFQView({ currentUser, selectedEntity, focusDoc, onClearFocus }) {
   const [rfqs, setRfqs] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -101,11 +103,17 @@ export default function RFQView({ currentUser, selectedEntity }) {
   const counts = useMemo(() => TABS.reduce((a, t) => ({
     ...a, [t.key]: t.key === "all" ? rfqs.length : rfqs.filter((r) => r.status === t.key).length,
   }), {}), [rfqs]);
+  // PK-44 (IA-04) — tautan dokumen membuka rincian RFQ ber-id itu (dicek ada dulu → pemberitahuan bila tidak).
+  const fokus = useFocusDoc(focusDoc, "rfq", async (id) => {
+    await axios.get(`${API}/rfqs/${id}`);
+    setDetailId(id);
+  }, onClearFocus);
 
   return (
     <div data-testid="rfq-view">
       {notice && <div className="notice-bar success" data-testid="rfq-notice"><span>{notice}</span><button onClick={() => setNotice("")}>×</button></div>}
       <ErrorNotice message={error} onRetry={load} onDismiss={() => setError("")} testId="rfq-error" />
+      <FocusNotice {...fokus} testId="rfq-focus-notice" />
 
       <div className="section-card mb-3">
         <div className="section-head flex-wrap gap-2">

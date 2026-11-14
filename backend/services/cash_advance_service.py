@@ -453,6 +453,9 @@ async def create_settlement(payload, ctx: EntityContext, actor: Dict[str, Any]) 
         **calc,
     }
     await db[STL_COLL].insert_one(doc)
+    # PK-44 (IA-10) — LPJ lahir dari PD-nya: relasi dua arah untuk Jejak Dokumen (INV-REF-01 menuntutnya).
+    from services import doc_refs_service as _refs
+    await _refs.safe_link(("cash_settlement", doc["id"]), ("cash_advance", ca["id"]), "parent", note=_refs.LPJ_NOTE)
     await audit(actor.get("name", ""), "settlement_created", "cash_advance_settlement", doc["id"],
                 {"number": number, "total": calc["total_pengeluaran"]})
     return safe_doc(doc)

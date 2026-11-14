@@ -106,6 +106,9 @@ export default function AdminHome({ token, selectedEntity = "all", onNavigate })
     else if (onNavigate && link.view) onNavigate(link.view);
   };
   const topApproval = approvalItems.slice().sort((a, b) => b.count - a.count)[0] || null;
+  // PK-44 (IA-11) — kartu penjualan/tertagih membuka layar sumbernya + bilah "← Kembali ke Control Tower" (`preset.from`).
+  // Tertagih → Keuangan › Piutang › Penagihan & Penerimaan (MN-T1 memindahkan tab Penagihan dari CRM).
+  const tujuan = (view) => (nav.canOpen(view) ? () => nav.go(view, { preset: { from: { view: "admin-home" } } }) : undefined);
   const approvalSub = boardsUnreadable
     // Kegagalan pemuatan tidak boleh berbunyi kabar baik ("Tidak ada yang menunggu").
     ? "Tidak bisa dibaca — coba muat ulang"
@@ -144,9 +147,12 @@ export default function AdminHome({ token, selectedEntity = "all", onNavigate })
 
         {/* Fase 3 · P3 (L-04) — 2 kolom juga di HP 390 px (dulu 1 kolom: 8 kartu = 2+ layar gulir). */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-3" data-testid="admin-home-kpis">
-          <KPICard icon={Banknote} label="Penjualan Hari Ini" value={fmtCur(sales.today)} sub={`${sales.today_orders || 0} pesanan`} color="#007AFF" loading={loading} />
-          <KPICard icon={TrendingUp} label="Penjualan Bulan Ini" value={fmtCur(sales.mtd)} sub="Bulan berjalan" color="#34C759" loading={loading} />
-          <KPICard icon={ArrowUpRight} label="Tertagih Bulan Ini" value={fmtCur(sales.collected_mtd)} sub="Kas masuk" color="#30D158" loading={loading} />
+          <KPICard icon={Banknote} label="Penjualan Hari Ini" value={fmtCur(sales.today)} sub={`${sales.today_orders || 0} pesanan`} color="#007AFF" loading={loading}
+            onClick={tujuan("orders")} />
+          <KPICard icon={TrendingUp} label="Penjualan Bulan Ini" value={fmtCur(sales.mtd)} sub="Bulan berjalan" color="#34C759" loading={loading}
+            onClick={tujuan("orders")} />
+          <KPICard icon={ArrowUpRight} label="Tertagih Bulan Ini" value={fmtCur(sales.collected_mtd)} sub="Kas masuk" color="#30D158" loading={loading}
+            onClick={tujuan("collection-worklist")} />
           {/* Keputusan pemilik K-01 (26 Okt): kedua KPI piutang = SEMUA pelanggan, sumber sub-buku (dokumen belum
               lunas) — angka & definisi lewat tempo SAMA dengan layar Piutang. Dulu (G1-13) hanya pelanggan ber-sales aktif.
               Label sumber wajib tampil di kartu. */}

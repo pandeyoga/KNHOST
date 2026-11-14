@@ -47,8 +47,12 @@ _PRINTABLE_SOURCES = ("sales_orders", "shipments", "wms_tasks", "purchase_orders
 
 
 async def _assert_doc_entity(request: Request, doc_type: str, doc_id: str) -> None:
-    """404 bila dokumen jangkar bukan milik entitas yang boleh dilihat pengguna."""
-    coll = _DOC_COLLECTION.get(doc_type)
+    """404 bila dokumen jangkar bukan milik entitas yang boleh dilihat pengguna.
+
+    PK-44 — koleksi diambil dari peta jenis dokumen (`doc_refs_service.DOC_TYPES`) lebih dulu, supaya jenis yang baru
+    didaftarkan (penggajian, PD, LPJ, aset tetap) langsung terpagar PT; `_DOC_COLLECTION` tinggal untuk jenis di luar
+    peta. (Peta lama menulis `landed_cost` → `landed_costs`, koleksi yang tidak ada: jejak Biaya Masuk selalu 404.)"""
+    coll = (refs_svc.DOC_TYPES.get(doc_type) or {}).get("collection") or _DOC_COLLECTION.get(doc_type)
     if not coll:
         return
     ctx = await entity_ctx(request)
@@ -163,7 +167,7 @@ async def document_ref_types(request: Request) -> Dict[str, Any]:
     """Jenis dokumen yang ikut dalam graf relasi + kosakata relasinya (untuk UI)."""
     await require_permission(request, "document", "view")
     types = [{"doc_type": m["doc_type"], "label": m["label"], "order": m["order"],
-              "needs_parent": m["needs_parent"], "view": m["view"]}
+              "needs_parent": m["needs_parent"], "view": m["view"], "tab": m["tab"]}
              for m in sorted(refs_svc.DOC_TYPES.values(), key=lambda x: x["order"])]
     return {"types": types, "rel_labels": refs_svc.REL_LABEL}
 

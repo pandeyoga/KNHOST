@@ -12,7 +12,6 @@ import { POCloseSettlementPanel } from "./POCloseSettlementPanel";
 import POVersionHistory from "./POVersionHistory";
 import PODeviationBanner from "./PODeviationBanner";
 import POReceiptVariancePanel from "./POReceiptVariancePanel";
-import ProcessTimeline from "../../documents/ProcessTimeline";
 import DocRefsPanel from "../../documents/trace/DocRefsPanel";
 import DocumentActionsBar from "../../documents/DocumentActionsBar";
 import RelatedDocsPanel from "../../documents/RelatedDocsPanel";
@@ -148,7 +147,7 @@ export default function PODetailPanel({ po, currentUser, onClose, onApprove, onC
         {/* Dokumen penerimaan gudang (gap docs) — muncul setelah barang mulai diterima */}
         {goodsReceived && (
           <RelatedDocsPanel
-            title="Dokumen Penerimaan Gudang"
+            title="Cetak Dokumen · Penerimaan Gudang"
             docs={[
               { docType: "po_receipt", label: "Bukti Terima per PO" },
               { docType: "put_away", label: "Daftar Put-Away" },
@@ -338,11 +337,9 @@ export default function PODetailPanel({ po, currentUser, onClose, onApprove, onC
         <POVarianceTasksPanel po={po} onAmend={onAmend} />
         <POTimeline po={po} />
 
-        {/* EPIC6 — Document Hub: rantai PR→PO→GRN→Landed Cost→Vendor Bill + deep-link */}
-        <ProcessTimeline docType="purchase_order" docId={po.id} onNavigate={onOpenDocument} />
-
-        {/* FASE G-4 — Referensi Dokumen tersimpan (refs[] dua arah) + Jejak Dokumen */}
-        <DocRefsPanel docType="purchase_order" docId={po.id} onOpenDocument={onOpenDocument} />
+        {/* PK-44 (IA-13) — SATU panel relasi: Dokumen Terkait (referensi tersimpan + garis tahapan PR→PO→GRN→Biaya
+            Masuk→Tagihan Pemasok) + Jejak Dokumen */}
+        <DocRefsPanel docType="purchase_order" docId={po.id} onOpenDocument={onOpenDocument} withStages />
 
         {/* Phase 7.2 — Riwayat amandemen (snapshot + diff per versi) */}
         {po.amendments?.length > 0 && <POVersionHistory amendments={po.amendments} currentVersion={version} />}

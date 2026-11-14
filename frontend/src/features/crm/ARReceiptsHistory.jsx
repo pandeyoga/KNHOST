@@ -5,6 +5,9 @@
  * PK-42 (UX-12) — berhalaman di server (`usePagedList`, 25 per halaman, terbaru dulu, cari nomor / pelanggan) dengan
  * "Menampilkan a–b dari N penerimaan"; dulu semua dimuat lalu dipotong 25 baris di layar tanpa keterangan.
  * Standar UI (KN_37): tabel baku `data-table`, kolom aksi lekat di kanan, status = ikon + teks + warna.
+ *
+ * PK-44 (IA-04) — `focus = { id, number, nonce }` dari tautan dokumen (Jejak / Dokumen Terkait): kotak cari server diisi
+ * nomornya (kwitansi di luar halaman termuat tetap ketemu tanpa memuat semua baris) dan barisnya disorot.
  */
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Wallet, RefreshCw, Ban, Route, CheckCircle2, AlertTriangle } from "lucide-react";
@@ -22,6 +25,7 @@ import { can } from "../../config/roles";
 // FASE G-3 — status selisih pembayaran per kwitansi (diputus / menunggu keputusan).
 import { directionMeta, varianceKindMeta } from "../finance/payments/paymentApi";
 import { askReason } from "@/services/confirmService";
+import { gulirKe } from "../../hooks/useFocusDoc";
 
 const PAGE_SIZE = 25;
 // Butir CSV di "Unduh ▾" = kolom yang terlihat di layar (INV-UI-07), kata yang sama dengan tabel.
@@ -55,13 +59,19 @@ function VarianceCell({ v = {} }) {
   );
 }
 
-export default function ARReceiptsHistory({ refreshKey, selectedEntity, currentUser, onChanged }) {
+export default function ARReceiptsHistory({ refreshKey, selectedEntity, currentUser, onChanged, focus = null }) {
   // FASE E-8 — membatalkan kwitansi (uang masuk yang sudah tercatat) tetap
   // wewenang manajer: Finance boleh MENCATAT, tidak boleh MENGHAPUS jejak uang.
   const canVoid = can(currentUser?.permissions || {}, "ar_receipt", "void");
   const [search, setSearch] = useState("");
   const [error, setError] = useState("");
   const [voiding, setVoiding] = useState("");
+  const [sorot, setSorot] = useState("");
+  useEffect(() => {
+    if (!focus?.id) return;
+    setSearch(focus.number || ""); setSorot(focus.id);
+    gulirKe(`ar-history-row-${focus.id}`, 700);
+  }, [focus?.nonce]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // PK-42 — PT dari kepala aplikasi; "Semua PT" = tanpa saringan (server memakai cakupan pengguna).
   const params = useMemo(
@@ -110,7 +120,7 @@ export default function ARReceiptsHistory({ refreshKey, selectedEntity, currentU
       <div className="section-body">
         <ErrorNotice message={error} onDismiss={() => setError("")} testId="ar-history-action-error" />
         <div className="mb-2 flex flex-wrap items-center gap-2">
-          <SearchBox value={search} onChange={setSearch} placeholder="Cari nomor kwitansi / pelanggan…" testId="ar-history-search" />
+          <SearchBox value={search} onChange={(v) => { setSearch(v); if (!v) setSorot(""); }} placeholder="Cari nomor kwitansi / pelanggan…" testId="ar-history-search" />
         </div>
         {listError ? (
           <ErrorNotice message={listError} onRetry={paged.refresh} testId="ar-history-error" />
@@ -133,7 +143,7 @@ export default function ARReceiptsHistory({ refreshKey, selectedEntity, currentU
                 {rows.map((r) => {
                   const isVoid = r.status === "void";
                   return (
-                    <tr key={r.id} data-testid={`ar-history-row-${r.id}`}>
+                    <tr key={r.id} data-testid={`ar-history-row-${r.id}`} className={r.id === sorot ? "row-focus" : undefined}>
                       <td className="font-mono whitespace-nowrap text-kn-action">{r.number}</td>
                       <td className="whitespace-nowrap text-kn-text-2">{fmtDate(r.receipt_date)}</td>
                       <td className="font-semibold">{r.customer_name}</td>

@@ -6,6 +6,8 @@ import { askConfirm, askReason } from "../../services/confirmService";
 import KNSelect from "../../components/KNSelect";
 import EntityBadge from "../../components/EntityBadge";
 import ErrorNotice from "../../components/ErrorNotice";
+import FocusNotice from "../../components/FocusNotice";
+import useFocusDoc from "../../hooks/useFocusDoc";
 import { rp, pct, RUN_STATUS, recentMonths, curMonth, openPayslipPdf } from "./payrollUtils";
 import { entityOptions } from "../../utils/entityLabel";
 import { formatPeriod } from "../../utils/formatters";
@@ -19,7 +21,7 @@ function Stat({ label, value, color }) {
   );
 }
 
-export default function PayrollRunsView({ currentUser, selectedEntity }) {
+export default function PayrollRunsView({ currentUser, selectedEntity, focusDoc, onClearFocus }) {
   const [runs, setRuns] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -119,11 +121,16 @@ export default function PayrollRunsView({ currentUser, selectedEntity }) {
   // Audit UI 24 Okt (082): daftar run dulu tidak kronologis (PR-00002 2026-08 di atas PR-00001 2026-09).
   const sortedRuns = [...runs].sort((a, b) => String(b.period || "").localeCompare(String(a.period || ""))
     || String(b.number || "").localeCompare(String(a.number || "")));
+  // PK-44 (IA-10) — tautan dokumen (Jejak Dokumen / rincian jurnal gaji) membuka rincian penggajian ber-id itu.
+  const fokus = useFocusDoc(focusDoc, "payroll_run", async (id) => {
+    setSel((await axios.get(`${API}/hr/payroll/runs/${id}`)).data || null);
+  }, onClearFocus);
 
   return (
     <div data-testid="payroll-runs-view">
       {notice && (<div className="notice-bar success" data-testid="payroll-notice"><span>{notice}</span><button onClick={() => setNotice("")}>×</button></div>)}
       <ErrorNotice message={error} onRetry={loadRuns} onDismiss={() => setError("")} testId="payroll-runs-error" />
+      <FocusNotice {...fokus} testId="payroll-focus-notice" />
 
       {/* Buat Run */}
       <div className="section-card mb-3">

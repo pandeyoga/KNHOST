@@ -346,3 +346,20 @@ pengecualian nama hub **"Perusahaan (PT)"**. Teks letak di layar ditulis "Pengat
 Nama hub/tab lama tetap bisa dicari di palet Ctrl+K: "Badan Usaha & Akses", "Pembelian & Produksi", "Master Data",
 "Notifikasi & Penjadwal" (`config/viewAliases.js`, `since: "KP-T9"`). Kata "entitas"/"badan usaha" **di dalam** layar
 (selain menu dan pemilih PT) diganti unit pemilik layarnya.
+
+### 9.6 Nama dokumen & panel relasi (PK-44)
+
+Satu dokumen satu nama — di peta Jejak Dokumen (`services/doc_refs_service.py::DOC_TYPES`), bilah aksi dokumen, dan teks
+baru. Menu & layar lain yang masih memakai nama lama diganti unit pemilik layarnya (MN-T1 untuk menu).
+
+| Istilah | Teks | Arti · bedakan dari | Unit · tempat |
+|---|---|---|---|
+| Tagihan Pemasok | "Tagihan Pemasok" | Faktur/tagihan yang diterima dari pemasok dan menjadi hutang usaha (`vendor_bill`). Jangan memakai "Tagihan Supplier", "Vendor Bill", "Faktur Supplier" pada teks baru | PK-44 · Jejak Dokumen, bilah aksi rincian tagihan |
+| Kontrabon | "Kontrabon (Tukar Faktur)" | Dokumen tukar faktur: banyak tagihan pemasok satu siklus digabung jadi satu tanda terima dan satu pembayaran. **Bukan** tagihan — jangan menulis "Tagihan … (Kontrabon)" | PK-44 · Jejak Dokumen, Hutang › Kontrabon |
+| Uang Muka Pelanggan | "Titipan pelanggan" / "Uang Muka Pelanggan" | Uang PELANGGAN yang diterima lebih dulu (titipan, belum dialokasikan ke tagihan). Bedakan dari Pengajuan Dana (PD) | PK-44 · Piutang › Titipan & Saldo Kredit |
+| Pengajuan Dana (PD) · Pertanggungjawaban Dana (LPJ) | "Pengajuan Dana (PD)" · "Pertanggungjawaban Dana (LPJ)" | Kasbon KARYAWAN (uang perusahaan yang dicairkan ke karyawan) dan laporan pemakaiannya. LPJ selalu berinduk PD. Bedakan dari Uang Muka Pelanggan | PK-44 · Jejak Dokumen, Kas & Bank › Kas Kecil |
+| Pelunasan Antar-PT | "Pelunasan Antar-PT" | Dokumen pelunasan saldo antar-PT (termasuk saling hapus). Jangan memakai "Settlement Antar-PT (Netting)" pada teks baru | PK-44 · Jejak Dokumen, Antar-PT |
+| Dokumen Terkait | Judul panel "Dokumen Terkait" · tombol "Lihat seluruh jejak" · tombol "Buka" · "Tanpa akses lihat" · garis tahapan ("{tahap} · {n}" / "{tahap} · belum") | Satu-satunya panel relasi di rincian dokumen: dokumen asal ("Berasal dari") dan turunan ("Menurunkan"), plus garis tahapan pesanan/PO. "Tanpa akses lihat" = peran tidak memegang izin lihat modul dokumen itu (PK-17) | PK-44 · rincian pesanan, PO, tagihan pemasok, kontrabon, penerimaan barang |
+| Cetak Dokumen | Judul panel "Cetak Dokumen · …" | Daftar dokumen cetak turunan (surat pengambilan, daftar kemasan, surat jalan, bukti terima). Bukan panel relasi | PK-44 · rincian pesanan & PO |
+| Kembali ke … | Bilah "← Kembali ke {layar asal}" (mis. "Kembali ke Jejak Dokumen", "Kembali ke Dasbor Keuangan") | Muncul sesudah melompat ke dokumen dari Jejak Dokumen, panel Dokumen Terkait, atau kartu angka; membawa kembali ke layar asal (jejak yang sama). Hilang saat memilih menu lain | PK-44 · semua layar tujuan tautan dokumen |
+| Dokumen tidak ditemukan | "Dokumen {nomor} tidak ditemukan di PT ini." | Tautan dokumen menunjuk dokumen yang tidak ada atau di luar PT aktif; layar tujuan menulis ini (bukan layar kosong) | PK-44 · layar tujuan tautan dokumen |

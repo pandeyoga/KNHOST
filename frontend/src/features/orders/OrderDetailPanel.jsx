@@ -10,7 +10,6 @@ import { QcStatusBadge, soQcStatus } from "../../components/QcStatusBadge";
 import PaymentBadge from "../../components/PaymentBadge";
 import QtyDual from "../../components/QtyDual";      // FASE U — dua satuan
 import axios, { API } from "../../services/apiClient";
-import ProcessTimeline from "../documents/ProcessTimeline";
 import DocumentActionsBar from "../documents/DocumentActionsBar";
 import RelatedDocsPanel from "../documents/RelatedDocsPanel";
 import DocRefsPanel from "../documents/trace/DocRefsPanel";
@@ -182,7 +181,7 @@ export function OrderDetailPanel({
         {/* Dokumen gudang & penagihan (gap docs) — muncul saat order sudah diproses */}
         {["confirmed", "partially_picked", "picked", "partially_shipped", "shipped", "done"].includes(sel.status) && (
           <RelatedDocsPanel
-            title="Dokumen Gudang & Penagihan"
+            title="Cetak Dokumen · Gudang & Penagihan"
             docs={[
               { docType: "picking_list", label: "Surat Pengambilan Barang" },
               { docType: "packing_list", label: "Daftar Kemasan" },
@@ -283,9 +282,6 @@ export function OrderDetailPanel({
         <RestockPanel order={sel} currentUser={user} onNavigate={onOpenDocument}
           onChanged={onRefresh} />
 
-        {/* EPIC6 — Document Hub: rantai dokumen terkait + deep-link */}
-        <ProcessTimeline docType="sales_order" docId={sel.id} onNavigate={onOpenDocument} />
-
         {/* F-10 — termin CBD/DP: wajib bayar sebelum kirim + pengecualian berizin (alasan wajib) */}
         <DispatchPaymentGatePanel key={`${sel.id}:${sel.paid_total || 0}`} orderId={sel.id} currentUser={user} onChanged={onRefresh}
                                   customerId={sel.customer_id} customerName={sel.customer_name} />
@@ -293,8 +289,8 @@ export function OrderDetailPanel({
         {/* FASE G-2 — Jadwal pembayaran (DP/cicilan/milestone) + antrean denda */}
         <SoPaymentPanel order={sel} currentUser={user} onChanged={onRefresh} />
 
-        {/* FASE G-4 — Referensi Dokumen tersimpan (refs[] dua arah) + Jejak Dokumen */}
-        <DocRefsPanel docType="sales_order" docId={sel.id} onOpenDocument={onOpenDocument} />
+        {/* PK-44 (IA-13) — SATU panel relasi: Dokumen Terkait (referensi tersimpan + garis tahapan EPIC6) + Jejak Dokumen */}
+        <DocRefsPanel docType="sales_order" docId={sel.id} onOpenDocument={onOpenDocument} withStages />
 
         <div className="rounded-md border border-[#EFF0F2] overflow-hidden">
           <div className="px-2.5 py-1.5 bg-[#FAFBFC] text-[10px] font-bold uppercase text-[#6B6B73] border-b border-[#EFF0F2]">Item</div>

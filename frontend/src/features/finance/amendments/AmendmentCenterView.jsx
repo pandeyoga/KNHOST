@@ -22,6 +22,10 @@ import {
 import DetailModal from "../../../components/DetailModal";
 import EntityBadge from "../../../components/EntityBadge";
 import ErrorNotice from "../../../components/ErrorNotice";
+import FocusNotice from "../../../components/FocusNotice";
+import useFocusDoc from "../../../hooks/useFocusDoc";
+import { useAppNav } from "../../../context/AppNavContext";
+import axios, { API } from "../../../services/apiClient";
 import FilterChips from "../../../components/FilterChips";
 import { MetricRow } from "../../../components/ListPageParts";
 import useIsMobile from "../../../hooks/useIsMobile";
@@ -45,7 +49,7 @@ function when(iso) {
   catch { return iso; }
 }
 
-export default function AmendmentCenterView({ currentUser, selectedEntity }) {
+export default function AmendmentCenterView({ currentUser, selectedEntity, focusDoc, onClearFocus }) {
   const [status, setStatus] = useState("");
   const [q, setQ] = useState("");
   const [rows, setRows] = useState([]);
@@ -88,9 +92,28 @@ export default function AmendmentCenterView({ currentUser, selectedEntity }) {
 
   const applied = Number(stats.applied || 0) + Number(stats.auto_applied || 0);
 
+  // PK-44 (IA-04) — tautan dokumen: amandemen → rinciannya; nota kredit/debit → amandemen asalnya. Nota yang lahir
+  // dari retur atau batal pesanan khusus tidak punya amandemen → dibuka di retur / pesanannya (asal tetap sama).
+  const nav = useAppNav();
+  const fokus = useFocusDoc(focusDoc, ["doc_amendment", "credit_note"], async (id, fd) => {
+    if (fd.focus_type === "doc_amendment") {
+      await axios.get(`${API}/amendments/${id}`);
+      setQ(""); setStatus(""); setSelected(id);
+      return true;
+    }
+    const cn = (await axios.get(`${API}/credit-notes/${id}`)).data || {};
+    if (cn.amendment_id) { setQ(""); setStatus(""); setSelected(cn.amendment_id); return true; }
+    const ke = cn.return_id ? { view: "returns", focus_type: "sales_return", focus_id: cn.return_id, number: cn.return_number }
+      : cn.order_id ? { view: "orders", focus_type: "sales_order", focus_id: cn.order_id, number: cn.order_number } : null;
+    if (!ke) return false;
+    nav.openDocument({ ...ke, origin: fd.origin });
+    return true;
+  }, onClearFocus);
+
   return (
     <div data-testid="amendment-center-view">
       <ErrorNotice message={error} onRetry={load} onDismiss={() => setError("")} testId="amd-center-error" />
+      <FocusNotice {...fokus} testId="amd-focus-notice" />
 
       <div className="section-card mb-3">
         <div className="section-head flex-wrap gap-2">

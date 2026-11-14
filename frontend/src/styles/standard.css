@@ -103,3 +103,9 @@
 
 /* — Bilah alat daftar (judul → cakupan → cari/saring → Unduh) — */
 .kn-list-toolbar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; }
+
+/* — PK-44 (IA-04): baris yang dibuka lewat tautan dokumen (Jejak Dokumen / Dokumen Terkait) — latar aksi lembut + garis
+     kiri (bukan warna saja). Dipasang layar lewat `rowClassName`/`className` selama baris itu sedang disorot. — */
+.row-focus, .row-focus > td { background: var(--kn-action-soft) !important; }
+.row-focus { box-shadow: inset 3px 0 0 var(--kn-action); }
+.row-focus > td:first-child { box-shadow: inset 3px 0 0 var(--kn-action); }

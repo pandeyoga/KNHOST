@@ -5,6 +5,8 @@ import { ReceiptText, Plus, RefreshCw, FileText } from "lucide-react";
 import { formatCurrency } from "../../utils/formatters";
 import ErrorNotice from "../../components/ErrorNotice";
 import EntityGatedButton from "../../components/EntityGatedButton";   // PK-42 (UX-05)
+import FocusNotice from "../../components/FocusNotice";
+import useFocusDoc from "../../hooks/useFocusDoc";
 import { SearchBox } from "../../components/ListControls";
 import DetailModal from "../../components/DetailModal";
 import ResponsiveTable from "../../components/ResponsiveTable";
@@ -29,7 +31,7 @@ const TABS = [
   { key: "rejected", label: "Ditolak" },
 ];
 
-export default function SettlementsView({ currentUser, selectedEntity = "all", entities = [] }) {
+export default function SettlementsView({ currentUser, selectedEntity = "all", entities = [], focusDoc, onClearFocus }) {
   const [view, setView] = useState("list");
   const [rows, setRows] = useState([]);
   const [categories, setCategories] = useState([]);
@@ -81,11 +83,16 @@ export default function SettlementsView({ currentUser, selectedEntity = "all", e
     && (!q.trim() || [r.number, r.advance_number, r.description, r.requester_name, r.employee_name].some((v) => String(v || "").toLowerCase().includes(q.trim().toLowerCase()))));
   const entityName = (id) => entities.find((e) => e.id === id)?.short_name || entities.find((e) => e.id === id)?.legal_name || id || "—";
   const catLabels = useMemo(() => Object.fromEntries(categories.map((c) => [c.code, c.label])), [categories]);
+  // PK-44 (IA-10) — tautan dokumen (Jejak Dokumen / rincian jurnal) membuka rincian LPJ ber-id itu.
+  const fokus = useFocusDoc(focusDoc, "cash_settlement", async (id) => {
+    setSelected((await axios.get(`${API}/cash-advance-settlements/${id}`)).data); setView("detail");
+  }, onClearFocus);
 
   return (
     <div data-testid="settlements-view" className="grid gap-4">
       {toast && <div className="notice-bar success" data-testid="stl-toast"><span>{toast}</span><button onClick={() => setToast("")}>×</button></div>}
       <ErrorNotice message={error} onRetry={load} onDismiss={() => setError("")} testId="stl-error" />
+      <FocusNotice {...fokus} testId="stl-focus-notice" />
 
       <section className="section-card">
         <div className="section-head">

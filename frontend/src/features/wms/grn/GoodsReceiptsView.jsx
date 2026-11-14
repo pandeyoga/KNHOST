@@ -26,7 +26,7 @@ const mkoPreset = () => {
 };
 
 /** Operasi Gudang → Barang Masuk: Kedatangan (SJ & OCR) · Selisih Supplier · Scan Terima PO (mode lama). */
-export default function GoodsReceiptsView({ currentUser, selectedEntity, focusDoc, onClearFocus, onOpenPO }) {
+export default function GoodsReceiptsView({ currentUser, selectedEntity, focusDoc, onClearFocus, onOpenPO, onOpenDocument }) {
   const [tab, setTab] = useState("list");
   const [rows, setRows] = useState(null);   // 23 Okt — null = sedang dimuat (dulu [] → "Belum ada kedatangan" saat memuat)
   const [status, setStatus] = useState("");
@@ -69,6 +69,10 @@ export default function GoodsReceiptsView({ currentUser, selectedEntity, focusDo
     if (focusDoc.focus_type === "goods_receipt") setOpenId(focusDoc.focus_id);
     if (focusDoc.focus_type === "purchase_order" && focusDoc.tab === "inbound" && showLegacy) {
       setTab("legacy"); setLegacyPo(focusDoc.focus_id);
+    } else if (focusDoc.focus_type === "purchase_order" && focusDoc.tab === "inbound" && !canCreateGrn && onOpenDocument) {
+      // PK-44 — tautan tugas terima (Jejak Dokumen) = PO induknya. Peran yang tidak memindai terima dan tidak membuat
+      // kedatangan dibuka di rincian PO-nya (bukan wizard kedatangan baru yang pasti ditolak).
+      onOpenDocument({ view: "purchasing", focus_type: "purchase_order", focus_id: focusDoc.focus_id, origin: focusDoc.origin });
     } else if (focusDoc.focus_type === "purchase_order") {
       axios.get(`${API}/purchase-orders/${focusDoc.focus_id}`).then((r) => setWizard({
         partner_type: "supplier", partner_id: r.data.supplier_id, warehouse_id: r.data.warehouse_id, po_ids: [r.data.id],
@@ -107,7 +111,8 @@ export default function GoodsReceiptsView({ currentUser, selectedEntity, focusDo
             <span className="text-[11px] text-[#6B6B73]">Scan barcode di formulir tugas di bawah</span>
           </div>
           <div className="section-body">
-            <InboundScanInterface user={currentUser} focusPoId={legacyPo} onFocusConsumed={() => setLegacyPo("")} onOpenPO={onOpenPO} />
+            <InboundScanInterface user={currentUser} focusPoId={legacyPo} onFocusConsumed={() => setLegacyPo("")} onOpenPO={onOpenPO}
+              onOpenDocument={onOpenDocument} />
           </div>
         </div>
       ) : (<>

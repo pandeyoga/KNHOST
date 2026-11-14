@@ -103,7 +103,8 @@ PARENT_RELS = {"parent", "amends", "corrects", "reverses", "settles", "fulfills"
 def _T(doc_type: str, collection: str, number: str, label: str,
        view: str = "", focus_type: str = "", order: int = 50,
        needs_parent: bool = False, filter_: Optional[Dict[str, Any]] = None,
-       source_fk: Optional[Sequence[str]] = None) -> Dict[str, Any]:
+       source_fk: Optional[Sequence[str]] = None, tab: str = "", focus_from: str = "",
+       perm: Optional[Tuple[str, str]] = None) -> Dict[str, Any]:
     """Satu baris peta dokumen.
 
     `source_fk` = kolom penghubung NYATA yang menandakan dokumen ini memang LAHIR
@@ -113,95 +114,121 @@ def _T(doc_type: str, collection: str, number: str, label: str,
     tagihan biaya langsung tanpa PO) tidak dituduh yatim. Tanpa pembedaan ini gate
     akan memerah karena transaksi yang benar — dan gate yang "memerah palsu" cepat
     diabaikan orang.
+
+    PK-44 (IA-04, K-18) — tujuan tautan: `view` (layar yang DIRENDER perute; diuji statik terhadap
+    `AppViewRouter.jsx`), `tab` (tab di layar itu), `focus_type` (jenis yang dibaca pembaca fokus layar),
+    `focus_from` (field dokumen yang menjadi `focus_id` — kosong = id dokumen itu sendiri; mis. surat jalan dibuka
+    lewat pesanan induknya `order_id`). `perm` = izin LIHAT modul sumber (sumber_daya, aksi): nominal & tombol buka
+    simpul hanya untuk pemegangnya (penyaring PK-17, `SOURCE_PERMISSION` diturunkan dari sini). `None` = tidak
+    disaring (dokumen tanpa nilai uang).
     """
     return {"doc_type": doc_type, "collection": collection, "number": number,
             "label": label, "view": view, "focus_type": focus_type or doc_type,
             "order": order, "needs_parent": needs_parent, "filter": filter_ or {},
-            "source_fk": list(source_fk or [])}
+            "source_fk": list(source_fk or []), "tab": tab, "focus_from": focus_from,
+            "perm": tuple(perm) if perm else None}
 
 
 DOC_TYPES: Dict[str, Dict[str, Any]] = {d["doc_type"]: d for d in [
     _T("special_order", "special_orders", "number", "Pesanan Khusus", "special-orders", order=5),
-    _T("purchase_requisition", "purchase_requisitions", "number", "Purchase Requisition",
+    _T("purchase_requisition", "purchase_requisitions", "number", "Permintaan Pembelian (PR)",
        "purchase-requisitions", order=10),
     _T("rfq", "rfqs", "number", "Permintaan Penawaran (RFQ)", "rfq", order=12,
        # P-0 — RFQ yang lahir dari PR menaut PR-nya (rantai PO → RFQ → PR → SO).
        source_fk=["pr_id"]),
-    _T("supplier_contract", "supplier_contracts", "contract_number", "Kontrak Supplier",
+    _T("supplier_contract", "supplier_contracts", "contract_number", "Kontrak Pemasok",
        "supplier-contracts", order=14),
-    _T("purchase_order", "purchase_orders", "po_number", "Purchase Order", "purchasing", order=20,
+    _T("purchase_order", "purchase_orders", "po_number", "Pesanan Pembelian (PO)", "purchasing", order=20,
        # P-0 (prasyarat FASE P) — PO yang LAHIR dari PR wajib menaut PR-nya. `pr_id`
        # hanya terisi pada PO hasil realisasi PR/award RFQ, jadi PO pembelian rutin
        # yang sah berdiri sendiri TIDAK dituduh yatim (aturan `source_fk`).
-       source_fk=["pr_id"]),
-    _T("grn", "wms_tasks", "id", "Penerimaan Barang (GRN)", "operations", order=25,
-       needs_parent=True, filter_={"flow_type": "inbound"}, source_fk=["po_id"]),
+       source_fk=["pr_id"], perm=("purchase_order", "view")),
+    # PK-44 — tugas terima tidak punya layar rincian sendiri: dibuka lewat PO induknya di Kedatangan Barang (tab
+    # penerimaan per PO). Tanpa PO (`po_id` kosong) → layar dibuka tanpa fokus.
+    _T("grn", "wms_tasks", "id", "Penerimaan Barang (GRN)", "goods-receipts", order=25,
+       needs_parent=True, filter_={"flow_type": "inbound"}, source_fk=["po_id"],
+       tab="inbound", focus_type="purchase_order", focus_from="po_id"),
     _T("goods_receipt", "goods_receipts", "number", "Kedatangan Barang (Surat Jalan)", "goods-receipts",
        order=24),
-    _T("landed_cost", "landed_cost_vouchers", "number", "Voucher Landed Cost", "landed-cost",
-       order=27, needs_parent=True, source_fk=["po_ids"]),
-    _T("vendor_bill", "vendor_bills", "bill_number", "Tagihan Supplier (Kontrabon)",
-       "vendor-bills", order=30, needs_parent=True, source_fk=["po_id", "makloon_order_id"]),
+    _T("landed_cost", "landed_cost_vouchers", "number", "Biaya Masuk (Landed Cost)", "landed-cost",
+       order=27, needs_parent=True, source_fk=["po_ids"], perm=("landed_cost", "view")),
+    _T("vendor_bill", "vendor_bills", "bill_number", "Tagihan Pemasok",
+       "vendor-bills", order=30, needs_parent=True, source_fk=["po_id", "makloon_order_id"],
+       perm=("vendor_bill", "view")),
     # FASE G-7 — kontrabon: satu dokumen menggabungkan banyak faktur supplier satu siklus.
     _T("contra_bon", "contra_bons", "number", "Kontrabon (Tukar Faktur)", "contra-bons",
-       order=31),
+       order=31, perm=("vendor_bill", "view")),
     _T("purchase_return", "purchase_returns", "number", "Retur Beli", "purchase-returns",
-       order=32, needs_parent=True, source_fk=["po_id"]),
+       order=32, needs_parent=True, source_fk=["po_id"], perm=("purchase_return", "view")),
     _T("makloon_order", "makloon_orders", "mko_number", "Order Makloon", "makloon-orders", order=35),
-    _T("sales_order", "sales_orders", "number", "Sales Order", "orders", order=40),
-    _T("picking_task", "wms_tasks", "id", "Tugas Pengambilan", "operations", order=42,
-       needs_parent=True, filter_={"flow_type": "outbound"}, source_fk=["order_id"]),
+    _T("sales_order", "sales_orders", "number", "Pesanan Penjualan (SO)", "orders", order=40,
+       perm=("order", "view")),
+    # PK-44 — tugas ambil dibuka di Barang Keluar (pembaca `wms_task` sudah ada).
+    _T("picking_task", "wms_tasks", "id", "Tugas Pengambilan", "wms-outbound", order=42,
+       needs_parent=True, filter_={"flow_type": "outbound"}, source_fk=["order_id"], focus_type="wms_task"),
+    # PK-44 — surat jalan tidak punya layar rincian sendiri: dibuka lewat pesanan induknya.
     _T("shipment", "shipments", "shipment_no", "Surat Jalan / Pengiriman", "orders",
-       order=44, needs_parent=True, source_fk=["order_id"]),
+       order=44, needs_parent=True, source_fk=["order_id"], focus_type="sales_order", focus_from="order_id"),
     _T("tax_invoice", "tax_invoices", "number", "Faktur Pajak", "tax-invoices",
-       order=46, needs_parent=True, source_fk=["order_id", "replaces_id"]),
-    _T("ar_receipt", "ar_receipts", "number", "Kwitansi / Pembayaran", "customers-crm",
-       order=48, needs_parent=True, source_fk=["allocations"]),
-    _T("sales_return", "sales_returns", "number", "Retur Jual", "sales-returns",
-       order=50, needs_parent=True, source_fk=["order_id"]),
+       order=46, needs_parent=True, source_fk=["order_id", "replaces_id"], perm=("tax_invoice", "view")),
+    # PK-44 — kwitansi dibuka di Keuangan › Piutang › Penagihan & Penerimaan (MN-T1 memindahkan tab Penagihan dari
+    # CRM ke layar `collection-worklist`); riwayat kwitansi mencari nomor dan menyorot barisnya.
+    _T("ar_receipt", "ar_receipts", "number", "Kwitansi Pelanggan", "collection-worklist",
+       order=48, needs_parent=True, source_fk=["allocations"], perm=("ar_receipt", "view")),
+    _T("sales_return", "sales_returns", "number", "Retur Jual", "returns",
+       order=50, needs_parent=True, source_fk=["order_id"], perm=("sales_return", "view")),
     _T("doc_amendment", "doc_amendments", "number", "Amandemen Dokumen", "amendments",
        order=52, needs_parent=True, source_fk=["doc_id"]),
     _T("credit_note", "credit_notes", "number", "Nota Kredit / Debit", "amendments",
        order=54, needs_parent=True, source_fk=["order_id", "amendment_id"]),
     # FASE G-2 — jadwal bayar & nota denda adalah DOKUMEN (bisa ditelusuri & dicetak).
+    # PK-44 — `tab` = kunci tab `PaymentPlansView` (jadwal · denda · selisih).
     _T("payment_plan", "payment_plans", "number", "Rencana Pembayaran", "payment-plans",
-       order=56, needs_parent=True, source_fk=["doc_id"]),
+       order=56, needs_parent=True, source_fk=["doc_id"], tab="jadwal", perm=("payment_plan", "view")),
     _T("penalty", "penalties", "number", "Nota Denda Keterlambatan", "payment-plans",
-       order=58, needs_parent=True, source_fk=["doc_id"]),
+       order=58, needs_parent=True, source_fk=["doc_id"], tab="denda", perm=("penalty", "view")),
     # FASE G-3 — keputusan selisih pembayaran (lebih/kurang bayar) juga DOKUMEN bernomor.
     _T("payment_variance", "payment_variance_decisions", "number",
        "Keputusan Selisih Pembayaran", "payment-plans", order=59, needs_parent=True,
-       source_fk=["receipt_id", "bill_id"]),
+       source_fk=["receipt_id", "bill_id"], tab="selisih", perm=("payment_variance", "view")),
+    # PK-44 — transfer & stock opname dibuka di Operasi Gudang pada tabnya (pembaca fokus sudah ada).
     _T("warehouse_transfer", "warehouse_transfers", "code", "Surat Jalan Transfer",
-       "transfers", order=60),
+       "operations", order=60, tab="transfer"),
     # FASE G-6 — antar-PT adalah JUAL-BELI: dokumen kembar (SO/SJ/Invoice internal di
     # penjual, PO internal/Vendor Bill di pembeli) + settlement/netting. Tanpa
     # terdaftar di sini, dokumen antar-PT tidak bisa ditelusuri/dicetak dari Pusat
     # Dokumen dan jejak "barangnya pindah lewat tugas gudang mana" berhenti.
+    # PK-44 — `tab` = kunci tab `IntercoView`.
     _T("interco_transaction", "interco_transactions", "number",
-       "Transaksi Antar-PT (Jual-Beli Internal)", "interco-transactions", order=64),
+       "Transaksi Antar-PT (Jual-Beli Internal)", "interco-transactions", order=64, tab="transactions",
+       perm=("interco", "view")),
     _T("interco_settlement", "interco_settlements", "number",
-       "Settlement Antar-PT (Netting)", "interco-transactions", order=65),
+       "Pelunasan Antar-PT", "interco-transactions", order=65, tab="settlements",
+       perm=("interco_finance", "view")),
     # FASE G-6b — retur antar-PT (dokumen kembar nota retur ↔ nota kredit internal)
     # & faktur pajak MASUKAN internal (pasangan faktur keluaran di PT penjual).
+    # PK-44 — retur antar-PT tinggal di layar Retur Antar-PT (`interco-returns`, L08), bukan di tab Antar-PT.
     _T("interco_return", "interco_returns", "number",
-       "Retur Antar-PT", "interco-transactions", order=66),
+       "Retur Antar-PT", "interco-returns", order=66, tab="returns", perm=("interco", "view")),
     _T("input_tax_invoice", "tax_invoices_in", "number",
-       "Faktur Pajak Masukan", "input-tax", order=67),
-    _T("cycle_count", "cycle_count_sessions", "number", "Stock Opname", "cycle-count", order=62),
+       "Faktur Pajak Masukan", "input-tax", order=67, perm=("input_tax", "view")),
+    _T("cycle_count", "cycle_count_sessions", "number", "Stock Opname", "operations", order=62, tab="cycle"),
     # FASE F — R&D: spesifikasi & permintaan sample adalah DOKUMEN bernomor yang
     # menjadi HULU rantai (spec → sample → kontrak → PO). Tanpa ini kontrak harga
     # tidak bisa menjawab "harga ini dari mana".
-    _T("md_spec", "md_specs", "number", "Spesifikasi Produk (R&D)", "rnd-specs", order=2),    _T("md_sample", "md_samples", "number", "Permintaan Sample (Labdip/Proofing)",
+    _T("md_spec", "md_specs", "number", "Spesifikasi Produk (R&D)", "rnd-specs", order=2),
+    _T("md_sample", "md_samples", "number", "Permintaan Sample (Labdip/Proofing)",
        "rnd-samples", order=3, needs_parent=False, source_fk=["spec_id"]),
     # FASE G-9 — kasus keuangan adalah DOKUMEN bernomor: sumbernya (kwitansi/mutasi/tagihan)
     # dan dokumen turunannya (jurnal/kas/nota denda) harus bisa ditelusuri dua arah.
-    _T("finance_case", "finance_cases", "number", "Kasus Keuangan", "finance-cases",       order=61, needs_parent=False),
+    _T("finance_case", "finance_cases", "number", "Kasus Keuangan", "finance-cases",
+       order=61, needs_parent=False, perm=("finance_case", "view")),
     # FASE G-7 — pembayaran kontrabon adalah SATU transaksi kas untuk banyak faktur.
     # Tanpa jenis dokumen ini, jejak "uang keluarnya lewat mana" berhenti di kontrabon
     # dan petugas harus mencari sendiri di layar Kas & Bank.
+    # PK-44 — `cash-bank` adalah id hub, bukan layar: transaksi kas dibuka di Pengelolaan Kas (cari nomor, sorot).
     _T("cash_transaction", "cash_transactions", "number", "Transaksi Kas / Bank",
-       "cash-bank", order=63, needs_parent=False),
+       "cash-management", order=63, needs_parent=False, perm=("cash", "view")),
     # FASE E-7 (E7d) — permintaan internal adalah HULU transaksi antar-PT: tanpa
     # terdaftar di sini, pertanyaan "transaksi antar-PT ini untuk siapa/kenapa"
     # berhenti di catatan bebas.
@@ -209,7 +236,7 @@ DOC_TYPES: Dict[str, Dict[str, Any]] = {d["doc_type"]: d for d in [
        "Permintaan Internal (Antar-PT)", "internal-requests", order=6),
     # FASE E-7 (E7f) — pinjaman uang antar-PT (dokumen kembar piutang ↔ utang).
     _T("interco_loan", "interco_loans", "number",
-       "Pinjaman Antar-PT", "interco-transactions", order=68),
+       "Pinjaman Antar-PT", "interco-transactions", order=68, tab="loans", perm=("interco_finance", "view")),
     # FASE D — permintaan desain: HULU rantai desain (permintaan → artwork galeri →
     # spesifikasi → produk). Tanpa terdaftar di sini, pertanyaan "artwork ini diminta
     # untuk pesanan siapa" berhenti di catatan bebas.
@@ -222,17 +249,44 @@ DOC_TYPES: Dict[str, Dict[str, Any]] = {d["doc_type"]: d for d in [
     _T("repair_order", "repair_orders", "number", "Perbaikan / Celup Ulang", "repair-orders", order=27),   # UAT 24 Okt (P7)
     _T("inspection", "inspections", "number", "Inspeksi & QC", "inspections",
        order=26, needs_parent=True, source_fk=["ref_doc_id"]),
+    # PK-44 (IA-10) — gaji, kas kecil, dan aset tetap ikut bisa ditelusuri ke jurnalnya. Tidak ada koleksi/field
+    # baru: koleksi & nomor yang sudah ada. LPJ wajib berinduk PD (`cash_advance_id`, ditaut saat lahir +
+    # `backfill`). Jurnal gaji ber-`source_id` "{entity_id}:{period}" → kasus khusus di `derived_refs`.
+    _T("payroll_run", "hr_payroll_runs", "number", "Penggajian", "hr-payroll-runs", order=70,
+       perm=("hr", "view")),
+    _T("cash_advance", "cash_advances", "number", "Pengajuan Dana (PD)", "cash-advances", order=71,
+       perm=("cash_advance", "view")),
+    _T("cash_settlement", "cash_advance_settlements", "number", "Pertanggungjawaban Dana (LPJ)", "settlements",
+       order=72, needs_parent=True, source_fk=["cash_advance_id"], perm=("cash_settlement", "view")),
+    _T("fixed_asset", "fin_fixed_assets", "number", "Aset Tetap", "fixed-assets", order=73,
+       perm=("fixed_asset", "view")),
     # Ujung rantai akuntansi — jurnal otomatis tiap dokumen (tautan diturunkan dari source_id).
-    _T("journal_entry", "journal_entries", "number", "Jurnal Umum", "general-ledger", order=90),
+    _T("journal_entry", "journal_entries", "number", "Jurnal", "general-ledger", order=90,
+       perm=("accounting", "view")),
 ]}
 
-# source_type jurnal → doc_type sumbernya (selain yang namanya sudah sama dengan doc_type).
+# source_type jurnal → doc_type sumbernya (selain yang namanya sudah sama dengan doc_type). Semua `source_id` di
+# bawah berawalan id dokumennya (diperiksa PK-44 di `gl_service`); gaji = kasus khusus `PAYROLL_SOURCE_TYPES`.
 JOURNAL_SOURCE_TYPE: Dict[str, str] = {
     "shipment_revenue": "shipment", "shipment_cogs": "shipment",
     "subcon_issue": "makloon_order", "subcon_receipt": "makloon_order",
     "subcon_service": "vendor_bill", "goods_receipt": "grn",
     "advance_reclass": "sales_order", "contra_bon_deduction": "contra_bon",
+    # PK-44 (IA-10)
+    "petty_cash_settlement": "cash_settlement",
+    "fixed_asset_acquisition": "fixed_asset", "fixed_asset_depreciation": "fixed_asset",
+    "fixed_asset_disposal": "fixed_asset",
+    "makloon_claim": "makloon_order", "makloon_material_loss": "makloon_order",
+    "subcon_service_unabsorbed": "makloon_order", "subcon_issue_reversal": "makloon_order",
+    "penalty_reversal": "penalty", "penalty_payment": "penalty",
+    "payment_variance_writeoff": "payment_variance", "payment_variance_alloc": "payment_variance",
+    "payment_variance_reversal": "payment_variance", "ap_variance_writeoff": "payment_variance",
+    "cash_transaction_void": "cash_transaction", "vendor_bill_reversal": "vendor_bill",
 }
+# PK-44 — jurnal gaji: `source_id` = "{entity_id}:{period}" (satu penggajian aktif per PT per bulan), bukan id run.
+PAYROLL_SOURCE_TYPES = ("payroll_run", "payroll_pay")
+#: Catatan relasi LPJ → PD (saat lahir dan `backfill`; satu teks supaya tidak bercabang).
+LPJ_NOTE = "pertanggungjawaban PD"
 DERIVED_RELS = {"journal_of", "journaled_by"}
 
 # Koleksi → doc_type kanonik (untuk PDF doc_type yang berbagi koleksi, mis. `invoice`
@@ -320,7 +374,7 @@ def _title_of(doc_type: str, doc: Dict[str, Any]) -> str:
 
 def _amount_of(doc: Dict[str, Any]) -> float:
     for k in ("grand_total", "total_amount", "amount", "gross_amount", "net_amount",
-              "total_est_amount"):
+              "total_est_amount", "acquisition_cost", "total_pengeluaran"):   # PK-44 — aset tetap, LPJ
         if doc.get(k) not in (None, ""):
             try:
                 return float(doc[k])
@@ -349,18 +403,8 @@ def pdf_type_of(doc_type: str) -> str:
 
 # ── PK-17 (K-18, IA-01) — nominal dokumen hanya untuk pemegang izin lihat modul sumbernya ─────────────
 #: Jenis dokumen bernilai uang → izin LIHAT modul sumbernya. Jenis yang tidak terdaftar tidak disaring.
-SOURCE_PERMISSION: Dict[str, Tuple[str, str]] = {
-    "sales_order": ("order", "view"), "sales_return": ("sales_return", "view"),
-    "purchase_order": ("purchase_order", "view"), "purchase_return": ("purchase_return", "view"),
-    "vendor_bill": ("vendor_bill", "view"), "contra_bon": ("vendor_bill", "view"),
-    "landed_cost": ("landed_cost", "view"), "input_tax_invoice": ("input_tax", "view"),
-    "tax_invoice": ("tax_invoice", "view"), "ar_receipt": ("ar_receipt", "view"),
-    "payment_plan": ("payment_plan", "view"), "penalty": ("penalty", "view"),
-    "payment_variance": ("payment_variance", "view"), "finance_case": ("finance_case", "view"),
-    "cash_transaction": ("cash", "view"), "journal_entry": ("accounting", "view"),
-    "interco_transaction": ("interco", "view"), "interco_return": ("interco", "view"),
-    "interco_settlement": ("interco_finance", "view"), "interco_loan": ("interco_finance", "view"),
-}
+#: PK-44 — diturunkan dari `perm` di peta jenis dokumen (satu sumber; dulu daftar kedua yang ditulis tangan).
+SOURCE_PERMISSION: Dict[str, Tuple[str, str]] = {t: m["perm"] for t, m in DOC_TYPES.items() if m.get("perm")}
 
 
 def may_see_amount(doc_type: str, viewer_perms: Optional[Dict[str, List[str]]]) -> bool:
@@ -381,6 +425,23 @@ def redact_node(node: Dict[str, Any], viewer_perms: Optional[Dict[str, List[str]
     return node
 
 
+def link_of(doc_type: str, doc: Dict[str, Any]) -> Dict[str, Any]:
+    """PK-44 (IA-04) — SATU-SATUNYA pembentuk tautan dokumen → layar: `{view, tab, focus_type, focus_id, number}`.
+
+    Dipakai simpul Jejak Dokumen (`node_of`), panel referensi, dan linimasa proses
+    (`document_relations_service._link`). `view` selalu layar yang dirender perute; `focus_id` diambil dari field
+    `focus_from` bila ada (surat jalan → pesanan induk, tugas terima → PO induk), kosong bila field itu kosong
+    (layar dibuka tanpa fokus). Menu yang disorot TIDAK dikirim (`nav_id`): layar menurunkannya dari menu peran
+    (`resolveDeepLinkTarget`), karena id menu/tab berubah (MN-T1) sedangkan peta ini tidak boleh ikut basi.
+    """
+    meta = DOC_TYPES.get(doc_type) or {}
+    src = meta.get("focus_from") or ""
+    fid = (doc.get(src) if src else doc.get("id")) or ""
+    return {"view": meta.get("view", ""), "tab": meta.get("tab", ""),
+            "focus_type": meta.get("focus_type", doc_type), "focus_id": str(fid) if fid else "",
+            "number": number_of(doc_type, doc)}
+
+
 def node_of(doc_type: str, doc: Dict[str, Any]) -> Dict[str, Any]:
     meta = DOC_TYPES.get(doc_type, {})
     return {
@@ -393,8 +454,7 @@ def node_of(doc_type: str, doc: Dict[str, Any]) -> Dict[str, Any]:
         "date": _date_of(doc),
         "amount": _amount_of(doc),
         "entity_id": doc.get("entity_id") or "",
-        "link": {"view": meta.get("view", ""), "focus_type": meta.get("focus_type", doc_type),
-                 "focus_id": doc.get("id")},
+        "link": link_of(doc_type, doc),
         "order": meta.get("order", 50),
         "pdf_doc_type": pdf_type_of(doc_type),
     }
@@ -479,17 +539,48 @@ async def safe_link(src: Tuple[str, str], dst: Tuple[str, str], rel: str,
         return
 
 
+async def _payroll_run_of_journal(je: Dict[str, Any]) -> str:
+    """PK-44 (IA-10) — penggajian pemilik jurnal gaji. Jurnal ber-`source_id` "{entity_id}:{period}" (memotong pada
+    ":" dulu menghasilkan id PT). Utamakan run yang mencatat id jurnal ini; selain itu run (PT, periode) yang tidak
+    dibatalkan (`existing_run` memakai kunci yang sama)."""
+    jid = je.get("id") or ""
+    if jid:
+        run = await db.hr_payroll_runs.find_one(
+            {"$or": [{"journal_id": jid}, {"paid_journal_id": jid}]}, {"_id": 0, "id": 1})
+        if run:
+            return run["id"]
+    ent, _, period = str(je.get("source_id") or "").partition(":")
+    if not (ent and period):
+        return ""
+    run = await db.hr_payroll_runs.find_one(
+        {"entity_id": ent, "period": period, "status": {"$ne": "void"}}, {"_id": 0, "id": 1})
+    return (run or {}).get("id", "")
+
+
 async def derived_refs(doc_type: str, doc: Dict[str, Any]) -> List[Dict[str, Any]]:
     """Tautan yang DITURUNKAN dari kolom sumber (jurnal & transaksi kas) — tidak disimpan."""
     import re as _re
     out: List[Dict[str, Any]] = []
     if doc_type == "journal_entry":
         st = doc.get("source_type") or doc.get("source") or ""
+        if st in PAYROLL_SOURCE_TYPES:
+            run_id = await _payroll_run_of_journal(doc)
+            if run_id:
+                out.append({"rel": "journal_of", "doc_type": "payroll_run", "doc_id": run_id, "note": st})
+            return out
         tgt = JOURNAL_SOURCE_TYPE.get(st) or (st if st in DOC_TYPES else "")
         sid = str(doc.get("source_id") or "").split(":")[0]
         if tgt and sid:
             out.append({"rel": "journal_of", "doc_type": tgt, "doc_id": sid, "note": st})
         return out
+    if doc_type == "payroll_run":
+        # PK-44 — jurnal gaji tidak berawalan id run: dicari dengan kunci "{entity_id}:{period}".
+        src = f"{doc.get('entity_id') or ''}:{doc.get('period') or ''}"
+        async for j in db.journal_entries.find(
+                {"source_type": {"$in": list(PAYROLL_SOURCE_TYPES)}, "source_id": src},
+                {"_id": 0, "id": 1, "number": 1, "source_type": 1}).limit(30):
+            out.append({"rel": "journaled_by", "doc_type": "journal_entry", "doc_id": j["id"],
+                        "doc_number": j.get("number", ""), "note": j.get("source_type", "")})
     if doc_type == "cash_transaction":
         if doc.get("ref_type") in DOC_TYPES and doc.get("ref_id"):
             out.append({"rel": "parent", "doc_type": doc["ref_type"], "doc_id": doc["ref_id"],
@@ -751,6 +842,9 @@ async def backfill(dry_run: bool = True) -> Dict[str, Any]:
                note="jadwal pembayaran dokumen ini")
     await rule("penalty", "sales_order", "parent", "penalties", "doc_id",
                note="denda keterlambatan")
+    # PK-44 (IA-10) — LPJ menaut PD-nya (dokumen lama; LPJ baru ditaut saat lahir di `cash_advance_service`).
+    await rule("cash_settlement", "cash_advance", "parent", "cash_advance_settlements", "cash_advance_id",
+               note=LPJ_NOTE)
 
     # Landed cost menaut BANYAK PO (array) — ditangani terpisah.
     async for row in db.landed_cost_vouchers.find({"po_ids": {"$exists": True}},

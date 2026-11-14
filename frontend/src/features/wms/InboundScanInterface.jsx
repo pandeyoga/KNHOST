@@ -32,7 +32,7 @@ function MiniBar({ pct, status }) {
 const EMPTY_SCAN = { doc_uom: "", doc_qty: "", batch: "", lot: "", dye_lot: "",
                      grade: "A", roll_id: "", bin_id: "" };
 
-export default function InboundScanInterface({ user, focusPoId = "", onFocusConsumed, onOpenPO }) {
+export default function InboundScanInterface({ user, focusPoId = "", onFocusConsumed, onOpenPO, onOpenDocument }) {
   const { isGrn, data: modeData } = useReceivingMode();
   const grnEntities = (modeData?.entities || []).filter((e) => e.mode === "grn");
   const [tasks, setTasks] = useState([]);
@@ -446,6 +446,7 @@ export default function InboundScanInterface({ user, focusPoId = "", onFocusCons
             submitting={submitting}
             onOpenPO={onOpenPO}
             onTaskUpdated={onTaskUpdated}
+            onOpenDocument={onOpenDocument}
           />
         ) : (
           <div className="bg-white border border-dashed border-[#E5E5EA] rounded-xl flex items-center justify-center">

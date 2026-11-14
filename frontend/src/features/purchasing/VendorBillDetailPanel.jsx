@@ -39,7 +39,7 @@ function MatchPill({ status }) {
   return <span className={`status-pill ${cls}`} data-testid="vb-detail-match">{label}</span>;
 }
 
-export default function VendorBillDetailPanel({ bill, canApprove, decideHint = "", currentUser, onClose, onAction, onError }) {
+export default function VendorBillDetailPanel({ bill, canApprove, decideHint = "", currentUser, onClose, onAction, onError, onOpenDocument }) {
   const [payAmount, setPayAmount] = useState("");
   const [method, setMethod] = useState("transfer");
   const payMethods = usePaymentMethods("keluar", bill?.entity_id);
@@ -144,10 +144,10 @@ export default function VendorBillDetailPanel({ bill, canApprove, decideHint = "
           <ErrorNotice message={err} onDismiss={() => setErr("")} testId="vb-detail-error" />
           {warn && <div className="notice-bar warning" data-testid="vb-pay-warning"><span className="text-[12px]">{warn}</span></div>}
           <DocumentActionsBar docType="vendor_bill" sourceId={bill.id} entityId={bill.entity_id}
-            number={bill.bill_number} label="Vendor Bill" esignable currentUser={currentUser}
+            number={bill.bill_number} label="Tagihan Pemasok" esignable currentUser={currentUser}
             className="rounded-lg border border-[#EDEEF1] bg-[#FAFBFC] px-2.5 py-2" />
           {/* FASE G-4 — 3-way match bisa ditelusuri: tagihan → PO → Penerimaan Barang */}
-          <DocRefsPanel docType="vendor_bill" docId={bill.id} />
+          <DocRefsPanel docType="vendor_bill" docId={bill.id} onOpenDocument={onOpenDocument} />
           {/* Financial cards */}
           <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-4">
             <Card label="Total Tagihan" value={formatCurrency(fin.grand_total)} testId="vb-fin-grand" />

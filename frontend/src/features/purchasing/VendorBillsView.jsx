@@ -31,6 +31,8 @@ import VendorBillDetailPanel from "./VendorBillDetailPanel";
 import DetailModal from "../../components/DetailModal";
 import { can } from "../../config/roles";
 import { useCanDecideMap } from "../../hooks/useCanDecide";   // KP-T4
+import useFocusDoc from "../../hooks/useFocusDoc";
+import FocusNotice from "../../components/FocusNotice";
 
 /**
  * VendorBillsView (Fase 5.2 — P0-2) — Tagihan Supplier (Vendor Bill) + 3-Way Matching.
@@ -64,7 +66,7 @@ const vbDecideParams = (b) => (b.status === "pending_approval"
   ? { docKind: b.bill_type === "campaign_expense" ? "vendor_bill.kampanye" : "vendor_bill", entityId: b.entity_id,
     amount: b.grand_total || b.total_amount || 0 } : null);
 
-export default function VendorBillsView({ currentUser, selectedEntity }) {
+export default function VendorBillsView({ currentUser, selectedEntity, focusDoc, onClearFocus, onOpenDocument }) {
   const { entities } = useEntityScope();
   const [pos, setPos] = useState([]);
   const [summary, setSummary] = useState(null);
@@ -124,6 +126,12 @@ export default function VendorBillsView({ currentUser, selectedEntity }) {
     } catch { /* ignore */ }
   }
 
+  // PK-44 (IA-04) — tautan dokumen (Jejak / Dokumen Terkait) membuka rincian tagihan ber-id itu.
+  const fokus = useFocusDoc(focusDoc, "vendor_bill", async (id) => {
+    const r = await axios.get(`${API}/vendor-bills/${id}`);
+    setDetail(r.data);
+  }, onClearFocus);
+
   function onCreated(bill, submitted) {
     setShowCreate(false);
     const msg = bill.status === "posted" ? "langsung terposting (cocok bersih)"
@@ -164,6 +172,7 @@ export default function VendorBillsView({ currentUser, selectedEntity }) {
     <div data-testid="vendor-bills-view" className="view-container">
       {notice && <div className="notice-bar success" data-testid="vb-notice"><span>{notice}</span><button onClick={() => setNotice("")}>×</button></div>}
       <ErrorNotice message={error || paged.error} onRetry={reload} onDismiss={() => setError("")} testId="vb-error" />
+      <FocusNotice {...fokus} testId="vb-focus-notice" />
 
       <PageHeader icon={Receipt} title={<span data-testid="vendor-bills-title">Tagihan Supplier</span>}
         subtitle="Tagihan dicocokkan PO ↔ penerimaan ↔ tagihan (3-way matching); yang terposting menjadi hutang usaha sampai dibayar."
@@ -264,6 +273,7 @@ export default function VendorBillsView({ currentUser, selectedEntity }) {
             onClose={() => setDetail(null)}
             onAction={onAction}
             onError={(m) => setError(m)}
+            onOpenDocument={onOpenDocument}
           />
         </DetailModal>
       )}

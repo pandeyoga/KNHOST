@@ -46,7 +46,7 @@ export function TaskBadge({ status }) {
 export default function InboundTaskPanel({
   task, scanData, setScanData, uom,
   cameraActive, canOverride, onStartCamera, onStopCamera,
-  onClose, onScanReceive, onComplete, onEscalate, submitting, onOpenPO, onTaskUpdated,
+  onClose, onScanReceive, onComplete, onEscalate, submitting, onOpenPO, onTaskUpdated, onOpenDocument,
 }) {
   // FASE SL — mode default = scan label supplier; input manual (lama) tetap tersedia.
   const [mode, setMode] = useState((task.qty_rolls_scanned || 0) > 0 || !(task.scan_log || []).some((s) => s.scan_type === "receive") ? "label" : "manual");
@@ -264,7 +264,7 @@ export default function InboundTaskPanel({
         )}
 
         {/* FASE G-4 — penerimaan ini lahir dari PO mana? (referensi tersimpan dua arah) */}
-        <DocRefsPanel docType="grn" docId={task.id} />
+        <DocRefsPanel docType="grn" docId={task.id} onOpenDocument={onOpenDocument} />
       </div>
     </div>
   );

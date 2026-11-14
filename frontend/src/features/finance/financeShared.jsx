@@ -4,6 +4,7 @@
  * Konsisten dgn gaya existing (section-card, #6B219A, recharts, formatCurrency).
  */
 import { formatCurrency, formatCompactIDR, formatPct } from "../../utils/formatters";
+import { ChevronRight } from "lucide-react";
 import { isZeroMetric } from "../../components/ListPageParts";
 
 export const FC = {
@@ -47,7 +48,7 @@ export const chartTooltip = {
  * Fase 3 · P4 (L-08) — garis kiri warna-warni DIHAPUS (gaya baku = kartu berbingkai seperti `MetricRow`), dan nilai
  * nol tampil NETRAL abu (dulu "Rp 0" merah/hijau/ungu terbaca sebagai peringatan). `accent` kini hanya mewarnai ikon.
  */
-export function KpiCard({ label, value, icon: Icon, tone, sub, accent = "#6B219A", testId }) {
+export function KpiCard({ label, value, icon: Icon, tone, sub, accent = "#6B219A", testId, onClick, actionLabel = "Lihat rincian" }) {
   const zero = isZeroMetric(value);
   return (
     <div className="rounded-xl border border-[#EFF0F2] bg-white p-3.5" data-testid={testId}>
@@ -65,6 +66,13 @@ export function KpiCard({ label, value, icon: Icon, tone, sub, accent = "#6B219A
           <p className={`text-[15px] sm:text-[17px] font-bold tabular-nums break-words ${zero ? "text-[#8E8E93]" : (tone || "text-[#1C1C1E]")}`}
              data-testid={testId ? `${testId}-value` : undefined}>{value}</p>
           {sub && <p className="text-[10px] text-[#9A9BA3] mt-0.5 truncate" title={sub}>{sub}</p>}
+          {/* PK-44 (IA-11) — kartu bertujuan: tombol tautan baku (bukan seluruh kartu sebagai tombol buatan sendiri). */}
+          {onClick && (
+            <button type="button" className="link-button mt-1" onClick={onClick}
+              data-testid={testId ? `${testId}-open` : undefined}>
+              {actionLabel} <ChevronRight size={12} aria-hidden="true" />
+            </button>
+          )}
         </div>
       </div>
     </div>

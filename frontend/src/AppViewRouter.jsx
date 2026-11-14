@@ -9,6 +9,7 @@ import { Suspense, useEffect, useState } from "react";
 import { can } from "./config/roles";   // INV-ROLE-01 — wewenang dari izin, bukan literal peran
 import { Loader2 } from "lucide-react";
 import HubTabs from "./components/HubTabs";
+import BackToOriginBar from "./components/BackToOriginBar";   // PK-44 (IA-11) — "← Kembali ke …"
 import ComingSoon from "./features/ComingSoon";
 import { defaultNavIdForRole, defaultViewForRole } from "./config/navigationConfig";
 // Fase 3 · P1 — preset layar (alias/tautan) & jalur navigasi bersama untuk LinkCard/tombol tautan.
@@ -78,7 +79,7 @@ export default function AppViewRouter(props) {
     selectedProduct, breakdown, cart, setCart,
     selectedCustomer, setSelectedCustomer, selectedAddress, setSelectedAddress,
     search, setSearch, settings, paymentTerms,
-    focusDoc, setFocusDoc, openDocument, setActiveDetail, actions,
+    focusDoc, setFocusDoc, openDocument, setActiveDetail, actions, backTo, onBack,
     configFocus, onConfigFocusConsumed,
     traceAnchor, onTraceAnchorConsumed,
     rndFocus, onRndFocusConsumed,
@@ -126,6 +127,8 @@ export default function AppViewRouter(props) {
     onFocusConsumed: onConfigFocusConsumed,
   } : {};
   const docTplProps = { currentUser: user, selectedEntity, entities, orders: data.orders || [] };
+  // PK-44 (IA-04) — pembaca fokus dokumen layar tujuan peta `doc_refs_service` (hooks/useFocusDoc).
+  const focusDocProps = { focusDoc, onClearFocus: () => setFocusDoc(null) };
 
   return (
     <AppNavProvider role={user?.role} onNavigateTo={onNavigateTo} onOpenDocument={openDocument}>
@@ -139,6 +142,7 @@ export default function AppViewRouter(props) {
           onSelect={(view, tab) => onNavSelect(hubInfo.hubId, view, tab)}
         />
       )}
+      <BackToOriginBar origin={backTo} onBack={onBack} />
       <Suspense fallback={<ViewLoader />}>
       {/* Pengaturan & Master Data — hanya tab konfigurasi admin (master produk/kategori/uom/gudang telah pindah ke domain masing-masing). */}
       {activeView === "admin" && <AdminView {...adminProps} onSeedDemo={seedDemo} only={["integrations", "audit"]} />}
@@ -196,13 +200,16 @@ export default function AppViewRouter(props) {
       {activeView === "store-credit" && <StoreCreditView selectedEntity={selectedEntity} currentUser={user} />}
       {/* MN-T1 — Keuangan › Piutang: tab baru = layar lama tanpa perubahan (dulu sub-tab CRM) + pembungkus ber-chip.
           `advance-report`/`store-credit` = alias ke `customer-credit` (viewAliases.js); dua rute di atas = rute cadangan. */}
-      {activeView === "collection-worklist" && <CollectionWorklist currentUser={user} selectedEntity={selectedEntity} />}
+      {activeView === "collection-worklist" && <CollectionWorklist currentUser={user} selectedEntity={selectedEntity} {...focusDocProps} />}
       {activeView === "customer-credit" && <CustomerCreditView currentUser={user} selectedEntity={selectedEntity} onOpenDocument={openDocument} />}
       {activeView === "credit-overrides" && <CreditOverridesPanel currentUser={user} />}
       {activeView === "bank-accounts" && <BankAccountsView selectedEntity={selectedEntity} currentUser={user} />}
       {activeView === "bank-reconciliation" && <BankReconciliationView selectedEntity={selectedEntity} />}
-      {activeView === "finance-cases" && <FinanceCasesView currentUser={user} selectedEntity={selectedEntity} entities={entities} focusCase={caseFocus} onFocusCaseConsumed={onCaseFocusConsumed} />}
-      {activeView === "fixed-assets" && <FixedAssetsView selectedEntity={selectedEntity} entities={entities} />}
+      {activeView === "finance-cases" && <FinanceCasesView currentUser={user} selectedEntity={selectedEntity} entities={entities}
+        focusCase={caseFocus || (focusDoc?.focus_type === "finance_case" && focusDoc.focus_id   // PK-44 — tautan dokumen → jalur kasus
+          ? { caseId: focusDoc.focus_id, number: focusDoc.number || "", nonce: `doc:${focusDoc.nonce || focusDoc.focus_id}` } : null)}
+        onFocusCaseConsumed={() => { onCaseFocusConsumed?.(); if (focusDoc?.focus_type === "finance_case") setFocusDoc(null); }} />}
+      {activeView === "fixed-assets" && <FixedAssetsView selectedEntity={selectedEntity} entities={entities} {...focusDocProps} />}
       {activeView === "production" && <ProductionView selectedEntity={selectedEntity} entities={entities} currentUser={user} />}
       {/* KP-T9 — Penjadwal & Notifikasi dipecah: Pengingat Otomatis (job + riwayat) dan WhatsApp (pengaturan + Outbox),
           keduanya di Pengaturan › Dokumen & Notifikasi. WhatsApp kirim dokumen tetap di Pusat Dokumen (kartu tautan). */}
@@ -226,11 +233,11 @@ export default function AppViewRouter(props) {
       {activeView === "budget" && <BudgetView selectedEntity={selectedEntity} currentUser={user} />}
       {activeView === "cs-pajak" && <TaxCenterView currentUser={user} selectedEntity={selectedEntity} />}
       {/* Kas & Aset — Digitalisasi Formulir Sukacita (PD / LPJ / Kendaraan) */}
-      {activeView === "cash-advances" && <CashAdvancesView currentUser={user} selectedEntity={selectedEntity} entities={entities} />}
-      {activeView === "settlements" && <SettlementsView currentUser={user} selectedEntity={selectedEntity} entities={entities} />}
+      {activeView === "cash-advances" && <CashAdvancesView currentUser={user} selectedEntity={selectedEntity} entities={entities} {...focusDocProps} />}
+      {activeView === "settlements" && <SettlementsView currentUser={user} selectedEntity={selectedEntity} entities={entities} {...focusDocProps} />}
       {/* MN-T1 — Keuangan › Kas & Bank › Kas Kecil (pembungkus ber-chip). `cash-advances`/`settlements`/
           `reimburse-payables` = alias ke `petty-cash`; rute di atas & di bawah = rute cadangan id lama. */}
-      {activeView === "petty-cash" && <PettyCashView currentUser={user} selectedEntity={selectedEntity} entities={entities} />}
+      {activeView === "petty-cash" && <PettyCashView currentUser={user} selectedEntity={selectedEntity} entities={entities} {...focusDocProps} />}
       {activeView === "expense-categories" && <ExpenseCategoriesView currentUser={user} selectedEntity={selectedEntity} entities={entities} />}
       {activeView === "gl-account-mappings" && <GLAccountMappingView currentUser={user} />}
       {activeView === "reimburse-payables" && <ReimbursePayablesView selectedEntity={selectedEntity} entities={entities} />}
@@ -254,7 +261,7 @@ export default function AppViewRouter(props) {
       {/* Fase 3 · P8 (D-16) — alias ke Operasi Gudang › Transfer saringan "Antar PT"; rute cadangan = daftar yang sama. */}
       {activeView === "interco-transfers" && <InterCompanyTransfers currentUser={user} />}
       {activeView === "orders" && <OrdersView orders={data.orders || []} loading={loading} user={user} onRefresh={actions.loadAll} onShowDetail={setActiveDetail} onIssueTaxInvoice={issueTaxInvoice} onSubmitForApproval={(id) => mutateOrder(`/sales-orders/${id}/submit-for-approval`, (order) => order.status === "approved" ? `${order.number} auto-approved (di bawah threshold).` : `${order.number} dikirim untuk approval (butuh ${order.required_approval_role || "approver"}).`)} onApprove={(id) => mutateOrder(`/sales-orders/${id}/approve`, (order) => `${order.number} approved.`)} onConfirm={(id) => mutateOrder(`/sales-orders/${id}/confirm`, (order) => `${order.number} confirmed.`)} onCancel={(id) => mutateOrder(`/sales-orders/${id}/cancel`, (order) => `${order.number} dibatalkan, stok unlock.`)} onPay={payInvoice} onGenerateDocument={generateDocument} onReleaseReservation={releaseReservation} onMarkDelivered={markDelivered} focusDoc={focusDoc} onClearFocus={() => setFocusDoc(null)} onOpenDocument={openDocument} />}
-      {activeView === "tax-invoices" && <TaxInvoices currentUser={user} />}
+      {activeView === "tax-invoices" && <TaxInvoices currentUser={user} {...focusDocProps} />}
       {/* FASE E-8 — MEJA ADMIN SALES & MEJA FINANCE. `onOpenDocument` dipakai supaya
           satu baris antrean melompat ke layar yang menanganinya (navigasi + auto-buka). */}
       {activeView === "sales-admin-desk" && (
@@ -279,7 +286,7 @@ export default function AppViewRouter(props) {
           focusDoc={focusDoc} onClearFocus={() => setFocusDoc(null)} />
       )}
       {activeView === "return-policies" && <ReturnPoliciesView currentUser={user} selectedEntity={selectedEntity} entities={entities} />}
-      {activeView === "amendments" && <AmendmentCenterView currentUser={user} selectedEntity={selectedEntity} />}
+      {activeView === "amendments" && <AmendmentCenterView currentUser={user} selectedEntity={selectedEntity} {...focusDocProps} />}
       {activeView === "special-orders" && <SpecialOrders currentUser={user} focusDoc={focusDoc?.focus_type === "special_order" ? focusDoc : null} onClearFocus={() => setFocusDoc(null)} />}
       {activeView === "pricelist" && <><PricelistView entities={entities} selectedEntity={selectedEntity} currentUser={user} /><div className="mt-4"><SamplePriceMaster canEdit={can(user?.permissions || {}, "product", "update")} /></div></>}
       {/* F1b — Daftar Harga per Pelanggan: harga langganan (pelanggan → PT → umum) */}
@@ -330,10 +337,10 @@ export default function AppViewRouter(props) {
       {activeView === "suppliers" && <SuppliersView currentUser={user} selectedEntity={selectedEntity} />}
       {activeView === "makloons" && <MakloonsView currentUser={user} selectedEntity={selectedEntity} />}
       {activeView === "process-recipes" && <ProcessRecipesView currentUser={user} selectedEntity={selectedEntity} />}
-      {activeView === "makloon-orders" && <MakloonOrdersView currentUser={user} selectedEntity={selectedEntity} />}
+      {activeView === "makloon-orders" && <MakloonOrdersView currentUser={user} selectedEntity={selectedEntity} {...focusDocProps} />}
       {activeView === "makloon-claim-recap" && <MakloonClaimRecapView selectedEntity={selectedEntity} />}
       {activeView === "makloon-claims" && <MakloonClaimsView currentUser={user} selectedEntity={selectedEntity} />}
-      {activeView === "supplier-contracts" && <ContractsView currentUser={user} selectedEntity={selectedEntity} />}
+      {activeView === "supplier-contracts" && <ContractsView currentUser={user} selectedEntity={selectedEntity} {...focusDocProps} />}
       {/* Fase 3 · P8 (D-23) — tab tersembunyi Master Pembelian (peran Kontrak): layar Harga Internal yang sama. */}
       {activeView === "internal-prices" && <InternalPricesView />}
       {activeView === "supplier-internal-prices" && <InternalPricesView />}
@@ -344,8 +351,10 @@ export default function AppViewRouter(props) {
           Kontrak Supplier, atau kartu desain (event global `kn-open-rnd`). */}
       {activeView === "rnd-specs" && (
         <RndSpecsView currentUser={user} selectedEntity={selectedEntity}
-          focus={rndFocus?.view === "rnd-specs" ? rndFocus : null}
-          onFocusConsumed={onRndFocusConsumed} />
+          focus={rndFocus?.view === "rnd-specs" ? rndFocus   // PK-44 — tautan dokumen `md_spec` → fokus R&D
+            : (focusDoc?.focus_type === "md_spec" && focusDoc.focus_id
+              ? { nonce: `doc:${focusDoc.focus_id}:${focusDoc.nonce || ""}`, specId: focusDoc.focus_id } : null)}
+          onFocusConsumed={() => { onRndFocusConsumed?.(); if (focusDoc?.focus_type === "md_spec") setFocusDoc(null); }} />
       )}
       {activeView === "rnd-revalidation" && (
         <RndSamplesView key="reval" purpose="revalidation" currentUser={user} selectedEntity={selectedEntity}
@@ -379,20 +388,20 @@ export default function AppViewRouter(props) {
       {activeView === "rnd-divisions" && <DivisionsView section="matrix" currentUser={user} selectedEntity={selectedEntity} />}
       {activeView === "supplier-items" && <SupplierItemsView currentUser={user} selectedEntity={selectedEntity} />}
       {activeView === "purchase-approval" && <PurchaseApprovalView currentUser={user} selectedEntity={selectedEntity} />}
-      {activeView === "cash-management" && <CashManagementView currentUser={user} selectedEntity={selectedEntity} />}
-      {activeView === "purchase-returns" && <PurchaseReturns currentUser={user} selectedEntity={selectedEntity} />}
-      {activeView === "vendor-bills" && <VendorBillsView currentUser={user} selectedEntity={selectedEntity} />}
-      {activeView === "contra-bons" && <ContraBonsView currentUser={user} selectedEntity={selectedEntity} entities={entities} />}
-      {activeView === "interco-transactions" && <IntercoView currentUser={user} selectedEntity={selectedEntity} entities={entities} />}
-      {activeView === "interco-returns" && <IntercoView key="interco-returns" currentUser={user} selectedEntity={selectedEntity} entities={entities} only={["returns", "return-inbox"]} />}
+      {activeView === "cash-management" && <CashManagementView currentUser={user} selectedEntity={selectedEntity} {...focusDocProps} />}
+      {activeView === "purchase-returns" && <PurchaseReturns currentUser={user} selectedEntity={selectedEntity} {...focusDocProps} />}
+      {activeView === "vendor-bills" && <VendorBillsView currentUser={user} selectedEntity={selectedEntity} {...focusDocProps} onOpenDocument={openDocument} />}
+      {activeView === "contra-bons" && <ContraBonsView currentUser={user} selectedEntity={selectedEntity} entities={entities} {...focusDocProps} onOpenDocument={openDocument} />}
+      {activeView === "interco-transactions" && <IntercoView currentUser={user} selectedEntity={selectedEntity} entities={entities} {...focusDocProps} />}
+      {activeView === "interco-returns" && <IntercoView key="interco-returns" currentUser={user} selectedEntity={selectedEntity} entities={entities} only={["returns", "return-inbox"]} {...focusDocProps} />}
       {activeView === "repair-orders" && <RepairOrdersView currentUser={user} selectedEntity={selectedEntity} focusDoc={focusDoc} onClearFocus={() => setFocusDoc(null)} />}
       {activeView === "keep-pending" && <KeepPendingPanel selectedEntity={selectedEntity} onOpenDocument={openDocument} testPrefix="kp-page" />}
       {activeView === "internal-requests" && <InternalRequestsView currentUser={user} selectedEntity={selectedEntity} focusDoc={focusDoc} onClearFocus={() => setFocusDoc(null)} />}
       {activeView === "design-requests" && <DesignRequestsView currentUser={user} selectedEntity={selectedEntity} focusDoc={focusDoc} onClearFocus={() => setFocusDoc(null)} />}
       {activeView === "logistics" && <LogisticsView currentUser={user} selectedEntity={selectedEntity} focusDelivery={logisticsFocus} onFocusConsumed={onLogisticsFocusConsumed} />}
-      {activeView === "landed-cost" && <LandedCostView currentUser={user} selectedEntity={selectedEntity} />}
-      {activeView === "input-tax" && <InputTaxView currentUser={user} selectedEntity={selectedEntity} />}
-      {activeView === "rfq" && <RFQView currentUser={user} selectedEntity={selectedEntity} />}
+      {activeView === "landed-cost" && <LandedCostView currentUser={user} selectedEntity={selectedEntity} {...focusDocProps} />}
+      {activeView === "input-tax" && <InputTaxView currentUser={user} selectedEntity={selectedEntity} {...focusDocProps} />}
+      {activeView === "rfq" && <RFQView currentUser={user} selectedEntity={selectedEntity} {...focusDocProps} />}
       {activeView === "purchase-requisitions" && <PurchaseRequisitions currentUser={user} selectedEntity={selectedEntity} focusDoc={focusDoc} onClearFocus={() => setFocusDoc(null)} />}
       {activeView === "reorder" && <ReorderSuggestions currentUser={user} selectedEntity={selectedEntity} />}
       {activeView === "operations" && <OperationsView data={data} movements={movements} tasks={tasks} entities={entities} selectedEntity={selectedEntity} onGenerateLabel={generateLabel} onCreateInboundTask={createInboundTask} onCreateOutboundTasks={createOutboundTasks} onScanTask={scanTask} onAdvanceTask={advanceTask} onShowDetail={setActiveDetail} onNavigate={(target) => onNavSelect(target, target)} token={token} user={user} defaultTab={wmsInitialTab} focusDoc={focusDoc} onClearFocus={() => setFocusDoc(null)} onOpenDocument={openDocument} />}
@@ -407,7 +416,7 @@ export default function AppViewRouter(props) {
       {activeView === "hr-my-profile" && <EmployeeSelfService currentUser={user} />}
       {activeView === "hr-live-tracking" && <LiveTrackingView currentUser={user} selectedEntity={selectedEntity} />}
       {activeView === "hr-visits" && <VisitsView currentUser={user} selectedEntity={selectedEntity} />}
-      {activeView === "hr-payroll-runs" && <PayrollRunsView currentUser={user} selectedEntity={selectedEntity} />}
+      {activeView === "hr-payroll-runs" && <PayrollRunsView currentUser={user} selectedEntity={selectedEntity} {...focusDocProps} />}
       {activeView === "hr-payslips" && <PayslipsView currentUser={user} selectedEntity={selectedEntity} />}
       {activeView === "hr-leave" && <LeaveView currentUser={user} selectedEntity={selectedEntity} />}
       {activeView === "hr-overtime" && <OvertimeView currentUser={user} selectedEntity={selectedEntity} />}
@@ -420,7 +429,7 @@ export default function AppViewRouter(props) {
       {activeView === "cs-bi-hrd" && <HrAnalyticsView currentUser={user} selectedEntity={selectedEntity} />}
       {activeView === "cs-stock-analytics" && <StockAnalyticsView currentUser={user} selectedEntity={selectedEntity} />}
       {activeView === "export-center" && <ExportCenterView selectedEntity={selectedEntity} />}
-      {activeView === "goods-receipts" && <GoodsReceiptsView currentUser={user} selectedEntity={selectedEntity} focusDoc={focusDoc} onClearFocus={() => setFocusDoc(null)} onOpenPO={(poId) => openDocument({ view: "purchasing", nav_id: "purchase-orders", focus_type: "purchase_order", focus_id: poId })} />}
+      {activeView === "goods-receipts" && <GoodsReceiptsView currentUser={user} selectedEntity={selectedEntity} focusDoc={focusDoc} onClearFocus={() => setFocusDoc(null)} onOpenDocument={openDocument} onOpenPO={(poId) => openDocument({ view: "purchasing", nav_id: "purchase-orders", focus_type: "purchase_order", focus_id: poId })} />}
       {activeView === "wms-outbound" && <OutboundView user={user} focusDoc={focusDoc} onClearFocus={() => setFocusDoc(null)} />}
       {activeView === "wms-cutting" && <CuttingOpsView />}
       {activeView === "settings-receiving-ocr" && <ReceivingOcrSettings currentUser={user} />}

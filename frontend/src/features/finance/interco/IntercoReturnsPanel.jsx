@@ -24,7 +24,8 @@ const toPanelItems = (r) => (r.items || []).map((it) => ({
   ...it, quantity_returned: it.quantity, unit_price_est: it.unit_price, line_total_est: it.line_subtotal,
 }));
 
-export default function IntercoReturnsPanel({ rows, canWrite, canDecideRolls, activeEntityId, onApprove, onTask, onCancel, onChanged }) {
+export default function IntercoReturnsPanel({ rows, canWrite, canDecideRolls, activeEntityId, onApprove, onTask, onCancel, onChanged,
+  focusId = "" }) {
   const [chainFor, setChainFor] = useState("");
   const [rollsFor, setRollsFor] = useState("");
   const [askCancel, setAskCancel] = useState(null);
@@ -66,7 +67,7 @@ export default function IntercoReturnsPanel({ rows, canWrite, canDecideRolls, ac
                 </td></tr>
               )}
               {rows.map((r) => (
-                <tr key={r.id} data-testid={`interco-ret-${r.id}`} className="hover:bg-[#FAFAFB]">
+                <tr key={r.id} data-testid={`interco-ret-${r.id}`} className={`hover:bg-[#FAFAFB] ${r.id === focusId ? "row-focus" : ""}`}>
                   <td className="px-4 py-3">
                     {/* G1-32 — nomor tidak patah 2 baris. */}
                     <div className="font-medium text-[#1D1D1F] whitespace-nowrap">{r.number}</div>
