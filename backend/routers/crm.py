@@ -78,21 +78,40 @@ async def get_customer_360(customer_id: str, request: Request) -> Dict[str, Any]
 @router.post("/customers/{customer_id}/reassign")
 async def reassign_customer(customer_id: str, payload: CustomerReassign, request: Request) -> Dict[str, Any]:
     actor = await require_permission(request, "sales_force", "assign")
-    sales = await db.users.find_one({"id": payload.assigned_sales_id, "role": {"$in": roles_in_category("sales")},
-                                     "status": "active"}, {"_id": 0})
-    if not sales:
-        raise HTTPException(status_code=400, detail="Salesperson tujuan tidak valid")
-    before = safe_doc(await db.customers.find_one({"id": customer_id}, {"_id": 0, "assigned_sales_id": 1}))
+    before = safe_doc(await db.customers.find_one({"id": customer_id}, {"_id": 0, "assigned_sales_id": 1,
+                                                                          "entity_id": 1, "sales_team": 1}))
     if not before:
         raise HTTPException(status_code=404, detail="Customer tidak ditemukan")
+    # KM-T1 (PR-UX-04) — sales tujuan = akun dari SATU penentu daftar sales (`incentive_targets.sales_roster`, PT
+    # pelanggan): akun aktif berperan — atau berperan acuan / berkategori kerja — sales yang ditugaskan di PT itu.
+    from services.incentive_targets import is_sales_account, sales_roster
+    eid = before.get("entity_id") or ""
+    if eid and eid != "all":
+        ok = payload.assigned_sales_id in {s["id"] for s in await sales_roster(eid) if s.get("active")}
+    else:
+        ok = await is_sales_account(payload.assigned_sales_id)
+    sales = await db.users.find_one({"id": payload.assigned_sales_id, "status": "active"}, {"_id": 0}) if ok else None
+    if not sales:
+        raise HTTPException(status_code=400, detail="Salesperson tujuan tidak valid")
+    # KM-06 — pesanan baru mewarisi `sales_team` pelanggan lebih dulu (`resolve_customer_sales_team`): anggota `pic`
+    # ikut diganti (pendamping tetap — ASUMSI unit), supaya pesanan sesudah serah-terima milik sales baru.
+    team = [dict(m) for m in (before.get("sales_team") or [])]
+    if team:
+        pic = next((m for m in team if m.get("role") == "pic"), None) or team[0]
+        dup = [m for m in team if m is not pic and m.get("sales_id") == sales["id"]]
+        for m in dup:   # sales tujuan sudah pendamping → digabung ke PIC (Σ porsi tetap)
+            pic["split_pct"] = round(float(pic.get("split_pct") or 0) + float(m.get("split_pct") or 0), 4)
+            team.remove(m)
+        pic.update({"sales_id": sales["id"], "name": sales.get("name", "")})
     updated = await db.customers.find_one_and_update(
         {"id": customer_id},
         {"$set": {"assigned_sales_id": sales["id"], "assigned_sales_name": sales["name"],
-                  "sales_pic": sales["name"], "updated_at": now_iso()}},
+                  "sales_pic": sales["name"], "updated_at": now_iso(), **({"sales_team": team} if team else {})}},
         projection={"_id": 0}, return_document=ReturnDocument.AFTER,
     )
     await audit(actor["name"], "customer_reassigned", "customer", customer_id,
-                {"from": before.get("assigned_sales_id"), "to": sales["id"], "reason": payload.reason})
+                {"from": before.get("assigned_sales_id"), "to": sales["id"], "reason": payload.reason,
+                 **({"sales_team_before": before.get("sales_team"), "sales_team_after": team} if team else {})})
     return safe_doc(updated)
 
 
@@ -433,37 +452,26 @@ async def list_targets(request: Request, sales_id: str = None, period: str = Non
 
 @router.post("/sales-targets")
 async def create_target(payload: SalesTargetCreate, request: Request) -> Dict[str, Any]:
+    """KM-T1 — jalur lama layar "Set Target" (sampai KM-T5 menghapusnya) DITERUSKAN ke penyimpan baru
+    `incentive_targets.save_target` dengan `period_type = "month"`: kunci (PT, sales, jenis periode, periode), PT = PT
+    konteks pengguna (N1 — dulu PT asal sales dan kunci tanpa PT), sales = akun aktif yang ditugaskan di PT itu (dulu
+    hanya kategori sales). Izin tetap `sales_force.update` (pemegang layar lama)."""
     actor = await require_permission(request, "sales_force", "update")
-    ctx = await entity_ctx(request)
-    sales = await db.users.find_one({"id": payload.sales_id, "role": {"$in": roles_in_category("sales")}},
-                                    {"_id": 0, "name": 1, "home_entity_id": 1})
-    if not sales:
-        raise HTTPException(status_code=400, detail="Salesperson tidak valid")
-    doc = {
-        "id": new_id("starg"),
-        "sales_id": payload.sales_id,
-        "sales_name": sales.get("name", ""),
-        # FASE E-0 (L12) — entitas target = entitas HOME salesnya (bukan DEFAULT global).
-        "entity_id": (sales.get("home_entity_id") or payload.entity_id
-                      or ctx.active_entity_id or DEFAULT_ENTITY_ID),
-        "period_type": payload.period_type,
-        "period": payload.period,
-        "target_sales_amount": float(payload.target_sales_amount or 0),
-        "target_collection_amount": float(payload.target_collection_amount or 0),
-        "target_new_customers": int(payload.target_new_customers or 0),
-        "target_focus_products": payload.target_focus_products,
-        "notes": payload.notes,
-        "created_by": actor["name"],
-        "created_at": now_iso(),
-    }
-    # upsert by sales_id + period (1 target per periode)
-    await db.sales_targets.update_one(
-        {"sales_id": payload.sales_id, "period": payload.period},
-        {"$set": {k: v for k, v in doc.items() if k != "id"},
-         "$setOnInsert": {"id": doc["id"]}},
-        upsert=True,
-    )
-    saved = safe_doc(await db.sales_targets.find_one({"sales_id": payload.sales_id, "period": payload.period}, {"_id": 0}))
+    from entity_scope import assert_write_entity
+    from services import incentive_targets as _itg
+    eid = assert_write_entity(await entity_ctx(request), "mengatur target")
+    try:
+        saved = await _itg.save_target(eid, {
+            "sales_id": payload.sales_id, "period_type": "month", "period": payload.period,
+            "target_sales_amount": payload.target_sales_amount,
+            "target_collection_amount": payload.target_collection_amount,
+            "target_new_customers": payload.target_new_customers, "notes": payload.notes}, actor)
+    except _itg.InsentifError as exc:
+        raise HTTPException(status_code=exc.status, detail=str(exc))
+    if payload.target_focus_products:   # field lama layar Set Target (tidak dipakai Meja Insentif)
+        await db.sales_targets.update_one({"id": saved["id"]},
+                                          {"$set": {"target_focus_products": payload.target_focus_products}})
+        saved["target_focus_products"] = payload.target_focus_products
     await audit(actor["name"], "sales_target_set", "sales_target", saved["id"], saved)
     return saved
 

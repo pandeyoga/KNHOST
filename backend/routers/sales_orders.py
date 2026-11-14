@@ -119,6 +119,26 @@ async def _periksa_tax_override(actor: Dict[str, Any], payload: SalesOrderCreate
     return mode, reason[:1000]
 
 
+async def _price_refs(entity_id: str, product: Dict[str, Any], ref: Dict[str, Any], sell_factor: float) -> Dict[str, Any]:
+    """KM-T1 — harga pembanding satu baris pesanan per satuan jual: `list_price` (harga daftar PT; tanpa harga PT = harga
+    umum) + `list_price_source` (`entity` · `global`), `global_price`, `floor_price` + `floor_from` (batas bawah
+    `price_guard_service.floor_for`; kosong bila tidak ada batas atau galat)."""
+    glob = float(ref.get("global_price", product.get("price")) or 0)
+    ent = ref.get("entity_price")
+    out: Dict[str, Any] = {
+        "list_price": round(float(ent if ent is not None else glob) * sell_factor, 2),
+        "list_price_source": "entity" if ent is not None else "global",
+        "global_price": round(glob * sell_factor, 2), "floor_price": None, "floor_from": ""}
+    try:
+        from services.price_guard_service import floor_for
+        fl = await floor_for(entity_id, product)
+        if float(fl.get("floor") or 0) > 0:
+            out.update(floor_price=round(float(fl["floor"]) * sell_factor, 2), floor_from=fl.get("floor_from") or "")
+    except Exception as exc:  # noqa: BLE001 — batas bawah pembanding saja; pesanan tidak boleh gagal karenanya
+        logging.getLogger(__name__).warning("[create_order] batas bawah %s tidak terbaca: %s", product.get("id"), exc)
+    return out
+
+
 @router.post("/sales-orders")
 async def create_order(payload: SalesOrderCreate, request: Request) -> Dict[str, Any]:
     # L06 — Pesanan Sample cukup izin sample_order.create (Admin Sample tidak membuat SO roll biasa).
@@ -338,6 +358,10 @@ async def create_order(payload: SalesOrderCreate, request: Request) -> Dict[str,
                              if not special_meta else ("special_approval" if special_meta.get("special_price") else special_meta.get("sample_price_source", "global"))),
             "price_record_id": (entity_price_map.get(product["id"]) or {}).get("record_id") or "",
             **({"required_grade": item_in.required_grade.strip()} if item_in.required_grade.strip() else {}),
+            # KM-T1 (KM-01, K-23) — potret HARGA PEMBANDING di SEMUA baris (dulu `normal_price` hanya di baris harga
+            # khusus dan berisi harga langganan): harga daftar PT (bila PT belum punya harga: harga umum), harga umum,
+            # dan batas bawah `price_guard_service.floor_for` — per satuan jual, saat pesanan dibuat.
+            **(await _price_refs(entity_id, product, entity_price_map.get(product["id"]) or {}, sell_factor)),
             **special_meta,
         })
     number = await next_doc_number("sales_orders", "number", "SOS-" if is_sample_order else "SO-", entity_id=entity_id)
@@ -728,6 +752,12 @@ async def create_order(payload: SalesOrderCreate, request: Request) -> Dict[str,
     # KN-E01 — nama sales diisi SERVER (PIC tim → user login), bukan dari payload.
     _pic = next((m for m in (order.get("sales_team") or []) if m.get("role") == "pic"), None)
     order["sales_name"] = ((_pic or {}).get("name") or actor.get("name") or "").strip()
+    # KM-T1 (KM-03, K-21) — pemilik angka penjualan DIPOTRET saat pesanan dibuat (satu aturan atribusi: tim → sales
+    # pesanan → pembuat ber-kategori sales → penanggung jawab pelanggan). Fakta insentif & analitik membaca potret ini,
+    # jadi serah-terima pelanggan sesudahnya tidak memindahkan pesanan lama.
+    from services.analytics_facts import attribute_sales as _attribute_sales
+    order["sales_attribution"] = [{"sales_id": sid, "split": round(sp, 6)} for sid, sp in _attribute_sales(
+        order, customer, {actor.get("id") or "": actor}, "team_split")]
     await db.sales_orders.insert_one(order)
     if any(it.get("sample_cut_status") == "awaiting_internal" for it in order["items"]):
         from services import sample_sale_service as _smpi   # L06 LN-061-T01 — ownership dulu

@@ -4132,7 +4132,8 @@ kedua buku = jurnal kembar kasus: PT penerima Dr 2-1950 / Cr 2-1250, PT pemilik 
 `sales_targets` — **kunci baru** (`entity_id`, `sales_id`, `period_type`, `period`), indeks unik WAJIB-ADA
 `uq_target_pt_sales_periode` (D7; baris tanpa `entity_id`/`period_type` belum ikut sampai
 `scripts/migrate_sales_targets_km_t1.py` — data nyata H3, kunci kembar H6). Ditulis `services/incentive_targets.py:save_target`
-(PUT `/api/incentive/targets`) dan `copy_targets`.
+(PUT `/api/incentive/targets`; KM-T1 (b): juga `POST /api/sales-targets` lama — layar "Set Target" sampai KM-T5 —
+dengan `period_type = "month"` dan PT konteks) dan `copy_targets`.
 
 | Field | Arti |
 |---|---|
@@ -4152,4 +4153,20 @@ kedua buku = jurnal kembar kasus: PT penerima Dr 2-1950 / Cr 2-1250, PT pemilik 
 
 Tanda air kedua fakta: `ai_fact_state` id `fact_shipment_sales` / `fact_collections` (`watermark`, `last_sync_at`,
 `last_rebuild_at`, `build_lock_until` = satu pembangun pada satu waktu).
+
+**KM-T1 (b) — field baru pesanan (`routers/sales_orders.py:create_order`, semua pesanan baru):**
+
+| Field | Arti |
+|---|---|
+| `items[].list_price` | Harga daftar PT per satuan jual saat pesanan dibuat; PT belum punya harga → harga umum (K-23) |
+| `items[].list_price_source` | `entity` (harga daftar PT) · `global` (harga umum) |
+| `items[].global_price` | Harga umum (`products.price`) per satuan jual |
+| `items[].floor_price`, `items[].floor_from` | Batas bawah `price_guard_service.floor_for` per satuan jual (kosong bila tidak ada batas); asal batas (`entity_price` · `hpp`) |
+| `sales_attribution` | `[{sales_id, split}]` — potret pemilik angka saat pesanan dibuat (`analytics_facts.attribute_sales` mode tim; K-21). Dibaca `incentive_facts` dan `analytics_facts.build_rows` (mode tim); pesanan lama tanpa potret memakai aturan tim |
+
+Pesanan lama: `scripts/backfill_order_price_refs.py` mengisi `list_price = price` hanya untuk baris ber-`price_source`
+`entity`/`global` (baris lain dibiarkan kosong dan dilaporkan). Target lama: `scripts/migrate_sales_targets_km_t1.py`
+(`YYYY-MM` → `period_type = "month"`, `entity_id` kosong → PT asal sales; kunci kembar = H6). Serah-terima pelanggan
+(`POST /api/customers/{id}/reassign`) kini juga mengganti anggota `pic` `customers.sales_team` (pendamping tetap) dan hanya
+menerima akun dari `incentive_targets.sales_roster` PT pelanggan (KM-06).
 

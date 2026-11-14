@@ -78,13 +78,8 @@ def _giro_codes() -> Set[str]:
 def attribution(so: Dict[str, Any], customer: Dict[str, Any], users: Dict[str, Dict[str, Any]]) -> List[Tuple[str, float]]:
     """(sales_id, split) pemilik angka pesanan: potret `sales_attribution` (K-21) bila ada; selain itu aturan tim
     `analytics_facts.attribute_sales`. Split dinormalkan supaya Σ = 1."""
-    from services.analytics_facts import attribute_sales
-    snap = [(str(a.get("sales_id") or ""), _f(a.get("split"))) for a in so.get("sales_attribution") or []
-            if isinstance(a, dict)]
-    if snap:
-        total = sum(s for _, s in snap)
-        return [(sid, (s / total) if total > 0 else 1.0 / len(snap)) for sid, s in snap]
-    return attribute_sales(so, customer or {}, users, "team_split")
+    from services.analytics_facts import attribute_sales, snapshot_attribution
+    return snapshot_attribution(so) or attribute_sales(so, customer or {}, users, "team_split")
 
 
 def _split(total: float, splits: List[float]) -> List[float]:

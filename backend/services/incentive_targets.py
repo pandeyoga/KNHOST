@@ -64,9 +64,16 @@ async def assigned_user(user_id: str, entity_id: str) -> Dict[str, Any]:
 
 
 def _is_sales_role(role: str) -> bool:
-    """Peran `sales` atau peran kustom beracuan `sales` (penentu daftar, bukan wewenang)."""
-    from role_registry import base_or_self
-    return base_or_self(role) == "sales"
+    """Peran `sales`, peran kustom beracuan `sales`, atau peran berkategori kerja sales (PR-T4) — penentu daftar, bukan
+    wewenang."""
+    from role_registry import base_or_self, category_of
+    return base_or_self(role) == "sales" or category_of(role) == "sales"
+
+
+async def is_sales_account(user_id: str) -> bool:
+    """Akun aktif berperan sales (lihat `_is_sales_role`), tanpa melihat PT."""
+    u = await db.users.find_one({"id": user_id or "__none__", "status": "active"}, {"_id": 0, "role": 1})
+    return bool(u) and _is_sales_role(u.get("role") or "")
 
 
 async def sales_roster(entity_id: str, period_type: str = "", period: str = "") -> List[Dict[str, Any]]:

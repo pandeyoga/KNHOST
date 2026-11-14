@@ -60,6 +60,18 @@ def attribute_sales(so: Dict[str, Any], customer: Dict[str, Any], users: Dict[st
     return [(owner, 1.0)]
 
 
+def snapshot_attribution(so: Dict[str, Any]) -> List[Tuple[str, float]]:
+    """KM-T1 (KM-03, K-21) — potret pemilik angka `sales_attribution` yang dicatat saat pesanan dibuat
+    (`routers/sales_orders.create_order`), split dinormalkan supaya Σ = 1. Kosong = pesanan lama tanpa potret (aturan
+    `attribute_sales` dipakai). Mode `customer_owner` (pemilik pelanggan kini) sengaja tidak memakai potret."""
+    snap = [(str(a.get("sales_id") or ""), _f(a.get("split"))) for a in (so.get("sales_attribution") or [])
+            if isinstance(a, dict)]
+    if not snap:
+        return []
+    total = sum(s for _, s in snap)
+    return [(sid, (s / total) if total > 0 else 1.0 / len(snap)) for sid, s in snap]
+
+
 def _alloc(total: float, weights: List[float]) -> List[float]:
     """G3 D4-AI-04 — bagi `total` ke bobot dalam SEN (largest remainder, seri → indeks terkecil):
     Σ hasil == round(total, 2) persis, deterministik untuk replay."""
@@ -116,7 +128,8 @@ def build_rows(so: Dict[str, Any], customer: Dict[str, Any], products: Dict[str,
     line_net = _alloc(net_order, shares)
     line_grs = _alloc(total_amount, gshares)
     line_ppn = _alloc(ppn, shares)
-    attrs = attribute_sales(so, customer, users, mode)
+    attrs = snapshot_attribution(so) if mode == "team_split" else []
+    attrs = attrs or attribute_sales(so, customer, users, mode)
     splits = [sp for _, sp in attrs]
     per_line = []
     for idx, it in enumerate(items):
