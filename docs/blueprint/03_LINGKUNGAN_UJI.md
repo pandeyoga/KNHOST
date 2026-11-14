@@ -103,6 +103,7 @@ Skrip siap pakai di `docs/audit/konfigurasi-peran-2026-11-13/bukti/`:
 | `t8_cr01_plafon_oleh_sales.py` | Temuan CR-01 lewat API: Sales mengubah plafon dan status blokir pelanggannya | ±5 dtk |
 | `t9_tulis_tanpa_izin.py <keluaran.json> <inventaris.json>` lalu `t9_analyze.py <keluaran.json>` | 962 rute tulis × 3 akun tanpa izin; isi permintaan dibuat otomatis dari skema OpenAPI | ±30 dtk |
 | `t10_setuju_tanpa_izin.py` | Persetujuan PO dan tagihan pemasok oleh peran tanpa izin; persetujuan PO lintas PT | ±5 dtk |
+| `backend/tests_mem/sapuan_izin.py [--penuh] [--awalan …] [--keluaran …]` (PR-T8 — penerus `t2_roles.py` + `t9_tulis_tanpa_izin.py`, bukan arsip; penjaga `guard:matriks_izin` di `gate.sh --full`) | Semua rute `/api` × akun uji (tanpa sesi, tanpa izin, semua izin, "Manajer Kosong", Sopir; `--penuh`: + 13 peran bawaan dan 11 peran "{peran} Kosong" lagi), dinilai M0–M8 terhadap `LOGIN_ONLY`, `PUBLIC_ALLOWLIST`, dan `sapuan_izin_harapan.json` | cepat ±75 dtk (1.773 rute, 7.892 permintaan); penuh ±6 mnt (37.795 permintaan) |
 | `fe_be_routes.py <inventaris.json>` | Tiap panggilan API di layar punya rute dengan metode yang sama | ±5 dtk |
 
 Skrip-skrip ini adalah bahan baku tes regresi untuk unit `KF-*` dan `PR-*`: tiap unit menyebut skrip mana yang harus

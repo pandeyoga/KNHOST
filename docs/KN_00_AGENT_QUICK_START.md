@@ -59,6 +59,12 @@ python scripts/verify_contract.py --all   # nama koleksi (cegah RC-1 drift)
 Aturan: semua hijau → boleh `finish`. Ada FAIL → perbaiki dulu, atau catat
 eksplisit sebagai keputusan owner. **DILARANG** mengklaim hijau secara palsu (RC-10).
 
+Orkestrator gate: `bash scripts/gate.sh --quick` (statik) · `bash scripts/gate.sh` (bawaan) · `bash scripts/gate.sh --full`
+(bawaan + POC fase + **`guard:matriks_izin`** — INV-PERM-02, peran × endpoint di database tiruan, `backend/tests_mem/sapuan_izin.py`,
+beserta `SELF-TEST`-nya; `SKIP` bila `mongomock-motor` belum terpasang). Mode `python backend/tests_mem/sapuan_izin.py --penuh`
+(13 peran bawaan) dijalankan dengan tangan sebelum unit yang mengubah izin, peran, atau gerbang endpoint dinyatakan selesai;
+aturan endpoint baru: `backend/tests_mem/README.md`.
+
 ---
 
 Total waktu baca: ~20 menit. Ini menghemat jam kerja yang sia-sia.

@@ -1,0 +1,41 @@
+{
+ "_catatan": "PR-T8 — daftar yang boleh menyimpang dari penilaian sapuan_izin.py; tiap baris wajib beralasan (aturan: backend/tests_mem/README.md). menunggu_unit hanya untuk endpoint yang oleh PR-T3 diserahkan ke unit lain (PK-17, KF-T1, KP-T4, PR-T4); unit pemegangnya menghapus barisnya (M7 memerah bila lupa).",
+ "tolak_bukan_izin": {},
+ "menunggu_unit": {
+  "GET /api/desks/me": "PR-T4 — meja kerja milik sendiri (diserahkan PR-T3 tabel A); belum tercatat di LOGIN_ONLY",
+  "GET /api/home/sales": "PK-17 — beranda Sales hanya-login (diserahkan PR-T3 tabel A); putusan izin/login-saja belum tertulis",
+  "GET /api/home/warehouse": "PK-17 — beranda Gudang hanya-login (diserahkan PR-T3 tabel A); putusan izin/login-saja belum tertulis",
+  "GET /api/settings/compute-tax": "KF-T1 — hitung pajak dari pengaturan, hanya-login (diserahkan PR-T3 tabel A; Pusat Pengaturan dilanjutkan KF-T4)",
+  "GET /api/settings/effective": "KF-T1 — nilai efektif disaring `saring_bagi_pembaca` tanpa settings.view (diserahkan PR-T3 tabel A); belum tercatat di LOGIN_ONLY",
+  "GET /api/settings/evaluate-approval": "KF-T1 — evaluasi aturan persetujuan hanya-login, `doc_type` bebas (diserahkan PR-T3 tabel A; usulan KP-T3)",
+  "POST /api/landed-costs/{voucher_id}/approve": "KP-T4 — izin approve + batas nominal diperiksa sesudah dokumen dimuat (assert_can_decide); id contoh → 404 sebelum gerbang",
+  "POST /api/landed-costs/{voucher_id}/reject": "KP-T4 — idem approve: gerbang katalog persetujuan sesudah dokumen dimuat",
+  "POST /api/purchase-orders/{po_id}/approve": "KP-T4 — izin purchase_order.approve + batas nominal sesudah PO dimuat; id contoh → 404 sebelum gerbang",
+  "POST /api/purchase-orders/{po_id}/reject": "KP-T4 — idem approve: gerbang katalog persetujuan sesudah PO dimuat",
+  "POST /api/vendor-bills/{bill_id}/approve": "KP-T4 — izin vendor_bill.approve + batas nominal sesudah tagihan dimuat; id contoh → 404 sebelum gerbang",
+  "POST /api/vendor-bills/{bill_id}/reject": "KP-T4 — idem approve: gerbang katalog persetujuan sesudah tagihan dimuat"
+ },
+ "tak_teruji": {},
+ "galat_dikenal": {
+  "POST /api/push/subscribe": "lingkungan B tanpa kunci VAPID: 503 'Notifikasi push belum dikonfigurasi di server.' adalah jawaban sah (bukan cacat); akun tanpa sesi tetap 401"
+ },
+ "isi_contoh": {
+  "GET /api/ai/export.xlsx": {"query": {"ids": "x"}, "alasan": "`ids` kosong → 400 sebelum gerbang; dengan id, `get_result` menegakkan sesi dan izin asisten"},
+  "GET /api/ap-payments/accounts": {"query": {"kind": "vendor_bill", "target_id": "x"}, "alasan": "`kind` di luar vendor_bill/contra_bon → 400 sebelum gerbang (sumber daya izin dipilih dari `kind`)"},
+  "GET /api/ap-payments/pending": {"query": {"kind": "vendor_bill", "target_id": "x"}, "alasan": "idem accounts"},
+  "POST /api/customers/{customer_id}/merge": {"json": {"data": {"source_id": "x", "reason": "Uji sapuan izin otomatis"}}, "alasan": "alasan < 5 karakter → 400 sebelum gerbang"},
+  "GET /api/documents/relations/{doc_type}/{doc_id}": {"path": {"doc_type": "sales_order"}, "alasan": "`doc_type` di luar sales_order/purchase_order → 400 sebelum gerbang (izin dipilih dari jenis dokumen)"},
+  "GET /api/gl/inventory-drift-explain": {"query": {"entity_id": "ent_ksc"}, "alasan": "`entity_id` wajib PT yang ditugaskan; nilai contoh 'uji' → 403 cakupan PT, bukan izin"},
+  "GET /api/config/explain": {"query": {"key": "tax.ppn_rate"}, "alasan": "izin baca per kunci registri (KF-T1): kunci contoh tidak dikenal → 404 sebelum gerbang"},
+  "GET /api/config/layers": {"query": {"key": "tax.ppn_rate"}, "alasan": "idem explain"},
+  "POST /api/config/simulate": {"json": {"key": "tax.ppn_rate"}, "alasan": "simulator dipilih dari kunci registri; kunci contoh → 404 sebelum gerbang"},
+  "PUT /api/config/values": {"json": {"items": [{"key": "tax.ppn_rate", "value": 12.0, "scope_type": "global", "reason": "Uji sapuan izin otomatis"}]}, "alasan": "izin tulis per kunci (`_may_edit`); daftar kosong → 400 sebelum gerbang. Nilai = bawaan, supaya tulisan yang (keliru) lolos tidak mengubah apa pun"},
+  "POST /api/config/values/clear": {"json": {"key": "tax.ppn_rate", "scope_type": "global", "reason": "Uji sapuan izin otomatis"}, "alasan": "izin per kunci registri; kunci contoh → 404 sebelum gerbang"},
+  "POST /api/config/values/reset": {"json": {"key": "tax.ppn_rate", "scope_type": "global", "reason": "Uji sapuan izin otomatis"}, "alasan": "idem clear"},
+  "POST /api/handheld/batches": {"json": {"kind": "putaway_in", "doc_id": "x"}, "alasan": "H7 — jenis tugas diperiksa sebelum sesi (`handheld_core.kind_context`); jenis contoh → 404 KIND_UNKNOWN. Perilaku tidak diubah"},
+  "GET /api/handheld/tasks": {"query": {"kind": "putaway_in"}, "alasan": "H7 — idem batches"},
+  "POST /api/handheld/tasks/{kind}/{doc_id}/complete": {"path": {"kind": "outbound_so"}, "alasan": "H7 — idem batches (jenis berlangkah selesai)"},
+  "GET /api/handheld/tasks/{kind}/{doc_id}/expected": {"path": {"kind": "putaway_in"}, "alasan": "H7 — idem batches"},
+  "POST /api/rfid/v2/passages/{passage_id}/acknowledge": {"json": {"device_id": "x"}, "alasan": "H7 — isi dibaca mentah (tanpa skema); tanpa `device_id` → 400 sebelum sesi. Perilaku tidak diubah"}
+ }
+}

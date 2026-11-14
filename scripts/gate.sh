@@ -14,6 +14,7 @@
 #                                          receipt JSON (memory/GATE_RECEIPT.json)
 #                                          → dipakai CI / pre-commit / robot.
 #   bash scripts/gate.sh --full     ~95 s  DEFAULT + POC fase (G-0..G-4, F, F-1, D)
+#                                          + guard:matriks_izin (PR-T8, lingkungan B, ±75 s tambahan)
 #
 #   Opsi: --no-parallel (paksa berurutan)  ·  --jobs N (jumlah pekerja statik)
 #         --json (tulis receipt JSON juga, di mode apa pun)
@@ -880,6 +881,17 @@ fi
 
 # ============ POC FASE (hanya --full) ============
 if [ "$MODE" = "full" ]; then
+  # PR-T8 — INV-PERM-02: matriks izin BERJALAN. Aplikasi utuh di database tiruan (lingkungan B, tanpa backend :8001
+  # dan tanpa MongoDB asli); tiap rute /api × lima akun uji (tanpa sesi · tanpa izin · semua izin · "Manajer Kosong" ·
+  # Sopir). Merah: rute terbuka tanpa login/izin, menolak pemegang izin, terbuka karena peran dasar, gerbang tak teruji,
+  # daftar basi, sesi mati (M0–M8, `backend/tests_mem/sapuan_izin.py`). Daftar pengecualian beralasan:
+  # `backend/tests_mem/sapuan_izin_harapan.json`. Mode `--penuh` (13 peran bawaan) dijalankan dengan tangan.
+  run_gate "guard:matriks_izin SELF-TEST (bukti-merah penilai M0–M8)" "python backend/tests_mem/sapuan_izin.py --uji-diri"
+  if python -c "import mongomock_motor" 2>/dev/null; then
+    run_gate "guard:matriks_izin (INV-PERM-02, peran × endpoint)" "python backend/tests_mem/sapuan_izin.py"
+  else
+    skip_gate "guard:matriks_izin (INV-PERM-02, peran × endpoint)" "mongomock-motor belum terpasang (backend/tests_mem/requirements.txt)"
+  fi
   if [ $AUTH_READY -eq 1 ]; then
     # Sidik jari KEDUA — khusus fase POC. Sebelumnya anti-residu hanya mengukur
     # blok guardrail runtime, sedangkan POC fase berjalan SESUDAHNYA sehingga

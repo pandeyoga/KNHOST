@@ -55,6 +55,10 @@ PUBLIC_ALLOWLIST = {
     "POST /auth/logout",            # idempotent: hapus sesi milik token yang dibawa; tak bisa disalahgunakan.
     "POST /hr/attendance/ingest",   # agen jembatan on-prem ZKTeco — auth via device_token (bukan sesi), cek eksplisit.
     "GET /verify/{code}",           # e-sign verifikasi publik (QR/halaman /verify-document) — by design tanpa login; hanya baca status by kode acak.
+    # PR-T8 — jalur ABSOLUT (bukan dekorator router): `server.py` `@app.get("/api/")` = tanda hidup API, tanpa data.
+    # Pemindai statik ini hanya membaca routers/*.py sehingga entri ini tidak memengaruhinya; dibaca penjaga matriks
+    # berjalan (`backend/tests_mem/sapuan_izin.py`, M0).
+    "GET /api/",
     # Middleware RFID (gate/handheld/printer) — auth via header X-Device-Key
     # (`rfid_ingest_service.authenticate` → 401 bila kosong/tak dikenal), bukan sesi.
     "POST /rfid/ingest",
