@@ -9,7 +9,7 @@ from fastapi import APIRouter, Request, Query, HTTPException
 from pydantic import BaseModel
 
 from dependencies import require_permission, audit
-from entity_scope import entity_ctx, resolve_scope_ids, guard_doc
+from entity_scope import entity_ctx, resolve_scope_ids, guard_doc, resolve_requested_entity
 from schemas_interco_loan import FixedAssetTransferIn, FixedAssetTransferSettleIn
 from services import fixed_asset_service as svc
 from services import gl_service
@@ -26,7 +26,9 @@ class FixedAssetIn(BaseModel):
     salvage_value: float = 0
     entity_id: Optional[str] = ""
     gl_account_asset: Optional[str] = ""
-    funding_account: Optional[str] = ""
+    funding_account: Optional[str] = ""   # PK-23 — diabaikan: akun lawan diturunkan dari `funding_source`
+    funding_source: Optional[str] = ""    # PK-23 (FY-03) — wajib: kas · hutang · saldo_awal
+    account_id: Optional[str] = ""        # PK-23 — rekening kas/bank untuk sumber `kas`
     notes: Optional[str] = ""
 
 
@@ -58,6 +60,11 @@ def _scope(ctx, entity_id: Optional[str]) -> Dict[str, Any]:
     return {"entity_id": {"$in": ids}}
 
 
+def _galat(e: ValueError) -> HTTPException:
+    """PK-23 — `AssetError` membawa kodenya sendiri (409/400/403); ValueError lain tetap 400."""
+    return HTTPException(status_code=getattr(e, "status_code", 400), detail=str(e))
+
+
 @router.get("/fixed-assets")
 async def list_fixed_assets(request: Request, entity_id: str = Query(None)) -> List[Dict[str, Any]]:
     await require_permission(request, "fixed_asset", "view")
@@ -67,20 +74,19 @@ async def list_fixed_assets(request: Request, entity_id: str = Query(None)) -> L
 
 @router.get("/fixed-assets/meta")
 async def fixed_asset_meta(request: Request, entity_id: str = Query(None)) -> Dict[str, Any]:
-    """Kategori + akun GL aset yang bisa dipilih (postable di bawah 1-2000, kecuali akumulasi)."""
+    """Kategori + akun GL aset yang bisa dipilih (postable di bawah 1-2000, kecuali akumulasi) + PK-23: pilihan sumber
+    dana untuk PT itu (pilihan yang akun lawannya belum dipetakan tampil mati beralasan)."""
     await require_permission(request, "fixed_asset", "view")
-    await gl_service.seed_default_coa()
-    accts = await gl_service.list_accounts(active_only=True, entity_id=entity_id or None)
-    asset_accts = [{"code": a["code"], "name": a["name"]} for a in accts
-                   if a.get("code", "").startswith("1-2") and a.get("is_postable")
-                   and a.get("code") != gl_service.ACC_FA_ACCUM_DEP]
-    asset_accts.sort(key=lambda x: x["code"])
+    ctx = await entity_ctx(request)
+    eid = entity_id if entity_id and entity_id != "all" else (
+        ctx.active_entity_id if getattr(ctx, "active_entity_id", "") != "all" else None)
     return {
         "categories": svc.ASSET_CATEGORIES,
         "category_account": svc.CATEGORY_ACCOUNT,
-        "asset_accounts": asset_accts,
+        "asset_accounts": await svc.asset_accounts(eid),
         "acc_dep_account": gl_service.ACC_FA_ACCUM_DEP,
         "dep_expense_account": gl_service.ACC_DEP_EXPENSE,
+        "funding_sources": await svc.funding_options(eid),
     }
 
 
@@ -94,10 +100,14 @@ async def fixed_asset_summary(request: Request, entity_id: str = Query(None)) ->
 @router.post("/fixed-assets")
 async def create_fixed_asset(payload: FixedAssetIn, request: Request) -> Dict[str, Any]:
     actor = await require_permission(request, "fixed_asset", "create")
+    # PK-23 (N1) — PT dari konteks pengguna (`resolve_requested_entity`: isian PT wajib ∈ PT yang ditugaskan → 403);
+    # id aset dari kunci idempotensi bila dikirim (kirim ulang = aset yang sama, diteruskan).
+    ent = resolve_requested_entity(await entity_ctx(request), payload.entity_id)
     try:
-        asset = await svc.create_asset(payload.model_dump(), actor)
+        asset = await svc.create_asset(payload.model_dump(), actor, entity_id=ent,
+                                       idem_key=(request.headers.get("Idempotency-Key") or "").strip()[:120])
     except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        raise _galat(e)
     await audit(actor.get("name", ""), "fixed_asset_created", "fixed_asset", asset["id"],
                 {"number": asset["number"], "cost": asset["acquisition_cost"]})
     return asset
@@ -112,7 +122,7 @@ async def run_depreciation(payload: RunDepreciationIn, request: Request) -> Dict
                                          asset_id=payload.asset_id or None,
                                          scope=_scope(ctx, payload.entity_id))
     except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        raise _galat(e)
     await audit(actor.get("name", ""), "fixed_asset_depreciation_run", "fixed_asset",
                 payload.asset_id or "batch", {"period": res["period"], "posted": res["posted"],
                                               "total": res["total_amount"]})
@@ -134,7 +144,7 @@ async def patch_fixed_asset(asset_id: str, payload: FixedAssetPatch, request: Re
     try:
         a = await svc.update_asset(asset_id, payload.model_dump(exclude_none=True))
     except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        raise _galat(e)
     if a is None:
         raise HTTPException(status_code=404, detail="Aset tidak ditemukan")
     await audit(actor.get("name", ""), "fixed_asset_updated", "fixed_asset", asset_id, {})
@@ -149,7 +159,7 @@ async def dispose_fixed_asset(asset_id: str, payload: DisposeIn, request: Reques
         a = await svc.dispose_asset(asset_id, payload.proceeds, actor,
                                     date=payload.date or "", note=payload.note or "")
     except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        raise _galat(e)
     await audit(actor.get("name", ""), "fixed_asset_disposed", "fixed_asset", asset_id,
                 {"proceeds": payload.proceeds, "gain_loss": (a.get("disposal") or {}).get("gain_loss")})
     return a
@@ -177,7 +187,7 @@ async def transfer_fixed_asset(asset_id: str, payload: FixedAssetTransferIn,
     try:
         res = await svc.transfer_to_entity(asset_id, payload.model_dump(), actor)
     except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        raise _galat(e)
     await audit(actor.get("name", ""), "fixed_asset_transferred", "fixed_asset", asset_id,
                 {"to_entity_id": payload.to_entity_id, "price": res["price"],
                  "book_value": res["book_value"], "gain": res["gain"],

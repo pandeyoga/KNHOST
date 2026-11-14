@@ -136,7 +136,12 @@ export default function FixedAssetsView({ selectedEntity, entities = [], focusDo
     setBusy("create");
     try {
       const res = await createIntent.send(payload, (k) => moneyPost(`${API}/fixed-assets`, payload, k));
-      notify(`Aset ${res.data?.number || ""} dibuat. JE perolehan: ${res.data?.acquisition_je || "—"}.`);
+      // PK-23 — jawaban memuat status jurnal perolehan: gagal = aset tersimpan, jurnalnya diulang dari Posting Gagal.
+      const d = res.data || {};
+      notify(d.gl_status === "failed"
+        ? `Aset ${d.number || ""} tersimpan, tetapi jurnal perolehannya gagal: ${d.gl_error || "galat tidak diketahui"}. `
+          + "Ulangi di Keuangan › Posting Gagal."
+        : `Aset ${d.number || ""} dibuat. Jurnal perolehan: ${d.acquisition_je || "—"}.`);
       setShowAdd(false);
       await load();
       return true;

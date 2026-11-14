@@ -282,10 +282,17 @@ async def test_PK18_U8_surat_jalan_nominal_nol_tidak_ditulis_posted(klien, kepal
 
 # ── U9 — aset tetap ──────────────────────────────────────────────────────────────────────────────────────────────────
 async def test_PK18_U9_aset_tetap_tersimpan_jurnal_gagal_lalu_diulang(klien, kepala_admin, db, paksa_jurnal_gagal):
-    async with paksa_jurnal_gagal("akun", entity_id=KSC, kode_akun="1-2100"):
+    # PK-23 — sumber dana wajib (kas: rekening fixture) dan akun aset nonaktif kini ditolak PERIKSA sebelum tulisan
+    # (400, PK-23 U6); kegagalan jurnal dipaksa di pintu sisip.
+    if not await db.bank_accounts.find_one({"id": "rek_pk18_u9"}):
+        await db.bank_accounts.insert_one({"id": "rek_pk18_u9", "name": "BCA PK18", "entity_id": KSC,
+                                           "account_type": "bank", "cash_type": "kas_besar", "is_active": True,
+                                           "opening_balance": 0})
+    async with paksa_jurnal_gagal("sisip", entity_id=KSC, source_type="fixed_asset_acquisition"):
         r = await klien.post("/api/fixed-assets", headers=kepala_admin, json={
             "name": "Mesin potong PK-18", "category": "Peralatan & Mesin", "acquisition_cost": 12 * JT,
-            "acquisition_date": tanggal_buku(), "useful_life_months": 48, "entity_id": KSC})
+            "acquisition_date": tanggal_buku(), "useful_life_months": 48, "entity_id": KSC,
+            "funding_source": "kas", "account_id": "rek_pk18_u9"})
     assert r.status_code == 200, r.text
     aid = r.json()["id"]
     a = await db.fin_fixed_assets.find_one({"id": aid})

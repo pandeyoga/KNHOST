@@ -99,11 +99,12 @@ async def test_U03_reklas_suspense_dua_kali(klien, db, kepala_admin):
                                              "title": "uji PK-12"}),
     ("/api/tax/pph-records", "tax_pph_records", {"entity_id": E1, "period": "2026-10", "code": "pph23",
                                                  "rate": 2.0, "dpp": 1_000_000}),
+    # PK-23 (FY-03) — sumber dana wajib; sumber kas memakai rekening fixture `rek`.
     ("/api/fixed-assets", "fin_fixed_assets", {"name": "Mesin uji PK-12", "acquisition_cost": 12_000_000,
                                            "acquisition_date": "2026-10-01", "useful_life_months": 48,
-                                           "entity_id": E1}),
+                                           "entity_id": E1, "funding_source": "kas", "account_id": "ba_pk12_1"}),
 ])
-async def test_U04_jalur_lain_dua_kali(klien, db, kepala_admin, url, koleksi, isi):
+async def test_U04_jalur_lain_dua_kali(klien, db, kepala_admin, rek, url, koleksi, isi):
     n = await db[koleksi].count_documents({})
     r1, r2 = await _dua_kali(klien, url, kepala_admin, f"k-u4-{koleksi}", isi)
     assert r1.status_code == 200, r1.text

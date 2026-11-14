@@ -2634,12 +2634,15 @@ async def variance_writeoff_total(entity_id: str = "") -> float:
     return round(total, 2)
 
 
-async def post_asset_acquisition(*, asset_id: str, entity_id: str, amount: float,                                 asset_acc: str, funding_acc: str = ACC_KAS_BESAR,
+async def post_asset_acquisition(*, asset_id: str, entity_id: str, amount: float,
+                                 asset_acc: str, funding_acc: str = ACC_KAS_BESAR, funding_fixed: bool = False,
                                  label: str = "", date: str = "") -> Optional[Dict[str, Any]]:
     """R6.2 — Perolehan aset tetap → GL.
       Dr <akun aset> (harga perolehan) / Cr <akun sumber dana> (default 1-1100 Kas/Bank).
     Menaruh aset di neraca sehingga disposal (Cr aset) tidak membuat saldo negatif.
-    Idempotent per asset (source_type='fixed_asset_acquisition')."""
+    Idempotent per asset (source_type='fixed_asset_acquisition').
+    PK-23 — `funding_fixed=True`: akun sumber dana sudah hasil pemetaan khusus aset (`aset.sumber_hutang`,
+    `aset.sumber_saldo_awal`) dan dipakai apa adanya (tidak dialihkan pemetaan kebutuhan lain berkode bawaan sama)."""
     amount = round(float(amount or 0), 2)
     if amount <= EPS or await _already_posted("fixed_asset_acquisition", asset_id):
         return None
@@ -2649,7 +2652,7 @@ async def post_asset_acquisition(*, asset_id: str, entity_id: str, amount: float
         {"account_code": asset_acc, "debit": amount, "credit": 0.0,
          "description": f"Perolehan aset {lbl}"},
         {"account_code": funding_acc, "debit": 0.0, "credit": amount,
-         "description": f"Pembayaran perolehan aset {lbl}"},
+         "description": f"Pembayaran perolehan aset {lbl}", **({"fixed_account": True} if funding_fixed else {})},
     ]
     return await _insert_entry(
         lines=lines, description=f"Perolehan aset tetap {lbl}",

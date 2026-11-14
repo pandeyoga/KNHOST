@@ -18,6 +18,8 @@ import KNSelect from "../../components/KNSelect";
 import FormModal from "../../components/FormModal";
 import DetailModal from "../../components/DetailModal";
 import JournalStatusBadge, { JournalStatusBar, hasJournalBadge } from "../../components/JournalStatusBadge";   // PK-18
+import CashAccountField, { cashAccountBlocked, cashAccountBlockReason } from "../../components/CashAccountField";   // PK-23
+import { entityFullById } from "../../utils/entityLabel";
 
 // PK-42 (UX-18) — satu pemformat tanggal WIB bersama ("23 Okt 2026"); dulu zona perangkat & tahun dua angka.
 export const fmtDate = (s) => formatDate(s);
@@ -65,18 +67,29 @@ export function FaKpi({ label, value, hint, icon: Icon, tone = "", testId }) {
 }
 
 /* ── Tambah Aset ─────────────────────────────────────────────────────────── */
+// PK-23 (FY-03) — sumber dana WAJIB dipilih (tanpa bawaan). Pilihan yang akun lawannya belum ditetapkan di Pemetaan
+// Akun tampil mati dengan alasannya (dari server: `meta.funding_sources`). Sumber kas/bank → isian Rekening.
+const FUNDING_FALLBACK = [
+  { value: "kas", label: "Dibayar dari kas/bank", available: true, reason: "" },
+  { value: "hutang", label: "Dibeli secara hutang", available: true, reason: "" },
+  { value: "saldo_awal", label: "Saldo awal (aset lama)", available: true, reason: "" },
+];
+
 export function AddAssetDialog({ meta, entities = [], selectedEntity, busy, error = "", onCancel, onSubmit }) {
   const cats = meta?.categories || ["Peralatan & Mesin"];
   const catAcc = meta?.category_account || {};
   const accounts = meta?.asset_accounts || [];
-  const defaultEntity = selectedEntity && selectedEntity !== "all"
-    ? selectedEntity : (entities[0]?.id || "");
+  const funding = Array.isArray(meta?.funding_sources) && meta.funding_sources.length
+    ? meta.funding_sources : FUNDING_FALLBACK;
+  // PK-23 (N1) — PT = PT yang sedang dipilih (tombol Tambah mati di "Semua PT"); server memeriksanya lagi.
+  const entityId = selectedEntity && selectedEntity !== "all" ? selectedEntity : (entities[0]?.id || "");
 
   const [form, setForm] = useState({
     name: "", category: cats[0], acquisition_cost: "", acquisition_date: todayWib(),
-    useful_life_months: 60, salvage_value: "", entity_id: defaultEntity,
-    gl_account_asset: catAcc[cats[0]] || "", notes: "",
+    useful_life_months: 60, salvage_value: "", gl_account_asset: catAcc[cats[0]] || "", notes: "",
+    funding_source: "", account_id: "",
   });
+  const [accState, setAccState] = useState("");
   const [localErr, setLocalErr] = useState("");
   const set = (k, v) => setForm((f) => ({ ...f, [k]: v }));
 
@@ -87,104 +100,133 @@ export function AddAssetDialog({ meta, entities = [], selectedEntity, busy, erro
   const life = parseInt(form.useful_life_months || 0, 10) || 0;
   const monthly = life > 0 && biaya > salvage ? Math.round(((biaya - salvage) / life) * 100) / 100 : 0;
   const salvageBad = form.salvage_value !== "" && biaya > 0 && salvage >= biaya;
+  const isKas = form.funding_source === "kas";
 
   function submit() {
     if (!form.name.trim()) { setLocalErr("Nama aset wajib diisi."); return; }
     if (biaya <= 0) { setLocalErr("Harga perolehan harus lebih besar dari 0."); return; }
     if (life <= 0) { setLocalErr("Masa manfaat (bulan) harus lebih besar dari 0."); return; }
     if (salvage < 0 || salvage >= biaya) { setLocalErr("Nilai residu harus ≥ 0 dan < harga perolehan."); return; }
+    if (!form.funding_source) { setLocalErr("Pilih sumber dana perolehan aset."); return; }
     setLocalErr("");
     onSubmit({
       name: form.name.trim(), category: form.category, acquisition_cost: biaya,
       acquisition_date: form.acquisition_date, useful_life_months: life, salvage_value: salvage,
-      entity_id: form.entity_id, gl_account_asset: form.gl_account_asset, notes: form.notes.trim(),
+      entity_id: entityId, gl_account_asset: form.gl_account_asset, notes: form.notes.trim(),
+      funding_source: form.funding_source, account_id: isKas ? form.account_id : "",
     });
   }
 
   // UAT 24 Okt (audit UI tahap 2) — G1-25: Simpan nonaktif sampai Nama & Harga Perolehan & masa manfaat terisi.
-  const cannotSave = salvageBad || !form.name.trim() || biaya <= 0 || life <= 0;
+  // PK-23 — juga sampai sumber dana dipilih dan (kas/bank) rekeningnya bisa ditentukan; alasannya ditulis di bawah.
+  const accBlocked = isKas && cashAccountBlocked(accState, form.account_id);
+  const cannotSave = salvageBad || !form.name.trim() || biaya <= 0 || life <= 0 || !form.funding_source || accBlocked;
+  const saveReason = !form.name.trim() || biaya <= 0 || life <= 0 ? "Isi nama, harga perolehan, dan masa manfaat."
+    : salvageBad ? "Nilai residu harus lebih kecil dari harga perolehan."
+      : !form.funding_source ? "Pilih sumber dana perolehan."
+        : accBlocked ? cashAccountBlockReason(accState) : "";
   return (
     <FormModal open onClose={onCancel} title="Tambah Aset Tetap" icon={Plus} size="md"
-      subtitle="Perolehan otomatis diposting ke GL: Dr akun aset / Cr Kas-Bank."
+      subtitle="Perolehan dijurnal otomatis: debit akun aset, kredit sesuai sumber dana."
       testId="add-asset-dialog" onSubmit={submit} busy={busy} error={error}
       submitDisabled={cannotSave} submitLabel="Simpan Aset"
       submitTestId="add-asset-submit-btn" cancelTestId="add-asset-cancel-btn">
         {localErr && <div className="notice-bar danger mb-2" data-testid="add-asset-error"><span>{localErr}</span></div>}
 
         <div className="grid gap-3">
+          <p className="text-fs-12 text-kn-text-2" data-testid="asset-entity-line">
+            PT pemilik aset: <b className="text-kn-text">{entityFullById(entities, entityId)}</b>
+          </p>
           <label className="grid gap-1">
-            <span className="text-[11px] font-semibold text-[#3C3C43]">Nama Aset *</span>
+            <span className="field-label">Nama Aset *</span>
             <input data-testid="asset-name-input" className="field" value={form.name}
               placeholder="Mesin Tenun Otomatis TX-200" onChange={(e) => set("name", e.target.value)} />
           </label>
 
           <div className="grid gap-3 sm:grid-cols-2">
             <label className="grid gap-1">
-              <span className="text-[11px] font-semibold text-[#3C3C43]">Kategori</span>
+              <span className="field-label">Kategori</span>
               <KNSelect data-testid="asset-category-select" className="field" value={form.category}
                 onValueChange={onCategory} aria-label="Kategori aset"
                 options={cats.map((c) => ({ value: c, label: c }))} />
             </label>
             <label className="grid gap-1">
-              <span className="text-[11px] font-semibold text-[#3C3C43]">Akun GL Aset</span>
+              <span className="field-label">Akun Aset</span>
               <KNSelect data-testid="asset-account-select" className="field" value={form.gl_account_asset}
-                onValueChange={(v) => set("gl_account_asset", v)} aria-label="Akun GL aset"
-                placeholder="(default kategori)"
+                onValueChange={(v) => set("gl_account_asset", v)} aria-label="Akun aset"
+                placeholder="(akun kategori)"
                 options={accounts.map((a) => ({ value: a.code, label: `${a.code} · ${a.name}` }))} />
             </label>
           </div>
 
           <div className="grid gap-3 sm:grid-cols-2">
             <label className="grid gap-1">
-              <span className="text-[11px] font-semibold text-[#3C3C43]">Harga Perolehan (Rp) *</span>
+              <span className="field-label">Harga Perolehan (Rp) *</span>
               <MoneyInput testId="asset-cost-input" className="field" value={form.acquisition_cost} placeholder="mis. 12.000.000"
                 onChange={(v) => set("acquisition_cost", v)} />
             </label>
             <label className="grid gap-1">
-              <span className="text-[11px] font-semibold text-[#3C3C43]">Tanggal Perolehan</span>
+              <span className="field-label">Tanggal Perolehan</span>
               <KNDatePicker data-testid="asset-date-input" value={form.acquisition_date}
                 onChange={(v) => set("acquisition_date", v)} clearable={false} />
             </label>
           </div>
 
+          <fieldset className="grid gap-1.5" data-testid="asset-funding">
+            <legend className="field-label">Sumber Dana *</legend>
+            {funding.map((f) => (
+              <label key={f.value} data-testid={`asset-funding-row-${f.value}`}
+                className={`flex items-start gap-2 rounded-md border border-kn-divider px-3 py-2 ${f.available
+                  ? "cursor-pointer" : "cursor-not-allowed bg-kn-neutral-soft"}`}>
+                <input type="radio" name="asset-funding" className="mt-0.5" value={f.value}
+                  data-testid={`asset-funding-${f.value}`} checked={form.funding_source === f.value}
+                  disabled={!f.available} onChange={() => set("funding_source", f.value)} />
+                <span className="grid">
+                  <span className={`text-fs-13 ${f.available ? "text-kn-text" : "text-kn-text-2"}`}>{f.label}</span>
+                  {!f.available && (
+                    <span className="text-fs-12 text-kn-text-2" data-testid={`asset-funding-reason-${f.value}`}>
+                      {f.reason || "Akun lawannya belum ditetapkan di Pemetaan Akun."}
+                    </span>
+                  )}
+                </span>
+              </label>
+            ))}
+          </fieldset>
+          {isKas && (
+            <CashAccountField entityId={entityId} value={form.account_id} onChange={(v) => set("account_id", v)}
+              onState={setAccState} testId="asset-cash-account" />
+          )}
+
           <div className="grid gap-3 sm:grid-cols-2">
             <label className="grid gap-1">
-              <span className="text-[11px] font-semibold text-[#3C3C43]">Masa Manfaat (bulan) *</span>
+              <span className="field-label">Masa Manfaat (bulan) *</span>
               <input data-testid="asset-life-input" className="field tabular-nums" type="number" min={1}
                 value={form.useful_life_months} onChange={(e) => set("useful_life_months", e.target.value)} />
             </label>
             <label className="grid gap-1">
-              <span className="text-[11px] font-semibold text-[#3C3C43]">Nilai Residu (Rp)</span>
+              <span className="field-label">Nilai Residu (Rp)</span>
               <MoneyInput testId="asset-salvage-input" className="field" value={form.salvage_value} placeholder="opsional"
                 invalid={salvageBad} hint={salvageBad ? "Residu harus lebih kecil dari harga perolehan" : undefined}
                 onChange={(v) => set("salvage_value", v)} />
             </label>
           </div>
 
-          {entities.length > 1 && (
-            <label className="grid gap-1">
-              <span className="text-[11px] font-semibold text-[#3C3C43]">Entitas (PT)</span>
-              <KNSelect data-testid="asset-entity-select" className="field" value={form.entity_id}
-                onValueChange={(v) => set("entity_id", v)} aria-label="Badan usaha pemilik aset"
-                options={entities.map((en) => ({
-                  value: en.id, label: en.short_name || en.legal_name,
-                }))} />
-            </label>
-          )}
-
           <label className="grid gap-1">
-            <span className="text-[11px] font-semibold text-[#3C3C43]">Catatan</span>
+            <span className="field-label">Catatan</span>
             <input data-testid="asset-notes-input" className="field" value={form.notes}
               placeholder="opsional" onChange={(e) => set("notes", e.target.value)} />
           </label>
 
-          <div className="rounded-md bg-[#F7F8FA] border border-[#EFF0F2] px-3 py-2">
-            <p className="text-[11px] text-[#6B6B73]">
+          <div className="rounded-md border border-kn-divider bg-kn-neutral-soft px-3 py-2">
+            <p className="text-fs-12 text-kn-text-2">
               Estimasi penyusutan bulanan:{" "}
-              <b className="tabular-nums text-[#1C1C1E]" data-testid="asset-monthly-preview">{formatCurrency(monthly)}</b>
-              {life > 0 ? ` selama ${life} bulan` : ""}
+              <b className="tabular-nums text-kn-text" data-testid="asset-monthly-preview">{formatCurrency(monthly)}</b>
+              {life > 0 ? ` selama ${life} bulan; bulan terakhir mengambil seluruh sisanya` : ""}
             </p>
           </div>
+          {cannotSave && saveReason && (
+            <p className="text-fs-12 text-kn-text-2" data-testid="add-asset-save-reason">Simpan aktif sesudah: {saveReason}</p>
+          )}
         </div>
     </FormModal>
   );

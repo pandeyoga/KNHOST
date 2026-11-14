@@ -17,7 +17,8 @@ koleksi, saringan "jurnal gagal", nomor, nominal, dan jalur ulang tiap jenis (`0
   per_step         (opsional) satu baris panel per unsur larik yang gagal; id baris = `<id dokumen>:<seq>`. Lariknya
                    `items_field` (bawaan `steps`), nominal unsur `item_amount` (bawaan `makloon_step_amount`), sebutan
                    unsur di nomor baris `item_label` (bawaan "langkah") — PK-28 memakai `grir_clearings[]`
-  link             (opsional) tujuan tautan tetap bila jenis dokumennya tidak ada di `DOC_TYPES`
+  link             (opsional) tujuan tautan tetap bila jenis dokumennya tidak ada di `DOC_TYPES`; `link_id_field`
+                   (opsional) = field id dokumen tujuan (bawaan `id`), mis. entri penyusutan → asetnya
 
 `KINDS` sengaja berupa literal: penjaga statik membacanya tanpa mengimpor aplikasi. Jenis dari PK-05 (`contra_bon`),
 PK-06 (`interco_*`) dan PK-30 (`interco_adj`) dipindahkan dari `routers/posting_failures.py` apa adanya.
@@ -228,8 +229,21 @@ async def _retry_receipt_void(doc: Dict[str, Any], actor: Dict[str, Any]) -> Non
 
 
 async def _retry_fixed_asset(doc: Dict[str, Any], actor: Dict[str, Any]) -> None:
-    from services.fixed_asset_service import post_acquisition_gl
-    await post_acquisition_gl(doc, raise_on_fail=True)
+    """PK-23 — kas perolehan (sumber `kas`, id tetap) dipastikan ada, lalu jurnal perolehan."""
+    from services.fixed_asset_service import retry_acquisition
+    await retry_acquisition(doc, actor)
+
+
+async def _retry_asset_depreciation(doc: Dict[str, Any], actor: Dict[str, Any]) -> None:
+    """PK-23 — jurnal entri penyusutan yang gagal; register aset diperbarui sesudah terbit."""
+    from services.fixed_asset_service import repost_depreciation_entry
+    await repost_depreciation_entry(doc, actor)
+
+
+async def _retry_fixed_asset_disposal(doc: Dict[str, Any], actor: Dict[str, Any]) -> None:
+    """PK-23 — pelepasan yang macet di `disposing` dengan jurnal gagal diselesaikan dari niatnya."""
+    from services.fixed_asset_service import resume_disposal
+    await resume_disposal(doc, actor)
 
 
 async def _retry_credit_note(doc: Dict[str, Any], actor: Dict[str, Any]) -> None:
@@ -389,6 +403,23 @@ KINDS: Dict[str, Dict[str, Any]] = {
         "amount_field": "total_pengeluaran", "status_field": "gl_status", "error_field": "gl_error",
         "failed_at_field": "gl_failed_at", "doc_type": "cash_settlement",
         "posters": ("post_petty_cash_settlement",), "retry": _retry_petty_cash_settlement},
+    # ── PK-23 — penyusutan per (aset, periode) dan pelepasan aset ──
+    "asset_depreciation": {
+        "label": "Penyusutan Aset", "collection": "fin_depreciation_entries", "failed_query": {"gl_status": "failed"},
+        "entity_field": "entity_id", "number_field": "gl_label", "amount_field": "amount",
+        "status_field": "gl_status", "error_field": "gl_error", "failed_at_field": "gl_failed_at",
+        "doc_type": "", "link": {"view": "fixed-assets", "tab": "", "focus_type": "fixed_asset"},
+        "link_id_field": "asset_id", "posters": ("post_depreciation",), "retry": _retry_asset_depreciation},
+    # Jurnal pelepasan gagal → status aset DIKEMBALIKAN (409 di layar). Baris panel hanya untuk pelepasan yang macet
+    # di `disposing` (pengembalian status tidak sempat ditulis); ulang = selesaikan pelepasan dari niatnya.
+    "fixed_asset_disposal": {
+        "label": "Pelepasan Aset", "collection": "fin_fixed_assets",
+        "failed_query": {"status": "disposing", "disposal_gl_status": "failed"},
+        "entity_field": "entity_id", "number_field": "number", "amount_field": "book_value",
+        "status_field": "disposal_gl_status", "error_field": "disposal_gl_error",
+        "failed_at_field": "disposal_gl_failed_at", "doc_type": "",
+        "link": {"view": "fixed-assets", "tab": "", "focus_type": "fixed_asset"},
+        "posters": ("post_asset_disposal",), "retry": _retry_fixed_asset_disposal},
     # ── PK-28 — kliring sisa GR/IR: satu baris panel per unsur `grir_clearings[]` yang gagal ──
     "grir_clearing": {
         "label": "Kliring GR/IR", "collection": "purchase_orders", "failed_query": {"grir_clearings.gl_status": "failed"},
@@ -422,8 +453,8 @@ def _link(spec: Dict[str, Any], doc: Dict[str, Any], number: str) -> Dict[str, A
         link = _refs.link_of(spec["doc_type"], doc)
         link["number"] = link.get("number") or number
         return link
-    if spec.get("link"):
-        return {**spec["link"], "focus_id": doc["id"], "number": number}
+    if spec.get("link"):   # `link_id_field` (PK-23): id dokumen tujuan bila beda dari dokumen gagalnya
+        return {**spec["link"], "focus_id": pick(doc, spec.get("link_id_field") or "id") or doc["id"], "number": number}
     return {}
 
 

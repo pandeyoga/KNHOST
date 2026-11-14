@@ -5375,11 +5375,18 @@ async def seed_fixed_assets():
          "entity_id": "ent_kanda", "days": 220,
          "notes": "Cadangan daya workshop Kanda."},
     ]
+    from services import interco_money_service as icm  # noqa: PLC0415
     made = 0
     for c in contoh:
         days = c.pop("days")
         try:
-            await fas.create_asset({**c, "acquisition_date": ago(days=days)[:10]}, actor)
+            # PK-23 (FY-03) — sumber dana wajib: dibayar dari rekening bank PT (dulu Cr 1-1100 tanpa transaksi kas);
+            # kas keluarnya lahir lewat pembuat kas satu pintu, jadi buku rekening = buku besar.
+            acc_id = await icm.default_cash_account(c["entity_id"]) or ((await db.bank_accounts.find_one(
+                {"entity_id": c["entity_id"], "is_active": {"$ne": False}}, {"_id": 0, "id": 1},
+                sort=[("created_at", 1)])) or {}).get("id", "")
+            await fas.create_asset({**c, "acquisition_date": ago(days=days)[:10], "funding_source": "kas",
+                                    "account_id": acc_id}, actor, entity_id=c["entity_id"])
             made += 1
         except Exception as exc:  # noqa: BLE001
             print(f"  [warn] aset '{c['name']}' dilewati: {exc}")

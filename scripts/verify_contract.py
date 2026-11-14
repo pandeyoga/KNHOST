@@ -129,6 +129,8 @@ CANONICAL_COLLECTIONS = {
     # ── PK-18 — koleksi dokumen yang menjurnal, terdaftar di registri posting (ENTITY_REGISTRY.md sudah memuatnya) ──
     "contra_bons", "interco_transactions", "interco_returns", "interco_settlements",
     "credit_notes", "fin_fixed_assets",
+    # ── PK-23 — entri penyusutan menjurnal (jenis `asset_depreciation` registri posting) ──
+    "fin_depreciation_entries",
 }
 
 # ── Alias TERLARANG → koleksi kanonik (dari bagian FORBIDDEN ENTITY_REGISTRY) ──

@@ -175,6 +175,16 @@ ENTRIES: List[Dict[str, Any]] = [
        ("Kas", "Laba pelepasan"), ["Aset tetap"]),
     _e("aset.rugi_pelepasan", "6-9500", "Rugi pelepasan aset", "aset dijual di bawah nilai buku",
        ("Rugi pelepasan", "Aset"), ["Aset tetap"]),
+    # PK-23 (FY-03) — lawan perolehan aset menurut sumber dananya. `remap=False` (kode bawaannya sama dengan
+    # `pembelian.hutang` / `persediaan.saldo_awal`, jadi dipanggil eksplisit) dan `required=False`: pilihan sumber dana
+    # di form aset baru HIDUP sesudah pemetaan ini DISIMPAN orang (PT atau global) — bawaan registri hanya usulan
+    # (titik henti H4: akunnya keputusan pemilik).
+    _e("aset.sumber_hutang", "2-1100", "Lawan perolehan aset yang dibeli secara hutang",
+       "aset tetap dibeli secara hutang (pilihan di form aset aktif sesudah pemetaan ini disimpan)",
+       ("Aset tetap", "Hutang"), ["Aset tetap"], remap=False, required=False),
+    _e("aset.sumber_saldo_awal", "3-2900", "Lawan aset lama yang dicatat sebagai saldo awal",
+       "aset lama dicatat sebagai saldo awal (pilihan di form aset aktif sesudah pemetaan ini disimpan)",
+       ("Aset tetap", "Ekuitas saldo awal"), ["Aset tetap"], remap=False, required=False),
     _e("lain.suspense", "1-9999", "Akun penampung (suspense)", "posting yang belum jelas akunnya",
        ("Suspense", "Kas"), ["Posting gagal", "Reklas suspense"]),
 ]

@@ -1312,9 +1312,12 @@ async def layer_fixed_asset_invariants(db):
     INACTIVE = ("disposed", "transferred")
     aktif = [a for a in assets if a.get("status") not in INACTIVE]
 
-    # FA-1 — accumulated aset == Σ entri penyusutan
+    # FA-1 — accumulated aset == Σ entri penyusutan yang jurnalnya TERBIT (PK-23: entri `pending`/`failed` belum
+    # diterapkan ke register; ia tampil di Posting Gagal, bukan drift)
     sum_by_asset = {}
     for e in entries:
+        if e.get("gl_status") in ("pending", "failed"):
+            continue
         sum_by_asset[e.get("asset_id")] = round(sum_by_asset.get(e.get("asset_id"), 0) + float(e.get("amount", 0) or 0), 2)
     v1 = [a.get("number") for a in assets
           if abs(round(float(a.get("accumulated_depreciation", 0) or 0), 2) - sum_by_asset.get(a.get("id"), 0.0)) > 0.01]

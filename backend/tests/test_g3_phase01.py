@@ -239,8 +239,9 @@ def _asset_fixture(monkeypatch):
                                              "amount": kw["amount"]})
         return {"id": f"je_{sid}", "number": sid}
     monkeypatch.setattr(fa.gl_service, "post_depreciation", fake_post)
+    # PK-23 (FY-01) — hanya aset yang jurnal perolehannya terbit yang disusutkan.
     return db.fin_fixed_assets.insert_one({"id": "a1", "status": "active", "acquisition_cost": 1200,
-                                          "salvage_value": 0, "useful_life_months": 12,
+                                          "gl_status": "posted", "salvage_value": 0, "useful_life_months": 12,
                                           "accumulated_depreciation": 0, "depreciated_months": 0})
 
 

@@ -35,6 +35,7 @@ REF_LABEL = {
     "ap_advance": "uang muka pemasok", "contra_bon": "kontrabon", "landed_cost": "landed cost",
     "sales_return": "retur jual", "purchase_return": "retur beli", "payroll_run": "pembayaran gaji",
     "penalty": "nota denda", "interco_loan": "pinjaman antar-PT", "interco_loan_repayment": "angsuran antar-PT",
+    "fixed_asset": "perolehan aset tetap", "fixed_asset_transfer": "pembayaran pindah aset antar-PT",   # PK-23
 }
 
 #: Field dokumen kas yang hanya ditentukan pembuat ini — `extra` tidak boleh menimpanya.
