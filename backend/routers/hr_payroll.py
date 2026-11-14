@@ -205,7 +205,7 @@ async def pay_payroll_run(request: Request, run_id: str, body: PayRunInput):
     await guard_doc(request, "hr_payroll_runs", await db.hr_payroll_runs.find_one({"id": run_id}, {"_id": 0}),
                     not_found="Payroll run tidak ditemukan")  # KN-B30
     try:
-        run = await pay.pay_run(run_id, actor, body.cash_account)
+        run = await pay.pay_run(run_id, actor, body.cash_account, account_id=body.account_id)
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
     await audit(actor["name"], "hr.payroll.run_pay", "hr_payroll_runs", run_id,

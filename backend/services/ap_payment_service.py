@@ -17,7 +17,7 @@ from typing import Any, Dict, List, Optional, Tuple
 
 from fastapi import HTTPException
 
-from core_utils import DEFAULT_ENTITY_ID, new_id, next_doc_number, now_iso, rupiah, safe_doc, timeline_entry
+from core_utils import DEFAULT_ENTITY_ID, new_id, now_iso, rupiah, safe_doc, timeline_entry
 from db import db
 
 COLL = "ap_payment_intents"
@@ -333,11 +333,12 @@ async def pay_payable(*, kind: str, target_id: str, actor: Dict[str, Any], amoun
     token = claimed[_saga.LOCK]["token"]
     ent = plan["entity_id"]
     cash, adv = plan["cash"], plan["advance"]
+    from services import cash_ledger
     try:
         if cash:
-            cash["number"] = await next_doc_number("cash_transactions", "number", "CASH-", entity_id=ent)
+            cash["number"] = await cash_ledger.next_cash_number(ent)   # PK-20 — satu pemberi nomor kas
         if adv:
-            adv["number"] = await next_doc_number("cash_transactions", "number", "CASH-", entity_id=ent)
+            adv["number"] = await cash_ledger.next_cash_number(ent)
         intent = {
             "id": iid, "entity_id": ent, "kind": kind, "target_id": target_id, "target_number": plan["target_number"],
             "request_hash": req_hash, "idempotency_key": idempotency_key, "amount": plan["amount"],
@@ -463,11 +464,23 @@ async def _apply_allocations(intent: Dict[str, Any], actor: Dict[str, Any]) -> N
 
 
 async def _insert_cash(intent: Dict[str, Any]) -> None:
+    """PK-20 — langkah sisip kas lewat pembuat kas satu pintu (`cash_ledger.create_cash`) dengan id turunan niat
+    (`txn_id`) dan nomor yang sudah dipesan saat niat lahir. Pembuat kas langsung menjurnal kasnya (pintu tahan-gagal);
+    jurnal gagal → kas tersimpan `failed`, langkah ini tetap selesai dan langkah jurnal mencatat peringatannya."""
+    from services import cash_ledger
     for c in (intent.get("cash_doc"), intent.get("advance_cash_doc")):
         if not c or _r(c.get("amount")) <= EPS:
             continue
-        if not await db.cash_transactions.find_one({"id": c["id"]}, {"_id": 0, "id": 1}):
-            await db.cash_transactions.insert_one(dict(c))
+        tambahan = {k: c[k] for k in ("number", "ref_number", "counterparty_name", "payment_intent_id") if c.get(k)}
+        try:
+            await cash_ledger.create_cash(
+                entity_id=c["entity_id"], direction=c.get("direction") or "out", amount=_r(c["amount"]),
+                ref_type=c["ref_type"], ref_id=c["ref_id"], account_id=c.get("account_id", ""),
+                cash_type=c.get("cash_type", ""), txn_date=c.get("txn_date", ""), category=c.get("category", ""),
+                description=c.get("description", ""), actor=c.get("created_by", "") or "system",
+                owner_entity_id=c.get("owner_entity_id", ""), txn_id=c["id"], extra=tambahan)
+        except cash_ledger.CashPostingError:
+            intent.setdefault("_kas_gagal", set()).add(c["id"])   # jangan dicoba ulang di langkah jurnal putaran ini
 
 
 async def _update_document(intent: Dict[str, Any], actor: Dict[str, Any]) -> None:
@@ -544,16 +557,21 @@ async def _post_journals(intent: Dict[str, Any]) -> None:
             "gl_status": "failed" if ded_err else "posted", "gl_error": ded_err, "updated_at": now_iso()}})
         if ded_err:
             errors.append(ded_err)
+    from services import cash_ledger
     for cid in (intent.get("cash_txn_id"), intent.get("advance_cash_txn_id")):
         if not cid:
             continue
         cash = await db.cash_transactions.find_one({"id": cid}, {"_id": 0})
         if not cash:
             continue
+        if cid in intent.get("_kas_gagal", ()):   # PK-20 — baru saja gagal di pembuat kas: penandanya sudah tertulis
+            errors.append((cash.get("gl_error") or "jurnal kas gagal")[:300])
+            continue
         try:
-            await gl.post_cash_durable(cash)
-        except Exception as exc:  # noqa: BLE001 — kas sudah ditandai gagal oleh post_cash_durable
-            errors.append(str(exc)[:300])
+            await cash_ledger.ensure_posted(cid)
+        except cash_ledger.CashPostingError as exc:  # kas sudah ditandai gagal oleh pintu tahan-gagal
+            errors.append(exc.error[:300])
+    intent.pop("_kas_gagal", None)
     await db[COLL].update_one({"id": intent["id"]}, {"$set": {
         "gl_status": "failed" if errors else "posted", "gl_error": "; ".join(errors)[:500], "updated_at": now_iso()}})
 

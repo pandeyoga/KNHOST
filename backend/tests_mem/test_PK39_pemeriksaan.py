@@ -42,6 +42,10 @@ async def _bersih(db):
         await db[koleksi].delete_many(saring)
     await db.cash_transactions.delete_many({"category": "sewa"})
     await db.journal_entries.delete_many({"source_type": "cash_transaction"})
+    # PK-20 — kas wajib berekening: fixture satu rekening Kas Kecil milik KSC (rekening tunggal → dipakai otomatis).
+    if not await db.bank_accounts.find_one({"id": "rek_pk39_k"}):
+        await db.bank_accounts.insert_one({"id": "rek_pk39_k", "name": "Kas Kecil KSC (uji PK-39)", "entity_id": KSC,
+                                           "account_type": "cash", "cash_type": "kas_kecil", "is_active": True})
 
 
 async def _pagu(klien, h, key, amount, *, dimension="account", entity=KSC):

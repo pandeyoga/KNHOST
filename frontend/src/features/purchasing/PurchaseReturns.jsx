@@ -579,7 +579,9 @@ export default function PurchaseReturns({ currentUser, selectedEntity, focusDoc,
         onReject={(r) => { setDetail(null); setRejectTarget(r); }}
         onDelete={(r) => { setDetail(null); setDeleteTarget(r); }}
         onShip={(r) => lifecycleAct(r, "ship", {})}
-        onSupplierAccept={(r, outcome, refundAccount, rejectedRolls) => lifecycleAct(r, "accept", { outcome, refund_account_code: refundAccount || "", rejected_rolls: rejectedRolls || [] })}
+        onSupplierAccept={(r, outcome, refundAccount, rejectedRolls, refundAccountId) => lifecycleAct(r, "accept", {
+          outcome, refund_account_code: refundAccount || "", rejected_rolls: rejectedRolls || [],
+          ...(refundAccountId ? { refund_account_id: refundAccountId } : {}) })}
         onPartialGoodsBack={(r, regrade) => lifecycleAct(r, "partial_goods_back", { regrade })}
         onSupplierReject={(r, reason) => lifecycleAct(r, "supplier_reject", { reason })}
         onGoodsBack={(r, regrade) => lifecycleAct(r, "goods_back", { regrade })}

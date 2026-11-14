@@ -22,7 +22,7 @@ Ditambah dua hal yang membuat angkanya JUJUR di laporan grup:
 from typing import Any, Dict, List, Optional
 
 from db import db
-from core_utils import new_id, next_doc_number, now_iso, rupiah, safe_doc
+from core_utils import new_id, now_iso, rupiah, safe_doc
 from services import gl_service
 from services.book_date import tanggal_buku   # PK-37
 
@@ -62,46 +62,50 @@ async def assert_pair(a_entity: str, b_entity: str, *, what: str) -> Dict[str, D
 
 
 async def default_cash_account(entity_id: str) -> str:
-    acc = await db.bank_accounts.find_one(
-        {"entity_id": entity_id, "is_active": {"$ne": False}}, {"_id": 0, "id": 1},
-        sort=[("account_type", 1)])
-    return (acc or {}).get("id", "")
+    """Rekening bawaan PT untuk uang antar-PT: rekening BANK (kas besar) aktif pertama — jurnal antar-PT memakai akun
+    1-1100, jadi rekening Kas Kecil tidak dipilih otomatis (PK-20: buku kas = buku besar)."""
+    from services.bank_service import account_cash_type
+    async for acc in db.bank_accounts.find({"entity_id": entity_id, "is_active": {"$ne": False},
+                                            "status": {"$ne": "inactive"}}, {"_id": 0}).sort(
+            [("account_type", 1), ("created_at", 1)]):
+        if account_cash_type(acc) == "kas_besar":
+            return acc.get("id", "")
+    return ""
 
 
 async def twin_cash(*, out_entity: str, in_entity: str, amount: float, category: str,
                     description: str, ref_type: str, ref_id: str,
                     actor: str = "system", txn_date: str = "",
                     out_account_id: str = "", in_account_id: str = "") -> Dict[str, Any]:
-    """Satu peristiwa uang → DUA mutasi kas (keluar di satu PT, masuk di PT lain)."""
+    """Satu peristiwa uang → DUA mutasi kas (keluar di satu PT, masuk di PT lain).
+
+    PK-20 — keduanya lewat pembuat kas satu pintu (`cash_ledger.create_cash`, `seq` = arah, `journal_by_parent`: jurnal
+    kembar dibentuk dokumen induk lewat `twin_je()` / jurnal pelunasan, jadi kas tidak dijurnal dua kali). Rekening tiap
+    PT (yang dipilih pemanggil, atau `default_cash_account`) diperiksa untuk KEDUA PT sebelum kas pertama tertulis."""
+    from services import cash_ledger
     amount = round(float(amount or 0), 2)
     if amount <= EPS:
         raise IntercoMoneyError("Nominal harus lebih dari 0.")
+    sisi = []
+    for direction, ent, pilih in (("out", out_entity, out_account_id), ("in", in_entity, in_account_id)):
+        # PK-06 — rekening yang dipilih pemanggil (settlement) menang atas rekening bawaan PT.
+        rek = await cash_ledger.periksa_rekening(ent, pilih or await default_cash_account(ent), "kas_besar")
+        if rek["cash_type"] != "kas_besar":
+            raise IntercoMoneyError(f"Rekening {rek['account'].get('name', '')} adalah Kas Kecil; uang antar-PT "
+                                    "dibukukan di Bank (1-1100). Pilih rekening Bank.")
+        sisi.append((direction, ent, rek["account_id"]))
     out: Dict[str, Any] = {}
     inn: Dict[str, Any] = {}
-    for direction, ent in (("out", out_entity), ("in", in_entity)):
-        doc = await db.cash_transactions.find_one(
-            {"ref_type": ref_type, "ref_id": ref_id, "direction": direction,
-             "entity_id": ent, "status": {"$ne": "void"}}, {"_id": 0})
-        if not doc:
-            doc = {
-                "id": new_id("cash"),
-                "number": await next_doc_number("cash_transactions", "number", "CASH-",
-                                                entity_id=ent),
-                # `kas_besar` = buku bank/transfer (BUKAN "milik grup" — lihat E7.4).
-                "cash_type": "kas_besar", "direction": direction, "amount": amount,
-                "category": category, "description": description, "entity_id": ent,
-                "counterparty_entity_id": in_entity if direction == "out" else out_entity,
-                "ref_type": ref_type, "ref_id": ref_id,
-                # PK-06 — rekening yang dipilih pemanggil (settlement) menang atas rekening bawaan PT.
-                "account_id": ((out_account_id if direction == "out" else in_account_id)
-                               or await default_cash_account(ent)),
-                "txn_date": txn_date or now_iso(), "reconciled": False, "status": "posted",
-                # Jurnalnya dibentuk `twin_je()` (Dr/Cr IC-AR/IC-AP) — jangan diposting
-                # ulang sebagai mutasi kas biasa (itu akan menjurnal dua kali).
-                "gl_posted": True,
-                "created_by": actor, "created_at": now_iso(), "updated_at": now_iso(),
-            }
-            await db.cash_transactions.insert_one(dict(doc))
+    for direction, ent, acc_id in sisi:
+        lama = await db.cash_transactions.find_one(   # kas lama (id acak, sebelum PK-20) untuk sisi ini dipakai ulang
+            {"ref_type": ref_type, "ref_id": ref_id, "direction": direction, "entity_id": ent,
+             "status": {"$ne": "void"}, "seq": {"$in": [None, ""]}}, {"_id": 0, "id": 1})
+        doc = await cash_ledger.create_cash(
+            entity_id=ent, direction=direction, amount=amount, ref_type=ref_type, ref_id=ref_id, seq=direction,
+            txn_id=(lama or {}).get("id", ""), account_id=acc_id, cash_type="kas_besar", txn_date=txn_date,
+            category=category, description=description, actor=actor,
+            counterparty_entity_id=in_entity if direction == "out" else out_entity,
+            journal_by_parent=f"{ref_type}:{ref_id}")
         if direction == "out":
             out = doc
         else:

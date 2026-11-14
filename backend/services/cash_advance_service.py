@@ -307,12 +307,6 @@ async def reject_cash_advance(ca_id: str, reason: str, ctx: EntityContext, actor
     return safe_doc(updated)
 
 
-async def _next_cash_number(entity_id: str = "") -> str:
-    """Nomor kas ber-deret per badan usaha (E1.7) — kas grup sudah dihapus (E7.4)."""
-    return await next_doc_number("cash_transactions", "number", "CASH-",
-                                 entity_id=(entity_id or None))
-
-
 async def disburse_cash_advance(ca_id: str, payload, ctx: EntityContext, actor: Dict[str, Any]) -> Dict[str, Any]:
     doc = await get_cash_advance(ca_id, ctx)
     if doc["status"] != "approved":
@@ -323,59 +317,43 @@ async def disburse_cash_advance(ca_id: str, payload, ctx: EntityContext, actor: 
         await gl_service.preflight_posting(entity_id, payload.txn_date or now_iso())
     except gl_service.ClosedPeriodError as exc:
         raise HTTPException(status_code=409, detail=str(exc))
+    # PK-20 — rekening sumber (isian baru `account_id`; kosong = rekening tunggal PT jenis kas itu) diperiksa SEBELUM klaim.
+    from services import cash_ledger
+    rek = await cash_ledger.periksa_rekening(entity_id, getattr(payload, "account_id", "") or "", cash_type)
     # CX-04 — klaim atomik (satu pencairan per PD) + resume: kas lama dari percobaan gagal DIPAKAI ULANG.
     from services import atomic_claim as _saga
     await _saga.claim(CA_COLL, ca_id, "cash_advance_disburse", precondition={"status": "approved"},
                       actor=actor.get("name", ""))
     try:
-        return await _disburse_locked(ca_id, doc, payload, cash_type, entity_id, actor)
+        return await _disburse_locked(ca_id, doc, payload, rek["cash_type"], entity_id, actor, rek["account_id"])
     finally:
         await _saga.release(CA_COLL, ca_id)
 
 
 async def _disburse_locked(ca_id: str, doc: Dict[str, Any], payload, cash_type: str, entity_id: str,
-                           actor: Dict[str, Any]) -> Dict[str, Any]:
-    existing = await db.cash_transactions.find_one(
-        {"ref_type": "cash_advance", "ref_id": ca_id, "direction": "out", "status": "posted"}, {"_id": 0})
-    if existing:
-        je = await gl_service.post_cash_durable(existing)
-        je = je or await db.journal_entries.find_one(
-            {"source_type": "cash_transaction", "source_id": existing["id"], "status": {"$ne": "void"}},
-            {"_id": 0, "id": 1, "number": 1})
-        return await _finish_disburse(ca_id, doc, existing, je, cash_type, payload, actor)
-    number = await _next_cash_number(entity_id)
-    txn = {
-        "id": new_id("cash"),
-        "number": number,
-        "cash_type": cash_type,
-        "direction": "out",
-        "amount": _r(doc["total_amount"]),
-        "category": "cash_advance",
-        "description": f"Pencairan {doc['number']} — {doc.get('kegiatan', '')}".strip(),
-        # FASE E-7 (E7.4) — kas grup dihapus: pencairan uang muka karyawan tetap uang
-        # badan usaha yang menugaskannya, walau ditransfer lewat bank (`kas_besar`).
-        "entity_id": entity_id,
-        "ref_type": "cash_advance",
-        "ref_id": ca_id,
-        "txn_date": payload.txn_date or now_iso(),
-        "account_id": "",
-        "reconciled": False,
-        "status": "posted",
-        "created_by": actor.get("name", ""),
-        "created_at": now_iso(),
-        "updated_at": now_iso(),
-    }
-    await db.cash_transactions.insert_one(txn)
-    await db[CA_COLL].update_one({"id": ca_id}, {"$set": {"disbursement_attempt": {
-        "cash_txn_id": txn["id"], "at": now_iso(), "by": actor.get("name", "")}}})
-    # GL: Dr 1-1400 Uang Muka / Cr Kas (idempotent by source cash_transaction). Gagal → PD tetap
-    # 'approved' dengan kas tertaut; percobaan ulang melanjutkan kas yang sama (tanpa kas kedua).
+                           actor: Dict[str, Any], account_id: str = "") -> Dict[str, Any]:
+    """PK-20 — kas pencairan lewat pembuat kas satu pintu: rujukan (`cash_advance`, id PD, keluar) memberi id tetap,
+    jadi percobaan ulang memakai kas yang sama. Jurnal gagal → PD tetap 'approved', kas tertaut ber-`failed`."""
+    from services import cash_ledger
     try:
-        je = await gl_service.post_cash_durable(txn)
-    except Exception as exc:  # noqa: BLE001
+        txn = await cash_ledger.create_cash(
+            entity_id=entity_id, direction="out", amount=_r(doc["total_amount"]), ref_type="cash_advance", ref_id=ca_id,
+            account_id=account_id, cash_type=cash_type, txn_date=payload.txn_date or "", category="cash_advance",
+            # FASE E-7 (E7.4) — kas grup dihapus: pencairan uang muka karyawan tetap uang badan usaha yang
+            # menugaskannya, walau ditransfer lewat bank (`kas_besar`).
+            description=f"Pencairan {doc['number']} — {doc.get('kegiatan', '')}".strip(),
+            actor=actor.get("name", ""))
+    except cash_ledger.CashPostingError as exc:
+        await db[CA_COLL].update_one({"id": ca_id}, {"$set": {"disbursement_attempt": {
+            "cash_txn_id": exc.txn.get("id", ""), "at": now_iso(), "by": actor.get("name", "")}}})
         raise HTTPException(status_code=409, detail=(
-            f"Kas {number} tercatat tetapi jurnal gagal: {exc}. Ulangi pencairan untuk melanjutkan (tanpa kas ganda)."))
-    return await _finish_disburse(ca_id, doc, txn, je, cash_type, payload, actor)
+            f"Kas {exc.txn.get('number', '')} tercatat tetapi jurnal gagal: {exc.error}. Ulangi pencairan untuk "
+            "melanjutkan (tanpa kas ganda)."))
+    # GL: Dr 1-1400 Uang Muka / Cr Kas (idempotent by source cash_transaction).
+    je = await db.journal_entries.find_one(
+        {"source_type": "cash_transaction", "source_id": txn["id"], "status": {"$ne": "void"}},
+        {"_id": 0, "id": 1, "number": 1})
+    return await _finish_disburse(ca_id, doc, txn, je, txn.get("cash_type") or cash_type, payload, actor)
 
 
 async def _finish_disburse(ca_id: str, doc: Dict[str, Any], txn: Dict[str, Any], je, cash_type: str,
@@ -598,26 +576,25 @@ async def pay_reimburse(stl_id: str, payload, ctx: EntityContext, actor: Dict[st
         await gl_service.preflight_posting(doc["entity_id"], txn_date)
     except gl_service.ClosedPeriodError as exc:
         raise HTTPException(status_code=409, detail=str(exc))
+    # PK-20 — rekening sumber (isian baru `account_id`; kosong = rekening tunggal PT jenis kas itu) diperiksa SEBELUM klaim.
+    from services import cash_ledger
+    rek = await cash_ledger.periksa_rekening(doc["entity_id"], getattr(payload, "account_id", "") or "", cash_type)
     from services import atomic_claim as _saga
     await _saga.claim(STL_COLL, stl_id, "reimburse_pay", precondition={"hutang_reimburse.status": "open"},
                       actor=actor.get("name", ""))
     try:
-        txn = await db.cash_transactions.find_one(
-            {"ref_type": "reimburse_payable", "ref_id": stl_id, "status": "posted"}, {"_id": 0})
-        if not txn:
-            txn = {
-                "id": new_id("cash"), "number": await _next_cash_number(doc["entity_id"]),
-                "cash_type": cash_type, "direction": "out", "amount": _r(hr["amount"]),
-                "category": "reimburse karyawan", "description": f"Bayar kelebihan LPJ {doc.get('number', '')}",
-                "entity_id": doc["entity_id"], "ref_type": "reimburse_payable", "ref_id": stl_id,
-                "txn_date": txn_date, "status": "posted", "created_by": actor.get("name", ""),
-                "created_at": now_iso(), "updated_at": now_iso()}
-            await db.cash_transactions.insert_one(dict(txn))
-        try:
-            je = await gl_service.post_cash_durable(txn)
-        except Exception as exc:  # noqa: BLE001
+        try:   # PK-20 — rujukan (reimburse_payable, id LPJ) memberi id kas tetap: ulang memakai kas yang sama
+            txn = await cash_ledger.create_cash(
+                entity_id=doc["entity_id"], direction="out", amount=_r(hr["amount"]), ref_type="reimburse_payable",
+                ref_id=stl_id, account_id=rek["account_id"], cash_type=cash_type, txn_date=txn_date,
+                category="reimburse karyawan", description=f"Bayar kelebihan LPJ {doc.get('number', '')}",
+                actor=actor.get("name", ""))
+        except cash_ledger.CashPostingError as exc:
             raise HTTPException(status_code=409, detail=(
-                f"Kas {txn['number']} tercatat tetapi jurnal gagal: {exc}. Ulangi untuk melanjutkan."))
+                f"Kas {exc.txn.get('number', '')} tercatat tetapi jurnal gagal: {exc.error}. Ulangi untuk melanjutkan."))
+        je = await db.journal_entries.find_one(
+            {"source_type": "cash_transaction", "source_id": txn["id"], "status": {"$ne": "void"}},
+            {"_id": 0, "id": 1, "number": 1})
         updated = await db[STL_COLL].find_one_and_update(
             {"id": stl_id},
             _saga.finish_set({"hutang_reimburse.status": "paid", "hutang_reimburse.cash_txn_id": txn["id"],

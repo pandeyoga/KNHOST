@@ -179,7 +179,9 @@ TITIK = _titik_panggil()
 
 def test_KPT5_U1_semua_titik_panggil_dikenali_katalog():
     import doc_number_kinds as dnk
-    assert len(TITIK) >= 90, f"pengurai menemukan terlalu sedikit pemanggilan: {len(TITIK)}"
+    # PK-20 — ±13 pemberi nomor kas (`next_doc_number("cash_transactions", …)` di tiap pembuat kas) disatukan di
+    # `services/cash_ledger.next_cash_number`; ambang kewajaran pengurai turun dari 90 ke 80 (85 titik saat itu).
+    assert len(TITIK) >= 80, f"pengurai menemukan terlalu sedikit pemanggilan: {len(TITIK)}"
     tak_dikenal, beda, awalan = [], [], set()
     for t in TITIK:
         assert t["collection"] and t["field"] and t["prefixes"], f"tidak terurai: {t}"

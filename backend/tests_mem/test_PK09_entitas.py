@@ -127,12 +127,18 @@ async def test_U04_kas_manual(klien, db, siap):
     r = await klien.post("/api/cash-transactions", headers=h, json={**dasar, "ref_type": "vendor_bill", "ref_id": "vb_a"})
     assert r.status_code == 400, r.text
     r = await klien.post("/api/cash-transactions", headers=h, json={**dasar, "account_id": "ba_a"})
-    assert r.status_code == 400, r.text
+    # PK-20 — rekening PT lain ditolak pembuat kas satu pintu: 409 "Rekening … bukan rekening aktif {PT}" (dulu 400)
+    assert r.status_code == 409 and "bukan rekening aktif" in r.text, r.text
+    # PK-20 — kas wajib berekening: fixture satu rekening Bank milik B (rekening tunggal → dipakai otomatis)
+    await db.bank_accounts.insert_one({"id": "ba_b", "name": "Bank B", "account_type": "bank",
+                                       "cash_type": "kas_besar", "entity_id": B, "is_active": True})
     r = await klien.post("/api/cash-transactions", headers=h,
                          json={**dasar, "ref_type": "manual", "created_by": "Orang Lain"})
     assert r.status_code == 200, r.text
     k = r.json()
-    assert (k["entity_id"], k["ref_type"], k["created_by"]) == (B, "", siap["nama_b"])
+    # PK-20 — kas manual ber-`ref_type="manual"` (rujukan = kunci permintaan atau id baru)
+    assert (k["entity_id"], k["ref_type"], k["created_by"]) == (B, "manual", siap["nama_b"])
+    assert k["account_id"] == "ba_b"
     assert await db.cash_transactions.count_documents({}) == n + 1
     siap["kas_d"] = k["id"]
 

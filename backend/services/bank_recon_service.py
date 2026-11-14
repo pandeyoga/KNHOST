@@ -1036,7 +1036,6 @@ async def book_charge(line_id: str, kind: str, note: str, actor: str,
     if amount <= EPS:
         raise ValueError("Nominal mutasi nol — tidak ada yang bisa dibukukan")
 
-    from core_utils import next_doc_number
     from services import gl_service as gl
     # Akun bisa berasal dari Pusat Pengaturan; pastikan bagan akun baku ada supaya jurnal
     # tidak jatuh ke Suspense pada database baru.
@@ -1051,33 +1050,25 @@ async def book_charge(line_id: str, kind: str, note: str, actor: str,
                            precondition={"status": {"$nin": ["matched", "holding"]}})
     token = (lk.get(_saga.LOCK) or {}).get("token", "")
     # Kas untuk rujukan ini yang sudah ada (jurnal gagal sebelumnya) DIPAKAI ULANG — mengulang tidak melahirkan kas kedua.
+    # PK-20 — lewat pembuat kas satu pintu: rujukan (baris mutasi, arah, `seq="charge"`) memberi id tetap; kas lama
+    # (sebelum PK-20, id acak) untuk rujukan + kategori yang sama dipakai lewat `txn_id`.
     prior = await db.cash_transactions.find_one(
         {"ref_type": "bank_statement_line", "ref_id": ln["id"], "category": category, "status": {"$ne": "void"}},
-        {"_id": 0})
-    number = prior["number"] if prior else await next_doc_number("cash_transactions", "number", "CASH-",
-                                                                   entity_id=ent)
-    cdoc = prior or {
-        "id": new_id("cash"), "number": number,
-        "cash_type": acc.get("cash_type") or "kas_besar",
-        "direction": want_dir, "amount": amount, "category": category,
-        "contra_account_code": contra,
-        "description": (f"{label} — {(ln.get('description') or '')[:80]}"
-                        + (f" · {note}" if note else "")),
-        "entity_id": ent, "account_id": ln["bank_account_id"],
-        "ref_type": "bank_statement_line", "ref_id": ln["id"],
-        "txn_date": ln.get("stmt_date") or now_iso(), "status": "posted",
-        "reconciled": False, "reconciled_amount": 0.0,
-        "created_by": actor, "created_at": now_iso(), "updated_at": now_iso(),
-    }
+        {"_id": 0, "id": 1})
+    from services import cash_ledger
     try:
-        if not prior:
-            await db.cash_transactions.insert_one(dict(cdoc))
         try:
-            je = await gl.post_cash_durable(cdoc)   # gl_status ditulis; gagal → panel Posting Gagal "Transaksi Kas"
-        except Exception as exc:  # noqa: BLE001
-            raise HoldingConflict(f"Kas {number} sudah tercatat, tetapi jurnalnya gagal: {exc}. "
+            cdoc = await cash_ledger.create_cash(
+                entity_id=ent, direction=want_dir, amount=amount, ref_type="bank_statement_line", ref_id=ln["id"],
+                seq="charge", txn_id=(prior or {}).get("id", ""), account_id=ln["bank_account_id"],
+                txn_date=ln.get("stmt_date") or "", category=category, contra_account_code=contra, actor=actor,
+                description=(f"{label} — {(ln.get('description') or '')[:80]}" + (f" · {note}" if note else "")),
+                extra={"reconciled_amount": 0.0})
+        except cash_ledger.CashPostingError as exc:   # gl_status ditulis; panel Posting Gagal "Transaksi Kas"
+            raise HoldingConflict(f"Kas {exc.txn.get('number', '')} sudah tercatat, tetapi jurnalnya gagal: {exc.error}. "
                                   "Perbaiki sebabnya lalu catat lagi dari baris ini.") from exc
-        je = je or await db.journal_entries.find_one(
+        number = cdoc.get("number", "")
+        je = await db.journal_entries.find_one(
             {"source_type": "cash_transaction", "source_id": cdoc["id"], "status": {"$ne": "void"}},
             {"_id": 0, "id": 1, "number": 1})
         await db.bank_statement_lines.update_one({"id": line_id}, {"$set": {
@@ -1110,8 +1101,13 @@ async def _reverse_charge(line: Dict[str, Any], actor: str) -> None:
     await db.cash_transactions.update_one({"id": ch["cash_txn_id"]}, {"$set": {
         "status": "void", "void_reason": "pembukuan biaya/bunga bank dilepas",
         "updated_at": now_iso()}})
-    await gl.reverse_document("cash_transaction", ch["cash_txn_id"],
-                              reason="pembukuan biaya/bunga bank dilepas", actor_name=actor)
+    # PK-20 — pembalik lewat pintu tahan-gagal: hasilnya ditulis ke `void_gl_status` kas (gagal tetap dilempar).
+    cid = ch["cash_txn_id"]
+    await gl.post_durable("cash_transactions", cid,
+                          lambda: gl.reverse_document("cash_transaction", cid,
+                                                      reason="pembukuan biaya/bunga bank dilepas", actor_name=actor),
+                          source_type="cash_transaction_reversal", source_id=cid, field="void_gl_status",
+                          raise_on_fail=True)
     await db.bank_statement_lines.update_one({"id": line["id"]}, {"$set": {
         "charge": {}, "updated_at": now_iso()}})
 
@@ -1224,7 +1220,6 @@ async def to_holding(line_id: str, note: str, actor: str,
     ent = ln.get("entity_id") or _stamp_entity(acc, active_entity)
     amount = _round(ln.get("amount"))
 
-    from core_utils import next_doc_number
     from services import gl_service as gl
     # PK-37 (K-03) — PERIKSA periode tanggal mutasi sebelum nomor & kas titipan lahir (ClosedPeriodError → 409).
     from services.book_date import periksa_periode_dokumen
@@ -1232,35 +1227,34 @@ async def to_holding(line_id: str, note: str, actor: str,
     # Pastikan akun titipan ADA sebelum menjurnal. Tanpa ini, jurnal pertama di DB baru
     # jatuh ke akun Suspense (terukur di POC G-8) sehingga saldo titipan tak terbaca.
     await gl.seed_default_coa()
-    number = await next_doc_number("cash_transactions", "number", "CASH-", entity_id=ent)
-    cdoc = {
-        "id": new_id("cash"), "number": number,
-        "cash_type": "kas_besar" if (acc.get("cash_type") or "kas_besar") == "kas_besar" else acc.get("cash_type"),
-        "direction": "in", "amount": amount,
-        "category": "titipan dana belum teridentifikasi",
-        "description": (f"Titipan dana belum teridentifikasi — {ln.get('description', '')[:80]}"
-                        + (f" · {note}" if note else "")),
-        "entity_id": ent, "account_id": ln["bank_account_id"],
-        "ref_type": "bank_statement_line", "ref_id": ln["id"],
-        "txn_date": ln.get("stmt_date") or now_iso(), "status": "posted",
-        "reconciled": True, "reconciled_amount": amount, "matched_line_id": ln["id"],
-        "matched_line_ids": [ln["id"]], "reconciled_at": now_iso(),
-        "created_by": actor, "created_at": now_iso(), "updated_at": now_iso(),
-    }
     # Sesi 15 — klaim saga baris koran (belum matched/holding) sesudah validasi, sebelum kas/jurnal titipan.
     from services import atomic_claim as _saga
-    await _saga.claim("bank_statement_lines", line_id, "to_holding", actor=actor,
-                      precondition={"status": {"$nin": ["matched", "holding"]}})
+    lk = await _saga.claim("bank_statement_lines", line_id, "to_holding", actor=actor,
+                           precondition={"status": {"$nin": ["matched", "holding"]}})
+    token = (lk.get(_saga.LOCK) or {}).get("token", "")
+    # PK-20 — kas titipan lewat pembuat kas satu pintu: rujukan (baris mutasi, masuk, `seq="holding"`) memberi id tetap,
+    # rekening = rekening mutasi. Jurnal gagal → baris TIDAK ditautkan, kunci dilepas; ulang memakai kas yang sama.
+    from services import cash_ledger
     try:
-        await db.cash_transactions.insert_one(cdoc)
-    except Exception as e:
-        await _saga.mark_failed("bank_statement_lines", line_id, str(e))
+        cdoc = await cash_ledger.create_cash(
+            entity_id=ent, direction="in", amount=amount, ref_type="bank_statement_line", ref_id=ln["id"],
+            seq="holding", account_id=ln["bank_account_id"], txn_date=ln.get("stmt_date") or "",
+            category="titipan dana belum teridentifikasi", actor=actor,
+            description=(f"Titipan dana belum teridentifikasi — {ln.get('description', '')[:80]}"
+                         + (f" · {note}" if note else "")),
+            extra={"reconciled": True, "reconciled_amount": amount, "matched_line_id": ln["id"],
+                   "matched_line_ids": [ln["id"]], "reconciled_at": now_iso()})
+    except cash_ledger.CashPostingError as exc:
+        await _saga.release("bank_statement_lines", line_id, token)
+        raise HoldingConflict(f"Kas {exc.txn.get('number', '')} sudah tercatat, tetapi jurnalnya gagal: {exc.error}. "
+                              "Perbaiki sebabnya lalu titipkan lagi dari baris ini.") from exc
+    except Exception:
+        await _saga.release("bank_statement_lines", line_id, token)
         raise
-    je = None
-    try:
-        je = await gl.post_cash_transaction(cdoc)
-    except Exception:  # noqa: BLE001
-        je = None
+    number = cdoc.get("number", "")
+    je = await db.journal_entries.find_one(
+        {"source_type": "cash_transaction", "source_id": cdoc["id"], "status": {"$ne": "void"}},
+        {"_id": 0, "id": 1, "number": 1})
     await db.bank_statement_lines.update_one({"id": line_id}, _saga.finish_set({
         "status": "holding", "suggestions": [],
         "holding": {"cash_txn_id": cdoc["id"], "cash_number": number,
@@ -1449,9 +1443,14 @@ async def cancel_holding(line_id: str, actor: str,
         if hold.get("cash_txn_id"):
             await db.cash_transactions.update_one({"id": hold["cash_txn_id"]}, {"$set": {
                 "status": "void", "void_reason": "titipan dibatalkan", "updated_at": now_iso()}})
-            # KN-G8-CANCEL-JE: jurnal dibalik dengan reversing entry (append-only, idempoten).
-            await gl.reverse_document("cash_transaction", hold["cash_txn_id"],
-                                      reason="titipan dana dibatalkan", actor_name=actor)
+            # KN-G8-CANCEL-JE: jurnal dibalik dengan reversing entry (append-only, idempoten). PK-20 — lewat pintu
+            # tahan-gagal: hasilnya ditulis ke `void_gl_status` kas (gagal tetap dilempar → kunci gagal).
+            cid = hold["cash_txn_id"]
+            await gl.post_durable("cash_transactions", cid,
+                                  lambda: gl.reverse_document("cash_transaction", cid,
+                                                              reason="titipan dana dibatalkan", actor_name=actor),
+                                  source_type="cash_transaction_reversal", source_id=cid, field="void_gl_status",
+                                  raise_on_fail=True)
     except Exception as e:
         await _saga.mark_failed("bank_statement_lines", line_id, str(e))
         raise

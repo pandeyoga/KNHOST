@@ -269,11 +269,12 @@ async def _retry_grir_clearing(doc: Dict[str, Any], actor: Dict[str, Any]) -> No
 
 # ── Registri ─────────────────────────────────────────────────────────────────────────────────────────────────────────
 KINDS: Dict[str, Dict[str, Any]] = {
+    # PK-20 — jurnal kas lewat pintu `post_cash_durable` (fungsi pribadi `_post_cash_transaction`, bukan `post_*`).
     "cash_transaction": {
         "label": "Transaksi Kas", "collection": "cash_transactions", "failed_query": {"gl_status": "failed"},
         "entity_field": "entity_id", "number_field": "number", "amount_field": _NOMINAL_LAMA,
         "status_field": "gl_status", "error_field": "gl_error", "failed_at_field": "gl_failed_at",
-        "doc_type": "cash_transaction", "posters": ("post_cash_transaction",), "retry": _retry_cash},
+        "doc_type": "cash_transaction", "posters": (), "retry": _retry_cash},
     "ar_receipt": {
         "label": "Kwitansi AR", "collection": "ar_receipts", "failed_query": {"gl_status": "failed"},
         "entity_field": "entity_id", "number_field": "number", "amount_field": _NOMINAL_LAMA,

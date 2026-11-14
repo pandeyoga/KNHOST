@@ -174,11 +174,13 @@ export default function SalesReturns({ currentUser, onNavigate, onOpenDocument, 
     });
   }
 
-  function handleSettle(ret, outcome, itemDecisions, notes, returnWarehouseId, refundAccountCode, decisionNote, payout, exchange) {
+  function handleSettle(ret, outcome, itemDecisions, notes, returnWarehouseId, refundAccountCode, decisionNote, payout, exchange,
+    refundAccountId) {
     return runAction("settle", "Gagal settle", async () => {
       const body = { outcome, item_decisions: itemDecisions || [], notes: notes || "", decision_note: decisionNote || "", payout: payout || "" };
       if (returnWarehouseId) body.return_warehouse_id = returnWarehouseId;
       if (refundAccountCode) body.refund_account_code = refundAccountCode;
+      if (refundAccountId) body.refund_account_id = refundAccountId;   // PK-20 — rekening kas refund tunai
       if (exchange) body.exchange = true;
       const res = await axios.post(`${API}/sales-returns/${ret.id}/settle`, body);
       const st = res.data?.settlement || {};

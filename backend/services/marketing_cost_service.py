@@ -72,35 +72,43 @@ async def record_cost(campaign: Dict[str, Any], payload: Dict[str, Any], actor: 
         await gl.preflight_posting(entity_id, date)
     except gl.ClosedPeriodError as exc:
         raise HTTPException(status_code=409, detail=str(exc)) from exc
+    # PK-20 — rekening sumber dana (isian baru `account_id`; kosong = rekening tunggal PT jenis kas itu) diperiksa
+    # SEBELUM biaya tercatat; kas lahir lewat pembuat kas satu pintu (`cash_ledger.create_cash`).
+    from services import cash_ledger
+    rek = await cash_ledger.periksa_rekening(entity_id, payload.get("account_id") or "", cash_type)
     now = now_iso()
     cost = {
         "id": new_id("mcc"), "number": await next_doc_number(COLL, "number", "MCC-", entity_id=entity_id),
         "entity_id": entity_id, "campaign_id": campaign["id"], "campaign_name": campaign.get("name", ""),
-        "date": date, "description": desc, "amount": amount, "source": "direct", "cash_type": cash_type,
+        "date": date, "description": desc, "amount": amount, "source": "direct", "cash_type": rek["cash_type"],
+        "account_id": rek["account_id"],
         "expense_account_code": expense_acc, "vendor_name": (payload.get("vendor_name") or "").strip(),
         "status": "posting", "created_by": actor.get("name", ""), "created_at": now, "updated_at": now,
     }
     await db[COLL].insert_one(dict(cost))
-    txn = {
-        "id": new_id("cash"),
-        "number": await next_doc_number("cash_transactions", "number", "CASH-", entity_id=entity_id or None),
-        "cash_type": cash_type, "direction": "out", "amount": amount, "category": "beban pemasaran",
-        "description": f"Biaya kampanye {campaign.get('name', '')} — {desc}", "entity_id": entity_id,
-        "ref_type": REF_TYPE, "ref_id": cost["id"], "contra_account_code": expense_acc,
-        "txn_date": f"{date}T00:00:00", "account_id": "", "reconciled": False, "status": "posted",
-        "created_by": actor.get("name", ""), "created_at": now, "updated_at": now,
-    }
-    await db.cash_transactions.insert_one(dict(txn))
+    gl_error = ""
     try:
-        je = await gl.post_cash_durable(txn)
-    except Exception as exc:  # noqa: BLE001 — kompensasi: kas & biaya dibatalkan, tak ada jurnal setengah
-        await db.cash_transactions.update_one({"id": txn["id"]}, {"$set": {"status": "void", "updated_at": now_iso()}})
-        await db[COLL].delete_one({"id": cost["id"]})
-        raise HTTPException(status_code=409, detail=f"Jurnal biaya gagal, biaya tidak disimpan: {exc}") from exc
-    sets = {"status": "posted", "cash_txn_id": txn["id"], "cash_txn_number": txn["number"],
+        txn = await cash_ledger.create_cash(
+            entity_id=entity_id, direction="out", amount=amount, ref_type=REF_TYPE, ref_id=cost["id"],
+            account_id=rek["account_id"], cash_type=cash_type, txn_date=f"{date}T00:00:00", category="beban pemasaran",
+            description=f"Biaya kampanye {campaign.get('name', '')} — {desc}", contra_account_code=expense_acc,
+            actor=actor.get("name", ""))
+    except cash_ledger.CashPostingError as exc:
+        # Kas TIDAK di-void: uangnya sudah keluar. Biaya tetap tercatat; jurnal kasnya diulang dari Posting Gagal.
+        txn, gl_error = exc.txn, exc.error
+    except Exception:
+        await db[COLL].delete_one({"id": cost["id"], "status": "posting"})   # kas belum lahir → biaya dibatalkan
+        raise
+    je = await db.journal_entries.find_one({"source_type": "cash_transaction", "source_id": txn["id"],
+                                            "status": {"$ne": "void"}}, {"_id": 0, "id": 1, "number": 1})
+    sets = {"status": "posted", "cash_txn_id": txn["id"], "cash_txn_number": txn.get("number", ""),
             "journal_entry_id": (je or {}).get("id", ""), "journal_entry_number": (je or {}).get("number", ""),
-            "updated_at": now_iso()}
+            "gl_status": txn.get("gl_status", ""), "gl_error": gl_error, "updated_at": now_iso()}
     await db[COLL].update_one({"id": cost["id"]}, {"$set": sets})
+    if gl_error:
+        raise HTTPException(status_code=409, detail=(
+            f"Jurnal biaya gagal: {gl_error}. Biaya {cost['number']} dan kas {txn.get('number', '')} tersimpan — "
+            "jangan dicatat ulang; ulangi jurnalnya dari Keuangan › Posting Gagal."))
     return {**cost, **sets}
 
 

@@ -22,7 +22,7 @@ async def _kas(eid, sid, arah, nominal, tanggal, db):
            "category": "operasional", "description": "uji", "entity_id": eid, "txn_date": tanggal,
            "status": "posted", "ref_type": "", "ref_id": ""}
     await db.cash_transactions.insert_one(dict(txn))
-    return await gl.post_cash_transaction(txn)
+    return await gl._post_cash_transaction(txn)   # PK-20 — fixture: fungsi pribadi pintu jurnal kas
 
 
 async def test_PK02_GL01_dibalik_dua_kali(db):

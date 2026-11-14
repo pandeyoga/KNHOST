@@ -619,7 +619,8 @@ async def void_vendor_bill_payment(bill_id: str, payment_id: str, payload: Vendo
         raise HTTPException(status_code=409, detail="Pembayaran sedang/sudah dibatalkan.")
     rev = None
     if txn:
-        await gl_service.post_cash_transaction(txn)
+        from services import cash_ledger   # PK-20 — jurnal asal dipastikan ada lewat pembuat kas
+        await cash_ledger.ensure_posted(txn["id"])
         rev = await gl_service.post_cash_void(txn["id"], label=txn.get("number", ""), created_by=actor["name"])
         await db.cash_transactions.update_one({"id": txn["id"]}, {"$set": {
             "status": "void", "updated_at": now_iso(), "void_journal_entry_id": (rev or {}).get("id", "")}})

@@ -2737,12 +2737,32 @@ Collection:  cash_transactions  Prefix: cash_
 Router:      routers/cash.py
 Schema:      schemas.py → CashTransactionCreate
 Component:   CashManagementView.jsx (Pembelian → Pengelolaan Kas)
-cash_type:   kas_kecil (per entitas) | kas_besar (gabungan, entity_id="all")
+cash_type:   kas_kecil | kas_besar (buku bank) — jenis BUKU, bukan kepemilikan (kas grup dihapus, E7.4)
 direction:   in (masuk) | out (keluar)   ·   status: posted | void
 Key Fields:
   id, number (format: CASH-NNNNN), cash_type, direction, amount, category,
   description, entity_id, ref_type, ref_id, txn_date, status, created_by,
   created_at, updated_at
+Satu pembuat (PK-20 · SL-11, `02` §1 P5) — kas BARU hanya lahir dari `services/cash_ledger.create_cash` (penjaga
+INV-CASH-01 `scripts/guardrails/verify_cash_single_door.py`); nomor hanya dari `cash_ledger.next_cash_number`:
+  id                 string  tetap: `cash_` + 24 heksa pertama SHA-1 `ref_type|ref_id|direction|seq` (atau id turunan
+                             pemanggil, mis. niat bayar PK-05 / kasus keuangan). Kejadian sesudah kas lama `void` →
+                             `seq#2`, `#3`…  Unik: indeks `uq_id` (`indexes.ID_INDEX_COLLECTIONS`).
+  ref_type, ref_id   string  WAJIB — dokumen induk. Kas manual: `ref_type="manual"`, `ref_id` = kunci idempotensi
+                             permintaan (atau id baru). Indeks tidak unik (ref_type, ref_id, direction).
+  seq                string  pembeda kas searah satu dokumen (id pembayaran landed cost, `out`/`in` antar-PT, langkah
+                             kasus, `charge`/`holding` baris mutasi bank); kosong untuk satu kas per dokumen.
+  account_id         string  WAJIB — id `bank_accounts` AKTIF milik `entity_id` (dikirim, atau rekening tunggal PT
+                             untuk jenis kasnya). Tidak pernah berisi kode akun (dulu refund retur / gaji: kode akun).
+  account_code       string  akun kas buku besar jurnalnya (1-1110 kas kecil · 1-1100 bank), dari jenis rekening.
+  cash_type                  diturunkan dari rekening (`bank_service.account_cash_type`), bukan dari pemanggil.
+  entity_id          string  PT dokumen induk; tidak pernah "all".
+  gl_status          string  pending (baru lahir) → posted | failed | not_required (`gl_posted: true` — dijurnal
+                             dokumen induk: nota kredit/nota debit/gaji/antar-PT; `parent_journal` = id/rujukan
+                             jurnal induk). Jurnal kas gagal → kas TETAP tersimpan `failed` (panel Posting Gagal).
+  void_gl_status     string  hasil jurnal pembalik saat kas dibatalkan (batal kas manual, lepas biaya bank,
+                             batal titipan) lewat `gl_service.post_durable`.
+  Kas lama tanpa rekening / berkode akun di `account_id` TIDAK dimigrasi (paket perbaikan data, H3).
 Rekonsiliasi bank (PK-21, satu pemilik — `02` D1):
   reconciled_amount  float   PEMILIK: hanya services/bank_recon_service.py (`_link`, `_unlink`, titipan,
                              biaya bank). = Σ allocations[].amount baris bank_statement_lines `matched` yang

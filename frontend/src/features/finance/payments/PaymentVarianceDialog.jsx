@@ -26,6 +26,9 @@ import { money } from "./paymentApi";
 import MoneyInput from "../../../components/MoneyInput";
 import { parseDecimal } from "../../../utils/decimalInput";
 import { canonicalMethod, usePaymentMethods } from "../../../config/paymentMethods";
+// PK-20 — "kembalikan dana" melahirkan kas keluar: rekening sumber wajib (rekening aktif PT kwitansi).
+import CashAccountField, { cashAccountBlocked, cashAccountBlockReason } from "../../../components/CashAccountField";
+import { useEntityScope } from "../../../context/EntityScopeContext";
 
 // PK-42 (UX-18) — nominal alokasi (teks `MoneyInput`, koma desimal boleh) → angka; kosong/tak sah → 0.
 const amt = (v) => { const n = parseDecimal(v); return Number.isFinite(n) ? n : 0; };
@@ -81,6 +84,10 @@ export default function PaymentVarianceDialog({
   const [alloc, setAlloc] = useState({});
   const payMethods = usePaymentMethods("keluar", a.entity_id || "");
   const methodOptions = useMemo(() => refundOptions(payMethods.methods), [payMethods.methods]);
+  const { selectedEntity } = useEntityScope();
+  const [accountId, setAccountId] = useState("");
+  const [accState, setAccState] = useState("memuat");
+  const refundBlocked = kind === "refund" && cashAccountBlocked(accState, accountId);
 
   const gap = Math.round(Math.abs(Number(a.delta || 0)) * 100) / 100;
   const under = Number(a.delta || 0) < 0;
@@ -113,12 +120,15 @@ export default function PaymentVarianceDialog({
   const picked = options.find((o) => o.value === kind);
   const allocInvalid = kind === "allocate" && (allocTotal <= 0 || allocTotal > gap + 0.01);
   const canSubmit = !!kind && !!reasonCode && !busy && !allocInvalid
-    && (kind !== "reschedule" || !!dueDate);
+    && (kind !== "reschedule" || !!dueDate) && !refundBlocked;
 
   function submit() {
     const payload = { kind, reason_code: reasonCode, note };
     if (kind === "reschedule") payload.due_date = dueDate;
-    if (kind === "refund") { payload.method = method; payload.amount = gap; }
+    if (kind === "refund") {
+      payload.method = method; payload.amount = gap;
+      if (accountId) payload.account_id = accountId;
+    }
     if (kind === "allocate") {
       payload.allocations = Object.entries(alloc)
         .filter(([, v]) => amt(v) > 0)
@@ -138,7 +148,12 @@ export default function PaymentVarianceDialog({
           <span className="text-[10.5px] text-[#9A9BA3]">
             Keputusan tercatat sebagai dokumen bernomor beserta nama pemutus.
           </span>
-          <div className="ml-auto flex gap-2">
+          <div className="ml-auto flex items-center gap-2">
+            {refundBlocked && (
+              <span className="text-fs-12 text-kn-text-2" data-testid="pv-account-reason">
+                {cashAccountBlockReason(accState)}
+              </span>
+            )}
             <button type="button" className="secondary-button" onClick={onCancel}
               disabled={busy} data-testid="pv-cancel">Batal</button>
             <button type="button" className="primary-button" onClick={submit}
@@ -219,6 +234,9 @@ export default function PaymentVarianceDialog({
             <label className="kicker">Cara pengembalian {money(gap)}</label>
             <KNSelect className="field" value={method} onValueChange={setMethod}
               data-testid="pv-refund-method" options={methodOptions} />
+            <CashAccountField entityId={a.entity_id || selectedEntity}
+              cashType={payMethods.isCash?.(method) ? "kas_kecil" : "kas_besar"} value={accountId}
+              onChange={setAccountId} onState={setAccState} label="Rekening sumber" testId="pv-refund-account" />
             <p className="text-[10.5px] text-[#6B6B73]">
               Kas keluar dicatat di buku kas & berjurnal (Uang Muka Pelanggan turun).
             </p>

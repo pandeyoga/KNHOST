@@ -602,8 +602,12 @@ async def _allocate_from_deposit(customer_id: str, allocations: List[Dict[str, A
 async def _refund(customer: Dict[str, Any], amount: float, method: str, *,
                   decision_id: str, decision_number: str, entity_id: str,
                   receipt_number: str, reason_label: str,
-                  actor: Dict[str, Any]) -> Dict[str, Any]:
-    """Kelebihan bayar dikembalikan: kas keluar + Dr 2-1400 Uang Muka Pelanggan."""
+                  actor: Dict[str, Any], account_id: str = "") -> Dict[str, Any]:
+    """Kelebihan bayar dikembalikan: kas keluar + Dr 2-1400 Uang Muka Pelanggan.
+
+    PK-20 — kas lewat pembuat kas satu pintu (`cash_ledger.create_cash`, rujukan `ar_refund` = id keputusan,
+    rekening `account_id` yang sudah diperiksa `decide_receipt`). Jurnal kas gagal → kas tersimpan `failed` (panel
+    Posting Gagal), deposit tetap dikurangi (uangnya sudah keluar); urutan deposit-dulu milik PK-19."""
     from services import ar_receipt_service as ars
     amt = round(float(amount or 0), 2)
     if amt <= EPS:
@@ -619,26 +623,26 @@ async def _refund(customer: Dict[str, Any], amount: float, method: str, *,
     from services.cash_entity_service import resolve_owner as _cash_owner
     cash_entity = _cash_owner(entity_id, DEFAULT_ENTITY_ID,
                               what="Kas pengembalian dana pelanggan")
-    cdoc = {
-        "id": new_id("cash"),
-        "number": await next_doc_number("cash_transactions", "number", "CASH-",
-                                        entity_id=cash_entity),
-        "cash_type": cash_type, "direction": "out", "amount": amt,
-        "category": "pengembalian dana pelanggan",
-        "description": (f"Pengembalian kelebihan bayar {decision_number} · "
-                        f"{customer.get('name', '')} ({reason_label})"),
-        "entity_id": cash_entity, "owner_entity_id": entity_id or DEFAULT_ENTITY_ID,
-        "ref_type": "ar_refund", "ref_id": decision_id,
-        "txn_date": now_iso(), "status": "posted",
-        "created_by": actor.get("name", "system"),
-        "created_at": now_iso(), "updated_at": now_iso(),
-    }
-    await db.cash_transactions.insert_one(cdoc)
-    je = await gl_service.post_cash_transaction(cdoc)
+    from services import cash_ledger
+    gl_error = ""
+    try:
+        cdoc = await cash_ledger.create_cash(
+            entity_id=cash_entity, direction="out", amount=amt, ref_type="ar_refund", ref_id=decision_id,
+            account_id=account_id, cash_type=cash_type, category="pengembalian dana pelanggan",
+            description=(f"Pengembalian kelebihan bayar {decision_number} · "
+                         f"{customer.get('name', '')} ({reason_label})"),
+            owner_entity_id=entity_id or DEFAULT_ENTITY_ID, actor=actor.get("name", "system"))
+    except cash_ledger.CashRejected as exc:
+        raise VarianceError(str(exc.detail)) from exc
+    except cash_ledger.CashPostingError as exc:
+        cdoc, gl_error = exc.txn, exc.error
+    je = await db.journal_entries.find_one({"source_type": "cash_transaction", "source_id": cdoc["id"],
+                                            "status": {"$ne": "void"}}, {"_id": 0, "id": 1, "number": 1})
     await ars.adjust_deposit(customer["id"], -amt)
-    return {"amount": amt, "cash_txn_id": cdoc["id"], "cash_txn_number": cdoc["number"],
-            "method": method or "transfer", "je_id": (je or {}).get("id", ""),
-            "je_number": (je or {}).get("number", "")}
+    return {"amount": amt, "cash_txn_id": cdoc["id"], "cash_txn_number": cdoc.get("number", ""),
+            "account_id": cdoc.get("account_id", ""), "method": method or "transfer",
+            "je_id": (je or {}).get("id", ""), "je_number": (je or {}).get("number", ""),
+            "gl_status": cdoc.get("gl_status", ""), "gl_error": gl_error}
 
 
 # ── Wewenang ──────────────────────────────────────────────────────────────
@@ -775,7 +779,7 @@ async def decide_receipt(receipt_id: str, payload: Dict[str, Any],
             raise VarianceError(_dcr["pesan"])
     if kind not in ("outstanding", "reschedule"):   # PK-37 — dua pilihan ini tanpa perubahan pembukuan
         await _periksa_periode(entity_id)
-    refund_method = ""
+    refund_method = refund_account_id = ""
     if kind == "refund":   # PM-T1 — cara pengembalian dari daftar induk cara bayar (arah keluar), sebelum menulis
         from services import payment_method_service as _pms
         try:
@@ -783,6 +787,15 @@ async def decide_receipt(receipt_id: str, payload: Dict[str, Any],
                                               arah="keluar"))["code"]
         except _pms.CaraBayarError as exc:
             raise VarianceError(str(exc)) from exc
+        # PK-20 — rekening sumber pengembalian (isian baru `account_id`; kosong = rekening tunggal PT jenis kas itu)
+        # diperiksa SEBELUM menulis apa pun.
+        from services import cash_ledger as _cl
+        try:
+            refund_account_id = (await _cl.periksa_rekening(
+                entity_id or DEFAULT_ENTITY_ID, payload.get("account_id") or "",
+                "kas_kecil" if await _pms.is_cash(entity_id or "", refund_method) else "kas_besar"))["account_id"]
+        except _cl.CashRejected as exc:
+            raise VarianceError(str(exc.detail)) from exc
 
     number = await next_doc_number(COLL, "number", "SLB-", entity_id=entity_id or None)
     decision_id = new_id("pvd")
@@ -847,7 +860,8 @@ async def decide_receipt(receipt_id: str, payload: Dict[str, Any],
             customer or {"id": receipt.get("customer_id"), "name": receipt.get("customer_name")},
             amount, refund_method,
             decision_id=decision_id, decision_number=number, entity_id=entity_id,
-            receipt_number=receipt.get("number", ""), reason_label=reason["label"], actor=actor)
+            receipt_number=receipt.get("number", ""), reason_label=reason["label"], actor=actor,
+            account_id=refund_account_id)
         je_id, je_number = res["je_id"], res["je_number"]
         effect = {"refund": res}
 

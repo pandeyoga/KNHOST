@@ -728,6 +728,9 @@ def test_case02_two_parallel_resolves_only_one_cash_txn(monkeypatch):
             "case_type": "refund_pelanggan", "customer_id": "c1",
             "amount": 50.0, "documents": [], "attachments": ["bukti"]}
         await db.finance_cases.insert_one(dict(case))
+        # PK-20 — kas wajib berekening: satu rekening Bank milik e1 (rekening tunggal → dipakai otomatis).
+        await db.bank_accounts.insert_one({"id": "rek_e1", "name": "Bank e1", "entity_id": "e1",
+                                           "account_type": "bank", "cash_type": "kas_besar", "is_active": True})
         # Policy stub lengkap.
         async def _pol(_e):
             return {"sla_hours": 24, "sla_hours_high": 8, "high_amount_threshold": 1e9,
@@ -754,7 +757,7 @@ def test_case02_two_parallel_resolves_only_one_cash_txn(monkeypatch):
         monkeypatch.setattr(fcs.acts, "execute", _exec)
         # Stub post_cash_transaction (gl) untuk hindari posting GL real.
         async def _ok(*a, **k): return None
-        monkeypatch.setattr(gl, "post_cash_transaction", _ok)
+        monkeypatch.setattr(gl, "_post_cash_transaction", _ok)   # PK-20 — kini pribadi
         monkeypatch.setattr(gl, "ACC_UANG_MUKA_PELANGGAN", "2-1400", raising=False)
 
         # Dua resolve paralel.
@@ -779,7 +782,10 @@ def test_case02_cash_txn_retry_adopts_same_cash(monkeypatch):
         t2 = fca._CASE_OP_SEQ.set(0)
         try:
             async def _ok(*a, **k): return None
-            monkeypatch.setattr(gl, "post_cash_transaction", _ok)
+            monkeypatch.setattr(gl, "_post_cash_transaction", _ok)   # PK-20 — kini pribadi
+            # PK-20 — kas wajib berekening: satu rekening Bank milik e1 (rekening tunggal → dipakai otomatis).
+            await db.bank_accounts.insert_one({"id": "rek_e1", "name": "Bank e1", "entity_id": "e1",
+                                               "account_type": "bank", "cash_type": "kas_besar", "is_active": True})
             # Pertama: fault SESUDAH insert kas (sisanya diurus retry).
             undo = inject(db.cash_transactions, "update_one", lambda *a, **k: True)  # no-op fault lane
             # Actually post is via gl above; biar fault di next_doc_number TIDAK dipakai —

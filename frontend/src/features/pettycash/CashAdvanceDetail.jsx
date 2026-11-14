@@ -17,6 +17,7 @@ import { useCanDecideMap } from "../../hooks/useCanDecide";   // KP-T4
 import useIntentKey from "../../hooks/useIntentKey";
 import { moneyPost } from "../../utils/moneyRequest";
 import { usePaymentMethods } from "../../config/paymentMethods";   // PM-T1 — label cara bayar dari daftar induk
+import CashAccountField, { cashAccountBlocked, cashAccountBlockReason } from "../../components/CashAccountField";   // PK-20
 
 /**
  * CashAdvanceDetail — Detail Form PD: ringkasan, rincian, timeline approval,
@@ -37,6 +38,8 @@ export default function CashAdvanceDetail({ ca, currentUser, entities, onEdit, o
   const [reject, setReject] = useState(false);
   const [disburse, setDisburse] = useState(false);
   const [cashType, setCashType] = useState("kas_kecil");
+  const [accountId, setAccountId] = useState("");   // PK-20 — rekening sumber pencairan (wajib)
+  const [accState, setAccState] = useState("memuat");
   // PK-12 — satu kunci idempotensi per aksi (ajukan / setujui / tolak / cairkan).
   const intents = {
     submit: useIntentKey("cas"), approve: useIntentKey("caa"),
@@ -185,11 +188,23 @@ export default function CashAdvanceDetail({ ca, currentUser, entities, onEdit, o
           title={`Cairkan ${ca.number}`}
           subtitle={`Pencairan mencatat kas keluar ${formatCurrency(ca.total_amount)} & jurnal Uang Muka otomatis.`}
           busy={busy} submitLabel="Cairkan Dana" submitTestId="ca-disburse-confirm"
-          onSubmit={async () => { setDisburse(false); await act("disburse", { cash_type: cashType }, `${ca.number} dicairkan (${formatCurrency(ca.total_amount)}).`); }}>
+          submitDisabled={cashAccountBlocked(accState, accountId)}
+          onSubmit={async () => {
+            setDisburse(false);
+            await act("disburse", { cash_type: cashType, ...(accountId ? { account_id: accountId } : {}) },
+              `${ca.number} dicairkan (${formatCurrency(ca.total_amount)}).`);
+          }}>
           <div className="grid gap-1.5">
             <label className="text-[11px] font-bold uppercase text-[#6B6B73]">Sumber Kas</label>
             <KNSelect data-testid="ca-disburse-cashtype" className="form-input" value={cashType} onValueChange={setCashType}
-              options={[{ value: "kas_kecil", label: "Kas Kecil (per entitas)" }, { value: "kas_besar", label: "Kas Besar (gabungan grup)" }]} />
+              options={[{ value: "kas_kecil", label: "Kas Kecil (tunai)" }, { value: "kas_besar", label: "Bank (transfer)" }]} />
+            <CashAccountField entityId={ca.entity_id} cashType={cashType} value={accountId} onChange={setAccountId}
+              onState={setAccState} testId="ca-disburse-account" />
+            {cashAccountBlocked(accState, accountId) && accState !== "kosong" && (
+              <p className="text-fs-12 text-kn-text-2" data-testid="ca-disburse-account-reason">
+                {cashAccountBlockReason(accState)}
+              </p>
+            )}
           </div>
         </FormModal>
       )}

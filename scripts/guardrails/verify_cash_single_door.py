@@ -81,8 +81,9 @@ def _call_name(c: ast.Call) -> Optional[str]:
     return f.attr if isinstance(f, ast.Attribute) else getattr(f, "id", None)
 
 
-def scan(root: Path) -> Dict[Tuple[str, int], int]:
-    """→ {("berkas:fungsi", aturan): jumlah} untuk semua temuan di luar berkas yang dikecualikan."""
+def scan(root: Path, stats: Optional[Dict[str, int]] = None) -> Dict[Tuple[str, int], int]:
+    """→ {("berkas:fungsi", aturan): jumlah} untuk semua temuan di luar berkas yang dikecualikan.
+    `stats["berkas"]` (opsional) = jumlah berkas yang diperiksa."""
     found: Dict[Tuple[str, int], int] = {}
     base = root / "backend"
     for f in sorted(base.rglob("*.py")):
@@ -93,6 +94,8 @@ def scan(root: Path) -> Dict[Tuple[str, int], int]:
             tree = ast.parse(f.read_text(encoding="utf-8"))
         except (SyntaxError, UnicodeDecodeError):
             continue
+        if stats is not None:
+            stats["berkas"] = stats.get("berkas", 0) + 1
 
         def hit(fn: str, rule: int) -> None:
             if rel in ALLOWED[rule]:
@@ -130,7 +133,9 @@ def load_baseline(root: Path) -> List[Dict[str, Any]]:
 
 def check(root: Path = ROOT) -> Guard:
     g = Guard(INV, "kas hanya lahir dari satu pembuat (`cash_ledger.create_cash`)")
-    found = scan(root)
+    stats: Dict[str, int] = {}
+    found = scan(root, stats)
+    g.bump(stats.get("berkas", 0))   # satu cek per berkas backend yang dipindai
     base: Dict[Tuple[str, int], Dict[str, Any]] = {}
     for row in load_baseline(root):
         key = (row.get("lokasi", ""), int(row.get("aturan", 0) or 0))
@@ -138,7 +143,6 @@ def check(root: Path = ROOT) -> Guard:
         if not row.get("alasan"):
             g.add(f"garis dasar {key[0]} [aturan {key[1]}] tanpa kolom `alasan`")
     for key, n in sorted(found.items()):
-        g.bump()
         row = base.get(key)
         lim = int((row or {}).get("jumlah", 0) or 0)
         if not row:

@@ -312,15 +312,23 @@ async def approve_and_adjust_stock(return_id: str, approved_by: str, notes: str 
 
 
 async def _finalize_supplier_return_financials(ret: Dict[str, Any], actor: str, notes: str,
-                                               outcome: str, refund_account_code: str = "") -> Dict[str, Any]:
+                                               outcome: str, refund_account_code: str = "",
+                                               refund_account_id: str = "") -> Dict[str, Any]:
     """Konsumsi roll (returned_supplier) + Nota Debit + kurangi AP PO + jurnal GL retur beli.
-    Dipakai oleh alur DIRECT (approve) & RMA (supplier_accept). Idempotent via stock_adjusted."""
+    Dipakai oleh alur DIRECT (approve) & RMA (supplier_accept). Idempotent via stock_adjusted.
+    PK-20 — refund: rekening penerima (`refund_account_id`, kosong = rekening tunggal PT untuk jenis kas akun refund)
+    diperiksa SEBELUM stok/AP/jurnal; kas refund lewat `cash_ledger.record_return_cash` (pembuat kas satu pintu)."""
     return_id = ret["id"]
     now = now_iso()
     warehouse_id = ret["warehouse_id"]
     entity_id = ret["entity_id"]
     from services import gl_service as _glp
     await _glp.preflight_posting(entity_id, now)  # IX-17 — periode tertutup ditolak sebelum stok/AP
+    if (outcome or "").lower() == prs.OUTCOME_REFUND:
+        from services import cash_ledger as _cl
+        _acc = refund_account_code or ret.get("refund_account_code") or "1-1100"
+        refund_account_id = (await _cl.periksa_rekening(
+            entity_id, refund_account_id or ret.get("refund_account_id") or "", _cl.cash_type_for(_acc)))["account_id"]
 
     if not ret.get("stock_adjusted"):
         # GN-07 — klaim retur sebelum roll dikurangi: dua finalisasi bersamaan → satu 409, bukan dua konsumsi.
@@ -402,11 +410,12 @@ async def _finalize_supplier_return_financials(ret: Dict[str, Any], actor: str, 
                 category="Refund Retur Beli (Supplier)",
                 description=f"Refund tunai supplier — retur beli {debit_note} ({fresh.get('supplier_name', '')})",
                 entity_id=entity_id, ref_type="purchase_return", ref_id=return_id,
-                journal_entry_id=(je or {}).get("id", ""), created_by=actor)
+                journal_entry_id=(je or {}).get("id", ""), created_by=actor, account_id=refund_account_id)
             if ctxn:
                 await db.purchase_returns.update_one({"id": return_id}, {"$set": {
                     "cash_txn_id": ctxn.get("id"), "cash_txn_number": ctxn.get("number"),
-                    "refund_account_code": acc, "updated_at": now_iso()}})
+                    "refund_account_code": acc, "refund_account_id": ctxn.get("account_id", ""),
+                    "updated_at": now_iso()}})
         except Exception as e:  # noqa: BLE001
             import logging
             logging.getLogger("cash.refund").exception(
@@ -479,7 +488,8 @@ async def ship_to_supplier(return_id: str, actor: str, notes: str = "",
 
 async def supplier_accept(return_id: str, actor: str, outcome: str = prs.OUTCOME_AP_CREDIT,
                           notes: str = "", refund_account_code: str = "",
-                          rejected_rolls: Optional[List[Dict[str, Any]]] = None) -> Dict[str, Any]:
+                          rejected_rolls: Optional[List[Dict[str, Any]]] = None,
+                          refund_account_id: str = "") -> Dict[str, Any]:
     """shipped_supplier → accepted_supplier. Supplier terima retur → finalisasi (stok + DN + AP + GL).
 
     23 Okt — supplier boleh menerima SEBAGIAN: `rejected_rolls` [{roll_id, reason}] keluar dari retur SEBELUM
@@ -497,7 +507,8 @@ async def supplier_accept(return_id: str, actor: str, outcome: str = prs.OUTCOME
     if rej:
         ret = await _apply_supplier_rejections(ret, rej, actor)
     return await _finalize_supplier_return_financials(
-        ret, actor=actor, notes=notes, outcome=outcome, refund_account_code=refund_account_code)
+        ret, actor=actor, notes=notes, outcome=outcome, refund_account_code=refund_account_code,
+        refund_account_id=refund_account_id)
 
 
 def _retotal(ret: Dict[str, Any], items: List[Dict[str, Any]]) -> Dict[str, Any]:

@@ -252,55 +252,27 @@ async def ensure_posted(txn_id: str) -> Optional[Dict[str, Any]]:
         {"source_type": "cash_transaction", "source_id": txn_id, "status": {"$ne": "void"}}, {"_id": 0})
 
 
-async def _next_cash_number(entity_id: str = "") -> str:
-    """Nomor kas ber-deret per badan usaha (E1.7) — kas grup sudah dihapus (E7.4)."""
-    return await next_cash_number(entity_id)
-
-
 async def record_return_cash(*, direction: str, amount: float, account_code: str,
                              category: str, description: str, entity_id: str,
                              ref_type: str, ref_id: str, journal_entry_id: str = "",
-                             created_by: str = "system",
-                             txn_date: str = "") -> Optional[Dict[str, Any]]:
-    """Catat 1 mutasi kas untuk refund retur (in=supplier kembalikan dana; out=refund ke customer).
-    Idempotent per (ref_type, ref_id, direction, non-void)."""
-    from core_utils import new_id
+                             created_by: str = "system", txn_date: str = "",
+                             account_id: str = "") -> Optional[Dict[str, Any]]:
+    """R5.3 — 1 mutasi kas untuk refund retur (in = pemasok kembalikan dana; out = refund ke pelanggan) dan bayar gaji,
+    yang JURNALNYA milik dokumen induk (nota kredit / nota debit / proses gaji, `account_code` = akun kas jurnal itu).
+
+    PK-20 — pembungkus `create_cash(..., journal_by_parent=…)`: rekening = `account_id` (rekening dokumen) atau rekening
+    tunggal PT untuk jenis kas `account_code`; `account_id` tidak pernah lagi berisi kode akun. Idempoten per rujukan
+    (id tetap `ref_type|ref_id|direction`; kas lama ber-id acak untuk rujukan sama dipakai ulang)."""
     amount = round(float(amount or 0), 2)
     if amount <= 0.01 or not ref_id:
         return None
-    existing = await db.cash_transactions.find_one(
-        {"ref_type": ref_type, "ref_id": ref_id, "direction": direction, "status": {"$ne": "void"}},
-        {"_id": 0})
-    if existing:
-        return existing
-    ctype = cash_type_for(account_code)
-    # FASE E-7 (E7.4) — kas grup DIHAPUS: refund retur tetap uang badan usaha
-    # dokumennya. `kas_besar` hanya menandakan buku bank, bukan kepemilikan grup.
+    # FASE E-7 (E7.4) — kas grup DIHAPUS: refund retur tetap uang badan usaha dokumennya.
     from services.cash_entity_service import resolve_owner
     txn_entity = resolve_owner(entity_id, what="Kas refund retur")
-    now = now_iso()
-    doc = {
-        "id": new_id("cash"),
-        "number": await _next_cash_number(txn_entity),
-        "cash_type": ctype,
-        "direction": direction,                 # in | out
-        "amount": amount,
-        "category": category,
-        "description": description,
-        "entity_id": txn_entity,
-        "source_entity_id": entity_id or "",     # entitas asal dokumen (untuk telusur)
-        "ref_type": ref_type,
-        "ref_id": ref_id,
-        "account_id": account_code or "",
-        "account_code": account_code or "",
-        "journal_entry_id": journal_entry_id or "",
-        "gl_posted": True,                        # GL ditangani CN/Nota-Debit; jangan double-post
-        "txn_date": txn_date or now,
-        "reconciled": False,
-        "status": "posted",
-        "created_by": created_by,
-        "created_at": now,
-        "updated_at": now,
-    }
-    await db.cash_transactions.insert_one(dict(doc))
-    return doc
+    return await create_cash(
+        entity_id=txn_entity, direction=direction, amount=amount, ref_type=ref_type, ref_id=ref_id,
+        account_id=account_id, cash_type=cash_type_for(account_code), txn_date=txn_date, category=category,
+        description=description, actor=created_by,
+        # id jurnal induk bila sudah ada; bila jurnalnya terbit kemudian (penyelesaian per roll), rujukan dokumennya
+        journal_by_parent=journal_entry_id or f"{ref_type}:{ref_id}",
+        extra={"source_entity_id": entity_id or ""})

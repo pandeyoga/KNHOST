@@ -111,7 +111,7 @@ async def scenario_cash_advance_and_settlement():
               str(_line_amt(je_d, "1-1110", "credit")))
 
     # Idempotency: post ulang cash_transaction tidak buat JE baru
-    dup = await gl_service.post_cash_transaction({**txns[0]}) if txns else "skip"
+    dup = await gl_service._post_cash_transaction({**txns[0]}) if txns else "skip"   # PK-20 — kini pribadi
     check("Idempotent: post_cash_transaction ulang → None", dup is None, f"got={dup}")
     je_count = await db.journal_entries.count_documents(
         {"source_type": "cash_transaction", "source_id": txns[0]["id"]}) if txns else 0

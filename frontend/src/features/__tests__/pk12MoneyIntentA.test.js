@@ -71,6 +71,11 @@ describe("U11 — CashManagementView: Catat Transaksi", () => {
     mockGet.mockImplementation((url) => {
       if (url.endsWith("/cash-transactions/summary")) return Promise.resolve({ data: { kas_kecil: {}, kas_besar: {}, kas_kecil_per_entity: {} } });
       if (url.endsWith("/entities")) return Promise.resolve({ data: [{ id: "ent_ksc", short_name: "Sukacita" }] });
+      // PK-20 — form kas mewajibkan rekening: fixture satu rekening Kas Kecil milik PT terpilih (terisi otomatis).
+      if (url.endsWith("/bank-accounts")) {
+        return Promise.resolve({ data: [{ id: "rek_k", name: "Kas Kecil", entity_id: "ent_ksc", account_type: "cash",
+          cash_type: "kas_kecil" }] });
+      }
       return Promise.resolve({ data: [] });
     });
     let resolvePost;

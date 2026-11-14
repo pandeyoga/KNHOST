@@ -11,6 +11,7 @@ import FormModal from "../../components/FormModal";
 import { formatCurrency, formatQty } from "../../utils/formatters";
 import { apiErrorText } from "../../utils/apiError";
 import { SettleValuePanel } from "./ReturnSettleModal";
+import CashAccountField from "../../components/CashAccountField";   // PK-20 — rekening kas refund tunai
 
 const NEGO = ["cutloss", "discount"];
 const qty = (v, unit) => (v ? `${formatQty(v)} ${unit || ""}` : "—");
@@ -22,6 +23,7 @@ export default function ReturnRollSettleModal({ ret, open, onClose, onDone }) {
   const [payout, setPayout] = useState("store_credit");
   const [cashAccounts, setCashAccounts] = useState([]);
   const [refundAccount, setRefundAccount] = useState("");
+  const [refundAccountId, setRefundAccountId] = useState("");   // PK-20
   const [decisionNote, setDecisionNote] = useState("");
   const [notes, setNotes] = useState("");
   const [busy, setBusy] = useState(false);
@@ -78,6 +80,7 @@ export default function ReturnRollSettleModal({ ret, open, onClose, onDone }) {
     try {
       await axios.post(`${API}/sales-returns/${ret.id}/roll-settlement`, {
         rolls: chosen, payout: hasNego ? payout : "", refund_account_code: hasRefund ? refundAccount : "",
+        ...(hasRefund && refundAccountId ? { refund_account_id: refundAccountId } : {}),
         decision_note: decisionNote, notes,
       });
       if (onDone) await onDone();
@@ -171,6 +174,9 @@ export default function ReturnRollSettleModal({ ret, open, onClose, onDone }) {
           <span className="field-label">Akun Kas/Bank pengembalian dana</span>
           <KNSelect className="field w-full" value={refundAccount} onValueChange={setRefundAccount} searchable={false}
             options={[{ value: "", label: "Default — 1-1100 Kas Besar / Bank" }, ...cashAccounts.map((a) => ({ value: a.code, label: `${a.code} — ${a.name}` }))]} />
+          <CashAccountField entityId={ret.entity_id} cashType={refundAccount === "1-1110" ? "kas_kecil" : "kas_besar"}
+            value={refundAccountId} onChange={setRefundAccountId} label="Rekening pengembalian dana"
+            testId="roll-settle-refund-bank-account" className="mt-2" />
         </div>
       )}
 

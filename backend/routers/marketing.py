@@ -132,6 +132,7 @@ class CampaignCostBody(BaseModel):
     description: str = ""
     amount: float = 0
     cash_type: str = "kas_besar"
+    account_id: str = ""      # PK-20 — rekening sumber dana (`bank_accounts` milik PT kampanye); kosong = rekening tunggal
     vendor_name: str = ""
     expense_account_code: str = ""
 

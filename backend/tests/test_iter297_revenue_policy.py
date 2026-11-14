@@ -89,7 +89,7 @@ class TestAdvancePolicy:
         assert run(gl.post_order_revenue_and_cogs(oid))["revenue"] is None
         assert not run(gl.order_revenue_posted(oid))
 
-        je = run(gl.post_cash_transaction(run(db.cash_transactions.find_one({"id": cid}, {"_id": 0}))))
+        je = run(gl._post_cash_transaction(run(db.cash_transactions.find_one({"id": cid}, {"_id": 0}))))
         assert je is not None
         ls = _lines(je)
         assert (gl.ACC_KAS_BESAR, 500000.0, 0.0) in ls
@@ -134,7 +134,7 @@ class TestAdvancePolicy:
             "payments": [{"id": "pay1", "amount": 1110000, "receipt_id": rid}]}}))
         run(db.ar_receipts.insert_one(_receipt(rid, oid, 1110000)))
         run(db.cash_transactions.insert_one(_cash(cid, rid, 1110000)))
-        je = run(gl.post_cash_transaction(run(db.cash_transactions.find_one({"id": cid}, {"_id": 0}))))
+        je = run(gl._post_cash_transaction(run(db.cash_transactions.find_one({"id": cid}, {"_id": 0}))))
         ls = _lines(je)
         assert (gl.ACC_PIUTANG, 0.0, 1110000.0) in ls
         assert not any(a == gl.ACC_UANG_MUKA_PELANGGAN for a, _, _ in ls)
@@ -166,7 +166,7 @@ class TestProRataPerShipment:
             [{"id": "pay1", "amount": 500000, "receipt_id": rid}])))
         run(db.ar_receipts.insert_one(_receipt(rid, oid, 500000)))
         run(db.cash_transactions.insert_one(_cash(cid, rid, 500000)))
-        run(gl.post_cash_transaction(run(db.cash_transactions.find_one({"id": cid}, {"_id": 0}))))
+        run(gl._post_cash_transaction(run(db.cash_transactions.find_one({"id": cid}, {"_id": 0}))))
 
         # SJ-1: 4 dari 10 yard (40%) → pesanan partially_shipped
         sh1 = f"shp_kebpdpt_{u}a"

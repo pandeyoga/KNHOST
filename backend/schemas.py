@@ -946,6 +946,8 @@ class SalesReturnSettle(BaseModel):
     # R5.3 — akun Kas/Bank untuk refund TUNAI (GL Cr akun ini + cash_transaction keluar).
     #   Kosong = default 1-1100 Kas Besar/Bank. Hanya relevan bila settlement = cash.
     refund_account_code: str = ""
+    # PK-20 — rekening penerima refund tunai (`bank_accounts`, milik PT retur); kosong = rekening tunggal PT jenis kas itu.
+    refund_account_id: str = ""
     # L08 LN-081 — bukti keputusan (mis. "ACC Pak Budi via WA 12/10") + lampiran yang mendukung.
     decision_note: str = ""
     decision_attachment_ids: List[str] = []

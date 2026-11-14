@@ -65,6 +65,7 @@ class DisburseInput(BaseModel):
     cash_type: str = "kas_kecil"     # kas_kecil (per-entitas) | kas_besar (grup)
     txn_date: str = ""
     note: str = ""
+    account_id: str = ""             # PK-20 — rekening sumber (`bank_accounts` milik PT PD); kosong = rekening tunggal
 
 
 # ─── Laporan Pertanggungjawaban (Settlement) ───────────────────────────

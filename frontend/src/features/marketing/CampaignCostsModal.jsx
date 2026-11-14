@@ -10,13 +10,16 @@ import useIntentKey from "../../hooks/useIntentKey";
 import CampaignBillsSection, { BillForm, RejectModal } from "./CampaignBillsSection";
 import { todayWib } from "../../utils/formatters";
 import MoneyInput from "../../components/MoneyInput";
+import CashAccountField, { cashAccountBlocked, cashAccountBlockReason } from "../../components/CashAccountField";   // PK-20
 
 const errText = (e, fb) => { const d = e.response?.data?.detail; return (typeof d === "string" ? d : d?.message) || fb; };
 const today = () => todayWib();
 
 export default function CampaignCostsModal({ campaign, canPost, canVoid = canPost, canCreateBill, canApproveBill, currentUserId, onClose, onChanged }) {
   const [data, setData] = useState(null);
-  const [f, setF] = useState({ date: today(), description: "", amount: "", cash_type: "kas_besar", vendor_name: "" });
+  const [f, setF] = useState({ date: today(), description: "", amount: "", cash_type: "kas_besar", vendor_name: "",
+    account_id: "" });
+  const [accState, setAccState] = useState("memuat");   // PK-20 — rekening sumber biaya wajib
   const [busy, setBusy] = useState(false); const [err, setErr] = useState("");
   const [voiding, setVoiding] = useState(null);
   const [addingBill, setAddingBill] = useState(false);
@@ -28,16 +31,17 @@ export default function CampaignCostsModal({ campaign, canPost, canVoid = canPos
   const set = (k, v) => setF((s) => ({ ...s, [k]: v }));
   const submit = async () => {
     setBusy(true); setErr("");
-    try { const body = { ...f, amount: Number(f.amount || 0) }; await intent.send(body, (k) => mktApi.recordCost(campaign.id, body, k)); setF((s) => ({ ...s, description: "", amount: "", vendor_name: "" })); await load(); onChanged(); }
+    try { const body = { ...f, amount: Number(f.amount || 0) }; if (!body.account_id) delete body.account_id; await intent.send(body, (k) => mktApi.recordCost(campaign.id, body, k)); setF((s) => ({ ...s, description: "", amount: "", vendor_name: "" })); await load(); onChanged(); }
     catch (e) { setErr(errText(e, "Gagal mencatat biaya.")); } finally { setBusy(false); }
   };
   return (
     <>
     <FormModal open title={`Biaya kampanye · ${campaign.name}`} subtitle="Biaya dicatat sebagai beban pemasaran saat uang keluar dari kas/bank. Anggaran hanya rencana — tidak dicatat ke pembukuan." icon={Wallet}
-      onClose={onClose} onSubmit={canPost ? submit : undefined} busy={busy} error={err} submitLabel="Catat & posting biaya" testId="mkt-costs-modal" submitTestId="mkt-cost-submit" cancelTestId="mkt-costs-close">
+      onClose={onClose} onSubmit={canPost ? submit : undefined} busy={busy} error={err} submitLabel="Catat & posting biaya" testId="mkt-costs-modal" submitTestId="mkt-cost-submit" cancelTestId="mkt-costs-close"
+      submitDisabled={canPost && cashAccountBlocked(accState, f.account_id)}>
       <div className="grid gap-3">
         <BudgetSummary data={data} />
-        {canPost && <CostForm f={f} set={set} />}
+        {canPost && <CostForm f={f} set={set} entityId={campaign.entity_id} accState={accState} onAccState={setAccState} />}
         <CostList rows={data?.costs || []} canVoid={canVoid} onVoid={setVoiding} />
         <CampaignBillsSection campaign={campaign} bills={data?.bills || []} canCreate={canCreateBill} canApprove={canApproveBill} currentUserId={currentUserId} onChanged={refresh} onAdd={() => setAddingBill(true)} onReject={setRejecting} />
       </div>
@@ -67,7 +71,7 @@ function BudgetSummary({ data }) {
   );
 }
 
-function CostForm({ f, set }) {
+function CostForm({ f, set, entityId, accState, onAccState }) {
   return (
     <div className="grid grid-cols-1 gap-2 rounded-xl border border-[#EFF0F2] p-3 sm:grid-cols-2" data-testid="mkt-cost-form">
       <Field label="Tanggal keluar *"><KNDatePicker value={f.date} onChange={(v) => set("date", v)} clearable={false} data-testid="mkt-cost-date" /></Field>
@@ -76,6 +80,13 @@ function CostForm({ f, set }) {
       <Field label="Uraian *"><input className="field w-full" value={f.description} onChange={(e) => set("description", e.target.value)} placeholder="mis. Iklan Instagram minggu 1" data-testid="mkt-cost-description" /></Field>
       <Field label="Vendor / penerima"><input className="field w-full" value={f.vendor_name} onChange={(e) => set("vendor_name", e.target.value)} data-testid="mkt-cost-vendor" /></Field>
       <Field label="Dibayar dari"><KNSelect className="field w-full" value={f.cash_type} onValueChange={(v) => set("cash_type", v)} data-testid="mkt-cost-cash-type" options={[{ value: "kas_besar", label: "Kas Besar / Bank" }, { value: "kas_kecil", label: "Kas Kecil" }]} /></Field>
+      <CashAccountField entityId={entityId} cashType={f.cash_type} value={f.account_id} onChange={(v) => set("account_id", v)}
+        onState={onAccState} testId="mkt-cost-account" />
+      {cashAccountBlocked(accState, f.account_id) && accState !== "kosong" && (
+        <p className="text-fs-12 text-kn-text-2 sm:col-span-2" data-testid="mkt-cost-account-reason">
+          {cashAccountBlockReason(accState)}
+        </p>
+      )}
     </div>
   );
 }

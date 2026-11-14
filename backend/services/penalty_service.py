@@ -635,25 +635,33 @@ async def _resume_payment(p: Dict[str, Any], item: Dict[str, Any], actor: Dict[s
         return p
     cash = dict(item.get("cash_doc") or {})
     cid = item.get("cash_txn_id") or cash.get("id", "")
+    from services import cash_ledger   # PK-20 — kas & jurnalnya lewat pembuat kas satu pintu (tahan-gagal)
+    gl_err = ""
     # ── EFEK ────────────────────────────────────────────────────────────
     if item.get("status") == "pending":
-        if not await db.cash_transactions.find_one({"id": cid}, {"_id": 0, "id": 1}):
-            from core_utils import next_doc_number as _ndn
-            cash.update({"id": cid, "number": await _ndn("cash_transactions", "number", "CASH-",
-                                                         entity_id=(cash.get("entity_id") or None)),
-                         "txn_date": now_iso(), "created_at": now_iso(), "updated_at": now_iso()})
-            await db.cash_transactions.insert_one(dict(cash))
+        try:
+            await cash_ledger.create_cash(
+                entity_id=cash.get("entity_id", ""), direction="in", amount=float(item["amount"]), ref_type="penalty",
+                ref_id=p["id"], seq=item["id"], txn_id=cid, account_id=cash.get("account_id", ""),
+                cash_type=cash.get("cash_type", ""), category=cash.get("category", ""),
+                description=cash.get("description", ""), contra_account_code=cash.get("contra_account_code", ""),
+                owner_entity_id=cash.get("owner_entity_id", ""), actor=cash.get("created_by", "system"),
+                extra={"method": cash.get("method") or "transfer"})
+        except cash_ledger.CashPostingError as exc:   # kas tercatat `failed`; pembayaran tetap diterapkan
+            gl_err = exc.error
         await db[COLL].update_one(
             {"id": p["id"], "payments": {"$elemMatch": {"id": item["id"], "status": "pending"}}},
             {"$inc": {"paid_amount": float(item["amount"])},
              "$set": {"payments.$.status": "applied", "updated_at": now_iso()}})
-    # ── JURNAL (tahan-gagal) ────────────────────────────────────────────
-    txn = await db.cash_transactions.find_one({"id": cid}, {"_id": 0})
-    try:
-        await gl_service.post_cash_durable(txn)
-    except Exception as exc:  # noqa: BLE001 — kas sudah tercatat; jurnal diulang dari panel atau kirim ulang
-        raise PenaltyConflict(f"Pembayaran denda sudah tercatat, tetapi jurnalnya gagal: {str(exc)[:200]}. "
-                              "Ulangi dari Keuangan › Posting Gagal.") from exc
+    else:
+        # ── JURNAL (tahan-gagal) — butir `applied`: kas sudah ada, jurnalnya dipastikan ─────────────────────────
+        try:
+            await cash_ledger.ensure_posted(cid)
+        except cash_ledger.CashPostingError as exc:
+            gl_err = exc.error
+    if gl_err:   # kas sudah tercatat; jurnal diulang dari panel atau kirim ulang
+        raise PenaltyConflict(f"Pembayaran denda sudah tercatat, tetapi jurnalnya gagal: {gl_err[:200]}. "
+                              "Ulangi dari Keuangan › Posting Gagal.")
     # ── SELESAI ─────────────────────────────────────────────────────────
     await db[COLL].update_one({"id": p["id"], "payments.id": item["id"]},
                               {"$set": {"payments.$.status": "done", "updated_at": now_iso()}})

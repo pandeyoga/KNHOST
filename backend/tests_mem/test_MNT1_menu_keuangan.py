@@ -105,6 +105,11 @@ async def test_MNT1_U13_finance_melihat_hutang_dan_mencairkan_uang_muka(klien, d
           "approvals": [], "kegiatan": "uji MN-T1", "created_by": keu["name"], "created_by_id": keu["id"],
           "created_at": now_iso()}
     await db.cash_advances.insert_one(dict(ca))
+    # PK-20 — kas wajib berekening: fixture satu rekening Kas Kecil milik PT itu (rekening tunggal → dipakai otomatis).
+    if not await db.bank_accounts.find_one({"entity_id": "ent_ksc", "cash_type": "kas_kecil"}):
+        await db.bank_accounts.insert_one({"id": f"rek_mnt1_{uuid.uuid4().hex[:6]}", "name": "Kas Kecil (uji MN-T1)",
+                                           "account_type": "cash", "cash_type": "kas_kecil", "entity_id": "ent_ksc",
+                                           "is_active": True})
     r = await klien.post(f"/api/cash-advances/{ca['id']}/disburse", headers=h, json={"cash_type": "kas_kecil", "note": "uji"})
     assert r.status_code != 403, r.text          # harapan spesifikasi
     assert r.status_code == 200, r.text          # di database tiruan: pencairan tercatat

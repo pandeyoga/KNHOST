@@ -34,6 +34,8 @@ class ReceiptPayload(BaseModel):
     entity_id: Optional[str] = None
     notes: str = ""
     use_deposit_amount: float = 0.0
+    # PK-20 — rekening penerima (`bank_accounts` milik PT kwitansi); kosong = rekening tunggal PT untuk jenis kasnya.
+    account_id: str = ""
     allocations: List[AllocationIn] = Field(default_factory=list)
     # FASE G-3 — keputusan selisih pembayaran yang dipilih petugas di dialog:
     #   {"kind": "outstanding|reschedule|writeoff|deposit|allocate|refund",

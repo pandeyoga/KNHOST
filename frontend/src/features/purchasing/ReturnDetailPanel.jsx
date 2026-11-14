@@ -11,6 +11,7 @@ import KNSelect from "../../components/KNSelect";
 import ReturnRollsPanel from "../sales/ReturnRollsPanel";
 import DetailModal from "../../components/DetailModal";
 import FormModal from "../../components/FormModal";
+import CashAccountField from "../../components/CashAccountField";   // PK-20 — rekening penerima refund pemasok
 import { REASON_MIN_LENGTH } from "../../services/confirmService";   // 23 Okt — detail & keputusan PER ROLL (sama dgn retur jual)
 
 const STATUS_PILL = {
@@ -87,6 +88,7 @@ export default function ReturnDetailPanel({ ret, supName, canApprove, canDelete,
   const [regradeMap, setRegradeMap] = useState({});   // roll_id -> grade
   const [cashAccounts, setCashAccounts] = useState([]);
   const [refundAccount, setRefundAccount] = useState("");
+  const [refundAccountId, setRefundAccountId] = useState("");   // PK-20
   // R5.4b — reversal/koreksi retur beli terfinalisasi
   const [showReverse, setShowReverse] = useState(false);
   const [reverseReason, setReverseReason] = useState("");
@@ -259,6 +261,9 @@ export default function ReturnDetailPanel({ ret, supName, canApprove, canDelete,
                       { value: "", label: "Default — 1-1100 Kas Besar / Bank" },
                       ...cashAccounts.map((a) => ({ value: a.code, label: `${a.code} — ${a.name}` })),
                     ]} />
+                  <CashAccountField entityId={ret.entity_id} cashType={refundAccount === "1-1110" ? "kas_kecil" : "kas_besar"}
+                    value={refundAccountId} onChange={setRefundAccountId} label="Rekening penerima"
+                    testId="rma-refund-bank-account" className="mt-1.5" />
                   <p className="text-[10px] text-[#5B6472] mt-1">Pengembalian Dana → <b>Dr Kas/Bank / Cr Persediaan</b> + tercatat kas masuk. AP tidak berubah.</p>
                 </div>
               )}
@@ -288,7 +293,8 @@ export default function ReturnDetailPanel({ ret, supName, canApprove, canDelete,
               )}
               <div className="flex gap-2">
                 <button data-testid="rma-accept-btn" className="primary-button flex-1 justify-center" disabled={supRejBad}
-                  onClick={() => onSupplierAccept && onSupplierAccept(ret, outcome, refundAccount, supRejList)}>
+                  onClick={() => onSupplierAccept && onSupplierAccept(ret, outcome, refundAccount, supRejList,
+                    outcome === "refund" ? refundAccountId : "")}>
                   <PackageCheck size={13} /> {supRejList.length ? `Supplier Terima Sebagian (${allRolls.length - supRejList.length} roll) → Nota Debit` : "Supplier Terima → Terbitkan Nota Debit"}
                 </button>
               </div>

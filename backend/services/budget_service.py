@@ -849,9 +849,10 @@ async def bill_budget_targets(bill: Dict[str, Any]) -> List[Dict[str, Any]]:
 
 
 async def cash_budget_targets(txn: Dict[str, Any]) -> List[Dict[str, Any]]:
-    """Kas KELUAR manual (tanpa `ref_type`) → akun lawan (`gl_service.cash_contra_account`) bila berjenis beban."""
+    """Kas KELUAR manual (tanpa `ref_type`, atau `ref_type="manual"` sejak PK-20) → akun lawan
+    (`gl_service.cash_contra_account`) bila berjenis beban."""
     from services import gl_service as gl
-    if txn.get("direction") != "out" or txn.get("ref_type"):
+    if txn.get("direction") != "out" or (txn.get("ref_type") or "") not in ("", "manual"):
         return []
     code = gl.cash_contra_account(txn)
     if not code or not await _is_expense(code, txn.get("entity_id") or ""):

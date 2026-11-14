@@ -145,6 +145,7 @@ async def submit_settlement(stl_id: str, request: Request) -> Dict[str, Any]:
 class ReimbursePayIn(BaseModel):
     cash_type: str = "kas_besar"
     txn_date: Optional[str] = None
+    account_id: str = ""      # PK-20 — rekening sumber (`bank_accounts` milik PT LPJ); kosong = rekening tunggal
 
 
 @router.post("/cash-advance-settlements/{stl_id}/pay-reimburse")

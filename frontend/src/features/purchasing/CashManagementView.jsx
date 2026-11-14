@@ -19,6 +19,7 @@ import EntityGatedButton from "../../components/EntityGatedButton";   // PK-42 (
 import FocusNotice from "../../components/FocusNotice";
 import { BudgetPreview } from "../../components/BudgetCheckNotice";   // PK-39 — pratinjau anggaran kas keluar
 import useFocusDoc, { gulirKe } from "../../hooks/useFocusDoc";
+import CashAccountField, { cashAccountBlocked, cashAccountBlockReason } from "../../components/CashAccountField";   // PK-20
 
 /**
  * CashManagementView (Fase 3 — Pengelolaan Kas).
@@ -37,7 +38,7 @@ import useFocusDoc, { gulirKe } from "../../hooks/useFocusDoc";
  */
 const EMPTY_FORM = {
   cash_type: "kas_kecil", direction: "out", amount: "",
-  category: "operasional", description: "",
+  category: "operasional", description: "", account_id: "",   // PK-20 — rekening wajib (tunggal → otomatis)
 };
 const CATEGORIES = [
   { value: "operasional", label: "Operasional" },
@@ -82,6 +83,7 @@ export default function CashManagementView({ currentUser, selectedEntity, focusD
   const [form, setForm] = useState(EMPTY_FORM);
   // PK-12 — satu niat = satu Idempotency-Key; tombol mati selama menunggu jawaban (klik ganda tidak mencatat dua kali).
   const [saving, setSaving] = useState(false);
+  const [accState, setAccState] = useState("memuat");
   const [voidingId, setVoidingId] = useState("");
   const createIntent = useIntentKey("kas");
   const voidIntent = useIntentKey("kasv");
@@ -128,6 +130,7 @@ export default function CashManagementView({ currentUser, selectedEntity, focusD
     setSaving(true);
     try {
       const payload = { ...form, amount: Number(form.amount) };
+      if (!payload.account_id) delete payload.account_id;
       const res = await createIntent.send(payload, (k) => moneyPost(`${API}/cash-transactions`, payload, k));
       // PK-39 — peringatan anggaran (mode Peringatkan) ikut di bilah pemberitahuan; mode Tolak → 400 di pop-up.
       const bWarn = (res.data.budget_check?.warnings || []).join(" ");
@@ -146,7 +149,9 @@ export default function CashManagementView({ currentUser, selectedEntity, focusD
   // UAT 24 Okt (audit UI tahap 2) — G1-20: anulir meminta ALASAN (dikirim & dicatat server) dan menyebut dampaknya.
   // Kas turunan dokumen lain (kwitansi piutang, uang muka, retur, AP) ditolak server — tombolnya dinonaktifkan
   // dengan penjelasan, bukan dialog yang berakhir galat.
-  const derivedFrom = (t) => (t.ref_type || t.ref_id ? (t.ref_number || REF_LABEL[t.ref_type] || t.ref_type || "dokumen lain") : "");
+  // PK-20 — kas manual kini ber-`ref_type="manual"` (rujukan = kunci permintaan): tetap kas manual, boleh dianulir di sini.
+  const derivedFrom = (t) => (t.ref_type === "manual" ? ""
+    : (t.ref_type || t.ref_id ? (t.ref_number || REF_LABEL[t.ref_type] || "dokumen lain") : ""));
 
   async function handleVoid(t) {
     const dir = t.direction === "in" ? "masuk" : "keluar";
@@ -301,6 +306,7 @@ export default function CashManagementView({ currentUser, selectedEntity, focusD
         cancelTestId="cancel-cash-button"
         busy={saving}
         error={error}
+        submitDisabled={cashAccountBlocked(accState, form.account_id)}
       >
         <div className="space-y-3">
             {/* PK-16 — menggantikan isian "Entitas": catatan masuk ke buku PT di kepala aplikasi. */}
@@ -321,6 +327,11 @@ export default function CashManagementView({ currentUser, selectedEntity, focusD
                 <KNSelect data-testid="cash-category-select" value={form.category} onValueChange={(v) => setForm({ ...form, category: v })} className="field" options={CATEGORIES} searchable={false} />
               </Field>
             </div>
+            <CashAccountField entityId={selectedEntity} cashType={form.cash_type} value={form.account_id}
+              onChange={(v) => setForm((f) => ({ ...f, account_id: v }))} onState={setAccState} testId="cash-account" />
+            {cashAccountBlocked(accState, form.account_id) && accState !== "kosong" && (
+              <p className="text-fs-12 text-kn-text-2" data-testid="cash-account-reason">{cashAccountBlockReason(accState)}</p>
+            )}
             <Field label="Deskripsi">
               <input data-testid="cash-description-input" value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} className="field" placeholder="Keterangan transaksi..." />
             </Field>

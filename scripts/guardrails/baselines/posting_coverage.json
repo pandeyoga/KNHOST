@@ -128,32 +128,11 @@
  },
  "panggilan": [
   {
-   "lokasi": "routers/cash.py:void_cash_transaction",
-   "fungsi_gl": "post_cash_transaction",
-   "jumlah": 1,
-   "pemilik": "PK-20",
-   "alasan": "batal transaksi kas"
-  },
-  {
-   "lokasi": "routers/cash.py:void_cash_transaction",
-   "fungsi_gl": "post_cash_void",
-   "jumlah": 1,
-   "pemilik": "PK-20",
-   "alasan": "batal transaksi kas"
-  },
-  {
    "lokasi": "routers/crm.py:post_incentive_gl",
    "fungsi_gl": "post_incentive_accrual",
    "jumlah": 1,
    "pemilik": "PK-22",
    "alasan": "akrual insentif"
-  },
-  {
-   "lokasi": "routers/invoices.py:simulate_payment",
-   "fungsi_gl": "post_cash_transaction",
-   "jumlah": 1,
-   "pemilik": "belum ada",
-   "alasan": "simulasi pembayaran (jalur uji lama)"
   },
   {
    "lokasi": "routers/invoices.py:simulate_payment",
@@ -170,13 +149,6 @@
    "alasan": "simulasi pembayaran (jalur uji lama)"
   },
   {
-   "lokasi": "routers/landed_cost.py:pay_landed_cost",
-   "fungsi_gl": "post_cash_transaction",
-   "jumlah": 1,
-   "pemilik": "PK-20",
-   "alasan": "bayar landed cost"
-  },
-  {
    "lokasi": "routers/sales_orders_extra.py:cancel_order",
    "fungsi_gl": "reverse_order_journals",
    "jumlah": 1,
@@ -189,13 +161,6 @@
    "jumlah": 1,
    "pemilik": "belum ada",
    "alasan": "pembalik tagihan pemasok"
-  },
-  {
-   "lokasi": "routers/vendor_bills.py:void_vendor_bill_payment",
-   "fungsi_gl": "post_cash_transaction",
-   "jumlah": 1,
-   "pemilik": "PK-05",
-   "alasan": "batal bayar faktur pemasok"
   },
   {
    "lokasi": "routers/vendor_bills.py:void_vendor_bill_payment",
@@ -261,39 +226,11 @@
    "alasan": "rekonsiliasi bank (PK-15 memberi penanda sendiri)"
   },
   {
-   "lokasi": "services/bank_recon_service.py:_reverse_charge",
-   "fungsi_gl": "reverse_document",
-   "jumlah": 1,
-   "pemilik": "PK-20",
-   "alasan": "rekonsiliasi bank (PK-15 memberi penanda sendiri)"
-  },
-  {
-   "lokasi": "services/bank_recon_service.py:cancel_holding",
-   "fungsi_gl": "reverse_document",
-   "jumlah": 1,
-   "pemilik": "PK-20",
-   "alasan": "rekonsiliasi bank (PK-15 memberi penanda sendiri)"
-  },
-  {
-   "lokasi": "services/bank_recon_service.py:to_holding",
-   "fungsi_gl": "post_cash_transaction",
-   "jumlah": 1,
-   "pemilik": "PK-20",
-   "alasan": "rekonsiliasi bank (PK-15 memberi penanda sendiri)"
-  },
-  {
    "lokasi": "services/cash_advance_service.py:approve_settlement",
    "fungsi_gl": "post_petty_cash_settlement",
    "jumlah": 1,
    "pemilik": "PK-24",
    "alasan": "LPJ"
-  },
-  {
-   "lokasi": "services/finance_case_actions.py:_cash_txn",
-   "fungsi_gl": "post_cash_transaction",
-   "jumlah": 2,
-   "pemilik": "PK-25",
-   "alasan": "kasus keuangan"
   },
   {
    "lokasi": "services/finance_case_actions.py:act_akui_dipegang_karyawan",
@@ -445,13 +382,6 @@
   {
    "lokasi": "services/payment_variance_service.py:_allocate_from_deposit",
    "fungsi_gl": "post_variance_reallocation",
-   "jumlah": 1,
-   "pemilik": "PK-19",
-   "alasan": "keputusan selisih bayar"
-  },
-  {
-   "lokasi": "services/payment_variance_service.py:_refund",
-   "fungsi_gl": "post_cash_transaction",
    "jumlah": 1,
    "pemilik": "PK-19",
    "alasan": "keputusan selisih bayar"
@@ -676,7 +606,7 @@
  },
  "total": {
   "fungsi": 31,
-  "panggilan": 78,
+  "panggilan": 67,
   "insert_entry": 12
  }
 }

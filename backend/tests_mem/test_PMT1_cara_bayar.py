@@ -105,6 +105,11 @@ async def _kwitansi(klien, h, cus, so, method, ent=KSC):
 
 
 async def test_PMT1_U3_kwitansi_alias_disimpan_kanonik(klien, db, orang):
+    # PK-20 — kas wajib berekening: fixture satu rekening Kas Kecil milik KSC (rekening tunggal → dipakai otomatis).
+    if not await db.bank_accounts.find_one({"entity_id": KSC, "cash_type": "kas_kecil"}):
+        await db.bank_accounts.insert_one({"id": _id("bank"), "name": "Kas Kecil KSC (uji)", "account_type": "cash",
+                                           "cash_type": "kas_kecil", "entity_id": KSC, "is_active": True,
+                                           "created_at": now_iso()})
     cus, so = await _pelanggan(db)
     for kata in ("tunai", "kontan"):
         r = await _kwitansi(klien, orang["h_mgr"], cus, so, kata)

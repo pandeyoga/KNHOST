@@ -70,7 +70,11 @@ async def _cash_routing(method: str, entity_id: str = "") -> tuple:
 
 
 async def _post_cash_in(receipt: Dict[str, Any], actor: Dict[str, Any]) -> Optional[str]:
-    """Posting kas masuk untuk penerimaan AR. Mengembalikan id cash_transaction."""
+    """Kas masuk penerimaan AR lewat pembuat kas satu pintu (PK-20). Mengembalikan id cash_transaction.
+
+    Rekening = `receipt.account_id` (sudah diperiksa `create_receipt` sebelum tulisan; kosong = rekening tunggal PT untuk
+    jenis kas cara bayarnya). FN-10 — kegagalan jurnal TIDAK disembunyikan: kas (`create_cash`) & kwitansi ditandai
+    `gl_status=failed` (terlihat, bisa diulang lewat POST /ar-receipts/{id}/repost atau panel Posting Gagal)."""
     amt = round(float(receipt.get("amount", 0) or 0), 2)
     if amt <= EPS:
         return None
@@ -79,39 +83,23 @@ async def _post_cash_in(receipt: Dict[str, Any], actor: Dict[str, Any]) -> Optio
     from services.cash_entity_service import resolve_owner
     entity_id = resolve_owner(receipt.get("entity_id"), DEFAULT_ENTITY_ID,
                               what="Kas masuk kwitansi")
-    number = await next_doc_number("cash_transactions", "number", "CASH-", entity_id=entity_id)
-    cdoc = {
-        "id": new_id("cash"),
-        "number": number,
-        "cash_type": cash_type,
-        "direction": "in",
-        "amount": amt,
-        "category": "penagihan",
-        "description": f"Penerimaan {receipt.get('number')} — {receipt.get('customer_name', '')}",
-        "entity_id": entity_id,
-        "ref_type": "ar_receipt",
-        "ref_id": receipt["id"],
-        "txn_date": receipt.get("receipt_date") or now_iso(),
-        "status": "posted",
-        "created_by": actor.get("name", "system"),
-        "created_at": now_iso(),
-        "updated_at": now_iso(),
-    }
-    await db.cash_transactions.insert_one(cdoc)
-    # KN-G3: jurnal kas diposting SEKARANG (bukan menunggu backfill saat startup) supaya
-    # saldo Piutang & Uang Muka Pelanggan langsung benar — penting sejak keputusan selisih
-    # pembayaran (FASE G-3) bisa menjurnal di detik yang sama. Idempotent.
-    # FN-10 — kegagalan jurnal TIDAK disembunyikan: kas & kwitansi ditandai gl_status=failed
-    # (terlihat, bisa dicoba ulang lewat POST /ar-receipts/{id}/repost — idempotent).
-    from services import gl_service as _gl
+    from services import cash_ledger
     try:
-        await _gl.post_cash_durable(cdoc)
+        cdoc = await cash_ledger.create_cash(
+            entity_id=entity_id, direction="in", amount=amt, ref_type="ar_receipt", ref_id=receipt["id"],
+            account_id=receipt.get("account_id") or "", cash_type=cash_type,
+            txn_date=receipt.get("receipt_date") or now_iso(), category="penagihan",
+            description=f"Penerimaan {receipt.get('number')} — {receipt.get('customer_name', '')}",
+            actor=actor.get("name", "system"))
+        # KN-G3: jurnal kas diposting SEKARANG (bukan menunggu backfill) supaya saldo Piutang & Uang Muka Pelanggan
+        # langsung benar — penting sejak keputusan selisih pembayaran (FASE G-3) bisa menjurnal di detik yang sama.
         await db.ar_receipts.update_one({"id": receipt["id"]}, {"$set": {"gl_status": "posted", "gl_error": ""}})
-    except Exception as exc:  # noqa: BLE001
-        logger.error("[_post_cash_in] jurnal kwitansi %s gagal: %s", receipt.get("number"), exc)
+    except cash_ledger.CashPostingError as exc:
+        logger.error("[_post_cash_in] jurnal kwitansi %s gagal: %s", receipt.get("number"), exc.error)
+        cdoc = exc.txn
         await db.ar_receipts.update_one({"id": receipt["id"]}, {"$set": {
-            "gl_status": "failed", "gl_error": str(exc)[:300], "updated_at": now_iso()}})
-    return cdoc["id"]
+            "gl_status": "failed", "gl_error": exc.error[:300], "updated_at": now_iso()}})
+    return cdoc.get("id")
 
 
 async def _post_deposit_gl(doc: Dict[str, Any], actor: Dict[str, Any]) -> None:
@@ -140,12 +128,12 @@ async def repost_receipt(receipt_id: str) -> Dict[str, Any]:
     txn = await db.cash_transactions.find_one({"id": rc.get("cash_txn_id") or "__none__"}, {"_id": 0})
     if not txn:
         raise HTTPException(status_code=409, detail="Kwitansi tanpa transaksi kas — tidak ada jurnal untuk diulang")
-    from services import gl_service as _gl
+    from services import cash_ledger   # PK-20 — jurnal kas lewat pembuat kas (pintu tahan-gagal di dalamnya)
     try:
-        await _gl.post_cash_durable(txn)
-    except Exception as exc:  # noqa: BLE001
-        await db.ar_receipts.update_one({"id": receipt_id}, {"$set": {"gl_status": "failed", "gl_error": str(exc)[:300]}})
-        raise HTTPException(status_code=409, detail=f"Jurnal masih gagal: {exc}")
+        await cash_ledger.ensure_posted(txn["id"])
+    except cash_ledger.CashPostingError as exc:
+        await db.ar_receipts.update_one({"id": receipt_id}, {"$set": {"gl_status": "failed", "gl_error": exc.error[:300]}})
+        raise HTTPException(status_code=409, detail=f"Jurnal masih gagal: {exc.error}")
     await db.ar_receipts.update_one({"id": receipt_id}, {"$set": {"gl_status": "posted", "gl_error": "",
                                                                   "updated_at": now_iso()}})
     return safe_doc(await db.ar_receipts.find_one({"id": receipt_id}, {"_id": 0}))
@@ -453,6 +441,14 @@ async def create_receipt(payload: Dict[str, Any], actor: Dict[str, Any]) -> Dict
         await _glp.preflight_posting(entity_id, receipt_date)
     except _glp.ClosedPeriodError as exc:
         raise HTTPException(status_code=409, detail=str(exc))
+    # PK-20 — rekening penerima diperiksa SEBELUM kwitansi/alokasi/deposit (kas baru saja; deposit bukan kas baru).
+    if amount > EPS:
+        from services import cash_ledger
+        from services.cash_entity_service import resolve_owner
+        cash_type = (await _cash_routing(method, entity_id or ""))[0]
+        payload["account_id"] = (await cash_ledger.periksa_rekening(
+            resolve_owner(entity_id, DEFAULT_ENTITY_ID, what="Kas masuk kwitansi"), payload.get("account_id") or "",
+            cash_type))["account_id"]
 
     receipt_id = new_id("arc")
     number = await next_doc_number("ar_receipts", "number", "AR-", entity_id=entity_id)
@@ -586,6 +582,7 @@ async def _create_receipt_after_reserve(payload, actor, customer, amount, use_de
         "unapplied_amount": unapplied,
         "deposit_delta": deposit_delta,
         "allocations": allocations,
+        "account_id": payload.get("account_id") or "",   # PK-20 — rekening penerima kas (kosong = tanpa kas baru)
         "notes": payload.get("notes", ""),
         "status": "posted",
         "effects_done": False,   # G3 V3-AR-01 — True hanya setelah kas/GL/deposit tuntas

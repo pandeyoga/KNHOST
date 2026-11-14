@@ -10,7 +10,7 @@ from pymongo import ReturnDocument
 from db import db
 from dependencies import require_permission, current_user, audit
 from entity_scope import assert_entity_access, entity_ctx, resolve_list_scope, guard_doc
-from core_utils import new_id, now_iso, safe_doc, DEFAULT_ENTITY_ID, timeline_entry, next_doc_number, rupiah
+from core_utils import new_id, now_iso, safe_doc, DEFAULT_ENTITY_ID, timeline_entry, rupiah
 from schemas import LandedCostCreate, LandedCostPaymentCreate, LandedCostDecision
 from services.landed_cost_service import (
     next_voucher_number, total_cost_of, voucher_financials, resolve_target_rolls,
@@ -354,37 +354,41 @@ async def pay_landed_cost(voucher_id: str, payload: LandedCostPaymentCreate, req
     from services.payment_method_service import kode_400 as _cara_bayar
     payload.method = await _cara_bayar(v.get("entity_id") or DEFAULT_ENTITY_ID, payload.method or "transfer",
                                        arah="keluar")
-    cash_entity = "all" if payload.cash_type == "kas_besar" else (payload.entity_id or v.get("entity_id") or DEFAULT_ENTITY_ID)
-    # PK-37 (K-03) — PERIKSA periode tanggal bayar sebelum kas lahir (PT voucher, dan PT kas bila berbeda).
+    # PK-20 (SL-11, `02` §3.4 N1) — kas milik PT VOUCHER; `entity_id` & `cash_type` isi permintaan diabaikan. Rekening
+    # (isian baru `account_id`; kosong = rekening tunggal PT jenis kas itu) diperiksa SEBELUM klaim/kas.
+    cash_entity = v.get("entity_id") or DEFAULT_ENTITY_ID
+    # PK-37 (K-03) — PERIKSA periode tanggal bayar sebelum kas lahir.
     from services.book_date import periksa_periode_dokumen_409
-    _pt_bayar = [v.get("entity_id") or DEFAULT_ENTITY_ID] + ([cash_entity] if cash_entity != "all" else [])
-    await periksa_periode_dokumen_409(_pt_bayar, payload.paid_at or None, jenis="pembayaran")
+    await periksa_periode_dokumen_409([cash_entity], payload.paid_at or None, jenis="pembayaran")
+    from services import cash_ledger
+    rek = await cash_ledger.periksa_rekening(cash_entity, getattr(payload, "account_id", "") or "",
+                                             payload.cash_type if payload.cash_type in ("kas_kecil", "kas_besar")
+                                             else "kas_besar")
     # INV-ATOMIC-01 — klaim voucher (status applied) SESUDAH validasi sisa, sebelum kas lahir:
     # dua pembayaran bersamaan tidak boleh sama-sama lolos cek sisa → satu 409.
     from services import atomic_claim as _saga
     await _saga.claim("landed_cost_vouchers", voucher_id, "landed_cost_pay",
                       precondition={"status": "applied"}, actor=actor["name"])
-    cash_doc = {
-        "id": new_id("cash"), "number": await next_doc_number("cash_transactions", "number", "CASH-", entity_id=cash_entity),
-        "cash_type": payload.cash_type, "direction": "out", "amount": amount,
-        "category": "pembelian",
-        "description": f"Pembayaran {v.get('voucher_number')} — landed cost {v.get('provider_name','')} ({payload.method})",
-        "entity_id": cash_entity, "ref_type": "landed_cost", "ref_id": voucher_id,
-        "txn_date": payload.paid_at or now_iso(), "status": "posted",
-        "created_by": actor["name"], "created_at": now_iso(), "updated_at": now_iso(),
-    }
+    pay_id = new_id("pay")
+    gl_error = ""
     try:
-        await db.cash_transactions.insert_one(cash_doc)
-        # S#074 (LC-PAY): posting GL inline (Dr Hutang / Cr Kas) — idempotent, tak menunggu backfill
-        from services import gl_service
-        await gl_service.post_cash_transaction(cash_doc)
+        # S#074 (LC-PAY): jurnal Dr Hutang / Cr Kas di buku PT voucher — lewat pembuat kas (pintu tahan-gagal).
+        cash_doc = await cash_ledger.create_cash(
+            entity_id=cash_entity, direction="out", amount=amount, ref_type="landed_cost", ref_id=voucher_id,
+            seq=pay_id, account_id=rek["account_id"], cash_type=rek["cash_type"], txn_date=payload.paid_at or "",
+            category="pembelian", actor=actor["name"],
+            description=f"Pembayaran {v.get('voucher_number')} — landed cost {v.get('provider_name','')} ({payload.method})")
+    except cash_ledger.CashPostingError as exc:
+        # Pembayaran tetap tercatat (uangnya keluar); kas `failed` tampil di Posting Gagal.
+        cash_doc, gl_error = exc.txn, exc.error
     except Exception as exc:  # noqa: BLE001
         await _saga.mark_failed("landed_cost_vouchers", voucher_id, str(exc))
         raise
     payment = {
-        "id": new_id("pay"), "amount": amount, "method": payload.method,
+        "id": pay_id, "amount": amount, "method": payload.method,
         "cash_txn_id": cash_doc["id"], "cash_txn_number": cash_doc["number"],
-        "cash_type": payload.cash_type, "notes": payload.notes,
+        "cash_type": cash_doc.get("cash_type", ""), "account_id": cash_doc.get("account_id", ""),
+        "gl_status": cash_doc.get("gl_status", ""), "notes": payload.notes,
         "paid_by": actor["name"], "paid_at": payload.paid_at or now_iso(),
     }
     new_paid = round(float(v.get("amount_paid", 0) or 0) + amount, 2)
@@ -396,11 +400,14 @@ async def pay_landed_cost(voucher_id: str, payload: LandedCostPaymentCreate, req
          **_saga.finish_set({"status": new_status, "payment_status": new_pay_status, "updated_at": now_iso()}),
          "$push": {"payments": payment, "timeline": timeline_entry(
              "paid", "Pembayaran dicatat", actor["name"],
-             f"{rupiah(amount)} via {payload.method} ({payload.cash_type})")}})
+             f"{rupiah(amount)} via {payload.method} ({cash_doc.get('number', '')})")}})
     await audit(actor["name"], "landed_cost_payment", "landed_cost", voucher_id,
                 {"voucher_number": v.get("voucher_number"), "amount": amount, "cash": cash_doc["number"]})
     updated = await db.landed_cost_vouchers.find_one({"id": voucher_id}, {"_id": 0})
-    return _hydrate(safe_doc(updated))
+    out = _hydrate(safe_doc(updated))
+    if gl_error:   # PK-20 — jawaban 200 memberi tahu layar bahwa jurnal kas pembayaran ini menunggu diulang
+        out["payment_gl_status"], out["payment_gl_error"] = "failed", gl_error
+    return out
 
 
 @router.post("/landed-costs/{voucher_id}/cancel")

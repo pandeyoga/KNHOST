@@ -27,6 +27,9 @@ import { assessVariance, directionMeta, varianceMeta } from "../finance/payments
 
 // PM-T1 — pilihan cara bayar dari daftar induk (master "Cara Bayar", per PT); titipan dipakai lewat kotak deposit.
 import { usePaymentMethods } from "../../config/paymentMethods";
+// PK-20 — kas wajib berekening: isian Rekening (rekening aktif PT kwitansi untuk jenis kas cara bayarnya).
+import CashAccountField, { cashAccountBlocked, cashAccountBlockReason } from "../../components/CashAccountField";
+import { useEntityScope } from "../../context/EntityScopeContext";
 const LABEL = "text-[11px] font-bold uppercase tracking-wide text-[#6B6B73]";
 
 // Cek UI UAT v3 — tanggal LOKAL (dulu toISOString = UTC: 00.00–07.00 WIB jadi tanggal kemarin).
@@ -44,6 +47,9 @@ export default function ARReceiptModal({ customerId, customerName, preselectOrde
   const [amount, setAmount] = useState("");
   const [method, setMethod] = useState("transfer");
   const pm = usePaymentMethods("masuk");
+  const { selectedEntity } = useEntityScope();   // PK-20 — kwitansi dibukukan di PT kepala aplikasi (server, PK-09)
+  const [accountId, setAccountId] = useState("");
+  const [accState, setAccState] = useState("memuat");
   const methodOptions = useMemo(() => pm.methods.filter((m) => m.needs_account !== "tidak")
     .map((m) => ({ value: m.code, label: m.name })), [pm.methods]);
   // Cara bayar yang tidak aktif untuk PT ini tidak boleh tetap terpilih (mis. QRIS dimatikan khusus PT).
@@ -150,6 +156,7 @@ export default function ARReceiptModal({ customerId, customerName, preselectOrde
       receipt_date: new Date(date).toISOString(),
       notes,
       use_deposit_amount: depositUse,
+      ...(accountId ? { account_id: accountId } : {}),
     };
     if (vp) body.variance = vp;
     if (mode === "manual") {
@@ -190,6 +197,9 @@ export default function ARReceiptModal({ customerId, customerName, preselectOrde
     } finally { setBusy(false); }
   }
 
+  const cashType = pm.isCash(method) ? "kas_kecil" : "kas_besar";
+  const needsAccount = effectiveAmount > 0;   // deposit saja = tanpa kas baru
+  const accBlocked = needsAccount && cashAccountBlocked(accState, accountId);
   const cashHint = pm.isCash(method)
     ? `${pm.labelOf(method)} → masuk Kas Kecil (per PT).`
     : `${pm.labelOf(method)} → masuk Kas Besar (bank).`;
@@ -209,9 +219,14 @@ export default function ARReceiptModal({ customerId, customerName, preselectOrde
           </span>
         )}
       </div>
-      <div className="ml-auto flex gap-2">
+      <div className="ml-auto flex items-center gap-2">
+        {accBlocked && (
+          <span className="text-fs-12 text-kn-text-2" data-testid="ar-receipt-account-reason">
+            {cashAccountBlockReason(accState)}
+          </span>
+        )}
         <button type="button" onClick={onClose} className="secondary-button" disabled={busy} data-testid="ar-receipt-cancel">Batal</button>
-        <button type="button" data-testid="ar-receipt-submit" disabled={busy || totalFunds <= 0} onClick={() => submit()} className="primary-button">
+        <button type="button" data-testid="ar-receipt-submit" disabled={busy || totalFunds <= 0 || accBlocked} onClick={() => submit()} className="primary-button">
           {busy ? "Menyimpan..." : "Simpan Pembayaran"}
         </button>
       </div>
@@ -237,6 +252,10 @@ export default function ARReceiptModal({ customerId, customerName, preselectOrde
             </div>
           </div>
           <p className="text-[10.5px] text-[#9A9BA3] -mt-1" data-testid="ar-receipt-cash-hint">{cashHint}</p>
+          {needsAccount && (
+            <CashAccountField entityId={selectedEntity} cashType={cashType} value={accountId}
+              onChange={setAccountId} onState={setAccState} testId="ar-receipt-account" />
+          )}
 
           {deposit > 0 && (
             <div className="rounded-md border border-[#E6F6EC] bg-[#F2FBF5] px-3 py-2" data-testid="ar-receipt-deposit-box">

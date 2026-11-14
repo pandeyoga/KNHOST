@@ -750,7 +750,7 @@ async def post_cash_durable(txn: Dict[str, Any]) -> Optional[Dict[str, Any]]:
     """FN-07/FN-10/CX-04 — posting jurnal kas dengan status TERLIHAT di dokumen kas
     (`gl_status` posted|failed + galat). Idempotent; kegagalan dilempar ke pemanggil.
     PK-18 — pembungkus tipis `post_durable(..., raise_on_fail=True)`; perilakunya tidak berubah."""
-    res = await post_durable("cash_transactions", txn["id"], lambda: post_cash_transaction(txn),
+    res = await post_durable("cash_transactions", txn["id"], lambda: _post_cash_transaction(txn),
                              source_type="cash_transaction", source_id=txn["id"], raise_on_fail=True)
     return res["journal"]
 
@@ -3065,7 +3065,7 @@ def _cash_out_contra(txn: Dict[str, Any]) -> str:
 
 
 def cash_contra_account(txn: Dict[str, Any]) -> str:
-    """PK-39 — lawan akun kas KELUAR yang akan dijurnal `post_cash_transaction` (publik: pemeriksaan anggaran kas keluar
+    """PK-39 — lawan akun kas KELUAR yang akan dijurnal `_post_cash_transaction` (publik: pemeriksaan anggaran kas keluar
     membaca akun yang sama dengan jurnalnya). Logikanya tetap satu: `_cash_out_contra`."""
     return _cash_out_contra(txn)
 
@@ -3073,7 +3073,7 @@ def cash_contra_account(txn: Dict[str, Any]) -> str:
 async def preflight_cash(txn: Dict[str, Any]) -> None:
     """PK-05 — periksa jurnal kas KELUAR yang akan terbit (akun, periode) tanpa menulis apa pun.
 
-    Baris = baris `post_cash_transaction` cabang keluar; tanggal `txn_date`; entitas = pemilik (owner) kas.
+    Baris = baris `_post_cash_transaction` cabang keluar; tanggal `txn_date`; entitas = pemilik (owner) kas.
     Melempar `JournalValidationError` / `ClosedPeriodError`."""
     amount = round(float(txn.get("amount", 0) or 0), 2)
     if amount <= EPS or txn.get("direction") != "out":
@@ -3083,8 +3083,12 @@ async def preflight_cash(txn: Dict[str, Any]) -> None:
                           entity_id=ent, date=txn.get("txn_date") or now_iso(), source_type="cash_transaction")
 
 
-async def post_cash_transaction(txn: Dict[str, Any]) -> Optional[Dict[str, Any]]:
-    """Mutasi kas: Dr/Cr Kas/Bank vs lawan akun berdasar ref_type / kategori."""
+async def _post_cash_transaction(txn: Dict[str, Any]) -> Optional[Dict[str, Any]]:
+    """Mutasi kas: Dr/Cr Kas/Bank vs lawan akun berdasar ref_type / kategori.
+
+    PK-20 — PRIBADI: pemanggil luar memakai `post_cash_durable` (penanda gagal di dokumen kas) yang dipanggil hanya oleh
+    pembuat kas `services/cash_ledger.py` (`create_cash` / `ensure_posted`) dan jalur ulang panel Posting Gagal;
+    di sini dipakai pintu itu dan isi ulang jurnal (`backfill_journals`). Penjaga INV-CASH-01."""
     if txn.get("status") == "void":
         return None
     # F-04 (audit 2026-09-02) — kas ber-`gl_posted:true` sudah dijurnal oleh dokumen
@@ -3242,7 +3246,7 @@ async def backfill_journals(entity_id: Optional[str] = None) -> Dict[str, Any]:
         {**ent_q, "status": {"$ne": "void"}, "gl_posted": {"$ne": True}},
         {"_id": 0}).sort("txn_date", 1).to_list(20000)
     for t in txns:
-        if await _guarded("cash_transaction", t.get("id", ""), post_cash_transaction(t)):
+        if await _guarded("cash_transaction", t.get("id", ""), _post_cash_transaction(t)):
             posted_cash += 1
     # KEB-PDPT — setelah kas (penanda uang muka) terposting: reklas uang muka pesanan
     # yang sudah berpendapatan ke Piutang.
@@ -3357,7 +3361,7 @@ async def post_petty_cash_settlement(*, settlement_id: str, entity_id: str,
       Cr 1-1400 Uang Muka        = Σ total pengeluaran
 
     Anti double-count: beban diakui SAAT settlement (bukan saat disburse). Pada
-    pencairan (disburse) hanya Dr Uang Muka / Cr Kas (lihat post_cash_transaction
+    pencairan (disburse) hanya Dr Uang Muka / Cr Kas (lihat _post_cash_transaction
     ref_type='cash_advance'); settlement membersihkan Uang Muka dengan beban riil.
     Idempotent (source_type='petty_cash_settlement').
     """

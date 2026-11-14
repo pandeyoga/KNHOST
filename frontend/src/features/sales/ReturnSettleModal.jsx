@@ -10,6 +10,7 @@ import { CheckCircle2, Loader2, Wallet, Coins, Percent, Warehouse, Info, Repeat,
 import { fmtNum } from "./ReturnShared";
 import KNSelect from "../../components/KNSelect";
 import FormModal from "../../components/FormModal";
+import CashAccountField from "../../components/CashAccountField";   // PK-20 — rekening kas refund tunai
 import { formatCurrency, formatQty } from "../../utils/formatters";
 import { apiErrorText } from "../../utils/apiError";
 
@@ -93,6 +94,7 @@ export default function ReturnSettleModal({ ret, open, onClose, onSettle }) {
   const [returnWarehouseId, setReturnWarehouseId] = useState("");
   const [cashAccounts, setCashAccounts] = useState([]);
   const [refundAccount, setRefundAccount] = useState("");
+  const [refundAccountId, setRefundAccountId] = useState("");   // PK-20 — rekening (bank_accounts) kas refund
   const [decisions, setDecisions] = useState(() =>
     (ret.items || []).map((it) => ({ include: true, settle_qty: it.quantity_returned ?? 0 })));
 
@@ -151,7 +153,8 @@ export default function ReturnSettleModal({ ret, open, onClose, onSettle }) {
     setBusy(true); setErr("");
     try {
       const failed = await onSettle(ret, apiOutcome, itemDecisions(), notes, movesStock && !physLocs.length ? returnWarehouseId : "",
-                     refundAcc, decisionNote, outcome === "nego" ? payout : "", outcome === "exchange");
+                     refundAcc, decisionNote, outcome === "nego" ? payout : "", outcome === "exchange",
+                     refundAcc || outcome === "refund" ? refundAccountId : "");
       if (failed) { setErr(failed); return; }
       onClose();
     } finally { setBusy(false); }
@@ -259,6 +262,9 @@ export default function ReturnSettleModal({ ret, open, onClose, onSettle }) {
               { value: "", label: "Default — 1-1100 Kas Besar / Bank" },
               ...cashAccounts.map((a) => ({ value: a.code, label: `${a.code} — ${a.name}` })),
             ]} />
+          <CashAccountField entityId={ret.entity_id} cashType={refundAccount === "1-1110" ? "kas_kecil" : "kas_besar"}
+            value={refundAccountId} onChange={setRefundAccountId} label="Rekening pengembalian dana"
+            testId="settle-refund-bank-account" className="mt-2" />
           <div className="flex items-start gap-1 text-[10.5px] text-[#5B6472] mt-1.5 leading-snug">
             <Info size={12} className="mt-[1px] shrink-0" />
             <span>Berlaku bila retur berasal dari penjualan <b>tunai</b> → dana keluar dari akun ini &

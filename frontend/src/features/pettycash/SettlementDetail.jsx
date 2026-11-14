@@ -10,6 +10,7 @@ import useIntentKey from "../../hooks/useIntentKey";
 import { moneyPost } from "../../utils/moneyRequest";
 import { confirmMoney } from "../../utils/moneyConfirm";
 import { BudgetCheckNotice } from "../../components/BudgetCheckNotice";
+import CashAccountField, { cashAccountBlocked, cashAccountBlockReason } from "../../components/CashAccountField";   // PK-20
 
 /**
  * SettlementDetail — rincian Laporan Pertanggungjawaban (LPJ) + aksi (ajukan / setujui & posting GL / tolak /
@@ -35,6 +36,11 @@ export default function SettlementDetail({ stl, currentUser, entities, catLabels
   const canApprove = ["submitted", "draft"].includes(stl.status) && can(currentUser?.permissions, "cash_settlement", "approve");
   const canReject = ["submitted", "draft"].includes(stl.status) && can(currentUser?.permissions, "cash_settlement", "reject");
   const canPayReimburse = can(currentUser?.permissions, "accounting", "create");
+  // PK-20 — rekening sumber bayar reimburse (Bank) wajib; rekening tunggal PT terisi otomatis.
+  const [accountId, setAccountId] = useState("");
+  const [accState, setAccState] = useState("memuat");
+  const reimburseOpen = stl.hutang_reimburse?.status === "open" && canPayReimburse;
+  const reimburseBlocked = cashAccountBlocked(accState, accountId);
   const sisa = Number(stl.sisa_kurang_dana) || 0;
 
   async function act(path, body, okMsg) {
@@ -65,7 +71,7 @@ export default function SettlementDetail({ stl, currentUser, entities, catLabels
       confirmLabel: "Bayar Reimburse", testId: "stl-reimburse-confirm",
     });
     if (ok) {
-      await act("pay-reimburse", { cash_type: "kas_besar" },
+      await act("pay-reimburse", { cash_type: "kas_besar", ...(accountId ? { account_id: accountId } : {}) },
         `Kelebihan LPJ ${stl.number} dibayar ke karyawan (hutang reimburse dilunasi dari kas).`);
     }
   }
@@ -82,8 +88,8 @@ export default function SettlementDetail({ stl, currentUser, entities, catLabels
           <div className="flex flex-wrap items-center gap-2">
             <button data-testid="stl-print" className="btn-secondary btn-xs" onClick={() => printSettlement(stl, entityName, catLabels)}><Printer size={13} /> Cetak LPJ</button>
             {canSubmit && <button data-testid="stl-submit-btn" className="btn-primary btn-xs" onClick={() => act("submit", {}, `${stl.number} diajukan.`)} disabled={busy}><Send size={13} /> Ajukan</button>}
-            {stl.hutang_reimburse?.status === "open" && canPayReimburse && (
-              <button data-testid="stl-pay-reimburse-btn" className="btn-primary btn-xs" disabled={busy}
+            {reimburseOpen && (
+              <button data-testid="stl-pay-reimburse-btn" className="btn-primary btn-xs" disabled={busy || reimburseBlocked}
                 onClick={payReimburse}>
                 <CheckCircle2 size={13} /> Bayar Reimburse Rp {Number(stl.hutang_reimburse.amount || 0).toLocaleString("id-ID")}
               </button>)}
@@ -101,6 +107,17 @@ export default function SettlementDetail({ stl, currentUser, entities, catLabels
         <div className="section-body grid gap-4">
           {/* PK-39 (K-12) — peringatan anggaran dari ajukan/setujui (tersimpan di LPJ); mode tolak → galat di atas. */}
           <BudgetCheckNotice check={stl.budget_check} testId="stl-budget-check" />
+          {reimburseOpen && (
+            <div className="grid gap-1 sm:max-w-md" data-testid="stl-reimburse-account-bar">
+              <CashAccountField entityId={stl.entity_id} cashType="kas_besar" value={accountId} onChange={setAccountId}
+                onState={setAccState} label="Rekening bayar reimburse" testId="stl-reimburse-account" />
+              {reimburseBlocked && accState !== "kosong" && (
+                <p className="text-fs-12 text-kn-text-2" data-testid="stl-reimburse-account-reason">
+                  {cashAccountBlockReason(accState)}
+                </p>
+              )}
+            </div>
+          )}
           <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3 text-[12px]">
             <Meta k="Ref. PD" v={stl.cash_advance_number || "—"} />
             <Meta k="Entitas" v={entityName} />

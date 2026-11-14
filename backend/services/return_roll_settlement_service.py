@@ -273,7 +273,7 @@ def _final_status(ret: Dict[str, Any], outcomes: Dict[str, Dict[str, Any]]) -> T
 
 async def execute(return_id: str, decisions: List[Dict[str, Any]], actor: Dict[str, Any], *, payout: str = "",
                   refund_account_code: str = "", decision_note: str = "", notes: str = "",
-                  attachment_ids: Optional[List[str]] = None) -> Dict[str, Any]:
+                  attachment_ids: Optional[List[str]] = None, refund_account_id: str = "") -> Dict[str, Any]:
     from services import atomic_claim as saga
     ret = await db.sales_returns.find_one({"id": return_id}, {"_id": 0})
     if not ret:
@@ -283,6 +283,13 @@ async def execute(return_id: str, decisions: List[Dict[str, Any]], actor: Dict[s
     plan = await plan_event(ret, decisions, payout, refund_account_code)
     if plan["problem"]:
         raise RollSettlementError(plan["problem"])
+    if plan["cash_total"] > 0:
+        # PK-20 — rekening penerima refund tunai diperiksa SEBELUM klaim/stok/nota kredit; tersimpan di rencana supaya
+        # "Lengkapi" memakai rekening yang sama.
+        from services import cash_ledger as _cl
+        plan["refund_account_id"] = (await _cl.periksa_rekening(
+            ret.get("entity_id", ""), refund_account_id,
+            _cl.cash_type_for(plan["refund_account_code"] or "1-1100")))["account_id"]
     seq = int(ret.get("settlement_seq") or 0) + 1
     await saga.claim("sales_returns", return_id, "sales_return_roll_settle",
                      precondition={"status": ret["status"], "settlement_seq": ret.get("settlement_seq")},
@@ -408,7 +415,8 @@ async def _apply(return_id: str, settlement_id: str, actor: Dict[str, Any]) -> D
                 direction="out", amount=plan["cash_total"], account_code=plan["refund_account_code"] or "1-1100",
                 category="Refund Retur Jual", description=f"Refund tunai retur {label} → {ret.get('customer_name', '')}",
                 entity_id=ret.get("entity_id", ""), ref_type="sales_return", ref_id=ref_id,
-                journal_entry_id=(je or {}).get("id", ""), created_by=actor.get("name", ""))
+                journal_entry_id=(je or {}).get("id", ""), created_by=actor.get("name", ""),
+                account_id=plan.get("refund_account_id", ""))
         # 6) Saldo pelanggan.
         if plan["saldo_total"] > 0:
             from services import store_credit_service as _sc

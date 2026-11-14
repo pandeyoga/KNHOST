@@ -1291,9 +1291,14 @@ async def _settle_account(entity_id: str, account_id: str) -> str:
     from services.interco_money_service import default_cash_account
     nama = (await _entity_snapshot(entity_id))["name"]
     if account_id:
-        acc = await db.bank_accounts.find_one({"id": account_id}, {"_id": 0, "entity_id": 1, "is_active": 1})
+        acc = await db.bank_accounts.find_one({"id": account_id}, {"_id": 0, "entity_id": 1, "is_active": 1,
+                                                                    "cash_type": 1, "account_type": 1, "name": 1})
         if not acc or acc.get("is_active") is False or acc.get("entity_id") != entity_id:
             raise IntercoError(f"Rekening itu bukan milik {nama} atau sudah nonaktif.")
+        from services.bank_service import account_cash_type
+        if account_cash_type(acc) != "kas_besar":   # PK-20 — jurnal pelunasan antar-PT memakai akun Bank 1-1100
+            raise IntercoError(f"Rekening {acc.get('name', '')} adalah Kas Kecil; pelunasan antar-PT dibukukan di "
+                               "Bank (1-1100). Pilih rekening Bank.")
         return account_id
     aid = await default_cash_account(entity_id)
     if not aid:

@@ -1648,7 +1648,7 @@ async def preview_settlement(return_id: str, outcome: str, item_decisions: List[
 async def settle_return(return_id: str, actor: str, outcome: str,
                         item_decisions: List[Dict] = None, notes: str = "",
                         return_warehouse_id: str = "", refund_account_code: str = "",
-                        nego_payout: str = "") -> Dict[str, Any]:
+                        nego_payout: str = "", refund_account_id: str = "") -> Dict[str, Any]:
     """Selesaikan retur dengan salah satu outcome finansial (R1):
       refund       → Credit Note + refund (tunai/AR) + barang masuk stok → refund_settled
       store_credit → Credit Note (potong bon) + barang masuk stok → credit_settled (ledger saldo di R5)
@@ -1683,6 +1683,16 @@ async def settle_return(return_id: str, actor: str, outcome: str,
                 ret = await db.sales_returns.find_one({"id": return_id}, {"_id": 0})
         return ret
     st.assert_transition(ret["status"], target)
+    # PK-20 — refund TUNAI: rekening penerima diperiksa SEBELUM stok / nota kredit / jurnal (tanpa tulisan). Bagian
+    # tunai dibaca dari pratinjau yang memakai fungsi hitung yang sama dengan penyelesaian.
+    try:
+        _pv = await preview_settlement(return_id, outcome, item_decisions, nego_payout, refund_account_code)
+    except Exception:  # noqa: BLE001 — pratinjau gagal: kas diperiksa lagi saat dibuat (jalur `cash_failed`)
+        _pv = {}
+    if sum(float(x.get("amount") or 0) for x in (_pv.get("split") or []) if x.get("kind") == "cash") > 0:
+        from services import cash_ledger as _cl
+        refund_account_id = (await _cl.periksa_rekening(
+            ret.get("entity_id", ""), refund_account_id, _cl.cash_type_for(refund_account_code or "1-1100")))["account_id"]
     # KN-B02 — klaim ATOMIK berprasyarat status: dua "selesaikan" bersamaan tidak boleh
     # restock dua kali, menerbitkan dua nota kredit, atau refund dua kali.
     from services import atomic_claim as _saga
@@ -1733,11 +1743,13 @@ async def settle_return(return_id: str, actor: str, outcome: str,
                         category="Refund Retur Jual",
                         description=f"Refund tunai retur {ret.get('number', '')} → {ret.get('customer_name', '')}",
                         entity_id=ret.get("entity_id", ""), ref_type="sales_return", ref_id=ret["id"],
-                        journal_entry_id=cn.get("journal_entry_id", ""), created_by=actor)
+                        journal_entry_id=cn.get("journal_entry_id", ""), created_by=actor,
+                        account_id=refund_account_id)
                     if ctxn:
                         settlement["cash_txn_id"] = ctxn.get("id")
                         settlement["cash_txn_number"] = ctxn.get("number")
                         settlement["refund_account_code"] = acc
+                        settlement["refund_account_id"] = ctxn.get("account_id", "")
                 except Exception as e:  # noqa: BLE001
                     import logging
                     logging.getLogger("cash.refund").exception(

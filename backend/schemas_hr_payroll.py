@@ -10,6 +10,7 @@ class PayrollRunInput(BaseModel):
 
 class PayRunInput(BaseModel):
     cash_account: Optional[str] = None  # kode akun kas/bank untuk disbursement
+    account_id: str = ""               # PK-20 — rekening sumber (`bank_accounts`); kosong = rekening tunggal PT
 
 
 class HrSettingsUpdate(BaseModel):

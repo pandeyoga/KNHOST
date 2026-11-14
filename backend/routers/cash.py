@@ -23,14 +23,6 @@ VALID_TYPES = {"kas_kecil", "kas_besar"}
 VALID_DIRECTIONS = {"in", "out"}
 
 
-async def _next_cash_number(entity_id: str = "") -> str:
-    """Nomor kas. FASE E-7 (E7.4): kas selalu milik satu badan usaha, jadi nomornya
-    memakai deret per badan usaha (E1.7) — dua PT tidak lagi berebut satu deret."""
-    from core_utils import next_doc_number
-    return await next_doc_number("cash_transactions", "number", "CASH-",
-                                 entity_id=(entity_id or None))
-
-
 #: PK-42 (UX-12) — kotak cari daftar kas (`q`) dan urutan halaman (terbaru dulu; `created_at`/`id` = pemecah seri
 #: supaya baris tidak meloncat antar-halaman saat tanggalnya sama).
 CASH_SEARCH_FIELDS = ("number", "description", "category")
@@ -182,14 +174,10 @@ async def create_cash_transaction(payload: CashTransactionCreate, request: Reque
     if (payload.ref_type or "") not in ("", "manual") or (payload.ref_id or ""):
         raise HTTPException(status_code=400, detail=(
             "Transaksi kas manual tidak boleh menunjuk dokumen lain. Catat pembayaran dari dokumennya."))
-    acc_id = getattr(payload, "account_id", "") or ""
-    if acc_id:
-        acc = await db.bank_accounts.find_one({"id": acc_id}, {"_id": 0, "entity_id": 1, "status": 1, "is_active": 1})
-        if (not acc or acc.get("status") == "inactive" or acc.get("is_active") is False
-                or acc.get("entity_id") != entity_id):
-            raise HTTPException(status_code=400, detail="Rekening tidak ditemukan atau bukan milik PT transaksi ini.")
-
+    # PK-20 — PERIKSA rekening & periode lebih dulu (urutan lama: rekening → periode → anggaran), tanpa tulisan.
+    from services import cash_ledger
     from services import gl_service as _gl
+    rek = await cash_ledger.periksa_rekening(entity_id, getattr(payload, "account_id", "") or "", payload.cash_type)
     try:  # FN-07 — periode diperiksa sebelum kas tercatat
         await _gl.preflight_posting(entity_id, payload.txn_date or now_iso())
     except _gl.ClosedPeriodError as exc:
@@ -199,46 +187,34 @@ async def create_cash_transaction(payload: CashTransactionCreate, request: Reque
     if payload.direction == "out":
         from services import budget_service as _bs
         _niat = {"direction": "out", "ref_type": "", "category": payload.category.strip(), "entity_id": entity_id,
-                 "amount": round(float(payload.amount), 2), "cash_type": payload.cash_type}
+                 "amount": round(float(payload.amount), 2), "cash_type": rek["cash_type"]}
         try:
             budget_check = await _bs.enforce_budget(entity_id, await _bs.cash_budget_targets(_niat), when="cash_out",
                                                     date=payload.txn_date or "", actor=actor)
         except ValueError as exc:
             raise HTTPException(status_code=400, detail=str(exc))
-    number = await _next_cash_number(entity_id)
-    doc = {
-        "id": new_id("cash"),
-        "number": number,
-        "cash_type": payload.cash_type,
-        "direction": payload.direction,
-        "amount": round(float(payload.amount), 2),
-        "category": payload.category.strip(),
-        "description": payload.description.strip(),
-        "entity_id": entity_id,
-        "ref_type": "",
-        "ref_id": "",
-        "txn_date": payload.txn_date or now_iso(),
-        "account_id": getattr(payload, "account_id", "") or "",
-        "reconciled": False,
-        "status": "posted",
-        "created_by": actor.get("name", ""),   # PK-09 — nilai klien diabaikan
-        "created_at": now_iso(),
-        "updated_at": now_iso(),
-    }
-    if budget_check is not None:
-        doc["budget_check"] = budget_check
-    if not doc["account_id"]:   # UAT 24 Okt — rekening tunggal PT untuk jenis kas ini dipakai otomatis
-        from services.bank_service import sole_account_id
-        doc["account_id"] = await sole_account_id(entity_id, doc["cash_type"])
-    await db.cash_transactions.insert_one(doc)
-    # FN-07 — kas manual + jurnal = satu operasi: jurnal gagal → kas dibatalkan (tanpa kas yatim GL).
+    # PK-20 (SL-11) — kas lahir lewat SATU pembuat: rekening wajib (atau rekening tunggal PT untuk jenis kasnya),
+    # periode diperiksa sebelum tulisan, id tetap dari kunci idempotensi (`ref_type="manual"`, `ref_id` = kunci;
+    # tanpa kunci → id baru). Jurnal gagal → kas TETAP tersimpan `failed` (tampil di Posting Gagal), bukan dihapus.
+    ref_id = (request.headers.get("Idempotency-Key") or "").strip()[:120] or new_id("kasm")
     try:
-        je = await _gl.post_cash_durable(doc)
-    except Exception as exc:  # noqa: BLE001
-        await db.cash_transactions.delete_one({"id": doc["id"], "status": "posted"})
-        raise HTTPException(status_code=409, detail=f"Jurnal kas gagal, transaksi tidak disimpan: {exc}")
-    doc = await db.cash_transactions.find_one({"id": doc["id"]}, {"_id": 0}) or doc
+        doc = await cash_ledger.create_cash(
+            entity_id=entity_id, direction=payload.direction, amount=float(payload.amount), ref_type="manual",
+            ref_id=ref_id, account_id=rek["account_id"], cash_type=payload.cash_type,
+            txn_date=payload.txn_date or "", category=payload.category.strip(), description=payload.description.strip(),
+            actor=actor.get("name", ""),   # PK-09 — nilai klien `created_by` diabaikan
+            extra={"budget_check": budget_check} if budget_check is not None else None)
+    except cash_ledger.CashPostingError as exc:
+        await audit(actor["name"], "cash_transaction_created", "cash_transaction", exc.txn.get("id", ""), {
+            "number": exc.txn.get("number", ""), "cash_type": exc.txn.get("cash_type", ""),
+            "direction": payload.direction, "amount": exc.txn.get("amount"), "entity_id": entity_id,
+            "gl_status": "failed"})
+        raise HTTPException(status_code=409, detail=(
+            f"Jurnal kas gagal: {exc.error}. Transaksi tersimpan dan bisa diulang dari Posting Gagal."))
+    je = await db.journal_entries.find_one({"source_type": "cash_transaction", "source_id": doc["id"],
+                                            "status": {"$ne": "void"}}, {"_id": 0, "number": 1})
     doc["journal_entry_number"] = (je or {}).get("number", "")
+    number = doc.get("number", "")
     await audit(actor["name"], "cash_transaction_created", "cash_transaction", doc["id"], {
         "number": number, "cash_type": doc["cash_type"], "direction": doc["direction"],
         "amount": doc["amount"], "entity_id": entity_id,
@@ -262,9 +238,13 @@ async def void_cash_transaction(txn_id: str, request: Request,
         raise HTTPException(status_code=409, detail="Transaksi sudah di-void")
     # FN-07 — kas turunan dokumen (kwitansi, uang muka, retur, AP, dll.) hanya dibatalkan lewat
     # dokumen asalnya supaya subledger sumber ikut di-unwind.
-    if txn.get("ref_type") or txn.get("ref_id") or txn.get("gl_posted") is True:
+    # PK-20 — kas manual kini ber-`ref_type="manual"` (ref_id = kunci permintaan): tetap kas manual, bukan turunan dokumen.
+    if (txn.get("ref_type") or "") != "manual" and (txn.get("ref_type") or txn.get("ref_id")) \
+            or txn.get("gl_posted") is True:
+        from services.cash_ledger import REF_LABEL
+        asal = REF_LABEL.get(txn.get("ref_type") or "", "lain")
         raise HTTPException(status_code=409, detail=(
-            f"Transaksi kas ini berasal dari dokumen {txn.get('ref_type') or 'lain'} — batalkan lewat dokumen asalnya."))
+            f"Transaksi kas ini berasal dari dokumen {asal} — batalkan lewat dokumen asalnya."))
     # PK-21 — yang menahan hanya pencocokan nyata (`reconciled_amount`); tanda manual lama tidak bisa dilepas lagi.
     if float(txn.get("reconciled_amount") or 0) > 0:
         raise HTTPException(status_code=409, detail="Transaksi sudah dicocokkan dengan mutasi bank — lepaskan dulu.")
@@ -276,9 +256,19 @@ async def void_cash_transaction(txn_id: str, request: Request,
             {"$set": {"voiding": True}}, projection={"_id": 0})
         if not claimed:
             raise HTTPException(status_code=409, detail="Transaksi sedang/sudah di-void")
-        # Pastikan jurnal asli ada (kas lama pra-FN-07) lalu balik — pembalik idempotent.
-        await _gl.post_cash_transaction(claimed)
-        rev = await _gl.post_cash_void(txn_id, label=txn.get("number", ""), created_by=actor["name"])
+        # Pastikan jurnal asli ada (kas lama pra-FN-07 / jurnal gagal) lalu balik — pembalik idempotent.
+        from services import cash_ledger
+        try:
+            await cash_ledger.ensure_posted(claimed["id"])
+        except cash_ledger.CashPostingError as exc:   # bukan HTTPException biasa: penanda `voiding` harus dilepas
+            raise RuntimeError(f"jurnal asal kas belum bisa diterbitkan ({exc.error})") from exc
+        # PK-20 — pembalik lewat pintu tahan-gagal: hasilnya ditulis ke `void_gl_status` kas; gagal tetap dilempar
+        # (kas TIDAK di-void, penanda `voiding` dilepas di bawah).
+        res = await _gl.post_durable(
+            "cash_transactions", txn_id,
+            lambda: _gl.post_cash_void(txn_id, label=txn.get("number", ""), created_by=actor["name"]),
+            source_type="cash_transaction_void", source_id=txn_id, field="void_gl_status", raise_on_fail=True)
+        rev = res.get("journal") or ({"id": res["journal_entry_id"]} if res.get("journal_entry_id") else None)
     except _gl.ClosedPeriodError as exc:
         await db.cash_transactions.update_one({"id": txn_id}, {"$unset": {"voiding": ""}})
         raise HTTPException(status_code=409, detail=str(exc))

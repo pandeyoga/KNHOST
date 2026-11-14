@@ -572,13 +572,20 @@ async def post_run_gl(run_id: str, actor: Dict[str, Any]) -> Dict[str, Any]:
     return await _set_run(run_id, patch)
 
 
-async def pay_run(run_id: str, actor: Dict[str, Any], cash_account: Optional[str] = None) -> Dict[str, Any]:
+async def pay_run(run_id: str, actor: Dict[str, Any], cash_account: Optional[str] = None,
+                  account_id: str = "") -> Dict[str, Any]:
+    """PK-20 — `account_id` = rekening sumber (`bank_accounts`, milik PT proses gaji); kosong = rekening tunggal PT untuk
+    jenis kas akun `cash_account`. Diperiksa SEBELUM jurnal gaji; layar menyusul di PY-T4."""
     from services import gl_service
+    from services import cash_ledger
     run = await get_run(run_id)
     if not run:
         raise ValueError("Payroll run tidak ditemukan.")
     if run["status"] not in ("posted",):
         raise ValueError(f"Run status '{run['status']}' harus 'posted' sebelum dibayar.")
+    if round(float((run.get("totals") or {}).get("net", 0) or 0), 2) > 0.01:
+        account_id = (await cash_ledger.periksa_rekening(
+            run.get("entity_id", ""), account_id, cash_ledger.cash_type_for(cash_account or "1-1100")))["account_id"]
     if not (await db.hr_payroll_runs.update_one({"id": run_id, "status": "posted"},
                                                 {"$set": {"status": "paying"}})).modified_count:
         raise ValueError("Payroll ini sedang/sudah dibayar — muat ulang.")
@@ -592,7 +599,6 @@ async def pay_run(run_id: str, actor: Dict[str, Any], cash_account: Optional[str
         patch["paid_journal_id"] = je.get("id", "")
         patch["paid_journal_number"] = je.get("number", "")
         # W2-022 — kredit kas GL WAJIB punya pasangan di buku kas (idempotent per run).
-        from services import cash_ledger
         net = round(float((run.get("totals") or {}).get("net", 0) or 0), 2)
         acc_code = next((ln.get("account_code") for ln in je.get("lines") or [] if float(ln.get("credit") or 0) > 0),
                         cash_account or "1-1100")
@@ -601,7 +607,7 @@ async def pay_run(run_id: str, actor: Dict[str, Any], cash_account: Optional[str
                 direction="out", amount=net, account_code=acc_code, category="Pembayaran Gaji",
                 description=f"Pembayaran gaji {run.get('period', '')} ({run.get('number', '')})",
                 entity_id=run.get("entity_id", ""), ref_type="payroll_run", ref_id=run_id,
-                journal_entry_id=je.get("id", ""), created_by=actor.get("name", "system"))
+                journal_entry_id=je.get("id", ""), created_by=actor.get("name", "system"), account_id=account_id)
         except Exception as exc:
             await db.hr_payroll_runs.update_one({"id": run_id, "status": "paying"}, {"$set": {
                 "status": "posted", "cash_error": str(exc)[:300]}})   # retry: jurnal idempotent, kas dilengkapi

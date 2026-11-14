@@ -185,11 +185,9 @@ async def test_PK20_ensure_posted(db, rekening):
 # ═════════════════════════════════════════════════════════════════════════════════════════════════════════════════════
 #  Serah-terima (b) — pemanggil dialihkan ke pembuat kas
 # ═════════════════════════════════════════════════════════════════════════════════════════════════════════════════════
-MENUNGGU_B = "SL-11 — pemanggil lama belum dialihkan ke cash_ledger.create_cash (PK-20 serah-terima b)"
 DIBUAT: list = []   # id kas yang lahir di modul ini (U11)
 
 
-@pytest.mark.xfail(strict=True, reason=MENUNGGU_B)
 async def test_PK20_U6b_kas_manual_jurnal_gagal_tersimpan(klien, kepala_admin, db, rekening, paksa_jurnal_gagal):
     body = {"cash_type": "kas_kecil", "direction": "out", "amount": 250_000, "category": "sewa",
             "description": "Sewa gudang (U6b)"}
@@ -219,7 +217,6 @@ async def test_PK20_U6b_kas_manual_jurnal_gagal_tersimpan(klien, kepala_admin, d
     assert await jumlah("journal_entries", {"source_type": "cash_transaction_void", "source_id": kas["id"]}) == 1
 
 
-@pytest.mark.xfail(strict=True, reason=MENUNGGU_B)
 async def test_PK20_U8_refund_retur_berekening_dijurnal_induk(db, rekening):
     # Fixture: jurnal nota kredit retur (induk) yang sudah mengkredit 1-1110 Rp 400.000; kas refund lewat
     # `record_return_cash` (jalur yang dipanggil penyelesaian retur) — rekening dari jenis kas akun 1-1110.
@@ -242,7 +239,6 @@ async def test_PK20_U8_refund_retur_berekening_dijurnal_induk(db, rekening):
     assert lagi["id"] == kas["id"] and await jumlah("cash_transactions", {"ref_id": "sr_pk20_u8"}) == 1
 
 
-@pytest.mark.xfail(strict=True, reason=MENUNGGU_B)
 async def test_PK20_U9_bayar_landed_cost_entitas_voucher(klien, kepala_admin, db, rekening):
     await db.landed_cost_vouchers.insert_one({
         "id": "lcv_pk20", "voucher_number": "LCV/PK20/1", "entity_id": KSC, "status": "applied",
@@ -264,7 +260,6 @@ async def test_PK20_U9_bayar_landed_cost_entitas_voucher(klien, kepala_admin, db
     assert await jumlah("cash_transactions", {"entity_id": KANDA, "ref_id": "lcv_pk20"}) == 0
 
 
-@pytest.mark.xfail(strict=True, reason=MENUNGGU_B)
 async def test_PK20_U10_kwitansi_berekening(klien, kepala_admin, db, rekening):
     from core_utils import now_iso
     await db.customers.insert_one({"id": "cus_pk20", "name": "Toko PK20", "entity_id": KSC, "status": "active"})
@@ -292,7 +287,6 @@ async def test_PK20_U10_kwitansi_berekening(klien, kepala_admin, db, rekening):
     assert so_b["payments"] == [] and so_b.get("paid_total", 0) == 0
 
 
-@pytest.mark.xfail(strict=True, reason=MENUNGGU_B)
 async def test_PK20_U11_saldo_rekening_sama_dengan_buku_besar(db, rekening):
     # Kas yang lahir di modul ini (U1, U2, U6a, U6b, U8–U10 dan uji inti): semuanya berekening milik ent_ksc, dan
     # per rekening Σ mutasi kas ber-gl_status posted = Σ (debit − kredit) baris jurnal kasnya pada akun kas rekening itu.

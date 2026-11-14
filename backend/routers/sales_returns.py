@@ -675,7 +675,8 @@ async def settle_return(
             notes=payload.notes,
             return_warehouse_id=payload.return_warehouse_id,
             refund_account_code=payload.refund_account_code,
-            nego_payout=(payload.payout or "").strip())
+            nego_payout=(payload.payout or "").strip(),
+            refund_account_id=getattr(payload, "refund_account_id", "") or "")
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
     decision = {"by": user.get("name", user.get("email", "")), "role": user.get("role", ""),
@@ -718,6 +719,7 @@ class RollSettleIn(BaseModel):
     rolls: List[RollDecisionIn] = []
     payout: str = ""           # kompensasi cutloss/diskon: store_credit | refund | "" (kurangi piutang SO asal)
     refund_account_code: str = ""
+    refund_account_id: str = ""   # PK-20 — rekening penerima refund tunai; kosong = rekening tunggal PT
     decision_note: str = ""
     notes: str = ""
     decision_attachment_ids: List[str] = []
@@ -800,7 +802,8 @@ async def roll_settlement_execute(return_id: str, payload: RollSettleIn, request
     try:
         doc = await rrs.execute(return_id, [d.dict() for d in payload.rolls], user, payout=(payload.payout or "").strip(),
                                 refund_account_code=payload.refund_account_code, decision_note=payload.decision_note,
-                                notes=payload.notes, attachment_ids=payload.decision_attachment_ids)
+                                notes=payload.notes, attachment_ids=payload.decision_attachment_ids,
+                                refund_account_id=payload.refund_account_id)
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
     if cond:

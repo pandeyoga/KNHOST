@@ -190,7 +190,8 @@ async def supplier_accept_purchase_return(return_id: str, request: Request,
         doc = await svc.supplier_accept(return_id, actor=user.get("name", "Admin"),
                                         outcome=payload.outcome, notes=payload.notes,
                                         refund_account_code=getattr(payload, "refund_account_code", ""),
-                                        rejected_rolls=[r.dict() for r in (payload.rejected_rolls or [])])
+                                        rejected_rolls=[r.dict() for r in (payload.rejected_rolls or [])],
+                                        refund_account_id=getattr(payload, "refund_account_id", ""))
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
     await audit(user.get("name", ""), "purchase_return_supplier_accepted", "purchase_return", return_id,

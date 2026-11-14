@@ -44,26 +44,17 @@ def _je_doc(je: Optional[Dict[str, Any]], label: str) -> List[Dict[str, Any]]:
     return [_doc("journal_entry", je.get("id", ""), je.get("number", je.get("id", "")), label)]
 
 
-async def _next_cash_number(entity_id: str = "") -> str:
-    """FASE E-1 (E1.7) — nomor kas PER BADAN USAHA.
-
-    Kas “all” (tingkat grup) sengaja tetap memakai deret bersama; itu satu-satunya
-    kas yang memang bukan milik satu badan usaha (lihat FASE E-7).
-    """
-    from core_utils import next_doc_number
-    return await next_doc_number("cash_transactions", "number", "CASH-",
-                                 entity_id=(entity_id or None))
-
-
 async def _cash_txn(*, direction: str, amount: float, category: str, description: str,
                     entity_id: str, account_id: str = "", cash_type: str = "kas_besar",
                     ref_type: str = "", ref_id: str = "", contra: str = "",
                     owner_entity_id: str = "", actor: str = "system") -> Dict[str, Any]:
-    """Catat mutasi kas NYATA + jurnalnya (idempotent di sisi jurnal).
+    """Catat mutasi kas NYATA + jurnalnya lewat pembuat kas satu pintu (PK-20, `cash_ledger.create_cash`).
 
-    Memakai koleksi & bentuk dokumen yang sama dengan layar Transaksi Kas supaya saldo
-    rekening di layar Kas & Bank ikut bergerak — bukan angka bayangan milik modul kasus.
-    """
+    Memakai koleksi & bentuk dokumen yang sama dengan layar Transaksi Kas supaya saldo rekening di layar Kas & Bank ikut
+    bergerak. Rekening = `account_id` aksi (dibuktikan milik PT kasus oleh pembuat kas), kosong = rekening tunggal PT.
+    G3 D4-CASE-02 — id kas DETERMINISTIK per (kasus, aksi, langkah, urutan) (`cash_case_{op}_{n}`, `seq="{op}:{n}"`) →
+    aksi yang diulang MENGADOPSI kas + jurnal yang sudah ada; jurnal gagal → aksi gagal, kas tertinggal `failed` dan
+    dipakai ulang saat aksi diulang."""
     amount = round(float(amount or 0), 2)
     if amount <= EPS:
         raise CaseActionError("Nominal harus lebih dari 0")
@@ -71,42 +62,28 @@ async def _cash_txn(*, direction: str, amount: float, category: str, description
     # kasusnya. `kas_besar` di sini hanya berarti "lewat bank", bukan "milik grup".
     from services.cash_entity_service import resolve_owner
     cash_owner = resolve_owner(entity_id, owner_entity_id, what="Kas kasus keuangan")
-    # G3 D4-CASE-02 — id kas DETERMINISTIK per (kasus, aksi, langkah, urutan) → retry/ack hilang
-    # MENGADOPSI kas + jurnal yang sudah ada, bukan membuat kas kedua.
     op = _CASE_OP.get()
     if op:
         n = _CASE_OP_SEQ.get() + 1
         _CASE_OP_SEQ.set(n)
-        cid = f"cash_case_{op}_{n}"
-        prior = await db.cash_transactions.find_one({"id": cid}, {"_id": 0})
-        if prior:
-            je = await gl.post_cash_transaction(prior)
-            je = je or await db.journal_entries.find_one(
-                {"source_type": "cash_transaction", "source_id": cid, "status": {"$ne": "void"}}, {"_id": 0})
-            out = [_doc("cash_transaction", prior["id"], prior.get("number", ""),
-                        f"Kas {'masuk' if direction == 'in' else 'keluar'} {_rp(amount)}")]
-            return {"txn": safe_doc(prior), "documents": out + _je_doc(je, f"Jurnal kas {prior.get('number', '')}")}
-    doc = {
-        "id": f"cash_case_{op}_{_CASE_OP_SEQ.get()}" if op else new_id("cash"),
-        "number": await _next_cash_number(entity_id),
-        "cash_type": cash_type if cash_type in ("kas_besar", "kas_kecil") else "kas_besar",
-        "direction": direction, "amount": amount, "category": category,
-        "description": description,
-        "entity_id": cash_owner,
-        "ref_type": ref_type, "ref_id": ref_id, "txn_date": now_iso(),
-        "account_id": account_id or "", "reconciled": False, "status": "posted",
-        "created_by": actor, "created_at": now_iso(), "updated_at": now_iso(),
-    }
-    if contra:
-        doc["contra_account_code"] = contra
-    if owner_entity_id:
-        doc["owner_entity_id"] = owner_entity_id
-    await db.cash_transactions.insert_one(dict(doc))
-    je = await gl.post_cash_transaction(doc)
-    out = [_doc("cash_transaction", doc["id"], doc["number"],
+        txn_id, seq = f"cash_case_{op}_{n}", f"{op}:{n}"
+    else:
+        txn_id, seq = "", new_id("seq")
+    from services import cash_ledger
+    try:
+        txn = await cash_ledger.create_cash(
+            entity_id=cash_owner, direction=direction, amount=amount, ref_type=ref_type or "finance_case",
+            ref_id=ref_id or cash_owner, seq=seq, txn_id=txn_id, account_id=account_id,
+            cash_type=cash_type if cash_type in ("kas_besar", "kas_kecil") else "kas_besar", category=category,
+            description=description, contra_account_code=contra, owner_entity_id=owner_entity_id, actor=actor)
+    except cash_ledger.CashPostingError as exc:
+        raise CaseActionError(f"Kas {exc.txn.get('number', '')} tercatat, tetapi jurnalnya gagal: {exc.error}. "
+                              "Ulangi aksi ini untuk melanjutkan (kas yang sama dipakai ulang).") from exc
+    je = await db.journal_entries.find_one(
+        {"source_type": "cash_transaction", "source_id": txn["id"], "status": {"$ne": "void"}}, {"_id": 0})
+    out = [_doc("cash_transaction", txn["id"], txn.get("number", ""),
                 f"Kas {'masuk' if direction == 'in' else 'keluar'} {_rp(amount)}")]
-    out += _je_doc(je, f"Jurnal kas {doc['number']}")
-    return {"txn": safe_doc(doc), "documents": out}
+    return {"txn": safe_doc(txn), "documents": out + _je_doc(je, f"Jurnal kas {txn.get('number', '')}")}
 
 
 async def _order_or_fail(order_id: str) -> Dict[str, Any]:

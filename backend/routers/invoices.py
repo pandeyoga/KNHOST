@@ -4,7 +4,7 @@ from typing import Any, Dict, List
 from fastapi import APIRouter, HTTPException, Request
 from db import db
 from dependencies import require_permission, audit
-from core_utils import new_id, now_iso, safe_doc, next_doc_number, DEFAULT_ENTITY_ID
+from core_utils import new_id, now_iso, safe_doc, DEFAULT_ENTITY_ID
 from schemas import PaymentSimulationCreate
 from services import gl_service
 from services.customer_service import order_payment_method, NON_AR_METHODS
@@ -136,20 +136,13 @@ async def simulate_payment(order_id: str, payload: PaymentSimulationCreate, requ
             from services.cash_entity_service import resolve_owner as _cash_owner
             cash_entity = _cash_owner(order.get("entity_id"), DEFAULT_ENTITY_ID,
                                       what="Kas masuk pembayaran faktur")
-            cdoc = {
-                "id": new_id("cash"),
-                "number": await next_doc_number("cash_transactions", "number", "CASH-",
-                                                entity_id=cash_entity),
-                "cash_type": cash_type, "direction": "in", "amount": amount,
-                "category": "penagihan",
-                "description": f"Pembayaran {invoice['number']} — {order.get('customer_name', '')}",
-                "entity_id": cash_entity, "ref_type": "ar_receipt", "ref_id": invoice["id"],
-                "txn_date": now_iso(), "status": "posted",
-                "created_by": payload.created_by or actor["name"],
-                "created_at": now_iso(), "updated_at": now_iso(),
-            }
-            await db.cash_transactions.insert_one(dict(cdoc))
-            await gl_service.post_cash_transaction(cdoc)
+            # PK-20 — kas lewat pembuat kas satu pintu (rekening tunggal PT jenis kas itu; tanpa rekening → galat
+            # dicatat di log seperti kegagalan GL lain di jalur simulasi ini — jalur dimatikan PK-19).
+            from services import cash_ledger
+            await cash_ledger.create_cash(
+                entity_id=cash_entity, direction="in", amount=amount, ref_type="ar_receipt", ref_id=invoice["id"],
+                cash_type=cash_type, category="penagihan", actor=payload.created_by or actor["name"],
+                description=f"Pembayaran {invoice['number']} — {order.get('customer_name', '')}")
     except Exception as exc:  # noqa: BLE001
         logger.error("Gagal posting GL penjualan utk order %s: %s", order_id, exc)
     return safe_doc(invoice)

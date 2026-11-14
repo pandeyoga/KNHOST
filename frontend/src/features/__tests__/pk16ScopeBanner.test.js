@@ -356,8 +356,13 @@ describe("U11 — sukses lalu gagal: angka jawaban pertama tidak tersisa, galat 
 // ── U12 — form kas ────────────────────────────────────────────────────────────────────────────────────────────────
 describe("U12 — Catat Transaksi Kas: banner form, tanpa isian Entitas, entity_id tidak dikirim", () => {
   test("PT terpilih ent_kanda", async () => {
-    routeGet(screenRoutes({ ...META_ONE, entity_ids: ["ent_kanda"],
-      entities: [{ id: "ent_kanda", short_name: "KANDA", legal_name: "CV Kanda Suka" }], label: "CV Kanda Suka" }));
+    routeGet({
+      ...screenRoutes({ ...META_ONE, entity_ids: ["ent_kanda"],
+        entities: [{ id: "ent_kanda", short_name: "KANDA", legal_name: "CV Kanda Suka" }], label: "CV Kanda Suka" }),
+      // PK-20 — form kas mewajibkan rekening: fixture satu rekening Kas Kecil milik PT terpilih (terisi otomatis).
+      "/bank-accounts": [{ id: "rek_kanda_k", name: "Kas Kecil Kanda", entity_id: "ent_kanda", account_type: "cash",
+        cash_type: "kas_kecil" }],
+    });
     mockPost.mockResolvedValue({ data: { number: "KANDA/CASH-0001", direction: "out" } });
     await mount(<CashManagementView currentUser={ADMIN} selectedEntity="ent_kanda" />, { selectedEntity: "ent_kanda" });
     await click(q("create-cash-button"));

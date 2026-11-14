@@ -8,6 +8,7 @@ import { isZeroMetric } from "../../components/ListPageParts";
 import ErrorNotice from "../../components/ErrorNotice";
 import { JournalStatusBar } from "../../components/JournalStatusBadge";   // PK-18 — status jurnal kapitalisasi
 import { usePaymentMethods } from "../../config/paymentMethods";   // PM-T1 — daftar induk cara bayar
+import CashAccountField, { cashAccountBlocked, cashAccountBlockReason } from "../../components/CashAccountField";   // PK-20
 
 /**
  * LandedCostDetailPanel (Fase 5.4) — detail voucher: biaya, alokasi HPP roll, aksi.
@@ -62,6 +63,9 @@ export default function LandedCostDetailPanel({ voucher, canApprove, decideHint 
   const payMethods = usePaymentMethods("keluar", voucher?.entity_id);
   const [showPay, setShowPay] = useState(false);
   const [busy, setBusy] = useState(false);
+  // PK-20 — rekening sumber pembayaran (rekening aktif PT voucher) wajib; tunggal → terisi otomatis.
+  const [accountId, setAccountId] = useState("");
+  const [accState, setAccState] = useState("memuat");
   // Fase 4 · R3 — galat aksi juga tampil DI DALAM pop-up (bilah halaman `onError` tertutup lapisan DetailModal).
   const [err, setErr] = useState("");
   const fail = (m) => { setErr(m); onError?.(m); };
@@ -85,6 +89,10 @@ export default function LandedCostDetailPanel({ voucher, canApprove, decideHint 
       };
       const r = await axios.post(urls[action], body || {});
       onAction?.(action, r.data);
+      if (r.data?.payment_gl_status === "failed") {   // PK-20 — pembayaran tercatat, jurnal kasnya menunggu diulang
+        setErr(`Pembayaran tercatat, tetapi jurnal kasnya gagal: ${r.data.payment_gl_error || "galat"}. `
+          + "Ulangi dari Keuangan › Posting Gagal.");
+      }
     } catch (e) {
       fail(e.response?.data?.detail || `Gagal ${action}.`);
     } finally { setBusy(false); }
@@ -93,7 +101,7 @@ export default function LandedCostDetailPanel({ voucher, canApprove, decideHint 
   async function doPay() {
     const amt = Number(payAmount || 0);
     if (amt <= 0) { fail("Nominal pembayaran harus > 0."); return; }
-    await act("pay", { amount: amt, cash_type: cashType, method });
+    await act("pay", { amount: amt, cash_type: cashType, method, ...(accountId ? { account_id: accountId } : {}) });
     setShowPay(false); setPayAmount("");
   }
 
@@ -216,16 +224,24 @@ export default function LandedCostDetailPanel({ voucher, canApprove, decideHint 
                 </Field>
                 <Field label="Sumber Kas">
                   <KNSelect data-testid="lc-pay-cashtype" value={cashType} onValueChange={setCashType} className="field"
-                    options={[{ value: "kas_besar", label: "Kas Besar" }, { value: "kas_kecil", label: "Kas Kecil" }]} />
+                    options={[{ value: "kas_besar", label: "Bank (transfer)" }, { value: "kas_kecil", label: "Kas Kecil (tunai)" }]} />
                 </Field>
                 <Field label="Cara bayar">
                   <KNSelect data-testid="lc-pay-method" value={method} onValueChange={setMethod} className="field"
                     options={payMethods.options} />
                 </Field>
               </div>
-              <div className="flex gap-2">
-                <button data-testid="lc-pay-confirm" onClick={doPay} disabled={busy} className="primary-button">Catat Pembayaran</button>
-                <button onClick={() => setShowPay(false)} className="secondary-button">Batal</button>
+              <CashAccountField entityId={voucher.entity_id} cashType={cashType} value={accountId} onChange={setAccountId}
+                onState={setAccState} testId="lc-pay-account" className="sm:max-w-md" />
+              <div className="flex flex-wrap items-center gap-2">
+                <button data-testid="lc-pay-confirm" onClick={doPay} disabled={busy || cashAccountBlocked(accState, accountId)}
+                  className="primary-button btn-sm whitespace-nowrap">Catat Pembayaran</button>
+                <button onClick={() => setShowPay(false)} className="secondary-button btn-sm">Batal</button>
+                {cashAccountBlocked(accState, accountId) && accState !== "kosong" && (
+                  <span className="text-fs-12 text-kn-text-2" data-testid="lc-pay-account-reason">
+                    {cashAccountBlockReason(accState)}
+                  </span>
+                )}
               </div>
             </div>
           )}

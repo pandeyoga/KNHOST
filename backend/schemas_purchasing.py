@@ -313,8 +313,9 @@ class LandedCostCreate(BaseModel):
 
 class LandedCostPaymentCreate(BaseModel):
     amount: float = Field(..., ge=0)
-    cash_type: str = "kas_besar"      # kas_kecil | kas_besar (sumber dana)
-    entity_id: str = ""
+    cash_type: str = "kas_besar"      # kas_kecil | kas_besar (sumber dana); PK-20 — diturunkan dari rekening
+    account_id: str = ""              # PK-20 — rekening sumber (`bank_accounts` milik PT voucher); kosong = rekening tunggal
+    entity_id: str = ""               # PK-20 — DIABAIKAN: kas selalu milik PT voucher (`02` §3.4 N1)
     method: str = "transfer"          # transfer | tunai | giro
     notes: str = ""
     paid_at: str = ""
@@ -476,6 +477,8 @@ class SupplierAcceptInput(BaseModel):
     notes: str = ""
     # R5.3 — akun Kas/Bank untuk outcome 'refund' (supplier kembalikan dana tunai). Default 1-1100.
     refund_account_code: str = ""
+    # PK-20 — rekening penerima refund (`bank_accounts`, milik PT retur); kosong = rekening tunggal PT jenis kas itu.
+    refund_account_id: str = ""
     # 23 Okt — supplier menerima SEBAGIAN: roll yang ia tolak tidak ikut Nota Debit dan menunggu "barang kembali".
     rejected_rolls: List[SupplierRollRejectIn] = []
 
