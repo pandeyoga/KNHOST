@@ -15,6 +15,9 @@
  *  5. Buka/tutup kartu beranimasi (`Collapse`) + panah yang berputar — sebelumnya
  *     isinya hilang mendadak dan kartu di grid 2 kolom ikut setinggi tetangganya
  *     (kesan "statis"); `self-start` membuat tiap kartu memakai tingginya sendiri.
+ *  6. Perapian Meja Finance (14 Nov 2026) — `stretch` (opsional): kartu TERBUKA ikut setinggi tetangganya
+ *     di baris grid yang sama (tepi bawah rata); kartu tertutup tetap `self-start`. `className` menambah
+ *     kelas tata letak dari pemanggil (mis. `xl:col-span-2` untuk kartu ganjil terakhir). Bawaan = perilaku lama.
  */
 import { useState } from "react";
 import { ChevronDown, Inbox } from "lucide-react";
@@ -38,6 +41,7 @@ const PAGE_ROWS = 5;
 
 export default function DeskQueueCard({
   queue, onAction, busyRef = "", testPrefix = "desk", rowTestPrefix, defaultOpen, loading = false,
+  stretch = false, className = "",
 }) {
   const [open, setOpen] = useState(
     defaultOpen === undefined ? (queue?.count || 0) > 0 : defaultOpen);
@@ -69,7 +73,8 @@ export default function DeskQueueCard({
       : formatCurrency(Number(queue?.total_value) || 0);
 
   return (
-    <section className="section-card self-start" data-testid={`${testPrefix}-queue-${queue?.id}`}>
+    <section className={`section-card ${stretch && open ? "flex flex-col" : "self-start"} ${className}`.trim()}
+             data-testid={`${testPrefix}-queue-${queue?.id}`}>
       <button
         type="button"
         data-testid={`${testPrefix}-queue-toggle-${queue?.id}`}

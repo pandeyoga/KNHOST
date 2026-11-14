@@ -15,8 +15,12 @@
  * klik baris membuka dokumennya di layar utama (`onOpenRow(row)`, mis. lewat `boardRowLink()` di
  * `config/waitingBoards.js` + `openDocument`). Keputusan hanya di layar utama (satu dialog). Bawaan
  * `mode="act"` = perilaku lama (papan bisa ditindak).
+ *
+ * Perapian Meja Finance (14 Nov 2026) — `compactEmpty` (opsional): papan yang TERBACA dan KOSONG digambar
+ * sebagai SATU baris (ikon centang + teks kosong + tautan "Buka …"), bukan kotak setinggi ±130 px. Keadaan
+ * "tidak bisa dibaca" TETAP kotak penuh + Coba lagi (regresi B5: kegagalan tidak boleh tampil sebagai kabar baik).
  */
-import { RefreshCw } from "lucide-react";
+import { CheckCircle2, RefreshCw } from "lucide-react";
 import { useEffect, useState } from "react";
 import SeeAllModal, { SeeAllFooter } from "./SeeAllModal";
 import axios, { API } from "../services/apiClient";
@@ -47,7 +51,7 @@ export default function WaitingQueueBoard({
   board = {}, loading = false, unreadable = false, onRetry, onNavigate,
   showEntity = false, icon: Icon, accent = "#6C3FD1", title,
   testIdBase, rowTestIdBase, gotoLabel = "Buka layarnya →", emptyText, gotoTestId,
-  onActed, entityId = "all", mode = "act", onOpenRow,
+  onActed, entityId = "all", mode = "act", onOpenRow, compactEmpty = false,
 }) {
   const rows = board.rows || [];
   const go = () => { if (board.view && onNavigate) onNavigate(board.view); };
@@ -197,6 +201,26 @@ export default function WaitingQueueBoard({
       )}
     </div>
   );
+
+  // Papan kosong yang terbaca → satu baris ringkas (hanya bila pemanggil memintanya).
+  if (compactEmpty && !loading && !unreadable && rows.length === 0 && !((board.count ?? 0) > 0)) {
+    return (
+      <div className="flex flex-wrap items-center gap-x-3 gap-y-1 rounded-xl border px-3 py-1.5"
+        style={{ borderColor: `${accent}33`, background: `${accent}0A` }}
+        data-testid={testIdBase} data-board-mode={mode} data-board-compact="empty">
+        <p className="flex min-w-0 flex-1 items-center gap-2 text-fs-13 text-kn-text"
+          data-testid={`${testIdBase}-empty`} title={`${judul} (0)`}>
+          <CheckCircle2 size={15} className="shrink-0 text-kn-success-text" aria-hidden="true" />
+          <span className="min-w-0">{emptyText || "Tidak ada dokumen yang menunggu keputusan"}</span>
+          <span className="sr-only"> — {judul} (0)</span>
+        </p>
+        <button type="button" className="link-button shrink-0"
+          onClick={go} disabled={!board.view}
+          title={board.view ? "" : "Layar tujuan belum dikirim server"}
+          data-testid={gotoTestId || `${testIdBase}-goto`}>{gotoLabel}</button>
+      </div>
+    );
+  }
 
   return (
     <div className="rounded-xl border p-4"

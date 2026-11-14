@@ -313,7 +313,7 @@ export function Sidebar({ groups = [], activeNavId, activeView, onSelect, user, 
 
 // Fase 3 · P1 (L-05) — `crumbs` = jejak menu yang SAMA dengan sorotan sidebar (`breadcrumbFor()` di
 // navigationConfig: grup › menu › tab). `kicker` (PAGE_META) hanya cadangan untuk layar di luar menu.
-export function TopBar({ title, kicker, crumbs = [], onToggleSidebar, onSync, syncing, notice, onShowDetail, infoCta, entitySwitcher, notificationCenter, scopeLabel, onAskKn }) {
+export function TopBar({ title, kicker, crumbs = [], onToggleSidebar, onSync, syncing, notice, onShowDetail, infoCta, entitySwitcher, notificationCenter, helpMenu, scopeLabel, onAskKn }) {
   const trail = Array.isArray(crumbs) && crumbs.length ? crumbs : (kicker ? [kicker] : []);
   return (
     <header className="topbar no-print" role="banner">
@@ -367,6 +367,8 @@ export function TopBar({ title, kicker, crumbs = [], onToggleSidebar, onSync, sy
           </button>
         )}
         {notificationCenter}
+        {/* 14 Nov 2026 — "Bantuan & Panduan" di topbar (layar > 768 px), bukan melayang di atas isi (TourMenu). */}
+        {helpMenu}
         <button data-testid="refresh-data-button" className="icon-button" onClick={onSync} aria-label="Sync data" title="Sync">
           <RefreshCw size={14} className={syncing ? "animate-spin" : ""} />
         </button>

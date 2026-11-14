@@ -10,6 +10,12 @@
  * Dua tindakan dikerjakan LANGSUNG di sini karena keduanya pekerjaan sehari-hari yang
  * berulang: **terbitkan Faktur Pajak** dan **catat kwitansi** (memakai ARReceiptModal
  * yang sudah ada — alokasi FIFO, deposit, dan takaran selisih bayar ikut terpakai).
+ *
+ * Perapian penyajian (14 Nov 2026 — isi & hitungan antrean TIDAK berubah, semuanya tetap dari server):
+ *  · antrean BER-ISI tampil dulu, urut umur tertua → nilai → jumlah (`splitDeskQueues`); antrean KOSONG
+ *    dilipat menjadi satu baris "N antrean kosong: …" yang bisa dibuka (`DeskEmptyQueues`, KN_08);
+ *  · papan kontrabon yang kosong = satu baris (`compactEmpty`), bukan kotak besar;
+ *  · grid 2 kolom: kartu terbuka sebaris sama tinggi (`stretch`), kartu ganjil terakhir merentang 2 kolom.
  */
 import { useCallback, useEffect, useState } from "react";
 import { Coins, Inbox, Landmark, RefreshCw, ShieldAlert } from "lucide-react";
@@ -17,6 +23,8 @@ import ErrorNotice from "../../components/ErrorNotice";
 import { formatCurrency } from "../../utils/formatters";
 import { apiErrorText } from "../../utils/apiError";
 import DeskQueueCard from "../sales_admin/DeskQueueCard";
+import DeskEmptyQueues from "../sales_admin/DeskEmptyQueues";
+import { splitDeskQueues } from "../sales_admin/deskQueueOrder";
 import SoTrackerCard from "../sales_admin/SoTrackerCard";
 import WaitingBoardsStrip from "../../components/WaitingBoardsStrip";
 import { financeDesk, issueTaxInvoice, rowLink, soTrackerLink } from "../sales_admin/workDeskApi";
@@ -70,6 +78,7 @@ export default function FinanceDesk({ currentUser, selectedEntity = "all", onOpe
   const openItems = queues.reduce((s, q) => s + (q.count || 0), 0);
   const totalMoney = queues.reduce((s, q) => s + (q.total_value || 0), 0);
   const oldest = Math.max(0, ...queues.map((q) => q.oldest_age_days || 0));
+  const { filled, empty } = splitDeskQueues(queues);
 
   return (
     // Audit UI 24 Okt (141 HP): `grid` tanpa kolom eksplisit = kolom `auto` yang ikut melebar
@@ -88,14 +97,14 @@ export default function FinanceDesk({ currentUser, selectedEntity = "all", onOpe
           Angka + umur tunggunya milik backend (`approval_backlog_service` lewat
           `/api/home/finance`), jadi mustahil berselisih dari Pusat Persetujuan. */}
       <WaitingBoardsStrip endpoint="/home/finance" entityId={selectedEntity}
-        primaryKey="contra_bon_approve" testIdPrefix="fin-home"
+        primaryKey="contra_bon_approve" testIdPrefix="fin-home" compactEmpty
         onActed={load}
         onNavigate={(view) => onOpenDocument?.({ view })} />
 
       <section className="section-card">
         <div className="section-head">
           <div className="flex min-w-0 items-center gap-2">
-            <Landmark size={15} className="text-[#0058CC]" />
+            <Landmark size={15} className="text-kn-action" />
             <span className="kicker">Finance</span>
             <h2 data-testid="fin-desk-title">Meja Finance</h2>
           </div>
@@ -105,7 +114,7 @@ export default function FinanceDesk({ currentUser, selectedEntity = "all", onOpe
           </button>
         </div>
 
-        <p className="px-3 pt-2 text-[11.5px] leading-relaxed text-[#6B6B73]">
+        <p className="px-3 pt-2 text-fs-12 leading-relaxed text-kn-text-2">
           Sisi <b>uang masuk</b> &amp; <b>pajak keluaran</b>: terbitkan Faktur Pajak, catat
           kwitansi pelanggan dan alokasikan ke tagihan, putuskan selisih bayar dalam batas
           kewenangan Anda, terbitkan denda, dan pantau jatuh tempo.
@@ -126,11 +135,11 @@ export default function FinanceDesk({ currentUser, selectedEntity = "all", onOpe
 
         {(desk?.not_my_desk || []).length > 0 && (
           <div data-testid="fin-desk-not-mine"
-               className="mx-3 mb-3 rounded-lg border border-[#CBDFFF] bg-[#F2F7FF] px-3 py-2">
-            <p className="text-[11px] font-bold uppercase tracking-wide text-[#0058CC]">
+               className="mx-3 mb-3 rounded-lg bg-kn-action-soft px-3 py-2">
+            <p className="text-fs-12 font-bold uppercase tracking-wide text-kn-action">
               Bukan wewenang meja ini
             </p>
-            <p className="text-[11.5px] text-[#31465F]">
+            <p className="text-fs-12 text-kn-neutral">
               {(desk.not_my_desk || []).join(" · ")}
             </p>
           </div>
@@ -140,23 +149,29 @@ export default function FinanceDesk({ currentUser, selectedEntity = "all", onOpe
       <SoTrackerCard desk="finance" selectedEntity={selectedEntity} testPrefix="fin-desk" onOpen={(r) => onOpenDocument?.(soTrackerLink(r))} />
 
       {loading && !desk ? (
-        <div className="section-card py-14 text-center text-[12px] text-[#6B6B73]"
+        <div className="section-card py-14 text-center text-fs-13 text-kn-text-2"
              data-testid="fin-desk-loading">
           Menyusun antrean uang masuk & pajak…
         </div>
       ) : queues.length === 0 ? (
-        <div className="section-card py-14 text-center text-[12px] text-[#6B6B73]"
+        <div className="section-card py-14 text-center text-fs-13 text-kn-text-2"
              data-testid="fin-desk-empty">
-          <Inbox size={26} className="mx-auto mb-2 text-[#D6D6DB]" />
+          <Inbox size={26} className="mx-auto mb-2 text-kn-divider" aria-hidden="true" />
           Belum ada antrean untuk badan usaha yang sedang Anda lihat.
         </div>
       ) : (
-        <div className="grid grid-cols-[minmax(0,1fr)] gap-3 xl:grid-cols-2">
-          {queues.map((q) => (
-            <DeskQueueCard key={q.id} queue={q} busyRef={busyRef} loading={loading}
-                           testPrefix="fin-desk" rowTestPrefix={`fin-desk-${q.id}`} onAction={handleAction} />
-          ))}
-        </div>
+        <>
+          {filled.length > 0 && (
+            <div data-testid="fin-desk-queues" className="grid grid-cols-[minmax(0,1fr)] gap-3 xl:grid-cols-2">
+              {filled.map((q, i) => (
+                <DeskQueueCard key={q.id} queue={q} busyRef={busyRef} loading={loading} stretch
+                               className={filled.length % 2 === 1 && i === filled.length - 1 ? "xl:col-span-2" : ""}
+                               testPrefix="fin-desk" rowTestPrefix={`fin-desk-${q.id}`} onAction={handleAction} />
+              ))}
+            </div>
+          )}
+          <DeskEmptyQueues queues={empty} allEmpty={filled.length === 0} testPrefix="fin-desk" />
+        </>
       )}
 
       {payRow && (
@@ -176,10 +191,10 @@ function Metric({ icon: Icon, label, value, tone, testId }) {
   return (
     <div data-testid={testId} className="metric-card">
       <div className="metric-icon" style={{ background: tone }}>
-        <Icon size={16} className="text-[#1C1C1E]" />
+        <Icon size={16} className="text-kn-text" />
       </div>
       <div className="min-w-0">
-        <p className="text-[11px] font-bold uppercase tracking-wide text-[#8E8E93]">{label}</p>
+        <p className="text-fs-12 font-bold uppercase tracking-wide text-kn-text-2">{label}</p>
         <p className="text-[15px] font-bold tabular-nums break-words">{value}</p>
       </div>
     </div>

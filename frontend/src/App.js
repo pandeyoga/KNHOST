@@ -275,6 +275,20 @@ function App() {
   }
 
   const pageMeta = PAGE_META[activeView] || { kicker: "Workspace", title: "Kain Nusantara" };
+  // Perapian 14 Nov 2026 (keputusan pemilik) — tombol melayang menutupi angka/kontrol di tepi kanan bawah;
+  // di layar desktop kini tinggal di topbar. Satu status menu (`showTourMenu`) untuk kedua penempatan.
+  const helpMenu = (placement) => (
+    <TourMenu
+      placement={placement}
+      userRole={user?.role}
+      showMenu={showTourMenu}
+      onToggleMenu={() => setShowTourMenu((v) => !v)}
+      onSelectTour={(tour) => {
+        setActiveTour(tour);
+        setShowTourMenu(false);
+      }}
+    />
+  );
   // Restrukturisasi IA — tab bar sekunder bila view aktif bagian dari sebuah hub.
   const hubInfo = hubForView(activeView, user?.role);
 
@@ -314,6 +328,7 @@ function App() {
           // G0-21 — CTA bilah pesan dulu "Selesaikan"/"Tinjau" yang membuka layar yang SAMA (ambigu); kini "Tutup".
           infoCta={{ label: "Tutup", onClick: () => setNotice("") }}
           entitySwitcher={<><EntitySwitcher entities={switcherEntities} archived={canSwitchEntity ? archivedEntities : []} value={selectedEntity} onChange={onSelectEntity} canSwitch={canSwitchEntity} role={user?.role} homeEntityId={entityContext?.home_entity_id || ""} />{showsLocationScope(user) && <LocationScopeBar value={loc.choice} onChange={loc.setChoice} />}</>}
+          helpMenu={isMobile ? null : helpMenu("topbar")}
           notificationCenter={
             <NotificationCenter
               notifications={notifications}
@@ -480,16 +495,8 @@ function App() {
         </button>
       )}
 
-      {/* Floating Help Button */}
-      <TourMenu
-        userRole={user?.role}
-        showMenu={showTourMenu}
-        onToggleMenu={() => setShowTourMenu(!showTourMenu)}
-        onSelectTour={(tour) => {
-          setActiveTour(tour);
-          setShowTourMenu(false);
-        }}
-      />
+      {/* Bantuan & Panduan — layar ≤ 768 px: tombol mengapung; layar lebih lebar: di topbar (`helpMenu`). */}
+      {isMobile && helpMenu("floating")}
     </div>
     </EntityScopeProvider>
   );

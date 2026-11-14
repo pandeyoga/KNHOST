@@ -664,7 +664,7 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 
 | Fitur (`src/features/`) | Berkas | Baris |
 |---|---:|---:|
-| `__tests__` | 72 | 9461 |
+| `__tests__` | 73 | 9666 |
 | `admin` | 34 | 6577 |
 | `approvals` | 9 | 1699 |
 | `catalog` | 24 | 1449 |
@@ -675,7 +675,7 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 | `desks` | 2 | 229 |
 | `documents` | 18 | 2640 |
 | `export` | 9 | 700 |
-| `finance` | 93 | 20385 |
+| `finance` | 93 | 20400 |
 | `home` | 5 | 1130 |
 | `hr` | 33 | 5340 |
 | `inspections` | 12 | 2171 |
@@ -697,7 +697,7 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 | `rfid` | 21 | 3556 |
 | `rnd` | 66 | 7874 |
 | `sales` | 97 | 15769 |
-| `sales_admin` | 11 | 1862 |
+| `sales_admin` | 13 | 1979 |
 | `samples` | 8 | 777 |
 | `settings` | 49 | 9108 |
 | `tanya` | 25 | 1592 |

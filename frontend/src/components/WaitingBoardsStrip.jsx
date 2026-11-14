@@ -18,13 +18,16 @@ import WaitingQueueBoard from "./WaitingQueueBoard";
 import { boardLook, boardRowLink, selectWaitingBoards } from "../config/waitingBoards";
 
 /**
+ * Perapian Meja Finance (14 Nov 2026) — `compactEmpty`: papan kosong yang terbaca digambar satu baris
+ * (lihat `WaitingQueueBoard`); papan berisi & keadaan gagal-baca tidak berubah.
+ *
  * Fase 3 · P1 — `linkKeys` (mis. `["inspection_hold"]`, D-28): papan dengan kunci ini digambar `mode="link"`
  * (tanpa tombol keputusan; klik baris → `onOpenDocument(boardRowLink(board, row))` membuka dokumennya di
  * layar utama). Papan lain tetap bisa ditindak seperti dulu.
  */
 export default function WaitingBoardsStrip({
   endpoint, entityId = "all", primaryKey, testIdPrefix, onNavigate, onActed, scopeNote = "",
-  linkKeys = [], onOpenDocument,
+  linkKeys = [], onOpenDocument, compactEmpty = false,
 }) {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -64,7 +67,7 @@ export default function WaitingBoardsStrip({
                memakai data yang sama. Dua angka berbeda di satu layar = INV-HOME-01. */
             onActed={async () => { await load(); if (onActed) await onActed(); }}
             onNavigate={(view) => onNavigate && onNavigate(view, b.key)}
-            showEntity={showEntity} icon={look.icon} accent={look.accent}
+            showEntity={showEntity} icon={look.icon} accent={look.accent} compactEmpty={compactEmpty}
             gotoLabel={look.goto} emptyText={look.empty} title={look.title}
             testIdBase={`${testIdPrefix}-board-${b.key}`}
             rowTestIdBase={`${testIdPrefix}-board-${b.key}-row`} />
