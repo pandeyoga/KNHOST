@@ -22,6 +22,8 @@ import { SalesTeamEditor, salesTeamError, customerDefaultTeam } from "./SalesTea
 import { useEffectivePrices, pickPrice, sourceMeta } from "../../hooks/useEffectivePrices";
 import { useEntityScope } from "../../context/EntityScopeContext";
 import { canSeeSourcing } from "../../utils/sourcingVisibility";
+import { apiErrorText } from "../../utils/apiError";
+import { INTERNAL_REQUEST_REASON } from "../../components/FulfillmentInfo";
 
 const STEPS = [
   { n: 1, label: "Pelanggan & Alamat", icon: Users },
@@ -218,20 +220,21 @@ export default function CheckoutDrawer({
   };
   const handleSubmitClick = () => { if (requiresLotConfirmation) setShowMixedConfirm(true); else doSubmit(false); };
 
+  // PK-30 (IC-09) — stok PT lain diminta lewat PERMINTAAN INTERNAL (Admin Sales menjadikannya transaksi antar-PT
+  // berharga kontrak). Jalur transfer antar-PT harga pokok yang lama sudah ditutup server (410).
   const handleRequestTransfer = async (line) => {
-    const source = (line.cross_entity || [])[0];
-    const destEntity = allocation.entityId || entityFor;
     const qty = line.breakdown?.inter_company || 0;
-    if (!source || !destEntity || qty <= 0) return;
-    setTransferRequests((t) => ({ ...t, [line.product_id]: "requesting" }));
+    if (qty <= 0) return;
+    setTransferRequests((t) => ({ ...t, [line.product_id]: { status: "requesting" } }));
     try {
-      await axios.post(`${API}/transfers/inter-company`, {
-        source_entity_id: source.entity_id, dest_entity_id: destEntity,
-        items: [{ product_id: line.product_id, quantity: qty, unit: line.unit }],
-        notes: "Permintaan dari POS checkout (Fulfillment Assistant)",
+      const r = await axios.post(`${API}/internal-requests`, {
+        items: [{ product_id: line.product_id, quantity: qty }],
+        reason: INTERNAL_REQUEST_REASON,
       });
-      setTransferRequests((t) => ({ ...t, [line.product_id]: "requested" }));
-    } catch { setTransferRequests((t) => ({ ...t, [line.product_id]: "error" })); }
+      setTransferRequests((t) => ({ ...t, [line.product_id]: { status: "requested", number: r.data?.number || "" } }));
+    } catch (e) {
+      setTransferRequests((t) => ({ ...t, [line.product_id]: { status: "error", message: apiErrorText(e) } }));
+    }
   };
 
   if (!open) return null;

@@ -568,6 +568,10 @@ class RollSSOTTester:
                 timeout=30
             )
             
+            # PK-30 (IC-09) — jalur transfer antar-PT harga pokok ditutup: selalu 410 tanpa menulis.
+            if r.status_code == 410:
+                ok("Regression: jalur transfer antar-PT lama ditutup (410) — PK-30")
+                return True
             if r.status_code != 200:
                 bad(f"Regression: Inter-company create failed: {r.status_code} {r.text[:200]}")
                 return False

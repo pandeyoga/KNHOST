@@ -1,10 +1,17 @@
-import { ArrowLeftRight, Check } from "lucide-react";
+import { AlertCircle, ArrowLeftRight, Check } from "lucide-react";
 import { formatQty } from "../utils/formatters";
 import { modeMeta } from "../utils/fulfillment";
 import { canSeeSourcing } from "../utils/sourcingVisibility";
 
+/** PK-30 (IC-09) — alasan baku Permintaan Internal dari keranjang (dibaca Admin Sales di antreannya). */
+export const INTERNAL_REQUEST_REASON = "Stok PT sendiri tidak cukup — diminta dari keranjang penjualan";
+
+/** `reqStatus` = `{status: "requesting"|"requested"|"error", number?, message?}` (bentuk teks lama tetap dibaca). */
+const reqOf = (reqStatus) => (typeof reqStatus === "string" ? { status: reqStatus } : (reqStatus || {}));
+
 /**
- * Info ketersediaan/fulfillment (ATP) per baris cart + tombol minta transfer inter-company.
+ * Info ketersediaan/fulfillment (ATP) per baris cart + tombol **Buat Permintaan Internal** bila stok diambil dari PT
+ * lain (PK-30: dulu "Minta Transfer" lewat jalur transfer harga pokok yang kini ditutup).
  * Dipisah dari CartPanel agar file tetap ramping (compliance < 500 baris).
  */
 export function FulfillmentInfo({ line, loading, reqStatus, onRequestTransfer }) {
@@ -20,6 +27,7 @@ export function FulfillmentInfo({ line, loading, reqStatus, onRequestTransfer })
   const bo = line.breakdown?.backorder || 0;
   const ic = line.breakdown?.inter_company || 0;
   const source = (line.cross_entity || [])[0];
+  const req = reqOf(reqStatus);
   return (
     <div
       data-testid={`cart-item-fulfillment-${line.product_id}`}
@@ -57,28 +65,34 @@ export function FulfillmentInfo({ line, loading, reqStatus, onRequestTransfer })
       <p className="mt-1 text-[10px] leading-snug text-[#8E8E93]">{line.explanation}</p>
       {line.primary_mode === "inter_company" && ic > 0 && source && (
         <div className="mt-2">
-          {reqStatus === "requested" ? (
+          {req.status === "requested" ? (
             <p
               data-testid={`transfer-requested-${line.product_id}`}
-              className="flex items-center gap-1 rounded-md bg-[#EEF4FF] px-2 py-1.5 text-[10px] font-semibold text-[#0058CC]"
+              className="flex items-center gap-1 rounded-md bg-kn-action-soft px-2 py-1.5 text-fs-12 font-semibold text-kn-action"
             >
-              <Check size={12} className="flex-shrink-0" /> Transfer diminta — menunggu persetujuan {source.entity_name}
+              <Check size={12} className="flex-shrink-0" /> Permintaan Internal {req.number} dibuat — menunggu Admin Sales.
             </p>
           ) : (
-            <button
-              type="button"
-              data-testid={`request-transfer-${line.product_id}`}
-              disabled={reqStatus === "requesting" || !onRequestTransfer}
-              onClick={() => onRequestTransfer && onRequestTransfer(line)}
-              className="flex w-full items-center justify-center gap-1.5 rounded-md border border-[#C9B6E8] bg-[#F7F2FE] px-2 py-1.5 text-[10px] font-bold text-[#6B219A] transition hover:bg-[#F0E8FB] disabled:opacity-50"
-            >
-              <ArrowLeftRight size={12} />
-              {reqStatus === "requesting"
-                ? "Memproses…"
-                : reqStatus === "error"
-                ? "Gagal — coba lagi"
-                : `Minta Transfer dari ${source.entity_name} (${formatQty(ic)} ${line.unit})`}
-            </button>
+            <>
+              <button
+                type="button"
+                data-testid={`request-transfer-${line.product_id}`}
+                disabled={req.status === "requesting" || !onRequestTransfer}
+                onClick={() => onRequestTransfer && onRequestTransfer(line)}
+                className="secondary-button btn-sm flex w-full items-center justify-center gap-1.5"
+              >
+                <ArrowLeftRight size={12} />
+                {req.status === "requesting"
+                  ? "Memproses…"
+                  : `Buat Permintaan Internal (${formatQty(ic)} ${line.unit})`}
+              </button>
+              {req.status === "error" && (
+                <p data-testid={`transfer-request-error-${line.product_id}`}
+                  className="mt-1 flex items-center gap-1 text-fs-12 font-semibold text-kn-danger-text">
+                  <AlertCircle size={12} className="flex-shrink-0" /> Permintaan gagal dibuat: {req.message || "coba lagi"}
+                </p>
+              )}
+            </>
           )}
         </div>
       )}

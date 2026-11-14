@@ -772,6 +772,14 @@ PK-06 — field tambahan: `interco_transactions` dan `interco_returns` (tiap dok
 `cash_in_id`, `idempotency_key`, `cancel_reason`, `applied[].applied_at`, `applied[].previous_status`. Jurnal kembar lewat
 `services/twin_journal.py` (`preflight_twin`, `post_twin`); panel Posting Gagal jenis `interco_transaction`,
 `interco_return`, `interco_settlement_payer`, `interco_settlement_payee`.
+PK-30 — field tambahan `interco_transactions` (kedua dokumen kembar): `items[].quantity_ordered` (jumlah pesanan semula,
+diisi saat penyesuaian panjang; `quantity`/`line_subtotal` = nilai aktual), `length_adjustment` `{transfer_id,
+from_subtotal, to_subtotal, delta_subtotal, delta_tax, delta_total, lines[{product_id, from_qty, to_qty}], by, at}` (ada =
+sudah disesuaikan, penanda aman-diulang), `gl_status_adj`/`gl_error_adj`/`gl_journal_id_adj` (jurnal
+`{pair}:adj:seller|buyer`; panel Posting Gagal jenis `interco_adj`), `terms_override` `{by, by_id, reason, at,
+pricing_mode {standar, dipakai}|null, ppn_mode {standar, dipakai}|null, lines[{product_id, standard_price|null,
+used_price}]}`, `seller_is_pkp`/`buyer_is_pkp` (potret PKP saat dibuat), `tax_warning` (`pembeli_non_pkp` | ""). Tanpa
+migrasi. Kunci `antar_entitas.selisih_panjang` (PT penjual). Jalur `POST /api/transfers/inter-company` ditutup (410).
 Antar-PT itu **jual-beli**, bukan pindah gudang: PT KSC menjual kain ke CV Kanda dengan
 **harga internal dari kontrak** dan mengambil **margin**; keduanya PT terpisah dengan buku,
 pajak, dan pelanggan sendiri. Satu transaksi lahir sebagai **DOKUMEN KEMBAR** (satu di tiap
@@ -792,7 +800,7 @@ Components:  features/finance/interco/IntercoView.jsx · IntercoCreateModal.jsx 
              IntercoSettlementModal.jsx · IntercoDetailPanel.jsx · IntercoCancelModal.jsx ·
              InternalContractWizardModal.jsx · intercoApi.js
              (eliminasi: features/finance/GroupConsolidationView.jsx)
-Config:      config_catalog_interco.py (grup `antar_entitas` — 7 kunci; `ppn_mode` ber-scope PT)
+Config:      config_catalog_interco.py (grup `antar_entitas` — 8 kunci; `ppn_mode`, `selisih_panjang` ber-scope PT)
 Invarian:    INV-IC-01..06 (scripts/verify_data_integrity.py lapisan `interco`)
 POC:         backend/tests/test_g6_poc.py (21 skenario, bukti-merah, nol residu)
 Doc types:   `interco_transaction` & `interco_settlement` terdaftar di doc_refs_service (G-4)

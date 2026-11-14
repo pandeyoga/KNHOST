@@ -5,7 +5,7 @@
  * berkas layar tetap di bawah panduan panjang dan tiap blok bukti bisa dibaca
  * sendiri: kartu per PT, blok jurnal, tabel jurnal, dan timeline.
  */
-import { FileText, BookOpen, Scissors, ShieldCheck } from "lucide-react";
+import { FileText, BookOpen, Scissors, ShieldCheck, Ruler, PenLine, AlertTriangle } from "lucide-react";
 import { formatCurrency, formatQty } from "../../../utils/formatters";
 import { STATUS_CLASS, STATUS_LABEL, ACC_LABEL, fmtDate } from "./intercoApi";
 import QtyDual from "../../../components/QtyDual";      // FASE U — dua satuan
@@ -21,7 +21,7 @@ export function Section({ icon: Icon, title, testid, children }) {
   );
 }
 
-export function SidePanel({ role, doc, journal, extraJournal, extraLabel }) {
+export function SidePanel({ role, doc, journal, extraJournal, extraLabel, adjJournal }) {
   if (!doc) return <div className="p-6 text-[#8E8E93]">-</div>;
   const isSeller = role === "seller";
   return (
@@ -116,11 +116,59 @@ export function SidePanel({ role, doc, journal, extraJournal, extraLabel }) {
           Belum ada jurnal — dokumen masih draf (jurnal terbit saat dikonfirmasi).
         </div>
       )}
+      {adjJournal && (
+        <div className="mt-2">
+          <JournalBlock title="Jurnal Penyesuaian Panjang Roll" je={adjJournal}
+                        testid={`interco-detail-journal-${role}-adj`} />
+        </div>
+      )}
       {extraJournal && (
         <div className="mt-2">
           <JournalBlock title={extraLabel} je={extraJournal}
                         testid={`interco-detail-journal-${role}-extra`} />
         </div>
+      )}
+    </div>
+  );
+}
+
+const fmtLen = (n) => formatQty(n);
+
+/** PK-30 — catatan dokumen: penyesuaian panjang roll, harga/PPN di luar kontrak, pembeli bukan PKP (ikon + teks). */
+export function IntercoTermsNotes({ seller, buyer }) {
+  if (!seller) return null;
+  const adj = seller.length_adjustment;
+  const ov = seller.terms_override;
+  const warn = (buyer || seller).tax_warning === "pembeli_non_pkp";
+  if (!adj && !ov && !warn) return null;
+  const unitOf = (pid) => ((seller.items || []).find((it) => it.product_id === pid) || {}).unit || "";
+  return (
+    <div className="mx-6 mb-3 space-y-2" data-testid="interco-detail-notes">
+      {adj && (
+        <p className="flex items-start gap-2 rounded-lg bg-kn-action-soft px-3 py-2 text-fs-13 text-kn-action"
+          data-testid="interco-detail-length-adjustment">
+          <Ruler size={14} className="mt-0.5 flex-shrink-0" />
+          <span>
+            Disesuaikan ke panjang roll aktual:{" "}
+            {(adj.lines || []).map((l) => `${fmtLen(l.from_qty)} → ${fmtLen(l.to_qty)} ${unitOf(l.product_id)}`.trim())
+              .join(", ")}, nilai {formatCurrency(adj.from_subtotal)} → {formatCurrency(adj.to_subtotal)}.
+          </span>
+        </p>
+      )}
+      {ov && (
+        <p className="flex items-start gap-2 rounded-lg bg-kn-special-soft px-3 py-2 text-fs-13 text-kn-special-text"
+          data-testid="interco-detail-terms-override">
+          <PenLine size={14} className="mt-0.5 flex-shrink-0" />
+          <span>Harga/PPN di luar kontrak oleh {ov.by || "—"}: {ov.reason}</span>
+        </p>
+      )}
+      {warn && (
+        <p className="flex items-start gap-2 rounded-lg bg-kn-warning-soft px-3 py-2 text-fs-13 text-kn-warning-text"
+          data-testid="interco-detail-tax-warning">
+          <AlertTriangle size={14} className="mt-0.5 flex-shrink-0" />
+          <span>PT pembeli bukan PKP: PPN masukan {formatCurrency((buyer || seller).tax_amount)} tidak dapat
+            dikreditkan.</span>
+        </p>
       )}
     </div>
   );

@@ -124,7 +124,8 @@ def test_inter_company_persists_doc(s):
         "items": [{"product_id": roll["product_id"], "quantity": 1, "unit": roll.get("unit", "roll")}],
     }
     rr = s.post(f"{BASE}/api/transfers/inter-company", json=body)
-    assert rr.status_code in (200, 201), rr.text
+    assert rr.status_code == 410, rr.text
+    pytest.skip("PK-30 (IC-09): jalur transfer antar-PT harga pokok ditutup — selalu 410 tanpa menulis; pengganti diuji tests_mem/test_PK30_antar_pt.py (U7, U8)")
     tid = rr.json().get("id")
     assert tid, rr.text
     g = s.get(f"{BASE}/api/transfers/{tid}")

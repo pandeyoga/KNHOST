@@ -168,10 +168,6 @@ async def dokumen(db, pid):
     return {d["role"]: d async for d in db.interco_transactions.find({"pair_id": pid}, {"_id": 0})}
 
 
-XFAIL_A_IC02 = pytest.mark.xfail(strict=True, reason="IC-02 — pemanggil belum dialihkan ke fungsi baru (serah-terima b)")
-XFAIL_A_IC09 = pytest.mark.xfail(strict=True, reason="IC-09 — jalur transfer lama belum ditutup (serah-terima b)")
-
-
 # ═══ Serah-terima (a): dua fungsi baru diuji langsung (angka U1–U3) ═══════════════════════════════════════════════════
 async def siapkan_langsung(klien, db, siap, qty, panjang, *, buyer=KANDA):
     """Transaksi dikonfirmasi lewat API; roll penjual direservasi untuk tugas gudang tiruan (fixture)."""
@@ -299,7 +295,6 @@ async def test_PK30_a_U6_sisi_pembeli_gagal_diulang_lewat_panel(klien, kepala_ad
 
 
 # ═══ U1–U8: alur lewat API ════════════════════════════════════════════════════════════════════════════════════════════
-@XFAIL_A_IC02
 async def test_PK30_U1_roll_lebih_panjang_dokumen_dan_jurnal_menyesuaikan(klien, db, siap):
     a = await alur(klien, db, siap, 100, 130)
     assert a["task"].status_code == 200, a["task"].text
@@ -327,7 +322,6 @@ async def test_PK30_U1_roll_lebih_panjang_dokumen_dan_jurnal_menyesuaikan(klien,
         assert d["length_adjustment"]["transfer_id"] == a["tid"]
 
 
-@XFAIL_A_IC02
 async def test_PK30_U2_roll_lebih_pendek_dan_roll_pas(klien, db, siap):
     a = await alur(klien, db, siap, 100, 90)
     assert a["task"].status_code == 200, a["task"].text
@@ -348,7 +342,6 @@ async def test_PK30_U2_roll_lebih_pendek_dan_roll_pas(klien, db, siap):
                                                      "source_id": {"$regex": f"^{b['pid']}:adj:"}}) == 0
 
 
-@XFAIL_A_IC02
 async def test_PK30_U3_ber_ppn_pembeli_pkp(klien, kepala_admin, db, siap):
     await atur(klien, kepala_admin, "antar_entitas.ppn_mode", "ikut_pkp")
     try:
@@ -367,7 +360,6 @@ async def test_PK30_U3_ber_ppn_pembeli_pkp(klien, kepala_admin, db, siap):
         await atur(klien, kepala_admin, "antar_entitas.ppn_mode", "tanpa_ppn")
 
 
-@XFAIL_A_IC02
 async def test_PK30_U4_mode_tolak_tugas_gudang_tidak_terbit(klien, kepala_admin, db, siap):
     await atur(klien, kepala_admin, KUNCI, "tolak")
     try:
@@ -396,7 +388,6 @@ async def test_PK30_U5_periode_pembeli_tertutup(klien, db, siap):
     assert await db.journal_entries.count_documents({}) == n0
 
 
-@XFAIL_A_IC02
 async def test_PK30_U5b_periode_tertutup_tanpa_kunci_dokumen(klien, kepala_admin, db, siap):
     """Tambahan: sakelar PK-37 `periode.kunci_dokumen` dimatikan untuk PT pembeli — pemeriksaan jurnal penyesuaian,
     HPP, dan penerimaan (`precheck_warehouse_task`) tetap menolak sebelum kepemilikan roll pindah."""
@@ -416,7 +407,6 @@ async def test_PK30_U5b_periode_tertutup_tanpa_kunci_dokumen(klien, kepala_admin
     assert await db.journal_entries.count_documents({}) == n0
 
 
-@XFAIL_A_IC02
 async def test_PK30_U6_sisi_pembeli_gagal_lalu_diulang(klien, kepala_admin, db, siap, paksa_jurnal_gagal):
     a = await alur(klien, db, siap, 100, 130, setujui=False)
     async with paksa_jurnal_gagal("sisip", entity_id=KANDA, source_type="interco_transaction", kali=1):
@@ -438,7 +428,6 @@ async def test_PK30_U6_sisi_pembeli_gagal_lalu_diulang(klien, kepala_admin, db, 
         assert d["length_adjustment"]["delta_total"] == 750_000
 
 
-@XFAIL_A_IC09
 async def test_PK30_U7_jalur_lama_410(klien, kepala_admin, db, siap):
     rid = await buat_roll(db, 50)
     n0 = await db.warehouse_transfers.count_documents({})
@@ -464,7 +453,6 @@ async def test_PK30_U7_jalur_lama_410(klien, kepala_admin, db, siap):
     assert pemanggil == ["services/return_service.py"]
 
 
-@XFAIL_A_IC09
 async def test_PK30_U8_transfer_lama_tidak_bisa_disetujui_tetap_bisa_ditolak(klien, db, siap):
     tid = f"trn_pk30_lama_{uuid.uuid4().hex[:6]}"
     rid = await buat_roll(db, 20, ref_transfer=tid)
@@ -587,7 +575,6 @@ async def test_PK30_U14_putaran_t1_config(klien, kepala_admin):
     assert await value_of(KUNCI) == "sesuaikan"
 
 
-@XFAIL_A_IC02
 async def test_PK30_U14_yang_dibaca_pt_penjual(klien, kepala_admin, db, siap):
     await atur(klien, kepala_admin, KUNCI, "tolak", scope_id=KANDA)        # lapisan PT PEMBELI
     try:
@@ -597,3 +584,43 @@ async def test_PK30_U14_yang_dibaca_pt_penjual(klien, kepala_admin, db, siap):
     assert a["task"].status_code == 200, a["task"].text
     assert a["approve"].status_code == 200, a["approve"].text
     assert (await dokumen(db, a["pid"]))["seller"]["length_adjustment"]["delta_total"] == 750_000
+
+
+# ═══ Langkah 7: laporan baca-saja sisa jalur lama (H3 — tanpa mode tulis) ═════════════════════════════════════════════
+async def test_PK30_laporan_transfer_lama_baca_saja(db, capsys):
+    import importlib.util
+    spec = importlib.util.spec_from_file_location("pk30_lapor", ROOT / "scripts/blueprint/pk30_transfer_lama_lapor.py")
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    # Fixture (sisip langsung): satu transfer kasir lama menunggu, satu tugas antar-PT ber-tautan, satu pindah roll
+    # retur; jurnal harga pokok kasir lama 1.000.000 dan pindah roll retur 400.000 (KSC → Kanda).
+    dasar = {"transfer_kind": "inter_entity", "source_entity_id": KSC, "dest_entity_id": KANDA, "items": [
+        {"product_id": P1, "qty": 10, "rolls": [{"roll_id": "r1"}]}], "created_at": "2026-11-01T01:00:00+00:00"}
+    await db.warehouse_transfers.insert_many([
+        {**dasar, "id": "trn_lp_lama", "code": "TRF-LAMA-1", "status": "waiting_approval", "requested_by": "Kasir"},
+        {**dasar, "id": "trn_lp_ic", "code": "TRF-IC-1", "status": "waiting_approval", "interco_pair_id": "icp_x"},
+        {**dasar, "id": "trn_lp_rtn", "code": "RTNX-1", "status": "completed", "origin_sales_return_id": "sr1"},
+        {**dasar, "id": "trn_lp_lama2", "code": "TRF-LAMA-2", "status": "completed"}])
+
+    def je(tid, sisi, ent, lawan, akun_d, akun_c, n):
+        return {"id": f"je_lp_{tid}_{sisi}", "source_type": "inter_company_transfer", "source_id": f"{tid}:{sisi}",
+                "status": "posted", "entity_id": ent, "intercompany_counterpart_entity_id": lawan,
+                "lines": [{"account_code": akun_d, "debit": n, "credit": 0},
+                          {"account_code": akun_c, "debit": 0, "credit": n}]}
+    await db.journal_entries.insert_many([
+        je("trn_lp_lama2", "src", KSC, KANDA, "1-1250", "1-1300", 1_000_000),
+        je("trn_lp_lama2", "dst", KANDA, KSC, "1-1300", "2-1250", 1_000_000),
+        je("trn_lp_rtn", "src", KSC, KANDA, "1-1250", "1-1300", 400_000),
+        je("trn_lp_rtn", "dst", KANDA, KSC, "1-1300", "2-1250", 400_000)])
+    n_trf, n_je = await db.warehouse_transfers.count_documents({}), await db.journal_entries.count_documents({})
+    hasil = await mod.kumpulkan(db)
+    assert [t["code"] for t in hasil["menunggu"]] == ["TRF-LAMA-1"]
+    assert hasil["jurnal"] == [
+        {"asal": "kasir lama", "dari": KSC, "ke": KANDA, "transfer": 1, "piutang_1250": 1_000_000,
+         "utang_2250": 1_000_000},
+        {"asal": "pindah roll retur", "dari": KSC, "ke": KANDA, "transfer": 1, "piutang_1250": 400_000,
+         "utang_2250": 400_000}]
+    mod.cetak(hasil)
+    assert "TRF-LAMA-1" in capsys.readouterr().out
+    assert (await db.warehouse_transfers.count_documents({}), await db.journal_entries.count_documents({})) == \
+        (n_trf, n_je)                                                             # baca-saja

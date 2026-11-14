@@ -408,6 +408,7 @@ export default function IntercoView({ currentUser, selectedEntity, entities = []
       {showCreate && (
         <IntercoCreateModal
           entities={entities} currentEntityId={entityId}
+          canOverride={can(perms, "interco", "override_terms")}
           onClose={() => setShowCreate(false)}
           onCreated={() => { setShowCreate(false); showMsg("Transaksi antar-PT diterbitkan"); refresh(); }}
         />

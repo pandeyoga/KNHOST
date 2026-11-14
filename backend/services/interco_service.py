@@ -1606,8 +1606,15 @@ async def summary(scope_entity_ids: List[str], entity_id: str = "") -> Dict[str,
     }
 
 
-async def meta() -> Dict[str, Any]:
+async def meta(seller_entity_id: str = "") -> Dict[str, Any]:
+    """Kamus layar + (PK-30) mode harga & PPN BAWAAN pengaturan PT penjual — form buat menandai penyimpangan."""
+    # Cadangan = bawaan registry (INV-CFG-09), bukan literal kedua.
+    from config_registry import default_of
+    defaults = {"pricing_mode": await _config("antar_entitas.pricing_mode", seller_entity_id)
+                or default_of("antar_entitas.pricing_mode"),
+                "ppn_mode": await _config("antar_entitas.ppn_mode", seller_entity_id) or default_of("antar_entitas.ppn_mode")}
     return {
+        "defaults": defaults,
         "statuses": [{"value": s, "label": STATUS_LABEL[s]} for s in STATUSES],
         "pricing_modes": [
             {"value": "fixed_price", "label": "Harga tetap dari kontrak internal"},
@@ -1717,6 +1724,8 @@ async def pair_journal(pair_id: str) -> Dict[str, Any]:
     buyer_je = await _je(f"{pair_id}:buyer")
     cogs_je = await _je(f"{pair_id}:cogs")
     receipt_je = await _je(f"{pair_id}:receipt")
+    adj_seller_je = await _je(f"{pair_id}:adj:seller")   # PK-30 — penyesuaian panjang roll
+    adj_buyer_je = await _je(f"{pair_id}:adj:buyer")
     reversals = await db.journal_entries.find(
         {"source_type": "interco_transaction",
          "source_id": {"$regex": f"^{pair_id}:.*:reversal$"}}, {"_id": 0}).to_list(20)
@@ -1773,6 +1782,8 @@ async def pair_journal(pair_id: str) -> Dict[str, Any]:
         "buyer": safe_doc(buyer_je) if buyer_je else None,
         "cogs": safe_doc(cogs_je) if cogs_je else None,
         "receipt": safe_doc(receipt_je) if receipt_je else None,
+        "adj_seller": safe_doc(adj_seller_je) if adj_seller_je else None,
+        "adj_buyer": safe_doc(adj_buyer_je) if adj_buyer_je else None,
         "reversals": [safe_doc(r) for r in reversals],
         "settlement_entries": [safe_doc(j) for j in settlement_jes],
         "settlements": [safe_doc(s) for s in settlements],
@@ -2058,7 +2069,8 @@ async def create_warehouse_task(interco_id: str, actor: str) -> Dict[str, Any]:
     wh_ids: List[str] = []
     try:
         for it in seller.get("items", []):
-            # UAT 24 Okt — P10.2 roll PILIHAN dipakai utuh (P10-K2: kirim utuh, tanpa dipotong); P10.6 hanya roll di
+            # UAT 24 Okt — P10.2 roll PILIHAN dipakai utuh (P10-K2: kirim utuh, tanpa dipotong; PK-30: juga bila lebih
+            # pendek dari pesanan — dokumen menyesuaikan saat disetujui); P10.6 hanya roll di
             # gudang yang BOLEH dipakai PT pembeli (gudang bersama / khusus pembeli) — ganti pemilik di tempat tanpa kirim.
             reserved = await reserve_rolls_for_transfer(
                 it["product_id"], seller["seller_entity_id"],
@@ -2081,6 +2093,8 @@ async def create_warehouse_task(interco_id: str, actor: str) -> Dict[str, Any]:
                 "rolls": roll_refs,
                 "interco_unit_price": float(it.get("unit_price") or 0),
             })
+        # PK-30 (IC-02) — mode `tolak`: Σ panjang roll yang direservasi ≠ jumlah baris → reservasi dilepas + 409.
+        await precheck_warehouse_task({"id": transfer_id, "interco_pair_id": pair_id}, periksa_jurnal=False)
     except HTTPException as exc:
         await release_transfer_rolls(transfer_id)
         raise IntercoError(str(exc.detail)) from exc
@@ -2133,8 +2147,13 @@ async def create_warehouse_task(interco_id: str, actor: str) -> Dict[str, Any]:
     return safe_doc(transfer)
 
 
-async def on_warehouse_task_executed(transfer: Dict[str, Any], actor: str) -> Dict[str, Any]:
+async def on_warehouse_task_executed(transfer: Dict[str, Any], actor: str,
+                                     actual: Optional[Dict[str, float]] = None) -> Dict[str, Any]:
     """Dipanggil `routers/transfers.py` sesudah kepemilikan roll berpindah.
+
+    PK-30 (IC-02) — langkah PERTAMA: dokumen kembar & jurnalnya disesuaikan ke panjang roll aktual
+    (`apply_length_adjustment`; `actual` dari `precheck_warehouse_task`, atau dihitung ulang dari roll yang sudah
+    berpindah), sehingga penilaian ulang roll dan `post_gl_on_delivery` membaca `subtotal` baru.
 
     Tiga hal yang WAJIB terjadi supaya buku tetap benar:
       1. Roll di pembeli dinilai ulang ke **harga beli internal** (kalau tidak,
@@ -2146,6 +2165,13 @@ async def on_warehouse_task_executed(transfer: Dict[str, Any], actor: str) -> Di
     pair_id = transfer.get("interco_pair_id") or ""
     if not pair_id:
         return {"revalued_rolls": 0, "status": ""}
+    if actual is None:
+        actual = {}
+        async for r in db.inventory_rolls.find({"acquired.ref_id": transfer["id"],
+                                                "owner_entity_id": transfer.get("dest_entity_id")},
+                                               {"_id": 0, "product_id": 1, "length_remaining": 1}):
+            actual[r["product_id"]] = round(actual.get(r["product_id"], 0.0) + float(r.get("length_remaining") or 0), 4)
+    adjustment = await apply_length_adjustment(pair_id, actual, transfer, actor)
     seller, buyer = await _pair_docs(pair_id)
     price_map = {it["product_id"]: float(it.get("unit_price") or 0)
                  for it in seller.get("items", [])}
@@ -2200,7 +2226,8 @@ async def on_warehouse_task_executed(transfer: Dict[str, Any], actor: str) -> Di
     # pelanggan yang menunggu stok wajib terpenuhi OTOMATIS.
     fulfilled = await _auto_fulfill_after_interco_receipt(seller, transfer, actor)
     return {"revalued_rolls": revalued, "status": stamp.get("status", seller.get("status")),
-            "pair_id": pair_id, "gl_delivery": gl_delivery, "auto_fulfill": fulfilled}
+            "pair_id": pair_id, "gl_delivery": gl_delivery, "auto_fulfill": fulfilled,
+            "length_adjustment": adjustment}
 
 
 async def _auto_fulfill_after_interco_receipt(

@@ -7,13 +7,13 @@ from services import approval_policy_service as _aps   # KP-T4 — satu tabel ke
 from services import dual_qty_service as _dual  # FASE U — dua satuan (roll + ukuran)
 from dependencies import require_permission, audit
 from core_utils import new_id, now_iso, safe_doc, next_doc_number
-from schemas import (TransferCreate, TransferApprove, TransferReject, TransferStatusUpdate, InterCompanyTransferCreate,
+from schemas import (TransferCreate, TransferApprove, TransferReject, TransferStatusUpdate,
                      TransferReceiveIn, TransferExceptionIn, TransferExceptionResolveIn)
 from services import transfer_receipt_service as trs   # P03 — transfer terkait SO + penerimaan aktual
 from entity_scope import entity_ctx, resolve_scope_ids
 from services import line_scope              # FASE L — pagar & penyaring lini produk
 from services.roll_service import (
-    reserve_rolls_for_transfer, execute_ownership_transfer, release_transfer_rolls,
+    execute_ownership_transfer, release_transfer_rolls,
     resolve_stock_owner, reserve_rolls_for_wh_transfer, dispatch_wh_transfer_rolls,
     release_wh_transfer_rolls, transfer_held_rolls,
 )
@@ -213,8 +213,8 @@ async def create_transfer(payload: TransferCreate, request: Request) -> Dict[str
         "" if getattr(ctx, "view_all", False) else (ctx.active_entity_id or "")
     )
     # E4.1 — transfer internal: KEDUA gudang harus boleh dipakai badan usaha ini.
-    # (Jembatan gudang ANTAR badan usaha punya rutenya sendiri:
-    #  `POST /api/transfers/inter-company` — di sana gudang lawan memang sah.)
+    # (Jembatan gudang ANTAR badan usaha = tugas gudang transaksi Antar-PT / retur antar-PT — di sana gudang lawan memang
+    #  sah. Rute lama `POST /api/transfers/inter-company` ditutup PK-30.)
     from services import warehouse_scope_service as whscope
     await whscope.assert_usable(payload.source_warehouse_id,
                                prefer_owner or ctx.active_entity_id,
@@ -336,133 +336,20 @@ def _build_transfer_doc(transfer_id, code, payload, prefer_owner, ctx, items_out
     }
 
 
+#: PK-30 (IC-09) — jalur transfer antar-PT harga pokok dari kasir ditutup; jalur resmi = Permintaan Internal / Antar-PT.
+PESAN_JALUR_LAMA_DITUTUP = ("Transfer antar-PT lewat jalur ini sudah ditutup. Buat Permintaan Internal dari keranjang, "
+                            "atau transaksi di menu Antar-PT.")
+PESAN_TRANSFER_LAMA = ("Transfer antar-PT ini dibuat lewat jalur lama yang sudah ditutup. Tolak transfer ini, lalu buat "
+                       "Permintaan Internal atau transaksi Antar-PT.")
+
+
 @router.post("/transfers/inter-company")
-async def create_inter_company_transfer(payload: InterCompanyTransferCreate, request: Request) -> Dict[str, Any]:
-    """Sub-fase 1.5 — Minta transfer kepemilikan antar-entitas (B→E) dari preview POS.
-
-    Permission: order:create (dimulai oleh Sales sebagai bagian alur pemenuhan).
-    Persetujuan B (transfer:approve) yang akan MEMINDAHKAN kepemilikan (KN_15 §7).
-    Reservasi roll milik B (status=reserved, ref=transfer) agar tak dobel-jual.
-    """
-    actor = await require_permission(request, "order", "create")
-
-    if payload.source_entity_id == payload.dest_entity_id:
-        raise HTTPException(status_code=400, detail="Entitas sumber dan tujuan harus berbeda")
-    # FASE E-0 (L13) — pemohon wajib berwenang atas SALAH SATU sisi transaksi.
-    _ctx = await entity_ctx(request)
-    _allowed = set(resolve_scope_ids(_ctx))
-    if not ({payload.source_entity_id, payload.dest_entity_id} & _allowed):
-        raise HTTPException(status_code=403,
-                            detail="Anda tidak berwenang atas entitas pada transfer ini")
-    src_ent = await db.business_entities.find_one({"id": payload.source_entity_id}, {"_id": 0})
-    dst_ent = await db.business_entities.find_one({"id": payload.dest_entity_id}, {"_id": 0})
-    if not src_ent:
-        raise HTTPException(status_code=404, detail="Entitas sumber tidak ditemukan")
-    if not dst_ent:
-        raise HTTPException(status_code=404, detail="Entitas tujuan tidak ditemukan")
-    if not payload.items:
-        raise HTTPException(status_code=400, detail="Items tidak boleh kosong")
-
-    transfer_id = new_id("trn")
-    # FASE E-1 (E1.7) — nomor per badan usaha ASAL barang (pemilik dokumennya).
-    code = await next_doc_number("warehouse_transfers", "code", "TRF-",
-                                 entity_id=payload.source_entity_id or None)
-
-    items_out: List[Dict[str, Any]] = []
-    wh_ids: List[str] = []
-    try:
-        for it in payload.items:
-            prod = await db.products.find_one({"id": it.product_id}, {"_id": 0})
-            if not prod:
-                raise HTTPException(status_code=404, detail=f"Produk {it.product_id} tidak ditemukan")
-            if it.quantity <= 0:
-                raise HTTPException(status_code=400, detail="Qty harus lebih dari 0")
-            reserved = await reserve_rolls_for_transfer(
-                it.product_id, payload.source_entity_id, it.quantity, transfer_id
-            )
-            roll_refs = [{
-                "roll_id": r["id"], "roll_no": r.get("roll_no"), "lot": r.get("lot"),
-                "warehouse_id": r.get("warehouse_id"), "length": float(r.get("length_remaining", 0) or 0),
-            } for r in reserved]
-            lots = sorted({r.get("lot") for r in reserved if r.get("lot")})
-            for r in reserved:
-                if r.get("warehouse_id"):
-                    wh_ids.append(r["warehouse_id"])
-            items_out.append({
-                "product_id": it.product_id, "qty": round(it.quantity, 2), "unit": it.unit,
-                "sku": prod.get("sku", ""), "product_name": prod.get("name", ""),
-                "lots": lots, "rolls": roll_refs,
-                "line_code": str(prod.get("line_code") or "").strip().lower(),   # FASE L
-                # FASE U — jumlah roll transfer DIHITUNG dari roll yang benar-benar
-                # direservasi (bukan diketik): satu fakta, satu sumber.
-                **(await _dual.stamp(it, rolls=len(roll_refs))),
-            })
-        primary_wh = wh_ids[0] if wh_ids else ""
-        # FASE G-6 — tautan ke transaksi antar-PT (bila ada). Divalidasi supaya penanda
-        # anti dobel-posting tidak bisa dipakai sembarangan.
-        interco_pair_id = (payload.interco_pair_id or "").strip()
-        interco_number = ""
-        interco_id_ref = ""
-        if interco_pair_id:
-            ict = await db.interco_transactions.find_one(
-                {"pair_id": interco_pair_id, "role": "seller"}, {"_id": 0})
-            if not ict:
-                raise HTTPException(status_code=404,
-                                    detail="Transaksi antar-PT (pair) tidak ditemukan.")
-            if ict.get("status") in ("draft", "cancelled"):
-                raise HTTPException(
-                    status_code=400,
-                    detail="Transaksi antar-PT belum dikonfirmasi/sudah dibatalkan — "
-                           "barang tidak boleh berjalan tanpa dokumen sah.")
-            if (ict["seller_entity_id"] != payload.source_entity_id
-                    or ict["buyer_entity_id"] != payload.dest_entity_id):
-                await release_transfer_rolls(transfer_id)
-                raise HTTPException(
-                    status_code=400,
-                    detail="Arah transfer tidak sama dengan transaksi antar-PT "
-                           f"(seharusnya {ict['seller_entity_id']} → {ict['buyer_entity_id']}).")
-            interco_number = ict.get("number", "")
-            interco_id_ref = ict.get("id", "")
-        transfer = {
-            "id": transfer_id,
-            "code": code,
-            "transfer_kind": "inter_entity",
-            # FASE E-0 (L14) — transfer antar-entitas WAJIB ber-`entity_id` (registry
-            # `SCOPED_COLLECTIONS`). Pemiliknya = entitas ASAL barang; entitas tujuan
-            # tetap melihat dokumen ini lewat `dest_entity_id` (lihat `_transfer_scope_clause`).
-            "entity_id": payload.source_entity_id,
-            "source_entity_id": payload.source_entity_id,
-            "dest_entity_id": payload.dest_entity_id,
-            # Ownership-in-place (Sub-fase 1.5): gudang sumber = tujuan (tak ada pindah fisik)
-            "source_warehouse_id": primary_wh,
-            "dest_warehouse_id": primary_wh,
-            "status": "waiting_approval",
-            "items": items_out,
-            "line_codes": line_scope.codes_from_items(items_out),   # FASE L
-            "transfer_price": payload.transfer_price,
-            "linked_order_id": payload.linked_order_id,
-            "interco_pair_id": interco_pair_id or None,
-            "interco_id": interco_id_ref or None,
-            "interco_number": interco_number,
-            "notes": payload.notes,
-            "requested_by": payload.requested_by or actor["name"],
-            "requested_by_id": actor.get("id", ""),   # KF-T6 — pengaju andal untuk kontrol dua orang
-            "approved_by": None, "approved_at": None,
-            "rejected_by": None, "rejected_at": None, "rejected_reason": None,
-            "created_at": now_iso(), "updated_at": now_iso(),
-        }
-        # P16 — dokumen WAJIB tersimpan: tanpa ini roll tertahan ber-ref transfer yang tidak ada
-        # (tidak bisa disetujui/dibatalkan → stok bocor permanen).
-        await db.warehouse_transfers.insert_one(dict(transfer))
-    except Exception:
-        await release_transfer_rolls(transfer_id)   # kompensasi saga: reservasi parsial dilepas bila item/insert gagal
-        raise
-    await audit(actor["name"], "inter_company_transfer_requested", "transfer", transfer_id, {
-        "source": payload.source_entity_id, "dest": payload.dest_entity_id,
-        "items": [{"product_id": i["product_id"], "qty": i["qty"]} for i in items_out],
-        "linked_order_id": payload.linked_order_id,
-    })
-    return safe_doc(transfer)
+async def create_inter_company_transfer(request: Request) -> Dict[str, Any]:
+    """PK-30 (IC-09) — DITUTUP. Dulu kasir memindah stok antar-PT di sini (izin `order.create`) tanpa harga & tanpa
+    dokumen antar-PT; saat disetujui terbit jurnal harga pokok 1-1250/2-1250 di luar layar Saldo Antar-PT. Kini selalu
+    410 sesudah pemeriksaan izin; tidak menulis apa pun (isi permintaan diabaikan, roll tidak direservasi)."""
+    await require_permission(request, "order", "create")
+    raise HTTPException(status_code=410, detail=PESAN_JALUR_LAMA_DITUTUP)
 
 
 @router.get("/transfers/so-options")
@@ -588,6 +475,21 @@ async def approve_transfer(transfer_id: str, payload: TransferApprove, request: 
         from services.book_date import periksa_periode_dokumen_409
         await periksa_periode_dokumen_409([transfer.get("source_entity_id") or "", transfer.get("dest_entity_id") or ""],
                                           None, jenis="transfer antar-PT")
+        # PK-30 (IC-09) — transfer antar-PT tanpa dokumen antar-PT (jalur kasir lama) tidak bisa disetujui lagi; tolak &
+        # batal tetap bekerja (melepas roll).
+        if not transfer.get("interco_pair_id") and not transfer.get("interco_return_pair_id"):
+            raise HTTPException(status_code=409, detail=PESAN_TRANSFER_LAMA)
+    interco_pre: Dict[str, Any] = {}
+    if transfer.get("transfer_kind") == "inter_entity" and transfer.get("interco_pair_id"):
+        # PK-30 (IC-02) — PERIKSA panjang roll aktual (mode `tolak`) + jurnal penyesuaian, HPP, dan penerimaan di KEDUA
+        # PT sebelum kepemilikan roll pindah. Gagal → 409, tidak ada yang tertulis.
+        from services import interco_service as _ics
+        from services.twin_journal import TwinJournalError
+        try:
+            interco_pre = await _ics.precheck_warehouse_task(transfer)
+        except (_ics.IntercoError, TwinJournalError, gl_service.ClosedPeriodError,
+                gl_service.JournalValidationError) as exc:
+            raise HTTPException(status_code=409, detail=str(exc)) from exc
     # T-01 Opsi B (INV-ATOMIC-01) — klaim sebelum kepemilikan roll pindah + jurnal diposting.
     from services import atomic_claim as _saga
     await _saga.claim("warehouse_transfers", transfer_id, "transfer_approve",
@@ -617,13 +519,14 @@ async def approve_transfer(transfer_id: str, payload: TransferApprove, request: 
                 "returned_cost": bridge.get("returned_cost", 0),
                 "interco_status": bridge.get("status", ""),
             }
-        elif interco_pair_id:
-            # FASE G-6 — perpindahan fisik milik transaksi JUAL-BELI antar-PT.
-            # Jurnal at-cost M-3 SENGAJA DILEWATI: jurnal harga jual (IC-AR/Pendapatan
-            # di penjual, Persediaan/IC-AP di pembeli) sudah diposting saat transaksi
-            # dikonfirmasi. Kalau tetap diposting, satu barang tercatat DUA KALI.
+        else:
+            # FASE G-6 — perpindahan fisik milik transaksi JUAL-BELI antar-PT (transfer tanpa tautan antar-PT sudah
+            # ditolak di atas — PK-30). Jurnal at-cost M-3 SENGAJA DILEWATI: jurnal harga jual (IC-AR/Pendapatan di
+            # penjual, Persediaan/IC-AP di pembeli) sudah diposting saat transaksi dikonfirmasi. PK-30: dokumen &
+            # jurnalnya lebih dulu disesuaikan ke panjang roll aktual (`interco_pre`).
             from services import interco_service as _ics
-            bridge = await _ics.on_warehouse_task_executed(transfer, actor["name"])
+            bridge = await _ics.on_warehouse_task_executed(transfer, actor["name"],
+                                                           actual=interco_pre.get("actual"))
             je_result = {
                 "posted": False,
                 "skipped_reason": (
@@ -633,12 +536,8 @@ async def approve_transfer(transfer_id: str, payload: TransferApprove, request: 
                 "interco_pair_id": interco_pair_id,
                 "revalued_rolls": bridge.get("revalued_rolls", 0),
                 "interco_status": bridge.get("status", ""),
+                "length_adjustment": (bridge.get("length_adjustment") or {}).get("length_adjustment"),
             }
-        else:
-            # M-3 — Post JE at-cost di kedua buku PT (idempotent).
-            je_result = await gl_service.post_intercompany_transfer({
-                **transfer, "approved_at": now_iso(),
-            })
         updated = await db.warehouse_transfers.find_one_and_update(
             {"id": transfer_id},
             _saga.finish_set({"status": "completed", "approved_by": payload.approved_by,

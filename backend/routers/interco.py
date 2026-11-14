@@ -61,9 +61,11 @@ async def _assert_one_side(request: Request, a: str, b: str) -> None:
 
 # ── Meta & ringkasan ─────────────────────────────────────────────────────────
 @router.get("/interco/meta")
-async def interco_meta(request: Request) -> Dict[str, Any]:
+async def interco_meta(request: Request, seller_entity_id: str = "") -> Dict[str, Any]:
     await require_permission(request, "interco", "view")
-    return await ics.meta()
+    # PK-30 — bawaan mode harga/PPN dibaca untuk PT penjual yang termasuk cakupan pengguna (selain itu lapisan grup).
+    allowed = set((await entity_ctx(request)).allowed_entity_ids)
+    return await ics.meta(seller_entity_id if seller_entity_id in allowed else "")
 
 
 #: PK-17 (IA-09) — angka saldo ringkasan yang hanya untuk pemegang `interco_finance.view` (saldo per pasangan PT

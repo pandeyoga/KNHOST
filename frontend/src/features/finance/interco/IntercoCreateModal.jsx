@@ -7,6 +7,10 @@
  *
  * Fase 3 · P4 (L-03) — overlay `fixed inset-0` buatan sendiri → `FormModal` baku; tombol hitam "Terbitkan" →
  * `primary-button` biru standar (satu gaya tombol di semua pop-up antar-PT). Isian tidak berubah.
+ *
+ * PK-30 (IC-10) — harga per baris, Mode harga, dan Mode PPN hanya bisa diubah pemegang izin
+ * `interco.override_terms` (`canOverride`); bawaannya = pengaturan PT penjual (`GET /api/interco/meta`). Begitu salah
+ * satunya berbeda dari bawaan, isian wajib **Alasan mengubah harga/PPN** muncul (server menolak tanpa izin/alasan).
  */
 import { useEffect, useState } from "react";
 import { ArrowLeftRight, Plus, Trash2 } from "lucide-react";
@@ -21,12 +25,15 @@ import useIntentKey from "../../../hooks/useIntentKey";
 import { PRICING_MODES, PPN_MODES } from "./intercoApi";
 
 export default function IntercoCreateModal({
-  entities = [], currentEntityId = "", onClose, onCreated,
+  entities = [], currentEntityId = "", onClose, onCreated, canOverride = false,
 }) {
   const [seller, setSeller] = useState(currentEntityId || (entities[0]?.id || ""));
   const [buyer, setBuyer] = useState("");
-  const [pricingMode, setPricingMode] = useState("fixed_price");
-  const [ppnMode, setPpnMode] = useState("ikut_pkp");
+  // PK-30 — "" = ikuti pengaturan PT penjual (nilai bawaan dibaca server); isian lain = menyimpang dari bawaan.
+  const [pricingMode, setPricingMode] = useState("");
+  const [ppnMode, setPpnMode] = useState("");
+  const [defaults, setDefaults] = useState({});
+  const [overrideReason, setOverrideReason] = useState("");
   const [items, setItems] = useState([{ product_id: "", quantity: 1, unit_price: "" }]);
   const [products, setProducts] = useState([]);
   // Keputusan pemilik K-10 (26 Okt) — bawaan TIDAK tercentang: transaksi baru lahir sebagai draf (tanpa jurnal);
@@ -47,6 +54,14 @@ export default function IntercoCreateModal({
       })
       .catch(() => setProducts([]));
   }, []);
+
+  useEffect(() => {
+    let batal = false;
+    axios.get(`${API}/interco/meta`, { params: { seller_entity_id: seller || undefined } })
+      .then((r) => { if (!batal) setDefaults((r.data && r.data.defaults) || {}); })
+      .catch(() => { if (!batal) setDefaults({}); });
+    return () => { batal = true; };
+  }, [seller]);
 
   const entOptions = entities
     .filter((e) => e.status !== "inactive")
@@ -72,7 +87,18 @@ export default function IntercoCreateModal({
   const buyerOptions = entOptions.filter((o) => o.value !== seller);
   const sellerOptions = entOptions.filter((o) => o.value !== buyer);
   const validLines = items.filter((it) => it.product_id && (parseFloat(it.quantity) || 0) > 0).length;
-  const canSubmit = !!seller && !!buyer && seller !== buyer && validLines > 0;
+  // PK-30 — menyimpang dari bawaan: mode dipilih & berbeda dari pengaturan PT penjual, atau harga diketik.
+  const pricingChanged = !!pricingMode && pricingMode !== defaults.pricing_mode;
+  const ppnChanged = !!ppnMode && ppnMode !== defaults.ppn_mode;
+  const priceChanged = items.some((it) => it.product_id && String(it.unit_price ?? "").trim() !== "");
+  const termsChanged = canOverride && (pricingChanged || ppnChanged || priceChanged);
+  const reasonOk = !termsChanged || overrideReason.trim().length >= 5;
+  const canSubmit = !!seller && !!buyer && seller !== buyer && validLines > 0 && reasonOk;
+  const labelOf = (list, v) => (list.find((o) => o.value === v) || {}).label;
+  const pricingOptions = [{ value: "", label: `Ikuti pengaturan PT penjual${defaults.pricing_mode
+    ? ` (${labelOf(PRICING_MODES, defaults.pricing_mode) || defaults.pricing_mode})` : ""}` }, ...PRICING_MODES];
+  const ppnOptions = [{ value: "", label: `Ikuti pengaturan PT penjual${defaults.ppn_mode
+    ? ` (${labelOf(PPN_MODES, defaults.ppn_mode) || defaults.ppn_mode})` : ""}` }, ...PPN_MODES];
 
   const subtotalPreview = items.reduce(
     (s, it) => s + (parseFloat(it.quantity) || 0) * (parseFloat(it.unit_price) || 0), 0);
@@ -86,7 +112,7 @@ export default function IntercoCreateModal({
       .map((it) => ({
         product_id: it.product_id,
         quantity: parseFloat(it.quantity),
-        unit_price: it.unit_price === "" ? null : parseFloat(it.unit_price),
+        unit_price: !canOverride || it.unit_price === "" ? null : parseFloat(it.unit_price),
       }));
     if (cleanItems.length === 0) {
       setErr("Minimal satu baris produk dengan jumlah > 0."); return;
@@ -96,8 +122,9 @@ export default function IntercoCreateModal({
       const body = {
         seller_entity_id: seller,
         buyer_entity_id: buyer,
-        pricing_mode: pricingMode,
-        ppn_mode: ppnMode,
+        pricing_mode: canOverride && pricingChanged ? pricingMode : "",
+        ppn_mode: canOverride && ppnChanged ? ppnMode : "",
+        ...(termsChanged ? { override_reason: overrideReason.trim() } : {}),
         items: cleanItems,
         submit_now: submitNow,
         notes,
@@ -112,7 +139,16 @@ export default function IntercoCreateModal({
     <FormModal open onClose={onClose} size="lg" icon={ArrowLeftRight} testId="interco-create-modal" busy={busy}
       title="Transaksi Antar-PT Baru" subtitle="Dokumen kembar akan terbit di kedua PT."
       footer={(
-        <div className="flex items-center justify-end gap-2">
+        <div className="flex flex-wrap items-center justify-end gap-2">
+          {!reasonOk ? (
+            <span className="text-fs-12 text-kn-warning-text" data-testid="interco-create-reason-needed">
+              Isi alasan mengubah harga/PPN (minimal 5 huruf) untuk menerbitkan.
+            </span>
+          ) : !canSubmit && (
+            <span className="text-fs-12 text-kn-text-2" data-testid="interco-create-incomplete">
+              Lengkapi PT penjual, PT pembeli, dan minimal satu baris produk.
+            </span>
+          )}
           <button type="button" onClick={onClose} data-testid="interco-create-cancel" className="secondary-button"
             disabled={busy}>
             Batal
@@ -121,7 +157,8 @@ export default function IntercoCreateModal({
             type="button"
             onClick={submit}
             disabled={busy || !canSubmit}
-            title={canSubmit ? undefined : "Lengkapi PT penjual, PT pembeli, dan minimal satu baris produk"}
+            title={canSubmit ? undefined : (reasonOk ? "Lengkapi PT penjual, PT pembeli, dan minimal satu baris produk"
+              : "Isi alasan mengubah harga/PPN (minimal 5 huruf)")}
             data-testid="interco-create-submit"
             className="primary-button"
           >
@@ -138,11 +175,14 @@ export default function IntercoCreateModal({
           <Field label="PT Pembeli" required hint="menerbitkan Pesanan Beli internal + Tagihan internal">
             <KNSelect value={buyer} onValueChange={setBuyer} options={buyerOptions} placeholder="Pilih PT pembeli" data-testid="interco-create-buyer" />
           </Field>
-          <Field label="Mode Harga" hint="Harga tetap: diambil dari kontrak internal yang aktif">
-            <KNSelect value={pricingMode} onValueChange={setPricingMode} options={PRICING_MODES} data-testid="interco-create-pricing" />
+          <Field label="Mode Harga" hint={canOverride ? "Harga tetap: diambil dari kontrak internal yang aktif"
+            : "Mengikuti pengaturan PT penjual. Mengubahnya butuh akses 'Ubah harga/PPN di luar kontrak'."}>
+            <KNSelect value={pricingMode} onValueChange={setPricingMode} options={pricingOptions}
+              disabled={!canOverride} data-testid="interco-create-pricing" />
           </Field>
-          <Field label="Mode PPN" hint="Ikut PKP: mengikuti status PKP PT penjual">
-            <KNSelect value={ppnMode} onValueChange={setPpnMode} options={PPN_MODES} data-testid="interco-create-ppn" />
+          <Field label="Mode PPN" hint="Ikut PKP: mengikuti status PKP PT penjual; PT penjual bukan PKP tidak boleh memungut PPN">
+            <KNSelect value={ppnMode} onValueChange={setPpnMode} options={ppnOptions}
+              disabled={!canOverride} data-testid="interco-create-ppn" />
           </Field>
         </div>
 
@@ -187,9 +227,11 @@ export default function IntercoCreateModal({
                   type="number"
                   min="0"
                   step="0.01"
-                  value={it.unit_price}
+                  value={canOverride ? it.unit_price : ""}
                   onChange={(e) => setItem(i, { unit_price: e.target.value })}
-                  placeholder="Kosong = dari kontrak"
+                  placeholder={canOverride ? "Kosong = dari kontrak" : "Dari kontrak"}
+                  disabled={!canOverride}
+                  title={canOverride ? undefined : "Harga mengikuti kontrak internal"}
                   data-testid={`interco-create-price-${i}`}
                   className="col-span-3 px-3 py-2 text-sm border border-[#E5E5EA] rounded-lg focus:outline-none focus:border-[#0058CC]"
                 />
@@ -205,11 +247,30 @@ export default function IntercoCreateModal({
               </div>
             ))}
           </div>
+          {!canOverride && (
+            <p className="mt-2 text-fs-12 text-kn-text-2" data-testid="interco-create-price-locked">
+              Harga dan mode PPN mengikuti kontrak internal dan pengaturan PT penjual. Mengubahnya butuh akses
+              {" "}&lsquo;Ubah harga/PPN di luar kontrak&rsquo;.
+            </p>
+          )}
           <div className="mt-3 text-right text-sm text-[#6E6E73]">
             Perkiraan subtotal: <span className="font-medium text-[#1D1D1F] tabular-nums">{formatCurrency(subtotalPreview)}</span>
             <span className="text-xs ml-1">(final dihitung sistem)</span>
           </div>
         </div>
+
+        {termsChanged && (
+          <Field label="Alasan mengubah harga/PPN" required
+            hint="Harga atau PPN berbeda dari kontrak/pengaturan PT penjual. Alasan tercatat di dokumen dan jejak audit.">
+            <textarea
+              value={overrideReason}
+              onChange={(e) => setOverrideReason(e.target.value)}
+              rows={2}
+              data-testid="interco-create-override-reason"
+              className="field w-full"
+            />
+          </Field>
+        )}
 
         <Field label="Catatan (opsional)">
           <textarea

@@ -1762,7 +1762,9 @@ async def reserve_rolls_for_transfer(
                         + f" (id: {', '.join(missing[:3])})."))
         if whole_rolls:
             # P10-K2 — roll pilihan dikirim UTUH (tidak dipotong): kuantitas = total panjang roll pilihan.
-            quantity = max(quantity, sum(float(r["length_remaining"]) for r in rolls))
+            # PK-30 (IC-02, K-07) — juga bila LEBIH PENDEK dari pesanan (dulu 409 "tidak cukup"): dokumen antar-PT
+            # menyesuaikan panjang aktual saat tugas gudang disetujui, atau ditolak pada mode `tolak`.
+            quantity = sum(float(r["length_remaining"]) for r in rolls)
     elif prefer_origin_type:
         rolls.sort(key=lambda r: (0 if r.get("origin_type") == prefer_origin_type else 1,
                                   r.get("created_at", ""),

@@ -32,11 +32,11 @@ import {
   RETURN_STATUS_CLASS, RETURN_STATUS_LABEL, fmtDate,
 } from "./intercoApi";
 import {
-  Section, SidePanel, JournalTable, Timeline,
+  Section, SidePanel, JournalTable, Timeline, IntercoTermsNotes,
 } from "./IntercoDetailParts";
 
 const EMPTY_J = {
-  seller: null, buyer: null, cogs: null, receipt: null, reversals: [],
+  seller: null, buyer: null, cogs: null, receipt: null, adj_seller: null, adj_buyer: null, reversals: [],
   settlement_entries: [], settlements: [], eliminations: [], warehouse_tasks: [],
   // FASE G-6b — retur antar-PT + faktur pajak internal
   returns: [], return_entries: [], tax_invoices_out: [], tax_invoices_in: [],
@@ -107,12 +107,13 @@ export default function IntercoDetailPanel({ intercoId, currentUser, onClose }) 
           <>
             <div className="grid grid-cols-1 md:grid-cols-2 divide-y md:divide-y-0 md:divide-x divide-[#F2F2F5]">
               <SidePanel role="seller" doc={pair.seller}
-                         journal={j.seller} extraJournal={j.cogs}
+                         journal={j.seller} extraJournal={j.cogs} adjJournal={j.adj_seller}
                          extraLabel="Jurnal HPP (barang keluar)" />
               <SidePanel role="buyer" doc={pair.buyer}
-                         journal={j.buyer} extraJournal={j.receipt}
+                         journal={j.buyer} extraJournal={j.receipt} adjJournal={j.adj_buyer}
                          extraLabel="Jurnal Penerimaan (transit → persediaan)" />
             </div>
+            <IntercoTermsNotes seller={pair.seller} buyer={pair.buyer} />
 
             {jErr && (
               <div className="mx-6 mb-2 rounded-lg bg-[#FDEDE7] border border-[#F7C3B4] text-[#9B1C1C] text-[12px] px-3 py-2"

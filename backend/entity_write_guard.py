@@ -103,7 +103,7 @@ GROUP_LEVEL_EXACT: frozenset = frozenset({
     # (G) ANTAR-BADAN-USAHA by design: dokumen kembar hidup di DUA badan usaha,
     #     jadi layar & POC-nya memang bekerja dalam konteks gabungan.
     "/api/interco/transactions", "/api/interco/settlements", "/api/interco/returns",
-    "/api/transfers/inter-company",
+    # PK-30 (IC-09) — `/api/transfers/inter-company` dikeluarkan: jalur itu ditutup (selalu 410, tanpa tulisan).
     # (G) konsolidasi grup
     "/api/finance/consolidation/eliminations",
     "/api/finance/consolidation/eliminations/sync-from-pairs",

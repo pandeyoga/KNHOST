@@ -213,7 +213,8 @@ class TestIcTransferJE:
             "notes": "M-3 test IC transfer",
         }
         r = client.post(f"{API}/transfers/inter-company", json=payload, timeout=30)
-        assert r.status_code == 200, f"Create failed: {r.text}"
+        assert r.status_code == 410, f"Jalur lama seharusnya ditutup: {r.text}"
+        pytest.skip("PK-30 (IC-09): jalur transfer antar-PT harga pokok ditutup — selalu 410 tanpa menulis; pengganti diuji tests_mem/test_PK30_antar_pt.py (U7, U8)")
         tid = r.json()["id"]
         r_app = client.post(f"{API}/transfers/{tid}/approve",
                             json={"approved_by": "Manager Test"}, timeout=30)
@@ -298,7 +299,8 @@ class TestIcTransferJE:
             "notes": "M-3 test IC transfer reject",
         }
         r = client.post(f"{API}/transfers/inter-company", json=payload, timeout=30)
-        assert r.status_code == 200
+        assert r.status_code == 410, r.text
+        pytest.skip("PK-30 (IC-09): jalur transfer antar-PT harga pokok ditutup — selalu 410 tanpa menulis; pengganti diuji tests_mem/test_PK30_antar_pt.py (U7, U8)")
         tid = r.json()["id"]
         r_rej = client.post(f"{API}/transfers/{tid}/reject",
                             json={"rejected_by": "Manager", "reason": "test"}, timeout=30)
