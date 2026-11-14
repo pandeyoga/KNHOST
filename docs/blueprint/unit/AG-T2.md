@@ -147,7 +147,7 @@ penyamaran dipasang juga pada mode umum.
 
 `ai.samarkan_nama` — group `asisten-analitik` · type `bool` · default ya · scopes `("global", "entity")` · risk `high` ·
 requires_reason ya · permission `("ai", "configure")` · consumers `services/ai_privacy.py:masker_for`.
-label "Samarkan nama pihak sebelum dikirim ke asisten" · help "Nama pelanggan, pemasok, dan karyawan diganti kode
+label "Samarkan nama pihak yang dikirim ke asisten" (≤ 45 huruf, INV-CFG-TXT T1) · help "Nama pelanggan, pemasok, dan karyawan diganti kode
 sebelum dikirim ke penyedia model, lalu dikembalikan ke nama asli di layar. Nominal tetap dikirim." · impact "Mati =
 nama asli ikut terkirim ke penyedia model untuk PT ini." · example "Ya → penyedia menerima 'PLG-001 menunggak
 5.000.000'; layar menampilkan 'Toko Maju menunggak 5.000.000'".
