@@ -6,9 +6,13 @@ import ErrorNotice from "../../components/ErrorNotice";
 import useListSearch from "@/hooks/useListSearch";
 import ConfirmModal from "../../components/ConfirmModal";
 import { fmtDate } from "./crmUtils";
+import { can } from "../../config/roles";
 
 /** Persetujuan override kredit (KN_17 §5.2 / S37) — Manager/Finance. */
 export default function CreditOverridesPanel({ currentUser }) {
+  // MN-T1 — tab "Kredit & Plafon" kini terbuka bagi pembaca pelanggan (`customer.view`, GET /api/credit-overrides);
+  // memutus tetap `credit_override.approve` (PR-T2) — tanpa izin itu tombol Setujui/Tolak tidak ditampilkan.
+  const canDecide = can(currentUser?.permissions, "credit_override", "approve");
   const [rows, setRows] = useState([]);
   const srch = useListSearch(rows, null, { testId: "overrides", placeholder: "Cari pelanggan / pemohon / alasan…" });
   const [loading, setLoading] = useState(true);
@@ -83,7 +87,7 @@ export default function CreditOverridesPanel({ currentUser }) {
                     <span className="truncate text-[#3C3C43]">{r.requested_by}<br /><span className="text-[10px] text-[#9A9BA3]">{fmtDate(r.created_at)}</span></span>
                     <span><span className={`status-pill ${r.status === "approved" ? "pill-success" : r.status === "rejected" ? "pill-danger" : "pill-warning"}`}>{r.status}</span></span>
                     <div className="flex gap-1">
-                      {r.status === "pending" ? (
+                      {r.status === "pending" && canDecide ? (
                         <>
                           <button data-testid={`override-approve-${r.id}`} onClick={() => setConfirm({ row: r, decision: "approve" })} className="icon-button text-[#1E8E5A]" title="Setujui"><Check size={15} /></button>
                           <button data-testid={`override-reject-${r.id}`} onClick={() => setConfirm({ row: r, decision: "reject" })} className="icon-button text-[#C0392B]" title="Tolak"><XCircle size={15} /></button>

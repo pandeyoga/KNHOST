@@ -92,8 +92,9 @@ ROLES: Dict[str, Dict[str, Any]] = {
         "rank": 2,
         "cross_entity": False,
         # GELOMBANG 2: beranda = **Meja Finance** (5 antrean uang masuk & pajak).
+        # MN-T1 — Meja Finance kini tab "Perlu Tindakan" di Keuangan › Beranda Keuangan: menu yang disorot = hub itu.
         "home_view": "finance-desk",
-        "home_nav_id": "finance-desk",
+        "home_nav_id": "finance-tower",
         "scope_hint": "1 badan usaha (bisa ditugaskan ke beberapa)",
         "description": (
             "Mencatat uang masuk (kwitansi AR), menerbitkan faktur pajak keluaran, "
@@ -346,7 +347,7 @@ HOME_CHOICES: List[Dict[str, Any]] = [
     {"view": "admin-home", "nav_id": "home", "label": "Beranda Admin", "requires": ("manager_home", "view")},
     {"view": "sales-admin-desk", "nav_id": "sales-admin-desk", "label": "Meja Admin Sales",
      "requires": ("order", "confirm")},
-    {"view": "finance-desk", "nav_id": "finance-desk", "label": "Meja Finance",
+    {"view": "finance-desk", "nav_id": "finance-tower", "label": "Meja Finance",   # MN-T1 — tab Beranda Keuangan
      "requires": ("payment_variance", "decide")},
     {"view": "md-desk", "nav_id": "md-desk", "label": "Meja MD", "requires": ("design_request", "view")},
     {"view": "warehouse-admin-desk", "nav_id": "warehouse-admin-desk", "label": "Meja Admin Gudang",

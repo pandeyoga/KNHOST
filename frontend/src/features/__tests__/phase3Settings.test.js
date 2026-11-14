@@ -76,7 +76,9 @@ describe("P16-K1 — menu Pengaturan 7 kelompok", () => {
     expect(menu("manager")["settings-system"]).toEqual(["settings-config", "settings-cfg-system", "settings-devices"]);
     expect(menu("warehouse_admin")).toEqual({ "settings-warehouse": ["settings-receiving-ocr", "grade-master"] });
     expect(menu("sales_admin")).toEqual({ "settings-sales": ["return-policies"], "settings-warehouse": ["grade-master"] });
-    ["sales", "finance", "md", "designer", "driver"].forEach((r) => expect(menu(r)).toBeNull());
+    // MN-T1 (IA-06) — tab Pemetaan Akun mencantumkan Finance (izin gl_mapping view/update), kini terjangkau lewat ROLE_NAV.
+    expect(menu("finance")).toEqual({ "settings-finance": ["gl-account-mappings"] });
+    ["sales", "md", "designer", "driver"].forEach((r) => expect(menu(r)).toBeNull());
   });
 
   test("alias P2: settings-hub (legacy), doc-templates-basic → tab dasar, cs-rfid-devices → tab RFID, uom-conversions", () => {
@@ -116,7 +118,8 @@ describe("kelompok registri → layar domain (tanpa yatim)", () => {
   });
 
   test("deep link openConfig: komisi → Komisi & Insentif; kelompok → layar domain; MD (K-11) tetap Semua pengaturan", () => {
-    expect(configTargetFor({ key: "commission.strategy" })).toEqual({ view: "incentive-rates", nav: "settings-sales" });
+    // MN-T1 — Komisi & Insentif kini SDM › Kinerja & Insentif › Target & Aturan (menu `hr-kpi-hub`).
+    expect(configTargetFor({ key: "commission.strategy" })).toEqual({ view: "incentive-rates", nav: "hr-kpi-hub" });
     expect(configTargetFor({ group: "makloon", key: "makloon.contract_mode" })).toEqual({ view: "settings-cfg-purchasing", nav: "settings-purchasing" });
     expect(configTargetFor({ key: "tidak_dikenal.x" })).toEqual({ view: "settings-config", nav: "settings-system" });
     expect(configDeepLinkTarget({ group: "rnd" }, "admin")).toEqual({ view: "settings-cfg-rnd", nav: "settings-rnd" });

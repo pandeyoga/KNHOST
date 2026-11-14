@@ -61,6 +61,9 @@ test("Gudang: Kinerja Mitra Makloon (D-22) terbuka dengan izin server", () => {
 const SERVER_GATED = { sales: ["inventory-lots"] };
 // FIX-1 (audit B1b UI-48) — pencabutan sah yang tercatat di roleReach.test.js (ROLE_REACH_REMOVALS).
 const REMOVED = { warehouse_admin: ["my-desk"], sales_admin: ["my-desk"] };
+// MN-T1 — id menu/hub yang kini mendarat di tab pertama lain di hub yang sama (tercatat di roleReach.test.js
+// `ROLE_REACH_RELANDED`); layar lamanya tetap diperiksa terjangkau.
+const RELANDED = { manager: { "hr-kpi-hub": "sales-performance" }, finance: { "cash-bank": "bank-accounts" } };
 
 test("R5: Lot & Silsilah tersembunyi untuk sales (tanpa field_visibility.lot), tetap untuk gudang & manajer", () => {
   expect(builtin.view_resources["inventory-lots"]).toEqual(["field_visibility"]);
@@ -77,9 +80,14 @@ describe.each(BUILTIN.filter((r) => r !== "admin"))("peran %s dengan izin server
     login(role);
     const lost = [];
     const gated = new Set([...(SERVER_GATED[role] || []), ...(REMOVED[role] || [])]);
+    const relanded = RELANDED[role] || {};
     for (const [id, view] of Object.entries(baseline.roles[role] || {})) {
       if (gated.has(id)) continue;
       const t = resolveDeepLinkTarget(id, role);
+      if (relanded[id]) {
+        if (t?.view !== relanded[id] || resolveDeepLinkTarget(view, role)?.view !== view) lost.push(`${id} → ${t?.view} (tercatat ${relanded[id]})`);
+        continue;
+      }
       const ok = new Set([view, aliasTarget(view), aliasTarget(id)]);
       if (!t) lost.push(`${id} → (tidak sampai; dulu ${view})`);
       else if (!ok.has(t.view)) lost.push(`${id} → ${t.view} (dulu ${view})`);

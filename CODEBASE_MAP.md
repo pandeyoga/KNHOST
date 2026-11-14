@@ -1,5 +1,5 @@
 <!-- DIHASILKAN OTOMATIS oleh scripts/gen_codebase_map.py — JANGAN EDIT TANGAN -->
-<!-- Dihasilkan dari commit: 4e816a0 pada 2026-11-14 -->
+<!-- Dihasilkan dari commit: eb4e0e1 pada 2026-11-14 -->
 # CODEBASE MAP — Kain Nusantara (dihasilkan otomatis)
 
 Peta ini dihitung dari kode oleh `scripts/gen_codebase_map.py`. Kalau angka di sini
@@ -28,7 +28,7 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 | `schemas.py` | 1123 |
 | `schemas_purchasing.py` | 625 |
 | `dependencies.py` | 286 |
-| `permissions_config.py` | 801 |
+| `permissions_config.py` | 822 |
 | `entity_scope.py` | 728 |
 | `pagination.py` | 145 |
 | `indexes.py` | 799 |
@@ -362,7 +362,7 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 | `costing_service.py` | 146 | Costing service (EPIC3A) — Weighted Average Cost (WAC) per produk/entitas. |
 | `crm_omnichannel_service.py` | 249 | CRM Omnichannel (MVP manual) — Lead pipeline + timeline interaksi. |
 | `csv_money.py` | 39 | SATU definisi “cara membaca angka rupiah dari CSV” untuk seluruh sistem. |
-| `custom_role_service.py` | 856 | PERAN KUSTOM & TINGKAT AKSES — aturan bisnis untuk layar "Peran & Hak Akses". |
+| `custom_role_service.py` | 864 | PERAN KUSTOM & TINGKAT AKSES — aturan bisnis untuk layar "Peran & Hak Akses". |
 | `customer_feedback_service.py` | 153 | FEEDBACK / KOMPLAIN PELANGGAN per Sales Order (2026-09, sesi #075). |
 | `customer_merge_service.py` | 99 | P18 MASTER-05 / COMM-01 — gabung pelanggan duplikat (sumber → target) tanpa memutus riwayat. |
 | `customer_price_service.py` | 568 | F1b (D-14) — **Daftar Harga per Pelanggan** (customer pricelist) dengan histori, |
@@ -691,18 +691,18 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 
 | Fitur (`src/features/`) | Berkas | Baris |
 |---|---:|---:|
-| `__tests__` | 97 | 14723 |
+| `__tests__` | 98 | 14880 |
 | `admin` | 35 | 6764 |
-| `approvals` | 9 | 1719 |
+| `approvals` | 9 | 1720 |
 | `catalog` | 24 | 1450 |
 | `costing` | 1 | 150 |
-| `crm` | 17 | 3661 |
+| `crm` | 17 | 3652 |
 | `design` | 8 | 1585 |
 | `designer` | 8 | 1628 |
 | `desks` | 2 | 229 |
 | `documents` | 18 | 2676 |
 | `export` | 9 | 700 |
-| `finance` | 94 | 21091 |
+| `finance` | 95 | 21135 |
 | `home` | 5 | 1130 |
 | `hr` | 33 | 5350 |
 | `inspections` | 12 | 2181 |
@@ -716,7 +716,7 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 | `notifications` | 1 | 33 |
 | `orders` | 23 | 3856 |
 | `pdf` | 5 | 901 |
-| `pettycash` | 11 | 1623 |
+| `pettycash` | 12 | 1671 |
 | `pos` | 23 | 2632 |
 | `pricing` | 1 | 151 |
 | `production` | 3 | 753 |
@@ -726,7 +726,7 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 | `sales` | 97 | 15798 |
 | `sales_admin` | 11 | 1880 |
 | `samples` | 8 | 776 |
-| `settings` | 69 | 12848 |
+| `settings` | 69 | 12849 |
 | `tanya` | 25 | 1592 |
 | `transfers` | 1 | 20 |
 | `wms` | 99 | 13196 |

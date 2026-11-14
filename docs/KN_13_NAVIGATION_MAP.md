@@ -514,6 +514,84 @@ const ordersTabs = [
 
 ---
 
+## 💰 MENU KEUANGAN, AKUNTANSI & PAJAK, DAN SDM (MN-T1 — ditulis ulang dari konfigurasi)
+
+Sumber kebenaran: `frontend/src/config/navStructure.js` (grup & entri), `hubTabs.js` (tab), `roles.js` (`ROLE_NAV`),
+`viewAliases.js` (alamat lama) dan katalog modul akses `backend/access_modules.py` (menu peran kustom & penyaring izin).
+Tabel di bawah dibangkitkan dari konfigurasi itu (menu Sidebar per peran bawaan dengan izin server bawaan, 14 Nov 2026).
+Peran: A admin · M manager · F finance · S sales · SA sales_admin · G warehouse · GA warehouse_admin (peran lain tidak
+melihat ketiga grup ini). Keuangan **5 entri** + Akuntansi & Pajak **5 entri** = 10 entri dalam 2 grup (dulu 18 entri
+dalam 4 grup); grup "Kas & Aset" dihapus.
+
+| Grup › Entri (id menu) | Tab (view) | Peran bawaan yang melihatnya |
+|---|---|---|
+| Keuangan › Beranda Keuangan (`finance-tower`) | Perlu Tindakan (`finance-desk`) | A M F |
+| Keuangan › Beranda Keuangan (`finance-tower`) | Posisi (`finance-tower`) | A M F |
+| Keuangan › Beranda Keuangan (`finance-tower`) | Analisis (`bi-finance`) | A M F |
+| Keuangan › Piutang (`ar-aging`) | Saldo & Umur (`ar-aging`) | A M F |
+| Keuangan › Piutang (`ar-aging`) | Penagihan & Penerimaan (`collection-worklist`) | A M F S SA |
+| Keuangan › Piutang (`ar-aging`) | Rencana & Denda (`payment-plans`) | A M F |
+| Keuangan › Piutang (`ar-aging`) | Titipan & Saldo Kredit (`customer-credit`) | A M F |
+| Keuangan › Piutang (`ar-aging`) | Kredit & Plafon (`credit-overrides`) | A M F |
+| Keuangan › Piutang (`ar-aging`) | Kasus (`finance-cases`) | A M F S SA |
+| Keuangan › Hutang (`accounts-payable`) | Tagihan (`vendor-bills`) | A M F |
+| Keuangan › Hutang (`accounts-payable`) | Kontrabon (`contra-bons`) | A M F G GA |
+| Keuangan › Kas & Bank (`cash-bank`) | Rekening & Saldo (`bank-accounts`) | A M F |
+| Keuangan › Kas & Bank (`cash-bank`) | Transaksi Kas (`cash-management`) | A M F |
+| Keuangan › Kas & Bank (`cash-bank`) | Rekonsiliasi (`bank-reconciliation`) | A M F |
+| Keuangan › Kas & Bank (`cash-bank`) | Kas Kecil (`petty-cash`) | A M F S SA |
+| Keuangan › Antar-PT (`interco-transactions`) | — (view `interco-transactions`) | A M F SA G GA |
+| Akuntansi & Pajak › Buku Besar (`ledger`) | Jurnal (`general-ledger`) | A M F |
+| Akuntansi & Pajak › Buku Besar (`ledger`) | Bagan Akun (`chart-of-accounts`) | A M F |
+| Akuntansi & Pajak › Tutup Buku (`closing`) | Daftar Periksa & Tutup (`closing`) | A M |
+| Akuntansi & Pajak › Tutup Buku (`closing`) | Buka Periode (`period-unlock`) | A M |
+| Akuntansi & Pajak › Tutup Buku (`closing`) | Posting Gagal (`posting-failures`) | A M |
+| Akuntansi & Pajak › Laporan (`fin-reports`) | Laba-Rugi, Neraca & Arus Kas (`financial-statements`) | A M |
+| Akuntansi & Pajak › Laporan (`fin-reports`) | Profitabilitas (`profitability`) | A M |
+| Akuntansi & Pajak › Laporan (`fin-reports`) | Proyeksi Kas (`cashflow-forecast`) | A M |
+| Akuntansi & Pajak › Laporan (`fin-reports`) | Anggaran (`budget`) | A M |
+| Akuntansi & Pajak › Laporan (`fin-reports`) | Konsolidasi (`consolidation`) | A M |
+| Akuntansi & Pajak › Pajak (`tax-hub`) | Faktur Keluaran (`tax-invoices`) | A M F |
+| Akuntansi & Pajak › Pajak (`tax-hub`) | Faktur Masukan (`input-tax`) | A M |
+| Akuntansi & Pajak › Pajak (`tax-hub`) | PPN & PPh (`cs-pajak`) | A M |
+| Akuntansi & Pajak › Aset Tetap (`fixed-assets`) | — (view `fixed-assets`) | A M |
+| SDM › Karyawan (`hr-people`) | Karyawan (`hr-employees`) | A M |
+| SDM › Karyawan (`hr-people`) | Struktur Organisasi (`hr-org-units`) | A M |
+| SDM › Kehadiran (`hr-attendance-hub`) | Presensi (`hr-attendance`) | A M |
+| SDM › Kehadiran (`hr-attendance-hub`) | Cuti & Izin (`hr-leave`) | A M |
+| SDM › Kehadiran (`hr-attendance-hub`) | Lembur (`hr-overtime`) | A M |
+| SDM › Kehadiran (`hr-attendance-hub`) | Lacak Lapangan (`hr-live-tracking`) | A M |
+| SDM › Penggajian (`hr-payroll-hub`) | Proses Gaji (`hr-payroll-runs`) | A M |
+| SDM › Penggajian (`hr-payroll-hub`) | Slip Gaji (`hr-payslips`) | A M |
+| SDM › Kinerja & Insentif (`hr-kpi-hub`) | Kinerja Sales (`sales-performance`) | A M S SA |
+| SDM › Kinerja & Insentif (`hr-kpi-hub`) | Target & Aturan (`incentive-rates`) | A M |
+| SDM › Kinerja & Insentif (`hr-kpi-hub`) | Skema (Arsip) (`incentive-schemes`) | A M |
+| SDM › Kinerja & Insentif (`hr-kpi-hub`) | KPI Karyawan (`cs-kpi`) | A M |
+
+Dipindah ke luar keuangan: **Pembelian › Pesanan Pembelian › Landed Cost** (`landed-cost`, A M; hub kini 7 tab — baseline
+INV-UI-13) dan **Gudang & Logistik › Kendaraan** (`vehicle-logs`, A M G S). CRM & Pelanggan tinggal tiga sub-tab
+(Pelanggan · Prospek · Interaksi). Pengaturan › Penjualan tidak lagi memuat Komisi & Insentif; Finance kini melihat
+Pengaturan › Keuangan & Pajak › Pemetaan Akun (izin `gl_mapping`).
+
+Alamat lama (`config/viewAliases.js`, `since: "MN-T1"`; rute cadangan `activeView === "<lama>"` tetap; palet Ctrl+K
+menampilkan "nama lama → kini di …"):
+
+| Id lama | Mendarat di | Preset |
+|---|---|---|
+| `advance-report` (Uang Muka Pelanggan) | Keuangan › Piutang › Titipan & Saldo Kredit (`customer-credit`) | `{bagian: "titipan"}` |
+| `store-credit` (Saldo Kredit) | idem | `{bagian: "saldo"}` |
+| `cash-advances` (Pengajuan Dana) | Keuangan › Kas & Bank › Kas Kecil (`petty-cash`) | `{bagian: "pengajuan"}` |
+| `settlements` (Pertanggungjawaban) | idem | `{bagian: "pertanggungjawaban"}` |
+| `reimburse-payables` (Hutang Reimburse) | idem (chip hanya dengan `accounting.view`) | `{bagian: "reimburse"}` |
+| `kas-aset` (id grup lama, `legacy`) | Keuangan › Kas & Bank › Kas Kecil | — |
+
+Id yang tetap tetapi berpindah induk: `finance-desk` (kini tab pertama Beranda Keuangan; beranda peran Finance tetap,
+menu yang disorot `finance-tower`), `period-unlock`, `posting-failures` (tab Tutup Buku), `payment-plans`,
+`finance-cases` (tab Piutang), `interco-transactions` (Keuangan), `fixed-assets` (Akuntansi & Pajak), `incentive-rates`
+(SDM › Kinerja & Insentif). Penjaga: `verify_access_catalog_nav.py`, `verify_view_aliases.py`, `verify_desk_targets.py`,
+`verify_page_tabs.py` (INV-UI-12/13/14), jest `roleReach.test.js`, `serverAccessReach.test.js`, `navAccess.test.js`,
+`mnt1MenuKeuangan.test.js`.
+
 ## 📝 CHANGELOG
 
 ### KP-T5 — 14 Nov 2026 (tab Penomoran Dokumen)
@@ -524,6 +602,25 @@ const ordersTabs = [
   `settings.manage` (`/api/doc-numbering`). Pilihan "Semua PT" = baris grup.
 - Wizard PT langkah 3 (Penomoran & Dokumen): empat contoh nomor dari `POST /api/doc-numbering/preview` (format grup yang
   berlaku, kode = isian wizard).
+
+### MN-T1 — 14 Nov 2026 (menu keuangan & SDM: pindah dan kelompokkan, isi layar tetap)
+- Keuangan: **Beranda Keuangan** (Perlu Tindakan · Posisi · Analisis; Meja Finance bukan lagi menu lepas/butir Meja
+  Peran) · **Piutang** (6 tab; Penagihan & Kredit dari CRM, Uang Muka + Saldo Kredit = satu tab pembungkus ber-chip,
+  Rencana Bayar, Kasus) · **Hutang** (dari Pembelian) · **Kas & Bank** (+ Kas Kecil = pembungkus ber-chip) · **Antar-PT**
+  (dari Akuntansi & Pajak). Akuntansi & Pajak: Buku Besar · **Tutup Buku** (3 tab) · Laporan · Pajak · **Aset Tetap**.
+  SDM › KPI → **Kinerja & Insentif** (Kinerja Sales, Target & Aturan, Skema (Arsip), KPI Karyawan); Payroll Run →
+  **Proses Gaji**. Label: Rekonsiliasi Bank → Rekonsiliasi, Jurnal & Buku Besar → Jurnal, Chart of Accounts → Bagan Akun,
+  Profitabilitas & Margin → Profitabilitas, Proyeksi Arus Kas → Proyeksi Kas, Anggaran vs Realisasi → Anggaran,
+  Konsolidasi Grup → Konsolidasi, Pajak (PPN & PPh) → PPN & PPh, Tagihan Supplier → Tagihan, Kontrabon (Tukar Faktur) →
+  Kontrabon. Rincian & tabel per peran: bagian "MENU KEUANGAN, AKUNTANSI & PAJAK, DAN SDM" di atas.
+- `roles` grup: + sales di Keuangan & SDM, + gudang di Keuangan, gudang dicabut dari Akuntansi & Pajak. `ROLE_NAV.finance`
+  + 16 id (K-09, K-17, UX-17, IA-06); `ROLE_NAV.sales_admin` tanpa `akuntansi`.
+- Katalog modul akses (`backend/access_modules.py`, blok `MN-T1`): menu ikut modul pemilik sumber daya endpoint utama
+  layarnya (`_MNT1_NAV_ADD`/`_MNT1_NAV_REMOVE`); `hidden_views` berisi id tak dikenal (mis. `kas-aset`) dibuang saat
+  dimuat. Izin bawaan Finance: + `vendor_bill.view/pay`, `contra_bon.view/pay`, `cash_advance.disburse` (Manajer juga
+  `cash_advance.disburse`).
+- Penjaga baru di `verify_page_tabs.py`: INV-UI-13 (maks 6 tab tampak per hub; baseline `hub_tab_limit.json`) dan
+  INV-UI-14 (tanpa tab tingkat ketiga; baseline `third_level_tabs.json`).
 
 ### PR-T5 — 14 Nov 2026 (pemilik menu & tab di katalog modul akses)
 Tidak ada menu baru; yang berubah = modul akses (`backend/access_modules.py`) yang MEMBUKA menu/tab untuk peran kustom
@@ -617,14 +714,14 @@ SIDEBAR (grouped, collapsible, role-filtered)
      └── Stock Analytics (fast/slow/dead >3bln) 🆕
   📡 RFID
      ├── Lokasi RFID 🆕 · Tags 🆕 · Devices 🆕 · Gate Monitor (green/red) 🆕
-  💰 Keuangan
-     ├── Chart of Accounts 🆕 · Jurnal/GL 🆕 · Bank 🆕 · Pajak (PPN/PPH) 🆕
-     ├── AR / Outstanding + Denda 1–3% 🆕 · Closing (28/30/31) 🆕 · Invoices ✅🟡
-  💼 Kas & Aset (Digitalisasi Formulir Sukacita) ✅🆕
-     ├── Petty Cash & PD → Pengajuan Dana (PD) · Pertanggungjawaban (LPJ) · Kategori Beban
-     └── Kendaraan → Log & Biaya · Master Kendaraan · Rekap
-  👥 SDM (HRD)
-     ├── Employees 🆕 · Attendance (fingerprint) 🆕 · KPI Design 🆕 · Design Gallery + AI 🆕
+  💰 Keuangan ✅ (MN-T1 — susunan berlaku: bagian "MENU KEUANGAN, AKUNTANSI & PAJAK, DAN SDM")
+     ├── Beranda Keuangan · Piutang · Hutang · Kas & Bank (+ Kas Kecil) · Antar-PT
+  🧮 Akuntansi & Pajak ✅ (MN-T1)
+     ├── Buku Besar · Tutup Buku · Laporan · Pajak · Aset Tetap
+  (💼 Kas & Aset — DIHAPUS MN-T1: Kas Kecil → Keuangan › Kas & Bank, Kendaraan → Gudang & Logistik, Aset Tetap →
+     Akuntansi & Pajak; alamat `?view=kas-aset` → Kas Kecil)
+  👥 SDM (HRD) ✅
+     ├── Karyawan · Kehadiran · Penggajian (Proses Gaji · Slip Gaji) · Kinerja & Insentif (MN-T1)
   📊 Analitik (BI)
      └── Sales / Stock / Finance / HR dashboards 🆕
   📝 Dokumen

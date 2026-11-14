@@ -194,7 +194,8 @@ export const ROLE_NAV = {
       // Tanpa baris ini ia ikut kehilangan menu itu karena mewarisi menu sales.
       "wms-operations",
       "pembelian", "sourcing", "purchase-requisitions",
-      "akuntansi", "interco-transactions",
+      // MN-T1 — Antar-PT kini di grup Keuangan (warisan `sales`); induk lama `akuntansi` dicabut dari daftar ini.
+      "interco-transactions",
       "return-policies",           // perlu membaca kebijakan retur saat memproses retur
       // Fase 3 · P2 (P16-K1) — Pengaturan kini GRUP (groupId tetap `settings-hub`): Admin Sales melihat
       // Penjualan › Kebijakan Retur dan Gudang & Mutu › Master Grade Mutu (tab yang sama seperti sebelumnya).
@@ -272,6 +273,14 @@ export const ROLE_NAV = {
       "products-pricing", "internal-prices",
       // LN-140 — retur antar-PT masuk & saldo pasangan PT (hanya-lihat)
       "interco-transactions",
+      // MN-T1 (UX-17, K-09, K-17, IA-06) — menu mengikuti izin bawaan Finance: Rekening & Saldo, Rekonsiliasi (K-09),
+      // Kas Kecil (cash_advance), Buku Besar lihat saja (K-09), Hutang lihat & bayar (K-17), tab Piutang yang dulu
+      // sub-tab CRM, Analisis (BI Keuangan), Pengaturan › Keuangan & Pajak › Pemetaan Akun (izin gl_mapping, IA-06).
+      "bank-accounts", "bank-reconciliation", "petty-cash",
+      "ledger", "general-ledger", "chart-of-accounts",
+      "accounts-payable", "vendor-bills", "contra-bons",
+      "collection-worklist", "customer-credit", "credit-overrides", "bi-finance",
+      "settings-hub", "settings-finance", "gl-account-mappings",
     ],
     remove: [],
   },

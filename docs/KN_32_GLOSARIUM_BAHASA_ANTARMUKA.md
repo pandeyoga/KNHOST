@@ -282,3 +282,29 @@ pesanan yang sudah terkunci", `hold` "Tahan", `random_check` "Cek acak", `scan` 
 produksi", `manage_payroll` "Kelola gaji", `release` "Lepas / rilis"; modul `warehouse_ops` "Operasi Gudang", `rnd`
 "Pengembangan Produk & Sample", `petty_cash` "Kas Kecil (pengajuan dana & pertanggungjawaban)". Teks tombol editor
 "Menu, tab & aktivitas" → **"Atur rinci"**.
+
+### 9.4 Menu keuangan & SDM (MN-T1)
+
+Label menu dan tab baru sesudah penggabungan menu (`docs/blueprint/unit/MN-T1.md`; susunan lengkap: KN_13 bagian
+"MENU KEUANGAN, AKUNTANSI & PAJAK, DAN SDM"). Istilah baku tetap: **PT** (bukan "Entitas"/"Badan Usaha" di menu
+keuangan — "Antar Entitas (Grup)" → **Antar-PT**) dan **pemasok** (bukan "supplier" — "Tagihan Supplier" → **Tagihan**
+di bawah menu **Hutang**; label izin server `vendor_bill` tetap "Tagihan Supplier" sampai kamus izin diganti).
+
+| Label baru | Dulu | Tempat |
+|---|---|---|
+| **Beranda Keuangan** › **Perlu Tindakan** · **Posisi** · **Analisis** | Dasbor Keuangan (Posisi & Kontrol · BI Keuangan) + menu lepas "Meja Finance" | Keuangan |
+| **Piutang** › **Saldo & Umur** · **Penagihan & Penerimaan** · **Rencana & Denda** · **Titipan & Saldo Kredit** · **Kredit & Plafon** · **Kasus** | Piutang, sub-tab CRM "Penagihan" & "Persetujuan Kredit", Rencana Bayar, Uang Muka Pelanggan, Saldo Kredit, Kasus Keuangan | Keuangan |
+| Chip **Titipan pelanggan** · **Saldo kredit** | menu "Uang Muka Pelanggan" · "Saldo Kredit" | Piutang › Titipan & Saldo Kredit |
+| **Hutang** › **Tagihan** · **Kontrabon** | Pembelian › Hutang Pemasok › Tagihan Supplier · Kontrabon (Tukar Faktur) | Keuangan |
+| **Kas & Bank** › … · **Rekonsiliasi** · **Kas Kecil** | Rekonsiliasi Bank; Kas & Aset › Kas Kecil | Keuangan |
+| Chip **Pengajuan dana** · **Pertanggungjawaban** · **Hutang reimburse** | tab Pengajuan Dana (PD) · Pertanggungjawaban · Hutang Reimburse | Kas & Bank › Kas Kecil |
+| **Antar-PT** | Antar Entitas (Grup) | Keuangan |
+| **Buku Besar** › **Jurnal** · **Bagan Akun** | Jurnal & Buku Besar · Chart of Accounts | Akuntansi & Pajak |
+| **Tutup Buku** › **Daftar Periksa & Tutup** · **Buka Periode** · **Posting Gagal** | tiga entri terpisah | Akuntansi & Pajak |
+| **Laporan** › … · **Profitabilitas** · **Proyeksi Kas** · **Anggaran** · **Konsolidasi** | Profitabilitas & Margin · Proyeksi Arus Kas · Anggaran vs Realisasi · Konsolidasi Grup | Akuntansi & Pajak |
+| **Pajak** › … · **PPN & PPh** | Pajak (PPN & PPh) | Akuntansi & Pajak |
+| **Penggajian** › **Proses Gaji** | Payroll Run | SDM |
+| **Kinerja & Insentif** › **Kinerja Sales** · **Target & Aturan** · **Skema (Arsip)** · **KPI Karyawan** | SDM › KPI (KPI Karyawan (manual)); sub-tab CRM "Kinerja Sales" & "Skema (Arsip)"; Pengaturan › Penjualan › Komisi & Insentif | SDM |
+
+Nama lama tetap bisa dicari di palet Ctrl+K ("{nama lama} → kini di {menu} › {tab}", `config/viewAliases.js`).
+Jangan memakai "Dashboard", "BI", "Payroll Run", "Chart of Accounts", "Store Credit" pada label menu baru.

@@ -687,13 +687,18 @@
     "view",
     "create",
     "update",
-    "submit"
+    "submit",
+    "disburse"
    ],
    "cash_settlement": [
     "view",
     "create",
     "update",
     "submit"
+   ],
+   "contra_bon": [
+    "view",
+    "pay"
    ],
    "customer": [
     "view",
@@ -815,8 +820,10 @@
     "view"
    ],
    "vendor_bill": [
+    "view",
     "approve",
-    "reject"
+    "reject",
+    "pay"
    ]
   },
   "manager": {
@@ -894,7 +901,8 @@
     "update",
     "submit",
     "approve",
-    "reject"
+    "reject",
+    "disburse"
    ],
    "cash_settlement": [
     "view",
@@ -2438,9 +2446,6 @@
    "fixed_asset",
    "gl_mapping",
    "input_tax",
-   "interco",
-   "interco_finance",
-   "interco_price",
    "landed_cost",
    "payment_plan",
    "payment_variance",
@@ -2482,9 +2487,18 @@
   ],
   "ar-aging": [
    "ar_receipt",
+   "cash",
+   "customer",
+   "finance_amendment",
+   "finance_case",
+   "internal_request",
+   "od_fulfillment",
+   "od_pricing",
+   "order",
    "payment_plan",
    "payment_variance",
    "penalty",
+   "sales_return",
    "tax_invoice"
   ],
   "bank-accounts": [
@@ -2503,7 +2517,12 @@
    "finance_case"
   ],
   "bi-finance": [
+   "accounting",
    "audit",
+   "budget",
+   "fixed_asset",
+   "gl_mapping",
+   "period",
    "reports"
   ],
   "blanket-po": [
@@ -2524,9 +2543,16 @@
    "cash_settlement"
   ],
   "cash-bank": [
+   "accounting",
+   "budget",
    "cash",
+   "cash_advance",
+   "cash_settlement",
    "finance_amendment",
-   "finance_case"
+   "finance_case",
+   "fixed_asset",
+   "gl_mapping",
+   "period"
   ],
   "cash-management": [
    "cash",
@@ -2560,6 +2586,13 @@
    "gl_mapping",
    "period"
   ],
+  "collection-worklist": [
+   "internal_request",
+   "od_fulfillment",
+   "od_pricing",
+   "order",
+   "sales_return"
+  ],
   "color-library": [
    "color",
    "product",
@@ -2581,6 +2614,9 @@
   ],
   "costing": [
    "costing"
+  ],
+  "credit-overrides": [
+   "customer"
   ],
   "cs-bi-hrd": [
    "audit",
@@ -2639,6 +2675,13 @@
   "cs-stock-analytics": [
    "inventory",
    "transfer"
+  ],
+  "customer-credit": [
+   "ar_receipt",
+   "payment_plan",
+   "payment_variance",
+   "penalty",
+   "tax_invoice"
   ],
   "customers-crm": [
    "customer"
@@ -2725,9 +2768,16 @@
    "tax_invoice"
   ],
   "finance-tower": [
-   "cash",
-   "finance_amendment",
-   "finance_case"
+   "accounting",
+   "ar_receipt",
+   "budget",
+   "fixed_asset",
+   "gl_mapping",
+   "payment_plan",
+   "payment_variance",
+   "penalty",
+   "period",
+   "tax_invoice"
   ],
   "financial-statements": [
    "accounting",
@@ -2793,7 +2843,14 @@
    "hr"
   ],
   "hr-kpi-hub": [
-   "hr"
+   "credit_override",
+   "hr",
+   "internal_request",
+   "od_fulfillment",
+   "od_pricing",
+   "order",
+   "sales_force",
+   "sales_return"
   ],
   "hr-leave": [
    "hr"
@@ -2823,9 +2880,19 @@
    "customer"
   ],
   "hrd": [
-   "hr"
+   "credit_override",
+   "hr",
+   "internal_request",
+   "od_fulfillment",
+   "od_pricing",
+   "order",
+   "sales_force",
+   "sales_return"
   ],
   "incentive-rates": [
+   "sales_force"
+  ],
+  "incentive-schemes": [
    "sales_force"
   ],
   "input-tax": [
@@ -2872,17 +2939,6 @@
   "inventory-lots": [
    "field_visibility"
   ],
-  "kas-aset": [
-   "accounting",
-   "budget",
-   "cash_advance",
-   "cash_settlement",
-   "fixed_asset",
-   "gl_mapping",
-   "logistics",
-   "period",
-   "vehicle_log"
-  ],
   "keep-pending": [
    "internal_request",
    "od_fulfillment",
@@ -2895,17 +2951,28 @@
    "ar_receipt",
    "budget",
    "cash",
+   "cash_advance",
+   "cash_settlement",
    "contra_bon",
+   "customer",
    "finance_amendment",
    "finance_case",
    "fixed_asset",
    "gl_mapping",
    "input_tax",
+   "interco",
+   "interco_finance",
+   "interco_price",
+   "internal_request",
    "landed_cost",
+   "od_fulfillment",
+   "od_pricing",
+   "order",
    "payment_plan",
    "payment_variance",
    "penalty",
    "period",
+   "sales_return",
    "tax_invoice",
    "vendor_bill"
   ],
@@ -2999,7 +3066,6 @@
    "wms"
   ],
   "meja-peran": [
-   "ar_receipt",
    "design_ownership",
    "design_request",
    "goods_receipt",
@@ -3008,14 +3074,10 @@
    "od_fulfillment",
    "od_pricing",
    "order",
-   "payment_plan",
-   "payment_variance",
-   "penalty",
    "production",
    "repair_order",
    "sales_return",
    "sample_order",
-   "tax_invoice",
    "warehouse",
    "wms"
   ],
@@ -3106,8 +3168,13 @@
    "period"
   ],
   "petty-cash": [
+   "accounting",
+   "budget",
    "cash_advance",
-   "cash_settlement"
+   "cash_settlement",
+   "fixed_asset",
+   "gl_mapping",
+   "period"
   ],
   "po-board": [
    "purchase_order",
@@ -3183,6 +3250,9 @@
    "rfq"
   ],
   "purchase-orders": [
+   "contra_bon",
+   "input_tax",
+   "landed_cost",
    "makloon",
    "makloon_order",
    "process_recipe",
@@ -3192,7 +3262,8 @@
    "rfq",
    "supplier",
    "supplier_contract",
-   "supplier_item"
+   "supplier_item",
+   "vendor_bill"
   ],
   "purchase-requisitions": [
    "purchase_order",
@@ -3365,6 +3436,13 @@
    "order",
    "sales_return"
   ],
+  "sales-performance": [
+   "internal_request",
+   "od_fulfillment",
+   "od_pricing",
+   "order",
+   "sales_return"
+  ],
   "sample-admin-desk": [
    "sample_order"
   ],
@@ -3482,7 +3560,6 @@
    "cash_advance",
    "cash_settlement",
    "contra_bon",
-   "credit_override",
    "design_ownership",
    "design_request",
    "entity",
@@ -3520,7 +3597,6 @@
    "rfid_device",
    "rfq",
    "rnd",
-   "sales_force",
    "sales_return",
    "scheduler",
    "settings",
@@ -3571,14 +3647,12 @@
    "rnd"
   ],
   "settings-sales": [
-   "credit_override",
    "internal_request",
    "od_fulfillment",
    "od_pricing",
    "order",
    "price_approval",
    "pricelist",
-   "sales_force",
    "sales_return"
   ],
   "settings-system": [

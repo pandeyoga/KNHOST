@@ -357,6 +357,8 @@ DEFAULT_PERMISSIONS = {
         # KASIR / FINANCE — sisi UANG MASUK & PAJAK KELUARAN.
         # CATATAN: sisi HUTANG (vendor_bill.pay, contra_bon, landed_cost) TETAP
         # manajer/admin sampai pemilik memutuskan sebaliknya — jangan diperluas sendiri.
+        # MN-T1 — pemilik memutuskan K-17: lihat + bayar tagihan & kontrabon ditambahkan blok MN-T1 di akhir berkas
+        # (landed cost tetap manajer/admin).
         "product": ["view"],
         "customer": ["view"],
         "template": ["view"],
@@ -799,3 +801,22 @@ for _mods in DEFAULT_PERMISSIONS.values():
         _mods.pop(_res, None)
 for _res in PRT5_REMOVED_RESOURCES:
     EXTRA_ACTIONS.pop(_res, None)
+
+# ═══════════════════════════════════════════════════════════════════════════
+# MN-T1 (K-09, K-17) — izin bawaan peran Finance untuk menu Keuangan yang baru (docs/blueprint/unit/MN-T1.md, tabel
+# "Izin bawaan peran Finance"). HANYA MENAMBAH: Hutang dilihat dan dibayar oleh pemegang izin bayar (bawaan Finance dan
+# Manajer, K-17), mencairkan uang muka juga Finance dan Manajer (K-17; dulu hanya Admin). Rekonsiliasi Bank (K-09: ya —
+# `cash.view/create`) dan Buku Besar lihat saja (K-09 — `accounting.view`) sudah dipegang. Instalasi lama menerima
+# pasangan baru sekali lewat `bootstrap.sync_permission_modules` (`defaults_applied`, PR-T9); pencabutan Admin sesudahnya
+# bertahan. PK-24/PK-38 memuat baris yang sama ("lewati bila sudah ada") — blok ini idempoten.
+# ═══════════════════════════════════════════════════════════════════════════
+MNT1_DEFAULT_PAIRS = {
+    "finance": {"vendor_bill": ("view", "pay"), "contra_bon": ("view", "pay"), "cash_advance": ("disburse",)},
+    "manager": {"cash_advance": ("disburse",)},
+}
+for _role, _mods in MNT1_DEFAULT_PAIRS.items():
+    for _res, _acts in _mods.items():
+        _cur = list(DEFAULT_PERMISSIONS[_role].get(_res) or [])
+        if "view" in _acts and "view" not in _cur:
+            _cur.insert(0, "view")
+        DEFAULT_PERMISSIONS[_role][_res] = _cur + [a for a in _acts if a not in _cur]

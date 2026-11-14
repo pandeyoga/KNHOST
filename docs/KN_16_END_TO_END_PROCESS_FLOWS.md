@@ -204,6 +204,37 @@ B approve → `ownership_transfer` (owner pindah saat **approval/dispatch**, S3)
 
 ---
 
+## 8A. Finance & SDM — tempat tiap langkah dikerjakan (MN-T1, 14 Nov 2026; ditulis ulang dari konfigurasi)
+
+Menu disusun menurut **pekerjaan** (rencana keuangan `01` §2). Bagian §8 di atas = rancangan data; tabel ini = tempat
+langkahnya di aplikasi sekarang (`navStructure.js`/`hubTabs.js`; rincian per peran: KN_13 bagian "MENU KEUANGAN,
+AKUNTANSI & PAJAK, DAN SDM").
+
+| Langkah proses | Menu › tab | Pelaku bawaan (izin) |
+|---|---|---|
+| Melihat apa yang perlu ditindak hari ini (uang masuk, selisih, faktur pajak, jatuh tempo) | Keuangan › Beranda Keuangan › Perlu Tindakan | A M F (`payment_variance.decide`) |
+| Posisi kas/piutang/hutang; analisis tren | Keuangan › Beranda Keuangan › Posisi · Analisis | A M F (`accounting.view`) |
+| Umur piutang & denda | Keuangan › Piutang › Saldo & Umur · Rencana & Denda | A M F |
+| Menagih pelanggan & mencatat kwitansi | Keuangan › Piutang › Penagihan & Penerimaan | A M F S SA (`order.view`; kwitansi `ar_receipt.create`) |
+| Uang muka / titipan & saldo kredit pelanggan | Keuangan › Piutang › Titipan & Saldo Kredit (chip) | A M F |
+| Pengecualian batas kredit | Keuangan › Piutang › Kredit & Plafon (memutus: `credit_override.approve`) | A M (F baca) |
+| Uang nyangkut (salah transfer, dobel, giro ditolak) | Keuangan › Piutang › Kasus | A M F; S SA melapor |
+| Tagihan pemasok & kontrabon → bayar | Keuangan › Hutang › Tagihan · Kontrabon | A M F (K-17: lihat & bayar); G GA melihat kontrabon |
+| Biaya masuk barang PO | Pembelian › Pesanan Pembelian › Landed Cost | A M |
+| Rekening, transaksi kas, rekonsiliasi bank | Keuangan › Kas & Bank › Rekening & Saldo · Transaksi Kas · Rekonsiliasi | A M F (K-09) |
+| Pengajuan dana → pencairan → pertanggungjawaban → hutang reimburse | Keuangan › Kas & Bank › Kas Kecil (chip) | A M F S SA; cairkan `cash_advance.disburse` (A M F) |
+| Transaksi, settlement & saldo antar-PT | Keuangan › Antar-PT | A M F SA G GA |
+| Jurnal & bagan akun | Akuntansi & Pajak › Buku Besar | A M; F lihat saja (K-09) |
+| Tutup buku → buka periode → posting gagal | Akuntansi & Pajak › Tutup Buku (3 tab) | A M |
+| Laporan keuangan, profitabilitas, proyeksi kas, anggaran, konsolidasi | Akuntansi & Pajak › Laporan | A M |
+| Faktur keluaran / masukan, PPN & PPh | Akuntansi & Pajak › Pajak | A M; F faktur keluaran |
+| Aset tetap & penyusutan | Akuntansi & Pajak › Aset Tetap | A M |
+| Log & biaya kendaraan | Gudang & Logistik › Kendaraan | A M G S |
+| Proses gaji & slip | SDM › Penggajian › Proses Gaji · Slip Gaji | A M |
+| Kinerja sales, target & aturan komisi, skema insentif, KPI karyawan | SDM › Kinerja & Insentif | A M; S SA Kinerja Sales |
+
+---
+
 ## 8B. Tambahan Sales/Finance & Strategi Master Data (Session #015 lanjutan)
 
 ### 8B.1 Eskalasi Alokasi ke Admin
@@ -361,6 +392,9 @@ I15 PELAPORAN: laporan prioritas (stok per entitas, valuasi, AR aging, penjualan
 ---
 
 ## 12. Changelog
+### MN-T1 — 14 Nov 2026 (tempat langkah keuangan & SDM; menutup IA-15)
+- §8A baru: tiap langkah proses keuangan & SDM → menu › tab berlaku sesudah MN-T1 (Keuangan 5 entri, Akuntansi & Pajak 5
+  entri, SDM Kinerja & Insentif), dari konfigurasi navigasi.
 ### v1.2 — Session #015 (Sales/Finance tambahan + Master Data strategy)
 - §8B baru: eskalasi alokasi ke Admin [S22]; entitas dinamis (no hardcode) [S23]; multi-rekening `bank_accounts`
   + SO.destination_bank_account_id [S24]; Special Order detail (sord_) [S25]; **Special Price = pakai

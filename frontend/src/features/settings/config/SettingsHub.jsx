@@ -51,7 +51,7 @@ const TABS = [
 export const COMMISSION_EXCLUDE = [COMMISSION_PREFIX];
 export const COMMISSION_LINK = {
   testId: "cfg-commission-link", what: "Bawaan komisi sales", view: "incentive-rates",
-  where: "Pengaturan › Penjualan › Komisi & Insentif",
+  where: "SDM › Kinerja & Insentif › Target & Aturan",   // MN-T1 — dulu Pengaturan › Penjualan › Komisi & Insentif
 };
 
 /** Pita simpan/galat + mesin tampilan daftar (re-export agar impor lama — `SettingsGroupView`, uji — tidak patah).

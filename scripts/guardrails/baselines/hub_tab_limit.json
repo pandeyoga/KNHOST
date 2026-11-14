@@ -1,0 +1,7 @@
+{
+ "_catatan": "Baseline INV-UI-13 (MN-T1): hub yang SUDAH melebihi enam tab tampak saat penjaga dibuat. Angka hanya boleh turun (--update); hub lain maks 6. Pesanan Pembelian 7 karena Landed Cost pindah dari Hutang (MN-T1).",
+ "hubs": {
+  "products-pricing": 8,
+  "purchase-orders": 7
+ }
+}

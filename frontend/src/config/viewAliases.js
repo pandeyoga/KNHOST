@@ -96,6 +96,32 @@ export const VIEW_ALIASES = {
     to: "settings-cfg-approval", nav: "settings-approval", preset: { section: "pemberitahuan" },
     label: "Penerima Notifikasi", since: "KF-T4",
   },
+
+  // ── MN-T1 — menu keuangan & SDM dipindah dan dikelompokkan (docs/blueprint/unit/MN-T1.md). Layar lama dirender UTUH
+  // di dalam pembungkus ber-chip (`preset.bagian`); rute cadangan `activeView === "<lama>"` tetap; id lama tetap di
+  // access_modules (hidden_views peran kustom menyembunyikan chipnya).
+  "advance-report": {
+    to: "customer-credit", nav: "ar-aging", preset: { bagian: "titipan" },
+    label: "Uang Muka Pelanggan", since: "MN-T1",
+  },
+  "store-credit": {
+    to: "customer-credit", nav: "ar-aging", preset: { bagian: "saldo" },
+    label: "Saldo Kredit", since: "MN-T1",
+  },
+  "cash-advances": {
+    to: "petty-cash", nav: "cash-bank", preset: { bagian: "pengajuan" },
+    label: "Pengajuan Dana (PD)", since: "MN-T1",
+  },
+  settlements: {
+    to: "petty-cash", nav: "cash-bank", preset: { bagian: "pertanggungjawaban" },
+    label: "Pertanggungjawaban (LPJ)", since: "MN-T1",
+  },
+  "reimburse-payables": {
+    to: "petty-cash", nav: "cash-bank", preset: { bagian: "reimburse" },
+    label: "Hutang Reimburse", since: "MN-T1",
+  },
+  // Id grup lama "Kas & Aset" (bookmark/`?view=kas-aset`) tanpa layar sendiri → Kas & Bank › Kas Kecil.
+  "kas-aset": { to: "petty-cash", nav: "cash-bank", label: "Kas & Aset", legacy: true, since: "MN-T1" },
 };
 
 /** Alias untuk `view` → `{ from, to, nav, preset, label, since, legacy }`, atau null bila bukan alias. */

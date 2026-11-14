@@ -283,6 +283,38 @@ _PRT5_NAV = {
 for _m in MODULE_CATALOG:
     _m["nav"].extend(v for v in _PRT5_NAV.get(_m["id"], []) if v not in _m["nav"])
 
+# ─── MN-T1 — menu keuangan & SDM dipindah dan dikelompokkan (docs/blueprint/unit/MN-T1.md, tabel "Katalog modul") ─────
+# Aturan: tiap id menu/tab masuk `nav` modul pemilik SUMBER DAYA yang dituntut endpoint utama layarnya, bersama id grup
+# dan id hub induknya. Grup `kas-aset` hilang (Kas Kecil → Keuangan › Kas & Bank, Kendaraan → Gudang & Logistik, Aset
+# Tetap → Akuntansi & Pajak); Antar-PT pindah ke grup Keuangan; Landed Cost menjadi tab Pembelian › Pesanan Pembelian
+# (modul `payable` tetap memegang Hutang); Meja Finance kini tab "Perlu Tindakan" di Beranda Keuangan (`finance-tower`),
+# bukan butir grup Meja Peran; "Target & Aturan" (Komisi & Insentif) pindah dari Pengaturan › Penjualan ke
+# SDM › Kinerja & Insentif. Id lama (`cash-advances`, `settlements`, `reimburse-payables`, `advance-report`,
+# `store-credit`) tetap di modulnya: dikenal rute cadangan, sah sebagai `hidden_views`, dan dipakai chip pembungkus.
+_MNT1_NAV_ADD = {
+    "accounting": ["keuangan", "finance-tower", "bi-finance", "cash-bank", "petty-cash"],
+    "finance_ops": ["ar-aging"],                                   # induk tab Kasus
+    "ar": ["customer-credit", "finance-tower", "finance-desk"],
+    "penjualan": ["keuangan", "ar-aging", "collection-worklist", "hrd", "hr-kpi-hub", "sales-performance"],
+    "customer": ["keuangan", "ar-aging", "credit-overrides"],
+    "payable": ["keuangan", "purchase-orders"],                    # Hutang + induk tab Landed Cost
+    "interco": ["keuangan"],
+    "petty_cash": ["keuangan", "cash-bank", "petty-cash"],
+    "sales_force": ["hrd", "hr-kpi-hub", "incentive-schemes"],
+}
+_MNT1_NAV_REMOVE = {
+    "accounting": ["kas-aset"],
+    "finance_ops": ["finance-tower"],          # layar Posisi menuntut `accounting.view`, bukan izin kas
+    "ar": ["meja-peran"],                      # Meja Finance bukan lagi butir grup Meja Peran
+    "interco": ["akuntansi"],
+    "petty_cash": ["kas-aset"],
+    "logistics": ["kas-aset"],
+    "sales_force": ["settings-hub", "settings-sales"],   # tidak ada lagi tab modul ini di Pengaturan
+}
+for _m in MODULE_CATALOG:
+    _m["nav"] = [v for v in _m["nav"] if v not in _MNT1_NAV_REMOVE.get(_m["id"], [])]
+    _m["nav"].extend(v for v in _MNT1_NAV_ADD.get(_m["id"], []) if v not in _m["nav"])
+
 MODULE_BY_ID = {m["id"]: m for m in MODULE_CATALOG}
 #: PR-T5 — id modul lama → id modul penggantinya. `apply_levels`/`nav_for_levels` menerima id lama (permintaan, uji, dan
 #: `custom_roles.levels` lama); jawaban selalu memakai id baru.
@@ -614,6 +646,9 @@ VIEW_RESOURCE_OVERRIDES: Dict[str, List[str]] = {
 VIEW_RESOURCE_OVERRIDES["settings-dual-control"] = ["settings"]
 # KP-T5 — tab Penomoran Dokumen dibuka izin `settings` (GET /api/doc-numbering = `settings.view`).
 VIEW_RESOURCE_OVERRIDES["settings-doc-numbering"] = ["settings"]
+# MN-T1 — SDM › Kinerja & Insentif › Skema (Arsip) (dulu sub-tab CRM bergerbang `sales_force.view`): sumber izin sama
+# dengan Target & Aturan, bukan seluruh modul Pengawasan Tim Sales & Kredit (`credit_override`).
+VIEW_RESOURCE_OVERRIDES["incentive-schemes"] = ["sales_force"]
 # KF-T2 — kunci `interco_payment.*` (kelompok "antar-entitas") diubah pemegang `entity.update`; aturan KF-T1 (U14): tab
 # kelompok itu juga terbuka bagi pemegang izin pengubah kuncinya.
 VIEW_RESOURCE_OVERRIDES["settings-cfg-finance"] = ["settings", "entity"]

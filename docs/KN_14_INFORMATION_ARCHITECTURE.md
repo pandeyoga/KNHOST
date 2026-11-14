@@ -177,21 +177,27 @@ graph LR
         R4["Gate Monitor (green/red) 🆕"]
     end
 
-    subgraph G6["💰 Keuangan"]
-        F1["Chart of Accounts 🆕"]
-        F2["Jurnal / GL 🆕"]
-        F3["Bank Accounts 🆕"]
-        F4["Pajak (PPN/PPH) 🆕"]
-        F5["AR / Outstanding + Denda 🆕"]
-        F6["Closing Bulanan 🆕"]
-        F7["Invoices ✅🟡"]
+    subgraph G6["💰 Keuangan (MN-T1)"]
+        F1["Beranda Keuangan ✅ (Perlu Tindakan · Posisi · Analisis)"]
+        F2["Piutang ✅ (Saldo & Umur · Penagihan & Penerimaan · Rencana & Denda · Titipan & Saldo Kredit · Kredit & Plafon · Kasus)"]
+        F3["Hutang ✅ (Tagihan · Kontrabon)"]
+        F4["Kas & Bank ✅ (Rekening & Saldo · Transaksi Kas · Rekonsiliasi · Kas Kecil)"]
+        F5["Antar-PT ✅"]
+    end
+
+    subgraph G6b["🧮 Akuntansi & Pajak (MN-T1)"]
+        F6["Buku Besar ✅ (Jurnal · Bagan Akun)"]
+        F7["Tutup Buku ✅ (Daftar Periksa & Tutup · Buka Periode · Posting Gagal)"]
+        F8["Laporan ✅ (5 tab)"]
+        F9["Pajak ✅ (Faktur Keluaran · Faktur Masukan · PPN & PPh)"]
+        F10["Aset Tetap ✅"]
     end
 
     subgraph G7["👥 SDM (HRD)"]
-        H1["Employees 🆕"]
-        H2["Attendance (fingerprint) 🆕"]
-        H3["KPI Design 🆕"]
-        H4["Design Gallery + AI 🆕"]
+        H1["Karyawan ✅"]
+        H2["Kehadiran ✅"]
+        H3["Penggajian ✅ (Proses Gaji · Slip Gaji)"]
+        H4["Kinerja & Insentif ✅ (Kinerja Sales · Target & Aturan · Skema (Arsip) · KPI Karyawan)"]
     end
 
     subgraph G8["📊 Analitik (BI)"]
@@ -257,13 +263,17 @@ Aksi             : btn-{action}-{module}        (btn-approve-price)
 | Pembelian | ✅ | ✅ approve | ❌ | 👁️ | 👁️ | ❌ | ✅ | 👁️ |
 | Gudang | ✅ | 👁️/approve | 👁️ | ✅ | 👁️ | ❌ | 👁️ | 👁️ |
 | RFID | ✅ | 👁️ | ❌ | ✅ | ❌ | ❌ | ❌ | 👁️ |
-| Keuangan | ✅ | 👁️ | ❌ | ❌ | ✅ | ❌ | 👁️ | 👁️ |
-| SDM | ✅ | 👁️ | ❌ | ❌ | ❌ | ✅ | ❌ | 👁️ |
+| Keuangan | ✅ | ✅ | Piutang › Penagihan & Kasus · Kas Kecil | Hutang › Kontrabon · Antar-PT | ✅ (Kredit & Plafon tanpa memutus) | ❌ | 👁️ | 👁️ |
+| Akuntansi & Pajak | ✅ | ✅ | ❌ | ❌ | Buku Besar (lihat) · Faktur Keluaran | ❌ | ❌ | 👁️ |
+| SDM | ✅ | ✅ | Kinerja & Insentif › Kinerja Sales | ❌ | ❌ | ✅ | ❌ | 👁️ |
 | Analitik (BI) | ✅ | ✅ | 👁️ | 👁️ | ✅ | 👁️ | 👁️ | ✅ |
 | Dokumen | ✅ | ✅ | ✅ | ✅ | ✅ | 👁️ | ✅ | 👁️ |
 | Admin & Master | ✅ | 👁️ | ❌ | ❌ | 👁️ | ❌ | ❌ | ❌ |
 | Eskalasi | ✅ | ✅ | ❌ | ✅ | 👁️ | ❌ | 👁️ | 👁️ |
 
+> MN-T1 (14 Nov 2026) — baris Keuangan, Akuntansi & Pajak, dan SDM ditulis ulang dari konfigurasi berjalan
+> (`navStructure.js`/`hubTabs.js`/`roles.js` + izin bawaan server). Rincian per tab & per peran: `KN_13_NAVIGATION_MAP.md`
+> bagian "MENU KEUANGAN, AKUNTANSI & PAJAK, DAN SDM". Kolom lain tabel ini tetap rancangan lama (target).
 > *) Role baru (Finance/HRD/Procurement/Executive) = sesuai KN_01 Role Definitions. Saat ini sistem hanya punya `admin/sales/manager/warehouse`; perluasan role = bagian Fase terkait. RBAC sumber tunggal = `permission_settings` + `permissions_config.py` (hindari RC-9 dua sumber).
 
 ---
@@ -588,6 +598,12 @@ KN_14 (IA induk) ─ menentukan ─▶ KN_13 (navigasi) + ENTITY_REGISTRY (data)
 ---
 
 ## 14. Changelog
+
+### MN-T1 — 14 Nov 2026 (menu keuangan & SDM ditulis ulang dari konfigurasi; menutup IA-15)
+- §5.2 grup Keuangan (5 entri), Akuntansi & Pajak (5 entri), SDM (4 entri) = susunan berlaku; grup Kas & Aset dihapus
+  (Kas Kecil → Keuangan › Kas & Bank, Kendaraan → Gudang & Logistik, Aset Tetap → Akuntansi & Pajak). §5.6 baris
+  Keuangan/Akuntansi & Pajak/SDM mengikuti menu peran bawaan nyata. Prinsip baru (rencana keuangan `01` §5): maks enam
+  tab per hub, tanpa tab tingkat ketiga — dijaga `verify_page_tabs.py` INV-UI-13/14.
 
 ### v1.2 — Session #015 (Multi-Entity Inventory Ownership + Lot — DRAFT)
 - **Keputusan user (D1–D4) diserap:** kepemilikan stok per-entitas pada **level roll** (`inventory_rolls` = SSOT

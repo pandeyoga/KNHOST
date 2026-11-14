@@ -138,7 +138,8 @@ export async function loadInbox(perms) {
     subtitle: c.order_number || c.reason || "Override batas kredit",
     meta: c.reason || "", amount: c.amount ?? c.requested_amount ?? null,
     requester: c.requested_by, role: "manager", at: c.created_at,
-    target: "customers-crm",
+    // MN-T1 — sub-tab CRM "Persetujuan Kredit" kini Keuangan › Piutang › Kredit & Plafon.
+    target: "ar-aging", targetView: "credit-overrides",
   }));
 
   const items = [...soApprovals, ...pos, ...prices, ...salesReturns, ...purchaseReturns, ...cycleCounts, ...credits]

@@ -104,7 +104,9 @@ async def test_PRT6_U4_pratinjau_memuat_ringkasan_dan_menu_tambahan(klien, kepal
     j = r.json()
     hr = next((m for m in j["summary"]["modules"] if m["id"] == "hr"), None)
     assert hr is not None and hr["level"] == "view", j["summary"]["modules"]
-    assert "hrd" in j["nav_added"]
+    # MN-T1 — grup `hrd` kini sudah dibuka modul Pesanan (SDM › Kinerja & Insentif › Kinerja Sales = `order.view`), jadi
+    # bukan lagi menu TAMBAHAN bagi Sales; menu SDM yang dibuka izin `hr` (Karyawan) tetap tambahan.
+    assert "hr-people" in j["nav_added"] and "hrd" not in j["nav_added"], j["nav_added"]
     assert "turn_alerts" in j and "screens" in j   # jawaban lama tetap
 
 
@@ -121,7 +123,8 @@ async def test_PRT6_U6_menu_peran_bawaan_bertambah_dari_izin(klien, kepala_admin
     assert r.status_code == 200, r.text
     try:
         add = (await _roles_publik(klien, kepala_admin))["finance"]["nav"]["add"]
-        assert "hrd" in add and "hr-people" in add, add
+        # MN-T1 — `hrd` sudah dibuka modul Pesanan untuk Finance (`order.view`; Kinerja Sales) → bukan tambahan.
+        assert "hr-people" in add and "hrd" not in add, add
     finally:
         assert (await klien.post("/api/access/roles/finance/reset", headers=kepala_admin)).status_code == 200
 

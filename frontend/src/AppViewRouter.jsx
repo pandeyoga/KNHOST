@@ -42,7 +42,8 @@ import { SalesPortal, PriceApprovals, OrdersView, CrmView, OperationsView, QcHub
   SampleAdminDesk, SampleOrdersView, DocumentCenter, DocTraceView, PaymentPlansView, RndSpecsView,
   RndSamplesView, SampleTypeGalleryView, RndDesignsView, RndReportsView, DesignerKpiView, ContentCalendar,
   MktCampaigns, MarketingAnalytics, SocialAccounts, DivisionsView,
-  SettingsGroupView, DevicesView, PriceCorrectionsView, DocTemplatesView, DualControlView, DocNumberingView
+  SettingsGroupView, DevicesView, PriceCorrectionsView, DocTemplatesView, DualControlView, DocNumberingView,
+  CollectionWorklist, CreditOverridesPanel, SalesForceDashboard, IncentiveSchemeEditor, CustomerCreditView, PettyCashView,
 } from "./appViewImports";
 
 // PS-20 — peta view tujuan → hub induknya, untuk tombol "Buka" di Persetujuan Saya.
@@ -181,6 +182,11 @@ export default function AppViewRouter(props) {
       {activeView === "advance-report" && <AdvanceReportView selectedEntity={selectedEntity} onOpenDocument={openDocument} />}
       {activeView === "payment-plans" && <PaymentPlansView currentUser={user} selectedEntity={selectedEntity} onOpenDocument={openDocument} focusDoc={focusDoc} onClearFocus={() => setFocusDoc(null)} />}
       {activeView === "store-credit" && <StoreCreditView selectedEntity={selectedEntity} currentUser={user} />}
+      {/* MN-T1 — Keuangan › Piutang: tab baru = layar lama tanpa perubahan (dulu sub-tab CRM) + pembungkus ber-chip.
+          `advance-report`/`store-credit` = alias ke `customer-credit` (viewAliases.js); dua rute di atas = rute cadangan. */}
+      {activeView === "collection-worklist" && <CollectionWorklist currentUser={user} selectedEntity={selectedEntity} />}
+      {activeView === "customer-credit" && <CustomerCreditView currentUser={user} selectedEntity={selectedEntity} onOpenDocument={openDocument} />}
+      {activeView === "credit-overrides" && <CreditOverridesPanel currentUser={user} />}
       {activeView === "bank-accounts" && <BankAccountsView selectedEntity={selectedEntity} currentUser={user} />}
       {activeView === "bank-reconciliation" && <BankReconciliationView selectedEntity={selectedEntity} />}
       {activeView === "finance-cases" && <FinanceCasesView currentUser={user} selectedEntity={selectedEntity} entities={entities} focusCase={caseFocus} onFocusCaseConsumed={onCaseFocusConsumed} />}
@@ -202,6 +208,9 @@ export default function AppViewRouter(props) {
       {/* Kas & Aset — Digitalisasi Formulir Sukacita (PD / LPJ / Kendaraan) */}
       {activeView === "cash-advances" && <CashAdvancesView currentUser={user} selectedEntity={selectedEntity} entities={entities} />}
       {activeView === "settlements" && <SettlementsView currentUser={user} selectedEntity={selectedEntity} entities={entities} />}
+      {/* MN-T1 — Keuangan › Kas & Bank › Kas Kecil (pembungkus ber-chip). `cash-advances`/`settlements`/
+          `reimburse-payables` = alias ke `petty-cash`; rute di atas & di bawah = rute cadangan id lama. */}
+      {activeView === "petty-cash" && <PettyCashView currentUser={user} selectedEntity={selectedEntity} entities={entities} />}
       {activeView === "expense-categories" && <ExpenseCategoriesView currentUser={user} selectedEntity={selectedEntity} entities={entities} />}
       {activeView === "gl-account-mappings" && <GLAccountMappingView currentUser={user} />}
       {activeView === "reimburse-payables" && <ReimbursePayablesView selectedEntity={selectedEntity} entities={entities} />}
@@ -381,6 +390,9 @@ export default function AppViewRouter(props) {
       {activeView === "hr-leave" && <LeaveView currentUser={user} selectedEntity={selectedEntity} />}
       {activeView === "hr-overtime" && <OvertimeView currentUser={user} selectedEntity={selectedEntity} />}
       {activeView === "cs-kpi" && <KpiView currentUser={user} selectedEntity={selectedEntity} />}
+      {/* MN-T1 — SDM › Kinerja & Insentif: Kinerja Sales & Skema (Arsip) dulu sub-tab CRM (komponen tanpa perubahan). */}
+      {activeView === "sales-performance" && <SalesForceDashboard currentUser={user} selectedEntity={selectedEntity} />}
+      {activeView === "incentive-schemes" && <IncentiveSchemeEditor currentUser={user} selectedEntity={selectedEntity} />}
       {/* Fase 3 · P8 (D-09) — alias ke Desain & Pattern mode Galeri; rute cadangan (antrean backend design_gallery). */}
       {activeView === "cs-design-gallery" && <DesignGalleryView currentUser={user} selectedEntity={selectedEntity} />}
       {activeView === "cs-bi-hrd" && <HrAnalyticsView currentUser={user} selectedEntity={selectedEntity} />}

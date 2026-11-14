@@ -20,18 +20,25 @@ beforeAll(() => {
       nav: { add: fixture.find((r) => r.id === "cr_interco").nav.add, remove: ["akuntansi"] } }]);
 });
 
-test("Interco penuh: induk Akuntansi muncul dengan transaksi Interco + Retur Antar-PT saja", () => {
+// MN-T1 — Antar-PT pindah dari Akuntansi & Pajak ke grup Keuangan: induknya kini `keuangan` (katalog modul `interco`).
+test("Interco penuh: induk Keuangan muncul dengan transaksi Interco + Retur Antar-PT saja", () => {
   const m = menu("cr_interco");
-  expect(Object.keys(m.akuntansi)).toEqual(["interco-transactions"]);
+  expect(Object.keys(m.keuangan)).toEqual(["interco-transactions"]);
+  expect(m.akuntansi).toBeUndefined();
   expect(m["returns-hub"]["returns-hub"]).toEqual(["interco-returns"]);   // tab retur pelanggan/supplier tidak ikut
   expect(m.pembelian).toBeUndefined();                                     // hub Hutang tanpa tab = tidak jadi pintu mati
 });
 
-test("Akuntansi penuh: Buku Besar, Laporan, Tutup Buku, Buka Periode, Posting Gagal", () => {
+// MN-T1 — Buka Periode & Posting Gagal kini tab di hub Tutup Buku; Aset Tetap pindah ke Akuntansi & Pajak; modul ini juga
+// membuka Beranda Keuangan › Posisi & Analisis dan Kas & Bank › Kas Kecil (chip Hutang reimburse = accounting.view).
+test("Akuntansi penuh: Buku Besar, Tutup Buku (Buka Periode, Posting Gagal), Laporan, Aset Tetap", () => {
   const m = menu("cr_accounting");
-  expect(Object.keys(m.akuntansi)).toEqual(expect.arrayContaining(["ledger", "fin-reports", "closing", "period-unlock", "posting-failures"]));
+  expect(Object.keys(m.akuntansi)).toEqual(["ledger", "closing", "fin-reports", "fixed-assets"]);
+  expect(m.akuntansi.closing).toEqual(["closing", "period-unlock", "posting-failures"]);
   expect(m.akuntansi.ledger).toEqual(["general-ledger", "chart-of-accounts"]);
   expect(m.akuntansi["tax-hub"]).toBeUndefined();
+  expect(m.keuangan).toEqual({ "finance-tower": ["finance-tower", "bi-finance"], "cash-bank": ["petty-cash"] });
+  expect(m["kas-aset"]).toBeUndefined();
 });
 
 test("Operasi Gudang penuh: tab Barang Masuk/Keluar & hub RFID; antrean QC di menu Kualitas", () => {
@@ -62,7 +69,7 @@ test("Turunan Manager tanpa Akuntansi: menu akuntansi dicabut, sisanya tetap", (
   // Fase 3 · P8 (D-11) — Margin & HPP (modul Laporan) kini tab katalog di Laporan › Profitabilitas: menu Laporan hanya
   // memuat Profitabilitas; laporan keuangan lain tetap tercabut bersama modul Akuntansi.
   expect(m.akuntansi["fin-reports"]).toEqual(["profitability"]);
-  expect(m.akuntansi["interco-transactions"]).toBeDefined();
+  expect(m.keuangan["interco-transactions"]).toBeDefined();   // MN-T1 — Antar-PT di grup Keuangan
 });
 
 // Fase 3 · P8 — "Pengaturan" kini GRUP berisi kelompok (P16-K1): peran kustom mendapat kelompok dari modul domainnya.
@@ -116,10 +123,12 @@ test("Pratinjau editor peran = menu akun nyata", () => {
 });
 
 test("Peran bawaan tidak mendapat grup baru dari aturan anak; pintu hub tanpa tab hilang", () => {
-  expect(menu("sales").keuangan).toBeUndefined();
+  // MN-T1 (IA-06) — grup Keuangan kini SENGAJA memuat sales (rancangan `roles` grup): hanya Piutang (Penagihan, Kasus)
+  // dan Kas & Bank (Kas Kecil); hub tanpa tab sales (Beranda Keuangan, Hutang) tidak menjadi pintu mati.
+  expect(menu("sales").keuangan).toEqual({ "ar-aging": ["collection-worklist", "finance-cases"], "cash-bank": ["petty-cash"] });
   expect(menu("sales_admin")["meja-peran"]).toBeUndefined();
   ["md_quality", "sample_admin"].forEach((r) => expect((menu(r).gudang || {})["wms-operations"]).toBeUndefined());
   // UAT 24 Okt (P7) — MD hanya mendapat tab Perbaikan di Operasi Gudang (repair / celup ulang roll).
   expect(menu("md").gudang["wms-operations"]).toEqual(["repair-orders"]);
-  expect(menu("admin").akuntansi["interco-transactions"]).toBeDefined();
+  expect(menu("admin").keuangan["interco-transactions"]).toBeDefined();   // MN-T1
 });

@@ -128,7 +128,7 @@ describe("aktivasi P8 (tabel §6 rencana fase 3)", () => {
   test("palet: 'Nama lama → kini di <utama>' membawa preset", () => {
     const pal = buildPaletteEntries("admin").find((e) => e.aliasOf === "costing");
     expect(pal).toMatchObject({ view: "profitability", navId: "fin-reports", preset: { tab: "katalog" } });
-    expect(pal.label).toBe("Margin & HPP → kini di Laporan › Profitabilitas & Margin");
+    expect(pal.label).toBe("Margin & HPP → kini di Laporan › Profitabilitas");   // MN-T1 — label tab "Profitabilitas"
     expect(buildPaletteEntries("warehouse_admin").some((e) => e.aliasOf === "costing")).toBe(false);
   });
 
@@ -162,11 +162,14 @@ describe("breadcrumb dari menu (L-05)", () => {
     ["amendments", ["Penjualan", "Pesanan", "Koreksi & Amandemen"]],
     ["cs-stock-analytics", ["Analitik", "Analitik Stok"]],
     // Fase 3 · P8 (D-11) — `costing` kini alias → breadcrumb layar utamanya.
-    ["costing", ["Akuntansi & Pajak", "Laporan", "Profitabilitas & Margin"]],
-    ["consolidation", ["Akuntansi & Pajak", "Laporan", "Konsolidasi Grup"]],
+    // MN-T1 — label tab Laporan diringkas ("Profitabilitas", "Konsolidasi"); Antar-PT pindah ke grup Keuangan.
+    ["costing", ["Akuntansi & Pajak", "Laporan", "Profitabilitas"]],
+    ["consolidation", ["Akuntansi & Pajak", "Laporan", "Konsolidasi"]],
     ["financial-statements", ["Akuntansi & Pajak", "Laporan", "Laba-Rugi, Neraca & Arus Kas"]],
-    ["profitability", ["Akuntansi & Pajak", "Laporan", "Profitabilitas & Margin"]],
-    ["interco-transactions", ["Akuntansi & Pajak", "Antar Entitas (Grup)"]],
+    ["profitability", ["Akuntansi & Pajak", "Laporan", "Profitabilitas"]],
+    ["interco-transactions", ["Keuangan", "Antar-PT"]],
+    ["period-unlock", ["Akuntansi & Pajak", "Tutup Buku", "Buka Periode"]],
+    ["advance-report", ["Keuangan", "Piutang", "Titipan & Saldo Kredit"]],
   ])("%s = sorotan sidebar", (view, crumbs) => {
     expect(breadcrumbFor(view, null, "admin")).toEqual(crumbs);
     const nid = resolveActiveNavId(view, null, "admin");
@@ -188,13 +191,15 @@ describe("sub-judul grup sidebar ({type:'heading'})", () => {
   afterEach(() => { group.items.splice(0, group.items.length, ...original); });
 
   test("hanya Sidebar (withHeadings) yang menerima sub-judul; sub-judul tanpa menu tampak dibuang", () => {
-    group.items.splice(2, 0, { type: "heading", id: "h-uji-piutang", label: "Piutang & Uang Muka" });
+    // MN-T1 — grup Keuangan kini 5 entri (Beranda · Piutang · Hutang · Kas & Bank · Antar-PT) dan memuat sales (Piutang,
+    // Kas & Bank): sub-judul uji diletakkan sebelum Antar-PT — entri terakhir yang tidak terlihat oleh sales.
+    group.items.splice(4, 0, { type: "heading", id: "h-uji-piutang", label: "Piutang & Uang Muka" });
     group.items.push({ type: "heading", id: "h-uji-yatim", label: "Tanpa isi" });
     const plain = buildNavGroups("manager").find((g) => g.groupId === "keuangan");
     expect(plain.items.some((i) => i.type === "heading")).toBe(false);
     const withH = buildNavGroups("manager", { withHeadings: true }).find((g) => g.groupId === "keuangan");
     const ids = withH.items.map((i) => i.id);
-    expect(ids.indexOf("h-uji-piutang")).toBe(ids.indexOf("ar-aging") - 1);
+    expect(ids.indexOf("h-uji-piutang")).toBe(ids.indexOf("interco-transactions") - 1);
     expect(ids).not.toContain("h-uji-yatim");
     expect(buildPaletteEntries("manager").some((e) => String(e.navId).startsWith("h-uji"))).toBe(false);
     // Peran tanpa menu di bawah sub-judul → sub-judul ikut hilang.

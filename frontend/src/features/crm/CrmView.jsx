@@ -1,33 +1,24 @@
 import { useState } from "react";
-import { Users, Receipt, TrendingUp, ShieldCheck, SlidersHorizontal, Percent, KanbanSquare, MessageSquare } from "lucide-react";
+import { Users, KanbanSquare, MessageSquare } from "lucide-react";
 import CustomerList from "./CustomerList";
-import CollectionWorklist from "./CollectionWorklist";
-import SalesForceDashboard from "./SalesForceDashboard";
-import CreditOverridesPanel from "./CreditOverridesPanel";
-import IncentiveSchemeEditor from "./IncentiveSchemeEditor";
 import LeadsPipeline from "./LeadsPipeline";
 import OmnichannelInteractions from "./OmnichannelInteractions";
-import { can } from "../../config/roles";
 
 /**
- * CrmView — modul Pelanggan / CRM + Sales Force (KN_17).
- * Sub-tab: Pelanggan · Penagihan · Sales Force · Rate Insentif · Skema (Arsip) · Approval Kredit.
- * Row-level scoping ditegakkan backend (sales hanya melihat miliknya).
+ * CrmView — modul Pelanggan / CRM (KN_17).
+ * Sub-tab: Pelanggan · Prospek · Interaksi. Row-level scoping ditegakkan backend (sales hanya melihat miliknya).
+ *
+ * MN-T1 — empat sub-tab keuangan/insentif PINDAH (komponennya tidak berubah, kini tab hub sendiri):
+ * Penagihan → Keuangan › Piutang › Penagihan & Penerimaan (`collection-worklist`), Persetujuan Kredit → Keuangan ›
+ * Piutang › Kredit & Plafon (`credit-overrides`), Kinerja Sales → SDM › Kinerja & Insentif › Kinerja Sales
+ * (`sales-performance`), Skema (Arsip) → SDM › Kinerja & Insentif › Skema (Arsip) (`incentive-schemes`).
+ * Gerbang izinnya (PR-T7) kini di katalog akses tab tersebut + tombol memutus kredit (`credit_override.approve`).
  */
 export default function CrmView({ currentUser, selectedEntity, focusDoc, onClearFocus }) {
-  // PR-T7 (#12) — tab dari izin endpoint-nya, bukan nama peran: Skema (Arsip) = `sales_force.view` (skema & target
-  // insentif), Persetujuan Kredit = `credit_override.approve` (keputusan izin lewat-batas kredit).
-  const perms = currentUser?.permissions;
-  const canSchemes = can(perms, "sales_force", "view");
-  const canCredit = can(perms, "credit_override", "approve");
   const TABS = [
     { key: "customers", label: "Pelanggan", icon: Users },
     { key: "leads", label: "Prospek (Lead)", icon: KanbanSquare },
     { key: "interactions", label: "Interaksi", icon: MessageSquare },
-    { key: "collection", label: "Penagihan", icon: Receipt },
-    { key: "salesforce", label: "Kinerja Sales", icon: TrendingUp },
-    ...(canSchemes ? [{ key: "schemes", label: "Skema (Arsip)", icon: SlidersHorizontal }] : []),
-    ...(canCredit ? [{ key: "approvals", label: "Persetujuan Kredit", icon: ShieldCheck }] : []),
   ];
   const [tab, setTab] = useState("customers");
 
@@ -48,10 +39,6 @@ export default function CrmView({ currentUser, selectedEntity, focusDoc, onClear
       {tab === "customers" && <CustomerList currentUser={currentUser} selectedEntity={selectedEntity} focusDoc={focusDoc} onClearFocus={onClearFocus} />}
       {tab === "leads" && <LeadsPipeline currentUser={currentUser} selectedEntity={selectedEntity} />}
       {tab === "interactions" && <OmnichannelInteractions currentUser={currentUser} selectedEntity={selectedEntity} />}
-      {tab === "collection" && <CollectionWorklist currentUser={currentUser} selectedEntity={selectedEntity} />}
-      {tab === "salesforce" && <SalesForceDashboard currentUser={currentUser} selectedEntity={selectedEntity} />}
-      {tab === "schemes" && canSchemes && <IncentiveSchemeEditor currentUser={currentUser} selectedEntity={selectedEntity} />}
-      {tab === "approvals" && canCredit && <CreditOverridesPanel currentUser={currentUser} />}
     </div>
   );
 }

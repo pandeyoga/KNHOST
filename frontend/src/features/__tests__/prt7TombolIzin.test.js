@@ -45,6 +45,7 @@ jest.mock("../hr/MyDesignerKpiSection", () => ({ __esModule: true, default: () =
 import { canCurrent, registerDynamicRoles, setAccessContext } from "../../config/roles";
 import { prodPerms } from "../production/ProductionParts";
 import CrmView from "../crm/CrmView";
+import { hubTabsForRole } from "../../config/navigationConfig";
 import { AskKnButton } from "../../components/AskKnButton";
 import KeepPendingPanel from "../sales_admin/KeepPendingPanel";
 import EmployeeSelfService from "../hr/EmployeeSelfService";
@@ -106,23 +107,34 @@ describe("U6 — prodPerms dari izin", () => {
   });
 });
 
-describe("U7/U8 — tab CRM dari izin", () => {
-  const tabs = (user) => {
+// MN-T1 — sub-tab CRM "Persetujuan Kredit" & "Skema (Arsip)" kini tab hub sendiri (Keuangan › Piutang › Kredit & Plafon,
+// SDM › Kinerja & Insentif › Skema (Arsip)); CRM tinggal tiga sub-tab. Gerbang izin PR-T7 TETAP, pindah tempat:
+// Skema = sumber izin `sales_force` (katalog akses `VIEW_RESOURCE_OVERRIDES`), memutus kredit = `credit_override.approve`
+// (tombol di CreditOverridesPanel — diuji `mnt1Pembungkus.test.js`; daftarnya kini dibaca pemegang `customer.view`).
+describe("U7/U8 — tab bekas CRM dari izin (MN-T1: kini tab hub)", () => {
+  const crm = (user) => {
     const html = renderToStaticMarkup(<CrmView currentUser={user} selectedEntity="ent_ksc" />);
     return { kredit: html.includes('data-testid="crm-tab-approvals"'), skema: html.includes('data-testid="crm-tab-schemes"') };
   };
-  test("U7 peran kustom tanpa peran dasar + credit_override.approve → tab Persetujuan Kredit, tanpa Skema", () => {
-    registerDynamicRoles([{ id: "cr_tagih", custom: true, base_role: "", label: "Staf Penagihan Uji" }]);
-    expect(tabs({ role: "cr_tagih", permissions: { customer: ["view"], credit_override: ["approve"] } }))
-      .toEqual({ kredit: true, skema: false });
+  const NAV = ["keuangan", "ar-aging", "credit-overrides", "hrd", "hr-kpi-hub", "incentive-schemes", "sales-performance"];
+  const tabHub = (role, permissions) => {
+    setAccessContext({ role, permissions, view_resources: BUILTIN.view_resources, hidden_views: [], view_actions: BUILTIN.view_actions });
+    return { kredit: hubTabsForRole("ar-aging", role).some((t) => t.view === "credit-overrides"),
+             skema: hubTabsForRole("hr-kpi-hub", role).some((t) => t.view === "incentive-schemes") };
+  };
+  test("U7 peran kustom tanpa peran dasar + credit_override.approve → tab Kredit & Plafon, tanpa Skema", () => {
+    registerDynamicRoles([{ id: "cr_tagih", custom: true, base_role: "", label: "Staf Penagihan Uji", nav: { add: NAV, remove: [] } }]);
+    const perms = { customer: ["view"], credit_override: ["approve"] };
+    expect(crm({ role: "cr_tagih", permissions: perms })).toEqual({ kredit: false, skema: false });
+    expect(tabHub("cr_tagih", perms)).toEqual({ kredit: true, skema: false });
   });
-  test("U8 peran kustom berdasar Manajer dengan izin {customer: [view]} → kedua tab tidak ada", () => {
-    registerDynamicRoles([{ id: "cr_mgr", custom: true, base_role: "manager", label: "Manajer Kosong" }]);
-    expect(tabs({ role: "cr_mgr", permissions: { customer: ["view"] } })).toEqual({ kredit: false, skema: false });
+  test("U8 peran kustom berdasar Manajer dengan izin {customer: [view]} → Skema tidak ada; Kredit & Plafon hanya baca", () => {
+    registerDynamicRoles([{ id: "cr_mgr", custom: true, base_role: "manager", label: "Manajer Kosong", nav: { add: NAV, remove: [] } }]);
+    expect(tabHub("cr_mgr", { customer: ["view"] })).toEqual({ kredit: true, skema: false });
   });
-  test("Manajer bawaan (izin bawaan) tetap melihat kedua tab", () => {
-    expect(tabs({ role: "manager", permissions: { customer: ["view"], credit_override: ["approve"], sales_force: ["view", "update"] } }))
-      .toEqual({ kredit: true, skema: true });
+  test("Manajer bawaan (izin bawaan) tetap melihat kedua tab di tempat barunya", () => {
+    expect(tabHub("manager", BUILTIN.permissions.manager)).toEqual({ kredit: true, skema: true });
+    expect(crm({ role: "manager", permissions: BUILTIN.permissions.manager })).toEqual({ kredit: false, skema: false });
   });
 });
 

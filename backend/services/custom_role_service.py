@@ -434,6 +434,14 @@ async def load_hidden_views() -> Dict[str, List[str]]:
                                                                     "assignable_roles": 1}) or {}
     _HIDDEN.clear()
     _HIDDEN.update(rec.get("hidden_views") or {})
+    # MN-T1 — id menu yang tidak lagi dikenal katalog (mis. grup `kas-aset` yang dihapus MN-T1) dibuang SAAT DIMUAT, supaya
+    # editor peran yang menyimpan ulang daftar ini tidak ditolak "Menu/tab tidak dikenal" (`_clean_hidden`). Data
+    # tersimpan tidak diubah di sini; tergantikan saat peran disimpan.
+    from access_modules import all_nav_ids
+    known = all_nav_ids()
+    for rid, vals in list(_HIDDEN.items()):
+        if any(v not in known for v in (vals or [])):
+            _HIDDEN[rid] = [v for v in vals if v in known]
     _ASSIGNABLE.clear()
     _ASSIGNABLE.update(rec.get("assignable_roles") or {})
     return _HIDDEN

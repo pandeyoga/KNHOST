@@ -29,11 +29,16 @@ const P2_SETTINGS_VIEWS = [
 const P8_SUPPLIER_INTERNAL = ["supplier-internal-prices"];
 // KF-T6 — tab Pengaturan › Persetujuan › Kontrol dua orang (baca `settings.view`; ubah `settings.manage`).
 const KFT6_DUAL_CONTROL = ["settings-dual-control"];
+// MN-T1 — id layar BARU untuk layar yang SUDAH ADA: empat sub-tab CRM & Pelanggan kini tab hub sendiri (komponen sama;
+// dulu terjangkau sebagai isi `customers-crm`): Penagihan & Penerimaan, Kredit & Plafon (Keuangan › Piutang), Kinerja
+// Sales, Skema (Arsip) (SDM › Kinerja & Insentif). Peran mendapatkannya sesuai kolom "Peran bawaan" tabel MN-T1.
 // KP-T5 — tab Pengaturan › Dokumen & Cetak › Penomoran Dokumen (baca `settings.view`; ubah `settings.manage`).
 const KPT5_DOC_NUMBERING = ["settings-doc-numbering"];
+const MNT1_CRM_TABS = ["collection-worklist", "credit-overrides", "sales-performance", "incentive-schemes"];
 export const ROLE_REACH_ADDITIONS = {
-  admin: [...P2_SETTINGS_VIEWS, ...P8_SUPPLIER_INTERNAL, ...KFT6_DUAL_CONTROL, ...KPT5_DOC_NUMBERING],
-  manager: [...P2_SETTINGS_VIEWS, ...P8_SUPPLIER_INTERNAL, ...KFT6_DUAL_CONTROL, ...KPT5_DOC_NUMBERING,
+  admin: [...P2_SETTINGS_VIEWS, ...P8_SUPPLIER_INTERNAL, ...KFT6_DUAL_CONTROL, ...KPT5_DOC_NUMBERING, ...MNT1_CRM_TABS],
+  manager: [...P2_SETTINGS_VIEWS, ...P8_SUPPLIER_INTERNAL, ...KFT6_DUAL_CONTROL, ...KPT5_DOC_NUMBERING, ...MNT1_CRM_TABS,
+    "finance-desk",       // MN-T1 — Beranda Keuangan › Perlu Tindakan (Meja Finance; manajer memegang payment_variance.decide)
     "approval-rules",     // D-04 — manajer membaca aturan (dulu lewat Master per Badan Usaha), tulis tetap settings.manage
     "pdf-templates",      // D-01 — tab "Kop & tata letak dasar" (dulu Master per BU kind document-templates); Desainer PDF tetap admin
     "settings-devices",   // D-29 — tab Mesin absen (dulu Shift & Geofence › Perangkat); tab RFID tetap admin
@@ -47,6 +52,26 @@ export const ROLE_REACH_ADDITIONS = {
   // menjadi job yang diambil di Pusat Export (dataset dibatasi daftar putih gudang di server).
   warehouse: ["makloon-claim-recap", "export-center"],
   warehouse_admin: ["makloon-claim-recap"],
+  // MN-T1 (IA-06) — "Kasus Keuangan" mencantumkan sales (izin finance_case.view/create) tetapi grup induknya hanya admin &
+  // manajer → sales tidak pernah melihatnya; kini grup Keuangan memuat sales. + Penagihan & Penerimaan dan Kinerja Sales
+  // (dulu sub-tab CRM; Admin Sales mewarisi menu sales).
+  sales: ["finance-cases", "collection-worklist", "sales-performance"],
+  sales_admin: ["finance-cases", "collection-worklist", "sales-performance"],
+  // MN-T1 — menu Finance mengikuti izin bawaannya (UX-17): Rekening & Saldo dan Rekonsiliasi (K-09: ya; izin `cash`),
+  // Kas Kecil (izin `cash_advance` sudah dipegang), Buku Besar lihat saja (K-09; `accounting.view`), Hutang lihat &
+  // bayar (K-17), Analisis/BI Keuangan (`accounting.view`), Pemetaan Akun (IA-06; `gl_mapping.view/update`), dan dua tab
+  // Piutang yang dulu sub-tab CRM (Penagihan & Penerimaan; Kredit & Plafon tanpa hak memutus).
+  finance: ["bank-accounts", "bank-reconciliation", "petty-cash", "general-ledger", "chart-of-accounts",
+    "vendor-bills", "contra-bons", "bi-finance", "gl-account-mappings", "collection-worklist", "credit-overrides"],
+};
+/** Id MENU/HUB yang kini mendarat di tab pertama LAIN di hub yang sama (urutan/isi tab baru), sementara layar lamanya tetap
+ *  terjangkau (diperiksa): { peran: { id: "view baru" } } + alasan.
+ *  · MN-T1 — SDM › Kinerja & Insentif: tab pertama kini Kinerja Sales (urutan tabel MN-T1); KPI Karyawan tetap tab hub.
+ *  · MN-T1 — Kas & Bank untuk Finance: kini memuat Rekening & Saldo (K-09) sebagai tab pertama; Transaksi Kas tetap. */
+export const ROLE_REACH_RELANDED = {
+  admin: { "hr-kpi-hub": "sales-performance" },
+  manager: { "hr-kpi-hub": "sales-performance" },
+  finance: { "cash-bank": "bank-accounts" },
 };
 /** Pencabutan jangkauan yang SAH (layar yang server-nya menolak peran itu): { peran: ["id", …] } + alasan. */
 // FIX-1 (audit B1b UI-48) — "Meja Saya" untuk Admin Gudang & Admin Sales: server `/desks/me` menolak kedua peran
@@ -92,9 +117,14 @@ describe.each(BUILTIN)("peran %s", (role) => {
   test("setiap alamat yang dulu sampai, masih sampai ke layar yang sama / layar utama aliasnya", () => {
     const lost = [];
     const removed = new Set(ROLE_REACH_REMOVALS[role] || []);
+    const relanded = ROLE_REACH_RELANDED[role] || {};
     for (const [id, view] of Object.entries(baseline.roles[role] || {})) {
       if (removed.has(id)) continue;
       const t = resolveDeepLinkTarget(id, role);
+      if (relanded[id]) {   // MN-T1 — mendarat di tab baru yang tercatat, DAN layar lamanya tetap terjangkau
+        if (t?.view !== relanded[id] || resolveDeepLinkTarget(view, role)?.view !== view) lost.push(`${id} → ${t?.view} (tercatat ${relanded[id]}; ${view} tetap?)`);
+        continue;
+      }
       const ok = new Set([view, aliasTarget(view), aliasTarget(id)]);
       if (!t) lost.push(`${id} → (tidak sampai; dulu ${view})`);
       else if (!ok.has(t.view)) lost.push(`${id} → ${t.view} (dulu ${view})`);

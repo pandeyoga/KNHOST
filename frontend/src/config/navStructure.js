@@ -10,7 +10,6 @@ import {
   Boxes,
   Briefcase,
   Calculator,
-  CalendarClock,
   CalendarX,
   Truck,
   Clock,
@@ -41,11 +40,9 @@ import {
   ClipboardList,
   Factory,
   FlaskConical,
-  Wallet,
   Car,
   ReceiptText,
   FolderTree,
-  Unlock,
   BellRing,
   FileSpreadsheet,
   RotateCcw,
@@ -112,14 +109,8 @@ export const NAV_STRUCTURE = [
     roles: [],
     view:  "sales-admin-desk",
   },
-  {
-    type: "standalone",
-    id:    "finance-desk",
-    label: "Meja Finance",
-    icon:  Landmark,
-    roles: [],
-    view:  "finance-desk",
-  },
+  // MN-T1 — "Meja Finance" bukan lagi menu lepas: kini tab "Perlu Tindakan" di Keuangan › Beranda Keuangan (view tetap
+  // `finance-desk`; peran Finance tetap mendarat di sana — beranda perannya, ROLE_HOME_REGISTRY).
   // Sesi #087 — meja MD & Admin Gudang (peran barunya lewat ROLE_NAV, pola yang sama).
   {
     type: "standalone",
@@ -157,7 +148,6 @@ export const NAV_STRUCTURE = [
     roles:   ["admin"],
     items: [
       { id: "sales-admin-desk",     label: "Meja Admin Sales", icon: ClipboardList, roles: ["admin"], view: "sales-admin-desk" },
-      { id: "finance-desk",         label: "Meja Finance",     icon: Landmark,      roles: ["admin"], view: "finance-desk" },
       { id: "md-desk",              label: "Meja MD",          icon: Palette,       roles: ["admin"], view: "md-desk" },
       { id: "warehouse-admin-desk", label: "Meja Gudang",      icon: Warehouse,     roles: ["admin"], view: "warehouse-admin-desk" },
       { id: "sample-admin-desk",    label: "Meja Sample",      icon: Scissors,      roles: ["admin"], view: "sample-admin-desk" },
@@ -219,7 +209,7 @@ export const NAV_STRUCTURE = [
       // Cek UI UAT v3 (2026-10-22) — Gudang punya izin makloon_order.issue/receive & tab "Order Makloon"/"Klaim Selisih
       // Makloon" untuk peran gudang, tetapi induknya tertutup → tab tidak pernah tampil (pengeluaran bahan makloon buntu).
       { id: "purchase-orders",  label: "Pesanan Pembelian",  icon: ClipboardList, roles: ["admin", "manager", "finance", "warehouse"],   hub: "purchase-orders" },
-      { id: "accounts-payable", label: "Hutang Pemasok",    icon: Receipt,       roles: ["admin", "manager", "warehouse"], hub: "accounts-payable" },
+      // MN-T1 — "Hutang Pemasok" pindah ke Keuangan › Hutang (id menu tetap `accounts-payable`).
       { id: "master-pembelian", label: "Master Pembelian",        icon: Factory,       roles: ["admin", "manager"],              hub: "master-pembelian" },
       { id: "cs-bom",           label: "Bahan Cetak",            icon: Printer,       roles: ["admin"], comingSoon: true },
     ],
@@ -285,6 +275,8 @@ export const NAV_STRUCTURE = [
       { id: "md-warehouses",      label: "Data Gudang",      icon: Warehouse, roles: ["admin", "warehouse", "manager"] },
       // Pengiriman (ekspedisi / armada sendiri, foto muat & POD). Sopir hanya melihat item ini.
       { id: "logistics",          label: "Pengiriman", icon: Truck, roles: ["admin", "manager", "warehouse", "driver", "sales", "sales_admin", "warehouse_admin"], view: "logistics" },
+      // MN-T1 — dari Kas & Aset (grup dihapus): catatan operasional armada = pekerjaan gudang & logistik (view sama).
+      { id: "vehicle-logs",       label: "Kendaraan",  icon: Car,   roles: ["admin", "manager", "warehouse", "sales"], view: "vehicle-logs" },
       // IA 2026-10 (D1) — RFID adalah teknologi gudang, bukan domain: 4 menu jadi satu hub di sini.
       { id: "rfid-hub",           label: "RFID",       icon: Cpu,   roles: ["admin", "warehouse", "manager"], hub: "rfid-hub" },   // FIX-1 K-B1-07
       // IA 2026-10 (C8) — eskalasi tugas inbound/outbound = pekerjaan gudang.
@@ -292,58 +284,41 @@ export const NAV_STRUCTURE = [
     ],
   },
 
-  // ── KEUANGAN (menyerap Kas dari Pembelian + Pajak 3-pintu jadi 1) ────────────
+  // ── KEUANGAN — MN-T1 (K-46, rencana 01 §2): uang harian, 5 entri. Satu pekerjaan = satu entri, langkahnya tab
+  // (hubTabs.js). Dulu 18 entri dalam 4 grup (Keuangan · Akuntansi & Pajak · Kas & Aset · Hutang Pemasok di Pembelian) +
+  // sub-tab keuangan di CRM & Pengaturan; id lama tetap hidup (alias `viewAliases.js` + rute cadangan). Grup tampil
+  // bila ada minimal satu entri yang boleh (Sales: Piutang & Kas Kecil; Gudang: Kontrabon & Antar-PT).
   {
     type:    "group",
     groupId: "keuangan",
     label:   "Keuangan",
     icon:    DollarSign,
-    roles:   ["admin", "manager"],
+    roles:   ["admin", "manager", "sales", "warehouse"],
     items: [
-      { id: "finance-tower", label: "Dasbor Keuangan",     icon: PieChart,     roles: ["admin", "manager"], hub: "finance-tower" },
-      { id: "cash-bank",   label: "Kas & Bank",            icon: CreditCard,   roles: ["admin", "manager"], hub: "cash-bank" },
-      { id: "ar-aging",    label: "Piutang",  icon: TrendingDown, roles: ["admin", "manager"] },
-      // KEB-PDPT (S#090) — saldo 2-1400 per pelanggan: uang muka pesanan belum dikirim + deposit.
-      { id: "advance-report", label: "Uang Muka Pelanggan", icon: Wallet,      roles: ["admin", "manager"] },
-      { id: "payment-plans", label: "Rencana Bayar", icon: CalendarClock, roles: ["admin", "manager"] },
-      // FASE G-9 — antrean uang yang nyangkut. Sales ikut dilibatkan: mereka yang paling
-      // sering menerima kabar "sudah transfer kok" dari pelanggan, jadi boleh MELAPOR &
-      // memantau (izin finance_case: view+create), tetapi tidak menutup kasus uang.
-      { id: "finance-cases", label: "Kasus Keuangan", icon: Briefcase, roles: ["admin", "manager", "sales"] },
-      { id: "store-credit", label: "Saldo Kredit", icon: Wallet,      roles: ["admin", "manager"] },
+      { id: "finance-tower", label: "Beranda Keuangan", icon: PieChart,     roles: ["admin", "manager"], hub: "finance-tower" },
+      { id: "ar-aging",      label: "Piutang",          icon: TrendingDown, roles: ["admin", "manager", "sales"], hub: "ar-aging" },
+      { id: "accounts-payable", label: "Hutang",        icon: Receipt,      roles: ["admin", "manager", "warehouse"], hub: "accounts-payable" },
+      { id: "cash-bank",     label: "Kas & Bank",       icon: CreditCard,   roles: ["admin", "manager", "sales"], hub: "cash-bank" },
+      // IA 2026-10 (D2) — saldo/settlement/pinjaman antar-PT. MN-T1 — dari Akuntansi & Pajak ke Keuangan (view sama).
+      { id: "interco-transactions", label: "Antar-PT",  icon: Briefcase,    roles: ["admin", "manager", "warehouse", "finance"], view: "interco-transactions" },
     ],
   },
 
-  // ── AKUNTANSI & PAJAK (2026-10 — dipisah dari Keuangan: 12 item → 7 + 6, urut alur tutup buku)
+  // ── AKUNTANSI & PAJAK — MN-T1: pembukuan, 5 entri, urut alur tutup buku. Gudang dicabut (Antar-PT pindah ke Keuangan).
   {
     type:    "group",
     groupId: "akuntansi",
     label:   "Akuntansi & Pajak",
     icon:    FileStack,
-    roles:   ["admin", "manager", "warehouse"],
+    roles:   ["admin", "manager"],
     items: [
-      { id: "tax-hub",     label: "Pajak",     icon: Percent,      roles: ["admin", "manager"], hub: "tax-hub" },
-      { id: "ledger",      label: "Buku Besar",      icon: FileStack,    roles: ["admin", "manager"], hub: "ledger" },
-      { id: "fin-reports", label: "Laporan",    icon: FileBarChart, roles: ["admin", "manager"], hub: "fin-reports" },
-      { id: "closing",     label: "Tutup Buku",  icon: CalendarX,    roles: ["admin", "manager"] },
-      { id: "period-unlock", label: "Buka Periode", icon: Unlock,     roles: ["admin", "manager"] },
-      { id: "posting-failures", label: "Posting Gagal", icon: AlertTriangle, roles: ["admin", "manager"] },
-      // IA 2026-10 (D2) — saldo/settlement/pinjaman antar-PT = akuntansi grup (dulu di Hutang Pemasok).
-      { id: "interco-transactions", label: "Antar Entitas (Grup)", icon: Briefcase, roles: ["admin", "manager", "warehouse", "finance"], view: "interco-transactions" },
-    ],
-  },
-
-  // ── KAS & ASET (Digitalisasi Formulir Sukacita — PD/LPJ/Kendaraan) ───────────
-  {
-    type:    "group",
-    groupId: "kas-aset",
-    label:   "Kas & Aset",
-    icon:    Wallet,
-    roles:   ["admin", "manager", "sales", "warehouse"],
-    items: [
-      { id: "petty-cash",   label: "Kas Kecil",  icon: Wallet, roles: ["admin", "manager", "sales"],              hub: "petty-cash" },
-      { id: "vehicle-logs", label: "Kendaraan",        icon: Car,    roles: ["admin", "manager", "warehouse", "sales"], view: "vehicle-logs" },
-      { id: "fixed-assets", label: "Aset Tetap",       icon: Boxes,  roles: ["admin", "manager"],                       view: "fixed-assets" },
+      { id: "ledger",      label: "Buku Besar",  icon: FileStack,    roles: ["admin", "manager"], hub: "ledger" },
+      // MN-T1 — Tutup Buku · Buka Periode · Posting Gagal: tiga entri menjadi satu hub (id menu tetap `closing`).
+      { id: "closing",     label: "Tutup Buku",  icon: CalendarX,    roles: ["admin", "manager"], hub: "closing" },
+      { id: "fin-reports", label: "Laporan",     icon: FileBarChart, roles: ["admin", "manager"], hub: "fin-reports" },
+      { id: "tax-hub",     label: "Pajak",       icon: Percent,      roles: ["admin", "manager"], hub: "tax-hub" },
+      // MN-T1 — dari Kas & Aset (grup dihapus; id grup `kas-aset` = alias legacy ke Kas & Bank › Kas Kecil).
+      { id: "fixed-assets", label: "Aset Tetap", icon: Boxes,        roles: ["admin", "manager"], view: "fixed-assets" },
     ],
   },
 
@@ -353,12 +328,14 @@ export const NAV_STRUCTURE = [
     groupId: "hrd",
     label:   "SDM",
     icon:    Users,
-    roles:   ["admin", "manager"],
+    // MN-T1 — + sales: SDM › Kinerja & Insentif › Kinerja Sales (dulu sub-tab CRM) sampai KM-T5 menggantinya.
+    roles:   ["admin", "manager", "sales"],
     items: [
       { id: "hr-people",         label: "Karyawan", icon: UserCheck,  roles: ["admin", "manager"], hub: "hr-people" },
       { id: "hr-attendance-hub", label: "Kehadiran",      icon: Clock,      roles: ["admin", "manager"], hub: "hr-attendance-hub" },
       { id: "hr-payroll-hub",    label: "Penggajian",               icon: Calculator, roles: ["admin", "manager"], hub: "hr-payroll-hub" },
-      { id: "hr-kpi-hub",        label: "KPI",          icon: Target,     roles: ["admin", "manager"], hub: "hr-kpi-hub" },
+      // MN-T1 — "KPI" → "Kinerja & Insentif": menyerap Kinerja Sales & Skema (CRM) + Komisi & Insentif (Pengaturan).
+      { id: "hr-kpi-hub",        label: "Kinerja & Insentif", icon: Target, roles: ["admin", "manager", "sales"], hub: "hr-kpi-hub" },
     ],
   },
 

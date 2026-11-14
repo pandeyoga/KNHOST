@@ -49,6 +49,11 @@ for _r, _tambah in {"admin": {"customer": {"manage_credit"}, "order": {"tax_over
                     "finance": {"customer": {"manage_credit"}}}.items():
     for _res, _aksi in _tambah.items():
         TAMBAHAN_SESUDAH.setdefault(_r, {}).setdefault(_res, set()).update(_aksi)
+# MN-T1 (K-09, K-17) — Finance melihat & membayar hutang, Finance & Manajer mencairkan uang muka
+# (`permissions_config.MNT1_DEFAULT_PAIRS`).
+for _r, _tambah in _pc.MNT1_DEFAULT_PAIRS.items():
+    for _res, _aksi in _tambah.items():
+        TAMBAHAN_SESUDAH.setdefault(_r, {}).setdefault(_res, set()).update(_aksi)
 
 
 def _himpunan(perms: dict) -> dict:

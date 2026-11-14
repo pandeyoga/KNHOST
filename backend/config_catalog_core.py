@@ -1149,7 +1149,7 @@ E("notif.reminder_recipients", group="notifikasi", type="table", row_shape="list
        "Tabel PT menggantikan tabel grup; pengingat yang tidak ada di tabel PT memakai baris grup, lalu bawaan. "
        "Piutang jatuh tempo dan penyusutan aset berlaku untuk semua PT sekaligus, jadi hanya mengikuti tabel grup.",
   impact="Mengubah kotak masuk siapa yang terisi pengingat itu. Penerima per izin dihitung saat pengingat dikirim.",
-  example="Hutang pemasok jatuh tempo → semua pemegang izin Tagihan Supplier — Bayar",
+  example="Hutang pemasok jatuh tempo → semua pemegang izin bayar tagihan pemasok",
   columns=({"name": "reminder", "label": "Pengingat", "type": "enum", "default": "ap_due",
             "options": [{"value": k, "label": v} for k, v in _KPT7_PENGINGAT.items()]},
            {"name": "mode", "label": "Cara menentukan", "type": "enum", "default": "peran", "width": "170px",

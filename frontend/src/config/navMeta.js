@@ -122,7 +122,7 @@ export const PAGE_META = {
   "internal-prices":      { kicker: "Produk & Harga", title: "Harga Internal Antar-PT" },
   "amendment-reasons":    { kicker: "Pengaturan · Penjualan", title: "Label Alasan Amandemen" },
   // Fase 3 · P2 (D-03) — tarif per kategori + bawaan komisi (`commission.*`) digabung di satu layar.
-  "incentive-rates":      { kicker: "Pengaturan · Penjualan", title: "Komisi & Insentif \u00b7 Bawaan Komisi & Tarif per Kategori" },
+  "incentive-rates":      { kicker: "SDM · Kinerja & Insentif", title: "Komisi & Insentif \u00b7 Bawaan Komisi & Tarif per Kategori" },
   "bank-recon-rules":     { kicker: "Pengaturan · Keuangan", title: "Aturan & Template Bank" },
   "cs-bom":               { kicker: "Pembelian",      title: "BOM Printing" },
   "cs-stock-analytics":   { kicker: "Gudang",         title: "Analitik Stok (Cepat/Lambat/Mati)" },
@@ -138,7 +138,7 @@ export const PAGE_META = {
   "cs-rfid-tags":         { kicker: "RFID",           title: "Tag RFID" },
   "cs-rfid-devices":      { kicker: "Pengaturan · Integrasi & Sistem", title: "Perangkat RFID (Pembaca / Gerbang)" },
   "cs-rfid-gate":         { kicker: "RFID",           title: "Monitor Gerbang" },
-  "chart-of-accounts":    { kicker: "Keuangan",       title: "Bagan Akun · Chart of Accounts" },
+  "chart-of-accounts":    { kicker: "Keuangan",       title: "Bagan Akun" },   // MN-T1 — label Inggris dicabut
   "general-ledger":       { kicker: "Keuangan",       title: "Buku Besar · Jurnal Umum" },
   "financial-statements": { kicker: "Keuangan",       title: "Laporan Keuangan · Laba-Rugi, Neraca & Arus Kas" },
   "finance-tower":        { kicker: "Keuangan",       title: "Dasbor Keuangan" },
@@ -198,7 +198,7 @@ export const PAGE_META = {
   "hr-attendance-setup":  { kicker: "Pengaturan · SDM", title: "Shift & Geofence" },
   "hr-live-tracking":     { kicker: "SDM (HRD)",      title: "Lacak Lapangan · Live Tracking Sales" },
   "hr-visits":            { kicker: "Penjualan",      title: "Kunjungan Sales (Visit)" },
-  "hr-payroll-runs":      { kicker: "SDM (HRD)",      title: "Penggajian (Payroll Run)" },
+  "hr-payroll-runs":      { kicker: "SDM (HRD)",      title: "Penggajian \u00b7 Proses Gaji" },   // MN-T1
   "hr-payslips":          { kicker: "SDM (HRD)",      title: "Slip Gaji (Payslip)" },
   "hr-leave":             { kicker: "SDM (HRD)",      title: "Cuti & Izin" },
   "hr-overtime":          { kicker: "SDM (HRD)",      title: "Lembur (Overtime)" },
@@ -208,6 +208,13 @@ export const PAGE_META = {
   "cs-bi-stock":          { kicker: "Analitik (BI)",  title: "Dasbor Stok (Business Intelligence)" },
   "bi-finance":           { kicker: "Analitik (BI)",  title: "BI Keuangan · Tren, Rasio & Perbandingan PT" },
   "cs-bi-hrd":            { kicker: "Analitik (BI)",  title: "Dasbor BI SDM" },
+  // MN-T1 — view baru (tab hub yang merender layar lama tanpa perubahan) + Kas Kecil (dulu id hub, kini pembungkus).
+  "collection-worklist":  { kicker: "Keuangan \u00b7 Piutang", title: "Penagihan & Penerimaan \u00b7 Daftar Kerja Penagihan" },
+  "customer-credit":      { kicker: "Keuangan \u00b7 Piutang", title: "Titipan & Saldo Kredit Pelanggan" },
+  "credit-overrides":     { kicker: "Keuangan \u00b7 Piutang", title: "Kredit & Plafon \u00b7 Persetujuan Lewat Batas Kredit" },
+  "sales-performance":    { kicker: "SDM \u00b7 Kinerja & Insentif", title: "Kinerja Sales \u00b7 KPI, Komisi & Papan Peringkat" },
+  "incentive-schemes":    { kicker: "SDM \u00b7 Kinerja & Insentif", title: "Skema Insentif (Arsip) \u00b7 Target & Skema per Sales" },
+  "petty-cash":           { kicker: "Keuangan \u00b7 Kas & Bank", title: "Kas Kecil \u00b7 Pengajuan Dana, Pertanggungjawaban & Hutang Reimburse" },
 };
 
 // ROLE-HOME REGISTRY (F5) — landing per role
@@ -227,7 +234,8 @@ export const ROLE_HOME_REGISTRY = {
   // Peran pelaksana yang mendarat di daftar harus menyaring sendiri untuk menemukan
   // apa yang perlu ditindak; meja kerja sudah menyusunnya.
   sales_admin: { view: "sales-admin-desk", navId: "sales-admin-desk" },
-  finance:     { view: "finance-desk", navId: "finance-desk" },
+  // MN-T1 — Meja Finance kini tab "Perlu Tindakan" di Keuangan › Beranda Keuangan (menu yang disorot = hub itu).
+  finance:     { view: "finance-desk", navId: "finance-tower" },
   // FASE D — peran ke-7. WAJIB sama dengan `backend/role_registry.py` (diperiksa POC).
   // Desainer mendarat langsung di papan pekerjaannya, bukan di beranda generik.
   designer:    { view: "design-requests", navId: "designer-hub" },

@@ -194,3 +194,11 @@ export const MktCampaigns = lazy(() => import("./features/marketing/Campaigns"))
 export const MarketingAnalytics = lazy(() => import("./features/marketing/MarketingAnalytics"));
 export const SocialAccounts = lazy(() => import("./features/marketing/SocialAccounts"));
 export const DivisionsView = lazy(() => import("./features/designer/DivisionsView"));
+// MN-T1 — tab hub keuangan & SDM baru: komponen CRM lama dirender tanpa perubahan (dulu sub-tab CRM & Pelanggan) +
+// dua pembungkus ber-chip (Titipan & Saldo Kredit, Kas Kecil).
+export const CollectionWorklist = lazy(() => import("./features/crm/CollectionWorklist"));
+export const CreditOverridesPanel = lazy(() => import("./features/crm/CreditOverridesPanel"));
+export const SalesForceDashboard = lazy(() => import("./features/crm/SalesForceDashboard"));
+export const IncentiveSchemeEditor = lazy(() => import("./features/crm/IncentiveSchemeEditor"));
+export const CustomerCreditView = lazy(() => import("./features/finance/CustomerCreditView"));
+export const PettyCashView = lazy(() => import("./features/pettycash/PettyCashView"));

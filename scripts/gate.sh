@@ -259,8 +259,10 @@ STATIK=(
   # INV-NAV-02 = registri alias layar (config/viewAliases.js): tujuan nyata, rute cadangan, hak peran tidak hilang.
   "guard:custom_modals SELF-TEST (ratchet dua arah, 9 kasus)|python scripts/guardrails/verify_custom_modals.py --self-test"
   "guard:custom_modals (INV-UI-11, pop-up buatan sendiri hanya boleh berkurang)|python scripts/guardrails/verify_custom_modals.py"
-  "guard:page_tabs SELF-TEST (ratchet dua arah, 7 kasus)|python scripts/guardrails/verify_page_tabs.py --self-test"
-  "guard:page_tabs (INV-UI-12, tab maks 2 tingkat — tab/pil buatan sendiri hanya berkurang)|python scripts/guardrails/verify_page_tabs.py"
+  # MN-T1 — berkas yang sama kini juga menjaga INV-UI-13 (maks 6 tab tampak per hub, baseline hub_tab_limit.json) dan
+  # INV-UI-14 (komponen tab hub tampak tanpa PageTabs/kelas tab-bar, baseline third_level_tabs.json).
+  "guard:page_tabs SELF-TEST (ratchet dua arah + batas tab hub + tab tingkat ketiga, 14 kasus)|python scripts/guardrails/verify_page_tabs.py --self-test"
+  "guard:page_tabs (INV-UI-12/13/14, tab maks 2 tingkat · maks 6 tab per hub · tanpa tab tingkat ketiga)|python scripts/guardrails/verify_page_tabs.py"
   "guard:view_aliases SELF-TEST (bukti-merah dua arah, 8 kasus)|python scripts/guardrails/verify_view_aliases.py --self-test"
   "guard:view_aliases (INV-NAV-02, alias layar tidak memutus pintu/hak)|python scripts/guardrails/verify_view_aliases.py"
   # KF-T4 — teks Pengaturan berbahasa awam: label ≤ 45, satuan, arti 0, glosarium, sub-judul ≤ 14 (0 pelanggaran,

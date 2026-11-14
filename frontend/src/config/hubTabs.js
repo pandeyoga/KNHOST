@@ -65,6 +65,9 @@ export const HUB_TABS = {
     // melihat skor mitra di Klaim Selisih Makloon; tanpa izin rekap layar menampilkan skor saja (403 ditangani layar).
     { view: "makloon-claim-recap", label: "Kinerja Mitra Makloon", roles: ["admin", "manager", "finance", "md", "warehouse"] },
     { view: "makloon-claims",    label: "Klaim Selisih Makloon", roles: ["admin", "manager", "warehouse"] },
+    // MN-T1 — dari Hutang Pemasok: pembebanan biaya ke barang PO, bukan hutang (view sama). Hub ini 7 tab tampak —
+    // tercatat di baseline INV-UI-13 (`scripts/guardrails/baselines/hub_tab_limit.json`), bukan pelonggaran.
+    { view: "landed-cost",       label: "Landed Cost",           roles: ["admin", "manager"] },
   ],
   "master-pembelian": [
     { view: "suppliers",         label: "Pemasok (Supplier)",    roles: ["admin", "manager"] },
@@ -78,14 +81,14 @@ export const HUB_TABS = {
     // server (`interco_price`).
     { view: "supplier-internal-prices", label: "Harga Internal Antar-PT", roles: ["admin", "manager", "warehouse"], hidden: true, aliasOf: "supplier-contracts" },
   ],
+  // MN-T1 — Keuangan › Hutang (dulu Pembelian › Hutang Pemasok). Finance lewat ROLE_NAV (K-17: lihat & bayar).
   "accounts-payable": [
-    { view: "vendor-bills",      label: "Tagihan Supplier",      roles: ["admin", "manager"] },
+    { view: "vendor-bills",      label: "Tagihan",               roles: ["admin", "manager"] },
     // FASE G-7 — kontrabon: satu siklus tukar faktur = satu tanda terima + satu
     // pembayaran. Gudang ikut MELIHAT karena tab "GR Belum Ditagih" adalah pekerjaan
     // mereka (barang sudah diterima tapi faktur supplier belum datang).
-    { view: "contra-bons",       label: "Kontrabon (Tukar Faktur)", roles: ["admin", "manager", "warehouse"] },
-    // IA 2026-10 (D2) — "Antar Entitas" PINDAH ke grup Akuntansi & Pajak (view sama, fitur utuh).
-    { view: "landed-cost",       label: "Landed Cost (HPP)",     roles: ["admin", "manager"] },
+    { view: "contra-bons",       label: "Kontrabon",             roles: ["admin", "manager", "warehouse"] },
+    // MN-T1 — Landed Cost PINDAH ke Pembelian › Pesanan Pembelian (view sama).
   ],
   // L08 LN-080 — menu Retur terpadu: semua arah retur di satu tempat (tiap tab = layar aslinya).
   "returns-hub": [
@@ -159,28 +162,26 @@ export const HUB_TABS = {
   "cash-bank": [
     { view: "bank-accounts",     label: "Rekening & Saldo",      roles: ["admin", "manager"] },
     { view: "cash-management",   label: "Transaksi Kas",         roles: ["admin", "manager"] },
-    { view: "bank-reconciliation", label: "Rekonsiliasi Bank",   roles: ["admin", "manager"] },
-  ],
-  "petty-cash": [
-    { view: "cash-advances",      label: "Pengajuan Dana (PD)",  roles: ["admin", "manager", "sales"] },
-    { view: "settlements",        label: "Pertanggungjawaban",   roles: ["admin", "manager", "sales"] },
-    { view: "reimburse-payables", label: "Hutang Reimburse",     roles: ["admin", "manager"] },
+    { view: "bank-reconciliation", label: "Rekonsiliasi",        roles: ["admin", "manager"] },
+    // MN-T1 — Kas Kecil (dulu hub Kas & Aset › Kas Kecil, 3 tab) = satu tab pembungkus ber-chip (PettyCashView):
+    // Pengajuan dana · Pertanggungjawaban · Hutang reimburse. Id lama = alias (viewAliases.js) + rute cadangan.
+    { view: "petty-cash",        label: "Kas Kecil",             roles: ["admin", "manager", "sales"] },
   ],
   "tax-hub": [
     { view: "tax-invoices",      label: "Faktur Keluaran",       roles: ["admin", "manager"] },
     { view: "input-tax",         label: "Faktur Masukan",        roles: ["admin", "manager"] },
-    { view: "cs-pajak",          label: "Pajak (PPN & PPh)",     roles: ["admin", "manager"] },
+    { view: "cs-pajak",          label: "PPN & PPh",             roles: ["admin", "manager"] },
   ],
   "ledger": [
-    { view: "general-ledger",    label: "Jurnal & Buku Besar",   roles: ["admin", "manager"] },
-    { view: "chart-of-accounts", label: "Chart of Accounts",     roles: ["admin", "manager"] },
+    { view: "general-ledger",    label: "Jurnal",                roles: ["admin", "manager"] },
+    { view: "chart-of-accounts", label: "Bagan Akun",            roles: ["admin", "manager"] },
   ],
   "fin-reports": [
     { view: "financial-statements", label: "Laba-Rugi, Neraca & Arus Kas", roles: ["admin", "manager"] },
-    { view: "profitability",        label: "Profitabilitas & Margin",       roles: ["admin", "manager"] },
-    { view: "cashflow-forecast",    label: "Proyeksi Arus Kas",             roles: ["admin", "manager"] },
-    { view: "budget",               label: "Anggaran vs Realisasi",         roles: ["admin", "manager"] },
-    { view: "consolidation",        label: "Konsolidasi Grup",              roles: ["admin", "manager"] },
+    { view: "profitability",        label: "Profitabilitas",                roles: ["admin", "manager"] },
+    { view: "cashflow-forecast",    label: "Proyeksi Kas",                  roles: ["admin", "manager"] },
+    { view: "budget",               label: "Anggaran",                      roles: ["admin", "manager"] },
+    { view: "consolidation",        label: "Konsolidasi",                   roles: ["admin", "manager"] },
   ],
   "hr-people": [
     { view: "hr-employees",      label: "Karyawan",              roles: ["admin", "manager"] },
@@ -193,14 +194,20 @@ export const HUB_TABS = {
     { view: "hr-live-tracking",    label: "Lacak Lapangan",      roles: ["admin", "manager"] },
   ],
   "hr-payroll-hub": [
-    { view: "hr-payroll-runs",   label: "Payroll Run",           roles: ["admin", "manager"] },
+    { view: "hr-payroll-runs",   label: "Proses Gaji",           roles: ["admin", "manager"] },
     { view: "hr-payslips",       label: "Slip Gaji",             roles: ["admin", "manager"] },
     // FASE G-0 — "Setup Penggajian" DIHAPUS. Semua aturan BPJS/PPh21/lembur kini
     // hanya ada di Pusat Pengaturan (kelompok "SDM & Penggajian"). Manager tetap
     // berwenang mengubahnya lewat izin hr.manage_payroll — tidak ada wewenang hilang.
   ],
+  // MN-T1 — SDM › Kinerja & Insentif: Kinerja Sales & Skema (dulu sub-tab CRM) + Target & Aturan (dulu Pengaturan ›
+  // Penjualan › Komisi & Insentif) + KPI Karyawan. Komponen lama dirender tanpa perubahan.
   "hr-kpi-hub": [
-    { view: "cs-kpi",            label: "KPI Karyawan (manual)", roles: ["admin", "manager"] },
+    { view: "sales-performance", label: "Kinerja Sales",         roles: ["admin", "manager", "sales"] },
+    // D-03 — tarif per kategori + bawaan komisi (`commission.*`) di satu layar (view sama).
+    { view: "incentive-rates",   label: "Target & Aturan",       roles: ["admin", "manager"] },
+    { view: "incentive-schemes", label: "Skema (Arsip)",         roles: ["admin", "manager"] },
+    { view: "cs-kpi",            label: "KPI Karyawan",          roles: ["admin", "manager"] },
   ],
   "analytics": [
     { view: "reports",           label: "Ringkasan",              roles: ["admin", "manager"] },
@@ -217,10 +224,30 @@ export const HUB_TABS = {
     // 2026-10 — "Pusat Cetak" (menu terpisah) digabung ke sini: satu pintu dokumen.
     { view: "documents",       label: "Cetak PDF & Label", roles: ["admin", "sales", "manager", "warehouse"] },
   ],
-  // IA 2026-10 (B11) — dua dasbor keuangan dalam satu pintu.
+  // IA 2026-10 (B11) — dua dasbor keuangan dalam satu pintu. MN-T1 — "Beranda Keuangan": + Meja Finance sebagai tab
+  // pertama "Perlu Tindakan" (dulu menu lepas & butir Meja Peran). Finance lewat ROLE_NAV.
   "finance-tower": [
-    { view: "finance-tower",     label: "Posisi & Kontrol",      roles: ["admin", "manager"] },
-    { view: "bi-finance",        label: "BI Keuangan",           roles: ["admin", "manager"] },
+    { view: "finance-desk",      label: "Perlu Tindakan",        roles: ["admin", "manager"] },
+    { view: "finance-tower",     label: "Posisi",                roles: ["admin", "manager"] },
+    { view: "bi-finance",        label: "Analisis",              roles: ["admin", "manager"] },
+  ],
+  // MN-T1 — Keuangan › Piutang (dulu satu layar + 4 entri Keuangan + 2 sub-tab CRM). Menagih = sales juga.
+  "ar-aging": [
+    { view: "ar-aging",          label: "Saldo & Umur",          roles: ["admin", "manager"] },
+    { view: "collection-worklist", label: "Penagihan & Penerimaan", roles: ["admin", "manager", "sales"] },
+    { view: "payment-plans",     label: "Rencana & Denda",       roles: ["admin", "manager"] },
+    // Pembungkus Uang Muka Pelanggan + Saldo Kredit (CustomerCreditView); id lama = alias + rute cadangan.
+    { view: "customer-credit",   label: "Titipan & Saldo Kredit", roles: ["admin", "manager"] },
+    // Persetujuan Kredit (dulu sub-tab CRM): daftar = `customer.view`; tombol memutus = `credit_override.approve`.
+    { view: "credit-overrides",  label: "Kredit & Plafon",       roles: ["admin", "manager"] },
+    // FASE G-9 — sales boleh MELAPOR & memantau (finance_case: view+create), tidak menutup kasus uang.
+    { view: "finance-cases",     label: "Kasus",                 roles: ["admin", "manager", "sales"] },
+  ],
+  // MN-T1 — Akuntansi & Pajak › Tutup Buku (dulu tiga entri terpisah).
+  "closing": [
+    { view: "closing",           label: "Daftar Periksa & Tutup", roles: ["admin", "manager"] },
+    { view: "period-unlock",     label: "Buka Periode",          roles: ["admin", "manager"] },
+    { view: "posting-failures",  label: "Posting Gagal",         roles: ["admin", "manager"] },
   ],
   // IA 2026-10 (D1) — RFID jadi satu hub di grup Gudang (dulu grup sendiri, 4 menu).
   "rfid-hub": [
@@ -252,8 +279,7 @@ export const HUB_TABS = {
   "settings-sales": [
     { view: "settings-cfg-sales", label: "Aturan Penjualan",     roles: ["admin", "manager"] },
     { view: "amendment-reasons", label: "Label Alasan Amandemen", roles: ["admin", "manager"] },
-    // D-03 — tarif per kategori + bawaan komisi (`commission.*`) di satu layar.
-    { view: "incentive-rates",   label: "Komisi & Insentif",     roles: ["admin", "manager"] },
+    // MN-T1 — "Komisi & Insentif" pindah ke SDM › Kinerja & Insentif › Target & Aturan (view sama).
     // P16-K1 — dipindah dari hub Retur (sales_admin tetap lewat ROLE_NAV `return-policies` + `settings-sales`).
     { view: "return-policies",   label: "Kebijakan Retur",       roles: ["admin", "manager"] },
   ],

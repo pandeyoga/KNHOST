@@ -29,7 +29,7 @@ import EntityMasterKindPanel, { EntityScopeRibbon } from "./EntityMasterKindPane
 export const DOMAIN_HOME = {
   "document-templates": { view: "pdf-templates", preset: { tab: "dasar" }, where: "Pengaturan › Dokumen & Cetak › Template Dokumen" },
   "expense-categories": { view: "expense-categories", where: "Pengaturan › Keuangan & Pajak › Kategori Beban" },
-  "incentive-rates": { view: "incentive-rates", where: "Pengaturan › Penjualan › Komisi & Insentif" },
+  "incentive-rates": { view: "incentive-rates", where: "SDM › Kinerja & Insentif › Target & Aturan" },   // MN-T1
   "approval-rules": { view: "approval-rules", where: "Pengaturan › Persetujuan › Aturan Persetujuan" },
   "sales-return-policies": { view: "return-policies", where: "Pengaturan › Penjualan › Kebijakan Retur" },
 };

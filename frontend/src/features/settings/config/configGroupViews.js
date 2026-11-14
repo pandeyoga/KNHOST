@@ -18,7 +18,8 @@ import { groupForKey, resolveGroupId } from "./configDeepLink";
 
 /** Kunci bawaan komisi (D-03) — rumahnya `incentive-rates`, bukan kelompok "Harga, Diskon & Komisi". */
 export const COMMISSION_PREFIX = "commission.";
-export const COMMISSION_HOME = { view: "incentive-rates", nav: "settings-sales" };
+// MN-T1 — Komisi & Insentif kini SDM › Kinerja & Insentif › Target & Aturan (view sama, menu `hr-kpi-hub`).
+export const COMMISSION_HOME = { view: "incentive-rates", nav: "hr-kpi-hub" };
 
 /** KF-T6 — kunci `kontrol.*` (kontrol dua orang) hanya diubah di tab Persetujuan › Kontrol dua orang. */
 export const DUAL_CONTROL_PREFIX = "kontrol.";
