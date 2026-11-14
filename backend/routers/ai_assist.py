@@ -38,7 +38,8 @@ async def confirm_action(pid: str, request: Request, payload: Optional[Dict[str,
         return await ai_cards.decide(pid, request=request, user=user, ctx=ctx, decision="approve",
                                      reason=str(payload.get("reason") or ""), retype=str(payload.get("retype") or ""),
                                      edits=payload.get("edits") if isinstance(payload.get("edits"), dict) else None)
-    return await ai_actions.confirm(pid, user, payload.get("edits"), ctx)
+    # AG-T3 (b) — draf PO dijalankan lewat endpoint layar dengan sesi permintaan ini (`ai_actions._exec_po`).
+    return await ai_actions.confirm(pid, user, payload.get("edits"), ctx, request)
 
 
 @router.post("/actions/{pid}/dismiss")

@@ -7,6 +7,10 @@ AG-T1 (AG-01, AG-02) — status kartu hanya maju: `pending → running → confi
 tidak pernah kembali ke `pending`. Kartu berlaku `ai.kartu_masa_berlaku_jam` (per PT kartu) dan hanya bisa disetujui
 saat PT aktif = PT kartu. Pemeriksaan izin & isian dijalankan SEBELUM klaim; hasil (nomor PO / pengingat) disimpan
 bertahap, sehingga kartu yang gagal di tengah mencatat yang sudah jadi dan tidak bisa diulang.
+
+AG-T3 (b) — draf PO dijalankan lewat endpoint layar `POST /api/purchase-orders` (pintu aplikasi sendiri `SelfApi` mode
+tulis, sesi & PT pengguna, kunci `<id kartu>:<urutan>`). Pengingat ke sales tetap `create_notification` — satu-satunya
+pengecualian karena tidak ada endpoint layarnya. Kartu golongan A/B baru ada di `services/ai_cards.py`.
 """
 from __future__ import annotations
 
@@ -246,20 +250,29 @@ async def _po_siap(doc, user, edits) -> List[Dict[str, Any]]:
     return pos
 
 
-async def _exec_po(doc, user, pos, simpan: Simpan) -> None:
-    from routers import purchase_orders as po_router
-    from schemas_purchasing import POItemCreate, PurchaseOrderCreate
-    for g in pos:
-        payload = PurchaseOrderCreate(
-            supplier_id=g["supplier_id"], warehouse_id=g["warehouse_id"], entity_id=doc["entity_id"], created_by=user.get("name", ""),
-            notes=f"Disiapkan Tanya KN · {doc.get('reason') or doc['title']}"[:480],
-            items=[POItemCreate(product_id=i["product_id"], quantity=i["quantity"], unit=i["unit"], price=i["price"],
-                                expected_grade=i.get("expected_grade") or "A") for i in g["items"]])
-        po = await po_router._create_po_core(payload, user, active_entity_id=doc["entity_id"])
-        await simpan(po.get("po_number") or po.get("id"))   # langsung tersimpan sebelum PO berikutnya
+async def _exec_po(doc, user, pos, simpan: Simpan, token: str = "") -> None:
+    """AG-T3 (b) — tiap PO lewat endpoint layar `POST /api/purchase-orders` (pintu aplikasi sendiri, izin & PT pengguna),
+    kunci idempotensi `<id kartu>:<urutan>`; pemanggilan `_create_po_core` langsung dicabut. PT = header PT kartu (tidak
+    dikirim di isi permintaan, N1). Hasil sebagian AG-T1 tetap: tiap nomor PO disimpan sebelum PO berikutnya."""
+    from schemas_purchasing import POItemCreate
+    from services.ai_self_api import SelfApi
+    api = SelfApi(None, token=token, entity_header=doc["entity_id"], read_only=False, card_id=doc["id"])
+    try:
+        for urutan, g in enumerate(pos):
+            body = {"supplier_id": g["supplier_id"], "warehouse_id": g["warehouse_id"], "created_by": user.get("name", ""),
+                    "notes": f"Disiapkan Tanya KN · {doc.get('reason') or doc['title']}"[:480],
+                    "items": [POItemCreate(product_id=i["product_id"], quantity=i["quantity"], unit=i["unit"],
+                                           price=i["price"], expected_grade=i.get("expected_grade") or "A").model_dump()
+                              for i in g["items"]]}
+            po = await api.call("POST", "/api/purchase-orders", json=body, idempotency_key=f"{doc['id']}:{urutan}")
+            await simpan(po.get("po_number") or po.get("id"))   # langsung tersimpan sebelum PO berikutnya
+    finally:
+        await api.aclose()
 
 
 async def _exec_reminders(doc, user, simpan: Simpan) -> None:
+    # AG-T3 (b) — SATU-SATUNYA pengecualian pintu aplikasi: pengingat ke sales tidak punya endpoint layar, jadi tetap
+    # memakai `create_notification` (bukan uang, bukan jurnal; penerima = sales penanggung jawab pelanggan).
     from services.notification_service import create_notification
     for r in doc["payload"]["reminders"]:
         to = r.get("sales_id") or user["id"]
@@ -290,7 +303,8 @@ def _pesan_gagal(error: str, result: List[str]) -> str:
     return f"{error.rstrip('.')}. Yang sudah dibuat: {', '.join(result)}."
 
 
-async def confirm(pid: str, user: Dict[str, Any], edits: Optional[Dict[str, Any]], ctx) -> Dict[str, Any]:
+async def confirm(pid: str, user: Dict[str, Any], edits: Optional[Dict[str, Any]], ctx, request: Any = None
+                  ) -> Dict[str, Any]:
     # 1. muat (kedaluwarsa & proses mati diterapkan di `load`)
     doc = await load(pid, user)
     if doc["user_id"] != user["id"]:
@@ -324,7 +338,11 @@ async def confirm(pid: str, user: Dict[str, Any], edits: Optional[Dict[str, Any]
 
     error = ""
     try:
-        await (_exec_po(doc, user, pos, simpan) if doc["type"] == "draft_po" else _exec_reminders(doc, user, simpan))
+        if doc["type"] == "draft_po":
+            from dependencies import extract_token
+            await _exec_po(doc, user, pos, simpan, extract_token(request) if request is not None else "")
+        else:
+            await _exec_reminders(doc, user, simpan)
     except Exception as exc:  # noqa: BLE001 — galat pelaksana dicatat di kartu (status `failed`), bukan dilempar
         error = _galat(exc)[:500]
     # 7. selesai: confirmed, atau failed dengan galat asli + yang sudah jadi

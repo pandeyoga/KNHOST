@@ -109,8 +109,8 @@ def _pattern(path: str) -> "re.Pattern[str]":
     return re.compile("^" + re.sub(r"\\\{[a-z_]+\\\}", "[^/]+", re.escape(path)) + "/?$")
 
 
-#: Pintu tulis kartu lama yang dialihkan ke endpoint layar (diisi serah-terima b). Pasangan (metode, pola path).
-LEGACY_WRITE_PATHS: Tuple[Tuple[str, str], ...] = ()
+#: Pintu tulis kartu lama yang dialihkan ke endpoint layar (serah-terima b): draf PO → `POST /api/purchase-orders`.
+LEGACY_WRITE_PATHS: Tuple[Tuple[str, str], ...] = (("POST", "/api/purchase-orders"),)
 
 
 def write_allowed(method: str, path: str) -> bool:
