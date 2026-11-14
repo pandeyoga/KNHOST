@@ -1,0 +1,7 @@
+== KP-T3 Aturan Persetujuan — mode lapor ==
+1. Aturan 'Diskon (%)' yang dipensiunkan: 2
+   - aprule_f361eaa14711 · PT all · aktif=True
+   - aprule_c70a61da88bc · PT all · aktif=True
+2. Aturan ber-peran tak dikenal → Manajer: 0
+3. Jenjang tambahan ber-peran tak dikenal (hanya dilaporkan): 0
+(mode lapor; jalankan dengan --apply untuk menulis langkah 1–2)

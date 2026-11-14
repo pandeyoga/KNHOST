@@ -349,11 +349,11 @@ P14-K1 → Bima). Laporan hasil di `docs/uat/2026-10-21/hasil/UAT24-*.md`.
 | KP-36 | Tabel PTKP & tarif pajak penghasilan ditulis mati, sementara kunci hr.ptkp_table ditandai "tidak dipakai" padahal PTKP dipakai pada hitungan masa… | Rendah | PK-46 | implemented_pending_review | ya — dijalankan (bukti merah U3–U11 di kode lama) | `c38ab35` | [PK-46](2026-11-13/hasil/PK-46.md) |
 | KP-01 | Lima isian master PT tidak dibaca kode mana pun: skema penomoran, penanggung insentif, awal tahun fiskal, template CoA, induk grup. Wizard… | Tinggi | KP-T1 | open | belum dicek — diisi unit pemegang | — | — |
 | KP-02 | Status PKP tidak bisa diubah dari layar setelah PT dibuat. T | Tinggi | KP-T1 | open | belum dicek — diisi unit pemegang | — | — |
-| KP-03 | Penyetuju "Owner" bisa dipilih tetapi peran itu tidak ada; diperlakukan sama dengan Manajer. T | Tinggi | KP-T3 | open | belum dicek — diisi unit pemegang | — | — |
-| KP-04 | Jenis aturan "Diskon (%)" tidak punya pembaca. T | Tinggi | KP-T3 | open | belum dicek — diisi unit pemegang | — | — |
+| KP-03 | Penyetuju "Owner" bisa dipilih tetapi peran itu tidak ada; diperlakukan sama dengan Manajer. T | Tinggi | KP-T3 | implemented_pending_review | ya — dijalankan (bukti merah U1–U13 di kode lama) | `3224848` | [KP-T3](2026-11-13/hasil/KP-T3.md) |
+| KP-04 | Jenis aturan "Diskon (%)" tidak punya pembaca. T | Tinggi | KP-T3 | implemented_pending_review | ya — dijalankan (bukti merah U1–U13 di kode lama) | `3224848` | [KP-T3](2026-11-13/hasil/KP-T3.md) |
 | KP-06 | ≥ 6 mekanisme persetujuan hidup bersamaan; penyetuju ditentukan dengan tiga cara berbeda; matriks divisi ditulis mati. T | Tinggi | KP-T4 | open | belum dicek — diisi unit pemegang | — | — |
 | KP-07 | Satu keputusan dinilai dua daftar peran. ACC desain: matriks ditulis mati dan rnd.spec_approval_roles; ACC sample: matriks dan… | Tinggi | KP-T4 | open | belum dicek — diisi unit pemegang | — | — |
-| KP-08 | Aturan persetujuan khusus PT menggantikan seluruh jenjang grup untuk jenis dokumen itu; tidak ada pemeriksaan celah/tumpang-tindih rentang. T | Sedang | KP-T3 | open | belum dicek — diisi unit pemegang | — | — |
+| KP-08 | Aturan persetujuan khusus PT menggantikan seluruh jenjang grup untuk jenis dokumen itu; tidak ada pemeriksaan celah/tumpang-tindih rentang. T | Sedang | KP-T3 | implemented_pending_review | ya — dijalankan (bukti merah U1–U13 di kode lama) | `3224848` | [KP-T3](2026-11-13/hasil/KP-T3.md) |
 | KP-09 | Selang job berbasis menit tidak bisa diubah walau layar menerima. 11 job. T | Tinggi | KP-T7 | open | belum dicek — diisi unit pemegang | — | — |
 | KP-10 | Daftar kesiapan PT tidak lengkap dan satu tautannya salah. T | Tinggi | KP-T2 | open | belum dicek — diisi unit pemegang | — | — |
 | KP-11 | Termin bawaan per PT tidak dipakai saat membuat SO. T | Sedang | KF-T3 | open | belum dicek — diisi unit pemegang | — | — |

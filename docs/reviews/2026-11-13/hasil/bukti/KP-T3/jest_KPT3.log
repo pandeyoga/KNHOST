@@ -1,0 +1,17 @@
+# komponen lama (HEAD) + uji baru
+  ✕ pilihan: jenis dokumen tanpa Diskon, peran penyetuju tanpa Owner (label registry) (11 ms)
+  ✕ kalimat jenjang: grup + jenjang tambahan Direksi (1 ms)
+  ✕ U14: PT Kanda — kartu PO berlencana 'Aturan khusus PT ini', dua peringatan kuning, aturan grup tak dipakai (54 ms)
+  ✕ PT aktif jadi bawaan; kartu grup tanpa tautan aturan tak dipakai (26 ms)
+  ✕ memuat = kerangka abu-abu; galat = ErrorNotice dengan coba lagi (16 ms)
+  ✕ tabel: 'Semua PT', peran tak dikenal ditandai, catatan hasil migrasi (22 ms)
+  ✕ form: tanpa Diskon & Owner, 'Berlaku untuk PT', keterangan menggantikan; peringatan simpan di pop-up (38 ms)
+Test Suites: 1 failed, 1 total
+Tests:       7 failed, 7 total
+
+# komponen baru
+PASS src/features/__tests__/kpt3ApprovalTiers.test.js
+PASS src/features/__tests__/auditUi2G5b.test.js
+PASS src/features/__tests__/phase3Settings.test.js
+Test Suites: 3 passed, 3 total
+Tests:       26 passed, 26 total
