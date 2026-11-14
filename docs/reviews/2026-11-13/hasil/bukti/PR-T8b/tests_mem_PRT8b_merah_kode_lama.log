@@ -1,0 +1,148 @@
+FFFFFF..F....FF.                                                         [100%]
+=================================== FAILURES ===================================
+___ test_PRT8b_U1_tanpa_sesi_401[POST /api/ap-payments/api_tidak_ada/resume] ___
+klien = <httpx.AsyncClient object at 0x7f0203646a10>, metode = 'POST'
+jalur = '/api/ap-payments/api_tidak_ada/resume', isi = None
+    @pytest.mark.parametrize("metode,jalur,isi", RUTE_B, ids=[f"{m} {j}" for m, j, _ in RUTE_B])
+    async def test_PRT8b_U1_tanpa_sesi_401(klien, metode, jalur, isi):
+        r = await _panggil(klien, metode, jalur, isi, {"X-Entity-Id": "ent_ksc"})
+>       assert r.status_code == 401, (r.status_code, r.text)
+E       AssertionError: (404, '{"detail":"Pembayaran tidak ditemukan"}')
+E       assert 404 == 401
+E        +  where 404 = <Response [404 Not Found]>.status_code
+tests_mem/test_PRT8b_gerbang_pertama.py:72: AssertionError
+---------------------------- Captured stdout setup -----------------------------
+[bootstrap] SANDI AWAL akun seed (ganti segera): WIcQTcMqA8djzTSA
+[bootstrap] FASE F lifecycle backfill: 5 produk distempel 'produksi'
+[bootstrap] kebersihan data: 5 record dirapikan {'customers': 3, 'suppliers': 0, 'users': 0, 'hr_employees': 2, 'makloons': 0}
+___ test_PRT8b_U1_tanpa_sesi_401[POST /api/ap-payments/api_tidak_ada/cancel] ___
+klien = <httpx.AsyncClient object at 0x7f0203646a10>, metode = 'POST'
+jalur = '/api/ap-payments/api_tidak_ada/cancel'
+isi = {'reason': 'Uji gerbang izin PR-T8b'}
+    @pytest.mark.parametrize("metode,jalur,isi", RUTE_B, ids=[f"{m} {j}" for m, j, _ in RUTE_B])
+    async def test_PRT8b_U1_tanpa_sesi_401(klien, metode, jalur, isi):
+        r = await _panggil(klien, metode, jalur, isi, {"X-Entity-Id": "ent_ksc"})
+>       assert r.status_code == 401, (r.status_code, r.text)
+E       AssertionError: (404, '{"detail":"Pembayaran tidak ditemukan"}')
+E       assert 404 == 401
+E        +  where 404 = <Response [404 Not Found]>.status_code
+tests_mem/test_PRT8b_gerbang_pertama.py:72: AssertionError
+_ test_PRT8b_U1_tanpa_sesi_401[POST /api/registration/sessions/sesi_tidak_ada/approve] _
+klien = <httpx.AsyncClient object at 0x7f0203646a10>, metode = 'POST'
+jalur = '/api/registration/sessions/sesi_tidak_ada/approve'
+isi = {'reason': 'Uji gerbang izin PR-T8b'}
+    @pytest.mark.parametrize("metode,jalur,isi", RUTE_B, ids=[f"{m} {j}" for m, j, _ in RUTE_B])
+    async def test_PRT8b_U1_tanpa_sesi_401(klien, metode, jalur, isi):
+        r = await _panggil(klien, metode, jalur, isi, {"X-Entity-Id": "ent_ksc"})
+>       assert r.status_code == 401, (r.status_code, r.text)
+E       AssertionError: (404, '{"detail":"Sesi pendaftaran tidak ditemukan"}')
+E       assert 404 == 401
+E        +  where 404 = <Response [404 Not Found]>.status_code
+tests_mem/test_PRT8b_gerbang_pertama.py:72: AssertionError
+_ test_PRT8b_U1_tanpa_sesi_401[POST /api/registration/sessions/sesi_tidak_ada/return] _
+klien = <httpx.AsyncClient object at 0x7f0203646a10>, metode = 'POST'
+jalur = '/api/registration/sessions/sesi_tidak_ada/return'
+isi = {'reason': 'Uji gerbang izin PR-T8b'}
+    @pytest.mark.parametrize("metode,jalur,isi", RUTE_B, ids=[f"{m} {j}" for m, j, _ in RUTE_B])
+    async def test_PRT8b_U1_tanpa_sesi_401(klien, metode, jalur, isi):
+        r = await _panggil(klien, metode, jalur, isi, {"X-Entity-Id": "ent_ksc"})
+>       assert r.status_code == 401, (r.status_code, r.text)
+E       AssertionError: (404, '{"detail":"Sesi pendaftaran tidak ditemukan"}')
+E       assert 404 == 401
+E        +  where 404 = <Response [404 Not Found]>.status_code
+tests_mem/test_PRT8b_gerbang_pertama.py:72: AssertionError
+_ test_PRT8b_U1_tanpa_sesi_401[PATCH /api/registration/sessions/sesi_tidak_ada/lines/baris_x] _
+klien = <httpx.AsyncClient object at 0x7f0203646a10>, metode = 'PATCH'
+jalur = '/api/registration/sessions/sesi_tidak_ada/lines/baris_x'
+isi = {'note': 'Uji gerbang izin PR-T8b'}
+    @pytest.mark.parametrize("metode,jalur,isi", RUTE_B, ids=[f"{m} {j}" for m, j, _ in RUTE_B])
+    async def test_PRT8b_U1_tanpa_sesi_401(klien, metode, jalur, isi):
+        r = await _panggil(klien, metode, jalur, isi, {"X-Entity-Id": "ent_ksc"})
+>       assert r.status_code == 401, (r.status_code, r.text)
+E       AssertionError: (404, '{"detail":"Sesi pendaftaran tidak ditemukan"}')
+E       assert 404 == 401
+E        +  where 404 = <Response [404 Not Found]>.status_code
+tests_mem/test_PRT8b_gerbang_pertama.py:72: AssertionError
+_ test_PRT8b_U1_tanpa_sesi_401[DELETE /api/registration/sessions/sesi_tidak_ada/lines/baris_x] _
+klien = <httpx.AsyncClient object at 0x7f0203646a10>, metode = 'DELETE'
+jalur = '/api/registration/sessions/sesi_tidak_ada/lines/baris_x', isi = None
+    @pytest.mark.parametrize("metode,jalur,isi", RUTE_B, ids=[f"{m} {j}" for m, j, _ in RUTE_B])
+    async def test_PRT8b_U1_tanpa_sesi_401(klien, metode, jalur, isi):
+        r = await _panggil(klien, metode, jalur, isi, {"X-Entity-Id": "ent_ksc"})
+>       assert r.status_code == 401, (r.status_code, r.text)
+E       AssertionError: (404, '{"detail":"Sesi pendaftaran tidak ditemukan"}')
+E       assert 404 == 401
+E        +  where 404 = <Response [404 Not Found]>.status_code
+tests_mem/test_PRT8b_gerbang_pertama.py:72: AssertionError
+_______________________ test_PRT8b_U2_tanpa_izin_403_z6 ________________________
+klien = <httpx.AsyncClient object at 0x7f0203646a10>
+akun = <function akun.<locals>._akun at 0x7f02022d23e0>
+sesi = <function sesi.<locals>._sesi at 0x7f02022d0ea0>
+peran_tanpa_acuan = <function peran_tanpa_acuan.<locals>._peran at 0x7f02022d20c0>
+peran_manajer_kosong = <function peran_manajer_kosong.<locals>._peran at 0x7f02022d31a0>
+peran_sopir = 'driver'
+    async def test_PRT8b_U2_tanpa_izin_403_z6(klien, akun, sesi, peran_tanpa_acuan, peran_manajer_kosong, peran_sopir):
+        kosong = await _ta(akun, sesi, peran_tanpa_acuan, {}, "TA U2 kosong")
+        mk = await sesi(await akun(await peran_manajer_kosong()))
+        sopir = await sesi(await akun(peran_sopir))
+        salah = []
+        for metode, jalur, isi in RUTE_B:
+            for nama, h in (("kosong", kosong), ("mgr0", mk), ("sopir", sopir)):
+                r = await _panggil(klien, metode, jalur, isi, h)
+                if r.status_code != 403:
+                    salah.append((nama, metode, jalur, r.status_code, r.text[:80]))
+                    continue
+                d = _detail(r)
+                ok = (d.startswith("Anda belum punya akses untuk ") and "Minta Admin menambahkan akses '" in d
+                      and not POLA_TEKNIS.search(d) and "Permission ditolak" not in d)
+                if not ok:
+                    salah.append((nama, metode, jalur, 403, d))
+>       assert not salah, salah
+E       AssertionError: [('kosong', 'POST', '/api/ap-payments/api_tidak_ada/resume', 404, '{"detail": "Pembayaran tidak ditemukan"}'), ('mgr0'...n"}'), ('sopir', 'POST', '/api/ap-payments/api_tidak_ada/cancel', 404, '{"detail":"Pembayaran tidak ditemukan"}'), ...]
+E       assert not [('kosong', 'POST', '/api/ap-payments/api_tidak_ada/resume', 404, '{"detail": "Pembayaran tidak ditemukan"}'), ('mgr0'...n"}'), ('sopir', 'POST', '/api/ap-payments/api_tidak_ada/cancel', 404, '{"detail":"Pembayaran tidak ditemukan"}'), ...]
+tests_mem/test_PRT8b_gerbang_pertama.py:92: AssertionError
+________________ test_PRT8b_U7_batal_pemenuhan_hanya_izin_batal ________________
+klien = <httpx.AsyncClient object at 0x7f0203646a10>
+akun = <function akun.<locals>._akun at 0x7f02022d23e0>
+sesi = <function sesi.<locals>._sesi at 0x7f02022d0ea0>
+peran_tanpa_acuan = <function peran_tanpa_acuan.<locals>._peran at 0x7f02022d20c0>
+    async def test_PRT8b_U7_batal_pemenuhan_hanya_izin_batal(klien, akun, sesi, peran_tanpa_acuan):
+        jalur, isi = "/api/special-orders/od_tidak_ada/fulfillment/k/cancel", {"reason": ALASAN}
+        for izin in ({"od_fulfillment": ["choose_route", "realize"]}, {"order": ["view", "update"]}):
+            h = await _ta(akun, sesi, peran_tanpa_acuan, izin, f"TA U7 {sorted(izin)[0]}")
+            r = await klien.post(jalur, headers=h, json=isi)
+>           assert r.status_code == 403, (izin, r.text)
+E           AssertionError: ({'od_fulfillment': ['choose_route', 'realize']}, '{"detail": "Special order tidak ditemukan"}')
+E           assert 404 == 403
+E            +  where 404 = <Response [404 Not Found]>.status_code
+tests_mem/test_PRT8b_gerbang_pertama.py:173: AssertionError
+______________________ test_PRT8b_U8_login_saja_tertulis _______________________
+aplikasi = <fastapi.applications.FastAPI object at 0x7f0204e07590>
+    async def test_PRT8b_U8_login_saja_tertulis(aplikasi):
+        import login_only_endpoints as lo
+        rute = {(m, rt.path) for rt in aplikasi.routes for m in (getattr(rt, "methods", None) or ())}
+        for k, alasan in LOGIN_SAJA_BARU.items():
+            assert k in rute, k
+>           assert lo.LOGIN_ONLY.get(k) == alasan, (k, lo.LOGIN_ONLY.get(k))
+E           AssertionError: (('GET', '/api/dashboard'), None)
+E           assert None == 'rujukan'
+E            +  where None = <built-in method get of dict object at 0x7f0203059440>(('GET', '/api/dashboard'))
+E            +    where <built-in method get of dict object at 0x7f0203059440> = {('GET', '/api/auth/me'): 'sesi', ('GET', '/api/auth/context'): 'sesi', ('GET', '/api/push/public-key'): 'sesi', ('GET', '/api/roles'): 'rujukan', ...}.get
+E            +      where {('GET', '/api/auth/me'): 'sesi', ('GET', '/api/auth/context'): 'sesi', ('GET', '/api/push/public-key'): 'sesi', ('GET', '/api/roles'): 'rujukan', ...} = <module 'login_only_endpoints' from '/home/user/KNHOST/backend/login_only_endpoints.py'>.LOGIN_ONLY
+tests_mem/test_PRT8b_gerbang_pertama.py:192: AssertionError
+=============================== warnings summary ===============================
+../../../..<venv>/lib/python3.11/site-packages/starlette/formparsers.py:12
+  <venv>/lib/python3.11/site-packages/starlette/formparsers.py:12: PendingDeprecationWarning: Please use `import python_multipart` instead.
+    import multipart
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests_mem/test_PRT8b_gerbang_pertama.py::test_PRT8b_U1_tanpa_sesi_401[POST /api/ap-payments/api_tidak_ada/resume]
+FAILED tests_mem/test_PRT8b_gerbang_pertama.py::test_PRT8b_U1_tanpa_sesi_401[POST /api/ap-payments/api_tidak_ada/cancel]
+FAILED tests_mem/test_PRT8b_gerbang_pertama.py::test_PRT8b_U1_tanpa_sesi_401[POST /api/registration/sessions/sesi_tidak_ada/approve]
+FAILED tests_mem/test_PRT8b_gerbang_pertama.py::test_PRT8b_U1_tanpa_sesi_401[POST /api/registration/sessions/sesi_tidak_ada/return]
+FAILED tests_mem/test_PRT8b_gerbang_pertama.py::test_PRT8b_U1_tanpa_sesi_401[PATCH /api/registration/sessions/sesi_tidak_ada/lines/baris_x]
+FAILED tests_mem/test_PRT8b_gerbang_pertama.py::test_PRT8b_U1_tanpa_sesi_401[DELETE /api/registration/sessions/sesi_tidak_ada/lines/baris_x]
+FAILED tests_mem/test_PRT8b_gerbang_pertama.py::test_PRT8b_U2_tanpa_izin_403_z6
+FAILED tests_mem/test_PRT8b_gerbang_pertama.py::test_PRT8b_U7_batal_pemenuhan_hanya_izin_batal
+FAILED tests_mem/test_PRT8b_gerbang_pertama.py::test_PRT8b_U8_login_saja_tertulis
+9 failed, 7 passed, 1 warning in 2.14s

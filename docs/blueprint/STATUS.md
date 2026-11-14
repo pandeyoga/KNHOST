@@ -36,7 +36,8 @@ Papan kerja agen pelaksana. Aturan mengubahnya: `00_ATURAN_EKSEKUSI.md` §5. Uru
 | 29 | PR-T5 | Katalog izin dirapikan; modul akses dipecah | PR-T2 | selesai | `b8bd0a2` | [PR-T5](../reviews/2026-11-13/hasil/PR-T5.md) | Keputusan pemilik: API Ringkasan kini 403 bagi Sales/Gudang/MD/Admin Gudang/Admin Sample (layar sudah tersembunyi). H3: migrasi prt5:katalog saat proses awal |
 | 30 | PR-T6 | Layar Peran & Hak Akses dan Akun & Akses | PR-T4, PR-T5 | siap |  |  |  |
 | 31 | PR-T7 | Layar memakai izin, bukan nama peran | PR-T2 | selesai | `2d164c9` | [PR-T7](../reviews/2026-11-13/hasil/PR-T7.md) |  |
-| 32 | PR-T8 | Penjaga matriks izin berjalan (peran × endpoint) | PR-T3 | selesai | `303e709` | [PR-T8](../reviews/2026-11-13/hasil/PR-T8.md) | guard:matriks_izin (--full) MERAH 20 baris pada 14 rute — diserahkan ke unit pemilik rute (lihat laporan) |
+| 32 | PR-T8 | Penjaga matriks izin berjalan (peran × endpoint) | PR-T3 | selesai | `303e709` | [PR-T8](../reviews/2026-11-13/hasil/PR-T8.md) | guard:matriks_izin (--full) MERAH 20 baris pada 14 rute — dibereskan PR-T8b (`66c1de3`): sapuan cepat & --penuh HIJAU |
+| 32b | PR-T8b | Rute merah penjaga matriks izin: putusan login-saja dan gerbang izin sebelum dokumen dimuat (T8-01…T8-09) | PR-T8 | selesai | `66c1de3` | [PR-T8b](../reviews/2026-11-13/hasil/PR-T8b.md) |  |
 | 33 | KF-T2 | Kunci pengaturan mati, ganda, dan tersembunyi | KF-T1 | selesai | `1dcb06c` | [KF-T2](../reviews/2026-11-13/hasil/KF-T2.md) | H3: --apply migrate_kft2_akun_bank sebelum dipasang di data nyata |
 | 34 | KF-T3 | Layar menampilkan nilai yang dipakai mesin; jadwal diaktifkan penjadwal | KF-T1 | selesai | `dbe1633` · `9783875` | [KF-T3](../reviews/2026-11-13/hasil/KF-T3.md) |  |
 | 35 | KF-T4 | Bahasa, pengelompokan, dan editor Pusat Pengaturan | KF-T2 | selesai | `13b84dd` | [KF-T4](../reviews/2026-11-13/hasil/KF-T4.md) |  |
@@ -131,3 +132,10 @@ Diisi agen di akhir tiap sesi: tanggal, unit yang selesai, unit yang tertahan da
   rekomendasi namun catat". Dipakai untuk titik henti yang bersifat tinjauan (H1) dan pertanyaan aturan bisnis
   (`00` §4.1). **Tidak** dipakai untuk H2 (jalur produksi), H3 (data nyata), H4 (isi tabel peraturan, akun/arah jurnal
   yang tidak disebut unit), H8 (rahasia): unit itu tetap `tahan`.
+
+**Sesi 14 Nov 2026 — PR-T8b** (cloud, lingkungan B saja)
+
+- Cabang kerja: `claude/wizardly-fermi-q8jeii`, dibuat dari ujung `claude/nifty-carson-jjx3c8` (`2121202`); belum
+  digabung ke `claude/nifty-carson-jjx3c8`.
+- PR-T8b selesai (T8-01…T8-09): `guard:matriks_izin` kini hijau (cepat dan `--penuh`). Lingkungan A tidak tersedia —
+  gate bawaan/`--ci`/`--full` belum dijalankan untuk unit ini.

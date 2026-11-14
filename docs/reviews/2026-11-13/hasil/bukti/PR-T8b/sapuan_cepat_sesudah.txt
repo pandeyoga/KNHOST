@@ -1,0 +1,17 @@
+== INV-PERM-02 — matriks izin berjalan (peran × endpoint) ==
+mode cepat · awalan /api/ · 1773 rute (800 GET) · 7892 permintaan · 64.3 dtk
+  akun             peran                       ditolak  lolos   422  galat    dtk
+  tanpa_token      —                              1771      2     0      0    7.7
+  kosong           Tanpa Acuan Kosong             1699     73     0      1   14.7
+  sopir            Sopir                          1682     90     0      1   14.7
+  mgr0             Manajer Kosong                 1699     73     0      1   14.3
+  penuh            Tanpa Acuan Penuh                13    787     0      0    9.8
+  sesi akhir GET /api/auth/me: kosong 200 · sopir 200 · mgr0 200 · penuh 200
+  jumlah dokumen: users 4 seed + 4 sapuan = 8 (terhitung 8) · custom_roles 0 seed + 3 sapuan = 3 (terhitung 3)
+  pelanggaran: 0
+HIJAU — tidak ada pelanggaran.
+
+real	1m10.203s
+user	1m9.526s
+sys	0m0.682s
+exit=0

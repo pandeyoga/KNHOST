@@ -1,0 +1,5 @@
+# python -m pytest tests_mem -q (dari backend/, dua pekerja pytest.ini)
+sebelum (worktree 2121202): 577 passed, 2 skipped, 3 xfailed, 11 warnings in 135.13s (0:02:15)
+sesudah (salinan kerja):   593 passed, 2 skipped, 3 xfailed, 11 warnings in 129.60s (0:02:09)
+
+# catatan: dari root repo (python -m pytest backend/tests_mem -q) pekerja xdist mengumpulkan 0 uji (exit 5) di kedua salinan — rootdir backend/pytest.ini; pakai -n 0 dari root atau jalankan dari backend/

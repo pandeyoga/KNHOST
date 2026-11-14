@@ -1,0 +1,17 @@
+.............................                                            [100%]
+=============================== warnings summary ===============================
+../../../..<venv>/lib/python3.11/site-packages/starlette/formparsers.py:12
+  <venv>/lib/python3.11/site-packages/starlette/formparsers.py:12: PendingDeprecationWarning: Please use `import python_multipart` instead.
+    import multipart
+
+tests_mem/test_PRT3_login_saja.py::test_PRT3_U11_pratinjau_tidak_menulis
+tests_mem/test_PRT3_login_saja.py::test_PRT3_U11_pratinjau_tidak_menulis
+
+tests_mem/test_PRT3_login_saja.py::test_PRT3_U11_pratinjau_tidak_menulis
+tests_mem/test_PRT3_login_saja.py::test_PRT3_U11_pratinjau_tidak_menulis
+
+tests_mem/test_PRT3_login_saja.py::test_PRT3_U11_pratinjau_tidak_menulis
+tests_mem/test_PRT3_login_saja.py::test_PRT3_U11_pratinjau_tidak_menulis
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+29 passed, 7 warnings in 5.63s
