@@ -36,7 +36,12 @@ def _now():
 
 @pytest.fixture(scope="module")
 def h():
-    return _login()
+    hh = _login()
+    # Label alasan kasus dibuat saat daftar alasan pertama kali dibaca (layar penyelesaian memanggilnya sebelum
+    # menyimpan); database data acuan yang baru dipulihkan belum punya `amendment_reasons`.
+    r = requests.get(f"{BASE}/finance-cases/reasons", headers=hh, timeout=30)
+    assert r.status_code == 200, r.text
+    return hh
 
 
 def _dunia(hh):
