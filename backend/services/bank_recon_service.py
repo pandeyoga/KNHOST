@@ -46,6 +46,7 @@ from fastapi import HTTPException
 
 from db import db
 from core_utils import new_id, now_iso, safe_doc, rupiah
+from ai_card_context import card_field
 from services import bank_statement_parser as parser
 from services.config_resolver import value_of
 logger = logging.getLogger(__name__)
@@ -674,12 +675,15 @@ async def _link(line: Dict[str, Any], allocations: List[Dict[str, Any]], actor: 
             raise ValueError("Sisa transaksi buku tidak cukup (baru saja dipakai proses lain / alokasi ganda).")
         claimed.append({"txn_id": a["txn_id"], "amount": amt})
     txn_ids = [a["txn_id"] for a in allocations]
+    # AG-T3 — catatan cocok dari kartu tindakan asisten membawa `ai_card_id`; dicocokkan di layar → field dihapus
+    # (tidak mewarisi id kartu dari pencocokan sebelumnya yang sudah dilepas).
+    kartu = card_field()
     await db.bank_statement_lines.update_one({"id": line["id"], "match_lock": op}, {"$set": {
         "status": "matched", "match_kind": match_kind,
         "matched_txn_id": txn_ids[0] if len(txn_ids) == 1 else "",
         "matched_txn_ids": txn_ids, "allocations": allocations,
-        "match_type": match_type, "matched_at": now, "matched_by": actor,
-        "updated_at": now}, "$unset": {"match_lock": "", "match_lock_at": ""}})
+        "match_type": match_type, "matched_at": now, "matched_by": actor, **kartu,
+        "updated_at": now}, "$unset": {"match_lock": "", "match_lock_at": "", **({} if kartu else {"ai_card_id": ""})}})
 
 
 async def _unlink(line: Dict[str, Any], op: str = "", actor: str = "") -> None:
@@ -1331,7 +1335,7 @@ async def allocate_holding(line_id: str, allocations: List[Dict[str, Any]], cust
             item = {"id": new_id("bha"), "order_id": order_id, "order_number": order.get("number", ""),
                     "amount": amt, "status": "pending", "gl_status": "", "gl_error": "",
                     "reason_code": reason_code, "note": note, "customer_id": customer_id,
-                    "at": now_iso(), "by": actor}
+                    "at": now_iso(), "by": actor, **card_field()}   # AG-T3 — dari kartu tindakan asisten
             cur = await db.bank_statement_lines.find_one({"id": line_id}, {"_id": 0, "holding_remaining": 1})
             # NIAT — butir `pending` dicatat dengan syarat sisa titipan belum berubah.
             res = await db.bank_statement_lines.update_one(

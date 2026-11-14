@@ -113,6 +113,10 @@ PK29_KUNCI = 1
 # `accounting.manage` (kelompok "pajak-pembukuan"): ikut terhitung di katalog (U04) tetapi tidak bisa diubah pemegang
 # `settings.manage` saja (U02 tetap).
 PK22_KUNCI = 1
+# AG-T3 — dua kunci baru `ai.tindakan_uang_masuk` (sakelar kartu uang masuk per PT) dan `ai.tindakan_maks_per_hari`
+# (batas kartu disetujui per orang per hari) berizin `ai.configure`: ikut terhitung di katalog (U04) tetapi tidak bisa
+# diubah pemegang `settings.manage` saja (U02 tetap).
+AGT3_KUNCI = 2
 
 
 def _put(key, value, scope_type="entity", scope_id="ent_ksc"):
@@ -180,10 +184,10 @@ async def test_U04_lihat_saja_tidak_bisa_ubah(klien, akun, sesi, peran_tanpa_acu
     # TX-T1 tujuh kunci pajak (faktor, pembulatan, kode transaksi); PK-39 mode pemeriksaan anggaran; PK-26 porsi biaya
     # masuk roll yang sudah terjual; AG-T2 penyamaran nama pihak ke penyedia model; PK-24 kontrol dua orang
     # cairkan uang muka dan LPJ wajib berlampiran; PK-29 true-up persediaan hanya untuk saldo awal; PK-22
-    # tanggal jurnal periodik.
+    # tanggal jurnal periodik; AG-T3 sakelar kartu uang masuk & batas kartu per hari.
     assert r.json()["total"] == 310 + 5 + KFT6_KUNCI + KFT2_KUNCI + KPT7_KUNCI + PK36_KUNCI + KFT7_KUNCI + PK37_KUNCI \
         + PK38_KUNCI + KPT8_KUNCI + PK30_KUNCI + PMT1_KUNCI + CRT1_KUNCI + AGT1_KUNCI + PMT2_KUNCI + TXT1_KUNCI \
-        + PK39_KUNCI + PK26_KUNCI + AGT2_KUNCI + PK24_KUNCI + PK29_KUNCI + PK22_KUNCI
+        + PK39_KUNCI + PK26_KUNCI + AGT2_KUNCI + PK24_KUNCI + PK29_KUNCI + PK22_KUNCI + AGT3_KUNCI
 
 
 async def test_U05_manajer_kosong_tidak_lagi_lewat_nama_peran(klien, akun, sesi, peran_manajer_kosong):

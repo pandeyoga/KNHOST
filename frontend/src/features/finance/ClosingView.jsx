@@ -9,6 +9,7 @@ import {
   RefreshCw, CalendarX, Lock, Unlock, FileStack, CheckCircle2, AlertTriangle,
   Eye, Building2, RotateCcw,
 } from "lucide-react";
+import { AskKnButton } from "../../components/AskKnButton";
 import EntityRequiredNotice from "../../components/EntityRequiredNotice";
 import DesktopOnlyNotice from "../../components/DesktopOnlyNotice";
 import { MetricRow } from "../../components/ListPageParts";
@@ -258,6 +259,11 @@ export default function ClosingView({ selectedEntity, entities = [], currentUser
                 title="Badan usaha mengikuti pilihan di kepala aplikasi">
                 <Building2 size={12} aria-hidden="true" /> <b className="text-[#1C1C1E]">{entityLabel}</b>
               </span>
+            )}
+            {/* AG-T3 — "Tanya soal layar ini" untuk periode terpilih (Asisten Keuangan; tampil menurut izin). */}
+            {entityId && (
+              <AskKnButton type="period" id={periodKey} label={`${periodType === "year" ? "Tahun" : "Bulan"} ${periodKey}`}
+                buttonLabel="Tanya soal layar ini" className="secondary-button btn-sm" />
             )}
             <button data-testid="closing-refresh" className="icon-button" onClick={load} aria-label="Muat ulang" title="Muat ulang"><RefreshCw size={14} className={loading ? "animate-spin" : ""} /></button>
           </div>

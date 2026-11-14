@@ -84,7 +84,9 @@ async def retry_posting_failure(kind: str, doc_id: str, request: Request) -> Dic
         raise
     except Exception as exc:  # noqa: BLE001
         raise HTTPException(status_code=409, detail=f"Posting masih gagal: {exc}")
-    await audit(actor["name"], "posting_failure_retried", kind, doc_id, {})
+    # AG-T3 — ulang dari kartu tindakan asisten: id kartu di jejak audit saja (dokumennya tidak diubah).
+    from ai_card_context import card_field
+    await audit(actor["name"], "posting_failure_retried", kind, doc_id, card_field())
     fresh = await db[spec["collection"]].find_one({"id": doc["id"]}, {"_id": 0}) or {}
     return {"kind": kind, "id": doc_id, **reg.status_of(kind, fresh, doc_id)}
 

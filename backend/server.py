@@ -146,6 +146,9 @@ app.add_middleware(EntityWriteGuardMiddleware)
 # Sesi 14 — Idempotency-Key untuk aksi gudang HP (antrean offline / klik ganda): kunci sama → balasan pertama.
 from idempotency import IdempotencyMiddleware  # noqa: E402
 app.add_middleware(IdempotencyMiddleware)
+# AG-T3 — id kartu tindakan asisten (`X-Asisten-Kartu`) ke konteks permintaan, hanya untuk kartu `running` milik sesi.
+from ai_card_context import AiCardMiddleware  # noqa: E402
+app.add_middleware(AiCardMiddleware)
 # L01 LN-012 — grade/LOT/asal disaring per peran di satu choke point (layar, API, ekspor JSON).
 from services.field_visibility import FieldVisibilityMiddleware  # noqa: E402
 app.add_middleware(FieldVisibilityMiddleware)

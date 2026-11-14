@@ -117,7 +117,8 @@ def test_U02_pemeriksa_hijau():
     # dan `credit_profile_requests.uq_open_request`: + 2. PK-31 menambah `intercompany_eliminations.uq_pair_period`: + 1.
     # PM-T2 menambah `payment_codes.uq_pay_code` dan `payment_codes.uq_pay_code_line`: + 2.
     # PK-39 menambah `budgets.uq_budget_key` (satu pagu per PT, tahun, bulan, dimensi, kunci): + 1.
-    assert out.count(": terpasang · 0 kelompok kembar") == len(REQUIRED_UNIQUE_INDEXES) == 22
+    # AG-T3 menambah `ai_action_proposals.uq_pending_session` (satu kartu asisten menunggu per percakapan): + 1.
+    assert out.count(": terpasang · 0 kelompok kembar") == len(REQUIRED_UNIQUE_INDEXES) == 23
 
 
 def test_U03_U04_U05_indeks_tak_terpasang_menolak_mulai():

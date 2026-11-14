@@ -35,6 +35,8 @@ VERSIONS = "prompt sp-v1 · katalog cat-v1 · tool tools-v1"
 # AG-T2 — mode Keuangan: alat baca lewat pintu aplikasi sendiri, instruksi tambahan, teks tidak dialirkan.
 TOOLS_FIN_V1 = json.loads((_DATA / "tools_kn_keuangan_v1.json").read_text(encoding="utf-8"))
 FINANCE_PROMPT_V1 = (_DATA / "system_prompt_kn_keuangan_v1.md").read_text(encoding="utf-8")
+# AG-T3 — alat `prepare_action` (kartu tindakan golongan A/B) hanya di mode Keuangan. Tidak ada alat untuk menyetujui.
+TOOLS_ACT_V1 = json.loads((_DATA / "tools_kn_tindakan_v1.json").read_text(encoding="utf-8"))
 MODES = ("umum", "keuangan")
 #: Konstanta teknis (bukan aturan bisnis): satu putaran ulang bila pemeriksa angka menolak jawaban mode Keuangan.
 FINANCE_VERIFY_RETRIES = 1
@@ -43,13 +45,13 @@ STREAM_BY_MODE = {"umum": True, "keuangan": False}
 FINANCE_FALLBACK = ("Saya tidak bisa memastikan angka untuk pertanyaan ini. Data yang berhasil diambil ada di tabel "
                     "di bawah.")
 #: Alat yang mengubah data (kartu tindakan). Ditolak sesudah alat teks bebas dipakai pada giliran yang sama.
-ACTION_TOOLS = frozenset({"propose_action"})
+ACTION_TOOLS = frozenset({"propose_action", "prepare_action"})
 ACTION_BLOCKED = "Alat tindakan tidak tersedia pada giliran ini."
 #: Label sehari-hari alat untuk teks status di layar (kode alat tidak ditampilkan; L1).
 TOOL_STATUS_LABEL = {
     "query_metrics": "angka ringkasan", "analyze_change": "analisis perubahan", "list_records": "daftar dokumen",
     "run_report": "laporan", "find_entities": "pencarian nama", "get_document": "dokumen", "ops_metrics": "metrik operasional",
-    "forecast": "perkiraan", "propose_action": "draf tindakan",
+    "forecast": "perkiraan", "propose_action": "draf tindakan", "prepare_action": "kartu tindakan",
     "fin_journal_search": "jurnal", "fin_journal_get": "rincian jurnal", "fin_account_ledger": "buku besar",
     "fin_trial_balance": "neraca saldo", "fin_income_statement": "laba rugi", "fin_balance_sheet": "neraca",
     "fin_cash_flow": "arus kas", "fin_equity_changes": "perubahan ekuitas", "fin_ar_aging": "umur piutang",
@@ -150,7 +152,10 @@ async def _glossary() -> str:
 CONTEXT_TYPES = {"customer": ("Pelanggan", "id"), "product": ("Produk", "id"), "sales_order": ("Pesanan penjualan", "nomor"),
                  "purchase_order": ("Purchase order", "nomor"), "goods_receipt": ("Kedatangan barang (GRN)", "nomor"),
                  "sales_return": ("Retur penjualan", "nomor"), "purchase_return": ("Retur pembelian", "nomor"),
-                 "vendor_bill": ("Tagihan supplier", "nomor"), "makloon_order": ("Order makloon", "nomor")}
+                 "vendor_bill": ("Tagihan supplier", "nomor"), "makloon_order": ("Order makloon", "nomor"),
+                 # AG-T3 — tombol "Tanya soal layar ini" di layar keuangan (Buku Besar, Piutang, Kas & Bank, Tutup Buku)
+                 "journal_entry": ("Jurnal", "nomor"), "ar_receipt": ("Piutang pelanggan", "id"),
+                 "bank_line": ("Mutasi bank", "id"), "period": ("Periode tutup buku", "nomor")}
 
 
 def context_prefix(context: Optional[Dict[str, Any]]) -> str:
@@ -198,6 +203,7 @@ class _TurnState:
     scope: Dict[str, Any] = field(default_factory=dict)
     free_text_seen: bool = False
     raw_results: List[Dict[str, Any]] = field(default_factory=list)
+    question: str = ""   # AG-T3 — kalimat permintaan pengguna disimpan di kartu tindakan (`request`)
 
     @property
     def finance(self) -> bool:
@@ -253,6 +259,7 @@ async def chat_events(question: str, session_id: Optional[str], deep: bool, user
             yield ev
         return
     st = await _turn_state(mode, api, session, ctx)
+    st.question = question
     sys_prompt = SYSTEM_PROMPT_V1 + ("\n\n" + FINANCE_PROMPT_V1 if st.finance else "")
     instructions = [sys_prompt, CATALOG_V1, await _session_context(user, ctx, masked=st.masker is not None)]
     q_model = st.masker.mask_text(question) if st.masker else question   # nama yang sudah dikenal sesi → kode
@@ -424,7 +431,7 @@ async def _model_loop(provider, cfg, deep, instructions, items, results, rids, u
                       st: Optional[_TurnState] = None):
     st = st or _TurnState()
     stream = STREAM_BY_MODE.get(st.mode, True)
-    tools = TOOLS_V1 + TOOLS_FIN_V1 if st.finance else TOOLS_V1
+    tools = TOOLS_V1 + TOOLS_FIN_V1 + TOOLS_ACT_V1 if st.finance else TOOLS_V1
     text = ""
     for _ in range(int(cfg["max_tool_rounds"] or 6)):
         yield {"type": "status", "text": "Menganalisis pertanyaan…" if not results else "Menyusun jawaban…"}
@@ -487,6 +494,15 @@ async def _run_tool(name: str, args: Dict[str, Any], user, ctx, session, st: _Tu
     from services import ai_finance_tools as fin
     if name in ACTION_TOOLS and st.free_text_seen:
         return {"error": ACTION_BLOCKED}
+    if name == "prepare_action":   # AG-T3 — kartu disiapkan; giliran model berhenti di sini (menyetujui = layar)
+        from fastapi import HTTPException
+        from services import ai_cards
+        try:
+            card = await ai_cards.prepare(str(args.get("action") or ""), args.get("args") or {}, api=st.api, user=user,
+                                          ctx=ctx, session_id=session["id"], user_request=st.question)
+        except HTTPException as exc:
+            return {"error": str(exc.detail)}
+        return ai_cards.tool_result(card)
     if name in fin.TOOLS:
         res = await fin.execute(name, args, fin.FinCall(api=st.api, user=user, ctx=ctx, session_id=session["id"],
                                                         scope=st.scope))

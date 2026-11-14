@@ -133,10 +133,18 @@ async def run_template(template_id: str, payload: Dict[str, Any], request: Reque
 
 @router.post("/tools/{tool}")
 async def run_tool(tool: str, payload: Dict[str, Any], request: Request) -> Dict[str, Any]:
-    user = await _chat_user(request, {"mode": "keuangan" if tool.startswith("fin_") else "umum"})
+    # AG-T3 — `prepare_action` (kartu tindakan golongan A/B) termasuk Asisten Keuangan: gerbang sama dengan alat `fin_*`.
+    user = await _chat_user(request, {"mode": "keuangan" if tool.startswith("fin_") or tool == "prepare_action"
+                                      else "umum"})
     from services import ai_finance_tools, ai_tools
     user = user[0]
     ctx = await entity_ctx(request)
+    if tool == "prepare_action":
+        from services import ai_cards
+        card = await ai_cards.prepare(str(payload.get("action") or ""), payload.get("args") or {}, request=request,
+                                      user=user, ctx=ctx, session_id=str(payload.get("session_id") or ""),
+                                      user_request=str(payload.get("user_request") or ""))
+        return {**ai_cards.tool_result(card), "card": card}
     if tool in ai_finance_tools.TOOLS:
         from entity_scope import scope_meta
         from services.ai_privacy import drop_salary

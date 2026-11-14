@@ -1739,6 +1739,14 @@
    "sistem",
    "tanya-kn-tindakan"
   ],
+  "ai.tindakan_uang_masuk": [
+   "sistem",
+   "tanya-kn-tindakan"
+  ],
+  "ai.tindakan_maks_per_hari": [
+   "sistem",
+   "tanya-kn-tindakan"
+  ],
   "ai.samarkan_nama": [
    "sistem",
    "tanya-kn-privasi"

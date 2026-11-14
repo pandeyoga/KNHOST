@@ -33,6 +33,8 @@ MSG_KEDALUWARSA = "Draf ini sudah kedaluwarsa. Minta asisten menyiapkannya lagi.
 MSG_SUDAH_DIPROSES = "Draf ini sudah diproses"
 MSG_TANPA_AKSES_PT = "Anda tidak lagi punya akses ke PT draf ini."
 MSG_PROSES_MATI = "Proses berhenti sebelum selesai. Periksa daftar PO sebelum meminta draf baru."
+#: AG-T3 — kartu golongan A/B (`services/ai_cards.py`) yang prosesnya mati: hasilnya tidak pasti.
+MSG_PROSES_MATI_KARTU = "Proses berhenti sebelum selesai. Periksa dokumennya sebelum meminta kartu baru."
 
 
 async def _warehouse(entity_id: str) -> Dict[str, Any]:
@@ -172,7 +174,9 @@ async def propose_action(args, user, ctx, session_id=None) -> Dict[str, Any]:
            "payload": {k: v for k, v in body.items() if k != "rows"}, "user_id": user["id"], "user_name": user.get("name", ""),
            "entity_id": entity_id, "session_id": session_id or "", "created_at": dibuat.isoformat(),
            "expires_at": (dibuat + timedelta(hours=jam)).isoformat()}
-    await db.ai_action_proposals.insert_one(dict(doc))
+    # AG-T3 — satu kartu `pending` per percakapan (indeks `uq_pending_session`): kartu sebelumnya `superseded`.
+    from services.ai_cards import insert_card
+    await insert_card(doc)
     return {"proposal_id": doc["id"], "action_type": at, "title": title, "rows": body["rows"],
             "instruction": f"Sisipkan blok ```kn-action\n{{\"proposal_id\": \"{doc['id']}\"}}\n``` agar pengguna bisa menyetujui."}
 
@@ -198,6 +202,9 @@ async def _segarkan(doc: Dict[str, Any]) -> Dict[str, Any]:
             if doc.get("updated_at"):
                 flt["updated_at"] = doc["updated_at"]
             upd = {"status": "failed", "error": MSG_PROSES_MATI, "finished_at": now.isoformat(), "updated_at": now.isoformat()}
+            if doc.get("class"):   # AG-T3 — kartu baru: galat bersandi `uncertain` (hasil tidak pasti)
+                upd.update(error=MSG_PROSES_MATI_KARTU, error_code="uncertain",
+                           result={"status_code": 0, "document": None, "gl_status": None, "message": MSG_PROSES_MATI_KARTU})
             res = await db.ai_action_proposals.update_one(flt, {"$set": upd})
             if res.modified_count:
                 doc.update(upd)

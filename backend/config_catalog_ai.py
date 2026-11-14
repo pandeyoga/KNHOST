@@ -146,6 +146,23 @@ E("ai.kartu_masa_berlaku_jam", group="sistem", section="tanya-kn-tindakan", type
   consumers=("services/ai_actions.py:propose_action", "services/ai_actions.py:_masa_berlaku"), risk="low",
   permission=("settings", "manage"))
 
+# ── AG-T3 (K-44, K-45) — kartu tindakan golongan B (uang masuk) & batas harian kartu disetujui ───────────────────────
+E("ai.tindakan_uang_masuk", group="asisten-analitik", section="tanya-kn-tindakan", type="bool", default=False,
+  scopes=("global", "entity"),
+  label="Izinkan asisten mencatat uang masuk",
+  help="Menyala = pengguna yang dinyalakan boleh menyetujui kartu kwitansi, pencocokan bank, alokasi titipan, dan ulang "
+       "jurnal yang gagal untuk PT ini.",
+  impact="Mati = kartu golongan itu tidak bisa disiapkan maupun disetujui untuk PT ini.",
+  example="Ya untuk PT A saja",
+  consumers=("services/ai_cards.py:_sakelar_b",), risk="high", requires_reason=True, permission=("ai", "configure"))
+E("ai.tindakan_maks_per_hari", group="asisten-analitik", section="tanya-kn-tindakan", type="int", default=0, min=0,
+  max=1000, scopes=("global", "entity"), unit="kartu",
+  label="Batas kartu disetujui per orang per hari",
+  help="Jumlah kartu tindakan asisten yang boleh disetujui satu orang dalam satu hari (WIB). 0 = tanpa batas.",
+  impact="Tercapai = kartu berikutnya ditolak sampai besok.",
+  example="50",
+  consumers=("services/ai_cards.py:_batas_harian",), risk="low", permission=("ai", "configure"))
+
 # ── AG-T2 (K-43) — nama pihak disamarkan sebelum dikirim ke penyedia model (per PT) ─────────────────────────────────
 E("ai.samarkan_nama", group="asisten-analitik", section="tanya-kn-privasi", type="bool", default=True,
   scopes=("global", "entity"),

@@ -1,0 +1,208 @@
+[
+ {
+  "type": "function",
+  "name": "prepare_action",
+  "strict": true,
+  "description": "Siapkan KARTU tindakan yang baru dijalankan setelah pengguna sendiri menyetujuinya di layar (tidak ada alat untuk menyetujui). Kartu memanggil layar yang sama dengan izin pengguna. followup_note = catat tindak lanjut penagihan; payment_promise = catat janji bayar (promise_date wajib); collection_reminder = tandai pelanggan sudah diingatkan; ar_receipt_create = catat kwitansi piutang beserta alokasi ke pesanan; bank_match = cocokkan mutasi bank dengan transaksi kas kandidat; holding_allocate = alokasikan titipan bank ke tagihan pelanggan; posting_retry = ulang jurnal dokumen di daftar Posting Gagal. Isi hanya argumen yang dipakai tindakan itu, sisanya null. Jangan pernah mengisi PT. Panggil hanya bila pengguna memintanya.",
+  "parameters": {
+   "type": "object",
+   "additionalProperties": false,
+   "required": [
+    "action",
+    "args",
+    "user_request"
+   ],
+   "properties": {
+    "action": {
+     "type": "string",
+     "enum": [
+      "followup_note",
+      "payment_promise",
+      "collection_reminder",
+      "ar_receipt_create",
+      "bank_match",
+      "holding_allocate",
+      "posting_retry"
+     ]
+    },
+    "args": {
+     "type": "object",
+     "additionalProperties": false,
+     "required": [
+      "account_id",
+      "allocations",
+      "amount",
+      "customer_id",
+      "doc_id",
+      "kind",
+      "line_id",
+      "method",
+      "next_action_date",
+      "note",
+      "notes",
+      "order_id",
+      "outcome",
+      "promise_date",
+      "reason_code",
+      "receipt_date",
+      "txn_id"
+     ],
+     "properties": {
+      "customer_id": {
+       "type": [
+        "string",
+        "null"
+       ],
+       "description": "Id pelanggan (dari hasil alat, mis. fin_ar_customer/find_entities)."
+      },
+      "order_id": {
+       "type": [
+        "string",
+        "null"
+       ],
+       "description": "Id pesanan bila tindak lanjut/pengingat untuk satu pesanan."
+      },
+      "amount": {
+       "type": [
+        "number",
+        "null"
+       ],
+       "description": "Nominal kwitansi (ar_receipt_create) atau nominal yang dijanjikan (payment_promise)."
+      },
+      "allocations": {
+       "type": [
+        "array",
+        "null"
+       ],
+       "description": "Alokasi ke pesanan (ar_receipt_create, holding_allocate).",
+       "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+         "order_id",
+         "amount"
+        ],
+        "properties": {
+         "order_id": {
+          "type": "string"
+         },
+         "amount": {
+          "type": "number"
+         }
+        }
+       }
+      },
+      "receipt_date": {
+       "type": [
+        "string",
+        "null"
+       ],
+       "description": "Tanggal kwitansi TTTT-BB-HH (kosong = hari ini WIB)."
+      },
+      "method": {
+       "type": [
+        "string",
+        "null"
+       ],
+       "description": "Cara bayar kwitansi, mis. transfer, tunai, giro, qris."
+      },
+      "account_id": {
+       "type": [
+        "string",
+        "null"
+       ],
+       "description": "Rekening penerima kwitansi bila PT punya lebih dari satu rekening."
+      },
+      "notes": {
+       "type": [
+        "string",
+        "null"
+       ],
+       "description": "Catatan kwitansi."
+      },
+      "note": {
+       "type": [
+        "string",
+        "null"
+       ],
+       "description": "Catatan tindak lanjut / janji bayar / pengingat / alokasi titipan."
+      },
+      "outcome": {
+       "type": [
+        "string",
+        "null"
+       ],
+       "enum": [
+        "contacted",
+        "no_response",
+        "escalated",
+        null
+       ],
+       "description": "Hasil tindak lanjut (followup_note)."
+      },
+      "next_action_date": {
+       "type": [
+        "string",
+        "null"
+       ],
+       "description": "Tanggal tindak lanjut berikutnya TTTT-BB-HH."
+      },
+      "promise_date": {
+       "type": [
+        "string",
+        "null"
+       ],
+       "description": "Tanggal janji bayar TTTT-BB-HH (wajib untuk payment_promise)."
+      },
+      "line_id": {
+       "type": [
+        "string",
+        "null"
+       ],
+       "description": "Id baris mutasi bank (bank_match, holding_allocate)."
+      },
+      "txn_id": {
+       "type": [
+        "string",
+        "null"
+       ],
+       "description": "Id transaksi kas kandidat pencocokan (bank_match)."
+      },
+      "reason_code": {
+       "type": [
+        "string",
+        "null"
+       ],
+       "enum": [
+        "identified_customer",
+        "customer_confirmation",
+        "sales_confirmation",
+        "partial_identification",
+        null
+       ],
+       "description": "Alasan alokasi titipan."
+      },
+      "kind": {
+       "type": [
+        "string",
+        "null"
+       ],
+       "description": "Jenis dokumen di daftar Posting Gagal (posting_retry)."
+      },
+      "doc_id": {
+       "type": [
+        "string",
+        "null"
+       ],
+       "description": "Id baris dokumen di daftar Posting Gagal (posting_retry)."
+      }
+     }
+    },
+    "user_request": {
+     "type": "string",
+     "description": "Kalimat permintaan pengguna (≤ 500 huruf)."
+    }
+   }
+  }
+ }
+]

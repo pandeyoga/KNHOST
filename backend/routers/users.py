@@ -154,13 +154,25 @@ async def create_user(payload: UserCreate, request: Request) -> Dict[str, Any]:
 AI_FINANCE_DENIED = "Asisten Keuangan hanya bisa dinyalakan oleh pemegang akses konfigurasi asisten."
 
 
+#: AG-T3 — golongan kartu tindakan yang bisa dinyalakan per akun (`users.ai_finance.classes`). Golongan A tidak butuh
+#: sakelar; golongan B = tindakan uang masuk (kwitansi, pencocokan bank, alokasi titipan, ulang jurnal gagal).
+AI_FINANCE_CLASSES = ("B",)
+
+
 async def _guard_ai_finance(actor: Dict[str, Any], value: Any) -> None:
-    """AG-T2 (K-45) — sakelar Asisten Keuangan per akun: hanya pemegang `ai.configure` (izin, bukan nama peran)."""
+    """AG-T2 (K-45) — sakelar Asisten Keuangan per akun: hanya pemegang `ai.configure` (izin, bukan nama peran).
+    AG-T3 — isian boleh memuat `enabled` (nyala/mati) dan/atau `classes` (daftar golongan kartu, nilai `B`); yang tidak
+    dikirim dipertahankan (lihat `update_user`)."""
     from dependencies import has_permission
     if not await has_permission(actor, "ai", "configure"):
         raise HTTPException(status_code=403, detail=AI_FINANCE_DENIED)
-    if not isinstance(value, dict) or set(value) != {"enabled"} or not isinstance(value.get("enabled"), bool):
+    if (not isinstance(value, dict) or not value or not set(value) <= {"enabled", "classes"}
+            or ("enabled" in value and not isinstance(value.get("enabled"), bool))):
         raise HTTPException(status_code=400, detail="Sakelar Asisten Keuangan harus berisi nyala atau mati.")
+    if "classes" in value:
+        cl = value.get("classes")
+        if (not isinstance(cl, list) or any(c not in AI_FINANCE_CLASSES for c in cl) or len(set(cl)) != len(cl)):
+            raise HTTPException(status_code=400, detail="Golongan tindakan asisten hanya boleh 'B' (uang masuk).")
 
 
 @router.patch("/users/{user_id}")
@@ -177,12 +189,18 @@ async def update_user(user_id: str, payload: GenericPatch,
     if "ai_finance" in (payload.data or {}):
         await _guard_ai_finance(actor, payload.data["ai_finance"])
     from services.access_guard import assert_can_manage_account   # PR-T1
-    await assert_can_manage_account(actor, target_user=await svc.get_user_or_404(user_id),
-                                    new_role=(payload.data or {}).get("role"))
+    target = await svc.get_user_or_404(user_id)
+    await assert_can_manage_account(actor, target_user=target, new_role=(payload.data or {}).get("role"))
+    if "ai_finance" in (payload.data or {}):
+        # AG-T3 — isian yang tidak dikirim (nyala/mati atau golongan) dipertahankan dari akun.
+        lama = target.get("ai_finance") if isinstance(target.get("ai_finance"), dict) else {}
+        payload.data["ai_finance"] = {**{k: v for k, v in lama.items() if k in ("enabled", "classes")},
+                                      **payload.data["ai_finance"]}
     after = await svc.update_user(user_id, payload.data or {})
     if "ai_finance" in (payload.data or {}):
+        af = payload.data["ai_finance"]
         await audit(actor["name"], "ai_finance_toggled", "user", user_id,
-                    {"enabled": bool(payload.data["ai_finance"]["enabled"])},
+                    {"enabled": bool(af.get("enabled")), "classes": list(af.get("classes") or [])},
                     scope_entity_id=after.get("home_entity_id", ""))
     await audit(actor["name"], "user_updated", "user", user_id,
                 {"changed": after.get("changed_fields", []),

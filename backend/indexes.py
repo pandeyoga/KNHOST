@@ -397,6 +397,7 @@ INDEX_SPECS: Dict[str, List[IndexKeys]] = {
     # AG-T1 — kartu tindakan Tanya KN milik pengguna (kunci `id` unik: ID_INDEX_COLLECTIONS).
     "ai_action_proposals": [
         [("user_id", A), ("status", A), ("created_at", D)],
+        [("entity_id", A), ("status", A)],   # AG-T3 — daftar kartu per PT & status
     ],
     # AG-T4 — paket tutup buku milik pengguna (kunci `id` unik: ID_INDEX_COLLECTIONS).
     "ai_finance_packs": [
@@ -835,6 +836,18 @@ REQUIRED_UNIQUE_INDEXES += [
      "partial": {"key": dict(_NONEMPTY)},
      "finder": _finder_dup("budgets", '{key:{$type:"string",$gt:""}}',
                            '{e:"$entity_id",y:"$year",m:"$month",d:"$dimension",k:"$key"}', "$id")},
+]
+
+
+# AG-T3 (D7) — satu kartu tindakan asisten `pending` per percakapan: kartu baru di percakapan yang sama menandai kartu
+# sebelumnya `superseded` lalu menyisip (`ai_cards.prepare`, `ai_actions.propose_action`); dua penyiapan bersamaan → satu
+# kena DuplicateKeyError lalu diulang sekali. Kartu tanpa percakapan (`session_id` kosong, mis. alat dipanggil langsung)
+# tidak ikut. Data lama yang kembar → indeks gagal dibuat → titik henti H6; kueri pencarinya = `finder`.
+REQUIRED_UNIQUE_INDEXES += [
+    {"collection": "ai_action_proposals", "name": "uq_pending_session",
+     "label": "satu kartu tindakan asisten menunggu per percakapan", "keys": [("session_id", 1)],
+     "partial": {"status": "pending", "session_id": {"$gt": ""}},
+     "finder": _finder_dup("ai_action_proposals", '{status:"pending",session_id:{$gt:""}}', '"$session_id"', "$id")},
 ]
 
 

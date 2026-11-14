@@ -31,6 +31,10 @@ from typing import Any, AsyncIterator, Dict, Optional
 import httpx
 
 READ_ONLY_MESSAGE = ("Asisten hanya boleh membaca. Perubahan dilakukan lewat kartu tindakan yang Anda setujui.")
+#: AG-T3 — mode tulis (kartu tindakan yang disetujui) hanya menerima pintu yang terdaftar di `ai_cards`.
+WRITE_PATH_MESSAGE = "Asisten hanya boleh menulis lewat pintu kartu tindakan yang terdaftar."
+#: AG-T3 — header id kartu; dibaca `ai_card_context.AiCardMiddleware` (hanya kartu `running` milik sesi).
+CARD_HEADER = "X-Asisten-Kartu"
 ENTITY_MESSAGE = "PT diambil dari sesi, bukan dari permintaan."
 PATH_MESSAGE = "Asisten hanya boleh memanggil endpoint data aplikasi."
 #: Umur sesi sementara jadwal laporan (batas teknis, bukan aturan bisnis).
@@ -86,6 +90,7 @@ class SelfApi:
         self.card_id = card_id or ""
         self._client: Optional[httpx.AsyncClient] = None
         self._temp_token = ""
+        self.last_status = 0
 
     @classmethod
     def from_request(cls, request: Any, *, read_only: bool = True, card_id: str = "") -> "SelfApi":
@@ -123,17 +128,22 @@ class SelfApi:
             raise SelfApiError(400, PATH_MESSAGE)
         if self.read_only and method != "GET":
             raise SelfApiError(403, READ_ONLY_MESSAGE)
+        if not self.read_only:
+            from services.ai_cards import write_allowed   # AG-T3 — hanya `write_path` tindakan terdaftar
+            if not write_allowed(method, path):
+                raise SelfApiError(403, WRITE_PATH_MESSAGE)
         if _has_entity_key(params) or _has_entity_key(json):
             raise SelfApiError(400, ENTITY_MESSAGE)
         headers = {"Authorization": f"Bearer {self.token}", "X-Via": "asisten"}
         if self.entity_header:
             headers["X-Entity-Id"] = self.entity_header
         if self.card_id:
-            headers["X-Ai-Card"] = self.card_id
+            headers[CARD_HEADER] = self.card_id
         if idempotency_key:
             headers["Idempotency-Key"] = idempotency_key
         clean = {k: v for k, v in (params or {}).items() if v is not None and v != ""}
         resp = await self._http().request(method, path, params=clean, json=json, headers=headers)
+        self.last_status = resp.status_code
         if resp.status_code >= 400:
             raise SelfApiError(resp.status_code, _detail(resp))
         try:

@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 import axios, { API } from "../../../services/apiClient";
 import { formatCurrency, formatDate } from "../../../utils/formatters";
+import { AskKnButton } from "../../../components/AskKnButton";
 import ErrorNotice from "../../../components/ErrorNotice";
 import FormModal from "../../../components/FormModal";
 import { apiErrorText } from "../../../utils/apiError";
@@ -285,6 +286,9 @@ export default function ReconLinesTable({ lines, busy, onAction, onOpenMatch, on
                           onClick={() => onAction(l.id, "ignore", { note: "" }, "Baris diabaikan.")}>
                           <EyeOff size={12} /> Abaikan
                         </button>
+                        {/* AG-T3 — tanya asisten soal mutasi ini (Asisten Keuangan; tampil menurut izin). */}
+                        <AskKnButton type="bank_line" id={l.id} label={`${formatDate(l.stmt_date)} · ${l.description || ""}`}
+                          buttonLabel="Tanya asisten" className="link-button" />
                       </div>
                     )}
                   </td>

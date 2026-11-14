@@ -44,10 +44,18 @@ IDEMPOTENT_PREFIXES = ("/api/inbound/", "/api/outbound/", "/api/wms/tasks/",
                        # PK-28 — kliring GR/IR menerbitkan jurnal: kirim ulang = satu kliring.
                        "/api/finance/gr-ir",
                        # PK-22 — posting/anulir/bayar gaji dan setoran kewajiban: kirim ulang = satu jurnal/kas.
-                       "/api/hr/payroll/")
+                       "/api/hr/payroll/",
+                       # AG-T3 — pintu yang dipanggil kartu tindakan asisten (kunci = id kartu): kirim ulang = satu
+                       # tulisan. Hanya berlaku bila klien mengirim kunci; layar yang ada tidak mengirimnya. Tindak
+                       # lanjut penagihan (`/api/customers/{id}/followups`) lewat pola di bawah, bukan awalan
+                       # `/api/customers/` yang luas (CR-T1 menjaga `/api/customers/{id}` tetap di luar).
+                       "/api/bank-reconciliation/", "/api/finance/posting-failures/",
+                       "/api/collection-reminders", "/api/purchase-orders")
 #: CR-T1 — jalur ber-id di tengah yang tidak bisa dinyatakan sebagai awalan (`/api/customers/{id}/credit-profile-requests`:
 #: mengajukan perubahan kredit). Dicocokkan penuh terhadap jalur permintaan.
-IDEMPOTENT_PATTERNS = (re.compile(r"^/api/customers/[^/]+/credit-profile-requests/?$"),)
+IDEMPOTENT_PATTERNS = (re.compile(r"^/api/customers/[^/]+/credit-profile-requests/?$"),
+                       # AG-T3 — tindak lanjut penagihan / janji bayar dari kartu tindakan asisten
+                       re.compile(r"^/api/customers/[^/]+/followups/?$"))
 
 
 def is_idempotent_path(path: str) -> bool:

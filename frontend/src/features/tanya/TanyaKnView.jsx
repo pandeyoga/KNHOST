@@ -2,7 +2,8 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { ArrowLeft, Loader2 } from "lucide-react";
 import { toast } from "../../hooks/use-toast";
 import { entityFullById, entityShortById } from "../../utils/entityLabel";
-import { PENDING_KEY } from "../../components/AskKnButton";
+import { PENDING_KEY, PRESETS as ASK_PRESETS } from "../../components/AskKnButton";
+import { TanyaActions } from "./TanyaActions";
 import { TanyaInsights } from "./TanyaInsights";
 import { TanyaAnswer } from "./TanyaAnswer";
 import { TanyaBudgetCard } from "./TanyaBudgetCard";
@@ -21,7 +22,9 @@ import { useTanyaChat } from "./useTanyaChat";
 import useIsMobile from "../../hooks/useIsMobile";
 import "./tanya.css";
 
-const TABS = [["reports", "Laporan"], ["insights", "Peringatan"], ["history", "Riwayat"], ["schedules", "Jadwal"], ["cost", "Biaya"]];
+// AG-T3 — tab "Tindakan" (kartu tindakan asisten) sesudah "Laporan"; daftarnya tampil di panel utama (enam kolom).
+const TABS = [["reports", "Laporan"], ["actions", "Tindakan"], ["insights", "Peringatan"], ["history", "Riwayat"],
+  ["schedules", "Jadwal"], ["cost", "Biaya"]];
 const MOBILE_Q = "(max-width: 900px)";
 const initialTab = () => {
   const t = new URLSearchParams(window.location.search).get("tab");
@@ -103,7 +106,10 @@ export default function TanyaKnView({ selectedEntity, entities }) {
     try {
       const p = JSON.parse(raw);
       if (p?.context) { setTab("chat"); setDocCtx(p.context); }
-      if (p?.question) chat.ask(p.question, p.context || null);
+      // AG-T3 — konteks keuangan dibuka di mode Keuangan bila Asisten Keuangan & chat menyala untuk akun ini.
+      const m = p?.mode === "keuangan" && status?.finance_enabled && status?.chat_enabled ? "keuangan" : "umum";
+      if (m === "keuangan") setMode("keuangan");
+      if (p?.question) chat.ask(p.question, p.context || null, m);
     } catch { /* abaikan */ }
   }, [catalog]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -179,10 +185,18 @@ export default function TanyaKnView({ selectedEntity, entities }) {
       finance={status?.finance_enabled ? financeScope : null} />}
     {view === "insights" && <TanyaInsights canScan={!!status?.can_edit_rules} onAsk={ask} refreshKey={selectedEntity} />}
     {view === "cost" && <TanyaBudgetCard budget={status?.budget} />}
+    {view === "actions" && (
+      <p className="tanya-action-hint" data-testid="tanya-actions-side">
+        Kartu tindakan yang disiapkan asisten untuk Anda. Tidak ada yang dijalankan sebelum Anda menyetujui kartunya.
+      </p>
+    )}
   </>);
   const scrollKey = `${chat.thread.length}|${lastEntry?.pending}|${(lastEntry?.streamText || "").length >> 7}|${!!lastEntry?.answer}|${lastEntry?.error || ""}|${tplAnswer ? 1 : 0}|${tplBusy}|${pack?.status || ""}`;
   // Cek layar 14 Nov — mode Keuangan: saran pembuka berupa pertanyaan keuangan (bukan laporan umum gudang/penjualan).
-  const prompts = askMode === "keuangan" ? FINANCE_PROMPTS.map((label) => ({ label }))
+  // AG-T3 — dibuka dari "Tanya soal layar ini" di layar keuangan: saran pembuka = pertanyaan untuk konteks itu.
+  const ctxPrompts = docCtx ? (ASK_PRESETS || {})[docCtx.type] : null;
+  const prompts = askMode === "keuangan" && ctxPrompts?.length ? ctxPrompts.map((label) => ({ label }))
+    : askMode === "keuangan" ? FINANCE_PROMPTS.map((label) => ({ label }))
     : catalog.templates.slice(0, 4).map((t) => ({ label: t.prompt || t.title, tpl: t }));
   const pick = (p) => (status?.chat_enabled ? ask(p.label) : (toMain(), run(p.tpl)));
   const composer = { status, busy, entityLabel, onAsk: ask, context: docCtx, onClearContext: () => setDocCtx(null),
@@ -213,7 +227,8 @@ export default function TanyaKnView({ selectedEntity, entities }) {
         {tabBar}
         {view === "chat" && <div className="tanya-main">{chatMain}</div>}
         {view === "cost" && <div className="tanya-main"><div className="section-card tanya-side">{side}</div><TanyaCostView /></div>}
-        {view !== "chat" && view !== "cost" && <div className="section-card tanya-side">{side}</div>}
+        {view === "actions" && <div className="tanya-main"><div className="section-card section-pad"><TanyaActions refreshKey={selectedEntity} /></div></div>}
+        {view !== "chat" && view !== "cost" && view !== "actions" && <div className="section-card tanya-side">{side}</div>}
         {dialogs}
       </div>
     );
@@ -223,7 +238,9 @@ export default function TanyaKnView({ selectedEntity, entities }) {
       <TanyaRulesStrip status={status} />
       <div className="tanya-layout">
         <aside ref={sideRef} className="tanya-side section-card">{tabBar}{side}</aside>
-        <main className="tanya-main">{view === "cost" ? <TanyaCostView /> : chatMain}</main>
+        <main className="tanya-main">{view === "cost" ? <TanyaCostView />
+          : view === "actions" ? <div className="section-card section-pad"><TanyaActions refreshKey={selectedEntity} /></div>
+            : chatMain}</main>
       </div>
       {dialogs}
     </div>

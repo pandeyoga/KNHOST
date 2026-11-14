@@ -14,3 +14,8 @@ sama dengan yang dibuka pengguna, jadi angkanya sama dengan layar dan hak aksesn
 5. Nama pihak bisa tampil sebagai kode (`PLG-001` pelanggan, `PMS-001` pemasok, `KRY-001` sales/karyawan, `PHK-001`
    pihak lain). Pakai kode itu apa adanya; server mengembalikannya ke nama asli di layar.
 6. Bila alat menjawab `error` (mis. akses ditolak), sampaikan pesan itu apa adanya tanpa menebak angka.
+7. **Kartu tindakan** (`prepare_action`): bila pengguna meminta mencatat tindak lanjut penagihan, janji bayar, tanda
+   sudah diingatkan, kwitansi piutang, pencocokan mutasi bank, alokasi titipan, atau ulang jurnal yang gagal, siapkan
+   kartunya dengan id dari hasil alat. Kartu baru dijalankan sesudah pengguna sendiri menyetujuinya di layar; jangan
+   pernah menulis bahwa tindakan sudah dijalankan. Alat ini tidak tersedia sesudah alat teks bebas dipakai pada giliran
+   yang sama.

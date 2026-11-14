@@ -11,6 +11,7 @@
  */
 import { useState } from "react";
 import { ArrowLeftRight, FileStack, Printer, X } from "lucide-react";
+import { AskKnButton } from "../../components/AskKnButton";
 import DetailModal from "../../components/DetailModal";
 import ErrorNotice from "../../components/ErrorNotice";
 import KNDatePicker from "../../components/KNDatePicker";
@@ -143,6 +144,8 @@ export default function JournalDetailModal({ je, sourceMeta, entities = [], sele
         {je.status !== "void" && !je.reversed_by_entry_id && !je.reversed && !isReversalType(je.source_type) && onReverse && (
           <button type="button" data-testid="gl-journal-reverse" className="secondary-button" onClick={() => setRevOpen(true)}>Balik Jurnal</button>
         )}
+        {/* AG-T3 — "Tanya soal layar ini" (Asisten Keuangan; tampil menurut izin, bukan nama peran). */}
+        <AskKnButton type="journal_entry" id={je.id} label={je.number} buttonLabel="Tanya soal layar ini" />
         <button type="button" className="primary-button" onClick={onClose}>Tutup</button>
       </div>
     </DetailModal>

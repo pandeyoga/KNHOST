@@ -904,6 +904,22 @@ for _role, _mods in AGT2_DEFAULT_PAIRS.items():
         DEFAULT_PERMISSIONS[_role][_res] = _cur + [a for a in _acts if a not in _cur]
 
 # ═══════════════════════════════════════════════════════════════════════════
+# AG-T3 (K-44, K-45) — kartu tindakan asisten: `ai_finance.create` ("Siapkan dan setujui tindakan") dituntut kartu
+# golongan B (kwitansi, pencocokan bank, alokasi titipan, ulang jurnal gagal) bersama sakelar akun
+# `users.ai_finance.classes` dan pengaturan PT `ai.tindakan_uang_masuk` (bawaan mati). Bawaan Admin, Manajer, Finance.
+# Instalasi lama menerima pasangan baru sekali lewat `bootstrap.sync_permission_modules` (`defaults_applied`, PR-T9).
+# ═══════════════════════════════════════════════════════════════════════════
+AGT3_DEFAULT_PAIRS = {
+    "admin": {"ai_finance": ("create",)},
+    "manager": {"ai_finance": ("create",)},
+    "finance": {"ai_finance": ("create",)},
+}
+for _role, _mods in AGT3_DEFAULT_PAIRS.items():
+    for _res, _acts in _mods.items():
+        _cur = list(DEFAULT_PERMISSIONS[_role].get(_res) or [])
+        DEFAULT_PERMISSIONS[_role][_res] = _cur + [a for a in _acts if a not in _cur]
+
+# ═══════════════════════════════════════════════════════════════════════════
 # PK-24 (IA-05, K-17) — kas kecil: `cash_settlement.pay` (baru) = membayar hutang reimburse karyawan dan menerima
 # pengembalian sisa uang muka (`POST /api/cash-advance-settlements/{id}/pay-reimburse` | `/return-remainder`; dulu bayar
 # reimburse dijaga `accounting.create`). Bawaan Admin, Manajer, Finance. Mencairkan uang muka (`cash_advance.disburse`)

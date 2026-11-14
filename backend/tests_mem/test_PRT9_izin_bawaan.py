@@ -76,6 +76,11 @@ for _r, _tambah in _pc.CRT1_DEFAULT_PAIRS.items():
 for _r, _tambah in _pc.AGT2_DEFAULT_PAIRS.items():
     for _res, _aksi in _tambah.items():
         TAMBAHAN_SESUDAH.setdefault(_r, {}).setdefault(_res, set()).update(_aksi)
+# AG-T3 (K-44, K-45) — kartu tindakan golongan B `ai_finance.create`: Admin, Manajer, Finance
+# (`permissions_config.AGT3_DEFAULT_PAIRS`).
+for _r, _tambah in _pc.AGT3_DEFAULT_PAIRS.items():
+    for _res, _aksi in _tambah.items():
+        TAMBAHAN_SESUDAH.setdefault(_r, {}).setdefault(_res, set()).update(_aksi)
 # PK-24 (IA-05, K-17) — bayar reimburse & terima pengembalian sisa uang muka `cash_settlement.pay`: Admin, Manajer,
 # Finance; `cash_advance.disburse` Manajer & Finance sudah dari MN-T1 (`permissions_config.PK24_DEFAULT_PAIRS`).
 for _r, _tambah in _pc.PK24_DEFAULT_PAIRS.items():

@@ -15,6 +15,7 @@ import { openTrace } from "../documents/trace/traceDeepLink";
 import { penaltyMeta } from "./payments/paymentApi";
 // INV-ROLE-01 — wewenang dibaca dari IZIN, bukan dari daftar nama peran.
 import { can } from "../../config/roles";
+import { AskKnButton } from "../../components/AskKnButton";
 
 // UAT 24 Okt (audit UI tahap 2) — G1-15: tanggal tampilan satu format ("25 Okt 2026", WIB) via formatDate.
 const fmtDate = (iso) => formatDate(iso);
@@ -41,13 +42,18 @@ export default function ARAgingDetail({ detail, customerId, loading, currentUser
                 {" "}· belum dikirim <b className="tabular-nums" data-testid="ar-detail-exposure-total">{formatCurrency(t.exposure || 0)}</b>)
               </span>
             )}
-            {canAccrue && (
-              <button type="button" className="secondary-button ml-auto" data-testid="ar-aging-accrue"
-                disabled={accruing} onClick={onAccrue}>
-                {accruing ? <Loader2 size={13} className="animate-spin" /> : <Receipt size={13} />}
-                Buat Nota Denda
-              </button>
-            )}
+            <div className="ml-auto flex flex-wrap items-center gap-2">
+              {/* AG-T3 — "Tanya soal layar ini" (Asisten Keuangan; tampil menurut izin, bukan nama peran). */}
+              <AskKnButton type="ar_receipt" id={customerId} label={detail?.customer_name || ""}
+                buttonLabel="Tanya soal layar ini" className="secondary-button btn-sm" />
+              {canAccrue && (
+                <button type="button" className="secondary-button" data-testid="ar-aging-accrue"
+                  disabled={accruing} onClick={onAccrue}>
+                  {accruing ? <Loader2 size={13} className="animate-spin" /> : <Receipt size={13} />}
+                  Buat Nota Denda
+                </button>
+              )}
+            </div>
           </div>
         )}
       </div>

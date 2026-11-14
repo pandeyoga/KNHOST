@@ -36,6 +36,7 @@ from services.customer_service import (
     NON_AR_METHODS,
 )
 from request_context import active_entity_or
+from ai_card_context import card_field
 logger = logging.getLogger(__name__)
 
 
@@ -385,6 +386,8 @@ async def _create_receipt_after_reserve(payload, actor, customer, amount, use_de
         "created_by_name": actor.get("name", ""),
         "created_at": now_iso(),
         "updated_at": now_iso(),
+        # AG-T3 — kwitansi dari kartu tindakan asisten yang disetujui (hanya kartu `running` milik sesi ini).
+        **card_field(),
     }
     await db.ar_receipts.insert_one(doc)
     # FASE G-4 — kwitansi menaut ke SETIAP pesanan yang dilunasinya (dua arah).

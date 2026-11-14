@@ -43,6 +43,10 @@ export default function AccountFormDrawer({ user, entities = [], selectedEntity,
   // AG-T2 (K-45) — sakelar Asisten Keuangan per akun; hanya pemegang `ai.configure` yang bisa mengubahnya.
   const savedAiFinance = Boolean(user?.ai_finance?.enabled);
   const [aiFinance, setAiFinance] = useState(savedAiFinance);
+  // AG-T3 — golongan kartu tindakan per akun: `B` = boleh menyetujui kartu uang masuk (kwitansi, pencocokan bank,
+  // alokasi titipan, ulang jurnal gagal). Tetap butuh izin & sakelar PT; diubah pemegang `ai.configure`.
+  const savedClassB = (user?.ai_finance?.classes || []).includes("B");
+  const [classB, setClassB] = useState(savedClassB);
   const [empQuery, setEmpQuery] = useState("");
   const [employees, setEmployees] = useState([]);
   const [busy, setBusy] = useState(false);
@@ -168,7 +172,9 @@ export default function AccountFormDrawer({ user, entities = [], selectedEntity,
           allowed_line_codes: form.allowed_line_codes || [],   // FASE L
           location_site_ids: form.location_site_ids || [], location_warehouse_ids: form.location_warehouse_ids || [],
           ...(form.password ? { password: form.password } : {}),
-          ...(canConfigureAi && aiFinance !== savedAiFinance ? { ai_finance: { enabled: aiFinance } } : {}),
+          ...(canConfigureAi && (aiFinance !== savedAiFinance || classB !== savedClassB) ? { ai_finance: {
+            ...(aiFinance !== savedAiFinance ? { enabled: aiFinance } : {}),
+            ...(classB !== savedClassB ? { classes: classB ? ["B"] : [] } : {}) } } : {}),
         };
         const res = await patchUser(user.id, data);
         onSaved?.(
@@ -436,6 +442,19 @@ export default function AccountFormDrawer({ user, entities = [], selectedEntity,
               </label>
               <p className="mt-1 text-fs-12 text-kn-text-2">
                 Mati = akun ini tidak bisa bertanya soal keuangan lewat Tanya KN.
+              </p>
+              <label className="mt-2 flex items-center gap-2">
+                <input type="checkbox" role="switch" className="h-4 w-4" data-testid="account-form-ai-class-b"
+                       checked={classB} disabled={!canConfigureAi}
+                       onChange={(e) => setClassB(e.target.checked)} />
+                <span className="text-fs-13 font-semibold text-kn-text">Boleh menyetujui kartu uang masuk</span>
+                <span className="text-fs-12 text-kn-text-2" data-testid="account-form-ai-class-b-state">
+                  {classB ? "Menyala" : "Mati"}
+                </span>
+              </label>
+              <p className="mt-1 text-fs-12 text-kn-text-2">
+                Kartu kwitansi, pencocokan bank, alokasi titipan, dan ulang jurnal yang disiapkan asisten. Juga butuh
+                akses &apos;Siapkan dan setujui tindakan&apos; dan pengaturan PT yang menyala.
               </p>
               {!canConfigureAi && (
                 <p className="mt-1 text-fs-12 text-kn-text-2" data-testid="account-form-ai-finance-readonly">

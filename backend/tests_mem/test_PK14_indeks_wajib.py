@@ -35,6 +35,8 @@ PK31_INDEKS = 1
 PMT2_INDEKS = 2
 # PK-39 (FY-12) — `budgets.uq_budget_key` (satu pagu per PT, tahun, bulan, dimensi, kunci).
 PK39_INDEKS = 1
+# AG-T3 (D7) — `ai_action_proposals.uq_pending_session` (satu kartu tindakan asisten menunggu per percakapan).
+AGT3_INDEKS = 1
 
 
 def _info_lengkap() -> dict:
@@ -72,8 +74,9 @@ def test_U12_pembanding_indeks():
     # PK-31 — + `intercompany_eliminations.uq_pair_period` (satu eliminasi otomatis per pasangan per bulan): + PK31_INDEKS.
     # PM-T2 — + `payment_codes.uq_pay_code`, `uq_pay_code_line` (kode bayar unik lintas PT; satu per tagihan): + PMT2_INDEKS.
     # PK-39 — + `budgets.uq_budget_key` (satu pagu per PT, tahun, bulan, dimensi, kunci): + PK39_INDEKS.
+    # AG-T3 — + `ai_action_proposals.uq_pending_session` (satu kartu asisten menunggu per percakapan): + AGT3_INDEKS.
     assert len(indexes.REQUIRED_UNIQUE_INDEXES) == (9 + PK40_INDEKS + 1 + PMT1_INDEKS + CRT1_INDEKS + PK31_INDEKS
-                                                    + PMT2_INDEKS + PK39_INDEKS)
+                                                    + PMT2_INDEKS + PK39_INDEKS + AGT3_INDEKS)
 
 
 async def test_U13_mode_enforce_dan_warn(aplikasi, monkeypatch):

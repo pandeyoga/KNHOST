@@ -1,0 +1,965 @@
+"""AG-T3 — mesin kartu tindakan asisten golongan A dan B lewat pintu aplikasi sendiri (K-44, K-45).
+
+Asisten hanya **menyiapkan** kartu (`prepare`): rencana sebelum → sesudah dibaca lewat `SelfApi` baca-saja (GET ke
+endpoint layar, dengan sesi & PT pengguna). Tidak ada yang tertulis sebelum pengguna menyetujui kartu; giliran model
+berhenti di sini — tidak ada alat untuk menyetujui. Sesudah disetujui (`decide`), kartu memanggil **endpoint yang sama
+dengan layar**, tepat sekali (`Idempotency-Key: <id kartu>`), dengan izin pengguna sendiri, lalu berakhir `confirmed`
+atau `failed`. Tidak ada jalan pintas ke database untuk tulisan.
+
+    kartu = await ai_cards.prepare("ar_receipt_create", {"customer_id": "cus_c", "amount": 5000000,
+                                   "allocations": [{"order_id": "so_c1", "amount": 5000000}]},
+                                   request=request, user=user, ctx=ctx, session_id="aichat_…", user_request="…")
+    kartu = await ai_cards.decide(kartu["id"], request=request, user=user, ctx=ctx, decision="approve",
+                                  reason="pelanggan transfer pagi ini", retype="5.000.000")
+
+Status hanya maju: `pending → running → confirmed | failed`; `pending → dismissed | expired | superseded`. Kartu baru di
+percakapan yang sama menandai kartu `pending` sebelumnya `superseded` (indeks unik parsial `uq_pending_session`).
+
+Golongan A (tindak lanjut penagihan, janji bayar, tanda sudah diingatkan) tidak menuntut sakelar tambahan. Golongan B
+(kwitansi piutang, pencocokan mutasi bank, alokasi titipan, ulang jurnal gagal) menuntut izin `ai_finance.create`,
+golongan `B` di `users.ai_finance.classes`, dan `ai.tindakan_uang_masuk` menyala untuk PT kartu (bawaan mati, H5).
+"""
+from __future__ import annotations
+
+import hashlib
+import json
+import re
+from dataclasses import dataclass, field
+from datetime import datetime, timedelta, timezone
+from typing import Any, Awaitable, Callable, Dict, List, Optional, Tuple
+
+import httpx
+from fastapi import HTTPException
+
+from core_utils import new_id, now_iso, rupiah
+from db import db
+from dependencies import audit, denied, has_permission
+from services.ai_self_api import ENTITY_MESSAGE, SelfApi, SelfApiError, _has_entity_key
+from services.config_resolver import value_of
+
+KUNCI_UANG_MASUK = "ai.tindakan_uang_masuk"
+KUNCI_MAKS_HARIAN = "ai.tindakan_maks_per_hari"
+KUNCI_MASA_BERLAKU = "ai.kartu_masa_berlaku_jam"   # AG-T1 — masa berlaku kartu per PT kartu
+#: Validasi isian (bukan aturan bisnis, ASUMSI spesifikasi): panjang alasan minimal untuk tingkat `medium`/`high`.
+REASON_MIN = 10
+#: Batas teknis tampilan daftar kartu.
+PAGE_SIZE_DEFAULT, PAGE_SIZE_MAX = 20, 100
+#: Batas teknis pembacaan sidik berhalaman (`pages`): halaman paling banyak yang dibaca untuk menemukan baris.
+FINGERPRINT_MAX_PAGES = 10
+
+MSG_TIDAK_DIKENAL = "Tindakan ini tidak bisa dilakukan lewat asisten. Lakukan di layarnya."
+MSG_SEMUA_PT = "Pilih satu PT dulu. Tindakan tidak bisa disiapkan dalam mode Semua PT."
+MSG_AKUN_MATI = "Tindakan uang masuk lewat asisten belum dinyalakan untuk akun Anda."
+MSG_IZIN_B = ("Anda belum punya akses untuk menyiapkan dan menyetujui tindakan lewat asisten. Minta Admin menambahkan "
+              "akses 'Asisten Tanya KN'.")
+MSG_ALASAN = "Tulis alasan singkat (minimal 10 huruf)."
+MSG_KETIK = "Ketik ulang nominal persis seperti di kartu."
+MSG_BATAS = "Batas tindakan asisten hari ini sudah tercapai ({n})."
+MSG_STALE = "Data sudah berubah sejak kartu disiapkan. Minta asisten menyiapkannya lagi."
+MSG_PEMBUAT = "Hanya pembuat kartu yang boleh menyetujui atau mengabaikannya."
+MSG_TANPA_AKSES_PT = "Anda tidak lagi punya akses ke PT kartu ini."
+MSG_TIDAK_PASTI = "Hasil tidak pasti: jawaban pintu tidak diterima. Periksa dokumennya sebelum meminta kartu baru."
+MSG_SEDANG_DISIAPKAN = "Kartu lain di percakapan ini sedang disiapkan. Coba lagi."
+MSG_STATUS = {
+    "confirmed": "Kartu ini sudah dijalankan.",
+    "failed": "Kartu ini gagal dan tidak bisa diulang.",
+    "superseded": "Kartu ini sudah diganti kartu yang lebih baru.",
+    "dismissed": "Kartu ini sudah diabaikan.",
+    "expired": "Kartu ini sudah kedaluwarsa. Minta asisten menyiapkannya lagi.",
+    "running": "Kartu ini sedang diproses.",
+}
+METHOD_LABEL = {"transfer": "Transfer", "tunai": "Tunai", "cash": "Tunai", "giro": "Giro", "qris": "QRIS",
+                "kartu": "Kartu debit/kredit", "cek": "Cek"}
+HOLDING_REASONS = {"identified_customer": "Pengirim akhirnya teridentifikasi",
+                   "customer_confirmation": "Dikonfirmasi pelanggan lewat bukti transfer",
+                   "sales_confirmation": "Dikonfirmasi sales/penagih",
+                   "partial_identification": "Sebagian teridentifikasi (sisanya masih ditelusuri)"}
+FOLLOWUP_OUTCOMES = {"contacted": "Sudah dihubungi", "no_response": "Tidak menjawab", "escalated": "Dinaikkan ke atasan"}
+NOTE_JURNAL = "Jurnal dibuat sistem saat disimpan."
+
+
+def _err(status: int, message: str) -> HTTPException:
+    return HTTPException(status_code=status, detail=message)
+
+
+# ── Tindakan terdaftar ────────────────────────────────────────────────────────────────────────────────────────────────
+Prepare = Callable[[SelfApi, Dict[str, Any]], Awaitable[Dict[str, Any]]]
+BuildRequest = Callable[[Dict[str, Any], Dict[str, Any]], Tuple[Dict[str, Any], Any]]
+ResultOf = Callable[[Any, Dict[str, Any], Dict[str, Any]], Dict[str, Any]]
+
+
+@dataclass
+class CardAction:
+    code: str
+    label: str
+    cls: str                 # "A" | "B"
+    risk: str                # "low" | "medium" | "high"
+    write_method: str
+    write_path: str          # pola path, mis. "/api/customers/{customer_id}/followups"
+    prepare: Prepare         # hanya GET; mengembalikan {args, plan, fingerprint_source}
+    build_request: BuildRequest   # (args, plan) -> (path_params, json)
+    result_of: ResultOf      # (jawaban endpoint, args, plan) -> {document, gl_status}
+    editable: Tuple[Dict[str, str], ...] = field(default_factory=tuple)
+
+
+REGISTRY: Dict[str, CardAction] = {}
+
+
+def _pattern(path: str) -> "re.Pattern[str]":
+    return re.compile("^" + re.sub(r"\\\{[a-z_]+\\\}", "[^/]+", re.escape(path)) + "/?$")
+
+
+#: Pintu tulis kartu lama yang dialihkan ke endpoint layar (diisi serah-terima b). Pasangan (metode, pola path).
+LEGACY_WRITE_PATHS: Tuple[Tuple[str, str], ...] = ()
+
+
+def write_allowed(method: str, path: str) -> bool:
+    """`SelfApi` mode tulis hanya menerima path yang cocok dengan `write_path` tindakan terdaftar."""
+    pairs = [(a.write_method, a.write_path) for a in REGISTRY.values()] + list(LEGACY_WRITE_PATHS)
+    return any(m.upper() == (method or "").upper() and _pattern(p).match(path or "") for m, p in pairs)
+
+
+def _fill(path: str, params: Dict[str, Any]) -> str:
+    def rep(m: "re.Match[str]") -> str:
+        v = str(params.get(m.group(1)) or "")
+        if not v or "/" in v or ".." in v or "?" in v or "#" in v:
+            raise _err(400, "Isian kartu tidak lengkap.")
+        return v
+    return re.sub(r"\{([a-z_]+)\}", rep, path)
+
+
+# ── Pembantu angka & teks ─────────────────────────────────────────────────────────────────────────────────────────────
+def _money(v: Any) -> float:
+    try:
+        return round(float(v or 0), 2)
+    except (TypeError, ValueError):
+        return 0.0
+
+
+def _norm(v: Any) -> Any:
+    if isinstance(v, bool) or v is None:
+        return v
+    if isinstance(v, (int, float)):
+        return round(float(v), 2)
+    if isinstance(v, (list, tuple)):
+        return [_norm(x) for x in v]
+    if isinstance(v, dict):
+        return {str(k): _norm(x) for k, x in sorted(v.items())}
+    return str(v)
+
+
+def confirm_text_of(amount: float) -> str:
+    """Nominal tanpa pemisah ribuan untuk ketik ulang: 5000000 → "5000000"; 1500,5 → "1500,50"."""
+    a = round(float(amount or 0), 2)
+    return str(int(a)) if a == int(a) else f"{a:.2f}".replace(".", ",")
+
+
+def _digits(v: Any) -> str:
+    return re.sub(r"\D", "", str(v or ""))
+
+
+def _clean_args(args: Any) -> Dict[str, Any]:
+    """Isian alat dari model: `null` dibuang (skema ketat mewajibkan semua kunci)."""
+    if not isinstance(args, dict):
+        return {}
+    return {k: v for k, v in args.items() if v is not None and v != ""}
+
+
+def _text(v: Any, limit: int = 500) -> str:
+    return str(v or "").strip()[:limit]
+
+
+def _date(v: Any, label: str, *, required: bool = False) -> str:
+    s = _text(v, 10)
+    if not s:
+        if required:
+            raise _err(400, f"{label} wajib diisi.")
+        return ""
+    try:
+        datetime.strptime(s, "%Y-%m-%d")
+    except ValueError:
+        raise _err(400, f"{label} harus berbentuk TTTT-BB-HH.")
+    return s
+
+
+def _today_wib() -> str:
+    from services.analytics_time import now_wib
+    return now_wib().date().isoformat()
+
+
+def fingerprint(snapshots: List[Any]) -> str:
+    """Sidik sha256 atas potret data dasar (D3): urutan kunci tetap, angka dibulatkan 2 desimal."""
+    raw = json.dumps(_norm(snapshots), sort_keys=True, ensure_ascii=False, separators=(",", ":"), default=str)
+    return hashlib.sha256(raw.encode("utf-8")).hexdigest()
+
+
+def _at(obj: Any, dotted: str) -> Any:
+    for k in [x for x in (dotted or "").split(".") if x]:
+        obj = obj.get(k) if isinstance(obj, dict) else None
+    return obj
+
+
+def _pick(resp: Any, pick: Dict[str, Any]) -> Any:
+    """Potong jawaban GET menjadi potret: daftar → baris ber-`key` dalam `ids` (yang hilang ditandai), objek → `fields`."""
+    target = _at(resp, pick.get("at") or "")
+    fields = list(pick.get("fields") or [])
+    if isinstance(target, list):
+        key = pick.get("key") or "id"
+        ids = [str(i) for i in (pick.get("ids") or [])]
+        rows = [r for r in target if isinstance(r, dict) and (not ids or str(r.get(key)) in ids)]
+        out = [{key: str(r.get(key)), **{f: _norm(r.get(f)) for f in fields}} for r in rows]
+        have = {r[key] for r in out}
+        out += [{key: i, "missing": True} for i in ids if i not in have]
+        return sorted(out, key=lambda r: str(r.get(key)))
+    if isinstance(target, dict):
+        return {f: _norm(target.get(f)) for f in fields}
+    return _norm(target)
+
+
+async def _get(api: SelfApi, src: Dict[str, Any], cache: Dict[str, Any]) -> Any:
+    pick = src.get("pick") or {}
+    ck = json.dumps([src.get("path"), src.get("params") or {}, pick.get("pages") or 0], sort_keys=True, default=str)
+    if ck in cache:
+        return cache[ck]
+    params = dict(src.get("params") or {})
+    if not pick.get("pages"):
+        cache[ck] = await api.call("GET", src["path"], params=params)
+        return cache[ck]
+    # Berhalaman: baca halaman berikutnya sampai semua `ids` ditemukan atau daftar habis (batas teknis).
+    ids = {str(i) for i in (pick.get("ids") or [])}
+    key, at = pick.get("key") or "id", pick.get("at") or "items"
+    acc: List[Any] = []
+    for page in range(1, min(int(pick["pages"]), FINGERPRINT_MAX_PAGES) + 1):
+        resp = await api.call("GET", src["path"], params={**params, "page": page})
+        rows = _at(resp, at) or []
+        acc += rows
+        if not rows or ids <= {str(r.get(key)) for r in acc if isinstance(r, dict)}:
+            break
+    out: Dict[str, Any] = {}
+    cur = out
+    parts = [x for x in at.split(".") if x]
+    for p in parts[:-1]:
+        cur = cur.setdefault(p, {})
+    cur[parts[-1]] = acc
+    cache[ck] = out
+    return out
+
+
+async def read_fingerprint(api: SelfApi, sources: List[Dict[str, Any]]) -> Tuple[str, List[Any]]:
+    """Baca ulang `fingerprint_source` lewat GET → (sidik, potret)."""
+    cache: Dict[str, Any] = {}
+    snaps = [_pick(await _get(api, s, cache), s.get("pick") or {}) for s in sources or []]
+    return fingerprint(snaps), snaps
+
+
+# ── Pembaca bersama (hanya GET lewat pintu baca-saja) ─────────────────────────────────────────────────────────────────
+async def _customer_name(api: SelfApi, customer_id: str) -> str:
+    """Nama pelanggan dari pesanan terbarunya di PT aktif (`GET /api/sales-orders`, izin `order.view`); "" bila tidak
+    terbaca (tanpa izin / tanpa pesanan)."""
+    try:
+        res = await api.call("GET", "/api/sales-orders", params={"customer_id": customer_id, "page": 1, "page_size": 1})
+    except SelfApiError:
+        return ""
+    items = (res or {}).get("items") if isinstance(res, dict) else res
+    return str(((items or [{}])[0] or {}).get("customer_name") or "")
+
+
+async def _customer_in_pt(api: SelfApi, customer_id: str) -> str:
+    """Golongan A — pelanggan harus punya pesanan di PT aktif (pembacaan berizin `order.view`, cakupan PT dari sesi).
+    Mengembalikan nama pelanggan."""
+    if not customer_id:
+        raise _err(400, "Pelanggan wajib dipilih.")
+    res = await api.call("GET", "/api/sales-orders", params={"customer_id": customer_id, "page": 1, "page_size": 1})
+    items = (res or {}).get("items") if isinstance(res, dict) else res
+    if not items:
+        raise _err(404, "Pelanggan ini tidak punya pesanan di PT aktif. Pilih pelanggan dari PT ini.")
+    return str(items[0].get("customer_name") or "pelanggan")
+
+
+async def _order_of(api: SelfApi, order_id: str, customer_id: str) -> Dict[str, Any]:
+    o = await api.call("GET", f"/api/sales-orders/{order_id}")
+    if str(o.get("customer_id") or "") != customer_id:
+        raise _err(400, "Pesanan ini bukan milik pelanggan yang dipilih.")
+    return o
+
+
+async def _open_orders(api: SelfApi, customer_id: str) -> Dict[str, Dict[str, Any]]:
+    rows = await api.call("GET", "/api/ar-receipts/open-orders", params={"customer_id": customer_id})
+    return {str(r.get("order_id")): r for r in rows or [] if isinstance(r, dict)}
+
+
+def _allocations(raw: Any) -> List[Dict[str, Any]]:
+    out: List[Dict[str, Any]] = []
+    for a in raw or []:
+        if not isinstance(a, dict):
+            continue
+        oid, amt = _text(a.get("order_id"), 80), _money(a.get("amount"))
+        if not oid or amt <= 0:
+            raise _err(400, "Setiap alokasi butuh pesanan dan nominal lebih dari 0.")
+        if any(x["order_id"] == oid for x in out):
+            raise _err(400, "Satu pesanan hanya boleh dialokasi satu kali di kartu.")
+        out.append({"order_id": oid, "amount": amt})
+    return out
+
+
+def _alloc_rows(allocs: List[Dict[str, Any]], open_rows: Dict[str, Dict[str, Any]]) -> List[Dict[str, Any]]:
+    rows = []
+    for a in allocs:
+        o = open_rows.get(a["order_id"])
+        if not o:
+            raise _err(400, "Pesanan yang dialokasi tidak ada di tagihan terbuka pelanggan ini di PT aktif.")
+        sisa = _money(o.get("outstanding"))
+        if a["amount"] > sisa + 0.005:
+            raise _err(400, f"Alokasi ke {o.get('number') or a['order_id']} melebihi sisa tagihannya ({rupiah(sisa)}).")
+        rows.append({"label": f"Sisa tagihan {o.get('number') or a['order_id']}", "kind": "money",
+                     "before": sisa, "after": round(sisa - a["amount"], 2)})
+    return rows
+
+
+def _row(label: str, before: Any, after: Any, kind: str = "text") -> Dict[str, Any]:
+    return {"label": label, "kind": kind, "before": before, "after": after}
+
+
+# ── Golongan A: tindak lanjut penagihan ───────────────────────────────────────────────────────────────────────────────
+async def _followup_common(api: SelfApi, a: Dict[str, Any]) -> Tuple[str, str, List[Dict[str, Any]]]:
+    cid = _text(a.get("customer_id"), 80)
+    name = await _customer_in_pt(api, cid)
+    oid = _text(a.get("order_id"), 80)
+    rows = [_row("Pelanggan", "", name)]
+    if oid:
+        o = await _order_of(api, oid, cid)
+        rows.append(_row("Pesanan", "", o.get("number") or oid))
+    return cid, name, rows
+
+
+async def _prep_followup(api: SelfApi, args: Dict[str, Any]) -> Dict[str, Any]:
+    a = _clean_args(args)
+    note = _text(a.get("note"))
+    if not note:
+        raise _err(400, "Tulis catatan tindak lanjut.")
+    outcome = a.get("outcome") or "contacted"
+    if outcome not in FOLLOWUP_OUTCOMES:
+        raise _err(400, "Hasil tindak lanjut tidak dikenal.")
+    nxt = _date(a.get("next_action_date"), "Tanggal tindak lanjut berikutnya")
+    cid, name, rows = await _followup_common(api, a)
+    rows += [_row("Hasil", "—", FOLLOWUP_OUTCOMES[outcome]), _row("Catatan", "—", note)]
+    if nxt:
+        rows.append(_row("Tindak lanjut berikutnya", "—", nxt, "date"))
+    return {"args": {"customer_id": cid, "order_id": _text(a.get("order_id"), 80), "note": note, "outcome": outcome,
+                     "next_action_date": nxt},
+            "plan": {"summary": f"Catat tindak lanjut penagihan untuk {name}.", "rows": rows, "amount": 0,
+                     "confirm_text": "", "meta": {"customer_name": name}},
+            "fingerprint_source": []}
+
+
+async def _prep_promise(api: SelfApi, args: Dict[str, Any]) -> Dict[str, Any]:
+    a = _clean_args(args)
+    tgl = _date(a.get("promise_date"), "Tanggal janji bayar", required=True)
+    amount = _money(a.get("amount"))
+    cid, name, rows = await _followup_common(api, a)
+    note = _text(a.get("note")) or (f"Janji bayar {rupiah(amount)} pada {tgl}" if amount > 0 else f"Janji bayar pada {tgl}")
+    rows += [_row("Hasil", "—", "Janji bayar"), _row("Tanggal janji bayar", "—", tgl, "date")]
+    if amount > 0:
+        rows.append(_row("Nominal dijanjikan", None, amount, "money"))
+    rows.append(_row("Catatan", "—", note))
+    return {"args": {"customer_id": cid, "order_id": _text(a.get("order_id"), 80), "note": note, "outcome": "promised",
+                     "next_action_date": tgl},
+            "plan": {"summary": f"Catat janji bayar {name} pada {tgl}.", "rows": rows, "amount": 0, "confirm_text": "",
+                     "meta": {"customer_name": name}},
+            "fingerprint_source": []}
+
+
+async def _prep_reminder(api: SelfApi, args: Dict[str, Any]) -> Dict[str, Any]:
+    a = _clean_args(args)
+    cid, name, rows = await _followup_common(api, a)
+    note = _text(a.get("note")) or "Pengingat penagihan dikirim"
+    rows += [_row("Status pengingat", "Belum diingatkan", "Sudah diingatkan"), _row("Catatan", "—", note)]
+    return {"args": {"customer_id": cid, "order_id": _text(a.get("order_id"), 80), "note": note,
+                     "next_action_date": _date(a.get("next_action_date"), "Tanggal tindak lanjut berikutnya")},
+            "plan": {"summary": f"Tandai {name} sudah diingatkan.", "rows": rows, "amount": 0, "confirm_text": "",
+                     "meta": {"customer_name": name}},
+            "fingerprint_source": []}
+
+
+def _build_followup(args: Dict[str, Any], plan: Dict[str, Any]) -> Tuple[Dict[str, Any], Any]:
+    return ({"customer_id": args["customer_id"]},
+            {k: args.get(k, "") for k in ("customer_id", "order_id", "note", "outcome", "next_action_date")})
+
+
+def _build_reminder(args: Dict[str, Any], plan: Dict[str, Any]) -> Tuple[Dict[str, Any], Any]:
+    return ({}, {k: args.get(k, "") for k in ("customer_id", "order_id", "note", "next_action_date")})
+
+
+def _followup_result(label: str) -> ResultOf:
+    def _res(resp: Any, args: Dict[str, Any], plan: Dict[str, Any]) -> Dict[str, Any]:
+        r = resp if isinstance(resp, dict) else {}
+        return {"document": {"type": "collection_followup", "label": label, "id": r.get("id", ""),
+                             "number": r.get("customer_name") or (plan.get("meta") or {}).get("customer_name", ""),
+                             "link": {"view": "collection-worklist", "tab": "", "focus_type": "customer",
+                                      "focus_id": args.get("customer_id", ""), "number": ""}},
+                "gl_status": None}
+    return _res
+
+
+# ── Golongan B: kwitansi piutang ──────────────────────────────────────────────────────────────────────────────────────
+async def _prep_receipt(api: SelfApi, args: Dict[str, Any]) -> Dict[str, Any]:
+    a = _clean_args(args)
+    cid = _text(a.get("customer_id"), 80)
+    if not cid:
+        raise _err(400, "Pelanggan wajib dipilih.")
+    amount = _money(a.get("amount"))
+    if amount <= 0:
+        raise _err(400, "Nominal kwitansi harus lebih dari 0.")
+    allocs = _allocations(a.get("allocations"))
+    if not allocs:
+        raise _err(400, "Kartu kwitansi butuh minimal satu alokasi ke pesanan.")
+    total = round(sum(x["amount"] for x in allocs), 2)
+    if total > amount + 0.005:
+        raise _err(400, "Total alokasi melebihi nominal kwitansi.")
+    method = _text(a.get("method"), 40) or "transfer"
+    tgl = _date(a.get("receipt_date"), "Tanggal kwitansi") or _today_wib()
+    open_rows = await _open_orders(api, cid)
+    rows = _alloc_rows(allocs, open_rows)
+    dep = await api.call("GET", "/api/ar-receipts/deposit", params={"customer_id": cid})
+    dep_now = _money((dep or {}).get("deposit_balance"))
+    sisa = round(amount - total, 2)
+    if sisa > 0:
+        rows.append(_row("Deposit pelanggan", dep_now, round(dep_now + sisa, 2), "money"))
+    rows += [_row("Tanggal kwitansi", "—", tgl, "date"), _row("Cara bayar", "—", METHOD_LABEL.get(method, method))]
+    notes = _text(a.get("notes"))
+    if notes:
+        rows.append(_row("Catatan", "—", notes))
+    name = await _customer_name(api, cid)
+    out_args = {"customer_id": cid, "amount": amount, "allocations": allocs, "method": method, "receipt_date": tgl,
+                "notes": notes}
+    if a.get("account_id"):
+        out_args["account_id"] = _text(a.get("account_id"), 80)
+    return {"args": out_args,
+            "plan": {"summary": f"Catat kwitansi {rupiah(amount)}" + (f" dari {name}" if name else "") + ".",
+                     "rows": rows, "amount": amount, "confirm_text": confirm_text_of(amount), "note": NOTE_JURNAL,
+                     "meta": {"customer_name": name}},
+            "fingerprint_source": [
+                {"path": "/api/ar-receipts/open-orders", "params": {"customer_id": cid},
+                 "pick": {"key": "order_id", "ids": [x["order_id"] for x in allocs], "fields": ["outstanding"]}},
+                {"path": "/api/ar-receipts/deposit", "params": {"customer_id": cid},
+                 "pick": {"fields": ["deposit_balance"]}}]}
+
+
+def _build_receipt(args: Dict[str, Any], plan: Dict[str, Any]) -> Tuple[Dict[str, Any], Any]:
+    body = {k: args[k] for k in ("customer_id", "amount", "method", "receipt_date", "notes", "allocations") if k in args}
+    if args.get("account_id"):
+        body["account_id"] = args["account_id"]
+    return {}, body
+
+
+def _receipt_result(resp: Any, args: Dict[str, Any], plan: Dict[str, Any]) -> Dict[str, Any]:
+    from services.doc_refs_service import link_of
+    r = resp if isinstance(resp, dict) else {}
+    return {"document": {"type": "ar_receipt", "label": "Kwitansi Pelanggan", "id": r.get("id", ""),
+                         "number": r.get("number", ""), "link": link_of("ar_receipt", r)},
+            "gl_status": r.get("gl_status")}
+
+
+# ── Golongan B: pencocokan mutasi bank ────────────────────────────────────────────────────────────────────────────────
+def _line_label(ln: Dict[str, Any]) -> str:
+    d = str(ln.get("stmt_date") or "")[:10]
+    desc = _text(ln.get("description"), 60)
+    return " · ".join(x for x in (d, desc) if x) or "mutasi bank"
+
+
+async def _prep_bank_match(api: SelfApi, args: Dict[str, Any]) -> Dict[str, Any]:
+    a = _clean_args(args)
+    line_id, txn_id = _text(a.get("line_id"), 80), _text(a.get("txn_id"), 80)
+    if not line_id or not txn_id:
+        raise _err(400, "Kartu pencocokan butuh mutasi bank dan transaksi kas yang dicocokkan.")
+    src_path = f"/api/bank-reconciliation/lines/{line_id}/candidates"
+    res = await api.call("GET", src_path, params={"limit": 100})
+    ln = (res or {}).get("line") or {}
+    if ln.get("status") in ("matched", "ignored", "holding"):
+        raise _err(409, "Mutasi bank ini sudah dicocokkan, diabaikan, atau dititipkan.")
+    cand = next((c for c in (res or {}).get("candidates") or [] if str(c.get("id")) == txn_id), None)
+    if not cand:
+        raise _err(400, "Transaksi kas ini bukan kandidat pencocokan untuk mutasi tersebut.")
+    amount = _money(ln.get("amount"))
+    sisa = _money(cand.get("outstanding"))
+    rows = [_row(f"Mutasi {_line_label(ln)}", "Belum cocok", "Cocok"),
+            _row("Nominal mutasi", None, amount, "money"),
+            _row(f"Sisa belum cocok {cand.get('number') or 'transaksi kas'}", sisa, round(sisa - amount, 2), "money")]
+    return {"args": {"line_id": line_id, "txn_id": txn_id},
+            "plan": {"summary": f"Cocokkan mutasi {rupiah(amount)} dengan {cand.get('number') or 'transaksi kas'}.",
+                     "rows": rows, "amount": amount, "confirm_text": confirm_text_of(amount),
+                     "meta": {"line_label": _line_label(ln)}},
+            "fingerprint_source": [
+                {"path": src_path, "params": {"limit": 100}, "pick": {"at": "line", "fields": ["status", "amount"]}},
+                {"path": src_path, "params": {"limit": 100},
+                 "pick": {"at": "candidates", "key": "id", "ids": [txn_id], "fields": ["outstanding"]}}]}
+
+
+def _build_bank_match(args: Dict[str, Any], plan: Dict[str, Any]) -> Tuple[Dict[str, Any], Any]:
+    return {"line_id": args["line_id"]}, {"txn_id": args["txn_id"]}
+
+
+def _bank_link(line_id: str) -> Dict[str, Any]:
+    return {"view": "bank-reconciliation", "tab": "", "focus_type": "bank_statement_line", "focus_id": line_id,
+            "number": ""}
+
+
+def _bank_match_result(resp: Any, args: Dict[str, Any], plan: Dict[str, Any]) -> Dict[str, Any]:
+    return {"document": {"type": "bank_statement_line", "label": "Pencocokan mutasi bank", "id": args["line_id"],
+                         "number": (plan.get("meta") or {}).get("line_label", ""), "link": _bank_link(args["line_id"])},
+            "gl_status": None}
+
+
+# ── Golongan B: alokasi titipan bank ──────────────────────────────────────────────────────────────────────────────────
+async def _prep_holding(api: SelfApi, args: Dict[str, Any]) -> Dict[str, Any]:
+    a = _clean_args(args)
+    line_id, cid = _text(a.get("line_id"), 80), _text(a.get("customer_id"), 80)
+    if not line_id or not cid:
+        raise _err(400, "Kartu alokasi titipan butuh baris titipan dan pelanggan.")
+    reason = a.get("reason_code") or "identified_customer"
+    if reason not in HOLDING_REASONS:
+        raise _err(400, "Alasan alokasi titipan tidak dikenal.")
+    allocs = _allocations(a.get("allocations"))
+    if not allocs:
+        raise _err(400, "Kartu alokasi titipan butuh minimal satu alokasi ke pesanan.")
+    total = round(sum(x["amount"] for x in allocs), 2)
+    hold = await api.call("GET", "/api/bank-reconciliation/holding")
+    item = next((it for it in (hold or {}).get("items") or [] if str(it.get("id")) == line_id), None)
+    if not item:
+        raise _err(404, "Titipan dana ini tidak ditemukan di PT aktif (atau sudah tidak berstatus titipan).")
+    remaining = _money(item.get("remaining"))
+    if total > remaining + 0.005:
+        raise _err(400, f"Total alokasi melebihi sisa titipan ({rupiah(remaining)}).")
+    open_rows = await _open_orders(api, cid)
+    rows = [_row("Sisa titipan", remaining, round(remaining - total, 2), "money")] + _alloc_rows(allocs, open_rows)
+    rows.append(_row("Alasan", "—", HOLDING_REASONS[reason]))
+    note = _text(a.get("note"))
+    if note:
+        rows.append(_row("Catatan", "—", note))
+    name = await _customer_name(api, cid)
+    return {"args": {"line_id": line_id, "customer_id": cid, "reason_code": reason, "note": note, "allocations": allocs},
+            "plan": {"summary": f"Alokasikan titipan {rupiah(total)}" + (f" ke tagihan {name}" if name else "") + ".",
+                     "rows": rows, "amount": total, "confirm_text": confirm_text_of(total), "note": NOTE_JURNAL,
+                     "meta": {"line_label": _line_label(item), "customer_name": name}},
+            "fingerprint_source": [
+                {"path": "/api/bank-reconciliation/holding", "params": {},
+                 "pick": {"at": "items", "key": "id", "ids": [line_id], "fields": ["remaining"]}},
+                {"path": "/api/ar-receipts/open-orders", "params": {"customer_id": cid},
+                 "pick": {"key": "order_id", "ids": [x["order_id"] for x in allocs], "fields": ["outstanding"]}}]}
+
+
+def _build_holding(args: Dict[str, Any], plan: Dict[str, Any]) -> Tuple[Dict[str, Any], Any]:
+    return ({"line_id": args["line_id"]},
+            {k: args[k] for k in ("customer_id", "reason_code", "note", "allocations")})
+
+
+def _holding_result(resp: Any, args: Dict[str, Any], plan: Dict[str, Any]) -> Dict[str, Any]:
+    r = resp if isinstance(resp, dict) else {}
+    mine = [it for it in r.get("holding_allocated") or [] if it.get("ai_card_id") and it.get("ai_card_id") == r.get("_card")]
+    gl = None
+    items = mine or [it for it in r.get("holding_allocated") or [] if it.get("status") in ("applied", "done")]
+    if items:
+        gl = "failed" if any(it.get("gl_status") == "failed" for it in items) else "posted"
+    return {"document": {"type": "bank_statement_line", "label": "Alokasi titipan bank", "id": args["line_id"],
+                         "number": (plan.get("meta") or {}).get("line_label", ""), "link": _bank_link(args["line_id"])},
+            "gl_status": gl}
+
+
+# ── Golongan B: ulang jurnal yang gagal ───────────────────────────────────────────────────────────────────────────────
+async def _prep_retry(api: SelfApi, args: Dict[str, Any]) -> Dict[str, Any]:
+    a = _clean_args(args)
+    kind, doc_id = _text(a.get("kind"), 60), _text(a.get("doc_id"), 120)
+    if not kind or not doc_id:
+        raise _err(400, "Kartu ulang jurnal butuh jenis dan dokumen yang gagal.")
+    src = {"path": "/api/finance/posting-failures", "params": {"kind": kind, "page_size": 200},
+           "pick": {"at": "items", "key": "id", "ids": [doc_id], "fields": ["number", "amount", "error"],
+                    "pages": FINGERPRINT_MAX_PAGES}}
+    got = await _get(api, src, {})
+    row = next((r for r in _at(got, "items") or [] if str(r.get("id")) == doc_id), None)
+    if not row:
+        raise _err(404, "Dokumen ini tidak ada di daftar Posting Gagal PT aktif (mungkin sudah terposting).")
+    label = row.get("kind_label") or "Dokumen"
+    rows = [_row(f"{label} {row.get('number') or ''}".strip(), "Jurnal gagal", "Diulang"),
+            _row("Galat terakhir", _text(row.get("error"), 200) or "—", "—")]
+    amount = _money(row.get("amount"))
+    if amount:
+        rows.append(_row("Nominal dokumen", None, amount, "money"))
+    return {"args": {"kind": kind, "doc_id": doc_id},
+            "plan": {"summary": f"Ulang jurnal {label} {row.get('number') or ''}".strip() + ".", "rows": rows,
+                     "amount": amount, "confirm_text": confirm_text_of(amount) if amount else "",
+                     "meta": {"kind_label": label, "number": row.get("number") or "", "link": row.get("link") or {}}},
+            "fingerprint_source": [src]}
+
+
+def _build_retry(args: Dict[str, Any], plan: Dict[str, Any]) -> Tuple[Dict[str, Any], Any]:
+    return {"kind": args["kind"], "doc_id": args["doc_id"]}, None
+
+
+def _retry_result(resp: Any, args: Dict[str, Any], plan: Dict[str, Any]) -> Dict[str, Any]:
+    r = resp if isinstance(resp, dict) else {}
+    meta = plan.get("meta") or {}
+    return {"document": {"type": args["kind"], "label": meta.get("kind_label") or "Dokumen", "id": args["doc_id"],
+                         "number": meta.get("number") or "", "link": meta.get("link") or {}},
+            "gl_status": r.get("gl_status")}
+
+
+_EDIT_RECEIPT = ({"path": "receipt_date", "label": "Tanggal", "kind": "date"},
+                 {"path": "method", "label": "Cara bayar", "kind": "text"},
+                 {"path": "notes", "label": "Catatan", "kind": "text"})
+
+for _a in (
+    CardAction("followup_note", "Catat tindak lanjut penagihan", "A", "low", "POST",
+               "/api/customers/{customer_id}/followups", _prep_followup, _build_followup,
+               _followup_result("Tindak lanjut penagihan")),
+    CardAction("payment_promise", "Catat janji bayar", "A", "low", "POST",
+               "/api/customers/{customer_id}/followups", _prep_promise, _build_followup, _followup_result("Janji bayar")),
+    CardAction("collection_reminder", "Tandai sudah diingatkan", "A", "low", "POST", "/api/collection-reminders/mark",
+               _prep_reminder, _build_reminder, _followup_result("Pengingat penagihan")),
+    CardAction("ar_receipt_create", "Catat kwitansi piutang", "B", "high", "POST", "/api/ar-receipts",
+               _prep_receipt, _build_receipt, _receipt_result, _EDIT_RECEIPT),
+    CardAction("bank_match", "Cocokkan mutasi bank", "B", "low", "POST",
+               "/api/bank-reconciliation/lines/{line_id}/match", _prep_bank_match, _build_bank_match, _bank_match_result),
+    CardAction("holding_allocate", "Alokasikan titipan bank", "B", "low", "POST",
+               "/api/bank-reconciliation/lines/{line_id}/holding/allocate", _prep_holding, _build_holding,
+               _holding_result),
+    CardAction("posting_retry", "Ulang jurnal yang gagal", "B", "low", "POST",
+               "/api/finance/posting-failures/{kind}/{doc_id}/retry", _prep_retry, _build_retry, _retry_result),
+):
+    REGISTRY[_a.code] = _a
+#: `attach_proof` (lampirkan bukti) TIDAK dibuka: belum ada endpoint lampiran kwitansi/tindak lanjut (spesifikasi
+#: butir 8). Kode di luar REGISTRY dijawab `MSG_TIDAK_DIKENAL`.
+
+
+# ── Sakelar & batas ───────────────────────────────────────────────────────────────────────────────────────────────────
+async def _nama_pt(entity_id: str) -> str:
+    from services.ai_actions import _nama_pt as nama
+    return await nama(entity_id)
+
+
+async def _sakelar_b(user: Dict[str, Any], entity_id: str) -> None:
+    """Golongan B: izin `ai_finance.create` → golongan `B` di akun → `ai.tindakan_uang_masuk` menyala untuk PT kartu."""
+    if not await has_permission(user, "ai_finance", "create"):
+        raise denied([("ai_finance", "create")], MSG_IZIN_B)
+    if "B" not in list(((user.get("ai_finance") or {}).get("classes")) or []):
+        raise _err(403, MSG_AKUN_MATI)
+    if not await value_of(KUNCI_UANG_MASUK, {"entity_id": entity_id}):
+        raise _err(409, f"Tindakan uang masuk lewat asisten belum dinyalakan untuk {await _nama_pt(entity_id)}.")
+
+
+async def _batas_harian(user: Dict[str, Any], entity_id: str) -> None:
+    """Batas `ai.tindakan_maks_per_hari` (PT kartu): dihitung dari kartu `confirmed` pengguna sejak 00.00 WIB."""
+    n = int(await value_of(KUNCI_MAKS_HARIAN, {"entity_id": entity_id}) or 0)
+    if n <= 0:
+        return
+    from services.analytics_time import now_wib, wib_midnight_utc
+    awal = wib_midnight_utc(now_wib().date())
+    done = await db.ai_action_proposals.count_documents(
+        {"user_id": user["id"], "status": "confirmed", "confirmed_at": {"$gte": awal}})
+    if done >= n:
+        raise _err(409, MSG_BATAS.format(n=n))
+
+
+async def _finance_gate(user: Dict[str, Any]) -> None:
+    """Kartu disiapkan di Asisten Keuangan: izin `ai_finance.view` + sakelar akun menyala (AG-T2, K-45)."""
+    from routers.ai_analytics import _DENY_FIN, _OFF_FIN
+    if not await has_permission(user, "ai_finance", "view"):
+        raise denied([("ai_finance", "view")], _DENY_FIN)
+    if not (user.get("ai_finance") or {}).get("enabled"):
+        raise _err(403, _OFF_FIN)
+
+
+def _token_of(request: Any = None, api: Optional[SelfApi] = None) -> str:
+    if api is not None and getattr(api, "token", ""):
+        return api.token
+    if request is not None:
+        from dependencies import extract_token
+        return extract_token(request)
+    return ""
+
+
+def _reader(token: str, entity_id: str) -> SelfApi:
+    return SelfApi(None, token=token, entity_header=entity_id, read_only=True)
+
+
+async def _run_prepare(action: CardAction, token: str, entity_id: str, args: Dict[str, Any]) -> Dict[str, Any]:
+    api = _reader(token, entity_id)
+    try:
+        out = await action.prepare(api, args)
+        fp, snaps = await read_fingerprint(api, out.get("fingerprint_source") or [])
+    except SelfApiError as exc:
+        raise _err(exc.status if exc.status in (400, 403, 404, 409) else 400, exc.message)
+    finally:
+        await api.aclose()
+    return {**out, "fingerprint": fp, "snapshot": snaps}
+
+
+# ── Satu kartu pending per percakapan ─────────────────────────────────────────────────────────────────────────────────
+async def supersede_pending(session_id: str, user_id: str, new_card_id: str) -> int:
+    if not session_id:
+        return 0
+    now = now_iso()
+    res = await db.ai_action_proposals.update_many(
+        {"session_id": session_id, "user_id": user_id, "status": "pending", "id": {"$ne": new_card_id}},
+        {"$set": {"status": "superseded", "superseded_by": new_card_id, "finished_at": now, "updated_at": now}})
+    return int(res.modified_count or 0)
+
+
+async def insert_card(doc: Dict[str, Any]) -> None:
+    """Tandai kartu `pending` lain di percakapan yang sama `superseded`, lalu sisip. Indeks `uq_pending_session` (A):
+    dua penyiapan bersamaan → yang kalah diulang sekali."""
+    from pymongo.errors import DuplicateKeyError
+    for attempt in range(2):
+        await supersede_pending(doc.get("session_id") or "", doc["user_id"], doc["id"])
+        try:
+            await db.ai_action_proposals.insert_one(dict(doc))
+            return
+        except DuplicateKeyError:
+            if attempt:
+                raise _err(409, MSG_SEDANG_DISIAPKAN)
+
+
+# ── prepare ───────────────────────────────────────────────────────────────────────────────────────────────────────────
+async def prepare(code: str, args: Dict[str, Any], *, request: Any = None, api: Optional[SelfApi] = None,
+                  user: Dict[str, Any], ctx: Any, session_id: str = "", user_request: str = "") -> Dict[str, Any]:
+    action = REGISTRY.get(str(code or ""))
+    if action is None:
+        raise _err(400, MSG_TIDAK_DIKENAL)
+    if getattr(ctx, "view_all", False) or ctx.active_entity_id in ("", "all"):
+        raise _err(400, MSG_SEMUA_PT)
+    if _has_entity_key(args):
+        raise _err(400, ENTITY_MESSAGE)
+    await _finance_gate(user)
+    entity_id = ctx.active_entity_id
+    if action.cls == "B":
+        await _sakelar_b(user, entity_id)
+    token = _token_of(request, api)
+    out = await _run_prepare(action, token, entity_id, args if isinstance(args, dict) else {})
+    jam = int(await value_of(KUNCI_MASA_BERLAKU, {"entity_id": entity_id}))
+    dibuat = datetime.now(timezone.utc)
+    cid = new_id("aiact")
+    doc = {"id": cid, "type": action.code, "class": action.cls, "risk": action.risk, "status": "pending",
+           "title": action.label, "request": _text(user_request), "args": out["args"],
+           "args_initial": json.loads(json.dumps(out["args"], default=str)),
+           "editable": [dict(e) for e in action.editable], "plan": out["plan"],
+           "fingerprint": out["fingerprint"], "fingerprint_source": out.get("fingerprint_source") or [],
+           "fingerprint_snapshot": out["snapshot"], "reason": "", "edits": {},
+           "user_id": user["id"], "user_name": user.get("name", ""), "entity_id": entity_id,
+           "session_id": session_id or "", "created_at": dibuat.isoformat(), "updated_at": dibuat.isoformat(),
+           "expires_at": (dibuat + timedelta(hours=jam)).isoformat()}
+    await insert_card(doc)
+    await audit(user.get("name", ""), "ai_card_prepared", "ai_action_proposals", cid,
+                {"type": action.code, "amount": out["plan"].get("amount", 0)}, scope_entity_id=entity_id)
+    return {**doc, "entity_name": await _nama_pt(entity_id)}
+
+
+def tool_result(card: Dict[str, Any]) -> Dict[str, Any]:
+    """Hasil alat `prepare_action` untuk model: ringkasan rencana + blok kartu; tanpa jalur untuk menyetujui."""
+    plan = card.get("plan") or {}
+    # K-43 — nama pihak tidak ikut dikirim ke penyedia model: hanya baris nominal (label nomor dokumen) dan totalnya.
+    rows = [{k: r.get(k) for k in ("label", "before", "after")} for r in plan.get("rows") or [] if r.get("kind") == "money"]
+    return {"proposal_id": card["id"], "action": card["type"], "title": card.get("title", ""), "status": card["status"],
+            "rows": rows, "amount": plan.get("amount", 0),
+            "instruction": ("Kartu menunggu persetujuan pengguna di layar. Sisipkan blok ```kn-action\n"
+                            f"{{\"proposal_id\": \"{card['id']}\"}}\n``` dan jangan menyatakan tindakan sudah dijalankan.")}
+
+
+# ── decide ────────────────────────────────────────────────────────────────────────────────────────────────────────────
+def status_conflict(status: str) -> HTTPException:
+    return _err(409, MSG_STATUS.get(status) or "Kartu ini sudah diproses.")
+
+
+async def _load(card_id: str, user: Dict[str, Any]) -> Dict[str, Any]:
+    from services.ai_actions import load
+    doc = await load(card_id, user)
+    if doc.get("user_id") != user["id"]:
+        raise _err(403, MSG_PEMBUAT)
+    return doc
+
+
+async def _finish(card_id: str, status: str, **fields: Any) -> Dict[str, Any]:
+    now = now_iso()
+    upd = {"status": status, "finished_at": now, "updated_at": now, **fields}
+    if status == "confirmed":
+        upd["confirmed_at"] = now
+    await db.ai_action_proposals.update_one({"id": card_id, "status": "running"}, {"$set": upd})
+    return upd
+
+
+async def is_card(card_id: str) -> bool:
+    d = await db.ai_action_proposals.find_one({"id": card_id}, {"_id": 0, "type": 1})
+    return bool(d) and d.get("type") in REGISTRY
+
+
+async def dismiss(card_id: str, *, user: Dict[str, Any], reason: str = "") -> Dict[str, Any]:
+    doc = await _load(card_id, user)
+    if doc["status"] != "pending":
+        raise status_conflict(doc["status"])
+    now = now_iso()
+    upd = {"status": "dismissed", "reason": _text(reason), "finished_at": now, "updated_at": now,
+           "decided_by": {"id": user["id"], "name": user.get("name", "")}, "decided_at": now}
+    res = await db.ai_action_proposals.update_one({"id": card_id, "status": "pending"}, {"$set": upd})
+    if not res.modified_count:
+        fresh = await db.ai_action_proposals.find_one({"id": card_id}, {"_id": 0}) or doc
+        raise status_conflict(fresh.get("status", ""))
+    await audit(user.get("name", ""), "ai_card_dismissed", "ai_action_proposals", card_id, {"type": doc["type"]},
+                scope_entity_id=doc.get("entity_id", ""))
+    return {**doc, **upd}
+
+
+async def _write(token: str, entity_id: str, card_id: str, method: str, path: str, body: Any) -> Tuple[int, Any, str]:
+    """SATU panggilan tulis (kunci = id kartu). Putus koneksi / batas waktu → ulang satu kali dengan kunci yang sama.
+    Mengembalikan (kode, jawaban, kode galat kartu: "" | "door" | "uncertain")."""
+    api = SelfApi(None, token=token, entity_header=entity_id, read_only=False, card_id=card_id)
+    try:
+        for attempt in range(2):
+            try:
+                resp = await api.call(method, path, json=body, idempotency_key=card_id)
+                return api.last_status or 200, resp, ""
+            except SelfApiError as exc:
+                if exc.status == 409 and "IDEMPOTENT_IN_PROGRESS" in exc.message:
+                    return exc.status, {"message": MSG_TIDAK_PASTI}, "uncertain"
+                return exc.status, {"message": exc.message}, "uncertain" if exc.status >= 500 else "door"
+            except (httpx.TransportError, httpx.TimeoutException):
+                if attempt:
+                    return 0, {"message": MSG_TIDAK_PASTI}, "uncertain"
+            except Exception as exc:  # noqa: BLE001 — galat di dalam pintu (500): hasil tidak pasti, tidak diulang
+                return 500, {"message": f"{MSG_TIDAK_PASTI} ({str(exc)[:200]})"}, "uncertain"
+        return 0, {"message": MSG_TIDAK_PASTI}, "uncertain"
+    finally:
+        await api.aclose()
+
+
+async def decide(card_id: str, *, request: Any, user: Dict[str, Any], ctx: Any, decision: str, reason: str = "",
+                 retype: str = "", edits: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+    if decision == "dismiss":
+        return await dismiss(card_id, user=user, reason=reason)
+    if decision != "approve":
+        raise _err(400, "Keputusan kartu harus setujui atau abaikan.")
+    # 1. muat (kedaluwarsa diterapkan) · pembuat · status · PT kartu = PT aktif
+    doc = await _load(card_id, user)
+    if doc["status"] != "pending":
+        raise status_conflict(doc["status"])
+    action = REGISTRY.get(doc.get("type") or "")
+    if action is None:
+        raise _err(400, MSG_TIDAK_DIKENAL)
+    eid = doc.get("entity_id") or ""
+    if eid not in (ctx.allowed_entity_ids or []):
+        raise _err(403, MSG_TANPA_AKSES_PT)
+    if getattr(ctx, "view_all", False) or ctx.active_entity_id != eid:
+        raise _err(409, f"Kartu ini disiapkan untuk {doc.get('entity_name') or await _nama_pt(eid)}. "
+                        "Pindah ke PT itu lalu setujui lagi.")
+    # 2. sakelar golongan B
+    if action.cls == "B":
+        await _sakelar_b(user, eid)
+    # 3. konfirmasi menurut tingkat
+    reason = _text(reason)
+    plan = doc.get("plan") or {}
+    if action.risk in ("medium", "high") and len(reason) < REASON_MIN:
+        raise _err(400, MSG_ALASAN)
+    if action.risk == "high" and (not _digits(retype) or _digits(retype) != _digits(plan.get("confirm_text"))):
+        raise _err(400, MSG_KETIK)
+    # 4. isian yang boleh diubah → rencana disusun ulang (sidik tetap yang lama: perubahan data tetap terdeteksi)
+    token = _token_of(request)
+    args = doc.get("args") or {}
+    edits = {k: v for k, v in (edits or {}).items()} if isinstance(edits, dict) else {}
+    if edits:
+        boleh = {e.get("path") for e in doc.get("editable") or []}
+        salah = [k for k in edits if k not in boleh]
+        if salah:
+            raise _err(400, "Isian ini tidak bisa diubah di kartu. Minta asisten menyiapkan kartu baru.")
+        if _has_entity_key(edits):
+            raise _err(400, ENTITY_MESSAGE)
+        ulang = await _run_prepare(action, token, eid, {**args, **edits})
+        args, plan = ulang["args"], ulang["plan"]
+    # 5. batas harian
+    await _batas_harian(user, eid)
+    # 6. klaim atomik pending → running
+    mulai = now_iso()
+    klaim = {"status": "running", "started_at": mulai, "updated_at": mulai, "reason": reason, "edits": edits,
+             "args": args, "plan": plan, "decided_by": {"id": user["id"], "name": user.get("name", "")},
+             "decided_at": mulai}
+    claimed = await db.ai_action_proposals.find_one_and_update({"id": card_id, "status": "pending"}, {"$set": klaim})
+    if not claimed:
+        fresh = await db.ai_action_proposals.find_one({"id": card_id}, {"_id": 0}) or doc
+        raise status_conflict(fresh.get("status", ""))
+    out = {**doc, **klaim}
+    # 7. baca ulang sidik
+    api = _reader(token, eid)
+    try:
+        fp2, _snap = await read_fingerprint(api, doc.get("fingerprint_source") or [])
+    except SelfApiError as exc:
+        upd = await _finish(card_id, "failed", error_code="door", error=exc.message[:500],
+                            result={"status_code": exc.status, "document": None, "gl_status": None,
+                                    "message": exc.message[:500]})
+        return await _done(user, out, upd)
+    finally:
+        await api.aclose()
+    if fp2 != doc.get("fingerprint"):
+        upd = await _finish(card_id, "failed", error_code="stale", error=MSG_STALE,
+                            result={"status_code": 200, "document": None, "gl_status": None, "message": MSG_STALE})
+        return await _done(user, out, upd)
+    # 8. satu panggilan tulis lewat pintu aplikasi (izin pengguna, kunci idempotensi = id kartu)
+    path_params, body = action.build_request(args, plan)
+    path = _fill(action.write_path, path_params)
+    code, resp, err = await _write(token, eid, card_id, action.write_method, path, body)
+    # 9. 2xx → confirmed (gl_status dari jawaban pintu); selain itu → failed dengan pesan asli
+    if not err and 200 <= code < 300:
+        if isinstance(resp, dict):
+            resp = {**resp, "_card": card_id}
+        res = action.result_of(resp, args, plan)
+        upd = await _finish(card_id, "confirmed", error_code="", error="",
+                            result={"status_code": code, "document": res.get("document"),
+                                    "gl_status": res.get("gl_status"), "message": ""})
+    else:
+        msg = str((resp or {}).get("message") or MSG_TIDAK_PASTI)[:500]
+        upd = await _finish(card_id, "failed", error_code=err or "door", error=msg,
+                            result={"status_code": code, "document": None, "gl_status": None, "message": msg})
+    return await _done(user, out, upd)
+
+
+async def _done(user: Dict[str, Any], doc: Dict[str, Any], upd: Dict[str, Any]) -> Dict[str, Any]:
+    # 10. jejak
+    ok = upd.get("status") == "confirmed"
+    res = upd.get("result") or {}
+    await audit(user.get("name", ""), "ai_card_confirmed" if ok else "ai_card_failed", "ai_action_proposals", doc["id"],
+                {"type": doc.get("type"), "status_code": res.get("status_code"),
+                 "document": (res.get("document") or {}).get("number", ""), "gl_status": res.get("gl_status"),
+                 **({} if ok else {"error_code": upd.get("error_code"), "error": upd.get("error", "")})},
+                scope_entity_id=doc.get("entity_id", ""))
+    return {**doc, **upd}
+
+
+# ── Daftar kartu (tab "Tindakan") ─────────────────────────────────────────────────────────────────────────────────────
+BOXES = {"mine": ["pending", "running"], "others": [], "done": ["confirmed", "dismissed", "expired", "superseded"],
+         "failed": ["failed"]}
+
+
+async def list_cards(user: Dict[str, Any], box: str = "mine", page: int = 1, page_size: int = PAGE_SIZE_DEFAULT
+                     ) -> Dict[str, Any]:
+    """Kartu milik pengguna per kotak. "Menunggu orang lain" kosong sampai ada persetujuan orang kedua (AG-T5)."""
+    from services.ai_actions import _nama_pt as nama, _segarkan
+    if box not in BOXES:
+        raise _err(400, "Saringan kartu tidak dikenal.")
+    page = max(1, int(page or 1))
+    page_size = max(1, min(int(page_size or PAGE_SIZE_DEFAULT), PAGE_SIZE_MAX))
+    if not BOXES[box]:
+        return {"items": [], "total": 0, "page": page, "page_size": page_size}
+    now = now_iso()
+    # Kedaluwarsa diterapkan dulu supaya jumlah per kotak benar (kartu lama tanpa `expires_at` di `_segarkan`).
+    await db.ai_action_proposals.update_many(
+        {"user_id": user["id"], "status": "pending", "expires_at": {"$lte": now}},
+        {"$set": {"status": "expired", "finished_at": now, "updated_at": now}})
+    q = {"user_id": user["id"], "status": {"$in": BOXES[box]}}
+    total = await db.ai_action_proposals.count_documents(q)
+    rows = await db.ai_action_proposals.find(q, {"_id": 0}).sort([("created_at", -1), ("id", -1)]) \
+        .skip((page - 1) * page_size).limit(page_size).to_list(page_size)
+    names: Dict[str, str] = {}
+    items = []
+    for r in rows:
+        r = await _segarkan(r)
+        eid = r.get("entity_id") or ""
+        if eid not in names:
+            names[eid] = await nama(eid)
+        r["entity_name"] = names[eid]
+        items.append(r)
+    return {"items": items, "total": total, "page": page, "page_size": page_size}

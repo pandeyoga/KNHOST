@@ -314,3 +314,34 @@ body.tanya-open [data-testid="help-tours-button"] span { display: none; }
 .tanya-pack-sheet-state { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; min-width: 0; }
 .tanya-pack-sheet-reason { font-size: var(--fs-12); color: var(--kn-text-2); overflow-wrap: anywhere; }
 .tanya-pack-error { display: flex; align-items: center; gap: 6px; font-size: var(--fs-13); color: var(--kn-danger-text); }
+
+/* AG-T3 — kartu tindakan golongan A/B: tabel Rencana 3 kolom (judul boleh dua baris), isian alasan/ketik ulang,
+   tab "Tindakan" (saringan + daftar berhalaman). Warna lewat token `kn-*`; tanpa hex baru. */
+.tanya-plan { display: flex; flex-direction: column; gap: var(--sp-2); min-width: 0; }
+.tanya-plan-table { width: 100%; table-layout: fixed; font-size: var(--fs-12); }
+.tanya-plan-table th:first-child, .tanya-plan-table td:first-child { width: 44%; overflow-wrap: anywhere; }
+.tanya-plan-table td { vertical-align: top; overflow-wrap: anywhere; }
+.tanya-plan-empty { color: var(--kn-text-2); }
+.tanya-card-fields { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: var(--sp-2); }
+.tanya-card-field { display: flex; flex-direction: column; gap: 4px; font-size: var(--fs-12); color: var(--kn-text-2); min-width: 0; }
+.tanya-card-field .input-field { font-size: var(--fs-13); }
+.tanya-action.superseded { border-color: var(--kn-divider); opacity: .8; }
+.tanya-actions { display: flex; flex-direction: column; gap: var(--sp-3); min-width: 0; }
+.tanya-actions-count { font-size: var(--fs-12); color: var(--kn-text-2); }
+.tanya-actions-table { width: 100%; table-layout: fixed; font-size: var(--fs-12); }
+.tanya-actions-table td { overflow-wrap: anywhere; vertical-align: top; }
+.tanya-actions-table tr.active td { background: var(--kn-action-soft); }
+.tanya-actions-pager { display: flex; align-items: center; justify-content: space-between; gap: var(--sp-2); flex-wrap: wrap; }
+.tanya-actions-state { font-size: var(--fs-13); color: var(--kn-text-2); padding: var(--sp-2) 0; }
+.tanya-actions-table .link-button { text-align: left; white-space: normal; }
+@media (max-width: 600px) {
+  /* HP: tabel enam kolom menjadi kartu bertumpuk (label kolom di kiri) — tidak lebih lebar dari layar. */
+  .tanya-actions-table thead { display: none; }
+  .tanya-actions-table, .tanya-actions-table tbody, .tanya-actions-table tr, .tanya-actions-table td { display: block; width: 100%; }
+  .tanya-actions-table tr { border-bottom: 1px solid var(--kn-divider); padding: var(--sp-2) 0; }
+  .tanya-actions-table td { display: flex; justify-content: space-between; gap: var(--sp-2); border: 0; padding: 2px 0; }
+  .tanya-actions-table td::before { content: attr(data-label); color: var(--kn-text-2); flex: 0 0 auto; }
+}
+/* AG-T3 — enam tab samping di panel 320 px: dua baris (tidak ada tab yang tersembunyi di gulir datar). */
+.tanya-layout .tanya-side-tabs { flex-wrap: wrap; overflow-x: visible; }
+.tanya-action-buttons .btn-sm, .tanya-actions-pager .btn-sm, .tanya-action-outcome .btn-sm { white-space: nowrap; }

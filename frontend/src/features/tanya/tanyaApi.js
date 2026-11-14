@@ -104,7 +104,11 @@ export async function downloadClosingPack(pack) {
 
 export const fetchUsageDaily = (params) => axios.get(`${API}/ai/usage/daily`, { params }).then((r) => r.data);
 export const fetchAction = (id) => axios.get(`${API}/ai/actions/${id}`).then((r) => r.data);
-export const confirmAction = (id, edits) => axios.post(`${API}/ai/actions/${id}/confirm`, { edits }).then((r) => r.data);
-export const dismissAction = (id) => axios.post(`${API}/ai/actions/${id}/dismiss`).then((r) => r.data);
+// AG-T3 — kartu golongan A/B: `{reason, retype}` (alasan & ketik ulang nominal) ikut dikirim; kartu lama hanya `edits`.
+export const confirmAction = (id, edits, extra = {}) =>
+  axios.post(`${API}/ai/actions/${id}/confirm`, { edits, ...extra }).then((r) => r.data);
+export const dismissAction = (id, reason = "") => axios.post(`${API}/ai/actions/${id}/dismiss`, reason ? { reason } : {}).then((r) => r.data);
+export const fetchActions = (box, page = 1, pageSize = 20) =>
+  axios.get(`${API}/ai/actions`, { params: { box, page, page_size: pageSize } }).then((r) => r.data);
 export const fetchInsights = () => axios.get(`${API}/ai/insights`).then((r) => (Array.isArray(r.data) ? r.data : []));
 export const scanInsights = () => axios.post(`${API}/ai/insights/scan`).then((r) => r.data);

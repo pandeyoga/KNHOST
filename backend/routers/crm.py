@@ -21,6 +21,7 @@ from services.customer_service import (
 from services.sales_force_service import sales_kpi, compute_commission, leaderboard, commission_history
 from services import gl_service
 from entity_scope import entity_ctx, guard_doc, resolve_list_scope
+from ai_card_context import card_field
 # PR-T4 — cakupan data & kategori kerja dari sifat peran (bukan nama peran).
 from role_registry import roles_in_category
 from services.data_scope import in_clause, own_scoped, owner_ids, owns
@@ -233,6 +234,7 @@ async def mark_reminder(payload: CollectionFollowupCreate, request: Request) -> 
         "outcome": "reminded", "next_action_date": payload.next_action_date,
         "entity_id": customer.get("entity_id", DEFAULT_ENTITY_ID),
         "created_by": actor["name"], "created_by_id": actor["id"], "created_at": now_iso(),
+        **card_field(),   # AG-T3 — dari kartu tindakan asisten yang disetujui
     }
     await db.collection_followups.insert_one(dict(doc))
     await audit(actor["name"], "collection_reminded", "collection_followup", doc["id"], doc)
@@ -259,6 +261,7 @@ async def add_followup(customer_id: str, payload: CollectionFollowupCreate, requ
         "created_by": actor["name"],
         "created_by_id": actor["id"],
         "created_at": now_iso(),
+        **card_field(),   # AG-T3 — dari kartu tindakan asisten yang disetujui
     }
     await db.collection_followups.insert_one(dict(doc))
     await audit(actor["name"], "collection_followup_added", "collection_followup", doc["id"], doc)

@@ -615,7 +615,9 @@ ACTION_LABEL.update({"credit_profile.view": "Lihat plafon, status kredit & riway
                      "credit_profile.approve": "Putuskan pengajuan kredit & ubah plafon bawaan PT"})
 # AG-T2 — Asisten Keuangan (modul Asisten Tanya KN).
 RESOURCE_LABEL["ai_finance"] = "Asisten Keuangan"
-ACTION_LABEL.update({"ai_finance.view": "Bertanya soal keuangan lewat Tanya KN"})
+ACTION_LABEL.update({"ai_finance.view": "Bertanya soal keuangan lewat Tanya KN",
+                     # AG-T3 — kartu tindakan golongan B (uang masuk) lewat asisten
+                     "ai_finance.create": "Siapkan dan setujui tindakan"})
 # PK-24 (IA-05) — kas kecil: bayar hutang reimburse & terima pengembalian sisa uang muka (modul Kas Kecil).
 ACTION_LABEL.update({"cash_settlement.pay": "Bayar reimburse & terima pengembalian sisa uang muka"})
 # PK-22 — lima izin penggajian (modul SDM & Penggajian).

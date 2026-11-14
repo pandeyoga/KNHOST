@@ -55,7 +55,7 @@ Sebelum membuat apapun yang baru, tanya: **"Apakah ini sudah ada di sini?"**
 | Kode Bayar & Instruksi Bayar *(PM-T2)* | `payment_codes` (+ field pesanan `payment_method_code`, `receiving_account_id`, `receiving_account`, `payment_code`; `payment_plans.lines[].pay_code`) | `services/payment_code_service.py` (`resolve_destination` dipanggil `create_order` & override SO; `ensure_for_order` dari `confirm_core`; `ensure_for_line` untuk jadwal tagihan CR-T2; `find_in_text` untuk PM-T3; `instruction`), `routers/payment_methods.py` (`GET /api/sales-orders/{id}/payment-instruction`), `services/pdf_resolvers.py` (blok "Instruksi Pembayaran" Konfirmasi Pesanan & Faktur) | `SalesOrderCreate`, `SoOverrideIn` | `CheckoutPaymentDestination` (checkout desktop & HP), `OrderPaymentInstructionCard` (detail pesanan), `SalesOrderOverrideDialog` |
 | Perubahan Rekening *(PM-T1)* | `bank_account_changes` | `routers/bank.py` (`POST/PATCH /bank-accounts` → 202 bila dua orang, `GET /bank-account-changes`, `POST …/{id}/decision`), `services/bank_account_change_service.py` | `BankAccountCreate`, `BankAccountUpdate`, `BankAccountChangeDecision` | `BankAccountChangesPanel`, `BankAccountForm` (Keuangan › Kas & Bank › Rekening & Saldo) |
 | Profil Kredit Pelanggan *(CR-T1)* | `customer_credit_profiles` (satu per pelanggan × PT pesanan), `credit_profile_requests` | `routers/credit_profiles.py` (`GET /customers/{id}/credit-profile`, `POST /customers/{id}/credit-profile-requests`, `GET /credit-profile-requests`, `POST …/{id}/decision`, `POST …/{id}/cancel`), `services/credit_profile_service.py` (`effective`, `status_from` — dipakai `customer_service.compute_customer_credit`, `ar_aging_service`) | `CreditProfileRequestCreate`, `CreditProfileDecision`, `CreditProfileCancel` | `CustomerCreditTab` + `CreditProfileRequestModal` (kartu pelanggan › Kredit), `CreditProfileRequestsPanel` (Keuangan › Piutang › Kredit & Plafon) |
-| Kartu Tindakan Asisten *(AG-T1)* | `ai_action_proposals` | `routers/ai_assist.py` (`GET /api/ai/actions/{id}`, `POST …/{id}/confirm`, `POST …/{id}/dismiss`), `services/ai_actions.py` (disiapkan alat `propose_action`, `POST /api/ai/tools/propose_action`) | — | `TanyaActionCard` (Tanya KN › percakapan) |
+| Kartu Tindakan Asisten *(AG-T1, AG-T3)* | `ai_action_proposals` | `routers/ai_assist.py` (`GET /api/ai/actions?box=`, `GET /api/ai/actions/{id}`, `POST …/{id}/confirm`, `POST …/{id}/dismiss`), `services/ai_actions.py` (jenis lama, alat `propose_action`), `services/ai_cards.py` (golongan A/B, alat `prepare_action`, `POST /api/ai/tools/prepare_action`) | — | `TanyaActionCard` (percakapan & tab), `TanyaActions` (Tanya KN › Tindakan) |
 | Kunci Masa Pajak *(PK-40)* | `tax_period_locks` | `routers/tax_center.py` (`/api/tax/periods*`), `services/tax_center_service.py` (`assert_masa_terbuka` dipanggil layanan faktur & PPh) | `TaxPeriodLockInput`, `TaxPeriodUnlockInput` | `TaxCenterView` (Akuntansi & Pajak › Pusat Pajak) |
 | Niat Bayar Hutang *(PK-05)* | `ap_payment_intents` | `routers/ap_payments.py`, `services/ap_payment_service.py` (dipanggil bayar faktur & bayar kontrabon) | `VendorBillPaymentCreate`, `ContraBonPayIn` | `VendorBillDetailPanel` & `contrabon/PayModal` (panel bayar, `features/purchasing/apPayment.jsx`) |
 | Kontrabon *(FASE G-7)* | `contra_bons` | `routers/contra_bons.py`, `services/contra_bon_service.py`, `services/contra_bon_reminder.py` | `ContraBonCreate`, `ContraBonDeductionIn`, `ContraBonDecisionIn`, `ContraBonScheduleIn`, `ContraBonPayIn`, `InvoiceExchangeIn` | `ContraBonsView` (Pembelian → Hutang Supplier (AP) → Kontrabon) |
@@ -100,6 +100,11 @@ Key Fields:
                            Diubah lewat `PATCH /api/users/{id}` `{"data": {"ai_finance": {...}}}` hanya oleh pemegang
                            izin `ai.configure` (jejak `ai_finance_toggled`). Memakai mode Keuangan = izin
                            `ai_finance.view` DAN sakelar ini.
+                           [AG-T3] `classes`: daftar golongan kartu tindakan yang boleh disetujui akun ini; nilai sah
+                           hanya `"B"` (uang masuk: kwitansi, pencocokan bank, alokasi titipan, ulang jurnal gagal).
+                           Kosong/tidak ada = golongan B ditolak. PATCH boleh mengirim `enabled` dan/atau `classes`; yang
+                           tidak dikirim dipertahankan. Golongan B juga menuntut izin `ai_finance.create` dan
+                           `ai.tindakan_uang_masuk` menyala untuk PT kartu.
   created_at  string   ISO 8601 UTC
 
 ⚠️ JANGAN BUAT: staff, karyawan, operator, employee (untuk user system)
@@ -468,6 +473,7 @@ Key Fields:
                             deposit_restored}}; panggilan ulang meneruskan dari langkah yang belum bertanda
   reversed_orders array    PK-19 — [{order_id, reversed, outstanding_after, payment_status}] per pesanan yang dibalik
   variance.decision_status  pending | failed | done — PK-19, cermin status keputusan selisih kwitansi ini
+  ai_card_id      string   AG-T3 — id kartu tindakan asisten yang mencatat kwitansi ini (tidak ada = dicatat di layar)
   created_by / created_by_name / created_at / updated_at
 
 ℹ️ PK-19 — baris `sales_orders.payments[]` HANYA ditulis lewat `services/ar_allocation_service.py` (`allocate`,
@@ -596,6 +602,8 @@ Key Fields:
                      je_number, order_number, outstanding_after. `sales_orders.payments[].alloc_id` = id alokasi
                      (metode `bank_holding`). Sisa tersedia = holding_remaining − Σ butir pending.
   holding_remaining float   FASE G-8 — sisa titipan belum dialokasikan (INV-BNK-03)
+  ai_card_id        string  AG-T3 — catatan cocok dari kartu tindakan asisten (dicocokkan di layar → field dihapus);
+                     juga `holding_allocated[].ai_card_id` untuk alokasi titipan dari kartu
   format_id         string  FASE G-8 — FK bank_statement_formats.id (template pembaca)
   match_type        enum    auto | manual
   matched_at / matched_by / import_batch / created_at / updated_at
@@ -1967,6 +1975,33 @@ Index:       uq_id (unik) · (user_id, status, created_at)
   started_at · updated_at · finished_at (saat confirmed/failed/dismissed/expired) · confirmed_at (lama, tetap diisi)
 Saat dibaca: `pending` lewat `expires_at` → `expired`; `running` tak berubah > 10 menit (batas teknis) → `failed`
 "Proses berhenti sebelum selesai. Periksa daftar PO sebelum meminta draf baru."
+```
+
+**AG-T3 — kartu golongan A/B** (`services/ai_cards.py`, satu koleksi untuk semua kartu; tanpa migrasi). Kartu disiapkan
+alat `prepare_action` (hanya GET lewat pintu baca-saja) dan sesudah disetujui memanggil SATU endpoint layar
+(`Idempotency-Key` + `X-Asisten-Kartu` = id kartu). Field tambahan:
+```
+  type              followup_note | payment_promise | collection_reminder (golongan A) · ar_receipt_create | bank_match |
+                    holding_allocate | posting_retry (golongan B) — atau tiga jenis lama
+  class · risk      A | B · low | medium | high (tingkat konfirmasi: high = alasan ≥ 10 huruf + ketik ulang nominal)
+  request           ≤ 500 — kalimat permintaan pengguna
+  args · args_initial   isian yang dikirim ke endpoint · salinan awal sebelum diubah pengguna
+  editable[]        {path, label, kind} isian yang boleh diubah di kartu (kwitansi: tanggal, cara bayar, catatan)
+  plan              {summary, rows: [{label, kind: money|text|date, before, after}], amount, confirm_text (nominal tanpa
+                    pemisah), note ("Jurnal dibuat sistem saat disimpan."), meta}
+  fingerprint · fingerprint_source[] · fingerprint_snapshot[]   sha256 potret data dasar saat disiapkan + cara membacanya
+                    ulang ({path, params, pick}) + potretnya (D3). Sidik berbeda saat disetujui → `failed`/`stale`
+  reason · edits    alasan & isian yang diubah pengguna saat menyetujui/mengabaikan
+  decided_by · decided_at   {id, name} · ISO — siapa menyetujui atau mengabaikan
+  result            {status_code, document: {type, label, id, number, link}, gl_status, message}
+  error_code        stale (data berubah) | door (endpoint menolak) | uncertain (hasil tidak pasti)
+  superseded_by     id kartu baru di percakapan yang sama
+  status            + superseded (pending → superseded saat kartu baru disiapkan di percakapan yang sama)
+Index:  (entity_id, status) · uq_pending_session — unik parsial (session_id) {status: "pending", session_id > ""}
+        (REQUIRED_UNIQUE_INDEXES, satu kartu menunggu per percakapan; berlaku juga untuk jenis lama)
+Dokumen hasil ber-`ai_card_id` (id kartu; diisi dari konteks `ai_card_context` hanya bila kartu `running` milik sesi):
+  ar_receipts.ai_card_id · collection_followups.ai_card_id · bank_statement_lines.ai_card_id (catatan cocok) dan
+  bank_statement_lines.holding_allocated[].ai_card_id · ulang jurnal: `audit_logs` `posting_failure_retried` saja.
 ```
 
 ### ai_chat_sessions · ai_results — field AG-T2 (Asisten Keuangan)
@@ -3374,6 +3409,8 @@ sales_targets          Prefix: starg_ — target sales per salesperson per perio
 sales_incentives       Prefix: sinc_  — komisi/bonus per sales per periode (basis sales|pencairan|tiered) [KN_17]
 campaigns              Prefix: camp_  — product focus / campaign + target per sales (advanced) [KN_17]
 collection_followups   Prefix: cfu_   — jejak follow-up penagihan jatuh tempo [KN_17 S39]
+                       AG-T3 — `ai_card_id` bila dicatat lewat kartu tindakan asisten (tindak lanjut, janji bayar
+                       `outcome=promised` + `next_action_date` = tanggal janji, tanda sudah diingatkan)
 credit_overrides       Prefix: cro_   — bypass blokir kredit via approval Finance + bukti (case-by-case) [KN_17 S37]
 ⚠️ KPI salesperson = DERIVED (dari sales_orders/invoices/payments/customers), BUKAN koleksi.
 ⚠️ JANGAN buat: discounts, faktur, returns_generic, salespersons (pakai users role=sales), leads/crm_* (fase lanjut)
