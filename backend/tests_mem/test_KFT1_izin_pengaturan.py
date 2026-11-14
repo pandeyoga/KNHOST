@@ -98,6 +98,9 @@ PK39_KUNCI = 1
 # terhitung di katalog (U04) tetapi tidak bisa diubah pemegang `settings.manage` saja (U02 tetap). Tab "Aturan Pembelian
 # & Makloon" (`settings-cfg-purchasing`) kini juga terbuka bagi pemegang izin `accounting` (U14, `VIEW_RESOURCE_OVERRIDES`).
 PK26_KUNCI = 1
+# AG-T2 — satu kunci baru `ai.samarkan_nama` (samarkan nama pihak ke penyedia model, berlapis PT) berizin `ai.configure`:
+# ikut terhitung di katalog (U04) tetapi tidak bisa diubah pemegang `settings.manage` saja (U02 tetap).
+AGT2_KUNCI = 1
 
 
 def _put(key, value, scope_type="entity", scope_id="ent_ksc"):
@@ -162,10 +165,10 @@ async def test_U04_lihat_saja_tidak_bisa_ubah(klien, akun, sesi, peran_tanpa_acu
     # periode tertutup mengunci dokumen; PK-38 kontrol dua orang bayar hutang; KP-T8 hidup/mati & model pengenal gambar;
     # PK-30 selisih panjang roll antar-PT; PM-T1 kontrol dua orang ubah rekening; AG-T1 masa berlaku kartu asisten;
     # TX-T1 tujuh kunci pajak (faktor, pembulatan, kode transaksi); PK-39 mode pemeriksaan anggaran; PK-26 porsi biaya
-    # masuk roll yang sudah terjual.
+    # masuk roll yang sudah terjual; AG-T2 penyamaran nama pihak ke penyedia model.
     assert r.json()["total"] == 310 + 5 + KFT6_KUNCI + KFT2_KUNCI + KPT7_KUNCI + PK36_KUNCI + KFT7_KUNCI + PK37_KUNCI \
         + PK38_KUNCI + KPT8_KUNCI + PK30_KUNCI + PMT1_KUNCI + CRT1_KUNCI + AGT1_KUNCI + PMT2_KUNCI + TXT1_KUNCI \
-        + PK39_KUNCI + PK26_KUNCI
+        + PK39_KUNCI + PK26_KUNCI + AGT2_KUNCI
 
 
 async def test_U05_manajer_kosong_tidak_lagi_lewat_nama_peran(klien, akun, sesi, peran_manajer_kosong):

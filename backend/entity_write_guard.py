@@ -126,6 +126,10 @@ GROUP_LEVEL_EXACT: frozenset = frozenset({
     "/api/export-center/preview", "/api/export-center/jobs", "/api/export-center/templates",
     "/api/export-center/quick",   # FIX-4 — tombol Unduh daftar: hanya membaca (berkas langsung / job milik pengguna)
     "/api/sales-returns/cutloss/simulate", "/api/sales-returns/discount/simulate",   # LN-092 — simulasi, tanpa tulis
+    # AG-T2 — percakapan Tanya KN hanya membaca (alat keuangan memanggil endpoint GET; kartu tindakan menolak mode
+    # gabungan sendiri, AG-T1); yang ditulis hanya sesi percakapan milik pengguna (`ai_chat_sessions`, per pengguna).
+    # Mode Keuangan "Semua PT" menjawab angka gabungan berlabel "belum dieliminasi" (K-15, U6).
+    "/api/ai/chat",
     # (P) pekerjaan pemeliharaan tingkat grup (dijalankan penjadwal/admin)
     "/api/finance-cases/scan", "/api/contra-bons/run-reminder",
     "/api/fixed-assets/run-depreciation", "/api/rnd/sla/escalate",

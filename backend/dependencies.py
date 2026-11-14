@@ -71,8 +71,9 @@ async def current_user(request: Request) -> Dict[str, Any]:
     elif expires_at <= now:
         await db.sessions.delete_one({"token": token})
         raise HTTPException(status_code=401, detail="Session kedaluwarsa — silakan login ulang")
-    elif (expires_at - now) < timedelta(hours=ttl / 2):
-        # sliding renewal: perpanjang saat sisa < setengah TTL
+    elif (expires_at - now) < timedelta(hours=ttl / 2) and not session.get("fixed_expiry"):
+        # sliding renewal: perpanjang saat sisa < setengah TTL. AG-T2 — sesi sementara asisten (jadwal laporan,
+        # `fixed_expiry`) tidak diperpanjang: umurnya tetap 10 menit dan dihapus pemakainya.
         await db.sessions.update_one({"token": token}, {"$set": {"expires_at": session_expiry(ttl)}})
     user = safe_doc(await db.users.find_one({"id": session["user_id"], "status": "active"}, {"_id": 0, "password_hash": 0}))
     if not user:

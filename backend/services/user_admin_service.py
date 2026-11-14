@@ -34,7 +34,9 @@ EDITABLE_FIELDS = ["name", "email", "role", "phone", "home_entity_id",
                    # FASE L — pagar lini produk per akun (kosong = semua lini)
                    "allowed_line_codes",
                    # P01 IMP-20 — lokasi kerja (site → gudang)
-                   "location_site_ids", "location_warehouse_ids"]
+                   "location_site_ids", "location_warehouse_ids",
+                   # AG-T2 (K-45) — sakelar Asisten Keuangan per akun `{"enabled": bool}`; router menuntut `ai.configure`
+                   "ai_finance"]
 
 
 # ─── Pembantu ────────────────────────────────────────────────────

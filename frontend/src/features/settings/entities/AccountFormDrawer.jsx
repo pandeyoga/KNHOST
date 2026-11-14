@@ -23,7 +23,7 @@ import { createUser, patchUser, availableEmployees, ROLE_OPTIONS, publicRoles,
   errText, manageableRoles } from "./entityApi";
 
 export default function AccountFormDrawer({ user, entities = [], selectedEntity,
-  onClose, onSaved, onError, canViewRoles = false }) {
+  onClose, onSaved, onError, canViewRoles = false, canConfigureAi = false }) {
   const editing = Boolean(user?.id);
   const [form, setForm] = useState(() => ({
     name: user?.name || "",
@@ -40,6 +40,9 @@ export default function AccountFormDrawer({ user, entities = [], selectedEntity,
     location_site_ids: user?.location_site_ids || [],
     location_warehouse_ids: user?.location_warehouse_ids || [],
   }));
+  // AG-T2 (K-45) — sakelar Asisten Keuangan per akun; hanya pemegang `ai.configure` yang bisa mengubahnya.
+  const savedAiFinance = Boolean(user?.ai_finance?.enabled);
+  const [aiFinance, setAiFinance] = useState(savedAiFinance);
   const [empQuery, setEmpQuery] = useState("");
   const [employees, setEmployees] = useState([]);
   const [busy, setBusy] = useState(false);
@@ -165,6 +168,7 @@ export default function AccountFormDrawer({ user, entities = [], selectedEntity,
           allowed_line_codes: form.allowed_line_codes || [],   // FASE L
           location_site_ids: form.location_site_ids || [], location_warehouse_ids: form.location_warehouse_ids || [],
           ...(form.password ? { password: form.password } : {}),
+          ...(canConfigureAi && aiFinance !== savedAiFinance ? { ai_finance: { enabled: aiFinance } } : {}),
         };
         const res = await patchUser(user.id, data);
         onSaved?.(
@@ -416,6 +420,28 @@ export default function AccountFormDrawer({ user, entities = [], selectedEntity,
               tetap terlihat, jadi tidak ada layar yang mendadak kosong.
             </p>
           </div>
+
+          {editing && (
+            <div className="rounded-md border border-kn-divider p-2.5" data-testid="account-form-ai-finance">
+              <label className="flex items-center gap-2">
+                <input type="checkbox" role="switch" className="h-4 w-4" data-testid="account-form-ai-finance-switch"
+                       checked={aiFinance} disabled={!canConfigureAi}
+                       onChange={(e) => setAiFinance(e.target.checked)} />
+                <span className="text-fs-13 font-semibold text-kn-text">Asisten Keuangan</span>
+                <span className="text-fs-12 text-kn-text-2" data-testid="account-form-ai-finance-state">
+                  {aiFinance ? "Menyala" : "Mati"}
+                </span>
+              </label>
+              <p className="mt-1 text-fs-12 text-kn-text-2">
+                Mati = akun ini tidak bisa bertanya soal keuangan lewat Tanya KN.
+              </p>
+              {!canConfigureAi && (
+                <p className="mt-1 text-fs-12 text-kn-text-2" data-testid="account-form-ai-finance-readonly">
+                  Hanya-baca: yang bisa menyalakan adalah pemegang akses pengaturan asisten (Asisten Tanya KN).
+                </p>
+              )}
+            </div>
+          )}
 
           <AccountLocationScope role={form.role} siteIds={form.location_site_ids || []}
                                 warehouseIds={form.location_warehouse_ids || []} onChange={set} />

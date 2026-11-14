@@ -18,7 +18,6 @@ from services import analytics_engine as engine
 from services.analytics_time import now_wib, period_from_args
 from services.ar_aging_service import _eligible_outstanding, due_context, order_due
 from services.sales_ownership import apply_scope, assert_may_open
-from role_registry import role_in  # peran acuan dikenali (keputusan owner 2026-10-21)
 
 Q_DEFAULT = {"group_by": [], "time_grain": None, "compare": "none", "filters": [],
              "sort": {"by": None, "direction": "desc"}, "limit": None, "include_samples": False,
@@ -313,36 +312,44 @@ async def run_report(args, user, ctx, session_id=None) -> Dict[str, Any]:
     warn: List[str] = []
     sections: Dict[str, Any] = {}
     if rep in ("cash_position", "cashflow_forecast", "income_statement"):
-        from services.finance_tower_service import _cash_position
-        from services.cashflow_forecast_service import cashflow_forecast
-        from services.financial_statement_service import income_statement
-        sc = await engine.build_scope(user, ctx)
-        if not await sc.allowed((("accounting", "view"), ("cash", "view"))):
-            raise engine.AnalyticsError("Laporan keuangan tidak tersedia untuk peran Anda.")
-        scope = {"entity_id": {"$in": sc.entity_ids}}
-        if rep == "income_statement":
-            p = period_from_args(per)
-            st = await income_statement(p.date_from.isoformat(), p.date_to.isoformat(), scope=scope)
-            rows = [{"section": s["label"], "account": ln.get("name") or ln.get("code"), "amount": ln.get("amount", ln.get("balance"))}
-                    for s in st["sections"] for ln in s.get("lines") or []]
-            rows += [{"section": "Ringkasan", "account": lbl, "amount": st[k]} for k, lbl in (
-                ("revenue_total", "Total pendapatan"), ("gross_profit", "Laba kotor"), ("opex_total", "Total beban operasional"),
-                ("net_income", "Laba bersih"))]
-            if not role_in(sc.role, ("admin", "manager", "finance")):
-                raise engine.AnalyticsError("Laba rugi tidak tersedia untuk peran Anda.")
-            sections["statement"] = await _save("Laba rugi", [_txt("section", "Bagian"), _txt("account", "Akun"), _col("amount", "Jumlah", "idr")],
-                                                rows, user, session_id, "run_report", args, period=p.to_dict(),
-                                                totals={"amount": st["net_income"]}, definition="Laba rugi dari jurnal posted (akrual)")
-        elif rep == "cash_position":
-            cp = await _cash_position(scope)
-            sections["kpi"] = await _save("Posisi kas & bank", [_txt("name", "Akun"), _col("balance", "Saldo", "idr")],
-                                          cp["accounts"], user, session_id, "run_report", args, totals={"balance": cp["total"]})
-        else:
-            fc = await cashflow_forecast(scope=scope)
-            rows = [{"label": b.get("label"), "inflow": b.get("inflow"), "outflow": b.get("outflow"),
-                     "net": round(float(b.get("inflow") or 0) - float(b.get("outflow") or 0), 2)} for b in fc.get("buckets") or fc.get("weeks") or []]
-            sections["weeks"] = await _save("Perkiraan arus kas", [_txt("label", "Periode"), _col("inflow", "Masuk", "idr"),
-                                            _col("outflow", "Keluar", "idr"), _col("net", "Bersih", "idr")], rows, user, session_id, "run_report", args)
+        # AG-T2 (b, AG-03) — tiga laporan keuangan dibaca dari endpoint layarnya lewat pintu aplikasi sendiri, dengan sesi
+        # dan PT pengguna: izin = izin layar (dulu `accounting.view` ATAU `cash.view`, ditambah gerbang nama peran untuk
+        # laba rugi), angka = angka layar. Jadwal laporan memakai sesi sementara atas nama pemilik jadwal.
+        from services import ai_self_api
+        try:
+            async with ai_self_api.for_scope(user, ctx) as api:
+                if rep == "income_statement":
+                    p = period_from_args(per)
+                    st = await api.call("GET", "/api/finance/income-statement",
+                                        params={"start": p.date_from.isoformat(), "end": p.date_to.isoformat()})
+                    rows = [{"section": s["label"], "account": ln.get("name") or ln.get("code"),
+                             "amount": ln.get("amount", ln.get("balance"))}
+                            for s in st["sections"] for ln in s.get("lines") or []]
+                    rows += [{"section": "Ringkasan", "account": lbl, "amount": st[k]} for k, lbl in (
+                        ("revenue_total", "Total pendapatan"), ("gross_profit", "Laba kotor"),
+                        ("opex_total", "Total beban operasional"), ("net_income", "Laba bersih"))]
+                    sections["statement"] = await _save(
+                        "Laba rugi", [_txt("section", "Bagian"), _txt("account", "Akun"), _col("amount", "Jumlah", "idr")],
+                        rows, user, session_id, "run_report", args, period=p.to_dict(), totals={"amount": st["net_income"]},
+                        definition="Laba rugi dari jurnal posted (akrual)")
+                elif rep == "cash_position":
+                    cp = await api.call("GET", "/api/bank-accounts/position")
+                    sections["kpi"] = await _save(
+                        "Posisi kas & bank", [_txt("name", "Akun"), _col("balance", "Saldo", "idr")],
+                        [{"name": a.get("name") or a.get("code"), "balance": a.get("balance")} for a in cp.get("gl_accounts") or []],
+                        user, session_id, "run_report", args, totals={"balance": cp.get("gl_total")},
+                        definition=cp.get("source_label") or "Saldo buku besar akun kas & bank")
+                else:
+                    fc = await api.call("GET", "/api/finance/cashflow-forecast")
+                    rows = [{"label": b.get("label"), "inflow": b.get("inflow"), "outflow": b.get("outflow"),
+                             "net": round(float(b.get("inflow") or 0) - float(b.get("outflow") or 0), 2)}
+                            for b in fc.get("buckets") or fc.get("weeks") or []]
+                    sections["weeks"] = await _save(
+                        "Perkiraan arus kas", [_txt("label", "Periode"), _col("inflow", "Masuk", "idr"),
+                                               _col("outflow", "Keluar", "idr"), _col("net", "Bersih", "idr")],
+                        rows, user, session_id, "run_report", args)
+        except ai_self_api.SelfApiError as exc:   # 403 izin layar, dsb. → pesan endpoint apa adanya
+            raise engine.AnalyticsError(exc.message) from exc
     elif rep in plan:
         rfilters = args.get("filters") or []
         for name, (fn, a) in plan[rep].items():

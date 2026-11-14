@@ -96,6 +96,10 @@ Key Fields:
                            bawaannya, supaya akun lama tidak kehilangan apa pun.
                            Divalidasi ke master `product_lines` (services/line_scope.py);
                            mengubahnya MENCABUT sesi (hak baca berubah).
+  ai_finance  object   [AG-T2] `{"enabled": bool}` sakelar Asisten Keuangan per akun (K-45). TIDAK ADA = mati.
+                           Diubah lewat `PATCH /api/users/{id}` `{"data": {"ai_finance": {...}}}` hanya oleh pemegang
+                           izin `ai.configure` (jejak `ai_finance_toggled`). Memakai mode Keuangan = izin
+                           `ai_finance.view` DAN sakelar ini.
   created_at  string   ISO 8601 UTC
 
 ⚠️ JANGAN BUAT: staff, karyawan, operator, employee (untuk user system)
@@ -1891,6 +1895,25 @@ Index:       uq_id (unik) · (user_id, status, created_at)
   started_at · updated_at · finished_at (saat confirmed/failed/dismissed/expired) · confirmed_at (lama, tetap diisi)
 Saat dibaca: `pending` lewat `expires_at` → `expired`; `running` tak berubah > 10 menit (batas teknis) → `failed`
 "Proses berhenti sebelum selesai. Periksa daftar PO sebelum meminta draf baru."
+```
+
+### ai_chat_sessions · ai_results — field AG-T2 (Asisten Keuangan)
+Percakapan Tanya KN (`services/ai_chat_service.py`) dan hasil alat (`services/analytics_engine.save_result`). AG-T2 menambah
+field berikut (tanpa migrasi; dokumen lama tanpa field = mode umum / tanpa keterangan):
+```
+ai_chat_sessions
+  mode        umum | keuangan    mode percakapan (diisi saat sesi dibuat; giliran mode Keuangan menimpanya)
+  alias_map   {by_name: {nama asli → kode}, counters: {awalan → nomor}}  peta samaran nama pihak sesi itu
+              (PLG- pelanggan, PMS- pemasok, KRY- sales/karyawan, PHK- pihak lain; 3 digit berurutan per sesi).
+              HANYA di server — tidak pernah dikirim ke penyedia model maupun ke layar (`services/ai_privacy.py`).
+              Diisi di kedua mode (umum & keuangan) selama `ai.samarkan_nama` menyala untuk salah satu PT cakupan
+  turns[].mode · turns[].sources   giliran mode Keuangan: sumber jawaban {result_id, title, entity_label, period_label,
+              notes, link} yang disusun server dari hasil alat; `verification` tanpa daftar angka yang tidak cocok
+ai_results (hasil alat keuangan `fin_*`, `services/ai_finance_tools.py`)
+  entity_label  label PT / cakupan dari `scope_meta` endpoint (gabungan = "Penjumlahan … belum dieliminasi")
+  period_label  periode atau "per {tanggal}" / "saat ini"
+  notes[]       keterangan wajib (PT gabungan belum dieliminasi, rentang tanggal, dasar jatuh tempo, batas pemindaian …)
+  link          {view, nav_id, focus_type, focus_id, tab?} — tombol "Buka di layar" di bagian Sumber
 ```
 
 ### payment_terms  [Fase 1A IMPLEMENTED]

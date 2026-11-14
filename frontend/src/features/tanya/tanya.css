@@ -273,3 +273,23 @@ body.tanya-open [data-testid="help-tours-button"] span { display: none; }
 .tanya-context-chip button { display: inline-flex; border-radius: 999px; padding: 2px; color: #6B219A; transition: background-color 150ms ease; }
 .tanya-context-chip button:hover { background: #E6D5F2; }
 @keyframes tanyaChipIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
+
+/* AG-T2 — Asisten Keuangan: pilihan mode + banner PT di komposer; bagian Sumber + lencana pemeriksa angka. */
+.tanya-mode-bar { display: flex; flex-wrap: wrap; align-items: center; gap: var(--sp-2); margin-bottom: var(--sp-2); }
+.tanya-mode { display: inline-flex; border: 1px solid var(--kn-field-border); border-radius: 999px; padding: 2px; background: transparent; }
+.tanya-mode-opt { border: 0; background: transparent; border-radius: 999px; padding: 4px 12px; font-size: var(--fs-13);
+  font-weight: 600; color: var(--kn-text-2); white-space: nowrap; cursor: pointer;
+  min-height: var(--target-desktop-min); }
+.tanya-mode-opt.active { background: var(--kn-action-soft); color: var(--kn-action); }
+.tanya-mode-scope { display: inline-flex; align-items: center; gap: 6px; font-size: var(--fs-12); color: var(--kn-neutral);
+  background: var(--kn-neutral-soft); border-radius: 8px; padding: 3px 8px; min-width: 0; }
+.tanya-mode-scope.combined { background: var(--kn-warning-soft); color: var(--kn-warning-text); }
+.tanya-sources { display: flex; flex-direction: column; gap: var(--sp-2); border-top: 1px solid var(--kn-divider);
+  padding-top: var(--sp-3); }
+.tanya-source-list { display: flex; flex-direction: column; gap: var(--sp-2); margin: 0; padding: 0; list-style: none; }
+.tanya-source { display: flex; flex-direction: column; gap: 4px; }
+.tanya-source-row { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--sp-2); }
+.tanya-source-title { font-size: var(--fs-13); font-weight: 600; color: var(--kn-text); min-width: 0; overflow-wrap: anywhere; }
+.tanya-source-open { white-space: nowrap; }
+.tanya-source-notes { margin: 0; padding-left: 18px; font-size: var(--fs-12); color: var(--kn-text-2); list-style: disc; }
+.tanya-finance-verify-bar { display: flex; flex-wrap: wrap; gap: var(--sp-2); }

@@ -71,6 +71,10 @@ for _r, _tambah in _pc.PMT1_DEFAULT_PAIRS.items():
 for _r, _tambah in _pc.CRT1_DEFAULT_PAIRS.items():
     for _res, _aksi in _tambah.items():
         TAMBAHAN_SESUDAH.setdefault(_r, {}).setdefault(_res, set()).update(_aksi)
+# AG-T2 (K-45) — Asisten Keuangan `ai_finance.view`: Admin, Manajer, Finance (`permissions_config.AGT2_DEFAULT_PAIRS`).
+for _r, _tambah in _pc.AGT2_DEFAULT_PAIRS.items():
+    for _res, _aksi in _tambah.items():
+        TAMBAHAN_SESUDAH.setdefault(_r, {}).setdefault(_res, set()).update(_aksi)
 
 
 def _himpunan(perms: dict) -> dict:

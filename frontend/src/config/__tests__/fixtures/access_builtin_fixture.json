@@ -15,6 +15,9 @@
     "manage",
     "configure"
    ],
+   "ai_finance": [
+    "view"
+   ],
    "ai_template": [
     "daily_brief",
     "sales_today_vs_yesterday",
@@ -671,6 +674,9 @@
     "view",
     "view_stock_value"
    ],
+   "ai_finance": [
+    "view"
+   ],
    "ai_template": [
     "daily_brief",
     "ar_due",
@@ -850,6 +856,9 @@
     "view_margin",
     "view_stock_value",
     "manage"
+   ],
+   "ai_finance": [
+    "view"
    ],
    "ai_template": [
     "daily_brief",
@@ -3549,6 +3558,7 @@
    "settings"
   ],
   "settings-cfg-system": [
+   "ai",
    "integration",
    "settings"
   ],
@@ -3823,6 +3833,7 @@
   ],
   "tanya-kn": [
    "ai",
+   "ai_finance",
    "ai_template"
   ],
   "tax-hub": [

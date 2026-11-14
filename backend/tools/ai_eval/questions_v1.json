@@ -3338,8 +3338,10 @@
      "entity_scope": "active"
     }
    },
-   "expect": "scoped",
-   "denied_metrics": [],
+   "expect": "denied",
+   "denied_metrics": [
+    "ar_outstanding"
+   ],
    "alternatives": []
   },
   {

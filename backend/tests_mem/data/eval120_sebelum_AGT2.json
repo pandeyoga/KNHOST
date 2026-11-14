@@ -1,0 +1,916 @@
+{
+ "q001": {
+  "denied": [],
+  "error": null,
+  "expect": "ok",
+  "role": "admin",
+  "tool": "query_metrics",
+  "warnings": []
+ },
+ "q002": {
+  "denied": [],
+  "error": null,
+  "expect": "ok",
+  "role": "admin",
+  "tool": "query_metrics",
+  "warnings": []
+ },
+ "q003": {
+  "denied": [],
+  "error": null,
+  "expect": "ok",
+  "role": "admin",
+  "tool": "query_metrics",
+  "warnings": []
+ },
+ "q004": {
+  "denied": [],
+  "error": null,
+  "expect": "ok",
+  "role": "admin",
+  "tool": "query_metrics",
+  "warnings": []
+ },
+ "q005": {
+  "denied": [],
+  "error": null,
+  "expect": "ok",
+  "role": "admin",
+  "tool": "query_metrics",
+  "warnings": []
+ },
+ "q006": {
+  "denied": [],
+  "error": null,
+  "expect": "ok",
+  "role": "admin",
+  "tool": "query_metrics",
+  "warnings": []
+ },
+ "q007": {
+  "denied": [],
+  "error": null,
+  "expect": "ok",
+  "role": "admin",
+  "tool": "query_metrics",
+  "warnings": []
+ },
+ "q008": {
+  "denied": [],
+  "error": null,
+  "expect": "ok",
+  "role": "admin",
+  "tool": "query_metrics",
+  "warnings": []
+ },
+ "q009": {
+  "denied": [],
+  "error": null,
+  "expect": "ok",
+  "role": "admin",
+  "tool": "query_metrics",
+  "warnings": []
+ },
+ "q010": {
+  "denied": [],
+  "error": null,
+  "expect": "ok",
+  "role": "admin",
+  "tool": "query_metrics",
+  "warnings": []
+ },
+ "q011": {
+  "denied": [],
+  "error": null,
+  "expect": "ok",
+  "role": "admin",
+  "tool": "query_metrics",
+  "warnings": []
+ },
+ "q012": {
+  "denied": [],
+  "error": null,
+  "expect": "ok",
+  "role": "admin",
+  "tool": "query_metrics",
+  "warnings": []
+ },
+ "q013": {
+  "denied": [],
+  "error": null,
+  "expect": "ok",
+  "role": "admin",
+  "tool": "query_metrics",
+  "warnings": []
+ },
+ "q014": {
+  "denied": [],
+  "error": null,
+  "expect": "ok",
+  "role": "admin",
+  "tool": "query_metrics",
+  "warnings": []
+ },
+ "q015": {
+  "denied": [],
+  "error": null,
+  "expect": "ok",
+  "role": "admin",
+  "tool": "query_metrics",
+  "warnings": []
+ },
+ "q016": {
+  "denied": [],
+  "error": null,
+  "expect": "ok",
+  "role": "admin",
+  "tool": "query_metrics",
+  "warnings": []
+ },
+ "q017": {
+  "denied": [],
+  "error": null,
+  "expect": "ok",
+  "role": "admin",
+  "tool": "query_metrics",
+  "warnings": [
+   "Qty dipisah per satuan (yard, meter, kg tidak dijumlah)."
+  ]
+ },
+ "q018": {
+  "denied": [],
+  "error": null,
+  "expect": "ok",
+  "role": "admin",
+  "tool": "query_metrics",
+  "warnings": [
+   "Qty dipisah per satuan (yard, meter, kg tidak dijumlah)."
+  ]
+ },
+ "q019": {
+  "denied": [],
+  "error": null,
+  "expect": "ok",
+  "role": "admin",
+  "tool": "query_metrics",
+  "warnings": [
+   "Qty dipisah per satuan (yard, meter, kg tidak dijumlah)."
+  ]
+ },
+ "q020": {
+  "denied": [],
+  "error": null,
+  "expect": "ok",
+  "role": "admin",
+  "tool": "query_metrics",
+  "warnings": []
+ },
+ "q021": {
+  "denied": [],
+  "error": null,
+  "expect": "ok",
+  "role": "admin",
+  "tool": "query_metrics",
+  "warnings": [
+   "Qty dipisah per satuan (yard, meter, kg tidak dijumlah)."
+  ]
+ },
+ "q022": {
+  "denied": [],
+  "error": null,
+  "expect": "ok",
+  "role": "admin",
+  "tool": "query_metrics",
+  "warnings": [
+   "Qty dipisah per satuan (yard, meter, kg tidak dijumlah)."
+  ]
+ },
+ "q023": {
+  "denied": [],
+  "error": null,
+  "expect": "ok",
+  "role": "admin",
+  "tool": "query_metrics",
+  "warnings": [
+   "Qty dipisah per satuan (yard, meter, kg tidak dijumlah)."
+  ]
+ },
+ "q024": {
+  "denied": [],
+  "error": null,
+  "expect": "ok",
+  "role": "admin",
+  "tool": "query_metrics",
+  "warnings": [
+   "Qty dipisah per satuan (yard, meter, kg tidak dijumlah)."
+  ]
+ },
+ "q025": {
+  "denied": [],
+  "error": null,
+  "expect": "ok",
+  "role": "admin",
+  "tool": "query_metrics",
+  "warnings": []
+ },
+ "q026": {
+  "denied": [],
+  "error": null,
+  "expect": "ok",
+  "role": "admin",
+  "tool": "query_metrics",
+  "warnings": []
+ },
+ "q027": {
+  "denied": [],
+  "error": null,
+  "expect": "ok",
+  "role": "admin",
+  "tool": "query_metrics",
+  "warnings": []
+ },
+ "q028": {
+  "denied": [],
+  "error": null,
+  "expect": "ok",
+  "role": "admin",
+  "tool": "query_metrics",
+  "warnings": []
+ },
+ "q029": {
+  "denied": [],
+  "error": null,
+  "expect": "ok",
+  "role": "admin",
+  "tool": "query_metrics",
+  "warnings": []
+ },
+ "q030": {
+  "denied": [],
+  "error": null,
+  "expect": "ok",
+  "role": "admin",
+  "tool": "query_metrics",
+  "warnings": []
+ },
+ "q031": {
+  "denied": [],
+  "error": null,
+  "expect": "ok",
+  "role": "admin",
+  "tool": "query_metrics",
+  "warnings": []
+ },
+ "q032": {
+  "denied": [],
+  "error": null,
+  "expect": "ok",
+  "role": "admin",
+  "tool": "query_metrics",
+  "warnings": []
+ },
+ "q033": {
+  "denied": [],
+  "error": null,
+  "expect": "ok",
+  "role": "admin",
+  "tool": "query_metrics",
+  "warnings": []
+ },
+ "q034": {
+  "denied": [],
+  "error": null,
+  "expect": "ok",
+  "role": "admin",
+  "tool": "query_metrics",
+  "warnings": []
+ },
+ "q035": {
+  "denied": [],
+  "error": null,
+  "expect": "ok",
+  "role": "admin",
+  "tool": "query_metrics",
+  "warnings": []
+ },
+ "q036": {
+  "denied": [],
+  "error": null,
+  "expect": "ok",
+  "role": "admin",
+  "tool": "query_metrics",
+  "warnings": []
+ },
+ "q037": {
+  "denied": [],
+  "error": null,
+  "expect": "ok",
+  "role": "admin",
+  "tool": "query_metrics",
+  "warnings": []
+ },
+ "q038": {
+  "denied": [],
+  "error": null,
+  "expect": "ok",
+  "role": "admin",
+  "tool": "query_metrics",
+  "warnings": []
+ },
+ "q039": {
+  "denied": [],
+  "error": null,
+  "expect": "ok",
+  "role": "admin",
+  "tool": "query_metrics",
+  "warnings": []
+ },
+ "q040": {
+  "denied": [],
+  "error": null,
+  "expect": "ok",
+  "role": "admin",
+  "tool": "query_metrics",
+  "warnings": []
+ },
+ "q041": {
+  "denied": [],
+  "error": null,
+  "expect": "ok",
+  "role": "admin",
+  "tool": "query_metrics",
+  "warnings": []
+ },
+ "q042": {
+  "denied": [],
+  "error": null,
+  "expect": "ok",
+  "role": "admin",
+  "tool": "query_metrics",
+  "warnings": []
+ },
+ "q043": {
+  "denied": [],
+  "error": null,
+  "expect": "ok",
+  "role": "admin",
+  "tool": "query_metrics",
+  "warnings": []
+ },
+ "q044": {
+  "denied": [],
+  "error": null,
+  "expect": "ok",
+  "role": "admin",
+  "tool": "query_metrics",
+  "warnings": []
+ },
+ "q045": {
+  "denied": [],
+  "error": null,
+  "expect": "ok",
+  "role": "admin",
+  "tool": "query_metrics",
+  "warnings": []
+ },
+ "q046": {
+  "denied": [],
+  "error": null,
+  "expect": "ok",
+  "role": "admin",
+  "tool": "query_metrics",
+  "warnings": []
+ },
+ "q047": {
+  "denied": [],
+  "error": null,
+  "expect": "ok",
+  "role": "admin",
+  "tool": "query_metrics",
+  "warnings": []
+ },
+ "q048": {
+  "denied": [],
+  "error": null,
+  "expect": "ok",
+  "role": "admin",
+  "tool": "query_metrics",
+  "warnings": []
+ },
+ "q049": {
+  "denied": [],
+  "error": null,
+  "expect": "ok",
+  "role": "admin",
+  "tool": "query_metrics",
+  "warnings": []
+ },
+ "q050": {
+  "denied": [],
+  "error": null,
+  "expect": "ok",
+  "role": "admin",
+  "tool": "query_metrics",
+  "warnings": []
+ },
+ "q051": {
+  "denied": [],
+  "error": null,
+  "expect": "ok",
+  "role": "admin",
+  "tool": "list_records",
+  "warnings": []
+ },
+ "q052": {
+  "denied": [],
+  "error": null,
+  "expect": "ok",
+  "role": "admin",
+  "tool": "list_records",
+  "warnings": []
+ },
+ "q053": {
+  "denied": [],
+  "error": null,
+  "expect": "ok",
+  "role": "admin",
+  "tool": "list_records",
+  "warnings": []
+ },
+ "q054": {
+  "denied": [],
+  "error": null,
+  "expect": "ok",
+  "role": "admin",
+  "tool": "list_records",
+  "warnings": []
+ },
+ "q055": {
+  "denied": [],
+  "error": null,
+  "expect": "ok",
+  "role": "admin",
+  "tool": "run_report",
+  "warnings": []
+ },
+ "q056": {
+  "denied": [],
+  "error": null,
+  "expect": "ok",
+  "role": "admin",
+  "tool": "run_report",
+  "warnings": []
+ },
+ "q057": {
+  "denied": [],
+  "error": null,
+  "expect": "ok",
+  "role": "admin",
+  "tool": "run_report",
+  "warnings": []
+ },
+ "q058": {
+  "denied": [],
+  "error": null,
+  "expect": "ok",
+  "role": "admin",
+  "tool": "run_report",
+  "warnings": []
+ },
+ "q059": {
+  "denied": [],
+  "error": null,
+  "expect": "ok",
+  "role": "admin",
+  "tool": "run_report",
+  "warnings": []
+ },
+ "q060": {
+  "denied": [],
+  "error": null,
+  "expect": "ok",
+  "role": "admin",
+  "tool": "run_report",
+  "warnings": []
+ },
+ "q061": {
+  "denied": [],
+  "error": null,
+  "expect": "ok",
+  "role": "admin",
+  "tool": "query_metrics",
+  "warnings": [
+   "Qty dipisah per satuan (yard, meter, kg tidak dijumlah)."
+  ]
+ },
+ "q062": {
+  "denied": [],
+  "error": null,
+  "expect": "ok",
+  "role": "admin",
+  "tool": "query_metrics",
+  "warnings": []
+ },
+ "q063": {
+  "denied": [],
+  "error": null,
+  "expect": "ok",
+  "role": "admin",
+  "tool": "query_metrics",
+  "warnings": [
+   "Qty dipisah per satuan (yard, meter, kg tidak dijumlah)."
+  ]
+ },
+ "q064": {
+  "denied": [],
+  "error": null,
+  "expect": "ok",
+  "role": "admin",
+  "tool": "query_metrics",
+  "warnings": [
+   "Qty dipisah per satuan (yard, meter, kg tidak dijumlah)."
+  ]
+ },
+ "q065": {
+  "denied": [],
+  "error": null,
+  "expect": "ok",
+  "role": "admin",
+  "tool": "query_metrics",
+  "warnings": [
+   "Qty dipisah per satuan (yard, meter, kg tidak dijumlah)."
+  ]
+ },
+ "q066": {
+  "denied": [],
+  "error": "TIRUAN: OperationFailure",
+  "expect": "ok",
+  "role": "admin",
+  "tool": "query_metrics",
+  "warnings": []
+ },
+ "q067": {
+  "denied": [],
+  "error": null,
+  "expect": "ok",
+  "role": "admin",
+  "tool": "query_metrics",
+  "warnings": [
+   "Qty dipisah per satuan (yard, meter, kg tidak dijumlah)."
+  ]
+ },
+ "q068": {
+  "denied": [],
+  "error": null,
+  "expect": "ok",
+  "role": "admin",
+  "tool": "query_metrics",
+  "warnings": [
+   "Qty dipisah per satuan (yard, meter, kg tidak dijumlah)."
+  ]
+ },
+ "q069": {
+  "denied": [],
+  "error": null,
+  "expect": "ok",
+  "role": "admin",
+  "tool": "query_metrics",
+  "warnings": []
+ },
+ "q070": {
+  "denied": [],
+  "error": null,
+  "expect": "ok",
+  "role": "admin",
+  "tool": "query_metrics",
+  "warnings": []
+ },
+ "q071": {
+  "denied": [],
+  "error": null,
+  "expect": "ok",
+  "role": "admin",
+  "tool": "query_metrics",
+  "warnings": [
+   "Qty dipisah per satuan (yard, meter, kg tidak dijumlah)."
+  ]
+ },
+ "q072": {
+  "denied": [],
+  "error": null,
+  "expect": "ok",
+  "role": "admin",
+  "tool": "query_metrics",
+  "warnings": [
+   "Qty dipisah per satuan (yard, meter, kg tidak dijumlah)."
+  ]
+ },
+ "q073": {
+  "denied": [],
+  "error": null,
+  "expect": "ok",
+  "role": "admin",
+  "tool": "list_records",
+  "warnings": []
+ },
+ "q074": {
+  "denied": [],
+  "error": null,
+  "expect": "ok",
+  "role": "admin",
+  "tool": "list_records",
+  "warnings": []
+ },
+ "q075": {
+  "denied": [],
+  "error": null,
+  "expect": "ok",
+  "role": "admin",
+  "tool": "list_records",
+  "warnings": []
+ },
+ "q076": {
+  "denied": [],
+  "error": null,
+  "expect": "ok",
+  "role": "admin",
+  "tool": "list_records",
+  "warnings": []
+ },
+ "q077": {
+  "denied": [],
+  "error": "TIRUAN: OperationFailure",
+  "expect": "ok",
+  "role": "admin",
+  "tool": "run_report",
+  "warnings": []
+ },
+ "q078": {
+  "denied": [],
+  "error": null,
+  "expect": "ok",
+  "role": "admin",
+  "tool": "run_report",
+  "warnings": []
+ },
+ "q079": {
+  "denied": [],
+  "error": null,
+  "expect": "ok",
+  "role": "admin",
+  "tool": "run_report",
+  "warnings": []
+ },
+ "q080": {
+  "denied": [],
+  "error": null,
+  "expect": "ok",
+  "role": "admin",
+  "tool": "run_report",
+  "warnings": []
+ },
+ "q081": {
+  "denied": [],
+  "error": null,
+  "expect": "ok",
+  "role": "admin",
+  "tool": "query_metrics",
+  "warnings": []
+ },
+ "q082": {
+  "denied": [],
+  "error": null,
+  "expect": "ok",
+  "role": "admin",
+  "tool": "query_metrics",
+  "warnings": []
+ },
+ "q083": {
+  "denied": [],
+  "error": null,
+  "expect": "ok",
+  "role": "admin",
+  "tool": "query_metrics",
+  "warnings": []
+ },
+ "q084": {
+  "denied": [],
+  "error": null,
+  "expect": "ok",
+  "role": "admin",
+  "tool": "query_metrics",
+  "warnings": []
+ },
+ "q085": {
+  "denied": [],
+  "error": null,
+  "expect": "ok",
+  "role": "admin",
+  "tool": "query_metrics",
+  "warnings": [
+   "Qty dipisah per satuan (yard, meter, kg tidak dijumlah)."
+  ]
+ },
+ "q086": {
+  "denied": [],
+  "error": null,
+  "expect": "ok",
+  "role": "admin",
+  "tool": "query_metrics",
+  "warnings": []
+ },
+ "q087": {
+  "denied": [],
+  "error": null,
+  "expect": "ok",
+  "role": "admin",
+  "tool": "query_metrics",
+  "warnings": []
+ },
+ "q088": {
+  "denied": [],
+  "error": null,
+  "expect": "ok",
+  "role": "admin",
+  "tool": "list_records",
+  "warnings": []
+ },
+ "q089": {
+  "denied": [],
+  "error": null,
+  "expect": "ok",
+  "role": "admin",
+  "tool": "list_records",
+  "warnings": []
+ },
+ "q090": {
+  "denied": [],
+  "error": null,
+  "expect": "ok",
+  "role": "admin",
+  "tool": "list_records",
+  "warnings": []
+ },
+ "q091": {
+  "denied": [],
+  "error": null,
+  "expect": "ok",
+  "role": "admin",
+  "tool": "list_records",
+  "warnings": []
+ },
+ "q092": {
+  "denied": [],
+  "error": null,
+  "expect": "ok",
+  "role": "admin",
+  "tool": "list_records",
+  "warnings": []
+ },
+ "q093": {
+  "denied": [],
+  "error": null,
+  "expect": "ok",
+  "role": "admin",
+  "tool": "list_records",
+  "warnings": []
+ },
+ "q094": {
+  "denied": [],
+  "error": null,
+  "expect": "ok",
+  "role": "admin",
+  "tool": "run_report",
+  "warnings": []
+ },
+ "q095": {
+  "denied": [],
+  "error": null,
+  "expect": "ok",
+  "role": "admin",
+  "tool": "run_report",
+  "warnings": []
+ },
+ "q096": {
+  "denied": [],
+  "error": "Semua metrik yang diminta tidak tersedia untuk peran Anda: gross_margin",
+  "expect": "denied",
+  "role": "sales",
+  "tool": "query_metrics",
+  "warnings": []
+ },
+ "q097": {
+  "denied": [],
+  "error": "Semua metrik yang diminta tidak tersedia untuk peran Anda: gross_margin_pct",
+  "expect": "denied",
+  "role": "sales",
+  "tool": "query_metrics",
+  "warnings": []
+ },
+ "q098": {
+  "denied": [],
+  "error": "Semua metrik yang diminta tidak tersedia untuk peran Anda: stock_value",
+  "expect": "denied",
+  "role": "sales",
+  "tool": "query_metrics",
+  "warnings": []
+ },
+ "q099": {
+  "denied": [],
+  "error": "Semua metrik yang diminta tidak tersedia untuk peran Anda: gross_margin",
+  "expect": "denied",
+  "role": "finance",
+  "tool": "query_metrics",
+  "warnings": []
+ },
+ "q100": {
+  "denied": [],
+  "error": "Semua metrik yang diminta tidak tersedia untuk peran Anda: gross_margin",
+  "expect": "denied",
+  "role": "warehouse_admin",
+  "tool": "query_metrics",
+  "warnings": []
+ },
+ "q101": {
+  "denied": [],
+  "error": "Semua metrik yang diminta tidak tersedia untuk peran Anda: gross_margin_pct",
+  "expect": "denied",
+  "role": "sales_admin",
+  "tool": "query_metrics",
+  "warnings": []
+ },
+ "q102": {
+  "denied": [],
+  "error": "Semua metrik yang diminta tidak tersedia untuk peran Anda: gross_margin",
+  "expect": "denied",
+  "role": "md",
+  "tool": "query_metrics",
+  "warnings": []
+ },
+ "q103": {
+  "denied": [],
+  "error": "Semua metrik yang diminta tidak tersedia untuk peran Anda: gross_margin",
+  "expect": "denied",
+  "role": "sales",
+  "tool": "query_metrics",
+  "warnings": []
+ },
+ "q104": {
+  "denied": [],
+  "error": "Semua metrik yang diminta tidak tersedia untuk peran Anda: stock_value",
+  "expect": "denied",
+  "role": "sales_admin",
+  "tool": "query_metrics",
+  "warnings": []
+ },
+ "q105": {
+  "denied": [],
+  "error": "Semua metrik yang diminta tidak tersedia untuk peran Anda: stock_value",
+  "expect": "denied",
+  "role": "sales",
+  "tool": "query_metrics",
+  "warnings": []
+ },
+ "q106": {
+  "denied": [],
+  "error": null,
+  "expect": "scoped",
+  "role": "sales",
+  "tool": "query_metrics",
+  "warnings": []
+ },
+ "q107": {
+  "denied": [],
+  "error": null,
+  "expect": "scoped",
+  "role": "sales",
+  "tool": "query_metrics",
+  "warnings": []
+ },
+ "q108": {
+  "denied": [],
+  "error": null,
+  "expect": "scoped",
+  "role": "sales",
+  "tool": "query_metrics",
+  "warnings": []
+ },
+ "q109": {
+  "denied": [],
+  "error": null,
+  "expect": "scoped",
+  "role": "warehouse_admin",
+  "tool": "query_metrics",
+  "warnings": [
+   "Qty dipisah per satuan (yard, meter, kg tidak dijumlah)."
+  ]
+ },
+ "q110": {
+  "denied": [],
+  "error": null,
+  "expect": "scoped",
+  "role": "finance",
+  "tool": "query_metrics",
+  "warnings": []
+ }
+}

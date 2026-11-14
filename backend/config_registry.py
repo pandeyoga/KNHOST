@@ -138,6 +138,8 @@ GROUPS: List[Dict[str, Any]] = [
      "sections": [_S("tanya-kn", "Tanya KN: arti angka & hak lihat"),
                   # AG-T1 — sub-judul sendiri: "tanya-kn" sudah 14 kunci (batas sub-judul biasa, KF-T4).
                   _S("tanya-kn-tindakan", "Tanya KN: kartu tindakan"),
+                  # AG-T2 — penyamaran nama pihak (Asisten Keuangan); "tanya-kn" penuh (14 kunci).
+                  _S("tanya-kn-privasi", "Tanya KN: penyamaran nama"),
                   _S("tanya-kn-teknis", "Tanya KN: model & anggaran", advanced=True),
                   _S("baca-sj", "Baca surat jalan otomatis", advanced=True),
                   _S("rfid-proses", "RFID & proses macet", advanced=True),

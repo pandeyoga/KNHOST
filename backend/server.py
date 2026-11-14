@@ -65,6 +65,9 @@ from routers import (
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    # AG-T2 — asisten memanggil endpoint aplikasi ini sendiri (di dalam proses) dengan sesi pengguna yang bertanya.
+    from services.ai_self_api import set_app as _ai_self_api_app
+    _ai_self_api_app(app)
     await bootstrap.run_bootstrap()
     from services.rfid_v2_service import ensure_indexes as ensure_rfid_v2_indexes
     await ensure_rfid_v2_indexes()

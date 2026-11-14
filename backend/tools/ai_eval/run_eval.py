@@ -1,7 +1,8 @@
 """Tanya KN F5 — pengukur set evaluasi.
 
   python tools/ai_eval/run_eval.py --mode engine   # tanpa kunci: argumen harapan dijalankan langsung ke mesin
-  python tools/ai_eval/run_eval.py --mode model    # butuh kunci OpenAI + ai.enabled: pilihan tool oleh model
+  python tools/ai_eval/run_eval.py --mode model    # butuh kunci penyedia model + ai.enabled: pilihan tool oleh model
+  python tools/ai_eval/run_eval.py --mode engine --set keuangan   # AG-T2: 60 pertanyaan Asisten Keuangan (lulus = 60/60)
 
 Target §9: pemilihan tool ≥ 90%, argumen benar ≥ 90%, pemeriksa angka ≥ 98%, penolakan hak akses 100%.
 """
@@ -31,6 +32,47 @@ KEY_ARGS = ("metrics", "group_by", "record_type", "report", "time_grain", "compa
 async def _user(role):
     u = await db.users.find_one({"email": EMAIL[role]}, {"_id": 0, "password": 0, "password_hash": 0})
     return u, await ctx_for(u, u.get("home_entity_id") or "ent_ksc", False)
+
+
+async def _user_doc(role):
+    return (await _user(role))[0]
+
+
+def _app_ready():
+    """AG-T2 — set keuangan memanggil endpoint aplikasi sendiri di dalam proses (tanpa server berjalan)."""
+    import server
+    from services.ai_self_api import set_app
+    set_app(server.app)
+
+
+async def run_model_keuangan(qs):
+    """Mode `model` set keuangan (penyedia sungguhan; dijalankan pemilik sebelum menyalakan fitur, `00` §6 H8)."""
+    from services.ai_chat_service import chat_events
+    from services.ai_self_api import SelfApi
+    rows = []
+    for q in qs:
+        user, _ = await _user(q["role"])
+        ent = q.get("entity") or user.get("home_entity_id") or "ent_ksc"
+        ctx = await ctx_for(user, user.get("home_entity_id") or "ent_ksc" if ent == "all" else ent, ent == "all")
+        api = await SelfApi.for_user(user, ent)
+        tools, ver, err, t0 = [], None, None, time.perf_counter()
+        try:
+            async for ev in chat_events(q["question"], None, False, user, ctx, mode="keuangan", api=api):
+                if ev["type"] == "tool":
+                    tools.append(ev)
+                elif ev["type"] == "done":
+                    ver, err = ev.get("verification"), ev.get("error")
+        finally:
+            await api.aclose()
+        exp, first = q["expected"], (tools[0] if tools else None)
+        tool_ok = (first is None) if exp is None else bool(first and first["name"] == exp["tool"])
+        rows.append({"id": q["id"], "category": q["category"], "tool_ok": tool_ok,
+                     "args_ok": tool_ok and (exp is None or all(first["arguments"].get(k) == v for k, v in exp["args"].items()
+                                                              if not str(v).startswith("@"))),
+                     "numbers_ok": not (ver and ver.get("replaced") is False and not ver.get("ok")),
+                     "sent_unmatched": bool(ver and not ver.get("ok") and not ver.get("replaced")),
+                     "tools": [t["name"] for t in tools], "error": err, "ms": int((time.perf_counter() - t0) * 1000)})
+    return rows
 
 
 def _judge_engine(q, res):
@@ -123,16 +165,30 @@ async def main():
     ap.add_argument("--mode", choices=("engine", "model"), default="engine")
     ap.add_argument("--limit", type=int, default=0)
     ap.add_argument("--ids", default="", help="mis. q005,q013 — hanya pertanyaan ini")
+    ap.add_argument("--set", choices=("umum", "keuangan"), default="umum",
+                    help="umum = questions_v1.json (120); keuangan = questions_keuangan_v1.json (60, AG-T2)")
     a = ap.parse_args()
-    qs = json.loads((HERE / "questions_v1.json").read_text())["questions"]
+    qs = json.loads((HERE / ("questions_keuangan_v1.json" if a.set == "keuangan" else "questions_v1.json"))
+                    .read_text())["questions"]
     qs = qs[: a.limit] if a.limit else qs
     if a.ids:
         want = set(a.ids.split(","))
         qs = [q for q in qs if q["id"] in want]
-    rows = await (run_engine(qs) if a.mode == "engine" else run_model(qs))
+    if a.set == "keuangan":
+        _app_ready()
+        from eval_keuangan import run_engine_keuangan, summary as fin_summary
+        rows = await (run_engine_keuangan(qs, _user_doc) if a.mode == "engine" else run_model_keuangan(qs))
+    else:
+        rows = await (run_engine(qs) if a.mode == "engine" else run_model(qs))
     ms = sorted(r["ms"] for r in rows)
-    summary = {"mode": a.mode, "n": len(rows), "p50_ms": ms[len(ms) // 2] if ms else None}
-    if a.mode == "engine":
+    summary = {"mode": a.mode, "set": a.set, "n": len(rows), "p50_ms": ms[len(ms) // 2] if ms else None}
+    if a.set == "keuangan" and a.mode == "engine":
+        summary.update(fin_summary(rows))
+    elif a.set == "keuangan":
+        summary.update(tool_pct=_pct(rows, "tool_ok"), args_pct=_pct(rows, "args_ok"),
+                       access_denied_pct=_pct([r for r in rows if r["category"] == "hak_akses"], "tool_ok"),
+                       sent_unmatched_n=sum(1 for r in rows if r.get("sent_unmatched")))
+    elif a.mode == "engine":
         summary["args_valid_pct"] = _pct(rows, "ok")
         summary["access_denied_pct"] = _pct([r for r in rows if r["category"] == "hak_akses"], "ok")
     else:
@@ -140,7 +196,7 @@ async def main():
                        args_strict_pct=_pct(rows, "args_strict_ok"),
                        routed_n=sum(1 for r in rows if r.get("routed_template")),
                        alternative_n=sum(1 for r in rows if r.get("matched") == "alternative"), numbers_pct=_pct(rows, "numbers_ok"))
-    out = HERE / "reports" / f"{a.mode}_{datetime.now(timezone.utc).strftime('%Y%m%d_%H%M%S')}.json"
+    out = HERE / "reports" / f"{a.mode}{'_keuangan' if a.set == 'keuangan' else ''}_{datetime.now(timezone.utc).strftime('%Y%m%d_%H%M%S')}.json"
     out.write_text(json.dumps({"summary": summary, "rows": rows}, ensure_ascii=False, indent=1))
     print(json.dumps(summary, ensure_ascii=False))
     for r in rows:

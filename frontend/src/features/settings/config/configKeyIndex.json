@@ -338,6 +338,11 @@
      "advanced": false
     },
     {
+     "id": "tanya-kn-privasi",
+     "label": "Tanya KN: penyamaran nama",
+     "advanced": false
+    },
+    {
      "id": "tanya-kn-teknis",
      "label": "Tanya KN: model & anggaran",
      "advanced": true
@@ -1721,6 +1726,10 @@
   "ai.kartu_masa_berlaku_jam": [
    "sistem",
    "tanya-kn-tindakan"
+  ],
+  "ai.samarkan_nama": [
+   "sistem",
+   "tanya-kn-privasi"
   ],
   "ai.glossary": [
    "sistem",

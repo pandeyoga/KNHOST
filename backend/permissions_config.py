@@ -886,3 +886,19 @@ for _mods in DEFAULT_PERMISSIONS.values():
     for _res, _act in CRT1_REMOVED_PAIRS:
         if _act in (_mods.get(_res) or []):
             _mods[_res] = [a for a in _mods[_res] if a != _act]
+
+# ═══════════════════════════════════════════════════════════════════════════
+# AG-T2 (K-45) — Asisten Keuangan: bertanya soal jurnal, laporan, piutang, hutang, kas, periode, antar-PT, pajak, dan
+# anggaran lewat Tanya KN (`docs/blueprint/unit/AG-T2.md`, tabel "Izin dan peran"). Sumber daya baru `ai_finance` (modul
+# "Asisten Tanya KN"). Izin saja belum cukup: sakelar per akun `users.ai_finance.enabled` (bawaan mati, dinyalakan
+# pemegang `ai.configure`). Instalasi lama menerima pasangan baru sekali lewat `bootstrap.sync_permission_modules`.
+# ═══════════════════════════════════════════════════════════════════════════
+AGT2_DEFAULT_PAIRS = {
+    "admin": {"ai_finance": ("view",)},
+    "manager": {"ai_finance": ("view",)},
+    "finance": {"ai_finance": ("view",)},
+}
+for _role, _mods in AGT2_DEFAULT_PAIRS.items():
+    for _res, _acts in _mods.items():
+        _cur = list(DEFAULT_PERMISSIONS[_role].get(_res) or [])
+        DEFAULT_PERMISSIONS[_role][_res] = _cur + [a for a in _acts if a not in _cur]

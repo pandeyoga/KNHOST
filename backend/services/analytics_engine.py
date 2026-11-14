@@ -527,7 +527,9 @@ async def save_result(result: Dict[str, Any], full_rows: List[Dict[str, Any]], t
         "result_id": result["result_id"], "session_id": session_id or "", "user_id": user.get("id"), "tool": tool,
         "args": args, "title": result.get("title"), "columns": result["columns"], "rows": full_rows[:cat.ROW_STORE_LIMIT],
         "totals": result.get("totals"), "compare": result.get("compare"), "period": result.get("period"),
-        "definition": result.get("definition"), "created_at": now_iso(), "expires_at": now + timedelta(days=30)})
+        "definition": result.get("definition"), "created_at": now_iso(), "expires_at": now + timedelta(days=30),
+        # AG-T2 — keterangan wajib hasil alat keuangan (PT, periode, catatan, tautan layar); hasil lain tidak memuatnya.
+        **{k: result[k] for k in ("entity_label", "period_label", "notes", "link") if k in result}})
 
 
 async def query_metrics(args: Dict[str, Any], user: Dict[str, Any], ctx: Any,

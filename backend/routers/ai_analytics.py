@@ -13,11 +13,34 @@ from services import analytics_facts as facts
 router = APIRouter(prefix="/api/ai")
 
 _DENY_AI = "Anda belum punya akses untuk memakai asisten Tanya KN. Minta Admin menambahkan akses 'Asisten Tanya KN'."
+# AG-T2 (K-45) — mode Keuangan: izin `ai_finance.view`, lalu sakelar akun `users.ai_finance.enabled`.
+_DENY_FIN = "Anda belum punya akses untuk memakai Asisten Keuangan. Minta Admin menambahkan akses 'Asisten Keuangan'."
+_OFF_FIN = "Asisten Keuangan belum dinyalakan untuk akun Anda. Minta pemilik menyalakannya di Akun & Akses."
 
 
 async def _ai_user(request: Request) -> Dict[str, Any]:
     """PR-T2 — membuka asisten = izin `ai.view` (dulu daftar peran di pengaturan `ai.enabled_roles`)."""
     return await require_permission(request, "ai", "view", detail=_DENY_AI)
+
+
+async def _finance_user(request: Request) -> Dict[str, Any]:
+    """AG-T2 — Asisten Keuangan = izin `ai_finance.view` (pesan Z6) lalu sakelar akun (bawaan mati, K-45)."""
+    user = await require_permission(request, "ai_finance", "view", detail=_DENY_FIN)
+    if not (user.get("ai_finance") or {}).get("enabled"):
+        raise HTTPException(status_code=403, detail=_OFF_FIN)
+    return user
+
+
+async def _chat_user(request: Request, payload: Dict[str, Any]):
+    """Gerbang `POST /api/ai/chat`: mode Keuangan menuntut Asisten Keuangan dulu (pesannya sendiri), lalu `ai.view`."""
+    from services.ai_chat_service import MODES
+    mode = str(payload.get("mode") or "umum")
+    if mode == "keuangan":
+        await _finance_user(request)
+    user = await _ai_user(request)
+    if mode not in MODES:
+        raise HTTPException(status_code=400, detail="Mode tanya harus Umum atau Keuangan.")
+    return user, mode
 
 
 async def _sees_all(user: Dict[str, Any]) -> bool:
@@ -96,17 +119,47 @@ async def list_templates(request: Request) -> Dict[str, Any]:
 async def run_template(template_id: str, payload: Dict[str, Any], request: Request) -> Dict[str, Any]:
     from services import ai_templates
     user = await _ai_user(request)
+    from services import ai_self_api
+    api = ai_self_api.SelfApi.from_request(request)   # AG-T2 (b) — laporan keuangan templat lewat endpoint layarnya
+    tok = ai_self_api.bind(api)
     try:
         return await ai_templates.run(template_id, payload.get("params") or {}, user, await entity_ctx(request))
     except engine.AnalyticsError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
+    finally:
+        ai_self_api.unbind(tok)
+        await api.aclose()
 
 
 @router.post("/tools/{tool}")
 async def run_tool(tool: str, payload: Dict[str, Any], request: Request) -> Dict[str, Any]:
-    from services import ai_tools
-    user = await _ai_user(request)
-    res = await ai_tools.execute(tool, payload, user, await entity_ctx(request))
+    user = await _chat_user(request, {"mode": "keuangan" if tool.startswith("fin_") else "umum"})
+    from services import ai_finance_tools, ai_tools
+    user = user[0]
+    ctx = await entity_ctx(request)
+    if tool in ai_finance_tools.TOOLS:
+        from entity_scope import scope_meta
+        from services.ai_privacy import drop_salary
+        from services.ai_self_api import SelfApi
+        api = SelfApi.from_request(request)
+        try:
+            res = drop_salary(await ai_finance_tools.execute(tool, payload, ai_finance_tools.FinCall(
+                api=api, user=user, ctx=ctx, session_id=payload.get("session_id"), scope=await scope_meta(ctx))))
+        finally:
+            await api.aclose()
+        if res.get("error"):
+            raise HTTPException(status_code=res.get("status") if res.get("status") in (400, 403, 404, 409) else 400,
+                                detail=res["error"])
+        return res
+    from services import ai_self_api
+    from services.ai_privacy import drop_salary
+    api = ai_self_api.SelfApi.from_request(request)   # AG-T2 (b) — `run_report` keuangan lewat endpoint layarnya
+    tok = ai_self_api.bind(api)
+    try:
+        res = drop_salary(await ai_tools.execute(tool, payload, user, ctx))
+    finally:
+        ai_self_api.unbind(tok)
+        await api.aclose()
     if res.get("error"):
         raise HTTPException(status_code=400, detail=res["error"])
     return res
@@ -114,22 +167,28 @@ async def run_tool(tool: str, payload: Dict[str, Any], request: Request) -> Dict
 
 @router.post("/chat")
 async def post_chat(payload: Dict[str, Any], request: Request):
+    user, mode = await _chat_user(request, payload)
     import json as _json
     from fastapi.responses import StreamingResponse
     from services import ai_chat_service
-    user = await _ai_user(request)
     ctx = await entity_ctx(request)
     question = str(payload.get("question") or "").strip()
     if not question:
         raise HTTPException(status_code=400, detail="Pertanyaan kosong")
+    # AG-T2 — alat keuangan (dan, sejak serah-terima b, laporan keuangan `run_report` mode umum) memanggil endpoint
+    # layar dengan sesi & PT permintaan ini.
+    from services.ai_self_api import SelfApi
+    api = SelfApi.from_request(request)
 
     async def gen():
         try:
             async for ev in ai_chat_service.chat_events(question, payload.get("session_id"), bool(payload.get("deep")), user, ctx,
-                                                        payload.get("context")):
+                                                        payload.get("context"), mode=mode, api=api):
                 yield f"data: {_json.dumps(ev, ensure_ascii=False, default=str)}\n\n"
         except Exception as exc:  # noqa: BLE001 — galat model dikirim sebagai event, bukan koneksi putus
             yield f"data: {_json.dumps({'type': 'done', 'error': f'Asisten gagal menjawab: {exc}'})}\n\n"
+        finally:
+            await api.aclose()
     return StreamingResponse(gen(), media_type="text/event-stream",
                              headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"})
 

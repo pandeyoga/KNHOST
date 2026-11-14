@@ -390,3 +390,16 @@ Istilah layar Pengaturan › Keuangan & Pajak › Aturan Keuangan & Pajak (sub-j
 | **Data pajak belum lengkap** | lencana ikon + "Data pajak belum lengkap" · "Identitas pajak (NPWP/NIK) belum diisi" · "Alamat pajak belum diisi" | Faktur tetap terbit; kekurangan ditandai di faktur |
 | **Pesanan tanpa PPN** | sakelar "Pesanan tanpa PPN" + isian wajib "Alasan tanpa PPN" (checkout) · detail pesanan "Pesanan tanpa PPN — dibuat {nama}. Alasan: …" | Hanya pemegang akses pesanan tanpa PPN di PT PKP; alasan minimal 10 huruf |
 | **belum dipakai mesin** | lencana di form produk: "Perlakuan PPN" [Kena PPN · Dibebaskan · Tidak dipungut] · "Kode barang pajak" | Disimpan untuk persiapan; PPN per barang belum dihitung (L5) |
+
+### 9.8 Asisten Keuangan di Tanya KN (AG-T2)
+
+Istilah mode Keuangan di Tanya KN, sakelar akun di Pengaturan › Akun & Akses, dan pengaturan penyamaran nama
+(`docs/blueprint/unit/AG-T2.md`, K-15, K-43, K-45).
+
+| Istilah | Teks layar | Arti |
+|---|---|---|
+| **Asisten Keuangan** | pilihan Mode "Umum" · "Keuangan" di kotak tanya · kicker jawaban "Asisten Keuangan" · sakelar akun "Asisten Keuangan" + "Mati = akun ini tidak bisa bertanya soal keuangan lewat Tanya KN." · akses peran "Asisten Keuangan" ("Bertanya soal keuangan lewat Tanya KN") | Mode Tanya KN yang menjawab soal jurnal, laporan keuangan, piutang, hutang, kas, periode, antar-PT, pajak, dan anggaran dengan membaca layar yang sama dengan pengguna. Butuh akses peran **dan** sakelar akun yang dinyalakan pemilik |
+| **Menjawab untuk** | banner "Menjawab untuk: {nama PT}" · gabungan "Semua PT — angka gabungan belum dieliminasi" | PT yang angkanya dipakai jawaban (PT aktif di kepala aplikasi). Pada Semua PT angkanya penjumlahan tanpa eliminasi antar-PT (K-15) |
+| **Memeriksa angka** | status "Memeriksa angka…" · lencana "Angka diperiksa: semua cocok dengan data" / "Angka tidak bisa dipastikan" · kalimat "Saya tidak bisa memastikan angka untuk pertanyaan ini. Data yang berhasil diambil ada di tabel di bawah." | Jawaban mode Keuangan baru ditampilkan sesudah setiap angkanya cocok dengan data yang diambil; bila tetap tidak cocok, teks diganti kalimat baku dan tabel datanya tetap tampil |
+| **Sumber** | bagian "Sumber": "{judul} · {PT} · {periode}", catatan di bawahnya, tombol "Buka di layar" | Data yang dipakai jawaban, disusun server (bukan ditulis asisten); tombol membuka layar laporannya |
+| **Samarkan nama pihak** | pengaturan "Samarkan nama pihak yang dikirim ke asisten" | Nama pelanggan, pemasok, dan karyawan diganti kode (mis. "PLG-001") sebelum dikirim ke penyedia model, lalu dikembalikan ke nama asli di layar. Nominal dan nama PT tetap dikirim. Diatur per PT |

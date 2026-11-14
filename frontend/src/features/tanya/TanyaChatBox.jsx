@@ -1,8 +1,32 @@
 import { useEffect, useRef, useState } from "react";
-import { ArrowUp, FileText, Loader2, X } from "lucide-react";
+import { AlertTriangle, ArrowUp, Building2, FileText, Loader2, X } from "lucide-react";
+
+const MODES = [["umum", "Umum"], ["keuangan", "Keuangan"]];
+
+/** AG-T2 — pilihan mode (hanya bila Asisten Keuangan menyala untuk akun ini) + banner PT mode Keuangan. */
+function TanyaModeBar({ mode, onMode, financeScope }) {
+  const combined = financeScope?.combined;
+  return (
+    <div className="tanya-mode-bar" data-testid="tanya-mode-bar">
+      <div className="tanya-mode" role="radiogroup" aria-label="Mode tanya" data-testid="tanya-mode">
+        {MODES.map(([k, label]) => (
+          <button key={k} type="button" role="radio" aria-checked={mode === k} data-testid={`tanya-mode-${k}`}
+            className={`tanya-mode-opt btn-sm ${mode === k ? "active" : ""}`} onClick={() => onMode(k)}>{label}</button>
+        ))}
+      </div>
+      {mode === "keuangan" && (
+        <div className={`tanya-mode-scope ${combined ? "combined" : ""}`} data-testid="tanya-finance-scope">
+          {combined ? <AlertTriangle className="h-3.5 w-3.5" aria-hidden="true" /> : <Building2 className="h-3.5 w-3.5" aria-hidden="true" />}
+          <span>{combined ? "Semua PT — angka gabungan belum dieliminasi" : `Menjawab untuk: ${financeScope?.label || "PT aktif"}`}</span>
+        </div>
+      )}
+    </div>
+  );
+}
 
 /** Komposer gaya Claude: textarea tumbuh otomatis, tombol kirim bulat di dalam kotak. */
-export function TanyaChatBox({ status, busy, statusText, onAsk, entityLabel, context, onClearContext }) {
+export function TanyaChatBox({ status, busy, statusText, onAsk, entityLabel, context, onClearContext,
+  mode = "umum", onMode, financeScope }) {
   const [q, setQ] = useState("");
   const ref = useRef(null);
   useEffect(() => {
@@ -18,11 +42,17 @@ export function TanyaChatBox({ status, busy, statusText, onAsk, entityLabel, con
     onAsk(q.trim());
     setQ("");
   };
+  const finance = Boolean(status?.finance_enabled) && mode === "keuangan";
   const note = busy ? statusText || "Memproses…"
-    : status?.chat_enabled ? `Jawaban memakai data ${entityLabel || "entitas aktif"} sesuai hak akses Anda.`
-      : "Chat AI belum aktif — pertanyaan diarahkan ke laporan yang cocok.";
+    : finance ? "Angka diperiksa terhadap data sebelum jawaban ditampilkan."
+      : status?.chat_enabled ? `Jawaban memakai data ${entityLabel || "entitas aktif"} sesuai hak akses Anda.`
+        : "Chat AI belum aktif — pertanyaan diarahkan ke laporan yang cocok.";
+  const placeholder = context ? `Tanya tentang ${context.label || context.id}…`
+    : finance ? "Tanya soal laba rugi, neraca, piutang, hutang, kas, pajak…"
+      : "Tanya apa saja tentang penjualan, stok, piutang…";
   return (
     <form className="tanya-composer" onSubmit={submit} data-testid="tanya-chat-form">
+      {status?.finance_enabled && onMode && <TanyaModeBar mode={mode} onMode={onMode} financeScope={financeScope} />}
       {context && (
         <div className="tanya-context-chip" data-testid="tanya-context-chip">
           <FileText className="h-3.5 w-3.5" />
@@ -32,7 +62,7 @@ export function TanyaChatBox({ status, busy, statusText, onAsk, entityLabel, con
       )}
       <div className="tanya-composer-box">
         <textarea ref={ref} value={q} rows={1} onChange={(e) => setQ(e.target.value)} data-testid="tanya-chat-input"
-          className="tanya-composer-input" placeholder={context ? `Tanya tentang ${context.label || context.id}…` : "Tanya apa saja tentang penjualan, stok, piutang…"}
+          className="tanya-composer-input" placeholder={placeholder}
           onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey && !e.nativeEvent.isComposing) submit(e); }} />
         <button type="submit" className="tanya-send" disabled={busy || !q.trim()} aria-label="Kirim pertanyaan" data-testid="tanya-chat-submit">
           {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <ArrowUp className="h-4 w-4" strokeWidth={2.5} />}

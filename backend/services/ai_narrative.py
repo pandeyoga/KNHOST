@@ -84,10 +84,17 @@ async def _ai_text(mode: str, template: Dict[str, Any], results: List[Dict[str, 
     model = await value_of("ai.model_fast") if mode == "luna" else await value_of("ai.model_main")
     data = [{"judul": r.get("title"), "periode": (r.get("period") or {}).get("label"), "kolom": r.get("columns"),
              "baris": (r.get("rows") or [])[:20], "total": r.get("totals"), "pembanding": r.get("compare")} for r in results]
+    # AG-T2 (b, K-43) — nama pihak disamarkan sebelum dikirim ke penyedia (PT pengguna; menyala bila salah satu PT
+    # menyalakannya), lalu dikembalikan sebelum pemeriksa angka & layar. Gaji selalu dibuang.
+    from services.ai_privacy import drop_salary, masker_for
+    masker = await masker_for({}, [user.get("home_entity_id") or "", *(user.get("allowed_entity_ids") or [])])
+    data = drop_salary(data)
     started = time.perf_counter()
     text, usage = await provider.short_text(
         model=model, instructions=_PROMPT + _STYLE[mode], max_output_tokens=700,
-        content=f"Laporan: {template['title']}\n{json.dumps(data, ensure_ascii=False, default=str)}")
+        content=f"Laporan: {template['title']}\n{json.dumps(masker.mask(data) if masker else data, ensure_ascii=False, default=str)}")
+    if masker and text:
+        text = masker.unmask(text)
     await db.ai_usage_log.insert_one({"id": new_id("aiu"), "feature": "bi_template", "model": model, "user_id": user.get("id"),
                                       "template_id": template["id"], "usage": usage,
                                       "cost_usd": ai_cost.cost_usd(model, usage, provider.price_of(model)),

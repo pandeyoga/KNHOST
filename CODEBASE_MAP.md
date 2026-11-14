@@ -1,5 +1,5 @@
 <!-- DIHASILKAN OTOMATIS oleh scripts/gen_codebase_map.py — JANGAN EDIT TANGAN -->
-<!-- Dihasilkan dari commit: ccfa7b4 pada 2026-11-14 -->
+<!-- Dihasilkan dari commit: 550c400 pada 2026-11-14 -->
 # CODEBASE MAP — Kain Nusantara (dihasilkan otomatis)
 
 Peta ini dihitung dari kode oleh `scripts/gen_codebase_map.py`. Kalau angka di sini
@@ -14,7 +14,7 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 |---|---:|
 | Router (`backend/routers/*.py`) | 166 |
 | Endpoint (`@router.<method>`) | 1798 |
-| Service (`backend/services/*.py`) | 403 |
+| Service (`backend/services/*.py`) | 406 |
 | Koleksi MongoDB disentuh kode produksi | 203 |
 | Direktori fitur frontend (`src/features/*`) | 39 |
 
@@ -22,13 +22,13 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 
 | Berkas | Baris |
 |---|---:|
-| `server.py` | 431 |
+| `server.py` | 434 |
 | `db.py` | 12 |
 | `core_utils.py` | 438 |
 | `schemas.py` | 1132 |
 | `schemas_purchasing.py` | 625 |
-| `dependencies.py` | 286 |
-| `permissions_config.py` | 888 |
+| `dependencies.py` | 287 |
+| `permissions_config.py` | 904 |
 | `entity_scope.py` | 745 |
 | `pagination.py` | 145 |
 | `indexes.py` | 928 |
@@ -125,7 +125,7 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 | `access_review.py` | 2 | 87 | `/access/role-reality`, `/access/role-reality/{user_id}/apply` |
 | `access_roles.py` | 13 | 228 | `/labels`, `/modules`, `/roles`, `/roles/preview`, `/roles/{rid}`, `/roles/{rid}/follow-base` … |
 | `admin.py` | 10 | 563 | `/admin/seed-demo`, `/master-data/export-customers`, `/master-data/export-products`, `/master-data/export-warehouses`, `/master-data/export-yarn`, `/master-data/import-customers` … |
-| `ai_analytics.py` | 32 | 436 | `/analyze-change`, `/catalog`, `/chat`, `/export.xlsx`, `/facts/rebuild`, `/facts/status` … |
+| `ai_analytics.py` | 32 | 495 | `/analyze-change`, `/catalog`, `/chat`, `/export.xlsx`, `/facts/rebuild`, `/facts/status` … |
 | `ai_assist.py` | 5 | 46 | `/actions/{pid}`, `/actions/{pid}/confirm`, `/actions/{pid}/dismiss`, `/insights`, `/insights/scan` |
 | `amendments.py` | 10 | 185 | `/amendment-reasons`, `/amendments`, `/amendments/doc/{doc_type}/{doc_id}`, `/amendments/preview`, `/amendments/stats/summary`, `/amendments/{amd_id}` … |
 | `ap_payments.py` | 4 | 85 | `/ap-payments/accounts`, `/ap-payments/pending`, `/ap-payments/{intent_id}/cancel`, `/ap-payments/{intent_id}/resume` |
@@ -280,7 +280,7 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 | `transfers.py` | 14 | 764 | `/transfers`, `/transfers/inter-company`, `/transfers/so-options`, `/transfers/so-rolls`, `/transfers/{transfer_id}`, `/transfers/{transfer_id}/approve` … |
 | `uom_conversions.py` | 10 | 226 | `/uom-conversions/catalog`, `/uom-conversions/check-variance`, `/uom-conversions/convert`, `/uom-conversions/rules`, `/uom-conversions/rules/{rule_id}`, `/uom-conversions/rules/{rule_id}/status` … |
 | `uoms.py` | 5 | 186 | `/uoms`, `/uoms/vocab`, `/uoms/{uom_id}` |
-| `users.py` | 11 | 237 | `/hr-employees-available`, `/users`, `/users/count`, `/users/manageable-roles`, `/users/{user_id}`, `/users/{user_id}/reactivate` … |
+| `users.py` | 11 | 255 | `/hr-employees-available`, `/users`, `/users/count`, `/users/manageable-roles`, `/users/{user_id}`, `/users/{user_id}/reactivate` … |
 | `vehicle_logs.py` | 9 | 214 | `/vehicle-usage-logs`, `/vehicle-usage-logs/summary`, `/vehicle-usage-logs/{log_id}`, `/vehicles`, `/vehicles/{veh_id}` |
 | `vendor_bills.py` | 12 | 671 | `/purchase-orders/{po_id}/billing-context`, `/vendor-bills`, `/vendor-bills/payables/summary`, `/vendor-bills/status-counts`, `/vendor-bills/{bill_id}`, `/vendor-bills/{bill_id}/approve` … |
 | `warehouse_sites.py` | 6 | 91 | `/warehouse-sites`, `/warehouse-sites/seed-blueprint`, `/warehouse-sites/{site_id}`, `/warehouse-sites/{site_id}/receiving` |
@@ -296,25 +296,28 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 | `access_guard.py` | 111 | PR-T1 — penjaga KENAIKAN HAK lewat kelola akun dan kelola peran (docs/blueprint/02_STANDAR.md §3.3 E1–E4). |
 | `advance_report_service.py` | 111 | KEB-PDPT (Sesi #090) — Laporan Uang Muka Pelanggan. |
 | `ai_actions.py` | 348 | Tanya KN — draf tindakan dari jawaban AI. Tidak ada yang tersimpan/terkirim sebelum pengguna menekan Setujui. |
-| `ai_chat_service.py` | 344 | Tanya KN F2.2 — orkestrator chat bebas (pemanggilan alat lewat penyedia model). |
+| `ai_chat_service.py` | 541 | Tanya KN F2.2 — orkestrator chat bebas (pemanggilan alat lewat penyedia model). |
 | `ai_cost.py` | 37 | Tanya KN F2.5 — biaya per panggilan model + rem anggaran bulanan (`ai.monthly_budget_usd`). |
+| `ai_finance_tools.py` | 594 | AG-T2 (AG-03) — alat baca Asisten Keuangan: tiap alat = satu atau dua `GET` ke endpoint layar lewat `SelfApi`. |
 | `ai_forecast.py` | 112 | Tanya KN — perkiraan: kebutuhan stok 4–8 minggu + saran reorder, risiko pelanggan berhenti order. |
 | `ai_insights.py` | 147 | Tanya KN — peringatan anomali otomatis (tanpa model; angka & penyebab dihitung server). |
-| `ai_narrative.py` | 112 | Tanya KN F4 — narasi template: ringkasan otomatis dari angka server, atau AI (luna/sol) bila aktif. |
+| `ai_narrative.py` | 119 | Tanya KN F4 — narasi template: ringkasan otomatis dari angka server, atau AI (luna/sol) bila aktif. |
 | `ai_number_check.py` | 88 | Tanya KN F2.4 — pemeriksa angka: setiap angka di jawaban harus ada di hasil tool giliran itu. |
 | `ai_ops_metrics.py` | 163 | Tanya KN — metrik operasional gudang, QC, makloon & performa supplier (dihitung server, baca-saja). |
+| `ai_privacy.py` | 146 | AG-T2 (AG-06, K-43) — nama pihak tidak dikirim ke penyedia model; gaji tidak pernah dikirim. |
 | `ai_provider.py` | 174 | AG-T1 — satu lapisan antara mesin percakapan Tanya KN dan penyedia model. |
 | `ai_provider_fake.py` | 78 | AG-T1 — pelaksana penyedia model TIRUAN untuk tes (tanpa panggilan ke luar, tanpa kunci). |
 | `ai_schedules.py` | 128 | Tanya KN F4 — laporan terjadwal (in-app) + pemeliharaan harian (retensi sesi chat). |
+| `ai_self_api.py` | 186 | AG-T2 (AG-03) — asisten membaca data lewat pintu aplikasi sendiri, dengan sesi pengguna yang bertanya. |
 | `ai_templates.py` | 158 | Tanya KN F4 (dasar) — template laporan `tpl-v1`: resep dijalankan server TANPA model. |
-| `ai_tools.py` | 525 | Tanya KN F2.1 — eksekusi 6 tool (Lampiran C). Semua baca-saja, identitas pengguna asli. |
+| `ai_tools.py` | 532 | Tanya KN F2.1 — eksekusi 6 tool (Lampiran C). Semua baca-saja, identitas pengguna asli. |
 | `ai_usage_report.py` | 112 | Halaman Biaya AI — pemakaian harian per fitur, per pengguna, per model (tanggal WIB). |
 | `alert_ops_service.py` | 368 | PS-21 — Generator ALERT OPERASIONAL (quick win di atas mesin R6.5/R6.6). |
 | `alert_service.py` | 335 | R6.5 — Generator ALERT untuk Scheduler & Notifikasi (Kain Nusantara). |
 | `amendment_service.py` | 1096 | FASE G-1 — **FONDASI AMANDEMEN**: tidak ada lagi perubahan angka secara diam-diam. |
-| `analytics_catalog.py` | 148 | Tanya KN F1.2 — katalog semantik `cat-v1` sebagai DATA (satu-satunya tempat definisi). |
+| `analytics_catalog.py` | 155 | Tanya KN F1.2 — katalog semantik `cat-v1` sebagai DATA (satu-satunya tempat definisi). |
 | `analytics_config.py` | 15 | Tanya KN F0.5 — kebijakan data asisten analitik (keputusan klien §7) dari konfigurasi. |
-| `analytics_engine.py` | 736 | Tanya KN F1.3 — kompilator `query_metrics` & `analyze_change` → agregasi Mongo. |
+| `analytics_engine.py` | 738 | Tanya KN F1.3 — kompilator `query_metrics` & `analyze_change` → agregasi Mongo. |
 | `analytics_facts.py` | 289 | Tanya KN F1.1 — tabel fakta `fact_sales_lines`. |
 | `analytics_snapshots.py` | 73 | Tanya KN F5 — snapshot harian stok & piutang (23.55 WIB) → posisi `as_of` masa lalu di mesin analitik. |
 | `analytics_time.py` | 218 | Tanya KN F0.1 — periode analitik dalam WIB (Asia/Jakarta) → batas UTC. |
@@ -683,7 +686,7 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 | `twin_journal.py` | 118 | PK-06 — Jurnal KEMBAR (dua buku PT) yang utuh dan bisa diulang per sisi (docs/blueprint/02_STANDAR.md §1 P6). |
 | `uom_rules_service.py` | 485 | FASE B — REGISTRY KONVERSI SATUAN **GLOBAL** + TOLERANSI (D-06/D-07). |
 | `uom_service.py` | 503 | Sub-fase 1.13 — UOM Conversion Engine (Multi-UOM). |
-| `user_admin_service.py` | 405 | FASE E-2 — AKUN PENGGUNA TERTAUT BADAN USAHA (via HR) & PENEGAKAN AKSES. |
+| `user_admin_service.py` | 407 | FASE E-2 — AKUN PENGGUNA TERTAUT BADAN USAHA (via HR) & PENEGAKAN AKSES. |
 | `variant_axes.py` | 56 | Sumbu varian yang dapat dikonfigurasi pemilik (rnd.variant_axes_default / _optional). |
 | `vendor_bill_service.py` | 309 | Vendor Bill service (Fase 5.2 — P0-2) — 3-Way Matching PO ↔ GR ↔ Bill. |
 | `wa_alert_service.py` | 297 | R6.5 — Kanal WhatsApp untuk notifikasi/alert (Kain Nusantara). |
@@ -705,7 +708,7 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 
 | Fitur (`src/features/`) | Berkas | Baris |
 |---|---:|---:|
-| `__tests__` | 115 | 18302 |
+| `__tests__` | 116 | 18492 |
 | `admin` | 36 | 6981 |
 | `approvals` | 9 | 1720 |
 | `catalog` | 24 | 1459 |
@@ -740,8 +743,8 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 | `sales` | 97 | 15798 |
 | `sales_admin` | 11 | 1880 |
 | `samples` | 8 | 776 |
-| `settings` | 70 | 13013 |
-| `tanya` | 25 | 1662 |
+| `settings` | 70 | 13040 |
+| `tanya` | 25 | 1754 |
 | `transfers` | 1 | 20 |
 | `wms` | 99 | 13202 |
 
@@ -776,5 +779,5 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 | `frontend/src/features/settings/entities/EntityDetailDrawer.jsx` | 518 | 500 |
 | `frontend/src/features/finance/interco/IntercoView.jsx` | 515 | 500 |
 | `frontend/src/features/settings/entities/RoleRealityPanel.jsx` | 511 | 500 |
-| `frontend/src/features/purchasing/contrabon/ContraBonCreateWizard.jsx` | 502 | 500 |
 | `frontend/src/features/wms/warehouses/WarehouseMasterView.jsx` | 502 | 500 |
+| `frontend/src/features/purchasing/contrabon/ContraBonCreateWizard.jsx` | 502 | 500 |

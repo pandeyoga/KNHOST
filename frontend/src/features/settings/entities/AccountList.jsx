@@ -435,6 +435,7 @@ export default function AccountList({ entities = [], currentUser, selectedEntity
           onSaved={(msg) => { setEditing(null); onChanged?.(msg); load(); }}
           onError={onError}
           canViewRoles={can(currentUser?.permissions, "permission", "view")}
+          canConfigureAi={can(currentUser?.permissions, "ai", "configure")}
         />
       )}
     </div>

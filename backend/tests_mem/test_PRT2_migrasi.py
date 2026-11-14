@@ -63,7 +63,8 @@ async def test_katalog_enam_modul_dan_label(klien, kepala_admin):
     mods = {m["id"]: m for m in j["modules"]}
     for mid, res in {"sales_force": ["sales_force", "credit_override"], "costing": ["costing"],
                      "manager_home": ["manager_home"], "system_tools": ["system_tools"], "devices": ["rfid_device"],
-                     "assistant": ["ai", "ai_template"]}.items():
+                     # AG-T2 — modul Asisten Tanya KN juga memuat Asisten Keuangan (`ai_finance`).
+                     "assistant": ["ai", "ai_template", "ai_finance"]}.items():
         assert mods[mid]["resources"] == res, mid
         for x in res:
             assert j["resource_labels"].get(x), x

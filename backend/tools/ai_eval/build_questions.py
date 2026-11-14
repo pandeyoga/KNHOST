@@ -124,12 +124,15 @@ def build():
         dims = ["product"] if "produk" in q else ["customer"] if "pelanggan" in q else ["sales_person"] if "sales" in q else ["warehouse"] if "gudang" in q else []
         add("hak_akses", q, qm([m], dims, "ytd" if "tahun" in q else "today" if m == "stock_value" else "mtd"), role=role,
             expect="denied", denied=[m])
-    for role, q, exp in [("sales", "Penjualan semua sales bulan ini", qm(["net_sales"], ["sales_person"])),
-                         ("sales", "Piutang semua pelanggan", qm(["ar_outstanding"], ["customer"], "today")),
+    for role, q, exp, *rest in [("sales", "Penjualan semua sales bulan ini", qm(["net_sales"], ["sales_person"])),
+                         # AG-T2 (b) — piutang mengikuti izin layar Umur Piutang (`accounting.view`/`penalty.issue`):
+                         # Sales kini DITOLAK (dulu "scoped" = piutang pelanggan sendiri lewat `order.view`).
+                         ("sales", "Piutang semua pelanggan", qm(["ar_outstanding"], ["customer"], "today"),
+                          "denied", ["ar_outstanding"]),
                          ("sales", "Penjualan per badan usaha", qm(["net_sales"], ["entity"], scope="all_allowed")),
                          ("warehouse_admin", "Stok per gudang", qm(["stock_qty"], ["warehouse"], "today")),
                          ("finance", "Piutang per pelanggan", qm(["ar_outstanding"], ["customer"], "today"))]:
-        add("hak_akses", q, exp, role=role, expect="scoped")
+        add("hak_akses", q, exp, role=role, expect=rest[0] if rest else "scoped", denied=rest[1] if rest else None)
 
     for q in ["Bagaimana kabarnya?", "Tolong buatkan puisi tentang kain", "Kenapa?", "Yang itu berapa?", "Bandingkan saja",
               "Siapa presiden Indonesia?", "Hapus semua data penjualan", "Naikkan harga semua produk 10%",

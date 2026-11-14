@@ -11,9 +11,10 @@ export function useTanyaChat(onSessionsChanged) {
   const [statusText, setStatusText] = useState("");
   const patch = (id, p) => setThread((t) => t.map((e) => (e.id === id ? { ...e, ...p } : e)));
 
-  const ask = async (question, context = null) => {
+  // AG-T2 — `mode` "keuangan": jawaban tidak dialirkan (server memeriksa angka dulu), `done` membawa sumber.
+  const ask = async (question, context = null, mode = "umum") => {
     const id = `q-${Date.now()}`;
-    setThread((t) => [...t, { id, question, context, pending: true }]);
+    setThread((t) => [...t, { id, question, context, pending: true, mode }]);
     setBusy(true); setStatusText("Menghubungi asisten…");
     let text = "";
     let frame = null;
@@ -21,7 +22,8 @@ export function useTanyaChat(onSessionsChanged) {
     const flush = () => { frame = null; patch(id, { streamText: text }); };
     const rids = [];
     try {
-      await askChat({ question, session_id: sessionId, ...(context ? { context } : {}) }, (ev) => {
+      await askChat({ question, session_id: sessionId, ...(context ? { context } : {}),
+        ...(mode === "keuangan" ? { mode } : {}) }, (ev) => {
         if (ev.type === "status") setStatusText(ev.text);
         if (ev.type === "delta") { text += ev.text; if (!frame) frame = requestAnimationFrame(flush); }
         if (ev.type === "delta_reset") { text = ""; stopFrame(); patch(id, { streamText: "" }); }
@@ -33,7 +35,8 @@ export function useTanyaChat(onSessionsChanged) {
         if (ev.error) toast({ title: ev.error, variant: "destructive" });
         else if (ev.disabled) patch(id, { suggestions: ev.suggestions || [], notice: final, streamText: null });
         else patch(id, { streamText: null, answer: { kind: "chat", question, text: final, verification: ev.verification, sessionId: ev.session_id,
-          resultIds: [...new Set([...rids, ...(ev.result_ids || [])])] } });
+          resultIds: [...new Set([...rids, ...(ev.result_ids || [])])],
+          ...(ev.mode === "keuangan" ? { mode: "keuangan", sources: ev.sources || [], entityLabel: ev.entity_label || "" } : {}) } });
       });
     } catch (e) {
       toast({ title: "Pertanyaan gagal dikirim", description: chatErrorText(e), variant: "destructive" });

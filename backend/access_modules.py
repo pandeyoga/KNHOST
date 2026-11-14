@@ -228,8 +228,10 @@ MODULE_CATALOG: List[Dict[str, Any]] = [
      "resources": ["rfid_device"], "nav": ["settings-hub", "settings-system", "settings-devices"], "sensitive": True},
     {"id": "assistant", "group": "Alat", "label": "Asisten Tanya KN",
      "description": "Asisten analitik: chat, templat laporan (per templat), jadwal laporan; margin & nilai persediaan "
-                    "dipisah; pemakaian & biaya asisten.",
-     "resources": ["ai", "ai_template"], "nav": ["tanya-kn"]},
+                    "dipisah; pemakaian & biaya asisten; Asisten Keuangan (pertanyaan soal jurnal, laporan, piutang, "
+                    "hutang, kas, pajak).",
+     # AG-T2 — `ai_finance` (Asisten Keuangan: mode Keuangan di Tanya KN; menu sama).
+     "resources": ["ai", "ai_template", "ai_finance"], "nav": ["tanya-kn"]},
     # PR-T5 (PR-08) — modul "Pengaturan, Pengguna & Hak Akses" (`admin`) DIPECAH lima: memberi "kelola akun" tidak lagi
     # ikut memberi "ubah peran", "kelola PT", "ubah pengaturan", dan "penjadwal". Id lama `admin` tetap diterima sebagai
     # alias kelimanya (`MODULE_ALIASES`). `pdf-templates`/`settings-documents` pindah ke modul Dokumen (pemilik
@@ -605,6 +607,9 @@ RESOURCE_LABEL["credit_profile"] = "Profil Kredit Pelanggan"
 ACTION_LABEL.update({"credit_profile.view": "Lihat plafon, status kredit & riwayatnya",
                      "credit_profile.update": "Ajukan perubahan kredit",
                      "credit_profile.approve": "Putuskan pengajuan kredit & ubah plafon bawaan PT"})
+# AG-T2 — Asisten Keuangan (modul Asisten Tanya KN).
+RESOURCE_LABEL["ai_finance"] = "Asisten Keuangan"
+ACTION_LABEL.update({"ai_finance.view": "Bertanya soal keuangan lewat Tanya KN"})
 # PR-T4 — KPI & komisi sales lain (modul Pesanan Penjualan; dulu daftar nama peran di `_kpi_scope`).
 ACTION_LABEL.update({"order.view_sales_kpi": "Lihat KPI & komisi sales lain"})
 # KP-T8 — kunci layanan luar & koneksi WhatsApp (modul Pusat Pengaturan).
@@ -721,6 +726,9 @@ VIEW_RESOURCE_OVERRIDES["settings-cfg-finance"] = [*VIEW_RESOURCE_OVERRIDES["set
 # KP-T8 — kunci `integrations.anthropic.*` (kelompok "sistem") diubah pemegang `integration.manage`; aturan KF-T1 (U14):
 # tab kelompok itu juga terbuka bagi pemegang izin pengubah kuncinya.
 VIEW_RESOURCE_OVERRIDES["settings-cfg-system"] = [*VIEW_RESOURCE_OVERRIDES["settings-cfg-system"], "integration"]
+# AG-T2 — kunci `ai.samarkan_nama` (kelompok "sistem") diubah pemegang `ai.configure`; aturan KF-T1 (U14): tab kelompok
+# itu juga terbuka bagi pemegang izin pengubah kuncinya (menu Pengaturan tetap dari modulnya sendiri).
+VIEW_RESOURCE_OVERRIDES["settings-cfg-system"] = [*VIEW_RESOURCE_OVERRIDES["settings-cfg-system"], "ai"]
 # CR-T1 — kunci `ar.default_credit_limit` (kelompok "Pembayaran pelanggan") diubah pemegang `credit_profile.approve`;
 # aturan KF-T1 (U14): tab kelompok itu juga terbuka bagi pemegang izin pengubah kuncinya.
 VIEW_RESOURCE_OVERRIDES["settings-cfg-finance"] = [*VIEW_RESOURCE_OVERRIDES["settings-cfg-finance"], "credit_profile"]

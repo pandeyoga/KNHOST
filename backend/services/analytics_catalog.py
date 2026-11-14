@@ -57,7 +57,12 @@ _O = (("order", "view"),)
 # PR-T2 — metrik bernilai sensitif butuh izin tambahan (dulu daftar peran `ai.margin_roles`/`ai.stock_value_roles`).
 _MARGIN = ("ai", "view_margin")
 _STOCK_VALUE = ("ai", "view_stock_value")
-_AR = (("ar_receipt", "view"), ("order", "view"))
+# AG-T2 (b, AG-03) — izin metrik keuangan = izin endpoint layarnya (dulu `_AR` = `ar_receipt.view` ATAU `order.view`,
+# lebih longgar dari layar). Dijaga uji `tests_mem/test_AGT2_pengalihan.py` terhadap konstanta router-nya.
+AR_AGING_PERMS = (("accounting", "view"), ("penalty", "issue"))   # = routers/ar_aging.AGING_READ (Saldo & Umur Piutang)
+AR_RECEIPT_PERMS = (("ar_receipt", "view"),)                        # = GET /api/ar-receipts (daftar kwitansi)
+AP_PERMS = (("vendor_bill", "view"),)                               # = GET /api/vendor-bills/payables/summary
+GL_PERMS = (("accounting", "view"),)                                # = GET /api/gl/journal (jurnal)
 _NOTE_LIVE = "pesanan hidup (bukan batal/draft/kedaluwarsa/ditolak), tanpa sample"
 
 
@@ -91,7 +96,7 @@ METRICS: Dict[str, Dict[str, Any]] = {
     "recognized_revenue": M("Pendapatan diakui", "journal", "sum", "idr",
                             "Σ kredit − debit akun 4-1000 di jurnal posted, tanpa jurnal penutup (diakui saat barang dikirim, "
                             "sudah dikurangi retur)",
-                            perms=(("accounting", "view"),), date_basis="tanggal jurnal (WIB)"),
+                            perms=GL_PERMS, date_basis="tanggal jurnal (WIB)"),
     "sample_orders_count": M("Pesanan sample", "fact_sample", "orders", "count",
                              "Jumlah pesanan hidup bertipe sample", additive=False),
     "sales_target": M("Target penjualan", "targets", "sum", "idr", "Target penjualan bulanan (sales_targets)",
@@ -99,16 +104,18 @@ METRICS: Dict[str, Dict[str, Any]] = {
     "target_achievement_pct": M("Pencapaian target", "targets", "derived", "pct",
                                 "Penjualan bersih / target penjualan", additive=False, date_basis="bulan target"),
     "collections_amount": M("Uang masuk pelanggan", "collections", "sum", "idr",
-                            "Σ penerimaan pelanggan (kwitansi) berstatus posted", perms=_AR, date_basis="tanggal terima (WIB)"),
+                            "Σ penerimaan pelanggan (kwitansi) berstatus posted", perms=AR_RECEIPT_PERMS,
+                            date_basis="tanggal terima (WIB)"),
     "ar_outstanding": M("Piutang", "ar", "outstanding", "idr",
-                        "Σ sisa tagihan pesanan tempo (mesin umur piutang)", perms=_AR, date_basis="posisi saat ini"),
+                        "Σ sisa tagihan pesanan tempo (mesin umur piutang)", perms=AR_AGING_PERMS,
+                        date_basis="posisi saat ini"),
     "ar_overdue": M("Piutang lewat jatuh tempo", "ar", "overdue", "idr",
-                    "Bagian piutang yang sudah lewat jatuh tempo", perms=_AR, date_basis="posisi saat ini"),
+                    "Bagian piutang yang sudah lewat jatuh tempo", perms=AR_AGING_PERMS, date_basis="posisi saat ini"),
     "ap_outstanding": M("Hutang usaha", "ap", "outstanding", "idr",
-                        "Σ tagihan supplier berstatus posted yang belum lunas", perms=(("vendor_bill", "view"),),
+                        "Σ tagihan supplier berstatus posted yang belum lunas", perms=AP_PERMS,
                         date_basis="posisi saat ini"),
     "ap_due": M("Hutang jatuh tempo", "ap", "due", "idr", "Hutang usaha dengan jatuh tempo ≤ akhir periode",
-                perms=(("vendor_bill", "view"),), date_basis="jatuh tempo"),
+                perms=AP_PERMS, date_basis="jatuh tempo"),
     "purchase_value": M("Nilai pembelian", "purchases", "value", "idr",
                         "Σ (grand_total − PPN) PO bukan draft/batal/ditolak", perms=(("purchase_order", "view"),),
                         date_basis="tanggal PO (WIB)"),

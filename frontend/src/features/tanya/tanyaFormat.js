@@ -19,7 +19,8 @@ export function turnsToThread(session) {
     else if (out.length) {
       const e = out[out.length - 1];
       if (t.suggestions) Object.assign(e, { notice: t.content, suggestions: t.suggestions });
-      else e.answer = { kind: "chat", question: e.question, text: t.content, verification: t.verification, resultIds: t.result_ids || [], sessionId: session.id };
+      else e.answer = { kind: "chat", question: e.question, text: t.content, verification: t.verification, resultIds: t.result_ids || [], sessionId: session.id,
+        ...(t.mode === "keuangan" ? { mode: "keuangan", sources: t.sources || [] } : {}) };   // AG-T2
     }
   });
   return out;

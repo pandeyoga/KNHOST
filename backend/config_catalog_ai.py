@@ -146,6 +146,16 @@ E("ai.kartu_masa_berlaku_jam", group="sistem", section="tanya-kn-tindakan", type
   consumers=("services/ai_actions.py:propose_action", "services/ai_actions.py:_masa_berlaku"), risk="low",
   permission=("settings", "manage"))
 
+# ── AG-T2 (K-43) — nama pihak disamarkan sebelum dikirim ke penyedia model (per PT) ─────────────────────────────────
+E("ai.samarkan_nama", group="asisten-analitik", section="tanya-kn-privasi", type="bool", default=True,
+  scopes=("global", "entity"),
+  label="Samarkan nama pihak yang dikirim ke asisten",
+  help="Nama pelanggan, pemasok, dan karyawan diganti kode sebelum dikirim ke penyedia model, lalu dikembalikan ke "
+       "nama asli di layar. Nominal tetap dikirim.",
+  impact="Mati = nama asli ikut terkirim ke penyedia model untuk PT ini.",
+  example="Ya → penyedia menerima 'PLG-001 menunggak 5.000.000'; layar menampilkan 'Toko Maju menunggak 5.000.000'",
+  consumers=("services/ai_privacy.py:masker_for",), risk="high", requires_reason=True, permission=("ai", "configure"))
+
 # ── 2026-09-28 — kamus istilah & peringatan anomali ─────────────────────────
 E("ai.glossary", group="sistem", section="tanya-kn", type="text", default="", scopes=_G,
   label="Kamus istilah perusahaan",

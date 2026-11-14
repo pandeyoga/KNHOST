@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { ArrowLeft, Loader2 } from "lucide-react";
 import { toast } from "../../hooks/use-toast";
-import { entityShortById } from "../../utils/entityLabel";
+import { entityFullById, entityShortById } from "../../utils/entityLabel";
 import { PENDING_KEY } from "../../components/AskKnButton";
 import { TanyaInsights } from "./TanyaInsights";
 import { TanyaAnswer } from "./TanyaAnswer";
@@ -42,6 +42,7 @@ export default function TanyaKnView({ selectedEntity, entities }) {
   const [scheduleTarget, setScheduleTarget] = useState(null);
   const [saveQuestion, setSaveQuestion] = useState(null);
   const [docCtx, setDocCtx] = useState(null);
+  const [mode, setMode] = useState("umum");   // AG-T2 — "keuangan" hanya bila Asisten Keuangan menyala untuk akun ini
   const chat = useTanyaChat(() => setHistoryKey((k) => k + 1));
   const compact = useIsMobile(900);
   const lastEntry = chat.thread[chat.thread.length - 1];
@@ -96,7 +97,8 @@ export default function TanyaKnView({ selectedEntity, entities }) {
   }, [period]);
 
   const onPeriod = (p) => { setPeriod(p); if (active?.has_period) run(active, p); };
-  const ask = (q) => { toMain(); setTplAnswer(null); setActive(null); chat.ask(q, docCtx); };
+  const askMode = status?.finance_enabled && mode === "keuangan" ? "keuangan" : "umum";
+  const ask = (q) => { toMain(); setTplAnswer(null); setActive(null); chat.ask(q, docCtx, askMode); };
   const removeMine = async (id) => { await deleteMyTemplate(id).catch(() => null); loadMine(); toast({ title: "Template pribadi dihapus" }); };
   const onSchedule = (data) => setScheduleTarget({ template: data.template, params: data.params,
     hasPeriod: !!catalog?.templates.find((t) => t.id === data.template.id)?.has_period });
@@ -135,8 +137,10 @@ export default function TanyaKnView({ selectedEntity, entities }) {
   const scrollKey = `${chat.thread.length}|${lastEntry?.pending}|${(lastEntry?.streamText || "").length >> 7}|${!!lastEntry?.answer}|${lastEntry?.error || ""}|${tplAnswer ? 1 : 0}|${tplBusy}`;
   const prompts = catalog.templates.slice(0, 4).map((t) => ({ label: t.prompt || t.title, tpl: t }));
   const pick = (p) => (status?.chat_enabled ? ask(p.label) : (toMain(), run(p.tpl)));
+  const financeScope = { combined: selectedEntity === "all", label: entityFullById(entities || [], selectedEntity, "PT aktif") };
   const composer = { status, busy, entityLabel, onAsk: ask, context: docCtx, onClearContext: () => setDocCtx(null),
-    statusText: tplBusy ? `Menjalankan ${active?.title || "laporan"}…` : chat.statusText };
+    statusText: tplBusy ? `Menjalankan ${active?.title || "laporan"}…` : chat.statusText, mode: askMode, onMode: setMode,
+    financeScope };
   const chatMain = (<TanyaChatPane scrollKey={scrollKey} composer={composer}>
     {tplAnswer && chat.thread.length > 0 && (
       <button type="button" className="tanya-chip tanya-back" onClick={() => { setTplAnswer(null); setActive(null); }} data-testid="tanya-back-to-chat">

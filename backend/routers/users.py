@@ -151,6 +151,18 @@ async def create_user(payload: UserCreate, request: Request) -> Dict[str, Any]:
     return out
 
 
+AI_FINANCE_DENIED = "Asisten Keuangan hanya bisa dinyalakan oleh pemegang akses konfigurasi asisten."
+
+
+async def _guard_ai_finance(actor: Dict[str, Any], value: Any) -> None:
+    """AG-T2 (K-45) — sakelar Asisten Keuangan per akun: hanya pemegang `ai.configure` (izin, bukan nama peran)."""
+    from dependencies import has_permission
+    if not await has_permission(actor, "ai", "configure"):
+        raise HTTPException(status_code=403, detail=AI_FINANCE_DENIED)
+    if not isinstance(value, dict) or set(value) != {"enabled"} or not isinstance(value.get("enabled"), bool):
+        raise HTTPException(status_code=400, detail="Sakelar Asisten Keuangan harus berisi nyala atau mati.")
+
+
 @router.patch("/users/{user_id}")
 async def update_user(user_id: str, payload: GenericPatch,
                       request: Request) -> Dict[str, Any]:
@@ -162,10 +174,16 @@ async def update_user(user_id: str, payload: GenericPatch,
             status_code=400,
             detail="Status akun diubah lewat tombol Nonaktifkan / Aktifkan kembali, "
                    "bukan lewat pembaruan biasa.")
+    if "ai_finance" in (payload.data or {}):
+        await _guard_ai_finance(actor, payload.data["ai_finance"])
     from services.access_guard import assert_can_manage_account   # PR-T1
     await assert_can_manage_account(actor, target_user=await svc.get_user_or_404(user_id),
                                     new_role=(payload.data or {}).get("role"))
     after = await svc.update_user(user_id, payload.data or {})
+    if "ai_finance" in (payload.data or {}):
+        await audit(actor["name"], "ai_finance_toggled", "user", user_id,
+                    {"enabled": bool(payload.data["ai_finance"]["enabled"])},
+                    scope_entity_id=after.get("home_entity_id", ""))
     await audit(actor["name"], "user_updated", "user", user_id,
                 {"changed": after.get("changed_fields", []),
                  "home_entity_id": after.get("home_entity_id"),
