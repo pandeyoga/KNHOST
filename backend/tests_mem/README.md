@@ -111,6 +111,7 @@ Mode `--penuh` dijalankan dengan tangan sebelum unit yang mengubah izin, peran, 
 |---|---|
 | `sapuan_izin.py`, `sapuan_izin_harapan.json` | Penjaga matriks izin berjalan dan daftar pengecualiannya (PR-T8; di atas) |
 | `test_PRT8_sapuan_izin.py` | PR-T8 U2–U10: rute sementara `/api/_uji/*` (bukti-merah M0–M3, M6, M7), penilai M5, `/api/costing` |
+| `test_PRT8b_gerbang_pertama.py` | PR-T8b U1–U9: 14 rute merah penjaga matriks — gerbang sesi + izin sebelum dokumen dimuat (401/403 sebelum 404, aturan izin per jenis/status/kunci tetap) dan putusan `LOGIN_ONLY` |
 | `test_PK02_kerangka.py`, `test_PK02_isolasi_a.py`, `test_PK02_isolasi_b.py` | Uji kerangka (U1–U10, U14) |
 | `test_PK02_laporan_inti.py` | 15 tes laporan inti — harus selalu lulus |
 | `test_PK02_arus_kas_ekuitas.py` | 4 tes arus kas dan ekuitas — harus selalu lulus |

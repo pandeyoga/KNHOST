@@ -16,7 +16,7 @@ Satu pintu API untuk seluruh konfigurasi sistem:
 KF-T1 — wewenang: UBAH = Admin atau izin `entry.permission` (`_may_edit`); BACA = Admin, `settings.view`, atau yang
 boleh mengubah kunci itu (`_may_read`). Tanpa satu pun kunci terbaca → 403 (B1); kunci/kelompok di luar → 403 (B2).
 """
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Tuple
 
 from fastapi import APIRouter, HTTPException, Request
 
@@ -68,6 +68,21 @@ async def require_setting_edit(request: Request, key: str) -> Dict[str, Any]:
         raise HTTPException(status_code=403, detail=(
             "Anda belum punya akses untuk mengubah pengaturan ini. Minta Admin menambahkan akses 'Pengaturan'."))
     return user
+
+
+_SCHEDULE_DENIED = ("Anda belum punya akses untuk mengubah pengaturan atau membatalkan jadwal perubahannya. Minta Admin "
+                    "menambahkan akses 'Pusat Pengaturan'.")
+
+
+async def _require_some_edit(request: Request, detail: str) -> Tuple[Dict[str, Any], Dict[str, List[str]]]:
+    """PR-T8b (Z1) — gerbang PERTAMA rute yang kuncinya baru diketahui sesudah baris dimuat (batal jadwal): sesi +
+    wewenang mengubah SETIDAKNYA satu kunci, dengan aturan yang sama (`_may_edit`). Izin per kunci tetap diperiksa
+    sesudah baris dimuat. Dulu tanpa wewenang apa pun dijawab 404 "Jadwal perubahan tidak ditemukan"."""
+    user = await current_user(request)
+    perms = await _allowed(user)
+    if not any(_may_edit(e, user, perms) for e in registry.all_entries()):
+        raise HTTPException(status_code=403, detail=detail)
+    return user, perms
 
 
 def _may_read(entry: Optional[Dict[str, Any]], user: Dict[str, Any], perms: Dict[str, List[str]]) -> bool:
@@ -434,8 +449,7 @@ async def cancel_scheduled_value(payload: ConfigCancelScheduledIn, request: Requ
     """KF-T3 (KF-09) — batalkan satu perubahan berjadwal yang belum berlaku. Wewenang = pengubah kunci itu
     (`_may_edit`) pada lapisan barisnya (`_assert_scope_write`). Baris tetap tersimpan (append-only) dengan penanda
     `cancelled_at`; nilai yang berlaku sekarang tidak berubah."""
-    actor = await current_user(request)
-    perms = await _allowed(actor)
+    actor, perms = await _require_some_edit(request, _SCHEDULE_DENIED)
     try:
         row = await resolver.scheduled_row(payload.id)
     except resolver.ScheduleError as exc:

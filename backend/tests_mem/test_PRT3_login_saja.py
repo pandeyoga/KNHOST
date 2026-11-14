@@ -301,14 +301,17 @@ async def test_PRT3_U13_daftar_login_only_menunjuk_rute(aplikasi):
     # + PR-T5: `GET /api/access/labels` (kamus label, data rujukan); + PM-T1: `GET /api/payment-methods` (cara bayar)
     # + PM-T4: `GET /api/cash-holdings/me/summary` (ringkasan titipan tunai milik sendiri)
     # + KM-T5: `GET /api/incentive/me` (kartu "Capaian & Insentif Saya", milik sendiri)
-    assert len(lo.LOGIN_ONLY) == 53 + 1 + 1 + 1 + 1
+    # + PR-T8b: 6 putusan temuan penjaga matriks T8-01…05
+    assert len(lo.LOGIN_ONLY) == 53 + 1 + 1 + 1 + 1 + 6
     assert set(lo.LOGIN_ONLY.values()) <= {"milik_sendiri", "rujukan", "sesi"}
     rute = {(m, rt.path) for rt in aplikasi.routes for m in (getattr(rt, "methods", None) or ())}
     hilang = [k for k in lo.LOGIN_ONLY if k not in rute]
     assert not hilang, hilang
     # rute yang diberi izin / disaring oleh unit ini tidak boleh tercatat sebagai login-saja sah
     for k in (("GET", "/api/sales-users"), ("GET", "/api/sales-incentives"),   # KM-T5 — /api/sales-targets dihapus
-              ("GET", "/api/dashboard"), ("GET", "/api/entities/{entity_id}"), ("GET", "/api/entities/count"),
+              ("GET", "/api/entities/{entity_id}"), ("GET", "/api/entities/count"),
               ("GET", "/api/finance/period-unlocks"), ("GET", "/api/purchase-orders/resolve-sourcing")):
         assert k not in lo.LOGIN_ONLY, k
+    # rute yang isinya disaring izin di dalam handler (S2 daftar PT; S1 dasbor — dicatat PR-T8b, T8-01) = rujukan
     assert lo.LOGIN_ONLY[("GET", "/api/entities")] == "rujukan"
+    assert lo.LOGIN_ONLY[("GET", "/api/dashboard")] == "rujukan"

@@ -3,6 +3,10 @@
 Pembayarannya sendiri tetap lewat `POST /api/vendor-bills/{id}/pay` dan `POST /api/contra-bons/{id}/pay`; keduanya
 memanggil `services/ap_payment_service.pay_payable`. Endpoint ber-id niat menjaga PT lewat `entity_id` niat (di luar
 penugasan → 404).
+
+PR-T8b (Z1) — endpoint ber-id niat memeriksa sesi + izin bayar (salah satu jenis) SEBELUM niat dimuat, supaya tanpa sesi
+→ 401 dan tanpa izin → 403, bukan 404 (dulu id yang tidak ada bisa ditebak tanpa login). Izin sesuai jenis niat tetap
+diperiksa sesudahnya.
 """
 from typing import Any, Dict
 
@@ -10,7 +14,7 @@ from fastapi import APIRouter, HTTPException, Request
 from pydantic import BaseModel
 
 from db import db
-from dependencies import audit, require_permission
+from dependencies import audit, require_any_permission, require_permission
 from entity_scope import guard_doc
 from services import ap_payment_service as aps
 
@@ -42,6 +46,16 @@ async def _guard_intent(request: Request, intent_id: str) -> Dict[str, Any]:
     return intent
 
 
+#: PR-T8b — gerbang pertama endpoint ber-id niat: pemegang izin bayar salah satu jenis (pesan Z6).
+_PAY_ANY = [(_RES[k], "pay") for k in _RES]
+_PAY_DENIED = ("Anda belum punya akses untuk membayar tagihan supplier atau kontrabon. Minta Admin menambahkan akses "
+               "'Hutang Supplier & Kontrabon'.")
+_PAY_KIND_DENIED = {"vendor_bill": "Anda belum punya akses untuk membayar tagihan supplier. Minta Admin menambahkan "
+                                   "akses 'Hutang Supplier & Kontrabon'.",
+                    "contra_bon": "Anda belum punya akses untuk membayar kontrabon. Minta Admin menambahkan akses "
+                                  "'Hutang Supplier & Kontrabon'."}
+
+
 def _http(exc: aps.ApPaymentError) -> HTTPException:
     return HTTPException(status_code=exc.status_code, detail=exc.detail())
 
@@ -62,8 +76,9 @@ async def payable_accounts(kind: str, target_id: str, request: Request) -> Any:
 
 @router.post("/ap-payments/{intent_id}/resume")
 async def resume_payment(intent_id: str, request: Request) -> Dict[str, Any]:
+    await require_any_permission(request, _PAY_ANY, detail=_PAY_DENIED)
     intent = await _guard_intent(request, intent_id)
-    actor = await require_permission(request, _RES[intent["kind"]], "pay")
+    actor = await require_permission(request, _RES[intent["kind"]], "pay", detail=_PAY_KIND_DENIED[intent["kind"]])
     try:
         res = await aps.resume(intent_id, actor)
     except aps.ApPaymentError as exc:
@@ -74,8 +89,9 @@ async def resume_payment(intent_id: str, request: Request) -> Dict[str, Any]:
 
 @router.post("/ap-payments/{intent_id}/cancel")
 async def cancel_payment(intent_id: str, payload: CancelIn, request: Request) -> Dict[str, Any]:
+    await require_any_permission(request, _PAY_ANY, detail=_PAY_DENIED)
     intent = await _guard_intent(request, intent_id)
-    actor = await require_permission(request, _RES[intent["kind"]], "pay")
+    actor = await require_permission(request, _RES[intent["kind"]], "pay", detail=_PAY_KIND_DENIED[intent["kind"]])
     try:
         res = await aps.cancel(intent_id, actor, payload.reason)
     except aps.ApPaymentError as exc:
