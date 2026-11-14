@@ -303,7 +303,7 @@ def test_budget_zero_threshold(monkeypatch):
     async def budgets(scope, year):
         return [{"id": "b", "dimension": "account", "key": "6-1", "amount": 150, "month": 0}]
 
-    async def acts(scope, year):
+    async def acts(scope, year, *a, **k):   # PK-39 — `_actual_by_account` menerima `docs` (penelusuran)
         return {"6-1": {1: 10.0}}
 
     async def none(scope, year, *a, **k):

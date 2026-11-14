@@ -857,3 +857,4 @@ import config_catalog_rnd  # noqa: E402,F401  (FASE F — R&D & Desain: lifecycl
 import config_catalog_approval_matrix  # noqa: E402,F401  (PS-20/D-14 — penegakan matriks persetujuan divisi)
 import config_catalog_kontrol  # noqa: E402,F401  (KF-T6 — kontrol "harus dua orang" per PT)
 import config_catalog_nilai  # noqa: E402,F401  (KF-T7 — nilai bisnis yang dulu ditulis mati di kode)
+import config_catalog_budget  # noqa: E402,F401  (PK-39 — mode pemeriksaan anggaran)

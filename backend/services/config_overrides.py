@@ -52,6 +52,28 @@ async def _master_grade_mutu(key: str, ctx: Dict[str, Any], nilai: Any) -> Optio
     return None
 
 
+_MODE_LAMA = {"off": "mati", "warn": "peringatan", "block": "blokir"}
+
+
+async def _mode_anggaran_lama(key: str, ctx: Dict[str, Any], nilai: Any) -> Optional[Any]:
+    """PK-39 (K-12) — sama dengan `budget_service.get_rules`: mode lama `fin_budget_rules.mode` PT itu dipakai selama
+    lapisan PT `budget.mode` belum diisi (baris PT apa pun — nilai atau dicabut — berarti pemilik sudah memutus). Nilai
+    lama yang sama dengan nilai lapisan tidak dilaporkan sebagai penimpa."""
+    ent = (ctx or {}).get("entity_id") or ""
+    if not ent or ent == "all":
+        return None
+    doc = await db.fin_budget_rules.find_one({"entity_id": ent}, {"_id": 0, "mode": 1})
+    lama = _MODE_LAMA.get((doc or {}).get("mode") or "")
+    if not lama or lama == nilai:
+        return None
+    from datetime import datetime, timezone
+    from services.config_resolver import _pick_effective, _stored_rows
+    rows = [r for r in (await _stored_rows([key], {"entity_id": ent})).get((key, "entity"), [])
+            if r.get("scope_id") == ent]
+    _, baris_pt, _ = _pick_effective(rows, datetime.now(timezone.utc))
+    return None if baris_pt is not None else lama
+
+
 Cek = Callable[[str, Dict[str, Any], Any], Awaitable[Optional[Any]]]
 
 PENIMPA: List[Dict[str, Any]] = [
@@ -64,6 +86,9 @@ PENIMPA: List[Dict[str, Any]] = [
     {"id": "master_grade_mutu", "keys": ("qc.grade_thresholds.a_max", "qc.grade_thresholds.b_max"),
      "label": "Batas poin di Master Grade Mutu",
      "link": {"view": "grade-master"}, "cek": _master_grade_mutu},
+    {"id": "mode_anggaran_lama", "keys": ("budget.mode",),
+     "label": "Kebijakan anggaran lama PT ini (belum dipindah ke Pusat Pengaturan)",
+     "link": {"view": "budget"}, "cek": _mode_anggaran_lama},
 ]
 
 _KUNCI_DITIMPA = {k for p in PENIMPA for k in p["keys"]}

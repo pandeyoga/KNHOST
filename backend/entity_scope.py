@@ -189,6 +189,7 @@ SCOPED_COLLECTIONS = {
     "repair_orders",                  # UAT 24 Okt (P7) — perbaikan / celup ulang roll milik entitas
     "credit_notes",                   # nota kredit = dokumen keuangan entitas
     "budgets", "fin_budget_rules",    # anggaran & aturannya per entitas
+    "budget_history",                 # PK-39 — riwayat pagu (milik PT pagunya)
     "approval_rules",                 # aturan persetujuan (warisan global→entitas di E-4)
     "approval_policies",              # KP-T4 — kebijakan persetujuan (baris grup "all" + baris khusus PT)
     "cycle_count_sessions",           # stock opname per entitas

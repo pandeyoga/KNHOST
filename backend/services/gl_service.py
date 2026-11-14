@@ -2961,6 +2961,12 @@ def _cash_out_contra(txn: Dict[str, Any]) -> str:
     return (txn.get("contra_account_code") or "").strip() or contra
 
 
+def cash_contra_account(txn: Dict[str, Any]) -> str:
+    """PK-39 — lawan akun kas KELUAR yang akan dijurnal `post_cash_transaction` (publik: pemeriksaan anggaran kas keluar
+    membaca akun yang sama dengan jurnalnya). Logikanya tetap satu: `_cash_out_contra`."""
+    return _cash_out_contra(txn)
+
+
 async def preflight_cash(txn: Dict[str, Any]) -> None:
     """PK-05 — periksa jurnal kas KELUAR yang akan terbit (akun, periode) tanpa menulis apa pun.
 

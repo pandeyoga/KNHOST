@@ -4041,14 +4041,16 @@ async def seed_budgets():
                 "amount": float(amount), "note": "Anggaran tahunan (seed)",
                 "created_at": now_iso(), "updated_at": now_iso(),
             })
-        # R6.3 — anggaran belanja persediaan (target komitmen PO default 1-1300)
-        inv_acc = await db.gl_accounts.find_one({"code": bs.DEFAULT_PO_BUDGET_ACCOUNT}, {"_id": 0})
+        # R6.3 — anggaran belanja persediaan (target komitmen PO tanpa tanda anggaran). PK-39 — akunnya dari pemetaan
+        # `persediaan.persediaan` PT (dulu konstanta 1-1300 di budget_service).
+        inv_code = await bs.inventory_account(ent)
+        inv_acc = await db.gl_accounts.find_one({"code": inv_code}, {"_id": 0})
         if inv_acc:
             docs.append({
                 "id": new_id("budget"), "entity_id": ent, "year": year, "month": 0,
-                "dimension": "account", "key": bs.DEFAULT_PO_BUDGET_ACCOUNT,
+                "dimension": "account", "key": inv_code,
                 "label": inv_acc.get("name", "Persediaan Barang"),
-                "account_code": bs.DEFAULT_PO_BUDGET_ACCOUNT,
+                "account_code": inv_code,
                 "account_name": inv_acc.get("name", "Persediaan Barang"),
                 "account_type": inv_acc.get("type", "asset"),
                 "amount": 900_000_000.0 if ent == "ent_ksc" else 250_000_000.0,

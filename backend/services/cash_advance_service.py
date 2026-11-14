@@ -505,8 +505,15 @@ async def submit_settlement(stl_id: str, ctx: EntityContext, actor: Dict[str, An
     doc = await get_settlement(stl_id, ctx)
     if doc["status"] != "draft":
         raise HTTPException(status_code=409, detail="Hanya draft yang bisa diajukan")
+    # PK-39 (K-12) — PERIKSA anggaran tiap kategori; mode tolak di sini hanya memperingatkan (persetujuannya yang ditahan).
+    from services import budget_service as _bs
+    try:
+        budget_check = await _bs.enforce_budget(doc["entity_id"], _bs.settlement_budget_targets(doc), when="lpj_submit",
+                                                date="", actor=actor, exclude_stl_id=stl_id)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
     updated = await db[STL_COLL].find_one_and_update(
-        {"id": stl_id}, {"$set": {"status": "submitted", "updated_at": now_iso()}},
+        {"id": stl_id}, {"$set": {"status": "submitted", "budget_check": budget_check, "updated_at": now_iso()}},
         projection={"_id": 0}, return_document=ReturnDocument.AFTER)
     await audit(actor.get("name", ""), "settlement_submitted", "cash_advance_settlement", stl_id, {})
     return safe_doc(updated)
@@ -526,6 +533,13 @@ async def approve_settlement(stl_id: str, ctx: EntityContext, actor: Dict[str, A
         await gl_service.preflight_posting(doc["entity_id"], now_iso())
     except gl_service.ClosedPeriodError as exc:
         raise HTTPException(status_code=409, detail=str(exc))
+    # PK-39 (K-12) — PERIKSA anggaran tiap kategori (bulan buku jurnal LPJ = hari ini) sebelum PD induk diklaim.
+    from services import budget_service as _bs
+    try:
+        budget_check = await _bs.enforce_budget(doc["entity_id"], _bs.settlement_budget_targets(doc),
+                                                when="lpj_approve", date="", actor=actor, exclude_stl_id=stl_id)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
     parent = await db[CA_COLL].find_one_and_update(
         {"id": doc["cash_advance_id"], "status": "disbursed",
          "$or": [{"settling_stl_id": {"$exists": False}}, {"settling_stl_id": stl_id}]},
@@ -554,7 +568,7 @@ async def approve_settlement(stl_id: str, ctx: EntityContext, actor: Dict[str, A
     excess = _r(max(float(doc.get("total_pengeluaran") or 0) - float(parent.get("total_amount") or 0), 0.0))
     updated = await db[STL_COLL].find_one_and_update(
         {"id": stl_id},
-        {"$set": {"status": "posted_to_gl", "journal_entry_id": (je or {}).get("id", ""),
+        {"$set": {"status": "posted_to_gl", "journal_entry_id": (je or {}).get("id", ""), "budget_check": budget_check,
                   # CX-05 — kelebihan pengeluaran = Hutang Reimburse Karyawan (2-1650) yang harus dibayar
                   "hutang_reimburse": {"amount": excess, "status": "open" if excess > 0 else "none",
                                        "cash_txn_id": "", "paid_at": ""},

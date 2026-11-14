@@ -11,7 +11,7 @@ import KNSelect from "../../../components/KNSelect";
 import { formatCurrency } from "../../../utils/formatters";
 
 export default function POBudgetPanel({ formData, setFormData, dppAmount = 0, entityId = "" }) {
-  const [keys, setKeys] = useState({ accounts: [], categories: [], default_po_account: "1-1300" });
+  const [keys, setKeys] = useState({ accounts: [], categories: [], default_po_account: "" });
   const [check, setCheck] = useState(null);
   const [err, setErr] = useState("");
 
@@ -23,7 +23,8 @@ export default function POBudgetPanel({ formData, setFormData, dppAmount = 0, en
 
   const dim = formData.budget_dimension || "account";
   const key = formData.budget_key || "";
-  const effKey = key || (dim === "account" ? (keys.default_po_account || "1-1300") : "");
+  // PK-39 — akun bawaan = pemetaan persediaan PT dari server (dulu konstanta 1-1300).
+  const effKey = key || (dim === "account" ? (keys.default_po_account || "") : "");
 
   const runCheck = useCallback(async () => {
     if (!effKey || dppAmount <= 0) { setCheck(null); return; }
@@ -45,7 +46,7 @@ export default function POBudgetPanel({ formData, setFormData, dppAmount = 0, en
   if (err === "akses") return null;   // role tanpa permission budget → panel disembunyikan
 
   const opts = dim === "account"
-    ? [{ value: "", label: `— Default: ${keys.default_po_account || "1-1300"} (Persediaan) —` },
+    ? [{ value: "", label: `— Bawaan: ${keys.default_po_account || "akun persediaan"} (Persediaan) —` },
        ...(keys.accounts || []).map((a) => ({ value: a.code, label: `${a.code} · ${a.name}` }))]
     : [{ value: "", label: "— Pilih kategori beban —" },
        ...(keys.categories || []).map((c) => ({ value: c.code, label: `${c.label} (${c.account_code || "—"})` }))];
@@ -62,7 +63,7 @@ export default function POBudgetPanel({ formData, setFormData, dppAmount = 0, en
   return (
     <div className="rounded-md border border-[#EFF0F2] bg-[#FCFCFD] p-2.5" data-testid="po-budget-panel">
       <p className="text-[10.5px] font-bold uppercase text-[#6B6B73] mb-2 flex items-center gap-1.5">
-        <Target size={12} /> Kontrol Anggaran (R6.3)
+        <Target size={12} /> Kontrol Anggaran
       </p>
       <div className="grid grid-cols-2 gap-2">
         <div>
@@ -82,9 +83,9 @@ export default function POBudgetPanel({ formData, setFormData, dppAmount = 0, en
         <div className={`mt-2 rounded-md border px-2.5 py-2 text-[11px] ${tone}`} data-testid="po-budget-check">
           <div className="flex items-center gap-1.5 font-bold mb-0.5">
             <Icon size={13} />
-            {mode === "off" ? "Kontrol anggaran OFF — pemantauan saja"
-              : blocked ? "DITOLAK: melampaui anggaran (mode BLOCK)"
-              : over ? "Melampaui anggaran — PO tetap bisa dibuat (mode WARN)"
+            {mode === "off" ? "Pemeriksaan anggaran mati — pemantauan saja"
+              : blocked ? "Akan ditolak: melampaui anggaran (Tolak bila melampaui)"
+              : over ? "Melampaui anggaran — PO tetap bisa dibuat dengan peringatan"
               : "Dalam anggaran"}
           </div>
           {check.has_budget ? (

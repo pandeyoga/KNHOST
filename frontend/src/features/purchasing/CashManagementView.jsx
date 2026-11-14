@@ -17,6 +17,7 @@ import { moneyPost } from "../../utils/moneyRequest";
 import EntityScopeBanner from "../../components/EntityScopeBanner";
 import EntityGatedButton from "../../components/EntityGatedButton";   // PK-42 (UX-05)
 import FocusNotice from "../../components/FocusNotice";
+import { BudgetPreview } from "../../components/BudgetCheckNotice";   // PK-39 — pratinjau anggaran kas keluar
 import useFocusDoc, { gulirKe } from "../../hooks/useFocusDoc";
 
 /**
@@ -128,7 +129,10 @@ export default function CashManagementView({ currentUser, selectedEntity, focusD
     try {
       const payload = { ...form, amount: Number(form.amount) };
       const res = await createIntent.send(payload, (k) => moneyPost(`${API}/cash-transactions`, payload, k));
-      setNotice(`Transaksi ${res.data.number} (${res.data.direction === "in" ? "masuk" : "keluar"}) dicatat.`);
+      // PK-39 — peringatan anggaran (mode Peringatkan) ikut di bilah pemberitahuan; mode Tolak → 400 di pop-up.
+      const bWarn = (res.data.budget_check?.warnings || []).join(" ");
+      setNotice(`Transaksi ${res.data.number} (${res.data.direction === "in" ? "masuk" : "keluar"}) dicatat.`
+        + (bWarn ? ` Peringatan anggaran: ${bWarn}` : ""));
       setShowForm(false);
       setForm(EMPTY_FORM);
       await reloadAll();
@@ -320,6 +324,10 @@ export default function CashManagementView({ currentUser, selectedEntity, focusD
             <Field label="Deskripsi">
               <input data-testid="cash-description-input" value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} className="field" placeholder="Keterangan transaksi..." />
             </Field>
+            {form.direction === "out" && showForm && (
+              <BudgetPreview entityId={selectedEntity} source="cash_out" category={form.category}
+                amount={form.amount} date={form.txn_date || ""} testId="cash-budget-preview" />
+            )}
         </div>
       </FormModal>
 

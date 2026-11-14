@@ -77,6 +77,15 @@ class BudgetTester:
             self.log(f"FAILED - Exception: {str(e)}", "fail")
             return False, {}
 
+    # PK-39 (K-12) — mode pemeriksaan anggaran kini pengaturan `budget.mode` (Pusat Pengaturan); PUT budget-rules
+    # yang memuat `mode` ditolak 400. Uji ini menulis lapisan PT lalu mencabutnya saat bersih-bersih.
+    MODE_SETTING = {"off": "mati", "warn": "peringatan", "block": "blokir"}
+
+    def set_mode(self, name, mode):
+        return self.test(name, "PUT", "config/values", 200, role="admin", data={"items": [{
+            "key": "budget.mode", "value": self.MODE_SETTING[mode], "scope_type": "entity", "scope_id": "ent_ksc",
+            "reason": "uji R6.3 budget control"}]})
+
     def login_all(self):
         """Login all test users"""
         self.log("=== PHASE 1: Authentication ===", "info")
@@ -304,9 +313,9 @@ class BudgetTester:
             self.original_rules = rules
             self.log(f"  Current mode: {rules.get('mode')}", "info")
         
-        # Test invalid mode rejection
+        # PK-39 — `mode` lewat PUT budget-rules selalu ditolak (diatur di Pusat Pengaturan)
         self.test(
-            "Reject invalid mode",
+            "Reject mode via budget-rules (moved to Pusat Pengaturan)",
             "PUT",
             "finance/budget-rules",
             400,
@@ -343,7 +352,6 @@ class BudgetTester:
             role="admin",
             data={
                 "entity_id": "ent_ksc",
-                "mode": "warn",
                 "warn_threshold_pct": 85,
                 "unbudgeted_action": "allow"
             }
@@ -422,15 +430,15 @@ class BudgetTester:
             return True
         
         # Test 1: mode=warn allows PO with warnings
+        self.set_mode("Set budget.mode to peringatan", "warn")
         self.test(
-            "Set rules to mode=warn",
+            "Set other budget switches",
             "PUT",
             "finance/budget-rules",
             200,
             role="admin",
             data={
                 "entity_id": "ent_ksc",
-                "mode": "warn",
                 "warn_threshold_pct": 85,
                 "unbudgeted_action": "allow"
             }
@@ -484,19 +492,7 @@ class BudgetTester:
         if success and small_budget.get("id"):
             self.created_budget_ids.append(small_budget["id"])
         
-        self.test(
-            "Set rules to mode=block",
-            "PUT",
-            "finance/budget-rules",
-            200,
-            role="admin",
-            data={
-                "entity_id": "ent_ksc",
-                "mode": "block",
-                "warn_threshold_pct": 85,
-                "unbudgeted_action": "allow"
-            }
-        )
+        self.set_mode("Set budget.mode to blokir", "block")
         
         self.test(
             "Create over-budget PO with mode=block (should fail 400)",
@@ -522,17 +518,7 @@ class BudgetTester:
         )
         
         # Test 3: mode=off skips check
-        self.test(
-            "Set rules to mode=off",
-            "PUT",
-            "finance/budget-rules",
-            200,
-            role="admin",
-            data={
-                "entity_id": "ent_ksc",
-                "mode": "off"
-            }
-        )
+        self.set_mode("Set budget.mode to mati", "off")
         
         success, po_off = self.test(
             "Create PO with mode=off (should succeed)",
@@ -637,14 +623,21 @@ class BudgetTester:
         if self.original_rules:
             self.log("Restoring original budget rules...", "info")
             self.test(
-                "Restore budget rules to mode=warn",
+                "Clear budget.mode PT layer (back to group value)",
+                "POST",
+                "config/values/clear",
+                200,
+                role="admin",
+                data={"key": "budget.mode", "scope_type": "entity", "scope_id": "ent_ksc", "reason": "pulihkan uji R6.3"}
+            )
+            self.test(
+                "Restore other budget switches",
                 "PUT",
                 "finance/budget-rules",
                 200,
                 role="admin",
                 data={
                     "entity_id": "ent_ksc",
-                    "mode": "warn",
                     "warn_threshold_pct": 85,
                     "unbudgeted_action": "allow"
                 }

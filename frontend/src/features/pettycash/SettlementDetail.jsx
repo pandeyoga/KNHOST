@@ -9,6 +9,7 @@ import { can } from "../../config/roles";
 import useIntentKey from "../../hooks/useIntentKey";
 import { moneyPost } from "../../utils/moneyRequest";
 import { confirmMoney } from "../../utils/moneyConfirm";
+import { BudgetCheckNotice } from "../../components/BudgetCheckNotice";
 
 /**
  * SettlementDetail — rincian Laporan Pertanggungjawaban (LPJ) + aksi (ajukan / setujui & posting GL / tolak /
@@ -98,6 +99,8 @@ export default function SettlementDetail({ stl, currentUser, entities, catLabels
         {err && <div className="notice-bar danger mx-3 mb-3" data-testid="stl-detail-error"><span>{err}</span><button onClick={() => setErr("")}>×</button></div>}
 
         <div className="section-body grid gap-4">
+          {/* PK-39 (K-12) — peringatan anggaran dari ajukan/setujui (tersimpan di LPJ); mode tolak → galat di atas. */}
+          <BudgetCheckNotice check={stl.budget_check} testId="stl-budget-check" />
           <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3 text-[12px]">
             <Meta k="Ref. PD" v={stl.cash_advance_number || "—"} />
             <Meta k="Entitas" v={entityName} />

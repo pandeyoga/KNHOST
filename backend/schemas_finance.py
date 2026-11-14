@@ -139,5 +139,6 @@ class BudgetUpdate(BaseModel):
     month: Optional[int] = None
     year: Optional[int] = None
     note: Optional[str] = None
+    reason: str = ""                       # PK-39 — alasan perubahan (opsional), masuk riwayat pagu
 
 

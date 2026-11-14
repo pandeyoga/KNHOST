@@ -2237,6 +2237,10 @@
   "esign.max_attempts": [
    "persetujuan",
    "tanda-tangan"
+  ],
+  "budget.mode": [
+   "pajak-pembukuan",
+   "tutup-buku"
   ]
  }
 }

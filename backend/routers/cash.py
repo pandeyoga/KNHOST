@@ -194,6 +194,17 @@ async def create_cash_transaction(payload: CashTransactionCreate, request: Reque
         await _gl.preflight_posting(entity_id, payload.txn_date or now_iso())
     except _gl.ClosedPeriodError as exc:
         raise HTTPException(status_code=409, detail=str(exc))
+    # PK-39 (K-12) — kas KELUAR manual: PERIKSA anggaran akun lawannya (bila akun beban) sebelum kas disimpan.
+    budget_check = None
+    if payload.direction == "out":
+        from services import budget_service as _bs
+        _niat = {"direction": "out", "ref_type": "", "category": payload.category.strip(), "entity_id": entity_id,
+                 "amount": round(float(payload.amount), 2), "cash_type": payload.cash_type}
+        try:
+            budget_check = await _bs.enforce_budget(entity_id, await _bs.cash_budget_targets(_niat), when="cash_out",
+                                                    date=payload.txn_date or "", actor=actor)
+        except ValueError as exc:
+            raise HTTPException(status_code=400, detail=str(exc))
     number = await _next_cash_number(entity_id)
     doc = {
         "id": new_id("cash"),
@@ -214,6 +225,8 @@ async def create_cash_transaction(payload: CashTransactionCreate, request: Reque
         "created_at": now_iso(),
         "updated_at": now_iso(),
     }
+    if budget_check is not None:
+        doc["budget_check"] = budget_check
     if not doc["account_id"]:   # UAT 24 Okt — rekening tunggal PT untuk jenis kas ini dipakai otomatis
         from services.bank_service import sole_account_id
         doc["account_id"] = await sole_account_id(entity_id, doc["cash_type"])

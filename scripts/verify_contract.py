@@ -74,6 +74,8 @@ CANONICAL_COLLECTIONS = {
     "doc_number_formats",
     # ── CR-T1 (blueprint) — profil kredit per pelanggan per PT + pengajuan perubahannya ──
     "customer_credit_profiles", "credit_profile_requests",
+    # ── PK-39 (blueprint) — riwayat pagu anggaran (buat · ubah · hapus; sebelum/sesudah, alasan) ──
+    "budget_history",
     "cash_transactions",
     # ── Depth #1 (Retur Beli / Nota Debit) ──
     "purchase_returns",

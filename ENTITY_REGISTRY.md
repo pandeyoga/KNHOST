@@ -66,6 +66,7 @@ Sebelum membuat apapun yang baru, tanya: **"Apakah ini sudah ada di sini?"**
 | Depreciation Entry *(R6.2)* | `fin_depreciation_entries` | `routers/fixed_assets.py`, `services/fixed_asset_service.py` | — | `FixedAssetsView` (histori penyusutan) |
 | Budget *(P1-4 / R6.3)* | `budgets` | `routers/budgets.py`, `services/budget_service.py` | `BudgetCreate/Update` | `BudgetView` (Keuangan → Laporan & Analitik → Anggaran vs Realisasi) |
 | Budget Rule *(R6.3)* | `fin_budget_rules` | `routers/budgets.py`, `services/budget_service.py` | `BudgetRulesIn` | `BudgetView` (panel Kebijakan Anggaran) |
+| Riwayat Pagu *(PK-39)* | `budget_history` | `services/budget_service.py` (`_write_history` dari `create_budget`/`update_budget`/`delete_budget`), `routers/budgets.py` (`GET /api/finance/budgets/{id}/history`) | `BudgetUpdate.reason`, `?reason=` | `BudgetHistoryModal` (`BudgetDialogs.jsx`) |
 | BOM / Resep Produksi *(R6.4)* | `mfg_boms` | `routers/production.py`, `services/production_service.py` | `BomIn/BomPatch` | `ProductionView` (Gudang → Produksi (BOM & WO) → tab BOM/Resep) |
 | Work Order *(R6.4)* | `mfg_work_orders` | `routers/production.py`, `services/production_service.py` | `WorkOrderIn` | `ProductionView` + `ProductionWO` (tab Work Order) |
 | Histori Job Scheduler *(R6.5)* | `sys_scheduler_runs` | `routers/scheduler.py`, `services/scheduler_service.py` | — | `SchedulerView` (Pengaturan → Penjadwal & Notifikasi → tab Riwayat Eksekusi) |
@@ -1010,34 +1011,50 @@ materialized cache sehingga selalu konsisten dengan sumber (GL-safe).
 ```
 Collections: budgets            (prefix budget_)
              fin_budget_rules   (prefix bgrule_, 1 dokumen per entity_id)
+             budget_history     (prefix bgh_, PK-39 — satu baris per buat/ubah/hapus pagu)
 Router:      routers/budgets.py    Service: services/budget_service.py
-Component:   features/finance/BudgetView.jsx + BudgetParts.jsx
+Component:   features/finance/BudgetView.jsx + BudgetParts.jsx + BudgetDialogs.jsx
              (Keuangan → Laporan & Analitik → Anggaran vs Realisasi)
 budgets fields:
   id, entity_id (FK business_entities), year, month (0=tahunan | 1–12 bulanan),
   dimension ("account" | "category"), key (kode akun COA | kode expense_categories),
   label, account_code, account_name, account_type, amount, note, created_at, updated_at
-  UNIK per (entity_id, year, month, dimension, key)  → invarian BG-1.
+  UNIK per (entity_id, year, month, dimension, key)  → invarian BG-1; PK-39: indeks wajib `uq_budget_key`
+  (REQUIRED_UNIQUE_INDEXES, parsial key terisi) — simpan kembar / bersamaan → 409.
+budget_history fields (PK-39):
+  id, budget_id, entity_id, dimension, key, label, action ("created"|"updated"|"deleted"),
+  before {amount, year, month, note}, after {…; kosong saat hapus}, reason, by, by_id, at · indeks (budget_id, at)
 fin_budget_rules fields:
-  id, entity_id, mode ("off"|"warn"|"block"), warn_threshold_pct (0–100, default 85),
+  id, entity_id, warn_threshold_pct (0–100, default 85),
   unbudgeted_action ("allow"|"warn"|"block"), enforce_po_create, enforce_po_approve,
   updated_by, updated_at
-Sumber angka (derived):
-  Realisasi dimension=account   → journal_entries (non-void, exclude closing) per akun & bulan
-  Realisasi dimension=category  → cash_advance_settlements status posted_to_gl (category_totals)
-  Komitmen  PO terbuka          → purchase_orders status ∈ (draft, submitted, waiting_approval,
-                                   pending, approved, confirmed, sent, receiving,
-                                   partially_received); key = PO.budget_dimension/budget_key
-                                   atau default akun Persediaan 1-1300; nilai = net_subtotal (DPP)
-  Komitmen  LPJ petty cash      → cash_advance_settlements status draft|submitted (per kategori)
+  `mode` ("off"|"warn"|"block") TIDAK DIBACA lagi sejak PK-39: mode = pengaturan `budget.mode`
+  (mati · peringatan · blokir; global → PT). Nilai lama PT dipakai sebagai penimpa terdaftar
+  (`config_overrides.mode_anggaran_lama`) sampai lapisan PT kunci baru diisi; tanpa penulisan data.
+Sumber angka (derived; bulan = bulan buku WIB `book_date.periode_buku`; dihitung PER PT pemilik pagu):
+  Realisasi dimension=account   → journal_entries (non-void, exclude closing): pendapatan kredit−debit,
+                                   beban debit−kredit, ASET = Σ debit `goods_receipt` − Σ kredit
+                                   `purchase_return` (HPP/opname/transfer diabaikan; jurnal yang dibalik tidak)
+  Realisasi dimension=category  → jurnal `petty_cash_settlement` tahun itu → LPJ (`source_id`) `category_totals`
+                                   pada bulan JURNAL (teks `periode` LPJ tidak dipakai)
+  Komitmen  PO terbuka          → purchase_orders status ∉ (cancelled, rejected, closed_short, completed)
+                                   (termasuk `partial`); key = PO.budget_dimension/budget_key atau akun
+                                   pemetaan `persediaan.persediaan`; nilai = SISA PO `po_open_value`
+                                   = net_subtotal × (1 − nilai diterima / nilai dipesan)
+  Komitmen  LPJ petty cash      → cash_advance_settlements status draft|submitted (per kategori, bulan created_at WIB)
 Rumus: spent = actual + committed · remaining = budget − spent · variance = budget − actual
-Enforcement (budget_service.enforce_po_budget): dipanggil router PO saat create & approve.
-  mode=off  → dilewati · mode=warn → daftar peringatan (PO tetap dibuat, jejak di timeline)
-  mode=block → HTTP 400 (create) / 409 (approve). Komitmen PO sendiri dikecualikan saat approve.
+Mode gabungan: tiap baris `entity_id`/`entity_name`; `is_combined` + `combined_note` (belum dieliminasi).
+Pemeriksaan (budget_service.enforce_budget; enforce_po_budget = pembungkus PO), hasil di dokumen `budget_check`
+  {mode, mode_label, when, warnings[], checks[], blocked, skipped}:
+  po_create/po_approve (router PO, PR→PO) · bill_approve (tagihan tanpa PO berakun beban: kampanye) ·
+  cash_out (kas keluar manual, akun lawan `gl_service.cash_contra_account` berjenis beban) ·
+  lpj_submit (tolak = peringatan) / lpj_approve.
+  mode off → dilewati · warn → peringatan (transaksi jalan) · block → HTTP 400 (PO setujui 409).
 PO menyimpan: budget_dimension, budget_key, budget_check {mode, when, warnings[], checks[], blocked}
-Endpoints: GET/POST /api/finance/budgets · PATCH/DELETE /api/finance/budgets/{id} ·
-  GET /api/finance/budget-vs-actual · GET /api/finance/budget-keys ·
-  GET/PUT /api/finance/budget-rules · POST /api/finance/budget-check
+Endpoints: GET/POST /api/finance/budgets · PATCH/DELETE /api/finance/budgets/{id} (+ reason) ·
+  GET /api/finance/budgets/{id}/history · GET /api/finance/budget-vs-actual · GET /api/finance/budget-keys ·
+  GET/PUT /api/finance/budget-rules (PUT dengan `mode` → 400) · POST /api/finance/budget-check
+  (+ `source="cash_out"` + `category`: pratinjau form kas)
 RBAC: permission "budget" (admin: view/create/update/delete/configure; manager: tanpa configure).
 Invarian integritas: BG-1 tak ada duplikat kunci · BG-2 amount>0 & month 0–12 ·
   BG-3 key terdaftar (akun COA/kategori) · BG-4 kebijakan rules valid.
@@ -3075,6 +3092,7 @@ ccp_    → customer_credit_profiles  [CR-T1]
 cpr_    → credit_profile_requests   [CR-T1]
 aiact_  → ai_action_proposals       [AG-T1]
 pyc_    → payment_codes             [PM-T2]
+bgh_    → budget_history            [PK-39]
 aprule_ → approval_rules            [Fase 1A IMPLEMENTED]
 ```
 > Prefix PLANNED (lihat bagian PLANNED ENTITIES): `pra_` price_approvals (= "special price"),
@@ -3242,6 +3260,7 @@ INDEKS UNIK WAJIB (PK-14, `backend/indexes.py` REQUIRED_UNIQUE_INDEXES — aplik
   PK-31: intercompany_eliminations.uq_pair_period (source_g6_pair_id, period_key | keduanya terisi)
   PM-T1: bank_accounts.uq_default_receiving (entity_id, default_receiving_methods) ·
   PM-T2: payment_codes.uq_pay_code (code) · payment_codes.uq_pay_code_line (order_id, line_id)
+  PK-39: budgets.uq_budget_key (entity_id, year, month, dimension, key | key terisi)
 ⚠️ AR aging/Outstanding = DERIVED dari invoices + credit_limit; denda 1–3% pada invoices
 ⚠️ JANGAN buat: ledger, accounts, gl (pakai journal_entries/chart_of_accounts/bank_accounts)
 ```

@@ -724,6 +724,9 @@ VIEW_RESOURCE_OVERRIDES["settings-cfg-system"] = [*VIEW_RESOURCE_OVERRIDES["sett
 # CR-T1 — kunci `ar.default_credit_limit` (kelompok "Pembayaran pelanggan") diubah pemegang `credit_profile.approve`;
 # aturan KF-T1 (U14): tab kelompok itu juga terbuka bagi pemegang izin pengubah kuncinya.
 VIEW_RESOURCE_OVERRIDES["settings-cfg-finance"] = [*VIEW_RESOURCE_OVERRIDES["settings-cfg-finance"], "credit_profile"]
+# PK-39 — kunci `budget.mode` (kelompok "Pajak, pembukuan & antar-PT") diubah pemegang `budget.configure`; aturan KF-T1
+# (U14): tab kelompok itu juga terbuka bagi pemegang izin pengubah kuncinya.
+VIEW_RESOURCE_OVERRIDES["settings-cfg-finance"] = [*VIEW_RESOURCE_OVERRIDES["settings-cfg-finance"], "budget"]
 # CR-T1 — menu Pelanggan (`customers-crm`) kini juga di `nav` modul piutang (tab Kredit di kartu pelanggan), tetapi
 # daftarnya tetap menuntut `customer.view` (`GET /api/customers`): sumber izin menu tetap `customer`, supaya pemegang
 # izin piutang tanpa izin pelanggan tidak mendapat menu yang langsung menolak.

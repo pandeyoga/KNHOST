@@ -191,6 +191,9 @@ INDEX_SPECS: Dict[str, List[IndexKeys]] = {
     "payment_codes": [               # PM-T2 — kode bayar per pesanan / baris tagihan (unik: REQUIRED_UNIQUE_INDEXES)
         [("entity_id", A), ("status", A), ("created_at", D)],
     ],
+    "budget_history": [              # PK-39 — riwayat pagu per pagu (terbaru dulu) · pagu unik: REQUIRED_UNIQUE_INDEXES
+        [("budget_id", A), ("at", D)],
+    ],
     "approval_policies": [           # KP-T4 — satu tabel kebijakan persetujuan (jenis, PT, jenjang, urutan)
         [("doc_kind", A), ("entity_id", A), ("level", A), ("sort", A)],
     ],
@@ -803,6 +806,18 @@ REQUIRED_UNIQUE_INDEXES += [
      "keys": [("order_id", 1), ("line_id", 1)], "partial": {"order_id": dict(_NONEMPTY)},
      "finder": _finder_dup("payment_codes", '{order_id:{$type:"string",$gt:""}}', '{o:"$order_id",l:"$line_id"}',
                            "$code")},
+]
+
+
+# PK-39 (FY-12, D7) — satu pagu per (PT, tahun, bulan, dimensi, kunci). Dulu dicegah "cari dulu, lalu sisip" (dua simpan
+# bersamaan → dua pagu). Hanya pagu yang kuncinya terisi (dokumen lama tanpa `key` diisi `backfill_dimensions`). Data
+# kembar yang sudah ada → indeks gagal dibuat → titik henti H6; kueri pencarinya = `finder` (FY-11/FY-12).
+REQUIRED_UNIQUE_INDEXES += [
+    {"collection": "budgets", "name": "uq_budget_key", "label": "satu pagu per PT per tahun per bulan per akun/kategori",
+     "keys": [("entity_id", 1), ("year", 1), ("month", 1), ("dimension", 1), ("key", 1)],
+     "partial": {"key": dict(_NONEMPTY)},
+     "finder": _finder_dup("budgets", '{key:{$type:"string",$gt:""}}',
+                           '{e:"$entity_id",y:"$year",m:"$month",d:"$dimension",k:"$key"}', "$id")},
 ]
 
 

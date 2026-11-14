@@ -231,8 +231,16 @@ async def approve_campaign_bill(bill: Dict[str, Any], actor: Dict[str, Any]) -> 
         await gl.preflight_posting(bill.get("entity_id", ""), bill.get("bill_date") or now_iso())
     except gl.ClosedPeriodError as exc:
         raise HTTPException(status_code=409, detail=str(exc)) from exc
+    # PK-39 (K-12) — PERIKSA anggaran akun beban tagihan (nilai DPP) sebelum status berubah; mode `budget.mode` PT.
+    from services import budget_service as _bs
+    try:
+        budget_check = await _bs.enforce_budget(bill.get("entity_id", ""), await _bs.bill_budget_targets(bill),
+                                                when="bill_approve", date="", actor=actor)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
     await db.vendor_bills.update_one({"id": bill["id"], "status": "pending_approval"}, {"$set": {
-        "approval_status": "approved", "approved_by": actor.get("name", ""), "approved_at": now_iso()}})
+        "approval_status": "approved", "approved_by": actor.get("name", ""), "approved_at": now_iso(),
+        "budget_check": budget_check}})
     out = await _post_bill(bill["id"], actor, note=f"disetujui oleh {actor.get('role')}")
     await db.notifications.update_many({"ref": f"mkt_bill:{bill['id']}", "read": {"$ne": True}},
                                        {"$set": {"read": True, "read_at": now_iso()}})

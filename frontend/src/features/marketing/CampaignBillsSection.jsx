@@ -8,6 +8,7 @@ import { Field } from "../rnd/RndField";
 import { mktApi, fmtN } from "./marketingShared";
 import useIntentKey from "../../hooks/useIntentKey";
 import { todayWib } from "../../utils/formatters";
+import { BudgetCheckNotice } from "../../components/BudgetCheckNotice";
 
 const errText = (e, fb) => { const d = e.response?.data?.detail; return (typeof d === "string" ? d : d?.message) || fb; };
 const today = () => todayWib();
@@ -17,12 +18,16 @@ export default function CampaignBillsSection({ campaign, bills, canCreate, canAp
   const [err, setErr] = useState("");
   // PK-12 — setujui (memposting hutang): satu niat = satu Idempotency-Key; tombol baris mati selama menunggu.
   const [approving, setApproving] = useState("");
+  const [budgetCheck, setBudgetCheck] = useState(null);   // PK-39 — peringatan anggaran saat menyetujui
   const approveIntent = useIntentKey("mvbapv");
   const approve = async (b) => {
     if (approving) return;
-    setErr(""); setApproving(b.id);
-    try { await approveIntent.send({ id: b.id, aksi: "approve" }, (k) => mktApi.approveBill(campaign.id, b.id, k)); onChanged(); }
-    catch (e) { setErr(errText(e, "Gagal menyetujui tagihan.")); } finally { setApproving(""); }
+    setErr(""); setBudgetCheck(null); setApproving(b.id);
+    try {
+      const out = await approveIntent.send({ id: b.id, aksi: "approve" }, (k) => mktApi.approveBill(campaign.id, b.id, k));
+      setBudgetCheck(out?.budget_check || out?.data?.budget_check || null);
+      onChanged();
+    } catch (e) { setErr(errText(e, "Gagal menyetujui tagihan.")); } finally { setApproving(""); }
   };
   return (
     <div className="grid gap-1.5" data-testid="mkt-bills-section">
@@ -31,6 +36,7 @@ export default function CampaignBillsSection({ campaign, bills, canCreate, canAp
         {canCreate && <button type="button" className="secondary-button !py-0.5 text-[10.5px]" onClick={onAdd} data-testid="mkt-bill-add"><Plus size={11} /> Tagihan vendor</button>}
       </div>
       {err && <p className="text-[11px] text-[#C0392B]" data-testid="mkt-bill-error">{err}</p>}
+      <BudgetCheckNotice check={budgetCheck} testId="mkt-bill-budget-check" />
       {!bills.length && <p className="text-[11px] text-[#9A9BA3]" data-testid="mkt-bills-empty">Belum ada tagihan vendor.</p>}
       {bills.map((b) => {
         const [label, cls] = STATUS[b.status] || [b.status, ""];

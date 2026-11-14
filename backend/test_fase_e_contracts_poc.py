@@ -658,11 +658,14 @@ async def main():  # noqa: C901 — satu skrip POC lengkap (protokol repo)
     budget_id = (r.json() or {}).get("id", "") if r.ok else ""
     ok("Anggaran ketat (Rp 1.000) dibuat untuk akun Persediaan 1-1300") if budget_made else \
         info(f"Pembuatan anggaran dilewati: {r.status_code} {r.text[:200]}")
-    r = s.put(f"{API}/finance/budget-rules", json={"entity_id": ENTITY, "mode": "block",
-                                                   "enforce_po_create": True}, timeout=30)
+    # PK-39 (K-12) — mode = pengaturan `budget.mode` (lapisan PT di Pusat Pengaturan); sakelar PO tetap budget-rules.
+    s.put(f"{API}/finance/budget-rules", json={"entity_id": ENTITY, "enforce_po_create": True}, timeout=30)
+    r = s.put(f"{API}/config/values", json={"items": [{"key": "budget.mode", "value": "blokir", "scope_type": "entity",
+                                                         "scope_id": ENTITY, "reason": f"{MARK} uji anggaran"}]},
+              timeout=30)
     rules_set = r.ok
-    ok("Mode anggaran diubah ke `block` tanpa deploy") if rules_set else \
-        info(f"Gagal set mode block: {r.status_code} {r.text[:200]}")
+    ok("Mode anggaran diubah ke `blokir` tanpa deploy") if rules_set else \
+        info(f"Gagal set mode blokir: {r.status_code} {r.text[:200]}")
 
     r = s.post(f"{API}/purchase-requisitions", json={
         "entity_id": ENTITY, "warehouse_id": WH, "reason": f"{MARK} uji anggaran",
@@ -684,9 +687,10 @@ async def main():  # noqa: C901 — satu skrip POC lengkap (protokol repo)
     else:
         info("Uji block anggaran dilewati (aturan/anggaran tak bisa dipasang)")
     # kembalikan aturan seperti semula agar tidak mengganggu data lain
+    s.post(f"{API}/config/values/clear", json={"key": "budget.mode", "scope_type": "entity", "scope_id": ENTITY,
+                                                "reason": f"{MARK} pulihkan"}, timeout=30)
     s.put(f"{API}/finance/budget-rules", json={
-        "entity_id": ENTITY, "mode": rules_before.get("mode", "warn"),
-        "enforce_po_create": bool(rules_before.get("enforce_po_create", True))}, timeout=30)
+        "entity_id": ENTITY, "enforce_po_create": bool(rules_before.get("enforce_po_create", True))}, timeout=30)
     if budget_id:
         s.delete(f"{API}/finance/budgets/{budget_id}", timeout=30)
     await db.budgets.delete_many({"note": {"$regex": MARK}})

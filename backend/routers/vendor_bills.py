@@ -473,9 +473,21 @@ async def approve_vendor_bill(bill_id: str, request: Request) -> Dict[str, Any]:
     # PK-37 (K-03) — PERIKSA periode sebelum tanda setuju ditulis (`_post_bill` memeriksa lagi untuk jalur ajukan).
     from services.book_date import periksa_periode_dokumen_409
     await periksa_periode_dokumen_409(bill.get("entity_id") or DEFAULT_ENTITY_ID, None, jenis="tagihan pemasok")
+    # PK-39 (K-12) — tagihan TANPA PO berakun beban: PERIKSA anggaran sebelum tanda setuju ditulis. Tagihan ber-PO
+    # sudah dicakup komitmen PO; tagihan jasa makloon (tanpa akun beban) tidak menghasilkan sasaran.
+    extra: Dict[str, Any] = {}
+    if not bill.get("po_id"):
+        from services import budget_service as _bs
+        targets = await _bs.bill_budget_targets(bill)
+        if targets:
+            try:
+                extra["budget_check"] = await _bs.enforce_budget(bill.get("entity_id", ""), targets,
+                                                                 when="bill_approve", date="", actor=actor)
+            except ValueError as exc:
+                raise HTTPException(status_code=400, detail=str(exc)) from exc
     await db.vendor_bills.update_one(
         {"id": bill_id},
-        {"$set": {"approval_status": "approved", "approved_by": actor["name"], "approved_at": now_iso()}})
+        {"$set": {"approval_status": "approved", "approved_by": actor["name"], "approved_at": now_iso(), **extra}})
     return await _post_bill(bill_id, actor, note=f"disetujui oleh {actor.get('role')}")
 
 
