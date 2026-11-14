@@ -29,7 +29,9 @@ def next_step(o: Dict[str, Any], hold: Optional[Dict[str, Any]] = None) -> Dict[
     """Tahap berikutnya + peran pemiliknya, diturunkan dari status SO (+ gerbang termin CBD/DP, F-10)."""
     st = o.get("status") or ""
     verified = (o.get("verification") or {}).get("status") == "verified"
-    outstanding = float(o.get("grand_total") or o.get("total_amount") or 0) - float(o.get("paid_total") or 0)
+    outstanding = (float(o.get("grand_total") or o.get("total_amount") or 0)   # PK-32 — + tagihan tambahan nota debit
+                   + sum(float(x.get("gross") or 0) for x in o.get("extra_billing_lines") or [])
+                   - float(o.get("paid_total") or 0))
     if st in ("draft", "pending", ""):
         return {"step": "Dilengkapi & diajukan", "roles": ["sales"], "action": "Buka SO"}
     # Trial 22 Okt (E8/E10) — tahap mengikuti alur "Periksa & lepas ke gudang".
@@ -99,7 +101,7 @@ async def so_tracker(desk: str, actor: Dict[str, Any], scope: Dict[str, Any]) ->
     # Meja Admin Sample melacak SO SAMPEL (dulu: SO roll biasa yang tak satu pun tahapnya milik Admin Sample).
     q = {**scope, "status": {"$nin": CLOSED}, "is_sample": True if sample_desk else {"$ne": True}}
     proj = {"_id": 0, "id": 1, "order_number": 1, "number": 1, "customer_name": 1, "sales_name": 1,
-            "status": 1, "verification": 1, "release": 1, "pending_approvals": 1, "grand_total": 1, "total_amount": 1, "paid_total": 1,
+            "status": 1, "verification": 1, "release": 1, "pending_approvals": 1, "grand_total": 1, "total_amount": 1, "paid_total": 1, "extra_billing_lines": 1,
             "required_approval_role": 1, "has_backorder": 1, "created_at": 1, "updated_at": 1, "entity_id": 1,
             "sample_payment_status": 1}
     rows: List[Dict[str, Any]] = []

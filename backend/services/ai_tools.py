@@ -453,7 +453,12 @@ async def get_document(args, user, ctx, session_id=None) -> Dict[str, Any]:
                               if not m.get("replaced")]
     paid = slim.get("paid_total", slim.get("amount_paid"))
     if paid is not None and slim.get("grand_total") is not None:
-        slim["outstanding"] = round(max(0.0, float(slim["grand_total"]) - float(paid)), 2)   # sisa tagihan/hutang
+        total = float(slim["grand_total"])
+        if dt == "sales_order" and doc.get("extra_billing_lines"):   # PK-32 — nilai tagihan (+ tagihan tambahan)
+            from services.customer_service import _order_grand_total
+            total = _order_grand_total(doc)
+            slim["billing_total"] = round(total, 2)
+        slim["outstanding"] = round(max(0.0, total - float(paid)), 2)   # sisa tagihan/hutang
     # Dibungkus `document` agar angka dokumen ikut menjadi sumber sah pemeriksa angka.
     return {"document": strip_cost_fields(slim, sc.role)}
 

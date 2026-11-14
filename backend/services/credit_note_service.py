@@ -286,9 +286,11 @@ async def _ar_room(order_id: str) -> float:
     return round(max(0.0, await gl.order_ar_room(order_id) - await gl.order_advance_reclassed(order_id)), 2)
 
 
-async def plan_for(*, kind: str, source: str, order: Dict[str, Any], net: float, ppn: float) -> Dict[str, Any]:
+async def plan_for(*, kind: str, source: str, order: Dict[str, Any], net: float, ppn: float,
+                   open_cap: Optional[float] = None) -> Dict[str, Any]:
     """Rencana efek nota amandemen / batal item / nota debit (tanpa menulis apa pun). Nota retur memakai rencana
-    pembuatnya sendiri (`allocation_amount`) dan jurnal retur yang tidak berubah."""
+    pembuatnya sendiri (`allocation_amount`) dan jurnal retur yang tidak berubah. `open_cap` = batas tambahan bagian
+    piutang (nota batal item: sisa tagihan SEBELUM batal, `open_before` — perilaku lama dipertahankan)."""
     from services import gl_service as gl
     net, ppn = round(float(net or 0), 2), round(float(ppn or 0), 2)
     gross = round(net + ppn, 2)
@@ -310,6 +312,8 @@ async def plan_for(*, kind: str, source: str, order: Dict[str, Any], net: float,
     ar_part = round(min(reversed_gross, await _ar_room(oid)), 2)
     if source == "amendment":
         ar_part = round(min(ar_part, alloc_total), 2)
+    if open_cap is not None:
+        ar_part = round(min(ar_part, max(0.0, float(open_cap or 0))), 2)
     sc_part = round(reversed_gross - ar_part, 2)
     eff = await gl.order_effective_totals(order)
     new_grand = round(eff["grand"] - (part if reduces else 0.0), 2)
@@ -317,7 +321,8 @@ async def plan_for(*, kind: str, source: str, order: Dict[str, Any], net: float,
     excess = round(max(0.0, overpaid - sc_part), 2)
     out = {"revenue_reversed_net": sp["sekarang_net"], "revenue_reversed_ppn": sp["sekarang_ppn"],
            "deferred_net": sp["deferred_net"], "deferred_ppn": sp["deferred_ppn"], "shipped_share": sp["porsi_terkirim"],
-           "ar_part": ar_part, "store_credit_part": sc_part, "excess_payment": excess,
+           "ar_part": ar_part, "store_credit_part": sc_part, "store_credit_amount": sc_part,   # nama field lama
+           "excess_payment": excess,
            "allocation_amount": alloc_total, "allocation_deferred": round(alloc_total - min(ar_part, alloc_total), 2),
            "debit_note_offset": offset, "debit_note_offsets": offset_rows}
     if source == "od_item_cancel":   # bidang lama layar batal item
@@ -394,8 +399,11 @@ async def release(note_id: str, actor: Any, *, issue_note: str = "") -> Dict[str
                               f"'{LABEL_STATUS.get(note_status(doc), note_status(doc))}'.")
     order = await _pesanan(doc["order_id"])
     plan = await plan_for(kind=note_kind(doc), source=note_source(doc), order=order,
-                          net=float(doc.get("net_amount") or 0), ppn=float(doc.get("ppn_amount") or 0))
-    if float(plan.get("revenue_reversed_net") or 0) + float(plan.get("revenue_reversed_ppn") or 0) > EPS:
+                          net=float(doc.get("net_amount") or 0), ppn=float(doc.get("ppn_amount") or 0),
+                          open_cap=doc.get("open_before") if "open_before" in doc else None)
+    if doc.get("revenue_recognized") \
+            or float(plan.get("revenue_reversed_net") or 0) + float(plan.get("revenue_reversed_ppn") or 0) > EPS:
+        # PK-37 (K-03) — terbit = jurnal koreksi pendapatan hari ini: PERIKSA periode sebelum status berubah
         from services.book_date import periksa_periode_dokumen_409
         await periksa_periode_dokumen_409(doc.get("entity_id") or "", None, jenis="nota kredit")
     now = now_iso()

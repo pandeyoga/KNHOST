@@ -484,3 +484,18 @@ Istilah SDM › Kinerja & Insentif › Target & Aturan (`docs/blueprint/unit/KM-
 | **komponen insentif** | Bagian "Komponen insentif" · "Tambah komponen" | Jenis insentif yang dipakai PT (mis. Insentif Bulanan, Insentif Triwulan): kode, periode dasar, dan angka yang ditampilkan. Nominalnya diputuskan di lembar insentif |
 | **definisi angka** | Bagian "Definisi angka" · "Berlaku sejak {tanggal} (versi {n})" · "Ubah di Pusat Pengaturan" | Empat pilihan PT yang menentukan arti angka insentif; tiap perubahan dicatat sebagai versi baru |
 | **pencocokan angka** | Kartu "Pencocokan angka" · "Cocok" · "Selisih Rp …" · "Penyebab selisih" | Pemeriksaan bulanan: omzet = pendapatan buku besar; pencairan + kas belum dialokasikan = kwitansi = kas masuk |
+
+### 9.15 Nota kredit & nota debit pesanan (PK-32)
+
+Istilah Keuangan › Koreksi & Amandemen, jejak koreksi di rincian pesanan, nota batal item, dan rincian retur
+(`docs/blueprint/unit/PK-32.md`).
+
+| Istilah | Teks layar | Arti |
+|---|---|---|
+| **status nota** | Lencana "Menunggu Finance" · "Terbit" · "Selesai" · "Batal" (ikon + teks + warna), di samping nomor nota lencana jurnal PK-18 | Menunggu Finance = nota batal item belum ditinjau; Terbit = nota sudah lahir, efeknya (potong tagihan, saldo kredit, jurnal) belum semua tuntas — mis. jurnal gagal, ulang di Posting Gagal; Selesai = semua efek tuntas; Batal = dibatalkan sebelum berefek |
+| **tagihan tambahan** | Bagian "Tagihan tambahan" di rincian pesanan (kolom Nota Debit · Keterangan · Nilai · Jatuh tempo) · baris "Tagihan tambahan (nota debit)" dan "Total tagihan" di Ringkasan Harga | Tagihan dari nota debit kenaikan harga/qty pesanan yang sudah terbit (K-14). Total pesanan asal tidak diubah; **total tagihan** = total pesanan + tagihan tambahan, dan sisa tagihan dihitung dari angka ini. Jatuh tempo = tanggal nota + termin pesanan |
+| **belum mengurangi pendapatan** | "Rp {nominal} belum mengurangi pendapatan karena barangnya belum dikirim." (nota debit: "belum menambah") | Bagian nota yang barangnya belum dikirim: tidak dijurnal saat nota terbit, melainkan ikut nilai efektif saat surat jalan berikutnya |
+| **kelebihan bayar** (nota) | "Kelebihan bayar Rp {nominal} tetap sebagai uang muka pelanggan." | Uang pelanggan di atas nilai pesanan sesudah koreksi; tetap uang muka pelanggan (dikembalikan/dipakai lewat Uang Masuk), bukan saldo kredit |
+| **melebihi nilai pesanan** | 409 "Nota kredit {rupiah} akan membuat total nota kredit pesanan {nomor} menjadi {rupiah}, melebihi nilai pesanan {rupiah}. Periksa nota yang sudah terbit." | Total nota kredit (retur + koreksi) satu pesanan tidak boleh melebihi nilai tagihannya |
+| **tidak bisa dibatalkan** (nota) | 409 "Nota {nomor} sudah mengurangi tagihan atau sudah dijurnal, jadi tidak bisa dibatalkan." · 400 "Alasan pembatalan nota wajib (minimal 5 huruf)." | Nota hanya bisa dibatalkan sebelum satu efek pun tuntas |
+

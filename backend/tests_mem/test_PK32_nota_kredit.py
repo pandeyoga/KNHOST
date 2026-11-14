@@ -56,11 +56,6 @@ _n = itertools.count(1)
 #: pesanan yang dipakai uji lanjutan (U2 ← U1)
 BAG: Dict[str, Any] = {}
 
-#: serah-terima (a) — pembuat lama belum memakai mesin nota; tanda dicabut di serah-terima (b)
-B_FX12 = pytest.mark.xfail(strict=True, reason="FX-12 — menunggu serah-terima (b): pembuat lama belum memakai mesin nota")
-B_FX13 = pytest.mark.xfail(strict=True, reason="FX-13 — menunggu serah-terima (b): pembuat lama belum memakai mesin nota")
-B_FX14 = pytest.mark.xfail(strict=True, reason="FX-14 — menunggu serah-terima (b): pendapatan belum memakai nilai efektif")
-B_FX15 = pytest.mark.xfail(strict=True, reason="FX-15 — menunggu serah-terima (b): nota debit amandemen belum ditagihkan")
 
 
 def uid(awalan: str) -> str:
@@ -274,7 +269,6 @@ async def retur_barang(db, dunia, so: dict, qty: float) -> str:
     return sr
 
 
-@B_FX12
 async def test_PK32_U1_koreksi_lalu_retur_harga_efektif(klien, kepala_admin, db, dunia):
     so = await pesanan(db, dunia)
     await kirim(db, dunia, so, QTY, penutup=True)
@@ -309,7 +303,6 @@ async def test_PK32_U1_koreksi_lalu_retur_harga_efektif(klien, kepala_admin, db,
     BAG["u1"] = o
 
 
-@B_FX12
 async def test_PK32_U2_koreksi_melebihi_nilai_pesanan_ditolak(klien, kepala_admin, db, dunia):
     so = BAG.get("u1")
     assert so, "lanjutan U1"
@@ -322,7 +315,6 @@ async def test_PK32_U2_koreksi_melebihi_nilai_pesanan_ditolak(klien, kepala_admi
 
 
 # ═══ U3–U5 — pendapatan hanya dibalik sebesar yang sudah diakui (FX-14) ════════════════════════════════════════════
-@B_FX14
 async def test_PK32_U3_U4_dibayar_sebelum_kirim_lalu_kirim(klien, kepala_admin, db, dunia):
     so = await pesanan(db, dunia)
     awal = await saldo_semua()
@@ -349,7 +341,6 @@ async def test_PK32_U3_U4_dibayar_sebelum_kirim_lalu_kirim(klien, kepala_admin, 
     assert (beda[UANG_MUKA], beda[PIUTANG], beda[PENDAPATAN]) == (200_000, 0, 800_000), beda
 
 
-@B_FX14
 async def test_PK32_U5_terkirim_sebagian_lalu_kirim_sisa(klien, kepala_admin, db, dunia):
     from services import gl_service
     so = await pesanan(db, dunia)
@@ -376,7 +367,6 @@ async def test_PK32_U5_terkirim_sebagian_lalu_kirim_sisa(klien, kepala_admin, db
 
 
 # ═══ U6–U7 — nota debit kenaikan harga menjadi tagihan (FX-15, K-14) ═══════════════════════════════════════════════
-@B_FX15
 async def test_PK32_U6_nota_debit_terkirim_penuh(klien, kepala_admin, db, dunia):
     so = await pesanan(db, dunia)
     await kirim(db, dunia, so, QTY, penutup=True)
@@ -423,7 +413,6 @@ async def test_PK32_U7_nota_debit_sebelum_kirim(db, dunia):
 
 
 # ═══ U8–U10 — nota yang gagal di tengah terlihat dan bisa diulang (FX-13) ══════════════════════════════════════════
-@B_FX13
 async def test_PK32_U8_jurnal_amandemen_gagal_lalu_ulang(klien, kepala_admin, db, dunia, paksa_jurnal_gagal):
     so = await pesanan(db, dunia)
     await kirim(db, dunia, so, QTY, penutup=True)
@@ -435,7 +424,7 @@ async def test_PK32_U8_jurnal_amandemen_gagal_lalu_ulang(klien, kepala_admin, db
         "issued", "failed", "done", "pending"), n
     panel = (await klien.get("/api/finance/posting-failures", headers=kepala_admin,
                              params={"kind": "credit_note", "page_size": 200})).json()
-    assert n["id"] in {x["id"] for x in panel["rows"]}, panel
+    assert n["id"] in {x["id"] for x in panel["items"]}, panel
     r = await klien.post(f"/api/finance/posting-failures/credit_note/{n['id']}/retry", headers=kepala_admin)
     assert r.status_code == 200, r.text
     n = await nota_dari(db, amd)
@@ -470,7 +459,6 @@ async def nota_batal_item(db, dunia, *, diakui: bool) -> Tuple[dict, dict]:
     return sebelum, note
 
 
-@B_FX13
 async def test_PK32_U9_batal_item_jurnal_gagal_lalu_ulang(klien, kepala_admin, db, dunia, paksa_jurnal_gagal):
     so, note = await nota_batal_item(db, dunia, diakui=True)
     assert note["status"] == "pending_finance"
@@ -487,7 +475,6 @@ async def test_PK32_U9_batal_item_jurnal_gagal_lalu_ulang(klien, kepala_admin, d
     assert len(j) == 1 and baris(j) == {PENDAPATAN: (300_000, 0), PIUTANG: (0, 300_000)}, j
 
 
-@B_FX13
 async def test_PK32_U10_batal_item_tanpa_pendapatan_diakui(klien, kepala_admin, db, dunia):
     so, note = await nota_batal_item(db, dunia, diakui=False)
     r = await klien.post(f"/api/credit-notes/{note['id']}/finance-review", headers=kepala_admin,
@@ -500,7 +487,6 @@ async def test_PK32_U10_batal_item_tanpa_pendapatan_diakui(klien, kepala_admin, 
 
 
 # ═══ U11 — retur per roll memakai harga efektif (FX-12) ═════════════════════════════════════════════════════════════
-@B_FX12
 async def test_PK32_U11_retur_per_roll_harga_efektif(klien, kepala_admin, db, dunia):
     from services import return_roll_settlement_service as rrs
     so = await pesanan(db, dunia)
@@ -534,7 +520,6 @@ async def test_PK32_U11_retur_per_roll_harga_efektif(klien, kepala_admin, db, du
 
 
 # ═══ U12 — satu penyisip & penjaga posting (statik) ═════════════════════════════════════════════════════════════════
-@B_FX13
 async def test_PK32_U12_satu_penyisip_dan_penjaga_posting():
     import json
     import subprocess
@@ -585,6 +570,7 @@ async def test_PK32_a_U1_mesin_terkirim_penuh(db, dunia):
     assert sisa(o) == 800_000 and await cns.settle(n["id"], AKTOR_UJI) == n   # aman diulang
     eff = await gl_service.order_effective_totals(o)
     assert eff == {"grand": 800_000, "ppn": 0, "net": 800_000}, eff
+    assert gl_service.NOTE_BUCKETS == cns.NOTE_BUCKETS   # satu kosakata bucket baris nota (gl ↔ mesin nota)
     eo = await amendment_service.effective_order(o)
     assert (eo["items"][0]["price"], eo["items"][0]["line_total"], eo["grand_total"]) == (8_000, 800_000, 800_000)
     assert o["grand_total"] == 1_000_000   # dokumen asal tidak diubah

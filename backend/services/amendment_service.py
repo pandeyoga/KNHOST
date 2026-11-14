@@ -641,6 +641,8 @@ async def propose(doc_type: str, doc_id: str, reason_code: str,
         # (HTTP 409 — AmendmentError dipetakan router ke 400.)
         from services.book_date import periksa_periode_dokumen_409
         await periksa_periode_dokumen_409(amd.get("entity_id") or "", None, jenis="nota kredit")
+        from services import credit_note_service as cns   # PK-32 (FX-12) — batas total nota kredit (409)
+        await cns.assert_cap(await _load_order(doc_id), abs(float(amd["impact"]["delta"] or 0)))
     await db[AMD_COLL].insert_one(dict(amd))
     if amd["method"] in _NOTE_METHODS:
         await _yield_to_earlier_note(amd)
@@ -807,6 +809,9 @@ async def decide(amd_id: str, action: str, actor: Dict[str, Any],
         await periksa_periode_dokumen_409(amd.get("entity_id") or "", None, jenis="nota kredit")
     if amd.get("method") in _NOTE_METHODS:
         await _assert_note_still_valid(amd)
+    if amd.get("method") == "credit_note":   # PK-32 (FX-12) — batas total nota kredit, sebelum putusan ditulis (409)
+        from services import credit_note_service as cns
+        await cns.assert_cap(await _load_order(amd["doc_id"]), abs(float(amd["impact"]["delta"] or 0)))
 
     res = await db[AMD_COLL].update_one({"id": amd_id, "status": "pending_approval"}, {"$set": {
         "status": "approved", "decided_by": actor.get("name", ""),
@@ -815,7 +820,15 @@ async def decide(amd_id: str, action: str, actor: Dict[str, Any],
     if not res.modified_count:   # KN-E04(c) — klik ganda / dua penyetuju
         raise AmendmentError(f"Amandemen {amd['number']} sudah diputus pihak lain.")
     amd = safe_doc(await db[AMD_COLL].find_one({"id": amd_id}, {"_id": 0}))
-    amd = await _apply(amd, actor, auto=False)
+    try:
+        amd = await _apply(amd, actor, auto=False)
+    except Exception as exc:
+        from services.credit_note_service import CreditNoteError
+        if isinstance(exc, CreditNoteError):   # PK-32 — kalah balapan batas nota: usulan kembali menunggu putusan
+            await db[AMD_COLL].update_one({"id": amd_id, "status": "approved"}, {"$set": {
+                "status": "pending_approval", "decided_by": "", "decided_by_id": "", "decided_at": "",
+                "decision_note": "", "updated_at": now_iso()}})
+        raise
     await _close_approval_notice(amd_id, "disetujui", actor)
     return safe_doc(await db[AMD_COLL].find_one({"id": amd["id"]}, {"_id": 0}))
 
@@ -926,14 +939,16 @@ async def _apply_re_derive(amd: Dict[str, Any], actor: Dict[str, Any]) -> List[D
 
 
 async def _apply_note(amd: Dict[str, Any], actor: Dict[str, Any]) -> List[Dict[str, Any]]:
-    """Dokumen sudah terbit → TERBITKAN NOTA. Dokumen asal TIDAK disentuh angkanya."""
+    """Dokumen sudah terbit → TERBITKAN NOTA. Dokumen asal TIDAK disentuh angkanya.
+
+    PK-32 — nota lahir lewat mesin nota (`credit_note_service.issue` lalu `settle`): batas total nota kredit, bagian
+    pendapatan yang benar-benar diakui (sisanya tertangguh ke surat jalan berikutnya), kelebihan bayar tetap uang muka,
+    nota debit langsung menjadi tagihan tambahan (K-14), jurnal lewat pintu tahan-gagal. Penomoran tidak berubah."""
+    from services import credit_note_service as cns
     order = await _load_order(amd["doc_id"])
     entity_id = order.get("entity_id") or ""
     kind = "credit_note" if amd["method"] == "credit_note" else "debit_note"
     prefix = "CN-" if kind == "credit_note" else "DN-"
-    number = await next_doc_number("credit_notes", "number", prefix,
-                                   entity_id=entity_id or None)
-
     delta = float(amd["impact"]["delta"])
     gross = round(abs(delta), 2)
     before = amd["before"]
@@ -941,35 +956,23 @@ async def _apply_note(amd: Dict[str, Any], actor: Dict[str, Any]) -> List[Dict[s
     ppn_delta = round(abs(float(after.get("ppn_amount", 0) or 0)
                           - float(before.get("ppn_amount", 0) or 0)), 2)
     net = round(gross - ppn_delta, 2)
-
+    if kind == "credit_note":   # PERIKSA sebelum nomor diambil (409 tanpa nota baru)
+        await cns.assert_cap(order, gross)
+    number = await next_doc_number("credit_notes", "number", prefix,
+                                   entity_id=entity_id or None)
+    note_doc = await cns.issue(
+        kind=kind, source="amendment", order=order, number=number, net=net, ppn=ppn_delta, actor=actor,
+        lines=[{"product_id": c.get("product_id"), "product_name": c.get("product_name"),
+                "field": c.get("field"), "label": c.get("label"), "from": c.get("from"), "to": c.get("to")}
+               for c in amd.get("changes") or []],
+        refs={"amendment_id": amd["id"], "amendment_number": amd["number"], "reason_code": amd["reason_code"],
+              "reason_label": amd["reason_label"], "note": amd.get("note", "")},
+        extra={"created_by": actor.get("name", ""), "direction": "decrease" if delta < 0 else "increase"})
+    note_doc = await cns.settle(note_doc["id"], actor)
     now = now_iso()
-    note_doc = {
-        "id": new_id("cn" if kind == "credit_note" else "dn"), "number": number,
-        "kind": kind, "source": "amendment",
-        "amendment_id": amd["id"], "amendment_number": amd["number"],
-        "order_id": order["id"], "order_number": order.get("number", ""),
-        "customer_id": order.get("customer_id"), "customer_name": order.get("customer_name", ""),
-        "entity_id": entity_id,
-        "reason_code": amd["reason_code"], "reason_label": amd["reason_label"],
-        "note": amd.get("note", ""),
-        "lines": [{"product_id": c.get("product_id"), "product_name": c.get("product_name"),
-                   "field": c.get("field"), "from": c.get("from"), "to": c.get("to")}
-                  for c in amd.get("changes") or []],
-        "net_amount": net, "ppn_amount": ppn_delta, "gross_amount": gross,
-        "direction": "decrease" if delta < 0 else "increase",
-        "status": "issued",
-        "created_by": actor.get("name", ""), "created_at": now, "updated_at": now,
-        "refs": [],   # ditulis lewat services/doc_refs_service (dua arah) setelah insert
-    }
-    await db.credit_notes.insert_one(dict(note_doc))
-    if kind == "credit_note":
-        await _settle_credit_note(note_doc, order)
-    else:
-        # Penagihan tambahan (jatuh tempo, cara tagih) belum diputuskan — nota tercatat, jurnal/AR menunggu.
-        await db.credit_notes.update_one({"id": note_doc["id"]}, {"$set": {
-            "billing_status": "awaiting_billing_rule", "open_amount": gross}})
 
-    # Dokumen asal HANYA menerima jejak — nominalnya sengaja tidak diubah sama sekali.
+    # Dokumen asal HANYA menerima jejak — nominalnya sengaja tidak diubah sama sekali (tagihan tambahan nota debit
+    # berdiri di `extra_billing_lines`, bukan di `grand_total`/`items`).
     await db.sales_orders.update_one({"id": order["id"]}, {
         "$inc": {"amendment_count": 1},
         "$set": {"last_amendment_id": amd["id"], "last_amendment_number": amd["number"],
@@ -998,56 +1001,6 @@ async def _apply_note(amd: Dict[str, Any], actor: Dict[str, Any]) -> List[Dict[s
                           "amends", note=amd["reason_label"])
     return [{"rel": "issued", "doc_type": kind, "doc_id": note_doc["id"],
              "doc_number": number, "note": f"{rupiah(gross)}"}]
-
-
-async def _settle_credit_note(note: Dict[str, Any], order: Dict[str, Any]) -> None:
-    """L02 LN-022-T03 — nota kredit amandemen: kurangi sisa tagihan pesanan, sisanya jadi saldo kredit
-    pelanggan, lalu jurnal (idempoten per nota)."""
-    from services import gl_service, store_credit_service
-    from services.customer_service import _order_paid
-    full = float(note["gross_amount"])
-    # Nota Debit yang belum ditagih (tanpa jurnal/AR) di-offset dulu — bukan memotong piutang asal.
-    offset = 0.0
-    async for dn in db.credit_notes.find(
-            {"order_id": order["id"], "kind": "debit_note", "billing_status": "awaiting_billing_rule"},
-            {"_id": 0}).sort("created_at", 1):
-        avail = float(dn.get("open_amount", dn.get("gross_amount")) or 0)
-        take = round(min(full - offset, avail), 2)
-        if take <= 0:
-            continue
-        left = round(avail - take, 2)
-        await db.credit_notes.update_one({"id": dn["id"]}, {
-            "$set": {"open_amount": left, "updated_at": now_iso(),
-                     **({"billing_status": "offset_by_credit_note"} if left <= 0.005 else {})},
-            "$push": {"offsets": {"credit_note_id": note["id"], "credit_note_number": note["number"],
-                                   "amount": take, "at": now_iso()}}})
-        offset = round(offset + take, 2)
-    gross = round(full - offset, 2)
-    if gross > 0.005 and offset > 0:
-        ppn = round(float(note.get("ppn_amount") or 0) * gross / full, 2)
-        note = {**note, "net_amount": round(gross - ppn, 2), "ppn_amount": ppn}
-    open_amt = round(float(order.get("grand_total") or 0) - _order_paid(order), 2)
-    ar_part = round(min(gross, max(open_amt, 0.0)), 2)
-    sc_part = round(gross - ar_part, 2)
-    if ar_part > 0:
-        # PK-19 — nota kredit amandemen menempel lewat SATU fungsi alokasi.
-        from services import ar_allocation_service as _aas
-        await _aas.allocate(kind="nota_kredit", order_id=order["id"], amount=ar_part, source_id=note["id"],
-                            source_number=note["number"], customer_id=order.get("customer_id") or "",
-                            entity_id=order.get("entity_id") or note.get("entity_id") or "", date=now_iso(),
-                            actor=note.get("created_by") or "system", method="credit_note")
-    je = (await gl_service.post_amendment_credit_note(note, ar_part=ar_part, store_credit_part=sc_part)
-          if gross > 0.005 else None)
-    if sc_part > 0:
-        await store_credit_service.issue(
-            customer_id=order.get("customer_id") or "", entity_id=note.get("entity_id", ""), amount=sc_part,
-            ref_type="credit_note", ref_id=note["id"], ref_number=note["number"],
-            note=f"Sisa nota kredit amandemen {note['number']}", je_id=(je or {}).get("id", ""),
-            customer_name=order.get("customer_name", ""))
-    await db.credit_notes.update_one({"id": note["id"]}, {"$set": {
-        "status": "posted" if gross > 0.005 else "offset", "ar_applied": ar_part,
-        "store_credit_amount": sc_part, "debit_note_offset": offset,
-        "journal_entry_id": (je or {}).get("id", ""), "updated_at": now_iso()}})
 
 
 async def _close_approval_notice(amd_id: str, outcome: str, actor: Dict[str, Any]) -> None:
@@ -1112,7 +1065,15 @@ async def stats(flt: Dict[str, Any]) -> Dict[str, Any]:
     return out
 
 
+async def notes_for_amendment(amd_id: str) -> List[Dict[str, Any]]:
+    """PK-32 — nota hasil satu amandemen (status kosakata baru, `gl_status`, `effects`, bagian tertangguh)."""
+    from services.credit_note_service import normalize
+    rows = await db.credit_notes.find({"amendment_id": amd_id}, {"_id": 0}).to_list(50)
+    return [safe_doc(normalize(r)) for r in rows]
+
+
 async def notes_for_order(order_id: str) -> List[Dict[str, Any]]:
     rows = await db.credit_notes.find(   # + nota kredit batal item OD (keputusan owner 2026-10-21)
         {"order_id": order_id, "source": {"$in": ["amendment", "od_item_cancel"]}}, {"_id": 0}).to_list(500)
-    return [safe_doc(r) for r in rows]
+    from services.credit_note_service import normalize   # PK-32 — status kosakata baru (`offset` = posted)
+    return [safe_doc(normalize(r)) for r in rows]

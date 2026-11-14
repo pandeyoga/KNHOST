@@ -23,6 +23,7 @@ EPS = 1.0   # toleransi pembulatan Rupiah
 CLOSED = ("done", "cancelled", "rejected", "void", "expired")
 PROJ = {"_id": 0, "id": 1, "entity_id": 1, "status": 1, "is_sample": 1, "payment_term_code": 1, "payment_term": 1,
         "payment_term_name": 1, "grand_total": 1, "total_amount": 1, "paid_total": 1, "dispatch_payment_release": 1,
+        "extra_billing_lines": 1,
         "order_number": 1, "number": 1, "sample_billing": 1, "sample_payment_status": 1}
 
 
@@ -58,7 +59,10 @@ async def evaluate(order: Dict[str, Any], cache: Optional[Dict] = None) -> Dict[
     code = order.get("payment_term_code") or order.get("payment_term") or ""
     term = await _term(code, order.get("entity_id") or "", cache)
     pct = float((term or {}).get("dp_percent") or 0)
+    from services.customer_service import _order_grand_total   # PK-32 — nilai tagihan (+ tagihan tambahan)
     grand = round(float(order.get("grand_total") or order.get("total_amount") or 0), 2)
+    if order.get("extra_billing_lines"):
+        grand = round(_order_grand_total({**order, "grand_total": grand}), 2)
     paid = round(float(order.get("paid_total") or 0), 2)
     required = round(grand * pct / 100.0, 2)
     mode = await _mode(order.get("entity_id") or "", cache)

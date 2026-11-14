@@ -50,6 +50,16 @@ def _mk(suffix, status="shipped"):
           "payments": [], "paid_total": 0, "payment_status": "pending", "amendment_count": 0, "timeline": [],
           "notes": "TEST_L022T03E", "backorders": [], "has_backorder": False}
     DB.sales_orders.insert_one(dict(so))
+    if status in ("shipped", "partially_shipped", "done"):
+        # PK-32 (FX-14) — pesanan terkirim punya pendapatan yang sudah diakui; nota amandemen hanya membalik bagian itu.
+        gt, ppn = float(so["grand_total"]), float(so.get("ppn_amount") or 0)
+        DB.journal_entries.insert_one({
+            "id": f"je_TEST_l022e_{uuid.uuid4().hex[:8]}", "source_type": "sales_order", "source_id": sid,
+            "ref": {"order_id": sid}, "status": "posted", "entity_id": so["entity_id"],
+            "description": "TEST_L022T03E fixture pendapatan",
+            "lines": [{"account_code": "1-1200", "debit": gt, "credit": 0.0},
+                      {"account_code": "4-1000", "debit": 0.0, "credit": round(gt - ppn, 2)}]
+            + ([{"account_code": "2-1200", "debit": 0.0, "credit": ppn}] if ppn else [])})
     return so
 
 
@@ -214,8 +224,8 @@ def test_cross_field_pending_notes_do_not_over_credit(H, disc_on):
     assert credited <= true_reduction + 0.02, f"over-credit: credited {credited} vs true reduction {true_reduction}"
 
 
-# --- debit note (unbilled) followed by credit note ---
-def test_unbilled_debit_note_then_credit_note_ar(H):
+# --- debit note (PK-32: langsung ditagih) followed by credit note ---
+def test_billed_debit_note_then_credit_note_ar(H):
     so = _mk("dn_cn")
     a1 = _post(H, "/amendments", _body(so["id"], _ch("price", round(IT["price"] * 1.2, 2)))).json()
     if a1["status"] == "pending_approval":
@@ -226,9 +236,14 @@ def test_unbilled_debit_note_then_credit_note_ar(H):
         a2 = _approve(H, a2["id"]).json()
     assert a2["method"] == "credit_note"
     cn = DB.credit_notes.find_one({"amendment_id": a2["id"]}, {"_id": 0})
-    print("CN after unbilled DN", cn["gross_amount"], "ar_applied", cn["ar_applied"], "sc", cn["store_credit_amount"])
-    # harga kembali ke asal: tagihan riil (AR) tidak pernah naik, jadi AR tidak boleh berkurang
-    assert cn["ar_applied"] == 0, f"AR reduced by {cn['ar_applied']} for a debit note that was never billed"
+    dn = DB.credit_notes.find_one({"amendment_id": a1["id"]}, {"_id": 0})
+    print("CN after billed DN", cn["gross_amount"], "ar_applied", cn["ar_applied"], "sc", cn.get("store_credit_amount"))
+    # PK-32 (K-14) — nota debit sudah menjadi tagihan tambahan (Dr 1-1200), jadi nota kredit yang mengembalikan harga ke
+    # asal mengurangi tagihan itu lagi: piutang & sisa tagihan kembali ke nilai pesanan asal.
+    assert dn["billing_status"] == "billed" and cn["ar_applied"] == round(cn["gross_amount"], 2)
+    cur = DB.sales_orders.find_one({"id": so["id"]}, {"_id": 0})
+    tagihan = float(cur["grand_total"]) + sum(float(x["gross"]) for x in cur.get("extra_billing_lines") or [])
+    assert round(tagihan - sum(float(p["amount"]) for p in cur["payments"]), 2) == round(float(so["grand_total"]), 2)
 
 
 # --- regression ---

@@ -15,6 +15,7 @@ import { FileEdit, Loader2, ReceiptText, ScrollText } from "lucide-react";
 import { formatCurrency } from "../../../utils/formatters";
 import AmendmentProposeModal from "./AmendmentProposeModal";
 import OdCancelNoteActions, { OdCancelNoteInfo } from "./OdCancelNoteActions";
+import { NoteNumber, NoteRecognitionHints, NoteStatusPill } from "./CreditNoteBadges";   // PK-32 — status nota seragam
 import { amendmentsForDoc, errText, methodMeta, statusMeta } from "./amendmentApi";
 import { can } from "../../../config/roles";
 
@@ -134,12 +135,16 @@ export default function AmendmentTrailPanel({ order, currentUser, onRefresh }) {
             )}
             {notes.map((n) => (
               <div key={n.id} data-testid={`amd-note-${n.id}`}
-                className="flex items-center justify-between gap-2 rounded bg-white px-2 py-1 border border-[#E5EEFB] mb-1 last:mb-0">
-                <div className="min-w-0">
-                  <p className="text-[10.5px] font-bold text-[#0058CC]">{n.number}</p>
-                  <p className="text-[9.5px] text-[#6B6B73] truncate">
-                    {n.kind === "credit_note" ? "Nota Kredit" : "Nota Debit"} · {n.reason_label}
-                  </p>
+                className="flex items-start justify-between gap-2 rounded bg-white px-2 py-1 border border-[#E5EEFB] mb-1 last:mb-0">
+                <div className="min-w-0 space-y-0.5">
+                  <NoteNumber note={n} className="text-fs-12" />
+                  <div className="flex flex-wrap items-center gap-1.5">
+                    {n.source !== "od_item_cancel" && <NoteStatusPill note={n} />}
+                    <span className="text-fs-12 text-kn-text-2">
+                      {n.kind === "debit_note" ? "Nota Debit" : "Nota Kredit"} · {n.reason_label}
+                    </span>
+                  </div>
+                  {n.source !== "od_item_cancel" && <NoteRecognitionHints note={n} />}
                   {n.source === "od_item_cancel" && (
                     <>
                       <OdCancelNoteInfo note={n} />

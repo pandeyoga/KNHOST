@@ -33,6 +33,15 @@ def _mk(suffix, status="confirmed", paid=0.0, je=None):
     if je:
         DB.journal_entries.insert_one({"id": f"je_TEST_{suffix}", "lines": [], "entity_id": so["entity_id"],
                                        "description": "TEST_L022T03X fixture", **je(sid)})
+    elif status in ("shipped", "partially_shipped", "done"):
+        # PK-32 (FX-14) — pesanan terkirim punya pendapatan yang sudah diakui; nota amandemen hanya membalik bagian itu.
+        gt, ppn = float(so["grand_total"]), float(so.get("ppn_amount") or 0)
+        DB.journal_entries.insert_one({
+            "id": f"je_TEST_rev_{suffix}", "source_type": "sales_order", "source_id": sid, "status": "posted",
+            "entity_id": so["entity_id"], "description": "TEST_L022T03X fixture",
+            "lines": [{"account_code": "1-1200", "debit": gt, "credit": 0.0},
+                      {"account_code": "4-1000", "debit": 0.0, "credit": round(gt - ppn, 2)}]
+            + ([{"account_code": "2-1200", "debit": 0.0, "credit": ppn}] if ppn else [])})
     return so
 
 
@@ -196,16 +205,19 @@ def test_credit_note_double_approve_and_self_approve(H):
     assert len([p for p in cur["payments"] if p.get("receipt_id") == cn["id"]]) == 1
 
 
-def test_debit_note_no_journal_order_unchanged(H):
+def test_debit_note_billed_order_unchanged(H):
+    """PK-32 (FX-15, K-14) — nota debit = tagihan tambahan (dulu `awaiting_billing_rule` tanpa jurnal); pesanan
+    terkirim penuh → seluruh nilai nota dijurnal `amendment_debit_note`; `items`/`grand_total` tetap."""
     so = _mk("debit", status="shipped")
     amd = _propose(H, so["id"], 1.3)
     assert amd["method"] == "debit_note"
     dn = DB.credit_notes.find_one({"amendment_id": amd["id"]}, {"_id": 0})
-    assert dn["kind"] == "debit_note" and dn["billing_status"] == "awaiting_billing_rule"
-    assert DB.journal_entries.count_documents({"source_id": dn["id"]}) == 0
+    assert dn["kind"] == "debit_note" and dn["billing_status"] == "billed" and dn["status"] == "posted"
+    assert DB.journal_entries.count_documents({"source_type": "amendment_debit_note", "source_id": dn["id"]}) == 1
     cur = DB.sales_orders.find_one({"id": so["id"]}, {"_id": 0})
     assert cur["items"] == so["items"] and cur["grand_total"] == so["grand_total"]
     assert cur["payments"] == []
+    assert [round(x["gross"], 2) for x in cur["extra_billing_lines"]] == [round(dn["gross_amount"], 2)]
 
 
 def test_qty_decrease_below_shipped_blocked(H):

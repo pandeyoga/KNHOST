@@ -152,7 +152,8 @@ AR_DEFINITIONS = {
 
 
 async def recognized_by_order(order_ids: List[str]) -> Dict[str, float]:
-    """Σ piutang yang lahir per pesanan (Dr 1-1200/kas dari jurnal penjualan & per surat jalan)."""
+    """Σ piutang yang lahir per pesanan (Dr 1-1200/kas dari jurnal penjualan, per surat jalan, dan nota debit PK-32).
+    Pengurang piutang nota kredit amandemen tidak dihitung di sini: barisnya ada di `payments[]` (Σ terbayar)."""
     from services.gl_mapping_service import known_codes
     codes = set(await known_codes("penjualan.piutang")) | set(await known_codes("kas_bank.kas_besar"))
     out: Dict[str, float] = {}
@@ -161,7 +162,8 @@ async def recognized_by_order(order_ids: List[str]) -> Dict[str, float]:
     async for je in db.journal_entries.find(
             {"status": {"$ne": "void"}, "$or": [
                 {"source_type": "sales_order", "source_id": {"$in": order_ids}},
-                {"source_type": "shipment_revenue", "ref.order_id": {"$in": order_ids}}]},
+                # PK-32 — tagihan tambahan nota debit yang sudah dijurnal (Dr 1-1200) ikut piutang ledger
+                {"source_type": {"$in": ["shipment_revenue", "amendment_debit_note"]}, "ref.order_id": {"$in": order_ids}}]},
             {"_id": 0, "source_type": 1, "source_id": 1, "ref": 1, "lines": 1}):
         oid = je["source_id"] if je["source_type"] == "sales_order" else (je.get("ref") or {}).get("order_id")
         amt = sum(float(l.get("debit") or 0) for l in je.get("lines") or []
@@ -209,7 +211,7 @@ async def aging_report(entity_id: Optional[str] = None, sales_id: Optional[str] 
         orders = await db.sales_orders.find(
             {"customer_id": {"$in": cust_ids}},
             {"_id": 0, "id": 1, "number": 1, "customer_id": 1, "customer_name": 1,
-             "status": 1, "payment_status": 1, "grand_total": 1, "total_amount": 1,
+             "status": 1, "payment_status": 1, "grand_total": 1, "total_amount": 1, "extra_billing_lines": 1,
              "payments": 1, "created_at": 1, "payment_term_code": 1,
              "payment_term_days": 1, "payment_profile_method": 1, "entity_id": 1},
         ).to_list(20000)
@@ -359,7 +361,7 @@ async def orders_due_soon(offsets: List[int], entity_id: Optional[str] = None,
     orders = await db.sales_orders.find(
         {"customer_id": {"$in": list(cmap.keys())}},
         {"_id": 0, "id": 1, "number": 1, "customer_id": 1, "customer_name": 1,
-         "status": 1, "payment_status": 1, "grand_total": 1, "total_amount": 1,
+         "status": 1, "payment_status": 1, "grand_total": 1, "total_amount": 1, "extra_billing_lines": 1,
          "payments": 1, "created_at": 1, "payment_term_code": 1,
          "payment_term_days": 1, "payment_profile_method": 1, "entity_id": 1},
     ).to_list(20000)

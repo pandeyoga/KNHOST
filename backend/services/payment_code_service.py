@@ -211,6 +211,7 @@ async def ensure_for_order(order: Dict[str, Any]) -> Optional[Dict[str, Any]]:
         return ada
     awalan = _awalan_bersih(await value_of(AWALAN_KEY, {"entity_id": order.get("entity_id") or ""}))
     grand = float(order.get("grand_total") if order.get("grand_total") is not None else order.get("total_amount") or 0)
+    grand += sum(float(x.get("gross") or 0) for x in order.get("extra_billing_lines") or [])   # PK-32 — nilai tagihan
     isi = _isi_kode(order, amount=round(grand * pct / 100.0, 2), due_date="", plan_id="", line_id="",
                     order_level=True, percent=pct)
     kode = await _sisip(awalan, isi, {"order_id": order["id"], "order_level": True})

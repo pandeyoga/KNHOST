@@ -1231,14 +1231,33 @@ async def order_revenue_posted(order_id: str) -> bool:
         {"_id": 0, "id": 1}))
 
 
+#: PK-32 — jurnal nota koreksi pesanan yang ikut menentukan pendapatan yang sudah diakui (`ref.order_id`)
+AMENDMENT_NOTE_SOURCES = ("amendment_credit_note", "amendment_debit_note")
+
+
+async def order_amendment_recognized(order_id: str) -> Dict[str, float]:
+    """PK-32 — {revenue, ppn, ar} neto jurnal nota koreksi pesanan: nota debit menambah (Cr 4-1000 / Cr 2-1200 /
+    Dr 1-1200), nota kredit mengurangi (Dr 4-1000 / Dr 2-1200 / Cr 1-1200)."""
+    flt = {"source_type": {"$in": list(AMENDMENT_NOTE_SOURCES)}, "ref.order_id": order_id}
+    rev = await _sum_lines(flt, ACC_PENDAPATAN, "credit") - await _sum_lines(flt, ACC_PENDAPATAN, "debit")
+    ppn = await _sum_lines(flt, ACC_PPN_OUT, "credit") - await _sum_lines(flt, ACC_PPN_OUT, "debit")
+    ar = await _sum_lines(flt, ACC_PIUTANG, "debit") - await _sum_lines(flt, ACC_PIUTANG, "credit")
+    return {"revenue": round(rev, 2), "ppn": round(ppn, 2), "ar": round(ar, 2)}
+
+
 async def order_revenue_recognized(order_id: str) -> Dict[str, float]:
-    """{revenue, ppn, ar} yang sudah diakui untuk pesanan (legacy + per surat jalan)."""
+    """{revenue, ppn, ar} yang sudah diakui untuk pesanan (legacy + per surat jalan + PK-32 nota koreksi pesanan
+    `amendment_credit_note`/`amendment_debit_note`), sehingga surat jalan penutup mengambil sisa terhadap nilai efektif.
+    Piutang yang dikurangi nota kredit amandemen dihitung dari jurnalnya di sini — baris `payments[]` nota itu
+    (`nota_koreksi`/`nota_tangguh`) tidak dihitung `order_direct_ar_paid`."""
     flt = {"$or": [{"source_type": "sales_order", "source_id": order_id},
                    {"source_type": "shipment_revenue", "ref.order_id": order_id}]}
     rev = await _sum_lines(flt, ACC_PENDAPATAN, "credit")
     ppn = await _sum_lines(flt, ACC_PPN_OUT, "credit")
     ar = await _sum_lines(flt, ACC_PIUTANG, "debit") + await _sum_lines(flt, ACC_KAS_BESAR, "debit")
-    return {"revenue": rev, "ppn": ppn, "ar": round(ar, 2)}
+    amd = await order_amendment_recognized(order_id)
+    return {"revenue": round(rev + amd["revenue"], 2), "ppn": round(ppn + amd["ppn"], 2),
+            "ar": round(ar + amd["ar"], 2)}
 
 
 async def order_effective_totals(order: Dict[str, Any]) -> Dict[str, float]:
@@ -1273,10 +1292,15 @@ def order_advance_total(order: Dict[str, Any]) -> float:
                      if p.get("gl_bucket") == ADVANCE_BUCKET), 2)
 
 
+#: PK-32 — baris `payments[]` nota kredit amandemen: bagian tertangguh (`nota_tangguh`, pendapatannya belum diakui)
+#: dan bagian yang dijurnal Cr 1-1200 (`nota_koreksi`, sudah dihitung `order_revenue_recognized` dari jurnalnya)
+NOTE_BUCKETS = ("nota_koreksi", "nota_tangguh")
+
+
 def order_direct_ar_paid(order: Dict[str, Any], exclude_receipt_id: str = "") -> float:
-    """Σ pembayaran yang LANGSUNG mengkredit Piutang (bukan uang muka)."""
+    """Σ pembayaran yang LANGSUNG mengkredit Piutang (bukan uang muka, bukan baris nota kredit amandemen)."""
     return round(sum(float(p.get("amount") or 0) for p in (order.get("payments") or [])
-                     if p.get("gl_bucket") != ADVANCE_BUCKET
+                     if p.get("gl_bucket") != ADVANCE_BUCKET and p.get("gl_bucket") not in NOTE_BUCKETS
                      and (not exclude_receipt_id or p.get("receipt_id") != exclude_receipt_id)), 2)
 
 
@@ -1433,8 +1457,10 @@ async def post_shipment_revenue(shipment: Dict[str, Any],
         return None
     if await _already_posted("shipment_revenue", shid):
         return None
-    grand = round(order_grand_total(order), 2)
-    ppn_total = round(float(order.get("ppn_amount", order.get("tax", 0)) or 0), 2)
+    # PK-32 (FX-12/FX-14) — basis = NILAI EFEKTIF (nilai tagihan − nota kredit amandemen); tanpa nota = grand total.
+    eff = await order_effective_totals(order)
+    grand = eff["grand"]
+    ppn_total = eff["ppn"]
     rev_total = round(grand - ppn_total, 2)
     if grand <= EPS:
         return None
@@ -1534,10 +1560,13 @@ async def post_sales_order(order: Dict[str, Any]) -> Optional[Dict[str, Any]]:
     # KEB-PDPT tahap 2 — pesanan yang punya surat jalan dijurnal per surat jalan.
     if await db.shipments.find_one({"order_id": sid, "status": {"$nin": list(SHIPMENT_DEAD)}}, {"_id": 0, "id": 1}):
         return None
-    grand = round(order_grand_total(order), 2)
+    # PK-32 — nilai efektif dikurangi bagian yang sudah dijurnal nota koreksi pesanan (tanpa nota = grand total).
+    eff = await order_effective_totals(order)
+    amd = await order_amendment_recognized(sid)
+    grand = round(eff["grand"] - amd["revenue"] - amd["ppn"], 2)
     if grand <= EPS:
         return None
-    ppn = round(float(order.get("ppn_amount", order.get("tax", 0)) or 0), 2)
+    ppn = round(eff["ppn"] - amd["ppn"], 2)
     is_cash = order_payment_method(order) in NON_AR_METHODS
     debit_acc = ACC_KAS_BESAR if is_cash else ACC_PIUTANG
     num = order.get("number", sid)

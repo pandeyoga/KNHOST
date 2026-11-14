@@ -107,8 +107,10 @@ async def roll_rows(ret: Dict[str, Any]) -> List[Dict[str, Any]]:
 
 
 async def _net_price(order: Dict[str, Any], pid: str) -> float:
+    """Harga neto per satuan pada NILAI EFEKTIF pesanan (PK-32: harga asal + koreksi nota yang sudah terbit)."""
+    from services.amendment_service import effective_order
     from services.return_compensation_service import _net_unit_price
-    return await _net_unit_price(order, pid)
+    return await _net_unit_price(await effective_order(order) if order else order, pid)
 
 
 async def plan_event(ret: Dict[str, Any], decisions: List[Dict[str, Any]], payout: str = "",
@@ -196,7 +198,8 @@ async def plan_event(ret: Dict[str, Any], decisions: List[Dict[str, Any]], payou
         top = max(group_gross, key=group_gross.get)
         group_gross[top] = round(group_gross[top] + resid, 2)
 
-    open_amt = round(float(order.get("grand_total") or 0) - sum(float(p.get("amount") or 0) for p in order.get("payments") or []), 2)
+    from services.customer_service import _order_grand_total   # PK-32 — nilai tagihan (+ tagihan tambahan)
+    open_amt = round(_order_grand_total(order) - sum(float(p.get("amount") or 0) for p in order.get("payments") or []), 2)
     from services.return_policy_service import return_assumptions
     bill_first = bool((await return_assumptions(eid)).get("bill_first", True))
     cap = max(open_amt, 0.0) if order else 0.0
@@ -258,7 +261,7 @@ async def plan_event(ret: Dict[str, Any], decisions: List[Dict[str, Any]], payou
             "bill_total": bill_total, "cash_total": round(cash, 2), "saldo_total": round(saldo, 2), "ar_rest": round(ar_rest, 2),
             "exchange_credit": rest["exchange"], "order_number": ret.get("order_number", ""), "source_open": max(open_amt, 0.0),
             "source_bill_checked": True, "post_stock": any(r["qty_stock"] > 0 for r in per_roll),
-            "basis": "Harga transaksi neto SO asal × qty aktual QC (stok) · qty cacat (cutloss) · nominal Finance (diskon)"}
+            "basis": "Harga transaksi neto efektif SO asal × qty aktual QC (stok) · qty cacat (cutloss) · nominal Finance (diskon)"}
 
 
 def _final_status(ret: Dict[str, Any], outcomes: Dict[str, Dict[str, Any]]) -> Tuple[Optional[str], str]:
@@ -287,6 +290,10 @@ async def execute(return_id: str, decisions: List[Dict[str, Any]], actor: Dict[s
     plan = await plan_event(ret, decisions, payout, refund_account_code)
     if plan["problem"]:
         raise RollSettlementError(plan["problem"])
+    if plan["gross_amount"] > 0:
+        # PK-32 (FX-12) — batas total nota kredit pesanan diperiksa SEBELUM klaim/stok/nota (409 tanpa tulisan)
+        from services import credit_note_service as _cns
+        await _cns.assert_cap({"id": ret["order_id"]}, plan["gross_amount"])
     if plan["cash_total"] > 0:
         # PK-20 — rekening penerima refund tunai diperiksa SEBELUM klaim/stok/nota kredit; tersimpan di rencana supaya
         # "Lengkapi" memakai rekening yang sama.
@@ -355,6 +362,44 @@ async def post_settlement_gl(ret: Dict[str, Any], cn: Dict[str, Any], *, plan: O
     return jr
 
 
+async def issue_settlement_note(ret: Dict[str, Any], settlement_id: str, plan: Dict[str, Any],
+                                actor: Dict[str, Any]) -> Optional[Dict[str, Any]]:
+    """PK-32 — Nota Kredit satu penyelesaian per roll lewat mesin nota (`credit_note_service.issue` lalu `settle`):
+    alokasi `plan.bill_total` ke pesanan asal (PK-19), jurnal `post_settlement_gl` (PK-18). Aman diulang: nota yang
+    sudah ada (retur, penyelesaian, tidak `void`) dituntaskan, tidak dibuat lagi. Tanpa nilai → None."""
+    from services import credit_note_service as cns
+    from services import return_service as rs
+    return_id = ret["id"]
+    cn = await db.credit_notes.find_one({"return_id": return_id, "settlement_id": settlement_id,
+                                         "status": {"$ne": "void"}}, {"_id": 0})
+    if not cn and plan["gross_amount"] > 0:
+        seq = next((e.get("seq") for e in ret.get("settlements") or [] if e.get("id") == settlement_id), 0)
+        order = await db.sales_orders.find_one({"id": ret["order_id"]}, {"_id": 0}) or {"id": ret["order_id"]}
+        cn = await cns.issue(
+            kind="credit_note", source="sales_return_roll", order=order,
+            number=await rs.next_credit_note_number(ret.get("entity_id") or None),
+            net=plan["net_amount"], ppn=plan["ppn_amount"], lines=plan["lines"], actor=actor,
+            cogs=plan["cogs_amount"],
+            refs={"return_id": return_id, "return_number": ret.get("number", ""),
+                  "return_type": ret.get("return_type", "retur"), "settlement_id": settlement_id, "settlement_seq": seq},
+            extra={"ppn_rate": plan["ppn_rate"], "cogs_source": plan.get("cogs_source", ""),   # PK-27
+                   "settlement": "per_roll", "split": plan["split"], "bill_scope": "source_order", "ar_applied": 0,
+                   "excess_amount": round(plan["gross_amount"] - plan["bill_total"], 2),
+                   "refund_account_code": plan["refund_account_code"], "outcome": "per_roll",
+                   "allocation_amount": plan["bill_total"]})
+        try:
+            from services import doc_refs_service as _refs
+            await _refs.safe_link(("credit_note", cn["id"]), ("sales_order", ret["order_id"]), "corrects",
+                                  note="Nota kredit atas retur pesanan ini")
+            await _refs.safe_link(("credit_note", cn["id"]), ("sales_return", return_id), "issued_by",
+                                  note="Diterbitkan oleh retur pelanggan (penyelesaian per roll)")
+        except Exception:   # noqa: BLE001 — jejak dokumen, bukan syarat sah
+            pass
+    if not cn:
+        return None
+    return await cns.settle(cn["id"], actor)
+
+
 async def _apply(return_id: str, settlement_id: str, actor: Dict[str, Any]) -> Dict[str, Any]:
     from services import atomic_claim as saga
     from services import return_service as rs
@@ -378,46 +423,11 @@ async def _apply(return_id: str, settlement_id: str, actor: Dict[str, Any]) -> D
         await db.sales_returns.update_one({"id": return_id, "settlements.id": settlement_id},
                                           {"$addToSet": {"settlements.$.restocked": r["roll_id"]},
                                            "$unset": {"quarantine_released": ""}})
-    # 2) Nota Kredit (satu per penyelesaian).
-    cn = await db.credit_notes.find_one({"return_id": return_id, "settlement_id": settlement_id, "status": {"$ne": "void"}}, {"_id": 0})
-    if not cn and plan["gross_amount"] > 0:
-        cn = {"id": new_id("cn"), "number": await rs.next_credit_note_number(ret.get("entity_id") or None),
-              "return_id": return_id, "return_number": ret.get("number", ""), "order_id": ret["order_id"],
-              "order_number": ret.get("order_number", ""), "customer_id": ret.get("customer_id"),
-              "customer_name": ret.get("customer_name", ""), "entity_id": ret.get("entity_id", ""),
-              "return_type": ret.get("return_type", "retur"), "settlement_id": settlement_id, "settlement_seq": seq,
-              "lines": plan["lines"], "net_amount": plan["net_amount"], "ppn_rate": plan["ppn_rate"],
-              "ppn_amount": plan["ppn_amount"], "gross_amount": plan["gross_amount"], "cogs_amount": plan["cogs_amount"],
-              "cogs_source": plan.get("cogs_source", ""),   # PK-27
-              "settlement": "per_roll", "split": plan["split"], "bill_scope": "source_order", "ar_applied": 0,
-              "excess_amount": round(plan["gross_amount"] - plan["bill_total"], 2),
-              "refund_account_code": plan["refund_account_code"], "outcome": "per_roll", "status": "posted",
-              "created_by": actor.get("name", ""), "created_at": now, "updated_at": now,
-              "gl_status": "pending"}   # PK-18 — jurnal belum dicoba
-        await db.credit_notes.insert_one(dict(cn))
-        try:
-            from services import doc_refs_service as _refs
-            await _refs.safe_link(("credit_note", cn["id"]), ("sales_order", ret["order_id"]), "corrects",
-                                  note="Nota kredit atas retur pesanan ini")
-            await _refs.safe_link(("credit_note", cn["id"]), ("sales_return", return_id), "issued_by",
-                                  note="Diterbitkan oleh retur pelanggan (penyelesaian per roll)")
-        except Exception:   # noqa: BLE001 — jejak dokumen, bukan syarat sah
-            pass
+    # 2–4) Nota Kredit (satu per penyelesaian) lewat mesin nota: potong sisa tagihan SO asal + jurnal (PK-18: jurnal
+    #      gagal → `gl_status: failed`, penyelesaian TETAP dilanjutkan; refund & saldo memakai id jurnal bila ada).
+    cn = await issue_settlement_note(ret, settlement_id, plan, actor)
     if cn:
-        # 3) Potong sisa tagihan SO asal.
-        if plan["bill_total"] > 0 and not float(cn.get("ar_applied") or 0):
-            # PK-19 — satu fungsi alokasi (id baris dari nota kredit → aman diulang saat penyelesaian dilanjutkan).
-            from services import ar_allocation_service as _aas
-            await _aas.allocate(kind="nota_kredit", order_id=ret["order_id"], amount=plan["bill_total"],
-                                source_id=cn["id"], source_number=cn["number"],
-                                customer_id=cn.get("customer_id") or ret.get("customer_id") or "",
-                                entity_id=cn.get("entity_id") or "", date=now, actor=actor.get("name", ""),
-                                method="credit_note")
-            await db.credit_notes.update_one({"id": cn["id"]}, {"$set": {"ar_applied": plan["bill_total"]}})
-        # 4) Jurnal. PK-18 — lewat pintu tahan-gagal: gagal → `gl_status: failed` di nota kredit, penyelesaian TETAP
-        #    dilanjutkan (stok, tagihan sudah berubah); refund & saldo memakai id jurnal bila ada, ulang menautkannya.
-        jr = await post_settlement_gl(ret, cn, plan=plan)
-        je = {"id": jr["journal_entry_id"]} if jr["journal_entry_id"] else None
+        je = {"id": cn.get("journal_entry_id")} if cn.get("journal_entry_id") else None
         # 5) Refund kas.
         if plan["cash_total"] > 0:
             from services import cash_ledger

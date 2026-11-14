@@ -365,7 +365,8 @@ async def customer_360(customer_id: str) -> Optional[Dict[str, Any]]:
     orders = await db.sales_orders.find(
         {"customer_id": customer_id},
         {"_id": 0, "id": 1, "number": 1, "status": 1, "payment_status": 1,
-         "grand_total": 1, "total_amount": 1, "created_at": 1, "sales_name": 1, "payments": 1},
+         "grand_total": 1, "total_amount": 1, "created_at": 1, "sales_name": 1, "payments": 1,
+         "extra_billing_lines": 1},   # PK-32 — nilai tagihan
     ).sort("created_at", -1).to_list(100)
     order_history = []
     for o in orders:
@@ -523,7 +524,7 @@ async def collection_worklist(
     orders = await db.sales_orders.find(
         oq,
         {"_id": 0, "id": 1, "number": 1, "customer_id": 1, "customer_name": 1,
-         "status": 1, "payment_status": 1, "grand_total": 1, "total_amount": 1,
+         "status": 1, "payment_status": 1, "grand_total": 1, "total_amount": 1, "extra_billing_lines": 1,
          "payments": 1, "created_at": 1, "sales_name": 1, "payment_term_code": 1,
          "payment_term_days": 1, "payment_profile_method": 1, "entity_id": 1},
     ).to_list(8000)

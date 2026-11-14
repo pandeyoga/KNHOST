@@ -12,6 +12,7 @@ import PenaltyPanel from "./PenaltyPanel";
 import { accrueNow, errText, fetchMeta, lineMeta, money, planByDoc } from "./paymentApi";
 import { can } from "../../../config/roles";
 import useIntentKey from "../../../hooks/useIntentKey";
+import { billingTotal } from "../../../utils/orderBilling";   // PK-32 — nilai tagihan
 
 export default function SoPaymentPanel({ order, currentUser, onChanged }) {
   const [data, setData] = useState(null);
@@ -23,7 +24,7 @@ export default function SoPaymentPanel({ order, currentUser, onChanged }) {
   const accrueIntent = useIntentKey("pp-denda");   // PK-12 — satu niat hitung denda = satu Idempotency-Key
 
   const docId = order?.id;
-  const total = Number(order?.grand_total || order?.total_amount || 0);
+  const total = billingTotal(order);   // PK-32 — grand total + tagihan tambahan nota debit
 
   const load = useCallback(async () => {
     if (!docId) return;

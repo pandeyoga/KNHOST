@@ -23,9 +23,15 @@ def ctx():
     so = {**src, "id": SID, "number": "TEST/SO-L022T03", "status": "confirmed", "payments": [], "paid_total": 0,
           "payment_status": "pending", "amendment_count": 0, "timeline": [], "notes": "TEST_L022T03"}
     DB.sales_orders.insert_one(so)
-    DB.journal_entries.insert_one({"id": JE, "source_type": "shipment_revenue", "source_id": "shp_TEST_l022t03",
+    # PK-32 (FX-14) — nota amandemen hanya membalik pendapatan yang SUDAH diakui: fixture = jurnal pendapatan per pesanan
+    # sungguhan (dulu jurnal kosong; nota dulu selalu menjurnal seluruh nilainya).
+    gt, ppn = float(so["grand_total"]), float(so.get("ppn_amount") or 0)
+    DB.journal_entries.insert_one({"id": JE, "source_type": "sales_order", "source_id": SID,
                                    "ref": {"order_id": SID}, "status": "posted", "entity_id": so["entity_id"],
-                                   "lines": [], "description": "TEST_L022T03 fixture"})
+                                   "lines": [{"account_code": "1-1200", "debit": gt, "credit": 0.0},
+                                             {"account_code": "4-1000", "debit": 0.0, "credit": round(gt - ppn, 2)}]
+                                   + ([{"account_code": "2-1200", "debit": 0.0, "credit": ppn}] if ppn else []),
+                                   "description": "TEST_L022T03 fixture"})
     yield {"so": so, "admin": _h("admin@kainnusantara.id", "demo12345", so["entity_id"]),
            "manager": _h("manager@kainnusantara.id", "demo12345", so["entity_id"])}
     notes = [n["id"] for n in DB.credit_notes.find({"order_id": SID}, {"id": 1})]
@@ -73,10 +79,16 @@ def test_credit_note_posts_journal_and_reduces_ar_without_editing_order(ctx):
     assert DB.journal_entries.count_documents({"source_type": "amendment_credit_note", "source_id": cn["id"]}) == 1
 
 
-def test_debit_note_recorded_waits_for_billing_rule(ctx):
+def test_debit_note_becomes_extra_billing_line(ctx):
+    """PK-32 (FX-15, K-14) — nota debit langsung menjadi tagihan tambahan (dulu berhenti di `awaiting_billing_rule`);
+    pendapatan pesanan sudah diakui → bagian terkirim (seluruhnya) dijurnal `amendment_debit_note`."""
     it = ctx["so"]["items"][0]
     amd = _propose(ctx, "price", round(float(it["price"]) * 1.2, 2))
     assert amd["method"] == "debit_note"
     dn = DB.credit_notes.find_one({"amendment_id": amd["id"]}, {"_id": 0})
-    assert dn["kind"] == "debit_note" and dn["billing_status"] == "awaiting_billing_rule"
-    assert DB.journal_entries.count_documents({"source_id": dn["id"]}) == 0
+    assert dn["kind"] == "debit_note" and dn["billing_status"] == "billed" and dn["status"] == "posted"
+    jes = list(DB.journal_entries.find({"source_type": "amendment_debit_note", "source_id": dn["id"]}))
+    assert len(jes) == 1 and round(sum(l["debit"] for l in jes[0]["lines"]), 2) == round(dn["gross_amount"], 2)
+    so = DB.sales_orders.find_one({"id": SID}, {"_id": 0})
+    assert [x["debit_note_id"] for x in so.get("extra_billing_lines") or []] == [dn["id"]]
+    assert so["grand_total"] == ctx["so"]["grand_total"]   # dokumen asal tetap

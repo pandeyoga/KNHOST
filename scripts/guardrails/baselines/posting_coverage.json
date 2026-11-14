@@ -1,10 +1,6 @@
 {
  "_catatan": "PK-18 — garis dasar INV-POST-01 (scripts/guardrails/verify_posting_coverage.py). Hanya boleh turun: unit pemilik menghapus barisnya saat pemanggilnya dialihkan ke gl_service.post_durable. `fungsi` = fungsi gl_service yang belum dicakup jenis registri; `panggilan` = pemanggilan telanjang (berkas:fungsi → fungsi gl); `insert_entry` = sisipan jurnal langsung dari luar gl_service.",
  "fungsi": {
-  "post_amendment_credit_note": {
-   "pemilik": "PK-32",
-   "alasan": "nota kredit amandemen dan batal item"
-  },
   "post_bank_holding_allocation": {
    "pemilik": "PK-20",
    "alasan": "alokasi titipan bank (PK-15 memberi penanda di baris mutasi)"
@@ -99,13 +95,6 @@
    "jumlah": 1,
    "pemilik": "PK-05",
    "alasan": "batal bayar faktur pemasok"
-  },
-  {
-   "lokasi": "services/amendment_service.py:_settle_credit_note",
-   "fungsi_gl": "post_amendment_credit_note",
-   "jumlah": 1,
-   "pemilik": "PK-32",
-   "alasan": "nota kredit amandemen"
   },
   {
    "lokasi": "services/ap_payment_service.py:_post_journals",
@@ -218,13 +207,6 @@
    "jumlah": 1,
    "pemilik": "belum ada",
    "alasan": "potong uji mutu"
-  },
-  {
-   "lokasi": "services/od_cancel_credit_note.py:_post_if_revenue_recognized",
-   "fungsi_gl": "post_amendment_credit_note",
-   "jumlah": 1,
-   "pemilik": "PK-32",
-   "alasan": "nota kredit batal item"
   },
   {
    "lokasi": "services/penalty_service.py:adjust",
@@ -417,8 +399,8 @@
   }
  },
  "total": {
-  "fungsi": 19,
-  "panggilan": 44,
+  "fungsi": 18,
+  "panggilan": 42,
   "insert_entry": 12
  }
 }

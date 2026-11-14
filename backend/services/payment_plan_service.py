@@ -236,10 +236,12 @@ async def _load_source(doc_type: str, doc_id: str) -> Dict[str, Any]:
 
 
 def source_total(order: Dict[str, Any]) -> float:
+    """Nilai tagihan dokumen sumber — PK-32: termasuk tagihan tambahan nota debit (`extra_billing_lines[].gross`)."""
+    extra = sum(float(x.get("gross") or 0) for x in order.get("extra_billing_lines") or [] if isinstance(x, dict))
     for k in ("grand_total", "total_amount", "amount"):
         if order.get(k) not in (None, ""):
-            return round(float(order[k]), 2)
-    return 0.0
+            return round(float(order[k]) + extra, 2)
+    return round(extra, 2)
 
 
 def source_paid(order: Dict[str, Any]) -> float:

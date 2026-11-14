@@ -9,26 +9,30 @@ import { Loader2 } from "lucide-react";
 import { formatCurrency } from "../../../utils/formatters";
 import { can } from "../../../config/roles";
 import { errText, reviewCreditNote } from "./amendmentApi";
+import { NoteStatusPill } from "./CreditNoteBadges";
 
-const STATUS = {
-  pending_finance: ["Menunggu Finance", "bg-[#FFF7EC] text-[#9A5B00]"],
-  issued: ["Terbit", "bg-[#E5F6EC] text-[#1B7A43]"],
-  void: ["Dibatalkan Finance", "bg-[#F4F4F4] text-[#666]"],
-};
-
+// PK-32 — status nota memakai kosakata bersama (`CreditNoteBadges`: Menunggu Finance · Terbit · Selesai · Batal);
+// kelebihan bayar dan bagian tertangguh dengan kalimat yang sama dengan nota amandemen.
 export function OdCancelNoteInfo({ note }) {
-  const [label, cls] = STATUS[note.status] || [note.status, "bg-[#F4F4F4] text-[#666]"];
+  const pending = note.status === "pending_finance";
   return (
-    <div className="mt-0.5 space-y-0.5 text-[9.5px] text-[#4A4A52]">
-      <span className={`inline-block rounded px-1.5 py-0.5 font-bold ${cls}`} data-testid={`od-note-status-${note.id}`}>{label}</span>
+    <div className="mt-0.5 space-y-0.5 text-fs-12 text-kn-text-2" data-testid={`od-note-info-${note.id}`}>
+      <NoteStatusPill note={note} testId={`od-note-status-${note.id}`} />
       {note.excess_payment > 0 && (
         <p data-testid={`od-note-excess-${note.id}`}>
-          Kelebihan bayar {formatCurrency(note.excess_payment)} tetap sebagai uang muka pelanggan — kembalikan atau pakai lewat Uang Masuk.
+          Kelebihan bayar {formatCurrency(note.excess_payment)} tetap sebagai uang muka pelanggan.
         </p>
       )}
-      {note.revenue_recognized && <p>Pendapatan pesanan sudah diakui: saat diterbitkan dibuat jurnal koreksi pendapatan &amp; PPN.</p>}
+      {Number(note.deferred_net || 0) > 0 && (
+        <p data-testid={`od-note-deferred-${note.id}`}>
+          {formatCurrency(note.deferred_net)} belum mengurangi pendapatan karena barangnya belum dikirim.
+        </p>
+      )}
+      {pending && note.revenue_recognized && (
+        <p>Pendapatan pesanan sudah diakui: saat diterbitkan dibuat jurnal koreksi pendapatan &amp; PPN.</p>
+      )}
       {(note.corrections || []).map((c, i) => (
-        <p key={i} className="text-[#8E8E93]">Dikoreksi {c.by}: {formatCurrency(c.from)} → {formatCurrency(c.to)} · {c.reason}</p>
+        <p key={i}>Dikoreksi {c.by}: {formatCurrency(c.from)} → {formatCurrency(c.to)} · {c.reason}</p>
       ))}
     </div>
   );

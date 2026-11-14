@@ -51,7 +51,8 @@ FIN_STAGES = (_SHIPPED
               + _sum_lookup("sales_returns", "id", "order_id", "$total_amount", _LIVE, "returned_value")
               + _sum_lookup("ar_receipts", "id", "allocations.order_id", "$allocations.applied", _LIVE, "cash_received",
                             unwind="allocations")
-              + [{"$addFields": {"open_amount": {"$subtract": ["$grand_total", "$cash_received"]},
+              + [{"$addFields": {"open_amount": {"$subtract": [   # PK-32 — nilai tagihan (+ tagihan tambahan nota debit)
+                  {"$add": ["$grand_total", {"$sum": "$extra_billing_lines.gross"}]}, "$cash_received"]},
                                  "net_sales": {"$subtract": ["$net_subtotal", "$returned_value"]}}}])
 _FIN_COLS = ("number:No. SO|status:Status|customer_name:Pelanggan|sales_name:Sales (pada transaksi)"
              "|grand_total:Dipesan (total SO):m|net_subtotal:Dipesan neto (DPP+diskon):m|shipped_qty:Qty dikirim:n"

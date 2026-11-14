@@ -3,11 +3,12 @@
 // Dulu `partial` jatuh ke "Belum bayar" (bohong) atau tampil mentah "partial" (Inggris).
 import { Check } from "lucide-react";
 import { formatCurrency } from "../utils/formatters";
+import { billingTotal } from "../utils/orderBilling";   // PK-32 — nilai tagihan (+ tagihan tambahan nota debit)
 
 export default function PaymentBadge({ order, showRemaining = false, className = "", testId = "payment-badge" }) {
   const ps = String(order?.payment_status || "").toLowerCase();
   const paid = Number(order?.paid_total || 0);
-  const grand = Number(order?.grand_total ?? order?.total_amount ?? 0);
+  const grand = billingTotal(order);
   const partial = ps === "partial" || (ps !== "paid" && paid > 0);
   const remaining = Math.max(grand - paid, 0);
 

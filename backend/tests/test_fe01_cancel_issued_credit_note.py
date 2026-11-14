@@ -73,7 +73,8 @@ def test_batal_item_so_terbit_nota_kredit_menunggu_finance_koreksi_terbit_batal(
     assert _review(fin, cn["id"], {"action": "adjust", "gross_amount": doc["gross_amount"] + 1,
                                    "note": "lebih besar dari nilai baris"}).status_code == 400   # tidak melebihi nilai batal
     iss = _review(fin, cn["id"], {"action": "issue", "note": "OK"})
-    assert iss.status_code == 200 and iss.json()["status"] == "issued" and iss.json()["issued_by"]
+    # PK-32 — kosakata status baru: semua efek tuntas (tanpa jurnal karena pendapatan belum diakui) → `posted`
+    assert iss.status_code == 200 and iss.json()["status"] == "posted" and iss.json()["issued_by"]
     assert not iss.json().get("journal_entry_id")                         # pendapatan belum diakui → tanpa jurnal
     assert _review(fin, cn["id"], {"action": "void", "note": "terlambat dibatalkan"}).status_code == 409
 
@@ -102,8 +103,14 @@ def test_batal_item_so_terbit_tanpa_pembayaran_tidak_membuat_nota(H):  # noqa: F
 def test_pendapatan_historis_diakui_nota_terbit_berjurnal_dan_kredit_pelanggan(H):  # noqa: F811
     od, (i1, i2, i3), so = _so_paid(H)
     je_id = f"je_TEST_FE01CN_{so['id'][-6:]}"
+    # PK-32 (FX-14) — bagian yang dijurnal = pendapatan yang benar-benar diakui: fixture jurnal pendapatan berisi
+    # (dulu baris kosong; nota dulu percaya penanda `revenue_recognized` saja).
+    gt, ppn = float(so["grand_total"]), float(so.get("ppn_amount") or 0)
     DB.journal_entries.insert_one({"id": je_id, "source_type": "sales_order", "source_id": so["id"], "status": "posted",
-                                   "entity_id": so.get("entity_id"), "lines": [], "description": "TEST pendapatan historis"})
+                                   "entity_id": so.get("entity_id"), "description": "TEST pendapatan historis",
+                                   "lines": [{"account_code": "1-1200", "debit": gt, "credit": 0.0},
+                                             {"account_code": "4-1000", "debit": 0.0, "credit": round(gt - ppn, 2)}]
+                                   + ([{"account_code": "2-1200", "debit": 0.0, "credit": ppn}] if ppn else [])})
     cn_id = None
     try:
         r = fe._cancel(H, od["id"], i3["id"], reason="Pelanggan batal item 3 (pendapatan historis)")
@@ -114,7 +121,7 @@ def test_pendapatan_historis_diakui_nota_terbit_berjurnal_dan_kredit_pelanggan(H
         iss = _review(fin, cn_id, {"action": "issue", "note": "Jurnal koreksi pendapatan"})
         assert iss.status_code == 200, iss.text
         doc = iss.json()
-        assert doc["status"] == "issued" and doc["accounting"] == "revenue_correction" and doc["journal_entry_id"]
+        assert doc["status"] == "posted" and doc["accounting"] == "revenue_correction" and doc["journal_entry_id"]
         je = DB.journal_entries.find_one({"id": doc["journal_entry_id"]})
         debit = round(sum(ln["debit"] for ln in je["lines"]), 2)
         assert je["source_type"] == "amendment_credit_note" and debit == round(doc["gross_amount"], 2)

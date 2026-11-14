@@ -276,8 +276,14 @@ def cogs_source_of(sources: List[str]) -> str:
 
 async def _cn_figures(ret: Dict[str, Any], items: List[Dict] = None, post_stock: bool = True) -> Dict[str, Any]:
     """Angka Nota Kredit retur — baris (harga transaksi neto SO asal / nilai diputus Finance), DPP, PPN (rasio efektif
-    SO asal), HPP balik ke stok. SATU hitungan untuk penerbitan dan pratinjau keputusan (23 Okt)."""
-    order = await db.sales_orders.find_one({"id": ret["order_id"]}, {"_id": 0}) or {}
+    SO asal), HPP balik ke stok. SATU hitungan untuk penerbitan dan pratinjau keputusan (23 Okt).
+
+    PK-32 (FX-12) — harga per baris dan rasio PPN dari NILAI EFEKTIF pesanan (`amendment_service.effective_order`:
+    baris asal + koreksi nota yang sudah terbit), bukan harga asal. `fig["order"]` tetap dokumen pesanan apa adanya
+    (sisa tagihan, metode bayar)."""
+    from services.amendment_service import effective_order
+    raw_order = await db.sales_orders.find_one({"id": ret["order_id"]}, {"_id": 0}) or {}
+    order = await effective_order(raw_order) if raw_order else {}
     price_by_pid: Dict[str, float] = {}
     lines_by_pid: Dict[str, List[List[float]]] = {}  # CX-11 — [qty_dasar, harga neto] per BARIS SO
     for it in order.get("items", []):
@@ -344,8 +350,8 @@ async def _cn_figures(ret: Dict[str, Any], items: List[Dict] = None, post_stock:
     ppn = round(net * eff_frac, 2) if has_ppn else 0.0
     gross = round(net + ppn, 2)
 
-    return {"order": order, "lines": lines, "net": net, "cogs": cogs, "ppn_rate": ppn_rate, "ppn": ppn, "gross": gross,
-            "cogs_source": cogs_source_of(sources)}
+    return {"order": raw_order, "lines": lines, "net": net, "cogs": cogs, "ppn_rate": ppn_rate, "ppn": ppn,
+            "gross": gross, "cogs_source": cogs_source_of(sources)}
 
 
 def _default_settlement(order: Dict[str, Any]) -> str:
@@ -363,7 +369,8 @@ async def _source_bill_split(ret: Dict[str, Any], order: Dict[str, Any], settlem
         from services.return_policy_service import return_assumptions
         bill_first = bool((await return_assumptions(ret.get("entity_id", ""))).get("bill_first", True))
     if (settlement in ("ar", "nego") or bill_first) and gross > 0 and order:
-        open_amt = round(float(order.get("grand_total") or 0) - sum(float(p.get("amount") or 0) for p in order.get("payments") or []), 2)
+        from services.customer_service import _order_grand_total   # PK-32 — nilai tagihan (+ tagihan tambahan)
+        open_amt = round(_order_grand_total(order) - sum(float(p.get("amount") or 0) for p in order.get("payments") or []), 2)
         return True, round(min(gross, max(open_amt, 0.0)), 2)
     return False, 0.0
 
@@ -383,13 +390,14 @@ async def _create_credit_note_and_post_gl(
       settlement_type: "cash" (refund tunai) | "ar" (pengurang piutang) | "store_credit" | "nego".
                        None → deteksi dari metode bayar order.
 
-    Nilai retur dari harga item SO asli; HPP dari avg unit_cost roll.
-    Bila return sudah punya credit_note_id → kembalikan yang ada (idempotent)."""
+    Nilai retur dari harga efektif baris SO (PK-32: harga asal + koreksi nota yang sudah terbit); HPP dari potret biaya
+    surat jalan (PK-27). Bila return sudah punya credit_note_id → kembalikan yang ada (idempotent)."""
     if ret.get("credit_note_id"):
         existing = await db.credit_notes.find_one({"id": ret["credit_note_id"]}, {"_id": 0})
         if existing:
             return existing
 
+    from services import credit_note_service as cns
     fig = await _cn_figures(ret, items, post_stock)
     order, lines, net, cogs = fig["order"], fig["lines"], fig["net"], fig["cogs"]
     ppn_rate, ppn, gross = fig["ppn_rate"], fig["ppn"], fig["gross"]
@@ -397,50 +405,31 @@ async def _create_credit_note_and_post_gl(
 
     # Tentukan penyelesaian & flag kas.
     settlement = settlement_type or _default_settlement(order)
-    is_cash = settlement == "cash"
-
-    cn_number = await next_credit_note_number(eid)   # KP-T5 — PT dokumen (N1)
-    now = now_iso()
-    cn = {
-        "id": new_id("cn"), "number": cn_number,
-        "return_id": ret["id"], "return_number": ret.get("number", ""),
-        "order_id": ret["order_id"], "order_number": ret.get("order_number", ""),
-        "customer_id": ret.get("customer_id"), "customer_name": ret.get("customer_name", ""),
-        "entity_id": eid, "return_type": ret.get("return_type", "retur"),
-        "lines": lines, "net_amount": net, "ppn_rate": ppn_rate, "ppn_amount": ppn,
-        "gross_amount": gross, "cogs_amount": cogs,
-        "cogs_source": fig.get("cogs_source", ""),   # PK-27 — surat_jalan | rata_surat_jalan | wac
-        "settlement": settlement,   # cash | ar | store_credit | nego
-        "refund_account_code": (refund_account_code or "1-1100") if settlement == "cash" else "",
-        "outcome": ret.get("outcome", ""),
-        "status": "posted", "created_by": ret.get("settled_by") or ret.get("approved_by", "system"),
-        "created_at": now, "updated_at": now, "gl_status": "pending",   # PK-18 — jurnal belum dicoba
-    }
-    await db.credit_notes.insert_one(dict(cn))
-    await db.sales_returns.update_one(
-        {"id": ret["id"]},
-        {"$set": {"credit_note_id": cn["id"], "credit_note_number": cn_number,
-                  "credit_note_amount": gross, "updated_at": now}})
     # P20 SALE-05 — nota kredit pengurang piutang juga mengurangi sisa tagihan SO (subledger = GL 1-1200).
     # LN-091 — refund/saldo: tagihan SO asal dipotong DULU (disepakati); kelebihan saja yang direfund/jadi saldo.
     # KLR-10 (owner 2026-10-19): hanya SO asal; utang SO lain TIDAK dipotong — kelebihan = pilihan customer refund/saldo.
     applies, ar_amt = await _source_bill_split(ret, order, settlement, gross)
+    extra: Dict[str, Any] = {
+        "ppn_rate": ppn_rate, "cogs_source": fig.get("cogs_source", ""),   # PK-27 — surat_jalan | rata_surat_jalan | wac
+        "settlement": settlement,   # cash | ar | store_credit | nego
+        "refund_account_code": (refund_account_code or "1-1100") if settlement == "cash" else "",
+        "outcome": ret.get("outcome", ""), "created_by": ret.get("settled_by") or ret.get("approved_by", "system"),
+        "allocation_amount": ar_amt if applies else 0.0}
     if applies:
-        cn["excess_amount"] = round(gross - ar_amt, 2)
-        cn["bill_scope"] = "source_order"
-        await db.credit_notes.update_one({"id": cn["id"]}, {"$set": {"excess_amount": cn["excess_amount"],
-                                                                     "bill_scope": "source_order", "ar_applied": 0}})
-        if ar_amt > 0:
-            # PK-19 — nota kredit menempel ke pesanan asal lewat SATU fungsi alokasi (pelanggan, PT, status, sisa).
-            from services import ar_allocation_service as _aas
-            await _aas.allocate(kind="nota_kredit", order_id=ret["order_id"], amount=ar_amt, source_id=cn["id"],
-                                source_number=cn_number,
-                                customer_id=cn.get("customer_id") or order.get("customer_id") or "",
-                                entity_id=eid, date=now, actor=cn.get("created_by") or "system",
-                                method="credit_note")
-            await db.credit_notes.update_one({"id": cn["id"]}, {"$set": {"ar_applied": ar_amt}})
-            cn["ar_applied"] = ar_amt
-    await _post_cn_gl(ret, cn)
+        extra.update({"excess_amount": round(gross - ar_amt, 2), "bill_scope": "source_order", "ar_applied": 0})
+    cn_number = await next_credit_note_number(eid)   # KP-T5 — PT dokumen (N1)
+    # PK-32 — SATU pembuat nota (`credit_note_service.issue`: batas total nota kredit pesanan, periode) lalu `settle`:
+    # alokasi ke pesanan asal (PK-19, `allocate(kind="nota_kredit")`), jurnal retur lewat `_post_cn_gl` (PK-18).
+    cn = await cns.issue(
+        kind="credit_note", source="sales_return", order=order or {"id": ret["order_id"]}, number=cn_number,
+        net=net, ppn=ppn, lines=lines, actor=extra["created_by"], cogs=cogs,
+        refs={"return_id": ret["id"], "return_number": ret.get("number", ""),
+              "return_type": ret.get("return_type", "retur")}, extra=extra)
+    await db.sales_returns.update_one(
+        {"id": ret["id"]},
+        {"$set": {"credit_note_id": cn["id"], "credit_note_number": cn_number,
+                  "credit_note_amount": gross, "updated_at": now_iso()}})
+    cn = await cns.settle(cn["id"], extra["created_by"])
     # FASE G-4 / E-9 — TAUTAN DI TITIK LAHIR. Nota kredit retur dulu hanya tertaut
     # lewat backfill `doc_refs_service.backfill()` yang jalan saat seed, jadi nota
     # kredit yang lahir di produksi menjadi **dokumen yatim** sampai seed berikutnya
@@ -1771,8 +1760,9 @@ async def settle_return(return_id: str, actor: str, outcome: str,
         ret.pop("_id", None)
         if ret.get("gl_status") == "failed" and ret.get("credit_note_id"):
             cn = await db.credit_notes.find_one({"id": ret["credit_note_id"]}, {"_id": 0})
-            if cn:
-                await _post_cn_gl(ret, cn)
+            if cn:   # PK-32 — tuntaskan langkah nota yang belum `done` (jurnal lewat `_post_cn_gl`)
+                from services import credit_note_service as cns
+                await cns.settle(cn["id"], actor)
                 ret = await db.sales_returns.find_one({"id": return_id}, {"_id": 0})
         return ret
     st.assert_transition(ret["status"], target)
@@ -1782,6 +1772,10 @@ async def settle_return(return_id: str, actor: str, outcome: str,
         _pv = await preview_settlement(return_id, outcome, item_decisions, nego_payout, refund_account_code)
     except Exception:  # noqa: BLE001 — pratinjau gagal: kas diperiksa lagi saat dibuat (jalur `cash_failed`)
         _pv = {}
+    if float(_pv.get("gross_amount") or 0) > 0 and not ret.get("credit_note_id"):
+        # PK-32 (FX-12) — batas total nota kredit pesanan diperiksa SEBELUM stok / klaim (409 tanpa tulisan)
+        from services import credit_note_service as _cns
+        await _cns.assert_cap({"id": ret["order_id"]}, float(_pv["gross_amount"]))
     if sum(float(x.get("amount") or 0) for x in (_pv.get("split") or []) if x.get("kind") == "cash") > 0:
         from services import cash_ledger as _cl
         refund_account_id = (await _cl.periksa_rekening(

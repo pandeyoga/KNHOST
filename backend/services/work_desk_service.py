@@ -443,6 +443,7 @@ async def finance_desk(actor: Dict[str, Any], scope: Dict[str, Any],
             {**_ent_q(scope), "status": {"$in": ["shipped", "partially_shipped", "dispatched", "delivered", "done"]},
              "payment_status": {"$ne": "paid"}, "order_type": {"$ne": "sample"}},
             {"_id": 0, "id": 1, "number": 1, "customer_id": 1, "customer_name": 1, "grand_total": 1, "total_amount": 1,
+             "extra_billing_lines": 1,   # PK-32 — nilai tagihan
              "payments": 1, "paid_total": 1, "payment_term_code": 1, "payment_profile_method": 1, "created_at": 1}):
         if o["id"] in _seen or order_payment_method(o) not in NON_AR_METHODS:
             continue

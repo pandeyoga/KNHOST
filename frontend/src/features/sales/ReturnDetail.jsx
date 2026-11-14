@@ -35,6 +35,8 @@ import ReturnReplacementPanel from "./ReturnReplacementPanel";   // LN-090 — p
 import ReturnLogisticsPanel from "./ReturnLogisticsPanel";       // LN-091 KLR-11 — penanggung ongkir
 import DocumentActionsBar from "../documents/DocumentActionsBar";
 import { DetailHeader, Panel, Cell } from "../../components/DetailParts";
+import { NoteStatusPill } from "../finance/amendments/CreditNoteBadges";   // PK-32 — status nota seragam
+import JournalStatusBadge from "../../components/JournalStatusBadge";       // PK-18 — lencana jurnal di samping nomor
 import ReturnRollsPanel from "./ReturnRollsPanel";
 import { AttachmentThumb } from "../../components/AttachmentThumb";   // UAT 24 Okt (P17) — pratinjau tanpa unduh
 import MediaLightbox from "../../components/MediaLightbox";   // 23 Okt — detail & keputusan PER ROLL
@@ -334,7 +336,13 @@ export default function ReturnDetail({
         {fullView && (creditNote || ret.credit_note_number) && (
           <Panel icon={Receipt} title="Nota kredit" testId="return-credit-note-section">
             <div className="grid grid-cols-2 gap-2 md:grid-cols-4">
-              <Cell label="Nomor CN"><span className="font-mono" data-testid="credit-note-number">{creditNote?.number || ret.credit_note_number}</span></Cell>
+              <Cell label="Nomor CN">
+                <span className="inline-flex flex-wrap items-center gap-1.5">
+                  <span className="font-mono" data-testid="credit-note-number">{creditNote?.number || ret.credit_note_number}</span>
+                  <JournalStatusBadge status={creditNote?.gl_status} error={creditNote?.gl_error}
+                    journalEntryId={creditNote?.journal_entry_id} testId="credit-note-journal" />
+                </span>
+              </Cell>
               <Cell label="Nilai bruto" tone="#0058CC"><span className="tabular-nums" data-testid="credit-note-gross">{formatCurrency(creditNote?.gross_amount ?? ret.credit_note_amount)}</span></Cell>
               <Cell label="DPP / PPN"><span className="tabular-nums">{formatCurrency(creditNote?.net_amount)} / {formatCurrency(creditNote?.ppn_amount)}</span></Cell>
               <Cell label="Penyelesaian">
@@ -343,6 +351,12 @@ export default function ReturnDetail({
                 </span>
               </Cell>
             </div>
+            {creditNote && (
+              <div className="flex flex-wrap items-center gap-2 text-fs-12" data-testid="credit-note-status-bar">
+                <span className="font-semibold text-kn-text-2">Status nota</span>
+                <NoteStatusPill note={creditNote} testId="credit-note-status" />
+              </div>
+            )}
             {creditNote?.cogs_amount > 0 && (
               <div className="section-notes tabular-nums" data-testid="credit-note-cogs">
                 Pembalikan HPP (barang kembali ke stok): {formatCurrency(creditNote.cogs_amount)}

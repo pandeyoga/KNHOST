@@ -145,7 +145,9 @@ async def detail(amd_id: str, request: Request) -> Dict[str, Any]:
     if not row:
         raise HTTPException(status_code=404, detail="Amandemen tidak ditemukan")
     await _guard_doc(request, actor, row.get("doc_type", ""), row.get("doc_id", ""))
-    return _clean(row)
+    out = _clean(row)
+    out["notes"] = await amd_svc.notes_for_amendment(amd_id)   # PK-32 — nota hasil: status, jurnal, tangguh
+    return out
 
 
 # ── Putusan ──────────────────────────────────────────────────────────────────

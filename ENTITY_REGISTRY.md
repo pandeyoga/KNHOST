@@ -493,7 +493,11 @@ Key Fields:
 ℹ️ EFEK SAMPING: meng-apply ke sales_orders.payments[] (+paid_total, +payment_status).
    payment_status: unpaid | partial | paid. Credit gate & Collection Worklist membaca payments[] → auto-update.
 ℹ️ Alokasi eksplisit (allocations) atau auto-FIFO (order terbuka tertua) bila kosong.
-ℹ️ SSOT outstanding = grand_total − Σ payments[].amount (lihat customer_service._order_paid).
+ℹ️ SSOT outstanding = nilai tagihan (grand_total + Σ extra_billing_lines.gross, `customer_service._order_grand_total`)
+   − Σ payments[].amount (lihat customer_service._order_paid).
+ℹ️ PK-32 — baris `kind="nota_kredit"` nota kredit AMANDEMEN ber-`gl_bucket`: `nota_koreksi` (bagian yang dijurnal
+   Cr 1-1200) atau `nota_tangguh` (bagian yang pendapatannya belum diakui). Keduanya mengurangi sisa tagihan tetapi tidak
+   dihitung `gl_service.order_direct_ar_paid` (piutangnya dihitung dari jurnal nota di `order_revenue_recognized`).
 ⚠️ JANGAN BUAT: payments, receipts, ar_payments, collections (sebagai koleksi).
 ```
 
@@ -1566,6 +1570,13 @@ Key Fields:
   dpp float   ppn_rate float   ppn_mode enum(excluded|included)   is_pkp bool
   ppn_amount float   grand_total float  (= yang dibayar customer)
   payment_term_code string   payment_term_name string   payment_status enum(pending|paid_partial|paid)
+  # PK-32 (K-14) — tagihan tambahan dari nota debit amandemen; `grand_total` dan `items[]` TIDAK diubah nota
+  extra_billing_lines list [{id "xbl_", debit_note_id, debit_note_number, description, net, ppn, gross,
+                          due_date (tanggal nota + hari termin pesanan), created_at}] — ditulis HANYA
+                          `credit_note_service.settle` ($push bersyarat id nota belum ada)
+  # NILAI TAGIHAN = grand_total + Σ extra_billing_lines.gross (`customer_service._order_grand_total`);
+  # nilai efektif pendapatan = nilai tagihan − Σ nota kredit amandemen (`gl_service.order_effective_totals`)
+  credit_note_lock / credit_note_lock_until  PK-32 — kunci penerbitan nota kredit (batas total, ±30 dtk)
   # PM-T2 — cara bayar & rekening tujuan (master PM-T1), kode bayar:
   payment_method_code string  kode kanonik daftar induk cara bayar | "" (belum ditentukan; pesanan lama & bawaan)
   receiving_account_id string FK → bank_accounts.id (PT pesanan, penerimaan pelanggan, melayani cara bayar) | ""
@@ -4169,4 +4180,36 @@ Pesanan lama: `scripts/backfill_order_price_refs.py` mengisi `list_price = price
 (`YYYY-MM` → `period_type = "month"`, `entity_id` kosong → PT asal sales; kunci kembar = H6). Serah-terima pelanggan
 (`POST /api/customers/{id}/reassign`) kini juga mengganti anggota `pic` `customers.sales_team` (pendamping tetap) dan hanya
 menerima akun dari `incentive_targets.sales_roster` PT pelanggan (KM-06).
+
+## PK-32 — satu pembuat nota kredit / nota debit (`credit_notes`)
+
+Semua dokumen `credit_notes` lahir lewat **`backend/services/credit_note_service.py::issue`** (satu-satunya penyisip,
+INV-POST-01 + uji U12) lalu efeknya dijalankan **`settle`**: retur per barang (`return_service`), retur per roll
+(`return_roll_settlement_service.issue_settlement_note`), amandemen (`amendment_service._apply_note`), batal item Pesanan
+Khusus (`od_cancel_credit_note`), dan migrasi nota debit lama (`scripts/migrasi_pk32_nota_debit_menunggu.py`). Field lama
+dipertahankan; data lama dibaca `credit_note_service.normalize` tanpa migrasi.
+
+| Field | Tipe | Arti |
+|---|---|---|
+| `kind` | `credit_note` · `debit_note` | Dokumen lama tanpa field = `credit_note` |
+| `source` | `sales_return` · `sales_return_roll` · `amendment` · `od_item_cancel` | Nota retur lama tanpa field dibaca dari `settlement_id`/`return_id` |
+| `status` | `pending_finance` · `issued` · `posted` · `void` | `issued` = terbit, efek belum tuntas; `posted` = semua efek tuntas. Nilai lama `offset` dibaca `posted`; nota batal item lama `issued` + `accounting` dibaca `posted`. Label layar: Menunggu Finance · Terbit · Selesai · Batal (`status_label` di jawaban API) |
+| `effects` | `{allocation, store_credit, journal}` = `pending` · `done` · `skipped` | Penanda langkah `settle`; ulang (panel Posting Gagal jenis `credit_note`) meneruskan dari yang belum `done`. Nota debit: `allocation` = baris tagihan tambahan |
+| `gl_status`, `gl_error`, `gl_failed_at`, `journal_entry_id` | seperti PK-18 | Untuk semua sumber |
+| `revenue_reversed_net`, `revenue_reversed_ppn` | angka | Nota kredit amandemen/batal item: bagian yang dijurnal saat terbit (= pendapatan yang sudah diakui − porsi terkirim × nilai efektif baru) |
+| `revenue_added_net`, `revenue_added_ppn` | angka | Nota debit: bagian yang dijurnal saat terbit (porsi terkirim × nilai nota) |
+| `deferred_net`, `deferred_ppn` | angka | Bagian yang tidak dijurnal karena barangnya belum dikirim; diakui surat jalan berikutnya lewat nilai efektif |
+| `shipped_share` | 0..1 | Porsi terkirim saat rencana dibuat |
+| `ar_part`, `store_credit_part` | angka | Jurnal nota koreksi: Cr 1-1200 sebesar piutang yang masih terbuka; sisanya Cr 2-1450 saldo kredit pelanggan (rujukan `credit_note` = id nota) |
+| `excess_payment` | angka | Uang pelanggan di atas nilai efektif baru yang tidak menjadi saldo kredit; tetap uang muka pelanggan (2-1400) |
+| `allocation_amount`, `allocation_deferred` | angka | Rencana baris `payments[]` (≤ sisa tagihan); bagian di atas `ar_part` = `nota_tangguh` |
+| `debit_note_offset`, `debit_note_offsets[]` | angka / larik | Nota kredit amandemen yang menutup nota debit LAMA yang belum ditagih (perilaku lama dipertahankan) |
+| `billing_status` (nota debit) | `billed` | Menggantikan `awaiting_billing_rule` untuk nota baru; nota lama ditagihkan skrip migrasi (H3) |
+| `bill_gross`, `bill_ppn`, `migrated_pk32_at`, `migrated_pk32_by` | | Hanya nota debit lama yang ditagihkan skrip migrasi |
+| `issued_at`, `posted_at`, `voided_at`, `void_reason`, `voided_by` | | Jejak langkah |
+
+Batas: Σ `gross_amount` nota kredit tidak-`void` sumber retur/roll/amandemen ≤ nilai tagihan + 0,01 (`assert_cap`, 409
+"…melebihi nilai pesanan…"; nota batal item tidak dihitung karena total pesanannya sudah turun saat batal). Batal nota
+(`void`) hanya `pending_finance`/`issued` tanpa efek `done` (409 "…sudah mengurangi tagihan atau sudah dijurnal…").
+Jurnal baru `amendment_debit_note` (Dr 1-1200 / Cr 4-1000 / Cr 2-1200, `ref.order_id`).
 

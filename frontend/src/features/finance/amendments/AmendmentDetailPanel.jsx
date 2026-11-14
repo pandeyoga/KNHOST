@@ -22,6 +22,7 @@ import { can } from "../../../config/roles";
 import AmendmentChangeList from "./AmendmentChangeList";
 import AmendmentImpactCard from "./AmendmentImpactCard";
 import { amendmentDetail, decideAmendment, errText, statusMeta } from "./amendmentApi";
+import { NoteNumber, NoteRecognitionHints, NoteStatusPill } from "./CreditNoteBadges";   // PK-32
 
 // UAT 24 Okt (audit UI tahap 2) — G1-05: jejak dokumen dulu mencetak kode mentah (APPLIED_TO, AMENDS, sales_order).
 const REL_LABEL = {
@@ -189,6 +190,23 @@ export default function AmendmentDetailPanel({ amdId, currentUser, onDecided, on
           <PolicyRow label="Kontrol ganda" value={policy.dual_control ? "Aktif" : "Nonaktif"} />
           <PolicyRow label="Dokumen terbit" value={policy.issued_doc_policy === "note_only" ? "Hanya lewat nota" : "Boleh dihitung ulang"} />
         </div>
+
+        {/* PK-32 — nota hasil amandemen: status seragam, lencana jurnal, bagian tertangguh / kelebihan bayar */}
+        {(amd.notes || []).length > 0 && (
+          <div data-testid="amd-detail-notes" className="rounded-md border border-kn-divider p-2 space-y-1.5">
+            <p className="text-fs-12 font-bold uppercase text-kn-text-2">Nota hasil</p>
+            {(amd.notes || []).map((n) => (
+              <div key={n.id} className="space-y-0.5" data-testid={`amd-detail-note-${n.id}`}>
+                <div className="flex flex-wrap items-center gap-1.5">
+                  <NoteNumber note={n} className="text-fs-12" />
+                  <NoteStatusPill note={n} />
+                  <span className="text-fs-12 tabular-nums text-kn-text">{formatCurrency(n.gross_amount)}</span>
+                </div>
+                <NoteRecognitionHints note={n} />
+              </div>
+            ))}
+          </div>
+        )}
 
         {/* Jejak dua arah + dokumen hasil */}
         {(amd.refs || []).length > 0 && (

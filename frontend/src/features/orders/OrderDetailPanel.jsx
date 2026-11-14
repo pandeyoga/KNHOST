@@ -27,6 +27,9 @@ import OrderTransferLinks from "./OrderTransferLinks";
 import RestockPanel from "./RestockPanel";
 // FASE G-1 — jejak koreksi dokumen (amandemen bernomor + nota kredit/debit).
 import AmendmentTrailPanel from "../finance/amendments/AmendmentTrailPanel";
+// PK-32 (K-14) — tagihan tambahan dari nota debit; total tagihan = nilai tagihan.
+import OrderExtraBilling from "./OrderExtraBilling";
+import { billingTotal, extraBillingTotal } from "../../utils/orderBilling";
 // Alokasi manual Admin Sales — Ganti Roll pilihan sistem (izin inventory.pegging).
 import ReallocateRollsModal from "./ReallocateRollsModal";
 // AS-03 — Lepas reservasi SEBAGIAN per baris (Admin Sales, alasan wajib, status SO tetap).
@@ -530,10 +533,23 @@ export function OrderDetailPanel({
               {formatCurrency(sel.grand_total != null ? sel.grand_total : sel.total_amount)}
             </span>
           </div>
+          {extraBillingTotal(sel) > 0 && (
+            <>
+              <BreakRow label="Tagihan tambahan (nota debit)" value={formatCurrency(extraBillingTotal(sel))} />
+              <div className="flex items-center justify-between gap-2" data-testid="order-billing-total-row">
+                <span className="text-fs-12 font-bold uppercase text-kn-text-2">Total tagihan</span>
+                <span data-testid="order-billing-total" className="text-fs-14 font-bold text-kn-action">
+                  {formatCurrency(billingTotal(sel))}
+                </span>
+              </div>
+            </>
+          )}
           {sel.payment_term_name && (
             <p className="text-[10.5px] text-[#6B6B73] pt-0.5">Termin: <span className="font-semibold text-[#3C3C43]">{sel.payment_term_name}</span></p>
           )}
         </div>
+
+        <OrderExtraBilling order={sel} />
 
         {sel.order_type !== "sample" && <OrderPaymentInstructionCard order={sel} />}
 
