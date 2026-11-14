@@ -46,6 +46,22 @@ def s_admin():
     return _login("admin@kainnusantara.id")
 
 
+#: PK-29 (K-06) — true-up persediaan bawaannya hanya untuk PT yang belum bertransaksi; PT data acuan sudah bertransaksi.
+#: Uji pembulatan di bawah menyetel pengaturan lapisan PT ini ke `false` lebih dulu dan memulihkannya sesudahnya.
+TRUEUP_KEY = "inventory.trueup_hanya_saldo_awal"
+
+
+@pytest.fixture
+def trueup_bebas(s_admin):
+    r = s_admin.put(f"{BASE_URL}/api/config/values", json={"items": [{
+        "key": TRUEUP_KEY, "value": False, "scope_type": "entity", "scope_id": ENTITY,
+        "reason": "uji iter258: true-up pembulatan pada PT bertransaksi"}]}, timeout=30)
+    assert r.status_code == 200, r.text[:300]
+    yield
+    s_admin.post(f"{BASE_URL}/api/config/values/clear", json={
+        "key": TRUEUP_KEY, "scope_type": "entity", "scope_id": ENTITY, "reason": "pulihkan uji iter258"}, timeout=30)
+
+
 @pytest.fixture(scope="module")
 def s_manager():
     return _login("manager@kainnusantara.id")
@@ -362,12 +378,12 @@ class TestReconPrecision:
             assert abs(float(row["difference"])) <= 1.0 + 0.005, \
                 f"entity {row['entity_id']} drift {row['difference']} > Rp 1"
 
-    def test_opening_balance_no_post_without_flag(self, s_admin):
+    def test_opening_balance_no_post_without_flag(self, s_admin, trueup_bebas):
         """Bila selisih hanya sen (≤ tol), POST tanpa include_rounding tidak memposting."""
         recon_before = s_admin.get(
             f"{BASE_URL}/api/gl/inventory-reconciliation", timeout=30).json()
-        # Only meaningful if diff is within tolerance
-        small = all(abs(float(r["difference"])) <= 1.0 for r in recon_before["rows"])
+        # Only meaningful if diff is within tolerance — PK-29: true-up hanya untuk PT aktif (ENTITY)
+        small = all(abs(float(r["difference"])) <= 1.0 for r in recon_before["rows"] if r["entity_id"] == ENTITY)
         if not small:
             pytest.skip("difference beyond rounding tolerance; skip 'no-post' guard")
         r = s_admin.post(f"{BASE_URL}/api/gl/inventory-opening-balance",
@@ -378,11 +394,11 @@ class TestReconPrecision:
         posted = int(result.get("posted", 0) or result.get("count", 0) or 0)
         assert posted == 0, f"expected 0 posted without include_rounding, got {result}"
 
-    def test_opening_balance_with_rounding_flag(self, s_admin):
+    def test_opening_balance_with_rounding_flag(self, s_admin, trueup_bebas):
         """include_rounding=True boleh memposting jurnal kecil terhadap 3-2900."""
         recon = s_admin.get(f"{BASE_URL}/api/gl/inventory-reconciliation", timeout=30).json()
-        has_rounding_only = any(
-            r.get("rounding_only") and abs(float(r["difference"])) > 0 for r in recon["rows"])
+        has_rounding_only = any(   # PK-29 — true-up hanya untuk PT aktif (ENTITY)
+            r.get("rounding_only") and abs(float(r["difference"])) > 0 for r in recon["rows"] if r["entity_id"] == ENTITY)
         if not has_rounding_only:
             pytest.skip("no rounding-only residue to clean up")
         r = s_admin.post(
@@ -390,10 +406,11 @@ class TestReconPrecision:
             params={"reason": "iter258 rapikan pembulatan", "include_rounding": True},
             timeout=30)
         assert r.status_code == 200, r.text[:300]
-        # after: recon.total_difference == 0
+        # after: selisih PT aktif == 0 (PK-29 — PT lain tidak ikut disamakan)
         recon2 = s_admin.get(f"{BASE_URL}/api/gl/inventory-reconciliation", timeout=30).json()
-        assert abs(float(recon2["total_difference"])) <= 0.005, \
-            f"after rounding true-up total_difference still {recon2['total_difference']}"
+        row2 = next(r for r in recon2["rows"] if r["entity_id"] == ENTITY)
+        assert abs(float(row2["difference"])) <= 0.005, \
+            f"after rounding true-up difference {ENTITY} still {row2['difference']}"
 
 
 if __name__ == "__main__":

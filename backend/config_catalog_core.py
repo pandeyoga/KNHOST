@@ -486,6 +486,21 @@ E("inventory.drift_alert_rupiah", group="pajak-pembukuan", section="tutup-buku",
           "pemegang akses Akuntansi",
   consumers=("services/inventory_drift_watch.py",), risk="low")
 
+# PK-29 (IV-09, K-06) — true-up persediaan (jurnal ke Ekuitas Saldo Awal) hanya untuk PT yang masih mengisi saldo awal;
+# sesudah PT bertransaksi, selisih dikoreksi lewat dokumennya. Ditegakkan endpoint true-up (`assert_trueup_allowed`);
+# skrip impor stok awal yang memanggil fungsi layanan langsung tidak terkena.
+E("inventory.trueup_hanya_saldo_awal", group="pajak-pembukuan", section="tutup-buku", type="bool", default=True,
+  scopes=("global", "entity"),
+  label="True-up persediaan hanya untuk saldo awal",
+  help="Bila ya, true-up persediaan (tombol saldo awal di Rekonsiliasi Persediaan) hanya bisa dipakai PT yang belum "
+       "punya transaksi persediaan (penerimaan, pengiriman, retur). Sesudah itu selisih harus dikoreksi lewat dokumennya.",
+  impact="Bila dimatikan, selisih berapa pun antara nilai roll dan buku besar bisa disamakan lewat jurnal ke Ekuitas "
+         "Saldo Awal.",
+  example="PT baru mengimpor stok awal Rp 2.000.000.000 → boleh true-up. PT yang sudah berjalan dengan selisih "
+          "Rp 5.000 → ditolak sampai penyebabnya dikoreksi.",
+  risk="high", requires_reason=True, permission=("accounting", "manage"),
+  consumers=("services/gl_service.py:assert_trueup_allowed",))
+
 # T-01 Opsi B (2026-09). Klaim saga yang mati di tengah meninggalkan `saga_lock` —
 # dokumen terkunci, aksi ulang 409. Ambang ini menjawab "sesudah berapa menit kunci
 # dianggap MENGGANTUNG dan admin harus diberi tahu", bukan sekadar sedang berjalan.

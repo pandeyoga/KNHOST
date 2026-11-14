@@ -56,4 +56,6 @@ export const originLabel = (code) => ORIGIN_LABELS[code] || humanize(code);
 export const ROLL_STATUS_LABELS = {
   available: "tersedia", reserved: "dipesan", committed: "terikat", picked: "diambil", packed: "dikemas",
   quarantine: "karantina", hold: "ditahan",
+  // PK-29 — status lain yang DIHITUNG rekonsiliasi (`gl_service.OWNED_ROLL_STATUSES`, dikirim server `roll_statuses`)
+  wip: "dalam proses", blocked: "diblokir", damaged: "rusak", in_transit_transfer: "dalam transfer gudang",
 };

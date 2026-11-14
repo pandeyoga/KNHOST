@@ -1139,7 +1139,7 @@ async def layer_gl_invariants(db):
     BUTA terhadap keseimbangan jurnal & rekonsiliasi persediaan.
       GL-1 (FAIL): setiap JE non-void seimbang (Σline.debit == Σline.credit == header).
       GL-2 (FAIL): trial balance seimbang per entitas.
-      GL-3 (WARN): rekonsiliasi persediaan subledger(rolls) vs GL 1-1300 (INV-GL-DRIFT).
+      GL-3 (WARN): rekonsiliasi persediaan per PT = `gl_service.inventory_reconciliation()` (INV-GL-DRIFT, PK-29).
       GL-4 (WARN): order berpendapatan tanpa jurnal HPP (COGS-ZERO detector).
     """
     from collections import defaultdict
@@ -1178,33 +1178,31 @@ async def layer_gl_invariants(db):
         results["pass"] += 1
         line("PASS", G, f"GL: trial balance seimbang untuk {len(tb)} buku entitas")
 
-    # GL-3 (WARN): rekonsiliasi persediaan subledger(rolls) vs GL 1-1300
-    PHYS = ["available", "reserved", "committed", "picked", "packed", "quarantine", "hold"]
+    # GL-3 (WARN, INV-GL-DRIFT): rekonsiliasi persediaan per PT. PK-29 (`02` D1) — SATU rumus: memanggil
+    #   `gl_service.inventory_reconciliation()` (status roll `OWNED_ROLL_STATUSES`, nilai roll sen bulat, akun persediaan
+    #   hasil pemetaan per PT, kursor tanpa batas) dan melaporkan baris ber-`reconciled` salah. Rumus sendiri (daftar status
+    #   lain, penjumlahan pecahan, kode 1-1300, batas 100.000) dihapus.
     ents = await db.business_entities.find({}, {"_id": 0, "id": 1}).to_list(100)
-    gl_inv = defaultdict(float)
-    for je in jes:
-        eid = je.get("entity_id", "")
-        for l in je.get("lines", []):
-            if l.get("account_code") == "1-1300":
-                gl_inv[eid] += float(l.get("debit", 0) or 0) - float(l.get("credit", 0) or 0)
-    drift = []
-    for e in ents:
-        eid = e["id"]
-        rolls = await db.inventory_rolls.find(
-            {"owner_entity_id": eid, "status": {"$in": PHYS}},
-            {"_id": 0, "length_remaining": 1, "unit_cost": 1, "base_unit_cost": 1}).to_list(100000)
-        sub = round(sum(float(r.get("length_remaining", 0) or 0) *
-                        float(r.get("unit_cost") or r.get("base_unit_cost") or 0) for r in rolls), 2)
-        diff = round(sub - round(gl_inv.get(eid, 0.0), 2), 2)
-        if abs(diff) > 1.0:
-            drift.append(f"{eid}(Δ{diff:,.0f})")
-    if drift:
+    sys.path.insert(0, str(ROOT / "backend"))
+    try:
+        from services import gl_service as _gls
+        recon = await _gls.inventory_reconciliation()
+    except Exception as exc:  # noqa: BLE001 — penjaga tidak boleh buta diam-diam
+        recon = None
+        results["fail"] += 1
+        line("FAIL", R, f"GL: rekonsiliasi persediaan tidak bisa dihitung ({exc.__class__.__name__}: {exc})")
+    drift = [f"{r['entity_id']}(Δ{r['difference']:,.0f})" for r in (recon or {}).get("rows", [])
+             if not r.get("reconciled")]
+    if recon is None:
+        pass
+    elif drift:
         results["warn"] += 1
-        line("WARN", Y, f"GL: {len(drift)} entitas drift persediaan subledger vs GL 1-1300: {drift[:5]}",
-             "→ jalankan post_inventory_opening_balance / cek posting GR·COGS·retur·LC (INV-GL-DRIFT)")
+        line("WARN", Y, f"GL: {len(drift)} PT berselisih persediaan nilai roll vs buku besar: {drift[:5]}",
+             "→ telusuri lewat Buku Besar › Rekonsiliasi Persediaan › Jelaskan selisih; true-up hanya untuk saldo "
+             "awal (K-06) — cek posting GR·HPP·retur·biaya masuk (INV-GL-DRIFT)")
     else:
         results["pass"] += 1
-        line("PASS", G, "GL: rekonsiliasi persediaan (subledger rolls == GL 1-1300) per entitas")
+        line("PASS", G, "GL: rekonsiliasi persediaan (nilai roll == saldo akun persediaan) per PT")
 
     # GL-4 (WARN): order berpendapatan tapi tanpa jurnal HPP (COGS-ZERO)
     posted_rev = {je.get("source_id") for je in jes if je.get("source_type") == "sales_order"}

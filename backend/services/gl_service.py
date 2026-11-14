@@ -3714,41 +3714,146 @@ from services.roll_service import PHYSICAL_ROLL_STATUSES  # KN-C05 — satu defi
 OWNED_ROLL_STATUSES = list(PHYSICAL_ROLL_STATUSES) + ["in_transit_transfer"]
 
 
-async def inventory_reconciliation() -> Dict[str, Any]:
-    """Banding nilai persediaan fisik (Σ roll × unit_cost) vs saldo GL 1-1300 per entitas.
+#: PK-29 (IV-05/IV-09) — kebutuhan akun persediaan; saldo buku besar dibaca dari SEMUA akun yang pernah dipetakan untuk
+#: kebutuhan ini di PT itu (`gl_mapping_service.known_codes(…, entity_id)`), bukan kode tetap 1-1300.
+INVENTORY_ACCOUNT_KEY = "persediaan.persediaan"
+#: Jurnal yang TIDAK dihitung sebagai "transaksi persediaan": jurnal saldo awal itu sendiri dan pembaliknya.
+OPENING_SOURCES = ("inventory_opening", "inventory_opening_reversal")
+ROLL_VALUE_FIELDS = {"_id": 0, "length_remaining": 1, "unit_cost": 1, "base_unit_cost": 1}
 
-    AMBANG PEMBULATAN (2026-06c, gap iterasi 256): nilai roll disimpan sebagai float,
-    jadi Σ-nya bisa meninggalkan residu sen (nyata: subledger 582.368.600,01 vs GL
-    582.368.600,00). `inventory_drift_explain()` sudah menggolongkan selisih ≤ Rp 1
-    sebagai "pembulatan sen" — layar HARUS memakai ambang yang SAMA, bukan ambang
-    sendiri (dulu 0.01 di layar): satu angka tidak boleh punya dua definisi "sinkron"
-    (INV-HOME-01). Karena itu ambangnya dikirim dari sini.
+
+class TrueupNotAllowed(ValueError):
+    """PK-29 (K-06) — true-up ditolak karena PT sudah punya transaksi persediaan (router → 409)."""
+
+
+async def _inventory_codes(entity_id: str) -> List[str]:
+    from services import gl_mapping_service as _glm
+    return [c for c in await _glm.known_codes(INVENTORY_ACCOUNT_KEY, entity_id) if c]
+
+
+async def accounts_balance_cents(codes: List[str], entity_id: str) -> int:
+    """PK-29 (IV-05) — saldo (debit − kredit) dalam SEN BULAT untuk baris berakun ∈ `codes` pada jurnal tidak-void PT
+    itu. Satu agregasi di database; baris dikelompokkan per pasangan (debit, kredit) lalu tiap nominal dibulatkan ke sen
+    lewat satu fungsi (`core_utils.to_cents`, `02` D5) — Σ round(debit × 100) − Σ round(credit × 100)."""
+    codes = [c for c in codes or [] if c]
+    if not codes or not entity_id:
+        return 0
+    pipe = [{"$match": {"entity_id": entity_id, "status": {"$ne": "void"}, "lines.account_code": {"$in": codes}}},
+            {"$unwind": "$lines"},
+            {"$match": {"lines.account_code": {"$in": codes}}},
+            {"$group": {"_id": {"d": "$lines.debit", "c": "$lines.credit"}, "n": {"$sum": 1}}}]
+    total = 0
+    async for g in db.journal_entries.aggregate(pipe):
+        k = g.get("_id") or {}
+        total += int(g.get("n") or 0) * (to_cents(float(k.get("d") or 0)) - to_cents(float(k.get("c") or 0)))
+    return total
+
+
+async def _owned_rolls_value_cents(entity_id: str) -> int:
+    """Nilai roll milik PT berstatus persediaan (`OWNED_ROLL_STATUSES`) dalam sen — kursor tanpa batas (`02` D4, GL-13);
+    nilai per roll dari SATU fungsi `roll_service.roll_value_cents` (`02` D5)."""
+    total = 0
+    async for r in db.inventory_rolls.find(
+            {"owner_entity_id": entity_id, "status": {"$in": OWNED_ROLL_STATUSES}}, ROLL_VALUE_FIELDS):
+        total += _roll_value_cents(r)
+    return total
+
+
+def _pt_text(name: str) -> str:
+    """"PT {nama}" tanpa menggandakan bentuk badan usaha yang sudah tertulis di nama ("PT Uji", "CV Kanda")."""
+    n = (name or "").strip()
+    return n if re.match(r"^(PT|CV|UD|Koperasi|Yayasan)\.?\s", n, re.IGNORECASE) else f"PT {n}"
+
+
+async def _has_inventory_transactions(entity_id: str, codes: List[str]) -> bool:
+    """Ada jurnal tidak-void PT itu yang menyentuh akun persediaannya selain jurnal saldo awal (`OPENING_SOURCES`)?
+    Pembalik manual (`reversal`) atas jurnal saldo awal ikut dianggap bagian saldo awal."""
+    if not codes:
+        return False
+    async for je in db.journal_entries.find(
+            {"entity_id": entity_id, "status": {"$ne": "void"}, "lines.account_code": {"$in": codes},
+             "source_type": {"$nin": list(OPENING_SOURCES)}},
+            {"_id": 0, "source_type": 1, "ref": 1}):
+        asal = ((je.get("ref") or {}).get("reverses_entry_id") or "") if je.get("source_type") == "reversal" else ""
+        if asal and await db.journal_entries.find_one(
+                {"id": asal, "source_type": {"$in": list(OPENING_SOURCES)}}, {"_id": 0, "id": 1}):
+            continue
+        return True
+    return False
+
+
+async def assert_trueup_allowed(entity_id: str, *, entity_name: Optional[str] = None,
+                                codes: Optional[List[str]] = None) -> None:
+    """PK-29 (K-06) — bila `inventory.trueup_hanya_saldo_awal` benar untuk PT ini DAN PT sudah punya jurnal persediaan
+    selain saldo awal → `TrueupNotAllowed` (pesan siap tampil). Pengaturan salah → lolos (perilaku sebelum PK-29).
+    Dipanggil endpoint true-up dan baris rekonsiliasi (`trueup_allowed`); `post_inventory_opening_balance` (skrip impor
+    stok awal, seed) tidak menegakkannya. `entity_name`/`codes` opsional (sudah dibaca pemanggil)."""
+    from services.config_resolver import value_of
+    if not await value_of("inventory.trueup_hanya_saldo_awal", {"entity_id": entity_id}):
+        return
+    if codes is None:
+        codes = await _inventory_codes(entity_id)
+    if not await _has_inventory_transactions(entity_id, codes):
+        return
+    if entity_name is None:
+        ent = await db.business_entities.find_one({"id": entity_id}, {"_id": 0, "name": 1, "legal_name": 1}) or {}
+        entity_name = ent.get("legal_name") or ent.get("name") or entity_id
+    raise TrueupNotAllowed(
+        f"True-up persediaan hanya untuk pengisian saldo awal. {_pt_text(entity_name)} sudah punya transaksi "
+        "persediaan; telusuri selisihnya lewat \"Jelaskan selisih\" lalu koreksi dokumennya.")
+
+
+async def _trueup_block_reason(entity_id: str, entity_name: str, codes: List[str]) -> str:
+    """Alasan true-up ditolak untuk PT ini (kosong = boleh) — aturan yang SAMA dengan endpoint."""
+    try:
+        await assert_trueup_allowed(entity_id, entity_name=entity_name, codes=codes)
+    except TrueupNotAllowed as exc:
+        return str(exc)
+    return ""
+
+
+async def inventory_reconciliation(entity_ids: Optional[List[str]] = None) -> Dict[str, Any]:
+    """Banding nilai persediaan fisik (Σ roll × unit_cost) vs saldo buku besar akun persediaan, PER PT.
+
+    `entity_ids` = PT yang dibaca (endpoint: penugasan pengguna); `None` = semua PT (skrip, penjaga data, pengingat).
+
+    AMBANG PEMBULATAN (2026-06c, gap iterasi 256): nilai roll disimpan sebagai float, jadi Σ-nya bisa meninggalkan residu
+    sen — `inventory_drift_explain()` menggolongkan selisih ≤ ambang sebagai "pembulatan sen"; layar memakai ambang yang
+    SAMA yang dikirim dari sini (INV-HOME-01).
+
+    PK-29: saldo buku besar = `accounts_balance_cents(known_codes("persediaan.persediaan", PT), PT)` (IV-05); nilai roll
+    dari kursor tanpa batas (GL-13); `reconciled` per baris dan tingkat atas = SEMUA baris sinkron (IV-09) — PT A lebih
+    dan PT B kurang dengan jumlah sama tidak lagi "sinkron". `total_difference` (jumlah aljabar) dipertahankan;
+    `total_abs_difference` = Σ |selisih|. `trueup_allowed`/`trueup_blocked_reason` = aturan K-06 (`assert_trueup_allowed`).
     """
     from services.nilai_pengaturan import nilai
     toleransi = float(await nilai("finance.rounding_tolerance_rupiah"))   # KF-T7
-    ents = await db.business_entities.find(
-        {}, {"_id": 0, "id": 1, "name": 1, "legal_name": 1}).to_list(100)
+    tol_cents = to_cents(toleransi)
+    q: Dict[str, Any] = {} if entity_ids is None else {"id": {"$in": [e for e in entity_ids if e]}}
+    ents = [e async for e in db.business_entities.find(q, {"_id": 0, "id": 1, "name": 1, "legal_name": 1})]
     rows: List[Dict[str, Any]] = []
     for e in ents:
-        rolls = await db.inventory_rolls.find(
-            {"owner_entity_id": e["id"], "status": {"$in": OWNED_ROLL_STATUSES}},
-            {"_id": 0, "length_remaining": 1, "unit_cost": 1, "base_unit_cost": 1}).to_list(100000)
-        sub_cents = sum(_roll_value_cents(r) for r in rolls)
-        sub = from_cents(sub_cents)
-        led = await account_ledger(ACC_PERSEDIAAN, scope={"entity_id": e["id"]})
-        gl_cents = to_cents(float((led or {}).get("balance", 0) or 0))
-        gl_bal = from_cents(gl_cents)
-        diff = from_cents(sub_cents - gl_cents)
-        rows.append({"entity_id": e["id"],
-                     "entity_name": e.get("legal_name") or e.get("name") or e["id"],
-                     "subledger_value": sub, "gl_balance": gl_bal,
-                     "difference": diff,
-                     "rounding_only": bool(0 < abs(diff) <= toleransi)})
-    total = from_cents(sum(to_cents(r["difference"]) for r in rows))
+        name = e.get("legal_name") or e.get("name") or e["id"]
+        codes = await _inventory_codes(e["id"])
+        sub_cents = await _owned_rolls_value_cents(e["id"])
+        gl_cents = await accounts_balance_cents(codes, e["id"])
+        diff_cents = sub_cents - gl_cents
+        alasan = await _trueup_block_reason(e["id"], name, codes)
+        rows.append({"entity_id": e["id"], "entity_name": name,
+                     "subledger_value": from_cents(sub_cents), "gl_balance": from_cents(gl_cents),
+                     "difference": from_cents(diff_cents),
+                     "rounding_only": bool(0 < abs(diff_cents) <= tol_cents),
+                     "reconciled": abs(diff_cents) <= tol_cents,
+                     "inventory_accounts": codes,
+                     "trueup_allowed": not alasan, "trueup_blocked_reason": alasan})
+    out_of_sync = sum(1 for r in rows if not r["reconciled"])
     return {"rows": rows,
-            "total_difference": total,
+            "total_difference": from_cents(sum(to_cents(r["difference"]) for r in rows)),
+            "total_abs_difference": from_cents(sum(abs(to_cents(r["difference"])) for r in rows)),
+            "rows_out_of_sync": out_of_sync,
+            "roll_statuses": list(OWNED_ROLL_STATUSES),   # status roll yang dinilai (layar menampilkannya, `02` L6)
             "rounding_tolerance": toleransi,
-            "reconciled": abs(total) <= toleransi,
+            "reconciled": out_of_sync == 0,
             "as_of": now_iso()}
 
 
@@ -3870,17 +3975,21 @@ async def inventory_drift_explain(entity_id: str) -> Dict[str, Any]:
     Sisi FISIK dari koleksi `inventory_rolls` (`acquired.via` → asal barang), dipotong
     dengan status & rumus nilai yang SAMA dengan `inventory_reconciliation()` supaya
     totalnya tak mungkin berbeda dari angka di layar. Sisi GL dari baris jurnal
-    berakun `1-1300` (`journal_entries.lines`), dikelompokkan per `source_type`.
+    berakun persediaan PT itu (`journal_entries.lines`), dikelompokkan per `source_type`.
+
+    PK-29 — akun persediaan = `known_codes("persediaan.persediaan", PT)` (bukan kode tetap 1-1300) dan saldo dari
+    `accounts_balance_cents`; roll dibaca lewat kursor tanpa batas (GL-13) dalam satu putaran (yang perlu diingat hanya
+    roll terbesar per asal, contoh roll ber-HPP nol, dan tiga roll terbaru), putaran kedua hanya untuk mencari roll yang
+    nilainya persis sebesar selisih.
     """
     from services.nilai_pengaturan import nilai
     toleransi = float(await nilai("finance.rounding_tolerance_rupiah"))   # KF-T7 — sama dengan rekonsiliasi
     ent = await db.business_entities.find_one(
         {"id": entity_id}, {"_id": 0, "id": 1, "name": 1, "legal_name": 1}) or {}
-    rolls = await db.inventory_rolls.find(
-        {"owner_entity_id": entity_id, "status": {"$in": OWNED_ROLL_STATUSES}},
-        {"_id": 0, "id": 1, "roll_no": 1, "length_remaining": 1, "unit_cost": 1,
-         "base_unit_cost": 1, "acquired": 1, "origin_type": 1, "writeoff_je_id": 1,
-         "writeoff_reversed": 1}).to_list(100000)
+    roll_q = {"owner_entity_id": entity_id, "status": {"$in": OWNED_ROLL_STATUSES}}
+    roll_fields = {"_id": 0, "id": 1, "roll_no": 1, "length_remaining": 1, "unit_cost": 1,
+                   "base_unit_cost": 1, "acquired": 1, "origin_type": 1, "writeoff_je_id": 1,
+                   "writeoff_reversed": 1}
 
     per_origin: Dict[str, Dict[str, Any]] = {}
     zero_cost: Dict[str, Any] = {"count": 0, "length": 0.0, "examples": []}
@@ -3890,7 +3999,13 @@ async def inventory_drift_explain(entity_id: str) -> Dict[str, Any]:
     biggest_per_origin: Dict[str, Dict[str, Any]] = {}
     zero_cost_ref: Optional[Dict[str, Any]] = None
     subledger_cents = 0
-    for r in rolls:
+    #: tiga roll paling baru masuk (tanggal turun; tanggal sama → urutan baca) — pengganti `sorted(rolls)[:3]`
+    terbaru_rolls: List[Tuple[str, int, Dict[str, Any]]] = []
+    i = -1
+    async for r in db.inventory_rolls.find(roll_q, roll_fields):
+        i += 1
+        tgl = str((r.get("acquired") or {}).get("date") or "")
+        terbaru_rolls = sorted(terbaru_rolls + [(tgl, i, r)], key=lambda x: (x[0], -x[1]), reverse=True)[:3]
         via = str(((r.get("acquired") or {}).get("via")
                    or r.get("origin_type") or "tidak tercatat"))
         cost = float(r.get("unit_cost") or r.get("base_unit_cost") or 0)
@@ -3915,7 +4030,8 @@ async def inventory_drift_explain(entity_id: str) -> Dict[str, Any]:
                 zero_cost_ref = _roll_ref(r)
 
     gl_by_source: Dict[str, float] = {}
-    inv_codes = await _known("persediaan.persediaan")
+    inv_codes = await _inventory_codes(entity_id)
+    inv_account = await account_for(INVENTORY_ACCOUNT_KEY, entity_id)   # akun yang dipakai jurnal baru PT ini
     async for je in db.journal_entries.find(
             {"entity_id": entity_id, "lines.account_code": {"$in": inv_codes},
              "status": {"$ne": "void"}},
@@ -3928,8 +4044,7 @@ async def inventory_drift_explain(entity_id: str) -> Dict[str, Any]:
                 gl_by_source.get(key, 0.0)
                 + float(line.get("debit") or 0) - float(line.get("credit") or 0), 2)
 
-    led = await account_ledger(ACC_PERSEDIAAN, scope={"entity_id": entity_id})
-    gl_cents = to_cents(float((led or {}).get("balance", 0) or 0))
+    gl_cents = await accounts_balance_cents(inv_codes, entity_id)
     gl_balance = from_cents(gl_cents)
     subledger = from_cents(subledger_cents)
     difference = from_cents(subledger_cents - gl_cents)
@@ -3949,7 +4064,7 @@ async def inventory_drift_explain(entity_id: str) -> Dict[str, Any]:
     #: Roll yang nilainya PERSIS sebesar selisih adalah petunjuk terkuat yang bisa
     #: diberikan tanpa menebak: ia menunjuk satu dokumen untuk diperiksa, bukan kategori.
     if abs(difference) > 1:
-        for r in rolls:
+        async for r in db.inventory_rolls.find(roll_q, roll_fields):
             cost = float(r.get("unit_cost") or r.get("base_unit_cost") or 0)
             nilai = round(float(r.get("length_remaining", 0) or 0) * cost, 2)
             if nilai <= 0 or abs(nilai - abs(difference)) > 1:
@@ -3962,7 +4077,7 @@ async def inventory_drift_explain(entity_id: str) -> Dict[str, Any]:
                 "hint": (f"Masuk lewat {roll_origin_label(acq.get('via') or r.get('origin_type') or '—')}"
                          f" (dokumen {acq.get('ref_id') or '—'}, "
                          f"{str(acq.get('date') or '')[:10]}). Barangnya ada di gudang "
-                         "tetapi nilainya tidak pernah berjurnal ke 1-1300 — periksa "
+                         f"tetapi nilainya tidak pernah berjurnal ke {inv_account} — periksa "
                          "dokumen itu dulu, jangan langsung true-up."),
                 "ref": _roll_ref(r)})
             break
@@ -4013,9 +4128,9 @@ async def inventory_drift_explain(entity_id: str) -> Dict[str, Any]:
             "kind": "jurnal_di_luar_rincian", "value": round(gl_balance - by_source_total, 2),
             "label": "Ada saldo GL yang tidak terwakili rincian sumber di atas",
             "hint": "Kemungkinan jurnal manual/anulir yang bentuknya berbeda — buka Buku "
-                    "Besar akun 1-1300.",
-            "ref": {"kind": "account", "id": ACC_PERSEDIAAN, "number": ACC_PERSEDIAAN,
-                    "q": ACC_PERSEDIAAN, "view": "general-ledger"}})
+                    f"Besar akun {inv_account}.",
+            "ref": {"kind": "account", "id": inv_account, "number": inv_account,
+                    "q": inv_account, "view": "general-ledger"}})
     if 0 < abs(difference) <= toleransi:
         suspects.append({
             "kind": "pembulatan", "value": difference,
@@ -4025,18 +4140,7 @@ async def inventory_drift_explain(entity_id: str) -> Dict[str, Any]:
     # roll yang paling baru masuk supaya ada dokumen konkret untuk diperiksa.
     tertunjuk = {"tanpa_jurnal", "nilai_cocok_selisih", "roll_tanpa_hpp", "pembulatan"}
     if abs(difference) > toleransi and not any(s["kind"] in tertunjuk for s in suspects):
-        terbaru = sorted(
-            ({"roll_no": r.get("roll_no") or "(tanpa nomor)",
-              "via": ((r.get("acquired") or {}).get("via")
-                      or r.get("origin_type") or "—"),
-              "date": str((r.get("acquired") or {}).get("date") or "")[:10],
-              "value": round(float(r.get("length_remaining", 0) or 0)
-                             * float(r.get("unit_cost") or r.get("base_unit_cost") or 0), 2)}
-             for r in rolls),
-            key=lambda x: x["date"], reverse=True)[:3]
-        terbaru_rolls = sorted(
-            rolls, key=lambda r: str((r.get("acquired") or {}).get("date") or ""),
-            reverse=True)[:3]
+        terbaru_rolls = [r for _, _, r in terbaru_rolls]
         terbaru = [{"roll_no": r.get("roll_no") or "(tanpa nomor)",
                     "via": ((r.get("acquired") or {}).get("via")
                             or r.get("origin_type") or "—"),
@@ -4058,6 +4162,7 @@ async def inventory_drift_explain(entity_id: str) -> Dict[str, Any]:
         "entity_id": entity_id,
         "entity_name": ent.get("legal_name") or ent.get("name") or entity_id,
         "subledger_value": subledger, "gl_balance": gl_balance, "difference": difference,
+        "inventory_accounts": inv_codes,   # PK-29 — akun yang dibaca (sama dengan baris rekonsiliasi)
         "physical_by_origin": sorted(({**o, "origin_label": roll_origin_label(o["origin"])}
                                       for o in per_origin.values()), key=lambda s: -s["value"]),
         "gl_by_source": sorted(({"source": k, "source_label": journal_source_label(k), "net": v}
@@ -4069,8 +4174,13 @@ async def inventory_drift_explain(entity_id: str) -> Dict[str, Any]:
 async def post_inventory_opening_balance(actor_name: str = "system",
                                          tag: str = "",
                                          reason: str = "",
-                                         include_rounding: bool = False) -> Dict[str, Any]:
+                                         include_rounding: bool = False,
+                                         entity_ids: Optional[List[str]] = None) -> Dict[str, Any]:
     """True-up saldo GL Persediaan ke nilai subledger per entitas.
+
+    PK-29 — `entity_ids` diisi → hanya PT itu yang diproses (endpoint: PT aktif saja); kosong = semua PT (skrip impor
+    stok awal, seed). Aturan K-06 (`assert_trueup_allowed`) SENGAJA tidak dipasang di sini: skrip impor stok awal
+    memanggil fungsi ini langsung untuk stok yang memang saldo awal; yang ditutup adalah tombol di layar (endpoint).
 
     Dr Persediaan / Cr Ekuitas Saldo Awal (atau sebaliknya bila GL > subledger).
 
@@ -4094,7 +4204,7 @@ async def post_inventory_opening_balance(actor_name: str = "system",
     yang tidak ada di tempat yang dibaca sama saja tidak ada.
     """
     await seed_default_coa()
-    recon = await inventory_reconciliation()
+    recon = await inventory_reconciliation(entity_ids)
     posted: List[Dict[str, Any]] = []
     dasar = (reason or "").strip()
     # `include_rounding` (2026-06c): sisa SEN warisan jurnal lama (≤ ambang

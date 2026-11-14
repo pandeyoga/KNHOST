@@ -40,7 +40,6 @@ ALLOWLIST: dict[tuple[str, int], tuple[int, str]] = {
     ("services/cashflow_forecast_service.py", 50000): (1, "proyeksi arus kas: proyeksi 12 field SO terbuka — hutang T-03"),
     ("services/financial_statement_service.py", 100000): (1, "laporan keuangan: journal_entries tersaring tanggal/entitas, proyeksi lines — hutang T-03 agregasi"),
     ("services/gl_service.py", 50000): (2, "trial balance / buku besar per akun: journal_entries tersaring status+tanggal — hutang T-03 agregasi"),
-    ("services/gl_service.py", 100000): (2, "valuasi persediaan per entitas: rolls fisik per owner, proyeksi sempit — hutang T-03"),
 }
 
 

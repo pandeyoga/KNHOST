@@ -28,6 +28,10 @@ from pagination import is_paged, get_page_params
 
 router = APIRouter(prefix="/api")
 
+#: PK-29 — 403 penjelas selisih untuk PT di luar penugasan (`02` §3.1 Z6).
+PESAN_PERSEDIAAN_PT_LAIN = ("Anda belum punya akses untuk melihat persediaan PT ini. Minta Admin menambahkan akses "
+                            "'Akuntansi & Tutup Buku'.")
+
 
 async def _gl_scope(request: Request, entity_id: Optional[str]) -> Dict[str, Any]:
     """Fragmen filter entitas untuk buku/jurnal (default: entitas aktif)."""
@@ -361,9 +365,15 @@ async def gl_consolidation(request: Request, as_of: Optional[str] = Query(None))
 
 @router.get("/gl/inventory-reconciliation")
 async def gl_inventory_reconciliation(request: Request) -> Dict[str, Any]:
-    """Gelombang 1 F-3 — nilai persediaan subledger (rolls) vs saldo GL per entitas."""
+    """Gelombang 1 F-3 — nilai persediaan subledger (rolls) vs saldo GL per entitas.
+
+    PK-29 — baris hanya untuk PT dalam penugasan pengguna (`allowed_entity_ids`, sama untuk PT aktif mana pun: layar
+    menampilkan semua PT yang boleh dilihat dan tombol true-up memakai baris PT aktif); field `reconciled`,
+    `inventory_accounts`, `trueup_allowed`, `trueup_blocked_reason` per baris, `rows_out_of_sync` dan
+    `total_abs_difference` di tingkat atas."""
     await require_permission(request, "accounting", "view")
-    return await gl_service.inventory_reconciliation()
+    ctx = await entity_ctx(request)
+    return await gl_service.inventory_reconciliation(list(ctx.allowed_entity_ids))
 
 
 @router.get("/gl/zero-cost-rolls")
@@ -388,7 +398,10 @@ async def gl_inventory_drift_explain(request: Request,
     Tidak ada tebakan dan tidak ada jurnal yang diterbitkan di sini.
     """
     await require_permission(request, "accounting", "view")
-    entity_id = resolve_requested_entity(await entity_ctx(request), entity_id)   # PK-09 E6
+    ctx = await entity_ctx(request)
+    if entity_id and entity_id != "all" and entity_id not in ctx.allowed_entity_ids:   # PK-29 — pesan Z6
+        raise HTTPException(status_code=403, detail=PESAN_PERSEDIAAN_PT_LAIN)
+    entity_id = resolve_requested_entity(ctx, entity_id)   # PK-09 E6
     return await gl_service.inventory_drift_explain(entity_id)
 
 
@@ -398,7 +411,7 @@ async def gl_inventory_opening_balance(request: Request,
                                        include_rounding: bool = Query(False)) -> Dict[str, Any]:
     """Gelombang 1 F-3 — posting saldo awal / true-up persediaan (per entitas, idempotent harian).
 
-    FASE P5 — `reason` (opsional di API, WAJIB di layar): true-up menyamakan GL Persediaan
+    FASE P5 — `reason` (PK-29: wajib juga di API): true-up menyamakan GL Persediaan
     dengan nilai fisik roll, artinya ia MENERBITKAN jurnal terhadap ekuitas saldo awal.
     Alasannya ikut tercatat di Jejak Audit supaya selisih yang di-posting bisa
     dipertanggungjawabkan saat tutup buku.
@@ -406,12 +419,28 @@ async def gl_inventory_opening_balance(request: Request,
     Lanjutan 2026-06 — alasan itu sekarang juga ikut ke JURNALNYA (deskripsi + field
     `reason`), bukan berhenti di jejak audit: yang dibaca akuntan saat tutup buku adalah
     jurnal, bukan `audit_logs`.
+
+    PK-29 (IV-09, K-06) — urutan `02` §1 PERIKSA sebelum jurnal apa pun: alasan wajib (≥ 5 huruf) → PT = PT aktif dari
+    konteks (mode "Semua PT" ditolak) → aturan "true-up hanya untuk saldo awal" (`assert_trueup_allowed`) → periode
+    terbuka (`preflight_posting(PT, hari ini)`). Jurnal hanya untuk PT itu; bentuk jawaban tidak berubah.
     """
     actor = await require_permission(request, "accounting", "manage")
+    dasar = (reason or "").strip()
+    if len(dasar) < 5:
+        raise HTTPException(status_code=400, detail="Alasan true-up wajib diisi (minimal 5 huruf).")
+    ctx = await entity_ctx(request)
+    if ctx.view_all or ctx.active_entity_id in ("", "all"):
+        raise HTTPException(status_code=400, detail="Pilih satu PT untuk memposting saldo awal persediaan.")
+    eid = resolve_requested_entity(ctx, None)
+    try:
+        await gl_service.assert_trueup_allowed(eid)
+        await gl_service.preflight_posting(eid)
+    except (gl_service.TrueupNotAllowed, gl_service.ClosedPeriodError) as e:
+        raise HTTPException(status_code=409, detail=str(e))
     result = await gl_service.post_inventory_opening_balance(
-        actor.get("name", "system"), reason=reason, include_rounding=include_rounding)
+        actor.get("name", "system"), reason=dasar, include_rounding=include_rounding, entity_ids=[eid])
     await audit(actor["name"], "inventory_opening_posted", "journal_entry", "batch",
-                {**result, "reason": (reason or "").strip()})
+                {**result, "reason": dasar, "entity_id": eid})
     return result
 
 

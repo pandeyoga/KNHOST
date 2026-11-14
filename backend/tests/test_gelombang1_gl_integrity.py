@@ -307,17 +307,31 @@ class TestFlow4_Reconciliation:
             assert abs(diff) < 1.0, f"Entity {row.get('entity_id')} diff={diff} (>1)"
 
     def test_b_opening_balance_idempotent(self, s):
-        r1 = s.post(f"{API}/gl/inventory-opening-balance", json={}, timeout=60)
-        assert r1.status_code == 200, r1.text
-        body1 = r1.json()
-        count1 = body1.get("count", body1.get("posted_count", 0))
+        # PK-29 (K-06) — true-up per PT aktif, alasan wajib, dan bawaannya hanya untuk PT yang belum bertransaksi:
+        # PT data acuan sudah bertransaksi → pengaturan lapisan PT ini disetel `false` dulu dan dipulihkan sesudahnya.
+        pt = "ent_ksc"
+        h = {"X-Entity-Id": pt}
+        kunci = "inventory.trueup_hanya_saldo_awal"
+        r = s.put(f"{API}/config/values", headers=h, json={"items": [{
+            "key": kunci, "value": False, "scope_type": "entity", "scope_id": pt,
+            "reason": "uji gelombang 1: true-up idempoten pada PT bertransaksi"}]}, timeout=30)
+        assert r.status_code == 200, r.text
+        try:
+            q = {"reason": "uji gelombang 1 true-up idempoten"}
+            r1 = s.post(f"{API}/gl/inventory-opening-balance", headers=h, params=q, json={}, timeout=60)
+            assert r1.status_code == 200, r1.text
+            body1 = r1.json()
+            count1 = body1.get("count", body1.get("posted_count", 0))
 
-        # 2nd call: idempotent
-        r2 = s.post(f"{API}/gl/inventory-opening-balance", json={}, timeout=60)
-        assert r2.status_code == 200
-        body2 = r2.json()
-        count2 = body2.get("count", body2.get("posted_count", 0))
-        assert count2 == 0, f"Opening balance harus idempotent, 2nd call count={count2}"
+            # 2nd call: idempotent
+            r2 = s.post(f"{API}/gl/inventory-opening-balance", headers=h, params=q, json={}, timeout=60)
+            assert r2.status_code == 200
+            body2 = r2.json()
+            count2 = body2.get("count", body2.get("posted_count", 0))
+            assert count2 == 0, f"Opening balance harus idempotent, 2nd call count={count2}"
+        finally:
+            s.post(f"{API}/config/values/clear", headers=h, json={
+                "key": kunci, "scope_type": "entity", "scope_id": pt, "reason": "pulihkan uji gelombang 1"}, timeout=30)
 
 
 # ─────────────────────────── FLOW 5: Trial Balance / IS / BS regresi ───────────────────────────

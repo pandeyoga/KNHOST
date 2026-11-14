@@ -105,6 +105,10 @@ AGT2_KUNCI = 1
 # `finance.lpj_wajib_lampiran` berizin `accounting.manage` (ikut katalog U04, tidak bisa diubah `settings.manage` saja).
 PK24_KUNCI_KONTROL = 2
 PK24_KUNCI = 3
+# PK-29 — satu kunci baru `inventory.trueup_hanya_saldo_awal` (true-up persediaan hanya untuk saldo awal, K-06) berizin
+# `accounting.manage` (kelompok "pajak-pembukuan"): ikut terhitung di katalog (U04) tetapi tidak bisa diubah pemegang
+# `settings.manage` saja (U02 tetap).
+PK29_KUNCI = 1
 
 
 def _put(key, value, scope_type="entity", scope_id="ent_ksc"):
@@ -171,10 +175,10 @@ async def test_U04_lihat_saja_tidak_bisa_ubah(klien, akun, sesi, peran_tanpa_acu
     # PK-30 selisih panjang roll antar-PT; PM-T1 kontrol dua orang ubah rekening; AG-T1 masa berlaku kartu asisten;
     # TX-T1 tujuh kunci pajak (faktor, pembulatan, kode transaksi); PK-39 mode pemeriksaan anggaran; PK-26 porsi biaya
     # masuk roll yang sudah terjual; AG-T2 penyamaran nama pihak ke penyedia model; PK-24 kontrol dua orang
-    # cairkan uang muka dan LPJ wajib berlampiran.
+    # cairkan uang muka dan LPJ wajib berlampiran; PK-29 true-up persediaan hanya untuk saldo awal.
     assert r.json()["total"] == 310 + 5 + KFT6_KUNCI + KFT2_KUNCI + KPT7_KUNCI + PK36_KUNCI + KFT7_KUNCI + PK37_KUNCI \
         + PK38_KUNCI + KPT8_KUNCI + PK30_KUNCI + PMT1_KUNCI + CRT1_KUNCI + AGT1_KUNCI + PMT2_KUNCI + TXT1_KUNCI \
-        + PK39_KUNCI + PK26_KUNCI + AGT2_KUNCI + PK24_KUNCI
+        + PK39_KUNCI + PK26_KUNCI + AGT2_KUNCI + PK24_KUNCI + PK29_KUNCI
 
 
 async def test_U05_manajer_kosong_tidak_lagi_lewat_nama_peran(klien, akun, sesi, peran_manajer_kosong):

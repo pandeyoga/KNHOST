@@ -607,6 +607,10 @@
    "pajak-pembukuan",
    "tutup-buku"
   ],
+  "inventory.trueup_hanya_saldo_awal": [
+   "pajak-pembukuan",
+   "tutup-buku"
+  ],
   "saga.stuck_lock_minutes": [
    "sistem",
    "rfid-proses"
