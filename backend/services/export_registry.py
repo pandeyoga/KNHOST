@@ -227,6 +227,7 @@ DATASETS: List[Dict[str, Any]] = [
                  C("unapplied_amount", "Belum dialokasikan", "money"), C("status", "Status"),
                  C("created_by_name", "Dicatat oleh"), C("receipt_date", "Tgl terima", "datetime"),
                  C("entity_id", "ID badan usaha")],
+     "search_fields": ["number", "customer_name"],   # = routers/ar_receipts.py `q` (PK-42)
      "joins": [CUSTOMER_JOIN, ENTITY_JOIN()]},
     {"id": "cash_transactions", "label": "Transaksi Kas & Bank", "group": "Keuangan", "collection": "cash_transactions",
      "grain": "1 baris = 1 transaksi kas", "key": "id", "perm": ("cash", "view"),
@@ -234,6 +235,7 @@ DATASETS: List[Dict[str, Any]] = [
      "columns": [C("number", "No."), C("cash_type", "Jenis kas"), C("direction", "Arah"),
                  C("amount", "Jumlah", "money"), C("category", "Kategori"), C("description", "Keterangan"),
                  C("status", "Status"), C("txn_date", "Tanggal", "datetime"), C("entity_id", "ID badan usaha")],
+     "search_fields": ["number", "description", "category"],   # = routers/cash.py `q` (PK-42)
      "joins": [ENTITY_JOIN()]},
     {"id": "journal_entries", "label": "Jurnal Umum", "group": "Keuangan", "collection": "journal_entries",
      "grain": "1 baris = 1 jurnal (header)", "key": "id", "perm": ("accounting", "view"),

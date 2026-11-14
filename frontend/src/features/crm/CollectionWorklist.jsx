@@ -1,9 +1,11 @@
 import { useEffect, useMemo, useState } from "react";
 import axios, { API } from "../../services/apiClient";
-import { Receipt, AlertTriangle, X, PhoneCall, BellRing, BellOff, CheckCircle2, Wallet } from "lucide-react";
+import { Receipt, AlertTriangle, PhoneCall, BellRing, BellOff, CheckCircle2, Wallet } from "lucide-react";
 import { formatCurrency } from "../../utils/formatters";
 import KNSelect from "../../components/KNSelect";
 import ErrorNotice from "../../components/ErrorNotice";
+import FormModal from "../../components/FormModal";
+import { apiErrorText } from "../../utils/apiError";
 import { can } from "../../config/roles";
 import { KpiTile, fmtDate } from "./crmUtils";
 import ARReceiptModal from "./ARReceiptModal";
@@ -115,7 +117,7 @@ export default function CollectionWorklist({ currentUser, selectedEntity }) {
                       {canTakeMoney && (
                         <button data-testid={`collection-pay-${r.order_id}`} onClick={() => setPayRow(r)} className="icon-button text-[#1B7F4B]" title="Catat pembayaran"><Wallet size={14} /></button>
                       )}
-                      <button data-testid={`collection-followup-${r.order_id}`} onClick={() => setFu(r)} className="icon-button text-[#0058CC]" title="Catat follow-up"><PhoneCall size={14} /></button>
+                      <button data-testid={`collection-followup-${r.order_id}`} onClick={() => setFu(r)} className="icon-button text-[#0058CC]" title="Catat tindak lanjut" aria-label="Catat tindak lanjut"><PhoneCall size={14} /></button>
                     </div>
                   </div>
                 ))}
@@ -134,43 +136,52 @@ export default function CollectionWorklist({ currentUser, selectedEntity }) {
         onDone={(m) => { setPayRow(null); setNotice(m); setReceiptRefresh((k) => k + 1); load(); }} />}
 
       {fu && <WorklistFollowup row={fu} onClose={() => setFu(null)}
-        onDone={(m) => { setFu(null); setNotice(m); load(); }} onError={(m) => setError(m)} />}
+        onDone={(m) => { setFu(null); setNotice(m); load(); }} />}
     </div>
   );
 }
 
-function WorklistFollowup({ row, onClose, onDone, onError }) {
+// PK-42 (UX-09) — pop-up baku `FormModal` (dulu `modal-overlay` buatan sendiri): galat (catatan kosong, server menolak)
+// tampil DI DALAM pop-up yang sedang dibuka, bukan di halaman di belakangnya; Esc/klik latar seragam.
+const FOLLOWUP_OUTCOMES = [{ value: "contacted", label: "Dihubungi" }, { value: "promised", label: "Dijanjikan bayar" },
+  { value: "paid", label: "Sudah bayar" }, { value: "no_response", label: "Tak respon" }, { value: "escalated", label: "Eskalasi" }];
+
+export function WorklistFollowup({ row, onClose, onDone }) {
   const [note, setNote] = useState("");
   const [outcome, setOutcome] = useState("contacted");
   const [busy, setBusy] = useState(false);
-  async function go() {
-    if (!note.trim()) { onError?.("Catatan wajib diisi."); return; }
+  const [err, setErr] = useState("");
+  async function save() {
+    if (busy) return;
+    if (!note.trim()) { setErr("Catatan wajib diisi."); return; }
     setBusy(true);
+    setErr("");
     try {
       await axios.post(`${API}/customers/${row.customer_id}/followups`, {
         customer_id: row.customer_id, order_id: row.order_id, note, outcome });
-      onDone?.(`Follow-up untuk ${row.customer_name} dicatat.`);
-    } catch (e) { onError?.(e.response?.data?.detail || "Gagal menyimpan."); } finally { setBusy(false); }
+      onDone?.(`Tindak lanjut untuk ${row.customer_name} dicatat.`);
+    } catch (e) {
+      setErr(apiErrorText(e, "Gagal menyimpan tindak lanjut."));
+    } finally { setBusy(false); }
   }
   return (
-    <div className="modal-overlay" data-testid="worklist-followup-modal" onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}>
-      <div className="modal-card" style={{ maxWidth: 420, width: "92vw" }}>
-        <div className="flex items-center justify-between px-4 py-3 border-b border-[#EFF0F2]">
-          <h2 className="text-[14px] font-bold">Follow-up: {row.customer_name}</h2>
-          <button onClick={onClose} className="icon-button"><X size={16} /></button>
+    <FormModal open onClose={onClose} title={`Tindak Lanjut Penagihan — ${row.customer_name}`} icon={PhoneCall} size="sm"
+      subtitle={`Pesanan ${row.order_number} · ${formatCurrency(row.outstanding)}${row.overdue ? ` · telat ${row.days_late} hari` : ""}`}
+      testId="worklist-followup-modal" submitTestId="worklist-followup-submit" cancelTestId="worklist-followup-cancel"
+      onSubmit={save} submitLabel="Simpan" busy={busy} error={err}>
+      <div className="space-y-3">
+        <div>
+          <label className="field-label" htmlFor="worklist-followup-note">Catatan <span className="req">*</span></label>
+          <textarea id="worklist-followup-note" data-testid="worklist-followup-note" value={note}
+            onChange={(e) => { setNote(e.target.value); if (err) setErr(""); }} className="field" rows="3"
+            placeholder="Hasil kontak penagihan..." />
         </div>
-        <div className="p-4 space-y-3">
-          <p className="text-[11px] text-[#6B6B73]">Pesanan {row.order_number} · {formatCurrency(row.outstanding)} {row.overdue ? `· telat ${row.days_late} hari` : ""}</p>
-          <textarea data-testid="worklist-followup-note" value={note} onChange={(e) => setNote(e.target.value)} className="field" rows="2" placeholder="Hasil kontak penagihan..." />
+        <div>
+          <label className="field-label">Hasil</label>
           <KNSelect value={outcome} onValueChange={setOutcome} className="field" data-testid="worklist-followup-outcome"
-            options={[{ value: "contacted", label: "Dihubungi" }, { value: "promised", label: "Dijanjikan bayar" },
-              { value: "paid", label: "Sudah bayar" }, { value: "no_response", label: "Tak respon" }, { value: "escalated", label: "Eskalasi" }]} />
-          <div className="flex justify-end gap-2">
-            <button onClick={onClose} className="secondary-button">Batal</button>
-            <button data-testid="worklist-followup-submit" disabled={busy} onClick={go} className="primary-button">{busy ? "..." : "Simpan"}</button>
-          </div>
+            options={FOLLOWUP_OUTCOMES} />
         </div>
       </div>
-    </div>
+    </FormModal>
   );
 }

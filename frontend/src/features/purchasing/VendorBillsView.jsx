@@ -8,6 +8,7 @@ import { Receipt, Plus, Send, Wallet, Scale, Clock, AlertTriangle, Loader2 } fro
 import { PageHeader, MetricRow, SearchBox, StatusTabs } from "../../components/ListPageParts";
 import { formatCurrency } from "../../utils/formatters";
 import ErrorNotice from "../../components/ErrorNotice";
+import EntityGatedButton from "../../components/EntityGatedButton";   // PK-42 (UX-05)
 import EntityBadge from "../../components/EntityBadge";
 import PaginationBar from "../../components/PaginationBar";
 import { usePagedList } from "../../hooks/usePagedList";
@@ -167,9 +168,10 @@ export default function VendorBillsView({ currentUser, selectedEntity }) {
       <PageHeader icon={Receipt} title={<span data-testid="vendor-bills-title">Tagihan Supplier</span>}
         subtitle="Tagihan dicocokkan PO ↔ penerimaan ↔ tagihan (3-way matching); yang terposting menjadi hutang usaha sampai dibayar."
         actions={canCreate && (
-          <button data-testid="create-vendor-bill-button" onClick={() => setShowCreate(true)} className="primary-button">
+          <EntityGatedButton selectedEntity={selectedEntity} what="membuat tagihan pemasok"
+            data-testid="create-vendor-bill-button" onClick={() => setShowCreate(true)} className="primary-button">
             <Plus size={14} /> Buat Tagihan
-          </button>
+          </EntityGatedButton>
         )} />
 
       {summary && (

@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 import axios, { API } from "../../services/apiClient";
 import ErrorNotice from "../../components/ErrorNotice";
+import { formatDateTime } from "../../utils/formatters";
 import useListSearch from "@/hooks/useListSearch";
 import KNSelect from "../../components/KNSelect";
 import { askConfirm, askReason } from "@/services/confirmService";
@@ -24,14 +25,8 @@ import EntityRequiredNotice from "../../components/EntityRequiredNotice";
 import DesktopOnlyNotice from "../../components/DesktopOnlyNotice";
 import { MetricRow } from "../../components/ListPageParts";
 
-function fmtDateTime(iso) {
-  if (!iso) return "—";
-  try {
-    return new Date(iso).toLocaleString("id-ID", {
-      day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit",
-    });
-  } catch { return iso; }
-}
+// PK-42 (UX-18) — satu pemformat tanggal WIB bersama (`utils/formatters`); dulu zona perangkat / bentuk sendiri.
+const fmtDateTime = (iso) => formatDateTime(iso);
 
 function fmtCountdown(secs) {
   if (!secs || secs <= 0) return "berakhir";

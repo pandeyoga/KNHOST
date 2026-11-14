@@ -560,6 +560,19 @@ nama peran = merah. Sisa garis dasar (`scripts/guardrails/baselines/role_gate_ui
 
 ---
 
+## 🏢 TOMBOL BUAT PADA MODE "SEMUA PT" (PK-42, UX-05)
+
+Mode "Semua PT" di kepala aplikasi hanya untuk melihat gabungan: server menolak pembuatan data di rute akar (409,
+`backend/entity_write_guard.py`). Supaya pengguna tidak mengisi form yang pasti ditolak:
+
+| Pola | Aturan |
+|---|---|
+| Tombol yang membuka form **buat** di layar uang | `components/EntityGatedButton.jsx`: `<EntityGatedButton selectedEntity={selectedEntity} what="membuat jurnal" …>`. Di "Semua PT" tombol mati, `title` = "Pilih satu PT dulu (kanan atas) untuk {what}.", dan alasan pendek **tertulis di samping tombol** ("Pilih satu PT dulu") — bukan hanya tooltip. Label tombol tidak berubah; izin tetap dari `can(...)` |
+| Rute yang sah tanpa PT terpilih | Tidak memakai pola ini — mis. dokumen antar-PT (`/api/interco/transactions`, `/api/interco/settlements`) memilih PT penjual/pembeli di form-nya sendiri (`GROUP_LEVEL_EXACT`) |
+| Layar yang seluruh isinya per PT (tutup buku, buka periode) | `components/EntityRequiredNotice.jsx` (kartu pilih PT), bukan tombol mati satu per satu |
+
+---
+
 ## ✅ QUALITY CHECKLIST (Per Component)
 
 Before marking component as "DONE":

@@ -5,6 +5,7 @@
  * selisih, dan label alasan tetap di backend (`GET /api/contra-bons/meta`) supaya
  * layar tidak pernah menawarkan langkah yang tidak punya mesinnya.
  */
+import { formatDate, formatDateTime } from "../../../utils/formatters";
 
 /** Warna pil status — mengikuti bahasa visual pil status modul lain. */
 export const STATUS_CLASS = {
@@ -62,23 +63,10 @@ export const EVENT_LABEL = {
   dibatalkan: "Dibatalkan",
 };
 
-export function fmtDate(s) {
-  if (!s) return "—";
-  try {
-    return new Date(String(s).length <= 10 ? `${s}T00:00:00` : s)
-      .toLocaleDateString("id-ID", { day: "2-digit", month: "short", year: "2-digit" });
-  } catch { return String(s); }
-}
+// PK-42 (UX-18) — satu pemformat tanggal WIB bersama (`utils/formatters`); dulu zona perangkat / bentuk sendiri.
+export const fmtDate = (s) => formatDate(s);
 
-export function fmtDateTime(s) {
-  if (!s) return "—";
-  try {
-    return `${new Date(s).toLocaleString("id-ID", {
-      day: "2-digit", month: "short", year: "2-digit",
-      hour: "2-digit", minute: "2-digit", timeZone: "Asia/Jakarta",
-    })} WIB`;
-  } catch { return String(s); }
-}
+export const fmtDateTime = (s) => formatDateTime(s);
 
 /** Tanggal hari ini dalam bentuk `YYYY-MM-DD` (zona lokal pengguna). */
 export function todayISO() {

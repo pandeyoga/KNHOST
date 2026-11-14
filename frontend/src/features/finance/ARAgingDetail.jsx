@@ -37,8 +37,8 @@ export default function ARAgingDetail({ detail, customerId, loading, currentUser
             {detail && (
               <span className="min-w-0 text-[11px] text-[#6B6B73]" data-testid="ar-aging-detail-summary">
                 Belum lunas <b className="tabular-nums">{formatCurrency(t.total)}</b>{" "}
-                (ledger <b className="tabular-nums" data-testid="ar-detail-ledger-total">{formatCurrency(t.ar_ledger || 0)}</b>
-                {" "}· eksposur <b className="tabular-nums" data-testid="ar-detail-exposure-total">{formatCurrency(t.exposure || 0)}</b>)
+                (tercatat <b className="tabular-nums" data-testid="ar-detail-ledger-total">{formatCurrency(t.ar_ledger || 0)}</b>
+                {" "}· belum dikirim <b className="tabular-nums" data-testid="ar-detail-exposure-total">{formatCurrency(t.exposure || 0)}</b>)
               </span>
             )}
             {canAccrue && (
@@ -68,7 +68,7 @@ export default function ARAgingDetail({ detail, customerId, loading, currentUser
                     <th className="text-right">Total</th>
                     <th className="text-right">Terbayar</th>
                     <th className="text-right">Belum Lunas</th>
-                    <th className="text-right" title="Piutang ledger (sudah diakui) · eksposur (belum dikirim)">Ledger · Eksposur</th>
+                    <th className="text-right" title="Piutang tercatat (barang sudah dikirim) · nilai pesanan yang belum dikirim">Tercatat · Belum dikirim</th>
                     <th className="text-right">Est. Denda</th>
                     <th>Nota Denda</th>
                   </tr>

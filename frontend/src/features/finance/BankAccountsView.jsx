@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 import axios, { API } from "../../services/apiClient";
 import ErrorNotice from "../../components/ErrorNotice";
+import EntityGatedButton from "../../components/EntityGatedButton";   // PK-42 (UX-05)
 import EntityScopeBanner from "../../components/EntityScopeBanner";
 import useListSearch from "@/hooks/useListSearch";
 import { formatCurrency, formatDate } from "../../utils/formatters";
@@ -161,9 +162,10 @@ export default function BankAccountsView({ selectedEntity, currentUser }) {
           <div className="flex items-center gap-2"><Landmark size={16} className="text-[#0058CC]" /><h2 data-testid="bank-title">Akun Kas & Bank</h2></div>
           <div className="flex items-center gap-2 ml-auto">
             {canConfigure && (
-              <button data-testid="bank-add-toggle" className="primary-button" onClick={() => setShowForm(true)}>
+              <EntityGatedButton selectedEntity={selectedEntity} what="menambah rekening" data-testid="bank-add-toggle"
+                className="primary-button" onClick={() => setShowForm(true)}>
                 <Plus size={14} /> Tambah Akun
-              </button>
+              </EntityGatedButton>
             )}
             <button data-testid="bank-refresh" className="icon-button" onClick={load} aria-label="Muat ulang" title="Muat ulang"><RefreshCw size={14} className={loading ? "animate-spin" : ""} /></button>
           </div>

@@ -10,7 +10,9 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link2, RefreshCw, Split, Info } from "lucide-react";
 import axios, { API } from "../../../services/apiClient";
-import { formatCurrency } from "../../../utils/formatters";
+import { formatCurrency, formatDate } from "../../../utils/formatters";
+import MoneyInput from "../../../components/MoneyInput";
+import { parseDecimal } from "../../../utils/decimalInput";
 import ErrorNotice from "../../../components/ErrorNotice";
 import FilterChips from "../../../components/FilterChips";
 import FormModal from "../../../components/FormModal";
@@ -18,13 +20,10 @@ import { apiErrorText } from "../../../utils/apiError";
 import useIntentKey from "../../../hooks/useIntentKey";
 import { moneyPost } from "../../../utils/moneyRequest";
 
-const fmtDate = (s) => {
-  if (!s) return "—";
-  try {
-    return new Date(String(s).length <= 10 ? `${s}T00:00:00` : s)
-      .toLocaleDateString("id-ID", { day: "2-digit", month: "short", year: "2-digit" });
-  } catch { return s; }
-};
+// PK-42 (UX-18) — satu pemformat tanggal WIB bersama ("23 Okt 2026"); dulu zona perangkat & tahun dua angka.
+const fmtDate = (s) => formatDate(s);
+// PK-42 — nominal alokasi (teks `MoneyInput`, koma desimal boleh) → angka; kosong/tak sah → 0.
+const amt = (v) => { const n = parseDecimal(v); return Number.isFinite(n) ? n : 0; };
 
 export default function ReconMatchModal({ line, onClose, onDone, onError }) {
   const [data, setData] = useState(null);
@@ -50,10 +49,10 @@ export default function ReconMatchModal({ line, onClose, onDone, onError }) {
   useEffect(() => { load(); }, [load]);
 
   const allocTotal = useMemo(
-    () => Object.values(alloc).reduce((a, v) => a + (Number(v) || 0), 0), [alloc]);
+    () => Object.values(alloc).reduce((a, v) => a + amt(v), 0), [alloc]);
   const remaining = Number(line.amount || 0) - allocTotal;
   const allocCount = useMemo(
-    () => Object.values(alloc).filter((v) => Number(v) > 0).length, [alloc]);
+    () => Object.values(alloc).filter((v) => amt(v) > 0).length, [alloc]);
 
   async function doSingle(txnId, score) {
     setBusy(txnId);
@@ -67,8 +66,8 @@ export default function ReconMatchModal({ line, onClose, onDone, onError }) {
 
   async function doSplit() {
     const allocations = Object.entries(alloc)
-      .filter(([, v]) => Number(v) > 0)
-      .map(([txn_id, v]) => ({ txn_id, amount: Number(v) }));
+      .filter(([, v]) => amt(v) > 0)
+      .map(([txn_id, v]) => ({ txn_id, amount: amt(v) }));
     setBusy("split");
     try {
       const body = { allocations };
@@ -166,11 +165,12 @@ export default function ReconMatchModal({ line, onClose, onDone, onError }) {
                     Tautkan
                   </button>
                 ) : (
-                  <input data-testid={`recon-alloc-${t.id}`} type="number" min={0}
-                    max={Number(t.outstanding)} step={1000} className="input-field w-[140px]"
-                    placeholder="Nominal"
-                    value={alloc[t.id] ?? ""}
-                    onChange={(e) => setAlloc((cur) => ({ ...cur, [t.id]: e.target.value }))} />
+                  <div className="w-[160px]">
+                    <MoneyInput testId={`recon-alloc-${t.id}`} className="input-field" placeholder="Nominal"
+                      aria-label={`Nominal alokasi ${t.number || ""}`.trim()}
+                      value={alloc[t.id] ?? ""}
+                      onChange={(v) => setAlloc((cur) => ({ ...cur, [t.id]: v }))} />
+                  </div>
                 )}
               </div>
             </div>

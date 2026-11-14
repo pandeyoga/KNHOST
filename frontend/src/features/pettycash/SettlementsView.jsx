@@ -4,6 +4,7 @@ import axios, { API } from "../../services/apiClient";
 import { ReceiptText, Plus, RefreshCw, FileText } from "lucide-react";
 import { formatCurrency } from "../../utils/formatters";
 import ErrorNotice from "../../components/ErrorNotice";
+import EntityGatedButton from "../../components/EntityGatedButton";   // PK-42 (UX-05)
 import { SearchBox } from "../../components/ListControls";
 import DetailModal from "../../components/DetailModal";
 import ResponsiveTable from "../../components/ResponsiveTable";
@@ -95,7 +96,7 @@ export default function SettlementsView({ currentUser, selectedEntity = "all", e
           </div>
           <div className="flex items-center gap-2">
             <button data-testid="stl-refresh" className="icon-button" onClick={load} aria-label="Muat ulang"><RefreshCw size={14} className={loading ? "animate-spin" : ""} /></button>
-            {canCreate && <button data-testid="stl-create-btn" className="btn-primary" onClick={() => setView("create")}><Plus size={14} /> LPJ Baru</button>}
+            {canCreate && <EntityGatedButton selectedEntity={selectedEntity} what="membuat pertanggungjawaban" data-testid="stl-create-btn" className="btn-primary" onClick={() => setView("create")}><Plus size={14} /> LPJ Baru</EntityGatedButton>}
           </div>
         </div>
 

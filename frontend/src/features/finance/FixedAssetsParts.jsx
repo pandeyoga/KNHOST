@@ -12,18 +12,14 @@ import { useState } from "react";
 import {
   X, Plus, RefreshCw, PackageMinus, CalendarClock, TrendingUp, TrendingDown, Building2,
 } from "lucide-react";
-import { formatCurrency, todayWib } from "../../utils/formatters";
+import { formatCurrency, formatDate, todayWib } from "../../utils/formatters";
+import { parseDecimal } from "../../utils/decimalInput";
 import KNSelect from "../../components/KNSelect";
 import FormModal from "../../components/FormModal";
 import DetailModal from "../../components/DetailModal";
 
-export const fmtDate = (s) => {
-  if (!s) return "—";
-  try {
-    const d = new Date(String(s).length <= 10 ? `${s}T00:00:00` : s);
-    return d.toLocaleDateString("id-ID", { day: "2-digit", month: "short", year: "2-digit" });
-  } catch { return s; }
-};
+// PK-42 (UX-18) — satu pemformat tanggal WIB bersama ("23 Okt 2026"); dulu zona perangkat & tahun dua angka.
+export const fmtDate = (s) => formatDate(s);
 
 const STATUS_MAP = {
   active: ["pill-success", "Aktif"],
@@ -213,7 +209,7 @@ export function ScheduleDialog({ asset, loading, onClose }) {
         {asset?.disposal && (
           <div className="notice-bar success mb-2" data-testid="schedule-disposal-info">
             <span>
-              Dilepas {fmtDate(asset.disposal.date)} · proceeds {formatCurrency(asset.disposal.proceeds)} ·
+              Dilepas {fmtDate(asset.disposal.date)} · nilai jual {formatCurrency(asset.disposal.proceeds)} ·
               nilai buku {formatCurrency(asset.disposal.book_value)} ·{" "}
               <b>{asset.disposal.result === "gain" ? "Laba" : asset.disposal.result === "loss" ? "Rugi" : "Impas"} {formatCurrency(Math.abs(asset.disposal.gain_loss || 0))}</b>
               {asset.disposal.je_number ? ` · JE ${asset.disposal.je_number}` : ""}
@@ -276,7 +272,8 @@ export function DisposeDialog({ asset, busy, error = "", onCancel, onSubmit }) {
   const [note, setNote] = useState("");
 
   const bookValue = Math.round((asset?.book_value || 0) * 100) / 100;
-  const p = parseFloat(proceeds || 0) || 0;
+  const pv = parseDecimal(proceeds);
+  const p = Number.isFinite(pv) ? pv : 0;
   const gainLoss = Math.round((p - bookValue) * 100) / 100;
   const isGain = gainLoss > 0.01;
   const isLoss = gainLoss < -0.01;
@@ -297,16 +294,16 @@ export function DisposeDialog({ asset, busy, error = "", onCancel, onSubmit }) {
       testId="dispose-dialog" busy={busy} error={error} footer={footer}>
         <div className="grid gap-3">
           <label className="grid gap-1">
-            <span className="text-[11px] font-semibold text-[#3C3C43]">Nilai Jual / Proceeds (Rp)</span>
-            <input data-testid="dispose-proceeds-input" className="field tabular-nums" type="number" min={0}
-              value={proceeds} placeholder="0" onChange={(e) => setProceeds(e.target.value)} />
+            <span className="field-label">Nilai Jual (Rp)</span>
+            <MoneyInput testId="dispose-proceeds-input" className="field tabular-nums" value={proceeds} placeholder="0"
+              onChange={setProceeds} />
           </label>
           <label className="grid gap-1">
-            <span className="text-[11px] font-semibold text-[#3C3C43]">Tanggal Pelepasan</span>
+            <span className="field-label">Tanggal Pelepasan</span>
             <KNDatePicker data-testid="dispose-date-input" value={date} onChange={setDate} clearable={false} />
           </label>
           <label className="grid gap-1">
-            <span className="text-[11px] font-semibold text-[#3C3C43]">Catatan</span>
+            <span className="field-label">Catatan</span>
             <input data-testid="dispose-note-input" className="field" value={note}
               placeholder="opsional" onChange={(e) => setNote(e.target.value)} />
           </label>
@@ -314,7 +311,7 @@ export function DisposeDialog({ asset, busy, error = "", onCancel, onSubmit }) {
           <div className={`rounded-md border px-3 py-2.5 ${isLoss ? "bg-[#FCEBEA] border-[#F0B5AE]" : isGain ? "bg-[#E6F6EC] border-[#B9E4C7]" : "bg-[#F7F8FA] border-[#EFF0F2]"}`}>
             <p className="text-[10px] font-bold uppercase tracking-wide text-[#8E8E93] mb-1">Pratinjau Laba/Rugi Pelepasan</p>
             <p className="text-[12px] text-[#3C3C43] tabular-nums">
-              {formatCurrency(p)} <span className="text-[#8E8E93]">(proceeds)</span> − {formatCurrency(bookValue)} <span className="text-[#8E8E93]">(nilai buku)</span> =
+              {formatCurrency(p)} <span className="text-kn-text-2">(nilai jual)</span> − {formatCurrency(bookValue)} <span className="text-kn-text-2">(nilai buku)</span> =
             </p>
             <p className={`text-[18px] font-bold tabular-nums ${isLoss ? "text-[#C0392B]" : isGain ? "text-[#1B7F4B]" : "text-[#1C1C1E]"}`}
               data-testid="dispose-preview-gainloss">

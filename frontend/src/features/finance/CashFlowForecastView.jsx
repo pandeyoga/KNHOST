@@ -63,7 +63,7 @@ export default function CashFlowForecastView({ selectedEntity }) {
       </div>
 
       <div className="flex items-center justify-end mb-3">
-        <button data-testid="fcst-refresh" className="icon-button" onClick={load} aria-label="Refresh"><RefreshCw size={14} className={loading ? "animate-spin" : ""} /></button>
+        <button data-testid="fcst-refresh" className="icon-button" onClick={load} aria-label="Muat ulang" title="Muat ulang"><RefreshCw size={14} className={loading ? "animate-spin" : ""} /></button>
       </div>
 
       <ErrorNotice message={error} onRetry={load} onDismiss={() => setError("")} testId="fcst-error" />

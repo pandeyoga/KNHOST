@@ -6,6 +6,7 @@
  * (`GET /api/interco/meta`) supaya layar tidak pernah menawarkan langkah yang
  * tidak punya mesinnya.
  */
+import { formatDate } from "../../../utils/formatters";
 
 /** Warna pil status — konsisten dengan pil status kontrabon G-7. */
 export const STATUS_CLASS = {
@@ -77,14 +78,8 @@ export const ACC_LABEL = {
   "1-1100": "Kas / Bank",
 };
 
-export function fmtDate(s) {
-  if (!s) return "-";
-  try {
-    return new Date(s).toLocaleDateString("id-ID", {
-      day: "2-digit", month: "short", year: "numeric",
-    });
-  } catch { return s; }
-}
+// PK-42 (UX-18) — satu pemformat tanggal WIB bersama (`utils/formatters`); dulu zona perangkat / bentuk sendiri.
+export const fmtDate = (s) => formatDate(s);
 
 /**
  * Langkah berikutnya yang wajar untuk sebuah transaksi.

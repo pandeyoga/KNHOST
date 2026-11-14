@@ -30,6 +30,7 @@ import useIntentKey from "../../hooks/useIntentKey";
 import { moneyPost } from "../../utils/moneyRequest";
 import JournalProposalsPanel, { JournalProposalBanner } from "./JournalProposalsPanel";   // KF-T6
 import FilterChips from "../../components/FilterChips";
+import EntityGatedButton, { EntityGateNote } from "../../components/EntityGatedButton";   // PK-42 (UX-05)
 
 const TONE_GRAY = "bg-gray-100 text-gray-600";
 const SOURCE_META_BASE = {
@@ -154,14 +155,17 @@ export default function GeneralLedger({ selectedEntity, entities = [], focusDoc,
           <div className="flex items-center gap-2 ml-auto">
             {tab === "journal" && (
               <>
-                <button type="button" data-testid="gl-new-journal" className="primary-button" onClick={() => setShowModal(true)}><Plus size={14} /> Jurnal Baru</button>
+                <EntityGatedButton selectedEntity={selectedEntity} what="membuat jurnal" hint={false} aria-describedby="gl-new-journal-scope-note"
+                  data-testid="gl-new-journal" className="primary-button" onClick={() => setShowModal(true)}><Plus size={14} /> Jurnal Baru</EntityGatedButton>
                 <button type="button" data-testid="gl-sync" className="secondary-button" onClick={runSync} disabled={syncing}><RotateCcw size={13} className={syncing ? "animate-spin" : ""} /> Sinkronkan</button>
               </>
             )}
-            <button data-testid="gl-refresh" className="icon-button" onClick={refreshAll} aria-label="Refresh"><RefreshCw size={14} /></button>
+            <button data-testid="gl-refresh" className="icon-button" onClick={refreshAll} aria-label="Muat ulang" title="Muat ulang"><RefreshCw size={14} /></button>
           </div>
         </div>
         <div className="section-body">
+          {/* PK-42 — kepala kartu sudah berisi lima tab + tiga tombol: alasan tombol Jurnal Baru yang mati di bilah sendiri. */}
+          {tab === "journal" && <EntityGateNote selectedEntity={selectedEntity} what="membuat jurnal" testId="gl-new-journal-scope-note" />}
           <ErrorNotice message={error} onRetry={refreshAll} onDismiss={() => setError("")} testId="gl-error" />
           {notice && (
             <div data-testid="gl-notice" className="mb-3 rounded-md bg-[#E6F6EC] border border-[#BDE5CC] text-[#1B7F4B] text-[12px] px-3 py-2 flex items-center gap-2">

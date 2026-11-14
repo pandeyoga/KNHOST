@@ -13,6 +13,7 @@ from dependencies import require_permission, audit
 from core_utils import new_id, now_iso, safe_doc
 from entity_scope import entity_ctx, resolve_scope_ids, guard_doc, resolve_requested_entity, scope_meta
 from schemas import CashTransactionCreate
+from pagination import build_search, envelope, get_page_params, is_paged, merge_query
 from services import cash_entity_service
 from role_registry import CROSS_ENTITY_ROLES   # PR-T6 — lintas PT dari pengaturan per peran (himpunan hidup)
 
@@ -30,29 +31,53 @@ async def _next_cash_number(entity_id: str = "") -> str:
                                  entity_id=(entity_id or None))
 
 
+#: PK-42 (UX-12) — kotak cari daftar kas (`q`) dan urutan halaman (terbaru dulu; `created_at`/`id` = pemecah seri
+#: supaya baris tidak meloncat antar-halaman saat tanggalnya sama).
+CASH_SEARCH_FIELDS = ("number", "description", "category")
+CASH_SORT = [("txn_date", -1), ("created_at", -1), ("id", -1)]
+#: Batas daftar tanpa halaman (bentuk jawaban lama) — tidak berubah.
+CASH_UNPAGED_LIMIT = 500
+
+
+def _cash_list_query(actor: Dict[str, Any], ctx, entity_id: Optional[str]) -> Dict[str, Any]:
+    """Cakupan daftar kas (tanpa saringan jenis/arah) — dipakai daftar DAN hitungan tab `summary.counts`, supaya
+    angka lencana tab sama dengan jumlah baris yang bisa dibuka di daftar (PK-42)."""
+    entities = resolve_scope_ids(ctx, entity_id)
+    or_clauses: List[Dict[str, Any]] = [{"entity_id": {"$in": entities}}]
+    if (actor or {}).get("role") in CROSS_ENTITY_ROLES:
+        or_clauses.append({"entity_id": {"$in": ["all", "", None]}})
+    return {"status": {"$ne": "void"}, "$or": or_clauses}
+
+
 @router.get("/cash-transactions")
 async def list_cash_transactions(
     request: Request, entity_id: str = None, cash_type: str = None, direction: str = None
-) -> List[Dict[str, Any]]:
+) -> Any:
     """List transaksi kas (filter entitas/jenis/arah).
 
     FASE E-7 (E7.4): kas tingkat grup DIHAPUS, jadi tidak ada lagi klausa "kas_besar
     selalu tampil lintas-entitas" — itu justru yang membuat uang satu PT terbaca PT
     lain. Sisa data lama ber-`entity_id="all"` tetap TERLIHAT (jangan hilang diam-diam)
     tetapi hanya untuk peran lintas-entitas, dan layar menegur agar dimigrasikan.
+
+    PK-42 (UX-12): `page`/`page_size` → `{items, total, page, page_size, has_more}` (`q` = nomor / keterangan /
+    kategori); tanpa keduanya → larik seperti sebelumnya (batas 500).
     """
     actor = await require_permission(request, "cash", "view")
     ctx = await entity_ctx(request)
-    entities = resolve_scope_ids(ctx, entity_id)
-    or_clauses: List[Dict[str, Any]] = [{"entity_id": {"$in": entities}}]
-    if (actor or {}).get("role") in CROSS_ENTITY_ROLES:
-        or_clauses.append({"entity_id": {"$in": ["all", "", None]}})
-    query: Dict[str, Any] = {"status": {"$ne": "void"}, "$or": or_clauses}
+    query = _cash_list_query(actor, ctx, entity_id)
     if cash_type:
         query["cash_type"] = cash_type
     if direction:
         query["direction"] = direction
-    rows = await db.cash_transactions.find(query, {"_id": 0}).sort("txn_date", -1).to_list(500)
+    if is_paged(request):
+        page, page_size, q, _sort = get_page_params(request)
+        query = merge_query(query, build_search(q, CASH_SEARCH_FIELDS))
+        total = await db.cash_transactions.count_documents(query)
+        items = await db.cash_transactions.find(query, {"_id": 0}).sort(CASH_SORT) \
+            .skip((page - 1) * page_size).limit(page_size).to_list(page_size)
+        return envelope(items, total, page, page_size)
+    rows = await db.cash_transactions.find(query, {"_id": 0}).sort("txn_date", -1).to_list(CASH_UNPAGED_LIMIT)
     return rows
 
 
@@ -65,7 +90,7 @@ async def cash_summary(request: Request, entity_id: str = None) -> Dict[str, Any
     Suka. Sekarang keduanya memakai scope yang sama, dan sisa data tingkat grup
     dilaporkan TERPISAH (`group_cash_pending`) agar bisa ditegur, bukan disembunyikan.
     """
-    await require_permission(request, "cash", "view")
+    actor = await require_permission(request, "cash", "view")
     ctx = await entity_ctx(request)
     entities = resolve_scope_ids(ctx, entity_id)
 
@@ -120,7 +145,17 @@ async def cash_summary(request: Request, entity_id: str = None) -> Dict[str, Any
         # E7.4 — sisa data kas tingkat grup (harus nol setelah migrasi dijalankan).
         "group_cash_pending": await cash_entity_service.group_cash_pending(db),
         "scope_meta": await scope_meta(ctx, entity_id),   # PK-16
+        # PK-42 (UX-12) — lencana tab daftar: jumlah transaksi non-anulir pada cakupan DAFTAR (bukan baris yang termuat
+        # di layar; dulu dihitung dari ≤ 500 baris pertama).
+        "counts": await _cash_counts(_cash_list_query(actor, ctx, entity_id)),
     }
+
+
+async def _cash_counts(query: Dict[str, Any]) -> Dict[str, int]:
+    out = {"all": await db.cash_transactions.count_documents(query)}
+    for t in sorted(VALID_TYPES):
+        out[t] = await db.cash_transactions.count_documents({**query, "cash_type": t})
+    return out
 
 
 @router.post("/cash-transactions")

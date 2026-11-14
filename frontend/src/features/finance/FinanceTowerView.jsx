@@ -44,7 +44,7 @@ export default function FinanceTowerView({ selectedEntity }) {
           <CalendarDays size={13} className="text-[#6B219A]" />
           <span>Periode berjalan: <b className="text-[#1C1C1E]">{data?.period?.month || "—"}</b> · YTD {data?.period?.year || ""}</span>
         </div>
-        <button data-testid="tower-refresh" className="icon-button" onClick={load} aria-label="Refresh"><RefreshCw size={14} className={loading ? "animate-spin" : ""} /></button>
+        <button data-testid="tower-refresh" className="icon-button" onClick={load} aria-label="Muat ulang" title="Muat ulang"><RefreshCw size={14} className={loading ? "animate-spin" : ""} /></button>
       </div>
       <EntityScopeBanner meta={data?.scope_meta} />
 

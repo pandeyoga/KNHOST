@@ -6,6 +6,7 @@ import { can } from "../../config/roles";
 import { Percent, Plus, Ban, Layers, Landmark } from "lucide-react";
 import { formatCurrency } from "../../utils/formatters";
 import ErrorNotice from "../../components/ErrorNotice";
+import EntityGatedButton from "../../components/EntityGatedButton";   // PK-42 (UX-05)
 import { SearchBox } from "../../components/ListControls";
 import FormModal from "../../components/FormModal";
 import LinkCard from "../../components/LinkCard";
@@ -192,9 +193,12 @@ export default function InputTaxView({ currentUser, selectedEntity }) {
             <h2 data-testid="input-tax-title">Faktur Pajak Masukan</h2>
           </div>
           {canCreate && (
-            <button data-testid="it-create-button" onClick={() => setShowCreate(true)} className="primary-button ml-auto">
-              <Plus size={13} /> Catat Faktur Masukan
-            </button>
+            <span className="ml-auto">
+              <EntityGatedButton selectedEntity={selectedEntity} what="mencatat faktur pajak masukan"
+                data-testid="it-create-button" onClick={() => setShowCreate(true)} className="primary-button">
+                <Plus size={13} /> Catat Faktur Masukan
+              </EntityGatedButton>
+            </span>
           )}
         </div>
         <div className="section-body">

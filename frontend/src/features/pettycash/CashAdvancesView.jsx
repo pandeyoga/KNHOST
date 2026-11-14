@@ -4,6 +4,7 @@ import axios, { API } from "../../services/apiClient";
 import { Wallet, Plus, RefreshCw, FileText } from "lucide-react";
 import { formatCurrency } from "../../utils/formatters";
 import ErrorNotice from "../../components/ErrorNotice";
+import EntityGatedButton from "../../components/EntityGatedButton";   // PK-42 (UX-05)
 import { SearchBox } from "../../components/ListControls";
 import FilterChips from "../../components/FilterChips";
 import ResponsiveTable from "../../components/ResponsiveTable";
@@ -110,7 +111,7 @@ export default function CashAdvancesView({ currentUser, selectedEntity = "all", 
           </div>
           <div className="flex items-center gap-2">
             <button data-testid="ca-refresh" className="icon-button" onClick={load} aria-label="Muat ulang"><RefreshCw size={14} className={loading ? "animate-spin" : ""} /></button>
-            {canCreate && <button data-testid="ca-create-btn" className="btn-primary" onClick={() => { setSelected(null); setView("create"); }}><Plus size={14} /> PD Baru</button>}
+            {canCreate && <EntityGatedButton selectedEntity={selectedEntity} what="mengajukan dana" data-testid="ca-create-btn" className="btn-primary" onClick={() => { setSelected(null); setView("create"); }}><Plus size={14} /> PD Baru</EntityGatedButton>}
           </div>
         </div>
 

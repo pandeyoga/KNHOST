@@ -269,8 +269,9 @@ test("Kontrabon: PageHeader, PageTabs (cb-tab-*), saringan status = FilterChips 
   routeGet({ "/contra-bons/meta": META, "/contra-bons": [], "/contra-bons/status-counts": { draft: 2, paid: 1 },
     "/contra-bons/summary": { waiting_count: 0, scheduled_count: 0, due_soon_count: 0, disputed_count: 0, overdue_count: 0 } });
   // PK-17 — tab "Daftar Kontrabon" hanya untuk pemegang `vendor_bill.view` (Admin bawaan memegangnya).
+  // PK-42 (UX-05) — satu PT dipilih: di mode "Semua PT" tombol Kontrabon baru sengaja mati (EntityGatedButton).
   const { host } = await mount(<ContraBonsView currentUser={{ role: "admin",
-    permissions: { contra_bon: ["*"], vendor_bill: ["view"] } }} selectedEntity="all" entities={[]} />);
+    permissions: { contra_bon: ["*"], vendor_bill: ["view"] } }} selectedEntity="ent_ksc" entities={[]} />);
   expect(q(host, "cb-head").classList.contains("view-header")).toBe(true);
   expect(q(host, "cb-tab-list").getAttribute("aria-selected")).toBe("true");
   expect(q(host, "cb-filter-status-all").getAttribute("aria-pressed")).toBe("true");

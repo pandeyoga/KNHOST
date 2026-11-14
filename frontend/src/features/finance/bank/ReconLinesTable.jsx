@@ -15,20 +15,15 @@ import {
   Receipt, Percent,
 } from "lucide-react";
 import axios, { API } from "../../../services/apiClient";
-import { formatCurrency } from "../../../utils/formatters";
+import { formatCurrency, formatDate } from "../../../utils/formatters";
 import ErrorNotice from "../../../components/ErrorNotice";
 import FormModal from "../../../components/FormModal";
 import { apiErrorText } from "../../../utils/apiError";
 import ReconContraBonModal from "./ReconContraBonModal";
 import useListSearch from "@/hooks/useListSearch";
 
-const fmtDate = (s) => {
-  if (!s) return "—";
-  try {
-    return new Date(String(s).length <= 10 ? `${s}T00:00:00` : s)
-      .toLocaleDateString("id-ID", { day: "2-digit", month: "short", year: "2-digit" });
-  } catch { return s; }
-};
+// PK-42 (UX-18) — satu pemformat tanggal WIB bersama (`utils/formatters`); dulu zona perangkat / bentuk sendiri.
+const fmtDate = (s) => formatDate(s);
 
 const STATUS_PILL = {
   unmatched: ["bg-[#FFF4E5] text-[#B26A00]", "Perlu keputusan"],

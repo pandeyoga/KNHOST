@@ -20,6 +20,11 @@ import { apiErrorText } from "../../utils/apiError";
 import KNSelect from "../../components/KNSelect";
 import FormModal from "../../components/FormModal";
 import { formatCurrency, formatDate } from "../../utils/formatters";
+import MoneyInput from "../../components/MoneyInput";
+import { parseDecimal } from "../../utils/decimalInput";
+
+// PK-42 (UX-18) — nilai isian rupiah (teks `MoneyInput`) → angka; kosong/tak sah → 0.
+const amt = (v) => { const n = parseDecimal(v); return Number.isFinite(n) ? n : 0; };
 import { stripInternalCodes } from "../../utils/cleanText";
 
 // UAT 24 Okt (audit UI tahap 2) — G1-06: judul/catatan entri eliminasi lama masih memuat kode fase/invarian
@@ -143,18 +148,18 @@ export function EliminationModal({ initial, accounts, entities, onClose, onSaved
   const addLine = () => setLines((ls) => [...ls, { account_code: "", debit: 0, credit: 0, description: "" }]);
   const rmLine = (i) => setLines((ls) => ls.filter((_, idx) => idx !== i));
 
-  const totalD = lines.reduce((s, l) => s + (Number(l.debit) || 0), 0);
-  const totalC = lines.reduce((s, l) => s + (Number(l.credit) || 0), 0);
+  const totalD = lines.reduce((s, l) => s + amt(l.debit), 0);
+  const totalC = lines.reduce((s, l) => s + amt(l.credit), 0);
   const balanced = Math.abs(totalD - totalC) < 0.5 && totalD > 0;
 
   const save = async () => {
-    const clean = lines.filter((l) => l.account_code && ((Number(l.debit) || 0) > 0 || (Number(l.credit) || 0) > 0));
+    const clean = lines.filter((l) => l.account_code && (amt(l.debit) > 0 || amt(l.credit) > 0));
     if (clean.length === 0) { setErr("Minimal satu baris eliminasi dengan akun & nominal."); return; }
     setSaving(true); setErr("");
     try {
       await axios.post(`${API}/finance/consolidation/eliminations`, {
         name, effective_date: effDate, note, entity_from: entFrom || null, entity_to: entTo || null,
-        lines: clean.map((l) => ({ account_code: l.account_code, debit: Number(l.debit) || 0, credit: Number(l.credit) || 0, description: l.description })),
+        lines: clean.map((l) => ({ account_code: l.account_code, debit: amt(l.debit), credit: amt(l.credit), description: l.description })),
       });
       onSaved();
     } catch (e) { setErr(apiErrorText(e, "Gagal menyimpan eliminasi.")); setSaving(false); }
@@ -182,15 +187,15 @@ export function EliminationModal({ initial, accounts, entities, onClose, onSaved
               <button type="button" data-testid="cons-form-addline" className="ml-auto text-[11px] text-[#0058CC] font-semibold inline-flex items-center gap-1" onClick={addLine}><Plus size={12} /> Baris</button>
             </div>
             <div className="p-2 space-y-2">
-              <div className="grid grid-cols-12 gap-1.5 px-0.5 text-[9.5px] font-bold uppercase tracking-wide text-[#8E8E93]" data-testid="cons-form-line-head">
+              <div className="grid grid-cols-12 gap-1.5 px-0.5 text-fs-12 font-bold uppercase tracking-wide text-kn-text-2" data-testid="cons-form-line-head">
                 <span className="col-span-5">Akun</span><span className="col-span-2 text-right">Debit</span>
                 <span className="col-span-2 text-right">Kredit</span><span className="col-span-2">Keterangan</span><span className="col-span-1" />
               </div>
               {lines.map((l, i) => (
-                <div key={i} className="grid grid-cols-12 gap-1.5 items-center" data-testid={`cons-form-line-${i}`}>
+                <div key={i} className="grid grid-cols-12 gap-1.5 items-start" data-testid={`cons-form-line-${i}`}>
                   <div className="col-span-5"><KNSelect data-testid={`cons-form-line-acct-${i}`} className="field !py-1 text-[11px]" value={l.account_code} onValueChange={(v) => setLine(i, "account_code", v)} options={accounts} placeholder="Pilih akun" searchable /></div>
-                  <input data-testid={`cons-form-line-debit-${i}`} type="number" className="field !py-1 text-[11px] col-span-2 tabular-nums" placeholder="Debit" value={l.debit || ""} onChange={(e) => setLine(i, "debit", e.target.value)} />
-                  <input data-testid={`cons-form-line-credit-${i}`} type="number" className="field !py-1 text-[11px] col-span-2 tabular-nums" placeholder="Kredit" value={l.credit || ""} onChange={(e) => setLine(i, "credit", e.target.value)} />
+                  <div className="col-span-2"><MoneyInput testId={`cons-form-line-debit-${i}`} className="field !py-1 text-fs-12 tabular-nums" placeholder="Debit" aria-label={`Debit baris ${i + 1}`} value={l.debit || ""} onChange={(v) => setLine(i, "debit", v)} /></div>
+                  <div className="col-span-2"><MoneyInput testId={`cons-form-line-credit-${i}`} className="field !py-1 text-fs-12 tabular-nums" placeholder="Kredit" aria-label={`Kredit baris ${i + 1}`} value={l.credit || ""} onChange={(v) => setLine(i, "credit", v)} /></div>
                   <input className="field !py-1 text-[11px] col-span-2" aria-label="Keterangan baris" value={l.description || ""} onChange={(e) => setLine(i, "description", e.target.value)} />
                   <button type="button" className="col-span-1 text-[#C9C9CE] hover:text-[#C0392B] flex justify-center" onClick={() => rmLine(i)} aria-label="Hapus baris"><Trash2 size={13} /></button>
                 </div>

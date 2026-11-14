@@ -81,7 +81,7 @@ export default function IntercoPaymentSchedule({ selectedEntity, entities = [] }
       <div className="overflow-x-auto rounded-xl border border-[#E5E5EA] bg-white">
         <table className="min-w-full text-[12.5px]">
           <thead className="bg-[#F7F7F9] text-left text-[#3A3A3C]">
-            <tr>{["No. (PT pembayar)", "Pembayar → Penerima", "Status", "Diterima", "Invoice", "Sisa (bayar penuh)", "Umur dokumen", "Periode bayar"].map((h) => <th key={h} className="px-3 py-2 font-semibold whitespace-nowrap">{h}</th>)}</tr>
+            <tr>{["No. (PT pembayar)", "Pembayar → Penerima", "Status", "Diterima", "Ditagih", "Sisa (bayar penuh)", "Umur dokumen", "Periode bayar"].map((h) => <th key={h} className="px-3 py-2 font-semibold whitespace-nowrap">{h}</th>)}</tr>
           </thead>
           <tbody>
             {data.rows.map((r) => (

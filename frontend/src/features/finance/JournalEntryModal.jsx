@@ -10,11 +10,16 @@
  *
  * PK-36 (IC-06) — pilihan akun tanpa akun kontrol yang ditolak pengaturan PT (`manual_allowed === false`) + kalimat
  * keterangan di bawah tabel baris (hanya bila ada akun yang disembunyikan).
+ *
+ * PK-42 — (UX-11) pita periode tertutup mengatakan yang sebenarnya: server MENOLAK jurnal ke periode tertutup
+ * (`gl_service.enforce_closed_period_guard`) kecuali ada jendela Buka Periode; dulu "tetap dapat diposting". Pita merah +
+ * tautan "Ajukan Buka Periode" (hanya bila layar itu boleh dibuka). (UX-18) Debit/Kredit = `MoneyInput` (pratinjau
+ * "Rp 1.250.000"); nilai yang dikirim tetap angka.
  */
 import { apiErrorText } from "../../utils/apiError";
 import KNDatePicker from "@/components/KNDatePicker";
 import { useEffect, useMemo, useState } from "react";
-import { Plus, Trash2, Scale, AlertTriangle } from "lucide-react";
+import { Plus, Trash2, Scale, AlertTriangle, ArrowRight } from "lucide-react";
 import axios, { API } from "../../services/apiClient";
 import KNSelect from "../../components/KNSelect";
 import ErrorNotice from "../../components/ErrorNotice";
@@ -23,6 +28,12 @@ import { formatCurrency, todayWib } from "../../utils/formatters";
 import useIntentKey from "../../hooks/useIntentKey";
 import { moneyPost } from "../../utils/moneyRequest";
 import EntityScopeBanner from "../../components/EntityScopeBanner";
+import MoneyInput from "../../components/MoneyInput";
+import { parseDecimal } from "../../utils/decimalInput";
+import { useAppNav } from "../../context/AppNavContext";
+
+// PK-42 — nilai isian rupiah (teks `MoneyInput`, koma desimal boleh) → angka; kosong/tak sah → 0.
+const amt = (v) => { const n = parseDecimal(v); return Number.isFinite(n) ? n : 0; };
 
 const emptyLine = () => ({ account_code: "", debit: "", credit: "", description: "" });
 
@@ -36,8 +47,10 @@ export default function JournalEntryModal({ accounts, onClose, onSaved }) {
   const [periodWarning, setPeriodWarning] = useState(null);
   // PK-12 — kirim ulang isi yang sama (koneksi putus) memakai kunci yang sama → server memutar ulang, bukan jurnal kedua.
   const intent = useIntentKey("je");
+  const { go, canOpen } = useAppNav();
 
-  // Soft-lock: peringatkan (tanpa memblokir) bila tanggal berada di periode tertutup.
+  // Periode tertutup: server menolak jurnal bertanggal di dalamnya (kecuali jendela Buka Periode) — beri tahu sebelum
+  // pengguna menekan Posting.
   useEffect(() => {
     let active = true;
     (async () => {
@@ -61,14 +74,14 @@ export default function JournalEntryModal({ accounts, onClose, onSaved }) {
   const hiddenControl = usable.some((a) => a.manual_allowed === false);
 
   const totals = useMemo(() => {
-    const d = lines.reduce((s, l) => s + (Number(l.debit) || 0), 0);
-    const c = lines.reduce((s, l) => s + (Number(l.credit) || 0), 0);
+    const d = lines.reduce((s, l) => s + amt(l.debit), 0);
+    const c = lines.reduce((s, l) => s + amt(l.credit), 0);
     return { debit: d, credit: c, diff: Math.round((d - c) * 100) / 100 };
   }, [lines]);
 
   // KN-D22 — gerbang "seimbang" juga menolak baris yang mengisi debit DAN kredit sekaligus
   // (server menolaknya per baris; dulu layar meloloskannya karena hanya membanding total kolom).
-  const twoSidedLines = lines.filter((l) => (Number(l.debit) || 0) > 0 && (Number(l.credit) || 0) > 0).length;
+  const twoSidedLines = lines.filter((l) => amt(l.debit) > 0 && amt(l.credit) > 0).length;
   const balanced = Math.abs(totals.diff) < 0.01 && totals.debit > 0 && twoSidedLines === 0;
 
   const setLine = (i, patch) => setLines((prev) => prev.map((l, idx) => (idx === i ? { ...l, ...patch } : l)));
@@ -80,8 +93,8 @@ export default function JournalEntryModal({ accounts, onClose, onSaved }) {
     if (twoSidedLines > 0) { setError("Satu baris tidak boleh berisi debit dan kredit sekaligus — pisahkan menjadi dua baris."); return; }
     if (!balanced) { setError("Jurnal belum seimbang (total debit harus sama dengan kredit dan > 0)."); return; }
     const payloadLines = lines
-      .filter((l) => l.account_code && (Number(l.debit) > 0 || Number(l.credit) > 0))
-      .map((l) => ({ account_code: l.account_code, debit: Number(l.debit) || 0, credit: Number(l.credit) || 0, description: l.description }));
+      .filter((l) => l.account_code && (amt(l.debit) > 0 || amt(l.credit) > 0))
+      .map((l) => ({ account_code: l.account_code, debit: amt(l.debit), credit: amt(l.credit), description: l.description }));
     if (payloadLines.length < 2) { setError("Minimal 2 baris terisi (debit & kredit)."); return; }
     setSaving(true);
     try {
@@ -108,48 +121,60 @@ export default function JournalEntryModal({ accounts, onClose, onSaved }) {
       )}>
       <div className="grid grid-cols-1 md:grid-cols-3 gap-2 mb-3">
         <div>
-          <label className="text-[10px] font-bold uppercase text-[#8E8E93]">Tanggal</label>
+          <label className="field-label">Tanggal</label>
           <KNDatePicker data-testid="je-date" className="text-[12px]" clearable={false} value={date} onChange={setDate} />
         </div>
         <div className="md:col-span-2">
-          <label className="text-[10px] font-bold uppercase text-[#8E8E93]">Keterangan</label>
+          <label className="field-label">Keterangan</label>
           <input data-testid="je-description" className="field py-1.5 text-[12px]" value={description} onChange={(e) => setDescription(e.target.value)} placeholder="mis. Penyesuaian beban sewa" />
         </div>
       </div>
 
       {periodWarning && (
-        <div data-testid="je-period-warning" className="mb-3 rounded-md bg-[#FDF3E7] border border-[#F5D9A8] text-[#B26B00] text-[12px] px-3 py-2 flex items-center gap-2">
-          <AlertTriangle size={14} />
-          Perhatian: periode <b>{periodWarning.period_label}</b> sudah ditutup. Jurnal tetap dapat diposting, namun sebaiknya buka kembali (reopen) periode bila ini koreksi resmi.
+        <div data-testid="je-period-warning" role="alert"
+          className="mb-3 flex flex-wrap items-start gap-x-2 gap-y-1 rounded-md border border-kn-danger bg-kn-danger-soft px-3 py-2 text-fs-12 text-kn-danger-text">
+          <AlertTriangle size={14} className="mt-0.5 shrink-0" aria-hidden="true" />
+          <span className="min-w-0 flex-1">
+            Periode <b>{periodWarning.period_label}</b> sudah ditutup. Jurnal bertanggal ini akan ditolak, kecuali ada izin
+            Buka Periode yang masih berlaku. Ganti tanggalnya, atau ajukan Buka Periode.
+          </span>
+          {canOpen("period-unlock") && (
+            <button type="button" className="link-button font-semibold" data-testid="je-period-unlock-link"
+              onClick={() => go("period-unlock")}>
+              Ajukan Buka Periode <ArrowRight size={12} aria-hidden="true" />
+            </button>
+          )}
         </div>
       )}
 
       <div className="overflow-x-auto rounded-md border border-[#EFF0F2]">
         <table className="w-full text-[12px]">
           <thead>
-            <tr className="text-left text-[10px] font-bold uppercase text-[#8E8E93] bg-[#FAFBFC] border-b border-[#EFF0F2]">
+            <tr className="text-left text-fs-12 font-bold uppercase text-kn-text-2 bg-[#FAFBFC] border-b border-[#EFF0F2]">
               <th className="px-2 py-2 min-w-[220px]">Akun</th>
-              <th className="px-2 py-2 text-right w-[140px]">Debit</th>
-              <th className="px-2 py-2 text-right w-[140px]">Kredit</th>
+              <th className="px-2 py-2 text-right w-[160px]">Debit</th>
+              <th className="px-2 py-2 text-right w-[160px]">Kredit</th>
               <th className="px-2 py-2 w-[40px]"></th>
             </tr>
           </thead>
           <tbody>
             {lines.map((l, i) => (
               <tr key={i} data-testid={`je-line-${i}`} className="border-b border-[#F5F5F7] last:border-0">
-                <td className="px-2 py-1.5">
+                <td className="px-2 py-1.5 align-top">
                   <KNSelect data-testid={`je-line-account-${i}`} className="field py-1 text-[12px]" value={l.account_code}
                     onValueChange={(v) => setLine(i, { account_code: v })} options={accountOptions} placeholder="Pilih akun" searchable />
                 </td>
-                <td className="px-2 py-1.5">
-                  <input data-testid={`je-line-debit-${i}`} type="number" min="0" className="field py-1 text-[12px] tabular-nums text-right" value={l.debit}
-                    onChange={(e) => setLine(i, { debit: e.target.value, credit: e.target.value ? "" : l.credit })} placeholder="0" />
+                <td className="px-2 py-1.5 align-top">
+                  <MoneyInput testId={`je-line-debit-${i}`} className="field py-1 text-fs-13 text-right" value={l.debit}
+                    aria-label={`Debit baris ${i + 1}`}
+                    onChange={(v) => setLine(i, { debit: v, credit: v ? "" : l.credit })} placeholder="0" />
                 </td>
-                <td className="px-2 py-1.5">
-                  <input data-testid={`je-line-credit-${i}`} type="number" min="0" className="field py-1 text-[12px] tabular-nums text-right" value={l.credit}
-                    onChange={(e) => setLine(i, { credit: e.target.value, debit: e.target.value ? "" : l.debit })} placeholder="0" />
+                <td className="px-2 py-1.5 align-top">
+                  <MoneyInput testId={`je-line-credit-${i}`} className="field py-1 text-fs-13 text-right" value={l.credit}
+                    aria-label={`Kredit baris ${i + 1}`}
+                    onChange={(v) => setLine(i, { credit: v, debit: v ? "" : l.debit })} placeholder="0" />
                 </td>
-                <td className="px-2 py-1.5 text-center">
+                <td className="px-2 py-1.5 text-center align-top">
                   <button type="button" data-testid={`je-line-remove-${i}`} className="icon-button text-[#C0392B]" onClick={() => removeLine(i)} aria-label="Hapus baris" disabled={lines.length <= 2}><Trash2 size={13} /></button>
                 </td>
               </tr>

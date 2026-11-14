@@ -248,7 +248,8 @@ describe("L-08 & kepala panel piutang", () => {
     const head = q(host, "ar-aging-detail").querySelector(".section-head");
     expect(head.className).toContain("flex-wrap");
     expect(head.children[1].getAttribute("data-testid")).toBe("ar-aging-detail-close");
-    expect(q(host, "ar-aging-detail-summary").textContent).toContain("ledger");
+    // PK-42 (UX-18) — "ledger · eksposur" → bahasa sehari-hari "tercatat · belum dikirim".
+    expect(q(host, "ar-aging-detail-summary").textContent).toContain("tercatat");
     expect(q(host, "ar-aging-accrue")).not.toBeNull();
   });
 });

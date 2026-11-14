@@ -1,8 +1,8 @@
-import { formatCurrency } from "../../utils/formatters";
+import { formatCurrency, formatDate } from "../../utils/formatters";
 
 /** Shared CRM helpers, pills, badges (KN_17). */
-export const fmtDate = (iso) =>
-  iso ? String(iso).slice(0, 10).split("-").reverse().join("/") : "—";
+// PK-42 (UX-18) — satu pemformat tanggal WIB bersama (`utils/formatters`); dulu zona perangkat / bentuk sendiri.
+export const fmtDate = (iso) => formatDate(iso);
 
 export const currentPeriod = () => {
   const d = new Date();

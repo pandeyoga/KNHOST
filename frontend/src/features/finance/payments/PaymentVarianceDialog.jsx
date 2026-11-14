@@ -23,6 +23,11 @@ import {
 import FormModal from "../../../components/FormModal";
 import KNSelect from "../../../components/KNSelect";
 import { money } from "./paymentApi";
+import MoneyInput from "../../../components/MoneyInput";
+import { parseDecimal } from "../../../utils/decimalInput";
+
+// PK-42 (UX-18) — nominal alokasi (teks `MoneyInput`, koma desimal boleh) → angka; kosong/tak sah → 0.
+const amt = (v) => { const n = parseDecimal(v); return Number.isFinite(n) ? n : 0; };
 
 const ICONS = {
   outstanding: Coins,
@@ -99,7 +104,7 @@ export default function PaymentVarianceDialog({
   }, [a.direction, a.delta, options.length, reasons.length]);
 
   const allocTotal = useMemo(
-    () => Math.round(Object.values(alloc).reduce((s, v) => s + (Number(v) || 0), 0) * 100) / 100,
+    () => Math.round(Object.values(alloc).reduce((s, v) => s + amt(v), 0) * 100) / 100,
     [alloc],
   );
 
@@ -114,8 +119,8 @@ export default function PaymentVarianceDialog({
     if (kind === "refund") { payload.method = method; payload.amount = gap; }
     if (kind === "allocate") {
       payload.allocations = Object.entries(alloc)
-        .filter(([, v]) => Number(v) > 0)
-        .map(([order_id, v]) => ({ order_id, amount: Number(v) }));
+        .filter(([, v]) => amt(v) > 0)
+        .map(([order_id, v]) => ({ order_id, amount: amt(v) }));
       payload.amount = allocTotal;
     }
     onConfirm?.(payload);
@@ -234,7 +239,7 @@ export default function PaymentVarianceDialog({
                 </p>
               )}
               {(a.others || []).map((o) => (
-                <div key={o.order_id} className="flex items-center gap-2 text-[11.5px]"
+                <div key={o.order_id} className="flex items-start gap-2 text-[11.5px]"
                   data-testid={`pv-alloc-row-${o.order_id}`}>
                   <span className="min-w-0 flex-1">
                     <b className="text-[#0058CC]">{o.number}</b>
@@ -242,14 +247,17 @@ export default function PaymentVarianceDialog({
                       sisa {money(o.outstanding)}
                     </span>
                   </span>
-                  <input type="number" className="field w-36 !py-1 text-[11.5px] tabular-nums"
-                    data-testid={`pv-alloc-input-${o.order_id}`}
-                    value={alloc[o.order_id] ?? ""} placeholder="0"
-                    onChange={(e) => {
-                      const v = Math.max(0, Math.min(Number(e.target.value) || 0,
-                        Number(o.outstanding || 0)));
-                      setAlloc((p) => ({ ...p, [o.order_id]: v }));
-                    }} />
+                  <div className="w-40">
+                    <MoneyInput className="field !py-1 text-fs-12 tabular-nums" testId={`pv-alloc-input-${o.order_id}`}
+                      aria-label={`Nominal alokasi ${o.number || ""}`.trim()}
+                      value={alloc[o.order_id] ?? ""} placeholder="0"
+                      onChange={(t) => {
+                        // Tidak boleh melebihi sisa tagihan pesanan itu (perilaku lama dipertahankan).
+                        const n = amt(t);
+                        const max = Number(o.outstanding || 0);
+                        setAlloc((p) => ({ ...p, [o.order_id]: n > max ? max : n < 0 ? "" : t }));
+                      }} />
+                  </div>
                 </div>
               ))}
             </div>

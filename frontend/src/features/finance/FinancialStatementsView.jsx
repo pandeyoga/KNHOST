@@ -331,7 +331,7 @@ function BalanceSheetTab({ selectedEntity }) {
               className="btn-secondary text-[12px] py-1.5 px-3 inline-flex items-center gap-1">
               <Download size={13} /> Ekspor CSV
             </button>
-            <button data-testid="fs-bs-refresh" className="icon-button" onClick={load} aria-label="Refresh"><RefreshCw size={14} className={loading ? "animate-spin" : ""} /></button>
+            <button data-testid="fs-bs-refresh" className="icon-button" onClick={load} aria-label="Muat ulang" title="Muat ulang"><RefreshCw size={14} className={loading ? "animate-spin" : ""} /></button>
           </div>
         </div>
       </div>

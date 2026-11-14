@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import axios, { API } from "../../services/apiClient";
 import ErrorNotice from "../../components/ErrorNotice";
+import EntityGatedButton, { EntityGateNote } from "../../components/EntityGatedButton";   // PK-42 (UX-05)
 import DesktopOnlyNotice from "../../components/DesktopOnlyNotice";
 import { formatCurrency, formatPeriod } from "../../utils/formatters";
 import { askConfirm } from "../../services/confirmService";
@@ -278,15 +279,19 @@ export default function FixedAssetsView({ selectedEntity, entities = [] }) {
               <input data-testid="fa-search" className="field !pl-7 !py-1 !text-[12px]" placeholder="Cari nomor / nama..."
                 value={q} onChange={(e) => setQ(e.target.value)} />
             </div>
-            <button data-testid="add-asset-btn" className="primary-button" onClick={() => { setError(""); setShowAdd(true); }}>
+            <EntityGatedButton selectedEntity={selectedEntity} what="menambah aset tetap" data-testid="add-asset-btn"
+              hint={false} aria-describedby="add-asset-btn-scope-note"
+              className="primary-button" onClick={() => { setError(""); setShowAdd(true); }}>
               <Plus size={14} /> Tambah Aset
-            </button>
+            </EntityGatedButton>
             <button data-testid="fa-refresh" className="icon-button" onClick={load} aria-label="Muat ulang">
               <RefreshCw size={14} className={loading ? "animate-spin" : ""} />
             </button>
           </div>
         </div>
         <div className="section-body">
+          {/* PK-42 — kepala kartu sudah berisi judul, jumlah, kotak cari, dan dua tombol: alasan di bilah sendiri. */}
+          <EntityGateNote selectedEntity={selectedEntity} what="menambah aset tetap" testId="add-asset-btn-scope-note" />
           <ErrorNotice message={error} onRetry={load} onDismiss={() => setError("")} testId="fixed-assets-error" />
           {msg && (
             <div className="notice-bar success mb-2" data-testid="fa-notice">

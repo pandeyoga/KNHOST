@@ -22,14 +22,10 @@ import {
 } from "./paymentApi";
 import { askReason } from "@/services/confirmService";
 import useIntentKey from "../../../hooks/useIntentKey";
+import { formatDate } from "../../../utils/formatters";
 
-function fmtDate(iso) {
-  if (!iso) return "—";
-  try {
-    return new Date(iso).toLocaleDateString("id-ID",
-      { day: "2-digit", month: "short", year: "2-digit" });
-  } catch { return "—"; }
-}
+// PK-42 (UX-18) — satu pemformat tanggal WIB bersama (`utils/formatters`); dulu zona perangkat / bentuk sendiri.
+const fmtDate = (iso) => formatDate(iso);
 
 function Kpi({ label, value, tone = "#1C1C1E", testId }) {
   return (

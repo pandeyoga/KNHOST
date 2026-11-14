@@ -12,6 +12,7 @@ from pydantic import BaseModel, Field
 from dependencies import require_permission, audit
 from entity_scope import entity_ctx, resolve_list_scope, assert_entity_access, guard_doc, resolve_requested_entity
 from services import ar_receipt_service
+from pagination import get_page_params, is_paged
 logger = logging.getLogger(__name__)
 
 
@@ -59,10 +60,15 @@ async def deposit_balance(request: Request, customer_id: str = Query(...)) -> Di
 
 @router.get("/ar-receipts")
 async def list_receipts(request: Request, customer_id: Optional[str] = Query(None),
-                        entity_id: Optional[str] = Query(None)) -> List[Dict[str, Any]]:
+                        entity_id: Optional[str] = Query(None)) -> Any:
+    """Riwayat kwitansi, terbaru dulu. PK-42 (UX-12): `page`/`page_size` → `{items, total, page, page_size,
+    has_more}` (`q` = nomor / nama pelanggan); tanpa keduanya → larik seperti sebelumnya (batas 2.000 sesudah urut)."""
     await require_permission(request, "ar_receipt", "view")
     ctx = await entity_ctx(request)
     scope = resolve_list_scope("ar_receipts", {}, ctx, entity_id)
+    if is_paged(request):
+        page, page_size, q, _sort = get_page_params(request)
+        return await ar_receipt_service.list_receipts_page(customer_id, scope, page=page, page_size=page_size, q=q)
     return await ar_receipt_service.list_receipts(customer_id, scope=scope)
 
 

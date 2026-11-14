@@ -218,7 +218,7 @@ export default function GroupConsolidationView({ entities = [] }) {
           <div className="flex items-center gap-2 ml-auto">
             {tab === "pnl" && <div className="w-[110px]"><KNSelect data-testid="cons-year" className="field py-1.5 text-[12px]" value={year} onValueChange={setYear} options={YEARS} /></div>}
             {tab !== "pnl" && <KNDatePicker data-testid="cons-asof" className="w-[170px] text-[12px]" clearable={false} value={asOf} onChange={setAsOf} />}
-            <button data-testid="cons-refresh" className="icon-button" onClick={load} aria-label="Refresh"><RefreshCw size={14} className={loading ? "animate-spin" : ""} /></button>
+            <button data-testid="cons-refresh" className="icon-button" onClick={load} aria-label="Muat ulang" title="Muat ulang"><RefreshCw size={14} className={loading ? "animate-spin" : ""} /></button>
           </div>
         </div>
 

@@ -13,7 +13,9 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { PiggyBank, RefreshCw, AlertTriangle, Undo2, HandCoins, Briefcase } from "lucide-react";
 import axios, { API } from "../../../services/apiClient";
 import { KNSelect } from "../../../components/KNSelect";
-import { formatCurrency } from "../../../utils/formatters";
+import { formatCurrency, formatDate } from "../../../utils/formatters";
+import MoneyInput from "../../../components/MoneyInput";
+import { parseDecimal } from "../../../utils/decimalInput";
 import { apiErrorText } from "../../../utils/apiError";
 import ErrorNotice from "../../../components/ErrorNotice";
 import FormModal from "../../../components/FormModal";
@@ -22,13 +24,10 @@ import { openFinanceCase, caseNumberFromText } from "../cases/caseDeepLink";
 import useIntentKey from "../../../hooks/useIntentKey";
 import { moneyPost } from "../../../utils/moneyRequest";
 
-const fmtDate = (s) => {
-  if (!s) return "—";
-  try {
-    return new Date(String(s).length <= 10 ? `${s}T00:00:00` : s)
-      .toLocaleDateString("id-ID", { day: "2-digit", month: "short", year: "2-digit" });
-  } catch { return s; }
-};
+// PK-42 (UX-18) — satu pemformat tanggal WIB bersama ("23 Okt 2026"); dulu zona perangkat & tahun dua angka.
+const fmtDate = (s) => formatDate(s);
+// PK-42 — nominal alokasi (teks `MoneyInput`, koma desimal boleh) → angka; kosong/tak sah → 0.
+const amt = (v) => { const n = parseDecimal(v); return Number.isFinite(n) ? n : 0; };
 
 // Label alasan keputusan atas uang — wajib dipilih (tidak boleh alokasi tanpa alasan).
 const REASONS = [
@@ -86,7 +85,7 @@ export default function ReconHoldingPanel({ holding, busy, onAction, onReload, o
       || c.entity_id === target.entity_id)
     .map((c) => ({ value: c.id, label: c.name || c.id })), [customers, target]);
   const allocTotal = useMemo(
-    () => Object.values(alloc).reduce((a, v) => a + (Number(v) || 0), 0), [alloc]);
+    () => Object.values(alloc).reduce((a, v) => a + amt(v), 0), [alloc]);
   const remaining = (Number(target?.remaining || 0) - allocTotal);
 
   function close() {
@@ -136,8 +135,8 @@ export default function ReconHoldingPanel({ holding, busy, onAction, onReload, o
 
   async function submit() {
     const allocations = Object.entries(alloc)
-      .filter(([, v]) => Number(v) > 0)
-      .map(([order_id, v]) => ({ order_id, amount: Number(v) }));
+      .filter(([, v]) => amt(v) > 0)
+      .map(([order_id, v]) => ({ order_id, amount: amt(v) }));
     if (!allocations.length) return;
     setSaving(true);
     try {
@@ -311,11 +310,11 @@ export default function ReconHoldingPanel({ holding, busy, onAction, onReload, o
             </label>
             <div className="rounded border border-[#EFF0F2] sm:max-h-[240px] sm:overflow-auto">
               {!customerId ? (
-                <div className="p-4 text-center text-[12px] text-[#8E8E93]">
+                <div className="p-4 text-center text-fs-12 text-kn-text-2">
                   Pilih pelanggan dulu untuk melihat pesanan yang masih punya sisa tagihan.
                 </div>
               ) : orders.length === 0 ? (
-                <div className="p-4 text-center text-[12px] text-[#8E8E93]">
+                <div className="p-4 text-center text-fs-12 text-kn-text-2">
                   Pelanggan ini tidak punya pesanan bersisa tagihan.
                 </div>
               ) : orders.map((o) => (
@@ -327,17 +326,16 @@ export default function ReconHoldingPanel({ holding, busy, onAction, onReload, o
                       <b>{o.number}</b> ·{" "}
                       {fmtDate(o.date || o.order_date || o.created_at)}
                     </p>
-                    <p className="text-[10px] text-[#8E8E93]">
+                    <p className="text-fs-12 text-kn-text-2">
                       Sisa tagihan {formatCurrency(o.outstanding ?? o.outstanding_amount ?? 0)}
                     </p>
                   </div>
-                  <input data-testid={`recon-allocate-amount-${o.id || o.order_id}`}
-                    type="number" min={0} step={1000} className="input-field w-[150px]"
-                    placeholder="Nominal"
-                    value={alloc[o.id || o.order_id] ?? ""}
-                    onChange={(e) => setAlloc((cur) => ({
-                      ...cur, [o.id || o.order_id]: e.target.value,
-                    }))} />
+                  <div className="w-[160px]">
+                    <MoneyInput testId={`recon-allocate-amount-${o.id || o.order_id}`} className="input-field"
+                      placeholder="Nominal" aria-label={`Nominal alokasi ${o.number || ""}`.trim()}
+                      value={alloc[o.id || o.order_id] ?? ""}
+                      onChange={(v) => setAlloc((cur) => ({ ...cur, [o.id || o.order_id]: v }))} />
+                  </div>
                 </div>
               ))}
             </div>

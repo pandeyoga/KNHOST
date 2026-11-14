@@ -25,6 +25,7 @@ import axios, { API } from "../../../services/apiClient";
 import { moneyPost } from "../../../utils/moneyRequest";
 import useIntentKey from "../../../hooks/useIntentKey";
 import ErrorNotice from "../../../components/ErrorNotice";
+import EntityGatedButton from "../../../components/EntityGatedButton";   // PK-42 (UX-05)
 import { KNSelect } from "../../../components/KNSelect";
 import FilterChips from "../../../components/FilterChips";
 import PageTabs from "../../../components/PageTabs";
@@ -208,9 +209,10 @@ export default function ContraBonsView({ currentUser, selectedEntity, entities =
               <RefreshCw size={14} className={loading ? "spin" : ""} /> Muat ulang
             </button>
             {canWrite && (
-              <button type="button" className="primary-button" data-testid="cb-new" onClick={() => openCreate("")}>
+              <EntityGatedButton selectedEntity={selectedEntity} what="membuat kontrabon" className="primary-button"
+                data-testid="cb-new" onClick={() => openCreate("")}>
                 <Plus size={14} /> Kontrabon baru
-              </button>
+              </EntityGatedButton>
             )}
           </>
         )} />

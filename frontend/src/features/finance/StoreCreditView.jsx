@@ -16,16 +16,13 @@ import {
 } from "lucide-react";
 import axios, { API } from "../../services/apiClient";
 import ErrorNotice from "../../components/ErrorNotice";
-import { formatCurrency } from "../../utils/formatters";
+import { formatCurrency, formatDateTime } from "../../utils/formatters";
 import DetailModal from "../../components/DetailModal";
 import { AdjustModal, RedeemModal, ReverseModal } from "./StoreCreditModals";
 import EntityBadge from "../../components/EntityBadge";
 
-function fmtDate(iso) {
-  if (!iso) return "—";
-  try { return new Date(iso).toLocaleString("id-ID", { day: "2-digit", month: "short", year: "2-digit", hour: "2-digit", minute: "2-digit" }); }
-  catch { return "—"; }
-}
+// PK-42 (UX-18) — satu pemformat tanggal WIB bersama (`utils/formatters`); dulu zona perangkat / bentuk sendiri.
+const fmtDate = (iso) => formatDateTime(iso);
 
 const TYPE_META = {
   issue: { label: "Terbit", cls: "bg-[#E6F6EC] text-[#1B7F4B]", icon: Gift },
@@ -109,7 +106,7 @@ export default function StoreCreditView({ selectedEntity, currentUser }) {
               <Search size={13} className="absolute left-2 top-1/2 -translate-y-1/2 text-[#9A9BA3]" />
               <input data-testid="sc-search" className="field !pl-7 !py-1 !text-[12px]" placeholder="Cari pelanggan..." value={q} onChange={(e) => setQ(e.target.value)} />
             </div>
-            <button data-testid="sc-refresh" className="icon-button" onClick={load} aria-label="Refresh"><RefreshCw size={14} className={loading ? "animate-spin" : ""} /></button>
+            <button data-testid="sc-refresh" className="icon-button" onClick={load} aria-label="Muat ulang" title="Muat ulang"><RefreshCw size={14} className={loading ? "animate-spin" : ""} /></button>
           </div>
         </div>
         <div className="section-body">

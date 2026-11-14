@@ -797,14 +797,39 @@ async def void_receipt(receipt_id: str, actor: Dict[str, Any], reason: str = "")
     return safe_doc(await db.ar_receipts.find_one({"id": receipt_id}, {"_id": 0}))
 
 
-async def list_receipts(customer_id: Optional[str] = None,
-                        scope: Optional[Dict[str, Any]] = None) -> List[Dict[str, Any]]:
+#: PK-42 (UX-12) — urutan daftar kwitansi: terbaru dulu, DI KUERI. Dulu 2.000 baris diambil tanpa urutan lalu diurutkan
+#: di memori, jadi kwitansi terbaru bisa terbuang begitu baris lebih dari 2.000. `id` = pemecah seri (halaman stabil).
+RECEIPT_SORT = [("created_at", -1), ("id", -1)]
+#: Batas daftar tanpa halaman (bentuk jawaban lama, larik telanjang) — tetap 2.000, kini sesudah pengurutan.
+RECEIPT_UNPAGED_LIMIT = 2000
+#: PK-42 — kotak cari riwayat kwitansi (`q`): nomor kwitansi dan nama pelanggan.
+RECEIPT_SEARCH_FIELDS = ("number", "customer_name")
+
+
+def _receipt_query(customer_id: Optional[str], scope: Optional[Dict[str, Any]], q: str = "") -> Dict[str, Any]:
+    from pagination import build_search, merge_query
     query: Dict[str, Any] = dict(scope or {})
     if customer_id:
         query["customer_id"] = customer_id
-    rows = await db.ar_receipts.find(query, {"_id": 0}).to_list(2000)
-    rows.sort(key=lambda r: str(r.get("created_at") or ""), reverse=True)
+    return merge_query(query, build_search(q, RECEIPT_SEARCH_FIELDS))
+
+
+async def list_receipts(customer_id: Optional[str] = None,
+                        scope: Optional[Dict[str, Any]] = None) -> List[Dict[str, Any]]:
+    rows = await db.ar_receipts.find(_receipt_query(customer_id, scope), {"_id": 0}) \
+        .sort(RECEIPT_SORT).to_list(RECEIPT_UNPAGED_LIMIT)
     return [safe_doc(r) for r in rows]
+
+
+async def list_receipts_page(customer_id: Optional[str], scope: Optional[Dict[str, Any]], *, page: int,
+                             page_size: int, q: str = "") -> Dict[str, Any]:
+    """PK-42 (UX-12) — satu halaman riwayat kwitansi + jumlah total (kontrak `pagination.envelope`)."""
+    from pagination import envelope
+    query = _receipt_query(customer_id, scope, q)
+    total = await db.ar_receipts.count_documents(query)
+    rows = await db.ar_receipts.find(query, {"_id": 0}).sort(RECEIPT_SORT) \
+        .skip((page - 1) * page_size).limit(page_size).to_list(page_size)
+    return envelope([safe_doc(r) for r in rows], total, page, page_size)
 
 
 async def get_receipt(receipt_id: str) -> Optional[Dict[str, Any]]:

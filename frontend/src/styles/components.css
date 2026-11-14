@@ -1003,6 +1003,14 @@ thead .col-sticky-end { background: #F7F7F9; z-index: 2; }
 .data-table tbody tr:hover .col-sticky-end { background: #FAFBFC; }
 /* Tabel bernaskah kolom panjang: judul kolom boleh dua baris agar tabel muat tanpa bergulir di 1280 px. */
 .data-table.head-wrap thead th { white-space: normal; vertical-align: bottom; }
+/* PK-42 (UX-05) — tombol buat yang mati di mode "Semua PT" (`EntityGatedButton`): alasannya tertulis di samping tombol,
+   bukan hanya tooltip (tak terbaca di layar sentuh). Tidak memecah baris; di HP turun ke bawah tombol. */
+.entity-gated { display: inline-flex; align-items: center; gap: 8px; flex-wrap: wrap; min-width: 0; }
+.entity-gated-hint { font-size: 12px; line-height: 16px; color: var(--kn-text-2); white-space: nowrap; }
+/* Kepala kartu yang sudah padat (tab + tombol): alasan di bilah sendiri di atas isi kartu (`EntityGateNote`). */
+.entity-gated-note { display: flex; align-items: center; gap: 8px; margin: 0 0 12px; padding: 8px 12px; font-size: 12px;
+  line-height: 16px; color: var(--kn-text); background: var(--kn-neutral-soft); border: 1px solid var(--kn-divider);
+  border-radius: var(--r-md, 10px); }
 .rt-state {
   padding: 28px 16px; text-align: center; color: #6B6B73; font-size: 13px;
   background: #fff; border: 1px dashed var(--line); border-radius: var(--r-lg);

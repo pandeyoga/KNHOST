@@ -18,6 +18,7 @@ import {
 } from "lucide-react";
 import axios, { API } from "../../services/apiClient";
 import ErrorNotice from "../../components/ErrorNotice";
+import EntityGatedButton from "../../components/EntityGatedButton";   // PK-42 (UX-05)
 import DesktopOnlyNotice from "../../components/DesktopOnlyNotice";
 import KNSelect from "../../components/KNSelect";
 import {
@@ -187,11 +188,11 @@ export default function BudgetView({ selectedEntity, currentUser }) {
           </div>
         </div>
         <div className="ml-auto flex items-center gap-2">
-          <button data-testid="budget-add-toggle" onClick={() => { setFormError(""); setShowForm(true); }}
-            className="btn-primary text-[12px] py-1.5 px-3 inline-flex items-center gap-1">
+          <EntityGatedButton selectedEntity={selectedEntity} what="menambah anggaran" data-testid="budget-add-toggle"
+            onClick={() => { setFormError(""); setShowForm(true); }} className="primary-button">
             <Plus size={13} /> Tambah Anggaran
-          </button>
-          <button data-testid="budget-refresh" className="icon-button" onClick={load} aria-label="Refresh">
+          </EntityGatedButton>
+          <button data-testid="budget-refresh" className="icon-button" onClick={load} aria-label="Muat ulang" title="Muat ulang">
             <RefreshCw size={14} className={loading ? "animate-spin" : ""} />
           </button>
         </div>

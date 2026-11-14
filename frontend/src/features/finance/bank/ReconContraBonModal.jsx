@@ -14,7 +14,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { RefreshCw, Receipt, CheckCircle2 } from "lucide-react";
 import axios, { API } from "../../../services/apiClient";
-import { formatCurrency } from "../../../utils/formatters";
+import { formatCurrency, formatDate } from "../../../utils/formatters";
 import ErrorNotice from "../../../components/ErrorNotice";
 import FormModal from "../../../components/FormModal";
 import { askConfirm } from "../../../services/confirmService";
@@ -22,13 +22,8 @@ import { apiErrorText } from "../../../utils/apiError";
 import useIntentKey from "../../../hooks/useIntentKey";
 import { moneyPost } from "../../../utils/moneyRequest";
 
-const fmtDate = (s) => {
-  if (!s) return "—";
-  try {
-    return new Date(String(s).length <= 10 ? `${s}T00:00:00` : s)
-      .toLocaleDateString("id-ID", { day: "2-digit", month: "short", year: "2-digit" });
-  } catch { return s; }
-};
+// PK-42 (UX-18) — satu pemformat tanggal WIB bersama (`utils/formatters`); dulu zona perangkat / bentuk sendiri.
+const fmtDate = (s) => formatDate(s);
 
 export default function ReconContraBonModal({ line, onClose, onDone, onError }) {
   const [data, setData] = useState(null);

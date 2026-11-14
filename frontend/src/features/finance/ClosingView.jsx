@@ -16,7 +16,7 @@ import FinReportLink from "./FinReportLink";
 import axios, { API } from "../../services/apiClient";
 import ErrorNotice from "../../components/ErrorNotice";
 import KNSelect from "../../components/KNSelect";
-import { formatCurrency } from "../../utils/formatters";
+import { formatCurrency, formatDateTime } from "../../utils/formatters";
 import { askConfirm, askReason } from "../../services/confirmService";
 import { can } from "../../config/roles";
 
@@ -47,11 +47,8 @@ const YEARS = Array.from({ length: 6 }, (_, i) => {
   return { value: y, label: y };
 });
 
-function fmtDateTime(iso) {
-  if (!iso) return "—";
-  try { return new Date(iso).toLocaleString("id-ID", { day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" }); }
-  catch { return iso; }
-}
+// PK-42 (UX-18) — satu pemformat waktu WIB bersama ("23 Okt 2026 01.47 WIB"); dulu zona perangkat.
+const fmtDateTime = (iso) => formatDateTime(iso);
 
 export default function ClosingView({ selectedEntity, entities = [], currentUser }) {
   // Sisir gerbang peran (2026-10-20): tutup ulang = accounting.manage. PR-T7 (#22) — buka kembali & menembus blokir
@@ -201,7 +198,7 @@ export default function ClosingView({ selectedEntity, entities = [], currentUser
 
   const doReopen = async (rec) => {
     if (!(await askConfirm({ danger: true, title: `Buka kembali periode ${rec.period_label}?`,
-      message: `Jurnal penutup ${rec.journal_entry_number || ""} akan di-void dan periode bisa dijurnal lagi.`,
+      message: `Jurnal penutup ${rec.journal_entry_number || ""} akan dianulir dan periode bisa dijurnal lagi.`,
       confirmLabel: "Buka Kembali" }))) return;
     setError(""); setNotice(""); setBusy(true);
     try {
@@ -209,7 +206,7 @@ export default function ClosingView({ selectedEntity, entities = [], currentUser
       // KF-T6 — aturan dua orang: panggilan pertama hanya mencatat pengajuan (202); orang kedua yang menjalankan.
       setNotice(res?.status === 202
         ? `Pengajuan buka kembali ${rec.period_label} tercatat — menunggu orang kedua untuk menjalankannya.`
-        : `Periode ${rec.period_label} dibuka kembali (jurnal penutup di-void).`);
+        : `Periode ${rec.period_label} dibuka kembali (jurnal penutup dianulir).`);
       load();
     } catch (e) {
       setError(apiErrorText(e, "Gagal membuka kembali periode."));
@@ -220,7 +217,7 @@ export default function ClosingView({ selectedEntity, entities = [], currentUser
 
   const doReclose = async (rec) => {
     if (!(await askConfirm({ danger: true, title: `Tutup ulang periode ${rec.period_label}?`,
-      message: "Jurnal penutup lama di-void dan jurnal penutup baru dibuat dari angka terkini.",
+      message: "Jurnal penutup lama dianulir dan jurnal penutup baru dibuat dari angka terkini.",
       confirmLabel: "Tutup Ulang" }))) return;
     setError(""); setNotice(""); setBusy(true);
     try {

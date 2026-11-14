@@ -18,6 +18,10 @@ import ErrorNotice from "../../../components/ErrorNotice";
 import FormModal from "../../../components/FormModal";
 import { KNSelect } from "../../../components/KNSelect";
 import { formatCurrency } from "../../../utils/formatters";
+import { parseDecimal } from "../../../utils/decimalInput";
+
+// PK-42 (UX-18) — nominal alokasi (teks `MoneyInput`, koma desimal boleh) → angka; kosong/tak sah → 0.
+const amt = (v) => { const n = parseDecimal(v); return Number.isFinite(n) ? n : 0; };
 import { entityFull } from "../../../utils/entityLabel";
 import { apiErrorText } from "../../../utils/apiError";
 import { moneyPost } from "../../../utils/moneyRequest";
@@ -99,7 +103,7 @@ export default function CasePlaybookWizard({ caseData, reasons, entities, custom
     .map((e) => ({ value: e.id, label: entityFull(e) })), [entities, caseData.entity_id]);
 
   const allocTotal = useMemo(
-    () => Object.values(alloc).reduce((a, v) => a + (Number(v) || 0), 0), [alloc]);
+    () => Object.values(alloc).reduce((a, v) => a + amt(v), 0), [alloc]);
   const effAmount = need("allocations") ? allocTotal : Number(amount) || 0;
   const needsApproval = Number(policy?.approval_above || 0) > 0
     && effAmount >= Number(policy.approval_above);
@@ -136,8 +140,8 @@ export default function CasePlaybookWizard({ caseData, reasons, entities, custom
         employee_name: employeeName, with_penalty: withPenalty,
         receipt_id: caseData.source?.kind === "ar_receipt" ? caseData.source.id : "",
         allocations: Object.entries(alloc)
-          .filter(([, v]) => Number(v) > 0)
-          .map(([order_id, v]) => ({ order_id, amount: Number(v) })),
+          .filter(([, v]) => amt(v) > 0)
+          .map(([order_id, v]) => ({ order_id, amount: amt(v) })),
       };
       const r = await intent.send({ id: caseData.id, ...body },
         (k) => moneyPost(`${API}/finance-cases/${caseData.id}/resolve`, body, k));
@@ -303,7 +307,7 @@ export default function CasePlaybookWizard({ caseData, reasons, entities, custom
               </p>
             )}
             {orders.map((o) => (
-              <div key={o.order_id} className="mb-1.5 flex items-center gap-2"
+              <div key={o.order_id} className="mb-1.5 flex items-start gap-2"
                 data-testid={`case-alloc-row-${o.order_id}`}>
                 <span className="flex-1 text-[12px] text-[#1C1C1E]">
                   {o.number}
@@ -311,11 +315,12 @@ export default function CasePlaybookWizard({ caseData, reasons, entities, custom
                     sisa {formatCurrency(o.outstanding)}
                   </span>
                 </span>
-                <input type="number" min={0} max={o.outstanding} placeholder="0"
-                  data-testid={`case-alloc-${o.order_id}`}
-                  className="input-field w-[150px] text-right"
-                  value={alloc[o.order_id] || ""}
-                  onChange={(e) => setAlloc({ ...alloc, [o.order_id]: e.target.value })} />
+                <div className="w-[160px]">
+                  <MoneyInput testId={`case-alloc-${o.order_id}`} className="input-field text-right" placeholder="0"
+                    aria-label={`Nominal alokasi ${o.number || ""}`.trim()}
+                    value={alloc[o.order_id] || ""}
+                    onChange={(v) => setAlloc({ ...alloc, [o.order_id]: v })} />
+                </div>
               </div>
             ))}
             <p className="mt-1 text-right text-[11px] text-[#6B6B73]">

@@ -1354,7 +1354,9 @@ async def payment_settings(entity_id: str = "") -> Dict[str, Any]:
     return out
 
 
-_BASIS = {"invoice": ("invoiced_at", "Tanggal invoice"), "receipt": ("received_at", "Tanggal barang diterima"),
+# PK-42 (UX-18) — label acuan yang tampil di jadwal bayar antar-PT = label pilihan di Pusat Pengaturan
+# (`config_catalog_interco.py` `interco_payment.basis`): "Tanggal tagihan", bukan "Tanggal invoice".
+_BASIS = {"invoice": ("invoiced_at", "Tanggal tagihan"), "receipt": ("received_at", "Tanggal barang diterima"),
           "document": ("doc_date", "Tanggal dokumen")}
 
 

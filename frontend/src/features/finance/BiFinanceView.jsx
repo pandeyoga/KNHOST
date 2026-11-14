@@ -99,7 +99,7 @@ export default function BiFinanceView({ selectedEntity }) {
             <div className="w-[110px]">
               <KNSelect data-testid="bi-year-select" className="field py-1.5 text-[12px]" value={year} onValueChange={setYear} options={YEARS} />
             </div>
-            <button data-testid="bi-refresh" className="icon-button" onClick={load} aria-label="Refresh"><RefreshCw size={14} className={loading ? "animate-spin" : ""} /></button>
+            <button data-testid="bi-refresh" className="icon-button" onClick={load} aria-label="Muat ulang" title="Muat ulang"><RefreshCw size={14} className={loading ? "animate-spin" : ""} /></button>
           </div>
         </div>
 

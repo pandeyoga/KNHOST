@@ -3,6 +3,7 @@ import axios, { API } from "../../services/apiClient";
 import { Ship, Plus, Send, Wallet, Layers } from "lucide-react";
 import { formatCurrency } from "../../utils/formatters";
 import ErrorNotice from "../../components/ErrorNotice";
+import EntityGatedButton from "../../components/EntityGatedButton";   // PK-42 (UX-05)
 import { SearchBox } from "../../components/ListControls";
 import LandedCostCreateModal from "./LandedCostCreateModal";
 import LandedCostDetailPanel from "./LandedCostDetailPanel";
@@ -139,9 +140,10 @@ export default function LandedCostView({ currentUser, selectedEntity }) {
             <h2 data-testid="landed-cost-title">Biaya Masuk (landed cost) · Alokasi HPP Roll</h2>
           </div>
           {canCreate && (
-            <button data-testid="create-landed-cost-button" onClick={() => setShowCreate(true)} className="primary-button">
+            <EntityGatedButton selectedEntity={selectedEntity} what="mencatat biaya masuk"
+              data-testid="create-landed-cost-button" onClick={() => setShowCreate(true)} className="primary-button">
               <Plus size={13} /> Buat Biaya Masuk
-            </button>
+            </EntityGatedButton>
           )}
         </div>
         <div className="section-body">

@@ -113,7 +113,7 @@ export default function SuspensePanel({ refreshKey, accounts = [], entities = []
             {isZero ? "Sudah nol — aman untuk tutup buku." : "Belum nol — reklasifikasi ke akun yang benar sebelum tutup buku."}
           </span>
         </div>
-        <button data-testid="suspense-refresh" className="icon-button ml-auto" onClick={load} aria-label="Refresh"><RefreshCw size={13} /></button>
+        <button data-testid="suspense-refresh" className="icon-button ml-auto" onClick={load} aria-label="Muat ulang" title="Muat ulang"><RefreshCw size={13} /></button>
       </div>
 
       {/* Form reklasifikasi */}

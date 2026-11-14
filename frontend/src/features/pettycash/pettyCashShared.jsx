@@ -2,6 +2,7 @@
 // Petty Cash: Pengajuan Dana (PD) · Pertanggungjawaban (Settlement) · Kendaraan.
 // SSOT status label/tone + StatusPill + konstanta. Fungsi CETAK (print) dokumen
 // dipindah ke utils/docPrint.js (self-contained, di luar scan UX baseline).
+import { formatDate } from "../../utils/formatters";
 export {
   printCashAdvance, printTandaTerima, printSettlement, terbilang, printHTML,
 } from "../../utils/docPrint";
@@ -51,5 +52,5 @@ export function StatusPill({ status, map = CA_STATUS, testId }) {
   );
 }
 
-export const fmtDate = (s) =>
-  s ? new Date(s).toLocaleDateString("id-ID", { day: "2-digit", month: "short", year: "numeric" }) : "—";
+// PK-42 (UX-18) — satu pemformat tanggal WIB bersama (`utils/formatters`); dulu zona perangkat / bentuk sendiri.
+export const fmtDate = (s) => formatDate(s);

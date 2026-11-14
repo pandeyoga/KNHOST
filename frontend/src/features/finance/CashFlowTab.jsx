@@ -88,7 +88,7 @@ export default function CashFlowTab({ selectedEntity }) {
             </span>
           )}
           <button data-testid="cf-export" onClick={doExport} className="btn-secondary text-[12px] py-1.5 px-3 inline-flex items-center gap-1"><Download size={13} /> Ekspor CSV</button>
-          <button data-testid="cf-refresh" className="icon-button" onClick={load} aria-label="Refresh"><RefreshCw size={14} className={loading ? "animate-spin" : ""} /></button>
+          <button data-testid="cf-refresh" className="icon-button" onClick={load} aria-label="Muat ulang" title="Muat ulang"><RefreshCw size={14} className={loading ? "animate-spin" : ""} /></button>
         </div>
       </div>
 
