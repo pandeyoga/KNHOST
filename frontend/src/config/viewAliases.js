@@ -86,6 +86,16 @@ export const VIEW_ALIASES = {
     to: "rnd-samples", nav: "rnd-hub", preset: { mode: "gallery", type: "proofing", purpose: "all" },
     label: "Proofing", since: "D-24",
   },
+  // KF-T4 — dua kelompok registri (Dokumen, Notifikasi) pindah ke sub-judul kelompok Persetujuan; layarnya menjadi alias.
+  // Rute cadangan `activeView === "<id lama>"` tetap (SettingsGroupView `CFG_VIEW_ALIASES`); id tetap di access_modules.
+  "settings-cfg-documents": {
+    to: "settings-cfg-approval", nav: "settings-approval", preset: { section: "rujukan-dokumen" },
+    label: "Aturan Dokumen", since: "KF-T4",
+  },
+  "settings-cfg-notify": {
+    to: "settings-cfg-approval", nav: "settings-approval", preset: { section: "pemberitahuan" },
+    label: "Penerima Notifikasi", since: "KF-T4",
+  },
 };
 
 /** Alias untuk `view` → `{ from, to, nav, preset, label, since, legacy }`, atau null bila bukan alias. */

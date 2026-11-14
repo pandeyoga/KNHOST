@@ -27,7 +27,8 @@ export const configApi = {
   /** Simpan satu/beberapa perubahan (append-only + langsung aktif di mesin). */
   save: (items) => axios.put(`${BASE}/values`, { items }).then((r) => r.data),
 
-  /** Kembalikan satu setting ke default sistem. */
+  /** Tulis nilai bawaan sistem pada lapisan yang disebut (KF-T4: "Pakai nilai bawaan sistem …"; alasan wajib bila
+   *  kuncinya berisiko tinggi). */
   reset: (body) => axios.post(`${BASE}/values/reset`, body).then((r) => r.data),
 
   /** FASE E-4 (E4.6) — cabut nilai pada satu lapisan → kembali mewarisi lapisan di atasnya. */
@@ -36,7 +37,8 @@ export const configApi = {
   /** KF-T3 — batalkan satu perubahan berjadwal yang belum berlaku: `{ id, reason }`. */
   cancelScheduled: (body) => axios.post(`${BASE}/values/cancel-scheduled`, body).then((r) => r.data),
 
-  /** Riwayat perubahan (siapa, kapan, dari→ke, alasan). */
+  /** Riwayat perubahan (siapa, kapan, dari→ke, alasan). KF-T4 — saringan `group`, `changed_by`, `scope_type`/`scope_id`,
+   *  `date_from`/`date_to`, halaman `offset`/`limit` → `{ rows, total }`. */
   history: (params = {}) => axios.get(`${BASE}/history`, { params }).then((r) => r.data),
 
   /** KF-T5 — pelanggan/barang yang punya aturan khusus untuk satu kunci: `{ key, scope_type }` → `{ rows, total }`. */
@@ -70,14 +72,21 @@ export const scopeText = (type, id, label = "") => {
   if (type === "customer" || type === "product") return label ? `${t}: ${label}` : t;
   return `${t}: ${type === "entity" ? entityShortFromCtx(id, id) : id}`;
 };
-const SCOPE_LABEL_SHORT = { global: "Global", entity: "Badan usaha", customer: "Pelanggan", supplier: "Supplier",
-  product: "Barang", document: "Dokumen" };
+// KF-T4 — "Berlaku untuk": Semua PT (aturan grup) · PT · pelanggan · produk (glosarium KN_32; tanpa "Global"/"entitas").
+const SCOPE_LABEL_SHORT = { global: "Semua PT", entity: "PT", customer: "Pelanggan", supplier: "Pemasok",
+  product: "Barang", document: "Dokumen" };   // KF-T5 — lapisan produk ditulis "barang" (kartu barang)
 
 /** Angka gaya Indonesia (titik ribuan, koma desimal). */
 export function idNum(v, maxDec = 2) {
   const n = Number(v);
   if (!Number.isFinite(n)) return String(v);
   return n.toLocaleString("id-ID", { maximumFractionDigits: maxDec });
+}
+
+/** Label satu butir daftar: dari `options` (atau `ref_options`, mis. nama peran) bila ada. */
+function itemLabel(entry, v) {
+  const opt = [...(entry.options || []), ...(entry.ref_options || [])].find((o) => String(o.value) === String(v));
+  return opt ? opt.label : String(v);
 }
 
 /** Format nilai config menjadi teks yang dimengerti awam. */
@@ -98,11 +107,12 @@ export function formatValue(entry, value) {
       const opt = (entry.options || []).find((o) => o.value === value);
       return opt ? opt.label : String(value);
     }
-    case "list": {
-      // KP-T7 — daftar berpilihan ditampilkan dengan labelnya (bukan id teknis)
-      const lbl = (v) => (entry.options || []).find((o) => o.value === v)?.label ?? v;
-      return Array.isArray(value) ? value.map(lbl).join(" · ") : String(value);
-    }
+    case "list":
+      // KF-T4 — butir berlabel (nama peran, nama pilihan), bukan kode mentah.
+      return Array.isArray(value) ? (value.length ? value.map((v) => itemLabel(entry, v)).join(" · ") : "—")
+        : String(value);
+    case "text":
+      return (entry.ref_options || []).length ? itemLabel(entry, value) : String(value);
     case "table":
       return Array.isArray(value)
         ? `${value.length} baris`
@@ -166,6 +176,25 @@ export const LAYER_TONE = {
   override: "red",   // KF-T3 — ditimpa aturan lain (penimpaan terdaftar)
 };
 
+/** KF-T4 (KF-UX-13) — saringan kartu: semua · sudah diubah · risiko tinggi · tiga tema lintas kelompok (server `themes`). */
+export const CARD_FILTERS = [
+  { key: "all", label: "Semua" },
+  { key: "changed", label: "Sudah diubah" },
+  { key: "high", label: "Risiko tinggi" },
+  { key: "persetujuan", label: "Persetujuan", theme: true },
+  { key: "pengingat", label: "Pengingat & batas waktu", theme: true },
+  { key: "toleransi", label: "Toleransi selisih", theme: true },
+];
+export function cardFilterOk(item, filter) {
+  if (!filter || filter === "all") return true;
+  if (filter === "changed") return item.never_changed === false;
+  if (filter === "high") return item.risk === "high";
+  return (item.themes || []).includes(filter);
+}
+/** KF-T4 — "Bisa dibedakan untuk: …" dari `scopes`. */
+export const SCOPE_CAN = { global: "Semua PT", entity: "Satu PT", customer: "Satu pelanggan", product: "Satu barang",
+  supplier: "Satu pemasok", document: "Satu dokumen" };
+
 export const WIRING_TONE = { OK: "green", STALE: "orange", MISSING: "red", NOT_USED: "muted" };
 export const WIRING_LABEL = {
   OK: "Aktif & tersambung", STALE: "Referensi kode basi",
@@ -173,7 +202,8 @@ export const WIRING_LABEL = {
 };
 export const VERDICT_TONE = { ok: "green", warn: "orange", block: "red" };
 export const SCOPE_LABEL = {
-  global: "Semua entitas (Global)", entity: "Entitas ini",
-  customer: "Pelanggan ini", supplier: "Supplier tertentu",   // KF-T5
+  // KF-T4 — bilah "Berlaku untuk" (glosarium: PT, aturan grup).
+  global: "Semua PT (aturan grup)", entity: "Satu PT",
+  customer: "Pelanggan ini", supplier: "Pemasok tertentu",   // KF-T5
   product: "Barang ini", document: "Dokumen tertentu",
 };

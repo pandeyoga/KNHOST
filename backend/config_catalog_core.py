@@ -18,17 +18,17 @@ RP = "Rp"
 _KPT4_TIDAK_DIPAKAI = ("Dipindah ke Aturan Persetujuan (Pengaturan › Persetujuan › Aturan Persetujuan). Nilai terakhirnya hanya membentuk aturan bawaan selama aturan belum disimpan.")
 
 E("tax.ppn_rate", sensitif_baca=False,  # KF-T1 — dibaca layar semua pengguna
-  group="pajak", type="pct", default=12.0, min=0, max=100, step=0.5,
+  group="pajak-pembukuan", section="pajak", type="pct", default=12.0, min=0, max=100, step=0.5,
   unit="%", scopes=("global", "entity"), simulate="tax",
   label="Tarif PPN",
-  help="Tarif Pajak Pertambahan Nilai yang dipakai saat membuat invoice penjualan.",
-  impact="Mengubah nilai PPN pada SEMUA invoice baru. Invoice yang sudah terbit tidak berubah.",
+  help="Tarif Pajak Pertambahan Nilai yang dipakai saat membuat tagihan penjualan. Isi 0 = tagihan tanpa PPN.",
+  impact="Mengubah nilai PPN pada SEMUA tagihan baru. Tagihan yang sudah terbit tidak berubah.",
   example="Subtotal Rp 10.000.000 · tarif 12% + DPP Nilai Lain → PPN Rp 1.100.000",
   consumers=("services/config_service.py:compute_tax", "services/tax_invoice_service.py"),
   related=("tax.dpp_nilai_lain", "tax.ppn_mode"), risk="high")
 
 E("tax.dpp_nilai_lain", sensitif_baca=False,  # KF-T1 — dibaca layar semua pengguna
-  group="pajak", type="bool", default=True,
+  group="pajak-pembukuan", section="pajak", type="bool", default=True,
   scopes=("global", "entity"), simulate="tax",
   label="Pakai DPP Nilai Lain (11/12)",
   help="Aturan PMK 131/2024: dasar pengenaan pajak = 11/12 × harga jual untuk barang "
@@ -38,29 +38,31 @@ E("tax.dpp_nilai_lain", sensitif_baca=False,  # KF-T1 — dibaca layar semua pen
   consumers=("services/config_service.py:compute_tax",), risk="high")
 
 E("tax.ppn_mode", sensitif_baca=False,  # KF-T1 — dibaca layar semua pengguna
-  group="pajak", type="enum", default="excluded",
+  group="pajak-pembukuan", section="pajak", type="enum", default="excluded",
   options=({"value": "excluded", "label": "Harga BELUM termasuk PPN (ditambah)"},
            {"value": "included", "label": "Harga SUDAH termasuk PPN (dipisah)"}),
   scopes=("global", "entity"), simulate="tax",
   label="Cara menghitung PPN dari harga",
-  help="Menentukan apakah harga yang diketik sales sudah mengandung PPN atau belum.",
-  impact="Mengubah grand total invoice. 'Included' membuat harga jual dipecah menjadi DPP + PPN.",
-  example="Rp 11.100.000 · included → DPP Rp 10.000.000 + PPN Rp 1.100.000",
+  help="Menentukan apakah harga yang diketik sales sudah termasuk PPN. Bila sudah termasuk, sistem memisahkannya "
+       "menjadi DPP + PPN; bila belum, PPN ditambahkan di atas harga.",
+  impact="Mengubah total tagihan. 'Harga SUDAH termasuk PPN' membuat harga jual dipecah menjadi DPP + PPN.",
+  example="Rp 11.100.000 · Harga SUDAH termasuk PPN → DPP Rp 10.000.000 + PPN Rp 1.100.000",
   consumers=("services/config_service.py:compute_tax",), risk="high")
 
 # KF-T3 (KF-11) — sakelar ini tidak pernah dibaca saat menghitung PPN maupun menerbitkan faktur; sumbernya status PKP
 # di profil PT (keputusan K-08). Pusat Pajak kini mengirim `efaktur_enabled = is_pkp`.
-E("tax.efaktur_enabled", group="pajak", type="bool", default=True,
+E("tax.efaktur_enabled", group="pajak-pembukuan", section="pajak", type="bool", default=True,
   scopes=("global", "entity"),
-  label="Terbitkan Faktur Pajak (PKP)",
-  help="Aktif bila entitas sudah Pengusaha Kena Pajak dan wajib menerbitkan Faktur Pajak.",
-  impact="Bila dimatikan, menu Faktur Keluaran tidak menerbitkan e-Faktur dan PPN jadi 0.",
-  example="Entitas non-PKP → PPN Rp 0 dan tidak ada nomor Faktur Pajak",
+  label="Terbitkan Faktur Pajak",
+  help="Dulu menandai PT yang menerbitkan Faktur Pajak. Sekarang Faktur Pajak mengikuti status PKP di profil PT, "
+       "jadi sakelar ini tidak dibaca. Besar PPN diatur di Tarif PPN.",
+  impact="Tidak berpengaruh lagi: PT berstatus PKP menerbitkan Faktur Pajak, PT bukan PKP tidak.",
+  example="PT non-PKP → PPN Rp 0 dan tidak ada nomor Faktur Pajak",
   consumers=("services/tax_center_service.py:tax_summary",),
   risk="high",
   status="not_used", not_used_reason="Penerbitan faktur pajak mengikuti status PKP di profil PT.")
 
-E("tax.pph_items", group="pajak", type="table", default=[],
+E("tax.pph_items", group="pajak-pembukuan", section="pajak", type="table", default=[],
   scopes=("global", "entity"),
   row_shape="list",
   columns=({"name": "enabled", "label": "Aktif", "type": "bool", "default": True, "width": "60px"},
@@ -85,19 +87,19 @@ E("tax.pph_items", group="pajak", type="table", default=[],
 # ═══════════════════════════════════════════════════════════════════════════
 # DASAR KEUANGAN & PERIODE
 # ═══════════════════════════════════════════════════════════════════════════
-E("finance.base_currency", group="keuangan-dasar", type="enum", default="IDR",
+E("finance.base_currency", group="pajak-pembukuan", section="tutup-buku", type="enum", default="IDR",
   options=({"value": "IDR", "label": "Rupiah (IDR)"},
            {"value": "USD", "label": "Dolar AS (USD)"}),
   scopes=("global", "entity"), simulate="currency",
   label="Mata uang pembukuan",
   help="Mata uang yang dipakai seluruh laporan keuangan dan dokumen cetak.",
-  impact="Mengubah simbol & format angka pada laporan, PDF invoice, dan surat jalan.",
+  impact="Mengubah simbol & format angka pada laporan, PDF tagihan, dan surat jalan.",
   example="IDR → 'Rp 1.250.000' · USD → '$ 1,250.00'",
   consumers=("services/config_currency.py:money_format", "services/pdf_service.py",
              "services/pdf_engine.py:fmt_rp"),
   risk="medium")
 
-E("finance.fiscal_year_end_month", group="keuangan-dasar", type="int", default=12,
+E("finance.fiscal_year_end_month", group="pajak-pembukuan", section="tutup-buku", type="int", default=12,
   min=1, max=12, step=1, unit="bulan", scopes=("global", "entity"), simulate="fiscal_year",
   label="Bulan tutup tahun buku",
   help="Bulan terakhir tahun buku. 12 berarti tahun buku Januari–Desember.",
@@ -108,37 +110,38 @@ E("finance.fiscal_year_end_month", group="keuangan-dasar", type="int", default=1
   risk="high")
 
 E("finance.default_payment_term_code", sensitif_baca=False,  # KF-T1 — dibaca layar semua pengguna
-  group="uang-masuk", type="text", default="NET30",
+  group="pembayaran-pelanggan", section="syarat-bayar", type="text", default="NET30",
   scopes=("global", "entity"),
-  label="Term pembayaran default",
-  help="Term yang otomatis terpilih saat membuat pesanan baru bila pelanggan belum punya term khusus.",
-  impact="Mengubah tanggal jatuh tempo default pada pesanan & invoice baru.",
-  example="NET30 → invoice tanggal 1 Juli jatuh tempo 31 Juli",
+  label="Syarat bayar bawaan pesanan baru",
+  help="Syarat bayar yang otomatis terpilih saat membuat pesanan bila pelanggan belum punya syarat bayar sendiri. "
+       "Pilih dari daftar Syarat Bayar, mis. NET30 = tempo 30 hari.",
+  impact="Mengubah tanggal jatuh tempo bawaan pada pesanan & tagihan baru.",
+  example="NET30 → tagihan tanggal 1 Juli jatuh tempo 31 Juli",
   # KF-T3 (KP-11) — pembaca nyata: termin bawaan PT pesanan; `ar_aging_service.py` tidak membacanya.
   consumers=("services/config_service.py:default_payment_term_code", "routers/sales_orders.py:create_order"),
-  risk="medium")
+  risk="medium",
+  ref="payment_term")
 
-E("finance.dispatch_payment_gate", group="uang-masuk", type="enum", default="block",
-  options=({"value": "block", "label": "Tahan kirim sampai termin terbayar (blok keras)"},
-           {"value": "off", "label": "Tidak menahan (hanya informasi)"}),
+E("finance.dispatch_payment_gate", group="pembayaran-pelanggan", section="syarat-bayar", type="enum", default="block",
+  options=({"value": "block", "label": "Tahan kirim sampai dibayar"},
+           {"value": "off", "label": "Tidak menahan (hanya peringatan)"}),
   scopes=("global", "entity"),
-  label="Tahan pengiriman pesanan CBD / DP sampai dibayar",
-  help="Termin yang punya 'DP % sebelum kirim' (CBD = 100%, DP 50% = 50%) menahan Barang Keluar sampai "
-       "pembayaran pesanan mencapai persen itu. Pengecualian per pesanan hanya oleh pemegang izin "
-       "'Pesanan → Kirim tanpa lunas (pengecualian)' dengan alasan wajib & tercatat di jejak audit.",
-  impact="Bila 'blok keras', tombol Kirim di Barang Keluar, maju tahap WMS, dan cek keberangkatan trip "
-         "menolak pesanan yang belum dibayar sesuai termin. Persen per termin diatur di Syarat Bayar.",
+  label="Tahan kirim sampai CBD/DP dibayar",
+  help="Pesanan dengan syarat bayar CBD atau DP tidak bisa dikirim sebelum pembayarannya mencapai persen yang "
+       "disyaratkan. Pengecualian per pesanan hanya oleh pemegang izin khusus, dengan alasan tertulis.",
+  impact="Bila 'Tahan kirim sampai dibayar', tombol Kirim di Barang Keluar, maju tahap gudang, dan cek "
+         "keberangkatan trip menolak pesanan yang belum dibayar sesuai syarat bayar. Persen per syarat bayar diatur "
+         "di Syarat Bayar.",
   example="Pesanan CBD Rp 10.000.000 baru dibayar Rp 4.000.000 → tertahan (kurang Rp 6.000.000)",
   consumers=("services/dispatch_payment_gate.py:evaluate", "services/loading_check_service.py:dispatch_guard"),
   risk="high")
 
 # UAT v3 (2026-10-22) — gudang tanpa perangkat RFID (UAT / pelatihan) tetap bisa menjalankan alur kirim penuh.
-E("wms.rfid_simulation", group="stok-satuan", type="bool", default=False,
+E("wms.rfid_simulation", group="sistem", section="rfid-proses", type="bool", default=False,
   scopes=("global", "entity"),
-  label="Mode simulasi RFID (UAT / pelatihan)",
-  help="Untuk uji coba tanpa printer tag & handheld. Bila aktif: di Barang Keluar muncul tombol 'Buat tag simulasi' "
-       "untuk roll pesanan yang belum bertag (EPC dibuat sistem, ditandai simulasi), dan scan simulasi pada Pemeriksaan "
-       "Muat Akhir dianggap sah. Semua tetap tercatat di jejak audit.",
+  label="Mode latihan RFID (tanpa alat)",
+  help="Untuk uji coba atau pelatihan tanpa printer tag dan alat baca: petugas bisa membuat tag pura-pura dan scan "
+       "pura-pura dianggap sah. Matikan saat operasional nyata.",
   impact="Bila aktif, kirim tidak lagi tertahan 'roll belum bertag RFID aktif' — Staf Gudang bisa membuat tag simulasi "
          "sendiri. MATIKAN di operasional nyata.",
   example="UAT: roll RL-18027 belum bertag → [Buat tag simulasi] → tag aktif (simulasi) → Kirim Semua berhasil",
@@ -147,77 +150,82 @@ E("wms.rfid_simulation", group="stok-satuan", type="bool", default=False,
 # ═══════════════════════════════════════════════════════════════════════════
 # UANG MASUK & PIUTANG (AR)
 # ═══════════════════════════════════════════════════════════════════════════
-E("ar.denda_rate_pct_per_month", group="uang-masuk", type="pct", default=2.0,
+E("ar.denda_rate_pct_per_month", group="pembayaran-pelanggan", section="denda", type="pct", default=2.0,
   min=0, max=100, step=0.25, unit="% / bulan",
   scopes=("global", "entity", "customer"), simulate="ar_penalty",
   label="Bunga denda keterlambatan",
   # KF-T5 — aturan khusus pelanggan diatur dari kartu pelanggan (Customer360Panel › Aturan khusus pelanggan ini).
-  help="Persen denda per bulan atas saldo yang sudah lewat jatuh tempo. Dihitung prorata per 30 hari."
-       " Bisa dibedakan per pelanggan dari kartu pelanggan.",
+  help="Persen denda per bulan atas tagihan yang lewat jatuh tempo, dihitung harian (30 hari = 1 bulan). Isi 0 = "
+       "tidak ada denda. Bisa dibedakan per pelanggan dari kartu pelanggan.",
   impact="Mengubah kolom 'Denda' pada laporan Umur Piutang.",
   example="Outstanding Rp 10.000.000 · telat 45 hari · 2%/bulan → denda Rp 300.000",
   consumers=("services/ar_aging_service.py:get_ar_config",),
   related=("ar.grace_days",), risk="medium")
 
-E("ar.grace_days", group="uang-masuk", type="duration", default=0, min=0, max=180, step=1,
+E("ar.grace_days", group="pembayaran-pelanggan", section="denda", type="duration", default=0, min=0, max=180, step=1,
   unit="hari", scopes=("global", "entity", "customer"), simulate="ar_penalty",
   label="Masa tenggang sebelum denda",
-  help="Jumlah hari setelah jatuh tempo yang masih bebas denda."
-       " Bisa dibedakan per pelanggan dari kartu pelanggan.",  # KF-T5
+  help="Jumlah hari setelah jatuh tempo yang masih bebas denda. Bisa dibedakan per pelanggan dari kartu pelanggan. "
+       "Isi 0 = denda dihitung sejak hari pertama lewat jatuh tempo.",  # KF-T5
   impact="Hari keterlambatan dikurangi masa tenggang sebelum denda dihitung.",
   example="Tenggang 7 hari · telat 10 hari → denda hanya dihitung 3 hari",
   consumers=("services/ar_aging_service.py:get_ar_config",),
   related=("ar.denda_rate_pct_per_month",), risk="low")
 
-E("ar.aging_buckets", group="uang-masuk", type="list", default=[30, 60, 90],
+E("ar.aging_buckets", group="pembayaran-pelanggan", section="syarat-bayar", type="list", default=[30, 60, 90],
   scopes=("global", "entity"), simulate="ar_bucket",
   label="Kelompok umur piutang (hari)",
-  help="Ambang hari untuk mengelompokkan piutang: 1–30, 31–60, 61–90, dan di atas 90 hari.",
+  help="Batas hari tiap kolom laporan Umur Piutang. Ketik dipisah koma: 30, 60, 90 berarti kolom 1–30, 31–60, "
+       "61–90, dan di atas 90 hari.",
   impact="Mengubah kolom laporan Umur Piutang serta definisi 'pelanggan bermasalah'.",
-  example="[14, 30, 60] → kolom menjadi 1–14, 15–30, 31–60, 60+",
-  consumers=("services/ar_aging_service.py:_bucket",), risk="medium")
+  example="14, 30, 60 → kolom 1–14, 15–30, 31–60, di atas 60 hari",
+  consumers=("services/ar_aging_service.py:_bucket",), risk="medium",
+  items="int_asc")
 
 # ═══════════════════════════════════════════════════════════════════════════
 # HARGA, DISKON & KOMISI
 # ═══════════════════════════════════════════════════════════════════════════
 E("sales.allow_item_discount", sensitif_baca=False,  # KF-T1 — dibaca layar semua pengguna
-  group="harga-diskon", type="bool", default=False,
+  group="penjualan", section="harga", type="bool", default=False,
   scopes=("global", "entity"), simulate="pricing",
   label="Izinkan diskon per baris (penjualan)",
-  help="Bila mati, sales tidak bisa mengetik diskon di baris pesanan — potongan hanya lewat "
-       "Harga Khusus yang disetujui.",
-  impact="Kolom diskon pada layar pesanan hilang; diskon yang dikirim dari API diabaikan (0%).",
+  help="Bila mati, sales tidak bisa mengetik diskon di baris pesanan; potongan harga hanya lewat Harga Khusus yang "
+       "disetujui.",
+  impact="Kolom diskon di layar pesanan hilang dan diskon selalu dihitung 0%.",
   example="Mati → baris Rp 10.000.000 diskon 5% tetap dihitung Rp 10.000.000",
   consumers=("services/config_service.py:compute_order_pricing", "utils/pricing.js"),
   related=("sales.allow_order_discount",), risk="medium")
 
 E("sales.allow_order_discount", sensitif_baca=False,  # KF-T1 — dibaca layar semua pengguna
-  group="harga-diskon", type="bool", default=False,
+  group="penjualan", section="harga", type="bool", default=False,
   scopes=("global", "entity"), simulate="pricing",
   label="Izinkan diskon total pesanan (penjualan)",
-  help="Diskon satu angka untuk seluruh pesanan, di atas diskon per baris.",
+  help="Mengizinkan satu potongan untuk seluruh pesanan, di luar diskon per baris. Bila mati, potongan itu tidak "
+       "dihitung.",
   impact="Menentukan apakah field diskon order dipakai saat menghitung DPP dan PPN.",
   example="Aktif · diskon order 2% dari Rp 20.000.000 → potongan Rp 400.000",
   consumers=("services/config_service.py:compute_order_pricing", "utils/pricing.js"),
   risk="medium")
 
-E("sales.keep_max_age_days", group="harga-diskon", type="int", default=0,
+E("sales.keep_max_age_days", group="penjualan", section="alur-pesanan", type="int", default=0,
   scopes=("global", "entity"),
-  label="Batas umur Keep (hari) — SO belum diverifikasi Admin Sales",
-  help="SO yang belum diverifikasi lebih lama dari batas ini diberi tanda 'lewat batas' di daftar Keep. "
-       "0 = tanpa batas. Tidak membatalkan pesanan dan tidak menahan/melepas stok (keputusan DEC-01).",
+  label="Batas hari pesanan menunggu verifikasi",
+  help="Pesanan yang belum diverifikasi Admin Sales lebih lama dari sekian hari ditandai merah “lewat batas”. Isi 0 "
+       "bila tanpa batas; tidak membatalkan pesanan dan tidak mengubah stok.",
   impact="Daftar Keep di Meja Admin Sales menandai SO yang lewat batas dan menghitungnya terpisah.",
   example="3 → SO yang dibuat 4 hari lalu dan belum diverifikasi tampil merah 'lewat batas'",
-  consumers=("services/sales_p04_service.py:keep_limit_days",), risk="low")
-E("sales.sample_payment_tolerance_pct", group="harga-diskon", type="pct", default=5.0, min=0, max=100, step=0.5,
+  consumers=("services/sales_p04_service.py:keep_limit_days",), risk="low",
+  unit="hari")
+E("sales.sample_payment_tolerance_pct", group="penjualan", section="harga", type="pct", default=5.0, min=0, max=100, step=0.5,
   unit="%", scopes=("global", "entity"),
-  label="Toleransi selisih tagihan sample berbayar (panjang aktual potong)",
-  help="Sample berbayar yang sudah disetujui lalu dipotong dengan panjang berbeda: selisih tagihan sampai batas ini "
-       "disesuaikan otomatis; di atasnya wajib persetujuan ulang Finance/Admin Sample dan kiriman sample ditahan.",
+  label="Toleransi selisih tagihan sample berbayar",
+  help="Bila sample berbayar dipotong dengan panjang berbeda dari yang disetujui, selisih tagihan sampai persen ini "
+       "disesuaikan otomatis; di atasnya perlu persetujuan ulang dan kiriman sample ditahan. Isi 0 = setiap selisih "
+       "perlu persetujuan ulang.",
   impact="Menentukan kapan potong sample memicu persetujuan ulang pembayaran (Meja Admin Sample).",
   example="Disetujui Rp 83.250, dipotong 3,1 yd → Rp 86.025 (+3,3%) ≤ 5% → disesuaikan otomatis",
   consumers=("services/sample_sale_service.py:payment_after_reprice",), risk="medium")
-E("sales.allow_partial_shipment", group="harga-diskon", type="bool", default=True,
+E("sales.allow_partial_shipment", group="penjualan", section="alur-pesanan", type="bool", default=True,
   scopes=("global", "entity"),
   label="Izinkan kirim sebagian",
   help="Bila aktif, pesanan boleh dikirim bertahap saat stok belum lengkap. Bila mati, "
@@ -226,7 +234,7 @@ E("sales.allow_partial_shipment", group="harga-diskon", type="bool", default=Tru
   example="Aktif → pesanan 1.000 yard boleh dikirim 600 dulu, sisanya menyusul",
   consumers=("routers/sales_orders.py:create_order",), risk="medium")
 
-E("sales.quotation_enabled", group="harga-diskon", type="bool", default=False,
+E("sales.quotation_enabled", group="penjualan", section="alur-pesanan", type="bool", default=False,
   scopes=("global", "entity"), status="not_used",
   not_used_reason=("Alur Penawaran (Quotation) BELUM ADA di sistem — tidak ada satu pun "
                    "endpoint atau layar penawaran. Mengubah tombol ini TIDAK berpengaruh. "
@@ -235,19 +243,18 @@ E("sales.quotation_enabled", group="harga-diskon", type="bool", default=False,
                    "potongan harga ditempuh lewat 'Ajukan Harga Khusus'."),
   label="Aktifkan Penawaran (Quotation)",
   help="Bila alur Penawaran dibangun, sales membuat Penawaran lebih dulu sebelum pesanan resmi.",
-  impact=("BELUM ADA DAMPAK — fitur Penawaran belum dibangun sehingga setting ini tidak "
-          "dibaca mesin mana pun."),
+  impact=("BELUM ADA DAMPAK — fitur Penawaran belum dibangun sehingga pengaturan ini tidak dibaca mesin mana pun."),
   example="— (menunggu fitur Penawaran dibangun)")
 
 # ── F1b (D-14) — Penjagaan harga langganan per pelanggan ────────────────────
 # Keputusan pemilik 2026-08-10: harga khusus pelanggan yang jatuh di bawah harga PT
 # atau di bawah biaya pokok WAJIB lewat persetujuan manajer, dan memakai MESIN
 # persetujuan yang sudah ada (Harga Khusus / `price_approvals`) — bukan alur baru.
-E("pricelist.customer_price_approval", group="harga-diskon", type="bool", default=True,
+E("pricelist.customer_price_approval", group="penjualan", section="harga", type="bool", default=True,
   scopes=("global", "entity"),
-  label="Harga pelanggan di bawah batas wajib disetujui",
-  help="Bila aktif, harga langganan pelanggan yang di bawah batas bawah (harga PT / biaya "
-       "pokok) TIDAK langsung berlaku — masuk antrean Persetujuan Harga lebih dulu.",
+  label="Harga di bawah batas wajib disetujui",
+  help="Bila aktif, harga langganan pelanggan yang lebih rendah dari batas bawah tidak langsung berlaku; harus "
+       "disetujui dulu.",
   impact="Menentukan apakah record harga pelanggan baru berstatus 'menunggu persetujuan' "
          "atau langsung berlaku pada pesanan & POS.",
   example="Batas Rp 150.000 · admin menetapkan Rp 120.000 → menunggu persetujuan manajer",
@@ -255,20 +262,20 @@ E("pricelist.customer_price_approval", group="harga-diskon", type="bool", defaul
   related=("pricelist.customer_price_floor", "pricelist.customer_price_tolerance_pct"),
   risk="high")
 
-E("pricelist.customer_price_floor", group="harga-diskon", type="enum", default="both",
+E("pricelist.customer_price_floor", group="penjualan", section="harga", type="enum", default="both",
   options=({"value": "entity_price", "label": "Harga jual PT"},
            {"value": "hpp", "label": "Biaya pokok (HPP)"},
            {"value": "both", "label": "Keduanya (pakai yang lebih tinggi)"}),
   scopes=("global", "entity"),
   label="Dasar batas bawah harga pelanggan",
-  help="Angka pembanding yang dipakai untuk menilai sebuah harga 'terlalu murah'. "
-       "Biaya pokok dibaca dari HPP berjalan (WAC) produk, sama seperti laporan margin.",
+  help="Angka pembanding untuk menilai harga “terlalu murah”: harga jual PT, biaya pokok barang, atau yang lebih "
+       "tinggi dari keduanya.",
   impact="Mengubah kapan sebuah harga dianggap di bawah batas sehingga butuh persetujuan.",
   example="Pilihan 'Keduanya' · harga PT Rp 150.000 · HPP Rp 130.000 → batas Rp 150.000",
   consumers=("services/price_guard_service.py",),
   related=("pricelist.customer_price_approval",), risk="medium")
 
-E("pricelist.customer_price_tolerance_pct", group="harga-diskon", type="pct", default=0.0,
+E("pricelist.customer_price_tolerance_pct", group="penjualan", section="harga", type="pct", default=0.0,
   min=0, max=100, step=1, unit="% di bawah batas", scopes=("global", "entity"),
   label="Toleransi di bawah batas tanpa persetujuan",
   help="Selisih kecil yang masih dimaafkan supaya pembulatan harga tidak memicu antrean "
@@ -278,77 +285,83 @@ E("pricelist.customer_price_tolerance_pct", group="harga-diskon", type="pct", de
   consumers=("services/price_guard_service.py",),
   related=("pricelist.customer_price_approval",), risk="medium")
 
-E("commission.strategy", group="harga-diskon", type="enum", default="per_sku",
+E("commission.strategy", group="penjualan", section="komisi", type="enum", default="per_sku",
   options=({"value": "per_sku", "label": "Per SKU (tarif per barang)"},
            {"value": "achievement_tiered", "label": "Berjenjang dari pencapaian target"}),
   scopes=("global", "entity"),
   label="Cara menghitung komisi sales",
-  help="Per SKU: tarif rupiah per satuan barang. Berjenjang: persen dari pencapaian target.",
+  help="Per barang: tarif rupiah per satuan barang yang terjual. Berjenjang: persen dari pencapaian target.",
   impact="Mengubah seluruh perhitungan insentif sales pada periode berjalan.",
-  example="per_sku · tarif Rp 500/yard · terjual 2.000 yard → komisi Rp 1.000.000",
+  example="Per barang · tarif Rp 500/yard · terjual 2.000 yard → komisi Rp 1.000.000",
   consumers=("services/sales_force_service.py", "routers/incentive_rates.py"), risk="high")
 
-E("commission.incentive_unit", group="harga-diskon", type="text", default="meter",
+E("commission.incentive_unit", group="penjualan", section="komisi", type="text", default="meter",
   scopes=("global", "entity"),
-  label="Satuan dasar tarif komisi",
-  help="Satuan yang dipakai saat menuliskan tarif komisi rupiah per unit.",
-  impact="Qty penjualan dikonversi ke satuan ini sebelum dikalikan tarif komisi.",
+  label="Satuan tarif komisi",
+  help="Satuan yang dipakai saat menulis tarif komisi rupiah per satuan (mis. meter atau yard). Jumlah terjual "
+       "diubah ke satuan ini sebelum dikalikan tarif.",
+  impact="Jumlah penjualan dikonversi ke satuan ini sebelum dikalikan tarif komisi.",
   example="Satuan 'meter' · tarif Rp 500/meter → 100 yard ≈ 91,44 m → Rp 45.720",
-  consumers=("routers/incentive_rates.py:create_rate",), risk="medium")
+  consumers=("routers/incentive_rates.py:create_rate",), risk="medium",
+  ref="uom")
 
-E("commission.default_margin_cap_pct", group="harga-diskon", type="pct", default=50.0,
+E("commission.default_margin_cap_pct", group="penjualan", section="komisi", type="pct", default=50.0,
   min=0, max=100, step=5, unit="% margin", scopes=("global", "entity"),
   simulate="commission_cap",
   label="Batas komisi terhadap margin",
-  help="Komisi satu baris tidak boleh melebihi persen ini dari margin baris tersebut. "
-       "Pengaman agar komisi tidak lebih besar dari keuntungan.",
+  help="Komisi satu baris tidak boleh melebihi persen ini dari margin baris tersebut. Pengaman agar komisi tidak "
+       "lebih besar dari keuntungan. Isi 0 = komisi tidak dibatasi margin.",
   impact="Komisi yang melewati batas dipotong otomatis dan diberi catatan pemotongan.",
   example="Margin baris Rp 1.000.000 · batas 50% · komisi hitung Rp 700.000 → dibayar Rp 500.000",
   consumers=("services/sales_force_service.py",), risk="medium")
 
-E("commission.discount_threshold_type", group="harga-diskon", type="enum", default="pct",
+E("commission.discount_threshold_type", group="penjualan", section="komisi", type="enum", default="pct",
   options=({"value": "pct", "label": "Persen diskon"},
            {"value": "rp_per_unit", "label": "Rupiah per satuan"}),
   scopes=("global", "entity"),
-  label="Dasar ambang diskon komisi",
-  help="Menentukan apakah ambang diskon dibaca sebagai persen atau rupiah per satuan.",
+  label="Batas diskon dihitung dalam",
+  help="Menentukan apakah batas diskon di bawah dibaca sebagai persen atau rupiah per satuan.",
   impact="Mengubah cara ambang diskon dibandingkan sebelum mekanik pemotongan komisi aktif.",
-  example="Tipe 'pct' · ambang 10 → diskon 12% memicu pemotongan komisi",
+  example="Persen · ambang 10 → diskon 12% memotong komisi",
   consumers=("services/sales_force_service.py",), risk="low")
 
-E("commission.discount_threshold", group="harga-diskon", type="decimal", default=10.0,
+E("commission.discount_threshold", group="penjualan", section="komisi", type="decimal", default=10.0,
   min=0, max=1000000, step=1, scopes=("global", "entity"), simulate="commission_discount",
-  label="Ambang diskon yang memotong komisi",
-  help="Bila diskon baris melewati ambang ini, komisi sales dipotong sesuai mekanik yang dipilih.",
+  label="Batas diskon yang memotong komisi",
+  help="Bila diskon satu baris melewati angka ini (persen atau rupiah per satuan, sesuai pilihan di atas), komisi "
+       "sales untuk baris itu dipotong. Isi 0 = diskon berapa pun memotong komisi.",
   impact="Menentukan baris mana yang komisinya dipotong karena diskon terlalu besar.",
   example="Ambang 10% · diskon 15% → mekanik pemotongan aktif",
   consumers=("services/sales_force_service.py",),
   related=("commission.discount_mechanic",), risk="medium")
 
-E("commission.discount_mechanic", group="harga-diskon", type="enum", default="tier_factor",
+E("commission.discount_mechanic", group="penjualan", section="komisi", type="enum", default="tier_factor",
   options=({"value": "tier_factor", "label": "Kalikan faktor (mis. 50% komisi)"},
            {"value": "potong_rp", "label": "Kurangi rupiah per satuan"},
            {"value": "cutoff", "label": "Komisi hangus"}),
   scopes=("global", "entity"), simulate="commission_discount",
-  label="Mekanik pemotongan komisi",
-  help="Apa yang terjadi pada komisi ketika diskon melewati ambang.",
+  label="Cara memotong komisi saat diskon besar",
+  help="Pilih apa yang terjadi pada komisi bila diskon melewati ambang: dikalikan faktor, dikurangi rupiah per "
+       "satuan, atau hangus.",
   impact="Menentukan besar komisi yang dibayarkan pada baris berdiskon besar.",
-  example="tier_factor 0,5 → komisi Rp 1.000.000 menjadi Rp 500.000",
+  example="Kalikan faktor 0,5 → komisi Rp 1.000.000 menjadi Rp 500.000",
   consumers=("services/sales_force_service.py",), risk="medium")
 
-E("commission.discount_factor", group="harga-diskon", type="decimal", default=0.5,
+E("commission.discount_factor", group="penjualan", section="komisi", type="decimal", default=0.5,
   min=0, max=1, step=0.05, scopes=("global", "entity"), simulate="commission_discount",
   label="Faktor komisi saat diskon besar",
-  help="Pengali komisi bila mekanik 'Kalikan faktor' dipakai. 0,5 = komisi tinggal separuh.",
+  help="Pengali komisi bila mekanik 'Kalikan faktor' dipakai. 0,5 = komisi tinggal separuh. Isi 0 = komisi baris "
+       "itu hangus.",
   impact="Langsung mengubah nominal komisi baris berdiskon besar.",
   example="Faktor 0,25 → komisi Rp 800.000 menjadi Rp 200.000",
-  consumers=("services/sales_force_service.py",), risk="medium")
+  consumers=("services/sales_force_service.py",), risk="medium",
+  unit="× komisi")
 
-E("commission.discount_potong_rp", group="harga-diskon", type="money", default=0.0,
+E("commission.discount_potong_rp", group="penjualan", section="komisi", type="money", default=0.0,
   min=0, max=100000000, step=100, unit=RP, scopes=("global", "entity"),
   simulate="commission_discount",
   label="Potongan rupiah per satuan",
-  help="Dipakai bila mekanik 'Kurangi rupiah per satuan' dipilih.",
+  help="Dipakai bila mekanik 'Kurangi rupiah per satuan' dipilih. Isi 0 = komisi tidak dikurangi.",
   impact="Mengurangi tarif komisi per satuan pada baris berdiskon besar.",
   example="Tarif Rp 500/m dipotong Rp 200 → komisi jadi Rp 300/m",
   consumers=("services/sales_force_service.py",), risk="low")
@@ -356,27 +369,29 @@ E("commission.discount_potong_rp", group="harga-diskon", type="money", default=0
 # ═══════════════════════════════════════════════════════════════════════════
 # PERSETUJUAN & AMBANG
 # ═══════════════════════════════════════════════════════════════════════════
-E("approval.extra_levels", group="persetujuan", type="table", default={},
+E("approval.extra_levels", group="persetujuan", section="umum", type="table", default={},
   scopes=("global", "entity"), simulate="approval",
   label="Jenjang persetujuan tambahan",
-  help="Level persetujuan di ATAS level pertama, aktif bila nilai dokumen mencapai ambang "
-       "tertentu. Level pertama diatur di Approval Rules.",
-  impact="Menambah antrean approval berjenjang (mis. Direksi) untuk dokumen bernilai besar.",
-  example="PO ≥ Rp 500.000.000 → setelah Manager, wajib disetujui Direksi",
+  help="Persetujuan tingkat kedua dan seterusnya (mis. Direksi) untuk dokumen bernilai besar. Hanya berjalan bila "
+       "dokumen itu sudah wajib disetujui pada tingkat pertama di tab Aturan Persetujuan.",
+  impact="Menambah antrean persetujuan berjenjang (mis. Direksi) untuk dokumen bernilai besar.",
+  example="PO ≥ Rp 500.000.000 → setelah Manajer, wajib disetujui Direksi",
   consumers=("services/approval_policy_service.py:default_rows_for",), risk="high",
   # KP-T4 — isi kunci ini pindah ke tabel kebijakan persetujuan (`approval_policies`).
-  status="not_used", not_used_reason=_KPT4_TIDAK_DIPAKAI)
+  status="not_used", not_used_reason=_KPT4_TIDAK_DIPAKAI,
+  row_shape="grouped_list",
+  columns=[{"name": "doc_type", "label": "Jenis dokumen", "type": "enum", "options": [{"value": "purchase_order", "label": "Pesanan Pembelian (PO)"}, {"value": "sales_order", "label": "Pesanan penjualan", "not_used": True}, {"value": "purchase_requisition", "label": "Permintaan pembelian", "not_used": True}]}, {"name": "min_amount", "label": "Mulai nilai (Rp)", "type": "money", "default": 0}, {"name": "role", "label": "Peran penyetuju", "type": "enum", "ref": "role"}, {"name": "label", "label": "Nama tingkat", "type": "text"}])
 
 # PENGINGAT ANTREAN PERSETUJUAN (permintaan pemilik 2026-08-15).
 # Angka KPI yang benar hanya bekerja kalau orangnya membuka layar. Ambang ini menjawab
 # "sejak umur berapa sebuah dokumen layak diteriaki": dokumen yang baru masuk hari ini
 # tidak perlu pengingat, yang sudah menua wajib. Dinaikkan ke admin/pemilik otomatis
 # bila umurnya sudah 2× ambang ini (antrean bukan menumpuk lagi, tapi MANDEK).
-E("approval.reminder_min_days", group="persetujuan", type="int", default=2,
+E("approval.reminder_min_days", group="persetujuan", section="umum", type="int", default=2,
   min=0, max=60, step=1, unit="hari", scopes=("global", "entity"),
-  label="Umur dokumen sebelum diingatkan",
-  help="Pengingat harian hanya menyebut dokumen yang sudah menunggu keputusan minimal "
-       "sekian hari. Isi 0 bila ingin diingatkan sejak hari pertama.",
+  label="Ingatkan dokumen yang menunggu sejak",
+  help="Pengingat harian hanya menyebut dokumen yang sudah menunggu keputusan minimal sekian hari; bila sudah dua "
+       "kali lipatnya, pengingat juga dikirim ke admin. Isi 0 agar diingatkan sejak hari pertama.",
   impact="Menentukan isi pengingat harian 'keputusan yang menunggu Anda' di notifikasi "
          "manajer. Tidak mengubah dokumen apa pun — hanya kapan orang diberi tahu.",
   example="Ambang 2 hari · PO-00010 menunggu 12 hari → masuk pengingat & dinaikkan ke "
@@ -387,52 +402,49 @@ E("approval.reminder_min_days", group="persetujuan", type="int", default=2,
 # kelas cacat "salah tetapi tenang": tidak ada galat, tidak ada layar merah, hanya
 # neraca yang perlahan berbohong. Ambang ini menjawab "selisih berapa yang layak
 # membangunkan orang": pembulatan rupiah tidak, senilai satu roll wajib.
-E("inventory.drift_alert_rupiah", group="keuangan-dasar", type="money",
+E("inventory.drift_alert_rupiah", group="pajak-pembukuan", section="tutup-buku", type="money",
   default=1000, min=0, max=1000000000, step=1000, unit="Rp",
   scopes=("global", "entity"),
-  label="Selisih persediaan yang diperingatkan",
-  help="Bila nilai fisik roll dan saldo GL Persediaan (1-1300) berselisih lebih dari "
-       "angka ini, yang berwenang memposting true-up diberi tahu setiap hari sampai "
-       "selisihnya beres. Isi 0 bila ingin diperingatkan atas selisih sekecil apa pun.",
-  impact="Hanya menentukan KAPAN orang diberi tahu. Tidak menerbitkan jurnal dan tidak "
-         "mengubah stok — true-up tetap keputusan manusia.",
-  example="Ambang Rp 1.000 · fisik Rp 5.100.000 vs GL Rp 4.200.000 → selisih "
-          "Rp 900.000 diberitahukan ke pemegang izin accounting.manage",
+  label="Selisih stok vs pembukuan yang diingatkan",
+  help="Bila nilai stok fisik dan nilai persediaan di pembukuan berselisih lebih dari angka ini, petugas akunting "
+       "diberi tahu setiap hari sampai dibereskan. Isi 0 agar selisih sekecil apa pun diberitahukan.",
+  impact="Hanya menentukan KAPAN orang diberi tahu. Tidak mencatat apa pun di pembukuan dan tidak mengubah stok — "
+         "penyesuaian tetap keputusan manusia.",
+  example="Batas Rp 1.000 · fisik Rp 5.100.000 vs pembukuan Rp 4.200.000 → selisih Rp 900.000 diberitahukan ke "
+          "pemegang akses Akuntansi",
   consumers=("services/inventory_drift_watch.py",), risk="low")
 
 # T-01 Opsi B (2026-09). Klaim saga yang mati di tengah meninggalkan `saga_lock` —
 # dokumen terkunci, aksi ulang 409. Ambang ini menjawab "sesudah berapa menit kunci
 # dianggap MENGGANTUNG dan admin harus diberi tahu", bukan sekadar sedang berjalan.
-E("saga.stuck_lock_minutes", group="keuangan-dasar", type="int",
+E("saga.stuck_lock_minutes", group="sistem", section="rfid-proses", type="int",
   default=10, min=1, max=1440, step=1, unit="menit",
   scopes=("global",),
-  label="Umur kunci saga yang diperingatkan",
-  help="Bila sebuah aksi multi-koleksi (batal SO, ganti roll, batal tagihan, dsb.) "
-       "meninggalkan kunci lebih lama dari angka ini, admin diberi tahu setiap hari "
-       "sampai kunci dilepas lewat Pusat Pengaturan → Kunci Saga.",
+  label="Proses macet: beri tahu admin setelah",
+  help="Bila sebuah proses (mis. batal pesanan, ganti roll, batal tagihan) terhenti di tengah jalan lebih lama dari "
+       "sekian menit, admin diberi tahu tiap hari sampai dibereskan di tab Kunci Proses. Sistem tidak pernah "
+       "membukanya sendiri.",
   impact="Hanya menentukan KAPAN admin diberi tahu. Kunci tidak pernah dilepas otomatis.",
-  example="Ambang 10 menit · kunci 'order_cancel' pada SO-00012 berumur 25 menit → "
-          "notifikasi ke admin dengan alasan gagal bila tercatat",
+  example="Batas 10 menit · proses batal pesanan pada SO-00012 terhenti 25 menit → admin diberi tahu beserta alasan "
+          "gagal bila tercatat",
   consumers=("services/saga_lock_watch.py",), risk="low")
 
-E("purchasing.price_deviation_approval_percent", group="persetujuan", type="pct",  default=10.0, min=0, max=100, step=1, unit="%", scopes=("global", "entity"),
+E("purchasing.price_deviation_approval_percent", group="pembelian", section="memesan", type="pct",  default=10.0, min=0, max=100, step=1, unit="%", scopes=("global", "entity"),
   simulate="price_deviation",
-  label="Deviasi harga beli yang wajib disetujui",
-  help="Bila harga di PO lebih tinggi dari harga acuan supplier melebihi persen ini, "
-       "PO wajib persetujuan.",
-  impact="Menentukan PO mana yang tertahan menunggu approval karena harga naik.",
-  example="Harga acuan Rp 100.000 · PO Rp 115.000 (+15%) · ambang 10% → wajib approval",
+  label="Kenaikan harga beli yang wajib disetujui",
+  help="Bila harga di PO lebih tinggi dari harga acuan pemasok melebihi persen ini, PO harus disetujui dulu. Isi 0 "
+       "dibaca sistem sebagai 10%.",
+  impact="Menentukan PO mana yang tertahan menunggu persetujuan karena harga naik.",
+  example="Harga acuan Rp 100.000 · PO Rp 115.000 (+15%) · ambang 10% → wajib persetujuan",
   consumers=("routers/purchase_orders.py", "services/pr_sourcing_service.py"), risk="high")
 
 # AS-01 (catatan demo 2026-09) — persetujuan NILAI manajer setelah Admin Sales DITIADAKAN.
-E("sales.require_so_validation", group="persetujuan", type="bool",
+E("sales.require_so_validation", group="penjualan", section="alur-pesanan", type="bool",
   default=False, scopes=("global", "entity"),
-  label="Pesanan wajib disahkan manajer sebelum dikonfirmasi (persetujuan nilai)",
-  help="Bila MATI (bawaan sejak keputusan pemilik AS-01), pesanan yang lolos verifikasi "
-       "Admin Sales dan tidak menyentuh kredit/harga khusus langsung siap dikonfirmasi — "
-       "tanpa singgah ke manajer. Persetujuan KREDIT dan HARGA KHUSUS tetap wajib dan tidak "
-       "terpengaruh sakelar ini. Ambang nilai yang masih menuntut manajer diatur di tabel "
-       "Ambang Persetujuan (dok. sales_order).",
+  label="Pesanan wajib disetujui manajer",
+  help="Bila aktif, setiap pesanan baru menunggu persetujuan manajer sebelum bisa dikonfirmasi. Bila mati, pesanan "
+       "yang sudah diverifikasi Admin Sales langsung siap dikonfirmasi; persetujuan kredit dan harga khusus tetap "
+       "berlaku.",
   impact="Alur menjadi: Sales membuat → Admin Sales verifikasi → Admin Sales konfirmasi. "
          "Menyalakan kembali membuat setiap pesanan baru menunggu pengesahan manajer.",
   example="SO Rp 75 jt tanpa kredit berlebih → langsung 'Siap dikonfirmasi' di Meja Admin Sales",
@@ -444,16 +456,14 @@ E("sales.require_so_validation", group="persetujuan", type="bool",
 # Bawaan SENGAJA MATI: instalasi yang sudah berjalan tidak boleh mendadak menolak
 # konfirmasi yang tadinya sah. Pemilik menyalakannya di sini bila ingin "tidak ada
 # pesanan jalan ke gudang sebelum kelengkapannya diperiksa" jadi aturan mengikat.
-E("sales_admin.require_verification_before_confirm", group="persetujuan", type="bool",
+E("sales_admin.require_verification_before_confirm", group="penjualan", section="alur-pesanan", type="bool",
   default=True, scopes=("global", "entity"),
-  label="Wajib verifikasi kelengkapan sebelum pesanan dikonfirmasi",
-  help="Bila aktif, pesanan hanya bisa dikonfirmasi setelah Admin Sales menekan "
-       "Verifikasi di Meja Admin Sales (alamat & penerima · syarat bayar · isi pesanan). "
-       "Ini pemeriksaan ADMINISTRATIF — persetujuan nilai/kredit/harga khusus tetap "
-       "keputusan manajer dan tidak terpengaruh sakelar ini.",
-  impact="Konfirmasi pesanan yang belum diverifikasi ditolak (409) beserta daftar "
-         "kekurangannya. Pesanan yang sudah diverifikasi tidak terpengaruh.",
-  example="SO tanpa nama penerima & telepon → Konfirmasi ditolak sampai alamat dilengkapi",
+  label="Pesanan wajib diverifikasi Admin Sales",
+  help="Bila aktif, pesanan baru bisa dikonfirmasi setelah Admin Sales memeriksa alamat, penerima, syarat bayar, "
+       "dan isi pesanan. Ini pemeriksaan kelengkapan, bukan persetujuan nilai.",
+  impact="Konfirmasi pesanan yang belum diverifikasi ditolak beserta daftar kekurangannya. Pesanan yang sudah "
+         "diverifikasi tidak terpengaruh.",
+  example="Pesanan tanpa nama penerima & telepon → konfirmasi ditolak sampai alamat dilengkapi",
   consumers=("services/so_verify_service.py:assert_ready_to_confirm",
              "routers/sales_orders_extra.py:confirm_order"),
   related=("approval.extra_levels",), risk="medium")
@@ -461,36 +471,35 @@ E("sales_admin.require_verification_before_confirm", group="persetujuan", type="
 # ═══════════════════════════════════════════════════════════════════════════
 # PEMBELIAN & TAGIHAN SUPPLIER
 # ═══════════════════════════════════════════════════════════════════════════
-E("purchasing.receive_tolerance_percent", group="pembelian", type="pct", default=2.0,
+E("purchasing.receive_tolerance_percent", group="penerimaan", section="menerima", type="pct", default=2.0,
   min=0, max=100, step=0.5, unit="%", scopes=("global", "entity"), simulate="receiving_over",
-  label="Toleransi qty kedatangan vs PO",
-  help="Selisih qty yang masih boleh saat barang datang (kain/benang jarang persis).",
+  label="Kelebihan kedatangan yang masih diterima",
+  help="Persen kelebihan barang datang di atas jumlah PO yang masih boleh diterima. Di atasnya penerimaan ditolak "
+       "atau ditandai, sesuai “Tolak penerimaan melebihi sisa PO”. Isi 0 = tidak boleh menerima lebih dari sisa PO.",
   impact="Penerimaan di atas PO + toleransi ini akan ditolak atau diberi peringatan.",
   example="PO 1.000 yard · toleransi 2% → boleh terima s/d 1.020 yard",
   consumers=("services/receiving_uom_service.py:receive_tolerance_pct",),
   related=("receiving.block_over_remaining",), risk="medium")
 
-E("purchasing.restock_source_unknown", group="pembelian", type="enum", default="warn",
+E("purchasing.restock_source_unknown", group="pembelian", section="memesan", type="enum", default="warn",
   options=({"value": "warn", "label": "Peringatkan — PR/PO/MKO tetap boleh, tercatat 'belum diatur'"},
            {"value": "block", "label": "Tolak — MD wajib mengisi sumber restock artikel dulu"}),
   scopes=("global", "entity"),
-  label="Artikel tanpa sumber restock (supplier/makloon/keduanya)",
-  help="DEC-07: artikel lama tidak di-default. 'Tolak' = PR/PO/Order Makloon barang jadi untuk artikel yang "
-       "belum dipetakan MD ditolak. Jalur yang bertentangan dengan mapping & artikel 'keduanya' tanpa alasan "
-       "selalu ditolak, apa pun setelan ini.",
-  impact="Pembuatan PR, PO manual, dan Order Makloon barang jadi.",
-  example="block → PR artikel KNT-0067 ditolak sampai MD memilih supplier/makloon",
+  label="Barang tanpa sumber beli: tolak/ingatkan",
+  help="Bila MD belum menentukan barang ini dibeli dari pemasok atau dibuat lewat makloon, pilih apakah permintaan "
+       "pembelian, PO, dan order makloon-nya ditolak atau hanya diberi peringatan.",
+  impact="Berlaku saat membuat permintaan pembelian, PO manual, dan order makloon barang jadi.",
+  example="Tolak → permintaan pembelian produk KNT-0067 ditolak sampai MD memilih pemasok/makloon",
   consumers=("services/restock_source_service.py:unknown_policy",), risk="medium")
-E("purchasing.require_supplier_master", group="pembelian", type="bool", default=False,
+E("purchasing.require_supplier_master", group="pembelian", section="memesan", type="bool", default=False,
   scopes=("global", "entity"), simulate="po_supplier",
-  label="PO wajib memilih supplier master",
-  help="Bila aktif, PO tidak boleh diisi nama supplier bebas — harus memilih dari daftar "
-       "Pemasok yang terdaftar.",
-  impact="Pembuatan PO tanpa supplier terdaftar akan ditolak (400) demi kerapian data & 3-way match.",
-  example="Aktif → PO dengan supplier_id kosong ditolak: 'PO wajib memilih supplier master'",
+  label="PO wajib pilih pemasok terdaftar",
+  help="Bila aktif, PO tidak boleh diisi nama pemasok bebas; harus memilih dari daftar pemasok.",
+  impact="Pembuatan PO tanpa pemasok terdaftar ditolak, supaya data pemasok rapi dan tagihannya bisa dicocokkan.",
+  example="Aktif → PO tanpa pemasok terdaftar ditolak",
   consumers=("routers/purchase_orders.py:_create_po_core",), risk="medium")
 
-E("purchasing.qc_on_receipt", group="pembelian", type="bool", default=True,
+E("purchasing.qc_on_receipt", group="penerimaan", section="menerima", type="bool", default=True,
   scopes=("global", "entity"),
   label="Barang masuk lewat karantina QC",
   help="Bila aktif, barang yang diterima masuk status karantina dulu dan harus lulus inspeksi "
@@ -502,7 +511,7 @@ E("purchasing.qc_on_receipt", group="pembelian", type="bool", default=True,
              "services/makloon_receipt_qc.py:receipt_policy", "services/qc_service.py"), risk="medium")
 
 E("purchasing.allow_item_discount", sensitif_baca=False,  # KF-T1 — dibaca layar semua pengguna
-  group="pembelian", type="bool", default=True,
+  group="pembelian", section="memesan", type="bool", default=True,
   scopes=("global", "entity"), simulate="pricing",
   label="Izinkan diskon per baris (pembelian)",
   help="Mengizinkan potongan harga per baris pada Pesanan Pembelian.",
@@ -511,7 +520,7 @@ E("purchasing.allow_item_discount", sensitif_baca=False,  # KF-T1 — dibaca lay
   consumers=("services/config_service.py:compute_order_pricing",), risk="low")
 
 E("purchasing.allow_order_discount", sensitif_baca=False,  # KF-T1 — dibaca layar semua pengguna
-  group="pembelian", type="bool", default=True,
+  group="pembelian", section="memesan", type="bool", default=True,
   scopes=("global", "entity"), simulate="pricing",
   label="Izinkan diskon total (pembelian)",
   help="Mengizinkan satu potongan untuk seluruh Pesanan Pembelian.",
@@ -520,20 +529,21 @@ E("purchasing.allow_order_discount", sensitif_baca=False,  # KF-T1 — dibaca la
   consumers=("services/config_service.py:compute_order_pricing",), risk="low")
 
 E("purchasing.bill_qty_tolerance_percent", sensitif_baca=False,  # KF-T1 — dibaca layar semua pengguna
-  group="pembelian", type="pct", default=0.0,
+  group="pembelian", section="tagihan", type="pct", default=0.0,
   min=0, max=100, step=0.5, unit="%", scopes=("global", "entity"), simulate="bill_match",
-  label="Toleransi qty tagihan supplier",
-  help="Selisih qty pada tagihan supplier dibanding barang yang benar-benar diterima yang "
-       "masih boleh lewat tanpa sengketa (3-way match).",
-  impact="Tagihan dengan selisih qty di atas toleransi akan ditolak/ditandai perlu keputusan.",
+  label="Toleransi jumlah di tagihan pemasok",
+  help="Selisih jumlah di tagihan pemasok dibanding barang yang benar-benar diterima yang masih boleh lewat tanpa "
+       "keputusan. Isi 0 = jumlah harus sama persis.",
+  impact="Tagihan dengan selisih jumlah di atas toleransi akan ditolak/ditandai perlu keputusan.",
   example="Diterima 1.000 yard · ditagih 1.010 · toleransi 0% → tagihan ditolak",
   consumers=("services/three_way_policy.py",), risk="medium")
 
 E("purchasing.bill_price_tolerance_percent", sensitif_baca=False,  # KF-T1 — dibaca layar semua pengguna
-  group="pembelian", type="pct", default=5.0,
+  group="pembelian", section="tagihan", type="pct", default=5.0,
   min=0, max=100, step=0.5, unit="%", scopes=("global", "entity"), simulate="bill_match",
-  label="Toleransi harga tagihan supplier",
-  help="Selisih harga satuan pada tagihan supplier dibanding harga PO yang masih boleh lewat.",
+  label="Toleransi harga tagihan pemasok",
+  help="Selisih harga satuan pada tagihan pemasok dibanding harga PO yang masih boleh lewat. Isi 0 = harga harus "
+       "sama persis.",
   impact="Tagihan dengan harga di atas toleransi ditandai selisih dan butuh keputusan.",
   example="Harga PO Rp 100.000 · ditagih Rp 108.000 (+8%) · toleransi 5% → ditandai selisih",
   consumers=("services/three_way_policy.py",), risk="medium")
@@ -541,38 +551,39 @@ E("purchasing.bill_price_tolerance_percent", sensitif_baca=False,  # KF-T1 — d
 # ═══════════════════════════════════════════════════════════════════════════
 # STOK, SATUAN & ALOKASI
 # ═══════════════════════════════════════════════════════════════════════════
-E("inventory.default_uom", group="stok-satuan", type="text", default="meter",
+E("inventory.default_uom", group="stok", section="kerja-gudang", type="text", default="meter",
   scopes=("global", "entity"),
-  label="Satuan default produk baru",
+  label="Satuan bawaan produk baru",
   help="Satuan yang otomatis terpilih ketika membuat produk baru.",
-  impact="Mempengaruhi satuan awal produk baru dan tampilan stok default.",
+  impact="Mempengaruhi satuan awal produk baru dan tampilan stok bawaan.",
   example="'meter' → produk baru langsung bersatuan meter",
-  consumers=("routers/products.py:create_product",), risk="low")
+  consumers=("routers/products.py:create_product",), risk="low",
+  ref="uom")
 
 E("inventory.min_cut_qty", sensitif_baca=False,  # KF-T1 — dibaca layar semua pengguna
-  group="stok-satuan", type="decimal", default=0.5,
+  group="stok", section="memilih-stok", type="decimal", default=0.5,
   min=0, max=1000, step=0.1, unit="satuan dasar", scopes=("global", "entity"),
   simulate="min_cut",
   label="Minimum panjang potong kain",
-  help="Panjang terkecil yang boleh dipotong dari satu roll. Mencegah sisa potongan yang "
-       "terlalu pendek sehingga tidak terjual.",
-  impact="Pesanan/pengambilan dengan qty di bawah angka ini ditolak dengan pesan jelas.",
+  help="Panjang terkecil yang boleh dipotong dari satu roll. Mencegah sisa potongan yang terlalu pendek sehingga "
+       "tidak terjual. Isi 0 = tanpa batas terkecil.",
+  impact="Pesanan/pengambilan dengan jumlah di bawah angka ini ditolak dengan pesan jelas.",
   example="Minimum 0,5 m → permintaan potong 0,3 m ditolak",
   consumers=("routers/sales_orders.py:_validate_min_cut",), risk="medium")
 
-E("inventory.intercompany_transfer_required", group="stok-satuan", type="bool", default=True,
+E("inventory.intercompany_transfer_required", group="stok", section="memilih-stok", type="bool", default=True,
   scopes=("global", "entity"), simulate="interco",
-  label="Wajib transfer sebelum jual stok entitas lain",
-  help="Bila aktif, satu PT tidak boleh langsung menjual stok milik PT lain — harus dibuat "
-       "transaksi antar entitas terlebih dahulu.",
-  impact="Pesanan yang memakai stok milik entitas lain ditolak sampai transfer dibuat. "
-       "Menjaga kebenaran laporan laba per PT.",
-  example="Aktif → SO di KSC yang mengambil roll milik KANDA ditolak (400)",
+  label="Jual stok PT lain wajib lewat transfer",
+  help="Bila aktif, satu PT tidak boleh langsung menjual stok milik PT lain; harus dibuat transaksi antar-PT lebih "
+       "dulu. Selama aktif, “Boleh memakai stok PT lain” tidak berlaku.",
+  impact="Pesanan yang memakai stok milik PT lain ditolak sampai transfer dibuat. Menjaga kebenaran laporan laba "
+         "per PT.",
+  example="Aktif → pesanan di KSC yang mengambil roll milik KANDA ditolak sampai transfer dibuat",
   consumers=("services/config_service.py:get_allocation_policy",), risk="high")
 
 # K-05 (keputusan pemilik 26 Okt 2026) — kelas laju jual Analitik Stok HANYA dari moving average penjualan
 # (persentil per satuan). Ambang lama "hari sejak jual terakhir" tidak lagi dibaca mesin.
-E("inventory.stock_analytics.fast_max_days", group="stok-satuan", type="duration",
+E("inventory.stock_analytics.fast_max_days", group="stok", section="laris-lambat", type="duration",
   default=30, min=1, max=365, step=1, unit="hari", scopes=("global", "entity"),
   status="not_used",
   not_used_reason="Diganti K-05 (26 Okt 2026): kelas Analitik Stok kini dari moving average penjualan & "
@@ -582,7 +593,7 @@ E("inventory.stock_analytics.fast_max_days", group="stok-satuan", type="duration
   impact="Tidak berpengaruh lagi.",
   example="—", risk="low")
 
-E("inventory.stock_analytics.slow_max_days", group="stok-satuan", type="duration",
+E("inventory.stock_analytics.slow_max_days", group="stok", section="laris-lambat", type="duration",
   default=90, min=1, max=1095, step=1, unit="hari", scopes=("global", "entity"),
   status="not_used",
   not_used_reason="Diganti K-05 (26 Okt 2026): kelas Analitik Stok kini dari moving average penjualan & "
@@ -592,12 +603,12 @@ E("inventory.stock_analytics.slow_max_days", group="stok-satuan", type="duration
   impact="Tidak berpengaruh lagi.",
   example="—", risk="low")
 
-E("inventory.stock_analytics.velocity_window_days", group="stok-satuan", type="duration",
+E("inventory.stock_analytics.velocity_window_days", group="stok", section="laris-lambat", type="duration",
   default=90, min=7, max=730, step=1, unit="hari", scopes=("global", "entity"),
   simulate="stock_class",
-  label="Analitik Stok — jendela moving average penjualan",
-  help="Rentang hari ke belakang untuk rata-rata bergerak (moving average) qty terjual per hari, dihitung dari "
-       "pesanan penjualan yang hidup (tanpa batal/draf/kedaluwarsa/ditolak & tanpa pesanan sample).",
+  label="Analitik stok: hitung penjualan berapa hari",
+  help="Jumlah hari ke belakang untuk menghitung rata-rata penjualan per hari tiap barang. Lebih pendek lebih peka "
+       "tren; lebih panjang lebih stabil.",
   impact="Menjadi dasar kelas Best seller / Normal / Slow moving / Tidak bergerak di Analitik Stok dan angka "
          "'cukup untuk' (hari persediaan). Jendela pendek lebih peka tren, jendela panjang lebih stabil.",
   example="90 hari · terjual 900 yard → moving average 10 yard/hari",
@@ -605,164 +616,165 @@ E("inventory.stock_analytics.velocity_window_days", group="stok-satuan", type="d
   related=("inventory.stock_analytics.best_seller_pct", "inventory.stock_analytics.slow_moving_pct",
            "inventory.stock_analytics.new_sku_age_days"), risk="low")
 
-E("inventory.stock_analytics.best_seller_pct", group="stok-satuan", type="pct",
+E("inventory.stock_analytics.best_seller_pct", group="stok", section="laris-lambat", type="pct",
   default=20, min=1, max=50, step=1, unit="%", scopes=("global", "entity"),
   simulate="stock_class",
-  label="Analitik Stok — Best seller = persen teratas",
-  help="SKU yang terjual diurutkan menurut moving average penjualannya DI DALAM SATUAN YANG SAMA (yard, meter, "
-       "kg tidak dibandingkan). Persen teratas ini disebut Best seller (dasar analisis ABC/Pareto).",
+  label="Analitik stok: persen barang terlaris",
+  help="Barang diurutkan menurut rata-rata penjualannya (per satuan yang sama); sekian persen teratas disebut "
+       "Terlaris.",
   impact="Menambah/mengurangi jumlah SKU berlabel Best seller di Analitik Stok.",
   example="20% · 50 SKU bersatuan yard terjual → 10 SKU yard dengan laju jual tertinggi = Best seller",
   consumers=("services/stock_analytics_service.py:compute_stock_analytics",),
   related=("inventory.stock_analytics.slow_moving_pct",), risk="low")
 
-E("inventory.stock_analytics.slow_moving_pct", group="stok-satuan", type="pct",
+E("inventory.stock_analytics.slow_moving_pct", group="stok", section="laris-lambat", type="pct",
   default=20, min=1, max=50, step=1, unit="%", scopes=("global", "entity"),
   simulate="stock_class",
-  label="Analitik Stok — Slow moving = persen terbawah",
-  help="Persen terbawah di antara SKU yang TERJUAL dalam jendela (per satuan) disebut Slow moving. SKU yang punya "
-       "stok tetapi tidak terjual sama sekali dalam jendela masuk kelas Tidak bergerak (dead stock).",
+  label="Analitik stok: persen barang lambat laku",
+  help="Sekian persen terbawah di antara barang yang terjual disebut Lambat laku. Barang berstok yang tidak terjual "
+       "sama sekali disebut Tidak bergerak.",
   impact="Menambah/mengurangi daftar SKU Slow moving yang perlu didorong penjualannya.",
   example="20% · 50 SKU bersatuan yard terjual → 10 SKU yard dengan laju jual terendah = Slow moving",
   consumers=("services/stock_analytics_service.py:compute_stock_analytics",),
   related=("inventory.stock_analytics.best_seller_pct",), risk="low")
 
-E("inventory.stock_analytics.new_sku_age_days", group="stok-satuan", type="duration",
+E("inventory.stock_analytics.new_sku_age_days", group="stok", section="laris-lambat", type="duration",
   default=90, min=0, max=730, step=1, unit="hari", scopes=("global", "entity"),
   simulate="stock_class",
-  label="Analitik Stok — umur SKU baru",
-  help="SKU yang umurnya (sejak bukti pertama: produk dibuat, roll pertama tercatat, atau penjualan pertama) "
-       "kurang dari angka ini berlabel Baru dan TIDAK diperingkat, supaya tidak dinilai tidak adil karena belum "
-       "sempat terjual sepanjang jendela. 0 = tidak ada kelas Baru.",
+  label="Analitik stok: barang dianggap baru selama",
+  help="Barang yang umurnya kurang dari sekian hari diberi label Baru dan belum diperingkat. Isi 0 bila tidak perlu "
+       "kelas Baru.",
   impact="Mengubah SKU mana yang dikecualikan dari peringkat Best seller / Slow moving / Tidak bergerak.",
   example="90 hari · produk masuk 40 hari lalu → Baru (belum diperingkat)",
   consumers=("services/stock_analytics_service.py:compute_stock_analytics",),
   related=("inventory.stock_analytics.velocity_window_days",), risk="low")
 
-E("inventory.reorder.velocity_window_days", group="stok-satuan", type="duration",
+E("inventory.reorder.velocity_window_days", group="stok", section="laris-lambat", type="duration",
   default=90, min=7, max=730, step=1, unit="hari", scopes=("global", "entity"),
-  label="Jendela kecepatan jual untuk reorder",
-  help="Rentang hari yang dipakai khusus untuk menghitung usulan pembelian ulang.",
-  impact="Mengubah angka usulan qty pada Saran Reorder & Purchase Requisition otomatis.",
+  label="Pesan ulang: hitung penjualan berapa hari",
+  help="Jumlah hari penjualan yang dipakai untuk menghitung usulan pembelian ulang.",
+  impact="Mengubah angka usulan jumlah pada Saran Reorder & Purchase Requisition otomatis.",
   example="60 hari → usulan lebih responsif terhadap tren terbaru",
   consumers=("services/purchase_requisition_service.py",), risk="low")
 
-E("inventory.reorder.safety_days", group="stok-satuan", type="duration", default=7,
+E("inventory.reorder.safety_days", group="stok", section="laris-lambat", type="duration", default=7,
   min=0, max=180, step=1, unit="hari", scopes=("global", "entity"), simulate="reorder",
-  label="Cadangan hari aman (safety)",
-  help="Tambahan hari persediaan di atas lead time supplier agar tidak kehabisan stok.",
+  label="Pesan ulang: cadangan hari aman",
+  help="Tambahan hari persediaan di atas lama kirim pemasok agar stok tidak sampai habis. Lebih besar lebih aman, "
+       "tetapi modal tertahan lebih banyak. Isi 0 = hanya lama kirim pemasok yang dihitung, tanpa cadangan.",
   impact="Menaikkan titik pesan ulang → stok lebih aman tapi modal tertahan lebih besar.",
   example="Jual 10 yard/hari · lead time 14 hari · safety 7 → titik pesan 210 yard",
   consumers=("services/purchase_requisition_service.py",), risk="medium")
 
-E("allocation.mode", group="stok-satuan", type="enum", default="auto",
+E("allocation.mode", group="stok", section="memilih-stok", type="enum", default="auto",
   options=({"value": "auto", "label": "Otomatis penuh"},
            {"value": "assisted", "label": "Diusulkan sistem, dikonfirmasi petugas"},
            {"value": "manual", "label": "Manual sepenuhnya"}),
   scopes=("global", "entity"),
   label="Cara memilih stok untuk pesanan",
-  help="Menentukan seberapa besar campur tangan petugas saat sistem memilih roll/lot.",
+  help="Menentukan seberapa besar campur tangan petugas saat sistem memilih roll untuk pesanan.",
   impact="Mengubah alur kerja gudang: otomatis langsung terpilih, manual harus dipilih sendiri.",
-  example="assisted → sistem mengusulkan 3 roll, petugas menyetujui/menukar",
+  example="Diusulkan sistem → sistem mengusulkan 3 roll, petugas menyetujui atau menukar",
   consumers=("services/config_service.py:get_allocation_policy", "services/roll_service.py"),
   risk="medium")
 
 E("allocation.roll_pick_sales", sensitif_baca=False,  # KF-T1 — dibaca layar semua pengguna
-  group="stok-satuan", type="bool", default=True,
+  group="stok", section="memilih-stok", type="bool", default=True,
   scopes=("global", "entity"),
-  label="Sales boleh pilih roll saat checkout",
-  help="Bila dimatikan, role SALES hanya memasukkan jumlah (yard + perkiraan roll) — "
-       "roll dipilihkan otomatis (lokasi pesanan dulu, lalu FIFO), lalu Admin Sales dapat MENGGANTI roll pilihan "
-       "sistem lewat tombol 'Ganti Roll' di detail pesanan. Admin Sales/manajer/admin "
-       "tetap boleh memilih roll saat checkout.",
+  label="Sales boleh memilih roll saat memesan",
+  help="Bila mati, sales hanya mengisi jumlah; roll dipilihkan sistem (yang masuk lebih dulu) dan Admin Sales bisa "
+       "menggantinya di detail pesanan.",
   impact="Menggeser keputusan pemilihan roll dari sales lapangan ke Admin Sales (alokasi manual).",
   example="OFF → sales pesan 200 yard; sistem reserve FIFO di lokasi pesanan; Admin Sales tukar ke roll lot A-113",
   consumers=("routers/sales_orders.py", "routers/sales_orders_extra.py:reallocate_line_rolls"),
   risk="medium")
 
-E("allocation.makloon_reserve_mode", group="stok-satuan", type="enum", default="block",
+E("allocation.makloon_reserve_mode", group="stok", section="memilih-stok", type="enum", default="block",
   options=({"value": "block", "label": "Blokir — stok cadangan makloon tidak bisa dijual"},
            {"value": "approve", "label": "Boleh dipakai dengan persetujuan manajer"}),
   scopes=("global", "entity"),
-  label="Stok yang dicadangkan untuk makloon saat dipesan sales",
-  help="Bahan yang sudah dicadangkan untuk makloon (sejak PR makloon disetujui) dikurangkan dari stok "
-       "bebas untuk penjualan. Pilih apakah pesanan yang melebihi stok bebas diblokir, atau boleh "
-       "memakai stok cadangan dengan persetujuan manajer.",
+  label="Stok cadangan makloon boleh dijual?",
+  help="Bahan yang sudah dicadangkan untuk makloon dikurangkan dari stok yang bisa dijual. Pilih apakah pesanan "
+       "yang melebihi stok bebas ditolak, atau boleh memakai cadangan itu dengan persetujuan manajer.",
   impact="Mencegah stok yang sama dijanjikan ke pelanggan dan ke makloon sekaligus.",
   example="Stok 500 yd, cadangan makloon 300 yd → sales hanya bisa memesan 200 yd (mode Blokir)",
   consumers=("services/roll_service.py:makloon_guard", "services/sales_order_helpers.py:reserve_roll_mode_item"),
   risk="medium")
 
-E("allocation.priority_order", group="stok-satuan", type="list",
+E("allocation.priority_order", group="stok", section="memilih-stok", type="list",
   default=["owner", "lot", "location", "roll_efficiency"], scopes=("global", "entity"),
-  label="Urutan prioritas pemilihan stok",
-  help="Urutan pertimbangan saat memilih roll. 'owner' (pemilik entitas) SELALU nomor satu "
-       "dan tidak bisa digeser.",
+  label="Urutan pertimbangan memilih roll",
+  help="Urutan yang dipakai sistem saat memilih roll: pemilik (selalu pertama), kesamaan lot, kedekatan gudang, dan "
+       "efisiensi sisa.",
   impact="Mengubah roll mana yang dipilih lebih dulu: kesamaan lot, kedekatan gudang, atau efisiensi sisa.",
-  example="['owner','location','lot'] → utamakan gudang terdekat sebelum kesamaan lot",
+  example="PT pemilik stok, Lokasi gudang, Lot yang sama → utamakan gudang terdekat sebelum kesamaan lot",
   consumers=("services/config_service.py:_sanitize_alloc", "services/roll_service.py"),
-  risk="medium")
+  risk="medium",
+  items="options",
+  ordered=True,
+  options=[{"value": "owner", "label": "PT pemilik stok"}, {"value": "lot", "label": "Lot yang sama"}, {"value": "location", "label": "Lokasi gudang"}, {"value": "roll_efficiency", "label": "Roll paling hemat"}])
 
-E("allocation.lot_mode", group="stok-satuan", type="enum", default="prefer_single",
+E("allocation.lot_mode", group="stok", section="memilih-stok", type="enum", default="prefer_single",
   options=({"value": "prefer_single", "label": "Usahakan satu lot"},
            {"value": "strict_single", "label": "Wajib satu lot"},
            {"value": "allow_mixed", "label": "Boleh campur lot"}),
   # KF-T5 — lapisan pelanggan dicabut: mesin memakai isian `lot_policy` kartu pelanggan, bukan lapisan pengaturan.
   scopes=("global", "entity"),
   label="Kebijakan campur lot",
-  help="Seberapa ketat satu pesanan harus berasal dari satu lot produksi (penting untuk warna)."
-       " Untuk pelanggan tertentu, atur di kartu pelanggan (Kebijakan lot).",
+  help="Seberapa ketat satu pesanan harus berasal dari satu lot produksi (penting untuk kesamaan warna). Untuk "
+       "pelanggan tertentu, atur di kartu pelanggan (Kebijakan lot).",
   impact="Mode 'wajib satu lot' bisa membuat pesanan tidak bisa dipenuhi walau total stok cukup.",
-  example="strict_single → pesanan 600 yard ditolak bila lot terbesar hanya 400 yard",
+  example="Wajib satu lot → pesanan 600 yard ditolak bila lot terbesar hanya 400 yard",
   consumers=("services/config_service.py:get_allocation_policy", "services/roll_service.py"),
   risk="high")
 
-E("allocation.lot_selection", group="stok-satuan", type="enum", default="fifo",
+E("allocation.lot_selection", group="stok", section="memilih-stok", type="enum", default="fifo",
   # UAT 24 Okt (P9.6, keputusan pemilik) — kain tidak berkedaluwarsa: FIFO (tanggal masuk) setelah LOKASI pesanan.
   # Nilai lama "fefo" tetap sah (diperlakukan sama dengan FIFO) supaya pengaturan tersimpan tidak rusak.
-  options=({"value": "fifo", "label": "FIFO — masuk pertama keluar pertama (tanggal terima)"},
-           {"value": "fefo", "label": "FEFO (lama) — sama dengan FIFO, kain tidak berkedaluwarsa"},
+  options=({"value": "fifo", "label": "Yang masuk lebih dulu"},
+           {"value": "fefo", "label": "Yang masuk lebih dulu (sama dengan pilihan pertama)"},
            {"value": "smallest_fit", "label": "Sisa terkecil yang cukup"},
            {"value": "largest_fit", "label": "Sisa terbesar"}),
   scopes=("global", "entity"),
   label="Urutan pengambilan lot",
   help="Aturan memilih lot mana yang dipakai lebih dulu.",
   impact="Mengubah umur stok yang keluar dan potensi barang mengendap.",
-  example="smallest_fit → habiskan roll sisa 40 yard sebelum membuka roll penuh",
+  example="Sisa terkecil yang cukup → habiskan roll sisa 40 yard sebelum membuka roll penuh",
   consumers=("services/config_service.py:get_allocation_policy", "services/roll_service.py"),
   risk="medium")
 
-E("allocation.location_pref", group="stok-satuan", type="enum", default="single_warehouse",
+E("allocation.location_pref", group="stok", section="memilih-stok", type="enum", default="single_warehouse",
   options=({"value": "single_warehouse", "label": "Satu gudang saja"},
            {"value": "nearest_customer", "label": "Gudang terdekat pelanggan"},
            {"value": "fewest_splits", "label": "Paling sedikit pecah kiriman"}),
   scopes=("global", "entity"),
   label="Preferensi gudang pengambilan",
-  help="Menentukan gudang mana yang diutamakan saat stok tersebar.",
+  help="Menentukan gudang mana yang diutamakan saat stok tersebar di beberapa gudang.",
   impact="Mempengaruhi biaya kirim dan jumlah surat jalan per pesanan.",
-  example="nearest_customer → ambil dari gudang Solo untuk pelanggan Yogyakarta",
+  example="Gudang terdekat pelanggan → ambil dari gudang Solo untuk pelanggan Yogyakarta",
   consumers=("services/config_service.py:get_allocation_policy", "services/roll_service.py"),
   risk="low")
 
-E("allocation.allow_intercompany", group="stok-satuan", type="bool", default=True,
+E("allocation.allow_intercompany", group="stok", section="memilih-stok", type="bool", default=True,
   scopes=("global", "entity"),
-  label="Boleh memakai stok entitas lain",
-  help="Mengizinkan alokasi mengambil stok milik PT lain dalam grup.",
-  impact="Bila mati, pesanan hanya dilayani stok milik entitas penerbit pesanan.",
+  label="Boleh memakai stok PT lain",
+  help="Mengizinkan pesanan dipenuhi dari stok milik PT lain dalam grup. Tidak berlaku selama “Jual stok PT lain "
+       "wajib lewat transfer” masih aktif.",
+  impact="Bila mati, pesanan hanya dilayani stok milik PT penerbit pesanan.",
   example="Mati → SO KSC hanya boleh memakai roll milik KSC",
   consumers=("services/config_service.py:_sanitize_alloc", "services/roll_service.py"),
   related=("inventory.intercompany_transfer_required",), risk="high")
 
-E("allocation.allow_partial", group="stok-satuan", type="bool", default=True,
+E("allocation.allow_partial", group="stok", section="memilih-stok", type="bool", default=True,
   scopes=("global", "entity"),
   label="Boleh alokasi sebagian",
-  help="Mengizinkan sistem mengalokasikan sebagian qty bila stok belum cukup.",
+  help="Mengizinkan sistem mengalokasikan sebagian jumlah bila stok belum cukup.",
   impact="Bila mati, pesanan yang stoknya kurang tidak dialokasikan sama sekali.",
   example="Aktif → pesanan 1.000 yard dialokasi 700, sisa 300 jadi backorder",
   consumers=("services/config_service.py:_sanitize_alloc", "services/roll_service.py"),
   risk="medium")
 
-E("allocation.dye_lot_strict", group="stok-satuan", type="bool", default=False,
+E("allocation.dye_lot_strict", group="stok", section="memilih-stok", type="bool", default=False,
   # KF-T5 — lapisan pelanggan dicabut: mesin memakai isian `enforce_single_dye_lot` kartu pelanggan.
   scopes=("global", "entity"),
   label="Wajib satu dye lot (warna sama)",
@@ -776,53 +788,55 @@ E("allocation.dye_lot_strict", group="stok-satuan", type="bool", default=False,
 # ═══════════════════════════════════════════════════════════════════════════
 # KUALITAS (QC)
 # ═══════════════════════════════════════════════════════════════════════════
-E("qc.four_point_enabled", group="kualitas", type="bool", default=True,
+E("qc.four_point_enabled", group="kualitas", section="inspeksi", type="bool", default=True,
   scopes=("global", "entity"), simulate="qc_grade",
   label="Aktifkan inspeksi 4-Point",
-  help="Metode standar tekstil: cacat dihitung poin berdasarkan panjangnya, lalu jadi grade A/B/C.",
+  help="Metode standar tekstil: tiap cacat diberi poin menurut panjangnya, lalu total poin menjadi acuan grade roll.",
   impact="Bila mati, layar Inspeksi QC tidak meminta rincian 4-point dan grade ditetapkan manual.",
   example="Mati → petugas langsung memilih grade tanpa menghitung poin cacat",
   consumers=("routers/qc_inspection.py:inspect",), risk="medium")
 
-E("qc.grade_thresholds.a_max", group="kualitas", type="decimal", default=20.0,
-  min=0, max=1000, step=1, unit="poin/100 yd²", scopes=("global", "entity"),
+E("qc.grade_thresholds.a_max", group="kualitas", section="inspeksi", type="decimal", default=20.0,
+  min=0, max=1000, step=1, unit="poin", scopes=("global", "entity"),
   simulate="qc_grade",
   label="Poin maksimum Grade A",
-  help="Poin cacat 4-point paling tinggi yang masih dinilai Grade A.",
-  impact="Mengubah grade hasil inspeksi → mempengaruhi harga jual dan klaim ke supplier.",
-  example="a_max 20 · hasil 18 poin → Grade A",
+  help="Total poin cacat paling tinggi yang masih Grade A. Dipakai sebagai saran grade; bila batas poin sudah diisi "
+       "di Master Grade Mutu, angka di sana yang dipakai. Isi 0 dibaca sistem sebagai 20.",
+  impact="Mengubah grade hasil inspeksi → mempengaruhi harga jual dan klaim ke pemasok.",
+  example="Batas 20 · hasil 18 poin → Grade A",
   consumers=("services/qc_inspection_service.py", "services/grade_service.py"),
   related=("qc.grade_thresholds.b_max",), risk="high")
 
-E("qc.grade_thresholds.b_max", group="kualitas", type="decimal", default=40.0,
-  min=0, max=1000, step=1, unit="poin/100 yd²", scopes=("global", "entity"),
+E("qc.grade_thresholds.b_max", group="kualitas", section="inspeksi", type="decimal", default=40.0,
+  min=0, max=1000, step=1, unit="poin", scopes=("global", "entity"),
   simulate="qc_grade",
   label="Poin maksimum Grade B",
-  help="Di atas batas Grade A sampai angka ini = Grade B. Lebih dari itu = Grade C.",
+  help="Batas atas poin untuk Grade B. Rentang di antara batas Grade A dan angka ini dibagi rata menjadi A1, A2, "
+       "dan B; di atas angka ini roll masuk grade terendah. Isi 0 dibaca sistem sebagai 40.",
   impact="Menentukan kain mana yang turun ke Grade C dan wajib diskon/klaim.",
-  example="b_max 40 · hasil 45 poin → Grade C",
+  example="Batas 40 · hasil 45 poin → grade terendah (BS)",
   consumers=("services/qc_inspection_service.py", "services/grade_service.py"), risk="high")
 
 # Trial 22 Okt 2026 (F5, keputusan pemilik) — grade roll ditentukan PETUGAS QC dari total poin; untuk sekarang sistem
 # tidak mengisi grade otomatis. Nyalakan bila kelak grade mau dihitung sistem memakai ambang di atas.
-E("qc.grade_from_points", group="kualitas", type="bool", default=False,
+E("qc.grade_from_points", group="kualitas", section="inspeksi", type="bool", default=False,
   scopes=("global", "entity"),
   label="Grade roll diisi otomatis dari total poin",
-  help="Mati (bawaan): petugas QC mengisi kode cacat, poin, DAN grade roll sendiri — total poin & STDRT hanya acuan. "
-       "Hidup: grade yang dikosongkan petugas diisi sistem dari total poin memakai ambang grade di atas.",
+  help="Mati (bawaan): petugas QC mengisi sendiri kode cacat, poin, dan grade roll; total poin hanya acuan. Hidup: "
+       "grade yang dikosongkan petugas diisi sistem dari total poin.",
   impact="Bila mati, hasil 4-point yang disimpan tanpa grade ditolak dengan pesan 'isi grade roll'. "
          "Bila hidup, grade kosong = saran sistem dari total poin.",
   example="Mati → roll 18 poin, petugas memilih sendiri Grade A di Lembar Inspect",
   consumers=("services/qc_inspection_service.py:grade_auto",), risk="high")
 
-E("qc.color_mismatch_action", group="kualitas", type="enum", default="tahan",
+E("qc.color_mismatch_action", group="kualitas", section="tidak-sesuai", type="enum", default="tahan",
   scopes=("global", "entity"),
   options=[{"value": "abaikan", "label": "Abaikan (hanya dicatat)"},
            {"value": "peringatkan", "label": "Beri peringatan, barang tetap masuk"},
            {"value": "tahan", "label": "TAHAN barang sampai manajer memutuskan"}],
-  label="Bila warna beda dari sample yang di-ACC",
-  help="Menentukan apa yang terjadi saat petugas inspect menandai warna kain BEDA dari "
-       "sample yang sudah disetujui. Pelepas tahanan hanya manajer.",
+  label="Bila warna beda dari sample disetujui",
+  help="Menentukan apa yang terjadi bila petugas menandai warna kain berbeda dari sample yang sudah disetujui: "
+       "dicatat saja, diberi peringatan, atau roll ditahan sampai manajer memutuskan.",
   impact="Pada pilihan TAHAN, roll tidak bisa ditempatkan ke bin (putaway) sebelum "
          "manajer melepasnya ber-alasan — barang tidak bisa terjual diam-diam.",
   example="Tahan → petugas gudang melihat pesan “roll ditahan: warna beda dari "
@@ -832,15 +846,14 @@ E("qc.color_mismatch_action", group="kualitas", type="enum", default="tahan",
              "services/location_service.py:putaway_roll"),
   related=("qc.handfeel_mismatch_action",), risk="high")
 
-E("qc.handfeel_mismatch_action", group="kualitas", type="enum", default="peringatkan",
+E("qc.handfeel_mismatch_action", group="kualitas", section="tidak-sesuai", type="enum", default="peringatkan",
   scopes=("global", "entity"),
   options=[{"value": "abaikan", "label": "Abaikan (hanya dicatat)"},
            {"value": "peringatkan", "label": "Beri peringatan, barang tetap masuk"},
            {"value": "tahan", "label": "TAHAN barang sampai manajer memutuskan"}],
-  label="Bila handfeel beda dari sample yang di-ACC",
-  help="Rasa & konstruksi kain (gramasi, lebar, susut, handfeel) yang menyimpang dari "
-       "sample. Bawaan hanya MEMPERINGATKAN karena selisih rasa lebih sering soal "
-       "toleransi produksi daripada barang salah.",
+  label="Bila handfeel beda dari sample disetujui",
+  help="Menentukan apa yang terjadi bila rasa dan konstruksi kain (gramasi, lebar, susut, handfeel) menyimpang dari "
+       "sample: dicatat saja, diberi peringatan, atau roll ditahan.",
   impact="Pada pilihan TAHAN, perlakuannya sama seperti selisih warna: roll tidak boleh "
          "putaway sebelum manajer memutuskan.",
   example="Peringatkan → hasil inspeksi menampilkan catatan selisih, barang tetap masuk gudang",
@@ -849,14 +862,13 @@ E("qc.handfeel_mismatch_action", group="kualitas", type="enum", default="peringa
   related=("qc.color_mismatch_action",), risk="medium")
 
 # B1 (keputusan pemilik 26 Okt 2026) — SPK QC ditutup "Diterima seluruhnya" padahal masih ada roll ditahan/gagal QC.
-E("qc.accept_all_with_hold_action", group="kualitas", type="enum", default="peringatkan",
+E("qc.accept_all_with_hold_action", group="kualitas", section="tidak-sesuai", type="enum", default="peringatkan",
   scopes=("global", "entity"),
   options=[{"value": "peringatkan", "label": "Beri peringatan, SPK tetap bisa ditutup (roll tetap ditahan)"},
            {"value": "blokir", "label": "Blokir — wajib 'Diterima sebagian'/'Ditolak' atau putus tahanan dulu"}],
-  label="Bila SPK 'Diterima seluruhnya' tetapi masih ada roll ditahan",
-  help="Roll yang gagal QC 4-point / random check atau ditahan MD Quality TETAP ditahan walau keputusan dokumennya "
-       "'Diterima seluruhnya'. Bawaan: petugas diberi peringatan (daftar roll yang ditahan) lalu boleh tetap menutup; "
-       "jumlah roll yang ditahan tercatat di SPK.",
+  label="Tutup SPK saat masih ada roll ditahan",
+  help="Bila keputusan SPK “Diterima seluruhnya” tetapi masih ada roll yang ditahan: beri peringatan lalu boleh "
+       "ditutup (roll tetap ditahan), atau tolak sampai tahanannya diputus.",
   impact="Pada pilihan Blokir, server menolak keputusan 'Diterima seluruhnya' selama masih ada roll ditahan — "
          "petugas harus memilih 'Diterima sebagian'/'Ditolak' atau melepas/menolak tahanannya lebih dulu.",
   example="Peringatkan → SPK 10 roll, 1 roll gagal 4-point: dialog “1 roll masih ditahan (RL-00005)”, "
@@ -864,37 +876,38 @@ E("qc.accept_all_with_hold_action", group="kualitas", type="enum", default="peri
   consumers=("services/inspection_service.py:finish", "services/inspection_service.py:meta"), risk="medium")
 
 # UAT 24 Okt 2026 (P11.2/P11.3, permintaan pemilik) — MD Quality & QC 4-point boleh memeriksa SEBAGIAN roll (sampling).
-E("qc.md_sampling_pct", group="kualitas", type="int", default=0,
+E("qc.md_sampling_pct", group="kualitas", section="jumlah-cek", type="int", default=0,
   min=0, max=100, step=5, unit="%", scopes=("global", "entity"),
-  label="Sampling MD Quality — persen roll minimal yang dicek",
-  help="SPK MD Quality kedatangan boleh ditutup setelah sekian persen roll dicek (dibulatkan ke atas, minimal sesuai "
-       "angka 'jumlah minimal' di bawah). 0 = bebas (cukup satu roll).",
+  label="Cek MD Quality: persen roll minimal",
+  help="SPK MD Quality boleh ditutup setelah sekian persen roll dicek. Isi 0 bila cukup satu roll. Roll yang tidak "
+       "dicek tetap lepas karantina tetapi diberi tanda.",
   impact="Roll yang tidak dicek tetap lepas karantina, tetapi ditandai 'MDQ sampling' (bukan 'MDQ ✓') — "
          "terlihat di daftar roll dan bisa disaring di stok.",
   example="20% · kedatangan 10 roll → minimal 2 roll dicek; 8 roll lain bertanda MDQ sampling",
   consumers=("services/inspection_service.py:sampling_rule",), related=("qc.md_sampling_min",), risk="medium")
 
-E("qc.md_sampling_min", group="kualitas", type="int", default=1,
+E("qc.md_sampling_min", group="kualitas", section="jumlah-cek", type="int", default=1,
   min=1, max=1000, step=1, unit="roll", scopes=("global", "entity"),
-  label="Sampling MD Quality — jumlah roll minimal",
-  help="Batas bawah jumlah roll yang dicek MD Quality per SPK (dipakai bersama persen di atas).",
+  label="Cek MD Quality: jumlah roll minimal",
+  help="Jumlah roll paling sedikit yang harus dicek MD Quality per SPK, dipakai bersama persen di atas.",
   impact="SPK MD tidak bisa ditutup sebelum jumlah ini tercapai (atau semua roll bila kedatangannya lebih sedikit).",
   example="min 1 → kedatangan 3 roll dengan sampling 0% cukup 1 roll dicek",
   consumers=("services/inspection_service.py:sampling_rule",), related=("qc.md_sampling_pct",), risk="low")
 
-E("qc.sampling_pct", group="kualitas", type="int", default=100,
+E("qc.sampling_pct", group="kualitas", section="jumlah-cek", type="int", default=100,
   min=0, max=100, step=5, unit="%", scopes=("global", "entity"),
-  label="Sampling QC 4-point — persen roll SPK yang wajib dicek",
-  help="100 (bawaan) = semua roll di SPK QC 4-point wajib dicek. Di bawah 100, SPK boleh ditutup setelah sekian persen "
-       "dicek; roll yang tidak dicek DIKELUARKAN dari SPK (tetap bertanda 'belum 4-point'), tidak diluluskan.",
+  label="Cek QC 4-point: persen roll wajib dicek",
+  help="100 berarti semua roll di SPK wajib dicek. Di bawah 100, SPK boleh ditutup setelah sekian persen dicek; "
+       "roll yang tidak dicek dikeluarkan dari SPK dan tetap bertanda “belum 4-point”. Isi 0 = cukup sejumlah roll "
+       "minimal yang wajib dicek.",
   impact="Menentukan kapan SPK QC 4-point boleh ditutup. Pilih roll yang mau diperiksa saat membuat SPK.",
   example="30% · SPK 10 roll → cukup 3 roll dicek; 7 roll lain keluar dari SPK dan tetap 'belum 4-point'",
   consumers=("services/inspection_service.py:sampling_rule",), related=("qc.sampling_min",), risk="medium")
 
-E("qc.sampling_min", group="kualitas", type="int", default=1,
+E("qc.sampling_min", group="kualitas", section="jumlah-cek", type="int", default=1,
   min=1, max=1000, step=1, unit="roll", scopes=("global", "entity"),
-  label="Sampling QC 4-point — jumlah roll minimal",
-  help="Batas bawah jumlah roll yang dicek per SPK QC 4-point bila sampling di bawah 100%.",
+  label="Cek QC 4-point: jumlah roll minimal",
+  help="Jumlah roll paling sedikit yang harus dicek per SPK QC 4-point bila tidak semua roll dicek.",
   impact="SPK QC 4-point tidak bisa ditutup sebelum jumlah ini tercapai.",
   example="min 2 · SPK 3 roll dengan sampling 30% → wajib 2 roll dicek",
   consumers=("services/inspection_service.py:sampling_rule",), related=("qc.sampling_pct",), risk="low")
@@ -902,53 +915,60 @@ E("qc.sampling_min", group="kualitas", type="int", default=1,
 # ═══════════════════════════════════════════════════════════════════════════
 # TAMPILAN & NAVIGASI
 # ═══════════════════════════════════════════════════════════════════════════
-E("ui.show_coming_soon", group="tampilan", type="bool", default=True,
+E("ui.show_coming_soon", group="sistem", section="menu", type="bool", default=True,
   scopes=("global",),
   label="Tampilkan grup menu 'Segera Hadir'",
   help="Menampilkan menu fitur yang belum aktif supaya tim tahu apa yang sedang disiapkan.",
   impact="Bila mati, grup 'Segera Hadir' hilang dari sidebar semua pengguna.",
   example="Mati → sidebar lebih ringkas, hanya menu yang sudah berfungsi",
-  consumers=("App.js:buildNavGroups",), risk="low")
+  consumers=("App.js:buildNavGroups",), risk="low",
+  sensitif_baca=False)
 
-E("ui.coming_soon_collapsed", group="tampilan", type="bool", default=True,
+E("ui.coming_soon_collapsed", group="sistem", section="menu", type="bool", default=True,
   scopes=("global",),
   label="Grup 'Segera Hadir' awalnya tertutup",
   help="Menentukan apakah grup 'Segera Hadir' tampil tertutup saat aplikasi dibuka.",
   impact="Mengubah keadaan awal sidebar; pengguna tetap bisa membuka/menutup sendiri.",
   example="Aktif → grup tampil terlipat, hemat ruang layar",
-  consumers=("config/navigationConfig.js:buildNavGroups",), risk="low")
+  consumers=("config/navigationConfig.js:buildNavGroups",), risk="low",
+  sensitif_baca=False)
 
 # UAT 24 Okt (P12) — sorotan POS / katalog HP bisa dinyalakan & dimatikan per PT.
-for _k, _label, _help in (
-    ("best_sellers", "Strip 'Produk Terlaris'", "Produk paling sering dipesan dalam jendela waktu di bawah."),
-    ("reorder", "Strip 'Sering dibeli pelanggan ini'", "Muncul saat pelanggan dipilih: barang yang pernah ia beli."),
-    ("fbt", "Saran 'Sering dibeli bersama'", "Di keranjang: barang yang sering muncul di pesanan yang sama."),
-    ("featured", "Strip 'Produk Unggulan'", "Produk yang ditandai MD/Manajer (push) sampai tanggal akhirnya."),
-    ("recommendation", "Strip 'Rekomendasi untuk pelanggan'",
-     "Muncul saat pelanggan dipilih: produk berstok dengan desain/pattern/kategori yang sama dengan pembeliannya."),
+for _k, _label, _help in (   # KF-T4 — teks Lampiran A
+    ("best_sellers", "tampilkan 'Produk Terlaris'", "Menampilkan deretan produk yang paling sering dipesan di layar kasir."),
+    ("reorder", "tampilkan 'Sering dibeli pelanggan'", "Saat pelanggan dipilih, menampilkan barang yang pernah ia beli."),
+    ("fbt", "Saran 'Sering dibeli bersama'",
+     "Di keranjang, menampilkan barang yang sering dibeli bersamaan dengan isi keranjang."),
+    ("featured", "tampilkan 'Produk Unggulan'",
+     "Menampilkan produk yang ditandai MD atau manajer sebagai unggulan sampai tanggal akhirnya."),
+    ("recommendation", "tampilkan 'Rekomendasi pelanggan'",
+     "Saat pelanggan dipilih, menampilkan produk berstok yang mirip (desain, motif, atau kategori) dengan "
+     "pembeliannya."),
 ):
-    E(f"pos.{_k}.enabled", group="tampilan", type="bool", default=True, scopes=("global", "entity"),
+    E(f"pos.{_k}.enabled", group="penjualan", section="saran-pos", type="bool", default=True,
+      scopes=("global", "entity"), sensitif_baca=False,   # KF-T4 — dulu terbuka lewat kelompok Tampilan
       label=f"POS: {_label}", help=_help,
-      impact="Bila mati, strip/saran ini hilang di POS desktop & katalog HP tanpa deploy.",
+      impact="Bila mati, saran ini tidak tampil di kasir dan katalog HP.",
       example="Mati → kasir hanya melihat katalog biasa",
       consumers=("routers/pos.py", "services/pos_recommendation_service.py:highlights_config"), risk="low")
-E("pos.best_sellers.window_days", group="tampilan", type="int", default=90, min=7, max=730, step=1, unit="hari",
+E("pos.best_sellers.window_days", group="penjualan", section="saran-pos", type="int", default=90, min=7, max=730, step=1, unit="hari",
   scopes=("global", "entity"),
-  label="POS: jendela waktu 'Produk Terlaris'",
-  help="Hanya pesanan dalam N hari terakhir yang dihitung (dulu seluruh riwayat).",
+  label="POS: Produk Terlaris dihitung dari (hari)",
+  help="Hanya pesanan dalam sekian hari terakhir yang dihitung untuk menentukan Produk Terlaris.",
   impact="Mengubah urutan strip Produk Terlaris.",
-  example="30 → terlaris bulan ini",
-  consumers=("services/pos_recommendation_service.py:best_sellers",), risk="low")
+  example="30 → terlaris 30 hari terakhir",
+  consumers=("services/pos_recommendation_service.py:best_sellers",), risk="low",
+  sensitif_baca=False)
 
 # PR-T4 — halaman awal kini SIFAT PERAN (`permission_settings.role_traits.<peran>.home_view`, editor Peran & Hak Akses
 # › Sifat peran) untuk semua peran bawaan & kustom; empat kunci lama tidak pernah dibaca layar → tidak dipakai.
 for _role, _default_view, _label in (
     ("admin", "admin", "Admin"),
-    ("manager", "reports", "Manager"),
+    ("manager", "reports", "Manajer"),
     ("sales", "sales", "Sales"),
     ("warehouse", "operations", "Gudang"),
 ):
-    E(f"role_home.{_role}", group="tampilan", type="text", default=_default_view,
+    E(f"role_home.{_role}", group="sistem", section="menu", type="text", default=_default_view,
       sensitif_baca=True,   # KF-T1 — kelompok Tampilan terbuka untuk semua, beranda per peran tidak
       scopes=("global",),
       label=f"Halaman awal peran {_label}",
@@ -972,25 +992,22 @@ for _role, _default_view, _label in (
 # Keduanya sengaja BERNILAI KOSONG/aman secara bawaan supaya tidak ada perusahaan yang
 # tiba-tiba menerima pemberitahuan yang tidak diminta.
 
-E("notif.low_stock_division", group="notifikasi", type="text", default="",
+E("notif.low_stock_division", group="persetujuan", section="pemberitahuan", type="text", default="",
   scopes=("global",),   # KF-T3 (KF-10) — pindai stok tidak per PT: lapisan PT tidak pernah dibaca, jadi dicabut
-  label="Divisi yang ikut diberi tahu saat stok menipis",
-  help="Kosongkan bila cukup pemegang wewenang pesanan pembelian saja. Bila diisi, "
-       "seluruh karyawan pada departemen itu yang punya akun akan ikut menerima "
-       "pemberitahuan stok menipis. Boleh diisi nama, kode, atau id departemen "
-       "(mis. 'Penjualan', 'DEPT-002') — huruf besar-kecil tidak dibedakan.",
-  impact="Menambah penerima pemberitahuan stok menipis di luar pemegang izin "
-         "purchase_order.create. Tidak pernah MENGURANGI penerima.",
+  label="Departemen yang ikut diberi tahu stok tipis",
+  help="Kosongkan bila cukup petugas pembelian saja. Bila diisi nama departemen (mis. Penjualan), semua karyawan "
+       "departemen itu yang punya akun ikut menerima pemberitahuan stok menipis.",
+  impact="Menambah penerima pemberitahuan stok menipis di luar petugas yang boleh membuat PO. Tidak pernah "
+         "MENGURANGI penerima.",
   example="'Penjualan' → 3 karyawan departemen Penjualan yang punya akun ikut diberi tahu",
   consumers=("services/notification_service.py:generate_system_notifications",
-             "services/notification_audience.py:resolve_recipients"), risk="low")
+             "services/notification_audience.py:resolve_recipients"), risk="low",
+  ref="department")
 
-E("notif.po_stage_stuck_days", group="notifikasi", type="duration", default=7,
+E("notif.po_stage_stuck_days", group="persetujuan", section="pemberitahuan", type="duration", default=7,
   min=1, max=180, step=1, unit="hari", scopes=("global", "entity"),
-  label="Tahap PO dianggap macet setelah",
-  help="Jumlah hari sebuah tahap proses pada Papan PO per Lini boleh berstatus "
-       "'berjalan' tanpa kemajuan sebelum sistem memberi tahu pemegang wewenang "
-       "pesanan pembelian.",
+  label="Tahap PO dianggap macet setelah (hari)",
+  help="Bila sebuah tahap di Papan PO per Lini tidak ada kemajuan selama sekian hari, petugas pembelian diberi tahu.",
   impact="Ambang ini menentukan kapan pemberitahuan 'tahap PO macet' muncul. Angka "
          "kecil = lebih cepat mengingatkan, tetapi lebih berisik.",
   example="7 → tahap 'Tenun' yang mulai 8 hari lalu dan belum selesai akan diberitakan",
@@ -1007,7 +1024,7 @@ from services.reminder_policy import (  # noqa: E402 — pilihan editor tabel pe
 _KPT7 = {"permission": ("scheduler", "configure"), "risk": "low"}
 _KPT7_PERAN = tuple(_kpt7_peran())
 
-E("notif.ap_due_soon_days", group="notifikasi", type="duration", default=7, min=0, max=90, step=1, unit="hari",
+E("notif.ap_due_soon_days", group="notifikasi", section="tenggat-pengingat", type="duration", default=7, min=0, max=90, step=1, unit="hari",
   label="Ingatkan hutang jatuh tempo dalam (hari)",
   help="Tagihan pemasok yang jatuh tempo dalam sekian hari atau sudah lewat diingatkan. 0 = hanya yang sudah "
        "lewat jatuh tempo (dan jatuh tempo hari ini).",
@@ -1015,21 +1032,21 @@ E("notif.ap_due_soon_days", group="notifikasi", type="duration", default=7, min=
   example="7 → tagihan yang jatuh tempo 5 hari lagi ikut diingatkan",
   consumers=("services/alert_service.py:job_ap_due",), **_KPT7)
 
-E("notif.wo_released_stale_days", group="notifikasi", type="duration", default=3, min=1, max=90, step=1, unit="hari",
+E("notif.wo_released_stale_days", group="notifikasi", section="tenggat-pengingat", type="duration", default=3, min=1, max=90, step=1, unit="hari",
   label="Perintah kerja dirilis tertunda setelah",
   help="Umur perintah kerja berstatus dirilis yang belum selesai sebelum gudang diingatkan.",
   impact="Menentukan kapan perintah kerja dirilis masuk pengingat 'Perintah Kerja Produksi Tertunda'.",
   example="3 → perintah kerja yang dirilis 4 hari lalu dan belum selesai ikut diingatkan",
   consumers=("services/alert_service.py:job_production_stalled",), **_KPT7)
 
-E("notif.wo_draft_stale_days", group="notifikasi", type="duration", default=7, min=1, max=180, step=1, unit="hari",
+E("notif.wo_draft_stale_days", group="notifikasi", section="tenggat-pengingat", type="duration", default=7, min=1, max=180, step=1, unit="hari",
   label="Perintah kerja draf dianggap tertunda setelah",
   help="Umur draf perintah kerja yang belum dirilis sebelum gudang diingatkan.",
   impact="Menentukan kapan draf perintah kerja masuk pengingat 'Perintah Kerja Produksi Tertunda'.",
   example="7 → draf yang dibuat 8 hari lalu ikut diingatkan",
   consumers=("services/alert_service.py:job_production_stalled",), **_KPT7)
 
-E("notif.warehouse_task_stale_days", group="notifikasi", type="duration", default=2, min=1, max=60, step=1,
+E("notif.warehouse_task_stale_days", group="notifikasi", section="tenggat-pengingat", type="duration", default=2, min=1, max=60, step=1,
   unit="hari",
   label="Tugas gudang dianggap tertunda setelah",
   help="Umur tugas barang masuk/keluar yang masih terbuka sebelum diringkas ke gudang.",
@@ -1037,7 +1054,7 @@ E("notif.warehouse_task_stale_days", group="notifikasi", type="duration", defaul
   example="2 → tugas yang dibuat 3 hari lalu dan masih terbuka ikut diringkas",
   consumers=("services/alert_service.py:job_ops_stalled",), **_KPT7)
 
-E("notif.ar_due_soon_offsets", group="notifikasi", type="list", default=[-3, -1, 0, 1], unit="hari",
+E("notif.ar_due_soon_offsets", group="notifikasi", section="tenggat-pengingat", type="list", default=[-3, -1, 0, 1], unit="hari",
   label="Hari pengingat piutang terhadap jatuh tempo",
   help="Angka negatif = sebelum jatuh tempo, 0 = hari jatuh tempo, positif = sesudahnya. Tiap butir −30 sampai 30. "
        "Kosong = tidak ada pengingat piutang mendekati jatuh tempo.",
@@ -1045,7 +1062,7 @@ E("notif.ar_due_soon_offsets", group="notifikasi", type="list", default=[-3, -1,
   example="[-7, 0] → pengingat dikirim 7 hari sebelum jatuh tempo dan pada hari jatuh tempo",
   consumers=("services/alert_ops_service.py:job_ar_due_soon",), **_KPT7)
 
-E("notif.po_arrival_lookback_hours", group="notifikasi", type="int", default=24, min=1, max=168, step=1, unit="jam",
+E("notif.po_arrival_lookback_hours", group="notifikasi", section="tenggat-pengingat", type="int", default=24, min=1, max=168, step=1, unit="jam",
   label="Barang PO dianggap baru datang selama",
   help="Penerimaan barang PO yang selesai dalam jendela ini diberitakan oleh pemindai berkala.",
   impact="Jendela pendek mencegah berita lama terulang; jendela panjang menangkap penerimaan yang terlewat.",
@@ -1064,22 +1081,22 @@ E("notif.max_alerts_per_run", group="notifikasi", type="int", default=40, min=1,
              "services/alert_ops_service.py:job_ar_due_soon", "services/escalation_service.py:job_escalation_scan"),
   **_KPT7)
 
-E("notif.turn_stale_days", group="notifikasi", type="duration", default=7, min=1, max=90, step=1, unit="hari",
+E("notif.turn_stale_days", group="notifikasi", section="tenggat-pengingat", type="duration", default=7, min=1, max=90, step=1, unit="hari",
   label="Jangan ingatkan giliran bila dokumen diam",
   help="Dokumen yang tidak bergerak lebih dari sekian hari tidak diingatkan ulang oleh pemindai giliran.",
   impact="Makin kecil, makin sedikit dokumen lama yang memunculkan pemberitahuan 'Giliran Anda'.",
   example="7 → pesanan yang terakhir berubah 10 hari lalu ditandai tanpa pemberitahuan",
   consumers=("services/turn_notification_service.py:scan",), **_KPT7)
 
-E("notif.content_reminder_window_minutes", group="notifikasi", type="int", default=60, min=5, max=1440, step=5,
+E("notif.content_reminder_window_minutes", group="notifikasi", section="tenggat-pengingat", type="int", default=60, min=5, max=1440, step=5,
   unit="menit",
   label="Ingatkan tayang konten sebelum (menit)",
   help="Jarak sebelum jadwal tayang ketika PIC konten media sosial diingatkan.",
-  impact="Makin besar, makin awal PIC diingatkan untuk memposting.",
-  example="60 → posting yang dijadwalkan 10.00 diingatkan sejak 09.00",
+  impact="Makin besar, makin awal PIC diingatkan untuk menayangkan konten.",
+  example="60 → konten yang dijadwalkan tayang 10.00 diingatkan sejak 09.00",
   consumers=("services/marketing_service.py:job_content_reminder",), **_KPT7)
 
-E("notif.content_on_time_grace_minutes", group="notifikasi", type="int", default=60, min=0, max=1440, step=5,
+E("notif.content_on_time_grace_minutes", group="notifikasi", section="tenggat-pengingat", type="int", default=60, min=0, max=1440, step=5,
   unit="menit",
   label="Toleransi tayang tepat waktu (menit)",
   help="Konten yang tayang dalam toleransi ini sesudah jadwalnya dihitung tepat waktu. 0 = tanpa toleransi.",
@@ -1087,14 +1104,14 @@ E("notif.content_on_time_grace_minutes", group="notifikasi", type="int", default
   example="60 → dijadwalkan 10.00, tayang 10.45 = tepat waktu; tayang 11.15 = terlambat",
   consumers=("services/marketing_ext.py:_toleransi_per_pt",), **_KPT7)
 
-E("notif.campaign_budget_near_pct", group="notifikasi", type="pct", default=80, min=1, max=100, step=1, unit="%",
+E("notif.campaign_budget_near_pct", group="notifikasi", section="tenggat-pengingat", type="pct", default=80, min=1, max=100, step=1, unit="%",
   label="Anggaran kampanye dianggap hampir habis pada",
   help="Persen realisasi anggaran kampanye yang memunculkan peringatan 'hampir habis'.",
   impact="Makin kecil, makin awal kampanye ditandai hampir habis.",
   example="80 → terpakai Rp8 jt dari Rp10 jt ditandai hampir habis",
   consumers=("services/marketing_cost_service.py:budget_summary",), **_KPT7)
 
-E("notif.printer_stuck_minutes", group="notifikasi", type="int", default=30, min=5, max=1440, step=5, unit="menit",
+E("notif.printer_stuck_minutes", group="notifikasi", section="tenggat-pengingat", type="int", default=30, min=5, max=1440, step=5, unit="menit",
   label="Label dianggap tertahan setelah (menit)",
   help="Lama antrean cetak label menunggu tanpa printer menyala di gudang itu sebelum diberitakan.",
   impact="Makin kecil, makin cepat kepala gudang dan manajer diberi tahu label tertahan.",
@@ -1103,14 +1120,14 @@ E("notif.printer_stuck_minutes", group="notifikasi", type="int", default=30, min
 
 E("inventory.drift_critical_multiplier", group="keuangan-dasar", type="int", default=10, min=2, max=1000, step=1,
   unit="kali",
-  label="Selisih persediaan kritis pada (× ambang)",
+  label="Selisih persediaan kritis pada (× batas)",
   help="Kelipatan 'Selisih persediaan yang diperingatkan' yang menaikkan peringatan selisih persediaan menjadi "
        "kritis.",
   impact="Peringatan kritis tetap dikirim seketika (WhatsApp) walau mode pengiriman ringkasan.",
   example="10 × Rp1.000 = selisih Rp10.000 atau lebih ditandai kritis",
   consumers=("services/inventory_drift_watch.py:scan",), **_KPT7)
 
-E("approval.reminder_max_listed", group="persetujuan", type="int", default=3, min=1, max=20, step=1, unit="dokumen",
+E("approval.reminder_max_listed", group="persetujuan", section="pemberitahuan", type="int", default=3, min=1, max=20, step=1, unit="dokumen",
   label="Dokumen yang disebut di pengingat persetujuan",
   help="Jumlah dokumen terlama yang ditulis nomornya di pengingat harian keputusan yang menunggu; sisanya diringkas "
        "'+N dokumen lain'.",
@@ -1118,7 +1135,7 @@ E("approval.reminder_max_listed", group="persetujuan", type="int", default=3, mi
   example="3 → tiga dokumen terlama disebut, sisanya '+5 dokumen lain menunggu'",
   consumers=("services/approval_reminder.py:_ringkas",), **_KPT7)
 
-E("rnd.design_due_soon_days", group="rnd", type="duration", default=3, min=1, max=30, step=1, unit="hari",
+E("rnd.design_due_soon_days", group="rnd", section="nilai-desainer", type="duration", default=3, min=1, max=30, step=1, unit="hari",
   label="Tenggat permintaan desain dekat dalam",
   help="Batas 'tenggat dekat' di ringkasan desainer (hari kalender, termasuk hari ini).",
   impact="Makin besar, makin banyak permintaan desain yang dihitung 'tenggat dekat'.",

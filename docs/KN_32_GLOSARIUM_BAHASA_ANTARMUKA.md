@@ -222,3 +222,36 @@ Empat hal yang dulu melekat pada nama peran dasar kini isian **Sifat peran** di 
 | Kategori kerja | Label **"Kategori kerja"** · pilihan "Tidak ada" / "Sales" / "Sopir" / "Desainer" / "Petugas gudang" / "Pengawas" · kalimat akibat di bawah isian | Jenis pekerjaan pemegang peran: menentukan siapa yang muncul di daftar pilih sales/sopir/desainer, ikut papan peringkat, komisi dan akrual insentif, dibatasi lokasi kerja, dan jenis Meja Saya. Peran tanpa kategori: "Peran Anda belum punya meja kerja. Buka menu yang tersedia di samping." |
 | Ikut menerima notifikasi | Label **"Ikut menerima notifikasi untuk"** · keterangan "Notifikasi giliran tetap mengikuti izin." | Notifikasi yang dialamatkan ke peran bawaan yang dicentang ikut sampai ke pemegang peran ini |
 | KPI & komisi sales lain | Label aksi "Lihat KPI & komisi sales lain" (modul Pesanan Penjualan) | Izin `order.view_sales_kpi`: memilih sales lain di dasbor Tim Sales. Tanpa izin ini (dan untuk peran bercakupan "milik sendiri") permintaan KPI sales lain menampilkan KPI dirinya |
+
+### 9.3 Bahasa kartu Pengaturan (KF-T4)
+
+Satu istilah untuk teks registry Pengaturan (label, penjelasan, dampak, contoh, pilihan) dan layar `settings-cfg-*` /
+"Semua pengaturan". Ditegakkan penjaga `scripts/guardrails/verify_config_text.py` (INV-CFG-TXT, aturan T1–T7, 0
+pelanggaran): label ≤ 45 huruf, tanpa label kembar, tanpa kata teknis/id/kode HTTP/kode keputusan, kunci angka
+bersatuan, arti angka 0 ditulis, dan kata di kolom "Menggantikan" tidak dipakai (label juga tanpa "ambang", "SJ", "GRN";
+frasa yang persis label menu dikecualikan). Singkatan PO, QC, HPP, RFID tetap.
+
+| Dipakai | Menggantikan |
+|---|---|
+| **PT**; "grup" = semua PT; "Semua PT" · **antar-PT** · **pelanggan** · **pemasok** ("mitra makloon" khusus makloon) · "PO kita" | entitas, badan usaha, perusahaan (badan hukum) · antar entitas · customer, pembeli, toko · supplier, vendor · klien |
+| **persetujuan / disetujui** · **penyetuju** · **pengaju** | ACC (kecuali nama status tercetak di layar R&D), approval, disahkan · approver · pengusul |
+| **Manajer** · **Admin (Direksi)** saat pertama disebut, lalu "Admin" · **peran** · **bawaan** | manager · Direksi, pemilik, owner · role · default |
+| **toleransi** (selisih yang dimaafkan) · **batas** (angka tertinggi/terendah) · "**mulai** (nilai)" untuk persetujuan | ambang |
+| **Biarkan / Beri peringatan / Tolak** (atau **Tahan** untuk barang); **ditolak** = aksi dibatalkan, **ditahan** = menunggu keputusan · **aktif / mati** | enam susunan kata lama; blokir, blok keras, block · hidup, nyala, OFF, nonaktif |
+| **pesanan** · **PO**, **permintaan pembelian** · **jumlah** | SO, order, Sales Order · Purchase Order, PR, Purchase Requisition · qty |
+| **tagihan** · **Faktur Pajak** (hanya pajak) · **kwitansi** · **surat jalan** (ditulis lengkap) · **penerimaan barang** | invoice, bill, faktur (bukan pajak) · SJ · GRN, GR, Barang Masuk (kecuali nama menu) |
+| **syarat bayar**; "tempo" = lama kredit · **koreksi dokumen** · **pengembalian dana** · **saldo pelanggan** (nama akun Store Credit tetap, §4.5) · **biaya pokok (HPP)** | term, termin · amandemen · refund · deposit · WAC |
+| **peringatan** (muncul saat itu) · **pengingat** (kiriman terjadwal) · "dalam … hari" · **dinaikkan ke atasan** · **tingkat** | warn · jendela, rentang, horizon · eskalasi · jenjang, level |
+| **putaran** · **sample** · **departemen** (SDM; "divisi" hanya matriks R&D) · **penggajian / slip gaji** · **stok** / "persediaan" (nilai di pembukuan) · "**dicatat di pembukuan**" · **produk** (master) / **barang** (fisik) | round, ronde · sampel · payroll · jurnal, GL, Dr/Cr, posting · SKU, artikel (di label) |
+| **Pengaturan** (menu), **pengaturan** (satu kartu), "Semua pengaturan" · "**Berlaku untuk**" | Pusat Pengaturan, setting, konfigurasi, setelan · cakupan, level, lapisan |
+
+Teks layar baku:
+
+| Istilah | Teks | Arti |
+|---|---|---|
+| Berlaku untuk | "Semua PT (aturan grup)" / "Satu PT" + "Pilih PT…" · pita "Anda sedang mengubah aturan grup — berlaku untuk semua PT yang tidak punya nilai sendiri." / "Anda sedang mengubah nilai khusus {PT}. PT lain tidak terpengaruh." / "Pilih PT dulu supaya perubahan tersimpan pada PT yang benar." | Lapisan yang diubah. Pada aturan grup kartu menampilkan nilai grup dan "PT dengan nilai sendiri: {PT} = {nilai}" |
+| Asal nilai | lencana "Bawaan sistem" · "Aturan grup" · "Khusus {nama PT}" · "Mengikuti nilai grup" | Dari mana nilai yang berlaku datang |
+| Ikuti nilai grup | tombol "Ikuti nilai grup" · dialog "'{label}' untuk {PT} kembali mengikuti nilai grup ({nilai grup}). Nilai khusus {PT} ({nilai sekarang}) dicabut." | Mencabut nilai khusus PT (`POST /api/config/values/clear`); alasan bawaan "Kembali mengikuti nilai grup" |
+| Pakai nilai bawaan sistem | "Pakai nilai bawaan sistem" (aturan grup) / "Pakai nilai bawaan sistem untuk PT ini" · dialog menyebut nilai bawaan dan akibatnya | Menulis nilai bawaan pada lapisan itu (`/values/reset`); untuk PT, PT itu tidak lagi mengikuti grup. Alasan bawaan "Dikembalikan ke nilai bawaan sistem". Kunci berisiko tinggi tanpa alasan → "'{label}' berisiko tinggi — alasan wajib diisi." Jangan menulis "Default" |
+| Lanjutan (teknis) | blok tertutup "Lanjutan (teknis): {sub-judul}" · tombol kartu "Detail teknis" | Sub-judul `advanced` (model & anggaran AI, baca surat jalan otomatis, RFID & proses macet) dan kunci/berkas pemakai |
+| Kesehatan Pengaturan | tab "Kesehatan Pengaturan" · kolom "Tersambung ke sistem?" | Pengganti "Kesehatan Konfigurasi", "Status wiring" |

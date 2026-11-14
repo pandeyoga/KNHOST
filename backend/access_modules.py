@@ -248,10 +248,10 @@ MODULE_CATALOG: List[Dict[str, Any]] = [
      "resources": ["settings"],
      "nav": ["settings-hub", "settings-system", "settings-config", "settings-cfg-system", "admin",
              "settings-approval", "approval-rules", "settings-cfg-approval", "settings-masters", "domain-registry",
-             "settings-cfg-documents", "settings-notify", "settings-cfg-notify",
-             # Induk tab `settings-cfg-documents` (hubTabs "settings-documents"): tanpa ini tab dokumen Pusat Pengaturan
-             # tidak terjangkau pemegang modul ini. Grup yang sama juga milik modul Dokumen (tab Template Dokumen).
-             "settings-documents"],
+             # KF-T4 — `settings-cfg-documents` & `settings-cfg-notify` kini alias ke `settings-cfg-approval` (sub-judul
+             # "Rujukan antar dokumen" / "Pemberitahuan"), jadi grup induknya (`settings-documents`, `settings-notify`)
+             # tidak lagi diberikan modul ini: grup itu milik modul Dokumen dan Penjadwal (PR-T5 tetap).
+             "settings-cfg-documents", "settings-cfg-notify"],
      "sensitive": True},
     {"id": "scheduler", "group": "Organisasi", "label": "Penjadwal & Notifikasi Otomatis",
      "description": "Jadwal tugas otomatis (pengingat, ringkasan, sinkronisasi) dan saluran notifikasi otomatisnya.",

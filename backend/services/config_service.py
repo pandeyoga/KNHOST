@@ -338,6 +338,13 @@ async def compute_tax(subtotal: float, entity_id: Optional[str] = None,
         mode = mode_override.strip().lower()
     is_pkp = tax.get("is_pkp", True)
     use_nl = bool(tax.get("dpp_nilai_lain", _reg_default("tax.dpp_nilai_lain")))
+    return ppn_breakdown(subtotal, rate, mode, is_pkp, use_nl)
+
+
+def ppn_breakdown(subtotal: float, rate: float, mode: str, is_pkp: bool, use_nl: bool) -> Dict[str, Any]:
+    """KF-T4 (KF-UX-04) — rumus PPN MURNI: dipakai `compute_tax` (mesin) dan "Coba dulu" Pengaturan (simulator `tax`),
+    supaya keduanya selalu memberi angka yang sama. F-10 Coretax: `use_nl` → DPP = 11/12 × harga jual."""
+    rate = float(rate or 0)
     subtotal = round(float(subtotal or 0), 2)
     if not is_pkp or rate <= 0:
         return {"ppn_rate": 0.0, "effective_rate": 0.0, "dpp_nilai_lain": False,

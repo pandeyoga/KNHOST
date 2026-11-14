@@ -41,9 +41,9 @@ export default function ConfigRedirectCard({
 
       <div className="cfg-redirect-body">
         {/* Audit UI 24 Okt (059/111) — tanpa catatan pengembang ("form lama dihapus"); cukup ke mana pengguna pergi. */}
-        <h4 className="cfg-redirect-title">{title} diatur di Pusat Pengaturan</h4>
+        <h4 className="cfg-redirect-title">{title} diatur di Pengaturan</h4>
         <p className="cfg-redirect-text">
-          Ubah aturan ini di Pusat Pengaturan — di sana ada penjelasan, contoh angka,
+          Ubah aturan ini di Pengaturan — di sana ada penjelasan, contoh angka,
           simulasi <b>“coba dulu”</b>, jadwal berlaku, dan riwayat perubahan.
           {note ? <> {note}</> : null}
         </p>
@@ -57,7 +57,7 @@ export default function ConfigRedirectCard({
                   className="cfg-redirect-chip"
                   onClick={() => go(s.key)}
                   data-testid={`${testId}-key-${s.key}`}
-                  title={`Buka “${s.label || s.key}” di Pusat Pengaturan`}
+                  title={`Buka “${s.label || s.key}” di Pengaturan`}
                 >
                   {s.label || s.key}
                 </button>
@@ -72,7 +72,7 @@ export default function ConfigRedirectCard({
           onClick={() => go(primary)}
           data-testid={`${testId}-open`}
         >
-          Buka di Pusat Pengaturan <ArrowRight size={14} />
+          Buka di Pengaturan <ArrowRight size={14} />
         </button>
       </div>
     </div>

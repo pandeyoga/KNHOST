@@ -1,0 +1,2023 @@
+{
+ "_catatan": "Dibangkitkan scripts/gen_config_key_index.py dari backend/config_registry.py — jangan diubah tangan.",
+ "groups": [
+  {
+   "id": "penjualan",
+   "label": "Penjualan & harga",
+   "sections": [
+    {
+     "id": "harga",
+     "label": "Harga & diskon",
+     "advanced": false
+    },
+    {
+     "id": "alur-pesanan",
+     "label": "Alur pesanan",
+     "advanced": false
+    },
+    {
+     "id": "komisi",
+     "label": "Komisi sales",
+     "advanced": false
+    },
+    {
+     "id": "saran-pos",
+     "label": "Saran produk di kasir (POS)",
+     "advanced": false
+    }
+   ]
+  },
+  {
+   "id": "pembayaran-pelanggan",
+   "label": "Pembayaran pelanggan",
+   "sections": [
+    {
+     "id": "syarat-bayar",
+     "label": "Syarat bayar, DP & cicilan",
+     "advanced": false
+    },
+    {
+     "id": "denda",
+     "label": "Denda telat bayar",
+     "advanced": false
+    },
+    {
+     "id": "selisih-bayar",
+     "label": "Selisih bayar",
+     "advanced": false
+    }
+   ]
+  },
+  {
+   "id": "retur-koreksi",
+   "label": "Retur & koreksi dokumen",
+   "sections": [
+    {
+     "id": "retur",
+     "label": "Retur penjualan",
+     "advanced": false
+    },
+    {
+     "id": "koreksi",
+     "label": "Koreksi dokumen",
+     "advanced": false
+    }
+   ]
+  },
+  {
+   "id": "pembelian",
+   "label": "Pembelian, makloon & tagihan pemasok",
+   "sections": [
+    {
+     "id": "memesan",
+     "label": "Memesan ke pemasok",
+     "advanced": false
+    },
+    {
+     "id": "makloon",
+     "label": "Makloon",
+     "advanced": false
+    },
+    {
+     "id": "tagihan",
+     "label": "Tagihan pemasok & kontrabon",
+     "advanced": false
+    }
+   ]
+  },
+  {
+   "id": "penerimaan",
+   "label": "Penerimaan barang & lot",
+   "sections": [
+    {
+     "id": "menerima",
+     "label": "Menghitung & menerima",
+     "advanced": false
+    },
+    {
+     "id": "nomor-lot",
+     "label": "Nomor lot",
+     "advanced": false
+    },
+    {
+     "id": "konversi-satuan",
+     "label": "Konversi satuan",
+     "advanced": false
+    }
+   ]
+  },
+  {
+   "id": "kualitas",
+   "label": "Mutu kain (QC)",
+   "sections": [
+    {
+     "id": "inspeksi",
+     "label": "Inspeksi & grade",
+     "advanced": false
+    },
+    {
+     "id": "tidak-sesuai",
+     "label": "Bila tidak sesuai sample",
+     "advanced": false
+    },
+    {
+     "id": "jumlah-cek",
+     "label": "Berapa roll yang dicek",
+     "advanced": false
+    }
+   ]
+  },
+  {
+   "id": "stok",
+   "label": "Stok, alokasi & potong",
+   "sections": [
+    {
+     "id": "memilih-stok",
+     "label": "Memilih stok untuk pesanan",
+     "advanced": false
+    },
+    {
+     "id": "potong",
+     "label": "Potong & sisa potong",
+     "advanced": false
+    },
+    {
+     "id": "laris-lambat",
+     "label": "Laris/lambat & pesan ulang",
+     "advanced": false
+    },
+    {
+     "id": "kerja-gudang",
+     "label": "Kerja gudang",
+     "advanced": false
+    }
+   ]
+  },
+  {
+   "id": "persetujuan",
+   "label": "Persetujuan, pengingat & dokumen",
+   "sections": [
+    {
+     "id": "umum",
+     "label": "Persetujuan umum",
+     "advanced": false
+    },
+    {
+     "id": "rnd",
+     "label": "Persetujuan R&D",
+     "advanced": false
+    },
+    {
+     "id": "pemberitahuan",
+     "label": "Pemberitahuan",
+     "advanced": false
+    },
+    {
+     "id": "tenggat-pengingat",
+     "label": "Kapan pengingat dikirim",
+     "advanced": false
+    },
+    {
+     "id": "rujukan-dokumen",
+     "label": "Rujukan antar dokumen",
+     "advanced": false
+    },
+    {
+     "id": "dua-orang-pembelian",
+     "label": "Dua orang: pembelian",
+     "advanced": false
+    },
+    {
+     "id": "dua-orang-hutang",
+     "label": "Dua orang: tagihan pemasok",
+     "advanced": false
+    },
+    {
+     "id": "dua-orang-penjualan",
+     "label": "Dua orang: penjualan & retur",
+     "advanced": false
+    },
+    {
+     "id": "dua-orang-piutang",
+     "label": "Dua orang: piutang",
+     "advanced": false
+    },
+    {
+     "id": "dua-orang-gudang",
+     "label": "Dua orang: gudang, produksi & R&D",
+     "advanced": false
+    },
+    {
+     "id": "dua-orang-sdm",
+     "label": "Dua orang: SDM",
+     "advanced": false
+    },
+    {
+     "id": "dua-orang-buku",
+     "label": "Dua orang: pembukuan",
+     "advanced": false
+    },
+    {
+     "id": "dua-orang-admin",
+     "label": "Dua orang: pengecualian Admin",
+     "advanced": false
+    }
+   ]
+  },
+  {
+   "id": "pajak-pembukuan",
+   "label": "Pajak, pembukuan & antar-PT",
+   "sections": [
+    {
+     "id": "pajak",
+     "label": "Pajak",
+     "advanced": false
+    },
+    {
+     "id": "tutup-buku",
+     "label": "Mata uang & tutup buku",
+     "advanced": false
+    },
+    {
+     "id": "antar-pt",
+     "label": "Jual-beli antar-PT",
+     "advanced": false
+    }
+   ]
+  },
+  {
+   "id": "bank-kasus",
+   "label": "Bank & uang yang nyangkut",
+   "sections": [
+    {
+     "id": "bank",
+     "label": "Mencocokkan mutasi bank",
+     "advanced": false
+    },
+    {
+     "id": "kasus",
+     "label": "Kasus keuangan",
+     "advanced": false
+    }
+   ]
+  },
+  {
+   "id": "sdm",
+   "label": "Gaji & SDM",
+   "sections": [
+    {
+     "id": "bpjs",
+     "label": "BPJS",
+     "advanced": false
+    },
+    {
+     "id": "pph21",
+     "label": "PPh 21",
+     "advanced": false
+    },
+    {
+     "id": "lembur",
+     "label": "Lembur, komisi & kepegawaian",
+     "advanced": false
+    }
+   ]
+  },
+  {
+   "id": "rnd",
+   "label": "R&D & desain",
+   "sections": [
+    {
+     "id": "boleh-dijual",
+     "label": "Kapan produk boleh dijual",
+     "advanced": false
+    },
+    {
+     "id": "sample",
+     "label": "Sample & pemasok pemenang",
+     "advanced": false
+    },
+    {
+     "id": "kode-desain",
+     "label": "Kode & nilai desain",
+     "advanced": false
+    },
+    {
+     "id": "nilai-desainer",
+     "label": "Nilai desainer",
+     "advanced": false
+    }
+   ]
+  },
+  {
+   "id": "sistem",
+   "label": "Sistem, AI & tampilan",
+   "sections": [
+    {
+     "id": "tanya-kn",
+     "label": "Tanya KN: arti angka & hak lihat",
+     "advanced": false
+    },
+    {
+     "id": "tanya-kn-teknis",
+     "label": "Tanya KN: model & anggaran",
+     "advanced": true
+    },
+    {
+     "id": "baca-sj",
+     "label": "Baca surat jalan otomatis",
+     "advanced": true
+    },
+    {
+     "id": "rfid-proses",
+     "label": "RFID & proses macet",
+     "advanced": true
+    },
+    {
+     "id": "menu",
+     "label": "Menu & halaman awal",
+     "advanced": false
+    }
+   ]
+  }
+ ],
+ "aliases": {
+  "uang-masuk": [
+   "pembayaran-pelanggan",
+   ""
+  ],
+  "harga-diskon": [
+   "penjualan",
+   ""
+  ],
+  "pajak": [
+   "pajak-pembukuan",
+   "pajak"
+  ],
+  "keuangan-dasar": [
+   "pajak-pembukuan",
+   "tutup-buku"
+  ],
+  "stok-satuan": [
+   "stok",
+   ""
+  ],
+  "lot": [
+   "penerimaan",
+   "nomor-lot"
+  ],
+  "makloon": [
+   "pembelian",
+   "makloon"
+  ],
+  "tampilan": [
+   "sistem",
+   "menu"
+  ],
+  "amandemen": [
+   "retur-koreksi",
+   "koreksi"
+  ],
+  "dokumen": [
+   "persetujuan",
+   "rujukan-dokumen"
+  ],
+  "bank": [
+   "bank-kasus",
+   "bank"
+  ],
+  "kasus": [
+   "bank-kasus",
+   "kasus"
+  ],
+  "kontrabon": [
+   "pembelian",
+   "tagihan"
+  ],
+  "antar-entitas": [
+   "pajak-pembukuan",
+   "antar-pt"
+  ],
+  "notifikasi": [
+   "persetujuan",
+   "pemberitahuan"
+  ],
+  "asisten-analitik": [
+   "sistem",
+   "tanya-kn"
+  ],
+  "retur": [
+   "retur-koreksi",
+   "retur"
+  ]
+ },
+ "keys": {
+  "tax.ppn_rate": [
+   "pajak-pembukuan",
+   "pajak"
+  ],
+  "tax.dpp_nilai_lain": [
+   "pajak-pembukuan",
+   "pajak"
+  ],
+  "tax.ppn_mode": [
+   "pajak-pembukuan",
+   "pajak"
+  ],
+  "tax.efaktur_enabled": [
+   "pajak-pembukuan",
+   "pajak"
+  ],
+  "tax.pph_items": [
+   "pajak-pembukuan",
+   "pajak"
+  ],
+  "finance.base_currency": [
+   "pajak-pembukuan",
+   "tutup-buku"
+  ],
+  "finance.fiscal_year_end_month": [
+   "pajak-pembukuan",
+   "tutup-buku"
+  ],
+  "finance.default_payment_term_code": [
+   "pembayaran-pelanggan",
+   "syarat-bayar"
+  ],
+  "finance.dispatch_payment_gate": [
+   "pembayaran-pelanggan",
+   "syarat-bayar"
+  ],
+  "wms.rfid_simulation": [
+   "sistem",
+   "rfid-proses"
+  ],
+  "ar.denda_rate_pct_per_month": [
+   "pembayaran-pelanggan",
+   "denda"
+  ],
+  "ar.grace_days": [
+   "pembayaran-pelanggan",
+   "denda"
+  ],
+  "ar.aging_buckets": [
+   "pembayaran-pelanggan",
+   "syarat-bayar"
+  ],
+  "sales.allow_item_discount": [
+   "penjualan",
+   "harga"
+  ],
+  "sales.allow_order_discount": [
+   "penjualan",
+   "harga"
+  ],
+  "sales.keep_max_age_days": [
+   "penjualan",
+   "alur-pesanan"
+  ],
+  "sales.sample_payment_tolerance_pct": [
+   "penjualan",
+   "harga"
+  ],
+  "sales.allow_partial_shipment": [
+   "penjualan",
+   "alur-pesanan"
+  ],
+  "sales.quotation_enabled": [
+   "penjualan",
+   "alur-pesanan"
+  ],
+  "pricelist.customer_price_approval": [
+   "penjualan",
+   "harga"
+  ],
+  "pricelist.customer_price_floor": [
+   "penjualan",
+   "harga"
+  ],
+  "pricelist.customer_price_tolerance_pct": [
+   "penjualan",
+   "harga"
+  ],
+  "commission.strategy": [
+   "penjualan",
+   "komisi"
+  ],
+  "commission.incentive_unit": [
+   "penjualan",
+   "komisi"
+  ],
+  "commission.default_margin_cap_pct": [
+   "penjualan",
+   "komisi"
+  ],
+  "commission.discount_threshold_type": [
+   "penjualan",
+   "komisi"
+  ],
+  "commission.discount_threshold": [
+   "penjualan",
+   "komisi"
+  ],
+  "commission.discount_mechanic": [
+   "penjualan",
+   "komisi"
+  ],
+  "commission.discount_factor": [
+   "penjualan",
+   "komisi"
+  ],
+  "commission.discount_potong_rp": [
+   "penjualan",
+   "komisi"
+  ],
+  "approval.extra_levels": [
+   "persetujuan",
+   "umum"
+  ],
+  "approval.reminder_min_days": [
+   "persetujuan",
+   "umum"
+  ],
+  "inventory.drift_alert_rupiah": [
+   "pajak-pembukuan",
+   "tutup-buku"
+  ],
+  "saga.stuck_lock_minutes": [
+   "sistem",
+   "rfid-proses"
+  ],
+  "purchasing.price_deviation_approval_percent": [
+   "pembelian",
+   "memesan"
+  ],
+  "sales.require_so_validation": [
+   "penjualan",
+   "alur-pesanan"
+  ],
+  "sales_admin.require_verification_before_confirm": [
+   "penjualan",
+   "alur-pesanan"
+  ],
+  "purchasing.receive_tolerance_percent": [
+   "penerimaan",
+   "menerima"
+  ],
+  "purchasing.restock_source_unknown": [
+   "pembelian",
+   "memesan"
+  ],
+  "purchasing.require_supplier_master": [
+   "pembelian",
+   "memesan"
+  ],
+  "purchasing.qc_on_receipt": [
+   "penerimaan",
+   "menerima"
+  ],
+  "purchasing.allow_item_discount": [
+   "pembelian",
+   "memesan"
+  ],
+  "purchasing.allow_order_discount": [
+   "pembelian",
+   "memesan"
+  ],
+  "purchasing.bill_qty_tolerance_percent": [
+   "pembelian",
+   "tagihan"
+  ],
+  "purchasing.bill_price_tolerance_percent": [
+   "pembelian",
+   "tagihan"
+  ],
+  "inventory.default_uom": [
+   "stok",
+   "kerja-gudang"
+  ],
+  "inventory.min_cut_qty": [
+   "stok",
+   "memilih-stok"
+  ],
+  "inventory.intercompany_transfer_required": [
+   "stok",
+   "memilih-stok"
+  ],
+  "inventory.stock_analytics.fast_max_days": [
+   "stok",
+   "laris-lambat"
+  ],
+  "inventory.stock_analytics.slow_max_days": [
+   "stok",
+   "laris-lambat"
+  ],
+  "inventory.stock_analytics.velocity_window_days": [
+   "stok",
+   "laris-lambat"
+  ],
+  "inventory.stock_analytics.best_seller_pct": [
+   "stok",
+   "laris-lambat"
+  ],
+  "inventory.stock_analytics.slow_moving_pct": [
+   "stok",
+   "laris-lambat"
+  ],
+  "inventory.stock_analytics.new_sku_age_days": [
+   "stok",
+   "laris-lambat"
+  ],
+  "inventory.reorder.velocity_window_days": [
+   "stok",
+   "laris-lambat"
+  ],
+  "inventory.reorder.safety_days": [
+   "stok",
+   "laris-lambat"
+  ],
+  "allocation.mode": [
+   "stok",
+   "memilih-stok"
+  ],
+  "allocation.roll_pick_sales": [
+   "stok",
+   "memilih-stok"
+  ],
+  "allocation.makloon_reserve_mode": [
+   "stok",
+   "memilih-stok"
+  ],
+  "allocation.priority_order": [
+   "stok",
+   "memilih-stok"
+  ],
+  "allocation.lot_mode": [
+   "stok",
+   "memilih-stok"
+  ],
+  "allocation.lot_selection": [
+   "stok",
+   "memilih-stok"
+  ],
+  "allocation.location_pref": [
+   "stok",
+   "memilih-stok"
+  ],
+  "allocation.allow_intercompany": [
+   "stok",
+   "memilih-stok"
+  ],
+  "allocation.allow_partial": [
+   "stok",
+   "memilih-stok"
+  ],
+  "allocation.dye_lot_strict": [
+   "stok",
+   "memilih-stok"
+  ],
+  "qc.four_point_enabled": [
+   "kualitas",
+   "inspeksi"
+  ],
+  "qc.grade_thresholds.a_max": [
+   "kualitas",
+   "inspeksi"
+  ],
+  "qc.grade_thresholds.b_max": [
+   "kualitas",
+   "inspeksi"
+  ],
+  "qc.grade_from_points": [
+   "kualitas",
+   "inspeksi"
+  ],
+  "qc.color_mismatch_action": [
+   "kualitas",
+   "tidak-sesuai"
+  ],
+  "qc.handfeel_mismatch_action": [
+   "kualitas",
+   "tidak-sesuai"
+  ],
+  "qc.accept_all_with_hold_action": [
+   "kualitas",
+   "tidak-sesuai"
+  ],
+  "qc.md_sampling_pct": [
+   "kualitas",
+   "jumlah-cek"
+  ],
+  "qc.md_sampling_min": [
+   "kualitas",
+   "jumlah-cek"
+  ],
+  "qc.sampling_pct": [
+   "kualitas",
+   "jumlah-cek"
+  ],
+  "qc.sampling_min": [
+   "kualitas",
+   "jumlah-cek"
+  ],
+  "ui.show_coming_soon": [
+   "sistem",
+   "menu"
+  ],
+  "ui.coming_soon_collapsed": [
+   "sistem",
+   "menu"
+  ],
+  "pos.best_sellers.enabled": [
+   "penjualan",
+   "saran-pos"
+  ],
+  "pos.reorder.enabled": [
+   "penjualan",
+   "saran-pos"
+  ],
+  "pos.fbt.enabled": [
+   "penjualan",
+   "saran-pos"
+  ],
+  "pos.featured.enabled": [
+   "penjualan",
+   "saran-pos"
+  ],
+  "pos.recommendation.enabled": [
+   "penjualan",
+   "saran-pos"
+  ],
+  "pos.best_sellers.window_days": [
+   "penjualan",
+   "saran-pos"
+  ],
+  "role_home.admin": [
+   "sistem",
+   "menu"
+  ],
+  "role_home.manager": [
+   "sistem",
+   "menu"
+  ],
+  "role_home.sales": [
+   "sistem",
+   "menu"
+  ],
+  "role_home.warehouse": [
+   "sistem",
+   "menu"
+  ],
+  "notif.low_stock_division": [
+   "persetujuan",
+   "pemberitahuan"
+  ],
+  "notif.po_stage_stuck_days": [
+   "persetujuan",
+   "pemberitahuan"
+  ],
+  "notif.ap_due_soon_days": [
+   "persetujuan",
+   "tenggat-pengingat"
+  ],
+  "notif.wo_released_stale_days": [
+   "persetujuan",
+   "tenggat-pengingat"
+  ],
+  "notif.wo_draft_stale_days": [
+   "persetujuan",
+   "tenggat-pengingat"
+  ],
+  "notif.warehouse_task_stale_days": [
+   "persetujuan",
+   "tenggat-pengingat"
+  ],
+  "notif.ar_due_soon_offsets": [
+   "persetujuan",
+   "tenggat-pengingat"
+  ],
+  "notif.po_arrival_lookback_hours": [
+   "persetujuan",
+   "tenggat-pengingat"
+  ],
+  "notif.max_alerts_per_run": [
+   "persetujuan",
+   "pemberitahuan"
+  ],
+  "notif.turn_stale_days": [
+   "persetujuan",
+   "tenggat-pengingat"
+  ],
+  "notif.content_reminder_window_minutes": [
+   "persetujuan",
+   "tenggat-pengingat"
+  ],
+  "notif.content_on_time_grace_minutes": [
+   "persetujuan",
+   "tenggat-pengingat"
+  ],
+  "notif.campaign_budget_near_pct": [
+   "persetujuan",
+   "tenggat-pengingat"
+  ],
+  "notif.printer_stuck_minutes": [
+   "persetujuan",
+   "tenggat-pengingat"
+  ],
+  "inventory.drift_critical_multiplier": [
+   "pajak-pembukuan",
+   "tutup-buku"
+  ],
+  "approval.reminder_max_listed": [
+   "persetujuan",
+   "pemberitahuan"
+  ],
+  "rnd.design_due_soon_days": [
+   "rnd",
+   "nilai-desainer"
+  ],
+  "notif.reminder_recipients": [
+   "persetujuan",
+   "pemberitahuan"
+  ],
+  "notif.escalation_chain": [
+   "persetujuan",
+   "pemberitahuan"
+  ],
+  "notif.wa_broadcast_roles": [
+   "persetujuan",
+   "pemberitahuan"
+  ],
+  "notif.wa_pic_number": [
+   "persetujuan",
+   "pemberitahuan"
+  ],
+  "uom.warn_pct": [
+   "penerimaan",
+   "konversi-satuan"
+  ],
+  "uom.block_pct": [
+   "penerimaan",
+   "konversi-satuan"
+  ],
+  "uom.allow_override": [
+   "penerimaan",
+   "konversi-satuan"
+  ],
+  "uom.precision": [
+   "penerimaan",
+   "konversi-satuan"
+  ],
+  "uom.require_trail": [
+   "penerimaan",
+   "konversi-satuan"
+  ],
+  "lot.enforcement_mode": [
+   "penerimaan",
+   "nomor-lot"
+  ],
+  "lot.require_supplier_lot": [
+   "penerimaan",
+   "nomor-lot"
+  ],
+  "lot.require_dye_lot": [
+   "penerimaan",
+   "nomor-lot"
+  ],
+  "lot.alias_mode": [
+   "penerimaan",
+   "nomor-lot"
+  ],
+  "lot.alias_unique_scope": [
+   "penerimaan",
+   "nomor-lot"
+  ],
+  "lot.auto_create_on_receiving": [
+   "penerimaan",
+   "nomor-lot"
+  ],
+  "lot.status_on_receipt": [
+   "penerimaan",
+   "nomor-lot"
+  ],
+  "lot.number_format": [
+   "penerimaan",
+   "nomor-lot"
+  ],
+  "receiving.supplier_uom_input_mode": [
+   "penerimaan",
+   "menerima"
+  ],
+  "receiving.require_supplier_item_for_supplier_uom": [
+   "penerimaan",
+   "menerima"
+  ],
+  "receiving.supplier_dn_mode": [
+   "penerimaan",
+   "menerima"
+  ],
+  "receiving.block_over_remaining": [
+   "penerimaan",
+   "menerima"
+  ],
+  "receiving.line_qty_tolerance_pct": [
+   "penerimaan",
+   "menerima"
+  ],
+  "receiving.mode": [
+   "penerimaan",
+   "menerima"
+  ],
+  "receiving.blind_count": [
+   "penerimaan",
+   "menerima"
+  ],
+  "receiving.min_photo_short_side_px": [
+   "sistem",
+   "baca-sj"
+  ],
+  "receiving.client_po_patterns": [
+   "sistem",
+   "baca-sj"
+  ],
+  "receiving.ocr_enabled": [
+   "sistem",
+   "baca-sj"
+  ],
+  "receiving.ocr_model_primary": [
+   "sistem",
+   "baca-sj"
+  ],
+  "receiving.ocr_model_second": [
+   "sistem",
+   "baca-sj"
+  ],
+  "receiving.ocr_auto_orient": [
+   "sistem",
+   "baca-sj"
+  ],
+  "receiving.ocr_photo_check": [
+   "sistem",
+   "baca-sj"
+  ],
+  "receiving.ocr_orient_model": [
+   "sistem",
+   "baca-sj"
+  ],
+  "receiving.ocr_second_reader_mode": [
+   "sistem",
+   "baca-sj"
+  ],
+  "receiving.ocr_reasoning_effort": [
+   "sistem",
+   "baca-sj"
+  ],
+  "receiving.ocr_max_output_tokens": [
+   "sistem",
+   "baca-sj"
+  ],
+  "receiving.ocr_image_max_side": [
+   "sistem",
+   "baca-sj"
+  ],
+  "receiving.ocr_max_pages": [
+   "sistem",
+   "baca-sj"
+  ],
+  "receiving.ocr_extract_packing_list": [
+   "sistem",
+   "baca-sj"
+  ],
+  "receiving.ocr_monthly_budget_usd": [
+   "sistem",
+   "baca-sj"
+  ],
+  "receiving.ocr_budget_warn_pct": [
+   "sistem",
+   "baca-sj"
+  ],
+  "receiving.ocr_price_table": [
+   "sistem",
+   "baca-sj"
+  ],
+  "receiving.label_variance_tolerance_percent": [
+   "penerimaan",
+   "menerima"
+  ],
+  "receiving.auto_rfid_on_scan": [
+   "penerimaan",
+   "menerima"
+  ],
+  "makloon.variance_tolerance_pct": [
+   "pembelian",
+   "makloon"
+  ],
+  "makloon.auto_claim": [
+   "pembelian",
+   "makloon"
+  ],
+  "makloon.claim_approval_roles": [
+   "pembelian",
+   "makloon"
+  ],
+  "makloon.contract_mode": [
+   "pembelian",
+   "makloon"
+  ],
+  "makloon.default_shrinkage_pct": [
+   "pembelian",
+   "makloon"
+  ],
+  "makloon.require_output_product": [
+   "pembelian",
+   "makloon"
+  ],
+  "makloon.require_yield_reason": [
+   "pembelian",
+   "makloon"
+  ],
+  "hr.bpjs.kes_rate_employee": [
+   "sdm",
+   "bpjs"
+  ],
+  "hr.bpjs.kes_rate_employer": [
+   "sdm",
+   "bpjs"
+  ],
+  "hr.bpjs.jht_rate_employee": [
+   "sdm",
+   "bpjs"
+  ],
+  "hr.bpjs.jht_rate_employer": [
+   "sdm",
+   "bpjs"
+  ],
+  "hr.bpjs.jp_rate_employee": [
+   "sdm",
+   "bpjs"
+  ],
+  "hr.bpjs.jp_rate_employer": [
+   "sdm",
+   "bpjs"
+  ],
+  "hr.bpjs.jkm_rate_employer": [
+   "sdm",
+   "bpjs"
+  ],
+  "hr.bpjs.kes_ceiling": [
+   "sdm",
+   "bpjs"
+  ],
+  "hr.bpjs.jp_ceiling": [
+   "sdm",
+   "bpjs"
+  ],
+  "hr.jkk_classes": [
+   "sdm",
+   "bpjs"
+  ],
+  "hr.ter_enabled": [
+   "sdm",
+   "pph21"
+  ],
+  "hr.pph21.ter_table": [
+   "sdm",
+   "pph21"
+  ],
+  "hr.pph21.ptkp_to_ter": [
+   "sdm",
+   "pph21"
+  ],
+  "hr.ptkp_table": [
+   "sdm",
+   "pph21"
+  ],
+  "hr.pph21.pasal17_table": [
+   "sdm",
+   "pph21"
+  ],
+  "hr.pph21.biaya_jabatan_pct": [
+   "sdm",
+   "pph21"
+  ],
+  "hr.pph21.biaya_jabatan_maks_bulanan": [
+   "sdm",
+   "pph21"
+  ],
+  "hr.overtime.multiplier": [
+   "sdm",
+   "lembur"
+  ],
+  "hr.overtime.hours_divisor": [
+   "sdm",
+   "lembur"
+  ],
+  "hr.feature_toggles.bpjs_kesehatan": [
+   "sdm",
+   "bpjs"
+  ],
+  "hr.feature_toggles.bpjs_ketenagakerjaan": [
+   "sdm",
+   "bpjs"
+  ],
+  "hr.feature_toggles.pph21": [
+   "sdm",
+   "pph21"
+  ],
+  "hr.feature_toggles.npwp_required": [
+   "sdm",
+   "pph21"
+  ],
+  "hr.employment_types": [
+   "sdm",
+   "lembur"
+  ],
+  "hr.payroll_commission_mode": [
+   "sdm",
+   "lembur"
+  ],
+  "catalog.sales_hidden_stages": [
+   "stok",
+   "memilih-stok"
+  ],
+  "wms.location_scope_enforced": [
+   "stok",
+   "kerja-gudang"
+  ],
+  "stock.atp_horizon_days": [
+   "stok",
+   "memilih-stok"
+  ],
+  "registration.finance_approval": [
+   "stok",
+   "kerja-gudang"
+  ],
+  "putaway.auto_draft": [
+   "stok",
+   "kerja-gudang"
+  ],
+  "cutting.wait_warn_minutes": [
+   "stok",
+   "potong"
+  ],
+  "cutting.wait_late_minutes": [
+   "stok",
+   "potong"
+  ],
+  "cutting.remnant_threshold": [
+   "stok",
+   "potong"
+  ],
+  "cutting.remnant_grade": [
+   "stok",
+   "potong"
+  ],
+  "cutting.waste_limit_pct": [
+   "stok",
+   "potong"
+  ],
+  "returns.evidence_required_submit": [
+   "retur-koreksi",
+   "retur"
+  ],
+  "returns.evidence_required_approve": [
+   "retur-koreksi",
+   "retur"
+  ],
+  "returns.evidence_required_inspect": [
+   "retur-koreksi",
+   "retur"
+  ],
+  "returns.evidence_required_settle": [
+   "retur-koreksi",
+   "retur"
+  ],
+  "returns.block_resend_to_origin_customer": [
+   "retur-koreksi",
+   "retur"
+  ],
+  "returns.logistics_vat_enabled": [
+   "retur-koreksi",
+   "retur"
+  ],
+  "returns.cutloss_treatment_roles": [
+   "retur-koreksi",
+   "retur"
+  ],
+  "returns.customer_window_days": [
+   "retur-koreksi",
+   "retur"
+  ],
+  "returns.supplier_window_days": [
+   "retur-koreksi",
+   "retur"
+  ],
+  "returns.supplier_reminder_days": [
+   "retur-koreksi",
+   "retur"
+  ],
+  "returns.bill_first": [
+   "retur-koreksi",
+   "retur"
+  ],
+  "returns.grade_price_factors": [
+   "retur-koreksi",
+   "retur"
+  ],
+  "amendment.approval_threshold_amount": [
+   "retur-koreksi",
+   "koreksi"
+  ],
+  "amendment.approval_threshold_pct": [
+   "retur-koreksi",
+   "koreksi"
+  ],
+  "amendment.approver_role": [
+   "retur-koreksi",
+   "koreksi"
+  ],
+  "amendment.admin_approval_above": [
+   "retur-koreksi",
+   "koreksi"
+  ],
+  "amendment.dual_control": [
+   "retur-koreksi",
+   "koreksi"
+  ],
+  "amendment.require_note_above": [
+   "retur-koreksi",
+   "koreksi"
+  ],
+  "amendment.issued_doc_policy": [
+   "retur-koreksi",
+   "koreksi"
+  ],
+  "docref.autolink_enabled": [
+   "persetujuan",
+   "rujukan-dokumen"
+  ],
+  "docref.trace_max_depth": [
+   "persetujuan",
+   "rujukan-dokumen"
+  ],
+  "docref.require_parent": [
+   "persetujuan",
+   "rujukan-dokumen"
+  ],
+  "docref.show_in_pdf": [
+   "persetujuan",
+   "rujukan-dokumen"
+  ],
+  "docref.qr_in_pdf": [
+   "persetujuan",
+   "rujukan-dokumen"
+  ],
+  "docref.pdf_max_refs": [
+   "persetujuan",
+   "rujukan-dokumen"
+  ],
+  "payment.plan_required_above_amount": [
+   "pembayaran-pelanggan",
+   "syarat-bayar"
+  ],
+  "payment.plan_tolerance_rupiah": [
+   "pembayaran-pelanggan",
+   "syarat-bayar"
+  ],
+  "payment.default_dp_percent": [
+   "pembayaran-pelanggan",
+   "syarat-bayar"
+  ],
+  "payment.default_installments": [
+   "pembayaran-pelanggan",
+   "syarat-bayar"
+  ],
+  "payment.default_installment_interval": [
+   "pembayaran-pelanggan",
+   "syarat-bayar"
+  ],
+  "payment.penalty_mode": [
+   "pembayaran-pelanggan",
+   "denda"
+  ],
+  "payment.penalty_base": [
+   "pembayaran-pelanggan",
+   "denda"
+  ],
+  "payment.penalty_cap_pct": [
+   "pembayaran-pelanggan",
+   "denda"
+  ],
+  "payment.penalty_min_amount": [
+   "pembayaran-pelanggan",
+   "denda"
+  ],
+  "payment.penalty_waive_requires_approval": [
+   "pembayaran-pelanggan",
+   "denda"
+  ],
+  "payment.penalty_waive_approver_role": [
+   "pembayaran-pelanggan",
+   "denda"
+  ],
+  "payment.variance_tolerance_rupiah": [
+   "pembayaran-pelanggan",
+   "selisih-bayar"
+  ],
+  "payment.variance_underpay_default": [
+   "pembayaran-pelanggan",
+   "selisih-bayar"
+  ],
+  "payment.variance_overpay_default": [
+   "pembayaran-pelanggan",
+   "selisih-bayar"
+  ],
+  "payment.variance_writeoff_requires_approval": [
+   "pembayaran-pelanggan",
+   "selisih-bayar"
+  ],
+  "payment.variance_writeoff_approver_role": [
+   "pembayaran-pelanggan",
+   "selisih-bayar"
+  ],
+  "payment.variance_writeoff_max_amount": [
+   "pembayaran-pelanggan",
+   "selisih-bayar"
+  ],
+  "payment.variance_reschedule_days": [
+   "pembayaran-pelanggan",
+   "selisih-bayar"
+  ],
+  "payment.variance_refund_method": [
+   "pembayaran-pelanggan",
+   "selisih-bayar"
+  ],
+  "payment.variance_ap_tolerance_rupiah": [
+   "pembelian",
+   "tagihan"
+  ],
+  "bank.match_weight_amount": [
+   "bank-kasus",
+   "bank"
+  ],
+  "bank.match_weight_date": [
+   "bank-kasus",
+   "bank"
+  ],
+  "bank.match_weight_ref": [
+   "bank-kasus",
+   "bank"
+  ],
+  "bank.match_weight_name": [
+   "bank-kasus",
+   "bank"
+  ],
+  "bank.auto_match_min_score": [
+   "bank-kasus",
+   "bank"
+  ],
+  "bank.suggest_min_score": [
+   "bank-kasus",
+   "bank"
+  ],
+  "bank.date_window_days": [
+   "bank-kasus",
+   "bank"
+  ],
+  "bank.amount_tolerance": [
+   "bank-kasus",
+   "bank"
+  ],
+  "bank.rule_learn_after": [
+   "bank-kasus",
+   "bank"
+  ],
+  "bank.rule_bonus_score": [
+   "bank-kasus",
+   "bank"
+  ],
+  "bank.holding_account_code": [
+   "bank-kasus",
+   "bank"
+  ],
+  "bank.charge_account_code": [
+   "bank-kasus",
+   "bank"
+  ],
+  "bank.interest_account_code": [
+   "bank-kasus",
+   "bank"
+  ],
+  "bank.holding_max_age_days": [
+   "bank-kasus",
+   "bank"
+  ],
+  "case.sla_hours": [
+   "bank-kasus",
+   "kasus"
+  ],
+  "case.sla_hours_high": [
+   "bank-kasus",
+   "kasus"
+  ],
+  "case.high_amount_threshold": [
+   "bank-kasus",
+   "kasus"
+  ],
+  "case.require_evidence": [
+   "bank-kasus",
+   "kasus"
+  ],
+  "case.require_approval_above": [
+   "bank-kasus",
+   "kasus"
+  ],
+  "case.approver_role": [
+   "bank-kasus",
+   "kasus"
+  ],
+  "case.refund_max_amount": [
+   "bank-kasus",
+   "kasus"
+  ],
+  "case.duplicate_window_days": [
+   "bank-kasus",
+   "kasus"
+  ],
+  "case.holding_case_after_days": [
+   "bank-kasus",
+   "kasus"
+  ],
+  "case.auto_bank_charge_max": [
+   "bank-kasus",
+   "kasus"
+  ],
+  "case.escalate_on_sla_breach": [
+   "bank-kasus",
+   "kasus"
+  ],
+  "case.auto_scan_enabled": [
+   "bank-kasus",
+   "kasus"
+  ],
+  "contra_bon.qty_tolerance_percent": [
+   "pembelian",
+   "tagihan"
+  ],
+  "contra_bon.value_tolerance_rupiah": [
+   "pembelian",
+   "tagihan"
+  ],
+  "contra_bon.require_reason_out_of_tolerance": [
+   "pembelian",
+   "tagihan"
+  ],
+  "contra_bon.approval_threshold_rupiah": [
+   "pembelian",
+   "tagihan"
+  ],
+  "contra_bon.approval_role": [
+   "pembelian",
+   "tagihan"
+  ],
+  "contra_bon.high_value_approval_role": [
+   "pembelian",
+   "tagihan"
+  ],
+  "contra_bon.reminder_days_before": [
+   "pembelian",
+   "tagihan"
+  ],
+  "contra_bon.unbilled_gr_age_days": [
+   "pembelian",
+   "tagihan"
+  ],
+  "contra_bon.verify_sla_days": [
+   "pembelian",
+   "tagihan"
+  ],
+  "contra_bon.block_pay_before_approval": [
+   "pembelian",
+   "tagihan"
+  ],
+  "antar_entitas.pricing_mode": [
+   "pajak-pembukuan",
+   "antar-pt"
+  ],
+  "antar_entitas.ppn_mode": [
+   "pajak-pembukuan",
+   "antar-pt"
+  ],
+  "antar_entitas.approval_threshold_rupiah": [
+   "pajak-pembukuan",
+   "antar-pt"
+  ],
+  "antar_entitas.approval_role": [
+   "pajak-pembukuan",
+   "antar-pt"
+  ],
+  "antar_entitas.high_value_approval_role": [
+   "pajak-pembukuan",
+   "antar-pt"
+  ],
+  "antar_entitas.settlement_reminder_days": [
+   "pajak-pembukuan",
+   "antar-pt"
+  ],
+  "antar_entitas.ppn_rate_percent": [
+   "pajak-pembukuan",
+   "antar-pt"
+  ],
+  "interco_payment.allow_netting": [
+   "pajak-pembukuan",
+   "antar-pt"
+  ],
+  "interco_payment.require_full_payment": [
+   "pajak-pembukuan",
+   "antar-pt"
+  ],
+  "interco_payment.cutoff_day": [
+   "pajak-pembukuan",
+   "antar-pt"
+  ],
+  "interco_payment.payment_day": [
+   "pajak-pembukuan",
+   "antar-pt"
+  ],
+  "interco_payment.basis": [
+   "pajak-pembukuan",
+   "antar-pt"
+  ],
+  "interco_payment.reminder_days": [
+   "pajak-pembukuan",
+   "antar-pt"
+  ],
+  "periode.unlock_window_hours": [
+   "pajak-pembukuan",
+   "tutup-buku"
+  ],
+  "periode.max_days_after_close": [
+   "pajak-pembukuan",
+   "tutup-buku"
+  ],
+  "ai.sales_definition": [
+   "sistem",
+   "tanya-kn"
+  ],
+  "ai.sales_attribution": [
+   "sistem",
+   "tanya-kn"
+  ],
+  "ai.margin_roles": [
+   "sistem",
+   "tanya-kn"
+  ],
+  "ai.stock_value_roles": [
+   "sistem",
+   "tanya-kn"
+  ],
+  "ai.enabled": [
+   "sistem",
+   "tanya-kn"
+  ],
+  "ai.model_main": [
+   "sistem",
+   "tanya-kn-teknis"
+  ],
+  "ai.reasoning_effort": [
+   "sistem",
+   "tanya-kn-teknis"
+  ],
+  "ai.deep_effort": [
+   "sistem",
+   "tanya-kn-teknis"
+  ],
+  "ai.max_tool_rounds": [
+   "sistem",
+   "tanya-kn-teknis"
+  ],
+  "ai.max_output_tokens": [
+   "sistem",
+   "tanya-kn-teknis"
+  ],
+  "ai.result_rows_to_model": [
+   "sistem",
+   "tanya-kn-teknis"
+  ],
+  "ai.daily_question_limit": [
+   "sistem",
+   "tanya-kn"
+  ],
+  "ai.model_fast": [
+   "sistem",
+   "tanya-kn-teknis"
+  ],
+  "ai.enabled_roles": [
+   "sistem",
+   "tanya-kn"
+  ],
+  "ai.monthly_budget_usd": [
+   "sistem",
+   "tanya-kn"
+  ],
+  "ai.template_cache_minutes": [
+   "sistem",
+   "tanya-kn-teknis"
+  ],
+  "ai.route_threshold_pct": [
+   "sistem",
+   "tanya-kn-teknis"
+  ],
+  "ai.chat_retention_days": [
+   "sistem",
+   "tanya-kn-teknis"
+  ],
+  "ai.prewarm_enabled": [
+   "sistem",
+   "tanya-kn-teknis"
+  ],
+  "ai.glossary": [
+   "sistem",
+   "tanya-kn"
+  ],
+  "ai.anomaly_enabled": [
+   "sistem",
+   "tanya-kn"
+  ],
+  "ai.anomaly_drop_pct": [
+   "sistem",
+   "tanya-kn"
+  ],
+  "ai.anomaly_cover_days": [
+   "sistem",
+   "tanya-kn"
+  ],
+  "rfid.evidence_retention_mode": [
+   "sistem",
+   "rfid-proses"
+  ],
+  "rfid.evidence_retention_days": [
+   "sistem",
+   "rfid-proses"
+  ],
+  "rfid.legacy_reads_retention_days": [
+   "sistem",
+   "rfid-proses"
+  ],
+  "rnd.lifecycle_enforcement": [
+   "rnd",
+   "boleh-dijual"
+  ],
+  "rnd.new_product_default_lifecycle": [
+   "rnd",
+   "boleh-dijual"
+  ],
+  "rnd.variant_axes_default": [
+   "rnd",
+   "boleh-dijual"
+  ],
+  "rnd.variant_axes_optional": [
+   "rnd",
+   "boleh-dijual"
+  ],
+  "rnd.spec_approval_roles": [
+   "rnd",
+   "boleh-dijual"
+  ],
+  "rnd.sample_decision_roles": [
+   "rnd",
+   "sample"
+  ],
+  "rnd.max_rounds": [
+   "rnd",
+   "sample"
+  ],
+  "rnd.round_sla_days": [
+   "rnd",
+   "sample"
+  ],
+  "rnd.require_attachment_on_round": [
+   "rnd",
+   "sample"
+  ],
+  "rnd.require_design_for_proofing": [
+   "rnd",
+   "sample"
+  ],
+  "rnd.require_stage_chain": [
+   "rnd",
+   "sample"
+  ],
+  "rnd.labdip_max_colors": [
+   "rnd",
+   "sample"
+  ],
+  "rnd.design_code_pattern": [
+   "rnd",
+   "kode-desain"
+  ],
+  "rnd.design_code_seq_digits": [
+   "rnd",
+   "kode-desain"
+  ],
+  "rnd.design_prefix_motif": [
+   "rnd",
+   "kode-desain"
+  ],
+  "rnd.design_prefix_pattern": [
+   "rnd",
+   "kode-desain"
+  ],
+  "rnd.design_prefix_artwork": [
+   "rnd",
+   "kode-desain"
+  ],
+  "rnd.design_acc_min_score": [
+   "rnd",
+   "kode-desain"
+  ],
+  "rnd.sla_escalate_admin_days": [
+   "rnd",
+   "sample"
+  ],
+  "rnd.kpi_weight_on_time": [
+   "rnd",
+   "nilai-desainer"
+  ],
+  "rnd.kpi_weight_score": [
+   "rnd",
+   "nilai-desainer"
+  ],
+  "rnd.kpi_weight_acc": [
+   "rnd",
+   "nilai-desainer"
+  ],
+  "rnd.kpi_weight_design": [
+   "rnd",
+   "nilai-desainer"
+  ],
+  "rnd.kpi_penalty_rework": [
+   "rnd",
+   "nilai-desainer"
+  ],
+  "rnd.kpi_penalty_overdue": [
+   "rnd",
+   "nilai-desainer"
+  ],
+  "rnd.auto_contract_on_decide": [
+   "rnd",
+   "sample"
+  ],
+  "rnd.sample_material_from_stock": [
+   "rnd",
+   "sample"
+  ],
+  "approval.matrix_enforcement": [
+   "persetujuan",
+   "rnd"
+  ],
+  "approval.matrix_scope": [
+   "persetujuan",
+   "rnd"
+  ],
+  "approval.matrix_effective_from": [
+   "persetujuan",
+   "rnd"
+  ],
+  "approval.matrix_sod": [
+   "persetujuan",
+   "rnd"
+  ],
+  "approval.po_custom_direksi_min": [
+   "persetujuan",
+   "rnd"
+  ],
+  "kontrol.acc_desain.min_orang": [
+   "persetujuan",
+   "dua-orang-gudang"
+  ],
+  "kontrol.acc_sample.min_orang": [
+   "persetujuan",
+   "dua-orang-gudang"
+  ],
+  "kontrol.po_custom.min_orang": [
+   "persetujuan",
+   "dua-orang-penjualan"
+  ],
+  "kontrol.po_custom.batas_nominal": [
+   "persetujuan",
+   "dua-orang-penjualan"
+  ],
+  "kontrol.permintaan_pembelian.min_orang": [
+   "persetujuan",
+   "dua-orang-pembelian"
+  ],
+  "kontrol.permintaan_pembelian.batas_nominal": [
+   "persetujuan",
+   "dua-orang-pembelian"
+  ],
+  "kontrol.harga_khusus.min_orang": [
+   "persetujuan",
+   "dua-orang-penjualan"
+  ],
+  "kontrol.amandemen.min_orang": [
+   "persetujuan",
+   "dua-orang-buku"
+  ],
+  "kontrol.amandemen.batas_nominal": [
+   "persetujuan",
+   "dua-orang-buku"
+  ],
+  "kontrol.setujui_po.min_orang": [
+   "persetujuan",
+   "dua-orang-pembelian"
+  ],
+  "kontrol.setujui_po.batas_nominal": [
+   "persetujuan",
+   "dua-orang-pembelian"
+  ],
+  "kontrol.po_tingkat_berikut.min_orang": [
+   "persetujuan",
+   "dua-orang-pembelian"
+  ],
+  "kontrol.tagihan_pemasok.min_orang": [
+   "persetujuan",
+   "dua-orang-hutang"
+  ],
+  "kontrol.tagihan_pemasok.batas_nominal": [
+   "persetujuan",
+   "dua-orang-hutang"
+  ],
+  "kontrol.biaya_masuk.min_orang": [
+   "persetujuan",
+   "dua-orang-hutang"
+  ],
+  "kontrol.biaya_masuk.batas_nominal": [
+   "persetujuan",
+   "dua-orang-hutang"
+  ],
+  "kontrol.kontrabon.min_orang": [
+   "persetujuan",
+   "dua-orang-hutang"
+  ],
+  "kontrol.kontrabon.batas_nominal": [
+   "persetujuan",
+   "dua-orang-hutang"
+  ],
+  "kontrol.tagihan_kampanye.min_orang": [
+   "persetujuan",
+   "dua-orang-hutang"
+  ],
+  "kontrol.tagihan_kampanye.batas_nominal": [
+   "persetujuan",
+   "dua-orang-hutang"
+  ],
+  "kontrol.retur_antar_pt.min_orang": [
+   "persetujuan",
+   "dua-orang-penjualan"
+  ],
+  "kontrol.retur_antar_pt.batas_nominal": [
+   "persetujuan",
+   "dua-orang-penjualan"
+  ],
+  "kontrol.buka_periode.min_orang": [
+   "persetujuan",
+   "dua-orang-buku"
+  ],
+  "kontrol.susut_makloon.min_orang": [
+   "persetujuan",
+   "dua-orang-gudang"
+  ],
+  "kontrol.susut_makloon.batas_nominal": [
+   "persetujuan",
+   "dua-orang-gudang"
+  ],
+  "kontrol.pengecualian_retur.min_orang": [
+   "persetujuan",
+   "dua-orang-penjualan"
+  ],
+  "kontrol.klaim_desain.min_orang": [
+   "persetujuan",
+   "dua-orang-penjualan"
+  ],
+  "kontrol.registrasi_stok_awal.min_orang": [
+   "persetujuan",
+   "dua-orang-gudang"
+  ],
+  "kontrol.transfer_gudang.min_orang": [
+   "persetujuan",
+   "dua-orang-gudang"
+  ],
+  "kontrol.stok_opname.min_orang": [
+   "persetujuan",
+   "dua-orang-gudang"
+  ],
+  "kontrol.retur_penjualan.min_orang": [
+   "persetujuan",
+   "dua-orang-penjualan"
+  ],
+  "kontrol.retur_penjualan.batas_nominal": [
+   "persetujuan",
+   "dua-orang-penjualan"
+  ],
+  "kontrol.retur_pembelian.min_orang": [
+   "persetujuan",
+   "dua-orang-pembelian"
+  ],
+  "kontrol.retur_pembelian.batas_nominal": [
+   "persetujuan",
+   "dua-orang-pembelian"
+  ],
+  "kontrol.cuti.min_orang": [
+   "persetujuan",
+   "dua-orang-sdm"
+  ],
+  "kontrol.lembur.min_orang": [
+   "persetujuan",
+   "dua-orang-sdm"
+  ],
+  "kontrol.proses_gaji.min_orang": [
+   "persetujuan",
+   "dua-orang-sdm"
+  ],
+  "kontrol.proses_gaji.batas_nominal": [
+   "persetujuan",
+   "dua-orang-sdm"
+  ],
+  "kontrol.uang_muka.min_orang": [
+   "persetujuan",
+   "dua-orang-sdm"
+  ],
+  "kontrol.uang_muka.batas_nominal": [
+   "persetujuan",
+   "dua-orang-sdm"
+  ],
+  "kontrol.lpj_uang_muka.min_orang": [
+   "persetujuan",
+   "dua-orang-sdm"
+  ],
+  "kontrol.lpj_uang_muka.batas_nominal": [
+   "persetujuan",
+   "dua-orang-sdm"
+  ],
+  "kontrol.pengurang_piutang.min_orang": [
+   "persetujuan",
+   "dua-orang-piutang"
+  ],
+  "kontrol.pengurang_piutang.batas_nominal": [
+   "persetujuan",
+   "dua-orang-piutang"
+  ],
+  "kontrol.lewat_batas_kredit.min_orang": [
+   "persetujuan",
+   "dua-orang-piutang"
+  ],
+  "kontrol.lewat_batas_kredit.batas_nominal": [
+   "persetujuan",
+   "dua-orang-piutang"
+  ],
+  "kontrol.klaim_makloon.min_orang": [
+   "persetujuan",
+   "dua-orang-gudang"
+  ],
+  "kontrol.klaim_makloon.batas_nominal": [
+   "persetujuan",
+   "dua-orang-gudang"
+  ],
+  "kontrol.permintaan_internal.min_orang": [
+   "persetujuan",
+   "dua-orang-gudang"
+  ],
+  "kontrol.permintaan_desain.min_orang": [
+   "persetujuan",
+   "dua-orang-gudang"
+  ],
+  "kontrol.nilai_pesanan.min_orang": [
+   "persetujuan",
+   "dua-orang-penjualan"
+  ],
+  "kontrol.nilai_pesanan.batas_nominal": [
+   "persetujuan",
+   "dua-orang-penjualan"
+  ],
+  "kontrol.buka_kembali_tutup_buku.min_orang": [
+   "persetujuan",
+   "dua-orang-buku"
+  ],
+  "kontrol.jurnal_manual.min_orang": [
+   "persetujuan",
+   "dua-orang-buku"
+  ],
+  "kontrol.jurnal_manual.batas_nominal": [
+   "persetujuan",
+   "dua-orang-buku"
+  ],
+  "kontrol.admin_boleh_sendiri": [
+   "persetujuan",
+   "dua-orang-admin"
+  ],
+  "kontrol.admin_tetap_dua_orang": [
+   "persetujuan",
+   "dua-orang-admin"
+  ]
+ }
+}

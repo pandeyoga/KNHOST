@@ -566,3 +566,28 @@
     padding: 8px; margin-bottom: 4px;
   }
 }
+
+/* ── KF-T4 — sub-judul, kartu ringkas, editor daftar, saringan riwayat (warna lewat token kn-*) ─────────────────── */
+.cfg-section { display: flex; flex-direction: column; gap: 8px; margin-top: 10px; }
+.cfg-section-title { margin: 6px 0 0; font-size: .86rem; font-weight: 700; color: var(--kn-text); }
+.cfg-section-toggle { display: flex; align-items: center; gap: 6px; padding: 6px 8px; border: 1px dashed var(--kn-divider);
+  border-radius: 8px; background: var(--kn-neutral-soft); color: var(--kn-neutral); font-size: .84rem; text-align: left; }
+.cfg-card-compact { padding-top: 8px; padding-bottom: 8px; }
+.cfg-card-toggle { display: inline-flex; align-items: center; color: var(--kn-neutral); }
+.cfg-card-compact-val { margin-left: 8px; font-size: .84rem; font-weight: 600; color: var(--kn-action); }
+.cfg-example { display: flex; gap: 6px; align-items: flex-start; }
+.cfg-check-grid { display: flex; flex-wrap: wrap; gap: 6px 14px; }
+.cfg-check { display: inline-flex; align-items: center; gap: 6px; font-size: .84rem; color: var(--kn-text); }
+.cfg-order-list { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 4px; }
+.cfg-order-row { display: flex; align-items: center; gap: 6px; padding: 4px 6px; border: 1px solid var(--kn-divider);
+  border-radius: 6px; background: #fff; }
+.cfg-order-n { width: 20px; color: var(--kn-neutral); font-size: .8rem; }
+.cfg-order-label { flex: 1; font-size: .84rem; }
+.cfg-order-add, .cfg-int-list { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; align-items: center; }
+.cfg-int-item { display: inline-flex; align-items: center; gap: 2px; }
+.cfg-input-xs { width: 76px; }
+.cfg-input-sm { width: 180px; }
+.cfg-col { display: flex; flex-direction: column; gap: 4px; }
+.cfg-tbl-row-ro { color: var(--kn-neutral); background: var(--kn-neutral-soft); }
+.cfg-notice-warn { background: var(--kn-warning-soft) !important; color: var(--kn-warning-text) !important; }
+.cfg-history-filters { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin: 8px 0; }

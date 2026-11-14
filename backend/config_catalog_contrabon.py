@@ -25,15 +25,12 @@ _KPT4_TIDAK_DIPAKAI = ("Dipindah ke Aturan Persetujuan (Pengaturan › Persetuju
 
 # KF-T2 (L5) — sejak KN-D16 persen 3-way dibaca dari `purchasing.bill_qty_tolerance_percent`; kunci ini tidak dibaca
 # mesin lagi, jadi ditandai tidak dipakai (bukan label "(Lama)" pada kunci yang tampil seolah aktif).
-E("contra_bon.qty_tolerance_percent", group="kontrabon", type="pct", default=1.0,
+E("contra_bon.qty_tolerance_percent", group="pembelian", section="tagihan", type="pct", default=1.0,
   min=0, max=100, step=0.5, unit="%", scopes=G,
-  label="Toleransi selisih 3-way match (persen)",
-  help="Audit 2026-09-21 (KN-D16): ambang persen 3-way kini SATU untuk vendor bill & kontrabon, "
-       "dibaca dari Pengaturan Pembelian → `bill_qty_tolerance_percent` (jumlah) dan "
-       "`bill_price_tolerance_percent` (harga). Nilai di sini diabaikan; ambang rupiah tetap "
-       "dari `contra_bon.value_tolerance_rupiah` dan berlaku untuk KEDUA layar.",
-  impact="Semakin kecil, semakin banyak selisih yang wajib diputus berlabel sebelum kontrabon "
-         "bisa diverifikasi.",
+  label="Toleransi persen kontrabon",
+  help="Tidak dipakai lagi. Toleransi persen sekarang satu untuk tagihan pemasok dan kontrabon: “Toleransi jumlah "
+       "di tagihan pemasok” dan “Toleransi harga tagihan pemasok”.",
+  impact="Tidak berpengaruh lagi.",
   example="Toleransi 1% · diterima 1.000 yard, ditagih 1.020 yard (+2%) senilai Rp 400.000 "
           "→ melewati keduanya → wajib keputusan berlabel",
   consumers=("services/contra_bon_service.py:tolerances",), risk="medium",
@@ -41,88 +38,87 @@ E("contra_bon.qty_tolerance_percent", group="kontrabon", type="pct", default=1.0
   status="not_used",
   not_used_reason="Toleransi jumlah kontrabon mengikuti pengaturan 'Toleransi jumlah tagihan pemasok'.")
 
-E("contra_bon.value_tolerance_rupiah", group="kontrabon", type="money", default=50000,
+E("contra_bon.value_tolerance_rupiah", group="pembelian", section="tagihan", type="money", default=50000,
   min=0, step=10000, unit="Rp", scopes=G,
-  label="Toleransi selisih 3-way match (nilai rupiah)",
-  help="Selisih yang nilainya di bawah angka ini diabaikan meskipun persentasenya besar — "
-       "supaya petugas tidak dipaksa menulis alasan untuk uang receh.",
+  label="Selisih kecil kontrabon yang diabaikan",
+  help="Selisih yang nilainya di bawah angka ini diabaikan walau persennya besar, supaya petugas tidak perlu "
+       "menulis alasan untuk uang receh. Isi 0 = tidak ada selisih yang diabaikan karena kecil.",
   impact="Menyaring pengecualian bernilai kecil agar antrean keputusan tetap bermakna.",
   example="Ambang Rp 50.000 · selisih 0,4 meter senilai Rp 18.000 → diabaikan (lolos)",
   consumers=("services/three_way_policy.py:tolerances",
              "services/contra_bon_service.py:policy"), risk="medium",
   related=("contra_bon.qty_tolerance_percent",))
 
-E("contra_bon.require_reason_out_of_tolerance", group="kontrabon", type="bool", default=True,
+E("contra_bon.require_reason_out_of_tolerance", group="pembelian", section="tagihan", type="bool", default=True,
   scopes=G,
-  label="Wajib keputusan berlabel untuk selisih di luar toleransi",
-  help="Bila aktif, kontrabon TIDAK bisa diverifikasi selama masih ada selisih 3-way di luar "
-       "toleransi yang belum diputus (terima / potong / sengketakan) beserta label alasannya.",
-  impact="Mencegah selisih diterima diam-diam — aturan #1 model keamanan Fase G.",
+  label="Selisih kontrabon wajib diputus dulu",
+  help="Kontrabon tidak bisa diverifikasi selama masih ada selisih di luar toleransi yang belum diputuskan (terima, "
+       "potong, atau sengketakan) beserta alasannya.",
+  impact="Mencegah selisih diterima diam-diam.",
   example="Aktif · ada 1 selisih belum diputus → tombol Verifikasi ditolak dengan penjelasan",
   consumers=("services/contra_bon_service.py:policy",), risk="high")
 
-E("contra_bon.approval_threshold_rupiah", group="kontrabon", type="money", default=50000000,
+E("contra_bon.approval_threshold_rupiah", group="pembelian", section="tagihan", type="money", default=50000000,
   min=0, step=1000000, unit="Rp", scopes=G,
-  label="Ambang kontrabon bernilai besar",
-  help="Kontrabon dengan nilai bersih di atas angka ini butuh persetujuan peran yang lebih "
-       "tinggi (lihat 'Peran penyetuju kontrabon bernilai besar').",
-  impact="Menentukan kapan pembayaran borongan ke supplier harus naik ke admin.",
+  label="Kontrabon bernilai besar mulai",
+  help="Kontrabon dengan nilai bersih di atas angka ini harus disetujui peran yang lebih tinggi.",
+  impact="Menentukan kapan pembayaran borongan ke pemasok harus naik ke admin.",
   example="Ambang Rp 50.000.000 · kontrabon Rp 120.000.000 → wajib disetujui admin",
   consumers=("services/approval_policy_service.py:default_rows_for",), risk="high",
   related=("contra_bon.approval_role", "contra_bon.high_value_approval_role"),
   # KP-T4 — isi kunci ini pindah ke tabel kebijakan persetujuan (`approval_policies`).
   status="not_used", not_used_reason=_KPT4_TIDAK_DIPAKAI)
 
-E("contra_bon.approval_role", group="kontrabon", type="enum", default="manager", scopes=G,
-  options=[{"value": "manager", "label": "Manager"}, {"value": "admin", "label": "Admin"}],
+E("contra_bon.approval_role", group="pembelian", section="tagihan", type="enum", default="manager", scopes=G,
+  options=[{"value": "manager", "label": "Manajer"}, {"value": "admin", "label": "Admin"}],
   label="Peran penyetuju kontrabon",
   help="Peran minimal yang boleh menyetujui kontrabon bernilai di bawah ambang.",
-  impact="Menentukan siapa yang boleh melepas pembayaran borongan ke supplier.",
-  example="Manager · kontrabon Rp 20.000.000 bisa disetujui manager",
+  impact="Menentukan siapa yang boleh melepas pembayaran borongan ke pemasok.",
+  example="Manajer · kontrabon Rp 20.000.000 bisa disetujui Manajer",
   consumers=("services/approval_policy_service.py:default_rows_for",), risk="high",
   # KP-T4 — isi kunci ini pindah ke tabel kebijakan persetujuan (`approval_policies`).
   status="not_used", not_used_reason=_KPT4_TIDAK_DIPAKAI)
 
-E("contra_bon.high_value_approval_role", group="kontrabon", type="enum", default="admin",
+E("contra_bon.high_value_approval_role", group="pembelian", section="tagihan", type="enum", default="admin",
   scopes=G,
-  options=[{"value": "manager", "label": "Manager"}, {"value": "admin", "label": "Admin"}],
+  options=[{"value": "manager", "label": "Manajer"}, {"value": "admin", "label": "Admin"}],
   label="Peran penyetuju kontrabon bernilai besar",
   help="Peran minimal untuk kontrabon di atas 'Ambang kontrabon bernilai besar'.",
   impact="Uang besar tidak boleh dilepas oleh wewenang yang sama dengan uang kecil.",
-  example="Admin · kontrabon Rp 120.000.000 ditolak bila disetujui manager",
+  example="Admin · kontrabon Rp 120.000.000 ditolak bila disetujui Manajer",
   consumers=("services/approval_policy_service.py:default_rows_for",), risk="high",
   # KP-T4 — isi kunci ini pindah ke tabel kebijakan persetujuan (`approval_policies`).
   status="not_used", not_used_reason=_KPT4_TIDAK_DIPAKAI)
 
-E("contra_bon.reminder_days_before", group="kontrabon", type="int", default=1,
+E("contra_bon.reminder_days_before", group="pembelian", section="tagihan", type="int", default=1,
   min=0, max=14, step=1, unit="hari", scopes=G,
-  label="Pengingat tukar faktur (H-berapa)",
-  help="Berapa hari sebelum jadwal tukar faktur supplier pengingat dikirim, berisi jumlah "
-       "penerimaan barang yang belum ditagih dan tagihan yang siap dikontrabon.",
-  impact="Mencegah siklus tukar faktur terlewat dan faktur supplier menumpuk tanpa dibayar.",
+  label="Pengingat tukar faktur: berapa hari sebelum",
+  help="Berapa hari sebelum jadwal tukar faktur pemasok pengingat dikirim, berisi penerimaan barang yang belum "
+       "ditagih dan tagihan yang siap dikontrabon. Isi 0 = pengingat dikirim pada hari jadwal itu sendiri.",
+  impact="Mencegah siklus tukar faktur terlewat dan faktur pemasok menumpuk tanpa dibayar.",
   example="H-1 · jadwal Selasa → pengingat terkirim Senin pagi",
   consumers=("services/contra_bon_service.py:policy",), risk="low",
   related=("contra_bon.unbilled_gr_age_days",))
 
-E("contra_bon.unbilled_gr_age_days", group="kontrabon", type="int", default=3,
+E("contra_bon.unbilled_gr_age_days", group="pembelian", section="tagihan", type="int", default=3,
   min=0, max=90, step=1, unit="hari", scopes=G,
-  label="Batas umur penerimaan barang belum ditagih",
-  help="Penerimaan barang (GR) yang sudah melewati umur ini tetapi belum ditagih supplier "
-       "ditandai TERTUNGGAK di daftar 'GR Belum Ditagih' dan ikut disebut di pengingat.",
+  label="Barang diterima belum ditagih: batas hari",
+  help="Penerimaan barang yang sudah lewat sekian hari tetapi belum ditagih pemasok ditandai tertunggak dan ikut "
+       "disebut di pengingat. Isi 0 = penerimaan yang belum ditagih langsung ditandai tertunggak keesokan harinya.",
   impact="Membuat barang yang sudah masuk gudang tetapi belum ada fakturnya kelihatan.",
   example="Batas 3 hari · GR 5 hari lalu belum ditagih → ditandai tertunggak",
   consumers=("services/contra_bon_service.py:policy",), risk="low")
 
-E("contra_bon.verify_sla_days", group="kontrabon", type="int", default=2,
+E("contra_bon.verify_sla_days", group="pembelian", section="tagihan", type="int", default=2,
   min=1, max=60, step=1, unit="hari", scopes=G,
-  label="Batas waktu verifikasi kontrabon (SLA)",
-  help="Berapa hari sebuah kontrabon boleh menunggu diverifikasi/disetujui sebelum ditandai "
-       "terlambat dan dinaikkan ke atasan.",
-  impact="Supplier tidak menunggu tanpa kejelasan; antrean kontrabon jadi disiplin.",
+  label="Batas waktu verifikasi kontrabon (hari)",
+  help="Berapa hari kontrabon boleh menunggu diverifikasi atau disetujui sebelum ditandai terlambat dan dinaikkan "
+       "ke atasan.",
+  impact="Pemasok tidak menunggu tanpa kejelasan; antrean kontrabon jadi disiplin.",
   example="SLA 2 hari · kontrabon disubmit 3 hari lalu belum diverifikasi → TERLAMBAT",
   consumers=("services/contra_bon_service.py:policy",), risk="low")
 
-E("contra_bon.block_pay_before_approval", group="kontrabon", type="bool", default=True,
+E("contra_bon.block_pay_before_approval", group="pembelian", section="tagihan", type="bool", default=True,
   scopes=G,
   label="Larang pembayaran sebelum kontrabon disetujui",
   help="Bila aktif, kontrabon hanya bisa dibayar setelah status 'Disetujui' atau "

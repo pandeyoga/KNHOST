@@ -10,6 +10,8 @@
 import { useEffect, useState } from "react";
 import { X, Layers, FlaskConical, History, Play, Check, AlertTriangle, Ban, Clock } from "lucide-react";
 import ErrorNotice from "../../../components/ErrorNotice";
+import KNSelect from "../../../components/KNSelect";
+import KNDatePicker from "../../../components/KNDatePicker";
 import { configApi, errMsg, formatValue, idNum, scopeText, shortVal, LAYER_TONE, VERDICT_TONE } from "./configApi";
 import { formatDateTime } from "../../../utils/formatters";
 
@@ -36,6 +38,24 @@ function Shell({ title, subtitle, icon, onClose, children, testId }) {
   );
 }
 
+const PADANAN = { legacy_global: "global", legacy_entity: "entity" };
+function mergeLayers(list) {
+  const src = (list || []).map((x) => ({ ...x }));
+  const out = [];
+  src.forEach((l) => {
+    const to = PADANAN[l.layer];
+    if (!to) { out.push(l); return; }
+    const twin = src.find((x) => x.layer === to);
+    if (!twin) { out.push({ ...l, layer: to }); return; }
+    if (l.present && !twin.present) {
+      Object.assign(twin, { present: true, value: l.value, note: l.note,
+        changed_by: twin.changed_by || l.changed_by, changed_at: twin.changed_at || l.changed_at });
+    }
+    if (l.winner) twin.winner = true;
+  });
+  return out;
+}
+
 /* ─── 1. Kenapa nilainya begini? ─────────────────────────────────────────── */
 export function WhyThisValueDrawer({ entry, ctx, onClose }) {
   const [data, setData] = useState(null);
@@ -51,7 +71,9 @@ export function WhyThisValueDrawer({ entry, ctx, onClose }) {
     return () => { alive = false; };
   }, [entry.key, ctx]);
 
-  const layers = data?.explain || [];
+  // KF-T4 (KF-UX-21) — satu baris per lapisan yang dikenal pengguna: lapisan lama digabung ke padanannya (Aturan grup
+  // / Khusus PT); yang ditampilkan nilai pemenang di antara keduanya.
+  const layers = mergeLayers(data?.explain || []);
   return (
     <Shell
       testId="cfg-why-drawer"
@@ -78,8 +100,8 @@ export function WhyThisValueDrawer({ entry, ctx, onClose }) {
             )}
           </div>
           <p className="cfg-hint">
-            Sistem membaca nilai dari lapisan paling umum ke paling khusus. Lapisan paling
-            khusus yang berisi nilai adalah yang dipakai.
+            Sistem memakai nilai yang paling khusus: nilai khusus PT menang atas aturan grup, dan aturan grup
+            menang atas bawaan sistem.
           </p>
           <ol className="cfg-layer-list" data-testid="cfg-layer-list">
             {layers.map((l, i) => (
@@ -90,14 +112,14 @@ export function WhyThisValueDrawer({ entry, ctx, onClose }) {
               >
                 <div className="cfg-layer-head">
                   <span className={`badge-${LAYER_TONE[l.layer] || "muted"}`}>{l.label}</span>
-                  {/* G5-61 — nama badan usaha, bukan id (`ent_ks…`). */}
-                  {l.scope_id ? <span className="cfg-scope-id" title={l.scope_id}>{scopeText(l.layer === "entity" || String(l.scope_id).startsWith("ent_") ? "entity" : l.layer, l.scope_id).split(": ").pop()}</span> : null}
+                  {/* G5-61 — nama PT, bukan id (`ent_ks…`); lapisan grup tidak menyebut cakupan teknis. */}
+                  {l.scope_id && l.layer !== "global" ? <span className="cfg-scope-id">{scopeText(l.layer === "entity" || String(l.scope_id).startsWith("ent_") ? "entity" : l.layer, l.scope_id).split(": ").pop()}</span> : null}
                   {l.winner ? (
                     <span className="cfg-layer-win">
                       <Check size={12} /> DIPAKAI
                     </span>
                   ) : l.present ? (
-                    <span className="cfg-layer-lose">tertimpa lapisan lebih khusus</span>
+                    <span className="cfg-layer-lose">kalah oleh nilai yang lebih khusus</span>
                   ) : (
                     <span className="cfg-layer-lose">belum diatur</span>
                   )}
@@ -129,7 +151,8 @@ export function WhyThisValueDrawer({ entry, ctx, onClose }) {
               </li>
             ))}
           </ol>
-          <div className="cfg-wiring-box" data-testid="cfg-why-wiring">
+          <details className="cfg-wiring-box" data-testid="cfg-why-wiring">
+            <summary>Detail teknis</summary>
             <h4>Bagian sistem yang memakai pengaturan ini</h4>
             <ul>
               {(entry.consumers || []).map((c) => (
@@ -139,13 +162,13 @@ export function WhyThisValueDrawer({ entry, ctx, onClose }) {
             </ul>
             {data.wiring ? (
               <p className="cfg-hint-sm">
-                Status wiring: <b>{data.wiring.wiring_status}</b>
+                Tersambung ke sistem? <b>{data.wiring.wiring_status === "OK" ? "Ya" : data.wiring.wiring_status}</b>
                 {data.wiring.consumers_stale?.length
-                  ? ` · referensi basi: ${data.wiring.consumers_stale.join(", ")}`
+                  ? ` · rujukan basi: ${data.wiring.consumers_stale.join(", ")}`
                   : ""}
               </p>
             ) : null}
-          </div>
+          </details>
         </>
       ) : null}
     </Shell>
@@ -277,139 +300,151 @@ export function SimulatorPanel({ entry, ctx, draftValue, onClose }) {
 }
 
 /* ─── 3. Riwayat perubahan ───────────────────────────────────────────────── */
-export function ChangeHistoryDrawer({ entry, onClose }) {
+// KF-T4 (KF-UX-19) — satu tabel untuk laci per kartu/kelompok dan tab Riwayat: saringan PT · orang · rentang tanggal
+// · kelompok, nilai diformat seperti di kartu, "Muat berikutnya" dengan jumlah total, "Pulihkan nilai ini" (laci kartu).
+const HAL = 50;
+
+function HistoryTable({ rows, onRestore, testId }) {
+  return (
+    <div className="cfg-table-wrap">
+      <table className="data-table" data-testid={testId}>
+        <thead>
+          <tr>
+            <th>Waktu</th><th>Pengaturan</th><th>Berlaku untuk</th>
+            <th>Dari → Ke</th><th>Oleh</th><th>Alasan</th>{onRestore ? <th aria-label="Aksi" /> : null}
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map((r) => (
+            <tr key={r.id} data-testid={`cfg-history-row-${r.id}`}>
+              <td className="cfg-nowrap">
+                {formatDateTime(r.changed_at)}
+                {r.scheduled ? <span className="badge-orange cfg-ml">terjadwal</span> : null}
+                {r.cancelled ? (
+                  <span className="badge-muted cfg-ml" data-testid={`cfg-history-cancelled-${r.id}`}
+                    title={r.cancel_reason ? `Alasan pembatalan: ${r.cancel_reason}` : undefined}>dibatalkan</span>
+                ) : null}
+              </td>
+              <td>{r.label}</td>
+              <td><span className="badge-muted">{scopeText(r.scope_type, r.scope_id, r.scope_label)}</span></td>
+              <td className="tabular-nums">
+                <span className="cfg-from">{r.type ? formatValue(r, r.prev_value) : shortVal(r.prev_value)}</span>
+                {" → "}
+                <b>{r.cleared ? "dicabut (ikut nilai grup)" : r.type ? formatValue(r, r.value) : shortVal(r.value)}</b>
+              </td>
+              <td>{r.changed_by || "—"}</td>
+              <td>{r.reason || "—"}</td>
+              {onRestore ? (
+                <td>
+                  {!r.cleared && !r.cancelled ? (
+                    <button type="button" className="cfg-link-btn" onClick={() => onRestore(r)}
+                      data-testid={`cfg-history-restore-${r.id}`}>Pulihkan nilai ini</button>
+                  ) : null}
+                </td>
+              ) : null}
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+/** Saringan + muat bertahap. `fixed` = saringan yang dikunci pemanggil (`key` / `group`). */
+function useHistory(fixed) {
+  const [f, setF] = useState({ entity: "", changed_by: "", date_from: "", date_to: "", group: "" });
   const [rows, setRows] = useState(null);
+  const [total, setTotal] = useState(0);
   const [err, setErr] = useState("");
+  const [busy, setBusy] = useState(false);
+  const params = (offset) => ({
+    ...fixed, limit: HAL, offset,
+    ...(f.group && !fixed.group && !fixed.key ? { group: f.group } : {}),
+    ...(f.entity ? { scope_type: "entity", scope_id: f.entity } : {}),
+    ...(f.changed_by.trim() ? { changed_by: f.changed_by.trim() } : {}),
+    ...(f.date_from ? { date_from: f.date_from } : {}), ...(f.date_to ? { date_to: f.date_to } : {}),
+  });
+  const fetchPage = async (offset) => {
+    setBusy(true); setErr("");
+    try {
+      const d = await configApi.history(params(offset));
+      setRows((cur) => (offset ? [...(cur || []), ...(d.rows || [])] : (d.rows || [])));
+      setTotal(d.total ?? (d.rows || []).length);
+    } catch (e) { setErr(errMsg(e, "Gagal memuat riwayat.")); }
+    setBusy(false);
+  };
+  const key = JSON.stringify({ fixed, f });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => { fetchPage(0); }, [key]);
+  return { f, setF, rows, total, err, busy, more: () => fetchPage((rows || []).length) };
+}
 
-  useEffect(() => {
-    let alive = true;
-    configApi
-      .history({ key: entry?.key || "", limit: 200 })
-      .then((d) => alive && setRows(d.rows || []))
-      .catch((e) => alive && setErr(errMsg(e, "Gagal memuat riwayat.")));
-    return () => { alive = false; };
-  }, [entry?.key]);
+function HistoryFilters({ h, entities = [], groups = null }) {
+  const set = (k) => (v) => h.setF((cur) => ({ ...cur, [k]: v }));
+  const ptOpts = [{ value: "__semua__", label: "Semua PT" }, ...(entities || []).map((e) => ({
+    value: e.id, label: e.short_name || e.legal_name || e.name || "PT" }))];
+  return (
+    <div className="cfg-history-filters" data-testid="cfg-history-filters">
+      <KNSelect value={h.f.entity || "__semua__"} onValueChange={(v) => set("entity")(v === "__semua__" ? "" : v)}
+        options={ptOpts} className="field cfg-select-sm" data-testid="cfg-history-entity" />
+      {groups ? (
+        <KNSelect value={h.f.group || "__semua__"} onValueChange={(v) => set("group")(v === "__semua__" ? "" : v)}
+          options={[{ value: "__semua__", label: "Semua kelompok" }, ...groups.map((g) => ({ value: g.id, label: g.label }))]}
+          className="field cfg-select-sm" data-testid="cfg-history-group" />
+      ) : null}
+      <input className="form-input cfg-input-sm" placeholder="Diubah oleh…" value={h.f.changed_by}
+        onChange={(e) => set("changed_by")(e.target.value)} data-testid="cfg-history-by" />
+      <KNDatePicker value={h.f.date_from} onChange={set("date_from")} placeholder="Dari tanggal"
+        data-testid="cfg-history-from" />
+      <KNDatePicker value={h.f.date_to} onChange={set("date_to")} placeholder="Sampai tanggal"
+        data-testid="cfg-history-to" />
+    </div>
+  );
+}
 
+function HistoryBody({ h, onRestore, testId, empty }) {
+  return (
+    <>
+      <ErrorNotice message={h.err} />
+      {h.rows === null && !h.err ? <p className="cfg-hint">Memuat…</p> : null}
+      {h.rows && h.rows.length === 0 ? <p className="cfg-empty" data-testid={`${testId}-empty`}>{empty}</p> : null}
+      {h.rows && h.rows.length > 0 ? <HistoryTable rows={h.rows} onRestore={onRestore} testId={testId} /> : null}
+      <p className="cfg-hint-sm" data-testid={`${testId}-total`}>
+        {idNum((h.rows || []).length, 0)} dari {idNum(h.total, 0)} perubahan
+        {h.rows && h.rows.length < h.total ? (
+          <> · <button type="button" className="cfg-link-btn" disabled={h.busy} onClick={h.more}
+            data-testid={`${testId}-more`}>Muat berikutnya</button></>
+        ) : null}
+      </p>
+    </>
+  );
+}
+
+export function ChangeHistoryDrawer({ entry, group = "", groupLabel = "", entities = [], onClose, onRestore = null }) {
+  const h = useHistory(entry?.key ? { key: entry.key } : group ? { group } : {});
   return (
     <Shell
       testId="cfg-history"
       icon={<History size={18} />}
       title="Riwayat perubahan"
-      subtitle={entry?.label || "Semua setting"}
+      subtitle={entry?.label || groupLabel || "Semua pengaturan"}
       onClose={onClose}
     >
-      <ErrorNotice message={err} />
-      <p className="cfg-hint">
-        Setiap perubahan disimpan sebagai catatan baru (tidak menimpa), sehingga selalu bisa
-        ditelusuri siapa mengubah apa dan mengapa.
-      </p>
-      {rows && rows.length === 0 ? (
-        <p className="cfg-empty" data-testid="cfg-history-empty">
-          Belum ada perubahan pada pengaturan ini — nilainya masih sesuai bawaan sistem.
-        </p>
-      ) : null}
-      {rows && rows.length > 0 ? (
-        <table className="data-table" data-testid="cfg-history-table">
-          <thead>
-            <tr>
-              <th>Waktu</th><th>Pengaturan</th><th>Cakupan</th>
-              <th>Dari → Ke</th><th>Oleh</th><th>Alasan</th>
-            </tr>
-          </thead>
-          <tbody>
-            {rows.map((r) => (
-              <tr key={r.id} data-testid={`cfg-history-row-${r.id}`}>
-                <td className="cfg-nowrap">
-                  {formatDateTime(r.changed_at)}
-                  {r.scheduled ? (
-                    <span className="badge-orange cfg-ml">terjadwal</span>
-                  ) : null}
-                  {r.cancelled ? (
-                    <span className="badge-muted cfg-ml" data-testid={`cfg-history-cancelled-${r.id}`}
-                      title={r.cancel_reason ? `Alasan pembatalan: ${r.cancel_reason}` : undefined}>dibatalkan</span>
-                  ) : null}
-                </td>
-                <td>{r.label}</td>
-                <td>
-                  <span className="badge-muted" title={r.scope_id || undefined}>
-                    {scopeText(r.scope_type, r.scope_id, r.scope_label)}
-                  </span>
-                </td>
-                <td className="tabular-nums">
-                  <span className="cfg-from">{shortVal(r.prev_value)}</span>
-                  {" → "}
-                  <b>{shortVal(r.value)}</b>
-                  {r.unit ? ` ${r.unit}` : ""}
-                </td>
-                <td>{r.changed_by || "—"}</td>
-                <td>{r.reason || "—"}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      ) : null}
-      {rows === null && !err ? <p className="cfg-hint">Memuat…</p> : null}
-      <p className="cfg-hint-sm">
-        Catatan: <b>{idNum((rows || []).length, 0)}</b> perubahan tercatat.
-      </p>
+      <p className="cfg-hint">Semua perubahan pengaturan, terbaru dulu. Nilai lama tidak pernah dihapus.</p>
+      <HistoryFilters h={h} entities={entities} />
+      <HistoryBody h={h} onRestore={entry ? onRestore : null} testId="cfg-history-table"
+        empty="Belum ada perubahan — nilainya masih sesuai bawaan sistem." />
     </Shell>
   );
 }
 
-/* Riwayat ringkas yang langsung terlihat di tab (tanpa harus buka drawer). */
-export function ChangeHistoryInline() {
-  const [rows, setRows] = useState(null);
-  const [err, setErr] = useState("");
-  useEffect(() => {
-    let alive = true;
-    configApi
-      .history({ limit: 50 })
-      .then((d) => alive && setRows(d.rows || []))
-      .catch((e) => alive && setErr(errMsg(e, "Gagal memuat riwayat.")));
-    return () => { alive = false; };
-  }, []);
+/* Riwayat di tab "Riwayat Perubahan" (tanpa harus buka laci). */
+export function ChangeHistoryInline({ entities = [], groups = [] }) {
+  const h = useHistory({});
   return (
     <>
-      <ErrorNotice message={err} />
-      {rows === null && !err ? <p className="cfg-hint">Memuat…</p> : null}
-      {rows && rows.length === 0 ? (
-        <p className="cfg-empty" data-testid="cfg-history-inline-empty">
-          Belum ada perubahan konfigurasi — semua nilai masih bawaan sistem.
-        </p>
-      ) : null}
-      {rows && rows.length > 0 ? (
-        <div className="cfg-table-wrap">
-        <table className="data-table" data-testid="cfg-history-inline">
-          <thead>
-            <tr>
-              <th>Waktu</th><th>Pengaturan</th><th>Cakupan</th>
-              <th>Dari → Ke</th><th>Oleh</th><th>Alasan</th>
-            </tr>
-          </thead>
-          <tbody>
-            {rows.map((r) => (
-              <tr key={r.id}>
-                <td className="cfg-nowrap">
-                  {formatDateTime(r.changed_at)}
-                  {r.cancelled ? <span className="badge-muted cfg-ml">dibatalkan</span> : null}
-                </td>
-                <td>{r.label}</td>
-                <td>
-                  <span className="badge-muted" title={r.scope_id || undefined}>
-                    {scopeText(r.scope_type, r.scope_id, r.scope_label)}
-                  </span>
-                </td>
-                <td className="tabular-nums">
-                  <span className="cfg-from">{shortVal(r.prev_value)}</span> → <b>{shortVal(r.value)}</b>
-                </td>
-                <td>{r.changed_by || "—"}</td>
-                <td>{r.reason || "—"}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-        </div>
-      ) : null}
+      <HistoryFilters h={h} entities={entities} groups={groups} />
+      <HistoryBody h={h} testId="cfg-history-inline" empty="Belum ada perubahan pengaturan yang cocok." />
     </>
   );
 }

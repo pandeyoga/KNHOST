@@ -72,6 +72,8 @@ def test_KFT2_U2_sebelas_kunci_baru_dan_lima_tidak_dipakai():
     for key, (group, typ, default, lo, hi, unit, perm) in BARU.items():
         e = registry.get(key)
         assert e is not None, f"{key} belum terdaftar"
+        # KF-T4 — kelompok lama spesifikasi KF-T2 (`retur`, `antar-entitas`) kini alias kelompok baru (`GROUP_ALIASES`).
+        group = registry.resolve_group_id(group)[0]
         assert (e["group"], e["type"], e["default"], e["min"], e["max"], e["unit"]) == (group, typ, default, lo, hi, unit), key
         assert tuple(e["permission"]) == perm, key
         assert e["scopes"] == ["global", "entity"], key

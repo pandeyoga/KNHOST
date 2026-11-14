@@ -80,8 +80,9 @@ test("U14 — kolom Penerima & Ambang terisi untuk Hutang Supplier; Ubah membuka
   await act(async () => { q(host, "job-thresholds-ap_due-edit").click(); });
   await act(async () => { q(host, "job-recipients-ap_due-edit").click(); });
   window.removeEventListener(CONFIG_EVENT, dengar);
-  expect(dibuka).toEqual([{ key: "notif.ap_due_soon_days", group: "notifikasi" },
-    { key: "notif.reminder_recipients", group: "notifikasi" }]);
+  // KF-T4 — tautan membuka kelompok & sub-judul kunci itu sendiri (kelompok lama "notifikasi" kini Persetujuan).
+  expect(dibuka).toEqual([{ key: "notif.ap_due_soon_days", group: "persetujuan", section: "tenggat-pengingat" },
+    { key: "notif.reminder_recipients", group: "persetujuan", section: "pemberitahuan" }]);
   const lihat = await pasang(<table><tbody><tr><JobPolicyCells job={ap} canEdit={false} /></tr></tbody></table>);
   expect(q(lihat, "job-recipients-ap_due-edit")).toBeNull();
   const kosong = await pasang(<table><tbody><tr><JobPolicyCells job={{ id: "ai_fact_sync", recipients: "",
@@ -120,7 +121,8 @@ test("daftar berpilihan (peran penerima WhatsApp): kotak centang + label, bukan 
   const entry = { key: "notif.wa_broadcast_roles", type: "list", options: PERAN, label: "Peran WA" };
   const ubah = jest.fn();
   const host = await pasang(<SettingEditor entry={entry} value={["manager"]} onChange={ubah} disabled={false} />);
-  await act(async () => { q(host, "cfg-input-notif.wa_broadcast_roles-warehouse").click(); });
+  // KF-T4 — kotak centang dari ChecklistField (id uji `-opt-<nilai>`).
+  await act(async () => { q(host, "cfg-input-notif.wa_broadcast_roles-opt-warehouse").click(); });
   expect(ubah).toHaveBeenLastCalledWith(["manager", "warehouse"]);
   expect(formatValue(entry, ["manager", "warehouse"])).toBe("Manajer · Gudang");
   expect(formatValue({ type: "list" }, [-3, 0])).toBe("-3 · 0");

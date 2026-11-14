@@ -274,8 +274,11 @@ def hub_wired() -> Tuple[bool, List[str]]:
         problems.append("SettingsHub.jsx: tidak membaca katalog registry")
     if not re.search(r"configApi\.effective\s*\(", hub):
         problems.append("SettingsHub.jsx: tidak membaca nilai efektif registry")
-    if not re.search(r"items\.map\s*\(", hub):
-        problems.append("SettingsHub.jsx: tidak merender daftar setting secara generik")
+    # KF-T4 — tampilan daftar (sub-judul + kartu) pindah ke SettingsBrowser.jsx (batas 500 baris komponen); mesin
+    # datanya (registry/effective) tetap di SettingsHub.jsx. Pemeriksaan render generik membaca keduanya.
+    tampilan = hub + read("features/settings/config/SettingsBrowser.jsx")
+    if not re.search(r"items\.map\s*\(", tampilan):
+        problems.append("SettingsHub.jsx/SettingsBrowser.jsx: tidak merender daftar setting secara generik")
 
     editor = read("features/settings/config/SettingEditor.jsx")
     if not re.search(r"switch\s*\(\s*entry\.type\s*\)", editor):

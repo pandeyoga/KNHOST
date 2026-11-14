@@ -11,82 +11,83 @@ from config_registry import E
 
 G = ("global", "entity")
 
-E("bank.match_weight_amount", group="bank", type="int", default=40, min=0, max=100, step=5,
+E("bank.match_weight_amount", group="bank-kasus", section="bank", type="int", default=40, min=0, max=100, step=5,
   unit="poin", scopes=G,
   label="Poin bila nominal sama",
-  help="Berapa poin diberikan saat nominal mutasi bank sama dengan nominal transaksi di buku. "
-       "Nominal adalah petunjuk terkuat, jadi bobotnya paling besar.",
+  help="Berapa poin diberikan saat nominal mutasi bank sama dengan nominal transaksi di buku. Nominal adalah "
+       "petunjuk terkuat, jadi bobotnya paling besar. Isi 0 = kesamaan nominal tidak dihitung.",
   impact="Menaikkan angka ini membuat pasangan yang nominalnya sama lebih mudah dianggap cocok.",
   example="Bobot 40 · transfer Rp 12.500.000 = kwitansi Rp 12.500.000 → +40 poin",
   consumers=("services/bank_recon_service.py:load_cfg",), risk="medium",
   related=("bank.auto_match_min_score",))
 
-E("bank.match_weight_date", group="bank", type="int", default=20, min=0, max=100, step=5,
+E("bank.match_weight_date", group="bank-kasus", section="bank", type="int", default=20, min=0, max=100, step=5,
   unit="poin", scopes=G,
   label="Poin bila tanggal berdekatan",
-  help="Poin penuh bila tanggalnya sama, lalu berkurang setiap hari selisih sampai batas "
-       "'Selisih hari yang masih wajar'.",
+  help="Poin penuh bila tanggalnya sama, lalu berkurang setiap hari selisih sampai batas 'Selisih hari yang masih "
+       "wajar'. Isi 0 = kedekatan tanggal tidak dihitung.",
   impact="Membedakan dua kwitansi bernominal sama: yang tanggalnya paling dekat menang.",
   example="Bobot 20 · jendela 3 hari · selisih 1 hari → +13 poin",
   consumers=("services/bank_recon_service.py:load_cfg",), risk="medium",
   related=("bank.date_window_days",))
 
-E("bank.match_weight_ref", group="bank", type="int", default=25, min=0, max=100, step=5,
+E("bank.match_weight_ref", group="bank-kasus", section="bank", type="int", default=25, min=0, max=100, step=5,
   unit="poin", scopes=G,
   label="Poin bila nomor referensi cocok",
-  help="Poin bila berita transfer menyebut nomor dokumen kita (mis. SO-0007 / nomor kwitansi). "
-       "Setengah poin bila hanya sebagian angkanya sama.",
+  help="Poin bila berita transfer menyebut nomor dokumen kita (mis. SO-0007 / nomor kwitansi). Setengah poin bila "
+       "hanya sebagian angkanya sama. Isi 0 = nomor dokumen di berita transfer tidak dihitung.",
   impact="Membuat pelanggan yang menulis nomor pesanan di berita transfer langsung tercocok otomatis.",
   example="Bobot 25 · berita transfer 'BYR SO-0007' & kwitansi untuk SO-0007 → +25 poin",
   consumers=("services/bank_recon_service.py:load_cfg",), risk="medium")
 
-E("bank.match_weight_name", group="bank", type="int", default=15, min=0, max=100, step=5,
+E("bank.match_weight_name", group="bank-kasus", section="bank", type="int", default=15, min=0, max=100, step=5,
   unit="poin", scopes=G,
   label="Poin bila nama pengirim mirip",
-  help="Poin bila nama pada berita transfer mirip nama pelanggan/keterangan transaksi buku. "
-       "Kemiripan dihitung, jadi 'PT MAJU JAYA' tetap dikenali walau ditulis 'PT MAJU JAYA TBK'.",
+  help="Poin bila nama pada berita transfer mirip nama pelanggan/keterangan transaksi buku. Kemiripan dihitung, "
+       "jadi 'PT MAJU JAYA' tetap dikenali walau ditulis 'PT MAJU JAYA TBK'. Isi 0 = kemiripan nama tidak dihitung.",
   impact="Menolong saat pelanggan tidak menulis nomor dokumen apa pun.",
   example="Bobot 15 · 'TRSF E-BANKING CR PT MAJU JAYA' vs pelanggan 'PT Maju Jaya' → +15 poin",
   consumers=("services/bank_recon_service.py:load_cfg",), risk="medium")
 
-E("bank.auto_match_min_score", group="bank", type="int", default=80, min=0, max=200, step=5,
+E("bank.auto_match_min_score", group="bank-kasus", section="bank", type="int", default=80, min=0, max=200, step=5,
   unit="poin", scopes=G,
   label="Skor minimal untuk dicocokkan otomatis",
-  help="Pasangan dengan skor mencapai angka ini ditautkan otomatis tanpa bertanya. "
-       "Naikkan bila Anda ingin lebih hati-hati.",
+  help="Pasangan dengan skor mencapai angka ini ditautkan otomatis tanpa bertanya. Naikkan bila Anda ingin lebih "
+       "hati-hati. Isi 0 = setiap pasangan yang nominalnya cukup langsung ditautkan.",
   impact="Terlalu rendah = salah cocok; terlalu tinggi = semuanya harus dikerjakan manual.",
   example="Ambang 80 · pasangan berskor 85 → langsung tertaut; berskor 70 → jadi usulan",
   consumers=("services/bank_recon_service.py:load_cfg",), risk="high",
   related=("bank.suggest_min_score",))
 
-E("bank.suggest_min_score", group="bank", type="int", default=60, min=0, max=200, step=5,
+E("bank.suggest_min_score", group="bank-kasus", section="bank", type="int", default=60, min=0, max=200, step=5,
   unit="poin", scopes=G,
   label="Skor minimal untuk ditawarkan sebagai usulan",
-  help="Di bawah ambang otomatis tetapi mencapai angka ini → muncul sebagai usulan berperingkat "
-       "yang bisa Anda terima 1 klik. Di bawahnya: murni manual.",
+  help="Di bawah ambang otomatis tetapi mencapai angka ini → muncul sebagai usulan berperingkat yang bisa Anda "
+       "terima 1 klik. Di bawahnya: murni manual. Isi 0 = semua pasangan di bawah batas otomatis muncul sebagai "
+       "usulan.",
   impact="Menentukan seberapa banyak usulan yang muncul di layar.",
   example="Ambang usulan 60 · pasangan berskor 62 → tampil sebagai usulan",
   consumers=("services/bank_recon_service.py:load_cfg",), risk="medium")
 
-E("bank.date_window_days", group="bank", type="duration", default=3, min=0, max=60, step=1,
+E("bank.date_window_days", group="bank-kasus", section="bank", type="duration", default=3, min=0, max=60, step=1,
   unit="hari", scopes=G,
   label="Selisih hari yang masih wajar",
-  help="Transfer bisa tercatat di bank sehari-dua setelah dibukukan. Di luar jendela ini "
-       "pasangan tidak dipertimbangkan.",
+  help="Transfer bisa tercatat di bank sehari-dua setelah dibukukan. Di luar jendela ini pasangan tidak "
+       "dipertimbangkan. Isi 0 = hanya tanggal yang sama.",
   impact="Terlalu sempit = transfer akhir pekan tidak ketemu; terlalu lebar = salah pasangan.",
   example="Jendela 3 hari · buku 12 Juli, bank 14 Juli → masih dipertimbangkan",
   consumers=("services/bank_recon_service.py:load_cfg",), risk="medium")
 
-E("bank.amount_tolerance", group="bank", type="money", default=0, min=0, max=1000000, step=1000,
+E("bank.amount_tolerance", group="bank-kasus", section="bank", type="money", default=0, min=0, max=1000000, step=1000,
   unit="Rp", scopes=G,
   label="Toleransi selisih nominal",
-  help="Selisih rupiah yang masih dianggap 'sama' — biasanya untuk biaya transfer antarbank. "
-       "Selisih di atas ini menurunkan skor, bukan langsung ditolak.",
+  help="Selisih rupiah yang masih dianggap 'sama' — biasanya untuk biaya transfer antarbank. Selisih di atas ini "
+       "menurunkan skor, bukan langsung ditolak. Isi 0 = nominal harus sama persis untuk poin penuh.",
   impact="Menaikkan angka ini membuat transfer yang dipotong biaya bank tetap tercocok otomatis.",
   example="Toleransi Rp 6.500 · tagihan Rp 5.000.000, masuk Rp 4.993.500 → tetap dianggap sama",
   consumers=("services/bank_recon_service.py:load_cfg",), risk="medium")
 
-E("bank.rule_learn_after", group="bank", type="int", default=3, min=2, max=20, step=1,
+E("bank.rule_learn_after", group="bank-kasus", section="bank", type="int", default=3, min=2, max=20, step=1,
   unit="kali", scopes=G,
   label="Belajar aturan setelah berapa kali pola sama",
   help="Bila Anda mencocokkan manual pola berita transfer yang sama sebanyak ini, sistem "
@@ -95,10 +96,11 @@ E("bank.rule_learn_after", group="bank", type="int", default=3, min=2, max=20, s
   example="Nilai 3 · Anda mencocokkan 'TRSF CR PT MAJU' ketiga kalinya → sistem menawarkan aturan",
   consumers=("services/bank_recon_service.py:load_cfg",), risk="low")
 
-E("bank.rule_bonus_score", group="bank", type="int", default=15, min=0, max=100, step=5,
+E("bank.rule_bonus_score", group="bank-kasus", section="bank", type="int", default=15, min=0, max=100, step=5,
   unit="poin", scopes=G,
   label="Tambahan poin dari aturan yang disetujui",
-  help="Poin tambahan bila pola berita transfer cocok dengan aturan yang sudah Anda setujui.",
+  help="Poin tambahan bila pola berita transfer cocok dengan aturan yang sudah Anda setujui. Isi 0 = tanpa poin "
+       "tambahan.",
   impact="Membuat transfer berulang dari pihak yang sama tercocok otomatis walau tanpa nomor dokumen.",
   example="Bonus 15 · pasangan berskor 70 + aturan aktif → 85 → tercocok otomatis",
   consumers=("services/bank_recon_service.py:load_cfg",), risk="medium",
@@ -108,7 +110,7 @@ E("bank.rule_bonus_score", group="bank", type="int", default=15, min=0, max=100,
 # `kas_bank.beban_bank`, `kas_bank.pendapatan_bunga`) per PT; nilai lama dipindah `scripts/migrate_kft2_akun_bank.py`.
 _DI_PEMETAAN = "Akun ini diatur di Pengaturan › Keuangan & Pajak › Pemetaan Akun."
 
-E("bank.holding_account_code", group="bank", type="text", default="2-1950", scopes=G,
+E("bank.holding_account_code", group="bank-kasus", section="bank", type="text", default="2-1950", scopes=G,
   label="Akun titipan dana belum teridentifikasi",
   help="Kode akun buku besar tempat dana masuk yang belum ketahuan pemiliknya ditampung. "
        "Dana tidak pernah menggantung tanpa jurnal.",
@@ -118,7 +120,7 @@ E("bank.holding_account_code", group="bank", type="text", default="2-1950", scop
              "services/bank_recon_service.py:holding_summary"), risk="high",
   status="not_used", not_used_reason=_DI_PEMETAAN)
 
-E("bank.charge_account_code", group="bank", type="text", default="6-8000", scopes=G,
+E("bank.charge_account_code", group="bank-kasus", section="bank", type="text", default="6-8000", scopes=G,
   label="Akun beban biaya administrasi bank",
   help="Kode akun buku besar untuk baris rekening koran yang memang BUKAN transaksi buku, "
        "mis. biaya administrasi, biaya transfer, atau materai yang dipotong bank. Baris seperti "
@@ -128,7 +130,7 @@ E("bank.charge_account_code", group="bank", type="text", default="6-8000", scope
   consumers=("services/bank_recon_service.py:book_charge",), risk="high",
   status="not_used", not_used_reason=_DI_PEMETAAN)
 
-E("bank.interest_account_code", group="bank", type="text", default="4-9000", scopes=G,
+E("bank.interest_account_code", group="bank-kasus", section="bank", type="text", default="4-9000", scopes=G,
   label="Akun pendapatan bunga / jasa giro",
   help="Kode akun buku besar untuk bunga bank atau jasa giro yang masuk sendiri ke rekening "
        "tanpa ada transaksi buku pasangannya.",
@@ -137,11 +139,12 @@ E("bank.interest_account_code", group="bank", type="text", default="4-9000", sco
   consumers=("services/bank_recon_service.py:book_charge",), risk="medium",
   status="not_used", not_used_reason=_DI_PEMETAAN)
 
-E("bank.holding_max_age_days", group="bank", type="duration", default=7, min=1, max=180, step=1,
+E("bank.holding_max_age_days", group="bank-kasus", section="bank", type="duration", default=7, min=1, max=180, step=1,
   unit="hari", scopes=G,
-  label="Batas umur dana titipan sebelum ditandai",
-  help="Dana titipan yang belum teridentifikasi lebih lama dari ini ditandai supaya "
-       "ditindaklanjuti (jadi antrean Pusat Kasus Keuangan).",
+  label="Dana titipan ditandai tua setelah (hari)",
+  help="Dana masuk tak dikenal yang belum teridentifikasi lebih lama dari sekian hari diberi tanda perlu "
+       "ditindaklanjuti di layar Rekonsiliasi Bank. Bedanya dengan “Dana titipan jadi kasus setelah”: pengaturan "
+       "ini hanya memberi tanda, sedangkan yang itu membuka kasus keuangan berpenanggung jawab.",
   impact="Menentukan kapan dana titipan dianggap terlalu lama menggantung.",
   example="Batas 7 hari · titipan 20 Juli belum teralokasi pada 28 Juli → ditandai perlu tindakan",
   consumers=("services/bank_recon_service.py:holding_summary",), risk="medium")

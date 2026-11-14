@@ -1,0 +1,7529 @@
+{
+"_catatan": "KF-T4 langkah 1 — potret registry pada 69cc4e3 (383 kunci): bidang yang tidak boleh berubah oleh unit ini.",
+"kunci": {
+"ai.anomaly_cover_days": {
+"default": 14,
+"max": 90,
+"min": 1,
+"options": [],
+"permission": [
+"settings",
+"manage"
+],
+"scopes": [
+"global"
+],
+"sensitif_baca": true,
+"status": "active",
+"type": "int"
+},
+"ai.anomaly_drop_pct": {
+"default": 30,
+"max": 90,
+"min": 5,
+"options": [],
+"permission": [
+"settings",
+"manage"
+],
+"scopes": [
+"global"
+],
+"sensitif_baca": true,
+"status": "active",
+"type": "int"
+},
+"ai.anomaly_enabled": {
+"default": true,
+"max": null,
+"min": null,
+"options": [],
+"permission": [
+"settings",
+"manage"
+],
+"scopes": [
+"global"
+],
+"sensitif_baca": true,
+"status": "active",
+"type": "bool"
+},
+"ai.chat_retention_days": {
+"default": 180,
+"max": 3650,
+"min": 7,
+"options": [],
+"permission": [
+"settings",
+"manage"
+],
+"scopes": [
+"global"
+],
+"sensitif_baca": true,
+"status": "active",
+"type": "int"
+},
+"ai.daily_question_limit": {
+"default": 60,
+"max": 1000,
+"min": 1,
+"options": [],
+"permission": [
+"settings",
+"manage"
+],
+"scopes": [
+"global"
+],
+"sensitif_baca": true,
+"status": "active",
+"type": "int"
+},
+"ai.deep_effort": {
+"default": "medium",
+"max": null,
+"min": null,
+"options": [
+"medium",
+"high"
+],
+"permission": [
+"settings",
+"manage"
+],
+"scopes": [
+"global"
+],
+"sensitif_baca": true,
+"status": "active",
+"type": "enum"
+},
+"ai.enabled": {
+"default": false,
+"max": null,
+"min": null,
+"options": [],
+"permission": [
+"settings",
+"manage"
+],
+"scopes": [
+"global"
+],
+"sensitif_baca": true,
+"status": "active",
+"type": "bool"
+},
+"ai.enabled_roles": {
+"default": [
+"admin",
+"manager",
+"sales_admin",
+"finance",
+"md",
+"warehouse_admin",
+"sales"
+],
+"max": null,
+"min": null,
+"options": [],
+"permission": [
+"settings",
+"manage"
+],
+"scopes": [
+"global"
+],
+"sensitif_baca": true,
+"status": "not_used",
+"type": "list"
+},
+"ai.glossary": {
+"default": "",
+"max": null,
+"min": null,
+"options": [],
+"permission": [
+"settings",
+"manage"
+],
+"scopes": [
+"global"
+],
+"sensitif_baca": true,
+"status": "active",
+"type": "text"
+},
+"ai.margin_roles": {
+"default": [
+"admin",
+"manager"
+],
+"max": null,
+"min": null,
+"options": [],
+"permission": [
+"settings",
+"manage"
+],
+"scopes": [
+"global"
+],
+"sensitif_baca": true,
+"status": "not_used",
+"type": "list"
+},
+"ai.max_output_tokens": {
+"default": 4000,
+"max": 16000,
+"min": 500,
+"options": [],
+"permission": [
+"settings",
+"manage"
+],
+"scopes": [
+"global"
+],
+"sensitif_baca": true,
+"status": "active",
+"type": "int"
+},
+"ai.max_tool_rounds": {
+"default": 6,
+"max": 10,
+"min": 1,
+"options": [],
+"permission": [
+"settings",
+"manage"
+],
+"scopes": [
+"global"
+],
+"sensitif_baca": true,
+"status": "active",
+"type": "int"
+},
+"ai.model_fast": {
+"default": "gpt-6-luna",
+"max": null,
+"min": null,
+"options": [],
+"permission": [
+"settings",
+"manage"
+],
+"scopes": [
+"global"
+],
+"sensitif_baca": true,
+"status": "active",
+"type": "text"
+},
+"ai.model_main": {
+"default": "gpt-6-sol",
+"max": null,
+"min": null,
+"options": [],
+"permission": [
+"settings",
+"manage"
+],
+"scopes": [
+"global"
+],
+"sensitif_baca": true,
+"status": "active",
+"type": "text"
+},
+"ai.monthly_budget_usd": {
+"default": 100,
+"max": 100000,
+"min": 0,
+"options": [],
+"permission": [
+"settings",
+"manage"
+],
+"scopes": [
+"global"
+],
+"sensitif_baca": true,
+"status": "active",
+"type": "int"
+},
+"ai.prewarm_enabled": {
+"default": false,
+"max": null,
+"min": null,
+"options": [],
+"permission": [
+"settings",
+"manage"
+],
+"scopes": [
+"global"
+],
+"sensitif_baca": true,
+"status": "active",
+"type": "bool"
+},
+"ai.reasoning_effort": {
+"default": "low",
+"max": null,
+"min": null,
+"options": [
+"low",
+"medium"
+],
+"permission": [
+"settings",
+"manage"
+],
+"scopes": [
+"global"
+],
+"sensitif_baca": true,
+"status": "active",
+"type": "enum"
+},
+"ai.result_rows_to_model": {
+"default": 50,
+"max": 200,
+"min": 5,
+"options": [],
+"permission": [
+"settings",
+"manage"
+],
+"scopes": [
+"global"
+],
+"sensitif_baca": true,
+"status": "active",
+"type": "int"
+},
+"ai.route_threshold_pct": {
+"default": 90,
+"max": 100,
+"min": 50,
+"options": [],
+"permission": [
+"settings",
+"manage"
+],
+"scopes": [
+"global"
+],
+"sensitif_baca": true,
+"status": "active",
+"type": "int"
+},
+"ai.sales_attribution": {
+"default": "team_split",
+"max": null,
+"min": null,
+"options": [
+"team_split",
+"customer_owner"
+],
+"permission": [
+"settings",
+"manage"
+],
+"scopes": [
+"global"
+],
+"sensitif_baca": true,
+"status": "active",
+"type": "enum"
+},
+"ai.sales_definition": {
+"default": "net_order",
+"max": null,
+"min": null,
+"options": [
+"net_order",
+"recognized"
+],
+"permission": [
+"settings",
+"manage"
+],
+"scopes": [
+"global"
+],
+"sensitif_baca": true,
+"status": "active",
+"type": "enum"
+},
+"ai.stock_value_roles": {
+"default": [
+"admin",
+"manager",
+"finance"
+],
+"max": null,
+"min": null,
+"options": [],
+"permission": [
+"settings",
+"manage"
+],
+"scopes": [
+"global"
+],
+"sensitif_baca": true,
+"status": "not_used",
+"type": "list"
+},
+"ai.template_cache_minutes": {
+"default": 5,
+"max": 120,
+"min": 0,
+"options": [],
+"permission": [
+"settings",
+"manage"
+],
+"scopes": [
+"global"
+],
+"sensitif_baca": true,
+"status": "active",
+"type": "int"
+},
+"allocation.allow_intercompany": {
+"default": true,
+"max": null,
+"min": null,
+"options": [],
+"permission": [
+"settings",
+"manage"
+],
+"scopes": [
+"global",
+"entity"
+],
+"sensitif_baca": true,
+"status": "active",
+"type": "bool"
+},
+"allocation.allow_partial": {
+"default": true,
+"max": null,
+"min": null,
+"options": [],
+"permission": [
+"settings",
+"manage"
+],
+"scopes": [
+"global",
+"entity"
+],
+"sensitif_baca": true,
+"status": "active",
+"type": "bool"
+},
+"allocation.dye_lot_strict": {
+"default": false,
+"max": null,
+"min": null,
+"options": [],
+"permission": [
+"settings",
+"manage"
+],
+"scopes": [
+"global",
+"entity"
+],
+"sensitif_baca": true,
+"status": "active",
+"type": "bool"
+},
+"allocation.location_pref": {
+"default": "single_warehouse",
+"max": null,
+"min": null,
+"options": [
+"single_warehouse",
+"nearest_customer",
+"fewest_splits"
+],
+"permission": [
+"settings",
+"manage"
+],
+"scopes": [
+"global",
+"entity"
+],
+"sensitif_baca": true,
+"status": "active",
+"type": "enum"
+},
+"allocation.lot_mode": {
+"default": "prefer_single",
+"max": null,
+"min": null,
+"options": [
+"prefer_single",
+"strict_single",
+"allow_mixed"
+],
+"permission": [
+"settings",
+"manage"
+],
+"scopes": [
+"global",
+"entity"
+],
+"sensitif_baca": true,
+"status": "active",
+"type": "enum"
+},
+"allocation.lot_selection": {
+"default": "fifo",
+"max": null,
+"min": null,
+"options": [
+"fifo",
+"fefo",
+"smallest_fit",
+"largest_fit"
+],
+"permission": [
+"settings",
+"manage"
+],
+"scopes": [
+"global",
+"entity"
+],
+"sensitif_baca": true,
+"status": "active",
+"type": "enum"
+},
+"allocation.makloon_reserve_mode": {
+"default": "block",
+"max": null,
+"min": null,
+"options": [
+"block",
+"approve"
+],
+"permission": [
+"settings",
+"manage"
+],
+"scopes": [
+"global",
+"entity"
+],
+"sensitif_baca": true,
+"status": "active",
+"type": "enum"
+},
+"allocation.mode": {
+"default": "auto",
+"max": null,
+"min": null,
+"options": [
+"auto",
+"assisted",
+"manual"
+],
+"permission": [
+"settings",
+"manage"
+],
+"scopes": [
+"global",
+"entity"
+],
+"sensitif_baca": true,
+"status": "active",
+"type": "enum"
+},
+"allocation.priority_order": {
+"default": [
+"owner",
+"lot",
+"location",
+"roll_efficiency"
+],
+"max": null,
+"min": null,
+"options": [],
+"permission": [
+"settings",
+"manage"
+],
+"scopes": [
+"global",
+"entity"
+],
+"sensitif_baca": true,
+"status": "active",
+"type": "list"
+},
+"allocation.roll_pick_sales": {
+"default": true,
+"max": null,
+"min": null,
+"options": [],
+"permission": [
+"settings",
+"manage"
+],
+"scopes": [
+"global",
+"entity"
+],
+"sensitif_baca": false,
+"status": "active",
+"type": "bool"
+},
+"amendment.admin_approval_above": {
+"default": 50000000,
+"max": 100000000000,
+"min": 0,
+"options": [],
+"permission": [
+"settings",
+"manage"
+],
+"scopes": [
+"global",
+"entity"
+],
+"sensitif_baca": true,
+"status": "not_used",
+"type": "money"
+},
+"amendment.approval_threshold_amount": {
+"default": 5000000,
+"max": 100000000000,
+"min": 0,
+"options": [],
+"permission": [
+"settings",
+"manage"
+],
+"scopes": [
+"global",
+"entity"
+],
+"sensitif_baca": true,
+"status": "active",
+"type": "money"
+},
+"amendment.approval_threshold_pct": {
+"default": 5.0,
+"max": 100,
+"min": 0,
+"options": [],
+"permission": [
+"settings",
+"manage"
+],
+"scopes": [
+"global",
+"entity"
+],
+"sensitif_baca": true,
+"status": "active",
+"type": "pct"
+},
+"amendment.approver_role": {
+"default": "manager",
+"max": null,
+"min": null,
+"options": [
+"manager",
+"admin"
+],
+"permission": [
+"settings",
+"manage"
+],
+"scopes": [
+"global",
+"entity"
+],
+"sensitif_baca": true,
+"status": "not_used",
+"type": "enum"
+},
+"amendment.dual_control": {
+"default": true,
+"max": null,
+"min": null,
+"options": [],
+"permission": [
+"settings",
+"manage"
+],
+"scopes": [
+"global",
+"entity"
+],
+"sensitif_baca": true,
+"status": "not_used",
+"type": "bool"
+},
+"amendment.issued_doc_policy": {
+"default": "note_only",
+"max": null,
+"min": null,
+"options": [
+"note_only",
+"allow_re_derive"
+],
+"permission": [
+"settings",
+"manage"
+],
+"scopes": [
+"global",
+"entity"
+],
+"sensitif_baca": true,
+"status": "active",
+"type": "enum"
+},
+"amendment.require_note_above": {
+"default": 10000000,
+"max": 100000000000,
+"min": 0,
+"options": [],
+"permission": [
+"settings",
+"manage"
+],
+"scopes": [
+"global",
+"entity"
+],
+"sensitif_baca": true,
+"status": "active",
+"type": "money"
+},
+"antar_entitas.approval_role": {
+"default": "manager",
+"max": null,
+"min": null,
+"options": [
+"manager",
+"admin"
+],
+"permission": [
+"settings",
+"manage"
+],
+"scopes": [
+"global",
+"entity"
+],
+"sensitif_baca": true,
+"status": "not_used",
+"type": "enum"
+},
+"antar_entitas.approval_threshold_rupiah": {
+"default": 100000000,
+"max": null,
+"min": 0,
+"options": [],
+"permission": [
+"settings",
+"manage"
+],
+"scopes": [
+"global",
+"entity"
+],
+"sensitif_baca": true,
+"status": "not_used",
+"type": "money"
+},
+"antar_entitas.high_value_approval_role": {
+"default": "admin",
+"max": null,
+"min": null,
+"options": [
+"manager",
+"admin"
+],
+"permission": [
+"settings",
+"manage"
+],
+"scopes": [
+"global",
+"entity"
+],
+"sensitif_baca": true,
+"status": "not_used",
+"type": "enum"
+},
+"antar_entitas.ppn_mode": {
+"default": "ikut_pkp",
+"max": null,
+"min": null,
+"options": [
+"ikut_pkp",
+"tanpa_ppn",
+"dengan_ppn"
+],
+"permission": [
+"settings",
+"manage"
+],
+"scopes": [
+"global",
+"entity"
+],
+"sensitif_baca": true,
+"status": "active",
+"type": "enum"
+},
+"antar_entitas.ppn_rate_percent": {
+"default": 0.0,
+"max": 100,
+"min": 0,
+"options": [],
+"permission": [
+"settings",
+"manage"
+],
+"scopes": [
+"global",
+"entity"
+],
+"sensitif_baca": true,
+"status": "active",
+"type": "pct"
+},
+"antar_entitas.pricing_mode": {
+"default": "fixed_price",
+"max": null,
+"min": null,
+"options": [
+"fixed_price",
+"at_cost",
+"cost_plus_pct"
+],
+"permission": [
+"settings",
+"manage"
+],
+"scopes": [
+"global",
+"entity"
+],
+"sensitif_baca": true,
+"status": "active",
+"type": "enum"
+},
+"antar_entitas.settlement_reminder_days": {
+"default": 30,
+"max": 365,
+"min": 0,
+"options": [],
+"permission": [
+"settings",
+"manage"
+],
+"scopes": [
+"global",
+"entity"
+],
+"sensitif_baca": true,
+"status": "active",
+"type": "int"
+},
+"approval.extra_levels": {
+"default": {},
+"max": null,
+"min": null,
+"options": [],
+"permission": [
+"settings",
+"manage"
+],
+"scopes": [
+"global",
+"entity"
+],
+"sensitif_baca": true,
+"status": "not_used",
+"type": "table"
+},
+"approval.matrix_effective_from": {
+"default": "",
+"max": null,
+"min": null,
+"options": [],
+"permission": [
+"rnd",
+"manage"
+],
+"scopes": [
+"global",
+"entity"
+],
+"sensitif_baca": true,
+"status": "not_used",
+"type": "text"
+},
+"approval.matrix_enforcement": {
+"default": "enforce",
+"max": null,
+"min": null,
+"options": [
+"off",
+"warn",
+"enforce"
+],
+"permission": [
+"rnd",
+"manage"
+],
+"scopes": [
+"global",
+"entity"
+],
+"sensitif_baca": true,
+"status": "not_used",
+"type": "enum"
+},
+"approval.matrix_scope": {
+"default": "all_pending",
+"max": null,
+"min": null,
+"options": [
+"all_pending",
+"new_only"
+],
+"permission": [
+"rnd",
+"manage"
+],
+"scopes": [
+"global",
+"entity"
+],
+"sensitif_baca": true,
+"status": "not_used",
+"type": "enum"
+},
+"approval.matrix_sod": {
+"default": true,
+"max": null,
+"min": null,
+"options": [],
+"permission": [
+"rnd",
+"manage"
+],
+"scopes": [
+"global",
+"entity"
+],
+"sensitif_baca": true,
+"status": "not_used",
+"type": "bool"
+},
+"approval.po_custom_direksi_min": {
+"default": 50000000,
+"max": null,
+"min": 0,
+"options": [],
+"permission": [
+"rnd",
+"manage"
+],
+"scopes": [
+"global",
+"entity"
+],
+"sensitif_baca": true,
+"status": "not_used",
+"type": "money"
+},
+"approval.reminder_min_days": {
+"default": 2,
+"max": 60,
+"min": 0,
+"options": [],
+"permission": [
+"settings",
+"manage"
+],
+"scopes": [
+"global",
+"entity"
+],
+"sensitif_baca": true,
+"status": "active",
+"type": "int"
+},
+"ar.aging_buckets": {
+"default": [
+30,
+60,
+90
+],
+"max": null,
+"min": null,
+"options": [],
+"permission": [
+"settings",
+"manage"
+],
+"scopes": [
+"global",
+"entity"
+],
+"sensitif_baca": true,
+"status": "active",
+"type": "list"
+},
+"ar.denda_rate_pct_per_month": {
+"default": 2.0,
+"max": 100,
+"min": 0,
+"options": [],
+"permission": [
+"settings",
+"manage"
+],
+"scopes": [
+"global",
+"entity",
+"customer"
+],
+"sensitif_baca": true,
+"status": "active",
+"type": "pct"
+},
+"ar.grace_days": {
+"default": 0,
+"max": 180,
+"min": 0,
+"options": [],
+"permission": [
+"settings",
+"manage"
+],
+"scopes": [
+"global",
+"entity",
+"customer"
+],
+"sensitif_baca": true,
+"status": "active",
+"type": "duration"
+},
+"bank.amount_tolerance": {
+"default": 0,
+"max": 1000000,
+"min": 0,
+"options": [],
+"permission": [
+"settings",
+"manage"
+],
+"scopes": [
+"global",
+"entity"
+],
+"sensitif_baca": true,
+"status": "active",
+"type": "money"
+},
+"bank.auto_match_min_score": {
+"default": 80,
+"max": 200,
+"min": 0,
+"options": [],
+"permission": [
+"settings",
+"manage"
+],
+"scopes": [
+"global",
+"entity"
+],
+"sensitif_baca": true,
+"status": "active",
+"type": "int"
+},
+"bank.charge_account_code": {
+"default": "6-8000",
+"max": null,
+"min": null,
+"options": [],
+"permission": [
+"settings",
+"manage"
+],
+"scopes": [
+"global",
+"entity"
+],
+"sensitif_baca": true,
+"status": "not_used",
+"type": "text"
+},
+"bank.date_window_days": {
+"default": 3,
+"max": 60,
+"min": 0,
+"options": [],
+"permission": [
+"settings",
+"manage"
+],
+"scopes": [
+"global",
+"entity"
+],
+"sensitif_baca": true,
+"status": "active",
+"type": "duration"
+},
+"bank.holding_account_code": {
+"default": "2-1950",
+"max": null,
+"min": null,
+"options": [],
+"permission": [
+"settings",
+"manage"
+],
+"scopes": [
+"global",
+"entity"
+],
+"sensitif_baca": true,
+"status": "not_used",
+"type": "text"
+},
+"bank.holding_max_age_days": {
+"default": 7,
+"max": 180,
+"min": 1,
+"options": [],
+"permission": [
+"settings",
+"manage"
+],
+"scopes": [
+"global",
+"entity"
+],
+"sensitif_baca": true,
+"status": "active",
+"type": "duration"
+},
+"bank.interest_account_code": {
+"default": "4-9000",
+"max": null,
+"min": null,
+"options": [],
+"permission": [
+"settings",
+"manage"
+],
+"scopes": [
+"global",
+"entity"
+],
+"sensitif_baca": true,
+"status": "not_used",
+"type": "text"
+},
+"bank.match_weight_amount": {
+"default": 40,
+"max": 100,
+"min": 0,
+"options": [],
+"permission": [
+"settings",
+"manage"
+],
+"scopes": [
+"global",
+"entity"
+],
+"sensitif_baca": true,
+"status": "active",
+"type": "int"
+},
+"bank.match_weight_date": {
+"default": 20,
+"max": 100,
+"min": 0,
+"options": [],
+"permission": [
+"settings",
+"manage"
+],
+"scopes": [
+"global",
+"entity"
+],
+"sensitif_baca": true,
+"status": "active",
+"type": "int"
+},
+"bank.match_weight_name": {
+"default": 15,
+"max": 100,
+"min": 0,
+"options": [],
+"permission": [
+"settings",
+"manage"
+],
+"scopes": [
+"global",
+"entity"
+],
+"sensitif_baca": true,
+"status": "active",
+"type": "int"
+},
+"bank.match_weight_ref": {
+"default": 25,
+"max": 100,
+"min": 0,
+"options": [],
+"permission": [
+"settings",
+"manage"
+],
+"scopes": [
+"global",
+"entity"
+],
+"sensitif_baca": true,
+"status": "active",
+"type": "int"
+},
+"bank.rule_bonus_score": {
+"default": 15,
+"max": 100,
+"min": 0,
+"options": [],
+"permission": [
+"settings",
+"manage"
+],
+"scopes": [
+"global",
+"entity"
+],
+"sensitif_baca": true,
+"status": "active",
+"type": "int"
+},
+"bank.rule_learn_after": {
+"default": 3,
+"max": 20,
+"min": 2,
+"options": [],
+"permission": [
+"settings",
+"manage"
+],
+"scopes": [
+"global",
+"entity"
+],
+"sensitif_baca": true,
+"status": "active",
+"type": "int"
+},
+"bank.suggest_min_score": {
+"default": 60,
+"max": 200,
+"min": 0,
+"options": [],
+"permission": [
+"settings",
+"manage"
+],
+"scopes": [
+"global",
+"entity"
+],
+"sensitif_baca": true,
+"status": "active",
+"type": "int"
+},
+"case.approver_role": {
+"default": "manager",
+"max": null,
+"min": null,
+"options": [
+"manager",
+"admin"
+],
+"permission": [
+"settings",
+"manage"
+],
+"scopes": [
+"global",
+"entity"
+],
+"sensitif_baca": true,
+"status": "active",
+"type": "enum"
+},
+"case.auto_bank_charge_max": {
+"default": 50000,
+"max": null,
+"min": 0,
+"options": [],
+"permission": [
+"settings",
+"manage"
+],
+"scopes": [
+"global",
+"entity"
+],
+"sensitif_baca": true,
+"status": "active",
+"type": "money"
+},
+"case.auto_scan_enabled": {
+"default": true,
+"max": null,
+"min": null,
+"options": [],
+"permission": [
+"settings",
+"manage"
+],
+"scopes": [
+"global",
+"entity"
+],
+"sensitif_baca": true,
+"status": "active",
+"type": "bool"
+},
+"case.duplicate_window_days": {
+"default": 7,
+"max": 90,
+"min": 1,
+"options": [],
+"permission": [
+"settings",
+"manage"
+],
+"scopes": [
+"global",
+"entity"
+],
+"sensitif_baca": true,
+"status": "active",
+"type": "int"
+},
+"case.escalate_on_sla_breach": {
+"default": true,
+"max": null,
+"min": null,
+"options": [],
+"permission": [
+"settings",
+"manage"
+],
+"scopes": [
+"global",
+"entity"
+],
+"sensitif_baca": true,
+"status": "active",
+"type": "bool"
+},
+"case.high_amount_threshold": {
+"default": 10000000,
+"max": null,
+"min": 0,
+"options": [],
+"permission": [
+"settings",
+"manage"
+],
+"scopes": [
+"global",
+"entity"
+],
+"sensitif_baca": true,
+"status": "active",
+"type": "money"
+},
+"case.holding_case_after_days": {
+"default": 3,
+"max": 365,
+"min": 1,
+"options": [],
+"permission": [
+"settings",
+"manage"
+],
+"scopes": [
+"global",
+"entity"
+],
+"sensitif_baca": true,
+"status": "active",
+"type": "int"
+},
+"case.refund_max_amount": {
+"default": 25000000,
+"max": null,
+"min": 0,
+"options": [],
+"permission": [
+"settings",
+"manage"
+],
+"scopes": [
+"global",
+"entity"
+],
+"sensitif_baca": true,
+"status": "active",
+"type": "money"
+},
+"case.require_approval_above": {
+"default": 5000000,
+"max": null,
+"min": 0,
+"options": [],
+"permission": [
+"settings",
+"manage"
+],
+"scopes": [
+"global",
+"entity"
+],
+"sensitif_baca": true,
+"status": "active",
+"type": "money"
+},
+"case.require_evidence": {
+"default": true,
+"max": null,
+"min": null,
+"options": [],
+"permission": [
+"settings",
+"manage"
+],
+"scopes": [
+"global",
+"entity"
+],
+"sensitif_baca": true,
+"status": "active",
+"type": "bool"
+},
+"case.sla_hours": {
+"default": 24,
+"max": 720,
+"min": 1,
+"options": [],
+"permission": [
+"settings",
+"manage"
+],
+"scopes": [
+"global",
+"entity"
+],
+"sensitif_baca": true,
+"status": "active",
+"type": "int"
+},
+"case.sla_hours_high": {
+"default": 8,
+"max": 720,
+"min": 1,
+"options": [],
+"permission": [
+"settings",
+"manage"
+],
+"scopes": [
+"global",
+"entity"
+],
+"sensitif_baca": true,
+"status": "active",
+"type": "int"
+},
+"catalog.sales_hidden_stages": {
+"default": [
+"grey",
+"yarn"
+],
+"max": null,
+"min": null,
+"options": [
+"yarn",
+"grey",
+"pfd",
+"pfp",
+"finished",
+"remnant",
+"byproduct"
+],
+"permission": [
+"settings",
+"manage"
+],
+"scopes": [
+"global"
+],
+"sensitif_baca": true,
+"status": "active",
+"type": "list"
+},
+"commission.default_margin_cap_pct": {
+"default": 50.0,
+"max": 100,
+"min": 0,
+"options": [],
+"permission": [
+"settings",
+"manage"
+],
+"scopes": [
+"global",
+"entity"
+],
+"sensitif_baca": true,
+"status": "active",
+"type": "pct"
+},
+"commission.discount_factor": {
+"default": 0.5,
+"max": 1,
+"min": 0,
+"options": [],
+"permission": [
+"settings",
+"manage"
+],
+"scopes": [
+"global",
+"entity"
+],
+"sensitif_baca": true,
+"status": "active",
+"type": "decimal"
+},
+"commission.discount_mechanic": {
+"default": "tier_factor",
+"max": null,
+"min": null,
+"options": [
+"tier_factor",
+"potong_rp",
+"cutoff"
+],
+"permission": [
+"settings",
+"manage"
+],
+"scopes": [
+"global",
+"entity"
+],
+"sensitif_baca": true,
+"status": "active",
+"type": "enum"
+},
+"commission.discount_potong_rp": {
+"default": 0.0,
+"max": 100000000,
+"min": 0,
+"options": [],
+"permission": [
+"settings",
+"manage"
+],
+"scopes": [
+"global",
+"entity"
+],
+"sensitif_baca": true,
+"status": "active",
+"type": "money"
+},
+"commission.discount_threshold": {
+"default": 10.0,
+"max": 1000000,
+"min": 0,
+"options": [],
+"permission": [
+"settings",
+"manage"
+],
+"scopes": [
+"global",
+"entity"
+],
+"sensitif_baca": true,
+"status": "active",
+"type": "decimal"
+},
+"commission.discount_threshold_type": {
+"default": "pct",
+"max": null,
+"min": null,
+"options": [
+"pct",
+"rp_per_unit"
+],
+"permission": [
+"settings",
+"manage"
+],
+"scopes": [
+"global",
+"entity"
+],
+"sensitif_baca": true,
+"status": "active",
+"type": "enum"
+},
+"commission.incentive_unit": {
+"default": "meter",
+"max": null,
+"min": null,
+"options": [],
+"permission": [
+"settings",
+"manage"
+],
+"scopes": [
+"global",
+"entity"
+],
+"sensitif_baca": true,
+"status": "active",
+"type": "text"
+},
+"commission.strategy": {
+"default": "per_sku",
+"max": null,
+"min": null,
+"options": [
+"per_sku",
+"achievement_tiered"
+],
+"permission": [
+"settings",
+"manage"
+],
+"scopes": [
+"global",
+"entity"
+],
+"sensitif_baca": true,
+"status": "active",
+"type": "enum"
+},
+"contra_bon.approval_role": {
+"default": "manager",
+"max": null,
+"min": null,
+"options": [
+"manager",
+"admin"
+],
+"permission": [
+"settings",
+"manage"
+],
+"scopes": [
+"global",
+"entity"
+],
+"sensitif_baca": true,
+"status": "not_used",
+"type": "enum"
+},
+"contra_bon.approval_threshold_rupiah": {
+"default": 50000000,
+"max": null,
+"min": 0,
+"options": [],
+"permission": [
+"settings",
+"manage"
+],
+"scopes": [
+"global",
+"entity"
+],
+"sensitif_baca": true,
+"status": "not_used",
+"type": "money"
+},
+"contra_bon.block_pay_before_approval": {
+"default": true,
+"max": null,
+"min": null,
+"options": [],
+"permission": [
+"settings",
+"manage"
+],
+"scopes": [
+"global",
+"entity"
+],
+"sensitif_baca": true,
+"status": "active",
+"type": "bool"
+},
+"contra_bon.high_value_approval_role": {
+"default": "admin",
+"max": null,
+"min": null,
+"options": [
+"manager",
+"admin"
+],
+"permission": [
+"settings",
+"manage"
+],
+"scopes": [
+"global",
+"entity"
+],
+"sensitif_baca": true,
+"status": "not_used",
+"type": "enum"
+},
+"contra_bon.qty_tolerance_percent": {
+"default": 1.0,
+"max": 100,
+"min": 0,
+"options": [],
+"permission": [
+"settings",
+"manage"
+],
+"scopes": [
+"global",
+"entity"
+],
+"sensitif_baca": true,
+"status": "not_used",
+"type": "pct"
+},
+"contra_bon.reminder_days_before": {
+"default": 1,
+"max": 14,
+"min": 0,
+"options": [],
+"permission": [
+"settings",
+"manage"
+],
+"scopes": [
+"global",
+"entity"
+],
+"sensitif_baca": true,
+"status": "active",
+"type": "int"
+},
+"contra_bon.require_reason_out_of_tolerance": {
+"default": true,
+"max": null,
+"min": null,
+"options": [],
+"permission": [
+"settings",
+"manage"
+],
+"scopes": [
+"global",
+"entity"
+],
+"sensitif_baca": true,
+"status": "active",
+"type": "bool"
+},
+"contra_bon.unbilled_gr_age_days": {
+"default": 3,
+"max": 90,
+"min": 0,
+"options": [],
+"permission": [
+"settings",
+"manage"
+],
+"scopes": [
+"global",
+"entity"
+],
+"sensitif_baca": true,
+"status": "active",
+"type": "int"
+},
+"contra_bon.value_tolerance_rupiah": {
+"default": 50000,
+"max": null,
+"min": 0,
+"options": [],
+"permission": [
+"settings",
+"manage"
+],
+"scopes": [
+"global",
+"entity"
+],
+"sensitif_baca": true,
+"status": "active",
+"type": "money"
+},
+"contra_bon.verify_sla_days": {
+"default": 2,
+"max": 60,
+"min": 1,
+"options": [],
+"permission": [
+"settings",
+"manage"
+],
+"scopes": [
+"global",
+"entity"
+],
+"sensitif_baca": true,
+"status": "active",
+"type": "int"
+},
+"cutting.remnant_grade": {
+"default": "keep",
+"max": null,
+"min": null,
+"options": [
+"keep",
+"BS",
+"C"
+],
+"permission": [
+"settings",
+"manage"
+],
+"scopes": [
+"global",
+"entity",
+"product"
+],
+"sensitif_baca": true,
+"status": "active",
+"type": "enum"
+},
+"cutting.remnant_threshold": {
+"default": 2.0,
+"max": 1000,
+"min": 0,
+"options": [],
+"permission": [
+"settings",
+"manage"
+],
+"scopes": [
+"global",
+"entity",
+"product"
+],
+"sensitif_baca": true,
+"status": "active",
+"type": "decimal"
+},
+"cutting.wait_late_minutes": {
+"default": 240,
+"max": 10080,
+"min": 1,
+"options": [],
+"permission": [
+"settings",
+"manage"
+],
+"scopes": [
+"global",
+"entity"
+],
+"sensitif_baca": true,
+"status": "active",
+"type": "int"
+},
+"cutting.wait_warn_minutes": {
+"default": 120,
+"max": 10080,
+"min": 1,
+"options": [],
+"permission": [
+"settings",
+"manage"
+],
+"scopes": [
+"global",
+"entity"
+],
+"sensitif_baca": true,
+"status": "active",
+"type": "int"
+},
+"cutting.waste_limit_pct": {
+"default": 3.0,
+"max": 100,
+"min": 0,
+"options": [],
+"permission": [
+"settings",
+"manage"
+],
+"scopes": [
+"global",
+"entity",
+"product"
+],
+"sensitif_baca": true,
+"status": "active",
+"type": "pct"
+},
+"docref.autolink_enabled": {
+"default": true,
+"max": null,
+"min": null,
+"options": [],
+"permission": [
+"settings",
+"manage"
+],
+"scopes": [
+"global",
+"entity"
+],
+"sensitif_baca": true,
+"status": "active",
+"type": "bool"
+},
+"docref.pdf_max_refs": {
+"default": 6,
+"max": 12,
+"min": 1,
+"options": [],
+"permission": [
+"settings",
+"manage"
+],
+"scopes": [
+"global",
+"entity"
+],
+"sensitif_baca": true,
+"status": "active",
+"type": "int"
+},
+"docref.qr_in_pdf": {
+"default": true,
+"max": null,
+"min": null,
+"options": [],
+"permission": [
+"settings",
+"manage"
+],
+"scopes": [
+"global",
+"entity"
+],
+"sensitif_baca": true,
+"status": "active",
+"type": "bool"
+},
+"docref.require_parent": {
+"default": true,
+"max": null,
+"min": null,
+"options": [],
+"permission": [
+"settings",
+"manage"
+],
+"scopes": [
+"global",
+"entity"
+],
+"sensitif_baca": true,
+"status": "active",
+"type": "bool"
+},
+"docref.show_in_pdf": {
+"default": true,
+"max": null,
+"min": null,
+"options": [],
+"permission": [
+"settings",
+"manage"
+],
+"scopes": [
+"global",
+"entity"
+],
+"sensitif_baca": true,
+"status": "active",
+"type": "bool"
+},
+"docref.trace_max_depth": {
+"default": 4,
+"max": 8,
+"min": 1,
+"options": [],
+"permission": [
+"settings",
+"manage"
+],
+"scopes": [
+"global",
+"entity"
+],
+"sensitif_baca": true,
+"status": "active",
+"type": "int"
+},
+"finance.base_currency": {
+"default": "IDR",
+"max": null,
+"min": null,
+"options": [
+"IDR",
+"USD"
+],
+"permission": [
+"settings",
+"manage"
+],
+"scopes": [
+"global",
+"entity"
+],
+"sensitif_baca": true,
+"status": "active",
+"type": "enum"
+},
+"finance.default_payment_term_code": {
+"default": "NET30",
+"max": null,
+"min": null,
+"options": [],
+"permission": [
+"settings",
+"manage"
+],
+"scopes": [
+"global",
+"entity"
+],
+"sensitif_baca": false,
+"status": "active",
+"type": "text"
+},
+"finance.dispatch_payment_gate": {
+"default": "block",
+"max": null,
+"min": null,
+"options": [
+"block",
+"off"
+],
+"permission": [
+"settings",
+"manage"
+],
+"scopes": [
+"global",
+"entity"
+],
+"sensitif_baca": true,
+"status": "active",
+"type": "enum"
+},
+"finance.fiscal_year_end_month": {
+"default": 12,
+"max": 12,
+"min": 1,
+"options": [],
+"permission": [
+"settings",
+"manage"
+],
+"scopes": [
+"global",
+"entity"
+],
+"sensitif_baca": true,
+"status": "active",
+"type": "int"
+},
+"hr.bpjs.jht_rate_employee": {
+"default": 2.0,
+"max": 100,
+"min": 0,
+"options": [],
+"permission": [
+"hr",
+"manage_payroll"
+],
+"scopes": [
+"global",
+"entity"
+],
+"sensitif_baca": true,
+"status": "active",
+"type": "pct"
+},
+"hr.bpjs.jht_rate_employer": {
+"default": 3.7,
+"max": 100,
+"min": 0,
+"options": [],
+"permission": [
+"hr",
+"manage_payroll"
+],
+"scopes": [
+"global",
+"entity"
+],
+"sensitif_baca": true,
+"status": "active",
+"type": "pct"
+},
+"hr.bpjs.jkm_rate_employer": {
+"default": 0.3,
+"max": 100,
+"min": 0,
+"options": [],
+"permission": [
+"hr",
+"manage_payroll"
+],
+"scopes": [
+"global",
+"entity"
+],
+"sensitif_baca": true,
+"status": "active",
+"type": "pct"
+},
+"hr.bpjs.jp_ceiling": {
+"default": 10042300,
+"max": 1000000000,
+"min": 0,
+"options": [],
+"permission": [
+"hr",
+"manage_payroll"
+],
+"scopes": [
+"global",
+"entity"
+],
+"sensitif_baca": true,
+"status": "active",
+"type": "money"
+},
+"hr.bpjs.jp_rate_employee": {
+"default": 1.0,
+"max": 100,
+"min": 0,
+"options": [],
+"permission": [
+"hr",
+"manage_payroll"
+],
+"scopes": [
+"global",
+"entity"
+],
+"sensitif_baca": true,
+"status": "active",
+"type": "pct"
+},
+"hr.bpjs.jp_rate_employer": {
+"default": 2.0,
+"max": 100,
+"min": 0,
+"options": [],
+"permission": [
+"hr",
+"manage_payroll"
+],
+"scopes": [
+"global",
+"entity"
+],
+"sensitif_baca": true,
+"status": "active",
+"type": "pct"
+},
+"hr.bpjs.kes_ceiling": {
+"default": 12000000,
+"max": 1000000000,
+"min": 0,
+"options": [],
+"permission": [
+"hr",
+"manage_payroll"
+],
+"scopes": [
+"global",
+"entity"
+],
+"sensitif_baca": true,
+"status": "active",
+"type": "money"
+},
+"hr.bpjs.kes_rate_employee": {
+"default": 1.0,
+"max": 100,
+"min": 0,
+"options": [],
+"permission": [
+"hr",
+"manage_payroll"
+],
+"scopes": [
+"global",
+"entity"
+],
+"sensitif_baca": true,
+"status": "active",
+"type": "pct"
+},
+"hr.bpjs.kes_rate_employer": {
+"default": 4.0,
+"max": 100,
+"min": 0,
+"options": [],
+"permission": [
+"hr",
+"manage_payroll"
+],
+"scopes": [
+"global",
+"entity"
+],
+"sensitif_baca": true,
+"status": "active",
+"type": "pct"
+},
+"hr.employment_types": {
+"default": [
+"tetap",
+"kontrak",
+"harian",
+"borongan"
+],
+"max": null,
+"min": null,
+"options": [],
+"permission": [
+"settings",
+"manage"
+],
+"scopes": [
+"global",
+"entity"
+],
+"sensitif_baca": true,
+"status": "active",
+"type": "list"
+},
+"hr.feature_toggles.bpjs_kesehatan": {
+"default": true,
+"max": null,
+"min": null,
+"options": [],
+"permission": [
+"hr",
+"manage_payroll"
+],
+"scopes": [
+"global",
+"entity"
+],
+"sensitif_baca": true,
+"status": "active",
+"type": "bool"
+},
+"hr.feature_toggles.bpjs_ketenagakerjaan": {
+"default": true,
+"max": null,
+"min": null,
+"options": [],
+"permission": [
+"hr",
+"manage_payroll"
+],
+"scopes": [
+"global",
+"entity"
+],
+"sensitif_baca": true,
+"status": "active",
+"type": "bool"
+},
+"hr.feature_toggles.npwp_required": {
+"default": false,
+"max": null,
+"min": null,
+"options": [],
+"permission": [
+"hr",
+"manage_payroll"
+],
+"scopes": [
+"global",
+"entity"
+],
+"sensitif_baca": true,
+"status": "active",
+"type": "bool"
+},
+"hr.feature_toggles.pph21": {
+"default": true,
+"max": null,
+"min": null,
+"options": [],
+"permission": [
+"hr",
+"manage_payroll"
+],
+"scopes": [
+"global",
+"entity"
+],
+"sensitif_baca": true,
+"status": "active",
+"type": "bool"
+},
+"hr.jkk_classes": {
+"default": [
+{
+"class": "I",
+"rate": 0.24
+},
+{
+"class": "II",
+"rate": 0.54
+},
+{
+"class": "III",
+"rate": 0.89
+},
+{
+"class": "IV",
+"rate": 1.27
+},
+{
+"class": "V",
+"rate": 1.74
+}
+],
+"max": null,
+"min": null,
+"options": [],
+"permission": [
+"hr",
+"manage_payroll"
+],
+"scopes": [
+"global",
+"entity"
+],
+"sensitif_baca": true,
+"status": "active",
+"type": "table"
+},
+"hr.overtime.hours_divisor": {
+"default": 173,
+"max": 400,
+"min": 1,
+"options": [],
+"permission": [
+"hr",
+"manage_payroll"
+],
+"scopes": [
+"global",
+"entity"
+],
+"sensitif_baca": true,
+"status": "active",
+"type": "int"
+},
+"hr.overtime.multiplier": {
+"default": 1.5,
+"max": 5,
+"min": 1,
+"options": [],
+"permission": [
+"hr",
+"manage_payroll"
+],
+"scopes": [
+"global",
+"entity"
+],
+"sensitif_baca": true,
+"status": "active",
+"type": "decimal"
+},
+"hr.payroll_commission_mode": {
+"default": "accrue_then_settle",
+"max": null,
+"min": null,
+"options": [
+"accrue_then_settle",
+"pay_on_invoice",
+"off"
+],
+"permission": [
+"hr",
+"manage_payroll"
+],
+"scopes": [
+"global",
+"entity"
+],
+"sensitif_baca": true,
+"status": "active",
+"type": "enum"
+},
+"hr.pph21.biaya_jabatan_maks_bulanan": {
+"default": 500000,
+"max": 100000000,
+"min": 0,
+"options": [],
+"permission": [
+"hr",
+"manage_payroll"
+],
+"scopes": [
+"global"
+],
+"sensitif_baca": true,
+"status": "active",
+"type": "money"
+},
+"hr.pph21.biaya_jabatan_pct": {
+"default": 5.0,
+"max": 100,
+"min": 0,
+"options": [],
+"permission": [
+"hr",
+"manage_payroll"
+],
+"scopes": [
+"global"
+],
+"sensitif_baca": true,
+"status": "active",
+"type": "pct"
+},
+"hr.pph21.pasal17_table": {
+"default": [
+{
+"batas_atas": 60000000,
+"tarif_pct": 5.0
+},
+{
+"batas_atas": 250000000,
+"tarif_pct": 15.0
+},
+{
+"batas_atas": 500000000,
+"tarif_pct": 25.0
+},
+{
+"batas_atas": 5000000000,
+"tarif_pct": 30.0
+},
+{
+"batas_atas": null,
+"tarif_pct": 35.0
+}
+],
+"max": null,
+"min": null,
+"options": [],
+"permission": [
+"hr",
+"manage_payroll"
+],
+"scopes": [
+"global"
+],
+"sensitif_baca": true,
+"status": "active",
+"type": "table"
+},
+"hr.pph21.ptkp_to_ter": {
+"default": {
+"K0": "A",
+"K1": "B",
+"K2": "B",
+"K3": "C",
+"TK0": "A",
+"TK1": "A",
+"TK2": "B",
+"TK3": "B"
+},
+"max": null,
+"min": null,
+"options": [],
+"permission": [
+"hr",
+"manage_payroll"
+],
+"scopes": [
+"global"
+],
+"sensitif_baca": true,
+"status": "active",
+"type": "table"
+},
+"hr.pph21.ter_table": {
+"default": [
+{
+"batas_atas": 5400000,
+"kategori": "A",
+"tarif_pct": 0.0
+},
+{
+"batas_atas": 5650000,
+"kategori": "A",
+"tarif_pct": 0.25
+},
+{
+"batas_atas": 5950000,
+"kategori": "A",
+"tarif_pct": 0.5
+},
+{
+"batas_atas": 6300000,
+"kategori": "A",
+"tarif_pct": 0.75
+},
+{
+"batas_atas": 6750000,
+"kategori": "A",
+"tarif_pct": 1.0
+},
+{
+"batas_atas": 7500000,
+"kategori": "A",
+"tarif_pct": 1.25
+},
+{
+"batas_atas": 8550000,
+"kategori": "A",
+"tarif_pct": 1.5
+},
+{
+"batas_atas": 9650000,
+"kategori": "A",
+"tarif_pct": 1.75
+},
+{
+"batas_atas": 10750000,
+"kategori": "A",
+"tarif_pct": 2.0
+},
+{
+"batas_atas": 11250000,
+"kategori": "A",
+"tarif_pct": 2.5
+},
+{
+"batas_atas": 11600000,
+"kategori": "A",
+"tarif_pct": 3.0
+},
+{
+"batas_atas": 12500000,
+"kategori": "A",
+"tarif_pct": 3.5
+},
+{
+"batas_atas": 13750000,
+"kategori": "A",
+"tarif_pct": 4.0
+},
+{
+"batas_atas": 15100000,
+"kategori": "A",
+"tarif_pct": 4.5
+},
+{
+"batas_atas": 16950000,
+"kategori": "A",
+"tarif_pct": 5.0
+},
+{
+"batas_atas": 19750000,
+"kategori": "A",
+"tarif_pct": 6.0
+},
+{
+"batas_atas": 24150000,
+"kategori": "A",
+"tarif_pct": 7.0
+},
+{
+"batas_atas": 26450000,
+"kategori": "A",
+"tarif_pct": 8.0
+},
+{
+"batas_atas": 29550000,
+"kategori": "A",
+"tarif_pct": 9.0
+},
+{
+"batas_atas": 33450000,
+"kategori": "A",
+"tarif_pct": 10.0
+},
+{
+"batas_atas": 38450000,
+"kategori": "A",
+"tarif_pct": 11.0
+},
+{
+"batas_atas": 44550000,
+"kategori": "A",
+"tarif_pct": 12.0
+},
+{
+"batas_atas": 52050000,
+"kategori": "A",
+"tarif_pct": 13.0
+},
+{
+"batas_atas": 61250000,
+"kategori": "A",
+"tarif_pct": 14.0
+},
+{
+"batas_atas": 72650000,
+"kategori": "A",
+"tarif_pct": 15.0
+},
+{
+"batas_atas": 86350000,
+"kategori": "A",
+"tarif_pct": 16.0
+},
+{
+"batas_atas": 102650000,
+"kategori": "A",
+"tarif_pct": 17.0
+},
+{
+"batas_atas": 122050000,
+"kategori": "A",
+"tarif_pct": 18.0
+},
+{
+"batas_atas": 145150000,
+"kategori": "A",
+"tarif_pct": 19.0
+},
+{
+"batas_atas": 172550000,
+"kategori": "A",
+"tarif_pct": 20.0
+},
+{
+"batas_atas": 204650000,
+"kategori": "A",
+"tarif_pct": 21.0
+},
+{
+"batas_atas": 242050000,
+"kategori": "A",
+"tarif_pct": 22.0
+},
+{
+"batas_atas": 285550000,
+"kategori": "A",
+"tarif_pct": 23.0
+},
+{
+"batas_atas": 335550000,
+"kategori": "A",
+"tarif_pct": 24.0
+},
+{
+"batas_atas": 392150000,
+"kategori": "A",
+"tarif_pct": 25.0
+},
+{
+"batas_atas": 455550000,
+"kategori": "A",
+"tarif_pct": 26.0
+},
+{
+"batas_atas": 525850000,
+"kategori": "A",
+"tarif_pct": 27.0
+},
+{
+"batas_atas": 603050000,
+"kategori": "A",
+"tarif_pct": 28.0
+},
+{
+"batas_atas": 687150000,
+"kategori": "A",
+"tarif_pct": 29.0
+},
+{
+"batas_atas": 778250000,
+"kategori": "A",
+"tarif_pct": 30.0
+},
+{
+"batas_atas": 876350000,
+"kategori": "A",
+"tarif_pct": 31.0
+},
+{
+"batas_atas": 981450000,
+"kategori": "A",
+"tarif_pct": 32.0
+},
+{
+"batas_atas": 1100000000,
+"kategori": "A",
+"tarif_pct": 33.0
+},
+{
+"batas_atas": null,
+"kategori": "A",
+"tarif_pct": 34.0
+},
+{
+"batas_atas": 6200000,
+"kategori": "B",
+"tarif_pct": 0.0
+},
+{
+"batas_atas": 6500000,
+"kategori": "B",
+"tarif_pct": 0.25
+},
+{
+"batas_atas": 6850000,
+"kategori": "B",
+"tarif_pct": 0.5
+},
+{
+"batas_atas": 7300000,
+"kategori": "B",
+"tarif_pct": 0.75
+},
+{
+"batas_atas": 9200000,
+"kategori": "B",
+"tarif_pct": 1.0
+},
+{
+"batas_atas": 10750000,
+"kategori": "B",
+"tarif_pct": 1.25
+},
+{
+"batas_atas": 11250000,
+"kategori": "B",
+"tarif_pct": 1.5
+},
+{
+"batas_atas": 11600000,
+"kategori": "B",
+"tarif_pct": 2.0
+},
+{
+"batas_atas": 12600000,
+"kategori": "B",
+"tarif_pct": 2.5
+},
+{
+"batas_atas": 13600000,
+"kategori": "B",
+"tarif_pct": 3.0
+},
+{
+"batas_atas": 14950000,
+"kategori": "B",
+"tarif_pct": 3.5
+},
+{
+"batas_atas": 16950000,
+"kategori": "B",
+"tarif_pct": 4.0
+},
+{
+"batas_atas": 19750000,
+"kategori": "B",
+"tarif_pct": 5.0
+},
+{
+"batas_atas": 24150000,
+"kategori": "B",
+"tarif_pct": 6.0
+},
+{
+"batas_atas": 26450000,
+"kategori": "B",
+"tarif_pct": 7.0
+},
+{
+"batas_atas": 29550000,
+"kategori": "B",
+"tarif_pct": 8.0
+},
+{
+"batas_atas": 33450000,
+"kategori": "B",
+"tarif_pct": 9.0
+},
+{
+"batas_atas": 38450000,
+"kategori": "B",
+"tarif_pct": 10.0
+},
+{
+"batas_atas": 44550000,
+"kategori": "B",
+"tarif_pct": 11.0
+},
+{
+"batas_atas": 52050000,
+"kategori": "B",
+"tarif_pct": 12.0
+},
+{
+"batas_atas": 61250000,
+"kategori": "B",
+"tarif_pct": 13.0
+},
+{
+"batas_atas": 72650000,
+"kategori": "B",
+"tarif_pct": 14.0
+},
+{
+"batas_atas": 86350000,
+"kategori": "B",
+"tarif_pct": 15.0
+},
+{
+"batas_atas": 102650000,
+"kategori": "B",
+"tarif_pct": 16.0
+},
+{
+"batas_atas": 122050000,
+"kategori": "B",
+"tarif_pct": 17.0
+},
+{
+"batas_atas": 145150000,
+"kategori": "B",
+"tarif_pct": 18.0
+},
+{
+"batas_atas": 172550000,
+"kategori": "B",
+"tarif_pct": 19.0
+},
+{
+"batas_atas": 204650000,
+"kategori": "B",
+"tarif_pct": 20.0
+},
+{
+"batas_atas": 242050000,
+"kategori": "B",
+"tarif_pct": 21.0
+},
+{
+"batas_atas": 285550000,
+"kategori": "B",
+"tarif_pct": 22.0
+},
+{
+"batas_atas": 335550000,
+"kategori": "B",
+"tarif_pct": 23.0
+},
+{
+"batas_atas": 392150000,
+"kategori": "B",
+"tarif_pct": 24.0
+},
+{
+"batas_atas": 455550000,
+"kategori": "B",
+"tarif_pct": 25.0
+},
+{
+"batas_atas": 525850000,
+"kategori": "B",
+"tarif_pct": 26.0
+},
+{
+"batas_atas": 603050000,
+"kategori": "B",
+"tarif_pct": 27.0
+},
+{
+"batas_atas": 687150000,
+"kategori": "B",
+"tarif_pct": 28.0
+},
+{
+"batas_atas": 778250000,
+"kategori": "B",
+"tarif_pct": 29.0
+},
+{
+"batas_atas": 876350000,
+"kategori": "B",
+"tarif_pct": 30.0
+},
+{
+"batas_atas": 981450000,
+"kategori": "B",
+"tarif_pct": 31.0
+},
+{
+"batas_atas": null,
+"kategori": "B",
+"tarif_pct": 34.0
+},
+{
+"batas_atas": 6600000,
+"kategori": "C",
+"tarif_pct": 0.0
+},
+{
+"batas_atas": 6950000,
+"kategori": "C",
+"tarif_pct": 0.25
+},
+{
+"batas_atas": 7350000,
+"kategori": "C",
+"tarif_pct": 0.5
+},
+{
+"batas_atas": 7800000,
+"kategori": "C",
+"tarif_pct": 0.75
+},
+{
+"batas_atas": 8850000,
+"kategori": "C",
+"tarif_pct": 1.0
+},
+{
+"batas_atas": 9800000,
+"kategori": "C",
+"tarif_pct": 1.25
+},
+{
+"batas_atas": 10950000,
+"kategori": "C",
+"tarif_pct": 1.5
+},
+{
+"batas_atas": 11200000,
+"kategori": "C",
+"tarif_pct": 1.75
+},
+{
+"batas_atas": 12600000,
+"kategori": "C",
+"tarif_pct": 2.0
+},
+{
+"batas_atas": 13600000,
+"kategori": "C",
+"tarif_pct": 2.5
+},
+{
+"batas_atas": 14950000,
+"kategori": "C",
+"tarif_pct": 3.0
+},
+{
+"batas_atas": 16950000,
+"kategori": "C",
+"tarif_pct": 3.5
+},
+{
+"batas_atas": 19750000,
+"kategori": "C",
+"tarif_pct": 4.0
+},
+{
+"batas_atas": 24150000,
+"kategori": "C",
+"tarif_pct": 5.0
+},
+{
+"batas_atas": 26450000,
+"kategori": "C",
+"tarif_pct": 6.0
+},
+{
+"batas_atas": 29550000,
+"kategori": "C",
+"tarif_pct": 7.0
+},
+{
+"batas_atas": 33450000,
+"kategori": "C",
+"tarif_pct": 8.0
+},
+{
+"batas_atas": 38450000,
+"kategori": "C",
+"tarif_pct": 9.0
+},
+{
+"batas_atas": 44550000,
+"kategori": "C",
+"tarif_pct": 10.0
+},
+{
+"batas_atas": 52050000,
+"kategori": "C",
+"tarif_pct": 11.0
+},
+{
+"batas_atas": 61250000,
+"kategori": "C",
+"tarif_pct": 12.0
+},
+{
+"batas_atas": 72650000,
+"kategori": "C",
+"tarif_pct": 13.0
+},
+{
+"batas_atas": 86350000,
+"kategori": "C",
+"tarif_pct": 14.0
+},
+{
+"batas_atas": 102650000,
+"kategori": "C",
+"tarif_pct": 15.0
+},
+{
+"batas_atas": 122050000,
+"kategori": "C",
+"tarif_pct": 16.0
+},
+{
+"batas_atas": 145150000,
+"kategori": "C",
+"tarif_pct": 17.0
+},
+{
+"batas_atas": 172550000,
+"kategori": "C",
+"tarif_pct": 18.0
+},
+{
+"batas_atas": 204650000,
+"kategori": "C",
+"tarif_pct": 19.0
+},
+{
+"batas_atas": 242050000,
+"kategori": "C",
+"tarif_pct": 20.0
+},
+{
+"batas_atas": 285550000,
+"kategori": "C",
+"tarif_pct": 21.0
+},
+{
+"batas_atas": 335550000,
+"kategori": "C",
+"tarif_pct": 22.0
+},
+{
+"batas_atas": 392150000,
+"kategori": "C",
+"tarif_pct": 23.0
+},
+{
+"batas_atas": 455550000,
+"kategori": "C",
+"tarif_pct": 24.0
+},
+{
+"batas_atas": 525850000,
+"kategori": "C",
+"tarif_pct": 25.0
+},
+{
+"batas_atas": 603050000,
+"kategori": "C",
+"tarif_pct": 26.0
+},
+{
+"batas_atas": 687150000,
+"kategori": "C",
+"tarif_pct": 27.0
+},
+{
+"batas_atas": 778250000,
+"kategori": "C",
+"tarif_pct": 28.0
+},
+{
+"batas_atas": 876350000,
+"kategori": "C",
+"tarif_pct": 29.0
+},
+{
+"batas_atas": 981450000,
+"kategori": "C",
+"tarif_pct": 30.0
+},
+{
+"batas_atas": 1100000000,
+"kategori": "C",
+"tarif_pct": 31.0
+},
+{
+"batas_atas": null,
+"kategori": "C",
+"tarif_pct": 34.0
+}
+],
+"max": null,
+"min": null,
+"options": [],
+"permission": [
+"hr",
+"manage_payroll"
+],
+"scopes": [
+"global"
+],
+"sensitif_baca": true,
+"status": "active",
+"type": "table"
+},
+"hr.ptkp_table": {
+"default": {
+"K0": 58500000,
+"K1": 63000000,
+"K2": 67500000,
+"K3": 72000000,
+"TK0": 54000000,
+"TK1": 58500000,
+"TK2": 63000000,
+"TK3": 67500000
+},
+"max": null,
+"min": null,
+"options": [],
+"permission": [
+"hr",
+"manage_payroll"
+],
+"scopes": [
+"global"
+],
+"sensitif_baca": true,
+"status": "active",
+"type": "table"
+},
+"hr.ter_enabled": {
+"default": true,
+"max": null,
+"min": null,
+"options": [],
+"permission": [
+"hr",
+"manage_payroll"
+],
+"scopes": [
+"global",
+"entity"
+],
+"sensitif_baca": true,
+"status": "active",
+"type": "bool"
+},
+"interco_payment.allow_netting": {
+"default": false,
+"max": null,
+"min": null,
+"options": [],
+"permission": [
+"entity",
+"update"
+],
+"scopes": [
+"global",
+"entity"
+],
+"sensitif_baca": false,
+"status": "active",
+"type": "bool"
+},
+"interco_payment.basis": {
+"default": "",
+"max": null,
+"min": null,
+"options": [
+"",
+"receipt",
+"invoice",
+"document"
+],
+"permission": [
+"entity",
+"update"
+],
+"scopes": [
+"global",
+"entity"
+],
+"sensitif_baca": false,
+"status": "active",
+"type": "enum"
+},
+"interco_payment.cutoff_day": {
+"default": 0,
+"max": 31,
+"min": 0,
+"options": [],
+"permission": [
+"entity",
+"update"
+],
+"scopes": [
+"global",
+"entity"
+],
+"sensitif_baca": false,
+"status": "active",
+"type": "int"
+},
+"interco_payment.payment_day": {
+"default": 0,
+"max": 31,
+"min": 0,
+"options": [],
+"permission": [
+"entity",
+"update"
+],
+"scopes": [
+"global",
+"entity"
+],
+"sensitif_baca": false,
+"status": "active",
+"type": "int"
+},
+"interco_payment.reminder_days": {
+"default": 3,
+"max": 30,
+"min": 0,
+"options": [],
+"permission": [
+"entity",
+"update"
+],
+"scopes": [
+"global",
+"entity"
+],
+"sensitif_baca": false,
+"status": "active",
+"type": "duration"
+},
+"interco_payment.require_full_payment": {
+"default": true,
+"max": null,
+"min": null,
+"options": [],
+"permission": [
+"entity",
+"update"
+],
+"scopes": [
+"global",
+"entity"
+],
+"sensitif_baca": false,
+"status": "active",
+"type": "bool"
+},
+"inventory.default_uom": {
+"default": "meter",
+"max": null,
+"min": null,
+"options": [],
+"permission": [
+"settings",
+"manage"
+],
+"scopes": [
+"global",
+"entity"
+],
+"sensitif_baca": true,
+"status": "active",
+"type": "text"
+},
+"inventory.drift_alert_rupiah": {
+"default": 1000,
+"max": 1000000000,
+"min": 0,
+"options": [],
+"permission": [
+"settings",
+"manage"
+],
+"scopes": [
+"global",
+"entity"
+],
+"sensitif_baca": true,
+"status": "active",
+"type": "money"
+},
+"inventory.intercompany_transfer_required": {
+"default": true,
+"max": null,
+"min": null,
+"options": [],
+"permission": [
+"settings",
+"manage"
+],
+"scopes": [
+"global",
+"entity"
+],
+"sensitif_baca": true,
+"status": "active",
+"type": "bool"
+},
+"inventory.min_cut_qty": {
+"default": 0.5,
+"max": 1000,
+"min": 0,
+"options": [],
+"permission": [
+"settings",
+"manage"
+],
+"scopes": [
+"global",
+"entity"
+],
+"sensitif_baca": false,
+"status": "active",
+"type": "decimal"
+},
+"inventory.reorder.safety_days": {
+"default": 7,
+"max": 180,
+"min": 0,
+"options": [],
+"permission": [
+"settings",
+"manage"
+],
+"scopes": [
+"global",
+"entity"
+],
+"sensitif_baca": true,
+"status": "active",
+"type": "duration"
+},
+"inventory.reorder.velocity_window_days": {
+"default": 90,
+"max": 730,
+"min": 7,
+"options": [],
+"permission": [
+"settings",
+"manage"
+],
+"scopes": [
+"global",
+"entity"
+],
+"sensitif_baca": true,
+"status": "active",
+"type": "duration"
+},
+"inventory.stock_analytics.best_seller_pct": {
+"default": 20,
+"max": 50,
+"min": 1,
+"options": [],
+"permission": [
+"settings",
+"manage"
+],
+"scopes": [
+"global",
+"entity"
+],
+"sensitif_baca": true,
+"status": "active",
+"type": "pct"
+},
+"inventory.stock_analytics.fast_max_days": {
+"default": 30,
+"max": 365,
+"min": 1,
+"options": [],
+"permission": [
+"settings",
+"manage"
+],
+"scopes": [
+"global",
+"entity"
+],
+"sensitif_baca": true,
+"status": "not_used",
+"type": "duration"
+},
+"inventory.stock_analytics.new_sku_age_days": {
+"default": 90,
+"max": 730,
+"min": 0,
+"options": [],
+"permission": [
+"settings",
+"manage"
+],
+"scopes": [
+"global",
+"entity"
+],
+"sensitif_baca": true,
+"status": "active",
+"type": "duration"
+},
+"inventory.stock_analytics.slow_max_days": {
+"default": 90,
+"max": 1095,
+"min": 1,
+"options": [],
+"permission": [
+"settings",
+"manage"
+],
+"scopes": [
+"global",
+"entity"
+],
+"sensitif_baca": true,
+"status": "not_used",
+"type": "duration"
+},
+"inventory.stock_analytics.slow_moving_pct": {
+"default": 20,
+"max": 50,
+"min": 1,
+"options": [],
+"permission": [
+"settings",
+"manage"
+],
+"scopes": [
+"global",
+"entity"
+],
+"sensitif_baca": true,
+"status": "active",
+"type": "pct"
+},
+"inventory.stock_analytics.velocity_window_days": {
+"default": 90,
+"max": 730,
+"min": 7,
+"options": [],
+"permission": [
+"settings",
+"manage"
+],
+"scopes": [
+"global",
+"entity"
+],
+"sensitif_baca": true,
+"status": "active",
+"type": "duration"
+},
+"kontrol.acc_desain.min_orang": {
+"default": "2",
+"max": null,
+"min": null,
+"options": [
+"1",
+"2"
+],
+"permission": [
+"settings",
+"manage"
+],
+"scopes": [
+"global",
+"entity"
+],
+"sensitif_baca": true,
+"status": "active",
+"type": "enum"
+},
+"kontrol.acc_sample.min_orang": {
+"default": "2",
+"max": null,
+"min": null,
+"options": [
+"1",
+"2"
+],
+"permission": [
+"settings",
+"manage"
+],
+"scopes": [
+"global",
+"entity"
+],
+"sensitif_baca": true,
+"status": "active",
+"type": "enum"
+},
+"kontrol.admin_boleh_sendiri": {
+"default": true,
+"max": null,
+"min": null,
+"options": [],
+"permission": [
+"settings",
+"manage"
+],
+"scopes": [
+"global",
+"entity"
+],
+"sensitif_baca": true,
+"status": "active",
+"type": "bool"
+},
+"kontrol.admin_tetap_dua_orang": {
+"default": [
+"susut_makloon",
+"pengecualian_retur",
+"klaim_desain",
+"registrasi_stok_awal"
+],
+"max": null,
+"min": null,
+"options": [],
+"permission": [
+"settings",
+"manage"
+],
+"scopes": [
+"global",
+"entity"
+],
+"sensitif_baca": true,
+"status": "active",
+"type": "list"
+},
+"kontrol.amandemen.batas_nominal": {
+"default": 0,
+"max": 1000000000000,
+"min": 0,
+"options": [],
+"permission": [
+"settings",
+"manage"
+],
+"scopes": [
+"global",
+"entity"
+],
+"sensitif_baca": true,
+"status": "active",
+"type": "money"
+},
+"kontrol.amandemen.min_orang": {
+"default": "2",
+"max": null,
+"min": null,
+"options": [
+"1",
+"2"
+],
+"permission": [
+"settings",
+"manage"
+],
+"scopes": [
+"global",
+"entity"
+],
+"sensitif_baca": true,
+"status": "active",
+"type": "enum"
+},
+"kontrol.biaya_masuk.batas_nominal": {
+"default": 0,
+"max": 1000000000000,
+"min": 0,
+"options": [],
+"permission": [
+"settings",
+"manage"
+],
+"scopes": [
+"global",
+"entity"
+],
+"sensitif_baca": true,
+"status": "active",
+"type": "money"
+},
+"kontrol.biaya_masuk.min_orang": {
+"default": "2",
+"max": null,
+"min": null,
+"options": [
+"1",
+"2"
+],
+"permission": [
+"settings",
+"manage"
+],
+"scopes": [
+"global",
+"entity"
+],
+"sensitif_baca": true,
+"status": "active",
+"type": "enum"
+},
+"kontrol.buka_kembali_tutup_buku.min_orang": {
+"default": "1",
+"max": null,
+"min": null,
+"options": [
+"1",
+"2"
+],
+"permission": [
+"settings",
+"manage"
+],
+"scopes": [
+"global",
+"entity"
+],
+"sensitif_baca": true,
+"status": "active",
+"type": "enum"
+},
+"kontrol.buka_periode.min_orang": {
+"default": "1",
+"max": null,
+"min": null,
+"options": [
+"1",
+"2"
+],
+"permission": [
+"settings",
+"manage"
+],
+"scopes": [
+"global",
+"entity"
+],
+"sensitif_baca": true,
+"status": "active",
+"type": "enum"
+},
+"kontrol.cuti.min_orang": {
+"default": "1",
+"max": null,
+"min": null,
+"options": [
+"1",
+"2"
+],
+"permission": [
+"settings",
+"manage"
+],
+"scopes": [
+"global",
+"entity"
+],
+"sensitif_baca": true,
+"status": "active",
+"type": "enum"
+},
+"kontrol.harga_khusus.min_orang": {
+"default": "2",
+"max": null,
+"min": null,
+"options": [
+"1",
+"2"
+],
+"permission": [
+"settings",
+"manage"
+],
+"scopes": [
+"global",
+"entity"
+],
+"sensitif_baca": true,
+"status": "active",
+"type": "enum"
+},
+"kontrol.jurnal_manual.batas_nominal": {
+"default": 0,
+"max": 1000000000000,
+"min": 0,
+"options": [],
+"permission": [
+"settings",
+"manage"
+],
+"scopes": [
+"global",
+"entity"
+],
+"sensitif_baca": true,
+"status": "active",
+"type": "money"
+},
+"kontrol.jurnal_manual.min_orang": {
+"default": "1",
+"max": null,
+"min": null,
+"options": [
+"1",
+"2"
+],
+"permission": [
+"settings",
+"manage"
+],
+"scopes": [
+"global",
+"entity"
+],
+"sensitif_baca": true,
+"status": "active",
+"type": "enum"
+},
+"kontrol.klaim_desain.min_orang": {
+"default": "2",
+"max": null,
+"min": null,
+"options": [
+"1",
+"2"
+],
+"permission": [
+"settings",
+"manage"
+],
+"scopes": [
+"global",
+"entity"
+],
+"sensitif_baca": true,
+"status": "active",
+"type": "enum"
+},
+"kontrol.klaim_makloon.batas_nominal": {
+"default": 0,
+"max": 1000000000000,
+"min": 0,
+"options": [],
+"permission": [
+"settings",
+"manage"
+],
+"scopes": [
+"global",
+"entity"
+],
+"sensitif_baca": true,
+"status": "active",
+"type": "money"
+},
+"kontrol.klaim_makloon.min_orang": {
+"default": "1",
+"max": null,
+"min": null,
+"options": [
+"1",
+"2"
+],
+"permission": [
+"settings",
+"manage"
+],
+"scopes": [
+"global",
+"entity"
+],
+"sensitif_baca": true,
+"status": "active",
+"type": "enum"
+},
+"kontrol.kontrabon.batas_nominal": {
+"default": 0,
+"max": 1000000000000,
+"min": 0,
+"options": [],
+"permission": [
+"settings",
+"manage"
+],
+"scopes": [
+"global",
+"entity"
+],
+"sensitif_baca": true,
+"status": "active",
+"type": "money"
+},
+"kontrol.kontrabon.min_orang": {
+"default": "2",
+"max": null,
+"min": null,
+"options": [
+"1",
+"2"
+],
+"permission": [
+"settings",
+"manage"
+],
+"scopes": [
+"global",
+"entity"
+],
+"sensitif_baca": true,
+"status": "active",
+"type": "enum"
+},
+"kontrol.lembur.min_orang": {
+"default": "1",
+"max": null,
+"min": null,
+"options": [
+"1",
+"2"
+],
+"permission": [
+"settings",
+"manage"
+],
+"scopes": [
+"global",
+"entity"
+],
+"sensitif_baca": true,
+"status": "active",
+"type": "enum"
+},
+"kontrol.lewat_batas_kredit.batas_nominal": {
+"default": 0,
+"max": 1000000000000,
+"min": 0,
+"options": [],
+"permission": [
+"settings",
+"manage"
+],
+"scopes": [
+"global",
+"entity"
+],
+"sensitif_baca": true,
+"status": "active",
+"type": "money"
+},
+"kontrol.lewat_batas_kredit.min_orang": {
+"default": "1",
+"max": null,
+"min": null,
+"options": [
+"1",
+"2"
+],
+"permission": [
+"settings",
+"manage"
+],
+"scopes": [
+"global",
+"entity"
+],
+"sensitif_baca": true,
+"status": "active",
+"type": "enum"
+},
+"kontrol.lpj_uang_muka.batas_nominal": {
+"default": 0,
+"max": 1000000000000,
+"min": 0,
+"options": [],
+"permission": [
+"settings",
+"manage"
+],
+"scopes": [
+"global",
+"entity"
+],
+"sensitif_baca": true,
+"status": "active",
+"type": "money"
+},
+"kontrol.lpj_uang_muka.min_orang": {
+"default": "1",
+"max": null,
+"min": null,
+"options": [
+"1",
+"2"
+],
+"permission": [
+"settings",
+"manage"
+],
+"scopes": [
+"global",
+"entity"
+],
+"sensitif_baca": true,
+"status": "active",
+"type": "enum"
+},
+"kontrol.nilai_pesanan.batas_nominal": {
+"default": 0,
+"max": 1000000000000,
+"min": 0,
+"options": [],
+"permission": [
+"settings",
+"manage"
+],
+"scopes": [
+"global",
+"entity"
+],
+"sensitif_baca": true,
+"status": "active",
+"type": "money"
+},
+"kontrol.nilai_pesanan.min_orang": {
+"default": "1",
+"max": null,
+"min": null,
+"options": [
+"1",
+"2"
+],
+"permission": [
+"settings",
+"manage"
+],
+"scopes": [
+"global",
+"entity"
+],
+"sensitif_baca": true,
+"status": "active",
+"type": "enum"
+},
+"kontrol.pengecualian_retur.min_orang": {
+"default": "2",
+"max": null,
+"min": null,
+"options": [
+"1",
+"2"
+],
+"permission": [
+"settings",
+"manage"
+],
+"scopes": [
+"global",
+"entity"
+],
+"sensitif_baca": true,
+"status": "active",
+"type": "enum"
+},
+"kontrol.pengurang_piutang.batas_nominal": {
+"default": 0,
+"max": 1000000000000,
+"min": 0,
+"options": [],
+"permission": [
+"settings",
+"manage"
+],
+"scopes": [
+"global",
+"entity"
+],
+"sensitif_baca": true,
+"status": "active",
+"type": "money"
+},
+"kontrol.pengurang_piutang.min_orang": {
+"default": "1",
+"max": null,
+"min": null,
+"options": [
+"1",
+"2"
+],
+"permission": [
+"settings",
+"manage"
+],
+"scopes": [
+"global",
+"entity"
+],
+"sensitif_baca": true,
+"status": "active",
+"type": "enum"
+},
+"kontrol.permintaan_desain.min_orang": {
+"default": "1",
+"max": null,
+"min": null,
+"options": [
+"1",
+"2"
+],
+"permission": [
+"settings",
+"manage"
+],
+"scopes": [
+"global",
+"entity"
+],
+"sensitif_baca": true,
+"status": "active",
+"type": "enum"
+},
+"kontrol.permintaan_internal.min_orang": {
+"default": "1",
+"max": null,
+"min": null,
+"options": [
+"1",
+"2"
+],
+"permission": [
+"settings",
+"manage"
+],
+"scopes": [
+"global",
+"entity"
+],
+"sensitif_baca": true,
+"status": "active",
+"type": "enum"
+},
+"kontrol.permintaan_pembelian.batas_nominal": {
+"default": 0,
+"max": 1000000000000,
+"min": 0,
+"options": [],
+"permission": [
+"settings",
+"manage"
+],
+"scopes": [
+"global",
+"entity"
+],
+"sensitif_baca": true,
+"status": "active",
+"type": "money"
+},
+"kontrol.permintaan_pembelian.min_orang": {
+"default": "2",
+"max": null,
+"min": null,
+"options": [
+"1",
+"2"
+],
+"permission": [
+"settings",
+"manage"
+],
+"scopes": [
+"global",
+"entity"
+],
+"sensitif_baca": true,
+"status": "active",
+"type": "enum"
+},
+"kontrol.po_custom.batas_nominal": {
+"default": 0,
+"max": 1000000000000,
+"min": 0,
+"options": [],
+"permission": [
+"settings",
+"manage"
+],
+"scopes": [
+"global",
+"entity"
+],
+"sensitif_baca": true,
+"status": "active",
+"type": "money"
+},
+"kontrol.po_custom.min_orang": {
+"default": "2",
+"max": null,
+"min": null,
+"options": [
+"1",
+"2"
+],
+"permission": [
+"settings",
+"manage"
+],
+"scopes": [
+"global",
+"entity"
+],
+"sensitif_baca": true,
+"status": "active",
+"type": "enum"
+},
+"kontrol.po_tingkat_berikut.min_orang": {
+"default": "2",
+"max": null,
+"min": null,
+"options": [
+"1",
+"2"
+],
+"permission": [
+"settings",
+"manage"
+],
+"scopes": [
+"global",
+"entity"
+],
+"sensitif_baca": true,
+"status": "active",
+"type": "enum"
+},
+"kontrol.proses_gaji.batas_nominal": {
+"default": 0,
+"max": 1000000000000,
+"min": 0,
+"options": [],
+"permission": [
+"settings",
+"manage"
+],
+"scopes": [
+"global",
+"entity"
+],
+"sensitif_baca": true,
+"status": "active",
+"type": "money"
+},
+"kontrol.proses_gaji.min_orang": {
+"default": "1",
+"max": null,
+"min": null,
+"options": [
+"1",
+"2"
+],
+"permission": [
+"settings",
+"manage"
+],
+"scopes": [
+"global",
+"entity"
+],
+"sensitif_baca": true,
+"status": "active",
+"type": "enum"
+},
+"kontrol.registrasi_stok_awal.min_orang": {
+"default": "2",
+"max": null,
+"min": null,
+"options": [
+"1",
+"2"
+],
+"permission": [
+"settings",
+"manage"
+],
+"scopes": [
+"global",
+"entity"
+],
+"sensitif_baca": true,
+"status": "active",
+"type": "enum"
+},
+"kontrol.retur_antar_pt.batas_nominal": {
+"default": 0,
+"max": 1000000000000,
+"min": 0,
+"options": [],
+"permission": [
+"settings",
+"manage"
+],
+"scopes": [
+"global",
+"entity"
+],
+"sensitif_baca": true,
+"status": "active",
+"type": "money"
+},
+"kontrol.retur_antar_pt.min_orang": {
+"default": "2",
+"max": null,
+"min": null,
+"options": [
+"1",
+"2"
+],
+"permission": [
+"settings",
+"manage"
+],
+"scopes": [
+"global",
+"entity"
+],
+"sensitif_baca": true,
+"status": "active",
+"type": "enum"
+},
+"kontrol.retur_pembelian.batas_nominal": {
+"default": 0,
+"max": 1000000000000,
+"min": 0,
+"options": [],
+"permission": [
+"settings",
+"manage"
+],
+"scopes": [
+"global",
+"entity"
+],
+"sensitif_baca": true,
+"status": "active",
+"type": "money"
+},
+"kontrol.retur_pembelian.min_orang": {
+"default": "1",
+"max": null,
+"min": null,
+"options": [
+"1",
+"2"
+],
+"permission": [
+"settings",
+"manage"
+],
+"scopes": [
+"global",
+"entity"
+],
+"sensitif_baca": true,
+"status": "active",
+"type": "enum"
+},
+"kontrol.retur_penjualan.batas_nominal": {
+"default": 0,
+"max": 1000000000000,
+"min": 0,
+"options": [],
+"permission": [
+"settings",
+"manage"
+],
+"scopes": [
+"global",
+"entity"
+],
+"sensitif_baca": true,
+"status": "active",
+"type": "money"
+},
+"kontrol.retur_penjualan.min_orang": {
+"default": "1",
+"max": null,
+"min": null,
+"options": [
+"1",
+"2"
+],
+"permission": [
+"settings",
+"manage"
+],
+"scopes": [
+"global",
+"entity"
+],
+"sensitif_baca": true,
+"status": "active",
+"type": "enum"
+},
+"kontrol.setujui_po.batas_nominal": {
+"default": 0,
+"max": 1000000000000,
+"min": 0,
+"options": [],
+"permission": [
+"settings",
+"manage"
+],
+"scopes": [
+"global",
+"entity"
+],
+"sensitif_baca": true,
+"status": "active",
+"type": "money"
+},
+"kontrol.setujui_po.min_orang": {
+"default": "2",
+"max": null,
+"min": null,
+"options": [
+"1",
+"2"
+],
+"permission": [
+"settings",
+"manage"
+],
+"scopes": [
+"global",
+"entity"
+],
+"sensitif_baca": true,
+"status": "active",
+"type": "enum"
+},
+"kontrol.stok_opname.min_orang": {
+"default": "1",
+"max": null,
+"min": null,
+"options": [
+"1",
+"2"
+],
+"permission": [
+"settings",
+"manage"
+],
+"scopes": [
+"global",
+"entity"
+],
+"sensitif_baca": true,
+"status": "active",
+"type": "enum"
+},
+"kontrol.susut_makloon.batas_nominal": {
+"default": 0,
+"max": 1000000000000,
+"min": 0,
+"options": [],
+"permission": [
+"settings",
+"manage"
+],
+"scopes": [
+"global",
+"entity"
+],
+"sensitif_baca": true,
+"status": "active",
+"type": "money"
+},
+"kontrol.susut_makloon.min_orang": {
+"default": "2",
+"max": null,
+"min": null,
+"options": [
+"1",
+"2"
+],
+"permission": [
+"settings",
+"manage"
+],
+"scopes": [
+"global",
+"entity"
+],
+"sensitif_baca": true,
+"status": "active",
+"type": "enum"
+},
+"kontrol.tagihan_kampanye.batas_nominal": {
+"default": 0,
+"max": 1000000000000,
+"min": 0,
+"options": [],
+"permission": [
+"settings",
+"manage"
+],
+"scopes": [
+"global",
+"entity"
+],
+"sensitif_baca": true,
+"status": "active",
+"type": "money"
+},
+"kontrol.tagihan_kampanye.min_orang": {
+"default": "2",
+"max": null,
+"min": null,
+"options": [
+"1",
+"2"
+],
+"permission": [
+"settings",
+"manage"
+],
+"scopes": [
+"global",
+"entity"
+],
+"sensitif_baca": true,
+"status": "active",
+"type": "enum"
+},
+"kontrol.tagihan_pemasok.batas_nominal": {
+"default": 0,
+"max": 1000000000000,
+"min": 0,
+"options": [],
+"permission": [
+"settings",
+"manage"
+],
+"scopes": [
+"global",
+"entity"
+],
+"sensitif_baca": true,
+"status": "active",
+"type": "money"
+},
+"kontrol.tagihan_pemasok.min_orang": {
+"default": "2",
+"max": null,
+"min": null,
+"options": [
+"1",
+"2"
+],
+"permission": [
+"settings",
+"manage"
+],
+"scopes": [
+"global",
+"entity"
+],
+"sensitif_baca": true,
+"status": "active",
+"type": "enum"
+},
+"kontrol.transfer_gudang.min_orang": {
+"default": "1",
+"max": null,
+"min": null,
+"options": [
+"1",
+"2"
+],
+"permission": [
+"settings",
+"manage"
+],
+"scopes": [
+"global",
+"entity"
+],
+"sensitif_baca": true,
+"status": "active",
+"type": "enum"
+},
+"kontrol.uang_muka.batas_nominal": {
+"default": 0,
+"max": 1000000000000,
+"min": 0,
+"options": [],
+"permission": [
+"settings",
+"manage"
+],
+"scopes": [
+"global",
+"entity"
+],
+"sensitif_baca": true,
+"status": "active",
+"type": "money"
+},
+"kontrol.uang_muka.min_orang": {
+"default": "1",
+"max": null,
+"min": null,
+"options": [
+"1",
+"2"
+],
+"permission": [
+"settings",
+"manage"
+],
+"scopes": [
+"global",
+"entity"
+],
+"sensitif_baca": true,
+"status": "active",
+"type": "enum"
+},
+"lot.alias_mode": {
+"default": "manual",
+"max": null,
+"min": null,
+"options": [
+"manual",
+"off"
+],
+"permission": [
+"inventory",
+"configure"
+],
+"scopes": [
+"global",
+"entity"
+],
+"sensitif_baca": true,
+"status": "active",
+"type": "enum"
+},
+"lot.alias_unique_scope": {
+"default": "entity_supplier",
+"max": null,
+"min": null,
+"options": [
+"entity_supplier",
+"entity"
+],
+"permission": [
+"inventory",
+"configure"
+],
+"scopes": [
+"global",
+"entity"
+],
+"sensitif_baca": true,
+"status": "active",
+"type": "enum"
+},
+"lot.auto_create_on_receiving": {
+"default": true,
+"max": null,
+"min": null,
+"options": [],
+"permission": [
+"inventory",
+"configure"
+],
+"scopes": [
+"global",
+"entity"
+],
+"sensitif_baca": true,
+"status": "active",
+"type": "bool"
+},
+"lot.enforcement_mode": {
+"default": "warn",
+"max": null,
+"min": null,
+"options": [
+"off",
+"warn",
+"block"
+],
+"permission": [
+"inventory",
+"configure"
+],
+"scopes": [
+"global",
+"entity"
+],
+"sensitif_baca": true,
+"status": "active",
+"type": "enum"
+},
+"lot.number_format": {
+"default": "LOT-YYMM-####",
+"max": null,
+"min": null,
+"options": [],
+"permission": [
+"inventory",
+"configure"
+],
+"scopes": [
+"global",
+"entity"
+],
+"sensitif_baca": true,
+"status": "not_used",
+"type": "text"
+},
+"lot.require_dye_lot": {
+"default": true,
+"max": null,
+"min": null,
+"options": [],
+"permission": [
+"inventory",
+"configure"
+],
+"scopes": [
+"global",
+"entity"
+],
+"sensitif_baca": true,
+"status": "active",
+"type": "bool"
+},
+"lot.require_supplier_lot": {
+"default": true,
+"max": null,
+"min": null,
+"options": [],
+"permission": [
+"inventory",
+"configure"
+],
+"scopes": [
+"global",
+"entity"
+],
+"sensitif_baca": true,
+"status": "active",
+"type": "bool"
+},
+"lot.status_on_receipt": {
+"default": "karantina",
+"max": null,
+"min": null,
+"options": [
+"karantina",
+"tersedia"
+],
+"permission": [
+"inventory",
+"configure"
+],
+"scopes": [
+"global",
+"entity"
+],
+"sensitif_baca": true,
+"status": "active",
+"type": "enum"
+},
+"makloon.auto_claim": {
+"default": true,
+"max": null,
+"min": null,
+"options": [],
+"permission": [
+"makloon",
+"configure"
+],
+"scopes": [
+"global",
+"entity"
+],
+"sensitif_baca": true,
+"status": "active",
+"type": "bool"
+},
+"makloon.claim_approval_roles": {
+"default": [
+"manager",
+"admin"
+],
+"max": null,
+"min": null,
+"options": [],
+"permission": [
+"makloon",
+"configure"
+],
+"scopes": [
+"global",
+"entity"
+],
+"sensitif_baca": true,
+"status": "not_used",
+"type": "list"
+},
+"makloon.contract_mode": {
+"default": "warn",
+"max": null,
+"min": null,
+"options": [
+"off",
+"warn",
+"block"
+],
+"permission": [
+"makloon",
+"configure"
+],
+"scopes": [
+"global",
+"entity"
+],
+"sensitif_baca": true,
+"status": "active",
+"type": "enum"
+},
+"makloon.default_shrinkage_pct": {
+"default": 0.0,
+"max": 100,
+"min": 0,
+"options": [],
+"permission": [
+"makloon",
+"configure"
+],
+"scopes": [
+"global",
+"entity"
+],
+"sensitif_baca": true,
+"status": "active",
+"type": "pct"
+},
+"makloon.require_output_product": {
+"default": true,
+"max": null,
+"min": null,
+"options": [],
+"permission": [
+"makloon",
+"configure"
+],
+"scopes": [
+"global",
+"entity"
+],
+"sensitif_baca": true,
+"status": "active",
+"type": "bool"
+},
+"makloon.require_yield_reason": {
+"default": true,
+"max": null,
+"min": null,
+"options": [],
+"permission": [
+"makloon",
+"configure"
+],
+"scopes": [
+"global",
+"entity"
+],
+"sensitif_baca": true,
+"status": "active",
+"type": "bool"
+},
+"makloon.variance_tolerance_pct": {
+"default": 3.0,
+"max": 100,
+"min": 0,
+"options": [],
+"permission": [
+"makloon",
+"configure"
+],
+"scopes": [
+"global",
+"entity"
+],
+"sensitif_baca": true,
+"status": "active",
+"type": "pct"
+},
+"notif.low_stock_division": {
+"default": "",
+"max": null,
+"min": null,
+"options": [],
+"permission": [
+"settings",
+"manage"
+],
+"scopes": [
+"global"
+],
+"sensitif_baca": true,
+"status": "active",
+"type": "text"
+},
+"notif.po_stage_stuck_days": {
+"default": 7,
+"max": 180,
+"min": 1,
+"options": [],
+"permission": [
+"settings",
+"manage"
+],
+"scopes": [
+"global",
+"entity"
+],
+"sensitif_baca": true,
+"status": "active",
+"type": "duration"
+},
+"payment.default_dp_percent": {
+"default": 30.0,
+"max": 100,
+"min": 0,
+"options": [],
+"permission": [
+"settings",
+"manage"
+],
+"scopes": [
+"global",
+"entity"
+],
+"sensitif_baca": true,
+"status": "active",
+"type": "pct"
+},
+"payment.default_installment_interval": {
+"default": "monthly",
+"max": null,
+"min": null,
+"options": [
+"monthly",
+"weekly"
+],
+"permission": [
+"settings",
+"manage"
+],
+"scopes": [
+"global",
+"entity"
+],
+"sensitif_baca": true,
+"status": "active",
+"type": "enum"
+},
+"payment.default_installments": {
+"default": 3,
+"max": 36,
+"min": 1,
+"options": [],
+"permission": [
+"settings",
+"manage"
+],
+"scopes": [
+"global",
+"entity"
+],
+"sensitif_baca": true,
+"status": "active",
+"type": "int"
+},
+"payment.penalty_base": {
+"default": "installment",
+"max": null,
+"min": null,
+"options": [
+"installment",
+"outstanding"
+],
+"permission": [
+"settings",
+"manage"
+],
+"scopes": [
+"global",
+"entity",
+"customer"
+],
+"sensitif_baca": true,
+"status": "active",
+"type": "enum"
+},
+"payment.penalty_cap_pct": {
+"default": 0.0,
+"max": 100,
+"min": 0,
+"options": [],
+"permission": [
+"settings",
+"manage"
+],
+"scopes": [
+"global",
+"entity",
+"customer"
+],
+"sensitif_baca": true,
+"status": "active",
+"type": "pct"
+},
+"payment.penalty_min_amount": {
+"default": 10000,
+"max": 100000000,
+"min": 0,
+"options": [],
+"permission": [
+"settings",
+"manage"
+],
+"scopes": [
+"global",
+"entity"
+],
+"sensitif_baca": true,
+"status": "active",
+"type": "money"
+},
+"payment.penalty_mode": {
+"default": "draft",
+"max": null,
+"min": null,
+"options": [
+"off",
+"draft",
+"auto"
+],
+"permission": [
+"settings",
+"manage"
+],
+"scopes": [
+"global",
+"entity",
+"customer"
+],
+"sensitif_baca": true,
+"status": "active",
+"type": "enum"
+},
+"payment.penalty_waive_approver_role": {
+"default": "manager",
+"max": null,
+"min": null,
+"options": [
+"manager",
+"admin"
+],
+"permission": [
+"settings",
+"manage"
+],
+"scopes": [
+"global",
+"entity"
+],
+"sensitif_baca": true,
+"status": "active",
+"type": "enum"
+},
+"payment.penalty_waive_requires_approval": {
+"default": true,
+"max": null,
+"min": null,
+"options": [],
+"permission": [
+"settings",
+"manage"
+],
+"scopes": [
+"global",
+"entity"
+],
+"sensitif_baca": true,
+"status": "active",
+"type": "bool"
+},
+"payment.plan_required_above_amount": {
+"default": 0,
+"max": 100000000000,
+"min": 0,
+"options": [],
+"permission": [
+"settings",
+"manage"
+],
+"scopes": [
+"global",
+"entity"
+],
+"sensitif_baca": true,
+"status": "active",
+"type": "money"
+},
+"payment.plan_tolerance_rupiah": {
+"default": 1,
+"max": 100000,
+"min": 1,
+"options": [],
+"permission": [
+"settings",
+"manage"
+],
+"scopes": [
+"global",
+"entity"
+],
+"sensitif_baca": true,
+"status": "active",
+"type": "money"
+},
+"payment.variance_ap_tolerance_rupiah": {
+"default": 5000,
+"max": 10000000,
+"min": 0,
+"options": [],
+"permission": [
+"settings",
+"manage"
+],
+"scopes": [
+"global",
+"entity"
+],
+"sensitif_baca": true,
+"status": "active",
+"type": "money"
+},
+"payment.variance_overpay_default": {
+"default": "deposit",
+"max": null,
+"min": null,
+"options": [
+"deposit",
+"allocate",
+"refund"
+],
+"permission": [
+"settings",
+"manage"
+],
+"scopes": [
+"global",
+"entity",
+"customer"
+],
+"sensitif_baca": true,
+"status": "active",
+"type": "enum"
+},
+"payment.variance_refund_method": {
+"default": "transfer",
+"max": null,
+"min": null,
+"options": [
+"transfer",
+"cash"
+],
+"permission": [
+"settings",
+"manage"
+],
+"scopes": [
+"global",
+"entity"
+],
+"sensitif_baca": true,
+"status": "active",
+"type": "enum"
+},
+"payment.variance_reschedule_days": {
+"default": 14,
+"max": 365,
+"min": 1,
+"options": [],
+"permission": [
+"settings",
+"manage"
+],
+"scopes": [
+"global",
+"entity"
+],
+"sensitif_baca": true,
+"status": "active",
+"type": "int"
+},
+"payment.variance_tolerance_rupiah": {
+"default": 5000,
+"max": 10000000,
+"min": 0,
+"options": [],
+"permission": [
+"settings",
+"manage"
+],
+"scopes": [
+"global",
+"entity",
+"customer"
+],
+"sensitif_baca": true,
+"status": "active",
+"type": "money"
+},
+"payment.variance_underpay_default": {
+"default": "outstanding",
+"max": null,
+"min": null,
+"options": [
+"outstanding",
+"reschedule",
+"writeoff"
+],
+"permission": [
+"settings",
+"manage"
+],
+"scopes": [
+"global",
+"entity",
+"customer"
+],
+"sensitif_baca": true,
+"status": "active",
+"type": "enum"
+},
+"payment.variance_writeoff_approver_role": {
+"default": "manager",
+"max": null,
+"min": null,
+"options": [
+"manager",
+"admin"
+],
+"permission": [
+"settings",
+"manage"
+],
+"scopes": [
+"global",
+"entity"
+],
+"sensitif_baca": true,
+"status": "not_used",
+"type": "enum"
+},
+"payment.variance_writeoff_max_amount": {
+"default": 1000000,
+"max": 1000000000,
+"min": 0,
+"options": [],
+"permission": [
+"settings",
+"manage"
+],
+"scopes": [
+"global",
+"entity"
+],
+"sensitif_baca": true,
+"status": "active",
+"type": "money"
+},
+"payment.variance_writeoff_requires_approval": {
+"default": true,
+"max": null,
+"min": null,
+"options": [],
+"permission": [
+"settings",
+"manage"
+],
+"scopes": [
+"global",
+"entity"
+],
+"sensitif_baca": true,
+"status": "active",
+"type": "bool"
+},
+"periode.max_days_after_close": {
+"default": 7,
+"max": 3650,
+"min": 0,
+"options": [],
+"permission": [
+"settings",
+"manage"
+],
+"scopes": [
+"global",
+"entity"
+],
+"sensitif_baca": true,
+"status": "active",
+"type": "int"
+},
+"periode.unlock_window_hours": {
+"default": 24,
+"max": 168,
+"min": 1,
+"options": [],
+"permission": [
+"settings",
+"manage"
+],
+"scopes": [
+"global",
+"entity"
+],
+"sensitif_baca": true,
+"status": "active",
+"type": "int"
+},
+"pos.best_sellers.enabled": {
+"default": true,
+"max": null,
+"min": null,
+"options": [],
+"permission": [
+"settings",
+"manage"
+],
+"scopes": [
+"global",
+"entity"
+],
+"sensitif_baca": false,
+"status": "active",
+"type": "bool"
+},
+"pos.best_sellers.window_days": {
+"default": 90,
+"max": 730,
+"min": 7,
+"options": [],
+"permission": [
+"settings",
+"manage"
+],
+"scopes": [
+"global",
+"entity"
+],
+"sensitif_baca": false,
+"status": "active",
+"type": "int"
+},
+"pos.fbt.enabled": {
+"default": true,
+"max": null,
+"min": null,
+"options": [],
+"permission": [
+"settings",
+"manage"
+],
+"scopes": [
+"global",
+"entity"
+],
+"sensitif_baca": false,
+"status": "active",
+"type": "bool"
+},
+"pos.featured.enabled": {
+"default": true,
+"max": null,
+"min": null,
+"options": [],
+"permission": [
+"settings",
+"manage"
+],
+"scopes": [
+"global",
+"entity"
+],
+"sensitif_baca": false,
+"status": "active",
+"type": "bool"
+},
+"pos.recommendation.enabled": {
+"default": true,
+"max": null,
+"min": null,
+"options": [],
+"permission": [
+"settings",
+"manage"
+],
+"scopes": [
+"global",
+"entity"
+],
+"sensitif_baca": false,
+"status": "active",
+"type": "bool"
+},
+"pos.reorder.enabled": {
+"default": true,
+"max": null,
+"min": null,
+"options": [],
+"permission": [
+"settings",
+"manage"
+],
+"scopes": [
+"global",
+"entity"
+],
+"sensitif_baca": false,
+"status": "active",
+"type": "bool"
+},
+"pricelist.customer_price_approval": {
+"default": true,
+"max": null,
+"min": null,
+"options": [],
+"permission": [
+"settings",
+"manage"
+],
+"scopes": [
+"global",
+"entity"
+],
+"sensitif_baca": true,
+"status": "active",
+"type": "bool"
+},
+"pricelist.customer_price_floor": {
+"default": "both",
+"max": null,
+"min": null,
+"options": [
+"entity_price",
+"hpp",
+"both"
+],
+"permission": [
+"settings",
+"manage"
+],
+"scopes": [
+"global",
+"entity"
+],
+"sensitif_baca": true,
+"status": "active",
+"type": "enum"
+},
+"pricelist.customer_price_tolerance_pct": {
+"default": 0.0,
+"max": 100,
+"min": 0,
+"options": [],
+"permission": [
+"settings",
+"manage"
+],
+"scopes": [
+"global",
+"entity"
+],
+"sensitif_baca": true,
+"status": "active",
+"type": "pct"
+},
+"purchasing.allow_item_discount": {
+"default": true,
+"max": null,
+"min": null,
+"options": [],
+"permission": [
+"settings",
+"manage"
+],
+"scopes": [
+"global",
+"entity"
+],
+"sensitif_baca": false,
+"status": "active",
+"type": "bool"
+},
+"purchasing.allow_order_discount": {
+"default": true,
+"max": null,
+"min": null,
+"options": [],
+"permission": [
+"settings",
+"manage"
+],
+"scopes": [
+"global",
+"entity"
+],
+"sensitif_baca": false,
+"status": "active",
+"type": "bool"
+},
+"purchasing.bill_price_tolerance_percent": {
+"default": 5.0,
+"max": 100,
+"min": 0,
+"options": [],
+"permission": [
+"settings",
+"manage"
+],
+"scopes": [
+"global",
+"entity"
+],
+"sensitif_baca": false,
+"status": "active",
+"type": "pct"
+},
+"purchasing.bill_qty_tolerance_percent": {
+"default": 0.0,
+"max": 100,
+"min": 0,
+"options": [],
+"permission": [
+"settings",
+"manage"
+],
+"scopes": [
+"global",
+"entity"
+],
+"sensitif_baca": false,
+"status": "active",
+"type": "pct"
+},
+"purchasing.price_deviation_approval_percent": {
+"default": 10.0,
+"max": 100,
+"min": 0,
+"options": [],
+"permission": [
+"settings",
+"manage"
+],
+"scopes": [
+"global",
+"entity"
+],
+"sensitif_baca": true,
+"status": "active",
+"type": "pct"
+},
+"purchasing.qc_on_receipt": {
+"default": true,
+"max": null,
+"min": null,
+"options": [],
+"permission": [
+"settings",
+"manage"
+],
+"scopes": [
+"global",
+"entity"
+],
+"sensitif_baca": true,
+"status": "active",
+"type": "bool"
+},
+"purchasing.receive_tolerance_percent": {
+"default": 2.0,
+"max": 100,
+"min": 0,
+"options": [],
+"permission": [
+"settings",
+"manage"
+],
+"scopes": [
+"global",
+"entity"
+],
+"sensitif_baca": true,
+"status": "active",
+"type": "pct"
+},
+"purchasing.require_supplier_master": {
+"default": false,
+"max": null,
+"min": null,
+"options": [],
+"permission": [
+"settings",
+"manage"
+],
+"scopes": [
+"global",
+"entity"
+],
+"sensitif_baca": true,
+"status": "active",
+"type": "bool"
+},
+"purchasing.restock_source_unknown": {
+"default": "warn",
+"max": null,
+"min": null,
+"options": [
+"warn",
+"block"
+],
+"permission": [
+"settings",
+"manage"
+],
+"scopes": [
+"global",
+"entity"
+],
+"sensitif_baca": true,
+"status": "active",
+"type": "enum"
+},
+"putaway.auto_draft": {
+"default": true,
+"max": null,
+"min": null,
+"options": [],
+"permission": [
+"settings",
+"manage"
+],
+"scopes": [
+"global",
+"entity"
+],
+"sensitif_baca": true,
+"status": "active",
+"type": "bool"
+},
+"qc.accept_all_with_hold_action": {
+"default": "peringatkan",
+"max": null,
+"min": null,
+"options": [
+"peringatkan",
+"blokir"
+],
+"permission": [
+"settings",
+"manage"
+],
+"scopes": [
+"global",
+"entity"
+],
+"sensitif_baca": true,
+"status": "active",
+"type": "enum"
+},
+"qc.color_mismatch_action": {
+"default": "tahan",
+"max": null,
+"min": null,
+"options": [
+"abaikan",
+"peringatkan",
+"tahan"
+],
+"permission": [
+"settings",
+"manage"
+],
+"scopes": [
+"global",
+"entity"
+],
+"sensitif_baca": true,
+"status": "active",
+"type": "enum"
+},
+"qc.four_point_enabled": {
+"default": true,
+"max": null,
+"min": null,
+"options": [],
+"permission": [
+"settings",
+"manage"
+],
+"scopes": [
+"global",
+"entity"
+],
+"sensitif_baca": true,
+"status": "active",
+"type": "bool"
+},
+"qc.grade_from_points": {
+"default": false,
+"max": null,
+"min": null,
+"options": [],
+"permission": [
+"settings",
+"manage"
+],
+"scopes": [
+"global",
+"entity"
+],
+"sensitif_baca": true,
+"status": "active",
+"type": "bool"
+},
+"qc.grade_thresholds.a_max": {
+"default": 20.0,
+"max": 1000,
+"min": 0,
+"options": [],
+"permission": [
+"settings",
+"manage"
+],
+"scopes": [
+"global",
+"entity"
+],
+"sensitif_baca": true,
+"status": "active",
+"type": "decimal"
+},
+"qc.grade_thresholds.b_max": {
+"default": 40.0,
+"max": 1000,
+"min": 0,
+"options": [],
+"permission": [
+"settings",
+"manage"
+],
+"scopes": [
+"global",
+"entity"
+],
+"sensitif_baca": true,
+"status": "active",
+"type": "decimal"
+},
+"qc.handfeel_mismatch_action": {
+"default": "peringatkan",
+"max": null,
+"min": null,
+"options": [
+"abaikan",
+"peringatkan",
+"tahan"
+],
+"permission": [
+"settings",
+"manage"
+],
+"scopes": [
+"global",
+"entity"
+],
+"sensitif_baca": true,
+"status": "active",
+"type": "enum"
+},
+"qc.md_sampling_min": {
+"default": 1,
+"max": 1000,
+"min": 1,
+"options": [],
+"permission": [
+"settings",
+"manage"
+],
+"scopes": [
+"global",
+"entity"
+],
+"sensitif_baca": true,
+"status": "active",
+"type": "int"
+},
+"qc.md_sampling_pct": {
+"default": 0,
+"max": 100,
+"min": 0,
+"options": [],
+"permission": [
+"settings",
+"manage"
+],
+"scopes": [
+"global",
+"entity"
+],
+"sensitif_baca": true,
+"status": "active",
+"type": "int"
+},
+"qc.sampling_min": {
+"default": 1,
+"max": 1000,
+"min": 1,
+"options": [],
+"permission": [
+"settings",
+"manage"
+],
+"scopes": [
+"global",
+"entity"
+],
+"sensitif_baca": true,
+"status": "active",
+"type": "int"
+},
+"qc.sampling_pct": {
+"default": 100,
+"max": 100,
+"min": 0,
+"options": [],
+"permission": [
+"settings",
+"manage"
+],
+"scopes": [
+"global",
+"entity"
+],
+"sensitif_baca": true,
+"status": "active",
+"type": "int"
+},
+"receiving.auto_rfid_on_scan": {
+"default": true,
+"max": null,
+"min": null,
+"options": [],
+"permission": [
+"settings",
+"manage"
+],
+"scopes": [
+"global",
+"entity"
+],
+"sensitif_baca": true,
+"status": "active",
+"type": "bool"
+},
+"receiving.blind_count": {
+"default": true,
+"max": null,
+"min": null,
+"options": [],
+"permission": [
+"settings",
+"manage"
+],
+"scopes": [
+"global",
+"entity"
+],
+"sensitif_baca": true,
+"status": "active",
+"type": "bool"
+},
+"receiving.block_over_remaining": {
+"default": true,
+"max": null,
+"min": null,
+"options": [],
+"permission": [
+"settings",
+"manage"
+],
+"scopes": [
+"global",
+"entity"
+],
+"sensitif_baca": true,
+"status": "active",
+"type": "bool"
+},
+"receiving.client_po_patterns": {
+"default": [
+"(?P<core>\\d{3,5})/(CST|SCB)/\\d{4}",
+"[A-Z]+/PO-(?P<core>\\d+)"
+],
+"max": null,
+"min": null,
+"options": [],
+"permission": [
+"settings",
+"manage"
+],
+"scopes": [
+"global",
+"entity"
+],
+"sensitif_baca": true,
+"status": "active",
+"type": "list"
+},
+"receiving.label_variance_tolerance_percent": {
+"default": 2.0,
+"max": 50,
+"min": 0,
+"options": [],
+"permission": [
+"settings",
+"manage"
+],
+"scopes": [
+"global",
+"entity"
+],
+"sensitif_baca": true,
+"status": "active",
+"type": "pct"
+},
+"receiving.line_qty_tolerance_pct": {
+"default": 2.0,
+"max": 50,
+"min": 0,
+"options": [],
+"permission": [
+"settings",
+"manage"
+],
+"scopes": [
+"global",
+"entity"
+],
+"sensitif_baca": true,
+"status": "active",
+"type": "pct"
+},
+"receiving.min_photo_short_side_px": {
+"default": 1000,
+"max": null,
+"min": null,
+"options": [],
+"permission": [
+"settings",
+"manage"
+],
+"scopes": [
+"global"
+],
+"sensitif_baca": true,
+"status": "active",
+"type": "int"
+},
+"receiving.mode": {
+"default": "legacy",
+"max": null,
+"min": null,
+"options": [
+"legacy",
+"grn"
+],
+"permission": [
+"settings",
+"manage"
+],
+"scopes": [
+"global",
+"entity"
+],
+"sensitif_baca": true,
+"status": "active",
+"type": "enum"
+},
+"receiving.ocr_auto_orient": {
+"default": true,
+"max": null,
+"min": null,
+"options": [],
+"permission": [
+"settings",
+"manage"
+],
+"scopes": [
+"global"
+],
+"sensitif_baca": true,
+"status": "active",
+"type": "bool"
+},
+"receiving.ocr_budget_warn_pct": {
+"default": 80,
+"max": null,
+"min": null,
+"options": [],
+"permission": [
+"settings",
+"manage"
+],
+"scopes": [
+"global"
+],
+"sensitif_baca": true,
+"status": "active",
+"type": "pct"
+},
+"receiving.ocr_enabled": {
+"default": false,
+"max": null,
+"min": null,
+"options": [],
+"permission": [
+"settings",
+"manage"
+],
+"scopes": [
+"global",
+"entity"
+],
+"sensitif_baca": true,
+"status": "active",
+"type": "bool"
+},
+"receiving.ocr_extract_packing_list": {
+"default": true,
+"max": null,
+"min": null,
+"options": [],
+"permission": [
+"settings",
+"manage"
+],
+"scopes": [
+"global",
+"entity"
+],
+"sensitif_baca": true,
+"status": "active",
+"type": "bool"
+},
+"receiving.ocr_image_max_side": {
+"default": 2048,
+"max": null,
+"min": null,
+"options": [],
+"permission": [
+"settings",
+"manage"
+],
+"scopes": [
+"global"
+],
+"sensitif_baca": true,
+"status": "active",
+"type": "int"
+},
+"receiving.ocr_max_output_tokens": {
+"default": 6000,
+"max": null,
+"min": null,
+"options": [],
+"permission": [
+"settings",
+"manage"
+],
+"scopes": [
+"global"
+],
+"sensitif_baca": true,
+"status": "active",
+"type": "int"
+},
+"receiving.ocr_max_pages": {
+"default": 5,
+"max": 50,
+"min": 1,
+"options": [],
+"permission": [
+"settings",
+"manage"
+],
+"scopes": [
+"global"
+],
+"sensitif_baca": true,
+"status": "active",
+"type": "int"
+},
+"receiving.ocr_model_primary": {
+"default": "gpt-6-sol",
+"max": null,
+"min": null,
+"options": [],
+"permission": [
+"settings",
+"manage"
+],
+"scopes": [
+"global"
+],
+"sensitif_baca": true,
+"status": "active",
+"type": "text"
+},
+"receiving.ocr_model_second": {
+"default": "gpt-5.6-sol",
+"max": null,
+"min": null,
+"options": [],
+"permission": [
+"settings",
+"manage"
+],
+"scopes": [
+"global"
+],
+"sensitif_baca": true,
+"status": "active",
+"type": "text"
+},
+"receiving.ocr_monthly_budget_usd": {
+"default": 75,
+"max": null,
+"min": null,
+"options": [],
+"permission": [
+"settings",
+"manage"
+],
+"scopes": [
+"global"
+],
+"sensitif_baca": true,
+"status": "active",
+"type": "decimal"
+},
+"receiving.ocr_orient_model": {
+"default": "gpt-6-sol",
+"max": null,
+"min": null,
+"options": [],
+"permission": [
+"settings",
+"manage"
+],
+"scopes": [
+"global"
+],
+"sensitif_baca": true,
+"status": "active",
+"type": "text"
+},
+"receiving.ocr_photo_check": {
+"default": true,
+"max": null,
+"min": null,
+"options": [],
+"permission": [
+"settings",
+"manage"
+],
+"scopes": [
+"global"
+],
+"sensitif_baca": true,
+"status": "active",
+"type": "bool"
+},
+"receiving.ocr_price_table": {
+"default": "{\"gpt-6-sol\": {\"in\": 2.0, \"cached_in\": 0.2, \"out\": 10.0}, \"gpt-6-luna\": {\"in\": 0.5, \"cached_in\": 0.05, \"out\": 2.0}, \"gpt-5.6-sol\": {\"in\": 5.0, \"cached_in\": 0.5, \"out\": 30.0}, \"price_version\": \"2026-09-28\"}",
+"max": null,
+"min": null,
+"options": [],
+"permission": [
+"settings",
+"manage"
+],
+"scopes": [
+"global"
+],
+"sensitif_baca": true,
+"status": "active",
+"type": "text"
+},
+"receiving.ocr_reasoning_effort": {
+"default": "low",
+"max": null,
+"min": null,
+"options": [
+"none",
+"low",
+"medium"
+],
+"permission": [
+"settings",
+"manage"
+],
+"scopes": [
+"global"
+],
+"sensitif_baca": true,
+"status": "active",
+"type": "enum"
+},
+"receiving.ocr_second_reader_mode": {
+"default": "on_doubt",
+"max": null,
+"min": null,
+"options": [
+"off",
+"on_doubt",
+"always"
+],
+"permission": [
+"settings",
+"manage"
+],
+"scopes": [
+"global"
+],
+"sensitif_baca": true,
+"status": "active",
+"type": "enum"
+},
+"receiving.require_supplier_item_for_supplier_uom": {
+"default": true,
+"max": null,
+"min": null,
+"options": [],
+"permission": [
+"settings",
+"manage"
+],
+"scopes": [
+"global",
+"entity"
+],
+"sensitif_baca": true,
+"status": "active",
+"type": "bool"
+},
+"receiving.supplier_dn_mode": {
+"default": "warn",
+"max": null,
+"min": null,
+"options": [
+"off",
+"warn",
+"block"
+],
+"permission": [
+"goods_receipt",
+"configure"
+],
+"scopes": [
+"global",
+"entity"
+],
+"sensitif_baca": true,
+"status": "active",
+"type": "enum"
+},
+"receiving.supplier_uom_input_mode": {
+"default": "prefer",
+"max": null,
+"min": null,
+"options": [
+"off",
+"optional",
+"prefer"
+],
+"permission": [
+"settings",
+"manage"
+],
+"scopes": [
+"global",
+"entity"
+],
+"sensitif_baca": true,
+"status": "active",
+"type": "enum"
+},
+"registration.finance_approval": {
+"default": true,
+"max": null,
+"min": null,
+"options": [],
+"permission": [
+"settings",
+"manage"
+],
+"scopes": [
+"global",
+"entity"
+],
+"sensitif_baca": true,
+"status": "active",
+"type": "bool"
+},
+"returns.bill_first": {
+"default": true,
+"max": null,
+"min": null,
+"options": [],
+"permission": [
+"sales_return",
+"policy"
+],
+"scopes": [
+"global",
+"entity"
+],
+"sensitif_baca": false,
+"status": "active",
+"type": "bool"
+},
+"returns.block_resend_to_origin_customer": {
+"default": true,
+"max": null,
+"min": null,
+"options": [],
+"permission": [
+"sales_return",
+"policy"
+],
+"scopes": [
+"global",
+"entity"
+],
+"sensitif_baca": true,
+"status": "active",
+"type": "bool"
+},
+"returns.customer_window_days": {
+"default": 21,
+"max": 365,
+"min": 1,
+"options": [],
+"permission": [
+"sales_return",
+"policy"
+],
+"scopes": [
+"global",
+"entity"
+],
+"sensitif_baca": false,
+"status": "active",
+"type": "duration"
+},
+"returns.cutloss_treatment_roles": {
+"default": [
+"md",
+"md_quality"
+],
+"max": null,
+"min": null,
+"options": [],
+"permission": [
+"sales_return",
+"policy"
+],
+"scopes": [
+"global",
+"entity"
+],
+"sensitif_baca": true,
+"status": "not_used",
+"type": "list"
+},
+"returns.evidence_required_approve": {
+"default": false,
+"max": null,
+"min": null,
+"options": [],
+"permission": [
+"settings",
+"manage"
+],
+"scopes": [
+"global",
+"entity"
+],
+"sensitif_baca": true,
+"status": "active",
+"type": "bool"
+},
+"returns.evidence_required_inspect": {
+"default": false,
+"max": null,
+"min": null,
+"options": [],
+"permission": [
+"settings",
+"manage"
+],
+"scopes": [
+"global",
+"entity"
+],
+"sensitif_baca": true,
+"status": "active",
+"type": "bool"
+},
+"returns.evidence_required_settle": {
+"default": false,
+"max": null,
+"min": null,
+"options": [],
+"permission": [
+"settings",
+"manage"
+],
+"scopes": [
+"global",
+"entity"
+],
+"sensitif_baca": true,
+"status": "active",
+"type": "bool"
+},
+"returns.evidence_required_submit": {
+"default": false,
+"max": null,
+"min": null,
+"options": [],
+"permission": [
+"settings",
+"manage"
+],
+"scopes": [
+"global",
+"entity"
+],
+"sensitif_baca": true,
+"status": "active",
+"type": "bool"
+},
+"returns.grade_price_factors": {
+"default": {
+"A": 100,
+"A1": 95,
+"A2": 90,
+"B": 70,
+"B1": 60,
+"BS": 10,
+"C": 40
+},
+"max": null,
+"min": null,
+"options": [],
+"permission": [
+"sales_return",
+"policy"
+],
+"scopes": [
+"global",
+"entity"
+],
+"sensitif_baca": false,
+"status": "active",
+"type": "table"
+},
+"returns.logistics_vat_enabled": {
+"default": false,
+"max": null,
+"min": null,
+"options": [],
+"permission": [
+"sales_return",
+"policy"
+],
+"scopes": [
+"global",
+"entity"
+],
+"sensitif_baca": true,
+"status": "active",
+"type": "bool"
+},
+"returns.supplier_reminder_days": {
+"default": 3,
+"max": 60,
+"min": 0,
+"options": [],
+"permission": [
+"sales_return",
+"policy"
+],
+"scopes": [
+"global",
+"entity"
+],
+"sensitif_baca": false,
+"status": "active",
+"type": "duration"
+},
+"returns.supplier_window_days": {
+"default": 21,
+"max": 365,
+"min": 1,
+"options": [],
+"permission": [
+"sales_return",
+"policy"
+],
+"scopes": [
+"global",
+"entity"
+],
+"sensitif_baca": false,
+"status": "active",
+"type": "duration"
+},
+"rfid.evidence_retention_days": {
+"default": 90,
+"max": 3650,
+"min": 7,
+"options": [],
+"permission": [
+"settings",
+"manage"
+],
+"scopes": [
+"global"
+],
+"sensitif_baca": true,
+"status": "active",
+"type": "int"
+},
+"rfid.evidence_retention_mode": {
+"default": "archive",
+"max": null,
+"min": null,
+"options": [
+"archive",
+"dry_run",
+"off"
+],
+"permission": [
+"settings",
+"manage"
+],
+"scopes": [
+"global"
+],
+"sensitif_baca": true,
+"status": "active",
+"type": "enum"
+},
+"rfid.legacy_reads_retention_days": {
+"default": 180,
+"max": 3650,
+"min": 7,
+"options": [],
+"permission": [
+"settings",
+"manage"
+],
+"scopes": [
+"global"
+],
+"sensitif_baca": true,
+"status": "active",
+"type": "int"
+},
+"rnd.auto_contract_on_decide": {
+"default": true,
+"max": null,
+"min": null,
+"options": [],
+"permission": [
+"rnd",
+"manage"
+],
+"scopes": [
+"global",
+"entity"
+],
+"sensitif_baca": true,
+"status": "active",
+"type": "bool"
+},
+"rnd.design_acc_min_score": {
+"default": 1.5,
+"max": 2,
+"min": 0,
+"options": [],
+"permission": [
+"rnd",
+"manage"
+],
+"scopes": [
+"global",
+"entity"
+],
+"sensitif_baca": true,
+"status": "active",
+"type": "decimal"
+},
+"rnd.design_code_pattern": {
+"default": "{DESIGNER}-{CAT}-{DCAT}-{SEQ}",
+"max": null,
+"min": null,
+"options": [],
+"permission": [
+"rnd",
+"manage"
+],
+"scopes": [
+"global",
+"entity"
+],
+"sensitif_baca": true,
+"status": "active",
+"type": "text"
+},
+"rnd.design_code_seq_digits": {
+"default": 3,
+"max": 6,
+"min": 2,
+"options": [],
+"permission": [
+"rnd",
+"manage"
+],
+"scopes": [
+"global",
+"entity"
+],
+"sensitif_baca": true,
+"status": "active",
+"type": "int"
+},
+"rnd.design_prefix_artwork": {
+"default": "ART",
+"max": null,
+"min": null,
+"options": [],
+"permission": [
+"rnd",
+"manage"
+],
+"scopes": [
+"global",
+"entity"
+],
+"sensitif_baca": true,
+"status": "active",
+"type": "text"
+},
+"rnd.design_prefix_motif": {
+"default": "MTF",
+"max": null,
+"min": null,
+"options": [],
+"permission": [
+"rnd",
+"manage"
+],
+"scopes": [
+"global",
+"entity"
+],
+"sensitif_baca": true,
+"status": "active",
+"type": "text"
+},
+"rnd.design_prefix_pattern": {
+"default": "PTR",
+"max": null,
+"min": null,
+"options": [],
+"permission": [
+"rnd",
+"manage"
+],
+"scopes": [
+"global",
+"entity"
+],
+"sensitif_baca": true,
+"status": "active",
+"type": "text"
+},
+"rnd.kpi_penalty_overdue": {
+"default": 0.3,
+"max": 2,
+"min": 0,
+"options": [],
+"permission": [
+"rnd",
+"manage"
+],
+"scopes": [
+"global",
+"entity"
+],
+"sensitif_baca": true,
+"status": "active",
+"type": "decimal"
+},
+"rnd.kpi_penalty_rework": {
+"default": 0.3,
+"max": 2,
+"min": 0,
+"options": [],
+"permission": [
+"rnd",
+"manage"
+],
+"scopes": [
+"global",
+"entity"
+],
+"sensitif_baca": true,
+"status": "active",
+"type": "decimal"
+},
+"rnd.kpi_weight_acc": {
+"default": 20,
+"max": 100,
+"min": 0,
+"options": [],
+"permission": [
+"rnd",
+"manage"
+],
+"scopes": [
+"global",
+"entity"
+],
+"sensitif_baca": true,
+"status": "active",
+"type": "pct"
+},
+"rnd.kpi_weight_design": {
+"default": 20,
+"max": 100,
+"min": 0,
+"options": [],
+"permission": [
+"rnd",
+"manage"
+],
+"scopes": [
+"global",
+"entity"
+],
+"sensitif_baca": true,
+"status": "active",
+"type": "pct"
+},
+"rnd.kpi_weight_on_time": {
+"default": 30,
+"max": 100,
+"min": 0,
+"options": [],
+"permission": [
+"rnd",
+"manage"
+],
+"scopes": [
+"global",
+"entity"
+],
+"sensitif_baca": true,
+"status": "active",
+"type": "pct"
+},
+"rnd.kpi_weight_score": {
+"default": 30,
+"max": 100,
+"min": 0,
+"options": [],
+"permission": [
+"rnd",
+"manage"
+],
+"scopes": [
+"global",
+"entity"
+],
+"sensitif_baca": true,
+"status": "active",
+"type": "pct"
+},
+"rnd.labdip_max_colors": {
+"default": 10,
+"max": 30,
+"min": 1,
+"options": [],
+"permission": [
+"rnd",
+"manage"
+],
+"scopes": [
+"global",
+"entity"
+],
+"sensitif_baca": true,
+"status": "active",
+"type": "int"
+},
+"rnd.lifecycle_enforcement": {
+"default": "block",
+"max": null,
+"min": null,
+"options": [
+"off",
+"warn",
+"block"
+],
+"permission": [
+"rnd",
+"manage"
+],
+"scopes": [
+"global",
+"entity"
+],
+"sensitif_baca": true,
+"status": "active",
+"type": "enum"
+},
+"rnd.max_rounds": {
+"default": 3,
+"max": 10,
+"min": 1,
+"options": [],
+"permission": [
+"rnd",
+"manage"
+],
+"scopes": [
+"global",
+"entity"
+],
+"sensitif_baca": true,
+"status": "active",
+"type": "int"
+},
+"rnd.new_product_default_lifecycle": {
+"default": "produksi",
+"max": null,
+"min": null,
+"options": [
+"produksi",
+"konsep",
+"disetujui"
+],
+"permission": [
+"rnd",
+"manage"
+],
+"scopes": [
+"global",
+"entity"
+],
+"sensitif_baca": true,
+"status": "active",
+"type": "enum"
+},
+"rnd.require_attachment_on_round": {
+"default": true,
+"max": null,
+"min": null,
+"options": [],
+"permission": [
+"rnd",
+"manage"
+],
+"scopes": [
+"global",
+"entity"
+],
+"sensitif_baca": true,
+"status": "active",
+"type": "bool"
+},
+"rnd.require_design_for_proofing": {
+"default": true,
+"max": null,
+"min": null,
+"options": [],
+"permission": [
+"rnd",
+"manage"
+],
+"scopes": [
+"global",
+"entity"
+],
+"sensitif_baca": true,
+"status": "active",
+"type": "bool"
+},
+"rnd.require_stage_chain": {
+"default": true,
+"max": null,
+"min": null,
+"options": [],
+"permission": [
+"rnd",
+"manage"
+],
+"scopes": [
+"global",
+"entity"
+],
+"sensitif_baca": true,
+"status": "active",
+"type": "bool"
+},
+"rnd.round_sla_days": {
+"default": 7,
+"max": 90,
+"min": 1,
+"options": [],
+"permission": [
+"rnd",
+"manage"
+],
+"scopes": [
+"global",
+"entity"
+],
+"sensitif_baca": true,
+"status": "active",
+"type": "duration"
+},
+"rnd.sample_decision_roles": {
+"default": [
+"manager",
+"md",
+"admin"
+],
+"max": null,
+"min": null,
+"options": [],
+"permission": [
+"rnd",
+"manage"
+],
+"scopes": [
+"global",
+"entity"
+],
+"sensitif_baca": true,
+"status": "not_used",
+"type": "list"
+},
+"rnd.sample_material_from_stock": {
+"default": true,
+"max": null,
+"min": null,
+"options": [],
+"permission": [
+"rnd",
+"manage"
+],
+"scopes": [
+"global",
+"entity"
+],
+"sensitif_baca": true,
+"status": "active",
+"type": "bool"
+},
+"rnd.sla_escalate_admin_days": {
+"default": 3,
+"max": 30,
+"min": 1,
+"options": [],
+"permission": [
+"rnd",
+"manage"
+],
+"scopes": [
+"global",
+"entity"
+],
+"sensitif_baca": true,
+"status": "active",
+"type": "duration"
+},
+"rnd.spec_approval_roles": {
+"default": [
+"manager",
+"admin"
+],
+"max": null,
+"min": null,
+"options": [],
+"permission": [
+"rnd",
+"manage"
+],
+"scopes": [
+"global",
+"entity"
+],
+"sensitif_baca": true,
+"status": "not_used",
+"type": "list"
+},
+"rnd.variant_axes_default": {
+"default": [
+"origin",
+"color",
+"grade",
+"customer",
+"lot"
+],
+"max": null,
+"min": null,
+"options": [],
+"permission": [
+"rnd",
+"manage"
+],
+"scopes": [
+"global",
+"entity"
+],
+"sensitif_baca": true,
+"status": "active",
+"type": "list"
+},
+"rnd.variant_axes_optional": {
+"default": [],
+"max": null,
+"min": null,
+"options": [],
+"permission": [
+"rnd",
+"manage"
+],
+"scopes": [
+"global",
+"entity"
+],
+"sensitif_baca": true,
+"status": "active",
+"type": "list"
+},
+"role_home.admin": {
+"default": "admin",
+"max": null,
+"min": null,
+"options": [],
+"permission": [
+"settings",
+"manage"
+],
+"scopes": [
+"global"
+],
+"sensitif_baca": true,
+"status": "not_used",
+"type": "text"
+},
+"role_home.manager": {
+"default": "reports",
+"max": null,
+"min": null,
+"options": [],
+"permission": [
+"settings",
+"manage"
+],
+"scopes": [
+"global"
+],
+"sensitif_baca": true,
+"status": "not_used",
+"type": "text"
+},
+"role_home.sales": {
+"default": "sales",
+"max": null,
+"min": null,
+"options": [],
+"permission": [
+"settings",
+"manage"
+],
+"scopes": [
+"global"
+],
+"sensitif_baca": true,
+"status": "not_used",
+"type": "text"
+},
+"role_home.warehouse": {
+"default": "operations",
+"max": null,
+"min": null,
+"options": [],
+"permission": [
+"settings",
+"manage"
+],
+"scopes": [
+"global"
+],
+"sensitif_baca": true,
+"status": "not_used",
+"type": "text"
+},
+"saga.stuck_lock_minutes": {
+"default": 10,
+"max": 1440,
+"min": 1,
+"options": [],
+"permission": [
+"settings",
+"manage"
+],
+"scopes": [
+"global"
+],
+"sensitif_baca": true,
+"status": "active",
+"type": "int"
+},
+"sales.allow_item_discount": {
+"default": false,
+"max": null,
+"min": null,
+"options": [],
+"permission": [
+"settings",
+"manage"
+],
+"scopes": [
+"global",
+"entity"
+],
+"sensitif_baca": false,
+"status": "active",
+"type": "bool"
+},
+"sales.allow_order_discount": {
+"default": false,
+"max": null,
+"min": null,
+"options": [],
+"permission": [
+"settings",
+"manage"
+],
+"scopes": [
+"global",
+"entity"
+],
+"sensitif_baca": false,
+"status": "active",
+"type": "bool"
+},
+"sales.allow_partial_shipment": {
+"default": true,
+"max": null,
+"min": null,
+"options": [],
+"permission": [
+"settings",
+"manage"
+],
+"scopes": [
+"global",
+"entity"
+],
+"sensitif_baca": true,
+"status": "active",
+"type": "bool"
+},
+"sales.keep_max_age_days": {
+"default": 0,
+"max": null,
+"min": null,
+"options": [],
+"permission": [
+"settings",
+"manage"
+],
+"scopes": [
+"global",
+"entity"
+],
+"sensitif_baca": true,
+"status": "active",
+"type": "int"
+},
+"sales.quotation_enabled": {
+"default": false,
+"max": null,
+"min": null,
+"options": [],
+"permission": [
+"settings",
+"manage"
+],
+"scopes": [
+"global",
+"entity"
+],
+"sensitif_baca": true,
+"status": "not_used",
+"type": "bool"
+},
+"sales.require_so_validation": {
+"default": false,
+"max": null,
+"min": null,
+"options": [],
+"permission": [
+"settings",
+"manage"
+],
+"scopes": [
+"global",
+"entity"
+],
+"sensitif_baca": true,
+"status": "active",
+"type": "bool"
+},
+"sales.sample_payment_tolerance_pct": {
+"default": 5.0,
+"max": 100,
+"min": 0,
+"options": [],
+"permission": [
+"settings",
+"manage"
+],
+"scopes": [
+"global",
+"entity"
+],
+"sensitif_baca": true,
+"status": "active",
+"type": "pct"
+},
+"sales_admin.require_verification_before_confirm": {
+"default": true,
+"max": null,
+"min": null,
+"options": [],
+"permission": [
+"settings",
+"manage"
+],
+"scopes": [
+"global",
+"entity"
+],
+"sensitif_baca": true,
+"status": "active",
+"type": "bool"
+},
+"stock.atp_horizon_days": {
+"default": 14,
+"max": 365,
+"min": 1,
+"options": [],
+"permission": [
+"settings",
+"manage"
+],
+"scopes": [
+"global"
+],
+"sensitif_baca": true,
+"status": "active",
+"type": "int"
+},
+"tax.dpp_nilai_lain": {
+"default": true,
+"max": null,
+"min": null,
+"options": [],
+"permission": [
+"settings",
+"manage"
+],
+"scopes": [
+"global",
+"entity"
+],
+"sensitif_baca": false,
+"status": "active",
+"type": "bool"
+},
+"tax.efaktur_enabled": {
+"default": true,
+"max": null,
+"min": null,
+"options": [],
+"permission": [
+"settings",
+"manage"
+],
+"scopes": [
+"global",
+"entity"
+],
+"sensitif_baca": true,
+"status": "not_used",
+"type": "bool"
+},
+"tax.pph_items": {
+"default": [],
+"max": null,
+"min": null,
+"options": [],
+"permission": [
+"settings",
+"manage"
+],
+"scopes": [
+"global",
+"entity"
+],
+"sensitif_baca": true,
+"status": "active",
+"type": "table"
+},
+"tax.ppn_mode": {
+"default": "excluded",
+"max": null,
+"min": null,
+"options": [
+"excluded",
+"included"
+],
+"permission": [
+"settings",
+"manage"
+],
+"scopes": [
+"global",
+"entity"
+],
+"sensitif_baca": false,
+"status": "active",
+"type": "enum"
+},
+"tax.ppn_rate": {
+"default": 12.0,
+"max": 100,
+"min": 0,
+"options": [],
+"permission": [
+"settings",
+"manage"
+],
+"scopes": [
+"global",
+"entity"
+],
+"sensitif_baca": false,
+"status": "active",
+"type": "pct"
+},
+"ui.coming_soon_collapsed": {
+"default": true,
+"max": null,
+"min": null,
+"options": [],
+"permission": [
+"settings",
+"manage"
+],
+"scopes": [
+"global"
+],
+"sensitif_baca": false,
+"status": "active",
+"type": "bool"
+},
+"ui.show_coming_soon": {
+"default": true,
+"max": null,
+"min": null,
+"options": [],
+"permission": [
+"settings",
+"manage"
+],
+"scopes": [
+"global"
+],
+"sensitif_baca": false,
+"status": "active",
+"type": "bool"
+},
+"uom.allow_override": {
+"default": true,
+"max": null,
+"min": null,
+"options": [],
+"permission": [
+"uom",
+"update"
+],
+"scopes": [
+"global",
+"entity"
+],
+"sensitif_baca": true,
+"status": "active",
+"type": "bool"
+},
+"uom.block_pct": {
+"default": 5.0,
+"max": 100,
+"min": 0,
+"options": [],
+"permission": [
+"uom",
+"update"
+],
+"scopes": [
+"global",
+"entity"
+],
+"sensitif_baca": true,
+"status": "active",
+"type": "pct"
+},
+"uom.precision": {
+"default": 2,
+"max": 6,
+"min": 0,
+"options": [],
+"permission": [
+"uom",
+"update"
+],
+"scopes": [
+"global",
+"entity"
+],
+"sensitif_baca": true,
+"status": "active",
+"type": "int"
+},
+"uom.require_trail": {
+"default": true,
+"max": null,
+"min": null,
+"options": [],
+"permission": [
+"uom",
+"update"
+],
+"scopes": [
+"global",
+"entity"
+],
+"sensitif_baca": true,
+"status": "active",
+"type": "bool"
+},
+"uom.warn_pct": {
+"default": 2.0,
+"max": 100,
+"min": 0,
+"options": [],
+"permission": [
+"uom",
+"update"
+],
+"scopes": [
+"global",
+"entity"
+],
+"sensitif_baca": true,
+"status": "active",
+"type": "pct"
+},
+"wms.location_scope_enforced": {
+"default": false,
+"max": null,
+"min": null,
+"options": [],
+"permission": [
+"settings",
+"manage"
+],
+"scopes": [
+"global"
+],
+"sensitif_baca": true,
+"status": "active",
+"type": "bool"
+},
+"wms.rfid_simulation": {
+"default": false,
+"max": null,
+"min": null,
+"options": [],
+"permission": [
+"settings",
+"manage"
+],
+"scopes": [
+"global",
+"entity"
+],
+"sensitif_baca": true,
+"status": "active",
+"type": "bool"
+}
+}
+}

@@ -3444,8 +3444,7 @@
    "document",
    "document_delivery",
    "esign",
-   "pdf_template",
-   "settings"
+   "pdf_template"
   ],
   "settings-dual-control": [
    "settings"
@@ -3535,8 +3534,7 @@
    "settings"
   ],
   "settings-notify": [
-   "scheduler",
-   "settings"
+   "scheduler"
   ],
   "settings-purchasing": [
    "contra_bon",

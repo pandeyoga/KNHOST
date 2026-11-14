@@ -20,32 +20,28 @@
  */
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
-  SlidersHorizontal, ShieldCheck, History, Loader2, RefreshCw, ChevronRight, Lock, Sparkles, Wand2,
+  SlidersHorizontal, ShieldCheck, History, Loader2, RefreshCw, Lock, Sparkles, Wand2,
 } from "lucide-react";
-import ErrorNotice from "../../../components/ErrorNotice";
 import PageTabs from "../../../components/PageTabs";
-import FilterChips from "../../../components/FilterChips";
 import LinkCard from "../../../components/LinkCard";
 import DesktopOnlyNotice from "../../../components/DesktopOnlyNotice";
-import SettingCard from "./SettingCard";
-import SettingsScopeBar, { SettingsNotice } from "./SettingsScopeBar";
+import { SettingsNotice } from "./SettingsScopeBar";
+import SettingsBrowser from "./SettingsBrowser";
 import ConfigHealthPanel from "./ConfigHealthPanel";
 import SagaLocksPanel from "./SagaLocksPanel";
 import DataHygienePanel from "./DataHygienePanel";
 import LocationBacklogPanel from "./LocationBacklogPanel";
-import {
-  WhyThisValueDrawer, SimulatorPanel, ChangeHistoryDrawer, ChangeHistoryInline,
-} from "./ConfigDrawers";
-import { configApi, errMsg, idNum, weightSetSummaries } from "./configApi";
-import { LEGACY_DEEPLINK, groupForKey } from "./configDeepLink";
+import { ChangeHistoryDrawer, ChangeHistoryInline } from "./ConfigDrawers";
+import { cleanCfgText, configApi, errMsg, formatValue } from "./configApi";
+import { groupForKey, resolveGroupId, sectionForKey } from "./configDeepLink";
 import { COMMISSION_PREFIX } from "./configGroupViews";
 import { entityShortById } from "../../../utils/entityLabel";
 import { can, canCurrent } from "../../../config/roles";
-import { askReason } from "../../../services/confirmService";
+import { askConfirm, askReason } from "../../../services/confirmService";
 
 const TABS = [
   { k: "settings", label: "Pengaturan", icon: SlidersHorizontal },
-  { k: "health", label: "Kesehatan Konfigurasi", icon: ShieldCheck, perm: ["settings", "view"] },
+  { k: "health", label: "Kesehatan Pengaturan", icon: ShieldCheck, perm: ["settings", "view"] },
   { k: "history", label: "Riwayat Perubahan", icon: History },
   { k: "saga", label: "Kunci Proses", icon: Lock, adminOnly: true },
   { k: "hygiene", label: "Kebersihan Data", icon: Sparkles },
@@ -58,8 +54,9 @@ export const COMMISSION_LINK = {
   where: "Pengaturan › Penjualan › Komisi & Insentif",
 };
 
-/** Deep-link kelompok editor lama (definisi di `configDeepLink.js`, re-export agar impor lama tidak patah). */
-export { LEGACY_DEEPLINK, SettingsNotice };
+/** Pita simpan/galat + mesin tampilan daftar (re-export agar impor lama — `SettingsGroupView`, uji — tidak patah).
+ *  KF-T4 — `LEGACY_DEEPLINK` dihapus: kelompok kunci dibaca dari `configKeyIndex.json` (`configDeepLink.js`). */
+export { SettingsNotice, SettingsBrowser };
 
 const byPrefix = (list, key) => (list || []).some((p) => String(key || "").startsWith(p));
 
@@ -69,9 +66,11 @@ const byPrefix = (list, key) => (list || []).some((p) => String(key || "").start
  */
 export function useSettingsBrowser({
   selectedEntity, groupIds = null, includeKeys = null, excludeKeys = null,
-  focusKey = "", focusGroup = "", focusNonce = 0, onFocusConsumed,
+  focusKey = "", focusGroup = "", focusSection = "", focusNonce = 0, onFocusConsumed,
 }) {
-  const allowKey = (groupIds || []).join("|");
+  // KF-T4 — layar yang mengunci id kelompok LAMA (Komisi & Insentif `harga-diskon`, Kebijakan Retur `retur`, Jadwal Bayar
+  // antar-PT `antar-entitas`) tetap jalan: id lama diterjemahkan ke kelompok barunya (`GROUP_ALIASES`).
+  const allowKey = (groupIds || []).flatMap((g) => [g, resolveGroupId(g).group]).filter(Boolean).join("|");
   const allow = useMemo(() => (allowKey ? new Set(allowKey.split("|")) : null), [allowKey]);
   const keyOk = useCallback((key) => (!includeKeys || byPrefix(includeKeys, key)) && !byPrefix(excludeKeys, key),
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -96,9 +95,23 @@ export function useSettingsBrowser({
   const [notice, setNotice] = useState(null);     // {msg, tone}
   const [why, setWhy] = useState(null);
   const [sim, setSim] = useState(null);           // {entry, draft}
-  const [hist, setHist] = useState(null);         // {entry} | {} = semua
+  const [hist, setHist] = useState(null);         // {entry} | {group} | {} = semua
   const cardRefs = useRef({});
   const counts = useRef(null);                    // id kelompok → jumlah kunci yang tampil (sesudah saringan kunci)
+  // KF-T4 — saringan kartu (Semua · Sudah diubah · Risiko tinggi · tiga tema), kartu ringkas yang terbuka, kartu
+  // berdraf (peringatan meninggalkan kelompok), sub-judul tujuan tautan, dan "Pulihkan nilai ini" dari riwayat.
+  const entitiesRef = useRef([]);                 // nama PT untuk kalimat dialog (diisi SettingsBrowser)
+  const [filter, setFilter] = useState("all");
+  const [openKeys, setOpenKeys] = useState(() => new Set());
+  const dirtyKeys = useRef(new Set());
+  const [section, setSection] = useState("");
+  const [restore, setRestore] = useState(null);
+  const onDirty = useCallback((key, d) => { if (d) dirtyKeys.current.add(key); else dirtyKeys.current.delete(key); }, []);
+  const toggleOpen = useCallback((key) => setOpenKeys((cur) => {
+    const n = new Set(cur);
+    if (n.has(key)) n.delete(key); else n.add(key);
+    return n;
+  }), []);
 
   // Kelompok yang boleh tampil di layar ini, dengan jumlah kunci SESUDAH saringan prefiks.
   const setGroups = useCallback((list) => setGroupsRaw((list || [])
@@ -112,9 +125,10 @@ export function useSettingsBrowser({
     flash._t = window.setTimeout(() => setNotice(null), tone === "err" ? 7000 : 4500);
   }, []);
 
+  // KF-T4 (KF-UX-09) — cakupan grup = nilai grup TANPA lapisan PT (dulu tetap dihitung untuk PT aktif).
   const ctx = useMemo(
-    () => ({ entity_id: scopeType === "entity" ? scopeId : (selectedEntity || "") }),
-    [scopeType, scopeId, selectedEntity]
+    () => ({ entity_id: scopeType === "entity" ? scopeId : "" }),
+    [scopeType, scopeId]
   );
 
   useEffect(() => {
@@ -172,12 +186,16 @@ export function useSettingsBrowser({
   useEffect(() => {
     if (!focusNonce) return;
     const key = focusKey || "";
-    let g = focusGroup || groupForKey(key);
+    // KF-T4 — id kelompok lama diterjemahkan (`GROUP_ALIASES`); sub-judul tujuan ikut dibuka.
+    const tujuan = focusGroup ? resolveGroupId(focusGroup) : { group: groupForKey(key), section: sectionForKey(key) };
+    let g = tujuan.group;
     if (allow && g && !allow.has(g)) g = "";
     if (g) setGroup(g);
+    setSection(focusSection || tujuan.section || "");
     setLockedGroup(!key && g && (!allow || allow.size > 1) ? g : "");
     setQ(key); setTerm(key);            // lewati debounce: hasil harus langsung muncul
     setPendingScroll(key); setHighlight(key);
+    if (key) setOpenKeys((cur) => new Set([...cur, key]));
     if (typeof onFocusConsumed === "function") onFocusConsumed();
     /* eslint-disable-next-line react-hooks/exhaustive-deps */
   }, [focusNonce]);
@@ -188,14 +206,17 @@ export function useSettingsBrowser({
     return () => window.clearTimeout(t);
   }, [highlight]);
 
+  // KF-T4 — di "Semua pengaturan" saringan tema berlaku lintas kelompok (semua kunci dimuat lalu disaring).
+  const crossTheme = !allow && !term && ["persetujuan", "pengingat", "toleransi"].includes(filter);
   const load = useCallback(async () => {
-    if (!group && !term) return;
+    if (!group && !term && !crossTheme) return;
     setLoading(true);
     setError("");
     try {
       const d = await configApi.effective({
-        ...(term ? { q: term } : { group }),
+        ...(term ? { q: term } : crossTheme ? {} : { group }),
         entity_id: ctx.entity_id || "",
+        ...(scopeType === "global" ? { scope: "global" } : {}),
       });
       const rows = (d.items || []).filter((it) => !allow || !it.group || allow.has(it.group));
       const kept = rows.filter((it) => keyOk(it.key));
@@ -209,7 +230,7 @@ export function useSettingsBrowser({
       setLoading(false);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [group, term, ctx.entity_id, allow, keyOk]);
+  }, [group, term, ctx.entity_id, scopeType, crossTheme, allow, keyOk]);
 
   useEffect(() => { load(); }, [load]);
 
@@ -236,22 +257,74 @@ export function useSettingsBrowser({
       return false;
     }
   };
-  const onReset = async (item) => {
+  // KF-T4 (KF-12) — "Pakai nilai bawaan sistem" (grup) / "… untuk PT ini" (nilai khusus PT berisi bawaan). Dialog
+  // menyebut akibatnya; alasan wajib bila kunci berisiko tinggi (server menolak tanpa alasan).
+  const ptName = (id) => entityShortById(entitiesRef.current, id, "PT ini");
+  const onReset = async (item, level = scopeType) => {
+    const bawaan = formatValue(item, item.default);
+    const label = cleanCfgText(item.label);
+    const forPt = level === "entity" && scopeId;
+    const reason = await askReason({
+      title: forPt ? "Pakai nilai bawaan sistem untuk PT ini" : "Pakai nilai bawaan sistem",
+      message: forPt
+        ? `Nilai bawaan sistem (${bawaan}) disimpan sebagai nilai khusus ${ptName(scopeId)}. Sesudah itu `
+          + `${ptName(scopeId)} tidak lagi mengikuti perubahan nilai grup.`
+        : `Nilai grup '${label}' kembali ke bawaan sistem (${bawaan}). Berlaku untuk semua PT yang tidak punya nilai `
+          + "sendiri.",
+      reasonLabel: "Alasan", reasonRequired: !!item.requires_reason,
+      confirmLabel: "Pakai nilai bawaan", cancelLabel: "Batal", testId: "cfg-reset-confirm",
+    });
+    if (reason === null) return false;
     try {
-      await configApi.reset({ key: item.key, scope_type: scopeType, scope_id: scopeId });
-      flash(`“${item.label}” dikembalikan ke bawaan sistem.`);
+      await configApi.reset({ key: item.key, scope_type: forPt ? "entity" : "global", scope_id: forPt ? scopeId : "",
+        reason });
+      flash(`“${label}” memakai nilai bawaan sistem.`);
       await load();
-    } catch (e) { flash(errMsg(e, "Gagal mengembalikan ke default."), "err"); }
+      return true;
+    } catch (e) { flash(errMsg(e, "Gagal memakai nilai bawaan sistem."), "err"); return false; }
   };
-  // FASE E-4 (E4.6) — cabut nilai khusus badan usaha → kembali mewarisi nilai global (BUKAN reset ke bawaan kode).
+  // FASE E-4 (E4.6) / KF-T4 — "Ikuti nilai grup": cabut nilai khusus PT → kembali mengikuti nilai grup.
   const onClearEntity = async (item) => {
-    if (!scopeId) return;
+    if (!scopeId) return false;
+    let grup = "";
     try {
-      const res = await configApi.clear({ key: item.key, scope_type: "entity", scope_id: scopeId });
-      flash(`“${item.label}” kembali mengikuti nilai ${res?.source_label_now || "Global"}.`);
+      const ex = await configApi.explain({ key: item.key });
+      grup = formatValue(item, ex?.stored_value ?? ex?.value);
+    } catch (e) { grup = ""; }
+    const label = cleanCfgText(item.label);
+    const pt = ptName(scopeId);
+    const reason = await askReason({
+      title: "Ikuti nilai grup",
+      message: `'${label}' untuk ${pt} kembali mengikuti nilai grup${grup ? ` (${grup})` : ""}. Nilai khusus ${pt} `
+        + `(${formatValue(item, item.overridden_by ? item.stored_value : item.value)}) dicabut.`,
+      reasonLabel: "Alasan", reasonRequired: !!item.requires_reason,
+      confirmLabel: "Ikuti nilai grup", cancelLabel: "Batal", testId: "cfg-clear-confirm",
+    });
+    if (reason === null) return false;
+    try {
+      await configApi.clear({ key: item.key, scope_type: "entity", scope_id: scopeId, reason });
+      flash(`“${label}” untuk ${pt} kembali mengikuti nilai grup.`);
       await load();
-    } catch (e) { flash(errMsg(e, "Gagal mengembalikan ke nilai global."), "err"); }
+      return true;
+    } catch (e) { flash(errMsg(e, "Gagal mengikuti nilai grup."), "err"); return false; }
   };
+  // KF-T4 — meninggalkan kelompok / cakupan dengan draf: tanya dulu.
+  const confirmLeave = async () => {
+    const n = dirtyKeys.current.size;
+    if (!n) return true;
+    const ok = await askConfirm({
+      title: "Tinggalkan perubahan?", message: `Ada perubahan yang belum disimpan pada ${n} pengaturan. Tinggalkan?`,
+      confirmLabel: "Tinggalkan", cancelLabel: "Tetap di sini", testId: "cfg-leave-confirm",
+    });
+    if (ok) dirtyKeys.current.clear();
+    return ok;
+  };
+  const pickGroup = async (id) => {
+    if (id === group && !term) return;
+    if (!(await confirmLeave())) return;
+    setGroup(id); setQ(""); setSection("");
+  };
+  const pickEntity = (id) => { setScopeType("entity"); setScopeId(id); };
 
   // KF-T3 — batalkan satu perubahan berjadwal (nilai yang berlaku sekarang tidak berubah). Alasan wajib bila kuncinya
   // berisiko tinggi (sama dengan aturan server).
@@ -283,133 +356,10 @@ export function useSettingsBrowser({
     health, caps, loading, error, denied, notice, setNotice, why, setWhy, sim, setSim, hist, setHist, cardRefs,
     highlight, lockedGroup, setLockedGroup, ctx, load, onSave, onReset, onClearEntity, onCancelScheduled,
     locked: !!allow,
+    // KF-T4
+    filter, setFilter, openKeys, toggleOpen, onDirty, section, setSection, restore, setRestore, pickGroup,
+    pickEntity, confirmLeave, setEntities: (list) => { entitiesRef.current = list || []; },
   };
-}
-
-/**
- * Tampilan daftar setting (cari · cakupan · kelompok · kartu). `groupNav`: "side" (kolom kiri, Semua pengaturan)
- * atau "chips" (FilterChips — layar domain; tingkat ke-3 = chip, bukan tab, aturan L-01). `excludeLink` = LinkCard
- * yang tampil bila ada kunci disembunyikan (mis. kunci komisi → Komisi & Insentif).
- */
-export function SettingsBrowser({ s, entities = [], groupNav = "side", excludeLink = null, searchPlaceholder = "" }) {
-  const scopeName = useMemo(
-    () => (s.scopeType === "entity" && s.scopeId ? entityShortById(entities, s.scopeId) : "Global"),
-    [s.scopeType, s.scopeId, entities]);
-  const { items, term, groups, group, caps } = s;
-  const activeGroup = groups.find((g) => g.id === group);
-  const notUsedCount = items.filter((i) => i.status === "not_used").length;
-  const weightSets = useMemo(() => weightSetSummaries(items), [items]);
-  const shownGroups = groups.filter((g) => !s.lockedGroup || g.id === s.lockedGroup);
-  const pickGroup = (id) => { s.setGroup(id); s.setQ(""); };
-
-  return (
-    <>
-      <SettingsScopeBar s={s} entities={entities} scopeName={scopeName} searchPlaceholder={searchPlaceholder} />
-
-      {groupNav === "chips" && groups.length > 1 ? (
-        <FilterChips testId="cfg-group-chips" chipTestId={(k) => `cfg-group-${k}`} ariaLabel="Kelompok pengaturan"
-          value={term ? null : group} onChange={(k) => k && pickGroup(k)}
-          options={shownGroups.map((g) => ({ key: g.id, label: g.label, count: g.count, title: g.question }))} />
-      ) : null}
-
-      <div className={groupNav === "side" ? "cfg-body" : "cfg-body cfg-body-single"}>
-        {groupNav === "side" ? (
-          <aside className="cfg-groupnav" data-testid="cfg-group-nav">
-            <h4>Kelompok</h4>
-            {s.lockedGroup && (
-              <button type="button" className="cfg-link-btn" data-testid="cfg-group-show-all"
-                onClick={() => s.setLockedGroup("")}>Tampilkan semua kelompok</button>
-            )}
-            {shownGroups.map((g) => (
-              <button key={g.id} className={`cfg-group-btn ${group === g.id && !term ? "active" : ""}`}
-                onClick={() => pickGroup(g.id)} data-testid={`cfg-group-${g.id}`} title={g.question}>
-                <span className="cfg-group-label">{g.label}</span>
-                <span className="cfg-group-count">{g.count}</span>
-                <ChevronRight size={13} />
-              </button>
-            ))}
-          </aside>
-        ) : null}
-
-        <section className="cfg-list">
-          {s.denied ? (
-            <div className="cfg-notice info" data-testid="cfg-denied">
-              <ShieldCheck size={15} />
-              <span>{s.denied}</span>
-            </div>
-          ) : <ErrorNotice message={s.error} onRetry={s.load} />}
-          {excludeLink && s.hiddenCount > 0 ? (
-            <LinkCard {...excludeLink} summary={`${s.hiddenCount} pengaturan`} />
-          ) : null}
-
-          {term ? (
-            <div className="cfg-result-head" data-testid="cfg-search-result-head">
-              <h3>Hasil pencarian “{term}”</h3>
-              <p>
-                {items.length} pengaturan cocok — {s.locked ? "di kelompok layar ini" : "dari seluruh kelompok"}.{" "}
-                <button className="cfg-link-btn" onClick={() => s.setQ("")} data-testid="cfg-back-to-group">
-                  Kembali ke kelompok
-                </button>
-              </p>
-            </div>
-          ) : activeGroup ? (
-            <div className="cfg-result-head" data-testid="cfg-group-head">
-              <h3>{activeGroup.label}</h3>
-              <p className="cfg-question">Kelompok ini menjawab: <b>{activeGroup.question}</b></p>
-              <p className="cfg-hint-sm">
-                {activeGroup.count} pengaturan{notUsedCount ? ` · ${notUsedCount} ditandai tidak dipakai` : ""}
-              </p>
-            </div>
-          ) : null}
-
-          {s.loading ? <p className="cfg-hint">Memuat pengaturan…</p> : null}
-          {!s.loading && items.length === 0 ? (
-            <p className="cfg-empty" data-testid="cfg-empty">
-              {term ? `Tidak ada pengaturan yang cocok dengan “${term}”. Coba kata lain, mis. “denda”, “PPN”, “lot”.`
-                : "Belum ada pengaturan di kelompok ini."}
-            </p>
-          ) : null}
-
-          {/* Keputusan pemilik K-08 (26 Okt) — kelompok bobot ditampilkan sebagai porsi dari 100%. */}
-          {!s.loading && weightSets.map((w) => (
-            <div key={w.id} className={`cfg-notice info ${w.total === 100 ? "" : "!bg-[#FFF4E5] !text-[#8A5300]"}`}
-              data-testid={`cfg-weight-total-${w.id}`}>
-              <SlidersHorizontal size={15} />
-              <span>
-                <b>{w.label}:</b>{" "}
-                {w.parts.map((p) => `${p.name} ${idNum(p.value)}%`).join(" + ")} ={" "}
-                <b data-testid={`cfg-weight-total-${w.id}-sum`}>{idNum(w.total)}%</b>
-                {w.total === 100 ? "."
-                  : w.total > 0
-                    ? ` — bukan 100%, jadi sistem menyetarakannya ke 100%: ${w.parts.map((p) => `${p.name} ${idNum(p.share, 1)}%`).join(" + ")}. Sesuaikan agar jumlahnya 100%.`
-                    : " — semua bobot 0, nilai tidak bisa dihitung."}
-              </span>
-            </div>
-          ))}
-
-          <div className="cfg-cards">
-            {items.map((item) => (
-              // Pembungkus fokus deep-link — testid SENGAJA beda dari kartunya (`cfg-card-<key>` di SettingCard).
-              <div key={item.key} ref={(el) => { s.cardRefs.current[item.key] = el; }}
-                className={s.highlight === item.key ? "cfg-card-focus" : ""}
-                data-testid={`cfg-card-wrap-${item.key}`} data-focused={s.highlight === item.key ? "1" : "0"}>
-                <SettingCard item={item} scopeType={s.scopeType} scopeId={s.scopeId} scopeLabel={scopeName}
-                  wiring={s.health[item.key]} canEdit={item.can_edit !== false}
-                  onSave={s.onSave} onReset={s.onReset} onClearEntity={s.onClearEntity}
-                  onWhy={(it) => s.setWhy(it)} onSimulate={(it, draft) => s.setSim({ entry: it, draft })}
-                  onHistory={(it) => s.setHist({ entry: it })}
-                  onCancelScheduled={s.onCancelScheduled} entities={entities} />
-              </div>
-            ))}
-          </div>
-        </section>
-      </div>
-
-      {s.why ? <WhyThisValueDrawer entry={s.why} ctx={s.ctx} onClose={() => s.setWhy(null)} /> : null}
-      {s.sim ? <SimulatorPanel entry={s.sim.entry} ctx={s.ctx} draftValue={s.sim.draft} onClose={() => s.setSim(null)} /> : null}
-      {s.hist ? <ChangeHistoryDrawer entry={s.hist.entry} onClose={() => s.setHist(null)} /> : null}
-    </>
-  );
 }
 
 export default function SettingsHub({
@@ -461,15 +411,8 @@ export default function SettingsHub({
       {tab === "hygiene" ? <><DataHygienePanel isAdmin={isAdmin} /><LocationBacklogPanel canEdit /></> : null}
       {tab === "history" ? (
         <section className="cfg-history-tab" data-testid="cfg-history-tab">
-          <p className="cfg-hint">
-            Seluruh perubahan konfigurasi, terbaru dulu. Data bersifat <b>append-only</b>: nilai lama tidak pernah
-            ditimpa sehingga selalu bisa ditelusuri dan dipulihkan.
-          </p>
-          <button className="btn-secondary btn-sm self-start" onClick={() => s.setHist({})} data-testid="cfg-open-all-history">
-            <History size={14} /> Buka riwayat lengkap
-          </button>
-          <ChangeHistoryInline />
-          {s.hist ? <ChangeHistoryDrawer entry={s.hist.entry} onClose={() => s.setHist(null)} /> : null}
+          <p className="cfg-hint">Semua perubahan pengaturan, terbaru dulu. Nilai lama tidak pernah dihapus.</p>
+          <ChangeHistoryInline entities={entities} groups={s.groups} />
         </section>
       ) : null}
     </div>

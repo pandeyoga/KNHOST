@@ -1,6 +1,8 @@
 /**
  * SettingsScopeBar — bagian atas daftar Pusat Pengaturan: pemberitahuan hak (K-11 / hak terbatas), cari, pilihan
- * cakupan (Global / Badan usaha) + pita "nilai SIAPA yang sedang diubah" (FASE E-4 · E4.6), dan pita simpan/galat.
+ * "Berlaku untuk" (Semua PT (aturan grup) / Satu PT) + pita "nilai SIAPA yang sedang diubah" (FASE E-4 · E4.6), dan
+ * pita simpan/galat. KF-T4 — istilah glosarium (PT, aturan grup); satu peringatan bila PT belum dipilih; berganti
+ * cakupan dengan draf yang belum disimpan meminta konfirmasi (`s.confirmLeave`).
  *
  * Fase 3 · P2 — diekstrak dari `SettingsHub.jsx` (batas 500 baris) karena dipakai bersama oleh "Semua pengaturan",
  * layar domain `settings-cfg-*` dan Komisi & Insentif. Perilaku & testid TIDAK berubah.
@@ -23,7 +25,7 @@ export function SettingsNotice({ s }) {
   );
 }
 
-export default function SettingsScopeBar({ s, entities = [], scopeName = "Global", searchPlaceholder = "" }) {
+export default function SettingsScopeBar({ s, entities = [], scopeName = "Semua PT", searchPlaceholder = "" }) {
   const entityOpts = useMemo(() => entityOptions(entities), [entities]);
   const { caps, items } = s;
   const editableShown = items.filter((i) => i.can_edit !== false).length;
@@ -63,41 +65,38 @@ export default function SettingsScopeBar({ s, entities = [], scopeName = "Global
         <div className="cfg-scope-box" data-testid="cfg-scope-box">
           <span className="cfg-scope-caption"><Building2 size={13} /> Berlaku untuk</span>
           <KNSelect value={s.scopeType} className="field cfg-select-sm" data-testid="cfg-scope-type"
-            onValueChange={(v) => { s.setScopeType(v); if (v === "global") s.setScopeId(""); }}
+            onValueChange={async (v) => {
+              if (s.confirmLeave && !(await s.confirmLeave())) return;
+              s.setScopeType(v); if (v === "global") s.setScopeId("");
+            }}
             options={[
-              // IX-06 — nilai grup hanya untuk peran lintas badan usaha (keputusan server)
-              { value: "global", label: caps.global_write ? SCOPE_LABEL.global : `${SCOPE_LABEL.global} (khusus peran lintas PT)`,
+              // IX-06 — aturan grup hanya untuk peran lintas PT (keputusan server)
+              { value: "global", label: caps.global_write ? SCOPE_LABEL.global : `${SCOPE_LABEL.global} — khusus peran lintas PT`,
                 disabled: !caps.global_write },
               { value: "entity", label: SCOPE_LABEL.entity },
             ]} />
           {s.scopeType === "entity" ? (
-            <KNSelect value={s.scopeId} onValueChange={s.setScopeId} options={entityOpts} placeholder="Pilih entitas…"
+            <KNSelect value={s.scopeId} options={entityOpts} placeholder="Pilih PT…"
+              onValueChange={async (v) => { if (s.confirmLeave && !(await s.confirmLeave())) return; s.setScopeId(v); }}
               className="field cfg-select-sm" data-testid="cfg-scope-entity" />
           ) : null}
         </div>
       </div>
 
-      {/* FASE E-4 (E4.6) — pita konteks: nilai SIAPA yang sedang diubah */}
+      {/* FASE E-4 (E4.6) / KF-T4 — pita konteks: nilai SIAPA yang sedang diubah (satu peringatan saja). */}
       <div data-testid="cfg-scope-ribbon"
         className={`cfg-scope-ribbon ${s.scopeType === "entity" ? "is-entity" : "is-global"}`}>
         {s.scopeType === "entity" ? <Building2 size={13} /> : <Globe2 size={13} />}
         <span>
           {s.scopeType === "entity" && s.scopeId ? (
-            <>Anda sedang mengubah <b>{scopeName}</b>. Perubahan hanya berlaku untuk badan usaha ini; nilai
-              berlencana <b>Global</b> masih diwarisi dari grup.</>
+            <>Anda sedang mengubah nilai khusus <b>{scopeName}</b>. PT lain tidak terpengaruh.</>
           ) : s.scopeType === "entity" ? (
-            <>Pilih badan usaha dulu supaya perubahan tersimpan pada badan usaha yang benar.</>
+            <span data-testid="cfg-scope-need-entity">Pilih PT dulu supaya perubahan tersimpan pada PT yang benar.</span>
           ) : (
-            <>Anda sedang mengubah nilai <b>Global</b> — berlaku untuk <b>semua</b> badan usaha yang belum punya nilai
-              sendiri.</>
+            <>Anda sedang mengubah <b>aturan grup</b> — berlaku untuk semua PT yang tidak punya nilai sendiri.</>
           )}
         </span>
       </div>
-      {s.scopeType === "entity" && !s.scopeId ? (
-        <p className="cfg-scope-warn" data-testid="cfg-scope-need-entity">
-          Pilih entitas dulu supaya perubahan tersimpan pada entitas yang benar. Nilai di bawah masih menampilkan nilai global.
-        </p>
-      ) : null}
     </>
   );
 }

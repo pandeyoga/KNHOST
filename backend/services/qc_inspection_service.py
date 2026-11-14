@@ -30,13 +30,19 @@ async def grade_thresholds(entity_id: Optional[str] = None) -> Dict[str, float]:
     settings = await get_effective_settings(entity_id)
     qc = settings.get("qc", {}) or {}
     th = qc.get("grade_thresholds", {}) or {}
-    a_max = float(th.get("a_max", 20.0) or 20.0)
-    b_max = float(th.get("b_max", 40.0) or 40.0)
-    span = max(b_max - a_max, 0.0)
-    a1_max = float(th.get("a1_max") or (a_max + span / 3.0))
-    a2_max = float(th.get("a2_max") or (a_max + 2.0 * span / 3.0))
-    return {"a_max": a_max, "a1_max": round(a1_max, 2), "a2_max": round(a2_max, 2),
-            "b_max": b_max}
+    return thresholds_from(th.get("a_max", 20.0) or 20.0, th.get("b_max", 40.0) or 40.0,
+                           th.get("a1_max"), th.get("a2_max"))
+
+
+def thresholds_from(a_max: Any, b_max: Any, a1_max: Any = None, a2_max: Any = None) -> Dict[str, float]:
+    """KF-T4 — fungsi MURNI batas grade (dipakai `grade_thresholds` dan "Coba dulu" Pengaturan): A1 & A2 kosong →
+    rentang A–B dibagi tiga sama besar."""
+    a = float(a_max)
+    b = float(b_max)
+    span = max(b - a, 0.0)
+    a1 = float(a1_max or (a + span / 3.0))
+    a2 = float(a2_max or (a + 2.0 * span / 3.0))
+    return {"a_max": a, "a1_max": round(a1, 2), "a2_max": round(a2, 2), "b_max": b}
 
 
 def compute_points(defects: List[Dict[str, Any]]) -> float:

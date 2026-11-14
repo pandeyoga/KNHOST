@@ -92,7 +92,8 @@ test("U17 — baris jadwal menyebut cakupan; Batalkan jadwal memanggil pembatal 
   const b0 = q(host, "cfg-sched-row-ar.grace_days-0").textContent;
   const b1 = q(host, "cfg-sched-row-ar.grace_days-1").textContent;
   expect(b0).toContain("Terjadwal: 11 hari mulai 01 Des 2026");
-  expect(b0).toContain("WIB · Global");
+  // KF-T4 — glosarium: aturan grup = "Semua PT" (dulu "Global").
+  expect(b0).toContain("WIB · Semua PT");
   expect(b1).toContain("WIB · KANDA");
   expect(b1).not.toContain("ent_kanda");
   await act(async () => { q(host, "cfg-sched-cancel-ar.grace_days-1").click(); });

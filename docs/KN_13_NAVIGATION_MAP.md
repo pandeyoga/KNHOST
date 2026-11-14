@@ -537,6 +537,19 @@ dan menyaring menu peran lain (`view_resources`).
 - `home` dan `my-desk` tidak masuk modul: untuk peran kustom tampil menurut sifat peran (halaman awal ber-menu `home`;
   kategori kerja terisi). `permission-matrix` (alias), `cs-bom`, `hr-my-profile` tidak berubah.
 
+### KF-T4 — 14 Nov 2026 (Pengaturan: 13 kelompok bersub-judul, dua tab jadi alias)
+- Registry Pengaturan kini 13 kelompok bersub-judul (`backend/config_registry.py` `GROUPS`); delapan layar
+  `settings-cfg-*` (`features/settings/config/configGroupViews.js`). Id kelompok lama diterima lewat `GROUP_ALIASES`.
+- Tab dicabut, id tetap (rute cadangan `activeView === "<id>"` + `access_modules.py`): **Aturan Dokumen**
+  (`settings-cfg-documents`, hub `settings-documents`) → alias ke `settings-cfg-approval` preset `{section:
+  "rujukan-dokumen"}`; **Penerima Notifikasi** (`settings-cfg-notify`, hub `settings-notify`) → alias ke
+  `settings-cfg-approval` preset `{section: "pemberitahuan"}` (`config/viewAliases.js`).
+- Label tab: `settings-cfg-approval` "Persetujuan & Ambang" → **Ketegasan, Pengingat & Dokumen**; `settings-cfg-system`
+  "Tampilan & Asisten" → **AI & Tampilan**. Judul halaman delapan layar = "<label tab> · <label kelompoknya>"
+  (`config/navMeta.js`). Semua pengaturan: tab "Kesehatan Konfigurasi" → **Kesehatan Pengaturan**.
+- Pengaturan › Gudang & Mutu › **Penerimaan & OCR** membaca preset `{tab}` (kartu "Cara mencatat barang datang" menautkan
+  ke tab Mode Penerimaan).
+
 ### KF-T6 — 14 Nov 2026 (tab Kontrol dua orang)
 - Pengaturan › **Persetujuan** (hub `settings-approval`) mendapat tab ke-4 **Kontrol dua orang** (view
   `settings-dual-control`, `features/settings/kontrol/DualControlView.jsx`; testid `dual-control-view`). Modul akses:

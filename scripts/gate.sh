@@ -262,6 +262,11 @@ STATIK=(
   "guard:page_tabs (INV-UI-12, tab maks 2 tingkat — tab/pil buatan sendiri hanya berkurang)|python scripts/guardrails/verify_page_tabs.py"
   "guard:view_aliases SELF-TEST (bukti-merah dua arah, 8 kasus)|python scripts/guardrails/verify_view_aliases.py --self-test"
   "guard:view_aliases (INV-NAV-02, alias layar tidak memutus pintu/hak)|python scripts/guardrails/verify_view_aliases.py"
+  # KF-T4 — teks Pengaturan berbahasa awam: label ≤ 45, satuan, arti 0, glosarium, sub-judul ≤ 14 (0 pelanggaran,
+  # bukan garis dasar). Indeks kunci layar (`configKeyIndex.json`) harus sama dengan keluaran skripnya.
+  "guard:config_text SELF-TEST (bukti-merah satu kasus per aturan T1–T7)|python scripts/guardrails/verify_config_text.py --self-test"
+  "guard:config_text (INV-CFG-TXT, teks Pengaturan awam & bersub-judul)|python scripts/guardrails/verify_config_text.py"
+  "config_key_index (KF-T4, indeks kunci layar selaras registry)|python scripts/gen_config_key_index.py --check"
   # AUDIT 2026-09 T-03 — INV-PERF-01. `to_list(n>20000)` memuat seluruh koleksi ke memori
   # (63 lokasi, beberapa lalu menyaring di Python). Ratchet: angka hanya boleh turun;
   # kejadian baru wajib alasan tertulis di ALLOWLIST skrip.

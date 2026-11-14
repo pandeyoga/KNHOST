@@ -116,8 +116,9 @@ def _deny_entry(entry: Dict[str, Any]) -> HTTPException:
 
 
 def _deny_group(group: str) -> HTTPException:
-    g = next((x for x in registry.GROUPS if x["id"] == group), None)
-    items = registry.by_group(group)
+    gid = registry.resolve_group_id(group)[0] or group   # KF-T4 — id kelompok lama → kelompok barunya
+    g = next((x for x in registry.GROUPS if x["id"] == gid), None)
+    items = registry.by_group(gid)
     return _deny_one((g or {}).get("label", group), (items[0].get("permission") or ["settings"])[0] if items else "settings")
 
 
@@ -176,8 +177,8 @@ async def _assert_scope_write(request: Request, entry: Dict[str, Any], scope_typ
         resolve_requested_entity(ctx, scope_id)
     elif scope_type == "global" and "entity" in (entry.get("scopes") or []) and not ctx.is_cross_entity:
         raise HTTPException(status_code=403, detail=(
-            f"Nilai grup '{entry['label']}' hanya dapat diubah peran lintas badan usaha. "
-            "Pilih 'Badan usaha' untuk mengubah nilai khusus PT Anda."))
+            f"Aturan grup '{entry['label']}' hanya dapat diubah peran lintas PT. "
+            "Pilih 'Satu PT' untuk mengubah nilai khusus PT Anda."))
     elif scope_type in aturan_khusus.LAPISAN_KHUSUS + aturan_khusus.BELUM_TERSEDIA:   # KF-T5
         await aturan_khusus.pastikan_sasaran(ctx, scope_type, scope_id)
 
@@ -218,12 +219,28 @@ async def read_effective(request: Request, group: str = "", q: str = "",
     """Nilai efektif + lapisan asal untuk satu grup (atau hasil pencarian).
 
     KF-T5 — `scope` (`customer` · `product`): hanya kunci yang bisa dibedakan per pelanggan/barang, tiap butir ditambah
-    `layer_value` (nilai milik `customer_id`/`product_id` itu, atau `null`) dan `inherited_value` (nilai PT/grup)."""
+    `layer_value` (nilai milik `customer_id`/`product_id` itu, atau `null`) dan `inherited_value` (nilai PT/grup).
+
+    KF-T4 — `group` boleh id kelompok lama (`GROUP_ALIASES`). `scope=global`: nilai dihitung TANPA lapisan PT (nilai
+    grup), dan tiap butir memuat `entity_overrides` = PT yang boleh dilihat pengguna dan punya nilai sendiri."""
     user = await current_user(request)
     perms = await _allowed(user)
     groups = _assert_any_readable(user, perms)
     if group and not q and not any(_may_read(e, user, perms) for e in registry.by_group(group)):
         raise _deny_group(group)
+    group = registry.resolve_group_id(group)[0] if group else ""
+    lihat_pt: List[str] = []
+    if scope == "global":   # KF-T4 — nilai grup + daftar PT yang menyimpang
+        from entity_scope import entity_ctx
+        ectx = await entity_ctx(request)
+        lihat_pt = list(ectx.allowed_entity_ids or [])
+        if ectx.is_cross_entity and not lihat_pt:
+            from db import db as _db
+            lihat_pt = [d["id"] async for d in _db.business_entities.find({}, {"_id": 0, "id": 1})]
+        entity_id, scope = "", ""
+        global_view = True
+    else:
+        global_view = False
     if scope:   # KF-T5 — pelanggan/barang harus ada; pelanggan dalam cakupan PT pembaca; aturan PT = PT pelanggan
         from entity_scope import entity_ctx
         aturan_khusus.periksa_lapisan(scope)
@@ -241,7 +258,10 @@ async def read_effective(request: Request, group: str = "", q: str = "",
         it["can_edit"] = _can_edit(registry.get(it["key"]) or it, user, perms)
     if scope:   # KF-T5
         items = await aturan_khusus.tambah_nilai_lapisan(items, scope, ctx)
-    return {"groups": groups, "context": ctx, "items": items, "total": len(items)}
+    if global_view:   # KF-T4
+        items = await resolver.entity_overrides(items, lihat_pt)
+    return {"groups": groups, "context": {**ctx, "scope": "global" if global_view else ""}, "items": items,
+            "total": len(items)}
 
 
 @router.get("/explain")
@@ -298,8 +318,21 @@ async def simulate(payload: ConfigSimulateIn, request: Request) -> Dict[str, Any
         trail.append({"key": key, "label": (e or {}).get("label", key), "value": res["value"],
                       "source_layer": res["source_layer"], "source_label": res["source_label"],
                       "hypothetical": key in payload.overrides})
-    out = config_simulator.run(sim_id, values, payload.sample)
+    out = config_simulator.run(sim_id, values, payload.sample, await _sim_facts(ctx))
     return {**out, "resolved": trail, "context": ctx}
+
+
+async def _sim_facts(ctx: Dict[str, Any]) -> Dict[str, Any]:
+    """KF-T4 (KF-UX-04) — fakta master yang dipakai mesin: status PKP dari profil PT `ctx.entity_id` (tanpa PT: PKP,
+    sama dengan `config_service.get_effective_settings`)."""
+    from db import db as _db
+    ent = (ctx or {}).get("entity_id") or ""
+    is_pkp = True
+    if ent and ent != "all":
+        doc = await _db.business_entities.find_one({"id": ent}, {"_id": 0, "default_tax_mode": 1})
+        if doc:
+            is_pkp = doc.get("default_tax_mode") == "ppn"
+    return {"is_pkp": is_pkp}
 
 
 @router.put("/values")
@@ -341,7 +374,8 @@ async def write_values(payload: ConfigBulkValuesIn, request: Request) -> Dict[st
 
 @router.post("/values/reset")
 async def reset_value(payload: ConfigValueIn, request: Request) -> Dict[str, Any]:
-    """Kembalikan sebuah setting ke nilai default sistem (tetap tercatat sebagai perubahan)."""
+    """Tulis nilai BAWAAN SISTEM pada lapisan yang disebut (tetap tercatat sebagai perubahan). KF-T4 — dipakai tombol
+    "Pakai nilai bawaan sistem" (grup) / "… untuk PT ini" (nilai khusus PT berisi bawaan)."""
     actor = await current_user(request)
     perms = await _allowed(actor)
     entry = registry.get(payload.key)
@@ -350,11 +384,15 @@ async def reset_value(payload: ConfigValueIn, request: Request) -> Dict[str, Any
     if not _may_edit(entry, actor, perms):
         raise HTTPException(status_code=403, detail=_perm_error(entry))
     await _assert_scope_write(request, entry, payload.scope_type, payload.scope_id)
+    # KF-T4 (KF-12) — kunci berisiko tinggi tanpa alasan → 400 (dulu diisi alasan otomatis); kunci lain beralasan bawaan.
+    alasan = (payload.reason or "").strip()
+    if not alasan and entry["requires_reason"]:
+        raise HTTPException(status_code=400, detail=resolver.alasan_wajib(entry))
     try:
         row = await resolver.set_value(
             payload.key, entry["default"], scope_type=payload.scope_type,
             scope_id=payload.scope_id, actor=actor.get("name", ""), actor_id=actor.get("id", ""),
-            reason=payload.reason or "Kembalikan ke default sistem")
+            reason=alasan or resolver.ALASAN_BAWAAN_RESET)
     except resolver.ConfigWriteError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
     await audit(actor.get("name", ""), "config_value_reset", "config_values", row["id"],
@@ -366,8 +404,8 @@ async def reset_value(payload: ConfigValueIn, request: Request) -> Dict[str, Any
 async def clear_value_layer(payload: ConfigValueIn, request: Request) -> Dict[str, Any]:
     """FASE E-4 (E4.6) — cabut nilai pada satu lapisan → kembali mewarisi lapisan di atasnya.
 
-    Dipakai tombol "Kembalikan ke global" di Pusat Pengaturan. Berbeda dari
-    `/values/reset` yang menulis nilai bawaan KODE pada lapisan ini.
+    Dipakai tombol "Ikuti nilai grup" (KF-T4) di Pengaturan. Berbeda dari `/values/reset` yang menulis nilai bawaan
+    sistem pada lapisan ini. Kunci berisiko tinggi wajib beralasan (`resolver.clear_layer`).
     """
     actor = await current_user(request)
     perms = await _allowed(actor)
@@ -420,8 +458,12 @@ async def cancel_scheduled_value(payload: ConfigCancelScheduledIn, request: Requ
 
 @router.get("/history")
 async def read_history(request: Request, key: str = "", scope_type: str = "",
-                       scope_id: str = "", limit: int = 100) -> Dict[str, Any]:
-    """Riwayat perubahan konfigurasi (append-only, terbaru dulu)."""
+                       scope_id: str = "", limit: int = 100, group: str = "", changed_by: str = "",
+                       date_from: str = "", date_to: str = "", offset: int = 0) -> Dict[str, Any]:
+    """Riwayat perubahan konfigurasi (append-only, terbaru dulu).
+
+    KF-T4 (KF-UX-19) — saringan `group` (id baru atau lama), `changed_by`, `date_from`/`date_to` (WIB), halaman `offset`;
+    `total` = jumlah sebelum dipotong halaman."""
     user = await current_user(request)
     perms = await _allowed(user)
     n = min(max(int(limit), 1), 500)
@@ -431,13 +473,22 @@ async def read_history(request: Request, key: str = "", scope_type: str = "",
             raise _deny_entry(entry or {"key": key, "label": key})
     else:
         _assert_any_readable(user, perms)
-    # KF-T1 — pembaca terbatas hanya melihat riwayat setting yang boleh dibacanya.
     full = _full_reader(user, perms)
-    rows = await resolver.history(key, scope_type, scope_id, n if full else 500)
+    keys: Optional[List[str]] = None
+    if group:
+        keys = [e["key"] for e in registry.by_group(group)]
     if not full:
-        rows = [r for r in rows if _may_read(registry.get(r["key"]), user, perms)][:n]
+        # KF-T1 — pembaca terbatas hanya melihat riwayat setting yang boleh dibacanya (disaring di kueri, jadi `total`
+        # dan halaman tetap jujur).
+        boleh = [e["key"] for e in registry.all_entries() if _may_read(e, user, perms)]
+        keys = [k for k in (keys if keys is not None else boleh) if k in set(boleh)]
+    try:
+        rows, total = await resolver.history(key, scope_type, scope_id, n, keys=keys, changed_by=changed_by,
+                                             date_from=date_from, date_to=date_to, offset=offset)
+    except resolver.ConfigWriteError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
     rows = await aturan_khusus.beri_nama(rows)   # KF-T5 — cakupan pelanggan/barang tampil bernama, bukan id
-    return {"rows": rows, "total": len(rows)}
+    return {"rows": rows, "total": total, "offset": max(int(offset), 0), "limit": n}
 
 
 # KF-T5 — daftar pelanggan/barang yang punya aturan khusus untuk satu kunci (dibaca kartu Pusat Pengaturan).

@@ -53,7 +53,10 @@ STATUSES = {"active", "not_used"}
 #   json → struktur bersarang ⇒ editor JSON (kasus jarang & memang kompleks)
 # Tanpa ini UI hanya bisa menampilkan JSON mentah — itulah alasan editor pajak lama
 # terasa lebih ramah daripada Pusat Pengaturan sebelum FASE G-0 dituntaskan.
-ROW_SHAPES = {"list", "map", "json"}
+ROW_SHAPES = {"list", "map", "json",
+              # KF-T4 (KF-13) — objek `{nilai kolom pertama: [baris]}` (mis. `approval.extra_levels`) disunting sebagai
+              # baris datar; kolom pertama = kunci kelompok.
+              "grouped_list"}
 
 # Prefix kunci yang tersimpan di dokumen `system_settings` scope tersendiri.
 LEGACY_SCOPED_PREFIXES: Tuple[str, ...] = ("uom", "lot", "makloon", "receiving", "hr")
@@ -62,75 +65,138 @@ LEGACY_SCOPED_PREFIXES: Tuple[str, ...] = ("uom", "lot", "makloon", "receiving",
 # ── Grup: dikelompokkan berdasarkan PERTANYAAN BISNIS, bukan nama modul ──────
 # `question` sengaja ditulis sebagai pertanyaan yang biasa diucapkan pemilik usaha,
 # supaya user tahu grup mana yang harus dibuka tanpa perlu paham arsitektur sistem.
+#
+# KF-T4 (KF-UX-11/12) — 23 kelompok tanpa sub-judul (terbesar 40 kunci) diganti 13 kelompok bersub-judul
+# (`docs/blueprint/unit/KF-T4.md` tabel (c)). Tiap kunci menyebut `section` (sub-judul) pada kelompoknya;
+# `advanced: True` = bagian "Lanjutan (teknis)" yang tertutup secara bawaan. Sub-judul biasa paling banyak 14 kunci
+# (penjaga `scripts/guardrails/verify_config_text.py` T7). Id kelompok lama tetap diterima lewat `GROUP_ALIASES`.
+def _S(sid: str, label: str, advanced: bool = False) -> Dict[str, Any]:
+    return {"id": sid, "label": label, "advanced": advanced}
+
+
 GROUPS: List[Dict[str, Any]] = [
-    {"id": "uang-masuk", "label": "Uang Masuk & Piutang", "order": 1,
-     "question": "Kapan pelanggan harus bayar, dan apa akibatnya kalau telat?"},
-    {"id": "harga-diskon", "label": "Harga, Diskon & Komisi", "order": 2,
-     "question": "Siapa boleh menurunkan harga, dan bagaimana komisi sales dihitung?"},
-    {"id": "persetujuan", "label": "Persetujuan & Ambang", "order": 3,
-     "question": "Nilai berapa yang wajib disetujui, dan oleh siapa?"},
-    {"id": "pajak", "label": "Pajak", "order": 4,
-     "question": "Berapa PPN dan bagaimana faktur pajak dihitung?"},
-    {"id": "keuangan-dasar", "label": "Dasar Keuangan & Periode", "order": 5,
-     "question": "Mata uang apa yang dipakai dan kapan tahun buku ditutup?"},
-    {"id": "pembelian", "label": "Pembelian & Tagihan Supplier", "order": 6,
-     "question": "Berapa selisih yang masih boleh saat barang/tagihan supplier datang?"},
-    {"id": "penerimaan", "label": "Penerimaan Barang", "order": 7,
-     "question": "Boleh input qty pakai satuan supplier? Boleh terima lebih dari PO?"},
-    {"id": "stok-satuan", "label": "Stok, Satuan & Alokasi", "order": 8,
-     "question": "Stok mana yang dipakai lebih dulu, dan bagaimana satuan dikonversi?"},
-    {"id": "kualitas", "label": "Kualitas (QC)", "order": 9,
-     "question": "Berapa poin cacat yang membuat kain turun grade?"},
-    {"id": "lot", "label": "Lot & Ketertelusuran", "order": 10,
-     "question": "Seberapa ketat nomor lot & dye lot diwajibkan?"},
-    {"id": "makloon", "label": "Produksi & Makloon", "order": 11,
-     "question": "Berapa selisih hasil makloon yang masih wajar sebelum jadi klaim?"},
-    {"id": "sdm", "label": "SDM & Penggajian", "order": 12,
-     "question": "Berapa iuran BPJS, PPh 21, dan pengali lembur?"},
-    {"id": "tampilan", "label": "Tampilan & Navigasi", "order": 13,
-     "question": "Menu apa yang muncul, dan halaman awal setiap peran?",
-     # KF-T1 — dibaca semua pengguna saat aplikasi dibuka (menu "segera hadir"); `role_home.*` ditandai sensitif.
-     "sensitif_baca": False},
-    # FASE G-1 — fondasi amandemen: tidak ada perubahan angka secara diam-diam.
-    {"id": "amandemen", "label": "Koreksi & Amandemen Dokumen", "order": 14,
-     "question": "Koreksi mana yang boleh langsung jalan, dan mana yang wajib disetujui?"},
-    # FASE G-4 — relasi dokumen: setiap surat harus bisa ditelusuri dari surat lain.
-    {"id": "dokumen", "label": "Dokumen, Referensi & Tanda Tangan", "order": 15,
-     "question": "Dokumen apa yang wajib menyebut referensinya, dan seberapa jauh jejaknya ditelusuri?"},
-    # FASE F — R&D & Desain: dari mana produk baru berasal, dan kapan boleh dijual.
-    {"id": "rnd", "label": "R&D & Desain", "order": 16,
-     "question": "Kapan barang hasil R&D boleh dipesan/dijual, dan berapa kali sample boleh diulang?"},
-    # FASE G-8 — rekonsiliasi bank: kapan mutasi dianggap cocok, dan ke mana dana tak dikenal.
-    {"id": "bank", "label": "Rekonsiliasi Bank", "order": 17,
-     "question": "Kapan mutasi bank dicocokkan otomatis, dan ke mana dana tak dikenal ditampung?"},
-    # FASE G-9 — pusat kasus keuangan: uang yang nyangkut harus punya antrean & batas waktu.
-    {"id": "kasus", "label": "Pusat Kasus Keuangan", "order": 18,
-     "question": "Berapa lama kasus uang boleh menganggur, dan nominal berapa yang wajib disetujui?"},
-    # FASE G-7 — kontrabon: siklus tukar faktur supplier (toleransi 3-way, approval, pengingat).
-    {"id": "kontrabon", "label": "Kontrabon (Tukar Faktur)", "order": 19,
-     "question": "Berapa selisih 3-way match yang masih boleh lewat, siapa yang menyetujui, "
-                 "dan kapan pengingat tukar faktur dikirim?"},
-    # FASE G-6 — antar-PT sebagai jual-beli: mode harga (kontrak internal), PPN per-PT,
-    # ambang persetujuan, pengingat settlement.
-    {"id": "antar-entitas", "label": "Antar Entitas (Jual-Beli Antar-PT)", "order": 20,
-     "question": "Bagaimana harga & PPN antar-PT ditentukan, dan kapan saldo pasangan PT "
-                 "harus diingatkan untuk settlement?"},
-    # FASE N — alamat notifikasi. Peristiwanya sudah lama ada; yang belum pernah bisa
-    # diatur pemilik adalah SIAPA yang menerimanya. Sebelum fase ini 11 notifikasi
-    # dikirim ke `recipient_role="all"` sehingga Finance menerima 9 pesan stok kain.
-    {"id": "notifikasi", "label": "Notifikasi & Pemberitahuan", "order": 21,
-     "question": "Peringatan mana yang masuk ke kotak siapa, dan divisi mana yang ikut "
-                 "diberi tahu?"},
-    # Tanya KN F0 — asisten analitik: definisi & hak lihat angka sensitif.
-    {"id": "asisten-analitik", "label": "Asisten Analitik (Tanya KN)", "order": 22,
-     "question": "Apa arti \u201cpenjualan\u201d, siapa mendapat kredit penjualan, dan siapa boleh "
-                 "melihat margin & nilai stok?"},
-    # L08 — retur penjualan: kewajiban bukti per tahap & larangan kirim ulang roll retur.
-    {"id": "retur", "label": "Retur Penjualan", "order": 23,
-     "question": "Pada tahap mana bukti foto retur wajib ada, dan bolehkah roll retur dikirim "
-                 "lagi ke pelanggan yang mengembalikannya?"},
+    {"id": "penjualan", "label": "Penjualan & harga", "order": 1,
+     "question": "Siapa boleh menurunkan harga, kapan pesanan boleh jalan, dan bagaimana komisi sales dihitung?",
+     "sections": [_S("harga", "Harga & diskon"), _S("alur-pesanan", "Alur pesanan"), _S("komisi", "Komisi sales"),
+                  _S("saran-pos", "Saran produk di kasir (POS)")]},
+    {"id": "pembayaran-pelanggan", "label": "Pembayaran pelanggan", "order": 2,
+     "question": "Kapan pelanggan harus bayar, dan apa akibatnya kalau telat atau bayarnya tidak pas?",
+     "sections": [_S("syarat-bayar", "Syarat bayar, DP & cicilan"), _S("denda", "Denda telat bayar"),
+                  _S("selisih-bayar", "Selisih bayar")]},
+    {"id": "retur-koreksi", "label": "Retur & koreksi dokumen", "order": 3,
+     "question": "Bukti apa yang wajib untuk retur, dan koreksi angka mana yang harus disetujui?",
+     "sections": [_S("retur", "Retur penjualan"), _S("koreksi", "Koreksi dokumen")]},
+    {"id": "pembelian", "label": "Pembelian, makloon & tagihan pemasok", "order": 4,
+     "question": "Apa yang wajib saat memesan ke pemasok atau makloon, dan kapan tagihannya boleh dibayar?",
+     "sections": [_S("memesan", "Memesan ke pemasok"), _S("makloon", "Makloon"),
+                  _S("tagihan", "Tagihan pemasok & kontrabon")]},
+    {"id": "penerimaan", "label": "Penerimaan barang & lot", "order": 5,
+     "question": "Boleh terima lebih dari PO? Nomor lot wajib? Satuan pemasok dihitung bagaimana?",
+     "sections": [_S("menerima", "Menghitung & menerima"), _S("nomor-lot", "Nomor lot"),
+                  _S("konversi-satuan", "Konversi satuan")]},
+    {"id": "kualitas", "label": "Mutu kain (QC)", "order": 6,
+     "question": "Berapa poin cacat jadi grade apa, dan kapan roll ditahan?",
+     "sections": [_S("inspeksi", "Inspeksi & grade"), _S("tidak-sesuai", "Bila tidak sesuai sample"),
+                  _S("jumlah-cek", "Berapa roll yang dicek")]},
+    {"id": "stok", "label": "Stok, alokasi & potong", "order": 7,
+     "question": "Roll mana dipakai lebih dulu, bagaimana sisa potong diperlakukan, dan kapan barang disebut laris "
+                 "atau lambat?",
+     "sections": [_S("memilih-stok", "Memilih stok untuk pesanan"), _S("potong", "Potong & sisa potong"),
+                  _S("laris-lambat", "Laris/lambat & pesan ulang"), _S("kerja-gudang", "Kerja gudang")]},
+    {"id": "persetujuan", "label": "Persetujuan, pengingat & dokumen", "order": 8,
+     "question": "Dokumen bernilai berapa naik ke siapa, siapa diingatkan, dan bagaimana dokumen saling merujuk?",
+     # KF-T6 — kunci `kontrol.*` diubah di tab Persetujuan › Kontrol dua orang; di sini dibagi per bidang (≤ 14).
+     "sections": [_S("umum", "Persetujuan umum"), _S("rnd", "Persetujuan R&D"), _S("pemberitahuan", "Pemberitahuan"), _S("tenggat-pengingat", "Kapan pengingat dikirim"),
+                  _S("rujukan-dokumen", "Rujukan antar dokumen"),
+                  _S("dua-orang-pembelian", "Dua orang: pembelian"),
+                  _S("dua-orang-hutang", "Dua orang: tagihan pemasok"),
+                  _S("dua-orang-penjualan", "Dua orang: penjualan & retur"),
+                  _S("dua-orang-piutang", "Dua orang: piutang"),
+                  _S("dua-orang-gudang", "Dua orang: gudang, produksi & R&D"),
+                  _S("dua-orang-sdm", "Dua orang: SDM"), _S("dua-orang-buku", "Dua orang: pembukuan"),
+                  _S("dua-orang-admin", "Dua orang: pengecualian Admin")]},
+    {"id": "pajak-pembukuan", "label": "Pajak, pembukuan & antar-PT", "order": 9,
+     "question": "Berapa PPN, kapan buku ditutup, dan bagaimana jual-beli antar-PT dihitung?",
+     "sections": [_S("pajak", "Pajak"), _S("tutup-buku", "Mata uang & tutup buku"),
+                  _S("antar-pt", "Jual-beli antar-PT")]},
+    {"id": "bank-kasus", "label": "Bank & uang yang nyangkut", "order": 10,
+     "question": "Kapan mutasi bank dicocokkan otomatis, dan berapa lama uang tak jelas boleh menganggur?",
+     "sections": [_S("bank", "Mencocokkan mutasi bank"), _S("kasus", "Kasus keuangan")]},
+    {"id": "sdm", "label": "Gaji & SDM", "order": 11,
+     "question": "Berapa iuran BPJS, PPh 21, dan upah lembur?",
+     "sections": [_S("bpjs", "BPJS"), _S("pph21", "PPh 21"), _S("lembur", "Lembur, komisi & kepegawaian")]},
+    {"id": "rnd", "label": "R&D & desain", "order": 12,
+     "question": "Kapan barang hasil R&D boleh dijual, siapa memutus sample, dan bagaimana desainer dinilai?",
+     "sections": [_S("boleh-dijual", "Kapan produk boleh dijual"), _S("sample", "Sample & pemasok pemenang"),
+                  _S("kode-desain", "Kode & nilai desain"), _S("nilai-desainer", "Nilai desainer")]},
+    {"id": "sistem", "label": "Sistem, AI & tampilan", "order": 13,
+     "question": "Fitur AI mana yang aktif dan berapa anggarannya, serta apa yang tampil di menu?",
+     # KF-T4 — tanpa `sensitif_baca` tingkat kelompok: kunci menu (`ui.*`) dan saran kasir (`pos.*`) yang dulu terbuka
+     # lewat kelompok Tampilan kini menyebut `sensitif_baca=False` sendiri (keterbacaan tiap kunci tidak berubah).
+     "sections": [_S("tanya-kn", "Tanya KN: arti angka & hak lihat"),
+                  _S("tanya-kn-teknis", "Tanya KN: model & anggaran", advanced=True),
+                  _S("baca-sj", "Baca surat jalan otomatis", advanced=True),
+                  _S("rfid-proses", "RFID & proses macet", advanced=True),
+                  _S("menu", "Menu & halaman awal")]},
 ]
 GROUP_IDS = {g["id"] for g in GROUPS}
+SECTION_IDS: Dict[str, Dict[str, Dict[str, Any]]] = {g["id"]: {x["id"]: x for x in g["sections"]} for g in GROUPS}
+
+#: KF-T4 — id kelompok lama → (id kelompok baru, sub-judul tujuan atau ""). Dipakai `by_group`, `E(group=<id lama>)`,
+#: `GET /api/config/effective?group=<id lama>`, dan layar (`configDeepLink.js` menyalin peta ini; diuji sama). Untuk
+#: kelompok lama yang terbagi ke beberapa kelompok baru, tujuan pertama = kelompok yang memuat kunci terbanyak.
+#: Id lama yang juga id baru (`persetujuan`, `pembelian`, `penerimaan`, `kualitas`, `sdm`, `rnd`) tidak dialiaskan.
+GROUP_ALIASES: Dict[str, Tuple[str, str]] = {
+    "uang-masuk": ("pembayaran-pelanggan", ""),
+    "harga-diskon": ("penjualan", ""),
+    "pajak": ("pajak-pembukuan", "pajak"),
+    "keuangan-dasar": ("pajak-pembukuan", "tutup-buku"),
+    "stok-satuan": ("stok", ""),
+    "lot": ("penerimaan", "nomor-lot"),
+    "makloon": ("pembelian", "makloon"),
+    "tampilan": ("sistem", "menu"),
+    "amandemen": ("retur-koreksi", "koreksi"),
+    "dokumen": ("persetujuan", "rujukan-dokumen"),
+    "bank": ("bank-kasus", "bank"),
+    "kasus": ("bank-kasus", "kasus"),
+    "kontrabon": ("pembelian", "tagihan"),
+    "antar-entitas": ("pajak-pembukuan", "antar-pt"),
+    "notifikasi": ("persetujuan", "pemberitahuan"),
+    "asisten-analitik": ("sistem", "tanya-kn"),
+    "retur": ("retur-koreksi", "retur"),
+}
+
+
+def resolve_group_id(group_id: str) -> Tuple[str, str]:
+    """(id kelompok baru, sub-judul tujuan) untuk id baru atau id lama; ("", "") bila tidak dikenal."""
+    g = (group_id or "").strip()
+    if g in GROUP_IDS:
+        return g, ""
+    return GROUP_ALIASES.get(g, ("", ""))
+
+
+#: KF-T4 — tema lintas kelompok (saringan "Persetujuan" · "Pengingat & batas waktu" · "Toleransi selisih"), dari pola
+#: kunci (`docs/blueprint/unit/KF-T4.md` § Server).
+THEMES: Tuple[Tuple[str, str, str], ...] = (
+    ("persetujuan", "Persetujuan",
+     r"approv|dual_control|require_so_validation|require_verification_before_confirm|decision_roles|treatment_roles"
+     r"|direksi"),
+    ("pengingat", "Pengingat & batas waktu",
+     r"remind|sla_|_sla|stuck|escalat|holding_max_age|holding_case_after|unbilled_gr_age|wait_(warn|late)"
+     r"|keep_max_age|drift_alert"),
+    ("toleransi", "Toleransi selisih", r"toleran"),
+)
+
+
+def themes_for(key: str) -> List[str]:
+    import re as _re
+    return [tid for tid, _lab, pola in THEMES if _re.search(pola, key or "")]
+
+
+#: KF-T4 — isi daftar (`type="list"`): butir dari `options` · id peran yang dikenal · bilangan bulat > 0 menaik · teks.
+LIST_ITEMS = ("options", "roles", "int_asc", "text")
+#: KF-T4 — kunci teks yang nilainya rujukan ke master: Syarat Bayar · satuan · departemen SDM.
+REFS = ("payment_term", "uom", "department")
 
 _REGISTRY: Dict[str, Dict[str, Any]] = {}
 _ORDER: List[str] = []
@@ -179,14 +245,37 @@ def E(
     value_format: str = "",
     sensitif_baca: Optional[bool] = None,
     bertanggal: bool = False,
+    section: str = "",
+    items: str = "",
+    ordered: bool = False,
+    ref: str = "",
+    edit_at: Optional[Dict[str, Any]] = None,
 ) -> Dict[str, Any]:
-    """Daftarkan satu setting. Validasi ketat supaya registry tidak pernah setengah jadi."""
+    """Daftarkan satu setting. Validasi ketat supaya registry tidak pernah setengah jadi.
+
+    KF-T4 — `section` (wajib: sub-judul yang terdaftar pada kelompoknya; id kelompok lama diterjemahkan lewat
+    `GROUP_ALIASES` dan memberi sub-judul tujuannya bila ada) · `items`/`ordered` (isi daftar) · `ref` (teks rujukan
+    master) · `edit_at` (`{view, preset}`: kartu tanpa editor, diubah di layar lain)."""
     if key in _REGISTRY:
         raise ValueError(f"config_registry: kunci ganda '{key}'")
     if type not in TYPES:
         raise ValueError(f"config_registry[{key}]: type '{type}' tidak dikenal")
+    group, alias_section = resolve_group_id(group)
     if group not in GROUP_IDS:
-        raise ValueError(f"config_registry[{key}]: group '{group}' tidak ada di GROUPS")
+        raise ValueError(f"config_registry[{key}]: group tidak ada di GROUPS maupun GROUP_ALIASES")
+    section = section or alias_section
+    if not section:
+        raise ValueError(f"config_registry[{key}]: section (sub-judul) wajib diisi — KF-T4")
+    if section not in SECTION_IDS[group]:
+        raise ValueError(f"config_registry[{key}]: section '{section}' tidak terdaftar pada kelompok '{group}'")
+    if items and (type != "list" or items not in LIST_ITEMS):
+        raise ValueError(f"config_registry[{key}]: items '{items}' hanya untuk type list ({', '.join(LIST_ITEMS)})")
+    if items == "options" and not options:
+        raise ValueError(f"config_registry[{key}]: items 'options' wajib punya options")
+    if ref and (type != "text" or ref not in REFS):
+        raise ValueError(f"config_registry[{key}]: ref '{ref}' hanya untuk type text ({', '.join(REFS)})")
+    if edit_at is not None and not (isinstance(edit_at, dict) and edit_at.get("view")):
+        raise ValueError(f"config_registry[{key}]: edit_at wajib berbentuk {{view, preset}}")
     if risk not in RISKS:
         raise ValueError(f"config_registry[{key}]: risk '{risk}' tidak dikenal")
     if status not in STATUSES:
@@ -198,7 +287,7 @@ def E(
         raise ValueError(f"config_registry[{key}]: type enum wajib punya options")
     if row_shape and row_shape not in ROW_SHAPES:
         raise ValueError(f"config_registry[{key}]: row_shape '{row_shape}' tidak dikenal")
-    if row_shape == "list" and not columns:
+    if row_shape in ("list", "grouped_list") and not columns:
         raise ValueError(
             f"config_registry[{key}]: row_shape 'list' wajib mendefinisikan columns "
             f"supaya UI bisa menampilkan editor baris (bukan JSON mentah)")
@@ -217,6 +306,7 @@ def E(
     entry: Dict[str, Any] = {
         "key": key,
         "group": group,
+        "section": section,
         "label": label,
         "help": help,
         "impact": impact,
@@ -257,6 +347,11 @@ def E(
         # `effective_from`, dibaca dengan tanggal (`resolve(key, ctx, at=…)`). Resolver tidak memproyeksikannya ke
         # `system_settings` dan tidak membaca lapisan lama, supaya pembacaan untuk tanggal lampau tidak jatuh ke nilai baru.
         "bertanggal": bool(bertanggal),
+        # KF-T4 — isi daftar, rujukan master, dan layar pengubah lain (kartu tanpa editor).
+        "items": items,
+        "ordered": bool(ordered),
+        "ref": ref,
+        "edit_at": dict(edit_at) if edit_at else None,
     }
     _REGISTRY[key] = entry
     _ORDER.append(key)
@@ -293,64 +388,124 @@ def keys() -> List[str]:
 
 
 def groups() -> List[Dict[str, Any]]:
-    """Grup + jumlah setting di dalamnya (untuk navigasi Pusat Pengaturan)."""
+    """Grup + jumlah setting di dalamnya (untuk navigasi Pusat Pengaturan). KF-T4 — tiap sub-judul ikut berjumlah."""
     out = []
     for g in sorted(GROUPS, key=lambda x: x["order"]):
         items = [e for e in all_entries() if e["group"] == g["id"]]
-        out.append({**g, "count": len(items),
+        sections = [{**sec, "count": sum(1 for e in items if e["section"] == sec["id"])} for sec in g["sections"]]
+        out.append({**g, "sections": sections, "count": len(items),
                     "active_count": len([e for e in items if e["status"] == "active"])})
     return out
 
 
 def by_group(group_id: str) -> List[Dict[str, Any]]:
-    return [e for e in all_entries() if e["group"] == group_id]
+    """Kunci satu kelompok; KF-T4 — id kelompok lama diterjemahkan lewat `GROUP_ALIASES` (seluruh kelompok baru)."""
+    gid = resolve_group_id(group_id)[0]
+    return [e for e in all_entries() if e["group"] == gid] if gid else []
+
+
+#: KF-T4 (KF-UX-24) — padanan kata dua arah: mencari salah satu kata = mencari semuanya (hasilnya sama persis).
+SEARCH_SYNONYMS: Tuple[Tuple[str, ...], ...] = (
+    ("pemasok", "supplier", "vendor"),
+    ("cicilan", "angsuran"),
+    ("dp", "uang muka"),
+    ("terlambat", "telat"),
+    ("roll", "gulungan"),
+    ("utang", "hutang"),
+    ("pt", "entitas", "badan usaha"),
+    ("pesanan", "so", "order"),
+    ("syarat bayar", "termin", "term"),
+)
+
+
+def _pola_cari(kata: str) -> "Any":
+    """Kata pendek (≤ 4 huruf: `pt`, `so`, `dp`, `term`, `roll`) dicocokkan utuh; kata lebih panjang boleh berimbuhan di
+    belakang (`pemasoknya`, `supplier_id`)."""
+    import re as _re
+    akhir = r"(?![a-z0-9])" if len(kata) <= 4 else ""
+    return _re.compile(r"(?<![a-z0-9])" + _re.escape(kata) + akhir)
+
+
+def _varian_cari(term: str) -> List[str]:
+    """Bentuk lain `term` menurut `SEARCH_SYNONYMS` ([] bila `term` tidak memuat kata berpadanan)."""
+    import re as _re
+    varian = [term]
+    kena = False
+    for grup in SEARCH_SYNONYMS:
+        baru: List[str] = []
+        for v in varian:
+            for kata in grup:
+                if _pola_cari(kata).search(v):
+                    kena = True
+                    for ganti in grup:
+                        baru.append(_re.sub(r"(?<![a-z0-9])" + _re.escape(kata) + r"(?![a-z0-9])", ganti, v))
+                    break
+            else:
+                baru.append(v)
+        varian = list(dict.fromkeys(baru))[:64]
+    return varian if kena else []
 
 
 def search(term: str) -> List[Dict[str, Any]]:
-    """Pencarian awam: cocokkan label, key, help, impact, dan nama grup."""
+    """Pencarian awam: cocokkan label, key, help, impact, contoh, nama grup, dan sub-judul (KF-T4); kata berpadanan
+    (`SEARCH_SYNONYMS`) dicari dua arah."""
     t = (term or "").strip().lower()
     if not t:
         return all_entries()
     glabel = {g["id"]: g["label"].lower() for g in GROUPS}
+    slabel = {(g["id"], x["id"]): x["label"].lower() for g in GROUPS for x in g["sections"]}
+    varian = _varian_cari(t)
+    pola = [_pola_cari(v) for v in varian]
     hits = []
     for e in all_entries():
-        hay = " ".join([e["key"], e["label"], e["help"], e["impact"],
-                        glabel.get(e["group"], "")]).lower()
-        if t in hay:
+        hay = " ".join([e["key"], e["label"], e["help"], e["impact"], e.get("example") or "",
+                        glabel.get(e["group"], ""), slabel.get((e["group"], e["section"]), "")]).lower()
+        if (any(p.search(hay) for p in pola) if pola else t in hay):
             hits.append(e)
     return hits
 
 
 # ── Validasi & koersi nilai (dipakai PUT /api/config/values) ─────────────────
-VALUE_FORMATS = ("regex", "json_map", "tarif_berjenjang")
+VALUE_FORMATS = ("regex", "json_map", "tarif_berjenjang",
+                 # KF-T4 — `date`: kosong atau `YYYY-MM-DD` · `multiline`: teks bebas berbaris (kotak multi-baris).
+                 "date", "multiline")
 
 
 def _check_format(entry: Dict[str, Any], value: Any) -> Any:
     """FIX-3a (B3b FRM-19) — nilai yang lolos tipe tetapi isinya rusak (regex tak valid, JSON patah) DITOLAK saat disimpan;
     dulu tersimpan lalu `GET /goods-receipts/usage` / OCR galat 500 untuk semua GRN."""
-    fmt, key = entry.get("value_format") or "", entry["key"]
+    fmt = entry.get("value_format") or ""
     if fmt == "regex":
         import re as _re
         items = [str(x) for x in value]
         for i, pat in enumerate(items, 1):
             if not pat.strip():
-                raise ValueError(f"'{key}' butir {i} kosong — hapus butir kosong.")
+                raise ValueError(f"'{entry['label']}' butir {i} kosong — hapus butir kosong.")
             try:
                 _re.compile(pat)
             except _re.error as exc:
-                raise ValueError(f"'{key}' butir {i} bukan pola regex yang sah ({exc}). Pola: {pat}") from exc
+                raise ValueError(f"'{entry['label']}' butir {i} bukan pola yang sah ({exc}). Pola: {pat}") from exc
         return items
     if fmt == "json_map":
         import json as _json
         try:
             obj = _json.loads(value) if isinstance(value, str) else value
         except ValueError as exc:
-            raise ValueError(f"'{key}' harus teks JSON yang sah ({exc}).") from exc
+            raise ValueError(f"'{entry['label']}' harus teks JSON yang sah ({exc}).") from exc
         if not isinstance(obj, dict):
-            raise ValueError(f"'{key}' harus objek JSON {{...}}.")
+            raise ValueError(f"'{entry['label']}' harus objek JSON {{...}}.")
         return value if isinstance(value, str) else _json.dumps(obj)
     if fmt == "tarif_berjenjang":
         return _tarif_berjenjang(entry, value)
+    if fmt == "date":
+        import datetime as _dt
+        teks = str(value or "").strip()
+        if teks:
+            try:
+                _dt.date.fromisoformat(teks)
+            except ValueError as exc:
+                raise ValueError(f"'{entry['label']}' harus tanggal (tahun-bulan-tanggal) atau dikosongkan.") from exc
+        return teks
     return value
 
 
@@ -436,16 +591,150 @@ def _tarif_berjenjang(entry: Dict[str, Any], value: Any) -> List[Dict[str, Any]]
 
 
 def coerce(entry: Dict[str, Any], value: Any) -> Any:
-    """FIX-3a — tipe dulu (`_coerce_type`), lalu isi (`value_format`)."""
-    return _check_format(entry, _coerce_type(entry, value))
+    """FIX-3a — tipe dulu (`_coerce_type`), lalu isi (`value_format`); KF-T4 — lalu isi daftar (`items`) dan tabel
+    berkelompok (`grouped_list`)."""
+    clean = _check_format(entry, _coerce_type(entry, value))
+    if entry.get("type") == "list":
+        clean = _check_items(entry, clean)
+    if entry.get("row_shape") == "grouped_list":
+        clean = _check_grouped(entry, clean)
+    return clean
+
+
+# ── KF-T4 (KF-13) — pesan galat simpan memakai LABEL, bukan kunci teknis ─────────────────────────────────────────────
+def _nama(entry: Dict[str, Any]) -> str:
+    return f"'{entry.get('label') or entry['key']}'"
+
+
+def _angka_satuan(entry: Dict[str, Any], num: Any) -> str:
+    """Angka gaya Indonesia + satuan kunci: "Rp 1.000", "5%", "30 hari"."""
+    try:
+        n = float(num)
+        teks = (f"{n:,.0f}" if n.is_integer() else f"{n:,.2f}".rstrip("0").rstrip("."))
+        teks = teks.replace(",", "~").replace(".", ",").replace("~", ".")
+    except (TypeError, ValueError):
+        teks = str(num)
+    unit = (entry.get("unit") or "").strip()
+    if unit == "Rp" or entry.get("type") == "money":
+        return f"Rp {teks}"
+    if unit in ("%", "") and entry.get("type") == "pct":
+        return f"{teks}%"
+    return f"{teks} {unit}".strip()
+
+
+def _role_known(rid: str) -> bool:
+    try:
+        from role_registry import is_role
+        return bool(is_role(rid))
+    except Exception:   # noqa: BLE001 — registry peran belum termuat: anggap dikenal (server memuatnya saat start)
+        return True
+
+
+def _role_choices() -> str:
+    try:
+        from role_registry import role_ids, role_label
+        return ", ".join(role_label(r) for r in role_ids())
+    except Exception:   # noqa: BLE001
+        return ""
+
+
+def _check_items(entry: Dict[str, Any], value: List[Any]) -> List[Any]:
+    """Isi daftar: butir sah menurut `items`; tanpa butir kembar; `allocation.priority_order` dimulai `owner`."""
+    nama, items = _nama(entry), entry.get("items") or ""
+    out: List[Any] = []
+    if items == "options":
+        allowed = {str(o["value"]): o for o in entry.get("options") or []}
+        pilihan = ", ".join(str(o.get("label") or o["value"]) for o in entry.get("options") or [])
+        for x in value:
+            if str(x) not in allowed:
+                raise ValueError(f"{nama}: butir '{x}' tidak dikenal. Pilihan: {pilihan}.")
+            out.append(allowed[str(x)]["value"])
+    elif items == "roles":
+        for x in value:
+            rid = str(x or "").strip()
+            if not rid or not _role_known(rid):
+                raise ValueError(f"{nama}: butir '{x}' tidak dikenal. Pilihan: {_role_choices()}.")
+            out.append(rid)
+    elif items == "int_asc":
+        for x in value:
+            try:
+                num = float(x)
+            except (TypeError, ValueError):
+                num = float("nan")
+            if isinstance(x, bool) or not num == num or not float(num).is_integer() or num <= 0:
+                raise ValueError(f"{nama}: butir '{x}' harus bilangan bulat lebih dari 0.")
+            if out and int(num) <= out[-1]:
+                raise ValueError(f"{nama}: butir harus makin besar dari kiri ke kanan ('{x}' tidak lebih besar dari "
+                                 f"'{out[-1]}').")
+            out.append(int(num))
+    elif items == "text":
+        for x in value:
+            teks = str(x if x is not None else "").strip()
+            if not teks:
+                raise ValueError(f"{nama}: butir kosong — hapus butir kosong.")
+            out.append(teks)
+    else:
+        out = list(value)
+    seen: set = set()
+    for x in out:
+        k = str(x).strip().lower() if isinstance(x, str) else repr(x)
+        if k in seen:
+            raise ValueError(f"{nama}: butir '{x}' tertulis dua kali.")
+        seen.add(k)
+    if entry["key"] == "allocation.priority_order" and out and out[0] != "owner":
+        pemilik = next((o.get("label") for o in entry.get("options") or [] if o.get("value") == "owner"), "owner")
+        raise ValueError(f"{nama}: '{pemilik}' harus di urutan pertama.")
+    return out
+
+
+def _check_grouped(entry: Dict[str, Any], value: Any) -> Dict[str, Any]:
+    """`grouped_list` — `{nilai kolom pertama: [baris]}`: kunci kelompok ada di pilihan kolom pertama; kolom ber-`ref:
+    "role"` = id peran yang dikenal; kolom angka ≥ 0."""
+    nama = _nama(entry)
+    cols = entry.get("columns") or []
+    if not isinstance(value, dict):
+        raise ValueError(f"{nama} harus dikelompokkan per {cols[0].get('label', 'jenis') if cols else 'jenis'}.")
+    first, rest = cols[0], cols[1:]
+    allowed = {str(o["value"]): o.get("label") or o["value"] for o in first.get("options") or []}
+    out: Dict[str, Any] = {}
+    for grp, rows in value.items():
+        if allowed and str(grp) not in allowed:
+            raise ValueError(f"{nama}: butir '{grp}' tidak dikenal. Pilihan: {', '.join(allowed.values())}.")
+        if not isinstance(rows, list):
+            raise ValueError(f"{nama} {allowed.get(str(grp), grp)}: harus berupa daftar baris.")
+        clean_rows = []
+        for n, row in enumerate(rows, 1):
+            if not isinstance(row, dict):
+                raise ValueError(f"{nama} baris {n}: isinya tidak sah.")
+            r = dict(row)
+            for c in rest:
+                v = r.get(c["name"])
+                if c.get("ref") == "role":
+                    rid = str(v or "").strip()
+                    if not rid or not _role_known(rid):
+                        raise ValueError(f"{nama} baris {n}: {c.get('label', 'peran')} '{v}' tidak dikenal. "
+                                         f"Pilihan: {_role_choices()}.")
+                elif c.get("type") in ("money", "int", "decimal", "pct"):
+                    try:
+                        num = float(v if v not in (None, "") else 0)
+                    except (TypeError, ValueError):
+                        num = float("nan")
+                    if isinstance(v, bool) or not num == num or num < 0:
+                        raise ValueError(f"{nama} baris {n}: {c.get('label', c['name'])} harus angka 0 atau lebih.")
+                    r[c["name"]] = int(num) if float(num).is_integer() else num
+            clean_rows.append(r)
+        out[str(grp)] = clean_rows
+    return out
 
 
 def _coerce_type(entry: Dict[str, Any], value: Any) -> Any:
     """Ubah nilai masukan menjadi tipe yang benar; lempar `ValueError` bila tak sah.
 
-    Pesan error ditulis dalam Bahasa Indonesia agar bisa langsung ditampilkan ke user.
+    Pesan error ditulis dalam Bahasa Indonesia agar bisa langsung ditampilkan ke user. KF-T4 — pesan menyebut label
+    pengaturan, bukan kunci teknisnya.
     """
-    key, typ = entry["key"], entry["type"]
+    typ = entry["type"]
+    nama = _nama(entry)
     if typ == "bool":
         if isinstance(value, bool):
             return value
@@ -453,13 +742,13 @@ def _coerce_type(entry: Dict[str, Any], value: Any) -> Any:
             return value.lower() in {"true", "1", "ya"}
         if value in (0, 1):
             return bool(value)
-        raise ValueError(f"'{key}' harus Ya/Tidak")
+        raise ValueError(f"{nama} harus Ya atau Tidak.")
 
     if typ in {"int", "duration"}:
         try:
             num = int(round(float(value)))
         except (TypeError, ValueError) as exc:
-            raise ValueError(f"'{key}' harus angka bulat") from exc
+            raise ValueError(f"{nama} harus angka bulat.") from exc
         return _bounded(entry, num)
 
     if typ in {"pct", "money", "decimal"}:
@@ -467,30 +756,31 @@ def _coerce_type(entry: Dict[str, Any], value: Any) -> Any:
         try:
             num = parse_decimal(value, 4)
         except ValueError as exc:
-            raise ValueError(f"'{key}' harus angka ({exc})") from exc
+            raise ValueError(f"{nama} harus angka ({exc}).") from exc
         if typ == "pct" and (num < 0 or num > 100) and entry.get("max") is None:
-            raise ValueError(f"'{key}' persen harus 0–100 (diberi {num})")
+            raise ValueError(f"{nama} harus antara 0% dan 100%.")
         return _bounded(entry, num)
 
     if typ == "enum":
         allowed = [o["value"] for o in entry["options"]]
         if value not in allowed:
-            raise ValueError(f"'{key}' harus salah satu dari {allowed}")
+            pilihan = ", ".join(str(o.get("label") or o["value"]) for o in entry["options"])
+            raise ValueError(f"{nama}: pilihan '{value}' tidak dikenal. Pilihan: {pilihan}.")
         return value
 
     if typ == "text":
         if not isinstance(value, str):
-            raise ValueError(f"'{key}' harus teks")
+            raise ValueError(f"{nama} harus teks.")
         return value.strip()
 
     if typ == "list":
         if not isinstance(value, list):
-            raise ValueError(f"'{key}' harus daftar (list)")
+            raise ValueError(f"{nama} harus berupa daftar.")
         return value
 
     if typ == "table":
         if not isinstance(value, (dict, list)):
-            raise ValueError(f"'{key}' harus objek/tabel")
+            raise ValueError(f"{nama} harus berupa tabel.")
         return value
 
     return value
@@ -499,9 +789,9 @@ def _coerce_type(entry: Dict[str, Any], value: Any) -> Any:
 def _bounded(entry: Dict[str, Any], num: float) -> float:
     lo, hi = entry.get("min"), entry.get("max")
     if lo is not None and num < lo:
-        raise ValueError(f"'{entry['key']}' minimum {lo} (diberi {num})")
+        raise ValueError(f"{_nama(entry)} paling kecil {_angka_satuan(entry, lo)}.")
     if hi is not None and num > hi:
-        raise ValueError(f"'{entry['key']}' maksimum {hi} (diberi {num})")
+        raise ValueError(f"{_nama(entry)} paling besar {_angka_satuan(entry, hi)}.")
     return num
 
 

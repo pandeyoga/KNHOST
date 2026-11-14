@@ -13,7 +13,7 @@
  *   drilling. Deep-link konfigurasi memakai pola yang sama: `kn-open-config`.
  *
  *   openConfig({ key: "tax.ppn_rate" })   → buka kartu setting itu (scroll + sorot)
- *   openConfig({ group: "makloon" })      → buka kelompoknya saja
+ *   openConfig({ group: "makloon" })      → buka kelompoknya saja (id lama → kelompok + sub-judul barunya)
  *
  * App.js yang mendengarkan event ini, lalu berpindah view ke `settings-config`
  * dan meneruskan fokus ke <SettingsHub focusKey focusGroup focusNonce />.
@@ -25,70 +25,37 @@
 export const CONFIG_EVENT = "kn-open-config";
 
 /**
- * Peta prefiks kunci → id kelompok di Pusat Pengaturan.
- *
- * Dipakai supaya pemanggil cukup menyebut `key` (mis. `hr.bpjs.kes_rate_employee`)
- * tanpa perlu tahu kelompok mana yang memuatnya. Id kelompok = `groups[].id`
- * dari `GET /api/config/registry` (sumber kebenaran ada di backend
- * `config_registry.py`; peta ini hanya jalan pintas navigasi, bukan data).
+ * KF-T4 — kelompok sebuah kunci DIBACA dari indeks yang dibangkitkan registry (`configKeyIndex.json`, ditulis
+ * `scripts/gen_config_key_index.py`; uji `backend/tests_mem/test_KFT4_registry.py` menegaskan berkasnya sama dengan
+ * keluaran skrip). Dulu kelompok DITEBAK dari awalan kunci lewat peta salinan tangan (`LEGACY_DEEPLINK`,
+ * `CONFIG_GROUP_IDS`) yang basi tiap kali kelompok bertambah.
  */
-export const LEGACY_DEEPLINK = {
-  tax: "pajak",
-  ar: "uang-masuk",
-  amendment: "amandemen",
-  pricing: "harga-diskon",
-  commission: "harga-diskon",
-  approval: "persetujuan",
-  purchasing: "pembelian",
-  receiving: "penerimaan",
-  inventory: "stok-satuan",
-  uom: "stok-satuan",
-  allocation: "stok-satuan",
-  qc: "kualitas",
-  lot: "lot",
-  makloon: "makloon",
-  hr: "sdm",
-  ui: "tampilan",
-  role_home: "tampilan",
-  finance: "keuangan-dasar",
-  sales: "harga-diskon",
-  // Fase 3 · P2 — prefiks registri yang dulu tak terpetakan (deep link berbasis kunci jatuh ke kelompok pertama).
-  // Prefiks yang dipakai >1 kelompok (finance, inventory, purchasing, sales) tetap ke kelompok mayoritasnya;
-  // pemanggil yang tahu kelompoknya mengirim `group` sendiri.
-  ai: "asisten-analitik",
-  antar_entitas: "antar-entitas",
-  bank: "bank",
-  case: "kasus",
-  catalog: "stok-satuan",
-  contra_bon: "kontrabon",
-  cutting: "stok-satuan",
-  docref: "dokumen",
-  notif: "notifikasi",
-  payment: "uang-masuk",
-  periode: "keuangan-dasar",
-  pos: "tampilan",
-  pricelist: "harga-diskon",
-  returns: "retur",
-  rnd: "rnd",
-  saga: "keuangan-dasar",
-  sales_admin: "persetujuan",
-  wms: "stok-satuan",
-};
+import KEY_INDEX from "./configKeyIndex.json";
 
-/** Semua id kelompok yang valid (dipakai untuk membedakan key vs group). Cermin `backend/config_registry.py`. */
-export const CONFIG_GROUP_IDS = [
-  "uang-masuk", "harga-diskon", "persetujuan", "pajak", "keuangan-dasar",
-  "pembelian", "penerimaan", "stok-satuan", "kualitas", "lot", "makloon",
-  "sdm", "tampilan", "amandemen",
-  // Fase 3 · P2 — kelompok yang lahir sesudah daftar ini ditulis (G-1..L08).
-  "dokumen", "rnd", "bank", "kasus", "kontrabon", "antar-entitas", "notifikasi", "asisten-analitik", "retur",
-];
+/** Kelompok registri urut tampil: [{ id, label, sections: [{ id, label, advanced }] }]. */
+export const CONFIG_GROUPS = KEY_INDEX.groups;
+/** Salinan `config_registry.GROUP_ALIASES`: id kelompok lama → [id baru, sub-judul tujuan]. */
+export const GROUP_ALIASES = KEY_INDEX.aliases;
+const GROUP_IDS = new Set(CONFIG_GROUPS.map((g) => g.id));
+
+/** `{ group, section }` untuk id kelompok baru atau lama (`{group: ""}` bila tak dikenal). */
+export function resolveGroupId(group) {
+  const g = String(group || "");
+  if (GROUP_IDS.has(g)) return { group: g, section: "" };
+  const a = GROUP_ALIASES[g];
+  return a ? { group: a[0], section: a[1] || "" } : { group: "", section: "" };
+}
 
 /** Kelompok mana yang memuat sebuah kunci. Mengembalikan "" bila tak dikenal. */
 export function groupForKey(key) {
   if (!key) return "";
-  const prefix = String(key).split(".")[0];
-  return LEGACY_DEEPLINK[prefix] || "";
+  return (KEY_INDEX.keys[String(key)] || [""])[0];
+}
+
+/** Sub-judul sebuah kunci ("" bila tak dikenal). */
+export function sectionForKey(key) {
+  if (!key) return "";
+  return (KEY_INDEX.keys[String(key)] || ["", ""])[1];
 }
 
 /**
@@ -100,7 +67,12 @@ export function groupForKey(key) {
 export function openConfig(target) {
   const t = typeof target === "string" ? { key: target } : (target || {});
   const key = t.key || "";
-  const group = t.group || groupForKey(key);
+  // KF-T4 — id kelompok lama (pemanggil lama tidak diubah) diterjemahkan lewat salinan GROUP_ALIASES.
+  // Kunci yang dikenal indeks → kelompok & sub-judul kunci itu sendiri (lebih tepat daripada alias kelompok lama).
+  const tujuan = key && groupForKey(key) ? { group: groupForKey(key), section: sectionForKey(key) }
+    : (t.group ? resolveGroupId(t.group) : { group: groupForKey(key), section: sectionForKey(key) });
+  const group = tujuan.group || t.group || "";
+  const section = t.section || tujuan.section || "";
   if (typeof window === "undefined") return;
-  window.dispatchEvent(new CustomEvent(CONFIG_EVENT, { detail: { key, group } }));
+  window.dispatchEvent(new CustomEvent(CONFIG_EVENT, { detail: { key, group, section } }));
 }

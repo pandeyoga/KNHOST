@@ -15,6 +15,9 @@ import {
 import ErrorNotice from "../../../components/ErrorNotice";
 import usePagedRows from "@/hooks/usePagedRows";
 import { configApi, errMsg, WIRING_LABEL, WIRING_TONE } from "./configApi";
+import { CONFIG_GROUPS } from "./configDeepLink";
+
+const GROUP_LABEL = Object.fromEntries(CONFIG_GROUPS.map((g) => [g.id, g.label]));
 
 const STATUS_HELP = {
   OK: "Setting ini dibaca oleh kode yang benar-benar ada. Mengubahnya PASTI mengubah perilaku sistem.",
@@ -86,13 +89,13 @@ export default function ConfigHealthPanel({ onOpenSetting }) {
         <div>
           <h3>
             {broken
-              ? `${broken} setting BELUM tersambung ke mesin`
-              : "Semua setting aktif benar-benar tersambung ke mesin"}
+              ? `${broken} pengaturan BELUM tersambung ke sistem`
+              : "Semua pengaturan aktif benar-benar tersambung ke sistem"}
           </h3>
           <p>
             {broken
-              ? `Setting berikut bisa diubah dari layar ini tetapi TIDAK akan mengubah perilaku sistem (tombol palsu): ${brokenList.slice(0, 6).join(", ")}${brokenList.length > 6 ? ` … +${brokenList.length - 6} lagi` : ""}.`
-              : `Diperiksa ${data?.total || 0} setting: setiap setting yang berstatus aktif punya kode pembaca yang nyata, sehingga mengubahnya pasti berefek. Tidak ada tombol palsu.`}
+              ? `Pengaturan berikut bisa diubah dari layar ini tetapi TIDAK akan mengubah perilaku sistem (tombol palsu): ${brokenList.slice(0, 6).join(", ")}${brokenList.length > 6 ? ` … +${brokenList.length - 6} lagi` : ""}.`
+              : `Diperiksa ${data?.total || 0} pengaturan: setiap pengaturan yang berstatus aktif punya kode pembaca yang nyata, sehingga mengubahnya pasti berefek. Tidak ada tombol palsu.`}
           </p>
         </div>
         <button className="btn-secondary btn-sm" onClick={load} disabled={busy}
@@ -165,8 +168,8 @@ export default function ConfigHealthPanel({ onOpenSetting }) {
             <tr>
               <th>Pengaturan</th>
               <th>Kelompok</th>
-              <th>Status wiring</th>
-              <th>Dibaca oleh kode</th>
+              <th>Tersambung ke sistem?</th>
+              <th>Dibaca oleh</th>
               <th aria-label="Aksi" />
             </tr>
           </thead>
@@ -176,10 +179,9 @@ export default function ConfigHealthPanel({ onOpenSetting }) {
               <tr key={r.key} data-testid={`cfg-health-row-${r.key}`}>
                 <td>
                   <b>{r.label}</b>
-                  <br />
-                  <code className="cfg-key">{r.key}</code>
                 </td>
-                <td>{r.group}</td>
+                {/* KF-T4 — nama kelompok, bukan id. */}
+                <td>{GROUP_LABEL[r.group] || r.group}</td>
                 <td>
                   <span className={`badge-${WIRING_TONE[r.wiring_status]}`}>
                     {WIRING_LABEL[r.wiring_status]}
@@ -202,13 +204,17 @@ export default function ConfigHealthPanel({ onOpenSetting }) {
                   {r.consumer_count > 0 ? (
                     <span className="cfg-consumer-list">
                       <CheckCircle2 size={12} /> {r.consumer_count} tempat
-                      <br />
-                      {(r.consumers_ok || []).slice(0, 2).map((c) => (
-                        <code key={c}>{c}</code>
-                      ))}
-                      {(r.consumers_unverified || []).map((c) => (
-                        <code key={c} title="Kode tampilan — tidak dibawa ke server ini, jadi tidak diperiksa di sini">{c} (tampilan)</code>
-                      ))}
+                      {/* KF-T4 — kunci teknis & nama berkas pemakai pindah ke "Detail teknis". */}
+                      <details data-testid={`cfg-health-detail-${r.key}`}>
+                        <summary>Detail teknis</summary>
+                        <code className="cfg-key">{r.key}</code>
+                        {(r.consumers_ok || []).slice(0, 2).map((c) => (
+                          <code key={c}>{c}</code>
+                        ))}
+                        {(r.consumers_unverified || []).map((c) => (
+                          <code key={c} title="Kode tampilan — tidak dibawa ke server ini, jadi tidak diperiksa di sini">{c} (tampilan)</code>
+                        ))}
+                      </details>
                     </span>
                   ) : (
                     <span className="cfg-hint-sm">—</span>

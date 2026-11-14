@@ -51,18 +51,26 @@ Di `backend/config_catalog_<domain>.py` memakai `E(...)` dari `backend/config_re
 | Field | Aturan |
 |---|---|
 | `key` | `<domain>.<nama_snake_case>`; domain yang sudah ada dipakai ulang (`ar`, `payment`, `tax`, `hr`, `approval`, `periode`, …) |
-| `group` | Salah satu id di `config_registry.GROUPS`; jangan membuat grup baru tanpa unit yang memintanya |
+| `group` | Salah satu id di `config_registry.GROUPS`; jangan membuat grup baru tanpa unit yang memintanya. Id kelompok lama diterima lewat `GROUP_ALIASES` (KF-T4) |
+| `section` | **Wajib** (KF-T4): sub-judul yang terdaftar di `sections` kelompoknya; sub-judul biasa paling banyak 14 kunci, bagian teknis memakai sub-judul `advanced` ("Lanjutan (teknis)") |
 | `type` | `bool` · `int` · `pct` · `money` · `decimal` · `enum` · `text` · `list` · `table` · `duration` |
+| `items`, `ordered` | Untuk `list` (KF-T4): `options` (butir dari `options`) · `roles` (id peran yang dikenal) · `int_asc` (bulat > 0 menaik) · `text`; `ordered=True` = urutan bermakna. Server menolak butir tak sah/kembar; layar memakai centang/geser/baris, bukan kotak berkoma |
+| `ref` | Untuk `text` yang merujuk master (KF-T4): `payment_term` · `uom` · `department` — layar menampilkan daftar pilih, server menolak nilai di luar daftar. Teks lain berformat: `value_format` `regex`, `json_map`, `date`, `multiline` |
 | `default` | **Perilaku yang berjalan hari ini.** Untuk aturan baru: yang paling tidak membatasi (`00` §4.1) |
 | `min`, `max`, `unit` | Wajib untuk tipe angka |
 | `scopes` | `("global", "entity")` sebagai bawaan. Lapisan `customer`/`product` hanya bila layar pengaturnya ada (unit KF-T5) |
-| `label` | Bahasa Indonesia, ≤ 45 karakter, tanpa istilah teknis, berbentuk pernyataan yang jelas arahnya ("Tahan pesanan bila telat lebih dari (hari)") |
-| `help` | 1–2 kalimat: apa yang diatur, untuk siapa. Sebut arti nilai khusus ("0 = tanpa batas") |
+| `label` | Bahasa Indonesia, ≤ 45 karakter, tanpa istilah teknis, berbentuk pernyataan yang jelas arahnya ("Tahan pesanan bila telat lebih dari (hari)"); istilah glosarium `KN_32` §9.3 |
+| `help` | 1–2 kalimat: apa yang diatur, untuk siapa. Sebut arti nilai khusus ("0 = tanpa batas"); kunci angka yang boleh 0 **wajib** menyebut akibat nyata nilai 0 |
 | `impact` | Apa yang berubah bagi pengguna bila nilainya diubah |
 | `example` | Contoh dengan angka |
 | `risk`, `requires_reason` | `high` + `True` untuk yang mengubah uang, pajak, atau wewenang |
 | `consumers` | `berkas.py:fungsi` yang **benar-benar** membaca kunci; fungsi harus ada |
 | `permission` | Izin domain yang boleh mengubah, mis. `("accounting", "configure")`. **Jangan** memakai `roles=` atau mengandalkan `owner_role` (KF-01, KF-02) |
+| `edit_at` | Opsional (KF-T4): `{view, preset, label}` bila kunci diubah di layar lain (kartu tanpa editor, mis. `receiving.mode`, `kontrol.*`) |
+
+Penjaga `scripts/guardrails/verify_config_text.py` (INV-CFG-TXT, gate statik) menolak label > 45 huruf, label kembar,
+kata teknis/id/kode HTTP/kode keputusan, kunci angka tanpa satuan, arti 0 yang tidak tertulis, istilah di luar glosarium,
+dan sub-judul tak terdaftar/terlalu besar — hasil wajib 0 pelanggaran.
 
 ### 2.2 Membaca kunci
 

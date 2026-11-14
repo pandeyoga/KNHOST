@@ -9,7 +9,7 @@ import path from "path";
 import { HUB_TABS, NAV_STRUCTURE, buildNavGroups, hubTabsForRole, resolveDeepLinkTarget } from "../../config/navigationConfig";
 import { resolveAlias } from "../../config/viewAliases";
 import { CONFIG_GROUP_VIEWS, CONFIG_GROUP_VIEW_IDS, configTargetFor, configViewForGroup } from "../settings/config/configGroupViews";
-import { CONFIG_GROUP_IDS } from "../settings/config/configDeepLink";
+import { CONFIG_GROUPS } from "../settings/config/configDeepLink";
 import { configDeepLinkTarget } from "../../hooks/useDeepLinks";
 import { sharedAccountGroups } from "../pettycash/ExpenseCategoriesView";
 import { buildUnitRows } from "../admin/uom/UomUnitsPanel";
@@ -92,10 +92,12 @@ describe("P16-K1 — menu Pengaturan 7 kelompok", () => {
 });
 
 describe("kelompok registri → layar domain (tanpa yatim)", () => {
-  test("23 kelompok registri masing-masing tepat di SATU layar settings-cfg-*", () => {
-    // Cermin backend/config_registry.py GROUPS (uji backend test_phase3_p2_settings_groups.py membandingkan langsung).
-    expect(CONFIG_GROUP_IDS).toHaveLength(23);
-    const owners = CONFIG_GROUP_IDS.map((g) => [g, CONFIG_GROUP_VIEW_IDS.filter((v) => CONFIG_GROUP_VIEWS[v].groups.includes(g))]);
+  test("13 kelompok registri masing-masing tepat di SATU layar settings-cfg-*", () => {
+    // KF-T4 — 13 kelompok bersub-judul; daftar dibaca dari configKeyIndex.json (dibangkitkan dari registry; uji
+    // backend test_KFT4_registry.py menegaskan berkas = keluaran skrip).
+    const ids = CONFIG_GROUPS.map((g) => g.id);
+    expect(ids).toHaveLength(13);
+    const owners = ids.map((g) => [g, CONFIG_GROUP_VIEW_IDS.filter((v) => CONFIG_GROUP_VIEWS[v].groups.includes(g))]);
     expect(owners.filter(([, v]) => v.length !== 1)).toEqual([]);
     expect(configViewForGroup("penerimaan")).toBe("settings-cfg-warehouse");
   });
@@ -119,6 +121,11 @@ describe("kelompok registri → layar domain (tanpa yatim)", () => {
     expect(configDeepLinkTarget({ group: "rnd" }, "md")).toEqual({ view: "settings-config", nav: "settings-system" });
     expect(configDeepLinkTarget({ key: "ai.sales_definition", group: "asisten-analitik" }, "manager"))
       .toEqual({ view: "settings-cfg-system", nav: "settings-system" });
+    // KF-T4 — id kelompok lama diterjemahkan (GROUP_ALIASES); kunci → kelompoknya dari indeks registry.
+    expect(configTargetFor({ group: "dokumen" })).toEqual({ view: "settings-cfg-approval", nav: "settings-approval" });
+    expect(configTargetFor({ key: "receiving.ocr_enabled" })).toEqual({ view: "settings-cfg-system", nav: "settings-system" });
+    expect(configTargetFor({ key: "payment.variance_ap_tolerance_rupiah" }))
+      .toEqual({ view: "settings-cfg-purchasing", nav: "settings-purchasing" });
   });
 });
 
@@ -127,12 +134,13 @@ describe("D-03 — kunci commission.* tidak tampil ganda", () => {
     key, group, label, value: 1, default: 1, type: "int", status: "active", scopes: ["global"], help: "", impact: "",
     example: "", source_layer: "code_default", source_label: "Bawaan sistem", can_edit: true,
   });
-  const items = [item("commission.strategy", "harga-diskon", "Strategi komisi"), item("pricing.max_discount", "harga-diskon", "Diskon maks"),
-    item("returns.photo_required", "retur", "Foto retur"), item("tax.ppn_rate", "pajak", "PPN")];
+  // KF-T4 — kelompok baru (penjualan, retur-koreksi, pajak-pembukuan) bersub-judul.
+  const items = [item("commission.strategy", "penjualan", "Strategi komisi"), item("pricing.max_discount", "penjualan", "Diskon maks"),
+    item("returns.photo_required", "retur-koreksi", "Foto retur"), item("tax.ppn_rate", "pajak-pembukuan", "PPN")];
   const groups = [
-    { id: "harga-diskon", label: "Harga, Diskon & Komisi", question: "?", count: 2 },
-    { id: "retur", label: "Retur Penjualan", question: "?", count: 1 },
-    { id: "pajak", label: "Pajak", question: "?", count: 1 },
+    { id: "penjualan", label: "Penjualan & harga", question: "?", count: 2, sections: [{ id: "harga", label: "Harga & diskon" }] },
+    { id: "retur-koreksi", label: "Retur & koreksi dokumen", question: "?", count: 1, sections: [{ id: "retur", label: "Retur" }] },
+    { id: "pajak-pembukuan", label: "Pajak, pembukuan & antar-PT", question: "?", count: 1, sections: [{ id: "pajak", label: "Pajak" }] },
   ];
   function spy() {
     jest.spyOn(configApi, "registry").mockResolvedValue({ groups, entries: items, caps: { settings_manage: true, global_write: true } });
@@ -154,12 +162,12 @@ describe("D-03 — kunci commission.* tidak tampil ganda", () => {
   test("Aturan Penjualan (settings-cfg-sales): hanya kelompok domainnya, tanpa kunci komisi", async () => {
     const eff = spy();
     const { host } = await mount(<SettingsGroupView view="settings-cfg-sales" currentUser={{ role: "admin" }} entities={[]} />);
-    expect(q(host, "cfg-group-harga-diskon")).not.toBeNull();
-    expect(q(host, "cfg-group-retur")).not.toBeNull();
-    expect(q(host, "cfg-group-pajak")).toBeNull();
+    expect(q(host, "cfg-group-penjualan")).not.toBeNull();
+    expect(q(host, "cfg-group-retur-koreksi")).not.toBeNull();
+    expect(q(host, "cfg-group-pajak-pembukuan")).toBeNull();
     expect(q(host, "cfg-card-wrap-commission.strategy")).toBeNull();
     expect(q(host, "cfg-card-wrap-pricing.max_discount")).not.toBeNull();
-    expect(eff.mock.calls.every(([p]) => p.group !== "pajak")).toBe(true);
+    expect(eff.mock.calls.every(([p]) => p.group !== "pajak-pembukuan")).toBe(true);
   });
 });
 

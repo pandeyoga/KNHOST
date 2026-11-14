@@ -117,6 +117,24 @@ _TITIK: Dict[str, Tuple[str, ...]] = {
 }
 for _x in KONTROL_AKSI:
     _x["titik"] = _TITIK.get(_x["aksi"], ())
+
+# KF-T4 — sub-judul di Pengaturan (≤ 14 kunci per sub-judul): bagian layar dipecah bila lebih besar.
+_SUB_JUDUL: Dict[str, Tuple[str, ...]] = {
+    "dua-orang-pembelian": ("permintaan_pembelian", "setujui_po", "po_tingkat_berikut", "retur_pembelian"),
+    "dua-orang-hutang": ("tagihan_pemasok", "biaya_masuk", "kontrabon", "tagihan_kampanye"),
+    "dua-orang-piutang": ("pengurang_piutang", "lewat_batas_kredit"),
+}
+_SUB_BAGIAN = {_PJ: "dua-orang-penjualan", _GD: "dua-orang-gudang", _SDM: "dua-orang-sdm", _BB: "dua-orang-buku"}
+#: KF-T4 (T1) — nama pendek untuk label Pengaturan (≤ 45 huruf); nama panjang tetap dipakai tab Kontrol dua orang.
+_PENDEK: Dict[str, str] = {
+    "po_custom": "Pesanan khusus", "permintaan_pembelian": "Permintaan pembelian", "amandemen": "Koreksi dokumen",
+    "po_tingkat_berikut": "PO tingkat berikutnya", "susut_makloon": "Susut makloon",
+    "registrasi_stok_awal": "Nilai stok awal", "lpj_uang_muka": "Laporan uang muka",
+    "pengurang_piutang": "Bebas denda/hapus selisih", "lewat_batas_kredit": "Lewat batas kredit",
+    "nilai_pesanan": "Nilai pesanan",
+}
+for _x in KONTROL_AKSI:
+    _x["sub_judul"] = next((s for s, aksi in _SUB_JUDUL.items() if _x["aksi"] in aksi), _SUB_BAGIAN.get(_x["bagian"], ""))
 AKSI_BY_ID: Dict[str, Dict[str, Any]] = {a["aksi"]: a for a in KONTROL_AKSI}
 
 #: Empat titik † yang dulu TIDAK mengecualikan Admin (ASUMSI unit: dipertahankan lewat daftar ini).
@@ -135,41 +153,43 @@ def kunci_batas(aksi: str) -> str:
 
 
 _OPSI = ({"value": "1", "label": "Cukup satu orang"}, {"value": "2", "label": "Harus dua orang"})
+#: KF-T4 — kartu di "Semua pengaturan" tanpa editor: kontrol dua orang diubah di satu tempat (tab Kontrol dua orang).
+_EDIT_AT = {"view": "settings-dual-control", "label": "Persetujuan › Kontrol dua orang"}
 
 for _x in KONTROL_AKSI:
     _cons = tuple(_x["titik"]) + (f"{_DC}:butuh_orang_kedua",)
-    E(kunci_min_orang(_x["aksi"]), group="persetujuan", type="enum", default=_x["awal"], options=_OPSI, scopes=G,
-      label=f"{_x['label']}: jumlah orang",
+    E(kunci_min_orang(_x["aksi"]), group="persetujuan", section=_x["sub_judul"], type="enum", default=_x["awal"], options=_OPSI, scopes=G,
+      label=f"{_PENDEK.get(_x['aksi'], _x['label'])}: jumlah orang",
       help="1 = orang yang mengajukan boleh memutuskan sendiri. 2 = harus diputuskan orang lain.",
       impact=(f"Bila 2, pengaju “{_x['label']}” tidak bisa memutuskannya sendiri — rekan lain yang berwenang "
               "harus memutuskan. Bila 1, satu orang cukup."),
       example=f"Rina mengajukan “{_x['label']}” lalu memutuskannya sendiri → ditolak bila 2, lolos bila 1",
-      consumers=_cons, risk="high", requires_reason=True, permission=("settings", "manage"),
+      consumers=_cons, risk="high", requires_reason=True, permission=("settings", "manage"), edit_at=_EDIT_AT,
       related=((kunci_batas(_x["aksi"]),) if _x["punya_nominal"] else ()) + (K_ADMIN_BOLEH,))
     if _x["punya_nominal"]:
-        E(kunci_batas(_x["aksi"]), group="persetujuan", type="money", default=0, min=0, max=1000000000000,
+        E(kunci_batas(_x["aksi"]), group="persetujuan", section=_x["sub_judul"], type="money", default=0, min=0, max=1000000000000,
           step=1000000, unit="Rp", scopes=G,
-          label=f"{_x['label']}: dua orang di atas (Rp)",
+          label=f"{_PENDEK.get(_x['aksi'], _x['label'])}: dua orang di atas",
           help="Di atas nilai ini selalu dua orang walau jumlah orang = 1. 0 = tidak dipakai.",
           impact=("Dokumen bernilai di atas batas ini wajib diputuskan orang selain pengajunya, walau jumlah "
                   "orang diatur 1."),
           example=f"Batas 5.000.000 · “{_x['label']}” Rp 6.000.000 diajukan Rina → harus diputuskan rekan lain",
-          consumers=_cons, risk="high", requires_reason=True, permission=("settings", "manage"),
+          consumers=_cons, risk="high", requires_reason=True, permission=("settings", "manage"), edit_at=_EDIT_AT,
           related=(kunci_min_orang(_x["aksi"]),))
 
-E(K_ADMIN_BOLEH, group="persetujuan", type="bool", default=True, scopes=G,
+E(K_ADMIN_BOLEH, group="persetujuan", section="dua-orang-admin", type="bool", default=True, scopes=G,
   label="Admin boleh memutuskan dokumennya sendiri",
   help="Bila ya, Admin tidak terkena aturan dua orang; tiap kejadian dicatat di jejak persetujuan.",
   impact=("Bila tidak, Admin yang mengajukan dokumen juga harus meminta Admin/rekan lain untuk memutuskannya — "
           "seperti pengguna lain."),
   example="Ya · Admin membuat PO lalu menyetujuinya sendiri → lolos, tercatat 'diputuskan sendiri oleh admin'",
   consumers=(f"{_DC}:tolak_bila_pelaku_sama",), risk="high", requires_reason=True,
-  permission=("settings", "manage"), related=(K_ADMIN_TETAP,))
+  permission=("settings", "manage"), related=(K_ADMIN_TETAP,), edit_at=_EDIT_AT)
 
-E(K_ADMIN_TETAP, group="persetujuan", type="list", default=list(ADMIN_TETAP_DUA_ORANG_AWAL), scopes=G,
+E(K_ADMIN_TETAP, group="persetujuan", section="dua-orang-admin", type="list", default=list(ADMIN_TETAP_DUA_ORANG_AWAL), scopes=G,
   label="Aksi yang tetap dua orang walau Admin",
   help="Admin pun tidak boleh memutuskan sendiri untuk aksi di daftar ini.",
   impact="Aksi yang dicentang tetap butuh orang kedua walau Admin boleh memutuskan dokumennya sendiri.",
-  example="Daftar memuat 'pengecualian_retur' · Admin mengajukan pengecualian retur → Admin lain yang memutuskan",
+  example="Daftar memuat Pengecualian retur · Admin mengajukan pengecualian retur → Admin lain yang memutuskan",
   consumers=(f"{_DC}:tolak_bila_pelaku_sama",), risk="high", requires_reason=True,
-  permission=("settings", "manage"), related=(K_ADMIN_BOLEH,))
+  permission=("settings", "manage"), related=(K_ADMIN_BOLEH,), edit_at=_EDIT_AT)

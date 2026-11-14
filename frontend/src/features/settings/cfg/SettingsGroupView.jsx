@@ -10,21 +10,37 @@
  *
  * Deep link `openConfig({ key, group })` mendarat di sini bila kelompoknya milik layar ini (hooks/useDeepLinks.js).
  */
+import { useState } from "react";
 import { SlidersHorizontal } from "lucide-react";
+import useViewPreset from "../../../hooks/useViewPreset";
 import DesktopOnlyNotice from "../../../components/DesktopOnlyNotice";
 import LinkCard from "../../../components/LinkCard";
 import DivisionsView from "../../designer/DivisionsView";
 import { COMMISSION_LINK, SettingsBrowser, SettingsNotice, useSettingsBrowser } from "../config/SettingsHub";
 import { CONFIG_GROUP_VIEWS } from "../config/configGroupViews";
 
+/** KF-T4 — dua layar lama yang kini alias (`config/viewAliases.js`): rute cadangan merender layar tujuannya pada
+ *  sub-judul yang dulu jadi isinya. */
+export const CFG_VIEW_ALIASES = {
+  "settings-cfg-documents": { view: "settings-cfg-approval", section: "rujukan-dokumen" },
+  "settings-cfg-notify": { view: "settings-cfg-approval", section: "pemberitahuan" },
+};
+
 export default function SettingsGroupView({
-  view, currentUser, selectedEntity, entities = [],
+  view: viewProp, currentUser, selectedEntity, entities = [],
   focusKey = "", focusGroup = "", focusNonce = 0, onFocusConsumed,
 }) {
+  const alias = CFG_VIEW_ALIASES[viewProp] || null;
+  const view = alias ? alias.view : viewProp;
   const cfg = CONFIG_GROUP_VIEWS[view] || { groups: [] };
+  // KF-T4 — preset `{ section }` (alias / tautan) membuka sub-judul yang dituju.
+  const [presetSection, setPresetSection] = useState(alias ? alias.section : "");
+  const [presetNonce, setPresetNonce] = useState(alias ? 1 : 0);
+  useViewPreset(view, (p) => { if (p.section) { setPresetSection(p.section); setPresetNonce((n) => n + 1); } });
   const s = useSettingsBrowser({
     selectedEntity, groupIds: cfg.groups, excludeKeys: cfg.excludeKeys || null,
-    focusKey, focusGroup, focusNonce, onFocusConsumed,
+    focusKey, focusGroup, focusSection: focusKey || focusGroup ? "" : presetSection,
+    focusNonce: focusNonce || (presetNonce ? -presetNonce : 0), onFocusConsumed,
   });
   const names = s.groups.map((g) => g.label).join(" · ");
 

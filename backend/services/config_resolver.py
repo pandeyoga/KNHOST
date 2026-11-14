@@ -54,16 +54,18 @@ LAYER_ORDER: List[str] = [
     "override",   # KF-T3 — penimpaan terdaftar (`config_overrides.PENIMPA`), selalu paling akhir
 ]
 LAYER_LABEL = {
-    "code_default": "Default sistem",
-    "legacy_global": "Global (pengaturan lama)",
-    "global": "Global",
-    "legacy_entity": "Entitas (pengaturan lama)",
-    "entity": "Entitas",
-    "supplier": "Supplier",
-    "customer": "Pelanggan",
-    "product": "Produk",
-    "document": "Dokumen",
-    "hypothetical": "Simulasi (belum disimpan)",
+    # KF-T4 (KF-UX-21/22) — istilah awam: "Bawaan sistem" · "Aturan grup" · "Khusus PT"; lapisan lama ditulis sama
+    # dengan padanannya (pengguna tidak perlu tahu penyimpanan mana yang dibaca).
+    "code_default": "Bawaan sistem",
+    "legacy_global": "Aturan grup",
+    "global": "Aturan grup",
+    "legacy_entity": "Khusus PT",
+    "entity": "Khusus PT",
+    "supplier": "Khusus pemasok",
+    "customer": "Khusus pelanggan",
+    "product": "Khusus produk",
+    "document": "Khusus dokumen",
+    "hypothetical": "Coba dulu (belum disimpan)",
     "override": "Ditimpa aturan lain",   # KF-T3
 }
 # Lapisan yang berasal dari `config_values` (bisa ditulis lewat API baru).
@@ -189,7 +191,7 @@ async def build_layers(key: str, ctx: Optional[Dict[str, Any]] = None,
     layers: List[Dict[str, Any]] = [{
         "layer": "code_default", "label": LAYER_LABEL["code_default"], "scope_id": "",
         "present": True, "value": entry["default"],
-        "note": "Nilai bawaan kode — usulan awal, bukan aturan permanen.",
+        "note": "Nilai awal dari sistem — dipakai selama belum ada aturan grup atau nilai khusus PT.",
         "changed_by": "", "changed_at": "", "reason": "", "effective_from": "",
     }]
 
@@ -197,7 +199,7 @@ async def build_layers(key: str, ctx: Optional[Dict[str, Any]] = None,
     layers.append({
         "layer": "legacy_global", "label": LAYER_LABEL["legacy_global"], "scope_id": legacy_scope,
         "present": lg is not _MISSING, "value": None if lg is _MISSING else lg,
-        "note": catatan_bertanggal if bertanggal else f"Dokumen system_settings scope '{legacy_scope}' (dibaca mesin lama).",
+        "note": catatan_bertanggal if bertanggal else "Aturan grup yang tersimpan sebelum Pengaturan ini ada.",
         "changed_by": (legacy_global or {}).get("updated_by", ""),
         "changed_at": (legacy_global or {}).get("updated_at", ""),
         "reason": "", "effective_from": "",
@@ -214,9 +216,9 @@ async def build_layers(key: str, ctx: Optional[Dict[str, Any]] = None,
             "present": val is not _MISSING,
             "value": None if val is _MISSING else val,
             "cleared": cleared,
-            "note": ("Dikembalikan ke lapisan di atasnya — tidak lagi diatur di sini."
+            "note": ("Dicabut — kembali mengikuti nilai di atasnya."
                      if cleared else
-                     ("Diatur lewat Pusat Pengaturan." if win else "Belum diatur pada lapisan ini.")),
+                     ("Diatur lewat Pengaturan." if win else "Belum diatur di sini.")),
             "changed_by": (win or {}).get("changed_by", ""),
             "changed_at": (win or {}).get("changed_at", ""),
             "reason": (win or {}).get("reason", ""),
@@ -235,8 +237,8 @@ async def build_layers(key: str, ctx: Optional[Dict[str, Any]] = None,
         "layer": "legacy_entity", "label": LAYER_LABEL["legacy_entity"], "scope_id": ent_id,
         "present": le is not _MISSING, "value": None if le is _MISSING else le,
         "note": (catatan_bertanggal if bertanggal else
-                 f"Override entitas di system_settings scope '{ent_id}'." if ent_id
-                 else "Tidak ada konteks entitas."),
+                 "Nilai khusus PT yang tersimpan sebelum Pengaturan ini ada." if ent_id
+                 else "Tidak ada PT yang dipilih."),
         "changed_by": (legacy_entity or {}).get("updated_by", ""),
         "changed_at": (legacy_entity or {}).get("updated_at", ""),
         "reason": "", "effective_from": "",
@@ -252,8 +254,7 @@ async def build_layers(key: str, ctx: Optional[Dict[str, Any]] = None,
     for lay in layers:
         if lay["layer"] in WRITABLE_LAYERS and lay["layer"] not in allowed:
             lay["present"] = False
-            lay["note"] = ("Lapisan ini tidak didukung untuk setting ini — mesin pembacanya "
-                           "belum menghormati level tersebut.")
+            lay["note"] = "Pengaturan ini tidak bisa dibedakan di sini — pembacanya belum mendukung."
     return layers
 
 
@@ -326,7 +327,12 @@ async def value_of(key: str, ctx: Optional[Dict[str, Any]] = None) -> Any:
 
 async def resolve_group(group_id: Optional[str] = None, ctx: Optional[Dict[str, Any]] = None,
                         term: str = "") -> List[Dict[str, Any]]:
-    """Nilai efektif untuk sekumpulan setting (satu grup / hasil pencarian) — hemat query."""
+    """Nilai efektif untuk sekumpulan setting (satu grup / hasil pencarian) — hemat query.
+
+    KF-T4 — tiap butir juga memuat sub-judul (`section`), tema lintas kelompok (`themes`), isi daftar (`items`,
+    `ordered`), rujukan master (`ref`, `ref_options`), layar pengubah lain (`edit_at`), izin pengubah + nama modulnya
+    (`permission`, `permission_label`), dan `never_changed` (belum pernah diubah: tanpa baris riwayat dan nilai =
+    bawaan). `group_id` boleh id kelompok lama (`GROUP_ALIASES`)."""
     entries = registry.search(term) if term else (
         registry.by_group(group_id) if group_id else registry.all_entries())
     if not entries:
@@ -340,6 +346,13 @@ async def resolve_group(group_id: Optional[str] = None, ctx: Optional[Dict[str, 
     ent_id = ctx.get("entity_id") or ""
     if ent_id and ent_id != "all":
         pre[f"legacy:{ent_id}"] = await _legacy_doc(ent_id)
+    pernah = set(await db[COLL].distinct("key", {"key": {"$in": keys}}))   # KF-T4 — `never_changed`
+    refs: Dict[str, List[Dict[str, Any]]] = {}
+    for e in entries:
+        if e.get("ref") and e["ref"] not in refs:
+            refs[e["ref"]] = await ref_options(e["ref"], ent_id)
+    peran = role_options() if any(e.get("items") == "roles" or any(c.get("ref") == "role" for c in e.get("columns") or [])
+                                  for e in entries) else []
 
     out: List[Dict[str, Any]] = []
     at = datetime.now(timezone.utc)
@@ -349,7 +362,16 @@ async def resolve_group(group_id: Optional[str] = None, ctx: Optional[Dict[str, 
             "key", "group", "label", "help", "impact", "example", "type", "default",
             "min", "max", "step", "options", "unit", "scopes", "consumers",
             "risk", "requires_reason", "status", "not_used_reason", "simulate", "related",
-            "row_shape", "columns", "editable", "bertanggal")},
+            "row_shape", "columns", "editable", "bertanggal",
+            # KF-T4 — sub-judul, isi daftar, rujukan, layar lain, format nilai, izin pengubah
+            "section", "items", "ordered", "ref", "edit_at", "value_format", "permission")},
+            "themes": registry.themes_for(e["key"]),
+            "permission_label": permission_label(e),
+            # KF-T4 — pilihan editor: rujukan master (`ref`) atau daftar peran (`items: "roles"`, kolom ber-`ref: "role"`).
+            "ref_options": refs.get(e.get("ref") or "", []) if e.get("ref") else (
+                peran if e.get("items") == "roles" else []),
+            "role_options": peran if any(c.get("ref") == "role" for c in e.get("columns") or []) else [],
+            "never_changed": e["key"] not in pernah and res["stored_value"] == e["default"],
             "value": res["value"], "source_layer": res["source_layer"],
             "source_label": res["source_label"], "scheduled": res["scheduled"],
             # KF-T3 — nilai tersimpan + penimpa (null bila tidak ditimpa): kartu menulis siapa yang menimpa.
@@ -358,9 +380,119 @@ async def resolve_group(group_id: Optional[str] = None, ctx: Optional[Dict[str, 
     return out
 
 
+def permission_label(entry: Dict[str, Any]) -> str:
+    """KF-T4 — nama modul akses pemilik izin pengubah (`access_modules.MODULE_CATALOG`), untuk kalimat kartu terkunci."""
+    resource = (entry.get("permission") or ["settings", "manage"])[0]
+    try:
+        from access_modules import MODULE_CATALOG
+    except Exception:   # noqa: BLE001
+        return resource
+    for m in MODULE_CATALOG:
+        if resource in (m.get("resources") or []):
+            return m.get("label", resource)
+    return resource
+
+
+def role_options() -> List[Dict[str, Any]]:
+    """KF-T4 — id peran yang dikenal (bawaan + kustom terdaftar) berlabel nama peran, untuk kotak centang daftar peran."""
+    from role_registry import role_ids, role_label
+    return [{"value": rid, "label": role_label(rid)} for rid in role_ids()]
+
+
+# ── KF-T4 (KF-UX-18) — pilihan untuk kunci teks yang merujuk master ─────────────────────────────────────────────────
+async def ref_options(ref: str, entity_id: str = "") -> List[Dict[str, Any]]:
+    """Pilihan untuk kunci ber-`ref`: `[{value, label}]`.
+
+    `payment_term` → baris efektif master Syarat Bayar PT itu (kode · nama) · `uom` → master satuan (`uoms`; nilai =
+    kata satuan pertama, mis. "meter") · `department` → nama unit organisasi SDM yang dicocokkan
+    `notification_audience._users_in_division`."""
+    ent = entity_id if entity_id and entity_id != "all" else ""
+    if ref == "payment_term":
+        from services import entity_master_service as ems
+        rows = await ems.effective_rows("payment-terms", ent)
+        out = [{"value": r.get("code"), "label": f"{r.get('code')} · {r.get('name') or r.get('code')}"}
+               for r in rows if r.get("code")]
+        return sorted(out, key=lambda o: str(o["value"]))
+    if ref == "uom":
+        rows = await db.uoms.find({}, {"_id": 0, "code": 1, "name": 1, "aliases": 1, "status": 1}).to_list(500)
+        out = []
+        for r in rows:
+            if r.get("status") not in (None, "", "active"):
+                continue
+            kata = (r.get("aliases") or [str(r.get("name") or r.get("code") or "").lower()])[0]
+            out.append({"value": kata, "label": str(r.get("name") or kata),
+                        "match": sorted({str(x).lower() for x in [r.get("code"), r.get("name"), *(r.get("aliases") or [])]
+                                         if x})})
+        return sorted(out, key=lambda o: o["label"])
+    if ref == "department":
+        from services.notification_audience import _ORG_COLL
+        q: Dict[str, Any] = {"entity_id": ent} if ent else {}
+        rows = await db[_ORG_COLL].find(q, {"_id": 0, "name": 1}).to_list(500)
+        names = sorted({str(r.get("name") or "").strip() for r in rows if str(r.get("name") or "").strip()})
+        return [{"value": n, "label": n} for n in names]
+    return []
+
+
+async def _check_ref(entry: Dict[str, Any], value: Any, entity_id: str) -> None:
+    """Nilai kunci ber-`ref` harus ada di pilihannya (kosong hanya bila bawaannya kosong)."""
+    teks = str(value or "").strip()
+    if not teks:
+        if str(entry.get("default") or "").strip():
+            raise ConfigWriteError(f"'{entry['label']}' wajib dipilih.")
+        return
+    opsi = await ref_options(entry["ref"], entity_id)
+    cocok = {str(o["value"]).lower() for o in opsi}
+    for o in opsi:
+        cocok |= set(o.get("match") or [])
+    if teks.lower() not in cocok:
+        daftar = ", ".join(str(o["label"]) for o in opsi[:12]) or "belum ada"
+        raise ConfigWriteError(f"'{entry['label']}': butir '{teks}' tidak dikenal. Pilihan: {daftar}.")
+
+
+async def entity_overrides(items: List[Dict[str, Any]], entity_ids: List[str]) -> List[Dict[str, Any]]:
+    """KF-T4 (KF-UX-09) — cakupan grup: tiap butir mendapat `entity_overrides` = PT (di antara `entity_ids`) yang punya
+    nilai sendiri untuk kunci itu: `[{entity_id, entity_label, value}]`."""
+    keys = [it["key"] for it in items]
+    ids = [e for e in dict.fromkeys(entity_ids or []) if e and e != "all"]
+    nama = {d["id"]: (d.get("short_name") or d.get("legal_name") or d.get("name") or d["id"])
+            async for d in db.business_entities.find({"id": {"$in": ids}},
+                                                     {"_id": 0, "id": 1, "short_name": 1, "legal_name": 1, "name": 1})}
+    per_key: Dict[str, List[Dict[str, Any]]] = {k: [] for k in keys}
+    entries = [registry.require(k) for k in keys]
+    at = datetime.now(timezone.utc)
+    for eid in ids:
+        ctx = {"entity_id": eid}
+        pre: Dict[str, Any] = {"rows": await _stored_rows(keys, ctx)}
+        for sc in {e["legacy_scope"] for e in entries}:
+            pre[f"legacy:{sc}"] = await _legacy_doc(sc)
+        pre[f"legacy:{eid}"] = await _legacy_doc(eid)
+        for e in entries:
+            if "entity" not in (e.get("scopes") or []):
+                continue
+            res = await resolve(e["key"], ctx, at=at, preloaded=pre)
+            if res["source_layer"] in ("entity", "legacy_entity"):
+                per_key[e["key"]].append({"entity_id": eid, "entity_label": nama.get(eid, eid),
+                                          "value": res["stored_value"]})
+    for it in items:
+        it["entity_overrides"] = per_key.get(it["key"], [])
+    return items
+
+
 # ── tulis (append-only) ─────────────────────────────────────────────────────
 class ConfigWriteError(ValueError):
     """Nilai/scope tidak sah — pesan siap tampil ke user (Bahasa Indonesia)."""
+
+
+#: KF-T4 — sasaran lapisan untuk pesan "Pilih … dulu." (tanpa id lapisan).
+SASARAN = {"entity": "PT", "customer": "pelanggan", "supplier": "pemasok", "product": "produk",
+           "document": "dokumen"}
+#: KF-T4 (KF-12) — alasan bawaan "kembalikan"/"cabut" untuk kunci yang tidak wajib beralasan.
+ALASAN_BAWAAN_RESET = "Dikembalikan ke nilai bawaan sistem"
+ALASAN_BAWAAN_CLEAR = "Kembali mengikuti nilai grup"
+
+
+def alasan_wajib(entry: Dict[str, Any]) -> str:
+    return f"'{entry['label']}' berisiko tinggi — alasan wajib diisi."
 
 
 async def set_value(key: str, value: Any, *, scope_type: str = "global", scope_id: str = "",
@@ -376,10 +508,9 @@ async def set_value(key: str, value: Any, *, scope_type: str = "global", scope_i
         # KF-T5 — pesan tanpa istilah "level"/id lapisan: "“{label}” tidak bisa dibedakan per pelanggan."
         raise ConfigWriteError(f"“{entry['label']}” tidak bisa dibedakan {PER_LAPISAN.get(scope_type, scope_type)}.")
     if scope_type != "global" and not scope_id:
-        raise ConfigWriteError(f"Level '{scope_type}' wajib menyebut ID sasaran.")
+        raise ConfigWriteError(f"Pilih {SASARAN.get(scope_type, 'sasarannya')} dulu.")
     if entry["requires_reason"] and not (reason or "").strip():
-        raise ConfigWriteError(
-            f"'{entry['label']}' berisiko tinggi — alasan perubahan WAJIB diisi.")
+        raise ConfigWriteError(alasan_wajib(entry))
     try:
         clean = registry.coerce(entry, value)
         if key == "approval.extra_levels":   # KP-T3 — isi jenjang tambahan: peran dikenal, nilai minimal ≥ 0
@@ -389,6 +520,8 @@ async def set_value(key: str, value: Any, *, scope_type: str = "global", scope_i
         clean = periksa_nilai(key, clean)
     except ValueError as exc:
         raise ConfigWriteError(str(exc)) from exc
+    if entry.get("ref"):   # KF-T4 — rujukan master harus ada di pilihannya (PT sasaran bila lapisan PT)
+        await _check_ref(entry, clean, scope_id if scope_type == "entity" else (ctx or {}).get("entity_id", ""))
 
     eff = (effective_from or "").strip() or _iso_now()
     if _as_dt(eff) is None:
@@ -481,13 +614,16 @@ async def clear_layer(key: str, *, scope_type: str, scope_id: str = "",
     """
     entry = registry.require(key)
     if scope_type not in WRITABLE_LAYERS:
-        raise ConfigWriteError(f"Lapisan '{scope_type}' tidak bisa dikosongkan.")
+        raise ConfigWriteError("Nilai ini tidak bisa dicabut.")
     if scope_type == "global":
         raise ConfigWriteError(
-            "Lapisan Global adalah lapisan terluar — tidak ada 'global' di atasnya. "
-            "Pakai 'Kembalikan ke bawaan sistem' bila ingin nilai awal kode.")
+            "Aturan grup tidak punya nilai di atasnya untuk diikuti. "
+            "Pakai 'Pakai nilai bawaan sistem' bila ingin kembali ke nilai awal sistem.")
     if not scope_id:
-        raise ConfigWriteError(f"Lapisan '{scope_type}' wajib menyebut ID sasaran.")
+        raise ConfigWriteError(f"Pilih {SASARAN.get(scope_type, 'sasarannya')} dulu.")
+    # KF-T4 (KF-12) — kunci berisiko tinggi: mencabut nilai khusus juga perubahan, alasannya wajib (tanpa alasan otomatis).
+    if entry["requires_reason"] and not (reason or "").strip():
+        raise ConfigWriteError(alasan_wajib(entry))
 
     prev = await resolve(key, _ctx_for(scope_type, scope_id))
     row = {
@@ -496,7 +632,7 @@ async def clear_layer(key: str, *, scope_type: str, scope_id: str = "",
         "value": None, "cleared": True,
         "prev_value": prev["stored_value"], "prev_source_layer": prev["source_layer"],   # KF-T3 — nilai tersimpan
         "effective_from": _iso_now(), "effective_to": "",
-        "reason": (reason or "").strip() or "Kembalikan ke nilai global",
+        "reason": (reason or "").strip() or ALASAN_BAWAAN_CLEAR,
         "changed_by": actor, "changed_by_id": actor_id, "approved_by": "",
         "risk": entry["risk"], "changed_at": _iso_now(), "created_at": _iso_now(),
         "applied_at": _iso_now(),
@@ -703,25 +839,59 @@ async def cancel_scheduled(row_id: str, *, actor: str = "system", actor_id: str 
     return {**row, **tanda}
 
 
+def _awal_hari_wib(tanggal: str, tambah_hari: int = 0) -> str:
+    """'YYYY-MM-DD' (tanggal WIB) → awal hari itu dalam ISO UTC, bentuk yang sama dengan `changed_at` (`now_iso`)."""
+    from datetime import date, timedelta
+    try:
+        d = date.fromisoformat(str(tanggal).strip()[:10]) + timedelta(days=tambah_hari)
+    except ValueError as exc:
+        raise ConfigWriteError("Tanggal saringan riwayat tidak valid (pakai tahun-bulan-tanggal).") from exc
+    awal = datetime(d.year, d.month, d.day, tzinfo=timezone(timedelta(hours=7)))
+    return awal.astimezone(timezone.utc).isoformat()
+
+
 async def history(key: str = "", scope_type: str = "", scope_id: str = "",
-                  limit: int = 100) -> List[Dict[str, Any]]:
-    """Riwayat perubahan (terbaru dulu): siapa, kapan, dari→ke, alasan."""
+                  limit: int = 100, *, keys: Optional[List[str]] = None, changed_by: str = "",
+                  date_from: str = "", date_to: str = "", offset: int = 0) -> Tuple[List[Dict[str, Any]], int]:
+    """Riwayat perubahan (terbaru dulu): siapa, kapan, dari→ke, alasan.
+
+    KF-T4 (KF-UX-19) — saringan kelompok (`keys` = kunci kelompok itu), orang (`changed_by`, sebagian nama), rentang
+    tanggal (`date_from`/`date_to`, YYYY-MM-DD, WIB tidak diubah: dibandingkan dengan awalan `changed_at`) dan halaman
+    (`offset`). Mengembalikan `(baris, total sebelum dipotong halaman)`."""
+    import re as _re
     q: Dict[str, Any] = {}
     if key:
         q["key"] = key
+    elif keys is not None:
+        q["key"] = {"$in": list(keys)}
     if scope_type:
         q["scope_type"] = scope_type
     if scope_id:
         q["scope_id"] = scope_id
-    rows = await db[COLL].find(q, {"_id": 0}).sort("created_at", -1).to_list(int(limit))
+    if changed_by.strip():
+        q["changed_by"] = {"$regex": _re.escape(changed_by.strip()), "$options": "i"}
+    rentang: Dict[str, Any] = {}
+    if date_from.strip():
+        rentang["$gte"] = _awal_hari_wib(date_from)
+    if date_to.strip():
+        rentang["$lt"] = _awal_hari_wib(date_to, tambah_hari=1)
+    if rentang:
+        q["changed_at"] = rentang
+    total = await db[COLL].count_documents(q)
+    rows = await (db[COLL].find(q, {"_id": 0}).sort("created_at", -1).skip(max(int(offset), 0)).limit(int(limit))
+                  .to_list(int(limit)))
     for r in rows:
         e = registry.get(r["key"])
         r["label"] = e["label"] if e else r["key"]
         r["group"] = e["group"] if e else ""
+        r["section"] = e["section"] if e else ""
         r["unit"] = e["unit"] if e else ""
+        # KF-T4 — layar memformat nilai riwayat seperti di kartu (label pilihan, rupiah, satuan).
+        r["type"] = e["type"] if e else ""
+        r["options"] = e["options"] if e else []
         r["cancelled"] = bool(r.get("cancelled_at"))      # KF-T3 — jadwal yang dibatalkan tetap tercatat
         r["scheduled"] = not r["cancelled"] and not _is_due(r, datetime.now(timezone.utc))
-    return rows
+    return rows, total
 
 
 async def ensure_indexes() -> None:

@@ -112,8 +112,10 @@ test("R5 Backorder = status Menunggu stok; sisa pendingan SO hidup = 'Sebagian m
 });
 
 describe("R5 Pengaturan: /config/health hanya untuk pemegang settings.view", () => {
-  const groups = [{ id: "retur", label: "Retur Penjualan", question: "?", count: 1 }];
-  const items = [{ key: "returns.photo_required", group: "retur", label: "Foto retur", value: true, default: true, type: "bool",
+  // KF-T4 — kelompok `retur` kini sub-judul `retur` di kelompok `retur-koreksi` (layar Aturan Penjualan).
+  const groups = [{ id: "retur-koreksi", label: "Retur & koreksi dokumen", question: "?", count: 1,
+    sections: [{ id: "retur", label: "Retur penjualan", advanced: false }] }];
+  const items = [{ key: "returns.photo_required", group: "retur-koreksi", section: "retur", label: "Foto retur", value: true, default: true, type: "bool",
     status: "active", scopes: ["global"], help: "", impact: "", example: "", source_layer: "code_default", source_label: "Bawaan", can_edit: false }];
   function spies() {
     jest.spyOn(configApi, "registry").mockResolvedValue({ groups, entries: items, caps: { settings_manage: false } });

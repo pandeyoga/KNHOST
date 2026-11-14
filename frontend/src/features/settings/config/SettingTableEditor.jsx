@@ -293,10 +293,81 @@ function gridCols(columns, withDelete) {
   return withDelete ? `${cols} 34px` : cols;
 }
 
+/**
+ * KF-T4 (KF-13) — `grouped_list`: objek `{nilai kolom pertama: [baris]}` (mis. `approval.extra_levels` =
+ * `{jenis dokumen: [{min_amount, role, label}]}`) disunting sebagai baris DATAR. Kolom pertama = kunci kelompok; hanya
+ * pilihan tanpa tanda `not_used` yang bisa dipilih. Baris berjenis lain yang sudah tersimpan tampil hanya-baca bertanda
+ * "belum dipakai" dan tetap ikut tersimpan apa adanya. Kolom ber-`ref: "role"` = pilihan peran (`entry.role_options`).
+ */
+function GroupedTable({ entry, value, columns, disabled, onChange, tid }) {
+  const [first, ...rest] = columns;
+  const opts = first.options || [];
+  const usable = opts.filter((o) => !o.not_used);
+  const obj = value && typeof value === "object" && !Array.isArray(value) ? value : {};
+  const flat = [];
+  Object.entries(obj).forEach(([grp, rows]) => (Array.isArray(rows) ? rows : []).forEach((r) => flat.push({ ...r, [first.name]: grp })));
+  const editable = (r) => usable.some((o) => o.value === r[first.name]);
+  const emit = (rows) => {
+    const out = {};
+    rows.forEach((r) => {
+      const { [first.name]: grp, ...rest2 } = r;
+      if (!grp) return;
+      (out[grp] = out[grp] || []).push(rest2);
+    });
+    onChange(out);
+  };
+  const cols = columns.map((c) => (c.ref === "role" ? { ...c, type: "enum", options: entry.role_options || [] } : c))
+    .map((c, i) => (i === 0 ? { ...c, options: usable } : c));
+  const setCell = (i, name, v) => emit(flat.map((r, k) => (k === i ? { ...r, [name]: v } : r)));
+  const addRow = () => emit([...flat, { ...blankRow(rest), [first.name]: usable[0]?.value || "" }]);
+  const removeRow = (i) => emit(flat.filter((_, k) => k !== i));
+  const optLabel = (v) => (opts.find((o) => o.value === v) || {}).label || v;
+  return (
+    <div className="cfg-tbl" data-testid={tid}>
+      <div className="cfg-tbl-head" style={{ gridTemplateColumns: gridCols(columns, !disabled) }}>
+        {columns.map((c) => <span key={c.name}>{c.label}</span>)}
+        {!disabled ? <span aria-hidden="true" /> : null}
+      </div>
+      {flat.length === 0 ? (
+        <p className="cfg-empty-sm" data-testid={`${tid}-empty`}>Belum ada baris. Tekan “Tambah baris” untuk mulai.</p>
+      ) : null}
+      {flat.map((r, i) => (editable(r) ? (
+        <div key={i} className="cfg-tbl-row" style={{ gridTemplateColumns: gridCols(columns, !disabled) }}
+          data-testid={`${tid}-row-${i}`}>
+          {cols.map((c) => (
+            <CellInput key={c.name} col={c} value={r[c.name]} disabled={disabled}
+              onChange={(v) => setCell(i, c.name, v)} testId={`${tid}-${i}-${c.name}`} />
+          ))}
+          {!disabled ? (
+            <button type="button" className="icon-button" onClick={() => removeRow(i)} aria-label="Hapus baris"
+              data-testid={`${tid}-del-${i}`}><Trash2 size={13} /></button>
+          ) : null}
+        </div>
+      ) : (
+        <div key={i} className="cfg-tbl-row cfg-tbl-row-ro" style={{ gridTemplateColumns: gridCols(columns, !disabled) }}
+          data-testid={`${tid}-row-${i}-unused`}>
+          <span>{optLabel(r[first.name])} <span className="badge-muted">belum dipakai</span></span>
+          {rest.map((c) => <span key={c.name}>{String(r[c.name] ?? "—")}</span>)}
+          {!disabled ? <span aria-hidden="true" /> : null}
+        </div>
+      )))}
+      {!disabled && usable.length ? (
+        <button type="button" className="btn-secondary btn-sm" onClick={addRow} data-testid={`${tid}-add`}>
+          <Plus size={13} /> Tambah baris
+        </button>
+      ) : null}
+    </div>
+  );
+}
+
 export default function SettingTableEditor({ entry, value, onChange, disabled, testId }) {
   const tid = testId || `cfg-input-${entry.key}`;
   const shape = entry.row_shape || "json";
   const columns = entry.columns || [];
+
+  if (shape === "grouped_list" && columns.length) {
+    return <GroupedTable entry={entry} value={value} columns={columns} disabled={disabled} onChange={onChange} tid={tid} />;
+  }
 
   if (shape === "list" && columns.length) {
     const rows = Array.isArray(value) ? value : [];

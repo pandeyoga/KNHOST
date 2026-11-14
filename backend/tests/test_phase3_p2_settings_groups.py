@@ -5,7 +5,8 @@ Menu Pengaturan kini per domain: tiap layar `settings-cfg-*` = Pusat Pengaturan 
 yang lupa dipetakan akan "yatim" — hanya terlihat di "Semua pengaturan", tidak di menu domainnya. Uji ini memerah bila:
   1. ada kelompok `config_registry.GROUPS` yang tidak dipetakan ke tepat satu layar `settings-cfg-*`;
   2. peta frontend menyebut kelompok yang tidak ada di registri (salah ketik / kelompok dihapus);
-  3. daftar `CONFIG_GROUP_IDS` (configDeepLink.js) tidak sama dengan registri.
+  3. indeks kelompok layar (`configKeyIndex.json`, KF-T4 — pengganti `CONFIG_GROUP_IDS` salinan tangan) tidak sama
+     dengan registri.
 Murni statik (tanpa DB/HTTP):
     python -m pytest tests/test_phase3_p2_settings_groups.py -q
 """
@@ -32,9 +33,9 @@ def _views():
 
 
 def _deeplink_ids():
-    src = (FE / "configDeepLink.js").read_text(encoding="utf-8")
-    block = re.search(r"export const CONFIG_GROUP_IDS = \[(.*?)\];", src, re.S).group(1)
-    return re.findall(r'"([\w-]+)"', re.sub(r"//[^\n]*", "", block))
+    # KF-T4 — `configDeepLink.js` membaca kelompok dari indeks yang dibangkitkan `scripts/gen_config_key_index.py`.
+    import json
+    return [g["id"] for g in json.loads((FE / "configKeyIndex.json").read_text(encoding="utf-8"))["groups"]]
 
 
 def test_setiap_kelompok_registri_punya_satu_layar_domain():

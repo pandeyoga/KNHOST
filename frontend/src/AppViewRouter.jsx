@@ -282,7 +282,11 @@ export default function AppViewRouter(props) {
         />
       )}
       {/* Fase 3 · P2 (P16-K1) — Pusat Pengaturan dikunci ke kelompok registri domain (configGroupViews.js). */}
-      {["settings-cfg-approval", "settings-cfg-sales", "settings-cfg-warehouse", "settings-cfg-purchasing", "settings-cfg-finance", "settings-cfg-hr", "settings-cfg-rnd", "settings-cfg-documents", "settings-cfg-notify", "settings-cfg-system"].includes(activeView) && (
+      {["settings-cfg-approval", "settings-cfg-sales", "settings-cfg-warehouse", "settings-cfg-purchasing", "settings-cfg-finance", "settings-cfg-hr", "settings-cfg-rnd", "settings-cfg-system"].includes(activeView) && (
+        <SettingsGroupView key={activeView} view={activeView} currentUser={user} selectedEntity={selectedEntity} entities={entities} {...cfgFocus} />
+      )}
+      {/* KF-T4 — rute cadangan dua layar yang kini alias (viewAliases): dirender sebagai Persetujuan pada sub-judulnya. */}
+      {(activeView === "settings-cfg-documents" || activeView === "settings-cfg-notify") && (
         <SettingsGroupView key={activeView} view={activeView} currentUser={user} selectedEntity={selectedEntity} entities={entities} {...cfgFocus} />
       )}
       {activeView === "settings-devices" && <DevicesView currentUser={user} selectedEntity={selectedEntity} />}

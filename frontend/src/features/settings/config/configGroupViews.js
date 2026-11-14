@@ -14,7 +14,7 @@
  *
  * Modul tanpa dependensi React (dipakai router, deep link, dan uji).
  */
-import { groupForKey } from "./configDeepLink";
+import { groupForKey, resolveGroupId } from "./configDeepLink";
 
 /** Kunci bawaan komisi (D-03) — rumahnya `incentive-rates`, bukan kelompok "Harga, Diskon & Komisi". */
 export const COMMISSION_PREFIX = "commission.";
@@ -28,29 +28,33 @@ export const DUAL_CONTROL_LINK = {
   where: "Pengaturan › Persetujuan › Kontrol dua orang",
 };
 
-/** `view` layar domain → { nav (menu Pengaturan), groups (id kelompok registri), excludeKeys } */
+/**
+ * `view` layar domain → { nav (menu Pengaturan), groups (id kelompok registri), excludeKeys }.
+ * KF-T4 — 13 kelompok bersub-judul (`backend/config_registry.py` GROUPS); delapan layar. Dua layar lama kehilangan
+ * kelompoknya dan menjadi alias (`config/viewAliases.js`): `settings-cfg-documents` → sub-judul "Rujukan antar dokumen",
+ * `settings-cfg-notify` → sub-judul "Pemberitahuan", keduanya di `settings-cfg-approval`.
+ */
 export const CONFIG_GROUP_VIEWS = {
   "settings-cfg-approval":   { nav: "settings-approval", groups: ["persetujuan"],
     excludeKeys: [DUAL_CONTROL_PREFIX], excludeLink: DUAL_CONTROL_LINK },   // KF-T6
-  "settings-cfg-sales":      { nav: "settings-sales", groups: ["harga-diskon", "retur", "amandemen"],
+  "settings-cfg-sales":      { nav: "settings-sales", groups: ["penjualan", "retur-koreksi"],
     excludeKeys: [COMMISSION_PREFIX] },
-  "settings-cfg-warehouse":  { nav: "settings-warehouse", groups: ["penerimaan", "stok-satuan", "kualitas", "lot"] },
-  "settings-cfg-purchasing": { nav: "settings-purchasing", groups: ["pembelian", "makloon", "kontrabon"] },
+  "settings-cfg-warehouse":  { nav: "settings-warehouse", groups: ["penerimaan", "kualitas", "stok"] },
+  "settings-cfg-purchasing": { nav: "settings-purchasing", groups: ["pembelian"] },
   "settings-cfg-finance":    { nav: "settings-finance",
-    groups: ["uang-masuk", "pajak", "keuangan-dasar", "bank", "kasus", "antar-entitas"] },
+    groups: ["pembayaran-pelanggan", "pajak-pembukuan", "bank-kasus"] },
   "settings-cfg-hr":         { nav: "settings-hr", groups: ["sdm"] },
   "settings-cfg-rnd":        { nav: "settings-rnd", groups: ["rnd"] },
-  "settings-cfg-documents":  { nav: "settings-documents", groups: ["dokumen"] },
-  "settings-cfg-notify":     { nav: "settings-notify", groups: ["notifikasi"] },
-  "settings-cfg-system":     { nav: "settings-system", groups: ["tampilan", "asisten-analitik"] },
+  "settings-cfg-system":     { nav: "settings-system", groups: ["sistem"] },
 };
 
 export const CONFIG_GROUP_VIEW_IDS = Object.keys(CONFIG_GROUP_VIEWS);
 
-/** Layar domain yang memuat kelompok registri `group` ("" bila tak dikenal). */
+/** Layar domain yang memuat kelompok registri `group` ("" bila tak dikenal). KF-T4 — id kelompok lama diterjemahkan. */
 export function configViewForGroup(group) {
-  if (!group) return "";
-  return CONFIG_GROUP_VIEW_IDS.find((v) => CONFIG_GROUP_VIEWS[v].groups.includes(group)) || "";
+  const g = resolveGroupId(group).group;
+  if (!g) return "";
+  return CONFIG_GROUP_VIEW_IDS.find((v) => CONFIG_GROUP_VIEWS[v].groups.includes(g)) || "";
 }
 
 /**

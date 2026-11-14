@@ -10,7 +10,7 @@ Setiap simulator mendeklarasikan:
   inputs : contoh angka yang diminta ke user (dengan default masuk akal)
   run    : fungsi murni → {steps[], result, verdict}
 """
-from typing import Any, Callable, Dict, List
+from typing import Any, Callable, Dict, List, Optional
 from core_utils import rupiah
 
 
@@ -36,33 +36,31 @@ def I(name: str, label: str, typ: str = "money", default: Any = 0, unit: str = "
 
 
 # ── implementasi tiap simulator ─────────────────────────────────────────────
-def _tax(c: Dict[str, Any], s: Dict[str, Any]) -> Dict[str, Any]:
+def _tax(c: Dict[str, Any], s: Dict[str, Any], f: Dict[str, Any]) -> Dict[str, Any]:
+    """KF-T4 (KF-UX-04) — rumus SAMA dengan mesin (`config_service.ppn_breakdown`, dipakai `compute_tax`); status PKP
+    dari profil PT (`facts.is_pkp`), bukan dari sakelar e-Faktur."""
+    from services.config_service import ppn_breakdown
     sub = _f(s.get("subtotal"), 10_000_000)
     rate = _f(c.get("tax.ppn_rate"), 0)
     nl = bool(c.get("tax.dpp_nilai_lain"))
     mode = c.get("tax.ppn_mode") or "excluded"
-    pkp = bool(c.get("tax.efaktur_enabled", True))
-    steps = [{"label": "Subtotal yang diketik sales", "value": _rp(sub)}]
+    pkp = bool((f or {}).get("is_pkp", True))
+    hasil = ppn_breakdown(sub, rate, mode, pkp, nl)
+    steps = [{"label": "Subtotal yang diketik sales", "value": _rp(sub)},
+             {"label": "Status PKP PT", "value": "PKP" if pkp else "Bukan PKP"}]
     if not pkp or rate <= 0:
-        steps.append({"label": "Status PKP", "value": "Non-PKP / tarif 0 → tanpa PPN"})
-        return {"steps": steps, "result": f"Grand total {_rp(sub)} (tanpa PPN)", "verdict": "ok"}
-    factor = 11 / 12 if nl else 1.0
-    eff = rate * factor
+        steps.append({"label": "PPN", "value": "Bukan PKP / tarif 0 → tanpa PPN"})
+        return {"steps": steps, "result": f"Total {_rp(hasil['grand_total'])} (tanpa PPN)", "verdict": "ok",
+                "breakdown": hasil}
     steps.append({"label": "Tarif PPN", "value": f"{_num(rate)}%"})
-    steps.append({"label": "DPP Nilai Lain (11/12)", "value": "Ya" if nl else "Tidak"})
-    steps.append({"label": "Tarif efektif", "value": f"{_num(eff, 4)}%"})
+    steps.append({"label": "DPP nilai lain (11/12)", "value": "Ya" if nl else "Tidak"})
+    steps.append({"label": "Tarif efektif", "value": f"{_num(hasil['effective_rate'], 4)}%"})
     if mode == "included":
-        harga = round(sub / (1 + eff / 100), 2)
-        ppn = round(sub - harga, 2)
-        grand = sub
-        steps.append({"label": "Harga jual (dipisah dari total)", "value": _rp(harga)})
-    else:
-        harga = sub
-        ppn = round(sub * eff / 100, 2)
-        grand = round(sub + ppn, 2)
-    steps.append({"label": "DPP", "value": _rp(round(harga * factor, 2))})
-    steps.append({"label": "PPN", "value": _rp(ppn)})
-    return {"steps": steps, "result": f"Grand total {_rp(grand)} (PPN {_rp(ppn)})", "verdict": "ok"}
+        steps.append({"label": "Harga jual (dipisah dari total)", "value": _rp(hasil["harga_jual"])})
+    steps.append({"label": "DPP", "value": _rp(hasil["dpp"])})
+    steps.append({"label": "PPN", "value": _rp(hasil["ppn_amount"])})
+    return {"steps": steps, "result": f"Total {_rp(hasil['grand_total'])} (PPN {_rp(hasil['ppn_amount'])})",
+            "verdict": "ok", "breakdown": hasil}
 
 
 def _ar_penalty(c: Dict[str, Any], s: Dict[str, Any]) -> Dict[str, Any]:
@@ -218,16 +216,26 @@ def _bill_match(c: Dict[str, Any], s: Dict[str, Any]) -> Dict[str, Any]:
 
 
 def _qc_grade(c: Dict[str, Any], s: Dict[str, Any]) -> Dict[str, Any]:
+    """KF-T4 (KF-UX-04) — sama dengan mesin: batas A/A1/A2/B dari `qc_inspection_service.thresholds_from` (rentang A–B
+    dibagi tiga), grade dari Master Grade Mutu aktif (`grade_from_points`; batas poin sendiri di master menang)."""
+    from services.qc_inspection_service import grade_from_points, thresholds_from
+    import domain_registry as _dr
     pts = _f(s.get("points"), 25)
-    a = _f(c.get("qc.grade_thresholds.a_max"), 20)
-    b = _f(c.get("qc.grade_thresholds.b_max"), 40)
+    # 0/kosong dibaca 20 / 40 — sama dengan `grade_thresholds` mesin.
+    th = thresholds_from(_f(c.get("qc.grade_thresholds.a_max"), 20) or 20.0,
+                         _f(c.get("qc.grade_thresholds.b_max"), 40) or 40.0)
     on = bool(c.get("qc.four_point_enabled", True))
-    grade = "A" if pts <= a else ("B" if pts <= b else "C")
-    steps = [{"label": "Inspeksi 4-Point", "value": "Aktif" if on else "Nonaktif (grade manual)"},
+    grade = grade_from_points(pts, th)
+    aktif = [g["value"] for g in _dr.GRADES if g.get("active", True) is not False]
+    steps = [{"label": "Inspeksi 4 poin", "value": "Aktif" if on else "Mati (grade diisi petugas)"},
              {"label": "Poin cacat", "value": _num(pts)},
-             {"label": "Ambang A / B", "value": f"≤{_num(a)} / ≤{_num(b)}"}]
+             {"label": "Batas A / A1 / A2 / B",
+              "value": f"≤{_num(th['a_max'])} / ≤{_num(th['a1_max'])} / ≤{_num(th['a2_max'])} / ≤{_num(th['b_max'])}"},
+             {"label": "Grade aktif di Master Grade Mutu", "value": ", ".join(aktif) or "—"}]
+    terbaik = aktif[0] if aktif else "A"
+    terburuk = aktif[-1] if aktif else "BS"
     return {"steps": steps, "result": f"Grade {grade}",
-            "verdict": "ok" if grade == "A" else ("warn" if grade == "B" else "block")}
+            "verdict": "ok" if grade == terbaik else ("block" if grade == terburuk else "warn")}
 
 
 def _stock_class(c: Dict[str, Any], s: Dict[str, Any]) -> Dict[str, Any]:
@@ -482,7 +490,8 @@ def _approval(c: Dict[str, Any], s: Dict[str, Any]) -> Dict[str, Any]:
 
 SIMULATORS: Dict[str, Dict[str, Any]] = {
     "tax": {"label": "Hitung PPN faktur",
-            "needs": ["tax.ppn_rate", "tax.dpp_nilai_lain", "tax.ppn_mode", "tax.efaktur_enabled"],
+            # KF-T4 — `tax.efaktur_enabled` keluar: status PKP dibaca dari profil PT (fakta `is_pkp`).
+            "needs": ["tax.ppn_rate", "tax.dpp_nilai_lain", "tax.ppn_mode"],
             "inputs": [I("subtotal", "Subtotal pesanan", "money", 10_000_000, "Rp")], "run": _tax},
     "ar_penalty": {"label": "Hitung denda keterlambatan",
                    "needs": ["ar.denda_rate_pct_per_month", "ar.grace_days"],
@@ -614,11 +623,15 @@ def get(sim_id: str) -> Dict[str, Any]:
     return sim
 
 
-def run(sim_id: str, values: Dict[str, Any], sample: Dict[str, Any]) -> Dict[str, Any]:
+def run(sim_id: str, values: Dict[str, Any], sample: Dict[str, Any],
+        facts: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+    """KF-T4 — `facts` = data master yang dipakai mesin (mis. `{"is_pkp": …}` dari profil PT); simulator yang
+    membutuhkannya menerima argumen ketiga."""
+    import inspect
     sim = get(sim_id)
-    fn: Callable[[Dict[str, Any], Dict[str, Any]], Dict[str, Any]] = sim["run"]
+    fn: Callable[..., Dict[str, Any]] = sim["run"]
     merged = {**{i["name"]: i["default"] for i in sim["inputs"]}, **(sample or {})}
-    out = fn(values, merged)
+    out = fn(values, merged, facts or {}) if len(inspect.signature(fn).parameters) >= 3 else fn(values, merged)
     return {"simulator": sim_id, "label": sim["label"], "inputs": sim["inputs"],
             "sample": merged, "config_used": values, **out}
 

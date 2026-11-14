@@ -95,7 +95,8 @@ async def test_U03_lapisan_grup_tetap_untuk_lintas_pt(klien, akun, sesi, peran_t
     _, h = await _orang(akun, sesi, rid)
     r = await klien.put("/api/config/values", headers=h, json=_put("sales.allow_partial_shipment", False, "global", ""))
     assert r.status_code == 403, r.text
-    assert "hanya dapat diubah peran lintas badan usaha" in _detail(r)
+    # KF-T4 — glosarium: "badan usaha" → "PT" (pesan: "Aturan grup '…' hanya dapat diubah peran lintas PT.").
+    assert "hanya dapat diubah peran lintas PT" in _detail(r)
 
 
 async def test_U04_lihat_saja_tidak_bisa_ubah(klien, akun, sesi, peran_tanpa_acuan):
@@ -144,7 +145,8 @@ async def test_U07_izin_konfigurasi_stok_hanya_kunci_lot(klien, akun, sesi, pera
     assert all(e["key"].startswith("lot.") for e in r.json()["entries"])
     r = await klien.get("/api/config/effective", headers=h, params={"group": "pajak"})
     assert r.status_code == 403, r.text
-    assert _detail(r).startswith("Anda belum punya akses untuk melihat pengaturan “Pajak”")
+    # KF-T4 — id kelompok lama `pajak` kini alias kelompok "Pajak, pembukuan & antar-PT" (`GROUP_ALIASES`).
+    assert _detail(r).startswith("Anda belum punya akses untuk melihat pengaturan “Pajak, pembukuan & antar-PT”")
 
 
 async def test_U08_migrasi_peran_beracuan_manajer_sekali_jalan(klien, kepala_admin, db):
@@ -243,6 +245,7 @@ def test_U14_tab_pengaturan_mengikuti_izin_kuncinya():
         for g in groups:
             res |= {e["permission"][0] for e in registry.by_group(g) if not e["key"].startswith("commission.")}
         hitung[view] = res
-    assert len(hitung) == 11
+    # KF-T4 — delapan layar kelompok (+ Semua pengaturan); `settings-cfg-documents` / `settings-cfg-notify` jadi alias.
+    assert len(hitung) == 9
     for view, res in hitung.items():
         assert set(VIEW_RESOURCE_OVERRIDES.get(view, [])) == res, view

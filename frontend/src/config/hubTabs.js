@@ -245,7 +245,7 @@ export const HUB_TABS = {
     { view: "approval-rules",    label: "Aturan Persetujuan",    roles: ["admin", "manager"] },
     // Matriks approver R&D (DivisionsView bagian "matriks"); penempatan tim pindah ke Pengaturan › R&D.
     { view: "rnd-divisions",     label: "Divisi & Persetujuan R&D", roles: ["admin", "manager"] },
-    { view: "settings-cfg-approval", label: "Persetujuan & Ambang", roles: ["admin", "manager"] },
+    { view: "settings-cfg-approval", label: "Ketegasan, Pengingat & Dokumen", roles: ["admin", "manager"] },
     // KF-T6 — satu tabel aturan "pengaju tidak boleh memutuskan sendiri" per PT (GET /api/kontrol/aturan).
     { view: "settings-dual-control", label: "Kontrol dua orang", roles: ["admin", "manager"] },
   ],
@@ -291,17 +291,17 @@ export const HUB_TABS = {
     // D-01 — Template PDF + Template Dokumen Dasar digabung (alias `doc-templates-basic` → tab "dasar").
     // Tab "Desainer PDF" di dalam layar tetap khusus admin; hak tulis dijaga server (izin `template`).
     { view: "pdf-templates",     label: "Template Dokumen",      roles: ["admin", "manager"] },
-    { view: "settings-cfg-documents", label: "Aturan Dokumen",   roles: ["admin", "manager"] },
+    // KF-T4 — tab "Aturan Dokumen" dicabut: kini sub-judul "Rujukan antar dokumen" di Persetujuan (alias viewAliases).
   ],
   "settings-notify": [
     { view: "scheduler",         label: "Penjadwal & Notifikasi", roles: ["admin", "manager"] },
-    { view: "settings-cfg-notify", label: "Penerima Notifikasi", roles: ["admin", "manager"] },
+    // KF-T4 — tab "Penerima Notifikasi" dicabut: kini sub-judul "Pemberitahuan" di Persetujuan (alias viewAliases).
   ],
   "settings-system": [
     // Q6 — "Semua pengaturan" = Pusat Pengaturan penuh (cari lintas kelompok, kesehatan, riwayat, kunci proses,
     // kebersihan data). `view: "settings-config"` WAJIB ada di menu (scripts/audit_config_wiring.py).
     { view: "settings-config",   label: "Semua pengaturan",      roles: ["admin", "manager"] },
-    { view: "settings-cfg-system", label: "Tampilan & Asisten",  roles: ["admin", "manager"] },
+    { view: "settings-cfg-system", label: "AI & Tampilan",       roles: ["admin", "manager"] },
     // D-29 — satu layar Perangkat: mesin absen (dulu Shift & Geofence) + RFID (alias `cs-rfid-devices`).
     { view: "settings-devices",  label: "Perangkat",             roles: ["admin", "manager"] },
     { view: "admin",             label: "Integrasi & Audit",     roles: ["admin"] },

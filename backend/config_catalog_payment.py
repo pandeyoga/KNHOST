@@ -25,39 +25,39 @@ GC = ("global", "entity", "customer")
 # KP-T4 — alasan baku kunci persetujuan yang pindah ke Aturan Persetujuan.
 _KPT4_TIDAK_DIPAKAI = ("Dipindah ke Aturan Persetujuan (Pengaturan › Persetujuan › Aturan Persetujuan). Nilai terakhirnya hanya membentuk aturan bawaan selama aturan belum disimpan.")
 
-E("payment.plan_required_above_amount", group="uang-masuk", type="money", default=0,
+E("payment.plan_required_above_amount", group="pembayaran-pelanggan", section="syarat-bayar", type="money", default=0,
   min=0, max=100000000000, step=1000000, unit="Rp", scopes=G,
-  label="Nilai pesanan yang WAJIB punya rencana pembayaran",
-  help="Di atas nilai ini, pesanan tidak boleh hanya mengandalkan term kaku (mis. NET30) — "
-       "harus punya rencana pembayaran (DP/cicilan/milestone) supaya jadwal tagihnya jelas. "
-       "Isi 0 bila tidak ingin mewajibkan.",
+  label="Pesanan besar wajib punya jadwal bayar",
+  help="Pesanan bernilai di atas angka ini harus punya rencana pembayaran (DP atau cicilan), tidak cukup tempo "
+       "biasa. Isi 0 bila tidak ingin mewajibkan.",
   impact="Menentukan kapan sistem mengingatkan bahwa pesanan besar belum punya jadwal bayar.",
   example="Rp 50.000.000 · SO Rp 80.000.000 tanpa rencana → ditandai perlu rencana pembayaran",
   consumers=("services/payment_plan_service.py:plan_policy",), risk="medium",
   related=("payment.plan_tolerance_rupiah",))
 
-E("payment.plan_tolerance_rupiah", group="uang-masuk", type="money", default=1,
+E("payment.plan_tolerance_rupiah", group="pembayaran-pelanggan", section="syarat-bayar", type="money", default=1,
   min=1, max=100000, step=1, unit="Rp", scopes=G,   # KF-T3 (KF-10) — 0 dulu diganti diam-diam menjadi 1
   label="Toleransi pembulatan rencana pembayaran",
-  help="Selisih rupiah yang masih diterima antara jumlah seluruh baris cicilan dengan nilai "
-       "dokumen. Dibutuhkan karena persen sering menghasilkan pecahan rupiah. Paling kecil Rp 1.",
+  help="Selisih rupiah yang masih diterima antara jumlah semua cicilan dan nilai pesanan, karena persen sering "
+       "menghasilkan pecahan rupiah. Paling kecil Rp 1.",
   impact="Terlalu besar membuat rencana yang tidak pas ikut lolos; terlalu kecil membuat "
          "pembulatan persen ditolak terus.",
-  example="Toleransi Rp 1 · Σ baris Rp 9.999.999 untuk order Rp 10.000.000 → DITOLAK",
+  example="Toleransi Rp 1 · jumlah cicilan Rp 9.999.999 untuk pesanan Rp 10.000.000 → diterima; selisih Rp 2 → "
+          "ditolak",
   consumers=("services/payment_plan_service.py:plan_policy",), risk="high",
   related=("payment.plan_required_above_amount",))
 
-E("payment.default_dp_percent", group="uang-masuk", type="pct", default=30.0,
+E("payment.default_dp_percent", group="pembayaran-pelanggan", section="syarat-bayar", type="pct", default=30.0,
   min=0, max=100, step=5, unit="%", scopes=G,
   label="Uang muka (DP) bawaan",
-  help="Persen DP yang dipakai saat rencana pembayaran dibuat dari template DP + cicilan. "
-       "Tetap bisa diubah bebas per pesanan.",
+  help="Persen DP yang dipakai saat rencana pembayaran dibuat dari template DP + cicilan. Tetap bisa diubah bebas "
+       "per pesanan. Isi 0 = jadwal dari templat dimulai tanpa DP.",
   impact="Mengubah angka awal pada pembuat rencana pembayaran.",
   example="30% · order Rp 20.000.000 → DP Rp 6.000.000",
   consumers=("services/payment_plan_service.py:plan_policy",), risk="low",
   related=("payment.default_installments",))
 
-E("payment.default_installments", group="uang-masuk", type="int", default=3,
+E("payment.default_installments", group="pembayaran-pelanggan", section="syarat-bayar", type="int", default=3,
   min=1, max=36, step=1, unit="kali", scopes=G,
   label="Jumlah cicilan bawaan",
   help="Berapa kali sisa setelah DP dipecah saat memakai template DP + cicilan.",
@@ -66,7 +66,7 @@ E("payment.default_installments", group="uang-masuk", type="int", default=3,
   consumers=("services/payment_plan_service.py:plan_policy",), risk="low",
   related=("payment.default_installment_interval",))
 
-E("payment.default_installment_interval", group="uang-masuk", type="enum", default="monthly",
+E("payment.default_installment_interval", group="pembayaran-pelanggan", section="syarat-bayar", type="enum", default="monthly",
   options=({"value": "monthly", "label": "Bulanan"}, {"value": "weekly", "label": "Mingguan"}),
   scopes=G,
   label="Jarak antar cicilan bawaan",
@@ -77,22 +77,21 @@ E("payment.default_installment_interval", group="uang-masuk", type="enum", defau
   related=("payment.default_installments",))
 
 # ── Denda keterlambatan sebagai DOKUMEN ────────────────────────────────────
-E("payment.penalty_mode", group="uang-masuk", type="enum", default="draft",
+E("payment.penalty_mode", group="pembayaran-pelanggan", section="denda", type="enum", default="draft",
   options=({"value": "off", "label": "Mati (tidak ada denda)"},
            {"value": "draft", "label": "Usulan denda (draf, tanpa jurnal)"},
            {"value": "auto", "label": "Otomatis terbit (langsung berjurnal)"}),
   scopes=GC,
-  label="Perlakuan denda keterlambatan",
-  help="`Usulan` membuat denda lahir sebagai draft sehingga masih bisa dinegosiasikan atau "
-       "dibatalkan TANPA pernah mengotori buku besar. `Otomatis terbit` langsung menjurnal "
-       "(Dr Piutang Denda / Cr Pendapatan Denda) — pakai hanya bila kebijakan sudah tegas."
-       " Bisa dibedakan per pelanggan dari kartu pelanggan.",
+  label="Denda telat: usulan atau langsung terbit",
+  help="Usulan: denda dibuat sebagai konsep yang masih bisa dinegosiasikan atau dibatalkan dan belum masuk "
+       "pembukuan. Otomatis terbit: denda langsung dicatat sebagai piutang dan pendapatan denda. Bisa dibedakan per "
+       "pelanggan dari kartu pelanggan.",
   impact="Menentukan apakah denda hasil pemindaian harian berjurnal atau tidak.",
   example="Usulan · cicilan telat 12 hari → nota denda DRAFT Rp 80.000 menunggu keputusan",
   consumers=("services/penalty_service.py:penalty_policy",), risk="high",
   related=("ar.denda_rate_pct_per_month", "ar.grace_days", "payment.penalty_base"))
 
-E("payment.penalty_base", group="uang-masuk", type="enum", default="installment",
+E("payment.penalty_base", group="pembayaran-pelanggan", section="denda", type="enum", default="installment",
   options=({"value": "installment", "label": "Nilai cicilan yang telat"},
            {"value": "outstanding", "label": "Seluruh sisa piutang pesanan"}),
   scopes=GC,
@@ -105,7 +104,7 @@ E("payment.penalty_base", group="uang-masuk", type="enum", default="installment"
   consumers=("services/penalty_service.py:penalty_policy",), risk="high",
   related=("payment.penalty_mode", "payment.penalty_cap_pct"))
 
-E("payment.penalty_cap_pct", group="uang-masuk", type="pct", default=0.0,
+E("payment.penalty_cap_pct", group="pembayaran-pelanggan", section="denda", type="pct", default=0.0,
   min=0, max=100, step=1, unit="% dari dasar", scopes=GC,
   label="Batas maksimum denda",
   help="Batas atas denda sebagai persen dari dasar perhitungan. Isi 0 untuk tanpa batas."
@@ -115,32 +114,32 @@ E("payment.penalty_cap_pct", group="uang-masuk", type="pct", default=0.0,
   consumers=("services/penalty_service.py:penalty_policy",), risk="medium",
   related=("payment.penalty_base",))
 
-E("payment.penalty_min_amount", group="uang-masuk", type="money", default=10000,
+E("payment.penalty_min_amount", group="pembayaran-pelanggan", section="denda", type="money", default=10000,
   min=0, max=100000000, step=1000, unit="Rp", scopes=G,
   label="Denda minimum yang layak diterbitkan",
-  help="Denda di bawah nilai ini tidak dibuatkan nota — biaya administrasinya lebih besar "
-       "daripada nilainya.",
+  help="Denda di bawah nilai ini tidak dibuatkan nota — biaya administrasinya lebih besar daripada nilainya. Isi 0 "
+       "= semua denda dibuatkan nota.",
   impact="Mencegah antrean penuh nota denda receh.",
   example="Rp 10.000 · hasil hitung Rp 4.500 → tidak dibuatkan nota",
   consumers=("services/penalty_service.py:penalty_policy",), risk="low")
 
-E("payment.penalty_waive_requires_approval", group="uang-masuk", type="bool", default=True,
+E("payment.penalty_waive_requires_approval", group="pembayaran-pelanggan", section="denda", type="bool", default=True,
   scopes=G,
   label="Pembebasan / perubahan denda wajib disetujui",
   help="Bila aktif, membebaskan denda atau mengubah nominalnya wajib melewati persetujuan "
        "(selain wajib memilih label alasan). Ini yang mencegah denda hilang diam-diam.",
   impact="Menentukan apakah pembebasan denda langsung berlaku atau menunggu penyetuju.",
-  example="Aktif · sales membebaskan denda Rp 250.000 → menunggu persetujuan manager",
+  example="Aktif · sales membebaskan denda Rp 250.000 → menunggu persetujuan Manajer",
   consumers=("services/penalty_service.py:penalty_policy",), risk="high",
   related=("payment.penalty_waive_approver_role",))
 
-E("payment.penalty_waive_approver_role", group="uang-masuk", type="enum", default="manager",
-  options=({"value": "manager", "label": "Manager"}, {"value": "admin", "label": "Admin / Direksi"}),
+E("payment.penalty_waive_approver_role", group="pembayaran-pelanggan", section="denda", type="enum", default="manager",
+  options=({"value": "manager", "label": "Manajer"}, {"value": "admin", "label": "Admin / Direksi"}),
   scopes=G,
   label="Siapa yang menyetujui pembebasan denda",
   help="Peran yang berwenang menyetujui pembebasan atau perubahan nominal denda.",
   impact="Menentukan tujuan antrean persetujuan denda.",
-  example="Manager · pembebasan denda masuk Inbox Persetujuan manager",
+  example="Manajer · pembebasan denda masuk Inbox Persetujuan Manajer",
   consumers=("services/penalty_service.py:penalty_policy",), risk="medium",
   related=("payment.penalty_waive_requires_approval",))
 
@@ -148,21 +147,19 @@ E("payment.penalty_waive_approver_role", group="uang-masuk", type="enum", defaul
 # Prinsip: sistem TIDAK menuntut nominal persis, tapi setiap selisih WAJIB punya
 # label keputusan. Kunci di bawah menentukan kapan selisih boleh diselesaikan
 # otomatis, apa pilihan bawaannya, dan siapa yang boleh menghapus/mengembalikan uang.
-E("payment.variance_tolerance_rupiah", group="uang-masuk", type="money", default=5000,
+E("payment.variance_tolerance_rupiah", group="pembayaran-pelanggan", section="selisih-bayar", type="money", default=5000,
   min=0, max=10000000, step=1000, unit="Rp", scopes=GC,
-  label="Toleransi selisih pembayaran (otomatis dianggap lunas)",
-  help="Selisih rupiah antara uang yang masuk dan tagihan yang jatuh tempo yang masih "
-       "dianggap wajar (mis. biaya transfer bank). Di dalam batas ini sistem menutup "
-       "sisanya sendiri sebagai pembulatan — tanpa persetujuan, tapi TETAP tercatat "
-       "sebagai keputusan berlabel yang bisa diaudit."
-       " Bisa dibedakan per pelanggan dari kartu pelanggan.",
+  label="Selisih bayar yang dianggap lunas",
+  help="Selisih rupiah antara uang masuk dan tagihan yang masih dianggap wajar (mis. biaya transfer). Dalam batas "
+       "ini tagihan langsung dianggap lunas dan selisihnya dicatat sebagai pembulatan. Isi 0 = setiap selisih harus "
+       "diputuskan petugas. Bisa dibedakan per pelanggan dari kartu pelanggan.",
   impact="Menentukan kapan pelanggan langsung dianggap lunas walau nominalnya tidak persis.",
   example="Toleransi Rp 5.000 · tagihan Rp 10.000.000, masuk Rp 9.997.500 → otomatis lunas "
           "(selisih Rp 2.500 jadi beban pembulatan)",
   consumers=("services/payment_variance_service.py:variance_policy",), risk="high",
   related=("payment.variance_writeoff_requires_approval", "payment.variance_underpay_default"))
 
-E("payment.variance_underpay_default", group="uang-masuk", type="enum", default="outstanding",
+E("payment.variance_underpay_default", group="pembayaran-pelanggan", section="selisih-bayar", type="enum", default="outstanding",
   options=({"value": "outstanding", "label": "Sisa tetap jadi piutang (aman)"},
            {"value": "reschedule", "label": "Ubah jadwal — sisa jadi cicilan baru"},
            {"value": "writeoff", "label": "Hapus sisa (perlu alasan + persetujuan)"}),
@@ -176,53 +173,52 @@ E("payment.variance_underpay_default", group="uang-masuk", type="enum", default=
   consumers=("services/payment_variance_service.py:variance_policy",), risk="medium",
   related=("payment.variance_overpay_default",))
 
-E("payment.variance_overpay_default", group="uang-masuk", type="enum", default="deposit",
-  options=({"value": "deposit", "label": "Simpan sebagai deposit pelanggan"},
+E("payment.variance_overpay_default", group="pembayaran-pelanggan", section="selisih-bayar", type="enum", default="deposit",
+  options=({"value": "deposit", "label": "Simpan sebagai saldo pelanggan"},
            {"value": "allocate", "label": "Alokasikan ke pesanan terbuka lain"},
            {"value": "refund", "label": "Kembalikan (kas keluar)"}),
   scopes=GC,
   label="Pilihan bawaan saat pelanggan LEBIH bayar",
-  help="Perlakuan bawaan untuk kelebihan uang: disimpan sebagai deposit, dipakai melunasi "
-       "pesanan terbuka lain, atau dikembalikan lewat kas keluar."
-       " Bisa dibedakan per pelanggan dari kartu pelanggan.",
+  help="Perlakuan bawaan untuk kelebihan uang: disimpan sebagai saldo pelanggan, dipakai melunasi pesanan terbuka "
+       "lain, atau dikembalikan lewat kas keluar. Bisa dibedakan per pelanggan dari kartu pelanggan.",
   impact="Mengubah pilihan yang terpilih otomatis saat ada kelebihan bayar.",
-  example="Bawaan `Simpan sebagai deposit` · lebih Rp 1.500.000 → masuk saldo deposit pelanggan",
+  example="Bawaan 'Simpan sebagai saldo pelanggan' · lebih Rp 1.500.000 → masuk saldo pelanggan",
   consumers=("services/payment_variance_service.py:variance_policy",), risk="medium",
   related=("payment.variance_underpay_default",))
 
-E("payment.variance_writeoff_requires_approval", group="uang-masuk", type="bool", default=True,
+E("payment.variance_writeoff_requires_approval", group="pembayaran-pelanggan", section="selisih-bayar", type="bool", default=True,
   scopes=G,
   label="Penghapusan sisa kurang bayar wajib disetujui",
   help="Bila aktif, menghapus sisa piutang karena kurang bayar (di luar toleransi) hanya "
        "boleh dilakukan peran penyetuju — selain wajib memilih label alasan.",
   impact="Mencegah piutang hilang diam-diam lewat dalih 'selisih kecil'.",
-  example="Aktif · sales menghapus sisa Rp 500.000 → ditolak, harus manager/admin",
+  example="Aktif · sales menghapus sisa Rp 500.000 → ditolak, harus Manajer/admin",
   consumers=("services/payment_variance_service.py:variance_policy",), risk="high",
   related=("payment.variance_writeoff_approver_role", "payment.variance_writeoff_max_amount"))
 
-E("payment.variance_writeoff_approver_role", group="uang-masuk", type="enum", default="manager",
-  options=({"value": "manager", "label": "Manager"}, {"value": "admin", "label": "Admin / Direksi"}),
+E("payment.variance_writeoff_approver_role", group="pembayaran-pelanggan", section="selisih-bayar", type="enum", default="manager",
+  options=({"value": "manager", "label": "Manajer"}, {"value": "admin", "label": "Admin / Direksi"}),
   scopes=G,
   label="Siapa yang boleh menghapus sisa kurang bayar",
   help="Peran minimum yang berwenang memutuskan penghapusan sisa piutang & pengembalian dana.",
   impact="Menentukan siapa yang boleh menekan tombol Hapus Sisa / Kembalikan Dana.",
-  example="Manager · sales hanya bisa memilih `sisa tetap piutang` atau `ubah jadwal`",
+  example="Manajer · sales hanya bisa memilih `sisa tetap piutang` atau `ubah jadwal`",
   consumers=("services/approval_policy_service.py:default_rows_for",), risk="high",
   related=("payment.variance_writeoff_requires_approval",),
   # KP-T4 — isi kunci ini pindah ke tabel kebijakan persetujuan (`approval_policies`).
   status="not_used", not_used_reason=_KPT4_TIDAK_DIPAKAI)
 
-E("payment.variance_writeoff_max_amount", group="uang-masuk", type="money", default=1000000,
+E("payment.variance_writeoff_max_amount", group="pembayaran-pelanggan", section="selisih-bayar", type="money", default=1000000,
   min=0, max=1000000000, step=100000, unit="Rp", scopes=G,
-  label="Batas nominal penghapusan sisa oleh manager",
+  label="Batas nominal penghapusan sisa oleh Manajer",
   help="Di atas nilai ini penghapusan sisa kurang bayar hanya boleh oleh admin/direksi. "
        "Isi 0 bila tidak ingin membatasi.",
   impact="Membatasi kerugian yang bisa diputus satu orang tanpa eskalasi.",
-  example="Rp 1.000.000 · manager menghapus Rp 3.000.000 → ditolak, harus admin",
+  example="Rp 1.000.000 · Manajer menghapus Rp 3.000.000 → ditolak, harus admin",
   consumers=("services/payment_variance_service.py:variance_policy",), risk="high",
   related=("payment.variance_writeoff_approver_role",))
 
-E("payment.variance_reschedule_days", group="uang-masuk", type="int", default=14,
+E("payment.variance_reschedule_days", group="pembayaran-pelanggan", section="selisih-bayar", type="int", default=14,
   min=1, max=365, step=1, unit="hari", scopes=G,
   label="Perpanjangan tempo bawaan saat jadwal diubah",
   help="Saat sisa kurang bayar dijadikan cicilan baru, tanggal jatuh temponya diusulkan "
@@ -232,7 +228,7 @@ E("payment.variance_reschedule_days", group="uang-masuk", type="int", default=14
   consumers=("services/payment_variance_service.py:variance_policy",), risk="low",
   related=("payment.variance_underpay_default",))
 
-E("payment.variance_refund_method", group="uang-masuk", type="enum", default="transfer",
+E("payment.variance_refund_method", group="pembayaran-pelanggan", section="selisih-bayar", type="enum", default="transfer",
   options=({"value": "transfer", "label": "Transfer bank (Kas Besar)"},
            {"value": "cash", "label": "Tunai (Kas Kecil)"}),
   scopes=G,
@@ -243,12 +239,12 @@ E("payment.variance_refund_method", group="uang-masuk", type="enum", default="tr
   consumers=("services/payment_variance_service.py:variance_policy",), risk="medium",
   related=("payment.variance_overpay_default",))
 
-E("payment.variance_ap_tolerance_rupiah", group="uang-masuk", type="money", default=5000,
+E("payment.variance_ap_tolerance_rupiah", group="pembelian", section="tagihan", type="money", default=5000,
   min=0, max=10000000, step=1000, unit="Rp", scopes=G,
-  label="Toleransi selisih pembayaran ke SUPPLIER",
-  help="Selisih yang masih wajar saat kita membayar tagihan supplier (mis. beda pembulatan "
-       "atau biaya transfer). Di dalam batas ini tagihan otomatis ditutup lunas.",
-  impact="Menentukan kapan tagihan supplier dianggap lunas walau kurang/lebih sedikit.",
+  label="Selisih bayar ke pemasok yang dianggap lunas",
+  help="Selisih kecil saat kita membayar tagihan pemasok (pembulatan, biaya transfer) yang masih dianggap lunas. "
+       "Isi 0 = setiap selisih harus diputuskan petugas.",
+  impact="Menentukan kapan tagihan pemasok dianggap lunas walau kurang/lebih sedikit.",
   example="Toleransi Rp 5.000 · tagihan Rp 8.000.000 dibayar Rp 7.998.000 → tagihan LUNAS",
   consumers=("services/payment_variance_service.py:variance_policy",), risk="high",
   related=("payment.variance_tolerance_rupiah",))
