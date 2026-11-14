@@ -159,6 +159,7 @@ export const PAGE_META = {
   "settings-config":      { kicker: "Pengaturan",     title: "Semua Pengaturan \u00b7 Pusat Pengaturan (Konfigurasi Berjalan)" },
   // Fase 3 · P2 (P16-K1) — Pusat Pengaturan terkunci ke kelompok registri tiap domain (configGroupViews.js).
   "settings-cfg-approval":   { kicker: "Pengaturan",  title: "Persetujuan & Ambang \u00b7 Aturan Lintas Domain" },
+  "settings-dual-control":   { kicker: "Pengaturan · Persetujuan", title: "Kontrol Dua Orang \u00b7 Pengaju dan Pemutus" },
   "settings-cfg-sales":      { kicker: "Pengaturan",  title: "Aturan Penjualan \u00b7 Harga, Diskon, Retur & Amandemen" },
   "settings-cfg-warehouse":  { kicker: "Pengaturan",  title: "Aturan Gudang & Mutu \u00b7 Penerimaan, Stok, Kualitas & Lot" },
   "settings-cfg-purchasing": { kicker: "Pengaturan",  title: "Aturan Pembelian & Makloon \u00b7 Toleransi, Makloon & Kontrabon" },

@@ -240,6 +240,9 @@ MODULE_CATALOG: List[Dict[str, Any]] = [
      "sensitive": True},
 ]
 
+# KF-T6 — tab Pengaturan › Persetujuan › Kontrol dua orang ikut modul Admin (blok sendiri, tidak menyunting daftar).
+next(m for m in MODULE_CATALOG if m["id"] == "admin")["nav"].append("settings-dual-control")
+
 MODULE_BY_ID = {m["id"]: m for m in MODULE_CATALOG}
 _ADMIN = DEFAULT_PERMISSIONS["admin"]
 
@@ -443,6 +446,8 @@ VIEW_RESOURCE_OVERRIDES: Dict[str, List[str]] = {
     "costing": ["costing"],
     "incentive-rates": ["sales_force"],
 }
+# KF-T6 — tab Kontrol dua orang dibuka izin `settings` (GET /api/kontrol/aturan = `settings.view`).
+VIEW_RESOURCE_OVERRIDES["settings-dual-control"] = ["settings"]
 
 
 def view_resources_index() -> Dict[str, List[str]]:

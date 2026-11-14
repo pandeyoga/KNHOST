@@ -20,9 +20,18 @@ import { groupForKey } from "./configDeepLink";
 export const COMMISSION_PREFIX = "commission.";
 export const COMMISSION_HOME = { view: "incentive-rates", nav: "settings-sales" };
 
+/** KF-T6 — kunci `kontrol.*` (kontrol dua orang) hanya diubah di tab Persetujuan › Kontrol dua orang. */
+export const DUAL_CONTROL_PREFIX = "kontrol.";
+export const DUAL_CONTROL_HOME = { view: "settings-dual-control", nav: "settings-approval" };
+export const DUAL_CONTROL_LINK = {
+  testId: "cfg-dual-control-link", what: "Kontrol dua orang (pengaju ≠ pemutus)", view: "settings-dual-control",
+  where: "Pengaturan › Persetujuan › Kontrol dua orang",
+};
+
 /** `view` layar domain → { nav (menu Pengaturan), groups (id kelompok registri), excludeKeys } */
 export const CONFIG_GROUP_VIEWS = {
-  "settings-cfg-approval":   { nav: "settings-approval", groups: ["persetujuan"] },
+  "settings-cfg-approval":   { nav: "settings-approval", groups: ["persetujuan"],
+    excludeKeys: [DUAL_CONTROL_PREFIX], excludeLink: DUAL_CONTROL_LINK },   // KF-T6
   "settings-cfg-sales":      { nav: "settings-sales", groups: ["harga-diskon", "retur", "amandemen"],
     excludeKeys: [COMMISSION_PREFIX] },
   "settings-cfg-warehouse":  { nav: "settings-warehouse", groups: ["penerimaan", "stok-satuan", "kualitas", "lot"] },
@@ -50,6 +59,7 @@ export function configViewForGroup(group) {
  */
 export function configTargetFor({ key = "", group = "" } = {}) {
   if (String(key || "").startsWith(COMMISSION_PREFIX)) return { ...COMMISSION_HOME };
+  if (String(key || "").startsWith(DUAL_CONTROL_PREFIX)) return { ...DUAL_CONTROL_HOME };   // KF-T6
   const view = configViewForGroup(group || groupForKey(key));
   return view ? { view, nav: CONFIG_GROUP_VIEWS[view].nav } : { view: "settings-config", nav: "settings-system" };
 }

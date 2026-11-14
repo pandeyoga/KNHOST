@@ -3402,6 +3402,9 @@
    "settings",
    "user"
   ],
+  "settings-dual-control": [
+   "settings"
+  ],
   "settings-finance": [
    "accounting",
    "ar_receipt",

@@ -528,3 +528,4 @@ import config_catalog_rfid  # noqa: E402,F401  (PREP-H — masa simpan bukti gat
 
 import config_catalog_rnd  # noqa: E402,F401  (FASE F — R&D & Desain: lifecycle, sample, kontrak)
 import config_catalog_approval_matrix  # noqa: E402,F401  (PS-20/D-14 — penegakan matriks persetujuan divisi)
+import config_catalog_kontrol  # noqa: E402,F401  (KF-T6 — kontrol "harus dua orang" per PT)

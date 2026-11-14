@@ -211,6 +211,8 @@ app.include_router(_stock_figures.router)
 app.include_router(_so_override.router)
 from routers import gl_mappings as _gl_mappings  # noqa: E402 — GL-01 pemetaan akun terpusat
 app.include_router(_gl_mappings.router)
+from routers import kontrol as _kontrol  # noqa: E402 — KF-T6 aturan kontrol "harus dua orang" per PT
+app.include_router(_kontrol.router)
 from routers import product_media
 app.include_router(product_media.router)
 from routers import customer_feedback  # noqa: E402  — feedback/komplain pelanggan per SO (2026-09)

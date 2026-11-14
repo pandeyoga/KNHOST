@@ -69,7 +69,7 @@ test("Turunan Manager tanpa Akuntansi: menu akuntansi dicabut, sisanya tetap", (
 test("Pengaturan untuk peran kustom: modul Admin = kelompok umum; tanpa kebijakan domain", () => {
   const s = menu("cr_settings_admin")["settings-hub"];
   expect(s["settings-company"]).toEqual(["entities-access"]);
-  expect(s["settings-approval"]).toEqual(["approval-rules", "settings-cfg-approval"]);
+  expect(s["settings-approval"]).toEqual(["approval-rules", "settings-cfg-approval", "settings-dual-control"]);   // KF-T6
   expect(s["settings-masters"]).toEqual(["entity-masters", "domain-registry"]);
   expect(s["settings-documents"]).toEqual(["pdf-templates", "settings-cfg-documents"]);
   expect(s["settings-notify"]).toEqual(["scheduler", "settings-cfg-notify"]);

@@ -246,6 +246,8 @@ export const HUB_TABS = {
     // Matriks approver R&D (DivisionsView bagian "matriks"); penempatan tim pindah ke Pengaturan › R&D.
     { view: "rnd-divisions",     label: "Divisi & Persetujuan R&D", roles: ["admin", "manager"] },
     { view: "settings-cfg-approval", label: "Persetujuan & Ambang", roles: ["admin", "manager"] },
+    // KF-T6 — satu tabel aturan "pengaju tidak boleh memutuskan sendiri" per PT (GET /api/kontrol/aturan).
+    { view: "settings-dual-control", label: "Kontrol dua orang", roles: ["admin", "manager"] },
   ],
   "settings-sales": [
     { view: "settings-cfg-sales", label: "Aturan Penjualan",     roles: ["admin", "manager"] },

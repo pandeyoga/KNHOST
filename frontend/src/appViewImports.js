@@ -99,6 +99,7 @@ export const SettingsHub = lazy(() => import("./features/settings/config/Setting
 // Fase 3 · P2 (P16-K1) — Pengaturan per domain (`settings-cfg-*`), Perangkat gabungan (D-29), Koreksi Harga,
 // Template Dokumen (D-01: Template PDF + Template Dokumen Dasar).
 export const SettingsGroupView = lazy(() => import("./features/settings/cfg/SettingsGroupView"));
+export const DualControlView = lazy(() => import("./features/settings/kontrol/DualControlView"));   // KF-T6
 export const DevicesView = lazy(() => import("./features/settings/devices/DevicesView"));
 export const PriceCorrectionsView = lazy(() => import("./features/settings/config/PriceCorrectionsView"));
 export const DocTemplatesView = lazy(() => import("./features/pdf/DocTemplatesView"));

@@ -38,7 +38,7 @@ export default function SettingsGroupView({
       </p>
       <SettingsNotice s={s} />
       <SettingsBrowser s={s} entities={entities} groupNav="chips"
-        excludeLink={cfg.excludeKeys ? COMMISSION_LINK : null}
+        excludeLink={cfg.excludeLink || (cfg.excludeKeys ? COMMISSION_LINK : null)}
         searchPlaceholder="Cari di kelompok ini… (pencarian lintas semua kelompok ada di Semua pengaturan)" />
       {view === "settings-cfg-rnd" && (
         <DivisionsView section="team" currentUser={currentUser} selectedEntity={selectedEntity} />
