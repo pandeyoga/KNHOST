@@ -208,4 +208,12 @@ editor ganda" → sama persis, `audit_i18n_id --strict` 113 → 113 (isi sama), 
   bersebelahan dan aturan `source` jenjang tambahan per jenis dokumen.
 - Koreksi blueprint U10 (20 → 36).
 
+## Perbaikan susulan (sesudah laporan)
+
+- `1da3bde` — `verify_ui_standard` naik 23 → 26 sesudah unit ini: warna hex lepas di `ApprovalEffectiveTiers.jsx` (4×)
+  dan `ApprovalRulesSettings.jsx` (1× baru), satu tombol tanpa kelas baku. Diganti token `kn-*` (`border-kn-divider`,
+  `text-kn-danger-text`, `bg-kn-neutral-soft`, `text-kn-action`) dan `ghost-button btn-sm`; penjaga kembali 23, jest
+  `kpt3ApprovalTiers` 7/7. Gate tidak menangkapnya karena penjaga ini sudah merah di garis dasar (pembanding gate =
+  PASS/FAIL, bukan hitungan); sejak itu tiap unit juga dibandingkan hitungan penjaganya.
+
 Status: implemented_pending_review.

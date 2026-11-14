@@ -189,4 +189,16 @@ Jest sesudah digabung: `src/config/__tests__` + `src/features/__tests__` 384/384
 Bentuk `tolak_bila_pelaku_sama(kecualikan_admin=)`; pilihan "pengaju" pada aksi tabel C tanpa kolom pengaju; penjaga
 non-403 di jalur sesudah uang bergerak; INV-CLS-02/INV-AMD-02 yang kini membaca potret aturan.
 
+## Perbaikan susulan (sesudah laporan)
+
+- `8b5fdea` — `verify_approval_queues` naik 4 → 6 sesudah (b): pintu `/gl/journal-proposals/{id}/approve|reject` belum
+  punya antrean (INV-APPR-01), sehingga usulan jurnal yang menunggu tidak terhitung di KPI beranda / Pusat Persetujuan.
+  Ditambah baris antrean `journal_proposal` (`journal_proposals` berstatus `pending`, layar Buku Besar) di
+  `approval_backlog_service.QUEUES`, pemetaan pintu di `DOOR_QUEUE`, dan hitungan mandiri di POC F-6. Penjaga kembali 4.
+  Gate tidak menangkapnya karena penjaga ini sudah merah di garis dasar (pembanding gate = PASS/FAIL, bukan hitungan);
+  sejak itu tiap unit juga dibandingkan hitungan penjaganya.
+- `241a805` — lanjutan: baris antrean `journal_proposal` juga butuh pasangan hitung-ulang di `verify_home_kpi.EXPECT`
+  (INV-HOME-01, opini kedua); gate ci jalan pertama PR-T4 menandai `guard:home_kpi` lebih merah. Kini 125 cek lolos;
+  gate ci berikutnya (`db7e563`) 43 = garis dasar.
+
 Status: implemented_pending_review.

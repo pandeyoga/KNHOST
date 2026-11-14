@@ -1,0 +1,16 @@
+audit_config_wiring.log ✗=0 ⚠️  9 kunci bermasalah + 2 editor ganda (INV-CFG).
+audit_i18n_id.log ✗=1   ✗ 113 temuan di 66 berkas.
+role_registry.log ✗=0   HIJAU — 13 peran, 0 gagal.
+verify_access_catalog_nav.log ✗=0 
+verify_auth_coverage.log ✗=28 
+verify_codebase_map.log ✗=0 
+verify_cross_entity.log ✗=0 
+verify_custom_modals.log ✗=0 
+verify_desk_targets.log ✗=0 
+verify_escape_layers.log ✗=0 
+verify_money_idempotency.log ✗=0 
+verify_notification_audience.log ✗=0 
+verify_role_label.log ✗=0 
+verify_scope_guard.log ✗=0 HIJAU: semua endpoint ber-parameter path memanggil penjaga (pengecualian beralasan: 7)
+verify_ui_standard.log ✗=23 
+verify_view_aliases.log ✗=0 

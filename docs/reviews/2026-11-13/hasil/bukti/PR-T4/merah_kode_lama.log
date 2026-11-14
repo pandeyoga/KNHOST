@@ -1,0 +1,50 @@
+E   AssertionError: ('admin', None)
+tests_mem/test_PRT4_sifat_peran.py:92: AssertionError: ('admin', None)
+E   AssertionError: {"id":"cr_tanpa_acuan_u8","label":"Tanpa Acuan U8","long_label":"Tanpa Acuan U8","description":"peran uji","custom":true,"base_role":"","base_role_label":"","rank":1,"cross_entity":false,"cross_entity_default":false,"cro
+tests_mem/test_PRT4_sifat_peran.py:110: AssertionError: {"id":"cr_tanpa_acuan_u8","label":"Tanpa Acuan U8","long_label":"Tanpa Acuan U8","description":"peran uji","custom":true,"base_role":"","base_role_label":"","rank":1,"cross_entity":fal
+E   AssertionError: assert '40abc8983fab' != '40abc8983fab'
+tests_mem/test_PRT4_sifat_peran.py:149: AssertionError: assert '40abc8983fab' != '40abc8983fab'
+E   AssertionError: {"id":"cr_sasaran_u14","label":"Sasaran U14","long_label":"Sasaran U14","description":"peran uji","custom":true,"base_role":"","base_role_label":"","rank":1,"cross_entity":false,"cross_entity_default":false,"cross_entity
+tests_mem/test_PRT4_sifat_peran.py:159: AssertionError: {"id":"cr_sasaran_u14","label":"Sasaran U14","long_label":"Sasaran U14","description":"peran uji","custom":true,"base_role":"","base_role_label":"","rank":1,"cross_entity":false,"cross
+E   KeyError: 'traits'
+tests_mem/test_PRT4_sifat_peran.py:184: KeyError: 'traits'
+E   AssertionError: assert ['cust_prt4_A', 'cust_prt4_B'] == []
+tests_mem/test_PRT4_sifat_peran.py:201: AssertionError: assert ['cust_prt4_A', 'cust_prt4_B'] == []
+E   AssertionError: assert 'usr_uji_81b8b29a8c' in {'usr_uji_51a8824703', 'usr_uji_afe9cafdc5'}
+tests_mem/test_PRT4_sifat_peran.py:214: AssertionError: assert 'usr_uji_81b8b29a8c' in {'usr_uji_51a8824703', 'usr_uji_afe9cafdc5'}
+E   AssertionError: assert 3 == 4
+tests_mem/test_PRT4_sifat_peran.py:228: AssertionError: assert 3 == 4
+E   AssertionError: assert 'usr_uji_5bec817291' in set()
+tests_mem/test_PRT4_sifat_peran.py:240: AssertionError: assert 'usr_uji_5bec817291' in set()
+E   AssertionError: assert ['cust_prt4_A'] == ['cust_prt4_A', 'cust_prt4_B']
+tests_mem/test_PRT4_sifat_peran.py:256: AssertionError: assert ['cust_prt4_A'] == ['cust_prt4_A', 'cust_prt4_B']
+E   AssertionError: assert ['cust_prt4_A'] == ['cust_prt4_A', 'cust_prt4_B']
+tests_mem/test_PRT4_sifat_peran.py:272: AssertionError: assert ['cust_prt4_A'] == ['cust_prt4_A', 'cust_prt4_B']
+E   AssertionError: assert 'ntf_prt4_wh' in set()
+tests_mem/test_PRT4_sifat_peran.py:294: AssertionError: assert 'ntf_prt4_wh' in set()
+E   AssertionError: assert ('cr_manajer_cabang' not in ('cr_manajer_cabang', 'sales_admin', 'warehouse', 'warehouse_admin'))
+tests_mem/test_PRT4_sifat_peran.py:306: AssertionError: assert ('cr_manajer_cabang' not in ('cr_manajer_cabang', 'sales_admin', 'warehouse', 'warehouse_admin'))
+E   assert 'cr_' not in "Peran 'cr_t...nya sendiri."
+tests_mem/test_PRT4_sifat_peran.py:317: assert 'cr_' not in "Peran 'cr_t...nya sendiri."
+E   AssertionError: {"detail":"Aksi ['view_sales_kpi'] tidak berlaku untuk “Pesanan Penjualan (SO)”."}
+tests_mem/conftest.py:155: AssertionError: {"detail":"Aksi ['view_sales_kpi'] tidak berlaku untuk “Pesanan Penjualan (SO)”."}
+E   AssertionError: ['services/sales_ownership.py:is_owner_locked role_in(', 'services/customer_service.py:scope_query role_in(', 'service...orklist role_in(', 'routers/crm.py:list_credit_overrides role_in(', 'routers/crm.py:get_credit_over
+tests_mem/test_PRT4_sifat_peran.py:416: AssertionError: ['services/sales_ownership.py:is_owner_locked role_in(', 'services/customer_service.py:scope_query role_in(', 'service...orklist role_in(', 'routers/crm.py:list_credit_overrides role_i
+PASSED tests_mem/test_PRT4_sapuan.py::test_U13_kode_dan_jumlah_baris_peran_bawaan_sama_dengan_sebelum
+FAILED tests_mem/test_PRT4_sifat_peran.py::test_PRT4_U1_sifat_bawaan_13_peran
+FAILED tests_mem/test_PRT4_sifat_peran.py::test_PRT4_U8_halaman_awal_butuh_izin
+FAILED tests_mem/test_PRT4_sifat_peran.py::test_PRT4_U8b_admin_terkunci_dan_versi_memuat_sifat
+FAILED tests_mem/test_PRT4_sifat_peran.py::test_PRT4_U14_tidak_bisa_memberi_cakupan_lebih_luas
+FAILED tests_mem/test_PRT4_sifat_peran.py::test_PRT4_U15_migrasi_peran_desain_tanpa_acuan
+FAILED tests_mem/test_PRT4_sifat_peran.py::test_PRT4_U2_cakupan_milik_sendiri_peran_tanpa_acuan
+FAILED tests_mem/test_PRT4_sifat_peran.py::test_PRT4_U3_peran_berdasar_sales_ikut_daftar_pilih
+FAILED tests_mem/test_PRT4_sifat_peran.py::test_PRT4_U4_papan_peringkat_semua_akun_kategori_sales
+FAILED tests_mem/test_PRT4_sifat_peran.py::test_PRT4_U5_kurir_tanpa_acuan_sebagai_sopir
+FAILED tests_mem/test_PRT4_sifat_peran.py::test_PRT4_U6_sales_diperluas_bertahan_nyala_ulang
+FAILED tests_mem/test_PRT4_sifat_peran.py::test_PRT4_U7_cakupan_tim_lewat_kepala_unit
+FAILED tests_mem/test_PRT4_sifat_peran.py::test_PRT4_U9_ikut_menerima_notifikasi_peran_lain
+FAILED tests_mem/test_PRT4_sifat_peran.py::test_PRT4_U10_peran_berdasar_manajer_bukan_pelaksana_giliran
+FAILED tests_mem/test_PRT4_sifat_peran.py::test_PRT4_U11_meja_saya_dari_kategori
+FAILED tests_mem/test_PRT4_sifat_peran.py::test_PRT4_U12_kpi_sales_lain_butuh_izin
+FAILED tests_mem/test_PRT4_sifat_peran.py::test_PRT4_U16_tidak_ada_nama_peran_di_jangkar
+16 failed, 1 passed, 1 warning in 5.57s
