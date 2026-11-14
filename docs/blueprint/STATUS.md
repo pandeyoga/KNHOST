@@ -101,11 +101,11 @@ Papan kerja agen pelaksana. Aturan mengubahnya: `00_ATURAN_EKSEKUSI.md` §5. Uru
 | 94 | PM-T4 | Titipan tunai sales dan setoran | PM-T3 | menunggu |  |  | Titik henti H5 |
 | 95 | PM-T5 | Virtual account / QRIS | PM-T3 | tahan |  |  | Titik henti H8 (K-35) |
 | 96 | TX-T1 | Pengaturan pajak bertanggal berlaku dan data pajak pelanggan | PK-40 | selesai | 9707664 | [TX-T1](../reviews/2026-11-13/hasil/TX-T1.md) |  |
-| 97 | TX-T2 | Pemicu faktur pajak dan daur hidupnya | TX-T1, PK-32 | siap |  |  | Titik henti H5 |
+| 97 | TX-T2 | Pemicu faktur pajak dan daur hidupnya | TX-T1, PK-32 | dikerjakan |  |  | Titik henti H5 (bawaan pemicu = pesanan); dikerjakan paralel 15 Nov |
 | 98 | TX-T3 | Ekspor Coretax, PPh 23, bukti potong | TX-T2 | tahan |  |  | Titik henti H8 (K-08) |
 | 99 | AG-T3 | Asisten: kartu tindakan golongan A dan B | AG-T2, PK-15, PK-18, PK-21 | selesai | 78bbbd9 | [AG-T3](../reviews/2026-11-13/hasil/AG-T3.md) | H5: sakelar per PT ai.tindakan_uang_masuk bawaan mati — dinyalakan pemilik per PT |
 | 100 | AG-T4 | Asisten: paket tutup buku dan ringkasan pagi | AG-T2, PK-18 | selesai | f94f6bc | [AG-T4](../reviews/2026-11-13/hasil/AG-T4.md) |  |
-| 101 | AG-T5 | Asisten: kartu tindakan uang keluar dan jurnal | AG-T3, PK-05, PK-10, PK-12, PK-20, PK-36, KF-T6 | siap |  |  | Titik henti H5 |
+| 101 | AG-T5 | Asisten: kartu tindakan uang keluar dan jurnal | AG-T3, PK-05, PK-10, PK-12, PK-20, PK-36, KF-T6 | dikerjakan |  |  | Titik henti H5 (sakelar uang keluar tetap mati); dikerjakan paralel 15 Nov |
 | 102 | MN-T2 | Penyatuan layar keuangan | MN-T1, PK-18, PK-24, PK-43, PY-T1 | menunggu |  |  |  |
 | 103 | MN-T3 | Satu form pembayaran, kartu pelanggan, kartu pemasok | PK-05, PK-19, PK-43, PM-T3, CR-T5 | menunggu |  |  |  |
 
