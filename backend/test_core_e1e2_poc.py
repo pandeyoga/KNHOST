@@ -137,14 +137,14 @@ async def fase_e1(cl: httpx.AsyncClient, adm: str) -> Dict[str, Any]:
     ksc_short = ((await _dbx.business_entities.find_one({"id": "ent_ksc"}, {"_id": 0, "short_name": 1})) or {}).get("short_name", "ksc")
     r = await cl.post(f"{BASE}/api/entities", headers=H(adm), json={
         "legal_name": "PT Tabrakan", "short_name": ksc_short.lower(), "type": "PT",
-        "npwp": "1", "doc_prefix": "POCX1"})
+        "npwp": "01.234.567.8-901.111", "doc_prefix": "POCX1"})   # KP-T1 — NPWP sah (15 digit)
     if r.status_code == 200:
         CREATED["entities"].append(r.json()["id"])
     check("E1.2a", f"nama singkat duplikat (huruf kecil '{ksc_short.lower()}') DITOLAK 409",
           r.status_code == 409, f"HTTP {r.status_code} · {r.text[:110]}")
     r = await cl.post(f"{BASE}/api/entities", headers=H(adm), json={
         "legal_name": "PT Tabrakan2", "short_name": "POCX2", "type": "PT",
-        "npwp": "1", "doc_prefix": "ksc"})
+        "npwp": "01.234.567.8-901.112", "doc_prefix": "ksc"})   # KP-T1 — NPWP sah (15 digit)
     if r.status_code == 200:
         CREATED["entities"].append(r.json()["id"])
     check("E1.2b", "kode dokumen duplikat ('ksc') DITOLAK 409", r.status_code == 409,

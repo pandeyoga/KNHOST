@@ -4,7 +4,8 @@ Membuat badan usaha siap-pakai dalam satu langkah:
   - **validasi tunggal** (`validate_entity_input`) yang dipakai `POST` MAUPUN
     `PATCH` — sebelum FASE E-1 keduanya punya aturan sendiri sehingga `PATCH`
     bisa menembus keunikan yang ditegakkan `POST` (E1.2),
-  - lengkapi default config badan usaha (numbering_scheme, currency, fiscal year),
+  - lengkapi default badan usaha (`ENTITY_DEFAULTS`); tahun buku & mata uang yang dipilih saat dibuat ditulis ke
+    lapisan PT registry (`finance.fiscal_year_end_month`, `finance.base_currency` — KP-T1),
   - pastikan bagan akun (CoA) tersedia — CoA SHARED by-code, buku terpisah lewat
     `journal_entries.entity_id` (lihat `gl_service`),
   - siapkan penanda config override per-badan-usaha.
@@ -22,7 +23,14 @@ from services.entity_context_service import ENTITY_DEFAULTS
 from services import entity_lifecycle_service as lifecycle
 from services import gl_service
 
-TAX_MODES = ("ppn", "non_ppn")
+TAX_MODES = lifecycle.TAX_MODES
+#: KP-T1 — pesan 400 isian profil PT (sama dengan validasi di layar).
+NPWP_MESSAGE = lifecycle.NPWP_MESSAGE
+OWNERSHIP_MESSAGE = "Persen kepemilikan harus lebih dari 0 dan paling banyak 100."
+IS_GROUP_MESSAGE = "Isian PT induk harus ya atau tidak."
+TAX_MODE_PATCH_MESSAGE = "Status PKP diubah lewat tindakan 'Ubah status PKP', bukan lewat ubah profil."
+#: KP-T1 — isian `POST /api/entities` yang ditulis ke lapisan PT registry, bukan ke master PT.
+PROFILE_INPUT_KEYS = {name: key for name, key in lifecycle.PROFILE_KEYS}
 
 
 def _slug_prefix(short_name: str) -> str:
@@ -99,10 +107,31 @@ async def validate_entity_input(data: Dict[str, Any], *, entity_id: str = "",
     # ── mode pajak & NPWP: WAJIB hanya bila PKP (E1.1) ──
     if "default_tax_mode" in out:
         out["default_tax_mode"] = (out.get("default_tax_mode") or "").strip()
-        if out["default_tax_mode"] not in TAX_MODES:
+        if is_patch:
+            # KP-T1 (KP-02) — status PKP berubah hanya lewat tindakan bertanggal + beralasan (`change_tax_status`).
+            if out["default_tax_mode"] != (prev.get("default_tax_mode") or ""):
+                raise HTTPException(status_code=400, detail=TAX_MODE_PATCH_MESSAGE)
+            out.pop("default_tax_mode")
+        elif out["default_tax_mode"] not in TAX_MODES:
             raise HTTPException(
                 status_code=400,
                 detail="Mode pajak harus “ppn” (PKP) atau “non_ppn” (non-PKP).")
+    # KP-T1 (KP-23) — pola NPWP, persen kepemilikan, PT induk: hanya isian yang DIKIRIM dan nilainya BERUBAH, supaya data
+    # lama yang belum rapi tidak menghalangi perubahan isian lain.
+    def changed(key: str) -> bool:
+        return key in out and (not is_patch or out[key] != prev.get(key))
+
+    if "npwp" in out:
+        out["npwp"] = str(out.get("npwp") or "").strip()
+        if changed("npwp") and out["npwp"] and not lifecycle.npwp_valid(out["npwp"]):
+            raise HTTPException(status_code=400, detail=NPWP_MESSAGE)
+    if changed("ownership_pct"):
+        val = out["ownership_pct"]
+        if isinstance(val, bool) or not isinstance(val, (int, float)) or not 0 < float(val) <= 100:
+            raise HTTPException(status_code=400, detail=OWNERSHIP_MESSAGE)
+        out["ownership_pct"] = round(float(val), 2)
+    if changed("is_group") and not isinstance(out["is_group"], bool):
+        raise HTTPException(status_code=400, detail=IS_GROUP_MESSAGE)
     if eff("default_tax_mode", "ppn") == "ppn" and not str(eff("npwp")).strip():
         raise HTTPException(
             status_code=400,
@@ -129,11 +158,6 @@ async def validate_entity_input(data: Dict[str, Any], *, entity_id: str = "",
             await lifecycle.assert_prefix_change_allowed(
                 entity_id, prev.get("doc_prefix", ""), prefix)
 
-    if "fiscal_year_start" in out and out["fiscal_year_start"]:
-        if not re.fullmatch(r"\d{2}-\d{2}", str(out["fiscal_year_start"])):
-            raise HTTPException(status_code=400,
-                                detail="Awal tahun fiskal memakai format MM-DD, mis. 01-01.")
-
     # ── lokasi tervalidasi pada PATCH (Fase 4 · R6, G5-25) — POST dinormalisasi `provision_entity`. ──
     if is_patch:
         from services.entity_location_service import normalize_location_patch
@@ -141,8 +165,37 @@ async def validate_entity_input(data: Dict[str, Any], *, entity_id: str = "",
     return out
 
 
+def _profile_value_or_400(name: str, value: Any) -> Any:
+    """KP-T1 — nilai tahun buku / mata uang saat PT dibuat, diperiksa dengan aturan registry (pesan untuk manusia)."""
+    import config_registry as registry
+    entry = registry.require(PROFILE_INPUT_KEYS[name])
+    try:
+        return registry.coerce(entry, value)
+    except ValueError:
+        if entry["type"] == "enum":
+            pilihan = ", ".join(o["label"] for o in entry.get("options") or [])
+            raise HTTPException(status_code=400,
+                                detail=f"{entry['label']} harus salah satu dari: {pilihan}.") from None
+        raise HTTPException(status_code=400, detail=(
+            f"{entry['label']} harus bulan {entry.get('min', 1)} sampai {entry.get('max', 12)} "
+            f"(1 = Januari, 12 = Desember).")) from None
+
+
+async def _write_profile_layers(entity_id: str, profile: Dict[str, Any], actor_name: str) -> None:
+    """KP-T1 — tulis lapisan PT registry hanya bila nilainya berbeda dari nilai efektif grup."""
+    from services import config_resolver
+    for name, value in profile.items():
+        key = PROFILE_INPUT_KEYS[name]
+        if value == await config_resolver.value_of(key, {}):
+            continue
+        await config_resolver.set_value(key, value, scope_type="entity", scope_id=entity_id, actor=actor_name,
+                                        reason="Ditetapkan saat PT dibuat")
+
+
 async def provision_entity(payload: Dict[str, Any], actor_name: str) -> Dict[str, Any]:
     data = {k: v for k, v in (payload or {}).items() if v is not None}
+    # KP-T1 — tahun buku & mata uang bukan isian master PT: diperiksa dulu (400 sebelum PT lahir), ditulis ke registry.
+    profile = {name: _profile_value_or_400(name, data.pop(name)) for name in list(PROFILE_INPUT_KEYS) if name in data}
     data.setdefault("doc_prefix", "")   # dorong ke jalur validasi/normalisasi prefix
     clean = await validate_entity_input(data)
 
@@ -171,6 +224,8 @@ async def provision_entity(payload: Dict[str, Any], actor_name: str) -> Dict[str
         upsert=True,
     )
 
+    await _write_profile_layers(entity["id"], profile, actor_name)
+
     entity.pop("_id", None)
     prefix = entity.get("doc_prefix", "")
     # FASE E-7 (E7.7) — badan usaha baru langsung SALING TERLIHAT sebagai pemasok
@@ -188,7 +243,6 @@ async def provision_entity(payload: Dict[str, Any], actor_name: str) -> Dict[str
         "provisioning": {
             "doc_prefix": prefix,
             "number_preview": f"{prefix}/SO-00001",
-            "numbering_scheme": entity.get("numbering_scheme"),
             "is_pkp": entity.get("default_tax_mode") == "ppn",
             "coa_accounts_added": coa_added,
             "coa_shared": True,

@@ -32,9 +32,18 @@ async def _usable_warehouses(entity_id: str) -> int:
         ]})
 
 
+_BULAN = ("", "Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober",
+          "November", "Desember")
+
+
 async def readiness(entity_id: str, entity: Dict[str, Any]) -> Dict[str, Any]:
+    from services.config_resolver import resolve
     ent = entity or {}
     pkp = is_pkp(ent)
+    # KP-T1 — tahun buku = nilai efektif registry (`finance.fiscal_year_end_month`), bukan `fiscal_year_start` master.
+    fy = await resolve("finance.fiscal_year_end_month", {"entity_id": entity_id})
+    fy_end = int(fy.get("value") or 12)
+    fy_own = fy.get("source_layer") in ("entity", "legacy_entity")
 
     users = await db.users.count_documents({"home_entity_id": entity_id, "status": "active"})
     warehouses = await _usable_warehouses(entity_id)
@@ -106,11 +115,12 @@ async def readiness(entity_id: str, entity: Dict[str, Any]) -> Dict[str, Any]:
             "view": "entities-access",
         },
         {
-            "key": "fiscal_year", "label": "Tahun fiskal",
-            "ready": bool(ent.get("fiscal_year_start")), "count": 0,
-            "detail": f"Mulai {ent.get('fiscal_year_start')}" if ent.get("fiscal_year_start")
-                      else "Awal tahun fiskal belum ditetapkan",
-            "how_to": "Tetapkan awal tahun fiskal di detail badan usaha.",
+            "key": "fiscal_year", "label": "Tahun buku",
+            "ready": 1 <= fy_end <= 12, "count": 1 if fy_own else 0,
+            "detail": (f"{_BULAN[fy_end % 12 + 1]}–{_BULAN[fy_end]} · "
+                       + ("khusus PT ini" if fy_own else "mengikuti pengaturan grup")) if 1 <= fy_end <= 12
+                      else "Tahun buku belum ditetapkan",
+            "how_to": "Ubah di detail badan usaha, bagian Tahun buku & mata uang.",
             "view": "entities-access",
         },
     ]

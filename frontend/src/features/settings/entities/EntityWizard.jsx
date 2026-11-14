@@ -7,6 +7,11 @@
  * badan usaha non-PKP atau salah kode dokumen — dan kode dokumen TIDAK BISA
  * diubah setelah dokumen pertama terbit. Karena itu langkah 3 menampilkan
  * pratinjau nomor langsung dan peringatan bahwa kode akan terkunci.
+ *
+ * KP-T1 (KP-01, KP-23) — isian yang tidak dibaca mesin dibuang ("Skema penomoran", "Penanggung insentif sales", nama
+ * templat bagan akun). Mata uang dan tahun buku dipilih dari kunci Pusat Pengaturan (`finance.base_currency`,
+ * `finance.fiscal_year_end_month`) berbawaan nilai grup; server menulisnya ke lapisan PT hanya bila berbeda. NPWP
+ * diperiksa di tempat dengan pola yang sama dengan server; sakelar PT induk + persen kepemilikan (K-10).
  */
 import { useEffect, useMemo, useState } from "react";
 import LocationFields from "../../../components/LocationFields";
@@ -16,7 +21,8 @@ import { Building2, Loader2, X, ArrowLeft, ArrowRight, Save, ShieldCheck,
   Hash, ClipboardCheck, AlertTriangle } from "lucide-react";
 
 import KNSelect from "../../../components/KNSelect";
-import { createEntity, entityTypes, errText } from "./entityApi";
+import { BULAN_ID, createEntity, entityTypes, errText, fiscalYearText, NPWP_MESSAGE, npwpValid,
+  profileSettingItems } from "./entityApi";
 
 const STEPS = [
   { key: 1, label: "Identitas", icon: Building2 },
@@ -40,13 +46,13 @@ const EMPTY = {
   logo_url: "",
   npwp: "",
   default_tax_mode: "ppn",
-  currency: "IDR",
-  fiscal_year_start: "01-01",
-  coa_template: "id_standard",
-  incentive_payer: "sales_entity",
+  base_currency: "",          // KP-T1 — diisi nilai grup dari Pusat Pengaturan saat wizard dibuka
+  fiscal_year_end_month: "",
+  is_group: false,
+  ownership_pct: "100",
   doc_prefix: "",
-  numbering_scheme: "per_entity_prefix",
 };
+const OWNERSHIP_MESSAGE = "Persen kepemilikan harus lebih dari 0 dan paling banyak 100.";
 
 function slugPrefix(shortName) {
   return (shortName || "").replace(/[^A-Za-z0-9]/g, "").toUpperCase().slice(0, 6);
@@ -68,9 +74,19 @@ export default function EntityWizard({ entities = [], onClose, onCreated }) {
   const [types, setTypes] = useState([]);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
+  // KP-T1 — entri registry dua kunci profil PT; null = tidak bisa dibaca (pemilih disembunyikan, PT mengikuti grup).
+  const [profile, setProfile] = useState(undefined);
 
   useEffect(() => {
     entityTypes().then(setTypes).catch(() => setTypes([]));
+    profileSettingItems().then((p) => {
+      setProfile(p);
+      setForm((f) => ({
+        ...f,
+        base_currency: f.base_currency || String(p.currency?.value ?? ""),
+        fiscal_year_end_month: f.fiscal_year_end_month || String(p.fiscalYear?.value ?? ""),
+      }));
+    }).catch(() => setProfile(null));   // tanpa akses baca pengaturan: tampil keterangan "mengikuti grup"
   }, []);
 
   const set = (patch) => setForm((f) => ({ ...f, ...patch }));
@@ -110,6 +126,13 @@ export default function EntityWizard({ entities = [], onClose, onCreated }) {
       errs.push("Badan usaha PKP wajib mengisi NPWP karena akan menerbitkan faktur pajak. "
         + "Kalau belum PKP, pilih “Non-PKP”.");
     }
+    if (step === 2 && form.npwp.trim() && !npwpValid(form.npwp)) errs.push(NPWP_MESSAGE);
+    if (step === 2 && !form.is_group) {
+      const pct = Number(form.ownership_pct);
+      if (String(form.ownership_pct).trim() === "" || !Number.isFinite(pct) || pct <= 0 || pct > 100) {
+        errs.push(OWNERSHIP_MESSAGE);
+      }
+    }
     if (step === 3) {
       if (!effectivePrefix) errs.push("Kode dokumen wajib diisi.");
       if (effectivePrefix && !/^[A-Z0-9]{2,10}$/.test(effectivePrefix)) {
@@ -124,7 +147,10 @@ export default function EntityWizard({ entities = [], onClose, onCreated }) {
     setBusy(true);
     setError("");
     try {
-      const body = { ...form, doc_prefix: effectivePrefix };
+      const { base_currency: cur, fiscal_year_end_month: fy, ownership_pct: pct, ...rest } = form;
+      const body = { ...rest, doc_prefix: effectivePrefix, ownership_pct: form.is_group ? 100 : Number(pct) };
+      if (profile && cur) body.base_currency = cur;
+      if (profile && fy) body.fiscal_year_end_month = Number(fy);
       if (isPersonal) body.legal_name = "";   // server yang menyusun dari nama pemilik
       const created = await createEntity(body);
       onCreated?.(created);
@@ -283,37 +309,52 @@ export default function EntityWizard({ entities = [], onClose, onCreated }) {
                        placeholder="00.000.000.0-000.000"
                        value={form.npwp} onChange={(e) => set({ npwp: e.target.value })} />
               </Field>
+              {profile ? (
+                <div className="grid gap-2.5 sm:grid-cols-2">
+                  <Field label="Mata uang pembukuan" testId="entity-wizard-currency">
+                    <KNSelect
+                      className="field"
+                      data-testid="entity-wizard-currency-select"
+                      value={form.base_currency}
+                      onValueChange={(v) => set({ base_currency: v })}
+                      options={(profile.currency?.options || []).map((o) => ({ value: String(o.value), label: o.label }))}
+                    />
+                  </Field>
+                  <Field label="Tahun buku berakhir pada bulan" testId="entity-wizard-fiscal"
+                         hint="Menentukan batas tahun buku pada laporan dan tutup buku tahunan.">
+                    <KNSelect
+                      className="field"
+                      data-testid="entity-wizard-fiscal-select"
+                      value={form.fiscal_year_end_month}
+                      onValueChange={(v) => set({ fiscal_year_end_month: v })}
+                      options={BULAN_ID.map((b, i) => ({ value: String(i + 1), label: b }))}
+                    />
+                  </Field>
+                </div>
+              ) : profile === null ? (
+                <p className="text-fs-12 text-kn-text-2" data-testid="entity-wizard-profile-readonly">
+                  Mata uang pembukuan dan tahun buku mengikuti pengaturan grup. Pemegang akses pengaturan keuangan
+                  bisa mengubahnya khusus untuk PT ini dari detail PT.
+                </p>
+              ) : null}
               <div className="grid gap-2.5 sm:grid-cols-2">
-                <Field label="Mata uang" testId="entity-wizard-currency">
-                  <input className="field" data-testid="entity-wizard-currency-input"
-                         value={form.currency}
-                         onChange={(e) => set({ currency: e.target.value.toUpperCase() })} />
+                <Field label="PT induk (konsolidasi)" testId="entity-wizard-group"
+                       hint="PT induk tidak ikut dijumlahkan sebagai baris di laporan konsolidasi dan tidak muncul di pilihan PT pada tutup buku.">
+                  <label className="flex items-center gap-2 text-fs-13 text-kn-text">
+                    <input type="checkbox" data-testid="entity-wizard-group-input" checked={form.is_group}
+                           onChange={(e) => set({ is_group: e.target.checked })} />
+                    Ini PT induk grup
+                  </label>
                 </Field>
-                <Field label="Awal tahun fiskal (MM-DD)" testId="entity-wizard-fiscal"
-                       hint="Menentukan periode laporan & tutup buku.">
-                  <input className="field" data-testid="entity-wizard-fiscal-input"
-                         placeholder="01-01"
-                         value={form.fiscal_year_start}
-                         onChange={(e) => set({ fiscal_year_start: e.target.value })} />
+                <Field label="Persen kepemilikan (%)" testId="entity-wizard-ownership"
+                       hint="Belum memengaruhi angka — dipakai laporan konsolidasi setelah eliminasi per periode aktif.">
+                  <input className="field" type="number" min="0.01" max="100" step="0.01"
+                         data-testid="entity-wizard-ownership-input" disabled={form.is_group}
+                         value={form.ownership_pct} onChange={(e) => set({ ownership_pct: e.target.value })} />
                 </Field>
               </div>
-              <Field label="Penanggung insentif sales" testId="entity-wizard-incentive"
-                     hint="Model 1: insentif ditanggung badan usaha yang membukukan penjualannya.">
-                <KNSelect
-                  className="field"
-                  data-testid="entity-wizard-incentive-select"
-                  value={form.incentive_payer}
-                  onValueChange={(v) => set({ incentive_payer: v })}
-                  options={[
-                    { value: "sales_entity", label: "Badan usaha yang menjual" },
-                    { value: "group", label: "Tingkat grup" },
-                  ]}
-                />
-              </Field>
-              <p className="text-[10.5px] text-[#6B6B73]">
-                Bagan akun (CoA) memakai template bersama <b>{form.coa_template}</b> — kode akun
-                sama di semua badan usaha, tetapi bukunya terpisah. Ini membuat laporan
-                konsolidasi grup bisa dijumlahkan tanpa pemetaan manual.
+              <p className="text-fs-12 text-kn-text-2" data-testid="entity-wizard-coa-note">
+                Bagan akun dipakai bersama semua PT — kode akun sama, bukunya terpisah.
               </p>
             </div>
           )}
@@ -321,7 +362,7 @@ export default function EntityWizard({ entities = [], onClose, onCreated }) {
           {step === 3 && (
             <div className="grid gap-2.5" data-testid="entity-wizard-panel-3">
               <Field label="Kode dokumen" testId="entity-wizard-prefix"
-                     hint="Dipakai sebagai awalan SEMUA nomor dokumen badan usaha ini.">
+                     hint="Dipakai sebagai awalan nomor dokumen yang bernomor per PT, mis. pesanan, faktur pajak, kwitansi.">
                 <input className="field font-mono" data-testid="entity-wizard-prefix-input"
                        placeholder={slugPrefix(form.short_name) || "KSC"}
                        value={form.doc_prefix}
@@ -347,18 +388,6 @@ export default function EntityWizard({ entities = [], onClose, onCreated }) {
                   lama dan baru tidak bisa dibedakan lagi saat audit pajak. Pastikan sekarang.
                 </p>
               </div>
-              <Field label="Skema penomoran" testId="entity-wizard-scheme">
-                <KNSelect
-                  className="field"
-                  data-testid="entity-wizard-scheme-select"
-                  value={form.numbering_scheme}
-                  onValueChange={(v) => set({ numbering_scheme: v })}
-                  options={[
-                    { value: "per_entity_prefix", label: "Per badan usaha (KODE/SO-00001) — disarankan" },
-                    { value: "shared", label: "Deret bersama grup (SO-00001)" },
-                  ]}
-                />
-              </Field>
             </div>
           )}
 
@@ -374,8 +403,12 @@ export default function EntityWizard({ entities = [], onClose, onCreated }) {
                   ["Kota", form.city || "—"],
                   ["Status pajak", isPkp ? "PKP (memungut PPN)" : "Non-PKP"],
                   ["NPWP", form.npwp || "—"],
-                  ["Mata uang", form.currency],
-                  ["Awal tahun fiskal", form.fiscal_year_start],
+                  ["Mata uang pembukuan", profile ? (profile.currency?.options || []).find(
+                    (o) => String(o.value) === form.base_currency)?.label || form.base_currency : "Mengikuti pengaturan grup"],
+                  ["Tahun buku", profile && form.fiscal_year_end_month
+                    ? fiscalYearText(form.fiscal_year_end_month) : "Mengikuti pengaturan grup"],
+                  ["PT induk (konsolidasi)", form.is_group ? "Ya" : "Tidak"],
+                  ["Persen kepemilikan", form.is_group ? "—" : `${form.ownership_pct} %`],
                   ["Kode dokumen", effectivePrefix],
                   ["Contoh nomor", `${effectivePrefix}/SO-00001`],
                 ].map(([k, v]) => (

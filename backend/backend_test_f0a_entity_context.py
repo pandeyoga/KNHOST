@@ -387,9 +387,11 @@ def test_entities_endpoint(runner: TestRunner):
     )
     
     # Check enriched fields on ent_ksc
+    # KP-T1 (KP-01) — isian mati (coa_template, incentive_payer, numbering_scheme, fiscal_year_start, parent_entity_id)
+    # tidak lagi dikirim; tahun buku & mata uang = nilai registry (`currency` = `base_currency`).
     if ENT_KSC in entities_map:
         ksc = entities_map[ENT_KSC]
-        enriched_fields = ["currency", "coa_template", "incentive_payer", "numbering_scheme"]
+        enriched_fields = ["currency", "base_currency", "fiscal_year_end_month", "is_group", "ownership_pct"]
         
         for field in enriched_fields:
             runner.test(
@@ -398,10 +400,12 @@ def test_entities_endpoint(runner: TestRunner):
                 f"Value: {ksc.get(field)}"
             )
         
+        dead = [k for k in ("coa_template", "incentive_payer", "numbering_scheme", "fiscal_year_start",
+                            "parent_entity_id") if k in ksc]
         runner.test(
-            "ent_ksc incentive_payer = sales_entity (Model 1)",
-            ksc.get("incentive_payer") == "sales_entity",
-            f"Got: {ksc.get('incentive_payer')}"
+            "ent_ksc tanpa isian mati (KP-T1)",
+            not dead,
+            f"Masih ada: {dead}"
         )
     
     # Check is_pkp in entity_context.entities

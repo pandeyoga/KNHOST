@@ -2817,6 +2817,20 @@ aprule_ → approval_rules            [Fase 1A IMPLEMENTED]
 Collection: business_entities            Prefix: ent_    Fase 0  [IMPLEMENTED]
   id, legal_name, short_name, type(PT|CV), npwp, address, city,
   default_tax_mode(ppn|non_ppn), doc_prefix, logo_url, status, created_at, updated_at
+  is_group            bool    PT induk grup: tidak ikut dijumlahkan sebagai baris konsolidasi / pilihan PT tutup buku
+  ownership_pct       float   KP-T1 (K-10) — persen kepemilikan grup atas PT, > 0 dan ≤ 100 (2 desimal), bawaan 100.
+                              Belum dibaca hitungan (PK-31). Diisi untuk data lama: scripts/migrate_kpt1_profil_pt.py
+  tax_status_history  list    KP-T1 — riwayat ubah status PKP (hanya ditambah):
+                              {from, to, effective_date YYYY-MM-DD, reason, by, by_id, at[, scheduled_at]}
+  tax_status_pending  obj?    KP-T1 — perubahan status PKP bertanggal berlaku maju:
+                              {to, effective_date, reason, by, by_id, at}; diterapkan job `entity_tax_status_due`
+  ⚠️ default_tax_mode TETAP nilai yang dibaca mesin (K-08); diubah HANYA lewat POST /api/entities/{id}/tax-status
+     (PATCH ditolak 400). Tanpa indeks baru.
+  ⚠️ KP-T1 — TIDAK DIPAKAI LAGI (tidak dibaca, ditulis, atau dikirim; field lama di dokumen tidak dihapus):
+     numbering_scheme (→ tabel Penomoran Dokumen, KP-T5) · incentive_payer (→ commission.*) ·
+     coa_template (→ bagan akun bersama gl_service.seed_default_coa) · parent_entity_id (→ is_group + ownership_pct) ·
+     fiscal_year_start (→ registry finance.fiscal_year_end_month, lapisan PT) ·
+     currency (→ registry finance.base_currency, lapisan PT; jawaban API `currency` = nilai registry)
 ⚠️ entity_id (FK) ditambahkan ke koleksi TRANSAKSI (scoped): sales_orders, invoices,
    tax_invoices, purchase_orders, cash_transactions, journal_entries, bank_accounts,
    tax_records, fiscal_periods, price_approvals, sales_returns, special_orders.

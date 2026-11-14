@@ -15,10 +15,13 @@ Isi:
   * E1.8  bentuk data entitas SERAGAM dengan `/auth/context`
 """
 import json
+import re
 import time
+from datetime import date
 from typing import Any, Dict, List, Optional, Tuple
 
 from fastapi import HTTPException
+from pymongo import ReturnDocument
 
 from db import db
 from core_utils import invalidate_entity_code, now_iso, safe_doc
@@ -37,11 +40,12 @@ WRITE_LOCKED_STATUSES = {STATUS_ARCHIVED, STATUS_INACTIVE}
 # Fase 4 · R6 (G5-25) — lokasi tervalidasi (negara → provinsi → kota/kab → kecamatan → kode pos) kini ikut bisa
 # diubah, sama dengan wizard buat (`BusinessEntityCreate`). Dulu PATCH hanya menerima `city` teks bebas sehingga form
 # ubah tidak bisa memakai pemilih wilayah dan kode wilayah dari wizard tidak bisa dikoreksi.
+# KP-T1 (KP-01, KP-02) — isian mati (`currency`, `parent_entity_id`, `coa_template`, `fiscal_year_start`,
+# `incentive_payer`, `numbering_scheme`) tidak lagi bisa diubah; `default_tax_mode` diubah lewat tindakan
+# "Ubah status PKP" (`POST /api/entities/{id}/tax-status`), bukan PATCH; `ownership_pct` (K-10) ditambahkan.
 EDITABLE_FIELDS = [
     "legal_name", "short_name", "type", "npwp", "address", "city",
-    "default_tax_mode", "doc_prefix", "logo_url",
-    "currency", "parent_entity_id", "is_group", "coa_template",
-    "fiscal_year_start", "incentive_payer", "numbering_scheme",
+    "doc_prefix", "logo_url", "is_group", "ownership_pct",
     "owner_name", "business_label", "phone", "email",
 ] + [k for k in LOCATION_FIELDS if k != "city"]
 
@@ -92,6 +96,14 @@ def is_write_locked(entity: Dict[str, Any]) -> bool:
 
 
 # ─── E1.8 — bentuk data SERAGAM dengan /auth/context ────────────────────────
+def ownership_of(entity: Dict[str, Any]) -> float:
+    """KP-T1 (K-10) — persen kepemilikan grup; bawaan `ENTITY_DEFAULTS` (100) bila belum diisi atau rusak."""
+    val = (entity or {}).get("ownership_pct")
+    if isinstance(val, (int, float)) and not isinstance(val, bool) and 0 < float(val) <= 100:
+        return round(float(val), 2)
+    return float(ENTITY_DEFAULTS["ownership_pct"])
+
+
 def uniform_entity(entity: Dict[str, Any]) -> Dict[str, Any]:
     """Bentuk tunggal entitas untuk SEMUA konsumen (switcher, daftar, detail).
 
@@ -110,7 +122,6 @@ def uniform_entity(entity: Dict[str, Any]) -> Dict[str, Any]:
         "legal_name": e.get("legal_name", ""),
         "type": e.get("type", ""),
         "is_pkp": is_pkp(e),
-        "currency": e.get("currency", "IDR"),
         "status": e.get("status", STATUS_ACTIVE),
         "doc_prefix": e.get("doc_prefix", ""),
         "logo_url": e.get("logo_url", ""),
@@ -126,12 +137,10 @@ def uniform_entity(entity: Dict[str, Any]) -> Dict[str, Any]:
         "owner_name": e.get("owner_name", ""),
         "business_label": e.get("business_label", ""),
         "default_tax_mode": e.get("default_tax_mode", ""),
-        "fiscal_year_start": e.get("fiscal_year_start", ""),
-        "coa_template": e.get("coa_template", ""),
-        "incentive_payer": e.get("incentive_payer", ""),
-        "numbering_scheme": e.get("numbering_scheme", ""),
-        "parent_entity_id": e.get("parent_entity_id", ""),
+        # KP-T1 — tahun buku & mata uang TIDAK di sini: nilai registry (`profile_settings`) ditempel router.
         "is_group": bool(e.get("is_group", False)),
+        "ownership_pct": ownership_of(e),
+        "tax_status_pending": e.get("tax_status_pending") or None,
         "write_locked": is_write_locked(e),
         "created_at": e.get("created_at", ""),
         "updated_at": e.get("updated_at", ""),
@@ -605,3 +614,232 @@ async def assert_requested_entity_allowed(request: Any, user: Dict[str, Any]) ->
     if requested not in allowed and not await archived_read_target(request, user):
         raise HTTPException(status_code=403,
                             detail=await entity_denied_message(requested, allowed))
+
+
+# ─── KP-T1 — profil PT: tahun buku & mata uang dari registry; status PKP bertanggal ─────────────────────────────
+# Tahun buku dan mata uang punya SATU sumber: kunci registry (lapisan PT). Master PT tidak lagi menyimpan atau
+# mengirim `fiscal_year_start`/`currency`; jawaban router memuat nilai yang benar-benar dipakai mesin.
+PROFILE_KEYS = (("base_currency", "finance.base_currency"),
+                ("fiscal_year_end_month", "finance.fiscal_year_end_month"))
+TAX_MODES = ("ppn", "non_ppn")
+TAX_STATUS_LABEL = {"ppn": "PKP", "non_ppn": "Non-PKP"}
+#: Dokumen yang menyimpan hitungan pajak (keduanya dihitung `config_service.compute_order_pricing`).
+TAX_PREVIEW_SOURCES: Tuple[Tuple[str, str, str], ...] = (
+    ("sales_orders", "number", "Pesanan penjualan"),
+    ("purchase_orders", "po_number", "Pesanan pembelian"),
+)
+#: Pengaturan pajak lapisan PT yang mulai/berhenti dipakai saat status PKP berubah (`get_effective_settings`).
+TAX_PREVIEW_KEYS = ("tax.ppn_rate", "tax.efaktur_enabled")
+NPWP_MESSAGE = "NPWP harus 15 atau 16 digit angka. Periksa kembali nomor yang diketik."
+ARCHIVED_MESSAGE = "PT ini sudah diarsipkan."
+RACE_MESSAGE = "Status PKP sudah diubah oleh proses lain. Muat ulang lalu periksa kembali."
+
+
+async def profile_settings(entity_id: str) -> Dict[str, Any]:
+    """Nilai registry yang dipakai mesin untuk PT ini + lapisan asalnya (`source` = `source_layer` resolver)."""
+    import config_registry as registry
+    from services.config_resolver import resolve
+    out: Dict[str, Any] = {}
+    for name, key in PROFILE_KEYS:
+        res = await resolve(key, {"entity_id": entity_id})
+        val = res.get("value")
+        if val in (None, ""):
+            val = registry.require(key)["default"]
+        out[name] = int(val) if name == "fiscal_year_end_month" else str(val)
+        out[f"{name}_source"] = res.get("source_layer", "code_default")
+    return out
+
+
+def npwp_digits(value: Any) -> str:
+    """NPWP tanpa titik, strip, dan spasi."""
+    return re.sub(r"[.\-\s]", "", str(value or "").strip())
+
+
+def npwp_valid(value: Any) -> bool:
+    """`ASUMSI` KP-T1 (KP-23) — NPWP sah = tepat 15 atau 16 digit setelah titik, strip, dan spasi dibuang."""
+    return bool(re.fullmatch(r"\d{15}|\d{16}", npwp_digits(value)))
+
+
+def today_wib() -> str:
+    from services import analytics_time
+    return analytics_time.now_wib().date().isoformat()
+
+
+def _date_or_400(value: Any) -> str:
+    raw = str(value or "").strip()
+    try:
+        if not re.fullmatch(r"\d{4}-\d{2}-\d{2}", raw):
+            raise ValueError(raw)
+        return date.fromisoformat(raw).isoformat()
+    except ValueError:
+        raise HTTPException(status_code=400, detail="Tanggal berlaku tidak valid.") from None
+
+
+def _to_or_400(value: Any) -> str:
+    to = str(value or "").strip()
+    if to not in TAX_MODES:
+        raise HTTPException(status_code=400, detail="Status baru tidak dikenal. Pilih PKP atau Non-PKP.")
+    return to
+
+
+async def active_entity_or_409(entity_id: str) -> Dict[str, Any]:
+    entity = await get_entity_or_404(entity_id)
+    if is_write_locked(entity):
+        raise HTTPException(status_code=409, detail=ARCHIVED_MESSAGE)
+    return entity
+
+
+def _tax_blockers(entity: Dict[str, Any], to: str, npwp: str = "") -> List[str]:
+    """Penghalang yang sama untuk pratinjau dan simpan (urutan = urutan pemeriksaan `change_tax_status`)."""
+    cur = entity.get("default_tax_mode") or ""
+    if to == cur:
+        return [f"PT ini sudah berstatus {TAX_STATUS_LABEL.get(to, to)}."]
+    out: List[str] = []
+    pending = entity.get("tax_status_pending") or {}
+    if pending:
+        out.append(f"Sudah ada perubahan status PKP terjadwal mulai {pending.get('effective_date', '')}. "
+                   "Batalkan jadwal itu dulu.")
+    if to == "ppn":
+        eff_npwp = (npwp or "").strip() or str(entity.get("npwp") or "").strip()
+        if not eff_npwp:
+            out.append("PT yang menjadi PKP wajib mengisi NPWP.")
+        elif not npwp_valid(eff_npwp):
+            out.append(NPWP_MESSAGE)
+    return out
+
+
+async def tax_status_preview(entity_id: str, to: str, effective_date: str, npwp: str = "") -> Dict[str, Any]:
+    """Pratinjau dampak "Ubah status PKP" — tidak menulis apa pun."""
+    import config_registry as registry
+    from services.config_resolver import resolve
+    entity = await active_entity_or_409(entity_id)
+    to = _to_or_400(to)
+    eff = _date_or_400(effective_date)
+    today = today_wib()
+    open_docs: List[Dict[str, Any]] = []
+    since: List[Dict[str, Any]] = []
+    for coll, field, label in TAX_PREVIEW_SOURCES:
+        q = {"entity_id": entity_id, "status": {"$nin": sorted(CLOSED_STATUSES)}}
+        n = await db[coll].count_documents(q)
+        if n:
+            rows = await db[coll].find(q, {"_id": 0, field: 1}).sort("created_at", 1).limit(3).to_list(3)
+            open_docs.append({"collection": coll, "label": label, "count": n,
+                              "examples": [r.get(field) for r in rows if r.get(field)]})
+        if eff < today:
+            m = await db[coll].count_documents({"entity_id": entity_id, "created_at": {"$gte": eff}})
+            if m:
+                since.append({"collection": coll, "label": label, "count": m})
+    layers = []
+    for key in TAX_PREVIEW_KEYS:
+        res = await resolve(key, {"entity_id": entity_id})
+        layers.append({"key": key, "label": registry.require(key)["label"], "value": res.get("value"),
+                       "source": res.get("source_layer"),
+                       "effect": "mulai dipakai" if to == "ppn" else "berhenti dipakai"})
+    blockers = _tax_blockers(entity, to, npwp)
+    return {
+        "entity_id": entity_id,
+        "current": entity.get("default_tax_mode") or "",
+        "to": to,
+        "effective_date": eff,
+        "applies": "sekarang" if eff <= today else "terjadwal",
+        "npwp_ok": npwp_valid((npwp or "").strip() or entity.get("npwp")),
+        "open_documents": open_docs,
+        "documents_since": since,
+        "tax_invoices_issued": await db.tax_invoices.count_documents({"entity_id": entity_id}),
+        "setting_layers": layers,
+        "blockers": blockers,
+        "can_apply": not blockers,
+    }
+
+
+async def change_tax_status(entity_id: str, body: Dict[str, Any],
+                            actor: Dict[str, Any]) -> Tuple[Dict[str, Any], str, str]:
+    """Ubah status PKP (hari ini/mundur → langsung; maju → dijadwalkan). → (dokumen PT, aksi jejak, status lama)."""
+    entity = await active_entity_or_409(entity_id)
+    cur = entity.get("default_tax_mode") or ""
+    to = _to_or_400(body.get("to"))
+    npwp = str(body.get("npwp") or "").strip()
+    blockers = _tax_blockers(entity, to, npwp)
+    if blockers:
+        raise HTTPException(status_code=400, detail=blockers[0])
+    reason = str(body.get("reason") or "").strip()
+    if not reason:
+        raise HTTPException(status_code=400, detail="Alasan perubahan status PKP wajib diisi.")
+    eff = _date_or_400(body.get("effective_date"))
+    now = now_iso()
+    who = {"by": (actor or {}).get("name", ""), "by_id": (actor or {}).get("id", "")}
+    setter: Dict[str, Any] = {"updated_at": now}
+    if npwp and npwp != str(entity.get("npwp") or "").strip():
+        setter["npwp"] = npwp            # NPWP yang diketik di pop-up (sudah lolos pola) ikut disimpan
+    if eff <= today_wib():
+        setter["default_tax_mode"] = to
+        upd = {"$set": setter, "$unset": {"tax_status_pending": ""},
+               "$push": {"tax_status_history": {"from": cur, "to": to, "effective_date": eff, "reason": reason,
+                                                **who, "at": now}}}
+        flt: Dict[str, Any] = {"id": entity_id, "default_tax_mode": cur}
+        action = "entity_tax_status_changed"
+    else:
+        setter["tax_status_pending"] = {"to": to, "effective_date": eff, "reason": reason, **who, "at": now}
+        upd = {"$set": setter}
+        flt = {"id": entity_id, "default_tax_mode": cur, "tax_status_pending": {"$exists": False}}
+        action = "entity_tax_status_scheduled"
+    doc = await db.business_entities.find_one_and_update(flt, upd, projection={"_id": 0},
+                                                         return_document=ReturnDocument.AFTER)
+    if not doc:
+        raise HTTPException(status_code=409, detail=RACE_MESSAGE)
+    return doc, action, cur
+
+
+async def cancel_pending_tax_status(entity_id: str) -> Tuple[Dict[str, Any], Dict[str, Any]]:
+    """Batalkan jadwal status PKP. → (dokumen PT, jadwal yang dibatalkan). 404 bila tidak ada jadwal."""
+    entity = await active_entity_or_409(entity_id)
+    pending = entity.get("tax_status_pending") or {}
+    if not pending:
+        raise HTTPException(status_code=404, detail="Tidak ada perubahan status PKP yang terjadwal.")
+    doc = await db.business_entities.find_one_and_update(
+        {"id": entity_id, "tax_status_pending.at": pending.get("at")},
+        {"$unset": {"tax_status_pending": ""}, "$set": {"updated_at": now_iso()}},
+        projection={"_id": 0}, return_document=ReturnDocument.AFTER)
+    if not doc:
+        raise HTTPException(status_code=409, detail=RACE_MESSAGE)
+    return doc, pending
+
+
+async def apply_due_tax_status(today: Optional[str] = None) -> int:
+    """Terapkan `tax_status_pending` yang `effective_date` ≤ hari ini (WIB). Idempoten; → jumlah PT yang berubah.
+
+    Dipanggil saat aplikasi menyala (`bootstrap.run_bootstrap`) dan oleh job harian `entity_tax_status_due`.
+    """
+    from dependencies import audit
+    day = (today or today_wib())[:10]
+    rows = await db.business_entities.find(
+        {"tax_status_pending.effective_date": {"$lte": day}},
+        {"_id": 0, "id": 1, "default_tax_mode": 1, "tax_status_pending": 1}).to_list(500)
+    applied = 0
+    for row in rows:
+        pending = row.get("tax_status_pending") or {}
+        cur = row.get("default_tax_mode") or ""
+        flt = {"id": row["id"], "default_tax_mode": cur, "tax_status_pending.at": pending.get("at")}
+        now = now_iso()
+        if pending.get("to") == cur:     # status sudah sama (diubah jalur lain) — jadwal dibuang tanpa riwayat
+            await db.business_entities.update_one(flt, {"$unset": {"tax_status_pending": ""}})
+            continue
+        entry = {"from": cur, "to": pending.get("to"), "effective_date": pending.get("effective_date"),
+                 "reason": pending.get("reason", ""), "by": pending.get("by", ""), "by_id": pending.get("by_id", ""),
+                 "at": now, "scheduled_at": pending.get("at", "")}
+        res = await db.business_entities.update_one(flt, {
+            "$set": {"default_tax_mode": pending.get("to"), "updated_at": now},
+            "$push": {"tax_status_history": entry}, "$unset": {"tax_status_pending": ""}})
+        if not res.modified_count:
+            continue
+        applied += 1
+        await audit("Sistem (jadwal)", "entity_tax_status_changed", "business_entity", row["id"],
+                    {"from": cur, "to": pending.get("to"), "effective_date": pending.get("effective_date"),
+                     "scheduled_by": pending.get("by", "")}, reason=pending.get("reason", ""),
+                    scope_entity_id=row["id"])
+    return applied
+
+
+async def job_entity_tax_status_due() -> Dict[str, Any]:
+    """Job harian `scheduler_service.JOBS` — "Terapkan Perubahan Status PKP Terjadwal"."""
+    return {"applied": await apply_due_tax_status()}

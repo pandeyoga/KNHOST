@@ -384,7 +384,7 @@ class TestF0F_Provisioning:
         expected_prefix = slug_full[:6]
         assert ent["doc_prefix"] == expected_prefix, f"doc_prefix '{ent['doc_prefix']}' ≠ slug6 '{expected_prefix}'"
         prov = ent.get("provisioning") or {}
-        assert prov.get("numbering_scheme") == "per_entity_prefix"
+        assert "numbering_scheme" not in prov   # KP-T1 (KP-01) — isian mati tidak lagi dikirim
         assert prov.get("is_pkp") is False
         assert prov.get("coa_shared") is True
         pytest.f0f_short = unique_short

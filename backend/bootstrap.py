@@ -338,17 +338,13 @@ async def seed_entities() -> None:
              "type": "PT", "npwp": "01.234.567.8-901.000",
              "address": "Jl. Soekarno Hatta No. 100", "city": "Bandung",
              "default_tax_mode": "ppn", "doc_prefix": "KSC", "logo_url": "",
-             "currency": "IDR", "parent_entity_id": "", "is_group": False,
-             "coa_template": "id_standard", "fiscal_year_start": "01-01",
-             "incentive_payer": "sales_entity", "numbering_scheme": "per_entity_prefix",
+             "is_group": False, "ownership_pct": 100.0,   # KP-T1 — tanpa isian mati; tahun buku/mata uang = registry
              "status": "active", "created_by": "seed", "created_at": now_iso(), "updated_at": now_iso()},
             {"id": "ent_kanda", "legal_name": "CV Kanda Suka", "short_name": "Kanda",
              "type": "CV", "npwp": "02.345.678.9-012.000",
              "address": "Jl. Mangga Dua Raya No. 22", "city": "Jakarta",
              "default_tax_mode": "non_ppn", "doc_prefix": "KANDA", "logo_url": "",
-             "currency": "IDR", "parent_entity_id": "", "is_group": False,
-             "coa_template": "id_standard", "fiscal_year_start": "01-01",
-             "incentive_payer": "sales_entity", "numbering_scheme": "per_entity_prefix",
+             "is_group": False, "ownership_pct": 100.0,   # KP-T1 — tanpa isian mati; tahun buku/mata uang = registry
              "status": "active", "created_by": "seed", "created_at": now_iso(), "updated_at": now_iso()},
         ])
 
@@ -1893,6 +1889,12 @@ async def run_bootstrap() -> None:
     from services.entity_context_service import ensure_entity_defaults, ensure_user_entities
     await ensure_entity_defaults()
     await ensure_user_entities()
+    try:   # KP-T1 — perubahan status PKP terjadwal yang sudah jatuh tempo (juga job harian `entity_tax_status_due`)
+        from services.entity_lifecycle_service import apply_due_tax_status
+        await apply_due_tax_status()
+    except Exception as exc:  # noqa: BLE001 — jangan gagalkan startup
+        import logging
+        logging.getLogger("bootstrap").warning("[KP-T1] status PKP terjadwal dilewati: %s", exc)
     # K-8 (2026-09) — ganti nama Sukacita Textile / Kanda Fabric + CV Cipta Sandang Textile (sekali jalan).
     try:
         await apply_f09_superseded_rejections_2026_10_21()

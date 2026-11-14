@@ -3825,6 +3825,7 @@ async def consolidation(entity_ids: List[str], as_of: Optional[str] = None) -> D
     `entity_ids` = entitas dalam cakupan baca user (admin/manager = semua aktif).
     Jurnal ber-entity_id 'all' (kas/bank grup) ditampilkan sebagai baris 'Grup /
     Kas Bersama' agar penjumlahan baris == total konsolidasi (faithful)."""
+    from services.config_currency import base_currency   # KP-T1 — mata uang baris = registry, bukan master PT
     ents = {e["id"]: e for e in await db.business_entities.find(
         {"id": {"$in": list(entity_ids)}}, {"_id": 0}).to_list(200)}
     rows: List[Dict[str, Any]] = []
@@ -3839,7 +3840,7 @@ async def consolidation(entity_ids: List[str], as_of: Optional[str] = None) -> D
             "entity_id": eid,
             "entity_name": e.get("legal_name") or e.get("short_name") or eid,
             "short_name": e.get("short_name") or e.get("doc_prefix") or eid,
-            "currency": e.get("currency", "IDR"),
+            "currency": await base_currency(eid),
             "is_pkp": is_pkp,
             "is_shared": False,
             **fin,
@@ -3850,7 +3851,7 @@ async def consolidation(entity_ids: List[str], as_of: Optional[str] = None) -> D
     if shared["journal_count"] > 0:
         rows.append({
             "entity_id": "all", "entity_name": "Grup / Kas Bersama", "short_name": "Grup",
-            "currency": "IDR", "is_pkp": None, "is_shared": True, **shared,
+            "currency": await base_currency(None), "is_pkp": None, "is_shared": True, **shared,
         })
     cons = {f: round(sum(float(r.get(f, 0) or 0) for r in rows), 2) for f in _CONS_SUM_FIELDS}
     cons["journal_count"] = int(cons["journal_count"])

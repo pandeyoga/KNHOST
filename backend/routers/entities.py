@@ -13,6 +13,10 @@ FASE E-1 menambahkan:
   * E1.6 pagar deaktivasi + arsip + aktivasi ulang
   * E1.8 bentuk data seragam dengan `/auth/context`
   * E1.9 daftar kesiapan badan usaha
+
+KP-T1 — jawaban PT memuat tahun buku & mata uang dari registry (`lifecycle.profile_settings`; `currency` =
+`base_currency` supaya bentuk daftar tetap), dan tindakan "Ubah status PKP" bertanggal + beralasan
+(`GET …/tax-status/preview`, `POST …/tax-status`, `DELETE …/tax-status/pending`).
 """
 from typing import Any, Dict, List, Optional
 
@@ -22,7 +26,7 @@ from pymongo import ReturnDocument
 from db import db
 from dependencies import has_permission, require_permission, audit, current_user
 from core_utils import invalidate_entity_code, now_iso, safe_doc
-from schemas import BusinessEntityCreate, EntityArchiveBody, GenericPatch
+from schemas import BusinessEntityCreate, EntityArchiveBody, EntityTaxStatusIn, GenericPatch
 from services import entity_provisioning_service as provisioning
 from services import entity_lifecycle_service as lifecycle
 from services import entity_readiness_service as readiness_svc
@@ -37,6 +41,26 @@ REFERENCE_FIELDS = ("id", "code", "name", "short_name", "legal_name", "type", "i
                     "doc_prefix", "logo_url", "is_group", "write_locked", "city")
 _S5_DITOLAK = ("Anda belum punya akses untuk melihat rincian badan usaha. Minta Admin menambahkan akses "
                "'Pengaturan, Pengguna & Hak Akses'.")
+_PKP_DITOLAK = ("Anda belum punya akses untuk mengubah status PKP badan usaha. Minta Admin menambahkan akses "
+                "'Pengaturan, Pengguna & Hak Akses'.")
+
+
+async def _with_profile(out: Dict[str, Any]) -> Dict[str, Any]:
+    """KP-T1 — tempel nilai registry yang dipakai mesin; `currency` = mata uang pembukuan (bentuk daftar tetap)."""
+    prof = await lifecycle.profile_settings(out["id"])
+    return {**out, **prof, "currency": prof["base_currency"]}
+
+
+async def _entity_out(entity: Dict[str, Any]) -> Dict[str, Any]:
+    return await _with_profile(lifecycle.uniform_entity(entity))
+
+
+async def _guard_tax_scope(request: Request, entity_id: str) -> None:
+    """KP-T1 (N1) — PT sasaran wajib dalam penugasan pemanggil (PT terarsip yang terbaca → 409 di layanan)."""
+    ctx = await entity_ctx(request)
+    readable = set(ctx.allowed_entity_ids) | set(await lifecycle.archived_readable_ids(ctx.user))
+    if entity_id not in readable:
+        raise HTTPException(status_code=404, detail="Data tidak ditemukan untuk badan usaha ini")
 
 
 def _entity_query(status: str, type: str, q: str, include_test: bool) -> Dict[str, Any]:
@@ -89,7 +113,7 @@ async def list_entities(
         "created_at", 1).skip(offset).limit(limit).to_list(limit)
     out: List[Dict[str, Any]] = []
     for row in rows:
-        item = lifecycle.uniform_entity(row)
+        item = await _entity_out(row)      # KP-T1 — `currency` dari registry; kunci S2 tetap 14
         if not full:
             out.append({k: item.get(k) for k in REFERENCE_FIELDS})
             continue
@@ -118,10 +142,11 @@ async def count_entities(
 async def get_entity(entity_id: str, request: Request) -> Dict[str, Any]:
     await require_permission(request, "entity", "view", detail=_S5_DITOLAK)   # PR-T3 (S5) — jumlah akun, kunci awalan
     entity = await lifecycle.get_entity_or_404(entity_id)
-    out = lifecycle.uniform_entity(entity)
+    out = await _entity_out(entity)
     out["prefix_lock"] = await lifecycle.prefix_lock_info(entity_id)
     out["user_count"] = await db.users.count_documents(
         {"home_entity_id": entity_id, "status": "active"})
+    out["tax_status_history"] = entity.get("tax_status_history") or []   # KP-T1 — bagian Pajak di layar detail
     return out
 
 
@@ -173,7 +198,7 @@ async def create_entity(payload: BusinessEntityCreate, request: Request) -> Dict
     await audit(actor["name"], "entity_provisioned", "business_entity", entity["id"],
                 {**entity, "provisioning": result["provisioning"]},
                 scope_entity_id=entity["id"])
-    out = lifecycle.uniform_entity(entity)
+    out = await _entity_out(entity)
     return {**out, "provisioning": result["provisioning"],
             "readiness": await readiness_svc.readiness(entity["id"], entity)}
 
@@ -189,8 +214,9 @@ async def update_entity(entity_id: str, payload: GenericPatch,
     """
     actor = await require_permission(request, "entity", "update")
     existing = await lifecycle.get_entity_or_404(entity_id)
+    # KP-T1 — `default_tax_mode` ikut ke validasi supaya ditolak dengan petunjuk (bukan diabaikan diam-diam).
     raw = {k: v for k, v in (payload.data or {}).items()
-           if k in lifecycle.EDITABLE_FIELDS}
+           if k in lifecycle.EDITABLE_FIELDS or k == "default_tax_mode"}
     if not raw:
         raise HTTPException(
             status_code=400,
@@ -207,7 +233,7 @@ async def update_entity(entity_id: str, payload: GenericPatch,
     invalidate_entity_code(entity_id)   # E1.4 — nomor dokumen berikutnya pakai kode baru
     await audit(actor["name"], "entity_updated", "business_entity", entity_id, data,
                 scope_entity_id=entity_id)
-    out = lifecycle.uniform_entity(entity)
+    out = await _entity_out(entity)
     out["prefix_lock"] = await lifecycle.prefix_lock_info(entity_id)
     return out
 
@@ -228,7 +254,7 @@ async def archive_entity(entity_id: str, request: Request,
                 {"reason": reason, "forced": force,
                  "sessions_revoked": result.get("sessions_revoked", 0)},
                 scope_entity_id=entity_id)
-    out = lifecycle.uniform_entity(result)
+    out = await _entity_out(result)
     out["sessions_revoked"] = result.get("sessions_revoked", 0)
     out["impact"] = result.get("impact")
     return out
@@ -245,7 +271,7 @@ async def archive_entity_post(entity_id: str, body: EntityArchiveBody,
                 {"reason": body.reason, "forced": body.force,
                  "sessions_revoked": result.get("sessions_revoked", 0)},
                 scope_entity_id=entity_id)
-    out = lifecycle.uniform_entity(result)
+    out = await _entity_out(result)
     out["sessions_revoked"] = result.get("sessions_revoked", 0)
     return out
 
@@ -257,4 +283,40 @@ async def reactivate_entity(entity_id: str, request: Request) -> Dict[str, Any]:
     entity = await lifecycle.reactivate_entity(entity_id, actor)
     await audit(actor["name"], "entity_reactivated", "business_entity", entity_id,
                 {"status": "active"}, scope_entity_id=entity_id)
-    return lifecycle.uniform_entity(entity)
+    return await _entity_out(entity)
+
+
+# ─── KP-T1 (KP-02) — ubah status PKP: alasan, tanggal berlaku, pratinjau dampak ──────────────────────────────────
+@router.get("/entities/{entity_id}/tax-status/preview")
+async def preview_tax_status(entity_id: str, request: Request,
+                             to: str = Query("", description="ppn | non_ppn"),
+                             effective_date: str = Query("", description="YYYY-MM-DD"),
+                             npwp: str = Query("", description="NPWP yang akan diisi bila PT belum punya")
+                             ) -> Dict[str, Any]:
+    """Dampak sebelum status PKP diubah: dokumen berjalan, dokumen sejak tanggal berlaku, faktur, pengaturan pajak."""
+    await require_permission(request, "entity", "update", detail=_PKP_DITOLAK)
+    await _guard_tax_scope(request, entity_id)
+    return await lifecycle.tax_status_preview(entity_id, to, effective_date, npwp)
+
+
+@router.post("/entities/{entity_id}/tax-status")
+async def change_tax_status(entity_id: str, body: EntityTaxStatusIn, request: Request) -> Dict[str, Any]:
+    """Tanggal ≤ hari ini (WIB) → langsung berlaku + riwayat; tanggal maju → dijadwalkan (`tax_status_pending`)."""
+    actor = await require_permission(request, "entity", "update", detail=_PKP_DITOLAK)
+    await _guard_tax_scope(request, entity_id)
+    doc, action, before = await lifecycle.change_tax_status(entity_id, body.model_dump(), actor)
+    await audit(actor["name"], action, "business_entity", entity_id,
+                {"from": before, "to": body.to.strip(), "effective_date": body.effective_date.strip()},
+                reason=body.reason.strip(), scope_entity_id=entity_id)
+    return {**(await _entity_out(doc)), "tax_status_history": doc.get("tax_status_history") or []}
+
+
+@router.delete("/entities/{entity_id}/tax-status/pending")
+async def cancel_tax_status(entity_id: str, request: Request) -> Dict[str, Any]:
+    """Batalkan perubahan status PKP yang terjadwal. 404 bila tidak ada jadwal."""
+    actor = await require_permission(request, "entity", "update", detail=_PKP_DITOLAK)
+    await _guard_tax_scope(request, entity_id)
+    doc, pending = await lifecycle.cancel_pending_tax_status(entity_id)
+    await audit(actor["name"], "entity_tax_status_cancelled", "business_entity", entity_id,
+                {"cancelled": pending}, scope_entity_id=entity_id)
+    return {**(await _entity_out(doc)), "tax_status_history": doc.get("tax_status_history") or []}

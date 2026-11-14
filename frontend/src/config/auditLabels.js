@@ -115,6 +115,9 @@ export const AUDIT_ACTION_LABEL = {
   role_access_updated: "Akses peran diubah", role_access_reset: "Akses peran diatur ulang", permissions_updated: "Matriks izin diubah",
   so_approval_approved: "Persetujuan SO diberikan", so_approval_rejected: "Persetujuan SO ditolak",
   so_special_price_requested: "Harga khusus SO diajukan", entity_provisioned: "Badan usaha disiapkan",
+  // KP-T1 — tindakan "Ubah status PKP" (bertanggal berlaku, beralasan).
+  entity_tax_status_changed: "Status PKP diubah", entity_tax_status_scheduled: "Perubahan status PKP dijadwalkan",
+  entity_tax_status_cancelled: "Jadwal status PKP dibatalkan",
   // Keputusan pemilik K-15 (26 Okt) — admin menutup buku walau saldo Suspense ≠ 0 (alasan wajib, baris audit terpisah).
   period_close_suspense_override: "Tutup buku menembus blokir Suspense",
 };

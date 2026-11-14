@@ -1,7 +1,7 @@
 """F0-A — Entity identity & context helper (Multi-Entity foundation).
 
 Sumber tunggal untuk:
-- Default & enrichment skema entitas (currency, coa_template, numbering, incentive_payer).
+- Default & enrichment skema entitas (`is_group`, `ownership_pct` — KP-T1).
 - Membangun "entity context" user (home + allowed + active) untuk auth/me & switcher.
 
 MODEL 1 (silo selling): sales/warehouse terkunci ke 1 entitas; admin/manager
@@ -20,16 +20,19 @@ PRIMARY_ENTITY_ID = "ent_ksc"
 # (Admin Sales berbasis PENUGASAN lewat `users.allowed_entity_ids`, bukan lintas-PT).
 from role_registry import CROSS_ENTITY_ROLES  # noqa: E402
 
-# Default field entitas (enrichment idempotent untuk record lama)
+# Default field entitas (enrichment idempotent untuk record lama).
+# KP-T1 (KP-01) — lima isian yang tidak dibaca kode mana pun (`numbering_scheme`, `incentive_payer`, `coa_template`,
+# `fiscal_year_start`, `parent_entity_id`) dan `currency` dibuang. Sumber tunggalnya: tahun buku & mata uang =
+# kunci registry `finance.fiscal_year_end_month` / `finance.base_currency` (lapisan PT), penomoran = KP-T5, insentif =
+# `commission.*`, bagan akun = `gl_service.seed_default_coa`, grup = `is_group` + `ownership_pct` (K-10).
 ENTITY_DEFAULTS = {
-    "currency": "IDR",
-    "parent_entity_id": "",        # untuk konsolidasi grup (fase lanjut)
     "is_group": False,
-    "coa_template": "id_standard", # template CoA saat provisioning
-    "fiscal_year_start": "01-01",
-    "incentive_payer": "sales_entity",  # Model 1: penanggung insentif = entitas SO (=entitas sales)
-    "numbering_scheme": "per_entity_prefix",  # nomor: CODE/PREFIX-NNNNN
+    "ownership_pct": 100.0,        # K-10 — persen kepemilikan grup atas PT ini; dibaca PK-31
 }
+#: KP-T1 — isian yang DITULIS `ensure_entity_defaults` saat aplikasi menyala (perilaku lama untuk `is_group`).
+#: `ownership_pct` sengaja tidak: mengisinya pada data nyata = skrip `scripts/migrate_kpt1_profil_pt.py` (H3);
+#: sebelum itu pembaca memakai bawaan 100 dari `ENTITY_DEFAULTS` (`uniform_entity`).
+BOOT_DEFAULT_KEYS = ("is_group",)
 
 
 def entity_defaults() -> Dict[str, Any]:
@@ -136,10 +139,10 @@ async def build_entity_context(user: Dict[str, Any],
 # ─── Migrasi idempotent (dipanggil bootstrap) ────────────────────────────────
 
 async def ensure_entity_defaults() -> int:
-    """Lengkapi field default pada entitas yang belum punya (idempotent)."""
+    """Lengkapi field default pada entitas yang belum punya (idempotent). KP-T1 — hanya `BOOT_DEFAULT_KEYS`."""
     changed = 0
     async for e in db.business_entities.find({}, {"_id": 0}):
-        patch = {k: v for k, v in ENTITY_DEFAULTS.items() if k not in e}
+        patch = {k: ENTITY_DEFAULTS[k] for k in BOOT_DEFAULT_KEYS if k not in e}
         if patch:
             patch["updated_at"] = now_iso()
             await db.business_entities.update_one({"id": e["id"]}, {"$set": patch})

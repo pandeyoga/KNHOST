@@ -73,6 +73,11 @@ async def _supplier_deadline_job():
     from services import return_disposition_service as _rds   # LN-093 (impor malas, hindari siklus)
     return await _rds.job_supplier_deadline_reminder()
 
+
+async def _entity_tax_status_job():
+    from services import entity_lifecycle_service as _lc   # KP-T1 — status PKP terjadwal (impor malas)
+    return await _lc.job_entity_tax_status_due()
+
 _owns_lock = False
 
 
@@ -286,6 +291,12 @@ JOBS: List[Dict[str, Any]] = [
      "description": "Menjalankan template export yang dijadwalkan mingguan/bulanan dengan hak akses pemilik saat itu; "
                     "file siap diunduh di Pusat Export → Pekerjaan dan pemilik diberi notifikasi.",
      "kind": "interval", "interval_minutes": 5, "fn": _expsched.job_export_schedule_dispatch, "link": "export-center"},
+    # ── KP-T1 — status PKP bertanggal berlaku (KP-02) ─────────────────────────────────────────────────────
+    {"id": "entity_tax_status_due", "label": "Terapkan Perubahan Status PKP Terjadwal",
+     "description": "Perubahan status PKP badan usaha yang dijadwalkan (Pengaturan › Badan Usaha › Ubah status PKP) "
+                    "diterapkan pada tanggal berlakunya: status berubah, riwayat bertambah, jadwal dihapus. Dokumen "
+                    "yang sudah ada tidak dihitung ulang. Idempoten — juga dijalankan saat aplikasi menyala.",
+     "kind": "daily", "hour": 0, "minute": 5, "fn": _entity_tax_status_job, "link": "entities-access"},
     {"id": "ai_anomaly_scan", "label": "Peringatan Anomali Tanya KN",
      "description": "Tiap pagi memindai penjualan turun per sales, piutang mulai macet, stok yang akan habis, dan PO "
                     "supplier terlambat; hasilnya tampil di tab Peringatan Tanya KN dan dikirim ke lonceng. Tanpa biaya AI.",

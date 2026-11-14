@@ -5,16 +5,25 @@
  * alamat dan kop surat sering berubah. Yang TIDAK boleh berubah (kode dokumen setelah
  * ada dokumen terbit) tetap dikunci, tetapi alasannya DIJELASKAN beserta dokumen
  * pertamanya, bukan hanya dinonaktifkan tanpa keterangan.
+ *
+ * KP-T1 (KP-01, KP-02, KP-23) — "Awal tahun fiskal" (tidak dibaca mesin) dibuang. Bagian baru: **Pajak** (status PKP +
+ * tindakan "Ubah status PKP" bertanggal berlaku, beralasan, dengan pratinjau dampak; jadwal bisa dibatalkan),
+ * **Tahun buku & mata uang** (nilai Pusat Pengaturan yang dipakai mesin + sumbernya; diubah lewat editor baku pada
+ * lapisan PT), **Grup & konsolidasi** (PT induk + persen kepemilikan).
  */
 import { useCallback, useEffect, useState } from "react";
 import { X, Save, Loader2, Lock, History, ClipboardCheck, ExternalLink,
-  ShieldCheck, Building2 } from "lucide-react";
+  ShieldCheck, Building2, CalendarClock, Landmark, Network } from "lucide-react";
 
 import ErrorNotice from "../../../components/ErrorNotice";
-import KNSelect from "../../../components/KNSelect";
 import LocationFields, { locationSummary } from "../../../components/LocationFields";
+import { formatDateId } from "../../../components/KNDatePicker";
 import { auditActionInfo } from "../../../config/auditLabels";
-import { getEntity, patchEntity, getReadiness, getEntityAudit, errText } from "./entityApi";
+import { askConfirm } from "../../../services/confirmService";
+import { getEntity, patchEntity, getReadiness, getEntityAudit, errText, cancelTaxStatus, fiscalYearText,
+  NPWP_MESSAGE, npwpValid, profileSettingItems, sourceText, TAX_STATUS_LABEL } from "./entityApi";
+import TaxStatusDialog from "./TaxStatusDialog";
+import ProfileSettingDialog from "./ProfileSettingDialog";
 
 const EDITABLE = [
   ["legal_name", "Nama legal"],
@@ -26,10 +35,9 @@ const EDITABLE = [
   ["email", "Email"],
   ["npwp", "NPWP"],
   ["logo_url", "URL logo (kop surat)"],
-  ["fiscal_year_start", "Awal tahun fiskal"],
 ];
-// UAT 24 Okt (audit UI tahap 2, G5-25) — isian perorangan dulu tampil juga untuk PT; awal tahun fiskal teks bebas
-// "MM-DD"; tombol simpan di tengah kartu. Jenis perorangan sama dengan wizard buat (EntityWizard PERSONAL_TYPES).
+// UAT 24 Okt (audit UI tahap 2, G5-25) — isian perorangan dulu tampil juga untuk PT; tombol simpan di tengah kartu.
+// Jenis perorangan sama dengan wizard buat (EntityWizard PERSONAL_TYPES). KP-T1 — "Awal tahun fiskal" dibuang.
 const PERSONAL_TYPES = ["Perorangan", "UD"];
 const PERSONAL_FIELDS = ["owner_name", "business_label"];
 // Fase 4 · R6 (G5-25) — "Kota" dulu teks bebas karena PATCH badan usaha tidak menerima kode wilayah; kini server
@@ -38,10 +46,9 @@ const PERSONAL_FIELDS = ["owner_name", "business_label"];
 const LOC_KEYS = ["country", "country_code", "province", "province_code", "city", "city_code", "district",
   "district_code", "postal_code"];
 const pickLoc = (o = {}) => Object.fromEntries(LOC_KEYS.map((k) => [k, o[k] || ""]));
-const FORM_KEYS = [...EDITABLE.map(([k]) => k), ...LOC_KEYS];
-const BULAN = ["Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober",
-  "November", "Desember"];
-const pad2 = (n) => String(n).padStart(2, "0");
+const GROUP_KEYS = ["is_group", "ownership_pct"];   // KP-T1 — bagian Grup & konsolidasi (ikut tombol Simpan)
+const FORM_KEYS = [...EDITABLE.map(([k]) => k), ...LOC_KEYS, ...GROUP_KEYS];
+const OWNERSHIP_MESSAGE = "Persen kepemilikan harus lebih dari 0 dan paling banyak 100.";
 
 function fmtTime(iso) {
   if (!iso) return "—";
@@ -61,6 +68,9 @@ export default function EntityDetailDrawer({ entityId, canManage, onClose, onCha
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [saved, setSaved] = useState("");
+  const [profile, setProfile] = useState(null);       // KP-T1 — entri registry tahun buku & mata uang (lapisan PT)
+  const [taxOpen, setTaxOpen] = useState(false);
+  const [profileEdit, setProfileEdit] = useState(null);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -68,10 +78,13 @@ export default function EntityDetailDrawer({ entityId, canManage, onClose, onCha
       const [e, r] = await Promise.all([getEntity(entityId), getReadiness(entityId)]);
       setEntity(e);
       setReadiness(r);
-      setForm(Object.fromEntries(FORM_KEYS.map((k) => [k, e?.[k] ?? ""])));
+      setForm(Object.fromEntries(FORM_KEYS.map((k) => [k, k === "ownership_pct"
+        ? String(e?.[k] ?? "") : (e?.[k] ?? "")])));
       setError("");
       // Riwayat audit boleh gagal (mis. peran tanpa izin audit) tanpa merusak layar.
       getEntityAudit(entityId).then(setAudit).catch(() => setAudit([]));
+      // KP-T1 — tanpa akses baca pengaturan: nilai tetap tampil (dari jawaban PT), tombol Ubah disembunyikan.
+      profileSettingItems(entityId).then(setProfile).catch(() => setProfile(null));
     } catch (e) {
       setError(errText(e, "Gagal memuat detail badan usaha."));
     } finally {
@@ -83,6 +96,32 @@ export default function EntityDetailDrawer({ entityId, canManage, onClose, onCha
 
   const prefixLocked = entity?.prefix_lock?.locked;
   const firstDoc = entity?.prefix_lock?.first_document;
+  const canWrite = Boolean(canManage) && entity?.status === "active";
+  const taxHistory = entity?.tax_status_history || [];
+  const lastTax = taxHistory.length ? taxHistory[taxHistory.length - 1] : null;
+  const pendingTax = entity?.tax_status_pending || null;
+
+  const cancelPending = async () => {
+    const ok = await askConfirm({
+      title: "Batalkan jadwal status PKP?",
+      message: `Perubahan menjadi ${TAX_STATUS_LABEL[pendingTax?.to] || ""} mulai ${formatDateId(pendingTax?.effective_date)} `
+        + "dibatalkan. Status PKP sekarang tidak berubah.",
+      confirmLabel: "Batalkan jadwal", danger: true, testId: "entity-detail-tax-cancel-confirm",
+    });
+    if (!ok) return;
+    setBusy(true);
+    setError("");
+    try {
+      await cancelTaxStatus(entityId);
+      setSaved("Jadwal perubahan status PKP dibatalkan.");
+      await load();
+      onChanged?.("Jadwal perubahan status PKP dibatalkan.");
+    } catch (e) {
+      setError(errText(e, "Gagal membatalkan jadwal."));
+    } finally {
+      setBusy(false);
+    }
+  };
 
   const save = async () => {
     setBusy(true);
@@ -90,11 +129,24 @@ export default function EntityDetailDrawer({ entityId, canManage, onClose, onCha
     setSaved("");
     try {
       const dirty = Object.fromEntries(
-        Object.entries(form).filter(([k, v]) => (entity?.[k] ?? "") !== v));
+        Object.entries(form).filter(([k, v]) => String(entity?.[k] ?? "") !== String(v)));
       if (LOC_KEYS.some((k) => k in dirty)) Object.assign(dirty, pickLoc(form));
       if (!Object.keys(dirty).length) {
         setSaved("Tidak ada perubahan untuk disimpan.");
         return;
+      }
+      // KP-T1 — pola sama dengan server (pesan sama); persen kepemilikan dikirim sebagai angka.
+      if ("npwp" in dirty && String(dirty.npwp).trim() && !npwpValid(dirty.npwp)) {
+        setError(NPWP_MESSAGE);
+        return;
+      }
+      if ("ownership_pct" in dirty) {
+        const pct = Number(dirty.ownership_pct);
+        if (String(dirty.ownership_pct).trim() === "" || !Number.isFinite(pct) || pct <= 0 || pct > 100) {
+          setError(OWNERSHIP_MESSAGE);
+          return;
+        }
+        dirty.ownership_pct = pct;
       }
       await patchEntity(entityId, dirty);
       setSaved("Perubahan tersimpan.");
@@ -178,8 +230,8 @@ export default function EntityDetailDrawer({ entityId, canManage, onClose, onCha
                 <div className="section-body py-3">
                   <p className="kicker mb-2">Identitas & kontak</p>
                   <div className="grid gap-2 sm:grid-cols-2">
-                    {EDITABLE.filter(([key]) => key !== "fiscal_year_start"
-                      && (PERSONAL_TYPES.includes(entity?.type) || !PERSONAL_FIELDS.includes(key))).map(([key, label]) => (
+                    {EDITABLE.filter(([key]) => PERSONAL_TYPES.includes(entity?.type)
+                      || !PERSONAL_FIELDS.includes(key)).map(([key, label]) => (
                       <div key={key} className="grid gap-1">
                         <label className="text-[10px] font-bold uppercase tracking-wide text-[#8E8E93]">
                           {label}
@@ -211,24 +263,108 @@ export default function EntityDetailDrawer({ entityId, canManage, onClose, onCha
                       </p>
                     )}
                   </div>
-                  {(() => {
-                    const [mm, dd] = String(form.fiscal_year_start || "01-01").split("-");
-                    const off = !canManage || entity?.status !== "active";
-                    const setFy = (m, d) => setForm((f) => ({ ...f, fiscal_year_start: `${pad2(m)}-${pad2(d)}` }));
-                    return (
-                      <div className="mt-2 grid gap-1" data-testid="entity-detail-fiscal_year_start-input">
-                        <label className="text-[10px] font-bold uppercase tracking-wide text-[#8E8E93]">Awal tahun fiskal</label>
-                        <div className="flex gap-2">
-                          <div className="w-24"><KNSelect className="field" disabled={off} value={String(Number(dd) || 1)}
-                            onValueChange={(v) => setFy(Number(mm) || 1, v)} testId="entity-detail-fy-day"
-                            options={Array.from({ length: 31 }, (_, i) => ({ value: String(i + 1), label: String(i + 1) }))} /></div>
-                          <div className="w-40"><KNSelect className="field" disabled={off} value={String(Number(mm) || 1)}
-                            onValueChange={(v) => setFy(v, Number(dd) || 1)} testId="entity-detail-fy-month"
-                            options={BULAN.map((b, i) => ({ value: String(i + 1), label: b }))} /></div>
-                        </div>
-                      </div>
-                    );
-                  })()}
+                </div>
+              </div>
+
+              {/* KP-T1 — Pajak: status PKP yang dibaca mesin + tindakan bertanggal berlaku */}
+              <div className="section-card" data-testid="entity-detail-tax">
+                <div className="section-body py-3">
+                  <div className="mb-2 flex items-center gap-2">
+                    <ShieldCheck size={14} className="text-kn-action" />
+                    <p className="kicker !mb-0">Pajak</p>
+                  </div>
+                  <p className="text-fs-13 text-kn-text" data-testid="entity-detail-tax-status">
+                    Status: <b>{TAX_STATUS_LABEL[entity?.default_tax_mode] || "—"}</b>
+                  </p>
+                  <p className="text-fs-12 text-kn-text-2" data-testid="entity-detail-tax-since">
+                    {lastTax ? `Berlaku sejak ${formatDateId(lastTax.effective_date)} — ${lastTax.reason}`
+                      : "Sejak PT dibuat (belum pernah diubah)."}
+                  </p>
+                  {pendingTax && (
+                    <p className="mt-1 flex flex-wrap items-center gap-2 rounded-md bg-kn-warning-soft px-2.5 py-1.5 text-fs-12 text-kn-warning-text"
+                       data-testid="entity-detail-tax-pending">
+                      <CalendarClock size={13} />
+                      Akan menjadi {TAX_STATUS_LABEL[pendingTax.to] || pendingTax.to} mulai {formatDateId(pendingTax.effective_date)}
+                      {canWrite && (
+                        <button type="button" className="link-button" data-testid="entity-detail-tax-cancel"
+                                disabled={busy} onClick={cancelPending}>
+                          Batalkan jadwal
+                        </button>
+                      )}
+                    </p>
+                  )}
+                  {canWrite && !pendingTax && (
+                    <button type="button" className="secondary-button mt-2" data-testid="entity-detail-tax-change"
+                            onClick={() => setTaxOpen(true)}>
+                      Ubah status PKP
+                    </button>
+                  )}
+                </div>
+              </div>
+
+              {/* KP-T1 — Tahun buku & mata uang: nilai Pusat Pengaturan yang dipakai mesin (lapisan PT) */}
+              <div className="section-card" data-testid="entity-detail-profile">
+                <div className="section-body py-3">
+                  <div className="mb-2 flex items-center gap-2">
+                    <Landmark size={14} className="text-kn-action" />
+                    <p className="kicker !mb-0">Tahun buku &amp; mata uang</p>
+                  </div>
+                  {[
+                    { id: "fiscal", item: profile?.fiscalYear,
+                      text: `Tahun buku: ${fiscalYearText(entity?.fiscal_year_end_month)}`,
+                      source: entity?.fiscal_year_end_month_source },
+                    { id: "currency", item: profile?.currency,
+                      text: `Mata uang pembukuan: ${(profile?.currency?.options || []).find(
+                        (o) => o.value === entity?.base_currency)?.label || entity?.base_currency || "—"}`,
+                      source: entity?.base_currency_source },
+                  ].map((row) => (
+                    <div key={row.id} className="flex flex-wrap items-center gap-2 border-b border-kn-divider py-1.5 last:border-0"
+                         data-testid={`entity-detail-profile-${row.id}`}>
+                      <span className="text-fs-13 text-kn-text">{row.text}</span>
+                      <span className="text-fs-12 text-kn-text-2">({sourceText(row.source)})</span>
+                      {canWrite && row.item?.can_edit && (
+                        <button type="button" className="link-button ml-auto" data-testid={`entity-detail-profile-${row.id}-edit`}
+                                onClick={() => setProfileEdit(row.item)}>
+                          Ubah
+                        </button>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* KP-T1 — Grup & konsolidasi (K-10) */}
+              <div className="section-card" data-testid="entity-detail-group">
+                <div className="section-body py-3">
+                  <div className="mb-2 flex items-center gap-2">
+                    <Network size={14} className="text-kn-action" />
+                    <p className="kicker !mb-0">Grup &amp; konsolidasi</p>
+                  </div>
+                  <div className="grid gap-2 sm:grid-cols-2">
+                    <div className="grid gap-1">
+                      <label className="flex items-center gap-2 text-fs-13 text-kn-text">
+                        <input type="checkbox" data-testid="entity-detail-is_group-input" disabled={!canWrite}
+                               checked={Boolean(form.is_group)}
+                               onChange={(e) => setForm((f) => ({ ...f, is_group: e.target.checked }))} />
+                        PT induk (konsolidasi)
+                      </label>
+                      <p className="text-fs-12 text-kn-text-2">
+                        PT induk tidak ikut dijumlahkan sebagai baris di laporan konsolidasi dan tidak muncul di
+                        pilihan PT pada tutup buku.
+                      </p>
+                    </div>
+                    <div className="grid gap-1">
+                      <label className="kicker">Persen kepemilikan (%)</label>
+                      <input className="field" type="number" min="0.01" max="100" step="0.01"
+                             data-testid="entity-detail-ownership_pct-input"
+                             disabled={!canWrite || Boolean(form.is_group)}
+                             value={form.ownership_pct ?? ""}
+                             onChange={(e) => setForm((f) => ({ ...f, ownership_pct: e.target.value }))} />
+                      <p className="text-fs-12 text-kn-text-2">
+                        Belum memengaruhi angka — dipakai laporan konsolidasi setelah eliminasi per periode aktif.
+                      </p>
+                    </div>
+                  </div>
                 </div>
               </div>
 
@@ -349,6 +485,27 @@ export default function EntityDetailDrawer({ entityId, canManage, onClose, onCha
             </>
           )}
         </div>
+        {taxOpen && entity && (
+          <TaxStatusDialog entity={entity} onClose={() => setTaxOpen(false)}
+            onSaved={async (res) => {
+              setTaxOpen(false);
+              const msg = res?.tax_status_pending
+                ? "Perubahan status PKP dijadwalkan." : "Status PKP diperbarui.";
+              setSaved(msg);
+              await load();
+              onChanged?.(msg);
+            }} />
+        )}
+        {profileEdit && (
+          <ProfileSettingDialog entityId={entityId} entityName={entity?.legal_name || entity?.short_name}
+            item={profileEdit} onClose={() => setProfileEdit(null)}
+            onSaved={async () => {
+              setProfileEdit(null);
+              setSaved("Pengaturan PT diperbarui.");
+              await load();
+              onChanged?.("Pengaturan PT diperbarui.");
+            }} />
+        )}
         {!loading && canManage && entity?.status === "active" && (
           <div className="flex justify-end gap-2 border-t border-[#EFF0F2] px-4 py-3">
             <button type="button" className="secondary-button" data-testid="entity-detail-cancel" onClick={onClose}>Tutup</button>

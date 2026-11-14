@@ -61,6 +61,55 @@ export const reactivateEntity = (id) =>
 export const getEntityAudit = (id) =>
   axios.get(`${API}/entities/${id}/audit`).then((r) => r.data || []);
 
+// ─── KP-T1 — status PKP bertanggal + profil PT dari Pusat Pengaturan ─────────────────────────────────
+export const taxStatusPreview = (id, { to, effectiveDate, npwp = "" }) =>
+  axios.get(`${API}/entities/${id}/tax-status/preview`,
+    { params: { to, effective_date: effectiveDate, ...(npwp ? { npwp } : {}) } }).then((r) => r.data);
+
+export const changeTaxStatus = (id, body) =>
+  axios.post(`${API}/entities/${id}/tax-status`, body).then((r) => r.data);
+
+export const cancelTaxStatus = (id) =>
+  axios.delete(`${API}/entities/${id}/tax-status/pending`).then((r) => r.data);
+
+/** Kunci registry yang menjadi sumber tunggal tahun buku & mata uang PT (lapisan PT). */
+export const PROFILE_KEYS = { currency: "finance.base_currency", fiscalYear: "finance.fiscal_year_end_month" };
+
+/** Entri + nilai efektif dua kunci profil PT ({currency, fiscalYear}); tanpa `entityId` = nilai grup.
+ *  Gagal (mis. 403 tanpa akses baca pengaturan) → dilempar; layar memutuskan tampil hanya-baca. */
+export const profileSettingItems = (entityId = "") =>
+  axios.get(`${API}/config/effective`, { params: { group: "keuangan-dasar", ...(entityId ? { entity_id: entityId } : {}) } })
+    .then((r) => {
+      const items = r.data?.items || [];
+      const pick = (k) => items.find((i) => i.key === k) || null;
+      return { currency: pick(PROFILE_KEYS.currency), fiscalYear: pick(PROFILE_KEYS.fiscalYear) };
+    });
+
+/** Simpan satu kunci profil PT pada lapisan PT (jalur baku Pusat Pengaturan). */
+export const saveProfileSetting = (entityId, key, value, reason = "") =>
+  axios.put(`${API}/config/values`, { items: [{ key, value, scope_type: "entity", scope_id: entityId, reason }] })
+    .then((r) => r.data);
+
+export const BULAN_ID = ["Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September",
+  "Oktober", "November", "Desember"];
+
+/** "Januari–Desember" untuk bulan akhir 12; "April–Maret" untuk bulan akhir 3. */
+export function fiscalYearText(endMonth) {
+  const end = Number(endMonth) || 12;
+  return `${BULAN_ID[end % 12]}–${BULAN_ID[end - 1]}`;
+}
+
+/** Sumber nilai pengaturan dalam bahasa sehari-hari. */
+export const sourceText = (layer) => (["entity", "legacy_entity"].includes(layer)
+  ? "khusus PT ini" : "mengikuti pengaturan grup");
+
+export const NPWP_MESSAGE = "NPWP harus 15 atau 16 digit angka. Periksa kembali nomor yang diketik.";
+
+/** Sama dengan server (`entity_lifecycle_service.npwp_valid`): 15/16 digit setelah titik, strip, spasi dibuang. */
+export const npwpValid = (v) => /^(\d{15}|\d{16})$/.test(String(v || "").trim().replace(/[.\-\s]/g, ""));
+
+export const TAX_STATUS_LABEL = { ppn: "PKP (memungut PPN)", non_ppn: "Non-PKP (tanpa PPN)" };
+
 // ─── Akun ────────────────────────────────────────────────────
 export const listUsers = (params = {}) =>
   axios.get(`${API}/users`, { params }).then((r) => r.data);

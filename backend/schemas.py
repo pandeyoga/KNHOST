@@ -143,13 +143,20 @@ class BusinessEntityCreate(BaseModel):
     default_tax_mode: str = "ppn"  # ppn | non_ppn (driver PKP/PPN) — INDEPENDEN dari `type`
     doc_prefix: str = ""          # mis. KSC, KANDA — untuk nomor dokumen per badan usaha
     logo_url: str = ""
-    currency: str = "IDR"
-    parent_entity_id: str = ""    # untuk konsolidasi grup (fase lanjut)
     is_group: bool = False
-    coa_template: str = "id_standard"
-    fiscal_year_start: str = "01-01"
-    incentive_payer: str = "sales_entity"  # Model 1
-    numbering_scheme: str = "per_entity_prefix"
+    # KP-T1 — isian mati (`currency`, `parent_entity_id`, `coa_template`, `fiscal_year_start`, `incentive_payer`,
+    # `numbering_scheme`) dibuang: dikirim pun diabaikan. Tahun buku & mata uang ditulis ke lapisan PT registry.
+    ownership_pct: float = Field(100, gt=0, le=100)   # K-10 — persen kepemilikan grup (INV-NUM-01: batas di skema)
+    base_currency: Optional[str] = None          # `finance.base_currency` lapisan PT bila beda dari grup
+    fiscal_year_end_month: Optional[int] = None  # `finance.fiscal_year_end_month` lapisan PT bila beda dari grup
+
+
+class EntityTaxStatusIn(BaseModel):
+    """KP-T1 — `POST /api/entities/{id}/tax-status`. Isian kosong ditolak 400 berpesan oleh layanan (bukan 422)."""
+    to: str = ""                  # ppn | non_ppn
+    effective_date: str = ""      # YYYY-MM-DD; ≤ hari ini (WIB) = langsung, sesudahnya = terjadwal
+    reason: str = ""
+    npwp: Optional[str] = None    # diisi bila PT menjadi PKP dan NPWP-nya masih kosong
 
 
 class EntityArchiveBody(BaseModel):
