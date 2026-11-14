@@ -231,15 +231,15 @@ P14-K1 → Bima). Laporan hasil di `docs/uat/2026-10-21/hasil/UAT24-*.md`.
 | RP-10 | Konsolidasi: eliminasi, pendapatan, dan HPP memakai tiga tanggal berbeda; rugi belum terealisasi dieliminasi padahal rapor menulis "tidak… | Sedang | PK-31 | open | belum dicek — diisi unit pemegang | — | — |
 | RP-11 | Proyeksi kas membulatkan hari berlawanan dengan umur piutang; label kelompok umur ditulis mati; router menyebut arus kas "tak langsung" padahal… | Rendah | PK-41 | open | belum dicek — diisi unit pemegang | — | — |
 | RP-12 | Proyeksi kas membulatkan hari berlawanan dengan umur piutang; label kelompok umur ditulis mati; router menyebut arus kas "tak langsung" padahal… | Rendah | PK-41 | open | belum dicek — diisi unit pemegang | — | — |
-| IA-01 | Jejak Dokumen hanya dijaga izin "lihat dokumen"; pencarian lintas jenis dokumen memuat nominal | Tinggi | PK-17 | open | belum dicek — diisi unit pemegang | — | — |
-| IA-02 | Membuka dokumen tidak memeriksa menu peran; pagarnya tinggal izin API yang lebih lebar dari menu | Tinggi | PK-17 | open | belum dicek — diisi unit pemegang | — | — |
-| IA-03 | Papan Meja Finance hanya butuh login | Tinggi | PK-17 | open | belum dicek — diisi unit pemegang | — | — |
+| IA-01 | Jejak Dokumen hanya dijaga izin "lihat dokumen"; pencarian lintas jenis dokumen memuat nominal | Tinggi | PK-17 | implemented_pending_review | ya — dijalankan (bukti merah 14/15 server, 4/6 layar di kode lama) | `376bd21` | [PK-17](2026-11-13/hasil/PK-17.md) |
+| IA-02 | Membuka dokumen tidak memeriksa menu peran; pagarnya tinggal izin API yang lebih lebar dari menu | Tinggi | PK-17 | implemented_pending_review | ya — dijalankan (bukti merah 14/15 server, 4/6 layar di kode lama) | `376bd21` | [PK-17](2026-11-13/hasil/PK-17.md) |
+| IA-03 | Papan Meja Finance hanya butuh login | Tinggi | PK-17 | implemented_pending_review | ya — dijalankan (bukti merah 14/15 server, 4/6 layar di kode lama) | `376bd21` | [PK-17](2026-11-13/hasil/PK-17.md) |
 | IA-04 | Jejak Dokumen menaut ke layar yang tidak ada (retur jual, transfer, opname, kas-bank); sebelas layar keuangan tidak membaca fokus dokumen | Tinggi | PK-44 | open | belum dicek — diisi unit pemegang | — | — |
 | IA-05 | "Cairkan" uang muka hanya untuk Admin; Finance tanpa menu Kas Kecil; Hutang Reimburse tanpa tombol bayar | Tinggi | PK-24 | open | belum dicek — diisi unit pemegang | — | — |
 | IA-06 | Menu tidak sampai ke peran yang diberi izin (Sales → Kasus Keuangan; Finance → Pemetaan Akun) | Sedang | MN-T1 | open | belum dicek — diisi unit pemegang | — | — |
 | IA-07 | "Simulasi Pembayaran": gerbang layar dan gerbang server memakai izin berbeda | Sedang | PK-19 | open | belum dicek — diisi unit pemegang | — | — |
 | IA-08 | Gudang mengisi tarif jasa, PPN, dan nomor faktur makloon yang langsung melahirkan hutang | Sedang | PK-38 | open | belum dicek — diisi unit pemegang | — | — |
-| IA-09 | Saldo antar-PT dan seluruh daftar kontrabon bernilai tampil untuk peran gudang | Sedang | PK-17 | open | belum dicek — diisi unit pemegang | — | — |
+| IA-09 | Saldo antar-PT dan seluruh daftar kontrabon bernilai tampil untuk peran gudang | Sedang | PK-17 | implemented_pending_review | ya — dijalankan (bukti merah 14/15 server, 4/6 layar di kode lama) | `376bd21` | [PK-17](2026-11-13/hasil/PK-17.md) |
 | IA-10 | Gaji, kas kecil, aset, klaim makloon bukan jenis dokumen di Jejak Dokumen | Sedang | PK-44 | open | belum dicek — diisi unit pemegang | — | — |
 | IA-11 | Kartu angka di tiga dasbor tanpa tautan ke layar penjelasnya; lompatan antar-modul tanpa jalan kembali | Sedang | PK-44 | open | belum dicek — diisi unit pemegang | — | — |
 | IA-12 | Verifikasi → setujui → bayar kontrabon bisa satu Manajer; setujui dan selesaikan retur jual satu izin | Sedang | PK-38 | open | belum dicek — diisi unit pemegang | — | — |
