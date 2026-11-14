@@ -144,7 +144,7 @@ export function MethodNote({ th = {}, method = {} }) {
           sebagai ukuran laju permintaan karena meredam lonjakan pesanan harian.</li>
         <li><b>Cakupan:</b> kelas dihitung atas seluruh SKU badan usaha; saringan gudang & kategori hanya menyaring
           tampilan.{groups.length > 0 && <> Diperingkat: {groups.map((g) => `${unitText(g.unit)} ${fmt.format(g.ranked)} SKU`).join(" · ")}.</>}
-          {" "}Ambang diatur di Pusat Pengaturan › Stok, Satuan &amp; Alokasi.</li>
+          {" "}Ambang diatur di Pengaturan › Gudang, Pembelian &amp; Produksi › Aturan Gudang &amp; Mutu.</li>
       </ul>
     </details>
   );

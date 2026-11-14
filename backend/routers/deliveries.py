@@ -64,7 +64,7 @@ async def get_wa_settings(request: Request):
 @router.put("/whatsapp/settings")
 async def put_wa_settings(body: WASettingsBody, request: Request):
     """KP-T8 — setelah koneksi WhatsApp tunggal ada, field koneksi (penyedia, nomor, token, label, kode negara) ditolak:
-    diatur di Pengaturan › Integrasi & Sistem. Field pemakaian (`enabled`, `simulate`) tetap diterima."""
+    diatur di Pengaturan › Sistem › Integrasi & Audit. Field pemakaian (`enabled`, `simulate`) tetap diterima."""
     user = await require_permission(request, "document_delivery", "manage")
     actor = user.get("email") or user.get("name") or user.get("id")
     from services import wa_connection

@@ -3,7 +3,7 @@
 Keunggulan untuk alert internal: cukup 1 API token, boleh TEKS BEBAS (tanpa
 template & tanpa aturan 24 jam seperti Meta Cloud API).
 
-Aktivasi: isi `fonnte_token` di Pengaturan → Penjadwal & Notifikasi → WhatsApp.
+Aktivasi: isi token Fonnte di Pengaturan › Sistem › Integrasi & Audit (koneksi WhatsApp, KP-T8; KP-T9 nama menu).
 Selama token kosong, provider mengembalikan status 'failed' dengan pesan jelas
 (TIDAK melempar exception) agar alur alert tetap mulus.
 

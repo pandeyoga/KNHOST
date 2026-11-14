@@ -3,7 +3,7 @@
  *
  * Fase 3 · P2 (keputusan pemilik 26 Okt):
  *  · D-01 — tab "Template Dokumen" DICABUT: form terlengkapnya (`DocTemplateForm`) kini di Pengaturan › Dokumen &
- *    Cetak › Template Dokumen di atas tabel berlapis global → badan usaha (satu data, satu tempat).
+ *    Notifikasi › Template Dokumen di atas tabel berlapis global → PT (satu data, satu tempat).
  *  · D-21 — tab "Satuan (UOM)" DICABUT: `md-uoms` merender layar Satuan & Konversi (tabel tunggal "Satuan & faktor",
  *    form "Satuan baru" dipindah ke sana).
  *  · D-05 — "Buat Pelanggan" (Impor/Ekspor & Status) membuka `CustomerFormModal` (form pelanggan LENGKAP yang sama

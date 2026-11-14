@@ -592,7 +592,90 @@ menu yang disorot `finance-tower`), `period-unlock`, `posting-failures` (tab Tut
 `verify_page_tabs.py` (INV-UI-12/13/14), jest `roleReach.test.js`, `serverAccessReach.test.js`, `navAccess.test.js`,
 `mnt1MenuKeuangan.test.js`.
 
+## ⚙️ MENU PENGATURAN (KP-T9 — sembilan hub, ditulis dari konfigurasi)
+
+Sumber: `frontend/src/config/navStructure.js` (grup `settings-hub`), `hubTabs.js`, `backend/access_modules.py` (blok
+`KP-T9`). Urutan hub mengikuti cara mengisi PT baru: PT → orang → persetujuan → aturan per bagian → dokumen → sistem. Tanpa
+sub-judul; 9 hub, 35 tab tampak, paling banyak 6 per hub (INV-UI-13). Kolom peran = `roles` tab untuk peran bawaan
+(A admin · M manajer · F finance · SA admin sales · GA admin gudang · MD · MQ MD quality · QC); Admin Sales mendapat
+Penjualan › Kebijakan Retur lewat `ROLE_NAV`. Peran kustom mendapat tab dari modul akses pemilik izin endpoint layarnya;
+modul yang memuat tab Pengaturan juga memuat hub induknya dan `settings-hub` (`verify_access_catalog_nav.py` aturan 3–4).
+Dengan izin server, manajer tidak melihat Peran & Hak Akses / Cek Peran (tanpa izin `permission`).
+
+| Menu | Tab (view) | Peran bawaan |
+|---|---|---|
+| Pengaturan › Perusahaan (PT) (`settings-company`) | Profil PT (`settings-pt-profile`) · ikut tersembunyi bersama `entities-access` | A M |
+| Pengaturan › Perusahaan (PT) (`settings-company`) | Kesiapan PT (`settings-pt-readiness`) · ikut tersembunyi bersama `entities-access` | A M |
+| Pengaturan › Perusahaan (PT) (`settings-company`) | Master per PT (`entity-masters`) | A M |
+| Pengaturan › Pengguna & Hak Akses (`settings-access`) | Akun (`settings-accounts`) · ikut tersembunyi bersama `entities-access` | A M |
+| Pengaturan › Pengguna & Hak Akses (`settings-access`) | Peran & Hak Akses (`permission-matrix`) · ikut tersembunyi bersama `entities-access` | A M |
+| Pengaturan › Pengguna & Hak Akses (`settings-access`) | Cek Peran (`settings-role-check`) · ikut tersembunyi bersama `entities-access` | A M |
+| Pengaturan › Persetujuan (`settings-approval`) | Aturan Persetujuan (`approval-rules`) | A M |
+| Pengaturan › Persetujuan (`settings-approval`) | Persetujuan R&D (`rnd-divisions`) | A M |
+| Pengaturan › Persetujuan (`settings-approval`) | Ketegasan, Pengingat & Dokumen (`settings-cfg-approval`) | A M |
+| Pengaturan › Persetujuan (`settings-approval`) | Kontrol dua orang (`settings-dual-control`) | A M |
+| Pengaturan › Penjualan (`settings-sales`) | Aturan Penjualan (`settings-cfg-sales`) | A M |
+| Pengaturan › Penjualan (`settings-sales`) | Kebijakan Retur (`return-policies`) | A M |
+| Pengaturan › Penjualan (`settings-sales`) | Alasan Koreksi (`amendment-reasons`) | A M |
+| Pengaturan › Gudang, Pembelian & Produksi (`settings-warehouse`) | Aturan Gudang & Mutu (`settings-cfg-warehouse`) | A M |
+| Pengaturan › Gudang, Pembelian & Produksi (`settings-warehouse`) | Penerimaan Barang (`settings-receiving-ocr`) | A M GA |
+| Pengaturan › Gudang, Pembelian & Produksi (`settings-warehouse`) | Grade Mutu (`grade-master`) | A M MD SA GA MQ QC |
+| Pengaturan › Gudang, Pembelian & Produksi (`settings-warehouse`) | Aturan Pembelian & Makloon (`settings-cfg-purchasing`) | A M |
+| Pengaturan › Gudang, Pembelian & Produksi (`settings-warehouse`) | R&D & Desain (`settings-cfg-rnd`) | A M |
+| Pengaturan › Keuangan & Pajak (`settings-finance`) | Aturan Keuangan & Pajak (`settings-cfg-finance`) | A M |
+| Pengaturan › Keuangan & Pajak (`settings-finance`) | Pemetaan Akun (`gl-account-mappings`) | A M F |
+| Pengaturan › Keuangan & Pajak (`settings-finance`) | Kategori Beban (`expense-categories`) | A M |
+| Pengaturan › Keuangan & Pajak (`settings-finance`) | Bank (`bank-recon-rules`) | A M |
+| Pengaturan › SDM (`settings-hr`) | Aturan SDM & Penggajian (`settings-cfg-hr`) | A M |
+| Pengaturan › SDM (`settings-hr`) | Shift & Lokasi Absen (`hr-attendance-setup`) | A M |
+| Pengaturan › SDM (`settings-hr`) | Mesin Absen (`settings-attendance-devices`) · ikut tersembunyi bersama `settings-devices`, `hr-attendance-setup` | A M |
+| Pengaturan › Dokumen & Notifikasi (`settings-documents`) | Template Dokumen (`pdf-templates`) | A M |
+| Pengaturan › Dokumen & Notifikasi (`settings-documents`) | Pengingat Otomatis (`scheduler`) | A M |
+| Pengaturan › Dokumen & Notifikasi (`settings-documents`) | WhatsApp (`settings-whatsapp`) · ikut tersembunyi bersama `scheduler` | A M |
+| Pengaturan › Dokumen & Notifikasi (`settings-documents`) | Penomoran Dokumen (`settings-doc-numbering`) | A M |
+| Pengaturan › Sistem (`settings-system`) | Integrasi & Audit (`admin`) | A |
+| Pengaturan › Sistem (`settings-system`) | Perangkat RFID (`settings-devices`) · ikut tersembunyi bersama `cs-rfid-devices` | A |
+| Pengaturan › Sistem (`settings-system`) | Kamus Aturan Kain (`domain-registry`) | A M |
+| Pengaturan › Sistem (`settings-system`) | Impor Data Awal (`client-dataset-import`) | A |
+| Pengaturan › Sistem (`settings-system`) | AI & Tampilan (`settings-cfg-system`) | A M |
+| Pengaturan › Sistem (`settings-system`) | Cari Semua Pengaturan (`settings-config`) | A M |
+
+Bagian layar wadah lama yang dinaikkan menjadi tab merender komponen yang sama dengan prop `only` (`AppViewRouter.jsx`):
+`EntitiesAccessView only="entities" | "readiness" | "accounts" | "roles" | "role-reality"`, `DevicesView only="absen" | "rfid"`,
+`SchedulerView only={["jobs","runs"]} | {["wa"]}`. Tab ber-`inheritsHiddenFrom` ikut tersembunyi bila id wadah lamanya ada di
+`hidden_views` peran (atau `ROLE_NAV.remove` peran bawaan). Tab dalam yang tersisa (batas atas INV-UI-14, boleh turun oleh
+unit pemilik layarnya): Penerimaan Barang (4), Bank (2), Pengingat Otomatis (2), Template Dokumen (2), Shift & Lokasi Absen
+(2), Integrasi & Audit (2), Cari Semua Pengaturan (5).
+
+Alamat lama (`config/viewAliases.js`, `since: "KP-T9"`):
+
+| Id lama | Mendarat di | Catatan |
+|---|---|---|
+| `entities-access` (Badan Usaha & Akses) | Perusahaan (PT) › Profil PT (`settings-pt-profile`) | rute cadangan tetap (bagian "entities") |
+| `settings-purchasing` (hub, `legacy`) | Gudang, Pembelian & Produksi › Aturan Pembelian & Makloon | — |
+| `settings-rnd` (hub, `legacy`) | Gudang, Pembelian & Produksi › R&D & Desain | — |
+| `settings-masters` (hub, `legacy`) | Perusahaan (PT) › Master per PT | — |
+| `settings-notify` (hub, `legacy`) | Dokumen & Notifikasi › Pengingat Otomatis | — |
+
+Alias lama yang tetap: `settings-hub` → Grade Mutu; `doc-templates-basic` → Template Dokumen (tab dasar);
+`cs-rfid-devices` → Sistem › Perangkat RFID; `settings-cfg-documents` / `settings-cfg-notify` → Persetujuan › Ketegasan,
+Pengingat & Dokumen. Pengaturan yang tinggal di luar grup (KP-29) tampil sebagai kartu tautan di bawah daftar kartu
+(`SETTINGS_LINKS`, `configGroupViews.js`): Aturan Keuangan & Pajak → Keuangan › Antar-PT (jadwal bayar), Keuangan › Kas &
+Bank › Rekening & Saldo, Perusahaan (PT) › Master per PT (syarat pembayaran); Aturan Gudang & Mutu → Gudang & Logistik ›
+Data Gudang; WhatsApp → Pusat Dokumen (WhatsApp kirim dokumen). Pemilih PT di kepala aplikasi: **"Semua PT"**.
+
 ## 📝 CHANGELOG
+
+### KP-T9 — 14 Nov 2026 (Pengaturan: sembilan hub, satu istilah "PT")
+- Grup Pengaturan 12 hub + 2 sub-judul → **9 hub tanpa sub-judul**: Perusahaan (PT) · Pengguna & Hak Akses (baru) ·
+  Persetujuan · Penjualan · Gudang, Pembelian & Produksi · Keuangan & Pajak · SDM · Dokumen & Notifikasi · Sistem. Hub
+  Pembelian & Produksi, R&D, Master Data, Notifikasi & Penjadwal hilang (alias `legacy`). Rincian: bagian "MENU PENGATURAN
+  (KP-T9)" di atas.
+- Enam view baru (bagian layar wadah lama): `settings-pt-profile`, `settings-pt-readiness`, `settings-accounts`,
+  `settings-role-check`, `settings-attendance-devices`, `settings-whatsapp`; `permission-matrix` kini tab nyata.
+- Katalog modul akses: blok `KP-T9` (`_KPT9_NAV_REPLACE/ADD/REMOVE`); label `interco` "Transaksi Antar-PT", modul
+  `entities` "Data PT", sumber daya `entity` "PT". Penjaga katalog: aturan (3) dan (4) + `--self-test` (gate statik);
+  `check_nav_map.py` CHECK 6 (istilah menu).
 
 ### KP-T5 — 14 Nov 2026 (tab Penomoran Dokumen)
 - Pengaturan › **Dokumen & Cetak** (hub `settings-documents`) mendapat tab ke-2 **Penomoran Dokumen** (view

@@ -43,7 +43,7 @@ export const VIEW_ALIASES = {
   },
   // D-21 — satu tabel "Satuan & faktor" di Produk & Harga › Satuan & Konversi.
   "uom-conversions": { to: "md-uoms", nav: "products-pricing", since: "D-21" },
-  // D-29 — Perangkat RFID = tab "RFID" di Pengaturan › Integrasi & Sistem › Perangkat.
+  // D-29 — Perangkat RFID = tab "RFID" di layar Perangkat; sejak KP-T9 tab sendiri Pengaturan › Sistem › Perangkat RFID.
   "cs-rfid-devices": {
     to: "settings-devices", nav: "settings-system", preset: { tab: "rfid" },
     label: "Perangkat RFID", since: "D-29",
@@ -122,6 +122,23 @@ export const VIEW_ALIASES = {
   },
   // Id grup lama "Kas & Aset" (bookmark/`?view=kas-aset`) tanpa layar sendiri → Kas & Bank › Kas Kecil.
   "kas-aset": { to: "petty-cash", nav: "cash-bank", label: "Kas & Aset", legacy: true, since: "MN-T1" },
+
+  // ── KP-T9 — menu Pengaturan sembilan hub (docs/blueprint/unit/KP-T9.md). Layar Badan Usaha & Akses dipecah menjadi
+  // lima tab (Profil PT, Kesiapan PT, Akun, Peran & Hak Akses, Cek Peran); id lamanya mendarat di Profil PT dan rute
+  // cadangan `activeView === "entities-access"` tetap. Empat id hub yang hilang (tanpa layar sendiri) → tab barunya.
+  "entities-access": {
+    to: "settings-pt-profile", nav: "settings-company", label: "Badan Usaha & Akses", since: "KP-T9",
+  },
+  "settings-purchasing": {
+    to: "settings-cfg-purchasing", nav: "settings-warehouse", label: "Pembelian & Produksi", legacy: true, since: "KP-T9",
+  },
+  "settings-rnd": { to: "settings-cfg-rnd", nav: "settings-warehouse", legacy: true, since: "KP-T9" },
+  "settings-masters": {
+    to: "entity-masters", nav: "settings-company", label: "Master Data", legacy: true, since: "KP-T9",
+  },
+  "settings-notify": {
+    to: "scheduler", nav: "settings-documents", label: "Notifikasi & Penjadwal", legacy: true, since: "KP-T9",
+  },
 };
 
 /** Alias untuk `view` → `{ from, to, nav, preset, label, since, legacy }`, atau null bila bukan alias. */

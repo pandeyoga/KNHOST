@@ -1,5 +1,5 @@
 /**
- * DocNumberingView — KP-T5: Pengaturan › Dokumen & Cetak › **Penomoran Dokumen** (`docs/blueprint/unit/KP-T5.md`).
+ * DocNumberingView — KP-T5: Pengaturan › Dokumen & Notifikasi › **Penomoran Dokumen** (`docs/blueprint/unit/KP-T5.md`).
  *
  * Satu tabel untuk semua jenis nomor dokumen, per lapisan (Semua PT = aturan grup / satu PT): contoh nomor berikutnya
  * (dihitung server dari penghitung nyata), awalan, lebar angka, sisipan tanggal, kapan angka mulai lagi dari 1, deret

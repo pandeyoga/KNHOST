@@ -26,6 +26,7 @@ from typing import Any, Dict, List, Optional
 from fastapi import APIRouter, HTTPException, Query, Request
 from pymongo import ReturnDocument
 
+from access_modules import module_label_of
 from db import db
 from dependencies import has_permission, require_permission, audit, current_user
 from core_utils import invalidate_entity_code, now_iso, safe_doc
@@ -42,12 +43,14 @@ router = APIRouter(prefix="/api")
 #: `city` (pemilih badan usaha di kepala aplikasi: saringan & pencarian). Jumlah akun dan kesiapan tidak dikirim.
 REFERENCE_FIELDS = ("id", "code", "name", "short_name", "legal_name", "type", "is_pkp", "currency", "status",
                     "doc_prefix", "logo_url", "is_group", "write_locked", "city")
-_S5_DITOLAK = ("Anda belum punya akses untuk melihat rincian badan usaha. Minta Admin menambahkan akses "
-               "'Badan Usaha (PT)'.")   # PR-T5 — modul pemilik `entity`
-_PKP_DITOLAK = ("Anda belum punya akses untuk mengubah status PKP badan usaha. Minta Admin menambahkan akses "
-                "'Badan Usaha (PT)'.")   # PR-T5
+# KP-T9 — nama modul diambil dari katalog (`module_label_of`), tidak ditulis ulang di sini (dulu "Badan Usaha (PT)").
+_MODUL_PT = module_label_of("entity")
+_S5_DITOLAK = ("Anda belum punya akses untuk melihat rincian PT. Minta Admin menambahkan akses "
+               f"'{_MODUL_PT}'.")   # PR-T5 — modul pemilik `entity`
+_PKP_DITOLAK = ("Anda belum punya akses untuk mengubah status PKP PT. Minta Admin menambahkan akses "
+                f"'{_MODUL_PT}'.")   # PR-T5
 _ULANG_DITOLAK = ("Anda belum punya akses untuk mengulang penyiapan PT. Minta Admin menambahkan akses "
-                  "'Badan Usaha (PT)'.")   # KP-T2 — pesan Z6, modul pemilik `entity` (PR-T5)
+                  f"'{_MODUL_PT}'.")   # KP-T2 — pesan Z6, modul pemilik `entity` (PR-T5)
 
 
 async def _with_profile(out: Dict[str, Any]) -> Dict[str, Any]:

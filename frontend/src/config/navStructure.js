@@ -48,7 +48,7 @@ import {
   RotateCcw,
   ShieldCheck,
   Building2,
-  Database,
+  UserCog,
 } from "lucide-react";
 
 // HUB TABS (tab per hub) dipindah ke `hubTabs.js` — re-export agar impor lama tetap jalan.
@@ -371,13 +371,13 @@ export const NAV_STRUCTURE = [
     hub:   "document-center",
     view:  "document-center",
   },
-  // ── PENGATURAN — fase 3 · P2, keputusan pemilik P16-K1 (mock UAT24-F5 §P16.3): dulu SATU menu dengan ±20 tab
-  // berseksi; kini GRUP berisi 7 kelompok (Perusahaan & Akun · Persetujuan · Kebijakan per Domain · Master Data ·
-  // Dokumen & Cetak · Notifikasi & Penjadwal · Integrasi & Sistem). groupId TETAP `settings-hub` (ROLE_NAV
-  // sales_admin & katalog modul admin tetap sah); alamat lama `?view=settings-hub` = alias legacy (viewAliases.js).
-  // Editor lama mempertahankan view id-nya — hanya pindah hub. warehouse_admin: Gudang & Mutu (Penerimaan & OCR,
-  // Master Grade Mutu); sales_admin (ROLE_NAV): Penjualan › Kebijakan Retur + Gudang & Mutu › Master Grade Mutu.
-  // Sub-judul memakai urutan kunci `type, label, id` supaya pengurai baris `id, label` (audit_ia) tak menganggapnya menu.
+  // ── PENGATURAN — KP-T9 (K-46): SEMBILAN hub tanpa sub-judul, urut cara mengisi PT baru (PT → orang → persetujuan →
+  // aturan per bagian → dokumen → sistem). Dulu (fase 3 · P2, P16-K1) 12 hub + 2 sub-judul, tiga di antaranya ber-tab
+  // tunggal. groupId TETAP `settings-hub` (ROLE_NAV sales_admin & katalog modul tetap sah); alamat lama
+  // `?view=settings-hub` = alias legacy, empat id hub yang hilang (`settings-purchasing`, `settings-rnd`,
+  // `settings-masters`, `settings-notify`) = alias legacy ke tab barunya (viewAliases.js). Editor lama mempertahankan
+  // view id-nya — hanya pindah hub. warehouse_admin: Gudang, Pembelian & Produksi (Penerimaan Barang, Grade Mutu);
+  // sales_admin (ROLE_NAV): Penjualan › Kebijakan Retur + Gudang, Pembelian & Produksi › Grade Mutu.
   {
     type:    "group",
     groupId: "settings-hub",
@@ -385,20 +385,15 @@ export const NAV_STRUCTURE = [
     icon:    Settings,
     roles:   ["admin", "manager", "warehouse_admin"],
     items: [
-      { id: "settings-company",    label: "Perusahaan & Akun",      icon: Building2,    roles: ["admin", "manager"], hub: "settings-company" },
-      { id: "settings-approval",   label: "Persetujuan",            icon: ShieldCheck,  roles: ["admin", "manager"], hub: "settings-approval" },
-      { type: "heading", label: "Kebijakan per Domain", id: "h-settings-domain" },
-      { id: "settings-sales",      label: "Penjualan",              icon: ShoppingCart, roles: ["admin", "manager"], hub: "settings-sales" },
-      { id: "settings-warehouse",  label: "Gudang & Mutu",          icon: Warehouse,    roles: ["admin", "manager", "warehouse_admin"], hub: "settings-warehouse" },
-      { id: "settings-purchasing", label: "Pembelian & Produksi",   icon: Factory,      roles: ["admin", "manager"], hub: "settings-purchasing" },
-      { id: "settings-finance",    label: "Keuangan & Pajak",       icon: Landmark,     roles: ["admin", "manager"], hub: "settings-finance" },
-      { id: "settings-hr",         label: "SDM",                    icon: Users,        roles: ["admin", "manager"], hub: "settings-hr" },
-      { id: "settings-rnd",        label: "R&D",                    icon: FlaskConical, roles: ["admin", "manager"], hub: "settings-rnd" },
-      { type: "heading", label: "Data, Dokumen & Sistem", id: "h-settings-system" },
-      { id: "settings-masters",    label: "Master Data",            icon: Database,     roles: ["admin", "manager"], hub: "settings-masters" },
-      { id: "settings-documents",  label: "Dokumen & Cetak",        icon: Printer,      roles: ["admin", "manager"], hub: "settings-documents" },
-      { id: "settings-notify",     label: "Notifikasi & Penjadwal", icon: BellRing,     roles: ["admin", "manager"], hub: "settings-notify" },
-      { id: "settings-system",     label: "Integrasi & Sistem",     icon: Cpu,          roles: ["admin", "manager"], hub: "settings-system" },
+      { id: "settings-company",    label: "Perusahaan (PT)",              icon: Building2,    roles: ["admin", "manager"], hub: "settings-company" },
+      { id: "settings-access",     label: "Pengguna & Hak Akses",         icon: UserCog,      roles: ["admin", "manager"], hub: "settings-access" },
+      { id: "settings-approval",   label: "Persetujuan",                  icon: ShieldCheck,  roles: ["admin", "manager"], hub: "settings-approval" },
+      { id: "settings-sales",      label: "Penjualan",                    icon: ShoppingCart, roles: ["admin", "manager"], hub: "settings-sales" },
+      { id: "settings-warehouse",  label: "Gudang, Pembelian & Produksi", icon: Warehouse,    roles: ["admin", "manager", "warehouse_admin"], hub: "settings-warehouse" },
+      { id: "settings-finance",    label: "Keuangan & Pajak",             icon: Landmark,     roles: ["admin", "manager"], hub: "settings-finance" },
+      { id: "settings-hr",         label: "SDM",                          icon: Users,        roles: ["admin", "manager"], hub: "settings-hr" },
+      { id: "settings-documents",  label: "Dokumen & Notifikasi",         icon: Printer,      roles: ["admin", "manager"], hub: "settings-documents" },
+      { id: "settings-system",     label: "Sistem",                       icon: Cpu,          roles: ["admin", "manager"], hub: "settings-system" },
     ],
   },
   {

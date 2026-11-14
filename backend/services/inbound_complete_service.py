@@ -118,7 +118,7 @@ async def complete_task(task_id: str, payload: Optional[GRCompletePayload], acto
         if _sj_mode == "block":
             raise HTTPException(status_code=400, detail=(
                 "Nomor SJ supplier wajib diisi sebelum menyelesaikan penerimaan "
-                "(Pengaturan › Penerimaan › Nomor SJ supplier)."))
+                "(Pengaturan › Gudang, Pembelian & Produksi › Aturan Gudang & Mutu › Nomor SJ supplier)."))
         if _sj_mode == "warn":
             _sj_missing_warning = "Nomor SJ supplier belum diisi — lot baru tidak membawa SJ asal."
 

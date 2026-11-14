@@ -5,7 +5,7 @@ import { roleLabel } from "../config/roles";
 import { entityShort, entityFull } from "../utils/entityLabel";
 
 /**
- * EntitySwitcher — pemilih badan usaha aktif (FASE E-3).
+ * EntitySwitcher — pemilih PT aktif (FASE E-3). KP-T9 — teks pemilih memakai satu istilah "PT" ("Semua PT").
  *
  * Yang dijamin layar ini (semuanya cacat nyata yang pernah terjadi):
  *  1. **Hanya badan usaha aktif & yang diizinkan** yang bisa dipilih. Dulu badan
@@ -51,7 +51,7 @@ export default function EntitySwitcher({ entities = [], archived = [], value = "
   // User terkunci 1 badan usaha (sales/gudang — silo): tampilkan badge statis.
   if (!canSwitch) {
     const only = active || selectable[0] || entities[0];
-    const lockLabel = entityShort(only, "Badan usaha");
+    const lockLabel = entityShort(only, "PT");
     return (
       <div className="entity-switcher" data-testid="entity-switcher-locked">
         <div className="entity-switcher-trigger" title={`Anda di ${lockLabel}${roleTag ? ` sebagai ${roleTag}` : ""} (terkunci)`} style={{ cursor: "default" }}>
@@ -64,7 +64,7 @@ export default function EntitySwitcher({ entities = [], archived = [], value = "
   }
 
   const viewAll = value === "all";
-  const label = viewAll ? "Semua Entitas" : entityShort(active, "Badan usaha");
+  const label = viewAll ? "Semua PT" : entityShort(active, "PT");
 
   const term = q.trim().toLowerCase();
   const filtered = term
@@ -84,8 +84,8 @@ export default function EntitySwitcher({ entities = [], archived = [], value = "
         aria-haspopup="listbox"
         aria-expanded={open}
         title={viewAll
-          ? "Mode gabungan: hanya untuk melihat. Pilih satu badan usaha untuk membuat data."
-          : "Pilih badan usaha aktif"}
+          ? "Mode gabungan: hanya untuk melihat. Pilih satu PT untuk membuat data."
+          : "Pilih PT aktif"}
       >
         {viewAll ? <Eye size={14} /> : <Building2 size={14} />}
         <span className="entity-switcher-label">{label}</span>
@@ -103,7 +103,7 @@ export default function EntitySwitcher({ entities = [], archived = [], value = "
                 autoFocus
                 value={q}
                 onChange={(e) => setQ(e.target.value)}
-                placeholder={`Cari di ${selectable.length} badan usaha…`}
+                placeholder={`Cari di ${selectable.length} PT…`}
               />
             </div>
           )}
@@ -119,7 +119,7 @@ export default function EntitySwitcher({ entities = [], archived = [], value = "
             <span className="flex items-center gap-2 min-w-0">
               <Eye size={13} className="shrink-0" />
               <span className="truncate">
-                Semua Entitas
+                Semua PT
                 <span className="entity-tag entity-tag-ro">hanya lihat</span>
               </span>
             </span>
@@ -128,7 +128,7 @@ export default function EntitySwitcher({ entities = [], archived = [], value = "
 
           {filtered.length === 0 && (
             <p className="entity-switcher-empty" data-testid="entity-switcher-empty">
-              Tidak ada badan usaha yang cocok.
+              Tidak ada PT yang cocok.
             </p>
           )}
 

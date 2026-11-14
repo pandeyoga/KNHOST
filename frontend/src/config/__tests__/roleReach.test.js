@@ -32,16 +32,24 @@ const KFT6_DUAL_CONTROL = ["settings-dual-control"];
 // MN-T1 — id layar BARU untuk layar yang SUDAH ADA: empat sub-tab CRM & Pelanggan kini tab hub sendiri (komponen sama;
 // dulu terjangkau sebagai isi `customers-crm`): Penagihan & Penerimaan, Kredit & Plafon (Keuangan › Piutang), Kinerja
 // Sales, Skema (Arsip) (SDM › Kinerja & Insentif). Peran mendapatkannya sesuai kolom "Peran bawaan" tabel MN-T1.
-// KP-T5 — tab Pengaturan › Dokumen & Cetak › Penomoran Dokumen (baca `settings.view`; ubah `settings.manage`).
+// KP-T5 — tab Pengaturan › Dokumen & Notifikasi › Penomoran Dokumen (baca `settings.view`; ubah `settings.manage`).
 const KPT5_DOC_NUMBERING = ["settings-doc-numbering"];
 const MNT1_CRM_TABS = ["collection-worklist", "credit-overrides", "sales-performance", "incentive-schemes"];
+// KP-T9 — id layar BARU untuk bagian layar yang SUDAH ADA: layar wadah Badan Usaha & Akses, Perangkat, dan Penjadwal &
+// Notifikasi dibuka satu bagian per tab hub (komponen sama, prop `only`). `settings-pt-profile` = tujuan alias
+// `entities-access` (sudah di baseline). Manajer: Peran & Hak Akses / Cek Peran hanya tampil menurut rancangan menu — izin
+// server (tanpa `permission`) menyembunyikannya (serverAccessReach.test.js); Perangkat RFID tetap khusus admin.
+const KPT9_PART_TABS = ["settings-pt-readiness", "settings-accounts", "settings-role-check", "settings-attendance-devices",
+  "settings-whatsapp"];
 export const ROLE_REACH_ADDITIONS = {
-  admin: [...P2_SETTINGS_VIEWS, ...P8_SUPPLIER_INTERNAL, ...KFT6_DUAL_CONTROL, ...KPT5_DOC_NUMBERING, ...MNT1_CRM_TABS],
+  admin: [...P2_SETTINGS_VIEWS, ...P8_SUPPLIER_INTERNAL, ...KFT6_DUAL_CONTROL, ...KPT5_DOC_NUMBERING, ...MNT1_CRM_TABS,
+    ...KPT9_PART_TABS],
   manager: [...P2_SETTINGS_VIEWS, ...P8_SUPPLIER_INTERNAL, ...KFT6_DUAL_CONTROL, ...KPT5_DOC_NUMBERING, ...MNT1_CRM_TABS,
+    ...KPT9_PART_TABS,
     "finance-desk",       // MN-T1 — Beranda Keuangan › Perlu Tindakan (Meja Finance; manajer memegang payment_variance.decide)
     "approval-rules",     // D-04 — manajer membaca aturan (dulu lewat Master per Badan Usaha), tulis tetap settings.manage
     "pdf-templates",      // D-01 — tab "Kop & tata letak dasar" (dulu Master per BU kind document-templates); Desainer PDF tetap admin
-    "settings-devices",   // D-29 — tab Mesin absen (dulu Shift & Geofence › Perangkat); tab RFID tetap admin
+    "settings-devices",   // D-29 — tab Mesin absen (dulu Shift & Geofence › Perangkat); KP-T9: kini settings-attendance-devices
     // FIX-1 (K-B1-07, keputusan 9 Nov — audit B1 UI-20/B1b UI-57) — manajer mendapat menu RFID (baca) termasuk
     // Monitor Gerbang (operasional gate U300). Sapu RFID di Stock Opname tetap tertutup (D-15).
     "cs-rfid-lokasi", "cs-rfid-tags", "cs-rfid-gate",

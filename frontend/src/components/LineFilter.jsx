@@ -152,7 +152,7 @@ export default function LineFilter({
         <span
           data-testid={`${testId}-restricted`}
           className="ml-1 rounded bg-[#FFF4E5] px-1.5 py-0.5 text-[9.5px] font-bold text-[#B45309]"
-          title="Akses akun Anda dibatasi pada lini ini oleh admin (Badan Usaha & Akses → Akun)."
+          title="Akses akun Anda dibatasi pada lini ini oleh admin (Pengaturan › Pengguna & Hak Akses › Akun)."
         >
           akses lini terbatas
         </span>

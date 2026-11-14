@@ -511,6 +511,38 @@ def check_page_meta(verbose=False):
     return 0
 
 
+# ─────────────────────────────────────────────────────────────────────────────
+# CHECK 6 — Istilah menu (KP-T9, standar L2 + glosarium KN_32): satu kata "PT"
+#
+# KENAPA: menu memakai empat kata untuk satu hal ("Perusahaan & Akun", "Badan Usaha & Akses", "… Entitas, Akun,
+# Kesiapan", "Antar Entitas (Grup)"). `label`, `title`, dan `kicker` di tiga berkas menu tidak boleh memuat "Entitas"
+# atau "Badan Usaha" (komentar diabaikan). Nama lama untuk palet Ctrl+K hidup di `viewAliases.js` (`label` alias).
+# ─────────────────────────────────────────────────────────────────────────────
+TERM_FILES = ("navStructure.js", "hubTabs.js", "navMeta.js")
+TERM_BANNED = re.compile(r"\bentitas\b|badan usaha", re.I)
+TERM_RX = re.compile(r'\b(label|title|kicker)\s*:\s*"([^"]*)"')
+
+
+def term_violations(text):
+    code = re.sub(r"(^|[^:])//[^\n]*", r"\1", text)
+    code = re.sub(r"/\*.*?\*/", "", code, flags=re.S)
+    return [f"{k}: \"{v}\"" for k, v in TERM_RX.findall(code) if TERM_BANNED.search(v)]
+
+
+def check_terms(verbose=False):
+    hdr("CHECK 6: Istilah menu (label/title/kicker tanpa \"Entitas\"/\"Badan Usaha\")")
+    total = 0
+    for name in TERM_FILES:
+        f = SRC / "config" / name
+        if not f.exists():
+            bad(f"{name} tidak ditemukan"); total += 1; continue
+        for v in term_violations(f.read_text()):
+            bad(f"{name}: {v} — pakai \"PT\" (glosarium KN_32)"); total += 1
+    if not total:
+        ok("label/title/kicker di navStructure.js, hubTabs.js, navMeta.js memakai istilah PT")
+    return total
+
+
 def main():
     ap = argparse.ArgumentParser(description="Check Navigation Map compliance (config-driven)")
     ap.add_argument("-v", "--verbose", action="store_true")
@@ -529,6 +561,7 @@ def main():
     total += check_roles(entries, args.verbose)
     total += check_depth(entries, args.verbose)
     total += check_page_meta(args.verbose)
+    total += check_terms(args.verbose)
 
     hdr("SUMMARY")
     if total == 0:

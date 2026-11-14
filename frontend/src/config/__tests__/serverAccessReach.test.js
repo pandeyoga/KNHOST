@@ -57,8 +57,11 @@ test("Gudang: Kinerja Mitra Makloon (D-22) terbuka dengan izin server", () => {
  *  · Fase 4 · R5 — sales › Lot & Silsilah: seluruh `/api/lots*` dijaga `field_visibility.lot` (middleware), sales tanpa
  *    izin itu → layar berbunyi "Registri LOT tidak tersedia untuk peran Anda". Sumber izin tab kini `field_visibility`
  *    (`access_modules.VIEW_RESOURCE_OVERRIDES`), jadi tab disembunyikan; rancangan `hubTabs` tidak diubah.
+ *  · KP-T9 — manajer › Peran & Hak Akses (`permission-matrix`): dulu alias tersembunyi yang membuka layar Badan Usaha &
+ *    Akses pada bagian Peran — bagian itu sudah disaring izin `permission` (PR-T6) sehingga manajer (tanpa izin itu)
+ *    mendarat di bagian Badan Usaha. Kini tab sendiri milik modul Peran & Hak Akses (`view_resources` = permission).
  */
-const SERVER_GATED = { sales: ["inventory-lots"] };
+const SERVER_GATED = { sales: ["inventory-lots"], manager: ["permission-matrix"] };
 // FIX-1 (audit B1b UI-48) — pencabutan sah yang tercatat di roleReach.test.js (ROLE_REACH_REMOVALS).
 const REMOVED = { warehouse_admin: ["my-desk"], sales_admin: ["my-desk"] };
 // MN-T1 — id menu/hub yang kini mendarat di tab pertama lain di hub yang sama (tercatat di roleReach.test.js

@@ -1,6 +1,11 @@
 /**
  * EntitiesAccessView (FASE E-3) — SATU PINTU untuk badan usaha & hak akses.
  *
+ * KP-T9 — layar ini kini dibuka SATU BAGIAN per tab hub (prop `only`, AppViewRouter): Pengaturan › Perusahaan (PT) ›
+ * Profil PT (`entities`) · Kesiapan PT (`readiness`); Pengaturan › Pengguna & Hak Akses › Akun (`accounts`) · Peran & Hak
+ * Akses (`roles`) · Cek Peran (`role-reality`). Dengan `only` bilah tab dalam tidak dirender; isi tiap bagian tidak
+ * berubah. Preset navigasi dibaca dari id tab hub bagian itu (`PART_VIEW`).
+ *
  * Mengganti tab "Entities" dan "Users" lama di Master Data. Tab lama DIHAPUS
  * (bukan dibiarkan hidup berdampingan) supaya tidak ada dua pintu yang bisa
  * saling bertentangan — dulu formulir lama bisa mengetik `home_entity_id` bebas
@@ -29,6 +34,7 @@ import RoleAccessPanel from "./RoleAccessPanel";
 import EntityReadinessPanel from "./EntityReadinessPanel";
 import { listEntities, errText } from "./entityApi";
 import useViewPreset from "../../../hooks/useViewPreset";
+import { useAppNav } from "../../../context/AppNavContext";
 
 // PR-T6 — `need` = izin yang membuka tab (tanpa izin tab tidak tampil; dulu tampil lalu 403).
 const TABS = [
@@ -43,11 +49,20 @@ const TABS = [
   { key: "readiness", label: "Kesiapan", icon: ClipboardCheck },
 ];
 
-export default function EntitiesAccessView({ currentUser, selectedEntity, onNavigate, initialTab = "entities" }) {
+/** KP-T9 — bagian → id tab hub yang merendernya (preset navigasi & tautan antarbagian). */
+export const PART_VIEW = { entities: "settings-pt-profile", readiness: "settings-pt-readiness", accounts: "settings-accounts",
+  roles: "permission-matrix", "role-reality": "settings-role-check" };
+/** Modul akses yang membuka bagian ber-`need` (kalimat bila bagian dibuka tanpa izin). */
+const PART_MODULE = { accounts: "Akun Pengguna", roles: "Peran & Hak Akses", "role-reality": "Peran & Hak Akses" };
+
+export default function EntitiesAccessView({ currentUser, selectedEntity, onNavigate, initialTab = "entities", only = "" }) {
   const perms = currentUser?.permissions;
-  const tabs = TABS.filter((t) => !t.need || can(perms, t.need[0], t.need[1]));   // PR-T6
-  const [tabState, setTab] = useState(initialTab);
-  const tab = tabs.some((t) => t.key === tabState) ? tabState : (tabs[0]?.key || "entities");
+  const nav = useAppNav();
+  const part = TABS.some((t) => t.key === only) ? only : "";
+  const allowed = TABS.filter((t) => !t.need || can(perms, t.need[0], t.need[1]));   // PR-T6
+  const tabs = part ? allowed.filter((t) => t.key === part) : allowed;
+  const [tabState, setTab] = useState(part || initialTab);
+  const tab = tabs.some((t) => t.key === tabState) ? tabState : (tabs[0]?.key || (part ? "" : "entities"));
   const [entities, setEntities] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -82,11 +97,17 @@ export default function EntitiesAccessView({ currentUser, selectedEntity, onNavi
 
   // KP-T2 — tautan "Lengkapi" dari daftar kesiapan: tab tujuan (+ detail PT untuk tab Badan Usaha). Detail hanya dibuka
   // bila PT itu memang PT aktif (preset juga diterapkan ulang saat layar dipasang ulang karena ganti PT).
-  useViewPreset("entities-access", (p) => {
-    if (p.tab && TABS.some((t) => t.key === p.tab)) setTab(p.tab);
+  // KP-T9 — dengan `only`, preset dibaca dari id tab hub bagian ini (mis. Profil PT `{entity_id}` dari "Lengkapi").
+  useViewPreset(part ? PART_VIEW[part] : "entities-access", (p) => {
+    const want = part || p.tab;
+    if (!part && p.tab && TABS.some((t) => t.key === p.tab)) setTab(p.tab);
     setWizardOpen(false);
-    setDetailId(p.tab === "entities" && p.entity_id && p.entity_id === selectedEntity ? p.entity_id : "");
+    setDetailId(want === "entities" && p.entity_id && p.entity_id === selectedEntity ? p.entity_id : "");
   });
+  // Tombol "buka Akun" dari Peran & Hak Akses: tab dalam bila layar utuh, tab hub Akun bila dibuka per bagian.
+  const openAccounts = part
+    ? (nav.canOpen(PART_VIEW.accounts) ? () => nav.go(PART_VIEW.accounts) : undefined)
+    : (tabs.some((t) => t.key === "accounts") ? () => setTab("accounts") : undefined);
 
   return (
     <div data-testid="entities-access-view">
@@ -110,12 +131,15 @@ export default function EntitiesAccessView({ currentUser, selectedEntity, onNavi
         </div>
       </div>
 
-      {/* Fase 3 · P2 (L-01) — pil buatan sendiri → PageTabs baku (tingkat 2); testid `entities-access-tab-<key>` tetap. */}
+      {/* Fase 3 · P2 (L-01) — pil buatan sendiri → PageTabs baku (tingkat 2); testid `entities-access-tab-<key>` tetap.
+          KP-T9 — dibuka per bagian (`only`): tanpa bilah tab dalam, tombol tetap di bilahnya sendiri. */}
       <div className="mb-3 flex flex-wrap items-center gap-1.5">
-        <div className="min-w-0 flex-1">
-          <PageTabs testId="entities-access-tabs" tabTestId={(k) => `entities-access-tab-${k}`} value={tab} onChange={setTab}
-            ariaLabel="Badan Usaha & Akses" tabs={tabs.map((t) => ({ key: t.key, label: t.label, icon: t.icon }))} />
-        </div>
+        {!part && (
+          <div className="min-w-0 flex-1">
+            <PageTabs testId="entities-access-tabs" tabTestId={(k) => `entities-access-tab-${k}`} value={tab} onChange={setTab}
+              ariaLabel="Badan Usaha & Akses" tabs={tabs.map((t) => ({ key: t.key, label: t.label, icon: t.icon }))} />
+          </div>
+        )}
         <div className="ml-auto flex items-center gap-2">
           {tab === "entities" && canCreateEntity && (
             <button
@@ -172,12 +196,19 @@ export default function EntitiesAccessView({ currentUser, selectedEntity, onNavi
         />
       )}
 
+      {part && !tab && (
+        <p className="section-card section-pad flex items-center gap-2 text-fs-13 text-kn-text-2" data-testid="entities-access-no-part">
+          <ShieldCheck size={14} aria-hidden="true" className="shrink-0 text-kn-text-2" />
+          Anda belum punya akses untuk membuka bagian ini. Minta Admin menambahkan akses &lsquo;{PART_MODULE[part]}&rsquo;.
+        </p>
+      )}
+
       {tab === "roles" && (
         <RoleAccessPanel
           canManage={canEditRoles}
           onChanged={(msg) => { setFlash(msg); window.dispatchEvent(new CustomEvent("kn:roles-changed")); }}
           onError={setError}
-          onOpenAccounts={tabs.some((t) => t.key === "accounts") ? () => setTab("accounts") : undefined}
+          onOpenAccounts={openAccounts}
         />
       )}
 

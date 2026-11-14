@@ -1,5 +1,5 @@
 /**
- * DocTemplatesView — Pengaturan › Dokumen & Cetak › **Template Dokumen** (`pdf-templates`, fase 3 · P2, D-01).
+ * DocTemplatesView — Pengaturan › Dokumen & Notifikasi › **Template Dokumen** (`pdf-templates`, fase 3 · P2, D-01).
  *
  * KENAPA: template dokumen dulu diurus di EMPAT tempat — Template PDF (desainer), Template Dokumen Dasar (AdminView
  * tab templates), Master per Badan Usaha (kind `document-templates`, koleksi SAMA dengan Template Dasar) dan kartu

@@ -20,9 +20,22 @@ import { useAppNav } from "../../../context/AppNavContext";
 import { useEntityScope } from "../../../context/EntityScopeContext";
 import { errText, getReadiness, retryProvisioning } from "./entityApi";
 
-/** Preset tujuan: hub Badan Usaha & Akses membuka tab + (tab Badan Usaha) detail PT ini; layar lain hanya tab. */
+/** KP-T9 — layar Badan Usaha & Akses dipecah menjadi tab hub; id lamanya (`entities-access` + `tab`, dari data lama)
+ *  dipetakan ke tab barunya. */
+const OLD_PART_VIEW = { entities: "settings-pt-profile", readiness: "settings-pt-readiness", accounts: "settings-accounts",
+  roles: "permission-matrix", "role-reality": "settings-role-check" };
+
+/** Layar tujuan tombol Lengkapi. */
+export function completionView(item) {
+  if (item?.view === "entities-access") return OLD_PART_VIEW[item.tab || "entities"] || "settings-pt-profile";
+  return item?.view || "";
+}
+
+/** Preset tujuan: Profil PT membuka detail PT ini; tab pecahan lain tanpa preset; layar lain hanya tab. */
 export function completionPreset(item, entityId) {
-  if (item?.view === "entities-access") return { tab: item.tab || "entities", entity_id: entityId };
+  const view = completionView(item);
+  if (view === "settings-pt-profile") return { entity_id: entityId };
+  if (Object.values(OLD_PART_VIEW).includes(view)) return null;
   return item?.tab ? { tab: item.tab } : null;
 }
 
@@ -38,7 +51,7 @@ export default function EntityCompletionSteps({ entityId, data, loading = false,
     if (!item?.view) return;
     if (entityId && selectedEntity !== entityId) pickEntity(entityId);   // ganti PT aktif dulu
     const preset = completionPreset(item, entityId);
-    go(item.view, preset ? { preset } : {});
+    go(completionView(item), preset ? { preset } : {});
     onNavigated?.(item);
   };
 

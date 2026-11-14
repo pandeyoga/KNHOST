@@ -183,8 +183,8 @@ export default function SuppliersView({ currentUser, selectedEntity }) {
         // dari layar Badan Usaha & Akses, bukan dari sini — kalau tidak,
         // cermin dan aslinya bisa berbeda dan pagar PO ikut salah menilai.
         <span data-testid={withTestIds ? `group-entity-locked-${s.id}` : undefined}
-          title="Diubah dari menu Badan Usaha & Akses (baris ini cerminnya)"
-          aria-label="Diubah dari menu Badan Usaha & Akses"
+          title="Diubah dari Pengaturan › Perusahaan (PT) › Profil PT (baris ini cerminnya)"
+          aria-label="Diubah dari Pengaturan › Perusahaan (PT) › Profil PT"
           className="icon-button cursor-help text-[#8E8E93]"><Lock size={13} /></span>
       )}
     </div>

@@ -93,12 +93,12 @@ export default function RfidLocationsView({ currentUser, selectedEntity }) {
           <p data-testid="rfid-loc-no-reader" className="text-[12px] text-[#6B6B73]">
             Belum ada pembaca tetap di gudang ini — pindai area butuh pembaca.{" "}
             {/* Fase 3 · P8 (D-29) — dulu tautan mentah `?view=cs-rfid-devices` (muat ulang halaman); kini jalur navigasi
-                bersama ke Pengaturan › Integrasi & Sistem › Perangkat tab RFID, hanya bila peran boleh membukanya. */}
+                bersama ke Pengaturan › Sistem › Perangkat RFID, hanya bila peran boleh membukanya. */}
             {nav.canOpen("settings-devices") ? (
               <button type="button" data-testid="rfid-loc-devices-link" className="font-semibold text-[#0058CC] underline"
                 onClick={() => nav.go("settings-devices", { preset: { tab: "rfid" } })}>Buat di Perangkat RFID</button>
             ) : (
-              <span data-testid="rfid-loc-devices-readonly">Pembaca ditambahkan Admin di Pengaturan › Integrasi &amp; Sistem › Perangkat.</span>
+              <span data-testid="rfid-loc-devices-readonly">Pembaca ditambahkan Admin di Pengaturan › Sistem › Perangkat RFID.</span>
             )}
           </p>
         ) : !simMode ? (

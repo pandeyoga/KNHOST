@@ -1443,7 +1443,7 @@ async def _next_service_bill_no(entity_id: str = "") -> str:
     """KP-T5 (KP-35) — tagihan jasa makloon `VBM-#####` dari deret ATOMIK (`next_doc_number`, jenis `vbm`), bukan
     "baca nomor terakhir + 1" (dua pencatatan jasa bersamaan dulu mendapat nomor yang sama). Bawaan = deret bersama
     seluruh grup, bentuk sama; deret pertama disemai dari nomor `VBM-` tertinggi yang ada. `entity_id` = PT order
-    makloon (dipakai bila grup menjadikan deret ini per PT di Pengaturan › Dokumen & Cetak › Penomoran Dokumen)."""
+    makloon (dipakai bila grup menjadikan deret ini per PT di Pengaturan › Dokumen & Notifikasi › Penomoran Dokumen)."""
     from core_utils import next_doc_number
     return await next_doc_number("vendor_bills", "bill_number", "VBM-", width=5, entity_id=entity_id or None,
                                  scheme="shared", kind="vbm")

@@ -27,7 +27,7 @@ import EntityMasterKindPanel, { EntityScopeRibbon } from "./EntityMasterKindPane
 
 /** Fase 3 · P2 — jenis master yang dikelola di layar domainnya: di sini hanya TAUTAN (bukan tabel kedua). */
 export const DOMAIN_HOME = {
-  "document-templates": { view: "pdf-templates", preset: { tab: "dasar" }, where: "Pengaturan › Dokumen & Cetak › Template Dokumen" },
+  "document-templates": { view: "pdf-templates", preset: { tab: "dasar" }, where: "Pengaturan › Dokumen & Notifikasi › Template Dokumen" },
   "expense-categories": { view: "expense-categories", where: "Pengaturan › Keuangan & Pajak › Kategori Beban" },
   "incentive-rates": { view: "incentive-rates", where: "SDM › Kinerja & Insentif › Target & Aturan" },   // MN-T1
   "approval-rules": { view: "approval-rules", where: "Pengaturan › Persetujuan › Aturan Persetujuan" },
@@ -35,13 +35,13 @@ export const DOMAIN_HOME = {
 };
 // Editor lengkap yang tetap DIPASANGKAN dengan tabel berlapis di sini (bukan duplikat — cakupannya berbeda).
 const FULL_EDITOR = {
-  "process-stages": { view: "domain-registry", where: "Pengaturan › Master Data › Registri Domain" },
+  "process-stages": { view: "domain-registry", where: "Pengaturan › Sistem › Kamus Aturan Kain" },
 };
 /** Indeks master per domain (kepala layar). Hanya yang boleh dibuka peran aktif yang tampil. */
 const DOMAIN_INDEX = [
   ["md-products", "Produk & Varian"], ["md-categories", "Kategori"], ["md-uoms", "Satuan & Konversi"],
   ["color-library", "Pustaka Warna"], ["md-warehouses", "Gudang"], ["suppliers", "Pemasok"], ["makloons", "Mitra Makloon"],
-  ["customers-crm", "Pelanggan"], ["grade-master", "Master Grade Mutu"], ["domain-registry", "Registri Domain"],
+  ["customers-crm", "Pelanggan"], ["grade-master", "Grade Mutu"], ["domain-registry", "Kamus Aturan Kain"],
 ];
 
 function DomainIndex() {
@@ -87,7 +87,7 @@ export default function EntityMastersView({ entities = [], selectedEntity = "all
 
   return (
     <div data-testid="entity-masters-view" className="grid gap-4">
-      <DesktopOnlyNotice testId="settings-desktop-notice" what="Master per Badan Usaha" />
+      <DesktopOnlyNotice testId="settings-desktop-notice" what="Master per PT" />
       <ErrorNotice message={error} onRetry={loadGroups} onDismiss={() => setError("")} testId="em-error-groups" />
       <EntityScopeRibbon groupMode={groupMode} entityLabel={entityLabel} />
       <DomainIndex />

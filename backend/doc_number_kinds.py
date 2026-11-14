@@ -6,7 +6,7 @@ berubah walau awalan tercetak diubah), dan **bawaan** `{prefix, width, date_toke
 yang terbit sebelum unit ini dipasang.
 
 Ini STRUKTUR, bukan nilai bisnis: format yang diubah pemilik tersimpan di koleksi `doc_number_formats` (layar Pengaturan ›
-Dokumen & Cetak › Penomoran Dokumen) dan dibaca `services/doc_numbering_service.effective_format`. Tanpa baris tersimpan,
+Dokumen & Notifikasi › Penomoran Dokumen) dan dibaca `services/doc_numbering_service.effective_format`. Tanpa baris tersimpan,
 nomor berikutnya = bawaan katalog = perilaku lama (dibuktikan `tests_mem/test_KPT5a_setara.py` untuk tiap titik panggil).
 
 Aturan:

@@ -1,6 +1,6 @@
 /**
  * WhatsAppConnectionPanel — KP-T8 (KP-16): SATU koneksi WhatsApp untuk Pengingat dan Kirim Dokumen
- * (Pengaturan › Integrasi & Sistem › Integrasi & Audit).
+ * (Pengaturan › Sistem › Integrasi & Audit).
  *
  * Sumber: GET/PUT `/admin/integrations/whatsapp`, POST `…/whatsapp/adopt` (dua koneksi lama berbeda → pilih satu,
  * alasan wajib) dan `…/whatsapp/test` (kirim uji lewat Outbox). Token hanya-tulis: server tidak pernah

@@ -41,8 +41,8 @@ export const HUB_TABS = {
     { view: "md-categories",     label: "Kategori",              roles: ["admin", "manager"] },
     { view: "color-library",     label: "Pustaka Warna",         roles: ["admin", "manager"] },
     { view: "md-uoms",           label: "Satuan & Konversi",     roles: ["admin", "manager"] },
-    // Harga: dua lapis dalam SATU tempat — harga per badan usaha lalu harga khusus pelanggan.
-    { view: "pricelist",         label: "Harga per Badan Usaha", roles: ["admin", "manager"] },
+    // Harga: dua lapis dalam SATU tempat — harga per PT lalu harga khusus pelanggan.
+    { view: "pricelist",         label: "Harga per PT",          roles: ["admin", "manager"] },
     { view: "cs-price-list",     label: "Harga per Pelanggan",   roles: ["admin", "manager", "sales"] },
     { view: "internal-prices",   label: "Harga Internal Antar-PT", roles: ["admin"] },
     // Fase 3 · P2 (P16-K1) — Koreksi Harga & Daftar Dampak (dulu tab di Pusat Pengaturan). Manajer: pratinjau dampak
@@ -144,8 +144,8 @@ export const HUB_TABS = {
     { view: "wms-cutting",       label: "Cutting",               roles: ["admin", "warehouse", "manager", "warehouse_admin"] },
     // UAT 24 Okt (P7) — roll cacat / warna meleset diperbaiki, dicelup ulang, atau di-finishing ulang lalu kembali ke stok.
     { view: "repair-orders",     label: "Perbaikan",             roles: ["admin", "warehouse", "manager", "warehouse_admin", "md"] },
-    // 2026-10 (T5.2) — Transfer Antar-Entitas kini sub-tab di "Stok, Transfer & Opname" › Transfer.
-    { view: "interco-transfers", label: "Transfer Antar-Entitas", roles: ["admin", "warehouse", "manager"], hidden: true, aliasOf: "operations" },
+    // 2026-10 (T5.2) — Transfer Antar-PT kini sub-tab di "Stok, Transfer & Opname" › Transfer.
+    { view: "interco-transfers", label: "Transfer Antar-PT", roles: ["admin", "warehouse", "manager"], hidden: true, aliasOf: "operations" },
   ],
   // 23 Okt (IA, keputusan pemilik) — KUALITAS menu tersendiri (pola SAP QM / Odoo Quality): satu rumah untuk antrean
   // QC kedatangan & SPK inspeksi SEMUA sumber (penerimaan PO, makloon, retur pelanggan/supplier, random check).
@@ -256,82 +256,88 @@ export const HUB_TABS = {
     { view: "cs-rfid-tags",      label: "Tag RFID",              roles: ["admin", "warehouse", "manager"] },
     { view: "cs-rfid-gate",      label: "Monitor Gerbang",       roles: ["admin", "warehouse", "manager"] },
   ],
-  // ── PENGATURAN — fase 3 · P2 (keputusan pemilik P16-K1, mock UAT24-F5 §P16.3). Dulu satu hub `settings-hub` ±20 tab
-  // berseksi (pil membungkus 3–5 baris); kini grup sidebar "Pengaturan" berisi hub per kelompok. Editor lama TETAP
-  // memakai view id-nya (deep link, notifikasi, katalog akses). Yang baru hanya `settings-cfg-*` (Pusat Pengaturan
-  // terkunci ke kelompok registri domain itu — `features/settings/config/configGroupViews.js`), `settings-devices`
-  // (D-29) dan `price-corrections` (Koreksi Harga, hub Produk & Harga). "Semua pengaturan" (`settings-config`) tetap
-  // satu-satunya tempat cari lintas kelompok, riwayat, kesehatan, kunci proses & kebersihan data (Q6).
+  // ── PENGATURAN — KP-T9 (K-46): SEMBILAN hub berurutan menurut cara mengisi PT baru — PT → orang → persetujuan → aturan
+  // per bagian → dokumen → sistem. Dulu (fase 3 · P2, P16-K1) 12 hub dengan tiga hub ber-tab tunggal dan enam layar wadah
+  // ber-tab-dalam. Editor lama TETAP memakai view id-nya (deep link, notifikasi, katalog akses); hub yang hilang
+  // (`settings-purchasing`, `settings-rnd`, `settings-masters`, `settings-notify`) = alias legacy (viewAliases.js).
+  // Bagian layar wadah yang dinaikkan menjadi tab hub (`settings-pt-*`, `settings-accounts`, `settings-role-check`,
+  // `settings-attendance-devices`, `settings-whatsapp`) merender komponen yang sama dengan prop `only` (AppViewRouter) dan
+  // membawa `inheritsHiddenFrom`: tersembunyi bila id wadah lamanya ada di `hidden_views` peran (navigationConfig).
+  // `roles` tiap tab = `roles` tab/bagian lamanya. "Cari Semua Pengaturan" (`settings-config`) tetap satu-satunya tempat
+  // cari lintas kelompok, riwayat, kesehatan, kunci proses & kebersihan data (Q6) — WAJIB di menu (audit_config_wiring).
   "settings-company": [
-    { view: "entities-access",   label: "Badan Usaha & Akses",   roles: ["admin", "manager"] },
-    // Alias deep-link lama `?view=permission-matrix` → Badan Usaha & Akses tab Peran & Hak Akses.
-    { view: "permission-matrix", label: "Peran & Hak Akses",     roles: ["admin", "manager"], hidden: true, aliasOf: "entities-access" },
+    // Bagian "Badan Usaha" dan "Kesiapan" layar Badan Usaha & Akses (`entities-access` = alias ke Profil PT).
+    { view: "settings-pt-profile",   label: "Profil PT",     roles: ["admin", "manager"], inheritsHiddenFrom: "entities-access" },
+    { view: "settings-pt-readiness", label: "Kesiapan PT",   roles: ["admin", "manager"], inheritsHiddenFrom: "entities-access" },
+    // master BERLAPIS global → PT; jenis yang punya rumah domain tampil sebagai TAUTAN (D-01..D-04). Dulu hub Master Data.
+    { view: "entity-masters",        label: "Master per PT", roles: ["admin", "manager"] },
+  ],
+  "settings-access": [
+    // Bagian "Akun & Akses", "Peran & Hak Akses" (dulu juga alias tersembunyi `permission-matrix`), "Cek Peran".
+    { view: "settings-accounts",   label: "Akun",              roles: ["admin", "manager"], inheritsHiddenFrom: "entities-access" },
+    { view: "permission-matrix",   label: "Peran & Hak Akses", roles: ["admin", "manager"], inheritsHiddenFrom: "entities-access" },
+    { view: "settings-role-check", label: "Cek Peran",         roles: ["admin", "manager"], inheritsHiddenFrom: "entities-access" },
   ],
   "settings-approval": [
-    // D-04 — manajer membaca aturan (dulu lewat Master per Badan Usaha); tombol ubah hanya bagi izin settings.manage.
+    // D-04 — manajer membaca aturan (dulu lewat Master per PT); tombol ubah hanya bagi izin settings.manage.
     { view: "approval-rules",    label: "Aturan Persetujuan",    roles: ["admin", "manager"] },
-    // Matriks approver R&D (DivisionsView bagian "matriks"); penempatan tim pindah ke Pengaturan › R&D.
-    { view: "rnd-divisions",     label: "Divisi & Persetujuan R&D", roles: ["admin", "manager"] },
+    // Matriks approver R&D (DivisionsView bagian "matriks"); penempatan tim di Gudang, Pembelian & Produksi › R&D & Desain.
+    { view: "rnd-divisions",     label: "Persetujuan R&D",       roles: ["admin", "manager"] },
     { view: "settings-cfg-approval", label: "Ketegasan, Pengingat & Dokumen", roles: ["admin", "manager"] },
     // KF-T6 — satu tabel aturan "pengaju tidak boleh memutuskan sendiri" per PT (GET /api/kontrol/aturan).
     { view: "settings-dual-control", label: "Kontrol dua orang", roles: ["admin", "manager"] },
   ],
   "settings-sales": [
     { view: "settings-cfg-sales", label: "Aturan Penjualan",     roles: ["admin", "manager"] },
-    { view: "amendment-reasons", label: "Label Alasan Amandemen", roles: ["admin", "manager"] },
     // MN-T1 — "Komisi & Insentif" pindah ke SDM › Kinerja & Insentif › Target & Aturan (view sama).
     // P16-K1 — dipindah dari hub Retur (sales_admin tetap lewat ROLE_NAV `return-policies` + `settings-sales`).
     { view: "return-policies",   label: "Kebijakan Retur",       roles: ["admin", "manager"] },
+    { view: "amendment-reasons", label: "Alasan Koreksi",        roles: ["admin", "manager"] },
   ],
   "settings-warehouse": [
     { view: "settings-cfg-warehouse", label: "Aturan Gudang & Mutu", roles: ["admin", "manager"] },
     // 2026-10 — Profil SJ · Sample Uji OCR · Biaya OCR · Mode Penerimaan (dulu tab di Barang Masuk).
-    { view: "settings-receiving-ocr", label: "Penerimaan & OCR", roles: ["admin", "manager", "warehouse_admin"] },
-    { view: "grade-master",      label: "Master Grade Mutu",     roles: ["admin", "manager", "md", "sales_admin", "warehouse_admin", "md_quality", "qc"] },
-  ],
-  "settings-purchasing": [
+    { view: "settings-receiving-ocr", label: "Penerimaan Barang", roles: ["admin", "manager", "warehouse_admin"] },
+    { view: "grade-master",      label: "Grade Mutu",            roles: ["admin", "manager", "md", "sales_admin", "warehouse_admin", "md_quality", "qc"] },
+    // KP-T9 — dulu hub ber-tab tunggal Pembelian & Produksi dan R&D (`settings-purchasing`, `settings-rnd` = alias).
     { view: "settings-cfg-purchasing", label: "Aturan Pembelian & Makloon", roles: ["admin", "manager"] },
+    // Aturan R&D (kelompok registri `rnd`) + penempatan tim R&D (bagian "tim" DivisionsView).
+    { view: "settings-cfg-rnd",  label: "R&D & Desain",          roles: ["admin", "manager"] },
   ],
   "settings-finance": [
     { view: "settings-cfg-finance", label: "Aturan Keuangan & Pajak", roles: ["admin", "manager"] },
     { view: "gl-account-mappings", label: "Pemetaan Akun",       roles: ["admin", "manager", "finance"] },
-    // D-02 — satu editor kategori (lapis global → badan usaha + pemilih akun COA).
+    // D-02 — satu editor kategori (lapis global → PT + pemilih akun COA).
     { view: "expense-categories", label: "Kategori Beban",        roles: ["admin", "manager"] },
-    { view: "bank-recon-rules",  label: "Aturan & Template Bank", roles: ["admin", "manager"] },
+    { view: "bank-recon-rules",  label: "Bank",                  roles: ["admin", "manager"] },
   ],
   "settings-hr": [
-    { view: "settings-cfg-hr",   label: "SDM & Penggajian",      roles: ["admin", "manager"] },
-    { view: "hr-attendance-setup", label: "Shift & Geofence",     roles: ["admin", "manager"] },
-  ],
-  "settings-rnd": [
-    // Aturan R&D (kelompok registri `rnd`) + penempatan tim R&D (bagian "tim" DivisionsView).
-    { view: "settings-cfg-rnd",  label: "R&D & Desain",          roles: ["admin", "manager"] },
-  ],
-  "settings-masters": [
-    // master BERLAPIS global → badan usaha; jenis yang punya rumah domain tampil sebagai TAUTAN (D-01..D-04).
-    { view: "entity-masters",    label: "Master per Badan Usaha", roles: ["admin", "manager"] },
-    { view: "domain-registry",   label: "Registri Domain",       roles: ["admin", "manager"] },
-    { view: "client-dataset-import", label: "Impor Dataset Klien", roles: ["admin"] },
+    { view: "settings-cfg-hr",   label: "Aturan SDM & Penggajian", roles: ["admin", "manager"] },
+    { view: "hr-attendance-setup", label: "Shift & Lokasi Absen", roles: ["admin", "manager"] },
+    // Bagian "Mesin absen" layar Perangkat (D-29). Juga ikut tersembunyi bila Shift & Lokasi Absen disembunyikan — gerbang
+    // bagian itu di layar lama (`DevicesView`) memakai id `hr-attendance-setup`.
+    { view: "settings-attendance-devices", label: "Mesin Absen", roles: ["admin", "manager"], inheritsHiddenFrom: ["settings-devices", "hr-attendance-setup"] },
   ],
   "settings-documents": [
     // D-01 — Template PDF + Template Dokumen Dasar digabung (alias `doc-templates-basic` → tab "dasar").
     // Tab "Desainer PDF" di dalam layar tetap khusus admin; hak tulis dijaga server (izin `template`).
     { view: "pdf-templates",     label: "Template Dokumen",      roles: ["admin", "manager"] },
+    // KP-T9 — bagian "Job Terjadwal" + "Riwayat Eksekusi" layar Penjadwal & Notifikasi (dulu hub `settings-notify`).
+    { view: "scheduler",         label: "Pengingat Otomatis",    roles: ["admin", "manager"] },
+    { view: "settings-whatsapp", label: "WhatsApp",              roles: ["admin", "manager"], inheritsHiddenFrom: "scheduler" },
     // KP-T5 — format nomor dokumen per jenis per PT (GET /api/doc-numbering = settings.view; ubah settings.manage).
     { view: "settings-doc-numbering", label: "Penomoran Dokumen", roles: ["admin", "manager"] },
-    // KF-T4 — tab "Aturan Dokumen" dicabut: kini sub-judul "Rujukan antar dokumen" di Persetujuan (alias viewAliases).
-  ],
-  "settings-notify": [
-    { view: "scheduler",         label: "Penjadwal & Notifikasi", roles: ["admin", "manager"] },
-    // KF-T4 — tab "Penerima Notifikasi" dicabut: kini sub-judul "Pemberitahuan" di Persetujuan (alias viewAliases).
+    // KF-T4 — tab "Aturan Dokumen" & "Penerima Notifikasi" dicabut: sub-judul di Persetujuan (alias viewAliases).
   ],
   "settings-system": [
-    // Q6 — "Semua pengaturan" = Pusat Pengaturan penuh (cari lintas kelompok, kesehatan, riwayat, kunci proses,
-    // kebersihan data). `view: "settings-config"` WAJIB ada di menu (scripts/audit_config_wiring.py).
-    { view: "settings-config",   label: "Semua pengaturan",      roles: ["admin", "manager"] },
-    { view: "settings-cfg-system", label: "AI & Tampilan",       roles: ["admin", "manager"] },
-    // D-29 — satu layar Perangkat: mesin absen (dulu Shift & Geofence) + RFID (alias `cs-rfid-devices`).
-    { view: "settings-devices",  label: "Perangkat",             roles: ["admin", "manager"] },
     { view: "admin",             label: "Integrasi & Audit",     roles: ["admin"] },
+    // Bagian "RFID" layar Perangkat (D-29; alias `cs-rfid-devices`). Khusus admin seperti bagian RFID dulu (gerbang
+    // `roleCanSee(["admin"], role, "cs-rfid-devices")`); peran kustom lewat modul Operasi Gudang / Perangkat.
+    { view: "settings-devices",  label: "Perangkat RFID",        roles: ["admin"], inheritsHiddenFrom: "cs-rfid-devices" },
+    { view: "domain-registry",   label: "Kamus Aturan Kain",     roles: ["admin", "manager"] },
+    { view: "client-dataset-import", label: "Impor Data Awal",   roles: ["admin"] },
+    { view: "settings-cfg-system", label: "AI & Tampilan",       roles: ["admin", "manager"] },
+    // Q6 — Pusat Pengaturan penuh (cari lintas kelompok, kesehatan, riwayat, kunci proses, kebersihan data).
+    { view: "settings-config",   label: "Cari Semua Pengaturan", roles: ["admin", "manager"] },
   ],
 };

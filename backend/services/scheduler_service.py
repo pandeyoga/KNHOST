@@ -294,7 +294,7 @@ JOBS: List[Dict[str, Any]] = [
      "kind": "interval", "interval_minutes": 5, "fn": _expsched.job_export_schedule_dispatch, "link": "export-center"},
     # ── KP-T1 — status PKP bertanggal berlaku (KP-02) ─────────────────────────────────────────────────────
     {"id": "entity_tax_status_due", "label": "Terapkan Perubahan Status PKP Terjadwal",
-     "description": "Perubahan status PKP badan usaha yang dijadwalkan (Pengaturan › Badan Usaha › Ubah status PKP) "
+     "description": "Perubahan status PKP PT yang dijadwalkan (Pengaturan › Perusahaan (PT) › Profil PT › Ubah status PKP) "
                     "diterapkan pada tanggal berlakunya: status berubah, riwayat bertambah, jadwal dihapus. Dokumen "
                     "yang sudah ada tidak dihitung ulang. Idempoten — juga dijalankan saat aplikasi menyala.",
      "kind": "daily", "hour": 0, "minute": 5, "fn": _entity_tax_status_job, "link": "entities-access"},

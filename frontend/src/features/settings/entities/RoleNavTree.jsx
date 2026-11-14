@@ -3,6 +3,7 @@
 import { HUB_TABS } from "../../../config/hubTabs";
 import { PAGE_META } from "../../../config/navMeta";
 import { NAV_STRUCTURE } from "../../../config/navStructure";
+import { resolveAlias } from "../../../config/viewAliases";
 
 const NAV_LABEL = (() => {
   const out = {};
@@ -16,6 +17,13 @@ const NAV_LABEL = (() => {
   return out;
 })();
 export const titleOf = (id) => NAV_LABEL[id] || PAGE_META[id]?.title || id;
+
+// KP-T9 — tab hub yang dinaikkan dari bagian layar wadah lama ikut tersembunyi bila id wadahnya disembunyikan
+// (`inheritsHiddenFrom`, navigationConfig.hubTabsForRole). Editor menulisnya apa adanya: centang mati + alasan di samping.
+const INHERITS = Object.fromEntries(Object.values(HUB_TABS).flat()
+  .filter((t) => t.inheritsHiddenFrom).map((t) => [t.view, [].concat(t.inheritsHiddenFrom)]));
+export const inheritedHiddenBy = (tabId, hidden) => (INHERITS[tabId] || []).find((id) => hidden.has(id)) || "";
+const sourceLabel = (id) => resolveAlias(id)?.label || titleOf(id);
 
 // PR-T6 (PR-UX-…) — id GRUP sidebar (mis. Pengaturan, Penjualan) dan id menu hub dimiliki bersama banyak modul: dulu
 // tampil sebagai centang biasa di "Menu lain" dan satu centang menyembunyikan seluruh grup. Kini tidak ditampilkan.
@@ -54,7 +62,7 @@ export default function RoleNavTree({ module, hidden, original, disabled, off, o
       <p className="text-fs-12 font-semibold text-kn-text">Menu & tab yang tampil {off && <span className="font-normal text-kn-danger-text">· modul “Tidak ada”: semua tersembunyi</span>}</p>
       <p className="text-fs-12 text-kn-text-2" data-testid={`role-nav-tree-note-${module.id}`}>Menyembunyikan hanya merapikan menu; izin tetap berlaku.</p>
       {menus.map((m) => {
-        const shown = m.tabs.filter((t) => !hidden.has(t.id)).length;
+        const shown = m.tabs.filter((t) => !hidden.has(t.id) && !inheritedHiddenBy(t.id, hidden)).length;
         const state = shown === 0 ? "none" : shown === m.tabs.length ? "all" : "partial";
         return (
           <div key={m.id} className="rounded-md border border-[#EFF0F2] bg-white px-2.5 py-1.5" data-testid={`role-nav-menu-${module.id}-${m.id}`}>
@@ -67,11 +75,17 @@ export default function RoleNavTree({ module, hidden, original, disabled, off, o
             <div className="mt-1 flex flex-wrap gap-x-3 gap-y-1 pl-5">
               {m.tabs.map((t) => {
                 const changed = original.has(t.id) !== hidden.has(t.id);
+                const ikut = inheritedHiddenBy(t.id, hidden);
                 return (
                   <label key={t.id} className={`flex items-center gap-1 text-[10.5px] ${changed ? "font-semibold text-[#8C4A00]" : "text-[#3C3C43]"}`}>
-                    <input type="checkbox" disabled={disabled || off} data-testid={`role-nav-tab-${module.id}-${t.id}`}
-                           checked={!hidden.has(t.id)} onChange={() => onToggle(t.id)} />
+                    <input type="checkbox" disabled={disabled || off || !!ikut} data-testid={`role-nav-tab-${module.id}-${t.id}`}
+                           checked={!hidden.has(t.id) && !ikut} onChange={() => onToggle(t.id)} />
                     {t.label}
+                    {ikut && (
+                      <span className="text-fs-12 font-normal text-kn-text-2" data-testid={`role-nav-tab-inherited-${module.id}-${t.id}`}>
+                        (ikut disembunyikan bersama {sourceLabel(ikut)})
+                      </span>
+                    )}
                   </label>
                 );
               })}

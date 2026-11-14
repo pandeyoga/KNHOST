@@ -18,7 +18,7 @@ ALWAYS_NAV = ["hr-my-profile"]
 
 MODULE_CATALOG: List[Dict[str, Any]] = [
     {"id": "penjualan", "group": "Penjualan", "label": "Pesanan Penjualan",
-     "description": "Pesanan (SO), koreksi, retur, pesanan khusus, dan permintaan internal antar badan usaha.",
+     "description": "Pesanan (SO), koreksi, retur, pesanan khusus, dan permintaan internal antar PT.",
      "resources": ["order", "sales_return", "internal_request", "od_fulfillment", "od_pricing"],
      "nav": ["penjualan", "sales", "sales-orders", "orders", "amendments", "returns", "returns-hub",
              "return-policies", "special-orders", "internal-requests", "keep-pending",
@@ -39,7 +39,7 @@ MODULE_CATALOG: List[Dict[str, Any]] = [
              # terapkan product.update — karena itu modul Produk (bukan Harga).
              "price-corrections"]},
     {"id": "pricing", "group": "Penjualan", "label": "Harga & Persetujuan Harga",
-     "description": "Daftar harga per badan usaha, harga per pelanggan, dan persetujuan harga khusus.",
+     "description": "Daftar harga per PT, harga per pelanggan, dan persetujuan harga khusus.",
      "resources": ["pricelist", "price_approval"],
      "nav": ["penjualan", "products-pricing", "pricelist", "cs-price-list",
              "approval-inbox", "price-approvals",
@@ -50,7 +50,7 @@ MODULE_CATALOG: List[Dict[str, Any]] = [
      "nav": ["pembelian", "sourcing", "reorder", "purchase-requisitions", "rfq",
              "purchase-orders", "purchasing", "po-board", "blanket-po",
              "approval-inbox", "purchase-approval", "purchase-returns", "returns-hub",   # FE-03: tab Hutang milik modul payable
-             "settings-hub", "settings-purchasing", "settings-cfg-purchasing"]},   # fase 3 · P8 — Pengaturan › Pembelian
+             "settings-hub", "settings-purchasing", "settings-cfg-purchasing"]},   # fase 3 · P8 — aturan pembelian (KP-T9: hub Gudang, Pembelian & Produksi)
     {"id": "supplier", "group": "Pembelian", "label": "Pemasok & Makloon",
      "description": "Master pemasok, mitra makloon, kontrak, barang supplier, resep proses & order makloon.",
      "resources": ["supplier", "supplier_contract", "supplier_item", "makloon",
@@ -67,7 +67,7 @@ MODULE_CATALOG: List[Dict[str, Any]] = [
      "nav": ["pembelian", "accounts-payable", "vendor-bills", "contra-bons", "landed-cost",
              "keuangan", "akuntansi", "tax-hub", "input-tax",   # fase 3 · P8: Pajak ada di grup Akuntansi & Pajak
              "settings-hub", "settings-purchasing", "settings-cfg-purchasing"]},   # fase 3 · P8 — aturan kontrabon
-    {"id": "interco", "group": "Pembelian", "label": "Transaksi Antar Badan Usaha",
+    {"id": "interco", "group": "Pembelian", "label": "Transaksi Antar-PT",   # KP-T9 — istilah PT (dulu "Antar Badan Usaha")
      "description": "Jual-beli antar PT dalam grup, settlement, dan saldo pasangan PT.",
      "resources": ["interco", "interco_finance", "interco_price"],
      "nav": ["pembelian", "interco-transactions", "interco-returns", "returns-hub",   # FE-03: tab Hutang milik modul payable
@@ -86,7 +86,7 @@ MODULE_CATALOG: List[Dict[str, Any]] = [
      "resources": ["design_request", "design_ownership"],
      "nav": ["designer-hub", "design-requests", "designer-kpi", "rnd-designs",
              "cs-design-gallery", "rnd-divisions",   # fase 3 · P8 (D-09) — cs-design-gallery = alias mode Galeri
-             # Pengaturan › Persetujuan (Divisi & Persetujuan R&D) + Pengaturan › R&D (aturan & penempatan tim).
+             # Pengaturan › Persetujuan (Persetujuan R&D) + Gudang, Pembelian & Produksi › R&D & Desain (aturan & tim).
              "settings-hub", "settings-approval", "settings-rnd", "settings-cfg-rnd"]},
     {"id": "marketing", "group": "Penjualan", "label": "Marketing & Sosial Media",
      "description": "Kalender konten, kampanye, persetujuan konten, performa post.",
@@ -102,11 +102,11 @@ MODULE_CATALOG: List[Dict[str, Any]] = [
              "cs-rfid-tags", "cs-rfid-devices", "cs-rfid-gate",
              # F-11-layar — retur pelanggan yang menunggu scan terima/kirim/tiba (tampilan tanpa uang)
              "returns-hub", "returns",
-             # Fase 3 · P8 (D-29) — Perangkat RFID kini tab di Pengaturan › Integrasi & Sistem › Perangkat
-             # (`cs-rfid-devices` = alias); aturan gudang di Pengaturan › Gudang & Mutu.
+             # Fase 3 · P8 (D-29) — Perangkat RFID kini tab Pengaturan › Sistem › Perangkat RFID (KP-T9)
+             # (`cs-rfid-devices` = alias); aturan gudang di Pengaturan › Gudang, Pembelian & Produksi.
              "settings-hub", "settings-warehouse", "settings-cfg-warehouse", "settings-system", "settings-devices"]},
     {"id": "inventory", "group": "Gudang", "label": "Stok & Persediaan",
-     "description": "Status stok & ATP, lot & silsilah, stock opname, transfer antar gudang/entitas.",
+     "description": "Status stok & ATP, lot & silsilah, stock opname, transfer antar gudang/PT.",
      "resources": ["inventory", "transfer"],
      "nav": ["gudang", "stock-atp", "inventory-board", "stock-buckets", "inventory-lots",
              "wms-operations", "operations", "interco-transfers", "cs-stock-analytics",   # FE-03 · P8 (D-16): interco-transfers = alias Transfer "Antar PT"
@@ -169,8 +169,8 @@ MODULE_CATALOG: List[Dict[str, Any]] = [
              "hr-attendance", "hr-leave", "hr-overtime", "hr-live-tracking",
              "hr-attendance-setup", "hr-payroll-hub", "hr-payroll-runs", "hr-payslips",
              "hr-kpi-hub", "cs-kpi",
-             # Fase 3 · P8 (P16-K1, D-29) — Shift & Geofence + aturan SDM di Pengaturan › SDM; mesin absen di
-             # Pengaturan › Integrasi & Sistem › Perangkat (tab Mesin absen).
+             # Fase 3 · P8 (P16-K1, D-29) — Shift & Lokasi Absen + aturan SDM di Pengaturan › SDM; KP-T9 — mesin absen
+             # kini tab Pengaturan › SDM › Mesin Absen (blok KP-T9 di bawah).
              "settings-hub", "settings-hr", "settings-cfg-hr", "settings-system", "settings-devices"]},
     {"id": "documents", "group": "Alat", "label": "Dokumen, Cetak & Tanda Tangan",
      "description": "Pusat dokumen, jejak dokumen, pusat cetak, e-sign, pengiriman dokumen.",
@@ -187,7 +187,7 @@ MODULE_CATALOG: List[Dict[str, Any]] = [
              "akuntansi", "fin-reports", "profitability"]},
     {"id": "data_export", "group": "Alat", "label": "Pusat Export Data",
      "description": "Memilih dataset, kolom, filter & periode lalu mengunduh XLSX/CSV. Isi tetap dibatasi izin modul "
-                    "sumber, badan usaha/lokasi, dan visibilitas field (grade/LOT/HPP).",
+                    "sumber, PT/lokasi, dan visibilitas field (grade/LOT/HPP).",
      "resources": ["data_export"], "nav": ["export-center"]},
     {"id": "approval", "group": "Alat", "label": "Pusat Persetujuan",
      "description": "Melihat antrean persetujuan lintas modul. Keputusan tetap dijaga izin dokumennya.",
@@ -196,7 +196,7 @@ MODULE_CATALOG: List[Dict[str, Any]] = [
      "description": "Daftar grade & urutan mutu (rank). Tambah, ubah, aktif/nonaktif dipisah; grade nonaktif "
                     "tidak bisa dipakai input baru di semua form, histori tetap terbaca.",
      "resources": ["grade_master"],
-     "nav": ["grade-master", "settings-hub", "settings-warehouse"]},   # fase 3 · P8 — Pengaturan › Gudang & Mutu
+     "nav": ["grade-master", "settings-hub", "settings-warehouse"]},   # Pengaturan › Gudang, Pembelian & Produksi
     # PR-T5 — modul sakelar (Mati/Nyala); pindah ke grup Gudang. Modul "Profil POV Sales Komersial" (`sales_pov`) dihapus:
     # tidak dibaca kode mana pun (`services/field_visibility.hidden_for` sengaja mengabaikannya).
     {"id": "field_visibility", "group": "Gudang", "label": "Melihat grade, nomor lot & asal barang",
@@ -238,7 +238,7 @@ MODULE_CATALOG: List[Dict[str, Any]] = [
     {"id": "roles", "group": "Organisasi", "label": "Peran & Hak Akses",
      "description": "Mengatur hak akses peran. Hati-hati: bisa mengubah hak akses orang lain.",
      "resources": ["permission"], "nav": ["settings-hub", "settings-company", "entities-access"], "sensitive": True},
-    {"id": "entities", "group": "Organisasi", "label": "Badan Usaha (PT)",
+    {"id": "entities", "group": "Organisasi", "label": "Data PT",   # KP-T9 — istilah PT (dulu "Badan Usaha (PT)")
      "description": "Data PT dalam grup (identitas, pajak, kode dokumen), master per PT, dan pengarsipan PT.",
      "resources": ["entity"],
      "nav": ["settings-hub", "settings-company", "entities-access", "settings-masters", "entity-masters"],
@@ -261,7 +261,7 @@ MODULE_CATALOG: List[Dict[str, Any]] = [
 
 # KF-T6 — tab Pengaturan › Persetujuan › Kontrol dua orang ikut modul Pusat Pengaturan (PR-T5: dulu modul `admin`).
 next(m for m in MODULE_CATALOG if m["id"] == "settings")["nav"].append("settings-dual-control")
-# KP-T5 — tab Pengaturan › Dokumen & Cetak › Penomoran Dokumen ikut modul Pusat Pengaturan, beserta grup induknya
+# KP-T5 — tab Pengaturan › Dokumen & Notifikasi › Penomoran Dokumen ikut modul Pusat Pengaturan, beserta grup induknya
 # `settings-documents` (tab Template Dokumen di grup yang sama tetap milik modul Dokumen, PR-T5).
 next(m for m in MODULE_CATALOG if m["id"] == "settings")["nav"].extend(["settings-documents", "settings-doc-numbering"])
 
@@ -315,6 +315,44 @@ _MNT1_NAV_REMOVE = {
 for _m in MODULE_CATALOG:
     _m["nav"] = [v for v in _m["nav"] if v not in _MNT1_NAV_REMOVE.get(_m["id"], [])]
     _m["nav"].extend(v for v in _MNT1_NAV_ADD.get(_m["id"], []) if v not in _m["nav"])
+
+# ─── KP-T9 — menu Pengaturan sembilan hub (docs/blueprint/unit/KP-T9.md, tabel "Server") ────────────────────────────
+# Aturan umum: modul yang memuat id tab Pengaturan juga memuat id hub induknya dan `settings-hub` (dijaga
+# `scripts/guardrails/verify_access_catalog_nav.py` aturan 3 & 4). Hub yang hilang diganti hub barunya; tab yang
+# dinaikkan dari bagian layar wadah lama masuk modul pemilik sumber daya bagiannya (PR-T5 memecah modul `admin`).
+# Id lama yang masih punya rute (`entities-access`, `settings-cfg-documents`, `settings-cfg-notify`) TETAP: dikenal rute
+# cadangan dan sah sebagai `hidden_views` (tab pecahannya ikut tersembunyi lewat `inheritsHiddenFrom` di layar).
+_KPT9_NAV_REPLACE = {
+    "purchasing": {"settings-purchasing": "settings-warehouse"},
+    "supplier": {"settings-purchasing": "settings-warehouse"},
+    "payable": {"settings-purchasing": "settings-warehouse"},
+    "rnd": {"settings-rnd": "settings-warehouse"},
+    "design": {"settings-rnd": "settings-warehouse"},
+    "entities": {"settings-masters": "settings-company"},   # pemuat `entity-masters`
+    "settings": {"settings-masters": "settings-system"},    # pemuat `domain-registry`
+    "scheduler": {"settings-notify": "settings-documents"},
+}
+_KPT9_NAV_ADD = {
+    "entities": ["settings-pt-profile", "settings-pt-readiness"],
+    "accounts": ["settings-access", "settings-accounts"],
+    "roles": ["settings-access", "permission-matrix", "settings-role-check"],
+    "hr": ["settings-attendance-devices"],
+    "scheduler": ["settings-whatsapp"],
+    "finance_ops": ["settings-sales"],                      # induk tab Alasan Koreksi (finance_amendment)
+    "documents": ["settings-hub"],                          # induk grup tab Template Dokumen (pdf_template)
+    "product": ["settings-hub", "settings-system"],         # induk tab Impor Data Awal (product.import)
+}
+_KPT9_NAV_REMOVE = {
+    "accounts": ["settings-company"],                       # hub Perusahaan (PT) milik modul Data PT
+    "roles": ["settings-company"],
+    "hr": ["settings-system", "settings-devices"],          # Perangkat RFID bukan milik modul SDM
+}
+for _m in MODULE_CATALOG:
+    _rep = _KPT9_NAV_REPLACE.get(_m["id"], {})
+    _nav = [_rep.get(v, v) for v in _m["nav"] if v not in _KPT9_NAV_REMOVE.get(_m["id"], [])]
+    _nav += _KPT9_NAV_ADD.get(_m["id"], [])
+    _m["nav"] = list(dict.fromkeys(_nav))
+del _m, _rep, _nav
 
 MODULE_BY_ID = {m["id"]: m for m in MODULE_CATALOG}
 #: PR-T5 — id modul lama → id modul penggantinya. `apply_levels`/`nav_for_levels` menerima id lama (permintaan, uji, dan
@@ -486,7 +524,7 @@ RESOURCE_LABEL = {
     "audit": "Jejak Audit", "budget": "Anggaran", "cash": "Kas & Bank", "cash_advance": "Kasbon / Uang Muka",
     "cash_settlement": "Pertanggungjawaban Kas", "color": "Pustaka Warna", "contra_bon": "Kontrabon",
     "customer": "Pelanggan", "design_request": "Permintaan Desain", "design_ownership": "Kepemilikan Desain (white/customer label)", "document": "Dokumen & Cetak",
-    "document_delivery": "Pengiriman Dokumen", "entity": "Badan Usaha", "esign": "Tanda Tangan Elektronik",
+    "document_delivery": "Pengiriman Dokumen", "entity": "PT", "esign": "Tanda Tangan Elektronik",   # KP-T9 — dulu "Badan Usaha"
     "finance_amendment": "Amandemen Keuangan", "finance_case": "Kasus Keuangan", "fixed_asset": "Aset Tetap",
     "hr": "SDM / Karyawan", "input_tax": "Faktur Pajak Masukan", "inspection": "Inspeksi & QC",
     "interco": "Transaksi Antar PT (barang)", "interco_finance": "Keuangan Antar PT", "interco_price": "Harga Internal Antar PT", "internal_request": "Permintaan Internal (PIN)",

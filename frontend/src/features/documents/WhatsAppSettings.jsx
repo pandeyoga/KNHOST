@@ -3,7 +3,7 @@
 // menempel di tab Koneksi, layar penuh di HP). L-01: `TabBtn` buatan sendiri → `PageTabs` (`wa-tab-*` tetap).
 // Testid lain tetap (`wa-settings-modal` = kartu pop-up, `wa-set-*`).
 // KP-T8 (KP-16) — setelah koneksi WhatsApp tunggal ada (`connection_managed`), penyedia/nomor/token diatur di
-// Pengaturan › Integrasi & Sistem › Integrasi & Audit: isian itu diganti ringkasan hanya-baca + tautan; simpan hanya
+// Pengaturan › Sistem › Integrasi & Audit: isian itu diganti ringkasan hanya-baca + tautan; simpan hanya
 // mengirim isian pemakaian (`simulate`, `enabled`) — server menolak field koneksi.
 import { useEffect, useState } from "react";
 import axios, { API } from "../../services/apiClient";
@@ -91,7 +91,7 @@ export default function WhatsAppSettings({ open, onClose }) {
                   {` · ${s.sender_label || ""} · token ${s.has_token ? "sudah terisi" : "belum terisi"}`}
                 </p>
                 <LinkCard testId="wa-set-connection-link" what="Koneksi WhatsApp" label="Atur koneksi di Integrasi"
-                  where="Pengaturan › Integrasi & Sistem › Integrasi & Audit" view="admin" />
+                  where="Pengaturan › Sistem › Integrasi & Audit" view="admin" />
               </div>
             ) : (<>
             <div className="grid gap-1">

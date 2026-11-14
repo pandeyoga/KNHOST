@@ -1,6 +1,10 @@
 /**
  * SchedulerView (R6.5 — Penjadwal & Notifikasi) — pusat kendali alert otomatis.
  *
+ * KP-T9 — dibuka per bagian (`only`, AppViewRouter) sebagai dua tab Pengaturan › Dokumen & Notifikasi: **Pengingat
+ * Otomatis** (`scheduler`, `only={["jobs","runs"]}`) dan **WhatsApp** (`settings-whatsapp`, `only={["wa"]}`). Bilah tab
+ * dalam tidak dirender bila hanya satu bagian; kartu angka & tombol "Jalankan Semua" ikut bagiannya. Isi bagian tetap.
+ *
  * Sumber: /api/scheduler/jobs · /summary · /runs · /settings · /wa-outbox.
  * 3 tab: Job Terjadwal · Riwayat Eksekusi · WhatsApp (pengaturan + Outbox).
  * Semua alert dihitung dari data NYATA (AR, AP, penyusutan, anggaran, produksi, gudang).
@@ -25,9 +29,13 @@ const TABS = [
   { k: "wa", label: "WhatsApp", icon: MessageCircle },
 ];
 
-export default function SchedulerView({ currentUser, onNavigate }) {
+export default function SchedulerView({ currentUser, onNavigate, only = null }) {
   const perms = useMemo(() => schedPerms(currentUser?.permissions), [currentUser]);
-  const [tab, setTab] = useState("jobs");
+  const parts = TABS.filter((t) => !only || only.includes(t.k));
+  const hasJobs = parts.some((t) => t.k !== "wa");
+  const hasWa = parts.some((t) => t.k === "wa");
+  const [tabState, setTab] = useState(parts[0]?.k || "jobs");
+  const tab = parts.some((t) => t.k === tabState) ? tabState : (parts[0]?.k || "jobs");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [notice, setNotice] = useState(null); // {msg, tone:'ok'|'err'}
@@ -182,7 +190,7 @@ export default function SchedulerView({ currentUser, onNavigate }) {
           : `Pengiriman gagal: ${data.error || "cek kredensial provider"}`,
         data.status === "failed" ? "err" : "ok");
       await loadOutbox();
-      setTab("wa");
+      if (hasWa) setTab("wa");
     } catch (e) {
       flash(e.response?.data?.detail || "Gagal mengirim pesan uji.", "err");
     } finally { setTesting(false); }
@@ -213,7 +221,7 @@ export default function SchedulerView({ currentUser, onNavigate }) {
           <AlarmClock size={19} className="text-[#6B219A]" />
         </div>
         <div className="mr-auto">
-          <h2 className="text-[16px] font-bold text-[#1C1C1E]">Penjadwal & Notifikasi</h2>
+          <h2 className="text-[16px] font-bold text-[#1C1C1E]">{hasJobs && hasWa ? "Penjadwal & Notifikasi" : hasJobs ? "Pengingat Otomatis" : "WhatsApp"}</h2>
           <p className="text-[11px] text-[#8E8E93]">
             Alert otomatis dari data nyata · zona {status?.timezone || "Asia/Jakarta"} (WIB)
             {status && (
@@ -225,7 +233,7 @@ export default function SchedulerView({ currentUser, onNavigate }) {
             )}
           </p>
         </div>
-        {perms.run && (
+        {perms.run && hasJobs && (
           <button data-testid="sched-run-all" onClick={runAll} disabled={runningAll}
                   className="primary-button inline-flex items-center gap-1.5">
             {runningAll ? <Loader2 size={14} className="animate-spin" /> : <PlayCircle size={14} />}
@@ -250,7 +258,8 @@ export default function SchedulerView({ currentUser, onNavigate }) {
       {error && <ErrorNotice message={error} onRetry={load} />}
 
       {/* KPI */}
-      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+      <div className={`grid gap-3 ${hasJobs && hasWa ? "grid-cols-2 lg:grid-cols-4" : hasJobs ? "grid-cols-1 sm:grid-cols-3" : "grid-cols-1 sm:grid-cols-2 lg:grid-cols-4"}`}>
+        {hasJobs && <>
         <KpiCard testId="sched-kpi-jobs" label="Job Aktif" icon={AlarmClock} accent="#6B219A"
                  value={`${summary?.jobs_enabled ?? 0} / ${summary?.jobs_total ?? 0}`}
                  sub="terjadwal otomatis" />
@@ -260,22 +269,23 @@ export default function SchedulerView({ currentUser, onNavigate }) {
         <KpiCard testId="sched-kpi-notif" label="Notifikasi Hari Ini" icon={Bell} accent="#C77700"
                  value={summary?.notifications_today ?? 0}
                  sub={`${summary?.notifications_unread ?? 0} belum dibaca siapa pun · ${summary?.escalation?.open ?? 0} eskalasi terbuka`} />
-        <KpiCard testId="sched-kpi-wa" label="Pesan WhatsApp" icon={MessageCircle} accent="#1B7F4B"
+        </>}
+        {hasWa && <KpiCard testId="sched-kpi-wa" label="Pesan WhatsApp" icon={MessageCircle} accent="#1B7F4B"
                  value={summary?.wa?.total ?? 0}
                  sub={`${summary?.wa?.today ?? 0} hari ini · ${wa.enabled
                    ? `${summary?.delivery_mode === "digest" ? "ringkasan" : "instan"} · ${wa.provider || "simulated"}`
-                   : "nonaktif"}`} />
+                   : "nonaktif"}`} />}
       </div>
 
-      {/* Tabs */}
-      <div className="tab-pills !mb-0" role="tablist">
-        {TABS.map((t) => (
+      {/* Tabs — KP-T9: tidak dirender bila hanya satu bagian (`only`). */}
+      {parts.length > 1 && <div className="tab-pills !mb-0" role="tablist">
+        {parts.map((t) => (
           <button key={t.k} type="button" role="tab" aria-selected={tab === t.k} data-testid={`sched-tab-${t.k}`} onClick={() => setTab(t.k)}
                   className={`tab-pill inline-flex items-center gap-1.5 ${tab === t.k ? "active" : ""}`}>
             <t.icon size={14} /> {t.label}
           </button>
         ))}
-      </div>
+      </div>}
 
       {/* Content */}
       {tab === "jobs" && (

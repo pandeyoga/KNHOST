@@ -145,7 +145,7 @@ export default function RfidSecurityPanel({ whId, selectedEntity }) {
         {/* UAT 24 Okt (audit UI tahap 2) — kartu dulu kosong total ("Kesehatan Device (0 stale)") bila tak ada perangkat. */}
         <SectionCard title={`Kesehatan Perangkat${health && (health.devices || []).length ? ` (${health.stale_count} tidak melapor)` : ""}`}>
           {!health ? null : (health.devices || []).length === 0 ? (
-            <EmptyBox icon={HeartPulse} text="Belum ada perangkat RFID di gudang ini. Daftarkan di Pengaturan › Perangkat RFID." />
+            <EmptyBox icon={HeartPulse} text="Belum ada perangkat RFID di gudang ini. Daftarkan di Pengaturan › Sistem › Perangkat RFID." />
           ) : (
             <div className="max-h-64 space-y-1 overflow-y-auto" data-testid="rfid-device-health">
               {health.devices.map((d) => {

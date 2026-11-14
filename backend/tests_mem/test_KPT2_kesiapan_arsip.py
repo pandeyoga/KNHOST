@@ -238,7 +238,8 @@ async def test_KPT2_U12b_ulangi_penyiapan_ikut_izin(klien, akun, sesi, db, peran
     mk = await sesi(await akun(await peran_manajer_kosong()))
     r = await klien.post(f"/api/entities/{eid}/provisioning/retry", headers=mk)
     assert r.status_code == 403, r.text
-    assert _detail(r).startswith("Anda belum punya akses untuk") and "Badan Usaha (PT)" in _detail(r)
+    # KP-T9 — nama modul pemilik `entity` kini "Data PT" (diambil dari katalog, dulu "Badan Usaha (PT)").
+    assert _detail(r).startswith("Anda belum punya akses untuk") and "'Data PT'" in _detail(r)
     assert "entity." not in _detail(r)
     ta = await sesi(await akun(await peran_tanpa_acuan({"entity": ["update"]}, label="TA KPT2 ubah PT")))
     r = await klien.post(f"/api/entities/{KSC}/provisioning/retry", headers=ta)   # PT penugasannya (N1)

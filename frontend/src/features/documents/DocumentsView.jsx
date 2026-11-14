@@ -2,7 +2,7 @@
  * DocumentsView — Pusat Dokumen › Cetak PDF & Label.
  *
  * Fase 3 · P2 (D-01, keputusan pemilik 26 Okt) — kartu "Template aktif" (daftar template ketiga, baca-saja) diganti
- * SATU baris ringkas: tautan ke Pengaturan › Dokumen & Cetak › Template Dokumen bagi peran yang boleh membukanya,
+ * SATU baris ringkas: tautan ke Pengaturan › Dokumen & Notifikasi › Template Dokumen bagi peran yang boleh membukanya,
  * "dikelola Admin" bagi peran lain. Daftar & form template hanya di layar utama itu.
  */
 import { useState } from "react";
@@ -28,7 +28,7 @@ export default function DocumentsView({ templates, loading = false, lastDocument
         </div>
         <div className="px-4 py-2">
           <LinkCard testId="documents-templates-link" icon={FileText} what="Template dokumen (kop, kolom, tanda tangan)"
-            where="Pengaturan › Dokumen & Cetak › Template Dokumen" view="pdf-templates" preset={{ tab: "dasar" }}
+            where="Pengaturan › Dokumen & Notifikasi › Template Dokumen" view="pdf-templates" preset={{ tab: "dasar" }}
             summary={loading ? "memuat…" : `${(templates || []).length} template aktif`}
             readOnlyText="Template dokumen (kop, kolom, tanda tangan) dikelola Admin di Pengaturan." />
         </div>

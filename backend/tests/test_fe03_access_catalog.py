@@ -61,9 +61,11 @@ def test_pengaturan_tidak_terblokir_untuk_peran_yang_dulu_membukanya():
     harus_terbuka = {
         "sales_admin": ["settings-hub", "settings-sales", "return-policies", "settings-warehouse", "grade-master"],
         "warehouse_admin": ["settings-hub", "settings-warehouse", "grade-master", "settings-receiving-ocr"],
-        "manager": ["settings-hub", "settings-company", "settings-approval", "settings-sales", "settings-warehouse",
-                    "settings-purchasing", "settings-finance", "settings-hr", "settings-rnd", "settings-masters",
-                    "settings-documents", "settings-notify", "settings-system", "settings-devices",
+        # KP-T9 — sembilan hub Pengaturan (dulu juga settings-purchasing/-rnd/-masters/-notify) + tab pecahan baru.
+        "manager": ["settings-hub", "settings-company", "settings-access", "settings-approval", "settings-sales",
+                    "settings-warehouse", "settings-finance", "settings-hr", "settings-documents", "settings-system",
+                    "settings-pt-profile", "settings-pt-readiness", "settings-accounts", "settings-attendance-devices",
+                    "settings-whatsapp", "domain-registry",
                     "price-corrections", "fin-reports", "profitability", "supplier-internal-prices"],
         "warehouse": ["makloon-claim-recap"],
     }

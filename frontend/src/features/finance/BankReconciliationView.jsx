@@ -257,7 +257,7 @@ export default function BankReconciliationView() {
               count: t.id === "holding" && holding?.needs_action ? holding.needs_action : undefined,
             }))} />
           <p className="ml-auto text-[11px] text-[#6B6B73]" data-testid="recon-rules-moved">
-            Aturan pembelajaran & template bank kini di <a className="font-semibold text-[#0058CC] underline" href="?view=bank-recon-rules" data-testid="recon-rules-link">Pengaturan › Keuangan</a>
+            Aturan pembelajaran & template bank kini di <a className="font-semibold text-[#0058CC] underline" href="?view=bank-recon-rules" data-testid="recon-rules-link">Pengaturan › Keuangan & Pajak › Bank</a>
             {suggestedRules ? <span className="ml-1 rounded-full bg-[#FFF4E5] px-1.5 text-[10px] font-bold text-[#B26A00]">{suggestedRules} usulan menunggu</span> : null}
           </p>
         </div>

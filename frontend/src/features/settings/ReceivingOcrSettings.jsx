@@ -18,7 +18,7 @@ const TABS = [
   { key: "mode", label: "Mode Penerimaan", perm: ["goods_receipt", "configure"], Panel: GrnModePanel },
 ];
 
-/** Pengaturan › Gudang › Penerimaan & OCR — konfigurasi (bukan pekerjaan harian gudang). */
+/** Pengaturan › Gudang, Pembelian & Produksi › Penerimaan Barang — konfigurasi (bukan pekerjaan harian gudang). */
 export default function ReceivingOcrSettings({ currentUser }) {
   const tabs = TABS.filter((t) => can(currentUser?.permissions, ...t.perm));
   // KF-T4 — kartu Pengaturan "Cara mencatat barang datang" menautkan ke sini dengan preset `{ tab: "mode" }`.
@@ -31,7 +31,7 @@ export default function ReceivingOcrSettings({ currentUser }) {
       <DesktopOnlyNotice testId="settings-desktop-notice" what="Pengaturan" />
       {/* Fase 3 · P2 (L-01) — bilah tab baku (PageTabs); testid `ocr-settings-tab-<key>` tetap. */}
       <PageTabs testId="ocr-settings-tabs" tabTestId={(k) => `ocr-settings-tab-${k}`} value={active.key} onChange={setTab}
-        ariaLabel="Penerimaan & OCR" tabs={tabs.map((t) => ({ key: t.key, label: t.label }))} />
+        ariaLabel="Penerimaan Barang" tabs={tabs.map((t) => ({ key: t.key, label: t.label }))} />
       <active.Panel />
     </div>
   );

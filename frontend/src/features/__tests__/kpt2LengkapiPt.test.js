@@ -46,9 +46,10 @@ if (!Element.prototype.scrollIntoView) Element.prototype.scrollIntoView = () => 
 
 const KEYS = ["provisioning", "address", "tax", "doc_prefix", "users", "finance_user", "warehouses", "bank_account",
   "cash_account", "gl_mappings", "period", "payment_term", "prices", "opening_balance", "branding", "signers"];
-const VIEW = { address: ["entities-access", "entities"], tax: ["entities-access", "entities"],
-  doc_prefix: ["entities-access", "entities"], users: ["entities-access", "accounts"],
-  finance_user: ["entities-access", "accounts"], warehouses: ["md-warehouses"], bank_account: ["bank-accounts"],
+// KP-T9 — butir profil/akun menuju tab hub baru (Profil PT, Akun); `tab` lama tetap dikirim server.
+const VIEW = { address: ["settings-pt-profile", "entities"], tax: ["settings-pt-profile", "entities"],
+  doc_prefix: ["settings-pt-profile", "entities"], users: ["settings-accounts", "accounts"],
+  finance_user: ["settings-accounts", "accounts"], warehouses: ["md-warehouses"], bank_account: ["bank-accounts"],
   cash_account: ["bank-accounts"], gl_mappings: ["gl-account-mappings"], period: ["closing"],
   payment_term: ["entity-masters"], prices: ["pricelist"], opening_balance: ["general-ledger"],
   branding: ["pdf-templates"], signers: ["pdf-templates"] };
@@ -126,13 +127,13 @@ test("Lengkapi: mengganti PT aktif lebih dulu lalu membuka layar (dengan preset 
   expect(nav.go).toHaveBeenCalledWith("md-warehouses", {});
   expect(scope.pickEntity.mock.invocationCallOrder[0]).toBeLessThan(nav.go.mock.invocationCallOrder[0]);
   await click(q("cs-goto-users"));
-  expect(nav.go).toHaveBeenLastCalledWith("entities-access", { preset: { tab: "accounts", entity_id: "ent_baru" } });
+  expect(nav.go).toHaveBeenLastCalledWith("settings-accounts", {});   // KP-T9 — tab Akun (tanpa preset)
   scope.selectedEntity = "ent_baru";                                 // dipasang ulang dengan PT aktif = PT ini
   scope.pickEntity.mockClear();
   await mount(<EntityCompletionSteps entityId="ent_baru" data={READINESS()} testId="cs2" />);
   await click(q("cs2-goto-address"));
   expect(scope.pickEntity).not.toHaveBeenCalled();                  // PT sudah aktif
-  expect(nav.go).toHaveBeenLastCalledWith("entities-access", { preset: { tab: "entities", entity_id: "ent_baru" } });
+  expect(nav.go).toHaveBeenLastCalledWith("settings-pt-profile", { preset: { entity_id: "ent_baru" } });   // KP-T9
 });
 
 test("Ulangi penyiapan: POST retry, kesiapan baru dikirim ke pemanggil; kosong & memuat dibedakan", async () => {

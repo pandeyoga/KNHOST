@@ -187,7 +187,7 @@ async def update_supplier(supplier_id: str, payload: GenericPatch, request: Requ
             raise HTTPException(
                 status_code=409,
                 detail=(f"“{sup.get('name', '')}” adalah cermin badan usaha grup, jadi "
-                        f"{', '.join(sorted(blocked))} diubah dari menu Badan Usaha & Akses "
+                        f"{', '.join(sorted(blocked))} diubah dari Pengaturan › Perusahaan (PT) › Profil PT "
                         f"(bukan dari layar Pemasok) supaya identitasnya tidak pernah "
                         f"berbeda dengan aslinya."))
     elif "name" in updates or "npwp" in updates:
@@ -223,8 +223,8 @@ async def deactivate_supplier(supplier_id: str, request: Request) -> Dict[str, A
             status_code=409,
             detail=(f"“{sup.get('name', '')}” adalah cermin badan usaha di dalam grup, "
                     f"jadi tidak dinonaktifkan dari layar Pemasok. Status barisnya "
-                    f"mengikuti status badan usahanya — ubah di menu "
-                    f"**Badan Usaha & Akses** bila badan usaha itu memang berhenti "
+                    f"mengikuti status badan usahanya — ubah di "
+                    f"**Pengaturan › Perusahaan (PT) › Profil PT** bila PT itu memang berhenti "
                     f"beroperasi."))
     updated = await db.suppliers.find_one_and_update(
         {"id": supplier_id}, {"$set": {"status": "inactive", "updated_at": now_iso()}},

@@ -175,7 +175,7 @@ E("lot.number_format", group="penerimaan", section="nomor-lot", type="text", def
   consumers=("services/lot_service.py",), risk="low",
   permission=_LOT_PERM, status="not_used",
   not_used_reason="Nomor lot saat ini selalu berbentuk KODE-PT/LOT-TTBB-urutan. Format yang bisa diatur menyusul "
-                  "bersama penomoran dokumen. Diatur di Pengaturan › Dokumen & Cetak › Penomoran Dokumen.")
+                  "bersama penomoran dokumen. Diatur di Pengaturan › Dokumen & Notifikasi › Penomoran Dokumen.")
 
 # ═══════════════════════════════════════════════════════════════════════════
 # PENERIMAAN BARANG (scope `receiving`)
@@ -248,7 +248,7 @@ E("receiving.mode", group="penerimaan", section="menerima", type="enum", default
          "setengah jalan tetap boleh diselesaikan di layar lama.",
   example="Per kedatangan → petugas mencatat tiap surat jalan, menghitung fisik, lalu mencocokkannya",
   consumers=("services/goods_receipt_service.py:guard_legacy_receiving",), risk="high",
-  edit_at={"view": "settings-receiving-ocr", "preset": {"tab": "mode"}, "label": "Penerimaan & OCR › Mode Penerimaan"})
+  edit_at={"view": "settings-receiving-ocr", "preset": {"tab": "mode"}, "label": "Penerimaan Barang › Mode Penerimaan"})
 
 E("receiving.blind_count", group="penerimaan", section="menerima", type="bool", default=True, scopes=G,
   label="Hitung tanpa melihat angka surat jalan",

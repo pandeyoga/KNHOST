@@ -42,9 +42,13 @@ import { SalesPortal, PriceApprovals, OrdersView, CrmView, OperationsView, QcHub
   SampleAdminDesk, SampleOrdersView, DocumentCenter, DocTraceView, PaymentPlansView, RndSpecsView,
   RndSamplesView, SampleTypeGalleryView, RndDesignsView, RndReportsView, DesignerKpiView, ContentCalendar,
   MktCampaigns, MarketingAnalytics, SocialAccounts, DivisionsView,
-  SettingsGroupView, DevicesView, PriceCorrectionsView, DocTemplatesView, DualControlView, DocNumberingView,
+  SettingsGroupView, SettingsLinkCards, DevicesView, PriceCorrectionsView, DocTemplatesView, DualControlView, DocNumberingView,
   CollectionWorklist, CreditOverridesPanel, SalesForceDashboard, IncentiveSchemeEditor, CustomerCreditView, PettyCashView,
 } from "./appViewImports";
+
+// KP-T9 — bagian layar Penjadwal & Notifikasi per tab hub (konstanta: `only` dibandingkan per render).
+const SCHEDULER_JOBS = ["jobs", "runs"];
+const SCHEDULER_WA = ["wa"];
 
 // PS-20 — peta view tujuan → hub induknya, untuk tombol "Buka" di Persetujuan Saya.
 const APPROVAL_HUB_OF = {
@@ -140,15 +144,23 @@ export default function AppViewRouter(props) {
       {activeView === "admin" && <AdminView {...adminProps} onSeedDemo={seedDemo} only={["integrations", "audit"]} />}
       {/* IA 2026-10 — fitur yang dulu tab di "Master Data & Audit", kini di domainnya (komponen sama = fitur utuh). */}
       {activeView === "customers-master" && <AdminView {...adminProps} only={["customers"]} />}
-      {/* Matriks Izin lama DIHAPUS (duplikat) — satu pintu: Badan Usaha & Akses → Peran & Hak Akses.
-          Tautan/bookmark lama diarahkan ke tab itu. */}
-      {(activeView === "entities-access" || activeView === "permission-matrix") && (
-        <EntitiesAccessView
-          currentUser={user}
-          selectedEntity={selectedEntity}
-          initialTab={activeView === "permission-matrix" ? "roles" : "entities"}
-          onNavigate={(view) => onNavSelect(view, view)}
-        />
+      {/* KP-T9 — layar Badan Usaha & Akses dipecah menjadi lima tab hub (Pengaturan › Perusahaan (PT) dan Pengguna & Hak
+          Akses): komponen sama, satu bagian per tab (`only`). `entities-access` = alias ke Profil PT; rute cadangannya
+          tetap (bagian "entities"). `permission-matrix` kini tab nyata Peran & Hak Akses. */}
+      {["entities-access", "settings-pt-profile"].includes(activeView) && (
+        <EntitiesAccessView currentUser={user} selectedEntity={selectedEntity} only="entities" onNavigate={(view) => onNavSelect(view, view)} />
+      )}
+      {activeView === "settings-pt-readiness" && (
+        <EntitiesAccessView currentUser={user} selectedEntity={selectedEntity} only="readiness" onNavigate={(view) => onNavSelect(view, view)} />
+      )}
+      {activeView === "settings-accounts" && (
+        <EntitiesAccessView currentUser={user} selectedEntity={selectedEntity} only="accounts" onNavigate={(view) => onNavSelect(view, view)} />
+      )}
+      {activeView === "permission-matrix" && (
+        <EntitiesAccessView currentUser={user} selectedEntity={selectedEntity} only="roles" onNavigate={(view) => onNavSelect(view, view)} />
+      )}
+      {activeView === "settings-role-check" && (
+        <EntitiesAccessView currentUser={user} selectedEntity={selectedEntity} only="role-reality" onNavigate={(view) => onNavSelect(view, view)} />
       )}
       {/* Fase 3 · P2 (D-01) — Template Dokumen: tab "Kop & tata letak dasar" + "Desainer PDF" (khusus admin).
           `doc-templates-basic` = alias (viewAliases.js); rute cadangan tetap merender layar utama tab dasar. */}
@@ -192,7 +204,15 @@ export default function AppViewRouter(props) {
       {activeView === "finance-cases" && <FinanceCasesView currentUser={user} selectedEntity={selectedEntity} entities={entities} focusCase={caseFocus} onFocusCaseConsumed={onCaseFocusConsumed} />}
       {activeView === "fixed-assets" && <FixedAssetsView selectedEntity={selectedEntity} entities={entities} />}
       {activeView === "production" && <ProductionView selectedEntity={selectedEntity} entities={entities} currentUser={user} />}
-      {activeView === "scheduler" && <SchedulerView currentUser={user} onNavigate={(target) => onNavSelect(target, target)} />}
+      {/* KP-T9 — Penjadwal & Notifikasi dipecah: Pengingat Otomatis (job + riwayat) dan WhatsApp (pengaturan + Outbox),
+          keduanya di Pengaturan › Dokumen & Notifikasi. WhatsApp kirim dokumen tetap di Pusat Dokumen (kartu tautan). */}
+      {activeView === "scheduler" && <SchedulerView currentUser={user} only={SCHEDULER_JOBS} onNavigate={(target) => onNavSelect(target, target)} />}
+      {activeView === "settings-whatsapp" && (
+        <>
+          <SchedulerView currentUser={user} only={SCHEDULER_WA} onNavigate={(target) => onNavSelect(target, target)} />
+          <SettingsLinkCards view="settings-whatsapp" />
+        </>
+      )}
       {activeView === "chart-of-accounts" && <ChartOfAccounts entities={entities} currentUser={user} />}
       {activeView === "general-ledger" && <GeneralLedger selectedEntity={selectedEntity} entities={entities} focusDoc={focusDoc?.focus_type === "journal_entry" ? focusDoc : null} onClearFocus={() => setFocusDoc(null)} />}
       {activeView === "financial-statements" && <FinancialStatementsView selectedEntity={selectedEntity} />}
@@ -299,7 +319,9 @@ export default function AppViewRouter(props) {
       {(activeView === "settings-cfg-documents" || activeView === "settings-cfg-notify") && (
         <SettingsGroupView key={activeView} view={activeView} currentUser={user} selectedEntity={selectedEntity} entities={entities} {...cfgFocus} />
       )}
-      {activeView === "settings-devices" && <DevicesView currentUser={user} selectedEntity={selectedEntity} />}
+      {/* KP-T9 — layar Perangkat dipecah: Perangkat RFID (Sistem) dan Mesin Absen (SDM). */}
+      {activeView === "settings-devices" && <DevicesView currentUser={user} selectedEntity={selectedEntity} only="rfid" />}
+      {activeView === "settings-attendance-devices" && <DevicesView currentUser={user} selectedEntity={selectedEntity} only="absen" />}
       {activeView === "price-corrections" && <PriceCorrectionsView currentUser={user} selectedEntity={selectedEntity} />}
       {activeView === "purchasing" && <PurchaseOrderManagement user={user} selectedEntity={selectedEntity} onApprovePO={approvePurchaseOrder} focusDoc={focusDoc} onClearFocus={() => setFocusDoc(null)} onOpenDocument={openDocument} onSwitchEntity={props.onSelectEntity} buyerEntities={props.switcherEntities || entities} />}
       {/* FASE P — papan PO per lini (kertas kerja MD: tahap · Nama Sales · qty terima) */}
@@ -404,8 +426,8 @@ export default function AppViewRouter(props) {
       {activeView === "settings-receiving-ocr" && <ReceivingOcrSettings currentUser={user} />}
       {activeView === "wms-locations" && <LocationPutawayView currentUser={user} selectedEntity={selectedEntity} />}
       {activeView === "cs-rfid-tags" && <RfidTagsView currentUser={user} selectedEntity={selectedEntity} />}
-      {/* D-29 — `cs-rfid-devices` = alias ke Perangkat tab RFID; rute cadangan merender layar utama yang sama. */}
-      {activeView === "cs-rfid-devices" && <DevicesView currentUser={user} selectedEntity={selectedEntity} initialTab="rfid" />}
+      {/* D-29 — `cs-rfid-devices` = alias ke Perangkat RFID; rute cadangan merender layar utama yang sama. */}
+      {activeView === "cs-rfid-devices" && <DevicesView currentUser={user} selectedEntity={selectedEntity} only="rfid" />}
       {activeView === "cs-rfid-gate" && <RfidGateMonitorView currentUser={user} selectedEntity={selectedEntity} />}
       {activeView === "cs-rfid-lokasi" && <RfidLocationsView currentUser={user} selectedEntity={selectedEntity} />}
       {isComingSoon && <ComingSoon title={pageMeta.title} kicker={pageMeta.kicker} onBack={() => onNavSelect(defaultNavIdForRole(user?.role), defaultViewForRole(user?.role))} />}

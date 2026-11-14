@@ -41,15 +41,36 @@ export const CONFIG_GROUP_VIEWS = {
   "settings-cfg-sales":      { nav: "settings-sales", groups: ["penjualan", "retur-koreksi"],
     excludeKeys: [COMMISSION_PREFIX] },
   "settings-cfg-warehouse":  { nav: "settings-warehouse", groups: ["penerimaan", "kualitas", "stok"] },
-  "settings-cfg-purchasing": { nav: "settings-purchasing", groups: ["pembelian"] },
+  "settings-cfg-purchasing": { nav: "settings-warehouse", groups: ["pembelian"] },   // KP-T9 — dulu hub Pembelian & Produksi
   "settings-cfg-finance":    { nav: "settings-finance",
     groups: ["pembayaran-pelanggan", "pajak-pembukuan", "bank-kasus"] },
   "settings-cfg-hr":         { nav: "settings-hr", groups: ["sdm"] },
-  "settings-cfg-rnd":        { nav: "settings-rnd", groups: ["rnd"] },
+  "settings-cfg-rnd":        { nav: "settings-warehouse", groups: ["rnd"] },          // KP-T9 — dulu hub R&D
   "settings-cfg-system":     { nav: "settings-system", groups: ["sistem", "keamanan"] },   // KF-T7 — + Keamanan akun & sesi
 };
 
 export const CONFIG_GROUP_VIEW_IDS = Object.keys(CONFIG_GROUP_VIEWS);
+
+/**
+ * KP-T9 (KP-29) — pengaturan yang tinggal di layar lain di luar grup Pengaturan: kartu tautan (`LinkCard`
+ * `hideWhenDenied`) di bawah daftar kartu layar ini. `where` = nama menu tujuannya (dijaga uji
+ * `features/__tests__/kpt9BagianLayar.test.js` terhadap breadcrumb menu). Tab WhatsApp dirender rute
+ * (`AppViewRouter`) di bawah layar Penjadwal.
+ */
+export const SETTINGS_LINKS = {
+  "settings-cfg-finance": [
+    { what: "Jadwal bayar antar-PT", view: "interco-transactions", where: "Keuangan › Antar-PT" },
+    { what: "Rekening bank dan kas tiap PT", view: "bank-accounts", where: "Keuangan › Kas & Bank › Rekening & Saldo" },
+    { what: "Syarat pembayaran", view: "entity-masters", where: "Pengaturan › Perusahaan (PT) › Master per PT" },
+  ],
+  "settings-cfg-warehouse": [
+    { what: "Daftar gudang dan lokasi", view: "md-warehouses", where: "Gudang & Logistik › Data Gudang" },
+  ],
+  "settings-whatsapp": [
+    { what: "WhatsApp untuk mengirim dokumen dan aturan kirim otomatis", view: "document-center",
+      where: "Pusat Dokumen › Daftar Dokumen" },
+  ],
+};
 
 /** Layar domain yang memuat kelompok registri `group` ("" bila tak dikenal). KF-T4 — id kelompok lama diterjemahkan. */
 export function configViewForGroup(group) {

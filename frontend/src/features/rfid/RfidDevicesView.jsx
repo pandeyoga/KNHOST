@@ -1,8 +1,8 @@
 /**
  * RfidDevicesView — perangkat RFID (pembaca / gerbang / printer) per gudang.
  *
- * Fase 3 · P2 — D-29: dirender sebagai tab "RFID (pembaca/gerbang)" di Pengaturan › Integrasi & Sistem ›
- * Perangkat (`settings-devices`, `embedded`); alamat lama `cs-rfid-devices` = alias ke tab itu. L-02: kepala
+ * Fase 3 · P2 — D-29: dirender sebagai tab Pengaturan › Sistem › Perangkat RFID
+ * (`settings-devices`, `embedded`; KP-T9); alamat lama `cs-rfid-devices` = alias ke tab itu. L-02: kepala
  * halaman baku (`PageHeader`); L-03: form "Perangkat Baru" yang dulu diselipkan di tengah halaman → `FormModal`.
  * PREP-D1: tombol "Integrasi reader U300" (gerbang/pembaca tetap) membuka panel gate V2 di `DetailModal`.
  */

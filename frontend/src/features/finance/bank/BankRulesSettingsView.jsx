@@ -7,7 +7,7 @@ import ReconRulesPanel from "./ReconRulesPanel";
 import ReconFormatsPanel from "./ReconFormatsPanel";
 import DesktopOnlyNotice from "../../../components/DesktopOnlyNotice";
 
-/** Pengaturan › Keuangan › Aturan & Template Bank (dulu tab di Rekonsiliasi Bank). */
+/** Pengaturan › Keuangan & Pajak › Bank (aturan & template bank; dulu tab di Rekonsiliasi Bank). */
 export default function BankRulesSettingsView() {
   const [tab, setTab] = useState("rules");
   const [rules, setRules] = useState([]);

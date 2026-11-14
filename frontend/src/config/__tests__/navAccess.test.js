@@ -75,28 +75,30 @@ test("Turunan Manager tanpa Akuntansi: menu akuntansi dicabut, sisanya tetap", (
 // Fase 3 · P8 — "Pengaturan" kini GRUP berisi kelompok (P16-K1): peran kustom mendapat kelompok dari modul domainnya.
 // PR-T5 — modul Admin dipecah lima (Akun, Peran, Badan Usaha, Pusat Pengaturan, Penjadwal); id lama `admin` = alias kelimanya.
 // Template Dokumen pindah ke modul Dokumen; Perangkat tetap milik Operasi Gudang, SDM, dan Perangkat (PR-T2).
+// KP-T9 — sembilan hub: Badan Usaha & Akses dipecah (Perusahaan (PT) · Pengguna & Hak Akses), Master Data & Notifikasi &
+// Penjadwal hilang (tabnya pindah ke Perusahaan (PT), Sistem, Dokumen & Notifikasi).
 test("Pengaturan untuk peran kustom: modul Admin = kelompok umum; tanpa kebijakan domain", () => {
   const s = menu("cr_settings_admin")["settings-hub"];
-  expect(s["settings-company"]).toEqual(["entities-access"]);
+  expect(s["settings-company"]).toEqual(["settings-pt-profile", "settings-pt-readiness", "entity-masters"]);
+  expect(s["settings-access"]).toEqual(["settings-accounts", "permission-matrix", "settings-role-check"]);
   expect(s["settings-approval"]).toEqual(["approval-rules", "settings-cfg-approval", "settings-dual-control"]);   // KF-T6
-  expect(s["settings-masters"]).toEqual(["entity-masters", "domain-registry"]);
   // KF-T4 — "Aturan Dokumen" & "Penerima Notifikasi" kini sub-judul di Persetujuan (alias viewAliases); PR-T5 —
-  // Template Dokumen milik modul Dokumen → grup Template Dokumen tidak berisi apa pun bagi modul Pusat Pengaturan saja.
-  // KP-T5 — tab Penomoran Dokumen milik modul Pusat Pengaturan → grup Dokumen & Cetak berisi tab itu saja.
-  expect(s["settings-documents"]).toEqual(["settings-doc-numbering"]);
-  expect(s["settings-notify"]).toEqual(["scheduler"]);
-  expect(s["settings-system"]).toEqual(["settings-config", "settings-cfg-system", "admin"]);   // PR-T5 — tanpa Perangkat
-  ["settings-sales", "settings-finance", "settings-hr"].forEach((id) => expect(s[id]).toBeUndefined());
+  // Template Dokumen milik modul Dokumen → tidak ikut modul Pusat Pengaturan/Penjadwal. KP-T5 — Penomoran Dokumen milik
+  // modul Pusat Pengaturan; KP-T9 — Pengingat Otomatis & WhatsApp milik modul Penjadwal.
+  expect(s["settings-documents"]).toEqual(["scheduler", "settings-whatsapp", "settings-doc-numbering"]);
+  expect(s["settings-system"]).toEqual(["admin", "domain-registry", "settings-cfg-system", "settings-config"]);   // tanpa Perangkat RFID
+  ["settings-sales", "settings-finance", "settings-hr", "settings-masters", "settings-notify"].forEach((id) => expect(s[id]).toBeUndefined());
 });
 
 test("Pengaturan untuk peran kustom domain: SDM, Akuntansi, Operasi Gudang", () => {
   const hr = menu("cr_hr")["settings-hub"];
-  expect(hr["settings-hr"]).toEqual(["settings-cfg-hr", "hr-attendance-setup"]);
-  expect(hr["settings-system"]).toEqual(["settings-devices"]);              // D-29 — tab Mesin absen
+  // KP-T9 — Mesin Absen kini tab Pengaturan › SDM; modul SDM tidak lagi membuka hub Sistem (Perangkat RFID).
+  expect(hr["settings-hr"]).toEqual(["settings-cfg-hr", "hr-attendance-setup", "settings-attendance-devices"]);
+  expect(hr["settings-system"]).toBeUndefined();
   expect(menu("cr_accounting")["settings-hub"]["settings-finance"]).toEqual(["settings-cfg-finance", "gl-account-mappings"]);
   const wh = menu("cr_warehouse_ops")["settings-hub"];
   expect(wh["settings-warehouse"]).toEqual(["settings-cfg-warehouse", "settings-receiving-ocr"]);   // PR-T5 — tab di luar katalog
-  expect(wh["settings-system"]).toEqual(["settings-devices"]);              // D-29 — tab RFID (alias cs-rfid-devices)
+  expect(wh["settings-system"]).toEqual(["settings-devices"]);              // KP-T9 — tab Perangkat RFID (alias cs-rfid-devices)
   expect(menu("cr_interco")["settings-hub"]).toBeUndefined();
 });
 

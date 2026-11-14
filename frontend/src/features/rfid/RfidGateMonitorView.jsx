@@ -118,7 +118,7 @@ export default function RfidGateMonitorView({ currentUser, selectedEntity }) {
   const rollOpts = tags.map((t) => ({ value: t.roll_id, label: `${t.roll_no} · ${t.sku || "—"} · ${t.epc}` }));
   const gate = devices.find((d) => d.id === gateId);
   const noGate = devices.length === 0;
-  const NO_GATE_REASON = "Belum ada gerbang di gudang ini — daftarkan di Pengaturan › Perangkat RFID.";
+  const NO_GATE_REASON = "Belum ada gerbang di gudang ini — daftarkan di Pengaturan › Sistem › Perangkat RFID.";
   const gateStatus = useGateStatus(gateId, live || kiosk, undefined, gate?.protocol);
 
   return (
@@ -170,7 +170,7 @@ export default function RfidGateMonitorView({ currentUser, selectedEntity }) {
       {tab === "review" && <GateReviewQueue whId={whId} devices={devices} />}
       {/* FIX-1 (K-B1-07 diputuskan, audit B1 UI-21 / B1b UI-57) — operasional gate (kesehatan reader, kunci & buka
           kunci, sesi dokumen, riwayat lintasan) kini terjangkau dari RFID › Monitor Gerbang untuk Admin Gudang &
-          manajer; Pengaturan › Perangkat tinggal konfigurasi. Aksi tetap dijaga izin server (simulator/konfigurasi = admin). */}
+          manajer; Pengaturan › Sistem › Perangkat RFID tinggal konfigurasi. Aksi tetap dijaga izin server (simulator/konfigurasi = admin). */}
       {tab === "ops" && (
         <div className="space-y-3" data-testid="gate-ops">
           {devices.length === 0 ? <EmptyBox icon={Cpu} text="Belum ada gerbang di lokasi ini." /> : (
@@ -197,7 +197,7 @@ export default function RfidGateMonitorView({ currentUser, selectedEntity }) {
 
       <SectionCard title="Simulasi Pembacaan Gate">
         {devices.length === 0 ? (
-          <EmptyBox icon={Cpu} text="Belum ada gerbang di gudang ini. Buat dulu di Pengaturan › Perangkat RFID." />
+          <EmptyBox icon={Cpu} text="Belum ada gerbang di gudang ini. Buat dulu di Pengaturan › Sistem › Perangkat RFID." />
         ) : (
           <div className="space-y-3">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
@@ -206,7 +206,7 @@ export default function RfidGateMonitorView({ currentUser, selectedEntity }) {
               <div><label className="text-[11px] text-[#6B6B73]">Roll (tag) yang lewat</label>
                 <KNSelect data-testid="rfid-gate-roll" value={rollId} onValueChange={setRollId} options={rollOpts} className="field mt-1 text-[12px]" placeholder="Pilih roll ber-tag" searchable /></div>
             </div>
-            {gate && gate.status !== "online" && <p className="text-[11px] text-[#C0341D]">Gerbang ini MATI — nyalakan di Pengaturan › Perangkat RFID.</p>}
+            {gate && gate.status !== "online" && <p className="text-[11px] text-[#C0341D]">Gerbang ini MATI — nyalakan di Pengaturan › Sistem › Perangkat RFID.</p>}
             <button data-testid="rfid-gate-simulate" disabled={busy || !gateId || !rollId} onClick={simulate}
               className="primary-button disabled:opacity-40">
               <ScanLine size={16} /> Baca di Gate

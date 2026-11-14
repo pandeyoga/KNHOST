@@ -6,12 +6,12 @@
  * HANYA menampilkan tombol bila peran aktif boleh membuka layar utama (`canOpen`, SSOT menu). Bila tidak
  * boleh, yang tampil ringkasan BACA-SAJA satu baris — bukan tabel duplikat, bukan tombol mati.
  *
- *   <LinkCard testId="em-doc-templates-link" what="Template dokumen" where="Pengaturan › Template Dokumen"
+ *   <LinkCard testId="em-doc-templates-link" what="Template dokumen" where="Pengaturan › Dokumen & Notifikasi › Template Dokumen"
  *     view="pdf-templates" preset={{ tab: "dasar" }} summary="3 template aktif" />
  *   <LinkCard what="Skor mitra" where="Pesanan Pembelian › Kinerja Mitra Makloon" view="makloon-claim-recap"
  *     focus={{ type: "makloon_partner", id: partner.id }} label="Lihat skor" />
  *
- * Props: `what` · `where` (teks menu, mis. "Pengaturan › Template Dokumen") · `view` (boleh id lama/alias)
+ * Props: `what` · `where` (teks menu, mis. "Pengaturan › Dokumen & Notifikasi › Template Dokumen") · `view` (boleh id lama/alias)
  *   · `preset` · `tab` · `focus` ({ type, id, number }) · `label` (bawaan "Buka") · `summary` (node ringkas,
  *   tampil di kedua mode) · `count` (lencana angka) · `icon` · `readOnlyText` (pengganti kalimat baca-saja)
  *   · `hideWhenDenied` (sembunyikan total bila tak berwenang) · `testId` (bawaan "link-card"; tombol

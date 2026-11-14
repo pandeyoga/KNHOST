@@ -47,7 +47,7 @@ async def ocr_config(entity_id: str) -> Dict[str, Any]:
     good = [p for p in pats if R.valid_pattern(p)]
     if len(good) != len(pats):
         out.setdefault("config_warnings", []).append(
-            f"{len(pats) - len(good)} pola nomor PO klien tidak sah dan diabaikan — perbaiki di Pengaturan › Penerimaan.")
+            f"{len(pats) - len(good)} pola nomor PO klien tidak sah dan diabaikan — perbaiki di Pengaturan › Sistem › AI & Tampilan.")
     out["client_po_patterns"] = good or list(R.DEFAULT_PO_PATTERNS)
     return out
 

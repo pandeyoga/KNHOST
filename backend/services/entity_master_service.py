@@ -84,7 +84,7 @@ MASTERS: Dict[str, MasterSpec] = {
         active_field="status",
         hint="Kop surat & tata letak Surat Jalan / Invoice. Tiap badan usaha punya nama, "
              "alamat, dan logo sendiri sehingga template ini wajib bisa ditimpa. Dikelola di "
-             "Pengaturan › Dokumen & Cetak › Template Dokumen.",
+             "Pengaturan › Dokumen & Notifikasi › Template Dokumen.",
     ),
     "sales-return-policies": MasterSpec(
         kind="sales-return-policies", collection="sales_return_policies",
@@ -108,7 +108,7 @@ MASTERS: Dict[str, MasterSpec] = {
         # Fase 3 · P2 (D-03) — dulu menunjuk "CRM › Tarif Insentif" () padahal layarnya di Pengaturan.
         manage=False, screen="incentive-rates",
         hint="Tarif komisi per kategori produk + bawaan komisi. Dikelola di "
-             "Pengaturan › Penjualan › Komisi & Insentif.",
+             "SDM › Kinerja & Insentif › Target & Aturan.",
     ),
     "approval-rules": MasterSpec(
         kind="approval-rules", collection="approval_rules", label="Aturan Persetujuan",

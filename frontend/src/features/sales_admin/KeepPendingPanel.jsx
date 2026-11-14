@@ -100,7 +100,7 @@ function KeepList({ rows, limit, overdue, onOpen, tp }) {
         Keep = SO belum diverifikasi Admin Sales (bukan berarti stok dicadangkan).{" "}
         {limit > 0 ? <>Batas umur <b>{limit} hari</b> · <b className="text-[#C0392B]">{overdue}</b> lewat batas (tanda saja, tidak dibatalkan).</>
           // Audit UI 24 Okt (144/HP Beranda) — dulu menulis kunci konfigurasi mentah "sales.keep_max_age_days".
-          : "Batas umur belum diatur (Pusat Pengaturan › Harga, Diskon & Komisi › Batas umur Keep)."}
+          : "Batas umur belum diatur (Pengaturan › Penjualan › Aturan Penjualan › Batas umur Keep)."}
       </p>
       {rows.length === 0 ? <Empty tp={tp} text="Semua SO sudah diverifikasi." /> : (
         <ul className="divide-y divide-[#F2F3F5] rounded-lg border border-[#EFF0F2]">

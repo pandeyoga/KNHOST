@@ -75,7 +75,7 @@ export default function LocationScopeBar({ value = "", onChange, compact = false
     <div className={`entity-switcher location-scope-bar${compact ? " location-scope-compact" : ""}`} ref={ref} data-testid={testId}>
       <button type="button" className="entity-switcher-trigger" data-testid={`${testId}-trigger`}
         onClick={() => canPick && setOpen((v) => !v)} aria-haspopup="listbox" aria-expanded={open}
-        title={unset ? "Lokasi kerja akun Anda belum diatur — minta admin mengisinya di Pengaturan › Pengguna."
+        title={unset ? "Lokasi kerja akun Anda belum diatur — minta admin mengisinya di Pengaturan › Pengguna & Hak Akses › Akun."
           : restricted ? "Anda dibatasi ke lokasi tugas ini." : "Cakupan lokasi daftar tugas & stok gudang"}
         style={canPick ? undefined : { cursor: "default" }}>
         {unset ? <AlertTriangle size={14} className="text-[#8C4A00]" /> : <MapPin size={14} />}
@@ -92,7 +92,7 @@ export default function LocationScopeBar({ value = "", onChange, compact = false
         <div className="entity-switcher-menu" role="listbox" data-testid={`${testId}-menu`}>
           {unset && (
             <p className="entity-switcher-empty" data-testid={`${testId}-unset-hint`}>
-              Lokasi kerja akun belum diatur — admin mengaturnya di Pengaturan › Pengguna. Sementara itu semua lokasi tampil.
+              Lokasi kerja akun belum diatur — admin mengaturnya di Pengaturan › Pengguna & Hak Akses › Akun. Sementara itu semua lokasi tampil.
             </p>
           )}
           {options.map((o) => (

@@ -48,7 +48,7 @@ TIDAK_DIPAKAI = {
     # KP-T5 — alasan ditambah kalimat tempat format lot kini diatur (tabel Penomoran Dokumen, jenis `lot`).
     "lot.number_format":
         "Nomor lot saat ini selalu berbentuk KODE-PT/LOT-TTBB-urutan. Format yang bisa diatur menyusul bersama "
-        "penomoran dokumen. Diatur di Pengaturan › Dokumen & Cetak › Penomoran Dokumen.",
+        "penomoran dokumen. Diatur di Pengaturan › Dokumen & Notifikasi › Penomoran Dokumen.",   # KP-T9 — nama hub
     "bank.holding_account_code": AKUN_PEMETAAN,
     "bank.charge_account_code": AKUN_PEMETAAN,
     "bank.interest_account_code": AKUN_PEMETAAN,

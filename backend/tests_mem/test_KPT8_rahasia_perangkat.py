@@ -22,7 +22,7 @@ ROOT = Path(__file__).resolve().parents[2]
 SKRIP = ROOT / "scripts/migrate_kpt8_rahasia.py"
 KUNCI_UJI = Fernet.generate_key().decode()
 SIMPAN: dict = {}
-PESAN_KONEKSI = "Koneksi WhatsApp diatur di Pengaturan › Integrasi & Sistem."
+PESAN_KONEKSI = "Koneksi WhatsApp diatur di Pengaturan › Sistem › Integrasi & Audit."   # KP-T9 — nama hub & tab baru
 
 
 @pytest.fixture(autouse=True)

@@ -1,9 +1,9 @@
 /**
- * AttendanceSetupView — Pengaturan › SDM › **Shift & Geofence** (+ mesin absen di layar Perangkat).
+ * AttendanceSetupView — Pengaturan › SDM › **Shift & Lokasi Absen** (+ mesin absen di tab Mesin Absen).
  *
  * Fase 3 · P2:
- *  · D-29 — "Perangkat" (mesin absen) tidak lagi tab di sini: satu layar Perangkat (Pengaturan › Integrasi &
- *    Sistem) memuat mesin absen + RFID. Layar Perangkat merender komponen ini dengan `only="device"`; di Shift &
+ *  · D-29 — "Perangkat" (mesin absen) tidak lagi tab di sini: satu layar Perangkat memuat mesin absen + RFID;
+ *    KP-T9: bagiannya kini dua tab — Pengaturan › SDM › Mesin Absen dan Pengaturan › Sistem › Perangkat RFID. Layar Perangkat merender komponen ini dengan `only="device"`; di Shift &
  *    Geofence tersisa kartu TAUTAN ke sana (keputusan pemilik: duplikat = tautan, fitur & hak tetap).
  *  · L-01 — tab buatan sendiri (`TabBtn`) → `PageTabs` baku; L-03 — laci (Sheet) → `FormModal` baku (di HP
  *    layar penuh, isian tetap lengkap).
@@ -140,11 +140,11 @@ export default function AttendanceSetupView({ currentUser, selectedEntity, only 
       {!deviceOnly && (
         <div className="mb-3 grid gap-2">
           <PageTabs testId="setup-tabs" tabTestId={(k) => `setup-tab-${k}`} value={tab} onChange={setTab}
-            ariaLabel="Shift & Geofence"
+            ariaLabel="Shift & Lokasi Absen"
             tabs={[{ key: "shift", label: "Shift", icon: Clock }, { key: "geofence", label: "Geofence", icon: MapPin }]} />
           {/* D-29 — mesin absen dikelola di layar Perangkat (bersama pembaca/gerbang RFID). */}
           <LinkCard testId="setup-devices-link" icon={Cpu} what="Mesin absen"
-            where="Pengaturan › Integrasi & Sistem › Perangkat" view="settings-devices" preset={{ tab: "absen" }} />
+            where="Pengaturan › SDM › Mesin Absen" view="settings-attendance-devices" />
         </div>
       )}
 

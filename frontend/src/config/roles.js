@@ -198,7 +198,7 @@ export const ROLE_NAV = {
       "interco-transactions",
       "return-policies",           // perlu membaca kebijakan retur saat memproses retur
       // Fase 3 · P2 (P16-K1) — Pengaturan kini GRUP (groupId tetap `settings-hub`): Admin Sales melihat
-      // Penjualan › Kebijakan Retur dan Gudang & Mutu › Master Grade Mutu (tab yang sama seperti sebelumnya).
+      // Penjualan › Kebijakan Retur dan Gudang, Pembelian & Produksi › Grade Mutu (KP-T9; tab yang sama seperti sebelumnya).
       "settings-hub", "settings-sales", "settings-warehouse",
       "document-center", "doc-trace",
       // AUDIT SALES vs ADMIN SALES (sesi 2026-08-15) — keputusan pemilik E8.1b memberi
@@ -397,6 +397,19 @@ export function isModuleNavRole(role) {
 export function navExplicitlyHidden(role, id) {
   if (!id) return false;
   if (accessBlocks(role, id)) return true;
+  const rule = ROLE_NAV[role];
+  return !!(rule && rule.remove.includes(id));
+}
+
+/** KP-T9 — id disembunyikan oleh PILIHAN pengaturan peran: `hidden_views` (peran kustom, pratinjau editor) atau
+ *  `ROLE_NAV.remove` peran bawaan. `remove` peran kustom/pratinjau tidak dihitung: isinya turunan tingkat modul (menu
+ *  modul "Tidak ada"), bukan pilihan sembunyi — tab baru sudah mengikuti modulnya sendiri di katalog. Dipakai tab hub
+ *  ber-`inheritsHiddenFrom` (navigationConfig.hubTabsForRole). */
+export function hiddenByRoleSetting(role, id) {
+  if (!role || !id) return false;
+  const a = role === "__preview" ? ACCESS.preview : (ACCESS.current?.role === role ? ACCESS.current : null);
+  if (a && a.hidden.has(id)) return true;
+  if (isModuleNavRole(role)) return false;
   const rule = ROLE_NAV[role];
   return !!(rule && rule.remove.includes(id));
 }

@@ -3,10 +3,11 @@
  * domain (`settings-cfg-*`, peta di `config/configGroupViews.js`).
  *
  * KENAPA: dulu "aturan penerimaan barang" ada di Pusat Pengaturan (23 kelompok di kolom kiri) sedangkan "Penerimaan &
- * OCR" tab Pengaturan lain — dua tempat untuk satu urusan. Kini Pengaturan › Gudang & Mutu memuat keduanya. Mesinnya
+ * OCR" tab Pengaturan lain — dua tempat untuk satu urusan. Kini Pengaturan › Gudang, Pembelian & Produksi memuat keduanya. Mesinnya
  * SAMA dengan "Semua pengaturan" (`useSettingsBrowser` + `SettingsBrowser` dari SettingsHub) — tidak ada form kedua.
  * Pencarian di sini hanya di kelompok layar ini; pencarian lintas semua kelompok, kesehatan & riwayat tetap di
- * Pengaturan › Integrasi & Sistem › Semua pengaturan.
+ * Pengaturan › Sistem › Cari Semua Pengaturan. KP-T9 (KP-29) — di bawah daftar kartu: tautan ke pengaturan yang tinggal
+ * di layar lain (`SettingsLinkCards`, peta `SETTINGS_LINKS`).
  *
  * Deep link `openConfig({ key, group })` mendarat di sini bila kelompoknya milik layar ini (hooks/useDeepLinks.js).
  */
@@ -18,6 +19,7 @@ import LinkCard from "../../../components/LinkCard";
 import DivisionsView from "../../designer/DivisionsView";
 import { COMMISSION_LINK, SettingsBrowser, SettingsNotice, useSettingsBrowser } from "../config/SettingsHub";
 import { CONFIG_GROUP_VIEWS } from "../config/configGroupViews";
+import SettingsLinkCards from "./SettingsLinkCards";
 
 /** KF-T4 — dua layar lama yang kini alias (`config/viewAliases.js`): rute cadangan merender layar tujuannya pada
  *  sub-judul yang dulu jadi isinya. */
@@ -55,12 +57,13 @@ export default function SettingsGroupView({
       <SettingsNotice s={s} />
       <SettingsBrowser s={s} entities={entities} groupNav="chips"
         excludeLink={cfg.excludeLink || (cfg.excludeKeys ? COMMISSION_LINK : null)}
-        searchPlaceholder="Cari di kelompok ini… (pencarian lintas semua kelompok ada di Semua pengaturan)" />
+        searchPlaceholder="Cari di kelompok ini… (pencarian lintas semua kelompok ada di Cari Semua Pengaturan)" />
       {view === "settings-cfg-rnd" && (
         <DivisionsView section="team" currentUser={currentUser} selectedEntity={selectedEntity} />
       )}
+      <SettingsLinkCards view={view} />
       <LinkCard testId="settings-all-link" what="Pencarian lintas semua kelompok, kesehatan & riwayat perubahan"
-        where="Pengaturan › Integrasi & Sistem › Semua pengaturan" view="settings-config" hideWhenDenied />
+        where="Pengaturan › Sistem › Cari Semua Pengaturan" view="settings-config" hideWhenDenied />
     </div>
   );
 }

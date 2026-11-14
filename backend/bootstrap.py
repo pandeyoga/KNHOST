@@ -269,7 +269,7 @@ ENTITY_REBRAND_2026_09 = {
 }
 NEW_ENTITY_CST = {
     "legal_name": "CV Cipta Sandang Textile", "short_name": "Cipta Sandang", "type": "CV",
-    # NPWP placeholder — pemilik akan melengkapi di Pengaturan → Badan Usaha & Akses.
+    # NPWP placeholder — pemilik akan melengkapi di Pengaturan › Perusahaan (PT) › Profil PT.
     "npwp": "00.000.000.0-000.000", "address": "", "city": "",
     "default_tax_mode": "ppn", "doc_prefix": "CST", "phone": "", "email": "",
 }

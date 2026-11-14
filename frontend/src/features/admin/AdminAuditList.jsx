@@ -1,5 +1,5 @@
 /**
- * AdminAuditList — daftar Jejak Audit (Pengaturan › Integrasi & Sistem › Integrasi & Audit).
+ * AdminAuditList — daftar Jejak Audit (Pengaturan › Sistem › Integrasi & Audit).
  *
  * Fase 3 · P2 — diekstrak dari `AdminView.jsx` (batas 500 baris) apa adanya. UAT 24 Okt (audit UI tahap 2, G5-01):
  * tampilan bawaan = label aksi, nama pelaku, jenis dokumen berlabel, ringkasan data; kode/id hanya tooltip.

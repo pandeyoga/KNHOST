@@ -75,7 +75,7 @@ export default function IntegrationsPanel({ canManage = true }) {
 
             <p className="text-fs-12 text-kn-text-2" data-testid="integrations-model-used">Model dipakai: {cfg?.model || "—"}</p>
             <LinkCard testId="integrations-registry-link" what="Hidup/mati dan model pengenal gambar"
-              where="Pengaturan › Integrasi & Sistem › AI & Tampilan" view="settings-cfg-system" />
+              where="Pengaturan › Sistem › AI & Tampilan" view="settings-cfg-system" />
 
             {canManage && (
               <div className="flex items-center gap-2 pt-1">

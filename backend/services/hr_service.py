@@ -51,7 +51,7 @@ async def next_employee_code(entity_id: str = "") -> str:
     """Kode karyawan `EMP-#####` — KP-T5 (KP-35): deret ATOMIK lewat `next_doc_number` (jenis `emp`), bukan "baca kode
     terakhir + 1" (dua pendaftaran bersamaan dulu mendapat kode sama). Bawaan = deret bersama seluruh grup, bentuk
     sama; deret pertama disemai dari kode `EMP-` tertinggi yang ada. `entity_id` = PT karyawan (dipakai bila grup
-    menjadikan deret ini per PT di Pengaturan › Dokumen & Cetak › Penomoran Dokumen)."""
+    menjadikan deret ini per PT di Pengaturan › Dokumen & Notifikasi › Penomoran Dokumen)."""
     from core_utils import next_doc_number
     return await next_doc_number("hr_employees", "code", "EMP-", width=5, entity_id=entity_id or None,
                                  scheme="shared", kind="emp")

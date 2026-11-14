@@ -23,7 +23,7 @@ router = APIRouter(prefix="/api")
 #: Z6 — kalimat 403 untuk manusia (modul pemilik sumber daya `integration`, saat ini "Pusat Pengaturan").
 PESAN_403 = ("Anda belum punya akses untuk mengatur integrasi. "
              f"Minta Admin menambahkan akses '{module_label_of('integration')}'.")
-PESAN_DI_REGISTRY = "Hidup/mati dan model diatur di Pengaturan › Integrasi & Sistem › AI & Tampilan."
+PESAN_DI_REGISTRY = "Hidup/mati dan model diatur di Pengaturan › Sistem › AI & Tampilan."
 
 
 class WaConnectionUpdate(BaseModel):

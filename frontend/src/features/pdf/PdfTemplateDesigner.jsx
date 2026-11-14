@@ -230,8 +230,9 @@ export default function PdfTemplateDesigner({ currentUser, selectedEntity, entit
     } catch (e) { setBrandingErr(e.response?.data?.detail || "Gagal menyelesaikan identitas kop."); }
     finally { setResolving(false); }
   }
-  const canOpenProfile = nav.canOpen("entities-access");
-  const openProfile = () => nav.go("entities-access", { preset: { tab: "entities", entity_id: entityId } });
+  // KP-T9 — Profil PT kini tab sendiri (Pengaturan › Perusahaan (PT) › Profil PT); preset `{entity_id}` membuka detailnya.
+  const canOpenProfile = nav.canOpen("settings-pt-profile");
+  const openProfile = () => nav.go("settings-pt-profile", { preset: { entity_id: entityId } });
 
   async function resetDefaults() {
     // Pola sipro: reset = BUANG override di server; dokumen yang sudah terbit tidak berubah.

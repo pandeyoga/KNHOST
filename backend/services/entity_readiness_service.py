@@ -92,6 +92,8 @@ async def _payment_term(entity_id: str) -> Dict[str, Any]:
     return {"code": code, "row": row}
 
 
+#: KP-T9 — butir profil/akun menuju tab hub baru (`settings-pt-profile`, `settings-accounts`); `tab` lama ("entities",
+#: "accounts") tetap dikirim untuk klien yang masih membuka layar Badan Usaha & Akses lewat id lamanya.
 def _item(key: str, label: str, ready: bool, count: int, detail: str, how_to: str, view: str,
           tab: str = "") -> Dict[str, Any]:
     out = {"key": key, "label": label, "ready": bool(ready), "count": int(count), "detail": detail,
@@ -139,27 +141,28 @@ async def readiness(entity_id: str, entity: Dict[str, Any]) -> Dict[str, Any]:
         _item("address", "Alamat lengkap", addr_filled == 3, addr_filled,
               "Alamat, kota, dan provinsi sudah diisi" if addr_filled == 3
               else "Alamat, kota, atau provinsi masih kosong",
-              "Lengkapi alamat di profil PT.", "entities-access", "entities"),
+              "Lengkapi alamat di profil PT.", "settings-pt-profile", "entities"),
         _item("tax", "Status pajak & NPWP", bool(tax_mode) and (bool(npwp) or not pkp), 1 if tax_mode else 0,
               ("PKP — NPWP terisi" if pkp and npwp
                else "PKP tetapi NPWP masih kosong" if pkp
                else "Non-PKP — tidak memungut PPN" if tax_mode
                else "Status pajak belum ditetapkan"),
-              "Lengkapi NPWP di profil PT, atau pakai tombol Ubah status PKP.", "entities-access", "entities"),
+              "Lengkapi NPWP di profil PT, atau pakai tombol Ubah status PKP.", "settings-pt-profile", "entities"),
         _item("doc_prefix", "Kode dokumen", prefix_ok, 1 if prefix_ok else 0,
               f"Nomor dokumen berawalan {prefix}/" if prefix_ok
               else "Kode dokumen belum diisi atau bukan 2–10 huruf besar/angka",
               "Atur kode dokumen di profil PT; kode terkunci setelah dokumen pertama terbit.",
-              "entities-access", "entities"),
+              "settings-pt-profile", "entities"),
         _item("users", "Pengguna", users > 0, users,
               f"{users} akun aktif ber-PT utama di sini" if users
               else "Belum ada akun yang ber-PT utama di sini",
-              "Buat akun di tab Akun & Akses dan pilih PT ini sebagai PT utama.", "entities-access", "accounts"),
+              "Buat akun di Pengaturan › Pengguna & Hak Akses › Akun dan pilih PT ini sebagai PT utama.",
+              "settings-accounts", "accounts"),
         _item("finance_user", "Pengguna keuangan", finance_users > 0, finance_users,
               f"{finance_users} pengguna bisa mencatat kas untuk PT ini" if finance_users
               else "Belum ada pengguna yang bisa mencatat kas untuk PT ini",
               "Beri seorang pengguna peran yang punya akses Kas & Bank, dan tugaskan ke PT ini.",
-              "entities-access", "accounts"),
+              "settings-accounts", "accounts"),
         _item("warehouses", "Gudang yang boleh dipakai", warehouses > 0, warehouses,
               f"{warehouses} gudang tersedia" if warehouses else "Tidak ada gudang yang boleh dipakai PT ini",
               "Atur gudang bersama atau khusus di Master Gudang.", "md-warehouses"),
@@ -185,7 +188,7 @@ async def readiness(entity_id: str, entity: Dict[str, Any]) -> Dict[str, Any]:
               (f"{prices} harga khusus PT ini" if prices
                else (f"Belum ada harga khusus — memakai {global_prices} harga umum"
                      if global_prices else "Belum ada harga jual sama sekali")),
-              "Atur harga khusus PT di Produk & Harga › Harga per Badan Usaha, atau isi harga umum produk.",
+              "Atur harga khusus PT di Produk & Harga › Harga per PT, atau isi harga umum produk.",
               "pricelist"),
         _item("opening_balance", "Saldo awal", opening > 0, opening,
               f"{opening} jurnal saldo awal" if opening
@@ -193,11 +196,11 @@ async def readiness(entity_id: str, entity: Dict[str, Any]) -> Dict[str, Any]:
               "Catat saldo awal lewat Keuangan › Jurnal & Buku Besar.", "general-ledger"),
         _item("branding", "Kop surat & logo", has_brand, 1 if has_brand else 0,
               "Kop surat sudah diatur" if has_brand else "Dokumen cetak masih memakai kop bawaan",
-              "Atur di Pengaturan › Dokumen & Cetak › Template Dokumen.", "pdf-templates"),
+              "Atur di Pengaturan › Dokumen & Notifikasi › Template Dokumen.", "pdf-templates"),
         _item("signers", "Penanda tangan", bool(signers), len(signers),
               f"{len(signers)} penanda tangan: {', '.join(signers[:3])}" if signers
               else "Belum ada nama penanda tangan",
-              "Isi di Pengaturan › Dokumen & Cetak › Template Dokumen.", "pdf-templates"),
+              "Isi di Pengaturan › Dokumen & Notifikasi › Template Dokumen.", "pdf-templates"),
     ]
     ready_count = sum(1 for i in items if i["ready"])
     return {

@@ -88,7 +88,7 @@ export default function GoodsReceiptsView({ currentUser, selectedEntity, focusDo
           tabs={tabs.map(([k, l]) => ({ key: k, label: l, testId: `grn-view-tab-${k}` }))} />
         <div className="flex items-center gap-2 pb-1">
           {canOcrSettings && (
-            <a data-testid="grn-open-ocr-settings" href="?view=settings-receiving-ocr" title="Profil SJ, Sample Uji OCR, Biaya OCR & Mode Penerimaan ada di Pengaturan › Gudang"
+            <a data-testid="grn-open-ocr-settings" href="?view=settings-receiving-ocr" title="Profil SJ, Sample Uji OCR, Biaya OCR & Mode Penerimaan ada di Pengaturan › Gudang, Pembelian & Produksi › Penerimaan Barang"
               className="secondary-button !py-1 text-[11px]"><Settings size={12} /> Pengaturan OCR</a>
           )}
           {canCreateGrn && tab === "list" && (

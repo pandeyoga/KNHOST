@@ -10,9 +10,9 @@
  * R&D dan mendokumentasikan approver. admin & manager tetap super-role.
  *
  * Fase 3 · P2 (P16-K1) — dipecah per rumah menu Pengaturan lewat prop `section`:
- *   · "matrix" (Pengaturan › Persetujuan › Divisi & Persetujuan R&D, view `rnd-divisions`): kartu divisi +
+ *   · "matrix" (Pengaturan › Persetujuan › Persetujuan R&D, view `rnd-divisions`): kartu divisi +
  *     matriks approver + tautan ke penempatan tim;
- *   · "team" (seksi di Pengaturan › R&D, `settings-cfg-rnd`): kartu divisi + anggota & penempatan;
+ *   · "team" (seksi di Pengaturan › Gudang, Pembelian & Produksi › R&D & Desain, `settings-cfg-rnd`): kartu divisi + anggota & penempatan;
  *   · "all" (bawaan) = seperti dulu. Tabel memakai `.data-table` baku (L-07).
  */
 import { useCallback, useEffect, useMemo, useState } from "react";
@@ -149,7 +149,7 @@ export default function DivisionsView({ currentUser, selectedEntity, section = "
           </p>
           {section === "matrix" && (
             <LinkCard className="mt-2" testId="rnd-divisions-team-link" what="Penempatan anggota ke divisi"
-              where="Pengaturan › R&D" view="settings-cfg-rnd" />
+              where="Pengaturan › Gudang, Pembelian & Produksi › R&D & Desain" view="settings-cfg-rnd" />
           )}
           {msg && (
             <p data-testid="rnd-divisions-msg"

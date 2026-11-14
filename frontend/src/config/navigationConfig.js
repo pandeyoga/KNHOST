@@ -8,7 +8,7 @@ import { PAGE_META, ROLE_HOME_REGISTRY, GUIDANCE_MAP } from "./navMeta";
 // FASE E-8 (E8.1) — SATU definisi "boleh lihat menu ini?" (termasuk dua peran baru
 // `sales_admin` & `finance`). Dulu keputusannya `roles.includes(role)` yang disalin di
 // 5 tempat di berkas ini; peran baru harus ditambahkan ke ~40 baris `navStructure.js`.
-import { isModuleNavRole, navExplicitlyHidden, roleCanSee } from "./roles";
+import { hiddenByRoleSetting, isModuleNavRole, navExplicitlyHidden, roleCanSee } from "./roles";
 // Fase 3 · P1 — registri alias layar (layar duplikat = tautan ke layar utama; alamat lama tetap hidup).
 import { listAliases, resolveAlias } from "./viewAliases";
 
@@ -19,8 +19,13 @@ export const isNavHeading = (item) => !!item && item.type === "heading";
 export { HUB_TABS, NAV_STRUCTURE } from "./navStructure";
 export { PAGE_META, ROLE_HOME_REGISTRY, GUIDANCE_MAP } from "./navMeta";
 
+// KP-T9 — tab yang dinaikkan dari bagian layar wadah lama (`inheritsHiddenFrom`: id wadah, atau daftar id) ikut
+// tersembunyi bila id itu disembunyikan untuk peran ini (`hidden_views` / `ROLE_NAV.remove` peran bawaan) — supaya
+// pilihan "sembunyikan Badan Usaha & Akses" yang sudah tersimpan tetap berlaku pada lima tab pecahannya.
+const inheritedHidden = (t, role) => [].concat(t.inheritsHiddenFrom || []).some((id) => hiddenByRoleSetting(role, id));
+
 export function hubTabsForRole(hubId, role) {
-  return (HUB_TABS[hubId] || []).filter((t) => !t.hidden && roleCanSee(t.roles, role, t.view));
+  return (HUB_TABS[hubId] || []).filter((t) => !t.hidden && roleCanSee(t.roles, role, t.view) && !inheritedHidden(t, role));
 }
 
 // ─── KLASIFIKASI VIEW (SSOT — dipakai App.js, jangan disalin ke komponen) ──────

@@ -3177,6 +3177,9 @@
    "gl_mapping",
    "period"
   ],
+  "permission-matrix": [
+   "permission"
+  ],
   "petty-cash": [
    "accounting",
    "budget",
@@ -3462,11 +3465,21 @@
   "scheduler": [
    "scheduler"
   ],
+  "settings-access": [
+   "permission",
+   "user"
+  ],
+  "settings-accounts": [
+   "user"
+  ],
   "settings-approval": [
    "design_ownership",
    "design_request",
    "integration",
    "settings"
+  ],
+  "settings-attendance-devices": [
+   "hr"
   ],
   "settings-cfg-approval": [
    "rnd",
@@ -3514,16 +3527,13 @@
    "uom"
   ],
   "settings-company": [
-   "entity",
-   "permission",
-   "user"
+   "entity"
   ],
   "settings-config": [
    "settings"
   ],
   "settings-devices": [
    "goods_receipt",
-   "hr",
    "label",
    "production",
    "repair_order",
@@ -3540,6 +3550,7 @@
    "esign",
    "integration",
    "pdf_template",
+   "scheduler",
    "settings"
   ],
   "settings-dual-control": [
@@ -3572,10 +3583,14 @@
    "cash",
    "cash_advance",
    "cash_settlement",
+   "color",
    "contra_bon",
    "design_ownership",
    "design_request",
+   "document",
+   "document_delivery",
    "entity",
+   "esign",
    "finance_amendment",
    "finance_case",
    "fixed_asset",
@@ -3597,12 +3612,14 @@
    "order",
    "payment_plan",
    "payment_variance",
+   "pdf_template",
    "penalty",
    "period",
    "permission",
    "price_approval",
    "pricelist",
    "process_recipe",
+   "product",
    "production",
    "purchase_order",
    "purchase_requisition",
@@ -3618,35 +3635,19 @@
    "supplier_contract",
    "supplier_item",
    "tax_invoice",
+   "template",
    "transfer",
+   "uom",
    "user",
    "vendor_bill",
    "warehouse",
    "wms"
   ],
-  "settings-masters": [
-   "entity",
-   "integration",
-   "settings"
+  "settings-pt-profile": [
+   "entity"
   ],
-  "settings-notify": [
-   "scheduler"
-  ],
-  "settings-purchasing": [
-   "contra_bon",
-   "input_tax",
-   "landed_cost",
-   "makloon",
-   "makloon_order",
-   "process_recipe",
-   "purchase_order",
-   "purchase_requisition",
-   "purchase_return",
-   "rfq",
-   "supplier",
-   "supplier_contract",
-   "supplier_item",
-   "vendor_bill"
+  "settings-pt-readiness": [
+   "entity"
   ],
   "settings-receiving-ocr": [
    "goods_receipt",
@@ -3656,12 +3657,13 @@
    "warehouse",
    "wms"
   ],
-  "settings-rnd": [
-   "design_ownership",
-   "design_request",
-   "rnd"
+  "settings-role-check": [
+   "permission"
   ],
   "settings-sales": [
+   "cash",
+   "finance_amendment",
+   "finance_case",
    "internal_request",
    "od_fulfillment",
    "od_pricing",
@@ -3671,28 +3673,51 @@
    "sales_return"
   ],
   "settings-system": [
+   "color",
    "goods_receipt",
-   "hr",
    "integration",
    "label",
+   "product",
    "production",
    "repair_order",
    "rfid_device",
    "settings",
+   "template",
+   "uom",
    "warehouse",
    "wms"
   ],
   "settings-warehouse": [
+   "contra_bon",
+   "design_ownership",
+   "design_request",
    "goods_receipt",
    "grade_master",
+   "input_tax",
    "inspection",
    "inventory",
    "label",
+   "landed_cost",
+   "makloon",
+   "makloon_order",
+   "process_recipe",
    "production",
+   "purchase_order",
+   "purchase_requisition",
+   "purchase_return",
    "repair_order",
+   "rfq",
+   "rnd",
+   "supplier",
+   "supplier_contract",
+   "supplier_item",
    "transfer",
+   "vendor_bill",
    "warehouse",
    "wms"
+  ],
+  "settings-whatsapp": [
+   "scheduler"
   ],
   "settlements": [
    "cash_advance",

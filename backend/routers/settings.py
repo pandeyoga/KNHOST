@@ -6,6 +6,7 @@ semua CONFIGURABLE (tidak hardcode). Konsumsi engine ada di services/config_serv
 from typing import Any, Dict, List, Optional
 from fastapi import APIRouter, HTTPException, Request
 from pymongo import ReturnDocument
+from access_modules import module_label_of
 from db import db
 from dependencies import require_permission, require_any_permission, current_user, audit
 from core_utils import now_iso
@@ -63,7 +64,7 @@ async def update_settings(request: Request) -> Dict[str, Any]:
     jalur lama (salah satu dari `entity.update` / `sales_return.policy`) tetap diperiksa lebih dulu; tidak ada yang ditulis."""
     await require_any_permission(request, [("entity", "update"), ("sales_return", "policy")], detail=(
         "Anda belum punya akses untuk mengubah pengaturan. Minta Admin menambahkan akses "
-        "'Badan Usaha (PT)'."))   # PR-T5 — izin pintu ini `entity.update` (modul Badan Usaha)
+        f"'{module_label_of('entity')}'."))   # PR-T5 — izin pintu ini `entity.update` (modul PT; KP-T9: nama dari katalog)
     raise HTTPException(status_code=410, detail="Pengaturan kini disimpan lewat Pusat Pengaturan.")
 
 

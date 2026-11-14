@@ -6,7 +6,7 @@
  * kredensial provider nyata (Meta Cloud API / Fonnte).
  *
  * KP-T8 (KP-16) — setelah koneksi WhatsApp tunggal ada (`wa.connection_managed`), penyedia & kredensial diatur di
- * Pengaturan › Integrasi & Sistem › Integrasi & Audit: isian koneksi di sini diganti ringkasan hanya-baca + tautan,
+ * Pengaturan › Sistem › Integrasi & Audit: isian koneksi di sini diganti ringkasan hanya-baca + tautan,
  * dan simpan hanya mengirim isian pemakaian (server menolak field koneksi).
  */
 import { useState } from "react";
@@ -178,7 +178,7 @@ export function WaSettingsPanel({ wa, perms, saving, onSave, onTest, testing, on
                 {` · token ${conn.has_access_token || conn.has_fonnte_token ? "sudah terisi" : "belum terisi"}`}
               </p>
               <LinkCard testId="wa-connection-link" what="Koneksi WhatsApp" label="Atur koneksi di Integrasi"
-                where="Pengaturan › Integrasi & Sistem › Integrasi & Audit" view="admin" />
+                where="Pengaturan › Sistem › Integrasi & Audit" view="admin" />
             </div>
           )}
           {!managed && form.provider === "simulated" && (

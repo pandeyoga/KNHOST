@@ -1,5 +1,5 @@
 <!-- DIHASILKAN OTOMATIS oleh scripts/gen_codebase_map.py — JANGAN EDIT TANGAN -->
-<!-- Dihasilkan dari commit: a5134d0 pada 2026-11-14 -->
+<!-- Dihasilkan dari commit: 27f0853 pada 2026-11-14 -->
 # CODEBASE MAP — Kain Nusantara (dihasilkan otomatis)
 
 Peta ini dihitung dari kode oleh `scripts/gen_codebase_map.py`. Kalau angka di sini
@@ -164,7 +164,7 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 | `design_studio.py` | 25 | 344 | `/design-gallery/{gallery_id}/colorways`, `/design-gallery/{gallery_id}/colorways/{cw_id}`, `/design-gallery/{gallery_id}/feedback`, `/design-gallery/{gallery_id}/files-kind/{kind}`, `/design-gallery/{gallery_id}/history`, `/design-gallery/{gallery_id}/lifecycle/activate` … |
 | `doc_numbering.py` | 3 | 103 | `/preview`, `/{kind}` |
 | `documents.py` | 17 | 435 | `/document-templates`, `/document-templates/{template_id}`, `/document-templates/{template_id}/preview`, `/documents/barcode`, `/documents/generate`, `/documents/preview/{order_id}` … |
-| `entities.py` | 15 | 342 | `/entities`, `/entities/count`, `/entities/{entity_id}`, `/entities/{entity_id}/archive`, `/entities/{entity_id}/audit`, `/entities/{entity_id}/deactivation-impact` … |
+| `entities.py` | 15 | 345 | `/entities`, `/entities/count`, `/entities/{entity_id}`, `/entities/{entity_id}/archive`, `/entities/{entity_id}/audit`, `/entities/{entity_id}/deactivation-impact` … |
 | `entity_masters.py` | 7 | 114 | `/entity-masters`, `/entity-masters/{kind}`, `/entity-masters/{kind}/effective`, `/entity-masters/{kind}/{row_id}`, `/entity-masters/{kind}/{row_id}/override` |
 | `enums.py` | 5 | 124 | `/enums`, `/enums/products/validate`, `/enums/stage-transitions`, `/enums/stage-transitions/validate`, `/enums/{name}` |
 | `esign.py` | 4 | 91 | `/request`, `/signatures/{doc_type}/{source_id}`, `/verify`, `/verify/{code}` |
@@ -263,7 +263,7 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 | `sample_orders.py` | 11 | 258 | `/sample-orders`, `/sample-orders/catalogue/preview`, `/sample-orders/catalogue/templates`, `/sample-orders/desk`, `/sample-orders/kinds`, `/sample-orders/limits` … |
 | `sample_sales.py` | 5 | 102 | `/outbound/so/{order_id}/cut-samples`, `/outbound/tasks/{task_id}/cut-sample`, `/sample-prices`, `/sample-prices/{template_id}`, `/sample-quote` |
 | `scheduler.py` | 10 | 241 | `/scheduler/digest-preview`, `/scheduler/jobs`, `/scheduler/jobs/{job_id}/run`, `/scheduler/runs`, `/scheduler/settings`, `/scheduler/summary` … |
-| `settings.py` | 10 | 165 | `/payment-terms`, `/payment-terms/{term_id}`, `/payment-terms/{term_id}/override`, `/settings`, `/settings/compute-tax`, `/settings/effective` … |
+| `settings.py` | 10 | 166 | `/payment-terms`, `/payment-terms/{term_id}`, `/payment-terms/{term_id}/override`, `/settings`, `/settings/compute-tax`, `/settings/effective` … |
 | `so_approvals.py` | 8 | 553 | `/approvals/backlog`, `/approvals/queue`, `/approvals/queue-board/{key}`, `/sales-orders/{order_id}/approvals/{approval_id}/decide`, `/sales-orders/{order_id}/approvals/{approval_id}/evidence`, `/sales-orders/{order_id}/approvals/{approval_id}/evidence/{att_id}/download` … |
 | `so_override.py` | 2 | 55 | `/sales-orders/{order_id}/override`, `/sales-orders/{order_id}/override-context` |
 | `so_release.py` | 3 | 60 | `/sales-orders/{order_id}/approvals/{approval_id}/continue-normal-price`, `/sales-orders/{order_id}/release`, `/sales-orders/{order_id}/review-release` |
@@ -390,11 +390,11 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 | `dual_control.py` | 262 | KF-T6 — satu pembantu untuk kontrol "harus dua orang" (`docs/blueprint/unit/KF-T6.md`, `02_STANDAR.md` §2.3). |
 | `dual_qty_service.py` | 318 | FASE U — DUA SATUAN (jumlah roll + ukuran) · satu pintu untuk semua dokumen. |
 | `entity_context_service.py` | 174 | F0-A — Entity identity & context helper (Multi-Entity foundation). |
-| `entity_lifecycle_service.py` | 919 | FASE E-1 — SIKLUS HIDUP BADAN USAHA (satu pintu untuk semua pagar). |
+| `entity_lifecycle_service.py` | 920 | FASE E-1 — SIKLUS HIDUP BADAN USAHA (satu pintu untuk semua pagar). |
 | `entity_location_service.py` | 32 | entity_location_service — lokasi tervalidasi pada UBAH badan usaha (Fase 4 · R6, G5-25). |
 | `entity_master_service.py` | 634 | entity_master_service (FASE E-4 · E4a) — MASTER BERLAPIS: **global → badan usaha**. |
 | `entity_provisioning_service.py` | 319 | F0-F + FASE E-1 — Provisioning & VALIDASI badan usaha (SATU JALUR). |
-| `entity_readiness_service.py` | 220 | FASE E-1 (E1.9) — DAFTAR KESIAPAN BADAN USAHA. |
+| `entity_readiness_service.py` | 223 | FASE E-1 (E1.9) — DAFTAR KESIAPAN BADAN USAHA. |
 | `epc.py` | 45 | RF-01/RF-11 — SATU kontrak EPC: disimpan & dicocokkan sebagai 24 hex UPPERCASE tanpa pemisah. |
 | `equity_statement_service.py` | 65 | FINANCE — Laporan Perubahan Ekuitas (Statement of Changes in Equity). |
 | `escalation_service.py` | 241 | R6.6 — ESKALASI BERTINGKAT alert yang belum ditindak. |
@@ -697,8 +697,8 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 
 | Fitur (`src/features/`) | Berkas | Baris |
 |---|---:|---:|
-| `__tests__` | 105 | 16393 |
-| `admin` | 36 | 6971 |
+| `__tests__` | 106 | 16650 |
+| `admin` | 36 | 6981 |
 | `approvals` | 9 | 1720 |
 | `catalog` | 24 | 1450 |
 | `costing` | 1 | 150 |
@@ -708,7 +708,7 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 | `desks` | 2 | 229 |
 | `documents` | 18 | 2691 |
 | `export` | 9 | 700 |
-| `finance` | 97 | 21824 |
+| `finance` | 97 | 21826 |
 | `home` | 5 | 1130 |
 | `hr` | 33 | 5396 |
 | `inspections` | 12 | 2181 |
@@ -721,7 +721,7 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 | `mobile` | 13 | 1758 |
 | `notifications` | 1 | 33 |
 | `orders` | 23 | 3878 |
-| `pdf` | 5 | 1073 |
+| `pdf` | 5 | 1074 |
 | `pettycash` | 12 | 1680 |
 | `pos` | 23 | 2635 |
 | `pricing` | 1 | 151 |
@@ -732,7 +732,7 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 | `sales` | 97 | 15798 |
 | `sales_admin` | 11 | 1880 |
 | `samples` | 8 | 776 |
-| `settings` | 69 | 12897 |
+| `settings` | 70 | 13014 |
 | `tanya` | 25 | 1592 |
 | `transfers` | 1 | 20 |
 | `wms` | 99 | 13196 |

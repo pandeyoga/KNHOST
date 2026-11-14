@@ -11,7 +11,7 @@
  *
  * IA: kelompok disusun berdasarkan **PERTANYAAN BISNIS** (bukan nama modul).
  *
- * Fase 3 · P2 (keputusan pemilik P16-K1) — layar ini kini "Semua pengaturan" (Pengaturan › Integrasi & Sistem).
+ * Fase 3 · P2 (keputusan pemilik P16-K1) — layar ini kini "Cari Semua Pengaturan" (Pengaturan › Sistem; KP-T9).
  * Mesinnya diekspor (`useSettingsBrowser` + `SettingsBrowser`) supaya tiap kelompok menu domain merender Pusat
  * Pengaturan yang DIKUNCI ke kelompok registrinya (`SettingsGroupView` / `settings-cfg-*`) dan Komisi & Insentif
  * merender kunci `commission.*` (D-03) — satu mesin, tanpa salinan form. Kunci komisi disembunyikan di tempat lain

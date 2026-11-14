@@ -129,7 +129,7 @@ export function ScheduleEditor({ job, onSave, saving }) {
   );
 }
 
-// ── KP-T7 — kolom Penerima & Ambang (nilai untuk PT aktif; Ubah → Pengaturan › Penerima Notifikasi) ─────────
+// ── KP-T7 — kolom Penerima & Ambang (nilai untuk PT aktif; Ubah → Pengaturan › Persetujuan › Ketegasan, Pengingat & Dokumen) ─────────
 function PolicyCell({ text, title, cfgKey, group, canEdit, testId }) {
   if (!text) return <span className="text-kn-text-2" data-testid={testId}>—</span>;
   return (

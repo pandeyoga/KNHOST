@@ -47,17 +47,18 @@ const menu = (role) => {
   return g ? Object.fromEntries(g.items.map((it) => [it.id, hubTabsForRole(it.hub, role).map((t) => t.view)])) : null;
 };
 
-describe("P16-K1 — menu Pengaturan 7 kelompok", () => {
-  test("Pengaturan = grup (groupId tetap settings-hub) dengan sub-judul Kebijakan per Domain", () => {
+// KP-T9 — susunan P16-K1 (12 hub + 2 sub-judul) diganti sembilan hub tanpa sub-judul; uji susunan lengkap di
+// config/__tests__/kpt9HubPengaturan.test.js (U3). Yang tetap diuji di sini: grup, tanpa hub `settings-hub`, alias P2.
+describe("P16-K1 → KP-T9 — menu Pengaturan sembilan hub", () => {
+  test("Pengaturan = grup (groupId tetap settings-hub), sembilan hub tanpa sub-judul", () => {
     const g = settingsGroup();
     expect(g.type).toBe("group");
     const ids = g.items.map((i) => i.id);
-    expect(ids).toEqual(["settings-company", "settings-approval", "h-settings-domain", "settings-sales",
-      "settings-warehouse", "settings-purchasing", "settings-finance", "settings-hr", "settings-rnd",
-      "h-settings-system", "settings-masters", "settings-documents", "settings-notify", "settings-system"]);
-    expect(g.items.find((i) => i.id === "h-settings-domain")).toMatchObject({ type: "heading", label: "Kebijakan per Domain" });
+    expect(ids).toEqual(["settings-company", "settings-access", "settings-approval", "settings-sales",
+      "settings-warehouse", "settings-finance", "settings-hr", "settings-documents", "settings-system"]);
+    expect(g.items.filter((i) => i.type === "heading")).toEqual([]);
     expect(HUB_TABS["settings-hub"]).toBeUndefined();
-    // "Semua pengaturan" tetap di menu (audit_config_wiring) — di Integrasi & Sistem.
+    // "Cari Semua Pengaturan" tetap di menu (audit_config_wiring) — di Sistem.
     expect(HUB_TABS["settings-system"].map((t) => t.view)).toEqual(expect.arrayContaining(["settings-config", "settings-devices", "admin"]));
   });
 
@@ -71,9 +72,11 @@ describe("P16-K1 — menu Pengaturan 7 kelompok", () => {
   });
 
   test("peran: admin semua kelompok; manajer membaca aturan persetujuan; Admin Gudang & Admin Sales tab yang sama seperti dulu", () => {
-    expect(Object.keys(menu("admin"))).toHaveLength(12);
+    expect(Object.keys(menu("admin"))).toHaveLength(9);
     expect(menu("manager")["settings-approval"]).toContain("approval-rules");
-    expect(menu("manager")["settings-system"]).toEqual(["settings-config", "settings-cfg-system", "settings-devices"]);
+    // KP-T9 — Perangkat RFID khusus admin (seperti bagian RFID dulu); mesin absen manajer di SDM › Mesin Absen.
+    expect(menu("manager")["settings-system"]).toEqual(["domain-registry", "settings-cfg-system", "settings-config"]);
+    expect(menu("manager")["settings-hr"]).toContain("settings-attendance-devices");
     expect(menu("warehouse_admin")).toEqual({ "settings-warehouse": ["settings-receiving-ocr", "grade-master"] });
     expect(menu("sales_admin")).toEqual({ "settings-sales": ["return-policies"], "settings-warehouse": ["grade-master"] });
     // MN-T1 (IA-06) — tab Pemetaan Akun mencantumkan Finance (izin gl_mapping view/update), kini terjangkau lewat ROLE_NAV.
@@ -120,9 +123,10 @@ describe("kelompok registri → layar domain (tanpa yatim)", () => {
   test("deep link openConfig: komisi → Komisi & Insentif; kelompok → layar domain; MD (K-11) tetap Semua pengaturan", () => {
     // MN-T1 — Komisi & Insentif kini SDM › Kinerja & Insentif › Target & Aturan (menu `hr-kpi-hub`).
     expect(configTargetFor({ key: "commission.strategy" })).toEqual({ view: "incentive-rates", nav: "hr-kpi-hub" });
-    expect(configTargetFor({ group: "makloon", key: "makloon.contract_mode" })).toEqual({ view: "settings-cfg-purchasing", nav: "settings-purchasing" });
+    // KP-T9 — Aturan Pembelian & Makloon dan R&D & Desain kini tab Gudang, Pembelian & Produksi.
+    expect(configTargetFor({ group: "makloon", key: "makloon.contract_mode" })).toEqual({ view: "settings-cfg-purchasing", nav: "settings-warehouse" });
     expect(configTargetFor({ key: "tidak_dikenal.x" })).toEqual({ view: "settings-config", nav: "settings-system" });
-    expect(configDeepLinkTarget({ group: "rnd" }, "admin")).toEqual({ view: "settings-cfg-rnd", nav: "settings-rnd" });
+    expect(configDeepLinkTarget({ group: "rnd" }, "admin")).toEqual({ view: "settings-cfg-rnd", nav: "settings-warehouse" });
     expect(configDeepLinkTarget({ group: "rnd" }, "md")).toEqual({ view: "settings-config", nav: "settings-system" });
     expect(configDeepLinkTarget({ key: "ai.sales_definition", group: "asisten-analitik" }, "manager"))
       .toEqual({ view: "settings-cfg-system", nav: "settings-system" });
@@ -130,7 +134,7 @@ describe("kelompok registri → layar domain (tanpa yatim)", () => {
     expect(configTargetFor({ group: "dokumen" })).toEqual({ view: "settings-cfg-approval", nav: "settings-approval" });
     expect(configTargetFor({ key: "receiving.ocr_enabled" })).toEqual({ view: "settings-cfg-system", nav: "settings-system" });
     expect(configTargetFor({ key: "payment.variance_ap_tolerance_rupiah" }))
-      .toEqual({ view: "settings-cfg-purchasing", nav: "settings-purchasing" });
+      .toEqual({ view: "settings-cfg-purchasing", nav: "settings-warehouse" });
   });
 });
 

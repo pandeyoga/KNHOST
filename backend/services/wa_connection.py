@@ -34,7 +34,7 @@ DEFAULT_KONEKSI: Dict[str, Any] = {
 PEMAKAI = ("alerts", "documents")
 LABEL_PEMAKAI = {"alerts": "Pengingat", "documents": "Kirim Dokumen"}
 LABEL_PENYEDIA = {"simulated": "Simulasi", "meta_cloud": "Meta WhatsApp Cloud", "fonnte": "Fonnte"}
-PESAN_DIATUR_DI_INTEGRASI = "Koneksi WhatsApp diatur di Pengaturan › Integrasi & Sistem."
+PESAN_DIATUR_DI_INTEGRASI = "Koneksi WhatsApp diatur di Pengaturan › Sistem › Integrasi & Audit."
 PESAN_SUDAH_SATU = "Koneksi WhatsApp sudah satu."
 
 

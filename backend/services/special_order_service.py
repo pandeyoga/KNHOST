@@ -61,7 +61,7 @@ async def generate_special_order_number(on_date: Any = None, entity_id: str = ""
     # KP-T5 (KP-35) — urutan hari itu dari deret ATOMIK `next_doc_number` (jenis `sord`: sisipan YYMMDD WIB, mulai
     # lagi tiap hari), bukan "baca nomor terakhir hari itu + 1" (dua pesanan bersamaan dulu bernomor sama). Deret
     # hari itu disemai dari nomor tertinggi `SORD-YYMMDD-` yang ada. `entity_id` = PT pesanan (dipakai bila grup
-    # menjadikan deret ini per PT di Pengaturan › Dokumen & Cetak › Penomoran Dokumen).
+    # menjadikan deret ini per PT di Pengaturan › Dokumen & Notifikasi › Penomoran Dokumen).
     from core_utils import next_doc_number
     return await next_doc_number("special_orders", "number", "SORD-", width=4, entity_id=entity_id or None,
                                  scheme="shared", kind="sord", at=stamp)
