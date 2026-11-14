@@ -1,0 +1,13 @@
+test_KFT8_putaran[tax.ppn_rate]
+test_KFT8_putaran[tax.dpp_nilai_lain]
+test_KFT8_putaran[tax.ppn_mode]
+test_KFT8_putaran[tax.efaktur_enabled]
+test_KFT8_putaran[tax.pph_items]
+test_KFT8_putaran[tax.dpp_nilai_lain_pembilang]
+test_KFT8_putaran[tax.dpp_nilai_lain_penyebut]
+test_KFT8_putaran[tax.pembulatan_tingkat]
+test_KFT8_putaran[tax.pembulatan_satuan]
+test_KFT8_putaran[tax.kode_transaksi_diizinkan]
+test_KFT8_putaran[tax.kode_transaksi_bawaan]
+test_KFT8_putaran[tax.kode_transaksi_bawaan_dpp_nilai_lain]
+test_KFT8_U1_jumlah_kasus_dan_pembangkit

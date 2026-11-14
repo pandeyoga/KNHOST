@@ -1,0 +1,14 @@
+# AG-T1 — uji komponen kartu pada kode BARU
+  ✓ U18 — kartu gagal: pesan galat, hasil sebagian, tidak bisa diulang, tanpa tombol setujui (132 ms)
+  ✓ kartu gagal tanpa hasil sebagian tidak menampilkan baris 'Sudah dibuat' (18 ms)
+  ✓ kartu kedaluwarsa: kalimat baku, tanpa tombol (27 ms)
+  ✓ kartu menunggu: baris PT + berlaku sampai (WIB); label tombol tidak berubah (141 ms)
+  ✓ PT aktif berbeda → tombol setujui mati dengan alasan tertulis; Abaikan tetap bisa (41 ms)
+  ✓ mode Semua PT (akun berganti PT) → tombol setujui mati dengan alasan tertulis (21 ms)
+  ✓ akun satu-PT (header 'all' tetapi boleh menulis) → tombol setujui hidup (10 ms)
+  ✓ setujui → jawaban 200 berstatus gagal: kartu berganti ke tampilan gagal, toast galat (bukan 'berhasil') (40 ms)
+  ✓ setujui ditolak 409 (kedaluwarsa) → kartu dimuat ulang dan menampilkan status terkini (18 ms)
+  ✓ status tak dikenal tidak tampil sebagai kode mentah (14 ms)
+  ✓ kartu disetujui menampilkan nomor PO dan status ikon + teks (15 ms)
+Test Suites: 1 passed, 1 total
+Tests:       11 passed, 11 total

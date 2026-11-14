@@ -1,0 +1,32 @@
+>       assert r.json()["gl_status"] == "failed" and "2-1100 nonaktif" in r.json()["gl_error"]
+E       KeyError: 'gl_status'
+E       AssertionError: {"detail":"Jenis dokumen tidak dikenal"}
+E       assert (400 == 200)
+E        +  where 400 = <Response [400 Bad Request]>.status_code
+E       AssertionError: Internal Server Error
+E       assert 500 == 200
+E        +  where 500 = <Response [500 Internal Server Error]>.status_code
+E       AssertionError: Internal Server Error
+E       assert 500 == 200
+E        +  where 500 = <Response [500 Internal Server Error]>.status_code
+>       assert mv["movement_type"] == "cut_waste" and mv["gl_status"] == "failed" and mv["gl_amount"] == 40_000
+E       KeyError: 'gl_status'
+>       assert doc["status"] == "void" and doc["void_gl_status"] == "failed" and "1-1110 nonaktif" in doc["void_gl_error"]
+E       KeyError: 'void_gl_status'
+                                       "status": "dispatched", "rolls": [], "qty": 0, "gl_status": "failed",
+E       AssertionError: assert 'posted' == 'not_required'
+E         
+E         - not_required
+E         + posted
+E       AssertionError: {"detail":"Akun 1-2100 nonaktif"}
+E       assert 400 == 200
+E        +  where 400 = <Response [400 Bad Request]>.status_code
+FAILED tests_mem/test_PK18_penanda_gagal.py::test_PK18_U2_faktur_akun_nonaktif_jurnal_gagal_terlihat_di_panel[asyncio]
+FAILED tests_mem/test_PK18_penanda_gagal.py::test_PK18_U3_ulang_dua_kali_tepat_satu_jurnal[asyncio]
+FAILED tests_mem/test_PK18_penanda_gagal.py::test_PK18_U4_landed_cost_gagal_lalu_diulang[asyncio]
+FAILED tests_mem/test_PK18_penanda_gagal.py::test_PK18_U5_kirim_bahan_makloon_maju_walau_jurnal_gagal[asyncio]
+FAILED tests_mem/test_PK18_penanda_gagal.py::test_PK18_U6_susut_potong_gagal_lalu_diulang[asyncio]
+FAILED tests_mem/test_PK18_penanda_gagal.py::test_PK18_U7_batal_kwitansi_pembalik_gagal_lalu_diulang[asyncio]
+FAILED tests_mem/test_PK18_penanda_gagal.py::test_PK18_U8_surat_jalan_nominal_nol_tidak_ditulis_posted[asyncio]
+FAILED tests_mem/test_PK18_penanda_gagal.py::test_PK18_U9_aset_tetap_tersimpan_jurnal_gagal_lalu_diulang[asyncio]
+8 failed, 8 passed, 1 warning in 11.80s

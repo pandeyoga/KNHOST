@@ -1,0 +1,44 @@
+# Gabung ke HEAD cabang f05d8da di worktree T (wt13)
+## tests_mem penuh: HEAD f05d8da (salinan git archive) → T
+1328 passed, 2 skipped, 4 xfailed, 11 warnings in 643.12s (0:10:43)
+1352 passed, 2 skipped, 4 xfailed, 11 warnings in 867.69s (0:14:27)
+## jest penuh: HEAD → T (35 suite gagal dimuat = sama, @radix-ui/cmdk tidak termuat lokal)
+Test Suites: 35 failed, 92 passed, 127 total
+Tests:       762 passed, 762 total
+Test Suites: 35 failed, 93 passed, 128 total
+Tests:       773 passed, 773 total
+## hitung_penjaga.sh: HEAD → T
+1c1
+< verify_auth_coverage: [FAIL] 28 pelanggaran :
+---
+> verify_auth_coverage: [FAIL] 27 pelanggaran :
+verify_auth_coverage: [FAIL] 27 pelanggaran :
+verify_ui_standard: [FAIL] 13 pelanggaran :
+verify_approval_queues: 
+audit_i18n_id:   ✗ 104 temuan di 60 berkas.
+audit_create_modal: [FAIL] 6 pelanggaran :
+verify_page_tabs: [FAIL] 1 pelanggaran total (INV-UI-12 1 · INV-UI-13 0 · INV-UI-14 0)
+verify_to_list_bound: [FAIL] 6 pelanggaran :
+verify_list_export: [PASS] 0 pelanggaran.
+verify_error_notice: [PASS] 0 pelanggaran.
+verify_custom_modals: [PASS] 0 pelanggaran.
+verify_knselect_contract: verify_knselect_contract: 0 temuan
+verify_entity_label:   ✗ 2 pelanggaran:
+verify_access_catalog_nav: verify_access_catalog_nav: 0 temuan
+verify_money_idempotency: [PASS] 0 pelanggaran.
+verify_codebase_map: [PASS] 0 pelanggaran.
+verify_scope_guard: 
+## 67 gate statik scripts/gate.sh: kode keluar HEAD vs T identik; merah (sama di keduanya):
+guard:auth_coverage (INV-AUTH-01)
+validate_compliance (file/naming/docs/api/env)
+guard:create_modal (INV-UI-05, tombol Buat = pop-up konsisten)
+guard:page_tabs (INV-UI-12/13/14, tab maks 2 tingkat · maks 6 tab per hub · tanpa tab tingkat ketiga)
+guard:to_list_bound SELF-TEST (bukti-merah dua arah, 11 kasus)
+guard:to_list_bound (INV-PERF-01, to_list(n>20000) dilarang)
+guard:atomic_claim SELF-TEST (bukti-merah dua arah, 10 kasus)
+guard:atomic_claim (INV-ATOMIC-01, saga/CAS endpoint multi-koleksi)
+ux_audit --strict (INV-UX-01, loading/empty/chart baseline)
+guard:ref_unlink (INV-REF-04, hapus dokumen wajib sapu tautan balik)
+audit_i18n_id (label antarmuka Bahasa Indonesia)
+guard:entity_label (INV-UI-02, id entitas tak boleh tampil)
+guard:warehouse_scope SELF-TEST (E4.1, gudang khusus badan usaha)

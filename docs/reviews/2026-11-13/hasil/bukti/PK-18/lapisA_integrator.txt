@@ -1,0 +1,3 @@
+Lingkungan A, HEAD a48a0a9, backend dimulai ulang, MONGO_URL=mongodb://127.0.0.1:27017
+python -m pytest tests/test_bp_PK18_ulang_bersamaan_mongo.py tests/test_bp_PK14_indeks_wajib.py tests/test_bp_CRT1_profil_kredit.py tests/test_bp_PK31_unik_refund_bersamaan.py tests/test_bp_AGT1_kartu_bersamaan.py tests/test_bp_PMT2_kode_bayar.py -q -p no:cacheprovider --noconftest
+19 passed, 1 warning in 31.36s

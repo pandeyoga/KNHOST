@@ -1,0 +1,36 @@
+=== CETAKAN SKRIP MIGRASI PK-31 (baca-saja) ===
+Pasangan AAA/IC-P1 (pk31_p1) — PT ent_uji_aaa → PT ent_uji_bbb
+  entri lama: 1
+    · Eliminasi otomatis antar-PT AAA/IC-P1 · efektif 2026-12-28
+  entri per bulan: 2026-12 · 2027-01 · 2027-03
+  dampak laba-rugi 2026: lama -40.000.000 · baru -100.000.000 · selisih -60.000.000
+  dampak laba-rugi 2027: lama 0 · baru 80.000.000 · selisih +80.000.000
+Pasangan IC/pk31_p5 (pk31_p5) — PT ent_uji_ddd → PT ent_uji_eee
+  entri lama: 0
+  entri per bulan: 2026-12
+  dampak laba-rugi 2026: lama 0 · baru -30.000.000 · selisih -30.000.000
+Pasangan IC/pk31_p6 (pk31_p6) — PT ent_uji_aaa → PT ent_uji_bbb
+  entri lama: 0
+  entri per bulan: 2027-04
+  dampak laba-rugi 2027: lama 0 · baru -40.000.000 · selisih -40.000.000
+Pasangan IC/pk31_p7 (pk31_p7) — PT ent_uji_bbb → PT ent_uji_ccc
+  entri lama: 0
+  entri per bulan: 2027-05
+  dampak laba-rugi 2027: lama 0 · baru -20.000.000 · selisih -20.000.000
+Pasangan IC/pk31_p8 (pk31_p8) — PT ent_uji_aaa → PT ent_uji_bbb
+  entri lama: 0
+  entri per bulan: 2027-04
+  dampak laba-rugi 2027: lama 0 · baru 0 · selisih 0
+Pasangan RFS/IC-RF (pk31_rf) — PT ent_uji_rfs → PT ent_uji_rfb
+  entri lama: 0
+  entri per bulan: 2026-11
+  dampak laba-rugi 2026: lama 0 · baru -6.000.000 · selisih -6.000.000
+Ringkasan: 6 pasangan · 1 entri lama · 8 entri per bulan hasil hitung
+Mode baca-saja: tidak ada yang diubah. Pakai --apply untuk menerapkan (data nyata = keputusan pemilik).
+
+
+=== --apply ===
+Diterapkan: 1 entri lama dihapus · 4 entri per bulan ditulis · 1 diperbarui · 0 kosong dihapus.
+
+=== --apply (jalan ketiga) ===
+Tanpa perubahan: tidak ada entri lama, dan entri per bulan sudah sama dengan hitung ulang.

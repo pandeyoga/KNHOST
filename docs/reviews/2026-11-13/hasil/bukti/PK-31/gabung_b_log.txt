@@ -1,0 +1,32 @@
+GABUNG ENTITY_REGISTRY.md (bentrok=0)
+SALIN  backend/indexes.py
+SALIN  backend/routers/consolidation.py
+SALIN  backend/routers/interco.py
+SALIN  backend/schemas_interco.py
+SALIN  backend/services/consolidation_service.py
+SALIN  backend/services/interco_margin.py
+SALIN  backend/services/interco_return_service.py
+SALIN  backend/services/interco_service.py
+SALIN  backend/tests/test_bp_PK14_indeks_wajib.py
+SALIN  backend/tests/test_g6_poc.py
+SALIN  backend/tests/test_g6b_poc.py
+SALIN  backend/tests_mem/test_PK14_indeks_wajib.py
+GABUNG docs/KN_32_GLOSARIUM_BAHASA_ANTARMUKA.md (bentrok=0)
+SALIN  frontend/src/features/__tests__/kpt1ProfilPt.test.js
+SALIN  frontend/src/features/finance/GroupConsolidationParts.jsx
+SALIN  frontend/src/features/finance/GroupConsolidationView.jsx
+GABUNG frontend/src/features/finance/interco/IntercoPanels.jsx (bentrok=1)
+GABUNG frontend/src/features/finance/interco/IntercoView.jsx (bentrok=0)
+SALIN  frontend/src/features/settings/entities/EntityDetailDrawer.jsx
+GABUNG frontend/src/features/settings/entities/EntityWizard.jsx (bentrok=0)
+GABUNG memory/PRD.md (bentrok=0)
+SALIN  scripts/INDEX.md
+SALIN  scripts/guardrails/verify_atomic_claim.py
+SALIN  scripts/verify_data_integrity.py
+SALIN  backend/services/interco_elimination_engine.py
+BARU   backend/tests/test_bp_PK31_unik_refund_bersamaan.py
+SALIN  backend/tests_mem/test_PK31_eliminasi_periode.py
+BARU   frontend/src/features/__tests__/pk31KonsolidasiRefund.test.js
+BARU   frontend/src/features/finance/ConsolidationPeriodParts.jsx
+BARU   frontend/src/features/finance/interco/IntercoRefundModal.jsx
+SALIN  scripts/migrasi_pk31_eliminasi_per_periode.py

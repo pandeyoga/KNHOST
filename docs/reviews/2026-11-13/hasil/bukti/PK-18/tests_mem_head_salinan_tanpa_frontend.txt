@@ -1,0 +1,15 @@
+12 failed, 1310 passed, 2 skipped, 4 xfailed, 11 warnings, 2 errors in 891.29s (0:14:51)
+FAILED tests_mem/test_KFT7_nilai_tertulis.py::test_KFT7_U15_kelompok_keamanan_punya_layar_dan_pemakai_tersambung
+FAILED tests_mem/test_PMT1_cara_bayar.py::test_PMT1_U13_penjaga_kosakata - AssertionError: [96m[1m== INV-PAY-VOCAB-01 — kosakata cara bayar hanya dari dafta
+FAILED tests_mem/test_PK44_jejak_dokumen.py::test_PK44_U01_tiap_view_peta_dirender_perute
+FAILED tests_mem/test_PK44_jejak_dokumen.py::test_PK44_U13_tiap_view_tujuan_menerima_fokus
+FAILED tests_mem/test_PK44_jejak_dokumen.py::test_PK44_U04_kwitansi_ke_penagihan
+FAILED tests_mem/test_PK44_jejak_dokumen.py::test_PK44_U10_linimasa_pesanan_tautan_dari_peta
+FAILED tests_mem/test_KFT1_izin_pengaturan.py::test_U14_tab_pengaturan_mengikuti_izin_kuncinya
+FAILED tests_mem/test_KFT4_registry.py::test_KFT4_indeks_kunci_layar_sama_dengan_skrip
+FAILED tests_mem/test_KFT4_registry.py::test_KFT4_layar_kelompok_tepat_satu_layar
+FAILED tests_mem/test_KPT9_hub_pengaturan.py::test_KPT9_U01_katalog_selaras_termasuk_aturan_3_dan_4
+FAILED tests_mem/test_KPT9_hub_pengaturan.py::test_KPT9_U02_judul_istilah_alias_dan_batas_tab
+FAILED tests_mem/test_KPT9_hub_pengaturan.py::test_KPT9_kesiapan_pt_menuju_tab_hub_baru
+ERROR tests_mem/test_MNT1_menu_keuangan.py - FileNotFoundError: [Errno 2] No ...
+ERROR tests_mem/test_MNT1_menu_keuangan.py - FileNotFoundError: [Errno 2] No ...

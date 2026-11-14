@@ -1,0 +1,52 @@
+bringing up nodes...
+bringing up nodes...
+
+........................................................................ [  5%]
+........................................................................ [ 10%]
+..............................................x......................... [ 15%]
+........................................................................ [ 21%]
+........................................................................ [ 26%]
+........................................................................ [ 31%]
+..x..................................................................... [ 37%]
+........................................................................ [ 42%]
+........................................................................ [ 47%]
+........................................................................ [ 52%]
+........................................................................ [ 58%]
+........................................................................ [ 63%]
+........................................................................ [ 68%]
+........................................................................ [ 74%]
+........................................................................ [ 79%]
+........................................................................ [ 84%]
+......................................ss............x......x............ [ 89%]
+........................................................................ [ 95%]
+.................................................................        [100%]
+=============================== warnings summary ===============================
+../../venv311/lib/python3.11/site-packages/starlette/formparsers.py:12
+../../venv311/lib/python3.11/site-packages/starlette/formparsers.py:12
+../../venv311/lib/python3.11/site-packages/starlette/formparsers.py:12
+  $S/venv311/lib/python3.11/site-packages/starlette/formparsers.py:12: PendingDeprecationWarning: Please use `import python_multipart` instead.
+    import multipart
+
+tests_mem/test_PK17_nominal_berizin.py::test_PK17_U08_ekspor_tagihan_tertutup_bagi_gudang
+tests_mem/test_PK17_nominal_berizin.py::test_PK17_U08_ekspor_tagihan_tertutup_bagi_gudang
+tests_mem/test_PRT3_login_saja.py::test_PRT3_U11_pratinjau_tidak_menulis
+tests_mem/test_PRT3_login_saja.py::test_PRT3_U11_pratinjau_tidak_menulis
+  $S/wt15/backend/routers/export_center.py:99: PydanticDeprecatedSince20: The `dict` method is deprecated; use `model_dump` instead. Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.13/migration/
+    plan = await eng.build_plan(payload.dict(), user, ctx)
+
+tests_mem/test_PRT3_login_saja.py::test_PRT3_U11_pratinjau_tidak_menulis
+tests_mem/test_PRT3_login_saja.py::test_PRT3_U11_pratinjau_tidak_menulis
+  $S/wt15/backend/routers/sales_return_exceptions.py:284: PydanticDeprecatedSince20: The `dict` method is deprecated; use `model_dump` instead. Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.13/migration/
+    return await rsp.simulate_cutloss(payload.dict(), ctx.active_entity_id)
+
+tests_mem/test_PRT3_login_saja.py::test_PRT3_U11_pratinjau_tidak_menulis
+tests_mem/test_PRT3_login_saja.py::test_PRT3_U11_pratinjau_tidak_menulis
+  $S/wt15/backend/routers/sales_return_exceptions.py:293: PydanticDeprecatedSince20: The `dict` method is deprecated; use `model_dump` instead. Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.13/migration/
+    return await rsp.simulate_discount(payload.dict(), ctx.active_entity_id)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+1355 passed, 2 skipped, 4 xfailed, 11 warnings in 1037.61s (0:17:17)
+
+real	17m35.292s
+user	7m44.942s
+sys	0m6.331s

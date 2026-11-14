@@ -1,0 +1,7 @@
+  ✕ U15 — galat muat: kotak merah + Coba lagi, teks kosong TIDAK tampil (48 ms)
+  ✕ memuat: teks memuat, tanpa teks kosong (7 ms)
+  ✕ daftar: keterangan, saringan dari server (jenis 0 disembunyikan), kolom PT, nomor = tautan, ulang (15 ms)
+  ✕ tanpa accounting.manage: Ulang Posting mati dengan alasan tertulis (11 ms)
+  ✓ U16 — lencana jurnal: gagal → Posting Gagal; terbit → buka jurnal; status lain tidak tampil (14 ms)
+  ✓ lencana gagal tanpa accounting.view: tidak bisa diklik ke Posting Gagal (3 ms)
+Tests:       4 failed, 2 passed, 6 total

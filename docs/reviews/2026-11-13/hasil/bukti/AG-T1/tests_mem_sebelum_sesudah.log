@@ -1,0 +1,5 @@
+# tests_mem seluruhnya — python -m pytest tests_mem -q (pytest.ini: 2 pekerja)
+## W sebelum (b5b7539)
+1303 passed, 2 skipped, 4 xfailed, 11 warnings in 250.17s (0:04:10)
+## W sesudah (kode AG-T1 akhir)
+1327 passed, 2 skipped, 4 xfailed, 11 warnings in 873.08s (0:14:33)

@@ -1,0 +1,15 @@
+  [PASS] panggilan dibungkus post_durable / post_cash_durable → hijau → hijau
+  [PASS] U14 — pemanggilan post_vendor_bill telanjang di berkas contoh → MERAH → MERAH
+  [PASS] panggilan telanjang terdaftar di garis dasar (ber-pemilik) → hijau → hijau
+  [PASS] garis dasar tanpa pemilik → MERAH → MERAH
+  [PASS] panggilan telanjang bertambah melebihi garis dasar → MERAH → MERAH
+  [PASS] garis dasar basi (pemanggil sudah dibungkus) → MERAH (hapus barisnya) → MERAH
+  [PASS] langkah PERIKSA `dry_run=True` tidak dihitung → hijau → hijau
+  [PASS] fungsi post_* baru di gl_service tanpa jenis registri → MERAH → MERAH
+  [PASS] fungsi baru terdaftar di garis dasar `fungsi` ber-pemilik → hijau → hijau
+  [PASS] _insert_entry dipanggil dari luar gl_service tanpa garis dasar → MERAH → MERAH
+  [PASS] _insert_entry sesuai garis dasar → hijau → hijau
+  [PASS] koleksi jenis registri tidak dikenal verify_contract → MERAH → MERAH
+  [PASS] retry jenis registri bukan fungsi → MERAH → MERAH
+  [PASS] kode nyata saat ini HIJAU (0 pelanggaran)
+  SELF-TEST HIJAU (0 gagal).

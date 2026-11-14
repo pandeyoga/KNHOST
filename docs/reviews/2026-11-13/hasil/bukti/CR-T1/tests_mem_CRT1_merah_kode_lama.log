@@ -1,0 +1,90 @@
+.FFFFFFFFFFFFFFFFFF                                                      [100%]
+=================================== FAILURES ===================================
+E   AssertionError: {"detail": "Not Found"}
+    assert 404 == 200
+     +  where 404 = <Response [404 Not Found]>.status_code
+$S/crt1/lama/backend/tests_mem/test_CRT1_profil_kredit.py:126: AssertionError: {"detail": "Not Found"}
+E   KeyError: 'u2'
+$S/crt1/lama/backend/tests_mem/test_CRT1_profil_kredit.py:139: KeyError: 'u2'
+E   KeyError: 'u2'
+$S/crt1/lama/backend/tests_mem/test_CRT1_profil_kredit.py:147: KeyError: 'u2'
+E   AssertionError: {"detail":"Setting 'kontrol.ubah_profil_kredit.min_orang' tidak ada di registry"}
+    assert 404 == 200
+     +  where 404 = <Response [404 Not Found]>.status_code
+$S/crt1/lama/backend/tests_mem/test_CRT1_profil_kredit.py:81: AssertionError: {"detail":"Setting 'kontrol.ubah_profil_kredit.min_orang' tidak ada di registry"}
+E   AssertionError: {"detail":"Setting 'kontrol.ubah_profil_kredit.min_orang' tidak ada di registry"}
+    assert 404 == 200
+     +  where 404 = <Response [404 Not Found]>.status_code
+$S/crt1/lama/backend/tests_mem/test_CRT1_profil_kredit.py:81: AssertionError: {"detail":"Setting 'kontrol.ubah_profil_kredit.min_orang' tidak ada di registry"}
+E   AssertionError: {"detail":"Not Found"}
+    assert 404 == 200
+     +  where 404 = <Response [404 Not Found]>.status_code
+$S/crt1/lama/backend/tests_mem/test_CRT1_profil_kredit.py:56: AssertionError: {"detail":"Not Found"}
+E   AssertionError: {"detail":"Not Found"}
+    assert 404 == 200
+     +  where 404 = <Response [404 Not Found]>.status_code
+$S/crt1/lama/backend/tests_mem/test_CRT1_profil_kredit.py:72: AssertionError: {"detail":"Not Found"}
+E   AssertionError: {"detail":"Not Found"}
+    assert 404 == 200
+     +  where 404 = <Response [404 Not Found]>.status_code
+$S/crt1/lama/backend/tests_mem/test_CRT1_profil_kredit.py:72: AssertionError: {"detail":"Not Found"}
+E   AssertionError: {"detail": "Not Found"}
+    assert 404 == 200
+     +  where 404 = <Response [404 Not Found]>.status_code
+$S/crt1/lama/backend/tests_mem/test_CRT1_profil_kredit.py:253: AssertionError: {"detail": "Not Found"}
+E   AssertionError: {"detail": "Not Found"}
+    assert 404 == 200
+     +  where 404 = <Response [404 Not Found]>.status_code
+$S/crt1/lama/backend/tests_mem/test_CRT1_profil_kredit.py:56: AssertionError: {"detail": "Not Found"}
+E   AssertionError: {"detail":"Sumber daya izin “credit_profile” tidak dikenal."}
+    assert 400 == 200
+     +  where 400 = <Response [400 Bad Request]>.status_code
+$S/crt1/lama/backend/tests_mem/conftest.py:158: AssertionError: {"detail":"Sumber daya izin “credit_profile” tidak dikenal."}
+E   assert (0 == 1)
+     +  where 0 = len([])
+$S/crt1/lama/backend/tests_mem/test_CRT1_profil_kredit.py:335: assert (0 == 1)
+E   KeyError: "Setting 'ar.default_credit_limit' tidak ada di registry"
+$S/crt1/lama/backend/config_registry.py:391: KeyError: "Setting 'ar.default_credit_limit' tidak ada di registry"
+E   AssertionError: ['{"detail":"Not Found"}', '{"detail":"Not Found"}']
+    assert [404, 404] == [200, 409]
+      
+      At index 0 diff: 404 != 200
+      Use -v to get more diff
+$S/crt1/lama/backend/tests_mem/test_CRT1_profil_kredit.py:370: AssertionError: ['{"detail":"Not Found"}', '{"detail":"Not Found"}']
+E   AssertionError: {"id":"cust_da35c5ed517a","code":"CUST-0004","name":"Toko Kredit Satu","pic_name":"Andi","phone":"6281234567801","email":"","type":"Retail","city":"Kota Bandung","country":"Indonesia","country_code":"ID","province":"Jawa Barat","province_code":"32","city_code":"32.73","district":"","district_code":"","postal_code":"","location_status":"partial","npwp":"","credit_limit":1.0,"sales_pic":"Ayu Marketing","entity_id":"ent_ksc","enforce_single_dye_lot":false,"lot_policy":"","allocation_policy":{},"assigned_sales_id":"user_sales_01","assigned_sales_name":"Ayu Marketing","sales_team":[{"sales_id":"user_sales_01","name":"Ayu Marketing","role":"pic","split_pct":100.0}],"segment":"Retail","tags":[],"contacts":[{"name":"Andi","role":"PIC","phone":"6281234567801","email":"","is_primary":true}],"payment_profile":{"allowed_methods":["tunai","tempo"],"default_method":"tempo","term_days":30,"dp_percent":0,"installment_count":0,"installment_interval_days":30},"customer_group_id":"","status":"blocked","created_by":"Budi Santoso","created_at":"2026-11-14T10:38:35.574490+00:00","addresses":[{"id":"addr_26e7d5bfece3","label":"Alamat Utama","recipient_name":"Andi","phone":"6281234567801","city":"Kota Bandung","address":"Jl. Uji Kredit No. 1","is_primary":true,"country":"Indonesia","country_code":"ID","province":"Jawa Barat","province_code":"32","city_code":"32.73","district":"","district_code":"","postal_code":"","location_status":"partial"}],"updated_at":"2026-11-14T10:38:35.814116+00:00","credit":{"credit_limit":1.0,"ar_outstanding":8500000.0,"ar_ledger":0.0,"exposure":8500000.0,"overdue_amount":0.0,"max_overdue_days":0,"open_orders":1,"available_credit":0,"deposit_balance":0.0,"status":"blocked"}}
+    assert 200 == 410
+     +  where 200 = <Response [200 OK]>.status_code
+$S/crt1/lama/backend/tests_mem/test_CRT1_profil_kredit.py:378: AssertionError: {"id":"cust_da35c5ed517a","code":"CUST-0004","name":"Toko Kredit Satu","pic_name":"Andi","phone":"6281234567801","email":"","type":"Retail","city":"Kota Bandung","country":"Indonesia","country_code":"ID","province":"Jawa Barat","province_code":"32","city_code":"32.73","district":"","district_code":"","postal_code":"","location_status":"partial","npwp":"","credit_limit":1.0,"sales_pic":"Ayu Marketing","entity_id":"ent_ksc","enforce_single_dye_lot":false,"lot_policy":"","allocation_policy":{},"assigned_sales_id":"user_sales_01","assigned_sales_name":"Ayu Marketing","sales_team":[{"sales_id":"user_sales_01","name":"Ayu Marketing","role":"pic","split_pct":100.0}],"segment":"Retail","tags":[],"contacts":[{"name":"Andi","role":"PIC","phone":"6281234567801","email":"","is_primary":true}],"payment_profile":{"allowed_methods":["tunai","tempo"],"default_method":"tempo","term_days":30,"dp_percent":0,"installment_count":0,"installment_interval_days":30},"customer_group_id":"","status":"blocked","created_by":"Budi Santoso","created_at":"2026-11-14T10:38:35.574490+00:00","addresses":[{"id":"addr_26e7d5bfece3","label":"Alamat Utama","recipient_name":"Andi","phone":"6281234567801","city":"Kota Bandung","address":"Jl. Uji Kredit No. 1","is_primary":true,"country":"Indonesia","country_code":"ID","province":"Jawa Barat","province_code":"32","city_code":"32.73","district":"","district_code":"","postal_code":"","location_status":"partial"}],"updated_at":"2026-11-14T10:38:35.814116+00:00","credit":{"credit_limit":1.0,"ar_outstanding":8500000.0,"ar_ledger":0.0,"exposure":8500000.0,"overdue_amount":0.0,"max_overdue_days":0,"open_orders":1,"available_credit":0,"deposit_balance":0.0,"status":"blocked"}}
+E   assert False
+     +  where False = all(<generator object test_CRT1_izin_lama_tersimpan_dibersihkan_saat_menyala.<locals>.<genexpr> at 0x7fe9f2c83920>)
+$S/crt1/lama/backend/tests_mem/test_CRT1_profil_kredit.py:408: assert False
+E   ImportError: cannot import name 'is_idempotent_path' from 'idempotency' ($S/crt1/lama/backend/idempotency.py)
+$S/crt1/lama/backend/tests_mem/test_CRT1_profil_kredit.py:421: ImportError: cannot import name 'is_idempotent_path' from 'idempotency' ($S/crt1/lama/backend/idempotency.py)
+E   ImportError: cannot import name 'credit_profile_service' from 'services' ($S/crt1/lama/backend/services/__init__.py)
+$S/crt1/lama/backend/tests_mem/test_CRT1_profil_kredit.py:439: ImportError: cannot import name 'credit_profile_service' from 'services' ($S/crt1/lama/backend/services/__init__.py)
+=============================== warnings summary ===============================
+../../../venv311/lib/python3.11/site-packages/starlette/formparsers.py:12
+  $S/venv311/lib/python3.11/site-packages/starlette/formparsers.py:12: PendingDeprecationWarning: Please use `import python_multipart` instead.
+    import multipart
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests_mem/test_CRT1_profil_kredit.py::test_CRT1_U2_sales_mengajukan - ...
+FAILED tests_mem/test_CRT1_profil_kredit.py::test_CRT1_U3_sales_tidak_memutus
+FAILED tests_mem/test_CRT1_profil_kredit.py::test_CRT1_U4_manajer_menyetujui
+FAILED tests_mem/test_CRT1_profil_kredit.py::test_CRT1_U5_dua_orang_pt_ksc - ...
+FAILED tests_mem/test_CRT1_profil_kredit.py::test_CRT1_U6_pt_lain_satu_orang
+FAILED tests_mem/test_CRT1_profil_kredit.py::test_CRT1_U7_hari_blokir_bawaan_pt
+FAILED tests_mem/test_CRT1_profil_kredit.py::test_CRT1_U8_hari_blokir_khusus
+FAILED tests_mem/test_CRT1_profil_kredit.py::test_CRT1_U9_persen_peringatan
+FAILED tests_mem/test_CRT1_profil_kredit.py::test_CRT1_U10_terbuka_dan_isian_tidak_sah
+FAILED tests_mem/test_CRT1_profil_kredit.py::test_CRT1_U11_plafon_kedaluwarsa
+FAILED tests_mem/test_CRT1_profil_kredit.py::test_CRT1_U12_izin_peran_uji_baku
+FAILED tests_mem/test_CRT1_profil_kredit.py::test_CRT1_U13_plafon_saat_pelanggan_dibuat
+FAILED tests_mem/test_CRT1_profil_kredit.py::test_CRT1_U15_plafon_bawaan_pt
+FAILED tests_mem/test_CRT1_profil_kredit.py::test_CRT1_U16b_dua_pengajuan_bersamaan
+FAILED tests_mem/test_CRT1_profil_kredit.py::test_CRT1_jalur_lama_dimatikan
+FAILED tests_mem/test_CRT1_profil_kredit.py::test_CRT1_izin_lama_tersimpan_dibersihkan_saat_menyala
+FAILED tests_mem/test_CRT1_profil_kredit.py::test_CRT1_kontrol_dan_idempotensi_terdaftar
+FAILED tests_mem/test_CRT1_profil_kredit.py::test_CRT1_U14_migrasi_data_lama
+18 failed, 1 passed, 1 warning in 1.77s

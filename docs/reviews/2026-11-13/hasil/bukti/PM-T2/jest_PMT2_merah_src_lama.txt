@@ -1,0 +1,20 @@
+    [0m [90m 31 |[39m
+     [90m 32 |[39m [90m/* eslint-disable import/first */[39m
+    [31m[1m>[22m[39m[90m 33 |[39m [36mimport[39m [33mCheckoutPaymentDestination[39m[33m,[39m { [33mPESAN_REKENING_KOSONG[39m } [36mfrom[39m [32m"../pos/CheckoutPaymentDestination"[39m[33m;[39m
+     [90m    |[39m [31m[1m^[22m[39m
+     [90m 34 |[39m [36mimport[39m [33mOrderPaymentInstructionCard[39m[33m,[39m { [33mPESAN_DISALIN[39m } [36mfrom[39m [32m"../orders/OrderPaymentInstructionCard"[39m[33m;[39m
+     [90m 35 |[39m [36mimport[39m [33mSalesOrderOverrideDialog[39m [36mfrom[39m [32m"../orders/SalesOrderOverrideDialog"[39m[33m;[39m
+     [90m 36 |[39m [36mimport[39m { invalidatePaymentMethods } [36mfrom[39m [32m"../../config/paymentMethods"[39m[33m;[39m[0m
+
+      at Resolver.resolveModule (../fe/node_modules/jest-resolve/build/resolver.js:324:11)
+      at Object.<anonymous> (src/features/__tests__/pmt2InstruksiBayar.test.js:33:1)
+      at TestScheduler.scheduleTests (../fe/node_modules/@jest/core/build/TestScheduler.js:333:13)
+      at runJest (../fe/node_modules/@jest/core/build/runJest.js:404:19)
+      at _run10000 (../fe/node_modules/@jest/core/build/cli/index.js:320:7)
+      at runCLI (../fe/node_modules/@jest/core/build/cli/index.js:173:3)
+
+Test Suites: 1 failed, 1 total
+Tests:       0 total
+Snapshots:   0 total
+Time:        2.153 s
+Ran all test suites matching /src\/features\/__tests__\/pmt2InstruksiBayar.test.js/i.

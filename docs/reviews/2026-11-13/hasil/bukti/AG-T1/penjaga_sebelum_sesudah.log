@@ -1,0 +1,51 @@
+# hitung_penjaga.sh — sebelum (HEAD) lalu sesudah
+## sebelum
+verify_auth_coverage: [FAIL] 28 pelanggaran :
+verify_ui_standard: [FAIL] 13 pelanggaran :
+verify_approval_queues: 
+audit_i18n_id:   ✗ 104 temuan di 60 berkas.
+audit_create_modal: [FAIL] 6 pelanggaran :
+verify_page_tabs: [FAIL] 1 pelanggaran total (INV-UI-12 1 · INV-UI-13 0 · INV-UI-14 0)
+verify_to_list_bound: [FAIL] 6 pelanggaran :
+verify_list_export: [PASS] 0 pelanggaran.
+verify_error_notice: [PASS] 0 pelanggaran.
+verify_custom_modals: [PASS] 0 pelanggaran.
+verify_knselect_contract: verify_knselect_contract: 0 temuan
+verify_entity_label:   ✗ 2 pelanggaran:
+verify_access_catalog_nav: verify_access_catalog_nav: 0 temuan
+verify_money_idempotency: [PASS] 0 pelanggaran.
+verify_codebase_map: [PASS] 0 pelanggaran.
+verify_scope_guard: 
+## sesudah
+verify_auth_coverage: [FAIL] 27 pelanggaran :
+verify_ui_standard: [FAIL] 13 pelanggaran :
+verify_approval_queues: 
+audit_i18n_id:   ✗ 104 temuan di 60 berkas.
+audit_create_modal: [FAIL] 6 pelanggaran :
+verify_page_tabs: [FAIL] 1 pelanggaran total (INV-UI-12 1 · INV-UI-13 0 · INV-UI-14 0)
+verify_to_list_bound: [FAIL] 6 pelanggaran :
+verify_list_export: [PASS] 0 pelanggaran.
+verify_error_notice: [PASS] 0 pelanggaran.
+verify_custom_modals: [PASS] 0 pelanggaran.
+verify_knselect_contract: verify_knselect_contract: 0 temuan
+verify_entity_label:   ✗ 2 pelanggaran:
+verify_access_catalog_nav: verify_access_catalog_nav: 0 temuan
+verify_money_idempotency: [PASS] 0 pelanggaran.
+verify_codebase_map: [PASS] 0 pelanggaran.
+verify_scope_guard: 
+
+# daftar gate statik scripts/gate.sh (66 butir) — kode keluar HEAD vs baru: identik
+## butir merah (sama di HEAD dan baru) + perbandingan baris ringkasan
+SAMA  guard:auth_coverage (INV-AUTH-01) ::   ✗ handheld.py: `POST /tag-writes/{write_id}/fail` TIDAK menegakkan auth (require_permission/require_any_permission/require_role/current_user/entity_ctx) → dapat diakses TANPA login. Tambah enforcer atau daftarkan di PUBLIC_ALLOWLIST bila memang publik.
+SAMA  validate_compliance (file/naming/docs/api/env) :: ❌ 1 failure harus difix sebelum task dianggap DONE
+SAMA  guard:create_modal (INV-UI-05, tombol Buat = pop-up konsisten) :: [FAIL] 6 pelanggaran (dari 14 cek):
+SAMA  guard:page_tabs (INV-UI-12/13/14, tab maks 2 tingkat · maks 6 tab per hub · tanpa tab tingkat ketiga) :: [FAIL] 1 pelanggaran total (INV-UI-12 1 · INV-UI-13 0 · INV-UI-14 0)
+SAMA  guard:to_list_bound SELF-TEST (bukti-merah dua arah, 11 kasus) ::   [FAIL] kode nyata saat ini HIJAU (6 pelanggaran)
+SAMA  guard:to_list_bound (INV-PERF-01, to_list(n>20000) dilarang) :: [FAIL] 6 pelanggaran (dari 18 cek):
+SAMA  guard:atomic_claim SELF-TEST (bukti-merah dua arah, 10 kasus) ::   [FAIL] kode nyata saat ini HIJAU (6 pelanggaran)
+SAMA  guard:atomic_claim (INV-ATOMIC-01, saga/CAS endpoint multi-koleksi) :: [FAIL] 6 pelanggaran (dari 130 cek):
+SAMA  ux_audit --strict (INV-UX-01, loading/empty/chart baseline) ::   ERROR 11  |  WARN 9  (di 922 file)
+BEDA  guard:ref_unlink (INV-REF-04, hapus dokumen wajib sapu tautan balik) :: HEAD=[[FAIL] 4 pelanggaran (dari 659 cek):] BARU=[[FAIL] 4 pelanggaran (dari 661 cek):]
+SAMA  audit_i18n_id (label antarmuka Bahasa Indonesia) ::   ✗ 104 temuan di 60 berkas.
+SAMA  guard:entity_label (INV-UI-02, id entitas tak boleh tampil) ::   ✗ 2 pelanggaran:
+SAMA  guard:warehouse_scope SELF-TEST (E4.1, gudang khusus badan usaha) ::   [FAIL] kode nyata saat ini MERAH

@@ -1,0 +1,35 @@
+== HEAD f05d8da
+verify_auth_coverage: [FAIL] 28 pelanggaran :
+verify_ui_standard: [FAIL] 13 pelanggaran :
+verify_approval_queues: 
+audit_i18n_id:   ✗ 104 temuan di 60 berkas.
+audit_create_modal: [FAIL] 6 pelanggaran :
+verify_page_tabs: [FAIL] 1 pelanggaran total (INV-UI-12 1 · INV-UI-13 0 · INV-UI-14 0)
+verify_to_list_bound: [FAIL] 6 pelanggaran :
+verify_list_export: [PASS] 0 pelanggaran.
+verify_error_notice: [PASS] 0 pelanggaran.
+verify_custom_modals: [PASS] 0 pelanggaran.
+verify_knselect_contract: verify_knselect_contract: 0 temuan
+verify_entity_label:   ✗ 2 pelanggaran:
+verify_access_catalog_nav: verify_access_catalog_nav: 0 temuan
+verify_money_idempotency: [PASS] 0 pelanggaran.
+verify_codebase_map: [PASS] 0 pelanggaran.
+verify_scope_guard: 
+
+== T (gabungan)
+verify_auth_coverage: [FAIL] 28 pelanggaran :
+verify_ui_standard: [FAIL] 13 pelanggaran :
+verify_approval_queues: 
+audit_i18n_id:   ✗ 104 temuan di 60 berkas.
+audit_create_modal: [FAIL] 6 pelanggaran :
+verify_page_tabs: [FAIL] 1 pelanggaran total (INV-UI-12 1 · INV-UI-13 0 · INV-UI-14 0)
+verify_to_list_bound: [FAIL] 6 pelanggaran :
+verify_list_export: [PASS] 0 pelanggaran.
+verify_error_notice: [PASS] 0 pelanggaran.
+verify_custom_modals: [PASS] 0 pelanggaran.
+verify_knselect_contract: verify_knselect_contract: 0 temuan
+verify_entity_label:   ✗ 2 pelanggaran:
+verify_access_catalog_nav: verify_access_catalog_nav: 0 temuan
+verify_money_idempotency: [PASS] 0 pelanggaran.
+verify_codebase_map: [PASS] 0 pelanggaran.
+verify_scope_guard: 

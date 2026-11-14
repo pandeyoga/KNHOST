@@ -1,0 +1,44 @@
+
+[1] Laba-Rugi PT A Oktober (2026-10-01..2026-10-31)
+  OK   Pendapatan: laporan=70,000,000.00 hitung-tangan=70,000,000.00
+  OK   HPP: laporan=42,000,000.00 hitung-tangan=42,000,000.00
+  OK   Laba kotor: laporan=28,000,000.00 hitung-tangan=28,000,000.00
+  OK   Beban operasional (sewa saja bila ikut tanggal WIB): laporan=4,000,000.00 hitung-tangan=4,000,000.00
+  OK   Laba bersih (bila ikut tanggal WIB): laporan=24,000,000.00 hitung-tangan=24,000,000.00
+
+[2] Neraca PT A per 2026-10-31 (hitung tangan memakai tanggal seperti tersimpan)
+  BEDA Total aset: laporan=191,700,000.00 hitung-tangan=190,700,000.00
+  OK   Total kewajiban: laporan=67,700,000.00 hitung-tangan=67,700,000.00
+  BEDA Ekuitas (modal + laba berjalan): laporan=124,000,000.00 hitung-tangan=123,000,000.00
+     seimbang menurut laporan: True
+
+[3] Neraca saldo PT A per 2026-10-31
+  OK   Total saldo debit: laporan=237,700,000.00 hitung-tangan=237,700,000.00
+  OK   Total saldo kredit: laporan=237,700,000.00 hitung-tangan=237,700,000.00
+
+[4] Buku besar Kas PT A per 2026-10-31
+  BEDA Saldo kas: laporan=116,000,000.00 hitung-tangan=115,000,000.00
+
+[5] Mode gabungan (tanpa filter entitas) — Laba-Rugi Oktober
+  BEDA Pendapatan gabungan vs konsolidasi sebenarnya (penjualan ke luar saja): laporan=70,000,000.00 hitung-tangan=50,000,000.00
+  BEDA Persediaan+aset gabungan vs konsolidasi (tanpa piutang antar-PT & laba dalam stok 8 jt): laporan=213,900,000.00 hitung-tangan=182,700,000.00
+
+[6] Tutup buku Oktober PT A, lalu laporan yang sama
+     laba bersih yang ditutup: 24,000,000.00 | jurnal penutup: AAA/JE-00012
+  OK   Laba-Rugi Oktober tidak berubah setelah ditutup: laporan=24,000,000.00 hitung-tangan=24,000,000.00
+  OK   Ekuitas total tetap: laporan=124,000,000.00 hitung-tangan=124,000,000.00
+  OK   Laba berjalan menjadi 0 setelah ditutup: laporan=0.00 hitung-tangan=0.00
+  OK   Laba ditahan = laba Oktober: laporan=24,000,000.00 hitung-tangan=24,000,000.00
+     neraca seimbang: True
+  OK   jurnal mundur ke Oktober ditolak: ClosedPeriodError
+
+[7] Laba-Rugi Jan–Nov PT A (melewati jurnal penutup)
+  BEDA Laba bersih kumulatif = Okt + Nov: laporan=27,000,000.00 hitung-tangan=28,000,000.00
+     neraca 30 Nov seimbang: True | ekuitas: 127,000,000.00
+
+RINGKAS: 13 cocok, 6 berbeda dari hitungan tangan
+Arus kas Oktober menurut laporan : {'operating': 793.33, 'investing': 86.67, 'financing': 200.0}
+  kas awal 900.00 + perubahan 1,080.00 = kas akhir 1,980.00 | kas akhir buku besar 1,980.00 | cocok: True
+Hitungan tangan (klasifikasi baku): operasi +250 (jual 300 − sewa 50); investasi +130 (hasil jual mesin); pendanaan +500 (pinjaman); saldo awal rekening 200 = bagian kas awal, bukan arus periode
+Saldo kas buku besar 31 Okt: 1,980.00 (900 awal + 300 − 50 + 130 + 500 + 200 = 1.980)
+Perubahan ekuitas: awal 980.00 + mutasi 500.00 = akhir 1,480.00 | ekuitas di neraca 1,480.00 | laba periode 300.00

@@ -1,0 +1,22 @@
+# AG-T1 — uji komponen kartu pada TanyaActionCard.jsx LAMA (git show b5b7539:…)
+  ✕ U18 — kartu gagal: pesan galat, hasil sebagian, tidak bisa diulang, tanpa tombol setujui (89 ms)
+  ✕ kartu gagal tanpa hasil sebagian tidak menampilkan baris 'Sudah dibuat' (33 ms)
+  ✕ kartu kedaluwarsa: kalimat baku, tanpa tombol (43 ms)
+  ✕ kartu menunggu: baris PT + berlaku sampai (WIB); label tombol tidak berubah (100 ms)
+  ✕ PT aktif berbeda → tombol setujui mati dengan alasan tertulis; Abaikan tetap bisa (42 ms)
+  ✕ mode Semua PT (akun berganti PT) → tombol setujui mati dengan alasan tertulis (29 ms)
+  ✓ akun satu-PT (header 'all' tetapi boleh menulis) → tombol setujui hidup (21 ms)
+  ✕ setujui → jawaban 200 berstatus gagal: kartu berganti ke tampilan gagal, toast galat (bukan 'berhasil') (23 ms)
+  ✕ setujui ditolak 409 (kedaluwarsa) → kartu dimuat ulang dan menampilkan status terkini (18 ms)
+  ✕ status tak dikenal tidak tampil sebagai kode mentah (8 ms)
+  ✕ kartu disetujui menampilkan nomor PO dan status ikon + teks (13 ms)
+    Expected: "Draf ini sudah kedaluwarsa. Minta asisten menyiapkannya lagi."
+    Received: "expired"
+    Expected: true
+    Received: false
+    Expected: true
+    Received: false
+    Expected number of calls: 2
+    Received number of calls: 1
+Test Suites: 1 failed, 1 total
+Tests:       10 failed, 1 passed, 11 total

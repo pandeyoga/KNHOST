@@ -1,0 +1,2 @@
+verify_config_fallback.py --self-test (T, sesudah pemakai compute_tax dipulihkan): SELF-TEST: PASS
+prepD1GateV2 (jest, T, dijalankan sendiri): 6 passed — gagal di jalan penuh = batas waktu 5 dtk saat mesin sibuk

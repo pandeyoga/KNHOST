@@ -1,0 +1,67 @@
+1	python scripts/guardrails/verify_auth_coverage.py	[FAIL] 28 pelanggaran (dari 1770 cek):
+0	python scripts/guardrails/verify_auth_coverage.py --self-test	  [PASS] PUBLIC_ALLOWLIST dihormati → hijau  (harap=0 pelanggaran, dapat=0)
+1	python scripts/validate_compliance.py	❌ 1 failure harus difix sebelum task dianggap DONE
+0	python scripts/check_nav_map.py	✓ NAV MAP: PASS
+0	python scripts/guardrails/verify_modal_dismiss.py	[PASS] 9 cek lolos, 0 pelanggaran.
+0	python scripts/guardrails/verify_knselect_contract.py	verify_knselect_contract: 0 temuan
+0	python scripts/guardrails/verify_access_catalog_nav.py	verify_access_catalog_nav: 0 temuan
+0	python scripts/guardrails/verify_access_catalog_nav.py --self-test	  ✓ (3) tab tampak tanpa modul → tepat 1 temuan
+0	python scripts/guardrails/verify_desk_targets.py	verify_desk_targets: 33 target diperiksa, 0 temuan
+0	python scripts/audit_create_modal.py --self-test	  [PASS] kartu biasa tanpa penanda pop-up → bukan modal  (harap=False, dapat=False)
+1	python scripts/audit_create_modal.py	[FAIL] 6 pelanggaran (dari 14 cek):
+0	python scripts/guardrails/verify_blocking_dialogs.py --self-test	  [PASS] index.js dengan <ConfirmHost/> → hijau
+0	python scripts/guardrails/verify_blocking_dialogs.py	[PASS] 1 cek lolos, 0 pelanggaran.
+0	python scripts/guardrails/verify_list_export.py --self-test	  [PASS] util CSV yang pemisahnya diganti ',' → uji perilaku MEMERAH
+0	python scripts/guardrails/verify_list_export.py	[PASS] 24 cek lolos, 0 pelanggaran.
+0	python scripts/guardrails/verify_money_idempotency.py --self-test	[SELF-TEST] lulus — penjaga memerah pada pelanggaran dan lolos pada pintu
+0	python scripts/guardrails/verify_money_idempotency.py	[PASS] 19 cek lolos, 0 pelanggaran.
+0	python scripts/guardrails/verify_detail_modal.py --self-test	  [PASS] pembebasan tanpa alasan yang bisa dinilai → MERAH
+0	python scripts/guardrails/verify_detail_modal.py	[PASS] 29 cek lolos, 0 pelanggaran.
+0	python scripts/guardrails/verify_picker_portal.py --self-test	  [PASS] kode nyata saat ini HIJAU (0 berkas melanggar)
+0	python scripts/guardrails/verify_picker_portal.py	[PASS] 326 cek lolos, 0 pelanggaran.
+0	python scripts/guardrails/verify_escape_layers.py --self-test	  [PASS] kode nyata saat ini HIJAU (0 berkas melanggar)
+0	python scripts/guardrails/verify_escape_layers.py	[PASS] 1274 cek lolos, 0 pelanggaran.
+0	python scripts/guardrails/verify_custom_modals.py --self-test	
+0	python scripts/guardrails/verify_custom_modals.py	[PASS] 97 cek lolos, 0 pelanggaran.
+0	python scripts/guardrails/verify_page_tabs.py --self-test	
+1	python scripts/guardrails/verify_page_tabs.py	[FAIL] 1 pelanggaran total (INV-UI-12 1 · INV-UI-13 0 · INV-UI-14 0)
+0	python scripts/guardrails/verify_view_aliases.py --self-test	
+0	python scripts/guardrails/verify_view_aliases.py	[PASS] 162 cek lolos, 0 pelanggaran.
+0	python scripts/guardrails/verify_config_text.py --self-test	
+0	python scripts/guardrails/verify_config_text.py	[PASS] 3115 cek lolos, 0 pelanggaran.
+0	python scripts/gen_config_key_index.py --check	
+0	python scripts/guardrails/verify_payment_vocab.py --self-test	
+0	python scripts/guardrails/verify_payment_vocab.py	[PASS] 1751 cek lolos, 0 pelanggaran.
+1	python scripts/guardrails/verify_to_list_bound.py --self-test	  [FAIL] kode nyata saat ini HIJAU (6 pelanggaran)
+1	python scripts/guardrails/verify_to_list_bound.py	[FAIL] 6 pelanggaran (dari 18 cek):
+0	python scripts/guardrails/verify_codebase_map.py --self-test	  [PASS] peta lama v1.0 (tabel Ringkasan angka tidak ada) → MERAH → MERAH
+0	python scripts/guardrails/verify_codebase_map.py	[PASS] 5 cek lolos, 0 pelanggaran.
+1	python scripts/guardrails/verify_atomic_claim.py --self-test	  [FAIL] kode nyata saat ini HIJAU (6 pelanggaran)
+1	python scripts/guardrails/verify_atomic_claim.py	[FAIL] 6 pelanggaran (dari 130 cek):
+0	python scripts/ux_audit.py --self-test	  [PASS] variabel bernama `selected`/`selectedRow` → bukan E4
+1	python scripts/ux_audit.py --strict	
+0	python scripts/audit_config_wiring.py --strict	✅ INV-CFG: setiap setting terdeklarasi punya pembaca kode DAN jalur ubah yang nyata; tidak ada editor ganda.
+0	python scripts/audit_config_wiring.py --self-test	SELF-TEST: PASS — guardrail terbukti bisa memerah
+1	python scripts/guardrails/verify_config_fallback.py --self-test	SELF-TEST: FAIL
+0	python scripts/guardrails/verify_config_fallback.py	[PASS] 147 cek lolos, 0 pelanggaran.
+0	python scripts/guardrails/verify_config_fallback.py --entity --self-test	SELF-TEST: PASS — penjaga terbukti bisa memerah
+0	python scripts/guardrails/verify_config_fallback.py --entity	[PASS] 147 cek lolos, 0 pelanggaran.
+0	python scripts/audit_doc_refs.py --self-test	  ✓ [PASS] vendor_bill: hook penautan ada di routers/vendor_bills.py, services/makloon_order_service.py
+0	python scripts/guardrails/verify_ref_unlink.py --self-test	  [OK] harus MEMERAH · koleksi dinamis tak terdaftar = pelanggaran, bukan celah
+1	python scripts/guardrails/verify_ref_unlink.py	[FAIL] 4 pelanggaran (dari 660 cek):
+0	python scripts/guardrails/verify_notification_audience.py --self-test	  HASIL SELF-TEST: 16 PASS · 0 FAIL dari 16 kasus
+0	python scripts/guardrails/verify_notification_audience.py	
+1	python scripts/audit_i18n_id.py --strict	  ✗ 104 temuan di 60 berkas.
+0	python scripts/audit_i18n_id.py --self-test	  16/16 skenario lulus.
+0	python scripts/fix_i18n_id.py --self-test	  11/11 skenario lulus.
+1	python scripts/guardrails/verify_entity_label.py --self-test	  ✗ 2 pelanggaran:
+0	python scripts/guardrails/verify_error_notice.py --self-test	[PASS] 290 cek lolos, 0 pelanggaran.
+0	python scripts/guardrails/verify_role_label.py --self-test	  [PASS] kode nyata saat ini HIJAU
+0	python scripts/guardrails/verify_role_gate_ui.py --self-test	
+0	python scripts/guardrails/verify_role_gate_ui.py	[PASS] 31 cek lolos, 0 pelanggaran.
+0	python scripts/guardrails/verify_permission_checked.py --self-test	  OK   katalog nyata lulus
+0	python scripts/guardrails/verify_permission_checked.py	[PASS] 585 cek lolos, 0 pelanggaran.
+0	python scripts/guardrails/verify_derived_fields.py	[PASS] 3 cek lolos, 0 pelanggaran.
+0	python scripts/audit_entity_isolation.py --self-test	  [PASS] setelah dibersihkan gate kembali hijau
+0	cd backend && python -m entity_write_guard --self-test	  [PASS] POST   /api/rute-baru-yang-lupa-didaftarkan             X-Entity-Id=all      → 409  · deny-by-default untuk rute tulis baru
+1	python scripts/audit_warehouse_scope.py --self-test	  [FAIL] kode nyata saat ini MERAH

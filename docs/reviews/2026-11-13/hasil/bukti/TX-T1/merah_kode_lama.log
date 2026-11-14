@@ -1,0 +1,91 @@
+.FFFFFFFFFFF..FFFFFF                                                                                                                                                                                                                               [100%]
+======================================================================================================================== FAILURES ========================================================================================================================
+E   AssertionError: {}
+    assert (None, None, ...ne, None, ...) == (12.0, True, ...dokumen', ...)
+      
+      At index 0 diff: None != 12.0
+      Use -v to get more diff
+$S/txt1_lama/backend/tests_mem/test_TXT1_pengaturan_pajak.py:103: AssertionError: {}
+E   TypeError: compute_tax() got an unexpected keyword argument 'at'
+$S/txt1_lama/backend/tests_mem/test_TXT1_pengaturan_pajak.py:117: TypeError: compute_tax() got an unexpected keyword argument 'at'
+E   AssertionError: (24000000.0, 2860000.0)
+    assert (24000000.0, 2860000.0) == (24000000, 2640000)
+      
+      At index 1 diff: 2860000.0 != 2640000
+      Use -v to get more diff
+$S/txt1_lama/backend/tests_mem/test_TXT1_pengaturan_pajak.py:138: AssertionError: (24000000.0, 2860000.0)
+E   AssertionError: {"detail":"Setting 'tax.dpp_nilai_lain_pembilang' tidak ada di registry"}
+    assert 404 == 200
+     +  where 404 = <Response [404 Not Found]>.status_code
+$S/txt1_lama/backend/tests_mem/test_TXT1_pengaturan_pajak.py:38: AssertionError: {"detail":"Setting 'tax.dpp_nilai_lain_pembilang' tidak ada di registry"}
+E   AssertionError: {"detail":"Setting 'tax.pembulatan_satuan' tidak ada di registry"}
+    assert 404 == 200
+     +  where 404 = <Response [404 Not Found]>.status_code
+$S/txt1_lama/backend/tests_mem/test_TXT1_pengaturan_pajak.py:38: AssertionError: {"detail":"Setting 'tax.pembulatan_satuan' tidak ada di registry"}
+E   AssertionError: {"detail":"Setting 'tax.pembulatan_satuan' tidak ada di registry"}
+    assert 404 == 200
+     +  where 404 = <Response [404 Not Found]>.status_code
+$S/txt1_lama/backend/tests_mem/test_TXT1_pengaturan_pajak.py:38: AssertionError: {"detail":"Setting 'tax.pembulatan_satuan' tidak ada di registry"}
+E   AssertionError: {"detail":"Setting 'tax.kode_transaksi_bawaan_dpp_nilai_lain' tidak ada di registry"}
+    assert 404 == 200
+     +  where 404 = <Response [404 Not Found]>.status_code
+$S/txt1_lama/backend/tests_mem/test_TXT1_pengaturan_pajak.py:38: AssertionError: {"detail":"Setting 'tax.kode_transaksi_bawaan_dpp_nilai_lain' tidak ada di registry"}
+E   AssertionError: {"detail":"Setting 'tax.kode_transaksi_diizinkan' tidak ada di registry"}
+    assert 404 == 200
+     +  where 404 = <Response [404 Not Found]>.status_code
+$S/txt1_lama/backend/tests_mem/test_TXT1_pengaturan_pajak.py:38: AssertionError: {"detail":"Setting 'tax.kode_transaksi_diizinkan' tidak ada di registry"}
+E   AssertionError: {"id":"cus_txt1_nik","code":"CUS_TXT1_NIK","name":"Toko cus_txt1_nik","entity_id":"ent_ksc","status":"active","credit_limit":0,"pic_name":"Bu Rina","phone":"6281200000000","addresses":[{"id":"addr_cus_txt1_nik","label":"Toko","recipient_name":"Bu Rina","phone":"6281200000000","city":"Bandung","address":"Jl. Uji No. 1","is_primary":true}],"created_at":"2026-11-14T10:36:29.361155+00:00","updated_at":"2026-11-14T10:36:29.506652+00:00","credit":{"credit_limit":0.0,"ar_outstanding":0.0,"ar_ledger":0.0,"exposure":0.0,"overdue_amount":0.0,"max_overdue_days":0,"open_orders":0,"available_credit":null,"deposit_balance":0.0,"status":"active"}}
+    assert (200 == 400)
+     +  where 200 = <Response [200 OK]>.status_code
+$S/txt1_lama/backend/tests_mem/test_TXT1_pengaturan_pajak.py:244: AssertionError: {"id":"cus_txt1_nik","code":"CUS_TXT1_NIK","name":"Toko cus_txt1_nik","entity_id":"ent_ksc","status":"active","credit_limit":0,"pic_name":"Bu Rina","phone":"6281200000000","addresses":[{"id":"addr_cus_txt1_nik","label":"Toko","recipient_name":"Bu Rina","phone":"6281200000000","city":"Bandung","address":"Jl. Uji No. 1","is_primary":true}],"created_at":"2026-11-14T10:36:29.361155+00:00","updated_at":"2026-11-14T10:36:29.506652+00:00","credit":{"credit_limit":0.0,"ar_outstanding":0.0,"ar_ledger":0.0,"exposure":0.0,"overdue_amount":0.0,"max_overdue_days":0,"open_orders":0,"available_credit":null,"deposit_balance":0.0,"status":"active"}}
+E   KeyError: 'data_incomplete'
+$S/txt1_lama/backend/tests_mem/test_TXT1_pengaturan_pajak.py:277: KeyError: 'data_incomplete'
+E   KeyError: 'tax_override_by'
+$S/txt1_lama/backend/tests_mem/test_TXT1_pengaturan_pajak.py:296: KeyError: 'tax_override_by'
+E   AssertionError: None
+    assert None is False
+     +  where None = <built-in method get of dict object at 0x7fc756b2efc0>('is_pkp')
+     +    where <built-in method get of dict object at 0x7fc756b2efc0> = (None or {}).get
+     +      where None = <built-in method get of dict object at 0x7fc756a87640>('tax_snapshot')
+     +        where <built-in method get of dict object at 0x7fc756a87640> = {'id': 'so_a00cd0b5b365', 'number': 'KANDA/SO-00001', 'status': 'waiting_stock', 'entity_id': 'ent_kanda', ...}.get
+$S/txt1_lama/backend/tests_mem/test_TXT1_pengaturan_pajak.py:327: AssertionError: None
+E   AssertionError: {"detail":"Setting 'tax.dpp_nilai_lain_pembilang' tidak ada di registry"}
+    assert 404 == 200
+     +  where 404 = <Response [404 Not Found]>.status_code
+$S/txt1_lama/backend/tests_mem/test_TXT1_pengaturan_pajak.py:38: AssertionError: {"detail":"Setting 'tax.dpp_nilai_lain_pembilang' tidak ada di registry"}
+E   KeyError: "Setting 'tax.dpp_nilai_lain_pembilang' tidak ada di registry"
+$S/txt1_lama/backend/config_registry.py:391: KeyError: "Setting 'tax.dpp_nilai_lain_pembilang' tidak ada di registry"
+E   ModuleNotFoundError: No module named 'services.tax_config_service'
+$S/txt1_lama/backend/tests_mem/test_TXT1_pengaturan_pajak.py:399: ModuleNotFoundError: No module named 'services.tax_config_service'
+E   assert (11000000.0, 1320000.0) == (12000000, 1440000)
+      
+      At index 0 diff: 11000000.0 != 12000000
+      Use -v to get more diff
+$S/txt1_lama/backend/tests_mem/test_TXT1_pengaturan_pajak.py:412: assert (11000000.0, 1320000.0) == (12000000, 1440000)
+E   KeyError: 'dpp_nilai_lain_pembilang'
+$S/txt1_lama/backend/tests_mem/test_TXT1_pengaturan_pajak.py:418: KeyError: 'dpp_nilai_lain_pembilang'
+==================================================================================================================== warnings summary ====================================================================================================================
+../../venv311/lib/python3.11/site-packages/starlette/formparsers.py:12
+  $S/venv311/lib/python3.11/site-packages/starlette/formparsers.py:12: PendingDeprecationWarning: Please use `import python_multipart` instead.
+    import multipart
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+================================================================================================================ short test summary info =================================================================================================================
+FAILED tests_mem/test_TXT1_pengaturan_pajak.py::test_TXT1_U1b_potret_pajak_tersimpan - AssertionError: {}
+FAILED tests_mem/test_TXT1_pengaturan_pajak.py::test_TXT1_U2_tarif_berjadwal_berlaku_sejak_tanggalnya - TypeError: compute_tax() got an unexpected keyword argument 'at'
+FAILED tests_mem/test_TXT1_pengaturan_pajak.py::test_TXT1_U3_override_dan_faktur_memakai_potret - AssertionError: (24000000.0, 2860000.0)
+FAILED tests_mem/test_TXT1_pengaturan_pajak.py::test_TXT1_U4_faktor_per_pt - AssertionError: {"detail":"Setting 'tax.dpp_nilai_lain_pembilang' tidak ada di registry"}
+FAILED tests_mem/test_TXT1_pengaturan_pajak.py::test_TXT1_U5_rupiah_penuh - AssertionError: {"detail":"Setting 'tax.pembulatan_satuan' tidak ada di registry"}
+FAILED tests_mem/test_TXT1_pengaturan_pajak.py::test_TXT1_U6_per_baris_lawan_per_dokumen - AssertionError: {"detail":"Setting 'tax.pembulatan_satuan' tidak ada di registry"}
+FAILED tests_mem/test_TXT1_pengaturan_pajak.py::test_TXT1_U7_kode_bawaan_dari_pengaturan_dan_pelanggan - AssertionError: {"detail":"Setting 'tax.kode_transaksi_bawaan_dpp_nilai_lain' tidak ada di registry"}
+FAILED tests_mem/test_TXT1_pengaturan_pajak.py::test_TXT1_U8_kode_di_luar_daftar_pt_ditolak - AssertionError: {"detail":"Setting 'tax.kode_transaksi_diizinkan' tidak ada di registry"}
+FAILED tests_mem/test_TXT1_pengaturan_pajak.py::test_TXT1_U9_profil_pajak_pelanggan - AssertionError: {"id":"cus_txt1_nik","code":"CUS_TXT1_NIK","name":"Toko cus_txt1_nik","entity_id":"ent_ksc","status":"active","credit_limit":0,"pic_name":"Bu Rin...
+FAILED tests_mem/test_TXT1_pengaturan_pajak.py::test_TXT1_U10_tanpa_identitas_tetap_terbit_dengan_tanda - KeyError: 'data_incomplete'
+FAILED tests_mem/test_TXT1_pengaturan_pajak.py::test_TXT1_U11_pesanan_tanpa_ppn - KeyError: 'tax_override_by'
+FAILED tests_mem/test_TXT1_pengaturan_pajak.py::test_TXT1_U13b_potret_pt_bukan_pkp - AssertionError: None
+FAILED tests_mem/test_TXT1_pengaturan_pajak.py::test_TXT1_U14_dpp_faktur_antar_pt - AssertionError: {"detail":"Setting 'tax.dpp_nilai_lain_pembilang' tidak ada di registry"}
+FAILED tests_mem/test_TXT1_pengaturan_pajak.py::test_TXT1_U15_putaran_tujuh_kunci - KeyError: "Setting 'tax.dpp_nilai_lain_pembilang' tidak ada di registry"
+FAILED tests_mem/test_TXT1_pengaturan_pajak.py::test_TXT1_round_money_satu_fungsi - ModuleNotFoundError: No module named 'services.tax_config_service'
+FAILED tests_mem/test_TXT1_pengaturan_pajak.py::test_TXT1_coba_dulu_memakai_faktor_pengaturan - assert (11000000.0, 1320000.0) == (12000000, 1440000)
+FAILED tests_mem/test_TXT1_pengaturan_pajak.py::test_TXT1_pengaturan_efektif_memuat_aturan_pajak_mesin - KeyError: 'dpp_nilai_lain_pembilang'
+17 failed, 3 passed, 1 warning in 1.60s

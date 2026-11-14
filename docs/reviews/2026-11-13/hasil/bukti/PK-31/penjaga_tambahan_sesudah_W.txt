@@ -1,0 +1,28 @@
+== config_fallback
+  146 berkas pemakai · 152 temuan mentah · temuan tersisa 0 · pengecualian dipakai 135 (bukan_pengaturan 10 · hanya_bila_kosong 45 · sama_bawaan 80)
+[PASS] 146 cek lolos, 0 pelanggaran.
+== config_entity
+  146 berkas pemakai · 1 temuan mentah · temuan tersisa 0 · pengecualian dipakai 1 (garis_dasar 1)
+[PASS] 146 cek lolos, 0 pelanggaran.
+== payment_vocab
+[PASS] 1748 cek lolos, 0 pelanggaran.
+== access_catalog_nav
+verify_access_catalog_nav: 0 temuan
+== atomic_claim
+  ✗ backend/routers/purchase_orders_extra.py /purchase-orders/{po_id}/close: dicatat 'cas' tetapi find_one_and_update induk tidak berprasyarat status.
+  ✗ backend/routers/transfers.py /transfers/{transfer_id}: dicatat 'claim' tetapi tidak memanggil atomic_claim.claim(). Pasang klaim atau ubah mekanisme.
+  ✗ backend/routers/transfers.py /transfers/{transfer_id}: klaim tanpa pencabut kunci (finish_set / $unset saga_lock / so_transition / release).
+  ✗ BELUM DITINJAU = 95 > baseline 0. Endpoint multi-koleksi BARU wajib memakai atomic_claim.claim()/CAS dan dicatat di REVIEWED: client_dataset.py POST /batches/{batch_id}/rollback; cycle_count.py POST /cycle-count/sessions/{session_id}/roll-finalize; access_roles.py DELETE /roles/{rid}; purchase_orders.py POST /purchase-orders/{po_id}/approve; purchase_requisitions.py POST /purchase-requisitions/{pr_id}/approve
+== permission_checked
+[PASS] 585 cek lolos, 0 pelanggaran.
+== config_text
+  436 kunci · 14 kelompok · pelanggaran per aturan: 0
+[PASS] 3066 cek lolos, 0 pelanggaran.
+== role_gate_ui
+[PASS] 31 cek lolos, 0 pelanggaran.
+== audit_config_wiring_strict
+== check_nav_map
+✓ 158 layar semuanya punya judul & kicker (PAGE_META: 190 entri)
+✓ label/title/kicker di navStructure.js, hubTabs.js, navMeta.js memakai istilah PT
+✓ Navigation map COMPLIANT dengan KN_13 (grouped IA)
+✓ NAV MAP: PASS

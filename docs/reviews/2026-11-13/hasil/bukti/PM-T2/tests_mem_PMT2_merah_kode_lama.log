@@ -1,0 +1,414 @@
+FFFFFFFFFFFFFFFFFFFFFFF                                                  [100%]
+=================================== FAILURES ===================================
+________ test_PMT2_U1_pesanan_menyimpan_cara_bayar_dan_potret_rekening _________
+
+klien = <httpx.AsyncClient object at 0x7fbd42270a50>
+db = <motor.motor_asyncio.AsyncIOMotorDatabase object at 0x7fbd54ae0450>
+siap = {'A': 'bank_c2246418e6d0', 'B': 'bank_0d023c662aa4', 'C': 'bank_5362072da8f3', 'D': 'bank_d9d90fcb2405', ...}
+
+    async def test_PMT2_U1_pesanan_menyimpan_cara_bayar_dan_potret_rekening(klien, db, siap):
+        r = await _pesan(klien, db, siap, payment_method_code="transfer", receiving_account_id=siap["A"])
+        assert r.status_code == 200, r.text
+        so = await db.sales_orders.find_one({"id": r.json()["id"]})
+>       assert so["payment_method_code"] == "transfer"
+               ^^^^^^^^^^^^^^^^^^^^^^^^^
+E       KeyError: 'payment_method_code'
+
+tests_mem/test_PMT2_instruksi_bayar.py:136: KeyError
+---------------------------- Captured stdout setup -----------------------------
+[bootstrap] SANDI AWAL akun seed (ganti segera): DC-HeeNTqedJLh31
+[bootstrap] FASE F lifecycle backfill: 5 produk distempel 'produksi'
+[bootstrap] kebersihan data: 5 record dirapikan {'customers': 3, 'suppliers': 0, 'users': 0, 'hr_employees': 2, 'makloons': 0}
+______ test_PMT2_U2_rekening_pt_lain_ditolak_tanpa_pesanan_dan_reservasi _______
+
+klien = <httpx.AsyncClient object at 0x7fbd42270a50>
+db = <motor.motor_asyncio.AsyncIOMotorDatabase object at 0x7fbd54ae0450>
+siap = {'A': 'bank_c2246418e6d0', 'B': 'bank_0d023c662aa4', 'C': 'bank_5362072da8f3', 'D': 'bank_d9d90fcb2405', ...}
+
+    async def test_PMT2_U2_rekening_pt_lain_ditolak_tanpa_pesanan_dan_reservasi(klien, db, siap):
+        sebelum = await db.sales_orders.count_documents({})
+        rid = await _roll(db, siap)
+        r = await klien.post("/api/sales-orders", headers=siap["h"],
+                             json=_isi(siap, payment_method_code="transfer", receiving_account_id=siap["B"]))
+>       assert (r.status_code, r.json().get("detail")) == (400, PESAN_PT_LAIN), r.text
+E       AssertionError: {"id":"so_293980c8bbc6","number":"KSC/SO-00002","status":"reserved","entity_id":"ent_ksc","customer_id":"cus_pmt2_acb8c4c0","customer_name":"Toko PM-T2 ent_ksc","customer_city":"Bandung","shipping_address":{"id":"adr_pmt2_0921a1fe","label":"Utama","city":"Bandung","address":"Jl. Uji 1","recipient_name":"Bu Uji","phone":"081200000000"},"shipping_address_id":"adr_pmt2_0921a1fe","shipping_city":"Bandung","items":[{"product_id":"prd_pmt2_06c3d654","sku":"PMT2-ent_ksc","product_name":"Kain PM-T2 ent_ksc","quantity":100.0,"unit":"meter","price":20000.0,"discount_percent":0.0,"qty_rolls":null,"price_source":"global","price_record_id":"","subtotal":2000000.0,"discount_amount":0.0,"line_total":2000000.0,"base_unit":"meter","base_quantity":100.0,"category":"uji","line_code":"","unit_cost":0.0,"reserved_qty":100.0,"backorder_qty":0.0}],"allocations":[{"id":"alloc_adc9b2ae609b","product_id":"prd_pmt2_06c3d654","warehouse_id":"wh_pmt2_ent_ksc","warehouse_name":"Gudang PM-T2 ent_ksc","warehouse_city":"Bandung","owner_entity_id":"ent_ksc","quantity":100.0,"lot":"L-PMT2","lots":["L-PMT2"],"dye_lot":"L-PMT2","dye_lots":["L-PMT2"],"lot_mode":"single","allocation_explanation":"100.0 dari Lot L-PMT2 (FIFO) · Gudang PM-T2 ent_ksc — lot tunggal.","policy_lot_selection":"fifo","dye_lot_strict":false,"rolls":[{"roll_id":"roll_pmt2_4d90c8a0","roll_no":"R-2","lot":"L-PMT2","dye_lot":"L-PMT2","length":100.0}],"status":"allocated"}],"total_amount":2000000.0,"line_codes":[],"items_discount_total":0.0,"order_discount_percent":0.0,"order_discount_amount":0.0,"discount_total":0.0,"net_subtotal":2000000.0,"dpp":1833333.33,"dpp_nilai_lain":true,"effective_rate":11.0,"ppn_rate":12.0,"ppn_mode":"excluded","is_pkp":true,"ppn_amount":220000.0,"grand_total":2220000.0,"needs_tax_invoice":false,"tax_override":"","tax_override_reason":"","tax_mode":"ppn","payment_term_code":"NET30","payment_term_name":"Kredit NET 30 Hari","payment_status":"pending","credit_status_at_order":"active","credit_warning":false,"credit_hold":false,"credit_override_id":"","pending_approvals":[],"approval_required":false,"required_approval_role":null,"approval_amount":2220000.0,"is_split_warehouse":false,"sales_name":"Budi Santoso","sales_team":[],"source_special_order_id":null,"shipment_policy":"allow_partial_shipment","qc_request":{"mode":"none","status":"not_required"},"fulfillment_method":"kirim","fulfillment_site_id":"","pickup_date":"","delivery_date":"","reservation_expires_at":"2026-11-17T10:54:28.714244+00:00","allow_backorder":false,"has_backorder":false,"backorders":[],"allocation_policy":{"mode":"auto","lot_mode":"prefer_single","lot_selection":"fifo","location_pref":"single_warehouse"},"has_mixed_lot":false,"has_sample":false,"catalogue":null,"order_type":"regular","sample_billing":"","sample_payment_status":"","created_by":"user_admin_01","sales_id":null,"linked_transfer_ids":[],"intercompany_pending_qty":0.0,"created_at":"2026-11-14T10:54:28.714685+00:00","updated_at":"2026-11-14T10:54:28.714689+00:00","stage":"Reserved","sub_status":["siap_disahkan"]}
+E       assert (200, None) == (400, 'Rekeni...pesanan ini.')
+E         
+E         At index 0 diff: 200 != 400
+E         Use -v to get more diff
+
+tests_mem/test_PMT2_instruksi_bayar.py:148: AssertionError
+___________ test_PMT2_U3_rekening_bukan_penerimaan_pelanggan_ditolak ___________
+
+klien = <httpx.AsyncClient object at 0x7fbd42270a50>
+db = <motor.motor_asyncio.AsyncIOMotorDatabase object at 0x7fbd54ae0450>
+siap = {'A': 'bank_c2246418e6d0', 'B': 'bank_0d023c662aa4', 'C': 'bank_5362072da8f3', 'D': 'bank_d9d90fcb2405', ...}
+
+    async def test_PMT2_U3_rekening_bukan_penerimaan_pelanggan_ditolak(klien, db, siap):
+        sebelum = await db.sales_orders.count_documents({})
+        r = await klien.post("/api/sales-orders", headers=siap["h"],
+                             json=_isi(siap, stok=False, payment_method_code="transfer", receiving_account_id=siap["C"]))
+>       assert (r.status_code, r.json().get("detail")) == (400, PESAN_TIDAK_MENERIMA), r.text
+E       AssertionError: {"id":"so_2670d284c5f3","number":"KSC/SO-00003","status":"waiting_stock","entity_id":"ent_ksc","customer_id":"cus_pmt2_acb8c4c0","customer_name":"Toko PM-T2 ent_ksc","customer_city":"Bandung","shipping_address":{"id":"adr_pmt2_0921a1fe","label":"Utama","city":"Bandung","address":"Jl. Uji 1","recipient_name":"Bu Uji","phone":"081200000000"},"shipping_address_id":"adr_pmt2_0921a1fe","shipping_city":"Bandung","items":[{"product_id":"prd_pmt2_06c3d654","sku":"PMT2-ent_ksc","product_name":"Kain PM-T2 ent_ksc","quantity":100.0,"unit":"meter","price":20000.0,"discount_percent":0.0,"qty_rolls":null,"price_source":"global","price_record_id":"","subtotal":2000000.0,"discount_amount":0.0,"line_total":2000000.0,"base_unit":"meter","base_quantity":100.0,"category":"uji","line_code":"","unit_cost":0.0,"reserved_qty":0,"backorder_qty":100.0}],"allocations":[],"total_amount":2000000.0,"line_codes":[],"items_discount_total":0.0,"order_discount_percent":0.0,"order_discount_amount":0.0,"discount_total":0.0,"net_subtotal":2000000.0,"dpp":1833333.33,"dpp_nilai_lain":true,"effective_rate":11.0,"ppn_rate":12.0,"ppn_mode":"excluded","is_pkp":true,"ppn_amount":220000.0,"grand_total":2220000.0,"needs_tax_invoice":false,"tax_override":"","tax_override_reason":"","tax_mode":"ppn","payment_term_code":"NET30","payment_term_name":"Kredit NET 30 Hari","payment_status":"pending","credit_status_at_order":"active","credit_warning":false,"credit_hold":false,"credit_override_id":"","pending_approvals":[],"approval_required":false,"required_approval_role":null,"approval_amount":2220000.0,"is_split_warehouse":false,"sales_name":"Budi Santoso","sales_team":[],"source_special_order_id":null,"shipment_policy":"allow_partial_shipment","qc_request":{"mode":"none","status":"not_required"},"fulfillment_method":"kirim","fulfillment_site_id":"","pickup_date":"","delivery_date":"","reservation_expires_at":"2026-11-17T10:54:29.130159+00:00","allow_backorder":true,"has_backorder":true,"backorders":[{"id":"bo_f086d7b44490","product_id":"prd_pmt2_06c3d654","sku":"PMT2-ent_ksc","product_name":"Kain PM-T2 ent_ksc","entity_id":"ent_ksc","customer_city":"Bandung","requested_qty":100.0,"reserved_qty":0,"backorder_qty":100.0,"status":"waiting_stock","created_at":"2026-11-14T10:54:29.129977+00:00","updated_at":"2026-11-14T10:54:29.129983+00:00"}],"allocation_policy":{"mode":"auto","lot_mode":"prefer_single","lot_selection":"fifo","location_pref":"single_warehouse"},"has_mixed_lot":false,"has_sample":false,"catalogue":null,"order_type":"regular","sample_billing":"","sample_payment_status":"","created_by":"user_admin_01","sales_id":null,"linked_transfer_ids":[],"intercompany_pending_qty":0.0,"created_at":"2026-11-14T10:54:29.130563+00:00","updated_at":"2026-11-14T10:54:29.130566+00:00","stage":"Reserved","sub_status":["menunggu_stok"]}
+E       assert (200, None) == (400, 'Rekeni...ansfer bank.')
+E         
+E         At index 0 diff: 200 != 400
+E         Use -v to get more diff
+
+tests_mem/test_PMT2_instruksi_bayar.py:159: AssertionError
+______________ test_PMT2_U4_rekening_bawaan_dan_tanpa_cara_bayar _______________
+
+klien = <httpx.AsyncClient object at 0x7fbd42270a50>
+db = <motor.motor_asyncio.AsyncIOMotorDatabase object at 0x7fbd54ae0450>
+siap = {'A': 'bank_c2246418e6d0', 'B': 'bank_0d023c662aa4', 'C': 'bank_5362072da8f3', 'D': 'bank_d9d90fcb2405', ...}
+
+    async def test_PMT2_U4_rekening_bawaan_dan_tanpa_cara_bayar(klien, db, siap):
+        r = await _pesan(klien, db, siap, stok=False, payment_method_code="transfer")
+        assert r.status_code == 200, r.text
+        so = await db.sales_orders.find_one({"id": r.json()["id"]})
+>       assert so["receiving_account_id"] == siap["A"]
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       KeyError: 'receiving_account_id'
+
+tests_mem/test_PMT2_instruksi_bayar.py:175: KeyError
+_____________________ test_PMT2_U5_wajib_cara_bayar_per_pt _____________________
+
+klien = <httpx.AsyncClient object at 0x7fbd42270a50>
+db = <motor.motor_asyncio.AsyncIOMotorDatabase object at 0x7fbd54ae0450>
+siap = {'A': 'bank_c2246418e6d0', 'B': 'bank_0d023c662aa4', 'C': 'bank_5362072da8f3', 'D': 'bank_d9d90fcb2405', ...}
+
+    async def test_PMT2_U5_wajib_cara_bayar_per_pt(klien, db, siap):
+>       await resolver.set_value(WAJIB, True, scope_type="entity", scope_id=KSC, actor="uji", reason="uji PM-T2")
+
+tests_mem/test_PMT2_instruksi_bayar.py:189: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+services/config_resolver.py:503: in set_value
+    entry = registry.require(key)
+            ^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+key = 'payment.wajib_cara_bayar_di_pesanan'
+
+    def require(key: str) -> Dict[str, Any]:
+        entry = _REGISTRY.get(key)
+        if not entry:
+>           raise KeyError(f"Setting '{key}' tidak ada di registry")
+E           KeyError: "Setting 'payment.wajib_cara_bayar_di_pesanan' tidak ada di registry"
+
+config_registry.py:391: KeyError
+_______________ test_PMT2_U6_konfirmasi_cbd_melahirkan_satu_kode _______________
+
+klien = <httpx.AsyncClient object at 0x7fbd42270a50>
+db = <motor.motor_asyncio.AsyncIOMotorDatabase object at 0x7fbd54ae0450>
+siap = {'A': 'bank_c2246418e6d0', 'B': 'bank_0d023c662aa4', 'C': 'bank_5362072da8f3', 'D': 'bank_d9d90fcb2405', ...}
+
+    async def test_PMT2_U6_konfirmasi_cbd_melahirkan_satu_kode(klien, db, siap):
+        r = await _pesan(klien, db, siap, term="CBD", payment_method_code="transfer", receiving_account_id=siap["A"],
+                         **TANPA_PPN)
+        assert r.status_code == 200, r.text
+        oid = r.json()["id"]
+        assert r.json()["grand_total"] == 2_000_000
+        assert await db.payment_codes.count_documents({"order_id": oid}) == 0   # belum dikonfirmasi = belum ada kode
+        await _konfirmasi(klien, siap["h"], oid)
+        kode = await db.payment_codes.find({"order_id": oid}, {"_id": 0}).to_list(10)
+>       assert len(kode) == 1, kode
+E       AssertionError: []
+E       assert 0 == 1
+E        +  where 0 = len([])
+
+tests_mem/test_PMT2_instruksi_bayar.py:216: AssertionError
+__________________ test_PMT2_U7_konfirmasi_dp50_kode_separuh ___________________
+
+klien = <httpx.AsyncClient object at 0x7fbd42270a50>
+db = <motor.motor_asyncio.AsyncIOMotorDatabase object at 0x7fbd54ae0450>
+siap = {'A': 'bank_c2246418e6d0', 'B': 'bank_0d023c662aa4', 'C': 'bank_5362072da8f3', 'D': 'bank_d9d90fcb2405', ...}
+
+    async def test_PMT2_U7_konfirmasi_dp50_kode_separuh(klien, db, siap):
+        r = await _pesan(klien, db, siap, term="DP50", payment_method_code="transfer", **TANPA_PPN)
+        assert r.status_code == 200, r.text
+        await _konfirmasi(klien, siap["h"], r.json()["id"])
+        k = await db.payment_codes.find_one({"order_id": r.json()["id"]})
+>       assert k["amount"] == 1_000_000
+               ^^^^^^^^^^^
+E       TypeError: 'NoneType' object is not subscriptable
+
+tests_mem/test_PMT2_instruksi_bayar.py:232: TypeError
+___________________ test_PMT2_U8_ensure_for_order_idempoten ____________________
+
+db = <motor.motor_asyncio.AsyncIOMotorDatabase object at 0x7fbd54ae0450>
+siap = {'A': 'bank_c2246418e6d0', 'B': 'bank_0d023c662aa4', 'C': 'bank_5362072da8f3', 'D': 'bank_d9d90fcb2405', ...}
+
+    async def test_PMT2_U8_ensure_for_order_idempoten(db, siap):
+>       from services import payment_code_service as pcs
+E       ImportError: cannot import name 'payment_code_service' from 'services' (/tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/pmt2/head/backend/services/__init__.py)
+
+tests_mem/test_PMT2_instruksi_bayar.py:237: ImportError
+____________________ test_PMT2_U9_teks_instruksi_lima_baris ____________________
+
+klien = <httpx.AsyncClient object at 0x7fbd42270a50>
+db = <motor.motor_asyncio.AsyncIOMotorDatabase object at 0x7fbd54ae0450>
+siap = {'A': 'bank_c2246418e6d0', 'B': 'bank_0d023c662aa4', 'C': 'bank_5362072da8f3', 'D': 'bank_d9d90fcb2405', ...}
+
+    async def test_PMT2_U9_teks_instruksi_lima_baris(klien, db, siap):
+>       oid = SIMPAN["u6"]
+              ^^^^^^^^^^^^
+E       KeyError: 'u6'
+
+tests_mem/test_PMT2_instruksi_bayar.py:248: KeyError
+____________ test_PMT2_U10_blok_dokumen_mengikuti_tampil_di_dokumen ____________
+
+klien = <httpx.AsyncClient object at 0x7fbd42270a50>
+db = <motor.motor_asyncio.AsyncIOMotorDatabase object at 0x7fbd54ae0450>
+siap = {'A': 'bank_c2246418e6d0', 'B': 'bank_0d023c662aa4', 'C': 'bank_5362072da8f3', 'D': 'bank_d9d90fcb2405', ...}
+
+    async def test_PMT2_U10_blok_dokumen_mengikuti_tampil_di_dokumen(klien, db, siap):
+>       oid = SIMPAN["u6"]
+              ^^^^^^^^^^^^
+E       KeyError: 'u6'
+
+tests_mem/test_PMT2_instruksi_bayar.py:277: KeyError
+_________________ test_PMT2_U10b_bagian_dokumen_bisa_dimatikan _________________
+
+klien = <httpx.AsyncClient object at 0x7fbd42270a50>
+siap = {'A': 'bank_c2246418e6d0', 'B': 'bank_0d023c662aa4', 'C': 'bank_5362072da8f3', 'D': 'bank_d9d90fcb2405', ...}
+
+    async def test_PMT2_U10b_bagian_dokumen_bisa_dimatikan(klien, siap):
+>       oid = SIMPAN["u6"]
+              ^^^^^^^^^^^^
+E       KeyError: 'u6'
+
+tests_mem/test_PMT2_instruksi_bayar.py:294: KeyError
+____________________ test_PMT2_U11_pesanan_tempo_tanpa_kode ____________________
+
+klien = <httpx.AsyncClient object at 0x7fbd42270a50>
+db = <motor.motor_asyncio.AsyncIOMotorDatabase object at 0x7fbd54ae0450>
+siap = {'A': 'bank_c2246418e6d0', 'B': 'bank_0d023c662aa4', 'C': 'bank_5362072da8f3', 'D': 'bank_d9d90fcb2405', ...}
+
+    async def test_PMT2_U11_pesanan_tempo_tanpa_kode(klien, db, siap):
+        r = await _pesan(klien, db, siap, term="NET30", payment_method_code="transfer", receiving_account_id=siap["A"])
+        assert r.status_code == 200, r.text
+        oid = r.json()["id"]
+        await _konfirmasi(klien, siap["h"], oid)
+        if importlib.util.find_spec("services.billing_schedule_service") is not None:
+            pytest.fail("CR-T2 sudah ada: lengkapi cabang U11 (satu surat jalan → satu tagihan berkode dengan jatuh tempo "
+                        "baris itu) dan kaitkan `payment_code_service.ensure_for_line` saat baris tagihan lahir")
+        r = await _instruksi(klien, siap["h"], oid)
+>       assert r.status_code == 200, r.text
+E       AssertionError: {"detail":"Not Found"}
+E       assert 404 == 200
+E        +  where 404 = <Response [404 Not Found]>.status_code
+
+tests_mem/test_PMT2_instruksi_bayar.py:316: AssertionError
+____________________ test_PMT2_U12_override_rekening_tujuan ____________________
+
+klien = <httpx.AsyncClient object at 0x7fbd42270a50>
+db = <motor.motor_asyncio.AsyncIOMotorDatabase object at 0x7fbd54ae0450>
+siap = {'A': 'bank_c2246418e6d0', 'B': 'bank_0d023c662aa4', 'C': 'bank_5362072da8f3', 'D': 'bank_d9d90fcb2405', ...}
+
+    async def test_PMT2_U12_override_rekening_tujuan(klien, db, siap):
+>       oid = SIMPAN["u1"]
+              ^^^^^^^^^^^^
+E       KeyError: 'u1'
+
+tests_mem/test_PMT2_instruksi_bayar.py:328: KeyError
+______________________ test_PMT2_U13_izin_instruksi_bayar ______________________
+
+klien = <httpx.AsyncClient object at 0x7fbd42270a50>
+akun = <function akun.<locals>._akun at 0x7fbd410772e0>
+sesi = <function sesi.<locals>._sesi at 0x7fbd4113da80>
+peran_tanpa_acuan = <function peran_tanpa_acuan.<locals>._peran at 0x7fbd41076f20>
+peran_manajer_kosong = <function peran_manajer_kosong.<locals>._peran at 0x7fbd41075c60>
+peran_sopir = 'driver'
+
+    async def test_PMT2_U13_izin_instruksi_bayar(klien, akun, sesi, peran_tanpa_acuan, peran_manajer_kosong, peran_sopir):
+>       oid = SIMPAN["u6"]
+              ^^^^^^^^^^^^
+E       KeyError: 'u6'
+
+tests_mem/test_PMT2_instruksi_bayar.py:360: KeyError
+_______________________ test_PMT2_U14_putaran_dua_kunci ________________________
+
+klien = <httpx.AsyncClient object at 0x7fbd42270a50>
+kepala_admin = {'Authorization': 'Bearer tok_uji_e606604f2b51464386331a2bd9347073', 'X-Entity-Id': 'ent_ksc'}
+
+    async def test_PMT2_U14_putaran_dua_kunci(klien, kepala_admin):
+        from test_KFT8_putaran_pengaturan import putaran
+        for kunci in (WAJIB, AWALAN):
+>           gagal = await putaran(klien, kepala_admin, kunci)
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests_mem/test_PMT2_instruksi_bayar.py:378: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests_mem/test_KFT8_putaran_pengaturan.py:269: in putaran
+    return await Putaran(klien, hdr, key).jalankan()
+                 ^^^^^^^^^^^^^^^^^^^^^^^^
+tests_mem/test_KFT8_putaran_pengaturan.py:67: in __init__
+    self.e = registry.require(key)
+             ^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+key = 'payment.wajib_cara_bayar_di_pesanan'
+
+    def require(key: str) -> Dict[str, Any]:
+        entry = _REGISTRY.get(key)
+        if not entry:
+>           raise KeyError(f"Setting '{key}' tidak ada di registry")
+E           KeyError: "Setting 'payment.wajib_cara_bayar_di_pesanan' tidak ada di registry"
+
+config_registry.py:391: KeyError
+_______________ test_PMT2_U14b_awalan_baru_hanya_untuk_kode_baru _______________
+
+klien = <httpx.AsyncClient object at 0x7fbd42270a50>
+db = <motor.motor_asyncio.AsyncIOMotorDatabase object at 0x7fbd54ae0450>
+siap = {'A': 'bank_c2246418e6d0', 'B': 'bank_0d023c662aa4', 'C': 'bank_5362072da8f3', 'D': 'bank_d9d90fcb2405', ...}
+
+    async def test_PMT2_U14b_awalan_baru_hanya_untuk_kode_baru(klien, db, siap):
+>       await resolver.set_value(AWALAN, "KNS", scope_type="global", scope_id="", actor="uji", reason="uji PM-T2")
+
+tests_mem/test_PMT2_instruksi_bayar.py:390: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+services/config_resolver.py:503: in set_value
+    entry = registry.require(key)
+            ^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+key = 'payment.kode_bayar_awalan'
+
+    def require(key: str) -> Dict[str, Any]:
+        entry = _REGISTRY.get(key)
+        if not entry:
+>           raise KeyError(f"Setting '{key}' tidak ada di registry")
+E           KeyError: "Setting 'payment.kode_bayar_awalan' tidak ada di registry"
+
+config_registry.py:391: KeyError
+_______________________ test_PMT2_tabrakan_kode_diulang ________________________
+
+db = <motor.motor_asyncio.AsyncIOMotorDatabase object at 0x7fbd54ae0450>
+siap = {'A': 'bank_c2246418e6d0', 'B': 'bank_0d023c662aa4', 'C': 'bank_5362072da8f3', 'D': 'bank_d9d90fcb2405', ...}
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7fbd42473810>
+
+    async def test_PMT2_tabrakan_kode_diulang(db, siap, monkeypatch):
+>       from services import payment_code_service as pcs
+E       ImportError: cannot import name 'payment_code_service' from 'services' (/tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/pmt2/head/backend/services/__init__.py)
+
+tests_mem/test_PMT2_instruksi_bayar.py:404: ImportError
+___________________ test_PMT2_kode_dibuat_dari_alfabet_aman ____________________
+
+db = <motor.motor_asyncio.AsyncIOMotorDatabase object at 0x7fbd54ae0450>
+
+    async def test_PMT2_kode_dibuat_dari_alfabet_aman(db):
+>       from services import payment_code_service as pcs
+E       ImportError: cannot import name 'payment_code_service' from 'services' (/tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/pmt2/head/backend/services/__init__.py)
+
+tests_mem/test_PMT2_instruksi_bayar.py:428: ImportError
+____________________________ test_PMT2_find_in_text ____________________________
+
+db = <motor.motor_asyncio.AsyncIOMotorDatabase object at 0x7fbd54ae0450>
+siap = {'A': 'bank_c2246418e6d0', 'B': 'bank_0d023c662aa4', 'C': 'bank_5362072da8f3', 'D': 'bank_d9d90fcb2405', ...}
+
+    async def test_PMT2_find_in_text(db, siap):
+>       from services import payment_code_service as pcs
+E       ImportError: cannot import name 'payment_code_service' from 'services' (/tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/pmt2/head/backend/services/__init__.py)
+
+tests_mem/test_PMT2_instruksi_bayar.py:435: ImportError
+_______________________ test_PMT2_kode_per_baris_tagihan _______________________
+
+db = <motor.motor_asyncio.AsyncIOMotorDatabase object at 0x7fbd54ae0450>
+siap = {'A': 'bank_c2246418e6d0', 'B': 'bank_0d023c662aa4', 'C': 'bank_5362072da8f3', 'D': 'bank_d9d90fcb2405', ...}
+klien = <httpx.AsyncClient object at 0x7fbd42270a50>
+
+    async def test_PMT2_kode_per_baris_tagihan(db, siap, klien):
+        """`ensure_for_line` (dipanggil CR-T2 saat baris tagihan lahir): baris DP memakai ulang kode pesanan; baris lain kode
+        baru. Rencana bayar = fixture (CR-T2 belum ada)."""
+>       from services import payment_code_service as pcs
+E       ImportError: cannot import name 'payment_code_service' from 'services' (/tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/pmt2/head/backend/services/__init__.py)
+
+tests_mem/test_PMT2_instruksi_bayar.py:445: ImportError
+______________ test_PMT2_token_rekening_bank_dari_rekening_tujuan ______________
+
+klien = <httpx.AsyncClient object at 0x7fbd42270a50>
+db = <motor.motor_asyncio.AsyncIOMotorDatabase object at 0x7fbd54ae0450>
+siap = {'A': 'bank_c2246418e6d0', 'B': 'bank_0d023c662aa4', 'C': 'bank_5362072da8f3', 'D': 'bank_d9d90fcb2405', ...}
+
+    async def test_PMT2_token_rekening_bank_dari_rekening_tujuan(klien, db, siap):
+        """KP-T6 `{{rekening_bank}}`: potret rekening tujuan pesanan, lalu rekening bawaan transfer PT."""
+        r = await klien.put("/api/pdf/templates/invoice", headers=siap["h"], params={"entity_id": KSC},
+                            json={"config": {"closing_note": "Transfer ke {{rekening_bank}}."}})
+        assert r.status_code == 200, r.text
+        try:
+>           await db.sales_orders.update_one({"id": SIMPAN["u1"]}, {"$set": {"payment_code": ""}})
+                                                    ^^^^^^^^^^^^
+E           KeyError: 'u1'
+
+tests_mem/test_PMT2_instruksi_bayar.py:476: KeyError
+_________________ test_PMT2_kode_tidak_ikut_hash_tanda_tangan __________________
+
+db = <motor.motor_asyncio.AsyncIOMotorDatabase object at 0x7fbd54ae0450>
+siap = {'A': 'bank_c2246418e6d0', 'B': 'bank_0d023c662aa4', 'C': 'bank_5362072da8f3', 'D': 'bank_d9d90fcb2405', ...}
+
+    async def test_PMT2_kode_tidak_ikut_hash_tanda_tangan(db, siap):
+        """Instruksi bayar berubah saat tagihan lunas; isi yang ditandatangani (hash e-sign) tidak boleh ikut berubah."""
+        from services import pdf_service
+>       built = await pdf_service.build_document("sales_order", SIMPAN["u6"], None)
+                                                                ^^^^^^^^^^^^
+E       KeyError: 'u6'
+
+tests_mem/test_PMT2_instruksi_bayar.py:489: KeyError
+______________ test_PMT2_skrip_cari_rekening_ketikan_hanya_lapor _______________
+
+db = <motor.motor_asyncio.AsyncIOMotorDatabase object at 0x7fbd54ae0450>
+capsys = <_pytest.capture.CaptureFixture object at 0x7fbd41240f50>
+
+    async def test_PMT2_skrip_cari_rekening_ketikan_hanya_lapor(db, capsys):
+        """H3 — calon nomor rekening ketikan di naskah templat dilaporkan, tidak diubah."""
+        spec = importlib.util.spec_from_file_location("pmt2_cari", REPO / "scripts" / "blueprint" /
+                                                      "pmt2_rekening_ketikan_lapor.py")
+        mod = importlib.util.module_from_spec(spec)
+>       spec.loader.exec_module(mod)
+
+tests_mem/test_PMT2_instruksi_bayar.py:499: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+<frozen importlib._bootstrap_external>:936: in exec_module
+    ???
+<frozen importlib._bootstrap_external>:1073: in get_code
+    ???
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <_frozen_importlib_external.SourceFileLoader object at 0x7fbd4114b3d0>
+path = '/tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/pmt2/head/scripts/blueprint/pmt2_rekening_ketikan_lapor.py'
+
+>   ???
+E   FileNotFoundError: [Errno 2] No such file or directory: '/tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/pmt2/head/scripts/blueprint/pmt2_rekening_ketikan_lapor.py'
+
+<frozen importlib._bootstrap_external>:1130: FileNotFoundError
+=============================== warnings summary ===============================
+../../../venv311/lib/python3.11/site-packages/starlette/formparsers.py:12
+  /tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/venv311/lib/python3.11/site-packages/starlette/formparsers.py:12: PendingDeprecationWarning: Please use `import python_multipart` instead.
+    import multipart
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests_mem/test_PMT2_instruksi_bayar.py::test_PMT2_U1_pesanan_menyimpan_cara_bayar_dan_potret_rekening
+FAILED tests_mem/test_PMT2_instruksi_bayar.py::test_PMT2_U2_rekening_pt_lain_ditolak_tanpa_pesanan_dan_reservasi
+FAILED tests_mem/test_PMT2_instruksi_bayar.py::test_PMT2_U3_rekening_bukan_penerimaan_pelanggan_ditolak
+FAILED tests_mem/test_PMT2_instruksi_bayar.py::test_PMT2_U4_rekening_bawaan_dan_tanpa_cara_bayar
+FAILED tests_mem/test_PMT2_instruksi_bayar.py::test_PMT2_U5_wajib_cara_bayar_per_pt
+FAILED tests_mem/test_PMT2_instruksi_bayar.py::test_PMT2_U6_konfirmasi_cbd_melahirkan_satu_kode
+FAILED tests_mem/test_PMT2_instruksi_bayar.py::test_PMT2_U7_konfirmasi_dp50_kode_separuh
+FAILED tests_mem/test_PMT2_instruksi_bayar.py::test_PMT2_U8_ensure_for_order_idempoten
+FAILED tests_mem/test_PMT2_instruksi_bayar.py::test_PMT2_U9_teks_instruksi_lima_baris
+FAILED tests_mem/test_PMT2_instruksi_bayar.py::test_PMT2_U10_blok_dokumen_mengikuti_tampil_di_dokumen
+FAILED tests_mem/test_PMT2_instruksi_bayar.py::test_PMT2_U10b_bagian_dokumen_bisa_dimatikan
+FAILED tests_mem/test_PMT2_instruksi_bayar.py::test_PMT2_U11_pesanan_tempo_tanpa_kode
+FAILED tests_mem/test_PMT2_instruksi_bayar.py::test_PMT2_U12_override_rekening_tujuan
+FAILED tests_mem/test_PMT2_instruksi_bayar.py::test_PMT2_U13_izin_instruksi_bayar
+FAILED tests_mem/test_PMT2_instruksi_bayar.py::test_PMT2_U14_putaran_dua_kunci
+FAILED tests_mem/test_PMT2_instruksi_bayar.py::test_PMT2_U14b_awalan_baru_hanya_untuk_kode_baru
+FAILED tests_mem/test_PMT2_instruksi_bayar.py::test_PMT2_tabrakan_kode_diulang
+FAILED tests_mem/test_PMT2_instruksi_bayar.py::test_PMT2_kode_dibuat_dari_alfabet_aman
+FAILED tests_mem/test_PMT2_instruksi_bayar.py::test_PMT2_find_in_text - Impor...
+FAILED tests_mem/test_PMT2_instruksi_bayar.py::test_PMT2_kode_per_baris_tagihan
+FAILED tests_mem/test_PMT2_instruksi_bayar.py::test_PMT2_token_rekening_bank_dari_rekening_tujuan
+FAILED tests_mem/test_PMT2_instruksi_bayar.py::test_PMT2_kode_tidak_ikut_hash_tanda_tangan
+FAILED tests_mem/test_PMT2_instruksi_bayar.py::test_PMT2_skrip_cari_rekening_ketikan_hanya_lapor
+23 failed, 1 warning in 3.94s

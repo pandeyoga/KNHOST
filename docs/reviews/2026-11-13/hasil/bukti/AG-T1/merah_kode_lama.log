@@ -1,0 +1,175 @@
+# AG-T1 — uji penerimaan baru dijalankan pada kode LAMA (HEAD b5b7539, hanya berkas uji baru yang ditambahkan)
+# perintah: python -m pytest tests_mem/test_AGT1_kartu.py tests_mem/test_AGT1_penyedia.py -q -n 0 --tb=short
+FF.FFFFFFFFFFFFFFFFFFF                                                   [100%]
+=================================== FAILURES ===================================
+____________ test_AGT1_U1_gagal_di_tengah_berakhir_failed[asyncio] _____________
+tests_mem/test_AGT1_kartu.py:127: in test_AGT1_U1_gagal_di_tengah_berakhir_failed
+    assert r.status_code == 200, r.text
+E   AssertionError: {"detail":"Periode tertutup"}
+E   assert 400 == 200
+E    +  where 400 = <Response [400 Bad Request]>.status_code
+---------------------------- Captured stdout setup -----------------------------
+_____________ test_AGT1_U2_kartu_gagal_tidak_bisa_diulang[asyncio] _____________
+tests_mem/test_AGT1_kartu.py:140: in test_AGT1_U2_kartu_gagal_tidak_bisa_diulang
+    assert r.status_code == 409, r.text
+E   AssertionError: {"id":"aiact_14ec2e1a592c","type":"draft_po","status":"confirmed","title":"Draf purchase order","reason":"uji AG-T1 U1 b572a5","note":"","payload":{"pos":[{"supplier_id":"sup_agt1_s1","warehouse_id":"wh_agt1_bersama","warehouse_name":"Gudang AGT1 Bersama","items":[{"product_id":"prd_agt1_p1","product_name":"Kain AGT1 Satu","quantity":10.0,"unit":"meter","price":0.0,"price_source":"product_master","expected_grade":"A"}],"supplier_name":"Sumber Satu"},{"supplier_id":"sup_agt1_s2","warehouse_id":"wh_agt1_bersama","warehouse_name":"Gudang AGT1 Bersama","items":[{"product_id":"prd_agt1_p2","product_name":"Kain AGT1 Dua","quantity":20.0,"unit":"meter","price":0.0,"price_source":"product_master","expected_grade":"A"}],"supplier_name":"Sumber Dua"}]},"user_id":"user_admin_01","user_name":"Budi Santoso","entity_id":"ent_ksc","session_id":"","created_at":"2026-11-14T10:27:29.886420+00:00","result":["KSC/PO-00002","KSC/PO-00003"],"confirmed_at":"2026-11-14T10:27:29.983539+00:00"}
+E   assert 200 == 409
+E    +  where 200 = <Response [200 OK]>.status_code
+_______________ test_AGT1_U5_kartu_kedaluwarsa_ditolak[asyncio] ________________
+tests_mem/test_AGT1_kartu.py:165: in test_AGT1_U5_kartu_kedaluwarsa_ditolak
+    assert r.status_code == 409, r.text
+E   AssertionError: {"id":"aiact_e2302c0f5a1d","type":"draft_po","status":"confirmed","title":"Draf purchase order","reason":"uji AG-T1 U5 e70780","note":"","payload":{"pos":[{"supplier_id":"sup_agt1_s1","warehouse_id":"wh_agt1_bersama","warehouse_name":"Gudang AGT1 Bersama","items":[{"product_id":"prd_agt1_p1","product_name":"Kain AGT1 Satu","quantity":5.0,"unit":"meter","price":0.0,"price_source":"product_master","expected_grade":"A"}],"supplier_name":"Sumber Satu"}]},"user_id":"user_admin_01","user_name":"Budi Santoso","entity_id":"ent_ksc","session_id":"","created_at":"2026-11-14T10:27:30.051071+00:00","expires_at":"2026-11-14T10:26:30.052397+00:00","result":["KSC/PO-00005"],"confirmed_at":"2026-11-14T10:27:30.074762+00:00"}
+E   assert 200 == 409
+E    +  where 200 = <Response [200 OK]>.status_code
+_________ test_AGT1_U5b_abaikan_kartu_kedaluwarsa_pesan_sama[asyncio] __________
+tests_mem/test_AGT1_kartu.py:175: in test_AGT1_U5b_abaikan_kartu_kedaluwarsa_pesan_sama
+    assert r.status_code == 409, r.text
+E   AssertionError: {"id":"aiact_879d18889fe6","type":"draft_po","status":"dismissed","title":"Draf purchase order","reason":"uji AG-T1 U5b 4ff8c4","note":"","payload":{"pos":[{"supplier_id":"sup_agt1_s1","warehouse_id":"wh_agt1_bersama","warehouse_name":"Gudang AGT1 Bersama","items":[{"product_id":"prd_agt1_p1","product_name":"Kain AGT1 Satu","quantity":5.0,"unit":"meter","price":0.0,"price_source":"product_master","expected_grade":"A"}],"supplier_name":"Sumber Satu"}]},"user_id":"user_admin_01","user_name":"Budi Santoso","entity_id":"ent_ksc","session_id":"","created_at":"2026-11-14T10:27:30.116933+00:00","expires_at":"2026-11-14T10:26:30.118916+00:00"}
+E   assert 200 == 409
+E    +  where 200 = <Response [200 OK]>.status_code
+_____________ test_AGT1_U5c_kartu_baru_punya_masa_berlaku[asyncio] _____________
+tests_mem/test_AGT1_kartu.py:185: in test_AGT1_U5c_kartu_baru_punya_masa_berlaku
+    assert datetime.datetime.fromisoformat(doc["expires_at"]) - dibuat == datetime.timedelta(hours=24)
+                                           ^^^^^^^^^^^^^^^^^
+E   KeyError: 'expires_at'
+_______ test_AGT1_U6_kartu_lama_tanpa_masa_berlaku_kedaluwarsa[asyncio] ________
+tests_mem/test_AGT1_kartu.py:197: in test_AGT1_U6_kartu_lama_tanpa_masa_berlaku_kedaluwarsa
+    assert r.json()["status"] == "expired"
+E   AssertionError: assert 'pending' == 'expired'
+E     
+E     - expired
+E     + pending
+__________________ test_AGT1_U7_masa_berlaku_per_pt[asyncio] ___________________
+tests_mem/test_AGT1_kartu.py:209: in test_AGT1_U7_masa_berlaku_per_pt
+    assert r.status_code == 200, r.text
+E   AssertionError: {"detail":"Setting 'ai.kartu_masa_berlaku_jam' tidak ada di registry"}
+E   assert 404 == 200
+E    +  where 404 = <Response [404 Not Found]>.status_code
+_______________ test_AGT1_U6b_proses_mati_menjadi_gagal[asyncio] _______________
+tests_mem/test_AGT1_kartu.py:227: in test_AGT1_U6b_proses_mati_menjadi_gagal
+    assert r.json()["status"] == "failed"
+E   AssertionError: assert 'running' == 'failed'
+E     
+E     - failed
+E     + running
+___________ test_AGT1_U8_pt_aktif_berbeda_atau_semua_pt_409[asyncio] ___________
+tests_mem/test_AGT1_kartu.py:239: in test_AGT1_U8_pt_aktif_berbeda_atau_semua_pt_409
+    assert r.status_code == 409, (ent, r.text)
+E   AssertionError: ('ent_kanda', '{"id":"aiact_3a510dd6a12d","type":"draft_po","status":"confirmed","title":"Draf purchase order","reason...d_at":"2026-11-14T10:27:30.239265+00:00","result":["KSC/PO-00006"],"confirmed_at":"2026-11-14T10:27:30.255622+00:00"}')
+E   assert 200 == 409
+E    +  where 200 = <Response [200 OK]>.status_code
+____________ test_AGT1_U9_pt_kartu_dicabut_dari_akses_403[asyncio] _____________
+tests_mem/test_AGT1_kartu.py:252: in test_AGT1_U9_pt_kartu_dicabut_dari_akses_403
+    assert r.status_code == 403, r.text
+E   AssertionError: {"id": "aiact_193a5878e548", "type": "draft_po", "status": "confirmed", "title": "Draf purchase order", "reason": "uji AG-T1 U9 99ad4e", "note": "", "payload": {"pos": [{"supplier_id": "sup_agt1_s1", "warehouse_id": "wh_agt1_bersama", "warehouse_name": "Gudang AGT1 Bersama", "items": [{"product_id": "prd_agt1_p1", "product_name": "Kain AGT1 Satu", "quantity": 5.0, "unit": "meter", "price": 0.0, "price_source": "product_master", "expected_grade": "A"}], "supplier_name": "Sumber Satu"}]}, "user_id": "usr_uji_9c17c75737", "user_name": "Uji cr_pembuat_po_ag_t1 1", "entity_id": "ent_ksc", "session_id": "", "created_at": "2026-11-14T10:27:30.315865+00:00", "result": ["KSC/PO-00007"], "confirmed_at": "2026-11-14T10:27:30.335603+00:00"}
+E   assert 200 == 403
+E    +  where 200 = <Response [200 OK]>.status_code
+__________ test_AGT1_U10_siapkan_dalam_mode_semua_pt_ditolak[asyncio] __________
+tests_mem/test_AGT1_kartu.py:265: in test_AGT1_U10_siapkan_dalam_mode_semua_pt_ditolak
+    assert r.status_code == 400, r.text
+E   AssertionError: {"proposal_id":"aiact_0d407c915a41","action_type":"draft_po","title":"Draf purchase order","rows":[{"supplier":"Sumber Satu","product":"Kain AGT1 Satu","quantity":5.0,"unit":"meter","price":0.0,"value":0.0}],"instruction":"Sisipkan blok ```kn-action\n{\"proposal_id\": \"aiact_0d407c915a41\"}\n``` agar pengguna bisa menyetujui."}
+E   assert 200 == 400
+E    +  where 200 = <Response [200 OK]>.status_code
+_______________ test_AGT1_U11_galat_isian_sebelum_klaim[asyncio] _______________
+tests_mem/test_AGT1_kartu.py:289: in test_AGT1_U11_galat_isian_sebelum_klaim
+    assert tulis == [], tulis
+E   AssertionError: ['running', 'pending']
+E   assert ['running', 'pending'] == []
+E     
+E     Left contains 2 more items, first extra item: 'running'
+E     Use -v to get more diff
+_______________ test_AGT1_U12_cari_pemasok_bersaring_pt[asyncio] _______________
+tests_mem/test_AGT1_kartu.py:304: in test_AGT1_U12_cari_pemasok_bersaring_pt
+    assert {S1, S2, S4} <= ids, ids
+E   AssertionError: {'sup_agt1_s1', 'sup_agt1_s2', 'sup_agt1_s3', 'sup_grp_1345f1fd1ae4_ksc', 'sup_grp_kanda_ksc'}
+E   assert {'sup_agt1_s1...'sup_agt1_s4'} <= {'sup_agt1_s1...rp_kanda_ksc'}
+E     
+E     Extra items in the left set:
+E     'sup_agt1_s4'
+__________ test_AGT1_U13_cari_gudang_dan_sales_bersaring_pt[asyncio] ___________
+tests_mem/test_AGT1_kartu.py:317: in test_AGT1_U13_cari_gudang_dan_sales_bersaring_pt
+    assert WH_BERSAMA in ids and WH_KANDA not in ids, ids
+E   AssertionError: {'wh_agt1_bersama', 'wh_agt1_kanda', 'wh_bandung', 'wh_jakarta', 'wh_surabaya'}
+E   assert ('wh_agt1_bersama' in {'wh_agt1_bersama', 'wh_agt1_kanda', 'wh_bandung', 'wh_jakarta', 'wh_surabaya'} and 'wh_agt1_kanda' not in {'wh_agt1_bersama', 'wh_agt1_kanda', 'wh_bandung', 'wh_jakarta', 'wh_surabaya'})
+________________ test_AGT1_U13b_batas_hasil_dihormati[asyncio] _________________
+tests_mem/test_AGT1_kartu.py:329: in test_AGT1_U13b_batas_hasil_dihormati
+    assert len(r.json()["candidates"]) == 2
+E   AssertionError: assert 4 == 2
+E    +  where 4 = len([{'id': 'sup_agt1_s1', 'name': 'Sumber Satu', 'code': 'S1', 'score': 1.0}, {'id': 'sup_agt1_s2', 'name': 'Sumber Dua',...: 'Sumber Tiga', 'code': 'S3', 'score': 1.0}, {'id': 'sup_agt1_s4', 'name': 'Sumber Grup', 'code': 'S4', 'score': 1.0}])
+______________ test_AGT1_U14_enum_skema_sama_dengan_yang_dilayani ______________
+tests_mem/test_AGT1_kartu.py:375: in test_AGT1_U14_enum_skema_sama_dengan_yang_dilayani
+    assert beda == {}, f"skema menawarkan nilai tanpa pelaksana: {beda}"
+E   AssertionError: skema menawarkan nilai tanpa pelaksana: {'get_document.doc_type': ['ar_receipt', 'delivery_note', 'roll', 'tax_invoice'], 'find_entities.kind': ['category', 'city', 'entity', 'makloon_partner'], 'run_report.report': ['hr_summary']}
+E   assert {'get_documen...'hr_summary']} == {}
+E     
+E     Left contains 3 more items:
+E     {'find_entities.kind': ['category', 'city', 'entity', 'makloon_partner'],
+E      'get_document.doc_type': ['ar_receipt',
+E                                'delivery_note',
+E                                'roll',
+E                                'tax_invoice'],
+E      'run_report.report': ['hr_summary']}
+E     Use -v to get more diff
+___________________ test_AGT1_U17_putaran_t1_config[asyncio] ___________________
+tests_mem/test_AGT1_kartu.py:390: in test_AGT1_U17_putaran_t1_config
+    e = registry.require(KUNCI)
+        ^^^^^^^^^^^^^^^^^^^^^^^
+config_registry.py:391: in require
+    raise KeyError(f"Setting '{key}' tidak ada di registry")
+E   KeyError: "Setting 'ai.kartu_masa_berlaku_jam' tidak ada di registry"
+___________ test_AGT1_U17b_nilai_berlaku_saat_kartu_dibuat[asyncio] ____________
+tests_mem/test_AGT1_kartu.py:421: in test_AGT1_U17b_nilai_berlaku_saat_kartu_dibuat
+    assert r.status_code == 200, r.text
+E   AssertionError: {"detail":"Setting 'ai.kartu_masa_berlaku_jam' tidak ada di registry"}
+E   assert 404 == 200
+E    +  where 404 = <Response [404 Not Found]>.status_code
+_________ test_AGT1_U15_putaran_alat_dengan_pelaksana_tiruan[asyncio] __________
+tests_mem/test_AGT1_penyedia.py:47: in test_AGT1_U15_putaran_alat_dengan_pelaksana_tiruan
+    from services import ai_provider
+E   ImportError: cannot import name 'ai_provider' from 'services' (backend/services/__init__.py)
+---------------------------- Captured stdout setup -----------------------------
+__________ test_AGT1_U15b_status_dan_narasi_memakai_lapisan[asyncio] ___________
+tests_mem/test_AGT1_penyedia.py:82: in test_AGT1_U15b_status_dan_narasi_memakai_lapisan
+    from services import ai_narrative, ai_provider
+E   ImportError: cannot import name 'ai_provider' from 'services' (backend/services/__init__.py)
+___________ test_AGT1_U16_pustaka_penyedia_hanya_di_modul_pelaksana ____________
+tests_mem/test_AGT1_penyedia.py:119: in test_AGT1_U16_pustaka_penyedia_hanya_di_modul_pelaksana
+    assert set(pengimpor) == set(PELAKSANA), pengimpor
+E   AssertionError: {'ai_chat_service.py': {'openai'}, 'ai_narrative.py': {'openai'}, 'hr_ai_service.py': {'anthropic'}, 'ocr_openai_client.py': {'openai'}}
+E   assert {'ai_chat_ser...ai_client.py'} == {'ai_provider...ai_client.py'}
+E     
+E     Extra items in the left set:
+E     'ai_chat_service.py'
+E     'ai_narrative.py'
+E     Extra items in the right set:
+E     'ai_provider.py'
+E     Use -v to get more diff
+=============================== warnings summary ===============================
+../../venv311/lib/python3.11/site-packages/starlette/formparsers.py:12
+  venv311/lib/python3.11/site-packages/starlette/formparsers.py:12: PendingDeprecationWarning: Please use `import python_multipart` instead.
+    import multipart
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests_mem/test_AGT1_kartu.py::test_AGT1_U1_gagal_di_tengah_berakhir_failed[asyncio]
+FAILED tests_mem/test_AGT1_kartu.py::test_AGT1_U2_kartu_gagal_tidak_bisa_diulang[asyncio]
+FAILED tests_mem/test_AGT1_kartu.py::test_AGT1_U5_kartu_kedaluwarsa_ditolak[asyncio]
+FAILED tests_mem/test_AGT1_kartu.py::test_AGT1_U5b_abaikan_kartu_kedaluwarsa_pesan_sama[asyncio]
+FAILED tests_mem/test_AGT1_kartu.py::test_AGT1_U5c_kartu_baru_punya_masa_berlaku[asyncio]
+FAILED tests_mem/test_AGT1_kartu.py::test_AGT1_U6_kartu_lama_tanpa_masa_berlaku_kedaluwarsa[asyncio]
+FAILED tests_mem/test_AGT1_kartu.py::test_AGT1_U7_masa_berlaku_per_pt[asyncio]
+FAILED tests_mem/test_AGT1_kartu.py::test_AGT1_U6b_proses_mati_menjadi_gagal[asyncio]
+FAILED tests_mem/test_AGT1_kartu.py::test_AGT1_U8_pt_aktif_berbeda_atau_semua_pt_409[asyncio]
+FAILED tests_mem/test_AGT1_kartu.py::test_AGT1_U9_pt_kartu_dicabut_dari_akses_403[asyncio]
+FAILED tests_mem/test_AGT1_kartu.py::test_AGT1_U10_siapkan_dalam_mode_semua_pt_ditolak[asyncio]
+FAILED tests_mem/test_AGT1_kartu.py::test_AGT1_U11_galat_isian_sebelum_klaim[asyncio]
+FAILED tests_mem/test_AGT1_kartu.py::test_AGT1_U12_cari_pemasok_bersaring_pt[asyncio]
+FAILED tests_mem/test_AGT1_kartu.py::test_AGT1_U13_cari_gudang_dan_sales_bersaring_pt[asyncio]
+FAILED tests_mem/test_AGT1_kartu.py::test_AGT1_U13b_batas_hasil_dihormati[asyncio]
+FAILED tests_mem/test_AGT1_kartu.py::test_AGT1_U14_enum_skema_sama_dengan_yang_dilayani
+FAILED tests_mem/test_AGT1_kartu.py::test_AGT1_U17_putaran_t1_config[asyncio]
+FAILED tests_mem/test_AGT1_kartu.py::test_AGT1_U17b_nilai_berlaku_saat_kartu_dibuat[asyncio]
+FAILED tests_mem/test_AGT1_penyedia.py::test_AGT1_U15_putaran_alat_dengan_pelaksana_tiruan[asyncio]
+FAILED tests_mem/test_AGT1_penyedia.py::test_AGT1_U15b_status_dan_narasi_memakai_lapisan[asyncio]
+FAILED tests_mem/test_AGT1_penyedia.py::test_AGT1_U16_pustaka_penyedia_hanya_di_modul_pelaksana
+21 failed, 1 passed, 1 warning in 7.90s

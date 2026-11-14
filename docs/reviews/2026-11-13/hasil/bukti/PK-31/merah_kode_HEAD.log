@@ -1,0 +1,358 @@
+FFFFFFFFFFFFFFF                                                          [100%]
+=================================== FAILURES ===================================
+_________ test_PK31_U1_keadaan_akhir_desember_belum_diterima[asyncio] __________
+
+db = <motor.motor_asyncio.AsyncIOMotorDatabase object at 0x7fba0f57a2d0>
+data_p1 = ('ent_uji_aaa', 'ent_uji_bbb')
+
+    async def test_PK31_U1_keadaan_akhir_desember_belum_diterima(db, data_p1):
+>       eng = mesin()
+              ^^^^^^^
+
+tests_mem/test_PK31_eliminasi_periode.py:143: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+    def mesin():
+>       from services import interco_elimination_engine as eng   # PK-31 — berkas baru (merah di kode lama: tidak ada)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       ImportError: cannot import name 'interco_elimination_engine' from 'services' (/tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/wt12/backend/services/__init__.py)
+
+tests_mem/test_PK31_eliminasi_periode.py:121: ImportError
+---------------------------- Captured stdout setup -----------------------------
+[bootstrap] SANDI AWAL akun seed (ganti segera): mSi_aJgm2sr9yk_N
+[bootstrap] FASE F lifecycle backfill: 5 produk distempel 'produksi'
+[bootstrap] kebersihan data: 5 record dirapikan {'customers': 3, 'suppliers': 0, 'users': 0, 'hr_employees': 2, 'makloons': 0}
+____________________ test_PK31_U2_selisih_januari[asyncio] _____________________
+
+db = <motor.motor_asyncio.AsyncIOMotorDatabase object at 0x7fba0f57a2d0>
+data_p1 = ('ent_uji_aaa', 'ent_uji_bbb')
+
+    async def test_PK31_U2_selisih_januari(db, data_p1):
+>       eng = mesin()
+              ^^^^^^^
+
+tests_mem/test_PK31_eliminasi_periode.py:158: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+    def mesin():
+>       from services import interco_elimination_engine as eng   # PK-31 — berkas baru (merah di kode lama: tidak ada)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       ImportError: cannot import name 'interco_elimination_engine' from 'services' (/tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/wt12/backend/services/__init__.py)
+
+tests_mem/test_PK31_eliminasi_periode.py:121: ImportError
+____________ test_PK31_U3_ringkasan_konsolidasi_dua_tahun[asyncio] _____________
+
+klien = <httpx.AsyncClient object at 0x7fb9fbe0ffd0>
+kepala_ab = {'Authorization': 'Bearer tok_uji_5c835733549347218e978b5322528212', 'X-Entity-Id': 'ent_uji_aaa'}
+data_p1 = ('ent_uji_aaa', 'ent_uji_bbb')
+
+    @pytest.mark.xfail(strict=True, reason=TUNGGU_B)
+    async def test_PK31_U3_ringkasan_konsolidasi_dua_tahun(klien, kepala_ab, data_p1):
+        # ALUR: GET ringkasan (pengguna bercakupan A+B). Buku A 2026: pendapatan 100; buku B: 1-1310 100 / 2-1250 100.
+        s26 = await _ringkasan(klien, kepala_ab, 2026, "2026-12-31")
+        # Laba konsolidasi 2026 = 100 jt (A) − 100 jt (eliminasi Des) = 0.
+>       assert s26["consolidated"]["net_income"] == 0, s26["consolidated"]
+E       AssertionError: {'revenue': 100000000.0, 'cogs': 0.0, 'opex': 0.0, 'assets': 260000000.0, ...}
+E       assert 100000000.0 == 0
+
+tests_mem/test_PK31_eliminasi_periode.py:188: AssertionError
+___________ test_PK31_U4_laporan_tanggal_lama_tidak_berubah[asyncio] ___________
+
+klien = <httpx.AsyncClient object at 0x7fb9fbe0ffd0>
+kepala_ab = {'Authorization': 'Bearer tok_uji_5c835733549347218e978b5322528212', 'X-Entity-Id': 'ent_uji_aaa'}
+db = <motor.motor_asyncio.AsyncIOMotorDatabase object at 0x7fba0f57a2d0>
+data_p1 = ('ent_uji_aaa', 'ent_uji_bbb')
+
+    @pytest.mark.xfail(strict=True, reason=TUNGGU_B)
+    async def test_PK31_U4_laporan_tanggal_lama_tidak_berubah(klien, kepala_ab, db, data_p1):
+        a, b = data_p1
+        sebelum = [await _ringkasan(klien, kepala_ab, 2026, "2026-12-31"),
+                   await _ringkasan(klien, kepala_ab, 2027, "2027-01-31")]
+        # FIXTURE: surat jalan B ke pelanggan 15 Mar 2027 — roll 1.000 m dipotong; potongan 500 m dikirim.
+        await db.inventory_rolls.update_one({"id": "roll_pk31_1"}, {"$set": {"length_remaining": 500.0}})
+        induk = await db.inventory_rolls.find_one({"id": "roll_pk31_1"}, {"_id": 0})
+        await db.inventory_rolls.insert_one({**induk, "id": "roll_pk31_1b", "roll_no": "ROLL_PK31_1B",
+                                             "length_initial": 500.0, "length_remaining": 500.0,
+                                             "status": "in_transit_sales", "parent_roll_id": "roll_pk31_1"})
+        await db.shipments.insert_one({"id": "shp_pk31_1", "shipment_no": "SJ-PK31-1", "entity_id": b,
+                                       "order_id": "so_pk31", "product_id": PRD, "qty": 500.0, "status": "dispatched",
+                                       "rolls": [{"roll_id": "roll_pk31_1b", "length": 500.0, "unit": "meter"}],
+                                       "created_at": "2027-03-15T03:00:00+00:00"})
+        sesudah = [await _ringkasan(klien, kepala_ab, 2026, "2026-12-31"),
+                   await _ringkasan(klien, kepala_ab, 2027, "2027-01-31")]
+        for x, y in zip(sebelum, sesudah):
+            for k in ("gross", "elimination", "consolidated"):
+                assert x[k] == y[k], (k, x[k], y[k])
+>       assert sesudah[0]["consolidated"]["net_income"] == 0 and sesudah[0]["consolidated"]["assets"] == 60 * JT
+E       assert (100000000.0 == 0)
+
+tests_mem/test_PK31_eliminasi_periode.py:219: AssertionError
+_________________ test_PK31_U5_maret_separuh_terjual[asyncio] __________________
+
+db = <motor.motor_asyncio.AsyncIOMotorDatabase object at 0x7fba0f57a2d0>
+data_p1 = ('ent_uji_aaa', 'ent_uji_bbb')
+
+    async def test_PK31_U5_maret_separuh_terjual(db, data_p1):
+>       eng = mesin()
+              ^^^^^^^
+
+tests_mem/test_PK31_eliminasi_periode.py:223: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+    def mesin():
+>       from services import interco_elimination_engine as eng   # PK-31 — berkas baru (merah di kode lama: tidak ada)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       ImportError: cannot import name 'interco_elimination_engine' from 'services' (/tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/wt12/backend/services/__init__.py)
+
+tests_mem/test_PK31_eliminasi_periode.py:121: ImportError
+_____________________ test_PK31_U6_rantai_tiga_pt[asyncio] _____________________
+
+db = <motor.motor_asyncio.AsyncIOMotorDatabase object at 0x7fba0f57a2d0>
+data_p1 = ('ent_uji_aaa', 'ent_uji_bbb')
+
+    async def test_PK31_U6_rantai_tiga_pt(db, data_p1):
+        a, b, c = await ent()
+        p6, p7 = "pk31_p6", "pk31_p7"
+        await db.inventory_rolls.insert_one({"id": "roll_pk31_6", "roll_no": "R6", "product_id": PRD,
+                                             "owner_entity_id": a, "length_initial": 1000.0, "length_remaining": 1000.0,
+                                             "unit": "meter", "status": "reserved", "unit_cost": 60_000,
+                                             "base_unit_cost": 60_000, "created_at": now_iso()})
+        # A→B: S 100 jt, C 60 jt (4 → 5 Apr 2027)
+        await db.interco_transactions.insert_many(pasangan(p6, a, b, 100 * JT, status="confirmed", tanggal="2027-04-04"))
+        await jurnal_jual(p6, a, b, 100 * JT, "2027-04-04")
+        await jurnal_barang(p6, a, b, 100 * JT, 60 * JT, "2027-04-05")
+        await _pindahkan(db, "roll_pk31_6", "trn_pk31_6", p6, a, b, "2027-04-05")
+        # B→C: seluruh roll, harga 120 jt; HPP B = 1.000 × Rp 100.000 = 100 jt (1 → 2 Mei 2027)
+        await db.interco_transactions.insert_many(pasangan(p7, b, c, 120 * JT, status="confirmed", tanggal="2027-05-01"))
+        await jurnal_jual(p7, b, c, 120 * JT, "2027-05-01")
+        await jurnal_barang(p7, b, c, 120 * JT, 100 * JT, "2027-05-02")
+        await _pindahkan(db, "roll_pk31_6", "trn_pk31_7", p7, b, c, "2027-05-02")
+    
+        r = await db.inventory_rolls.find_one({"id": "roll_pk31_6"}, {"_id": 0})
+>       rantai = r["cost_basis"]["chain"]
+                 ^^^^^^^^^^^^^^^^^^^^^^^^
+E       KeyError: 'chain'
+
+tests_mem/test_PK31_eliminasi_periode.py:276: KeyError
+________________ test_PK31_U6b_rapor_margin_satu_rumus[asyncio] ________________
+
+db = <motor.motor_asyncio.AsyncIOMotorDatabase object at 0x7fba0f57a2d0>
+data_p1 = ('ent_uji_aaa', 'ent_uji_bbb')
+
+    @pytest.mark.xfail(strict=True, reason="IC-04 — rapor margin memakai pair_state mulai serah-terima (b) PK-31")
+    async def test_PK31_U6b_rapor_margin_satu_rumus(db, data_p1):
+        from services import interco_margin as icm
+>       u = await icm.unsold_ratio("pk31_p6", as_of="2027-06-30")
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       TypeError: unsold_ratio() got an unexpected keyword argument 'as_of'
+
+tests_mem/test_PK31_eliminasi_periode.py:297: TypeError
+_________________ test_PK31_U7_rugi_tidak_dieliminasi[asyncio] _________________
+
+db = <motor.motor_asyncio.AsyncIOMotorDatabase object at 0x7fba0f57a2d0>
+data_p1 = ('ent_uji_aaa', 'ent_uji_bbb')
+
+    async def test_PK31_U7_rugi_tidak_dieliminasi(db, data_p1):
+        from services import interco_margin as icm
+>       eng = mesin()
+              ^^^^^^^
+
+tests_mem/test_PK31_eliminasi_periode.py:304: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+    def mesin():
+>       from services import interco_elimination_engine as eng   # PK-31 — berkas baru (merah di kode lama: tidak ada)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       ImportError: cannot import name 'interco_elimination_engine' from 'services' (/tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/wt12/backend/services/__init__.py)
+
+tests_mem/test_PK31_eliminasi_periode.py:121: ImportError
+__________________ test_PK31_U8_bulan_beku_dan_stale[asyncio] __________________
+
+db = <motor.motor_asyncio.AsyncIOMotorDatabase object at 0x7fba0f57a2d0>
+data_p1 = ('ent_uji_aaa', 'ent_uji_bbb')
+
+    async def test_PK31_U8_bulan_beku_dan_stale(db, data_p1):
+>       eng = mesin()
+              ^^^^^^^
+
+tests_mem/test_PK31_eliminasi_periode.py:326: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+    def mesin():
+>       from services import interco_elimination_engine as eng   # PK-31 — berkas baru (merah di kode lama: tidak ada)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       ImportError: cannot import name 'interco_elimination_engine' from 'services' (/tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/wt12/backend/services/__init__.py)
+
+tests_mem/test_PK31_eliminasi_periode.py:121: ImportError
+_________________ test_PK31_U9_bagian_non_pengendali[asyncio] __________________
+
+klien = <httpx.AsyncClient object at 0x7fb9fbe0ffd0>
+akun = <function akun.<locals>._akun at 0x7fb9fbe825c0>
+sesi = <function sesi.<locals>._sesi at 0x7fb9fbe827a0>
+peran_tanpa_acuan = <function peran_tanpa_acuan.<locals>._peran at 0x7fb9fbe82ac0>
+db = <motor.motor_asyncio.AsyncIOMotorDatabase object at 0x7fba0f57a2d0>
+
+    @pytest.mark.xfail(strict=True, reason=TUNGGU_B)
+    async def test_PK31_U9_bagian_non_pengendali(klien, akun, sesi, peran_tanpa_acuan, db):
+        f, g = await pt("FFF"), await pt("GGG")   # A dan B uji ini; tanpa transaksi antar-PT
+        await db.business_entities.update_one({"id": g}, {"$set": {"ownership_pct": 80}})
+        await je(f, "2027-01-02", [("1-1100", 170 * JT, 0), ("3-1000", 0, 170 * JT)], "uji", "pk31_u9_modal_f")
+        await je(f, "2027-02-01", [("1-1100", 30 * JT, 0), ("4-1000", 0, 30 * JT)], "uji", "pk31_u9_laba_f")
+        await je(g, "2027-01-02", [("1-1100", 40 * JT, 0), ("3-1000", 0, 40 * JT)], "uji", "pk31_u9_modal_g")
+        await je(g, "2027-02-01", [("1-1100", 10 * JT, 0), ("4-1000", 0, 10 * JT)], "uji", "pk31_u9_laba_g")
+        p = await peran_tanpa_acuan({"accounting": ["view"]}, label="Konsolidasi FG PK31")
+        h = await sesi(await akun(p, entitas=(f, g)), entitas=f)
+        s = await _ringkasan(klien, h, 2027, "2027-12-31")
+        rows = {r["entity_id"]: r for r in s["entities"]}
+>       assert (rows[f]["ownership_pct"], rows[g]["ownership_pct"]) == (100, 80)
+                ^^^^^^^^^^^^^^^^^^^^^^^^
+E       KeyError: 'ownership_pct'
+
+tests_mem/test_PK31_eliminasi_periode.py:373: KeyError
+_______ test_PK31_U10_retur_setelah_lunas_menjadi_utang_refund[asyncio] ________
+
+klien = <httpx.AsyncClient object at 0x7fb9fbe0ffd0>
+kepala_admin = {'Authorization': 'Bearer tok_uji_3afce017c45047c6ad9123911b746480', 'X-Entity-Id': 'ent_ksc'}
+db = <motor.motor_asyncio.AsyncIOMotorDatabase object at 0x7fba0f57a2d0>
+data_rf = ('ent_uji_rfs', 'ent_uji_rfb')
+
+    async def test_PK31_U10_retur_setelah_lunas_menjadi_utang_refund(klien, kepala_admin, db, data_rf):
+        from services import interco_return_service as icret
+        s, b = data_rf
+        await db.interco_returns.insert_many(retur_fixture("pk31_rp", RF, s, b, 4 * JT))
+        await icret.approve("pk31_rp_ret", AKTOR_UJI)   # ALUR: setujui retur (pembuat "Orang Lain" ≠ penyetuju)
+        js = {j["source_id"]: baris(j) for j in await db.journal_entries.find(
+            {"source_type": "interco_return", "source_id": {"$regex": "^pk31_rp:"}}, {"_id": 0}).to_list(5)}
+        assert js == {"pk31_rp:seller": {("4-1000", 4 * JT, 0), ("1-1250", 0, 4 * JT)},
+                      "pk31_rp:buyer": {("2-1250", 4 * JT, 0), ("1-1310", 0, 4 * JT)}}
+        # refund_due = max(0, retur 4 jt + lunas 10 jt − nilai 10 jt) = 4 jt, pada KEDUA dokumen kembar.
+        docs = await db.interco_transactions.find({"pair_id": RF}, {"_id": 0}).to_list(2)
+>       assert [d.get("refund_due") for d in docs] == [4 * JT, 4 * JT], docs
+E       AssertionError: [{'pair_id': 'pk31_rf', 'seller_entity_id': 'ent_uji_rfs', 'buyer_entity_id': 'ent_uji_rfb', 'seller_entity_name': 'PT...rf', 'seller_entity_id': 'ent_uji_rfs', 'buyer_entity_id': 'ent_uji_rfb', 'seller_entity_name': 'PT ent_uji_rfs', ...}]
+E       assert [None, None] == [4000000, 4000000]
+E         
+E         At index 0 diff: None != 4000000
+E         Use -v to get more diff
+
+tests_mem/test_PK31_eliminasi_periode.py:437: AssertionError
+____________ test_PK31_U12_melebihi_sisa_dan_bukan_cakupan[asyncio] ____________
+
+klien = <httpx.AsyncClient object at 0x7fb9fbe0ffd0>
+kepala_admin = {'Authorization': 'Bearer tok_uji_3afce017c45047c6ad9123911b746480', 'X-Entity-Id': 'ent_ksc'}
+akun = <function akun.<locals>._akun at 0x7fb9fbe825c0>
+sesi = <function sesi.<locals>._sesi at 0x7fb9fbe827a0>
+peran_tanpa_acuan = <function peran_tanpa_acuan.<locals>._peran at 0x7fb9fbe82ac0>
+db = <motor.motor_asyncio.AsyncIOMotorDatabase object at 0x7fba0f57a2d0>
+data_rf = ('ent_uji_rfs', 'ent_uji_rfb')
+
+    async def test_PK31_U12_melebihi_sisa_dan_bukan_cakupan(klien, kepala_admin, akun, sesi, peran_tanpa_acuan, db,
+                                                           data_rf):
+        s, b = data_rf
+        r = await _refund(klien, kepala_admin, s, b, jumlah_rp=5 * JT)
+>       assert r.status_code == 400 and "melebihi sisa refund" in r.text, r.text
+E       AssertionError: {"detail":"Not Found"}
+E       assert (404 == 400)
+E        +  where 404 = <Response [404 Not Found]>.status_code
+
+tests_mem/test_PK31_eliminasi_periode.py:460: AssertionError
+_______________ test_PK31_U13_periode_pembeli_tertutup[asyncio] ________________
+
+klien = <httpx.AsyncClient object at 0x7fb9fbe0ffd0>
+kepala_admin = {'Authorization': 'Bearer tok_uji_3afce017c45047c6ad9123911b746480', 'X-Entity-Id': 'ent_ksc'}
+db = <motor.motor_asyncio.AsyncIOMotorDatabase object at 0x7fba0f57a2d0>
+data_rf = ('ent_uji_rfs', 'ent_uji_rfb')
+
+    async def test_PK31_U13_periode_pembeli_tertutup(klien, kepala_admin, db, data_rf):
+        s, b = data_rf
+        c = await tutup_periode(b, "2026-11")
+        try:
+            r = await _refund(klien, kepala_admin, s, b, key="pk31-u13")
+        finally:
+            await db.period_closings.delete_one({"id": c["id"]})
+>       assert r.status_code == 409 and re.search("ditutup", r.text, re.I), r.text
+E       AssertionError: {"detail":"Not Found"}
+E       assert (404 == 409)
+E        +  where 404 = <Response [404 Not Found]>.status_code
+
+tests_mem/test_PK31_eliminasi_periode.py:479: AssertionError
+_________________ test_PK31_U11_refund_dicatat_sekali[asyncio] _________________
+
+klien = <httpx.AsyncClient object at 0x7fb9fbe0ffd0>
+kepala_admin = {'Authorization': 'Bearer tok_uji_3afce017c45047c6ad9123911b746480', 'X-Entity-Id': 'ent_ksc'}
+db = <motor.motor_asyncio.AsyncIOMotorDatabase object at 0x7fba0f57a2d0>
+data_rf = ('ent_uji_rfs', 'ent_uji_rfb')
+
+    async def test_PK31_U11_refund_dicatat_sekali(klien, kepala_admin, db, data_rf):
+        s, b = data_rf
+        r = await _refund(klien, kepala_admin, s, b, key="pk31-u11")
+>       assert r.status_code == 200, r.text
+E       AssertionError: {"detail":"Not Found"}
+E       assert 404 == 200
+E        +  where 404 = <Response [404 Not Found]>.status_code
+
+tests_mem/test_PK31_eliminasi_periode.py:491: AssertionError
+_____________________ test_PK31_U14_skrip_migrasi[asyncio] _____________________
+
+db = <motor.motor_asyncio.AsyncIOMotorDatabase object at 0x7fba0f57a2d0>
+data_p1 = ('ent_uji_aaa', 'ent_uji_bbb')
+capsys = <_pytest.capture.CaptureFixture object at 0x7fb9fd03dbd0>
+
+    async def test_PK31_U14_skrip_migrasi(db, data_p1, capsys):
+        a, b = data_p1
+        if not await db.shipments.find_one({"id": "shp_pk31_1"}):
+            pytest.fail("butuh surat jalan U4/U5")
+        # FIXTURE: entri lama SATU per pasangan tanpa period_key, seperti yang ditulis sinkron lama saat barang diterima
+        # (u = 1): Dr 4-1000 100 · Cr 5-1000 60 · Cr 1-1300 40 · Dr 2-1250 100 · Cr 1-1250 100, efektif 28 Des 2026.
+        await db.intercompany_eliminations.delete_many({"source_g6_pair_id": P1})
+        lama = [("4-1000", 100 * JT, 0), ("5-1000", 0, 60 * JT), ("1-1300", 0, 40 * JT), ("2-1250", 100 * JT, 0),
+                ("1-1250", 0, 100 * JT)]
+        await db.intercompany_eliminations.insert_one({
+            "id": "icelim_pk31_lama", "name": "Eliminasi otomatis antar-PT AAA/IC-P1", "entity_from": a, "entity_to": b,
+            "effective_date": "2026-12-28", "auto_generated": True, "source_g6_pair_id": P1,
+            "lines": [{"account_code": k, "debit": d, "credit": c} for k, d, c in lama],
+            "total_debit": 200 * JT, "total_credit": 200 * JT, "balanced": True,
+            "impact": {"revenue": -100 * JT, "cogs": -60 * JT, "opex": 0, "assets": -140 * JT, "liabilities": -100 * JT,
+                       "equity": 0}, "created_at": now_iso()})
+>       skrip = _skrip()
+                ^^^^^^^^
+
+tests_mem/test_PK31_eliminasi_periode.py:543: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests_mem/test_PK31_eliminasi_periode.py:523: in _skrip
+    spec.loader.exec_module(mod)
+<frozen importlib._bootstrap_external>:936: in exec_module
+    ???
+<frozen importlib._bootstrap_external>:1073: in get_code
+    ???
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <_frozen_importlib_external.SourceFileLoader object at 0x7fb9fd0735d0>
+path = '/tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/wt12/scripts/migrasi_pk31_eliminasi_per_periode.py'
+
+>   ???
+E   FileNotFoundError: [Errno 2] No such file or directory: '/tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/wt12/scripts/migrasi_pk31_eliminasi_per_periode.py'
+
+<frozen importlib._bootstrap_external>:1130: FileNotFoundError
+=============================== warnings summary ===============================
+../../venv311/lib/python3.11/site-packages/starlette/formparsers.py:12
+  /tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/venv311/lib/python3.11/site-packages/starlette/formparsers.py:12: PendingDeprecationWarning: Please use `import python_multipart` instead.
+    import multipart
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests_mem/test_PK31_eliminasi_periode.py::test_PK31_U1_keadaan_akhir_desember_belum_diterima[asyncio]
+FAILED tests_mem/test_PK31_eliminasi_periode.py::test_PK31_U2_selisih_januari[asyncio]
+FAILED tests_mem/test_PK31_eliminasi_periode.py::test_PK31_U3_ringkasan_konsolidasi_dua_tahun[asyncio]
+FAILED tests_mem/test_PK31_eliminasi_periode.py::test_PK31_U4_laporan_tanggal_lama_tidak_berubah[asyncio]
+FAILED tests_mem/test_PK31_eliminasi_periode.py::test_PK31_U5_maret_separuh_terjual[asyncio]
+FAILED tests_mem/test_PK31_eliminasi_periode.py::test_PK31_U6_rantai_tiga_pt[asyncio]
+FAILED tests_mem/test_PK31_eliminasi_periode.py::test_PK31_U6b_rapor_margin_satu_rumus[asyncio]
+FAILED tests_mem/test_PK31_eliminasi_periode.py::test_PK31_U7_rugi_tidak_dieliminasi[asyncio]
+FAILED tests_mem/test_PK31_eliminasi_periode.py::test_PK31_U8_bulan_beku_dan_stale[asyncio]
+FAILED tests_mem/test_PK31_eliminasi_periode.py::test_PK31_U9_bagian_non_pengendali[asyncio]
+FAILED tests_mem/test_PK31_eliminasi_periode.py::test_PK31_U10_retur_setelah_lunas_menjadi_utang_refund[asyncio]
+FAILED tests_mem/test_PK31_eliminasi_periode.py::test_PK31_U12_melebihi_sisa_dan_bukan_cakupan[asyncio]
+FAILED tests_mem/test_PK31_eliminasi_periode.py::test_PK31_U13_periode_pembeli_tertutup[asyncio]
+FAILED tests_mem/test_PK31_eliminasi_periode.py::test_PK31_U11_refund_dicatat_sekali[asyncio]
+FAILED tests_mem/test_PK31_eliminasi_periode.py::test_PK31_U14_skrip_migrasi[asyncio]
+15 failed, 1 warning in 2.54s

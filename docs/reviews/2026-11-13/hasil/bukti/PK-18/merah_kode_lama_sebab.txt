@@ -1,0 +1,35 @@
+E   KeyError: 'gl_status'
+backend/tests_mem/test_PK18_penanda_gagal.py:121: KeyError: 'gl_status'
+E   AssertionError: {"detail":"Jenis dokumen tidak dikenal"}
+backend/tests_mem/test_PK18_penanda_gagal.py:137: AssertionError: {"detail":"Jenis dokumen tidak dikenal"}
+E   AssertionError: Internal Server Error
+     +  where 500 = <Response [500 Internal Server Error]>.status_code
+backend/tests_mem/test_PK18_penanda_gagal.py:162: AssertionError: Internal Server Error
+E   AssertionError: Internal Server Error
+     +  where 500 = <Response [500 Internal Server Error]>.status_code
+backend/tests_mem/test_PK18_penanda_gagal.py:186: AssertionError: Internal Server Error
+E   AssertionError: Internal Server Error
+     +  where 500 = <Response [500 Internal Server Error]>.status_code
+backend/tests_mem/test_PK18_penanda_gagal.py:216: AssertionError: Internal Server Error
+E   KeyError: 'gl_status'
+backend/tests_mem/test_PK18_penanda_gagal.py:236: KeyError: 'gl_status'
+E   KeyError: 'void_gl_status'
+backend/tests_mem/test_PK18_penanda_gagal.py:262: KeyError: 'void_gl_status'
+E   AssertionError: assert 'posted' == 'not_required'
+backend/tests_mem/test_PK18_penanda_gagal.py:279: AssertionError: assert 'posted' == 'not_required'
+E   AssertionError: {"detail":"Akun 1-2100 nonaktif"}
+backend/tests_mem/test_PK18_penanda_gagal.py:289: AssertionError: {"detail":"Akun 1-2100 nonaktif"}
+E   AssertionError: {"id":"gla_de3317f35e3c","code":"2-1100","name":"Hutang Usaha","type":"liability","normal_balance":"credit","parent_code":"2-1000","is_postable":true,"is_active":false,"system":true,"currency":"IDR","description":"","entity_id":null,"created_at":"2026-11-14T11:42:46.017233+00:00","updated_at":"2026-11-14T11:42:46.901458+00:00"}
+backend/tests_mem/test_PK18_penanda_gagal.py:303: AssertionError: {"id":"gla_de3317f35e3c","code":"2-1100","name":"Hutang Usaha","type":"liability","normal_balance":"credit","parent_code":"2-1000","is_postable":true,"is_active":false,"system":true,"currency":"IDR","description":"","entity_id":null,"created_at":"2026-11-14T11:42:46.017233+00:00","updated_at":"2026-11-14T11:42:46.901458+00:00"}
+E   AssertionError: {"id":"gla_aa9f4087b82f","code":"6-4999","name":"Beban Uji PK-18","type":"expense","normal_balance":"debit","parent_code":"","is_postable":true,"is_active":false,"system":false,"currency":"IDR","description":"","entity_id":null,"created_at":"2026-11-14T11:42:46.916279+00:00","updated_at":"2026-11-14T11:42:46.930832+00:00"}
+backend/tests_mem/test_PK18_penanda_gagal.py:316: AssertionError: {"id":"gla_aa9f4087b82f","code":"6-4999","name":"Beban Uji PK-18","type":"expense","normal_balance":"debit","parent_code":"","is_postable":true,"is_active":false,"system":false,"currency":"IDR","description":"","entity_id":null,"created_at":"2026-11-14T11:42:46.916279+00:00","updated_at":"2026-11-14T11:42:46.930832+00:00"}
+E   AssertionError: /tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/venv311/bin/python: can't open file 'scripts/guardrails/verify_posting_coverage.py': [Errno 2] No such file or directory
+backend/tests_mem/test_PK18_penanda_gagal.py:344: AssertionError: /tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/venv311/bin/python: can't open file 'scripts/guardrails/verify_posting_coverage.py': [Errno 2] No such file or directory
+E   AssertionError: /tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/venv311/bin/python: can't open file 'scripts/guardrails/verify_posting_coverage.py': [Errno 2] No such file or directory
+backend/tests_mem/test_PK18_penanda_gagal.py:344: AssertionError: /tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/venv311/bin/python: can't open file 'scripts/guardrails/verify_posting_coverage.py': [Errno 2] No such file or directory
+E   AttributeError: module 'services.gl_service' has no attribute 'post_durable'
+backend/tests_mem/test_PK18_penanda_gagal.py:356: AttributeError: module 'services.gl_service' has no attribute 'post_durable'
+E   KeyError: 'page'
+backend/tests_mem/test_PK18_penanda_gagal.py:397: KeyError: 'page'
+FAILED tests_mem/test_PK18_penanda_gagal.py::test_PK18_inti_post_durable_posted_failed_not_required[asyncio]
+15 failed, 2 passed, 1 warning in 2.95s
