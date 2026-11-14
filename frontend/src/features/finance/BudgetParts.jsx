@@ -176,7 +176,7 @@ export function BudgetTable({ rows, showEntity = false, onEdit, onDelete, onHist
         </table>
       </div>
       <p className="mt-1.5 text-fs-12 text-kn-text-2" data-testid="budget-committed-hint">
-        <b>Komitmen</b> = {COMMITMENT_HINT.toLowerCase()}. <b>Realisasi</b> = jurnal tahun ini: beban dan pendapatan dari
+        <b>Komitmen</b> = {COMMITMENT_HINT.charAt(0).toLowerCase() + COMMITMENT_HINT.slice(1)}. <b>Realisasi</b> = jurnal tahun ini: beban dan pendapatan dari
         jurnalnya, akun persediaan = penerimaan barang dikurangi retur beli, kategori beban = LPJ pada bulan jurnalnya.
       </p>
     </>

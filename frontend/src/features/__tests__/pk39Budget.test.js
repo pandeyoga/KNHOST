@@ -116,7 +116,7 @@ describe("PK-39 — layar Anggaran", () => {
     expect(q("budget-actual-ent_kanda-6-2000")?.textContent).toContain("10");
     expect(q("budget-combined-note")?.textContent).toContain("belum dieliminasi");
     expect(q("budget-col-committed").getAttribute("title")).toBe("Sisa PO yang belum diterima + LPJ yang belum disetujui");
-    expect(q("budget-committed-hint")?.textContent).toContain("sisa po yang belum diterima");
+    expect(q("budget-committed-hint")?.textContent).toContain("sisa PO yang belum diterima");
     expect(q("budget-adocs-ent_ksc-6-2000")?.textContent).toContain("JU-ent_ksc");
     // status = ikon + teks + warna
     const st = q("budget-status-ent_ksc-6-2000");

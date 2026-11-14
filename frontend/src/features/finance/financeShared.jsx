@@ -48,6 +48,14 @@ export const chartTooltip = {
  * Fase 3 · P4 (L-08) — garis kiri warna-warni DIHAPUS (gaya baku = kartu berbingkai seperti `MetricRow`), dan nilai
  * nol tampil NETRAL abu (dulu "Rp 0" merah/hijau/ungu terbaca sebagai peringatan). `accent` kini hanya mewarnai ikon.
  */
+/** Pecah "Rp 1.234.567" menjadi awalan + angka utuh (tidak dipatah); nilai lain dikembalikan apa adanya. */
+export function kpiValueParts(value) {
+  if (typeof value !== "string") return value;
+  const m = value.match(/^(-?\s*Rp)[\s\u00a0]+(.+)$/);
+  if (!m) return <span className="whitespace-nowrap">{value}</span>;
+  return (<>{m[1]}{" "}<span className="whitespace-nowrap">{m[2]}</span></>);
+}
+
 export function KpiCard({ label, value, icon: Icon, tone, sub, accent = "#6B219A", testId, onClick, actionLabel = "Lihat rincian" }) {
   const zero = isZeroMetric(value);
   return (
@@ -63,8 +71,10 @@ export function KpiCard({ label, value, icon: Icon, tone, sub, accent = "#6B219A
         )}
         <div className="min-w-0">
           <p className="text-[11px] font-bold uppercase tracking-wide text-[#8E8E93]">{label}</p>
-          <p className={`text-[15px] sm:text-[17px] font-bold tabular-nums break-words ${zero ? "text-[#8E8E93]" : (tone || "text-[#1C1C1E]")}`}
-             data-testid={testId ? `${testId}-value` : undefined}>{value}</p>
+          {/* Cek layar 14 Nov — angka tidak pernah dipatah di tengah ("Rp 155.000.0|00"): hanya awalan "Rp" yang boleh
+              turun baris; angkanya utuh satu baris. */}
+          <p className={`text-[15px] sm:text-[17px] font-bold tabular-nums ${zero ? "text-[#8E8E93]" : (tone || "text-[#1C1C1E]")}`}
+             data-testid={testId ? `${testId}-value` : undefined}>{kpiValueParts(value)}</p>
           {sub && <p className="text-[10px] text-[#9A9BA3] mt-0.5 truncate" title={sub}>{sub}</p>}
           {/* PK-44 (IA-11) — kartu bertujuan: tombol tautan baku (bukan seluruh kartu sebagai tombol buatan sendiri). */}
           {onClick && (

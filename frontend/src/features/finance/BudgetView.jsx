@@ -166,7 +166,8 @@ export default function BudgetView({ selectedEntity, currentUser }) {
       <DesktopOnlyNotice testId="budget-desktop-notice" what="Anggaran vs Realisasi" />
       <EntityScopeBanner meta={data?.scope_meta} />
       {/* KPI */}
-      <div className="grid grid-cols-2 lg:grid-cols-5 gap-3 mb-3">
+      {/* Cek layar 14 Nov — lima kartu sebaris hanya di ≥1536 px; di 1024–1535 px 3+2 supaya angka rupiah utuh sebaris. */}
+      <div className="grid grid-cols-2 md:grid-cols-3 2xl:grid-cols-5 gap-3 mb-3">
         <KpiCard testId="budget-kpi-total" label={`Anggaran ${year}`} value={formatCurrency(tot.budget)}
           icon={Target} accent={FC.purple} sub={`${allRows.length} baris anggaran`} />
         <KpiCard testId="budget-kpi-commitment" label="Komitmen (PO/LPJ)" value={formatCurrency(tot.commitment)}
@@ -300,8 +301,8 @@ export default function BudgetView({ selectedEntity, currentUser }) {
       <p className="mt-2 text-fs-12 text-kn-text-2 flex items-start gap-1.5">
         <ShieldCheck size={12} className="mt-0.5 shrink-0" />
         <span>
-          <b>Komitmen</b>: sisa PO yang belum diterima (nilai DPP; akun {keys.default_po_account || "persediaan"} bila PO
-          tak ditandai) + LPJ yang belum disetujui. <b>Realisasi</b>: jurnal tahun ini menurut bulan bukunya.
+          {/* Cek layar 14 Nov — arti Komitmen/Realisasi sudah tertulis di bawah tabel; di sini hanya yang belum. */}
+          Nilai PO = DPP; PO tanpa tanda anggaran masuk akun {keys.default_po_account || "persediaan"}.
           <b> Sisa</b> = Anggaran − Komitmen − Realisasi. Tiap PT dibandingkan dengan pagunya sendiri; semua angka
           diturunkan langsung dari sumber (tanpa cache).
         </span>
