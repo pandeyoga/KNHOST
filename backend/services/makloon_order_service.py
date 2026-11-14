@@ -736,10 +736,9 @@ async def issue_step(mko_id: str, seq: int, *, from_warehouse_id: str = "",
         await _saga.release("makloon_orders", mko_id, _tok)
         raise
     material_value = res["value"]
-    label = f"{order.get('mko_number')} step{seq}"
-    await gl.post_subcon_issue(mko_id=mko_id, step_seq=seq, entity_id=order["entity_id"],
-                               amount=material_value, label=label)
-    step.update({"status": "issued", "material_value": material_value,
+    # PK-18 (IV-04) — roll SUDAH di mitra: langkah dimajukan + klaim dilepas DULU (`gl_status: pending`), jurnal
+    # sesudahnya lewat pintu tahan-gagal. Dulu jurnal gagal = 500 dengan roll di mitra dan langkah tetap `pending`.
+    step.update({"status": "issued", "material_value": material_value, "gl_status": "pending",
                  "issued_at": now_iso(), "from_warehouse_id": wh,
                  "issue_uom_trail": uom_trail, "issue_mode": "rolls" if picked else "qty",
                  "issued_roll_ids": [m.get("roll_id") for m in res.get("rolls") or [] if m.get("roll_id")],
@@ -757,7 +756,17 @@ async def issue_step(mko_id: str, seq: int, *, from_warehouse_id: str = "",
     await db.makloon_orders.replace_one({"id": mko_id, f"{_saga.LOCK}.token": _tok}, order)   # FIX-3b — CAS token
     if seq == 1:
         await _mres.consume_for_issue(mko_id, input_pid, input_qty)
+    await _post_step_gl(order, step)
     return safe_doc(order)
+
+
+async def _post_step_gl(order: Dict[str, Any], step: Dict[str, Any]) -> None:
+    """PK-18 — jurnal langkah lewat `posting_registry.durable_makloon_step` (resep yang sama dengan Ulang Posting);
+    hasilnya disalin ke langkah di memori supaya jawaban API memuat `gl_status`/`gl_error`."""
+    from services import posting_registry as _preg
+    jr = await _preg.durable_makloon_step(order, int(step["seq"]))
+    step.update({"gl_status": jr["gl_status"], "gl_error": jr["gl_error"],
+                 "journal_entry_id": jr["journal_entry_id"]})
 
 
 # ─── FASE T — Catat Jasa (langkah "jasa murni": kain TIDAK bergerak) ─────────
@@ -939,11 +948,7 @@ async def record_service_step(mko_id: str, seq: int, data: Dict[str, Any], *,
         "bill_date": now_iso(), "posted_at": now_iso(),
         "created_by": actor_name, "created_at": now_iso(), "updated_at": now_iso(),
     })
-    await gl.post_subcon_service(bill_id=service_bill_id, mko_id=mko_id, step_seq=seq,
-                                 entity_id=entity_id, net_amount=net_service, ppn=ppn,
-                                 grand_total=round(net_service + ppn, 2),
-                                 makloon_name=step.get("makloon_name") or "", label=label)
-    from services import doc_refs_service as _refs
+    from services import doc_refs_service as _refs   # PK-18 — jurnal jasa sesudah langkah tersimpan (`_post_step_gl`)
     await _refs.safe_link(("vendor_bill", service_bill_id), ("makloon_order", mko_id),
                           "settles", note=f"jasa langkah {seq} (tanpa kain)")
 
@@ -962,7 +967,7 @@ async def record_service_step(mko_id: str, seq: int, data: Dict[str, Any], *,
         "received_at": now_iso(), "service_recorded_at": now_iso(),
         "supplier_invoice_no": data.get("supplier_invoice_no") or "",
         "service_note": (data.get("note") or "").strip(),
-        "variance": variance, "claim": mclaim.blank_claim(),
+        "variance": variance, "claim": mclaim.blank_claim(), "gl_status": "pending",
     })
     order["service_absorption_pending"] = round(
         float(order.get("service_absorption_pending") or 0) + net_service, 2)
@@ -981,6 +986,7 @@ async def record_service_step(mko_id: str, seq: int, data: Dict[str, Any], *,
     await db.makloon_orders.replace_one({"id": mko_id}, order)
     await _saga.release("makloon_orders", mko_id)   # replace_one sudah mencabut kunci; jaga-jaga
     await _release_leftover_reservation(order, actor_name)
+    await _post_step_gl(order, step)
     return safe_doc(order)
 
 
@@ -1161,10 +1167,7 @@ async def receive_step(mko_id: str, seq: int, data: Dict[str, Any], *,
             "bill_date": now_iso(), "posted_at": now_iso(),
             "created_by": actor_name, "created_at": now_iso(), "updated_at": now_iso(),
         })
-        await gl.post_subcon_service(bill_id=service_bill_id, mko_id=mko_id, step_seq=seq,
-                                     entity_id=entity_id, net_amount=net_service, ppn=ppn,
-                                     grand_total=round(net_service + ppn, 2),
-                                     makloon_name=step.get("makloon_name") or "", label=label)
+        # PK-18 — jurnal jasa diterbitkan sesudah langkah tersimpan (`_post_step_gl`, idempoten per tagihan).
         # FASE G-4 — tagihan jasa makloon menaut ke order makloonnya (dua arah).
         from services import doc_refs_service as _refs
         await _refs.safe_link(("vendor_bill", service_bill_id), ("makloon_order", mko_id),
@@ -1270,9 +1273,8 @@ async def receive_step(mko_id: str, seq: int, data: Dict[str, Any], *,
         prog["receipt_qc"] = await mqc.open_receipt_tasks(order, step, rq, final_roll_ids, data, actor_name)
         await _save_prog()
 
-    # 4) GL terima: Dr Persediaan (output+sisa = wip_total) / Cr WIP (clear penuh)
-    await gl.post_subcon_receipt(mko_id=mko_id, step_seq=seq, entity_id=entity_id,
-                                 amount=wip_total, label=label)
+    # 4) GL terima: Dr Persediaan (output+sisa = wip_total) / Cr WIP (clear penuh). PK-18 — diterbitkan sesudah tulisan
+    #    akhir lewat `_post_step_gl` dari nilai tersimpan di langkah (output_value + byproduct_value = wip_total).
 
     if pend:
         # Riwayat penyerapan: kiriman sebagian mana saja yang ikut terposting di penerimaan akhir ini.
@@ -1313,6 +1315,7 @@ async def receive_step(mko_id: str, seq: int, data: Dict[str, Any], *,
         "absorbed_service_steps": absorbed_from,
         # Langkah terakhir — karantina QC / journey hasil (None = langkah tengah, perilaku lama).
         "receipt_qc": prog.get("receipt_qc") or None,
+        "gl_status": "pending",   # PK-18 — jurnal jasa + terima diterbitkan sesudah tulisan akhir
     })
     if absorbed > 0:
         for s2 in order.get("steps", []):
@@ -1358,6 +1361,7 @@ async def receive_step(mko_id: str, seq: int, data: Dict[str, Any], *,
                                              {"$set": upd, "$unset": {"saga_lock": ""}})
     if res.matched_count != 1:
         raise HTTPException(status_code=409, detail="Kunci penerimaan sudah dilepas proses lain — muat ulang order.")
+    await _post_step_gl(order, step)
     await _link_staged_receipts(pend, data.get("grn_id") or "", service_bill_id, seq)
     await _release_leftover_reservation(order, actor_name)
     if rq["final"]:   # SPK inspeksi otomatis + tag RFID otomatis (best-effort, seperti jalur PO)
@@ -1712,16 +1716,15 @@ async def _return_material_locked(order: Dict[str, Any], mko_id: str, seq: int, 
     value = remaining_value if left <= 1e-6 else round(remaining_value * qty / remaining_qty, 2) if remaining_qty else 0.0
     part = "" if (not returns and left <= 1e-6) else hashlib.sha1(
         ",".join(sorted(moved["roll_ids"])).encode()).hexdigest()[:12]
-    label = f"{order.get('mko_number')} step{seq}"
-    await gl.reverse_subcon_issue(mko_id=mko_id, step_seq=int(seq), entity_id=order["entity_id"],
-                                  amount=value, label=label, part=part)
+    # PK-18 — jurnal pembalik diterbitkan sesudah retur tersimpan (`_post_step_gl`); `gl_part` = akhiran sumbernya.
     returns.append({"at": now_iso(), "by": actor_name, "reason": reason.strip(), "qty": round(qty, 2),
-                    "rolls": len(moved["roll_ids"]), "roll_ids": moved["roll_ids"], "value": value,
+                    "rolls": len(moved["roll_ids"]), "roll_ids": moved["roll_ids"], "value": value, "gl_part": part,
                     "split": moved.get("split") or [], "failed_partial_roll_ids": moved.get("failed") or [],
                     "ignored_roll_ids": sorted(set(whole) - set(moved["roll_ids"]))})
     step["material_returns"] = returns
     step["material_value_open"] = round(remaining_value - value, 2)   # nilai bahan yang MASIH di mitra
     step["returned_qty"] = round(sum(float(r.get("qty") or 0) for r in returns), 2)
+    step["gl_status"] = "pending"
     if left <= 1e-6:
         step.update({"status": "returned", "awaiting_return": False, "returned_at": now_iso(),
                      "return_reason": reason.strip(), "returned_by": actor_name})
@@ -1731,6 +1734,7 @@ async def _return_material_locked(order: Dict[str, Any], mko_id: str, seq: int, 
         + (f" · sisa {round(left, 2)} masih di mitra" if left > 1e-6 else "") + f" — {reason.strip()}")
     order["updated_at"] = now_iso()
     await db.makloon_orders.replace_one({"id": mko_id}, order)
+    await _post_step_gl(order, step)
     return safe_doc(order)
 
 

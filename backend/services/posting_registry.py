@@ -14,13 +14,14 @@ koleksi, saringan "jurnal gagal", nomor, nominal, dan jalur ulang tiap jenis (`0
   retry            `async retry(doc, actor) -> None` — menerbitkan jurnal yang kurang TEPAT SEKALI: semua fungsi
                    `post_*` yang dipanggil memeriksa `_already_posted`, jadi ulang tidak menggandakan jurnal. Gagal lagi →
                    melempar (router: 409 "Posting masih gagal: …", penanda galat diperbarui `post_durable`)
+  per_step         (opsional) satu baris panel per unsur `steps[]` yang gagal; id baris = `<id dokumen>:<seq>`
+  link             (opsional) tujuan tautan tetap bila jenis dokumennya tidak ada di `DOC_TYPES`
 
 `KINDS` sengaja berupa literal: penjaga statik membacanya tanpa mengimpor aplikasi. Jenis dari PK-05 (`contra_bon`),
 PK-06 (`interco_*`) dan PK-30 (`interco_adj`) dipindahkan dari `routers/posting_failures.py` apa adanya.
 """
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
 
-from core_utils import now_iso
 from db import db
 
 #: Jenis lama yang nominalnya diambil dari field pertama yang terisi (perilaku panel sebelum PK-18).
@@ -67,10 +68,10 @@ async def _retry_goods_receipt(doc: Dict[str, Any], actor: Dict[str, Any]) -> No
 
 
 async def _retry_shipment(doc: Dict[str, Any], actor: Dict[str, Any]) -> None:
+    """PK-18 (GL-12) — `posted` hanya bila jurnal pendapatan surat jalan (`shipment_revenue`) memang ada."""
     from services import gl_service as gl
-    await gl.post_order_revenue_and_cogs(doc["order_id"])
-    await db.shipments.update_one({"id": doc["id"]}, {"$set": {"gl_status": "posted", "gl_error": "",
-                                                               "updated_at": now_iso()}})
+    await gl.post_durable("shipments", doc["id"], lambda: gl.post_order_revenue_and_cogs(doc["order_id"]),
+                          source_type="shipment_revenue", source_id=doc["id"], raise_on_fail=True)
 
 
 async def _retry_contra_bon(doc: Dict[str, Any], actor: Dict[str, Any]) -> None:
@@ -96,6 +97,149 @@ async def _retry_interco_return(doc: Dict[str, Any], actor: Dict[str, Any]) -> N
 async def _retry_interco_settlement(doc: Dict[str, Any], actor: Dict[str, Any]) -> None:
     from services.interco_service import repost_settlement_gl
     _gagal_dari(await repost_settlement_gl(doc["id"], actor["name"]))
+
+
+# ── PK-18 — resep posting yang memanggil BEBERAPA fungsi `post_*` (dipakai aksi dokumen DAN ulang) ─────────────────────
+def step_of(order: Dict[str, Any], seq: int) -> Dict[str, Any]:
+    return next((s for s in order.get("steps") or [] if int(s.get("seq") or 0) == int(seq)), {})
+
+
+def _moves(step: Dict[str, Any]) -> bool:
+    return str(step.get("material_flow") or "moves") != "service_only"
+
+
+def makloon_step_source(order: Dict[str, Any], seq: int) -> tuple:
+    """(source_type, source_id) jurnal UTAMA langkah makloon menurut keadaannya — untuk `post_durable`."""
+    step, src = step_of(order, seq), f"{order['id']}:{seq}"
+    rets = step.get("material_returns") or []
+    if rets:
+        part = rets[-1].get("gl_part") or ""
+        return "subcon_issue_reversal", src + (f":{part}" if part else "")
+    if step.get("status") == "received":
+        return ("subcon_receipt", src) if _moves(step) else ("subcon_service", step.get("service_bill_id") or "")
+    return "subcon_issue", src
+
+
+def makloon_step_amount(step: Dict[str, Any]) -> float:
+    if step.get("status") == "received":
+        if _moves(step):
+            return round(float(step.get("output_value") or 0) + float(step.get("byproduct_value") or 0), 2)
+        return round(float(step.get("service_value") or 0), 2)
+    return round(float(step.get("material_value") or 0), 2)
+
+
+async def post_makloon_step(order: Dict[str, Any], seq: int) -> None:
+    """Semua jurnal langkah `seq` dari nilai yang TERSIMPAN di langkahnya: kirim bahan (Dr 1-1350 / Cr 1-1300 sebesar
+    `material_value`), jasa (tagihan `service_bill_id`), terima hasil (Dr 1-1300 / Cr 1-1350 sebesar output + sisa),
+    retur bahan (pembalik per retur, `gl_part`). Tiap fungsi idempoten → yang sudah terbit tidak diterbitkan lagi."""
+    from services import gl_service as gl
+    step = step_of(order, seq)
+    mko, eid = order["id"], order.get("entity_id", "")
+    label = f"{order.get('mko_number')} step{seq}"
+    if _moves(step) and step.get("status") in ("issued", "received", "returned"):
+        await gl.post_subcon_issue(mko_id=mko, step_seq=int(seq), entity_id=eid,
+                                   amount=float(step.get("material_value") or 0), label=label)
+    if step.get("service_bill_id"):
+        bill = await db.vendor_bills.find_one({"id": step["service_bill_id"]}, {"_id": 0}) or {}
+        if bill:
+            await gl.post_subcon_service(
+                bill_id=bill["id"], mko_id=mko, step_seq=int(seq), entity_id=eid,
+                net_amount=float(bill.get("net_amount") or 0), ppn=float(bill.get("ppn_amount") or 0),
+                grand_total=float(bill.get("grand_total") or 0), makloon_name=step.get("makloon_name") or "",
+                label=label)
+    if _moves(step) and step.get("status") == "received":
+        await gl.post_subcon_receipt(mko_id=mko, step_seq=int(seq), entity_id=eid,
+                                     amount=makloon_step_amount(step), label=label)
+    for ret in step.get("material_returns") or []:
+        await gl.reverse_subcon_issue(mko_id=mko, step_seq=int(seq), entity_id=eid,
+                                      amount=float(ret.get("value") or 0), label=label, part=ret.get("gl_part") or "")
+
+
+async def durable_makloon_step(order: Dict[str, Any], seq: int, *, raise_on_fail: bool = False) -> Dict[str, Any]:
+    """Pintu tahan-gagal satu langkah makloon: hasil ditulis ke `steps.$.gl_status` langkah itu."""
+    from services import gl_service as gl
+    st, sid = makloon_step_source(order, seq)
+    return await gl.post_durable("makloon_orders", order["id"], lambda: post_makloon_step(order, seq),
+                                 source_type=st, source_id=sid, field="steps.$.gl_status",
+                                 match={"steps.seq": int(seq)}, raise_on_fail=raise_on_fail)
+
+
+async def _receipt_cash_ids(receipt_id: str) -> List[str]:
+    return [c["id"] async for c in db.cash_transactions.find(
+        {"ref_type": "ar_receipt", "ref_id": receipt_id}, {"_id": 0, "id": 1}).sort("id", 1)]
+
+
+async def post_receipt_void(receipt: Dict[str, Any], created_by: str = "system") -> Optional[Dict[str, Any]]:
+    """Pembalik kwitansi yang dibatalkan: jurnal pembalik tiap kas kwitansi, lalu pembalik reklas deposit. → jurnal
+    pembalik pertama (termasuk pembalik yang SUDAH ada, mis. dibalik manual lebih dulu — PK-10)."""
+    from services import gl_service as gl
+    label = f"void {receipt.get('number', '')}"
+    hasil = [await gl.post_cash_void(cid, label=label, created_by=created_by)
+             for cid in await _receipt_cash_ids(receipt["id"])]
+    hasil.append(await gl.reverse_deposit_only_receipt(receipt["id"], label=label, created_by=created_by))
+    return next((je for je in hasil if isinstance(je, dict) and je.get("id")), None)
+
+
+async def durable_receipt_void(receipt: Dict[str, Any], created_by: str = "system", *,
+                               raise_on_fail: bool = False) -> Dict[str, Any]:
+    from services import gl_service as gl
+    kas = await _receipt_cash_ids(receipt["id"])
+    st, sid = ("cash_transaction_void", kas[0]) if kas else ("ar_receipt_deposit_void", receipt["id"])
+    return await gl.post_durable("ar_receipts", receipt["id"], lambda: post_receipt_void(receipt, created_by),
+                                 source_type=st, source_id=sid, field="void_gl_status", raise_on_fail=raise_on_fail)
+
+
+async def _retry_vendor_bill(doc: Dict[str, Any], actor: Dict[str, Any]) -> None:
+    from services import gl_service as gl
+    await gl.post_durable("vendor_bills", doc["id"], lambda: gl.post_vendor_bill(doc), source_type="vendor_bill",
+                          source_id=doc["id"], raise_on_fail=True)
+
+
+async def _retry_landed_cost(doc: Dict[str, Any], actor: Dict[str, Any]) -> None:
+    from services import gl_service as gl
+    if doc.get("allocated_total") is None:
+        raise RuntimeError("Nominal kapitalisasi voucher tidak tersimpan — tidak bisa diulang otomatis.")
+    await gl.post_durable("landed_cost_vouchers", doc["id"],
+                          lambda: gl.post_landed_cost(doc, amount=float(doc["allocated_total"]),
+                                                      label=doc.get("voucher_number") or doc["id"]),
+                          source_type="landed_cost", source_id=doc["id"], raise_on_fail=True)
+
+
+async def _retry_makloon_step(doc: Dict[str, Any], actor: Dict[str, Any]) -> None:
+    seq = int(str(doc["_baris"]).rsplit(":", 1)[1])
+    await durable_makloon_step(doc, seq, raise_on_fail=True)
+
+
+async def _retry_cut_waste(doc: Dict[str, Any], actor: Dict[str, Any]) -> None:
+    from services import gl_service as gl
+    sid = doc.get("gl_source_id") or f"cutw:{doc['id'].removeprefix('mov_cutw_')}"
+    await gl.post_durable("inventory_movements", doc["id"],
+                          lambda: gl.post_inventory_writeoff(
+                              roll_id=doc.get("roll_id") or "", entity_id=doc.get("owner_entity_id") or "",
+                              amount=float(doc.get("gl_amount") or 0), reason=doc.get("gl_reason") or "",
+                              label=doc.get("gl_label") or "", source_id=sid),
+                          source_type="inventory_writeoff", source_id=sid, raise_on_fail=True)
+
+
+async def _retry_receipt_void(doc: Dict[str, Any], actor: Dict[str, Any]) -> None:
+    await durable_receipt_void(doc, actor.get("name", "system"), raise_on_fail=True)
+
+
+async def _retry_fixed_asset(doc: Dict[str, Any], actor: Dict[str, Any]) -> None:
+    from services.fixed_asset_service import post_acquisition_gl
+    await post_acquisition_gl(doc, raise_on_fail=True)
+
+
+async def _retry_credit_note(doc: Dict[str, Any], actor: Dict[str, Any]) -> None:
+    ret = await db.sales_returns.find_one({"id": doc.get("return_id")}, {"_id": 0})
+    if not ret:
+        raise RuntimeError("Retur asal nota kredit tidak ditemukan.")
+    if doc.get("settlement_id"):
+        from services.return_roll_settlement_service import post_settlement_gl
+        await post_settlement_gl(ret, doc, raise_on_fail=True)
+    else:
+        from services.return_service import _post_cn_gl
+        await _post_cn_gl(ret, doc, raise_on_fail=True)
 
 
 # ── Registri ─────────────────────────────────────────────────────────────────────────────────────────────────────────
@@ -163,6 +307,48 @@ KINDS: Dict[str, Dict[str, Any]] = {
         "amount_field": "length_adjustment.delta_total", "amount_abs": True, "status_field": "gl_status_adj",
         "error_field": "gl_error_adj", "failed_at_field": "updated_at", "doc_type": "interco_transaction",
         "posters": (), "retry": _retry_interco_adj},
+    # ── PK-18 — jenis baru (baris 6–12 tabel spesifikasi) ──
+    "credit_note": {
+        "label": "Nota Kredit", "collection": "credit_notes", "failed_query": {"gl_status": "failed"},
+        "entity_field": "entity_id", "number_field": "number", "amount_field": "gross_amount",
+        "status_field": "gl_status", "error_field": "gl_error", "failed_at_field": "gl_failed_at",
+        "doc_type": "credit_note", "posters": ("post_sales_return", "post_sales_return_settlement"),
+        "retry": _retry_credit_note},
+    "vendor_bill": {
+        "label": "Faktur Pemasok", "collection": "vendor_bills", "failed_query": {"gl_status": "failed"},
+        "entity_field": "entity_id", "number_field": "bill_number", "amount_field": "grand_total",
+        "status_field": "gl_status", "error_field": "gl_error", "failed_at_field": "gl_failed_at",
+        "doc_type": "vendor_bill", "posters": ("post_vendor_bill",), "retry": _retry_vendor_bill},
+    "landed_cost": {
+        "label": "Landed Cost", "collection": "landed_cost_vouchers", "failed_query": {"gl_status": "failed"},
+        "entity_field": "entity_id", "number_field": "voucher_number", "amount_field": "allocated_total",
+        "status_field": "gl_status", "error_field": "gl_error", "failed_at_field": "gl_failed_at",
+        "doc_type": "landed_cost", "posters": ("post_landed_cost",), "retry": _retry_landed_cost},
+    "makloon_step": {
+        "label": "Langkah Makloon", "collection": "makloon_orders", "failed_query": {"steps.gl_status": "failed"},
+        "entity_field": "entity_id", "number_field": "mko_number", "amount_field": "steps",
+        "status_field": "steps.$.gl_status", "error_field": "gl_error", "failed_at_field": "updated_at",
+        "doc_type": "makloon_order", "per_step": True,
+        "posters": ("post_subcon_issue", "post_subcon_service", "post_subcon_receipt", "reverse_subcon_issue"),
+        "retry": _retry_makloon_step},
+    "cut_waste": {
+        "label": "Susut Potong", "collection": "inventory_movements",
+        "failed_query": {"movement_type": "cut_waste", "gl_status": "failed"}, "entity_field": "owner_entity_id",
+        "number_field": "gl_label", "amount_field": "gl_amount", "status_field": "gl_status",
+        "error_field": "gl_error", "failed_at_field": "gl_failed_at", "doc_type": "",
+        "posters": ("post_inventory_writeoff",), "retry": _retry_cut_waste},
+    "ar_receipt_void": {
+        "label": "Pembatalan Kwitansi", "collection": "ar_receipts", "failed_query": {"void_gl_status": "failed"},
+        "entity_field": "entity_id", "number_field": "number", "amount_field": "amount",
+        "status_field": "void_gl_status", "error_field": "void_gl_error", "failed_at_field": "void_gl_failed_at",
+        "doc_type": "ar_receipt", "posters": ("post_cash_void", "reverse_deposit_only_receipt"),
+        "retry": _retry_receipt_void},
+    "fixed_asset": {
+        "label": "Aset Tetap", "collection": "fin_fixed_assets", "failed_query": {"gl_status": "failed"},
+        "entity_field": "entity_id", "number_field": "number", "amount_field": "acquisition_cost",
+        "status_field": "gl_status", "error_field": "gl_error", "failed_at_field": "gl_failed_at",
+        "doc_type": "", "link": {"view": "fixed-assets", "tab": "", "focus_type": "fixed_asset"},
+        "posters": ("post_asset_acquisition",), "retry": _retry_fixed_asset},
 }
 
 LABELS: Dict[str, str] = {k: v["label"] for k, v in KINDS.items()}
@@ -182,19 +368,47 @@ def _amount(spec: Dict[str, Any], doc: Dict[str, Any]) -> float:
     return 0.0
 
 
-def row_of(kind: str, doc: Dict[str, Any]) -> Dict[str, Any]:
-    """Satu baris panel untuk dokumen gagal `doc` jenis `kind` (`02` L8: `link` = tujuan tautan dokumennya)."""
-    spec = KINDS[kind]
+def _link(spec: Dict[str, Any], doc: Dict[str, Any], number: str) -> Dict[str, Any]:
     from services import doc_refs_service as _refs
-    number = pick(doc, spec["number_field"]) or doc.get("number") or doc["id"]
-    link = _refs.link_of(spec["doc_type"], doc) if spec.get("doc_type") in _refs.DOC_TYPES else {}
-    if link:
+    if spec.get("doc_type") in _refs.DOC_TYPES:
+        link = _refs.link_of(spec["doc_type"], doc)
         link["number"] = link.get("number") or number
-    return {"kind": kind, "kind_label": spec["label"], "id": doc["id"], "number": number,
-            "entity_id": pick(doc, spec["entity_field"]) or "", "amount": _amount(spec, doc),
-            "error": pick(doc, spec["error_field"]) or doc.get("gl_error") or "",
-            "failed_at": pick(doc, spec["failed_at_field"]) or doc.get("updated_at") or doc.get("created_at") or "",
-            "updated_at": doc.get("updated_at") or doc.get("created_at") or "", "link": link}
+        return link
+    if spec.get("link"):
+        return {**spec["link"], "focus_id": doc["id"], "number": number}
+    return {}
+
+
+def rows_of(kind: str, doc: Dict[str, Any]) -> List[Dict[str, Any]]:
+    """Baris panel untuk dokumen gagal `doc` jenis `kind` (`02` L8: `link` = tujuan tautan dokumennya). Jenis
+    `per_step`: satu baris per langkah yang gagal, id baris `<id dokumen>:<seq>`."""
+    spec = KINDS[kind]
+    number = pick(doc, spec["number_field"]) or doc.get("number") or doc["id"]
+    base = {"kind": kind, "kind_label": spec["label"], "entity_id": pick(doc, spec["entity_field"]) or "",
+            "updated_at": doc.get("updated_at") or doc.get("created_at") or "", "link": _link(spec, doc, number)}
+    if spec.get("per_step"):
+        return [{**base, "id": f"{doc['id']}:{st.get('seq')}", "number": f"{number} · langkah {st.get('seq')}",
+                 "amount": makloon_step_amount(st), "error": st.get("gl_error") or "",
+                 "failed_at": st.get("gl_failed_at") or base["updated_at"]}
+                for st in doc.get("steps") or [] if st.get("gl_status") == "failed"]
+    return [{**base, "id": doc["id"], "number": number, "amount": _amount(spec, doc),
+             "error": pick(doc, spec["error_field"]) or doc.get("gl_error") or "",
+             "failed_at": pick(doc, spec["failed_at_field"]) or base["updated_at"]}]
+
+
+def lookup(kind: str, row_id: str) -> Dict[str, Any]:
+    """Saringan dokumen untuk id baris panel (jenis `per_step`: `<id>:<seq>` → langkah itu yang gagal)."""
+    if KINDS[kind].get("per_step"):
+        doc_id, _, seq = str(row_id).rpartition(":")
+        if not doc_id or not seq.isdigit():
+            return {"id": "__tidak_ada__"}
+        return {"id": doc_id, "steps": {"$elemMatch": {"seq": int(seq), "gl_status": "failed"}}}
+    return {"id": row_id}
+
+
+def count_pipeline(kind: str, query: Dict[str, Any]) -> List[Dict[str, Any]]:
+    """Hitungan baris (bukan dokumen) untuk jenis `per_step`."""
+    return [{"$match": query}, {"$unwind": "$steps"}, {"$match": {"steps.gl_status": "failed"}}, {"$count": "n"}]
 
 
 def sort_spec(kind: str) -> List[tuple]:
@@ -206,8 +420,11 @@ def sort_key(kind: str, doc: Dict[str, Any]) -> tuple:
     return (str(pick(doc, KINDS[kind]["failed_at_field"]) or ""), str(doc.get("id") or ""))
 
 
-def status_of(kind: str, doc: Dict[str, Any]) -> Dict[str, Any]:
+def status_of(kind: str, doc: Dict[str, Any], row_id: str = "") -> Dict[str, Any]:
     spec = KINDS[kind]
-    st = spec["status_field"]
-    jfield = st[:-len("gl_status")] + "journal_entry_id" if st.endswith("gl_status") else "journal_entry_id"
-    return {"gl_status": pick(doc, st), "journal_entry_id": pick(doc, jfield) or ""}
+    if spec.get("per_step"):
+        st = step_of(doc, int(str(row_id).rpartition(":")[2] or 0))
+        return {"gl_status": st.get("gl_status"), "journal_entry_id": st.get("journal_entry_id") or ""}
+    f = spec["status_field"]
+    jfield = f[:-len("gl_status")] + "journal_entry_id" if f.endswith("gl_status") else "journal_entry_id"
+    return {"gl_status": pick(doc, f), "journal_entry_id": pick(doc, jfield) or ""}

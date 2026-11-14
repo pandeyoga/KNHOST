@@ -737,22 +737,30 @@ async def _finish_cut(parent: Dict[str, Any], op: Dict[str, Any],
             "lot": parent.get("lot", ""), "source_document": rsv["ref"]["id"], "timestamp": now_iso()}
     moves = [{**base, "id": f"mov_cut_{op['op']}", "movement_type": "roll_cut", "quantity": 0,
               "roll_id": child["id"], "parent_roll_id": roll_id, "qty_rolls": 1, "cut": cut}]
+    waste_gl: Optional[Dict[str, Any]] = None
     if waste > 0:
+        # PK-18 — nominal & sumber jurnal susut disimpan di baris mutasinya (ulang posting memakai angka yang sama).
+        uc = float(parent.get("base_unit_cost") or parent.get("unit_cost") or 0)
         moves.append({**base, "id": f"mov_cutw_{op['op']}", "movement_type": "cut_waste", "quantity": -waste,
-                      "roll_id": roll_id, "qty_rolls": None})
+                      "roll_id": roll_id, "qty_rolls": None, "gl_status": "pending",
+                      "gl_amount": round(waste * uc, 2), "gl_source_id": f"cutw:{op['op']}",
+                      "gl_reason": f"susut potong {waste:g} {parent.get('unit', '')}".strip(),
+                      "gl_label": f"{parent.get('roll_no') or roll_id} potong {op['op']}"})
     for mv in moves:
         await db.inventory_movements.update_one({"id": mv["id"]}, {"$setOnInsert": mv}, upsert=True)
     if waste > 0:
         # FIX-3b (CUT-2) — susut = persediaan yang hilang → jurnal write-off (idempoten per operasi potong).
-        try:
-            from services import gl_service as _gl
-            uc = float(parent.get("base_unit_cost") or parent.get("unit_cost") or 0)
-            await _gl.post_inventory_writeoff(
-                roll_id=roll_id, entity_id=parent.get("owner_entity_id") or "", amount=round(waste * uc, 2),
-                reason=f"susut potong {waste:g} {parent.get('unit', '')}".strip(),
-                label=f"{parent.get('roll_no') or roll_id} potong {op['op']}", source_id=f"cutw:{op['op']}")
-        except Exception as exc:  # noqa: BLE001 — stok sudah benar; jurnal dicatat ulang lewat sapuan posting gagal
-            logger.warning("[FIX-3b] jurnal susut potong %s gagal: %s", op["op"], exc)
+        # PK-18 (IV-04) — lewat pintu tahan-gagal: stok sudah benar, jurnal gagal tercatat di baris mutasi `cut_waste`
+        # (`gl_status`) dan tampil di Posting Gagal (dulu hanya ditulis ke log).
+        from services import gl_service as _gl
+        mv = await db.inventory_movements.find_one({"id": f"mov_cutw_{op['op']}"}, {"_id": 0}) or moves[-1]
+        waste_gl = await _gl.post_durable(
+            "inventory_movements", mv["id"],
+            lambda: _gl.post_inventory_writeoff(
+                roll_id=roll_id, entity_id=parent.get("owner_entity_id") or "",
+                amount=float(mv.get("gl_amount") or 0), reason=mv.get("gl_reason") or "",
+                label=mv.get("gl_label") or "", source_id=f"cutw:{op['op']}"),
+            source_type="inventory_writeoff", source_id=f"cutw:{op['op']}")
     if (rsv.get("ref") or {}).get("type") == "sales_order":
         # F-05 — sebelum penanda operasi dicabut: gagal di sini → potong dilanjutkan & alokasi tetap ditautkan.
         await relink_cut_allocation(rsv["ref"]["id"], op["op"], parent, child)
@@ -761,7 +769,7 @@ async def _finish_cut(parent: Dict[str, Any], op: Dict[str, Any],
     # Selisih reservasi − aktual kembali bebas di induk (reservasi sudah ditarik utuh).
     await rebuild_balance(parent["product_id"], parent["warehouse_id"], parent["owner_entity_id"])
     upd = upd or await db.inventory_rolls.find_one({"id": roll_id}, {"_id": 0})
-    return {"parent": upd, "child": child, "cut": cut}
+    return {"parent": upd, "child": child, "cut": cut, "waste_gl": waste_gl}
 
 
 def _cut_entry_pos(allocs: List[Dict[str, Any]], reservation_id: str, parent_id: str) -> Optional[Tuple[int, int]]:

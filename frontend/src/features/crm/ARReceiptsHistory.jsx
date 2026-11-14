@@ -13,6 +13,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { Wallet, RefreshCw, Ban, Route, CheckCircle2, AlertTriangle } from "lucide-react";
 import axios, { API } from "../../services/apiClient";
 import ErrorNotice from "../../components/ErrorNotice";
+import JournalStatusBadge from "../../components/JournalStatusBadge";   // PK-18 — jurnal kwitansi / pembaliknya
 import PaginationBar from "../../components/PaginationBar";
 import { SearchBox } from "../../components/ListControls";
 import { usePagedList } from "../../hooks/usePagedList";
@@ -152,11 +153,18 @@ export default function ARReceiptsHistory({ refreshKey, selectedEntity, currentU
                       <td className="text-fs-12 text-kn-text-2">{(r.allocations || []).map((a) => a.order_number).join(", ") || "—"}</td>
                       <td data-testid={`ar-history-variance-${r.id}`}><VarianceCell v={r.variance} /></td>
                       <td>
-                        <span data-testid={`ar-history-status-${r.id}`}
-                          className={`status-pill ${isVoid ? "bg-kn-danger-soft text-kn-danger-text" : "bg-kn-success-soft text-kn-success-text"}`}>
-                          {isVoid ? <Ban size={12} aria-hidden="true" /> : <CheckCircle2 size={12} aria-hidden="true" />}
-                          {isVoid ? "Dibatalkan" : "Tercatat"}
-                        </span>
+                        <div className="flex flex-col items-start gap-1">
+                          <span data-testid={`ar-history-status-${r.id}`}
+                            className={`status-pill ${isVoid ? "bg-kn-danger-soft text-kn-danger-text" : "bg-kn-success-soft text-kn-success-text"}`}>
+                            {isVoid ? <Ban size={12} aria-hidden="true" /> : <CheckCircle2 size={12} aria-hidden="true" />}
+                            {isVoid ? "Dibatalkan" : "Tercatat"}
+                          </span>
+                          {/* PK-18 — kwitansi batal: status jurnal PEMBALIKNYA; selain itu jurnal penerimaannya */}
+                          <JournalStatusBadge testId={`ar-history-journal-${r.id}`}
+                            status={isVoid ? r.void_gl_status : r.gl_status}
+                            error={isVoid ? r.void_gl_error : r.gl_error}
+                            journalEntryId={isVoid ? r.void_journal_entry_id : r.journal_entry_id} />
+                        </div>
                       </td>
                       <td className="col-sticky-end">
                         <div className="flex items-center justify-end gap-1">

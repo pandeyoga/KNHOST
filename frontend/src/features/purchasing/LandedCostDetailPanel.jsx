@@ -6,6 +6,7 @@ import { formatCurrency, formatQty } from "../../utils/formatters";
 import KNSelect from "../../components/KNSelect";
 import { isZeroMetric } from "../../components/ListPageParts";
 import ErrorNotice from "../../components/ErrorNotice";
+import { JournalStatusBar } from "../../components/JournalStatusBadge";   // PK-18 — status jurnal kapitalisasi
 import { usePaymentMethods } from "../../config/paymentMethods";   // PM-T1 — daftar induk cara bayar
 
 /**
@@ -84,6 +85,7 @@ export default function LandedCostDetailPanel({ voucher, canApprove, decideHint 
 
         <div className="p-4 space-y-3">
           <ErrorNotice message={err} onDismiss={() => setErr("")} testId="lc-detail-error" />
+          <JournalStatusBar doc={voucher} testId="lc-journal-status" />
           {/* Financial cards */}
           <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-4">
             <Card label="Total Biaya" value={formatCurrency(fin.total_cost)} testId="lc-fin-total" />

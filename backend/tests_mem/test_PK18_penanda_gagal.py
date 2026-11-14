@@ -25,8 +25,6 @@ JT = 1_000_000
 PENGAJU = "usr_pengaju_pk18"   # pembuat dokumen ≠ admin penyetuju (kontrol dua orang KF-T6)
 ROOT = Path(__file__).resolve().parents[2]
 PANEL = "/api/finance/posting-failures"
-#: Serah-terima (a): pemanggil lama belum dialihkan — uji alur U2–U9 menunggu serah-terima (b) (`00` §8).
-MENUNGGU_B = pytest.mark.xfail(strict=True, reason="GL-02 — pemanggil dialihkan ke post_durable di serah-terima (b)")
 
 
 def uid(awalan: str) -> str:
@@ -114,7 +112,6 @@ async def faktur_gagal(klien, kepala_admin, db):
     return {"id": await _faktur(db, "pending_approval")}
 
 
-@MENUNGGU_B
 async def test_PK18_U2_faktur_akun_nonaktif_jurnal_gagal_terlihat_di_panel(klien, kepala_admin, db, faktur_gagal,
                                                                             paksa_jurnal_gagal):
     bid = faktur_gagal["id"]
@@ -132,7 +129,6 @@ async def test_PK18_U2_faktur_akun_nonaktif_jurnal_gagal_terlihat_di_panel(klien
     assert p["items"][0]["link"]["focus_id"] == bid and p["labels"]["vendor_bill"] == "Faktur Pemasok"
 
 
-@MENUNGGU_B
 async def test_PK18_U3_ulang_dua_kali_tepat_satu_jurnal(klien, kepala_admin, db, faktur_gagal):
     bid = faktur_gagal["id"]
     h0 = await saldo_akun("2-1100", KSC)
@@ -152,7 +148,6 @@ async def test_PK18_U3_ulang_dua_kali_tepat_satu_jurnal(klien, kepala_admin, db,
 
 
 # ── U4 — landed cost ─────────────────────────────────────────────────────────────────────────────────────────────────
-@MENUNGGU_B
 async def test_PK18_U4_landed_cost_gagal_lalu_diulang(klien, kepala_admin, db, paksa_jurnal_gagal):
     pid, wid = await _produk_gudang(db, harga=50_000)
     po = uid("po")
@@ -175,7 +170,6 @@ async def test_PK18_U4_landed_cost_gagal_lalu_diulang(klien, kepala_admin, db, p
 
 
 # ── U5 — langkah makloon ─────────────────────────────────────────────────────────────────────────────────────────────
-@MENUNGGU_B
 async def test_PK18_U5_kirim_bahan_makloon_maju_walau_jurnal_gagal(klien, kepala_admin, db, paksa_jurnal_gagal):
     pid, wid = await _produk_gudang(db, harga=50_000)
     await _roll(db, pid, wid, panjang=50, harga=50_000)        # bahan 50 m × 50.000 = 2.500.000
@@ -204,8 +198,32 @@ async def test_PK18_U5_kirim_bahan_makloon_maju_walau_jurnal_gagal(klien, kepala
     assert (await db.makloon_orders.find_one({"id": mko}))["steps"][0]["gl_status"] == "posted"
 
 
+async def test_PK18_U5b_catat_jasa_makloon_gagal_lalu_diulang(klien, kepala_admin, db, paksa_jurnal_gagal):
+    """Tambahan (bukan baris spesifikasi): langkah jasa murni — tagihan jasa lahir, langkah `received` walau jurnal
+    jasa (Dr 1-1350 / Cr 2-1100) gagal; ulang menerbitkannya sekali dari nilai tagihan yang tersimpan."""
+    pid, wid = await _produk_gudang(db, harga=50_000)
+    mko = uid("mko")
+    await db.makloon_orders.insert_one({
+        "id": mko, "mko_number": f"MKO/PK18/{mko[-6:]}", "entity_id": KSC, "status": "in_progress",
+        "from_warehouse_id": wid, "timeline": [], "steps": [{
+            "seq": 1, "status": "pending", "material_flow": "service_only", "input_product_id": pid,
+            "input_name": "Kain", "input_qty": 10, "input_unit": "meter", "output_product_id": pid,
+            "process_type": "screen", "stage_label": "Screen", "makloon_id": "mitra_pk18", "makloon_name": "Mitra Uji",
+            "issue_ref": f"{mko}:1", "expected_output_qty": 10}]})
+    async with paksa_jurnal_gagal("akun", entity_id=KSC, kode_akun="2-1100"):
+        r = await klien.post(f"/api/makloon-orders/{mko}/record-service", headers=kepala_admin,
+                             json={"step_seq": 1, "tariff": 300_000})
+    assert r.status_code == 200, r.text
+    st = (await db.makloon_orders.find_one({"id": mko}))["steps"][0]
+    assert st["status"] == "received" and st["gl_status"] == "failed" and st["service_bill_id"]
+    assert await jurnal_aktif("subcon_service", st["service_bill_id"]) == []
+    r2 = await ulang(klien, kepala_admin, "makloon_step", f"{mko}:1")
+    assert r2.status_code == 200 and r2.json()["gl_status"] == "posted", r2.text
+    jes = await jurnal_aktif("subcon_service", st["service_bill_id"])
+    assert len(jes) == 1 and baris(jes[0]) == {"1-1350": (300_000.0, 0.0), "2-1100": (0.0, 300_000.0)}
+
+
 # ── U6 — susut potong ────────────────────────────────────────────────────────────────────────────────────────────────
-@MENUNGGU_B
 async def test_PK18_U6_susut_potong_gagal_lalu_diulang(klien, kepala_admin, db, paksa_jurnal_gagal):
     pid, wid = await _produk_gudang(db, harga=20_000)
     rid = await _roll(db, pid, wid, panjang=50, harga=20_000, length_reserved=10, length_reservations=[
@@ -224,7 +242,6 @@ async def test_PK18_U6_susut_potong_gagal_lalu_diulang(klien, kepala_admin, db, 
 
 
 # ── U7 — batal kwitansi ──────────────────────────────────────────────────────────────────────────────────────────────
-@MENUNGGU_B
 async def test_PK18_U7_batal_kwitansi_pembalik_gagal_lalu_diulang(klien, kepala_admin, db, paksa_jurnal_gagal):
     rcp, kas = uid("rcp"), uid("cash")
     await db.ar_receipts.insert_one({
@@ -250,7 +267,6 @@ async def test_PK18_U7_batal_kwitansi_pembalik_gagal_lalu_diulang(klien, kepala_
 
 
 # ── U8 — surat jalan tanpa jurnal → not_required (GL-12) ────────────────────────────────────────────────────────────
-@pytest.mark.xfail(strict=True, reason="GL-12 — surat jalan dialihkan ke post_durable di serah-terima (b)")
 async def test_PK18_U8_surat_jalan_nominal_nol_tidak_ditulis_posted(klien, kepala_admin, db):
     so, shp = uid("so"), uid("shp")
     await db.sales_orders.insert_one({"id": so, "number": f"SO/PK18/{so[-6:]}", "entity_id": KSC, "status": "shipped",
@@ -265,7 +281,6 @@ async def test_PK18_U8_surat_jalan_nominal_nol_tidak_ditulis_posted(klien, kepal
 
 
 # ── U9 — aset tetap ──────────────────────────────────────────────────────────────────────────────────────────────────
-@MENUNGGU_B
 async def test_PK18_U9_aset_tetap_tersimpan_jurnal_gagal_lalu_diulang(klien, kepala_admin, db, paksa_jurnal_gagal):
     async with paksa_jurnal_gagal("akun", entity_id=KSC, kode_akun="1-2100"):
         r = await klien.post("/api/fixed-assets", headers=kepala_admin, json={

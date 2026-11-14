@@ -1272,6 +1272,33 @@ Laporan derived: Neraca Saldo (GET /api/gl/trial-balance) & Buku Besar per-akun
 ⚠️ JANGAN BUAT: journals, general_ledger, gl, jurnal, ledger (sebagai koleksi).
 ```
 
+### Penanda jurnal dokumen (`gl_status` dan kerabatnya) + registri Posting Gagal  [PK-18]
+
+Status jurnal ditulis dari **hasil** posting oleh satu pintu tahan-gagal `gl_service.post_durable(...)` (kas:
+`post_cash_durable`, pembungkus tipisnya). Jenis dokumen yang menjurnal, saringan "gagal", nomor, nominal, dan jalur ulang
+terdaftar di **`backend/services/posting_registry.py::KINDS`** (dibaca `routers/posting_failures.py`; dijaga
+`scripts/guardrails/verify_posting_coverage.py`, INV-POST-01). Tanpa migrasi: dokumen lama tanpa `gl_status` tidak berlencana
+(mencari dokumen lama tanpa jurnal = PK-03).
+
+| Field | Tipe | Arti |
+|---|---|---|
+| `gl_status` | `pending` · `posted` · `failed` · `not_required` | `pending` = efek bisnis sudah ditulis, jurnal belum dicoba (ditulis bersama perubahan status dokumen); `not_required` = fungsi posting sengaja tidak menjurnal (nominal nol, sudah dijurnal jalur lain) |
+| `gl_error` | teks ≤ 300 | galat terakhir; dikosongkan saat `posted`/`not_required` |
+| `gl_failed_at` | ISO | waktu gagal terakhir (urutan panel) |
+| `journal_entry_id` | id `je_…` | jurnal yang terbit (utama) |
+
+| Koleksi | Letak penanda | Tambahan |
+|---|---|---|
+| `credit_notes` | dokumen (dicerminkan ke `sales_returns` untuk nota kredit retur) | — |
+| `vendor_bills` | dokumen | — |
+| `landed_cost_vouchers` | dokumen | **`allocated_total`** (angka, wajib saat `applied`): nominal yang dikapitalisasi — ulang posting memakai angka ini |
+| `makloon_orders` | tiap unsur **`steps[]`** (`steps.$.gl_status`, `…gl_error`, `…gl_failed_at`, `…journal_entry_id`) | `steps[].material_returns[].gl_part` = akhiran `source_id` jurnal pembalik retur bahan |
+| `inventory_movements` | baris `movement_type: cut_waste` | `gl_amount` (susut × biaya roll), `gl_source_id` (`cutw:<op>`), `gl_reason`, `gl_label` |
+| `ar_receipts` | **`void_gl_status`**, `void_gl_error`, `void_gl_failed_at`, `void_journal_entry_id` | status jurnal PEMBALIK saat kwitansi dibatalkan (`gl_status` tetap milik jurnal penerimaan) |
+| `fin_fixed_assets` | dokumen | `acquisition_je` (nomor jurnal perolehan) diisi saat `posted` |
+| `shipments` | dokumen (sudah ada) | `posted` hanya bila jurnal `shipment_revenue` surat jalan itu ada (GL-12); `journal_entry_id` baru |
+| `cash_transactions` | dokumen (sudah ada) | `gl_failed_at` baru |
+
 ### Peta jenis dokumen Jejak Dokumen (`services/doc_refs_service.py::DOC_TYPES`)  [PK-44]
 Bukan koleksi: SATU peta jenis dokumen → koleksi · field nomor · label · tujuan layar (`view` · `tab` · `focus_type` ·
 `focus_from`) · izin modul sumber (`perm`, dipakai penyaring nominal PK-17 `SOURCE_PERMISSION`). Tujuan tautan dibentuk

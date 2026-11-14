@@ -808,9 +808,11 @@ async def post_confirm_cut(roll_id: str, reservation_id: str, payload: CutConfir
         "id", "roll_no", "length_remaining", "status", "reserved_ref", "cut", "rfid_tag_id",
         "product_id", "warehouse_id", "unit", "lot", "grade", "dye_lot")}
     child.update(await roll_service.label_context(out["child"], out["parent"]))  # cetak label anak
+    wg = out.get("waste_gl") or {}   # PK-18 — status jurnal susut potong (lencana / pesan layar)
     return {"parent_roll_id": roll_id, "child": child,
         "parent_length_remaining": out["parent"]["length_remaining"],
-        "parent_length_reserved": out["parent"].get("length_reserved", 0)}
+        "parent_length_reserved": out["parent"].get("length_reserved", 0),
+        **({"waste_gl_status": wg.get("gl_status"), "waste_gl_error": wg.get("gl_error", "")} if wg else {})}
 
 
 class LabelVerifyPayload(BaseModel):

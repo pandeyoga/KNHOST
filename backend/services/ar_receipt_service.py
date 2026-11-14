@@ -670,6 +670,9 @@ async def void_receipt(receipt_id: str, actor: Dict[str, Any], reason: str = "")
         raise HTTPException(status_code=404, detail="Receipt tidak ditemukan")
     if r.get("status") == "void":
         raise HTTPException(status_code=409, detail="Receipt sudah di-void")
+    # PK-18 — PERIKSA periode buku hari ini (tanggal jurnal pembalik) sebelum apa pun dibalik (`02` §1 P2).
+    from services.book_date import periksa_periode_dokumen_409
+    await periksa_periode_dokumen_409(r.get("entity_id") or "", None, jenis="pembatalan kwitansi")
 
     # INV-ATOMIC-01 (T-01 Opsi B) — klaim kwitansi SEBELUM payments SO / kas / deposit dibalik:
     # dua void bersamaan (tombol ganda / layar lain) tidak boleh membalik uang dua kali.
@@ -761,33 +764,17 @@ async def void_receipt(receipt_id: str, actor: Dict[str, Any], reason: str = "")
         except Exception as exc:  # noqa: BLE001
             logger.warning("[void_receipt] efek samping gagal diabaikan: %s", exc)  # KN-C10
 
-    # 2) Void cash_transaction terkait (saldo kas tak lagi menghitungnya) + jurnal PEMBALIK
-    #    supaya buku besar ikut kembali (Dr Piutang / Cr Kas), bukan hanya buku kas.
-    _cash_ids = [c["id"] async for c in db.cash_transactions.find(
-        {"ref_type": "ar_receipt", "ref_id": receipt_id, "status": {"$ne": "void"}},
-        {"_id": 0, "id": 1})]
+    # 2) Void cash_transaction terkait (saldo kas tak lagi menghitungnya). Jurnal PEMBALIK (Dr Piutang / Cr Kas) supaya
+    #    buku besar ikut kembali diterbitkan di langkah JURNAL di bawah.
     await db.cash_transactions.update_many(
         {"ref_type": "ar_receipt", "ref_id": receipt_id, "status": {"$ne": "void"}},
         {"$set": {"status": "void", "updated_at": now_iso()}},
     )
-    for _cid in _cash_ids:
-        try:
-            from services import gl_service as _gl
-            await _gl.post_cash_void(_cid, label=f"void {r.get('number', '')}",
-                                     created_by=actor.get("name", "system"))
-        except Exception as exc:  # noqa: BLE001
-            logger.warning("[void_receipt] efek samping gagal diabaikan: %s", exc)  # KN-C10
 
     # 3) Koreksi deposit (balik deposit_delta yang sempat diterapkan; porsi positif sudah ditarik di awal).
     delta = round(float(r.get("deposit_delta", 0) or 0), 2)
     if delta < -EPS:
         await _adjust_deposit(r["customer_id"], -delta)
-    try:   # W2-015 — pembalik reklas deposit (kwitansi murni deposit)
-        from services import gl_service as _gl
-        await _gl.reverse_deposit_only_receipt(receipt_id, label=f"void {r.get('number', '')}",
-                                               created_by=actor.get("name", "system"))
-    except Exception as exc:  # noqa: BLE001
-        logger.error("[void_receipt] pembalik reklas deposit %s gagal: %s", receipt_id, exc)
 
     await db.ar_receipts.update_one(
         {"id": receipt_id},
@@ -796,8 +783,13 @@ async def void_receipt(receipt_id: str, actor: Dict[str, Any], reason: str = "")
                           "updated_at": now_iso(),
                           "variance.needs_decision": False,
                           "variance.resolved": True,
+                          "void_gl_status": "pending",   # PK-18 — efek ditulis, jurnal pembalik belum dicoba
                           "reversed_orders": reversed_orders}),
     )
+    # JURNAL — PK-18 (GL-02): pembalik tiap kas kwitansi lalu pembalik reklas deposit (W2-015) lewat pintu tahan-gagal;
+    # hasilnya `void_gl_status`/`void_gl_error` (dulu galat hanya ditulis ke log). Ulang: panel Posting Gagal.
+    from services import posting_registry as _preg
+    await _preg.durable_receipt_void(r, actor.get("name", "system"))
     return safe_doc(await db.ar_receipts.find_one({"id": receipt_id}, {"_id": 0}))
 
 

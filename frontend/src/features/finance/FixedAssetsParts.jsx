@@ -17,6 +17,7 @@ import { parseDecimal } from "../../utils/decimalInput";
 import KNSelect from "../../components/KNSelect";
 import FormModal from "../../components/FormModal";
 import DetailModal from "../../components/DetailModal";
+import JournalStatusBadge, { JournalStatusBar, hasJournalBadge } from "../../components/JournalStatusBadge";   // PK-18
 
 // PK-42 (UX-18) — satu pemformat tanggal WIB bersama ("23 Okt 2026"); dulu zona perangkat & tahun dua angka.
 export const fmtDate = (s) => formatDate(s);
@@ -35,7 +36,13 @@ const STATUS_MAP = {
 export function AssetStatusPill({ asset }) {
   const [cls, label] = STATUS_MAP[asset?.status] || STATUS_MAP.active;
   return (
-    <span className={`status-pill ${cls}`} data-testid={`asset-status-${asset?.id}`}>{label}</span>
+    <span className="inline-flex flex-col items-center gap-1">
+      <span className={`status-pill ${cls}`} data-testid={`asset-status-${asset?.id}`}>{label}</span>
+      {/* PK-18 — jurnal perolehan yang gagal/diproses tampil di daftar; yang terbit cukup di rincian */}
+      {["failed", "pending"].includes(asset?.gl_status) && (
+        <JournalStatusBadge status={asset.gl_status} error={asset.gl_error} testId={`asset-journal-${asset?.id}`} />
+      )}
+    </span>
   );
 }
 
@@ -205,6 +212,9 @@ export function ScheduleDialog({ asset, loading, onClose }) {
           </div>
           <button data-testid="schedule-close-btn" className="icon-button" onClick={onClose} aria-label="Tutup"><X size={15} /></button>
         </div>
+        {hasJournalBadge(asset?.gl_status) && (   /* PK-18 — jurnal perolehan, di bilahnya sendiri */
+          <div className="mb-2"><JournalStatusBar doc={asset} testId="schedule-journal-status" /></div>
+        )}
 
         {asset?.disposal && (
           <div className="notice-bar success mb-2" data-testid="schedule-disposal-info">

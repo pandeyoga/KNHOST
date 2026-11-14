@@ -17,10 +17,6 @@
    "pemilik": "PK-19",
    "alasan": "keputusan selisih bayar sisi hutang"
   },
-  "post_asset_acquisition": {
-   "pemilik": "PK-18 (b)",
-   "alasan": "jenis registri lahir di serah-terima (b)"
-  },
   "post_asset_disposal": {
    "pemilik": "PK-23",
    "alasan": "pelepasan aset"
@@ -28,10 +24,6 @@
   "post_bank_holding_allocation": {
    "pemilik": "PK-20",
    "alasan": "alokasi titipan bank (PK-15 memberi penanda di baris mutasi)"
-  },
-  "post_cash_void": {
-   "pemilik": "PK-18 (b)",
-   "alasan": "jenis registri lahir di serah-terima (b)"
   },
   "post_cycle_count_variance": {
    "pemilik": "belum ada",
@@ -52,14 +44,6 @@
   "post_intercompany_transfer": {
    "pemilik": "belum ada",
    "alasan": "pindah kepemilikan roll retur antar-PT (sisa IC-09, laporan PK-30)"
-  },
-  "post_inventory_writeoff": {
-   "pemilik": "PK-18 (b)",
-   "alasan": "jenis registri lahir di serah-terima (b)"
-  },
-  "post_landed_cost": {
-   "pemilik": "PK-18 (b)",
-   "alasan": "jenis registri lahir di serah-terima (b)"
   },
   "post_makloon_claim": {
    "pemilik": "belum ada",
@@ -101,14 +85,6 @@
    "pemilik": "belum ada",
    "alasan": "turun grade roll retur"
   },
-  "post_sales_return": {
-   "pemilik": "PK-18 (b)",
-   "alasan": "jenis registri lahir di serah-terima (b)"
-  },
-  "post_sales_return_settlement": {
-   "pemilik": "PK-18 (b)",
-   "alasan": "jenis registri lahir di serah-terima (b)"
-  },
   "post_sample_material_issue": {
    "pemilik": "belum ada",
    "alasan": "bahan sample"
@@ -120,18 +96,6 @@
   "post_store_credit_redemption": {
    "pemilik": "belum ada",
    "alasan": "pemakaian saldo kredit pelanggan"
-  },
-  "post_subcon_issue": {
-   "pemilik": "PK-18 (b)",
-   "alasan": "jenis registri lahir di serah-terima (b)"
-  },
-  "post_subcon_receipt": {
-   "pemilik": "PK-18 (b)",
-   "alasan": "jenis registri lahir di serah-terima (b)"
-  },
-  "post_subcon_service": {
-   "pemilik": "PK-18 (b)",
-   "alasan": "jenis registri lahir di serah-terima (b)"
   },
   "post_subcon_service_unabsorbed": {
    "pemilik": "belum ada",
@@ -149,14 +113,6 @@
    "pemilik": "PK-19",
    "alasan": "keputusan selisih bayar: hapus sisa"
   },
-  "post_vendor_bill": {
-   "pemilik": "PK-18 (b)",
-   "alasan": "jenis registri lahir di serah-terima (b)"
-  },
-  "reverse_deposit_only_receipt": {
-   "pemilik": "PK-18 (b)",
-   "alasan": "jenis registri lahir di serah-terima (b)"
-  },
   "reverse_document": {
    "pemilik": "belum ada",
    "alasan": "pembalik generik jurnal dokumen"
@@ -164,10 +120,6 @@
   "reverse_order_journals": {
    "pemilik": "belum ada",
    "alasan": "pembalik jurnal pesanan batal"
-  },
-  "reverse_subcon_issue": {
-   "pemilik": "PK-18 (b)",
-   "alasan": "jenis registri lahir di serah-terima (b)"
   },
   "reverse_vendor_bill": {
    "pemilik": "belum ada",
@@ -218,13 +170,6 @@
    "alasan": "simulasi pembayaran (jalur uji lama)"
   },
   {
-   "lokasi": "routers/landed_cost.py:approve_landed_cost",
-   "fungsi_gl": "post_landed_cost",
-   "jumlah": 1,
-   "pemilik": "PK-18 (b)",
-   "alasan": "baris 8"
-  },
-  {
    "lokasi": "routers/landed_cost.py:pay_landed_cost",
    "fungsi_gl": "post_cash_transaction",
    "jumlah": 1,
@@ -237,13 +182,6 @@
    "jumlah": 1,
    "pemilik": "belum ada",
    "alasan": "pembalik jurnal pesanan batal"
-  },
-  {
-   "lokasi": "routers/vendor_bills.py:_post_bill",
-   "fungsi_gl": "post_vendor_bill",
-   "jumlah": 1,
-   "pemilik": "PK-18 (b)",
-   "alasan": "baris 7"
   },
   {
    "lokasi": "routers/vendor_bills.py:cancel_vendor_bill",
@@ -314,20 +252,6 @@
    "jumlah": 1,
    "pemilik": "belum ada",
    "alasan": "pembalik reklas uang muka"
-  },
-  {
-   "lokasi": "services/ar_receipt_service.py:void_receipt",
-   "fungsi_gl": "post_cash_void",
-   "jumlah": 1,
-   "pemilik": "PK-18 (b)",
-   "alasan": "baris 11"
-  },
-  {
-   "lokasi": "services/ar_receipt_service.py:void_receipt",
-   "fungsi_gl": "reverse_deposit_only_receipt",
-   "jumlah": 1,
-   "pemilik": "PK-18 (b)",
-   "alasan": "baris 11"
   },
   {
    "lokasi": "services/bank_recon_service.py:_alloc_steps",
@@ -405,13 +329,6 @@
    "jumlah": 1,
    "pemilik": "PK-25",
    "alasan": "kasus keuangan"
-  },
-  {
-   "lokasi": "services/fixed_asset_service.py:create_asset",
-   "fungsi_gl": "post_asset_acquisition",
-   "jumlah": 1,
-   "pemilik": "PK-18 (b)",
-   "alasan": "baris 12"
   },
   {
    "lokasi": "services/fixed_asset_service.py:dispose_asset",
@@ -503,48 +420,6 @@
    "jumlah": 1,
    "pemilik": "belum ada",
    "alasan": "jasa tak terserap (tingkat order)"
-  },
-  {
-   "lokasi": "services/makloon_order_service.py:_return_material_locked",
-   "fungsi_gl": "reverse_subcon_issue",
-   "jumlah": 1,
-   "pemilik": "PK-18 (b)",
-   "alasan": "baris 9"
-  },
-  {
-   "lokasi": "services/makloon_order_service.py:issue_step",
-   "fungsi_gl": "post_subcon_issue",
-   "jumlah": 1,
-   "pemilik": "PK-18 (b)",
-   "alasan": "baris 9"
-  },
-  {
-   "lokasi": "services/makloon_order_service.py:receive_step",
-   "fungsi_gl": "post_subcon_receipt",
-   "jumlah": 1,
-   "pemilik": "PK-18 (b)",
-   "alasan": "baris 9"
-  },
-  {
-   "lokasi": "services/makloon_order_service.py:receive_step",
-   "fungsi_gl": "post_subcon_service",
-   "jumlah": 1,
-   "pemilik": "PK-18 (b)",
-   "alasan": "baris 9"
-  },
-  {
-   "lokasi": "services/makloon_order_service.py:record_service_step",
-   "fungsi_gl": "post_subcon_service",
-   "jumlah": 1,
-   "pemilik": "PK-18 (b)",
-   "alasan": "baris 9"
-  },
-  {
-   "lokasi": "services/marketing_cost_service.py:approve_campaign_bill",
-   "fungsi_gl": "post_vendor_bill",
-   "jumlah": 1,
-   "pemilik": "PK-18 (b)",
-   "alasan": "tagihan pemasok kampanye = jenis vendor_bill"
   },
   {
    "lokasi": "services/marketing_cost_service.py:void_cost",
@@ -666,13 +541,6 @@
    "alasan": "turun grade"
   },
   {
-   "lokasi": "services/return_roll_settlement_service.py:_apply",
-   "fungsi_gl": "post_sales_return_settlement",
-   "jumlah": 1,
-   "pemilik": "PK-18 (b)",
-   "alasan": "baris 6"
-  },
-  {
    "lokasi": "services/return_roll_settlement_service.py:reverse_all",
    "fungsi_gl": "reverse_document",
    "jumlah": 1,
@@ -685,13 +553,6 @@
    "jumlah": 1,
    "pemilik": "belum ada",
    "alasan": "retur: transfer antar-PT, scrap, pembalik"
-  },
-  {
-   "lokasi": "services/return_service.py:_post_cn_gl",
-   "fungsi_gl": "post_sales_return",
-   "jumlah": 1,
-   "pemilik": "PK-18 (b)",
-   "alasan": "baris 6"
   },
   {
    "lokasi": "services/return_service.py:release_quarantine",
@@ -720,20 +581,6 @@
    "jumlah": 1,
    "pemilik": "belum ada",
    "alasan": "bahan sample"
-  },
-  {
-   "lokasi": "services/roll_service.py:_finish_cut",
-   "fungsi_gl": "post_inventory_writeoff",
-   "jumlah": 1,
-   "pemilik": "PK-18 (b)",
-   "alasan": "baris 10"
-  },
-  {
-   "lokasi": "services/shipment_service.py:dispatch_task",
-   "fungsi_gl": "post_order_revenue_and_cogs",
-   "jumlah": 1,
-   "pemilik": "PK-18 (b)",
-   "alasan": "baris 5"
   },
   {
    "lokasi": "services/stock_count_roll_service.py:_finish_op",
@@ -828,8 +675,8 @@
   }
  },
  "total": {
-  "fungsi": 43,
-  "panggilan": 93,
+  "fungsi": 31,
+  "panggilan": 78,
   "insert_entry": 12
  }
 }

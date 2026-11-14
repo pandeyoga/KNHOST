@@ -19,6 +19,7 @@ import { can } from "../../config/roles";
 import ErrorNotice from "../../components/ErrorNotice";
 import { usePaymentMethods } from "../../config/paymentMethods";   // PM-T1 — daftar induk cara bayar
 import { isZeroMetric } from "../../components/ListPageParts";
+import { JournalStatusBar } from "../../components/JournalStatusBadge";   // PK-18 — status jurnal tagihan
 
 /**
  * VendorBillDetailPanel (Fase 5.2) — detail bill: 3-way match, keuangan, aksi.
@@ -142,6 +143,7 @@ export default function VendorBillDetailPanel({ bill, canApprove, decideHint = "
 
         <div className="p-4 space-y-3">
           <ErrorNotice message={err} onDismiss={() => setErr("")} testId="vb-detail-error" />
+          <JournalStatusBar doc={bill} testId="vb-journal-status" />
           {warn && <div className="notice-bar warning" data-testid="vb-pay-warning"><span className="text-[12px]">{warn}</span></div>}
           <DocumentActionsBar docType="vendor_bill" sourceId={bill.id} entityId={bill.entity_id}
             number={bill.bill_number} label="Tagihan Pemasok" esignable currentUser={currentUser}

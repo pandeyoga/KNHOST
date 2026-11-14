@@ -23,6 +23,7 @@ import MakloonMaterialLedger from "./makloon/MakloonMaterialLedger";
 import { can } from "../../config/roles";
 import { recordService } from "./makloon/makloonApi";
 import { IssueModal, ReceiveModal, RecordServiceModal } from "./makloon/MkoStepModals";   // Fase 4 · R3 (L-03)
+import { JournalStatusBar, hasJournalBadge } from "../../components/JournalStatusBadge";   // PK-18 — jurnal langkah
 import { MKO_STATUS } from "./mkoStatus";
 import QtyDual from "../../components/QtyDual";      // FASE U — dua satuan
 import useReceivingMode from "../../hooks/useReceivingMode";
@@ -288,6 +289,9 @@ export default function MakloonOrderDetailPanel({ mkoId, currentUser, onBack, on
                         </span>
                       )}
                     </div>
+                  )}
+                  {hasJournalBadge(s.gl_status) && (
+                    <div className="mt-1.5"><JournalStatusBar doc={s} testId={`mko-step-journal-${s.seq}`} /></div>
                   )}
                   <div className="mt-2 grid grid-cols-3 gap-2 text-[11px]">
                     <MiniStat label="Input" node={<QtyDual rolls={s.qty_rolls} measure={s.input_qty} unit={s.input_unit || ""} compact />} />

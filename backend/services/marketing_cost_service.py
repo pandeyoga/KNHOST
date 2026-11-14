@@ -236,8 +236,8 @@ async def approve_campaign_bill(bill: Dict[str, Any], actor: Dict[str, Any]) -> 
     out = await _post_bill(bill["id"], actor, note=f"disetujui oleh {actor.get('role')}")
     await db.notifications.update_many({"ref": f"mkt_bill:{bill['id']}", "read": {"$ne": True}},
                                        {"$set": {"read": True, "read_at": now_iso()}})
-    if not await db.journal_entries.find_one({"source_type": "vendor_bill", "source_id": bill["id"]}, {"_id": 1}):
-        await gl.post_vendor_bill(out)   # _post_bill best-effort → pastikan jurnal ada (idempoten)
+    # PK-18 — `_post_bill` menjurnal lewat `post_durable`: jurnal gagal tercatat di `gl_status` tagihan dan diulang
+    # dari panel Posting Gagal (dulu dicoba sekali lagi di sini tanpa penanda — gagal kedua kali = 500).
     return out
 
 

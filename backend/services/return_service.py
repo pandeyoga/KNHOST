@@ -174,23 +174,23 @@ def _consume_lines(lines: List[List[float]], qty: float) -> float:
     return value
 
 
-async def _post_cn_gl(ret: Dict[str, Any], cn: Dict[str, Any]) -> Dict[str, Any]:
-    """P20 APAR-05 — jurnal nota kredit; gagal → gl_status 'failed' TERLIHAT, settle ulang melanjutkan."""
+async def _post_cn_gl(ret: Dict[str, Any], cn: Dict[str, Any], *, raise_on_fail: bool = False) -> Dict[str, Any]:
+    """P20 APAR-05 — jurnal nota kredit; gagal → gl_status 'failed' TERLIHAT, settle ulang melanjutkan.
+    PK-18 — lewat pintu tahan-gagal `post_durable` (hasil di nota kredit, dicerminkan ke retur); dipakai juga Ulang
+    Posting panel (`raise_on_fail=True`)."""
     is_cash = cn.get("settlement") == "cash"
-    try:
-        je = await gl_service.post_sales_return(
+    jr = await gl_service.post_durable(
+        "credit_notes", cn["id"],
+        lambda: gl_service.post_sales_return(
             ret, return_net=cn["net_amount"], return_ppn=cn["ppn_amount"], return_cogs=cn["cogs_amount"],
             is_cash=is_cash, settlement=cn.get("settlement", ""),
             cash_account_code=cn.get("refund_account_code", "") if is_cash else "",
             ar_part=float(cn.get("ar_applied") or 0) if cn.get("settlement") in ("cash", "store_credit") else 0.0,
-            credit_note_number=cn["number"])
-        je = je or await db.journal_entries.find_one(
-            {"source_type": "sales_return", "source_id": ret["id"], "status": {"$ne": "void"}}, {"_id": 0, "id": 1})
-        upd = {"gl_status": "posted" if je else "not_required", "gl_error": "", "journal_entry_id": (je or {}).get("id", "")}
-    except Exception as exc:  # noqa: BLE001
-        _log.error("jurnal nota kredit %s gagal: %s", cn.get("number"), exc)
-        upd = {"gl_status": "failed", "gl_error": str(exc)[:300]}
-    await db.credit_notes.update_one({"id": cn["id"]}, {"$set": upd})
+            credit_note_number=cn["number"]),
+        source_type="sales_return", source_id=ret["id"], raise_on_fail=raise_on_fail)
+    if jr["gl_status"] == "failed":
+        _log.error("jurnal nota kredit %s gagal: %s", cn.get("number"), jr["gl_error"])
+    upd = {"gl_status": jr["gl_status"], "gl_error": jr["gl_error"], "journal_entry_id": jr["journal_entry_id"]}
     await db.sales_returns.update_one({"id": ret["id"]}, {"$set": upd})
     if upd.get("journal_entry_id"):
         await db.cash_transactions.update_many({"ref_type": "sales_return", "ref_id": ret["id"], "journal_entry_id": {"$in": ["", None]}},
@@ -335,7 +335,7 @@ async def _create_credit_note_and_post_gl(
         "refund_account_code": (refund_account_code or "1-1100") if settlement == "cash" else "",
         "outcome": ret.get("outcome", ""),
         "status": "posted", "created_by": ret.get("settled_by") or ret.get("approved_by", "system"),
-        "created_at": now, "updated_at": now,
+        "created_at": now, "updated_at": now, "gl_status": "pending",   # PK-18 — jurnal belum dicoba
     }
     await db.credit_notes.insert_one(dict(cn))
     await db.sales_returns.update_one(

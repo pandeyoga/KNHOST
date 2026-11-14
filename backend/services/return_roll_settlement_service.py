@@ -313,6 +313,37 @@ async def complete(return_id: str, settlement_id: str, actor: Dict[str, Any]) ->
     return await _apply(return_id, settlement_id, actor)
 
 
+def _settlement_credits(plan: Dict[str, Any]) -> List[Any]:
+    return [(gl_service.ACC_PIUTANG, plan["bill_total"] + plan["ar_rest"], "Pengurang piutang"),
+            (plan["refund_account_code"] or "1-1100", plan["cash_total"], "Refund tunai"),
+            (gl_service.ACC_STORE_CREDIT, plan["saldo_total"], "Saldo kredit pelanggan (store credit)")]
+
+
+async def post_settlement_gl(ret: Dict[str, Any], cn: Dict[str, Any], *, plan: Optional[Dict[str, Any]] = None,
+                             raise_on_fail: bool = False) -> Dict[str, Any]:
+    """PK-18 — jurnal satu penyelesaian per roll lewat `post_durable` (hasil di nota kredit). `plan` kosong = dibaca dari
+    penyelesaian `cn.settlement_id` di retur (Ulang Posting panel). Jurnal terbit → kas refund & saldo pelanggan yang
+    belum bertaut jurnal ditautkan."""
+    sid = cn["settlement_id"]
+    if plan is None:
+        ev = next((e for e in ret.get("settlements") or [] if e.get("id") == sid), None)
+        if not ev:
+            raise RollSettlementError("Penyelesaian nota kredit ini tidak ditemukan di retur.")
+        plan = ev["plan"]
+    jr = await gl_service.post_durable(
+        "credit_notes", cn["id"],
+        lambda: gl_service.post_sales_return_settlement(
+            ret, sid, net=plan["net_amount"], ppn=plan["ppn_amount"], cogs=plan["cogs_amount"],
+            credits=_settlement_credits(plan), label=cn["number"]),
+        source_type="sales_return", source_id=f"{ret['id']}:{sid}", raise_on_fail=raise_on_fail)
+    if jr["journal_entry_id"]:
+        ref_id = f"{ret['id']}:{sid}"
+        await db.cash_transactions.update_many(
+            {"ref_type": "sales_return", "ref_id": ref_id, "journal_entry_id": {"$in": ["", None]}},
+            {"$set": {"journal_entry_id": jr["journal_entry_id"]}})
+    return jr
+
+
 async def _apply(return_id: str, settlement_id: str, actor: Dict[str, Any]) -> Dict[str, Any]:
     from services import atomic_claim as saga
     from services import return_service as rs
@@ -349,7 +380,8 @@ async def _apply(return_id: str, settlement_id: str, actor: Dict[str, Any]) -> D
               "settlement": "per_roll", "split": plan["split"], "bill_scope": "source_order", "ar_applied": 0,
               "excess_amount": round(plan["gross_amount"] - plan["bill_total"], 2),
               "refund_account_code": plan["refund_account_code"], "outcome": "per_roll", "status": "posted",
-              "created_by": actor.get("name", ""), "created_at": now, "updated_at": now}
+              "created_by": actor.get("name", ""), "created_at": now, "updated_at": now,
+              "gl_status": "pending"}   # PK-18 — jurnal belum dicoba
         await db.credit_notes.insert_one(dict(cn))
         try:
             from services import doc_refs_service as _refs
@@ -365,15 +397,10 @@ async def _apply(return_id: str, settlement_id: str, actor: Dict[str, Any]) -> D
             from services import ar_receipt_service as _ar
             await _ar.apply_from_case(ret["order_id"], plan["bill_total"], cn["id"], cn["number"], method="credit_note")
             await db.credit_notes.update_one({"id": cn["id"]}, {"$set": {"ar_applied": plan["bill_total"]}})
-        # 4) Jurnal.
-        credits = [(gl_service.ACC_PIUTANG, plan["bill_total"] + plan["ar_rest"], "Pengurang piutang"),
-                   (plan["refund_account_code"] or "1-1100", plan["cash_total"], "Refund tunai"),
-                   (gl_service.ACC_STORE_CREDIT, plan["saldo_total"], "Saldo kredit pelanggan (store credit)")]
-        je = await gl_service.post_sales_return_settlement(
-            ret, settlement_id, net=plan["net_amount"], ppn=plan["ppn_amount"], cogs=plan["cogs_amount"],
-            credits=credits, label=cn["number"])
-        await db.credit_notes.update_one({"id": cn["id"]}, {"$set": {"gl_status": "posted" if je else "not_required",
-                                                                  "journal_entry_id": (je or {}).get("id", "")}})
+        # 4) Jurnal. PK-18 — lewat pintu tahan-gagal: gagal → `gl_status: failed` di nota kredit, penyelesaian TETAP
+        #    dilanjutkan (stok, tagihan sudah berubah); refund & saldo memakai id jurnal bila ada, ulang menautkannya.
+        jr = await post_settlement_gl(ret, cn, plan=plan)
+        je = {"id": jr["journal_entry_id"]} if jr["journal_entry_id"] else None
         # 5) Refund kas.
         if plan["cash_total"] > 0:
             from services import cash_ledger

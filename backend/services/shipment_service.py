@@ -114,6 +114,7 @@ async def dispatch_task(
             "qty_rolls": (len(res["rolls"]) if res.get("rolls") else None),
             "rolls": res["rolls"], "is_partial": new_status == "partially_shipped",
             "status": "dispatched", "created_by": actor_name, "created_at": now_iso(),
+            "gl_status": "pending",   # PK-18 — surat jalan terbit, jurnal pendapatan & HPP belum dicoba
         }
         await db.wms_tasks.update_one({"id": task["id"]}, {"$set": {
             f"{_saga.LOCK}.operation": {"shipment_id": shipment["id"], "shipment_no": shipment["shipment_no"],
@@ -145,22 +146,15 @@ async def dispatch_task(
         await _p2.on_shipment_dispatched(task["order_id"])
     except Exception as exc:  # noqa: BLE001
         logger.warning("[dispatch_task] efek samping gagal diabaikan: %s", exc)  # KN-C10
-    # F-01 (audit 2026-09-02) — pendapatan & HPP diakui SAAT barang keluar, bukan
-    # menunggu backfill saat restart. Best-effort: kegagalan GL tidak membatalkan
-    # surat jalan yang sudah terbit (dicatat ke log; backfill akan mengulanginya).
-    try:
-        from services import gl_service as _gl
-        await _gl.post_order_revenue_and_cogs(task["order_id"])
-        await db.shipments.update_one({"id": shipment["id"]}, {"$set": {"gl_status": "posted"}})
-        shipment["gl_status"] = "posted"
-    except Exception as exc:  # noqa: BLE001
-        import logging
-        logging.getLogger("shipment").error(
-            "GL pendapatan order %s gagal saat dispatch: %s", task["order_id"], exc)
-        # AX-02 — kegagalan finansial terlihat di surat jalan (backfill/retry idempotent menyusul).
-        await db.shipments.update_one({"id": shipment["id"]}, {"$set": {
-            "gl_status": "failed", "gl_error": str(exc)[:300]}})
-        shipment["gl_status"] = "failed"
+    # F-01 (audit 2026-09-02) — pendapatan & HPP diakui SAAT barang keluar, bukan menunggu backfill saat restart.
+    # Kegagalan GL tidak membatalkan surat jalan yang sudah terbit (AX-02: terlihat di surat jalan). PK-18 (GL-12) —
+    # lewat pintu tahan-gagal: `posted` hanya bila jurnal pendapatan surat jalan (`shipment_revenue`) memang ada;
+    # fungsi posting yang tidak menjurnal (nominal nol / jalur per pesanan lama) → `not_required`.
+    from services import gl_service as _gl
+    jr = await _gl.post_durable("shipments", shipment["id"], lambda: _gl.post_order_revenue_and_cogs(task["order_id"]),
+                                source_type="shipment_revenue", source_id=shipment["id"])
+    shipment.update({"gl_status": jr["gl_status"], "gl_error": jr["gl_error"],
+                     "journal_entry_id": jr["journal_entry_id"]})
     return safe_doc(updated), safe_doc(shipment)
 
 

@@ -401,7 +401,8 @@ async def _post_bill(bill_id: str, actor: Dict[str, Any], note: str = "") -> Dic
     updated = await db.vendor_bills.find_one_and_update(
         {"id": bill_id, "status": {"$in": ["draft", "pending_approval"]}},
         {"$set": {"status": "posted", "approval_status": "approved" if note.startswith("disetujui") else "not_required",
-                  "posted_by": actor.get("name", ""), "posted_at": now_iso(), "updated_at": now_iso()},
+                  "posted_by": actor.get("name", ""), "posted_at": now_iso(), "updated_at": now_iso(),
+                  "gl_status": "pending"},   # PK-18 — efek ditulis, jurnal belum dicoba
          "$push": {"timeline": timeline_entry("posted", "Bill di-posting (AP diakui)", actor.get("name", ""), note)}},
         projection={"_id": 0}, return_document=ReturnDocument.AFTER)
     if not updated:
@@ -429,12 +430,12 @@ async def _post_bill(bill_id: str, actor: Dict[str, Any], note: str = "") -> Dic
     except Exception as exc:  # noqa: BLE001
         import logging
         logging.getLogger(__name__).warning("Gagal tautkan invoice ke roll (bill %s): %s", bill_id, exc)
-    # Gelombang 1 F-5 — posting AP ke GL: Dr GR-IR + PPN Masukan / Cr Hutang (best-effort).
-    try:
-        await gl_service.post_vendor_bill(updated)
-    except Exception as exc:  # noqa: BLE001
-        import logging
-        logging.getLogger(__name__).error("Gagal posting GL vendor bill %s: %s", bill_id, exc)
+    # Gelombang 1 F-5 — posting AP ke GL: Dr GR-IR + PPN Masukan / Cr Hutang. PK-18 (GL-02) — lewat pintu tahan-gagal:
+    # jurnal gagal TIDAK membatalkan tagihan dan tidak 500; `gl_status`/`gl_error` tertulis dan tampil di Posting Gagal.
+    jr = await gl_service.post_durable("vendor_bills", bill_id, lambda: gl_service.post_vendor_bill(updated),
+                                       source_type="vendor_bill", source_id=bill_id)
+    updated.update({"gl_status": jr["gl_status"], "gl_error": jr["gl_error"],
+                    "journal_entry_id": jr["journal_entry_id"]})
     await audit(actor["name"], "vendor_bill_posted", "vendor_bill", bill_id,
                 {"bill_number": updated.get("bill_number"), "grand_total": updated.get("grand_total")})
     return _hydrate(safe_doc(updated))

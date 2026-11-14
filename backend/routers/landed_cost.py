@@ -272,15 +272,23 @@ async def approve_landed_cost(voucher_id: str, request: Request) -> Dict[str, An
                              "approved_by": actor["name"], "approved_at": now_iso(), "applied_at": now_iso(),
                              "effective_basis": alloc["basis"], "allocations": alloc["allocations"],
                              "target_roll_count": alloc["roll_count"],
+                             # PK-18 — nominal yang dikapitalisasi disimpan: ulang posting memakai angka yang sama
+                             "allocated_total": alloc["allocated_total"], "gl_status": "pending",
                              "payment_status": "unpaid", "updated_at": now_iso()}),
          "$push": {"timeline": timeline_entry(
              "applied", "Disetujui & dialokasikan ke HPP roll", actor["name"],
              f"{applied_count} roll · {rupiah(alloc['allocated_total'])} · basis {alloc['basis']}")}},
         projection={"_id": 0}, return_document=ReturnDocument.AFTER)
-    # S#074 (LC-APPLY-GL): kapitalisasi landed cost ke GL (Dr Persediaan / Cr Hutang)
+    # S#074 (LC-APPLY-GL): kapitalisasi landed cost ke GL (Dr Persediaan / Cr Hutang). PK-18 — lewat pintu tahan-gagal:
+    # HPP roll sudah berubah, jadi jurnal gagal tidak membatalkan voucher dan tidak 500 (tampil di Posting Gagal).
     from services import gl_service
-    await gl_service.post_landed_cost(updated, amount=alloc["allocated_total"],
-                                      label=v.get("voucher_number", voucher_id))
+    jr = await gl_service.post_durable(
+        "landed_cost_vouchers", voucher_id,
+        lambda: gl_service.post_landed_cost(updated, amount=alloc["allocated_total"],
+                                            label=v.get("voucher_number", voucher_id)),
+        source_type="landed_cost", source_id=voucher_id)
+    updated.update({"gl_status": jr["gl_status"], "gl_error": jr["gl_error"],
+                    "journal_entry_id": jr["journal_entry_id"]})
     await audit(actor["name"], "landed_cost_applied", "landed_cost", voucher_id, {
         "voucher_number": v.get("voucher_number"), "rolls": applied_count,
         "allocated": alloc["allocated_total"], "basis": alloc["basis"]})

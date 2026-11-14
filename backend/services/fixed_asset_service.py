@@ -120,6 +120,7 @@ async def create_asset(payload: Dict[str, Any], actor: Dict[str, Any]) -> Dict[s
         "last_depreciation_period": "",
         "status": "active",
         "acquisition_je": "",
+        "gl_status": "pending",   # PK-18 — aset tersimpan, jurnal perolehan belum dicoba
         "disposal": None,
         "notes": (payload.get("notes") or "").strip(),
         "created_by": actor.get("name", "system"),
@@ -127,15 +128,28 @@ async def create_asset(payload: Dict[str, Any], actor: Dict[str, Any]) -> Dict[s
         "updated_at": now_iso(),
     }
     await db.fin_fixed_assets.insert_one(dict(doc))
-    # Posting perolehan → GL (Dr aset / Cr sumber dana). GL-safe, idempotent.
-    je = await gl_service.post_asset_acquisition(
-        asset_id=doc["id"], entity_id=entity_id, amount=cost, asset_acc=asset_acc,
-        funding_acc=funding_acc, label=f"{number} {name}".strip(), date=acq_date)
-    if je:
-        doc["acquisition_je"] = je.get("number", "")
-        await db.fin_fixed_assets.update_one(
-            {"id": doc["id"]}, {"$set": {"acquisition_je": doc["acquisition_je"]}})
+    doc.update(await post_acquisition_gl(doc))
     return safe_doc(doc)
+
+
+async def post_acquisition_gl(asset: Dict[str, Any], *, raise_on_fail: bool = False) -> Dict[str, Any]:
+    """Posting perolehan → GL (Dr aset / Cr sumber dana), idempoten. PK-18 (GL-02) — lewat pintu tahan-gagal: jurnal
+    gagal tercatat di `gl_status` aset (dulu 400 sesudah aset tersimpan). Dipakai simpan aset DAN Ulang Posting; akun
+    dan tanggal dari yang tersimpan di aset. Urutan periksa & sumber dana perolehan → PK-23."""
+    jr = await gl_service.post_durable(
+        "fin_fixed_assets", asset["id"],
+        lambda: gl_service.post_asset_acquisition(
+            asset_id=asset["id"], entity_id=asset.get("entity_id") or DEFAULT_ENTITY_ID,
+            amount=float(asset.get("acquisition_cost") or 0), asset_acc=asset.get("gl_account_asset") or DEFAULT_ASSET_ACC,
+            funding_acc=asset.get("funding_account") or gl_service.ACC_KAS_BESAR,
+            label=f"{asset.get('number', '')} {asset.get('name', '')}".strip(), date=asset.get("acquisition_date") or ""),
+        source_type="fixed_asset_acquisition", source_id=asset["id"], raise_on_fail=raise_on_fail)
+    upd = {"gl_status": jr["gl_status"], "gl_error": jr["gl_error"], "journal_entry_id": jr["journal_entry_id"]}
+    if jr["journal_entry_id"]:
+        je = await db.journal_entries.find_one({"id": jr["journal_entry_id"]}, {"_id": 0, "number": 1}) or {}
+        upd["acquisition_je"] = je.get("number", "")
+        await db.fin_fixed_assets.update_one({"id": asset["id"]}, {"$set": {"acquisition_je": upd["acquisition_je"]}})
+    return upd
 
 
 async def update_asset(asset_id: str, patch: Dict[str, Any]) -> Optional[Dict[str, Any]]:
