@@ -8,7 +8,7 @@ from typing import Any, Dict, List
 from fastapi import APIRouter, HTTPException, Request, Query
 from pymongo import ReturnDocument
 from db import db
-from dependencies import require_permission, current_user, audit
+from dependencies import has_permission, require_any_permission, require_permission, audit
 from core_utils import new_id, now_iso, safe_doc, DEFAULT_ENTITY_ID
 from schemas import (
     CustomerReassign, SalesTargetCreate, SalesIncentiveCreate,
@@ -36,8 +36,13 @@ async def list_sales_users(request: Request, entity_id: str = None) -> List[Dict
     menawarkan sales PT Kain Suka Cita — dan target/insentif bisa tertempel pada orang
     dari buku yang salah. Penyaringan memakai `allowed_entity_ids` (mekanisme penugasan
     yang sudah ada) supaya sales ber-penugasan 2 badan usaha tetap muncul di keduanya.
+
+    PR-T3 (S4) — dulu cukup login (Sopir membaca nama & email semua sales). Kini salah satu izin layar pemakainya
+    (pelanggan, pesanan, pengawasan tim sales).
     """
-    await current_user(request)
+    await require_any_permission(request, [("customer", "view"), ("order", "view"), ("sales_force", "view")],
+                                 detail="Anda belum punya akses untuk melihat daftar sales. Minta Admin menambahkan "
+                                        "akses 'Pelanggan & CRM' atau 'Pesanan Penjualan'.")
     ctx = await entity_ctx(request)
     ids = ([entity_id] if entity_id and entity_id != "all"
            else list(ctx.allowed_entity_ids) if (entity_id == "all"
@@ -253,6 +258,22 @@ async def add_followup(customer_id: str, payload: CollectionFollowupCreate, requ
 
 
 # ── Sales KPI / leaderboard / commission ─────────────────────────────────────
+def _sees_other_sales(actor: Dict[str, Any]) -> bool:
+    """KN-E38 — hanya peran pengawas yang boleh melihat KPI/komisi sales lain. Satu tempat untuk `_kpi_scope` dan
+    daftar target/insentif (PR-T3 S3); cakupan data dari sifat peran menggantikannya di PR-T4 (`02_STANDAR.md` Z5)."""
+    role = actor.get("role")
+    return not role_in(role, ("sales",)) and role_in(role, ("admin", "manager", "sales_admin", "finance"))
+
+
+async def _target_sales_filter(actor: Dict[str, Any], sales_id: str = None) -> str:
+    """PR-T3 (S3) — saringan `sales_id` daftar target & skema insentif: pemegang `sales_force.view` dan peran pengawas
+    (`_sees_other_sales`, aturan yang sama dengan KPI/komisi) melihat semua atau sales yang dipilih; selain itu hanya
+    miliknya sendiri. Kosong = tanpa saringan sales."""
+    if await has_permission(actor, "sales_force", "view") or _sees_other_sales(actor):
+        return sales_id or ""
+    return actor["id"]
+
+
 async def _kpi_scope(request: Request, sales_id: str, entity_id: str) -> tuple:
     """Tanya KN F0.4 — izin + validasi entitas untuk KPI/komisi sales."""
     actor = await require_permission(request, "order", "view")
@@ -267,8 +288,7 @@ async def _kpi_scope(request: Request, sales_id: str, entity_id: str) -> tuple:
             raise HTTPException(status_code=403, detail="Tidak berwenang atas entitas ini")
     else:
         entity_id = ctx.active_entity_id
-    if role_in(actor.get("role"), ("sales",)) or not sales_id or \
-            not role_in(actor.get("role"), ("admin", "manager", "sales_admin", "finance")):
+    if not sales_id or not _sees_other_sales(actor):
         sales_id = actor["id"]  # KN-E38 — hanya peran pengawas yang boleh melihat KPI/komisi sales lain
     return sales_id, entity_id
 
@@ -363,18 +383,22 @@ async def post_incentive_gl(request: Request, period: str = Query(...),
 
 
 # ── Sales targets ────────────────────────────────────────────────────────────
+_S3_DITOLAK = ("Anda belum punya akses untuk melihat target dan skema insentif sales. Minta Admin menambahkan akses "
+               "'Pesanan Penjualan'.")
+
+
 @router.get("/sales-targets")
 async def list_targets(request: Request, sales_id: str = None, period: str = None,
                        entity_id: str = None) -> List[Dict[str, Any]]:
     """FASE E-0 (L5) — target sales WAJIB ter-scope entitas: dulu target lintas-entitas
-    terlihat karena penyaringan hanya per `sales_id`."""
-    actor = await current_user(request)
+    terlihat karena penyaringan hanya per `sales_id`. PR-T3 (S3) — dulu cukup login; kini `order.view` + isi
+    tersaring `_target_sales_filter`."""
+    actor = await require_permission(request, "order", "view", detail=_S3_DITOLAK)
     ctx = await entity_ctx(request)
     query: Dict[str, Any] = {}
-    if role_in(actor.get("role"), ("sales",)):
-        query["sales_id"] = actor["id"]
-    elif sales_id:
-        query["sales_id"] = sales_id
+    sid = await _target_sales_filter(actor, sales_id)
+    if sid:
+        query["sales_id"] = sid
     if period:
         query["period"] = period
     query = resolve_list_scope("sales_targets", query, ctx, entity_id)
@@ -422,14 +446,14 @@ async def create_target(payload: SalesTargetCreate, request: Request) -> Dict[st
 @router.get("/sales-incentives")
 async def list_incentives(request: Request, sales_id: str = None, period: str = None,
                           entity_id: str = None) -> List[Dict[str, Any]]:
-    """FASE E-0 (L6) — insentif sales WAJIB ter-scope entitas (insentif = beban entitas)."""
-    actor = await current_user(request)
+    """FASE E-0 (L6) — insentif sales WAJIB ter-scope entitas (insentif = beban entitas). PR-T3 (S3) — seperti
+    daftar target."""
+    actor = await require_permission(request, "order", "view", detail=_S3_DITOLAK)
     ctx = await entity_ctx(request)
     query: Dict[str, Any] = {}
-    if role_in(actor.get("role"), ("sales",)):
-        query["sales_id"] = actor["id"]
-    elif sales_id:
-        query["sales_id"] = sales_id
+    sid = await _target_sales_filter(actor, sales_id)
+    if sid:
+        query["sales_id"] = sid
     if period:
         query["period"] = period
     query = resolve_list_scope("sales_incentives", query, ctx, entity_id)

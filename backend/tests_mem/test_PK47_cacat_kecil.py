@@ -72,9 +72,11 @@ async def test_U04_hitung_cari_dan_jenis(klien, kepala_admin, siap):
     assert r.json()["count"] == await _jumlah_daftar(klien, kepala_admin, include_test="true", type="CV")
 
 
-async def test_U05_hitung_cukup_login(klien, siap):
+async def test_U05_hitung_dijaga_izin_sejak_PRT3(klien, siap):
+    # PK-47 U5 dulu "200 (cukup login)". Unit PR-T3 (S5, docs/blueprint/unit/PR-T3.md) memberi penghitung ini gerbang
+    # `entity.view` — pemanggilnya hanya layar Badan Usaha & Akses — sehingga Sopir kini 403 (lihat hasil/PR-T3.md).
     r = await klien.get("/api/entities/count", headers=siap["sopir"])
-    assert r.status_code == 200, r.text
+    assert r.status_code == 403, r.text
 
 
 async def test_U06_baca_satu_barang(klien, kepala_admin, siap):

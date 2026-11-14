@@ -5,7 +5,7 @@ from fastapi import APIRouter, HTTPException, Request
 from pymongo import ReturnDocument
 from db import db
 from services import dual_qty_service as _dual  # FASE U — dua satuan (roll + ukuran)
-from dependencies import require_permission, audit, current_user
+from dependencies import require_any_permission, require_permission, audit, current_user
 from core_utils import new_id, now_iso, safe_doc, DEFAULT_ENTITY_ID, timeline_entry, next_doc_number, rupiah
 from entity_scope import entity_ctx, resolve_list_scope, assert_entity_access, guard_doc
 from pagination import is_paged, get_page_params, build_search, merge_query, fetch_page, envelope
@@ -303,8 +303,12 @@ async def resolve_po_sourcing(request: Request, supplier_id: str = "", product_i
     Mengembalikan harga usulan + sumbernya (kontrak pembelian / harga terakhir barang
     supplier / master) + jejak `explain[]` + nomor kontrak & SKU supplier, sehingga form
     bisa mengisi harga otomatis dan menampilkan lencana asal harga.
+
+    PR-T3 (S7) — dulu cukup login (harga kontrak/terakhir supplier terbaca siapa pun); kini pembuat/pengubah PO.
     """
-    await current_user(request)
+    await require_any_permission(request, [("purchase_order", "create"), ("purchase_order", "update")],
+                                 detail="Anda belum punya akses untuk mengisi harga PO otomatis. Minta Admin "
+                                        "menambahkan akses 'Pembelian & Pengadaan'.")
     if not product_id:
         raise HTTPException(status_code=400, detail="product_id wajib diisi.")
     ctx = await entity_ctx(request)

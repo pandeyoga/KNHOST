@@ -20,7 +20,7 @@ from fastapi import APIRouter, HTTPException, Query, Request
 from pymongo import ReturnDocument
 
 from db import db
-from dependencies import require_permission, audit, current_user
+from dependencies import has_permission, require_permission, audit, current_user
 from core_utils import invalidate_entity_code, now_iso, safe_doc
 from schemas import BusinessEntityCreate, EntityArchiveBody, GenericPatch
 from services import entity_provisioning_service as provisioning
@@ -29,6 +29,14 @@ from services import entity_readiness_service as readiness_svc
 from entity_scope import entity_ctx, resolve_list_scope_inherit
 
 router = APIRouter(prefix="/api")
+
+#: PR-T3 (S2) — kunci baris `GET /api/entities` bagi peran TANPA `entity.view`: pemilih PT dan nama PT lawan di banyak
+#: layar. 11 kunci spesifikasi + `is_group` (pemilih PT Tutup Buku/Buka Periode/Suspense/Eliminasi), `write_locked` dan
+#: `city` (pemilih badan usaha di kepala aplikasi: saringan & pencarian). Jumlah akun dan kesiapan tidak dikirim.
+REFERENCE_FIELDS = ("id", "code", "name", "short_name", "legal_name", "type", "is_pkp", "currency", "status",
+                    "doc_prefix", "logo_url", "is_group", "write_locked", "city")
+_S5_DITOLAK = ("Anda belum punya akses untuk melihat rincian badan usaha. Minta Admin menambahkan akses "
+               "'Pengaturan, Pengguna & Hak Akses'.")
 
 
 def _entity_query(status: str, type: str, q: str, include_test: bool) -> Dict[str, Any]:
@@ -70,14 +78,21 @@ async def list_entities(
     E1.5: **default hanya yang aktif**. Sebelum FASE E-1 endpoint ini selalu
     mengembalikan semua status sehingga badan usaha nonaktif ikut muncul di
     pemilih entitas dan bisa dipilih — lalu tulisnya gagal jauh di belakang.
+
+    PR-T3 (S2) — tetap untuk semua yang login (data rujukan), tetapi tanpa `entity.view` tiap baris hanya memuat
+    `REFERENCE_FIELDS`; `user_count` dan `readiness` tidak dikirim dan `with_readiness` diabaikan.
     """
-    await current_user(request)
+    user = await current_user(request)
+    full = await has_permission(user, "entity", "view")
     query = _entity_query(status, type, q, include_test)
     rows = await db.business_entities.find(query, {"_id": 0}).sort(
         "created_at", 1).skip(offset).limit(limit).to_list(limit)
     out: List[Dict[str, Any]] = []
     for row in rows:
         item = lifecycle.uniform_entity(row)
+        if not full:
+            out.append({k: item.get(k) for k in REFERENCE_FIELDS})
+            continue
         item["user_count"] = await db.users.count_documents(
             {"home_entity_id": row["id"], "status": "active"})
         if with_readiness:
@@ -95,13 +110,13 @@ async def count_entities(
     include_test: bool = Query(False, description="sertakan badan usaha bertanda data uji"),
 ) -> Dict[str, Any]:
     """Jumlah badan usaha (untuk paging daftar berskala puluhan entitas). Saringan = `GET /api/entities`."""
-    await current_user(request)
+    await require_permission(request, "entity", "view", detail=_S5_DITOLAK)   # PR-T3 (S5)
     return {"count": await db.business_entities.count_documents(_entity_query(status, type, q, include_test))}
 
 
 @router.get("/entities/{entity_id}")
 async def get_entity(entity_id: str, request: Request) -> Dict[str, Any]:
-    await current_user(request)
+    await require_permission(request, "entity", "view", detail=_S5_DITOLAK)   # PR-T3 (S5) — jumlah akun, kunci awalan
     entity = await lifecycle.get_entity_or_404(entity_id)
     out = lifecycle.uniform_entity(entity)
     out["prefix_lock"] = await lifecycle.prefix_lock_info(entity_id)
@@ -113,7 +128,7 @@ async def get_entity(entity_id: str, request: Request) -> Dict[str, Any]:
 @router.get("/entities/{entity_id}/readiness")
 async def get_readiness(entity_id: str, request: Request) -> Dict[str, Any]:
     """E1.9 — daftar periksa kesiapan badan usaha (terhitung, bukan teks statis)."""
-    await current_user(request)
+    await require_permission(request, "entity", "view", detail=_S5_DITOLAK)   # PR-T3 (S5)
     entity = await lifecycle.get_entity_or_404(entity_id)
     return await readiness_svc.readiness(entity_id, entity)
 

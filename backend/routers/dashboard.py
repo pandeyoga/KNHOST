@@ -3,7 +3,7 @@ from typing import Any, Dict, List
 from fastapi import APIRouter, Request
 from db import db
 from core_utils import safe_doc
-from dependencies import current_user
+from dependencies import current_user, has_permission
 from services.inventory_service import expire_old_reservations  # noqa: F401 — dipakai penjadwal (FIX-3b)
 from services import sales_ownership          # FASE E-8 (E8.4/US11) — "Pesanan Saya"
 from entity_scope import entity_ctx, resolve_list_scope
@@ -48,6 +48,11 @@ async def dashboard(request: Request, entity_id: str = None) -> Dict[str, Any]:
     # (view_all) = semua entitas yang diizinkan. KPI dashboard SELALU == list.
     ctx = await entity_ctx(request)
     actor = await current_user(request)
+    # PR-T3 (S1) — dasbor tetap 200 untuk semua yang login (dipanggil sekali untuk seluruh aplikasi), tetapi tiap bagian
+    # hanya diisi bila peran memegang izin lihatnya; bagian tanpa izin = daftar kosong / 0 (kuncinya tetap ada) dan
+    # kuerinya tidak dijalankan. Dulu Sopir menerima pesanan, pelanggan, produk, gudang, dan angka stok.
+    may = {res: await has_permission(actor, res, "view")
+           for res in ("order", "customer", "product", "warehouse", "inventory")}
     scope = resolve_list_scope("sales_orders", {}, ctx, entity_id)
     # FASE E-8 (E8.4 · US11) — KEPEMILIKAN SALES WAJIB IKUT DI SINI JUGA.
     # Layar "Pesanan" tidak memanggil `GET /sales-orders`; ia memakai `orders[]`
@@ -65,7 +70,7 @@ async def dashboard(request: Request, entity_id: str = None) -> Dict[str, Any]:
     # Kini pagar yang SAMA dengan `GET /products` (eksklusivitas per sales + lini; produk tanpa lini tetap terlihat).
     from services import product_exclusivity as _pexcl, line_scope as _lines
     products_raw = await db.products.find(_lines.narrow(_pexcl.visibility_query(actor), actor, ""),
-                                          {"_id": 0}).to_list(None)   # G3 D4-DASH-01 — tanpa batas 3.000
+                                          {"_id": 0}).to_list(None) if may["product"] else []   # G3 D4-DASH-01
     # PREP-A (K-OPN-06) — SKU tergantikan TETAP dikirim (stok lama/lot/riwayat masih menunjuknya) tetapi diberi
     # `superseded_by_sku` agar katalog jual (POS/Sales Portal) menyembunyikannya & memberi petunjuk kode penggantinya.
     from services.product_supersede import annotate as _sup_annotate
@@ -78,21 +83,23 @@ async def dashboard(request: Request, entity_id: str = None) -> Dict[str, Any]:
             _p["hpp"], _p["hpp_source"] = float(_w.get("wac") or 0), _w.get("source", "")
         except Exception:  # noqa: BLE001
             _p["hpp"], _p["hpp_source"] = 0.0, "none"
-    orders_raw = await db.sales_orders.find(order_scope, {"_id": 0}).sort("created_at", -1).to_list(20)
+    orders_raw = (await db.sales_orders.find(order_scope, {"_id": 0}).sort("created_at", -1).to_list(20)
+                  if may["order"] else [])
     # FASE E-4 (E4.1) — gudang KHUSUS badan usaha lain tidak ikut ke dasbor:
     # kalau ikut, angka "Gudang Aktif" & pemilih gudang di layar menawarkan
     # gudang yang haram dipakai badan usaha aktif.
     from services import warehouse_scope_service as whscope
     wh_filter = {**whscope.usable_query(ctx.active_entity_id), "is_test": {"$ne": True}}   # FIX-1 (K-B1-10) — tanpa gudang data uji
-    warehouses_raw = await db.warehouses.find(wh_filter, {"_id": 0}).to_list(100)
+    warehouses_raw = await db.warehouses.find(wh_filter, {"_id": 0}).to_list(100) if may["warehouse"] else []
     # UAT 24 Okt (P14/P8) — pemilih pelanggan POS & HP: sales hanya pelanggannya (+ walk-in PT), sama dengan
     # CRM; dulu semua pelanggan PT dan terpotong di 100.
     from services.customer_service import scope_query as _cust_scope
-    customers_raw = await db.customers.find(_cust_scope(actor, scope), {"_id": 0}).sort("name", 1).to_list(1000)
+    customers_raw = (await db.customers.find(_cust_scope(actor, scope), {"_id": 0}).sort("name", 1).to_list(1000)
+                     if may["customer"] else [])
     from core_utils import strip_cost_fields as _strip_cost
     products = _strip_cost([safe_doc(p) for p in products_raw if p], actor.get("role"))
     orders = [safe_doc(o) for o in orders_raw if o]
-    wh_names = await whscope.entity_name_map()
+    wh_names = await whscope.entity_name_map() if warehouses_raw else {}
     warehouses = [whscope.decorate(safe_doc(w), wh_names, ctx.active_entity_id)
                   for w in warehouses_raw if w]
     customers = [safe_doc(c) for c in customers_raw if c]
@@ -102,10 +109,10 @@ async def dashboard(request: Request, entity_id: str = None) -> Dict[str, Any]:
     # dari daftar di bawahnya (angka yang tak cocok = pengguna berhenti percaya).
     active_orders = await db.sales_orders.count_documents(
         {**order_scope, "status": {"$nin": ["done", "cancelled", "expired"]}}
-    )
-    total_products = await db.products.count_documents({})
-    total_warehouses = await db.warehouses.count_documents(wh_filter)
-    total_customers = await db.customers.count_documents(scope)
+    ) if may["order"] else 0
+    total_products = await db.products.count_documents({}) if may["product"] else 0
+    total_warehouses = await db.warehouses.count_documents(wh_filter) if may["warehouse"] else 0
+    total_customers = await db.customers.count_documents(scope) if may["customer"] else 0
     # INV-2/INV-3 (RC-7) — KPI stok dashboard SELALU konsisten dgn GET /inventory/balances:
     # agregasi dari koleksi inventory_balances yang di-SCOPE sama (owner_entity_id).
     # Sebelumnya memakai product_summary() TANPA scope → menghitung stok LINTAS-entitas
@@ -119,7 +126,9 @@ async def dashboard(request: Request, entity_id: str = None) -> Dict[str, Any]:
     from services import stock_figures as _sf
     owner_ids = set(resolve_scope_ids(ctx, entity_id))
     loc_whs = getattr(ctx, "warehouse_ids", None)
-    all_segs = await _sf.segments()
+    _own = bal_scope.get("owner_entity_id")
+    # PR-T3 (S1) — segmen stok hanya dibaca untuk angka stok (`inventory.view`) atau stok PT produk mode gabungan.
+    all_segs = await _sf.segments() if (may["inventory"] or (may["product"] and not isinstance(_own, str))) else []
     kpi_segs = [s for s in all_segs if s["owner_entity_id"] in owner_ids
                 and (loc_whs is None or s["warehouse_id"] in loc_whs)]
     per_prod: Dict[str, Dict[str, float]] = {}
@@ -148,9 +157,9 @@ async def dashboard(request: Request, entity_id: str = None) -> Dict[str, Any]:
     # 2026-10 — kartu produk (Kasir/katalog) memakai stok GLOBAL; KPI di atas tetap per entitas aktif.
     # FIX-2 — + dua angka {LOKAL, GLOBAL} per produk (`stock_figures`) untuk katalog POS/HP & Master Produk.
     from services import sales_stock_service
-    _own = bal_scope.get("owner_entity_id")
     _scope = await _sf.viewer_scope(ctx, entity_id=entity_id if entity_id and entity_id != "all" else "")
-    await sales_stock_service.apply_global(products, _own if isinstance(_own, str) else "", scope=_scope)
+    if products:
+        await sales_stock_service.apply_global(products, _own if isinstance(_own, str) else "", scope=_scope)
     if not isinstance(_own, str):
         # mode gabungan: "stok PT" = Σ PT dalam cakupan (definisi tunggal, makloon per PT pemilik)
         for product in products:
@@ -159,7 +168,12 @@ async def dashboard(request: Request, entity_id: str = None) -> Dict[str, Any]:
             product["entity_roll_count"] = int(d.get("roll_count") or 0)
     # MD-08 — kode versi supplier ikut ke Master Produk (pencarian dua sisi).
     from services.supplier_item_service import attach_supplier_codes
-    await attach_supplier_codes(products)
+    if products:
+        await attach_supplier_codes(products)
+    if not may["inventory"]:   # PR-T3 (S1) — angka stok: kunci tetap, isi 0 / kosong
+        total_available = total_reserved = 0
+        available_rolls = 0
+        unitless, available_by_unit, reserved_by_unit = {}, {}, {}
     return {
         "expired_released": expired,
         "metrics": {
@@ -177,7 +191,7 @@ async def dashboard(request: Request, entity_id: str = None) -> Dict[str, Any]:
             "active_orders": active_orders,
         },
         "products": products,
-        "stock_scope": _sf.scope_public(_scope),
+        "stock_scope": _sf.scope_public(_scope) if may["inventory"] else {},
         "orders": orders,
         "warehouses": warehouses,
         "customers": customers,

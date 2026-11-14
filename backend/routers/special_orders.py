@@ -748,7 +748,10 @@ async def fulfillment_view(order_id: str, request: Request) -> Dict[str, Any]:
 
 @router.post("/special-orders/{order_id}/fulfillment/{item_key}/route")
 async def fulfillment_set_route(order_id: str, item_key: str, payload: FulfillmentRouteBody, request: Request) -> Dict[str, Any]:
-    user = await current_user(request)
+    # PR-T3 (S8) — gerbang di baris pertama (dulu dokumen dimuat dulu, izin baru diperiksa di layanan; tetap dipertahankan).
+    user = await require_permission(request, "od_fulfillment", "choose_route",
+                                    detail="Anda belum punya akses untuk memilih jalur pengadaan item pesanan khusus. "
+                                           "Minta Admin menambahkan akses 'Pesanan Penjualan'.")
     od = await _od_or_404(order_id, request)
     from services import special_order_fulfillment as ful
     try:
@@ -763,7 +766,10 @@ async def fulfillment_set_route(order_id: str, item_key: str, payload: Fulfillme
 
 @router.post("/special-orders/{order_id}/fulfillment/{item_key}/realize")
 async def fulfillment_realize(order_id: str, item_key: str, payload: FulfillmentRealizeBody, request: Request) -> Dict[str, Any]:
-    user = await current_user(request)
+    # PR-T3 (S8) — seperti pilih jalur; pemeriksaan di `ful.realize` tetap.
+    user = await require_permission(request, "od_fulfillment", "realize",
+                                    detail="Anda belum punya akses untuk merealisasikan pengadaan item pesanan khusus. "
+                                           "Minta Admin menambahkan akses 'Pesanan Penjualan'.")
     od = await _od_or_404(order_id, request)
     from services import special_order_fulfillment as ful
     try:

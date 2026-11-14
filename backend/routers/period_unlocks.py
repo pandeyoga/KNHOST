@@ -1,6 +1,7 @@
 """FASE G-5 — UNLOCK PERIODE BEROTORITAS (router).
 
-Akses: permission module "period" (action "unlock"). GET bersifat lunak (login).
+Akses: permission module "period" (action "unlock"). Riwayat/antrean: `period.unlock` atau `accounting.view` (PR-T3);
+banner unlock aktif tetap untuk semua yang login (tanpa nominal).
 Respons OBJEK/ARRAY telanjang (kontrak KN3). Per-entitas (F0-E).
 """
 from typing import Any, Dict, List, Optional
@@ -9,7 +10,7 @@ from fastapi import APIRouter, Request, Query, HTTPException
 from pydantic import BaseModel
 
 from db import db
-from dependencies import require_permission, audit
+from dependencies import require_any_permission, require_permission, audit
 from entity_scope import entity_ctx, resolve_scope_ids
 from services import period_unlock_service as pus
 
@@ -42,7 +43,12 @@ async def _resolve_entity(request: Request, entity_id: Optional[str]) -> str:
 @router.get("/finance/period-unlocks")
 async def list_unlocks(request: Request, entity_id: Optional[str] = Query(None),
                        status: Optional[str] = Query(None)) -> List[Dict[str, Any]]:
-    """Riwayat & antrean usul buka periode (per entitas / status)."""
+    """Riwayat & antrean usul buka periode (per entitas / status).
+
+    PR-T3 (S6) — dulu cukup login; kini pengusul/pemutus buka periode atau pembaca akuntansi."""
+    await require_any_permission(request, [("period", "unlock"), ("accounting", "view")],
+                                 detail="Anda belum punya akses untuk melihat riwayat buka periode. Minta Admin "
+                                        "menambahkan akses 'Akuntansi & Tutup Buku'.")
     ctx = await entity_ctx(request)
     return await pus.list_requests(resolve_scope_ids(ctx, entity_id), status)  # IX-10
 

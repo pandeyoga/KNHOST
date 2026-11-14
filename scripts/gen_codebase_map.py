@@ -27,7 +27,8 @@ RE_ROUTE = re.compile(r"@router\.(get|post|put|patch|delete)\(\s*[\"']([^\"']+)"
 RE_COLL = re.compile(r"\bdb\.([a-z][a-z0-9_]*)\.(?:find|find_one|insert|update|delete|count|aggregate|replace|bulk|create_index|distinct|find_one_and)")
 CORE_FILES = ["server.py", "db.py", "core_utils.py", "schemas.py", "schemas_purchasing.py",
               "dependencies.py", "permissions_config.py", "entity_scope.py", "pagination.py",
-              "indexes.py", "bootstrap.py"]
+              "indexes.py", "bootstrap.py",
+              "login_only_endpoints.py"]   # PR-T3 — daftar endpoint yang sah cukup dengan login (Z3)
 LIMITS = {".jsx": 500, ".py": 800, ".js": 300}
 
 
