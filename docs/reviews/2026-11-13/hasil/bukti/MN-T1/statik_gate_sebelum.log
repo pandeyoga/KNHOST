@@ -1,0 +1,60 @@
+1 | python scripts/guardrails/verify_auth_coverage.py | [FAIL] 28 pelanggaran (dari 1754 cek):
+0 | python scripts/guardrails/verify_auth_coverage.py --self-test |   HIJAU — penjaga terbukti menuduh endpoint tanpa auth dan menerima ketiga enforcer keras.
+1 | python scripts/validate_compliance.py |    [IMPORTS] ... dan 12 temuan lain
+0 | python scripts/check_nav_map.py | ✓ NAV MAP: PASS
+0 | python scripts/guardrails/verify_modal_dismiss.py | [PASS] 10 cek lolos, 0 pelanggaran.
+0 | python scripts/guardrails/verify_knselect_contract.py | verify_knselect_contract: 0 temuan
+0 | python scripts/guardrails/verify_access_catalog_nav.py | verify_access_catalog_nav: 0 temuan
+0 | python scripts/guardrails/verify_desk_targets.py | verify_desk_targets: 33 target diperiksa, 0 temuan
+0 | python scripts/audit_create_modal.py --self-test |   HIJAU — penjaga terbukti menuduh form yang menyelip.
+1 | python scripts/audit_create_modal.py | [FAIL] 6 pelanggaran (dari 16 cek):
+0 | python scripts/guardrails/verify_blocking_dialogs.py --self-test |   HIJAU — penjaga terbukti menuduh dialog peramban DAN tidak menuduh palsu string/komentar/fungsi senama.
+0 | python scripts/guardrails/verify_blocking_dialogs.py | [PASS] 1 cek lolos, 0 pelanggaran.
+0 | python scripts/guardrails/verify_list_export.py --self-test |   HIJAU — penjaga terbukti menuduh pager tanpa Unduh, tidak menuduh palsu komentar/string/komponen senama, DAN lapis perilaku CSV-nya bisa
+0 | python scripts/guardrails/verify_list_export.py | [PASS] 22 cek lolos, 0 pelanggaran.
+0 | python scripts/guardrails/verify_money_idempotency.py --self-test | [SELF-TEST] lulus — penjaga memerah pada pelanggaran dan lolos pada pintu
+0 | python scripts/guardrails/verify_money_idempotency.py | [PASS] 17 cek lolos, 0 pelanggaran.
+0 | python scripts/guardrails/verify_detail_modal.py --self-test |   HIJAU — penjaga menangkap panel yang diselipkan di bawah daftar (termasuk dua kasus yang PERNAH ia lewatkan), tanpa menuduh pop-up, mast
+0 | python scripts/guardrails/verify_detail_modal.py | [PASS] 28 cek lolos, 0 pelanggaran.
+0 | python scripts/guardrails/verify_picker_portal.py --self-test |   HIJAU — penjaga menangkap pop-up yang lahir di dalam <label> (3 bentuk render) tanpa menuduh pop-up murni, pemicu ber-portal, komentar, 
+0 | python scripts/guardrails/verify_picker_portal.py | [PASS] 321 cek lolos, 0 pelanggaran.
+0 | python scripts/guardrails/verify_escape_layers.py --self-test |   HIJAU — penjaga menangkap pendengar Esc sendiri & implementasi tunggal yang dilemahkan, tanpa menuduh komentar, pendengar non-Esc, maupu
+0 | python scripts/guardrails/verify_escape_layers.py | [PASS] 1244 cek lolos, 0 pelanggaran.
+0 | python scripts/guardrails/verify_custom_modals.py --self-test |   SELF-TEST HIJAU (0 gagal)
+0 | python scripts/guardrails/verify_custom_modals.py | [PASS] 98 cek lolos, 0 pelanggaran.
+0 | python scripts/guardrails/verify_page_tabs.py --self-test |   SELF-TEST HIJAU (0 gagal)
+1 | python scripts/guardrails/verify_page_tabs.py | [FAIL] 1 pelanggaran (dari 12 cek):
+0 | python scripts/guardrails/verify_view_aliases.py --self-test |   SELF-TEST HIJAU (0 gagal)
+0 | python scripts/guardrails/verify_view_aliases.py | [PASS] 96 cek lolos, 0 pelanggaran.
+0 | python scripts/guardrails/verify_config_text.py --self-test |   SELF-TEST HIJAU (0 gagal)
+0 | python scripts/guardrails/verify_config_text.py | [PASS] 2834 cek lolos, 0 pelanggaran.
+0 | python scripts/gen_config_key_index.py --check | 
+1 | python scripts/guardrails/verify_to_list_bound.py --self-test |   SELF-TEST MERAH (1 gagal).
+1 | python scripts/guardrails/verify_to_list_bound.py | [FAIL] 6 pelanggaran (dari 18 cek):
+0 | python scripts/guardrails/verify_codebase_map.py --self-test |   SELF-TEST HIJAU (0 gagal).
+0 | python scripts/guardrails/verify_codebase_map.py | [PASS] 5 cek lolos, 0 pelanggaran.
+1 | python scripts/guardrails/verify_atomic_claim.py --self-test |   SELF-TEST MERAH (2 gagal).
+1 | python scripts/guardrails/verify_atomic_claim.py | [FAIL] 6 pelanggaran (dari 129 cek):
+0 | python scripts/ux_audit.py --self-test |   HIJAU — audit terbukti menangkap gap nyata tanpa menuduh komponen penampil.
+1 | python scripts/ux_audit.py --strict | 
+0 | python scripts/audit_config_wiring.py --strict | 
+0 | python scripts/audit_config_wiring.py --self-test | SELF-TEST: PASS — guardrail terbukti bisa memerah
+0 | python scripts/audit_doc_refs.py --self-test | ✓ SELF-TEST HIJAU: audit mendeteksi jenis dokumen tanpa hook.
+1 | python scripts/guardrails/verify_ref_unlink.py --self-test | 
+1 | python scripts/guardrails/verify_ref_unlink.py | 
+0 | python scripts/guardrails/verify_notification_audience.py --self-test |   HASIL SELF-TEST: 16 PASS · 0 FAIL dari 16 kasus
+0 | python scripts/guardrails/verify_notification_audience.py | 
+1 | python scripts/audit_i18n_id.py --strict |   ✗ 109 temuan di 62 berkas.
+0 | python scripts/audit_i18n_id.py --self-test |   ✓ SELF-TEST HIJAU — guardrail terbukti bisa memerah.
+0 | python scripts/fix_i18n_id.py --self-test |   ✓ SELF-TEST HIJAU — codemod hanya menyentuh teks pengguna.
+1 | python scripts/guardrails/verify_entity_label.py --self-test |   ✗ 2 pelanggaran:
+0 | python scripts/guardrails/verify_error_notice.py --self-test | [PASS] 284 cek lolos, 0 pelanggaran.
+0 | python scripts/guardrails/verify_role_label.py --self-test |   HIJAU — 0 pemeriksaan gagal.
+0 | python scripts/guardrails/verify_role_gate_ui.py --self-test |   SELF-TEST HIJAU (0 gagal)
+0 | python scripts/guardrails/verify_role_gate_ui.py | [PASS] 31 cek lolos, 0 pelanggaran.
+0 | python scripts/guardrails/verify_permission_checked.py --self-test | 
+0 | python scripts/guardrails/verify_permission_checked.py | [PASS] 580 cek lolos, 0 pelanggaran.
+0 | python scripts/guardrails/verify_derived_fields.py | [PASS] 3 cek lolos, 0 pelanggaran.
+0 | python scripts/audit_entity_isolation.py --self-test |   [PASS] setelah dibersihkan gate kembali hijau
+0 | cd backend && python -m entity_write_guard --self-test |   HIJAU — pagar terbukti bisa memerah.
+1 | python scripts/audit_warehouse_scope.py --self-test |   MERAH — 1 kasus gagal.

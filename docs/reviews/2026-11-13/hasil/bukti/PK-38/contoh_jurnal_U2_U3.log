@@ -1,0 +1,28 @@
+
+== U2 hapus sisa kurang bayar Rp 1.500.000 (kwitansi dibuat mgrA) ==
+mgrA (pembuat) memutus: 403 Pengurang piutang tanpa uang masuk harus diputuskan orang lain: Anda yang mengajukannya. Minta rekan yang berwenang. Admin dapat mengubah aturan ini di Pengaturan › Persetujuan › Kontrol dua orang.
+mgrB (orang kedua) memutus: 200 KSC/SLB-00001 KSC/JE-00005
+  KSC/JE-00005  6-9100   D    1,500,000  K            0
+  KSC/JE-00005  1-1200   D            0  K    1,500,000
+  saldo 1-1200 Piutang: 0 → -1,500,000 (selisih -1,500,000)
+  saldo 6-9100 Beban Selisih Pembayaran: 0 → 1,500,000 (selisih 1,500,000)
+  pesanan SO-PK38-1: tagihan 1,500,000, terbayar 0 → 1,500,000 (paid); sisa piutang 0
+
+== U3 kasus biaya bank Rp 1.500.000 (kasus dibuat mgrA) ==
+mgrA (pembuat) menyelesaikan: 403 Pengurang piutang tanpa uang masuk harus diputuskan orang lain: Anda yang mengajukannya. Minta rekan yang berwenang. Admin dapat mengubah aturan ini di Pengaturan › Persetujuan › Kontrol dua orang.
+mgrB (orang kedua) menyelesaikan: 200 KSC/CASE-00001 resolved
+  KSC/JE-00006  6-8000   D    1,500,000  K            0
+  KSC/JE-00006  1-1200   D            0  K    1,500,000
+  saldo 1-1200 Piutang: -1,500,000 → -3,000,000 (selisih -1,500,000)
+  saldo 6-8000 Beban Administrasi Bank: 0 → 1,500,000 (selisih 1,500,000)
+
+== jejak ar_reduction_checked: 4 baris; dua terakhir:
+   Uji manager 1 {'jenis': 'bebankan_biaya_bank', 'nominal': 1500000.0, 'batas': 1000000.0, 'di_atas_batas': True, 'perlu_orang_kedua': True, 'ditolak': True, 'number': 'KSC/CASE-00001'}
+   Uji manager 2 {'jenis': 'bebankan_biaya_bank', 'nominal': 1500000.0, 'batas': 1000000.0, 'di_atas_batas': True, 'perlu_orang_kedua': True, 'ditolak': False, 'number': 'KSC/CASE-00001'}
+.
+=============================== warnings summary ===============================
+../../../venv311/lib/python3.11/site-packages/starlette/formparsers.py:12
+    import multipart
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+1 passed, 1 warning in 1.52s

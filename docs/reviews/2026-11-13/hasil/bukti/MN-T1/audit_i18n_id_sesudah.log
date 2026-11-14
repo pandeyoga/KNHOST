@@ -1,0 +1,291 @@
+==========================================================================
+  AUDIT BAHASA ANTARMUKA — WAJIB BAHASA INDONESIA
+==========================================================================
+  Cakupan : frontend/src (*.jsx, *.js) · teks yang dilihat pengguna
+            backend (*.py) · label/pesan yang DIKIRIM ke antarmuka
+  Kamus   : 134 istilah wajib diterjemahkan
+  Dipakai : 43 istilah sengaja dibiarkan (lihat --list)
+
+  backend/access_modules.py
+     baris  188  “Pusat Export Data”
+                 export → Ekspor
+  backend/routers/export_center.py
+     baris  278  “Masa unduh habis (24 jam). Jalankan ulang export.”
+                 export → Ekspor
+  backend/seed_realistic.py
+     baris 3087  “Menunggu persetujuan manager”
+                 manager → Manajer
+     baris 3112  “Menunggu persetujuan manager”
+                 manager → Manajer
+     baris 3141  “Menunggu persetujuan manager”
+                 manager → Manajer
+     baris 3144  “oleh role manager”
+                 manager → Manajer
+     baris 3144  “oleh role manager”
+                 role → Peran
+     baris 3168  “Approval”
+                 approval → Persetujuan
+     baris 3188  “Menunggu persetujuan manager”
+                 manager → Manajer
+     baris 3189  “nilai ≥ Rp 500jt → 2 tingkat (Manager, Direksi)”
+                 manager → Manajer
+     baris 3201  “Approval”
+                 approval → Persetujuan
+     baris 3221  “Menunggu persetujuan manager”
+                 manager → Manajer
+     baris 3223  “Disetujui tingkat 1 (Approval)”
+                 approval → Persetujuan
+     baris 3563  “Biaya kirim sample ke customer”
+                 customer → Pelanggan
+     baris 3353  “"notes": f"Harga terkunci Rp {rate:,.0f}/{basis} sel”
+                 Rp {x:,} (pemisah ribuan gaya Inggris) → pakai rupiah(x) dari core_utils
+     baris 3356  “print(f"   · {c['contract_number']} — {c['partner_na”
+                 Rp {x:,} (pemisah ribuan gaya Inggris) → pakai rupiah(x) dari core_utils
+     baris 4343  “f"· {d['tariff_basis']} @ Rp {float(d['tariff_rate']”
+                 Rp {x:,} (pemisah ribuan gaya Inggris) → pakai rupiah(x) dari core_utils
+     baris 4545  “f"kasa Rp {float(scr.get('service_value') or 0):,.0f”
+                 Rp {x:,} (pemisah ribuan gaya Inggris) → pakai rupiah(x) dari core_utils
+     baris 5999  “"title": f"Dana masuk tak dikenal Rp {float(unknown[”
+                 Rp {x:,} (pemisah ribuan gaya Inggris) → pakai rupiah(x) dari core_utils
+  backend/services/handheld_core.py
+     baris   35  “Masuk · Putaway”
+                 putaway → Simpan ke Rak
+     baris   35  “Tiba Putaway Order per trip”
+                 putaway → Simpan ke Rak
+     baris   35  “Tiba Putaway Order per trip”
+                 order → Pesanan
+     baris   37  “Final Loading Check per SO & gudang”
+                 loading → Memuat
+     baris   39  “Final Loading Check pesanan sampel”
+                 loading → Memuat
+  backend/services/marketing_cost_service.py
+     baris  203  “f"{campaign.get('name', '')} · Rp {grand:,.0f} · men”
+                 Rp {x:,} (pemisah ribuan gaya Inggris) → pakai rupiah(x) dari core_utils
+     baris  211  “body=(f"{campaign.get('name', '')} · {sup.get('name'”
+                 Rp {x:,} (pemisah ribuan gaya Inggris) → pakai rupiah(x) dari core_utils
+  backend/services/master_usage_service.py
+     baris   58  “Purchase order”
+                 purchase order → Pesanan Pembelian
+  backend/services/ocr_sj_v2.py
+     baris   25  “Nomor surat jalan / delivery order persis seperti te”
+                 order → Pesanan
+     baris   25  “Nomor surat jalan / delivery order persis seperti te”
+                 delivery → Pengiriman
+     baris   28  “Nama penerima (Kepada Yth / Customer / Ship To).”
+                 customer → Pelanggan
+     baris   31  “SEMUA teks yang berlabel PO / No PO / Order / No Ord”
+                 order → Pesanan
+     baris   36  “Nomor lain: SO, DO, PL, invoice, EX SJ, SJ greige, k”
+                 invoice → Faktur
+     baris  113  “Kosongkan kecuali instruksi pengguna berisi EXTRACT_”
+                 packing → Pengemasan
+  backend/services/pdf_resolvers.py
+     baris  590  “Jenis order”
+                 order → Pesanan
+  backend/services/po_close_settlement_service.py
+     baris   58  “Sisa order tidak ditunggu lagi — beri tahu supplier ”
+                 order → Pesanan
+     baris   67  “Pembayaran melebihi nilai terima — minta refund atau”
+                 refund → Pengembalian Dana
+  backend/services/return_cutloss_split_service.py
+     baris   74  “Baik — kirim balik ke customer”
+                 customer → Pelanggan
+  backend/services/return_roll_settlement_service.py
+     baris  218  “Refund tunai ke pelanggan”
+                 refund → Pengembalian Dana
+  backend/services/return_timeline_service.py
+     baris  128  “detail += f" · Nota Kredit Rp {amt:,.0f}".replace(",”
+                 Rp {x:,} (pemisah ribuan gaya Inggris) → pakai rupiah(x) dari core_utils
+  backend/services/scheduler_service.py
+     baris  237  “Jaring pengaman pekerja latar transaksi gate (tiba p”
+                 putaway → Simpan ke Rak
+     baris  290  “Export Terjadwal (Pusat Export)”
+                 export → Ekspor
+  backend/services/trip_service.py
+     baris   92  “Picking list bukan Surat Jalan — SJ terbit per SO pe”
+                 picking → Pengambilan
+     baris   92  “Picking list bukan Surat Jalan — SJ terbit per SO pe”
+                 dispatch → Pengiriman
+  backend/services/variant_axes.py
+     baris   27  “Kode Customer”
+                 customer → Pelanggan
+  frontend/src/config/hubTabs.js
+     baris   24  “Keep & Pending”
+                 pending → Menunggu
+  frontend/src/config/navMeta.js
+     baris   41  “Keep & Pending · pesanan menunggu”
+                 pending → Menunggu
+     baris  129  “Pusat Export”
+                 export → Ekspor
+  frontend/src/config/navStructure.js
+     baris  355  “Pusat Export”
+                 export → Ekspor
+  frontend/src/features/catalog/AxisEditor.jsx
+     baris   13  “Kode Customer”
+                 customer → Pelanggan
+  frontend/src/features/catalog/FamilyDesignBar.jsx
+     baris   41  “Belum bertaut desain (kode desain & kategorinya koso”
+                 export → Ekspor
+     baris   38  “Customer label ·”
+                 customer → Pelanggan
+  frontend/src/features/crm/Customer360Panel.jsx
+     baris   90  “Piutang ledger”
+                 ledger → Mutasi
+     baris  346  “Permohonan diteruskan ke Manager/Finance untuk perse”
+                 manager → Manajer
+  frontend/src/features/crm/SalesForceDashboard.jsx
+     baris  124  “ledger”
+                 ledger → Mutasi
+  frontend/src/features/export/ExportCenterView.jsx
+     baris  172  “Pusat Export”
+                 export → Ekspor
+  frontend/src/features/export/JobsPanel.jsx
+     baris   49  “Pekerjaan export saya”
+                 export → Ekspor
+     baris   53  “Belum ada export. File tersedia 24 jam dan hanya bis”
+                 export → Ekspor
+  frontend/src/features/export/TemplatesPanel.jsx
+     baris   41  “Template export saya”
+                 export → Ekspor
+     baris   46  “Belum ada template. Buat dari tab “Buat export” → “S”
+                 export → Ekspor
+     baris   66  “Export sekarang”
+                 export → Ekspor
+  frontend/src/features/finance/ARAgingDetail.jsx
+     baris   71  “Piutang ledger (sudah diakui) · eksposur (belum diki”
+                 ledger → Mutasi
+     baris   71  “Ledger · Eksposur”
+                 ledger → Mutasi
+     baris   39  “(ledger”
+                 ledger → Mutasi
+  frontend/src/features/finance/ClosingView.jsx
+     baris  204  “akan di-void dan periode bisa dijurnal lagi.”
+                 void → Anulir
+     baris  223  “Jurnal penutup lama di-void dan jurnal penutup baru ”
+                 void → Anulir
+  frontend/src/features/home/SalesHome.jsx
+     baris  118  “Pelanggan saya · sub-buku · piutang ledger”
+                 ledger → Mutasi
+  frontend/src/features/hr/DesignOwnershipPanel.jsx
+     baris  111  “Tetapkan customer label”
+                 customer → Pelanggan
+  frontend/src/features/inventory/StockAnalyticsView.jsx
+     baris  137  “(dead stock) = punya stok tetapi tidak terjual sama ”
+                 stock → Stok
+  frontend/src/features/logistics/LogisticsView.jsx
+     baris   32  “Picking & Trip”
+                 picking → Pengambilan
+     baris  117  “Surat Jalan yang sudah dispatch gudang → pengiriman ”
+                 dispatch → Pengiriman
+  frontend/src/features/marketing/CampaignBillsSection.jsx
+     baris   72  “Belum dijurnal sampai disetujui Finance/Manager: Dr ”
+                 manager → Manajer
+     baris   76  “No. invoice vendor”
+                 invoice → Faktur
+  frontend/src/features/orders/OrderDetailPanel.jsx
+     baris  617  “Edit / Override SO”
+                 edit → Ubah
+  frontend/src/features/orders/OrderJourneyPanel.jsx
+     baris  120  “Piutang ledger”
+                 ledger → Mutasi
+  frontend/src/features/orders/SalesOrderOverrideDialog.jsx
+     baris   61  “Edit / Override”
+                 edit → Ubah
+  frontend/src/features/pos/OrderPriceRequestModal.jsx
+     baris   43  “mis. order rutin, pesaing menawar 104.000”
+                 order → Pesanan
+  frontend/src/features/purchasing/MakloonOrderDetailPanel.jsx
+     baris  152  “Order ini dibatalkan”
+                 order → Pesanan
+  frontend/src/features/purchasing/MakloonOrdersView.jsx
+     baris   79  “Total order”
+                 order → Pesanan
+  frontend/src/features/purchasing/PrSourcingPanel.jsx
+     baris  222  “bila ada, lalu estimasi PR, barang supplier, price-l”
+                 price → Harga
+  frontend/src/features/purchasing/makloon/MakloonReturnMaterial.jsx
+     baris   76  “Order dibatalkan, tetapi bahan”
+                 order → Pesanan
+  frontend/src/features/rfid/GateReviewDetail.jsx
+     baris   20  “Transaksi dicatat lewat jalur yang sama dengan gate ”
+                 putaway → Simpan ke Rak
+  frontend/src/features/rfid/u300Labels.js
+     baris   89  “Putaway”
+                 putaway → Simpan ke Rak
+  frontend/src/features/rnd/design/DesignCards.jsx
+     baris   58  “Print paper”
+                 print → Cetak
+  frontend/src/features/rnd/design/RoundPaperCheck.jsx
+     baris   29  “Print paper”
+                 print → Cetak
+  frontend/src/features/rnd/design/designFilters.js
+     baris   33  “Customer label”
+                 customer → Pelanggan
+  frontend/src/features/rnd/rndMeta.js
+     baris  158  “Print paper”
+                 print → Cetak
+  frontend/src/features/sales/ReturnCompensationPanel.jsx
+     baris  155  “Refund tunai”
+                 refund → Pengembalian Dana
+  frontend/src/features/sales/ReturnEligibilityPanel.jsx
+     baris   66  “Klaim ke supplier (terpisah, tidak memengaruhi custo”
+                 customer → Pelanggan
+     baris   72  “Asumsi sementara: customer”
+                 customer → Pelanggan
+  frontend/src/features/sales/ReturnReplacementPanel.jsx
+     baris   54  “· sisa saldo customer”
+                 customer → Pelanggan
+  frontend/src/features/sales/ReturnSettleModal.jsx
+     baris  300  “Kompensasi untuk customer (KLR-10):”
+                 customer → Pelanggan
+  frontend/src/features/sales/SpecialOrderItemsEditor.jsx
+     baris   67  “Artwork ACC (HOLD tidak tampil) *”
+                 hold → Ditahan
+  frontend/src/features/sales/mobile/MobileCustomers.jsx
+     baris   82  “Ledger”
+                 ledger → Mutasi
+  frontend/src/features/sales/mobile/MobileExtraViews.jsx
+     baris   42  “m-price-status-filter”
+                 price → Harga
+     baris   84  “Order sample”
+                 order → Pesanan
+  frontend/src/features/sales/mobile/MobileMore.jsx
+     baris   84  “Rantai SO → surat jalan → invoice → retur”
+                 invoice → Faktur
+  frontend/src/features/sales/mobile/MobileQuickView.jsx
+     baris  138  “Order biasa”
+                 order → Pesanan
+     baris  140  “Order sample”
+                 order → Pesanan
+     baris  144  “Pesanan Sample (SOS-) terpisah dari order biasa — ma”
+                 order → Pesanan
+  frontend/src/features/sales/mobile/MobileSalesHome.jsx
+     baris  150  “Ledger”
+                 ledger → Mutasi
+  frontend/src/features/sales_admin/KeepPendingPanel.jsx
+     baris   16  “Pending”
+                 pending → Menunggu
+     baris  118  “juga Pending”
+                 pending → Menunggu
+     baris  139  “— sudah dikunci untuk SO, bukan Pending”
+                 pending → Menunggu
+  frontend/src/features/wms/PutawayDraftsPanel.jsx
+     baris   66  “draf-putaway”
+                 putaway → Simpan ke Rak
+  frontend/src/features/wms/PutawayOrdersPanel.jsx
+     baris  162  “Tulis hasil pengecekan ulang — tercatat di jejak per”
+                 putaway → Simpan ke Rak
+     baris  309  “Butuh izin approve. Roll dianggap tiba tanpa hasil s”
+                 approve → Setujui
+  frontend/src/features/wms/grn/GrnLineRow.jsx
+     baris  177  “Packing list:”
+                 packing → Pengemasan
+  frontend/src/features/wms/grn/GrnPackingChecklist.jsx
+     baris   12  “Packing list · roll diharapkan”
+                 packing → Pengemasan
+  frontend/src/features/wms/transfer/TransferReceiptPanel.jsx
+     baris   97  “Simpan nanti (masuk antrean putaway)”
+                 putaway → Simpan ke Rak
+
+  ✗ 109 temuan di 62 berkas.
+

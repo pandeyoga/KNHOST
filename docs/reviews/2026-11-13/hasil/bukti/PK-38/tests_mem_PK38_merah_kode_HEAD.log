@@ -1,0 +1,368 @@
+.FFF.F.FF..F..FFF.FFFF.FF.F                                              [100%]
+=================================== FAILURES ===================================
+______________ test_PK38_U2_hapus_sisa_di_atas_batas_orang_kedua _______________
+
+klien = <httpx.AsyncClient object at 0x7f46ad4b0e50>
+db = <motor.motor_asyncio.AsyncIOMotorDatabase object at 0x7f46c1f9cd10>
+orang = {'mgrA': {'id': 'usr_uji_10c8b4df50', 'name': 'Uji manager 1', 'email': 'uji1.usr_uji_10c8b4df50@uji.id', 'role': 'man..._252c649309', 'name': 'Uji sales_admin 4', 'email': 'uji4.usr_uji_252c649309@uji.id', 'role': 'sales_admin', ...}, ...}
+
+    async def test_PK38_U2_hapus_sisa_di_atas_batas_orang_kedua(klien, db, orang):
+        k = await _kwitansi(db, orang["mgrA"], 1_500_000)
+        r = await _hapus_sisa(klien, orang["h_mgrA"], k, 1_500_000)
+>       assert (r.status_code, r.json().get("detail")) == (403, pesan_dua_orang()), r.text
+E       AssertionError: {"detail":"Nominal Rp 1.500.000 melebihi batas keputusan manager (Rp 1.000.000) — harus admin/direksi."}
+E       assert (400, 'Nomina...min/direksi.') == (403, 'Bebas ...l dua orang.')
+E         
+E         At index 0 diff: 400 != 403
+E         Use -v to get more diff
+
+tests_mem/test_PK38_wewenang.py:115: AssertionError
+_____ test_PK38_U2b_keputusan_saat_kwitansi_dibuat_tidak_membatalkan_uang ______
+
+db = <motor.motor_asyncio.AsyncIOMotorDatabase object at 0x7f46c1f9cd10>
+orang = {'mgrA': {'id': 'usr_uji_10c8b4df50', 'name': 'Uji manager 1', 'email': 'uji1.usr_uji_10c8b4df50@uji.id', 'role': 'man..._252c649309', 'name': 'Uji sales_admin 4', 'email': 'uji4.usr_uji_252c649309@uji.id', 'role': 'sales_admin', ...}, ...}
+
+    async def test_PK38_U2b_keputusan_saat_kwitansi_dibuat_tidak_membatalkan_uang(db, orang):
+        """Jalur `create_receipt` menangkap `VarianceError`: penolakan dua orang adalah turunannya, jadi kwitansi tetap sah
+        dan selisihnya menunggu di antrean (tidak ada 403 yang membatalkan uang yang sudah masuk)."""
+        from services import payment_variance_service as pvs
+>       assert issubclass(pvs.VarianceForbidden, pvs.VarianceError)
+                          ^^^^^^^^^^^^^^^^^^^^^
+E       AttributeError: module 'services.payment_variance_service' has no attribute 'VarianceForbidden'
+
+tests_mem/test_PK38_wewenang.py:131: AttributeError
+______________ test_PK38_U3_biaya_bank_di_atas_batas_orang_kedua _______________
+
+klien = <httpx.AsyncClient object at 0x7f46ad4b0e50>
+db = <motor.motor_asyncio.AsyncIOMotorDatabase object at 0x7f46c1f9cd10>
+orang = {'mgrA': {'id': 'usr_uji_10c8b4df50', 'name': 'Uji manager 1', 'email': 'uji1.usr_uji_10c8b4df50@uji.id', 'role': 'man..._252c649309', 'name': 'Uji sales_admin 4', 'email': 'uji4.usr_uji_252c649309@uji.id', 'role': 'sales_admin', ...}, ...}
+
+    async def test_PK38_U3_biaya_bank_di_atas_batas_orang_kedua(klien, db, orang):
+        kasus = await _kasus(klien, db, orang["h_mgrA"], "selisih_biaya_bank", 1_500_000)
+        r = await _selesaikan(klien, orang["h_mgrA"], kasus, "bebankan_biaya_bank", "bank_charge", 1_500_000)
+>       assert (r.status_code, r.json().get("detail")) == (403, pesan_dua_orang()), r.text
+E       AssertionError: {"id":"fcs_7619c8f261d3","number":"KSC/CASE-00001","entity_id":"ent_ksc","case_type":"selisih_biaya_bank","case_type_label":"Nominal kurang karena biaya bank","title":"Nominal kurang karena biaya bank","description":"","amount":1500000.0,"customer_id":"cus_pk38_2c5ee3a9","supplier_id":"","order_ids":["so_pk38_d100bba1"],"source":{"kind":"manual","id":"","label":""},"status":"resolved","assignee":"","attachments":[],"sla_hours":24,"sla_due_at":"2026-11-15T07:40:06.850254+00:00","escalation_level":0,"escalated_at":"","reason_code":"bank_charge","reason_label":"Dipotong biaya bank","resolution":{"action":"bebankan_biaya_bank","action_label":"Bebankan selisih ke biaya bank","effect":"Selisih kecil menjadi beban administrasi bank, dan sisa piutang pesanan ditutup supaya tidak menggantung selamanya.","produces":"Jurnal Dr 6-8000 Beban Administrasi Bank / Cr 1-1200 Piutang + pesanan lunas","amount":1500000.0,"note":"uji PK-38","extra":{},"next_action":"","auto_resolved":false,"at":"2026-11-14T07:40:06.868474+00:00","by":"Uji manager 1"},"documents":[{"kind":"order_payment","id":"so_pk38_d100bba1","number":"SO-KS-PK38-3","label":"Pelunasan Rp 1.500.000 menempel di pesanan SO-KS-PK38-3"},{"kind":"journal_entry","id":"je_2126189d3eee","number":"KSC/JE-00006","label":"Jurnal Dr 6-8000 Beban Administrasi Bank / Cr 1-1200 Piutang"}],"approved_by":"","approved_at":"","resolved_by":"Uji manager 1","resolved_at":"2026-11-14T07:40:06.868474+00:00","auto_source":"","timeline":[{"event":"dibuka","label":"Kasus dibuka: Nominal kurang karena biaya bank","actor":"Uji manager 1","note":"","at":"2026-11-14T07:40:06.850293+00:00"},{"event":"selesai","label":"Kasus diselesaikan: Bebankan selisih ke biaya bank","actor":"Uji manager 1","note":"Dipotong biaya bank · Rp 1.500.000 · 2 dokumen turunan","at":"2026-11-14T07:40:06.868488+00:00"}],"refs":[{"rel":"settles","doc_type":"sales_order","doc_id":"so_pk38_d100bba1","doc_number":"SO-KS-PK38-3","note":"kasus keuangan pesanan ini","at":"2026-11-14T07:40:06.850681+00:00"}],"created_by":"Uji manager 1","created_at":"2026-11-14T07:40:06.850254+00:00","updated_at":"2026-11-14T07:40:06.868498+00:00","saga_lock":{"action":"case_resolve","by":"Uji manager 1","started_at":"2026-11-14T07:40:06.865333+00:00","token":"lk_e26ac5e21927"},"playbook":["Bandingkan nominal tagihan dengan yang benar-benar masuk.","Kalau selisihnya sebesar biaya transfer dan di bawah ambang, bebankan ke Beban Administrasi Bank — pesanan dianggap lunas."],"actions":[{"code":"bebankan_biaya_bank","label":"Bebankan selisih ke biaya bank","effect":"Selisih kecil menjadi beban administrasi bank, dan sisa piutang pesanan ditutup supaya tidak menggantung selamanya.","needs":["order_id","amount"],"produces":"Jurnal Dr 6-8000 Beban Administrasi Bank / Cr 1-1200 Piutang + pesanan lunas","sensitive":false}],"moves_cash":true,"needs_evidence":false,"reason_codes":["bank_charge"],"priority":"normal","age_hours":0.0,"overdue":false}
+E       assert (200, None) == (403, 'Bebas ...l dua orang.')
+E         
+E         At index 0 diff: 200 != 403
+E         Use -v to get more diff
+
+tests_mem/test_PK38_wewenang.py:166: AssertionError
+______________ test_PK38_U5_uang_dipegang_karyawan_di_atas_batas _______________
+
+klien = <httpx.AsyncClient object at 0x7f46ad4b0e50>
+db = <motor.motor_asyncio.AsyncIOMotorDatabase object at 0x7f46c1f9cd10>
+orang = {'mgrA': {'id': 'usr_uji_10c8b4df50', 'name': 'Uji manager 1', 'email': 'uji1.usr_uji_10c8b4df50@uji.id', 'role': 'man..._252c649309', 'name': 'Uji sales_admin 4', 'email': 'uji4.usr_uji_252c649309@uji.id', 'role': 'sales_admin', ...}, ...}
+
+    async def test_PK38_U5_uang_dipegang_karyawan_di_atas_batas(klien, db, orang):
+        kasus = await _kasus(klien, db, orang["h_mgrA"], "rekening_pribadi_karyawan", 1_500_000, bukti=True)
+        r = await _selesaikan(klien, orang["h_mgrA"], kasus, "akui_dipegang_karyawan", "case_employee_account",
+                              1_500_000, employee_name="Budi")
+>       assert (r.status_code, r.json().get("detail")) == (403, pesan_dua_orang()), r.text
+E       AssertionError: {"id":"fcs_abd89d0adb43","number":"KSC/CASE-00003","entity_id":"ent_ksc","case_type":"rekening_pribadi_karyawan","case_type_label":"Pelanggan transfer ke rekening pribadi karyawan","title":"Pelanggan transfer ke rekening pribadi karyawan","description":"","amount":1500000.0,"customer_id":"cus_pk38_aa445499","supplier_id":"","order_ids":["so_pk38_cea8c797"],"source":{"kind":"manual","id":"","label":""},"status":"in_progress","assignee":"","attachments":[{"name":"bukti.pdf","path":"uji/bukti.pdf"}],"sla_hours":24,"sla_due_at":"2026-11-15T07:40:06.923311+00:00","escalation_level":0,"escalated_at":"","reason_code":"case_employee_account","reason_label":"Masuk rekening pribadi karyawan","resolution":{"action":"akui_dipegang_karyawan","action_label":"Langkah 1 — akui uang dipegang karyawan","effect":"Piutang pelanggan lunas dan berpindah menjadi piutang karyawan. Kas belum bertambah karena uangnya belum masuk rekening perusahaan.","produces":"Jurnal Dr 1-1280 Piutang Titipan Karyawan / Cr 1-1200 Piutang + pembayaran menempel di pesanan","amount":1500000.0,"note":"uji PK-38","extra":{"employee_name":"Budi","step":1,"held_amount":1500000.0,"settled_amount":0.0},"next_action":"setor_dari_karyawan","auto_resolved":false,"at":"2026-11-14T07:40:06.940767+00:00","by":"Uji manager 1"},"documents":[{"kind":"order_payment","id":"so_pk38_cea8c797","number":"SO-KS-PK38-5","label":"Pelunasan Rp 1.500.000 menempel di pesanan SO-KS-PK38-5"},{"kind":"journal_entry","id":"je_55b7955bff38","number":"KSC/JE-00008","label":"Jurnal Dr 1-1280 Piutang Titipan Karyawan / Cr 1-1200 Piutang"}],"approved_by":"","approved_at":"","resolved_by":"","resolved_at":"","auto_source":"","timeline":[{"event":"dibuka","label":"Kasus dibuka: Pelanggan transfer ke rekening pribadi karyawan","actor":"Uji manager 1","note":"","at":"2026-11-14T07:40:06.923348+00:00"},{"event":"langkah","label":"Langkah dijalankan: Langkah 1 — akui uang dipegang karyawan","actor":"Uji manager 1","note":"Masuk rekening pribadi karyawan · Rp 1.500.000 · 2 dokumen turunan","at":"2026-11-14T07:40:06.940778+00:00"}],"refs":[{"rel":"settles","doc_type":"sales_order","doc_id":"so_pk38_cea8c797","doc_number":"SO-KS-PK38-5","note":"kasus keuangan pesanan ini","at":"2026-11-14T07:40:06.923762+00:00"}],"created_by":"Uji manager 1","created_at":"2026-11-14T07:40:06.923311+00:00","updated_at":"2026-11-14T07:40:06.940788+00:00","saga_lock":{"action":"case_resolve","by":"Uji manager 1","started_at":"2026-11-14T07:40:06.937739+00:00","token":"lk_fa5d56ec0a05"},"playbook":["Catat siapa karyawannya dan pesanan mana yang dibayar (wajib lampiran bukti).","Langkah 1: akui uangnya dipegang karyawan — piutang pelanggan lunas, berpindah jadi piutang karyawan.","Langkah 2: setelah karyawan menyetor, catat setorannya sehingga piutang karyawan kembali nol."],"actions":[{"code":"akui_dipegang_karyawan","label":"Langkah 1 — akui uang dipegang karyawan","effect":"Piutang pelanggan lunas dan berpindah menjadi piutang karyawan. Kas belum bertambah karena uangnya belum masuk rekening perusahaan.","needs":["employee_name","order_id","amount"],"produces":"Jurnal Dr 1-1280 Piutang Titipan Karyawan / Cr 1-1200 Piutang + pembayaran menempel di pesanan","sensitive":false},{"code":"setor_dari_karyawan","label":"Langkah 2 — catat setoran karyawan","effect":"Karyawan menyetorkan uangnya; piutang karyawan berkurang.","needs":["amount"],"produces":"Transaksi kas masuk + jurnal Dr Kas-Bank / Cr 1-1280 Piutang Titipan Karyawan","sensitive":false}],"moves_cash":true,"needs_evidence":true,"reason_codes":["case_employee_account"],"priority":"normal","age_hours":0.0,"overdue":false}
+E       assert (200, None) == (403, 'Bebas ...l dua orang.')
+E         
+E         At index 0 diff: 200 != 403
+E         Use -v to get more diff
+
+tests_mem/test_PK38_wewenang.py:186: AssertionError
+__________________________ test_PK38_U7_batas_per_pt ___________________________
+
+klien = <httpx.AsyncClient object at 0x7f46ad4b0e50>
+db = <motor.motor_asyncio.AsyncIOMotorDatabase object at 0x7f46c1f9cd10>
+orang = {'mgrA': {'id': 'usr_uji_10c8b4df50', 'name': 'Uji manager 1', 'email': 'uji1.usr_uji_10c8b4df50@uji.id', 'role': 'man..._252c649309', 'name': 'Uji sales_admin 4', 'email': 'uji4.usr_uji_252c649309@uji.id', 'role': 'sales_admin', ...}, ...}
+
+    async def test_PK38_U7_batas_per_pt(klien, db, orang):
+        await _set(B_BARU, 2 * JT, "entity", KSC)
+        try:
+            k1 = await _kwitansi(db, orang["mgrA"], 1_500_000, KSC)
+            r = await _hapus_sisa(klien, orang["h_mgrA"], k1, 1_500_000)
+>           assert r.status_code == 200, r.text   # 1.500.000 ≤ 2.000.000 di ent_ksc
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E           AssertionError: {"detail":"Nominal Rp 1.500.000 melebihi batas keputusan manager (Rp 1.000.000) — harus admin/direksi."}
+E           assert 400 == 200
+E            +  where 400 = <Response [400 Bad Request]>.status_code
+
+tests_mem/test_PK38_wewenang.py:204: AssertionError
+______________________ test_PK38_U8_kunci_lama_jadi_alias ______________________
+
+klien = <httpx.AsyncClient object at 0x7f46ad4b0e50>
+db = <motor.motor_asyncio.AsyncIOMotorDatabase object at 0x7f46c1f9cd10>
+orang = {'mgrA': {'id': 'usr_uji_10c8b4df50', 'name': 'Uji manager 1', 'email': 'uji1.usr_uji_10c8b4df50@uji.id', 'role': 'man..._252c649309', 'name': 'Uji sales_admin 4', 'email': 'uji4.usr_uji_252c649309@uji.id', 'role': 'sales_admin', ...}, ...}
+kepala_admin = {'Authorization': 'Bearer tok_uji_8a6383e5855b4bed96ddeeb8763699c6', 'X-Entity-Id': 'ent_ksc'}
+
+    async def test_PK38_U8_kunci_lama_jadi_alias(klien, db, orang, kepala_admin):
+        # Kunci baru belum pernah diisi di grup maupun ent_kanda; kunci lama grup = 3.000.000 → 2.500.000 ≤ 3.000.000.
+        assert (await resolver.resolve(B_BARU, {"entity_id": KANDA}))["source_layer"] == "code_default"
+        awal = await resolver.value_of(B_LAMA)
+        await _set(B_LAMA, 3 * JT, "global", "")
+        try:
+            k = await _kwitansi(db, orang["mgrA"], 2_500_000, KANDA)
+            r = await _hapus_sisa(klien, orang["h_mgrA_kanda"], k, 2_500_000)
+            assert r.status_code == 200, r.text
+>           from services import ar_reduction_guard as ard
+E           ImportError: cannot import name 'ar_reduction_guard' from 'services' (/tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/pk38/head_tree/backend/services/__init__.py)
+
+tests_mem/test_PK38_wewenang.py:221: ImportError
+_______________ test_PK38_pilihan_keputusan_memakai_batas_server _______________
+
+klien = <httpx.AsyncClient object at 0x7f46ad4b0e50>
+db = <motor.motor_asyncio.AsyncIOMotorDatabase object at 0x7f46c1f9cd10>
+orang = {'mgrA': {'id': 'usr_uji_10c8b4df50', 'name': 'Uji manager 1', 'email': 'uji1.usr_uji_10c8b4df50@uji.id', 'role': 'man..._252c649309', 'name': 'Uji sales_admin 4', 'email': 'uji4.usr_uji_252c649309@uji.id', 'role': 'sales_admin', ...}, ...}
+
+    async def test_PK38_pilihan_keputusan_memakai_batas_server(klien, db, orang):
+        """Layar: pilihan `writeoff` membawa `max_amount` dan `needs_second_person_above` = batas server."""
+        k = await _kwitansi(db, orang["mgrA"], 700_000)
+        r = await klien.get(f"/api/payment-variances/receipt/{k['rc']}", headers=orang["h_mgrA"])
+        assert r.status_code == 200, r.text
+        wo = next(o for o in r.json()["assessment"]["options"] if o["value"] == "writeoff")
+>       assert (wo["max_amount"], wo["needs_second_person_above"]) == (1 * JT, 1 * JT)
+                                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       KeyError: 'needs_second_person_above'
+
+tests_mem/test_PK38_wewenang.py:261: KeyError
+_________________ test_PK38_U12_finance_bawaan_bayar_kontrabon _________________
+
+klien = <httpx.AsyncClient object at 0x7f46ad4b0e50>
+kepala_admin = {'Authorization': 'Bearer tok_uji_8a6383e5855b4bed96ddeeb8763699c6', 'X-Entity-Id': 'ent_ksc'}
+
+    async def test_PK38_U12_finance_bawaan_bayar_kontrabon(klien, kepala_admin):
+        from permissions_config import DEFAULT_PERMISSIONS
+>       assert DEFAULT_PERMISSIONS["finance"]["contra_bon"] == ["view", "pay"]
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       KeyError: 'contra_bon'
+
+tests_mem/test_PK38_wewenang.py:334: KeyError
+___________________ test_PK38_bayar_orang_kedua_bila_diatur ____________________
+
+klien = <httpx.AsyncClient object at 0x7f46ad4b0e50>
+db = <motor.motor_asyncio.AsyncIOMotorDatabase object at 0x7f46c1f9cd10>
+kontrabon = {'cb_pk38_bayar': 'cb_pk38_bayar', 'cb_pk38_setuju': 'cb_pk38_setuju', 'cb_pk38_bayar2': 'cb_pk38_bayar2', 'cb_pk38_setuju2': 'cb_pk38_setuju2'}
+orang = {'mgrA': {'id': 'usr_uji_10c8b4df50', 'name': 'Uji manager 1', 'email': 'uji1.usr_uji_10c8b4df50@uji.id', 'role': 'man..._252c649309', 'name': 'Uji sales_admin 4', 'email': 'uji4.usr_uji_252c649309@uji.id', 'role': 'sales_admin', ...}, ...}
+
+    async def test_PK38_bayar_orang_kedua_bila_diatur(klien, db, kontrabon, orang):
+        """IA-12 — `kontrol.bayar_hutang.min_orang = 2`: penyetuju kontrabon tidak boleh membayarnya sendiri."""
+        from services.dual_control import pesan_tolak
+        cid = "cb_pk38_bayar_sod"
+        bid = f"vb_{cid}"
+        from services import contra_bon_service as cbs
+        await db.vendor_bills.insert_one({"id": bid, "bill_number": bid.upper(), "entity_id": KSC, "supplier_id": "sup_pk38",
+                                          "supplier_name": "Pemasok PK38", "status": "posted", "grand_total": 2 * JT,
+                                          "subtotal": 2 * JT, "amount_paid": 0.0, "payments": [], "timeline": [],
+                                          "po_id": None, "bill_date": now_iso()[:10], "created_at": now_iso()})
+        await db.contra_bons.insert_one(dict(cbs.recompute({
+            "id": cid, "number": cid.upper(), "entity_id": KSC, "supplier_id": "sup_pk38", "supplier_name": "Pemasok PK38",
+            "status": "approved", "created_at": now_iso(), "timeline": [], "payments": [], "decisions": [],
+            "deductions": [], "approved_by": orang["mgrA"]["name"], "approved_by_id": orang["mgrA"]["id"],
+            "bills": [{"bill_id": bid, "bill_number": bid.upper(), "applied_amount": 2 * JT, "settled_amount": 0.0,
+                       "po_id": None}]})))
+>       await _set("kontrol.bayar_hutang.min_orang", "2", "entity", KSC)
+
+tests_mem/test_PK38_wewenang.py:356: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests_mem/test_PK38_wewenang.py:48: in _set
+    await resolver.set_value(key, value, scope_type=scope_type, scope_id=scope_id, actor="uji", reason="uji PK-38")
+services/config_resolver.py:503: in set_value
+    entry = registry.require(key)
+            ^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+key = 'kontrol.bayar_hutang.min_orang'
+
+    def require(key: str) -> Dict[str, Any]:
+        entry = _REGISTRY.get(key)
+        if not entry:
+>           raise KeyError(f"Setting '{key}' tidak ada di registry")
+E           KeyError: "Setting 'kontrol.bayar_hutang.min_orang' tidak ada di registry"
+
+config_registry.py:373: KeyError
+________________ test_PK38_U13_gudang_tidak_mengetik_nilai_jasa ________________
+
+klien = <httpx.AsyncClient object at 0x7f46ad4b0e50>
+db = <motor.motor_asyncio.AsyncIOMotorDatabase object at 0x7f46c1f9cd10>
+orang = {'mgrA': {'id': 'usr_uji_10c8b4df50', 'name': 'Uji manager 1', 'email': 'uji1.usr_uji_10c8b4df50@uji.id', 'role': 'man..._252c649309', 'name': 'Uji sales_admin 4', 'email': 'uji4.usr_uji_252c649309@uji.id', 'role': 'sales_admin', ...}, ...}
+
+    async def test_PK38_U13_gudang_tidak_mengetik_nilai_jasa(klien, db, orang):
+        mko = await _order_makloon(db)
+        n_tagihan = await jumlah("vendor_bills", {})
+        r = await _catat_jasa(klien, orang["h_gdg"], mko, tariff=500_000)
+>       assert (r.status_code, r.json().get("detail")) == (403, PESAN_JASA), r.text
+E       AssertionError: {"id":"mko_pk38_16262728","mko_number":"MKO-mko_pk38_16262728","entity_id":"ent_ksc","status":"completed","steps":[{"seq":1,"material_flow":"service_only","status":"received","makloon_id":"mkl_pk38","makloon_name":"Mitra PK38","contract_id":"ctr_pk38_f66db9fe","tariff_basis":"lumpsum","tariff_rate":0,"input_qty":100,"input_unit":"meter","input_product_id":"","output_product_id":"prd_out_pk38","aux_cost":0,"stage_label":"Pembuatan kasa","process_type":"screen","issue_ref":"iss_mko_pk38_16262728","tolerance_pct":0,"expected_output_qty":100,"actual_output_qty":100.0,"actual_byproduct_qty":0.0,"tariff":500000.0,"service_value":500000.0,"service_bill_id":"vb_7888655cd974","tariff_actual":{"source":"manual_input","amount":500000.0,"basis":"lumpsum","explain":["Biaya jasa diisi manual: Rp 500.000"]},"material_value":0.0,"output_value":0.0,"output_unit_cost":0.0,"byproduct_value":0.0,"lots":[],"received_at":"2026-11-14T07:40:07.547852+00:00","service_recorded_at":"2026-11-14T07:40:07.547856+00:00","supplier_invoice_no":"","service_note":"","variance":{"expected_qty":100.0,"actual_qty":100.0,"unit":"meter","variance_qty":0.0,"variance_pct":0.0,"tolerance_pct":0.0,"shortfall_qty":0.0,"unit_value":0.0,"shortfall_value":0.0,"level":"ok","claim_required":false,"over_delivery":false,"message":""},"claim":{"status":"none","required":false,"action":"","amount":0.0,"amount_suggested":0.0,"reason":"","history":[]}}],"timeline":[{"at":"2026-11-14T07:40:07.547871+00:00","event":"service_recorded","note":"Langkah 1 (Pembuatan kasa): jasa Rp 500.000 dicatat ke Mitra PK38 (VBM-00001) — kain TIDAK bergerak, qty tetap 100 meter."},{"at":"2026-11-14T07:40:07.550299+00:00","event":"service_unabsorbed","note":"Jasa Rp 500.000 tidak menempel ke kain mana pun di SPK ini (tidak ada langkah kain sesudahnya) → diakui sebagai Beban Jasa Makloon Tak Terserap (5-1200), keluar dari WIP."}],"created_at":"2026-11-14T07:40:07.533950+00:00","service_absorption_pending":0.0,"completion_hold":null,"costing":{"material_cost":0.0,"service_cost":500000.0,"aux_cost":0.0,"byproduct_credit":0.0,"hpp_output":0.0,"hpp_per_unit":0.0,"service_absorption_pending":500000.0,"service_unabsorbed":500000.0,"steps":[{"seq":1,"process_type":"screen","stage_code":"","stage_label":"Pembuatan kasa","changes_stage":true,"material_flow":"service_only","absorbed_service_value":0.0,"makloon_name":"Mitra PK38","status":"received","input_qty":100,"input_unit":"meter","expected_output_qty":100,"actual_output_qty":100.0,"output_unit":null,"material_value":0.0,"service_value":500000.0,"aux_cost":0.0,"byproduct_value":0.0,"output_value":0.0,"hpp_per_unit":0.0,"tariff_basis":"lumpsum","contract_number":"","variance_pct":0.0,"claim_status":"none"}]},"claim_summary":{"open":0,"pending_approval":0,"approved":0,"rejected":0,"approved_amount":0.0,"needs_action":0},"updated_at":"2026-11-14T07:40:07.550301+00:00"}
+E       assert (200, None) == (403, 'Nilai ...ari kontrak.')
+E         
+E         At index 0 diff: 200 != 403
+E         Use -v to get more diff
+
+tests_mem/test_PK38_wewenang.py:394: AssertionError
+________________ test_PK38_U13b_tarif_kontrak_nol_untuk_gudang _________________
+
+klien = <httpx.AsyncClient object at 0x7f46ad4b0e50>
+db = <motor.motor_asyncio.AsyncIOMotorDatabase object at 0x7f46c1f9cd10>
+orang = {'mgrA': {'id': 'usr_uji_10c8b4df50', 'name': 'Uji manager 1', 'email': 'uji1.usr_uji_10c8b4df50@uji.id', 'role': 'man..._252c649309', 'name': 'Uji sales_admin 4', 'email': 'uji4.usr_uji_252c649309@uji.id', 'role': 'sales_admin', ...}, ...}
+
+    async def test_PK38_U13b_tarif_kontrak_nol_untuk_gudang(klien, db, orang):
+        mko = await _order_makloon(db, kontrak=False)   # tanpa kontrak, tarif langkah 0
+        r = await _catat_jasa(klien, orang["h_gdg"], mko)
+>       assert (r.status_code, r.json().get("detail")) == (400, PESAN_TARIF_NOL), r.text
+E       AssertionError: {"detail":"Biaya jasa harus lebih dari 0. Langkah jasa murni tidak mengubah kain — kalau biayanya nol, langkah ini tidak punya alasan dicatat (hapus langkahnya atau isi tarifnya)."}
+E       assert (400, 'Biaya ...i tarifnya).') == (400, 'Tarif ... catat lagi.')
+E         
+E         At index 1 diff: 'Biaya jasa harus lebih dari 0. Langkah jasa murni tidak mengubah kain — kalau biayanya nol, langkah ini tidak punya alasan dicatat (hapus langkahnya atau isi tarifnya).' != 'Tarif jasa langkah ini belum ada di kontrak. Minta bagian Pembelian mengisi tarifnya, lalu catat lagi.'
+E         Use -v to get more diff
+
+tests_mem/test_PK38_wewenang.py:415: AssertionError
+__________________ test_PK38_U15_terima_hasil_gudang_isi_ppn ___________________
+
+klien = <httpx.AsyncClient object at 0x7f46ad4b0e50>
+db = <motor.motor_asyncio.AsyncIOMotorDatabase object at 0x7f46c1f9cd10>
+orang = {'mgrA': {'id': 'usr_uji_10c8b4df50', 'name': 'Uji manager 1', 'email': 'uji1.usr_uji_10c8b4df50@uji.id', 'role': 'man..._252c649309', 'name': 'Uji sales_admin 4', 'email': 'uji4.usr_uji_252c649309@uji.id', 'role': 'sales_admin', ...}, ...}
+
+    async def test_PK38_U15_terima_hasil_gudang_isi_ppn(klien, db, orang):
+        mko = await _order_makloon(db, alur="moves", status="issued")
+        await db.products.update_one({"id": "prd_out_pk38"}, {"$set": {"id": "prd_out_pk38", "name": "Kain Hasil PK38",
+                                                                       "sku": "OUT-PK38", "base_unit": "meter"}},
+                                     upsert=True)
+        wh = {"id": _id("wh")}
+        await db.warehouses.insert_one({**wh, "name": "Gudang PK38", "code": wh["id"][-6:], "entity_id": KSC,
+                                        "status": "active", "is_active": True, "type": "main"})
+        r = await klien.post(f"/api/makloon-orders/{mko}/receive", headers=orang["h_gdg"],
+                             json={"step_seq": 1, "actual_output_qty": 100, "ppn": 55_000,
+                                   "output_warehouse_id": wh.get("id", ""),
+                                   "rolls": [{"lot": "LOT-PK38", "length": 100, "grade": "A"}]})
+>       assert (r.status_code, r.json().get("detail")) == (403, PESAN_JASA), r.text
+E       AssertionError: {"detail":"Bahan input langkah 1 sudah tidak ada di mitra (sudah dikonsumsi) tanpa catatan penerimaan yang sah — penerimaan ganda ditolak. Muat ulang order."}
+E       assert (409, 'Bahan ...ulang order.') == (403, 'Nilai ...ari kontrak.')
+E         
+E         At index 0 diff: 409 != 403
+E         Use -v to get more diff
+
+tests_mem/test_PK38_wewenang.py:431: AssertionError
+__________________ test_PK38_detail_menandai_isian_nilai_jasa __________________
+
+klien = <httpx.AsyncClient object at 0x7f46ad4b0e50>
+db = <motor.motor_asyncio.AsyncIOMotorDatabase object at 0x7f46c1f9cd10>
+orang = {'mgrA': {'id': 'usr_uji_10c8b4df50', 'name': 'Uji manager 1', 'email': 'uji1.usr_uji_10c8b4df50@uji.id', 'role': 'man..._252c649309', 'name': 'Uji sales_admin 4', 'email': 'uji4.usr_uji_252c649309@uji.id', 'role': 'sales_admin', ...}, ...}
+
+    async def test_PK38_detail_menandai_isian_nilai_jasa(klien, db, orang):
+        mko = await _order_makloon(db)
+        r = await klien.get(f"/api/makloon-orders/{mko}", headers=orang["h_gdg"])
+        assert r.status_code == 200, r.text
+>       assert [s["service_value_editable"] for s in r.json()["steps"]] == [False]
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests_mem/test_PK38_wewenang.py:440: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+.0 = <list_iterator object at 0x7f46ac47dd50>
+
+>   assert [s["service_value_editable"] for s in r.json()["steps"]] == [False]
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   KeyError: 'service_value_editable'
+
+tests_mem/test_PK38_wewenang.py:440: KeyError
+__________________________ test_PK38_U16_cbd_ke_net30 __________________________
+
+klien = <httpx.AsyncClient object at 0x7f46ad4b0e50>
+db = <motor.motor_asyncio.AsyncIOMotorDatabase object at 0x7f46c1f9cd10>
+orang = {'mgrA': {'id': 'usr_uji_10c8b4df50', 'name': 'Uji manager 1', 'email': 'uji1.usr_uji_10c8b4df50@uji.id', 'role': 'man..._252c649309', 'name': 'Uji sales_admin 4', 'email': 'uji4.usr_uji_252c649309@uji.id', 'role': 'sales_admin', ...}, ...}
+
+    async def test_PK38_U16_cbd_ke_net30(klien, db, orang):
+        so = await _pesanan(db, "CBD")
+        r = await _ganti_termin(klien, orang["h_sa"], so, "NET30")
+>       assert r.status_code == 403, r.text
+E       AssertionError: {"order":{"id":"so_pk38_012de39e","number":"SO-T-so_pk38_012de39e","entity_id":"ent_ksc","customer_id":"cus_pk38_t","customer_name":"Toko Termin","status":"confirmed","payment_term_code":"NET30","grand_total":5000000,"paid_total":0,"payments":[],"fulfillment_method":"kirim","order_type":"regular","created_at":"2026-11-14T07:40:07.654358+00:00","items":[{"product_id":"prd_pk38","product_name":"Kain PK38","quantity":10,"base_quantity":10,"price":500000,"discount_percent":0,"unit":"meter"}],"payment_term_name":"Kredit NET 30 Hari","updated_at":"2026-11-14T07:40:07.668197+00:00","last_override_at":"2026-11-14T07:40:07.666384+00:00","last_override_by":"Uji sales_admin 4","stage":"Confirmed","sub_status":["siap_pick"],"last_amendment_id":"amd_c83085d4f8fa","last_amendment_number":"KSC/AMD-00001","amendment_count":1,"timeline":[{"event":"amended","label":"Amandemen KSC/AMD-00001 — Override SO oleh Admin","actor":"Uji sales_admin 4","at":"2026-11-14T07:40:07.667337+00:00","note":"uji ganti termin PK-38"}],"refs":[{"rel":"amended_by","doc_type":"doc_amendment","doc_id":"amd_c83085d4f8fa","doc_number":"KSC/AMD-00001","note":"Override SO oleh Admin","at":"2026-11-14T07:40:07.668022+00:00"}]},"amendment":{"id":"amd_c83085d4f8fa","number":"KSC/AMD-00001","entity_id":"ent_ksc","doc_type":"sales_order","doc_id":"so_pk38_012de39e","doc_number":"SO-T-so_pk38_012de39e","reason_code":"admin_override","reason_label":"Override SO oleh Admin","affects_master":false,"note":"uji ganti termin PK-38","attachments":[],"changes":[{"product_id":"","product_name":"Pesanan","field":"payment_term_code","label":"Termin bayar","from":"CBD","to":"NET30"}],"before":{"grand_total":5000000.0},"after":{"grand_total":5000000.0},"impact":{"amount_before":5000000.0,"amount_after":5000000.0,"delta":0.0,"delta_pct":0.0},"method":"re_derive","method_label":"Dokumen dihitung ulang (belum terbit)","issued":false,"issued_reason":"","policy_snapshot":{},"explain":[],"requires_approval":false,"required_role":"","status":"auto_applied","event":true,"proposed_by":"Uji sales_admin 4","proposed_by_id":"usr_uji_252c649309","proposed_at":"2026-11-14T07:40:07.666748+00:00","decided_by":"Uji sales_admin 4","decided_by_id":"usr_uji_252c649309","decided_at":"2026-11-14T07:40:07.666748+00:00","decision_note":"","applied_at":"2026-11-14T07:40:07.666748+00:00","result_refs":[{"rel":"applied_to","doc_type":"sales_order","doc_id":"so_pk38_012de39e","doc_number":"SO-T-so_pk38_012de39e","note":"Override SO oleh Admin"}],"refs":[{"rel":"applied_to","doc_type":"sales_order","doc_id":"so_pk38_012de39e","doc_number":"SO-T-so_pk38_012de39e","note":"Override SO oleh Admin"}],"payload":{},"created_at":"2026-11-14T07:40:07.666748+00:00","updated_at":"2026-11-14T07:40:07.666748+00:00"},"price_amendment":null,"changes":[{"product_id":"","product_name":"Pesanan","field":"payment_term_code","label":"Termin bayar","from":"CBD","to":"NET30"}]}
+E       assert 200 == 403
+E        +  where 200 = <Response [200 OK]>.status_code
+
+tests_mem/test_PK38_wewenang.py:465: AssertionError
+__________________ test_PK38_U17_arah_termin[DP50-NET30-403] ___________________
+
+klien = <httpx.AsyncClient object at 0x7f46ad4b0e50>
+db = <motor.motor_asyncio.AsyncIOMotorDatabase object at 0x7f46c1f9cd10>
+orang = {'mgrA': {'id': 'usr_uji_10c8b4df50', 'name': 'Uji manager 1', 'email': 'uji1.usr_uji_10c8b4df50@uji.id', 'role': 'man..._252c649309', 'name': 'Uji sales_admin 4', 'email': 'uji4.usr_uji_252c649309@uji.id', 'role': 'sales_admin', ...}, ...}
+dari = 'DP50', ke = 'NET30', kode = 403
+
+    @pytest.mark.parametrize("dari,ke,kode", [("NET30", "CBD", 200), ("DP50", "NET30", 403), ("NET14", "NET30", 403),
+                                              ("NET30", "NET14", 200)])
+    async def test_PK38_U17_arah_termin(klien, db, orang, dari, ke, kode):
+        so = await _pesanan(db, dari)
+        r = await _ganti_termin(klien, orang["h_sa"], so, ke)
+>       assert r.status_code == kode, r.text
+E       AssertionError: {"order":{"id":"so_pk38_1cb76b39","number":"SO-T-so_pk38_1cb76b39","entity_id":"ent_ksc","customer_id":"cus_pk38_t","customer_name":"Toko Termin","status":"confirmed","payment_term_code":"NET30","grand_total":5000000,"paid_total":0,"payments":[],"fulfillment_method":"kirim","order_type":"regular","created_at":"2026-11-14T07:40:07.691086+00:00","items":[{"product_id":"prd_pk38","product_name":"Kain PK38","quantity":10,"base_quantity":10,"price":500000,"discount_percent":0,"unit":"meter"}],"payment_term_name":"Kredit NET 30 Hari","updated_at":"2026-11-14T07:40:07.699978+00:00","last_override_at":"2026-11-14T07:40:07.698330+00:00","last_override_by":"Uji sales_admin 4","stage":"Confirmed","sub_status":["siap_pick"],"last_amendment_id":"amd_4de3ec762e5e","last_amendment_number":"KSC/AMD-00003","amendment_count":1,"timeline":[{"event":"amended","label":"Amandemen KSC/AMD-00003 — Override SO oleh Admin","actor":"Uji sales_admin 4","at":"2026-11-14T07:40:07.699109+00:00","note":"uji ganti termin PK-38"}],"refs":[{"rel":"amended_by","doc_type":"doc_amendment","doc_id":"amd_4de3ec762e5e","doc_number":"KSC/AMD-00003","note":"Override SO oleh Admin","at":"2026-11-14T07:40:07.699779+00:00"}]},"amendment":{"id":"amd_4de3ec762e5e","number":"KSC/AMD-00003","entity_id":"ent_ksc","doc_type":"sales_order","doc_id":"so_pk38_1cb76b39","doc_number":"SO-T-so_pk38_1cb76b39","reason_code":"admin_override","reason_label":"Override SO oleh Admin","affects_master":false,"note":"uji ganti termin PK-38","attachments":[],"changes":[{"product_id":"","product_name":"Pesanan","field":"payment_term_code","label":"Termin bayar","from":"DP50","to":"NET30"}],"before":{"grand_total":5000000.0},"after":{"grand_total":5000000.0},"impact":{"amount_before":5000000.0,"amount_after":5000000.0,"delta":0.0,"delta_pct":0.0},"method":"re_derive","method_label":"Dokumen dihitung ulang (belum terbit)","issued":false,"issued_reason":"","policy_snapshot":{},"explain":[],"requires_approval":false,"required_role":"","status":"auto_applied","event":true,"proposed_by":"Uji sales_admin 4","proposed_by_id":"usr_uji_252c649309","proposed_at":"2026-11-14T07:40:07.698741+00:00","decided_by":"Uji sales_admin 4","decided_by_id":"usr_uji_252c649309","decided_at":"2026-11-14T07:40:07.698741+00:00","decision_note":"","applied_at":"2026-11-14T07:40:07.698741+00:00","result_refs":[{"rel":"applied_to","doc_type":"sales_order","doc_id":"so_pk38_1cb76b39","doc_number":"SO-T-so_pk38_1cb76b39","note":"Override SO oleh Admin"}],"refs":[{"rel":"applied_to","doc_type":"sales_order","doc_id":"so_pk38_1cb76b39","doc_number":"SO-T-so_pk38_1cb76b39","note":"Override SO oleh Admin"}],"payload":{},"created_at":"2026-11-14T07:40:07.698741+00:00","updated_at":"2026-11-14T07:40:07.698741+00:00"},"price_amendment":null,"changes":[{"product_id":"","product_name":"Pesanan","field":"payment_term_code","label":"Termin bayar","from":"DP50","to":"NET30"}]}
+E       assert 200 == 403
+E        +  where 200 = <Response [200 OK]>.status_code
+
+tests_mem/test_PK38_wewenang.py:483: AssertionError
+__________________ test_PK38_U17_arah_termin[NET14-NET30-403] __________________
+
+klien = <httpx.AsyncClient object at 0x7f46ad4b0e50>
+db = <motor.motor_asyncio.AsyncIOMotorDatabase object at 0x7f46c1f9cd10>
+orang = {'mgrA': {'id': 'usr_uji_10c8b4df50', 'name': 'Uji manager 1', 'email': 'uji1.usr_uji_10c8b4df50@uji.id', 'role': 'man..._252c649309', 'name': 'Uji sales_admin 4', 'email': 'uji4.usr_uji_252c649309@uji.id', 'role': 'sales_admin', ...}, ...}
+dari = 'NET14', ke = 'NET30', kode = 403
+
+    @pytest.mark.parametrize("dari,ke,kode", [("NET30", "CBD", 200), ("DP50", "NET30", 403), ("NET14", "NET30", 403),
+                                              ("NET30", "NET14", 200)])
+    async def test_PK38_U17_arah_termin(klien, db, orang, dari, ke, kode):
+        so = await _pesanan(db, dari)
+        r = await _ganti_termin(klien, orang["h_sa"], so, ke)
+>       assert r.status_code == kode, r.text
+E       AssertionError: {"order":{"id":"so_pk38_1ee5f453","number":"SO-T-so_pk38_1ee5f453","entity_id":"ent_ksc","customer_id":"cus_pk38_t","customer_name":"Toko Termin","status":"confirmed","payment_term_code":"NET30","grand_total":5000000,"paid_total":0,"payments":[],"fulfillment_method":"kirim","order_type":"regular","created_at":"2026-11-14T07:40:07.711206+00:00","items":[{"product_id":"prd_pk38","product_name":"Kain PK38","quantity":10,"base_quantity":10,"price":500000,"discount_percent":0,"unit":"meter"}],"payment_term_name":"Kredit NET 30 Hari","updated_at":"2026-11-14T07:40:07.720006+00:00","last_override_at":"2026-11-14T07:40:07.718350+00:00","last_override_by":"Uji sales_admin 4","stage":"Confirmed","sub_status":["siap_pick"],"last_amendment_id":"amd_be711d315552","last_amendment_number":"KSC/AMD-00004","amendment_count":1,"timeline":[{"event":"amended","label":"Amandemen KSC/AMD-00004 — Override SO oleh Admin","actor":"Uji sales_admin 4","at":"2026-11-14T07:40:07.719095+00:00","note":"uji ganti termin PK-38"}],"refs":[{"rel":"amended_by","doc_type":"doc_amendment","doc_id":"amd_be711d315552","doc_number":"KSC/AMD-00004","note":"Override SO oleh Admin","at":"2026-11-14T07:40:07.719760+00:00"}]},"amendment":{"id":"amd_be711d315552","number":"KSC/AMD-00004","entity_id":"ent_ksc","doc_type":"sales_order","doc_id":"so_pk38_1ee5f453","doc_number":"SO-T-so_pk38_1ee5f453","reason_code":"admin_override","reason_label":"Override SO oleh Admin","affects_master":false,"note":"uji ganti termin PK-38","attachments":[],"changes":[{"product_id":"","product_name":"Pesanan","field":"payment_term_code","label":"Termin bayar","from":"NET14","to":"NET30"}],"before":{"grand_total":5000000.0},"after":{"grand_total":5000000.0},"impact":{"amount_before":5000000.0,"amount_after":5000000.0,"delta":0.0,"delta_pct":0.0},"method":"re_derive","method_label":"Dokumen dihitung ulang (belum terbit)","issued":false,"issued_reason":"","policy_snapshot":{},"explain":[],"requires_approval":false,"required_role":"","status":"auto_applied","event":true,"proposed_by":"Uji sales_admin 4","proposed_by_id":"usr_uji_252c649309","proposed_at":"2026-11-14T07:40:07.718749+00:00","decided_by":"Uji sales_admin 4","decided_by_id":"usr_uji_252c649309","decided_at":"2026-11-14T07:40:07.718749+00:00","decision_note":"","applied_at":"2026-11-14T07:40:07.718749+00:00","result_refs":[{"rel":"applied_to","doc_type":"sales_order","doc_id":"so_pk38_1ee5f453","doc_number":"SO-T-so_pk38_1ee5f453","note":"Override SO oleh Admin"}],"refs":[{"rel":"applied_to","doc_type":"sales_order","doc_id":"so_pk38_1ee5f453","doc_number":"SO-T-so_pk38_1ee5f453","note":"Override SO oleh Admin"}],"payload":{},"created_at":"2026-11-14T07:40:07.718749+00:00","updated_at":"2026-11-14T07:40:07.718749+00:00"},"price_amendment":null,"changes":[{"product_id":"","product_name":"Pesanan","field":"payment_term_code","label":"Termin bayar","from":"NET14","to":"NET30"}]}
+E       assert 200 == 403
+E        +  where 200 = <Response [200 OK]>.status_code
+
+tests_mem/test_PK38_wewenang.py:483: AssertionError
+_______________________ test_PK38_konteks_koreksi_termin _______________________
+
+klien = <httpx.AsyncClient object at 0x7f46ad4b0e50>
+db = <motor.motor_asyncio.AsyncIOMotorDatabase object at 0x7f46c1f9cd10>
+orang = {'mgrA': {'id': 'usr_uji_10c8b4df50', 'name': 'Uji manager 1', 'email': 'uji1.usr_uji_10c8b4df50@uji.id', 'role': 'man..._252c649309', 'name': 'Uji sales_admin 4', 'email': 'uji4.usr_uji_252c649309@uji.id', 'role': 'sales_admin', ...}, ...}
+
+    async def test_PK38_konteks_koreksi_termin(klien, db, orang):
+        so = await _pesanan(db, "CBD")
+        r = await klien.get(f"/api/sales-orders/{so}/override-context", headers=orang["h_sa"])
+        assert r.status_code == 200, r.text
+>       assert r.json()["can_loosen_term"] is False
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       KeyError: 'can_loosen_term'
+
+tests_mem/test_PK38_wewenang.py:491: KeyError
+=============================== warnings summary ===============================
+../../../venv311/lib/python3.11/site-packages/starlette/formparsers.py:12
+  /tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/venv311/lib/python3.11/site-packages/starlette/formparsers.py:12: PendingDeprecationWarning: Please use `import python_multipart` instead.
+    import multipart
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+==================================== PASSES ====================================
+______________ test_PK38_U1_hapus_sisa_di_bawah_batas_satu_orang _______________
+---------------------------- Captured stdout setup -----------------------------
+[bootstrap] FASE F lifecycle backfill: 5 produk distempel 'produksi'
+[bootstrap] kebersihan data: 5 record dirapikan {'customers': 3, 'suppliers': 0, 'users': 0, 'hr_employees': 2, 'makloons': 0}
+=========================== short test summary info ============================
+PASSED tests_mem/test_PK38_wewenang.py::test_PK38_U1_hapus_sisa_di_bawah_batas_satu_orang
+PASSED tests_mem/test_PK38_wewenang.py::test_PK38_U4_biaya_bank_kecil_tetap_otomatis
+PASSED tests_mem/test_PK38_wewenang.py::test_PK38_U6_refund_tidak_terkena_pintu
+PASSED tests_mem/test_PK38_wewenang.py::test_PK38_U9_dua_orang_selalu
+PASSED tests_mem/test_PK38_wewenang.py::test_PK38_bukan_pengurang_tanpa_kas_tidak_terkena_batas
+PASSED tests_mem/test_PK38_wewenang.py::test_PK38_U10_izin_bayar_saja
+PASSED tests_mem/test_PK38_wewenang.py::test_PK38_U11_izin_setujui_saja
+PASSED tests_mem/test_PK38_wewenang.py::test_PK38_U14_tarif_dari_kontrak_dan_pembelian_menimpa
+PASSED tests_mem/test_PK38_wewenang.py::test_PK38_U17_arah_termin[NET30-CBD-200]
+PASSED tests_mem/test_PK38_wewenang.py::test_PK38_U17_arah_termin[NET30-NET14-200]
+FAILED tests_mem/test_PK38_wewenang.py::test_PK38_U2_hapus_sisa_di_atas_batas_orang_kedua
+FAILED tests_mem/test_PK38_wewenang.py::test_PK38_U2b_keputusan_saat_kwitansi_dibuat_tidak_membatalkan_uang
+FAILED tests_mem/test_PK38_wewenang.py::test_PK38_U3_biaya_bank_di_atas_batas_orang_kedua
+FAILED tests_mem/test_PK38_wewenang.py::test_PK38_U5_uang_dipegang_karyawan_di_atas_batas
+FAILED tests_mem/test_PK38_wewenang.py::test_PK38_U7_batas_per_pt - Assertion...
+FAILED tests_mem/test_PK38_wewenang.py::test_PK38_U8_kunci_lama_jadi_alias - ...
+FAILED tests_mem/test_PK38_wewenang.py::test_PK38_pilihan_keputusan_memakai_batas_server
+FAILED tests_mem/test_PK38_wewenang.py::test_PK38_U12_finance_bawaan_bayar_kontrabon
+FAILED tests_mem/test_PK38_wewenang.py::test_PK38_bayar_orang_kedua_bila_diatur
+FAILED tests_mem/test_PK38_wewenang.py::test_PK38_U13_gudang_tidak_mengetik_nilai_jasa
+FAILED tests_mem/test_PK38_wewenang.py::test_PK38_U13b_tarif_kontrak_nol_untuk_gudang
+FAILED tests_mem/test_PK38_wewenang.py::test_PK38_U15_terima_hasil_gudang_isi_ppn
+FAILED tests_mem/test_PK38_wewenang.py::test_PK38_detail_menandai_isian_nilai_jasa
+FAILED tests_mem/test_PK38_wewenang.py::test_PK38_U16_cbd_ke_net30 - Assertio...
+FAILED tests_mem/test_PK38_wewenang.py::test_PK38_U17_arah_termin[DP50-NET30-403]
+FAILED tests_mem/test_PK38_wewenang.py::test_PK38_U17_arah_termin[NET14-NET30-403]
+FAILED tests_mem/test_PK38_wewenang.py::test_PK38_konteks_koreksi_termin - Ke...
+17 failed, 10 passed, 1 warning in 2.30s

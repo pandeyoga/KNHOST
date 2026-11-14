@@ -1,0 +1,11 @@
+# KP-T5 — uji mutasi: apakah uji setara (U1/U2) menangkap penyimpangan kecil dari perilaku lama?
+Tiap mutasi dipasang sementara di salinan kerja lalu dikembalikan (cmp = sama dengan sebelum mutasi).
+
+| Mutasi | Hasil test_KPT5a_setara.py |
+|---|---|
+| M1 lebar bawaan `so` 5 → 6 (katalog) | MERAH (U1 lebar ≠ titik panggil; U2 nomor beda) |
+| M2 `sret` bawaan `bersama` → `per_pt` (katalog) | MERAH (U1 cara bawaan ≠ titik panggil) — ditambahkan setelah mutasi awal lolos |
+| M3 aturan "titik panggil scheme=shared tetap bersama selama grup belum memilih" dihapus | lolos di (a) (titik panggil bersama belum mengirim PT); sejak (b) dijaga U1 + U8 |
+| M4 semai per PT memakai pola berjangkar `^` (lama: di mana saja dalam nomor) | MERAH (U2 keadaan "dokumen lama ada": KSC/SO-… tidak terhitung) |
+| M5 sisipan lot dari titik panggil diabaikan (dihitung ulang dari jam) | MERAH (U2 kasus lot bulan lampau `LOT-2501-`) — kasus ditambahkan setelah mutasi awal lolos |
+| M6 kunci per PT tanpa `.upper()` | lolos (semua awalan identitas sudah huruf besar — tidak berpengaruh pada data) |

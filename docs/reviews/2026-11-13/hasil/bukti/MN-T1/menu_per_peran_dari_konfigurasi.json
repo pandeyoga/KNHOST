@@ -1,0 +1,808 @@
+{
+ "struktur": {
+  "keuangan": {
+   "label": "Keuangan",
+   "items": [
+    {
+     "id": "finance-tower",
+     "label": "Beranda Keuangan",
+     "hub": "finance-tower",
+     "view": null,
+     "tabs": [
+      {
+       "view": "finance-desk",
+       "label": "Perlu Tindakan"
+      },
+      {
+       "view": "finance-tower",
+       "label": "Posisi"
+      },
+      {
+       "view": "bi-finance",
+       "label": "Analisis"
+      }
+     ]
+    },
+    {
+     "id": "ar-aging",
+     "label": "Piutang",
+     "hub": "ar-aging",
+     "view": null,
+     "tabs": [
+      {
+       "view": "ar-aging",
+       "label": "Saldo & Umur"
+      },
+      {
+       "view": "collection-worklist",
+       "label": "Penagihan & Penerimaan"
+      },
+      {
+       "view": "payment-plans",
+       "label": "Rencana & Denda"
+      },
+      {
+       "view": "customer-credit",
+       "label": "Titipan & Saldo Kredit"
+      },
+      {
+       "view": "credit-overrides",
+       "label": "Kredit & Plafon"
+      },
+      {
+       "view": "finance-cases",
+       "label": "Kasus"
+      }
+     ]
+    },
+    {
+     "id": "accounts-payable",
+     "label": "Hutang",
+     "hub": "accounts-payable",
+     "view": null,
+     "tabs": [
+      {
+       "view": "vendor-bills",
+       "label": "Tagihan"
+      },
+      {
+       "view": "contra-bons",
+       "label": "Kontrabon"
+      }
+     ]
+    },
+    {
+     "id": "cash-bank",
+     "label": "Kas & Bank",
+     "hub": "cash-bank",
+     "view": null,
+     "tabs": [
+      {
+       "view": "bank-accounts",
+       "label": "Rekening & Saldo"
+      },
+      {
+       "view": "cash-management",
+       "label": "Transaksi Kas"
+      },
+      {
+       "view": "bank-reconciliation",
+       "label": "Rekonsiliasi"
+      },
+      {
+       "view": "petty-cash",
+       "label": "Kas Kecil"
+      }
+     ]
+    },
+    {
+     "id": "interco-transactions",
+     "label": "Antar-PT",
+     "hub": null,
+     "view": "interco-transactions",
+     "tabs": []
+    }
+   ]
+  },
+  "akuntansi": {
+   "label": "Akuntansi & Pajak",
+   "items": [
+    {
+     "id": "ledger",
+     "label": "Buku Besar",
+     "hub": "ledger",
+     "view": null,
+     "tabs": [
+      {
+       "view": "general-ledger",
+       "label": "Jurnal"
+      },
+      {
+       "view": "chart-of-accounts",
+       "label": "Bagan Akun"
+      }
+     ]
+    },
+    {
+     "id": "closing",
+     "label": "Tutup Buku",
+     "hub": "closing",
+     "view": null,
+     "tabs": [
+      {
+       "view": "closing",
+       "label": "Daftar Periksa & Tutup"
+      },
+      {
+       "view": "period-unlock",
+       "label": "Buka Periode"
+      },
+      {
+       "view": "posting-failures",
+       "label": "Posting Gagal"
+      }
+     ]
+    },
+    {
+     "id": "fin-reports",
+     "label": "Laporan",
+     "hub": "fin-reports",
+     "view": null,
+     "tabs": [
+      {
+       "view": "financial-statements",
+       "label": "Laba-Rugi, Neraca & Arus Kas"
+      },
+      {
+       "view": "profitability",
+       "label": "Profitabilitas"
+      },
+      {
+       "view": "cashflow-forecast",
+       "label": "Proyeksi Kas"
+      },
+      {
+       "view": "budget",
+       "label": "Anggaran"
+      },
+      {
+       "view": "consolidation",
+       "label": "Konsolidasi"
+      }
+     ]
+    },
+    {
+     "id": "tax-hub",
+     "label": "Pajak",
+     "hub": "tax-hub",
+     "view": null,
+     "tabs": [
+      {
+       "view": "tax-invoices",
+       "label": "Faktur Keluaran"
+      },
+      {
+       "view": "input-tax",
+       "label": "Faktur Masukan"
+      },
+      {
+       "view": "cs-pajak",
+       "label": "PPN & PPh"
+      }
+     ]
+    },
+    {
+     "id": "fixed-assets",
+     "label": "Aset Tetap",
+     "hub": null,
+     "view": "fixed-assets",
+     "tabs": []
+    }
+   ]
+  },
+  "hrd": {
+   "label": "SDM",
+   "items": [
+    {
+     "id": "hr-people",
+     "label": "Karyawan",
+     "hub": "hr-people",
+     "view": null,
+     "tabs": [
+      {
+       "view": "hr-employees",
+       "label": "Karyawan"
+      },
+      {
+       "view": "hr-org-units",
+       "label": "Struktur Organisasi"
+      }
+     ]
+    },
+    {
+     "id": "hr-attendance-hub",
+     "label": "Kehadiran",
+     "hub": "hr-attendance-hub",
+     "view": null,
+     "tabs": [
+      {
+       "view": "hr-attendance",
+       "label": "Presensi"
+      },
+      {
+       "view": "hr-leave",
+       "label": "Cuti & Izin"
+      },
+      {
+       "view": "hr-overtime",
+       "label": "Lembur"
+      },
+      {
+       "view": "hr-live-tracking",
+       "label": "Lacak Lapangan"
+      }
+     ]
+    },
+    {
+     "id": "hr-payroll-hub",
+     "label": "Penggajian",
+     "hub": "hr-payroll-hub",
+     "view": null,
+     "tabs": [
+      {
+       "view": "hr-payroll-runs",
+       "label": "Proses Gaji"
+      },
+      {
+       "view": "hr-payslips",
+       "label": "Slip Gaji"
+      }
+     ]
+    },
+    {
+     "id": "hr-kpi-hub",
+     "label": "Kinerja & Insentif",
+     "hub": "hr-kpi-hub",
+     "view": null,
+     "tabs": [
+      {
+       "view": "sales-performance",
+       "label": "Kinerja Sales"
+      },
+      {
+       "view": "incentive-rates",
+       "label": "Target & Aturan"
+      },
+      {
+       "view": "incentive-schemes",
+       "label": "Skema (Arsip)"
+      },
+      {
+       "view": "cs-kpi",
+       "label": "KPI Karyawan"
+      }
+     ]
+    }
+   ]
+  },
+  "pembelian": {
+   "label": "Pembelian",
+   "items": [
+    {
+     "id": "sourcing",
+     "label": "Pengadaan",
+     "hub": "sourcing",
+     "view": null,
+     "tabs": [
+      {
+       "view": "reorder",
+       "label": "Saran Reorder"
+      },
+      {
+       "view": "purchase-requisitions",
+       "label": "Permintaan Pembelian"
+      },
+      {
+       "view": "rfq",
+       "label": "RFQ / Penawaran"
+      }
+     ]
+    },
+    {
+     "id": "purchase-orders",
+     "label": "Pesanan Pembelian",
+     "hub": "purchase-orders",
+     "view": null,
+     "tabs": [
+      {
+       "view": "purchasing",
+       "label": "Pesanan Pembelian (PO)"
+      },
+      {
+       "view": "po-board",
+       "label": "Papan PO per Lini"
+      },
+      {
+       "view": "blanket-po",
+       "label": "Blanket / Kontrak"
+      },
+      {
+       "view": "makloon-orders",
+       "label": "Order Makloon"
+      },
+      {
+       "view": "makloon-claim-recap",
+       "label": "Kinerja Mitra Makloon"
+      },
+      {
+       "view": "makloon-claims",
+       "label": "Klaim Selisih Makloon"
+      },
+      {
+       "view": "landed-cost",
+       "label": "Landed Cost"
+      }
+     ]
+    },
+    {
+     "id": "master-pembelian",
+     "label": "Master Pembelian",
+     "hub": "master-pembelian",
+     "view": null,
+     "tabs": [
+      {
+       "view": "suppliers",
+       "label": "Pemasok (Supplier)"
+      },
+      {
+       "view": "makloons",
+       "label": "Mitra Makloon"
+      },
+      {
+       "view": "supplier-contracts",
+       "label": "Kontrak Mitra & Supplier"
+      },
+      {
+       "view": "supplier-items",
+       "label": "Barang Supplier"
+      },
+      {
+       "view": "process-recipes",
+       "label": "Resep Proses Makloon"
+      }
+     ]
+    },
+    {
+     "id": "cs-bom",
+     "label": "Bahan Cetak",
+     "hub": null,
+     "view": null,
+     "tabs": []
+    }
+   ]
+  },
+  "gudang": {
+   "label": "Gudang & Logistik",
+   "items": [
+    {
+     "id": "wms-operations",
+     "label": "Operasi Gudang",
+     "hub": "wms-operations",
+     "view": null,
+     "tabs": [
+      {
+       "view": "operations",
+       "label": "Stok, Transfer & Opname"
+      },
+      {
+       "view": "goods-receipts",
+       "label": "Barang Masuk"
+      },
+      {
+       "view": "wms-outbound",
+       "label": "Barang Keluar"
+      },
+      {
+       "view": "wms-cutting",
+       "label": "Cutting"
+      },
+      {
+       "view": "repair-orders",
+       "label": "Perbaikan"
+      }
+     ]
+    },
+    {
+     "id": "stock-atp",
+     "label": "Stok & ATP",
+     "hub": "stock-atp",
+     "view": null,
+     "tabs": [
+      {
+       "view": "inventory-board",
+       "label": "Status Stok & ATP"
+      },
+      {
+       "view": "stock-buckets",
+       "label": "Stok Multi-Bucket"
+      },
+      {
+       "view": "inventory-lots",
+       "label": "Lot & Silsilah"
+      }
+     ]
+    },
+    {
+     "id": "production",
+     "label": "BOM Produksi In-House",
+     "hub": null,
+     "view": null,
+     "tabs": []
+    },
+    {
+     "id": "wms-locations",
+     "label": "Lokasi Rak",
+     "hub": null,
+     "view": null,
+     "tabs": []
+    },
+    {
+     "id": "md-warehouses",
+     "label": "Data Gudang",
+     "hub": null,
+     "view": null,
+     "tabs": []
+    },
+    {
+     "id": "logistics",
+     "label": "Pengiriman",
+     "hub": null,
+     "view": "logistics",
+     "tabs": []
+    },
+    {
+     "id": "vehicle-logs",
+     "label": "Kendaraan",
+     "hub": null,
+     "view": "vehicle-logs",
+     "tabs": []
+    },
+    {
+     "id": "rfid-hub",
+     "label": "RFID",
+     "hub": "rfid-hub",
+     "view": null,
+     "tabs": [
+      {
+       "view": "cs-rfid-lokasi",
+       "label": "Lokasi RFID"
+      },
+      {
+       "view": "cs-rfid-tags",
+       "label": "Tag RFID"
+      },
+      {
+       "view": "cs-rfid-gate",
+       "label": "Monitor Gerbang"
+      }
+     ]
+    },
+    {
+     "id": "escalations",
+     "label": "Eskalasi Gudang",
+     "hub": null,
+     "view": "escalations",
+     "tabs": []
+    }
+   ]
+  }
+ },
+ "peran": {
+  "admin": {
+   "keuangan": {
+    "finance-tower": [
+     "finance-desk",
+     "finance-tower",
+     "bi-finance"
+    ],
+    "ar-aging": [
+     "ar-aging",
+     "collection-worklist",
+     "payment-plans",
+     "customer-credit",
+     "credit-overrides",
+     "finance-cases"
+    ],
+    "accounts-payable": [
+     "vendor-bills",
+     "contra-bons"
+    ],
+    "cash-bank": [
+     "bank-accounts",
+     "cash-management",
+     "bank-reconciliation",
+     "petty-cash"
+    ],
+    "interco-transactions": []
+   },
+   "akuntansi": {
+    "ledger": [
+     "general-ledger",
+     "chart-of-accounts"
+    ],
+    "closing": [
+     "closing",
+     "period-unlock",
+     "posting-failures"
+    ],
+    "fin-reports": [
+     "financial-statements",
+     "profitability",
+     "cashflow-forecast",
+     "budget",
+     "consolidation"
+    ],
+    "tax-hub": [
+     "tax-invoices",
+     "input-tax",
+     "cs-pajak"
+    ],
+    "fixed-assets": []
+   },
+   "hrd": {
+    "hr-people": [
+     "hr-employees",
+     "hr-org-units"
+    ],
+    "hr-attendance-hub": [
+     "hr-attendance",
+     "hr-leave",
+     "hr-overtime",
+     "hr-live-tracking"
+    ],
+    "hr-payroll-hub": [
+     "hr-payroll-runs",
+     "hr-payslips"
+    ],
+    "hr-kpi-hub": [
+     "sales-performance",
+     "incentive-rates",
+     "incentive-schemes",
+     "cs-kpi"
+    ]
+   }
+  },
+  "manager": {
+   "keuangan": {
+    "finance-tower": [
+     "finance-desk",
+     "finance-tower",
+     "bi-finance"
+    ],
+    "ar-aging": [
+     "ar-aging",
+     "collection-worklist",
+     "payment-plans",
+     "customer-credit",
+     "credit-overrides",
+     "finance-cases"
+    ],
+    "accounts-payable": [
+     "vendor-bills",
+     "contra-bons"
+    ],
+    "cash-bank": [
+     "bank-accounts",
+     "cash-management",
+     "bank-reconciliation",
+     "petty-cash"
+    ],
+    "interco-transactions": []
+   },
+   "akuntansi": {
+    "ledger": [
+     "general-ledger",
+     "chart-of-accounts"
+    ],
+    "closing": [
+     "closing",
+     "period-unlock",
+     "posting-failures"
+    ],
+    "fin-reports": [
+     "financial-statements",
+     "profitability",
+     "cashflow-forecast",
+     "budget",
+     "consolidation"
+    ],
+    "tax-hub": [
+     "tax-invoices",
+     "input-tax",
+     "cs-pajak"
+    ],
+    "fixed-assets": []
+   },
+   "hrd": {
+    "hr-people": [
+     "hr-employees",
+     "hr-org-units"
+    ],
+    "hr-attendance-hub": [
+     "hr-attendance",
+     "hr-leave",
+     "hr-overtime",
+     "hr-live-tracking"
+    ],
+    "hr-payroll-hub": [
+     "hr-payroll-runs",
+     "hr-payslips"
+    ],
+    "hr-kpi-hub": [
+     "sales-performance",
+     "incentive-rates",
+     "incentive-schemes",
+     "cs-kpi"
+    ]
+   }
+  },
+  "sales_admin": {
+   "keuangan": {
+    "ar-aging": [
+     "collection-worklist",
+     "finance-cases"
+    ],
+    "cash-bank": [
+     "petty-cash"
+    ],
+    "interco-transactions": []
+   },
+   "hrd": {
+    "hr-kpi-hub": [
+     "sales-performance"
+    ]
+   }
+  },
+  "finance": {
+   "keuangan": {
+    "finance-tower": [
+     "finance-desk",
+     "finance-tower",
+     "bi-finance"
+    ],
+    "ar-aging": [
+     "ar-aging",
+     "collection-worklist",
+     "payment-plans",
+     "customer-credit",
+     "credit-overrides",
+     "finance-cases"
+    ],
+    "accounts-payable": [
+     "vendor-bills",
+     "contra-bons"
+    ],
+    "cash-bank": [
+     "bank-accounts",
+     "cash-management",
+     "bank-reconciliation",
+     "petty-cash"
+    ],
+    "interco-transactions": []
+   },
+   "akuntansi": {
+    "ledger": [
+     "general-ledger",
+     "chart-of-accounts"
+    ],
+    "tax-hub": [
+     "tax-invoices"
+    ]
+   }
+  },
+  "sales": {
+   "keuangan": {
+    "ar-aging": [
+     "collection-worklist",
+     "finance-cases"
+    ],
+    "cash-bank": [
+     "petty-cash"
+    ]
+   },
+   "hrd": {
+    "hr-kpi-hub": [
+     "sales-performance"
+    ]
+   }
+  },
+  "warehouse": {
+   "keuangan": {
+    "accounts-payable": [
+     "contra-bons"
+    ],
+    "interco-transactions": []
+   }
+  },
+  "designer": {},
+  "driver": {},
+  "md": {},
+  "warehouse_admin": {
+   "keuangan": {
+    "accounts-payable": [
+     "contra-bons"
+    ],
+    "interco-transactions": []
+   }
+  },
+  "sample_admin": {},
+  "md_quality": {},
+  "qc": {}
+ },
+ "alias": [
+  {
+   "from": "advance-report",
+   "to": "customer-credit",
+   "nav": "ar-aging",
+   "preset": {
+    "bagian": "titipan"
+   },
+   "label": "Uang Muka Pelanggan",
+   "since": "MN-T1",
+   "legacy": false
+  },
+  {
+   "from": "store-credit",
+   "to": "customer-credit",
+   "nav": "ar-aging",
+   "preset": {
+    "bagian": "saldo"
+   },
+   "label": "Saldo Kredit",
+   "since": "MN-T1",
+   "legacy": false
+  },
+  {
+   "from": "cash-advances",
+   "to": "petty-cash",
+   "nav": "cash-bank",
+   "preset": {
+    "bagian": "pengajuan"
+   },
+   "label": "Pengajuan Dana (PD)",
+   "since": "MN-T1",
+   "legacy": false
+  },
+  {
+   "from": "settlements",
+   "to": "petty-cash",
+   "nav": "cash-bank",
+   "preset": {
+    "bagian": "pertanggungjawaban"
+   },
+   "label": "Pertanggungjawaban (LPJ)",
+   "since": "MN-T1",
+   "legacy": false
+  },
+  {
+   "from": "reimburse-payables",
+   "to": "petty-cash",
+   "nav": "cash-bank",
+   "preset": {
+    "bagian": "reimburse"
+   },
+   "label": "Hutang Reimburse",
+   "since": "MN-T1",
+   "legacy": false
+  },
+  {
+   "from": "kas-aset",
+   "to": "petty-cash",
+   "nav": "cash-bank",
+   "preset": null,
+   "label": "Kas & Aset",
+   "since": "MN-T1",
+   "legacy": true
+  }
+ ]
+}

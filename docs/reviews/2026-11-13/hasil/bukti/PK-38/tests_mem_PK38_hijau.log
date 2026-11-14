@@ -1,0 +1,41 @@
+...........................                                              [100%]
+=============================== warnings summary ===============================
+../../venv311/lib/python3.11/site-packages/starlette/formparsers.py:12
+  /tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/venv311/lib/python3.11/site-packages/starlette/formparsers.py:12: PendingDeprecationWarning: Please use `import python_multipart` instead.
+    import multipart
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+==================================== PASSES ====================================
+______________ test_PK38_U1_hapus_sisa_di_bawah_batas_satu_orang _______________
+---------------------------- Captured stdout setup -----------------------------
+[bootstrap] FASE F lifecycle backfill: 5 produk distempel 'produksi'
+[bootstrap] kebersihan data: 5 record dirapikan {'customers': 3, 'suppliers': 0, 'users': 0, 'hr_employees': 2, 'makloons': 0}
+=========================== short test summary info ============================
+PASSED tests_mem/test_PK38_wewenang.py::test_PK38_U1_hapus_sisa_di_bawah_batas_satu_orang
+PASSED tests_mem/test_PK38_wewenang.py::test_PK38_U2_hapus_sisa_di_atas_batas_orang_kedua
+PASSED tests_mem/test_PK38_wewenang.py::test_PK38_U2b_keputusan_saat_kwitansi_dibuat_tidak_membatalkan_uang
+PASSED tests_mem/test_PK38_wewenang.py::test_PK38_U3_biaya_bank_di_atas_batas_orang_kedua
+PASSED tests_mem/test_PK38_wewenang.py::test_PK38_U4_biaya_bank_kecil_tetap_otomatis
+PASSED tests_mem/test_PK38_wewenang.py::test_PK38_U5_uang_dipegang_karyawan_di_atas_batas
+PASSED tests_mem/test_PK38_wewenang.py::test_PK38_U6_refund_tidak_terkena_pintu
+PASSED tests_mem/test_PK38_wewenang.py::test_PK38_U7_batas_per_pt
+PASSED tests_mem/test_PK38_wewenang.py::test_PK38_U8_kunci_lama_jadi_alias
+PASSED tests_mem/test_PK38_wewenang.py::test_PK38_U9_dua_orang_selalu
+PASSED tests_mem/test_PK38_wewenang.py::test_PK38_bukan_pengurang_tanpa_kas_tidak_terkena_batas
+PASSED tests_mem/test_PK38_wewenang.py::test_PK38_pilihan_keputusan_memakai_batas_server
+PASSED tests_mem/test_PK38_wewenang.py::test_PK38_U10_izin_bayar_saja
+PASSED tests_mem/test_PK38_wewenang.py::test_PK38_U11_izin_setujui_saja
+PASSED tests_mem/test_PK38_wewenang.py::test_PK38_U12_finance_bawaan_bayar_kontrabon
+PASSED tests_mem/test_PK38_wewenang.py::test_PK38_bayar_orang_kedua_bila_diatur
+PASSED tests_mem/test_PK38_wewenang.py::test_PK38_U13_gudang_tidak_mengetik_nilai_jasa
+PASSED tests_mem/test_PK38_wewenang.py::test_PK38_U14_tarif_dari_kontrak_dan_pembelian_menimpa
+PASSED tests_mem/test_PK38_wewenang.py::test_PK38_U13b_tarif_kontrak_nol_untuk_gudang
+PASSED tests_mem/test_PK38_wewenang.py::test_PK38_U15_terima_hasil_gudang_isi_ppn
+PASSED tests_mem/test_PK38_wewenang.py::test_PK38_detail_menandai_isian_nilai_jasa
+PASSED tests_mem/test_PK38_wewenang.py::test_PK38_U16_cbd_ke_net30
+PASSED tests_mem/test_PK38_wewenang.py::test_PK38_U17_arah_termin[NET30-CBD-200]
+PASSED tests_mem/test_PK38_wewenang.py::test_PK38_U17_arah_termin[DP50-NET30-403]
+PASSED tests_mem/test_PK38_wewenang.py::test_PK38_U17_arah_termin[NET14-NET30-403]
+PASSED tests_mem/test_PK38_wewenang.py::test_PK38_U17_arah_termin[NET30-NET14-200]
+PASSED tests_mem/test_PK38_wewenang.py::test_PK38_konteks_koreksi_termin
+27 passed, 1 warning in 2.37s

@@ -1,0 +1,88 @@
+FFFFFFFFFF.FFFFFFFFF                                                     [100%]
+=================================== FAILURES ===================================
+E   assert 0 == 1
+backend/tests_mem/test_PK40_pajak.py:83: assert 0 == 1
+E   KeyError: 'active_key'
+backend/tests_mem/test_PK40_pajak.py:95: KeyError: 'active_key'
+E   KeyError: 'nsfp_key'
+backend/tests_mem/test_PK40_pajak.py:116: KeyError: 'nsfp_key'
+E   AssertionError: assert {('tax_invoic...uq_fpm_nsfp')} <= {('finance_ca...active'), ...}
+      Extra items in the left set:
+      ('tax_invoices', 'uq_fkt_nsfp')
+      ('tax_invoices', 'uq_fkt_active')
+      ('tax_invoices_in', 'uq_fpm_active')
+      ('tax_invoices_in', 'uq_fpm_nsfp')
+backend/tests_mem/test_PK40_pajak.py:136: AssertionError: assert {('tax_invoic...uq_fpm_nsfp')} <= {('finance_ca...active'), ...}
+E   AssertionError: {"detail":"Faktur ini sudah pernah diganti."}
+    assert 409 == 200
+     +  where 409 = <Response [409 Conflict]>.status_code
+backend/tests_mem/test_PK40_pajak.py:153: AssertionError: {"detail":"Faktur ini sudah pernah diganti."}
+E   KeyError: 'active_key'
+backend/tests_mem/test_PK40_pajak.py:172: KeyError: 'active_key'
+E   assert 4999 == 6000
+backend/tests_mem/test_PK40_pajak.py:214: assert 4999 == 6000
+E   assert (6001, 6601100.0) == (6000, 6600000.0)
+      At index 0 diff: 6001 != 6000
+      Use -v to get more diff
+backend/tests_mem/test_PK40_pajak.py:230: assert (6001, 6601100.0) == (6000, 6600000.0)
+E   KeyError: 'gl_ppn'
+backend/tests_mem/test_PK40_pajak.py:239: KeyError: 'gl_ppn'
+E   AssertionError: {"detail":"Not Found"}
+    assert 404 == 200
+     +  where 404 = <Response [404 Not Found]>.status_code
+backend/tests_mem/test_PK40_pajak.py:269: AssertionError: {"detail":"Not Found"}
+E   AssertionError: {"detail":"Not Found"}
+    assert 404 == 400
+     +  where 404 = <Response [404 Not Found]>.status_code
+backend/tests_mem/test_PK40_pajak.py:313: AssertionError: {"detail":"Not Found"}
+E   AssertionError: {"detail":"Not Found"}
+    assert 404 == 400
+     +  where 404 = <Response [404 Not Found]>.status_code
+backend/tests_mem/test_PK40_pajak.py:332: AssertionError: {"detail":"Not Found"}
+E   assert 10000000.0 == 10300000
+backend/tests_mem/test_PK40_pajak.py:373: assert 10000000.0 == 10300000
+E   assert 80000.0 == 0
+backend/tests_mem/test_PK40_pajak.py:392: assert 80000.0 == 0
+E   AssertionError: {"detail": "Not Found"}
+    assert 404 == 200
+     +  where 404 = <Response [404 Not Found]>.status_code
+backend/tests_mem/test_PK40_pajak.py:400: AssertionError: {"detail": "Not Found"}
+E   KeyError: 'active_key'
+backend/tests_mem/test_PK40_pajak.py:422: KeyError: 'active_key'
+E   Failed: DID NOT RAISE HTTPException
+backend/tests_mem/test_PK40_pajak.py:444: Failed: DID NOT RAISE HTTPException
+E   FileNotFoundError: [Errno 2] No such file or directory: 'scripts/blueprint/pk40_kunci_faktur.py'
+<frozen importlib._bootstrap_external>:1130: FileNotFoundError: [Errno 2] No such file or directory: 'scripts/blueprint/pk40_kunci_faktur.py'
+E   AssertionError: 
+      [96m[1mL4-FKT — Invarian Faktur Pajak (Sub-fase 1.9)[0m
+        [91m[FAIL][0m faktur: 1 faktur PPN/Grand tidak konsisten  [91m['KSC/FKT-U8'][0m
+        [91m[FAIL][0m faktur: 6001 ref order invalid / 1 non-PKP-atau-tanpa-PPN  [91m['KSC/FKT-U7-00000', 'KSC/FKT-U7-00001', 'KSC/FKT-U7-00002', 'KSC/FKT-U7-00003', 'KSC/FKT-U7-00004'][0m
+        [91m[FAIL][0m faktur: 1 order >1 faktur aktif / nomor duplikat=False  [91m[''][0m
+        [92m[PASS][0m faktur: rantai pengganti konsisten (replaces_id valid)
+    assert None
+     +  where None = <function search at 0x7fa16a9162a0>('PASS.*≤1 faktur aktif/order', "\n\x1b[96m\x1b[1mL4-FKT — Invarian Faktur Pajak (Sub-fase 1.9)\x1b[0m\n  \x1b[91m[FAIL]\x1b[0m faktur: 1 faktur PPN/G... duplikat=False  \x1b[91m['']\x1b[0m\n  \x1b[92m[PASS]\x1b[0m faktur: rantai pengganti konsisten (replaces_id valid)\n")
+     +    where <function search at 0x7fa16a9162a0> = <module 're' from '/usr/lib/python3.11/re/__init__.py'>.search
+backend/tests_mem/test_PK40_pajak.py:500: AssertionError:
+=============================== warnings summary ===============================
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests_mem/test_PK40_pajak.py::test_PK40_U1_terbit_dua_kali_satu_faktur_aktif
+FAILED tests_mem/test_PK40_pajak.py::test_PK40_U3_ganti_lalu_batalkan_pengganti
+FAILED tests_mem/test_PK40_pajak.py::test_PK40_U4_nsfp_kembar_ditolak_walau_format_beda
+FAILED tests_mem/test_PK40_pajak.py::test_PK40_U4b_jalur_indeks_tanpa_jalan_cepat
+FAILED tests_mem/test_PK40_pajak.py::test_PK40_U5_ganti_dengan_nsfp_sama_memindah_kunci
+FAILED tests_mem/test_PK40_pajak.py::test_PK40_U6b_faktur_masukan_kunci_aktif_dan_nsfp
+FAILED tests_mem/test_PK40_pajak.py::test_PK40_U7_rekap_6000_faktur_dan_buku_besar
+FAILED tests_mem/test_PK40_pajak.py::test_PK40_U8_faktur_dini_hari_tanggal_1_masuk_november
+FAILED tests_mem/test_PK40_pajak.py::test_PK40_U9_jurnal_ppn_tanpa_faktur_tampil_sebagai_selisih
+FAILED tests_mem/test_PK40_pajak.py::test_PK40_U10_masa_terkunci_menolak_aksi_oktober
+FAILED tests_mem/test_PK40_pajak.py::test_PK40_U12_buka_masa_dengan_alasan - ...
+FAILED tests_mem/test_PK40_pajak.py::test_PK40_U13_kunci_masa_berjalan_dan_kunci_ganda
+FAILED tests_mem/test_PK40_pajak.py::test_PK40_U14_dasar_pph21_bruto_kena_pajak_dan_buku_besar
+FAILED tests_mem/test_PK40_pajak.py::test_PK40_U15_penggajian_belum_terjurnal_tidak_dihitung
+FAILED tests_mem/test_PK40_pajak.py::test_PK40_U16_izin_baca_dan_kunci - Asse...
+FAILED tests_mem/test_PK40_pajak.py::test_PK40_antar_pt_kunci_aktif_ganti_dan_batal
+FAILED tests_mem/test_PK40_pajak.py::test_PK40_antar_pt_masa_terkunci - Faile...
+FAILED tests_mem/test_PK40_pajak.py::test_PK40_skrip_kunci_faktur_lama_baca_saja_dan_terapkan
+FAILED tests_mem/test_PK40_pajak.py::test_PK40_invarian_kunci_faktur - Assert...
+19 failed, 1 passed, 1 warning in 6.24s

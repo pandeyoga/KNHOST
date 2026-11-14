@@ -1,0 +1,19 @@
+# KP-T5 (a) — test_KPT5a_setara.py di keadaan HEAD 1392969 (katalog & pembaca belum ada)
+FAILED tests_mem/test_KPT5a_setara.py::test_KPT5_U1_semua_titik_panggil_dikenali_katalog
+FAILED tests_mem/test_KPT5a_setara.py::test_KPT5_U2_contoh_hitung_tangan_dan_cakupan_jenis[asyncio]
+FAILED tests_mem/test_KPT5a_setara.py::test_KPT5_a_tanpa_baris_format_saat_dipasang[asyncio]
+FAILED tests_mem/test_KPT5a_setara.py::test_KPT5_a_indeks_unik_format[asyncio]
+FAILED tests_mem/test_KPT5a_setara.py::test_KPT5_a_bagian_periode[--tidak-]
+FAILED tests_mem/test_KPT5a_setara.py::test_KPT5_a_bagian_periode[YYYY-2026-tidak-]
+FAILED tests_mem/test_KPT5a_setara.py::test_KPT5_a_bagian_periode[YYYY-2026-tahunan-2026]
+FAILED tests_mem/test_KPT5a_setara.py::test_KPT5_a_bagian_periode[YY-26-tahunan-26]
+FAILED tests_mem/test_KPT5a_setara.py::test_KPT5_a_bagian_periode[YYMM-2611-bulanan-2611]
+FAILED tests_mem/test_KPT5a_setara.py::test_KPT5_a_bagian_periode[YYMMDD-261113-bulanan-2611]
+FAILED tests_mem/test_KPT5a_setara.py::test_KPT5_a_bagian_periode[YYMMDD-261113-harian-261113]
+FAILED tests_mem/test_KPT5a_setara.py::test_KPT5_a_bagian_periode[YYYYMM-202611-tahunan-2026]
+12 failed, 2 passed, 1 warning in 4.93s
+
+## sebab
+      1 E       AssertionError: assert ('doc_number_formats', 'uq_kind_entity') in {('finance_cases', 'uq_case_open_source'), ('interco_loans', 'uq_number'), ('interco_returns', 'uq_number'), ('interco_settlements', 'uq_number'), ('interco_transactions', 'uq_number'), ('journal_entries', 'uq_je_source_active'), ...}
+      9 E       ImportError: cannot import name 'doc_numbering_service' from 'services' (/tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/wt12/backend/services/__init__.py)
+      2 E       ModuleNotFoundError: No module named 'doc_number_kinds'

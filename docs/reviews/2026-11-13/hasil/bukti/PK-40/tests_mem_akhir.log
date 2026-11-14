@@ -1,0 +1,4 @@
+# tests_mem HEAD a323bb0 (sebelum)
+699 passed, 2 skipped, 2 xfailed, 11 warnings in 318.28s (0:05:18)
+# tests_mem sesudah PK-40
+719 passed, 2 skipped, 2 xfailed, 11 warnings in 356.36s (0:05:56)

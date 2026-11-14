@@ -1,0 +1,5 @@
+    ✕ Tandai Sudah Dilaporkan: konfirmasi menyebut masa, PT, dan angka; lencana berubah (127 ms)
+    ✕ Buka Masa Pajak meminta alasan lalu mengirimnya; galat server tampil (42 ms)
+    ✕ Semua PT: tombol mati dengan petunjuk; tanpa accounting.manage: tidak ada tombol (29 ms)
+    ✕ Kartu PPN: angka buku besar + selisih; PPh 21: dasar bruto kena pajak + beda dengan buku besar (36 ms)
+Tests:       4 failed, 4 total

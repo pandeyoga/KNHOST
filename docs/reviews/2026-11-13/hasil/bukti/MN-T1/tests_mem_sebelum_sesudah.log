@@ -1,0 +1,4 @@
+sebelum (HEAD 1392969):
+638 passed, 2 skipped, 3 xfailed, 13 warnings in 100.85s (0:01:40)
+sesudah:
+644 passed, 2 skipped, 3 xfailed, 11 warnings in 268.28s (0:04:28)

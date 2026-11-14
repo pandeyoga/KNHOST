@@ -1,0 +1,6 @@
+# tests_mem (lingkungan B, Python 3.11, pytest.ini 2 pekerja)
+HEAD 1392969 (pesan koordinator): 638 passed, 2 skipped, 3 xfailed
+sesudah PK-38:
+665 passed, 2 skipped, 3 xfailed, 11 warnings in 275.10s (0:04:35)
+
+# berkas yang disesuaikan (perilaku sengaja diubah): test_KFT1_izin_pengaturan, test_KFT4_registry, test_KFT6_kontrol, test_KFT6_tabel_c, test_PRT9_izin_bawaan

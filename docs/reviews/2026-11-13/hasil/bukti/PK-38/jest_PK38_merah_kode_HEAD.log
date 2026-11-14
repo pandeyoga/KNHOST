@@ -1,0 +1,117 @@
+[visual-edits] @emergentbase/visual-edits not installed — visual editing disabled.
+[visual-edits] @emergentbase/visual-edits not installed — visual editing disabled.
+FAIL src/features/__tests__/pk38Wewenang.test.js
+  PK-38 — nilai jasa makloon
+    ✕ aturan tampil: bawaan boleh (data lama tanpa tanda), salah = tidak boleh (2 ms)
+    ✕ Catat Jasa tanpa wewenang: isian nilai tidak tampil, keterangan tampil, isi kirim tanpa nilai (63 ms)
+    ✓ Catat Jasa dengan wewenang: isian nilai tampil, tanpa keterangan (12 ms)
+    ✕ Terima Hasil tanpa wewenang: Ongkos Jasa, Bahan Pembantu, PPN, No. Faktur tidak tampil (25 ms)
+  PK-38 — ganti termin di Koreksi Pesanan
+    ✕ arah termin sama dengan server
+    ✕ tanpa izin: termin lebih longgar mati dengan petunjuk; yang lebih ketat tetap bisa dipilih (11 ms)
+    ✕ dengan izin: termin lebih longgar bisa dipilih dan peringatan tampil (10 ms)
+
+  ● PK-38 — nilai jasa makloon › aturan tampil: bawaan boleh (data lama tanpa tanda), salah = tidak boleh
+
+    TypeError: (0 , _MkoStepModals.nilaiJasaBolehDiisi) is not a function
+
+    [0m [90m 59 |[39m describe([32m"PK-38 — nilai jasa makloon"[39m[33m,[39m () [33m=>[39m {
+     [90m 60 |[39m   test([32m"aturan tampil: bawaan boleh (data lama tanpa tanda), salah = tidak boleh"[39m[33m,[39m () [33m=>[39m {
+    [31m[1m>[22m[39m[90m 61 |[39m     expect(nilaiJasaBolehDiisi({}))[33m.[39mtoBe([36mtrue[39m)[33m;[39m
+     [90m    |[39m                               [31m[1m^[22m[39m
+     [90m 62 |[39m     expect(nilaiJasaBolehDiisi({ service_value_editable[33m:[39m [36mtrue[39m }))[33m.[39mtoBe([36mtrue[39m)[33m;[39m
+     [90m 63 |[39m     expect(nilaiJasaBolehDiisi({ service_value_editable[33m:[39m [36mfalse[39m }))[33m.[39mtoBe([36mfalse[39m)[33m;[39m
+     [90m 64 |[39m   })[33m;[39m[0m
+
+      at Object.<anonymous> (src/features/__tests__/pk38Wewenang.test.js:61:31)
+      at TestScheduler.scheduleTests (../fe/node_modules/@jest/core/build/TestScheduler.js:333:13)
+      at runJest (../fe/node_modules/@jest/core/build/runJest.js:404:19)
+      at _run10000 (../fe/node_modules/@jest/core/build/cli/index.js:320:7)
+      at runCLI (../fe/node_modules/@jest/core/build/cli/index.js:173:3)
+
+  ● PK-38 — nilai jasa makloon › Catat Jasa tanpa wewenang: isian nilai tidak tampil, keterangan tampil, isi kirim tanpa nilai
+
+    expect(received).toBeNull()
+
+    Received: <input autocomplete="off" class="field tabular-nums  " data-testid="mko-service-tariff" inputmode="decimal" placeholder="otomatis" style="padding-left: 34px;" type="text" value="" />
+
+    [0m [90m 68 |[39m     [36mawait[39m mount([33m<[39m[33mRecordServiceModal[39m step[33m=[39m{{ [33m...[39m[33mSTEP[39m[33m,[39m service_value_editable[33m:[39m [36mfalse[39m }} mkoNumber[33m=[39m[32m"MKO-1"[39m busy[33m=[39m{[36mfalse[39m}
+     [90m 69 |[39m       onClose[33m=[39m{() [33m=>[39m {}} onConfirm[33m=[39m{onConfirm} [33m/[39m[33m>[39m)[33m;[39m
+    [31m[1m>[22m[39m[90m 70 |[39m     [36mfor[39m ([36mconst[39m id [36mof[39m [33mNILAI[39m) expect(q(id))[33m.[39mtoBeNull()[33m;[39m
+     [90m    |[39m                                           [31m[1m^[22m[39m
+     [90m 71 |[39m     expect(q([32m"mko-service-value-note"[39m)[33m.[39mtextContent)[33m.[39mtoBe([33mKETERANGAN_NILAI_JASA[39m)[33m;[39m
+     [90m 72 |[39m     expect(q([32m"mko-service-confirm"[39m)[33m.[39mtextContent)[33m.[39mtoMatch([32m"Catat Jasa & Terbitkan Tagihan"[39m)[33m;[39m
+     [90m 73 |[39m     [36mawait[39m act([36masync[39m () [33m=>[39m { q([32m"mko-service-confirm"[39m)[33m.[39mclick()[33m;[39m })[33m;[39m[0m
+
+      at Object.<anonymous> (src/features/__tests__/pk38Wewenang.test.js:70:43)
+
+  ● PK-38 — nilai jasa makloon › Terima Hasil tanpa wewenang: Ongkos Jasa, Bahan Pembantu, PPN, No. Faktur tidak tampil
+
+    expect(received).toBeNull()
+
+    Received: <input autocomplete="off" class="field tabular-nums  " data-testid="mko-recv-tariff" inputmode="decimal" placeholder="otomatis" style="padding-left: 34px;" type="text" value="" />
+
+    [0m [90m 87 |[39m     [36mawait[39m mount([33m<[39m[33mReceiveModal[39m step[33m=[39m{{ [33m...[39m[33mSTEP[39m[33m,[39m service_value_editable[33m:[39m [36mfalse[39m }} warehouses[33m=[39m{[{ id[33m:[39m [32m"w1"[39m[33m,[39m name[33m:[39m [32m"Gd"[39m[33m,[39m code[33m:[39m [32m"G1"[39m }]}
+     [90m 88 |[39m       defaultWh[33m=[39m[32m"w1"[39m mkoNumber[33m=[39m[32m"MKO-1"[39m busy[33m=[39m{[36mfalse[39m} onClose[33m=[39m{() [33m=>[39m {}} onConfirm[33m=[39m{() [33m=>[39m [33mPromise[39m[33m.[39mresolve()} [33m/[39m[33m>[39m)[33m;[39m
+    [31m[1m>[22m[39m[90m 89 |[39m     [36mfor[39m ([36mconst[39m id [36mof[39m [[32m"mko-recv-tariff"[39m[33m,[39m [32m"mko-recv-aux"[39m[33m,[39m [32m"mko-recv-ppn"[39m[33m,[39m [32m"mko-recv-invoice"[39m]) expect(q(id))[33m.[39mtoBeNull()[33m;[39m
+     [90m    |[39m                                                                                                             [31m[1m^[22m[39m
+     [90m 90 |[39m     expect(q([32m"mko-recv-value-note"[39m)[33m.[39mtextContent)[33m.[39mtoBe([33mKETERANGAN_NILAI_JASA[39m)[33m;[39m
+     [90m 91 |[39m     expect(q([32m"mko-recv-output-qty"[39m))[33m.[39mnot[33m.[39mtoBeNull()[33m;[39m
+     [90m 92 |[39m   })[33m;[39m[0m
+
+      at Object.<anonymous> (src/features/__tests__/pk38Wewenang.test.js:89:109)
+
+  ● PK-38 — ganti termin di Koreksi Pesanan › arah termin sama dengan server
+
+    TypeError: (0 , _SalesOrderOverrideDialog.terminLebihLonggar) is not a function
+
+    [0m [90m 113 |[39m   test([32m"arah termin sama dengan server"[39m[33m,[39m () [33m=>[39m {
+     [90m 114 |[39m     [36mconst[39m t [33m=[39m [33mObject[39m[33m.[39mfromEntries([33mTERMS[39m[33m.[39mmap((x) [33m=>[39m [x[33m.[39mcode[33m,[39m x]))[33m;[39m
+    [31m[1m>[22m[39m[90m 115 |[39m     expect(terminLebihLonggar(t[33m.[39m[33mCBD[39m[33m,[39m t[33m.[39m[33mNET30[39m))[33m.[39mtoBe([36mtrue[39m)[33m;[39m
+     [90m     |[39m                              [31m[1m^[22m[39m
+     [90m 116 |[39m     expect(terminLebihLonggar(t[33m.[39m[33mNET30[39m[33m,[39m t[33m.[39m[33mCBD[39m))[33m.[39mtoBe([36mfalse[39m)[33m;[39m
+     [90m 117 |[39m     expect(terminLebihLonggar(t[33m.[39m[33mDP50[39m[33m,[39m t[33m.[39m[33mNET30[39m))[33m.[39mtoBe([36mtrue[39m)[33m;[39m
+     [90m 118 |[39m     expect(terminLebihLonggar(t[33m.[39m[33mNET14[39m[33m,[39m t[33m.[39m[33mNET30[39m))[33m.[39mtoBe([36mtrue[39m)[33m;[39m[0m
+
+      at Object.<anonymous> (src/features/__tests__/pk38Wewenang.test.js:115:30)
+      at TestScheduler.scheduleTests (../fe/node_modules/@jest/core/build/TestScheduler.js:333:13)
+      at runJest (../fe/node_modules/@jest/core/build/runJest.js:404:19)
+      at _run10000 (../fe/node_modules/@jest/core/build/cli/index.js:320:7)
+      at runCLI (../fe/node_modules/@jest/core/build/cli/index.js:173:3)
+
+  ● PK-38 — ganti termin di Koreksi Pesanan › tanpa izin: termin lebih longgar mati dengan petunjuk; yang lebih ketat tetap bisa dipilih
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: true
+    Received: false
+
+    [0m [90m 125 |[39m       current_term[33m:[39m { code[33m:[39m [32m"CBD"[39m[33m,[39m dp_percent[33m:[39m [35m100[39m[33m,[39m net_days[33m:[39m [35m0[39m } })[33m;[39m
+     [90m 126 |[39m     [36mawait[39m mount([33m<[39m[33mSalesOrderOverrideDialog[39m order[33m=[39m{[33mORDER[39m} onClose[33m=[39m{() [33m=>[39m {}} onDone[33m=[39m{() [33m=>[39m {}} [33m/[39m[33m>[39m)[33m;[39m
+    [31m[1m>[22m[39m[90m 127 |[39m     expect(opsi([32m"NET30"[39m)[33m.[39mdisabled)[33m.[39mtoBe([36mtrue[39m)[33m;[39m
+     [90m     |[39m                                    [31m[1m^[22m[39m
+     [90m 128 |[39m     expect(opsi([32m"NET30"[39m)[33m.[39mtextContent)[33m.[39mtoContain([33mPETUNJUK_TERMIN_MATI[39m)[33m;[39m
+     [90m 129 |[39m     expect(opsi([32m"DP50"[39m)[33m.[39mdisabled)[33m.[39mtoBe([36mtrue[39m)[33m;[39m
+     [90m 130 |[39m     expect(opsi([32m"CBD"[39m)[33m.[39mdisabled)[33m.[39mtoBe([36mfalse[39m)[33m;[39m[0m
+
+      at Object.<anonymous> (src/features/__tests__/pk38Wewenang.test.js:127:36)
+
+  ● PK-38 — ganti termin di Koreksi Pesanan › dengan izin: termin lebih longgar bisa dipilih dan peringatan tampil
+
+    TypeError: Cannot read properties of null (reading 'textContent')
+
+    [0m [90m 143 |[39m     })[33m;[39m
+     [90m 144 |[39m     [36mawait[39m flush()[33m;[39m
+    [31m[1m>[22m[39m[90m 145 |[39m     expect(q([32m"override-term-loosen-warning"[39m)[33m.[39mtextContent)[33m.[39mtoBe([33mPERINGATAN_TERMIN_LONGGAR[39m)[33m;[39m
+     [90m     |[39m                                             [31m[1m^[22m[39m
+     [90m 146 |[39m   })[33m;[39m
+     [90m 147 |[39m })[33m;[39m
+     [90m 148 |[39m[0m
+
+      at Object.<anonymous> (src/features/__tests__/pk38Wewenang.test.js:145:45)
+
+Test Suites: 1 failed, 1 total
+Tests:       6 failed, 1 passed, 7 total
+Snapshots:   0 total
+Time:        1.613 s, estimated 2 s
+Ran all test suites matching /src\/features\/__tests__\/pk38Wewenang.test.js/i.

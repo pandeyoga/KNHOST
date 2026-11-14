@@ -1,0 +1,26 @@
+# KP-T5 keadaan (b) — akhir
+tests_mem (venv 3.11, -n 0): HEAD 638 passed, 2 skipped, 3 xfailed, 9 warnings in 234.79s (0:03:54)
+  (a): 652 passed, 2 skipped, 3 xfailed, 9 warnings in 250.36s (0:04:10)
+  (b): 668 passed, 2 skipped, 3 xfailed, 9 warnings in 309.34s (0:05:09)
+
+jest HEAD:  Test Suites: 35 failed, 78 passed, 113 total Tests:       563 passed, 563 total 
+jest baru:  Test Suites: 35 failed, 79 passed, 114 total Tests:       571 passed, 571 total 
+suite gagal dimuat (radix/cmdk) sama persis dengan HEAD (35)
+
+## penjaga statik HEAD = (b)
+verify_auth_coverage: [FAIL] 28 pelanggaran :
+verify_ui_standard: [FAIL] 15 pelanggaran :
+verify_approval_queues: 
+audit_i18n_id:   ✗ 109 temuan di 62 berkas.
+audit_create_modal: [FAIL] 6 pelanggaran :
+verify_page_tabs: [FAIL] 1 pelanggaran :
+verify_to_list_bound: [FAIL] 6 pelanggaran :
+verify_list_export: [PASS] 0 pelanggaran.
+verify_error_notice: [PASS] 0 pelanggaran.
+verify_custom_modals: [PASS] 0 pelanggaran.
+verify_knselect_contract: verify_knselect_contract: 0 temuan
+verify_entity_label:   ✗ 2 pelanggaran:
+verify_access_catalog_nav: verify_access_catalog_nav: 0 temuan
+verify_money_idempotency: [PASS] 0 pelanggaran.
+verify_codebase_map: [PASS] 0 pelanggaran.
+verify_scope_guard: 

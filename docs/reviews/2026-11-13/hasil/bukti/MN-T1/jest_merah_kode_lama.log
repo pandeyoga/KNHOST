@@ -1,0 +1,55 @@
+FAIL src/config/__tests__/mnt1MenuKeuangan.test.js
+    ✕ admin: 5 + 5 = 10 entri, urutan & label rancangan (8 ms)
+    ✕ Hutang tidak lagi di Pembelian; Kendaraan di Gudang & Logistik; Meja Finance bukan menu lepas (8 ms)
+    ✕ finance-tower = 3 tab (1 ms)
+    ✕ ar-aging = 6 tab
+    ✕ accounts-payable = 2 tab (9 ms)
+    ✕ cash-bank = 4 tab
+    ✕ closing = 3 tab (1 ms)
+    ✓ ledger = 2 tab
+    ✕ hr-kpi-hub = 4 tab (1 ms)
+    ✕ purchase-orders = 7 tab
+    ✕ label tab persis tabel lama → baru (1 ms)
+    ✕ U15 — label 'Payroll Run' dan 'Chart of Accounts' tidak lagi tampil di menu (1 ms)
+    ✓ fixture memuat 13 peran bawaan
+    ✓ admin: nol entri tampak tanpa izin (1 ms)
+    ✓ manager: nol entri tampak tanpa izin (1 ms)
+    ✓ sales_admin: nol entri tampak tanpa izin
+    ✓ finance: nol entri tampak tanpa izin
+    ✓ sales: nol entri tampak tanpa izin
+    ✓ warehouse: nol entri tampak tanpa izin (1 ms)
+    ✓ designer: nol entri tampak tanpa izin
+    ✓ driver: nol entri tampak tanpa izin
+    ✓ md: nol entri tampak tanpa izin (1 ms)
+    ✓ warehouse_admin: nol entri tampak tanpa izin
+    ✓ sample_admin: nol entri tampak tanpa izin
+    ✓ md_quality: nol entri tampak tanpa izin (169 ms)
+    ✓ qc: nol entri tampak tanpa izin
+    ✕ bukti-merah: Finance tanpa izin Tagihan (vendor_bill) → tab Hutang › Tagihan terdeteksi tampak tanpa izin (1 ms)
+    ✕ tabel bantu mencakup semua tab hub keuangan & SDM yang dipindah
+    ✕ advance-report → customer-credit (ar-aging) + preset (2 ms)
+    ✕ store-credit → customer-credit (ar-aging) + preset (1 ms)
+    ✕ cash-advances → petty-cash (cash-bank) + preset (1 ms)
+    ✕ settlements → petty-cash (cash-bank) + preset (1 ms)
+    ✕ reimburse-payables → petty-cash (cash-bank) + preset (1 ms)
+    ✕ period-unlock → menu closing (17 ms)
+    ✕ posting-failures → menu closing (1 ms)
+    ✕ payment-plans → menu ar-aging
+    ✕ landed-cost → menu purchase-orders
+    ✓ vehicle-logs → menu vehicle-logs (4 ms)
+    ✓ fixed-assets → menu fixed-assets
+    ✕ finance-desk → menu finance-tower (1 ms)
+    ✕ petty-cash → menu cash-bank (12 ms)
+    ✕ kas-aset → menu cash-bank (1 ms)
+    ✕ kas-aset (id grup lama) → Kas & Bank › Kas Kecil
+    ✕ beranda Finance tetap Meja Finance, menu yang disorot Beranda Keuangan (1 ms)
+    ✕ U7 Finance: Keuangan (Beranda 3, Piutang 6, Hutang 2, Kas & Bank 4, Antar-PT) + Akuntansi (Buku Besar 2, Pajak › Faktur Keluaran) (4 ms)
+    ✕ U8 Sales: Keuangan hanya Piutang (Penagihan, Kasus) + Kas & Bank (Kas Kecil); SDM hanya Kinerja Sales (1 ms)
+    ✕ U9 Gudang: Keuangan hanya Hutang › Kontrabon dan Antar-PT; Akuntansi & Pajak tidak tampil (1 ms)
+    ✕ U10 Admin Sales: tanpa Hutang; memuat Antar-PT (1 ms)
+    ✕ Admin Gudang mewarisi Gudang: Kontrabon & Antar-PT
+    ✕ Manajer: Perlu Tindakan (Meja Finance) dan semua tab Kinerja & Insentif
+FAIL src/features/__tests__/mnt1Pembungkus.test.js
+    Cannot find module '../finance/CustomerCreditView' from 'src/features/__tests__/mnt1Pembungkus.test.js'
+Test Suites: 2 failed, 2 total
+Tests:       33 failed, 17 passed, 50 total

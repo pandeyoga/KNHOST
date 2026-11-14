@@ -1,0 +1,32 @@
+# Penjaga statik — sebelum (HEAD 1392969) | sesudah
+verify_auth_coverage: [FAIL] 28 pelanggaran :|verify_auth_coverage: [FAIL] 28 pelanggaran :
+verify_ui_standard: [FAIL] 15 pelanggaran :|verify_ui_standard: [FAIL] 15 pelanggaran :
+verify_approval_queues: |verify_approval_queues: 
+audit_i18n_id:   ✗ 109 temuan di 62 berkas.|audit_i18n_id:   ✗ 109 temuan di 62 berkas.
+audit_create_modal: [FAIL] 6 pelanggaran :|audit_create_modal: [FAIL] 6 pelanggaran :
+verify_page_tabs: [FAIL] 1 pelanggaran :|verify_page_tabs: [FAIL] 1 pelanggaran :
+verify_to_list_bound: [FAIL] 6 pelanggaran :|verify_to_list_bound: [FAIL] 6 pelanggaran :
+verify_list_export: [PASS] 0 pelanggaran.|verify_list_export: [PASS] 0 pelanggaran.
+verify_error_notice: [PASS] 0 pelanggaran.|verify_error_notice: [PASS] 0 pelanggaran.
+verify_custom_modals: [PASS] 0 pelanggaran.|verify_custom_modals: [PASS] 0 pelanggaran.
+verify_knselect_contract: verify_knselect_contract: 0 temuan|verify_knselect_contract: verify_knselect_contract: 0 temuan
+verify_entity_label:   ✗ 2 pelanggaran:|verify_entity_label:   ✗ 2 pelanggaran:
+verify_access_catalog_nav: verify_access_catalog_nav: 0 temuan|verify_access_catalog_nav: verify_access_catalog_nav: 0 temuan
+verify_money_idempotency: [PASS] 0 pelanggaran.|verify_money_idempotency: [PASS] 0 pelanggaran.
+verify_codebase_map: [PASS] 0 pelanggaran.|verify_codebase_map: [PASS] 0 pelanggaran.
+verify_scope_guard: |verify_scope_guard: 
+
+## rolegate sebelum: [PASS] 31 cek lolos, 0 pelanggaran.
+## rolegate sesudah: [PASS] 31 cek lolos, 0 pelanggaran.
+## cfgtext sebelum: [PASS] 2834 cek lolos, 0 pelanggaran.
+## cfgtext sesudah: [PASS] 2848 cek lolos, 0 pelanggaran.
+## permchk sebelum: [PASS] 580 cek lolos, 0 pelanggaran.
+## permchk sesudah: [PASS] 580 cek lolos, 0 pelanggaran.
+## acw sebelum: ✅ INV-CFG: setiap setting terdeklarasi punya pembaca kode DAN jalur ubah yang nyata; tidak ada editor ganda.
+## acw sesudah: ✅ INV-CFG: setiap setting terdeklarasi punya pembaca kode DAN jalur ubah yang nyata; tidak ada editor ganda.
+
+## sapuan_izin.py (mode cepat) HEAD: MERAH — 20 pelanggaran (arti kode: lihat docstring).
+## sapuan_izin.py (mode cepat) sesudah: MERAH — 20 pelanggaran (arti kode: lihat docstring). — daftar pelanggaran identik (diff kosong), tidak ada rute yang disentuh unit ini
+## config_health (BACKEND diarahkan ke salinan): HEAD OK 367 / NOT_USED 36 → sesudah OK 369 / NOT_USED 36; STALE/MISSING 0 = 0
+## verify_scope_guard sebelum = sesudah: HIJAU (semua endpoint ber-parameter path memanggil penjaga; pengecualian beralasan 7)
+## verify_approval_queues: bagian data bergantung database — tidak dijalankan (aturan brief)

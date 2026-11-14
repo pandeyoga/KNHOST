@@ -1,0 +1,9 @@
+Test Suites: 7 failed, 106 passed, 113 total
+Tests:       6 failed, 806 passed, 812 total
+  ● D-01 — Template Dokumen: Desainer PDF › peran kustom modul Admin tetap punya Desainer PDF (dulu tab pdf-templates); manajer tidak
+  ● D-07: Setujui di Pesanan Khusus = dialog bersama (catatan opsional) + pesan hasil berantai
+  ● D-07: Tolak = alasan wajib ≥5 huruf lewat dialog bersama (pop-up tolak lama hilang)
+  ● Test suite failed to run
+  ● U9 — tombol Tanya KN dari izin ai.view › peran kustom dengan {ai: [view]} → tampil
+  ● kasbon — tahap persetujuan = izin + peran tahap server › Manager berizin approve saja: Setujui ada, Tolak tidak
+  ● modal tolak: gagal → modal & alasan tetap, pesan tampil di modal

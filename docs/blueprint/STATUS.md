@@ -45,12 +45,12 @@ Papan kerja agen pelaksana. Aturan mengubahnya: `00_ATURAN_EKSEKUSI.md` §5. Uru
 | 38 | KF-T8 | Penjaga pengaturan: uji putaran semua kunci menjadi gate | KF-T2 | siap |  |  |  |
 | 39 | KP-T1 | Profil PT yang jujur dan bisa diubah | KF-T1 | selesai | `69cc4e3` | [KP-T1](../reviews/2026-11-13/hasil/KP-T1.md) | H3: --apply migrate_kpt1_profil_pt di data nyata |
 | 40 | KP-T2 | Kesiapan PT, wizard lanjutan, dan arsip PT | KP-T1 | selesai | `aea3cec` | [KP-T2](../reviews/2026-11-13/hasil/KP-T2.md) |  |
-| 41 | KP-T5 | Penomoran dokumen per PT | KP-T1 | siap |  |  | Titik henti H3 untuk dokumen lama |
+| 41 | KP-T5 | Penomoran dokumen per PT | KP-T1 | selesai | `4e816a0` · `eb4e0e1` | [KP-T5](../reviews/2026-11-13/hasil/KP-T5.md) | Titik henti H3 untuk dokumen lama |
 | 42 | KP-T6 | Dokumen dan cetak per PT | KP-T1 | siap |  |  |  |
 | 43 | KP-T7 | Pengingat dan penjadwal yang bisa diatur | KF-T1 | selesai | `0a91095` | [KP-T7](../reviews/2026-11-13/hasil/KP-T7.md) |  |
 | 44 | KP-T8 | Rahasia dan perangkat | KF-T1 | siap |  |  |  |
-| 45 | MN-T1 | Menu keuangan dan SDM: pindah dan kelompokkan | PR-T5 | siap |  |  |  |
-| 46 | KP-T9 | Susunan hub Pengaturan | MN-T1, KF-T4 | menunggu |  |  |  |
+| 45 | MN-T1 | Menu keuangan dan SDM: pindah dan kelompokkan | PR-T5 | selesai | `5e94a1d` | [MN-T1](../reviews/2026-11-13/hasil/MN-T1.md) |  |
+| 46 | KP-T9 | Susunan hub Pengaturan | MN-T1, KF-T4 | siap |  |  |  |
 | 47 | PK-18 | Penanda gagal dan panel untuk semua jenis dokumen | PK-05, PK-06 tervalidasi | menunggu |  |  |  |
 | 48 | PK-19 | Kwitansi, deposit, selisih bayar: satu fungsi alokasi | PK-18 | menunggu |  |  |  |
 | 49 | PK-20 | Kas dibuat lewat satu pembuat | PK-18 | menunggu |  |  |  |
@@ -71,13 +71,13 @@ Papan kerja agen pelaksana. Aturan mengubahnya: `00_ATURAN_EKSEKUSI.md` §5. Uru
 | 64 | PK-35 | Uang sebagai bilangan bulat; validator; penomoran jurnal | PK-34 | tahan |  |  | Titik henti H2, H3 |
 | 65 | PK-36 | Akun kontrol tertutup dari jurnal manual | PK-10 | selesai | `16b50fe` | [PK-36](../reviews/2026-11-13/hasil/PK-36.md) |  |
 | 66 | PK-37 | Tanggal buku WIB dan kunci periode untuk dokumen | PK-11 | selesai | `689ca70` · `a323bb0` | [PK-37](../reviews/2026-11-13/hasil/PK-37.md) | H3: --terapkan pk37_tanggal_buku_lama di data nyata |
-| 67 | PK-38 | Satu batas wewenang; izin bayar terpisah; ganti termin | KF-T6, PR-T2 | siap |  |  |  |
+| 67 | PK-38 | Satu batas wewenang; izin bayar terpisah; ganti termin | KF-T6, PR-T2 | selesai | `eef7bb9` | [PK-38](../reviews/2026-11-13/hasil/PK-38.md) |  |
 | 68 | PK-39 | Anggaran | PK-18 | menunggu |  |  |  |
-| 69 | PK-40 | Pajak: keunikan, masa pajak, basis | PK-14 | siap |  |  |  |
+| 69 | PK-40 | Pajak: keunikan, masa pajak, basis | PK-14 | selesai | `a78f552` | [PK-40](../reviews/2026-11-13/hasil/PK-40.md) |  |
 | 70 | PK-41 | Laporan pendukung | PK-19 | menunggu |  |  |  |
 | 71 | PK-42 | Layar: perbaikan cepat per berkas | PK-12 | siap |  |  |  |
 | 72 | PK-43 | Layar: struktural | PK-06, PK-19 | menunggu |  |  |  |
-| 73 | PK-44 | Jejak dokumen dan relasi dokumen | MN-T1 | menunggu |  |  |  |
+| 73 | PK-44 | Jejak dokumen dan relasi dokumen | MN-T1 | siap |  |  |  |
 | 74 | PM-T1 | Induk cara bayar dan rekening ber-peruntukan | KF-T1 | siap |  |  |  |
 | 75 | CR-T1 | Profil kredit per pelanggan per PT | PK-45, KF-T6, KF-T7 | siap |  |  |  |
 | 76 | KM-T1 | Data insentif: omzet terkirim, pencairan, harga acuan, target | PK-19 | menunggu |  |  |  |
@@ -100,7 +100,7 @@ Papan kerja agen pelaksana. Aturan mengubahnya: `00_ATURAN_EKSEKUSI.md` §5. Uru
 | 93 | PM-T3 | Kwitansi ber-rekening; terverifikasi bank | PK-19, PK-20, PK-21, PM-T2 | menunggu |  |  |  |
 | 94 | PM-T4 | Titipan tunai sales dan setoran | PM-T3 | menunggu |  |  | Titik henti H5 |
 | 95 | PM-T5 | Virtual account / QRIS | PM-T3 | tahan |  |  | Titik henti H8 (K-35) |
-| 96 | TX-T1 | Pengaturan pajak bertanggal berlaku dan data pajak pelanggan | PK-40 | menunggu |  |  |  |
+| 96 | TX-T1 | Pengaturan pajak bertanggal berlaku dan data pajak pelanggan | PK-40 | siap |  |  |  |
 | 97 | TX-T2 | Pemicu faktur pajak dan daur hidupnya | TX-T1, PK-32 | menunggu |  |  | Titik henti H5 |
 | 98 | TX-T3 | Ekspor Coretax, PPh 23, bukti potong | TX-T2 | tahan |  |  | Titik henti H8 (K-08) |
 | 99 | AG-T3 | Asisten: kartu tindakan golongan A dan B | AG-T2, PK-15, PK-18, PK-21 | menunggu |  |  | Titik henti H5 |

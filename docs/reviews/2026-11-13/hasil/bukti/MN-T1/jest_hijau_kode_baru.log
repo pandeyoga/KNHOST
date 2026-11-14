@@ -1,0 +1,64 @@
+PASS src/features/__tests__/mnt1Pembungkus.test.js
+    ✓ dua chip; bawaan Titipan pelanggan; layar lama dirender utuh (185 ms)
+    ✓ U17 padanan — preset alias `store-credit` {bagian: saldo} membuka chip Saldo kredit (10 ms)
+    ✓ chip mengikuti izin endpoint layar lamanya; tanpa izin keduanya → pesan, bukan layar 403 (11 ms)
+    ✓ hidden_views peran kustom atas id lama (advance-report) menyembunyikan chipnya (4 ms)
+    ✓ admin & finance: tiga chip (Hutang reimburse butuh accounting.view) (17 ms)
+    ✓ sales (tanpa accounting.view): dua chip; preset `reimburse` jatuh ke chip pertama (16 ms)
+    ✓ U17 padanan — preset alias `settlements` membuka Pertanggungjawaban; chip lain berpindah layar (6 ms)
+    ✓ Pelanggan · Prospek · Interaksi; sub-tab keuangan/insentif sudah pindah ke Piutang dan SDM (11 ms)
+    ✓ manager: tombol Setujui/Tolak = true (54 ms)
+    ✓ finance: tombol Setujui/Tolak = false (33 ms)
+PASS src/config/__tests__/mnt1MenuKeuangan.test.js
+    ✓ admin: 5 + 5 = 10 entri, urutan & label rancangan (2 ms)
+    ✓ Hutang tidak lagi di Pembelian; Kendaraan di Gudang & Logistik; Meja Finance bukan menu lepas (1 ms)
+    ✓ finance-tower = 3 tab
+    ✓ ar-aging = 6 tab (1 ms)
+    ✓ accounts-payable = 2 tab
+    ✓ cash-bank = 4 tab
+    ✓ closing = 3 tab
+    ✓ ledger = 2 tab
+    ✓ hr-kpi-hub = 4 tab
+    ✓ purchase-orders = 7 tab
+    ✓ label tab persis tabel lama → baru (4 ms)
+    ✓ U15 — label 'Payroll Run' dan 'Chart of Accounts' tidak lagi tampil di menu
+    ✓ fixture memuat 13 peran bawaan (1 ms)
+    ✓ admin: nol entri tampak tanpa izin (12 ms)
+    ✓ manager: nol entri tampak tanpa izin (1 ms)
+    ✓ sales_admin: nol entri tampak tanpa izin (1 ms)
+    ✓ finance: nol entri tampak tanpa izin
+    ✓ sales: nol entri tampak tanpa izin
+    ✓ warehouse: nol entri tampak tanpa izin (1 ms)
+    ✓ designer: nol entri tampak tanpa izin
+    ✓ driver: nol entri tampak tanpa izin
+    ✓ md: nol entri tampak tanpa izin (1 ms)
+    ✓ warehouse_admin: nol entri tampak tanpa izin
+    ✓ sample_admin: nol entri tampak tanpa izin
+    ✓ md_quality: nol entri tampak tanpa izin (1 ms)
+    ✓ qc: nol entri tampak tanpa izin (1 ms)
+    ✓ bukti-merah: Finance tanpa izin Tagihan (vendor_bill) → tab Hutang › Tagihan terdeteksi tampak tanpa izin
+    ✓ tabel bantu mencakup semua tab hub keuangan & SDM yang dipindah (1 ms)
+    ✓ advance-report → customer-credit (ar-aging) + preset (1 ms)
+    ✓ store-credit → customer-credit (ar-aging) + preset (4 ms)
+    ✓ cash-advances → petty-cash (cash-bank) + preset (3 ms)
+    ✓ settlements → petty-cash (cash-bank) + preset (1 ms)
+    ✓ reimburse-payables → petty-cash (cash-bank) + preset
+    ✓ period-unlock → menu closing
+    ✓ posting-failures → menu closing
+    ✓ payment-plans → menu ar-aging (3 ms)
+    ✓ landed-cost → menu purchase-orders
+    ✓ vehicle-logs → menu vehicle-logs (3 ms)
+    ✓ fixed-assets → menu fixed-assets
+    ✓ finance-desk → menu finance-tower
+    ✓ petty-cash → menu cash-bank (3 ms)
+    ✓ kas-aset → menu cash-bank (1 ms)
+    ✓ kas-aset (id grup lama) → Kas & Bank › Kas Kecil
+    ✓ beranda Finance tetap Meja Finance, menu yang disorot Beranda Keuangan
+    ✓ U7 Finance: Keuangan (Beranda 3, Piutang 6, Hutang 2, Kas & Bank 4, Antar-PT) + Akuntansi (Buku Besar 2, Pajak › Faktur Keluaran) (1 ms)
+    ✓ U8 Sales: Keuangan hanya Piutang (Penagihan, Kasus) + Kas & Bank (Kas Kecil); SDM hanya Kinerja Sales (1 ms)
+    ✓ U9 Gudang: Keuangan hanya Hutang › Kontrabon dan Antar-PT; Akuntansi & Pajak tidak tampil
+    ✓ U10 Admin Sales: tanpa Hutang; memuat Antar-PT (3 ms)
+    ✓ Admin Gudang mewarisi Gudang: Kontrabon & Antar-PT
+    ✓ Manajer: Perlu Tindakan (Meja Finance) dan semua tab Kinerja & Insentif (1 ms)
+Test Suites: 2 passed, 2 total
+Tests:       60 passed, 60 total

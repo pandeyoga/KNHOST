@@ -1,0 +1,26 @@
+E       AssertionError: ['amendments', 'hr-my-profile', 'internal-requests', 'keep-pending', 'meja-peran', 'orders', ...]
+E       assert {'ar-aging', ...', 'keuangan'} <= {'amendments'...'orders', ...}
+E         
+E         Extra items in the left set:
+E         'keuangan'
+E         'ar-aging'
+E         'collection-worklist'
+E       AssertionError: assert ['finance-cases', 'kas-aset'] == ['finance-cases']
+E         
+E         Left contains one more item: 'kas-aset'
+E         Use -v to get more diff
+E           AssertionError: ('/api/vendor-bills', 403, '{"detail":"Anda belum punya akses untuk melihat Tagihan Supplier. Minta Admin menambahkan akses \'Hutang Supplier & Kontrabon\'."}')
+E           assert 403 == 200
+E            +  where 403 = <Response [403 Forbidden]>.status_code
+E       AssertionError: assert ({'pay', 'view'} <= {'approve', 'reject'}
+E         
+E         Extra items in the left set:
+E         'view'
+E         'pay')
+PASSED tests_mem/test_MNT1_menu_keuangan.py::test_MNT1_U04_satu_pasangan_izin_membuka_endpoint_utama
+PASSED tests_mem/test_MNT1_menu_keuangan.py::test_MNT1_U04b_manajer_kosong_ditolak_tiap_baris
+FAILED tests_mem/test_MNT1_menu_keuangan.py::test_MNT1_U11_modul_pesanan_lihat_saja_membuka_piutang_penagihan
+FAILED tests_mem/test_MNT1_menu_keuangan.py::test_MNT1_U12_hidden_views_kas_aset_dibuang_saat_dimuat
+FAILED tests_mem/test_MNT1_menu_keuangan.py::test_MNT1_U13_finance_melihat_hutang_dan_mencairkan_uang_muka
+FAILED tests_mem/test_MNT1_menu_keuangan.py::test_MNT1_U13b_izin_bawaan_finance_dan_manajer
+4 failed, 2 passed, 1 warning in 5.52s

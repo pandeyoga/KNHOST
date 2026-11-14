@@ -1,0 +1,36 @@
+# KP-T5 (b) — test_KPT5b_pengaturan.py di pohon HEAD 1392969 (git archive; berkas uji disalin)
+FAILED tests_mem/test_KPT5b_pengaturan.py::test_KPT5_U4_format_khusus_pt_tidak_mengubah_pt_lain[asyncio]
+FAILED tests_mem/test_KPT5b_pengaturan.py::test_KPT5_U5_mulai_lagi_tiap_tahun[asyncio]
+FAILED tests_mem/test_KPT5b_pengaturan.py::test_KPT5_U6_pengulangan_tanpa_sisipan_ditolak[asyncio]
+FAILED tests_mem/test_KPT5b_pengaturan.py::test_KPT5_U7_bentuk_sama_dengan_jenis_lain_ditolak[asyncio]
+FAILED tests_mem/test_KPT5b_pengaturan.py::test_KPT5_U8_deret_bersama_dijadikan_per_pt[asyncio]
+FAILED tests_mem/test_KPT5b_pengaturan.py::test_KPT5_U9_jenis_terkunci[asyncio]
+FAILED tests_mem/test_KPT5b_pengaturan.py::test_KPT5_U10_scope_hanya_baris_grup[asyncio]
+FAILED tests_mem/test_KPT5b_pengaturan.py::test_KPT5_validasi_alasan_awalan_versi[asyncio]
+FAILED tests_mem/test_KPT5b_pengaturan.py::test_KPT5_jejak_audit_tercatat[asyncio]
+FAILED tests_mem/test_KPT5b_pengaturan.py::test_KPT5_U11_tiga_deret_melanjutkan_nomor_tertinggi[asyncio]
+FAILED tests_mem/test_KPT5b_pengaturan.py::test_KPT5_KP35_dua_puluh_panggilan_bersamaan_tidak_kembar[asyncio]
+FAILED tests_mem/test_KPT5b_pengaturan.py::test_KPT5_U13_pratinjau_tidak_menaikkan_penghitung[asyncio]
+FAILED tests_mem/test_KPT5b_pengaturan.py::test_KPT5_U14_izin[asyncio] - asse...
+FAILED tests_mem/test_KPT5b_pengaturan.py::test_KPT5_U15_pt_baru_pratinjau_nomor[asyncio]
+FAILED tests_mem/test_KPT5b_pengaturan.py::test_KPT5_daftar_lengkap_dan_contoh_berikutnya[asyncio]
+15 failed, 1 passed, 1 warning in 1.93s
+
+## sebab (dikelompokkan)
+     10 E        +  where 404 = <Response [404 Not Found]>.status_code
+      4 E       assert 404 == 200
+      3 E       assert (404 == 400)
+      3 E       AssertionError: {"detail":"Not Found"}
+      2 E       assert 404 == 400
+      1 E       assert 404 == 403
+      1 E       TypeError: _next_service_bill_no() takes 0 positional arguments but 1 was given
+      1 E       KeyError: 'samples'
+      1 E       KeyError: 'rows'
+      1 E       ImportError: cannot import name 'doc_numbering_service' from 'services' (/tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/kpt5/head_tree/backend/services/__init__.py)
+      1 E       AssertionError: assert ['EMP-00121',...P-00121', ...] == ['EMP-00121',...P-00126', ...]
+      1 E         Use -v to get more diff
+      1 E         At index 1 diff: 'EMP-00121' != 'EMP-00122'
+      1 E         
+
+Catatan: test_KPT5_KP35_setara_generator_lama LULUS di HEAD — memang oracle setara (generator lama = harapan).
+KP-35 bersamaan di HEAD: 20 panggilan next_employee_code() → semuanya EMP-00121 (kembar).

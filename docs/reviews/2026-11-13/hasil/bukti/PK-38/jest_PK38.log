@@ -1,0 +1,16 @@
+# jest — src/config/__tests__ + src/features/__tests__
+HEAD: Test Suites: 33 failed, 67 passed, 100 total · Tests:       490 passed, 490 total
+sesudah: Test Suites: 33 failed, 68 passed, 101 total · Tests:       497 passed, 497 total
+33 suite gagal dimuat di keduanya: Cannot find module '@radix-ui/primitive/is-development' (kendala lingkungan lokal)
+
+## pk38Wewenang.test.js — kode baru
+    ✓ aturan tampil: bawaan boleh (data lama tanpa tanda), salah = tidak boleh (4 ms)
+    ✓ Catat Jasa tanpa wewenang: isian nilai tidak tampil, keterangan tampil, isi kirim tanpa nilai (80 ms)
+    ✓ Catat Jasa dengan wewenang: isian nilai tampil, tanpa keterangan (18 ms)
+    ✓ Terima Hasil tanpa wewenang: Ongkos Jasa, Bahan Pembantu, PPN, No. Faktur tidak tampil (52 ms)
+    ✓ arah termin sama dengan server (1 ms)
+    ✓ tanpa izin: termin lebih longgar mati dengan petunjuk; yang lebih ketat tetap bisa dipilih (26 ms)
+    ✓ dengan izin: termin lebih longgar bisa dipilih dan peringatan tampil (20 ms)
+Tests:       7 passed, 7 total
+
+## pk38Wewenang.test.js — MkoStepModals.jsx & SalesOrderOverrideDialog.jsx versi HEAD: lihat jest_PK38_merah_kode_HEAD.log (6 gagal, 1 lulus)

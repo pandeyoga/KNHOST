@@ -1,0 +1,4 @@
+PASS src/features/__tests__/pk40MasaPajak.test.js
+PASS src/features/__tests__/pk13MoneyConfirm.test.js (5.179 s)
+Test Suites: 2 passed, 2 total
+Tests:       19 passed, 19 total

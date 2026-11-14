@@ -1,0 +1,29 @@
+  ✓ pil hitam aktif (rounded-full + ternary) terhitung
+  ✓ bg-[#1C1C1E] tanpa ternary (tombol gelap biasa) tidak dihitung
+  ✓ tombol-toggle primary/secondary terhitung
+  ✓ primary-button biasa tidak dihitung
+  ✓ TabBtn & cfg-group-btn terhitung
+  ✓ komentar tidak dihitung
+  ✓ naik + berkas baru → merah; turun dicatat
+  ✓ INV-UI-13: hub 6 tab (+ tersembunyi & komentar) → hijau
+  ✓ INV-UI-13: hub 7 tab → merah
+  ✓ INV-UI-13: hub baseline 8 → hijau
+  ✓ INV-UI-13: hub baseline 8 menjadi 9 → merah
+  ✓ INV-UI-14: berkas baru ber-PageTabs di bawah tab hub tampak → terdeteksi (merah bila bukan baseline)
+  ✓ INV-UI-14: tab tersembunyi (alias) tidak dihitung; kelas tab-bar di komentar diabaikan
+  ✓ INV-UI-14: kondisi ganda `(a || b) && (<Comp` terbaca
+  SELF-TEST HIJAU (0 gagal)
+  berkas berpola: 6 (baseline 6) · pola: 6 (baseline 6)
+  turun di 1 berkas (ratchet bisa dikencangkan dengan --update):
+    ↓ features/settings/config/SettingsHub.jsx: 1 → 0
+== INV-UI-12 — tab maksimal 2 tingkat — tab/pil buatan sendiri hanya boleh berkurang ==
+[FAIL] 1 pelanggaran (dari 12 cek):
+  ✗ features/wms/InventoryStockView.jsx — berkas BARU memakai tab/pil buatan sendiri (1×). Pakai components/PageTabs.jsx (tab) atau components/FilterChips.jsx (saringan).
+→ Perbaiki sesuai INVARIANT INV-UI-12 (detail: memory/INVARIANTS.md).
+  hub > 6 tab: {'products-pricing': 8, 'purchase-orders': 7} (baseline {'products-pricing': 8, 'purchase-orders': 7})
+  berkas tab tingkat ketiga: 41 (baseline 41)
+== INV-UI-13 — paling banyak 6 tab tampak per hub (baseline hanya boleh turun) ==
+[PASS] 41 cek lolos, 0 pelanggaran.
+== INV-UI-14 — tanpa tab tingkat ketiga — komponen tab hub tampak tanpa PageTabs/kelas tab-bar ==
+[PASS] 133 cek lolos, 0 pelanggaran.
+[FAIL] 1 pelanggaran total (INV-UI-12 1 · INV-UI-13 0 · INV-UI-14 0)
