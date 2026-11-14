@@ -1,0 +1,24 @@
+FAILED tests_mem/test_PK37_kunci_dokumen.py::test_PK37_U9_titik_panggil_ditolak_di_muka[1]
+FAILED tests_mem/test_PK37_kunci_dokumen.py::test_PK37_U9_titik_panggil_ditolak_di_muka[2]
+FAILED tests_mem/test_PK37_kunci_dokumen.py::test_PK37_U9_titik_panggil_ditolak_di_muka[3]
+FAILED tests_mem/test_PK37_kunci_dokumen.py::test_PK37_U9_titik_panggil_ditolak_di_muka[4]
+FAILED tests_mem/test_PK37_kunci_dokumen.py::test_PK37_U9_titik_panggil_ditolak_di_muka[5]
+FAILED tests_mem/test_PK37_kunci_dokumen.py::test_PK37_U9_titik_panggil_ditolak_di_muka[6]
+FAILED tests_mem/test_PK37_kunci_dokumen.py::test_PK37_U9_titik_panggil_ditolak_di_muka[7]
+FAILED tests_mem/test_PK37_kunci_dokumen.py::test_PK37_U9_titik_panggil_ditolak_di_muka[8]
+FAILED tests_mem/test_PK37_kunci_dokumen.py::test_PK37_U9_titik_panggil_ditolak_di_muka[9]
+FAILED tests_mem/test_PK37_kunci_dokumen.py::test_PK37_U9_titik_panggil_ditolak_di_muka[10]
+FAILED tests_mem/test_PK37_kunci_dokumen.py::test_PK37_U9_titik_panggil_ditolak_di_muka[11]
+FAILED tests_mem/test_PK37_kunci_dokumen.py::test_PK37_U9_titik_panggil_ditolak_di_muka[12]
+FAILED tests_mem/test_PK37_kunci_dokumen.py::test_PK37_U9_titik_panggil_ditolak_di_muka[13]
+FAILED tests_mem/test_PK37_kunci_dokumen.py::test_PK37_U9_titik_panggil_ditolak_di_muka[14]
+FAILED tests_mem/test_PK37_kunci_dokumen.py::test_PK37_U9_titik_panggil_ditolak_di_muka[15]
+FAILED tests_mem/test_PK37_kunci_dokumen.py::test_PK37_U9_titik_panggil_ditolak_di_muka[16]
+FAILED tests_mem/test_PK37_kunci_dokumen.py::test_PK37_U9_titik_panggil_ditolak_di_muka[17]
+FAILED tests_mem/test_PK37_kunci_dokumen.py::test_PK37_U9_titik_panggil_ditolak_di_muka[18]
+FAILED tests_mem/test_PK37_kunci_dokumen.py::test_PK37_U9_titik_panggil_ditolak_di_muka[19]
+FAILED tests_mem/test_PK37_kunci_dokumen.py::test_PK37_U9_titik_panggil_ditolak_di_muka[20]
+FAILED tests_mem/test_PK37_kunci_dokumen.py::test_PK37_U9_b13_keputusan_selisih_tagihan_lapis_layanan
+FAILED tests_mem/test_PK37_kunci_dokumen.py::test_PK37_U10_sakelar_per_pt - A...
+FAILED tests_mem/test_PK37_kunci_dokumen.py::test_PK37_U13_transfer_penerima_tertutup
+23 failed, 3 passed, 1 warning in 3.72s

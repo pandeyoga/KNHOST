@@ -1,0 +1,102 @@
+FFFFFF.FFFFFFFFFFFFF                                                     [100%]
+=================================== FAILURES ===================================
+E   AssertionError: ar.overdue_block_days
+    assert None is not None
+kft7_head/backend/tests_mem/test_KFT7_nilai_tertulis.py:144: AssertionError: ar.overdue_block_days
+E   AssertionError: [('OVERDUE_BLOCK_DAYS', 'services/ar_aging_service.py'), ('OVERDUE_BLOCK_DAYS', 'services/customer_service.py'), ('WAR..., ('MAX_GROUP_SALES', 'services/customer_service.py'), ('DEFAULT_MARGIN_PCT', 'services/special_order_phase2.py'), ...]
+    assert [('OVERDUE_BL...se2.py'), ...] == []
+      
+      Left contains 38 more items, first extra item: ('OVERDUE_BLOCK_DAYS', 'services/ar_aging_service.py')
+      Use -v to get more diff
+kft7_head/backend/tests_mem/test_KFT7_nilai_tertulis.py:200: AssertionError: [('OVERDUE_BLOCK_DAYS', 'services/ar_aging_service.py'), ('OVERDUE_BLOCK_DAYS', 'services/customer_service.py'), ('WAR..., ('MAX_GROUP_SALES', 'services/customer_service.py'), ('DEFAULT_MARGIN_PCT', 'services/special_order_phase2.py'), ...]
+E   ImportError: cannot import name 'credit_thresholds' from 'services.customer_service' (kft7_head/backend/services/customer_service.py)
+---------------------------- Captured stdout setup -----------------------------
+[bootstrap] SANDI AWAL akun seed (ganti segera): B6y3xPHKW3Qm7Eod
+[bootstrap] FASE F lifecycle backfill: 5 produk distempel 'produksi'
+[bootstrap] kebersihan data: 5 record dirapikan {'customers': 3, 'suppliers': 0, 'users': 0, 'hr_employees': 2, 'makloons': 0}
+kft7_head/backend/tests_mem/test_KFT7_nilai_tertulis.py:220: ImportError: cannot import name 'credit_thresholds' from 'services.customer_service' (kft7_head/backend/services/customer_service.py)
+E   AssertionError: {"detail":"Setting 'ar.credit_warning_pct' tidak ada di registry"}
+    assert 404 == 200
+     +  where 404 = <Response [404 Not Found]>.status_code
+kft7_head/backend/tests_mem/test_KFT7_nilai_tertulis.py:62: AssertionError: {"detail":"Setting 'ar.credit_warning_pct' tidak ada di registry"}
+E   AssertionError: {"detail":"Setting 'ar.overdue_block_days' tidak ada di registry"}
+    assert 404 == 200
+     +  where 404 = <Response [404 Not Found]>.status_code
+kft7_head/backend/tests_mem/test_KFT7_nilai_tertulis.py:62: AssertionError: {"detail":"Setting 'ar.overdue_block_days' tidak ada di registry"}
+E   ImportError: cannot import name 'reservation_expires_at' from 'services.inventory_service' (kft7_head/backend/services/inventory_service.py)
+kft7_head/backend/tests_mem/test_KFT7_nilai_tertulis.py:270: ImportError: cannot import name 'reservation_expires_at' from 'services.inventory_service' (kft7_head/backend/services/inventory_service.py)
+E   AttributeError: module 'services.special_order_phase2' has no attribute 'migrasi_margin_lama'
+kft7_head/backend/tests_mem/test_KFT7_nilai_tertulis.py:311: AttributeError: module 'services.special_order_phase2' has no attribute 'migrasi_margin_lama'
+E   AssertionError: {"detail":"Setting 'inventory.low_stock_default_qty' tidak ada di registry"}
+    assert 404 == 200
+     +  where 404 = <Response [404 Not Found]>.status_code
+
+During handling of the above exception, another exception occurred:
+E   AssertionError: {"detail":"Setting 'inventory.low_stock_default_qty' tidak ada di registry"}
+    assert 404 == 200
+     +  where 404 = <Response [404 Not Found]>.status_code
+kft7_head/backend/tests_mem/test_KFT7_nilai_tertulis.py:73: AssertionError: {"detail":"Setting 'inventory.low_stock_default_qty' tidak ada di registry"}
+E   AssertionError: {"detail":"Setting 'keamanan.maks_salah_sandi' tidak ada di registry"}
+    assert 404 == 200
+     +  where 404 = <Response [404 Not Found]>.status_code
+kft7_head/backend/tests_mem/test_KFT7_nilai_tertulis.py:62: AssertionError: {"detail":"Setting 'keamanan.maks_salah_sandi' tidak ada di registry"}
+E   AssertionError: {"detail":"Setting 'keamanan.lama_kunci_menit' tidak ada di registry"}
+    assert 404 == 200
+     +  where 404 = <Response [404 Not Found]>.status_code
+kft7_head/backend/tests_mem/test_KFT7_nilai_tertulis.py:62: AssertionError: {"detail":"Setting 'keamanan.lama_kunci_menit' tidak ada di registry"}
+E   AssertionError: {"detail":"Setting 'keamanan.umur_sesi_jam' tidak ada di registry"}
+    assert 404 == 200
+     +  where 404 = <Response [404 Not Found]>.status_code
+kft7_head/backend/tests_mem/test_KFT7_nilai_tertulis.py:62: AssertionError: {"detail":"Setting 'keamanan.umur_sesi_jam' tidak ada di registry"}
+E   AssertionError: {"detail":"Setting 'qc.inspection_interval_yard' tidak ada di registry"}
+    assert 404 == 200
+     +  where 404 = <Response [404 Not Found]>.status_code
+kft7_head/backend/tests_mem/test_KFT7_nilai_tertulis.py:62: AssertionError: {"detail":"Setting 'qc.inspection_interval_yard' tidak ada di registry"}
+E   AssertionError: ('keamanan.maks_salah_sandi', '{"detail":"Setting \'keamanan.maks_salah_sandi\' tidak ada di registry"}')
+    assert 404 == 400
+     +  where 404 = <Response [404 Not Found]>.status_code
+kft7_head/backend/tests_mem/test_KFT7_nilai_tertulis.py:439: AssertionError: ('keamanan.maks_salah_sandi', '{"detail":"Setting \'keamanan.maks_salah_sandi\' tidak ada di registry"}')
+E   KeyError: "Setting 'ar.overdue_block_days' tidak ada di registry"
+kft7_head/backend/config_registry.py:373: KeyError: "Setting 'ar.overdue_block_days' tidak ada di registry"
+E   AssertionError: assert [] == ['settings-cfg-system']
+      
+      Right contains one more item: 'settings-cfg-system'
+      Use -v to get more diff
+kft7_head/backend/tests_mem/test_KFT7_nilai_tertulis.py:481: AssertionError: assert [] == ['settings-cfg-system']
+E   ImportError: cannot import name 'group_sales_max' from 'services.customer_service' (kft7_head/backend/services/customer_service.py)
+kft7_head/backend/tests_mem/test_KFT7_nilai_tertulis.py:494: ImportError: cannot import name 'group_sales_max' from 'services.customer_service' (kft7_head/backend/services/customer_service.py)
+E   AttributeError: module 'services.special_order_phase2' has no attribute 'multi_item_min'
+kft7_head/backend/tests_mem/test_KFT7_nilai_tertulis.py:514: AttributeError: module 'services.special_order_phase2' has no attribute 'multi_item_min'
+E   AttributeError: module 'services.stock_analytics_service' has no attribute 'trend_rules'
+kft7_head/backend/tests_mem/test_KFT7_nilai_tertulis.py:530: AttributeError: module 'services.stock_analytics_service' has no attribute 'trend_rules'
+E   AssertionError: {"detail":"Setting 'finance.rounding_tolerance_rupiah' tidak ada di registry"}
+    assert 404 == 200
+     +  where 404 = <Response [404 Not Found]>.status_code
+kft7_head/backend/tests_mem/test_KFT7_nilai_tertulis.py:62: AssertionError: {"detail":"Setting 'finance.rounding_tolerance_rupiah' tidak ada di registry"}
+=============================== warnings summary ===============================
+../../venv311/lib/python3.11/site-packages/starlette/formparsers.py:12
+  venv311/lib/python3.11/site-packages/starlette/formparsers.py:12: PendingDeprecationWarning: Please use `import python_multipart` instead.
+    import multipart
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests_mem/test_KFT7_nilai_tertulis.py::test_KFT7_U1_kunci_terdaftar_bawaan_sama_dengan_nilai_hari_ini
+FAILED tests_mem/test_KFT7_nilai_tertulis.py::test_KFT7_U2_konstanta_tidak_tersisa
+FAILED tests_mem/test_KFT7_nilai_tertulis.py::test_KFT7_U3_hari_telat_blokir_per_pt
+FAILED tests_mem/test_KFT7_nilai_tertulis.py::test_KFT7_U4_persen_peringatan_plafon
+FAILED tests_mem/test_KFT7_nilai_tertulis.py::test_KFT7_U5_umur_piutang_dan_kartu_pelanggan_satu_pembaca
+FAILED tests_mem/test_KFT7_nilai_tertulis.py::test_KFT7_U6_masa_reservasi_per_pt
+FAILED tests_mem/test_KFT7_nilai_tertulis.py::test_KFT7_U8_migrasi_margin_pesanan_khusus
+FAILED tests_mem/test_KFT7_nilai_tertulis.py::test_KFT7_U9_stok_menipis_barang_tanpa_titik_pesan_ulang
+FAILED tests_mem/test_KFT7_nilai_tertulis.py::test_KFT7_U10_batas_salah_sandi
+FAILED tests_mem/test_KFT7_nilai_tertulis.py::test_KFT7_U10b_lama_kunci_akun
+FAILED tests_mem/test_KFT7_nilai_tertulis.py::test_KFT7_U11_umur_sesi_masuk
+FAILED tests_mem/test_KFT7_nilai_tertulis.py::test_KFT7_U12_titik_inspeksi_per_pt
+FAILED tests_mem/test_KFT7_nilai_tertulis.py::test_KFT7_U13_nilai_di_bawah_minimum_ditolak
+FAILED tests_mem/test_KFT7_nilai_tertulis.py::test_KFT7_U14_putaran_t1_config_26_kunci
+FAILED tests_mem/test_KFT7_nilai_tertulis.py::test_KFT7_U15_kelompok_keamanan_punya_layar_dan_pemakai_tersambung
+FAILED tests_mem/test_KFT7_nilai_tertulis.py::test_KFT7_T1_anggota_tim_sales_per_pt
+FAILED tests_mem/test_KFT7_nilai_tertulis.py::test_KFT7_T2_pesanan_khusus_multi_barang_dan_katalog_sample
+FAILED tests_mem/test_KFT7_nilai_tertulis.py::test_KFT7_T3_tren_penjualan_dan_format_surat_jalan
+FAILED tests_mem/test_KFT7_nilai_tertulis.py::test_KFT7_T4_pembulatan_alasan_dan_reservasi_segera_berakhir
+19 failed, 1 passed, 1 warning in 3.73s

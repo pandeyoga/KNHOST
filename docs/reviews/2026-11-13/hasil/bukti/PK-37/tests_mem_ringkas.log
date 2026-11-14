@@ -1,0 +1,8 @@
+# tests_mem sebelum (HEAD 303e709)
+577 passed, 2 skipped, 3 xfailed, 11 warnings in 161.88s (0:02:41)
+# sesudah (a)
+584 passed, 2 skipped, 3 xfailed, 11 warnings in 131.61s (0:02:11)
+# sesudah (b1)
+592 passed, 2 skipped, 2 xfailed, 11 warnings in 132.64s (0:02:12)
+# sesudah (b) akhir
+618 passed, 2 skipped, 2 xfailed, 11 warnings in 207.08s (0:03:27)

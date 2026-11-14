@@ -1,0 +1,28 @@
+E       AssertionError: beban Okt 5,000,000.00 (seharusnya 4.000.000)
+E       assert False
+E        +  where False = cocok(5000000.0, (4 * 1000000))
+E       AssertionError: assert '2026-10-31T17:30:00+00:00' == '2026-11-01'
+E         
+E         - 2026-11-01
+E         + 2026-10-31T17:30:00+00:00
+E       AssertionError: assert '2026-10-31T17:30:00+00:00' == '2026-11-01'
+E         
+E         - 2026-11-01
+E         + 2026-10-31T17:30:00+00:00
+E           services.gl_service.ClosedPeriodError: Periode 2026-10 sudah DITUTUP (terkunci). Jurnal mundur ke tanggal 2026-10-31 memerlukan izin 'Buka Periode' yang disetujui dua orang. Ajukan di Keuangan → Buka Periode (Unlock).
+E       Failed: DID NOT RAISE ClosedPeriodError
+E       assert True is False
+E       AssertionError: assert '2026-11-14' == '2026-11-01'
+E         
+E         - 2026-11-01
+E         ?         -
+E         + 2026-11-14
+E         ?          +
+FAILED tests_mem/test_PK37_pemakai_tanggal_buku.py::test_PK37_U4_laba_rugi_oktober_dan_november[asyncio]
+FAILED tests_mem/test_PK37_pemakai_tanggal_buku.py::test_PK37_U5_tanggal_jurnal_sepuluh_huruf[asyncio]
+FAILED tests_mem/test_PK37_pemakai_tanggal_buku.py::test_PK37_U5b_jurnal_manual_bertanggal_buku[asyncio]
+FAILED tests_mem/test_PK37_pemakai_tanggal_buku.py::test_PK37_U6_dini_hari_1_nov_diterima_saat_oktober_tertutup[asyncio]
+FAILED tests_mem/test_PK37_pemakai_tanggal_buku.py::test_PK37_U7_dini_hari_1_okt_ditolak_saat_oktober_tertutup[asyncio]
+FAILED tests_mem/test_PK37_pemakai_tanggal_buku.py::test_PK37_U8_status_tanggal_lewat_api[asyncio]
+FAILED tests_mem/test_PK37_pemakai_tanggal_buku.py::test_PK37_b1_hari_ini_antar_pt_dan_periode_pajak_wib[asyncio]
+7 failed, 1 warning in 1.25s

@@ -1,0 +1,74 @@
+[visual-edits] @emergentbase/visual-edits not installed — visual editing disabled.
+[visual-edits] @emergentbase/visual-edits not installed — visual editing disabled.
+FAIL src/features/__tests__/kft7NilaiPengaturan.test.js
+  KF-T7 — lembar cacat per interval mengikuti Pengaturan
+    ✕ rumus jumlah titik = server: ⌈panjang ÷ jarak⌉, paling sedikit minimum (2 ms)
+    ✕ label kolom & keterangan memakai jarak dari server (39 ms)
+    ✓ tanpa data server: cadangan 15 yard / 10 titik (perilaku lama) (11 ms)
+  KF-T7 — kelompok Keamanan akun & sesi punya rumah
+    ✕ kelompok `keamanan` di layar Integrasi & Sistem, kuncinya dikenal indeks (1 ms)
+
+  ● KF-T7 — lembar cacat per interval mengikuti Pengaturan › rumus jumlah titik = server: ⌈panjang ÷ jarak⌉, paling sedikit minimum
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: 20
+    Received: 14
+
+      36 |   test("rumus jumlah titik = server: ⌈panjang ÷ jarak⌉, paling sedikit minimum", () => {
+      37 |     expect(intervalCount(200)).toBe(14);            // bawaan 15 yard / 10 titik (cadangan)
+    > 38 |     expect(intervalCount(200, 10, 10)).toBe(20);    // ⌈200 ÷ 10⌉
+         |                                        ^
+      39 |     expect(intervalCount(90, 15, 10)).toBe(10);     // ⌈90 ÷ 15⌉ = 6 → minimum 10
+      40 |     expect(intervalCount(90, 15, 4)).toBe(6);
+      41 |   });
+
+      at Object.<anonymous> (src/features/__tests__/kft7NilaiPengaturan.test.js:38:40)
+      at TestScheduler.scheduleTests (../fe/node_modules/@jest/core/build/TestScheduler.js:333:13)
+      at runJest (../fe/node_modules/@jest/core/build/runJest.js:404:19)
+      at _run10000 (../fe/node_modules/@jest/core/build/cli/index.js:320:7)
+      at runCLI (../fe/node_modules/@jest/core/build/cli/index.js:173:3)
+
+  ● KF-T7 — lembar cacat per interval mengikuti Pengaturan › label kolom & keterangan memakai jarak dari server
+
+    expect(received).toContain(expected) // indexOf
+
+    Expected substring: "20 interval × 10 yard"
+    Received string:    "Stok roll tetap 200 yard — posisi cacat selalu dalam yard. 14 interval × 15 yard (berlanjut melewati 150)."
+
+      46 |         intervalYard={10} minPoints={10} />);
+      47 |     const note = div.querySelector('[data-testid="ins-stock-unit-note"]').textContent;
+    > 48 |     expect(note).toContain("20 interval × 10 yard");
+         |                  ^
+      49 |     expect(note).toContain("berlanjut melewati 100");
+      50 |     expect(div.querySelector('[data-testid="ins-interval-summary"]').textContent).toContain("190–200");
+      51 |     await act(async () => root.unmount());
+
+      at Object.<anonymous> (src/features/__tests__/kft7NilaiPengaturan.test.js:48:18)
+
+  ● KF-T7 — kelompok Keamanan akun & sesi punya rumah › kelompok `keamanan` di layar Integrasi & Sistem, kuncinya dikenal indeks
+
+    expect(received).toContain(expected) // indexOf
+
+    Expected value: "keamanan"
+    Received array: ["penjualan", "pembayaran-pelanggan", "retur-koreksi", "pembelian", "penerimaan", "kualitas", "stok", "persetujuan", "pajak-pembukuan", "bank-kasus", "sdm", "rnd", "sistem"]
+
+      62 | describe("KF-T7 — kelompok Keamanan akun & sesi punya rumah", () => {
+      63 |   test("kelompok `keamanan` di layar Integrasi & Sistem, kuncinya dikenal indeks", () => {
+    > 64 |     expect(CONFIG_GROUPS.map((g) => g.id)).toContain("keamanan");
+         |                                            ^
+      65 |     expect(configViewForGroup("keamanan")).toBe("settings-cfg-system");
+      66 |     expect(CONFIG_GROUP_VIEWS["settings-cfg-system"].groups).toEqual(["sistem", "keamanan"]);
+      67 |     expect(groupForKey("keamanan.umur_sesi_jam")).toBe("keamanan");
+
+      at Object.<anonymous> (src/features/__tests__/kft7NilaiPengaturan.test.js:64:44)
+      at TestScheduler.scheduleTests (../fe/node_modules/@jest/core/build/TestScheduler.js:333:13)
+      at runJest (../fe/node_modules/@jest/core/build/runJest.js:404:19)
+      at _run10000 (../fe/node_modules/@jest/core/build/cli/index.js:320:7)
+      at runCLI (../fe/node_modules/@jest/core/build/cli/index.js:173:3)
+
+Test Suites: 1 failed, 1 total
+Tests:       3 failed, 1 passed, 4 total
+Snapshots:   0 total
+Time:        1.195 s
+Ran all test suites matching /kft7NilaiPengaturan/i.

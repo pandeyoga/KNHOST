@@ -41,7 +41,7 @@ Papan kerja agen pelaksana. Aturan mengubahnya: `00_ATURAN_EKSEKUSI.md` §5. Uru
 | 34 | KF-T3 | Layar menampilkan nilai yang dipakai mesin; jadwal diaktifkan penjadwal | KF-T1 | selesai | `dbe1633` · `9783875` | [KF-T3](../reviews/2026-11-13/hasil/KF-T3.md) |  |
 | 35 | KF-T4 | Bahasa, pengelompokan, dan editor Pusat Pengaturan | KF-T2 | selesai | `13b84dd` | [KF-T4](../reviews/2026-11-13/hasil/KF-T4.md) |  |
 | 36 | KF-T5 | Pengaturan per pelanggan dan per barang punya layar | KF-T1 | selesai | `0da3656` | [KF-T5](../reviews/2026-11-13/hasil/KF-T5.md) |  |
-| 37 | KF-T7 | Nilai bisnis yang ditulis mati menjadi pengaturan | KF-T2 | siap |  |  |  |
+| 37 | KF-T7 | Nilai bisnis yang ditulis mati menjadi pengaturan | KF-T2 | selesai | `885daca` | [KF-T7](../reviews/2026-11-13/hasil/KF-T7.md) | H3: migrasi margin pesanan khusus saat proses awal |
 | 38 | KF-T8 | Penjaga pengaturan: uji putaran semua kunci menjadi gate | KF-T2 | siap |  |  |  |
 | 39 | KP-T1 | Profil PT yang jujur dan bisa diubah | KF-T1 | selesai | `69cc4e3` | [KP-T1](../reviews/2026-11-13/hasil/KP-T1.md) | H3: --apply migrate_kpt1_profil_pt di data nyata |
 | 40 | KP-T2 | Kesiapan PT, wizard lanjutan, dan arsip PT | KP-T1 | selesai | `aea3cec` | [KP-T2](../reviews/2026-11-13/hasil/KP-T2.md) |  |
@@ -70,7 +70,7 @@ Papan kerja agen pelaksana. Aturan mengubahnya: `00_ATURAN_EKSEKUSI.md` §5. Uru
 | 63 | PK-34 | Replica set satu anggota, transaksi di jalur uang, pustaka database | gelombang 3 tervalidasi (PK-18 … PK-25; dengan sendirinya PK-05, PK-06) | tahan |  |  | Titik henti H2 |
 | 64 | PK-35 | Uang sebagai bilangan bulat; validator; penomoran jurnal | PK-34 | tahan |  |  | Titik henti H2, H3 |
 | 65 | PK-36 | Akun kontrol tertutup dari jurnal manual | PK-10 | selesai | `16b50fe` | [PK-36](../reviews/2026-11-13/hasil/PK-36.md) |  |
-| 66 | PK-37 | Tanggal buku WIB dan kunci periode untuk dokumen | PK-11 | siap |  |  |  |
+| 66 | PK-37 | Tanggal buku WIB dan kunci periode untuk dokumen | PK-11 | selesai | `689ca70` · `a323bb0` | [PK-37](../reviews/2026-11-13/hasil/PK-37.md) | H3: --terapkan pk37_tanggal_buku_lama di data nyata |
 | 67 | PK-38 | Satu batas wewenang; izin bayar terpisah; ganti termin | KF-T6, PR-T2 | siap |  |  |  |
 | 68 | PK-39 | Anggaran | PK-18 | menunggu |  |  |  |
 | 69 | PK-40 | Pajak: keunikan, masa pajak, basis | PK-14 | siap |  |  |  |
@@ -79,7 +79,7 @@ Papan kerja agen pelaksana. Aturan mengubahnya: `00_ATURAN_EKSEKUSI.md` §5. Uru
 | 72 | PK-43 | Layar: struktural | PK-06, PK-19 | menunggu |  |  |  |
 | 73 | PK-44 | Jejak dokumen dan relasi dokumen | MN-T1 | menunggu |  |  |  |
 | 74 | PM-T1 | Induk cara bayar dan rekening ber-peruntukan | KF-T1 | siap |  |  |  |
-| 75 | CR-T1 | Profil kredit per pelanggan per PT | PK-45, KF-T6, KF-T7 | menunggu |  |  |  |
+| 75 | CR-T1 | Profil kredit per pelanggan per PT | PK-45, KF-T6, KF-T7 | siap |  |  |  |
 | 76 | KM-T1 | Data insentif: omzet terkirim, pencairan, harga acuan, target | PK-19 | menunggu |  |  |  |
 | 77 | KM-T2 | Layar Capaian (cari dan jumlahkan) | KM-T1, PK-41 | menunggu |  |  |  |
 | 78 | AG-T1 | Asisten: rapikan kartu tindakan yang ada | PK-02 | siap |  |  |  |

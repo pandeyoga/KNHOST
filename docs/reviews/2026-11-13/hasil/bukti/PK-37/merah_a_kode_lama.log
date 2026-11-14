@@ -1,0 +1,20 @@
+tests_mem/test_PK37_tanggal_buku.py:56: ModuleNotFoundError
+E       ImportError: cannot import name 'book_date' from 'services' (backend/services/__init__.py)
+tests_mem/test_PK37_tanggal_buku.py:68: ImportError
+>           raise KeyError(f"Setting '{key}' tidak ada di registry")
+E           KeyError: "Setting 'periode.kunci_dokumen' tidak ada di registry"
+config_registry.py:373: KeyError
+E       AssertionError: {"detail": "Setting 'periode.kunci_dokumen' tidak ada di registry"}
+tests_mem/test_PK37_tanggal_buku.py:110: AssertionError
+E   FileNotFoundError: [Errno 2] No such file or directory: 'scripts/blueprint/pk37_tanggal_buku_lama.py'
+<frozen importlib._bootstrap_external>:1130: FileNotFoundError
+E   FileNotFoundError: [Errno 2] No such file or directory: 'scripts/blueprint/pk37_tanggal_buku_lama.py'
+<frozen importlib._bootstrap_external>:1130: FileNotFoundError
+FAILED tests_mem/test_PK37_tanggal_buku.py::test_PK37_U1_stempel_berzona_diubah_ke_wib[asyncio]
+FAILED tests_mem/test_PK37_tanggal_buku.py::test_PK37_U2_tanggal_isian_apa_adanya_bentuk_lain_ditolak[asyncio]
+FAILED tests_mem/test_PK37_tanggal_buku.py::test_PK37_U3_hari_ini_wib_dengan_jam_dibekukan[asyncio]
+FAILED tests_mem/test_PK37_tanggal_buku.py::test_PK37_U15_putaran_t1_config[asyncio]
+FAILED tests_mem/test_PK37_tanggal_buku.py::test_PK37_U15b_pengubah_kunci_dari_izin_akuntansi[asyncio]
+FAILED tests_mem/test_PK37_tanggal_buku.py::test_PK37_U16_skrip_baca_saja_hanya_jurnal_dini_hari[asyncio]
+FAILED tests_mem/test_PK37_tanggal_buku.py::test_PK37_U16b_terapkan_melewati_periode_tertutup[asyncio]
+7 failed, 1 warning in 1.49s

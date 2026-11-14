@@ -1,0 +1,12 @@
+== verify_config_text (sesudah)
+  428 kunci · 14 kelompok · pelanggaran per aturan: 0
+== INV-CFG-TXT — teks Pengaturan berbahasa awam (label ≤ 45, satuan, arti 0, glosarium, sub-judul) ==
+[PASS] 3010 cek lolos, 0 pelanggaran.
+  ✓ T7 sub-judul Lanjutan 15 kunci → hijau
+  SELF-TEST HIJAU (0 gagal)
+
+== gen_config_key_index --check
+configKeyIndex.json selaras registry
+
+== verify_role_gate_ui
+[PASS] 33 cek lolos, 0 pelanggaran.

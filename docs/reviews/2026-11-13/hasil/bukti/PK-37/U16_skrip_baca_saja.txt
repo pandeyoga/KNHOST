@@ -1,0 +1,4 @@
+Jurnal bertanggal stempel waktu yang tanggal buku WIB-nya berbeda: 1
+  ent_contoh · 2026-10 → 2026-11 · 1 jurnal · debit Rp 1.000.000
+    C/JE-1: 2026-10-31T17:30:00+00:00 → 2026-11-01
+Mode baca-saja: tidak ada yang diubah. Pakai --terapkan untuk mengubah (data nyata = keputusan pemilik).
