@@ -1,9 +1,10 @@
-"""Tanya KN F2.2 — orkestrator chat bebas (OpenAI Responses API + function calling).
+"""Tanya KN F2.2 — orkestrator chat bebas (pemanggilan alat lewat penyedia model).
 
-Siap pakai tetapi MATI sampai `ai.enabled=true` DAN kunci OpenAI terpasang (integrasi `openai`
-atau env OPENAI_API_KEY). Selama mati, pertanyaan dijawab dengan saran template (tanpa model).
-Urutan permintaan tetap demi prompt caching (§7.1): tools → developer#1 system → developer#2
-katalog (breakpoint) → developer#3 konteks sesi (breakpoint) → percakapan (append-only).
+Siap pakai tetapi MATI sampai `ai.enabled=true` DAN kunci penyedia model terpasang (menu Integrasi atau variabel
+lingkungan). Selama mati, pertanyaan dijawab dengan saran template (tanpa model).
+AG-T1 — penyedia model hanya diajak bicara lewat `services/ai_provider.py` (`active_provider()`); tes memasang
+pelaksana tiruan. Urutan permintaan tetap demi cache prompt (§7.1): tools → instruksi#1 system → instruksi#2
+katalog (titik potong) → instruksi#3 konteks sesi (titik potong) → percakapan (append-only).
 """
 from __future__ import annotations
 
@@ -17,7 +18,7 @@ from typing import Any, AsyncIterator, Dict, List, Optional
 
 from db import db
 from core_utils import new_id, now_iso
-from services import ai_cost, ai_templates, ai_tools
+from services import ai_cost, ai_provider, ai_templates, ai_tools
 from services.ai_number_check import verify
 from services.analytics_config import ai_policy
 from services.analytics_time import now_wib
@@ -68,14 +69,9 @@ def _is_mock(cfg: Dict[str, Any]) -> bool:
     return str(cfg.get("model_main") or "").startswith("mock") and _os.environ.get("AI_ALLOW_MOCK", "1") == "1"
 
 
-async def resolve_key() -> str:
-    from services.ocr_openai_client import resolve_key as _rk
-    return await _rk()
-
-
 async def status(user: Dict[str, Any]) -> Dict[str, Any]:
     cfg, pol = await chat_config(), await ai_policy()
-    has_key, mock = bool(await resolve_key()), _is_mock(cfg)
+    has_key, mock = (await ai_provider.configured_provider()) is not None, _is_mock(cfg)
     budget = await ai_cost.budget_state()
     live = bool(cfg["enabled"]) and has_key and not mock and not budget["exceeded"]
     return {"chat_enabled": bool(cfg["enabled"]) and (mock or (has_key and not budget["exceeded"])),
@@ -169,11 +165,11 @@ async def chat_events(question: str, session_id: Optional[str], deep: bool, user
             yield ev
         return
     mock = _is_mock(cfg)
-    key = await resolve_key() if cfg["enabled"] and not mock else ""
-    budget = await ai_cost.budget_state() if key else {"exceeded": False}
-    if not cfg["enabled"] or not (key or mock) or budget["exceeded"]:
+    provider = await ai_provider.active_provider() if cfg["enabled"] and not mock else None
+    budget = await ai_cost.budget_state() if provider else {"exceeded": False}
+    if not cfg["enabled"] or not (provider or mock) or budget["exceeded"]:
         text = ("Anggaran AI bulan ini sudah habis, jadi chat bebas dimatikan sampai bulan depan. " if budget["exceeded"] else
-                "Asisten chat bebas belum aktif (menunggu kunci OpenAI dan persetujuan pengiriman data agregat). ") + \
+                "Asisten chat bebas belum aktif (menunggu kunci penyedia model dan persetujuan pengiriman data agregat). ") + \
             "Sementara itu, template laporan berikut bisa langsung menjawab tanpa AI:"
         sugg = ai_templates.suggest(question, allowed)
         await _append(session, [turn_user, {"role": "assistant", "content": text, "suggestions": sugg, "at": now_iso()}], [])
@@ -195,30 +191,23 @@ async def chat_events(question: str, session_id: Optional[str], deep: bool, user
             return
         await _finalize_usage(res_id, cfg["model_main"], {}, 0)
         async for ev in _template_answer(tpl, question, session, turn_user, user, ctx,
-                                         f"[MODE UJI \u2014 jawaban tiruan tanpa OpenAI] Pertanyaan Anda dijawab dengan laporan \u201c{tpl['title']}\u201d."):
+                                         f"[MODE UJI \u2014 jawaban tiruan tanpa penyedia model] Pertanyaan Anda dijawab dengan laporan \u201c{tpl['title']}\u201d."):
             yield ev
         return
-    from openai import AsyncOpenAI
-    client = AsyncOpenAI(api_key=key, timeout=60.0, max_retries=1)
-    prefix = [
-        {"role": "developer", "content": [{"type": "input_text", "text": SYSTEM_PROMPT_V1}]},
-        {"role": "developer", "content": [{"type": "input_text", "text": CATALOG_V1, "prompt_cache_breakpoint": {"mode": "explicit"}}]},
-        {"role": "developer", "content": [{"type": "input_text", "text": await _session_context(user, ctx),
-                                           "prompt_cache_breakpoint": {"mode": "explicit"}}]},
-    ]
+    instructions = [SYSTEM_PROMPT_V1, CATALOG_V1, await _session_context(user, ctx)]
     items: List[Any] = _cap_history(list(session.get("items") or [])) + [{"role": "user", "content": prefix_ctx + question}]
     results: List[Dict[str, Any]] = []
     rids: List[str] = []
     usage_tot: Dict[str, int] = {}
     text, started = "", time.perf_counter()
     try:
-        async for ev in _model_loop(client, cfg, deep, prefix, items, results, rids, usage_tot, user, ctx, session):
+        async for ev in _model_loop(provider, cfg, deep, instructions, items, results, rids, usage_tot, user, ctx, session):
             if ev.get("type") == "_final":
                 text = ev["text"]
             else:
                 yield ev
     finally:   # KN-E33 — dicatat walau klien memutus koneksi (CancelledError/GeneratorExit)
-        await _finalize_usage(res_id, cfg["model_main"], usage_tot, int((time.perf_counter() - started) * 1000))
+        await _finalize_usage(res_id, cfg["model_main"], usage_tot, int((time.perf_counter() - started) * 1000), provider)
     items.append({"role": "assistant", "content": text})
     ver = verify(text, results, question)
     await _append(session, [turn_user, {"role": "assistant", "content": text, "verification": ver, "usage": usage_tot,
@@ -246,57 +235,70 @@ async def _reserve_usage(model: str, user, ctx) -> str:
     return rid
 
 
-async def _finalize_usage(rid: str, model: str, usage: Dict[str, int], latency_ms: int) -> None:
+async def _finalize_usage(rid: str, model: str, usage: Dict[str, int], latency_ms: int, provider=None) -> None:
+    price = provider.price_of(model) if provider else None
     await db.ai_usage_log.update_one({"id": rid}, {"$set": {
-        "usage": usage, "cost_usd": ai_cost.cost_usd(model, usage), "latency_ms": latency_ms, "status": "done"}})
+        "usage": usage, "cost_usd": ai_cost.cost_usd(model, usage, price), "latency_ms": latency_ms, "status": "done"}})
 
 
-async def _model_loop(client, cfg, deep, prefix, items, results, rids, usage_tot, user, ctx, session):
+async def _turn_events(provider, **kw) -> AsyncIterator[Dict[str, Any]]:
+    """AG-T1 — satu giliran model; potongan teks diteruskan sebagai event `delta` SELAGI giliran berjalan (bentuk event
+    SSE sama dengan sebelum lapisan penyedia). Event terakhir `{"type": "_turn", "turn": ModelTurn}`."""
+    q: asyncio.Queue = asyncio.Queue()
+
+    async def on_text(t: str) -> None:
+        q.put_nowait(t)
+
+    task = asyncio.ensure_future(provider.run_turn(on_text=on_text, **kw))
+    try:
+        while not task.done() or not q.empty():
+            if not q.empty():
+                yield {"type": "delta", "text": q.get_nowait()}
+                continue
+            getter = asyncio.ensure_future(q.get())
+            await asyncio.wait({task, getter}, return_when=asyncio.FIRST_COMPLETED)
+            if getter.done():
+                yield {"type": "delta", "text": getter.result()}
+            else:
+                getter.cancel()
+        yield {"type": "_turn", "turn": task.result()}
+    finally:   # klien memutus koneksi → giliran yang masih berjalan dihentikan
+        if not task.done():
+            task.cancel()
+
+
+async def _model_loop(provider, cfg, deep, instructions, items, results, rids, usage_tot, user, ctx, session):
     text = ""
     for _ in range(int(cfg["max_tool_rounds"] or 6)):
         yield {"type": "status", "text": "Menganalisis pertanyaan…" if not results else "Menyusun jawaban…"}
-        stream = await client.responses.create(
-            model=cfg["model_main"], tools=TOOLS_V1, input=prefix + items, stream=True,
-            reasoning={"effort": cfg["deep_effort"] if deep else cfg["reasoning_effort"]}, parallel_tool_calls=True,
-            max_output_tokens=int(cfg["max_output_tokens"] or 4000), store=False, include=["reasoning.encrypted_content"],
-            prompt_cache_key="kn-bi", extra_body={"prompt_cache_options": {"mode": "implicit", "ttl": "30m"}})
-        resp, streamed = None, False
-        async for sev in stream:
-            et = getattr(sev, "type", "")
-            if et == "response.output_text.delta":
+        turn, streamed = None, False
+        async for ev in _turn_events(provider, model=cfg["model_main"], instructions=instructions, tools=TOOLS_V1,
+                                     conversation=items, effort=cfg["deep_effort"] if deep else cfg["reasoning_effort"],
+                                     max_output_tokens=int(cfg["max_output_tokens"] or 4000)):
+            if ev["type"] == "_turn":
+                turn = ev["turn"]
+            else:
                 streamed = True
-                yield {"type": "delta", "text": sev.delta}
-            elif et == "response.completed":
-                resp = sev.response
-            elif et in ("response.failed", "response.incomplete", "error"):
-                err = getattr(getattr(getattr(sev, "response", None), "error", None), "message", None) or getattr(sev, "message", None)
-                raise RuntimeError(err or f"model berhenti ({et})")
-        if resp is None:
-            raise RuntimeError("respons model terputus")
-        u = getattr(resp, "usage", None)
-        if u:
-            for k in ("input_tokens", "output_tokens"):
-                usage_tot[k] = usage_tot.get(k, 0) + int(getattr(u, k, 0) or 0)
-            usage_tot["cached_tokens"] = usage_tot.get("cached_tokens", 0) + int(getattr(getattr(u, "input_tokens_details", None), "cached_tokens", 0) or 0)
-        calls = [o for o in resp.output if getattr(o, "type", "") == "function_call"]
-        items += [o.model_dump(exclude_none=True) for o in resp.output if getattr(o, "type", "") in ("reasoning", "function_call")]
-        if not calls:
-            text = resp.output_text or ""
+                yield ev
+        for k, v in (turn.usage or {}).items():
+            usage_tot[k] = usage_tot.get(k, 0) + int(v or 0)
+        items += list(turn.carry)
+        if not turn.tool_calls:
+            text = turn.text or ""
             break
         if streamed:
             yield {"type": "delta_reset"}
-        for c in calls:
-            args = json.loads(c.arguments or "{}")
+        for c in turn.tool_calls:
             yield {"type": "status", "text": f"Mengambil data ({c.name})…"}
-            yield {"type": "tool", "name": c.name, "arguments": args}
-            res = await ai_tools.execute(c.name, args, user, ctx, session["id"])
+            yield {"type": "tool", "name": c.name, "arguments": c.arguments}
+            res = await ai_tools.execute(c.name, c.arguments, user, ctx, session["id"])
             results.append(res)
             for r in [res] + list((res.get("sections") or {}).values()):
                 if r.get("result_id"):
                     rids.append(r["result_id"])
                     yield {"type": "result", "result_id": r["result_id"], "title": r.get("title")}
-            items.append({"type": "function_call_output", "call_id": c.call_id,
-                          "output": json.dumps(_trim(res, int(cfg["result_rows_to_model"] or 50)), ensure_ascii=False, default=str)})
+            items.append(ai_provider.tool_result(c.id, json.dumps(_trim(res, int(cfg["result_rows_to_model"] or 50)),
+                                                                  ensure_ascii=False, default=str)))
     yield {"type": "_final", "text": text}
 
 
@@ -325,20 +327,13 @@ async def job_ai_prewarm() -> Dict[str, Any]:
     cfg = await chat_config()
     if now_wib().weekday() >= 5 or not await value_of("ai.prewarm_enabled") or not cfg["enabled"] or _is_mock(cfg):
         return {"scanned": 0, "created": 0, "detail": "Dilewati (mati, akhir pekan, atau mode uji)"}
-    key = await resolve_key()
-    if not key or (await ai_cost.budget_state())["exceeded"]:
+    provider = await ai_provider.active_provider()
+    if provider is None or (await ai_cost.budget_state())["exceeded"]:
         return {"scanned": 0, "created": 0, "detail": "Dilewati (tanpa kunci atau anggaran habis)"}
-    from openai import AsyncOpenAI
-    resp = await AsyncOpenAI(api_key=key, timeout=60.0, max_retries=1).responses.create(
-        model=cfg["model_main"], tools=TOOLS_V1, max_output_tokens=16, store=False, prompt_cache_key="kn-bi",
-        input=[{"role": "developer", "content": [{"type": "input_text", "text": SYSTEM_PROMPT_V1}]},
-               {"role": "developer", "content": [{"type": "input_text", "text": CATALOG_V1, "prompt_cache_breakpoint": {"mode": "explicit"}}]},
-               {"role": "user", "content": "ok"}],
-        extra_body={"prompt_cache_options": {"mode": "implicit", "ttl": "30m", "prewarm": True}})
-    u = getattr(resp, "usage", None)
-    usage = {"input_tokens": int(getattr(u, "input_tokens", 0) or 0), "output_tokens": int(getattr(u, "output_tokens", 0) or 0)}
+    usage = await provider.prewarm(model=cfg["model_main"], instructions=[SYSTEM_PROMPT_V1, CATALOG_V1], tools=TOOLS_V1)
     await db.ai_usage_log.insert_one({"id": new_id("aiu"), "feature": "bi_prewarm", "model": cfg["model_main"], "usage": usage,
-                                      "cost_usd": ai_cost.cost_usd(cfg["model_main"], usage), "created_at": now_wib().isoformat()})
+                                      "cost_usd": ai_cost.cost_usd(cfg["model_main"], usage, provider.price_of(cfg["model_main"])),
+                                      "created_at": now_wib().isoformat()})
     return {"scanned": 1, "created": 0, "detail": f"Prefix dipanaskan ({usage['input_tokens']} token)"}
 
 

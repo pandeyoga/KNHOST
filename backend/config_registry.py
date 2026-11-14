@@ -136,6 +136,8 @@ GROUPS: List[Dict[str, Any]] = [
      # KF-T4 — tanpa `sensitif_baca` tingkat kelompok: kunci menu (`ui.*`) dan saran kasir (`pos.*`) yang dulu terbuka
      # lewat kelompok Tampilan kini menyebut `sensitif_baca=False` sendiri (keterbacaan tiap kunci tidak berubah).
      "sections": [_S("tanya-kn", "Tanya KN: arti angka & hak lihat"),
+                  # AG-T1 — sub-judul sendiri: "tanya-kn" sudah 14 kunci (batas sub-judul biasa, KF-T4).
+                  _S("tanya-kn-tindakan", "Tanya KN: kartu tindakan"),
                   _S("tanya-kn-teknis", "Tanya KN: model & anggaran", advanced=True),
                   _S("baca-sj", "Baca surat jalan otomatis", advanced=True),
                   _S("rfid-proses", "RFID & proses macet", advanced=True),

@@ -64,6 +64,8 @@ CANONICAL_COLLECTIONS = {
     "journal_proposals",
     # ── PM-T1 (blueprint) — master cara bayar + perubahan rekening yang menunggu orang kedua ──
     "payment_methods", "bank_account_changes",
+    # ── AG-T1 (blueprint) — kartu tindakan Tanya KN (masa berlaku, gagal/kedaluwarsa) ──
+    "ai_action_proposals",
     # ── KP-T4 (blueprint) — satu tabel kebijakan persetujuan ──
     "approval_policies",
     # ── KP-T5 (blueprint) — tabel Penomoran Dokumen (format yang diubah saja) ──

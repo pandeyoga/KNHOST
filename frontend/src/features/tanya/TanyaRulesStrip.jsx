@@ -18,7 +18,7 @@ export function TanyaRulesStrip({ status }) {
       <div className="tanya-rule">
         <span className="tanya-rule-label">Chat AI</span>
         <span className={`tanya-pill ${status.chat_enabled ? "on" : "off"}`} data-testid="tanya-ai-status">
-          <Sparkles className="h-3.5 w-3.5" /> {status.chat_enabled ? (status.mock ? "Mode uji (tiruan)" : "Aktif") : status.has_key ? "Kunci ada, belum diaktifkan" : "Menunggu kunci OpenAI"}
+          <Sparkles className="h-3.5 w-3.5" /> {status.chat_enabled ? (status.mock ? "Mode uji (tiruan)" : "Aktif") : status.has_key ? "Kunci ada, belum diaktifkan" : "Menunggu kunci penyedia model"}
         </span>
       </div>
       {status.can_edit_rules && status.budget && (

@@ -1,4 +1,6 @@
-"""Tanya KN F4 — narasi template: ringkasan otomatis dari angka server, atau AI (luna/sol) bila aktif."""
+"""Tanya KN F4 — narasi template: ringkasan otomatis dari angka server, atau AI (luna/sol) bila aktif.
+
+AG-T1 — model dipanggil lewat lapisan penyedia (`services/ai_provider.py`, `short_text`)."""
 from __future__ import annotations
 
 import json
@@ -8,7 +10,7 @@ from typing import Any, Dict, List, Optional
 
 from core_utils import new_id
 from db import db
-from services import ai_cost
+from services import ai_cost, ai_provider
 from services.ai_number_check import verify
 from services.analytics_time import now_wib
 from services.config_resolver import value_of
@@ -68,33 +70,28 @@ def auto_summary(results: List[Dict[str, Any]]) -> Optional[str]:
 
 
 async def ai_available() -> Dict[str, Any]:
-    from services.ai_chat_service import resolve_key
     enabled, model = await value_of("ai.enabled"), str(await value_of("ai.model_main") or "")
     budget = await ai_cost.budget_state()
-    ok = bool(enabled) and not model.startswith("mock") and not budget["exceeded"] and bool(await resolve_key())
+    ok = bool(enabled) and not model.startswith("mock") and not budget["exceeded"] and \
+        (await ai_provider.active_provider()) is not None
     return {"ok": ok, "budget": budget}
 
 
 async def _ai_text(mode: str, template: Dict[str, Any], results: List[Dict[str, Any]], user) -> Optional[Dict[str, Any]]:
-    from openai import AsyncOpenAI
-    from services.ai_chat_service import resolve_key
+    provider = await ai_provider.active_provider()
+    if provider is None:
+        return None
     model = await value_of("ai.model_fast") if mode == "luna" else await value_of("ai.model_main")
     data = [{"judul": r.get("title"), "periode": (r.get("period") or {}).get("label"), "kolom": r.get("columns"),
              "baris": (r.get("rows") or [])[:20], "total": r.get("totals"), "pembanding": r.get("compare")} for r in results]
     started = time.perf_counter()
-    client = AsyncOpenAI(api_key=await resolve_key(), timeout=45.0, max_retries=1)
-    resp = await client.responses.create(
-        model=model, store=False, max_output_tokens=700, reasoning={"effort": "low"},
-        input=[{"role": "developer", "content": [{"type": "input_text", "text": _PROMPT + _STYLE[mode]}]},
-               {"role": "user", "content": [{"type": "input_text", "text":
-                                             f"Laporan: {template['title']}\n{json.dumps(data, ensure_ascii=False, default=str)}"}]}])
-    u = getattr(resp, "usage", None)
-    usage = {"input_tokens": int(getattr(u, "input_tokens", 0) or 0), "output_tokens": int(getattr(u, "output_tokens", 0) or 0),
-             "cached_tokens": int(getattr(getattr(u, "input_tokens_details", None), "cached_tokens", 0) or 0)}
+    text, usage = await provider.short_text(
+        model=model, instructions=_PROMPT + _STYLE[mode], max_output_tokens=700,
+        content=f"Laporan: {template['title']}\n{json.dumps(data, ensure_ascii=False, default=str)}")
     await db.ai_usage_log.insert_one({"id": new_id("aiu"), "feature": "bi_template", "model": model, "user_id": user.get("id"),
-                                      "template_id": template["id"], "usage": usage, "cost_usd": ai_cost.cost_usd(model, usage),
+                                      "template_id": template["id"], "usage": usage,
+                                      "cost_usd": ai_cost.cost_usd(model, usage, provider.price_of(model)),
                                       "created_at": now_wib().isoformat(), "latency_ms": int((time.perf_counter() - started) * 1000)})
-    text = (resp.output_text or "").strip()
     return {"text": text, "source": "ai", "model": model, "verification": verify(text, results)} if text else None
 
 

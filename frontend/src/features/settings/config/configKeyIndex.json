@@ -333,6 +333,11 @@
      "advanced": false
     },
     {
+     "id": "tanya-kn-tindakan",
+     "label": "Tanya KN: kartu tindakan",
+     "advanced": false
+    },
+    {
      "id": "tanya-kn-teknis",
      "label": "Tanya KN: model & anggaran",
      "advanced": true
@@ -1672,6 +1677,10 @@
   "ai.prewarm_enabled": [
    "sistem",
    "tanya-kn-teknis"
+  ],
+  "ai.kartu_masa_berlaku_jam": [
+   "sistem",
+   "tanya-kn-tindakan"
   ],
   "ai.glossary": [
    "sistem",

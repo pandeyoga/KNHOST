@@ -659,8 +659,7 @@
       "dispatch_today",
       "supplier_scorecard",
       "makloon_status",
-      "entity_comparison",
-      "hr_summary"
+      "entity_comparison"
      ]
     },
     "period": {
@@ -807,11 +806,7 @@
       "product",
       "sales_person",
       "supplier",
-      "makloon_partner",
-      "warehouse",
-      "category",
-      "entity",
-      "city"
+      "warehouse"
      ]
     },
     "query": {
@@ -844,13 +839,9 @@
      "enum": [
       "sales_order",
       "purchase_order",
-      "delivery_note",
-      "tax_invoice",
-      "ar_receipt",
       "vendor_bill",
       "makloon_order",
       "goods_receipt",
-      "roll",
       "sales_return",
       "purchase_return"
      ]

@@ -54,6 +54,7 @@ Sebelum membuat apapun yang baru, tanya: **"Apakah ini sudah ada di sini?"**
 | Cara Bayar *(PM-T1)* | `payment_methods` (master berlapis `payment-methods`) | `routers/payment_methods.py` (`GET /api/payment-methods`), `routers/entity_masters.py` (kelola, `cash.configure`), `services/payment_method_service.py` (`normalize`, `get`, `active_for`, `is_cash` — dipanggil kwitansi, bayar hutang, kontrabon, biaya masuk, uang muka, denda, selisih bayar, antar-PT) | — | `config/paymentMethods.js` (`usePaymentMethods`), `EntityMastersView` (Pengaturan › Keuangan & Pajak › Master per Badan Usaha) |
 | Perubahan Rekening *(PM-T1)* | `bank_account_changes` | `routers/bank.py` (`POST/PATCH /bank-accounts` → 202 bila dua orang, `GET /bank-account-changes`, `POST …/{id}/decision`), `services/bank_account_change_service.py` | `BankAccountCreate`, `BankAccountUpdate`, `BankAccountChangeDecision` | `BankAccountChangesPanel`, `BankAccountForm` (Keuangan › Kas & Bank › Rekening & Saldo) |
 | Profil Kredit Pelanggan *(CR-T1)* | `customer_credit_profiles` (satu per pelanggan × PT pesanan), `credit_profile_requests` | `routers/credit_profiles.py` (`GET /customers/{id}/credit-profile`, `POST /customers/{id}/credit-profile-requests`, `GET /credit-profile-requests`, `POST …/{id}/decision`, `POST …/{id}/cancel`), `services/credit_profile_service.py` (`effective`, `status_from` — dipakai `customer_service.compute_customer_credit`, `ar_aging_service`) | `CreditProfileRequestCreate`, `CreditProfileDecision`, `CreditProfileCancel` | `CustomerCreditTab` + `CreditProfileRequestModal` (kartu pelanggan › Kredit), `CreditProfileRequestsPanel` (Keuangan › Piutang › Kredit & Plafon) |
+| Kartu Tindakan Asisten *(AG-T1)* | `ai_action_proposals` | `routers/ai_assist.py` (`GET /api/ai/actions/{id}`, `POST …/{id}/confirm`, `POST …/{id}/dismiss`), `services/ai_actions.py` (disiapkan alat `propose_action`, `POST /api/ai/tools/propose_action`) | — | `TanyaActionCard` (Tanya KN › percakapan) |
 | Kunci Masa Pajak *(PK-40)* | `tax_period_locks` | `routers/tax_center.py` (`/api/tax/periods*`), `services/tax_center_service.py` (`assert_masa_terbuka` dipanggil layanan faktur & PPh) | `TaxPeriodLockInput`, `TaxPeriodUnlockInput` | `TaxCenterView` (Akuntansi & Pajak › Pusat Pajak) |
 | Niat Bayar Hutang *(PK-05)* | `ap_payment_intents` | `routers/ap_payments.py`, `services/ap_payment_service.py` (dipanggil bayar faktur & bayar kontrabon) | `VendorBillPaymentCreate`, `ContraBonPayIn` | `VendorBillDetailPanel` & `contrabon/PayModal` (panel bayar, `features/purchasing/apPayment.jsx`) |
 | Kontrabon *(FASE G-7)* | `contra_bons` | `routers/contra_bons.py`, `services/contra_bon_service.py`, `services/contra_bon_reminder.py` | `ContraBonCreate`, `ContraBonDeductionIn`, `ContraBonDecisionIn`, `ContraBonScheduleIn`, `ContraBonPayIn`, `InvoiceExchangeIn` | `ContraBonsView` (Pembelian → Hutang Supplier (AP) → Kontrabon) |
@@ -1795,6 +1796,27 @@ Index:       uq_id (unik) · uq_open_request (customer_id, entity_id) UNIK parsi
   requested_by(_id) · created_at · decided_by(_id) · decided_at · decision_note · profile_version
 Putus: `credit_profile.approve` + `kontrol.ubah_profil_kredit.*` (nominal = plafon baru). `from` berbeda dari profil
 sekarang → 409 "Profil kredit sudah berubah sejak pengajuan dibuat. Buat pengajuan baru." (pengajuan dibatalkan otomatis).
+
+### ai_action_proposals  [AG-T1 — kartu tindakan Tanya KN: draf PO, pengingat tagih, tindak lanjut pelanggan]
+Kartu disiapkan asisten (alat `propose_action`) dan baru dijalankan saat pembuatnya menekan Setujui. **USER_SCOPED**
+(dibaca pemiliknya, `user_id`; izin `ai.configure` boleh melihat milik orang lain); PT kartu = `entity_id` (PT aktif saat
+disiapkan; mode "Semua PT" ditolak) dan kartu hanya bisa disetujui saat PT aktif = PT kartu.
+```
+Collection:  ai_action_proposals       Prefix: aiact_
+Router:      routers/ai_assist.py      (GET /api/ai/actions/{id}, POST {id}/confirm, POST {id}/dismiss)
+Service:     services/ai_actions.py    (propose_action, load, confirm, dismiss)
+Index:       uq_id (unik) · (user_id, status, created_at)
+
+  id · type (draft_po | collection_followup | customer_followup) · title · reason · note · payload {pos | reminders}
+  user_id · user_name · entity_id · session_id · created_at
+  expires_at        created_at + `ai.kartu_masa_berlaku_jam` PT kartu (kartu baru). Kartu lama tanpa field ini dianggap
+                    berlaku sampai created_at + nilai pengaturan PT kartu (dihitung saat dibaca, tidak disimpan)
+  status            pending → running → confirmed | failed · pending → dismissed | expired (tidak pernah kembali ke pending)
+  result[]          nomor PO / pengingat yang sudah jadi, ditambahkan BERTAHAP (sebelum butir berikutnya dijalankan)
+  error             ≤ 500 huruf, galat asli pelaksana bila `failed`
+  started_at · updated_at · finished_at (saat confirmed/failed/dismissed/expired) · confirmed_at (lama, tetap diisi)
+Saat dibaca: `pending` lewat `expires_at` → `expired`; `running` tak berubah > 10 menit (batas teknis) → `failed`
+"Proses berhenti sebelum selesai. Periksa daftar PO sebelum meminta draf baru."
 ```
 
 ### payment_terms  [Fase 1A IMPLEMENTED]
@@ -2994,6 +3016,7 @@ pmeth_  → payment_methods           [PM-T1]
 bac_    → bank_account_changes      [PM-T1]
 ccp_    → customer_credit_profiles  [CR-T1]
 cpr_    → credit_profile_requests   [CR-T1]
+aiact_  → ai_action_proposals       [AG-T1]
 aprule_ → approval_rules            [Fase 1A IMPLEMENTED]
 ```
 > Prefix PLANNED (lihat bagian PLANNED ENTITIES): `pra_` price_approvals (= "special price"),

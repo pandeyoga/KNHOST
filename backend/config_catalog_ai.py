@@ -45,12 +45,12 @@ E("ai.stock_value_roles", group="sistem", section="tanya-kn", type="list", defau
   status="not_used", not_used_reason=_PRT2_NOT_USED,
   items="roles")
 
-# ── Tanya KN F2 — chat bebas (mati sampai kunci OpenAI & persetujuan klien) ───
+# ── Tanya KN F2 — chat bebas (mati sampai kunci penyedia model & persetujuan klien) ───
 _CH = ("services/ai_chat_service.py:chat_config",)
 _G = ("global",)
 E("ai.enabled", group="sistem", section="tanya-kn", type="bool", default=False, scopes=_G,
   label="Aktifkan tanya-jawab bebas (AI)",
-  help="Pertanyaan bebas dijawab layanan AI (OpenAI) memakai ringkasan angka, tanpa data pribadi. Laporan siap "
+  help="Pertanyaan bebas dijawab penyedia model memakai ringkasan angka, tanpa data pribadi. Laporan siap "
        "pakai tetap jalan tanpa ini.",
   impact="Aktif = pertanyaan dan ringkasan angka dikirim ke pihak luar; aktifkan hanya bila perusahaan "
          "menyetujuinya.",
@@ -132,8 +132,19 @@ E("ai.prewarm_enabled", group="sistem", section="tanya-kn-teknis", type="bool", 
   label="Siapkan AI tiap pagi agar lebih cepat", help="Tiap hari kerja pukul 06.55 sistem menyiapkan AI lebih dulu "
                                                       "agar pertanyaan pertama lebih cepat dan murah (sekitar Rp "
                                                       "330 per hari).",
-  impact="Aktif = ± Rp 330 per pemanasan. Butuh kunci OpenAI & chat aktif.", example="Mati",
+  impact="Aktif = ± Rp 330 per pemanasan. Butuh kunci penyedia model & chat aktif.", example="Mati",
   consumers=("services/ai_chat_service.py:job_ai_prewarm",), risk="low")
+
+# ── AG-T1 (AG-02) — masa berlaku kartu tindakan asisten, per PT kartu ──────────────────────────────────────────────
+E("ai.kartu_masa_berlaku_jam", group="sistem", section="tanya-kn-tindakan", type="int", default=24, min=1, max=168,
+  scopes=("global", "entity"), unit="jam",
+  label="Kartu tindakan asisten berlaku selama (jam)",
+  help="Kartu yang belum disetujui setelah waktu ini tidak bisa dijalankan dan harus disiapkan ulang.",
+  impact="Lebih kecil = kartu lebih cepat hangus; lebih besar = kartu lama masih bisa disetujui walau data mungkin "
+         "sudah berubah.",
+  example="24 → kartu yang dibuat Senin 09.00 hangus Selasa 09.00",
+  consumers=("services/ai_actions.py:propose_action", "services/ai_actions.py:_masa_berlaku"), risk="low",
+  permission=("settings", "manage"))
 
 # ── 2026-09-28 — kamus istilah & peringatan anomali ─────────────────────────
 E("ai.glossary", group="sistem", section="tanya-kn", type="text", default="", scopes=_G,

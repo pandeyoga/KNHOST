@@ -184,6 +184,16 @@
 .tanya-action-list { font-size: 12.5px; display: flex; flex-direction: column; gap: 4px; padding-left: 16px; list-style: disc; }
 .tanya-action-status { font-size: 12.5px; font-weight: 600; color: #1f7a3a; }
 .tanya-action.dismissed .tanya-action-status { color: var(--ios-muted); }
+/* AG-T1 — kepala kartu (judul + status), baris PT & masa berlaku, hasil gagal/kedaluwarsa, alasan tombol mati. */
+.tanya-action-head { display: flex; align-items: center; justify-content: space-between; gap: var(--sp-2); flex-wrap: wrap; }
+.tanya-action .tanya-kicker { font-size: var(--fs-12); margin-bottom: 0; }
+.tanya-action-meta { font-size: var(--fs-12); line-height: var(--lh-12); color: var(--kn-text-2); }
+.tanya-action-buttons { flex-wrap: wrap; align-items: center; }
+.tanya-action-hint { font-size: var(--fs-12); line-height: var(--lh-12); color: var(--kn-text-2); }
+.tanya-action-outcome { display: flex; flex-direction: column; gap: var(--sp-1); font-size: var(--fs-13); line-height: var(--lh-13); color: var(--kn-text); }
+.tanya-action-outcome.failed p:first-child { color: var(--kn-danger-text); font-weight: 600; }
+.tanya-action.failed { border-color: var(--kn-danger-text); }
+.tanya-action.expired { border-color: var(--kn-divider); }
 .tanya-insights { display: flex; flex-direction: column; gap: 10px; }
 .tanya-insights-head { display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap; }
 .tanya-insight { border: 1px solid var(--solid-line); border-left: 3px solid #D97706; border-radius: var(--r-md); padding: 10px 12px; background: #fff; display: flex; flex-direction: column; gap: 6px; animation: tanya-in .25s ease-out; }

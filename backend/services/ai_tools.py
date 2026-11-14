@@ -358,12 +358,33 @@ async def run_report(args, user, ctx, session_id=None) -> Dict[str, Any]:
 
 
 # ── find_entities & get_document ─────────────────────────────────────────────
+FIND_LIMIT_DEFAULT, FIND_LIMIT_MAX = 5, 20   # batas teknis jawaban alat (bukan aturan bisnis)
+
+
+def _find_limit(raw: Any) -> int:
+    try:
+        n = int(raw or FIND_LIMIT_DEFAULT)
+    except (TypeError, ValueError):
+        n = FIND_LIMIT_DEFAULT
+    return max(1, min(n, FIND_LIMIT_MAX))
+
+
 async def find_entities(args, user, ctx, session_id=None) -> Dict[str, Any]:
+    from entity_scope import resolve_list_scope_inherit
+    from services.warehouse_scope_service import usable_query
     kind, text = args.get("kind"), str(args.get("query") or "").strip().lower()
     sc = await engine.build_scope(user, ctx)
+    # AG-T1 (AG-04) — pemasok, gudang, dan sales hanya dari PT dalam cakupan pengguna (dulu tanpa saringan PT):
+    # pemasok PT + pemasok grup (`entity_id="all"`); gudang yang boleh dipakai salah satu PT cakupan; akun sales yang
+    # PT rumah atau penugasannya beririsan dengan cakupan.
+    wh_q = [usable_query(e) for e in sc.entity_ids]
     spec = {"customer": ("customers", {"entity_id": {"$in": sc.entity_ids}, **({"assigned_sales_id": sc.sales_only} if sc.sales_only else {})}),
-            "product": ("products", dict(sc.line_q)), "sales_person": ("users", {"role": {"$in": ["sales", "sales_admin"]}}),
-            "supplier": ("suppliers", {}), "warehouse": ("warehouses", {})}.get(kind)
+            "product": ("products", dict(sc.line_q)),
+            "sales_person": ("users", {"role": {"$in": ["sales", "sales_admin"]},
+                                       "$or": [{"home_entity_id": {"$in": sc.entity_ids}},
+                                               {"allowed_entity_ids": {"$in": sc.entity_ids}}]}),
+            "supplier": ("suppliers", resolve_list_scope_inherit("suppliers", {}, ctx)),
+            "warehouse": ("warehouses", {"$or": wh_q} if wh_q and all(wh_q) else {})}.get(kind)
     if not spec or not text:
         raise engine.AnalyticsError("kind/query tidak sah untuk find_entities.")
     cands = []
@@ -375,7 +396,7 @@ async def find_entities(args, user, ctx, session_id=None) -> Dict[str, Any]:
         if score >= 0.5:
             cands.append({"id": d["id"], "name": label, "code": d.get("sku") or d.get("code") or "", "score": round(score, 3)})
     cands.sort(key=lambda c: -c["score"])
-    return {"kind": kind, "query": text, "candidates": cands[:5]}
+    return {"kind": kind, "query": text, "candidates": cands[:_find_limit(args.get("limit"))]}
 
 
 _DOC_EXTRA = {

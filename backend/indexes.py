@@ -385,6 +385,10 @@ INDEX_SPECS: Dict[str, List[IndexKeys]] = {
         [("entity_id", A), ("seq", A)],
         [("active", A)],
     ],
+    # AG-T1 — kartu tindakan Tanya KN milik pengguna (kunci `id` unik: ID_INDEX_COLLECTIONS).
+    "ai_action_proposals": [
+        [("user_id", A), ("status", A), ("created_at", D)],
+    ],
 }
 
 
@@ -443,6 +447,8 @@ ID_INDEX_COLLECTIONS: List[str] = [
     "payment_methods", "bank_account_changes",
     # CR-T1 — profil kredit (`ccp_…`) dan pengajuan perubahannya (`cpr_…`).
     "customer_credit_profiles", "credit_profile_requests",
+    # AG-T1 — kartu tindakan Tanya KN (`aiact_…`).
+    "ai_action_proposals",
 ]
 
 # FIX-5 — rujukan bersarang roll yang dicari per nilai (B3a SCH-9: index `reserved_ref` utuh tidak terpakai oleh

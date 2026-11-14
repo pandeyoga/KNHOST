@@ -18,7 +18,9 @@ async def get_action(pid: str, request: Request) -> Dict[str, Any]:
 
 @router.post("/actions/{pid}/confirm")
 async def confirm_action(pid: str, payload: Dict[str, Any], request: Request) -> Dict[str, Any]:
-    return await ai_actions.confirm(pid, await _ai_user(request), payload.get("edits"))
+    # AG-T1 — konteks PT ikut dikirim: PT kartu diadu ulang dengan akses & PT aktif pengguna saat menyetujui.
+    user = await _ai_user(request)
+    return await ai_actions.confirm(pid, user, payload.get("edits"), await entity_ctx(request))
 
 
 @router.post("/actions/{pid}/dismiss")
