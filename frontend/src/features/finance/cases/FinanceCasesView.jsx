@@ -382,9 +382,16 @@ export default function FinanceCasesView({ currentUser, selectedEntity, entities
           onDone={async (updated) => {
             setWizard(null);
             setActive(updated);
-            notify(`${updated.number} — ${updated.status === "resolved"
-              ? "kasus selesai" : "langkah dijalankan"}: `
-              + `${(updated.documents || []).length} dokumen turunan lahir.`);
+            // PK-25 — jurnal penyelesaian gagal: kasus tetap terbuka, penyelesaian dilanjutkan dari Posting Gagal.
+            if (updated.gl_status === "failed") {
+              notify(`${updated.number} — penyelesaian tersimpan, tetapi jurnalnya gagal: `
+                + `${updated.gl_error || "galat tidak diketahui"}. Perbaiki penyebabnya lalu ulangi dari Posting Gagal.`,
+              "warning");
+            } else {
+              notify(`${updated.number} — ${updated.status === "resolved"
+                ? "kasus selesai" : "langkah dijalankan"}: `
+                + `${(updated.documents || []).length} dokumen turunan lahir.`);
+            }
             await loadData();
           }}
           onError={fail} />

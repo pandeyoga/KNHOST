@@ -498,6 +498,14 @@ async def _retry_petty_cash_settlement(doc: Dict[str, Any], actor: Dict[str, Any
     await repost_settlement(doc["id"], actor)
 
 
+async def _retry_finance_case(doc: Dict[str, Any], actor: Dict[str, Any]) -> None:
+    """PK-25 — kasus keuangan yang penyelesaiannya tersimpan (niat `pending`) tetapi jurnalnya gagal: `resolve` dipanggil
+    lagi dengan isi niat yang tersimpan — efek yang sudah jadi dipakai ulang (id tetap), jurnal ber-kunci per kejadian
+    diadopsi bila sudah ada. Masih gagal → melempar (panel: 409 "Posting masih gagal: …")."""
+    from services.finance_case_service import resume_resolution
+    await resume_resolution(doc, actor)
+
+
 # ── Registri ─────────────────────────────────────────────────────────────────────────────────────────────────────────
 KINDS: Dict[str, Dict[str, Any]] = {
     # PK-20 — jurnal kas lewat pintu `post_cash_durable` (fungsi pribadi `_post_cash_transaction`, bukan `post_*`).
@@ -683,6 +691,14 @@ KINDS: Dict[str, Dict[str, Any]] = {
         "doc_type": "purchase_order", "per_step": True, "items_field": "grir_clearings",
         "item_amount": grir_clearing_amount, "item_label": "kliring",
         "posters": ("post_grir_clearing",), "retry": _retry_grir_clearing},
+    # ── PK-25 — penyelesaian kasus keuangan: jurnal kasus (dan jurnal kembar salah PT) gagal → kasus tetap terbuka,
+    #    niat `pending`; ulang = lanjutkan penyelesaian dengan isi niat yang tersimpan ──
+    "finance_case": {
+        "label": "Kasus Keuangan", "collection": "finance_cases", "failed_query": {"gl_status": "failed"},
+        "entity_field": "entity_id", "number_field": "number", "amount_field": ("resolution_intent.payload.amount",
+                                                                               "amount"),
+        "status_field": "gl_status", "error_field": "gl_error", "failed_at_field": "gl_failed_at",
+        "doc_type": "finance_case", "posters": ("post_finance_case",), "retry": _retry_finance_case},
 }
 
 LABELS: Dict[str, str] = {k: v["label"] for k, v in KINDS.items()}

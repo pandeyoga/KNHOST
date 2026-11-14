@@ -2517,11 +2517,22 @@ async def post_finance_case(*, case_id: str, entity_id: str, amount: float,
     Idempotent per (`finance_case`, `case_id:suffix`) — satu kasus bisa melahirkan
     beberapa jurnal berlabel (mis. pindah-buku = 2 jurnal `keluar` & `masuk`), tetapi
     aksi yang sama tidak akan pernah menjurnal dua kali.
+
+    PK-25 (FX-09) — kunci PER KEJADIAN: pemanggil mengirim `suffix` berakhiran nomor penyelesaian (`chg:<n>`), jadi
+    penyelesaian kedua pada kasus yang sama menerbitkan jurnal kedua. Jurnal ber-kunci sama yang SUDAH ada dikembalikan
+    (bukan kosong) supaya pengulangan mengadopsinya; untuk `n = 0` kunci lama tanpa nomor (`{id}:chg`, sebelum PK-25)
+    ikut dikenali.
     """
     amount = round(float(amount or 0), 2)
     sid = f"{case_id}:{suffix}" if suffix else str(case_id or "")
-    if not case_id or amount <= EPS or await _already_posted("finance_case", sid):
+    if not case_id or amount <= EPS:
         return None
+    kunci = [sid] + ([f"{case_id}:{suffix[:-2]}"] if suffix.endswith(":0") and len(suffix) > 2 else [])
+    for k in kunci:
+        ada = await db.journal_entries.find_one(
+            {"source_type": "finance_case", "source_id": k, "status": {"$ne": "void"}}, {"_id": 0})
+        if ada:
+            return safe_doc(ada)
     await seed_default_coa()
     lbl = label or case_id
     lines = _balanced_pair(debit_acc, credit_acc, amount, f"Kasus keuangan {lbl}")

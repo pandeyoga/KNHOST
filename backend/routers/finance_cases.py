@@ -151,14 +151,15 @@ async def resolve_case(case_id: str, payload: CaseResolveInput, request: Request
     body = payload.model_dump()
     body["allocations"] = [a.model_dump() for a in (payload.allocations or [])]
     try:
-        case = await svc.resolve(case_id, body, actor, _ids(ctx))
+        # PK-25 — PT pemilik tagihan (kasus salah PT) diadu dengan penugasan pengguna, bukan PT yang sedang aktif.
+        case = await svc.resolve(case_id, body, actor, _ids(ctx), assigned_ids=list(ctx.allowed_entity_ids))
     except Exception as e:  # noqa: BLE001
         _bad(e)
     await audit(actor.get("name", ""), "finance_case_resolved", "finance_case", case_id,
                 {"number": case["number"], "action": payload.action,
                  "reason_code": payload.reason_code,
                  "documents": len(case.get("documents") or []),
-                 "status": case.get("status")})
+                 "status": case.get("status"), "gl_status": case.get("gl_status", "")})
     return case
 
 

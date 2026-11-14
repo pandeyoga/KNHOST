@@ -135,6 +135,9 @@ CANONICAL_COLLECTIONS = {
     "fin_depreciation_entries",
     # ── PK-19 — keputusan selisih bayar menjurnal lewat pintu tahan-gagal (jenis registri `payment_variance`) ──
     "payment_variance_decisions",
+    # ── PK-25 — kasus keuangan menjurnal lewat pintu tahan-gagal (jenis registri `finance_case`); dokumen antar-PT
+    #    salah transfer lahir di koleksi pinjaman antar-PT ──
+    "finance_cases", "interco_loans",
 }
 
 # ── Alias TERLARANG → koleksi kanonik (dari bagian FORBIDDEN ENTITY_REGISTRY) ──

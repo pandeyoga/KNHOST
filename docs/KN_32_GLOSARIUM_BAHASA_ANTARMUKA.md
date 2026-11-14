@@ -461,3 +461,12 @@ Istilah SDM › Penggajian (`docs/blueprint/unit/PK-22.md`).
 | **saldo awal** (buku besar) | Baris pertama "Saldo awal" bila isian "Dari" diisi · "Saldo awal Rp … · Saldo akhir Rp …" | Saldo akun sebelum tanggal "Dari" (tanda mengikuti saldo normal akun); saldo berjalan berangkat dari sini | PK-43 · Buku Besar |
 | **dokumen sumber** (jurnal) | Bilah "Dokumen sumber {jenis} {nomor}" · tombol "Buka Dokumen Sumber" · "{jenis} {nomor} — di luar PT Anda" / "— Anda belum punya akses untuk membukanya" | Dokumen yang melahirkan jurnal otomatis. Jurnal manual, penutup, pembalik, dan reklas penampung tidak punya dokumen sumber | PK-43 · rincian jurnal |
 | **Pelunasan Antar-PT** (tombol) | Tombol "Buat Pelunasan" · pop-up "Pelunasan Antar-PT" · isian "Tanggal pelunasan", "Rekening {PT pembayar}" · tombol "Terbitkan Pelunasan" | Satu nama untuk tombol, pop-up, dan pengingat saldo menganggur (dulu "Buat Settlement"/"Settlement Antar-PT") | PK-43 · Antar-PT |
+
+### 9.13 Kasus keuangan: penyelesaian tertunda dan titipan salah transfer (PK-25)
+
+Istilah Keuangan › Kasus Keuangan, Antar Entitas › Pinjaman Antar-PT, dan Posting Gagal (`docs/blueprint/unit/PK-25.md`).
+
+| Istilah | Teks layar | Arti |
+|---|---|---|
+| **titipan salah transfer** | Lencana "Titipan salah transfer" di daftar Pinjaman Antar-PT · tautan "Kasus {nomor}: pelanggan membayar ke PT yang salah" · dokumen turunan kasus "Dokumen antar-PT {nomor}" | Dokumen antar-PT yang lahir saat kasus "Pelanggan bayar ke PT yang salah" diselesaikan: PT penerima uang berutang kepada PT pemilik tagihan sebesar uang yang salah masuk. Statusnya langsung "Sudah dicairkan" (uangnya memang sudah di PT penerima), saldonya tampil di Saldo Antar-PT sebagai saldo non-dagang, dan dilunasi lewat tombol "Angsur" seperti pinjaman. Bukan pinjaman yang disengaja |
+| **penyelesaian tersimpan, jurnalnya gagal** | Pita rincian kasus "Penyelesaian tersimpan, tetapi jurnalnya gagal: {galat}. Perbaiki penyebabnya lalu ulangi dari Posting Gagal." · keterangan tombol mati "Penyelesaian sebelumnya belum tuntas — lanjutkan dari Posting Gagal." · pesan 409 "Kasus {nomor} punya penyelesaian \"{nama aksi}\" yang belum tuntas. Lanjutkan penyelesaian itu dari Posting Gagal." · jenis Posting Gagal "Kasus Keuangan" | Pelunasan/kas/titipan kasus sudah tercatat, tetapi jurnalnya belum terbit (mis. akun nonaktif). Kasus tetap terbuka; Ulang Posting meneruskan penyelesaian yang sama (tanpa pelunasan kedua) lalu menutup kasusnya. Penyelesaian dengan isi lain ditolak sampai yang tertunda tuntas |

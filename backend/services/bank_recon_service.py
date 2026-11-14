@@ -1461,7 +1461,7 @@ async def cancel_holding(line_id: str, actor: str,
 
 async def holding_refunded(line_id: str, amount: float, ref_label: str, actor: str,
                            label: str = "pengembalian dana",
-                           entity_ids: Optional[List[str]] = None) -> Dict[str, Any]:
+                           entity_ids: Optional[List[str]] = None, ref_key: str = "") -> Dict[str, Any]:
     """FASE G-9 — titipan dana KELUAR dari akun titipan tanpa melunasi piutang.
 
     Dipakai Pusat Kasus Keuangan untuk dua playbook: **dana dikembalikan ke pengirim**
@@ -1472,8 +1472,14 @@ async def holding_refunded(line_id: str, amount: float, ref_label: str, actor: s
 
     Ledger tambah-saja: riwayatnya dicatat di `holding_settled[]`, baris aslinya tidak
     pernah dihapus.
+
+    PK-25 — pengurangan BERSYARAT: sisa titipan belum berubah sejak dibaca (dua pengurangan bersamaan tidak bisa
+    membuat sisa negatif); `ref_key` (opsional, mis. id niat penyelesaian kasus) membuat panggilan ulang dengan kunci
+    yang sama tidak mengurangi dua kali.
     """
     ln = await _line(line_id, entity_ids)
+    if ref_key and any(s.get("key") == ref_key for s in (ln.get("holding_settled") or [])):
+        return safe_doc(ln)
     if ln.get("status") != "holding":
         raise ValueError("Baris ini bukan titipan dana")
     amt = _round(amount)
@@ -1483,10 +1489,21 @@ async def holding_refunded(line_id: str, amount: float, ref_label: str, actor: s
     if amt > remaining + EPS:
         raise ValueError(
             f"Nominal {rupiah(amt)} melebihi sisa titipan {rupiah(remaining)}")
-    await db.bank_statement_lines.update_one({"id": line_id}, {
-        "$push": {"holding_settled": {
-            "amount": amt, "kind": label, "ref": ref_label, "by": actor, "at": now_iso()}},
+    row: Dict[str, Any] = {"amount": amt, "kind": label, "ref": ref_label, "by": actor, "at": now_iso()}
+    flt: Dict[str, Any] = {"id": line_id, "status": "holding"}
+    if "holding_remaining" in ln:
+        flt["holding_remaining"] = ln.get("holding_remaining")
+    if ref_key:
+        row["key"] = ref_key
+        flt["holding_settled.key"] = {"$ne": ref_key}
+    res = await db.bank_statement_lines.update_one(flt, {
+        "$push": {"holding_settled": row},
         "$set": {"holding_remaining": _round(remaining - amt), "updated_at": now_iso()}})
+    if not res.modified_count:
+        cur = await db.bank_statement_lines.find_one({"id": line_id}, {"_id": 0}) or {}
+        if ref_key and any(s.get("key") == ref_key for s in (cur.get("holding_settled") or [])):
+            return safe_doc(cur)
+        raise ValueError("Sisa titipan berubah saat diproses. Muat ulang lalu coba lagi.")
     return safe_doc(await db.bank_statement_lines.find_one({"id": line_id}, {"_id": 0}))
 
 

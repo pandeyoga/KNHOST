@@ -13,10 +13,6 @@
    "pemilik": "belum ada",
    "alasan": "selisih opname"
   },
-  "post_finance_case": {
-   "pemilik": "PK-25",
-   "alasan": "kasus keuangan"
-  },
   "post_intercompany_transfer": {
    "pemilik": "belum ada",
    "alasan": "pindah kepemilikan roll retur antar-PT (sisa IC-09, laporan PK-30)"
@@ -152,41 +148,6 @@
    "jumlah": 1,
    "pemilik": "PK-20",
    "alasan": "rekonsiliasi bank (PK-15 memberi penanda sendiri)"
-  },
-  {
-   "lokasi": "services/finance_case_actions.py:act_akui_dipegang_karyawan",
-   "fungsi_gl": "post_finance_case",
-   "jumlah": 1,
-   "pemilik": "PK-25",
-   "alasan": "kasus keuangan"
-  },
-  {
-   "lokasi": "services/finance_case_actions.py:act_alokasi_uang_muka",
-   "fungsi_gl": "post_finance_case",
-   "jumlah": 1,
-   "pemilik": "PK-25",
-   "alasan": "kasus keuangan"
-  },
-  {
-   "lokasi": "services/finance_case_actions.py:act_bank_charge",
-   "fungsi_gl": "post_finance_case",
-   "jumlah": 1,
-   "pemilik": "PK-25",
-   "alasan": "kasus keuangan"
-  },
-  {
-   "lokasi": "services/finance_case_actions.py:act_settlement_antar_entitas",
-   "fungsi_gl": "post_finance_case",
-   "jumlah": 2,
-   "pemilik": "PK-25",
-   "alasan": "kasus keuangan"
-  },
-  {
-   "lokasi": "services/finance_case_actions.py:act_uang_muka_supplier",
-   "fungsi_gl": "post_finance_case",
-   "jumlah": 1,
-   "pemilik": "PK-25",
-   "alasan": "kasus keuangan"
   },
   {
    "lokasi": "services/goods_receipt_close_service.py:_ensure_gr_posted",
@@ -456,8 +417,8 @@
   }
  },
  "total": {
-  "fungsi": 20,
-  "panggilan": 50,
+  "fungsi": 19,
+  "panggilan": 44,
   "insert_entry": 12
  }
 }

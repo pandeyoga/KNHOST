@@ -46,6 +46,11 @@ STATUS_LABEL = {
 }
 OPEN_STATUSES = (STATUS_DISBURSED, STATUS_PARTIAL)
 
+#: PK-25 (FX-11) — jenis dokumen kembar di koleksi ini. Dokumen lama tanpa `kind` = pinjaman.
+KIND_PINJAMAN = "pinjaman"
+KIND_SALAH_TRANSFER = "salah_transfer"
+KIND_LABEL = {KIND_PINJAMAN: "Pinjaman antar-PT", KIND_SALAH_TRANSFER: "Titipan salah transfer"}
+
 
 class LoanError(ValueError):
     """Kesalahan ber-kalimat siap tampil."""
@@ -109,7 +114,7 @@ async def create(payload: Dict[str, Any], actor: Dict[str, Any]) -> Dict[str, An
     num_b = await next_doc_number(COLL, "number", "ICL-", entity_id=borrower)
     ts = now_iso()
     common = {
-        "pair_id": pair_id,
+        "pair_id": pair_id, "kind": KIND_PINJAMAN,
         "lender_entity_id": lender, "lender_entity_name": snaps["a"]["name"],
         "borrower_entity_id": borrower, "borrower_entity_name": snaps["b"]["name"],
         "principal": principal, "outstanding": principal, "repaid_amount": 0.0,
@@ -132,6 +137,61 @@ async def create(payload: Dict[str, Any], actor: Dict[str, Any]) -> Dict[str, An
         {**common, "id": borrower_id, "number": num_b, "role": "borrower",
          "entity_id": borrower, "counterpart_id": lender_id, "counterpart_number": num_l},
     ])
+    return await get_pair(pair_id)
+
+
+def case_pair_id(case_id: str) -> str:
+    """Id pasangan dokumen antar-PT yang lahir dari kasus keuangan — tetap per kasus (`iclp_case_{id kasus}`)."""
+    return f"iclp_case_{case_id}"
+
+
+async def create_from_case(*, case: Dict[str, Any], owner_entity_id: str, receiver_entity_id: str,
+                           amount: float, actor: Dict[str, Any]) -> Dict[str, Any]:
+    """PK-25 (FX-11) — pelanggan membayar ke PT yang salah: sepasang dokumen antar-PT `kind="salah_transfer"`.
+
+    PT pemilik tagihan = pemberi (`role="lender"`, piutang 1-1250), PT penerima uang = peminjam (`role="borrower"`,
+    utang 2-1250); `status="disbursed"`, `outstanding = amount`. TANPA kas dan TANPA jurnal pencairan: uangnya sudah di
+    PT penerima dan jurnal kedua buku diterbitkan penyelesaian kasus (jurnal kembar `finance_case`). Id dokumen dan
+    `pair_id` tetap per kasus → sisip bersyarat (`$setOnInsert`), panggilan ulang mengembalikan pasangan yang sama tanpa
+    memakai nomor baru. Sesudahnya saldo pasangan PT + eliminasi disegarkan (`_after_change`). Pelunasannya memakai
+    `repay` yang ada (kas kembar + jurnal di dua buku)."""
+    pair_id = case_pair_id(case["id"])
+    if await db[COLL].count_documents({"pair_id": pair_id}) >= 2:
+        return await get_pair(pair_id)
+    snaps = await money.assert_pair(owner_entity_id, receiver_entity_id, what="Dokumen antar-PT salah transfer")
+    amount = round(float(amount or 0), 2)
+    if amount <= EPS:
+        raise LoanError("Nominal dokumen antar-PT harus lebih dari 0.")
+    lender_id, borrower_id = f"icl_case_{case['id']}_l", f"icl_case_{case['id']}_b"
+    ada = {d["id"]: d async for d in db[COLL].find({"id": {"$in": [lender_id, borrower_id]}}, {"_id": 0})}
+    num_l = (ada.get(lender_id) or {}).get("number") or await next_doc_number(
+        COLL, "number", "ICL-", entity_id=owner_entity_id)
+    num_b = (ada.get(borrower_id) or {}).get("number") or await next_doc_number(
+        COLL, "number", "ICL-", entity_id=receiver_entity_id)
+    num_case = case.get("number") or case["id"]
+    ts = now_iso()
+    who = actor.get("name", "") if isinstance(actor, dict) else str(actor or "")
+    common = {
+        "pair_id": pair_id, "kind": KIND_SALAH_TRANSFER,
+        "origin": {"kind": "finance_case", "id": case["id"], "number": num_case},
+        "lender_entity_id": owner_entity_id, "lender_entity_name": snaps["a"]["name"],
+        "borrower_entity_id": receiver_entity_id, "borrower_entity_name": snaps["b"]["name"],
+        "principal": amount, "outstanding": amount, "repaid_amount": 0.0,
+        "purpose": f"Pelanggan membayar ke PT yang salah — kasus {num_case}",
+        "interest_note": "", "agreed_return_date": "", "doc_date": tanggal_buku(), "notes": "",
+        "status": STATUS_DISBURSED, "repayments": [],
+        "disbursed_at": ts, "disbursed_by": who,
+        "timeline": [timeline_entry(STATUS_DISBURSED, "Dokumen antar-PT lahir dari kasus keuangan", who,
+                                    f"{rupiah(amount)} · pelanggan membayar ke {snaps['b']['name']}, tagihannya milik "
+                                    f"{snaps['a']['name']} (kasus {num_case})")],
+        "created_at": ts, "created_by": who, "updated_at": ts, "updated_by": who,
+    }
+    for doc in ({**common, "id": lender_id, "number": num_l, "role": "lender", "entity_id": owner_entity_id,
+                 "counterpart_id": borrower_id, "counterpart_number": num_b},
+                {**common, "id": borrower_id, "number": num_b, "role": "borrower", "entity_id": receiver_entity_id,
+                 "counterpart_id": lender_id, "counterpart_number": num_l}):
+        await db[COLL].update_one({"id": doc["id"]}, {"$setOnInsert": doc}, upsert=True)
+    await _after_change(pair_id)
     return await get_pair(pair_id)
 
 

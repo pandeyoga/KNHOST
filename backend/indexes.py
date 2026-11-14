@@ -455,6 +455,8 @@ ID_INDEX_COLLECTIONS: List[str] = [
     "ap_payment_intents",
     # PK-06 — id settlement antar-PT turunan kunci idempotensi.
     "interco_settlements",
+    # PK-25 — dokumen antar-PT salah transfer ber-id turunan id kasus (`icl_case_…`, sisip bersyarat).
+    "interco_loans",
     # KF-T6 — usulan jurnal manual (`jprop_…`).
     "journal_proposals",
     # KP-T4 — baris kebijakan persetujuan (`appol_…`).

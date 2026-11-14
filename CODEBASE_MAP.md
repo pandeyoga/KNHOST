@@ -1,5 +1,5 @@
 <!-- DIHASILKAN OTOMATIS oleh scripts/gen_codebase_map.py — JANGAN EDIT TANGAN -->
-<!-- Dihasilkan dari commit: 352d8b5 pada 2026-11-14 -->
+<!-- Dihasilkan dari commit: 0562d29 pada 2026-11-14 -->
 # CODEBASE MAP — Kain Nusantara (dihasilkan otomatis)
 
 Peta ini dihitung dari kode oleh `scripts/gen_codebase_map.py`. Kalau angka di sini
@@ -31,7 +31,7 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 | `permissions_config.py` | 957 |
 | `entity_scope.py` | 747 |
 | `pagination.py` | 145 |
-| `indexes.py` | 958 |
+| `indexes.py` | 960 |
 | `bootstrap.py` | 2159 |
 | `login_only_endpoints.py` | 81 |
 
@@ -174,7 +174,7 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 | `fabric_type_master.py` | 2 | 31 | `/master/fabric-types` |
 | `finance_analytics.py` | 4 | 144 | `/finance/cashflow-forecast`, `/finance/profitability`, `/finance/profitability/export.xlsx`, `/finance/tower` |
 | `finance_bi.py` | 1 | 36 | `/finance/bi` |
-| `finance_cases.py` | 13 | 200 | `/finance-cases`, `/finance-cases/playbooks`, `/finance-cases/policy`, `/finance-cases/reasons`, `/finance-cases/scan`, `/finance-cases/stats` … |
+| `finance_cases.py` | 13 | 201 | `/finance-cases`, `/finance-cases/playbooks`, `/finance-cases/policy`, `/finance-cases/reasons`, `/finance-cases/scan`, `/finance-cases/stats` … |
 | `financial_statements.py` | 8 | 270 | `/finance/balance-sheet`, `/finance/balance-sheet/export.csv`, `/finance/cash-flow`, `/finance/cash-flow/export.csv`, `/finance/equity-changes`, `/finance/equity-changes/export.csv` … |
 | `fixed_assets.py` | 10 | 216 | `/fixed-assets`, `/fixed-assets/meta`, `/fixed-assets/run-depreciation`, `/fixed-assets/summary`, `/fixed-assets/{asset_id}`, `/fixed-assets/{asset_id}/dispose` … |
 | `fulfillment.py` | 3 | 49 | `/fulfillment/wizard/{so_id}`, `/fulfillment/wizard/{so_id}/create-interco`, `/fulfillment/wizard/{so_id}/create-pr` |
@@ -201,7 +201,7 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 | `inspections.py` | 18 | 543 | `/inspections`, `/inspections/export`, `/inspections/meta`, `/inspections/meta/ref-docs`, `/inspections/qc-4point`, `/inspections/queue/qc-tasks` … |
 | `integrations.py` | 8 | 172 | `/admin/integrations`, `/admin/integrations/gemini/test`, `/admin/integrations/openai/test`, `/admin/integrations/whatsapp`, `/admin/integrations/whatsapp/adopt`, `/admin/integrations/whatsapp/test` |
 | `interco.py` | 39 | 632 | `/interco/accounts`, `/interco/accounts/{from_entity_id}/{to_entity_id}`, `/interco/accounts/{payer_entity_id}/{payee_entity_id}/remind`, `/interco/contracts`, `/interco/margin-by-product`, `/interco/margin-report` … |
-| `interco_loans.py` | 8 | 138 | `/interco/loans`, `/interco/loans/meta`, `/interco/loans/{loan_id}`, `/interco/loans/{loan_id}/cancel`, `/interco/loans/{loan_id}/disburse`, `/interco/loans/{loan_id}/repay` … |
+| `interco_loans.py` | 8 | 140 | `/interco/loans`, `/interco/loans/meta`, `/interco/loans/{loan_id}`, `/interco/loans/{loan_id}/cancel`, `/interco/loans/{loan_id}/disburse`, `/interco/loans/{loan_id}/repay` … |
 | `interco_prices.py` | 5 | 76 | `/interco/prices/access`, `/interco/prices/bulk`, `/interco/prices/missing`, `/interco/prices/request`, `/interco/prices/summary` |
 | `internal_requests.py` | 9 | 231 | `/internal-requests`, `/internal-requests-availability/{product_id}`, `/internal-requests/meta`, `/internal-requests/{req_id}`, `/internal-requests/{req_id}/cancel`, `/internal-requests/{req_id}/convert` … |
 | `inventory.py` ⚠️>800 | 23 | 840 | `/history/{product_id}`, `/inventory/balances`, `/inventory/cut-children-unverified`, `/inventory/initial-stock`, `/inventory/low-stock-summary`, `/inventory/movements` … |
@@ -340,7 +340,7 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 | `atp_policy.py` | 127 | KN-D11 (audit 2026-09-21) — SATU definisi ATP (Available-to-Promise) untuk seluruh sistem. |
 | `backorder_service.py` | 232 | Backorder service (Sub-fase 1.6) — auto-fulfill lifecycle. |
 | `bank_account_change_service.py` | 307 | PM-T1 — membuat & mengubah rekening kas/bank: langsung berlaku, atau diajukan dan menunggu orang kedua. |
-| `bank_recon_service.py` | 1602 | FASE G-8 — REKONSILIASI BANK OTOMATIS (skor berbobot · split · aturan · titipan). |
+| `bank_recon_service.py` | 1619 | FASE G-8 — REKONSILIASI BANK OTOMATIS (skor berbobot · split · aturan · titipan). |
 | `bank_service.py` | 391 | Bank/Cash Accounts service (EPIC7-B) — multi-akun kas & bank + rekonsiliasi. |
 | `bank_statement_parser.py` | 536 | FASE G-8 — PARSER MUTASI BANK MULTI-FORMAT. |
 | `base_fabric.py` | 26 | Kain dasar — rujukan induk master data (mis. kain polos woven yang menjadi bahan printing). |
@@ -420,10 +420,10 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 | `fabric_type_master_service.py` | 51 | L01 — MASTER JENIS KAIN (`md_fabric_types`): woven/knit benih + tambahan admin (mis. dari laporan |
 | `field_visibility.py` | 245 | L01 (LN-012) — visibilitas atribut stok per peran: grade · LOT · asal lokal/impor. |
 | `finance_bi_service.py` | 133 | FINANCE — BI Keuangan (dashboard analitik) diturunkan dari GL. |
-| `finance_case_actions.py` | 605 | FASE G-9 — EKSEKUTOR AKSI PLAYBOOK KASUS KEUANGAN. |
+| `finance_case_actions.py` | 1174 | FASE G-9 — EKSEKUTOR AKSI PLAYBOOK KASUS KEUANGAN. |
 | `finance_case_playbooks.py` | 245 | FASE G-9 — REGISTRY 11 PLAYBOOK KASUS KEUANGAN. |
-| `finance_case_scan.py` | 259 | FASE G-9 — PEMINDAI KASUS OTOMATIS + PEMERIKSA INVARIAN. |
-| `finance_case_service.py` | 627 | FASE G-9 — PUSAT KASUS KEUANGAN (Finance Exception Desk). |
+| `finance_case_scan.py` | 288 | FASE G-9 — PEMINDAI KASUS OTOMATIS + PEMERIKSA INVARIAN. |
+| `finance_case_service.py` | 761 | FASE G-9 — PUSAT KASUS KEUANGAN (Finance Exception Desk). |
 | `finance_tower_service.py` | 128 | FINANCE — Control Tower (Dashboard Keuangan terpadu) (EPIC P1-5). |
 | `financial_statement_service.py` | 313 | FINANCE — Laporan Keuangan (Laba-Rugi & Neraca) diturunkan dari GL. |
 | `fixed_asset_service.py` | 826 | R6.2 — Fixed Assets & Depresiasi (straight-line) + disposal gain/loss. |
@@ -442,7 +442,7 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 | `gemini_image_service.py` | 193 | FB-01 — Ilustrasi AI Galeri Desain via Google Gemini "Nano Banana Pro" (SDK google-genai LANGSUNG). |
 | `gl_mapping_registry.py` | 203 | GL-01 — registri kebutuhan akun (SSOT di kode). Satu baris = satu kebutuhan fitur. |
 | `gl_mapping_service.py` | 217 | GL-01 — pemetaan akun terpusat. Resolver: mapping PT → mapping global → bawaan registri. |
-| `gl_service.py` | 4434 | EPIC7-C — General Ledger & Chart of Accounts (akuntansi inti). |
+| `gl_service.py` | 4445 | EPIC7-C — General Ledger & Chart of Accounts (akuntansi inti). |
 | `goods_receipt_close_service.py` | 596 | GRN Fase 2 — rekonsiliasi (§4.4), penyelesaian selisih, penutupan (§4.5), sisa PO, tolak & batal. |
 | `goods_receipt_ocr_service.py` | 604 | GRN Fase 4 — baca surat jalan dengan OpenAI: praproses, panggil, pembaca kedua, log biaya, rem anggaran, pemet |
 | `goods_receipt_service.py` | 1003 | GRN Fase 2 — Kedatangan Barang (satu surat jalan · satu mitra): buat, berkas, kepala SJ, baris, hitung. |
@@ -476,7 +476,7 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 | `inspection_service.py` | 1888 | FASE I — **INSPEKSI & QC SEBAGAI DOKUMEN** (`<ENT>/INS-#####`). |
 | `integrations_service.py` | 153 | H5 service — Integrasi pihak ketiga (config runtime di system_settings). |
 | `interco_elimination_engine.py` | 482 | PK-31 (IC-03, IC-04, RP-10) — MESIN ELIMINASI ANTAR-PT PER PERIODE dari data BERTANGGAL. |
-| `interco_loan_service.py` | 268 | FASE E-7 (E7f) — **PINJAMAN UANG ANTAR-PT** (`<ENT>/ICL-#####`). |
+| `interco_loan_service.py` | 328 | FASE E-7 (E7f) — **PINJAMAN UANG ANTAR-PT** (`<ENT>/ICL-#####`). |
 | `interco_margin.py` | 414 | FASE G-6b — **RAPOR MARGIN GRUP** antar-PT (realized vs unrealized). |
 | `interco_money_service.py` | 221 | FASE E-7 (E7f + E7g) — **UANG & ASET ANTAR-PT** yang bukan jual-beli. |
 | `interco_price_service.py` | 176 | 2026-10 — HARGA INTERNAL antar-PT (kontrak `supplier_contracts` contract_type=internal). |
@@ -553,7 +553,7 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 | `po_pricing.py` | 39 | PK-28 (IV-03) — harga neto satu baris PO: SATU hitungan untuk nilai penerimaan barang (Dr Persediaan / Cr GR/I |
 | `po_variance_task_service.py` | 194 | W2-REQ-06 — tugas keputusan MD atas selisih penerimaan PO (tunggu / amendment / short-close). |
 | `pos_recommendation_service.py` | 213 | F-4b — POS advanced recommendations, dihitung dari histori `sales_orders` (TANPA AI, TANPA koleksi baru). |
-| `posting_registry.py` | 770 | PK-18 (GL-02, GL-12, IV-04) — registri jenis dokumen yang menjurnal: SATU tempat panel Posting Gagal membaca |
+| `posting_registry.py` | 786 | PK-18 (GL-02, GL-12, IV-04) — registri jenis dokumen yang menjurnal: SATU tempat panel Posting Gagal membaca |
 | `pr_sourcing_service.py` | 1030 | FASE E — SOURCING PR: routing `purchase|makloon` + realisasi PR → PO / Order Makloon. |
 | `price_approval_service.py` | 268 | Sub-fase 1.7 + F1b — bagian **BERSAMA** alur Harga Khusus (`price_approvals`). |
 | `price_guard_service.py` | 172 | F1b — SATU definisi **batas bawah harga jual** (price floor) untuk seluruh sistem. |
@@ -719,7 +719,7 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 
 | Fitur (`src/features/`) | Berkas | Baris |
 |---|---:|---:|
-| `__tests__` | 127 | 20760 |
+| `__tests__` | 128 | 20879 |
 | `admin` | 36 | 6981 |
 | `approvals` | 9 | 1720 |
 | `catalog` | 24 | 1459 |
@@ -730,7 +730,7 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 | `desks` | 2 | 229 |
 | `documents` | 18 | 2580 |
 | `export` | 9 | 700 |
-| `finance` | 103 | 23628 |
+| `finance` | 103 | 23695 |
 | `home` | 5 | 1136 |
 | `hr` | 34 | 5799 |
 | `inspections` | 12 | 2181 |

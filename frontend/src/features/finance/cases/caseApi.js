@@ -35,6 +35,7 @@ export const DOC_KIND_LABEL = {
   penalty: "Nota denda",
   store_credit_entry: "Buku saldo kredit",
   supplier_advance: "Uang muka supplier",
+  interco_loan: "Dokumen antar-PT",   // PK-25 — titipan salah transfer (kasus pelanggan membayar ke PT yang salah)
 };
 
 export const SOURCE_LABEL = {
@@ -54,6 +55,7 @@ export const EVENT_LABEL = {
   ditolak: "Ditutup tanpa tindakan",
   dibuka_ulang: "Dibuka kembali",
   eskalasi: "Eskalasi",
+  jurnal_gagal: "Jurnal penyelesaian gagal",   // PK-25
 };
 
 export function fmtDateTime(s) {

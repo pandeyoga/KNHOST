@@ -8,9 +8,11 @@
 import { useMemo, useState } from "react";
 import {
   X, Landmark, Paperclip, FileCheck2, History, Link2, UserCog, Ban, Wand2, ShieldCheck,
-  RotateCcw,
+  RotateCcw, AlertTriangle, ArrowLeftRight,
 } from "lucide-react";
 import { API } from "../../../services/apiClient";
+import JournalStatusBadge, { JournalStatusBar } from "../../../components/JournalStatusBadge";
+import { useAppNav } from "../../../context/AppNavContext";
 import ErrorNotice from "../../../components/ErrorNotice";
 import { formatCurrency } from "../../../utils/formatters";
 import { apiErrorText } from "../../../utils/apiError";
@@ -66,6 +68,11 @@ export default function CaseDetailPanel({ caseData: c, reasons, canResolve, onCl
   }
 
   const closed = c.status === "resolved" || c.status === "rejected";
+  // PK-25 — penyelesaian yang tersimpan tetapi belum tuntas (jurnalnya gagal): dilanjutkan dari Posting Gagal, bukan
+  // diselesaikan ulang dengan isi lain (server menolak 409).
+  const tertahan = c.resolution_intent?.status === "pending" || c.gl_status === "failed";
+  const galatJurnal = c.gl_error || c.resolution_intent?.last_error || "galat tidak diketahui";
+  const { openDocument } = useAppNav();
 
   return (
     <div className="rounded-lg border border-[#E5E5EA] bg-white" data-testid="case-detail">
@@ -113,6 +120,25 @@ export default function CaseDetailPanel({ caseData: c, reasons, canResolve, onCl
           <p className="text-[12px] text-[#1C1C1E]">{c.assignee || "belum ditugaskan"}</p>
         </div>
       </div>
+
+      {tertahan ? (
+        <div className="border-b border-kn-divider px-4 py-3" data-testid="case-journal-failed">
+          <div className="notice-bar danger flex flex-wrap items-start gap-2">
+            <AlertTriangle size={14} className="mt-[2px] shrink-0" aria-hidden="true" />
+            <span className="min-w-0 flex-1 text-fs-13">
+              Penyelesaian tersimpan, tetapi jurnalnya gagal: {galatJurnal}. Perbaiki penyebabnya lalu ulangi dari
+              Posting Gagal.
+            </span>
+            <JournalStatusBadge status="failed" error={galatJurnal} testId="case-journal" />
+          </div>
+        </div>
+      ) : (
+        c.gl_status === "posted" && (
+          <div className="border-b border-kn-divider px-4 py-2">
+            <JournalStatusBar doc={c} testId="case-journal" />
+          </div>
+        )
+      )}
 
       {!!c.description && (
         <p className="border-b border-[#EFF0F2] px-4 py-3 text-[12px] text-[#1C1C1E]">
@@ -187,9 +213,18 @@ export default function CaseDetailPanel({ caseData: c, reasons, canResolve, onCl
                 <span className="mt-[2px] rounded bg-[#EAF2FF] px-1.5 py-0.5 text-[10px] font-bold text-[#0058CC]">
                   {DOC_KIND_LABEL[d.kind] || d.kind}
                 </span>
-                <span className="text-[#1C1C1E]">
-                  {d.number ? <b>{d.number}</b> : null} {d.label}
-                </span>
+                {d.kind === "interco_loan" ? (
+                  <button type="button" className="link-button inline-flex items-center gap-1 text-left text-fs-13"
+                    data-testid={`case-doc-interco-${d.id}`}
+                    onClick={() => openDocument({ view: "interco-transactions", tab: "loans",
+                      focus_type: "interco_loan", focus_id: d.id, number: d.number })}>
+                    <ArrowLeftRight size={12} aria-hidden="true" /> Dokumen antar-PT {d.number}
+                  </button>
+                ) : (
+                  <span className="text-[#1C1C1E]">
+                    {d.number ? <b>{d.number}</b> : null} {d.label}
+                  </span>
+                )}
               </li>
             ))}
           </ul>
@@ -292,18 +327,23 @@ export default function CaseDetailPanel({ caseData: c, reasons, canResolve, onCl
 
           {canResolve && (
             <div className="flex flex-wrap items-center gap-2 border-t border-[#EFF0F2] pt-3">
-              <button className="primary-button" data-testid="case-open-wizard"
-                onClick={() => onOpenWizard(c)}>
+              <button className="primary-button whitespace-nowrap" data-testid="case-open-wizard"
+                disabled={tertahan} onClick={() => onOpenWizard(c)}>
                 <Wand2 size={13} /> Selesaikan lewat playbook
               </button>
-              <button className="secondary-button" data-testid="case-reject-toggle"
-                onClick={() => setRejectMode((v) => !v)}>
+              <button className="secondary-button whitespace-nowrap" data-testid="case-reject-toggle"
+                disabled={tertahan} onClick={() => setRejectMode((v) => !v)}>
                 <Ban size={13} /> Tutup tanpa tindakan
               </button>
+              {tertahan && (
+                <span className="text-fs-12 text-kn-warning-text" data-testid="case-resolve-locked">
+                  Penyelesaian sebelumnya belum tuntas — lanjutkan dari Posting Gagal.
+                </span>
+              )}
             </div>
           )}
 
-          {rejectMode && canResolve && (
+          {rejectMode && canResolve && !tertahan && (
             <div className="rounded-lg border border-[#E5E5EA] p-3" data-testid="case-reject-box">
               <p className="mb-1.5 text-[11px] text-[#6B6B73]">
                 Kasus ditutup tanpa perpindahan uang. Alasan & penjelasan wajib diisi supaya

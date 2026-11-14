@@ -39,10 +39,31 @@ def _rp(v: Any) -> str:
     return rupiah(v)
 
 
+#: Ukuran halaman baca pemindai (batas teknis, bukan aturan bisnis): daftar dibaca sampai habis, tidak dipotong.
+HALAMAN = 1000
+
+
+async def _semua(coll: str, query: Dict[str, Any], sort: List[tuple]) -> List[Dict[str, Any]]:
+    """PK-25 (D4) — baca SEMUA dokumen yang cocok dengan saringan di kueri, berhalaman `HALAMAN` sampai habis."""
+    out: List[Dict[str, Any]] = []
+    while True:
+        rows = await db[coll].find(query, {"_id": 0}).sort(sort).skip(len(out)).limit(HALAMAN).to_list(HALAMAN)
+        out += rows
+        if len(rows) < HALAMAN:
+            return out
+
+
 async def _has_open_case(case_type: str, source_id: str) -> bool:
+    """Ada kasus TERBUKA untuk sumber ini (dipakai titipan dana: titipan yang masih menganggur memang perlu
+    dimunculkan lagi walau kasus lamanya ditolak)."""
     return bool(await db[COLL].find_one(
         {"case_type": case_type, "source.id": source_id, "status": {"$in": OPEN}},
         {"_id": 1}))
+
+
+async def _has_case(case_type: str, source_id: str) -> bool:
+    """PK-25 (FX-18) — ada kasus berstatus APA PUN untuk sumber ini (kasus yang sudah diputus tidak lahir lagi)."""
+    return bool(await db[COLL].find_one({"case_type": case_type, "source.id": source_id}, {"_id": 1}))
 
 
 # ═════════════════════════════════════════════════════════════════════════════
@@ -50,8 +71,11 @@ async def _has_open_case(case_type: str, source_id: str) -> bool:
 # ═════════════════════════════════════════════════════════════════════════════
 async def aged_holding_lines(days: int) -> List[Dict[str, Any]]:
     cutoff = (datetime.now(timezone.utc).date() - timedelta(days=int(days or 0)))
-    rows = await db.bank_statement_lines.find(
-        {"status": "holding"}, {"_id": 0}).to_list(5000)
+    # PK-25 (D4) — saringan umur di kueri (`stmt_date` ≤ batas; < hari sesudahnya supaya "YYYY-MM-DDTjam" ikut),
+    # dibaca berhalaman sampai habis.
+    rows = await _semua("bank_statement_lines",
+                        {"status": "holding", "stmt_date": {"$lt": (cutoff + timedelta(days=1)).isoformat()}},
+                        [("stmt_date", 1), ("id", 1)])
     out = []
     for r in rows:
         rem = round(float(r.get("holding_remaining", r.get("amount")) or 0), 2)
@@ -70,8 +94,12 @@ async def duplicate_receipts(window_days: int) -> List[Dict[str, Any]]:
     Yang dilaporkan adalah kwitansi **kedua** (yang lebih baru) karena itulah uang yang
     perlu diputus: dikembalikan atau dipakai untuk pesanan lain.
     """
-    rows = await db.ar_receipts.find(
-        {"status": {"$ne": "void"}}, {"_id": 0}).sort("created_at", 1).to_list(5000)
+    # PK-25 (FX-18, D4) — hanya kwitansi tidak-batal ber-`receipt_date` dalam 2 × jendela hari terakhir (saringan di
+    # kueri), urut menaik, berhalaman sampai habis. Dulu 5.000 kwitansi TERTUA tanpa saringan: pasangan kembar terbaru
+    # tidak pernah terbaca begitu datanya melewati 5.000.
+    batas = (datetime.now(timezone.utc).date() - timedelta(days=2 * int(window_days or 0))).isoformat()
+    rows = await _semua("ar_receipts", {"status": {"$ne": "void"}, "receipt_date": {"$gte": batas}},
+                        [("receipt_date", 1), ("created_at", 1), ("id", 1)])
     seen: Dict[str, List[Dict[str, Any]]] = {}
     dupes: List[Dict[str, Any]] = []
     for r in rows:
@@ -153,7 +181,8 @@ async def scan(actor_name: str = "sistem") -> Dict[str, Any]:
             skipped += 1
 
     for r in await duplicate_receipts(pol["dup_window_days"]):
-        if await _has_open_case("bayar_dobel", r["id"]):
+        # PK-25 (FX-18) — kasus yang sudah ada (status apa pun) atau kwitansi yang sudah diputus tidak lahir lagi.
+        if r.get("dup_decision") or await _has_case("bayar_dobel", r["id"]):
             skipped += 1
             continue
         try:

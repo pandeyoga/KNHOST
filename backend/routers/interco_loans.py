@@ -30,7 +30,9 @@ def _fail(exc: Exception) -> HTTPException:
 async def loans_meta(request: Request) -> Dict[str, Any]:
     await require_permission(request, "interco", "view")
     return {"statuses": [{"id": k, "label": v} for k, v in svc.STATUS_LABEL.items()],
-            "open_statuses": list(svc.OPEN_STATUSES)}
+            "open_statuses": list(svc.OPEN_STATUSES),
+            # PK-25 — jenis dokumen kembar (pinjaman · titipan salah transfer dari kasus keuangan)
+            "kinds": [{"id": k, "label": v} for k, v in svc.KIND_LABEL.items()]}
 
 
 @router.get("/interco/loans")

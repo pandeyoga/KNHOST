@@ -474,6 +474,8 @@ Key Fields:
   reversed_orders array    PK-19 — [{order_id, reversed, outstanding_after, payment_status}] per pesanan yang dibalik
   variance.decision_status  pending | failed | done — PK-19, cermin status keputusan selisih kwitansi ini
   ai_card_id      string   AG-T3 — id kartu tindakan asisten yang mencatat kwitansi ini (tidak ada = dicatat di layar)
+  dup_decision    object   PK-25 — keputusan kasus "pembayaran dobel" atas kwitansi ini: {case_id, case_number,
+                            status: resolved|rejected, at}; pemindai kasus tidak membuat kasus dobel lagi
   created_by / created_by_name / created_at / updated_at
 
 ℹ️ PK-19 — baris `sales_orders.payments[]` HANYA ditulis lewat `services/ar_allocation_service.py` (`allocate`,
@@ -965,10 +967,20 @@ Job:         finance_case_scan (harian 08:25 WIB, services/scheduler_service.py)
                              extra, next_action, auto_resolved, at, by}
   documents[]       object  {kind, id, number, label} — DOKUMEN TURUNAN yang benar-benar
                             lahir: journal_entry · cash_transaction · order_payment ·
-                            ar_receipt · penalty · store_credit_entry · supplier_advance
+                            ar_receipt · penalty · store_credit_entry · supplier_advance ·
+                            interco_loan (PK-25 — dokumen antar-PT salah transfer di PT kasus)
   approved_by / approved_at   penyetuju bila nominal >= `case.require_approval_above`
   resolved_by / resolved_at   siapa & kapan kasus ditutup
   auto_source       string  "" | "titipan menganggur" | "kwitansi kembar"
+  resolution_intent object  PK-25 — niat penyelesaian: {op_id, action, payload, status: pending|done, started_by,
+                            started_at, approver, auto_resolved, steps: {<efek sekali>: {hasil, at}}, last_error,
+                            done_at}. `op_id` = "{id kasus}_{aksi}_{jumlah dokumen saat mulai}" (id kas, baris
+                            pelunasan, dan nomor kunci jurnal diturunkan darinya). `pending` = efek tersimpan, belum
+                            tuntas → `resolve` dengan aksi & isi sama meneruskan, isi lain 409; tutup-tanpa-tindakan 409
+  gl_status / gl_error / gl_failed_at / journal_entry_id   PK-18/PK-25 — status jurnal penyelesaian terakhir
+                            (posted | failed | not_required); `failed` = panel Posting Gagal jenis `finance_case`
+                            (ulang = `resolve` dengan isi niat). Kasus salah PT: juga `gl_status_ic_ap` / `_ic_ar`
+                            (+ `gl_error_*`, `gl_journal_id_*`) per sisi jurnal kembar PK-06
   timeline[]        object  {event, label, actor, note, at} — jejak waktu kasus
   refs[]            object  relasi dokumen dua arah (FASE G-4)
   created_by / created_at / updated_at
@@ -983,6 +995,12 @@ ATURAN YANG DIJAGA:
     yang sama (1-1200) sehingga jurnal baru justru menyesatkan.
   * Kasus yang sudah melahirkan dokumen TIDAK bisa dibuka ulang (ledger tambah-saja) —
     tindak lanjutnya kasus BARU.
+  * PK-25 — penyelesaian = PERIKSA (tanpa tulisan; `finance_case_actions.precheck`, periode SETIAP PT) → NIAT →
+    EFEK → JURNAL (`post_durable`; kunci `finance_case` · `{id}:{suffix}:{n}`, kunci lama `{id}:{suffix}` dikenali
+    untuk n = 0) → SELESAI. Kasus salah PT: jurnal kembar dua buku (`{id}:ic_ap:{n}` di PT penerima, `{id}:ic_ar:{n}`
+    di PT pemilik) + dokumen `interco_loans` `kind="salah_transfer"`.
+  * PK-25 — pemindai: kasus `bayar_dobel` untuk kwitansi yang sama tidak lahir lagi bila sudah ada kasus BERSTATUS APA
+    PUN atau kwitansinya ber-`ar_receipts.dup_decision`; `dana_tak_dikenal` tetap hanya kasus terbuka.
 Akun GL baru: 1-1150 Kas & Bank Transit (pindah-buku) · 1-1280 Piutang Titipan Karyawan.
 Endpoints:   GET /api/finance-cases · GET .../playbooks · .../reasons · .../policy ·
              .../stats · GET .../{id} · POST /api/finance-cases ·
@@ -4095,3 +4113,15 @@ gaji, bayar, dan pembaliknya = **id proses** (`gl_service.payroll_source_id`; pr
 |-----------|-----------|----------------|---------|---------|
 | `hr_statutory_remittances` | `strm_` (id dari kunci idempotensi bila ada) + `number` `STR-` per PT | `services/hr_remittance_service.py:create_remittance` / `finish_remittance` | `GET /api/hr/payroll/remittances`, `/outstanding`; `PayrollRemittancesView` | **PK-22 (FY-07)** setoran hutang BPJS (2-1700, `sdm.hutang_bpjs`) dan PPh 21 (2-1800, `sdm.hutang_pph21`): `kind` (`bpjs`·`pph21`), `period` (masa gaji), `amount`, `paid_date` (= tanggal jurnal), `account_id` (rekening), `cash_type`, `contra_account_code`, `cash_txn_id`, `journal_entry_id`, `status` (`pending` → `done`), `gl_status`/`gl_error`, `reference`, `notes`, `created_by(_id)`. Satu setoran = satu kas keluar `ref_type="statutory_remittance"` (pembuat kas PK-20) → jurnal kas Dr hutang / Cr kas. Sisa kewajiban masa = Σ `totals` proses `posted`/`paid` (BPJS = `bpjs_emp + bpjs_er`, PPh 21 = `pph21`) − Σ setoran masa itu. Indeks `(entity_id, period, kind)` tidak unik; `uq_id`. **SCOPED**. |
 
+## PK-25 — dokumen antar-PT dari kasus "pelanggan membayar ke PT yang salah"
+
+| Koleksi · field | Tipe | Arti |
+|---|---|---|
+| `interco_loans.kind` | `pinjaman` (bawaan; dokumen lama tanpa field = pinjaman) · `salah_transfer` | Jenis dokumen kembar di koleksi pinjaman antar-PT. `salah_transfer` lahir dari `interco_loan_service.create_from_case` saat kasus `salah_entitas` diselesaikan |
+| `interco_loans.origin` | `{kind: "finance_case", id, number}` | Kasus asal dokumen `salah_transfer` |
+| `interco_loans.pair_id` / `id` | `iclp_case_{id kasus}` · `icl_case_{id kasus}_l` (PT pemilik tagihan, `role="lender"`) / `_b` (PT penerima uang, `role="borrower"`) | Tetap per kasus — sisip bersyarat, tanpa nomor baru saat diulang; `uq_id` |
+
+Dokumen `salah_transfer` lahir `status="disbursed"`, `outstanding = nominal`, TANPA kas dan TANPA jurnal pencairan (jurnal
+kedua buku = jurnal kembar kasus: PT penerima Dr 2-1950 / Cr 2-1250, PT pemilik Dr 1-1250 / Cr 1-1200). Saldonya dibaca
+`interco_money_service.non_trade_outstanding` (Saldo Antar-PT non-dagang) dan dieliminasi otomatis; pelunasan lewat
+`repay` yang ada (kas kembar + jurnal di dua buku).

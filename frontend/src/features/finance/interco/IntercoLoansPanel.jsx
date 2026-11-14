@@ -15,7 +15,8 @@
 import MoneyInput from "../../../components/MoneyInput";
 import KNDatePicker from "@/components/KNDatePicker";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Banknote, Plus, RefreshCw, HandCoins, Ban, CheckCircle2 } from "lucide-react";
+import { Banknote, Plus, RefreshCw, HandCoins, Ban, CheckCircle2, ArrowLeftRight } from "lucide-react";
+import { openFinanceCase } from "../cases/caseDeepLink";
 import axios, { API } from "../../../services/apiClient";
 import KNSelect from "../../../components/KNSelect";
 import FormModal from "../../../components/FormModal";
@@ -69,6 +70,8 @@ export default function IntercoLoansPanel({ entities = [], entityId = "", canWri
   }, []);
 
   const label = (s) => (meta.statuses || []).find((x) => x.id === s)?.label || s;
+  // PK-25 — dokumen yang lahir dari kasus "pelanggan membayar ke PT yang salah" (label jenis dari server).
+  const kindLabel = (k) => (meta.kinds || []).find((x) => x.id === k)?.label || "Titipan salah transfer";
 
   async function act(loan, path, body, okMsg) {
     setBusy(loan.id); setErr("");
@@ -124,7 +127,7 @@ export default function IntercoLoansPanel({ entities = [], entityId = "", canWri
               <th className="px-3 py-2 text-right">Pokok</th>
               <th className="px-3 py-2 text-right">Sisa</th>
               <th className="px-3 py-2 text-left">Status</th>
-              <th className="px-3 py-2 text-right">Aksi</th>
+              <th className="col-sticky-end px-3 py-2 text-right">Aksi</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-[#F2F2F5]">
@@ -136,12 +139,27 @@ export default function IntercoLoansPanel({ entities = [], entityId = "", canWri
             )}
             {!loading && items.map((l) => (
               <tr key={l.id} data-testid={`loan-row-${l.id}`} className={`hover:bg-[#FAFAFB] ${l.id === focusId ? "row-focus" : ""}`}>
-                <td className="px-3 py-2 font-bold text-[#0058CC]">{l.number}</td>
+                <td className="px-3 py-2">
+                  <span className="font-bold text-kn-action">{l.number}</span>
+                  {l.kind === "salah_transfer" && (
+                    <span className="status-pill mt-1 flex w-fit items-center gap-1 bg-kn-special-soft text-kn-special-text"
+                      data-testid={`loan-kind-${l.id}`}>
+                      <ArrowLeftRight size={11} aria-hidden="true" /> {kindLabel(l.kind)}
+                    </span>
+                  )}
+                </td>
                 <td className="px-3 py-2">
                   {l.role === "lender" ? "memberi →" : "menerima ←"}{" "}
                   <b>{l.role === "lender" ? l.borrower_entity_name : l.lender_entity_name}</b>
                 </td>
-                <td className="px-3 py-2 max-w-[240px] truncate" title={l.purpose}>{l.purpose}</td>
+                <td className="px-3 py-2 max-w-[240px]" title={l.purpose}>
+                  {l.kind === "salah_transfer" && l.origin?.id ? (
+                    <button type="button" className="link-button text-left text-fs-12" data-testid={`loan-case-${l.id}`}
+                      onClick={() => openFinanceCase({ caseId: l.origin.id, number: l.origin.number })}>
+                      Kasus {l.origin.number || "keuangan"}: pelanggan membayar ke PT yang salah
+                    </button>
+                  ) : <span className="block truncate">{l.purpose}</span>}
+                </td>
                 <td className="px-3 py-2 text-right tabular-nums">{formatCurrency(l.principal)}</td>
                 <td className="px-3 py-2 text-right tabular-nums font-semibold">{formatCurrency(l.outstanding)}</td>
                 <td className="px-3 py-2">
@@ -150,7 +168,7 @@ export default function IntercoLoansPanel({ entities = [], entityId = "", canWri
                     {label(l.status)}
                   </span>
                 </td>
-                <td className="px-3 py-2 text-right whitespace-nowrap">
+                <td className="col-sticky-end px-3 py-2 text-right whitespace-nowrap">
                   {canWrite && l.status === "draft" && l.role === "lender" && (
                     <>
                       <button data-testid={`loan-disburse-${l.id}`} className="btn-primary btn-xs mr-1"

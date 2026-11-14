@@ -433,10 +433,12 @@ def _assert_authority(action: Dict[str, Any], amount: float, pol: Dict[str, Any]
 
 
 async def assert_case_refs(case: Dict[str, Any], payload: Dict[str, Any],
-                           entity_ids: Optional[List[str]] = None) -> None:
+                           entity_ids: Optional[List[str]] = None,
+                           assigned_ids: Optional[List[str]] = None) -> None:
     """PK-09 E10 — semua rujukan dari isi permintaan (pelanggan, pesanan, kwitansi, rekening, pemasok, PT pemilik)
     wajib milik PT kasus (dan pelanggan kasus). Dipanggil SEBELUM wewenang dan klaim; pelanggaran → `CaseError`, tanpa
-    tulisan apa pun."""
+    tulisan apa pun. PK-25 — PT pemilik tagihan diadu dengan PENUGASAN pengguna (`assigned_ids`, bila dikirim router),
+    bukan PT yang sedang aktif di layar: kasus salah PT memang diselesaikan dari PT penerima uang."""
     ent = case.get("entity_id") or ""
     if not ent or ent == GROUP_ENTITY:
         raise CaseError("Kasus ini belum punya PT, jadi tidak bisa diselesaikan. Tolak lalu buat ulang di PT yang benar.")
@@ -450,7 +452,8 @@ async def assert_case_refs(case: Dict[str, Any], payload: Dict[str, Any],
     order_ent = ent
     if payload.get("action") == "settlement_antar_entitas":
         owner = (payload.get("owner_entity_id") or "").strip()
-        if owner and entity_ids is not None and owner not in entity_ids:
+        tugas = assigned_ids if assigned_ids is not None else entity_ids
+        if owner and tugas is not None and owner not in tugas:
             raise CaseError("Anda tidak ditugaskan di PT pemilik tagihan yang dipilih.")
         order_ent = owner or ent
     oids = [payload.get(k) for k in ("order_id", "from_order_id", "to_order_id")]
@@ -477,23 +480,56 @@ async def assert_case_refs(case: Dict[str, Any], payload: Dict[str, Any],
             raise CaseError(f"Pemasok {(sup or {}).get('name') or sid} bukan milik PT kasus ini.")
 
 
+#: PK-25 — isi permintaan yang TIDAK ikut dibandingkan saat niat `pending` diteruskan (bukan bagian keputusan uang).
+_ISI_BEBAS = ("note", "attachments")
+
+
+def _isi_inti(p: Dict[str, Any]) -> str:
+    import json
+    return json.dumps({k: v for k, v in (p or {}).items() if k not in _ISI_BEBAS}, sort_keys=True, default=str)
+
+
+def _pesan_niat_lain(case: Dict[str, Any], intent: Dict[str, Any]) -> str:
+    try:
+        nama = action_or_fail(case.get("case_type", ""), intent.get("action", ""))["label"]
+    except ValueError:
+        nama = intent.get("action", "")
+    return (f"Kasus {case.get('number') or case['id']} punya penyelesaian \"{nama}\" yang belum tuntas. "
+            "Lanjutkan penyelesaian itu dari Posting Gagal.")
+
+
 async def resolve(case_id: str, payload: Dict[str, Any], actor: Dict[str, Any],
-                  entity_ids: Optional[List[str]] = None) -> Dict[str, Any]:
-    """Jalankan aksi playbook → dokumen turunan nyata → kasus ditutup."""
+                  entity_ids: Optional[List[str]] = None, *, assigned_ids: Optional[List[str]] = None,
+                  lanjutan_panel: bool = False) -> Dict[str, Any]:
+    """Jalankan aksi playbook → dokumen turunan nyata → kasus ditutup.
+
+    PK-25 (FX-09) — urutan `02_STANDAR.md` §1: PERIKSA (rujukan PK-09, alasan, bukti, wewenang, periode, lalu
+    `finance_case_actions.precheck` — semua tanpa tulisan) → NIAT (klaim kasus + `resolution_intent` ber-`status:
+    "pending"`, `op_id` tetap) → EFEK (pelaksana aksi; id turunan dari `op_id`) → JURNAL (`post_durable` atas kasus /
+    jurnal kembar PK-06) → SELESAI (dokumen ditautkan, kasus ditutup atau ditahan, niat `done`). Jurnal gagal: kasus
+    tidak ditutup, `gl_status="failed"`, niat tetap `pending` (panel Posting Gagal jenis `finance_case`). Kasus berniat
+    `pending`: aksi & isi sama → diteruskan; berbeda → 409. `lanjutan_panel` = ulang dari panel (isi niat tersimpan;
+    wewenang sudah diputus saat niat lahir)."""
     case = await get(case_id, entity_ids)
     if case["status"] in ("resolved", "rejected"):
         raise CaseError(f"Kasus {case['number']} sudah berstatus {case['status']}")
     pb = playbook_or_fail(case["case_type"])
     action = action_or_fail(case["case_type"], payload.get("action", ""))
-    await assert_case_refs(case, payload, entity_ids)   # PK-09 — sebelum wewenang & klaim
+    amount = _round(payload.get("amount") or case.get("amount"))
+    if payload.get("allocations"):
+        amount = _round(sum(float(a.get("amount") or 0) for a in payload["allocations"]))
+    isi = {**payload, "amount": amount}
+    intent = case.get("resolution_intent") or {}
+    lanjutan = intent.get("status") == "pending"
+    if lanjutan and (intent.get("action") != action["code"]
+                     or _isi_inti(intent.get("payload") or {}) != _isi_inti(isi)):
+        raise HTTPException(status_code=409, detail=_pesan_niat_lain(case, intent))
+    await assert_case_refs(case, payload, entity_ids, assigned_ids)   # PK-09 — sebelum wewenang & klaim
     pol = await policy(case.get("entity_id") or "")
     reason = await _reason_or_fail(payload.get("reason_code", ""),
                                    case.get("case_type", ""))
     _assert_evidence(case, pb, pol, payload.get("attachments") or [])
 
-    amount = _round(payload.get("amount") or case.get("amount"))
-    if payload.get("allocations"):
-        amount = _round(sum(float(a.get("amount") or 0) for a in payload["allocations"]))
     # Selisih biaya bank kecil boleh selesai tanpa persetujuan (kebijakan admin).
     # PK-38 — dan tidak melewati batas pengurang piutang tanpa uang masuk: syaratnya `amount <= min(auto, batas)`.
     from services import ar_reduction_guard as _arg
@@ -503,53 +539,106 @@ async def resolve(case_id: str, payload: Dict[str, Any], actor: Dict[str, Any],
         if _b > 0:
             auto_max = min(auto_max, _b)
     auto_ok = (case["case_type"] == "selisih_biaya_bank" and amount <= auto_max + EPS)
-    approver = "" if auto_ok else _assert_authority(action, amount, pol, actor)
-    # PK-38 (FX-10) — biaya bank, uang dipegang karyawan, salah PT = pengurang piutang tanpa uang masuk: satu batas +
-    # pembuat kasus ≠ penyelesai di atasnya (403), SEBELUM klaim kasus dan dokumen turunan apa pun.
-    await _arg.periksa(sumber="finance_case", jenis=action["code"], entity_id=case.get("entity_id") or "",
-                       nominal=amount, dokumen=case, aktor=actor)
+    if lanjutan_panel:
+        approver = intent.get("approver") or ""
+    else:
+        approver = "" if auto_ok else _assert_authority(action, amount, pol, actor)
+        # PK-38 (FX-10) — biaya bank, uang dipegang karyawan, salah PT = pengurang piutang tanpa uang masuk: satu
+        # batas + pembuat kasus ≠ penyelesai di atasnya (403), SEBELUM klaim kasus dan dokumen turunan apa pun.
+        await _arg.periksa(sumber="finance_case", jenis=action["code"], entity_id=case.get("entity_id") or "",
+                           nominal=amount, dokumen=case, aktor=actor)
     # PK-37 (K-03) — PERIKSA periode buku hari ini sebelum kasus diklaim & dokumen turunan lahir (HTTP 409; CaseError
-    # dipetakan router ke 400).
+    # dipetakan router ke 400). PK-25 — untuk SETIAP PT yang bukunya disentuh (kasus salah PT: dua PT).
     from services.book_date import periksa_periode_dokumen_409
-    await periksa_periode_dokumen_409(case.get("entity_id") or "", None, jenis="penyelesaian kasus")
+    pts = acts.entities_of(action["code"], case, isi)
+    if len(pts) <= 1:
+        await periksa_periode_dokumen_409(case.get("entity_id") or "", None, jenis="penyelesaian kasus")
+    else:
+        for eid in pts:
+            await periksa_periode_dokumen_409(eid, None, jenis=f"penyelesaian kasus di {await acts._entity_name(eid)}")
+    op = intent.get("op_id") if lanjutan else acts.op_id_of(case, action["code"])
+    try:
+        await acts.precheck(action["code"], case, isi, lanjutan=lanjutan, op_id=op)
+    except acts.CaseConflict as e:
+        raise HTTPException(status_code=409, detail=str(e)) from e
+    except acts.CaseActionError as e:
+        raise CaseError(str(e)) from e
 
     # G3 D4-CASE-02 — KLAIM kasus sebelum efek samping: dua penyelesaian paralel → satu menang,
     # yang kalah tidak meninggalkan kas. Gagal di tengah → kunci dilepas; retry mengadopsi kas
     # ber-id deterministik (lihat finance_case_actions._cash_txn).
     from fastapi import HTTPException as _HE
     from services import atomic_claim as _saga
+    pre: Dict[str, Any] = {"status": {"$nin": ["resolved", "rejected"]}, "documents": case.get("documents") or []}
+    pre["resolution_intent.op_id" if lanjutan else "resolution_intent.status"] = \
+        op if lanjutan else {"$ne": "pending"}
     try:
-        await _saga.claim("finance_cases", case_id, "case_resolve",
-                          precondition={"status": {"$nin": ["resolved", "rejected"]},
-                                        "documents": case.get("documents") or []},
-                          actor=actor.get("name", ""))
+        await _saga.claim("finance_cases", case_id, "case_resolve", precondition=pre, actor=actor.get("name", ""))
     except _HE as e:
         raise CaseError("Kasus sedang/baru saja diselesaikan proses lain — muat ulang.") from e
     try:
-        return await _resolve_claimed(case_id, case, pb, action, reason, payload, amount, auto_ok,
-                                      approver, actor, entity_ids)
+        if not lanjutan:
+            # NIAT — id tetap `op_id`; isi disimpan supaya ulang dari panel memakai keputusan yang sama.
+            intent = {"op_id": op, "action": action["code"], "payload": isi, "status": "pending",
+                      "started_by": actor.get("name", ""), "started_at": now_iso(), "approver": approver,
+                      "auto_resolved": bool(auto_ok), "steps": {}}
+            await db[COLL].update_one({"id": case_id}, {"$set": {"resolution_intent": intent,
+                                                                 "updated_at": now_iso()}})
+        return await _resolve_claimed(case_id, case, pb, action, reason, isi, amount, intent, actor, entity_ids,
+                                      baru=not lanjutan, lanjutan_panel=lanjutan_panel)
     finally:
         await _saga.release("finance_cases", case_id)
 
 
-async def _resolve_claimed(case_id, case, pb, action, reason, payload, amount, auto_ok, approver,
-                           actor, entity_ids):
+async def _tahan_gagal(case_id: str, pesan: str) -> None:
+    """Penyelesaian tersimpan (niat `pending`) tetapi belum tuntas: tampil di panel Posting Gagal jenis `finance_case`."""
+    await db[COLL].update_one({"id": case_id}, {"$set": {
+        "gl_status": "failed", "gl_error": (pesan or "")[:300], "gl_failed_at": now_iso(),
+        "resolution_intent.last_error": (pesan or "")[:300], "updated_at": now_iso()}})
+
+
+async def _resolve_claimed(case_id, case, pb, action, reason, payload, amount, intent, actor, entity_ids, *,
+                           baru: bool, lanjutan_panel: bool = False):
+    op = intent["op_id"]
     try:
-        res = await acts.execute(action["code"], case, {**payload, "amount": amount}, actor)
-    except acts.CaseActionError as e:
-        raise CaseError(str(e)) from e
+        res = await acts.execute(action["code"], case, payload, actor, op_id=op)
+    except Exception as e:  # noqa: BLE001 — nasib niat ditentukan apakah efek sudah tertulis
+        tertulis = bool(getattr(e, "efek_tertulis", False))
+        if baru and not tertulis:
+            # Belum ada efek apa pun: niat dicabut, kasus kembali seperti sebelum diselesaikan.
+            await db[COLL].update_one({"id": case_id}, {"$unset": {"resolution_intent": ""}})
+        else:
+            await _tahan_gagal(case_id, str(getattr(e, "detail", "") or e))
+        if isinstance(e, acts.CaseConflict):
+            raise HTTPException(status_code=409, detail=str(e)) from e
+        if isinstance(e, (acts.CaseActionError, ValueError)):
+            raise CaseError(str(e)) from e
+        raise
     docs = res.get("documents") or []
+    gagal = [g for g in res.get("gl") or [] if g.get("status") == "failed"]
+    if gagal:
+        # JURNAL gagal: efek sudah tertulis, kasus TIDAK ditutup, niat tetap `pending` (ulang dari Posting Gagal).
+        await db[COLL].update_one({"id": case_id}, {"$set": {
+            "resolution_intent.last_error": (gagal[0].get("error") or "")[:300], "updated_at": now_iso()},
+            "$push": {"timeline": _event("jurnal_gagal", f"Penyelesaian tersimpan, jurnalnya gagal: {action['label']}",
+                                         actor.get("name", ""), (gagal[0].get("error") or "")[:200])}})
+        return await get(case_id, entity_ids)
     if not docs:
+        await _tahan_gagal(case_id, "Penyelesaian tidak melahirkan dokumen apa pun.")
         raise CaseError(
             "Penyelesaian tidak melahirkan dokumen apa pun — kasus TIDAK ditutup supaya "
             "tidak ada perubahan senyap. Periksa masukan lalu coba lagi.")
-    if pb["moves_cash"] and not any(d.get("kind") == "journal_entry" for d in docs):
+    jes = [d for d in docs if d.get("kind") == "journal_entry"]
+    if pb["moves_cash"] and not jes:
+        await _tahan_gagal(case_id, "Playbook ini wajib melahirkan jurnal, tetapi tidak ada jurnal yang terbit.")
         raise CaseError(
             "Playbook ini wajib melahirkan jurnal, tetapi tidak ada jurnal yang terbit. "
             "Kasus tidak ditutup (INV-CASE-03).")
 
     hold = bool(res.get("hold"))                    # playbook 2 langkah (mis. karyawan)
     now = now_iso()
+    pemutus = intent.get("started_by") or actor.get("name", "")
+    approver = intent.get("approver") or ""
     resolution = {
         "action": action["code"], "action_label": action["label"],
         "effect": action["effect"], "produces": action["produces"],
@@ -557,29 +646,66 @@ async def _resolve_claimed(case_id, case, pb, action, reason, payload, amount, a
         "note": (payload.get("note") or "").strip(),
         "extra": res.get("extra") or {},
         "next_action": res.get("next_action") or "",
-        "auto_resolved": bool(auto_ok),
-        "at": now, "by": actor.get("name", ""),
+        "auto_resolved": bool(intent.get("auto_resolved")),
+        "at": now, "by": pemutus,
     }
     sets: Dict[str, Any] = {
         "status": "in_progress" if hold else "resolved",
         "reason_code": reason["code"], "reason_label": reason["label"],
         "resolution": {**(case.get("resolution") or {}), **resolution},
         "documents": list(case.get("documents") or []) + docs,
-        "approved_by": (actor.get("name", "") if approver else case.get("approved_by", "")),
+        "approved_by": (pemutus if approver else case.get("approved_by", "")),
         "approved_at": (now if approver else case.get("approved_at", "")),
+        # SELESAI — niat tuntas; status jurnal penyelesaian dari HASIL (`02` §1 langkah 4).
+        "resolution_intent.status": "done", "resolution_intent.done_at": now,
+        "resolution_intent.last_error": "",
+        "gl_status": "posted" if jes else "not_required", "gl_error": "",
+        "journal_entry_id": (jes[0].get("id") if jes else ""),
     }
     if payload.get("attachments"):
         sets["attachments"] = list(case.get("attachments") or []) + payload["attachments"]
     if not hold:
-        sets.update({"resolved_by": actor.get("name", ""), "resolved_at": now})
+        sets.update({"resolved_by": pemutus, "resolved_at": now})
     label = (f"Langkah dijalankan: {action['label']}" if hold
              else f"Kasus diselesaikan: {action['label']}")
+    if lanjutan_panel:
+        label += f" (dilanjutkan {actor.get('name', '')} dari Posting Gagal)"
     await _touch(case_id, sets,
-                 _event("selesai" if not hold else "langkah", label, actor.get("name", ""),
+                 _event("selesai" if not hold else "langkah", label, pemutus,
                         f"{reason['label']} · {_rp(resolution['amount'])} · "
                         f"{len(docs)} dokumen turunan"))
     await _link_documents(case_id, docs)
+    if not hold:
+        await _catat_keputusan_dobel(case, "resolved")
     return await get(case_id, entity_ids)
+
+
+async def resume_resolution(doc: Dict[str, Any], actor: Dict[str, Any]) -> None:
+    """PK-25 — jalur ulang panel Posting Gagal (jenis `finance_case`): penyelesaian yang niatnya `pending` diteruskan
+    dengan isi niat tersimpan. Masih gagal → melempar (`RuntimeError` berisi galatnya)."""
+    intent = doc.get("resolution_intent") or {}
+    if intent.get("status") != "pending":
+        raise RuntimeError("Kasus ini tidak punya penyelesaian yang tertunda. Buka kasusnya di Kasus Keuangan.")
+    try:
+        await resolve(doc["id"], dict(intent.get("payload") or {}, action=intent.get("action", "")), actor, None,
+                      lanjutan_panel=True)
+    except HTTPException as e:
+        raise RuntimeError(str(e.detail)) from e
+    except CaseError as e:
+        raise RuntimeError(str(e)) from e
+    fresh = await db[COLL].find_one({"id": doc["id"]}, {"_id": 0, "gl_status": 1, "gl_error": 1}) or {}
+    if fresh.get("gl_status") == "failed":
+        raise RuntimeError(fresh.get("gl_error") or "jurnal penyelesaian kasus masih gagal")
+
+
+async def _catat_keputusan_dobel(case: Dict[str, Any], status: str) -> None:
+    """PK-25 (FX-18) — kasus `bayar_dobel` yang ditutup/ditolak meninggalkan `dup_decision` di kwitansi sumbernya,
+    supaya pemindai tidak melahirkan kasus yang sama lagi."""
+    src = case.get("source") or {}
+    if case.get("case_type") != "bayar_dobel" or src.get("kind") != "ar_receipt" or not src.get("id"):
+        return
+    await db.ar_receipts.update_one({"id": src["id"]}, {"$set": {"dup_decision": {
+        "case_id": case["id"], "case_number": case.get("number", ""), "status": status, "at": now_iso()}}})
 
 
 async def _link_documents(case_id: str, docs: List[Dict[str, Any]]) -> None:
@@ -592,6 +718,9 @@ async def _link_documents(case_id: str, docs: List[Dict[str, Any]]) -> None:
             if d.get("kind") == "ar_receipt" and d.get("id"):
                 await refs.safe_link(("finance_case", case_id), ("ar_receipt", d["id"]),
                                      "parent", note="kwitansi yang dikoreksi kasus ini")
+            if d.get("kind") == "interco_loan" and d.get("id"):   # PK-25 — dokumen antar-PT salah transfer
+                await refs.safe_link(("interco_loan", d["id"]), ("finance_case", case_id),
+                                     "parent", note="lahir dari kasus pelanggan membayar ke PT yang salah")
     except Exception as exc:  # noqa: BLE001
         logger.warning("[_link_documents] efek samping gagal diabaikan: %s", exc)  # KN-C10
 
@@ -601,6 +730,10 @@ async def reject(case_id: str, reason_code: str, note: str, actor: Dict[str, Any
     case = await get(case_id, entity_ids)
     if case["status"] in ("resolved", "rejected"):
         raise CaseError(f"Kasus {case['number']} sudah berstatus {case['status']}")
+    intent = case.get("resolution_intent") or {}
+    if intent.get("status") == "pending":
+        # PK-25 — sebagian efek penyelesaian sudah tertulis: kasus tidak boleh ditutup tanpa tindakan sebelum tuntas.
+        raise HTTPException(status_code=409, detail=_pesan_niat_lain(case, intent))
     reason = await _reason_or_fail(reason_code, case.get("case_type", ""))
     if not (note or "").strip():
         raise CaseError("Penjelasan wajib diisi saat kasus ditutup tanpa tindakan")
@@ -610,6 +743,7 @@ async def reject(case_id: str, reason_code: str, note: str, actor: Dict[str, Any
         "resolved_at": now_iso(),
     }, _event("ditolak", f"Kasus ditutup tanpa tindakan: {reason['label']}",
               actor.get("name", ""), note))
+    await _catat_keputusan_dobel(case, "rejected")
     return await get(case_id, entity_ids)
 
 
