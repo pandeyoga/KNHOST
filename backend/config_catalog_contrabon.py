@@ -20,9 +20,11 @@ from config_registry import E
 
 G = ("global", "entity")
 
+# KF-T2 (L5) — sejak KN-D16 persen 3-way dibaca dari `purchasing.bill_qty_tolerance_percent`; kunci ini tidak dibaca
+# mesin lagi, jadi ditandai tidak dipakai (bukan label "(Lama)" pada kunci yang tampil seolah aktif).
 E("contra_bon.qty_tolerance_percent", group="kontrabon", type="pct", default=1.0,
   min=0, max=100, step=0.5, unit="%", scopes=G,
-  label="(Lama) Toleransi selisih 3-way match (persen) — TIDAK DIPAKAI LAGI",
+  label="Toleransi selisih 3-way match (persen)",
   help="Audit 2026-09-21 (KN-D16): ambang persen 3-way kini SATU untuk vendor bill & kontrabon, "
        "dibaca dari Pengaturan Pembelian → `bill_qty_tolerance_percent` (jumlah) dan "
        "`bill_price_tolerance_percent` (harga). Nilai di sini diabaikan; ambang rupiah tetap "
@@ -32,7 +34,9 @@ E("contra_bon.qty_tolerance_percent", group="kontrabon", type="pct", default=1.0
   example="Toleransi 1% · diterima 1.000 yard, ditagih 1.020 yard (+2%) senilai Rp 400.000 "
           "→ melewati keduanya → wajib keputusan berlabel",
   consumers=("services/contra_bon_service.py:tolerances",), risk="medium",
-  related=("contra_bon.value_tolerance_rupiah", "contra_bon.require_reason_out_of_tolerance"))
+  related=("contra_bon.value_tolerance_rupiah", "contra_bon.require_reason_out_of_tolerance"),
+  status="not_used",
+  not_used_reason="Toleransi jumlah kontrabon mengikuti pengaturan 'Toleransi jumlah tagihan pemasok'.")
 
 E("contra_bon.value_tolerance_rupiah", group="kontrabon", type="money", default=50000,
   min=0, step=10000, unit="Rp", scopes=G,

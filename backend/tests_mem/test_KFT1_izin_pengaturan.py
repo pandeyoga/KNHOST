@@ -30,6 +30,12 @@ KFT6_TIDAK_DIPAKAI = 1
 # PR-T4 — empat kunci `role_home.*` (izin `settings.manage`) kini `not_used`: halaman awal diatur per peran di Peran &
 # Hak Akses › Sifat peran → tidak bisa diubah siapa pun di Pusat Pengaturan (−4 di U02).
 PRT4_TIDAK_DIPAKAI = 4
+# KF-T2 — 11 kunci baru (`returns.*` ber-izin `sales_return.policy`, `interco_payment.*` ber-izin `entity.update`): ikut
+# terhitung di katalog (U04) tetapi tidak bisa diubah pemegang `settings.manage` saja (U02 tetap). Empat kunci ber-izin
+# `settings.manage` menjadi `not_used` (`contra_bon.qty_tolerance_percent`, `bank.holding/charge/interest_account_code`) →
+# −4 di U02; `lot.number_format` (izin `inventory.configure`) tidak terhitung di U02.
+KFT2_KUNCI = 11
+KFT2_TIDAK_DIPAKAI = 4
 
 
 def _put(key, value, scope_type="entity", scope_id="ent_ksc"):
@@ -62,9 +68,10 @@ async def test_U02_bisa_ubah_232_kunci(klien, akun, sesi, peran_tanpa_acuan):
     assert r.status_code == 200, r.text
     # PR-T2 — 232 kunci aktif berizin `settings.manage` saat KF-T1; tiga kunci `ai.*_roles` kini tidak dipakai
     # (diatur di Peran & Hak Akses) → 232 − 3 = 229. KF-T6 menambah kunci `kontrol.*` (KFT6_KUNCI) dan mematikan
-    # sakelar lama (KFT6_TIDAK_DIPAKAI). PR-T4 mematikan empat kunci halaman awal (PRT4_TIDAK_DIPAKAI).
+    # sakelar lama (KFT6_TIDAK_DIPAKAI). PR-T4 mematikan empat kunci halaman awal (PRT4_TIDAK_DIPAKAI); KF-T2 empat kunci
+    # lain (KFT2_TIDAK_DIPAKAI).
     assert sum(1 for it in r.json()["items"] if it["can_edit"]) == \
-        229 + KFT6_KUNCI - KFT6_TIDAK_DIPAKAI - PRT4_TIDAK_DIPAKAI
+        229 + KFT6_KUNCI - KFT6_TIDAK_DIPAKAI - PRT4_TIDAK_DIPAKAI - KFT2_TIDAK_DIPAKAI
 
 
 async def test_U03_lapisan_grup_tetap_untuk_lintas_pt(klien, akun, sesi, peran_tanpa_acuan):
@@ -84,7 +91,8 @@ async def test_U04_lihat_saja_tidak_bisa_ubah(klien, akun, sesi, peran_tanpa_acu
     assert "settings.manage" not in _detail(r)
     r = await klien.get("/api/config/registry", headers=h)
     assert r.status_code == 200, r.text
-    assert r.json()["total"] == 310 + 5 + KFT6_KUNCI   # PK-46 menambah lima kunci PPh 21 bertanggal; KF-T6 kunci kontrol.*
+    # PK-46 menambah lima kunci PPh 21 bertanggal; KF-T6 kunci kontrol.*; KF-T2 kunci retur & jadwal bayar antar-PT.
+    assert r.json()["total"] == 310 + 5 + KFT6_KUNCI + KFT2_KUNCI
 
 
 async def test_U05_manajer_kosong_tidak_lagi_lewat_nama_peran(klien, akun, sesi, peran_manajer_kosong):

@@ -249,7 +249,7 @@ export default function AppViewRouter(props) {
           onNavigate={(navId, view, tab) => onNavSelect(navId, view, tab)} onOpenDocument={openDocument}
           focusDoc={focusDoc} onClearFocus={() => setFocusDoc(null)} />
       )}
-      {activeView === "return-policies" && <ReturnPoliciesView currentUser={user} />}
+      {activeView === "return-policies" && <ReturnPoliciesView currentUser={user} selectedEntity={selectedEntity} entities={entities} />}
       {activeView === "amendments" && <AmendmentCenterView currentUser={user} selectedEntity={selectedEntity} />}
       {activeView === "special-orders" && <SpecialOrders currentUser={user} focusDoc={focusDoc?.focus_type === "special_order" ? focusDoc : null} onClearFocus={() => setFocusDoc(null)} />}
       {activeView === "pricelist" && <><PricelistView entities={entities} selectedEntity={selectedEntity} currentUser={user} /><div className="mt-4"><SamplePriceMaster canEdit={can(user?.permissions || {}, "product", "update")} /></div></>}

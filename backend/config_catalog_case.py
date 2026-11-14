@@ -18,7 +18,7 @@ E("case.sla_hours", group="kasus", type="int", default=24, min=1, max=720, step=
        "Kasus yang lewat batas ditandai merah di Inbox dan bisa dinaikkan ke atasan.",
   impact="Semakin kecil, semakin cepat kasus terlihat terlambat — antrean jadi lebih disiplin.",
   example="SLA 24 jam · kasus dibuka kemarin 09:00 dan belum selesai → ditandai TERLAMBAT",
-  consumers=("services/finance_case_service.py:sla_of",), risk="low",
+  consumers=("services/finance_case_service.py:sla_hours_of",), risk="low",   # KF-T2 — dulu `sla_of` (tidak ada)
   related=("case.sla_hours_high", "case.escalate_on_sla_breach"))
 
 E("case.sla_hours_high", group="kasus", type="int", default=8, min=1, max=720, step=1,
@@ -28,7 +28,7 @@ E("case.sla_hours_high", group="kasus", type="int", default=8, min=1, max=720, s
        "yang lebih pendek karena risikonya lebih besar.",
   impact="Uang besar tidak boleh menunggu selama uang kecil.",
   example="SLA besar 8 jam · kasus Rp 50.000.000 dibuka 09:00 → terlambat setelah 17:00",
-  consumers=("services/finance_case_service.py:sla_of",), risk="low",
+  consumers=("services/finance_case_service.py:sla_hours_of",), risk="low",   # KF-T2 — dulu `sla_of` (tidak ada)
   related=("case.high_amount_threshold",))
 
 E("case.high_amount_threshold", group="kasus", type="money", default=10000000,

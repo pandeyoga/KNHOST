@@ -206,8 +206,13 @@ def test_ln024_klx03_config_per_payer_entity():
     _ict("ent_ksc", CST, 1)
     hdr = {**ADMIN, "X-Entity-Id": "all"}
     DB.system_settings.update_one({"scope": "global"}, {"$unset": {"interco_payment": ""}})
-    r = requests.put(f"{BASE}/settings", headers=hdr, json={"scope": CST, "interco_payment": {
-        "allow_netting": False, "require_full_payment": True, "cutoff_day": 20, "payment_day": 5, "basis": "document"}})
+    # KF-T2 — `PUT /api/settings` dimatikan (410); aturan jadwal bayar per PT pembayar disimpan lewat Pusat Pengaturan.
+    assert requests.put(f"{BASE}/settings", headers=hdr, json={"scope": CST, "interco_payment": {
+        "cutoff_day": 20}}).status_code == 410
+    nilai = {"interco_payment.cutoff_day": 20, "interco_payment.payment_day": 5, "interco_payment.basis": "document"}
+    r = requests.put(f"{BASE}/config/values", headers=hdr, json={"items": [
+        {"key": k, "value": v, "scope_type": "entity", "scope_id": CST, "reason": f"TEST_{T} jadwal bayar"}
+        for k, v in nilai.items()]})
     assert r.status_code == 200, r.text
     try:
         sch = requests.get(f"{BASE}/interco/payment-schedule", headers=hdr).json()
@@ -215,6 +220,9 @@ def test_ln024_klx03_config_per_payer_entity():
         other = [x for x in sch["rows"] if x["payer_entity_id"] != CST]
         assert cst_rows and all(x["period"] for x in cst_rows) and all(x["period"] is None for x in other)
     finally:
+        for k in nilai:   # cabut lapisan PT (juga membersihkan proyeksi di `system_settings`)
+            requests.post(f"{BASE}/config/values/clear", headers=hdr,
+                          json={"key": k, "scope_type": "entity", "scope_id": CST, "reason": f"TEST_{T} kembalikan"})
         DB.system_settings.update_one({"scope": CST}, {"$unset": {"interco_payment": ""}})
 
 

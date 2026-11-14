@@ -221,10 +221,12 @@ def summarize(order: Dict[str, Any]) -> Dict[str, Any]:
 
 
 def require_validation_default(settings: Optional[Dict[str, Any]]) -> bool:
-    """Apakah SO wajib divalidasi admin/manager sebelum Confirmed (KEPUTUSAN OWNER §1.7).
-    Default WAJIB (True); bisa dimatikan via settings.sales.require_so_validation=False."""
+    """Apakah SO wajib divalidasi admin/manager sebelum Confirmed (KEPUTUSAN OWNER §1.7) — kunci
+    `sales.require_so_validation`. KF-T2 (KF-06): bila dokumen pengaturan tidak memuatnya, cadangan = bawaan registry
+    (tidak wajib, AS-01), bukan True."""
+    from config_registry import default_of
     s = (settings or {}).get("sales", {}) if settings else {}
-    return bool(s.get("require_so_validation", True))
+    return bool(s.get("require_so_validation", default_of("sales.require_so_validation")))
 
 
 def approval_fields(order: Dict[str, Any], require_validation: bool = True) -> Dict[str, Any]:

@@ -1281,10 +1281,21 @@ async def _run_settlement(doc: Dict[str, Any], actor: str) -> Dict[str, Any]:
     return out
 
 
+#: KF-T2 — enam kunci Pusat Pengaturan jadwal bayar antar-PT (dulu dibaca langsung dari dokumen pengaturan).
+PAYMENT_SETTING_KEYS = ("allow_netting", "require_full_payment", "cutoff_day", "payment_day", "basis", "reminder_days")
+
+
 async def payment_settings(entity_id: str = "") -> Dict[str, Any]:
-    from services.config_service import DEFAULT_GLOBAL_SETTINGS, get_effective_settings
-    eff = await get_effective_settings(entity_id or None)
-    return {**DEFAULT_GLOBAL_SETTINGS["interco_payment"], **(eff.get("interco_payment") or {})}
+    """Aturan jadwal bayar antar-PT untuk PT pembayar ini (lapisan global → PT). `cutoff_day`/`payment_day` 0 dan
+    `basis` "" = belum diatur → `None`, arti yang dipakai jadwal dan pengingat hari ini."""
+    ctx = {"entity_id": entity_id or ""}
+    out = {k: await config_resolver.value_of(f"interco_payment.{k}", ctx) for k in PAYMENT_SETTING_KEYS}
+    for k in ("cutoff_day", "payment_day"):
+        out[k] = int(out[k]) if out[k] not in (None, "", 0) else None
+    out["basis"] = out["basis"] or None
+    out["allow_netting"] = bool(out["allow_netting"])
+    out["require_full_payment"] = bool(out["require_full_payment"])
+    return out
 
 
 _BASIS = {"invoice": ("invoiced_at", "Tanggal invoice"), "receipt": ("received_at", "Tanggal barang diterima"),
@@ -1354,7 +1365,8 @@ async def payment_schedule(scope_entity_ids: List[str], payer: str = "", payee: 
             "cutoff_status": "configured" if (ready or any(r.get("period") for r in rows)) else "not_configured",
             "basis_label": basis[1] if basis else None, "netting": "disabled" if not cfg["allow_netting"] else "allowed",
             "note": None if ready else "Cutoff & acuan periode pembayaran belum diatur — periode bayar & pengingat "
-                                       "belum jalan. Atur di form di bawah (semua PT atau per PT pembayar)."}
+                                       "belum jalan. Atur di bagian Aturan jadwal bayar di bawah (semua PT atau per "
+                                       "PT pembayar)."}
 
 
 async def job_interco_payment_reminder() -> Dict[str, Any]:

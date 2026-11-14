@@ -267,7 +267,8 @@ export default function LotsView({ user, products = [], warehouses = [], entityI
             <UnassignedRollsCard data={unassigned} onFix={fixUnassigned} busy={fixBusy} />
           )}
           {/* FASE G-0 — form "Penegakan Lot" DIHAPUS dari sini; aturannya tunggal
-              di Pusat Pengaturan supaya tidak ada dua tempat yang bisa berbeda. */}
+              di Pusat Pengaturan supaya tidak ada dua tempat yang bisa berbeda.
+              KF-T2 — "Format nomor lot" tidak ditautkan lagi: kuncinya tidak dibaca mesin (status tidak dipakai). */}
           <ConfigRedirectCard
             title="Penegakan lot & ketertelusuran"
             note="Mode peringatan hanya menandai data lot yang belum lengkap; mode blokir menolak penerimaan tanpa nomor lot."
@@ -279,7 +280,6 @@ export default function LotsView({ user, products = [], warehouses = [], entityI
               { key: "lot.require_dye_lot", label: "Wajib dye lot / shade" },
               { key: "lot.status_on_receipt", label: "Status lot saat diterima" },
               { key: "lot.auto_create_on_receiving", label: "Buat lot otomatis saat penerimaan" },
-              { key: "lot.number_format", label: "Format nomor lot" },
             ]}
           />
 

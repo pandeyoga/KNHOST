@@ -450,6 +450,9 @@ VIEW_RESOURCE_OVERRIDES: Dict[str, List[str]] = {
 }
 # KF-T6 — tab Kontrol dua orang dibuka izin `settings` (GET /api/kontrol/aturan = `settings.view`).
 VIEW_RESOURCE_OVERRIDES["settings-dual-control"] = ["settings"]
+# KF-T2 — kunci `interco_payment.*` (kelompok "antar-entitas") diubah pemegang `entity.update`; aturan KF-T1 (U14): tab
+# kelompok itu juga terbuka bagi pemegang izin pengubah kuncinya.
+VIEW_RESOURCE_OVERRIDES["settings-cfg-finance"] = ["settings", "entity"]
 
 
 def view_resources_index() -> Dict[str, List[str]]:

@@ -74,8 +74,9 @@ HOLDING_STATUSES = tuple(s for s in STATUSES if s != "cancelled")
 # Status yang masih menunggu tindakan manusia (dipakai SLA & pengingat).
 PENDING_STATUSES = ("draft", "submitted", "verified", "approved", "scheduled_payment")
 
+# KF-T2 — `contra_bon.qty_tolerance_percent` tidak dimuat lagi (status `not_used`; persen 3-way dari `three_way_policy`).
 CFG_KEYS = (
-    "contra_bon.qty_tolerance_percent", "contra_bon.value_tolerance_rupiah",
+    "contra_bon.value_tolerance_rupiah",
     "contra_bon.require_reason_out_of_tolerance", "contra_bon.approval_threshold_rupiah",
     "contra_bon.approval_role", "contra_bon.high_value_approval_role",
     "contra_bon.reminder_days_before", "contra_bon.unbilled_gr_age_days",

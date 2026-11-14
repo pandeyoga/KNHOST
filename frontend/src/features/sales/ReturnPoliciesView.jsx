@@ -4,7 +4,7 @@
  * Koleksi kanonik: sales_return_policies (prefix srp_). Endpoint: /api/sales-return-policies.
  */
 import { useEffect, useMemo, useState } from "react";
-import ReturnAssumptionsPanel from "./ReturnAssumptionsPanel";
+import ReturnGeneralLimits from "./ReturnGeneralLimits";   // KF-T2 — pengganti panel "Asumsi retur" (PUT /api/settings)
 import CutlossSimulator from "./CutlossSimulator";
 import axios, { API } from "../../services/apiClient";
 import { ScrollText, Plus, X, Pencil, Power, ShieldCheck } from "lucide-react";
@@ -39,7 +39,7 @@ function ScopePill({ scope }) {
   return <span className={`status-pill ${map[scope] || "pill-muted"}`} data-testid={`policy-scope-${scope}`}>{label[scope] || scope}</span>;
 }
 
-export default function ReturnPoliciesView({ currentUser }) {
+export default function ReturnPoliciesView({ currentUser, selectedEntity, entities = [] }) {
   const [rows, setRows] = useState([]);
   const srch = useListSearch(rows, null, { testId: "policy", placeholder: "Cari kebijakan…" });
   const [cats, setCats] = useState([]);
@@ -158,7 +158,7 @@ export default function ReturnPoliciesView({ currentUser }) {
         </div>
       )}
       <ErrorNotice message={error} onRetry={load} onDismiss={() => setError("")} testId="policy-error" />
-      <ReturnAssumptionsPanel canManage={canManage} />
+      <ReturnGeneralLimits selectedEntity={selectedEntity} entities={entities} />
       <CutlossSimulator />
 
       {/* FASE P4 — form kebijakan retur menjadi POP-UP (dulu form panjang ini menyelip

@@ -279,6 +279,15 @@ def require(key: str) -> Dict[str, Any]:
     return entry
 
 
+def default_of(key: str) -> Any:
+    """KF-T2 (KF-06, standar §2.2) — SATU-SATUNYA nilai cadangan kode untuk kunci registry: bawaannya sendiri.
+
+    Dipakai bila dokumen pengaturan tidak memuat kunci itu, supaya mesin dan layar Pusat Pengaturan selalu menunjuk
+    angka yang sama. Wadah (dict/list) dikembalikan sebagai salinan supaya pemanggil tidak mengubah registry."""
+    import copy
+    return copy.deepcopy(require(key)["default"])
+
+
 def keys() -> List[str]:
     return list(_ORDER)
 

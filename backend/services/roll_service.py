@@ -1078,7 +1078,8 @@ def _build_allocation_plan(rolls: List[Dict[str, Any]], quantity: float, city: s
     """READ-ONLY: hasilkan urutan roll (`ordered_rolls`) + meta lot untuk 1 baris.
     Menerapkan R1/R2/R3/R4 + location_pref. Tidak memutasi DB."""
     lot_mode = policy.get("lot_mode", "prefer_single")
-    lot_selection = policy.get("lot_selection", "fefo")
+    from config_registry import default_of   # KF-T2 (KF-06) — cadangan = bawaan registry "fifo" (dulu "fefo", alias lama)
+    lot_selection = policy.get("lot_selection", default_of("allocation.lot_selection"))
     location_pref = policy.get("location_pref", "single_warehouse")
     dye_strict = bool(policy.get("dye_lot_strict", False))
     wh_rank = _wh_rank_factory(warehouses, city, policy.get("_site_id", ""))
@@ -1158,7 +1159,8 @@ def _explain_allocation(qty: float, lots: List[str], wh: Dict[str, Any], owner: 
                         order_lot_mode: str, policy: Dict[str, Any], plan: Dict[str, Any]) -> str:
     """CLARITY (KN_15 §6.0): kalimat penjelasan per sub-alokasi (per warehouse)."""
     lot_txt = lots[0] if len(lots) == 1 else (" + ".join(lots) if lots else "—")
-    sel = policy.get("lot_selection", "fefo").upper()
+    from config_registry import default_of   # KF-T2 — penjelasan memakai cadangan yang sama dengan mesin (dulu "fefo")
+    sel = policy.get("lot_selection", default_of("allocation.lot_selection")).upper()
     wh_name = wh.get("name", wh.get("id", "Gudang"))
     if len(lots) > 1:
         base = f"{qty} dari Lot {lot_txt} ({sel}) · {wh_name} — lintas-lot di gudang ini."

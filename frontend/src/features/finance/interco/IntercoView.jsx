@@ -374,7 +374,7 @@ export default function IntercoView({ currentUser, selectedEntity, entities = []
         />
       )}
       {tab === "settlements" && <SettlementsPanel rows={settlements} />}
-      {tab === "schedule" && <IntercoPaymentSchedule canConfigure={can(currentUser?.permissions, "entity", "update")} />}
+      {tab === "schedule" && <IntercoPaymentSchedule selectedEntity={selectedEntity} entities={entities} />}
       {tab === "returns" && (
         <IntercoReturnsPanel
           rows={returns} canWrite={canWrite}

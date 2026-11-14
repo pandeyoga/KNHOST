@@ -59,15 +59,17 @@ CFG_KEYS = (
     "bank.match_weight_amount", "bank.match_weight_date", "bank.match_weight_ref",
     "bank.match_weight_name", "bank.auto_match_min_score", "bank.suggest_min_score",
     "bank.date_window_days", "bank.amount_tolerance", "bank.rule_learn_after",
-    "bank.rule_bonus_score", "bank.holding_account_code", "bank.holding_max_age_days",
-    "bank.charge_account_code", "bank.interest_account_code",
+    "bank.rule_bonus_score", "bank.holding_max_age_days",
 )
+# KF-T2 (KP-30, standar §1 P9) — akun titipan, biaya bank, dan bunga dibaca dari Pemetaan Akun per PT (dulu tiga kunci
+# Pusat Pengaturan `bank.*_account_code`, kini `not_used`). Pindahan nilai lama: `scripts/migrate_kft2_akun_bank.py`.
 
 
 # ═════════════════════════════════════════════════════════════════════════════
 #  KONFIGURASI (Pusat Pengaturan — tidak ada angka sihir di kode)
 # ═════════════════════════════════════════════════════════════════════════════
 async def load_cfg(entity_id: str = "") -> Dict[str, Any]:
+    from services import gl_mapping_service
     ctx = {"entity_id": entity_id or ""}
     raw = {}
     for k in CFG_KEYS:
@@ -83,13 +85,13 @@ async def load_cfg(entity_id: str = "") -> Dict[str, Any]:
         "amount_tol": float(raw.get("amount_tolerance") or 0),
         "learn_after": int(raw.get("rule_learn_after") or 3),
         "rule_bonus": float(raw.get("rule_bonus_score") or 0),
-        "holding_acc": str(raw.get("holding_account_code") or "2-1950"),
+        "holding_acc": await gl_mapping_service.account_for("kas_bank.titipan_dana", entity_id),
         "holding_max_age_days": int(raw.get("holding_max_age_days") or 7),
         # Penutupan FASE G-8 — baris rekening koran yang memang TIDAK punya pasangan di buku
         # (biaya administrasi bank, bunga/jasa giro) dibukukan langsung ke akun ini. Tanpa
         # jalur ini "Selisih rekening vs buku" tidak pernah bisa nol.
-        "charge_acc": str(raw.get("charge_account_code") or "6-8000"),
-        "interest_acc": str(raw.get("interest_account_code") or "4-9000"),
+        "charge_acc": await gl_mapping_service.account_for("kas_bank.beban_bank", entity_id),
+        "interest_acc": await gl_mapping_service.account_for("kas_bank.pendapatan_bunga", entity_id),
     }
 
 

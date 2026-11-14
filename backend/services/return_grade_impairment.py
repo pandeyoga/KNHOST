@@ -17,8 +17,10 @@ COLL = "return_grade_impairments"
 
 
 async def grade_factors(entity_id: str = "") -> Dict[str, float]:
+    """KF-T2 — tabel `returns.grade_price_factors` apa adanya (bawaan registrinya sudah lengkap); tidak lagi digabung
+    `DEFAULT_FACTORS`, supaya grade yang dihapus pemilik dari tabel tidak hidup lagi dari angka kode."""
     a = await return_assumptions(entity_id)
-    return {**DEFAULT_FACTORS, **{k: float(v) for k, v in (a.get("grade_price_factors") or {}).items()}}
+    return {k: float(v) for k, v in (a.get("grade_price_factors") or {}).items()}
 
 
 def compute(list_price: float, book_unit: float, f_old: float, f_new: float, qty: float) -> Dict[str, Any]:

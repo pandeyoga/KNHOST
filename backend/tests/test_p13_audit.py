@@ -132,32 +132,34 @@ class TestBankAccountAudit:
 
 
 # ── Settings PUT (scope ent_ksc) ────────────────────────────────────────────
+# KF-T2 — `PUT /api/settings` dimatikan (410); jejak audit simpan pengaturan kini lewat `PUT /api/config/values`
+# (aksi `config_value_changed`, sumber daya = baris `config_values`, nilai lama/baru di `from`/`to`).
 class TestSettingsAudit:
-    prev_finance = None
+    KEY = "finance.default_payment_term_code"
+    prev_value = None
 
     def test_put_settings_before_value(self, admin):
         s = admin["session"]
-        # Baca nilai lama scope ent_ksc
-        prev = _mongo.system_settings.find_one({"scope": ENT}, {"_id": 0})
-        prev_finance = (prev or {}).get("finance") or {}
-        TestSettingsAudit.prev_finance = prev_finance
-        new_finance = {**prev_finance, "test_marker_p13": "TEST_v1"}
-        t0 = time.time()
-        r = s.put(f"{BASE_URL}/api/settings",
-                  json={"scope": ENT, "finance": new_finance})
+        eff = s.get(f"{BASE_URL}/api/config/effective", params={"q": self.KEY, "entity_id": ENT}).json()
+        prev = next(it["value"] for it in eff["items"] if it["key"] == self.KEY)
+        TestSettingsAudit.prev_value = prev
+        new = "NET14" if prev != "NET14" else "NET30"
+        r = s.put(f"{BASE_URL}/api/config/values", json={"items": [{
+            "key": self.KEY, "value": new, "scope_type": "entity", "scope_id": ENT, "reason": "TEST_p13 jejak audit"}]})
         assert r.status_code == 200, r.text
-        row = _latest_audit("settings_updated", ENT, t0)
-        _assert_audit_shape(row, admin["user_id"], "settings_updated")
-        # before harus memuat kunci finance (nilai lama) — kalau belum ada, None
-        before = row.get("before") or {}
-        assert "finance" in before, f"'finance' absen di before: {list(before.keys())}"
-        assert before.get("finance") == prev_finance or before.get("finance") is None
+        row_id = r.json()["saved"][0]["id"]
+        row = _latest_audit("config_value_changed", row_id, time.time())
+        _assert_audit_shape(row, admin["user_id"], "config_value_changed")
+        # nilai lama tercatat (dulu `before`; kini `from` pada isi audit)
+        after = row.get("after") or {}
+        assert after.get("from") == prev and after.get("to") == new, after
+        assert s.put(f"{BASE_URL}/api/settings", json={"scope": ENT, "finance": {}}).status_code == 410
 
     def test_restore_settings(self, admin):
-        # Kembalikan nilai semula agar tak mengotori data
+        # Kembalikan: cabut lapisan PT (riwayat tetap ada) agar tak mengotori data
         s = admin["session"]
-        prev = TestSettingsAudit.prev_finance or {}
-        s.put(f"{BASE_URL}/api/settings", json={"scope": ENT, "finance": prev})
+        s.post(f"{BASE_URL}/api/config/values/clear",
+               json={"key": self.KEY, "scope_type": "entity", "scope_id": ENT, "reason": "TEST_p13 kembalikan"})
 
 
 # ── Customer PATCH ──────────────────────────────────────────────────────────

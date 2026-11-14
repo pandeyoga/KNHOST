@@ -14,16 +14,27 @@ from core_utils import now_iso, new_id, DEFAULT_ENTITY_ID
 
 GLOBAL_SCOPE = "global"
 
+
+def _reg_default(key: str) -> Any:
+    """KF-T2 (KF-06) — cadangan kode = bawaan registry (`config_registry.default_of`). Diimpor lambat (pola
+    `saring_bagi_pembaca`) supaya memuat modul ini tidak ikut memuat seluruh katalog registry."""
+    from config_registry import default_of
+    return default_of(key)
+
+
 # Default global settings (seed sekali, lalu editable dari Admin → Pengaturan)
 DEFAULT_GLOBAL_SETTINGS: Dict[str, Any] = {
     # LN-083 — ASUMSI sementara (menunggu owner KLR-08/KLR-09); nilai dapat diubah di Pengaturan.
+    # KF-T2 — kunci `returns.*` kini di registry (`config_catalog_ops.py`). Tabel harga per grade TIDAK ditulis di sini:
+    # bawaannya hanya di registry (`returns.grade_price_factors`), supaya tidak ada salinan kedua yang daun-daunnya
+    # (`A`, `B1`, …) tidak bisa dicocokkan gate wiring dengan pembacanya.
     "returns": {"customer_window_days": 21, "supplier_window_days": 21,
                 "bill_first": True,
-                "grade_price_factors": {"A": 100, "A1": 95, "A2": 90, "B": 70, "B1": 60, "C": 40, "BS": 10},
                 "supplier_reminder_days": 3},
     # LN-024 — pembayaran antar-PT: penuh per transaksi, tanpa netting; KLX-03: cutoff/tanggal bayar/acuan configurable.
+    # KF-T2 — "belum diatur" ditulis sama dengan bawaan registry (0 / ""), bukan None; artinya tidak berubah.
     "interco_payment": {"allow_netting": False, "require_full_payment": True,
-                        "cutoff_day": None, "payment_day": None, "basis": None, "reminder_days": 3},
+                        "cutoff_day": 0, "payment_day": 0, "basis": "", "reminder_days": 3},
     "tax": {
         "ppn_rate": 12.0,            # % — tarif resmi UU HPP (sejak 2025)
         # F-10 Coretax — DPP Nilai Lain = 11/12 × harga jual (PMK 131/2024) untuk barang
@@ -223,9 +234,9 @@ def _deep_merge(base: Dict[str, Any], override: Dict[str, Any]) -> Dict[str, Any
     return out
 
 
-#: KF-T1 — jalur dokumen pengaturan yang belum ada di registry tetapi dibaca layar semua pengguna. `returns` dan
-#: `interco_payment` dicabut unit KF-T2 saat kuncinya masuk registry.
-BUKA_SEMENTARA = ("scope", "tax.is_pkp", "returns", "interco_payment")
+#: KF-T1 — jalur dokumen pengaturan yang belum ada di registry tetapi dibaca layar semua pengguna. KF-T2 — `returns` dan
+#: `interco_payment` dicabut: kuncinya kini di registry dengan `sensitif_baca=False`.
+BUKA_SEMENTARA = ("scope", "tax.is_pkp")
 
 
 def saring_bagi_pembaca(doc: Dict[str, Any]) -> Dict[str, Any]:
@@ -306,12 +317,13 @@ async def compute_tax(subtotal: float, entity_id: Optional[str] = None,
     `mode_override` ("included"/"excluded") memaksa harga termasuk/belum termasuk PPN (PB-01)."""
     s = await get_effective_settings(entity_id)
     tax = s.get("tax", {})
-    rate = float(tax.get("ppn_rate", 0) or 0)
+    # KF-T2 (KF-06) — cadangan bila dokumen tidak memuat kunci = bawaan registry (dulu 0 / False).
+    rate = float(tax.get("ppn_rate", _reg_default("tax.ppn_rate")) or 0)
     mode = tax.get("ppn_mode", "excluded")
     if (mode_override or "").strip().lower() in ("included", "excluded"):
         mode = mode_override.strip().lower()
     is_pkp = tax.get("is_pkp", True)
-    use_nl = bool(tax.get("dpp_nilai_lain", False))
+    use_nl = bool(tax.get("dpp_nilai_lain", _reg_default("tax.dpp_nilai_lain")))
     subtotal = round(float(subtotal or 0), 2)
     if not is_pkp or rate <= 0:
         return {"ppn_rate": 0.0, "effective_rate": 0.0, "dpp_nilai_lain": False,
@@ -676,8 +688,9 @@ async def compute_order_pricing(
     """
     s = settings or await get_effective_settings(entity_id)
     disc_cfg = s.get(cfg_section, {}) or {}
-    allow_item = bool(disc_cfg.get("allow_item_discount", True))
-    allow_order = bool(disc_cfg.get("allow_order_discount", True))
+    # KF-T2 (KF-06) — cadangan = bawaan registry bagian itu (`sales` False, `purchasing` True; dulu selalu True).
+    allow_item = bool(disc_cfg.get("allow_item_discount", _reg_default(f"{cfg_section}.allow_item_discount")))
+    allow_order = bool(disc_cfg.get("allow_order_discount", _reg_default(f"{cfg_section}.allow_order_discount")))
 
     priced_items: List[Dict[str, Any]] = []
     gross_total = 0.0
@@ -785,7 +798,8 @@ async def get_allocation_policy(
     # Sekarang benar-benar mengikat: bila wajib transfer, alokasi TIDAK BOLEH memakai stok
     # milik entitas lain secara diam-diam — pengguna harus membuat Transaksi Antar-Entitas
     # lebih dulu sehingga laba/HPP setiap PT tetap benar.
-    if bool((s.get("inventory", {}) or {}).get("intercompany_transfer_required", False)):
+    if bool((s.get("inventory", {}) or {}).get("intercompany_transfer_required",   # KF-T2 — cadangan registry
+                                               _reg_default("inventory.intercompany_transfer_required"))):
         base["allow_intercompany"] = False
         base["intercompany_blocked_reason"] = (
             "Pengaturan 'Wajib transfer sebelum jual stok entitas lain' aktif — buat "

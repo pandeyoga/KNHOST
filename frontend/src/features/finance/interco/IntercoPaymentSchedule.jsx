@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
-import { CalendarClock, Info } from "lucide-react";
+import { CalendarClock, Info, SlidersHorizontal } from "lucide-react";
 import axios, { API } from "../../../services/apiClient";
-import KNSelect from "../../../components/KNSelect";
+import { SettingsBrowser, SettingsNotice, useSettingsBrowser } from "../../settings/config/SettingsHub";
 import { formatCurrency, formatDate } from "../../../utils/formatters";
 import { docStatusLabel } from "../../../utils/docStatus";
 import { stripInternalCodes } from "../../../utils/cleanText";
@@ -10,60 +10,39 @@ import { STATUS_LABEL } from "./intercoApi";
 // 23 Okt — formatter baku (dulu toLocaleString tanpa batas desimal → "Rp 20.998,967").
 const rp = (v) => formatCurrency(v);
 const errText = (e) => e.response?.data?.detail?.message || e.response?.data?.detail || e.message;
-const BASIS = [{ value: "", label: "Belum diatur" }, { value: "receipt", label: "Tanggal barang diterima" },
-  { value: "invoice", label: "Tanggal invoice" }, { value: "document", label: "Tanggal dokumen" }];
 
 // LN-024 KLX-03 — cutoff, tanggal bayar & acuan periode dapat dikonfigurasi (semua PT atau per PT pembayar).
-function CutoffForm({ cfg, onSaved }) {
-  const [f, setF] = useState({ cutoff_day: cfg.cutoff_day ?? "", payment_day: cfg.payment_day ?? "", basis: cfg.basis ?? "",
-    reminder_days: cfg.reminder_days ?? 3 });
-  const [scope, setScope] = useState("global");
-  const [ents, setEnts] = useState([]);
-  useEffect(() => { axios.get(`${API}/entities`).then((r) => setEnts(Array.isArray(r.data) ? r.data : r.data?.items || [])).catch(() => setEnts([])); }, []);
-  useEffect(() => {
-    if (scope === "global") return;
-    axios.get(`${API}/settings/effective`, { params: { entity_id: scope } }).then((r) => {
-      const c = r.data.interco_payment || {};
-      setF({ cutoff_day: c.cutoff_day ?? "", payment_day: c.payment_day ?? "", basis: c.basis ?? "", reminder_days: c.reminder_days ?? 3 });
-    }).catch(() => {});
-  }, [scope]);
-  const [err, setErr] = useState("");
-  const [ok, setOk] = useState("");
-  const save = async () => {
-    setErr(""); setOk("");
-    const num = (v) => (v === "" || v === null ? null : Math.min(31, Math.max(1, parseInt(v, 10) || 1)));
-    try {
-      await axios.put(`${API}/settings`, { scope, interco_payment: {
-        allow_netting: false, require_full_payment: true, cutoff_day: num(f.cutoff_day), payment_day: num(f.payment_day), basis: f.basis || null,
-        reminder_days: Math.max(0, Math.min(30, parseInt(f.reminder_days, 10) || 0)) } });
-      setOk("Tersimpan."); onSaved();
-    } catch (e) { setErr(errText(e)); }
-  };
+// KF-T2 — dulu `CutoffForm` yang menulis `PUT /api/settings` langsung (tanpa riwayat) dan selalu mengirim
+// `allow_netting=false` / `require_full_payment=true`. Kini kartu Pusat Pengaturan yang DIKUNCI ke kunci
+// `interco_payment.*` (mesin yang sama dengan Pengaturan: lapisan semua PT / per PT pembayar, riwayat, jadwal). Bagian ini
+// hanya tampil bagi yang boleh membaca kuncinya; tombol simpan mengikuti `can_edit` dari server (`entity.update`).
+export const PAYMENT_RULE_GROUPS = ["antar-entitas"];
+export const PAYMENT_RULE_KEYS = ["interco_payment."];
+
+function PaymentRules({ selectedEntity, entities, onChanged }) {
+  const base = useSettingsBrowser({ selectedEntity, groupIds: PAYMENT_RULE_GROUPS, includeKeys: PAYMENT_RULE_KEYS });
+  if (base.denied || (!base.loading && !base.error && base.groups.length === 0)) return null;
+  // Jadwal di bawah dihitung ulang sesudah aturan berubah.
+  const after = (fn) => async (...args) => { const res = await fn(...args); onChanged(); return res; };
+  const s = { ...base, onSave: after(base.onSave), onReset: after(base.onReset), onClearEntity: after(base.onClearEntity) };
   return (
-    <div data-testid="interco-cutoff-form" className="flex flex-wrap items-end gap-2 text-[12px]">
-      <div className="w-56 flex flex-col gap-1">Berlaku untuk (PT pembayar)
-        <KNSelect data-testid="interco-cutoff-scope" value={scope} searchable={false} onValueChange={setScope}
-                  options={[{ value: "global", label: "Semua PT" }, ...ents.map((e) => ({ value: e.id, label: e.short_name || e.name || e.id }))]} /></div>
-      <label className="flex flex-col gap-1">Tanggal cutoff
-        <input data-testid="interco-cutoff-day" type="number" min={1} max={31} value={f.cutoff_day} placeholder="—"
-               onChange={(e) => setF({ ...f, cutoff_day: e.target.value })} className="field w-24" /></label>
-      <label className="flex flex-col gap-1">Tanggal bayar
-        <input data-testid="interco-payment-day" type="number" min={1} max={31} value={f.payment_day} placeholder="akhir bulan"
-               onChange={(e) => setF({ ...f, payment_day: e.target.value })} className="field w-28" /></label>
-      <label className="flex flex-col gap-1">Ingatkan (hari sebelum)
-        <input data-testid="interco-reminder-days" type="number" min={0} max={30} value={f.reminder_days}
-               onChange={(e) => setF({ ...f, reminder_days: e.target.value })} className="field w-24" /></label>
-      <div className="w-56 flex flex-col gap-1">Basis tanggal
-        <KNSelect data-testid="interco-cutoff-basis" value={f.basis} options={BASIS} searchable={false} onValueChange={(v) => setF({ ...f, basis: v })} /></div>
-      <button type="button" data-testid="interco-cutoff-save" onClick={save}
-              className="primary-button">Simpan pengaturan</button>{/* Fase 3 · P4 (L-03/L-08) — tombol hitam → biru standar */}
-      {err && <span className="text-[#C62828]" data-testid="interco-cutoff-error">{err}</span>}
-      {ok && <span className="text-[#1B7F4B]" data-testid="interco-cutoff-saved">{ok}</span>}
-    </div>
+    <section className="section-card" data-testid="interco-payment-rules">
+      <div className="section-head">
+        <div className="flex items-center gap-2"><SlidersHorizontal size={14} className="text-kn-action" /><h2>Aturan jadwal bayar</h2></div>
+      </div>
+      <div className="section-body cfg-hub cfg-group-view">
+        <p className="cfg-group-intro">
+          Tanggal tutup, tanggal bayar, tanggal acuan, pengingat, serta boleh-tidaknya saling hapus dan pelunasan
+          sebagian — untuk semua PT, atau khusus satu PT pembayar.
+        </p>
+        <SettingsNotice s={s} />
+        <SettingsBrowser s={s} entities={entities} groupNav="chips" searchPlaceholder="Cari aturan jadwal bayar…" />
+      </div>
+    </section>
   );
 }
 
-export default function IntercoPaymentSchedule({ canConfigure }) {
+export default function IntercoPaymentSchedule({ selectedEntity, entities = [] }) {
   const [data, setData] = useState(null);
   const [err, setErr] = useState("");
   const load = () => axios.get(`${API}/interco/payment-schedule`).then((r) => setData(r.data)).catch((e) => setErr(errText(e)));
@@ -79,14 +58,18 @@ export default function IntercoPaymentSchedule({ canConfigure }) {
         <div>
           {/* UAT 24 Okt (audit UI tahap 2) — G1-10: tanpa kode keputusan (KLX-03) di teks pengguna. */}
           {pending ? stripInternalCodes(data.note) : <>Cutoff tanggal <b>{data.config.cutoff_day}</b> · bayar tanggal <b>{data.config.payment_day || "akhir bulan"}</b> · acuan periode <b>{data.basis_label}</b> (dapat diubah).</>}
-          <p className="mt-1">Pembayaran penuh per transaksi, netting antar tagihan <b>dinonaktifkan</b>. Saldo setiap PT dihitung sendiri-sendiri.</p>
+          {/* KF-T2 — kalimat mengikuti aturan yang dipakai mesin (dulu ditulis tetap "dinonaktifkan"). */}
+          <p className="mt-1" data-testid="interco-schedule-rules">
+            {data.config?.require_full_payment === false ? "Pelunasan sebagian diperbolehkan" : "Pembayaran penuh per transaksi"},
+            saling hapus antar tagihan <b>{data.netting === "allowed" ? "diizinkan" : "dinonaktifkan"}</b>. Saldo setiap PT dihitung sendiri-sendiri.
+          </p>
           {/* G1-31 — dasar angka disebut: sisa per dokumen terbuka (nilai − pelunasan − retur); umur = sejak tanggal dokumen. */}
           <p className="mt-1 text-[11.5px] opacity-80" data-testid="interco-schedule-basis">Sisa = nilai dokumen − pelunasan − retur, per dokumen yang sudah dikonfirmasi (draf tidak dihitung). Umur dihitung dari tanggal dokumen.</p>
           {/* Keputusan pemilik K-07 (26 Okt) — jadwal ini RINCIAN per dokumen (bruto); angka utama = posisi bersih. */}
           <p className="mt-1 text-[11.5px] font-semibold" data-testid="interco-schedule-detail-label">Rincian per dokumen (bruto, sebelum netting dua arah). Angka utama utang antar-PT = posisi bersih di tab Saldo Antar-PT &amp; kartu ringkasan.</p>
         </div>
       </div>
-      {canConfigure && <CutoffForm cfg={data.config} onSaved={load} />}
+      <PaymentRules selectedEntity={selectedEntity} entities={entities} onChanged={load} />
       <div className="flex flex-wrap gap-2">
         {data.pairs.map((p) => (
           <div key={`${p.payer_entity_id}>${p.payee_entity_id}`} className="rounded-lg border border-[#E5E5EA] bg-white px-3 py-2 text-[12px]"

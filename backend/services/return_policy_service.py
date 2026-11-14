@@ -301,10 +301,17 @@ RETURN_ASSUMPTION_DEFAULTS: Dict[str, Any] = {
 _RECEIPT_VIA = ("inbound", "grn", "goods_receipt", "purchase", "receiving")
 
 
+#: KF-T2 — lima kunci Pusat Pengaturan di balik "batas retur umum" (dulu dibaca langsung dari dokumen pengaturan).
+RETURN_ASSUMPTION_KEYS = ("customer_window_days", "supplier_window_days", "bill_first", "grade_price_factors",
+                          "supplier_reminder_days")
+
+
 async def return_assumptions(entity_id: str = "") -> Dict[str, Any]:
-    from services.config_service import get_effective_settings
-    eff = await get_effective_settings(entity_id or None)
-    return {**RETURN_ASSUMPTION_DEFAULTS, **(eff.get("returns") or {})}
+    """Batas retur umum yang berlaku untuk PT ini (lapisan global → PT, dengan riwayat). Bentuk jawaban tetap."""
+    from services.config_resolver import value_of
+    ctx = {"entity_id": entity_id or ""}
+    return {**RETURN_ASSUMPTION_DEFAULTS,
+            **{k: await value_of(f"returns.{k}", ctx) for k in RETURN_ASSUMPTION_KEYS}}
 
 
 async def customer_reference(order: Dict[str, Any]) -> Dict[str, Any]:

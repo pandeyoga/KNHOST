@@ -41,6 +41,11 @@ ENTRIES: List[Dict[str, Any]] = [
        ("Beban bank", "Bank"), ["Rekonsiliasi bank"]),
     _e("kas_bank.titipan_dana", "2-1950", "Titipan dana belum teridentifikasi", "dana masuk yang belum dikenali",
        ("Bank", "Titipan dana"), ["Rekonsiliasi bank"]),
+    # KF-T2 (KP-30) — dulu kunci Pusat Pengaturan `bank.interest_account_code` (bawaan 4-9000). `remap=False`: kode
+    # bawaannya sama dengan `penjualan.pendapatan_lain`, jadi dipanggil eksplisit (`account_for`) oleh rekonsiliasi bank.
+    _e("kas_bank.pendapatan_bunga", "4-9000", "Pendapatan bunga / jasa giro",
+       "bunga atau jasa giro yang masuk sendiri ke rekening", ("Bank", "Pendapatan bunga"), ["Rekonsiliasi bank"],
+       remap=False),
     _e("kas_bank.uang_muka_karyawan", "1-1400", "Uang muka & biaya dibayar dimuka", "pengajuan dana (PD) kas kecil",
        ("Uang muka", "Kas"), ["PD/LPJ"]),
     _e("kas_bank.hutang_reimburse", "2-1650", "Hutang reimburse karyawan", "LPJ melebihi uang muka",

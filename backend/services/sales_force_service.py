@@ -255,8 +255,9 @@ def _discount_factor(cfg: Dict[str, Any], line: Dict[str, Any], per_unit: float)
     net_unit = (line_total / qty) if qty else price
     disc_rp_per_unit = max(price - net_unit, 0.0)
 
+    from config_registry import default_of   # KF-T2 (KF-06) — cadangan = bawaan registry (dulu 0 dan 1,0)
     thr_type = cfg.get("discount_threshold_type", "pct")
-    threshold = float(cfg.get("discount_threshold", 0) or 0)
+    threshold = float(cfg.get("discount_threshold", default_of("commission.discount_threshold")) or 0)
     over = (disc_pct > threshold) if thr_type == "pct" else (disc_rp_per_unit > threshold)
     if not over:
         return per_unit, 1.0
@@ -266,7 +267,7 @@ def _discount_factor(cfg: Dict[str, Any], line: Dict[str, Any], per_unit: float)
         return per_unit, 0.0
     if mech == "potong_rp":
         return max(per_unit - float(cfg.get("discount_potong_rp", 0) or 0), 0.0), 1.0
-    return per_unit, float(cfg.get("discount_factor", 1.0) or 0)  # tier_factor
+    return per_unit, float(cfg.get("discount_factor", default_of("commission.discount_factor")) or 0)  # tier_factor
 
 
 async def _compute_commission_per_sku(

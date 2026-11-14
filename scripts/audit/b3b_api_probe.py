@@ -279,8 +279,10 @@ def main():
                                 "reason": "uji b3b batas"}]})
     P.run("setelan alasan 1 huruf", AD, "PUT", "/api/config/values",
           json_body={"items": [{"key": "receiving.mode", "value": "legacy", "scope_type": "global", "scope_id": "", "reason": "x"}]})
-    P.run("PUT /settings lama inventory dict bebas", AD, "PUT", "/api/settings",
-          json_body={"scope": "global", "inventory": {"min_cut_qty": -5}})
+    # KF-T2 — `PUT /api/settings` dimatikan (410); masukan buruk yang sama diuji lewat satu-satunya jalur simpan.
+    P.run("setelan min_cut_qty negatif", AD, "PUT", "/api/config/values",
+          json_body={"items": [{"key": "inventory.min_cut_qty", "value": -5, "scope_type": "global", "scope_id": "",
+                                "reason": "uji b3b batas"}]})
     rdev = one(db, "rfid_devices", {"protocol": "v2"}, {"id": 1})
     if rdev:
         P.run("simulator roll_limit bukan angka", AD, "POST", f"/api/rfid/v2/ops/devices/{rdev['id']}/simulate",

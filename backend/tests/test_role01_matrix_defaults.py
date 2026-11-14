@@ -1,10 +1,10 @@
 """Keputusan owner 2026-10-21 (lanjutan ROLE-01) — default izin dipilih implementer, dapat diatur
 di matriks izin:
 * Antrean QC kedatangan: lihat = wms.view ATAU qc.view; putus karantina = wms.update ATAU qc.release.
-* Kebijakan Retur & Asumsi Retur (bagian `returns` PUT /settings) = sales_return.policy.
+* Kebijakan Retur & Asumsi Retur (kunci `returns.*` Pusat Pengaturan; dulu bagian `returns` PUT /settings) = sales_return.policy.
 * Master Entitas: izin tulis per jenis = izin domain layar khususnya (+ `can` per operasi di daftar).
-Hanya memakai ID yang tidak ada (penjaga diuji tanpa mengubah data) kecuali satu PUT /settings yang
-dipulihkan dari salinan DB. Butuh data acuan (`bash scripts/dev_restore_demo.sh`).
+Hanya memakai ID yang tidak ada (penjaga diuji tanpa mengubah data) kecuali satu nilai lapisan PT
+`returns.customer_window_days` yang lapisannya dicabut lagi (KF-T2). Butuh data acuan (`bash scripts/dev_restore_demo.sh`).
 Jalankan: cd /app/backend && python -m pytest tests/test_role01_matrix_defaults.py -p no:randomly -n 0 -q
 """
 import os
@@ -52,22 +52,24 @@ def test_kebijakan_retur_pakai_sales_return_policy(H):
 
 
 def test_asumsi_retur_manager_boleh_bagian_lain_tetap_entity_update(H):
-    before = DB.system_settings.find_one({"scope": "global"}, {"_id": 0})
+    # KF-T2 — `PUT /api/settings` dimatikan (410). Asumsi retur = kunci Pusat Pengaturan `returns.*` ber-izin
+    # `sales_return.policy`; jadwal bayar antar-PT (`interco_payment.*`) tetap `entity.update` — wewenang sama dengan
+    # pemisahan bagian di jalur lama. Ditulis di lapisan PT `ent_ksc` lalu lapisannya dicabut.
+    def put(key, value, who):
+        return requests.put(f"{BASE}/config/values", headers=H[who], json={"items": [
+            {"key": key, "value": value, "scope_type": "entity", "scope_id": ENT, "reason": "uji ROLE-01 asumsi retur"}]})
     try:
-        eff = requests.get(f"{BASE}/settings/effective", headers=H["manager"]).json().get("returns") or {}
-        r = requests.put(f"{BASE}/settings", json={"scope": "global", "returns": eff}, headers=H["manager"])
+        r = put("returns.customer_window_days", 21, "manager")
         assert r.status_code == 200, r.text
-        # bagian lain (pajak) tetap butuh entity.update — Manager tidak punya
-        assert requests.put(f"{BASE}/settings", json={"scope": "global", "tax": {}}, headers=H["manager"]).status_code == 403
-        # payload campuran menuntut semua izin
-        mixed = {"scope": "global", "returns": eff, "tax": {}}
-        assert requests.put(f"{BASE}/settings", json=mixed, headers=H["manager"]).status_code == 403
-        assert requests.put(f"{BASE}/settings", json={"scope": "global", "returns": eff}, headers=H["sales"]).status_code == 403
+        # bagian lain (jadwal bayar antar-PT) tetap butuh entity.update — Manager tidak punya
+        assert put("interco_payment.reminder_days", 3, "manager").status_code == 403
+        assert put("returns.customer_window_days", 21, "sales").status_code == 403
+        assert requests.put(f"{BASE}/settings", json={"scope": "global", "returns": {}},
+                            headers=H["manager"]).status_code == 410
     finally:
-        if before is None:
-            DB.system_settings.delete_one({"scope": "global"})
-        else:
-            DB.system_settings.replace_one({"scope": "global"}, before)
+        requests.post(f"{BASE}/config/values/clear", headers=H["manager"], json={
+            "key": "returns.customer_window_days", "scope_type": "entity", "scope_id": ENT,
+            "reason": "uji ROLE-01 kembalikan"})
 
 
 # ── Master Entitas: izin per jenis ─────────────────────────────────────────────

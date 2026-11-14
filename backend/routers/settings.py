@@ -7,17 +7,15 @@ from typing import Any, Dict, List, Optional
 from fastapi import APIRouter, HTTPException, Request
 from pymongo import ReturnDocument
 from db import db
-from dependencies import require_permission, current_user, audit
-from core_utils import new_id, now_iso, safe_doc
-from schemas import SettingsUpdate, PaymentTermPayload, GenericPatch
+from dependencies import require_permission, require_any_permission, current_user, audit
+from core_utils import now_iso
+from schemas import PaymentTermPayload, GenericPatch
 from entity_scope import entity_ctx, resolve_requested_entity
 from services.config_service import (
-    get_global_settings, get_effective_settings, compute_tax, evaluate_approval, GLOBAL_SCOPE,
+    get_global_settings, get_effective_settings, compute_tax, evaluate_approval,
 )
 
 router = APIRouter(prefix="/api")
-SETTINGS_SECTIONS = ["tax", "finance", "sales", "inventory", "allocation", "purchasing", "commission",
-                     "returns", "interco_payment"]
 
 
 # ── Settings (global + per-entity override) ─────────────────────────────────
@@ -57,51 +55,16 @@ async def read_effective_settings(request: Request, entity_id: Optional[str] = N
     return saring_bagi_pembaca(doc)
 
 
-#: Bagian pengaturan dengan izin domain sendiri (selain entity.update).
-SECTION_PERMISSION = {"returns": ("sales_return", "policy")}   # Asumsi Retur = kebijakan retur
-
-
 @router.put("/settings")
-async def update_settings(payload: SettingsUpdate, request: Request) -> Dict[str, Any]:
-    # Keputusan owner 2026-10-21 — bagian yang punya izin domain dapat diubah pemegang izin itu
-    # (diatur di matriks izin); bagian lain tetap entity.update. Payload campuran menuntut semuanya.
-    sections = [s for s in SETTINGS_SECTIONS if getattr(payload, s, None) is not None]
-    needs = {SECTION_PERMISSION.get(s, ("entity", "update")) for s in sections} or {("entity", "update")}
-    for module, action in sorted(needs):
-        actor = await require_permission(request, module, action)
-    scope = payload.scope or GLOBAL_SCOPE
-    # KN-E45 — scope hanya "global" atau id entitas nyata; scope lain (mis. "integrations",
-    # "hr") dikelola endpoint khususnya dan TIDAK boleh ditimpa/dibaca lewat sini.
-    if scope != GLOBAL_SCOPE and not await db.business_entities.find_one({"id": scope}, {"_id": 1}):
-        raise HTTPException(status_code=400, detail="Scope pengaturan harus 'global' atau id entitas.")
-    # IX-07 — target scope memakai kebijakan akses yang sama dengan baca; global hanya peran lintas-PT
-    ctx = await entity_ctx(request)
-    if scope == GLOBAL_SCOPE:
-        if not ctx.is_cross_entity:
-            raise HTTPException(status_code=403, detail="Pengaturan global hanya dapat diubah peran lintas badan usaha.")
-    else:
-        resolve_requested_entity(ctx, scope)
-        from services.entity_lifecycle_service import assert_entity_writable_cached
-        await assert_entity_writable_cached(scope)
-    data: Dict[str, Any] = {"updated_at": now_iso()}
-    for sec in SETTINGS_SECTIONS:
-        val = getattr(payload, sec, None)
-        if val is not None:
-            data[sec] = val
-    existing = await db.system_settings.find_one({"scope": scope}, {"_id": 0})
-    if existing:
-        updated = await db.system_settings.find_one_and_update(
-            {"scope": scope}, {"$set": data},
-            projection={"_id": 0}, return_document=ReturnDocument.AFTER,
-        )
-    else:
-        doc = {"id": new_id("set"), "scope": scope, "created_at": now_iso(), **data}
-        await db.system_settings.insert_one(doc)
-        updated = safe_doc(doc)
-    await audit(actor["name"], "settings_updated", "system_settings", scope, data,
-                before={k: (existing or {}).get(k) for k in data})
-    keep = set(SETTINGS_SECTIONS) | {"id", "scope", "created_at", "updated_at"}
-    return {k: v for k, v in (updated or {}).items() if k in keep}
+async def update_settings(request: Request) -> Dict[str, Any]:
+    """KF-T2 (standar §5 D8) — jalur lama DIMATIKAN: dulu menimpa dokumen `system_settings` langsung, tanpa baris
+    `config_values` (tanpa riwayat, alasan, jadwal). Semua bagiannya kini kunci Pusat Pengaturan dan disimpan lewat
+    `PUT /api/config/values`; pemanggil di `backend/`, `scripts/`, `frontend/src` sudah dialihkan. Izin yang sama dengan
+    jalur lama (salah satu dari `entity.update` / `sales_return.policy`) tetap diperiksa lebih dulu; tidak ada yang ditulis."""
+    await require_any_permission(request, [("entity", "update"), ("sales_return", "policy")], detail=(
+        "Anda belum punya akses untuk mengubah pengaturan. Minta Admin menambahkan akses "
+        "'Pengaturan, Pengguna & Hak Akses'."))
+    raise HTTPException(status_code=410, detail="Pengaturan kini disimpan lewat Pusat Pengaturan.")
 
 
 # ── Tax & Approval helper endpoints (dipakai FE Sales nanti) ─────────────────

@@ -74,7 +74,8 @@ def _bucket(days_late: int, edges: Optional[List[int]] = None) -> str:
 
 
 def _denda_estimate(outstanding: float, days_late: int, cfg: Dict[str, Any]) -> float:
-    rate = float(cfg.get("denda_rate_pct_per_month", 0) or 0)
+    from config_registry import default_of   # KF-T2 (KF-06) — cadangan = bawaan registry (dulu 0)
+    rate = float(cfg.get("denda_rate_pct_per_month", default_of("ar.denda_rate_pct_per_month")) or 0)
     eff = days_late - int(cfg.get("grace_days", 0) or 0)
     if rate <= 0 or eff <= 0 or outstanding <= EPS:
         return 0.0

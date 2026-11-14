@@ -92,7 +92,7 @@ E("ai.template_cache_minutes", group="asisten-analitik", type="int", default=5, 
 E("ai.route_threshold_pct", group="asisten-analitik", type="int", default=90, min=50, max=100, scopes=_G,
   label="Ambang kemiripan pertanyaan → template (%)", help="Pertanyaan yang mirip template di atas ambang dijawab langsung sebagai template (tanpa model).",
   impact="Terlalu rendah → pertanyaan berbeda salah diarahkan ke template.", example="90",
-  consumers=("services/ai_chat_service.py:ask",), risk="low")
+  consumers=("services/ai_chat_service.py:chat_events",), risk="low")   # KF-T2 — dulu `ask` (tidak ada)
 E("ai.chat_retention_days", group="asisten-analitik", type="int", default=180, min=7, max=3650, scopes=_G,
   label="Retensi riwayat percakapan (hari)", help="Sesi yang tidak diperbarui lebih lama dari ini dihapus oleh job pemeliharaan malam.",
   impact="Lebih kecil = riwayat lebih cepat hilang.", example="180", consumers=("services/ai_schedules.py:job_ai_maintenance",), risk="low")

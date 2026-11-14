@@ -157,14 +157,17 @@ E("lot.status_on_receipt", group="lot", type="enum", default="karantina",
   related=("purchasing.qc_on_receipt",), risk="high",
   permission=_LOT_PERM)
 
+# KF-T2 (KP-13, L5) — `lot_service.next_lot_number` tidak membaca kunci ini (nomor selalu `{KODE}/LOT-YYMM-####`);
+# pembacanya hanya simulator. Ditandai tidak dipakai sampai format bisa diatur (unit KP-T5).
 E("lot.number_format", group="lot", type="text", default="LOT-YYMM-####", scopes=G,
-  simulate="lot_number",
   label="Format nomor lot",
   help="Pola nomor lot otomatis. YY = tahun 2 digit, MM = bulan, #### = urutan.",
   impact="Mengubah bentuk nomor lot baru. Nomor lama tidak berubah.",
   example="'KN-LOT-YYMM-#####' → KN-LOT-2607-00001",
   consumers=("services/lot_service.py",), risk="low",
-  permission=_LOT_PERM)
+  permission=_LOT_PERM, status="not_used",
+  not_used_reason="Nomor lot saat ini selalu berbentuk KODE-PT/LOT-TTBB-urutan. Format yang bisa diatur menyusul "
+                  "bersama penomoran dokumen.")
 
 # ═══════════════════════════════════════════════════════════════════════════
 # PENERIMAAN BARANG (scope `receiving`)
@@ -797,3 +800,57 @@ E("returns.cutloss_treatment_roles", group="retur", type="list", default=["md", 
   consumers=("services/return_cutloss_split_service.py:assert_can_choose",), permission=("sales_return", "policy"), risk="low",
   # PR-T2 (K-47) — kini izin `sales_return.treat_cutloss`; nilai kunci ini dibaca sekali oleh migrasi pemasangan unit itu.
   status="not_used", not_used_reason="Diatur di Peran & Hak Akses › Pesanan Penjualan (Pilih potongan cacat: masuk BS atau dibuang)")
+
+
+# ═══════════════════════════════════════════════════════════════════════════
+# KF-T2 — BATAS RETUR UMUM (dulu panel "Asumsi retur" yang menulis `PUT /api/settings` langsung ke dokumen global,
+# tanpa riwayat). Kunci tersimpan di jalur yang sama (`system_settings{scope:"global"}.returns.*`), jadi nilai lama
+# terbaca sebagai lapisan "pengaturan lama" tanpa migrasi. Dibaca semua pengguna (`sensitif_baca=False`): layar Kebijakan
+# Retur menampilkan batas umum bagi yang tidak membuka Pusat Pengaturan. Diubah pemegang `sales_return.policy`.
+# ═══════════════════════════════════════════════════════════════════════════
+_RETUR_PERM = ("sales_return", "policy")
+
+E("returns.customer_window_days", group="retur", type="duration", default=21, min=1, max=365, step=1, unit="hari",
+  scopes=G, sensitif_baca=False, permission=_RETUR_PERM, risk="medium",
+  label="Batas retur pelanggan sejak surat jalan",   # KF-T2 — ≤ 45 huruf (standar §2.1); satuan "hari" tampil di kartu
+  help="Pelanggan boleh mengajukan retur sampai sekian hari sesudah tanggal surat jalan. Kebijakan retur per kategori "
+       "atau pelanggan boleh menimpa angka ini.",
+  impact="Retur yang diajukan lewat batas ini ditandai terlambat; kebijakan retur baru memakai angka ini sebagai "
+         "jendela awal.",
+  example="21 hari → surat jalan 1 Maret, retur masih boleh diajukan sampai 22 Maret",
+  consumers=("services/return_policy_service.py:return_assumptions",))
+
+E("returns.supplier_window_days", group="retur", type="duration", default=21, min=1, max=365, step=1, unit="hari",
+  scopes=G, sensitif_baca=False, permission=_RETUR_PERM, risk="medium",
+  label="Batas retur ke pemasok sejak barang diterima",
+  help="Klaim ke pemasok harus dikirim sebelum sekian hari sejak roll diterima gudang.",
+  impact="Menentukan tenggat klaim retur ke pemasok yang tampil di retur dan disposisi barang.",
+  example="21 hari → roll diterima 1 Maret, klaim ke pemasok paling lambat 22 Maret",
+  consumers=("services/return_policy_service.py:return_assumptions",))
+
+E("returns.supplier_reminder_days", group="retur", type="duration", default=3, min=0, max=60, step=1, unit="hari",
+  scopes=G, sensitif_baca=False, permission=_RETUR_PERM, risk="medium",
+  label="Ingatkan sebelum batas retur pemasok habis",
+  help="Pengingat dikirim sekian hari sebelum batas. 0 = tanpa pengingat.",
+  impact="Mengubah kapan PT pemasok menerima pengingat klaim retur yang hampir lewat batas.",
+  example="3 hari → batas 22 Maret, pengingat dikirim mulai 19 Maret",
+  consumers=("services/return_disposition_service.py:job_supplier_deadline_reminder",))
+
+E("returns.bill_first", group="retur", type="bool", default=True,
+  scopes=G, sensitif_baca=False, permission=_RETUR_PERM, risk="medium",
+  label="Potong tagihan pesanan asal lebih dulu",
+  help="Nilai retur dipakai mengurangi tagihan pesanan asal; sisanya baru dikembalikan atau menjadi saldo.",
+  impact="Bila dimatikan, nilai retur langsung dikembalikan atau menjadi saldo walau tagihan pesanan asal masih terbuka.",
+  example="Ya → retur Rp 500.000 atas pesanan bersisa tagihan Rp 300.000: Rp 300.000 memotong tagihan, "
+          "Rp 200.000 dikembalikan",
+  consumers=("services/return_service.py:_source_bill_split", "services/return_roll_settlement_service.py:plan_event"))
+
+E("returns.grade_price_factors", group="retur", type="table", row_shape="map",
+  default={"A": 100, "A1": 95, "A2": 90, "B": 70, "B1": 60, "C": 40, "BS": 10},
+  scopes=G, sensitif_baca=False, permission=_RETUR_PERM, risk="medium",
+  label="Harga per grade (% dari harga produk)",
+  help="Dasar menghitung kerugian saat barang retur turun grade: selisih persen grade lama dan baru dikali harga daftar.",
+  impact="Mengubah nilai kerugian turun grade yang dijurnal saat barang retur dilepas dari karantina dengan grade baru.",
+  example="A 100 %, B 70 % → roll harga daftar Rp 50.000 turun dari A ke B: rugi Rp 15.000 per satuan "
+          "(paling banyak nilai buku roll)",
+  consumers=("services/return_grade_impairment.py:grade_factors",))

@@ -195,20 +195,20 @@ class TestE04cDoubleApprove:
 
 # ============================================================ E45
 class TestE45SettingsScope:
+    # KF-T2 — `PUT /api/settings` dimatikan: scope apa pun (termasuk "integrations") tidak lagi ditulis → 410, dan
+    # jawabannya tidak memuat isi dokumen pengaturan (jadi tidak mungkin membocorkan kunci API).
     def test_integrations_scope_rejected(self, tokens):
         r = requests.put(f"{API}/settings", headers=_hdr(tokens["admin"]),
                          json={"scope": "integrations", "values": {}})
-        assert r.status_code == 400
+        assert r.status_code == 410
 
     def test_global_scope_no_api_keys(self, tokens):
         r = requests.put(f"{API}/settings", headers=_hdr(tokens["admin"]),
                          json={"scope": "global", "values": {}})
-        assert r.status_code in (200, 400)
-        if r.status_code == 200:
-            body = r.json()
-            s = str(body).lower()
-            assert "api_key" not in s and "apikey" not in s and "openai" not in s, \
-                f"global scope leaked api key field: {s[:400]}"
+        assert r.status_code == 410
+        s = r.text.lower()
+        assert "api_key" not in s and "apikey" not in s and "openai" not in s, \
+            f"global scope leaked api key field: {s[:400]}"
 
 
 # ============================================================ E31

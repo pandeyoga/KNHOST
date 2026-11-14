@@ -29,6 +29,7 @@ from config_divisions import (APPROVER_MATRIX, DIREKSI_MIN_KEY, STAGE_BY_ID,
 from core_utils import new_id, now_iso, safe_doc
 from db import db
 from services.config_resolver import value_of
+from config_registry import default_of   # KF-T2 — cadangan = bawaan registry
 logger = logging.getLogger(__name__)
 
 
@@ -76,7 +77,7 @@ async def settings(entity_id: str = "") -> Dict[str, Any]:
         if await _dc.butuh_orang_kedua(_aksi, entity_id or ""):
             sod = True
             break
-    direksi_min = _as_float(await value_of(DIREKSI_MIN_KEY, ctx), 0.0)
+    direksi_min = _as_float(await value_of(DIREKSI_MIN_KEY, ctx), default_of(DIREKSI_MIN_KEY))   # KF-T2 (KF-06)
     if mode not in MODES:
         mode = "enforce"
     if scope not in SCOPES:
@@ -199,7 +200,7 @@ def evaluate(stage: str, actor: Dict[str, Any], doc: Dict[str, Any],
     """MURNI (tanpa I/O): boleh atau tidak seseorang memutuskan tahap ini sekarang."""
     st = STAGE_BY_ID.get(stage) or {}
     amt = _as_float(amount if amount is not None else (doc or {}).get("total_amount"), 0.0)
-    lv_all = levels_for(stage, amt, cfg.get("po_custom_direksi_min", 0.0))
+    lv_all = levels_for(stage, amt, cfg.get("po_custom_direksi_min", default_of(DIREKSI_MIN_KEY)))   # KF-T2 (KF-06)
     chain = (doc or {}).get("approval_chain") or []
     cur = level or pending_level(chain) or lv_all[0]
     roles = list(cur.get("roles") or [])

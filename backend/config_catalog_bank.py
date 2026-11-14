@@ -106,6 +106,10 @@ E("bank.rule_bonus_score", group="bank", type="int", default=15, min=0, max=100,
   consumers=("services/bank_recon_service.py:score_pair",), risk="medium",
   related=("bank.rule_learn_after",))
 
+# KF-T2 (KP-30, standar §1 P9) — tiga akun rekonsiliasi bank kini dibaca dari Pemetaan Akun (`kas_bank.titipan_dana`,
+# `kas_bank.beban_bank`, `kas_bank.pendapatan_bunga`) per PT; nilai lama dipindah `scripts/migrate_kft2_akun_bank.py`.
+_DI_PEMETAAN = "Akun ini diatur di Pengaturan › Keuangan & Pajak › Pemetaan Akun."
+
 E("bank.holding_account_code", group="bank", type="text", default="2-1950", scopes=G,
   label="Akun titipan dana belum teridentifikasi",
   help="Kode akun buku besar tempat dana masuk yang belum ketahuan pemiliknya ditampung. "
@@ -113,7 +117,8 @@ E("bank.holding_account_code", group="bank", type="text", default="2-1950", scop
   impact="Mengubah kode ini memindahkan tempat penampungan dana tak dikenal di laporan keuangan.",
   example="2-1950 Titipan Dana Belum Teridentifikasi (kewajiban lancar)",
   consumers=("services/bank_recon_service.py:to_holding",
-             "services/bank_recon_service.py:holding_summary"), risk="high")
+             "services/bank_recon_service.py:holding_summary"), risk="high",
+  status="not_used", not_used_reason=_DI_PEMETAAN)
 
 E("bank.charge_account_code", group="bank", type="text", default="6-8000", scopes=G,
   label="Akun beban biaya administrasi bank",
@@ -122,7 +127,8 @@ E("bank.charge_account_code", group="bank", type="text", default="6-8000", scope
        "ini dibukukan langsung dari layar rekonsiliasi supaya selisih rekening vs buku bisa nol.",
   impact="Mengubah kode ini memindahkan tempat biaya bank muncul di laporan laba rugi.",
   example="6-8000 Beban Administrasi Bank · 'BIAYA ADM' Rp 15.000 → Dr 6-8000 / Cr Bank",
-  consumers=("services/bank_recon_service.py:book_charge",), risk="high")
+  consumers=("services/bank_recon_service.py:book_charge",), risk="high",
+  status="not_used", not_used_reason=_DI_PEMETAAN)
 
 E("bank.interest_account_code", group="bank", type="text", default="4-9000", scopes=G,
   label="Akun pendapatan bunga / jasa giro",
@@ -130,7 +136,8 @@ E("bank.interest_account_code", group="bank", type="text", default="4-9000", sco
        "tanpa ada transaksi buku pasangannya.",
   impact="Menentukan di mana bunga bank diakui pada laporan laba rugi.",
   example="4-9000 Pendapatan Lain-lain · 'JASA GIRO' Rp 12.400 → Dr Bank / Cr 4-9000",
-  consumers=("services/bank_recon_service.py:book_charge",), risk="medium")
+  consumers=("services/bank_recon_service.py:book_charge",), risk="medium",
+  status="not_used", not_used_reason=_DI_PEMETAAN)
 
 E("bank.holding_max_age_days", group="bank", type="duration", default=7, min=1, max=180, step=1,
   unit="hari", scopes=G,

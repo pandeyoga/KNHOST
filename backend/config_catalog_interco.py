@@ -102,3 +102,62 @@ E("antar_entitas.ppn_rate_percent", group="antar-entitas", type="pct", default=0
   impact="Menentukan besar PPN keluaran penjual & PPN masukan pembeli internal.",
   example="0 → 12% × DPP 11/12 · harga Rp 10.000.000 → DPP Rp 9.166.667, PPN Rp 1.100.000",
   consumers=("services/interco_service.py:_resolve_tax",), risk="medium")
+
+
+# ── KF-T2 — jadwal bayar antar-PT (LN-024 / KLX-03). Dulu form "Cutoff" di tab Jadwal Bayar yang menulis `PUT /api/settings`
+# langsung (tanpa riwayat) dan dua sakelar yang tidak punya layar sama sekali. Jalur simpan sama
+# (`system_settings.interco_payment.*`) sehingga nilai lama terbaca sebagai lapisan "pengaturan lama". Wewenang tetap
+# `entity.update` (sama dengan syarat `PUT /api/settings` hari ini).
+_IC_PAY_PERM = ("entity", "update")
+
+E("interco_payment.allow_netting", group="antar-entitas", type="bool", default=False, scopes=G,
+  sensitif_baca=False, permission=_IC_PAY_PERM, risk="medium",
+  label="Izinkan saling hapus hutang antar-PT",
+  help="Bila tidak, tiap transaksi antar-PT dibayar penuh lewat transfer atau kas.",
+  impact="Bila diizinkan, pelunasan antar-PT boleh memakai metode saling hapus (netting) untuk PT pembayar ini.",
+  example="Tidak → pelunasan KSC ke Kanda dengan metode saling hapus ditolak; pilih transfer atau kas",
+  consumers=("services/interco_service.py:create_settlement",))
+
+E("interco_payment.require_full_payment", group="antar-entitas", type="bool", default=True, scopes=G,
+  sensitif_baca=False, permission=_IC_PAY_PERM, risk="medium",
+  label="Pembayaran antar-PT harus penuh per transaksi",
+  help="Bila ya, pelunasan sebagian ditolak.",
+  impact="Bila dimatikan, satu transaksi antar-PT boleh dilunasi bertahap.",
+  example="Ya → sisa tagihan Rp 10.000.000 dibayar Rp 4.000.000 → ditolak",
+  consumers=("services/interco_service.py:create_settlement",))
+
+E("interco_payment.cutoff_day", group="antar-entitas", type="int", default=0, min=0, max=31, step=1, unit="tanggal",
+  scopes=G, sensitif_baca=False, permission=_IC_PAY_PERM, risk="medium",
+  label="Tanggal tutup tagihan antar-PT",
+  help="Transaksi sampai tanggal ini masuk jadwal bayar bulan itu. 0 = belum diatur (jadwal dan pengingat tidak berjalan).",
+  impact="Menentukan periode bayar tiap transaksi antar-PT di tab Jadwal Bayar dan kapan pengingat dikirim.",
+  example="25 → transaksi 25 Oktober masuk periode Oktober, transaksi 26 Oktober masuk periode November",
+  consumers=("services/interco_service.py:payment_schedule",))
+
+E("interco_payment.payment_day", group="antar-entitas", type="int", default=0, min=0, max=31, step=1, unit="tanggal",
+  scopes=G, sensitif_baca=False, permission=_IC_PAY_PERM, risk="medium",
+  label="Tanggal bayar antar-PT",
+  help="0 = akhir bulan.",
+  impact="Menentukan tanggal bayar yang tampil di jadwal dan dasar pengingat bayar antar-PT.",
+  example="28 → transaksi periode Oktober jatuh tempo 28 Oktober; 0 → 31 Oktober",
+  consumers=("services/interco_service.py:payment_schedule",))
+
+E("interco_payment.basis", group="antar-entitas", type="enum", default="", scopes=G,
+  options=[{"value": "", "label": "Belum diatur"},
+           {"value": "receipt", "label": "Tanggal barang diterima"},
+           {"value": "invoice", "label": "Tanggal invoice"},
+           {"value": "document", "label": "Tanggal dokumen"}],
+  sensitif_baca=False, permission=_IC_PAY_PERM, risk="medium",
+  label="Tanggal acuan jadwal bayar antar-PT",
+  help="Tanggal mana yang dibandingkan dengan tanggal tutup.",
+  impact="Belum diatur = jadwal bayar dan pengingat antar-PT tidak berjalan.",
+  example="Tanggal barang diterima · tutup tanggal 25 · barang diterima 26 Oktober → periode November",
+  consumers=("services/interco_service.py:payment_schedule",))
+
+E("interco_payment.reminder_days", group="antar-entitas", type="duration", default=3, min=0, max=30, step=1,
+  unit="hari", scopes=G, sensitif_baca=False, permission=_IC_PAY_PERM, risk="medium",
+  label="Ingatkan sebelum tanggal bayar antar-PT",   # KF-T2 — ≤ 45 huruf (standar §2.1)
+  help="0 = tanpa pengingat.",
+  impact="Mengubah kapan finance PT pembayar menerima pengingat bayar antar-PT.",
+  example="3 → tanggal bayar 28 Oktober, pengingat dikirim mulai 25 Oktober",
+  consumers=("services/interco_service.py:job_interco_payment_reminder",))
