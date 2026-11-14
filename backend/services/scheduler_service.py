@@ -50,6 +50,7 @@ from services import ai_schedules as _aisched            # Tanya KN F4 — lapor
 from services import analytics_snapshots as _snaps       # Tanya KN F5 — snapshot stok & piutang
 from services import ai_chat_service as _aichat          # Tanya KN §7.3 — prewarm cache prompt
 from services import ai_insights as _aiins               # Tanya KN — peringatan anomali harian
+from services import config_resolver as _cfgres          # KF-T3 — pengaturan terjadwal yang jatuh tempo
 
 logger = logging.getLogger("scheduler")
 
@@ -289,6 +290,10 @@ JOBS: List[Dict[str, Any]] = [
      "description": "Tiap pagi memindai penjualan turun per sales, piutang mulai macet, stok yang akan habis, dan PO "
                     "supplier terlambat; hasilnya tampil di tab Peringatan Tanya KN dan dikirim ke lonceng. Tanpa biaya AI.",
      "kind": "daily", "hour": 7, "minute": 0, "fn": _aiins.job_ai_anomaly_scan, "link": "tanya-kn"},
+    # ── KF-T3 (KF-09) — dulu nilai berjadwal hanya disalin ke penyimpanan lama saat layar Pengaturan dibuka ──
+    {"id": "config_apply_due", "label": "Aktifkan Pengaturan Terjadwal",
+     "description": "Menerapkan perubahan pengaturan yang tanggal berlakunya sudah tiba.",
+     "kind": "interval", "interval_minutes": 5, "fn": _cfgres.job_config_apply_due, "link": "settings-config"},
 ]
 JOB_MAP: Dict[str, Dict[str, Any]] = {j["id"]: j for j in JOBS}
 

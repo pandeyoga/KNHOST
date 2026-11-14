@@ -27,6 +27,12 @@ class ConfigBulkValuesIn(BaseModel):
     items: List[ConfigValueIn] = Field(default_factory=list)
 
 
+class ConfigCancelScheduledIn(BaseModel):
+    """KF-T3 — batalkan satu perubahan berjadwal (`id` baris `config_values`) sebelum berlaku."""
+    id: str
+    reason: str = Field("", max_length=500)
+
+
 class ConfigSimulateIn(BaseModel):
     simulator: str = ""
     key: str = ""                     # dipakai bila simulator tidak disebut eksplisit

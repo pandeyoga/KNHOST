@@ -17,8 +17,16 @@ Desain:
 - PK-46 — kecuali kunci registry `bertanggal`: tidak diproyeksikan dan tidak membaca lapisan lama; nilainya untuk
   tanggal tertentu dibaca dengan `resolve(key, ctx, at=<waktu>)`.
 
-INV-CFG-03: baris `config_values` tidak pernah di-update pada field nilai. Hanya
-`applied_at` (penanda bookkeeping proyeksi) yang boleh diisi sekali.
+INV-CFG-03: baris `config_values` tidak pernah di-update pada field nilai. Penanda yang boleh diisi SEKALI:
+`applied_at` (penanda bookkeeping proyeksi) dan — KF-T3 — `cancelled_at` (+ `cancelled_by`, `cancelled_by_id`,
+`cancel_reason`) pada baris berjadwal yang dibatalkan sebelum berlaku. Baris ber-`cancelled_at` diabaikan resolver dan
+`apply_due_values`, tetapi tetap tampil di riwayat (`cancelled: true`).
+
+KF-T3 — `resolve()` juga menanyakan PENIMPAAN TERDAFTAR (`services/config_overrides.py`): bila aturan lain menimpa
+nilai lapisan (mis. PT bukan PKP → tarif PPN 0), `value` = nilai yang dipakai mesin, `stored_value` = nilai lapisan
+pemenang, `overridden_by` = siapa yang menimpa, dan `explain` mendapat lapisan terakhir `override` sebagai pemenang.
+Perubahan berjadwal diterapkan begitu jatuh tempo oleh `ensure_due_applied()` (dipanggil pembaca lama) dan job
+penjadwal `config_apply_due`, bukan hanya saat layar Pengaturan dibuka.
 """
 import logging
 from datetime import datetime, timezone
@@ -43,6 +51,7 @@ LAYER_ORDER: List[str] = [
     "customer",
     "product",
     "document",
+    "override",   # KF-T3 — penimpaan terdaftar (`config_overrides.PENIMPA`), selalu paling akhir
 ]
 LAYER_LABEL = {
     "code_default": "Default sistem",
@@ -55,6 +64,7 @@ LAYER_LABEL = {
     "product": "Produk",
     "document": "Dokumen",
     "hypothetical": "Simulasi (belum disimpan)",
+    "override": "Ditimpa aturan lain",   # KF-T3
 }
 # Lapisan yang berasal dari `config_values` (bisa ditulis lewat API baru).
 WRITABLE_LAYERS = ("global", "entity", "supplier", "customer", "product", "document")
@@ -119,6 +129,8 @@ async def _stored_rows(keys: List[str], ctx: Dict[str, Any]) -> Dict[Tuple[str, 
     cur = db[COLL].find({"key": {"$in": keys}, "$or": ors}, {"_id": 0})
     out: Dict[Tuple[str, str], List[Dict[str, Any]]] = {}
     async for row in cur:
+        if row.get("cancelled_at"):          # KF-T3 — jadwal yang dibatalkan tidak pernah berlaku
+            continue
         out.setdefault((row["key"], row["scope_type"]), []).append(row)
     for rows in out.values():
         rows.sort(key=lambda r: (str(r.get("effective_from") or ""), str(r.get("created_at") or "")))
@@ -209,7 +221,9 @@ async def build_layers(key: str, ctx: Optional[Dict[str, Any]] = None,
             "changed_at": (win or {}).get("changed_at", ""),
             "reason": (win or {}).get("reason", ""),
             "effective_from": (win or {}).get("effective_from", ""),
-            "scheduled": [{"value": s.get("value"), "effective_from": s.get("effective_from"),
+            # KF-T3 — `id` + cakupan supaya layar bisa menyebut lapisannya dan membatalkan jadwal itu.
+            "scheduled": [{"id": s.get("id", ""), "scope_type": layer, "scope_id": s.get("scope_id", ""),
+                           "value": s.get("value"), "effective_from": s.get("effective_from"),
                            "changed_by": s.get("changed_by", ""), "reason": s.get("reason", "")}
                           for s in sched],
         }
@@ -274,11 +288,30 @@ async def resolve(key: str, ctx: Optional[Dict[str, Any]] = None,
         winner = layers[-1]
     else:
         winner = _decide(layers)
+    value = winner.get("value")
+    stored = value
+    overridden_by: Optional[Dict[str, Any]] = None
+    if hypothetical is _MISSING:
+        # KF-T3 (KF-04) — aturan lain yang menimpa nilai lapisan (PT bukan PKP, wajib transfer antar-PT, Master Grade).
+        from services.config_overrides import penimpa
+        overridden_by = await penimpa(key, ctx or {}, stored)
+        if overridden_by is not None:
+            value = overridden_by["value"]
+            for lay in layers:
+                lay["winner"] = False
+            layers.append({
+                "layer": "override", "label": LAYER_LABEL["override"], "scope_id": "",
+                "present": True, "value": value, "winner": True, "note": overridden_by["label"],
+                "changed_by": "", "changed_at": "", "reason": "", "effective_from": "",
+            })
     return {
         "key": key,
-        "value": winner.get("value"),
+        "value": value,
+        # KF-T3 — lapisan asal NILAI TERSIMPAN (yang bisa diubah/dicabut di kartu); penimpa ada di `overridden_by`.
         "source_layer": winner["layer"],
         "source_label": winner["label"],
+        "stored_value": stored,
+        "overridden_by": overridden_by,
         "type": entry["type"],
         "status": entry["status"],
         "explain": layers,
@@ -319,6 +352,8 @@ async def resolve_group(group_id: Optional[str] = None, ctx: Optional[Dict[str, 
             "row_shape", "columns", "editable", "bertanggal")},
             "value": res["value"], "source_layer": res["source_layer"],
             "source_label": res["source_label"], "scheduled": res["scheduled"],
+            # KF-T3 — nilai tersimpan + penimpa (null bila tidak ditimpa): kartu menulis siapa yang menimpa.
+            "stored_value": res["stored_value"], "overridden_by": res["overridden_by"],
             "is_default": res["source_layer"] == "code_default"})
     return out
 
@@ -364,7 +399,7 @@ async def set_value(key: str, value: Any, *, scope_type: str = "global", scope_i
         "scope_type": scope_type,
         "scope_id": scope_id,
         "value": clean,
-        "prev_value": prev["value"],
+        "prev_value": prev["stored_value"],   # KF-T3 — riwayat = perubahan nilai TERSIMPAN (bukan nilai penimpa)
         "prev_source_layer": prev["source_layer"],
         "effective_from": eff,
         "effective_to": "",
@@ -382,6 +417,8 @@ async def set_value(key: str, value: Any, *, scope_type: str = "global", scope_i
         await _project(entry, scope_type, scope_id, clean, actor)
         await db[COLL].update_one({"id": row["id"]}, {"$set": {"applied_at": _iso_now()}})
         row["applied_at"] = row["changed_at"]
+    else:
+        _catat_jadwal(_as_dt(eff))           # KF-T3 — `ensure_due_applied` tahu kapan harus menerapkan
     row.pop("_id", None)
     return row
 
@@ -455,7 +492,7 @@ async def clear_layer(key: str, *, scope_type: str, scope_id: str = "",
         "id": new_id("cfgv"), "key": key,
         "scope_type": scope_type, "scope_id": scope_id,
         "value": None, "cleared": True,
-        "prev_value": prev["value"], "prev_source_layer": prev["source_layer"],
+        "prev_value": prev["stored_value"], "prev_source_layer": prev["source_layer"],   # KF-T3 — nilai tersimpan
         "effective_from": _iso_now(), "effective_to": "",
         "reason": (reason or "").strip() or "Kembalikan ke nilai global",
         "changed_by": actor, "changed_by_id": actor_id, "approved_by": "",
@@ -550,13 +587,14 @@ async def entity_overlay(legacy_scope: str, entity_id: str) -> Dict[str, Any]:
 async def apply_due_values() -> Dict[str, int]:
     """Terapkan perubahan berjadwal yang sudah jatuh tempo (idempotent).
 
-    Dipanggil saat membaca Pusat Pengaturan dan oleh scheduler, sehingga nilai
-    "berlaku sejak" otomatis aktif tanpa intervensi manual.
+    Dipanggil oleh `ensure_due_applied` (pembaca lama), job penjadwal `config_apply_due`, dan saat membaca Pusat
+    Pengaturan, sehingga nilai "berlaku sejak" otomatis aktif tanpa intervensi manual. KF-T3 — baris yang dibatalkan
+    dilewati; `applied_at` diisi bersyarat (sekali saja, juga bila dua pemanggil berjalan bersamaan).
     """
     now = datetime.now(timezone.utc)
     applied = 0
     cur = db[COLL].find({"applied_at": ""}, {"_id": 0})
-    pending: List[Dict[str, Any]] = [r async for r in cur if _is_due(r, now)]
+    pending: List[Dict[str, Any]] = [r async for r in cur if not r.get("cancelled_at") and _is_due(r, now)]
     pending.sort(key=lambda r: (str(r.get("effective_from")), str(r.get("created_at"))))
     for row in pending:
         entry = registry.get(row["key"])
@@ -564,9 +602,103 @@ async def apply_due_values() -> Dict[str, int]:
             continue
         await _project(entry, row["scope_type"], row.get("scope_id", ""),
                        row["value"], row.get("changed_by", "scheduler"))
-        await db[COLL].update_one({"id": row["id"]}, {"$set": {"applied_at": _iso_now()}})
-        applied += 1
+        res = await db[COLL].update_one({"id": row["id"], "applied_at": "", "cancelled_at": {"$exists": False}},
+                                        {"$set": {"applied_at": _iso_now()}})
+        if getattr(res, "modified_count", 1):
+            applied += 1
+    await _muat_jadwal()
     return {"applied": applied, "pending": len(pending) - applied}
+
+
+# ── KF-T3 (KF-09) — jadwal diterapkan begitu jatuh tempo ────────────────────────────────────────────────────────────
+#: Cache memori proses: waktu jatuh tempo terdekat dari baris `applied_at == ""` tanpa `cancelled_at`.
+#: `{}` = belum dimuat; `{"dimuat": True, "berikut": None}` = tidak ada jadwal tertunda (nol kueri).
+#: ASUMSI (unit KF-T3): satu proses server; proses lain baru segar saat job lima menit berjalan.
+_JATUH_TEMPO: Dict[str, Any] = {}
+
+
+async def _muat_jadwal() -> None:
+    berikut: Optional[datetime] = None
+    async for r in db[COLL].find({"applied_at": ""}, {"_id": 0, "key": 1, "effective_from": 1, "cancelled_at": 1}):
+        if r.get("cancelled_at") or not registry.get(r.get("key", "")):
+            continue                         # baris kunci yang sudah tidak terdaftar tidak pernah diterapkan
+        t = _as_dt(r.get("effective_from")) or datetime.min.replace(tzinfo=timezone.utc)
+        if berikut is None or t < berikut:
+            berikut = t
+    _JATUH_TEMPO.clear()
+    _JATUH_TEMPO.update({"dimuat": True, "berikut": berikut})
+
+
+def _catat_jadwal(t: Optional[datetime]) -> None:
+    """`set_value` berjadwal: majukan waktu jatuh tempo terdekat bila cache sudah dimuat."""
+    if not _JATUH_TEMPO.get("dimuat") or t is None:
+        return
+    cur = _JATUH_TEMPO.get("berikut")
+    if cur is None or t < cur:
+        _JATUH_TEMPO["berikut"] = t
+
+
+def _lupakan_jadwal() -> None:
+    """Pembatalan jadwal: cache dihitung ulang pada pembacaan berikutnya."""
+    _JATUH_TEMPO.clear()
+
+
+async def ensure_due_applied() -> Dict[str, int]:
+    """Terapkan jadwal yang sudah jatuh tempo SEBELUM pembaca lama membaca `system_settings`.
+
+    Dipanggil baris pertama `config_service.get_global_settings()` dan `policy_settings()`. Tanpa jadwal tertunda
+    biayanya nol kueri (sesudah pemuatan pertama)."""
+    if not _JATUH_TEMPO.get("dimuat"):
+        await _muat_jadwal()
+    berikut = _JATUH_TEMPO.get("berikut")
+    if berikut is None or datetime.now(timezone.utc) < berikut:
+        return {"applied": 0, "pending": 0}
+    return await apply_due_values()
+
+
+async def job_config_apply_due() -> Dict[str, Any]:
+    """Job penjadwal `config_apply_due` (setiap 5 menit) — jaring pengaman untuk proses lain / baris tanpa pembaca."""
+    res = await apply_due_values()
+    return {**res, "scanned": res["applied"] + res["pending"],
+            "detail": f"{res['applied']} perubahan pengaturan diterapkan"}
+
+
+class ScheduleError(ValueError):
+    """KF-T3 — pembatalan jadwal ditolak; `status` = kode HTTP, pesan siap tampil."""
+
+    def __init__(self, status: int, message: str):
+        super().__init__(message)
+        self.status = status
+
+
+async def scheduled_row(row_id: str) -> Dict[str, Any]:
+    row = await db[COLL].find_one({"id": row_id}, {"_id": 0}) if row_id else None
+    if not row or not registry.get(row.get("key", "")):
+        raise ScheduleError(404, "Jadwal perubahan tidak ditemukan.")
+    return row
+
+
+async def cancel_scheduled(row_id: str, *, actor: str = "system", actor_id: str = "",
+                           reason: str = "") -> Dict[str, Any]:
+    """Batalkan satu baris berjadwal yang belum berlaku. Nilai yang berlaku sekarang tidak berubah."""
+    row = await scheduled_row(row_id)
+    entry = registry.require(row["key"])
+    if row.get("cancelled_at"):
+        raise ScheduleError(409, "Jadwal ini sudah dibatalkan.")
+    sudah = ("Perubahan ini sudah berlaku, jadi tidak bisa dibatalkan. Simpan nilai baru bila ingin mengubahnya.")
+    if row.get("applied_at") or _is_due(row, datetime.now(timezone.utc)):
+        raise ScheduleError(409, sudah)
+    alasan = (reason or "").strip()
+    if entry["requires_reason"] and not alasan:
+        raise ScheduleError(400, "Alasan pembatalan wajib diisi.")
+    tanda = {"cancelled_at": _iso_now(), "cancelled_by": actor, "cancelled_by_id": actor_id, "cancel_reason": alasan}
+    res = await db[COLL].update_one(
+        {"id": row_id, "applied_at": "", "cancelled_at": {"$exists": False}}, {"$set": tanda})
+    if not getattr(res, "modified_count", 1):
+        now = await db[COLL].find_one({"id": row_id}, {"_id": 0}) or {}
+        raise ScheduleError(409, "Jadwal ini sudah dibatalkan." if now.get("cancelled_at") else sudah)
+    _lupakan_jadwal()
+    return {**row, **tanda}
 
 
 async def history(key: str = "", scope_type: str = "", scope_id: str = "",
@@ -585,7 +717,8 @@ async def history(key: str = "", scope_type: str = "", scope_id: str = "",
         r["label"] = e["label"] if e else r["key"]
         r["group"] = e["group"] if e else ""
         r["unit"] = e["unit"] if e else ""
-        r["scheduled"] = not _is_due(r, datetime.now(timezone.utc))
+        r["cancelled"] = bool(r.get("cancelled_at"))      # KF-T3 — jadwal yang dibatalkan tetap tercatat
+        r["scheduled"] = not r["cancelled"] and not _is_due(r, datetime.now(timezone.utc))
     return rows
 
 
@@ -606,6 +739,7 @@ async def policy_settings(legacy_scope: str, defaults: Dict[str, Any], entity_id
     Dipakai `get_settings` lot/makloon/receiving/uom (dulu empat salinan AST identik).
     Tanpa `entity_id` hasilnya = nilai global; `entity_overrides` = kunci yang ditimpa PT.
     """
+    await ensure_due_applied()   # KF-T3 (KF-09) — jadwal yang jatuh tempo berlaku sebelum dokumen lama dibaca
     doc = await db.system_settings.find_one({"scope": legacy_scope}, {"_id": 0}) or {}
     out = dict(defaults)
     for key in defaults:

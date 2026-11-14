@@ -270,6 +270,10 @@ _BUANG = object()
 
 
 async def get_global_settings() -> Dict[str, Any]:
+    # KF-T3 (KF-09) — perubahan berjadwal yang sudah jatuh tempo diterapkan dulu (nol kueri bila tidak ada jadwal), supaya
+    # semua pembaca lama (`get_effective_settings` dkk.) tidak tertinggal sampai layar Pengaturan dibuka.
+    from services.config_resolver import ensure_due_applied
+    await ensure_due_applied()
     doc = await db.system_settings.find_one({"scope": GLOBAL_SCOPE}, {"_id": 0})
     if not doc:
         await seed_config_defaults()

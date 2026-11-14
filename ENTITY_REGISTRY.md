@@ -1635,6 +1635,23 @@ Berkas data pajak:
    backend/tests_mem/data/pph21_snapshot_kode_lama.json — perilaku kode lama (dibuat buat_snapshot_pph21.py)
 ```
 
+### config_values — pembatalan jadwal  [KF-T3]
+```
+Collection:  config_values            Prefix: cfgv_   (append-only; FASE G-0)
+Service:     services/config_resolver.py (cancel_scheduled · ensure_due_applied · apply_due_values · history)
+Router:      POST /api/config/values/cancel-scheduled  {id, reason} — izin pengubah kunci itu + lapisan barisnya
+Field baru (PENANDA, bukan field nilai — hanya pada baris berjadwal yang dibatalkan sebelum berlaku):
+  cancelled_at      teks ISO   saat jadwal dibatalkan; ada = baris diabaikan resolver & apply_due_values
+  cancelled_by      teks       nama pembatal
+  cancelled_by_id   teks       id pembatal
+  cancel_reason     teks       alasan (wajib untuk kunci berisiko tinggi)
+
+⚠️ INV-CFG-03 diperluas: penanda yang boleh diisi SEKALI = applied_at, cancelled_at. Field nilai tetap tidak diubah.
+⚠️ Riwayat (`GET /api/config/history`) tetap memuat baris yang dibatalkan dengan `cancelled: true`.
+⚠️ Tanpa migrasi. Penimpaan terdaftar (PT bukan PKP, wajib transfer antar-PT, Master Grade) = services/config_overrides.py
+   — tidak menyimpan apa pun; resolver menambah `stored_value` + `overridden_by` pada jawabannya.
+```
+
 ### payment_terms  [Fase 1A IMPLEMENTED]
 ```
 Collection:  payment_terms             Prefix: pterm_

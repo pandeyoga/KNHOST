@@ -6,6 +6,7 @@ Satu pintu API untuk seluruh konfigurasi sistem:
   GET  /api/config/explain         — "kenapa nilainya begini?" (jejak lapisan)
   POST /api/config/simulate        — "coba dulu" sebelum menyimpan
   PUT  /api/config/values          — simpan (append-only + proyeksi ke mesin lama)
+  POST /api/config/values/cancel-scheduled — KF-T3: batalkan perubahan berjadwal yang belum berlaku
   GET  /api/config/history         — riwayat siapa-ubah-apa-kapan-kenapa
   GET  /api/config/layers          — KF-T5: pelanggan/barang yang punya aturan khusus untuk satu kunci
   GET  /api/config/health          — kesehatan wiring (tidak ada tombol palsu)
@@ -22,7 +23,7 @@ from fastapi import APIRouter, HTTPException, Request
 import config_registry as registry
 from dependencies import audit, current_user, permission_matrix, require_permission
 from schemas_config import (
-    ConfigBulkValuesIn, ConfigSimulateIn, ConfigValueIn, ImpactApplyIn, ImpactPreviewIn,
+    ConfigBulkValuesIn, ConfigCancelScheduledIn, ConfigSimulateIn, ConfigValueIn, ImpactApplyIn, ImpactPreviewIn,
 )
 from services import config_health, config_simulator
 from services import config_resolver as resolver
@@ -388,6 +389,33 @@ async def clear_value_layer(payload: ConfigValueIn, request: Request) -> Dict[st
                  "from": row["prev_value"], "now": row.get("value_now"),
                  "now_source": row.get("source_label_now")}, reason=row["reason"])
     return row
+
+
+@router.post("/values/cancel-scheduled")
+async def cancel_scheduled_value(payload: ConfigCancelScheduledIn, request: Request) -> Dict[str, Any]:
+    """KF-T3 (KF-09) — batalkan satu perubahan berjadwal yang belum berlaku. Wewenang = pengubah kunci itu
+    (`_may_edit`) pada lapisan barisnya (`_assert_scope_write`). Baris tetap tersimpan (append-only) dengan penanda
+    `cancelled_at`; nilai yang berlaku sekarang tidak berubah."""
+    actor = await current_user(request)
+    perms = await _allowed(actor)
+    try:
+        row = await resolver.scheduled_row(payload.id)
+    except resolver.ScheduleError as exc:
+        raise HTTPException(status_code=exc.status, detail=str(exc)) from exc
+    entry = registry.require(row["key"])
+    if not _may_edit(entry, actor, perms):
+        raise HTTPException(status_code=403, detail=_perm_error(entry))
+    await _assert_scope_write(request, entry, row.get("scope_type") or "global", row.get("scope_id") or "")
+    try:
+        out = await resolver.cancel_scheduled(payload.id, actor=actor.get("name", ""), actor_id=actor.get("id", ""),
+                                              reason=payload.reason)
+    except resolver.ScheduleError as exc:
+        raise HTTPException(status_code=exc.status, detail=str(exc)) from exc
+    await audit(actor.get("name", ""), "config_schedule_cancelled", "config_values", out["id"],
+                {"key": out["key"], "scope": f"{out.get('scope_type')}:{out.get('scope_id') or '-'}",
+                 "value": out.get("value"), "effective_from": out.get("effective_from")},
+                reason=out.get("cancel_reason", ""))
+    return out
 
 
 @router.get("/history")
