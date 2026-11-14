@@ -666,7 +666,9 @@ async def finance_desk(actor: Dict[str, Any], scope: Dict[str, Any],
                                                         if r.get("revenue_recognized"))},
             "not_my_desk": ["Membuat / mengonfirmasi pesanan",
                             "Keputusan pemenuhan (ambil dari PT lain · reorder)",
-                            "Sisi hutang lainnya: tagihan supplier · kontrabon · landed cost"]}
+                            # MN-T1/PK-38 (K-17): Finance kini MELIHAT dan MEMBAYAR hutang (tagihan pemasok, kontrabon);
+                            # yang tetap bukan wewenangnya: membuat tagihan, memverifikasi/menyetujui kontrabon, landed cost.
+                            "Membuat tagihan pemasok · memverifikasi & menyetujui kontrabon · landed cost"]}
 
 
 async def _fully_decided(order_ids: List[str]) -> List[str]:
