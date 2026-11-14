@@ -9,6 +9,9 @@
  * L-07: matriks → `.data-table`. L-03/L-08: pop-up & bilah alat di GroupConsolidationParts.jsx. L-04 kelas C:
  * DesktopOnlyNotice di HP.
  * Fase 4 · R2 (G1-33) — peringatan entri eliminasi otomatis basi (`eliminations_stale` dari ringkasan, R6).
+ * PK-31 — persen kepemilikan per PT di kepala kolom + Bagian non-pengendali/pemilik induk (K-10); eliminasi otomatis
+ * antar-PT per bulan (lencana Beku / Bulan berjalan) dari `auto_eliminations`; peringatan bulan beku yang berbeda dari
+ * hitung ulang (`eliminations_period_stale`).
  */
 import { apiErrorText } from "../../utils/apiError";
 import KNDatePicker from "@/components/KNDatePicker";
@@ -25,6 +28,7 @@ import { formatCurrency, formatDate } from "../../utils/formatters";
 import { askConfirm, askReason } from "@/services/confirmService";
 import { stripInternalCodes } from "../../utils/cleanText";
 import { EliminationsPanel, EliminationModal, DetectModal, StaleEliminationsNotice } from "./GroupConsolidationParts";
+import { AutoEliminationsByMonth, OwnershipShare, PeriodStaleNotice } from "./ConsolidationPeriodParts";
 
 const NOW = new Date();
 const YEARS = Array.from({ length: 6 }, (_, i) => {
@@ -32,6 +36,8 @@ const YEARS = Array.from({ length: 6 }, (_, i) => {
   return { value: y, label: y };
 });
 const ymd = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+// PK-31 (K-10) — persen kepemilikan grup atas PT (bawaan 100 %).
+const pct = (v) => `${Number(v ?? 100).toLocaleString("id-ID", { maximumFractionDigits: 2 })} %`;
 
 const PNL_ROWS = [
   { key: "revenue", label: "Pendapatan" },
@@ -128,8 +134,8 @@ export default function GroupConsolidationView({ entities = [] }) {
   const syncG6 = async () => {
     if (!(await askConfirm({
       title: "Sinkronkan eliminasi antar-PT?",
-      message: `Entri eliminasi otomatis per ${formatDate(asOf)} dibuat/diperbarui/dihapus mengikuti transaksi antar-PT. `
-        + "Laporan konsolidasi grup ikut berubah; jurnal per-PT tidak tersentuh.",
+      message: "Entri eliminasi otomatis per bulan dihitung ulang dari data antar-PT bertanggal; bulan yang sudah "
+        + "ditutup di kedua PT tidak ditimpa. Jurnal per-PT tidak tersentuh.",
       confirmLabel: "Sinkronkan",
     }))) return;
     setBusy(true); setError(""); setNotice("");
@@ -139,7 +145,8 @@ export default function GroupConsolidationView({ entities = [] }) {
       setNotice(
         `Eliminasi antar-PT tersinkron: ${d.created || 0} baru · ` +
         `${d.updated || 0} diperbarui · ${d.removed || 0} dihapus · ` +
-        `${d.skipped_existing || 0} sudah pas — dari ${d.pairs_seen || 0} transaksi antar-PT.`);
+        `${d.skipped_existing || 0} sudah pas — dari ${d.pairs_seen || 0} transaksi antar-PT.`
+        + ((d.stale || []).length ? ` ${(d.stale || []).length} bulan beku berbeda dari hitung ulang.` : ""));
       load();
     } catch (e) {
       setError(stripInternalCodes(e.response?.data?.detail) || "Gagal menyinkronkan eliminasi antar-PT.");
@@ -177,15 +184,26 @@ export default function GroupConsolidationView({ entities = [] }) {
   };
 
   const entityCols = data?.entities || [];
+  // PK-31 — entri eliminasi otomatis antar-PT per bulan datang dari ringkasan (dihitung dari data bertanggal);
+  // daftar koleksi di tab Eliminasi tinggal entri manual & pasangan jurnal lama.
+  const autoElims = Array.isArray(data?.auto_eliminations) ? data.auto_eliminations : [];
+  const manualElims = elims.filter((e) => !e.source_g6_pair_id);
   const colClass = "text-right tabular-nums whitespace-nowrap";
 
   const renderMatrix = (rows) => (
     <div className="table-wrap" data-testid={`cons-matrix-${tab}`}>
-      <table className="data-table">
+      <table className="data-table head-wrap">
         <thead>
           <tr>
             <th className="sticky left-0 z-[2]">Pos</th>
-            {entityCols.map((e) => <th key={e.entity_id} className="text-right">{e.short_name}</th>)}
+            {entityCols.map((e) => (
+              <th key={e.entity_id} className="text-right">
+                {e.short_name}
+                <span className="block text-fs-12 font-normal text-kn-text-2" data-testid={`cons-ownership-${e.entity_id}`}>
+                  Kepemilikan {pct(e.ownership_pct)}
+                </span>
+              </th>
+            ))}
             <th className="text-right !text-[#C0392B]">Eliminasi</th>
             <th className="text-right !text-[#0058CC]" title="Σ per-PT + eliminasi antar-PT">Konsolidasi</th>
           </tr>
@@ -214,7 +232,7 @@ export default function GroupConsolidationView({ entities = [] }) {
       <div className="section-card">
         <div className="section-head flex-wrap gap-2">
           <PageTabs testId="cons-tab" ariaLabel="Laporan konsolidasi" value={tab} onChange={setTab}
-            tabs={TABS.map((t) => ({ key: t.id, label: t.label, icon: t.icon, count: t.id === "elim" ? elims.length : undefined }))} />
+            tabs={TABS.map((t) => ({ key: t.id, label: t.label, icon: t.icon, count: t.id === "elim" ? manualElims.length + autoElims.length : undefined }))} />
           <div className="flex items-center gap-2 ml-auto">
             {tab === "pnl" && <div className="w-[110px]"><KNSelect data-testid="cons-year" className="field py-1.5 text-[12px]" value={year} onValueChange={setYear} options={YEARS} /></div>}
             {tab !== "pnl" && <KNDatePicker data-testid="cons-asof" className="w-[170px] text-[12px]" clearable={false} value={asOf} onChange={setAsOf} />}
@@ -226,6 +244,7 @@ export default function GroupConsolidationView({ entities = [] }) {
           <ErrorNotice message={error} onRetry={load} onDismiss={() => setError("")} testId="cons-error" />
           {/* Fase 4 · R2 (G1-33) — entri eliminasi basi dari server (R6); diam bila field tidak ada. */}
           <StaleEliminationsNotice stale={data?.eliminations_stale} />
+          <PeriodStaleNotice stale={data?.eliminations_period_stale} />
           {notice && (
             <div data-testid="cons-notice" className="mb-3 rounded-md bg-[#E6F6EC] border border-[#BDE5CC] text-[#1B7F4B] text-[12px] px-3 py-2 flex items-center gap-2">
               <CheckCircle2 size={14} />{notice}<button className="ml-auto" onClick={() => setNotice("")}><X size={13} /></button>
@@ -238,6 +257,7 @@ export default function GroupConsolidationView({ entities = [] }) {
             <>
               <div className="flex flex-wrap items-center gap-2 mb-2 text-[11px] text-[#8E8E93]" data-testid="cons-pnl-caption"><Layers size={13} className="text-[#0058CC]" /> Laba-Rugi Konsolidasi Tahun {year} — {entityCols.length} entitas · <b className="text-[#3C3C43]">kolom Konsolidasi = setelah eliminasi antar-PT</b></div>
               {renderMatrix(PNL_ROWS)}
+              <OwnershipShare data={data} year={year} asOf={asOf} />
             </>
           ) : tab === "bs" ? (
             <>
@@ -248,10 +268,14 @@ export default function GroupConsolidationView({ entities = [] }) {
                 </span>
               </div>
               {renderMatrix(BS_ROWS)}
+              <OwnershipShare data={data} year={year} asOf={asOf} />
             </>
           ) : (
-            <EliminationsPanel elims={elims} onAdd={() => setModal({})} onDetect={runDetect}
-                               onDelete={removeElim} onSyncG6={syncG6} onSyncPairs={syncPairs} busy={busy} />
+            <>
+              <AutoEliminationsByMonth entries={autoElims} />
+              <EliminationsPanel elims={manualElims} hasAuto={autoElims.length > 0} onAdd={() => setModal({})} onDetect={runDetect}
+                                 onDelete={removeElim} onSyncG6={syncG6} onSyncPairs={syncPairs} busy={busy} />
+            </>
           )}
           <p className="mt-2 text-[11px] text-[#9A9BA3]">Konsolidasi = Σ Per-PT + Eliminasi. Eliminasi bersifat adjustment grup (tidak mengubah jurnal per-PT). Neraca konsolidasi tetap seimbang bila entri eliminasi balanced.</p>
         </div>

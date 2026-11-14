@@ -5,7 +5,7 @@
  * (validate_compliance CHECK 1) dan tiap tabel bisa dibaca sendiri:
  *   * `TransactionsPanel` — daftar dokumen kembar + langkah berikutnya
  *   * `BalancesPanel`     — saldo pasangan PT + pengingat settlement (G-6b)
- *   * `SettlementsPanel`  — riwayat netting
+ *   * `SettlementsPanel`  — riwayat netting (+ refund antar-PT, PK-31)
  */
 import {
   AlertTriangle, Bell, Eye, Receipt, Truck, Undo2,
@@ -192,7 +192,22 @@ export function TransactionsPanel({
   );
 }
 
-export function BalancesPanel({ accounts, onNetting, onRemind, canWrite, netPairs }) {
+/** PK-31 (IC-07) — utang refund penjual (retur sesudah lunas) dari sudut pandang baris saldo. */
+export function RefundCell({ a }) {
+  const v = Number(a.refund_outstanding) || 0;
+  if (v <= 0.005) return <span className="text-kn-text-2">—</span>;
+  const penjual = a.role === "receivable";
+  return (
+    <div className="text-right" data-testid={`interco-refund-${a.id}`}>
+      <div className="tabular-nums font-semibold text-kn-warning-text">{formatCurrency(v)}</div>
+      <div className="text-fs-12 text-kn-text-2">
+        {penjual ? `Harus dikembalikan ke ${a.to_entity_name}` : `Akan diterima dari ${a.to_entity_name}`}
+      </div>
+    </div>
+  );
+}
+
+export function BalancesPanel({ accounts, onNetting, onRemind, canWrite, netPairs, canRefund = false, onRefund }) {
   const pairs = Array.isArray(netPairs) ? netPairs : null;
   return (
     <div className="space-y-3">
@@ -255,13 +270,14 @@ export function BalancesPanel({ accounts, onNetting, onRemind, canWrite, netPair
                 <th className="text-right px-4 py-3 font-medium">Terlunasi</th>
                 <th className="text-right px-4 py-3 font-medium">Diretur</th>
                 <th className="text-right px-4 py-3 font-medium">Sisa</th>
+                <th className="text-right px-4 py-3 font-medium">Pengembalian dana</th>
                 <th className="text-right px-4 py-3 font-medium" title="Sejak aktivitas nyata terakhir (dokumen/settlement)">Umur (aktivitas)</th>
-                <th className="text-right px-4 py-3 font-medium">Aksi</th>
+                <th className="text-right px-4 py-3 font-medium col-sticky-end">Aksi</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-[#F2F2F5]">
               {accounts.length === 0 && (
-                <tr><td colSpan={10} className="px-4 py-10 text-center text-[#8E8E93]">
+                <tr><td colSpan={11} className="px-4 py-10 text-center text-[#8E8E93]">
                   Belum ada saldo antar-PT.
                 </td></tr>
               )}
@@ -290,6 +306,7 @@ export function BalancesPanel({ accounts, onNetting, onRemind, canWrite, netPair
                   <td className="px-4 py-3 text-right tabular-nums font-medium text-[#1D1D1F]">
                     {formatCurrency(a.outstanding)}
                   </td>
+                  <td className="px-4 py-3"><RefundCell a={a} /></td>
                   <td className="px-4 py-3 text-right">
                     {a.aging_days || 0} hari
                     {a.reminder_active && (
@@ -299,8 +316,14 @@ export function BalancesPanel({ accounts, onNetting, onRemind, canWrite, netPair
                       </div>
                     )}
                   </td>
-                  <td className="px-4 py-3 text-right">
+                  <td className="px-4 py-3 text-right col-sticky-end">
                     <div className="inline-flex items-center gap-1">
+                      {canRefund && a.role === "receivable" && Number(a.refund_outstanding) > 0.005 && (
+                        <button type="button" onClick={() => onRefund?.(a)} data-testid={`interco-refund-btn-${a.id}`}
+                                className="secondary-button btn-sm whitespace-nowrap">
+                          Catat Pengembalian Dana
+                        </button>
+                      )}
                       {canWrite && a.role === "payable" && a.outstanding > 0 && (
                         <>
                           <button onClick={() => onRemind?.(a)}
@@ -351,7 +374,14 @@ export function SettlementsPanel({ rows, focusId = "" }) {
             )}
             {rows.map((s) => (
               <tr key={s.id} data-testid={`interco-set-${s.id}`} className={`hover:bg-[#FAFAFB] ${s.id === focusId ? "row-focus" : ""}`}>
-                <td className="px-4 py-3 font-medium text-[#1D1D1F]">{s.number}</td>
+                <td className="px-4 py-3 font-medium text-[#1D1D1F]">
+                  {s.number}
+                  {s.kind === "refund" && (
+                    <span className="status-pill bg-kn-warning-soft text-kn-warning-text ml-1" data-testid={`interco-set-refund-${s.id}`}>
+                      <Undo2 size={12} /> Pengembalian Dana
+                    </span>
+                  )}
+                </td>
                 <td className="px-4 py-3">{s.payer_entity_name}</td>
                 <td className="px-4 py-3">{s.payee_entity_name}</td>
                 <td className="px-4 py-3">

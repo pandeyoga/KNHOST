@@ -121,7 +121,7 @@ test("Wizard: isian mati hilang; mata uang & tahun buku dari Pusat Pengaturan; N
   expect(q("entity-wizard-fiscal-select").options.length).toBe(12);
   expect(q("entity-wizard-coa-note").textContent).toBe("Bagan akun dipakai bersama semua PT — kode akun sama, bukunya terpisah.");
   expect(q("entity-wizard-group").textContent).toContain("PT induk (konsolidasi)");
-  expect(q("entity-wizard-ownership").textContent).toContain("Belum memengaruhi angka");
+  expect(q("entity-wizard-ownership").textContent).toContain("bagian non-pengendali");
 
   await type(q("entity-wizard-npwp-input"), "12345");
   expect(q("entity-wizard-step-errors").textContent).toContain(NPWP_MSG);

@@ -9,11 +9,16 @@ kandidat akun intercompany.
 Prinsip keseimbangan: entri eliminasi harus balanced (Σdebit=Σkredit) sehingga
 `assets_elim = liabilities_elim + equity_total_elim` dan Neraca konsolidasi tetap
 seimbang. equity_total_elim = equity_langsung + net_income_elim.
+
+PK-31 (IC-03, RP-10, K-10) — eliminasi transaksi antar-PT (jual-beli G-6) kini PER BULAN dari data bertanggal
+(`services/interco_elimination_engine.py`): laporan per tanggal tertentu memberi angka yang sama kapan pun dibuka, dan
+bulan yang sudah ditutup di kedua PT memakai entri beku. Entri lain (manual, pasangan jurnal transfer lama, non-dagang)
+tetap dari koleksi. Ringkasan membawa persen kepemilikan tiap PT dan bagian non-pengendali.
 """
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional
 
 from db import db
-from core_utils import new_id, now_iso, rupiah, safe_doc
+from core_utils import new_id, now_iso, safe_doc
 from services import financial_statement_service as fs
 from services.consolidation_stale_service import stale_g6_eliminations   # Fase 4 · R6 (G1-33)
 from services.book_date import tanggal_buku   # PK-37
@@ -66,6 +71,7 @@ def _pnl_derive(m: Dict[str, float]) -> Dict[str, float]:
 # ═══════════════════════════════════════════════════════════════════════════
 
 async def _entity_row(eid: str, ent: Dict[str, Any], year: int, as_of: str) -> Dict[str, Any]:
+    from services.entity_lifecycle_service import ownership_of   # KP-T1 (K-10) — bawaan 100 bila belum diisi
     scope = {"entity_id": eid}
     pnl = await fs.income_statement(start=f"{year}-01-01", end=f"{year}-12-31", scope=scope)
     bs = await fs.balance_sheet(as_of=as_of, scope=scope)
@@ -85,6 +91,7 @@ async def _entity_row(eid: str, ent: Dict[str, Any], year: int, as_of: str) -> D
         "assets": float(bs.get("assets_total", 0) or 0),
         "liabilities": float(bs.get("liabilities_total", 0) or 0),
         "equity": float(bs.get("equity_total", 0) or 0),
+        "ownership_pct": ownership_of(ent),
     }
 
 
@@ -97,9 +104,15 @@ def _in_perimeter(e: Dict[str, Any], perimeter: set, full_group: bool) -> bool:
     return a in perimeter and b in perimeter
 
 
-async def _applicable_eliminations(year: int, as_of: str, entity_ids: Optional[List[str]] = None):
-    """Kembalikan (pl_elims, bs_elims, eligible) sesuai perimeter entitas + tanggal efektif."""
-    all_elims = await db.intercompany_eliminations.find({}, {"_id": 0}).to_list(2000)
+async def _applicable_eliminations(year: int, as_of: str, entity_ids: Optional[List[str]] = None,
+                                   exclude_g6: bool = False):
+    """Kembalikan (pl_elims, bs_elims, eligible) sesuai perimeter entitas + tanggal efektif.
+
+    PK-31 — `exclude_g6=True` membuang entri otomatis transaksi antar-PT (`source_g6_pair_id`, lama maupun per
+    bulan): angkanya dari `interco_elimination_engine.eliminations_for`. Bawaan `False` = perilaku lama (jalur
+    pembatalan: kembalikan `summary` ke fungsi ini)."""
+    q: Dict[str, Any] = {"source_g6_pair_id": {"$in": [None, ""]}} if exclude_g6 else {}
+    all_elims = [e async for e in db.intercompany_eliminations.find(q, {"_id": 0})]
     if entity_ids is not None:
         perimeter = set(entity_ids)
         group_ids = {e["id"] for e in await db.business_entities.find(
@@ -139,7 +152,12 @@ async def summary(entity_ids: List[str], year: int, as_of: str) -> Dict[str, Any
                   "net_income", "assets", "liabilities", "equity"]
     gross = {f: round(sum(float(r.get(f, 0) or 0) for r in rows), 2) for f in sum_fields}
 
-    pl_elims, bs_elims, _all = await _applicable_eliminations(year, as_of, list(entity_ids))
+    # PK-31 — antar-PT dari mesin per periode (bulan penuh: entri beku dari koleksi atau hitung dari data bertanggal;
+    # bulan berjalan: dihitung sampai `as_of`); entri lain dari koleksi.
+    from services import interco_elimination_engine as _eng
+    pl_g6, bs_g6, all_g6, period_stale = await _eng.eliminations_for(as_of, year, list(entity_ids))
+    pl_o, bs_o, all_o = await _applicable_eliminations(year, as_of, list(entity_ids), exclude_g6=True)
+    pl_elims, bs_elims, _all = pl_o + pl_g6, bs_o + bs_g6, all_o + all_g6
     pl_agg = _aggregate_impacts(pl_elims)
     bs_agg = _aggregate_impacts(bs_elims)
     pl_elim = _pnl_derive(pl_agg)
@@ -168,6 +186,13 @@ async def summary(entity_ids: List[str], year: int, as_of: str) -> Dict[str, Any
     consolidated["net_income"] = round(consolidated["revenue"] - consolidated["expense"], 2)
 
     balanced = abs(consolidated["assets"] - (consolidated["liabilities"] + consolidated["equity"])) < 1.0
+    # K-10 — bagian non-pengendali dari laba & ekuitas BUKU tiap PT (sebelum eliminasi; eliminasi seluruhnya ditanggung
+    # pemilik induk). Semua PT 100 % → nol.
+    nci_ni = round(sum(float(r["net_income"]) * (100.0 - float(r["ownership_pct"])) / 100.0 for r in rows), 2)
+    nci_eq = round(sum(float(r["equity"]) * (100.0 - float(r["ownership_pct"])) / 100.0 for r in rows), 2)
+    consolidated.update({"nci_net_income": nci_ni, "nci_equity": nci_eq,
+                         "net_income_parent": round(consolidated["net_income"] - nci_ni, 2),
+                         "equity_parent": round(consolidated["equity"] - nci_eq, 2)})
     stale = await stale_g6_eliminations(_all)
 
     return {
@@ -185,8 +210,22 @@ async def summary(entity_ids: List[str], year: int, as_of: str) -> Dict[str, Any
         # dilaporkan supaya layar bisa memperingatkan "jalankan Sinkron Antar-PT / periksa data".
         "eliminations_stale": stale,
         "eliminations_stale_count": len(stale),
+        # PK-31 — entri otomatis antar-PT per bulan yang dipakai laporan ini (layar mengelompokkan per bulan) dan bulan
+        # beku yang berbeda dari hitung ulang (ada jurnal mundur ke bulan tertutup).
+        "auto_eliminations": [_ringkas_otomatis(e) for e in all_g6],
+        "eliminations_period_stale": period_stale,
+        "has_minority": any(float(r["ownership_pct"]) < 100.0 for r in rows),
         "balanced": balanced,
     }
+
+
+_FIELD_OTOMATIS = ("id", "name", "source_g6_pair_id", "seller_number", "entity_from", "entity_to", "period_key",
+                   "period_label", "effective_date", "lines", "total_debit", "total_credit", "balanced", "frozen",
+                   "partial", "cumulative")
+
+
+def _ringkas_otomatis(e: Dict[str, Any]) -> Dict[str, Any]:
+    return {k: e.get(k) for k in _FIELD_OTOMATIS if k in e}
 
 
 # ═══════════════════════════════════════════════════════════════════════════
@@ -454,309 +493,15 @@ async def ic_candidates(entity_ids: List[str], as_of: str) -> Dict[str, Any]:
 # ═══════════════════════════════════════════════════════════════════════════
 # FASE G-6 — Eliminasi TRANSAKSI ANTAR-PT (jual-beli internal)
 # ═══════════════════════════════════════════════════════════════════════════
-async def _g6_pair_totals(as_of: str = "", pair_id: str = "") -> List[Dict[str, Any]]:
-    """Kumpulkan pair G-6 dari `interco_transactions`.
-
-    Untuk tiap pair (dokumen kembar), kembalikan:
-      * seller_entity_id, buyer_entity_id
-      * subtotal, tax_amount, grand_total
-      * cost (agregat WAC × qty di sisi penjual, diambil dari JE `{pair}:cogs`)
-      * status (untuk menentukan bagian yang masih di persediaan pembeli)
-    """
-    q: Dict[str, Any] = {"role": "seller"}
-    if as_of:
-        q["doc_date"] = {"$lte": as_of}
-    if pair_id:
-        q["pair_id"] = pair_id
-    seller_docs = await db.interco_transactions.find(q, {"_id": 0}).to_list(20000)
-    pairs: List[Dict[str, Any]] = []
-    for d in seller_docs:
-        if d.get("status") in ("draft", "cancelled"):
-            continue
-        # Ambil biaya HPP dari JE :cogs (baru ada SESUDAH barang keluar gudang)
-        cogs_je = await db.journal_entries.find_one(
-            {"source_type": "interco_transaction",
-             "source_id": f"{d['pair_id']}:cogs",
-             "status": "posted"},
-            {"_id": 0, "total_debit": 1})
-        cost = float((cogs_je or {}).get("total_debit") or 0)
-        # Barangnya sudah diterima pembeli? Menentukan DI AKUN MANA margin bersarang:
-        # sudah diterima → `1-1300 Persediaan`; masih jalan → `1-1310 Dalam Perjalanan`.
-        receipt_je = await db.journal_entries.find_one(
-            {"source_type": "interco_transaction",
-             "source_id": f"{d['pair_id']}:receipt",
-             "status": "posted"},
-            {"_id": 0, "id": 1})
-        # FASE G-6b — bagian yang sudah DIRETUR bukan transaksi intra-grup lagi
-        # (barangnya kembali ke penjual), jadi nilainya dikeluarkan dari eliminasi.
-        ret_sub = float(d.get("returned_subtotal") or 0)
-        ret_cost = float(d.get("returned_cost") or 0)
-        # FASE G-6b — rasio barang yang MASIH ada di gudang pembeli (belum terjual
-        # ke pihak luar). Dari data roll nyata, bukan asumsi.
-        from services import interco_margin as _margin
-        u = await _margin.unsold_ratio(d["pair_id"], seller=d,
-                                       delivered=bool(receipt_je))
-        # FASE E-7 (E7.3) — kalau JE HPP belum ada, angka HPP yang dieliminasi memang 0.
-        # Itu BUKAN "HPP nol": itu "HPP belum diketahui". Entri eliminasi wajib
-        # membawa labelnya + taksiran WAC sebagai keterangan, supaya orang yang
-        # membaca laporan konsolidasi tidak menyimpulkan margin grup 100%.
-        disc = await _margin.cost_disclosure(
-            d, cost, round(float(d.get("subtotal") or 0) - ret_sub, 2))
-        pairs.append({
-            "pair_id": d["pair_id"],
-            "seller_entity_id": d["seller_entity_id"],
-            "buyer_entity_id": d["buyer_entity_id"],
-            "seller_number": d.get("number", ""),
-            "subtotal": round(float(d.get("subtotal") or 0) - ret_sub, 2),
-            "tax_amount": float(d.get("tax_amount") or 0),
-            "grand_total": float(d.get("grand_total") or 0),
-            "settled_amount": float(d.get("settled_amount") or 0),
-            "returned_amount": float(d.get("returned_amount") or 0),
-            "cost": round(cost - ret_cost, 2),
-            "unsold_ratio": u["ratio"],
-            "qty_base": u["qty_base"],
-            "qty_remaining": u["qty_remaining"],
-            "delivered": bool(receipt_je),
-            "status": d.get("status"),
-            "effective_date": (d.get("doc_date") or d.get("created_at") or "")[:10],
-            "cost_estimated": bool(disc.get("cost_estimated")),
-            "cost_basis": disc.get("cost_basis", ""),
-            "cost_estimate": float(disc.get("cost_estimate") or 0),
-            "cost_estimate_reason": disc.get("cost_estimate_reason", ""),
-        })
-    return pairs
-
-
-def _g6_elim_lines(p: Dict[str, Any], amap: Dict[str, Any],
-                   acc: Dict[str, str]) -> List[Dict[str, Any]]:
-    """Rakit baris eliminasi untuk SATU pair G-6 (selalu seimbang).
-
-    Dipisah dari `sync_g6_ic_eliminations` supaya angka eliminasi bisa
-    **dihitung ulang** (bukan hanya dibuat sekali) ketika transaksinya
-    berubah — mis. setelah settlement, IC-AR/IC-AP yang tersisa mengecil.
-    Tanpa perhitungan ulang, entri eliminasi lama akan menghapus saldo yang
-    sudah tidak ada lagi (INV-IC-03 memerah).
-    """
-    subtotal = round(float(p["subtotal"]), 2)
-    cost = round(float(p["cost"]), 2)
-    margin = round(subtotal - cost, 2)          # bisa negatif (jual di bawah HPP)
-    outstanding = round(float(p["grand_total"]) - float(p["settled_amount"])
-                        - float(p.get("returned_amount") or 0), 2)
-    label = p.get("seller_number") or p["pair_id"]
-    # FASE G-6b — hanya margin yang MASIH menempel di persediaan pembeli yang
-    # dieliminasi. Begitu pembeli menjual barangnya ke pihak luar, laba itu NYATA
-    # bagi grup dan tidak boleh dihapus lagi (kalau tetap dihapus, laba grup
-    # dilaporkan terlalu kecil). Identitas yang dipakai (u = rasio belum terjual):
-    #     Dr Pendapatan S · Cr HPP (C·u + S·(1−u)) · Cr Persediaan (M·u)
-    # Saat u = 1 rumus ini identik dengan perilaku lama (Cr HPP C, Cr Persediaan M).
-    u = float(p.get("unsold_ratio", 1.0) or 0.0)
-    u = max(0.0, min(1.0, u))
-    s_ratio = round(1.0 - u, 6)
-    margin_unrealized = round(margin * u, 2)
-    # Cr HPP = C·u + S·(1−u) — ditulis sebagai `S − M·u` supaya pembulatan tidak
-    # pernah membuat entri jadi tidak seimbang (Dr == Cr persis).
-    cogs_elim = round(subtotal - margin_unrealized, 2)
-    # Margin bersarang di akun yang benar: begitu barang diterima ia ada di
-    # `1-1300 Persediaan`; selama masih jalan ia ada di `1-1310 Dalam Perjalanan`.
-    inv_acc = acc["inventory"] if p.get("delivered") else acc["inventory_transit"]
-    lines: List[Dict[str, Any]] = []
-
-    def _nm(code: str) -> str:
-        return amap.get(code, {}).get("name", code)
-
-    # A. Pendapatan + HPP intra-grup + unrealized profit di persediaan pembeli
-    if subtotal > 0.005:
-        lines.append({
-            "account_code": acc["revenue"], "account_name": _nm(acc["revenue"]),
-            "debit": subtotal, "credit": 0.0,
-            "description": f"Eliminasi pendapatan antar-PT {label}",
-        })
-    if cogs_elim > 0.005:
-        lines.append({
-            "account_code": acc["cogs"], "account_name": _nm(acc["cogs"]),
-            "debit": 0.0, "credit": cogs_elim,
-            "description": (f"Eliminasi HPP antar-PT {label}"
-                            + (f" (termasuk {int(round(s_ratio * 100))}% yang sudah "
-                               f"terjual ke pihak luar)" if s_ratio > 0.005 else "")),
-        })
-    # Selisih ditutup di Persediaan: margin>0 → Cr (turunkan nilai buku pembeli
-    # ke HPP asli penjual); margin<0 → Dr (jual di bawah HPP → naikkan kembali).
-    if margin_unrealized > 0.005:
-        lines.append({
-            "account_code": inv_acc, "account_name": _nm(inv_acc),
-            "debit": 0.0, "credit": margin_unrealized,
-            "description": (f"Unrealized profit antar-PT {label} "
-                            f"(margin belum direalisasi ke pihak luar"
-                            + (f" · {int(round(u * 100))}% barang masih di gudang pembeli)"
-                               if s_ratio > 0.005 else ")")),
-        })
-    elif margin_unrealized < -0.005:
-        lines.append({
-            "account_code": inv_acc, "account_name": _nm(inv_acc),
-            "debit": abs(margin_unrealized), "credit": 0.0,
-            "description": (f"Koreksi nilai persediaan antar-PT {label} "
-                            f"(jual di bawah HPP — balikkan ke nilai asli)"),
-        })
-    # B. IC-AR ↔ IC-AP untuk sisa yang belum di-settle
-    if outstanding > 0.005:
-        lines.append({
-            "account_code": acc["ic_ap"], "account_name": _nm(acc["ic_ap"]),
-            "debit": outstanding, "credit": 0.0,
-            "description": f"Eliminasi IC-AP {label}",
-        })
-        lines.append({
-            "account_code": acc["ic_ar"], "account_name": _nm(acc["ic_ar"]),
-            "debit": 0.0, "credit": outstanding,
-            "description": f"Eliminasi IC-AR {label}",
-        })
-    return lines
-
-
-def _lines_differ(old: Any, new: List[Dict[str, Any]]) -> bool:
-    """Bandingkan baris eliminasi (akun + nilai) — abaikan urutan & deskripsi."""
-    def key(rows: Any) -> List[Tuple[str, float, float]]:
-        return sorted((str(r.get("account_code")),
-                       round(float(r.get("debit") or 0), 2),
-                       round(float(r.get("credit") or 0), 2)) for r in (rows or []))
-    return key(old) != key(new)
-
-
+# PK-31 (IC-03, RP-10) — perhitungan lama satu entri per pasangan yang DITIMPA dari keadaan dokumen & roll HARI INI
+# (`_g6_pair_totals`, `_g6_elim_lines`) diganti mesin per periode `interco_elimination_engine`. Dua pintu lama tetap ada
+# sebagai pemanggil `sync_period` (tombol "Sinkron Antar-PT" dan kait transaksi antar-PT).
 async def sync_g6_ic_eliminations(as_of: str = "", pair_id: str = "") -> Dict[str, Any]:
-    """FASE G-6 (US7) — Eliminasi konsolidasi untuk transaksi antar-PT.
-
-    Untuk setiap pair G-6 diterbitkan SATU entri eliminasi berimbang yang:
-
-      1. **Mengeliminasi Pendapatan & HPP intra-grup** (transaksi tidak pernah
-         menghasilkan laba bagi grup):
-            Dr 4-1000 Pendapatan        subtotal
-              Cr 5-1000 HPP               cost
-              Cr 1-1300 Persediaan        (subtotal - cost)   ← *unrealized profit*
-                                                              (margin yang masih
-                                                               "berdiam" di
-                                                               persediaan pembeli)
-
-      2. **Mengeliminasi IC-AR ↔ IC-AP** (piutang & utang antar-PT saling hapus):
-            Dr 2-1250 IC-AP             outstanding
-              Cr 1-1250 IC-AR             outstanding
-
-    Idempotent lewat `source_g6_pair_id`, tetapi **bukan sekadar "sudah ada →
-    lewati"**: bila angka transaksinya berubah (mis. setelah settlement, sisa
-    IC-AR/IC-AP mengecil) entri auto akan **diperbarui**; bila pair-nya
-    dibatalkan/kembali draf, entri auto akan **dihapus**. Dengan begitu laporan
-    konsolidasi tidak pernah menghapus saldo yang sudah tidak ada (INV-IC-03).
-
-    Dipanggil otomatis dari `interco_service` saat transaksi dikonfirmasi /
-    dilunasi / dibatalkan, dan bisa dipanggil manual dari layar Konsolidasi Grup
-    (tombol "Sinkron Antar-PT (G-6)") untuk data lama.
-    """
-    from services.gl_service import (
-        ACC_IC_AR, ACC_IC_AP, ACC_PERSEDIAAN, ACC_PERSEDIAAN_TRANSIT,
-        ACC_PENDAPATAN, ACC_HPP,
-    )
-    acc = {"revenue": ACC_PENDAPATAN, "cogs": ACC_HPP, "inventory": ACC_PERSEDIAAN,
-           "inventory_transit": ACC_PERSEDIAAN_TRANSIT,
-           "ic_ar": ACC_IC_AR, "ic_ap": ACC_IC_AP}
-    pairs = await _g6_pair_totals(as_of=as_of, pair_id=pair_id)
-    amap = await _accounts_lookup()
-
-    q_exist: Dict[str, Any] = {"source_g6_pair_id": {"$exists": True, "$ne": None}}
-    if pair_id:
-        q_exist["source_g6_pair_id"] = pair_id
-    existing = await db.intercompany_eliminations.find(q_exist, {"_id": 0}).to_list(5000)
-    by_pair = {e["source_g6_pair_id"]: e for e in existing}
-    qualifying = {p["pair_id"] for p in pairs}
-
-    created: List[Dict[str, Any]] = []
-    updated: List[Dict[str, Any]] = []
-    removed = 0
-    skipped = 0
-    for p in pairs:
-        lines = _g6_elim_lines(p, amap, acc)
-        prev = by_pair.get(p["pair_id"])
-        if not lines:
-            # Tidak ada apa pun untuk dieliminasi (nilai nol) → jangan simpan entri kosong.
-            if prev:
-                await db.intercompany_eliminations.delete_one({"id": prev["id"]})
-                removed += 1
-            continue
-        total_debit = round(sum(l["debit"] for l in lines), 2)
-        total_credit = round(sum(l["credit"] for l in lines), 2)
-        payload: Dict[str, Any] = {
-            # UAT 24 Okt (audit UI tahap 2) — G1-06: judul & catatan tanpa kode fase/invarian internal.
-            "name": f"Eliminasi otomatis antar-PT {p['seller_number'] or p['pair_id']}",
-            "entity_from": p["seller_entity_id"],
-            "entity_to": p["buyer_entity_id"],
-            "effective_date": p["effective_date"] or tanggal_buku(),   # PK-37 — bawaan hari ini WIB
-            "note": (
-                "Dibuat otomatis dari transaksi antar-PT. "
-                "Mengeliminasi pendapatan & HPP intra-grup, laba yang belum terealisasi "
-                "(masih di persediaan pembeli), dan saldo piutang/utang antar-PT yang belum "
-                "diselesaikan."
-            ),
-            "lines": lines,
-            "total_debit": total_debit,
-            "total_credit": total_credit,
-            "balanced": abs(total_debit - total_credit) < 0.01,
-            "impact": await _compute_impact(lines, amap),
-            "auto_generated": True,
-            "source_g6_pair_id": p["pair_id"],
-            "source_status": p.get("status", ""),
-            # FASE G-6b — jejak angka yang dipakai (dibaca invarian INV-IC-03 &
-            # layar Rapor Margin Grup, supaya tidak ada dua rumus yang berbeda).
-            "g6_unsold_ratio": round(float(p.get("unsold_ratio", 1.0) or 0.0), 6),
-            "g6_subtotal_effective": round(float(p["subtotal"]), 2),
-            "g6_cost_effective": round(float(p["cost"]), 2),
-            "g6_qty_base": round(float(p.get("qty_base") or 0), 4),
-            "g6_qty_remaining": round(float(p.get("qty_remaining") or 0), 4),
-            # FASE E-7 (E7.3) — label HPP taksiran ikut menempel di entri eliminasi.
-            "g6_cost_estimated": bool(p.get("cost_estimated")),
-            "g6_cost_basis": p.get("cost_basis", ""),
-            "g6_cost_estimate": round(float(p.get("cost_estimate") or 0), 2),
-            "g6_cost_estimate_reason": p.get("cost_estimate_reason", ""),
-            "updated_at": now_iso(),
-        }
-        if p.get("cost_estimated"):
-            payload["note"] += (
-                " ⚠ HPP penjual BELUM diposting, jadi HPP yang dieliminasi masih 0 "
-                "(bukan berarti HPP-nya nol). Taksiran WAC penjual: "
-                f"{rupiah(float(p.get('cost_estimate') or 0))} — angka ini keterangan, "
-                "bukan jurnal. Setelah barang keluar gudang, entri ini otomatis "
-                "diperbarui dengan HPP sebenarnya.")
-        if prev is None:
-            doc = {"id": new_id("icelim"), **payload,
-                   "created_by": "system", "created_by_id": None,
-                   "created_at": now_iso()}
-            await db.intercompany_eliminations.insert_one(dict(doc))
-            created.append(safe_doc(doc))
-        elif _lines_differ(prev.get("lines"), lines) or \
-                bool(prev.get("g6_cost_estimated")) != bool(payload["g6_cost_estimated"]) or \
-                prev.get("name") != payload["name"] or prev.get("note") != payload["note"]:
-            # Label HPP taksiran juga alasan sah untuk memperbarui entri: begitu HPP
-            # sebenarnya diposting, keterangan "taksiran" WAJIB hilang dari layar.
-            await db.intercompany_eliminations.update_one(
-                {"id": prev["id"]}, {"$set": payload})
-            updated.append(safe_doc({**prev, **payload}))
-        else:
-            skipped += 1
-
-    # Entri auto yang pair-nya sudah tidak sah lagi (dibatalkan / kembali draf /
-    # dokumennya dihapus) WAJIB ikut hilang — kalau tidak, konsolidasi menghapus
-    # pendapatan yang sebenarnya tidak pernah ada.
-    for pid, e in by_pair.items():
-        if pid in qualifying:
-            continue
-        still = await db.interco_transactions.count_documents({
-            "pair_id": pid, "role": "seller",
-            "status": {"$nin": ["draft", "cancelled"]}})
-        if still == 0:
-            await db.intercompany_eliminations.delete_one({"id": e["id"]})
-            removed += 1
-
-    return {
-        "created": len(created), "updated": len(updated), "removed": removed,
-        "skipped_existing": skipped, "pairs_seen": len(pairs),
-        "entries": created + updated,
-    }
+    """Bangun ulang entri eliminasi antar-PT per bulan (`interco_elimination_engine.sync_period`): bulan yang belum
+    beku ditulis/diperbarui/dihapus; bulan beku hanya dibandingkan (`stale`). `as_of` diabaikan — semua bulan yang
+    punya data dihitung dari data bertanggal."""
+    from services import interco_elimination_engine as _eng
+    return await _eng.sync_period(pair_id=pair_id)
 
 
 async def sync_g6_for_pair(pair_id: str) -> Dict[str, Any]:

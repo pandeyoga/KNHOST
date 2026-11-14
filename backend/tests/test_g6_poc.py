@@ -506,28 +506,20 @@ def test_US7_unrealized_profit_eliminated(admin_client):
     pairs = list(db.interco_transactions.find(
         {"role": "seller", "status": {"$nin": ["draft", "cancelled"]}}))
     assert pairs, "butuh minimal satu pair aktif"
+    # PK-31 — entri per BULAN (`period_key`): kumulatifnya mengeliminasi pendapatan penuh (sesudah retur) dan laba
+    # belum terealisasi tidak pernah negatif (rugi tidak dieliminasi).
     for p in pairs:
         elims = list(db.intercompany_eliminations.find(
             {"source_g6_pair_id": p["pair_id"]}))
-        assert len(elims) == 1, \
-            f"pair {p.get('number')} harus punya 1 eliminasi, ada {len(elims)}"
-        e = elims[0]
-        assert e["balanced"] is True, f"eliminasi {e['id']} tidak seimbang"
-        rev = sum(l["debit"] for l in e["lines"] if l["account_code"] == "4-1000")
-        assert abs(rev - float(p.get("subtotal") or 0)) < 0.01, \
-            "pendapatan intra-grup harus dieliminasi penuh"
-        cogs = sum(l["credit"] for l in e["lines"] if l["account_code"] == "5-1000")
-        margin = round(float(p.get("subtotal") or 0) - cogs, 2)
-        inv_credit = sum(l["credit"] for l in e["lines"]
-                         if l["account_code"] in ("1-1300", "1-1310"))
-        inv_debit = sum(l["debit"] for l in e["lines"]
-                        if l["account_code"] in ("1-1300", "1-1310"))
-        if margin > 0.005:
-            assert abs(inv_credit - margin) < 0.01, \
-                "unrealized profit harus mengurangi nilai persediaan pembeli"
-        elif margin < -0.005:
-            assert abs(inv_debit - abs(margin)) < 0.01, \
-                "jual di bawah HPP harus menaikkan kembali nilai persediaan"
+        assert elims and all(e.get("period_key") for e in elims), \
+            f"pair {p.get('number')} harus punya eliminasi per bulan"
+        for e in elims:
+            assert e["balanced"] is True, f"eliminasi {e['id']} tidak seimbang"
+        net = lambda codes: round(sum(float(l["debit"]) - float(l["credit"]) for e in elims  # noqa: E731
+                                      for l in e["lines"] if l["account_code"] in codes), 2)
+        rev_eff = float(p.get("subtotal") or 0) - float(p.get("returned_subtotal") or 0)
+        assert abs(net(("4-1000",)) - rev_eff) < 0.01, "pendapatan intra-grup harus dieliminasi penuh"
+        assert net(("1-1300", "1-1310")) <= 0.01, "laba belum terealisasi tidak boleh negatif"
 
 
 def test_US7b_eliminasi_ikut_mengecil_setelah_settlement(admin_client):
@@ -542,12 +534,13 @@ def test_US7b_eliminasi_ikut_mengecil_setelah_settlement(admin_client):
     settled = list(db.interco_transactions.find({"role": "seller", "status": "settled"}))
     assert settled, "POC US6 seharusnya sudah melunasi minimal satu transaksi"
     for p in settled:
-        e = db.intercompany_eliminations.find_one({"source_g6_pair_id": p["pair_id"]})
-        assert e, f"pair lunas {p.get('number')} tetap harus punya eliminasi margin"
-        ic_lines = [l for l in e["lines"] if l["account_code"] in ("1-1250", "2-1250")]
-        assert not ic_lines, \
-            f"eliminasi {e['id']} masih menghapus IC-AR/IC-AP padahal sudah lunas"
-        assert e["balanced"] is True
+        # PK-31 — entri per bulan: KUMULATIF baris IC-AR/IC-AP (bulan konfirmasi + bulan pelunasan) = 0.
+        elims = list(db.intercompany_eliminations.find({"source_g6_pair_id": p["pair_id"]}))
+        assert elims, f"pair lunas {p.get('number')} tetap harus punya eliminasi margin"
+        ic = round(sum(float(l["debit"]) - float(l["credit"]) for e in elims for l in e["lines"]
+                       if l["account_code"] == "2-1250"), 2)
+        assert abs(ic) < 0.01, f"eliminasi pair {p.get('number')} masih menghapus IC-AR/IC-AP padahal sudah lunas"
+        assert all(e["balanced"] is True for e in elims)
 
 
 def test_US8b_jembatan_gudang_tanpa_dobel_jurnal(admin_client):

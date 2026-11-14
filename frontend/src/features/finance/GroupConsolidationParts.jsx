@@ -39,13 +39,13 @@ const elimNote = (n) => stripInternalCodes(n || "")
 
 const ymd = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 
-export function EliminationsPanel({ elims, onAdd, onDetect, onDelete, onSyncG6, onSyncPairs, busy }) {
+export function EliminationsPanel({ elims, onAdd, onDetect, onDelete, onSyncG6, onSyncPairs, busy, hasAuto = false }) {
   const autoG6 = elims.filter((e) => e.source_g6_pair_id).length;
   const [toolsOpen, setToolsOpen] = useState(false);
   return (
     <div data-testid="cons-elim-panel">
       <div className="flex items-center gap-2 mb-3 flex-wrap">
-        <h4 className="text-[12px] font-bold text-[#1C1C1E]">Entri Eliminasi Intercompany</h4>
+        <h4 className="text-[12px] font-bold text-[#1C1C1E]">{hasAuto ? "Entri eliminasi manual" : "Entri Eliminasi Intercompany"}</h4>
         {autoG6 > 0 && (
           <span data-testid="cons-elim-g6-count"
                 className="text-[10px] font-bold rounded-full px-1.5 py-0.5 bg-[#EFF4FF] text-[#0058CC]">
@@ -73,7 +73,10 @@ export function EliminationsPanel({ elims, onAdd, onDetect, onDelete, onSyncG6, 
       )}
       {elims.length === 0 ? (
         <div data-testid="cons-elim-empty" className="py-10 text-center text-[12px] text-[#8E8E93]">
-          <ScissorsLineDashed size={26} className="mx-auto mb-2 text-gray-300" />Belum ada entri eliminasi. Transaksi antar-PT akan mengisi ini sendiri; untuk data lama pakai "Sinkron Antar-PT", "Deteksi Otomatis", atau "Tambah Eliminasi".
+          <ScissorsLineDashed size={26} className="mx-auto mb-2 text-gray-300" />
+          {hasAuto
+            ? "Belum ada entri eliminasi manual. Eliminasi transaksi antar-PT ada di daftar per bulan di atas."
+            : "Belum ada entri eliminasi. Transaksi antar-PT akan mengisi ini sendiri; untuk data lama pakai \"Sinkron Antar-PT\", \"Deteksi Otomatis\", atau \"Tambah Eliminasi\"."}
         </div>
       ) : (
         <div className="space-y-2">

@@ -129,10 +129,9 @@ async def sync_g6_ic_eliminations(
 ) -> Dict[str, Any]:
     """FASE G-6 (US7) — Sinkronisasi eliminasi transaksi antar-PT (idempotent).
 
-    Untuk setiap pair G-6 (`interco_transactions.pair_id`) yang belum tereliminasi,
-    buat SATU entri seimbang yang mengeliminasi (a) pendapatan intra-grup +
-    HPP + *unrealized profit* di persediaan pembeli, dan (b) sisa IC-AR/IC-AP.
-    Idempotent lewat `source_g6_pair_id`.
+    PK-31 — pembangun ulang entri PER BULAN (`interco_elimination_engine.sync_period`): tiap pasangan × bulan yang
+    punya data mendapat satu entri seimbang (pendapatan & HPP intra-grup, laba belum terealisasi, sisa IC-AR/IC-AP)
+    dihitung dari data bertanggal; bulan yang sudah ditutup di kedua PT tidak ditimpa (berbeda → `stale`).
     """
     actor = await require_permission(request, "accounting", "manage")
     ao = as_of or datetime.now(timezone.utc).strftime("%Y-%m-%d")

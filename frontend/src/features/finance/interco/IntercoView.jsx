@@ -29,6 +29,7 @@ import { askConfirm } from "../../../services/confirmService";
 import { can } from "../../../config/roles";
 import IntercoCreateModal from "./IntercoCreateModal";
 import IntercoSettlementModal from "./IntercoSettlementModal";
+import IntercoRefundModal from "./IntercoRefundModal";   // PK-31 (IC-07) — refund retur sesudah lunas
 import IntercoPaymentSchedule from "./IntercoPaymentSchedule";
 import IntercoDetailPanel from "./IntercoDetailPanel";
 import InternalContractWizardModal from "./InternalContractWizardModal";
@@ -88,6 +89,7 @@ export default function IntercoView({ currentUser, selectedEntity, entities = []
   const [msg, setMsg] = useState("");
   const [showCreate, setShowCreate] = useState(false);
   const [showSettle, setShowSettle] = useState(null);
+  const [showRefund, setShowRefund] = useState(null);
   const [showContract, setShowContract] = useState(null);
   const [detailId, setDetailId] = useState(null);
   const [cancelDoc, setCancelDoc] = useState(null);
@@ -388,6 +390,8 @@ export default function IntercoView({ currentUser, selectedEntity, entities = []
           netPairs={summary?.net_pairs}
           onNetting={(a) => setShowSettle({ open: true, from: a.from_entity_id,
                                             to: a.to_entity_id })}
+          canRefund={can(perms, "interco", "settle")}
+          onRefund={(a) => setShowRefund({ payer: a.from_entity_id, payee: a.to_entity_id })}
         />
       )}
       {tab === "settlements" && <SettlementsPanel rows={settlements} focusId={sorot} />}
@@ -437,6 +441,17 @@ export default function IntercoView({ currentUser, selectedEntity, entities = []
           presetPayeeEntityId={showSettle.to || ""}
           onClose={() => setShowSettle(null)}
           onCreated={() => { setShowSettle(null); showMsg("Settlement antar-PT terbit"); refresh(); }}
+        />
+      )}
+      {showRefund && (
+        <IntercoRefundModal
+          entities={entities} presetPayerEntityId={showRefund.payer} presetPayeeEntityId={showRefund.payee}
+          onClose={() => setShowRefund(null)}
+          onCreated={(r) => {
+            setShowRefund(null);
+            showMsg(`Pengembalian dana ${r?.number || ""} ${formatCurrency(r?.total_applied || 0)} tercatat — kas & jurnal terbit di kedua PT`);
+            refresh();
+          }}
         />
       )}
       {showContract?.open && (

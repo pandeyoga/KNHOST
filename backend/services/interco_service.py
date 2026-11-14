@@ -529,7 +529,7 @@ async def get_one(interco_id: str) -> Optional[Dict[str, Any]]:
 
 async def list_transactions(scope_entity_ids: List[str], entity_id: str = "",
                             status: str = "", role: str = "",
-                            limit: int = 200) -> List[Dict[str, Any]]:
+                            limit: int = 200, refund_open: bool = False) -> List[Dict[str, Any]]:
     q: Dict[str, Any] = {"entity_id": {"$in": scope_entity_ids} if scope_entity_ids else None}
     if entity_id and entity_id != "all":
         q["entity_id"] = entity_id
@@ -537,9 +537,13 @@ async def list_transactions(scope_entity_ids: List[str], entity_id: str = "",
         q["status"] = status
     if role in ("seller", "buyer"):
         q["role"] = role
+    if refund_open:   # PK-31 (IC-07) — dokumen penjual yang diretur sesudah (sebagian) lunas dan masih bersisa refund
+        q.update({"role": "seller", "returned_amount": {"$gt": 0}, "status": {"$nin": ["draft", "cancelled"]}})
     if q.get("entity_id") is None:
         q.pop("entity_id")
     rows = await db[COLL_ICT].find(q, {"_id": 0}).sort("created_at", -1).to_list(limit)
+    if refund_open:
+        rows = [{**r, "refund_left": refund_left_of(r)} for r in rows if refund_left_of(r) > EPS]
     return [safe_doc(r) for r in rows]
 
 
@@ -1391,7 +1395,7 @@ async def _run_settlement(doc: Dict[str, Any], actor: str) -> Dict[str, Any]:
 # PK-31 (IC-07) — REFUND: retur atas transaksi yang sudah lunas → penjual mengembalikan dana
 # ═══════════════════════════════════════════════════════════════════════════
 PESAN_REFUND_PT = "Pilih PT yang mengembalikan dana dan PT penerima yang berbeda."
-PESAN_REFUND_CAKUPAN = ("Anda belum punya akses untuk mencatat refund atas nama PT ini. Minta Admin menambahkan akses "
+PESAN_REFUND_CAKUPAN = ("Anda belum punya akses untuk mencatat pengembalian dana atas nama PT ini. Minta Admin menambahkan akses "
                         "'Transaksi Antar Badan Usaha'.")
 
 
@@ -1417,11 +1421,11 @@ async def create_refund(payload: Dict[str, Any], actor: str = "", idempotency_ke
             if existing.get("status") == "posted":
                 return await _refund_answer(existing)
             if existing.get("status") == "cancelled":
-                raise IntercoConflict("Refund dengan kunci ini sudah dibatalkan. Muat ulang lalu ulangi.")
+                raise IntercoConflict("Pengembalian dana dengan kunci ini sudah dibatalkan. Muat ulang lalu ulangi.")
             return await _run_refund(existing, actor)
     picks = payload.get("transactions") or []
     if not picks:
-        raise IntercoError("Pilih minimal satu transaksi yang punya sisa refund.")
+        raise IntercoError("Pilih minimal satu transaksi yang punya sisa pengembalian dana.")
     payer_snap, payee_snap = await _entity_snapshot(payer), await _entity_snapshot(payee)
     rows: List[Dict[str, Any]] = []
     for p in picks:
@@ -1441,11 +1445,11 @@ async def create_refund(payload: Dict[str, Any], actor: str = "", idempotency_ke
                                   "Ulangi dulu dari Keuangan › Posting Gagal.")
         left = refund_left_of(seller_doc)
         if left <= EPS:
-            raise IntercoConflict(f"Transaksi {nomor} tidak punya sisa refund.")
+            raise IntercoConflict(f"Transaksi {nomor} tidak punya sisa pengembalian dana.")
         req = p.get("applied_amount")
         applied = round(float(req), 2) if req not in (None, "", 0) else left
         if applied > left + EPS:
-            raise IntercoError(f"Nilai refund {rupiah(applied)} melebihi sisa refund transaksi {nomor} "
+            raise IntercoError(f"Nilai pengembalian dana {rupiah(applied)} melebihi sisa pengembalian dana transaksi {nomor} "
                                f"({rupiah(left)}).")
         rows.append({"interco_id": seller_doc["id"], "counterpart_id": seller_doc.get("counterpart_id"),
                      "pair_id": seller_doc.get("pair_id"), "number": nomor,
@@ -1455,7 +1459,7 @@ async def create_refund(payload: Dict[str, Any], actor: str = "", idempotency_ke
                      "applied_amount": applied, "applied_at": None})
     total = round(sum(r["applied_amount"] for r in rows), 2)
     if total <= EPS:
-        raise IntercoError("Nilai refund harus lebih dari 0.")
+        raise IntercoError("Nilai pengembalian dana harus lebih dari 0.")
     from services import payment_method_service as _pms   # PM-T1 — cara bayar dari daftar induk (arah keluar)
     try:
         method = (await _pms.wajib(payer, (payload.get("method") or "transfer").strip().lower(), arah="keluar"))["code"]
@@ -1532,15 +1536,15 @@ async def _run_refund(doc: Dict[str, Any], actor: str) -> Dict[str, Any]:
         await _apply_refund_rows(doc, actor)
     except _SettleRowRejected as exc:
         await db[COLL_ICS].update_one({"id": sid}, {"$set": {
-            "status": "cancelled", "cancel_reason": f"sisa refund transaksi {exc} berubah saat diproses",
+            "status": "cancelled", "cancel_reason": f"sisa pengembalian dana transaksi {exc} berubah saat diproses",
             "updated_at": now_iso()}})
-        raise IntercoConflict(f"Sisa refund transaksi {exc} berubah saat diproses. Tidak ada yang tercatat; muat ulang "
+        raise IntercoConflict(f"Sisa pengembalian dana transaksi {exc} berubah saat diproses. Tidak ada yang tercatat; muat ulang "
                               "lalu ulangi.") from exc
     if not doc.get("cash_out_id"):   # EFEK 2 — kas keluar di PT penjual, kas masuk di PT pembeli (idempoten per arah)
         from services import interco_money_service as icm
         cash = await icm.twin_cash(
-            out_entity=payer, in_entity=payee, amount=float(doc["total_applied"]), category="refund antar-PT",
-            description=f"Refund antar-PT {doc.get('number')} ({doc.get('payer_entity_name')} → "
+            out_entity=payer, in_entity=payee, amount=float(doc["total_applied"]), category="pengembalian dana antar-PT",
+            description=f"Pengembalian dana antar-PT {doc.get('number')} ({doc.get('payer_entity_name')} → "
                         f"{doc.get('payee_entity_name')})",
             ref_type="interco_settlement", ref_id=sid, actor=actor or "system", txn_date=doc.get("settle_date", ""),
             out_account_id=doc.get("payer_account_id", ""), in_account_id=doc.get("payee_account_id", ""))
@@ -1559,7 +1563,7 @@ async def _run_refund(doc: Dict[str, Any], actor: str) -> Dict[str, Any]:
             for _id in (row["interco_id"], row.get("counterpart_id")):
                 if _id:
                     await _refs.safe_link(("interco_settlement", sid), ("interco_transaction", _id), "settles",
-                                          note=f"Refund antar-PT {doc.get('number')}")
+                                          note=f"Pengembalian dana antar-PT {doc.get('number')}")
     except Exception as exc:  # noqa: BLE001
         print(f"[interco] tautan refund gagal: {exc}")
     out = await _refund_answer(await db[COLL_ICS].find_one({"id": sid}, {"_id": 0}))
@@ -1703,10 +1707,10 @@ def _settlement_sides(doc: Dict[str, Any]) -> List[Any]:
         # dari pelunasan. Penjual Dr IC-AR / Cr Kas · pembeli Dr Kas / Cr IC-AP (akun kas sama dengan settlement).
         cash_acc = gl_service.ACC_KAS_BESAR
         lp = gl_service._balanced_pair(gl_service.ACC_IC_AR, cash_acc, total,
-                                       f"Refund antar-PT {label} → {doc.get('payee_entity_name', '')}")
+                                       f"Pengembalian dana antar-PT {label} → {doc.get('payee_entity_name', '')}")
         le = gl_service._balanced_pair(cash_acc, gl_service.ACC_IC_AP, total,
-                                       f"Terima refund antar-PT {label} ← {doc.get('payer_entity_name', '')}")
-        dp, de = f"Refund antar-PT {label}", f"Terima refund antar-PT {label}"
+                                       f"Terima pengembalian dana antar-PT {label} ← {doc.get('payer_entity_name', '')}")
+        dp, de = f"Pengembalian dana antar-PT {label}", f"Terima pengembalian dana antar-PT {label}"
     elif doc.get("method", "netting") == "netting":
         lp = gl_service._balanced_pair(gl_service.ACC_IC_AP, gl_service.ACC_IC_AR, total,
                                        f"Netting antar-PT {label} → {doc.get('payee_entity_name', '')}")
@@ -1895,8 +1899,9 @@ async def _sync_group_elimination(pair_id: str) -> None:
     sudah sah); dicatat ke log supaya tetap terlihat.
     """
     try:
-        from services import consolidation_service as _cons
-        await _cons.sync_g6_for_pair(pair_id)
+        # PK-31 (IC-03) — entri eliminasi PER BULAN dari data bertanggal (bulan beku tidak ditimpa).
+        from services import interco_elimination_engine as _eng
+        await _eng.sync_period(pair_id=pair_id)
     except Exception as exc:  # noqa: BLE001 — pelengkap laporan, bukan syarat transaksi
         print(f"[interco] sync eliminasi grup gagal untuk {pair_id}: {exc}")
 

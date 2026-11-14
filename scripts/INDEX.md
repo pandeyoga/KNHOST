@@ -109,6 +109,7 @@ Hasil selalu ditulis ke `memory/GATE_RECEIPT.md`. **Klaim “selesai” tanpa re
 | `ui_smoke.py` · `ux_audit.py` | Smoke UI & audit UX berbasis Playwright | **Sejak P5 `ux_audit.py` = GATE** (`--strict`) dan punya `--self-test` 16 kasus dua arah; aturan E1/E2 sadar-rujukan (menelusuri komponen anak) supaya tidak menuduh komponen penampil.
 | `audit_collection_drift.py` · `find_dead_services.py` | Cari koleksi/service yatim |
 | `poc_hrd.py` · `poc_hrd_h1.py` · `poc_document_platform.py` · `poc_sales_revamp.py` | POC modul (arsip bukti fase) |
+| `migrasi_pk31_eliminasi_per_periode.py` | **PK-31** — entri eliminasi antar-PT LAMA (satu per pasangan, tanpa `period_key`) → entri per bulan dari data bertanggal. Bawaan baca-saja: per pasangan entri lama, bulan pengganti, dan selisih dampak laba-rugi per tahun (wajib dilihat pemilik); `--apply` menghapus entri lama + `sync_period` (aman diulang). Data nyata = H3 |
 | `seed_ar_due_soon_demo.py` · `seed_escalation_demo.py` | Menyiapkan kondisi berbasis waktu agar fitur terlihat di UI tanpa menunggu |
 | `seed_reset.sh` · `reset_db.sh` · `rebuild_frontend.sh` · `dev_setup.sh` · `load_context.sh` · `run_forensics.sh` | Operasional harian |
 | `_codemod_rupiah.py` | **Sekali-pakai (arsip bukti FASE G-9)** — menyeragamkan 91 pola format uang gaya Inggris `Rp {x:,}` → `core_utils.rupiah()` di 30 berkas. Punya `--dry-run`. Penjaga permanennya: `audit_i18n_id.py` aturan [7] |

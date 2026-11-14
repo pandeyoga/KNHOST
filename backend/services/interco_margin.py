@@ -30,6 +30,12 @@ M=S−C, s=1−u):
 
 Saat u=1 (belum ada yang terjual) rumus ini identik dengan perilaku lama
 (Cr HPP = C, Cr Persediaan = M) — jadi tidak ada data lama yang berubah artinya.
+
+PK-31 (IC-03, IC-04, RP-10) — SATU RUMUS dengan eliminasi konsolidasi: rasio, pendapatan, HPP, dan laba belum
+terealisasi dibaca dari `interco_elimination_engine.pair_state` (data bertanggal ≤ `as_of`). "Belum terjual" = roll
+ber-rantai `cost_basis.chain` pasangan itu yang belum tercantum di surat jalan ke pelanggan — roll yang dijual lagi ke
+PT ketiga di dalam grup tetap dihitung belum terjual (rantai A→B→C). Penyebutnya panjang roll yang benar-benar pindah,
+bukan jumlah pesanan. `eliminated_unrealized` = laba di persediaan yang dieliminasi entri per bulan sampai `as_of`.
 """
 from __future__ import annotations
 
@@ -38,55 +44,29 @@ from typing import Any, Dict, List, Optional
 from db import db
 
 EPS = 0.01
-# KN-D10 — "belum dijual ulang" = roll masih dipegang grup: status FISIK gudang (termasuk
-# committed/picked/packed/hold) + transit transfer. Dulu memuat 'allocated' & 'in_transit'
-# (bukan status roll) dan melewatkan 'committed' → margin antar-PT dianggap terealisasi dini.
-from services.roll_service import PHYSICAL_ROLL_STATUSES as _PHYS
-ACTIVE_ROLL_STATUS = tuple(_PHYS) + ("in_transit_transfer",)
+# PK-31 — "belum dijual ulang" tidak lagi dibaca dari status/pemilik roll HARI INI (KN-D10 `ACTIVE_ROLL_STATUS`): roll
+# yang dijual lagi ke PT ketiga ikut hilang dari hitungan pasangan pertama (IC-04). Kini dari surat jalan bertanggal
+# (`interco_elimination_engine`).
 
 
-async def _receipt_posted(pair_id: str) -> bool:
-    je = await db.journal_entries.find_one(
-        {"source_type": "interco_transaction", "source_id": f"{pair_id}:receipt",
-         "status": "posted"}, {"_id": 0, "id": 1})
-    return bool(je)
+def _ratio_out(st: Dict[str, Any]) -> Dict[str, Any]:
+    return {"ratio": st["unsold_ratio"], "qty_base": st["moved_len"],
+            "qty_remaining": round(max(st["moved_len"] - st["sold_len"], 0.0), 4),
+            "delivered": st["delivered"], "rolls": 0, "state": st}
 
 
-async def unsold_ratio(pair_id: str, seller: Optional[Dict[str, Any]] = None,
-                      delivered: Optional[bool] = None) -> Dict[str, Any]:
-    """Rasio barang antar-PT yang MASIH ada di gudang pembeli (0..1) + buktinya.
+async def unsold_ratio(pair_id: str, as_of: str = "", seller: Optional[Dict[str, Any]] = None,
+                       delivered: Optional[bool] = None) -> Dict[str, Any]:
+    """Rasio barang antar-PT yang MASIH di dalam grup (0..1) + buktinya, pada `as_of` (kosong = semua data).
 
-    * Barang belum berpindah → `1.0` (belum mungkin terjual ke pihak luar).
-    * Barang sudah berpindah tetapi tidak ada roll bertanda lagi → `0.0`
-      (semuanya sudah terpakai/terjual keluar).
-    * Barang yang sudah DIRETUR tidak dihitung di penyebut (ia kembali ke penjual,
-      bukan terjual ke pihak luar) — dan rollnya kehilangan tanda pair-nya.
-    """
-    if seller is None:
-        seller = await db.interco_transactions.find_one(
-            {"pair_id": pair_id, "role": "seller"}, {"_id": 0})
-    if not seller:
-        return {"ratio": 1.0, "qty_base": 0.0, "qty_remaining": 0.0,
-                "delivered": False, "rolls": 0}
-    qty_total = round(sum(float(i.get("quantity") or 0)
-                          for i in seller.get("items", [])), 4)
-    qty_returned = round(float(seller.get("returned_qty") or 0), 4)
-    qty_base = round(max(qty_total - qty_returned, 0.0), 4)
-    if delivered is None:
-        delivered = await _receipt_posted(pair_id)
-    if not delivered or qty_base <= 0:
-        return {"ratio": 1.0, "qty_base": qty_base, "qty_remaining": qty_base,
-                "delivered": bool(delivered), "rolls": 0}
-    rolls = await db.inventory_rolls.find(
-        {"cost_basis.interco_pair_id": pair_id,
-         "owner_entity_id": seller.get("buyer_entity_id"),
-         "status": {"$in": list(ACTIVE_ROLL_STATUS)}},
-        {"_id": 0, "length_remaining": 1}).to_list(20000)
-    remaining = round(sum(float(r.get("length_remaining") or 0) for r in rolls), 4)
-    ratio = remaining / qty_base if qty_base > 0 else 1.0
-    ratio = max(0.0, min(1.0, round(ratio, 6)))
-    return {"ratio": ratio, "qty_base": qty_base, "qty_remaining": remaining,
-            "delivered": True, "rolls": len(rolls)}
+    PK-31 — rumus `interco_elimination_engine.pair_state`: 1 bila belum diterima / belum ada yang pindah; selain itu
+    1 − (panjang di surat jalan ke pelanggan ÷ panjang yang pindah − retur). `delivered` diabaikan (dibaca dari jurnal
+    penerimaan bertanggal); argumen dipertahankan untuk pemanggil lama."""
+    from services import interco_elimination_engine as eng
+    f = await eng.facts(pair_id, seller)
+    if f is None:
+        return {"ratio": 1.0, "qty_base": 0.0, "qty_remaining": 0.0, "delivered": False, "rolls": 0}
+    return _ratio_out(eng.state_at(f, as_of or eng.SELAMANYA))
 
 
 async def _cogs_of(pair_id: str) -> float:
@@ -159,15 +139,20 @@ async def cost_disclosure(seller: Dict[str, Any], cost_posted_gross: float,
     }
 
 
-async def pair_margin(seller: Dict[str, Any]) -> Dict[str, Any]:
-    """Angka margin satu pair (sesudah retur) + pembagian realized/unrealized."""
+async def pair_margin(seller: Dict[str, Any], as_of: str = "",
+                      f: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+    """Angka margin satu pair (sesudah retur) + pembagian realized/unrealized pada `as_of` (kosong = semua data).
+
+    PK-31 — pendapatan, HPP, rasio, dan laba belum terealisasi dari `pair_state` (satu rumus dengan eliminasi)."""
+    from services import interco_elimination_engine as eng
     pair_id = seller["pair_id"]
-    subtotal = round(float(seller.get("subtotal") or 0)
-                     - float(seller.get("returned_subtotal") or 0), 2)
+    f = f or await eng.facts(pair_id, seller)
+    st = eng.state_at(f, as_of or eng.SELAMANYA)
+    subtotal = st["revenue"]
     cost_gross = await _cogs_of(pair_id)
-    cost = round(cost_gross - float(seller.get("returned_cost") or 0), 2)
+    cost = st["cogs"]
     margin = round(subtotal - cost, 2)
-    u = await unsold_ratio(pair_id, seller=seller)
+    u = _ratio_out(st)
     ratio = u["ratio"]
     unrealized = round(margin * ratio, 2)
     realized = round(margin - unrealized, 2)
@@ -199,7 +184,7 @@ async def pair_margin(seller: Dict[str, Any]) -> Dict[str, Any]:
         # RUGI nyata bagi grup — konservatisme akuntansi: rugi TIDAK dieliminasi.
         # Yang tidak boleh terjadi adalah rugi itu hilang tanpa keterangan; karena itu
         # angkanya tetap dilaporkan lewat `unrealized_loss` + kalimat penjelas.
-        "unrealized_profit": max(unrealized, 0.0),
+        "unrealized_profit": st["urp"],
         "unrealized_loss": round(-min(unrealized, 0.0), 2),
         "loss_not_eliminated": unrealized < -EPS,
         "loss_reason": (
@@ -229,21 +214,23 @@ async def margin_report(scope_entity_ids: Optional[List[str]] = None,
                    if s.get("seller_entity_id") in scope_entity_ids
                    or s.get("buyer_entity_id") in scope_entity_ids]
 
-    elims = await db.intercompany_eliminations.find(
-        {"source_g6_pair_id": {"$exists": True, "$ne": None}}, {"_id": 0}).to_list(20000)
-    elim_by_pair: Dict[str, Dict[str, Any]] = {e["source_g6_pair_id"]: e for e in elims}
-
+    # PK-31 — yang dieliminasi = Σ entri per bulan pasangan itu sampai `as_of` (bulan beku dari koleksi, sisanya dihitung
+    # dari data bertanggal) — rumus yang sama dengan laporan konsolidasi.
+    from services import gl_service as _gl
+    from services import interco_elimination_engine as eng
+    kode = await eng._kode_akun()
+    amap = await eng._amap()
+    inv_codes = (_gl.ACC_PERSEDIAAN, _gl.ACC_PERSEDIAAN_TRANSIT)
     rows: List[Dict[str, Any]] = []
     for s in sellers:
-        row = await pair_margin(s)
-        e = elim_by_pair.get(row["pair_id"])
-        elim_inv = 0.0
-        if e:
-            elim_inv = round(sum(float(l.get("credit") or 0) for l in e.get("lines", [])
-                                 if l.get("account_code") in ("1-1300", "1-1310")), 2)
+        f = await eng.facts(s["pair_id"], s, kode)
+        row = await pair_margin(s, as_of, f)
+        entries, _stale = await eng.pair_entries(f, as_of or eng.SELAMANYA, amap)
+        elim_inv = round(sum(float(ln.get("credit") or 0) - float(ln.get("debit") or 0)
+                             for e in entries for ln in e.get("lines", []) if ln.get("account_code") in inv_codes), 2)
         row["eliminated_unrealized"] = elim_inv
-        row["elimination_id"] = (e or {}).get("id", "")
-        row["elimination_name"] = (e or {}).get("name", "")
+        row["elimination_id"] = next((e.get("id") for e in reversed(entries) if e.get("id")), "")
+        row["elimination_name"] = f"{len(entries)} entri eliminasi per bulan" if entries else ""
         row["elimination_gap"] = round(elim_inv - row["unrealized_profit"], 2)
         rows.append(row)
 

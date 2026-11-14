@@ -21,7 +21,6 @@ from pembantu import AKTOR_UJI, jumlah, pt_uji, tutup_periode
 JT = 1_000_000
 PRD = "prd_pk31"
 P1 = "pk31_p1"          # A→B: konfirmasi 28 Des 2026, barang pindah 5 Jan 2027 (U1–U5, U14)
-TUNGGU_B = "IC-03 — eliminasi lama dibaca laporan konsolidasi sampai serah-terima (b) PK-31"
 
 
 # ── pembantu fixture ─────────────────────────────────────────────────────────────────────────────────────────────────
@@ -180,7 +179,6 @@ async def kepala_ab(akun, sesi, peran_tanpa_acuan, data_p1):
     return await sesi(await akun(p, entitas=(a, b)), entitas=a)
 
 
-@pytest.mark.xfail(strict=True, reason=TUNGGU_B)
 async def test_PK31_U3_ringkasan_konsolidasi_dua_tahun(klien, kepala_ab, data_p1):
     # ALUR: GET ringkasan (pengguna bercakupan A+B). Buku A 2026: pendapatan 100; buku B: 1-1310 100 / 2-1250 100.
     s26 = await _ringkasan(klien, kepala_ab, 2026, "2026-12-31")
@@ -196,7 +194,6 @@ async def test_PK31_U3_ringkasan_konsolidasi_dua_tahun(klien, kepala_ab, data_p1
     assert s27["consolidated"]["assets"] == 60 * JT and s27["balanced"] is True
 
 
-@pytest.mark.xfail(strict=True, reason=TUNGGU_B)
 async def test_PK31_U4_laporan_tanggal_lama_tidak_berubah(klien, kepala_ab, db, data_p1):
     a, b = data_p1
     sebelum = [await _ringkasan(klien, kepala_ab, 2026, "2026-12-31"),
@@ -221,7 +218,7 @@ async def test_PK31_U4_laporan_tanggal_lama_tidak_berubah(klien, kepala_ab, db, 
 
 async def test_PK31_U5_maret_separuh_terjual(db, data_p1):
     eng = mesin()
-    if not await db.shipments.find_one({"id": "shp_pk31_1"}):   # U4 (xfail di serah-terima a) sudah menyisipkannya
+    if not await db.shipments.find_one({"id": "shp_pk31_1"}):   # U4 sudah menyisipkannya (dijalankan sendiri: sisipkan di sini)
         a, b = data_p1
         await db.inventory_rolls.update_one({"id": "roll_pk31_1"}, {"$set": {"length_remaining": 500.0}})
         induk = await db.inventory_rolls.find_one({"id": "roll_pk31_1"}, {"_id": 0})
@@ -291,7 +288,6 @@ async def test_PK31_U6_rantai_tiga_pt(db, data_p1):
     assert s6["urp"] + s7["urp"] == 120 * JT - 60 * JT   # laba grup belum terealisasi 60 jt = 120 − 60
 
 
-@pytest.mark.xfail(strict=True, reason="IC-04 — rapor margin memakai pair_state mulai serah-terima (b) PK-31")
 async def test_PK31_U6b_rapor_margin_satu_rumus(db, data_p1):
     from services import interco_margin as icm
     u = await icm.unsold_ratio("pk31_p6", as_of="2027-06-30")
@@ -358,7 +354,6 @@ async def test_PK31_U8_bulan_beku_dan_stale(db, data_p1):
 
 
 # ── U9: persen kepemilikan (K-10) ────────────────────────────────────────────────────────────────────────────────────
-@pytest.mark.xfail(strict=True, reason=TUNGGU_B)
 async def test_PK31_U9_bagian_non_pengendali(klien, akun, sesi, peran_tanpa_acuan, db):
     f, g = await pt("FFF"), await pt("GGG")   # A dan B uji ini; tanpa transaksi antar-PT
     await db.business_entities.update_one({"id": g}, {"$set": {"ownership_pct": 80}})
@@ -457,13 +452,13 @@ async def test_PK31_U12_melebihi_sisa_dan_bukan_cakupan(klien, kepala_admin, aku
                                                        data_rf):
     s, b = data_rf
     r = await _refund(klien, kepala_admin, s, b, jumlah_rp=5 * JT)
-    assert r.status_code == 400 and "melebihi sisa refund" in r.text, r.text
+    assert r.status_code == 400 and "melebihi sisa pengembalian dana" in r.text, r.text
     p = await peran_tanpa_acuan({"interco": ["view", "settle"], "interco_finance": ["view"]}, label="Refund B PK31")
     h_b = await sesi(await akun(p, entitas=(b,)), entitas=b)
     r = await klien.post("/api/interco/refunds", headers=h_b, json={
         "payer_entity_id": s, "payee_entity_id": b, "transactions": [{"interco_id": f"{RF}_s"}],
         "settle_date": "2026-11-10", "method": "transfer"})
-    assert r.status_code == 403 and "mencatat refund" in r.text, r.text
+    assert r.status_code == 403 and "mencatat pengembalian dana" in r.text, r.text
     r = await _refund(klien, kepala_admin, s, s)
     assert r.status_code == 400 and "berbeda" in r.text, r.text
     assert {float(d.get("refund_paid") or 0) async for d in db.interco_transactions.find({"pair_id": RF})} == {0.0}
@@ -480,7 +475,7 @@ async def test_PK31_U13_periode_pembeli_tertutup(klien, kepala_admin, db, data_r
     assert {float(d.get("refund_paid") or 0) async for d in db.interco_transactions.find({"pair_id": RF})} == {0.0}
     assert await jumlah("interco_settlements", {"kind": "refund"}) == 0
     assert await jumlah("cash_transactions", {"entity_id": s, "direction": "out", "ref_type": "interco_settlement",
-                                              "category": {"$regex": "refund"}}) == 0
+                                              "category": {"$regex": "pengembalian dana"}}) == 0
     assert await jumlah("journal_entries", {"entity_id": s, "source_type": "interco_settlement", "lines": {
         "$elemMatch": {"account_code": "1-1250", "debit": {"$gt": 0}}}}) == 0
 
@@ -508,7 +503,7 @@ async def test_PK31_U11_refund_dicatat_sekali(klien, kepala_admin, db, data_rf):
     ulang = await _refund(klien, kepala_admin, s, b, key="pk31-u11")       # kunci sama → jawaban sama, tanpa tulisan
     assert ulang.status_code == 200 and ulang.json()["id"] == sid
     r2 = await _refund(klien, kepala_admin, s, b, key="pk31-u11-lagi")     # permintaan baru → tidak ada sisa
-    assert r2.status_code == 409 and "tidak punya sisa refund" in r2.text, r2.text
+    assert r2.status_code == 409 and "tidak punya sisa pengembalian dana" in r2.text, r2.text
     assert await jumlah("interco_settlements", {"kind": "refund"}) == 1
     assert await jumlah("cash_transactions", {"ref_id": sid}) == 2
 
@@ -543,6 +538,8 @@ async def test_PK31_U14_skrip_migrasi(db, data_p1, capsys):
     skrip = _skrip()
     assert await skrip.jalankan([], db=db) == 0
     keluar = capsys.readouterr().out
+    with capsys.disabled():   # cetakan untuk laporan (pytest -s): wajib dilihat pemilik sebelum (b) digabung
+        print("\n=== CETAKAN SKRIP MIGRASI PK-31 (baca-saja) ===\n" + keluar)
     blok = keluar.split(f"({P1})", 1)[1].split("\nPasangan ", 1)[0]
     # Dampak laba-rugi P1. Lama: 2026 = −100 + 60 = −40 jt; 2027 = 0. Baru: Des −100; Jan +60; Mar +20 (500 m terjual
     # 15 Mar, U4) → 2026 −100 jt, 2027 +80 jt. Selisih 2026 = −60 jt; 2027 = +80 jt (spesifikasi menulis +60 jt —
@@ -551,11 +548,92 @@ async def test_PK31_U14_skrip_migrasi(db, data_p1, capsys):
     assert re.search(r"2027: lama 0 · baru 80\.000\.000 · selisih \+80\.000\.000", blok), blok
     assert await db.intercompany_eliminations.find_one({"id": "icelim_pk31_lama"})   # baca-saja: tidak berubah
     assert await skrip.jalankan(["--apply"], db=db) == 0
-    capsys.readouterr()
+    keluar = capsys.readouterr().out
+    with capsys.disabled():
+        print("\n=== --apply ===\n" + keluar.splitlines()[-1])
     assert not await db.intercompany_eliminations.find_one({"source_g6_pair_id": P1, "period_key": {"$exists": False}})
     bulan = sorted([e["period_key"] async for e in db.intercompany_eliminations.find(
         {"source_g6_pair_id": P1, "period_key": {"$exists": True}}, {"_id": 0})])
     assert bulan == ["2026-12", "2027-01", "2027-03"]
     assert await skrip.jalankan(["--apply"], db=db) == 0
     keluar = capsys.readouterr().out
+    with capsys.disabled():
+        print("\n=== --apply (jalan ketiga) ===\n" + keluar.splitlines()[-1])
     assert "Tanpa perubahan" in keluar, keluar[-1500:]
+
+
+# ── Serah-terima (b): pemanggil dialihkan, indeks unik, invarian ─────────────────────────────────────────────────────
+async def test_PK31_b_kait_transaksi_menulis_entri_per_bulan(db, data_p1):
+    # ALUR (U6): `on_warehouse_task_executed` → `_sync_group_elimination` → `sync_period(pair_id)`.
+    rows = [e async for e in db.intercompany_eliminations.find({"source_g6_pair_id": "pk31_p6"}, {"_id": 0})]
+    assert rows and all(e.get("period_key") for e in rows), rows
+    assert sorted(e["period_key"] for e in rows) == ["2027-04"]
+    assert {(ln["account_code"], ln["debit"], ln["credit"]) for ln in rows[0]["lines"]} == {
+        ("4-1000", 100 * JT, 0), ("5-1000", 0, 60 * JT), ("1-1300", 0, 40 * JT), ("2-1250", 100 * JT, 0),
+        ("1-1250", 0, 100 * JT)}
+    from services import consolidation_service as cons   # tombol "Sinkron Antar-PT" = pembangun ulang yang sama
+    r = await cons.sync_g6_ic_eliminations(as_of="2027-06-30")
+    assert r["created"] + r["updated"] == 0 and r["pairs_seen"] >= 5, r
+
+
+async def test_PK31_b_indeks_unik_terdaftar():
+    import indexes
+    it = next(x for x in indexes.REQUIRED_UNIQUE_INDEXES
+              if (x["collection"], x["name"]) == ("intercompany_eliminations", "uq_pair_period"))
+    assert it["keys"] == [("source_g6_pair_id", 1), ("period_key", 1)]
+    assert set(it["partial"]) == {"source_g6_pair_id", "period_key"}
+
+
+def _vdi():
+    import importlib
+    import sys
+    from pathlib import Path
+    sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "scripts"))
+    return importlib.import_module("verify_data_integrity")
+
+
+async def _inv_ic(db, capsys):
+    await _vdi().layer_interco_invariants(db)
+    return re.sub(r"\x1b\[[0-9;]*m", "", capsys.readouterr().out)
+
+
+def _baris_inv(keluar, kode):
+    return [x for x in keluar.splitlines() if kode in x and ("[PASS]" in x or "[FAIL]" in x)]
+
+
+async def test_PK31_b_invarian_ic03_ic04(db, data_p1, data_rf, capsys):
+    from services import interco_elimination_engine as eng
+    from services import interco_service as ics
+    # Pembangun ulang saldo pasangan PT untuk fixture yang disisip langsung (D2).
+    async for s in db.interco_transactions.find({"role": "seller"}, {"_id": 0}):
+        await ics._update_account_balance(s["seller_entity_id"], s["buyer_entity_id"])
+    await eng.sync_period()
+    keluar = await _inv_ic(db, capsys)
+    for kode in ("INV-IC-03", "INV-IC-04"):
+        b = _baris_inv(keluar, kode)
+        assert b and "[PASS]" in b[0], keluar[-3000:]
+    # INV-IC-04 merah: refund_paid dokumen penjual digeser (FIXTURE) → refund_outstanding & 1-1250 tidak cocok.
+    await db.interco_transactions.update_one({"id": f"{RF}_s"}, {"$set": {"refund_paid": 3 * JT}})
+    try:
+        b = _baris_inv(await _inv_ic(db, capsys), "INV-IC-04")
+        assert b and "[FAIL]" in b[0] and "refund_outstanding" in b[0], b
+    finally:
+        await db.interco_transactions.update_one({"id": f"{RF}_s"}, {"$set": {"refund_paid": 4 * JT}})
+    # INV-IC-03 merah: entri bulan beku berbeda dari hitung ulang (jurnal mundur FIXTURE).
+    d, e_ = await pt("DDD"), await pt("EEE")
+    tutup = [await tutup_periode(d, "2026-12"), await tutup_periode(e_, "2026-12")]
+    try:
+        await eng.sync_period("2026-12", pair_id="pk31_p5")
+        await db.journal_entries.insert_one({
+            "id": "je_pk31_mundur2", "number": "JE-PK31-MUNDUR2", "date": "2026-12-20", "status": "posted",
+            "entity_id": d, "source_type": "interco_transaction", "source_id": "pk31_p5:adj:seller",
+            "lines": [{"account_code": "1-1250", "debit": 5 * JT, "credit": 0},
+                      {"account_code": "4-1000", "debit": 0, "credit": 5 * JT}],
+            "total_debit": 5 * JT, "total_credit": 5 * JT, "created_at": now_iso()})
+        b = _baris_inv(await _inv_ic(db, capsys), "INV-IC-03")
+        assert b and "[FAIL]" in b[0] and "beku" in b[0], b
+    finally:
+        for c in tutup:
+            await db.period_closings.delete_one({"id": c["id"]})
+        await db.journal_entries.delete_one({"id": "je_pk31_mundur2"})
+        await eng.sync_period(pair_id="pk31_p5")

@@ -373,7 +373,7 @@ export default function EntityDetailDrawer({ entityId, canManage, onClose, onCha
                              value={form.ownership_pct ?? ""}
                              onChange={(e) => setForm((f) => ({ ...f, ownership_pct: e.target.value }))} />
                       <p className="text-fs-12 text-kn-text-2">
-                        Belum memengaruhi angka — dipakai laporan konsolidasi setelah eliminasi per periode aktif.
+                        Dipakai Konsolidasi Grup: bagian non-pengendali = laba dan ekuitas PT ini × (100 % − persen ini).
                       </p>
                     </div>
                   </div>

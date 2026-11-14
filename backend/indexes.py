@@ -768,6 +768,20 @@ REQUIRED_UNIQUE_INDEXES += [
                            "$id")},
 ]
 
+# PK-31 (IC-03, D7) — satu entri eliminasi otomatis antar-PT per (pasangan, bulan). Hanya dokumen yang punya KEDUANYA
+# (entri lama tanpa `period_key` dan entri manual tidak ikut). Field `period_key` baru → data lama tidak bisa kembar;
+# dua sinkron bersamaan → satu kena DuplicateKeyError lalu dilewati (`interco_elimination_engine.sync_period`).
+REQUIRED_UNIQUE_INDEXES += [
+    {"collection": "intercompany_eliminations", "name": "uq_pair_period",
+     "label": "satu eliminasi otomatis antar-PT per pasangan per bulan",
+     "keys": [("source_g6_pair_id", 1), ("period_key", 1)],
+     "partial": {"source_g6_pair_id": dict(_NONEMPTY), "period_key": dict(_NONEMPTY)},
+     "finder": _finder_dup("intercompany_eliminations",
+                           '{source_g6_pair_id:{$type:"string",$gt:""},period_key:{$type:"string",$gt:""}}',
+                           '{p:"$source_g6_pair_id",k:"$period_key"}', "$id")},
+]
+
+
 class RequiredIndexError(RuntimeError):
     """Indeks unik wajib tidak terpasang — aplikasi tidak dijalankan (mode `enforce`)."""
 

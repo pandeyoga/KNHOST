@@ -1,5 +1,5 @@
 <!-- DIHASILKAN OTOMATIS oleh scripts/gen_codebase_map.py — JANGAN EDIT TANGAN -->
-<!-- Dihasilkan dari commit: 0f53340 pada 2026-11-14 -->
+<!-- Dihasilkan dari commit: 2442562 pada 2026-11-14 -->
 # CODEBASE MAP — Kain Nusantara (dihasilkan otomatis)
 
 Peta ini dihitung dari kode oleh `scripts/gen_codebase_map.py`. Kalau angka di sini
@@ -31,7 +31,7 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 | `permissions_config.py` | 888 |
 | `entity_scope.py` | 740 |
 | `pagination.py` | 145 |
-| `indexes.py` | 875 |
+| `indexes.py` | 889 |
 | `bootstrap.py` | 2157 |
 | `login_only_endpoints.py` | 81 |
 
@@ -146,7 +146,7 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 | `closing.py` | 6 | 171 | `/finance/closing`, `/finance/closing/close`, `/finance/closing/preview`, `/finance/closing/status`, `/finance/closing/{closing_id}/reclose`, `/finance/closing/{closing_id}/reopen` |
 | `color_library.py` | 14 | 196 | `/color-library`, `/color-library/customer-colors`, `/color-library/customer-colors/{customer_id}/card`, `/color-library/nearest`, `/color-library/supplier-variants`, `/color-library/use-requests` … |
 | `config.py` | 14 | 556 | `/effective`, `/explain`, `/health`, `/history`, `/impact-apply`, `/impact-preview` … |
-| `consolidation.py` | 7 | 143 | `/consolidation/sync-g6`, `/finance/consolidation/eliminations`, `/finance/consolidation/eliminations/sync-from-pairs`, `/finance/consolidation/eliminations/{elim_id}`, `/finance/consolidation/ic-candidates`, `/finance/consolidation/summary` |
+| `consolidation.py` | 7 | 142 | `/consolidation/sync-g6`, `/finance/consolidation/eliminations`, `/finance/consolidation/eliminations/sync-from-pairs`, `/finance/consolidation/eliminations/{elim_id}`, `/finance/consolidation/ic-candidates`, `/finance/consolidation/summary` |
 | `contra_bons.py` | 24 | 405 | `/contra-bons`, `/contra-bons/bank-line-candidates/{line_id}`, `/contra-bons/exchange-schedules`, `/contra-bons/meta`, `/contra-bons/prepare`, `/contra-bons/run-reminder` … |
 | `costing.py` | 2 | 27 | `/wac`, `/wac/{product_id}` |
 | `credit_profiles.py` | 5 | 146 | `/credit-profile-requests`, `/credit-profile-requests/{request_id}/cancel`, `/credit-profile-requests/{request_id}/decision`, `/customers/{customer_id}/credit-profile`, `/customers/{customer_id}/credit-profile-requests` |
@@ -198,7 +198,7 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 | `input_tax.py` | 6 | 203 | `/input-tax-invoices`, `/input-tax-invoices/eligible-bills`, `/input-tax-invoices/{fpm_id}`, `/input-tax-invoices/{fpm_id}/cancel`, `/tax/vat-summary` |
 | `inspections.py` | 18 | 543 | `/inspections`, `/inspections/export`, `/inspections/meta`, `/inspections/meta/ref-docs`, `/inspections/qc-4point`, `/inspections/queue/qc-tasks` … |
 | `integrations.py` | 8 | 172 | `/admin/integrations`, `/admin/integrations/gemini/test`, `/admin/integrations/openai/test`, `/admin/integrations/whatsapp`, `/admin/integrations/whatsapp/adopt`, `/admin/integrations/whatsapp/test` |
-| `interco.py` | 39 | 623 | `/interco/accounts`, `/interco/accounts/{from_entity_id}/{to_entity_id}`, `/interco/accounts/{payer_entity_id}/{payee_entity_id}/remind`, `/interco/contracts`, `/interco/margin-by-product`, `/interco/margin-report` … |
+| `interco.py` | 39 | 624 | `/interco/accounts`, `/interco/accounts/{from_entity_id}/{to_entity_id}`, `/interco/accounts/{payer_entity_id}/{payee_entity_id}/remind`, `/interco/contracts`, `/interco/margin-by-product`, `/interco/margin-report` … |
 | `interco_loans.py` | 8 | 138 | `/interco/loans`, `/interco/loans/meta`, `/interco/loans/{loan_id}`, `/interco/loans/{loan_id}/cancel`, `/interco/loans/{loan_id}/disburse`, `/interco/loans/{loan_id}/repay` … |
 | `interco_prices.py` | 5 | 76 | `/interco/prices/access`, `/interco/prices/bulk`, `/interco/prices/missing`, `/interco/prices/request`, `/interco/prices/summary` |
 | `internal_requests.py` | 9 | 231 | `/internal-requests`, `/internal-requests-availability/{product_id}`, `/internal-requests/meta`, `/internal-requests/{req_id}`, `/internal-requests/{req_id}/cancel`, `/internal-requests/{req_id}/convert` … |
@@ -357,7 +357,7 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 | `config_scoped_rules.py` | 133 | KF-T5 — aturan khusus per pelanggan dan per barang (`docs/blueprint/unit/KF-T5.md`). |
 | `config_service.py` | 825 | Config service (Fase 1A) — Configuration Foundation. |
 | `config_simulator.py` | 641 | FASE G-0 — SIMULATOR KONFIGURASI ("Coba dulu"). |
-| `consolidation_service.py` | 768 | FINANCE — Konsolidasi Grup + Eliminasi Intercompany. |
+| `consolidation_service.py` | 513 | FINANCE — Konsolidasi Grup + Eliminasi Intercompany. |
 | `consolidation_stale_service.py` | 57 | consolidation_stale_service — deteksi entri eliminasi antar-PT yang BASI (Fase 4 · R6, G1-33). |
 | `contra_bon_reminder.py` | 236 | FASE G-7 — **JADWAL TUKAR FAKTUR** per supplier + pengingat otomatis. |
 | `contra_bon_scan.py` | 247 | FASE G-7 — Pemeriksa invarian **KONTRABON** (INV-CB-01..04). |
@@ -461,14 +461,14 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 | `input_tax_service.py` | 248 | Faktur Pajak Masukan (tax_invoices_in) service — Fase 5.5 / P0-3. |
 | `inspection_service.py` | 1888 | FASE I — **INSPEKSI & QC SEBAGAI DOKUMEN** (`<ENT>/INS-#####`). |
 | `integrations_service.py` | 153 | H5 service — Integrasi pihak ketiga (config runtime di system_settings). |
-| `interco_elimination_engine.py` | 470 | PK-31 (IC-03, IC-04, RP-10) — MESIN ELIMINASI ANTAR-PT PER PERIODE dari data BERTANGGAL. |
+| `interco_elimination_engine.py` | 482 | PK-31 (IC-03, IC-04, RP-10) — MESIN ELIMINASI ANTAR-PT PER PERIODE dari data BERTANGGAL. |
 | `interco_loan_service.py` | 268 | FASE E-7 (E7f) — **PINJAMAN UANG ANTAR-PT** (`<ENT>/ICL-#####`). |
-| `interco_margin.py` | 427 | FASE G-6b — **RAPOR MARGIN GRUP** antar-PT (realized vs unrealized). |
+| `interco_margin.py` | 414 | FASE G-6b — **RAPOR MARGIN GRUP** antar-PT (realized vs unrealized). |
 | `interco_money_service.py` | 217 | FASE E-7 (E7f + E7g) — **UANG & ASET ANTAR-PT** yang bukan jual-beli. |
 | `interco_price_service.py` | 176 | 2026-10 — HARGA INTERNAL antar-PT (kontrak `supplier_contracts` contract_type=internal). |
 | `interco_reminder.py` | 179 | FASE G-6b — **PENGINGAT SETTLEMENT** saldo antar-PT yang menganggur. |
 | `interco_return_service.py` | 927 | FASE G-6b — **RETUR ANTAR-PT** (jalan resmi setelah barangnya sudah berpindah). |
-| `interco_service.py` | 2645 | FASE G-6 — Layanan **TRANSAKSI ANTAR ENTITAS** (jual-beli antar-PT dalam grup). |
+| `interco_service.py` | 2650 | FASE G-6 — Layanan **TRANSAKSI ANTAR ENTITAS** (jual-beli antar-PT dalam grup). |
 | `interco_tax_service.py` | 468 | FASE G-6b — **FAKTUR PAJAK INTERNAL** untuk transaksi antar-PT ber-PPN. |
 | `internal_request_service.py` | 523 | FASE E-7 (E7.1 · gelombang 2 “E7d”) — **PERMINTAAN INTERNAL** (`<ENT>/PIN-#####`). |
 | `inventory_drift_watch.py` | 129 | services/inventory_drift_watch.py — PEMANTAU DRIFT PERSEDIAAN (INV-GL-DRIFT). |
@@ -700,7 +700,7 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 
 | Fitur (`src/features/`) | Berkas | Baris |
 |---|---:|---:|
-| `__tests__` | 108 | 17123 |
+| `__tests__` | 109 | 17268 |
 | `admin` | 36 | 6980 |
 | `approvals` | 9 | 1720 |
 | `catalog` | 24 | 1450 |
@@ -711,7 +711,7 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 | `desks` | 2 | 229 |
 | `documents` | 18 | 2580 |
 | `export` | 9 | 700 |
-| `finance` | 97 | 21901 |
+| `finance` | 99 | 22348 |
 | `home` | 5 | 1136 |
 | `hr` | 33 | 5403 |
 | `inspections` | 12 | 2181 |
@@ -748,7 +748,7 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 
 ## Berkas melewati batas ukuran
 
-20 berkas.
+21 berkas.
 
 | Berkas | Baris | Batas |
 |---|---:|---:|
@@ -769,6 +769,7 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 | `frontend/src/features/purchasing/makloon/MakloonWizard.jsx` | 542 | 500 |
 | `frontend/src/features/pos/CheckoutDrawer.jsx` | 538 | 500 |
 | `frontend/src/features/settings/entities/EntityDetailDrawer.jsx` | 518 | 500 |
+| `frontend/src/features/finance/interco/IntercoView.jsx` | 515 | 500 |
 | `frontend/src/features/settings/entities/RoleRealityPanel.jsx` | 511 | 500 |
 | `frontend/src/features/purchasing/contrabon/ContraBonCreateWizard.jsx` | 502 | 500 |
 | `frontend/src/features/wms/warehouses/WarehouseMasterView.jsx` | 502 | 500 |

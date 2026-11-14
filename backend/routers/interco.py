@@ -87,12 +87,13 @@ async def interco_summary(request: Request, entity_id: str = "") -> Dict[str, An
 # ── Transaksi ────────────────────────────────────────────────────────────────
 @router.get("/interco/transactions")
 async def list_ict(request: Request, entity_id: str = "", status: str = "",
-                    role: str = "", limit: int = 200) -> List[Dict[str, Any]]:
+                    role: str = "", limit: int = 200, refund_open: bool = False) -> List[Dict[str, Any]]:
     await require_permission(request, "interco", "view")
     scope = await _scope(request, entity_id)
     from pagination import clamp_limit   # FIX-5 (B3b LST-03)
     return await ics.list_transactions(scope, entity_id=entity_id, status=status,
-                                        role=role, limit=clamp_limit(limit, 200, 500))
+                                        role=role, limit=clamp_limit(limit, 200, 500),
+                                        refund_open=refund_open)   # PK-31 — kandidat dialog Catat Refund
 
 
 @router.post("/interco/transactions")

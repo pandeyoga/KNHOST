@@ -360,7 +360,7 @@ export default function EntityWizard({ entities = [], onClose, onCreated, onDone
                   </label>
                 </Field>
                 <Field label="Persen kepemilikan (%)" testId="entity-wizard-ownership"
-                       hint="Belum memengaruhi angka — dipakai laporan konsolidasi setelah eliminasi per periode aktif.">
+                       hint="Dipakai Konsolidasi Grup: bagian non-pengendali = laba dan ekuitas PT ini × (100 % − persen ini).">
                   <input className="field" type="number" min="0.01" max="100" step="0.01"
                          data-testid="entity-wizard-ownership-input" disabled={form.is_group}
                          value={form.ownership_pct} onChange={(e) => set({ ownership_pct: e.target.value })} />

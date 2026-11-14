@@ -4002,15 +4002,15 @@ async def layer_interco_invariants(db):
                setiap ARAH DAGANG (setelah settlement diperhitungkan), baik dilihat
                dari `interco_accounts` maupun dari jurnal — dan **tidak boleh ada dua
                baris beperan sama yang berbagi satu arah dagang** (saling menimpa).
-    INV-IC-03  Margin antar-PT **ter-eliminasi** di konsolidasi selama barangnya belum
-               terjual ke pihak luar: tiap pair aktif punya TEPAT SATU entri auto yang
-               seimbang, menghapus pendapatan sebesar subtotal, mengoreksi persediaan
-               sebesar margin, dan menghapus IC-AR/IC-AP sebesar **sisa** (bukan nilai
-               lama sebelum settlement).
+    INV-IC-03  *(PK-31)* Eliminasi antar-PT PER BULAN: tiap entri `period_key` seimbang, satu
+               per (pasangan, bulan), dokumen sumbernya ada; entri BEKU == `period_entry`
+               hitung ulang (beda = jurnal mundur ke bulan tertutup). Entri lama tanpa
+               `period_key` → WARN (skrip migrasi PK-31, H3).
     INV-IC-04  Saldo `interco_accounts` == Σ transaksi terbuka − Σ settlement (tidak
-               boleh drift), `settled_amount` tak boleh melebihi nilai dokumen, dan
-               **setiap arah dagang yang punya transaksi terbuka WAJIB punya baris
-               piutang & utang** (baris yang hilang dulu lolos hijau — KN-G6-ICA-CLOBBER).
+               boleh drift), `refund_outstanding` == Σ (refund_due − refund_paid), refund
+               dibayar tak melebihi utang refund, **setiap arah dagang yang punya transaksi
+               terbuka WAJIB punya baris piutang & utang** (KN-G6-ICA-CLOBBER), dan *(PK-31)*
+               buku besar 1-1250 per arah dagang == outstanding − refund_outstanding.
     INV-IC-05  PPN keluaran penjual == PPN masukan pembeli untuk transaksi yang sama;
                bila `tanpa_ppn`, kedua sisi WAJIB nol (tidak boleh miring sebelah).
     INV-IC-06  Perpindahan fisik yang tertaut transaksi G-6 **tidak boleh** memposting
@@ -4027,10 +4027,9 @@ async def layer_interco_invariants(db):
                punya tugas gudang selesai + jurnal barang (bukan hanya berganti status).
     """
     print(f"\n{C}{B}L4-IC — Invarian Transaksi Antar Entitas (FASE G-6){X}")
-    # SATU sumber kebenaran untuk rasio "belum terjual keluar": helper yang sama
-    # dipakai mesin eliminasi konsolidasi & layar Rapor Margin Grup.
+    # SATU sumber kebenaran (PK-31): mesin eliminasi per bulan `interco_elimination_engine` — dipakai laporan
+    # konsolidasi, Rapor Margin Grup, dan INV-IC-03 di bawah.
     sys.path.insert(0, "/app/backend")
-    from services import interco_margin as _g6_margin
     OPEN = ["confirmed", "shipped", "received", "invoiced"]
     sellers = await db.interco_transactions.find({"role": "seller"}, {"_id": 0}).to_list(20000)
     buyers = {b["pair_id"]: b for b in await db.interco_transactions.find(
@@ -4177,82 +4176,48 @@ async def layer_interco_invariants(db):
                         f"({len(ar_by)} arah dagang · IC-AR bersih {ar:,.0f} == IC-AP bersih {ap:,.0f})")
 
     # ── INV-IC-03 ───────────────────────────────────────────────────────────
+    # PK-31 — entri otomatis antar-PT PER BULAN (`period_key`) dari mesin `interco_elimination_engine`: tiap entri
+    # seimbang, satu per (pasangan, bulan), dokumen sumbernya masih ada; entri BEKU (bulan tertutup di kedua PT) ==
+    # `period_entry` hitung ulang — beda = ada jurnal mundur ke bulan tertutup. Entri lama satu-per-pasangan (tanpa
+    # `period_key`) tidak lagi dibaca laporan → WARN + petunjuk skrip migrasi (H3).
+    from services import interco_elimination_engine as _eng
     elims = await db.intercompany_eliminations.find(
-        {"source_g6_pair_id": {"$exists": True, "$ne": None}}, {"_id": 0}).to_list(5000)
-    elim_by_pair = {}
-    for e in elims:
-        elim_by_pair.setdefault(e["source_g6_pair_id"], []).append(e)
+        {"source_g6_pair_id": {"$nin": [None, ""]}}, {"_id": 0}).to_list(None)
+    legacy = [e for e in elims if not e.get("period_key")]
+    per_bulan = [e for e in elims if e.get("period_key")]
     v3 = []
-    active = [s for s in sellers if s.get("status") not in ("draft", "cancelled")]
-    for s in active:
-        pair = s["pair_id"]
-        rows = elim_by_pair.get(pair, [])
-        if len(rows) != 1:
-            v3.append(f"{s.get('number')}: {len(rows)} entri eliminasi (harus tepat 1)")
-            continue
-        e = rows[0]
-        if not e.get("balanced"):
-            v3.append(f"{e.get('name')}: entri eliminasi tidak seimbang")
-            continue
-        # FASE G-6b — nilai EFEKTIF: bagian yang sudah diretur bukan transaksi
-        # intra-grup lagi, dan hanya margin yang masih menempel di persediaan
-        # pembeli (u) yang boleh dieliminasi.
-        sub_eff = round(float(s.get("subtotal") or 0)
-                        - float(s.get("returned_subtotal") or 0), 2)
-        rev = sum(float(l.get("debit") or 0) for l in e.get("lines", [])
-                  if l["account_code"] == "4-1000")
-        if abs(rev - sub_eff) > 0.01:
-            v3.append(f"{s.get('number')}: pendapatan intra-grup dieliminasi {rev:,.2f} "
-                      f"!= subtotal efektif {sub_eff:,.2f}")
-        cogs_je = await db.journal_entries.find_one(
-            {"source_type": "interco_transaction", "source_id": f"{pair}:cogs",
-             "status": "posted"}, {"_id": 0, "total_debit": 1})
-        cost_eff = round(float((cogs_je or {}).get("total_debit") or 0)
-                         - float(s.get("returned_cost") or 0), 2)
-        margin_eff = round(sub_eff - cost_eff, 2)
-        # SATU sumber kebenaran rasio: helper yang dipakai mesin eliminasi juga.
-        u_info = await _g6_margin.unsold_ratio(pair, seller=s)
-        u = max(0.0, min(1.0, float(u_info["ratio"])))
-        want_unreal = round(margin_eff * u, 2)
-        stored_u = e.get("g6_unsold_ratio")
-        if stored_u is not None and abs(float(stored_u) - u) > 0.001:
-            v3.append(f"{s.get('number')}: rasio belum-terjual tersimpan {stored_u} != "
-                      f"hitung ulang {u}")
-        inv_c = sum(float(l.get("credit") or 0) for l in e.get("lines", [])
-                    if l["account_code"] in ("1-1300", "1-1310"))
-        inv_d = sum(float(l.get("debit") or 0) for l in e.get("lines", [])
-                    if l["account_code"] in ("1-1300", "1-1310"))
-        if want_unreal > 0.005 and abs(inv_c - want_unreal) > 0.01:
-            v3.append(f"{s.get('number')}: unrealized profit {inv_c:,.2f} != margin belum "
-                      f"terealisasi {want_unreal:,.2f} (margin {margin_eff:,.2f} × u={u})")
-        if want_unreal < -0.005 and abs(inv_d - abs(want_unreal)) > 0.01:
-            v3.append(f"{s.get('number')}: koreksi persediaan jual-rugi tidak sesuai")
-        outstanding = round(float(s.get("grand_total") or 0)
-                            - float(s.get("settled_amount") or 0)
-                            - float(s.get("returned_amount") or 0), 2)
-        ic_ap = sum(float(l.get("debit") or 0) for l in e.get("lines", [])
-                    if l["account_code"] == "2-1250")
-        if abs(ic_ap - max(outstanding, 0)) > 0.01:
-            v3.append(f"{s.get('number')}: eliminasi IC-AP {ic_ap:,.2f} != sisa {outstanding:,.2f}")
-    stale = [p for p in elim_by_pair
-             if p not in {s["pair_id"] for s in active}]
-    for p in stale:
-        v3.append(f"pair {p}: entri eliminasi tertinggal padahal transaksinya tidak aktif")
+    live = {s["pair_id"] for s in sellers if s.get("status") != "draft"}
+    seen_key: dict = {}
+    for e in per_bulan:
+        k = (e["source_g6_pair_id"], e["period_key"])
+        seen_key[k] = seen_key.get(k, 0) + 1
+        sd = sum(int(round(float(ln.get("debit") or 0) * 100)) for ln in e.get("lines") or [])
+        sc = sum(int(round(float(ln.get("credit") or 0) * 100)) for ln in e.get("lines") or [])
+        if not e.get("balanced") or sd != sc:   # dihitung dari baris, bukan hanya penanda `balanced`
+            v3.append(f"{e.get('name')}: entri eliminasi tidak seimbang (debit {sd / 100:,.2f} ≠ kredit {sc / 100:,.2f})")
+        if e["source_g6_pair_id"] not in live and not e.get("frozen"):
+            v3.append(f"{e.get('name')}: dokumen antar-PT sumbernya tidak ada / draf")
+    v3 += [f"pasangan {p} bulan {m}: {n} entri (harus tepat 1)" for (p, m), n in seen_key.items() if n > 1]
+    beku = [e for e in per_bulan if e.get("frozen")]
+    for e in beku:
+        hitung = await _eng.period_entry(e["source_g6_pair_id"], e["period_key"])
+        if _eng.baris_berbeda(e.get("lines"), hitung.get("lines")):
+            v3.append(f"{e.get('name')}: entri beku {e.get('total_debit', 0):,.2f} != hitung ulang "
+                      f"{hitung.get('total_debit', 0):,.2f} (jurnal mundur ke bulan tertutup?)")
     if v3:
         results["fail"] += 1
-        line("FAIL", R, f"INV-IC-03: {len(v3)} masalah eliminasi unrealized profit", str(v3[:4]))
+        line("FAIL", R, f"INV-IC-03: {len(v3)} masalah eliminasi antar-PT per bulan", str(v3[:4]))
     else:
         results["pass"] += 1
-        margin_total = 0.0
-        for s in active:
-            e = elim_by_pair.get(s["pair_id"], [{}])[0]
-            margin_total += sum(float(l.get("credit") or 0) for l in e.get("lines", [])
-                                if l["account_code"] in ("1-1300", "1-1310"))
-        line("PASS", G, f"INV-IC-03: {len(active)} pair aktif ter-eliminasi otomatis di "
-                        f"konsolidasi (unrealized profit Rp {margin_total:,.0f} tidak "
-                        f"menggelembungkan laba grup)")
+        line("PASS", G, f"INV-IC-03: {len(per_bulan)} entri eliminasi per bulan seimbang & unik "
+                        f"({len(beku)} beku == hitung ulang)")
+    if legacy:
+        results["warn"] += 1
+        line("WARN", Y, f"INV-IC-03: {len(legacy)} entri eliminasi antar-PT LAMA (tanpa period_key) tidak dibaca laporan",
+             "cetak dulu: python scripts/migrasi_pk31_eliminasi_per_periode.py (--apply = keputusan pemilik, H3)")
 
     # ── INV-IC-04 ───────────────────────────────────────────────────────────
+    from services import interco_service as _ics
     v4 = []
     for acc in accounts:
         sel, buy = _pair_key(acc).split(">", 1)
@@ -4263,6 +4228,11 @@ async def layer_interco_invariants(db):
                              float(d.get("returned_amount") or 0) for d in docs), 2)
         if abs(expected - float(acc.get("outstanding") or 0)) > 0.01:
             v4.append(f"{acc.get('id')}: outstanding {acc.get('outstanding')} != hitung {expected}")
+        # PK-31 (IC-07) — utang refund penjual: Σ (refund_due − refund_paid) dokumen arah ini.
+        rf = round(sum(_ics.refund_left_of(s) for s in sellers if s.get("seller_entity_id") == sel
+                       and s.get("buyer_entity_id") == buy and s.get("status") not in ("draft", "cancelled")), 2)
+        if abs(rf - float(acc.get("refund_outstanding") or 0)) > 0.01:
+            v4.append(f"{acc.get('id')}: refund_outstanding {acc.get('refund_outstanding')} != hitung {rf}")
     # KELENGKAPAN (celah yang ditutup bersama KN-G6-ICA-CLOBBER): dulu invarian ini
     # hanya memeriksa baris yang ADA, jadi baris yang HILANG — tertimpa arah dagang
     # lain — lolos HIJAU sementara utangnya benar-benar menghilang dari layar.
@@ -4288,14 +4258,50 @@ async def layer_interco_invariants(db):
                 v4.append(f"{row.get('id')}: {label} {row.get('outstanding')} != "
                           f"hitung {expected}")
     for s in sellers:
-        if (float(s.get("settled_amount") or 0) + float(s.get("returned_amount") or 0)
-                - float(s.get("grand_total") or 0)) > 0.01:
-            v4.append(f"{s.get('number')}: terlunasi+diretur melebihi nilai dokumen")
+        # PK-31 — retur sesudah lunas SAH membuat terlunasi + diretur > nilai (selisihnya utang refund); yang tidak boleh:
+        # refund dibayar melebihi utang refund, atau `refund_due` tersimpan beda dari rumusnya.
+        if float(s.get("refund_paid") or 0) - _ics.refund_due_of(s) > 0.01:
+            v4.append(f"{s.get('number')}: refund dibayar {s.get('refund_paid')} melebihi utang refund "
+                      f"{_ics.refund_due_of(s)}")
+        if "refund_due" in s and abs(float(s.get("refund_due") or 0) - _ics.refund_due_of(s)) > 0.01:
+            v4.append(f"{s.get('number')}: refund_due {s.get('refund_due')} != rumus {_ics.refund_due_of(s)}")
     settlements = await db.interco_settlements.find({}, {"_id": 0}).to_list(5000)
     for st in settlements:
         tot = round(sum(float(a.get("applied_amount") or 0) for a in st.get("applied", [])), 2)
         if abs(tot - float(st.get("total_applied") or 0)) > 0.01:
             v4.append(f"{st.get('number')}: total {st.get('total_applied')} != Σ baris {tot}")
+    # PK-31 (IC-07) — buku besar 1-1250 per ARAH DAGANG (jurnal dagang di buku penjual + jurnal pelunasan/refund dengan
+    # PT lawannya) == outstanding − refund_outstanding. Retur sesudah lunas membuat 1-1250 negatif sebesar utang refund.
+    pair_dir = {s["pair_id"]: (s.get("seller_entity_id"), s.get("buyer_entity_id")) for s in sellers}
+    rp_dir = {r["return_pair_id"]: pair_dir.get(r.get("origin_pair_id")) async for r in db.interco_returns.find(
+        {"role": "returner"}, {"_id": 0, "return_pair_id": 1, "origin_pair_id": 1})}
+    st_by = {st["id"]: st for st in settlements}
+    gl_dir: dict = {}
+    async for je in db.journal_entries.find(
+            {"source_type": {"$in": ["interco_transaction", "interco_return", "interco_settlement"]},
+             "status": {"$ne": "void"}, "lines.account_code": "1-1250"},
+            {"_id": 0, "source_type": 1, "source_id": 1, "entity_id": 1, "lines": 1}):
+        base = str(je.get("source_id") or "").split(":", 1)[0]
+        if je["source_type"] == "interco_settlement":
+            st = st_by.get(base) or {}
+            other = st.get("payee_entity_id") if je.get("entity_id") == st.get("payer_entity_id") \
+                else st.get("payer_entity_id")
+            d = (je.get("entity_id"), other) if other else None
+        else:
+            d = (pair_dir if je["source_type"] == "interco_transaction" else rp_dir).get(base)
+            if d and je.get("entity_id") != d[0]:
+                d = None
+        if not d:
+            continue
+        k = f"{d[0]}>{d[1]}"
+        gl_dir[k] = round(gl_dir.get(k, 0.0) + sum(float(ln.get("debit") or 0) - float(ln.get("credit") or 0)
+                                                    for ln in je.get("lines", []) if ln.get("account_code") == "1-1250"), 2)
+    for k in sorted(set(gl_dir) | set(ar_by)):
+        row = ar_by.get(k) or {}
+        want = round(float(row.get("outstanding") or 0) - float(row.get("refund_outstanding") or 0), 2)
+        if abs(gl_dir.get(k, 0.0) - want) > 0.01:
+            v4.append(f"arah {k.replace('>', '→')}: buku besar 1-1250 {gl_dir.get(k, 0.0):,.2f} != outstanding − "
+                      f"refund_outstanding {want:,.2f}")
     if v4:
         results["fail"] += 1
         line("FAIL", R, f"INV-IC-04: {len(v4)} drift saldo antar-PT / settlement", str(v4[:4]))
@@ -4303,7 +4309,7 @@ async def layer_interco_invariants(db):
         results["pass"] += 1
         line("PASS", G, f"INV-IC-04: {len(accounts)} saldo pasangan PT == Σ transaksi − Σ "
                         f"settlement ({len(dirs)} arah dagang lengkap piutang+utang · "
-                        f"{len(settlements)} settlement konsisten)")
+                        f"{len(settlements)} settlement konsisten · 1-1250 == outstanding − refund_outstanding)")
 
     # ── INV-IC-05 ───────────────────────────────────────────────────────────
     v5 = []

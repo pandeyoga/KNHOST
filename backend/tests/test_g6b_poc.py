@@ -571,22 +571,21 @@ def test_d2_retur_keluar_dari_hitungan_margin(adm):
 
 
 def test_d3_bukti_merah_inv_ic_03(adm):
-    """Suntik rasio belum-terjual yang salah → INV-IC-03 WAJIB memerah."""
+    """Suntik baris eliminasi per bulan yang tidak seimbang → INV-IC-03 WAJIB memerah (PK-31: rasio tidak lagi
+    disimpan sebagai `g6_unsold_ratio`; keadaan dihitung dari data bertanggal)."""
     db = _db()
     e = db.intercompany_eliminations.find_one(
-        {"source_g6_pair_id": {"$exists": True, "$ne": None},
-         "g6_unsold_ratio": {"$exists": True}},
-        {"_id": 0, "id": 1, "g6_unsold_ratio": 1})
-    assert e, "entri eliminasi G-6 wajib menyimpan rasio yang dipakainya"
-    old = e["g6_unsold_ratio"]
-    db.intercompany_eliminations.update_one({"id": e["id"]},
-                                            {"$set": {"g6_unsold_ratio": 0.42}})
+        {"source_g6_pair_id": {"$exists": True, "$ne": None}, "period_key": {"$exists": True}},
+        {"_id": 0, "id": 1, "lines": 1})
+    assert e, "entri eliminasi antar-PT per bulan wajib ada"
+    rusak = [dict(l) for l in e["lines"]]
+    rusak[0]["debit"] = round(float(rusak[0].get("debit") or 0) + 4200.0, 2)
+    db.intercompany_eliminations.update_one({"id": e["id"]}, {"$set": {"lines": rusak}})
     try:
         red = _integrity()
         assert "INV-IC-03" in red and "FAIL" in red, red[-1200:]
     finally:
-        db.intercompany_eliminations.update_one({"id": e["id"]},
-                                                {"$set": {"g6_unsold_ratio": old}})
+        db.intercompany_eliminations.update_one({"id": e["id"]}, {"$set": {"lines": e["lines"]}})
     assert "FAIL 0" in _integrity()
 
 

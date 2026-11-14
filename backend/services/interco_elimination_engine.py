@@ -415,6 +415,34 @@ async def sync_period(period_key: str = "", pair_id: str = "") -> Dict[str, Any]
     return out
 
 
+async def pair_entries(f: Dict[str, Any], as_of: str,
+                       amap: Optional[Dict[str, Dict[str, Any]]] = None) -> Tuple[List[Dict[str, Any]], List[Dict[str, Any]]]:
+    """Entri eliminasi SATU pasangan sampai `as_of` → `(entri, stale)` — aturan bulan sama dengan `eliminations_for`
+    (dipakai laporan konsolidasi dan rapor margin, supaya keduanya membaca angka yang sama)."""
+    as_of = (as_of or SELAMANYA)[:10]
+    amap = amap if amap is not None else await _amap()
+    pid = f["pair_id"]
+    beku = {e["period_key"]: e async for e in db[COLL].find(
+        {"source_g6_pair_id": pid, "frozen": True, "period_key": {"$exists": True, "$nin": [None, ""]}}, {"_id": 0})}
+    months = sorted({m for m in f["months"] if m <= as_of[:7]} | {m for m in beku if akhir_bulan(m) <= as_of})
+    out: List[Dict[str, Any]] = []
+    stale: List[Dict[str, Any]] = []
+    for m in months:
+        end = akhir_bulan(m)
+        if end > as_of:
+            e = {**_entry(f, m, akhir_bulan_sebelumnya(m), as_of, amap), "partial": True}
+        elif m in beku:
+            e = beku[m]
+            hitung = _entry(f, m, akhir_bulan_sebelumnya(m), end, amap)
+            if baris_berbeda(e.get("lines"), hitung["lines"]):
+                stale.append(_stale_row(f, e, hitung))
+        else:
+            e = _entry(f, m, akhir_bulan_sebelumnya(m), end, amap)
+        if e.get("lines"):
+            out.append({**e, "frozen": bool(e.get("frozen"))})
+    return out, stale
+
+
 async def eliminations_for(as_of: str, year: int,
                            entity_ids: Optional[Iterable[str]] = None) -> Tuple[List[Dict[str, Any]], ...]:
     """Entri eliminasi antar-PT untuk laporan per `as_of` → `(pl, bs, semua, stale)`.
@@ -439,26 +467,10 @@ async def eliminations_for(as_of: str, year: int,
     async for seller in db.interco_transactions.find({"role": "seller", "status": {"$ne": "draft"}}, {"_id": 0}):
         if not dalam(seller.get("seller_entity_id"), seller.get("buyer_entity_id")):
             continue
-        pid = seller["pair_id"]
-        seen.append(pid)
-        f = await facts(pid, seller, kode)
-        beku = {e["period_key"]: e async for e in db[COLL].find(
-            {"source_g6_pair_id": pid, "frozen": True, "period_key": {"$exists": True, "$nin": [None, ""]}},
-            {"_id": 0})}
-        months = sorted({m for m in f["months"] if m <= as_of[:7]} | {m for m in beku if akhir_bulan(m) <= as_of})
-        for m in months:
-            end = akhir_bulan(m)
-            if end > as_of:
-                e = {**_entry(f, m, akhir_bulan_sebelumnya(m), as_of, amap), "partial": True}
-            elif m in beku:
-                e = beku[m]
-                hitung = _entry(f, m, akhir_bulan_sebelumnya(m), end, amap)
-                if baris_berbeda(e.get("lines"), hitung["lines"]):
-                    stale.append(_stale_row(f, e, hitung))
-            else:
-                e = _entry(f, m, akhir_bulan_sebelumnya(m), end, amap)
-            if e.get("lines"):
-                used.append({**e, "frozen": bool(e.get("frozen"))})
+        seen.append(seller["pair_id"])
+        ent, st = await pair_entries(await facts(seller["pair_id"], seller, kode), as_of, amap)
+        used.extend(ent)
+        stale.extend(st)
     # Entri beku yang dokumennya sudah tidak ada tetap bagian laporan bulan tertutup (dilaporkan R6 sebagai basi).
     async for e in db[COLL].find({"frozen": True, "period_key": {"$exists": True, "$nin": [None, ""]},
                                   "source_g6_pair_id": {"$nin": seen}}, {"_id": 0}):

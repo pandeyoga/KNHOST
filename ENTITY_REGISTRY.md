@@ -3157,7 +3157,8 @@ INDEKS UNIK WAJIB (PK-14, `backend/indexes.py` REQUIRED_UNIQUE_INDEXES — aplik
   finance_cases.uq_case_open_source (case_type, source.id | status open/in_progress) ·
   PK-40: tax_invoices.uq_fkt_active (active_key) · tax_invoices.uq_fkt_nsfp (nsfp_key) ·
   tax_invoices_in.uq_fpm_active (active_key) · tax_invoices_in.uq_fpm_nsfp (nsfp_key) ·
-  tax_period_locks.uq_tax_period (entity_id, period)
+  tax_period_locks.uq_tax_period (entity_id, period) ·
+  PK-31: intercompany_eliminations.uq_pair_period (source_g6_pair_id, period_key | keduanya terisi)
 ⚠️ AR aging/Outstanding = DERIVED dari invoices + credit_limit; denda 1–3% pada invoices
 ⚠️ JANGAN buat: ledger, accounts, gl (pakai journal_entries/chart_of_accounts/bank_accounts)
 ```
@@ -3567,6 +3568,23 @@ terakhir: dokumen terbuka & settlement — dipakai untuk umur saldo, menggantika
 `g6_unsold_ratio` · `g6_subtotal_effective` · `g6_cost_effective` · `g6_qty_base` ·
 `g6_qty_remaining` — jejak angka yang dipakai mesin eliminasi, dibaca invarian
 INV-IC-03 & layar Rapor Margin Grup (satu sumber kebenaran, bukan dua rumus).
+**PK-31 — field `g6_*` di atas hanya ada di entri LAMA (satu per pasangan, tanpa `period_key`); entri baru per bulan
+di bawah.**
+
+### PK-31 — eliminasi antar-PT per bulan, rantai roll, refund retur sesudah lunas
+Mesin: `backend/services/interco_elimination_engine.py` (`pair_state`, `period_entry`, `sync_period`, `eliminations_for`).
+| Koleksi · field | Tipe | Arti |
+|---|---|---|
+| `intercompany_eliminations.period_key` | `YYYY-MM` | Entri otomatis antar-PT **satu per pasangan per bulan** (`source_g6_pair_id` + `period_key`, indeks unik `uq_pair_period`); `effective_date` = hari terakhir bulan; `lines` = keadaan akhir bulan − akhir bulan sebelumnya |
+| `.cumulative` / `.previous` | objek | Potret keadaan akhir bulan / akhir bulan sebelumnya `{revenue, cogs, urp, delivered, unsold_ratio, moved_len, sold_len, ic_balance}` |
+| `.frozen` | bool | Bulan sudah ditutup di PT penjual DAN pembeli; entri beku tidak ditimpa (hitung ulang yang berbeda → `stale`, INV-IC-03) |
+| `.period_label`, `.seller_number` | teks | "Desember 2026"; nomor dokumen penjual |
+| `inventory_rolls.cost_basis.chain[]` | larik `{interco_pair_id, interco_number, seller_entity_id, buyer_entity_id, unit_price, previous_unit_cost, at}` | Satu unsur per perpindahan antar-PT (`interco_service.on_warehouse_task_executed`); retur antar-PT membuang unsur pasangan asal; potongan roll mewarisi `cost_basis`. Tingkat atas `cost_basis` tetap = perpindahan terakhir. Roll lama tanpa `chain` dikenali dari `cost_basis.interco_pair_id` |
+| `interco_transactions.refund_due`, `.refund_paid`, `.refund_ids` | angka · larik | `refund_due = max(0, returned_amount + settled_amount − grand_total)` (ditulis `interco_return_service._refresh_origin`, kedua dokumen kembar); `refund_paid` dinaikkan CAS oleh refund; `refund_ids` = id refund yang sudah diterapkan |
+| `interco_accounts.refund_due`, `.refund_paid`, `.refund_outstanding`, `.refund_count` | angka | Σ per arah dagang; `refund_outstanding` = Σ (`refund_due − refund_paid`); tidak masuk `outstanding` |
+| `interco_settlements.kind` | `settlement` (bawaan, field tidak ada) · `refund` | Refund (`POST /api/interco/refunds`, izin `interco.settle`): `payer_entity_id` = PT penjual; jurnal `{id}:payer` Dr 1-1250 / Cr kas, `{id}:payee` Dr kas / Cr 2-1250; kas kembar `ref_type="interco_settlement"` |
+Migrasi entri lama → per bulan: `scripts/migrasi_pk31_eliminasi_per_periode.py` (baca-saja; `--apply` = H3).
+⚠️ JANGAN membuat koleksi eliminasi kedua (`interco_eliminations`, `consolidation_entries`) — pakai `intercompany_eliminations`.
 
 ### customer_prices — F1b (D-14) **Daftar Harga per Pelanggan** (harga langganan)
 Collection: `customer_prices`   Prefix: `cpr_`   Router: `routers/customer_prices.py`
