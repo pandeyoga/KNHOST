@@ -14,7 +14,7 @@ from dependencies import audit, has_permission, require_any_permission, require_
 from services import approval_policy_service as _aps   # KP-T4 — satu tabel kebijakan persetujuan
 from entity_scope import entity_ctx, guard_party, resolve_scope_ids
 from schemas_interco import (
-    IntercoActionIn, IntercoCreate, IntercoReasonIn, IntercoReturnCreate,
+    IntercoActionIn, IntercoCreate, IntercoReasonIn, IntercoRefundCreate, IntercoReturnCreate,
     IntercoSettlementCreate, IntercoTaxIssueIn,
 )
 from schemas_return_rolls import ReturnRollDecisionsIn
@@ -279,6 +279,29 @@ async def create_ics(payload: IntercoSettlementCreate,
         raise _fail(exc) from exc
     await audit(actor.get("name", ""), "interco_settlement_created",
                 "interco_settlement", res.get("id", ""),
+                {"payer": payload.payer_entity_id, "payee": payload.payee_entity_id,
+                 "total": res.get("total_applied")})
+    return res
+
+
+@router.post("/interco/refunds")
+async def create_icr(payload: IntercoRefundCreate, request: Request) -> Dict[str, Any]:
+    """PK-31 (IC-07) — PT penjual mengembalikan kelebihan bayar transaksi yang diretur sesudah lunas (kas kembar +
+    jurnal di kedua PT, mesin settlement PK-06). Izin `interco.settle`; PT penjual (pembayar) wajib dalam cakupan."""
+    actor = await require_permission(request, "interco", "settle")
+    try:
+        ics.assert_refund_parties(payload.payer_entity_id, payload.payee_entity_id)
+    except ics.IntercoError as exc:
+        raise _fail(exc) from exc
+    ctx = await entity_ctx(request)
+    if payload.payer_entity_id not in ctx.allowed_entity_ids:
+        raise HTTPException(status_code=403, detail=ics.PESAN_REFUND_CAKUPAN)
+    try:
+        res = await ics.create_refund(payload.model_dump(), actor.get("name", ""),
+                                      idempotency_key=(request.headers.get("Idempotency-Key") or "").strip())
+    except _biz_errors() as exc:
+        raise _fail(exc) from exc
+    await audit(actor.get("name", ""), "interco_refund_created", "interco_settlement", res.get("id", ""),
                 {"payer": payload.payer_entity_id, "payee": payload.payee_entity_id,
                  "total": res.get("total_applied")})
     return res

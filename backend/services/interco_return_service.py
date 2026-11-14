@@ -492,6 +492,8 @@ async def _refresh_origin(ret_doc: Dict[str, Any]) -> None:
         "returned_subtotal": r_sub, "returned_tax": r_tax, "returned_amount": r_tot,
         "returned_cost": r_cost, "returned_qty": r_qty,
         "return_count": len(rows), "updated_at": now_iso(),
+        # PK-31 (IC-07) — retur atas transaksi yang sudah (sebagian) lunas: kelebihan bayar = utang refund penjual.
+        "refund_due": ics.refund_due_of({**seller, "returned_amount": r_tot}),
     }
     # Nilai dokumen TIDAK diedit (append-only). Bila retur + pelunasan sudah menutup
     # seluruh nilainya, statusnya maju ke `returned` supaya saldo tidak lagi terbuka.
@@ -742,6 +744,9 @@ async def on_return_task_executed(transfer: Dict[str, Any], actor: str) -> Dict[
         # PELANGGAN yang sudah dihapus-bukukan (mis. `damaged` → 0), angkanya jauh
         # lebih kecil — dan itulah yang harus dikreditkan, bukan harga jual internal.
         carry_out += length * booked
+        # PK-31 (IC-04) — roll kembali ke penjual: unsur rantai pasangan asal dibuang (roll tidak lagi "milik"
+        # perpindahan itu); unsur sebelumnya (A→B bila ini retur C→B) tetap, jadi laba A→B tetap dieliminasi.
+        chain = ics.drop_chain_link(await ics._cost_chain(cb), returner.get("origin_pair_id", ""))
         _upd = await db.inventory_rolls.update_one({"id": r["id"]}, {"$set": {
             "unit_cost": round(target, 2),
             "base_unit_cost": round(target, 2),
@@ -753,6 +758,7 @@ async def on_return_task_executed(transfer: Dict[str, Any], actor: str) -> Dict[
                 "interco_return_number": returner.get("number", ""),
                 "previous_unit_cost": booked,
                 "at": now_iso(),
+                "chain": chain,
             },
             "updated_at": now_iso(),
         }})

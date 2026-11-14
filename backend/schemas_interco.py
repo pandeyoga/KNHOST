@@ -69,6 +69,17 @@ class IntercoSettlementCreate(BaseModel):
     notes: str = ""
 
 
+class IntercoRefundCreate(BaseModel):
+    """PK-31 (IC-07) — refund antar-PT: PT penjual mengembalikan kelebihan bayar (retur sesudah lunas)."""
+    payer_entity_id: str             # PT penjual — yang mengembalikan dana
+    payee_entity_id: str             # PT pembeli — yang menerima
+    transactions: List[IntercoSettlementBillPick] = Field(default_factory=list)   # applied_amount None = seluruh sisa
+    settle_date: str = ""            # default: hari ini (WIB)
+    method: str = "transfer"         # cara bayar arah keluar dari daftar induk (PM-T1); tanpa netting
+    bank_account_id: str = ""        # rekening PT penjual; kosong = rekening bawaan
+    notes: str = ""
+
+
 # ═════════════════════════════════════════════════════════════════════════════
 #  FASE G-6b — faktur pajak internal · retur antar-PT · alasan
 # ═════════════════════════════════════════════════════════════════════════════

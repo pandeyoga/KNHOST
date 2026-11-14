@@ -860,6 +860,40 @@ def ica_pair_key(seller_entity_id: str, buyer_entity_id: str) -> str:
     return f"{seller_entity_id}>{buyer_entity_id}"
 
 
+def refund_due_of(doc: Dict[str, Any]) -> float:
+    """PK-31 (IC-07) — `refund_due = max(0, returned_amount + settled_amount − grand_total)` (satu rumus)."""
+    return round(max(0.0, float(doc.get("returned_amount") or 0) + float(doc.get("settled_amount") or 0)
+                     - float(doc.get("grand_total") or 0)), 2)
+
+
+def refund_left_of(doc: Dict[str, Any]) -> float:
+    """Sisa refund yang belum dibayar satu dokumen penjual."""
+    return round(max(0.0, refund_due_of(doc) - float(doc.get("refund_paid") or 0)), 2)
+
+
+async def _refund_by_direction(seller_entity_id: str = "", buyer_entity_id: str = "") -> Dict[Any, Dict[str, Any]]:
+    """Σ refund per arah dagang (penjual, pembeli) dari dokumen penjual tidak-draf/batal — rumus `refund_due_of`."""
+    q: Dict[str, Any] = {"role": "seller", "status": {"$nin": ["draft", "cancelled"]},
+                         "returned_amount": {"$gt": 0}}
+    if seller_entity_id:
+        q["seller_entity_id"] = seller_entity_id
+    if buyer_entity_id:
+        q["buyer_entity_id"] = buyer_entity_id
+    out: Dict[Any, Dict[str, Any]] = {}
+    async for d in db[COLL_ICT].find(q, {"_id": 0, "seller_entity_id": 1, "buyer_entity_id": 1, "grand_total": 1,
+                                         "settled_amount": 1, "returned_amount": 1, "refund_paid": 1}):
+        due = refund_due_of(d)
+        if due <= EPS:
+            continue
+        k = (d.get("seller_entity_id"), d.get("buyer_entity_id"))
+        a = out.setdefault(k, {"refund_due": 0.0, "refund_paid": 0.0, "refund_outstanding": 0.0, "refund_count": 0})
+        a["refund_due"] = round(a["refund_due"] + due, 2)
+        a["refund_paid"] = round(a["refund_paid"] + float(d.get("refund_paid") or 0), 2)
+        a["refund_outstanding"] = round(a["refund_outstanding"] + refund_left_of(d), 2)
+        a["refund_count"] += 1 if refund_left_of(d) > EPS else 0
+    return out
+
+
 async def _update_account_balance(seller_entity_id: str, buyer_entity_id: str) -> None:
     """Recompute saldo pasangan PT dari transaksi terbuka & settlement.
 
@@ -891,6 +925,10 @@ async def _update_account_balance(seller_entity_id: str, buyer_entity_id: str) -
     # pelunasan (nilai dokumen sendiri TIDAK pernah diedit — append-only).
     returned = sum(float(d.get("returned_amount") or 0) for d in open_docs)
     outstanding = round(gross - settled - returned, 2)
+    # PK-31 (IC-07) — utang refund penjual (retur sesudah lunas) dipelihara di baris yang sama, tidak masuk `outstanding`.
+    rf = (await _refund_by_direction(seller_entity_id, buyer_entity_id)).get(
+        (seller_entity_id, buyer_entity_id), {"refund_due": 0.0, "refund_paid": 0.0, "refund_outstanding": 0.0,
+                                              "refund_count": 0})
     seller_snap = await _entity_snapshot(seller_entity_id)
     buyer_snap = await _entity_snapshot(buyer_entity_id)
     ts = now_iso()
@@ -930,6 +968,7 @@ async def _update_account_balance(seller_entity_id: str, buyer_entity_id: str) -
             "settled_amount": round(settled, 2),
             "returned_amount": round(returned, 2),
             "outstanding": outstanding,
+            **rf,
             "last_activity_at": activity,
             "updated_at": ts,
         }}, upsert=True,
@@ -956,6 +995,7 @@ async def _update_account_balance(seller_entity_id: str, buyer_entity_id: str) -
             "settled_amount": round(settled, 2),
             "returned_amount": round(returned, 2),
             "outstanding": outstanding,
+            **rf,
             "last_activity_at": activity,
             "updated_at": ts,
         }}, upsert=True,
@@ -998,6 +1038,7 @@ async def list_accounts(scope_entity_ids: List[str]) -> List[Dict[str, Any]]:
     # terbuka saat ini 1 (Rp 6.993.000 — angka yang sama dengan Jadwal Bayar). Angka yang DITAMPILKAN kini dibaca
     # langsung dari dokumen terbuka dengan rumus yang sama (`_update_account_balance`); cache tidak ditulis di GET.
     live = await _live_pair_outstanding()
+    live_rf = await _refund_by_direction()   # PK-31 — utang refund dibaca langsung dari dokumen (rumus sama)
     for r in rows:
         k = (r.get("seller_entity_id"), r.get("buyer_entity_id"))
         if not all(k):
@@ -1008,6 +1049,8 @@ async def list_accounts(scope_entity_ids: List[str]) -> List[Dict[str, Any]]:
                 or int(r.get("open_count") or 0) != cur["open_count"]:
             r["cached_outstanding"] = r.get("outstanding")
             r.update(cur)
+        r.update(live_rf.get(k, {"refund_due": 0.0, "refund_paid": 0.0, "refund_outstanding": 0.0,
+                                 "refund_count": 0}))
     rows.sort(key=lambda r: -float(r.get("outstanding") or 0))
     reminder_days = int(await _config("antar_entitas.settlement_reminder_days") or 30)
     today = datetime.now(timezone.utc)
@@ -1344,6 +1387,187 @@ async def _run_settlement(doc: Dict[str, Any], actor: str) -> Dict[str, Any]:
     return out
 
 
+# ═══════════════════════════════════════════════════════════════════════════
+# PK-31 (IC-07) — REFUND: retur atas transaksi yang sudah lunas → penjual mengembalikan dana
+# ═══════════════════════════════════════════════════════════════════════════
+PESAN_REFUND_PT = "Pilih PT yang mengembalikan dana dan PT penerima yang berbeda."
+PESAN_REFUND_CAKUPAN = ("Anda belum punya akses untuk mencatat refund atas nama PT ini. Minta Admin menambahkan akses "
+                        "'Transaksi Antar Badan Usaha'.")
+
+
+def assert_refund_parties(payer: str, payee: str) -> None:
+    if not (payer or "").strip() or not (payee or "").strip() or payer.strip() == payee.strip():
+        raise IntercoError(PESAN_REFUND_PT)
+
+
+async def create_refund(payload: Dict[str, Any], actor: str = "", idempotency_key: str = "") -> Dict[str, Any]:
+    """PK-31 (IC-07) — refund antar-PT dengan mesin settlement PK-06: PERIKSA (pasangan, sisa refund, rekening kedua PT,
+    jurnal kedua buku) → NIAT (`interco_settlements` `kind="refund"` `pending`, id tetap dari kunci) → EFEK 1
+    (`refund_paid` dinaikkan CAS pada kedua dokumen kembar) → EFEK 2 (kas kembar: keluar di PT penjual, masuk di PT
+    pembeli) → JURNAL per sisi (`post_twin`, tahan-gagal; ulang `repost_settlement_gl`) → SELESAI."""
+    payer = (payload.get("payer_entity_id") or "").strip()     # PT penjual — yang mengembalikan dana
+    payee = (payload.get("payee_entity_id") or "").strip()     # PT pembeli — yang menerima
+    assert_refund_parties(payer, payee)
+    sid = new_id("ics")
+    if idempotency_key:
+        import hashlib
+        sid = "ics_" + hashlib.sha256(f"refund|{payer}|{idempotency_key}".encode()).hexdigest()[:24]
+        existing = await db[COLL_ICS].find_one({"id": sid}, {"_id": 0})
+        if existing:
+            if existing.get("status") == "posted":
+                return await _refund_answer(existing)
+            if existing.get("status") == "cancelled":
+                raise IntercoConflict("Refund dengan kunci ini sudah dibatalkan. Muat ulang lalu ulangi.")
+            return await _run_refund(existing, actor)
+    picks = payload.get("transactions") or []
+    if not picks:
+        raise IntercoError("Pilih minimal satu transaksi yang punya sisa refund.")
+    payer_snap, payee_snap = await _entity_snapshot(payer), await _entity_snapshot(payee)
+    rows: List[Dict[str, Any]] = []
+    for p in picks:
+        ict_id = (p.get("interco_id") or "").strip()
+        doc = await db[COLL_ICT].find_one({"id": ict_id}, {"_id": 0, "pair_id": 1})
+        seller_doc = await db[COLL_ICT].find_one({"pair_id": (doc or {}).get("pair_id"), "role": "seller"},
+                                                 {"_id": 0}) if doc else None
+        if not seller_doc:
+            raise IntercoError(f"Transaksi {ict_id} tidak ditemukan.")
+        nomor = seller_doc.get("number") or ict_id
+        if seller_doc.get("seller_entity_id") != payer or seller_doc.get("buyer_entity_id") != payee:
+            raise IntercoError(f"Transaksi {nomor} bukan penjualan {payer_snap['name'] or payer} kepada "
+                               f"{payee_snap['name'] or payee}.")
+        counterpart = await db[COLL_ICT].find_one({"id": seller_doc.get("counterpart_id")}, {"_id": 0, "gl_status": 1})
+        if seller_doc.get("gl_status") == "failed" or (counterpart or {}).get("gl_status") == "failed":
+            raise IntercoConflict(f"Transaksi {nomor} masih punya jurnal yang gagal terbit. "
+                                  "Ulangi dulu dari Keuangan › Posting Gagal.")
+        left = refund_left_of(seller_doc)
+        if left <= EPS:
+            raise IntercoConflict(f"Transaksi {nomor} tidak punya sisa refund.")
+        req = p.get("applied_amount")
+        applied = round(float(req), 2) if req not in (None, "", 0) else left
+        if applied > left + EPS:
+            raise IntercoError(f"Nilai refund {rupiah(applied)} melebihi sisa refund transaksi {nomor} "
+                               f"({rupiah(left)}).")
+        rows.append({"interco_id": seller_doc["id"], "counterpart_id": seller_doc.get("counterpart_id"),
+                     "pair_id": seller_doc.get("pair_id"), "number": nomor,
+                     "counterpart_number": seller_doc.get("counterpart_number"),
+                     "grand_total": float(seller_doc.get("grand_total") or 0),
+                     "refund_due": refund_due_of(seller_doc), "previous_refund_paid": float(seller_doc.get("refund_paid") or 0),
+                     "applied_amount": applied, "applied_at": None})
+    total = round(sum(r["applied_amount"] for r in rows), 2)
+    if total <= EPS:
+        raise IntercoError("Nilai refund harus lebih dari 0.")
+    from services import payment_method_service as _pms   # PM-T1 — cara bayar dari daftar induk (arah keluar)
+    try:
+        method = (await _pms.wajib(payer, (payload.get("method") or "transfer").strip().lower(), arah="keluar"))["code"]
+    except _pms.CaraBayarError as exc:
+        raise IntercoError(str(exc)) from exc
+    payer_acc = await _settle_account(payer, (payload.get("bank_account_id") or "").strip())
+    payee_acc = await _settle_account(payee, "")
+    settle_date = payload.get("settle_date") or _today()
+    doc = {"id": sid, "number": "", "kind": "refund", "entity_id": payer,
+           "payer_entity_id": payer, "payer_entity_name": payer_snap["name"],
+           "payee_entity_id": payee, "payee_entity_name": payee_snap["name"],
+           "settle_date": settle_date, "method": method, "bank_account_id": payer_acc,
+           "payer_account_id": payer_acc, "payee_account_id": payee_acc,
+           "notes": (payload.get("notes") or "").strip(), "applied": rows, "netted_against": [],
+           "total_applied": total, "status": "pending", "gl_status": "pending",
+           "idempotency_key": idempotency_key, "created_at": now_iso(), "created_by": actor}
+    from services import twin_journal as _twin
+    await _twin.preflight_twin(source_type="interco_settlement", base_id=sid, date=settle_date,
+                               sides=_settlement_sides(doc))
+    doc["number"] = await next_doc_number(COLL_ICS, "number", "ICS-", entity_id=payer)
+    await db[COLL_ICS].insert_one(dict(doc))
+    return await _run_refund(doc, actor)
+
+
+async def _apply_refund_rows(doc: Dict[str, Any], actor: str) -> None:
+    """EFEK 1 — `refund_paid` tiap dokumen kembar dinaikkan SEKALI per refund (CAS: status bukan draf/batal, belum
+    memuat id refund ini, `refund_paid + nilai ≤ returned + settled − grand_total`). Satu baris ditolak → semua yang
+    sudah dinaikkan refund ini dikembalikan, lalu `_SettleRowRejected`."""
+    from pymongo import ReturnDocument
+    sid = doc["id"]
+    amount_by_pair: Dict[str, float] = {}
+    for r in doc.get("applied", []):
+        amount_by_pair[r["pair_id"]] = round(amount_by_pair.get(r["pair_id"], 0.0) + float(r["applied_amount"]), 2)
+    for i, row in enumerate(doc.get("applied", [])):
+        if row.get("applied_at"):
+            continue
+        amt = float(row["applied_amount"])
+        ids = sorted(d["id"] for d in await db[COLL_ICT].find({"pair_id": row["pair_id"]}, {"_id": 0, "id": 1}).to_list(4))
+        for _id in ids:
+            res = await db[COLL_ICT].find_one_and_update(
+                {"id": _id, "status": {"$nin": ["draft", "cancelled"]}, "refund_ids": {"$ne": sid},
+                 "$expr": {"$lte": [{"$add": [{"$ifNull": ["$refund_paid", 0]}, amt, {"$ifNull": ["$grand_total", 0]}]},
+                                    {"$add": [{"$ifNull": ["$returned_amount", 0]}, {"$ifNull": ["$settled_amount", 0]},
+                                              EPS]}]}},
+                {"$inc": {"refund_paid": amt}, "$addToSet": {"refund_ids": sid},
+                 "$set": {"updated_at": now_iso(), "updated_by": actor}},
+                projection={"_id": 0, "id": 1}, return_document=ReturnDocument.AFTER)
+            if not res:
+                if await db[COLL_ICT].find_one({"id": _id, "refund_ids": sid}, {"_id": 0, "id": 1}):
+                    continue
+                async for d in db[COLL_ICT].find({"refund_ids": sid}, {"_id": 0, "id": 1, "pair_id": 1}):
+                    await db[COLL_ICT].update_one({"id": d["id"]}, {
+                        "$inc": {"refund_paid": -amount_by_pair.get(d["pair_id"], 0.0)},
+                        "$pull": {"refund_ids": sid}, "$set": {"updated_at": now_iso()}})
+                raise _SettleRowRejected(row.get("number") or row["pair_id"])
+        await db[COLL_ICS].update_one({"id": sid}, {"$set": {f"applied.{i}.applied_at": now_iso()}})
+        row["applied_at"] = now_iso()
+
+
+async def _refund_answer(doc: Dict[str, Any]) -> Dict[str, Any]:
+    out = safe_doc(dict(doc))
+    row = await get_account(doc["payer_entity_id"], doc["payee_entity_id"], role="receivable")
+    live = (await _refund_by_direction(doc["payer_entity_id"], doc["payee_entity_id"])).get(
+        (doc["payer_entity_id"], doc["payee_entity_id"]), {})
+    out["refund_outstanding"] = round(float(live.get("refund_outstanding", row.get("refund_outstanding") or 0)), 2)
+    return out
+
+
+async def _run_refund(doc: Dict[str, Any], actor: str) -> Dict[str, Any]:
+    from services import twin_journal as _twin
+    sid = doc["id"]
+    payer, payee = doc["payer_entity_id"], doc["payee_entity_id"]
+    try:
+        await _apply_refund_rows(doc, actor)
+    except _SettleRowRejected as exc:
+        await db[COLL_ICS].update_one({"id": sid}, {"$set": {
+            "status": "cancelled", "cancel_reason": f"sisa refund transaksi {exc} berubah saat diproses",
+            "updated_at": now_iso()}})
+        raise IntercoConflict(f"Sisa refund transaksi {exc} berubah saat diproses. Tidak ada yang tercatat; muat ulang "
+                              "lalu ulangi.") from exc
+    if not doc.get("cash_out_id"):   # EFEK 2 — kas keluar di PT penjual, kas masuk di PT pembeli (idempoten per arah)
+        from services import interco_money_service as icm
+        cash = await icm.twin_cash(
+            out_entity=payer, in_entity=payee, amount=float(doc["total_applied"]), category="refund antar-PT",
+            description=f"Refund antar-PT {doc.get('number')} ({doc.get('payer_entity_name')} → "
+                        f"{doc.get('payee_entity_name')})",
+            ref_type="interco_settlement", ref_id=sid, actor=actor or "system", txn_date=doc.get("settle_date", ""),
+            out_account_id=doc.get("payer_account_id", ""), in_account_id=doc.get("payee_account_id", ""))
+        doc["cash_out_id"], doc["cash_in_id"] = cash["out"].get("id", ""), cash["in"].get("id", "")
+        await db[COLL_ICS].update_one({"id": sid}, {"$set": {"cash_out_id": doc["cash_out_id"],
+                                                             "cash_in_id": doc["cash_in_id"]}})
+    gl_res = await repost_settlement_gl(sid, actor)
+    await db[COLL_ICS].update_one({"id": sid}, {"$set": {"status": "posted", "updated_at": now_iso()}})
+    await _update_account_balance(payer, payee)   # penjual = pembayar refund
+    for row in doc.get("applied", []):
+        if row.get("pair_id"):
+            await _sync_group_elimination(row["pair_id"])   # sisa piutang/utang antar-PT berubah
+    try:
+        from services import doc_refs_service as _refs
+        for row in doc.get("applied", []):
+            for _id in (row["interco_id"], row.get("counterpart_id")):
+                if _id:
+                    await _refs.safe_link(("interco_settlement", sid), ("interco_transaction", _id), "settles",
+                                          note=f"Refund antar-PT {doc.get('number')}")
+    except Exception as exc:  # noqa: BLE001
+        print(f"[interco] tautan refund gagal: {exc}")
+    out = await _refund_answer(await db[COLL_ICS].find_one({"id": sid}, {"_id": 0}))
+    out["gl"] = gl_res
+    out["warning"] = await _twin.warning_for(gl_res, _settlement_sides(out))
+    return out
+
+
 #: KF-T2 — enam kunci Pusat Pengaturan jadwal bayar antar-PT (dulu dibaca langsung dari dokumen pengaturan).
 PAYMENT_SETTING_KEYS = ("allow_netting", "require_full_payment", "cutoff_day", "payment_day", "basis", "reminder_days")
 
@@ -1474,7 +1698,16 @@ def _settlement_sides(doc: Dict[str, Any]) -> List[Any]:
     total = round(float(doc.get("total_applied") or 0), 2)
     sid, label = doc["id"], doc.get("number") or doc["id"]
     payer_ent, payee_ent = doc["payer_entity_id"], doc["payee_entity_id"]
-    if doc.get("method", "netting") == "netting":
+    if doc.get("kind") == "refund":
+        # PK-31 (IC-07) — REFUND: penjual (pembayar) mengembalikan kelebihan bayar; arah kas & akun antar-PT terbalik
+        # dari pelunasan. Penjual Dr IC-AR / Cr Kas · pembeli Dr Kas / Cr IC-AP (akun kas sama dengan settlement).
+        cash_acc = gl_service.ACC_KAS_BESAR
+        lp = gl_service._balanced_pair(gl_service.ACC_IC_AR, cash_acc, total,
+                                       f"Refund antar-PT {label} → {doc.get('payee_entity_name', '')}")
+        le = gl_service._balanced_pair(cash_acc, gl_service.ACC_IC_AP, total,
+                                       f"Terima refund antar-PT {label} ← {doc.get('payer_entity_name', '')}")
+        dp, de = f"Refund antar-PT {label}", f"Terima refund antar-PT {label}"
+    elif doc.get("method", "netting") == "netting":
         lp = gl_service._balanced_pair(gl_service.ACC_IC_AP, gl_service.ACC_IC_AR, total,
                                        f"Netting antar-PT {label} → {doc.get('payee_entity_name', '')}")
         le = gl_service._balanced_pair(gl_service.ACC_IC_AP, gl_service.ACC_IC_AR, total,
@@ -2159,6 +2392,32 @@ async def create_warehouse_task(interco_id: str, actor: str) -> Dict[str, Any]:
     return safe_doc(transfer)
 
 
+async def _cost_chain(cost_basis: Dict[str, Any]) -> List[Dict[str, Any]]:
+    """PK-31 (IC-04) — salinan `cost_basis.chain`; roll lama tanpa `chain` yang bertanda pasangan antar-PT → satu unsur
+    dari field tingkat atas (penjual/pembeli dibaca dari dokumen pasangannya)."""
+    if "chain" in (cost_basis or {}):
+        return [dict(x) for x in cost_basis.get("chain") or []]
+    pid = (cost_basis or {}).get("interco_pair_id") or ""
+    if not pid:
+        return []
+    s = await db[COLL_ICT].find_one({"pair_id": pid, "role": "seller"},
+                                    {"_id": 0, "seller_entity_id": 1, "buyer_entity_id": 1, "items": 1}) or {}
+    return [{"interco_pair_id": pid, "interco_number": cost_basis.get("interco_number", ""),
+             "seller_entity_id": s.get("seller_entity_id"), "buyer_entity_id": s.get("buyer_entity_id"),
+             "unit_price": None, "previous_unit_cost": float(cost_basis.get("previous_unit_cost") or 0),
+             "at": cost_basis.get("at", "")}]
+
+
+def drop_chain_link(chain: List[Dict[str, Any]], pair_id: str) -> List[Dict[str, Any]]:
+    """PK-31 (IC-04) — retur antar-PT membuang unsur TERAKHIR pasangan asal dari rantai roll yang kembali."""
+    out = [dict(x) for x in chain or []]
+    for i in range(len(out) - 1, -1, -1):
+        if out[i].get("interco_pair_id") == pair_id:
+            del out[i]
+            break
+    return out
+
+
 async def on_warehouse_task_executed(transfer: Dict[str, Any], actor: str,
                                      actual: Optional[Dict[str, float]] = None) -> Dict[str, Any]:
     """Dipanggil `routers/transfers.py` sesudah kepemilikan roll berpindah.
@@ -2192,7 +2451,7 @@ async def on_warehouse_task_executed(transfer: Dict[str, Any], actor: str,
         {"acquired.ref_id": transfer["id"],
          "owner_entity_id": transfer.get("dest_entity_id")},
         {"_id": 0, "id": 1, "product_id": 1, "unit_cost": 1, "base_unit_cost": 1,
-         "length_remaining": 1, "roll_no": 1, "owner_entity_id": 1}).to_list(10000)
+         "length_remaining": 1, "roll_no": 1, "owner_entity_id": 1, "cost_basis": 1}).to_list(10000)
     # Biaya NYATA yang keluar dari buku penjual = Σ(panjang × harga perolehan roll)
     # — dihitung SEBELUM roll dinilai ulang ke harga beli internal.
     cost_out = round(sum(float(r.get("length_remaining") or 0) *
@@ -2202,6 +2461,18 @@ async def on_warehouse_task_executed(transfer: Dict[str, Any], actor: str,
         new_cost = price_map.get(r["product_id"])
         if new_cost is None or new_cost <= 0:
             continue
+        ts_roll = now_iso()
+        # PK-31 (IC-04) — RANTAI perpindahan antar-PT: tiap perpindahan menambah satu unsur; tingkat atas tetap =
+        # perpindahan terakhir. Roll lama tanpa `chain` yang bertanda pasangan mendapat unsur pertama dari tingkat atas.
+        unsur = {"interco_pair_id": pair_id, "interco_number": seller.get("number", ""),
+                 "seller_entity_id": seller.get("seller_entity_id"), "buyer_entity_id": seller.get("buyer_entity_id"),
+                 "unit_price": round(new_cost, 2), "previous_unit_cost": float(r.get("unit_cost") or 0),
+                 "at": ts_roll}
+        chain = await _cost_chain(r.get("cost_basis") or {})
+        if chain and chain[-1].get("interco_pair_id") == pair_id:
+            chain[-1] = {**unsur, "previous_unit_cost": chain[-1].get("previous_unit_cost", unsur["previous_unit_cost"])}
+        else:
+            chain.append(unsur)
         _upd = await db.inventory_rolls.update_one({"id": r["id"]}, {"$set": {
             "unit_cost": round(new_cost, 2),
             "base_unit_cost": round(new_cost, 2),
@@ -2209,8 +2480,9 @@ async def on_warehouse_task_executed(transfer: Dict[str, Any], actor: str,
                 "source": "interco_purchase",
                 "interco_pair_id": pair_id,
                 "interco_number": seller.get("number", ""),
-                "previous_unit_cost": float(r.get("unit_cost") or 0),
-                "at": now_iso(),
+                "previous_unit_cost": chain[-1]["previous_unit_cost"],
+                "at": ts_roll,
+                "chain": chain,
             },
             "updated_at": now_iso(),
         }})
