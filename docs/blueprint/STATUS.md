@@ -23,8 +23,8 @@ Papan kerja agen pelaksana. Aturan mengubahnya: `00_ATURAN_EKSEKUSI.md` §5. Uru
 | 16 | PK-13 | Konfirmasi untuk aksi uang sekali klik | PK-02 | selesai | `0ac34c1` | [PK-13](../reviews/2026-11-13/hasil/PK-13.md) |  |
 | 17 | PK-14 | Indeks unik wajib ada | PK-02 | selesai | `a42f3ef` | [PK-14](../reviews/2026-11-13/hasil/PK-14.md) | Titik henti H6 bila data kembar |
 | 18 | PK-15 | Alokasi titipan bank dan biaya bank | PK-02 | selesai | `30e3f28` | [PK-15](../reviews/2026-11-13/hasil/PK-15.md) |  |
-| 19 | PK-16 | Laporan menyebut PT-nya; mode gabungan diberi label | PK-02 | dikerjakan |  |  |  |
-| 20 | PK-17 | Nominal keuangan hanya untuk yang berizin | PK-02 | siap |  |  |  |
+| 19 | PK-16 | Laporan menyebut PT-nya; mode gabungan diberi label | PK-02 | selesai | `b735229` | [PK-16](../reviews/2026-11-13/hasil/PK-16.md) |  |
+| 20 | PK-17 | Nominal keuangan hanya untuk yang berizin | PK-02 | dikerjakan |  |  |  |
 | 21 | PK-45 | Penjaga cepat: plafon, faktur pajak, gaji | PK-02 | siap |  |  |  |
 | 22 | PK-46 | Tabel tarif PPh 21 dari pengaturan bertanggal berlaku | PK-02 | siap |  |  | Titik henti H4 untuk memuat tabel dari pemilik |
 | 23 | PR-T2 | Wewenang dari izin, bukan nama peran acuan | PR-T1, PR-T9 | siap |  |  |  |

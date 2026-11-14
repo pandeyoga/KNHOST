@@ -141,8 +141,8 @@ P14-K1 → Bima). Laporan hasil di `docs/uat/2026-10-21/hasil/UAT24-*.md`.
 | UX-03 | Setujui/batalkan faktur supplier sekali klik | Tinggi | PK-13 | implemented_pending_review | ya — dijalankan (bukti merah 14/15 uji layar di kode lama) | `0ac34c1` | [PK-13](2026-11-13/hasil/PK-13.md) |
 | UX-04 | Panel Posting Gagal bilang "semua tercatat" saat gagal memuat | Tinggi | PK-18 | open | belum dicek — diisi unit pemegang | — | — |
 | UX-05 | Mode "Semua Entitas": tombol buat aktif, ditolak setelah form diisi | Tinggi | PK-42 | open | belum dicek — diisi unit pemegang | — | — |
-| UX-06 | Form uang tidak menyebut PT tujuan | Tinggi | PK-16 | open | belum dicek — diisi unit pemegang | — | — |
-| UX-07 | Laporan keuangan tidak menyebut entitas atau "gabungan" | Tinggi | PK-16 | open | belum dicek — diisi unit pemegang | — | — |
+| UX-06 | Form uang tidak menyebut PT tujuan | Tinggi | PK-16 | implemented_pending_review | ya — dijalankan (bukti merah 22/22 server, 36/36 layar di kode lama) | `b735229` | [PK-16](2026-11-13/hasil/PK-16.md) |
+| UX-07 | Laporan keuangan tidak menyebut entitas atau "gabungan" | Tinggi | PK-16 | implemented_pending_review | ya — dijalankan (bukti merah 22/22 server, 36/36 layar di kode lama) | `b735229` | [PK-16](2026-11-13/hasil/PK-16.md) |
 | UX-08 | Settlement antar-PT: daftar kandidat tampaknya kosong dari sisi pembayar (perlu uji jalan) | Tinggi | PK-43 | open | belum dicek — diisi unit pemegang | — | — |
 | DB-01 | MongoDB satu node biasa, tanpa transaksi; penjaga pola pengganti sedang merah | Tinggi | PK-33 | open | belum dicek — diisi unit pemegang | — | — |
 | DB-03 | Cadangan hanya mongodump harian, simpan 14 hari | Tinggi | PK-04 | open | belum dicek — diisi unit pemegang | — | — |
@@ -173,7 +173,7 @@ P14-K1 → Bima). Laporan hasil di `docs/uat/2026-10-21/hasil/UAT24-*.md`.
 | UX-11 | Galat tampil di belakang pop-up; bayar faktur tanpa tanggal/rekening; peringatan periode basi; daftar dipotong tanpa keterangan; laporan tanpa… | Sedang | PK-42 | open | belum dicek — diisi unit pemegang | — | — |
 | UX-12 | Galat tampil di belakang pop-up; bayar faktur tanpa tanggal/rekening; peringatan periode basi; daftar dipotong tanpa keterangan; laporan tanpa… | Sedang | PK-42 | open | belum dicek — diisi unit pemegang | — | — |
 | UX-13 | Galat tampil di belakang pop-up; bayar faktur tanpa tanggal/rekening; peringatan periode basi; daftar dipotong tanpa keterangan; laporan tanpa… | Sedang | PK-43 | open | belum dicek — diisi unit pemegang | — | — |
-| UX-14 | Galat tampil di belakang pop-up; bayar faktur tanpa tanggal/rekening; peringatan periode basi; daftar dipotong tanpa keterangan; laporan tanpa… | Sedang | PK-16 | open | belum dicek — diisi unit pemegang | — | — |
+| UX-14 | Galat tampil di belakang pop-up; bayar faktur tanpa tanggal/rekening; peringatan periode basi; daftar dipotong tanpa keterangan; laporan tanpa… | Sedang | PK-16 | implemented_pending_review | ya — dijalankan (bukti merah 22/22 server, 36/36 layar di kode lama) | `b735229` | [PK-16](2026-11-13/hasil/PK-16.md) |
 | UX-15 | Galat tampil di belakang pop-up; bayar faktur tanpa tanggal/rekening; peringatan periode basi; daftar dipotong tanpa keterangan; laporan tanpa… | Sedang | PK-43 | open | belum dicek — diisi unit pemegang | — | — |
 | UX-16 | Galat tampil di belakang pop-up; bayar faktur tanpa tanggal/rekening; peringatan periode basi; daftar dipotong tanpa keterangan; laporan tanpa… | Sedang | PK-43 | open | belum dicek — diisi unit pemegang | — | — |
 | UX-17 | Galat tampil di belakang pop-up; bayar faktur tanpa tanggal/rekening; peringatan periode basi; daftar dipotong tanpa keterangan; laporan tanpa… | Sedang | MN-T1 | open | belum dicek — diisi unit pemegang | — | — |
@@ -218,11 +218,11 @@ P14-K1 → Bima). Laporan hasil di `docs/uat/2026-10-21/hasil/UAT24-*.md`.
 | FX-17 | Endpoint rencana bayar dan selisih bayar tanpa penjaga entitas; jadwal bisa digeser tanpa riwayat | Sedang | PK-09 | implemented_pending_review | ya — dijalankan (bukti merah 15/19 di kode lama) | `bdd8e40` | [PK-09](2026-11-13/hasil/PK-09.md) |
 | FX-18 | Pemindai kasus hanya mengecek kembar terhadap kasus terbuka; membaca 5.000 kwitansi tertua | Sedang | PK-25 | open | belum dicek — diisi unit pemegang | — | — |
 | FX-19 | Tanpa indeks unik untuk nota denda per periode, rencana aktif per dokumen, kasus per sumber | Rendah | PK-14 | implemented_pending_review | ya — dijalankan (bukti merah 6/6 lapis B di kode lama; lapis A 9/9 di MongoDB asli) | `a42f3ef` | [PK-14](2026-11-13/hasil/PK-14.md) |
-| RC-01 | Laba-Rugi dan Neraca mode "Semua Entitas" menjumlah buku tiap PT tanpa eliminasi, tanpa keterangan di layar | Tinggi | PK-16 | open | belum dicek — diisi unit pemegang | — | — |
-| RP-02 | Hal yang sama di BI Keuangan dan Control Tower | Tinggi | PK-16 | open | belum dicek — diisi unit pemegang | — | — |
+| RC-01 | Laba-Rugi dan Neraca mode "Semua Entitas" menjumlah buku tiap PT tanpa eliminasi, tanpa keterangan di layar | Tinggi | PK-16 | implemented_pending_review | ya — dijalankan (bukti merah 22/22 server, 36/36 layar di kode lama) | `b735229` | [PK-16](2026-11-13/hasil/PK-16.md) |
+| RP-02 | Hal yang sama di BI Keuangan dan Control Tower | Tinggi | PK-16 | implemented_pending_review | ya — dijalankan (bukti merah 22/22 server, 36/36 layar di kode lama) | `b735229` | [PK-16](2026-11-13/hasil/PK-16.md) |
 | RP-01 | Daftar sumber dipotong diam-diam, dan kuotanya dihabiskan dokumen lama yang sudah lunas | Tinggi | PK-41 | open | belum dicek — diisi unit pemegang | — | — |
 | RP-03 | Seluruh sisa pesanan diumurkan dari satu tanggal jatuh tempo (surat jalan pertama + termin); bagian yang belum dikirim ikut "lewat tempo"; rumus… | Tinggi | PK-41 | open | belum dicek — diisi unit pemegang | — | — |
-| RP-04 | "Pendapatan diakui" di Tanya KN ikut menghitung jurnal penutup | Tinggi | PK-16 | open | belum dicek — diisi unit pemegang | — | — |
+| RP-04 | "Pendapatan diakui" di Tanya KN ikut menghitung jurnal penutup | Tinggi | PK-16 | implemented_pending_review | ya — dijalankan (bukti merah 22/22 server, 36/36 layar di kode lama) | `b735229` | [PK-16](2026-11-13/hasil/PK-16.md) |
 | RP-05 | Tanggal "per" pada umur piutang hanya menggeser penghitung hari; pembayaran setelah tanggal itu tetap dihitung | Sedang | PK-41 | open | belum dicek — diisi unit pemegang | — | — |
 | RP-06 | Klasifikasi Arus Kas salah di empat kasus: hasil jual aset berlaba terbagi ke operasi; pinjaman antar-PT masuk operasi; saldo awal rekening masuk… | Sedang | PK-41 | open | belum dicek — diisi unit pemegang | — | — |
 | RP-07 | Umur hutang berlabel "Umur" tetapi dihitung dari jatuh tempo; "0–30" memuat yang belum jatuh tempo; total tidak memuat landed cost dan nota debit | Sedang | PK-41 | open | belum dicek — diisi unit pemegang | — | — |
