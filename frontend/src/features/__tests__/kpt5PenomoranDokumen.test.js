@@ -124,6 +124,29 @@ test("tabel berkelompok: kolom spesifikasi, keterangan kepala, sumber, jenis ter
   expect(document.body.textContent).not.toContain("per_pt");
 });
 
+test("cari: menyaring per nama jenis atau awalan; kelompok kosong hilang; tanpa hasil ada keterangan", async () => {
+  // Cek visual 14 Nov: 66 jenis dalam 8 kelompok = halaman sangat panjang → kotak cari di atas tabel.
+  mockGet.mockResolvedValue({ data: DATA() });
+  await mount();
+  await type(q("docnum-search"), "retur");
+  await flush();
+  expect(q("docnum-row-sret")).not.toBeNull();
+  expect(q("docnum-row-so")).toBeNull();
+  expect(q("docnum-group-Gudang")).toBeNull();
+  expect(q("docnum-group-Penjualan").querySelector("h3").textContent).toContain("1 jenis");
+  await type(q("docnum-search"), "lot-");                     // awalan juga dicari, tanpa peka huruf
+  await flush();
+  expect(q("docnum-row-lot")).not.toBeNull();
+  expect(q("docnum-group-Penjualan")).toBeNull();
+  await type(q("docnum-search"), "tidak ada");
+  await flush();
+  expect(q("docnum-search-empty").textContent).toContain("tidak ada");
+  await type(q("docnum-search"), "");
+  await flush();
+  expect(q("docnum-row-so")).not.toBeNull();
+  expect(q("docnum-search-empty")).toBeNull();
+});
+
 test("Ubah: pratinjau dari server saat mengetik, Deret mati di baris PT, alasan wajib → satu PUT", async () => {
   mockGet.mockResolvedValue({ data: DATA() });
   mockPost.mockResolvedValue({ data: { samples: ["KSC/SP-000042", "KSC/SP-000043", "KSC/SP-000044"],

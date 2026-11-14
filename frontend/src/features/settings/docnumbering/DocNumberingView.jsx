@@ -19,6 +19,7 @@ import FormModal from "../../../components/FormModal";
 import KNSelect from "../../../components/KNSelect";
 import OkNotice from "../../../components/OkNotice";
 import { apiErrorText } from "../../../utils/apiError";
+import { SearchBox } from "../../../components/ListControls";
 import { entityOptions, entityShortById } from "../../../utils/entityLabel";
 
 export const SEMUA_PT = "all";
@@ -162,6 +163,7 @@ export default function DocNumberingView({ selectedEntity, entities = [], curren
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [edit, setEdit] = useState(null);
+  const [cari, setCari] = useState("");
   const [ok, setOk] = useState("");
   const [warnings, setWarnings] = useState([]);
 
@@ -204,6 +206,8 @@ export default function DocNumberingView({ selectedEntity, entities = [], curren
   };
 
   const rows = data?.rows || [];
+  const kunciCari = cari.trim().toLowerCase();
+  const cocok = (r) => !kunciCari || `${r.label} ${r.format?.prefix || ""}`.toLowerCase().includes(kunciCari);
   const groups = data?.groups || [];
   return (
     <div className="cfg-hub" data-testid="docnum-view">
@@ -224,18 +228,27 @@ export default function DocNumberingView({ selectedEntity, entities = [], curren
       {ok ? <OkNotice message={ok} testId="docnum-ok" /> : null}
       {warnings.map((w) => <p key={w} className="text-fs-12 text-kn-warning-text" data-testid="docnum-warning">{w}</p>)}
       {loading && !data ? <Skeleton /> : null}
+      {data ? (
+        <div className="mt-3 max-w-sm">
+          <SearchBox value={cari} onChange={setCari} placeholder="Cari jenis dokumen atau awalan" testId="docnum-search" />
+        </div>
+      ) : null}
+      {data && cari && !rows.some(cocok) ? (
+        <p className="mt-3 text-fs-13 text-kn-text-2" data-testid="docnum-search-empty">Tidak ada jenis dokumen yang cocok dengan “{cari}”.</p>
+      ) : null}
       {data ? groups.map((g) => {
-        const baris = rows.filter((r) => r.group === g);
+        const baris = rows.filter((r) => r.group === g && cocok(r));
         if (!baris.length) return null;
         return (
-          <section key={g} className="section-card mt-3" data-testid={`docnum-group-${g}`}>
-            <h3 className="mb-2 text-fs-13 font-semibold">{g}</h3>
+          <section key={g} className="section-card section-pad mt-3" data-testid={`docnum-group-${g}`}>
+            <h3 className="mb-2 text-fs-14 font-semibold">{g} <span className="text-fs-12 font-normal text-kn-text-2">· {baris.length} jenis</span></h3>
             <div className="overflow-x-auto">
-              <table className="data-table">
+              <table className="data-table head-wrap">
                 <thead>
                   <tr>
                     <th>Jenis dokumen</th><th>Contoh nomor berikutnya</th><th>Awalan</th><th>Lebar angka</th>
-                    <th>Sisipan tanggal</th><th>Mulai lagi dari 1</th><th>Deret</th><th>Sumber</th><th aria-label="Aksi" />
+                    <th>Sisipan tanggal</th><th>Mulai lagi dari 1</th><th>Deret</th><th>Sumber</th>
+                    <th className="col-sticky-end" aria-label="Aksi" />
                   </tr>
                 </thead>
                 <tbody>
@@ -250,9 +263,9 @@ export default function DocNumberingView({ selectedEntity, entities = [], curren
                       <td>{r.format.width}</td>
                       <td>{tokenLabel(r.format.date_token)}</td>
                       <td>{resetLabel(r.format.reset)}</td>
-                      <td>{scopeLabel(r.format.scope)}</td>
-                      <td data-testid={`docnum-source-${r.kind}`}>{r.source_label}</td>
-                      <td className="whitespace-nowrap">
+                      <td className="whitespace-nowrap">{scopeLabel(r.format.scope)}</td>
+                      <td className="whitespace-nowrap" data-testid={`docnum-source-${r.kind}`}>{r.source_label}</td>
+                      <td className="col-sticky-end whitespace-nowrap">
                         {canEdit && !r.locked ? (
                           <>
                             <button type="button" className="btn-secondary btn-sm" data-testid={`docnum-edit-${r.kind}`}
