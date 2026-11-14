@@ -60,7 +60,7 @@ persis peran itu; **{…}+acuan**: peran itu dan peran kustom beracuan padanya; 
 | 9 | `cycle_count` | G | `inventory.approve_count` (nilai registrasi awal: `inventory.approve_value`) — `backend/routers/cycle_count.py:294` (`approve_session`) | izin |
 | 10 | `rnd_spec` | C+D | `rnd.assess` — `backend/routers/rnd.py:287` (`approve_spec`) | J1 · ≥ 0 · {manager, admin} ∩ `rnd.spec_approval_roles` |
 | 11 | `rnd_sample` | C+D | `rnd.decide` — `backend/routers/rnd.py:719` (`sample_acc`) | J1 · ≥ 0 · {manager, md, admin} ∩ `rnd.sample_decision_roles` |
-| 12 | `special_order` | C+F | `order.approve` — `backend/routers/special_orders.py:1050` (`po_custom`) | J1 · ≥ Rp10.000.000,01 · {manager, admin}; J2 "Direksi" · ≥ `approval.po_custom_direksi_min` (50 jt) · {admin} |
+| 12 | `special_order` | C+F | `order.approve` — `backend/routers/special_orders.py:1050` (`po_custom`) | J1 · ≥ 0 · {manager, admin} (koreksi KP-T4: `APPROVAL_THRESHOLD` hanya mengisi field yang tidak dibaca — pesanan khusus yang diajukan selalu menunggu jenjang 1); J2 "Direksi" · ≥ `approval.po_custom_direksi_min` (50 jt) · {admin} |
 | 13 | `transfer` | G | `transfer.approve` — `backend/routers/transfers.py:557` (`approve_transfer`) | izin |
 | 14 | `contra_bon_verify` | G | `contra_bon.verify` — `backend/routers/contra_bons.py:239` (`verify_contra_bon`) | izin |
 | 15 | `contra_bon_approve` | D | `contra_bon.approve` — `backend/routers/contra_bons.py:251` (`approve_contra_bon`) | J1 · 0 – < `contra_bon.approval_threshold_rupiah` (50 jt) · ≥`contra_bon.approval_role`; di atasnya ≥`contra_bon.high_value_approval_role` |
@@ -206,9 +206,9 @@ Persiapan bersama: seed lingkungan B; tiga peran uji baku (`02` §6); akun per p
 | U5 | B | Admin `PUT …/purchase_order` menambahkan Tanpa Acuan pada J1 (`ent_ksc`) | Tanpa Acuan menyetujui PO Rp150 jt `ent_ksc`, lalu PO Rp150 jt `ent_kanda` | 200 (status `pending`); 403 (PT lain tidak berubah) |
 | U6 | B | Manajer Kosong (tanpa izin apa pun) | Menyetujui PO, tagihan pemasok, voucher biaya masuk | 403 `izin` ×3 (dulu 200) |
 | U7 | B | Peran kustom beracuan Manajer yang dibuat **sebelum** migrasi tanpa modul Pembelian | Jalankan migrasi; ia menyetujui PO Rp150 jt | 200; laporan migrasi menyebut peran itu diberi `purchase_order.approve` |
-| U8 | B | `PUT …/cash_advance` untuk `ent_kanda`: J3 berisi {finance} | Akun finance menyetujui uang muka `ent_kanda` berstatus `pending_finance`; lalu yang milik `ent_ksc` | 200 (status `approved`); 403 |
+| U8 | B | `PUT …/cash_advance` untuk `ent_kanda`: J3 berisi {finance}; Finance diberi izin setujui uang muka (`cash_advance.approve` — bukan bawaan Finance; koreksi KP-T4) | Akun finance menyetujui uang muka `ent_kanda` berstatus `pending_finance`; lalu yang milik `ent_ksc` | 200 (status `approved`); 403 |
 | U9 | B | `PUT …/cash_advance` untuk `ent_kanda`: hanya J1 | Manajer menyetujui uang muka `pending_atasan` `ent_kanda` | Status langsung `approved` (jenjang tanpa baris dilewati) |
-| U10 | B | Baris bawaan; lalu `PUT …/special_order` grup: J1 mulai 20.000.000 | Buat pesanan khusus Rp10.000.000 dan Rp10.000.000,01 (bawaan); lalu Rp15 jt dan Rp25 jt (sesudah PUT) | `draft`, `pending_approval` (sama dengan hari ini); lalu `draft`, `pending_approval` |
+| U10 | B | Baris bawaan; lalu `PUT …/special_order` grup: J1 mulai 20.000.000 | Buat pesanan khusus Rp10.000.000 dan Rp10.000.000,01 (bawaan); lalu Rp15 jt dan Rp25 jt (sesudah PUT) | `pending_approval`, `pending_approval` (sama dengan hari ini — koreksi KP-T4); lalu `confirmed` (disetujui otomatis), `pending_approval` |
 | U11 | B | `PUT` tanpa `reason`; dengan peran tak dikenal; dengan `expected_version` basi | — | 400; 400; 409 |
 | U12 | B | PO dibuat sebelum pengalihan dengan rantai tersimpan [manager, admin] | Sesudah pengalihan: manajer menyetujui J1, admin J2 | Keduanya 200; PO `pending` |
 | U13 | B | PR Rp60 jt; peran kustom beracuan Manajer berizin `purchase_requisition.approve` | Menyetujui sebelum dan sesudah ia ditambahkan ke baris PR | 403 (sama dengan hari ini: matriks menolak nama tak persis) → 200; hanya **satu** pesan penolakan, dari tabel |
