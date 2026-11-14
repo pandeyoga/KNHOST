@@ -373,3 +373,19 @@ baru. Menu & layar lain yang masih memakai nama lama diganti unit pemilik layarn
 | Cetak Dokumen | Judul panel "Cetak Dokumen · …" | Daftar dokumen cetak turunan (surat pengambilan, daftar kemasan, surat jalan, bukti terima). Bukan panel relasi | PK-44 · rincian pesanan & PO |
 | Kembali ke … | Bilah "← Kembali ke {layar asal}" (mis. "Kembali ke Jejak Dokumen", "Kembali ke Dasbor Keuangan") | Muncul sesudah melompat ke dokumen dari Jejak Dokumen, panel Dokumen Terkait, atau kartu angka; membawa kembali ke layar asal (jejak yang sama). Hilang saat memilih menu lain | PK-44 · semua layar tujuan tautan dokumen |
 | Dokumen tidak ditemukan | "Dokumen {nomor} tidak ditemukan di PT ini." | Tautan dokumen menunjuk dokumen yang tidak ada atau di luar PT aktif; layar tujuan menulis ini (bukan layar kosong) | PK-44 · layar tujuan tautan dokumen |
+
+### 9.7 Pajak keluaran: aturan pajak per PT dan data pajak pelanggan (TX-T1)
+
+Istilah layar Pengaturan › Keuangan & Pajak › Aturan Keuangan & Pajak (sub-judul Pajak), form pelanggan (bagian "Data pajak"), checkout, Faktur Keluaran, dan detail pesanan
+(`docs/blueprint/unit/TX-T1.md`, K-33). Hal peraturan (faktor, daftar kode) menunggu konfirmasi konsultan pajak.
+
+| Istilah | Teks layar | Arti |
+|---|---|---|
+| **DPP nilai lain** | "Pakai DPP nilai lain" · "Faktor DPP nilai lain — pembilang / penyebut" · baris rincian "DPP nilai lain (11/12)" | Dasar pengenaan pajak = pecahan × harga jual (bawaan 11/12, sehingga PPN efektif 11 % walau tarif 12 %). Pecahan ditulis dari aturan dokumennya, bukan dari pengaturan hari ini. Jangan menulis "DPP Nilai Lain" berhuruf besar di label baru |
+| **kode transaksi** | "Kode transaksi faktur yang dipakai" · "Kode transaksi bawaan" · "Kode transaksi bawaan saat DPP nilai lain" · pilihan "Ikut PT" di data pelanggan · galat "Kode transaksi {kode} tidak dipakai PT ini." | Dua angka di depan nomor seri Faktur Pajak (01, 04, …). Daftar per PT; bawaan faktur = kode pelanggan, lalu bawaan PT menurut DPP nilai lain |
+| **aturan pajak saat terbit** | Rincian faktur "Aturan pajak saat terbit" (tarif, DPP nilai lain, pembulatan, harga, "Aturan berlaku pada") · detail pesanan "Aturan pajak: …" · faktur lama "Faktur ini terbit sebelum aturan pajak disimpan bersama faktur: …" | Potret aturan yang dipakai saat dokumen dibuat. Mengubah atau menjadwalkan pengaturan pajak tidak mengubah dokumen yang sudah ada |
+| **pembulatan PPN** | "PPN dibulatkan per" [Per dokumen · Per baris] · "PPN dibulatkan ke" [Dua angka di belakang koma · Rupiah penuh] | Per dokumen = dari total; per baris = tiap baris lalu dijumlah |
+| **Data pajak** (pelanggan) | "Identitas pajak" [NPWP · NIK] · "Nama di faktur pajak" · "Alamat di faktur pajak" · "Status PKP pelanggan" [Belum diisi · PKP · Bukan PKP] · "Selalu minta faktur pajak" · peringatan "{NPWP/NIK} berisi {n} angka; biasanya … angka." | NPWP tetap disimpan di data pelanggan; nama/alamat kosong = nama toko dan alamat utama. Peringatan bentuk tidak menghalangi simpan |
+| **Data pajak belum lengkap** | lencana ikon + "Data pajak belum lengkap" · "Identitas pajak (NPWP/NIK) belum diisi" · "Alamat pajak belum diisi" | Faktur tetap terbit; kekurangan ditandai di faktur |
+| **Pesanan tanpa PPN** | sakelar "Pesanan tanpa PPN" + isian wajib "Alasan tanpa PPN" (checkout) · detail pesanan "Pesanan tanpa PPN — dibuat {nama}. Alasan: …" | Hanya pemegang akses pesanan tanpa PPN di PT PKP; alasan minimal 10 huruf |
+| **belum dipakai mesin** | lencana di form produk: "Perlakuan PPN" [Kena PPN · Dibebaskan · Tidak dipungut] · "Kode barang pajak" | Disimpan untuk persiapan; PPN per barang belum dihitung (L5) |

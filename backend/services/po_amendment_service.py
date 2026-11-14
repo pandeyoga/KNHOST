@@ -259,8 +259,12 @@ async def amend_po(po_id: str, payload, actor: Dict[str, Any]) -> Dict[str, Any]
     order_disc = payload.order_discount_percent if payload.order_discount_percent is not None \
         else po.get("order_discount_percent", 0)
     tax_mode = payload.tax_mode if payload.tax_mode is not None else po.get("tax_mode", "")
+    # TX-T1 — hitung ulang DARI potret pajak PO (aturan saat PO dibuat). Pilihan pajak PO diganti (mis. tanpa PPN →
+    # dengan PPN) → potret lama tidak berlaku; dihitung dengan aturan PT hari ini.
+    from services.tax_config_service import potret_dokumen
+    _snap = potret_dokumen(po) if (tax_mode or "") == (po.get("tax_mode") or "") else None
     pricing = await compute_order_pricing(raw_items, entity_id, order_disc, cfg_section="purchasing", tax_override=tax_mode,
-                                          ppn_mode_override=ppn_mode_of(po.get("price_includes_ppn")))
+                                          ppn_mode_override=ppn_mode_of(po.get("price_includes_ppn")), snapshot=_snap)
     items = pricing["items"]
     total_amount = pricing["total_amount"]
     grand_total = pricing["grand_total"]
@@ -338,6 +342,7 @@ async def amend_po(po_id: str, payload, actor: Dict[str, Any]) -> Dict[str, Any]
         "order_discount_amount": pricing["order_discount_amount"], "discount_total": pricing["discount_total"],
         "net_subtotal": pricing["net_subtotal"], "dpp": pricing["dpp"], "ppn_rate": pricing["ppn_rate"],
         "ppn_mode": pricing["ppn_mode"], "is_pkp": pricing["is_pkp"], "ppn_amount": pricing["ppn_amount"],
+        "tax_snapshot": pricing["tax_snapshot"],
         "grand_total": grand_total, "tax_mode": tax_mode, "expected_delivery_date": new_eta, "notes": new_notes,
         "status": "waiting_approval" if needs_approval else "pending",
         "approval_required": needs_approval, "required_approval_role": appr["required_role"],

@@ -1,14 +1,17 @@
 import { useState } from "react";
 import { variantLabel } from "../../utils/variants";
-import { Save } from "lucide-react";
+import { Save, Info } from "lucide-react";
 import KNSelect from "../../components/KNSelect";
 import KNDatePicker from "../../components/KNDatePicker";
 import MoneyInput from "../../components/MoneyInput";
 import { CatalogDialog } from "./CatalogDialog";
 import { catalogApi, catalogError } from "./catalogApi";
 import axios, { API } from "../../services/apiClient";
+const TAX_TREATMENTS = [{ value: "kena", label: "Kena PPN" }, { value: "dibebaskan", label: "Dibebaskan" }, { value: "tidak_dipungut", label: "Tidak dipungut" }];
 export const VariantEditor = ({ product, template, onClose, onSaved }) => {
-  const [f, setF] = useState({ name: product?.name || template.name, sku: product?.sku || "", price: product?.price ?? template.base_price ?? 0, description: product?.description || template.description || "", status: product?.status || "active", source_name: product?.source_name || "", source_color: product?.source_color || "" });
+  const [f, setF] = useState({ name: product?.name || template.name, sku: product?.sku || "", price: product?.price ?? template.base_price ?? 0, description: product?.description || template.description || "", status: product?.status || "active", source_name: product?.source_name || "", source_color: product?.source_color || "",
+    // TX-T1 (K-33) — disimpan & ditampilkan, BELUM dipakai mesin (PPN per barang di luar lingkup; L5).
+    tax_treatment: product?.tax_treatment || "kena", tax_item_code: product?.tax_item_code || "" });
   const [options, setOptions] = useState(product?.variant_options || {});
   // UAT 24 Okt (P12.3) — produk unggulan (push) di POS & katalog HP, diatur MD/Manajer per SKU.
   const feat0 = { on: !!product?.is_featured, rank: product?.featured_rank ?? "", until: product?.featured_until || "", note: product?.featured_note || "" };
@@ -51,6 +54,12 @@ export const VariantEditor = ({ product, template, onClose, onSaved }) => {
         </>)}
       </div>
     )}
+    <div className="grid grid-cols-1 gap-3 rounded-lg border border-kn-divider bg-kn-neutral-soft p-3 sm:grid-cols-2" data-testid="variant-tax">
+      <p className="text-fs-12 font-bold text-kn-text sm:col-span-2">Pajak barang <span className="status-pill border border-kn-divider bg-white text-kn-neutral" data-testid="variant-tax-unused"><Info size={12} aria-hidden="true" />belum dipakai mesin</span></p>
+      <label className="text-fs-12 font-semibold">Perlakuan PPN<KNSelect data-testid="variant-tax-treatment" className="field mt-1" value={f.tax_treatment} options={TAX_TREATMENTS} onValueChange={v => set("tax_treatment", v)} /></label>
+      <label className="text-fs-12 font-semibold">Kode barang pajak<input data-testid="variant-tax-item-code" className="field mt-1" maxLength={40} value={f.tax_item_code} onChange={e => set("tax_item_code", e.target.value)} placeholder="mis. kode barang di Coretax" /></label>
+      <p className="text-fs-12 text-kn-text-2 sm:col-span-2">Disimpan untuk persiapan. PPN pesanan masih dihitung dari aturan pajak PT untuk semua barang — perlakuan per barang menunggu konfirmasi konsultan pajak.</p>
+    </div>
     <label className="block text-xs font-semibold">Deskripsi<textarea data-testid="variant-description" className="field mt-1 min-h-24" value={f.description} onChange={e => set("description", e.target.value)} /></label>
     <footer className="flex justify-end gap-2"><button type="button" data-testid="variant-cancel" className="secondary-button" disabled={busy} onClick={onClose}>Batal</button><button data-testid="variant-save" type="submit" className="primary-button" disabled={busy}><Save size={14} />{busy ? "Menyimpan…" : "Simpan SKU"}</button></footer>
   </form></CatalogDialog>;

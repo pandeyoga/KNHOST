@@ -13,6 +13,7 @@ from core_utils import now_iso, new_id, safe_doc
 from services import amendment_service as amd_svc
 from services import so_approvals
 from services.config_service import compute_order_pricing, get_allocation_policy
+from services.tax_config_service import potret_dokumen
 from services.roll_service import (allocate_and_reserve_rolls, allocations_from_reserved_rolls,
                                    pending_cuts, release_order_rolls_partial)
 from services.so_status import stage_fields
@@ -364,9 +365,11 @@ async def _apply_lines(order, items, by_pid, qty_plan, adds, actor, diff) -> Dic
                                "requested_qty": it["base_quantity"], "reserved_qty": it["reserved_qty"],
                                "backorder_qty": it["backorder_qty"], "status": "waiting_stock",
                                "created_at": now_iso(), "updated_at": now_iso()})
+    # TX-T1 — hitung ulang DARI potret pajak pesanan (aturan saat pesanan dibuat), bukan aturan hari ini.
     priced = await compute_order_pricing(items, entity_id=order.get("entity_id") or "",
                                          order_discount_percent=float(order.get("order_discount_percent") or 0),
-                                         tax_override=(order.get("tax_override") or None))
+                                         tax_override=(order.get("tax_override") or None),
+                                         snapshot=potret_dokumen(order))
     patch = {k: v for k, v in priced.items() if k != "settings"}
     patch.update({"allocations": allocations, "backorders": backorders,
                   "has_backorder": any(float(b.get("backorder_qty") or 0) > EPS for b in backorders),

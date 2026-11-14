@@ -23,6 +23,8 @@ import { SalesTeamEditor, salesTeamError, customerDefaultTeam } from "./SalesTea
 import { useEffectivePrices, pickPrice, sourceMeta } from "../../hooks/useEffectivePrices";
 import { useEntityScope } from "../../context/EntityScopeContext";
 import { canSeeSourcing } from "../../utils/sourcingVisibility";
+import { can } from "../../config/roles";
+import { NON_PPN_MIN_LETTERS, countLetters } from "./CheckoutNonPpn";
 import { apiErrorText } from "../../utils/apiError";
 import { INTERNAL_REQUEST_REASON } from "../../components/FulfillmentInfo";
 
@@ -55,6 +57,9 @@ export default function CheckoutDrawer({
   const [lotPlan, setLotPlan] = useState({ requires_confirmation: false, lines: [], policy: {}, loading: false });
   const [credit, setCredit] = useState(null);
   const [needsTaxInvoice, setNeedsTaxInvoice] = useState(false);  // F6 — minta Faktur Pajak
+  // TX-T1 (K-33) — pesanan tanpa PPN: hanya pemegang izin `order.tax_override` di PT PKP, wajib beralasan (PK-45).
+  const [nonPpn, setNonPpn] = useState(false);
+  const [nonPpnReason, setNonPpnReason] = useState("");
   const [fulfillmentMethod, setFulfillmentMethod] = useState("kirim");  // kirim | ambil (Order Pengambilan)
   const [pickupDate, setPickupDate] = useState("");
   const [deliveryDate, setDeliveryDate] = useState("");   // F-SHIP — request tgl pengiriman (opsional, metode kirim)
@@ -73,6 +78,8 @@ export default function CheckoutDrawer({
   useEffect(() => { if (open) { setStep(1); setSpReq({}); setSampleBilling(""); setQcReq({ mode: "none", pct: 10 }); setPayDest({ method: "", account: "" }); } }, [open]);
   // F-4c REVISI — prefill tim sales dari default customer saat customer dipilih (boleh di-override per order).
   useEffect(() => { setSalesTeam(customerDefaultTeam(selectedCustomer)); }, [selectedCustomer?.id]); // eslint-disable-line
+  // TX-T1 — pelanggan "Selalu minta faktur pajak" → permintaan faktur langsung tercentang (tetap bisa dilepas).
+  useEffect(() => { setNeedsTaxInvoice(!!selectedCustomer?.tax_profile?.always_tax_invoice); }, [selectedCustomer?.id]); // eslint-disable-line
 
   // Diskon manual DIHAPUS untuk semua role — potongan harga hanya via Harga Khusus
   // (special-price) yang diajukan di detail SO & disetujui manager/admin.
@@ -160,7 +167,12 @@ export default function CheckoutDrawer({
     const price = sp && sp.has_special ? Number(sp.price) : scaled;
     return { ...item, product: { ...item.product, price } };
   });
-  const p = useMemo(() => computeOrderPreview(cartPriced, orderDiscount, settings), [cartPriced, orderDiscount, settings]);
+  const ptPkp = settings?.tax?.is_pkp !== false;
+  const canNonPpn = ptPkp && !sampleMode && can(user?.permissions, "order", "tax_override");
+  const nonPpnOn = canNonPpn && nonPpn;
+  const nonPpnInvalid = nonPpnOn && countLetters(nonPpnReason) < NON_PPN_MIN_LETTERS;
+  const p = useMemo(() => computeOrderPreview(cartPriced, orderDiscount, settings, nonPpnOn ? { taxOverride: "non_ppn" } : {}),
+    [cartPriced, orderDiscount, settings, nonPpnOn]);
   // Total BILA harga khusus disetujui (dua total berlabel — tidak ada satu angka yang bisa disangka final).
   const reqLines = cartPriced.filter((it) => !it.is_sample && spReq[it.product.id]);
   const pReq = useMemo(() => (reqLines.length ? computeOrderPreview(cartPriced.map((it) => (spReq[it.product.id] && !it.is_sample
@@ -214,6 +226,8 @@ export default function CheckoutDrawer({
       payment_method_code: payDest.method, receiving_account_id: payDest.method ? payDest.account : "",
       allow_backorder: allowBackorder, special_prices: linePrices, special_requests: spReq, confirm_mixed_lot: !!confirmMixed, ...qcPayload(qcReq),
       needs_tax_invoice: p.isPkp !== false ? needsTaxInvoice : false,
+      tax_override: nonPpnOn ? "non_ppn" : "",
+      tax_override_reason: nonPpnOn ? nonPpnReason.trim() : "",
       fulfillment_method: fulfillmentMethod,
       pickup_date: fulfillmentMethod === "ambil" ? pickupDate : "",
       delivery_date: fulfillmentMethod === "kirim" ? deliveryDate : "",
@@ -494,6 +508,7 @@ export default function CheckoutDrawer({
               selectedCustomer={selectedCustomer} addresses={addresses} selectedAddress={selectedAddress}
               p={p} cart={cart} pricedCart={cartPriced} paymentTerm={paymentTerm}
               needsTaxInvoice={needsTaxInvoice} setNeedsTaxInvoice={setNeedsTaxInvoice}
+              nonPpn={canNonPpn ? { on: nonPpn, setOn: setNonPpn, reason: nonPpnReason, setReason: setNonPpnReason } : null}
               credit={credit} creditBlocked={creditBlocked}
               hasBackorderLine={hasBackorderLine} allowBackorder={allowBackorder}
               requiresLotConfirmation={requiresLotConfirmation} mixedLotLines={mixedLotLines}
@@ -521,8 +536,8 @@ export default function CheckoutDrawer({
                 Lanjut <ChevronRight size={14} />
               </button>
             ) : (
-              <button data-testid="checkout-submit" className={`primary-button ${sampleMode ? "!bg-[#9A5B00] hover:!bg-[#7A4700]" : ""}`} disabled={!canWrite || mixedCart || !selectedCustomer || !selectedAddress || cart.length === 0 || lotPlan.loading || creditBlocked || pickupInvalid || deliveryInvalid || teamInvalid || billingInvalid || payMethodMissing || !!priceError} title={priceError ? "Harga pelanggan gagal dimuat — muat ulang dulu." : writeBlockHint} onClick={handleSubmitClick}>
-                <PackageCheck size={14} /> {!canWrite ? "Pilih Badan Usaha Dulu" : mixedCart ? "Pisahkan Sample & Ecer" : billingInvalid ? "Pilih Gratis/Berbayar" : creditBlocked ? "Terblokir Kredit" : pickupInvalid ? "Pilih Tanggal Ambil" : teamInvalid ? "Perbaiki Tim Sales" : deliveryInvalid ? "Tanggal Kirim Tak Valid" : payMethodMissing ? "Pilih Cara Bayar" : requiresLotConfirmation ? "Tinjau Lot & Buat" : sampleMode ? `Buat Pesanan Sample (${sampleBilling === "free" ? "Gratis" : "Berbayar"})` : "Buat Sales Order"}
+              <button data-testid="checkout-submit" className={`primary-button ${sampleMode ? "!bg-[#9A5B00] hover:!bg-[#7A4700]" : ""}`} disabled={!canWrite || mixedCart || !selectedCustomer || !selectedAddress || cart.length === 0 || lotPlan.loading || creditBlocked || pickupInvalid || deliveryInvalid || teamInvalid || billingInvalid || payMethodMissing || nonPpnInvalid || !!priceError} title={priceError ? "Harga pelanggan gagal dimuat — muat ulang dulu." : writeBlockHint} onClick={handleSubmitClick}>
+                <PackageCheck size={14} /> {!canWrite ? "Pilih Badan Usaha Dulu" : mixedCart ? "Pisahkan Sample & Ecer" : billingInvalid ? "Pilih Gratis/Berbayar" : creditBlocked ? "Terblokir Kredit" : pickupInvalid ? "Pilih Tanggal Ambil" : teamInvalid ? "Perbaiki Tim Sales" : nonPpnInvalid ? "Isi Alasan Tanpa PPN" : deliveryInvalid ? "Tanggal Kirim Tak Valid" : payMethodMissing ? "Pilih Cara Bayar" : requiresLotConfirmation ? "Tinjau Lot & Buat" : sampleMode ? `Buat Pesanan Sample (${sampleBilling === "free" ? "Gratis" : "Berbayar"})` : "Buat Sales Order"}
               </button>
             )}
           </div>

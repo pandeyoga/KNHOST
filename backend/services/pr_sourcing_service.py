@@ -638,6 +638,7 @@ async def realize_many_to_po(pr_refs: List[Dict[str, Any]], *, supplier_id: str,
         "dpp": pricing["dpp"], "ppn_rate": pricing["ppn_rate"],
         "ppn_mode": pricing["ppn_mode"], "is_pkp": pricing["is_pkp"],
         "ppn_amount": pricing["ppn_amount"], "grand_total": grand_total, "tax_mode": "",
+        "tax_snapshot": pricing["tax_snapshot"],   # TX-T1 (D3) — aturan pajak saat PO dibuat
         "expected_delivery_date": expected_delivery_date or pr.get("needed_by_date", ""),
         "notes": notes or f"Dari {', '.join(numbers)}",
         "status": "waiting_approval" if needs_approval else "pending",

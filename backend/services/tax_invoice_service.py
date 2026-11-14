@@ -16,7 +16,9 @@ from services.input_tax_service import normalize_nsfp
 
 ELIGIBLE_ORDER_STATUSES = {"confirmed", "partially_picked", "picked",
                           "partially_shipped", "shipped", "done"}
-KODE_TRANSAKSI_VALID = {"01", "02", "03", "04", "06", "07", "08", "09"}
+# TX-T1 — daftar kode transaksi yang sah kini pengaturan per PT (`tax.kode_transaksi_diizinkan`, bawaan = daftar lama
+# 01/02/03/04/06/07/08/09) dan bawaannya `tax.kode_transaksi_bawaan[_dpp_nilai_lain]` (01 / 04) — lihat
+# `tax_config_service.default_kode` dan `periksa_kode`.
 STATUS_CODE = {"normal": "0", "pengganti": "1"}
 
 
@@ -177,7 +179,30 @@ def _snapshot_from_order(order: Dict[str, Any], entity: Dict[str, Any],
         "ppn_amount": float(order.get("ppn_amount", 0) or 0),
         "grand_total": float(order.get("grand_total", 0) or 0),
         "is_pkp": True,
+        **_potret_pajak(order, customer),
     }
+
+
+def _potret_pajak(order: Dict[str, Any], customer: Dict[str, Any]) -> Dict[str, Any]:
+    """TX-T1 (D3) — "Aturan pajak saat terbit" (potret pesanan; pesanan lama = aturan lama) + potret data pajak pembeli
+    + kekurangannya. Penerbitan TIDAK ditolak karena data belum lengkap (antrean lengkapi data = TX-T2)."""
+    from services import tax_config_service as tcs
+    ctax = tcs.customer_tax(customer, order.get("customer_name", ""))
+    return {"tax_snapshot": tcs.potret_dokumen(order), "customer_tax": ctax, "data_incomplete": tcs.data_incomplete(ctax)}
+
+
+async def _aturan_kode(entity_id: Optional[str]) -> Dict[str, Any]:
+    """Pengaturan kode transaksi PT hari ini (tanggal terbit faktur)."""
+    from services.tax_config_service import tax_settings
+    return await tax_settings(entity_id or "")
+
+
+def _kode_sah(kode: str, aturan: Dict[str, Any]) -> str:
+    from services.tax_config_service import periksa_kode
+    try:
+        return periksa_kode(kode, aturan)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from None
 
 
 async def _load_order_entity_customer(order_id: str):
@@ -191,13 +216,12 @@ async def _load_order_entity_customer(order_id: str):
     return order, entity, customer
 
 
-def _validate_eligibility(order: Dict[str, Any], entity: Dict[str, Any], kode: str):
+def _validate_eligibility(order: Dict[str, Any], entity: Dict[str, Any], kode: str, aturan: Dict[str, Any]):
     if order.get("status") not in ELIGIBLE_ORDER_STATUSES:
         raise HTTPException(
             status_code=400,
             detail=f"Faktur Pajak hanya untuk order terkonfirmasi ke atas (status sekarang: {order.get('status')}).")
-    if kode not in KODE_TRANSAKSI_VALID:
-        raise HTTPException(status_code=400, detail=f"Kode transaksi tidak valid: {kode}")
+    _kode_sah(kode, aturan)   # TX-T1 — kode sah = daftar kode PT (`tax.kode_transaksi_diizinkan`)
     if not _entity_is_pkp(entity, order):
         raise HTTPException(
             status_code=400,
@@ -213,9 +237,11 @@ async def issue_tax_invoice(order_id: str, kode_transaksi: Optional[str],
                            actor_name: str) -> Dict[str, Any]:
     """Terbitkan Faktur Pajak (status normal) dari order. Idempotent: 1 faktur aktif/order."""
     order, entity, customer = await _load_order_entity_customer(order_id)
-    # F-10 — DPP Nilai Lain → kode transaksi default 04 (DPP Nilai Lain, Coretax)
-    kode = (kode_transaksi or ("04" if order.get("dpp_nilai_lain") else "01")).strip()
-    _validate_eligibility(order, entity, kode)
+    # F-10 — DPP Nilai Lain → kode bawaan "saat DPP nilai lain"; TX-T1: kode pelanggan → bawaan PT (pengaturan).
+    from services.tax_config_service import default_kode, potret_dokumen
+    aturan = await _aturan_kode(order.get("entity_id"))
+    kode = (kode_transaksi or default_kode(potret_dokumen(order) or order, customer, aturan)).strip()
+    _validate_eligibility(order, entity, kode, aturan)
     existing = await db.tax_invoices.find_one(   # jalan cepat; penjaminnya indeks `uq_fkt_active` (PK-40)
         {"order_id": order_id, "status": {"$ne": "batal"}}, {"_id": 0})
     if existing:
@@ -262,10 +288,10 @@ async def set_nsfp(fkt_id: str, nsfp: str, kode_transaksi: Optional[str]) -> Dic
     await _masa_terbuka(fkt.get("entity_id"), fkt.get("faktur_date"), "perubahan nomor seri")   # PK-40
     nsfp_raw = (nsfp or "").strip()
     upd: Dict[str, Any] = {"nsfp": nsfp_raw, "updated_at": now_iso()}
-    if kode_transaksi:
-        if kode_transaksi.strip() not in KODE_TRANSAKSI_VALID:
-            raise HTTPException(status_code=400, detail=f"Kode transaksi tidak valid: {kode_transaksi}")
-        upd["kode_transaksi"] = kode_transaksi.strip()
+    if kode_transaksi and kode_transaksi.strip() != (fkt.get("kode_transaksi") or ""):
+        # TX-T1 — kode BARU harus ada di daftar kode PT; kode yang sudah tercetak di faktur tetap boleh dipakai walau
+        # sesudahnya dikeluarkan dari daftar (faktur itu sah saat terbit).
+        upd["kode_transaksi"] = _kode_sah(kode_transaksi, await _aturan_kode(fkt.get("entity_id")))
     # PK-40 — faktur aktif ber-NSFP memegang `nsfp_key`; NSFP kosong / faktur sudah diganti → kunci dicabut.
     kunci = kunci_aktif_keluaran({**fkt, "nsfp": nsfp_raw})
     ops: Dict[str, Any] = {"$set": upd}
@@ -312,9 +338,11 @@ async def replace_tax_invoice(fkt_id: str, reason: Optional[str],
     await _masa_terbuka(original.get("entity_id"), original.get("faktur_date"), "penggantian faktur")
     await _masa_terbuka(original.get("entity_id"), None, "penggantian faktur")
     order, entity, customer = await _load_order_entity_customer(original["order_id"])
+    from services.tax_config_service import default_kode, potret_dokumen
+    aturan = await _aturan_kode(order.get("entity_id"))
     kode = (kode_transaksi or original.get("kode_transaksi")
-            or ("04" if order.get("dpp_nilai_lain") else "01")).strip()
-    _validate_eligibility(order, entity, kode)
+            or default_kode(potret_dokumen(order) or order, customer, aturan)).strip()
+    _validate_eligibility(order, entity, kode, aturan)
     nsfp_raw = (nsfp or "").strip()
     dup = await _pemakai_nsfp(normalize_nsfp(nsfp_raw), kecuali=(original["id"],))   # NSFP asli boleh dipakai lagi
     if dup:
@@ -399,6 +427,12 @@ async def cancel_tax_invoice(fkt_id: str, reason: str, actor_name: str) -> Dict[
     return safe_doc(await db.tax_invoices.find_one({"id": fkt_id}, {"_id": 0}))
 
 
+def _faktor(fkt: Dict[str, Any]) -> str:
+    """TX-T1 — pecahan DPP nilai lain dari potret faktur (faktur lama: aturan lama)."""
+    from services.tax_config_service import faktor_teks
+    return faktor_teks(fkt.get("tax_snapshot"))
+
+
 async def render_faktur_html(fkt_id: str) -> str:
     fkt = safe_doc(await db.tax_invoices.find_one({"id": fkt_id}, {"_id": 0}))
     if not fkt:
@@ -459,7 +493,7 @@ async def render_faktur_html(fkt_id: str) -> str:
       <table class="totals">
         <tr><td>Harga Jual (Bruto)</td><td style="text-align:right">{_money(fkt.get('total_amount', 0))}</td></tr>
         <tr><td>Dikurangi Potongan Harga</td><td style="text-align:right">{_money(fkt.get('discount_total', 0))}</td></tr>
-        <tr><td>Dasar Pengenaan Pajak (DPP{' — Nilai Lain 11/12' if fkt.get('dpp_nilai_lain') else ''})</td><td style="text-align:right">{_money(fkt.get('dpp', 0))}</td></tr>
+        <tr><td>Dasar Pengenaan Pajak (DPP{(' — Nilai Lain ' + _faktor(fkt)) if fkt.get('dpp_nilai_lain') else ''})</td><td style="text-align:right">{_money(fkt.get('dpp', 0))}</td></tr>
         <tr><td>PPN ({fkt.get('ppn_rate', 0)}%)</td><td style="text-align:right">{_money(fkt.get('ppn_amount', 0))}</td></tr>
         <tr class="grand"><td>Total</td><td style="text-align:right">{_money(fkt.get('grand_total', 0))}</td></tr>
       </table>

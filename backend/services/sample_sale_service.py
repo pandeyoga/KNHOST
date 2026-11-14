@@ -354,8 +354,10 @@ async def _reprice_order_line(order: Dict[str, Any], product_id: str, take: floa
             it["base_quantity"] = take
             break
     from services.config_service import compute_order_pricing
+    from services.tax_config_service import potret_dokumen
     pricing = await compute_order_pricing(items, order.get("entity_id"), 0,
-                                          tax_override=(order.get("tax_override") or "").strip().lower() or None)
+                                          tax_override=(order.get("tax_override") or "").strip().lower() or None,
+                                          snapshot=potret_dokumen(order))   # TX-T1
     await db.sales_orders.update_one({"id": order["id"]}, {"$set": {
         "items": pricing["items"], "total_amount": pricing["total_amount"],
         "items_discount_total": pricing["items_discount_total"], "order_discount_amount": pricing["order_discount_amount"],

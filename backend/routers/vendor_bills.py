@@ -298,6 +298,7 @@ async def _create_bill_locked(payload, po, pricing, tol, match_mode, entity_id, 
         "ppn_mode": pricing["ppn_mode"],
         "is_pkp": pricing["is_pkp"],
         "ppn_amount": pricing["ppn_amount"],
+        "tax_snapshot": pricing["tax_snapshot"],   # TX-T1 (D3) — aturan pajak saat tagihan dicatat
         "grand_total": pricing["grand_total"],
         "tax_mode": payload.tax_mode or po.get("tax_mode", ""),
         # 3-way match

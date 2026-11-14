@@ -243,11 +243,15 @@ async def _interco_rate(seller_entity_id: str) -> Dict[str, Any]:
     flat = float(await _config("antar_entitas.ppn_rate_percent", seller_entity_id) or 0)
     if flat > 0:
         return {"rate": flat, "rate_nominal": flat, "dpp_nilai_lain": False}
-    from services.config_service import get_effective_settings
-    tax = (await get_effective_settings(seller_entity_id)).get("tax", {})
-    nominal = float(tax.get("ppn_rate") or 0) or 12.0
-    nl = bool(tax.get("dpp_nilai_lain", False)) if tax.get("ppn_rate") else True
-    return {"rate": round(nominal * (11.0 / 12.0 if nl else 1.0), 4), "rate_nominal": nominal, "dpp_nilai_lain": nl}
+    # TX-T1 — aturan pajak PT penjual dari satu pintu (`tax_settings`): tarif, DPP nilai lain, dan FAKTOR-nya (dulu 11/12
+    # ditulis mati di sini). Cadangan tarif 12 bila PT penjual bertarif 0 adalah perilaku lama (tidak diubah unit ini).
+    from services.tax_config_service import tax_settings
+    tax = await tax_settings(seller_entity_id)
+    nominal = float(tax["ppn_rate"] or 0) or 12.0
+    nl = bool(tax["dpp_nilai_lain"]) if tax["ppn_rate"] else True
+    p, q = int(tax["dpp_pembilang"]), int(tax["dpp_penyebut"])
+    return {"rate": round(nominal * (p / q if nl else 1.0), 4), "rate_nominal": nominal, "dpp_nilai_lain": nl,
+            "dpp_pembilang": p, "dpp_penyebut": q}
 
 
 # ═══════════════════════════════════════════════════════════════════════════
@@ -425,6 +429,9 @@ async def create(payload: Dict[str, Any], actor: str = "",
         "tax_rate": tax["rate"],
         "tax_rate_nominal": tax.get("rate_nominal", tax["rate"]),
         "tax_dpp_nilai_lain": bool(tax.get("dpp_nilai_lain")),
+        # TX-T1 (D3) — potret faktor DPP nilai lain saat transaksi dibuat; faktur pajak internal memakainya.
+        **({"tax_dpp_pembilang": tax["dpp_pembilang"], "tax_dpp_penyebut": tax["dpp_penyebut"]}
+           if tax.get("dpp_pembilang") else {}),
         "tax_amount": totals["tax"],
         "grand_total": totals["total"],
         "pricing_mode": pricing_mode,

@@ -6,6 +6,7 @@ import { Truck, PackageCheck, Receipt, ShieldAlert, ShieldCheck, CreditCard } fr
 import { formatCurrency } from "../../utils/formatters";
 import { Row } from "./CheckoutItemCard";
 import CreditOverrideRequest from "./CreditOverrideRequest";
+import CheckoutNonPpn from "./CheckoutNonPpn";
 
 export default function CheckoutStep3({
   fulfillmentMethod, setFulfillmentMethod, pickupDate, setPickupDate,
@@ -13,7 +14,7 @@ export default function CheckoutStep3({
   selectedCustomer, addresses, selectedAddress, p, cart, pricedCart, paymentTerm,
   needsTaxInvoice, setNeedsTaxInvoice, credit, creditBlocked, spReq = {}, requestedGrand = null,
   hasBackorderLine, allowBackorder, requiresLotConfirmation, mixedLotLines, sampleCount = 0,
-  sampleMode = false, sampleBilling = "", termInfo = null,
+  sampleMode = false, sampleBilling = "", termInfo = null, nonPpn = null,
 }) {
   const today = (() => { const d = new Date(); return new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 10); })();   // tanggal lokal (WIB)
   const [pickDate, setPickDate] = useState(!!deliveryDate);
@@ -111,8 +112,8 @@ export default function CheckoutStep3({
         <div className="mt-1.5 space-y-1 border-t border-white/15 pt-1.5 text-[11.5px]">
           <Row label="Subtotal (bruto)" value={money(p.gross)} />
           {p.discountTotal > 0 && <Row label="Diskon" value={`- ${formatCurrency(p.discountTotal)}`} />}
-          {p.ppn > 0 && <Row label={`PPN ${p.ppnRate}%${p.dppNilaiLain ? " (DPP 11/12)" : ""}`} value={formatCurrency(p.ppn)} />}
-          {p.isPkp === false && <Row label="PPN" value="Non-PKP (0)" muted />}
+          {p.ppn > 0 && <Row label={`PPN ${p.ppnRate}%${p.dppNilaiLain ? ` (DPP ${p.dppFactorLabel})` : ""}`} value={formatCurrency(p.ppn)} />}
+          {p.isPkp === false && <Row label="PPN" value={nonPpn?.on ? "Tanpa PPN (0)" : "Non-PKP (0)"} muted />}
           <Row label="Termin" value={termInfo?.name || paymentTerm || "Default"} />
         </div>
         <div className="mt-2 flex items-end justify-between border-t border-white/15 pt-2">
@@ -140,6 +141,9 @@ export default function CheckoutStep3({
         </div>
       )}
 
+      {/* TX-T1 (K-33) — pesanan tanpa PPN: pemegang izin di PT PKP; ringkasan di atas langsung tanpa PPN. */}
+      <CheckoutNonPpn value={nonPpn} />
+
       {/* F6 — Faktur Pajak per-order: hanya relevan bila entitas PKP (kena PPN) */}
       {p.isPkp !== false ? (
         <button type="button" data-testid="checkout-tax-invoice-toggle"
@@ -149,7 +153,7 @@ export default function CheckoutStep3({
             <Receipt size={14} className={needsTaxInvoice ? "text-[#0058CC]" : "text-[#8E8E93]"} />
             <span>
               <span className="block font-semibold text-[#1C1C1E]">Minta Faktur Pajak</span>
-              <span className="block text-[10.5px] text-[#6B6B73]">Entitas PKP — PPN {p.ppnRate || 12}%{p.dppNilaiLain ? " (DPP Nilai Lain 11/12, efektif 11%)" : ""} berlaku. Centang bila pelanggan minta Faktur Pajak.</span>
+              <span className="block text-[10.5px] text-[#6B6B73]">Entitas PKP — PPN {p.ppnRate || 12}%{p.dppNilaiLain ? ` (DPP nilai lain ${p.dppFactorLabel}, efektif ${Number(p.effectiveRate || 0).toLocaleString("id-ID", { maximumFractionDigits: 2 })}%)` : ""} berlaku. Centang bila pelanggan minta Faktur Pajak.</span>
             </span>
           </span>
           <span className={`flex h-5 w-9 items-center rounded-full p-0.5 transition-colors ${needsTaxInvoice ? "bg-[#0058CC]" : "bg-[#D1D1D6]"}`}>
@@ -158,7 +162,11 @@ export default function CheckoutStep3({
         </button>
       ) : (
         <div data-testid="checkout-tax-nonpkp-note" className="rounded-md border border-[#EFF0F2] bg-[#FAFBFC] p-2.5 text-[11px] text-[#6B6B73]">
-          <span className="flex items-center gap-1.5"><Receipt size={13} className="text-[#8E8E93]" /> Entitas <b>non-PKP</b> — transaksi tanpa PPN, Faktur Pajak tidak diterbitkan.</span>
+          {nonPpn?.on ? (
+            <span className="flex items-center gap-1.5"><Receipt size={13} aria-hidden="true" /> Pesanan <b>tanpa PPN</b> — Faktur Pajak tidak diterbitkan.</span>
+          ) : (
+            <span className="flex items-center gap-1.5"><Receipt size={13} className="text-[#8E8E93]" /> Entitas <b>non-PKP</b> — transaksi tanpa PPN, Faktur Pajak tidak diterbitkan.</span>
+          )}
         </div>
       )}
 

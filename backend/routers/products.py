@@ -102,6 +102,15 @@ def _apply_domain(data: Dict[str, Any], existing: Dict[str, Any] | None = None) 
     return check
 
 
+def _pajak_produk(data: Dict[str, Any]) -> None:
+    """TX-T1 — `tax_treatment` (kena · dibebaskan · tidak_dipungut) dan `tax_item_code`; tidak sah → 400."""
+    from services.tax_config_service import periksa_pajak_produk
+    try:
+        periksa_pajak_produk(data)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from None
+
+
 @router.post("/products")
 async def create_product(payload: ProductPayload, request: Request) -> Dict[str, Any]:
     actor = await require_permission(request, "product", "create")
@@ -109,6 +118,7 @@ async def create_product(payload: ProductPayload, request: Request) -> Dict[str,
         raise HTTPException(status_code=409, detail="SKU sudah digunakan")
     product = payload.model_dump()
     product["harga_pokok"] = 0.0   # S#096 — HPP tidak diisi manual; terbentuk dari PO/penerimaan (WAC roll)
+    _pajak_produk(product)         # TX-T1 — perlakuan PPN & kode barang pajak (disimpan, belum dipakai mesin)
     # FASE G-0 — `inventory.default_uom` DULU tidak dibaca kode mana pun. Sekarang benar-benar
     # menjadi satuan dasar bawaan produk baru bila pengguna tidak mengisinya.
     if not (product.get("base_unit") or "").strip():
@@ -168,7 +178,9 @@ async def update_product(product_id: str, payload: GenericPatch, request: Reques
     allowed += ["exclusivity", "owner_sales_ids"]   # PS-20 — kepemilikan/visibilitas produk
     allowed += ["line_code"]                        # FASE L — pembagian kerja MD
     allowed += ["base_fabric_template_id", "origin"]  # kain dasar master data · asal impor/lokal
+    allowed += ["tax_treatment", "tax_item_code"]     # TX-T1 — disimpan & ditampilkan, belum dipakai mesin (L5)
     data = {k: v for k, v in payload.data.items() if k in allowed}
+    _pajak_produk(data)
     if "lifecycle" in data:
         lc = str(data["lifecycle"] or "").strip().lower()
         if lc and not dr.is_valid("lifecycle", lc):

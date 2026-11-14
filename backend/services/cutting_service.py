@@ -266,8 +266,10 @@ async def change_catalogue_soft(order: Dict[str, Any], soft_product_id: str, act
         it["quantity"] = q
         it["base_quantity"] = q
     from services.config_service import compute_order_pricing
+    from services.tax_config_service import potret_dokumen
     pricing = await compute_order_pricing(items, order.get("entity_id"), 0,
-                                          tax_override=(order.get("tax_override") or "").strip().lower() or None)
+                                          tax_override=(order.get("tax_override") or "").strip().lower() or None,
+                                          snapshot=potret_dokumen(order))   # TX-T1
     old = (cat.get("soft") or {}).get("color", "—")
     await db.sales_orders.update_one({"id": order["id"]}, {"$set": {
         "catalogue": new_cat, "items": pricing["items"], "total_amount": pricing["total_amount"],

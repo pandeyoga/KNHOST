@@ -26,6 +26,7 @@ from entity_scope import entity_ctx, resolve_list_scope, resolve_scope_ids, asse
 from schemas import SoSpecialPriceRequest, SoCreditApprovalRequest, SoApprovalDecision
 from services import so_approvals, storage_service as storage
 from services.config_service import compute_order_pricing
+from services.tax_config_service import potret_dokumen
 from services.so_status import stage_fields
 # Reuse transisi + commit roll dari source service (tak ada import balik → aman).
 from services.sales_order_helpers import so_transition as _transition
@@ -70,7 +71,8 @@ async def _recompute_so_totals(order: Dict[str, Any]) -> None:
     """F5 — recompute pricing SO setelah harga item berubah (INVARIAN-SAFE)."""
     pricing = await compute_order_pricing(
         order.get("items", []), order.get("entity_id"),
-        order.get("order_discount_percent", 0) or 0)
+        order.get("order_discount_percent", 0) or 0,
+        snapshot=potret_dokumen(order))   # TX-T1 — aturan pajak saat pesanan dibuat (pesanan tanpa PPN: bukan PKP)
     await db.sales_orders.update_one({"id": order["id"]}, {"$set": {
         "items": pricing["items"], "total_amount": pricing["total_amount"],
         "items_discount_total": pricing["items_discount_total"],

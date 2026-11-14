@@ -44,6 +44,14 @@ def _priced_order(monkeypatch, *, mode="excluded", nl=True, tag=""):
         return {"tax": {"ppn_rate": 12.0, "ppn_mode": mode, "is_pkp": True, "dpp_nilai_lain": nl},
                 "sales": {"allow_item_discount": True, "allow_order_discount": True}}
     monkeypatch.setattr(cs, "get_effective_settings", fake_settings)
+    # TX-T1 — aturan pajak kini dibaca satu pintu `tax_config_service.tax_settings` (bukan dokumen pengaturan gabungan):
+    # setelan pajak yang dipatok sama, faktor & pembulatan = bawaan (11/12, per dokumen, dua desimal).
+    from services import tax_config_service as tcs
+
+    async def fake_tax(entity_id, at=None):
+        return {"ppn_rate": 12.0, "dpp_nilai_lain": nl, "ppn_mode": mode, "dpp_pembilang": 11, "dpp_penyebut": 12,
+                "pembulatan_tingkat": "dokumen", "pembulatan_satuan": "dua_desimal", "is_pkp": True, "berlaku_pada": ""}
+    monkeypatch.setattr(tcs, "tax_settings", fake_tax)
     raw = [{"product_id": f"TEST_D4_p1_{tag}", "product_name": "Kain uji A", "sku": "UJI-A", "unit": "yard",
             "price": 10000, "quantity": 100, "discount_percent": 10},
            {"product_id": f"TEST_D4_p2_{tag}", "product_name": "Kain uji B", "sku": "UJI-B", "unit": "yard",

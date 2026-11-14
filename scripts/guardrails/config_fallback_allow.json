@@ -30,13 +30,6 @@
    "alasan": "Bukan pengaturan: tarif PPN tercetak dari faktur pajak tersimpan (`fkt`)."
   },
   {
-   "file": "backend/services/config_service.py",
-   "key": "tax.dpp_nilai_lain",
-   "line_text": "\"dpp_nilai_lain\": tax.get(\"dpp_nilai_lain\", False)",
-   "jenis": "bukan_pengaturan",
-   "alasan": "Bukan pengaturan: `tax` = hasil `compute_tax` (selalu memuat `dpp_nilai_lain`); cabang tanpa PPN mengisinya False."
-  },
-  {
    "file": "backend/services/interco_service.py",
    "key": "antar_entitas.pricing_mode",
    "line_text": "payload.get(\"pricing_mode\") or \"\"",
@@ -280,20 +273,6 @@
    "line_text": "await value_of(\"finance.fiscal_year_end_month\", {\"entity_id\": entity_id}) or 12",
    "jenis": "sama_bawaan",
    "alasan": "Garis dasar KF-T8: cadangan 12 = bawaan registry; ganti dengan `config_registry.default_of(\"finance.fiscal_year_end_month\")`, lalu hapus butir ini."
-  },
-  {
-   "file": "backend/services/config_service.py",
-   "key": "tax.ppn_mode",
-   "line_text": "tax.get(\"ppn_mode\", \"excluded\")",
-   "jenis": "sama_bawaan",
-   "alasan": "Garis dasar KF-T8: cadangan 'excluded' = bawaan registry; ganti dengan `config_registry.default_of(\"tax.ppn_mode\")`, lalu hapus butir ini."
-  },
-  {
-   "file": "backend/services/config_service.py",
-   "key": "tax.ppn_rate",
-   "line_text": "tax.get(\"ppn_rate\", _reg_default(\"tax.ppn_rate\")) or 0",
-   "jenis": "hanya_bila_kosong",
-   "alasan": "Garis dasar KF-T8: cadangan `or 0` ≠ bawaan 12.0, hanya terpakai bila nilai tersimpan kosong/None. Ganti dengan `config_registry.default_of`, lalu hapus butir ini."
   },
   {
    "file": "backend/services/contra_bon_service.py",

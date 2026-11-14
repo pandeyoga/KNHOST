@@ -18,6 +18,20 @@ GL-01: registri `services/gl_mapping_registry.py` (54 kebutuhan) → koleksi `gl
 - 2026-10-19 (sesi E): Fase A registri+resolver+API Pemetaan Akun; Fase B UI `?view=gl-account-mappings` (Pengaturan → Keuangan); Fase C pembaca saldo (suspense, piutang denda, uang muka, selisih bayar, persediaan, AR aging) memakai akun pemetaan; Fase D jurnal ongkir retur (cara kirim, akun bayar Finance, PT pembeban, PPN via `returns.logistics_vat_enabled`, jurnal balik saat ubah/tolak); Fase E pemecahan roll cutloss (posisi cacat, BS/Dibuang oleh peran `returns.cutloss_treatment_roles`, pratinjau, SJ potongan baik merujuk SJ & SO asal); Fase F uji (iteration_244: 100%), ACC-KP-01, filter `?stage=` produk, judul/qty kartu tugas gudang Meja Saya. Detail: evidence/HANDOFF_SESI_2026-10-19E.md.
 
 - 2026-11-13/14 (blueprint `docs/blueprint/`, laporan `docs/reviews/2026-11-13/hasil/`): PK-01 garis dasar gate + 256 temuan di tracker; PK-02 kerangka uji `backend/tests_mem/` (database tiruan); PK-05 bayar hutang lewat satu pintu niat bayar (`ap_payment_intents`): periksa tanpa tulis → niat → faktur → kas (rekening wajib, milik PT tagihan) → dokumen kontrabon berversi → jurnal tahan-gagal; kunci idempotensi pada bayar faktur/kontrabon; niat menggantung bisa dilanjutkan/dibatalkan dari form. PR-T9: izin peran bawaan tidak lagi ditimpa saat server start (cabut/atur ulang lama jadi migrasi sekali-jalan tercatat di `permission_settings.migrations_applied`); peran kustom ikut izin baru peran dasarnya bila modulnya belum diubah, selain itu tombol "Ikuti peran dasar". KF-T1: Pusat Pengaturan — ubah = izin kunci (`settings.manage`, `inventory/goods_receipt/makloon.configure`, `rnd.manage`, …; tanpa jalur nama peran), baca = `settings.view` atau yang boleh mengubah kunci itu; `GET /api/settings/effective` tanpa `settings.view` hanya memuat kunci `sensitif_baca=False`.
+- 2026-11-14 TX-T1 (TX-06, K-33 — aturan pajak per PT bertanggal & data pajak pelanggan): satu pintu
+  `services/tax_config_service.py` (`tax_settings(entity_id, at)`, `round_money`, `default_kode`) membaca tarif, DPP nilai
+  lain, cara harga, dan **tujuh kunci baru** Pengaturan › Keuangan & Pajak (sub-judul Pajak; izin `accounting.manage`, beralasan, bisa dijadwalkan
+  "berlaku sejak"): faktor DPP nilai lain pembilang/penyebut (11/12), "PPN dibulatkan per" (dokumen/baris), "PPN
+  dibulatkan ke" (dua desimal/rupiah penuh), daftar kode transaksi faktur (01–09 tanpa 05, sama dengan daftar lama),
+  kode bawaan 01 dan 04 saat DPP nilai lain — nilai bawaan = yang dulu ditulis mati (H4: tanpa tarif/kode baru). Pesanan,
+  PO, tagihan pemasok, dan faktur menyimpan **potret `tax_snapshot`**; override, amandemen, batal baris, kekurangan
+  ambil, dan pesanan khusus menghitung ulang DARI potret (dokumen lama = 11/12 · per dokumen · dua desimal, tanpa
+  migrasi). Faktor antar-PT, "Coba dulu", PDF, dan pratinjau POS/PO dari tempat yang sama. Data pajak pelanggan
+  `customers.tax_profile` (NPWP/NIK, nama & alamat pajak, status PKP, kode transaksi, selalu minta faktur; bentuk nomor
+  = peringatan `tax_data_warnings`); faktur memuat `customer_tax` + `data_incomplete` (tidak menolak terbit). Checkout:
+  "Pesanan tanpa PPN" + alasan untuk pemegang `order.tax_override` di PT PKP (`tax_override_by` tercatat). Faktur
+  Keluaran: rincian "Aturan pajak saat terbit", lencana "Data pajak belum lengkap", kode dari daftar PT. Produk:
+  "Perlakuan PPN" & "Kode barang pajak" (belum dipakai mesin).
 - 2026-11-14 CR-T1 (K-27, K-28, K-29 — profil kredit per pelanggan per PT): plafon, berlaku-sampai, termin yang
   diizinkan, hari telat yang menahan pesanan, dan blokir manual disimpan per (pelanggan, PT pesanan) di
   `customer_credit_profiles` dan HANYA berubah lewat pengajuan `credit_profile_requests` (`{PT}/PKR-NNNNN`, satu terbuka

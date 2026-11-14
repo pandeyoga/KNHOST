@@ -462,6 +462,34 @@
    "pajak-pembukuan",
    "pajak"
   ],
+  "tax.dpp_nilai_lain_pembilang": [
+   "pajak-pembukuan",
+   "pajak"
+  ],
+  "tax.dpp_nilai_lain_penyebut": [
+   "pajak-pembukuan",
+   "pajak"
+  ],
+  "tax.pembulatan_tingkat": [
+   "pajak-pembukuan",
+   "pajak"
+  ],
+  "tax.pembulatan_satuan": [
+   "pajak-pembukuan",
+   "pajak"
+  ],
+  "tax.kode_transaksi_diizinkan": [
+   "pajak-pembukuan",
+   "pajak"
+  ],
+  "tax.kode_transaksi_bawaan": [
+   "pajak-pembukuan",
+   "pajak"
+  ],
+  "tax.kode_transaksi_bawaan_dpp_nilai_lain": [
+   "pajak-pembukuan",
+   "pajak"
+  ],
   "finance.base_currency": [
    "pajak-pembukuan",
    "tutup-buku"

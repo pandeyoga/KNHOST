@@ -117,6 +117,9 @@ class CustomerCreate(BaseModel):
     tags: List[str] = Field(default_factory=list)
     contacts: List[ContactInfo] = Field(default_factory=list)
     payment_profile: Optional[PaymentProfile] = None
+    # TX-T1 (K-33) — data pajak pelanggan (identitas NPWP/NIK, nama & alamat pajak, status PKP, kode transaksi,
+    # selalu minta faktur). Diperiksa `tax_config_service.periksa_profil_pajak`; `npwp` tetap pemilik nomor NPWP.
+    tax_profile: Optional[Dict[str, Any]] = None
 
 
 class BusinessEntityCreate(BaseModel):
@@ -248,6 +251,10 @@ class ProductPayload(BaseModel):
     # INV-LINE-02 menolak kombinasi yang bertentangan. Kosong = belum bergolong
     # lini (data lama) dan TETAP terlihat semua akun.
     line_code: str = ""
+    # TX-T1 (K-33) — perlakuan PPN & kode barang pajak: disimpan dan ditampilkan bertanda "belum dipakai mesin"
+    # (PPN per barang di luar lingkup TX-T1). kena · dibebaskan · tidak_dipungut.
+    tax_treatment: str = "kena"
+    tax_item_code: str = ""
 
 
 class ProductTemplateCreate(BaseModel):

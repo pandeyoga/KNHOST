@@ -12,6 +12,7 @@ import { can, categoryOf } from "../../config/roles";
 import { apiErrorText } from "../../utils/apiError";
 import { parseDecimal } from "../../utils/decimalInput";
 import { PAYMENT_METHODS as METHODS, LOT_POLICY_OPTIONS, lotPolicyLabel, paymentMethodLabel } from "./crmUtils";
+import CustomerTaxSection, { taxFormFromProfile, taxProfileFromForm, TAX_FORM_BLANK } from "./CustomerTaxSection";
 
 const LOC_KEYS = ["country", "country_code", "province", "province_code", "city", "city_code", "district", "district_code", "postal_code"];
 const pickLoc = (o = {}) => Object.fromEntries(LOC_KEYS.map((k) => [k, o[k] || ""]));
@@ -56,12 +57,13 @@ export default function CustomerFormModal({
   // UAT 24 Okt (audit UI tahap 2) — setelah simpan gagal validasi, blok alamat ikut menampilkan kekurangannya
   // (`showErrors` LocationFields — API G0) dan daftar "Lengkapi: …" tampil di kaki pop-up.
   const [tried, setTried] = useState(false);
+  const [kodePt, setKodePt] = useState([]);       // TX-T1 — kode transaksi faktur yang dipakai PT pelanggan
 
   function blank() {
     return { name: "", segment: "Retail", assigned_sales_id: "", pic_name: "", phone: "", email: "",
       city: "", address: "", npwp: "", credit_limit: "", tags: "", status: "active",
       enforce_single_dye_lot: false, lot_policy: "",
-      default_method: "tempo", term_days: 30, dp_percent: 30 };
+      default_method: "tempo", term_days: 30, dp_percent: 30, ...TAX_FORM_BLANK };
   }
 
   // UAT 24 Okt (audit UI tahap 2) — G2-09: form ubah kini juga memuat "Alamat toko" (alamat UTAMA pelanggan).
@@ -85,6 +87,7 @@ export default function CustomerFormModal({
         status: editTarget.status || "active",
         enforce_single_dye_lot: !!editTarget.enforce_single_dye_lot, lot_policy: editTarget.lot_policy || "",
         default_method: pp.default_method || "tempo", term_days: pp.term_days ?? 30, dp_percent: pp.dp_percent ?? 30,
+        ...taxFormFromProfile(editTarget.tax_profile),   // TX-T1 — data pajak pelanggan
       });
       setMethods(pp.allowed_methods || ["tunai", "tempo"]);
       setSalesTeam(Array.isArray(editTarget.sales_team) ? editTarget.sales_team : []);
@@ -94,6 +97,21 @@ export default function CustomerFormModal({
       setSalesTeam([]);
     }
   }, [open, editTarget, primaryAddr]);
+
+  // TX-T1 — pilihan "Kode transaksi bawaan" = daftar kode PT pelanggan (Pengaturan › Keuangan & Pajak) + "Ikut PT".
+  const taxEntity = (editTarget?.entity_id) || ((selectedEntity && selectedEntity !== "all") ? selectedEntity : "");
+  useEffect(() => {
+    if (!open) return undefined;
+    let aktif = true;
+    (async () => {
+      try {
+        const r = await axios.get(`${API}/settings/effective`, { params: taxEntity ? { entity_id: taxEntity } : {} });
+        const list = r?.data?.tax?.kode_transaksi_diizinkan;
+        if (aktif) setKodePt(Array.isArray(list) ? list : []);
+      } catch { if (aktif) setKodePt([]); }
+    })();
+    return () => { aktif = false; };
+  }, [open, taxEntity]);
 
   const salesOptions = useMemo(() => [
     { value: "", label: "— Pilih Sales —" },
@@ -137,13 +155,14 @@ export default function CustomerFormModal({
     !!locationIncomplete(pickLoc(f)) && "wilayah alamat",
     addressRequired && f.address.trim().length < 3 && "jalan/nomor",
     !isEdit && isManager && !f.assigned_sales_id && "sales penanggung jawab",
+    f.id_type === "nik" && !f.nik.trim() && "NIK (identitas pajak)",
   ].filter(Boolean);
 
   // Isian pelanggan (CR-T1: plafon tidak pernah lewat sini; status hanya Aktif/Nonaktif bila diubah).
   async function patchCustomer(payment_profile, tags) {
     const body = { data: {
       name: f.name, segment: f.segment, pic_name: f.pic_name, phone: f.phone, email: f.email,
-      ...pickLoc(f), npwp: f.npwp, tags, payment_profile,
+      ...pickLoc(f), npwp: f.npwp, tax_profile: taxProfileFromForm(f), tags, payment_profile,
       enforce_single_dye_lot: !!f.enforce_single_dye_lot, lot_policy: f.lot_policy || "",
       sales_team: salesTeam,
       ...(statusChanged ? { status: f.status } : {}),
@@ -188,7 +207,7 @@ export default function CustomerFormModal({
           name: f.name, pic_name: f.pic_name, phone: f.phone, email: f.email,
           type: f.segment, segment: f.segment, ...pickLoc(f), address: f.address,
           // CR-T1 — usulan plafon: server menyimpan pelanggan dengan plafon 0 dan membuat pengajuan perubahan kredit.
-          npwp: f.npwp, credit_limit: canProposeCredit ? toLimit(f.credit_limit) : 0,
+          npwp: f.npwp, tax_profile: taxProfileFromForm(f), credit_limit: canProposeCredit ? toLimit(f.credit_limit) : 0,
           assigned_sales_id: f.assigned_sales_id, tags, payment_profile,
           enforce_single_dye_lot: !!f.enforce_single_dye_lot, lot_policy: f.lot_policy || "",
           sales_team: salesTeam,
@@ -294,9 +313,6 @@ export default function CustomerFormModal({
           <Field label="Email toko" optional>
             <input data-testid="customer-email" value={f.email} onChange={(e) => set("email", e.target.value)} className="field" placeholder="email@..." />
           </Field>
-          <Field label="NPWP" optional>
-            <input data-testid="customer-npwp" value={f.npwp} onChange={(e) => set("npwp", e.target.value)} className="field" placeholder="00.000.000.0-000.000" />
-          </Field>
           {isEdit ? (
             <>
               {CUSTOMER_STATUS.some((o) => o.value === initialStatus) ? (
@@ -367,6 +383,8 @@ export default function CustomerFormModal({
 
       {/* ── 4–5. Kebijakan lot & profil pembayaran — urutan menurut `variant` (kasir: pembayaran lebih dulu) ── */}
       {pos ? [paySection(4), lotSection(5)] : [lotSection(4), paySection(5)]}
+      {/* ── 6. Data pajak (TX-T1) ── */}
+      <CustomerTaxSection number={6} f={f} set={set} kodePt={kodePt} defaultOpen={!pos && isEdit} />
     </FormModal>
   );
 }

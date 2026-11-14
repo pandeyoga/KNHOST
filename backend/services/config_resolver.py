@@ -325,6 +325,22 @@ async def value_of(key: str, ctx: Optional[Dict[str, Any]] = None) -> Any:
     return (await resolve(key, ctx))["value"]
 
 
+async def resolve_keys(keys: List[str], ctx: Optional[Dict[str, Any]] = None,
+                       at: Optional[datetime] = None) -> Dict[str, Dict[str, Any]]:
+    """TX-T1 — `resolve()` untuk beberapa kunci sekaligus pada waktu `at` (bawaan: sekarang), hemat kueri (pola
+    `resolve_group`: baris `config_values` + dokumen lama dimuat sekali). Hasil per kunci identik dengan `resolve()`."""
+    ctx = ctx or {}
+    entries = [registry.require(k) for k in keys]
+    pre: Dict[str, Any] = {"rows": await _stored_rows(list(keys), ctx)}
+    for sc in {e["legacy_scope"] for e in entries}:
+        pre[f"legacy:{sc}"] = await _legacy_doc(sc)
+    ent_id = ctx.get("entity_id") or ""
+    if ent_id and ent_id != "all":
+        pre[f"legacy:{ent_id}"] = await _legacy_doc(ent_id)
+    when = _as_dt(at) or datetime.now(timezone.utc)   # tanggal tanpa zona = UTC (sama dengan `effective_from`)
+    return {k: await resolve(k, ctx, at=when, preloaded=pre) for k in keys}
+
+
 async def resolve_group(group_id: Optional[str] = None, ctx: Optional[Dict[str, Any]] = None,
                         term: str = "") -> List[Dict[str, Any]]:
     """Nilai efektif untuk sekumpulan setting (satu grup / hasil pencarian) — hemat query.

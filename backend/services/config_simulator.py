@@ -38,14 +38,20 @@ def I(name: str, label: str, typ: str = "money", default: Any = 0, unit: str = "
 # ── implementasi tiap simulator ─────────────────────────────────────────────
 def _tax(c: Dict[str, Any], s: Dict[str, Any], f: Dict[str, Any]) -> Dict[str, Any]:
     """KF-T4 (KF-UX-04) — rumus SAMA dengan mesin (`config_service.ppn_breakdown`, dipakai `compute_tax`); status PKP
-    dari profil PT (`facts.is_pkp`), bukan dari sakelar e-Faktur."""
+    dari profil PT (`facts.is_pkp`), bukan dari sakelar e-Faktur. TX-T1 — faktor DPP nilai lain dan cara bulat dari
+    kunci pengaturannya (dulu 11/12 dan dua desimal ditulis di sini)."""
     from services.config_service import ppn_breakdown
     sub = _f(s.get("subtotal"), 10_000_000)
     rate = _f(c.get("tax.ppn_rate"), 0)
     nl = bool(c.get("tax.dpp_nilai_lain"))
     mode = c.get("tax.ppn_mode") or "excluded"
     pkp = bool((f or {}).get("is_pkp", True))
-    hasil = ppn_breakdown(sub, rate, mode, pkp, nl)
+    from config_registry import default_of   # cadangan = bawaan registry (02_STANDAR §2.2)
+    aturan = {k: c.get(f"tax.{n}") if c.get(f"tax.{n}") not in (None, "") else default_of(f"tax.{n}")
+              for k, n in (("dpp_pembilang", "dpp_nilai_lain_pembilang"), ("dpp_penyebut", "dpp_nilai_lain_penyebut"),
+                           ("pembulatan_satuan", "pembulatan_satuan"))}
+    aturan["dpp_pembilang"], aturan["dpp_penyebut"] = int(aturan["dpp_pembilang"]), int(aturan["dpp_penyebut"])
+    hasil = ppn_breakdown(sub, rate, mode, pkp, nl, aturan=aturan)
     steps = [{"label": "Subtotal yang diketik sales", "value": _rp(sub)},
              {"label": "Status PKP PT", "value": "PKP" if pkp else "Bukan PKP"}]
     if not pkp or rate <= 0:
@@ -53,7 +59,8 @@ def _tax(c: Dict[str, Any], s: Dict[str, Any], f: Dict[str, Any]) -> Dict[str, A
         return {"steps": steps, "result": f"Total {_rp(hasil['grand_total'])} (tanpa PPN)", "verdict": "ok",
                 "breakdown": hasil}
     steps.append({"label": "Tarif PPN", "value": f"{_num(rate)}%"})
-    steps.append({"label": "DPP nilai lain (11/12)", "value": "Ya" if nl else "Tidak"})
+    steps.append({"label": f"DPP nilai lain ({aturan['dpp_pembilang']}/{aturan['dpp_penyebut']})",
+                  "value": "Ya" if nl else "Tidak"})
     steps.append({"label": "Tarif efektif", "value": f"{_num(hasil['effective_rate'], 4)}%"})
     if mode == "included":
         steps.append({"label": "Harga jual (dipisah dari total)", "value": _rp(hasil["harga_jual"])})
@@ -491,7 +498,9 @@ def _approval(c: Dict[str, Any], s: Dict[str, Any]) -> Dict[str, Any]:
 SIMULATORS: Dict[str, Dict[str, Any]] = {
     "tax": {"label": "Hitung PPN faktur",
             # KF-T4 — `tax.efaktur_enabled` keluar: status PKP dibaca dari profil PT (fakta `is_pkp`).
-            "needs": ["tax.ppn_rate", "tax.dpp_nilai_lain", "tax.ppn_mode"],
+            # TX-T1 — faktor DPP nilai lain & cara bulat ikut dibaca (dulu ditulis mati 11/12, dua desimal).
+            "needs": ["tax.ppn_rate", "tax.dpp_nilai_lain", "tax.ppn_mode", "tax.dpp_nilai_lain_pembilang",
+                      "tax.dpp_nilai_lain_penyebut", "tax.pembulatan_satuan"],
             "inputs": [I("subtotal", "Subtotal pesanan", "money", 10_000_000, "Rp")], "run": _tax},
     "ar_penalty": {"label": "Hitung denda keterlambatan",
                    "needs": ["ar.denda_rate_pct_per_month", "ar.grace_days"],

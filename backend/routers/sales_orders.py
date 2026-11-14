@@ -655,6 +655,10 @@ async def create_order(payload: SalesOrderCreate, request: Request) -> Dict[str,
         "needs_tax_invoice": bool(getattr(payload, "needs_tax_invoice", False)),
         "tax_override": tax_mode,
         "tax_override_reason": tax_reason,   # PK-45 (K-33) — terisi hanya bila tax_override == "non_ppn"
+        # TX-T1 — pembuat pesanan tanpa PPN (melengkapi alasan PK-45) + potret aturan pajak saat pesanan dibuat (D3;
+        # tidak pernah dihitung ulang — override/amandemen menghitung ulang DARI potret ini).
+        "tax_override_by": (actor.get("name") or "") if tax_mode else "",
+        "tax_snapshot": pricing["tax_snapshot"],
         "tax_mode": "non_ppn" if not pricing["is_pkp"] else "ppn",
         # Term pembayaran
         "payment_term_code": term_code,
@@ -765,7 +769,8 @@ async def create_order(payload: SalesOrderCreate, request: Request) -> Dict[str,
         "has_backorder": has_backorder,
         "backorder_lines": len(backorders),
         "special_price_lines": special_count,
-        **({"tax_override": tax_mode, "tax_override_reason": tax_reason} if tax_mode else {}),
+        **({"tax_override": tax_mode, "tax_override_reason": tax_reason,
+            "tax_override_by": order["tax_override_by"]} if tax_mode else {}),
     })
     return strip_cost_fields(safe_doc(order), actor.get("role"))
 

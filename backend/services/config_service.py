@@ -8,6 +8,7 @@ Prinsip user: SEMUA CONFIGURABLE, TIDAK ADA HARDCODE.
 config_service menyediakan resolver "effective settings" (global di-override entitas),
 kalkulasi pajak (PPN excluded/included), dan evaluasi approval.
 """
+from datetime import datetime
 from typing import Any, Dict, List, Optional
 from db import db
 from core_utils import now_iso, new_id, DEFAULT_ENTITY_ID
@@ -324,43 +325,54 @@ async def default_payment_term_code(entity_id: Optional[str] = None) -> str:
 # ── Kalkulasi pajak (PPN) ────────────────────────────────────────────────────
 
 async def compute_tax(subtotal: float, entity_id: Optional[str] = None,
-                      mode_override: Optional[str] = None) -> Dict[str, Any]:
-    """PPN per entitas. F-10 Coretax: dpp_nilai_lain=True → DPP = 11/12 × harga jual,
-    PPN = tarif × DPP (efektif tarif × 11/12 dari harga jual). Nilai rupiah identik
-    rezim 11% lama; representasi Faktur Pajak (kolom DPP, tarif 12%, kode 04) berbeda.
-    `mode_override` ("included"/"excluded") memaksa harga termasuk/belum termasuk PPN (PB-01)."""
-    s = await get_effective_settings(entity_id)
-    tax = s.get("tax", {})
-    # KF-T2 (KF-06) — cadangan bila dokumen tidak memuat kunci = bawaan registry (dulu 0 / False).
-    rate = float(tax.get("ppn_rate", _reg_default("tax.ppn_rate")) or 0)
-    mode = tax.get("ppn_mode", "excluded")
+                      mode_override: Optional[str] = None, *, at: Optional[datetime] = None,
+                      snapshot: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+    """PPN per entitas. F-10 Coretax: dpp_nilai_lain=True → DPP = pembilang/penyebut × harga jual,
+    PPN = tarif × DPP (efektif tarif × pembilang/penyebut dari harga jual).
+    `mode_override` ("included"/"excluded") memaksa harga termasuk/belum termasuk PPN (PB-01).
+
+    TX-T1 — `snapshot` diberikan → dihitung DARI POTRET dokumen (hitung ulang dokumen yang sudah ada); selain itu dari
+    aturan PT pada waktu `at` (`tax_config_service.tax_settings`: `tax.ppn_rate`, `tax.dpp_nilai_lain`, `tax.ppn_mode`,
+    faktor & cara bulat; bawaan: sekarang). Dengan kunci pada bawaannya hasilnya persis sama dengan sebelum unit ini."""
+    from services import tax_config_service as tcs
+    aturan = dict(snapshot) if snapshot else tcs.potret(await tcs.tax_settings(entity_id or "", at))
+    mode = aturan["ppn_mode"]
     if (mode_override or "").strip().lower() in ("included", "excluded"):
         mode = mode_override.strip().lower()
-    is_pkp = tax.get("is_pkp", True)
-    use_nl = bool(tax.get("dpp_nilai_lain", _reg_default("tax.dpp_nilai_lain")))
-    return ppn_breakdown(subtotal, rate, mode, is_pkp, use_nl)
+    return ppn_breakdown(subtotal, aturan["ppn_rate"], mode, aturan["is_pkp"], aturan["dpp_nilai_lain"], aturan=aturan)
 
 
-def ppn_breakdown(subtotal: float, rate: float, mode: str, is_pkp: bool, use_nl: bool) -> Dict[str, Any]:
+def ppn_breakdown(subtotal: float, rate: float, mode: str, is_pkp: bool, use_nl: bool,
+                  aturan: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
     """KF-T4 (KF-UX-04) — rumus PPN MURNI: dipakai `compute_tax` (mesin) dan "Coba dulu" Pengaturan (simulator `tax`),
-    supaya keduanya selalu memberi angka yang sama. F-10 Coretax: `use_nl` → DPP = 11/12 × harga jual."""
+    supaya keduanya selalu memberi angka yang sama. F-10 Coretax: `use_nl` → DPP = pembilang/penyebut × harga jual.
+
+    TX-T1 — faktor dan cara bulat dari `aturan` (potret `tax_snapshot`); tanpa `aturan` = aturan sebelum unit ini
+    (11/12, dua desimal — `tax_config_service.potret_lama`). Satu fungsi bulat: `tax_config_service.round_money`."""
+    from services.tax_config_service import potret_lama, round_money
+    a = aturan or potret_lama({"ppn_rate": rate, "ppn_mode": mode})
+    satuan = a["pembulatan_satuan"]
     rate = float(rate or 0)
     subtotal = round(float(subtotal or 0), 2)
     if not is_pkp or rate <= 0:
         return {"ppn_rate": 0.0, "effective_rate": 0.0, "dpp_nilai_lain": False,
                 "ppn_mode": mode, "is_pkp": is_pkp, "dpp": subtotal, "harga_jual": subtotal,
                 "ppn_amount": 0.0, "grand_total": subtotal}
-    dpp_factor = 11.0 / 12.0 if use_nl else 1.0
+    dpp_factor = int(a["dpp_pembilang"]) / int(a["dpp_penyebut"]) if use_nl else 1.0
     eff_rate = rate * dpp_factor
     if mode == "included":
-        harga_jual = round(subtotal / (1 + eff_rate / 100), 2)
-        ppn = round(subtotal - harga_jual, 2)
+        if satuan == "dua_desimal":   # urutan sebelum TX-T1 (harga jual dulu), persis
+            harga_jual = round_money(subtotal / (1 + eff_rate / 100), satuan)
+            ppn = round(subtotal - harga_jual, 2)
+        else:                         # PPN dulu supaya PPN bulat dan harga jual + PPN = subtotal
+            ppn = round_money(subtotal - subtotal / (1 + eff_rate / 100), satuan)
+            harga_jual = round(subtotal - ppn, 2)
         grand = subtotal
     else:  # excluded (default)
         harga_jual = subtotal
-        ppn = round(subtotal * eff_rate / 100, 2)
-        grand = round(subtotal + ppn, 2)
-    dpp = round(harga_jual * dpp_factor, 2)
+        ppn = round_money(subtotal * eff_rate / 100, satuan)
+        grand = round(subtotal + ppn, 2)   # total = harga + PPN (D5: tidak dibulatkan lagi)
+    dpp = round_money(harga_jual * dpp_factor, satuan)
     return {"ppn_rate": rate, "effective_rate": round(eff_rate, 4), "dpp_nilai_lain": use_nl,
             "ppn_mode": mode, "is_pkp": is_pkp, "dpp": dpp, "harga_jual": harga_jual,
             "ppn_amount": ppn, "grand_total": grand}
@@ -676,6 +688,9 @@ async def compute_order_pricing(
     cfg_section: str = "sales",
     tax_override: Optional[str] = None,
     ppn_mode_override: Optional[str] = None,
+    *,
+    at: Optional[datetime] = None,
+    snapshot: Optional[Dict[str, Any]] = None,
 ) -> Dict[str, Any]:
     """Hitung breakdown harga order: gross subtotal, diskon item, diskon order,
     DPP, PPN, grand total. Menghormati toggle settings.{cfg_section}.allow_*_discount &
@@ -685,6 +700,9 @@ async def compute_order_pricing(
       - cfg_section: bagian settings sumber toggle diskon ("sales" | "purchasing").
       - tax_override: paksa mode pajak ("non_ppn" → tanpa PPN; "ppn" → ikut rate config;
         None/"" → ikut compute_tax dari config entitas).
+      - TX-T1 `at`: tanggal dokumen untuk aturan pajak PT (dokumen baru); `snapshot`: potret aturan dokumen yang
+        dihitung ulang (`tax_config_service.potret_dokumen`). Hasil memuat `tax_snapshot` (D3, tidak dihitung ulang).
+        `pembulatan_tingkat == "baris"` → PPN tiap baris (`items[].ppn_amount`) lalu dijumlah.
 
     Mengembalikan dict siap-simpan (items diperkaya + agregat). INVARIAN-SAFE:
       - item.subtotal = price × quantity   (GROSS, tak terpengaruh diskon)
@@ -708,6 +726,7 @@ async def compute_order_pricing(
         disc_amt = round(subtotal * disc_pct / 100.0, 2)
         line_total = round(subtotal - disc_amt, 2)
         enriched = dict(it)
+        enriched.pop("ppn_amount", None)   # TX-T1 — PPN baris hanya ada bila dibulatkan per baris (diisi di bawah)
         enriched.update({
             "price": price, "subtotal": subtotal,
             "discount_percent": disc_pct, "discount_amount": disc_amt,
@@ -724,13 +743,19 @@ async def compute_order_pricing(
     order_disc_amt = round(after_item * order_disc_pct / 100.0, 2)
     net_subtotal = round(after_item - order_disc_amt, 2)      # = DPP base
 
+    from services import tax_config_service as tcs
+    aturan = dict(snapshot) if snapshot else tcs.potret(await tcs.tax_settings(entity_id or "", at))
     if (tax_override or "").strip().lower() == "non_ppn":
         # Supplier non-PKP / transaksi tanpa PPN → tanpa Faktur Pajak Masukan.
         tax = {"ppn_rate": 0.0, "effective_rate": 0.0, "dpp_nilai_lain": False,
                "ppn_mode": "excluded", "is_pkp": False, "dpp": net_subtotal,
                "harga_jual": net_subtotal, "ppn_amount": 0.0, "grand_total": net_subtotal}
+        aturan.update({"ppn_rate": 0.0, "is_pkp": False})   # TX-T1 — potret pesanan tanpa PPN: bukan PKP
     else:
-        tax = await compute_tax(net_subtotal, entity_id, mode_override=ppn_mode_override)
+        tax = await compute_tax(net_subtotal, entity_id, mode_override=ppn_mode_override, snapshot=aturan)
+        if aturan.get("pembulatan_tingkat") == "baris" and tax["ppn_amount"] > 0 and priced_items:
+            tax = _ppn_per_baris(priced_items, net_subtotal, after_item, tax, aturan)
+    aturan["ppn_mode"] = tax["ppn_mode"]
     return {
         "items": priced_items,
         "total_amount": gross_total,                          # GROSS (invarian)
@@ -747,7 +772,36 @@ async def compute_order_pricing(
         "is_pkp": tax["is_pkp"],
         "ppn_amount": tax["ppn_amount"],
         "grand_total": tax["grand_total"],
+        "tax_snapshot": aturan,
     }
+
+
+def _ppn_per_baris(items: List[Dict[str, Any]], net_subtotal: float, after_item: float,
+                   tax: Dict[str, Any], aturan: Dict[str, Any]) -> Dict[str, Any]:
+    """TX-T1 — PPN dibulatkan PER BARIS lalu dijumlah (`tax.pembulatan_tingkat = baris`). Dasar tiap baris = nilai baris
+    sesudah diskon baris; diskon pesanan dibagi sebanding nilai baris (baris terakhir menampung sisa pembulatan), supaya
+    Σ dasar = DPP dasar dokumen. `items[].ppn_amount` diisi; DPP dihitung dari harga jual total."""
+    from services.tax_config_service import round_money
+    satuan = aturan["pembulatan_satuan"]
+    totals = [float(it.get("line_total") or 0) for it in items]
+    if abs(net_subtotal - after_item) < 0.005 or after_item <= 0:
+        bases = totals
+    else:
+        bases = [round(t * net_subtotal / after_item, 2) for t in totals[:-1]]
+        bases.append(round(net_subtotal - sum(bases), 2))
+    ppn_total = 0.0
+    for it, base in zip(items, bases):
+        b = ppn_breakdown(base, tax["ppn_rate"], tax["ppn_mode"], tax["is_pkp"], tax["dpp_nilai_lain"], aturan=aturan)
+        it["ppn_amount"] = b["ppn_amount"]
+        ppn_total += b["ppn_amount"]
+    ppn_total = round(ppn_total, 2)
+    factor = int(aturan["dpp_pembilang"]) / int(aturan["dpp_penyebut"]) if tax["dpp_nilai_lain"] else 1.0
+    if tax["ppn_mode"] == "included":
+        harga_jual, grand = round(net_subtotal - ppn_total, 2), net_subtotal
+    else:
+        harga_jual, grand = net_subtotal, round(net_subtotal + ppn_total, 2)
+    return {**tax, "ppn_amount": ppn_total, "harga_jual": harga_jual, "grand_total": grand,
+            "dpp": round_money(harga_jual * factor, satuan)}
 
 
 def role_satisfies(actor_role: str, required_role: Optional[str]) -> bool:

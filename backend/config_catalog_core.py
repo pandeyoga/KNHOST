@@ -24,18 +24,21 @@ E("tax.ppn_rate", sensitif_baca=False,  # KF-T1 — dibaca layar semua pengguna
   help="Tarif Pajak Pertambahan Nilai yang dipakai saat membuat tagihan penjualan. Isi 0 = tagihan tanpa PPN.",
   impact="Mengubah nilai PPN pada SEMUA tagihan baru. Tagihan yang sudah terbit tidak berubah.",
   example="Subtotal Rp 10.000.000 · tarif 12% + DPP Nilai Lain → PPN Rp 1.100.000",
-  consumers=("services/config_service.py:compute_tax", "services/tax_invoice_service.py"),
+  # TX-T1 — mesin membaca lewat `tax_settings` (tanggal dokumen, lapisan PT); `compute_tax` memakai hasilnya.
+  consumers=("services/tax_config_service.py:tax_settings", "services/config_service.py:compute_tax",
+             "services/tax_invoice_service.py"),
   related=("tax.dpp_nilai_lain", "tax.ppn_mode"), risk="high")
 
 E("tax.dpp_nilai_lain", sensitif_baca=False,  # KF-T1 — dibaca layar semua pengguna
   group="pajak-pembukuan", section="pajak", type="bool", default=True,
   scopes=("global", "entity"), simulate="tax",
-  label="Pakai DPP Nilai Lain (11/12)",
-  help="Aturan PMK 131/2024: dasar pengenaan pajak = 11/12 × harga jual untuk barang "
-       "non-mewah, sehingga PPN efektif tetap 11% walau tarif tertulis 12%.",
+  label="Pakai DPP nilai lain",
+  help="Aturan PMK 131/2024: dasar pengenaan pajak = pecahan × harga jual untuk barang non-mewah, sehingga PPN "
+       "efektif tetap 11% walau tarif tertulis 12%. Pecahannya diatur di Faktor DPP nilai lain (bawaan 11/12).",
   impact="Nominal rupiah PPN turun ke setara 11%. Kolom DPP pada Faktur Pajak berubah.",
   example="Harga jual Rp 12.000.000 → DPP Rp 11.000.000 → PPN 12% × DPP = Rp 1.320.000",
-  consumers=("services/config_service.py:compute_tax",), risk="high")
+  related=("tax.dpp_nilai_lain_pembilang", "tax.dpp_nilai_lain_penyebut"),
+  consumers=("services/tax_config_service.py:tax_settings",), risk="high")
 
 E("tax.ppn_mode", sensitif_baca=False,  # KF-T1 — dibaca layar semua pengguna
   group="pajak-pembukuan", section="pajak", type="enum", default="excluded",
@@ -47,7 +50,7 @@ E("tax.ppn_mode", sensitif_baca=False,  # KF-T1 — dibaca layar semua pengguna
        "menjadi DPP + PPN; bila belum, PPN ditambahkan di atas harga.",
   impact="Mengubah total tagihan. 'Harga SUDAH termasuk PPN' membuat harga jual dipecah menjadi DPP + PPN.",
   example="Rp 11.100.000 · Harga SUDAH termasuk PPN → DPP Rp 10.000.000 + PPN Rp 1.100.000",
-  consumers=("services/config_service.py:compute_tax",), risk="high")
+  consumers=("services/tax_config_service.py:tax_settings",), risk="high")
 
 # KF-T3 (KF-11) — sakelar ini tidak pernah dibaca saat menghitung PPN maupun menerbitkan faktur; sumbernya status PKP
 # di profil PT (keputusan K-08). Pusat Pajak kini mengirim `efaktur_enabled = is_pkp`.
@@ -83,6 +86,75 @@ E("tax.pph_items", group="pajak-pembukuan", section="pajak", type="table", defau
   impact="Menentukan butir yang muncul di Pusat Pajak → PPh & Rekap serta nominal potongannya.",
   example="PPh 23 jasa 2% aktif → tagihan jasa makloon Rp 50.000.000 dipotong Rp 1.000.000",
   consumers=("services/tax_center_service.py",), risk="medium")
+
+# TX-T1 (K-33, TX-06) — nilai yang dulu ditulis mati di kode (faktor 11/12 di empat tempat, pembulatan dua desimal,
+# daftar & bawaan kode transaksi faktur) kini pengaturan per PT dengan NILAI YANG SAMA (H4: tidak ada tarif/faktor/kode
+# baru). Dibaca `tax_config_service.tax_settings` pada tanggal dokumen; dokumen menyimpan potretnya (`tax_snapshot`).
+# Hal peraturan (faktor, daftar kode) menunggu konfirmasi konsultan pajak.
+_TXT1 = dict(group="pajak-pembukuan", section="pajak", scopes=("global", "entity"), risk="high",
+             requires_reason=True, permission=("accounting", "manage"),
+             consumers=("services/tax_config_service.py:tax_settings",))
+#: Kode transaksi faktur yang dikenal sistem — sama persis dengan daftar yang dulu ditulis di
+#: `tax_invoice_service.KODE_TRANSAKSI_VALID` (05 tidak ada di daftar lama, jadi tidak ditambahkan).
+_KODE_TRANSAKSI = tuple({"value": k, "label": k} for k in ("01", "02", "03", "04", "06", "07", "08", "09"))
+
+E("tax.dpp_nilai_lain_pembilang", sensitif_baca=False, **{**_TXT1, "consumers": (
+      "services/tax_config_service.py:tax_settings", "utils/pricing.js")},
+  type="int", default=11, min=1, max=1000, step=1, unit="bagian", simulate="tax",
+  label="Faktor DPP nilai lain — pembilang",
+  help="Bagian atas pecahan DPP nilai lain. Dipakai bila 'Pakai DPP nilai lain' menyala.",
+  impact="Mengubah DPP dan PPN semua dokumen baru PT ini. Dokumen yang sudah dibuat tetap memakai aturan saat dibuat.",
+  example="11 dari 11/12")
+
+E("tax.dpp_nilai_lain_penyebut", sensitif_baca=False, **{**_TXT1, "consumers": (
+      "services/tax_config_service.py:tax_settings", "utils/pricing.js")},
+  type="int", default=12, min=1, max=1000, step=1, unit="bagian", simulate="tax",
+  label="Faktor DPP nilai lain — penyebut",
+  help="Bagian bawah pecahan DPP nilai lain. Dipakai bila 'Pakai DPP nilai lain' menyala.",
+  impact="Mengubah DPP dan PPN semua dokumen baru PT ini. Dokumen yang sudah dibuat tetap memakai aturan saat dibuat.",
+  example="Harga Rp 12.000.000 × 11/12 = DPP Rp 11.000.000")
+
+E("tax.pembulatan_tingkat", sensitif_baca=False, **{**_TXT1, "consumers": (
+      "services/tax_config_service.py:tax_settings", "utils/pricing.js")},
+  type="enum", default="dokumen",
+  options=({"value": "dokumen", "label": "Per dokumen (dari total)"},
+           {"value": "baris", "label": "Per baris (tiap baris lalu dijumlah)"}),
+  label="PPN dibulatkan per",
+  help="Per dokumen = PPN dihitung dari total pesanan; per baris = PPN dihitung tiap baris lalu dijumlah.",
+  impact="Bisa menggeser PPN beberapa rupiah pada dokumen baru. Dokumen yang sudah dibuat tidak berubah.",
+  example="Dua baris Rp 100.005: per baris Rp 22.002, per dokumen Rp 22.001 (rupiah penuh)")
+
+E("tax.pembulatan_satuan", sensitif_baca=False, **{**_TXT1, "consumers": (
+      "services/tax_config_service.py:tax_settings", "utils/pricing.js")},
+  type="enum", default="dua_desimal", simulate="tax",
+  options=({"value": "dua_desimal", "label": "Dua angka di belakang koma"},
+           {"value": "rupiah_penuh", "label": "Rupiah penuh"}),
+  label="PPN dibulatkan ke",
+  help="Ketelitian angka PPN, DPP, dan total pada dokumen baru.",
+  impact="Mengubah angka PPN dan total dokumen baru. Dokumen yang sudah dibuat tidak berubah.",
+  example="Rp 135.802,37 menjadi Rp 135.802")
+
+E("tax.kode_transaksi_diizinkan", sensitif_baca=False, **_TXT1,
+  type="list", items="options", options=_KODE_TRANSAKSI,
+  default=[o["value"] for o in _KODE_TRANSAKSI],
+  label="Kode transaksi faktur yang dipakai",
+  help="Pilihan kode transaksi saat menerbitkan faktur pajak keluaran PT ini.",
+  impact="Kode di luar daftar ditolak saat menerbitkan, mengganti, atau mengisi nomor seri faktur.",
+  example="Hapus 07 → faktur berkode 07 ditolak")
+
+E("tax.kode_transaksi_bawaan", sensitif_baca=False, **_TXT1,
+  type="enum", default="01", options=_KODE_TRANSAKSI,
+  label="Kode transaksi bawaan",
+  help="Dipakai bila pelanggan tidak punya kode sendiri dan pesanan tidak memakai DPP nilai lain.",
+  impact="Mengisi otomatis kode faktur pajak baru. Kode yang tidak ada di daftar kode PT ditolak saat terbit.",
+  example="01")
+
+E("tax.kode_transaksi_bawaan_dpp_nilai_lain", sensitif_baca=False, **_TXT1,
+  type="enum", default="04", options=_KODE_TRANSAKSI,
+  label="Kode transaksi bawaan saat DPP nilai lain",
+  help="Dipakai bila pelanggan tidak punya kode sendiri dan pesanan memakai DPP nilai lain.",
+  impact="Mengisi otomatis kode faktur pajak baru. Kode yang tidak ada di daftar kode PT ditolak saat terbit.",
+  example="04")
 
 # ═══════════════════════════════════════════════════════════════════════════
 # DASAR KEUANGAN & PERIODE

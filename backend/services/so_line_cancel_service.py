@@ -16,6 +16,7 @@ from typing import Any, Dict
 from db import db
 from core_utils import new_id, now_iso
 from services import config_service
+from services.tax_config_service import potret_dokumen
 from services.amendment_service import is_issued
 from services.roll_service import rebuild_balance
 from services.so_status import stage_fields
@@ -90,7 +91,8 @@ async def cancel_line(order: Dict[str, Any], od_item_id: str, reason: str, actor
     priced = await config_service.compute_order_pricing(
         rest, entity_id=order.get("entity_id") or "",
         order_discount_percent=float(order.get("order_discount_percent", 0) or 0),
-        tax_override=(order.get("tax_override") or None))
+        tax_override=(order.get("tax_override") or None),
+        snapshot=potret_dokumen(order))   # TX-T1 — aturan pajak saat pesanan dibuat
     patch: Dict[str, Any] = {k: v for k, v in priced.items() if k != "settings"}
     patch["allocations"] = [a for a in order.get("allocations") or [] if a.get("product_id") != pid]
     patch["backorders"] = [b for b in order.get("backorders") or [] if b.get("product_id") != pid]

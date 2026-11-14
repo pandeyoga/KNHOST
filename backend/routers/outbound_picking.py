@@ -465,11 +465,13 @@ async def resolve_outbound_escalation(
                         round(float(it.get("reserved_qty", 0) or 0) - delta, 2), 0.0)
                 break
             from services.config_service import compute_order_pricing
+            from services.tax_config_service import potret_dokumen
             # KN-A10 — diskon header pesanan DIPERTAHANKAN (dulu di-hardcode 0 → short-pick
             # justru menaikkan tagihan pelanggan).
             pricing = await compute_order_pricing(
                 items, order.get("entity_id"), float(order.get("order_discount_percent", 0) or 0),
-                tax_override=(order.get("tax_override") or "").strip().lower() or None)
+                tax_override=(order.get("tax_override") or "").strip().lower() or None,
+                snapshot=potret_dokumen(order))   # TX-T1 — aturan pajak saat pesanan dibuat
             await db.sales_orders.update_one(
                 {"id": order["id"]},
                 {"$set": {

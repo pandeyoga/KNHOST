@@ -33,7 +33,7 @@ Invarian: **INV-IC-07** (di `scripts/verify_data_integrity.py`).
 """
 from __future__ import annotations
 
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Tuple
 
 from core_utils import new_id, next_doc_number, now_iso, rupiah, safe_doc, timeline_entry
 from db import db
@@ -65,9 +65,23 @@ async def _entity_full(entity_id: str) -> Dict[str, Any]:
     return {"id": entity_id, "name": name, "npwp": ent.get("npwp", ""), "address": addr}
 
 
+def _faktor_dpp(seller: Dict[str, Any]) -> Tuple[int, int]:
+    """TX-T1 — faktor DPP nilai lain transaksi: potret saat transaksi dibuat (`tax_dpp_pembilang/penyebut`, dibaca dari
+    `tax_config_service.tax_settings` PT penjual); transaksi lama tanpa potret = aturan lama 11/12."""
+    from services.tax_config_service import potret_lama
+    p, q = seller.get("tax_dpp_pembilang"), seller.get("tax_dpp_penyebut")
+    if p and q:
+        return int(p), int(q)
+    lama = potret_lama({"ppn_rate": 0, "ppn_mode": "excluded"})
+    return lama["dpp_pembilang"], lama["dpp_penyebut"]
+
+
 def _faktur_dpp(seller: Dict[str, Any], harga_jual: float) -> float:
-    """Temuan lama #16 — DPP faktur ikut rezim penjualan (DPP Nilai Lain 11/12 bila berlaku)."""
-    return round(harga_jual * (11.0 / 12.0), 2) if seller.get("tax_dpp_nilai_lain") else harga_jual
+    """Temuan lama #16 — DPP faktur ikut rezim penjualan (DPP Nilai Lain bila berlaku; TX-T1: faktor dari potret)."""
+    if not seller.get("tax_dpp_nilai_lain"):
+        return harga_jual
+    p, q = _faktor_dpp(seller)
+    return round(harga_jual * (p / q), 2)
 
 
 def _net_amounts(seller: Dict[str, Any]) -> Dict[str, float]:
@@ -228,6 +242,12 @@ async def issue(pair_id: str, actor: str = "", nsfp: str = "",
         "ppn_mode": "excluded",
         "ppn_amount": net["ppn"],
         "grand_total": net["total"],
+        # TX-T1 — "Aturan pajak saat terbit": tarif & faktor dari transaksi; hitungan antar-PT dibulatkan per dokumen
+        # ke dua desimal (`interco_service._totals_from_items`, tidak diatur Pusat Pengaturan).
+        "tax_snapshot": {"ppn_rate": nominal, "dpp_nilai_lain": bool(seller.get("tax_dpp_nilai_lain")),
+                         "dpp_pembilang": _faktor_dpp(seller)[0], "dpp_penyebut": _faktor_dpp(seller)[1],
+                         "ppn_mode": "excluded", "pembulatan_tingkat": "dokumen", "pembulatan_satuan": "dua_desimal",
+                         "is_pkp": True, "berlaku_pada": str(seller.get("created_at") or "")},
     }
 
     # ── Buku PENJUAL: Faktur Pajak KELUARAN ──────────────────────────────

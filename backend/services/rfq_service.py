@@ -231,6 +231,7 @@ async def _create_po_from_lines(supplier_id: str, lines: List[Dict[str, Any]],
         "discount_total": pricing["discount_total"], "net_subtotal": pricing["net_subtotal"],
         "dpp": pricing["dpp"], "ppn_rate": pricing["ppn_rate"], "ppn_mode": pricing["ppn_mode"],
         "is_pkp": pricing["is_pkp"], "ppn_amount": pricing["ppn_amount"],
+        "tax_snapshot": pricing["tax_snapshot"],   # TX-T1 (D3) — aturan pajak saat PO dibuat
         "grand_total": grand_total, "tax_mode": "",
         "expected_delivery_date": rfq.get("needed_by_date", ""),
         "notes": f"Dari {rfq['rfq_number']}",

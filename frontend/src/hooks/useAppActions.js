@@ -405,6 +405,7 @@ export function useAppActions(state) {
         confirm_makloon_override: Boolean(extra.confirm_makloon_override),
         needs_tax_invoice: Boolean(extra.needs_tax_invoice),
         tax_override: extra.tax_override || "",
+        tax_override_reason: extra.tax_override_reason || "",   // PK-45/TX-T1 — alasan pesanan tanpa PPN
         // REVISI SAMPEL — jenis pesanan & skema bayar sample (SOS-, meja Admin Sample)
         order_type: extra.order_type || (cart.length > 0 && cart.every((i) => i.is_sample) ? "sample" : "regular"),
         sample_billing: extra.sample_billing || "",

@@ -36,6 +36,7 @@ from core_utils import new_id, next_doc_number, now_iso, safe_doc, timeline_entr
 from db import db
 from services import config_service
 from services.config_resolver import resolve
+from services.tax_config_service import potret_dokumen
 
 AMD_COLL = "doc_amendments"
 REASON_COLL = "amendment_reasons"
@@ -528,7 +529,8 @@ async def preview(doc_type: str, doc_id: str, changes: List[Dict[str, Any]],
 
     priced = await config_service.compute_order_pricing(
         new_items, entity_id=entity_id, order_discount_percent=disc,
-        tax_override=(order.get("tax_override") or None))   # KN-E04(a)
+        tax_override=(order.get("tax_override") or None),   # KN-E04(a)
+        snapshot=potret_dokumen(order))                      # TX-T1 — aturan pajak saat pesanan dibuat
 
     before_doc = {"grand_total": float(order.get("grand_total", 0) or 0),
                   "total_amount": float(order.get("total_amount", 0) or 0),
@@ -536,7 +538,7 @@ async def preview(doc_type: str, doc_id: str, changes: List[Dict[str, Any]],
     if noted:
         base_priced = await config_service.compute_order_pricing(
             base_items, entity_id=entity_id, order_discount_percent=base_disc,
-            tax_override=(order.get("tax_override") or None))
+            tax_override=(order.get("tax_override") or None), snapshot=potret_dokumen(order))
         before_doc = {k: float(base_priced.get(k, 0) or 0) for k in before_doc}
     before = before_doc["grand_total"]
     after = float(priced.get("grand_total", 0) or 0)
@@ -872,7 +874,7 @@ async def _apply_re_derive(amd: Dict[str, Any], actor: Dict[str, Any]) -> List[D
         cur_items,
         entity_id=order.get("entity_id") or "",
         order_discount_percent=float(payload.get("order_discount_percent", 0) or 0),
-        tax_override=(order.get("tax_override") or None))
+        tax_override=(order.get("tax_override") or None), snapshot=potret_dokumen(order))   # TX-T1
 
     patch: Dict[str, Any] = {k: v for k, v in priced.items() if k != "settings"}
     patch["order_discount_percent"] = float(payload.get("order_discount_percent", 0) or 0)

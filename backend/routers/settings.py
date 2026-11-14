@@ -46,6 +46,10 @@ async def read_effective_settings(request: Request, entity_id: Optional[str] = N
     resolved = resolve_requested_entity(ctx, entity_id) if entity_id else (
         None if ctx.view_all else ctx.active_entity_id)
     doc = await get_effective_settings(resolved)
+    # TX-T1 (L6) — bagian pajak = nilai yang DIPAKAI mesin hari ini (lapisan PT, jadwal yang sudah berlaku, bawaan
+    # registry untuk kunci yang belum pernah diatur): pratinjau harga POS/PO dan pilihan kode transaksi faktur.
+    from services.tax_config_service import bagian_pajak_layar
+    doc["tax"] = {**(doc.get("tax") or {}), **(await bagian_pajak_layar(resolved or ""))}
     # KF-T1 — tanpa `settings.view` hanya bagian yang dibaca layar umum (POS, PO, tagihan pemasok, menu).
     from dependencies import permission_matrix
     from services.config_service import saring_bagi_pembaca

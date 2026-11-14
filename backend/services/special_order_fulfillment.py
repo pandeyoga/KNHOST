@@ -553,7 +553,12 @@ async def _fix_po_price(po_id: str, n: Dict[str, Any], od: Dict[str, Any]) -> No
             changed = True
     if changed:
         from services.config_service import compute_order_pricing
-        pr_ = await compute_order_pricing([dict(i) for i in items], od.get("entity_id", ""), 0.0, cfg_section="purchasing")
+        from services.tax_config_service import potret_dokumen
+        po_tax = await db.purchase_orders.find_one({"id": po_id}, {"_id": 0, "tax_snapshot": 1, "ppn_rate": 1,
+                                                                    "ppn_mode": 1, "dpp_nilai_lain": 1, "is_pkp": 1,
+                                                                    "created_at": 1}) or {}
+        pr_ = await compute_order_pricing([dict(i) for i in items], od.get("entity_id", ""), 0.0, cfg_section="purchasing",
+                                          snapshot=potret_dokumen(po_tax))   # TX-T1 — aturan pajak saat PO dibuat
         await db.purchase_orders.update_one({"id": po_id}, {"$set": {
             "items": pr_["items"], "total_amount": pr_["total_amount"], "net_subtotal": pr_["net_subtotal"], "dpp": pr_["dpp"],
             "ppn_amount": pr_["ppn_amount"], "grand_total": pr_["grand_total"], "outstanding": round(float(pr_["grand_total"]), 2),

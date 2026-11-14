@@ -3789,3 +3789,24 @@ Potret aturan saat diputus (dibaca invarian `scripts/verify_data_integrity.py`):
 `system_settings{scope:"__migrations__"}.kft6_kontrol`). Jejak Admin yang memutuskan sendiri: `approval_matrix_log`
 `outcome = "diputuskan sendiri oleh admin"` (`stage` = nama aksi).
 
+
+## TX-T1 — potret aturan pajak di dokumen & data pajak pelanggan (K-33)
+
+Aturan pajak per PT dibaca SATU pintu `backend/services/tax_config_service.py` (`tax_settings(entity_id, at)`) dari
+kunci Pusat Pengaturan `tax.ppn_rate`, `tax.dpp_nilai_lain`, `tax.ppn_mode`, `tax.dpp_nilai_lain_pembilang` / `_penyebut`,
+`tax.pembulatan_tingkat`, `tax.pembulatan_satuan`, `tax.kode_transaksi_diizinkan`, `tax.kode_transaksi_bawaan`,
+`tax.kode_transaksi_bawaan_dpp_nilai_lain` (lapisan PT + jadwal "berlaku sejak"; PT bukan PKP → tarif 0).
+
+| Koleksi · field baru | Isi | Ditulis oleh |
+|---|---|---|
+| `sales_orders.tax_snapshot`, `purchase_orders.tax_snapshot`, `vendor_bills.tax_snapshot`, `tax_invoices.tax_snapshot` | `{ppn_rate, dpp_nilai_lain, dpp_pembilang, dpp_penyebut, ppn_mode, pembulatan_tingkat, pembulatan_satuan, is_pkp, berlaku_pada}` — aturan saat dokumen dibuat (D3: tidak pernah dihitung ulang; hitung ulang dokumen = DARI potret). Faktur: potret pesanannya; dokumen lama tanpa potret dianggap 11/12 · per dokumen · dua desimal (`asal: "dokumen_lama"`, tanpa migrasi) | `compute_order_pricing` (`create_order`, pembuat PO/tagihan pemasok), `tax_invoice_service`, `interco_tax_service` |
+| `sales_orders.items[].ppn_amount` | PPN baris — HANYA bila `pembulatan_tingkat = baris` | `compute_order_pricing` |
+| `sales_orders.tax_override_by` | Nama pembuat pesanan tanpa PPN (melengkapi `tax_override_reason` PK-45) | `create_order` |
+| `interco_transactions.tax_dpp_pembilang` / `tax_dpp_penyebut` | Faktor DPP nilai lain saat transaksi antar-PT dibuat | `interco_service.create` |
+| `customers.tax_profile` | `{id_type: npwp·nik·"", nik, tax_name, tax_address, is_pkp: true·false·null, kode_transaksi ("" = ikut PT), always_tax_invoice}` — `customers.npwp` tetap pemilik nomor NPWP | `POST/PATCH /api/customers` (izin `customer.update`), `tax_config_service.periksa_profil_pajak` |
+| `tax_invoices.customer_tax` | Potret pembeli: `{id_type, id_number, tax_name, tax_address, is_pkp}` | `tax_invoice_service` |
+| `tax_invoices.data_incomplete` | Daftar kekurangan: `identitas_pajak`, `alamat_pajak` (penerbitan tidak ditolak di TX-T1) | `tax_invoice_service` |
+| `products.tax_treatment` / `products.tax_item_code` | `kena` (bawaan) · `dibebaskan` · `tidak_dipungut` / kode barang pajak — disimpan & ditampilkan, **belum dipakai mesin** | `POST/PATCH /api/products` |
+
+⚠️ Kode transaksi sah faktur = `tax.kode_transaksi_diizinkan` PT (dulu konstanta `KODE_TRANSAKSI_VALID`); bawaan faktur =
+kode pelanggan → bawaan PT menurut DPP nilai lain (`default_kode`).

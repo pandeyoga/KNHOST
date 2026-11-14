@@ -55,10 +55,14 @@ def _num(v) -> float:
 
 
 def _uses_dpp_nilai_lain(doc, base: float) -> bool:
-    """DPP nilai lain (11/12) dipakai? Bendera dokumen bila ada; PO lama tanpa bendera → DPP ≈ 11/12 × harga."""
+    """DPP nilai lain dipakai? Bendera dokumen bila ada (TX-T1: potret pajak dokumen lebih dulu); PO lama tanpa bendera
+    → DPP ≈ 11/12 × harga."""
     dpp = _num(doc.get("dpp"))
     if dpp <= 0:
         return False
+    snap = doc.get("tax_snapshot") or {}
+    if snap.get("dpp_nilai_lain") is not None:
+        return bool(snap.get("dpp_nilai_lain"))
     if doc.get("dpp_nilai_lain") is not None:
         return bool(doc.get("dpp_nilai_lain"))
     return base > 0 and abs(dpp - base * 11 / 12) <= 1 and abs(dpp - base) > 1
@@ -78,7 +82,8 @@ def _total_rows(doc, *, grand=None, rate_key: str = "ppn_rate", amount_key: str 
     rate = fmt_num(doc.get(rate_key, default_rate))
     rows = [{"label": "DPP (harga sebelum PPN)", "value": fmt_rp(base)}]
     if _uses_dpp_nilai_lain(doc, base):
-        rows.append({"label": "DPP nilai lain (11/12)", "value": fmt_rp(doc.get("dpp"))})
+        from services.tax_config_service import faktor_teks   # TX-T1 — pecahan dari potret dokumen
+        rows.append({"label": f"DPP nilai lain ({faktor_teks(doc.get('tax_snapshot'))})", "value": fmt_rp(doc.get("dpp"))})
         label = f"PPN {rate}% × DPP nilai lain"
     else:
         label = f"PPN {rate}%"

@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import { XCircle, Clock3, Truck, CreditCard, PackageX, ShieldAlert, Send, FileText, AlertTriangle, PackageCheck, ClipboardCheck, PackageSearch, Repeat, Unlock, PencilLine } from "lucide-react";
 import { can, roleLabel } from "../../config/roles";
 import { formatCurrency, formatDateTime, formatQty } from "../../utils/formatters";
-import { taxBreakdownRows } from "../../utils/taxBreakdown";   // K-03 (26 Okt) — rincian PPN seragam layar & PDF
+import { taxBreakdownRows, taxRuleRows } from "../../utils/taxBreakdown";   // K-03 (26 Okt) — rincian PPN seragam layar & PDF
 import { hasPartialBackorder, isBackorderSo, isClosedSo, lotModeLabel, lotSelectionLabel, allocationExplain } from "./soStatusView";
 import { StagePill, StageTimeline } from "../../components/SoStatusBadges";
 import { QcStatusBadge, soQcStatus } from "../../components/QcStatusBadge";
@@ -506,6 +506,18 @@ export function OrderDetailPanel({
               )}
               <BreakRow label="PPN" value={sel.is_pkp === false ? "Non-PKP (0)" : formatCurrency(0)} muted />
             </>
+          )}
+          {/* TX-T1 — "Aturan pajak" dari potret pesanan (tidak dihitung ulang walau pengaturan berubah). */}
+          {taxRuleRows(sel) && (
+            <p className="text-fs-12 text-kn-text-2" data-testid="order-tax-rule">
+              Aturan pajak: {taxRuleRows(sel).map((r) => (r.key === "pkp" ? r.value : `${r.label.toLowerCase()} ${r.value}`)).join(" · ")}
+            </p>
+          )}
+          {sel.tax_override === "non_ppn" && (
+            <p className="rounded-md bg-kn-neutral-soft px-2 py-1 text-fs-12 text-kn-text" data-testid="order-non-ppn-note">
+              Pesanan tanpa PPN{sel.tax_override_by ? ` — dibuat ${sel.tax_override_by}` : ""}
+              {sel.tax_override_reason ? `. Alasan: ${sel.tax_override_reason}` : ""}
+            </p>
           )}
           {sel.needs_tax_invoice && (
             <div data-testid="order-needs-faktur-badge" className="mt-1 flex items-center gap-1 rounded bg-[#EFF4FF] px-2 py-1 text-[10px] font-semibold text-[#0058CC]">

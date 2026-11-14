@@ -20,6 +20,26 @@ from role_registry import category_of, roles_in_category  # PR-T4 — kategori k
 router = APIRouter(prefix="/api")
 
 
+async def _data_pajak(data: Dict[str, Any], entity_id: str) -> list:
+    """TX-T1 (K-33) — periksa `npwp` dan `tax_profile` pada isian simpan pelanggan (di tempat); kembalikan peringatan
+    bentuk (`tax_data_warnings`). Bentuk angka/huruf yang salah → 400; jumlah digit yang menyimpang hanya peringatan
+    (konfirmasi konsultan pajak). Kode transaksi pelanggan harus ada di daftar kode PT pelanggan."""
+    from services import tax_config_service as tcs
+    peringatan: list = []
+    try:
+        if data.get("npwp"):
+            data["npwp"], warn = tcs.periksa_npwp(data["npwp"])
+            peringatan += warn
+        if "tax_profile" in data:
+            aturan = await tcs.tax_settings(entity_id or "")
+            data["tax_profile"], warn = tcs.periksa_profil_pajak(
+                data["tax_profile"], kode_diizinkan=aturan["kode_transaksi_diizinkan"])
+            peringatan += warn
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from None
+    return peringatan
+
+
 @router.get("/customers")
 async def list_customers(request: Request, entity_id: str = None,
                          segment: str = None, credit_status: str = None,
@@ -40,7 +60,9 @@ async def list_customers(request: Request, entity_id: str = None,
         # cakupan baris yang sama dengan daftar CRM; pelanggan tanpa sales masuk antrean Admin Sales.
         rows = await db.customers.find(query, {"_id": 0, "id": 1, "name": 1, "code": 1, "city": 1, "phone": 1, "entity_id": 1,
                                                "assigned_sales_id": 1, "sales_team": 1, "segment": 1, "addresses": 1,
-                                               "default_payment_term": 1, "shared_walk_in": 1}).sort("name", 1).to_list(3000)
+                                               "default_payment_term": 1, "shared_walk_in": 1,
+                                               # TX-T1 — checkout: "Selalu minta faktur pajak" mencentang permintaan
+                                               "tax_profile.always_tax_invoice": 1}).sort("name", 1).to_list(3000)
         return rows
 
     if is_paged(request):
@@ -95,6 +117,10 @@ async def create_customer(payload: CustomerCreate, request: Request) -> Dict[str
         raise HTTPException(status_code=400, detail="Nomor HP/WhatsApp PIC toko wajib diisi.")
     if len((payload.address or "").strip().strip("-").strip()) < 3:
         raise HTTPException(status_code=400, detail="Alamat toko wajib diisi.")
+    # TX-T1 — data pajak pelanggan (NPWP & profil pajak) diperiksa sebelum nomor pelanggan diambil.
+    _pajak = {"npwp": payload.npwp or "", **({"tax_profile": payload.tax_profile}
+                                           if payload.tax_profile is not None else {})}
+    _peringatan_pajak = await _data_pajak(_pajak, payload.entity_id or active_entity_or(DEFAULT_ENTITY_ID))
     cust_code = await _ndn("customers", "code", "CUST-", width=4)   # D-01: atomik, bukan count()+1
     # assigned_sales: sales pembuat SELALU jadi pemilik (login = identitas, tak perlu memilih);
     # peran lain (admin/manager/sales_admin) WAJIB memilih sales penanggung jawab.
@@ -135,7 +161,8 @@ async def create_customer(payload: CustomerCreate, request: Request) -> Dict[str
         "type": payload.type,
         "city": payload.city,
         **normalize_location(payload.model_dump()),
-        "npwp": payload.npwp,
+        "npwp": _pajak["npwp"],
+        **({"tax_profile": _pajak["tax_profile"]} if "tax_profile" in _pajak else {}),
         # CR-T1 (K-28) — plafon TIDAK lagi di data pelanggan: selalu 0 (status selalu "active"). Usulan plafon > 0 →
         # pengajuan perubahan kredit atas nama pembuat (di bawah), diputus pemegang `credit_profile.approve`.
         "credit_limit": 0,
@@ -171,6 +198,7 @@ async def create_customer(payload: CustomerCreate, request: Request) -> Dict[str
     out = await enrich_customer(customer, with_credit=True)
     if float(payload.credit_limit or 0) > 0:
         out["credit_profile_request"] = await _usulan_plafon(customer, float(payload.credit_limit), actor)
+    out["tax_data_warnings"] = _peringatan_pajak   # TX-T1 — bentuk NPWP/NIK yang menyimpang (tidak menolak simpan)
     return out
 
 
@@ -202,7 +230,7 @@ async def update_customer(customer_id: str, payload: GenericPatch, request: Requ
     # blokir kredit hanya lewat pengajuan profil kredit; `status` aktif/nonaktif kembali diterima (nilai lain, termasuk
     # "blocked", diabaikan).
     allowed = ["name", "pic_name", "phone", "email", "type", "city", "addresses", *LOCATION_KEYS,
-               "npwp", "sales_pic", "entity_id",
+               "npwp", "tax_profile", "sales_pic", "entity_id",   # TX-T1 — data pajak pelanggan (izin customer.update)
                "enforce_single_dye_lot", "lot_policy", "allocation_policy",
                # CRM-lite
                "segment", "tags", "contacts", "payment_profile", "customer_group_id",
@@ -243,6 +271,7 @@ async def update_customer(customer_id: str, payload: GenericPatch, request: Requ
             if abs(total - 100.0) > 0.01:
                 raise HTTPException(status_code=400, detail=f"Total split insentif harus 100% (saat ini {total}%).")
         data["sales_team"] = await resolve_team_names(team)
+    _peringatan_pajak = await _data_pajak(data, data.get("entity_id") or existing.get("entity_id") or "")   # TX-T1
     data["updated_at"] = now_iso()
     # FASE E-7 (E7.7) — pintu belakang yang ditutup: mengganti NAMA/NPWP pelanggan biasa
     # menjadi identitas badan usaha grup akan membuat penjualan antar-PT lolos dari
@@ -258,7 +287,9 @@ async def update_customer(customer_id: str, payload: GenericPatch, request: Requ
     )
     await audit(actor["name"], "customer_updated", "customer", customer_id,
                 {k: customer.get(k) for k in data}, before={k: existing.get(k) for k in data})
-    return await enrich_customer(customer, with_credit=True)
+    out = await enrich_customer(customer, with_credit=True)
+    out["tax_data_warnings"] = _peringatan_pajak   # TX-T1 — bentuk NPWP/NIK yang menyimpang (tidak menolak simpan)
+    return out
 
 
 #: CR-T1 — status pelanggan yang boleh diubah lewat PATCH (blokir kredit pindah ke profil kredit).

@@ -673,6 +673,7 @@ async def _create_po_core(payload: PurchaseOrderCreate, actor: Dict[str, Any], *
         "ppn_mode": pricing["ppn_mode"],
         "is_pkp": pricing["is_pkp"],
         "ppn_amount": pricing["ppn_amount"],
+        "tax_snapshot": pricing["tax_snapshot"],   # TX-T1 (D3) — aturan pajak saat PO dibuat
         "grand_total": grand_total,
         "tax_mode": payload.tax_mode or "",
         # PB-01 — termin & jatuh tempo bayar (turun dari kontrak/supplier), harga incl/excl PPN.

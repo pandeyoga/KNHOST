@@ -2,9 +2,10 @@ import { apiErrorText } from "../../utils/apiError";
 import { useEffect, useMemo, useState } from "react";
 import axios, { API } from "../../services/apiClient";
 import { can } from "../../config/roles";
-import { FileText, RefreshCw, Search, Printer, Hash, Copy, Ban } from "lucide-react";
+import { FileText, RefreshCw, Search, Printer, Hash, Copy, Ban, Info, AlertTriangle, CheckCircle2, X } from "lucide-react";
 import { formatCurrency } from "../../utils/formatters";
-import { docDpp, usesDppNilaiLain } from "../../utils/taxBreakdown";
+import { docDpp, usesDppNilaiLain, dppFactorText, taxRuleRows } from "../../utils/taxBreakdown";
+import DetailModal from "../../components/DetailModal";
 import KNSelect from "../../components/KNSelect";
 import ErrorNotice from "../../components/ErrorNotice";
 import DocumentActionsBar from "../documents/DocumentActionsBar";
@@ -22,6 +23,10 @@ import FocusNotice from "../../components/FocusNotice";
  *
  * Fase 4 · R2 — L-03: pop-up NSFP/Pengganti/Batal (`div fixed inset-0`) → `FormModal` baku, galat di dalam pop-up
  * (`fkt-modal-error`); L-01: saringan status (tab) → `FilterChips` (testid `fkt-filter-*` tetap).
+ *
+ * TX-T1 — pilihan kode transaksi = daftar kode PT faktur (`tax.kode_transaksi_diizinkan`, dibaca dari
+ * `GET /settings/effective?entity_id=`); tombol Rincian menampilkan "Aturan pajak saat terbit" (potret `tax_snapshot`)
+ * dan data pajak pembeli; lencana "Data pajak belum lengkap" bila `data_incomplete` terisi. Status = ikon + teks + warna.
  */
 const FILTERS = [
   { id: "all", label: "Semua" },
@@ -30,13 +35,36 @@ const FILTERS = [
   { id: "batal", label: "Batal" },
 ];
 
-const STATUS_LABEL = { normal: "Normal", pengganti: "Pengganti", batal: "Batal" };
-
-const STATUS_STYLE = {
-  normal: "bg-[#E5F6EC] text-[#1B7A43]",
-  pengganti: "bg-[#FFF3CD] text-[#8A6D00]",
-  batal: "bg-[#FDE2E2] text-[#9B1C1C]",
+// KN_37 §1.3 — status = ikon + teks + warna (token `kn-*`).
+const STATUS_META = {
+  normal: { label: "Normal", icon: CheckCircle2, cls: "bg-kn-success-soft text-kn-success-text" },
+  pengganti: { label: "Pengganti", icon: Copy, cls: "bg-kn-warning-soft text-kn-warning-text" },
+  batal: { label: "Batal", icon: Ban, cls: "bg-kn-danger-soft text-kn-danger-text" },
 };
+const KURANG_LABEL = { identitas_pajak: "Identitas pajak (NPWP/NIK) belum diisi", alamat_pajak: "Alamat pajak belum diisi" };
+const ID_LABEL = { npwp: "NPWP", nik: "NIK" };
+
+function StatusPill({ status }) {
+  const m = STATUS_META[status] || { label: status, icon: Info, cls: "bg-kn-neutral-soft text-kn-neutral" };
+  const Icon = m.icon;
+  return <span className={`status-pill ${m.cls}`} data-testid="fkt-status"><Icon size={12} aria-hidden="true" />{m.label}</span>;
+}
+
+function IncompletePill({ fkt }) {
+  if (!(fkt.data_incomplete || []).length) return null;
+  return (
+    <span className="status-pill bg-kn-warning-soft text-kn-warning-text" data-testid={`fkt-incomplete-${fkt.id}`}
+      title={(fkt.data_incomplete || []).map((k) => KURANG_LABEL[k] || k).join(" · ")}>
+      <AlertTriangle size={12} aria-hidden="true" />Data pajak belum lengkap
+    </span>
+  );
+}
+
+function buyerId(f) {
+  const ct = f.customer_tax;
+  if (ct && ct.id_number) return `${ID_LABEL[ct.id_type] || "NPWP"} ${ct.id_number}`;
+  return f.customer_npwp ? `NPWP ${f.customer_npwp}` : "tanpa NPWP/NIK";
+}
 
 import PagedRows from "@/components/PagedRows";
 
@@ -67,6 +95,25 @@ export default function TaxInvoices({ currentUser = {}, focusDoc, onClearFocus }
   const [kodeVal, setKodeVal] = useState("01");
   const [reasonVal, setReasonVal] = useState("");
   const [modalErr, setModalErr] = useState("");
+  const [detail, setDetail] = useState(null);       // TX-T1 — faktur yang rinciannya dibuka
+  const [kodeByPt, setKodeByPt] = useState({});     // TX-T1 — {entity_id: [kode transaksi PT]}
+
+  // TX-T1 — daftar kode transaksi PT faktur (pengaturan per PT). Belum termuat → hanya kode faktur itu sendiri.
+  const loadKode = async (entityId) => {
+    if (!entityId || kodeByPt[entityId]) return;
+    try {
+      const r = await axios.get(`${API}/settings/effective`, { params: { entity_id: entityId } });
+      const list = r.data?.tax?.kode_transaksi_diizinkan;
+      if (Array.isArray(list)) setKodeByPt((m) => ({ ...m, [entityId]: list }));
+    } catch {
+      /* pilihan tetap kode faktur; server menolak kode di luar daftar PT */
+    }
+  };
+  const kodeOptions = (fkt) => {
+    const list = kodeByPt[fkt.entity_id] || [];
+    const all = list.includes(fkt.kode_transaksi) || !fkt.kode_transaksi ? list : [fkt.kode_transaksi, ...list];
+    return (all.length ? all : [fkt.kode_transaksi || kodeVal]).map((k) => ({ value: k, label: k }));
+  };
 
   const load = async () => {
     setLoading(true);
@@ -110,8 +157,9 @@ export default function TaxInvoices({ currentUser = {}, focusDoc, onClearFocus }
 
   const openModal = (type, fkt) => {
     setModal({ type, fkt });
+    if (type !== "cancel") loadKode(fkt.entity_id);
     setNsfpVal(fkt.nsfp || "");
-    setKodeVal(fkt.kode_transaksi || "01");
+    setKodeVal(fkt.kode_transaksi || "");
     setReasonVal("");
     setModalErr("");
   };
@@ -185,63 +233,65 @@ export default function TaxInvoices({ currentUser = {}, focusDoc, onClearFocus }
             </div>
           </div>
 
-          <div className="overflow-x-auto rounded-md border border-[#EFF0F2]">
-            <table className="w-full min-w-[900px] text-[11.5px]">
-              <thead className="bg-[#FAFBFC] text-[#6B6B73]">
-                <tr className="whitespace-nowrap">
-                  <th className="px-2.5 py-2 text-left font-bold uppercase tracking-wide text-[11px]">No. Faktur</th>
-                  <th className="px-2.5 py-2 text-left font-bold uppercase tracking-wide text-[11px]">NSFP</th>
-                  <th className="px-2.5 py-2 text-left font-bold uppercase tracking-wide text-[11px]">Pesanan</th>
-                  <th className="px-2.5 py-2 text-left font-bold uppercase tracking-wide text-[11px]">Pembeli</th>
-                  <th className="px-2.5 py-2 text-right font-bold uppercase tracking-wide text-[11px]">DPP</th>
-                  <th className="px-2.5 py-2 text-right font-bold uppercase tracking-wide text-[11px]">PPN</th>
-                  <th className="px-2.5 py-2 text-right font-bold uppercase tracking-wide text-[11px]" data-testid="fkt-col-total">Total (termasuk PPN)</th>
-                  <th className="px-2.5 py-2 text-center font-bold uppercase tracking-wide text-[11px]">Status</th>
-                  <th className="px-2.5 py-2 text-right font-bold uppercase tracking-wide text-[11px]">Aksi</th>
+          <div className="overflow-x-auto rounded-md border border-kn-divider">
+            {/* Cek layar KN_37 — 9 kolom: judul boleh dua baris (`head-wrap`), kolom aksi lekat di kanan. */}
+            <table className="data-table head-wrap" data-testid="fkt-table">
+              <thead>
+                <tr>
+                  <th>No. Faktur</th>
+                  <th>NSFP</th>
+                  <th>Pesanan</th>
+                  <th>Pembeli</th>
+                  <th className="text-right">DPP</th>
+                  <th className="text-right">PPN</th>
+                  <th className="text-right" data-testid="fkt-col-total">Total (termasuk PPN)</th>
+                  <th>Status</th>
+                  <th className="col-sticky-end text-right">Aksi</th>
                 </tr>
               </thead>
               <tbody>
                 {filtered.length === 0 ? (
                   <tr>
-                    <td colSpan={9} className="px-2.5 py-6 text-center text-[#8E8E93]">
-                      {loading ? "Memuat…" : "Belum ada Faktur Pajak."}
+                    <td colSpan={9} className="py-6 text-center text-kn-text-2">
+                      {loading ? "Memuat…" : (rows.length ? "Tidak ada faktur yang cocok dengan saringan." : "Belum ada Faktur Pajak.")}
                     </td>
                   </tr>
                 ) : (
                   <PagedRows rows={filtered} testId="tax-invoices-pager">{(f) => {
                     const isActive = f.status !== "batal" && !f.replaced_by_id;
                     return (
-                      <tr key={f.id} data-testid={`fkt-row-${f.id}`} className={`border-t border-[#EFF0F2] hover:bg-[#F8FAFD] ${f.id === sorot ? "row-focus" : ""}`}>
-                        <td className="px-2.5 py-2 font-bold text-[#0058CC]">{f.number}</td>
-                        <td className="px-2.5 py-2 text-[#3C3C43]">
+                      <tr key={f.id} data-testid={`fkt-row-${f.id}`} className={f.id === sorot ? "row-focus" : undefined}>
+                        <td className="font-bold text-kn-action">{f.number}</td>
+                        <td>
                           {f.nsfp ? (
                             <span className="tabular-nums">{f.nsfp}</span>
                           ) : (
-                            <span className="text-[#B23B14]">belum diisi</span>
+                            <span className="text-kn-warning-text">belum diisi</span>
                           )}
                         </td>
-                        <td className="px-2.5 py-2">{f.order_number}</td>
-                        <td className="px-2.5 py-2">
-                          <span className="block truncate max-w-[160px]">{f.customer_name}</span>
-                          <span className="text-[11px] text-[#8E8E93]">{f.customer_npwp || "tanpa NPWP"}</span>
+                        <td>{f.order_number}</td>
+                        <td>
+                          <span className="block max-w-[180px] truncate">{f.customer_name}</span>
+                          <span className="block text-fs-12 text-kn-text-2">{buyerId(f)}</span>
+                          <IncompletePill fkt={f} />
                         </td>
-                        {/* Keputusan pemilik K-03 (26 Okt) — DPP = harga sebelum PPN; rezim 12% → baris DPP nilai lain (11/12).
-                            Dulu kolom DPP berisi nilai 11/12 tanpa keterangan. */}
-                        <td className="px-2.5 py-2 text-right tabular-nums" data-testid={`fkt-dpp-${f.id}`}>
+                        {/* Keputusan pemilik K-03 (26 Okt) — DPP = harga sebelum PPN; rezim 12% → baris DPP nilai lain.
+                            TX-T1 — pecahan dari potret pajak faktur (faktur lama: 11/12). */}
+                        <td className="text-right tabular-nums" data-testid={`fkt-dpp-${f.id}`}>
                           {formatCurrency(docDpp(f))}
                           {usesDppNilaiLain(f) && (
-                            <span className="block whitespace-nowrap text-[10.5px] text-[#8E8E93]">nilai lain (11/12) {formatCurrency(f.dpp)}</span>
+                            <span className="block whitespace-nowrap text-fs-12 text-kn-text-2">nilai lain ({dppFactorText(f)}) {formatCurrency(f.dpp)}</span>
                           )}
                         </td>
-                        <td className="px-2.5 py-2 text-right tabular-nums">{formatCurrency(f.ppn_amount)}</td>
-                        <td className="px-2.5 py-2 text-right tabular-nums font-semibold">{formatCurrency(f.grand_total)}</td>
-                        <td className="px-2.5 py-2 text-center">
-                          <span className={`rounded px-1.5 py-0.5 text-[11px] font-bold ${STATUS_STYLE[f.status] || ""}`}>
-                            {STATUS_LABEL[f.status] || f.status}
-                          </span>
-                        </td>
-                        <td className="px-2.5 py-2">
+                        <td className="text-right tabular-nums">{formatCurrency(f.ppn_amount)}</td>
+                        <td className="text-right tabular-nums font-semibold">{formatCurrency(f.grand_total)}</td>
+                        <td><StatusPill status={f.status} /></td>
+                        <td className="col-sticky-end">
                           <div className="flex items-center justify-end gap-1">
+                            <button type="button" data-testid={`fkt-detail-${f.id}`} className="icon-button" title="Rincian faktur & aturan pajak"
+                              aria-label="Rincian faktur" onClick={() => setDetail(f)}>
+                              <Info size={13} />
+                            </button>
                             <DocumentActionsBar docType="tax_invoice" sourceId={f.id} entityId={f.entity_id}
                               number={f.number} label="Faktur Pajak" currentUser={currentUser}
                               compact autoCheckSignature={false} />
@@ -259,7 +309,7 @@ export default function TaxInvoices({ currentUser = {}, focusDoc, onClearFocus }
                               </button>
                             )}
                             {canCancel && f.status !== "batal" && (
-                              <button data-testid={`fkt-cancel-${f.id}`} className="icon-button text-[#B23B14]" title="Batalkan" onClick={() => openModal("cancel", f)}>
+                              <button data-testid={`fkt-cancel-${f.id}`} className="icon-button text-kn-danger-text" title="Batalkan" onClick={() => openModal("cancel", f)}>
                                 <Ban size={13} />
                               </button>
                             )}
@@ -274,6 +324,8 @@ export default function TaxInvoices({ currentUser = {}, focusDoc, onClearFocus }
           </div>
         </div>
       </div>
+
+      {detail && <TaxInvoiceDetail fkt={detail} onClose={() => setDetail(null)} />}
 
       {modal && (
         <FormModal open onClose={closeModal} size="sm" icon={modal.type === "cancel" ? Ban : modal.type === "replace" ? Copy : Hash}
@@ -293,42 +345,44 @@ export default function TaxInvoices({ currentUser = {}, focusDoc, onClearFocus }
           <ErrorNotice message={modalErr} onDismiss={() => setModalErr("")} testId="fkt-modal-error" />
           {modal.type === "nsfp" && (
             <div className="space-y-2">
-              <label className="block text-[11px] font-semibold">Nomor Seri Faktur Pajak (16 digit)</label>
+              <label className="field-label">Nomor Seri Faktur Pajak (16 digit)</label>
               <input data-testid="fkt-nsfp-input" value={nsfpVal} onChange={(e) => setNsfpVal(e.target.value)}
                 placeholder="0100123456789012"
                 className="field w-full tabular-nums" />
-              <label className="block text-[11px] font-semibold mt-2">Kode Transaksi</label>
+              <label className="field-label mt-2">Kode Transaksi</label>
               <KNSelect
                 data-testid="fkt-kode-select"
                 value={kodeVal}
                 onValueChange={setKodeVal}
                 className="field w-full"
-                options={["01", "02", "03", "04", "06", "07", "08", "09"].map((k) => ({ value: k, label: k }))}
+                options={kodeOptions(modal.fkt)}
               />
+              <p className="text-fs-12 text-kn-text-2">Pilihan = kode transaksi yang dipakai PT ini (Pengaturan › Keuangan & Pajak › Aturan Keuangan & Pajak).</p>
             </div>
           )}
 
           {modal.type === "replace" && (
             <div className="space-y-2">
-              <label className="block text-[11px] font-semibold">Alasan Pengganti (opsional)</label>
+              <label className="field-label">Alasan Pengganti (opsional)</label>
               <input data-testid="fkt-reason-input" value={reasonVal} onChange={(e) => setReasonVal(e.target.value)}
                 placeholder="mis. Koreksi alamat / nilai"
                 className="field w-full" />
-              <label className="block text-[11px] font-semibold mt-2">Kode Transaksi</label>
+              <label className="field-label mt-2">Kode Transaksi</label>
               <KNSelect
                 data-testid="fkt-kode-select"
                 value={kodeVal}
                 onValueChange={setKodeVal}
                 className="field w-full"
-                options={["01", "02", "03", "04", "06", "07", "08", "09"].map((k) => ({ value: k, label: k }))}
+                options={kodeOptions(modal.fkt)}
               />
-              <p className="text-[10.5px] text-[#8A6D00]">Faktur lama ditandai diganti; faktur baru berstatus PENGGANTI.</p>
+              <p className="text-fs-12 text-kn-text-2">Pilihan = kode transaksi yang dipakai PT ini (Pengaturan › Keuangan & Pajak › Aturan Keuangan & Pajak).</p>
+              <p className="text-fs-12 text-kn-warning-text">Faktur lama ditandai diganti; faktur baru berstatus PENGGANTI.</p>
             </div>
           )}
 
           {modal.type === "cancel" && (
             <div className="space-y-2">
-              <label className="block text-[11px] font-semibold">Alasan Pembatalan (wajib)</label>
+              <label className="field-label">Alasan Pembatalan (wajib)</label>
               <input data-testid="fkt-reason-input" value={reasonVal} onChange={(e) => setReasonVal(e.target.value)}
                 placeholder="mis. Transaksi dibatalkan pelanggan"
                 className="field w-full" />
@@ -337,5 +391,67 @@ export default function TaxInvoices({ currentUser = {}, focusDoc, onClearFocus }
         </FormModal>
       )}
     </div>
+  );
+}
+
+
+/** TX-T1 — rincian faktur: aturan pajak saat terbit (potret) + data pajak pembeli + kekurangannya. */
+function TaxInvoiceDetail({ fkt, onClose }) {
+  const aturan = taxRuleRows(fkt);
+  const ct = fkt.customer_tax || {};
+  const kurang = fkt.data_incomplete || [];
+  return (
+    <DetailModal open onClose={onClose} size="md" label={`Rincian Faktur Pajak ${fkt.number}`} testId="fkt-detail">
+      <div className="section-card">
+        <div className="section-head">
+          <div className="min-w-0">
+            <h2 className="text-fs-14 font-bold">Faktur Pajak {fkt.number}</h2>
+            <p className="text-fs-12 text-kn-text-2">{fkt.order_number || "—"} · kode transaksi {fkt.kode_transaksi || "—"}</p>
+          </div>
+          <button type="button" className="icon-button" aria-label="Tutup" data-testid="fkt-detail-close" onClick={onClose}>
+            <X size={16} />
+          </button>
+        </div>
+        <div className="section-body space-y-3">
+          <div className="flex flex-wrap items-center gap-2"><StatusPill status={fkt.status} /><IncompletePill fkt={fkt} /></div>
+          <section data-testid="fkt-detail-rules">
+            <h3 className="field-label">Aturan pajak saat terbit</h3>
+            {aturan ? (
+              <dl className="grid grid-cols-[minmax(0,1fr)_minmax(0,1.4fr)] gap-x-3 gap-y-1 text-fs-13">
+                {aturan.map((r) => (
+                  <div key={r.key} className="contents" data-testid={`fkt-rule-${r.key}`}>
+                    <dt className="text-kn-text-2">{r.label}</dt><dd className="font-semibold">{r.value}</dd>
+                  </div>
+                ))}
+              </dl>
+            ) : (
+              <p className="text-fs-12 text-kn-text-2" data-testid="fkt-detail-rules-lama">
+                Faktur ini terbit sebelum aturan pajak disimpan bersama faktur: tarif {Number(fkt.ppn_rate || 0)}%,
+                DPP nilai lain {fkt.dpp_nilai_lain ? "11/12" : "tidak dipakai"}, dua angka di belakang koma.
+              </p>
+            )}
+            <p className="mt-1 text-fs-12 text-kn-text-2">Mengubah pengaturan pajak sesudahnya tidak mengubah faktur ini.</p>
+          </section>
+          <section data-testid="fkt-detail-buyer">
+            <h3 className="field-label">Pembeli menurut data pajak</h3>
+            <dl className="grid grid-cols-[minmax(0,1fr)_minmax(0,1.4fr)] gap-x-3 gap-y-1 text-fs-13">
+              <dt className="text-kn-text-2">Identitas</dt><dd className="font-semibold">{buyerId(fkt)}</dd>
+              <dt className="text-kn-text-2">Nama</dt><dd>{ct.tax_name || fkt.customer_name || "—"}</dd>
+              <dt className="text-kn-text-2">Alamat</dt><dd>{ct.tax_address || fkt.customer_address || "—"}</dd>
+              <dt className="text-kn-text-2">Status PKP</dt>
+              <dd>{ct.is_pkp === true ? "PKP" : ct.is_pkp === false ? "Bukan PKP" : "Belum diisi"}</dd>
+            </dl>
+            {kurang.length > 0 && (
+              <ul className="mt-2 list-disc pl-5 text-fs-12 text-kn-warning-text" data-testid="fkt-detail-incomplete">
+                {kurang.map((k) => <li key={k}>{KURANG_LABEL[k] || k}</li>)}
+              </ul>
+            )}
+            {kurang.length > 0 && (
+              <p className="mt-1 text-fs-12 text-kn-text-2">Lengkapi di data pelanggan (bagian Data pajak) lalu terbitkan pengganti bila perlu.</p>
+            )}
+          </section>
+        </div>
+      </div>
+    </DetailModal>
   );
 }
