@@ -28,6 +28,15 @@ N = 200
 TAG = f"pmt2a_{uuid.uuid4().hex[:6]}"
 
 
+# Satu loop untuk seluruh modul: klien Motor layanan terikat ke loop pertama yang memakainya; `asyncio.run` per uji
+# membuat loop baru sehingga uji kedua gagal "Event loop is closed" (ditemukan saat lapis A pertama kali dijalankan).
+_LOOP = asyncio.new_event_loop()
+
+
+def _run(coro):
+    return _LOOP.run_until_complete(coro)
+
+
 def _svc():
     sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
     from services import payment_code_service as pcs  # noqa: E402 — butuh MONGO_URL backend
@@ -62,7 +71,7 @@ def test_U15_dua_ratus_kode_bersamaan_berbeda():
     async def _jalan():
         return await asyncio.gather(*[pcs.ensure_for_order(o) for o in orders])
 
-    hasil = asyncio.run(_jalan())
+    hasil = _run(_jalan())
     kode = [h["code"] for h in hasil]
     assert len(set(kode)) == N
     for c in kode:
@@ -79,7 +88,7 @@ def test_U15_tabrakan_dipaksa_diulang_dan_berhasil(monkeypatch):
     monkeypatch.setattr(pcs, "_acak", lambda: next(urut))
     o = _pesanan(N + 1)
     DB.sales_orders.insert_one(dict(o))
-    baru = asyncio.run(pcs.ensure_for_order(o))
+    baru = _run(pcs.ensure_for_order(o))
     assert baru["code"] != ada and baru["code"].startswith(f"{awalan}-")
     assert DB.payment_codes.count_documents({"code": ada}) == 1
     assert DB.payment_codes.count_documents({"order_id": o["id"]}) == 1
@@ -93,6 +102,6 @@ def test_U15_satu_pesanan_sepuluh_panggilan_bersamaan_satu_kode():
     async def _jalan():
         return await asyncio.gather(*[pcs.ensure_for_order(o) for _ in range(10)])
 
-    hasil = asyncio.run(_jalan())
+    hasil = _run(_jalan())
     assert len({h["code"] for h in hasil}) == 1
     assert DB.payment_codes.count_documents({"order_id": o["id"]}) == 1
