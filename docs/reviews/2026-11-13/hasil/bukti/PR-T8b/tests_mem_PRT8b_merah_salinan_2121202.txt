@@ -1,0 +1,32 @@
+# Berkas uji final test_PRT8b_gerbang_pertama.py (+ test_PRT3_login_saja.py lama) pada salinan git worktree 2121202 (kode lama)
+# python -m pytest tests_mem/test_PRT8b_gerbang_pertama.py tests_mem/test_PRT3_login_saja.py -n 0 -q -rA
+PASSED tests_mem/test_PRT8b_gerbang_pertama.py::test_PRT8b_U1_tanpa_sesi_401[POST /api/special-orders/od_tidak_ada/fulfillment/k/cancel]
+PASSED tests_mem/test_PRT8b_gerbang_pertama.py::test_PRT8b_U1_tanpa_sesi_401[POST /api/config/values/cancel-scheduled]
+PASSED tests_mem/test_PRT8b_gerbang_pertama.py::test_PRT8b_U3_berizin_tetap_404
+PASSED tests_mem/test_PRT8b_gerbang_pertama.py::test_PRT8b_U4_niat_bayar_izin_per_jenis
+PASSED tests_mem/test_PRT8b_gerbang_pertama.py::test_PRT8b_U5_sesi_pendaftaran_izin_per_keadaan
+PASSED tests_mem/test_PRT8b_gerbang_pertama.py::test_PRT8b_U6_jadwal_pengaturan_izin_per_kunci
+PASSED tests_mem/test_PRT8b_gerbang_pertama.py::test_PRT8b_U9_login_saja_perilaku_tetap
+PASSED tests_mem/test_PRT3_login_saja.py::test_PRT3_U1_daftar_sales_berizin
+PASSED tests_mem/test_PRT3_login_saja.py::test_PRT3_U2_target_dan_insentif_tersaring
+PASSED tests_mem/test_PRT3_login_saja.py::test_PRT3_U3_daftar_pt_tersaring
+PASSED tests_mem/test_PRT3_login_saja.py::test_PRT3_U4_rincian_pt_berizin
+PASSED tests_mem/test_PRT3_login_saja.py::test_PRT3_U5_dasbor_sopir_kosong
+PASSED tests_mem/test_PRT3_login_saja.py::test_PRT3_U6_dasbor_hanya_bagian_berizin
+PASSED tests_mem/test_PRT3_login_saja.py::test_PRT3_U7_riwayat_buka_periode
+PASSED tests_mem/test_PRT3_login_saja.py::test_PRT3_U8_sumber_harga_po
+PASSED tests_mem/test_PRT3_login_saja.py::test_PRT3_U9_pemenuhan_od_gerbang_pertama
+PASSED tests_mem/test_PRT3_login_saja.py::test_PRT3_U10_label_lot_tetap_izin_lihat
+PASSED tests_mem/test_PRT3_login_saja.py::test_PRT3_U11_pratinjau_tidak_menulis
+PASSED tests_mem/test_PRT3_login_saja.py::test_PRT3_U12_rute_login_saja_sah_tetap_terbuka
+PASSED tests_mem/test_PRT3_login_saja.py::test_PRT3_U13_daftar_login_only_menunjuk_rute
+FAILED tests_mem/test_PRT8b_gerbang_pertama.py::test_PRT8b_U1_tanpa_sesi_401[POST /api/ap-payments/api_tidak_ada/resume]
+FAILED tests_mem/test_PRT8b_gerbang_pertama.py::test_PRT8b_U1_tanpa_sesi_401[POST /api/ap-payments/api_tidak_ada/cancel]
+FAILED tests_mem/test_PRT8b_gerbang_pertama.py::test_PRT8b_U1_tanpa_sesi_401[POST /api/registration/sessions/sesi_tidak_ada/approve]
+FAILED tests_mem/test_PRT8b_gerbang_pertama.py::test_PRT8b_U1_tanpa_sesi_401[POST /api/registration/sessions/sesi_tidak_ada/return]
+FAILED tests_mem/test_PRT8b_gerbang_pertama.py::test_PRT8b_U1_tanpa_sesi_401[PATCH /api/registration/sessions/sesi_tidak_ada/lines/baris_x]
+FAILED tests_mem/test_PRT8b_gerbang_pertama.py::test_PRT8b_U1_tanpa_sesi_401[DELETE /api/registration/sessions/sesi_tidak_ada/lines/baris_x]
+FAILED tests_mem/test_PRT8b_gerbang_pertama.py::test_PRT8b_U2_tanpa_izin_403_z6
+FAILED tests_mem/test_PRT8b_gerbang_pertama.py::test_PRT8b_U7_batal_pemenuhan_hanya_izin_batal
+FAILED tests_mem/test_PRT8b_gerbang_pertama.py::test_PRT8b_U8_login_saja_tertulis
+9 failed, 20 passed, 7 warnings in 5.47s

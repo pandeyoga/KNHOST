@@ -1,0 +1,35 @@
+## Sesudah: diff baris receipt terhadap sebelum = kosong (identik)
+## Selisih jumlah di dalam log gate (pelanggaran/cek):
+24c24
+< [PASS] 580 cek lolos, 0 pelanggaran.
+---
+> [PASS] 579 cek lolos, 0 pelanggaran.
+
+## Ringkasan jumlah per penjaga (sebelum | sesudah)
+[FAIL] 28 pelanggaran (dari 1751 cek):|[FAIL] 28 pelanggaran (dari 1751 cek):
+[PASS] 10 cek lolos, 0 pelanggaran.|[PASS] 10 cek lolos, 0 pelanggaran.
+[FAIL] 6 pelanggaran (dari 16 cek):|[FAIL] 6 pelanggaran (dari 16 cek):
+[PASS] 1 cek lolos, 0 pelanggaran.|[PASS] 1 cek lolos, 0 pelanggaran.
+[PASS] 22 cek lolos, 0 pelanggaran.|[PASS] 22 cek lolos, 0 pelanggaran.
+[FAIL] 16 pelanggaran (dari 17 cek):|[FAIL] 16 pelanggaran (dari 17 cek):
+[PASS] 17 cek lolos, 0 pelanggaran.|[PASS] 17 cek lolos, 0 pelanggaran.
+[PASS] 28 cek lolos, 0 pelanggaran.|[PASS] 28 cek lolos, 0 pelanggaran.
+[PASS] 319 cek lolos, 0 pelanggaran.|[PASS] 319 cek lolos, 0 pelanggaran.
+[PASS] 1234 cek lolos, 0 pelanggaran.|[PASS] 1234 cek lolos, 0 pelanggaran.
+[PASS] 98 cek lolos, 0 pelanggaran.|[PASS] 98 cek lolos, 0 pelanggaran.
+[FAIL] 1 pelanggaran (dari 12 cek):|[FAIL] 1 pelanggaran (dari 12 cek):
+[PASS] 96 cek lolos, 0 pelanggaran.|[PASS] 96 cek lolos, 0 pelanggaran.
+[PASS] 2827 cek lolos, 0 pelanggaran.|[PASS] 2827 cek lolos, 0 pelanggaran.
+  [FAIL] kode nyata saat ini HIJAU (6 pelanggaran)|  [FAIL] kode nyata saat ini HIJAU (6 pelanggaran)
+[FAIL] 6 pelanggaran (dari 18 cek):|[FAIL] 6 pelanggaran (dari 18 cek):
+[PASS] 5 cek lolos, 0 pelanggaran.|[PASS] 5 cek lolos, 0 pelanggaran.
+  [FAIL] kode nyata saat ini HIJAU (6 pelanggaran)|  [FAIL] kode nyata saat ini HIJAU (6 pelanggaran)
+[FAIL] 6 pelanggaran (dari 129 cek):|[FAIL] 6 pelanggaran (dari 129 cek):
+  ✗ 109 temuan di 62 berkas.|  ✗ 109 temuan di 62 berkas.
+  ✗ 2 pelanggaran:|  ✗ 2 pelanggaran:
+[PASS] 284 cek lolos, 0 pelanggaran.|[PASS] 284 cek lolos, 0 pelanggaran.
+[PASS] 33 cek lolos, 0 pelanggaran.|[PASS] 33 cek lolos, 0 pelanggaran.
+[PASS] 580 cek lolos, 0 pelanggaran.|[PASS] 579 cek lolos, 0 pelanggaran.
+[PASS] 3 cek lolos, 0 pelanggaran.|[PASS] 3 cek lolos, 0 pelanggaran.
+[FAIL-HARD] 3 field INPUT tanpa bound (menerima nilai buruk):|[FAIL-HARD] 3 field INPUT tanpa bound (menerima nilai buruk):
+  STATIK: HARD 3 | SOFT 5    RUNTIME: LEAK 0 | OK 0 | SKIP 1|  STATIK: HARD 3 | SOFT 5    RUNTIME: LEAK 0 | OK 0 | SKIP 1

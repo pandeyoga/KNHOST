@@ -1,0 +1,41 @@
+== INV-PERM-02 — matriks izin berjalan (peran × endpoint) ==
+mode penuh · awalan /api/ · 1773 rute (800 GET) · 37795 permintaan · 353.0 dtk
+  akun             peran                       ditolak  lolos   422  galat    dtk
+  tanpa_token      —                              1771      2     0      0    7.7
+  kosong           Tanpa Acuan Kosong             1699     73     0      1   14.9
+  sopir            Sopir                          1682     90     0      1   15.1
+  mgr0             Manajer Kosong                 1699     73     0      1   15.0
+  sales_admin0     Admin Sales Kosong             1699     73     0      1   15.3
+  finance0         Finance Kosong                 1698     74     0      1   15.1
+  sales0           Sales Kosong                   1698     74     0      1   15.2
+  warehouse0       Gudang Kosong                  1698     74     0      1   14.5
+  designer0        Desainer Kosong                1698     74     0      1   14.8
+  driver0          Sopir Kosong                   1698     74     0      1   15.5
+  md0              MD Kosong                      1698     74     0      1   15.2
+  warehouse_admin0 Admin Gudang Kosong            1698     74     0      1   14.9
+  sample_admin0    Admin Sample Kosong            1698     74     0      1   14.6
+  md_quality0      MD Quality Kosong              1698     74     0      1   14.3
+  qc0              QC Kosong                      1698     74     0      1   15.2
+  penuh            Tanpa Acuan Penuh                13    787     0      0   14.2
+  admin            Admin                            13    787     0      0   12.7
+  manager          Manajer                          40    760     0      0   13.4
+  sales_admin      Admin Sales                     299    501     0      0    7.5
+  finance          Finance                         404    396     0      0    7.6
+  sales            Sales                           434    366     0      0    7.8
+  warehouse        Gudang                          363    437     0      0    7.4
+  designer         Desainer                        660    140     0      0    7.4
+  driver           Sopir                           740     60     0      0    6.8
+  md               MD                              435    365     0      0    7.5
+  warehouse_admin  Admin Gudang                    343    457     0      0    7.2
+  sample_admin     Admin Sample                    516    284     0      0    6.5
+  md_quality       MD Quality                      605    195     0      0    6.1
+  qc               QC                              622    178     0      0    6.6
+  sesi akhir GET /api/auth/me: kosong 200 · sopir 200 · mgr0 200 · sales_admin0 200 · finance0 200 · sales0 200 · warehouse0 200 · designer0 200 · driver0 200 · md0 200 · warehouse_admin0 200 · sample_admin0 200 · md_quality0 200 · qc0 200 · penuh 200 · admin 200 · manager 200 · sales_admin 200 · finance 200 · sales 200 · warehouse 200 · designer 200 · driver 200 · md 200 · warehouse_admin 200 · sample_admin 200 · md_quality 200 · qc 200
+  jumlah dokumen: users 4 seed + 28 sapuan = 32 (terhitung 32) · custom_roles 0 seed + 14 sapuan = 14 (terhitung 14)
+  pelanggaran: 0
+HIJAU — tidak ada pelanggaran.
+
+real	6m0.287s
+user	5m55.232s
+sys	0m2.699s
+exit=0
