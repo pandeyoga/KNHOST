@@ -2,6 +2,7 @@
 import { useEffect, useState } from "react";
 import { CalendarDays, ChevronLeft, ChevronRight } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { todayWib } from "../utils/formatters";
 
 const BULAN = ["Jan", "Feb", "Mar", "Apr", "Mei", "Jun", "Jul", "Agu", "Sep", "Okt", "Nov", "Des"];
 const BULAN_PANJANG = ["Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember"];
@@ -14,7 +15,7 @@ export const formatPeriodId = (ym) => {
 export default function KNMonthPicker({ value, onChange, placeholder = "Pilih periode", disabled = false, className = "", "data-testid": testId }) {
   const [open, setOpen] = useState(false);
   const m = /^(\d{4})-(\d{2})$/.exec(String(value || ""));
-  const [year, setYear] = useState(m ? Number(m[1]) : new Date().getFullYear());
+  const [year, setYear] = useState(() => (m ? Number(m[1]) : Number(todayWib().slice(0, 4))));   // tanpa nilai → tahun berjalan WIB
   useEffect(() => { if (m && open) setYear(Number(m[1])); }, [open]); // eslint-disable-line react-hooks/exhaustive-deps
   const selMonth = m && Number(m[1]) === year ? Number(m[2]) : null;
   return (

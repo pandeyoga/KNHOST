@@ -28,14 +28,16 @@ const DIRECTIONS = [{ value: "outbound", label: "Keluar" }, { value: "inbound", 
 
 const entityParam = (e) => (e && e !== "all" ? { entity_id: e } : {});
 
-function localNow() {
-  const d = new Date();
-  const off = d.getTimezoneOffset();
-  return new Date(d.getTime() - off * 60000).toISOString().slice(0, 16);
+// 15 Nov — waktu interaksi bawaan = jam dinding WIB sekarang ("YYYY-MM-DDTHH:MM", sama dengan label "WIB" di
+// KNDateTimePicker); isian Waktu Interaksi & Tindak Lanjut dikirim sebagai WIB (+07:00). Dulu jam dinding zona
+// PERANGKAT: di perangkat berzona UTC pukul 02.30 WIB 15 Nov isian bawaan bertuliskan "14 Nov 19.30 WIB".
+function wibNow() {
+  return new Date().toLocaleString("sv-SE", { timeZone: "Asia/Jakarta" }).replace(" ", "T").slice(0, 16);
 }
+const wibWallToIso = (v) => new Date(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/.test(v) ? `${v}:00+07:00` : v).toISOString();
 function fmtDateTime(iso) {
   if (!iso) return "—";
-  try { return new Date(iso).toLocaleString("id-ID", { day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" }); }
+  try { return new Date(iso).toLocaleString("id-ID", { day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit", timeZone: "Asia/Jakarta" }); }
   catch { return iso; }
 }
 
@@ -153,7 +155,7 @@ export default function OmnichannelInteractions({ currentUser, selectedEntity })
 function InteractionForm({ customers, selectedEntity, onClose, onSaved, setError }) {
   const [form, setForm] = useState({
     channel: "whatsapp", direction: "outbound", customer_id: "", subject: "", notes: "",
-    occurred_at: localNow(), follow_up_date: "",
+    occurred_at: wibNow(), follow_up_date: "",
   });
   const [saving, setSaving] = useState(false);
   const set = (k, v) => setForm((f) => ({ ...f, [k]: v }));
@@ -164,8 +166,8 @@ function InteractionForm({ customers, selectedEntity, onClose, onSaved, setError
     setSaving(true); setError("");
     try {
       const body = { ...form };
-      if (body.occurred_at) body.occurred_at = new Date(body.occurred_at).toISOString();
-      if (body.follow_up_date) body.follow_up_date = new Date(body.follow_up_date).toISOString();
+      if (body.occurred_at) body.occurred_at = wibWallToIso(body.occurred_at);
+      if (body.follow_up_date) body.follow_up_date = wibWallToIso(body.follow_up_date);
       else body.follow_up_date = null;
       await axios.post(`${API}/crm/interactions`, { ...body, ...entityParam(selectedEntity) });
       onSaved();

@@ -21,17 +21,12 @@ import ErrorNotice from "../../components/ErrorNotice";
 import KNSelect from "../../components/KNSelect";
 import PageTabs from "../../components/PageTabs";
 import DesktopOnlyNotice from "../../components/DesktopOnlyNotice";
-import { formatCurrency, formatDate } from "../../utils/formatters";
+import { formatCurrency, formatDate, todayWib } from "../../utils/formatters";
+import { yearOptions } from "./financeShared";
 import { askConfirm, askReason } from "@/services/confirmService";
 import { stripInternalCodes } from "../../utils/cleanText";
 import { EliminationsPanel, EliminationModal, DetectModal, StaleEliminationsNotice } from "./GroupConsolidationParts";
 
-const NOW = new Date();
-const YEARS = Array.from({ length: 6 }, (_, i) => {
-  const y = String(NOW.getFullYear() - i);
-  return { value: y, label: y };
-});
-const ymd = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 
 const PNL_ROWS = [
   { key: "revenue", label: "Pendapatan" },
@@ -55,8 +50,10 @@ const TABS = [
 
 export default function GroupConsolidationView({ entities = [] }) {
   const [tab, setTab] = useState("pnl");
-  const [year, setYear] = useState(String(NOW.getFullYear()));
-  const [asOf, setAsOf] = useState(ymd(NOW));
+  // Bawaan dari hari ini WIB, dihitung saat layar dipasang (dulu `NOW` tingkat modul, zona perangkat).
+  const [year, setYear] = useState(() => todayWib().slice(0, 4));
+  const [asOf, setAsOf] = useState(() => todayWib());
+  const years = useMemo(() => yearOptions(), []);
   const [data, setData] = useState(null);
   const [elims, setElims] = useState([]);
   const [accounts, setAccounts] = useState([]);
@@ -216,7 +213,7 @@ export default function GroupConsolidationView({ entities = [] }) {
           <PageTabs testId="cons-tab" ariaLabel="Laporan konsolidasi" value={tab} onChange={setTab}
             tabs={TABS.map((t) => ({ key: t.id, label: t.label, icon: t.icon, count: t.id === "elim" ? elims.length : undefined }))} />
           <div className="flex items-center gap-2 ml-auto">
-            {tab === "pnl" && <div className="w-[110px]"><KNSelect data-testid="cons-year" className="field py-1.5 text-[12px]" value={year} onValueChange={setYear} options={YEARS} /></div>}
+            {tab === "pnl" && <div className="w-[110px]"><KNSelect data-testid="cons-year" className="field py-1.5 text-[12px]" value={year} onValueChange={setYear} options={years} /></div>}
             {tab !== "pnl" && <KNDatePicker data-testid="cons-asof" className="w-[170px] text-[12px]" clearable={false} value={asOf} onChange={setAsOf} />}
             <button data-testid="cons-refresh" className="icon-button" onClick={load} aria-label="Refresh"><RefreshCw size={14} className={loading ? "animate-spin" : ""} /></button>
           </div>

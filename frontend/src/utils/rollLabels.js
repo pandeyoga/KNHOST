@@ -13,6 +13,8 @@ const barcodeFor = (text) => {
     return svg.outerHTML;
   } catch (_) { return ""; }
 };
+/** Tanggal cetak label (dd/mm/yyyy) menurut WIB — dulu zona perangkat. */
+const printedToday = () => new Date().toLocaleDateString("id-ID", { timeZone: "Asia/Jakarta" });
 const openPrint = (html) => { const w = window.open("", "_blank", "width=420,height=360"); if (!w) return; w.document.open(); w.document.write(html); w.document.close(); };
 const LABEL_CSS = `@page{size:58mm 40mm;margin:2mm}body{font-family:Arial,sans-serif;margin:0;width:54mm}section{page-break-after:always;padding-bottom:2mm;display:flex;gap:2mm}
 .qr{width:22mm;height:22mm;flex:none}.txt{flex:1;min-width:0}.no{font-size:17px;font-weight:800;letter-spacing:.3px;word-break:break-all}.row{font-size:10px;margin-top:2px}.b{font-weight:700}.small{font-size:8.5px;color:#444;margin-top:3px}.bc{display:block;width:100%;height:8mm;margin-top:2px}`;
@@ -25,7 +27,7 @@ export async function printSampleLabel(r) {
 <div class="row b">${esc(r.customer_name)}</div>
 <div class="row">${esc(r.product_name)} · ${esc(r.sku)}</div>
 <div class="row"><span class="b">${esc(r.length)} ${esc(r.unit)}</span> · dari ${esc(r.cut_roll_no)}</div>
-<div class="small">${esc(r.number)} · ${esc(r.sales_order_number || "")} · ${new Date().toLocaleDateString("id-ID")}</div></div></section>
+<div class="small">${esc(r.number)} · ${esc(r.sales_order_number || "")} · ${printedToday()}</div></div></section>
 <script>window.onload=function(){window.print();}</script></body></html>`);
 }
 
@@ -39,7 +41,7 @@ export async function printSampleLabels(list) {
 <div class="row b">${esc(r.customer_name)}</div>
 <div class="row">${esc(r.product_name)} · ${esc(r.sku)}</div>
 <div class="row"><span class="b">${esc(r.length)} ${esc(r.unit)}</span> · dari ${esc(r.cut_roll_no)}</div>
-<div class="small">${esc(r.sales_order_number || "")} · ${new Date().toLocaleDateString("id-ID")}</div></div></section>`).join("");
+<div class="small">${esc(r.sales_order_number || "")} · ${printedToday()}</div></div></section>`).join("");
   openPrint(`<!doctype html><html lang="id"><head><meta charset="utf-8"><title>Label potongan (${rows.length})</title><style>${LABEL_CSS}</style></head>
 <body>${body}<script>window.onload=function(){window.print();}</script></body></html>`);
 }
@@ -57,7 +59,7 @@ ${r.supplier_dn_number ? `<div class="small">SJ sup. ${esc(r.supplier_dn_number)
 ${r.supplier_sku || r.supplier_item_name ? `<div class="small">Versi supplier: ${esc([r.supplier_sku, r.supplier_item_name, r.supplier_color].filter(Boolean).join(" · "))}</div>` : ""}
 ${r.supplier_roll_no || r.rfid_epc ? `<div class="small">${r.supplier_roll_no ? `Roll sup ${esc(r.supplier_roll_no)}` : ""}${r.rfid_epc ? ` · EPC ${esc(r.rfid_epc)}` : ""}</div>` : ""}
 ${r.note ? `<div class="small b">${esc(r.note)}</div>` : ""}
-<div class="small">${esc(task.po_number || "")} · ${esc(task.warehouse_name || task.warehouse_id || "")} · ${new Date().toLocaleDateString("id-ID")}</div>
+<div class="small">${esc(task.po_number || "")} · ${esc(task.warehouse_name || task.warehouse_id || "")} · ${printedToday()}</div>
 ${opts.barcode ? barcodeFor(r.roll_no) : ""}</div></section>`).join("");
   openPrint(`<!doctype html><html lang="id"><head><meta charset="utf-8"><title>Label roll</title><style>${LABEL_CSS}</style></head>
 <body>${pages}<script>window.onload=function(){window.print();}</script></body></html>`);

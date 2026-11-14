@@ -27,7 +27,7 @@ import { useAppNav } from "../../context/AppNavContext";
 import { canCurrent } from "../../config/roles";
 import CostingView from "../costing/CostingView";
 import {
-  FC, NOW, ymd, compactIDR, entityParam, chartTooltip, fmtPct, saveBlob,
+  FC, ytdRangeWib, compactIDR, entityParam, chartTooltip, fmtPct, saveBlob,
   KpiCard, Panel, EmptyState, formatCurrency,
 } from "./financeShared";
 
@@ -69,7 +69,7 @@ export default function ProfitabilityView({ selectedEntity }) {
 }
 
 function RealisasiPanel({ selectedEntity }) {
-  const [range, setRange] = useState({ start: `${NOW.getFullYear()}-01-01`, end: ymd(NOW) });
+  const [range, setRange] = useState(() => ytdRangeWib());   // WIB, dihitung saat layar dipasang
   const [dim, setDim] = useState("by_product");
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);

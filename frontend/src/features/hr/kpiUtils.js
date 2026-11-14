@@ -1,20 +1,21 @@
 // HRD H5 — helper KPI (murni). Bulan terakhir + warna skor + rekap tertimbang.
-export function lastMonths(n = 12) {
+import { todayWib } from "../../utils/formatters";
+
+// 15 Nov — bulan berjalan menurut WIB (dulu zona perangkat). Mundur bulan dengan aritmetika (y, m) murni: dulu
+// `setMonth(-1)` pada tanggal 31 bisa melompati/menggandakan bulan (31 Mar → "3 Mar" → Februari hilang).
+export function lastMonths(n = 12, today = todayWib()) {
   const out = [];
-  const d = new Date();
+  let y = Number(today.slice(0, 4));
+  let m = Number(today.slice(5, 7));
   for (let i = 0; i < n; i++) {
-    const y = d.getFullYear();
-    const m = String(d.getMonth() + 1).padStart(2, "0");
-    out.push(`${y}-${m}`);
-    d.setMonth(d.getMonth() - 1);
+    out.push(`${y}-${String(m).padStart(2, "0")}`);
+    m -= 1;
+    if (m === 0) { m = 12; y -= 1; }
   }
   return out;
 }
 
-export function curMonth() {
-  const d = new Date();
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
-}
+export const curMonth = () => todayWib().slice(0, 7);
 
 // Kelas warna teks berdasar skor (0–150).
 export function scoreCls(s) {

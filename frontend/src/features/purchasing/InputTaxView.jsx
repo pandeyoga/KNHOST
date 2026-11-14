@@ -4,7 +4,7 @@ import axios, { API } from "../../services/apiClient";
 import KNMonthPicker from "@/components/KNMonthPicker";
 import { can } from "../../config/roles";
 import { Percent, Plus, Ban, Layers, Landmark } from "lucide-react";
-import { formatCurrency } from "../../utils/formatters";
+import { formatCurrency, todayWib } from "../../utils/formatters";
 import ErrorNotice from "../../components/ErrorNotice";
 import { SearchBox } from "../../components/ListControls";
 import FormModal from "../../components/FormModal";
@@ -37,10 +37,8 @@ function fmtPeriod(p) {
   return `${MONTHS[Number(m) - 1] || m} ${y}`;
 }
 
-function currentPeriod() {
-  const d = new Date();
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
-}
+// Masa pajak bawaan = bulan berjalan WIB (bukan zona perangkat).
+const currentPeriod = () => todayWib().slice(0, 7);
 
 function StatusPill({ status }) {
   const map = { recorded: ["pill-success", "Tercatat"], cancelled: ["pill-muted", "Batal"] };

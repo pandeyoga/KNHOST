@@ -3,6 +3,7 @@ import { CalendarDays, ChevronLeft, ChevronRight } from "lucide-react";
 import KNSelect from "../../../components/KNSelect";
 import KNDatePicker from "../../../components/KNDatePicker";
 import { DESIGN_DATE_FIELDS } from "../rndMeta";
+import { todayWib } from "../../../utils/formatters";
 
 const iso = (d) => d.toISOString().slice(0, 10);
 const startOfMonth = (d) => new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), 1));
@@ -14,7 +15,11 @@ export const DATE_PRESETS = [
   { key: "month", label: "Bulan ini" }, { key: "prev_month", label: "Bulan lalu" },
 ];
 
-export function presetRange(key, today = new Date()) {
+// 15 Nov — "hari ini" bawaan = tanggal WIB sebagai tengah malam UTC (aritmetika di bawah memakai UTC). Dulu tanggal
+// UTC dari jam sekarang: preset "Hari ini" pukul 00.00–07.00 WIB menunjuk KEMARIN.
+const wibMidnight = () => new Date(`${todayWib()}T00:00:00Z`);
+
+export function presetRange(key, today = wibMidnight()) {
   const t = new Date(Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), today.getUTCDate()));
   if (key === "today") return { from: iso(t), to: iso(t) };
   if (key === "7d") return { from: iso(addDays(t, -6)), to: iso(t) };
@@ -32,13 +37,13 @@ export const inDateRange = (value, from, to) => {
   return (!from || d >= from) && (!to || d <= to);
 };
 
-const monthLabel = (isoDate) => new Date(isoDate).toLocaleDateString("id-ID", { month: "long", year: "numeric" });
+const monthLabel = (isoDate) => new Date(isoDate).toLocaleDateString("id-ID", { month: "long", year: "numeric", timeZone: "UTC" });   // tanggal murni → baca di UTC
 
 export default function DateQuickNav({ value, onChange, testId = "design-date-nav" }) {
   const { field = "approved_at", from = "", to = "", preset = "" } = value || {};
   const set = (patch) => onChange({ field, from, to, preset, ...patch });
   const shiftMonth = (n) => {
-    const base = from ? new Date(from) : new Date();
+    const base = from ? new Date(from) : wibMidnight();
     const m = new Date(Date.UTC(base.getUTCFullYear(), base.getUTCMonth() + n, 1));
     set({ from: iso(m), to: iso(endOfMonth(m)), preset: "month_nav" });
   };

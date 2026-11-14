@@ -18,7 +18,7 @@ import axios, { API } from "../../services/apiClient";
 import KNSelect from "../../components/KNSelect";
 import ErrorNotice from "../../components/ErrorNotice";
 import FormModal from "../../components/FormModal";
-import { formatCurrency } from "../../utils/formatters";
+import { formatCurrency, todayWib } from "../../utils/formatters";
 import { apiErrorText } from "../../utils/apiError";
 import { offlinePost } from "../../utils/offlineQueue";
 // FASE G-3 — selisih pembayaran: setiap kurang/lebih bayar wajib punya keputusan berlabel.
@@ -33,8 +33,6 @@ const METHODS = [
 ];
 const LABEL = "text-[11px] font-bold uppercase tracking-wide text-[#6B6B73]";
 
-// Cek UI UAT v3 — tanggal LOKAL (dulu toISOString = UTC: 00.00–07.00 WIB jadi tanggal kemarin).
-function today() { const d = new Date(); return new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 10); }
 
 export default function ARReceiptModal({ customerId, customerName, preselectOrderId, onClose, onDone, onError,
   offline = false, testId = "ar-receipt-modal" }) {
@@ -47,7 +45,9 @@ export default function ARReceiptModal({ customerId, customerName, preselectOrde
   const [mode, setMode] = useState("auto"); // auto (FIFO) | manual
   const [amount, setAmount] = useState("");
   const [method, setMethod] = useState("transfer");
-  const [date, setDate] = useState(today());
+  // 15 Nov — tanggal kwitansi bawaan = hari ini WIB. Dulu "tanggal lokal" = zona PERANGKAT: di peramban berzona UTC
+  // pukul 02.20 WIB 15 Nov kwitansi tercatat 14 Nov (sebelumnya lagi toISOString = UTC, salah yang sama).
+  const [date, setDate] = useState(() => todayWib());
   const [notes, setNotes] = useState("");
   const [alloc, setAlloc] = useState({}); // order_id -> amount
   const [busy, setBusy] = useState(false);

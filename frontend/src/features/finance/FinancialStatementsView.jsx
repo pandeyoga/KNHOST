@@ -14,15 +14,14 @@ import {
 import axios, { API } from "../../services/apiClient";
 import ErrorNotice from "../../components/ErrorNotice";
 import KNSelect from "../../components/KNSelect";
-import { formatCurrency, formatDate, formatPct } from "../../utils/formatters";
+import { formatCurrency, formatDate, formatPct, todayWib } from "../../utils/formatters";
+import { yearOptions, ytdRangeWib, endOfPrevMonthWib } from "./financeShared";
 import { SectionBlock, SummaryRow, GroupHeader, BsSection, BsLine, BsTotalRow, Labeled, Kpi, BalancedKpi } from "./FinancialStatementsParts";
 import CashFlowTab from "./CashFlowTab";
 import EquityChangesTab from "./EquityChangesTab";
 import PageTabs from "../../components/PageTabs";
 import DesktopOnlyNotice from "../../components/DesktopOnlyNotice";
 import useViewPreset from "../../hooks/useViewPreset";
-
-const NOW = new Date();
 
 const MONTHS = [
   { value: "01", label: "Januari" }, { value: "02", label: "Februari" },
@@ -32,22 +31,8 @@ const MONTHS = [
   { value: "09", label: "September" }, { value: "10", label: "Oktober" },
   { value: "11", label: "November" }, { value: "12", label: "Desember" },
 ];
-const YEARS = Array.from({ length: 6 }, (_, i) => {
-  const y = String(NOW.getFullYear() - i);
-  return { value: y, label: y };
-});
-
 const pad = (n) => String(n).padStart(2, "0");
-const lastDay = (y, m) => new Date(Number(y), Number(m), 0).getDate();
-const ymd = (d) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
-const endOfPrevMonth = () => ymd(new Date(NOW.getFullYear(), NOW.getMonth(), 0));
-
-function fmtDateID(iso) {
-  if (!iso) return "—";
-  try {
-    return new Date(iso).toLocaleDateString("id-ID", { day: "2-digit", month: "short", year: "numeric" });
-  } catch { return iso; }
-}
+const lastDay = (y, m) => new Date(Number(y), Number(m), 0).getDate();   // jumlah hari bulan itu (tak bergantung zona)
 
 function fmtDelta(v) {
   const n = Number(v || 0);
@@ -108,10 +93,14 @@ export default function FinancialStatementsView({ selectedEntity }) {
 // ═════════════════════════════════════════════════════════════════════════════
 function IncomeStatementTab({ selectedEntity }) {
   const [mode, setMode] = useState("range"); // range | period
-  const [range, setRange] = useState({ start: `${NOW.getFullYear()}-01-01`, end: ymd(NOW) });
-  const [period, setPeriod] = useState({
-    type: "month", month: pad(NOW.getMonth() + 1), year: String(NOW.getFullYear()),
+  // 15 Nov — bawaan dari hari ini WIB, dihitung saat tab dipasang (dulu `NOW` tingkat modul + tanggal zona perangkat:
+  // di perangkat UTC pukul 00.00–07.00 WIB rentang berakhir kemarin → jurnal hari ini tidak tampil).
+  const [range, setRange] = useState(() => ytdRangeWib());
+  const [period, setPeriod] = useState(() => {
+    const today = todayWib();
+    return { type: "month", month: today.slice(5, 7), year: today.slice(0, 4) };
   });
+  const years = useMemo(() => yearOptions(), []);
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -209,7 +198,7 @@ function IncomeStatementTab({ selectedEntity }) {
             <Labeled label="Tahun">
               <div className="w-[110px]">
                 <KNSelect data-testid="fs-pl-period-year" className="field py-1.5 text-[12px]" value={period.year}
-                  onValueChange={(v) => setPeriod((p) => ({ ...p, year: v }))} options={YEARS} />
+                  onValueChange={(v) => setPeriod((p) => ({ ...p, year: v }))} options={years} />
               </div>
             </Labeled>
             <span className="text-[11px] text-[#9A9BA3] pb-1.5" data-testid="fs-pl-period-hint">
@@ -251,9 +240,9 @@ function IncomeStatementTab({ selectedEntity }) {
 //  NERACA (Balance Sheet)
 // ═════════════════════════════════════════════════════════════════════════════
 function BalanceSheetTab({ selectedEntity }) {
-  const [asOf, setAsOf] = useState(ymd(NOW));
+  const [asOf, setAsOf] = useState(() => todayWib());
   const [comparative, setComparative] = useState(true);
-  const [compareAsOf, setCompareAsOf] = useState(endOfPrevMonth());
+  const [compareAsOf, setCompareAsOf] = useState(() => endOfPrevMonthWib());
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -337,8 +326,8 @@ function BalanceSheetTab({ selectedEntity }) {
             <thead>
               <tr className="text-left text-[10px] font-bold uppercase text-[#8E8E93] bg-[#FAFBFC] border-b border-[#EFF0F2]">
                 <th className="px-3 py-2">Akun</th>
-                <th className="px-3 py-2 text-right">{fmtDateID(asOf)}</th>
-                {isComp && <th className="px-3 py-2 text-right">{fmtDateID(compareAsOf)}</th>}
+                <th className="px-3 py-2 text-right">{formatDate(asOf)}</th>
+                {isComp && <th className="px-3 py-2 text-right">{formatDate(compareAsOf)}</th>}
                 {isComp && <th className="px-3 py-2 text-right">Δ Perubahan</th>}
               </tr>
             </thead>

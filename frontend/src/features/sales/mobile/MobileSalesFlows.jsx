@@ -11,7 +11,7 @@ import { useEffect, useState } from "react";
 import { ArrowLeft, Camera, Check, ClipboardPen, MapPin, MessageCircle, Phone, Plus, RotateCcw, Send, X } from "lucide-react";
 import axios, { API } from "../../../services/apiClient";
 import LocationFields, { locationIncomplete } from "../../../components/LocationFields";
-import { formatCurrency, formatDate, formatQty } from "../../../utils/formatters";
+import { formatCurrency, formatDate, formatQty, todayWib } from "../../../utils/formatters";
 import { odPhaseOf, PHASE_LABEL } from "../SpecialOrderShared";
 import { useSubpageBack } from "./subpageBack";
 import KNSelect from "../../../components/KNSelect";
@@ -186,11 +186,9 @@ function OdCustomerDecision({ od, onChanged }) {
   const [mode, setMode] = useState("");
   const [note, setNote] = useState("");
   const [contact, setContact] = useState("");
-  // Tanggal lokal (WIB) — toISOString() memberi tanggal UTC, kemarin sebelum pukul 07.00.
-  const [date, setDate] = useState(() => {
-    const d = new Date(); const p = (n) => String(n).padStart(2, "0");
-    return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`;
-  });
+  // Hari ini WIB — toISOString() memberi tanggal UTC (kemarin sebelum pukul 07.00); tanggal zona perangkat juga salah
+  // di perangkat yang tidak berzona WIB.
+  const [date, setDate] = useState(() => todayWib());
   const [files, setFiles] = useState([]);
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState("");

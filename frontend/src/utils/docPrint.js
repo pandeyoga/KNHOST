@@ -26,8 +26,9 @@ export function terbilang(n) {
 export function escapeHtml(s) {
   return String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 }
+// 15 Nov — tanggal cetak (termasuk "hari ini" di baris tanda tangan) menurut WIB, bukan zona perangkat.
 export const fmtDate = (s) =>
-  s ? new Date(s).toLocaleDateString("id-ID", { day: "2-digit", month: "long", year: "numeric" }) : "..............";
+  s ? new Date(s).toLocaleDateString("id-ID", { day: "2-digit", month: "long", year: "numeric", timeZone: "Asia/Jakarta" }) : "..............";
 
 export function printHTML(title, bodyHtml) {
   const w = window.open("", "_blank", "width=900,height=1000");

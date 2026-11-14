@@ -1,5 +1,6 @@
 /** marketingShared — konstanta & helper modul Sosial Media & Konten. */
 import axios, { API } from "../../services/apiClient";
+import { todayWib } from "../../utils/formatters";
 
 export const PLATFORM_STYLE = {
   instagram: { label: "Instagram", bg: "#FCE7F3", fg: "#9D174D" },
@@ -30,7 +31,9 @@ export const NEXT_ACTIONS = {
 export const METRIC_LABEL = { likes: "Suka", comments: "Komentar", shares: "Bagikan", saves: "Simpan", reach: "Jangkauan", impressions: "Tayangan", clicks: "Klik", followers_gained: "Pengikut baru", sales_leads: "Prospek" };
 
 export const fmtN = (n) => new Intl.NumberFormat("id-ID").format(Math.round(n || 0));
-export const monthKey = (d = new Date()) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+// 15 Nov — tanpa argumen = bulan berjalan WIB (dulu zona perangkat). Dengan argumen: Date kalender lokal hasil
+// aritmetika (new Date(y, m, 1)) — tidak bergantung zona.
+export const monthKey = (d) => (d ? `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}` : todayWib().slice(0, 7));
 export const MONTHS_ID = ["Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember"];
 export const monthLabel = (m) => `${MONTHS_ID[Number(m.slice(5, 7)) - 1]} ${m.slice(0, 4)}`;
 export const fmtWhen = (s) => (s ? `${s.slice(8, 10)}/${s.slice(5, 7)} ${s.slice(11, 16) || ""}` : "—");
@@ -79,8 +82,11 @@ export const mktApi = {
 
 const pad = (n) => String(n).padStart(2, "0");
 export const dayKey = (d) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
-/** Senin dari minggu yang memuat tanggal `d` (YYYY-MM-DD). */
-export const weekStart = (d = new Date()) => { const x = new Date(d.getFullYear(), d.getMonth(), d.getDate()); x.setDate(x.getDate() - ((x.getDay() + 6) % 7)); return dayKey(x); };
+/** Senin dari minggu yang memuat tanggal `d` (YYYY-MM-DD). Tanpa argumen = minggu yang memuat hari ini WIB. */
+export const weekStart = (d) => {
+  const [y, m, dd] = d ? [d.getFullYear(), d.getMonth() + 1, d.getDate()] : todayWib().split("-").map(Number);
+  const x = new Date(y, m - 1, dd); x.setDate(x.getDate() - ((x.getDay() + 6) % 7)); return dayKey(x);
+};
 export const weekDays = (start) => { const [y, m, dd] = start.split("-").map(Number); return Array.from({ length: 7 }, (_, i) => dayKey(new Date(y, m - 1, dd + i))); };
 export const shiftDays = (key, n) => { const [y, m, d] = key.split("-").map(Number); return dayKey(new Date(y, m - 1, d + n)); };
 export const weekLabel = (start) => { const days = weekDays(start); const a = days[0]; const b = days[6]; return `${Number(a.slice(8))} ${MONTHS_ID[Number(a.slice(5, 7)) - 1].slice(0, 3)} – ${Number(b.slice(8))} ${MONTHS_ID[Number(b.slice(5, 7)) - 1].slice(0, 3)} ${b.slice(0, 4)}`; };

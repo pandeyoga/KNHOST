@@ -12,12 +12,12 @@ import { RefreshCw, Download, PiggyBank, TrendingUp, Landmark, ArrowRightLeft } 
 import axios, { API } from "../../services/apiClient";
 import ErrorNotice from "../../components/ErrorNotice";
 import {
-  FC, NOW, ymd, compactIDR, entityParam, saveBlob, chartTooltip,
+  FC, ytdRangeWib, compactIDR, entityParam, saveBlob, chartTooltip,
   KpiCard, Panel, EmptyState, formatCurrency,
 } from "./financeShared";
 
 export default function EquityChangesTab({ selectedEntity }) {
-  const [range, setRange] = useState({ start: `${NOW.getFullYear()}-01-01`, end: ymd(NOW) });
+  const [range, setRange] = useState(() => ytdRangeWib());   // WIB, dihitung saat layar dipasang
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");

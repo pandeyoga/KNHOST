@@ -7,6 +7,7 @@ import { CalendarClock, X } from "lucide-react";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { TimeColumns } from "./KNTimePicker";
+import { todayWib } from "../utils/formatters";
 
 const split = (v) => {
   const m = /^(\d{4}-\d{2}-\d{2})(?:[T ](\d{2}:\d{2}))?/.exec(String(v || ""));
@@ -50,7 +51,7 @@ export default function KNDateTimePicker({ value, onChange, placeholder = "Pilih
             disabled={minD && isValid(minD) ? { before: minD } : undefined}
             onSelect={(d) => emit(d ? format(d, "yyyy-MM-dd") : "", time)} />
           <div className="border-l border-[#EFF0F2] p-2" data-testid={testId ? `${testId}-time` : undefined}>
-            <TimeColumns value={time} testId={testId} onChange={(t) => emit(date || format(new Date(), "yyyy-MM-dd"), t)} />
+            <TimeColumns value={time} testId={testId} onChange={(t) => emit(date || todayWib(), t)} />
           </div>
         </div>
         <div className="flex items-center justify-between border-t border-[#EFF0F2] px-3 py-2">

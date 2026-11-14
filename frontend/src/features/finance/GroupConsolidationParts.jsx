@@ -19,7 +19,7 @@ import axios, { API } from "../../services/apiClient";
 import { apiErrorText } from "../../utils/apiError";
 import KNSelect from "../../components/KNSelect";
 import FormModal from "../../components/FormModal";
-import { formatCurrency, formatDate } from "../../utils/formatters";
+import { formatCurrency, formatDate, todayWib } from "../../utils/formatters";
 import { stripInternalCodes } from "../../utils/cleanText";
 
 // UAT 24 Okt (audit UI tahap 2) — G1-06: judul/catatan entri eliminasi lama masih memuat kode fase/invarian
@@ -31,8 +31,6 @@ const elimName = (n) => stripInternalCodes(n || "")
 const elimNote = (n) => stripInternalCodes(n || "")
   .replace(/Auto-generated dari intercompany transfer JE pair/i, "Dibuat otomatis dari pasangan jurnal transfer antar-PT")
   .replace(/Auto-generated dari/i, "Dibuat otomatis dari");
-
-const ymd = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 
 export function EliminationsPanel({ elims, onAdd, onDetect, onDelete, onSyncG6, onSyncPairs, busy }) {
   const autoG6 = elims.filter((e) => e.source_g6_pair_id).length;
@@ -129,7 +127,7 @@ export function EliminationsPanel({ elims, onAdd, onDetect, onDelete, onSyncG6, 
 
 export function EliminationModal({ initial, accounts, entities, onClose, onSaved }) {
   const [name, setName] = useState(initial.name || "Eliminasi Intercompany");
-  const [effDate, setEffDate] = useState(() => ymd(new Date()));
+  const [effDate, setEffDate] = useState(() => todayWib());   // tanggal efektif bawaan = hari ini WIB
   const [note, setNote] = useState("");
   const [lines, setLines] = useState(initial.lines || [{ account_code: "", debit: 0, credit: 0, description: "" }, { account_code: "", debit: 0, credit: 0, description: "" }]);
   const [saving, setSaving] = useState(false);

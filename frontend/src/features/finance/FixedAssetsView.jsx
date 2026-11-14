@@ -14,13 +14,14 @@ import {
 import axios, { API } from "../../services/apiClient";
 import ErrorNotice from "../../components/ErrorNotice";
 import DesktopOnlyNotice from "../../components/DesktopOnlyNotice";
-import { formatCurrency, formatPeriod } from "../../utils/formatters";
+import { formatCurrency, formatPeriod, todayWib } from "../../utils/formatters";
 import { askConfirm } from "../../services/confirmService";
 import {
   AssetStatusPill, FaKpi, AddAssetDialog, ScheduleDialog, DisposeDialog, TransferAssetDialog, fmtDate,
 } from "./FixedAssetsParts";
 
-const thisPeriod = () => new Date().toISOString().slice(0, 7);
+// Periode bawaan = bulan berjalan WIB (dulu potongan ISO UTC: 1 Des pukul 00.00–07.00 WIB masih "November").
+const thisPeriod = () => todayWib().slice(0, 7);
 
 export default function FixedAssetsView({ selectedEntity, entities = [] }) {
   const [assets, setAssets] = useState([]);

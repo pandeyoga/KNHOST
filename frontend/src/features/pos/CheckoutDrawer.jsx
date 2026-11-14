@@ -6,7 +6,7 @@ import {
 } from "lucide-react";
 import { isSampleCart, clampSampleQty, canSample } from "../../utils/sampleOrder";
 import axios, { API } from "../../services/apiClient";
-import { formatCurrency, formatQty } from "../../utils/formatters";
+import { formatCurrency, formatQty, todayWib } from "../../utils/formatters";
 import { formatUnitTotals } from "../../utils/qtyByUnit";
 import { computeOrderPreview } from "../../utils/pricing";
 import { convFactor } from "../../utils/uom";
@@ -240,8 +240,9 @@ export default function CheckoutDrawer({
   const billingInvalid = sampleMode && !sampleBilling;
   const pickupInvalid = fulfillmentMethod === "ambil" && !pickupDate;
   const teamInvalid = !!salesTeamError(salesTeam);
-  // Trial 22 Okt (E1) — banding dengan tanggal LOKAL (WIB); toISOString() = UTC → pagi hari "hari ini" dianggap lampau/kemarin.
-  const todayLocal = (() => { const d = new Date(); return new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 10); })();
+  // Trial 22 Okt (E1) — banding dengan "hari ini" WIB; toISOString() = UTC → pagi hari "hari ini" dianggap lampau/kemarin.
+  // 15 Nov: dulu memakai zona PERANGKAT (sama salahnya di perangkat berzona UTC) → kini todayWib().
+  const todayLocal = todayWib();
   const deliveryInvalid = fulfillmentMethod === "kirim" && !!deliveryDate && deliveryDate < todayLocal;
 
   return (
