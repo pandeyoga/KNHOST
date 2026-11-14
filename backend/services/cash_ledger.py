@@ -36,6 +36,7 @@ REF_LABEL = {
     "sales_return": "retur jual", "purchase_return": "retur beli", "payroll_run": "pembayaran gaji",
     "penalty": "nota denda", "interco_loan": "pinjaman antar-PT", "interco_loan_repayment": "angsuran antar-PT",
     "fixed_asset": "perolehan aset tetap", "fixed_asset_transfer": "pembayaran pindah aset antar-PT",   # PK-23
+    "statutory_remittance": "setoran kewajiban gaji",   # PK-22 — setoran BPJS / PPh 21
 }
 
 #: Field dokumen kas yang hanya ditentukan pembuat ini — `extra` tidak boleh menimpanya.

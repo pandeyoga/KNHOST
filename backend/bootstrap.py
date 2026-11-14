@@ -1928,6 +1928,8 @@ async def run_bootstrap() -> None:
     await _prt5_katalog()
     from services.custom_role_service import migrate_crt1_catalog as _crt1_katalog   # CR-T1 — customer.manage_credit
     await _crt1_katalog()
+    from services.custom_role_service import migrate_pk22_payroll_permission as _pk22_izin   # PK-22 — payroll.*
+    await _pk22_izin()
     await sync_permission_modules()
     await sync_permission_revocations()
     await migrate_kft1_settings_permissions()

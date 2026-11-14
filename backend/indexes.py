@@ -181,6 +181,9 @@ INDEX_SPECS: Dict[str, List[IndexKeys]] = {
     "bank_account_changes": [        # PM-T1 — perubahan rekening menunggu orang kedua (antrean per PT)
         [("entity_id", A), ("status", A), ("created_at", D)],
     ],
+    "hr_statutory_remittances": [    # PK-22 — setoran BPJS/PPh 21 per masa (tidak unik: boleh >1 setoran per masa)
+        [("entity_id", A), ("period", A), ("kind", A)],
+    ],
     "credit_profile_requests": [     # CR-T1 — pengajuan perubahan profil kredit (antrean per PT, riwayat per pelanggan)
         [("entity_id", A), ("status", A), ("created_at", A)],
         [("customer_id", A), ("entity_id", A), ("status", A), ("decided_at", D)],
@@ -469,6 +472,8 @@ ID_INDEX_COLLECTIONS: List[str] = [
     "payment_codes",
     # PK-20 — id kas turunan rujukan (`cash_` + SHA-1 `ref_type|ref_id|direction|seq`): upsert bersamaan = satu kas.
     "cash_transactions",
+    # PK-22 — setoran kewajiban gaji: id dari kunci idempotensi (`strm_` + SHA-1), upsert bersamaan = satu setoran.
+    "hr_statutory_remittances",
 ]
 
 # FIX-5 — rujukan bersarang roll yang dicari per nilai (B3a SCH-9: index `reserved_ref` utuh tidak terpakai oleh

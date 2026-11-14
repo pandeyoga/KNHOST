@@ -22,6 +22,33 @@ INF = float("inf")
 WORK_HOURS_DIVISOR = 173  # jam kerja/bulan (rumus upah-sejam Kepmenaker)
 PAYROLL_PREFIX = "PAY-"   # K-09 (26 Okt): awalan nomor penggajian baru (dulu "PR-", bentrok Permintaan Pembelian)
 
+# PK-22 (FY-06) — daur proses gaji: draft → pending_approval → approved → posted → paid; batal dari tiga status pertama →
+# `cancelled`; void dari `posted` → `void`. Status antara (`posting`, `paying`, `voiding`) = klaim langkah yang sedang
+# berjalan. Proses `cancelled`/`void` (dan `rejected` data lama) tidak menghalangi proses baru PT+periode yang sama.
+RUN_STATUS_LABEL: Dict[str, str] = {
+    "draft": "Draf", "pending_approval": "Menunggu pengesahan", "approved": "Disahkan", "posting": "Sedang diposting",
+    "posted": "Diposting", "paying": "Sedang dibayar", "paid": "Dibayar", "cancelled": "Dibatalkan",
+    "voiding": "Sedang dianulir", "void": "Dianulir", "rejected": "Ditolak",
+}
+DEAD_STATUSES = ("cancelled", "void", "rejected")
+CANCELLABLE = ("draft", "pending_approval", "approved")
+
+
+class PayrollConflict(ValueError):
+    """PK-22 — aksi pada status yang salah (router → 409). Pesan siap tampil."""
+
+
+def _status_conflict(run: Dict[str, Any], verb: str) -> PayrollConflict:
+    lbl = RUN_STATUS_LABEL.get(run.get("status") or "", run.get("status") or "")
+    return PayrollConflict(f"Penggajian {run.get('number') or run.get('id')} berstatus {lbl}, jadi tidak bisa {verb}.")
+
+
+def _min_reason(reason: str) -> str:
+    r = (reason or "").strip()
+    if len(r) < 5:   # K-14 (26 Okt): alasan minimum seragam 5 huruf
+        raise ValueError("Alasan wajib diisi (minimal 5 huruf).")
+    return r
+
 
 # ── PK-46 — aturan PPh 21 dari pengaturan BERTANGGAL BERLAKU ─────────────────────────────────────────────────────────
 # Tabel tarif efektif (TER), kategori per status PTKP, PTKP setahun, tarif pasal 17, dan biaya jabatan TIDAK lagi
@@ -389,13 +416,16 @@ async def preview_run(entity_id: str, period: str) -> Dict[str, Any]:
 
 
 async def existing_run(entity_id: str, period: str) -> Optional[Dict[str, Any]]:
+    """Proses gaji yang masih hidup untuk PT+periode (PK-22: `cancelled`/`void` tidak menghalangi proses baru)."""
     return safe_doc(await db.hr_payroll_runs.find_one(
-        {"entity_id": entity_id, "period": period, "status": {"$ne": "void"}}, {"_id": 0}))
+        {"entity_id": entity_id, "period": period, "status": {"$nin": list(DEAD_STATUSES)}}, {"_id": 0}))
 
 
 async def create_run(entity_id: str, period: str, actor: Dict[str, Any]) -> Dict[str, Any]:
     if not entity_id or entity_id == "all" or not period:
         raise ValueError("Payroll run butuh entitas spesifik & periode (mis. 2026-06).")
+    from services import periodic_posting
+    periodic_posting.assert_period_started(period)   # PK-22 (FY-02) — periode yang belum dimulai ditolak
     found = await existing_run(entity_id, period)
     if found:
         return await get_run(found["id"])
@@ -412,7 +442,8 @@ async def create_run(entity_id: str, period: str, actor: Dict[str, Any]) -> Dict
         "totals": prev["totals"], "gl_posted": False, "journal_id": "", "journal_number": "",
         "incentive_journal_id": "", "paid_journal_id": "", "paid_journal_number": "",
         "approved_by": "", "approved_at": "", "posted_at": "", "paid_at": "",
-        "created_by": actor.get("name", "system"), "created_at": now_iso(), "updated_at": now_iso(),
+        "created_by": actor.get("name", "system"), "created_by_id": actor.get("id", ""),
+        "created_at": now_iso(), "updated_at": now_iso(),
     }
     await db.hr_payroll_runs.insert_one(run)
     # INV-ATOMIC-01 — kompensasi saga: run adalah dokumen baru per permintaan. Bila balapan
@@ -420,7 +451,7 @@ async def create_run(entity_id: str, period: str, actor: Dict[str, Any]) -> Dict
     # milik permintaan ini dihapus lagi (tanpa slip yatim).
     dup = await db.hr_payroll_runs.find_one(
         {"entity_id": entity_id, "period": period, "id": {"$ne": run_id},
-         "status": {"$nin": ["cancelled", "rejected"]}}, {"_id": 0, "id": 1, "created_at": 1})
+         "status": {"$nin": list(DEAD_STATUSES)}}, {"_id": 0, "id": 1, "created_at": 1})
     if dup and dup.get("created_at", "") <= run["created_at"]:
         await _refs.safe_unlink_all("payroll_run", run_id)   # PK-44 — INV-REF-04 (run kini jenis dokumen ber-refs)
         await db.hr_payroll_runs.delete_one({"id": run_id})
@@ -497,11 +528,91 @@ async def submit_run(run_id: str, actor: Dict[str, Any]) -> Dict[str, Any]:
                          f"'{run['status']}').")
     if not await db.hr_payslips.count_documents({"run_id": run_id}):
         raise ValueError("Payroll ini belum punya slip gaji — hitung dulu sebelum diajukan.")
+    # PK-22 — bersyarat status lama (dan tidak sedang dihitung ulang): pengajuan tidak menyalip hitung ulang/batal.
+    if not (await db.hr_payroll_runs.update_one(
+            {"id": run_id, "status": "draft", "recalc_claim": {"$exists": False}},
+            {"$set": {"status": "pending_approval"}})).modified_count:
+        raise ValueError("Payroll ini sedang dihitung ulang / sudah berubah — muat ulang.")
     return await _set_run(run_id, {
         "status": "pending_approval",
         "submitted_by": actor.get("name", "system"), "submitted_at": now_iso(),
         "submitted_by_id": actor.get("id", ""),   # KF-T6 — pengaju andal untuk kontrol dua orang
         "reject_reason": "", "rejected_by": "", "rejected_at": ""})
+
+
+async def recalculate_run(run_id: str, actor: Dict[str, Any]) -> Dict[str, Any]:
+    """PK-22 (FY-06) — hitung ulang proses `draft` dari `preview_run` (data karyawan, lembur, komisi terbaru). Slip per
+    karyawan diperbarui DI TEMPAT (id & nomor slip tetap), karyawan baru ditambah slip baru, yang tidak lagi termasuk
+    dihapus; `totals` diperbarui; jejak `recalculated_at/_by`, `recalc_count`. → proses + slip."""
+    run = await db.hr_payroll_runs.find_one({"id": run_id}, {"_id": 0})
+    if not run:
+        raise ValueError("Payroll run tidak ditemukan.")
+    if run["status"] != "draft":
+        raise _status_conflict(run, "dihitung ulang")
+    prev = await preview_run(run["entity_id"], run["period"])
+    if prev["count"] == 0:
+        raise ValueError("Tidak ada karyawan aktif pada entitas ini.")
+    # INV-ATOMIC-01 — klaim bersyarat (draf & tidak sedang dihitung ulang); ajukan/batal menunggu klaim lepas.
+    claimed = await db.hr_payroll_runs.find_one_and_update(
+        {"id": run_id, "status": "draft", "recalc_claim": {"$exists": False}},
+        {"$set": {"recalc_claim": now_iso()}}, projection={"_id": 0, "id": 1})
+    if not claimed:
+        fresh = await db.hr_payroll_runs.find_one({"id": run_id}, {"_id": 0}) or run
+        if fresh.get("status") != "draft":
+            raise _status_conflict(fresh, "dihitung ulang")
+        raise PayrollConflict(f"Penggajian {run.get('number')} sedang dihitung ulang — muat ulang.")
+    try:
+        lama = {sl["employee_id"]: sl async for sl in db.hr_payslips.find({"run_id": run_id}, {"_id": 0})}
+        baru = set()
+        for sl in prev["payslips"]:
+            baru.add(sl["employee_id"])
+            old = lama.get(sl["employee_id"])
+            if old:
+                keep = {k: old.get(k) for k in ("id", "number", "run_id", "entity_id", "period", "status", "pdf_url",
+                                                 "created_at")}
+                await db.hr_payslips.replace_one({"id": old["id"]}, {**keep, **sl, "updated_at": now_iso()})
+            else:
+                snum = await next_doc_number("hr_payslips", "number", "SLIP-", entity_id=run["entity_id"])
+                await db.hr_payslips.insert_one({
+                    "id": new_id("slip"), "number": snum, "run_id": run_id, "entity_id": run["entity_id"],
+                    "period": run["period"], "status": "draft", "pdf_url": "", **sl,
+                    "created_at": now_iso(), "updated_at": now_iso()})
+        gone = [sl["id"] for eid, sl in lama.items() if eid not in baru]
+        if gone:
+            await db.hr_payslips.delete_many({"id": {"$in": gone}})
+        await db.hr_payroll_runs.update_one({"id": run_id}, {
+            "$set": {"totals": prev["totals"], "commission_mode": prev["commission_mode"],
+                     "recalculated_at": now_iso(), "recalculated_by": actor.get("name", "system"),
+                     "recalculated_by_id": actor.get("id", ""), "updated_at": now_iso()},
+            "$inc": {"recalc_count": 1}})
+    finally:
+        await db.hr_payroll_runs.update_one({"id": run_id}, {"$unset": {"recalc_claim": ""}})
+    return await get_run(run_id)
+
+
+async def cancel_run(run_id: str, actor: Dict[str, Any], reason: str) -> Dict[str, Any]:
+    """PK-22 (FY-06) — batalkan proses `draft`/`pending_approval`/`approved` (bersyarat status lama); slip ikut
+    `cancelled`. Tanpa jurnal (belum diposting). Izin dipilih router menurut status (`payroll.create` untuk draf,
+    `payroll.approve` untuk yang sudah diajukan/disahkan)."""
+    run = await db.hr_payroll_runs.find_one({"id": run_id}, {"_id": 0})
+    if not run:
+        raise ValueError("Payroll run tidak ditemukan.")
+    if run["status"] not in CANCELLABLE:
+        raise _status_conflict(run, "dibatalkan")
+    alasan = _min_reason(reason)
+    flt: Dict[str, Any] = {"id": run_id, "status": run["status"]}
+    if run["status"] == "draft":
+        flt["recalc_claim"] = {"$exists": False}
+    if not (await db.hr_payroll_runs.update_one(flt, {"$set": {"status": "cancelled"}})).modified_count:
+        fresh = await db.hr_payroll_runs.find_one({"id": run_id}, {"_id": 0}) or run
+        raise _status_conflict(fresh, "dibatalkan")
+    hist = list(run.get("decision_history") or [])
+    hist.append({"action": "cancelled", "by": actor.get("name", "system"), "at": now_iso(), "reason": alasan,
+                 "from_status": run["status"], "to_status": "cancelled"})
+    return await _set_run(run_id, {
+        "status": "cancelled", "cancel_reason": alasan, "cancelled_by": actor.get("name", "system"),
+        "cancelled_by_id": actor.get("id", ""), "cancelled_at": now_iso(), "cancelled_from": run["status"],
+        "decision_history": hist})
 
 
 async def approve_run(run_id: str, actor: Dict[str, Any]) -> Dict[str, Any]:
@@ -520,7 +631,12 @@ async def approve_run(run_id: str, actor: Dict[str, Any]) -> Dict[str, Any]:
     await _dc.tolak_bila_pelaku_sama("proses_gaji", run, actor, run.get("entity_id", ""),
                                      nominal=float((run.get("totals") or {}).get("net") or 0),
                                      pengaju=[run.get("submitted_by_id") or run.get("submitted_by")])
+    if not (await db.hr_payroll_runs.update_one({"id": run_id, "status": "pending_approval"},
+                                                {"$set": {"status": "approved"}})).modified_count:
+        fresh = await db.hr_payroll_runs.find_one({"id": run_id}, {"_id": 0}) or run
+        raise _status_conflict(fresh, "disahkan")
     return await _set_run(run_id, {"status": "approved", "approved_by": actor.get("name", "system"),
+                                   "approved_by_id": actor.get("id", ""),   # PK-22 — id pelaku (KF-T6)
                                    "approved_at": now_iso()})
 
 
@@ -542,9 +658,13 @@ async def reject_run(run_id: str, actor: Dict[str, Any], reason: str) -> Dict[st
     hist.append({"action": "rejected", "by": actor.get("name", "system"),
                  "at": now_iso(), "reason": reason.strip(),
                  "from_status": "pending_approval", "to_status": "draft"})
+    if not (await db.hr_payroll_runs.update_one({"id": run_id, "status": "pending_approval"},
+                                                {"$set": {"status": "draft"}})).modified_count:
+        fresh = await db.hr_payroll_runs.find_one({"id": run_id}, {"_id": 0}) or run
+        raise _status_conflict(fresh, "dikembalikan ke draf")
     return await _set_run(run_id, {
         "status": "draft", "reject_reason": reason.strip(),
-        "rejected_by": actor.get("name", "system"), "rejected_at": now_iso(),
+        "rejected_by": actor.get("name", "system"), "rejected_by_id": actor.get("id", ""), "rejected_at": now_iso(),
         "decision_history": hist})
 
 
@@ -570,6 +690,52 @@ async def post_run_gl(run_id: str, actor: Dict[str, Any]) -> Dict[str, Any]:
         patch["journal_number"] = je.get("number", "")
         patch["incentive_journal_id"] = je.get("incentive_journal_id", "")
     return await _set_run(run_id, patch)
+
+
+async def void_run(run_id: str, actor: Dict[str, Any], reason: str) -> Dict[str, Any]:
+    """PK-22 (FY-06) — void proses `posted`: jurnal gaji dibalik bertanggal buku jurnal asal, proses & slip `void`.
+
+    PERIKSA status `posted` (gaji yang sudah dibayar tidak bisa di-void — koreksinya proses susulan PY-T1) + alasan +
+    periode tanggal buku terbuka → NIAT `posted → voiding` bersyarat (dua void bersamaan: satu menang) → JURNAL
+    `gl_service.reverse_document("payroll_run", kunci jurnal, date=journal_date)` lewat `post_durable`
+    (`void_gl_status`) → `void` + jejak. Gagal → kembali `posted`, galat dilempar (router 409)."""
+    from services import gl_service, periodic_posting
+    run = await get_run(run_id)
+    if not run:
+        raise ValueError("Payroll run tidak ditemukan.")
+    if run["status"] != "posted":
+        raise _status_conflict(run, "dianulir")
+    alasan = _min_reason(reason)
+    src_id = await gl_service.payroll_source_id(run)
+    je = await db.journal_entries.find_one({"id": run.get("journal_id") or "__none__"}, {"_id": 0, "date": 1}) or \
+        await db.journal_entries.find_one({"source_type": "payroll_run", "source_id": src_id,
+                                           "status": {"$ne": "void"}}, {"_id": 0, "date": 1}) or {}
+    journal_date = run.get("journal_date") or (je.get("date") or "")[:10] or \
+        periodic_posting.akhir_periode(run["period"])
+    await gl_service.preflight_posting(run["entity_id"], journal_date)
+    if not (await db.hr_payroll_runs.update_one({"id": run_id, "status": "posted"},
+                                                {"$set": {"status": "voiding"}})).modified_count:
+        fresh = await db.hr_payroll_runs.find_one({"id": run_id}, {"_id": 0}) or run
+        raise _status_conflict(fresh, "dianulir")
+    name = actor.get("name", "system")
+    try:
+        await gl_service.post_durable(
+            "hr_payroll_runs", run_id,
+            lambda: gl_service.reverse_document("payroll_run", src_id, reason=alasan, actor_name=name,
+                                                date=journal_date),
+            source_type="payroll_run_reversal", source_id=src_id, field="void_gl_status", raise_on_fail=True)
+    except Exception as exc:
+        await db.hr_payroll_runs.update_one({"id": run_id, "status": "voiding"}, {"$set": {"status": "posted"}})
+        raise PayrollConflict(f"Jurnal pembalik gaji gagal: {exc}. Penggajian tetap berstatus Diposting.") from exc
+    rev = await db.journal_entries.find_one({"source_type": "payroll_run_reversal", "source_id": src_id,
+                                             "status": {"$ne": "void"}}, {"_id": 0, "id": 1, "number": 1}) or {}
+    hist = list(run.get("decision_history") or [])
+    hist.append({"action": "void", "by": name, "at": now_iso(), "reason": alasan,
+                 "from_status": "posted", "to_status": "void"})
+    return await _set_run(run_id, {
+        "status": "void", "void_reason": alasan, "voided_by": name, "voided_by_id": actor.get("id", ""),
+        "voided_at": now_iso(), "void_journal_id": rev.get("id", ""), "void_journal_number": rev.get("number", ""),
+        "decision_history": hist})
 
 
 async def pay_run(run_id: str, actor: Dict[str, Any], cash_account: Optional[str] = None,

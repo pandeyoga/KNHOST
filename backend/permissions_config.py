@@ -919,3 +919,23 @@ for _role, _mods in PK24_DEFAULT_PAIRS.items():
     for _res, _acts in _mods.items():
         _cur = list(DEFAULT_PERMISSIONS[_role].get(_res) or [])
         DEFAULT_PERMISSIONS[_role][_res] = _cur + [a for a in _acts if a not in _cur]
+
+# ═══════════════════════════════════════════════════════════════════════════
+# PK-22 (FY-09, K-41) — menyiapkan, mengesahkan, memposting, mem-void, dan membayar gaji = lima izin terpisah
+# (`docs/blueprint/unit/PK-22.md`, tabel "Izin dan peran"). Sumber daya baru `payroll` (modul "SDM & Penggajian"):
+# `create` buat/hitung ulang/ajukan/batalkan draf, `approve` sahkan/kembalikan/batalkan yang diajukan, `post` jurnal gaji,
+# `void` membalik gaji yang sudah diposting, `pay` membayar gaji dan menyetor BPJS/PPh 21. Pemegangnya sama dengan
+# pemegang `hr.manage_payroll` hari ini (Admin, Manajer); `hr.manage_payroll` tetap menjaga pengaturan gaji. Instalasi lama
+# menerima pasangan baru sekali lewat `bootstrap.sync_permission_modules` (`defaults_applied`, PR-T9); peran lain yang
+# memegang `hr.manage_payroll` diberi kelima pasangan sekali lewat migrasi `pk22:izin-penggajian`
+# (`services/custom_role_service.migrate_pk22_payroll_permission`).
+# ═══════════════════════════════════════════════════════════════════════════
+PK22_PAYROLL_ACTIONS = ("create", "approve", "post", "void", "pay")
+PK22_DEFAULT_PAIRS = {
+    "admin": {"payroll": PK22_PAYROLL_ACTIONS},
+    "manager": {"payroll": PK22_PAYROLL_ACTIONS},
+}
+for _role, _mods in PK22_DEFAULT_PAIRS.items():
+    for _res, _acts in _mods.items():
+        _cur = list(DEFAULT_PERMISSIONS[_role].get(_res) or [])
+        DEFAULT_PERMISSIONS[_role][_res] = _cur + [a for a in _acts if a not in _cur]

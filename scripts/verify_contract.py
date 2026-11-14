@@ -78,6 +78,8 @@ CANONICAL_COLLECTIONS = {
     "customer_credit_profiles", "credit_profile_requests",
     # ── PK-39 (blueprint) — riwayat pagu anggaran (buat · ubah · hapus; sebelum/sesudah, alasan) ──
     "budget_history",
+    # ── PK-22 (blueprint) — proses gaji (jenis `payroll_run` registri posting) + setoran kewajiban (BPJS, PPh 21) ──
+    "hr_payroll_runs", "hr_statutory_remittances",
     "cash_transactions",
     # ── Depth #1 (Retur Beli / Nota Debit) ──
     "purchase_returns",

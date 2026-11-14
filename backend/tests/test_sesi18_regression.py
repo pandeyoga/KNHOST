@@ -98,7 +98,7 @@ class TestUsersSuccess:
 # ── (3) Payroll runs 2× bersamaan → satu run id ────────────────────────────────
 class TestPayrollRaceSingleRun:
     def test_two_parallel_runs_yield_one(self, admin_token, db):
-        ent, period = "ent_ksc", "2032-02"
+        ent, period = "ent_ksc", "2020-02"   # PK-22 — periode yang belum dimulai kini ditolak 400 (dulu 2032-02)
         db.hr_payroll_runs.delete_many({"entity_id": ent, "period": period})
 
         async def _go():

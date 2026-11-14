@@ -167,7 +167,8 @@ MODULE_CATALOG: List[Dict[str, Any]] = [
              "settings-hub", "settings-finance", "settings-cfg-finance"]},
     {"id": "hr", "group": "Organisasi", "label": "SDM & Penggajian",
      "description": "Karyawan, struktur organisasi, presensi, cuti, lembur, payroll, KPI.",
-     "resources": ["hr"],
+     # PK-22 — `payroll` (siapkan · sahkan · posting · void · bayar & setor kewajiban); tab Setoran Kewajiban.
+     "resources": ["hr", "payroll"],
      "nav": ["hrd", "hr-people", "hr-employees", "hr-org-units", "hr-attendance-hub",
              "hr-attendance", "hr-leave", "hr-overtime", "hr-live-tracking",
              "hr-attendance-setup", "hr-payroll-hub", "hr-payroll-runs", "hr-payslips",
@@ -498,6 +499,9 @@ _SENSITIVE_GROUPS: List[Tuple[str, Tuple[Tuple[str, str], ...]]] = [
     ("mengirim barang sebelum lunas dan mengubah pesanan terkunci",
      (("order", "release_unpaid"), ("order", "override"), ("order", "approve_price_edit"))),
     ("mengelola gaji dan melihat data pribadi karyawan", (("hr", "manage_payroll"), ("hr", "view_pii"))),
+    # PK-22 — mengesahkan, menjurnal, membalik, dan membayar gaji (menyiapkan draf `payroll.create` tidak termasuk).
+    ("mengesahkan, menjurnal, membalik, dan membayar gaji",
+     (("payroll", "approve"), ("payroll", "post"), ("payroll", "void"), ("payroll", "pay"))),
     ("menghapus data induk",
      (("product", "delete"), ("product", "retire"), ("customer", "delete"), ("supplier", "delete"),
       ("warehouse", "delete"), ("uom", "delete"), ("entity", "delete"))),
@@ -614,6 +618,13 @@ RESOURCE_LABEL["ai_finance"] = "Asisten Keuangan"
 ACTION_LABEL.update({"ai_finance.view": "Bertanya soal keuangan lewat Tanya KN"})
 # PK-24 (IA-05) — kas kecil: bayar hutang reimburse & terima pengembalian sisa uang muka (modul Kas Kecil).
 ACTION_LABEL.update({"cash_settlement.pay": "Bayar reimburse & terima pengembalian sisa uang muka"})
+# PK-22 — lima izin penggajian (modul SDM & Penggajian).
+RESOURCE_LABEL["payroll"] = "Proses Penggajian"
+ACTION_LABEL.update({"payroll.create": "Siapkan: buat, hitung ulang, ajukan, batalkan draf",
+                     "payroll.approve": "Sahkan, kembalikan, atau batalkan penggajian yang diajukan",
+                     "payroll.post": "Posting jurnal gaji",
+                     "payroll.void": "Anulir gaji yang sudah diposting (jurnal dibalik)",
+                     "payroll.pay": "Bayar gaji dan setor BPJS/PPh 21"})
 # PR-T4 — KPI & komisi sales lain (modul Pesanan Penjualan; dulu daftar nama peran di `_kpi_scope`).
 ACTION_LABEL.update({"order.view_sales_kpi": "Lihat KPI & komisi sales lain"})
 # KP-T8 — kunci layanan luar & koneksi WhatsApp (modul Pusat Pengaturan).

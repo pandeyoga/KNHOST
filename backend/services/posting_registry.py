@@ -53,6 +53,9 @@ async def _retry_cash(doc: Dict[str, Any], actor: Dict[str, Any]) -> None:
     if doc.get("payment_intent_id"):   # PK-05 — ringkasan jurnal di niat bayar ikut diperbarui
         from services.ap_payment_service import refresh_gl_status
         await refresh_gl_status(doc["payment_intent_id"])
+    if doc.get("ref_type") == "statutory_remittance" and doc.get("ref_id"):   # PK-22 — setoran kewajiban selesai
+        from services.hr_remittance_service import finish_remittance
+        await finish_remittance(doc["ref_id"])
 
 
 async def _retry_ar_receipt(doc: Dict[str, Any], actor: Dict[str, Any]) -> None:

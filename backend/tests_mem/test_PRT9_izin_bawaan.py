@@ -29,7 +29,8 @@ for _r in DEFAULT_PERMISSIONS:   # PR-T2 — izin pengganti gerbang nama peran (
         TAMBAHAN_SESUDAH.setdefault(_r, {}).setdefault(_res, set()).update(_acts)
 # Butir di `migrations_applied`: 15 butir PR-T9 + `prt2:gerbang-peran` (PR-T2) + `prt4:sifat-peran` dan
 # `prt4:izin-kpi-sales` (PR-T4) + `prt5:katalog` (PR-T5) + `crt1:izin-kredit` (CR-T1 — `customer.manage_credit` dibuang).
-JUMLAH_MIGRASI = 20
+# PK-22 — + `pk22:izin-penggajian` (pemegang `hr.manage_payroll` diberi `payroll.*`).
+JUMLAH_MIGRASI = 21
 # Pencabutan izin bawaan yang SENGAJA dibuat unit sesudah PR-T9.
 DICABUT_SESUDAH = {r: {"vendor_bill": {"view"}, "landed_cost": {"view"}, "input_tax": {"view"}}
                    for r in ("warehouse", "warehouse_admin")}   # PK-17 (IA-02)
@@ -78,6 +79,10 @@ for _r, _tambah in _pc.AGT2_DEFAULT_PAIRS.items():
 # PK-24 (IA-05, K-17) — bayar reimburse & terima pengembalian sisa uang muka `cash_settlement.pay`: Admin, Manajer,
 # Finance; `cash_advance.disburse` Manajer & Finance sudah dari MN-T1 (`permissions_config.PK24_DEFAULT_PAIRS`).
 for _r, _tambah in _pc.PK24_DEFAULT_PAIRS.items():
+    for _res, _aksi in _tambah.items():
+        TAMBAHAN_SESUDAH.setdefault(_r, {}).setdefault(_res, set()).update(_aksi)
+# PK-22 (FY-09, K-41) — lima izin penggajian `payroll.*`: Admin, Manajer (`permissions_config.PK22_DEFAULT_PAIRS`).
+for _r, _tambah in _pc.PK22_DEFAULT_PAIRS.items():
     for _res, _aksi in _tambah.items():
         TAMBAHAN_SESUDAH.setdefault(_r, {}).setdefault(_res, set()).update(_aksi)
 

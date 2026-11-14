@@ -63,3 +63,19 @@ E("periode.kunci_dokumen", group="pajak-pembukuan", section="tutup-buku", type="
   risk="high", requires_reason=True,
   permission=("accounting", "manage"),
   related=("periode.unlock_window_hours", "periode.max_days_after_close"))
+
+# PK-22 (FY-02, keputusan K-13) — tanggal buku jurnal periodik (gaji, penyusutan, akrual insentif). Teks pilihan, dampak,
+# dan contoh spesifikasi memakai kata "diposting"/"hari posting" — ditolak penjaga INV-CFG-TXT (kata teknis) → "dibuat"
+# / "dicatat ke buku besar". Nilai pilihan (`hari_posting`) tetap sama dengan spesifikasi.
+E("gl.tanggal_jurnal_periodik", group="pajak-pembukuan", section="tutup-buku", type="enum", default="akhir_periode",
+  options=({"value": "akhir_periode", "label": "Hari terakhir periodenya"},
+           {"value": "hari_posting", "label": "Hari saat jurnalnya dibuat"}),
+  scopes=G,
+  label="Tanggal jurnal gaji, penyusutan, dan insentif",
+  help="Menentukan tanggal buku untuk jurnal yang dibuat per periode: gaji, penyusutan aset, dan akrual insentif.",
+  impact="Bila diubah ke hari jurnal dibuat, beban bulan lalu yang dicatat ke buku besar bulan ini masuk ke laporan "
+         "bulan ini.",
+  example="Gaji Oktober dicatat ke buku besar 3 November → jurnal bertanggal 31 Oktober",
+  consumers=("services/periodic_posting.py:journal_date",),
+  risk="high", requires_reason=True,
+  permission=("accounting", "manage"))

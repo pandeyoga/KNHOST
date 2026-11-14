@@ -397,6 +397,62 @@ async def migrate_crt1_catalog() -> Dict[str, Any]:
         alasan="CR-T1 — plafon & blokir kredit kini lewat pengajuan profil kredit (izin credit_profile)")
 
 
+PK22_MIGRATION_ID = "pk22:izin-penggajian"
+
+
+async def migrate_pk22_payroll_permission() -> Dict[str, Any]:
+    """PK-22 (FY-09) — sekali jalan (`pk22:izin-penggajian`): peran (kustom maupun bawaan yang matriksnya diubah Admin)
+    yang memegang `hr.manage_payroll` dan BELUM punya sumber daya `payroll` diberi kelima pasangan `payroll.*`
+    (`permissions_config.PK22_PAYROLL_ACTIONS`) — hari ini mereka menyiapkan, mengesahkan, memposting, dan membayar gaji
+    lewat `hr.manage_payroll`, jadi tidak ada yang kehilangan akses saat endpoint beralih ke izin baru. Pasangan bawaan
+    Admin & Manajer dicatat di `defaults_applied` supaya `sync_permission_modules` tidak meneruskannya lagi (pencabutan
+    sesudahnya bertahan). Dipanggil `bootstrap.run_bootstrap` sesudah `ensure_permission_ledger`, sebelum
+    `sync_permission_modules`."""
+    from permissions_config import PK22_DEFAULT_PAIRS, PK22_PAYROLL_ACTIONS
+    record = await db.permission_settings.find_one({"id": "default"}, {"_id": 0})
+    if not record or record.get("migrations_applied") is None or \
+            PK22_MIGRATION_ID in (record.get("migrations_applied") or []):
+        return {"diberi": []}
+    matrix: Dict[str, Any] = record.get("matrix") or {}
+    customs = {c["id"]: c for c in await db.custom_roles.find({}, {"_id": 0}).to_list(500)}
+    granted: List[str] = []
+    for rid, perms in matrix.items():
+        if not isinstance(perms, dict) or perms.get("payroll"):
+            continue
+        if "manage_payroll" in (perms.get("hr") or []):
+            perms["payroll"] = list(PK22_PAYROLL_ACTIONS)
+            granted.append(rid)
+    patch: Dict[str, Any] = {}
+    applied = record.get("defaults_applied")
+    if applied is not None:   # None = instalasi sebelum L01: garis dasar dibuat dari bawaan oleh sync_permission_modules
+        for rid, mods in PK22_DEFAULT_PAIRS.items():
+            done = applied.setdefault(rid, {})
+            for res, acts in mods.items():
+                cur = list(done.get(res) or [])
+                done[res] = cur + [a for a in acts if a not in cur]
+        patch["defaults_applied"] = applied
+    if granted:
+        patch.update({"matrix": matrix, "updated_at": now_iso()})
+    update: Dict[str, Any] = {"$addToSet": {"migrations_applied": PK22_MIGRATION_ID}}
+    if patch:
+        update["$set"] = patch
+    await db.permission_settings.update_one({"id": "default"}, update)
+    for cid in granted:
+        c = customs.get(cid)
+        if not c:
+            continue
+        pending = {k: v for k, v in (c.get("pending_defaults") or {}).items() if k != "payroll"}
+        await db.custom_roles.update_one({"id": cid}, {"$set": {
+            "levels": {k: v["level"] for k, v in levels_of(matrix.get(cid) or {}).items()},
+            "pending_defaults": pending, "updated_at": now_iso()}})
+    if granted:
+        from dependencies import audit
+        await audit("Sistem (migrasi PK-22)", "role_payroll_permission_migrated", "permission_settings", "default",
+                    {"payroll": granted},
+                    reason="PK-22 — menyiapkan, mengesahkan, memposting, dan membayar gaji kini lima izin terpisah")
+    return {"diberi": granted}
+
+
 async def _buang_pasangan_tersimpan(migration_id: str, pairs: Any, resources: Any, *, pelaku: str,
                                     alasan: str) -> Dict[str, Any]:
     """Buang pasangan izin `pairs` (dan seluruh sumber daya `resources`) dari matriks tersimpan sekali jalan

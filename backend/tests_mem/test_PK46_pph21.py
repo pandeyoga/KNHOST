@@ -135,7 +135,12 @@ async def test_PK46_U4_tidak_diproyeksikan_ke_penyimpanan_lama(db, monkeypatch):
     assert "pph21" not in doc
 
 
-async def test_PK46_U5_slip_per_periode_mengikuti_tanggal_berlaku(klien, kepala_admin, karyawan):
+async def test_PK46_U5_slip_per_periode_mengikuti_tanggal_berlaku(klien, kepala_admin, karyawan, monkeypatch):
+    # PK-22 (FY-02) — proses gaji untuk periode yang belum dimulai kini ditolak 400: "hari ini" dibekukan 15 Jan 2027
+    # supaya Desember 2026 dan Januari 2027 boleh diproses (tanggal berlaku tabel tetap dari pengaturan, bukan jam).
+    import datetime as _dt
+    from services import book_date
+    monkeypatch.setattr(book_date, "_sekarang", lambda: _dt.datetime(2027, 1, 15, 3, 0, tzinfo=_dt.timezone.utc))
     # Karyawan: gaji pokok 80.000.000, TK0 → kategori A (bawaan dan sintetis), BPJS bawaan:
     #   bruto pajak = 80.000.000 + JKK 0,54% 432.000 + JKM 0,3% 240.000 + Kesehatan 4% × batas 12.000.000 480.000
     #               = 81.152.000

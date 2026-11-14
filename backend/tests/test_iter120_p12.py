@@ -94,9 +94,11 @@ def employee(mongo) -> Dict[str, Any]:
 
 # ═══════════════════════════ HR-01/HR-02 PAYROLL (HTTP) ═══════════════════════
 class TestPayrollHttp:
+    # PK-22 (FY-02) — periode gaji yang belum dimulai kini ditolak 400 (buat & pratinjau): periode uji dipindah dari 2030 ke
+    # 2019 (sudah lewat, tanpa data acuan; 3 & 4 Juni 2019 juga Senin & Selasa seperti 2030).
     def test_preview_period_december_annual_pph21(self, admin, employee):
         """HR-01 — Desember: pph21_method='annual_pasal17' terisi untuk karyawan sintetis."""
-        period = "2030-12"
+        period = "2019-12"
         r = admin.post(f"{BASE}/api/hr/payroll/runs/preview",
                        json={"entity_id": ENTITY, "period": period}, timeout=60)
         assert r.status_code == 200, r.text
@@ -114,7 +116,7 @@ class TestPayrollHttp:
     def test_preview_period_normal_ter_method(self, admin, employee):
         """HR-01 — bulan biasa: pph21_method='ter'."""
         r = admin.post(f"{BASE}/api/hr/payroll/runs/preview",
-                       json={"entity_id": ENTITY, "period": "2030-06"}, timeout=60)
+                       json={"entity_id": ENTITY, "period": "2019-06"}, timeout=60)
         assert r.status_code == 200, r.text
         mine = [s for s in r.json()["payslips"] if s["employee_id"] == employee["id"]]
         assert mine and mine[0]["pph21_method"] == "ter"
@@ -124,21 +126,21 @@ class TestPayrollHttp:
         dihitung sekali: overtime_min=120, overtime≈3,5 × base/173 = 3500."""
         now = datetime.now(timezone.utc).isoformat()
         mongo.hr_attendance.insert_one({
-            "id": f"{TAG}_att_ok", "employee_id": employee["id"], "date": "2030-06-03",
+            "id": f"{TAG}_att_ok", "employee_id": employee["id"], "date": "2019-06-03",
             "overtime_min": 120, "approved": True, "status": "hadir",
             "method": "fingerprint", "entity_id": ENTITY, "created_at": now})
         mongo.hr_overtime.insert_one({
-            "id": f"{TAG}_ot_ok", "employee_id": employee["id"], "date": "2030-06-03",
-            "period": "2030-06", "minutes": 120, "status": "approved",
+            "id": f"{TAG}_ot_ok", "employee_id": employee["id"], "date": "2019-06-03",
+            "period": "2019-06", "minutes": 120, "status": "approved",
             "rate_basis": "normal", "entity_id": ENTITY, "created_at": now})
         # flagged attendance same month not counted
         mongo.hr_attendance.insert_one({
-            "id": f"{TAG}_att_flag", "employee_id": employee["id"], "date": "2030-06-04",
+            "id": f"{TAG}_att_flag", "employee_id": employee["id"], "date": "2019-06-04",
             "overtime_min": 120, "approved": False, "status": "flagged",
             "method": "mobile", "entity_id": ENTITY, "created_at": now})
 
         r = admin.post(f"{BASE}/api/hr/payroll/runs/preview",
-                       json={"entity_id": ENTITY, "period": "2030-06"}, timeout=60)
+                       json={"entity_id": ENTITY, "period": "2019-06"}, timeout=60)
         assert r.status_code == 200, r.text
         mine = [s for s in r.json()["payslips"] if s["employee_id"] == employee["id"]][0]
         assert mine["overtime_min"] == 120, mine["overtime_min"]
@@ -146,7 +148,7 @@ class TestPayrollHttp:
 
     def test_create_run_no_500(self, admin, employee):
         """HR-01 — create run tidak 500 (admin + X-Entity-Id)."""
-        period = "2030-11"
+        period = "2019-11"
         r = admin.post(f"{BASE}/api/hr/payroll/runs",
                        json={"entity_id": ENTITY, "period": period}, timeout=60)
         assert r.status_code == 200, r.text

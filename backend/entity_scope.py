@@ -158,6 +158,7 @@ SCOPED_COLLECTIONS = {
     "hr_shifts", "hr_geofences", "hr_attendance", "hr_devices",
     "hr_field_tracks", "hr_visits",
     "hr_payroll_runs", "hr_payslips",
+    "hr_statutory_remittances",       # PK-22 — setoran kewajiban gaji (BPJS, PPh 21) milik satu PT
     "hr_leave_requests", "hr_leave_balances", "hr_overtime",
     "hr_kpi", "design_gallery",
     "logistics_deliveries",   # FB-02 — pengiriman logistik (foto muat/POD, posisi)

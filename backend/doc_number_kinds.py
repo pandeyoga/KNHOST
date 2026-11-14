@@ -121,6 +121,7 @@ KINDS_LIST: List[Dict[str, Any]] = [
     _k("ot", "Pengajuan lembur", "SDM", "hr_overtime", "number", "OT-"),
     _k("pay", "Penggajian", "SDM", "hr_payroll_runs", "number", "PAY-"),
     _k("slip", "Slip gaji", "SDM", "hr_payslips", "number", "SLIP-"),
+    _k("str", "Setoran kewajiban gaji (BPJS/PPh 21)", "SDM", "hr_statutory_remittances", "number", "STR-"),   # PK-22
     _k("emp", "Kode karyawan", "SDM", "hr_employees", "code", "EMP-", scope=_B),
     # ── Master ─────────────────────────────────────────────────────────────────────────────────────────────────────
     _k("sup", "Kode pemasok", "Master", "suppliers", "code", "SUP-", scope=_B, locked=True),

@@ -3451,6 +3451,24 @@ async def post_petty_cash_settlement(*, settlement_id: str, entity_id: str,
 #  H4 — Payroll posting (idempotent per entitas+periode). Lihat PLAN_HRD §4.4.
 # ═════════════════════════════════════════════════════════════════════════════
 
+async def payroll_source_id(run: Dict[str, Any]) -> str:
+    """PK-22 (FY-06, P4) — kunci jurnal gaji (`payroll_run`, `payroll_pay`, pembaliknya) = id proses gaji, supaya proses
+    kedua sesudah void/batal menerbitkan jurnalnya sendiri. Proses lama yang jurnalnya terbit dengan kunci lama
+    "{PT}:{periode}" dikenali lewat `journal_id`-nya dan tetap memakai kunci lama (bayar & void menemukan jurnal yang
+    sama). MEMBATALKAN perubahan kunci: kembalikan `f"{entity_id}:{period}"` di fungsi ini saja."""
+    legacy = f"{run.get('entity_id')}:{run.get('period')}"
+    jid = run.get("journal_id") or ""
+    if jid:
+        je = await db.journal_entries.find_one({"id": jid}, {"_id": 0, "source_id": 1})
+        return legacy if je and je.get("source_id") == legacy else run["id"]
+    # Data lama (sebelum PK-22 — belum ber-`journal_date`) yang sudah diposting tetapi `journal_id`-nya kosong: kunci lama
+    # dipakai bila jurnal berkunci lama ada. Hitungan kasus ini di data nyata = kueri baca-saja laporan PK-22 (H3).
+    if run.get("status") in ("posted", "paying", "paid", "voiding", "void") and not run.get("journal_date"):
+        if await db.journal_entries.find_one({"source_type": "payroll_run", "source_id": legacy}, {"_id": 0, "id": 1}):
+            return legacy
+    return run["id"]
+
+
 async def post_payroll_run(run: Dict[str, Any], slips: List[Dict[str, Any]],
                            created_by: str = "system") -> Optional[Dict[str, Any]]:
     """Posting jurnal payroll run (SEIMBANG, idempotent).

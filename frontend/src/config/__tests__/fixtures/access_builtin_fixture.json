@@ -370,6 +370,13 @@
     "view",
     "decide"
    ],
+   "payroll": [
+    "create",
+    "approve",
+    "post",
+    "void",
+    "pay"
+   ],
    "pdf_template": [
     "view",
     "manage"
@@ -1184,6 +1191,13 @@
    "payment_variance": [
     "view",
     "decide"
+   ],
+   "payroll": [
+    "create",
+    "approve",
+    "post",
+    "void",
+    "pay"
    ],
    "pdf_template": [
     "view",
@@ -2670,7 +2684,8 @@
    "design_request"
   ],
   "cs-kpi": [
-   "hr"
+   "hr",
+   "payroll"
   ],
   "cs-pajak": [
    "ar_receipt",
@@ -2882,16 +2897,20 @@
    "wms"
   ],
   "hr-attendance": [
-   "hr"
+   "hr",
+   "payroll"
   ],
   "hr-attendance-hub": [
-   "hr"
+   "hr",
+   "payroll"
   ],
   "hr-attendance-setup": [
-   "hr"
+   "hr",
+   "payroll"
   ],
   "hr-employees": [
-   "hr"
+   "hr",
+   "payroll"
   ],
   "hr-kpi-hub": [
    "credit_override",
@@ -2900,32 +2919,41 @@
    "od_fulfillment",
    "od_pricing",
    "order",
+   "payroll",
    "sales_force",
    "sales_return"
   ],
   "hr-leave": [
-   "hr"
+   "hr",
+   "payroll"
   ],
   "hr-live-tracking": [
-   "hr"
+   "hr",
+   "payroll"
   ],
   "hr-org-units": [
-   "hr"
+   "hr",
+   "payroll"
   ],
   "hr-overtime": [
-   "hr"
+   "hr",
+   "payroll"
   ],
   "hr-payroll-hub": [
-   "hr"
+   "hr",
+   "payroll"
   ],
   "hr-payroll-runs": [
-   "hr"
+   "hr",
+   "payroll"
   ],
   "hr-payslips": [
-   "hr"
+   "hr",
+   "payroll"
   ],
   "hr-people": [
-   "hr"
+   "hr",
+   "payroll"
   ],
   "hr-visits": [
    "customer"
@@ -2937,6 +2965,7 @@
    "od_fulfillment",
    "od_pricing",
    "order",
+   "payroll",
    "sales_force",
    "sales_return"
   ],
@@ -3522,7 +3551,8 @@
    "settings"
   ],
   "settings-attendance-devices": [
-   "hr"
+   "hr",
+   "payroll"
   ],
   "settings-cfg-approval": [
    "rnd",
@@ -3623,7 +3653,8 @@
    "tax_invoice"
   ],
   "settings-hr": [
-   "hr"
+   "hr",
+   "payroll"
   ],
   "settings-hub": [
    "accounting",
@@ -3662,6 +3693,7 @@
    "order",
    "payment_plan",
    "payment_variance",
+   "payroll",
    "pdf_template",
    "penalty",
    "period",

@@ -1404,8 +1404,9 @@ Jurnal → dokumen (`JOURNAL_SOURCE_TYPE`, source_id berawalan id dokumen): pett
   fixed_asset_acquisition/_depreciation/_disposal → fixed_asset · makloon_claim, makloon_material_loss,
   subcon_service_unabsorbed, subcon_issue_reversal → makloon_order · penalty_reversal/_payment → penalty ·
   payment_variance_writeoff/_alloc/_reversal, ap_variance_writeoff → payment_variance · cash_transaction_void →
-  cash_transaction · vendor_bill_reversal → vendor_bill. Gaji (payroll_run, payroll_pay) ber-source_id
-  "{entity_id}:{period}" → run dicari lewat journal_id/paid_journal_id lalu (entity_id, period) non-void.
+  cash_transaction · vendor_bill_reversal → vendor_bill. Gaji (payroll_run, payroll_pay): PK-22 — source_id = id
+  proses (`prun_…`); jurnal lama "{entity_id}:{period}" → run dicari lewat journal_id/paid_journal_id lalu (entity_id,
+  period) non-void (`gl_service.payroll_source_id`).
 Label (satu dokumen satu nama): Tagihan Pemasok · Kontrak Pemasok · Permintaan Pembelian (PR) · Pesanan Pembelian (PO)
   · Pesanan Penjualan (SO) · Biaya Masuk (Landed Cost) · Kwitansi Pelanggan · Pelunasan Antar-PT · Jurnal.
 ⚠️ JANGAN BUAT peta tujuan kedua (dulu `document_relations_service._link` menulis `view` sendiri).
@@ -3640,7 +3641,8 @@ Key Fields:  id, code (pph21|pph23|...), period (YYYY-MM), rate, dpp, amount, no
              status, entity_id, created_by
 ⚠️ entity_id = SCOPED (per-PT). Basis payroll dihitung dari hr_payroll_runs (bukan koleksi ini).
    PK-40 (FY-16): butir PPh 21 = penggajian `posted`/`paid` saja; dpp = Σ hr_payslips.tax_gross (slip lama: gross),
-   amount = Σ pph21 slip, gl_amount = kredit − debit 2-1800 jurnal `payroll_run` `{entity_id}:{period}`, selisih.
+   amount = Σ pph21 slip, gl_amount = kredit − debit 2-1800 jurnal `payroll_run` berkunci proses itu (PK-22: id proses;
+   proses lama `{entity_id}:{period}` — `gl_service.payroll_source_id`), selisih.
    Rekam/hapus rekaman pada masa yang sudah dilaporkan (`tax_period_locks`) → 409.
 ```
 
@@ -4032,3 +4034,27 @@ kunci Pusat Pengaturan `tax.ppn_rate`, `tax.dpp_nilai_lain`, `tax.ppn_mode`, `ta
 
 ⚠️ Kode transaksi sah faktur = `tax.kode_transaksi_diizinkan` PT (dulu konstanta `KODE_TRANSAKSI_VALID`); bawaan faktur =
 kode pelanggan → bawaan PT menurut DPP nilai lain (`default_kode`).
+
+## PK-22 — penggajian: tanggal buku, hitung ulang, batal, anulir, setoran kewajiban
+
+`hr_payroll_runs` — daur `draft → pending_approval → approved → posted → paid`; batal dari tiga status pertama →
+`cancelled`; anulir dari `posted` → `void` (status antara `posting`, `paying`, `voiding` = klaim langkah). Proses
+`cancelled`/`void` tidak menghalangi proses baru PT+periode yang sama (`hr_payroll_service.existing_run`). Kunci jurnal
+gaji, bayar, dan pembaliknya = **id proses** (`gl_service.payroll_source_id`; proses lama tetap "{entity_id}:{period}").
+
+| Field baru | Arti | Ditulis oleh |
+|---|---|---|
+| `journal_date` | Tanggal buku jurnal gaji (`periodic_posting.journal_date`: akhir periode atau hari posting, `gl.tanggal_jurnal_periodik`) | `post_run_gl` (klaim) |
+| `gl_status`, `gl_error`, `gl_failed_at`, `journal_entry_id` | Penanda jurnal gaji (PK-18); `failed` → proses tetap `approved`, tampil di Posting Gagal jenis `payroll_run` | `post_run_gl` lewat `post_durable` |
+| `pay_gl_status`, `pay_gl_error`, `pay_journal_entry_id` · `void_gl_status`, `void_gl_error`, `void_journal_entry_id` | Penanda jurnal bayar / pembalik (gagal → status kembali `posted`) | `pay_run`, `void_run` |
+| `recalculated_at`, `recalculated_by`, `recalculated_by_id`, `recalc_count`, `recalc_claim` (sementara) | Jejak hitung ulang draf (slip diperbarui di tempat) | `recalculate_run` |
+| `cancelled_by`, `cancelled_by_id`, `cancelled_at`, `cancel_reason`, `cancelled_from` | Jejak batal | `cancel_run` |
+| `voided_by`, `voided_by_id`, `voided_at`, `void_reason`, `void_journal_id`, `void_journal_number` | Jejak anulir | `void_run` |
+| `created_by_id`, `approved_by_id`, `rejected_by_id`, `posted_by`, `posted_by_id`, `paid_by`, `paid_by_id` | Id pelaku tiap langkah (kontrol dua orang KF-T6 `kontrol.proses_gaji.*` pada sahkan, posting, bayar) | langkah masing-masing |
+
+`hr_payslips.status` mengikuti proses (`cancelled`, `void`).
+
+| Collection | Prefix/ID | Penulis (SSOT) | Pembaca | Catatan |
+|-----------|-----------|----------------|---------|---------|
+| `hr_statutory_remittances` | `strm_` (id dari kunci idempotensi bila ada) + `number` `STR-` per PT | `services/hr_remittance_service.py:create_remittance` / `finish_remittance` | `GET /api/hr/payroll/remittances`, `/outstanding`; `PayrollRemittancesView` | **PK-22 (FY-07)** setoran hutang BPJS (2-1700, `sdm.hutang_bpjs`) dan PPh 21 (2-1800, `sdm.hutang_pph21`): `kind` (`bpjs`·`pph21`), `period` (masa gaji), `amount`, `paid_date` (= tanggal jurnal), `account_id` (rekening), `cash_type`, `contra_account_code`, `cash_txn_id`, `journal_entry_id`, `status` (`pending` → `done`), `gl_status`/`gl_error`, `reference`, `notes`, `created_by(_id)`. Satu setoran = satu kas keluar `ref_type="statutory_remittance"` (pembuat kas PK-20) → jurnal kas Dr hutang / Cr kas. Sisa kewajiban masa = Σ `totals` proses `posted`/`paid` (BPJS = `bpjs_emp + bpjs_er`, PPh 21 = `pph21`) − Σ setoran masa itu. Indeks `(entity_id, period, kind)` tidak unik; `uq_id`. **SCOPED**. |
+

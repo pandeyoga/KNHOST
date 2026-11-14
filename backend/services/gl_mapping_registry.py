@@ -165,8 +165,11 @@ ENTRIES: List[Dict[str, Any]] = [
        ("Beban BPJS", "Hutang BPJS"), ["Payroll"]),
     _e("sdm.hutang_gaji", "2-1600", "Hutang gaji", "payroll diposting & dibayar",
        ("Beban gaji", "Hutang gaji"), ["Payroll"]),
-    _e("sdm.hutang_bpjs", "2-1700", "Hutang BPJS", "payroll diposting",
-       ("Beban BPJS", "Hutang BPJS"), ["Payroll"]),
+    _e("sdm.hutang_bpjs", "2-1700", "Hutang BPJS", "payroll diposting; setoran BPJS",
+       ("Beban BPJS", "Hutang BPJS"), ["Payroll", "Setoran Kewajiban"]),
+    # PK-22 (FY-07) — PPh 21 yang dipotong dari gaji; turun lewat setoran kewajiban (Dr hutang / Cr kas).
+    _e("sdm.hutang_pph21", "2-1800", "Hutang PPh 21", "payroll diposting; setoran PPh 21",
+       ("Beban gaji", "Hutang PPh 21"), ["Payroll", "Setoran Kewajiban"]),
     _e("aset.akumulasi_penyusutan", "1-2900", "Akumulasi penyusutan", "penyusutan bulanan aset tetap",
        ("Beban penyusutan", "Akumulasi penyusutan"), ["Aset tetap"]),
     _e("aset.beban_penyusutan", "6-6000", "Beban penyusutan", "penyusutan bulanan aset tetap",
