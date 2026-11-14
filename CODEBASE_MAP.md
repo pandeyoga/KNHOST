@@ -1,5 +1,5 @@
 <!-- DIHASILKAN OTOMATIS oleh scripts/gen_codebase_map.py — JANGAN EDIT TANGAN -->
-<!-- Dihasilkan dari commit: f94f6bc pada 2026-11-14 -->
+<!-- Dihasilkan dari commit: 40a441b pada 2026-11-14 -->
 # CODEBASE MAP — Kain Nusantara (dihasilkan otomatis)
 
 Peta ini dihitung dari kode oleh `scripts/gen_codebase_map.py`. Kalau angka di sini
@@ -14,7 +14,7 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 |---|---:|
 | Router (`backend/routers/*.py`) | 168 |
 | Endpoint (`@router.<method>`) | 1809 |
-| Service (`backend/services/*.py`) | 409 |
+| Service (`backend/services/*.py`) | 410 |
 | Koleksi MongoDB disentuh kode produksi | 204 |
 | Direktori fitur frontend (`src/features/*`) | 39 |
 
@@ -176,7 +176,7 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 | `finance_bi.py` | 1 | 36 | `/finance/bi` |
 | `finance_cases.py` | 13 | 200 | `/finance-cases`, `/finance-cases/playbooks`, `/finance-cases/policy`, `/finance-cases/reasons`, `/finance-cases/scan`, `/finance-cases/stats` … |
 | `financial_statements.py` | 8 | 270 | `/finance/balance-sheet`, `/finance/balance-sheet/export.csv`, `/finance/cash-flow`, `/finance/cash-flow/export.csv`, `/finance/equity-changes`, `/finance/equity-changes/export.csv` … |
-| `fixed_assets.py` | 10 | 209 | `/fixed-assets`, `/fixed-assets/meta`, `/fixed-assets/run-depreciation`, `/fixed-assets/summary`, `/fixed-assets/{asset_id}`, `/fixed-assets/{asset_id}/dispose` … |
+| `fixed_assets.py` | 10 | 214 | `/fixed-assets`, `/fixed-assets/meta`, `/fixed-assets/run-depreciation`, `/fixed-assets/summary`, `/fixed-assets/{asset_id}`, `/fixed-assets/{asset_id}/dispose` … |
 | `fulfillment.py` | 3 | 49 | `/fulfillment/wizard/{so_id}`, `/fulfillment/wizard/{so_id}/create-interco`, `/fulfillment/wizard/{so_id}/create-pr` |
 | `gl.py` | 24 | 444 | `/gl/accounts`, `/gl/accounts/{code}`, `/gl/accounts/{code}/ledger`, `/gl/cash-accounts`, `/gl/consolidation`, `/gl/inventory-drift-explain` … |
 | `gl_mappings.py` | 5 | 88 | `/gl/account-mappings`, `/gl/account-mappings/history`, `/gl/account-mappings/{key}`, `/gl/account-mappings/{key}/candidates`, `/gl/account-mappings/{key}/reset` |
@@ -423,7 +423,8 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 | `finance_case_service.py` | 627 | FASE G-9 — PUSAT KASUS KEUANGAN (Finance Exception Desk). |
 | `finance_tower_service.py` | 128 | FINANCE — Control Tower (Dashboard Keuangan terpadu) (EPIC P1-5). |
 | `financial_statement_service.py` | 313 | FINANCE — Laporan Keuangan (Laba-Rugi & Neraca) diturunkan dari GL. |
-| `fixed_asset_service.py` | 971 | R6.2 — Fixed Assets & Depresiasi (straight-line) + disposal gain/loss. |
+| `fixed_asset_service.py` | 800 | R6.2 — Fixed Assets & Depresiasi (straight-line) + disposal gain/loss. |
+| `fixed_asset_transfer_service.py` | 408 | PK-23 (FY-04) — pindah aset tetap antar-PT dan pembayarannya: dua PT atau tidak sama sekali, tidak dua kali. |
 | `fleet_service.py` | 137 | Armada internal — master kendaraan (`fleet_vehicles`, SCOPED) + ketersediaan sopir. |
 | `fulfillment_decision_service.py` | 369 | FASE E-8 (E8.10b#4 · US16) — **KEPUTUSAN PEMENUHAN** milik Admin Sales. |
 | `fulfillment_plan_service.py` | 294 | 2026-10 — RENCANA PEMENUHAN per baris (keputusan pemilik): Admin Sales membagi |
@@ -547,7 +548,7 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 | `po_pricing.py` | 39 | PK-28 (IV-03) — harga neto satu baris PO: SATU hitungan untuk nilai penerimaan barang (Dr Persediaan / Cr GR/I |
 | `po_variance_task_service.py` | 194 | W2-REQ-06 — tugas keputusan MD atas selisih penerimaan PO (tunggu / amendment / short-close). |
 | `pos_recommendation_service.py` | 213 | F-4b — POS advanced recommendations, dihitung dari histori `sales_orders` (TANPA AI, TANPA koleksi baru). |
-| `posting_registry.py` | 518 |  |
+| `posting_registry.py` | 560 |  |
 | `pr_sourcing_service.py` | 1030 | FASE E — SOURCING PR: routing `purchase|makloon` + realisasi PR → PO / Order Makloon. |
 | `price_approval_service.py` | 268 | Sub-fase 1.7 + F1b — bagian **BERSAMA** alur Harga Khusus (`price_approvals`). |
 | `price_guard_service.py` | 172 | F1b — SATU definisi **batas bawah harga jual** (price floor) untuk seluruh sistem. |
@@ -688,7 +689,7 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 | `transfer_receipt_service.py` | 658 | P03 (IMP-26/27) + sisa P02 — transfer terkait SO, penerimaan AKTUAL per roll, exception, cek ulang aturan tuju |
 | `trip_service.py` | 140 | L07 LN-070/071 — picking list multi-gudang, cek kesiapan trip multi-SO, manifest armada. |
 | `turn_notification_service.py` | 214 | Notifikasi "giliran Anda" — setiap dokumen berpindah tahap, peran yang harus bertindak |
-| `twin_journal.py` | 118 | PK-06 — Jurnal KEMBAR (dua buku PT) yang utuh dan bisa diulang per sisi (docs/blueprint/02_STANDAR.md §1 P6). |
+| `twin_journal.py` | 130 | PK-06 — Jurnal KEMBAR (dua buku PT) yang utuh dan bisa diulang per sisi (docs/blueprint/02_STANDAR.md §1 P6). |
 | `uom_rules_service.py` | 485 | FASE B — REGISTRY KONVERSI SATUAN **GLOBAL** + TOLERANSI (D-06/D-07). |
 | `uom_service.py` | 503 | Sub-fase 1.13 — UOM Conversion Engine (Multi-UOM). |
 | `user_admin_service.py` | 407 | FASE E-2 — AKUN PENGGUNA TERTAUT BADAN USAHA (via HR) & PENEGAKAN AKSES. |
@@ -713,7 +714,7 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 
 | Fitur (`src/features/`) | Berkas | Baris |
 |---|---:|---:|
-| `__tests__` | 122 | 19521 |
+| `__tests__` | 122 | 19602 |
 | `admin` | 36 | 6981 |
 | `approvals` | 9 | 1720 |
 | `catalog` | 24 | 1459 |
@@ -724,7 +725,7 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 | `desks` | 2 | 229 |
 | `documents` | 18 | 2580 |
 | `export` | 9 | 700 |
-| `finance` | 101 | 22961 |
+| `finance` | 101 | 23073 |
 | `home` | 5 | 1136 |
 | `hr` | 33 | 5403 |
 | `inspections` | 12 | 2181 |

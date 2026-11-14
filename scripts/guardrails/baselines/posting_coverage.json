@@ -46,8 +46,8 @@
    "alasan": "susut bahan di mitra makloon"
   },
   "post_paired_entry": {
-   "pemilik": "PK-23",
-   "alasan": "pindah aset / pinjaman antar-PT (twin_je lama)"
+   "pemilik": "belum ada",
+   "alasan": "tinggal twin_je pinjaman antar-PT; pindah aset lewat twin_journal sejak PK-23"
   },
   "post_payroll_run": {
    "pemilik": "PK-22",
@@ -249,13 +249,6 @@
    "alasan": "kasus keuangan"
   },
   {
-   "lokasi": "services/fixed_asset_service.py:transfer_to_entity",
-   "fungsi_gl": "post_paired_entry",
-   "jumlah": 1,
-   "pemilik": "PK-23",
-   "alasan": "penyusutan, pelepasan, pindah aset"
-  },
-  {
    "lokasi": "services/goods_receipt_close_service.py:_ensure_gr_posted",
    "fungsi_gl": "post_goods_receipt",
    "jumlah": 1,
@@ -294,8 +287,8 @@
    "lokasi": "services/interco_money_service.py:twin_je",
    "fungsi_gl": "post_paired_entry",
    "jumlah": 2,
-   "pemilik": "PK-23",
-   "alasan": "twin_je lama (pinjaman antar-PT, pindah aset)"
+   "pemilik": "belum ada",
+   "alasan": "twin_je lama — tinggal pinjaman antar-PT (interco_loan_service: cair & angsuran); pindah aset dan pembayarannya lewat twin_journal sejak PK-23"
   },
   {
    "lokasi": "services/inventory_service.py:expire_old_reservations",
@@ -573,7 +566,7 @@
  },
  "total": {
   "fungsi": 29,
-  "panggilan": 65,
+  "panggilan": 64,
   "insert_entry": 12
  }
 }

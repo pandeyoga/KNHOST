@@ -976,31 +976,57 @@ diposting ke GL & **idempotent** per sumber.
 Collections: fin_fixed_assets (prefix fasset_, number FA-##### per entitas)
              fin_depreciation_entries (prefix depe_)
 Router:      routers/fixed_assets.py   Service: services/fixed_asset_service.py
+             services/fixed_asset_transfer_service.py (PK-23 — pindah antar-PT & pembayarannya)
 Component:   features/finance/FixedAssetsView.jsx (Kas & Aset → Aset Tetap)
 fin_fixed_assets fields:
   id, number, name, category (Peralatan & Mesin|Kendaraan|Inventaris & Perabot Kantor|Bangunan)
   acquisition_cost, acquisition_date, useful_life_months, salvage_value, method="straight_line"
   entity_id (FK business_entities), gl_account_asset (1-2100/2200/2300/2400),
-  gl_account_dep_exp="6-6000", gl_account_acc_dep="1-2900", funding_account (default 1-1100)
+  gl_account_dep_exp="6-6000", gl_account_acc_dep="1-2900",
+  funding_source (PK-23: kas|hutang|saldo_awal|antar_pt — wajib untuk aset baru; aset lama tanpa field = kas;
+                  antar_pt hanya diisi pindah aset), funding_account (DITURUNKAN dari funding_source, bukan isian
+                  klien: kas → 1-1100/1-1110 menurut jenis rekening; hutang → pemetaan aset.sumber_hutang;
+                  saldo_awal → pemetaan aset.sumber_saldo_awal; antar_pt → 2-1250),
+  account_id + funding_cash_type + acquisition_cash_txn_id (sumber kas: rekening, jenis kasnya, kas keluar
+                  ref_type="fixed_asset" · ref_id=id aset, dijurnal dokumen induk → not_required),
   monthly_depreciation, accumulated_depreciation, book_value, depreciated_months,
-  last_depreciation_period, status (active|fully_depreciated|disposed),
-  acquisition_je, disposal {date, proceeds, book_value, gain_loss, result, je_id, je_number}
+  last_depreciation_period, status (active|fully_depreciated|disposed|transferred
+                  + PK-23 status antara transferring|disposing — klaim yang belum selesai),
+  acquisition_je, disposal {date, proceeds, book_value, gain_loss, result, je_id, je_number},
+  disposal_intent {prev_status, proceeds, date, note, by, at} + disposal_gl_status/_error/_failed_at
+                  (PK-23, hanya selama `disposing`),
+  transfer {intent {id, status pending|done, steps {target_created, journals, source_marked}, plan, lease_until},
+            from/to_entity_id+name, transfer_date, book_value, price, gain, reason, new_asset_id/number,
+            useful_life_left_months, settled, settle_status none|settling|settled (PK-23), settle_lease_until,
+            settled_at, settled_by, cash_txn_ids}  — field `settled` tetap diisi,
+  gl_status_transfer/_error_transfer/gl_journal_id_transfer (sisi pengirim jurnal kembar pindah),
+  gl_status_settle_payer|payee (+_error, gl_journal_id_…) (jurnal kembar pembayaran),
+  transfer_from {asset_id, number, entity_id, entity_name} (aset pengganti di PT penerima, id `{id lama}_tr`)
 fin_depreciation_entries fields:
   id, asset_id, asset_number, entity_id, period (YYYY-MM), amount,
-  accumulated_after, book_value_after, je_id, je_number, created_at
-Straight-line: monthly = (acquisition_cost − salvage_value) / useful_life_months (bulan terakhir
-  serap sisa pembulatan). Idempotent per (asset_id, period).
+  accumulated_after, book_value_after, je_id, je_number, created_at,
+  gl_status (PK-23: pending → posted|failed; register aset diperbarui HANYA sesudah posted; entri lama tanpa
+  field = posted), gl_error, gl_failed_at, journal_entry_id, gl_label ("{nomor aset} · {periode}", baris panel)
+Straight-line: monthly = (acquisition_cost − salvage_value) / useful_life_months; bulan terakhir umur
+  (depreciated_months == useful_life_months − 1) = SELURUH sisa (PK-23 · FY-20). Idempotent per (asset_id, period).
 Posting GL (via gl_service):
-  Perolehan  : Dr <akun aset> / Cr 1-1100 Kas/Bank            (source_type fixed_asset_acquisition)
+  Perolehan  : Dr <akun aset> / Cr <akun sumber dana>          (source_type fixed_asset_acquisition)
   Penyusutan : Dr 6-6000 Beban Penyusutan / Cr 1-2900 Akum.   (source_type fixed_asset_depreciation, sid=asset:period)
   Disposal   : Dr 1-2900 akum + Dr 1-1100 proceeds [+Dr 6-9500 rugi]
                / Cr <akun aset> perolehan [+Cr 4-9100 laba]   (source_type fixed_asset_disposal)
 Akun COA baru: 1-2200 Kendaraan, 1-2300 Inventaris & Perabot, 1-2400 Bangunan,
   1-2900 Akumulasi Penyusutan (contra-asset, saldo kredit), 6-6000 Beban Penyusutan,
   4-9100 Laba Pelepasan Aset, 6-9500 Rugi Pelepasan Aset.
-Endpoints: GET /api/fixed-assets · GET /api/fixed-assets/meta · GET /api/fixed-assets/summary ·
-  POST /api/fixed-assets · GET/PATCH /api/fixed-assets/{id} ·
-  POST /api/fixed-assets/run-depreciation · POST /api/fixed-assets/{id}/dispose
+  Pindah PT  : pengirim Dr 1-2900 akum + Dr 1-1250 harga [+Dr 6-9500] / Cr <akun aset> [+Cr 4-9100]
+               (fixed_asset_transfer · {id}:from); penerima = perolehan aset pengganti Dr <akun aset> / Cr 2-1250
+               (fixed_asset_acquisition · {id}_tr) — dua sisi lewat twin_journal (PK-06)
+  Bayar pindah: Dr 2-1250 / Cr kas (pembayar) & Dr kas / Cr 1-1250 (penerima uang)
+               (fixed_asset_transfer_settlement · {id}:settle:a|b)
+Endpoints: GET /api/fixed-assets · GET /api/fixed-assets/meta (+ funding_sources per PT) · GET /api/fixed-assets/summary ·
+  POST /api/fixed-assets (funding_source wajib, account_id untuk kas) · GET/PATCH /api/fixed-assets/{id} ·
+  POST /api/fixed-assets/run-depreciation (+ failed[], skipped_assets[]) · POST /api/fixed-assets/{id}/dispose ·
+  POST /api/fixed-assets/{id}/transfer · POST /api/fixed-assets/{id}/transfer/settle (pelaku wajib berwenang di PT
+  pembayar)
 RBAC: permission "fixed_asset" (admin/manager).
 Invarian integritas: FA-1 accumulated==Σentri · FA-2 book_value==cost−akum ·
   FA-3 GL 1-2900==Σakum aktif · FA-4 GL akun aset==Σperolehan aktif.
@@ -1316,7 +1342,8 @@ terdaftar di **`backend/services/posting_registry.py::KINDS`** (dibaca `routers/
 | `makloon_orders` | tiap unsur **`steps[]`** (`steps.$.gl_status`, `…gl_error`, `…gl_failed_at`, `…journal_entry_id`) | `steps[].material_returns[].gl_part` = akhiran `source_id` jurnal pembalik retur bahan |
 | `inventory_movements` | baris `movement_type: cut_waste` | `gl_amount` (susut × biaya roll), `gl_source_id` (`cutw:<op>`), `gl_reason`, `gl_label` |
 | `ar_receipts` | **`void_gl_status`**, `void_gl_error`, `void_gl_failed_at`, `void_journal_entry_id` | status jurnal PEMBALIK saat kwitansi dibatalkan (`gl_status` tetap milik jurnal penerimaan) |
-| `fin_fixed_assets` | dokumen | `acquisition_je` (nomor jurnal perolehan) diisi saat `posted` |
+| `fin_fixed_assets` | dokumen | `acquisition_je` (nomor jurnal perolehan) diisi saat `posted`; PK-23: `disposal_gl_status` (jenis `fixed_asset_disposal`, hanya pelepasan macet), `gl_status_transfer` (jenis `fixed_asset_transfer`), `gl_status_settle_payer`/`_payee` (jenis `fixed_asset_settle_payer`/`_payee`); aset pengganti pindah antar-PT memakai `gl_status` (jenis `fixed_asset`, ulang = teruskan niat pindah) |
+| `fin_depreciation_entries` | entri per (aset, periode) — PK-23 | jenis `asset_depreciation` ("Penyusutan Aset"); tautan panel → aset (`link_id_field: asset_id`) |
 | `shipments` | dokumen (sudah ada) | `posted` hanya bila jurnal `shipment_revenue` surat jalan itu ada (GL-12); `journal_entry_id` baru |
 | `cash_transactions` | dokumen (sudah ada) | `gl_failed_at` baru |
 | `purchase_orders` | tiap unsur **`grir_clearings[]`** (`grir_clearings.$.gl_status`, …) — PK-28 | jenis registri `grir_clearing` ("Kliring GR/IR"), baris panel `<po_id>:<seq>` |

@@ -20,6 +20,7 @@ JURNAL tahan-gagal (`gl_service.post_durable`):
 - Aset `transferred`/sedang diproses/belum berjurnal tidak bisa diubah, disusutkan, dilepas, atau dipindah.
 - Entri penyusutan lahir `pending`; register baru diperbarui sesudah jurnalnya terbit (jenis `asset_depreciation`).
 - Pelepasan berklaim (`disposing`); jurnal gagal → status dikembalikan, galat 409.
+- Pindah antar-PT dan pembayarannya: `services/fixed_asset_transfer_service.py`.
 """
 import hashlib
 from datetime import datetime as _dt, timedelta as _td, timezone as _tz
@@ -124,8 +125,9 @@ async def funding_options(entity_id: Optional[str]) -> List[Dict[str, Any]]:
     return out
 
 
-async def _resolve_funding(entity_id: str, source: str, account_id: str, *, internal: bool) -> Dict[str, Any]:
-    """Sumber dana → akun kredit perolehan (+ rekening untuk `kas`). Tanpa tulisan."""
+async def _resolve_funding(entity_id: str, source: str, account_id: str) -> Dict[str, Any]:
+    """Sumber dana → akun kredit perolehan (+ rekening untuk `kas`). Tanpa tulisan. `antar_pt` tidak diterima di sini:
+    aset pengganti pindah antar-PT dibuat `fixed_asset_transfer_service` (jurnalnya sisi penerima jurnal kembar)."""
     from services import cash_ledger, gl_mapping_service as glm
     source = (source or "").strip()
     if not source:
@@ -133,9 +135,7 @@ async def _resolve_funding(entity_id: str, source: str, account_id: str, *, inte
     if source not in FUNDING_SOURCES:
         raise AssetError("Sumber dana tidak dikenal. Pilih kas/bank, hutang, atau saldo awal.", 400)
     if source == "antar_pt":
-        if not internal:
-            raise AssetError("Sumber dana antar-PT hanya terbentuk dari Pindah PT.", 400)
-        return {"funding_account": gl_service.ACC_IC_AP, "account_id": "", "cash_type": ""}
+        raise AssetError("Sumber dana antar-PT hanya terbentuk dari Pindah PT.", 400)
     if source in FUNDING_KEY:
         r = await glm.resolve(FUNDING_KEY[source], entity_id)
         if r["source"] not in ("entity", "global"):
@@ -263,10 +263,10 @@ def asset_id_for(entity_id: str, idem_key: str) -> str:
 
 
 async def create_asset(payload: Dict[str, Any], actor: Dict[str, Any], *, entity_id: Optional[str] = None,
-                       idem_key: str = "", internal: bool = False) -> Dict[str, Any]:
+                       idem_key: str = "") -> Dict[str, Any]:
     """PK-23 (FY-01, FY-03) — perolehan aset: PERIKSA → NIAT (`gl_status: pending`) → EFEK (kas, sumber `kas`) →
     JURNAL (`post_durable`). `entity_id` = PT hasil `resolve_requested_entity` (router), bukan isi permintaan;
-    `funding_account` klien diabaikan. `internal=True` hanya untuk pindah aset (sumber `antar_pt`)."""
+    `funding_account` klien diabaikan."""
     # ── 1. PERIKSA (tanpa tulisan) ─────────────────────────────────────────────────────────────────────────────────
     name = (payload.get("name") or "").strip()
     if not name:
@@ -287,12 +287,11 @@ async def create_asset(payload: Dict[str, Any], actor: Dict[str, Any], *, entity
         raise AssetError("Pilih sumber dana perolehan aset.", 400)
     asset_acc = (payload.get("gl_account_asset") or CATEGORY_ACCOUNT.get(category, DEFAULT_ASSET_ACC))
     await _check_asset_account(ent, asset_acc)
-    fund = await _resolve_funding(ent, source, payload.get("account_id") or "", internal=internal)
+    fund = await _resolve_funding(ent, source, payload.get("account_id") or "")
     acq_date = tanggal_buku(payload.get("acquisition_date") or "")
     await _preflight_period(ent, acq_date)
     # ── 2. NIAT ───────────────────────────────────────────────────────────────────────────────────────────────────
-    aid = (payload.get("id") if internal and payload.get("id") else
-           (asset_id_for(ent, idem_key) if idem_key else new_id("fasset")))
+    aid = asset_id_for(ent, idem_key) if idem_key else new_id("fasset")
     doc = await db.fin_fixed_assets.find_one({"id": aid}, {"_id": 0})
     if doc is None:
         number = await next_doc_number("fin_fixed_assets", "number", "FA-", entity_id=ent)
@@ -330,8 +329,6 @@ async def create_asset(payload: Dict[str, Any], actor: Dict[str, Any], *, entity
             "created_at": now_iso(),
             "updated_at": now_iso(),
         }
-        if internal and payload.get("transfer_from"):
-            doc["transfer_from"] = payload["transfer_from"]
         try:
             await db.fin_fixed_assets.update_one({"id": aid}, {"$setOnInsert": doc}, upsert=True)
         except Exception as exc:  # noqa: BLE001 — balapan sisip id tetap: yang kalah memakai dokumen pemenang
@@ -412,7 +409,12 @@ async def post_acquisition_gl(asset: Dict[str, Any], *, raise_on_fail: bool = Fa
 
 
 async def retry_acquisition(asset: Dict[str, Any], actor: Dict[str, Any]) -> None:
-    """Jalur Ulang Posting jenis `fixed_asset` (registri posting)."""
+    """Jalur Ulang Posting jenis `fixed_asset` (registri posting). Aset pengganti pindah antar-PT yang jurnal sisi
+    penerimanya gagal → niat pindah aset asalnya diteruskan (dua buku sekaligus, `fixed_asset_transfer_service`)."""
+    if asset.get("funding_source") == "antar_pt" and (asset.get("transfer_from") or {}).get("asset_id"):
+        from services.fixed_asset_transfer_service import resume_transfer
+        await resume_transfer(asset, actor)
+        return
     await complete_acquisition(asset, actor, raise_on_fail=True)
 
 
@@ -764,183 +766,10 @@ async def resume_disposal(a: Dict[str, Any], actor: Optional[Dict[str, Any]] = N
     await _finish_disposal(a, intent, await _durable_disposal(a, intent))
 
 
+# ── Pindah antar-PT: `services/fixed_asset_transfer_service.py` (PK-23 · FY-04) ─────────────────────────────────────
+
+
 # ── Ringkasan KPI ────────────────────────────────────────────────────────────
-async def transfer_to_entity(asset_id: str, payload: Dict[str, Any],
-                             actor: Dict[str, Any]) -> Dict[str, Any]:
-    """FASE E-7 (E7g) — **PINDAH ASET TETAP ANTAR-PT** (keputusan pemilik E7.7).
-
-    Yang dijaga di sini (dan inilah sebabnya bukan sekadar mengganti `entity_id`):
-
-    * **Nilai buku ikut pindah, bukan harga perolehan asli.** Aset lahir kembali di PT
-      penerima dengan harga = harga pindah (bawaan: nilai buku) dan **masa manfaat SISA**,
-      supaya penyusutannya tidak dimulai dari awal (itu akan mengecilkan beban bertahun-tahun).
-    * **Akumulasi penyusutan di PT pengirim dihapus lewat jurnal**, tidak “dibawa” —
-      buku pengirim harus bersih dari aset yang sudah bukan miliknya.
-    * **Laba/rugi pindah dijurnal DAN dieliminasi** di konsolidasi: kalau dijual di atas
-      nilai buku ke PT sendiri, laba itu tidak nyata bagi grup.
-    * Aset lama TIDAK dihapus (append-only) → status `transferred` + jejak `transfer`.
-
-    Jurnalnya (dua buku):
-        pengirim : Dr Akum.Penyusutan + Dr IC-AR (harga) [+ Dr Rugi] / Cr Aset (perolehan)
-                   [+ Cr Laba Pelepasan]
-        penerima : Dr Aset (harga) / Cr IC-AP (harga)
-    """
-    from services import interco_money_service as money
-
-    a = await db.fin_fixed_assets.find_one({"id": asset_id}, {"_id": 0})
-    if not a:
-        raise ValueError("Aset tetap tidak ditemukan.")
-    if a.get("status") == "disposed":
-        raise ValueError("Aset sudah dilepas (disposed) — tidak bisa dipindahkan.")
-    if (a.get("transfer") or {}).get("to_entity_id"):
-        raise ValueError(
-            f"Aset ini sudah pernah dipindahkan ke badan usaha lain "
-            f"({(a.get('transfer') or {}).get('to_entity_name', '')}) — yang aktif sekarang "
-            f"adalah aset penggantinya di badan usaha itu.")
-    await _assert_usable(a)                  # PK-23 (FY-01, FY-05) — belum berjurnal / sedang diproses
-    await _assert_no_open_depreciation(a)
-    from_ent = a.get("entity_id") or DEFAULT_ENTITY_ID
-    to_ent = (payload.get("to_entity_id") or "").strip()
-    snaps = await money.assert_pair(from_ent, to_ent, what="Pindah aset tetap antar-PT")
-    reason = (payload.get("reason") or "").strip()
-    if len(reason) < 5:
-        raise ValueError(
-            "Alasan pindah wajib diisi (minimal 5 huruf) — pemindahan aset antar badan "
-            "hukum harus bisa dijelaskan ke auditor & pemeriksa pajak.")
-
-    cost = round(float(a.get("acquisition_cost") or 0), 2)
-    accum = round(float(a.get("accumulated_depreciation") or 0), 2)
-    book = round(cost - accum, 2)
-    price = round(float(payload.get("transfer_price") or 0), 2) or book
-    if price <= 0:
-        raise ValueError("Harga pindah harus lebih dari 0 (atau kosongkan untuk memakai "
-                         "nilai buku).")
-    gain = round(price - book, 2)
-    tdate = (payload.get("transfer_date") or now_iso())[:10]
-    life_left = max(int(a.get("useful_life_months") or 0) - int(a.get("depreciated_months") or 0), 1)
-    salvage_new = round(min(float(a.get("salvage_value") or 0), max(price - 1, 0.0)), 2)
-
-    # (1) Aset baru di PT penerima — masa manfaat SISA, akumulasi mulai nol.
-    new_doc = await create_asset({
-        "name": a.get("name", ""), "category": a.get("category", ""),
-        "acquisition_cost": price, "acquisition_date": tdate,
-        "useful_life_months": life_left, "salvage_value": salvage_new,
-        "entity_id": to_ent, "gl_account_asset": a.get("gl_account_asset"),
-        "funding_source": "antar_pt",   # PK-23 — dibayar lewat utang antar-PT (hanya dari pindah aset)
-        "notes": (f"Pindah dari {snaps['a']['name']} ({a.get('number')}) pada {tdate}. "
-                  f"Nilai buku saat pindah {book} · harga pindah {price} · "
-                  f"masa manfaat sisa {life_left} bulan. Alasan: {reason}"),
-    }, actor, entity_id=to_ent, internal=True)
-
-    # (2) Jurnal dua buku (pengirim menghapus aset + akumulasi; penerima mencatat aset).
-    lines_from: List[Dict[str, Any]] = []
-    if accum > EPS:
-        lines_from.append({"account_code": a.get("gl_account_acc_dep", gl_service.ACC_FA_ACCUM_DEP),
-                           "debit": accum, "credit": 0.0,
-                           "description": f"Hapus akumulasi penyusutan {a.get('number')}"})
-    lines_from.append({"account_code": gl_service.ACC_IC_AR, "debit": price, "credit": 0.0,
-                       "description": f"Piutang antar-PT pindah aset ke {snaps['b']['name']}"})
-    if gain < -EPS:
-        lines_from.append({"account_code": gl_service.ACC_FA_LOSS, "debit": round(-gain, 2),
-                           "credit": 0.0, "description": f"Rugi pindah aset {a.get('number')}"})
-    lines_from.append({"account_code": a.get("gl_account_asset", DEFAULT_ASSET_ACC),
-                       "debit": 0.0, "credit": cost,
-                       "description": f"Hapus aset {a.get('number')} (harga perolehan)"})
-    if gain > EPS:
-        lines_from.append({"account_code": gl_service.ACC_FA_GAIN, "debit": 0.0,
-                           "credit": gain,
-                           "description": f"Laba pindah aset {a.get('number')} (dieliminasi di grup)"})
-    await gl_service.post_paired_entry(
-        source_type="fixed_asset_transfer", source_id=f"{asset_id}:from",
-        entity_id=from_ent, lines=lines_from,
-        label=f"Pindah aset {a.get('number')} → {snaps['b']['name']}", date=tdate)
-    # Sisi penerima: `create_asset` sudah menjurnal Dr Aset / Cr <funding=IC-AP>.
-
-    # (3) Jejak di aset lama (append-only) + saldo pasangan PT + eliminasi konsolidasi.
-    transfer = {
-        "from_entity_id": from_ent, "from_entity_name": snaps["a"]["name"],
-        "to_entity_id": to_ent, "to_entity_name": snaps["b"]["name"],
-        "transfer_date": tdate, "book_value": book, "price": price, "gain": gain,
-        "reason": reason, "new_asset_id": new_doc["id"], "new_asset_number": new_doc["number"],
-        "useful_life_left_months": life_left,
-        "settled": False, "settled_at": "", "cash_txn_ids": [],
-        "by": actor.get("name", ""), "at": now_iso(),
-    }
-    await db.fin_fixed_assets.update_one({"id": asset_id}, {"$set": {
-        "status": "transferred", "transfer": transfer,
-        "book_value": 0.0, "updated_at": now_iso()}})
-    await money.refresh_pair_exposure(from_ent, to_ent)
-    await money.sync_non_trade_elimination(
-        source_key=f"asset:{asset_id}", pair_id=asset_id,
-        from_entity=from_ent, to_entity=to_ent, outstanding=price,
-        label=f"pindah aset {a.get('number')} → {new_doc['number']}",
-        extra_note=(f"Laba pindah {gain} ikut dieliminasi karena penjualnya PT sendiri."
-                    if gain > EPS else ""))
-    # Laba pindah antar-PT BUKAN laba grup: dihapus dari laba konsolidasi sekaligus
-    # menurunkan nilai aset yang ikut naik hanya karena berpindah tangan di dalam grup.
-    # Entri ini TIDAK hilang saat utangnya dibayar — ia hidup selama asetnya dipegang.
-    if gain > EPS:
-        await money.sync_non_trade_elimination(
-            source_key=f"asset_gain:{asset_id}", pair_id=asset_id,
-            from_entity=from_ent, to_entity=to_ent, outstanding=gain,
-            label=f"laba pindah aset {a.get('number')} → {new_doc['number']}",
-            accounts=(gl_service.ACC_FA_GAIN,
-                      new_doc.get("gl_account_asset", DEFAULT_ASSET_ACC)),
-            kind_note="laba pindah aset (bukan laba grup)",
-            extra_note=("Harga pindah di atas nilai buku; selisihnya laba internal, jadi "
-                        "dihapus dari laba grup dan dari nilai aset konsolidasi."))
-    return {"source": safe_doc({**a, "status": "transferred", "transfer": transfer}),
-            "new_asset": new_doc, "gain": gain, "book_value": book, "price": price}
-
-
-async def settle_transfer(asset_id: str, actor: Dict[str, Any],
-                          note: str = "") -> Dict[str, Any]:
-    """E7g — bayar utang antar-PT atas aset yang dipindah (uang benar-benar berpindah).
-
-    Dipisah dari pemindahannya karena di lapangan aset sering pindah dulu, uangnya
-    menyusul (atau di-netting). Selama belum dibayar, saldonya tampil sebagai
-    **saldo non-dagang** di papan pasangan PT — bukan hilang.
-    """
-    from services import interco_money_service as money
-
-    a = await db.fin_fixed_assets.find_one({"id": asset_id}, {"_id": 0})
-    if not a:
-        raise ValueError("Aset tetap tidak ditemukan.")
-    tr = a.get("transfer") or {}
-    if not tr.get("to_entity_id"):
-        raise ValueError("Aset ini tidak pernah dipindahkan antar badan usaha.")
-    if tr.get("settled"):
-        raise ValueError("Pembayaran pindah aset ini sudah dicatat.")
-    price = round(float(tr.get("price") or 0), 2)
-    from_ent, to_ent = tr["from_entity_id"], tr["to_entity_id"]
-    cash = await money.twin_cash(
-        out_entity=to_ent, in_entity=from_ent, amount=price,
-        category="pindah aset tetap antar-PT",
-        description=(f"Pembayaran pindah aset {a.get('number')} ke {tr.get('from_entity_name')}"
-                     + (f" — {note}" if note else "")),
-        ref_type="fixed_asset_transfer", ref_id=asset_id, actor=actor.get("name", "system"))
-    await money.twin_je(
-        source_type="fixed_asset_transfer_settlement", pair_id=asset_id, suffix="settle",
-        entity_a=to_ent,
-        lines_a=money.pair_line(gl_service.ACC_IC_AP, gl_service.ACC_KAS_BESAR, price,
-                                f"Bayar pindah aset {a.get('number')}"),
-        entity_b=from_ent,
-        lines_b=money.pair_line(gl_service.ACC_KAS_BESAR, gl_service.ACC_IC_AR, price,
-                                f"Terima pembayaran pindah aset {a.get('number')}"),
-        label=f"Pelunasan pindah aset {a.get('number')}")
-    await db.fin_fixed_assets.update_one({"id": asset_id}, {"$set": {
-        "transfer.settled": True, "transfer.settled_at": now_iso(),
-        "transfer.settled_by": actor.get("name", ""),
-        "transfer.cash_txn_ids": [cash["out"]["id"], cash["in"]["id"]],
-        "updated_at": now_iso()}})
-    await money.refresh_pair_exposure(from_ent, to_ent)
-    await money.sync_non_trade_elimination(
-        source_key=f"asset:{asset_id}", pair_id=asset_id, from_entity=from_ent,
-        to_entity=to_ent, outstanding=0.0, label=f"pindah aset {a.get('number')}")
-    return {"asset_id": asset_id, "paid": price,
-            "cash": [cash["out"]["number"], cash["in"]["number"]]}
-
-
 async def summary(scope: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
     rows = await db.fin_fixed_assets.find(dict(scope or {}), {"_id": 0}).to_list(5000)
     # FASE E-7 (E7g) — aset yang SUDAH PINDAH ke badan usaha lain BUKAN milik badan usaha

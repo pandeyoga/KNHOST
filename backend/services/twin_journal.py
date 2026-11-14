@@ -1,7 +1,8 @@
 """PK-06 — Jurnal KEMBAR (dua buku PT) yang utuh dan bisa diulang per sisi (docs/blueprint/02_STANDAR.md §1 P6).
 
 Satu peristiwa antar-PT menerbitkan satu jurnal di tiap PT yang terlibat. Aturannya:
-  * Kunci jurnal tiap sisi = `source_id = f"{base_id}:{side.key}"` (sama dengan kode lama → jurnal lama dikenali).
+  * Kunci jurnal tiap sisi = `source_id = f"{base_id}:{side.key}"` (sama dengan kode lama → jurnal lama dikenali);
+    PK-23: sisi boleh membawa kuncinya sendiri (`TwinSide.source_type` / `source_id`).
   * `preflight_twin` memeriksa SEMUA sisi yang belum berjurnal (akun & periode) tanpa menulis apa pun.
   * `post_twin` menerbitkan sisi yang belum ada, berurutan; gagal → sisi itu `failed` (+ `gl_error`), sisi sesudahnya
     TIDAK dicoba (buku kedua PT tetap sama-sama kosong) dan bertanda "Belum dicoba…". Tidak pernah melempar.
@@ -27,6 +28,15 @@ class TwinSide:
     source_label: str
     status_doc: Tuple[str, str]           # (koleksi, id dokumen) tempat status sisi ini ditulis
     status_suffix: str = ""               # "" → gl_status/gl_error/gl_journal_id; "_payer" → gl_status_payer …
+    # PK-23 — kunci jurnal sisi ini bila BEDA dari pola peristiwa (mis. pindah aset: sisi penerima = jurnal perolehan
+    # `fixed_asset_acquisition` · `{id aset baru}`, kunci lama yang sama dengan Ulang Posting perolehan). Kosong →
+    # `source_type` pemanggil dan `f"{base_id}:{key}"`.
+    source_type: str = ""
+    source_id: str = ""
+
+
+def _kunci(side: "TwinSide", source_type: str, base_id: str) -> Tuple[str, str]:
+    return side.source_type or source_type, side.source_id or f"{base_id}:{side.key}"
 
 
 class TwinJournalError(ValueError):
@@ -62,10 +72,11 @@ async def preflight_twin(*, source_type: str, base_id: str, date: str, sides: Se
     """Periksa tiap sisi yang jurnalnya belum ada. Tidak menulis apa pun. Gagal → `TwinJournalError`."""
     from services import gl_service as gl
     for s in sides:
-        if await _existing(source_type, f"{base_id}:{s.key}"):
+        st, sid = _kunci(s, source_type, base_id)
+        if await _existing(st, sid):
             continue
         try:
-            await gl.preflight_entry(lines=s.lines, entity_id=s.entity_id, date=date, source_type=source_type)
+            await gl.preflight_entry(lines=s.lines, entity_id=s.entity_id, date=date, source_type=st)
         except gl.ClosedPeriodError as exc:
             raise TwinJournalError(f"Jurnal di {await _entity_name(s.entity_id)} belum bisa diterbitkan: {exc}. "
                                    "Tidak ada yang berubah.", side=s.key, entity_id=s.entity_id,
@@ -88,14 +99,15 @@ async def post_twin(*, source_type: str, base_id: str, date: str, sides: Sequenc
             await _mark(s, "failed", error=err)
             hasil[s.key] = {"status": "failed", "journal_id": "", "error": err}
             continue
-        ada = await _existing(source_type, f"{base_id}:{s.key}")
+        st, sid = _kunci(s, source_type, base_id)
+        ada = await _existing(st, sid)
         if ada:
             await _mark(s, "posted", journal_id=ada["id"])
             hasil[s.key] = {"status": "posted", "journal_id": ada["id"], "error": ""}
             continue
         try:
             je = await gl._insert_entry(lines=s.lines, description=s.description, date=date,
-                                        source_type=source_type, source_id=f"{base_id}:{s.key}",
+                                        source_type=st, source_id=sid,
                                         entity_id=s.entity_id, created_by=created_by or "system",
                                         source_label=s.source_label)
             await _mark(s, "posted", journal_id=je.get("id", ""))

@@ -3,41 +3,63 @@
  * Akses admin/manager (permission "fixed_asset"). Sumber: /api/fixed-assets*.
  * GL: Dr 6-6000 Beban Penyusutan / Cr 1-2900 Akumulasi Penyusutan.
  * Disposal: gain/loss = proceeds − nilai buku (append-only; aset → status disposed).
+ *
+ * PK-23 — daftar memakai tabel baku (`data-table head-wrap`, kolom Aksi `col-sticky-end`, token `kn-*`, tombol
+ * `btn-sm`); kartu ringkasan tidak memotong angka (grid 2 → 3+2 → 5, `kpiValueParts`). Tombol Pindah PT & Lepas mati
+ * BERALASAN TERTULIS untuk aset yang sudah dipindahkan, sedang diproses, atau belum berjurnal (server menolak hal yang
+ * sama). Hasil Jalankan Penyusutan menyebut jumlah yang gagal dijurnal + tautan ke Posting Gagal.
  */
 import { apiErrorText } from "../../utils/apiError";
 import KNMonthPicker from "@/components/KNMonthPicker";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   RefreshCw, Building2, Plus, PlayCircle, CalendarClock, PackageMinus,
-  Layers3, TrendingDown, Wallet, Scale, CheckCircle2, Search,
+  Layers3, TrendingDown, Wallet, Scale, CheckCircle2, AlertTriangle, ChevronRight,
 } from "lucide-react";
 import axios, { API } from "../../services/apiClient";
 import ErrorNotice from "../../components/ErrorNotice";
 import EntityGatedButton, { EntityGateNote } from "../../components/EntityGatedButton";   // PK-42 (UX-05)
 import FocusNotice from "../../components/FocusNotice";
+import FilterChips from "../../components/FilterChips";
+import { SearchBox } from "../../components/ListPageParts";
 import useFocusDoc from "../../hooks/useFocusDoc";
 import DesktopOnlyNotice from "../../components/DesktopOnlyNotice";
 import { formatCurrency, formatPeriod } from "../../utils/formatters";
 import { askConfirm } from "../../services/confirmService";
 import {
   AssetStatusPill, FaKpi, AddAssetDialog, ScheduleDialog, DisposeDialog, TransferAssetDialog, fmtDate,
+  assetActionBlock,
 } from "./FixedAssetsParts";
 import useIntentKey from "../../hooks/useIntentKey";
 import { moneyPost } from "../../utils/moneyRequest";
 import { confirmMoney } from "../../utils/moneyConfirm";
 import { entityFullById } from "../../utils/entityLabel";
+import { useAppNav } from "../../context/AppNavContext";
+import { canCurrent } from "../../config/roles";
 
 const thisPeriod = () => new Date().toISOString().slice(0, 7);
+// Saringan daftar (bukan tab): status kepemilikan aset.
+const OWNED = ["active", "fully_depreciated", "transferring", "disposing"];
+const FILTERS = [
+  { key: "all", label: "Semua", match: () => true },
+  { key: "owned", label: "Dimiliki", match: (a) => OWNED.includes(a.status) },
+  { key: "transferred", label: "Pindah PT", match: (a) => a.status === "transferred" },
+  { key: "disposed", label: "Dilepas", match: (a) => a.status === "disposed" },
+];
 
 export default function FixedAssetsView({ selectedEntity, entities = [], focusDoc, onClearFocus }) {
+  const { go } = useAppNav();
   const [assets, setAssets] = useState([]);
   const [summary, setSummary] = useState(null);
   const [meta, setMeta] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [loaded, setLoaded] = useState(false);
   const [busy, setBusy] = useState("");
   const [error, setError] = useState("");
   const [msg, setMsg] = useState("");
+  const [depResult, setDepResult] = useState(null);       // PK-23 — hasil penyusutan yang punya kegagalan
   const [q, setQ] = useState("");
+  const [filter, setFilter] = useState("all");
   const [period, setPeriod] = useState(thisPeriod());
   const [showAdd, setShowAdd] = useState(false);
   const [scheduleFor, setScheduleFor] = useState(null);   // detail aset (schedule)
@@ -52,6 +74,7 @@ export default function FixedAssetsView({ selectedEntity, entities = [], focusDo
   const disposeIntent = useIntentKey("fadsp");
   const transferIntent = useIntentKey("fatrf");
   const settleIntent = useIntentKey("fastl");
+  const canSeeFailures = canCurrent("accounting", "view");
 
   async function submitTransfer({ to_entity_id, transfer_price, reason }) {
     if (!transferFor) return;
@@ -68,6 +91,7 @@ export default function FixedAssetsView({ selectedEntity, entities = [], focusDo
       await load();
     } catch (e) {
       setError(apiErrorText(e, "Gagal memindahkan aset."));
+      await load();   // PK-23 — pindah yang tertahan di jurnal tampil sebagai "Sedang Dipindah"
     } finally { setBusy(""); }
   }
 
@@ -121,6 +145,7 @@ export default function FixedAssetsView({ selectedEntity, entities = [], focusDo
       setSummary(sm.data || null);
       setMeta(mt.data || null);
       setError("");
+      setLoaded(true);
     } catch (e) {
       setError(apiErrorText(e, "Gagal memuat data aset tetap."));
     } finally {
@@ -152,7 +177,8 @@ export default function FixedAssetsView({ selectedEntity, entities = [], focusDo
   }
 
   // G1-25 — aset yang masih bisa disusutkan + perkiraan beban sebulan (garis lurus) untuk dialog konfirmasi.
-  const depreciable = useMemo(() => assets.filter((a) => !["disposed", "transferred"].includes(a.status)
+  // PK-23 — hanya aset aktif yang jurnal perolehannya terbit (server melewati yang lain beserta alasannya).
+  const depreciable = useMemo(() => assets.filter((a) => a.status === "active" && !assetActionBlock(a)
     && Number(a.depreciated_months || 0) < Number(a.useful_life_months || 0)), [assets]);
   const estMonthly = useMemo(() => depreciable.reduce((s, a) => s
     + Math.max(0, Number(a.acquisition_cost || 0) - Number(a.salvage_value || 0)) / Math.max(1, Number(a.useful_life_months || 1)), 0),
@@ -169,12 +195,16 @@ export default function FixedAssetsView({ selectedEntity, entities = [], focusDo
       confirmLabel: "Jalankan Penyusutan",
     });
     if (!ok) return;
-    setBusy("run");
+    setBusy("run"); setDepResult(null);
     try {
       const body = { period, entity_id: entParam };
       const res = await runIntent.send(body, (k) => moneyPost(`${API}/fixed-assets/run-depreciation`, body, k));
       const d = res.data || {};
-      notify(`Penyusutan ${d.period}: ${d.posted} aset diposting (${formatCurrency(d.total_amount)}), ${d.skipped} dilewati.`);
+      const gagal = (d.failed || []).length;
+      const teks = `Penyusutan ${formatPeriod(d.period)}: ${d.posted} aset dijurnal (${formatCurrency(d.total_amount)}), `
+        + `${d.skipped} dilewati${gagal ? `, ${gagal} gagal dijurnal` : ""}.`;
+      if (gagal) setDepResult({ text: teks, failed: d.failed });
+      else notify(teks);
       await load();
     } catch (e) {
       setError(apiErrorText(e, "Gagal menjalankan penyusutan."));
@@ -201,7 +231,7 @@ export default function FixedAssetsView({ selectedEntity, entities = [], focusDo
         (k) => moneyPost(`${API}/fixed-assets/${disposeFor.id}/dispose`, body, k));
       const d = res.data?.disposal || {};
       const label = d.result === "gain" ? "Laba" : d.result === "loss" ? "Rugi" : "Impas";
-      notify(`${res.data?.number || "Aset"} dilepas. ${label} pelepasan ${formatCurrency(Math.abs(d.gain_loss || 0))} · JE ${d.je_number || "—"}.`);
+      notify(`${res.data?.number || "Aset"} dilepas. ${label} pelepasan ${formatCurrency(Math.abs(d.gain_loss || 0))} · Jurnal ${d.je_number || "—"}.`);
       setDisposeFor(null);
       await load();
       return true;
@@ -211,11 +241,14 @@ export default function FixedAssetsView({ selectedEntity, entities = [], focusDo
     } finally { setBusy(""); }
   }
 
+  const counts = useMemo(() => Object.fromEntries(FILTERS.map((f) => [f.key, assets.filter(f.match).length])),
+    [assets]);
   const rows = useMemo(() => {
     const term = q.trim().toLowerCase();
-    if (!term) return assets;
-    return assets.filter((a) => `${a.number} ${a.name} ${a.category}`.toLowerCase().includes(term));
-  }, [assets, q]);
+    const f = FILTERS.find((x) => x.key === filter) || FILTERS[0];
+    return assets.filter((a) => f.match(a)
+      && (!term || `${a.number} ${a.name} ${a.category}`.toLowerCase().includes(term)));
+  }, [assets, q, filter]);
 
   const s = summary || {};
   // PK-44 (IA-10) — tautan dokumen (Jejak Dokumen / rincian jurnal penyusutan) membuka rincian aset ber-id itu.
@@ -223,76 +256,98 @@ export default function FixedAssetsView({ selectedEntity, entities = [], focusDo
     setScheduleFor((await axios.get(`${API}/fixed-assets/${id}`)).data || null);
   }, onClearFocus);
 
+  const toneOf = (v, tone) => (Number(v || 0) === 0 ? "text-kn-text-2" : tone);
   return (
     <div data-testid="fixed-assets-view">
       {/* Fase 3 · P4 (L-04 kelas C) — akuntansi aset: cukup pemberitahuan di HP, layar tetap bisa dipakai. */}
       <DesktopOnlyNotice testId="fa-desktop-notice" what="Aset Tetap" />
-      {/* KPI ringkasan */}
-      <div className="grid grid-cols-2 lg:grid-cols-5 gap-3 mb-3">
+      {/* KPI ringkasan — PK-23: 2 kolom (HP) → 3+2 (≥768 px, termasuk 1024) → 5 sebaris (≥1536 px); angka tidak
+          dipotong ("Rp" saja yang boleh turun baris). */}
+      <div className="grid grid-cols-2 md:grid-cols-3 2xl:grid-cols-5 gap-3 mb-3">
         <FaKpi testId="summary-count" label="Jumlah Aset" icon={Layers3}
           value={`${s.count || 0}`}
           hint={`${s.active || 0} dimiliki · ${s.transferred || 0} pindah PT · ${s.disposed || 0} dilepas`} />
         <FaKpi testId="summary-gross-cost" label="Nilai Perolehan" icon={Building2}
-          value={formatCurrency(s.gross_cost)} hint="aset yang MASIH dimiliki (gross)" />
+          value={formatCurrency(s.gross_cost)} hint="aset yang masih dimiliki" />
         <FaKpi testId="summary-accumulated" label="Akumulasi Penyusutan" icon={TrendingDown}
-          value={formatCurrency(s.accumulated_depreciation)} tone="text-[#B45309]" hint="akun Akumulasi Penyusutan" />
+          value={formatCurrency(s.accumulated_depreciation)} tone={toneOf(s.accumulated_depreciation, "text-kn-warning-text")}
+          hint="akun Akumulasi Penyusutan" />
         <FaKpi testId="summary-net-book-value" label="Nilai Buku (Net)" icon={Wallet}
-          value={formatCurrency(s.net_book_value)} tone="text-[#1B7F4B]" hint="perolehan − akumulasi" />
+          value={formatCurrency(s.net_book_value)} tone={toneOf(s.net_book_value, "text-kn-success-text")}
+          hint="perolehan − akumulasi" />
         {(s.transferred || 0) > 0 ? (
           <FaKpi testId="summary-transferred" label="Pindah ke PT Lain" icon={Building2}
-            value={formatCurrency(s.transferred_book_value)} tone="text-[#0058CC]"
+            value={formatCurrency(s.transferred_book_value)} tone="text-kn-action"
             hint={(s.transferred_unsettled || 0) > 0
               ? `${s.transferred} aset · ${s.transferred_unsettled} belum dibayar`
               : `${s.transferred} aset · semua sudah dibayar`} />
         ) : (
           <FaKpi testId="summary-disposal-gain-loss" label="Laba/Rugi Pelepasan" icon={Scale}
             value={formatCurrency(s.disposal_gain_loss)}
-            tone={(s.disposal_gain_loss || 0) < 0 ? "text-[#C0392B]" : "text-[#1B7F4B]"}
-            hint="akum. disposal" />
-        )}      </div>
+            tone={toneOf(s.disposal_gain_loss, (s.disposal_gain_loss || 0) < 0 ? "text-kn-danger-text" : "text-kn-success-text")}
+            hint="akumulasi pelepasan" />
+        )}
+      </div>
 
       {/* Kontrol penyusutan */}
-      <div className="section-card mb-3">
-        <div className="section-body py-3 flex flex-wrap items-end gap-3">
-          <div className="flex items-center gap-2 mr-auto">
-            <div className="w-9 h-9 rounded-lg bg-[#EAF1FF] flex items-center justify-center">
-              <CalendarClock size={17} className="text-[#0058CC]" />
+      <div className="section-card section-pad mb-3">
+        <div className="flex flex-wrap items-end gap-3">
+          <div className="flex items-center gap-2 mr-auto min-w-0">
+            <div className="w-9 h-9 rounded-lg bg-kn-action-soft flex items-center justify-center shrink-0">
+              <CalendarClock size={17} className="text-kn-action" aria-hidden="true" />
             </div>
-            <div>
-              <p className="text-[12px] font-bold text-[#1C1C1E]">Jalankan Penyusutan Bulanan</p>
-              <p className="text-[11px] text-[#8E8E93]">Metode garis lurus; aman dijalankan ulang (satu kali per aset per periode). Dicatat ke Beban Penyusutan / Akumulasi Penyusutan.</p>
+            <div className="min-w-0">
+              <p className="text-fs-13 font-bold text-kn-text">Jalankan Penyusutan Bulanan</p>
+              <p className="text-fs-12 text-kn-text-2">Metode garis lurus; aman dijalankan ulang (satu kali per aset per periode). Dicatat ke Beban Penyusutan / Akumulasi Penyusutan.</p>
             </div>
           </div>
           <label className="grid gap-1">
-            <span className="text-[10px] font-bold uppercase tracking-wide text-[#8E8E93]">Periode</span>
-            <KNMonthPicker data-testid="fa-period-input" className="w-[170px] text-[12px]" value={period} onChange={setPeriod} />
+            <span className="field-label">Periode</span>
+            <KNMonthPicker data-testid="fa-period-input" className="w-[170px]" value={period} onChange={setPeriod} />
           </label>
-          <button data-testid="run-depreciation-btn" className="primary-button" disabled={busy === "run" || depreciable.length === 0}
-            title={depreciable.length === 0 ? "Tidak ada aset yang perlu disusutkan" : undefined}
-            onClick={runDepreciation}>
-            {busy === "run" ? <RefreshCw size={14} className="animate-spin" /> : <PlayCircle size={14} />}
-            Jalankan Penyusutan
-          </button>
+          <div className="grid gap-1 justify-items-end">
+            <button data-testid="run-depreciation-btn" className="primary-button whitespace-nowrap"
+              disabled={busy === "run" || depreciable.length === 0} onClick={runDepreciation}>
+              {busy === "run" ? <RefreshCw size={14} className="animate-spin" /> : <PlayCircle size={14} />}
+              Jalankan Penyusutan
+            </button>
+            {loaded && depreciable.length === 0 && (
+              <p className="text-fs-12 text-kn-text-2" data-testid="run-depreciation-reason">
+                Tidak ada aset aktif berjurnal yang perlu disusutkan.
+              </p>
+            )}
+          </div>
         </div>
+        {depResult && (
+          <div className="notice-bar warning mt-3" data-testid="fa-dep-failed">
+            <AlertTriangle size={14} aria-hidden="true" />
+            <span>
+              {depResult.text} Gagal: {depResult.failed.map((f) => f.number).join(", ")}.
+              {" "}Jurnalnya tersimpan untuk diulang.
+            </span>
+            {canSeeFailures && (
+              <button type="button" className="link-button whitespace-nowrap" data-testid="fa-dep-failed-open"
+                onClick={() => go("posting-failures")}>
+                Buka Posting Gagal <ChevronRight size={12} aria-hidden="true" />
+              </button>
+            )}
+            <button type="button" onClick={() => setDepResult(null)} aria-label="Tutup">×</button>
+          </div>
+        )}
       </div>
 
       {/* Daftar aset */}
       <div className="section-card">
         <div className="section-head">
-          <div className="flex items-center gap-2">
-            <Building2 size={16} className="text-[#0058CC]" />
+          <div className="flex items-center gap-2 min-w-0">
+            <Building2 size={16} className="text-kn-action" aria-hidden="true" />
             <h2 data-testid="fixed-assets-title" className="whitespace-nowrap">Daftar Aset Tetap</h2>
-            <span className="whitespace-nowrap text-[11px] text-[#9A9BA3]">{rows.length} aset</span>
+            <span className="whitespace-nowrap text-fs-12 text-kn-text-2">{rows.length} aset</span>
           </div>
-          <div className="flex flex-wrap items-center gap-2 ml-auto">
-            <div className="relative">
-              <Search size={13} className="absolute left-2 top-1/2 -translate-y-1/2 text-[#9A9BA3]" />
-              <input data-testid="fa-search" className="field !pl-7 !py-1 !text-[12px]" placeholder="Cari nomor / nama..."
-                value={q} onChange={(e) => setQ(e.target.value)} />
-            </div>
+          <div className="flex items-center gap-2 ml-auto">
             <EntityGatedButton selectedEntity={selectedEntity} what="menambah aset tetap" data-testid="add-asset-btn"
               hint={false} aria-describedby="add-asset-btn-scope-note"
-              className="primary-button" onClick={() => { setError(""); setShowAdd(true); }}>
+              className="primary-button btn-sm whitespace-nowrap" onClick={() => { setError(""); setShowAdd(true); }}>
               <Plus size={14} /> Tambah Aset
             </EntityGatedButton>
             <button data-testid="fa-refresh" className="icon-button" onClick={load} aria-label="Muat ulang">
@@ -301,8 +356,13 @@ export default function FixedAssetsView({ selectedEntity, entities = [], focusDo
           </div>
         </div>
         <div className="section-body">
-          {/* PK-42 — kepala kartu sudah berisi judul, jumlah, kotak cari, dan dua tombol: alasan di bilah sendiri. */}
+          {/* PK-42 — kepala kartu hanya judul, jumlah, dan dua tombol; alasan, cari, saringan di badan. */}
           <EntityGateNote selectedEntity={selectedEntity} what="menambah aset tetap" testId="add-asset-btn-scope-note" />
+          <SearchBox testId="fa-search" value={q} onChange={setQ} placeholder="Cari nomor / nama / kategori…">
+            <FilterChips testId="fa-filter" value={filter} onChange={(k) => setFilter(k || "all")} ariaLabel="Status aset"
+              options={FILTERS.map((f) => ({ key: f.key, label: f.label, count: counts[f.key],
+                hidden: f.key !== "all" && f.key !== filter && !counts[f.key] }))} />
+          </SearchBox>
           <ErrorNotice message={error} onRetry={load} onDismiss={() => setError("")} testId="fixed-assets-error" />
           <FocusNotice {...fokus} testId="fa-focus-notice" />
           {msg && (
@@ -312,96 +372,105 @@ export default function FixedAssetsView({ selectedEntity, entities = [], focusDo
             </div>
           )}
 
-          {loading ? (
+          {loading && !loaded ? (
             <div className="grid gap-2" data-testid="fa-loading">
-              {[0, 1, 2, 3].map((i) => <div key={i} className="h-10 bg-[#F5F5F7] rounded animate-pulse" />)}
+              {[0, 1, 2, 3].map((i) => <div key={i} className="h-10 bg-kn-neutral-soft rounded animate-pulse" />)}
             </div>
-          ) : rows.length === 0 ? (
-            <div className="py-12 text-center text-[12px] text-[#8E8E93]" data-testid="fa-empty">
-              <Building2 size={26} className="mx-auto mb-2 text-gray-300" />
-              {q ? "Tidak ada aset yang cocok dengan pencarian."
-                : "Belum ada aset tetap terdaftar. Klik \u201cTambah Aset\u201d untuk registrasi aset pertama."}
+          ) : !loaded ? null : rows.length === 0 ? (
+            <div className="py-12 text-center text-fs-12 text-kn-text-2" data-testid="fa-empty">
+              <Building2 size={26} className="mx-auto mb-2 text-kn-text-2" aria-hidden="true" />
+              {q || filter !== "all" ? "Tidak ada aset yang cocok dengan pencarian atau saringan."
+                : "Belum ada aset tetap terdaftar. Klik “Tambah Aset” untuk registrasi aset pertama."}
             </div>
           ) : (
-            <div className="overflow-auto rounded-md border border-[#EFF0F2]">
-              <table className="w-full text-[12px]" data-testid="fa-table">
+            <div className="table-wrap">
+              <table className="data-table head-wrap" data-testid="fa-table">
                 <thead>
-                  <tr className="text-left text-[10px] font-bold uppercase text-[#8E8E93] bg-[#FAFBFC] border-b border-[#EFF0F2]">
-                    <th className="px-3 py-2">Nomor</th>
-                    <th className="px-3 py-2">Nama Aset</th>
-                    <th className="px-3 py-2">Kategori</th>
-                    <th className="px-3 py-2 text-right">Perolehan</th>
-                    <th className="px-3 py-2 text-right">Akumulasi</th>
-                    <th className="px-3 py-2 text-right">Nilai Buku</th>
-                    <th className="px-3 py-2 text-center">Status</th>
-                    <th className="px-3 py-2 text-right col-sticky-end">Aksi</th>
+                  <tr>
+                    <th>Nomor</th>
+                    <th>Nama Aset</th>
+                    <th>Kategori</th>
+                    <th className="text-right">Harga Perolehan</th>
+                    <th className="text-right">Akumulasi Penyusutan</th>
+                    <th className="text-right">Nilai Buku</th>
+                    <th>Status</th>
+                    <th className="col-sticky-end text-right">Aksi</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {rows.map((a) => (
-                    <tr key={a.id} data-testid={`asset-row-${a.id}`} className="border-b border-[#F5F5F7] last:border-0 hover:bg-[#FAFBFF]">
-                      <td className="px-3 py-2 font-semibold text-[#0058CC] whitespace-nowrap">{a.number}</td>
-                      <td className="px-3 py-2">
-                        <p className="font-semibold text-[#1C1C1E]">{a.name}</p>
-                        <p className="text-[10px] text-[#9A9BA3]">
-                          {fmtDate(a.acquisition_date)} · {a.useful_life_months} bln · {entityName(a.entity_id)}
-                          {a.gl_account_asset ? ` · ${a.gl_account_asset}` : ""}
-                        </p>
-                      </td>
-                      <td className="px-3 py-2 text-[#3C3C43]">{a.category}</td>
-                      <td className="px-3 py-2 text-right tabular-nums">{formatCurrency(a.acquisition_cost)}</td>
-                      <td className="px-3 py-2 text-right tabular-nums text-[#B45309]">
-                        {formatCurrency(a.accumulated_depreciation)}
-                        <span className="block text-[10px] text-[#9A9BA3]">{a.depreciated_months || 0}/{a.useful_life_months} bln</span>
-                      </td>
-                      <td className="px-3 py-2 text-right tabular-nums font-bold" data-testid={`asset-bv-${a.id}`}>
-                        {formatCurrency(a.book_value)}
-                      </td>
-                      <td className="px-3 py-2 text-center"><AssetStatusPill asset={a} /></td>
-                      <td className="px-3 py-2 text-right whitespace-nowrap col-sticky-end">
-                        {/* Tombol boleh turun baris (bukan labelnya) supaya tabel muat di 1280 px tanpa menutup kolom Status. */}
-                        <div className="flex flex-wrap items-center gap-2 justify-end max-w-[210px] ml-auto">
-                          <button data-testid={`schedule-btn-${a.id}`} className="secondary-button !py-1 !px-2 text-[11px]"
-                            onClick={() => openSchedule(a)}>
-                            <CalendarClock size={12} /> Jadwal
-                          </button>
-                          {a.status !== "disposed" && a.status !== "transferred" && (
-                            <>
-                              <button data-testid={`transfer-btn-${a.id}`} className="secondary-button !py-1 !px-2 text-[11px]"
-                                title="Pindahkan aset ini ke badan usaha lain di dalam grup (nilai buku + masa manfaat sisa ikut pindah)"
-                                onClick={() => { setError(""); setTransferFor(a); }}>
-                                <Building2 size={12} /> Pindah PT
-                              </button>
-                              <button data-testid={`dispose-btn-${a.id}`} className="secondary-button !py-1 !px-2 text-[11px]"
-                                style={{ color: "#B4231F", borderColor: "#F0B5AE" }} onClick={() => { setError(""); setDisposeFor(a); }}>
-                                <PackageMinus size={12} /> Lepas
-                              </button>
-                            </>
-                          )}
-                          {a.status === "transferred" && a.transfer && (
-                            <span data-testid={`transferred-flag-${a.id}`} className="text-[10.5px] text-[#6B219A]"
-                              title={`Dipindah ke ${a.transfer.to_entity_name} pada ${a.transfer.transfer_date} — aset penggantinya ${a.transfer.new_asset_number}`}>
-                              → {a.transfer.to_entity_name} ({a.transfer.new_asset_number})
-                              {!a.transfer.settled && (
-                                <button data-testid={`settle-transfer-${a.id}`} className="btn-primary btn-xs ml-2"
-                                  disabled={busy === `settle-${a.id}`} onClick={() => settleTransfer(a)}>
-                                  Catat pembayaran
+                  {rows.map((a) => {
+                    const block = assetActionBlock(a);
+                    const tr = a.transfer || {};
+                    return (
+                      <tr key={a.id} data-testid={`asset-row-${a.id}`}>
+                        <td className="font-mono whitespace-nowrap font-semibold text-kn-action">{a.number}</td>
+                        <td>
+                          <p className="font-semibold text-kn-text">{a.name}</p>
+                          <p className="text-fs-12 text-kn-text-2">
+                            {fmtDate(a.acquisition_date)} · {a.useful_life_months} bln · {entityName(a.entity_id)}
+                            {a.gl_account_asset ? ` · ${a.gl_account_asset}` : ""}
+                          </p>
+                        </td>
+                        <td className="text-kn-neutral">{a.category}</td>
+                        <td className="text-right tabular-nums">{formatCurrency(a.acquisition_cost)}</td>
+                        <td className="text-right tabular-nums text-kn-warning-text">
+                          {formatCurrency(a.accumulated_depreciation)}
+                          <span className="block text-fs-12 text-kn-text-2">{a.depreciated_months || 0}/{a.useful_life_months} bln</span>
+                        </td>
+                        <td className="text-right tabular-nums font-bold" data-testid={`asset-bv-${a.id}`}>
+                          {formatCurrency(a.book_value)}
+                        </td>
+                        <td><AssetStatusPill asset={a} /></td>
+                        <td className="col-sticky-end">
+                          {/* Tombol boleh turun baris (bukan labelnya) supaya tabel muat di 1280 px; alasan tombol mati
+                              ditulis di bawahnya, tidak hanya di petunjuk. */}
+                          <div className="flex flex-wrap items-center justify-end gap-1.5 max-w-[230px] ml-auto">
+                            <button data-testid={`schedule-btn-${a.id}`} className="secondary-button btn-sm whitespace-nowrap"
+                              onClick={() => openSchedule(a)}>
+                              <CalendarClock size={12} aria-hidden="true" /> Jadwal
+                            </button>
+                            {a.status !== "disposed" && (
+                              <>
+                                <button data-testid={`transfer-btn-${a.id}`} className="secondary-button btn-sm whitespace-nowrap"
+                                  disabled={!!block} aria-describedby={block ? `asset-block-${a.id}` : undefined}
+                                  onClick={() => { setError(""); setTransferFor(a); }}>
+                                  <Building2 size={12} aria-hidden="true" /> Pindah PT
                                 </button>
-                              )}
-                              {a.transfer.settled && <b className="ml-1 text-[#1B7F4B]">· dibayar</b>}
-                            </span>
-                          )}
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
+                                <button data-testid={`dispose-btn-${a.id}`}
+                                  className="secondary-button btn-sm whitespace-nowrap text-kn-danger-text"
+                                  disabled={!!block} aria-describedby={block ? `asset-block-${a.id}` : undefined}
+                                  onClick={() => { setError(""); setDisposeFor(a); }}>
+                                  <PackageMinus size={12} aria-hidden="true" /> Lepas
+                                </button>
+                              </>
+                            )}
+                            {a.status === "transferred" && tr.to_entity_id && !tr.settled && (
+                              <button data-testid={`settle-transfer-${a.id}`} className="primary-button btn-sm whitespace-nowrap"
+                                disabled={busy === `settle-${a.id}`} onClick={() => settleTransfer(a)}>
+                                Catat Pembayaran
+                              </button>
+                            )}
+                            {block && (
+                              <p id={`asset-block-${a.id}`} data-testid={`asset-block-${a.id}`}
+                                className="w-full text-right text-fs-12 text-kn-text-2">
+                                {block}
+                                {a.status === "transferred" && tr.new_asset_number ? ` Aset penggantinya ${tr.new_asset_number}.` : ""}
+                                {a.status === "transferred" && tr.settled ? " Pembayarannya sudah dicatat." : ""}
+                              </p>
+                            )}
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>
           )}
-          <p className="text-[11px] text-[#9A9BA3] mt-2">
-            Metode <b>garis lurus</b>: penyusutan bulanan = (perolehan − nilai residu) / masa manfaat.
-            Perolehan dicatat ke akun aset dengan lawan Kas/Bank. Aset yang dilepas tidak dihapus — statusnya menjadi <i>dilepas</i> dan riwayatnya tetap tersimpan.
+          <p className="text-fs-12 text-kn-text-2 mt-2">
+            Metode <b>garis lurus</b>: penyusutan bulanan = (perolehan − nilai residu) / masa manfaat; bulan terakhir
+            mengambil seluruh sisanya. Perolehan dicatat ke akun aset dengan lawan sesuai sumber dananya. Aset yang dilepas
+            atau dipindah tidak dihapus — statusnya berubah dan riwayatnya tetap tersimpan.
           </p>
         </div>
       </div>

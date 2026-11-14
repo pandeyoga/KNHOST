@@ -240,6 +240,18 @@ async def _retry_asset_depreciation(doc: Dict[str, Any], actor: Dict[str, Any]) 
     await repost_depreciation_entry(doc, actor)
 
 
+async def _retry_fixed_asset_transfer(doc: Dict[str, Any], actor: Dict[str, Any]) -> None:
+    """PK-23 — niat pindah aset antar-PT yang jurnal kembarnya belum lengkap diteruskan (dua buku)."""
+    from services.fixed_asset_transfer_service import resume_transfer
+    await resume_transfer(doc, actor)
+
+
+async def _retry_fixed_asset_settlement(doc: Dict[str, Any], actor: Dict[str, Any]) -> None:
+    """PK-23 — pembayaran pindah aset yang kasnya tercatat tetapi jurnal kembarnya belum lengkap diteruskan."""
+    from services.fixed_asset_transfer_service import resume_settlement
+    await resume_settlement(doc, actor)
+
+
 async def _retry_fixed_asset_disposal(doc: Dict[str, Any], actor: Dict[str, Any]) -> None:
     """PK-23 — pelepasan yang macet di `disposing` dengan jurnal gagal diselesaikan dari niatnya."""
     from services.fixed_asset_service import resume_disposal
@@ -420,6 +432,30 @@ KINDS: Dict[str, Dict[str, Any]] = {
         "failed_at_field": "disposal_gl_failed_at", "doc_type": "",
         "link": {"view": "fixed-assets", "tab": "", "focus_type": "fixed_asset"},
         "posters": ("post_asset_disposal",), "retry": _retry_fixed_asset_disposal},
+    # Pindah antar-PT: jurnal kembar lewat `twin_journal.post_twin` (PK-06). Sisi pengirim di aset lama
+    # (`gl_status_transfer`); sisi penerima = jurnal perolehan aset pengganti (jenis `fixed_asset`). Pembayaran: satu
+    # baris per sisi (pembayar = PT penerima aset, penerima uang = PT pengirim).
+    "fixed_asset_transfer": {
+        "label": "Pindah Aset Antar-PT", "collection": "fin_fixed_assets",
+        "failed_query": {"gl_status_transfer": "failed"}, "entity_field": "entity_id", "number_field": "number",
+        "amount_field": "transfer.intent.plan.price", "status_field": "gl_status_transfer",
+        "error_field": "gl_error_transfer", "failed_at_field": "updated_at", "doc_type": "",
+        "link": {"view": "fixed-assets", "tab": "", "focus_type": "fixed_asset"},
+        "posters": (), "retry": _retry_fixed_asset_transfer},
+    "fixed_asset_settle_payer": {
+        "label": "Bayar Pindah Aset (pembayar)", "collection": "fin_fixed_assets",
+        "failed_query": {"gl_status_settle_payer": "failed"}, "entity_field": "transfer.to_entity_id",
+        "number_field": "number", "amount_field": "transfer.price", "status_field": "gl_status_settle_payer",
+        "error_field": "gl_error_settle_payer", "failed_at_field": "updated_at", "doc_type": "",
+        "link": {"view": "fixed-assets", "tab": "", "focus_type": "fixed_asset"},
+        "posters": (), "retry": _retry_fixed_asset_settlement},
+    "fixed_asset_settle_payee": {
+        "label": "Bayar Pindah Aset (penerima)", "collection": "fin_fixed_assets",
+        "failed_query": {"gl_status_settle_payee": "failed"}, "entity_field": "transfer.from_entity_id",
+        "number_field": "number", "amount_field": "transfer.price", "status_field": "gl_status_settle_payee",
+        "error_field": "gl_error_settle_payee", "failed_at_field": "updated_at", "doc_type": "",
+        "link": {"view": "fixed-assets", "tab": "", "focus_type": "fixed_asset"},
+        "posters": (), "retry": _retry_fixed_asset_settlement},
     # ── PK-28 — kliring sisa GR/IR: satu baris panel per unsur `grir_clearings[]` yang gagal ──
     "grir_clearing": {
         "label": "Kliring GR/IR", "collection": "purchase_orders", "failed_query": {"grir_clearings.gl_status": "failed"},

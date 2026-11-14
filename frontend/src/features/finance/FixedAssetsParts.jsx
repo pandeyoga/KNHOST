@@ -11,35 +11,48 @@ import KNDatePicker from "@/components/KNDatePicker";
 import { useState } from "react";
 import {
   X, Plus, RefreshCw, PackageMinus, CalendarClock, TrendingUp, TrendingDown, Building2,
+  CheckCircle2, Hourglass, ArrowRightLeft, Clock,
 } from "lucide-react";
 import { formatCurrency, formatDate, todayWib } from "../../utils/formatters";
 import { parseDecimal } from "../../utils/decimalInput";
 import KNSelect from "../../components/KNSelect";
 import FormModal from "../../components/FormModal";
 import DetailModal from "../../components/DetailModal";
-import JournalStatusBadge, { JournalStatusBar, hasJournalBadge } from "../../components/JournalStatusBadge";   // PK-18
+import JournalStatusBadge, {
+  JournalStatusBar, hasJournalBadge, journalStatusLabel,
+} from "../../components/JournalStatusBadge";   // PK-18
 import CashAccountField, { cashAccountBlocked, cashAccountBlockReason } from "../../components/CashAccountField";   // PK-23
 import { entityFullById } from "../../utils/entityLabel";
+import { docStatusLabel } from "../../utils/docStatus";
+import { kpiValueParts } from "./financeShared";
 
 // PK-42 (UX-18) — satu pemformat tanggal WIB bersama ("23 Okt 2026"); dulu zona perangkat & tahun dua angka.
 export const fmtDate = (s) => formatDate(s);
 
-const STATUS_MAP = {
-  active: ["pill-success", "Aktif"],
-  fully_depreciated: ["pill-warning", "Habis Susut"],
-  disposed: ["pill-muted", "Dilepas"],
-  // FASE E-7 (E7g) — aset yang sudah pindah ke badan usaha lain. Tanpa baris ini pil
-  // jatuh ke cadangan "Aktif" (hijau) sehingga layar penjual mengaku masih memegang
-  // aset yang haknya sudah berpindah. Label dibuat DUA KATA karena `.status-pill`
-  // memakai `text-transform: capitalize` — kalimat panjang jadi "Pindah Ke PT Lain".
-  transferred: ["pill-info", "Pindah PT"],
+// PK-23 — status = ikon + teks + warna (KN_37 §8); label lewat `docStatusLabel` (peta lokal didahulukan). Label DUA
+// KATA karena `.status-pill` memakai `text-transform: capitalize`.
+const ASSET_STATUS_LABEL = {
+  active: "Aktif", fully_depreciated: "Habis Susut", disposed: "Dilepas",
+  // FASE E-7 (E7g) — aset yang sudah pindah ke badan usaha lain. Tanpa baris ini pil jatuh ke cadangan "Aktif"
+  // (hijau) sehingga layar penjual mengaku masih memegang aset yang haknya sudah berpindah.
+  transferred: "Pindah PT",
+  transferring: "Sedang Dipindah", disposing: "Sedang Dilepas",   // PK-23 — klaim yang belum selesai
+};
+const STATUS_TONE = {
+  active: ["pill-success", CheckCircle2], fully_depreciated: ["pill-warning", Hourglass],
+  disposed: ["pill-muted", PackageMinus], transferred: ["pill-info", ArrowRightLeft],
+  transferring: ["status-pending", Clock], disposing: ["status-pending", Clock],
 };
 
 export function AssetStatusPill({ asset }) {
-  const [cls, label] = STATUS_MAP[asset?.status] || STATUS_MAP.active;
+  const st = STATUS_TONE[asset?.status] ? asset.status : "active";
+  const [cls, Icon] = STATUS_TONE[st];
   return (
-    <span className="inline-flex flex-col items-center gap-1">
-      <span className={`status-pill ${cls}`} data-testid={`asset-status-${asset?.id}`}>{label}</span>
+    <span className="inline-flex flex-col items-start gap-1">
+      <span className={`status-pill ${cls} inline-flex items-center gap-1 whitespace-nowrap`}
+        data-testid={`asset-status-${asset?.id}`}>
+        <Icon size={12} aria-hidden="true" /> {docStatusLabel(st, ASSET_STATUS_LABEL)}
+      </span>
       {/* PK-18 — jurnal perolehan yang gagal/diproses tampil di daftar; yang terbit cukup di rincian */}
       {["failed", "pending"].includes(asset?.gl_status) && (
         <JournalStatusBadge status={asset.gl_status} error={asset.gl_error} testId={`asset-journal-${asset?.id}`} />
@@ -48,18 +61,36 @@ export function AssetStatusPill({ asset }) {
   );
 }
 
-export function FaKpi({ label, value, hint, icon: Icon, tone = "", testId }) {
+/** PK-23 — alasan aksi Pindah PT / Lepas tidak tersedia (sama dengan penolakan server); "" = tersedia. */
+export function assetActionBlock(a) {
+  const tr = a?.transfer || {};
+  if (a?.status === "transferred") return `Aset ini sudah dipindahkan ke ${tr.to_entity_name || "PT lain"}.`;
+  if (a?.status === "transferring") {
+    return `Pindah ke ${tr.intent?.plan?.to_entity_name || "PT lain"} sedang diproses; bila jurnalnya gagal, ulangi dari `
+      + "Keuangan › Posting Gagal.";
+  }
+  if (a?.status === "disposing") return "Pelepasan aset ini sedang diproses.";
+  if (["failed", "pending"].includes(a?.gl_status)) {
+    return "Jurnal perolehan belum terbit — ulangi di Keuangan › Posting Gagal.";
+  }
+  return "";
+}
+
+export function FaKpi({ label, value, hint, icon: Icon, tone = "text-kn-text", testId }) {
+  // PK-23 — angka tidak pernah dipotong: tanpa `truncate`; hanya awalan "Rp" yang boleh turun baris
+  // (`kpiValueParts`, sama dengan KpiCard Keuangan). Di HP ikon disembunyikan supaya angka mendapat ruang.
   return (
-    <div className="section-card" data-testid={testId}>
-      <div className="section-body flex items-center gap-3 py-3">
-        <div className="w-9 h-9 rounded-lg bg-[#EAF1FF] flex items-center justify-center shrink-0">
-          <Icon size={17} className="text-[#0058CC]" />
+    <div className="section-card section-pad" data-testid={testId}>
+      <div className="flex items-start gap-3">
+        <div className="hidden w-9 h-9 rounded-lg bg-kn-action-soft items-center justify-center shrink-0 sm:flex">
+          <Icon size={17} className="text-kn-action" aria-hidden="true" />
         </div>
         <div className="min-w-0">
-          <p className="text-[10px] font-bold uppercase tracking-wide text-[#8E8E93]">{label}</p>
-          <p className={`text-[16px] font-bold tabular-nums truncate ${tone || "text-[#1C1C1E]"}`}
-            data-testid={`${testId}-value`}>{value}</p>
-          {hint && <p className="text-[10px] text-[#9A9BA3] truncate">{hint}</p>}
+          <p className="text-fs-12 font-bold uppercase tracking-wide text-kn-text-2">{label}</p>
+          <p className={`text-fs-16 font-bold tabular-nums ${tone}`} data-testid={`${testId}-value`}>
+            {kpiValueParts(value)}
+          </p>
+          {hint && <p className="text-fs-12 text-kn-text-2">{hint}</p>}
         </div>
       </div>
     </div>
@@ -245,7 +276,7 @@ export function ScheduleDialog({ asset, loading, onClose }) {
         <div className="flex items-start justify-between gap-2 mb-3">
           <div>
             <h3 className="modal-title flex items-center gap-1.5">
-              <CalendarClock size={16} className="text-[#0058CC]" /> Jadwal Penyusutan · {asset?.number}
+              <CalendarClock size={16} className="text-kn-action" aria-hidden="true" /> Jadwal Penyusutan · {asset?.number}
             </h3>
             <p className="modal-subtitle">
               {asset?.name} · perolehan {formatCurrency(asset?.acquisition_cost)} · residu {formatCurrency(asset?.salvage_value)} ·
@@ -271,41 +302,44 @@ export function ScheduleDialog({ asset, loading, onClose }) {
 
         {loading ? (
           <div className="grid gap-2" data-testid="schedule-loading">
-            {[0, 1, 2, 3, 4].map((i) => <div key={i} className="h-8 bg-[#F5F5F7] rounded animate-pulse" />)}
+            {[0, 1, 2, 3, 4].map((i) => <div key={i} className="h-8 bg-kn-neutral-soft rounded animate-pulse" />)}
           </div>
         ) : schedule.length === 0 ? (
-          <div className="py-8 text-center text-[12px] text-[#8E8E93]" data-testid="schedule-empty">
+          <div className="py-8 text-center text-fs-12 text-kn-text-2" data-testid="schedule-empty">
             Jadwal penyusutan belum tersedia untuk aset ini.
           </div>
         ) : (
           <div className="table-wrap max-h-[46vh] overflow-auto">
-            <table className="data-table" data-testid="schedule-table">
-              <thead className="sticky top-0">
-                <tr className="text-left text-[10px] font-bold uppercase text-[#8E8E93] bg-[#FAFBFC] border-b border-[#EFF0F2]">
-                  <th className="px-3 py-2">Periode</th>
-                  <th className="px-3 py-2 text-right">Penyusutan</th>
-                  <th className="px-3 py-2 text-right">Akumulasi</th>
-                  <th className="px-3 py-2 text-right">Nilai Buku</th>
-                  <th className="px-3 py-2 text-center">Status</th>
-                  <th className="px-3 py-2">Jurnal</th>
+            <table className="data-table head-wrap" data-testid="schedule-table">
+              <thead>
+                <tr>
+                  <th>Periode</th>
+                  <th className="text-right">Penyusutan</th>
+                  <th className="text-right">Akumulasi</th>
+                  <th className="text-right">Nilai Buku</th>
+                  <th>Status</th>
+                  <th>Jurnal</th>
                 </tr>
               </thead>
               <tbody>
                 {schedule.map((r) => {
                   const je = entries.find((e) => e.period === r.period);
+                  // PK-23 — entri yang jurnalnya gagal/diproses BUKAN "terjurnal" (register belum memakainya)
+                  const [cls, Icon, teks] = r.posted ? ["pill-success", CheckCircle2, "Terjurnal"]
+                    : ["failed", "pending"].includes(r.gl_status) ? ["status-pending", Clock, journalStatusLabel(r.gl_status)]
+                      : ["pill-muted", CalendarClock, "Rencana"];
                   return (
-                    <tr key={r.period} data-testid={`schedule-row-${r.period}`}
-                      className={`border-b border-[#F5F5F7] last:border-0 ${r.posted ? "bg-[#F6FBF7]" : ""}`}>
-                      <td className="px-3 py-2 font-semibold text-[#1C1C1E]">{r.period}</td>
-                      <td className="px-3 py-2 text-right tabular-nums">{formatCurrency(r.amount)}</td>
-                      <td className="px-3 py-2 text-right tabular-nums text-[#B45309]">{formatCurrency(r.accumulated)}</td>
-                      <td className="px-3 py-2 text-right tabular-nums font-semibold">{formatCurrency(r.book_value)}</td>
-                      <td className="px-3 py-2 text-center">
-                        <span className={`status-pill ${r.posted ? "pill-success" : "pill-muted"}`}>
-                          {r.posted ? "Terposting" : "Rencana"}
+                    <tr key={r.period} data-testid={`schedule-row-${r.period}`}>
+                      <td className="font-semibold text-kn-text whitespace-nowrap">{r.period}</td>
+                      <td className="text-right tabular-nums">{formatCurrency(r.amount)}</td>
+                      <td className="text-right tabular-nums text-kn-warning-text">{formatCurrency(r.accumulated)}</td>
+                      <td className="text-right tabular-nums font-semibold">{formatCurrency(r.book_value)}</td>
+                      <td>
+                        <span className={`status-pill ${cls} inline-flex items-center gap-1 whitespace-nowrap`}>
+                          <Icon size={12} aria-hidden="true" /> {teks}
                         </span>
                       </td>
-                      <td className="px-3 py-2 text-[11px] text-[#6B6B73]">{je?.je_number || "—"}</td>
+                      <td className="text-fs-12 text-kn-text-2 whitespace-nowrap">{je?.je_number || "—"}</td>
                     </tr>
                   );
                 })}
@@ -360,19 +394,19 @@ export function DisposeDialog({ asset, busy, error = "", onCancel, onSubmit }) {
               placeholder="opsional" onChange={(e) => setNote(e.target.value)} />
           </label>
 
-          <div className={`rounded-md border px-3 py-2.5 ${isLoss ? "bg-[#FCEBEA] border-[#F0B5AE]" : isGain ? "bg-[#E6F6EC] border-[#B9E4C7]" : "bg-[#F7F8FA] border-[#EFF0F2]"}`}>
-            <p className="text-[10px] font-bold uppercase tracking-wide text-[#8E8E93] mb-1">Pratinjau Laba/Rugi Pelepasan</p>
-            <p className="text-[12px] text-[#3C3C43] tabular-nums">
+          <div className={`rounded-md border border-kn-divider px-3 py-2.5 ${isLoss ? "bg-kn-danger-soft" : isGain ? "bg-kn-success-soft" : "bg-kn-neutral-soft"}`}>
+            <p className="text-fs-12 font-bold uppercase tracking-wide text-kn-text-2 mb-1">Pratinjau Laba/Rugi Pelepasan</p>
+            <p className="text-fs-12 text-kn-neutral tabular-nums">
               {formatCurrency(p)} <span className="text-kn-text-2">(nilai jual)</span> − {formatCurrency(bookValue)} <span className="text-kn-text-2">(nilai buku)</span> =
             </p>
-            <p className={`text-[18px] font-bold tabular-nums ${isLoss ? "text-[#C0392B]" : isGain ? "text-[#1B7F4B]" : "text-[#1C1C1E]"}`}
+            <p className={`text-fs-16 font-bold tabular-nums ${isLoss ? "text-kn-danger-text" : isGain ? "text-kn-success-text" : "text-kn-text"}`}
               data-testid="dispose-preview-gainloss">
               {isGain && <TrendingUp size={15} className="inline mr-1" />}
               {isLoss && <TrendingDown size={15} className="inline mr-1" />}
               {formatCurrency(gainLoss)} · {isGain ? "Laba" : isLoss ? "Rugi" : "Impas"}
             </p>
-            <p className="text-[10.5px] text-[#6B6B73] mt-1">
-              JE: Dr 1-2900 Akumulasi {formatCurrency(asset?.accumulated_depreciation)} + Dr Kas {formatCurrency(p)}
+            <p className="text-fs-12 text-kn-text-2 mt-1">
+              Jurnal: Dr 1-2900 Akumulasi {formatCurrency(asset?.accumulated_depreciation)} + Dr Kas {formatCurrency(p)}
               {isLoss ? ` + Dr 6-9500 Rugi ${formatCurrency(Math.abs(gainLoss))}` : ""} / Cr {asset?.gl_account_asset} {formatCurrency(asset?.acquisition_cost)}
               {isGain ? ` + Cr 4-9100 Laba ${formatCurrency(gainLoss)}` : ""}
             </p>
@@ -389,40 +423,49 @@ export function TransferAssetDialog({ asset, entities = [], busy, error = "", on
   const [reason, setReason] = useState("");
   const submit = () => onSubmit({ to_entity_id: to, transfer_price: price ? Number(price) : null, reason });
   return (
-    <FormModal open onClose={onCancel} title="Pindah Aset ke Badan Usaha Lain" icon={Building2} size="md"
+    <FormModal open onClose={onCancel} title="Pindah Aset ke PT Lain" icon={Building2} size="md"
       testId="asset-transfer-modal" onSubmit={submit} busy={busy} error={error}
       submitDisabled={!to || reason.trim().length < 5} submitLabel={busy ? "Memproses…" : "Pindahkan Aset"}
       submitTestId="asset-transfer-submit">
-      <p className="text-[12px] leading-relaxed text-[#6B6B73]">
+      <p className="text-fs-12 leading-relaxed text-kn-text-2">
         <b>{asset.number} · {asset.name}</b> — nilai buku sekarang{" "}
         <b>{formatCurrency(asset.book_value)}</b> (akumulasi penyusutan{" "}
         {formatCurrency(asset.accumulated_depreciation)}). Aset akan lahir kembali
-        di badan usaha penerima dengan <b>masa manfaat SISA</b>, akumulasi penyusutan di
-        badan usaha ini dihapus lewat jurnal, dan bila harga pindah di atas nilai buku,
+        di PT penerima dengan <b>masa manfaat SISA</b>, akumulasi penyusutan di
+        PT ini dihapus lewat jurnal, dan bila harga pindah di atas nilai buku,
         labanya <b>dieliminasi di konsolidasi</b> (menjual ke PT sendiri bukan laba grup).
       </p>
       <div className="grid gap-3 mt-3">
         <div>
-          <label className="mb-1 block text-[11px] font-semibold text-[#4A4B53]">Badan Usaha Penerima *</label>
+          <label className="field-label">PT Penerima *</label>
           <KNSelect data-testid="asset-transfer-to" className="field" value={to}
-            onValueChange={setTo} aria-label="Badan usaha tujuan pindah aset"
-            placeholder="— Pilih badan usaha —"
+            onValueChange={setTo} aria-label="PT tujuan pindah aset"
+            placeholder="— Pilih PT —"
             options={(entities || [])
               .filter((en) => en.id !== asset.entity_id && (en.status || "active") === "active")
               .map((en) => ({ value: en.id, label: en.short_name || en.legal_name || en.id }))} />
         </div>
         <div>
-          <label className="mb-1 block text-[11px] font-semibold text-[#4A4B53]">
-            Harga Pindah <span className="font-normal text-[#9A9BA3]">(kosong = nilai buku)</span>
+          <label className="field-label">
+            Harga Pindah <span className="font-normal normal-case text-kn-text-2">(kosong = nilai buku)</span>
           </label>
           <MoneyInput testId="asset-transfer-price" className="field" value={price} onChange={(v) => setPrice(v)} />
         </div>
         <div>
-          <label className="mb-1 block text-[11px] font-semibold text-[#4A4B53]">Alasan Pindah *</label>
+          <label className="field-label">Alasan Pindah *</label>
           <input data-testid="asset-transfer-reason" className="field" value={reason}
             onChange={(e) => setReason(e.target.value)}
-            placeholder="mis. mesin dipakai produksi badan usaha itu mulai bulan depan" />
+            placeholder="mis. mesin dipakai produksi PT itu mulai bulan depan" />
         </div>
+        {(!to || reason.trim().length < 5) && (
+          <p className="text-fs-12 text-kn-text-2" data-testid="asset-transfer-submit-reason">
+            Pindahkan Aset aktif sesudah PT penerima dipilih dan alasan diisi (minimal 5 huruf).
+          </p>
+        )}
+        <p className="text-fs-12 text-kn-text-2">
+          Jurnal di kedua PT diperiksa dulu; bila salah satu belum bisa diterbitkan (periode tertutup, akun nonaktif),
+          tidak ada yang berubah.
+        </p>
       </div>
     </FormModal>
   );

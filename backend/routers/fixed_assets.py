@@ -12,6 +12,7 @@ from dependencies import require_permission, audit
 from entity_scope import entity_ctx, resolve_scope_ids, guard_doc, resolve_requested_entity
 from schemas_interco_loan import FixedAssetTransferIn, FixedAssetTransferSettleIn
 from services import fixed_asset_service as svc
+from services import fixed_asset_transfer_service as tsvc   # PK-23 — pindah antar-PT & pembayarannya
 from services import gl_service
 
 router = APIRouter(prefix="/api")
@@ -185,7 +186,7 @@ async def transfer_fixed_asset(asset_id: str, payload: FixedAssetTransferIn,
             detail=("Anda tidak berwenang di badan usaha penerima — minta admin/manajer "
                     "yang ditugaskan di sana yang memindahkan asetnya."))
     try:
-        res = await svc.transfer_to_entity(asset_id, payload.model_dump(), actor)
+        res = await tsvc.transfer_to_entity(asset_id, payload.model_dump(), actor)
     except ValueError as e:
         raise _galat(e)
     await audit(actor.get("name", ""), "fixed_asset_transferred", "fixed_asset", asset_id,
@@ -198,12 +199,16 @@ async def transfer_fixed_asset(asset_id: str, payload: FixedAssetTransferIn,
 @router.post("/fixed-assets/{asset_id}/transfer/settle")
 async def settle_fixed_asset_transfer(asset_id: str, payload: FixedAssetTransferSettleIn,
                                       request: Request) -> Dict[str, Any]:
-    """Catat pembayaran utang antar-PT atas aset yang dipindah (uang benar-benar pindah)."""
+    """Catat pembayaran utang antar-PT atas aset yang dipindah (uang benar-benar pindah).
+
+    PK-23 (FY-04) — pelaku wajib berwenang di PT PEMBAYAR (PT penerima aset); selain itu 403."""
     actor = await require_permission(request, "fixed_asset", "update")
+    ctx = await entity_ctx(request)
     try:
-        res = await svc.settle_transfer(asset_id, actor, payload.note or "")
+        res = await tsvc.settle_transfer(asset_id, actor, payload.note or "",
+                                         allowed_entity_ids=list(ctx.allowed_entity_ids))
     except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        raise _galat(e)
     await audit(actor.get("name", ""), "fixed_asset_transfer_settled", "fixed_asset",
                 asset_id, res)
     return res

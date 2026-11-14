@@ -5,10 +5,11 @@ import React, { act } from "react";
 import { createRoot } from "react-dom/client";
 
 const mockGet = jest.fn();
+const mockPost = jest.fn();
 jest.mock("../../services/apiClient", () => ({
   __esModule: true,
   default: {
-    get: (...a) => mockGet(...a), post: () => Promise.resolve({ data: {} }),
+    get: (...a) => mockGet(...a), post: (...a) => mockPost(...a),
     defaults: { headers: { common: {} } },
   },
   API: "/api",
@@ -30,8 +31,16 @@ jest.mock("../../components/KNDatePicker", () => ({
   default: (p) => <input data-testid={p["data-testid"]} value={p.value || ""} onChange={(e) => p.onChange?.(e.target.value)} />,
 }));
 
+jest.mock("../../components/KNMonthPicker", () => ({
+  __esModule: true,
+  default: (p) => <input data-testid={p["data-testid"]} value={p.value || ""} onChange={() => {}} />,
+}));
+jest.mock("../../services/confirmService", () => ({ __esModule: true, askConfirm: jest.fn(async () => true) }));
+
 // eslint-disable-next-line import/first
 import { AddAssetDialog } from "../finance/FixedAssetsParts";
+// eslint-disable-next-line import/first
+import FixedAssetsView from "../finance/FixedAssetsView";
 
 globalThis.IS_REACT_ACT_ENVIRONMENT = true;
 
@@ -73,7 +82,7 @@ async function klik(el) {
   await flush();
 }
 
-beforeEach(() => { mockGet.mockReset(); });
+beforeEach(() => { mockGet.mockReset(); mockPost.mockReset(); });
 afterEach(() => {
   roots.forEach((r) => act(() => r.unmount()));
   roots = [];
@@ -123,4 +132,76 @@ test("PT tanpa rekening: kas/bank dipilih → simpan mati dengan alasan rekening
   expect(q("asset-cash-account-none")).not.toBeNull();
   expect(q("add-asset-submit-btn").disabled).toBe(true);
   expect(q("add-asset-save-reason").textContent).toContain("belum punya rekening");
+});
+
+// ── Daftar aset (FixedAssetsView) ────────────────────────────────────────────────────────────────────────────────
+function routeGet(map) {
+  mockGet.mockImplementation((url) => {
+    const hit = Object.keys(map).sort((a, b) => b.length - a.length).find((k) => url.endsWith(k));
+    return Promise.resolve({ data: hit ? map[hit] : [] });
+  });
+}
+const ASET = (o) => ({ id: "fa1", number: "KSC/FA-00001", name: "Mesin Tenun", category: "Peralatan & Mesin",
+  entity_id: "ent_ksc", acquisition_date: "2026-01-10", useful_life_months: 48, acquisition_cost: 12000000,
+  accumulated_depreciation: 3000000, book_value: 9000000, depreciated_months: 12, status: "active",
+  gl_status: "posted", ...o });
+
+async function mountView(assets, summary = {}) {
+  routeGet({ "/fixed-assets": assets, "/fixed-assets/summary": summary, "/fixed-assets/meta": META });
+  const host = document.createElement("div");
+  document.body.appendChild(host);
+  const root = createRoot(host);
+  roots.push(root);
+  await act(async () => { root.render(<FixedAssetsView selectedEntity="ent_ksc" entities={ENTS} />); });
+  await flush();
+  return host;
+}
+
+test("Daftar: tabel baku; aset sudah pindah → Pindah PT & Lepas mati dengan alasan tertulis, Catat Pembayaran ada",
+  async () => {
+    await mountView([
+      ASET({ id: "fa1", status: "transferred", book_value: 0,
+        transfer: { to_entity_id: "ent_kanda", to_entity_name: "Kanda", settled: false, price: 9000000,
+          new_asset_number: "KANDA/FA-00001" } }),
+      ASET({ id: "fa2", number: "KSC/FA-00002", gl_status: "failed", gl_error: "Akun 1-2100 nonaktif" }),
+      ASET({ id: "fa3", number: "KSC/FA-00003" }),
+    ], { count: 3, transferred: 1, transferred_book_value: 9000000, gross_cost: 420000000 });
+    const tabel = q("fa-table");
+    expect(tabel.className).toContain("data-table");
+    expect(tabel.className).toContain("head-wrap");
+    expect(tabel.querySelector("th:last-child").className).toContain("col-sticky-end");
+    expect(q("transfer-btn-fa1").disabled).toBe(true);
+    expect(q("dispose-btn-fa1").disabled).toBe(true);
+    expect(q("transfer-btn-fa1").className).toContain("btn-sm");
+    expect(q("asset-block-fa1").textContent).toContain("Aset ini sudah dipindahkan ke Kanda.");
+    expect(q("settle-transfer-fa1")).not.toBeNull();
+    expect(q("asset-status-fa1").textContent).toContain("Pindah PT");
+    expect(q("asset-status-fa1").querySelector("svg")).not.toBeNull();    // ikon + teks + warna
+    // belum berjurnal → mati beralasan; aset biasa → aktif tanpa alasan
+    expect(q("transfer-btn-fa2").disabled).toBe(true);
+    expect(q("asset-block-fa2").textContent).toContain("Jurnal perolehan belum terbit");
+    expect(q("transfer-btn-fa3").disabled).toBe(false);
+    expect(q("asset-block-fa3")).toBeNull();
+  });
+
+test("Kartu ringkasan: angka rupiah tidak dipotong (tanpa truncate; angka satu baris utuh)", async () => {
+  await mountView([], { count: 0, gross_cost: 420000000, net_book_value: 0 });
+  const nilai = q("summary-gross-cost-value");
+  expect(nilai.className).not.toContain("truncate");
+  const angka = nilai.querySelector(".whitespace-nowrap");
+  expect(angka && angka.textContent).toMatch(/^420\.000\.000/);
+  expect(q("summary-net-book-value-value").className).toContain("text-kn-text-2");   // nol tidak mendominasi
+});
+
+test("Jalankan Penyusutan: jumlah gagal dijurnal ditampilkan", async () => {
+  await mountView([ASET({ id: "fa3", number: "KSC/FA-00003" })], { count: 1 });
+  mockPost.mockResolvedValue({ data: { period: "2026-11", posted: 0, skipped: 0, total_amount: 0,
+    failed: [{ asset_id: "fa3", number: "KSC/FA-00003", error: "uji" }] } });
+  // CRA `resetMocks`: tiruan dikosongkan tiap uji → jawaban konfirmasi dipasang di sini.
+  require("../../services/confirmService").askConfirm.mockResolvedValue(true);
+  expect(q("run-depreciation-btn").disabled).toBe(false);
+  await klik(q("run-depreciation-btn"));
+  expect(mockPost).toHaveBeenCalledTimes(1);
+  expect(q("fa-dep-failed").textContent).toContain("1 gagal dijurnal");
+  expect(q("fa-dep-failed").textContent).toContain("KSC/FA-00003");
 });

@@ -241,7 +241,6 @@ async def a1(klien, kepala_admin, db, siap):
     return {"id": aid, "akum": akum, "ar0": ar0, "ap0": ap0, "status": r.status_code, "json": r.json()}
 
 
-@pytest.mark.xfail(strict=True, reason="FY-04 — pindah antar-PT lewat niat dan jurnal kembar menunggu serah-terima (b)")
 async def test_PK23_U8_pindah_nilai_buku(db, a1):
     from services import interco_money_service as money
     aid = a1["id"]
@@ -268,7 +267,6 @@ async def test_PK23_U8_pindah_nilai_buku(db, a1):
 
 
 # ── U9 — periode pengirim tertutup: tidak ada apa pun di kedua PT ───────────────────────────────────────────────────
-@pytest.mark.xfail(strict=True, reason="FY-04 — pemeriksaan periode dua PT sebelum pindah menunggu serah-terima (b)")
 async def test_PK23_U9_periode_pengirim_tertutup(klien, kepala_admin, db, siap):
     r = await klien.post(URL, headers=kepala_admin, json=_isi(
         name="Mesin A9", acquisition_date="2026-09-01", funding_source="hutang", account_id=None))
@@ -315,7 +313,6 @@ async def test_PK23_U10_aset_pindah_terkunci(klien, kepala_admin, db, siap):
 
 
 # ── U11 — sisi penerima ditolak pemeriksa awal; sesudah akun aktif: tepat sekali ────────────────────────────────────
-@pytest.mark.xfail(strict=True, reason="FY-04 — pemeriksa awal jurnal kembar pindah aset menunggu serah-terima (b)")
 async def test_PK23_U11_penerima_ditolak_pemeriksa_awal_lalu_sekali(klien, kepala_admin, db, siap, paksa_jurnal_gagal):
     r = await klien.post(URL, headers=kepala_admin, json=_isi(
         name="Mesin A11", acquisition_date="2026-09-01", funding_source="hutang", account_id=None))
@@ -337,7 +334,6 @@ async def test_PK23_U11_penerima_ditolak_pemeriksa_awal_lalu_sekali(klien, kepal
 
 
 # ── U12 — catat bayar oleh pelaku tanpa akses di PT pembayar ────────────────────────────────────────────────────────
-@pytest.mark.xfail(strict=True, reason="FY-04 — penjaga PT pembayar & klaim bayar pindah aset menunggu serah-terima (b)")
 async def test_PK23_U12_bayar_tanpa_akses_pt_pembayar(klien, akun, sesi, peran_tanpa_acuan, db, a1):
     a1 = a1["id"]
     rid = await peran_tanpa_acuan({"fixed_asset": ["view", "update"]}, label="Aset Tetap KSC PK23")
@@ -351,7 +347,6 @@ async def test_PK23_U12_bayar_tanpa_akses_pt_pembayar(klien, akun, sesi, peran_t
 
 
 # ── U13 — catat bayar dua kali: sekali saja ─────────────────────────────────────────────────────────────────────────
-@pytest.mark.xfail(strict=True, reason="FY-04 — klaim bayar pindah aset (settle_status) menunggu serah-terima (b)")
 async def test_PK23_U13_bayar_dua_kali_sekali(klien, kepala_admin, db, a1):
     a1 = a1["id"]
     ar0, ap0 = await _mutasi(db, "1-1250", KSC), await _mutasi(db, "2-1250", KANDA)
@@ -448,3 +443,80 @@ async def test_PK23_meta_sumber_dana_per_pt(klien, kepala_admin, siap):
     assert pilih["kas"]["available"] and pilih["hutang"]["available"] and not pilih["saldo_awal"]["available"]
     assert pilih["saldo_awal"]["reason"] == "Akun lawannya belum ditetapkan di Pemetaan Akun."
     assert not {x["value"]: x for x in kanda["funding_sources"]}["hutang"]["available"]
+
+
+async def test_PK23_pindah_jurnal_gagal_niat_diteruskan_sekali(klien, kepala_admin, db, siap, paksa_jurnal_gagal):
+    """Jurnal sisi penerima dipaksa gagal SESUDAH pemeriksa awal: aset tetap `transferring` + niat `pending`, aset
+    pengganti `pending`/`failed`; panggilan ulang (pindah lagi / Ulang Posting) meneruskan niat yang sama → 1 aset
+    pengganti, 1 jurnal per sisi."""
+    r = await klien.post(URL, headers=kepala_admin, json=_isi(
+        name="Mesin A15", acquisition_date="2026-09-01", funding_source="hutang", account_id=None))
+    aid = r.json()["id"]
+    isi = {"to_entity_id": KANDA, "reason": "uji niat pindah diteruskan"}
+    async with paksa_jurnal_gagal("sisip", entity_id=KANDA, source_type="fixed_asset_acquisition"):
+        r = await klien.post(f"{URL}/{aid}/transfer", headers=kepala_admin, json=isi)
+    assert r.status_code == 409 and "belum selesai" in r.text, r.text
+    a = await db.fin_fixed_assets.find_one({"id": aid}, {"_id": 0})
+    assert a["status"] == "transferring" and a["transfer"]["intent"]["status"] == "pending"
+    assert a["gl_status_transfer"] == "posted"   # sisi pengirim sudah terbit (urutan sisi: pengirim dulu)
+    baru = await db.fin_fixed_assets.find_one({"id": f"{aid}_tr"}, {"_id": 0})
+    assert baru["gl_status"] == "failed" and baru["entity_id"] == KANDA
+    # aset yang sedang dipindah tidak bisa dilepas / disusutkan
+    r = await klien.post(f"{URL}/{aid}/dispose", headers=kepala_admin, json={"proceeds": 0})
+    assert r.status_code == 409 and "sedang diproses" in r.text, r.text
+    # Ulang Posting dari panel (baris aset pengganti di ent_kanda, jenis `fixed_asset`) → niat diteruskan, dua buku
+    h_kanda = {**kepala_admin, "X-Entity-Id": KANDA}
+    panel = (await klien.get(PANEL, headers=h_kanda, params={"kind": "fixed_asset"})).json()
+    assert f"{aid}_tr" in {x["id"] for x in panel["items"]}
+    r = await _ulang(klien, h_kanda, "fixed_asset", f"{aid}_tr")
+    assert r.status_code == 200 and r.json()["gl_status"] == "posted", r.text
+    a = await db.fin_fixed_assets.find_one({"id": aid}, {"_id": 0})
+    assert a["status"] == "transferred" and a["transfer"]["intent"]["status"] == "done"
+    assert await jumlah("fin_fixed_assets", {"transfer_from.asset_id": aid}) == 1
+    assert len(await _jurnal(db, "fixed_asset_transfer", f"{aid}:from")) == 1
+    assert len(await _jurnal(db, "fixed_asset_acquisition", f"{aid}_tr")) == 1
+    # pindah lagi atas aset yang sudah pindah → 409 berpesan
+    r = await klien.post(f"{URL}/{aid}/transfer", headers=kepala_admin, json=isi)
+    assert r.status_code == 409 and "sudah dipindahkan" in r.text, r.text
+
+
+async def test_PK23_pindah_sisi_pengirim_gagal_diulang_dari_panel(klien, kepala_admin, db, siap, paksa_jurnal_gagal):
+    r = await klien.post(URL, headers=kepala_admin, json=_isi(
+        name="Mesin A16", acquisition_date="2026-09-01", funding_source="hutang", account_id=None))
+    aid = r.json()["id"]
+    async with paksa_jurnal_gagal("sisip", entity_id=KSC, source_type="fixed_asset_transfer"):
+        r = await klien.post(f"{URL}/{aid}/transfer", headers=kepala_admin,
+                             json={"to_entity_id": KANDA, "reason": "uji sisi pengirim gagal"})
+    assert r.status_code == 409, r.text
+    a = await db.fin_fixed_assets.find_one({"id": aid}, {"_id": 0})
+    assert a["status"] == "transferring" and a["gl_status_transfer"] == "failed"
+    # buku kedua PT sama-sama kosong (sisi penerima tidak dicoba)
+    assert await jumlah("journal_entries", {"source_id": {"$in": [f"{aid}:from", f"{aid}_tr"]}}) == 0
+    panel = (await klien.get(PANEL, headers=kepala_admin, params={"kind": "fixed_asset_transfer"})).json()
+    assert aid in {x["id"] for x in panel["items"]}
+    r = await _ulang(klien, kepala_admin, "fixed_asset_transfer", aid)
+    assert r.status_code == 200, r.text
+    a = await db.fin_fixed_assets.find_one({"id": aid}, {"_id": 0})
+    assert a["status"] == "transferred" and a["gl_status_transfer"] == "posted"
+    assert len(await _jurnal(db, "fixed_asset_transfer", f"{aid}:from")) == 1
+    assert len(await _jurnal(db, "fixed_asset_acquisition", f"{aid}_tr")) == 1
+    SIMPAN["a16"] = aid
+
+
+async def test_PK23_bayar_jurnal_gagal_kas_dipakai_ulang(klien, kepala_admin, db, siap, paksa_jurnal_gagal):
+    aid = SIMPAN["a16"]
+    async with paksa_jurnal_gagal("sisip", entity_id=KSC, source_type="fixed_asset_transfer_settlement"):
+        r = await klien.post(f"{URL}/{aid}/transfer/settle", headers=kepala_admin, json={"note": ""})
+    assert r.status_code == 409 and "Kas pembayaran" in r.text, r.text
+    tr = (await db.fin_fixed_assets.find_one({"id": aid}))["transfer"]
+    assert tr["settle_status"] == "settling" and not tr["settled"]
+    assert await jumlah("cash_transactions", {"ref_type": "fixed_asset_transfer", "ref_id": aid}) == 2
+    panel = (await klien.get(PANEL, headers=kepala_admin, params={"kind": "fixed_asset_settle_payee"})).json()
+    assert aid in {x["id"] for x in panel["items"]}
+    r = await _ulang(klien, kepala_admin, "fixed_asset_settle_payee", aid)
+    assert r.status_code == 200, r.text
+    tr = (await db.fin_fixed_assets.find_one({"id": aid}))["transfer"]
+    assert tr["settle_status"] == "settled" and tr["settled"] is True and len(tr["cash_txn_ids"]) == 2
+    assert await jumlah("cash_transactions", {"ref_type": "fixed_asset_transfer", "ref_id": aid}) == 2
+    assert len(await _jurnal(db, "fixed_asset_transfer_settlement", f"{aid}:settle:a")) == 1
+    assert len(await _jurnal(db, "fixed_asset_transfer_settlement", f"{aid}:settle:b")) == 1
