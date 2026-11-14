@@ -78,7 +78,7 @@ Jumlah: hapus 14 · sambung di unit ini 2 · disambung unit lain 6 · tetap 20.
 | `accounts` | Akun Pengguna | `user` | `settings-hub`, `settings-company`, `entities-access` | ya |
 | `roles` | Peran & Hak Akses | `permission` | `settings-hub`, `settings-company`, `entities-access` | ya |
 | `entities` | Badan Usaha (PT) | `entity` | `settings-hub`, `settings-company`, `entities-access`, `settings-masters`, `entity-masters` | ya |
-| `settings` | Pusat Pengaturan | `settings` | `settings-hub`, `settings-system`, `settings-config`, `settings-cfg-system`, `admin`, `settings-approval`, `approval-rules`, `settings-cfg-approval`, `settings-masters`, `domain-registry`, `settings-cfg-documents`, `settings-notify`, `settings-cfg-notify` | ya |
+| `settings` | Pusat Pengaturan | `settings` | `settings-hub`, `settings-system`, `settings-config`, `settings-cfg-system`, `admin`, `settings-approval`, `approval-rules`, `settings-cfg-approval`, `settings-masters`, `domain-registry`, `settings-cfg-documents`, `settings-documents` (koreksi PR-T5: induk tab dokumen), `settings-notify`, `settings-cfg-notify` | ya |
 | `scheduler` | Penjadwal & Notifikasi Otomatis | `scheduler` | `settings-hub`, `settings-notify`, `scheduler` | tidak |
 
 - `pdf-templates` dan `settings-documents` pindah ke `nav` modul `documents` (pemilik sumber daya `pdf_template`).
@@ -207,7 +207,7 @@ baca inspeksi, `/api/users`, `/api/access/roles`, `/api/entities/x`, `/api/sched
 | U11 | B | — | `GET /api/access/labels` oleh Sopir | 200; `resources.permission` = "Peran & Hak Akses"; tiap sumber daya dan aksi di `DEFAULT_PERMISSIONS` punya label |
 | U12 | B | — | `python scripts/guardrails/verify_permission_checked.py` dan `--self-test` | Keluar 0; self-test memerah saat satu pasangan tanpa pemeriksa ditambahkan |
 | U13 | B | "Tanpa Acuan" dengan `levels: {"penjualan": "view"}` | `GET /api/auth/me` | `view_actions["sales-admin-desk"]` = `[["order", "confirm"]]`; menu itu tidak termasuk yang boleh dibuka |
-| U14 | B | berkas "sebelum" | Sapu ulang oleh 13 peran bawaan | Admin dan Manajer: kode sama di semua rute. Selisih yang diizinkan hanya 200 → 403 pada empat endpoint `/api/reports/*` tabel 1 bagi peran tanpa `reports.view` (Sales, Gudang, MD, Admin Gudang, Admin Sample, dan lainnya) |
+| U14 | B | berkas "sebelum" | Sapu ulang oleh 13 peran bawaan | Admin dan Manajer: kode sama di semua rute. Selisih yang diizinkan hanya pada empat endpoint `/api/reports/*` tabel 1: 200 → 403 bagi peran tanpa `reports.view` (Sales, Gudang, MD, Admin Gudang, Admin Sample, dan lainnya), dan 403 → 200 bagi peran yang memegang `reports.view` tetapi tidak memegang izin lama endpoint itu (Finance pada `/api/reports/warehouse-utilization`) — koreksi PR-T5 |
 | U15 | layar (uji jalan) | Login Admin | Buka editor Sales | Modul "Pesanan Penjualan" berlencana "Sebagian (n dari m aksi)" tanpa tombol menyala; modul "Melihat grade, nomor lot & asal barang" hanya punya Mati/Nyala; memilih "Semua aksi" lalu simpan menampilkan daftar "+aksi" dan kalimat "Perhatian — peran ini akan bisa: …" |
 
 ## Langkah kerja
