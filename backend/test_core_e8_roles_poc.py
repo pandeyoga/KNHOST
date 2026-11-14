@@ -438,8 +438,12 @@ def e_finance(fin):
           {"view", "print"} <= order_perms
           and order_perms <= {"view", "print", "approve_price_edit", "release_unpaid", "view_sales_kpi"},
           str(perms.get("order")))
-    check("izin efektif Finance: TANPA sisi hutang (vendor_bill/contra_bon/landed_cost)",
-          not any(perms.get(m) for m in ("vendor_bill", "contra_bon", "landed_cost")))
+    # KP-T4 (K-47) — Finance memegang `vendor_bill.approve|reject` sebagai pengganti gerbang nama peran tagihan vendor
+    # KAMPANYE (dulu `BILL_APPROVER_ROLES`); jenis mana yang boleh ia putus ditentukan Aturan Persetujuan (bawaan:
+    # hanya `vendor_bill.kampanye`). Yang dijaga E8.2 tetap: Finance tidak membuat/mengubah/membayar sisi hutang.
+    check("izin efektif Finance: TANPA sisi hutang (vendor_bill/contra_bon/landed_cost) selain putus tagihan",
+          set(perms.get("vendor_bill") or []) <= {"approve", "reject"}
+          and not any(perms.get(m) for m in ("contra_bon", "landed_cost")), str(perms.get("vendor_bill")))
     check("izin efektif Finance: batal faktur pajak TETAP manajer",
           "cancel" not in (perms.get("tax_invoice") or []), str(perms.get("tax_invoice")))
 
