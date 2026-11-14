@@ -59,8 +59,8 @@ Papan kerja agen pelaksana. Aturan mengubahnya: `00_ATURAN_EKSEKUSI.md` §5. Uru
 | 52 | PK-23 | Aset tetap | PK-06, PK-18 | siap |  |  |  |
 | 53 | PK-24 | Kas kecil dan pertanggungjawaban | PK-18 | siap |  |  |  |
 | 54 | PK-25 | Kasus keuangan: periksa dulu, efek kemudian | PK-09, PK-19 | menunggu |  |  |  |
-| 55 | PK-26 | Landed cost untuk roll yang sudah terjual | PK-18 | dikerjakan |  |  | Dikerjakan paralel (worktree terpisah), 14 Nov |
-| 56 | PK-27 | Biaya roll pada scrap, retur, dan HPP | PK-18 | siap |  |  |  |
+| 55 | PK-26 | Landed cost untuk roll yang sudah terjual | PK-18 | dikerjakan |  |  | Digabung ccfa7b4/550c400; menunggu gate/cek layar integrator |
+| 56 | PK-27 | Biaya roll pada scrap, retur, dan HPP | PK-18 | dikerjakan |  |  | Dikerjakan paralel (worktree terpisah), 14 Nov |
 | 57 | PK-28 | GR/IR: varians, umur, kliring | PK-18 | dikerjakan |  |  | Dikerjakan paralel (worktree terpisah), 14 Nov |
 | 58 | PK-29 | Rekonsiliasi persediaan per PT; true-up dibatasi | PK-27 | menunggu |  |  |  |
 | 59 | PK-30 | Antar-PT: panjang aktual, jalur lama, harga dan PPN | PK-06 | selesai | `a4b7c8d` · `a0ae755` | [PK-30](../reviews/2026-11-13/hasil/PK-30.md) | H4 PPN masukan pembeli non-PKP → Menunggu pemilik |
@@ -72,7 +72,7 @@ Papan kerja agen pelaksana. Aturan mengubahnya: `00_ATURAN_EKSEKUSI.md` §5. Uru
 | 65 | PK-36 | Akun kontrol tertutup dari jurnal manual | PK-10 | selesai | `16b50fe` | [PK-36](../reviews/2026-11-13/hasil/PK-36.md) |  |
 | 66 | PK-37 | Tanggal buku WIB dan kunci periode untuk dokumen | PK-11 | selesai | `689ca70` · `a323bb0` | [PK-37](../reviews/2026-11-13/hasil/PK-37.md) | H3: --terapkan pk37_tanggal_buku_lama di data nyata |
 | 67 | PK-38 | Satu batas wewenang; izin bayar terpisah; ganti termin | KF-T6, PR-T2 | selesai | `eef7bb9` | [PK-38](../reviews/2026-11-13/hasil/PK-38.md) |  |
-| 68 | PK-39 | Anggaran | PK-18 | dikerjakan |  |  | Dikerjakan paralel (worktree terpisah), 14 Nov |
+| 68 | PK-39 | Anggaran | PK-18 | dikerjakan |  |  | Digabung d5c466d; menunggu gate/cek layar integrator |
 | 69 | PK-40 | Pajak: keunikan, masa pajak, basis | PK-14 | selesai | `a78f552` | [PK-40](../reviews/2026-11-13/hasil/PK-40.md) |  |
 | 70 | PK-41 | Laporan pendukung | PK-19 | menunggu |  |  |  |
 | 71 | PK-42 | Layar: perbaikan cepat per berkas | PK-12 | selesai | `5e747b2` | [PK-42](../reviews/2026-11-13/hasil/PK-42.md) |  |
