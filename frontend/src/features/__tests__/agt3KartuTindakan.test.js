@@ -220,6 +220,8 @@ test("U18 — tab Tindakan: saringan & kolom sesuai teks; pilih baris → kartu;
   expect(q("tanya-actions-pill-aiact_9").textContent).toBe("Menunggu");
   await act(async () => { q("tanya-actions-open-aiact_9").click(); });
   await flush();
+  // INV-UI-08 (gate 15 Nov): kartu yang dipilih tampil di pop-up, bukan diselipkan di bawah daftar.
+  expect(q("tanya-actions-card-modal").contains(q("tanya-action-aiact_9"))).toBe(true);
   await act(async () => { ketik(q("tanya-card-reason"), "pelanggan transfer pagi ini"); ketik(q("tanya-card-retype"), "5000000"); });
   await act(async () => { q("tanya-action-confirm").click(); });
   await flush();

@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { ChevronLeft, ChevronRight, Loader2, RefreshCw } from "lucide-react";
+import DetailModal from "../../components/DetailModal";
 import FilterChips from "../../components/FilterChips";
 import { formatCurrency, formatDateTime } from "../../utils/formatters";
 import { kpiValueParts } from "../finance/financeShared";
@@ -14,7 +15,7 @@ const COLS = ["Tindakan", "PT", "Nominal", "Dibuat", "Berlaku sampai", "Status"]
 
 /**
  * Tanya KN › Tindakan — daftar kartu tindakan milik pengguna, per saringan, berhalaman dengan jumlah total. Baris
- * dipilih → kartunya tampil di bawah daftar (setujui/abaikan dari sini sama dengan di percakapan).
+ * dipilih → kartunya tampil di pop-up (`DetailModal`, INV-UI-08; setujui/abaikan dari sini sama dengan di percakapan).
  */
 export function TanyaActions({ refreshKey }) {
   const [box, setBox] = useState("mine");
@@ -82,7 +83,11 @@ export function TanyaActions({ refreshKey }) {
           </div>
         )}
       </>)}
-      {sel && <TanyaActionCard key={sel} proposalId={sel} onChanged={() => load()} />}
+      {sel && (
+        <DetailModal onClose={() => setSel(null)} size="md" framed label="Kartu tindakan" testId="tanya-actions-card-modal">
+          <TanyaActionCard key={sel} proposalId={sel} onChanged={() => load()} />
+        </DetailModal>
+      )}
     </div>
   );
 }
