@@ -1,0 +1,24 @@
+== INV-PERM-01 — setiap izin di katalog diperiksa server; sumber daya bermodul & berlabel ==
+[FAIL] 21 pelanggaran (dari 556 cek):
+  ✗ esign.manage: tidak punya pemeriksa di backend/ (literal, katalog persetujuan, atau DINAMIS) — pasang pemeriksanya atau hapus pasangannya dari permissions_config.py
+  ✗ finance_case.admin: tidak punya pemeriksa di backend/ (literal, katalog persetujuan, atau DINAMIS) — pasang pemeriksanya atau hapus pasangannya dari permissions_config.py
+  ✗ interco.update: tidak punya pemeriksa di backend/ (literal, katalog persetujuan, atau DINAMIS) — pasang pemeriksanya atau hapus pasangannya dari permissions_config.py
+  ✗ inventory.create: tidak punya pemeriksa di backend/ (literal, katalog persetujuan, atau DINAMIS) — pasang pemeriksanya atau hapus pasangannya dari permissions_config.py
+  ✗ md_quality.view: tidak punya pemeriksa di backend/ (literal, katalog persetujuan, atau DINAMIS) — pasang pemeriksanya atau hapus pasangannya dari permissions_config.py
+  ✗ order.print: tidak punya pemeriksa di backend/ (literal, katalog persetujuan, atau DINAMIS) — pasang pemeriksanya atau hapus pasangannya dari permissions_config.py
+  ✗ reports.export: tidak punya pemeriksa di backend/ (literal, katalog persetujuan, atau DINAMIS) — pasang pemeriksanya atau hapus pasangannya dari permissions_config.py
+  ✗ reports.view: tidak punya pemeriksa di backend/ (literal, katalog persetujuan, atau DINAMIS) — pasang pemeriksanya atau hapus pasangannya dari permissions_config.py
+  ✗ sales_pov.commercial: tidak punya pemeriksa di backend/ (literal, katalog persetujuan, atau DINAMIS) — pasang pemeriksanya atau hapus pasangannya dari permissions_config.py
+  ✗ tax_invoice.print: tidak punya pemeriksa di backend/ (literal, katalog persetujuan, atau DINAMIS) — pasang pemeriksanya atau hapus pasangannya dari permissions_config.py
+  ✗ template.export: tidak punya pemeriksa di backend/ (literal, katalog persetujuan, atau DINAMIS) — pasang pemeriksanya atau hapus pasangannya dari permissions_config.py
+  ✗ template.import: tidak punya pemeriksa di backend/ (literal, katalog persetujuan, atau DINAMIS) — pasang pemeriksanya atau hapus pasangannya dari permissions_config.py
+  ✗ template.print: tidak punya pemeriksa di backend/ (literal, katalog persetujuan, atau DINAMIS) — pasang pemeriksanya atau hapus pasangannya dari permissions_config.py
+  ✗ transfer.complete: tidak punya pemeriksa di backend/ (literal, katalog persetujuan, atau DINAMIS) — pasang pemeriksanya atau hapus pasangannya dari permissions_config.py
+  ✗ uom.export: tidak punya pemeriksa di backend/ (literal, katalog persetujuan, atau DINAMIS) — pasang pemeriksanya atau hapus pasangannya dari permissions_config.py
+  ✗ uom.import: tidak punya pemeriksa di backend/ (literal, katalog persetujuan, atau DINAMIS) — pasang pemeriksanya atau hapus pasangannya dari permissions_config.py
+  ✗ sumber daya marketing: tidak punya label (RESOURCE_LABEL)
+  ✗ aksi goods_receipt.close: tidak punya label (ACTION_LABEL)
+  ✗ aksi goods_receipt.count: tidak punya label (ACTION_LABEL)
+  ✗ aksi goods_receipt.review: tidak punya label (ACTION_LABEL)
+  ✗ aksi interco_price.set: tidak punya label (ACTION_LABEL)
+→ Perbaiki sesuai INVARIANT INV-PERM-01 (detail: memory/INVARIANTS.md).

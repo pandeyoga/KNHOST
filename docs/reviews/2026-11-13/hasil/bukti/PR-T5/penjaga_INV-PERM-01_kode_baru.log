@@ -1,0 +1,16 @@
+== INV-PERM-01 — setiap izin di katalog diperiksa server; sumber daya bermodul & berlabel ==
+[PASS] 580 cek lolos, 0 pelanggaran.
+verify_permission_checked --self-test
+  OK   katalog nyata lulus
+  OK   pasangan tanpa pemeriksa tertangkap
+  OK   …dan hanya itu
+  OK   pemeriksa literal dikenali (kode sisipan)
+  OK   tupel require_any_permission dikenali
+  OK   komentar tidak dihitung
+  OK   sumber daya tanpa modul & label tertangkap
+  OK   aksi tanpa label tertangkap
+  OK   entri DINAMIS basi (sudah literal) tertangkap
+  OK   penanda berkas pemeriksa hilang tertangkap
+  OK   MENUNGGU_KPT4 tidak kosong tertangkap
+  OK   SENSITIVE_ACTIONS di luar katalog tertangkap
+LULUS — 0 kasus gagal

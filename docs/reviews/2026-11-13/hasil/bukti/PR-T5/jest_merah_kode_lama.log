@@ -1,0 +1,11 @@
+FAIL src/features/__tests__/prt5EditorPeran.test.js
+  ✕ U15 — modul sebagian: lencana 'Sebagian (n dari m aksi)' dan tidak ada tombol tingkat yang menyala (35 ms)
+  ✕ U15 — modul sakelar hanya Mati/Nyala; modul hanya-lihat tanpa 'Semua aksi' (13 ms)
+  ✕ 'Lihat saja' menyebut halaman yang tidak termasuk (5 ms)
+  ✕ U15 — 'Semua aksi' lalu simpan: daftar +aksi per halaman dan kalimat 'Perhatian — peran ini akan bisa: …' (48 ms)
+  ✕ 'Semua modul: Lihat saja' melewati modul sakelar (tidak dimatikan diam-diam) (31 ms)
+  ✕ 'Atur rinci': aksi berisiko diberi ikon & petunjuk kalimatnya (4 ms)
+  ✕ kartu peran: semua aksi · sebagian · lihat · tidak ada (12 ms)
+  ✕ satu kamus label: pesan penolakan & jejak audit memakai nama dari server
+  ✕ U13 (layar) — menu meja peran butuh aksinya, bukan sekadar akses modul
+Tests:       9 failed, 9 total

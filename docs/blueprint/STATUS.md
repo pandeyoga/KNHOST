@@ -33,8 +33,8 @@ Papan kerja agen pelaksana. Aturan mengubahnya: `00_ATURAN_EKSEKUSI.md` §5. Uru
 | 26 | KP-T3 | Aturan Persetujuan: buang pilihan palsu, tampilkan jenjang efektif | KF-T1 | selesai | `3224848` | [KP-T3](../reviews/2026-11-13/hasil/KP-T3.md) | H3: --apply skrip migrasi menunggu pemilik |
 | 27 | KP-T4 | Satu tabel kebijakan persetujuan untuk semua antrean | KF-T6, KP-T3, PR-T2 | selesai | `ff73676` · `0c5486e` | [KP-T4](../reviews/2026-11-13/hasil/KP-T4.md) | H3: --apply migrate_kpt4_kebijakan_persetujuan wajib saat pemasangan di data nyata |
 | 28 | PR-T4 | Sifat peran yang bisa diatur: cakupan data, beranda, penerima notifikasi | PR-T2 | selesai | `6d7dacf` · `39cdd4b` | [PR-T4](../reviews/2026-11-13/hasil/PR-T4.md) | H3: migrasi prt4:sifat-peran & prt4:izin-kpi-sales berjalan saat proses awal |
-| 29 | PR-T5 | Katalog izin dirapikan; modul akses dipecah | PR-T2 | siap |  |  |  |
-| 30 | PR-T6 | Layar Peran & Hak Akses dan Akun & Akses | PR-T4, PR-T5 | menunggu |  |  |  |
+| 29 | PR-T5 | Katalog izin dirapikan; modul akses dipecah | PR-T2 | selesai | `b8bd0a2` | [PR-T5](../reviews/2026-11-13/hasil/PR-T5.md) | Keputusan pemilik: API Ringkasan kini 403 bagi Sales/Gudang/MD/Admin Gudang/Admin Sample (layar sudah tersembunyi). H3: migrasi prt5:katalog saat proses awal |
+| 30 | PR-T6 | Layar Peran & Hak Akses dan Akun & Akses | PR-T4, PR-T5 | siap |  |  |  |
 | 31 | PR-T7 | Layar memakai izin, bukan nama peran | PR-T2 | selesai | `2d164c9` | [PR-T7](../reviews/2026-11-13/hasil/PR-T7.md) |  |
 | 32 | PR-T8 | Penjaga matriks izin berjalan (peran × endpoint) | PR-T3 | siap |  |  |  |
 | 33 | KF-T2 | Kunci pengaturan mati, ganda, dan tersembunyi | KF-T1 | selesai | `1dcb06c` | [KF-T2](../reviews/2026-11-13/hasil/KF-T2.md) | H3: --apply migrate_kft2_akun_bank sebelum dipasang di data nyata |
@@ -49,7 +49,7 @@ Papan kerja agen pelaksana. Aturan mengubahnya: `00_ATURAN_EKSEKUSI.md` §5. Uru
 | 42 | KP-T6 | Dokumen dan cetak per PT | KP-T1 | siap |  |  |  |
 | 43 | KP-T7 | Pengingat dan penjadwal yang bisa diatur | KF-T1 | siap |  |  |  |
 | 44 | KP-T8 | Rahasia dan perangkat | KF-T1 | siap |  |  |  |
-| 45 | MN-T1 | Menu keuangan dan SDM: pindah dan kelompokkan | PR-T5 | menunggu |  |  |  |
+| 45 | MN-T1 | Menu keuangan dan SDM: pindah dan kelompokkan | PR-T5 | siap |  |  |  |
 | 46 | KP-T9 | Susunan hub Pengaturan | MN-T1, KF-T4 | menunggu |  |  |  |
 | 47 | PK-18 | Penanda gagal dan panel untuk semua jenis dokumen | PK-05, PK-06 tervalidasi | menunggu |  |  |  |
 | 48 | PK-19 | Kwitansi, deposit, selisih bayar: satu fungsi alokasi | PK-18 | menunggu |  |  |  |

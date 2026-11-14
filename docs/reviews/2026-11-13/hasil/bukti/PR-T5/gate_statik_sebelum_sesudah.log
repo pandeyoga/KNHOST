@@ -1,0 +1,57 @@
+kolom: rc HEAD | rc sesudah | perintah
+rc=1|rc=1|python scripts/guardrails/verify_auth_coverage.py
+rc=0|rc=0|python scripts/guardrails/verify_auth_coverage.py --self-test
+rc=1|rc=1|python scripts/validate_compliance.py
+rc=0|rc=0|python scripts/check_nav_map.py
+rc=0|rc=0|python scripts/guardrails/verify_modal_dismiss.py
+rc=0|rc=0|python scripts/guardrails/verify_knselect_contract.py
+rc=0|rc=0|python scripts/guardrails/verify_access_catalog_nav.py
+rc=0|rc=0|python scripts/guardrails/verify_desk_targets.py
+rc=0|rc=0|python scripts/audit_create_modal.py --self-test
+rc=1|rc=1|python scripts/audit_create_modal.py
+rc=0|rc=0|python scripts/guardrails/verify_blocking_dialogs.py --self-test
+rc=0|rc=0|python scripts/guardrails/verify_blocking_dialogs.py
+rc=0|rc=0|python scripts/guardrails/verify_list_export.py --self-test
+rc=0|rc=0|python scripts/guardrails/verify_list_export.py
+rc=0|rc=0|python scripts/guardrails/verify_money_idempotency.py --self-test
+rc=0|rc=0|python scripts/guardrails/verify_money_idempotency.py
+rc=0|rc=0|python scripts/guardrails/verify_detail_modal.py --self-test
+rc=0|rc=0|python scripts/guardrails/verify_detail_modal.py
+rc=0|rc=0|python scripts/guardrails/verify_picker_portal.py --self-test
+rc=0|rc=0|python scripts/guardrails/verify_picker_portal.py
+rc=0|rc=0|python scripts/guardrails/verify_escape_layers.py --self-test
+rc=0|rc=0|python scripts/guardrails/verify_escape_layers.py
+rc=0|rc=0|python scripts/guardrails/verify_custom_modals.py --self-test
+rc=0|rc=0|python scripts/guardrails/verify_custom_modals.py
+rc=0|rc=0|python scripts/guardrails/verify_page_tabs.py --self-test
+rc=1|rc=1|python scripts/guardrails/verify_page_tabs.py
+rc=0|rc=0|python scripts/guardrails/verify_view_aliases.py --self-test
+rc=0|rc=0|python scripts/guardrails/verify_view_aliases.py
+rc=1|rc=1|python scripts/guardrails/verify_to_list_bound.py --self-test
+rc=1|rc=1|python scripts/guardrails/verify_to_list_bound.py
+rc=0|rc=0|python scripts/guardrails/verify_codebase_map.py --self-test
+rc=0|rc=0|python scripts/guardrails/verify_codebase_map.py
+rc=1|rc=1|python scripts/guardrails/verify_atomic_claim.py --self-test
+rc=1|rc=1|python scripts/guardrails/verify_atomic_claim.py
+rc=0|rc=0|python scripts/ux_audit.py --self-test
+rc=1|rc=1|python scripts/ux_audit.py --strict
+rc=0|rc=0|python scripts/audit_config_wiring.py --strict
+rc=0|rc=0|python scripts/audit_config_wiring.py --self-test
+rc=0|rc=0|python scripts/audit_doc_refs.py --self-test
+rc=1|rc=0|python scripts/guardrails/verify_ref_unlink.py --self-test
+rc=1|rc=1|python scripts/guardrails/verify_ref_unlink.py
+rc=0|rc=0|python scripts/guardrails/verify_notification_audience.py --self-test
+rc=0|rc=0|python scripts/guardrails/verify_notification_audience.py
+rc=1|rc=1|python scripts/audit_i18n_id.py --strict
+rc=0|rc=0|python scripts/audit_i18n_id.py --self-test
+rc=0|rc=0|python scripts/fix_i18n_id.py --self-test
+rc=1|rc=1|python scripts/guardrails/verify_entity_label.py --self-test
+rc=0|rc=0|python scripts/guardrails/verify_error_notice.py --self-test
+rc=0|rc=0|python scripts/guardrails/verify_role_label.py --self-test
+rc=0|rc=0|python scripts/guardrails/verify_role_gate_ui.py --self-test
+rc=0|rc=0|python scripts/guardrails/verify_role_gate_ui.py
+rc=2|rc=0|python scripts/guardrails/verify_permission_checked.py --self-test
+rc=2|rc=0|python scripts/guardrails/verify_permission_checked.py
+rc=0|rc=0|python scripts/guardrails/verify_derived_fields.py
+rc=0|rc=0|python scripts/audit_entity_isolation.py --self-test
+rc=1|rc=1|python scripts/audit_warehouse_scope.py --self-test

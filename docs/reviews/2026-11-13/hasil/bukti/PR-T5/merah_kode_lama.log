@@ -1,0 +1,33 @@
+E   AssertionError: ['penjualan', 'sample_order', 'customer', 'product', 'pricing', 'purchasing', ...]
+backend/tests_mem/test_PRT5_katalog.py:50: AssertionError: ['penjualan', 'sample_order', 'customer', 'product', 'pricing', 'purchasing', ...]
+E   AssertionError: [403, 403, 403]
+backend/tests_mem/test_PRT5_katalog.py:69: AssertionError: [403, 403, 403]
+E   AssertionError: ['accounting', 'admin', 'approval', 'ar', 'assistant', 'costing', ...]
+backend/tests_mem/test_PRT5_katalog.py:77: AssertionError: ['accounting', 'admin', 'approval', 'ar', 'assistant', 'costing', ...]
+E   AssertionError: ['view', 'create', 'print']
+backend/tests_mem/test_PRT5_katalog.py:107: AssertionError: ['view', 'create', 'print']
+E   AssertionError: {"id":"cr_sasaran_ubah_prt5","label":"Sasaran Ubah PRT5","long_label":"Sasaran Ubah PRT5","description":"","custom":true,"base_role":"","base_role_label":"","rank":1,"cross_entity":false,"cross_entity_default":
+backend/tests_mem/test_PRT5_katalog.py:126: AssertionError: {"id":"cr_sasaran_ubah_prt5","label":"Sasaran Ubah PRT5","long_label":"Sasaran Ubah PRT5","description":"","custom":true,"base_role":"","base_role_label":"","rank":1,"cro
+E   AssertionError: [403, 403, 403]
+backend/tests_mem/test_PRT5_katalog.py:137: AssertionError: [403, 403, 403]
+E   AssertionError: [200, 200]
+backend/tests_mem/test_PRT5_katalog.py:145: AssertionError: [200, 200]
+E   AssertionError: {"detail": "Permission ditolak: inspection.view"}
+backend/tests_mem/test_PRT5_katalog.py:152: AssertionError: {"detail": "Permission ditolak: inspection.view"}
+E   AssertionError: {"id":"cr_sasaran_ubah_prt5","label":"Sasaran Ubah PRT5","long_label":"Sasaran Ubah PRT5","description":"","custom":true,"base_role":"","base_role_label":"","rank":1,"cross_entity":false,"cross_entity_default":
+backend/tests_mem/test_PRT5_katalog.py:160: AssertionError: {"id":"cr_sasaran_ubah_prt5","label":"Sasaran Ubah PRT5","long_label":"Sasaran Ubah PRT5","description":"","custom":true,"base_role":"","base_role_label":"","rank":1,"cro
+E   KeyError: 'levels_available'
+backend/tests_mem/test_PRT5_katalog.py:171: KeyError: 'levels_available'
+E   KeyError: 'held'
+backend/tests_mem/test_PRT5_katalog.py:194: KeyError: 'held'
+E   AssertionError: {"detail":"Not Found"}
+backend/tests_mem/test_PRT5_katalog.py:201: AssertionError: {"detail":"Not Found"}
+E   AssertionError: ([], '', "python: can't op...5037/scratchpad/prt5/headfull/scripts/guardrails/verify_permission_checked.py': [Errno 2]
+backend/tests_mem/test_PRT5_katalog.py:221: AssertionError: ([], '', "python: can't op...5037/scratchpad/prt5/headfull/scripts/guardrails/
+E   KeyError: 'view_actions'
+backend/tests_mem/test_PRT5_katalog.py:230: KeyError: 'view_actions'
+E   AssertionError: {'add': ['customers-crm', 'hr-my-profile', 'hr-visits', 'penjualan'], 'remove': ['accounts-payable', 'admin', 'advance-report', 'akuntansi', 'amendments', 'analytics', ...]}
+backend/tests_mem/test_PRT5_katalog.py:257: AssertionError: {'add': ['customers-crm', 'hr-my-profile', 'hr-visits', 'penjualan'], 'remove': ['accounts-payable', 'admin', 'advance-report', 'akuntansi', 'amendments', 'analytics', ..
+E   AssertionError: ('sales', 'seharusnya kehilangan laporan Ringkasan')
+backend/tests_mem/test_PRT5_sapuan.py:97: AssertionError: ('sales', 'seharusnya kehilangan laporan Ringkasan')
+16 failed, 1 warning in 4.86s

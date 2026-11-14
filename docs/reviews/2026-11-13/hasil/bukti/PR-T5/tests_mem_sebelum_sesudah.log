@@ -1,0 +1,4 @@
+== sebelum (HEAD d0c92d3)
+433 passed, 2 skipped, 3 xfailed, 11 warnings in 109.92s (0:01:49)
+== sesudah
+449 passed, 2 skipped, 3 xfailed, 11 warnings in 174.80s (0:02:54)
