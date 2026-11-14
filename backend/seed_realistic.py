@@ -3607,13 +3607,12 @@ async def seed_bank_accounts():
         return "bank_kas_ksc" if ent == "ent_ksc" else "bank_kas_kanda"
 
     cash_txns = await db.cash_transactions.find({}, {"_id": 0, "id": 1, "cash_type": 1, "entity_id": 1, "direction": 1}).to_list(1000)
-    for idx, t in enumerate(cash_txns):
-        # ~setengah ditandai sudah terekonsiliasi (yang 'in' & indeks genap)
-        reconciled = (t.get("direction") == "in") or (idx % 2 == 0)
+    for t in cash_txns:
+        # PK-21 (SL-10) — tidak lagi menanam tanda `reconciled` tanpa pencocokan mutasi bank: status terekonsiliasi
+        # hanya lahir dari Rekonsiliasi Bank (`bank_recon_service`, `reconciled_amount`).
         await db.cash_transactions.update_one(
             {"id": t["id"]},
-            {"$set": {"account_id": _acc_for(t), "reconciled": bool(reconciled),
-                      "reconciled_at": ago(days=5) if reconciled else ""}},
+            {"$set": {"account_id": _acc_for(t)}},
         )
     print(f"✅ Bank accounts seeded ({len(docs)}) + {len(cash_txns)} cash txns ditautkan")
 

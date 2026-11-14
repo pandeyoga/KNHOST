@@ -111,7 +111,8 @@ async def void_cost(cost: Dict[str, Any], reason: str, actor: Dict[str, Any]) ->
     if cost.get("status") != "posted":
         raise HTTPException(status_code=409, detail="Hanya biaya berstatus terposting yang bisa dibatalkan.")
     txn = await db.cash_transactions.find_one({"id": cost.get("cash_txn_id")}, {"_id": 0}) or {}
-    if txn.get("reconciled") or float(txn.get("reconciled_amount") or 0) > 0:
+    # PK-21 — yang menahan hanya pencocokan nyata (`reconciled_amount`); tanda manual lama tidak bisa dilepas lagi.
+    if float(txn.get("reconciled_amount") or 0) > 0:
         raise HTTPException(status_code=409, detail="Kas biaya ini sudah dicocokkan dengan mutasi bank — lepaskan dulu.")
     try:
         await gl.preflight_posting(cost.get("entity_id", ""), now_iso())

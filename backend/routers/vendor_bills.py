@@ -572,7 +572,8 @@ async def void_vendor_bill_payment(bill_id: str, payment_id: str, payload: Vendo
             or await db.cash_transactions.count_documents({"ref_type": "ap_advance", "ref_id": bill_id, "status": {"$ne": "void"}}):
         raise HTTPException(status_code=409, detail="Bill ini punya keputusan selisih/uang muka — batalkan keputusan itu dulu.")
     txn = await db.cash_transactions.find_one({"id": pay.get("cash_txn_id")}, {"_id": 0}) or {}
-    if txn.get("reconciled") or float(txn.get("reconciled_amount") or 0) > 0:
+    # PK-21 — yang menahan hanya pencocokan nyata (`reconciled_amount`); tanda manual lama tidak bisa dilepas lagi.
+    if float(txn.get("reconciled_amount") or 0) > 0:
         raise HTTPException(status_code=409, detail="Kas pembayaran ini sudah dicocokkan dengan mutasi bank — lepaskan dulu.")
     try:
         await gl_service.preflight_posting(bill.get("entity_id", ""), now_iso())

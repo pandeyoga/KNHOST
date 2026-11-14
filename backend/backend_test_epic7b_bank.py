@@ -9,7 +9,7 @@ Comprehensive test covering:
 4. GET /api/bank-accounts/{id}/ledger => 200 with running_balance
 5. POST /api/bank-accounts (create account)
 6. POST /api/cash-transactions (tie to account, balance updates)
-7. POST /api/cash-transactions/{txn_id}/reconcile (toggle reconciled)
+7. POST /api/cash-transactions/{txn_id}/reconcile => 410 (PK-21: tanda manual dimatikan)
 8. PATCH /api/bank-accounts/{id} (update name/is_active)
 9. RBAC: manager => 200, sales => 403
 10. Edge cases: unknown id => 404
@@ -316,55 +316,31 @@ class BankTester:
             return None
     
     def test_reconcile(self, txn_id, account_id):
-        """Test POST /api/cash-transactions/{txn_id}/reconcile (toggle reconciled)"""
-        print("\n=== TEST: Reconcile Transaction ===")
+        """PK-21 (SL-10) — POST /api/cash-transactions/{txn_id}/reconcile dimatikan: selalu 410, tidak menulis.
+        Status terekonsiliasi hanya dari pencocokan mutasi bank (Keuangan › Rekonsiliasi Bank)."""
+        print("\n=== TEST: Reconcile Transaction (PK-21: 410) ===")
         try:
-            # Reconcile = true
-            payload = {"reconciled": True}
-            r = self.session.post(f"{API}/cash-transactions/{txn_id}/reconcile", json=payload,
-                                headers=self.headers(self.admin_token), timeout=30)
-            if r.status_code != 200:
-                bad(f"POST /api/cash-transactions/{txn_id}/reconcile returned {r.status_code}, expected 200")
+            r = self.session.get(f"{API}/bank-accounts/{account_id}/ledger", headers=self.headers(self.admin_token),
+                                 timeout=30)
+            before = next((t for t in (r.json().get("transactions") or []) if t.get("id") == txn_id), {})
+            r = self.session.post(f"{API}/cash-transactions/{txn_id}/reconcile", json={"reconciled": True},
+                                  headers=self.headers(self.admin_token), timeout=30)
+            if r.status_code != 410:
+                bad(f"POST /api/cash-transactions/{txn_id}/reconcile returned {r.status_code}, expected 410")
                 return False
-            ok("POST /api/cash-transactions/{txn_id}/reconcile (true) => 200")
-            
-            txn = r.json()
-            if txn.get("reconciled") is not True:
-                bad(f"Transaction reconciled field is {txn.get('reconciled')}, expected True")
+            ok("POST /api/cash-transactions/{txn_id}/reconcile => 410 (tanda manual dimatikan)")
+            r = self.session.get(f"{API}/bank-accounts/{account_id}/ledger", headers=self.headers(self.admin_token),
+                                 timeout=30)
+            after = next((t for t in (r.json().get("transactions") or []) if t.get("id") == txn_id), {})
+            if before.get("reconciled") != after.get("reconciled") or after.get("reconciled") is True:
+                bad(f"Transaksi berubah setelah 410: {before.get('reconciled')} -> {after.get('reconciled')}")
                 return False
-            ok("Transaction marked as reconciled")
-            
-            # Check reconciled_balance
-            r = self.session.get(f"{API}/bank-accounts", headers=self.headers(self.admin_token), timeout=30)
-            accounts = r.json()
-            acc = next((a for a in accounts if a["id"] == account_id), None)
-            if not acc:
-                bad(f"Account {account_id} not found")
-                return False
-            
-            info(f"Account reconciled_balance: {acc.get('reconciled_balance', 0):,.0f}")
-            ok("Reconciled balance updated")
-            
-            # Reconcile = false
-            payload = {"reconciled": False}
-            r = self.session.post(f"{API}/cash-transactions/{txn_id}/reconcile", json=payload,
-                                headers=self.headers(self.admin_token), timeout=30)
-            if r.status_code != 200:
-                bad(f"POST /api/cash-transactions/{txn_id}/reconcile (false) returned {r.status_code}, expected 200")
-                return False
-            ok("POST /api/cash-transactions/{txn_id}/reconcile (false) => 200")
-            
-            txn = r.json()
-            if txn.get("reconciled") is not False:
-                bad(f"Transaction reconciled field is {txn.get('reconciled')}, expected False")
-                return False
-            ok("Transaction unmarked as reconciled")
-            
+            ok("Transaksi tidak berubah dan tidak terekonsiliasi tanpa pencocokan mutasi")
             return True
         except Exception as e:
             bad(f"Exception in test_reconcile: {e}")
             return False
-    
+
     def test_update_account(self, account_id):
         """Test PATCH /api/bank-accounts/{id} (update name/is_active)"""
         print("\n=== TEST: Update Bank Account ===")

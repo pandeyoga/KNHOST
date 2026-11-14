@@ -7,7 +7,7 @@ from schemas_crm import (  # noqa: F401 — re-export CRM schemas (KN_17)
     SalesIncentiveCreate, CreditOverrideCreate, CreditOverrideDecision, CollectionFollowupCreate,
 )
 from schemas_finance import (  # noqa: F401 — re-export Finance schemas (EPIC7)
-    BankAccountCreate, BankAccountUpdate, ReconcilePayload,
+    BankAccountCreate, BankAccountUpdate,
     BudgetCreate, BudgetUpdate,
 )
 from schemas_makloon import (  # noqa: F401 — re-export Makloon/Subcon schemas (M1/M3/Fase D)

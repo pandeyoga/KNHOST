@@ -1,13 +1,16 @@
 /**
- * BankAccountsView (EPIC7-B) — Kas & Bank: multi-akun + ledger + rekonsiliasi.
- * Akses admin/manager (permission "cash"). Sumber: /api/bank-accounts (+ /ledger, /reconcile).
+ * BankAccountsView (EPIC7-B) — Kas & Bank: multi-akun + ledger + status rekonsiliasi (baca-saja).
+ * Akses admin/manager (permission "cash"). Sumber: /api/bank-accounts (+ /ledger).
+ * PK-21 (SL-10) — status rekonsiliasi per transaksi hanya dari pencocokan mutasi bank: lencana baca-saja
+ * (Terekonsiliasi / Sebagian / Belum); tombol tanda manual dihapus; pemegang `cash.create` mendapat tautan ke
+ * Rekonsiliasi Bank dengan rekening ini terpilih.
  * PK-16 — banner PT di atas KPI (cakupan dari kepala aplikasi; /bank-accounts tidak mengirim `scope_meta`);
  * gagal memuat → kartu & posisi buku besar dikosongkan.
  */
 import { apiErrorText } from "../../utils/apiError";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
-  RefreshCw, Plus, Landmark, Wallet, CheckCircle2, Circle, X, Banknote, ArrowDownLeft, ArrowUpRight, ListChecks,
+  RefreshCw, Plus, Landmark, Wallet, CheckCircle2, X, Banknote, ArrowDownLeft, ArrowUpRight, ListChecks, ArrowRight,
 } from "lucide-react";
 import axios, { API } from "../../services/apiClient";
 import ErrorNotice from "../../components/ErrorNotice";
@@ -20,8 +23,7 @@ import { can } from "../../config/roles";
 import FormModal from "../../components/FormModal";
 import KNSelect from "../../components/KNSelect";
 import MoneyInput from "@/components/MoneyInput";
-import useIntentKey from "../../hooks/useIntentKey";
-import { moneyPost } from "../../utils/moneyRequest";
+import { useAppNav } from "../../context/AppNavContext";
 
 const ACCOUNT_TYPE_OPTIONS = [
   { value: "bank", label: "Rekening bank" },
@@ -36,6 +38,8 @@ const EMPTY_FORM = { name: "", account_type: "bank", bank_name: "", account_numb
 export default function BankAccountsView({ selectedEntity, currentUser }) {
   const canAudit = can(currentUser?.permissions, "audit", "view");
   const canConfigure = can(currentUser?.permissions, "cash", "configure");   // PK-17 — kelola rekening kas & bank
+  const canMatch = can(currentUser?.permissions, "cash", "create");          // PK-21 — cocokkan mutasi bank
+  const { go, canOpen } = useAppNav();
   const [detailTab, setDetailTab] = useState("ledger");
   const [accounts, setAccounts] = useState([]);
   const srch = useListSearch(accounts, null, { testId: "bank-accounts", pageSize: 24, placeholder: "Cari nama / bank / nomor rekening…" });
@@ -48,9 +52,6 @@ export default function BankAccountsView({ selectedEntity, currentUser }) {
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState(EMPTY_FORM);
   const [saving, setSaving] = useState(false);
-  // PK-12 — tandai rekonsiliasi kas ber-Idempotency-Key; tombol baris mati selama menunggu jawaban.
-  const [reconcilingId, setReconcilingId] = useState("");
-  const reconcileIntent = useIntentKey("kasrec");
 
   // Keputusan pemilik K-02 (26 Okt) — angka utama "Kas & Bank" = saldo buku besar akun kas+bank; kartu rekening =
   // rincian. Posisi buku besar dimuat terpisah: bila gagal (mis. izin), kartu rekening tetap tampil.
@@ -93,29 +94,6 @@ export default function BankAccountsView({ selectedEntity, currentUser }) {
       if (!silent) setLedgerLoading(false);
     }
   }, []);
-
-  const toggleReconcile = async (txn) => {
-    if (reconcilingId) return;
-    const next = !txn.reconciled;
-    // optimistic update agar tombol langsung berubah
-    setLedger((prev) => prev ? {
-      ...prev,
-      transactions: prev.transactions.map((t) => t.id === txn.id ? { ...t, reconciled: next } : t),
-    } : prev);
-    setReconcilingId(txn.id);
-    try {
-      const body = { reconciled: next };
-      await reconcileIntent.send({ id: txn.id, ...body },
-        (k) => moneyPost(`${API}/cash-transactions/${txn.id}/reconcile`, body, k));
-      await load();                       // sinkron saldo kartu
-      await openLedger(selected, true);   // silent refresh (tanpa flash skeleton)
-    } catch (err) {
-      setError(apiErrorText(err, "Gagal memperbarui rekonsiliasi."));
-      await openLedger(selected, true);   // revert dari server
-    } finally {
-      setReconcilingId("");
-    }
-  };
 
   const [formErr, setFormErr] = useState("");
   const closeForm = () => { setShowForm(false); setForm(EMPTY_FORM); setFormErr(""); };
@@ -292,7 +270,8 @@ export default function BankAccountsView({ selectedEntity, currentUser }) {
             ledger={ledger}
             loading={ledgerLoading}
             onClose={() => { setSelected(null); setLedger(null); }}
-            onToggle={toggleReconcile} busyId={reconcilingId}
+            onMatch={canMatch && canOpen("bank-reconciliation")
+              ? () => go("bank-reconciliation", { preset: { bank_account_id: selected } }) : null}
             tabs={canAudit ? (
               <div className="tab-bar px-3" data-testid="bank-detail-tabs">
                 <button data-testid="bank-detail-tab-ledger" className={`tab-button ${detailTab === "ledger" ? "active" : ""}`} onClick={() => setDetailTab("ledger")}>Mutasi</button>
@@ -310,7 +289,35 @@ export default function BankAccountsView({ selectedEntity, currentUser }) {
   );
 }
 
-function LedgerPanel({ ledger, loading, onClose, onToggle, busyId = "", tabs = null, children = null }) {
+// PK-21 — lencana baca-saja; status diturunkan server dari angka pencocokan (`reconciled`, `reconciled_amount`).
+function ReconBadge({ txn }) {
+  const rec = Number(txn?.reconciled_amount || 0);
+  if (txn?.reconciled) {
+    return (
+      <span data-testid={`bank-recon-status-${txn.id}`} data-status="full"
+        className="inline-flex items-center gap-1 whitespace-nowrap rounded-full bg-kn-success-soft px-2 py-0.5 text-fs-12 font-semibold text-kn-success-text">
+        <CheckCircle2 size={12} aria-hidden="true" />Terekonsiliasi
+      </span>
+    );
+  }
+  if (rec > 0 && rec < Number(txn?.amount || 0)) {
+    return (
+      <span data-testid={`bank-recon-status-${txn.id}`} data-status="partial"
+        title={`Sudah dicocokkan ${formatCurrency(rec)} dari ${formatCurrency(txn.amount)}`}
+        className="inline-flex items-center whitespace-nowrap rounded-full bg-kn-warning-soft px-2 py-0.5 text-fs-12 font-semibold text-kn-warning-text tabular-nums">
+        Sebagian {formatCurrency(rec)}
+      </span>
+    );
+  }
+  return (
+    <span data-testid={`bank-recon-status-${txn?.id}`} data-status="none"
+      className="inline-flex items-center whitespace-nowrap rounded-full bg-kn-neutral-soft px-2 py-0.5 text-fs-12 font-semibold text-kn-text-2">
+      Belum
+    </span>
+  );
+}
+
+function LedgerPanel({ ledger, loading, onClose, onMatch = null, tabs = null, children = null }) {
   return (
     <div className="section-card" data-testid="bank-ledger">
       <div className="section-head">
@@ -323,6 +330,13 @@ function LedgerPanel({ ledger, loading, onClose, onToggle, busyId = "", tabs = n
       </div>
       {tabs}
       <div className="section-body">
+        {!children && onMatch && (
+          <div className="mb-2 flex justify-end">
+            <button type="button" data-testid="bank-ledger-match-link" className="secondary-button btn-sm" onClick={onMatch}>
+              Cocokkan di Rekonsiliasi Bank <ArrowRight size={13} aria-hidden="true" />
+            </button>
+          </div>
+        )}
         {children || (loading ? (
           <div className="grid gap-2" data-testid="bank-ledger-loading">{[0, 1, 2].map((i) => <div key={i} className="h-9 bg-[#F5F5F7] rounded animate-pulse" />)}</div>
         ) : !ledger || (ledger.transactions || []).length === 0 ? (
@@ -348,15 +362,7 @@ function LedgerPanel({ ledger, loading, onClose, onToggle, busyId = "", tabs = n
                     <td className="px-3 py-2 text-right tabular-nums text-[#1B7F4B]">{t.direction === "in" ? formatCurrency(t.amount) : "—"}</td>
                     <td className="px-3 py-2 text-right tabular-nums text-[#C0392B]">{t.direction === "out" ? formatCurrency(t.amount) : "—"}</td>
                     <td className="px-3 py-2 text-right tabular-nums font-semibold">{formatCurrency(t.running_balance)}</td>
-                    <td className="px-3 py-2 text-center">
-                      <button
-                        data-testid={`bank-reconcile-${t.id}`}
-                        onClick={() => onToggle(t)} disabled={busyId === t.id}
-                        className={`inline-flex items-center gap-1 text-[10.5px] font-semibold rounded-full px-2 py-0.5 border ${t.reconciled ? "bg-[#E6F6EC] border-[#BDE5CC] text-[#1B7F4B]" : "bg-white border-[#E4E4EA] text-[#8E8E93] hover:border-[#C9DBF7]"}`}
-                      >
-                        {t.reconciled ? <CheckCircle2 size={12} /> : <Circle size={12} />}{t.reconciled ? "Terekonsiliasi" : "Tandai"}
-                      </button>
-                    </td>
+                    <td className="px-3 py-2 text-center"><ReconBadge txn={t} /></td>
                   </tr>
                 ))}
               </tbody>

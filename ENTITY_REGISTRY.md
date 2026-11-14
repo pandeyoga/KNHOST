@@ -506,10 +506,12 @@ Key Fields:
 
 Saldo akun (derived) = opening_balance + Σ(in) − Σ(out) cash_transactions
   posted (status≠void) dengan account_id = akun tsb.
-Rekonsiliasi: cash_transactions.reconciled (bool) + reconciled_at.
+Rekonsiliasi (PK-21): saldo terekonsiliasi & "belum dicocokkan" diturunkan dari
+  cash_transactions.reconciled_amount (`bank_recon_service.txn_reconciled`), bukan dari tanda tersimpan.
 ℹ️ Endpoint: GET /api/bank-accounts, POST /api/bank-accounts,
-  PATCH /api/bank-accounts/{id}, GET /api/bank-accounts/{id}/ledger,
-  POST /api/cash-transactions/{id}/reconcile. RBAC: permission "cash" (admin/manager).
+  PATCH /api/bank-accounts/{id}, GET /api/bank-accounts/{id}/ledger. RBAC: permission "cash" (admin/manager).
+  POST /api/cash-transactions/{id}/reconcile — PK-21: DIMATIKAN, selalu 410 (sesudah cek izin `cash.create`
+  + entitas); tanda manual ya/tidak tidak ada lagi.
 ⚠️ JANGAN BUAT: bank, banks, accounts, rekening (sebagai koleksi).
 ```
 
@@ -556,8 +558,12 @@ Key Fields:
 Auto-match:  1:1 line↔txn (akun sama, arah sama, |Δamount| ≤ toleransi,
              |Δtanggal| ≤ window hari; prioritas ref cocok lalu tanggal terdekat).
              Idempotent: hanya proses line unmatched & txn reconciled≠true.
-Efek match:  cash_transactions.reconciled=true, reconciled_at, matched_line_id.
-             Unmatch membalik ketiga field tsb (append-only; GL tak berubah).
+Efek match:  cash_transactions.reconciled_amount += alokasi (bersyarat ≤ amount) dan turunannya
+             (reconciled, reconciled_at, matched_line_ids, matched_line_id) dalam SATU pembaruan ber-pipeline.
+             Unmatch (PK-21): klaim baris `match_lock` (status matched) → pengurangan bersyarat
+             reconciled_amount ≥ alokasi − 0,01 per alokasi → baris unmatched; kalah klaim = 409 (append-only;
+             GL tak berubah, kecuali baris biaya bank: kas void + jurnal dibalik sesudah klaim).
+  match_lock / match_lock_at  string  kunci operasi cocok/lepas (basi > 10 menit boleh diambil alih)
 Endpoints:   POST /api/bank-reconciliation/import · POST /api/bank-reconciliation/auto-match ·
              GET /api/bank-reconciliation/lines · GET /api/bank-reconciliation/summary ·
              POST /api/bank-reconciliation/lines/{id}/match|unmatch|ignore
@@ -2426,8 +2432,19 @@ Key Fields:
   id, number (format: CASH-NNNNN), cash_type, direction, amount, category,
   description, entity_id, ref_type, ref_id, txn_date, status, created_by,
   created_at, updated_at
+Rekonsiliasi bank (PK-21, satu pemilik — `02` D1):
+  reconciled_amount  float   PEMILIK: hanya services/bank_recon_service.py (`_link`, `_unlink`, titipan,
+                             biaya bank). = Σ allocations[].amount baris bank_statement_lines `matched` yang
+                             menunjuk transaksi ini + `amount` bila ia kas titipan baris `holding`.
+  reconciled         bool    TURUNAN = reconciled_amount ≥ amount − 0,01 (dan > 0). Tidak pernah ditulis
+                             sendirian; pembaca memakai `txn_reconciled()` (tanda manual lama tidak dipercaya).
+  matched_line_ids[] string  TURUNAN = id baris yang masuk hitungan di atas (matched_line_id bila tepat satu).
+  reconciled_at      string  kosong bila tidak penuh.
+  Pembangun ulang: `bank_recon_service.rebuild_reconciled(txn_id)` (skrip perbaikan/uji). Invarian: INV-BNK-02.
+  Batal kas ditahan hanya bila reconciled_amount > 0 (cash.py, vendor_bills.py, marketing_cost_service.py).
 Endpoints:   GET /cash-transactions · GET /cash-transactions/summary ·
-             POST /cash-transactions · POST /cash-transactions/{id}/void
+             POST /cash-transactions · POST /cash-transactions/{id}/void ·
+             POST /cash-transactions/{id}/reconcile → 410 (PK-21)
 Invarian:    saldo = Σ(amount where direction=in) − Σ(amount where direction=out)
              untuk status≠void.
 ⚠️ JANGAN BUAT: kas, petty_cash, cash

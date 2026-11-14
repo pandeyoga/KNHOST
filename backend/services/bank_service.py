@@ -5,13 +5,15 @@ Koleksi kanonik: `bank_accounts` (master akun). Mutasi tetap memakai
 menautkan transaksi ke akun. Saldo akun = opening_balance + Σ(in) − Σ(out)
 transaksi posted (non-void) milik akun tsb.
 
-Rekonsiliasi sederhana: field `reconciled` (bool) + `reconciled_at` pada
-cash_transactions; saldo terekonsiliasi dihitung dari transaksi reconciled.
+PK-21 (SL-10) — status "terekonsiliasi" punya SATU sumber: alokasi mutasi bank (`bank_recon_service`, field
+`reconciled_amount`). Saldo terekonsiliasi & jumlah "belum dicocokkan" diturunkan dari angka itu
+(`bank_recon_service.txn_reconciled`); tanda manual `reconciled` ya/tidak sudah dihapus (endpoint → 410).
 """
 from typing import Any, Dict, List, Optional
 
 from db import db
 from core_utils import new_id, now_iso, safe_doc, DEFAULT_ENTITY_ID
+from services.bank_recon_service import txn_reconciled
 
 VALID_ACCOUNT_TYPES = {"bank", "cash"}
 CASH_TYPES = {"kas_kecil", "kas_besar"}
@@ -76,7 +78,7 @@ async def _txns_for(account_id: str) -> List[Dict[str, Any]]:
 def _balance(opening: float, txns: List[Dict[str, Any]], reconciled_only: bool = False) -> float:
     bal = float(opening or 0)
     for t in txns:
-        if reconciled_only and not t.get("reconciled"):
+        if reconciled_only and not txn_reconciled(t):   # PK-21 — dari angka pencocokan, bukan tanda tersimpan
             continue
         amt = float(t.get("amount", 0) or 0)
         bal += amt if t.get("direction") == "in" else -amt
@@ -87,7 +89,7 @@ def _enrich(acc: Dict[str, Any], txns: List[Dict[str, Any]]) -> Dict[str, Any]:
     opening = float(acc.get("opening_balance", 0) or 0)
     inflow = round(sum(float(t.get("amount", 0) or 0) for t in txns if t.get("direction") == "in"), 2)
     outflow = round(sum(float(t.get("amount", 0) or 0) for t in txns if t.get("direction") == "out"), 2)
-    reconciled = sum(1 for t in txns if t.get("reconciled"))
+    reconciled = sum(1 for t in txns if txn_reconciled(t))   # PK-21
     return {
         **acc,
         "balance": _balance(opening, txns),
@@ -260,18 +262,9 @@ async def account_ledger(account_id: str) -> Optional[Dict[str, Any]]:
         amt = float(t.get("amount", 0) or 0)
         running += amt if t.get("direction") == "in" else -amt
         t["running_balance"] = round(running, 2)
+        # PK-21 — lencana layar (Terekonsiliasi / Sebagian / Belum) membaca turunan dari `reconciled_amount`; tanda
+        # manual lama yang masih tersimpan tidak ditampilkan sebagai "terekonsiliasi".
+        t["reconciled"] = txn_reconciled(t)
+        t["reconciled_amount"] = round(float(t.get("reconciled_amount") or 0), 2)
     chron.reverse()  # tampilkan terbaru dulu
     return {**_enrich(acc, txns), "transactions": chron}
-
-
-async def reconcile_txn(txn_id: str, reconciled: bool) -> Optional[Dict[str, Any]]:
-    txn = await db.cash_transactions.find_one({"id": txn_id}, {"_id": 0})
-    if not txn:
-        return None
-    await db.cash_transactions.update_one(
-        {"id": txn_id},
-        {"$set": {"reconciled": bool(reconciled),
-                  "reconciled_at": now_iso() if reconciled else "",
-                  "updated_at": now_iso()}},
-    )
-    return await db.cash_transactions.find_one({"id": txn_id}, {"_id": 0})

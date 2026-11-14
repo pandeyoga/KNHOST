@@ -8,7 +8,7 @@ from fastapi import APIRouter, Request, Query, HTTPException
 
 from dependencies import require_permission, audit
 from entity_scope import entity_ctx, resolve_scope_ids
-from schemas import BankAccountCreate, BankAccountUpdate, ReconcilePayload
+from schemas import BankAccountCreate, BankAccountUpdate
 from services import bank_service
 from role_registry import role_in  # peran acuan dikenali (keputusan owner 2026-10-21)
 
@@ -120,16 +120,17 @@ async def _guard_cash_doc(request: Request, actor: Dict[str, Any], collection: s
     await guard_doc(request, collection, doc, not_found=not_found)
 
 
+#: PK-21 (SL-10) — tanda rekonsiliasi manual dimatikan: status "terekonsiliasi" hanya dari pencocokan mutasi bank.
+PESAN_TANDA_MANUAL_MATI = ("Tanda rekonsiliasi manual sudah tidak dipakai. Cocokkan transaksi dengan mutasi bank di "
+                           "Keuangan › Rekonsiliasi Bank.")
+
+
 @router.post("/cash-transactions/{txn_id}/reconcile")
-async def reconcile_cash_transaction(txn_id: str, payload: ReconcilePayload, request: Request) -> Dict[str, Any]:
-    """Tandai transaksi kas sebagai terekonsiliasi / belum."""
+async def reconcile_cash_transaction(txn_id: str, request: Request) -> Dict[str, Any]:
+    """PK-21 — dulu menandai transaksi kas terekonsiliasi ya/tidak tanpa mutasi bank (angka kedua yang tidak sejalan
+    dengan `reconciled_amount`). Kini selalu 410 sesudah pemeriksaan izin dan entitas; tidak menulis apa pun."""
     actor = await require_permission(request, "cash", "create")
     from db import db as _db
     await _guard_cash_doc(request, actor, "cash_transactions",
                           await _db.cash_transactions.find_one({"id": txn_id}, {"_id": 0}), "Transaksi tidak ditemukan")
-    txn = await bank_service.reconcile_txn(txn_id, payload.reconciled)
-    if txn is None:
-        raise HTTPException(status_code=404, detail="Transaksi tidak ditemukan")
-    await audit(actor["name"], "cash_transaction_reconciled", "cash_transaction", txn_id,
-                {"reconciled": payload.reconciled})
-    return txn
+    raise HTTPException(status_code=410, detail=PESAN_TANDA_MANUAL_MATI)

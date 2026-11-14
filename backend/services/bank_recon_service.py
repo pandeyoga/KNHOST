@@ -54,6 +54,9 @@ logger = logging.getLogger(__name__)
 STATUS = ("unmatched", "matched", "ignored", "holding")
 GROUP_ENTITY = "all"
 EPS = 0.01
+# PK-21 — kunci `match_lock` baris mutasi yang tertinggal lebih lama dari ini (proses mati di tengah) boleh diambil alih.
+MATCH_LOCK_STALE_MINUTES = 10
+PESAN_LEPAS_KONFLIK = "Mutasi bank ini baru saja dilepas atau diubah proses lain. Muat ulang."
 
 CFG_KEYS = (
     "bank.match_weight_amount", "bank.match_weight_date", "bank.match_weight_ref",
@@ -116,6 +119,44 @@ def _norm_dir(v: str) -> str:
 
 def _round(v: Any) -> float:
     return round(float(v or 0), 2)
+
+
+# ── PK-21 (SL-10) — status "terekonsiliasi" transaksi kas: SATU sumber ─────────────────────────────────────────
+# `reconciled_amount` hanya ditulis modul ini (`_link`, `_unlink`, titipan, biaya bank) dan = Σ alokasi baris mutasi
+# `matched` yang menunjuk transaksi + `amount` bila transaksi itu kas titipan baris `holding`. `reconciled` dan
+# `matched_line_ids` TURUNAN: tidak pernah ditulis sendirian (tanda manual `/cash-transactions/{id}/reconcile` → 410).
+def txn_reconciled(txn: Dict[str, Any]) -> bool:
+    """Turunan `reconciled` dari angka: `reconciled_amount ≥ amount − 0,01` (dan > 0, supaya kas bernominal nol tidak
+    pernah tampil terekonsiliasi). Dipakai semua pembaca — tanda `reconciled` lama yang tersimpan tidak dipercaya."""
+    rec = _round(txn.get("reconciled_amount"))
+    return rec > 0 and rec >= _round(txn.get("amount")) - EPS
+
+
+def _stale_before() -> str:
+    from datetime import timedelta
+    return (datetime.now(timezone.utc) - timedelta(minutes=MATCH_LOCK_STALE_MINUTES)).isoformat()
+
+
+def _recon_pipeline(line_id: str, delta: float, attach: bool, now: str) -> List[Dict[str, Any]]:
+    """PK-21 — SATU pembaruan ber-pipeline untuk transaksi kas: `reconciled_amount` ± `delta` (dibulatkan 2, tidak
+    pernah negatif) dan `matched_line_ids` ± baris ini, lalu turunannya (`reconciled`, `reconciled_at`,
+    `matched_line_id`) dihitung DATABASE dari nilai baru — bukan dari salinan yang dibaca sebelumnya (`02` D1)."""
+    rec = {"$round": [{"$add": [{"$ifNull": ["$reconciled_amount", 0]}, delta]}, 2]}
+    ids: Dict[str, Any] = {"$filter": {"input": {"$ifNull": ["$matched_line_ids", []]},
+                                       "cond": {"$ne": ["$$this", line_id]}}}
+    if attach:
+        ids = {"$concatArrays": [ids, {"$literal": [line_id]}]}
+    full = {"$and": [{"$gt": ["$reconciled_amount", 0]},
+                     {"$gte": ["$reconciled_amount", {"$subtract": [{"$ifNull": ["$amount", 0]}, EPS]}]}]}
+    keep_at = {"$literal": now} if attach else {"$ifNull": ["$reconciled_at", ""]}
+    return [
+        {"$set": {"reconciled_amount": {"$cond": [{"$lt": [rec, 0]}, 0, rec]}, "matched_line_ids": ids}},
+        {"$set": {"reconciled": full,
+                  "reconciled_at": {"$cond": [full, keep_at, ""]},
+                  "matched_line_id": {"$cond": [{"$eq": [{"$size": "$matched_line_ids"}, 1]},
+                                                {"$arrayElemAt": ["$matched_line_ids", 0]}, ""]},
+                  "updated_at": {"$literal": now}}},
+    ]
 
 
 def _scope_q(entity_ids: Optional[List[str]], field: str = "entity_id") -> Dict[str, Any]:
@@ -531,8 +572,8 @@ async def _candidate_txns(bank_account_id: str, entity_ids: Optional[List[str]],
     rows = await db.cash_transactions.find(_book_query(acc, entity_ids), {"_id": 0}).to_list(20000)
     out = []
     for t in rows:
-        rec = _round(t.get("reconciled_amount"))
-        if t.get("reconciled") and (not include_partial or rec >= _round(t.get("amount")) - EPS):
+        # PK-21 — dari angka, bukan tanda `reconciled` tersimpan (tanda manual lama tidak menyembunyikan/menampilkan).
+        if txn_reconciled(t) or (not include_partial and _round(t.get("reconciled_amount")) > EPS):
             continue
         out.append(t)
     return out
@@ -607,27 +648,27 @@ async def _link(line: Dict[str, Any], allocations: List[Dict[str, Any]], actor: 
     # G3 V3-BANK-01 — baris mutasi DIKLAIM dulu (CAS status+kunci) sebelum kapasitas transaksi:
     # dua pencocokan paralel atas satu baris → satu menang, yang lain konflik tanpa efek.
     op = new_id("bmatch")
-    from datetime import datetime, timedelta, timezone as _tz
-    stale = (datetime.now(_tz.utc) - timedelta(minutes=10)).isoformat()
     got = await db.bank_statement_lines.update_one(
         {"id": line["id"], "status": {"$nin": ["matched", "ignored"]},
-         "$or": [{"match_lock": {"$exists": False}}, {"match_lock_at": {"$lt": stale}}]},
+         "$or": [{"match_lock": {"$exists": False}}, {"match_lock_at": {"$lt": _stale_before()}}]},
         {"$set": {"match_lock": op, "match_lock_at": now}})
     if got.modified_count != 1:
         raise ValueError("Mutasi bank ini baru saja dicocokkan proses lain — muat ulang.")
     claimed: List[Dict[str, Any]] = []
     for a in allocations:
         amt = _round(a["amount"])
+        # PK-21 — klaim kapasitas DAN turunannya (`reconciled`, `matched_line_ids`, …) dalam SATU pembaruan bersyarat;
+        # dulu turunan ditulis sesudahnya dari salinan yang dibaca ulang (bisa basi bila proses lain menyela).
         res = await db.cash_transactions.update_one(
             {"id": a["txn_id"], "status": {"$ne": "void"},
              "$expr": {"$lte": [{"$add": [{"$ifNull": ["$reconciled_amount", 0]}, amt]},
                                 {"$add": ["$amount", EPS]}]}},
-            [{"$set": {"reconciled_amount": {"$round": [{"$add": [{"$ifNull": ["$reconciled_amount", 0]}, amt]}, 2]}}}])
+            _recon_pipeline(line["id"], amt, True, now))
         if res.modified_count != 1:
             for c in claimed:
                 await db.cash_transactions.update_one(
-                    {"id": c["txn_id"]}, [{"$set": {"reconciled_amount": {"$round": [
-                        {"$subtract": ["$reconciled_amount", c["amount"]]}, 2]}}}])
+                    {"id": c["txn_id"], "$expr": {"$gte": [{"$ifNull": ["$reconciled_amount", 0]}, c["amount"] - EPS]}},
+                    _recon_pipeline(line["id"], -c["amount"], False, now))
             await db.bank_statement_lines.update_one({"id": line["id"], "match_lock": op},
                                                      {"$unset": {"match_lock": "", "match_lock_at": ""}})
             raise ValueError("Sisa transaksi buku tidak cukup (baru saja dipakai proses lain / alokasi ganda).")
@@ -639,37 +680,85 @@ async def _link(line: Dict[str, Any], allocations: List[Dict[str, Any]], actor: 
         "matched_txn_ids": txn_ids, "allocations": allocations,
         "match_type": match_type, "matched_at": now, "matched_by": actor,
         "updated_at": now}, "$unset": {"match_lock": "", "match_lock_at": ""}})
-    for a in allocations:
-        t = await db.cash_transactions.find_one({"id": a["txn_id"]}, {"_id": 0})
-        if not t:
-            continue
-        rec = _round(t.get("reconciled_amount"))  # sudah ditambah atomik di atas
-        ids = [x for x in (t.get("matched_line_ids") or []) if x != line["id"]] + [line["id"]]
-        full = rec >= _round(t.get("amount")) - EPS
-        await db.cash_transactions.update_one({"id": a["txn_id"]}, {"$set": {
-            "reconciled": bool(full), "reconciled_amount": rec,
-            "reconciled_at": now if full else "",
-            "matched_line_id": line["id"] if len(ids) == 1 else "",
-            "matched_line_ids": ids, "updated_at": now}})
 
 
-async def _unlink(line: Dict[str, Any]) -> None:
+async def _unlink(line: Dict[str, Any], op: str = "", actor: str = "") -> None:
+    """PK-21 (SL-10) — lepas-cocok BERSYARAT, aman bila dua permintaan datang bersamaan.
+
+    1. KLAIM baris: `status == matched` dan `match_lock` kosong/basi → pasang `match_lock`. Gagal → 409. Alokasi dibaca
+       dari dokumen HASIL KLAIM (bukan dari salinan pemanggil).
+       Baris biaya/bunga bank: kas di-void + jurnal dibalik SESUDAH klaim; gagal → kunci dicabut, baris tetap `matched`.
+    2. Tiap alokasi: satu pembaruan bersyarat `reconciled_amount ≥ alokasi − 0,01` yang menulis sekaligus angka dan
+       turunannya (`_recon_pipeline`). Tidak cocok → sudah dilepas proses lain; dicatat di log, dilewati.
+    3. Baris → `unmatched`, tautan dikosongkan, kunci dicabut — bersyarat kunci milik operasi ini.
+    """
     now = now_iso()
-    for a in (line.get("allocations") or []):
-        t = await db.cash_transactions.find_one({"id": a["txn_id"]}, {"_id": 0})
-        if not t:
-            continue
-        rec = max(0.0, _round(_round(t.get("reconciled_amount")) - _round(a["amount"])))
-        ids = [x for x in (t.get("matched_line_ids") or []) if x != line["id"]]
-        await db.cash_transactions.update_one({"id": a["txn_id"]}, {"$set": {
-            "reconciled": bool(ids) and rec >= _round(t.get("amount")) - EPS,
-            "reconciled_amount": rec, "reconciled_at": "",
-            "matched_line_id": ids[0] if len(ids) == 1 else "",
-            "matched_line_ids": ids, "updated_at": now}})
-    await db.bank_statement_lines.update_one({"id": line["id"]}, {"$set": {
-        "status": "unmatched", "match_kind": "", "matched_txn_id": "", "matched_txn_ids": [],
-        "allocations": [], "match_type": "", "matched_at": "", "matched_by": "",
-        "score": 0, "score_explain": [], "updated_at": now}})
+    op = op or new_id("bunmatch")
+    claimed = await db.bank_statement_lines.find_one_and_update(
+        {"id": line["id"], "status": "matched",
+         "$or": [{"match_lock": {"$exists": False}}, {"match_lock_at": {"$lt": _stale_before()}}]},
+        {"$set": {"match_lock": op, "match_lock_at": now}}, projection={"_id": 0})
+    if not claimed:
+        raise HTTPException(status_code=409, detail=PESAN_LEPAS_KONFLIK)
+    if claimed.get("match_type") == "charge":
+        try:
+            await _reverse_charge(claimed, actor)
+        except Exception:
+            await db.bank_statement_lines.update_one({"id": line["id"], "match_lock": op},
+                                                     {"$unset": {"match_lock": "", "match_lock_at": ""}})
+            raise
+    for a in (claimed.get("allocations") or []):
+        amt = _round(a.get("amount"))
+        res = await db.cash_transactions.update_one(
+            {"id": a.get("txn_id"), "$expr": {"$gte": [{"$ifNull": ["$reconciled_amount", 0]}, amt - EPS]}},
+            _recon_pipeline(line["id"], -amt, False, now))
+        if res.modified_count != 1:
+            logger.warning("[PK-21 _unlink] %s → %s: alokasi %s sudah dilepas sebelumnya (dilewati)",
+                           line["id"], a.get("txn_id"), amt)
+    res = await db.bank_statement_lines.update_one({"id": line["id"], "match_lock": op}, {
+        "$set": {"status": "unmatched", "match_kind": "", "matched_txn_id": "", "matched_txn_ids": [],
+                 "allocations": [], "match_type": "", "matched_at": "", "matched_by": "",
+                 "score": 0, "score_explain": [], "updated_at": now},
+        "$unset": {"match_lock": "", "match_lock_at": ""}})
+    if res.modified_count != 1:
+        logger.warning("[PK-21 _unlink] kunci %s atas %s sudah diambil alih proses lain", op, line["id"])
+
+
+async def rebuild_reconciled(txn_id: str) -> Dict[str, Any]:
+    """PK-21 (`02` D2) — pembangun ulang `reconciled_amount`, `reconciled`, `matched_line_ids` satu transaksi kas dari
+    baris mutasi: Σ alokasi baris `matched` yang menunjuknya + `amount` bila ia kas titipan baris `holding`. Menulis
+    hanya bila berbeda. Dipanggil skrip perbaikan dan uji — bukan alur layar."""
+    t = await db.cash_transactions.find_one({"id": txn_id}, {"_id": 0})
+    if not t:
+        raise ValueError("Transaksi kas tidak ditemukan")
+    total, ids = 0.0, []
+    async for ln in db.bank_statement_lines.find({"status": "matched", "allocations.txn_id": txn_id},
+                                                 {"_id": 0, "id": 1, "allocations": 1}):
+        total += sum(_round(a.get("amount")) for a in (ln.get("allocations") or []) if a.get("txn_id") == txn_id)
+        ids.append(ln["id"])
+    async for ln in db.bank_statement_lines.find({"status": "holding", "holding.cash_txn_id": txn_id},
+                                                 {"_id": 0, "id": 1}):
+        total += _round(t.get("amount"))
+        ids.append(ln["id"])
+    after_rec = _round(total)
+    after = {"reconciled_amount": after_rec,
+             "reconciled": txn_reconciled({"amount": t.get("amount"), "reconciled_amount": after_rec}),
+             "matched_line_ids": ids}
+    before = {"reconciled_amount": t.get("reconciled_amount"), "reconciled": t.get("reconciled"),
+              "matched_line_ids": list(t.get("matched_line_ids") or [])}
+    changed = (abs(_round(before["reconciled_amount"]) - after_rec) > 0.005
+               or bool(before["reconciled"]) != after["reconciled"]
+               or sorted(before["matched_line_ids"]) != sorted(ids))
+    if changed:
+        now = now_iso()
+        res = await db.cash_transactions.update_one(
+            {"id": txn_id, "reconciled_amount": t.get("reconciled_amount")},
+            {"$set": {**after,
+                      "reconciled_at": (t.get("reconciled_at") or now) if after["reconciled"] else "",
+                      "matched_line_id": ids[0] if len(ids) == 1 else "", "updated_at": now}})
+        if res.modified_count != 1:
+            raise ValueError("Transaksi kas berubah saat dihitung ulang — jalankan lagi.")
+    return {"txn_id": txn_id, "before": before, "after": after, "changed": changed}
 
 
 async def auto_match(bank_account_id: str, entity_ids: Optional[List[str]] = None,
@@ -865,14 +954,14 @@ async def unmatch(line_id: str, actor: str, entity_ids: Optional[List[str]] = No
     # baris TITIPAN membuat statusnya 'unmatched' sementara kas + jurnal titipannya tetap
     # hidup → INV-BNK-03 memerah (uang tak dikenal hilang dari laporan). Layar hanya
     # menampilkan tombol "Lepas" untuk baris tercocok, tapi API tidak boleh percaya layar.
-    if ln.get("status") != "matched":
+    # PK-21 (SL-10) — dari salinan hanya titipan/diabaikan yang ditolak (400, arahan jalur lain). Status `matched`
+    # TIDAK dipercaya dari salinan: `_unlink` mengklaim baris; kalah klaim / bukan `matched` lagi → 409.
+    if ln.get("status") in ("holding", "ignored"):
         raise ValueError(
             "Hanya baris berstatus TERCOCOK yang bisa dilepas. "
             "Baris titipan dilepas lewat 'Batalkan titipan'; baris diabaikan lewat "
             "'Batal abaikan'.")
-    if ln.get("match_type") == "charge":
-        await _reverse_charge(ln, actor)
-    await _unlink(ln)
+    await _unlink(ln, new_id("bunmatch"), actor)
     return safe_doc(await db.bank_statement_lines.find_one({"id": line_id}, {"_id": 0}))
 
 

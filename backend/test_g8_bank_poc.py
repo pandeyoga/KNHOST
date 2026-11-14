@@ -850,7 +850,8 @@ def test_charge_and_guards(admin: str) -> Dict[str, Any]:
        "saldo Beban Administrasi Bank kembali seperti sebelum pembukuan (tidak ada beban hantu)",
        f"Rp {acc_balance('6-8000'):,.0f}")
     r = api("POST", f"/bank-reconciliation/lines/{fee['id']}/unmatch", admin, ENT_A, json={})
-    ok(r.status_code == 400 and "TERCOCOK" in r.text,
+    # PK-21 (SL-10) — baris yang sudah tidak `matched` ditolak lewat klaim baris → 409 (dulu 400 dari salinan).
+    ok(r.status_code == 409 and "baru saja dilepas" in r.text,
        "BUKTI-MERAH: melepas baris yang memang tidak tertaut ditolak", f"HTTP {r.status_code}")
 
     # ── PENJAGA TITIPAN: 'lepas tautan' & pembatalan yang JUJUR ───────────────

@@ -10,6 +10,8 @@
  * L-01: tab buatan sendiri → `PageTabs` (`recon-tab-*` tetap); saringan status (tab bertingkat ke-3) →
  * `FilterChips` (`recon-filter-status-*` tetap); jumlah baris di posisi tetap (tidak melompat saat "Bersihkan filter"
  * muncul). L-03: panel impor yang diselipkan → pop-up `ReconImportPanel` (FormModal).
+ * PK-21 — dibuka dari Rekening & Saldo dengan preset `{ bank_account_id }` → rekening itu terpilih. Lepas-cocok yang
+ * dijawab 409 (baris baru saja dilepas/diubah proses lain) → pesan tampil sebagai galat biasa dan daftar dimuat ulang.
  */
 import KNDatePicker from "@/components/KNDatePicker";
 import { useCallback, useEffect, useMemo, useState } from "react";
@@ -31,6 +33,7 @@ import ReconMatchModal from "./bank/ReconMatchModal";
 import ReconHoldingPanel from "./bank/ReconHoldingPanel";
 import DesktopOnlyNotice from "../../components/DesktopOnlyNotice";
 import useIntentKey from "../../hooks/useIntentKey";
+import useViewPreset from "../../hooks/useViewPreset";
 import { moneyPost } from "../../utils/moneyRequest";
 
 const TABS = [
@@ -50,6 +53,7 @@ const STATUS_FILTERS = [
 export default function BankReconciliationView() {
   const [accounts, setAccounts] = useState([]);
   const [acctId, setAcctId] = useState("");
+  useViewPreset("bank-reconciliation", (p) => { if (p?.bank_account_id) setAcctId(p.bank_account_id); });   // PK-21
   const [tab, setTab] = useState("lines");
   const [lines, setLines] = useState([]);
   const [summary, setSummary] = useState(null);
@@ -140,7 +144,12 @@ export default function BankReconciliationView() {
       setMatchFor(null);
       await loadData();
       return true;
-    } catch (e) { fail(e); return false; } finally { setBusy(""); }
+    } catch (e) {
+      // PK-21 — keadaan baris berubah di server (mis. lepas-cocok kalah klaim): muat ulang dulu, lalu tampilkan pesannya.
+      if (e?.response?.status === 409) await loadData();
+      fail(e);
+      return false;
+    } finally { setBusy(""); }
   }
 
   const suggestedRules = useMemo(

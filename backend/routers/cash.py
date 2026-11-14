@@ -217,7 +217,8 @@ async def void_cash_transaction(txn_id: str, request: Request,
     if txn.get("ref_type") or txn.get("ref_id") or txn.get("gl_posted") is True:
         raise HTTPException(status_code=409, detail=(
             f"Transaksi kas ini berasal dari dokumen {txn.get('ref_type') or 'lain'} — batalkan lewat dokumen asalnya."))
-    if txn.get("reconciled") or float(txn.get("reconciled_amount") or 0) > 0:
+    # PK-21 — yang menahan hanya pencocokan nyata (`reconciled_amount`); tanda manual lama tidak bisa dilepas lagi.
+    if float(txn.get("reconciled_amount") or 0) > 0:
         raise HTTPException(status_code=409, detail="Transaksi sudah dicocokkan dengan mutasi bank — lepaskan dulu.")
     from services import gl_service as _gl
     try:

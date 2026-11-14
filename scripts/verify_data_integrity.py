@@ -3428,27 +3428,50 @@ async def layer_bank_invariants(db):
              str(st_count))
 
     # ── INV-BNK-02 ──
+    # PK-21 (SL-10) — diperluas ke SEMUA transaksi kas tidak-void yang `reconciled_amount > 0` atau `reconciled` benar
+    # (dulu hanya yang ditunjuk baris `matched`): (a) `reconciled_amount` = Σ alokasi baris `matched` yang menunjuknya
+    # + `amount` bila ia kas titipan baris `holding`; (b) `reconciled` = (`reconciled_amount` ≥ `amount` − 0,01, > 0).
+    # Tanda manual LAMA (`reconciled` benar, angka 0, tanpa pencocokan) dilaporkan PERINGATAN: angkanya benar, layar
+    # menampilkannya "belum"; menghapus/memulihkan tandanya = paket perbaikan data (titik henti H3).
     per_txn: Dict[str, float] = {}
+    holding_cash = set()
     for ln in lines:
+        if ln.get("status") == "holding" and (ln.get("holding") or {}).get("cash_txn_id"):
+            holding_cash.add(ln["holding"]["cash_txn_id"])
         if ln.get("status") != "matched":
             continue
         for a in (ln.get("allocations") or []):
             per_txn[a.get("txn_id", "")] = round(
                 per_txn.get(a.get("txn_id", ""), 0.0) + float(a.get("amount", 0) or 0), 2)
-    bad2 = []
+    targets = set(per_txn) | holding_cash
+    async for t in db.cash_transactions.find(
+            {"status": {"$ne": "void"}, "$or": [{"reconciled_amount": {"$gt": 0}}, {"reconciled": True}]},
+            {"_id": 0, "id": 1}):
+        targets.add(t.get("id", ""))
+    bad2, legacy2 = [], []
     checked = 0
-    for tid, alloc in per_txn.items():
+    for tid in sorted(targets):
         t = await db.cash_transactions.find_one({"id": tid}, {"_id": 0})
         if not t:
-            bad2.append(f"{tid}: transaksi buku yang ditaut tidak ada")
+            if tid in per_txn:
+                bad2.append(f"{tid}: transaksi buku yang ditaut tidak ada")
             continue
         checked += 1
         rec = round(float(t.get("reconciled_amount", 0) or 0), 2)
         amt = round(float(t.get("amount", 0) or 0), 2)
+        alloc = round(per_txn.get(tid, 0.0) + (amt if tid in holding_cash else 0.0), 2)
+        label = t.get("number", tid)
         if abs(rec - alloc) > EPSB:
-            bad2.append(f"{t.get('number', tid)}: tercatat {rec} vs Σ alokasi {alloc}")
+            bad2.append(f"{label}: tercatat {rec} vs Σ alokasi {alloc}")
         if alloc > amt + EPSB:
-            bad2.append(f"{t.get('number', tid)}: dialokasikan {alloc} > nominal {amt}")
+            bad2.append(f"{label}: dialokasikan {alloc} > nominal {amt}")
+        want = rec > 0 and rec >= amt - EPSB
+        if bool(t.get("reconciled")) != want:
+            if t.get("reconciled") is True and rec <= EPSB and alloc <= EPSB:
+                legacy2.append(label)
+            else:
+                bad2.append(f"{label}: tanda reconciled={bool(t.get('reconciled'))} tidak sesuai angka "
+                            f"{rec} dari {amt}")
     if bad2:
         results["fail"] += 1
         line("FAIL", R, f"INV-BNK-02: {len(bad2)} transaksi buku tidak seimbang dgn tautannya",
@@ -3456,7 +3479,12 @@ async def layer_bank_invariants(db):
     else:
         results["pass"] += 1
         line("PASS", G, f"INV-BNK-02: {checked} transaksi buku tertaut — Σ rekonsiliasi == Σ alokasi "
-                        "& tidak melebihi nominal")
+                        "& tidak melebihi nominal; tanda terekonsiliasi sesuai angka")
+    if legacy2:
+        results["warn"] += 1
+        line("WARN", Y, f"INV-BNK-02: {len(legacy2)} transaksi kas bertanda rekonsiliasi manual lama tanpa "
+                        "pencocokan mutasi — tampil 'belum dicocokkan'; perbaikan data = keputusan pemilik (H3)",
+             str(legacy2[:4]))
 
     # ── INV-BNK-03 ──
     holding = [l for l in lines if l.get("status") == "holding"]
@@ -3464,7 +3492,9 @@ async def layer_bank_invariants(db):
                           for l in holding), 2)
     acc_code = "2-1950"
     try:
-        sys.path.insert(0, "/app/backend")
+        # PK-21 — jalur backend relatif ke repo ini (= `/app/backend` di container), supaya pemanggil dari salinan repo
+        # lain (uji `tests_mem`) tidak menyisipkan `/app/backend` ke depan `sys.path` dan memuat modul dari sana.
+        sys.path.insert(0, str(ROOT / "backend"))
         from services import bank_recon_service as brs
         cfg = await brs.load_cfg("")
         acc_code = cfg.get("holding_acc") or acc_code

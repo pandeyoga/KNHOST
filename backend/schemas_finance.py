@@ -27,10 +27,6 @@ class BankAccountUpdate(BaseModel):
     note: Optional[str] = None
 
 
-class ReconcilePayload(BaseModel):
-    reconciled: bool = True
-
-
 # ─── EPIC7-C: Chart of Accounts + General Ledger ─────────────────────────────
 
 class GLAccountCreate(BaseModel):
