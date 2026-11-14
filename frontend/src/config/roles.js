@@ -399,6 +399,23 @@ export function roleCanSee(roles, role, id, depth = 0) {
 // Server (`GET /api/roles`) adalah sumbernya; di sini registry, overlay menu, dan
 // beranda peran diisi SAAT RUNTIME supaya seluruh navigasi memakai satu jawaban.
 const CUSTOM_IDS = new Set();
+// PR-T4 — halaman awal SEMUA peran (bawaan & kustom) dari `home_view`/`home_nav_id` jawaban `GET /api/roles`
+// (bisa diatur per peran di Peran & Hak Akses › Sifat peran). Nilai tertulis `ROLE_HOME_REGISTRY` = cadangan sebelum
+// jawaban datang. Bila view sama dengan cadangan, id menu tertulis dipertahankan (sorotan sidebar tidak bergeser).
+const WRITTEN_HOME = Object.fromEntries(Object.entries(ROLE_HOME_REGISTRY).map(([k, v]) => [k, { ...v }]));
+const PROFILE_HOME = { view: "hr-my-profile", navId: "hr-my-profile" };
+
+function homeFromServer(r, fallback) {
+  if (!r?.home_view) return fallback || PROFILE_HOME;
+  if (fallback && fallback.view === r.home_view) return { ...fallback };
+  return { view: r.home_view, navId: r.home_nav_id || r.home_view };
+}
+
+/** Halaman awal peran ini berbeda dari nilai tertulis (diatur Admin)? */
+export function homeChangedByServer(role) {
+  const w = WRITTEN_HOME[role];
+  return Boolean(w && ROLE_HOME_REGISTRY[role] && ROLE_HOME_REGISTRY[role].view !== w.view);
+}
 
 function rebuildDerived() {
   const ids = Object.keys(ROLE_REGISTRY).sort((a, b) => ROLE_REGISTRY[a].order - ROLE_REGISTRY[b].order);
@@ -415,6 +432,11 @@ function rebuildDerived() {
 /** Daftarkan peran kustom dari server. Mengembalikan true bila ada yang berubah. */
 export function registerDynamicRoles(list) {
   const incoming = (list || []).filter((r) => r && r.custom && r.id);
+  const homes = () => JSON.stringify(Object.keys(ROLE_HOME_REGISTRY).sort().map((id) => [id, ROLE_HOME_REGISTRY[id]]));
+  const homesBefore = homes();
+  (list || []).filter((r) => r && r.id && !r.custom && WRITTEN_HOME[r.id]).forEach((r) => {
+    ROLE_HOME_REGISTRY[r.id] = homeFromServer(r, WRITTEN_HOME[r.id]);
+  });
   const before = JSON.stringify([...CUSTOM_IDS].sort().map((id) => [id, ROLE_NAV[id], ROLE_REGISTRY[id]?.label]));
   for (const id of [...CUSTOM_IDS]) {
     delete ROLE_REGISTRY[id]; delete ROLE_NAV[id]; delete ROLE_HOME_REGISTRY[id];
@@ -428,12 +450,11 @@ export function registerDynamicRoles(list) {
       custom: true, baseRole: r.base_role || "",
     };
     ROLE_NAV[r.id] = { inherit: r.base_role || null, add: r.nav?.add || [], remove: r.nav?.remove || [] };
-    ROLE_HOME_REGISTRY[r.id] = ROLE_HOME_REGISTRY[r.base_role]
-      || { view: "hr-my-profile", navId: "hr-my-profile" };
+    ROLE_HOME_REGISTRY[r.id] = homeFromServer(r, ROLE_HOME_REGISTRY[r.base_role]);
   });
   rebuildDerived();
   const after = JSON.stringify([...CUSTOM_IDS].sort().map((id) => [id, ROLE_NAV[id], ROLE_REGISTRY[id]?.label]));
-  return before !== after;
+  return before !== after || homesBefore !== homes();
 }
 
 /** Overlay sementara untuk PRATINJAU menu di editor peran (id `__preview`). */

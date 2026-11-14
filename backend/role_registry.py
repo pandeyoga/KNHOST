@@ -310,6 +310,186 @@ def apply_cross_entity(overrides: Optional[Dict[str, Any]]) -> None:
     CROSS_ENTITY_ROLES.clear()
     CROSS_ENTITY_ROLES.update(rid for rid, r in ROLES.items() if r["cross_entity"])
 
+# ─── PR-T4 — SIFAT PERAN: cakupan data · halaman awal · kategori kerja · alamat notifikasi ──────────────────────────
+# Disimpan di `permission_settings.role_traits.<id peran>` (pola `cross_entity`/`hidden_views`) dan diterapkan ke
+# `ROLES[rid]` oleh `apply_traits` (dipanggil `custom_role_service.sync_registry`). Kunci yang tidak disimpan =
+# nilai TURUNAN: peran bawaan → `PRT4_BUILTIN_TRAITS`/registry (= perilaku sebelum PR-T4); peran kustom → nilai
+# efektif peran dasarnya; tanpa peran dasar → "semua" / Profil Saya / tanpa kategori / tanpa alamat tambahan.
+TRAIT_KEYS = ("data_scope", "home_view", "kategori_kerja", "notify_like")
+DATA_SCOPES = ("milik_sendiri", "tim", "semua")   # urutan = makin luas (`02` §3.3 E3)
+DATA_SCOPE_LABEL = {"milik_sendiri": "Milik sendiri", "tim": "Milik sendiri dan timnya",
+                    "semua": "Semua di PT yang boleh dibuka"}
+WORK_CATEGORIES = ("", "sales", "sopir", "desainer", "gudang", "pengawas")
+WORK_CATEGORY_LABEL = {"": "Tidak ada", "sales": "Sales", "sopir": "Sopir", "desainer": "Desainer",
+                       "gudang": "Petugas gudang", "pengawas": "Pengawas"}
+#: Nilai bawaan sistem peran bawaan (sebelum pengaturan admin); yang tidak disebut: "semua" dan tanpa kategori.
+PRT4_BUILTIN_TRAITS: Dict[str, Dict[str, str]] = {
+    "sales": {"data_scope": "milik_sendiri", "kategori_kerja": "sales"},
+    "driver": {"data_scope": "milik_sendiri", "kategori_kerja": "sopir"},
+    "designer": {"data_scope": "milik_sendiri", "kategori_kerja": "desainer"},
+    "warehouse": {"kategori_kerja": "gudang"},
+    "admin": {"kategori_kerja": "pengawas"},
+    "manager": {"kategori_kerja": "pengawas"},
+}
+#: Halaman awal bawaan peran bawaan (foto registry sebelum `apply_traits` menimpa `home_view`/`home_nav_id`).
+BUILTIN_HOME: Dict[str, tuple] = {rid: (r["home_view"], r["home_nav_id"]) for rid, r in ROLES.items()}
+PROFILE_HOME = ("hr-my-profile", "hr-my-profile")
+#: Pilihan halaman awal: `requires` = izin (sumber daya, aksi) yang dibutuhkan layarnya; `needs_category` = meja kerja.
+HOME_CHOICES: List[Dict[str, Any]] = [
+    {"view": "hr-my-profile", "nav_id": "hr-my-profile", "label": "Profil Saya", "requires": None},
+    {"view": "my-desk", "nav_id": "my-desk", "label": "Meja Saya", "requires": None, "needs_category": True},
+    {"view": "sales-home", "nav_id": "home", "label": "Performa Saya", "requires": ("order", "view")},
+    {"view": "manager-home", "nav_id": "home", "label": "Beranda Manajer", "requires": ("manager_home", "view")},
+    {"view": "admin-home", "nav_id": "home", "label": "Beranda Admin", "requires": ("manager_home", "view")},
+    {"view": "sales-admin-desk", "nav_id": "sales-admin-desk", "label": "Meja Admin Sales",
+     "requires": ("order", "confirm")},
+    {"view": "finance-desk", "nav_id": "finance-desk", "label": "Meja Finance",
+     "requires": ("payment_variance", "decide")},
+    {"view": "md-desk", "nav_id": "md-desk", "label": "Meja MD", "requires": ("design_request", "view")},
+    {"view": "warehouse-admin-desk", "nav_id": "warehouse-admin-desk", "label": "Meja Admin Gudang",
+     "requires": ("wms", "view")},
+    {"view": "sample-admin-desk", "nav_id": "sample-admin-desk", "label": "Meja Admin Sample",
+     "requires": ("sample_order", "view")},
+    {"view": "operations", "nav_id": "wms-operations", "label": "Operasi Gudang", "requires": ("wms", "view")},
+    {"view": "design-requests", "nav_id": "design-requests", "label": "Permintaan Desain",
+     "requires": ("design_request", "view")},
+    {"view": "logistics", "nav_id": "logistics", "label": "Pengiriman", "requires": ("logistics", "view")},
+    {"view": "inspections", "nav_id": "quality-hub", "label": "SPK Inspeksi", "requires": ("inspection", "view")},
+]
+HOME_BY_VIEW: Dict[str, Dict[str, Any]] = {c["view"]: c for c in HOME_CHOICES}
+#: Nilai yang DISIMPAN Admin (`permission_settings.role_traits`); diisi `apply_traits`.
+TRAIT_OVERRIDES: Dict[str, Dict[str, Any]] = {}
+
+
+def home_allowed(view: str, perms: Optional[Dict[str, Any]], category: str) -> bool:
+    """Syarat satu halaman awal terpenuhi oleh izin `perms` (dan kategori kerja untuk Meja Saya)?"""
+    choice = HOME_BY_VIEW.get(view or "")
+    if not choice:
+        return False
+    if choice.get("needs_category") and not category:
+        return False
+    need = choice.get("requires")
+    if not need:
+        return True
+    acts = (perms or {}).get(need[0]) or []
+    return need[1] in acts or "*" in acts
+
+
+def _derived_trait(rid: str, key: str, depth: int = 0) -> Any:
+    """Nilai turunan (tanpa simpanan peran itu sendiri)."""
+    entry = ROLES.get(rid) or {}
+    if rid in BUILTIN_HOME and not entry.get("custom"):
+        if key == "home_view":
+            return BUILTIN_HOME[rid][0]
+        if key == "notify_like":
+            return []
+        return (PRT4_BUILTIN_TRAITS.get(rid) or {}).get(key, "semua" if key == "data_scope" else "")
+    base = entry.get("base_role") or ""
+    if key == "notify_like":
+        return [base] if base in BUILTIN_HOME else []
+    if base and base != rid and base in ROLES and depth < 5:
+        return _effective_trait(base, key, depth + 1)
+    return {"data_scope": "semua", "home_view": PROFILE_HOME[0], "kategori_kerja": ""}[key]
+
+
+def _effective_trait(rid: str, key: str, depth: int = 0) -> Any:
+    ov = TRAIT_OVERRIDES.get(rid) or {}
+    if key in ov:
+        return ov[key]
+    return _derived_trait(rid, key, depth)
+
+
+def _home_nav(rid: str, view: str, depth: int = 0) -> str:
+    """`home_nav_id` untuk halaman awal `view` peran `rid` (bawaan registry bila view = bawaan)."""
+    if rid in BUILTIN_HOME and not (ROLES.get(rid) or {}).get("custom") and view == BUILTIN_HOME[rid][0]:
+        return BUILTIN_HOME[rid][1]
+    base = (ROLES.get(rid) or {}).get("base_role") or ""
+    if "home_view" not in (TRAIT_OVERRIDES.get(rid) or {}) and base and base in ROLES and depth < 5:
+        return _home_nav(base, view, depth + 1)
+    return (HOME_BY_VIEW.get(view) or {}).get("nav_id") or view
+
+
+def trait_defaults(rid: str) -> Dict[str, Any]:
+    """Nilai turunan keempat sifat (yang berlaku bila Admin tidak menyimpan apa pun untuk peran ini)."""
+    return {k: (list(v) if isinstance(v, list) else v) for k, v in
+            ((k, _derived_trait(rid, k)) for k in TRAIT_KEYS)}
+
+
+def apply_traits(overrides: Optional[Dict[str, Dict[str, Any]]],
+                 matrix: Optional[Dict[str, Dict[str, Any]]] = None) -> None:
+    """Isi `ROLES[rid]` dengan sifat EFEKTIF: `data_scope`, `kategori_kerja`, `notify_like`, `home_view`,
+    `home_nav_id`, `home_view_fallback`. `matrix` (izin efektif per peran) dipakai memeriksa halaman awal yang
+    DISIMPAN: syaratnya tidak lagi terpenuhi → Profil Saya + `home_view_fallback`."""
+    TRAIT_OVERRIDES.clear()
+    for rid, vals in (overrides or {}).items():
+        clean = {k: v for k, v in (vals or {}).items() if k in TRAIT_KEYS and v is not None}
+        if clean:
+            TRAIT_OVERRIDES[rid] = clean
+    for rid in ROLES:
+        entry = ROLES[rid]
+        entry["data_scope"] = _effective_trait(rid, "data_scope")
+        entry["kategori_kerja"] = _effective_trait(rid, "kategori_kerja")
+        entry["notify_like"] = list(_effective_trait(rid, "notify_like") or [])
+        view = _effective_trait(rid, "home_view")
+        fallback = False
+        if "home_view" in (TRAIT_OVERRIDES.get(rid) or {}) and matrix is not None \
+                and not home_allowed(view, matrix.get(rid) or {}, entry["kategori_kerja"]):
+            view, fallback = PROFILE_HOME[0], True
+        entry["home_view"] = view
+        entry["home_nav_id"] = PROFILE_HOME[1] if fallback else _home_nav(rid, view)
+        entry["home_view_fallback"] = fallback
+
+
+def traits_of(rid: str) -> Dict[str, Any]:
+    entry = ROLES.get(rid) or {}
+    return {"data_scope": entry.get("data_scope") or _effective_trait(rid, "data_scope"),
+            "home_view": entry.get("home_view") or PROFILE_HOME[0],
+            "kategori_kerja": entry.get("kategori_kerja", _effective_trait(rid, "kategori_kerja")) or "",
+            "notify_like": list(entry.get("notify_like", _effective_trait(rid, "notify_like")) or [])}
+
+
+def data_scope_of(role: Optional[str]) -> str:
+    """Cakupan data peran (`milik_sendiri` · `tim` · `semua`). Peran tak dikenal = "semua" (tanpa izin apa pun)."""
+    r = role or ""
+    if r not in ROLES:
+        return "semua"
+    return ROLES[r].get("data_scope") or _effective_trait(r, "data_scope")
+
+
+def category_of(role: Optional[str]) -> str:
+    """Kategori kerja peran ("" bila tidak ada)."""
+    r = role or ""
+    if r not in ROLES:
+        return ""
+    entry = ROLES[r]
+    return entry["kategori_kerja"] if "kategori_kerja" in entry else _effective_trait(r, "kategori_kerja")
+
+
+def roles_in_category(kategori: str) -> List[str]:
+    """Id peran (bawaan & kustom) berkategori kerja `kategori`, urut registry."""
+    return [rid for rid in role_ids() if category_of(rid) == kategori]
+
+
+def notify_addresses(role: Optional[str]) -> List[str]:
+    """Peran bawaan yang notifikasinya ikut diterima pemegang `role` (selain alamat perannya sendiri)."""
+    r = role or ""
+    if r not in ROLES:
+        return []
+    entry = ROLES[r]
+    return list(entry["notify_like"] if "notify_like" in entry else _effective_trait(r, "notify_like") or [])
+
+
+def home_choices_for(perms: Optional[Dict[str, Any]], category: str) -> List[Dict[str, Any]]:
+    """Untuk layar: `allowed` menurut izin tersimpan; `requires`/`needs_category` supaya editor menghitung ulang
+    selagi izin diubah sebelum disimpan."""
+    return [{"view": c["view"], "label": c["label"], "allowed": home_allowed(c["view"], perms, category),
+             "requires": list(c["requires"]) if c.get("requires") else None,
+             "needs_category": bool(c.get("needs_category"))} for c in HOME_CHOICES]
+
+
+apply_traits({})   # PR-T4 — peran bawaan langsung bersifat bawaan sebelum `sync_registry` pertama
+
+
 #: Peringkat yang dipakai bila `required_role` diisi nilai yang tidak dikenal.
 #: Sengaja = peringkat manajer (perilaku lama), supaya konfigurasi persetujuan yang
 #: sudah tersimpan di basis data tidak mendadak jadi lebih longgar.
@@ -394,6 +574,10 @@ def public_list() -> List[Dict[str, Any]]:
             "custom": bool(ROLES[rid].get("custom")),
             "base_role": ROLES[rid].get("base_role", ""),
             "nav": ROLES[rid].get("nav"),
+            # PR-T4 — sifat efektif (halaman awal di atas sudah efektif).
+            "data_scope": data_scope_of(rid),
+            "kategori_kerja": category_of(rid),
+            "notify_like": notify_addresses(rid),
         }
         for rid in role_ids()
     ]
@@ -458,6 +642,12 @@ def _self_test() -> int:
         all(ROLES[r]["label"] and ROLES[r]["home_view"] for r in ROLES))
     chk("tidak ada label peran yang dobel",
         len({ROLES[r]["label"] for r in ROLES}) == len(ROLES))
+
+    # PR-T4 — nilai awal sifat peran = perilaku sebelum sifat bisa diatur.
+    chk("cakupan 'milik sendiri' bawaan hanya Sales, Sopir, Desainer",
+        {r for r in BUILTIN_HOME if trait_defaults(r)["data_scope"] != "semua"} == {"sales", "driver", "designer"})
+    chk("setiap halaman awal bawaan ada di daftar pilihan",
+        all(BUILTIN_HOME[r][0] in HOME_BY_VIEW for r in BUILTIN_HOME))
 
     # BUKTI-MERAH: kalau peringkat Admin Sales disamakan dengan manajer, gate HARUS memerah.
     saved = ROLE_RANK["sales_admin"]

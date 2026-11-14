@@ -15,6 +15,7 @@ import RoleDangerDialog from "./RoleDangerDialog";
 import RoleNotifPreview from "./RoleNotifPreview";
 import RoleAdvancedPanel from "./RoleAdvancedPanel";
 import RoleNavTree, { titleOf } from "./RoleNavTree";
+import RoleTraitsPanel, { traitChangeLines, traitPayload } from "./RoleTraitsPanel";
 import { applyLevel, levelOf, moduleActionsChanged, setResource, toggleAction } from "./roleAccessUtil";
 import { createAccessRole, patchAccessRole, deleteAccessRole, resetAccessRole, followBaseAccessRole, errText } from "./entityApi";
 
@@ -55,6 +56,11 @@ export default function RoleEditorDrawer({ role, template, roles, modules, label
   const [cross, setCross] = useState(initCross);
   const [crossTouched, setCrossTouched] = useState(false);
   const crossChanged = cross !== initCross;
+  // PR-T4 — sifat peran (cakupan data, halaman awal, kategori kerja, alamat notifikasi): perubahan yang belum disimpan.
+  const [traitsDraft, setTraitsDraft] = useState({});
+  const traitsOut = traitPayload({ role: editing ? role : null, draft: traitsDraft });
+  const traitsChanged = Object.keys(traitsOut).length > 0;
+  const traitLines = traitChangeLines({ role: editing ? role : null, baseRole, roles, draft: traitsDraft });
   const [advanced, setAdvanced] = useState({});   // moduleId → true (panel lanjutan terbuka)
   const [confirm, setConfirm] = useState(false);
   const [danger, setDanger] = useState(null);   // null | "delete" | "reset" | "follow"
@@ -85,9 +91,9 @@ export default function RoleEditorDrawer({ role, template, roles, modules, label
   const nameError = custom && label.trim().length < 2 ? "Nama peran minimal 2 karakter." : "";
   const nothingOn = modules.every((m) => levels[m.id] === "none");
   const managesAccounts = ["create", "update"].some((a) => (perms?.user || []).includes(a));
-  const canSave = !readOnly && !nameError && (changes.length > 0 || hiddenChanged.length > 0 || crossChanged || assignableChanged || (!editing) || label !== role?.label || description !== (role?.description || ""));
+  const canSave = !readOnly && !nameError && (changes.length > 0 || hiddenChanged.length > 0 || crossChanged || assignableChanged || traitsChanged || (!editing) || label !== role?.label || description !== (role?.description || ""));
 
-  const dirty = !readOnly && (changes.length > 0 || hiddenChanged.length > 0 || crossChanged || assignableChanged || label !== initLabel || description !== initDesc);
+  const dirty = !readOnly && (changes.length > 0 || hiddenChanged.length > 0 || crossChanged || assignableChanged || traitsChanged || label !== initLabel || description !== initDesc);
   const requestClose = () => { if (busy) return; if (dirty) setDiscard(true); else onClose?.(); };
   // Fase 3 · P1 — INV-UI-10: Esc lewat tumpukan lapisan bersama (dropdown di dalam laci menutup dirinya saja).
   // Urutan tutup tetap: dialog buang-perubahan → konfirmasi → dialog bahaya → laci. Callback stabil (ref) supaya
@@ -121,11 +127,12 @@ export default function RoleEditorDrawer({ role, template, roles, modules, label
           permissions: perms, hidden_views: [...hidden], expected_version: role.version,
           ...(crossChanged ? { cross_entity: cross } : {}),
           ...(canEditAssignable && assignableChanged ? { assignable_roles: [...assignable] } : {}),
+          ...(traitsChanged ? { traits: traitsOut } : {}),
         });
         onSaved?.(`Hak akses peran “${res.label}” disimpan. ${res.users} akun terpengaruh — berlaku otomatis dalam ≤1 menit.`);
       } else {
         res = await createAccessRole({ label: label.trim(), description: description.trim(), base_role: baseRole, permissions: perms,
-          ...(crossTouched ? { cross_entity: cross } : {}) });
+          ...(crossTouched ? { cross_entity: cross } : {}), ...(traitsChanged ? { traits: traitsOut } : {}) });
         if (hidden.size) res = await patchAccessRole(res.id, { hidden_views: [...hidden] });
         if (canEditAssignable && managesAccounts && assignable.size) res = await patchAccessRole(res.id, { assignable_roles: [...assignable] });
         onSaved?.(`Peran “${res.label}” dibuat. Berikan ke akun lewat tab Akun & Akses.`);
@@ -293,6 +300,8 @@ export default function RoleEditorDrawer({ role, template, roles, modules, label
                   )}
                 </span>
               </label>
+              <RoleTraitsPanel role={editing ? role : null} baseRole={baseRole} roles={roles} perms={perms}
+                               draft={traitsDraft} onChange={setTraitsDraft} disabled={readOnly || busy} />
               {editing && <RoleAccountsList role={role} roles={roles} canMove={!readOnly} onMoved={onRefresh} onError={onError} />}
               {!locked && (
                 <RoleNotifPreview roleId={editing ? role.id : ""} baseRole={baseRole} permissions={perms} saved={(editing ? role.turn_alerts : template?.turn_alerts) || []} />
@@ -382,7 +391,10 @@ export default function RoleEditorDrawer({ role, template, roles, modules, label
                 </p>
               </div>
               <div className="max-h-64 overflow-auto p-4">
-                {editing && changes.length === 0 && hiddenChanged.length === 0 && !crossChanged && <p className="text-[11px] text-[#6B6B73]">Hanya nama/keterangan yang berubah.</p>}
+                {editing && changes.length === 0 && hiddenChanged.length === 0 && !crossChanged && !traitsChanged && <p className="text-[11px] text-[#6B6B73]">Hanya nama/keterangan yang berubah.</p>}
+                {traitLines.map((t) => (
+                  <p key={t.key} className="mb-1 text-fs-12" data-testid={`role-editor-confirm-trait-${t.key}`}>{t.text}</p>
+                ))}
                 {crossChanged && (
                   <p className="mb-1 text-[11px]" data-testid="role-editor-confirm-cross">
                     Akses semua badan usaha: {initCross ? "aktif" : "mati"} → <b>{cross ? "aktif" : "mati"}</b>

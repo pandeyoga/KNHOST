@@ -2609,6 +2609,12 @@ Field lain:  hidden_views {role: [nav id]}, cross_entity {role: bool},
              migrations_applied [id] — PR-T9: id butir `bootstrap.PERMISSION_MIGRATIONS` (cabut/atur ulang izin
              SEKALI-JALAN) yang sudah dijalankan; butir yang id-nya ada tidak dijalankan lagi. Tidak ada field =
              belum dicatat → garis dasar `ensure_permission_ledger` mencatat semua butir lama tanpa mengubah matrix.
+             role_traits {<id peran>: {data_scope?, home_view?, kategori_kerja?, notify_like?}} — PR-T4: sifat peran
+             (bawaan & kustom) yang DISIMPAN Admin di Peran & Hak Akses › Sifat peran. `data_scope` ∈ milik_sendiri ·
+             tim · semua; `home_view` ∈ `role_registry.HOME_CHOICES`; `kategori_kerja` ∈ "" · sales · sopir ·
+             desainer · gudang · pengawas; `notify_like` = daftar id peran bawaan. Kunci yang tidak ada = nilai
+             turunan (peran bawaan → bawaan sistem; kustom → efektif peran dasarnya). Diterapkan ke registry oleh
+             `role_registry.apply_traits` (`custom_role_service.sync_registry`). Migrasi sekali `prt4:sifat-peran`.
 
 ⚠️ Hanya ADA 1 document dengan id="default"
 ⚠️ Izin peran bawaan TIDAK lagi ditimpa saat start (PR-T9); bawaan tunggal = permissions_config.DEFAULT_PERMISSIONS

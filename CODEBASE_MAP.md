@@ -1,5 +1,5 @@
 <!-- DIHASILKAN OTOMATIS oleh scripts/gen_codebase_map.py — JANGAN EDIT TANGAN -->
-<!-- Dihasilkan dari commit: 4d4da5c pada 2026-11-14 -->
+<!-- Dihasilkan dari commit: 3f452ff pada 2026-11-14 -->
 # CODEBASE MAP — Kain Nusantara (dihasilkan otomatis)
 
 Peta ini dihitung dari kode oleh `scripts/gen_codebase_map.py`. Kalau angka di sini
@@ -14,7 +14,7 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 |---|---:|
 | Router (`backend/routers/*.py`) | 162 |
 | Endpoint (`@router.<method>`) | 1760 |
-| Service (`backend/services/*.py`) | 382 |
+| Service (`backend/services/*.py`) | 383 |
 | Koleksi MongoDB disentuh kode produksi | 201 |
 | Direktori fitur frontend (`src/features/*`) | 39 |
 
@@ -32,7 +32,7 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 | `entity_scope.py` | 726 |
 | `pagination.py` | 145 |
 | `indexes.py` | 787 |
-| `bootstrap.py` | 2135 |
+| `bootstrap.py` | 2137 |
 | `login_only_endpoints.py` | 79 |
 
 ### Fungsi utilitas — JANGAN re-implementasi
@@ -120,7 +120,7 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 | Berkas | Endpoint | Baris | Path |
 |---|---:|---:|---|
 | `access_review.py` | 2 | 87 | `/access/role-reality`, `/access/role-reality/{user_id}/apply` |
-| `access_roles.py` | 10 | 166 | `/modules`, `/roles`, `/roles/preview`, `/roles/{rid}`, `/roles/{rid}/follow-base`, `/roles/{rid}/move-users` … |
+| `access_roles.py` | 10 | 177 | `/modules`, `/roles`, `/roles/preview`, `/roles/{rid}`, `/roles/{rid}/follow-base`, `/roles/{rid}/move-users` … |
 | `admin.py` | 10 | 560 | `/admin/seed-demo`, `/master-data/export-customers`, `/master-data/export-products`, `/master-data/export-warehouses`, `/master-data/export-yarn`, `/master-data/import-customers` … |
 | `ai_analytics.py` | 32 | 436 | `/analyze-change`, `/catalog`, `/chat`, `/export.xlsx`, `/facts/rebuild`, `/facts/status` … |
 | `ai_assist.py` | 5 | 44 | `/actions/{pid}`, `/actions/{pid}/confirm`, `/actions/{pid}/dismiss`, `/insights`, `/insights/scan` |
@@ -353,7 +353,7 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 | `costing_service.py` | 146 | Costing service (EPIC3A) — Weighted Average Cost (WAC) per produk/entitas. |
 | `crm_omnichannel_service.py` | 249 | CRM Omnichannel (MVP manual) — Lead pipeline + timeline interaksi. |
 | `csv_money.py` | 39 | SATU definisi “cara membaca angka rupiah dari CSV” untuk seluruh sistem. |
-| `custom_role_service.py` | 490 | PERAN KUSTOM & TINGKAT AKSES — aturan bisnis untuk layar "Peran & Hak Akses". |
+| `custom_role_service.py` | 638 | PERAN KUSTOM & TINGKAT AKSES — aturan bisnis untuk layar "Peran & Hak Akses". |
 | `customer_feedback_service.py` | 153 | FEEDBACK / KOMPLAIN PELANGGAN per Sales Order (2026-09, sesi #075). |
 | `customer_merge_service.py` | 99 | P18 MASTER-05 / COMM-01 — gabung pelanggan duplikat (sumber → target) tanpa memutus riwayat. |
 | `customer_price_service.py` | 568 | F1b (D-14) — **Daftar Harga per Pelanggan** (customer pricelist) dengan histori, |
@@ -361,6 +361,7 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 | `cutting_service.py` | 303 | L06 LN-061 — Meja Cutting/Admin Cutting: kemampuan lokasi, antrean potong, serah-terima hasil potong. |
 | `cycle_count_service.py` | 184 | CYCLE COUNT RFID — stock opname kilat via sweep handheld. |
 | `data_hygiene_service.py` | 204 | Kebersihan Data (K-1/K-2 otomatis) — normalisasi EYD nama & nomor telepon pada data LAMA. |
+| `data_scope.py` | 113 | PR-T4 — CAKUPAN DATA per peran: dokumen ber-pemilik siapa yang terlihat dan bisa diubah (di dalam PT yang bole |
 | `delivery_service.py` | 267 | delivery_service.py — Pengiriman dokumen via WhatsApp (mode simulasi default) + |
 | `demo_seed_service.py` | 97 | Demo Seed Service |
 | `design_gallery_service.py` | 721 | HRD H5 services — Design Gallery (motif kain) + upload gambar (storage lokal). |
@@ -677,7 +678,7 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 
 | Fitur (`src/features/`) | Berkas | Baris |
 |---|---:|---:|
-| `__tests__` | 84 | 12095 |
+| `__tests__` | 85 | 12249 |
 | `admin` | 34 | 6577 |
 | `approvals` | 9 | 1699 |
 | `catalog` | 24 | 1449 |
@@ -712,7 +713,7 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 | `sales` | 97 | 15769 |
 | `sales_admin` | 11 | 1872 |
 | `samples` | 8 | 777 |
-| `settings` | 52 | 9784 |
+| `settings` | 53 | 9994 |
 | `tanya` | 25 | 1592 |
 | `transfers` | 1 | 20 |
 | `wms` | 99 | 13195 |

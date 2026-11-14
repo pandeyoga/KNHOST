@@ -24,6 +24,8 @@ class RoleCreate(BaseModel):
     levels: Dict[str, str] = {}
     permissions: Optional[Dict[str, List[str]]] = None
     cross_entity: Optional[bool] = None   # keputusan owner 2026-10-21 — None = ikut peran acuan
+    # PR-T4 — sifat peran {data_scope?, home_view?, kategori_kerja?, notify_like?}; null = nilai turunan.
+    traits: Optional[Dict[str, Any]] = None
 
 
 class RolePatch(BaseModel):
@@ -36,6 +38,8 @@ class RolePatch(BaseModel):
     expected_version: Optional[str] = None
     # PR-T1 — peran yang akunnya boleh dikelola pemegang peran ini (hanya Admin yang mengubah; `admin` tidak sah).
     assignable_roles: Optional[List[str]] = None
+    # PR-T4 — sifat peran; nilai null pada sebuah kunci = kembali ke nilai turunan.
+    traits: Optional[Dict[str, Any]] = None
 
 
 class RolePreview(BaseModel):
@@ -96,6 +100,9 @@ async def create_role(payload: RoleCreate, request: Request) -> Dict[str, Any]:
     body = payload.model_dump()
     await assert_can_shape_role(actor, current_perms=None, new_perms=await svc.projected_permissions(None, body),
                                 new_cross_entity=body.get("cross_entity"))
+    from services.data_scope import assert_may_grant_scope   # PR-T4 — cakupan data tidak melebihi milik pelaku
+    await svc.sync_registry()
+    assert_may_grant_scope(actor, svc.projected_scope(None, body.get("traits"), (body.get("base_role") or "").strip()))
     out = await svc.create_custom(body)
     await audit(actor["name"], "custom_role_created", "custom_role", out["id"],
                 {"label": out["label"], "base_role": out["base_role"], "levels": out["levels"]})
@@ -116,6 +123,10 @@ async def patch_role(rid: str, payload: RolePatch, request: Request) -> Dict[str
     await assert_can_shape_role(actor, current_perms=await svc.current_permissions(rid),
                                 new_perms=await svc.projected_permissions(rid, body),
                                 new_cross_entity=body.get("cross_entity"), role_label=_label(rid))
+    if body.get("traits") is not None:   # PR-T4 — cakupan data tidak melebihi milik pelaku
+        from services.data_scope import assert_may_grant_scope
+        await svc.sync_registry()
+        assert_may_grant_scope(actor, svc.projected_scope(rid, body["traits"]))
     out = await svc.update_role(rid, body)
     await audit(actor["name"], "role_access_updated", "custom_role", rid,
                 {"label": out["label"], "changes": out.get("changes", {}), "users": out["users"]})

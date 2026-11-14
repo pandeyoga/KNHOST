@@ -210,6 +210,8 @@ export const PAGE_META = {
 };
 
 // ROLE-HOME REGISTRY (F5) — landing per role
+// PR-T4 — nilai di bawah adalah CADANGAN sebelum jawaban `GET /api/roles` datang: halaman awal tiap peran (bawaan
+// maupun kustom) diatur di Peran & Hak Akses › Sifat peran dan diisi `roles.registerDynamicRoles`.
 export const ROLE_HOME_REGISTRY = {
   admin:     { view: "admin-home", navId: "home" },
   // EPIC 1 · PS-18 — manajer akhirnya punya landing sendiri (dulu mendarat di

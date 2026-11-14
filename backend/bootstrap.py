@@ -1908,6 +1908,8 @@ async def run_bootstrap() -> None:
         logging.getLogger("bootstrap").warning("[entity] rebrand 2026-09 dilewati: %s", exc)
     await ensure_permission_ledger()   # PR-T9 — HARUS sebelum sync_permission_modules (lihat docstring)
     await migrate_role_gates_to_permissions()   # PR-T2 — sesudah buku catatan, sebelum bawaan baru diteruskan
+    from services.custom_role_service import migrate_role_traits as _prt4_sifat   # PR-T4 — sifat peran, sekali jalan
+    await _prt4_sifat()
     await sync_permission_modules()
     await sync_permission_revocations()
     await migrate_kft1_settings_permissions()

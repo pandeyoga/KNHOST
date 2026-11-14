@@ -27,8 +27,11 @@ async def list_custom() -> List[Dict[str, Any]]:
 
 async def sync_registry() -> None:
     reg.register_custom_roles(await list_custom())
-    rec = await db.permission_settings.find_one({"id": "default"}, {"_id": 0, "cross_entity": 1, "matrix": 1}) or {}
+    rec = await db.permission_settings.find_one({"id": "default"}, {"_id": 0, "cross_entity": 1, "matrix": 1,
+                                                                    "role_traits": 1}) or {}
     reg.apply_cross_entity(rec.get("cross_entity") or {})
+    # PR-T4 — sifat peran (cakupan data, halaman awal, kategori kerja, alamat notifikasi) sesudah lintas PT.
+    reg.apply_traits(rec.get("role_traits") or {}, {**DEFAULT_PERMISSIONS, **(rec.get("matrix") or {})})
     from core_utils import refresh_cost_safe_roles   # PR-T2 — kolom biaya/HPP mengikuti izin `costing.view`
     refresh_cost_safe_roles(rec.get("matrix") or DEFAULT_PERMISSIONS)
 
@@ -96,10 +99,11 @@ async def _assert_label_unique(label: str, exclude_id: str = "") -> None:
                                 detail=f"Nama peran “{label}” sudah dipakai. Pilih nama lain.")
 
 
-def _version(perms: Dict[str, Any], hidden: List[str], doc: Dict[str, Any], cross: bool = False) -> str:
-    """LN-015 — sidik isi peran untuk deteksi konflik simpan antar-admin."""
+def _version(perms: Dict[str, Any], hidden: List[str], doc: Dict[str, Any], cross: bool = False,
+             traits: Optional[Dict[str, Any]] = None) -> str:
+    """LN-015 — sidik isi peran untuk deteksi konflik simpan antar-admin. PR-T4: sifat peran ikut."""
     raw = json.dumps([{k: sorted(v or []) for k, v in sorted(perms.items())}, sorted(hidden),
-                      doc.get("label", ""), doc.get("description", ""), bool(cross)], sort_keys=True)
+                      doc.get("label", ""), doc.get("description", ""), bool(cross), traits or {}], sort_keys=True)
     return hashlib.sha1(raw.encode()).hexdigest()[:12]
 
 
@@ -122,6 +126,8 @@ def _modified_parts(rid: str, perms: Dict[str, Any], custom: bool) -> List[str]:
         parts.append("menu")
     if (reg.ROLES.get(rid) or {}).get("cross_entity", False) != reg.cross_entity_default(rid):
         parts.append("lintas_pt")
+    if reg.TRAIT_OVERRIDES.get(rid):   # PR-T4 — sifat peran disimpan Admin
+        parts.append("sifat")
     return parts
 
 
@@ -164,8 +170,138 @@ def _role_view(rid: str, matrix: Dict[str, Any], users: Dict[str, int],
         # PR-T1 — peran yang akunnya boleh dikelola pemegang peran ini (permission_settings.assignable_roles).
         "assignable_roles": sorted(_ASSIGNABLE.get(rid, [])),
         "assignable_roles_labels": [reg.role_label(r) for r in sorted(_ASSIGNABLE.get(rid, []))],
-        "version": _version(perms, _HIDDEN.get(rid, []), doc, entry.get("cross_entity", False)),
+        # PR-T4 — sifat peran: efektif, turunan, kunci yang disimpan Admin, dan pilihan halaman awal.
+        **_traits_view(rid, perms),
+        "version": _version(perms, _HIDDEN.get(rid, []), doc, entry.get("cross_entity", False),
+                            {"efektif": reg.traits_of(rid), "simpan": reg.TRAIT_OVERRIDES.get(rid) or {}}),
     }
+
+
+# ─── PR-T4 — sifat peran ─────────────────────────────────────────────────────────────────────────────────────────────
+PRT4_MIGRATION_ID = "prt4:sifat-peran"
+
+
+def _traits_view(rid: str, perms: Dict[str, Any]) -> Dict[str, Any]:
+    t = reg.traits_of(rid)
+    return {"traits": t, "traits_default": reg.trait_defaults(rid),
+            "traits_overridden": sorted(reg.TRAIT_OVERRIDES.get(rid) or {}),
+            "home_view_fallback": bool((reg.ROLES.get(rid) or {}).get("home_view_fallback")),
+            "home_choices": reg.home_choices_for(perms, t["kategori_kerja"])}
+
+
+def clean_traits(rid: Optional[str], traits: Optional[Dict[str, Any]], perms: Dict[str, Any],
+                 base_role: str = "") -> Dict[str, Any]:
+    """Periksa isian `traits` (PATCH/POST). Hasil: {kunci: nilai | None (= kembali ke turunan)}. 400 bila tidak sah.
+    `perms` = izin peran SESUDAH simpan (syarat halaman awal)."""
+    if not traits:
+        return {}
+    if not isinstance(traits, dict):
+        raise HTTPException(status_code=400, detail="Isian sifat peran tidak dikenal.")
+    out: Dict[str, Any] = {}
+    for key, val in traits.items():
+        if key not in reg.TRAIT_KEYS:
+            raise HTTPException(status_code=400, detail="Isian sifat peran tidak dikenal.")
+        if val is None:
+            out[key] = None
+        elif key == "data_scope":
+            if val not in reg.DATA_SCOPES:
+                raise HTTPException(status_code=400, detail=f"Cakupan data “{val}” tidak dikenal.")
+            out[key] = val
+        elif key == "kategori_kerja":
+            if val not in reg.WORK_CATEGORIES:
+                raise HTTPException(status_code=400, detail=f"Kategori kerja “{val}” tidak dikenal.")
+            out[key] = val
+        elif key == "notify_like":
+            vals = val if isinstance(val, list) else [val]
+            if any(str(v) not in reg.BUILTIN_HOME for v in vals):
+                raise HTTPException(status_code=400, detail="Alamat notifikasi hanya boleh peran bawaan.")
+            out[key] = sorted({str(v) for v in vals})
+        elif key == "home_view":
+            out[key] = str(val)
+    if out.get("home_view"):
+        choice = reg.HOME_BY_VIEW.get(out["home_view"])
+        if not choice:
+            raise HTTPException(status_code=400, detail=f"Halaman awal “{out['home_view']}” tidak dikenal.")
+        if out.get("kategori_kerja") is not None:
+            category = out["kategori_kerja"]
+        elif "kategori_kerja" in out and rid:   # null pada simpan yang sama = kembali ke turunan
+            category = reg.trait_defaults(rid)["kategori_kerja"]
+        else:
+            category = _projected_trait(rid, "kategori_kerja", base_role)
+        if not reg.home_allowed(out["home_view"], perms, category or ""):
+            raise HTTPException(status_code=400,
+                                detail=f"Halaman awal “{choice['label']}” butuh akses yang belum dimiliki peran ini.")
+    return out
+
+
+def _projected_trait(rid: Optional[str], key: str, base_role: str = "") -> Any:
+    """Nilai efektif sebuah sifat bila kunci itu TIDAK diisi pada simpan ini (peran baru: turunan peran dasarnya)."""
+    if rid:
+        return reg.traits_of(rid)[key]
+    if base_role and base_role in reg.ROLES:
+        return reg.traits_of(base_role)[key] if key != "notify_like" else [base_role]
+    return {"data_scope": "semua", "home_view": reg.PROFILE_HOME[0], "kategori_kerja": "", "notify_like": []}[key]
+
+
+def projected_scope(rid: Optional[str], traits: Optional[Dict[str, Any]], base_role: str = "") -> Optional[str]:
+    """Cakupan data HASIL simpan (untuk penjaga kenaikan hak). `None` = simpan ini tidak menyentuh cakupan."""
+    t = traits or {}
+    if rid is not None and "data_scope" not in t:
+        return None
+    if t.get("data_scope") is not None:
+        return t["data_scope"]
+    if rid is None:
+        return _projected_trait(None, "data_scope", base_role)
+    return reg.trait_defaults(rid)["data_scope"]   # null = kembali ke turunan
+
+
+async def _save_traits(rid: str, traits: Dict[str, Any]) -> None:
+    sets = {f"role_traits.{rid}.{k}": v for k, v in traits.items() if v is not None}
+    unsets = {f"role_traits.{rid}.{k}": "" for k, v in traits.items() if v is None}
+    update: Dict[str, Any] = {}
+    if sets:
+        update["$set"] = sets
+    if unsets:
+        update["$unset"] = unsets
+    if update:
+        await db.permission_settings.update_one({"id": "default"}, update, upsert=True)
+
+
+async def migrate_role_traits() -> Dict[str, Any]:
+    """PR-T4 — sekali jalan (`permission_settings.migrations_applied` ∋ `prt4:sifat-peran`). Hanya peran kustom TANPA
+    peran dasar yang memegang `design_request.view` tetapi tidak `order.view` maupun `customer.view`: simpan
+    `data_scope = "milik_sendiri"` (sebelum PR-T4 peran itu hanya melihat tugas desainnya). Selain itu tidak ada tulisan:
+    semua nilai awal diturunkan. Dipanggil `bootstrap.run_bootstrap` sesudah `ensure_permission_ledger`."""
+    record = await db.permission_settings.find_one({"id": "default"}, {"_id": 0, "matrix": 1, "role_traits": 1,
+                                                                       "migrations_applied": 1})
+    if not record or record.get("migrations_applied") is None or \
+            PRT4_MIGRATION_ID in (record.get("migrations_applied") or []):
+        return {"ditulis": []}
+    matrix = record.get("matrix") or {}
+    stored = record.get("role_traits") or {}
+
+    def has(perms: Dict[str, Any], res: str, act: str) -> bool:
+        acts = perms.get(res) or []
+        return act in acts or "*" in acts
+
+    written: List[str] = []
+    for c in await db.custom_roles.find({}, {"_id": 0, "id": 1, "base_role": 1}).to_list(500):
+        cid, perms = c.get("id") or "", matrix.get(c.get("id") or "") or {}
+        if not cid or c.get("base_role") or "data_scope" in (stored.get(cid) or {}):
+            continue
+        if has(perms, "design_request", "view") and not has(perms, "order", "view") \
+                and not has(perms, "customer", "view"):
+            written.append(cid)
+    update: Dict[str, Any] = {"$addToSet": {"migrations_applied": PRT4_MIGRATION_ID}}
+    if written:
+        update["$set"] = {f"role_traits.{cid}.data_scope": "milik_sendiri" for cid in written}
+    await db.permission_settings.update_one({"id": "default"}, update)
+    if written:
+        from dependencies import audit
+        await audit("Sistem (migrasi PR-T4)", "role_traits_migrated", "permission_settings", "default",
+                    {"data_scope_milik_sendiri": written},
+                    reason="PR-T4 — peran desain tanpa peran dasar tetap hanya melihat tugasnya")
+    return {"ditulis": written}
 
 
 _HIDDEN: Dict[str, List[str]] = {}
@@ -265,6 +401,7 @@ async def create_custom(payload: Dict[str, Any]) -> Dict[str, Any]:
     if base in LOCKED_ROLES:
         raise HTTPException(status_code=400, detail="Peran Admin tidak bisa dijadikan template.")
     levels = _clean_levels(payload.get("levels"))
+    traits_in = payload.get("traits")
     rid = _slug(label)
     existing = {r["id"] for r in await list_custom()}
     n = 2
@@ -275,6 +412,7 @@ async def create_custom(payload: Dict[str, Any]) -> Dict[str, Any]:
     perms = apply_levels(deepcopy(matrix.get(base, {})) if base else {}, levels)
     if payload.get("permissions") is not None:
         perms = _clean_perms(payload["permissions"])
+    traits = clean_traits(None, traits_in, perms, base)   # PR-T4 — sebelum apa pun disimpan
     matrix[rid] = perms
     doc = {"id": rid, "label": label, "description": (payload.get("description") or "").strip()[:200],
            "base_role": base, "levels": {k: v["level"] for k, v in levels_of(perms).items()},
@@ -283,6 +421,7 @@ async def create_custom(payload: Dict[str, Any]) -> Dict[str, Any]:
     await _save_matrix(matrix)
     if payload.get("cross_entity") is not None:   # tanpa nilai → mengikuti peran acuan
         await _set_cross_entity(rid, bool(payload["cross_entity"]))
+    await _save_traits(rid, traits)
     await sync_registry()
     return await get_role(rid)
 
@@ -340,6 +479,12 @@ async def update_role(rid: str, payload: Dict[str, Any]) -> Dict[str, Any]:
         changes["permissions"] = {
             r: sorted(matrix[rid].get(r, [])) for r in set(before) | set(matrix[rid])
             if sorted(before.get(r, [])) != sorted(matrix[rid].get(r, []))}
+    traits: Dict[str, Any] = {}
+    if payload.get("traits") is not None:   # PR-T4 — diperiksa terhadap izin HASIL simpan ini
+        perms_after = matrix.get(rid)
+        traits = clean_traits(rid, payload["traits"], perms_after if perms_after is not None
+                              else DEFAULT_PERMISSIONS.get(rid, {}))
+        changes["traits"] = traits
     if custom:
         patch: Dict[str, Any] = {"updated_at": now_iso()}
         if payload.get("label") is not None:
@@ -356,6 +501,7 @@ async def update_role(rid: str, payload: Dict[str, Any]) -> Dict[str, Any]:
                             detail="Nama & deskripsi peran bawaan sistem tidak bisa diubah; "
                                    "hanya hak aksesnya.")
     await _save_matrix(matrix)
+    await _save_traits(rid, traits)
     await sync_registry()
     out = await get_role(rid)
     out["changes"] = changes
@@ -371,7 +517,8 @@ async def reset_builtin(rid: str) -> Dict[str, Any]:
     await _save_matrix(matrix)
     await _set_cross_entity(rid, None)   # lintas badan usaha ikut kembali ke bawaan
     # PR-T9 — menu yang disembunyikan ikut kembali ke bawaan (tidak ada yang disembunyikan).
-    await db.permission_settings.update_one({"id": "default"}, {"$unset": {f"hidden_views.{rid}": ""}})
+    await db.permission_settings.update_one({"id": "default"}, {"$unset": {f"hidden_views.{rid}": "",
+                                                                         f"role_traits.{rid}": ""}})   # + PR-T4
     await load_hidden_views()
     await sync_registry()
     return await get_role(rid)
@@ -433,7 +580,8 @@ async def delete_custom(rid: str) -> Dict[str, Any]:
     await _save_matrix(matrix)
     await db.permission_settings.update_one({"id": "default"}, {"$unset": {f"hidden_views.{rid}": "",
                                                                          f"cross_entity.{rid}": "",
-                                                                         f"assignable_roles.{rid}": ""}})
+                                                                         f"assignable_roles.{rid}": "",
+                                                                         f"role_traits.{rid}": ""}})
     await db.custom_roles.delete_one({"id": rid})
     await sync_registry()
     return {"id": rid, "deleted": True}

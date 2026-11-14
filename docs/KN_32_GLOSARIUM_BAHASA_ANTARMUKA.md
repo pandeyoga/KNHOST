@@ -186,3 +186,16 @@ sementara", `inspection.release` "Lepas / tolak tahanan barang", `product.retire
 `sales_return.treat_cutloss` "Pilih potongan cacat: masuk BS atau dibuang", `od_pricing.unlock` "Buka kunci harga final".
 Pengaturan yang digantikan izin ini berstatus "tidak dipakai" dengan alasan "Diatur di Peran & Hak Akses › …"
 (`ai.enabled_roles`, `ai.margin_roles`, `ai.stock_value_roles`, `returns.cutloss_treatment_roles`).
+
+### 9.2 Sifat peran (PR-T4)
+
+Empat hal yang dulu melekat pada nama peran dasar kini isian **Sifat peran** di editor Peran & Hak Akses
+(`RoleTraitsPanel.jsx`; disimpan `permission_settings.role_traits`). Isian yang tidak diubah Admin tampil
+"Mengikuti {peran dasar}" atau "Mengikuti bawaan sistem".
+
+| Istilah | Teks layar | Arti |
+|---|---|---|
+| Cakupan data | Label isian **"Data yang terlihat"** · pilihan "Milik sendiri" / "Milik sendiri dan timnya" / "Semua di PT yang boleh dibuka" · keterangan "Berlaku untuk pelanggan, pesanan, pengajuan harga, prospek, pengiriman, dan permintaan desain." | Dokumen ber-pemilik siapa yang terlihat dan bisa diubah pemegang peran, di dalam PT yang boleh dibuka. "Timnya" = akun yang karyawannya berada di unit organisasi yang dikepalai karyawan pelaku. Pesan 403 bila diberi lebih luas: "Anda tidak bisa memberi cakupan data lebih luas dari cakupan peran Anda sendiri." Jangan memakai "scope" / "row-level" di layar |
+| Halaman awal | Label **"Halaman awal"** · keterangan "Layar pertama setelah masuk." · pilihan yang izinnya belum dimiliki: "{layar} · Butuh akses yang belum dimiliki peran ini" | Layar pertama setelah masuk. Bila izin layar tersimpan dicabut, akun mendarat di Profil Saya. Pesan 400: "Halaman awal “{layar}” butuh akses yang belum dimiliki peran ini." |
+| Kategori kerja | Label **"Kategori kerja"** · pilihan "Tidak ada" / "Sales" / "Sopir" / "Desainer" / "Petugas gudang" / "Pengawas" · kalimat akibat di bawah isian | Jenis pekerjaan pemegang peran: menentukan siapa yang muncul di daftar pilih sales/sopir/desainer, ikut papan peringkat, komisi dan akrual insentif, dibatasi lokasi kerja, dan jenis Meja Saya. Peran tanpa kategori: "Peran Anda belum punya meja kerja. Buka menu yang tersedia di samping." |
+| Ikut menerima notifikasi | Label **"Ikut menerima notifikasi untuk"** · keterangan "Notifikasi giliran tetap mengikuti izin." | Notifikasi yang dialamatkan ke peran bawaan yang dicentang ikut sampai ke pemegang peran ini |

@@ -11,7 +11,7 @@
  */
 import { useEffect, useRef, useState } from "react";
 import axios, { API } from "../services/apiClient";
-import { registerDynamicRoles, ROLE_REGISTRY } from "../config/roles";
+import { homeChangedByServer, registerDynamicRoles, ROLE_REGISTRY } from "../config/roles";
 import { defaultNavIdForRole, defaultViewForRole, resolveDeepLinkTarget } from "../config/navigationConfig";
 
 export default function useSessionSync({ token, user, setUser, setEntityContext, setEntities, setActiveView, setActiveNavId }) {
@@ -85,8 +85,9 @@ export default function useSessionSync({ token, user, setUser, setEntityContext,
   }, [token]); // eslint-disable-line react-hooks/exhaustive-deps
   // Peran kustom baru terdaftar setelah state awal dihitung → arahkan ke berandanya,
   // KECUALI alamat menyebut layar yang sah untuk peran ini (deep-link menang).
+  // PR-T4 — sama untuk peran bawaan yang halaman awalnya diatur Admin (berbeda dari nilai tertulis).
   useEffect(() => {
-    if (!rolesVersion || !user?.role || !ROLE_REGISTRY[user.role]?.custom) return;
+    if (!rolesVersion || !user?.role || !(ROLE_REGISTRY[user.role]?.custom || homeChangedByServer(user.role))) return;
     const wanted = new URLSearchParams(window.location.search).get("view");
     if (wanted && resolveDeepLinkTarget(wanted, user.role)) return;
     setActiveView(defaultViewForRole(user.role));
