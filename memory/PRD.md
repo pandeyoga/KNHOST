@@ -110,6 +110,17 @@ GL-01: registri `services/gl_mapping_registry.py` (54 kebutuhan) → koleksi `gl
   & tanpa "Diblokir" (PATCH status aktif/nonaktif kembali), plafon di pelanggan baru → pengajuan. Data lama dipindahkan
   `scripts/migrate_credit_profiles.py` (bawaan lapor, `--terapkan` = keputusan pemilik H3); sampai itu dijalankan,
   plafon/blokir lama dibaca sebagai cadangan "data lama".
+- 2026-11-14 PK-43 (UX-08, UX-13, UX-15, UX-16 — empat alur layar keuangan tanpa pindah menu): (1) pop-up **Pelunasan
+  Antar-PT** memuat kandidat dari `GET /api/interco/payment-schedule` untuk pasangan pembayar → penerima (dulu disaring
+  dari daftar PT aktif, kosong bila PT aktif pembayar); penjaga pihak (403 bila kedua PT di luar penugasan), baris
+  `outstanding` + `settleable`; isian tanggal (hari ini WIB) & rekening PT pembayar; server menolak rekening PT lain (400
+  "Rekening bukan milik PT pembayar."). (2) Telusur: baris akun Laba-Rugi/Neraca → Buku Besar terfilter (`start`,
+  `opening_balance`, `period`, `source_id` per baris), `GET /api/gl/journal?start&end`, rincian jurnal membawa
+  `source_doc` (`doc_refs_service.journal_source_doc`) → **Buka Dokumen Sumber**; tombol kembali ke laporan dan ke buku
+  besar terfilter. (3) Piutang: **Catat Pembayaran**/**Bayar** di rincian pelanggan (izin `ar_receipt.create`, mati di
+  "Semua PT"). (4) `GET /api/finance/closing/checklist` (`services/closing_checklist.py`, `CHECKS` berurutan, 11 butir;
+  tiga menghalangi, sisanya peringatan) + panel **Daftar Periksa Sebelum Tutup Buku** di Tutup Buku; aturan
+  `close_period` tidak berubah.
 - 2026-11-14 PK-44 (IA-04/IA-10/IA-11/IA-13/IA-14, K-18 — jejak dokumen membuka dokumennya): satu pembentuk tautan
   `doc_refs_service.link_of` (`view` · `tab` · `focus_type` · `focus_id`; tanpa `nav_id`) untuk Jejak Dokumen, panel
   Dokumen Terkait, dan linimasa proses; empat `view` tanpa layar diperbaiki (retur jual → `returns`, transfer/opname →

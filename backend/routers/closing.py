@@ -3,6 +3,7 @@
 Akses: permission module "accounting". Close butuh action "manage"; reopen
 admin-only. Respons OBJEK/ARRAY telanjang (kontrak KN3). Per-entitas (F0-E).
 """
+import re
 from typing import Any, Dict, List, Optional
 
 from fastapi import APIRouter, Request, Query, HTTPException
@@ -12,7 +13,7 @@ from pydantic import BaseModel
 from core_utils import now_iso
 from db import db
 from dependencies import has_permission, require_permission, audit
-from entity_scope import entity_ctx
+from entity_scope import entity_ctx, resolve_requested_entity
 from services import closing_service as cs
 
 router = APIRouter(prefix="/api")
@@ -58,6 +59,33 @@ async def preview_closing(
     await require_permission(request, "accounting", "view")
     eid = await _resolve_entity(request, entity_id)
     return await cs.preview(period_type, period_key, eid)
+
+
+#: PK-43 — pesan daftar periksa (mode "Semua PT" / periode tidak sah).
+PESAN_CEKLIS_SATU_PT = "Pilih satu PT untuk melihat daftar periksa tutup buku."
+PESAN_CEKLIS_PERIODE = "Periode harus berbentuk TTTT-BB (bulanan) atau TTTT (tahunan)."
+_RX_PERIODE = {"month": re.compile(r"^\d{4}-(0[1-9]|1[0-2])$"), "year": re.compile(r"^\d{4}$")}
+
+
+@router.get("/finance/closing/checklist")
+async def closing_checklist(
+    request: Request,
+    period_type: str = Query("month", description="month | year"),
+    period_key: str = Query("", description="YYYY-MM atau YYYY"),
+    entity_id: Optional[str] = Query(None),
+) -> Dict[str, Any]:
+    """PK-43 (UX-16) — daftar periksa sebelum tutup buku (angka dari sistem; `services/closing_checklist.py`).
+    Hanya membaca; aturan tutup buku di server (`close_period`) tidak berubah — butir `warning` tidak menghalangi."""
+    await require_permission(request, "accounting", "view")
+    ctx = await entity_ctx(request)
+    if (entity_id or "").strip() == "all" or (not entity_id and ctx.view_all):
+        raise HTTPException(status_code=400, detail=PESAN_CEKLIS_SATU_PT)
+    eid = resolve_requested_entity(ctx, entity_id)
+    rx = _RX_PERIODE.get(period_type)
+    if not rx or not rx.match(period_key or ""):
+        raise HTTPException(status_code=400, detail=PESAN_CEKLIS_PERIODE)
+    from services import closing_checklist as ceklis
+    return await ceklis.build(period_type, period_key, eid)
 
 
 @router.get("/finance/closing/status")

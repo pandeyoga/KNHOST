@@ -65,6 +65,10 @@ STATUS_LABEL = {
     "cancelled": "Dibatalkan",
 }
 OPEN_STATUSES = ("confirmed", "shipped", "received", "invoiced")
+#: PK-43 (UX-08) — pesan penjaga pasangan PT kandidat pelunasan dan rekening pembayar (`02` N2).
+PESAN_PASANGAN_CAKUPAN = "Anda tidak ditugaskan di salah satu PT pada pasangan ini."
+PESAN_REKENING_BUKAN_PEMBAYAR = "Rekening bukan milik PT pembayar."
+PESAN_JURNAL_GAGAL = "Jurnal transaksi ini masih gagal terbit — ulangi dulu dari Keuangan › Posting Gagal."
 
 PRICING_MODES = ("fixed_price", "at_cost", "cost_plus_pct")
 PPN_MODES = ("ikut_pkp", "tanpa_ppn", "dengan_ppn")
@@ -1149,6 +1153,11 @@ async def create_settlement(payload: Dict[str, Any], actor: str = "", idempotenc
         except _pms.CaraBayarError as exc:
             raise IntercoError(str(exc)) from exc
         payload = {**payload, "method": method_req}
+        # PK-43 (UX-08, `02` N2) — rekening yang dikirim layar wajib milik PT pembayar (diperiksa sebelum apa pun ditulis).
+        acc_id = (payload.get("bank_account_id") or "").strip()
+        if acc_id and ((await db.bank_accounts.find_one({"id": acc_id}, {"_id": 0, "entity_id": 1})) or {}).get(
+                "entity_id") != payer:
+            raise IntercoError(PESAN_REKENING_BUKAN_PEMBAYAR)
     if method_req == "netting" and not pay_cfg["allow_netting"]:
         raise IntercoError("Netting dinonaktifkan: pembayaran antar-PT dilakukan penuh per transaksi tanpa saling "
                            "hapus (LN-024). Pilih metode transfer/kas.")
@@ -1628,6 +1637,11 @@ async def payment_schedule(scope_entity_ids: List[str], payer: str = "", payee: 
     if payee:
         q["seller_entity_id"] = payee
     docs = await db[COLL_ICT].find(q, {"_id": 0}).sort("created_at", 1).to_list(2000)
+    # PK-43 (UX-08) — dokumen kembar (pembeli) yang jurnalnya gagal: pelunasan ditolak server (409), jadi barisnya
+    # ditandai tidak bisa dilunasi dulu.
+    cp_gagal = {d["id"] async for d in db[COLL_ICT].find(
+        {"id": {"$in": [d.get("counterpart_id") for d in docs if d.get("counterpart_id")]}, "gl_status": "failed"},
+        {"_id": 0, "id": 1})}
     cfg = await payment_settings(payer)
     basis = _BASIS.get(cfg.get("basis") or "")
     ready = bool(basis and cfg.get("cutoff_day"))
@@ -1652,6 +1666,10 @@ async def payment_schedule(scope_entity_ids: List[str], payer: str = "", payee: 
                "received_at": d.get("received_at") or "", "invoiced_at": d.get("invoiced_at") or "",
                "doc_date": d.get("doc_date") or (d.get("created_at") or "")[:10], "due_date": d.get("due_date") or "",
                "basis_date": bdate, "period": None, "pay_date": None}
+        # PK-43 — `outstanding` (= `remaining`) + `settleable`: status terbuka dan jurnal kedua sisi tidak gagal.
+        gagal = d.get("gl_status") == "failed" or d.get("counterpart_id") in cp_gagal
+        row.update({"outstanding": remaining, "settleable": d.get("status") in OPEN_STATUSES and not gagal,
+                    "settle_block_reason": PESAN_JURNAL_GAGAL if gagal else ""})
         if pready and bdate:
             row.update(_period_for(bdate, int(pcfg["cutoff_day"]), pcfg.get("payment_day")))
             row["basis_label"] = pbasis[1]

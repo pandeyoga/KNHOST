@@ -221,7 +221,7 @@ export default function AppViewRouter(props) {
         </>
       )}
       {activeView === "chart-of-accounts" && <ChartOfAccounts entities={entities} currentUser={user} />}
-      {activeView === "general-ledger" && <GeneralLedger selectedEntity={selectedEntity} entities={entities} focusDoc={focusDoc?.focus_type === "journal_entry" ? focusDoc : null} onClearFocus={() => setFocusDoc(null)} />}
+      {activeView === "general-ledger" && <GeneralLedger selectedEntity={selectedEntity} entities={entities} focusDoc={focusDoc?.focus_type === "journal_entry" ? focusDoc : null} onClearFocus={() => setFocusDoc(null)} onOpenDocument={openDocument} />}
       {activeView === "financial-statements" && <FinancialStatementsView selectedEntity={selectedEntity} />}
       {activeView === "closing" && <ClosingView selectedEntity={selectedEntity} entities={entities} currentUser={user} />}
       {activeView === "posting-failures" && <PostingFailuresView />}

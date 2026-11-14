@@ -418,7 +418,7 @@ def test_c1_umur_saldo_dari_aktivitas_nyata_dan_pengingat_terkirim(adm):
                                   {"_id": 0, "body": 1, "link": 1})
     assert n, "notifikasi pengingat harus benar-benar ada (bukan hanya respons OK)"
     assert n["link"] == "interco-transactions"
-    assert "tidak bergerak" in n["body"] and "Buat Settlement" in n["body"]
+    assert "tidak bergerak" in n["body"] and "Buat Pelunasan" in n["body"]   # PK-43 — nama tombol
 
     again = adm.post(f"{BASE}/api/interco/accounts/{a['from_entity_id']}/"
                      f"{a['to_entity_id']}/remind", json={"note": ""}).json()

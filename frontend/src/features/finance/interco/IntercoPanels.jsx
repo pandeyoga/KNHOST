@@ -332,10 +332,11 @@ export function BalancesPanel({ accounts, onNetting, onRemind, canWrite, netPair
                                   className="inline-flex items-center gap-1 px-2.5 py-1 text-xs rounded-md border border-[#E5E5EA] text-[#3C3C43] bg-white hover:bg-[#F2F2F5]">
                             <Bell size={12} /> Ingatkan
                           </button>
+                          {/* PK-43 — satu nama dengan pop-up "Pelunasan Antar-PT" (glosarium KN_32) */}
                           <button onClick={() => onNetting?.(a)}
                                   data-testid={`interco-settle-${a.id}`}
-                                  className="inline-flex items-center gap-1 px-2.5 py-1 text-xs rounded-md border border-[#0058CC] text-[#0058CC] bg-white hover:bg-[#EAF2FF] transition">
-                            Buat Settlement
+                                  className="secondary-button btn-sm whitespace-nowrap">
+                            Buat Pelunasan
                           </button>
                         </>
                       )}

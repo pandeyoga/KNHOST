@@ -3,11 +3,15 @@
  * Akses admin/manager (permission "accounting"). Sumber: /api/gl/*.
  * PK-16 — SATU banner PT (`scope_meta` /gl/summary) di atas KPI berlaku untuk tab Jurnal, Neraca Saldo & Buku Besar
  * (cakupan ketiganya sama: header PT); gagal memuat ringkasan → KPI dikosongkan.
+ * PK-43 (UX-13, `02` L8) — preset navigasi (`useViewPreset`): `{tab, code, start, end, from, fromTab}`. Dari Laporan
+ * Keuangan (`from: "financial-statements"`) tampil tombol **← Kembali ke Laporan Keuangan** di atas tab (tab & periode
+ * asal). Baris buku besar membuka rincian jurnal; rincian jurnal membuka dokumen sumbernya (`onOpenDocument`) dan
+ * bilah kembali dokumen itu membawa preset buku besar yang sama.
  */
 import { apiErrorText } from "../../utils/apiError";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
-  RefreshCw, FileStack, Scale, BookOpen, Plus, RotateCcw, X, CheckCircle2, Boxes, ArrowLeftRight, Search,
+  RefreshCw, FileStack, Scale, BookOpen, Plus, RotateCcw, X, CheckCircle2, Boxes, ArrowLeftRight, Search, ArrowLeft,
 } from "lucide-react";
 import axios, { API } from "../../services/apiClient";
 import ErrorNotice from "../../components/ErrorNotice";
@@ -28,6 +32,9 @@ import { SOURCE_LABELS, sourceLabel } from "./glSourceLabels";
 import { askConfirm } from "../../services/confirmService";
 import useIntentKey from "../../hooks/useIntentKey";
 import { moneyPost } from "../../utils/moneyRequest";
+import useViewPreset from "../../hooks/useViewPreset";
+import { useAppNav } from "../../context/AppNavContext";
+import useJournalActions from "./useJournalActions";   // PK-43 — anulir/balik dari tab Jurnal & Buku Besar
 import JournalProposalsPanel, { JournalProposalBanner } from "./JournalProposalsPanel";   // KF-T6
 import FilterChips from "../../components/FilterChips";
 import EntityGatedButton, { EntityGateNote } from "../../components/EntityGatedButton";   // PK-42 (UX-05)
@@ -70,8 +77,20 @@ const JOURNAL_CSV_COLUMNS = [
   { header: "Status", get: (je) => (je.status === "void" ? "Anulir" : "Terposting") },
 ];
 
-export default function GeneralLedger({ selectedEntity, entities = [], focusDoc, onClearFocus }) {
-  const [tab, setTab] = useState("journal");
+const TAB_IDS = TABS.map((t) => t.id);
+// PK-43 — asal "Laporan Keuangan": tab & periode laporan untuk tombol kembali.
+const reportOrigin = (p) => (p?.from === "financial-statements"
+  ? { tab: p.fromTab || "pl", start: p.fromTab === "bs" ? "" : (p.start || ""), end: p.end || "" } : null);
+
+export default function GeneralLedger({ selectedEntity, entities = [], focusDoc, onClearFocus, onOpenDocument }) {
+  const preset = useViewPreset("general-ledger", (p) => {
+    if (TAB_IDS.includes(p.tab)) setTab(p.tab);
+    if (p.code) { setLedgerCode(p.code); setLedgerRange({ start: p.start || "", end: p.end || "" }); }
+    setFromReport(reportOrigin(p));
+  });
+  const [tab, setTab] = useState(() => (TAB_IDS.includes(preset?.tab) ? preset.tab : "journal"));
+  const [fromReport, setFromReport] = useState(() => reportOrigin(preset));
+  const { go } = useAppNav();
   const [focusJe, setFocusJe] = useState(null);
   // Dibuka dari Jejak Dokumen → langsung tampilkan jurnal yang diklik.
   useEffect(() => {
@@ -88,7 +107,13 @@ export default function GeneralLedger({ selectedEntity, entities = [], focusDoc,
   const [syncing, setSyncing] = useState(false);
   const [showModal, setShowModal] = useState(false);
   const [notice, setNotice] = useState("");
-  const [ledgerCode, setLedgerCode] = useState("");
+  const [ledgerCode, setLedgerCode] = useState(() => preset?.code || "");
+  const [ledgerRange, setLedgerRange] = useState(() => ({ start: preset?.code ? preset.start || "" : "",
+    end: preset?.code ? preset.end || "" : "" }));
+  // PK-43 — buka dokumen sumber; bilah "← Kembali ke …" di layar dokumen membawa preset buku besar yang sedang dilihat.
+  const openSource = onOpenDocument ? (link) => onOpenDocument({ ...link, origin: { view: "general-ledger",
+    preset: tab === "ledger" && ledgerCode ? { tab: "ledger", code: ledgerCode, ...ledgerRange,
+      ...(fromReport ? { from: "financial-statements", fromTab: fromReport.tab } : {}) } : { tab } } }) : undefined;
   // PK-12 — kunci idempotensi untuk tulis ke /gl/ (kirim ulang setelah koneksi putus diputar ulang server).
   const syncIntent = useIntentKey("glsync");
 
@@ -139,6 +164,16 @@ export default function GeneralLedger({ selectedEntity, entities = [], focusDoc,
     <div data-testid="gl-view">
       {/* Fase 3 · P4 (L-04 kelas C) — akuntansi: cukup pemberitahuan "paling nyaman di desktop" di HP. */}
       <DesktopOnlyNotice testId="gl-desktop-notice" what="Jurnal & Buku Besar" />
+      {fromReport && (
+        <div className="mb-3 flex flex-wrap items-center gap-2" data-testid="gl-back-bar">
+          <button type="button" className="secondary-button btn-sm whitespace-nowrap" data-testid="gl-back-to-report"
+            onClick={() => go("financial-statements", { preset: { tab: fromReport.tab, start: fromReport.start,
+              end: fromReport.end } })}>
+            <ArrowLeft size={13} aria-hidden="true" /> Kembali ke Laporan Keuangan
+          </button>
+          <span className="text-fs-12 text-kn-text-2">Mutasi akun dari {fromReport.tab === "bs" ? "Neraca" : "Laba-Rugi"}.</span>
+        </div>
+      )}
       <EntityScopeBanner meta={summary?.scope_meta} />
       {/* Cek layar 15 Nov — empat kartu sebaris hanya di ≥1280 px; di 1024 px 2+2 supaya total rupiah utuh sebaris. */}
       <div className="grid grid-cols-2 xl:grid-cols-4 gap-3 mb-3">
@@ -177,9 +212,11 @@ export default function GeneralLedger({ selectedEntity, entities = [], focusDoc,
 
           {tab === "journal" && <JournalTab refreshKey={refreshKey} onChanged={refreshAll} onError={setError} entities={entities} selectedEntity={selectedEntity}
             sources={summary?.sources} voidCount={summary?.void_count || 0} onNotice={setNotice}
-            focusJe={focusJe} onFocusShown={() => setFocusJe(null)} />}
+            focusJe={focusJe} onFocusShown={() => setFocusJe(null)} onOpenDocument={openSource} />}
           {tab === "trial" && <TrialBalanceTab refreshKey={refreshKey} onError={setError} onDrill={(code) => { setTab("ledger"); setLedgerCode(code); }} />}
-          {tab === "ledger" && <LedgerTab accounts={accounts} refreshKey={refreshKey} code={ledgerCode} setCode={setLedgerCode} onError={setError} />}
+          {tab === "ledger" && <LedgerTab accounts={accounts} refreshKey={refreshKey} code={ledgerCode} setCode={setLedgerCode} onError={setError}
+            range={ledgerRange} setRange={setLedgerRange} entities={entities} selectedEntity={selectedEntity}
+            sourceMeta={sourceMeta} onChanged={refreshAll} onOpenDocument={openSource} />}
           {tab === "recon" && <InventoryReconTab refreshKey={refreshKey} onError={setError} onNotice={setNotice} onChanged={refreshAll} selectedEntity={selectedEntity} entities={entities} />}
           {tab === "suspense" && <SuspensePanel refreshKey={refreshKey} accounts={accounts} entities={entities} selectedEntity={selectedEntity} onNotice={setNotice} onChanged={refreshAll} />}
         </div>
@@ -202,7 +239,7 @@ export default function GeneralLedger({ selectedEntity, entities = [], focusDoc,
 
 // ─── JURNAL TAB ──────────────────────────────────────────────────────────────
 function JournalTab({ refreshKey, onChanged, onError, entities = [], selectedEntity, focusJe, onFocusShown,
-  sources = null, voidCount = 0, onNotice }) {
+  sources = null, voidCount = 0, onNotice, onOpenDocument }) {
   // KF-T6 — saringan "Menunggu persetujuan": usulan jurnal manual yang menunggu orang kedua.
   const [pendingView, setPendingView] = useState(false);
   // G1-26 — opsi sumber dari jenis yang benar-benar ada di buku (dulu hanya Manual/Penjualan/Kas).
@@ -232,25 +269,8 @@ function JournalTab({ refreshKey, onChanged, onError, entities = [], selectedEnt
   useEffect(() => { paged.refresh(); }, [refreshKey]); // eslint-disable-line
   useEffect(() => { if (paged.error) onError(paged.error); }, [paged.error]); // eslint-disable-line
 
-  // PK-12 — satu kunci per niat (anulir / balik); tombolnya dimatikan JournalDetailModal selama menunggu.
-  const voidIntent = useIntentKey("jev");
-  const reverseIntent = useIntentKey("jer");
-
-  // Fase 4 · R2 — galat anulir DILEMPAR ke pop-up rincian (dulu ke bilah galat halaman di belakang pop-up).
-  const voidEntry = async (je) => {
-    await voidIntent.send({ id: je.id, aksi: "void" },
-      (k) => moneyPost(`${API}/gl/journal/${je.id}/void`, undefined, k));
-    setDetail(null);
-    onChanged();
-  };
-
-  const reverseEntry = async (je, date, reason) => {
-    const body = { date, reason };
-    await reverseIntent.send({ id: je.id, ...body },
-      (k) => moneyPost(`${API}/gl/journal/${je.id}/reverse`, body, k));
-    setDetail(null);
-    onChanged();
-  };
+  // PK-12 — satu kunci per niat (anulir / balik); Fase 4 · R2 — galat DILEMPAR ke pop-up rincian. PK-43 — `useJournalActions`.
+  const { voidEntry, reverseEntry } = useJournalActions(() => { setDetail(null); onChanged(); });
 
   return (
     <div>
@@ -340,7 +360,7 @@ function JournalTab({ refreshKey, onChanged, onError, entities = [], selectedEnt
           />
         </div>
       )}
-      {detail && <JournalDetailModal je={detail} sourceMeta={sourceMeta} entities={entities} selectedEntity={selectedEntity} onClose={() => setDetail(null)} onVoid={voidEntry} onReverse={reverseEntry} />}
+      {detail && <JournalDetailModal je={detail} sourceMeta={sourceMeta} entities={entities} selectedEntity={selectedEntity} onClose={() => setDetail(null)} onVoid={voidEntry} onReverse={reverseEntry} onOpenDocument={onOpenDocument} />}
     </div>
   );
 }

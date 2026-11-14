@@ -594,6 +594,15 @@ menu yang disorot `finance-tower`), `period-unlock`, `posting-failures` (tab Tut
 `verify_page_tabs.py` (INV-UI-12/13/14), jest `roleReach.test.js`, `serverAccessReach.test.js`, `navAccess.test.js`,
 `mnt1MenuKeuangan.test.js`.
 
+### Alur telusur tanpa pindah menu (PK-43)
+
+| Mulai | Langkah | Kembali |
+|---|---|---|
+| Akuntansi & Pajak › Laporan › Laba-Rugi / Neraca (`financial-statements`) | klik nama akun (`fs-line-{kode}`) → Buku Besar › Jurnal › tab **Buku Besar** (`general-ledger`, preset `{tab: "ledger", code, start, end, from: "financial-statements", fromTab}`) → klik baris mutasi → rincian jurnal → **Buka Dokumen Sumber** (`source_doc.link`, peta tujuan PK-44) | layar dokumen: bilah "← Kembali ke Jurnal & Buku Besar" (preset buku besar yang sama); buku besar: **← Kembali ke Laporan Keuangan** (tab & periode asal) |
+| Akuntansi & Pajak › Tutup Buku (`closing`) | **Pratinjau** → panel Daftar Periksa Sebelum Tutup Buku → **Buka** per butir: Suspense / Neraca Saldo / Rekonsiliasi Persediaan (`general-ledger` ber-tab), `posting-failures`, `bank-reconciliation`, `interco-transactions` (tab Saldo Antar-PT), `period-unlock`, `fixed-assets`, `hr-payroll-runs` | bilah "← Kembali ke Tutup Buku" (`preset.from`) |
+| Keuangan › Piutang › Saldo & Umur (`ar-aging`) | rincian pelanggan → **Catat Pembayaran** / **Bayar** per pesanan (form kwitansi baku, izin `ar_receipt.create`) | tetap di rincian; daftar & rincian dimuat ulang |
+| Keuangan › Antar-PT (`interco-transactions`) | **Buat Pelunasan** (izin `interco.settle`) → pop-up Pelunasan Antar-PT: kandidat dari server untuk pasangan pembayar → penerima, tanggal & rekening pembayar | tetap di layar |
+
 ## ⚙️ MENU PENGATURAN (KP-T9 — sembilan hub, ditulis dari konfigurasi)
 
 Sumber: `frontend/src/config/navStructure.js` (grup `settings-hub`), `hubTabs.js`, `backend/access_modules.py` (blok

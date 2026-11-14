@@ -1,5 +1,5 @@
 <!-- DIHASILKAN OTOMATIS oleh scripts/gen_codebase_map.py — JANGAN EDIT TANGAN -->
-<!-- Dihasilkan dari commit: 6407e72 pada 2026-11-14 -->
+<!-- Dihasilkan dari commit: 352d8b5 pada 2026-11-14 -->
 # CODEBASE MAP — Kain Nusantara (dihasilkan otomatis)
 
 Peta ini dihitung dari kode oleh `scripts/gen_codebase_map.py`. Kalau angka di sini
@@ -13,8 +13,8 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 | Ukuran | Nilai |
 |---|---:|
 | Router (`backend/routers/*.py`) | 168 |
-| Endpoint (`@router.<method>`) | 1816 |
-| Service (`backend/services/*.py`) | 414 |
+| Endpoint (`@router.<method>`) | 1817 |
+| Service (`backend/services/*.py`) | 415 |
 | Koleksi MongoDB disentuh kode produksi | 204 |
 | Direktori fitur frontend (`src/features/*`) | 39 |
 
@@ -144,7 +144,7 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 | `cash_advances.py` | 24 | 217 | `/cash-advance-settlements`, `/cash-advance-settlements/reimburse-payables`, `/cash-advance-settlements/{stl_id}`, `/cash-advance-settlements/{stl_id}/approve`, `/cash-advance-settlements/{stl_id}/attachments`, `/cash-advance-settlements/{stl_id}/attachments/{att_id}` … |
 | `categories.py` | 5 | 169 | `/product-categories`, `/product-categories/{category_id}`, `/product-motifs` |
 | `client_dataset.py` | 6 | 60 | `/batches`, `/batches/{batch_id}`, `/batches/{batch_id}/commit`, `/batches/{batch_id}/rollback`, `/template`, `/upload` |
-| `closing.py` | 6 | 171 | `/finance/closing`, `/finance/closing/close`, `/finance/closing/preview`, `/finance/closing/status`, `/finance/closing/{closing_id}/reclose`, `/finance/closing/{closing_id}/reopen` |
+| `closing.py` | 7 | 199 | `/finance/closing`, `/finance/closing/checklist`, `/finance/closing/close`, `/finance/closing/preview`, `/finance/closing/status`, `/finance/closing/{closing_id}/reclose` … |
 | `color_library.py` | 14 | 196 | `/color-library`, `/color-library/customer-colors`, `/color-library/customer-colors/{customer_id}/card`, `/color-library/nearest`, `/color-library/supplier-variants`, `/color-library/use-requests` … |
 | `config.py` | 14 | 556 | `/effective`, `/explain`, `/health`, `/history`, `/impact-apply`, `/impact-preview` … |
 | `consolidation.py` | 7 | 142 | `/consolidation/sync-g6`, `/finance/consolidation/eliminations`, `/finance/consolidation/eliminations/sync-from-pairs`, `/finance/consolidation/eliminations/{elim_id}`, `/finance/consolidation/ic-candidates`, `/finance/consolidation/summary` |
@@ -178,7 +178,7 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 | `financial_statements.py` | 8 | 270 | `/finance/balance-sheet`, `/finance/balance-sheet/export.csv`, `/finance/cash-flow`, `/finance/cash-flow/export.csv`, `/finance/equity-changes`, `/finance/equity-changes/export.csv` … |
 | `fixed_assets.py` | 10 | 216 | `/fixed-assets`, `/fixed-assets/meta`, `/fixed-assets/run-depreciation`, `/fixed-assets/summary`, `/fixed-assets/{asset_id}`, `/fixed-assets/{asset_id}/dispose` … |
 | `fulfillment.py` | 3 | 49 | `/fulfillment/wizard/{so_id}`, `/fulfillment/wizard/{so_id}/create-interco`, `/fulfillment/wizard/{so_id}/create-pr` |
-| `gl.py` | 24 | 473 | `/gl/accounts`, `/gl/accounts/{code}`, `/gl/accounts/{code}/ledger`, `/gl/cash-accounts`, `/gl/consolidation`, `/gl/inventory-drift-explain` … |
+| `gl.py` | 24 | 500 | `/gl/accounts`, `/gl/accounts/{code}`, `/gl/accounts/{code}/ledger`, `/gl/cash-accounts`, `/gl/consolidation`, `/gl/inventory-drift-explain` … |
 | `gl_mappings.py` | 5 | 88 | `/gl/account-mappings`, `/gl/account-mappings/history`, `/gl/account-mappings/{key}`, `/gl/account-mappings/{key}/candidates`, `/gl/account-mappings/{key}/reset` |
 | `goods_receipts.py` | 37 | 317 | `/goods-receipts`, `/goods-receipts/dn-profiles`, `/goods-receipts/dn-profiles/{partner_id}`, `/goods-receipts/doc-variance`, `/goods-receipts/mode`, `/goods-receipts/partners` … |
 | `gr_ir.py` | 2 | 47 | `/finance/gr-ir`, `/finance/gr-ir/{po_id}/clear` |
@@ -200,7 +200,7 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 | `input_tax.py` | 6 | 203 | `/input-tax-invoices`, `/input-tax-invoices/eligible-bills`, `/input-tax-invoices/{fpm_id}`, `/input-tax-invoices/{fpm_id}/cancel`, `/tax/vat-summary` |
 | `inspections.py` | 18 | 543 | `/inspections`, `/inspections/export`, `/inspections/meta`, `/inspections/meta/ref-docs`, `/inspections/qc-4point`, `/inspections/queue/qc-tasks` … |
 | `integrations.py` | 8 | 172 | `/admin/integrations`, `/admin/integrations/gemini/test`, `/admin/integrations/openai/test`, `/admin/integrations/whatsapp`, `/admin/integrations/whatsapp/adopt`, `/admin/integrations/whatsapp/test` |
-| `interco.py` | 39 | 624 | `/interco/accounts`, `/interco/accounts/{from_entity_id}/{to_entity_id}`, `/interco/accounts/{payer_entity_id}/{payee_entity_id}/remind`, `/interco/contracts`, `/interco/margin-by-product`, `/interco/margin-report` … |
+| `interco.py` | 39 | 632 | `/interco/accounts`, `/interco/accounts/{from_entity_id}/{to_entity_id}`, `/interco/accounts/{payer_entity_id}/{payee_entity_id}/remind`, `/interco/contracts`, `/interco/margin-by-product`, `/interco/margin-report` … |
 | `interco_loans.py` | 8 | 138 | `/interco/loans`, `/interco/loans/meta`, `/interco/loans/{loan_id}`, `/interco/loans/{loan_id}/cancel`, `/interco/loans/{loan_id}/disburse`, `/interco/loans/{loan_id}/repay` … |
 | `interco_prices.py` | 5 | 76 | `/interco/prices/access`, `/interco/prices/bulk`, `/interco/prices/missing`, `/interco/prices/request`, `/interco/prices/summary` |
 | `internal_requests.py` | 9 | 231 | `/internal-requests`, `/internal-requests-availability/{product_id}`, `/internal-requests/meta`, `/internal-requests/{req_id}`, `/internal-requests/{req_id}/cancel`, `/internal-requests/{req_id}/convert` … |
@@ -355,6 +355,7 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 | `catalog_access.py` | 53 | Pagar bersama template, SKU, media dan relasi R&D. Produk tetap SHARED. |
 | `catalog_rules.py` | 102 | Kontrak murni induk/axis/SKU; digunakan R&D, generator, editor dan impor. |
 | `client_dataset_service.py` | 291 | L01 LN-011 — IMPOR DATASET CLIENT (DATA-01): artikel · tahap · jenis kain · supplier/warna. |
+| `closing_checklist.py` | 280 | PK-43 (UX-16) — DAFTAR PERIKSA SEBELUM TUTUP BUKU: angka diambil dari sistem, satu PT, satu periode. |
 | `closing_service.py` | 618 | FINANCE — Tutup Buku (Period Closing) bulanan & tahunan. |
 | `color_card_pdf.py` | 76 | Kartu Warna Pelanggan (PDF) — swatch, kode, versi supplier per warna + kop badan usaha aktif. |
 | `color_lock_service.py` | 165 | Kunci Warna Eksklusif + Penanda Warna Otomatis. |
@@ -397,7 +398,7 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 | `dn_rules.py` | 350 | GRN Fase 4 — aturan murni pembacaan surat jalan (§4.8): angka, qty declared, nomor PO, pencocokan baris, total |
 | `doc_label_service.py` | 174 | doc_label_service — NOMOR DOKUMEN yang layak dibaca untuk pasangan (jenis sumber daya, id teknis). |
 | `doc_numbering_service.py` | 445 | doc_numbering_service.py — format nomor dokumen yang berlaku (unit KP-T5, KP-12). |
-| `doc_refs_service.py` | 1083 | FASE G-4 — **RELASI DOKUMEN TERSIMPAN** (`refs[]` dua arah) + Jejak Dokumen. |
+| `doc_refs_service.py` | 1126 | FASE G-4 — **RELASI DOKUMEN TERSIMPAN** (`refs[]` dua arah) + Jejak Dokumen. |
 | `document_relations_service.py` | 294 | EPIC 6 — Document Relations / Process Timeline service. |
 | `dual_control.py` | 262 | KF-T6 — satu pembantu untuk kontrol "harus dua orang" (`docs/blueprint/unit/KF-T6.md`, `02_STANDAR.md` §2.3). |
 | `dual_qty_service.py` | 318 | FASE U — DUA SATUAN (jumlah roll + ukuran) · satu pintu untuk semua dokumen. |
@@ -441,7 +442,7 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 | `gemini_image_service.py` | 193 | FB-01 — Ilustrasi AI Galeri Desain via Google Gemini "Nano Banana Pro" (SDK google-genai LANGSUNG). |
 | `gl_mapping_registry.py` | 203 | GL-01 — registri kebutuhan akun (SSOT di kode). Satu baris = satu kebutuhan fitur. |
 | `gl_mapping_service.py` | 217 | GL-01 — pemetaan akun terpusat. Resolver: mapping PT → mapping global → bawaan registri. |
-| `gl_service.py` | 4401 | EPIC7-C — General Ledger & Chart of Accounts (akuntansi inti). |
+| `gl_service.py` | 4434 | EPIC7-C — General Ledger & Chart of Accounts (akuntansi inti). |
 | `goods_receipt_close_service.py` | 596 | GRN Fase 2 — rekonsiliasi (§4.4), penyelesaian selisih, penutupan (§4.5), sisa PO, tolak & batal. |
 | `goods_receipt_ocr_service.py` | 604 | GRN Fase 4 — baca surat jalan dengan OpenAI: praproses, panggil, pembaca kedua, log biaya, rem anggaran, pemet |
 | `goods_receipt_service.py` | 1003 | GRN Fase 2 — Kedatangan Barang (satu surat jalan · satu mitra): buat, berkas, kepala SJ, baris, hitung. |
@@ -481,7 +482,7 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 | `interco_price_service.py` | 176 | 2026-10 — HARGA INTERNAL antar-PT (kontrak `supplier_contracts` contract_type=internal). |
 | `interco_reminder.py` | 179 | FASE G-6b — **PENGINGAT SETTLEMENT** saldo antar-PT yang menganggur. |
 | `interco_return_service.py` | 927 | FASE G-6b — **RETUR ANTAR-PT** (jalan resmi setelah barangnya sudah berpindah). |
-| `interco_service.py` | 2662 | FASE G-6 — Layanan **TRANSAKSI ANTAR ENTITAS** (jual-beli antar-PT dalam grup). |
+| `interco_service.py` | 2680 | FASE G-6 — Layanan **TRANSAKSI ANTAR ENTITAS** (jual-beli antar-PT dalam grup). |
 | `interco_tax_service.py` | 488 | FASE G-6b — **FAKTUR PAJAK INTERNAL** untuk transaksi antar-PT ber-PPN. |
 | `internal_request_service.py` | 523 | FASE E-7 (E7.1 · gelombang 2 “E7d”) — **PERMINTAAN INTERNAL** (`<ENT>/PIN-#####`). |
 | `inventory_drift_watch.py` | 129 | services/inventory_drift_watch.py — PEMANTAU DRIFT PERSEDIAAN (INV-GL-DRIFT). |
@@ -718,7 +719,7 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 
 | Fitur (`src/features/`) | Berkas | Baris |
 |---|---:|---:|
-| `__tests__` | 126 | 20298 |
+| `__tests__` | 127 | 20760 |
 | `admin` | 36 | 6981 |
 | `approvals` | 9 | 1720 |
 | `catalog` | 24 | 1459 |
@@ -729,7 +730,7 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 | `desks` | 2 | 229 |
 | `documents` | 18 | 2580 |
 | `export` | 9 | 700 |
-| `finance` | 101 | 23180 |
+| `finance` | 103 | 23628 |
 | `home` | 5 | 1136 |
 | `hr` | 34 | 5799 |
 | `inspections` | 12 | 2181 |
@@ -754,7 +755,7 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 | `sales_admin` | 11 | 1880 |
 | `samples` | 8 | 776 |
 | `settings` | 70 | 13061 |
-| `tanya` | 27 | 2364 |
+| `tanya` | 27 | 2368 |
 | `transfers` | 1 | 20 |
 | `wms` | 99 | 13202 |
 
@@ -787,8 +788,8 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 | `frontend/src/features/pos/CheckoutDrawer.jsx` | 560 | 500 |
 | `frontend/src/features/purchasing/makloon/MakloonWizard.jsx` | 542 | 500 |
 | `frontend/src/features/settings/entities/EntityDetailDrawer.jsx` | 518 | 500 |
-| `frontend/src/features/finance/interco/IntercoView.jsx` | 515 | 500 |
 | `frontend/src/features/finance/InventoryReconTab.jsx` | 513 | 500 |
+| `frontend/src/features/finance/interco/IntercoView.jsx` | 513 | 500 |
 | `frontend/src/features/settings/entities/RoleRealityPanel.jsx` | 511 | 500 |
 | `frontend/src/features/settings/entities/AccountFormDrawer.jsx` | 508 | 500 |
 | `frontend/src/features/purchasing/contrabon/ContraBonCreateWizard.jsx` | 502 | 500 |

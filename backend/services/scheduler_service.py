@@ -163,7 +163,7 @@ JOBS: List[Dict[str, Any]] = [
      "link": "contra-bons"},
     # ── FASE G-6b ─────────────────────────────────────────────────────────
     {"id": "interco_settlement_reminder", "label": "Pengingat Settlement Antar-PT",
-     "description": "Ingatkan Keuangan bila saldo satu pasangan PT tidak bergerak lebih lama dari batas di Pusat Pengaturan (antar_entitas.settlement_reminder_days). MENGINGATKAN, bukan memaksa — netting tetap dijalankan manual lewat tombol 'Buat Settlement' (keputusan pemilik). Umur saldo dihitung dari aktivitas NYATA (dokumen & settlement terakhir), bukan dari kapan barisnya terakhir dihitung ulang. Idempotent: satu notifikasi per hari per pasangan PT.",
+     "description": "Ingatkan Keuangan bila saldo satu pasangan PT tidak bergerak lebih lama dari batas di Pusat Pengaturan (antar_entitas.settlement_reminder_days). MENGINGATKAN, bukan memaksa — netting tetap dijalankan manual lewat tombol 'Buat Pelunasan' (keputusan pemilik). Umur saldo dihitung dari aktivitas NYATA (dokumen & settlement terakhir), bukan dari kapan barisnya terakhir dihitung ulang. Idempotent: satu notifikasi per hari per pasangan PT.",
      "kind": "daily", "hour": 7, "minute": 40, "fn": icreminder.job_interco_settlement_reminder,
      "link": "interco-transactions"},
     # ── FASE G-5 ──────────────────────────────────────────────────────────

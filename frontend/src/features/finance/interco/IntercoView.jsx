@@ -27,6 +27,7 @@ import { moneyPost } from "../../../utils/moneyRequest";
 import useIntentKey from "../../../hooks/useIntentKey";
 import { askConfirm } from "../../../services/confirmService";
 import { can } from "../../../config/roles";
+import useViewPreset from "../../../hooks/useViewPreset";   // PK-43 — tautan daftar periksa tutup buku membuka tab saldo
 import IntercoCreateModal from "./IntercoCreateModal";
 import IntercoSettlementModal from "./IntercoSettlementModal";
 import IntercoRefundModal from "./IntercoRefundModal";   // PK-31 (IC-07) — refund retur sesudah lunas
@@ -76,6 +77,7 @@ export default function IntercoView({ currentUser, selectedEntity, entities = []
     sessionStorage.removeItem("interco_tab");
     return (only && !only.includes(hint) ? only[0] : hint) || "transactions";
   });
+  useViewPreset(only ? "" : "interco-transactions", (p) => { if (p.tab) setTab(p.tab); });
   const [rows, setRows] = useState([]);
   const [accounts, setAccounts] = useState([]);
   const [settlements, setSettlements] = useState([]);
@@ -296,17 +298,15 @@ export default function IntercoView({ currentUser, selectedEntity, entities = []
             <RefreshCw size={15} className={busy ? "animate-spin" : ""} />
             Muat ulang
           </button>
+          {can(perms, "interco", "settle") && ( /* PK-43 — mengikuti izin aksinya di server (`interco.settle`) */
+            <button onClick={() => setShowSettle({ open: true })} data-testid="interco-open-settle-btn"
+                    className="secondary-button"><Layers size={15} /> Buat Pelunasan</button>)}
           {canWrite && (
             <>
               <button onClick={() => setShowContract({ open: true })}
                       data-testid="interco-open-contract-btn"
                       className="inline-flex items-center gap-2 px-3.5 py-2 text-sm rounded-lg border border-[#E5E5EA] bg-white hover:bg-[#F2F2F5] transition text-[#3C3C43]">
                 <Handshake size={15} /> Kontrak Internal
-              </button>
-              <button onClick={() => setShowSettle({ open: true })}
-                      data-testid="interco-open-settle-btn"
-                      className="inline-flex items-center gap-2 px-3.5 py-2 text-sm rounded-lg border border-[#0058CC] text-[#0058CC] bg-white hover:bg-[#EAF2FF] transition">
-                <Layers size={15} /> Buat Settlement
               </button>
               <button onClick={() => setShowCreate(true)} data-testid="interco-create-btn"
                       className="primary-button">
@@ -436,11 +436,9 @@ export default function IntercoView({ currentUser, selectedEntity, entities = []
       )}
       {showSettle?.open && (
         <IntercoSettlementModal
-          entities={entities} transactions={rows}
-          presetPayerEntityId={showSettle.from || entityId}
-          presetPayeeEntityId={showSettle.to || ""}
+          entities={entities} presetPayerEntityId={showSettle.from || entityId} presetPayeeEntityId={showSettle.to || ""}
           onClose={() => setShowSettle(null)}
-          onCreated={() => { setShowSettle(null); showMsg("Settlement antar-PT terbit"); refresh(); }}
+          onCreated={() => { setShowSettle(null); showMsg("Pelunasan antar-PT terbit"); refresh(); }}
         />
       )}
       {showRefund && (

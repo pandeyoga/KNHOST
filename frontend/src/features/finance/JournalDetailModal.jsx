@@ -8,10 +8,14 @@
  *    pop-up (`gl-journal-detail-error`).
  * Testid lama tetap: `gl-journal-detail`, `gl-journal-detail-close`, `gl-reverse-*`, `gl-print-*`, `gl-journal-void`,
  * `gl-journal-reverse`, `gl-journal-back-to-trace`.
+ * PK-43 (UX-13, `02` L8) — bilah **Dokumen sumber** (`gl-journal-source`): `source_doc` dari `GET /gl/journal/{id}`
+ * (dimuat sendiri bila baris daftar belum membawanya). Ada tautan → tombol **Buka Dokumen Sumber**
+ * (`gl-journal-open-source`, `onOpenDocument(link)`); tanpa tautan → teks alasannya; jurnal tanpa sumber → tidak tampil.
  */
-import { useState } from "react";
-import { ArrowLeftRight, FileStack, Printer, X } from "lucide-react";
+import { useEffect, useState } from "react";
+import { ArrowLeftRight, ExternalLink, FileStack, Printer, X } from "lucide-react";
 import { AskKnButton } from "../../components/AskKnButton";
+import axios, { API } from "../../services/apiClient";
 import DetailModal from "../../components/DetailModal";
 import ErrorNotice from "../../components/ErrorNotice";
 import KNDatePicker from "../../components/KNDatePicker";
@@ -20,6 +24,7 @@ import { apiErrorText } from "../../utils/apiError";
 import { printPaymentVoucher, printReceivedVoucher } from "../../utils/docPrint";
 import { formatCurrency, formatDate, todayWib } from "../../utils/formatters";
 import { openTrace } from "../documents/trace/traceDeepLink";
+import { useAppNav } from "../../context/AppNavContext";
 
 
 /** PK-10 — sama dengan `gl_service.is_reversal_type`: jurnal penutup/pembalik tidak bisa dibalik lagi. */
@@ -28,7 +33,29 @@ export function isReversalType(sourceType) {
   return st === "closing" || st === "reversal" || st.endsWith("_reversal") || st.endsWith("_void");
 }
 
-export default function JournalDetailModal({ je, sourceMeta, entities = [], selectedEntity, onClose, onVoid, onReverse }) {
+/** PK-43 — kalimat bila dokumen sumber tidak bisa dibuka dari sini. */
+export function sourceDocNote(doc) {
+  if (!doc) return "";
+  const nama = `${doc.label || "Dokumen"} ${doc.number || ""}`.trim();
+  if (doc.link_hidden === "izin") return `${nama} — Anda belum punya akses untuk membukanya`;
+  if (doc.link_hidden === "pt") return `${nama} — di luar PT Anda`;
+  return `${nama} — belum bisa dibuka dari sini`;
+}
+
+export default function JournalDetailModal({ je, sourceMeta, entities = [], selectedEntity, onClose, onVoid, onReverse,
+  onOpenDocument }) {
+  const nav = useAppNav();
+  const openDoc = onOpenDocument || (nav.role ? nav.openDocument : null);   // cadangan: jalur navigasi bersama
+  const [srcDoc, setSrcDoc] = useState(je.source_doc);
+  useEffect(() => {
+    if (je.source_doc !== undefined || !je.id) { setSrcDoc(je.source_doc ?? null); return undefined; }
+    let alive = true;
+    // Bilah sumber hanya pelengkap: galat apa pun (termasuk jawaban kosong) = tanpa bilah, rincian tetap tampil.
+    Promise.resolve().then(() => axios.get(`${API}/gl/journal/${je.id}`))
+      .then((r) => { if (alive) setSrcDoc(r?.data?.source_doc ?? null); })
+      .catch(() => { if (alive) setSrcDoc(null); });
+    return () => { alive = false; };
+  }, [je.id, je.source_doc]);
   const [revOpen, setRevOpen] = useState(false);
   const [revDate, setRevDate] = useState(todayWib());
   const [revReason, setRevReason] = useState("");
@@ -72,6 +99,23 @@ export default function JournalDetailModal({ je, sourceMeta, entities = [], sele
         <span className="min-w-0">{formatDate(je.date)} · {je.description}</span>
         <span>oleh {je.created_by}</span>
       </div>
+      {srcDoc && (
+        <div className="mb-2 flex flex-wrap items-center gap-2 rounded-md bg-kn-neutral-soft px-3 py-2 text-fs-12"
+          data-testid="gl-journal-source">
+          <span className="text-kn-text-2">Dokumen sumber</span>
+          {srcDoc.link && openDoc ? (
+            <>
+              <b className="text-kn-text">{srcDoc.label} {srcDoc.number}</b>
+              <button type="button" data-testid="gl-journal-open-source" className="secondary-button btn-sm ml-auto whitespace-nowrap"
+                onClick={() => { onClose(); openDoc({ ...srcDoc.link, number: srcDoc.number }); }}>
+                <ExternalLink size={13} aria-hidden="true" /> Buka Dokumen Sumber
+              </button>
+            </>
+          ) : (
+            <span className="text-kn-text" data-testid="gl-journal-source-note">{sourceDocNote(srcDoc)}</span>
+          )}
+        </div>
+      )}
       <div className="table-wrap">
         <table className="data-table">
           <thead>

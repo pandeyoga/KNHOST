@@ -1,216 +1,266 @@
 /**
- * FASE G-6 — Wizard **SETTLEMENT / NETTING** (US6).
+ * FASE G-6 — pop-up **Pelunasan Antar-PT** (US6): satu dokumen melunasi beberapa tagihan antar-PT satu pasangan PT.
+ * Metode bawaan `transfer` (F-08); netting hanya saling hapus IC-AR/IC-AP dan server menolaknya bila melebihi piutang
+ * balik yang terbuka.
  *
- * Pola kontrabon G-7: satu dokumen menutup banyak transaksi. Pilih PT pembayar
- * & penerima, lalu centang transaksi terbuka yang mau dilunasi. Metode bawaan
- * `transfer` (F-08, audit 2026-09-02); `netting` hanya saling hapus IC-AR/IC-AP dan
- * server menolaknya bila melebihi piutang balik yang terbuka.
- *
- * Fase 3 · P4 (L-03) — overlay `fixed inset-0` buatan sendiri → `FormModal` baku; tombol hitam → `primary-button`.
+ * PK-43 (UX-08) — kandidat dimuat dari server (`GET /interco/payment-schedule`, utang antar-PT per transaksi untuk
+ * pasangan pembayar → penerima) setiap PT berubah; dulu disaring dari daftar halaman induk yang dimuat untuk PT aktif,
+ * sehingga saat PT aktif adalah PEMBAYAR kandidatnya kosong. Isian baru: tanggal pelunasan (bawaan hari ini WIB) dan
+ * rekening PT pembayar (wajib untuk transfer/tunai; tersembunyi untuk netting). Kirim: kunci idempotensi + penahan klik
+ * ganda (`02` N4) dan konfirmasi yang menyebut jumlah, nominal, kedua PT, dan tanggal (N5).
  */
-import { useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { HandCoins } from "lucide-react";
-import { API } from "../../../services/apiClient";
+import axios, { API } from "../../../services/apiClient";
 import FormModal from "../../../components/FormModal";
 import { KNSelect } from "../../../components/KNSelect";
+import KNDatePicker from "../../../components/KNDatePicker";
+import MoneyInput from "../../../components/MoneyInput";
 import ErrorNotice from "../../../components/ErrorNotice";
-import { formatCurrency } from "../../../utils/formatters";
+import { SearchBox } from "../../../components/ListControls";
+import { formatCurrency, formatDate, todayWib } from "../../../utils/formatters";
 import { apiErrorText } from "../../../utils/apiError";
 import { moneyPost } from "../../../utils/moneyRequest";
 import useIntentKey from "../../../hooks/useIntentKey";
-import { fmtDate } from "./intercoApi";
+import { askConfirm } from "../../../services/confirmService";
 import { usePaymentMethods } from "../../../config/paymentMethods";   // PM-T1 — daftar induk cara bayar
+import { fmtDate } from "./intercoApi";
 
-const OPEN_STATUSES = ["confirmed", "shipped", "received", "invoiced"];
+export const SETTLE_EMPTY = "Tidak ada tagihan antar-PT yang terbuka untuk pasangan PT ini.";
+
+const sisaOf = (r) => Number(r?.outstanding ?? r?.remaining ?? 0);
 
 export default function IntercoSettlementModal({
-  entities = [], transactions = [], presetPayerEntityId = "", presetPayeeEntityId = "",
-  onClose, onCreated,
+  entities = [], presetPayerEntityId = "", presetPayeeEntityId = "", onClose, onCreated,
 }) {
   const [payer, setPayer] = useState(presetPayerEntityId);
   const [payee, setPayee] = useState(presetPayeeEntityId);
   const [method, setMethod] = useState("transfer");
-  const payMethods = usePaymentMethods("keluar", payer);
-  const methodOptions = payMethods.methods.filter((m) => m.needs_account === "bank" || m.needs_account === "kas")
-    .map((m) => ({ value: m.code, label: m.name }));
-  const [selected, setSelected] = useState({});   // {id: appliedAmount}
+  const [date, setDate] = useState(() => todayWib());
+  const [account, setAccount] = useState("");
+  const [accounts, setAccounts] = useState([]);
+  const [rows, setRows] = useState([]);
+  const [fullOnly, setFullOnly] = useState(true);
+  const [loading, setLoading] = useState(false);
+  const [loadErr, setLoadErr] = useState("");
+  const [selected, setSelected] = useState({});   // {interco_id: nominal teks}
   const [notes, setNotes] = useState("");
+  const [cari, setCari] = useState("");
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState("");
   // PK-12 — satu niat pelunasan = satu Idempotency-Key (kirim ulang tidak melunasi dua kali).
   const intent = useIntentKey("ic-stl");
+  const payMethods = usePaymentMethods("keluar", payer);
+  const methodOptions = payMethods.methods.filter((m) => m.needs_account === "bank" || m.needs_account === "kas")
+    .map((m) => ({ value: m.code, label: m.name }));
+  const isNetting = method === "netting";
 
-  const entOptions = entities.map((e) => ({
-    value: e.id,
-    label: e.short_name || e.legal_name || e.name || e.id,
-  }));
-
-  // Kandidat: transaksi terbuka dengan penjual=payee & pembeli=payer, role=seller.
-  const candidates = useMemo(() => {
-    if (!payer || !payee) return [];
-    return transactions.filter(
-      (r) => r.role === "seller"
-          && r.seller_entity_id === payee
-          && r.buyer_entity_id === payer
-          && OPEN_STATUSES.includes(r.status)
-          && (r.grand_total - (r.settled_amount || 0) > 0.01)
-    );
-  }, [transactions, payer, payee]);
-
-  const toggle = (r) => {
-    setSelected((prev) => {
-      const nxt = { ...prev };
-      if (r.id in nxt) delete nxt[r.id];
-      else nxt[r.id] = (r.grand_total - (r.settled_amount || 0)).toFixed(2);
-      return nxt;
-    });
+  const nameOf = (id) => {
+    const e = entities.find((x) => x.id === id) || {};
+    return e.short_name || e.legal_name || e.name || "";
   };
+  const entOptions = entities.map((e) => ({ value: e.id, label: e.short_name || e.legal_name || e.name || e.id }));
+  const pairReady = Boolean(payer && payee && payer !== payee);
 
-  const total = Object.values(selected).reduce((s, v) => s + (parseFloat(v) || 0), 0);
+  const loadCandidates = useCallback(async () => {
+    setSelected({}); setRows([]); setLoadErr(""); setCari("");
+    if (!pairReady) return;
+    setLoading(true);
+    try {
+      const r = await axios.get(`${API}/interco/payment-schedule`,
+        { params: { payer_entity_id: payer, payee_entity_id: payee } });
+      setRows(Array.isArray(r.data?.rows) ? r.data.rows : []);
+      setFullOnly(r.data?.config?.require_full_payment !== false);
+    } catch (e) {
+      setLoadErr(apiErrorText(e, "Tagihan antar-PT gagal dimuat."));
+    } finally { setLoading(false); }
+  }, [payer, payee, pairReady]);
+
+  useEffect(() => { loadCandidates(); }, [loadCandidates]);
+
+  // Rekening PT pembayar (kas besar/bank aktif; server menolak Kas Kecil untuk pelunasan antar-PT).
+  useEffect(() => {
+    let alive = true;
+    setAccounts([]); setAccount("");
+    if (!payer) return () => { alive = false; };
+    axios.get(`${API}/bank-accounts`, { params: { entity_id: payer } }).then((b) => {
+      if (!alive) return;
+      const acc = (Array.isArray(b.data) ? b.data : []).filter((a) => a.entity_id === payer
+        && a.is_active !== false && a.status !== "inactive" && a.cash_type !== "kas_kecil");
+      setAccounts(acc);
+      setAccount(acc[0]?.id || "");
+    }).catch(() => { if (alive) setAccounts([]); });
+    return () => { alive = false; };
+  }, [payer]);
+
+  const toggle = (r) => setSelected((prev) => {
+    const nxt = { ...prev };
+    if (r.interco_id in nxt) delete nxt[r.interco_id];
+    else nxt[r.interco_id] = String(sisaOf(r));
+    return nxt;
+  });
+  const picks = useMemo(() => Object.entries(selected)
+    .map(([id, v]) => ({ interco_id: id, applied_amount: Number(v) || 0 }))
+    .filter((p) => p.applied_amount > 0), [selected]);
+  const total = picks.reduce((s, p) => s + p.applied_amount, 0);
+  const term = cari.trim().toLowerCase();
+  const shown = term ? rows.filter((r) => `${r.number || ""} ${r.counterpart_number || ""}`.toLowerCase().includes(term)) : rows;
+
+  const reason = !payer || !payee ? "Pilih PT pembayar dan PT penerima."
+    : payer === payee ? "PT pembayar dan PT penerima harus berbeda."
+      : !date ? "Isi tanggal pelunasan."
+        : picks.length === 0 ? "Centang minimal satu tagihan yang mau dilunasi."
+          : !isNetting && !account ? `${nameOf(payer) || "PT pembayar"} belum punya rekening bank aktif — tambahkan di Keuangan › Kas & Bank.`
+            : "";
 
   const submit = async () => {
-    setErr("");
-    if (!payer || !payee) { setErr("Pilih PT pembayar & penerima."); return; }
-    if (payer === payee) { setErr("PT pembayar & penerima harus berbeda."); return; }
-    const picks = Object.entries(selected)
-      .filter(([, v]) => parseFloat(v) > 0)
-      .map(([id, v]) => ({ interco_id: id, applied_amount: parseFloat(v) }));
-    if (picks.length === 0) {
-      setErr("Pilih minimal satu transaksi untuk dilunaskan.");
-      return;
-    }
-    setBusy(true);
+    if (reason || busy) return;
+    const ok = await askConfirm({
+      title: "Terbitkan pelunasan antar-PT?",
+      message: `Lunasi ${picks.length} tagihan senilai ${formatCurrency(total)} dari ${nameOf(payer)} ke ${nameOf(payee)} `
+        + `pada ${formatDate(date)}?`,
+      confirmLabel: "Terbitkan Pelunasan",
+      testId: "interco-settle-confirm",
+    });
+    if (!ok) return;
+    setBusy(true); setErr("");
+    const body = {
+      payer_entity_id: payer, payee_entity_id: payee, transactions: picks, method, settle_date: date,
+      bank_account_id: isNetting ? "" : account, notes,
+    };
     try {
-      const body = {
-        payer_entity_id: payer,
-        payee_entity_id: payee,
-        transactions: picks,
-        method,
-        notes,
-      };
       await intent.send(body, (k) => moneyPost(`${API}/interco/settlements`, body, k));
       onCreated?.();
-    } catch (e) { setErr(apiErrorText(e)); }
+    } catch (e) { setErr(apiErrorText(e, "Pelunasan antar-PT gagal diterbitkan.")); }
     finally { setBusy(false); }
   };
 
   return (
     <FormModal open onClose={onClose} size="lg" icon={HandCoins} testId="interco-settle-modal" busy={busy}
-      title="Settlement Antar-PT"
-      subtitle="Setiap transaksi dibayar penuh, tanpa netting silang tagihan. Satu dokumen boleh memuat beberapa transaksi, rinciannya tetap per transaksi."
+      title="Pelunasan Antar-PT"
+      subtitle="Pilih tagihan antar-PT yang mau dilunasi PT pembayar. Satu dokumen boleh memuat beberapa tagihan; rinciannya tetap per tagihan."
       footer={(
-        <div className="flex items-center justify-end gap-2">
+        <div className="flex flex-wrap items-center justify-end gap-2">
+          {reason && <span className="text-fs-12 text-kn-text-2" data-testid="interco-settle-reason">{reason}</span>}
           <button type="button" onClick={onClose} data-testid="interco-settle-cancel" className="secondary-button"
-            disabled={busy}>
-            Batal
-          </button>
-          <button
-            type="button"
-            onClick={submit}
-            disabled={busy || total <= 0 || !payer || !payee || payer === payee}
-            data-testid="interco-settle-submit"
-            className="primary-button"
-          >
-            {busy ? "Menerbitkan..." : "Terbitkan Settlement"}
-          </button>
+            disabled={busy}>Batal</button>
+          <button type="button" onClick={submit} disabled={busy || Boolean(reason)} data-testid="interco-settle-submit"
+            className="primary-button">{busy ? "Menerbitkan…" : "Terbitkan Pelunasan"}</button>
         </div>
       )}>
       <div className="space-y-4">
-        {err && <ErrorNotice message={err} onDismiss={() => setErr("")} />}
+        {err && <ErrorNotice message={err} onDismiss={() => setErr("")} testId="interco-settle-error" />}
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div>
-            {/* UAT 24 Okt (audit UI tahap 2) — G1-30: lawan tidak boleh PT yang sama; penanda wajib. */}
-            <label className="block text-xs font-medium text-[#3C3C43] mb-1">PT Pembayar <span className="text-[#C0392B]">*</span></label>
-            <KNSelect value={payer} onValueChange={setPayer} options={entOptions.filter((o) => o.value !== payee)} placeholder="Pilih PT pembayar" data-testid="interco-settle-payer" />
-          </div>
-          <div>
-            <label className="block text-xs font-medium text-[#3C3C43] mb-1">PT Penerima <span className="text-[#C0392B]">*</span></label>
-            <KNSelect value={payee} onValueChange={setPayee} options={entOptions.filter((o) => o.value !== payer)} placeholder="Pilih PT penerima" data-testid="interco-settle-payee" />
-          </div>
-          <div>
-            <label className="block text-xs font-medium text-[#3C3C43] mb-1">Metode</label>
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+          <label className="block">
+            <span className="field-label">PT pembayar <span className="text-kn-danger-text">*</span></span>
+            <KNSelect value={payer} onValueChange={setPayer} options={entOptions.filter((o) => o.value !== payee)}
+              placeholder="Pilih PT pembayar" data-testid="interco-settle-payer" />
+          </label>
+          <label className="block">
+            <span className="field-label">PT penerima <span className="text-kn-danger-text">*</span></span>
+            <KNSelect value={payee} onValueChange={setPayee} options={entOptions.filter((o) => o.value !== payer)}
+              placeholder="Pilih PT penerima" data-testid="interco-settle-payee" />
+          </label>
+          <label className="block">
+            <span className="field-label">Tanggal pelunasan <span className="text-kn-danger-text">*</span></span>
+            <KNDatePicker value={date} onChange={setDate} clearable={false} data-testid="interco-settle-date" />
+          </label>
+          <label className="block">
+            <span className="field-label">Cara bayar <span className="text-kn-danger-text">*</span></span>
             <KNSelect value={method} onValueChange={setMethod} options={methodOptions} data-testid="interco-settle-method" />
-          </div>
+          </label>
+          {!isNetting && (
+            <label className="block md:col-span-2">
+              <span className="field-label">Rekening {nameOf(payer) || "PT pembayar"} <span className="text-kn-danger-text">*</span></span>
+              <KNSelect value={account} onValueChange={setAccount} data-testid="interco-settle-account"
+                options={accounts.map((a) => ({ value: a.id, label: a.name || a.account_name || a.id }))}
+                placeholder={accounts.length ? "Pilih rekening" : "Belum ada rekening bank aktif"} />
+            </label>
+          )}
         </div>
 
-        <div className="rounded-xl border border-[#E5E5EA] overflow-x-auto">
-          <table className="w-full text-sm" data-testid="interco-settle-candidates">
-            <thead className="bg-[#F7F7F9] text-[#3C3C43]">
-              <tr>
-                <th className="text-left px-3 py-2 font-medium w-10"></th>
-                <th className="text-left px-3 py-2 font-medium">Nomor</th>
-                <th className="text-left px-3 py-2 font-medium">Tanggal</th>
-                <th className="text-right px-3 py-2 font-medium">Sisa</th>
-                <th className="text-right px-3 py-2 font-medium">Diterapkan</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-[#F2F2F5]">
-              {candidates.length === 0 && (
-                <tr><td colSpan={5} className="px-3 py-8 text-center text-[#8E8E93]">
-                  {payer && payee
-                    ? "Tidak ada transaksi terbuka untuk pasangan PT ini."
-                    : "Pilih PT pembayar & penerima dulu."}
-                </td></tr>
-              )}
-              {candidates.map((r) => {
-                const remaining = r.grand_total - (r.settled_amount || 0);
-                const checked = r.id in selected;
-                return (
-                  <tr key={r.id} data-testid={`interco-settle-cand-${r.id}`} className="hover:bg-[#FAFAFB]">
-                    <td className="px-3 py-2">
-                      <input
-                        type="checkbox"
-                        checked={checked}
-                        onChange={() => toggle(r)}
-                        data-testid={`interco-settle-check-${r.id}`}
-                      />
-                    </td>
-                    <td className="px-3 py-2 font-medium text-[#1D1D1F]">{r.number}</td>
-                    <td className="px-3 py-2">{fmtDate(r.doc_date)}</td>
-                    <td className="px-3 py-2 text-right tabular-nums">{formatCurrency(remaining)}</td>
-                    <td className="px-3 py-2 text-right">
-                      {checked ? (
-                        <input
-                          type="number"
-                          min="0"
-                          step="0.01"
-                          value={selected[r.id]}
-                          readOnly
-                          title="Pembayaran antar-PT harus penuh per transaksi"
-                          data-testid={`interco-settle-amount-${r.id}`}
-                          className="w-28 text-right px-2 py-1 text-sm border border-[#E5E5EA] rounded"
-                        />
-                      ) : (
-                        <span className="text-[#8E8E93]">—</span>
-                      )}
-                    </td>
+        {rows.length > 0 && (
+          <SearchBox value={cari} onChange={setCari} placeholder="Cari nomor tagihan…" testId="interco-settle-search" />
+        )}
+        {loadErr && <ErrorNotice message={loadErr} onRetry={loadCandidates} testId="interco-settle-load-error" />}
+        {!loadErr && (
+          <div className="table-wrap">
+            <table className="data-table head-wrap" data-testid="interco-settle-candidates">
+              <thead>
+                <tr>
+                  <th className="w-10"><span className="sr-only">Pilih</span></th>
+                  <th>Nomor</th>
+                  <th>Tanggal</th>
+                  <th>Jatuh Tempo</th>
+                  <th className="text-right">Total</th>
+                  <th className="text-right">Sisa</th>
+                  <th className="text-right">Dilunasi</th>
+                </tr>
+              </thead>
+              <tbody>
+                {loading && [0, 1, 2].map((i) => (
+                  <tr key={`sk${i}`} data-testid="interco-settle-loading">
+                    <td colSpan={7}><div className="h-5 animate-pulse rounded bg-kn-neutral-soft" /></td>
                   </tr>
-                );
-              })}
-            </tbody>
-          </table>
+                ))}
+                {!loading && shown.length === 0 && (
+                  <tr><td colSpan={7} className="py-6 text-center text-kn-text-2" data-testid="interco-settle-empty">
+                    {!pairReady ? "Pilih PT pembayar dan PT penerima dulu."
+                      : rows.length ? `Tidak ada tagihan yang cocok dengan “${cari.trim()}”.` : SETTLE_EMPTY}
+                  </td></tr>
+                )}
+                {!loading && shown.map((r) => {
+                  const id = r.interco_id;
+                  const checked = id in selected;
+                  const bisa = r.settleable !== false;
+                  return (
+                    <tr key={id} data-testid={`interco-settle-cand-${id}`}>
+                      <td>
+                        <input type="checkbox" checked={checked} disabled={!bisa} aria-label={`Pilih ${r.number}`}
+                          onChange={() => toggle(r)} data-testid={`interco-settle-check-${id}`} />
+                      </td>
+                      <td className="font-semibold text-kn-text">
+                        {r.number}
+                        {!bisa && r.settle_block_reason && (
+                          <span className="block text-fs-12 font-normal text-kn-warning-text"
+                            data-testid={`interco-settle-block-${id}`}>{r.settle_block_reason}</span>
+                        )}
+                      </td>
+                      <td>{fmtDate(r.doc_date)}</td>
+                      <td>{r.due_date ? fmtDate(r.due_date) : "—"}</td>
+                      <td className="text-right tabular-nums">{formatCurrency(r.grand_total)}</td>
+                      <td className="text-right tabular-nums">{formatCurrency(sisaOf(r))}</td>
+                      <td className="text-right">
+                        {!checked ? <span className="text-kn-text-2">—</span>
+                          : fullOnly ? (
+                            <span className="tabular-nums font-semibold" data-testid={`interco-settle-amount-${id}`}>
+                              {formatCurrency(Number(selected[id]) || 0)}</span>
+                          ) : (
+                            <MoneyInput value={selected[id]} testId={`interco-settle-amount-${id}`} className="field w-36"
+                              onChange={(v) => setSelected((p) => ({ ...p, [id]: v }))} />
+                          )}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
+
+        <div className="flex flex-wrap items-center justify-between gap-2 rounded-md bg-kn-neutral-soft px-3 py-2 text-fs-13">
+          <span className="text-kn-text-2" data-testid="interco-settle-count">
+            {picks.length} tagihan dipilih{fullOnly ? " · dibayar penuh per tagihan (pengaturan jadwal bayar antar-PT)" : ""}
+          </span>
+          <span className="text-kn-text">Total <b className="tabular-nums" data-testid="interco-settle-total">{formatCurrency(total)}</b></span>
         </div>
 
-        <div className="flex items-center justify-between p-3 rounded-lg bg-[#F7F7F9]">
-          <div className="text-sm text-[#6E6E73]">
-            {Object.keys(selected).length} transaksi dipilih
-          </div>
-          <div className="text-sm text-[#1D1D1F]">
-            Total: <span className="font-semibold tabular-nums">{formatCurrency(total)}</span>
-          </div>
-        </div>
-
-        <div>
-          <label className="block text-xs font-medium text-[#3C3C43] mb-1">Catatan</label>
-          <textarea
-            value={notes}
-            onChange={(e) => setNotes(e.target.value)}
-            rows={2}
-            data-testid="interco-settle-notes"
-            className="w-full px-3 py-2 text-sm border border-[#E5E5EA] rounded-lg focus:outline-none focus:border-[#0058CC]"
-          />
-        </div>
+        <label className="block">
+          <span className="field-label">Catatan</span>
+          <textarea className="field" rows={2} value={notes} onChange={(e) => setNotes(e.target.value)}
+            data-testid="interco-settle-notes" />
+        </label>
       </div>
     </FormModal>
   );

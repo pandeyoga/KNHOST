@@ -250,9 +250,17 @@ async def get_ica(from_entity_id: str, to_entity_id: str,
 # ── Settlement (netting) ─────────────────────────────────────────────────────
 @router.get("/interco/payment-schedule")
 async def interco_payment_schedule(request: Request, payer_entity_id: str = "", payee_entity_id: str = "") -> Dict[str, Any]:
-    """LN-024 — utang antar-PT per transaksi + periode bayar (bila cutoff KLX-03 sudah dikonfigurasi)."""
+    """LN-024 — utang antar-PT per transaksi + periode bayar (bila cutoff KLX-03 sudah dikonfigurasi).
+
+    PK-43 (UX-08) — juga sumber kandidat pop-up Pelunasan Antar-PT. Bila pasangan disebut (`payer_entity_id` /
+    `payee_entity_id`), salah satu PT-nya wajib ditugaskan ke pelaku (selain itu 403); tiap baris membawa
+    `outstanding` dan `settleable`."""
     await require_permission(request, "interco_finance", "view")
-    scope = await _scope(request, "")
+    ctx = await entity_ctx(request)
+    pihak = {p for p in (payer_entity_id, payee_entity_id) if p}
+    if pihak and not (pihak & set(ctx.allowed_entity_ids)):
+        raise HTTPException(status_code=403, detail=ics.PESAN_PASANGAN_CAKUPAN)
+    scope = resolve_scope_ids(ctx, "")
     return await ics.payment_schedule(scope, payer=payer_entity_id, payee=payee_entity_id)
 
 

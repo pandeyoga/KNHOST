@@ -118,7 +118,8 @@ export default function useAppNavigation({ role, setSidebarOpen }) {
     setBackTo(null);
     if (!o?.view) return;
     if (o.view === "doc-trace" && o.trace?.docId) { openTrace(o.trace); return; }
-    navigateTo(o.view, { navId: o.navId || undefined, tab: o.tab || undefined });
+    // PK-43 — asal yang membawa preset (mis. buku besar terfilter akun & rentang) dibuka lagi dengan preset itu.
+    navigateTo(o.view, { navId: o.navId || undefined, tab: o.tab || undefined, preset: o.preset || undefined });
   };
 
   return {

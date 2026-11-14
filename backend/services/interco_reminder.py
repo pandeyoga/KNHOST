@@ -119,7 +119,7 @@ def _body(row: Dict[str, Any]) -> str:
             f"{row['payee_entity_name']} dari {row['open_count']} dokumen antar-PT, dan "
             f"saldonya tidak bergerak {row['idle_days']} hari{since} — melewati batas "
             f"{row['limit_days']} hari. Buka Saldo Antar-PT lalu tekan "
-            f"\u201cBuat Settlement\u201d bila memang sudah waktunya (netting tidak pernah "
+            f"\u201cBuat Pelunasan\u201d bila memang sudah waktunya (netting tidak pernah "
             f"dijalankan otomatis).")
 
 

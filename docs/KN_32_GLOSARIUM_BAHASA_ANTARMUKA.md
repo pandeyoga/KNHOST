@@ -452,3 +452,12 @@ Istilah SDM › Penggajian (`docs/blueprint/unit/PK-22.md`).
 | **batalkan** (penggajian) | Tombol "Batalkan" · lencana "Dibatalkan" | Membatalkan penggajian yang belum diposting (draf, diajukan, disahkan) beserta slipnya; tanpa jurnal. Proses baru periode itu boleh dibuat |
 | **anulir** (penggajian) | Tombol "Anulir" · lencana "Dianulir" | Membatalkan penggajian yang sudah diposting dengan membalik jurnal gajinya (bertanggal sama dengan jurnal asal). Gaji yang sudah dibayar tidak bisa dianulir (koreksi lewat proses susulan) |
 | **tanggal buku** (jurnal periodik) | "Jurnal gaji: … · tanggal buku 31 Okt 2026" · pengaturan "Tanggal jurnal gaji, penyusutan, dan insentif" | Tanggal jurnal gaji, penyusutan, dan akrual insentif: hari terakhir periodenya (bawaan) atau hari jurnal dibuat |
+
+### 9.12 Daftar periksa tutup buku, telusur laporan, pelunasan antar-PT (PK-43)
+
+| Istilah | Teks | Arti · bedakan dari | Unit · tempat |
+|---|---|---|---|
+| **daftar periksa** (tutup buku) | Panel "Daftar Periksa Sebelum Tutup Buku" · ringkasan "{n} beres · {m} perlu dilihat · {k} harus diselesaikan" · status "Beres" / "Perlu dilihat" / "Harus diselesaikan" / "Tidak terbaca" · tombol "Buka" | Butir pemeriksaan yang angkanya diambil dari sistem sebelum periode ditutup. Hanya "Harus diselesaikan" yang menghalangi (aturan server); "Perlu dilihat" ikut ditulis di konfirmasi Tutup Buku. Bedakan dari Pratinjau (jurnal penutup) | PK-43 · Tutup Buku |
+| **saldo awal** (buku besar) | Baris pertama "Saldo awal" bila isian "Dari" diisi · "Saldo awal Rp … · Saldo akhir Rp …" | Saldo akun sebelum tanggal "Dari" (tanda mengikuti saldo normal akun); saldo berjalan berangkat dari sini | PK-43 · Buku Besar |
+| **dokumen sumber** (jurnal) | Bilah "Dokumen sumber {jenis} {nomor}" · tombol "Buka Dokumen Sumber" · "{jenis} {nomor} — di luar PT Anda" / "— Anda belum punya akses untuk membukanya" | Dokumen yang melahirkan jurnal otomatis. Jurnal manual, penutup, pembalik, dan reklas penampung tidak punya dokumen sumber | PK-43 · rincian jurnal |
+| **Pelunasan Antar-PT** (tombol) | Tombol "Buat Pelunasan" · pop-up "Pelunasan Antar-PT" · isian "Tanggal pelunasan", "Rekening {PT pembayar}" · tombol "Terbitkan Pelunasan" | Satu nama untuk tombol, pop-up, dan pengingat saldo menganggur (dulu "Buat Settlement"/"Settlement Antar-PT") | PK-43 · Antar-PT |

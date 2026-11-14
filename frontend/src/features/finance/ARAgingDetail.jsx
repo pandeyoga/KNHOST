@@ -6,8 +6,11 @@
  *    sehingga tombol × berada di x≈403 (di luar layar) dan panel bisa digeser ke samping. Kini baris 1 = judul + ×
  *    (selalu terlihat), baris 2 = ringkasan + aksi, keduanya membungkus;
  *  · L-07: tabel mentah → `.table-wrap` + `.data-table` baku (bergulir di dalam wadahnya sendiri).
+ * PK-43 (UX-15) — **Catat Pembayaran** (`ar-aging-pay`, di bilah aksi kepala panel) dan **Bayar** per pesanan
+ * (`ar-aging-pay-{id}`, kolom aksi menempel kanan) membuka form kwitansi baku (`onPay`). Tampil hanya bagi pemegang
+ * `ar_receipt.create`; di "Semua PT" mati dengan alasan tertulis di bilah sendiri.
  */
-import { FileText, Loader2, Receipt, X, BadgeDollarSign } from "lucide-react";
+import { FileText, Loader2, Receipt, X, BadgeDollarSign, Wallet } from "lucide-react";
 import { formatCurrency, formatDate } from "../../utils/formatters";
 import StoreCreditBadge from "../../components/StoreCreditBadge";
 import PenaltyPanel from "./payments/PenaltyPanel";
@@ -16,13 +19,18 @@ import { penaltyMeta } from "./payments/paymentApi";
 // INV-ROLE-01 — wewenang dibaca dari IZIN, bukan dari daftar nama peran.
 import { can } from "../../config/roles";
 import { AskKnButton } from "../../components/AskKnButton";
+import EntityGatedButton, { EntityGateNote } from "../../components/EntityGatedButton";   // PK-42 (UX-05)
 
 // UAT 24 Okt (audit UI tahap 2) — G1-15: tanggal tampilan satu format ("25 Okt 2026", WIB) via formatDate.
 const fmtDate = (iso) => formatDate(iso);
 
-export default function ARAgingDetail({ detail, customerId, loading, currentUser, accruing, onAccrue, onRefresh, onClose }) {
+const PAY_WHAT = "mencatat pembayaran";
+
+export default function ARAgingDetail({ detail, customerId, loading, currentUser, accruing, onAccrue, onRefresh, onClose,
+  selectedEntity, onPay, notice = "" }) {
   // INV-ROLE-01 — sama seperti di layar induk: izin, bukan nama peran.
   const canAccrue = can(currentUser?.permissions || {}, "penalty", "issue");
+  const canPay = Boolean(onPay) && can(currentUser?.permissions || {}, "ar_receipt", "create");   // PK-43
   const t = detail?.totals || {};
   return (
     <div className="section-card mt-3" data-testid="ar-aging-detail">
@@ -33,7 +41,7 @@ export default function ARAgingDetail({ detail, customerId, loading, currentUser
           <StoreCreditBadge customerId={customerId} testId="ar-aging-store-credit" />
         </div>
         <button data-testid="ar-aging-detail-close" className="icon-button flex-shrink-0" onClick={onClose} aria-label="Tutup"><X size={14} /></button>
-        {(detail || canAccrue) && (
+        {(detail || canAccrue || canPay) && (
           <div className="flex basis-full flex-wrap items-center gap-x-3 gap-y-1.5">
             {detail && (
               <span className="min-w-0 text-[11px] text-[#6B6B73]" data-testid="ar-aging-detail-summary">
@@ -47,17 +55,28 @@ export default function ARAgingDetail({ detail, customerId, loading, currentUser
               <AskKnButton type="ar_receipt" id={customerId} label={detail?.customer_name || ""}
                 buttonLabel="Tanya soal layar ini" className="secondary-button btn-sm" />
               {canAccrue && (
-                <button type="button" className="secondary-button btn-sm" data-testid="ar-aging-accrue"
+                <button type="button" className="secondary-button btn-sm whitespace-nowrap" data-testid="ar-aging-accrue"
                   disabled={accruing} onClick={onAccrue}>
                   {accruing ? <Loader2 size={13} className="animate-spin" /> : <Receipt size={13} />}
                   Buat Nota Denda
                 </button>
+              )}
+              {canPay && (
+                <EntityGatedButton selectedEntity={selectedEntity} what={PAY_WHAT} hint={false}
+                  aria-describedby="ar-aging-pay-scope-note" data-testid="ar-aging-pay"
+                  className="primary-button btn-sm whitespace-nowrap" disabled={loading}
+                  onClick={() => onPay()}>
+                  <Wallet size={13} aria-hidden="true" /> Catat Pembayaran
+                </EntityGatedButton>
               )}
             </div>
           </div>
         )}
       </div>
       <div className="section-body space-y-3">
+        {/* PK-43 — alasan tombol bayar yang mati di "Semua PT" di bilah sendiri (kepala panel sudah berisi aksi). */}
+        {canPay && <EntityGateNote selectedEntity={selectedEntity} what={PAY_WHAT} testId="ar-aging-pay-scope-note" className="!mb-0" />}
+        {notice && <div className="notice-bar success" role="status" data-testid="ar-aging-detail-notice">{notice}</div>}
         {loading ? (
           <div className="grid gap-2" data-testid="ar-aging-detail-loading">{[0, 1, 2].map((i) => <div key={i} className="h-9 bg-[#F5F5F7] rounded animate-pulse" />)}</div>
         ) : !detail || (detail.items || []).length === 0 ? (
@@ -77,6 +96,7 @@ export default function ARAgingDetail({ detail, customerId, loading, currentUser
                     <th className="text-right" title="Piutang tercatat (barang sudah dikirim) · nilai pesanan yang belum dikirim">Tercatat · Belum dikirim</th>
                     <th className="text-right">Est. Denda</th>
                     <th>Nota Denda</th>
+                    {canPay && <th className="col-sticky-end"><span className="sr-only">Aksi</span></th>}
                   </tr>
                 </thead>
                 <tbody>
@@ -129,6 +149,17 @@ export default function ARAgingDetail({ detail, customerId, loading, currentUser
                           </div>
                         )}
                       </td>
+                      {canPay && (
+                        <td className="col-sticky-end text-right">
+                          {Number(it.outstanding || 0) > 0.005 && (
+                            <EntityGatedButton selectedEntity={selectedEntity} what={PAY_WHAT} hint={false}
+                              aria-describedby="ar-aging-pay-scope-note" data-testid={`ar-aging-pay-${it.order_id}`}
+                              className="secondary-button btn-sm whitespace-nowrap" onClick={() => onPay(it.order_id)}>
+                              Bayar
+                            </EntityGatedButton>
+                          )}
+                        </td>
+                      )}
                     </tr>
                   ))}
                 </tbody>

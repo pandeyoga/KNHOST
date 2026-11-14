@@ -609,6 +609,49 @@ async def derived_refs(doc_type: str, doc: Dict[str, Any]) -> List[Dict[str, Any
     return out
 
 
+#: PK-43 (UX-13) — jurnal yang dibuat langsung di buku besar: tidak punya dokumen sumber.
+JOURNAL_NO_SOURCE = ("manual", "closing", "reversal", "suspense_reclass")
+#: PK-43 — jurnal kembar antar-PT berkunci `{pair_id}:{sisi}` (bukan id dokumen): dokumen sumbernya = dokumen pasangan
+#: itu di buku PT jurnal (`pair_id` + `entity_id`).
+JOURNAL_PAIR_TYPES = ("interco_transaction", "interco_return")
+
+
+async def journal_source_doc(je: Dict[str, Any], allowed_entity_ids: Optional[Sequence[str]] = None,
+                             viewer_perms: Optional[Dict[str, List[str]]] = None) -> Optional[Dict[str, Any]]:
+    """PK-43 (UX-13, `02` L8) — dokumen sumber satu jurnal: `derived_refs` → `load_doc` → `node_of`.
+
+    `None` untuk jurnal tanpa sumber (`JOURNAL_NO_SOURCE`) atau bila dokumennya tidak ditemukan. Selain itu
+    `{doc_type, doc_id, number, label, link, link_hidden}`; `link` = `{view, focus_type, focus_id, tab}` (peta tujuan
+    PK-44) atau `None` bila PT dokumen di luar `allowed_entity_ids` (`link_hidden="pt"`), izin lihat modul sumbernya
+    tidak dipegang (`"izin"`, penyaring PK-17), atau jenisnya belum punya layar."""
+    st = je.get("source_type") or je.get("source") or ""
+    if not st or st in JOURNAL_NO_SOURCE:
+        return None
+    for ref in await derived_refs("journal_entry", je):
+        if ref.get("rel") != "journal_of" or ref.get("doc_type") not in DOC_TYPES:
+            continue
+        doc = await load_doc(ref["doc_type"], ref["doc_id"])
+        if not doc and ref["doc_type"] in JOURNAL_PAIR_TYPES:
+            row = await db[DOC_TYPES[ref["doc_type"]]["collection"]].find_one(
+                {"pair_id": ref["doc_id"], "entity_id": je.get("entity_id") or ""}, {"_id": 0})
+            doc = safe_doc(row) if row else None
+        if not doc:
+            return None
+        node = node_of(ref["doc_type"], doc)
+        lk = node.get("link") or {}
+        hidden = ""
+        if node.get("entity_id") and allowed_entity_ids is not None and node["entity_id"] not in allowed_entity_ids:
+            hidden = "pt"
+        elif not may_see_amount(ref["doc_type"], viewer_perms):
+            hidden = "izin"
+        link = None if hidden or not lk.get("view") else {
+            "view": lk["view"], "focus_type": lk.get("focus_type", ""), "focus_id": lk.get("focus_id", ""),
+            "tab": lk.get("tab", "")}
+        return {"doc_type": ref["doc_type"], "doc_id": doc.get("id") or ref["doc_id"], "number": node.get("number", ""),
+                "label": node.get("label", ""), "link": link, "link_hidden": hidden}
+    return None
+
+
 async def all_refs(doc_type: str, doc: Dict[str, Any]) -> List[Dict[str, Any]]:
     """refs[] tersimpan + tautan turunan (tanpa duplikat target)."""
     stored = list(doc.get("refs") or [])

@@ -10,7 +10,20 @@ function fmtDelta(v) {
   return n > 0 ? `+${body}` : `-${body}`;
 }
 
-export function SectionBlock({ section }) {
+/** PK-43 (UX-13, `02` L8) — nama akun di laporan = tautan ke mutasinya (Jurnal & Buku Besar › Buku Besar). Tanpa
+ *  `onLine` (peran tanpa akses layar buku besar) baris tetap teks biasa. */
+export function AccountCell({ code, name, onLine }) {
+  const isi = <><span className="font-mono text-fs-12 text-kn-text-2">{code}</span> <span>{name}</span></>;
+  if (!onLine || !code) return code ? isi : <>{name}</>;
+  return (
+    <button type="button" className="link-button text-left" data-testid={`fs-line-${code}`}
+      title="Lihat mutasi akun ini" aria-label={`Lihat mutasi akun ${code} ${name}`} onClick={() => onLine(code)}>
+      {isi}
+    </button>
+  );
+}
+
+export function SectionBlock({ section, onLine }) {
   const hasLines = (section.lines || []).length > 0;
   return (
     <>
@@ -20,7 +33,7 @@ export function SectionBlock({ section }) {
       </tr>
       {hasLines ? section.lines.map((ln) => (
         <tr key={ln.code} className="border-b border-[#F5F5F7]">
-          <td className="px-3 py-1.5 pl-6"><span className="font-mono text-[10px] text-[#9A9BA3] mr-1.5">{ln.code}</span>{ln.name}</td>
+          <td className="px-3 py-1.5 pl-6"><AccountCell code={ln.code} name={ln.name} onLine={onLine} /></td>
           <td className="px-3 py-1.5 text-right tabular-nums text-[#3C3C43]">{formatCurrency(ln.amount)}</td>
         </tr>
       )) : (
@@ -47,7 +60,7 @@ export function GroupHeader({ label, isComp }) {
   );
 }
 
-export function BsSection({ section, isComp }) {
+export function BsSection({ section, isComp, onLine }) {
   return (
     <>
       <tr className="bg-[#FAF6FE] border-b border-[#F5F5F7]">
@@ -56,17 +69,17 @@ export function BsSection({ section, isComp }) {
         {isComp && <td className="px-3 py-1.5 text-right tabular-nums font-semibold text-[#6B6B73]">{formatCurrency(section.compare_total)}</td>}
         {isComp && <td className="px-3 py-1.5 text-right tabular-nums font-semibold text-[#6B6B73]">{fmtDelta(section.delta)}</td>}
       </tr>
-      {(section.lines || []).map((ln) => <BsLine key={ln.code} line={ln} isComp={isComp} indent />)}
+      {(section.lines || []).map((ln) => <BsLine key={ln.code} line={ln} isComp={isComp} indent onLine={onLine} />)}
     </>
   );
 }
 
-export function BsLine({ line, isComp, indent }) {
+export function BsLine({ line, isComp, indent, onLine }) {
   const delta = Number(line.delta || 0);
   return (
     <tr className="border-b border-[#F5F5F7]" data-testid={line.code ? `fs-bs-line-${line.code}` : undefined}>
       <td className={`px-3 py-1.5 ${indent ? "pl-8" : "pl-5"}`}>
-        {line.code ? <span className="font-mono text-[10px] text-[#9A9BA3] mr-1.5">{line.code}</span> : null}{line.name}
+        <AccountCell code={line.code} name={line.name} onLine={onLine} />
       </td>
       <td className="px-3 py-1.5 text-right tabular-nums text-[#3C3C43]">{formatCurrency(line.amount)}</td>
       {isComp && <td className="px-3 py-1.5 text-right tabular-nums text-[#9A9BA3]">{formatCurrency(line.compare_amount)}</td>}

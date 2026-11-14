@@ -9,6 +9,10 @@
  *     — lengkap status usulan / terbit / dibebaskan / dibayar;
  *   • yang belum pernah dibuatkan nota ditandai jelas, dan bisa **dibuatkan sekarang**
  *     lewat tombol “Buat Nota Denda” (nota lahir sebagai usulan, belum menyentuh buku besar).
+ *
+ * PK-43 (UX-15) — dari rincian pelanggan orang langsung mencatat pembayaran (form kwitansi baku `ARReceiptModal`, sama
+ * dengan Penagihan & Meja Finance); sesudah tersimpan: pemberitahuan sukses dari form, lalu daftar dan rincian dimuat
+ * ulang (sisa piutang pelanggan langsung turun).
  */
 import { apiErrorText } from "../../utils/apiError";
 import { useCallback, useEffect, useMemo, useState } from "react";
@@ -26,6 +30,7 @@ import { AGING_BUCKETS } from "./agingBuckets";
 // INV-ROLE-01 — wewenang dibaca dari IZIN, bukan dari daftar nama peran.
 import { can } from "../../config/roles";
 import DetailModal from "../../components/DetailModal";
+import ARReceiptModal from "../crm/ARReceiptModal";   // PK-43 — form kwitansi baku
 
 const BUCKETS = AGING_BUCKETS;
 
@@ -47,6 +52,8 @@ export default function ARAgingView({ selectedEntity, currentUser, focusDoc, onC
   const [detailLoading, setDetailLoading] = useState(false);
   const [accruing, setAccruing] = useState("");
   const [flash, setFlash] = useState("");
+  const [payFor, setPayFor] = useState(null);   // PK-43 — { orderId } form kwitansi yang sedang dibuka
+  const [paidMsg, setPaidMsg] = useState("");    // PK-43 — pemberitahuan sukses dari form kwitansi (di rincian)
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -338,7 +345,7 @@ export default function ARAgingView({ selectedEntity, currentUser, focusDoc, onC
           tabel: setelah mengklik baris tidak ada perubahan yang terlihat karena panelnya
           berada di bawah tabel ringkasan + catatan kaki (di luar pandangan). */}
       {selected && (
-        <DetailModal onClose={() => { setSelected(null); setDetail(null); }}
+        <DetailModal onClose={() => { setSelected(null); setDetail(null); setPaidMsg(""); }}
           label="Rincian piutang pelanggan" testId="ar-aging-detail-modal">
           <ARAgingDetail
             detail={detail}
@@ -348,9 +355,18 @@ export default function ARAgingView({ selectedEntity, currentUser, focusDoc, onC
             accruing={accruing === selected}
             onAccrue={() => accrue(selected)}
             onRefresh={() => openDetail(selected)}
-            onClose={() => { setSelected(null); setDetail(null); }}
+            onClose={() => { setSelected(null); setDetail(null); setPaidMsg(""); }}
+            selectedEntity={selectedEntity}
+            onPay={(orderId = "") => setPayFor({ orderId })}
+            notice={paidMsg}
           />
         </DetailModal>
+      )}
+      {selected && payFor && (
+        <ARReceiptModal customerId={selected} customerName={detail?.customer_name || ""}
+          preselectOrderId={payFor.orderId || undefined} onClose={() => setPayFor(null)}
+          onDone={(m) => { setPayFor(null); setPaidMsg(m || "Pembayaran dicatat."); setFlash(m || "Pembayaran dicatat.");
+            load(); openDetail(selected); }} />
       )}
     </div>
   );

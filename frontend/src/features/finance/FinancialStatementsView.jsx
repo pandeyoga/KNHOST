@@ -6,6 +6,11 @@
  *
  * PK-16 (UX-06, RC-01, RP-02, K-15) — tiap tab menyebut PT angkanya (`EntityScopeBanner`, `scope_meta` server);
  * gagal memuat → data dikosongkan (tidak ada angka periode lama); nama berkas unduhan memuat PT / `gabungan`.
+ *
+ * PK-43 (UX-13, `02` L8) — tiap baris akun Laba-Rugi/Neraca = tautan ke mutasinya di Jurnal & Buku Besar › Buku Besar
+ * (`go("general-ledger", { preset: { tab: "ledger", code, start, end, from: "financial-statements", fromTab } })`;
+ * Laba-Rugi mengirim rentang periodenya, Neraca `end` = tanggal neraca). Tombol kembali di buku besar membawa tab dan
+ * periode yang sama (`preset.start`/`preset.end`) supaya laporan yang tadi dilihat terbuka lagi.
  */
 import { apiErrorText } from "../../utils/apiError";
 import KNDatePicker from "@/components/KNDatePicker";
@@ -25,6 +30,7 @@ import PageTabs from "../../components/PageTabs";
 import DesktopOnlyNotice from "../../components/DesktopOnlyNotice";
 import useViewPreset from "../../hooks/useViewPreset";
 import EntityScopeBanner, { useScopeMeta, scopeFileTag } from "../../components/EntityScopeBanner";
+import { useAppNav } from "../../context/AppNavContext";
 
 const NOW = new Date();
 
@@ -87,6 +93,12 @@ export default function FinancialStatementsView({ selectedEntity }) {
     if (p.tab && TABS.some((t) => t.id === p.tab)) setTab(p.tab);
   });
   const [tab, setTab] = useState(() => (TABS.some((t) => t.id === preset?.tab) ? preset.tab : "pl"));
+  // PK-43 — kembali dari buku besar: periode laporan yang tadi dilihat (rentang Laba-Rugi / tanggal Neraca).
+  const [restore] = useState(() => (preset?.end ? { start: preset.start || "", end: preset.end } : null));
+  const { go, canOpen } = useAppNav();
+  const drill = (fromTab, range) => (canOpen("general-ledger") ? (code) => go("general-ledger", {
+    preset: { tab: "ledger", code, ...range, from: "financial-statements", fromTab },
+  }) : undefined);
 
   return (
     <div data-testid="financial-statements-view">
@@ -97,8 +109,8 @@ export default function FinancialStatementsView({ selectedEntity }) {
             tabs={TABS.map((t) => ({ key: t.id, label: t.label, icon: t.icon }))} />
         </div>
         <div className="section-body">
-          {tab === "pl" && <IncomeStatementTab selectedEntity={selectedEntity} />}
-          {tab === "bs" && <BalanceSheetTab selectedEntity={selectedEntity} />}
+          {tab === "pl" && <IncomeStatementTab selectedEntity={selectedEntity} drill={drill} restore={restore} />}
+          {tab === "bs" && <BalanceSheetTab selectedEntity={selectedEntity} drill={drill} restore={restore} />}
           {tab === "cf" && <CashFlowTab selectedEntity={selectedEntity} />}
           {tab === "eq" && <EquityChangesTab selectedEntity={selectedEntity} />}
         </div>
@@ -110,9 +122,10 @@ export default function FinancialStatementsView({ selectedEntity }) {
 // ═════════════════════════════════════════════════════════════════════════════
 //  LABA-RUGI (Income Statement)
 // ═════════════════════════════════════════════════════════════════════════════
-function IncomeStatementTab({ selectedEntity }) {
+function IncomeStatementTab({ selectedEntity, drill, restore }) {
   const [mode, setMode] = useState("range"); // range | period
-  const [range, setRange] = useState({ start: `${NOW.getFullYear()}-01-01`, end: ymd(NOW) });
+  const [range, setRange] = useState(() => (restore?.start && restore?.end ? { start: restore.start, end: restore.end }
+    : { start: `${NOW.getFullYear()}-01-01`, end: ymd(NOW) }));
   const [period, setPeriod] = useState({
     type: "month", month: pad(NOW.getMonth() + 1), year: String(NOW.getFullYear()),
   });
@@ -241,7 +254,8 @@ function IncomeStatementTab({ selectedEntity }) {
             </thead>
             <tbody>
               {(data.sections || []).map((sec) => (
-                <SectionBlock key={sec.key} section={sec} />
+                <SectionBlock key={sec.key} section={sec}
+                  onLine={drill?.("pl", { start: effRange.start, end: effRange.end })} />
               ))}
               <SummaryRow label="Laba Kotor" value={data.gross_profit} extra={`Marjin ${formatPct(Number(data.gross_margin || 0))}`} />
               <SummaryRow label="Laba Bersih" value={data.net_income} extra={`Marjin ${formatPct(Number(data.net_margin || 0))}`} highlight />
@@ -257,8 +271,9 @@ function IncomeStatementTab({ selectedEntity }) {
 // ═════════════════════════════════════════════════════════════════════════════
 //  NERACA (Balance Sheet)
 // ═════════════════════════════════════════════════════════════════════════════
-function BalanceSheetTab({ selectedEntity }) {
-  const [asOf, setAsOf] = useState(ymd(NOW));
+function BalanceSheetTab({ selectedEntity, drill, restore }) {
+  const [asOf, setAsOf] = useState(() => (restore?.end && !restore.start ? restore.end : ymd(NOW)));
+  const onLine = drill?.("bs", { end: asOf });
   const [comparative, setComparative] = useState(true);
   const [compareAsOf, setCompareAsOf] = useState(endOfPrevMonth());
   const [data, setData] = useState(null);
@@ -355,7 +370,7 @@ function BalanceSheetTab({ selectedEntity }) {
               {/* ASET */}
               <GroupHeader label="ASET" isComp={isComp} />
               {(data.assets?.sections || []).map((sec) => (
-                <BsSection key={`a-${sec.key}`} section={sec} isComp={isComp} />
+                <BsSection key={`a-${sec.key}`} section={sec} isComp={isComp} onLine={onLine} />
               ))}
               <BsTotalRow label="TOTAL ASET" value={data.assets_total} compare={cmp.assets_total} isComp={isComp} testId="fs-bs-total-assets" />
 
@@ -365,14 +380,14 @@ function BalanceSheetTab({ selectedEntity }) {
                 <tr className="border-b border-[#F5F5F7]"><td className="px-3 py-1.5 pl-6 text-[11px] text-[#9A9BA3]" colSpan={isComp ? 4 : 2}>Tidak ada kewajiban.</td></tr>
               )}
               {(data.liabilities?.sections || []).map((sec) => (
-                <BsSection key={`l-${sec.key}`} section={sec} isComp={isComp} />
+                <BsSection key={`l-${sec.key}`} section={sec} isComp={isComp} onLine={onLine} />
               ))}
               <BsTotalRow label="TOTAL KEWAJIBAN" value={data.liabilities_total} compare={cmp.liabilities_total} isComp={isComp} testId="fs-bs-total-liab" />
 
               {/* EKUITAS */}
               <GroupHeader label="EKUITAS" isComp={isComp} />
               {(data.equity?.lines || []).map((ln) => (
-                <BsLine key={`e-${ln.code}`} line={ln} isComp={isComp} />
+                <BsLine key={`e-${ln.code}`} line={ln} isComp={isComp} onLine={onLine} />
               ))}
               <BsLine isComp={isComp} line={{
                 code: "", name: "Laba Tahun Berjalan",

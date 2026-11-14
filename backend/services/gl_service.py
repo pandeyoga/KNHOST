@@ -924,16 +924,21 @@ async def create_manual_entry(payload, actor: Dict[str, Any],
 
 async def list_entries(source: Optional[str] = None, account_code: Optional[str] = None,
                        status: Optional[str] = None, limit: int = 500,
-                       scope: Optional[Dict[str, Any]] = None) -> List[Dict[str, Any]]:
-    q = _journal_query(source, account_code, status, scope)
+                       scope: Optional[Dict[str, Any]] = None, start: str = "",
+                       end: str = "") -> List[Dict[str, Any]]:
+    q = _journal_query(source, account_code, status, scope, start, end)
     rows = await db.journal_entries.find(q, {"_id": 0}).sort("number", -1).to_list(limit)
     return rows
 
 
 def _journal_query(source: Optional[str], account_code: Optional[str],
-                   status: Optional[str], scope: Optional[Dict[str, Any]]) -> Dict[str, Any]:
+                   status: Optional[str], scope: Optional[Dict[str, Any]], start: str = "",
+                   end: str = "") -> Dict[str, Any]:
     """Satu tempat pembentuk filter jurnal — dipakai versi biasa MAUPUN versi paginasi,
-    supaya halaman & total tidak pernah dihitung dari filter yang berbeda."""
+    supaya halaman & total tidak pernah dihitung dari filter yang berbeda.
+
+    PK-43 (UX-13) — `start`/`end` (`YYYY-MM-DD`) menyaring tanggal buku: batas bawah tanggal saja (≤ semua nilai hari
+    itu), batas atas sampai akhir hari (`_gl_day_end`) — sama dengan laporan keuangan."""
     q: Dict[str, Any] = dict(scope or {})
     if source:
         q["source_type"] = source
@@ -941,20 +946,27 @@ def _journal_query(source: Optional[str], account_code: Optional[str],
         q["lines.account_code"] = account_code
     if status:
         q["status"] = status
+    rentang: Dict[str, str] = {}
+    if start:
+        rentang["$gte"] = start[:10]
+    if end:
+        rentang["$lte"] = _gl_day_end(end)
+    if rentang:
+        q["date"] = rentang
     return q
 
 
 async def list_entries_paged(source: Optional[str] = None, account_code: Optional[str] = None,
                              status: Optional[str] = None, scope: Optional[Dict[str, Any]] = None,
                              page: int = 1, page_size: int = 20,
-                             q: str = "") -> Dict[str, Any]:
+                             q: str = "", start: str = "", end: str = "") -> Dict[str, Any]:
     """P2 — satu halaman jurnal + total (kontrak {items,total,page,page_size,has_more}).
 
     Urutan `number` menurun dipertahankan supaya jurnal terbaru tetap di halaman 1 —
     sama seperti perilaku daftar tanpa paginasi.
     """
     from pagination import build_search, merge_query, envelope
-    query = _journal_query(source, account_code, status, scope)
+    query = _journal_query(source, account_code, status, scope, start, end)
     if q:
         query = merge_query(query, build_search(
             q, ["number", "description", "memo", "ref_number", "source_type"]))
@@ -3658,8 +3670,13 @@ async def trial_balance(as_of: Optional[str] = None,
 
 
 async def account_ledger(code: str, as_of: Optional[str] = None,
-                         scope: Optional[Dict[str, Any]] = None) -> Optional[Dict[str, Any]]:
-    """Buku besar 1 akun: baris jurnal yg menyentuh akun + running balance (per entitas via `scope`)."""
+                         scope: Optional[Dict[str, Any]] = None,
+                         start: Optional[str] = None) -> Optional[Dict[str, Any]]:
+    """Buku besar 1 akun: baris jurnal yg menyentuh akun + running balance (per entitas via `scope`).
+
+    PK-43 (UX-13) — `start` (`YYYY-MM-DD`): `lines` hanya mutasi `start ≤ tanggal ≤ as_of`; `opening_balance` = saldo
+    sebelum `start` (tanda mengikuti saldo normal akun), `running_balance` berangkat dari saldo awal, `balance` = saldo
+    akhir, `period = {start, end}`. Tanpa `start` bentuk jawabannya tetap."""
     acc = await db.gl_accounts.find_one({"code": code}, {"_id": 0})
     if not acc:
         return None
@@ -3670,10 +3687,17 @@ async def account_ledger(code: str, as_of: Optional[str] = None,
     nb = acc.get("normal_balance", normal_balance(acc.get("type", "asset")))
     sign = 1 if nb == "debit" else -1
 
+    start = (start or "")[:10]
     flat: List[Dict[str, Any]] = []
+    opening = 0.0
     for je in entries:
         for ln in je.get("lines", []):
             if ln.get("account_code") != code:
+                continue
+            debit = round(float(ln.get("debit", 0) or 0), 2)
+            credit = round(float(ln.get("credit", 0) or 0), 2)
+            if start and str(je.get("date") or "") < start:   # sebelum rentang → saldo awal
+                opening += sign * (debit - credit)
                 continue
             flat.append({
                 "entry_id": je.get("id"),
@@ -3681,12 +3705,14 @@ async def account_ledger(code: str, as_of: Optional[str] = None,
                 "date": je.get("date"),
                 "description": ln.get("description") or je.get("description"),
                 "source_type": je.get("source_type"),
+                "source_id": je.get("source_id", ""),
                 "source_label": je.get("source_label", ""),
-                "debit": round(float(ln.get("debit", 0) or 0), 2),
-                "credit": round(float(ln.get("credit", 0) or 0), 2),
+                "debit": debit,
+                "credit": credit,
             })
     flat.sort(key=lambda r: (r.get("date") or "", r.get("number") or ""))
-    running = 0.0
+    opening = round(opening, 2)
+    running = opening
     total_debit = total_credit = 0.0
     for r in flat:
         running += sign * (r["debit"] - r["credit"])
@@ -3694,7 +3720,7 @@ async def account_ledger(code: str, as_of: Optional[str] = None,
         total_debit += r["debit"]
         total_credit += r["credit"]
     flat.reverse()  # terbaru dulu
-    return {
+    out = {
         "account": {"code": acc["code"], "name": acc["name"], "type": acc.get("type"),
                     "type_label": TYPE_LABELS.get(acc.get("type", ""), ""),
                     "normal_balance": nb},
@@ -3704,6 +3730,9 @@ async def account_ledger(code: str, as_of: Optional[str] = None,
         "balance": round(running, 2),
         "count": len(flat),
     }
+    if start:
+        out.update({"opening_balance": opening, "period": {"start": start, "end": (as_of or "")[:10]}})
+    return out
 
 
 async def gl_summary(scope: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
@@ -3764,14 +3793,18 @@ async def _inventory_codes(entity_id: str) -> List[str]:
     return [c for c in await _glm.known_codes(INVENTORY_ACCOUNT_KEY, entity_id) if c]
 
 
-async def accounts_balance_cents(codes: List[str], entity_id: str) -> int:
+async def accounts_balance_cents(codes: List[str], entity_id: str, as_of: str = "") -> int:
     """PK-29 (IV-05) — saldo (debit − kredit) dalam SEN BULAT untuk baris berakun ∈ `codes` pada jurnal tidak-void PT
     itu. Satu agregasi di database; baris dikelompokkan per pasangan (debit, kredit) lalu tiap nominal dibulatkan ke sen
-    lewat satu fungsi (`core_utils.to_cents`, `02` D5) — Σ round(debit × 100) − Σ round(credit × 100)."""
+    lewat satu fungsi (`core_utils.to_cents`, `02` D5) — Σ round(debit × 100) − Σ round(credit × 100).
+    PK-43 — `as_of` (`YYYY-MM-DD`, opsional): hanya jurnal bertanggal sampai akhir hari itu."""
     codes = [c for c in codes or [] if c]
     if not codes or not entity_id:
         return 0
-    pipe = [{"$match": {"entity_id": entity_id, "status": {"$ne": "void"}, "lines.account_code": {"$in": codes}}},
+    match: Dict[str, Any] = {"entity_id": entity_id, "status": {"$ne": "void"}, "lines.account_code": {"$in": codes}}
+    if as_of:
+        match["date"] = {"$lte": _gl_day_end(as_of)}
+    pipe = [{"$match": match},
             {"$unwind": "$lines"},
             {"$match": {"lines.account_code": {"$in": codes}}},
             {"$group": {"_id": {"d": "$lines.debit", "c": "$lines.credit"}, "n": {"$sum": 1}}}]

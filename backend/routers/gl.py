@@ -4,6 +4,7 @@ Akses: permission module "accounting" (admin/manager). Respons OBJEK/ARRAY
 telanjang (kontrak KN3). Jurnal otomatis diturunkan dari SSOT (sales_orders,
 cash_transactions) via /api/gl/sync — idempotent.
 """
+import re
 from typing import Any, Dict, List, Optional
 
 from fastapi import APIRouter, Request, Query, HTTPException
@@ -125,13 +126,30 @@ async def delete_gl_account(code: str, request: Request,
     return {"ok": True, "code": code, "entity_id": entity_id}
 
 
+_RX_TANGGAL = re.compile(r"^\d{4}-\d{2}-\d{2}$")
+
+
+def _tanggal_sah(nilai: Optional[str], nama: str) -> str:
+    """PK-43 — parameter tanggal `YYYY-MM-DD` (kosong boleh); bentuk lain → 400."""
+    v = (nilai or "").strip()
+    if v and not _RX_TANGGAL.match(v):
+        raise HTTPException(status_code=400, detail=f"Tanggal {nama} harus berbentuk TTTT-BB-HH.")
+    return v
+
+
 @router.get("/gl/accounts/{code}/ledger")
 async def gl_account_ledger(code: str, request: Request, as_of: Optional[str] = Query(None),
-                            entity_id: Optional[str] = Query(None)) -> Dict[str, Any]:
-    """Buku besar 1 akun (mutasi + running balance) — per entitas."""
+                            entity_id: Optional[str] = Query(None),
+                            start: Optional[str] = Query(None)) -> Dict[str, Any]:
+    """Buku besar 1 akun (mutasi + running balance) — per entitas.
+
+    PK-43 (UX-13) — `start` (opsional): mutasi `start ≤ tanggal ≤ as_of` + `opening_balance` + `period`."""
     await require_permission(request, "accounting", "view")
+    start = _tanggal_sah(start, "awal")
+    if start and as_of and start > as_of[:10]:
+        raise HTTPException(status_code=400, detail="Tanggal awal harus sebelum atau sama dengan tanggal akhir.")
     scope = await _gl_scope(request, entity_id)
-    led = await gl_service.account_ledger(code, as_of=as_of, scope=scope)
+    led = await gl_service.account_ledger(code, as_of=as_of, scope=scope, start=start or None)
     if led is None:
         raise HTTPException(status_code=404, detail="Akun tidak ditemukan")
     return {**led, "scope_meta": await scope_meta(await entity_ctx(request), entity_id)}   # PK-16
@@ -146,6 +164,8 @@ async def list_journal(
     account_code: Optional[str] = Query(None),
     status: Optional[str] = Query(None),
     entity_id: Optional[str] = Query(None),
+    start: Optional[str] = Query(None),
+    end: Optional[str] = Query(None),
 ) -> Any:
     """Daftar jurnal (filter sumber/akun/status) — ter-scope entitas.
 
@@ -155,14 +175,15 @@ async def list_journal(
     sekali. Tanpa parameter halaman, bentuk responsnya tetap array telanjang.
     """
     await require_permission(request, "accounting", "view")
+    start, end = _tanggal_sah(start, "awal"), _tanggal_sah(end, "akhir")   # PK-43 — saringan tanggal buku
     scope = await _gl_scope(request, entity_id)
     if is_paged(request):
         page, page_size, q, _sort = get_page_params(request)
         return await gl_service.list_entries_paged(
             source=source, account_code=account_code, status=status, scope=scope,
-            page=page, page_size=page_size, q=q)
+            page=page, page_size=page_size, q=q, start=start, end=end)
     return await gl_service.list_entries(source=source, account_code=account_code,
-                                         status=status, scope=scope)
+                                         status=status, scope=scope, start=start, end=end)
 
 
 @router.post("/gl/journal")
@@ -261,14 +282,20 @@ async def reject_journal_proposal(proposal_id: str, payload: ProposalReject, req
 
 @router.get("/gl/journal/{entry_id}")
 async def get_journal(entry_id: str, request: Request) -> Dict[str, Any]:
-    """Detail satu jurnal."""
-    await require_permission(request, "accounting", "view")
+    """Detail satu jurnal.
+
+    PK-43 (UX-13, `02` L8) — `source_doc`: dokumen sumber jurnal (`doc_refs_service.journal_source_doc`); `link`
+    dikosongkan bila PT dokumen di luar penugasan pelaku atau izin lihat modulnya tidak dipegang."""
+    actor = await require_permission(request, "accounting", "view")
     ctx = await entity_ctx(request)
     je = await gl_service.get_entry(entry_id)
     if je is None:
         raise HTTPException(status_code=404, detail="Jurnal tidak ditemukan")
     assert_entity_access(je, "journal_entries", ctx)
-    return je
+    from dependencies import permission_matrix
+    from services import doc_refs_service as _refs
+    perms = (await permission_matrix()).get(actor.get("role") or "") or {}
+    return {**je, "source_doc": await _refs.journal_source_doc(je, ctx.allowed_entity_ids, perms)}
 
 
 class ReversePayload(BaseModel):

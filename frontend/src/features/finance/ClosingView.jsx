@@ -2,6 +2,8 @@
  * ClosingView (FINANCE) — Tutup Buku bulanan & tahunan.
  * Buat jurnal penutup otomatis (Laba Bersih → Laba Ditahan 3-2000) + kunci periode
  * (soft). Admin dapat Reopen. Sumber: /api/finance/closing/*. Gaya modul GL.
+ * PK-43 (UX-16) — panel Daftar Periksa (`ClosingChecklistPanel`) di antara pemilih periode dan pratinjau, dimuat bersama
+ * Pratinjau; butir "perlu dilihat" ikut ditulis di konfirmasi Tutup Buku.
  */
 import { apiErrorText } from "../../utils/apiError";
 import { useCallback, useEffect, useMemo, useState } from "react";
@@ -20,6 +22,7 @@ import KNSelect from "../../components/KNSelect";
 import { formatCurrency, formatDateTime } from "../../utils/formatters";
 import { askConfirm, askReason } from "../../services/confirmService";
 import { can } from "../../config/roles";
+import ClosingChecklistPanel, { checklistWarnings, useClosingChecklist } from "./ClosingChecklistPanel";   // PK-43
 
 const NOW = new Date();
 // PK-11 — "2026-12-01" → "1 Desember 2026" (bulan penuh, sama dengan pesan server).
@@ -81,6 +84,7 @@ export default function ClosingView({ selectedEntity, entities = [], currentUser
   const [busy, setBusy] = useState(false);
 
   const periodKey = periodType === "year" ? year : `${year}-${month}`;
+  const ceklis = useClosingChecklist(entityId, periodType, periodKey);
 
   const load = useCallback(async () => {
     if (!entityId) { setClosings([]); setLoading(false); return; }
@@ -100,6 +104,7 @@ export default function ClosingView({ selectedEntity, entities = [], currentUser
 
   const doPreview = async () => {
     setError(""); setNotice(""); setBusy(true);
+    ceklis.load();
     try {
       const res = await axios.get(`${API}/finance/closing/preview`, {
         params: { period_type: periodType, period_key: periodKey, entity_id: entityId },
@@ -168,6 +173,7 @@ export default function ClosingView({ selectedEntity, entities = [], currentUser
     if (pv && Math.abs((pv.residual_net_income || 0) - (pv.net_income || 0)) > 0.01) {
       warnings.push(`Sebagian periode sudah ditutup bulanan — jurnal hanya menutup sisa ${formatCurrency(pv.residual_net_income)}.`);
     }
+    warnings.push(...checklistWarnings(ceklis.data || await ceklis.load()));   // PK-43 — butir "perlu dilihat"
     const ok = await askConfirm({
       danger: true,
       title: `Tutup buku ${periodText} — ${entityText}?`,
@@ -316,6 +322,7 @@ export default function ClosingView({ selectedEntity, entities = [], currentUser
                   </button>
                 </div>
 
+                <ClosingChecklistPanel {...ceklis} />
                 {/* Pratinjau */}
                 {preview && (
                   <div className="mt-3 pt-3 border-t border-[#EFF0F2]" data-testid="closing-preview">
