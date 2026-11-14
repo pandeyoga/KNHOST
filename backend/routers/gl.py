@@ -378,14 +378,14 @@ async def gl_inventory_reconciliation(request: Request) -> Dict[str, Any]:
 
 @router.get("/gl/zero-cost-rolls")
 async def gl_zero_cost_rolls(request: Request, page: int = Query(1, ge=1),
-                             page_size: int = Query(50, ge=1, le=200)) -> Dict[str, Any]:
+                             page_size: int = Query(50, ge=1, le=200), q: str = "") -> Dict[str, Any]:
     """PK-27 (IV-07) — roll berbiaya 0: masih di gudang (nilai persediaan 0) dan sudah terkirim (HPP surat jalan 0).
 
     PT dari konteks (`resolve_requested_entity`); mode "Semua PT" = semua PT dalam cakupan pengguna (baca saja)."""
     await require_permission(request, "accounting", "view")
     ctx = await entity_ctx(request)
     ids = list(ctx.allowed_entity_ids) if ctx.view_all else [resolve_requested_entity(ctx, None)]
-    return await gl_service.zero_cost_rolls(ids, page=page, page_size=page_size)
+    return await gl_service.zero_cost_rolls(ids, page=page, page_size=page_size, q=q)
 
 
 @router.get("/gl/inventory-drift-explain")

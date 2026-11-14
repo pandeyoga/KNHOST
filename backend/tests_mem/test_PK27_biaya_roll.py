@@ -330,6 +330,15 @@ async def test_PK27_U8_daftar_roll_berbiaya_nol(klien, kepala_admin, db, bahan):
     j2 = (await klien.get("/api/gl/zero-cost-rolls", headers=kepala_admin, params={"page": 1000})).json()
     assert j2["in_stock"]["items"] == [] and j2["in_stock"]["total"] == j["in_stock"]["total"]
     assert j2["shipped"]["items"] == [] and j2["shipped"]["total"] == j["shipped"]["total"]
+    # Cek layar 15 Nov — cari di server (`q`): nomor roll, nama barang, nomor surat jalan; jumlah ikut tersaring.
+    jq = (await klien.get("/api/gl/zero-cost-rolls", headers=kepala_admin, params={"q": stok[nol]["roll_no"]})).json()
+    assert [x["roll_id"] for x in jq["in_stock"]["items"]] == [nol] and jq["in_stock"]["total"] == 1, jq["in_stock"]
+    jb = (await klien.get("/api/gl/zero-cost-rolls", headers=kepala_admin, params={"q": "kain uji pk-27"})).json()
+    assert nol in {x["roll_id"] for x in jb["in_stock"]["items"]}
+    js = (await klien.get("/api/gl/zero-cost-rolls", headers=kepala_admin, params={"q": BAG["u7_sj"]})).json()
+    assert [x["shipment_no"] for x in js["shipped"]["items"]] == [BAG["u7_sj"]] and js["shipped"]["total"] == 1
+    jz = (await klien.get("/api/gl/zero-cost-rolls", headers=kepala_admin, params={"q": "tidak-ada-zzz"})).json()
+    assert (jz["in_stock"]["total"], jz["shipped"]["total"]) == (0, 0)
     # PT lain (Kanda) tidak memuat roll KSC; "Semua PT" memuat PT dalam cakupan
     h_kanda = {**kepala_admin, "X-Entity-Id": "ent_kanda"}
     jk = (await klien.get("/api/gl/zero-cost-rolls", headers=h_kanda)).json()

@@ -12,6 +12,7 @@ import axios, { API } from "../../services/apiClient";
 import EntityBadge from "../../components/EntityBadge";
 import ErrorNotice from "../../components/ErrorNotice";
 import KNPager from "../../components/KNPager";
+import { SearchBox } from "../../components/ListPageParts";
 import { apiErrorText } from "../../utils/apiError";
 import { docStatusLabel } from "../../utils/docStatus";
 import { formatDate, formatQty } from "../../utils/formatters";
@@ -49,11 +50,18 @@ export default function ZeroCostRollsSection({ refreshKey }) {
   const [pageKirim, setPageKirim] = useState(1);
   const [state, setState] = useState("loading");   // loading | error | ready
   const [err, setErr] = useState("");
+  // Cek layar 15 Nov (KN_37 butir cari) — daftar bisa puluhan baris: cari nomor roll / barang / surat jalan di server.
+  const [cari, setCari] = useState("");
+  const [q, setQ] = useState("");
+  useEffect(() => {
+    const t = setTimeout(() => { setQ(cari.trim()); setPageStok(1); setPageKirim(1); }, 300);
+    return () => clearTimeout(t);
+  }, [cari]);
 
   const load = useCallback(async () => {
     setState("loading");
     try {
-      const ambil = (page) => axios.get(`${API}/gl/zero-cost-rolls`, { params: { page, page_size: PAGE_SIZE } });
+      const ambil = (page) => axios.get(`${API}/gl/zero-cost-rolls`, { params: { page, page_size: PAGE_SIZE, ...(q ? { q } : {}) } });
       const a = await ambil(pageStok);
       const b = pageKirim === pageStok ? a : await ambil(pageKirim);
       setStok(a.data?.in_stock || KOSONG.in_stock);
@@ -64,10 +72,10 @@ export default function ZeroCostRollsSection({ refreshKey }) {
       setErr(apiErrorText(e) || "");
       setState("error");
     }
-  }, [pageStok, pageKirim]);
+  }, [pageStok, pageKirim, q]);
   useEffect(() => { load(); }, [load, refreshKey]);
 
-  const kosongSemua = state === "ready" && !stok.total && !kirim.total;
+  const kosongSemua = state === "ready" && !stok.total && !kirim.total && !q;
   return (
     // Bagian di dalam kartu Jurnal & Buku Besar (sejajar "True-up terakhir"): garis pemisah, bukan kartu bersarang.
     <div className="mt-4 border-t border-kn-divider pt-3" data-testid="zero-cost-rolls">
@@ -77,6 +85,9 @@ export default function ZeroCostRollsSection({ refreshKey }) {
           Roll tanpa biaya tidak menambah nilai persediaan dan keluar dengan HPP 0, jadi laba kotor terlihat lebih
           tinggi sampai biayanya diperbaiki. Roll yang sudah dihapus-buku (scrap) tidak ditampilkan.
         </p>
+        {(q || stok.total + kirim.total > 0) && (
+          <SearchBox value={cari} onChange={setCari} placeholder="Cari nomor roll, barang, atau surat jalan…" testId="zc-search" />
+        )}
         {state === "loading" && (
           <p className="text-fs-13 text-kn-text-2" role="status" data-testid="zc-loading">{TEKS_MEMUAT}</p>
         )}

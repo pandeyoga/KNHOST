@@ -3896,12 +3896,14 @@ WRITEOFF_ACTIVE: Dict[str, Any] = {"writeoff_je_id": {"$nin": [None, ""]}, "writ
 ZERO_COST: Dict[str, Any] = {"unit_cost": {"$in": [0, None]}, "base_unit_cost": {"$in": [0, None]}}
 
 
-async def zero_cost_rolls(entity_ids: List[str], *, page: int = 1, page_size: int = 50) -> Dict[str, Any]:
+async def zero_cost_rolls(entity_ids: List[str], *, page: int = 1, page_size: int = 50, q: str = "") -> Dict[str, Any]:
     """PK-27 (IV-07) — daftar berhalaman roll berbiaya 0 per PT (`GET /api/gl/zero-cost-rolls`).
 
     `in_stock`: roll berstatus persediaan (`OWNED_ROLL_STATUSES`), sisa > 0, `unit_cost` dan `base_unit_cost` 0/kosong,
     bukan roll yang sudah dihapus-buku. `shipped`: baris potret `shipments.rolls[]` ber-`unit_cost` 0 pada surat jalan
-    yang tidak batal (HPP-nya nol). Jumlah total dari kueri (`02` D4), bukan dari halaman."""
+    yang tidak batal (HPP-nya nol). Jumlah total dari kueri (`02` D4), bukan dari halaman. `q` (cek layar 15 Nov, KN_37
+    butir cari) menyaring nomor roll / nama barang di daftar gudang dan nomor roll / surat jalan / pesanan di daftar
+    terkirim, di server (berlaku untuk jumlah dan halaman)."""
     page, page_size = max(1, int(page or 1)), min(max(1, int(page_size or 50)), 200)
     skip = (page - 1) * page_size
     ids = [e for e in entity_ids if e]
@@ -3909,6 +3911,10 @@ async def zero_cost_rolls(entity_ids: List[str], *, page: int = 1, page_size: in
         {"owner_entity_id": {"$in": ids}, "status": {"$in": OWNED_ROLL_STATUSES}, "length_remaining": {"$gt": 0},
          **ZERO_COST},
         {"$nor": [WRITEOFF_ACTIVE]}]}
+    cari = re.escape((q or "").strip())
+    if cari:
+        pids = [p["id"] async for p in db.products.find({"name": {"$regex": cari, "$options": "i"}}, {"_id": 0, "id": 1})]
+        q_roll["$and"].append({"$or": [{"roll_no": {"$regex": cari, "$options": "i"}}, {"product_id": {"$in": pids}}]})
     total_roll = await db.inventory_rolls.count_documents(q_roll)
     rows = await (db.inventory_rolls.find(q_roll, {"_id": 0, "id": 1, "roll_no": 1, "product_id": 1,
                                                    "owner_entity_id": 1, "length_remaining": 1, "status": 1})
@@ -3921,6 +3927,12 @@ async def zero_cost_rolls(entity_ids: List[str], *, page: int = 1, page_size: in
     base = [{"$match": {"entity_id": {"$in": ids}, "status": {"$nin": list(SHIPMENT_DEAD)},
                         "rolls.unit_cost": {"$in": [0, None]}}},
             {"$unwind": "$rolls"}, {"$match": {"rolls.unit_cost": {"$in": [0, None]}}}]
+    if cari:
+        rids = [x["id"] async for x in db.inventory_rolls.find({"roll_no": {"$regex": cari, "$options": "i"}},
+                                                                {"_id": 0, "id": 1})]
+        base.append({"$match": {"$or": [{"shipment_no": {"$regex": cari, "$options": "i"}},
+                                        {"order_number": {"$regex": cari, "$options": "i"}},
+                                        {"rolls.roll_id": {"$in": rids}}]}})
     hit = await db.shipments.aggregate(base + [{"$group": {"_id": None, "n": {"$sum": 1}}}]).to_list(1)
     total_ship = int((hit[0] if hit else {}).get("n") or 0)
     srows = await db.shipments.aggregate(base + [

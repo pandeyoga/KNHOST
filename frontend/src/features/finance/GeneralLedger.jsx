@@ -140,7 +140,8 @@ export default function GeneralLedger({ selectedEntity, entities = [], focusDoc,
       {/* Fase 3 · P4 (L-04 kelas C) — akuntansi: cukup pemberitahuan "paling nyaman di desktop" di HP. */}
       <DesktopOnlyNotice testId="gl-desktop-notice" what="Jurnal & Buku Besar" />
       <EntityScopeBanner meta={summary?.scope_meta} />
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-3">
+      {/* Cek layar 15 Nov — empat kartu sebaris hanya di ≥1280 px; di 1024 px 2+2 supaya total rupiah utuh sebaris. */}
+      <div className="grid grid-cols-2 xl:grid-cols-4 gap-3 mb-3">
         <Kpi testId="gl-kpi-count" label={summary?.void_count ? "Total Jurnal (tanpa anulir)" : "Total Jurnal"} value={summary?.journal_count ?? "—"} icon={FileStack} />
         <Kpi testId="gl-kpi-debit" label="Total Debit" value={formatCurrency(summary?.total_debit)} icon={Scale} tone="text-[#0058CC]" />
         <Kpi testId="gl-kpi-credit" label="Total Kredit" value={formatCurrency(summary?.total_credit)} icon={Scale} tone="text-[#1B7F4B]" />

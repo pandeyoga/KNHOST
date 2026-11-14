@@ -1,6 +1,7 @@
 // Presentational KPI cards untuk GeneralLedger (dipisah agar file utama di bawah
 // batas guardrail). Pure — render dari props.
 import { CheckCircle2, AlertTriangle } from "lucide-react";
+import { kpiValueParts } from "./financeShared";
 
 export function BalancedKpi({ balanced }) {
   const ok = balanced !== false;
@@ -27,7 +28,8 @@ export function Kpi({ label, value, icon: Icon, tone = "", testId }) {
         <div className="hidden w-9 h-9 flex-shrink-0 rounded-lg bg-[#F3EAFB] items-center justify-center sm:flex"><Icon size={17} className="text-[#6B219A]" /></div>
         <div className="min-w-0">
           <p className="text-[11px] font-bold uppercase tracking-wide text-[#8E8E93]">{label}</p>
-          <p className={`text-[15px] sm:text-[17px] font-bold tabular-nums break-words ${tone || "text-[#1C1C1E]"}`} data-testid={`${testId}-value`}>{value}</p>
+          {/* Cek layar 15 Nov — angka tidak dipatah di tengah ("Rp 23.268.6 / 68.634"); hanya "Rp" boleh turun baris. */}
+          <p className={`text-[15px] sm:text-[17px] font-bold tabular-nums ${tone || "text-[#1C1C1E]"}`} data-testid={`${testId}-value`}>{kpiValueParts(value)}</p>
         </div>
       </div>
     </div>
