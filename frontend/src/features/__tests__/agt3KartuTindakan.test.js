@@ -51,7 +51,8 @@ const KARTU = (over = {}) => ({
   plan: { summary: "Catat kwitansi Rp 5.000.000 dari Toko Cahaya.", amount: 5000000, confirm_text: "5000000",
     note: "Jurnal dibuat sistem saat disimpan.",
     rows: [{ label: "Sisa tagihan SO-1", kind: "money", before: 8000000, after: 3000000 },
-      { label: "Cara bayar", kind: "text", before: "—", after: "Transfer" }] },
+      { label: "Cara bayar", kind: "text", before: "—", after: "Transfer" },
+      { label: "Tanggal kwitansi", kind: "date", before: "—", after: "2026-11-15" }] },
   ...over,
 });
 const BERHASIL = KARTU({ status: "confirmed", result: { status_code: 200, gl_status: "posted", message: "",
@@ -100,6 +101,8 @@ test("kartu golongan B: kepala, PT + batas berlaku, tabel Rencana, catatan jurna
   const sel = [...q("tanya-card-row-0").querySelectorAll("td")].map(txt);
   expect(sel).toEqual(["Sisa tagihan SO-1", "Rp 8.000.000", "Rp 3.000.000"]);
   expect(q("tanya-card-row-0").querySelector(".whitespace-nowrap").textContent).toBe("8.000.000");   // angka tak dipatah
+  // Cek layar AG-T3 (uji jalan 1280 px): tanggal rencana tampil "15 Nov 2026", bukan ISO mentah "2026-11-15".
+  expect(txt(q("tanya-card-row-2").querySelectorAll("td")[2])).toBe("15 Nov 2026");
   expect(q("tanya-card-note").textContent).toBe("Jurnal dibuat sistem saat disimpan.");
   expect(q("tanya-card-reason").getAttribute("placeholder")).toBe("Mengapa tindakan ini dilakukan?");
   expect(q("tanya-card-retype").getAttribute("placeholder")).toBe("Ketik 5000000 untuk menyetujui.");

@@ -47,7 +47,7 @@ export default function ARAgingDetail({ detail, customerId, loading, currentUser
               <AskKnButton type="ar_receipt" id={customerId} label={detail?.customer_name || ""}
                 buttonLabel="Tanya soal layar ini" className="secondary-button btn-sm" />
               {canAccrue && (
-                <button type="button" className="secondary-button" data-testid="ar-aging-accrue"
+                <button type="button" className="secondary-button btn-sm" data-testid="ar-aging-accrue"
                   disabled={accruing} onClick={onAccrue}>
                   {accruing ? <Loader2 size={13} className="animate-spin" /> : <Receipt size={13} />}
                   Buat Nota Denda
@@ -65,7 +65,7 @@ export default function ARAgingDetail({ detail, customerId, loading, currentUser
         ) : (
           <>
             <div className="table-wrap">
-              <table className="data-table" data-testid="ar-aging-detail-table">
+              <table className="data-table head-wrap" data-testid="ar-aging-detail-table">
                 <thead>
                   <tr>
                     <th>Pesanan</th>
@@ -82,7 +82,7 @@ export default function ARAgingDetail({ detail, customerId, loading, currentUser
                 <tbody>
                   {detail.items.map((it) => (
                     <tr key={it.order_id} data-testid={`ar-detail-row-${it.order_id}`}>
-                      <td className="px-3 py-2 font-semibold text-[#0058CC]">
+                      <td className="px-3 py-2 font-semibold text-[#0058CC] whitespace-nowrap">
                         {it.order_number}
                         {it.has_plan && (
                           <span className="ml-1 rounded bg-[#EFF4FF] px-1 text-[9px] font-bold text-[#0058CC]"

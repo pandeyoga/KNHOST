@@ -61,7 +61,7 @@ export function TanyaActions({ refreshKey }) {
                       aria-expanded={sel === it.id} data-testid={`tanya-actions-open-${it.id}`}>{it.title || "Kartu tindakan"}</button>
                   </td>
                   <td data-label={COLS[1]}>{it.entity_name || "—"}</td>
-                  <td data-label={COLS[2]} className="tabular-nums">{amount > 0 ? kpiValueParts(formatCurrency(amount)) : "—"}</td>
+                  <td data-label={COLS[2]} className="tabular-nums"><span>{amount > 0 ? kpiValueParts(formatCurrency(amount)) : "—"}</span></td>
                   <td data-label={COLS[3]}>{formatDateTime(it.created_at)}</td>
                   <td data-label={COLS[4]}>{it.status === "pending" ? formatDateTime(it.expires_at) : "—"}</td>
                   <td data-label={COLS[5]}><StatusPill status={it.status} labels={CARD_STATUS_LABEL} testId={`tanya-actions-pill-${it.id}`} /></td>

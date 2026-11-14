@@ -6,7 +6,7 @@ import { toast } from "../../hooks/use-toast";
 import { askConfirm } from "../../services/confirmService";
 import { docStatusLabel } from "../../utils/docStatus";
 import { entityShortById } from "../../utils/entityLabel";
-import { formatCurrency, formatDateTime } from "../../utils/formatters";
+import { formatCurrency, formatDate, formatDateTime } from "../../utils/formatters";
 import { kpiValueParts } from "../finance/financeShared";
 import { confirmAction, dismissAction, fetchAction } from "./tanyaApi";
 
@@ -102,10 +102,14 @@ function Outcome({ doc }) {
   ) : null;
 }
 
-/** Nilai sel rencana: rupiah utuh (pola `kpiValueParts`), tanggal & teks apa adanya, kosong = "—". */
+const ISO_TANGGAL = /^\d{4}-\d{2}-\d{2}(T|$)/;
+
+/** Nilai sel rencana: rupiah utuh (pola `kpiValueParts`), tanggal "15 Nov 2026" (bukan ISO mentah), teks apa adanya,
+ *  kosong = "—". */
 function PlanValue({ row, value }) {
   if (value === null || value === undefined || value === "") return <span className="tanya-plan-empty">—</span>;
   if (row.kind === "money" && typeof value === "number") return <span className="tabular-nums">{kpiValueParts(formatCurrency(value))}</span>;
+  if (row.kind === "date" && ISO_TANGGAL.test(String(value))) return <span className="whitespace-nowrap">{formatDate(value)}</span>;
   return <span>{String(value)}</span>;
 }
 
