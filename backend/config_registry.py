@@ -157,6 +157,10 @@ def _sisip_sub_kft7(gid: str, sub: Dict[str, Any], sesudah: str = "") -> None:
 _sisip_sub_kft7("pembayaran-pelanggan", _S("kredit", "Peringatan & blokir kredit"))
 _sisip_sub_kft7("penjualan", _S("pesanan-khusus", "Pesanan khusus & katalog sample"), sesudah="alur-pesanan")
 _sisip_sub_kft7("persetujuan", _S("tanda-tangan", "Tanda tangan elektronik"), sesudah="rujukan-dokumen")
+# PM-T3 — kwitansi ber-rekening & ber-referensi (nomor referensi wajib) dan daftar kwitansi yang menunggu dicocokkan
+# dengan mutasi bank. Sub-judul "Mencocokkan mutasi bank" sudah 14 kunci (batas sub-judul biasa, KF-T4).
+_sisip_sub_kft7("pembayaran-pelanggan", _S("kwitansi", "Kwitansi pelanggan"), sesudah="syarat-bayar")
+_sisip_sub_kft7("bank-kasus", _S("kwitansi-bank", "Kwitansi menunggu cocok bank"), sesudah="bank")
 GROUPS.append({"id": "keamanan", "label": "Keamanan akun & sesi", "order": 14,
                "question": "Berapa kali salah sandi sebelum akun dikunci, dan berapa lama sesi masuk berlaku?",
                "sections": [_S("masuk", "Salah sandi & lama sesi")]})

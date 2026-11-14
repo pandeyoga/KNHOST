@@ -227,6 +227,8 @@ INDEX_SPECS: Dict[str, List[IndexKeys]] = {
         [("customer_id", A)],
         [("number", A)],
         [("receipt_date", D)],
+        # PM-T3 — daftar "Belum terverifikasi lebih dari N hari" per PT.
+        [("entity_id", A), ("bank_verified", A), ("receipt_date", A)],
     ],
     "tax_invoices": [
         [("entity_id", A), ("status", A)],

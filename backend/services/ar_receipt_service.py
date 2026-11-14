@@ -42,6 +42,140 @@ logger = logging.getLogger(__name__)
 
 EPS = 0.01
 
+# ─── PM-T3 — kwitansi ber-rekening & ber-referensi; status "terverifikasi bank" ───────────────────────────────────
+#: Pesan galat langkah PERIKSA (spesifikasi `docs/blueprint/unit/PM-T3.md` §Galat).
+PESAN_REK_PT_LAIN = "Rekening penerima bukan milik PT kwitansi ini."
+PESAN_REK_TIDAK_MENERIMA = "Rekening ini tidak bisa menerima pembayaran pelanggan lewat {nama}."
+PESAN_REF_WAJIB = "Nomor referensi wajib diisi untuk {nama}."
+PESAN_GIRO_WAJIB = "Jatuh tempo giro wajib diisi untuk {nama}."
+PESAN_GIRO_FORMAT = "Jatuh tempo giro harus berupa tanggal yang sah (tahun-bulan-tanggal)."
+PESAN_TIDAK_SESUAI = "Rekening penerima berbeda dari instruksi bayar pesanan. Isi catatan alasannya."
+PESAN_BATAL_TERVERIFIKASI = "Kwitansi sudah terverifikasi bank. Lepaskan pencocokan mutasinya dulu."
+#: Panjang minimum catatan "tidak sesuai instruksi" (validasi isian, sama dengan alasan pengecualian kirim).
+CATATAN_MIN = 5
+KEY_WAJIB_REF = "payment.wajib_nomor_referensi"
+KEY_HARI_WAJAR = "payment.hari_wajar_verifikasi_bank"
+#: Field status verifikasi bank kwitansi (diisi rekonsiliasi `bank_recon_service`, bawaan belum terverifikasi).
+VERIFIKASI_AWAL = {"bank_verified": False, "bank_verified_at": "", "bank_verified_by": "", "bank_line_ids": []}
+
+
+def potret_rekening(acc: Optional[Dict[str, Any]]) -> Dict[str, str]:
+    """Potret rekening penerima yang disimpan di kwitansi (`02` D3): cetakan lama tetap menyebut rekening saat itu."""
+    a = acc or {}
+    return {"name": str(a.get("name") or ""), "bank_name": str(a.get("bank_name") or ""),
+            "account_number": str(a.get("account_number") or "")}
+
+
+def teks_potret(snap: Optional[Dict[str, Any]]) -> str:
+    """"{bank} {nomor} ({nama rekening})" — bentuk tampil rekening kwitansi (cetakan, keterangan kas)."""
+    s = snap or {}
+    head = " ".join(x for x in (str(s.get("bank_name") or "").strip(), str(s.get("account_number") or "").strip()) if x)
+    name = str(s.get("name") or "").strip()
+    return f"{head} ({name})" if head and name else (head or name)
+
+
+async def _rencana_pesanan(customer_id: str, entity_id: str, explicit: List[Dict[str, Any]],
+                           total_funds: float) -> List[str]:
+    """Id pesanan yang akan menerima alokasi kwitansi ini (dibaca SEBELUM tulisan): alokasi eksplisit, atau pratinjau
+    FIFO yang sama dengan `_create_receipt_after_reserve` (pesanan terbuka tertua lebih dulu)."""
+    if explicit:
+        return [str(a.get("order_id") or "") for a in explicit
+                if a.get("order_id") and round(float(a.get("amount", 0) or 0), 2) > 0]
+    out, sisa = [], round(total_funds, 2)
+    for oo in await list_open_orders(customer_id, entity_id=entity_id):
+        if sisa <= EPS:
+            break
+        take = round(min(sisa, oo["outstanding"]), 2)
+        if take > EPS:
+            out.append(oo["order_id"])
+            sisa = round(sisa - take, 2)
+    return out
+
+
+async def periksa_uang_masuk(payload: Dict[str, Any], *, entity_id: str, cara: Dict[str, Any], amount: float,
+                             customer_id: str, total_funds: float) -> Dict[str, Any]:
+    """PM-T3 — langkah PERIKSA rekening, referensi, dan instruksi bayar kwitansi (`02` §1 langkah 1: tanpa tulisan).
+
+    → isian kwitansi `{account_id, account_snapshot, cash_type, reference_no, giro_due_date, proof_url,
+    instruction_mismatch, mismatch_note, instruction_mismatch_orders, pay_codes, order_ids}`.
+
+    Rekening (hanya bila ada uang baru): yang dikirim → (kosong) rekening tujuan pesanan yang dialokasi bila semua
+    pesanan menunjuk rekening yang sama dan rekening itu menerima cara bayar ini → rekening bawaan (PT, cara bayar)
+    PM-T1 → rekening tunggal PT untuk jenis kasnya (PK-20) → 409 pesan PK-20. Rekening PT lain → 400; nonaktif → 409
+    (PK-20); bukan penerimaan pelanggan / tidak melayani cara bayar → 400."""
+    from services import bank_account_change_service as bacs
+    from services import cash_ledger
+    from services.cash_entity_service import resolve_owner
+    from services.config_resolver import value_of
+    from services.payment_code_service import teks_rekening
+    nama = cara.get("name") or cara.get("code") or ""
+    kode = cara.get("code") or ""
+    perlu = cara.get("needs_account") or ""
+    explicit = payload.get("allocations") or []
+    order_ids = await _rencana_pesanan(customer_id, entity_id, explicit, total_funds)
+    orders = await db.sales_orders.find({"id": {"$in": order_ids}},
+                                        {"_id": 0, "id": 1, "number": 1, "receiving_account_id": 1,
+                                         "receiving_account": 1}).to_list(len(order_ids) + 1) if order_ids else []
+    out: Dict[str, Any] = {"account_id": "", "account_snapshot": {}, "cash_type": "", "reference_no": "",
+                           "giro_due_date": "", "proof_url": str(payload.get("proof_url") or "").strip()[:500],
+                           "instruction_mismatch": False, "mismatch_note": "", "instruction_mismatch_orders": [],
+                           "pay_codes": [], "order_ids": order_ids}
+    if order_ids:
+        out["pay_codes"] = [c["code"] for c in await db.payment_codes.find(
+            {"order_id": {"$in": order_ids}, "status": {"$ne": "batal"}}, {"_id": 0, "code": 1}).to_list(200)
+            if c.get("code")]
+    if amount <= EPS:
+        return out   # deposit saja = tanpa kas baru, tanpa rekening (PK-20)
+    owner = resolve_owner(entity_id, DEFAULT_ENTITY_ID, what="Kas masuk kwitansi")
+    cash_type = "kas_kecil" if perlu == "kas" else "kas_besar"
+    dikirim = str(payload.get("account_id") or "").strip()
+    penerima = await bacs.daftar_penerima(owner, kode) if perlu in ("bank", "kas") else []
+    ids_penerima = {r["id"] for r in penerima}
+    if dikirim:
+        acc = await db.bank_accounts.find_one({"id": dikirim}, {"_id": 0, "id": 1, "entity_id": 1})
+        if acc and (acc.get("entity_id") or "") != owner:
+            raise HTTPException(status_code=400, detail=PESAN_REK_PT_LAIN)
+        pilih = dikirim
+    else:
+        tujuan = {o.get("receiving_account_id") for o in orders if o.get("receiving_account_id")}
+        pilih = ""
+        if len(tujuan) == 1 and next(iter(tujuan)) in ids_penerima:
+            pilih = next(iter(tujuan))   # rekening tujuan pesanan = rekening yang paling mungkin dipakai pelanggan
+        if not pilih:
+            pilih = next((r["id"] for r in penerima if r.get("is_default")), "")
+    rek = await cash_ledger.periksa_rekening(owner, pilih, cash_type)
+    if perlu in ("bank", "kas") and rek["account_id"] not in ids_penerima:
+        raise HTTPException(status_code=400, detail=PESAN_REK_TIDAK_MENERIMA.format(nama=nama))
+    out.update(account_id=rek["account_id"], account_snapshot=potret_rekening(rek["account"]),
+               cash_type=rek["cash_type"])
+    # Nomor referensi & jatuh tempo giro: wajib bila cara bayar memintanya DAN pengaturan PT menyala.
+    ref = str(payload.get("reference_no") or "").strip()[:80]
+    giro = str(payload.get("giro_due_date") or "").strip()
+    wajib_ref = bool(await value_of(KEY_WAJIB_REF, {"entity_id": owner}))
+    if cara.get("needs_reference") and wajib_ref and not ref:
+        raise HTTPException(status_code=400, detail=PESAN_REF_WAJIB.format(nama=nama))
+    if cara.get("needs_due_date"):
+        if giro:
+            from services.bank_statement_parser import strict_iso_date
+            if not strict_iso_date(giro) or len(giro) != 10:
+                raise HTTPException(status_code=400, detail=PESAN_GIRO_FORMAT)
+        elif wajib_ref:
+            raise HTTPException(status_code=400, detail=PESAN_GIRO_WAJIB.format(nama=nama))
+    else:
+        giro = ""
+    out.update(reference_no=ref, giro_due_date=giro)
+    # Tidak sesuai instruksi: rekening penerima ≠ rekening tujuan salah satu pesanan yang dialokasi.
+    beda = [{"order_id": o["id"], "order_number": o.get("number") or o["id"],
+             "account_id": o.get("receiving_account_id") or "",
+             "account_text": teks_rekening(o.get("receiving_account") or {})}
+            for o in orders if o.get("receiving_account_id") and o["receiving_account_id"] != rek["account_id"]]
+    if beda:
+        catatan = str(payload.get("mismatch_note") or "").strip()
+        if len(catatan) < CATATAN_MIN:
+            raise HTTPException(status_code=400, detail=PESAN_TIDAK_SESUAI)
+        out.update(instruction_mismatch=True, mismatch_note=catatan[:500], instruction_mismatch_orders=beda)
+    return out
+
 
 def _payment_status(grand_total: float, paid: float) -> str:
     if paid >= grand_total - EPS:
@@ -69,12 +203,27 @@ async def _cash_routing(method: str, entity_id: str = "") -> tuple:
     return "kas_besar", False
 
 
-async def _post_cash_in(receipt: Dict[str, Any], actor: Dict[str, Any]) -> Optional[str]:
+def keterangan_kas(receipt: Dict[str, Any], pay_codes: Optional[List[str]] = None) -> str:
+    """PM-T3 — keterangan kas kwitansi: nomor, pelanggan, nomor referensi, dan kode bayar pesanan yang dialokasi
+    (teks yang dibaca skor referensi rekonsiliasi bank)."""
+    teks = f"Penerimaan {receipt.get('number')} — {receipt.get('customer_name', '')}"
+    if receipt.get("reference_no"):
+        teks += f" · Ref {receipt['reference_no']}"
+    kode = [k for k in (pay_codes or []) if k]
+    if kode:
+        teks += " · Kode " + ", ".join(dict.fromkeys(kode))
+    return teks
+
+
+async def _post_cash_in(receipt: Dict[str, Any], actor: Dict[str, Any],
+                        pay_codes: Optional[List[str]] = None) -> Optional[str]:
     """Kas masuk penerimaan AR lewat pembuat kas satu pintu (PK-20). Mengembalikan id cash_transaction.
 
     Rekening = `receipt.account_id` (sudah diperiksa `create_receipt` sebelum tulisan; kosong = rekening tunggal PT untuk
     jenis kas cara bayarnya). FN-10 — kegagalan jurnal TIDAK disembunyikan: kas (`create_cash`) & kwitansi ditandai
-    `gl_status=failed` (terlihat, bisa diulang lewat POST /ar-receipts/{id}/repost atau panel Posting Gagal)."""
+    `gl_status=failed` (terlihat, bisa diulang lewat POST /ar-receipts/{id}/repost atau panel Posting Gagal).
+    PM-T3 — kas membawa `counterparty_name` (nama pelanggan) dan `reference_no`; keterangannya memuat nomor referensi
+    dan kode bayar pesanan yang dialokasi (`keterangan_kas`)."""
     amt = round(float(receipt.get("amount", 0) or 0), 2)
     if amt <= EPS:
         return None
@@ -89,8 +238,10 @@ async def _post_cash_in(receipt: Dict[str, Any], actor: Dict[str, Any]) -> Optio
             entity_id=entity_id, direction="in", amount=amt, ref_type="ar_receipt", ref_id=receipt["id"],
             account_id=receipt.get("account_id") or "", cash_type=cash_type,
             txn_date=receipt.get("receipt_date") or now_iso(), category="penagihan",
-            description=f"Penerimaan {receipt.get('number')} — {receipt.get('customer_name', '')}",
-            actor=actor.get("name", "system"))
+            description=keterangan_kas(receipt, pay_codes),
+            actor=actor.get("name", "system"),
+            extra={"counterparty_name": receipt.get("customer_name", ""),
+                   "reference_no": receipt.get("reference_no", "")})
         # KN-G3: jurnal kas diposting SEKARANG (bukan menunggu backfill) supaya saldo Piutang & Uang Muka Pelanggan
         # langsung benar — penting sejak keputusan selisih pembayaran (FASE G-3) bisa menjurnal di detik yang sama.
         await db.ar_receipts.update_one({"id": receipt["id"]}, {"$set": {"gl_status": "posted", "gl_error": ""}})
@@ -230,22 +381,24 @@ async def create_receipt(payload: Dict[str, Any], actor: Dict[str, Any]) -> Dict
                  or active_entity_or(DEFAULT_ENTITY_ID))
     # PM-T1 — cara bayar dari daftar induk (kata lama → kode kanonik; tak dikenal / nonaktif di PT ini → 400)
     # SEBELUM apa pun ditulis.
-    from services.payment_method_service import kode_400
-    method = await kode_400(entity_id, payload.get("method") or "transfer", arah="masuk")
+    from services import payment_method_service as _pms
+    try:
+        cara = await _pms.wajib(entity_id, payload.get("method") or "transfer", arah="masuk")
+    except _pms.CaraBayarError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    method = cara["code"]
     # FN-10 — periode tertutup ditolak SEBELUM kwitansi/alokasi/deposit dimutasi.
     from services import gl_service as _glp
     try:
         await _glp.preflight_posting(entity_id, receipt_date)
     except _glp.ClosedPeriodError as exc:
         raise HTTPException(status_code=409, detail=str(exc))
-    # PK-20 — rekening penerima diperiksa SEBELUM kwitansi/alokasi/deposit (kas baru saja; deposit bukan kas baru).
-    if amount > EPS:
-        from services import cash_ledger
-        from services.cash_entity_service import resolve_owner
-        cash_type = (await _cash_routing(method, entity_id or ""))[0]
-        payload["account_id"] = (await cash_ledger.periksa_rekening(
-            resolve_owner(entity_id, DEFAULT_ENTITY_ID, what="Kas masuk kwitansi"), payload.get("account_id") or "",
-            cash_type))["account_id"]
+    # PK-20 + PM-T3 — rekening penerima (milik PT, aktif, penerimaan pelanggan, melayani cara bayar), nomor referensi,
+    # jatuh tempo giro, dan tanda "tidak sesuai instruksi" diperiksa SEBELUM kwitansi/alokasi/deposit.
+    uang = await periksa_uang_masuk(payload, entity_id=entity_id, cara=cara, amount=amount,
+                                    customer_id=customer["id"], total_funds=total_funds)
+    payload["account_id"] = uang["account_id"]
+    payload["_uang_masuk"] = uang
     # PK-19 (SL-08, FX-05) — SEMUA target eksplisit diperiksa satu pemeriksa (pelanggan, PT, status pesanan, sisa
     # tagihan) SEBELUM deposit direservasi; tolak di sini = tidak ada kwitansi, kas, deposit, maupun baris.
     explicit = payload.get("allocations") or []
@@ -358,6 +511,7 @@ async def _create_receipt_after_reserve(payload, actor, customer, amount, use_de
 
     applied_total = round(sum(a["applied"] for a in allocations), 2)
     unapplied = round(total_funds - applied_total, 2)
+    uang = payload.get("_uang_masuk") or {}
     # Perubahan deposit: deposit terpakai berkurang, sisa tak teralokasi masuk deposit (P2-5).
     deposit_delta = round(unapplied - use_deposit_amount, 2)
 
@@ -377,6 +531,17 @@ async def _create_receipt_after_reserve(payload, actor, customer, amount, use_de
         "deposit_delta": deposit_delta,
         "allocations": allocations,
         "account_id": payload.get("account_id") or "",   # PK-20 — rekening penerima kas (kosong = tanpa kas baru)
+        # PM-T3 — cara bayar kanonik (`method` tetap ditulis sama untuk pembaca lama), potret rekening, referensi,
+        # tanda tidak sesuai instruksi, dan status verifikasi bank (diisi rekonsiliasi).
+        "payment_method_code": method,
+        "account_snapshot": uang.get("account_snapshot") or {},
+        "reference_no": uang.get("reference_no", ""),
+        "giro_due_date": uang.get("giro_due_date", ""),
+        "proof_url": uang.get("proof_url", ""),
+        "instruction_mismatch": bool(uang.get("instruction_mismatch")),
+        "mismatch_note": uang.get("mismatch_note", ""),
+        "instruction_mismatch_orders": uang.get("instruction_mismatch_orders") or [],
+        **VERIFIKASI_AWAL,
         "notes": payload.get("notes", ""),
         "status": "posted",
         "effects_done": False,   # G3 V3-AR-01 — True hanya setelah kas/GL/deposit tuntas
@@ -399,7 +564,7 @@ async def _create_receipt_after_reserve(payload, actor, customer, amount, use_de
             # FASE G-2 — jadwal pembayaran (rencana) sudah dihitung ulang oleh `allocate` (PK-19).
 
     # P0-1 — posting kas masuk (hanya untuk kas baru; deposit bukan kas baru).
-    cash_txn_id = await _post_cash_in(doc, actor)
+    cash_txn_id = await _post_cash_in(doc, actor, uang.get("pay_codes"))
     if cash_txn_id:
         doc["cash_txn_id"] = cash_txn_id
         await db.ar_receipts.update_one({"id": receipt_id}, {"$set": {"cash_txn_id": cash_txn_id}})
@@ -472,6 +637,12 @@ async def void_receipt(receipt_id: str, actor: Dict[str, Any], reason: str = "")
         raise HTTPException(status_code=404, detail="Receipt tidak ditemukan")
     if r.get("status") == "void":
         raise HTTPException(status_code=409, detail="Receipt sudah di-void")
+    # PM-T3 — kwitansi yang kasnya sudah dicocokkan dengan mutasi bank (penuh = terverifikasi, atau sebagian) tidak
+    # dibatalkan diam-diam: pencocokannya dilepas dulu di Rekonsiliasi Bank (baris mutasi tidak menunjuk kas batal).
+    if r.get("bank_verified") or await db.cash_transactions.find_one(
+            {"ref_type": "ar_receipt", "ref_id": receipt_id, "status": {"$ne": "void"},
+             "reconciled_amount": {"$gt": EPS}}, {"_id": 0, "id": 1}):
+        raise HTTPException(status_code=409, detail=PESAN_BATAL_TERVERIFIKASI)
     # PERIKSA — periode buku hari ini (tanggal jurnal pembalik) sebelum apa pun dibalik (`02` §1 P2).
     from services.book_date import periksa_periode_dokumen_409
     await periksa_periode_dokumen_409(r.get("entity_id") or "", None, jenis="pembatalan kwitansi")
@@ -573,26 +744,66 @@ RECEIPT_UNPAGED_LIMIT = 2000
 RECEIPT_SEARCH_FIELDS = ("number", "customer_name")
 
 
-def _receipt_query(customer_id: Optional[str], scope: Optional[Dict[str, Any]], q: str = "") -> Dict[str, Any]:
+def _receipt_query(customer_id: Optional[str], scope: Optional[Dict[str, Any]], q: str = "",
+                   extra: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
     from pagination import build_search, merge_query
     query: Dict[str, Any] = dict(scope or {})
     if customer_id:
         query["customer_id"] = customer_id
-    return merge_query(query, build_search(q, RECEIPT_SEARCH_FIELDS))
+    query = merge_query(query, build_search(q, RECEIPT_SEARCH_FIELDS))
+    return merge_query(query, extra) if extra else query
+
+
+async def saringan_verifikasi(*, bank_verified: Optional[str] = None, older_than_days: Optional[str] = None,
+                              method: Optional[str] = None, entity_id: str = "") -> Dict[str, Any]:
+    """PM-T3 — saringan daftar kwitansi `?bank_verified=&older_than_days=&method=` → kueri tambahan.
+
+    * `bank_verified=false` = daftar "Belum terverifikasi": kwitansi tidak batal, ber-uang baru, belum cocok mutasi
+      bank — kwitansi tunai dan titipan TIDAK PERNAH masuk (tidak ada mutasi bank untuk dicocokkan); `true` = sudah.
+    * `older_than_days` dikirim tanpa nilai → batas `payment.hari_wajar_verifikasi_bank` PT; angka → angka itu.
+      Kwitansi bertanggal lebih lama dari batas saja yang tampil.
+    * `method` = cara bayar (kode/alias; kata lama ikut ketemu)."""
+    from datetime import datetime, timedelta, timezone
+    from services import payment_method_service as _pms
+    syarat: List[Dict[str, Any]] = []
+    bv = str(bank_verified or "").strip().lower()
+    if bv in ("true", "1", "ya"):
+        syarat.append({"bank_verified": True})
+    elif bv in ("false", "0", "tidak"):
+        syarat += [{"bank_verified": {"$ne": True}}, {"status": {"$ne": "void"}}, {"amount": {"$gt": EPS}},
+                   {"method": {"$nin": await _pms.kata_bukan_bank()}}]
+    if older_than_days is not None:
+        teks = str(older_than_days).strip()
+        if teks:
+            try:
+                hari = int(teks)
+            except ValueError:
+                raise HTTPException(status_code=400, detail="Umur kwitansi harus berupa angka hari.")
+        else:
+            from services.config_resolver import value_of
+            hari = int(await value_of(KEY_HARI_WAJAR, {"entity_id": entity_id or ""}) or 0)
+        batas = (datetime.now(timezone.utc) - timedelta(days=max(hari, 0))).isoformat()
+        syarat.append({"receipt_date": {"$lt": batas}})
+    if method and str(method).strip():
+        syarat.append({"method": {"$in": await _pms.kata_untuk(method)}})
+    if not syarat:
+        return {}
+    return syarat[0] if len(syarat) == 1 else {"$and": syarat}
 
 
 async def list_receipts(customer_id: Optional[str] = None,
-                        scope: Optional[Dict[str, Any]] = None) -> List[Dict[str, Any]]:
-    rows = await db.ar_receipts.find(_receipt_query(customer_id, scope), {"_id": 0}) \
+                        scope: Optional[Dict[str, Any]] = None,
+                        extra: Optional[Dict[str, Any]] = None) -> List[Dict[str, Any]]:
+    rows = await db.ar_receipts.find(_receipt_query(customer_id, scope, extra=extra), {"_id": 0}) \
         .sort(RECEIPT_SORT).to_list(RECEIPT_UNPAGED_LIMIT)
     return [safe_doc(r) for r in rows]
 
 
 async def list_receipts_page(customer_id: Optional[str], scope: Optional[Dict[str, Any]], *, page: int,
-                             page_size: int, q: str = "") -> Dict[str, Any]:
+                             page_size: int, q: str = "", extra: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
     """PK-42 (UX-12) — satu halaman riwayat kwitansi + jumlah total (kontrak `pagination.envelope`)."""
     from pagination import envelope
-    query = _receipt_query(customer_id, scope, q)
+    query = _receipt_query(customer_id, scope, q, extra)
     total = await db.ar_receipts.count_documents(query)
     rows = await db.ar_receipts.find(query, {"_id": 0}).sort(RECEIPT_SORT) \
         .skip((page - 1) * page_size).limit(page_size).to_list(page_size)

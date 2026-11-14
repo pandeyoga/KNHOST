@@ -412,6 +412,7 @@ async def import_lines(bank_account_id: str, entity_id: str, lines: List[Dict[st
         if await _dup_exists(bank_account_id, doc):
             skipped += 1
             continue
+        doc["pay_code_hits"] = await pay_code_hits(doc)   # PM-T3 — kode bayar di berita/referensi transfer
         await db.bank_statement_lines.insert_one(doc)
         imported += 1
     return {"import_batch": batch, "imported": imported, "skipped": skipped, "line_errors": errors}
@@ -432,6 +433,50 @@ async def import_raw(bank_account_id: str, raw: str, format_id: str = "",
                 "detected": detected, "parsed": len(rows),
                 "errors": errors[:20], "error_count": len(errors)})
     return res
+
+
+# ── PM-T3 — kode bayar (PM-T2) di berita transfer ────────────────────────────────────────────────────────────────
+async def pay_code_hits(line: Dict[str, Any]) -> List[Dict[str, Any]]:
+    """Kode bayar terdaftar yang muncul di berita + referensi satu mutasi → `[{code, order_id, order_number,
+    customer_id}]`. Hanya kode milik PT mutasi itu (`02` N2: id yang ditemukan dibuktikan milik PT yang sama)."""
+    from services import payment_code_service as pcs
+    teks = f"{line.get('description') or ''} {line.get('ref') or ''}"
+    ent = line.get("entity_id") or ""
+    out = []
+    for c in await pcs.find_in_text(teks):
+        if ent and ent != GROUP_ENTITY and (c.get("entity_id") or "") != ent:
+            continue
+        out.append({"code": c.get("code", ""), "order_id": c.get("order_id", ""),
+                    "order_number": c.get("order_number", ""), "customer_id": c.get("customer_id", "")})
+    return out
+
+
+async def _isi_hits(lines: List[Dict[str, Any]]) -> None:
+    """Mutasi yang diimpor sebelum PM-T3 belum menyimpan `pay_code_hits`: dihitung di memori (tidak ditulis)."""
+    for ln in lines:
+        if "pay_code_hits" not in ln:
+            ln["pay_code_hits"] = await pay_code_hits(ln)
+
+
+async def _tandai_pesanan_kwitansi(txns: List[Dict[str, Any]]) -> None:
+    """PM-T3 — kas kwitansi diberi `_kwitansi_pesanan` = {id pesanan: nomor} dari alokasi kwitansinya (bahan langkah
+    kode bayar `score_pair`; field berawalan `_` tidak pernah dikirim ke layar)."""
+    ids = [t.get("ref_id") for t in txns if t.get("ref_type") == "ar_receipt" and t.get("ref_id")]
+    peta: Dict[str, Dict[str, str]] = {}
+    if ids:
+        async for rc in db.ar_receipts.find({"id": {"$in": ids}}, {"_id": 0, "id": 1, "allocations": 1}):
+            peta[rc["id"]] = {a.get("order_id"): a.get("order_number") or a.get("order_id")
+                             for a in rc.get("allocations") or [] if a.get("order_id")}
+    for t in txns:
+        t["_kwitansi_pesanan"] = peta.get(t.get("ref_id"), {}) if t.get("ref_type") == "ar_receipt" else {}
+
+
+def _kode_cocok(line: Dict[str, Any], txn: Dict[str, Any]) -> Optional[Dict[str, Any]]:
+    pesanan = txn.get("_kwitansi_pesanan") or {}
+    for h in line.get("pay_code_hits") or []:
+        if h.get("order_id") in pesanan:
+            return {**h, "order_number": h.get("order_number") or pesanan[h["order_id"]]}
+    return None
 
 
 # ═════════════════════════════════════════════════════════════════════════════
@@ -500,6 +545,12 @@ def score_pair(line: Dict[str, Any], txn: Dict[str, Any], cfg: Dict[str, Any],
     l_amt, t_amt = _round(line.get("amount")), _round(txn.get("amount"))
     diff = round(abs(l_amt - t_amt), 2)
     tol = max(cfg["amount_tol"], 0.0)
+    # PM-T3 — langkah paling awal: kode bayar di berita transfer menunjuk pesanan yang dialokasi kwitansi di balik kas
+    # ini. Nominal sama (dalam toleransi) → skor minimal ambang otomatis; nominal berbeda → tetap layak sebagai USULAN
+    # (skor minimal ambang usulan) dan tidak pernah tertaut otomatis (`no_auto`). Jendela tanggal tidak menggugurkan.
+    kode = _kode_cocok(line, txn)
+    if kode:
+        return _skor_kode(line, txn, cfg, rule, kode, diff, tol)
     if diff <= tol + 0.001:
         pts = cfg["w_amount"]
         explain.append({"label": "Nominal sama" + (f" (selisih {rupiah(diff)} ≤ toleransi)" if diff else ""),
@@ -541,6 +592,40 @@ def score_pair(line: Dict[str, Any], txn: Dict[str, Any], cfg: Dict[str, Any],
             "amount_diff": diff, "day_diff": day_diff, "reason": ""}
 
 
+def _skor_kode(line: Dict[str, Any], txn: Dict[str, Any], cfg: Dict[str, Any], rule: Optional[Dict[str, Any]],
+               kode: Dict[str, Any], diff: float, tol: float) -> Dict[str, Any]:
+    """PM-T3 — skor pasangan yang kode bayarnya cocok (lihat `score_pair`)."""
+    sama = diff <= tol + 0.001
+    explain: List[Dict[str, Any]] = []
+    total = 0.0
+    if sama:
+        explain.append({"label": "Nominal sama" + (f" (selisih {rupiah(diff)} ≤ toleransi)" if diff else ""),
+                        "points": cfg["w_amount"]})
+        total += cfg["w_amount"]
+    ld, td = _d(line.get("stmt_date")), _d(txn.get("txn_date") or txn.get("created_at"))
+    day_diff = abs((td - ld).days) if (td and ld) else 999
+    window = max(cfg["window_days"], 0)
+    if cfg["w_date"] > 0 and day_diff <= window:
+        pts_d = cfg["w_date"] if day_diff == 0 else round(cfg["w_date"] * (1 - (day_diff / (window + 1))), 2)
+        explain.append({"label": "Tanggal sama" if day_diff == 0 else f"Tanggal beda {day_diff} hari",
+                        "points": pts_d})
+        total += pts_d
+    for pts, why in (_ref_score(line, txn, cfg["w_ref"]), _name_score(line, txn, cfg["w_name"])):
+        if pts:
+            explain.append({"label": why, "points": pts})
+            total += pts
+    if rule and cfg["rule_bonus"] > 0:
+        explain.append({"label": f"Aturan tersimpan: {rule.get('sample_desc', '')[:40]}", "points": cfg["rule_bonus"]})
+        total += cfg["rule_bonus"]
+    target = cfg["auto_min"] if sama else cfg["suggest_min"]
+    tambah = round(max(0.0, target - total), 2)
+    label = (f"Kode bayar {kode['code']} cocok dengan pesanan {kode.get('order_number') or ''}".strip() if sama
+             else f"Kode bayar cocok, nominal berbeda {rupiah(diff)}")
+    explain.insert(0, {"label": label, "points": tambah})
+    return {"score": round(total + tambah, 2), "explain": explain, "eligible": True, "amount_diff": diff,
+            "day_diff": day_diff, "reason": "", "pay_code": kode["code"], "no_auto": not sama}
+
+
 # ═════════════════════════════════════════════════════════════════════════════
 #  KANDIDAT & PENCOCOKAN
 # ═════════════════════════════════════════════════════════════════════════════
@@ -577,6 +662,7 @@ async def _candidate_txns(bank_account_id: str, entity_ids: Optional[List[str]],
         if txn_reconciled(t) or (not include_partial and _round(t.get("reconciled_amount")) > EPS):
             continue
         out.append(t)
+    await _tandai_pesanan_kwitansi(out)   # PM-T3 — bahan langkah kode bayar
     return out
 
 
@@ -607,6 +693,7 @@ async def candidates(line_id: str, entity_ids: Optional[List[str]] = None,
                      limit: int = 8) -> Dict[str, Any]:
     """Kandidat berperingkat + penjelasan skor untuk satu baris (dipakai modal UI)."""
     ln = await _line(line_id, entity_ids)
+    await _isi_hits([ln])   # PM-T3
     cfg = await load_cfg(ln.get("entity_id", ""))
     rules = await _active_rules(ln["bank_account_id"], entity_ids)
     rule = _rule_for(ln, rules)
@@ -684,6 +771,7 @@ async def _link(line: Dict[str, Any], allocations: List[Dict[str, Any]], actor: 
         "matched_txn_ids": txn_ids, "allocations": allocations,
         "match_type": match_type, "matched_at": now, "matched_by": actor, **kartu,
         "updated_at": now}, "$unset": {"match_lock": "", "match_lock_at": "", **({} if kartu else {"ai_card_id": ""})}})
+    await sinkron_verifikasi_kwitansi(txn_ids, actor, now)   # PM-T3
 
 
 async def _unlink(line: Dict[str, Any], op: str = "", actor: str = "") -> None:
@@ -726,6 +814,45 @@ async def _unlink(line: Dict[str, Any], op: str = "", actor: str = "") -> None:
         "$unset": {"match_lock": "", "match_lock_at": ""}})
     if res.modified_count != 1:
         logger.warning("[PK-21 _unlink] kunci %s atas %s sudah diambil alih proses lain", op, line["id"])
+    await sinkron_verifikasi_kwitansi([a.get("txn_id") for a in (claimed.get("allocations") or [])], actor, now)
+
+
+async def sinkron_verifikasi_kwitansi(txn_ids: List[str], actor: str, now: str = "") -> None:
+    """PM-T3 — status "terverifikasi bank" kwitansi mengikuti kasnya: kas kwitansi cocok PENUH dengan mutasi
+    (`txn_reconciled`) → `bank_verified: true` + waktu, pelaku, id mutasi (sekali — syarat `bank_verified != true`);
+    tidak penuh lagi (dilepas) → `false`. Dipanggil sesudah `_link`/`_unlink` menulis angka kas."""
+    ids = [t for t in dict.fromkeys(txn_ids or []) if t]
+    if not ids:
+        return
+    now = now or now_iso()
+    kwitansi: List[str] = []
+    async for t in db.cash_transactions.find({"id": {"$in": ids}, "ref_type": "ar_receipt"},
+                                             {"_id": 0, "id": 1, "ref_id": 1, "amount": 1, "status": 1,
+                                              "reconciled_amount": 1, "matched_line_ids": 1}):
+        kwitansi.append(t.get("ref_id"))
+        lines = list(t.get("matched_line_ids") or [])
+        if t.get("status") != "void" and txn_reconciled(t):
+            await db.ar_receipts.update_one(
+                {"id": t.get("ref_id"), "bank_verified": {"$ne": True}},
+                {"$set": {"bank_verified": True, "bank_verified_at": now, "bank_verified_by": actor or "system",
+                          "bank_line_ids": lines, "updated_at": now}})
+        else:
+            await db.ar_receipts.update_one(
+                {"id": t.get("ref_id"), "bank_verified": True},
+                {"$set": {"bank_verified": False, "bank_verified_at": "", "bank_verified_by": "",
+                          "bank_line_ids": lines, "updated_at": now}})
+    try:   # CR-T2 — saldo pelanggan (giro belum cair = kwitansi giro belum terverifikasi); belum ada di HEAD
+        from services import customer_balance_service as _cbs   # type: ignore[attr-defined]
+    except ImportError:
+        return
+    refresh = getattr(_cbs, "refresh", None)
+    if refresh and kwitansi:
+        for rc in await db.ar_receipts.find({"id": {"$in": kwitansi}}, {"_id": 0, "customer_id": 1}) \
+                .to_list(len(kwitansi) + 1):
+            try:
+                await refresh(rc.get("customer_id"))
+            except Exception as exc:  # noqa: BLE001 — saldo turunan; dibangun ulang pembangunnya
+                logger.warning("[PM-T3] refresh saldo pelanggan %s gagal: %s", rc.get("customer_id"), exc)
 
 
 async def rebuild_reconciled(txn_id: str) -> Dict[str, Any]:
@@ -779,6 +906,7 @@ async def auto_match(bank_account_id: str, entity_ids: Optional[List[str]] = Non
     lines = await db.bank_statement_lines.find(
         {"bank_account_id": bank_account_id, "status": "unmatched", **_scope_q(entity_ids)},
         {"_id": 0}).to_list(20000)
+    await _isi_hits(lines)   # PM-T3 — mutasi lama tanpa `pay_code_hits` dihitung di memori
     txns = await _candidate_txns(bank_account_id, entity_ids)
     rules = await _active_rules(bank_account_id, entity_ids)
     by_id = {t["id"]: t for t in txns}
@@ -794,13 +922,13 @@ async def auto_match(bank_account_id: str, entity_ids: Optional[List[str]] = Non
                 continue
             s = score_pair(ln, t, cfg, rule)
             if s["eligible"]:
-                scored.append((s["score"], s["explain"], t))
+                scored.append((s["score"], s["explain"], t, bool(s.get("no_auto"))))
         scored.sort(key=lambda r: (-r[0], r[2].get("txn_date") or ""))
         if not scored:
             await db.bank_statement_lines.update_one({"id": ln["id"]}, {"$set": {
                 "suggestions": [], "score": 0, "score_explain": [], "updated_at": now_iso()}})
             continue
-        top_score, top_explain, top_txn = scored[0]
+        top_score, top_explain, top_txn, top_no_auto = scored[0]
         amt = _round(ln.get("amount"))
         top_avail = _round(_round(top_txn.get("amount"))
                            - _round(top_txn.get("reconciled_amount"))
@@ -810,7 +938,8 @@ async def auto_match(bank_account_id: str, entity_ids: Optional[List[str]] = Non
         # INV-BNK-01 memerah tanpa ada manusia yang menyentuh apa pun. Sekarang pita otomatis
         # hanya untuk pasangan yang menutup SELURUH nominal mutasi; yang tidak cukup turun
         # menjadi USULAN supaya manusia memilih jalur pecah (1:N) / gabung (N:1).
-        if top_score >= cfg["auto_min"] and top_avail + EPS >= amt:
+        # PM-T3 — pasangan kode bayar bernominal berbeda (`no_auto`) tidak pernah tertaut otomatis.
+        if top_score >= cfg["auto_min"] and top_avail + EPS >= amt and not top_no_auto:
             await db.bank_statement_lines.update_one({"id": ln["id"]}, {"$set": {
                 "score": top_score, "score_explain": top_explain, "suggestions": []}})
             fresh = await db.bank_statement_lines.find_one({"id": ln["id"]}, {"_id": 0})
@@ -818,7 +947,7 @@ async def auto_match(bank_account_id: str, entity_ids: Optional[List[str]] = Non
             used[top_txn["id"]] = used.get(top_txn["id"], 0.0) + amt
             matched += 1
         elif top_score >= cfg["suggest_min"]:
-            sug = [{**_txn_brief(t), "score": sc, "explain": ex} for sc, ex, t in scored[:3]]
+            sug = [{**_txn_brief(t), "score": sc, "explain": ex} for sc, ex, t, _na in scored[:3]]
             await db.bank_statement_lines.update_one({"id": ln["id"]}, {"$set": {
                 "suggestions": sug, "score": top_score, "score_explain": top_explain,
                 "updated_at": now_iso()}})
@@ -1565,6 +1694,7 @@ async def list_lines(bank_account_id: str, entity_ids: Optional[List[str]] = Non
             rng["$lte"] = end[:10]
         q["stmt_date"] = rng
     lines = await db.bank_statement_lines.find(q, {"_id": 0}).sort("stmt_date", -1).to_list(20000)
+    await _isi_hits(lines)   # PM-T3 — tiap mutasi memuat `pay_code_hits`
     tids = [a["txn_id"] for l in lines for a in (l.get("allocations") or [])]
     tmap: Dict[str, Dict[str, Any]] = {}
     if tids:

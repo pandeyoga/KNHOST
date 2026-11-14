@@ -468,12 +468,26 @@ async def resolve_ar_receipt(doc, db):
     allocs = doc.get("allocations", []) or []
     items = [{"no": i, "inv": a.get("invoice_number", a.get("order_number", a.get("target_id", "-"))),
               "amount": fmt_rp(a.get("amount", a.get("applied", 0)))} for i, a in enumerate(allocs, 1)]
+    if doc.get("payment_method_code"):
+        # PM-T3 — kwitansi ber-rekening: cara bayar (nama dari daftar induk), rekening penerima (potret saat kwitansi
+        # dibuat), nomor referensi. Kwitansi lama (tanpa field ini) dicetak seperti dulu, supaya isi yang sudah
+        # ditandatangani elektronik tidak berubah.
+        from services import payment_method_service as _pms
+        from services.ar_receipt_service import teks_potret
+        cara = [{"label": "Cara bayar", "value": await _pms.nama(doc.get("entity_id") or "", doc["payment_method_code"])}]
+        if doc.get("account_id"):
+            cara.append({"label": "Rekening", "value": teks_potret(doc.get("account_snapshot")) or "-"})
+        cara.append({"label": "No. referensi", "value": doc.get("reference_no") or "-"})
+        if doc.get("giro_due_date"):
+            cara.append({"label": "Jatuh tempo giro", "value": fmt_date(doc["giro_due_date"])})
+    else:
+        cara = [{"label": "Metode", "value": doc.get("method", "-")}]
     return {
         "title": "Kwitansi / Official Receipt", "number": doc.get("number"),
         "date": fmt_date(doc.get("receipt_date") or doc.get("created_at")), "status": doc.get("status"),
         "party_to": {"title": "Telah diterima dari", "name": doc.get("customer_name")},
         "meta": [
-            {"label": "Metode", "value": doc.get("method", "-")},
+            *cara,
             {"label": "Jumlah Diterima", "value": fmt_rp(doc.get("amount"))},
             {"label": "Dialokasikan", "value": fmt_rp(doc.get("applied_total"))},
             {"label": "Sisa/Deposit", "value": fmt_rp(doc.get("unapplied_amount"))},

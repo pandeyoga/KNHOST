@@ -98,6 +98,43 @@ E("payment.kode_bayar_awalan", group="uang-masuk", section="syarat-bayar", type=
   consumers=("services/payment_code_service.py:ensure_for_order", "services/payment_code_service.py:ensure_for_line"),
   risk="low", related=("payment.wajib_cara_bayar_di_pesanan",))
 
+# ── PM-T3 — kwitansi ber-rekening & ber-referensi; status "terverifikasi bank" ────────────────────────────────────
+# Diubah pemegang izin kelola rekening (`cash.configure`), sama dengan kunci PM-T2. Label dipendekkan dari spesifikasi
+# (batas 45 huruf INV-CFG-TXT) — usulan koreksi teks di laporan unit.
+E("payment.wajib_nomor_referensi", group="uang-masuk", section="kwitansi", type="bool", default=False,
+  scopes=G, permission=("cash", "configure"),
+  sensitif_baca=False,   # dibaca form kwitansi semua pemegang akses mencatat pembayaran (tanda wajib di isian)
+  label="Wajibkan nomor referensi di kwitansi",
+  help="Berlaku untuk cara bayar yang butuh referensi (transfer, giro, QRIS).",
+  impact="Menyala = kwitansi transfer tanpa nomor referensi ditolak.",
+  example="Menyala · transfer tanpa referensi → ditolak",
+  consumers=("services/ar_receipt_service.py:periksa_uang_masuk",), risk="medium",
+  related=("payment.hari_wajar_verifikasi_bank",))
+
+E("payment.hari_wajar_verifikasi_bank", group="bank", section="kwitansi-bank", type="int", default=3,
+  min=0, max=60, step=1, unit="hari", scopes=G, permission=("cash", "configure"),
+  sensitif_baca=False,   # dibaca layar Riwayat Pembayaran (judul saringan "Belum terverifikasi lebih dari N hari")
+  label="Kwitansi wajar belum terverifikasi (hari)",
+  help="Kwitansi non-tunai yang lebih lama dari ini tampil di daftar 'Belum terverifikasi'. 0 = semua kwitansi "
+       "non-tunai yang belum cocok dengan mutasi bank langsung tampil.",
+  impact="Hanya mengubah isi daftar; tidak menolak apa pun.",
+  example="3 · kwitansi berumur 5 hari → tampil",
+  consumers=("services/ar_receipt_service.py:saringan_verifikasi",), risk="low",
+  related=("payment.wajib_nomor_referensi",))
+
+E("finance.tahan_kirim_dasar_bayar", group="uang-masuk", section="syarat-bayar", type="enum", default="tercatat",
+  options=({"value": "tercatat", "label": "Tercatat (cukup ada kwitansi)"},
+           {"value": "terverifikasi", "label": "Terverifikasi bank (cocok dengan mutasi)"}),
+  scopes=G, permission=("cash", "configure"), requires_reason=True,
+  label="Bayar-dulu boleh dikirim setelah pembayaran",
+  help="'Tercatat' = cukup ada kwitansi. 'Terverifikasi' = kwitansi harus sudah cocok dengan mutasi bank. "
+       "Kwitansi tunai yang masuk rekening kas selalu dihitung.",
+  impact="'Terverifikasi' menahan barang sampai mutasi bank dicocokkan.",
+  example="Terverifikasi · CBD dibayar, mutasi belum cocok → tertahan",
+  # Dibaca `_basis` (dipanggil `evaluate` untuk tiap pesanan yang ditahan termin bayar-dulu).
+  consumers=("services/dispatch_payment_gate.py:_basis",), risk="high",
+  related=("finance.dispatch_payment_gate",))
+
 # ── Denda keterlambatan sebagai DOKUMEN ────────────────────────────────────
 E("payment.penalty_mode", group="pembayaran-pelanggan", section="denda", type="enum", default="draft",
   options=({"value": "off", "label": "Mati (tidak ada denda)"},

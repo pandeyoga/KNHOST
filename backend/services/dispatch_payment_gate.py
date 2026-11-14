@@ -20,6 +20,7 @@ from core_utils import now_iso, rupiah
 from db import db
 
 EPS = 1.0   # toleransi pembulatan Rupiah
+BASIS_KEY = "finance.tahan_kirim_dasar_bayar"   # PM-T3 — dasar "terbayar": tercatat | terverifikasi
 CLOSED = ("done", "cancelled", "rejected", "void", "expired")
 PROJ = {"_id": 0, "id": 1, "entity_id": 1, "status": 1, "is_sample": 1, "payment_term_code": 1, "payment_term": 1,
         "payment_term_name": 1, "grand_total": 1, "total_amount": 1, "paid_total": 1, "dispatch_payment_release": 1,
@@ -46,11 +47,61 @@ async def _mode(entity_id: str, cache: Dict) -> str:
     return cache[key]
 
 
+async def _basis(entity_id: str, cache: Dict) -> str:
+    """PM-T3 — `finance.tahan_kirim_dasar_bayar`: `tercatat` (semua pembayaran) | `terverifikasi` (kwitansi yang sudah
+    cocok dengan mutasi bank + kwitansi tunai)."""
+    key = ("basis", entity_id or "")
+    if key not in cache:
+        from services.config_resolver import value_of
+        try:
+            cache[key] = str(await value_of(BASIS_KEY, {"entity_id": entity_id or ""}) or "tercatat")
+        except Exception:   # noqa: BLE001 — registry belum termuat: perilaku lama
+            from config_registry import default_of
+            cache[key] = str(default_of(BASIS_KEY))
+    return cache[key]
+
+
+async def _verified_paid(order: Dict[str, Any], cache: Dict) -> float:
+    """PM-T3 — "terbayar" pada dasar `terverifikasi`: baris uang baru dari kwitansi (`kind` kas) hanya dihitung bila
+    kwitansinya `bank_verified` atau bercara bayar tunai (masuk rekening kas — tidak ada mutasi bank untuk dicocokkan).
+    Baris jenis lain (deposit, titipan bank, saldo kredit, nota kredit, hapus sisa, kasus) dihitung seperti biasa: bukan
+    uang baru kwitansi yang menunggu mutasi bank. Pembalik (nominal negatif) mengikuti kwitansi asalnya."""
+    from services.ar_allocation_service import payment_kind
+    from services.payment_method_service import is_cash
+    rows = order.get("payments")
+    if rows is None:
+        rows = ((await db.sales_orders.find_one({"id": order.get("id")}, {"_id": 0, "payments": 1})) or {}) \
+            .get("payments") or []
+    eid = order.get("entity_id") or ""
+    ids = sorted({r.get("receipt_id") for r in rows if payment_kind(r) == "kas" and r.get("receipt_id")})
+    belum = [i for i in ids if ("rc", i) not in cache]
+    if belum:
+        async for rc in db.ar_receipts.find({"id": {"$in": belum}},
+                                            {"_id": 0, "id": 1, "bank_verified": 1, "method": 1, "entity_id": 1}):
+            cache[("rc", rc["id"])] = bool(rc.get("bank_verified")) or await is_cash(
+                rc.get("entity_id") or eid, rc.get("method") or "")
+        for i in belum:
+            cache.setdefault(("rc", i), False)
+    total = 0.0
+    for r in rows:
+        if payment_kind(r) == "kas":
+            rid = r.get("receipt_id")
+            ok = cache.get(("rc", rid), False) if rid else await is_cash(eid, r.get("method") or "")
+            if not ok:
+                continue
+        total += float(r.get("amount", 0) or 0)
+    return round(total, 2)
+
+
 def _message(st: Dict[str, Any]) -> str:
-    return (f"Tertahan pembayaran: termin {st['term_name']} mewajibkan dibayar {rupiah(st['required'])} "
-            f"({st['dp_percent']:g}% dari {rupiah(st['grand_total'])}) sebelum kirim; baru dibayar "
-            f"{rupiah(st['paid'])} (kurang {rupiah(st['shortfall'])}). Catat pembayaran di Uang Masuk, atau minta "
-            "Finance/Manager memberi pengecualian berizin di detail SO.")
+    msg = (f"Tertahan pembayaran: termin {st['term_name']} mewajibkan dibayar {rupiah(st['required'])} "
+           f"({st['dp_percent']:g}% dari {rupiah(st['grand_total'])}) sebelum kirim; baru dibayar "
+           f"{rupiah(st['paid'])} (kurang {rupiah(st['shortfall'])}). ")
+    if st.get("basis") == "terverifikasi" and st.get("paid_recorded", 0) > st["paid"] + EPS:
+        msg += (f"Pembayaran tercatat {rupiah(st['paid_recorded'])} — sebagian belum cocok dengan mutasi bank; "
+                "cocokkan di Rekonsiliasi Bank. ")
+    return msg + ("Catat pembayaran di Uang Masuk, atau minta Finance/Manager memberi pengecualian berizin di "
+                  "detail SO.")
 
 
 async def evaluate(order: Dict[str, Any], cache: Optional[Dict] = None) -> Dict[str, Any]:
@@ -63,13 +114,15 @@ async def evaluate(order: Dict[str, Any], cache: Optional[Dict] = None) -> Dict[
     grand = round(float(order.get("grand_total") or order.get("total_amount") or 0), 2)
     if order.get("extra_billing_lines"):
         grand = round(_order_grand_total({**order, "grand_total": grand}), 2)
-    paid = round(float(order.get("paid_total") or 0), 2)
+    paid_recorded = round(float(order.get("paid_total") or 0), 2)
     required = round(grand * pct / 100.0, 2)
     mode = await _mode(order.get("entity_id") or "", cache)
     release = order.get("dispatch_payment_release") or None
     applies = pct > 0 and grand > 0 and mode != "off" and not order.get("is_sample")
+    basis = await _basis(order.get("entity_id") or "", cache) if applies else "tercatat"
+    paid = min(paid_recorded, await _verified_paid(order, cache)) if basis == "terverifikasi" else paid_recorded
     shortfall = round(max(0.0, required - paid), 2)
-    st = {"applies": applies, "mode": mode, "term_code": code,
+    st = {"applies": applies, "mode": mode, "basis": basis, "paid_recorded": paid_recorded, "term_code": code,
           "term_name": order.get("payment_term_name") or (term or {}).get("name") or code,
           "dp_percent": pct, "grand_total": grand, "required": required, "paid": paid, "shortfall": shortfall,
           "released": release, "blocked": bool(applies and shortfall > EPS and not release)}

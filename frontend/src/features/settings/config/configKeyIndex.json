@@ -42,6 +42,11 @@
      "advanced": false
     },
     {
+     "id": "kwitansi",
+     "label": "Kwitansi pelanggan",
+     "advanced": false
+    },
+    {
      "id": "denda",
      "label": "Denda telat bayar",
      "advanced": false
@@ -267,6 +272,11 @@
     {
      "id": "bank",
      "label": "Mencocokkan mutasi bank",
+     "advanced": false
+    },
+    {
+     "id": "kwitansi-bank",
+     "label": "Kwitansi menunggu cocok bank",
      "advanced": false
     },
     {
@@ -1376,6 +1386,18 @@
    "syarat-bayar"
   ],
   "payment.kode_bayar_awalan": [
+   "pembayaran-pelanggan",
+   "syarat-bayar"
+  ],
+  "payment.wajib_nomor_referensi": [
+   "pembayaran-pelanggan",
+   "kwitansi"
+  ],
+  "payment.hari_wajar_verifikasi_bank": [
+   "bank-kasus",
+   "kwitansi-bank"
+  ],
+  "finance.tahan_kirim_dasar_bayar": [
    "pembayaran-pelanggan",
    "syarat-bayar"
   ],

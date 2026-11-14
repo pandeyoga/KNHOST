@@ -34,8 +34,15 @@ class ReceiptPayload(BaseModel):
     entity_id: Optional[str] = None
     notes: str = ""
     use_deposit_amount: float = 0.0
-    # PK-20 — rekening penerima (`bank_accounts` milik PT kwitansi); kosong = rekening tunggal PT untuk jenis kasnya.
+    # PK-20 — rekening penerima (`bank_accounts` milik PT kwitansi); kosong = rekening tujuan pesanan / bawaan PT untuk
+    # cara bayar ini (PM-T3) / rekening tunggal PT untuk jenis kasnya.
     account_id: str = ""
+    # PM-T3 — nomor referensi bukti bayar (wajib bila cara bayar memintanya dan `payment.wajib_nomor_referensi`
+    # menyala), jatuh tempo giro (YYYY-MM-DD), tautan bukti, dan catatan bila rekening ≠ instruksi bayar pesanan.
+    reference_no: str = Field("", max_length=80)
+    giro_due_date: str = Field("", max_length=10)
+    proof_url: str = Field("", max_length=500)
+    mismatch_note: str = Field("", max_length=500)
     allocations: List[AllocationIn] = Field(default_factory=list)
     # FASE G-3 — keputusan selisih pembayaran yang dipilih petugas di dialog:
     #   {"kind": "outstanding|reschedule|writeoff|deposit|allocate|refund",
@@ -62,16 +69,24 @@ async def deposit_balance(request: Request, customer_id: str = Query(...)) -> Di
 
 @router.get("/ar-receipts")
 async def list_receipts(request: Request, customer_id: Optional[str] = Query(None),
-                        entity_id: Optional[str] = Query(None)) -> Any:
+                        entity_id: Optional[str] = Query(None), bank_verified: Optional[str] = Query(None),
+                        older_than_days: Optional[str] = Query(None), method: Optional[str] = Query(None)) -> Any:
     """Riwayat kwitansi, terbaru dulu. PK-42 (UX-12): `page`/`page_size` → `{items, total, page, page_size,
-    has_more}` (`q` = nomor / nama pelanggan); tanpa keduanya → larik seperti sebelumnya (batas 2.000 sesudah urut)."""
+    has_more}` (`q` = nomor / nama pelanggan); tanpa keduanya → larik seperti sebelumnya (batas 2.000 sesudah urut).
+    PM-T3 — saringan `bank_verified` (true/false), `older_than_days` (tanpa nilai = `payment.hari_wajar_verifikasi_bank`),
+    `method` (cara bayar)."""
     await require_permission(request, "ar_receipt", "view")
     ctx = await entity_ctx(request)
     scope = resolve_list_scope("ar_receipts", {}, ctx, entity_id)
+    pt = entity_id if entity_id and entity_id != "all" else (ctx.active_entity_id or "")
+    extra = await ar_receipt_service.saringan_verifikasi(
+        bank_verified=bank_verified, older_than_days=older_than_days, method=method,
+        entity_id="" if pt == "all" else pt)
     if is_paged(request):
         page, page_size, q, _sort = get_page_params(request)
-        return await ar_receipt_service.list_receipts_page(customer_id, scope, page=page, page_size=page_size, q=q)
-    return await ar_receipt_service.list_receipts(customer_id, scope=scope)
+        return await ar_receipt_service.list_receipts_page(customer_id, scope, page=page, page_size=page_size, q=q,
+                                                           extra=extra)
+    return await ar_receipt_service.list_receipts(customer_id, scope=scope, extra=extra)
 
 
 async def _perm_ar_receipt_create(request: Request) -> Dict[str, Any]:

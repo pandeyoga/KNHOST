@@ -177,6 +177,37 @@ async def nama(entity_id: str, value: str) -> str:
     return str(row.get("name") or kode)
 
 
+async def _semua_baris() -> List[Dict[str, Any]]:
+    """Benih + semua baris master (semua lapisan, termasuk nonaktif) — bahan saringan kata tersimpan."""
+    rows = await db[COLL].find({}, {"_id": 0, "code": 1, "aliases": 1, "needs_account": 1}).to_list(2000)
+    return list(BENIH) + rows
+
+
+async def kata_untuk(value: str) -> List[str]:
+    """PM-T3 — semua kata tersimpan (kode + alias, huruf kecil) untuk satu cara bayar; saringan daftar kwitansi lama
+    (`tunai` dan `cash` sama-sama ketemu). Kata tak dikenal → hanya kata itu."""
+    try:
+        kode = normalize(value)
+    except ValueError:
+        return [str(value or "").strip().lower()]
+    out = {kode}
+    for r in await _semua_baris():
+        if str(r.get("code") or "").strip().lower() == kode:
+            out |= {str(a or "").strip().lower() for a in r.get("aliases") or [] if str(a or "").strip()}
+    return sorted(out)
+
+
+async def kata_bukan_bank() -> List[str]:
+    """PM-T3 — kata tersimpan untuk cara bayar yang TIDAK lewat rekening bank (tunai, titipan): kwitansi seperti ini
+    tidak pernah menunggu dicocokkan dengan mutasi bank. Termasuk kata yang bukan cara bayar baris pesanan (`deposit`)."""
+    out = set()
+    for r in await _semua_baris():
+        if r.get("needs_account") != "bank":
+            out.add(str(r.get("code") or "").strip().lower())
+            out |= {str(a or "").strip().lower() for a in r.get("aliases") or [] if str(a or "").strip()}
+    return sorted(x for x in out if x)
+
+
 def untuk_layar(row: Dict[str, Any]) -> Dict[str, Any]:
     return {k: row.get(k) for k in KOLOM_LAYAR} | {"needs_reference": bool(row.get("needs_reference")),
                                                    "needs_due_date": bool(row.get("needs_due_date"))}

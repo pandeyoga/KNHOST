@@ -32,6 +32,10 @@ CRT1_PEMBAYARAN_PELANGGAN = 1
 #: PM-T2 — dua kunci baru di "Pembayaran pelanggan" › Syarat bayar (id lama `uang-masuk`): wajib cara bayar di pesanan,
 #: awalan kode bayar.
 PMT2_PEMBAYARAN_PELANGGAN = 2
+#: PM-T3 — dua kunci di kelompok "Pembayaran pelanggan" (`payment.wajib_nomor_referensi` di sub-judul baru "Kwitansi
+#: pelanggan", `finance.tahan_kirim_dasar_bayar` di "Syarat bayar"); kunci ketiga ada di kelompok "Bank & uang yang
+#: nyangkut".
+PMT3_PEMBAYARAN_PELANGGAN = 2
 #: Editor KF-T4 (tabel "Editor baru") memberi PILIHAN pada daftar yang dulu tanpa pilihan: urutan alokasi dan sumbu
 #: varian. Nilai pilihan kunci lain tidak boleh berubah.
 PILIHAN_BARU = {"allocation.priority_order", "rnd.variant_axes_default", "rnd.variant_axes_optional"}
@@ -134,7 +138,7 @@ async def test_KFT4_U4_effective_menerima_id_kelompok_lama(klien, kepala_admin):
     items = r.json()["items"]
     assert items and {it["group"] for it in items} == {"pembayaran-pelanggan"}
     assert len(items) == len(registry.by_group("pembayaran-pelanggan")) == 24 + KFT7_PEMBAYARAN_PELANGGAN \
-        + CRT1_PEMBAYARAN_PELANGGAN + PMT2_PEMBAYARAN_PELANGGAN
+        + CRT1_PEMBAYARAN_PELANGGAN + PMT2_PEMBAYARAN_PELANGGAN + PMT3_PEMBAYARAN_PELANGGAN
     r = await klien.get("/api/config/effective", headers=kepala_admin, params={"group": "dokumen"})
     assert r.status_code == 200, r.text
     assert {it["group"] for it in r.json()["items"]} == {"persetujuan"}

@@ -477,7 +477,25 @@ Key Fields:
   ai_card_id      string   AG-T3 — id kartu tindakan asisten yang mencatat kwitansi ini (tidak ada = dicatat di layar)
   dup_decision    object   PK-25 — keputusan kasus "pembayaran dobel" atas kwitansi ini: {case_id, case_number,
                             status: resolved|rejected, at}; pemindai kasus tidak membuat kasus dobel lagi
+  account_id      string   PK-20 — rekening penerima (`bank_accounts`) kas kwitansi; kosong = tanpa uang baru (deposit saja)
+  payment_method_code string PM-T3 — kode cara bayar kanonik (PM-T1); `method` tetap ditulis sama untuk pembaca lama
+  account_snapshot object  PM-T3 — potret rekening penerima {name, bank_name, account_number} saat kwitansi dibuat (D3)
+  reference_no    string   PM-T3 — nomor referensi bukti bayar; wajib bila cara bayar `needs_reference` DAN
+                            `payment.wajib_nomor_referensi` menyala untuk PT kwitansi
+  giro_due_date   string   PM-T3 — YYYY-MM-DD, hanya cara bayar ber-`needs_due_date` (giro); wajib dengan syarat sama
+  proof_url       string   PM-T3 — tautan bukti bayar (opsional)
+  instruction_mismatch bool PM-T3 — true bila rekening penerima ≠ `receiving_account_id` salah satu pesanan yang
+                            dialokasi; `mismatch_note` (≥ 5 huruf) wajib; `instruction_mismatch_orders[]`
+                            = [{order_id, order_number, account_id, account_text}] potret instruksi yang tidak diikuti
+  bank_verified   bool     PM-T3 — "Terverifikasi bank": kas kwitansi cocok PENUH dengan mutasi rekening yang sama
+                            (ditulis `bank_recon_service.sinkron_verifikasi_kwitansi` sesudah cocok/lepas; bawaan false);
+                            `bank_verified_at` ISO, `bank_verified_by` nama pelaku, `bank_line_ids[]` id mutasi.
+                            Kwitansi terverifikasi (atau kasnya sudah dicocokkan sebagian) tidak bisa dibatalkan (409)
   created_by / created_by_name / created_at / updated_at
+
+Indeks: `(entity_id, bank_verified, receipt_date)` (PM-T3 — daftar "Belum terverifikasi lebih dari N hari").
+Saringan daftar `GET /api/ar-receipts?bank_verified=&older_than_days=&method=` (PM-T3): kwitansi tunai & titipan tidak
+pernah masuk daftar belum terverifikasi; `older_than_days` tanpa nilai = `payment.hari_wajar_verifikasi_bank`.
 
 ℹ️ PK-19 — baris `sales_orders.payments[]` HANYA ditulis lewat `services/ar_allocation_service.py` (`allocate`,
    `reverse`, `withdraw`, `remove_unborn`; pemeriksa `validate_targets`: pelanggan, PT, status pesanan, sisa tagihan).
@@ -612,6 +630,10 @@ Key Fields:
   ai_card_id        string  AG-T3 — catatan cocok dari kartu tindakan asisten (dicocokkan di layar → field dihapus);
                      juga `holding_allocated[].ai_card_id` untuk alokasi titipan dari kartu
   format_id         string  FASE G-8 — FK bank_statement_formats.id (template pembaca)
+  pay_code_hits[]   object  PM-T3 — kode bayar (PM-T2, `payment_codes`) milik PT mutasi yang ditemukan di berita +
+                     referensi saat impor: {code, order_id, order_number, customer_id}. Mutasi lama tanpa field ini
+                     dihitung di memori saat dibaca (tidak ditulis). Skor: kode menunjuk pesanan yang dialokasi kwitansi
+                     di balik kas → nominal sama = minimal ambang otomatis; nominal beda = usulan saja (tidak otomatis)
   match_type        enum    auto | manual
   matched_at / matched_by / import_batch / created_at / updated_at
 Auto-match:  1:1 line↔txn (akun sama, arah sama, |Δamount| ≤ toleransi,
@@ -2906,6 +2928,9 @@ INV-CASH-01 `scripts/guardrails/verify_cash_single_door.py`); nomor hanya dari `
   void_gl_status     string  hasil jurnal pembalik saat kas dibatalkan (batal kas manual, lepas biaya bank,
                              batal titipan) lewat `gl_service.post_durable`.
   Kas lama tanpa rekening / berkode akun di `account_id` TIDAK dimigrasi (paket perbaikan data, H3).
+  counterparty_name  string  PM-T3 — kas kwitansi: nama pelanggan (bahan skor nama rekonsiliasi); `reference_no` =
+                             nomor referensi kwitansi; `description` memuat nomor referensi dan kode bayar pesanan
+                             yang dialokasi ("Penerimaan AR-… — {pelanggan} · Ref … · Kode KN-…").
 Rekonsiliasi bank (PK-21, satu pemilik — `02` D1):
   reconciled_amount  float   PEMILIK: hanya services/bank_recon_service.py (`_link`, `_unlink`, titipan,
                              biaya bank). = Σ allocations[].amount baris bank_statement_lines `matched` yang
