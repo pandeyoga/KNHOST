@@ -104,7 +104,7 @@ Jumlah digit NPWP (15 atau 16) dan NIK (16) **tidak** menolak simpan; yang menyi
 
 ### Pengaturan
 
-Semua: group `pajak`, scopes `("global", "entity")`, risk `high`, `requires_reason` ya, permission
+Semua: group `pajak-pembukuan` (sub-judul `pajak`), scopes `("global", "entity")`, risk `high`, `requires_reason` ya, permission
 `("accounting", "manage")`, consumers `services/tax_config_service.py:tax_settings`. Perubahan bisa dijadwalkan dengan
 "berlaku sejak" yang sudah ada di Pusat Pengaturan.
 
@@ -115,8 +115,8 @@ Semua: group `pajak`, scopes `("global", "entity")`, risk `high`, `requires_reas
 | `tax.pembulatan_tingkat` | `enum` `dokumen` · `baris`; bawaan `dokumen` | "PPN dibulatkan per" | Per dokumen = dihitung dari total; per baris = dihitung tiap baris lalu dijumlah. → Bisa menggeser PPN beberapa rupiah. → "Dua baris Rp 100.005: per baris Rp 22.002, per dokumen Rp 22.001 (rupiah penuh)" |
 | `tax.pembulatan_satuan` | `enum` `dua_desimal` · `rupiah_penuh`; bawaan `dua_desimal` | "PPN dibulatkan ke" | → Mengubah angka PPN dan total dokumen baru. → "Rp 135.802,37 menjadi Rp 135.802" |
 | `tax.kode_transaksi_diizinkan` | `list` · `["01","02","03","04","06","07","08","09"]` | "Kode transaksi faktur yang dipakai" | Pilihan kode saat menerbitkan faktur. → Kode di luar daftar ditolak. → "Hapus 07 → faktur berkode 07 ditolak" **(konfirmasi konsultan pajak)** |
-| `tax.kode_transaksi_bawaan` | `text` · `"01"` | "Kode transaksi bawaan" | Dipakai bila pelanggan tidak punya kode sendiri dan PT tidak memakai DPP nilai lain. → Mengisi otomatis kode faktur baru. → "01" |
-| `tax.kode_transaksi_bawaan_dpp_nilai_lain` | `text` · `"04"` | "Kode transaksi bawaan saat DPP nilai lain" | Dipakai bila pesanan memakai DPP nilai lain. → sama. → "04" **(konfirmasi konsultan pajak)** |
+| `tax.kode_transaksi_bawaan` | `enum` (pilihan = kode `tax.kode_transaksi_diizinkan` bawaan) · `"01"` | "Kode transaksi bawaan" | Dipakai bila pelanggan tidak punya kode sendiri dan PT tidak memakai DPP nilai lain. → Mengisi otomatis kode faktur baru. → "01" |
+| `tax.kode_transaksi_bawaan_dpp_nilai_lain` | `enum` (pilihan sama) · `"04"` | "Kode transaksi bawaan saat DPP nilai lain" | Dipakai bila pesanan memakai DPP nilai lain. → sama. → "04" **(konfirmasi konsultan pajak)** |
 
 ### Izin dan peran
 
@@ -158,13 +158,13 @@ non-PKP. Tarif efektif bawaan = 12 × 11 ÷ 12 = 11 %.
 | U11 | B | — | `sls`: pesanan `tax_override: "non_ppn"`; `mgr` tanpa alasan; `mgr` dengan alasan "Kawasan berikat" | 403; 400; 200 dengan PPN 0 dan `tax_override_reason` tersimpan |
 | U12 | B | peran uji baku | **Tanpa Acuan** + `order.create` + `order.tax_override`: pesanan tanpa PPN beralasan; **Manajer Kosong**; **Sopir** | 200; 403; 403 |
 | U13 | B | — | Pesanan di `ent_kanda` (non-PKP) | PPN 0; `tax_snapshot.is_pkp == false`, apa pun nilai kunci tarif |
-| U14 | B | Transaksi antar-PT berharga Rp 12.000.000, penjual memakai DPP nilai lain | Hitung DPP faktur antar-PT sebelum dan sesudah U4 | 11.000.000; 12.000.000 (faktor dibaca dari tempat yang sama) |
+| U14 | B | Transaksi antar-PT berharga Rp 12.000.000, penjual memakai DPP nilai lain | Hitung DPP faktur transaksi antar-PT yang dibuat sebelum U4 dan transaksi baru sesudah U4 | 11.000.000; 12.000.000; transaksi lama tetap 11.000.000 (faktor dibaca dari tempat yang sama, dipotret di transaksi) |
 | U15 | B | — | Putaran `t1_config.py` untuk tujuh kunci; pembilang 0 | Lulus; 400 |
 | U16 | layar (uji jalan) | Data acuan | Admin menjadwalkan tarif di Pusat Pengaturan › Pajak; Finance membuka rincian faktur lama | Jadwal tampil sebagai "berlaku sejak"; faktur lama menulis aturan saat terbit, tidak berubah |
 
 ## Langkah kerja
 
-1. `backend/tests_mem/test_TXT1_pengaturan_pajak.py`: U1–U15; merah kecuali U1, U13.
+1. `backend/tests_mem/test_TXT1_pengaturan_pajak.py`: U1–U15; merah kecuali bagian angka U1 dan U13 (bawaan = perilaku lama) dan U12 (sudah ditutup PK-45).
 2. Tujuh kunci + `tax_config_service`; `compute_tax` dan `compute_order_pricing` menerima `at` dan `snapshot`. U2, U4–U6.
 3. Potret di pesanan dan faktur; hitung ulang dokumen lama dari potret; pemanggil antar-PT dan simulator. U3, U14.
 4. Kode transaksi dari pengaturan dan pelanggan; data pajak pelanggan; `data_incomplete`. U7–U10.
