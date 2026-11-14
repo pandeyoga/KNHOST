@@ -25,9 +25,14 @@ def mdb():
 
 def test_reports_summary_scoped_to_sales_owner():
     admin = _login("admin@kainnusantara.id").get(f"{BASE}/reports/summary").json()
-    sales = _login("sales2@kainnusantara.id").get(f"{BASE}/reports/summary").json()
-    assert sales["monthly_revenue"] <= admin["monthly_revenue"]
-    assert sales["pending_approvals"] <= admin["pending_approvals"]
+    r = _login("sales2@kainnusantara.id").get(f"{BASE}/reports/summary")
+    # PR-T5 — Ringkasan dijaga `reports.view` (Sales bawaan tidak memegangnya → 403). Bila data acuan memberi Sales izin
+    # Laporan, angkanya tetap hanya dari pesanan miliknya.
+    assert r.status_code in (200, 403), r.text
+    if r.status_code == 200:
+        sales = r.json()
+        assert sales["monthly_revenue"] <= admin["monthly_revenue"]
+        assert sales["pending_approvals"] <= admin["pending_approvals"]
 
 
 def test_sales_kpi_and_commission_need_permission_and_entity():

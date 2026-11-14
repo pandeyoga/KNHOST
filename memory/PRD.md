@@ -32,6 +32,16 @@ GL-01: registri `services/gl_mapping_registry.py` (54 kebutuhan) → koleksi `gl
   daftar pilih & hitungan. Izin baru `order.view_sales_kpi` "Lihat KPI & komisi sales lain" (bawaan Admin, Manajer,
   Admin Sales, Finance; migrasi `prt4:izin-kpi-sales`). Meja Saya dari kategori kerja (antrean berizin); notifikasi
   `audience_roles`/giliran/eskalasi dari `notify_addresses`/kategori. Empat kunci `role_home.*` → tidak dipakai.
+- 2026-11-14 PR-T5 (katalog izin dirapikan, modul akses dipecah): 14 pasangan izin yang tidak pernah diperiksa server
+  dihapus (antara lain `order.print`, `reports.export`, `inventory.create`, seluruh `sales_pov` beserta modul "Profil POV
+  Sales Komersial"; migrasi sekali `prt5:katalog` pada matriks tersimpan); `reports.view` kini menjaga empat endpoint layar
+  Ringkasan, `md_quality.view`/`qc.view` membuka empat endpoint baca inspeksi. Modul "Pengaturan, Pengguna & Hak Akses"
+  dipecah lima (Akun Pengguna, Peran & Hak Akses, Badan Usaha (PT), Pusat Pengaturan, Penjadwal & Notifikasi Otomatis;
+  id lama `admin` = alias). Editor peran: tingkat "Semua aksi", lencana "Sebagian (n dari m aksi)", tingkat yang tidak
+  berlaku tidak ditawarkan (modul sakelar Mati/Nyala), konfirmasi "+aksi · −aksi" per halaman, aksi berisiko per aksi
+  (`SENSITIVE_ACTIONS`). Satu kamus label `GET /api/access/labels` untuk editor, pesan penolakan, dan jejak audit; meja
+  peran dan delapan tab di luar katalog masuk modul pemiliknya (meja tampil hanya bila aksinya dipegang, `view_actions`).
+  Penjaga INV-PERM-01 `scripts/guardrails/verify_permission_checked.py`.
 - 2026-11-14 KF-T6 (kontrol "harus dua orang" per PT): satu pembantu `services/dual_control.py`
   (`butuh_orang_kedua`, `pelaku_sama`, `tolak_bila_pelaku_sama`) membaca `kontrol.<aksi>.min_orang` ("1"/"2") dan
   `kontrol.<aksi>.batas_nominal` (35 aksi, katalog `config_catalog_kontrol.py`) plus `kontrol.admin_boleh_sendiri` /

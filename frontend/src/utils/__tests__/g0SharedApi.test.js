@@ -4,7 +4,7 @@ import { formatCompactIDR, formatDecimal, formatPct, formatPeriod, formatQty } f
 import { docStatusLabel, hasDocStatusLabel } from "../docStatus";
 import { stripInternalCodes } from "../cleanText";
 import apiErrorText, { isForbiddenError, permissionDeniedText } from "../apiError";
-import { auditActionInfo, auditActionLabel, isKnownAuditAction } from "../../config/auditLabels";
+import { auditActionInfo, auditActionLabel, isKnownAuditAction, setServerLabels } from "../../config/auditLabels";
 
 describe("G0-14 formatter", () => {
   test("formatPct id-ID", () => {
@@ -80,26 +80,38 @@ describe("G0-15 label status & pembersih kode", () => {
 
 describe("G0-03 pesan izin ditolak", () => {
   const e403 = (detail) => ({ response: { status: 403, data: { detail } } });
+  // PR-T5 — nama halaman & aksi dari SATU kamus server (`GET /api/access/labels` = `access_modules.RESOURCE_LABEL`/
+  // `ACTION_LABEL`), sama dengan editor peran; dulu kamus layar sendiri yang berbeda untuk 47 halaman & 46 aksi.
+  beforeAll(() => setServerLabels({
+    resources: { approval: "Matriks Persetujuan", settings: "Pengaturan Sistem", sales_return: "Retur Penjualan",
+      wms: "Operasi Gudang (WMS)", od_pricing: "Harga Pesanan Khusus (kunci, harga PIC, biaya kontrak)",
+      interco: "Transaksi Antar PT (barang)", purchase_return: "Retur Pembelian", rnd: "Riset & Sample",
+      design_request: "Permintaan Desain" },
+    actions: { view: "Lihat", reject: "Tolak", untagged_override: "Pengecualian roll tanpa tag",
+      set_price: "Isi harga (PIC Special Order)" },
+    modules: {},
+  }));
+  afterAll(() => setServerLabels(null));
   test("kode izin tidak tampil", () => {
     const t = apiErrorText(e403("Permission ditolak: approval.view"));
-    expect(t).toBe("Anda tidak punya akses ke Persetujuan.");
-    expect(apiErrorText(e403("Permission ditolak: settings.view"))).toBe("Anda tidak punya akses ke Pengaturan.");
+    expect(t).toBe("Anda tidak punya akses ke Matriks Persetujuan.");
+    expect(apiErrorText(e403("Permission ditolak: settings.view"))).toBe("Anda tidak punya akses ke Pengaturan Sistem.");
     expect(apiErrorText(e403("Permission ditolak: sales_return.reject"))).toBe("Anda tidak punya izin “Tolak” di Retur Penjualan.");
   });
   test("keterangan server dipertahankan, kode dibuang", () => {
     const t = apiErrorText(e403("Permission ditolak: wms.untagged_override — roll tanpa tag wajib dicetak/diverifikasi RFID."));
-    expect(t).toBe("Anda tidak punya izin “Izinkan Roll Tanpa Tag” di WMS / Gudang. Roll tanpa tag wajib dicetak/diverifikasi RFID.");
+    expect(t).toBe("Anda tidak punya izin “Pengecualian roll tanpa tag” di Operasi Gudang (WMS). Roll tanpa tag wajib dicetak/diverifikasi RFID.");
     expect(apiErrorText(e403("Permission ditolak: od_pricing.set_price (harga item tanpa induk diisi PIC Special Order).")))
-      .toBe("Anda tidak punya izin “Tetapkan Harga” di Harga Pesanan Khusus. Harga item tanpa induk diisi PIC Special Order.");
+      .toBe("Anda tidak punya izin “Isi harga (PIC Special Order)” di Harga Pesanan Khusus (kunci, harga PIC, biaya kontrak). Harga item tanpa induk diisi PIC Special Order.");
     expect(apiErrorText(e403("Permission ditolak: butuh salah satu dari sales_return.view / interco.view / purchase_return.view")))
-      .toBe("Anda tidak punya akses ke Retur Penjualan, Antar-Badan Usaha, atau Retur Pembelian.");
-    expect(apiErrorText(e403("Permission ditolak: rnd.view atau design_request.view"))).toBe("Anda tidak punya akses ke R&D atau Permintaan Desain.");
+      .toBe("Anda tidak punya akses ke Retur Penjualan, Transaksi Antar PT (barang), atau Retur Pembelian.");
+    expect(apiErrorText(e403("Permission ditolak: rnd.view atau design_request.view"))).toBe("Anda tidak punya akses ke Riset & Sample atau Permintaan Desain.");
   });
   test("403 dengan kalimat biasa & status lain tidak berubah", () => {
     expect(apiErrorText(e403("Akses gudang tujuan ditolak."))).toBe("Akses gudang tujuan ditolak.");
     expect(apiErrorText({ response: { status: 403, data: {} } })).toBe("Anda tidak punya izin untuk tindakan ini.");
     expect(apiErrorText({ response: { status: 400, data: { detail: "Wajib pilih alasan" } } })).toBe("Wajib pilih alasan");
-    expect(apiErrorText("Permission ditolak: approval.view")).toBe("Anda tidak punya akses ke Persetujuan.");
+    expect(apiErrorText("Permission ditolak: approval.view")).toBe("Anda tidak punya akses ke Matriks Persetujuan.");
     expect(permissionDeniedText("Gagal simpan")).toBe("");
   });
   test("isForbiddenError", () => {

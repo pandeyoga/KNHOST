@@ -350,24 +350,31 @@ export const ROLE_NAV = {
  */
 // L01 LN-015 — konteks akses akun aktif (+ pratinjau editor). Menu/tab yang dibuka modul tanpa
 // satu pun izin efektif disembunyikan, begitu pula tab yang dimatikan di editor peran.
-const ACCESS = { current: null, preview: null, role: "", perms: null };
+// PR-T5 — `view_actions` (server `access_modules.VIEW_ACTION_REQUIREMENTS`): menu yang butuh AKSI tertentu (meja peran),
+// bukan sekadar "ada aksi apa pun pada sumber daya modulnya". Peta global (sama untuk semua peran), ikut pratinjau editor.
+const ACCESS = { current: null, preview: null, role: "", perms: null, viewAct: {} };
 export function setAccessContext(user) {
+  ACCESS.viewAct = user?.view_actions || {};
   ACCESS.current = user?.role && user.role !== "admin" && user.view_resources
-    ? { role: user.role, perms: user.permissions || {}, hidden: new Set(user.hidden_views || []), viewRes: user.view_resources }
+    ? { role: user.role, perms: user.permissions || {}, hidden: new Set(user.hidden_views || []), viewRes: user.view_resources,
+        viewAct: ACCESS.viewAct }
     : null;
   // PR-T7 — izin efektif dicatat walau `view_resources` (penyaring menu) belum ada, untuk `canCurrent`.
   ACCESS.role = user?.role || "";
   ACCESS.perms = user?.role && user.role !== "admin" && user.permissions ? user.permissions : null;
 }
 export function setPreviewAccess(perms, hidden, viewRes) {
-  ACCESS.preview = perms ? { role: "__preview", perms, hidden: new Set(hidden || []), viewRes: viewRes || {} } : null;
+  ACCESS.preview = perms ? { role: "__preview", perms, hidden: new Set(hidden || []), viewRes: viewRes || {},
+    viewAct: ACCESS.viewAct } : null;
 }
 function accessBlocks(role, id) {
   const a = role === "__preview" ? ACCESS.preview : (ACCESS.current?.role === role ? ACCESS.current : null);
   if (!a || !id) return false;
   if (a.hidden.has(id)) return true;
   const res = a.viewRes[id];
-  return Array.isArray(res) && res.length > 0 && !res.some((r) => (a.perms[r] || []).length > 0);
+  if (Array.isArray(res) && res.length > 0 && !res.some((r) => (a.perms[r] || []).length > 0)) return true;
+  const need = (a.viewAct || {})[id];   // PR-T5 — syarat per aksi
+  return Array.isArray(need) && need.length > 0 && !need.some(([r, act]) => can(a.perms, r, act));
 }
 
 /** FE-03 — peran yang menunya DITURUNKAN dari katalog modul (peran kustom & pratinjau editor

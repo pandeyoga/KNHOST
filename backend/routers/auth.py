@@ -51,10 +51,11 @@ async def _my_permissions(user: Dict[str, Any]) -> Dict[str, Any]:
 
 
 async def _my_nav(role: str) -> Dict[str, Any]:
-    from access_modules import view_resources_index
+    from access_modules import view_actions_index, view_resources_index
     from services.custom_role_service import hidden_views_of
     return {"hidden_views": [] if role == "admin" else await hidden_views_of(role),
-            "view_resources": view_resources_index()}
+            "view_resources": view_resources_index(),
+            "view_actions": view_actions_index()}   # PR-T5 — menu yang butuh aksi tertentu (meja peran)
 
 
 # PR-T7 — tautan karyawan dibaca dari SUMBER YANG SAMA dengan `GET /api/hr/employees/me` (`hr_employees.user_id`).

@@ -516,6 +516,27 @@ const ordersTabs = [
 
 ## 📝 CHANGELOG
 
+### PR-T5 — 14 Nov 2026 (pemilik menu & tab di katalog modul akses)
+Tidak ada menu baru; yang berubah = modul akses (`backend/access_modules.py`) yang MEMBUKA menu/tab untuk peran kustom
+dan menyaring menu peran lain (`view_resources`).
+- Modul gabungan "Pengaturan, Pengguna & Hak Akses" (`admin`) dipecah lima: **Akun Pengguna** (`accounts`: `settings-hub`,
+  `settings-company`, `entities-access`), **Peran & Hak Akses** (`roles`: idem), **Badan Usaha (PT)** (`entities`: idem +
+  `settings-masters`, `entity-masters`), **Pusat Pengaturan** (`settings`: `settings-system`, `settings-config`,
+  `settings-cfg-system`, `admin`, `settings-approval`, `approval-rules`, `settings-cfg-approval`, `settings-dual-control`,
+  `settings-masters`, `domain-registry`, `settings-documents`, `settings-cfg-documents`, `settings-notify`,
+  `settings-cfg-notify`), **Penjadwal & Notifikasi Otomatis** (`scheduler`: `settings-notify`, `scheduler`). Id lama
+  `admin` tetap diterima sebagai alias kelimanya.
+- `pdf-templates` dan grup `settings-documents` → modul **Dokumen, Cetak & Tanda Tangan**; `settings-devices` tetap milik
+  Operasi Gudang, SDM, dan Perangkat.
+- Menu/tab yang dulu di luar katalog: `sales-admin-desk` → Pesanan Penjualan; `finance-desk` → Uang Masuk, Piutang &
+  Faktur Pajak; `md-desk` → Desain & Desainer; `warehouse-admin-desk` → Operasi Gudang; `sample-admin-desk` → Pesanan
+  Sample; grup `meja-peran` → kelimanya. Meja peran tampil hanya bila aksinya dipegang (`view_actions`: Konfirmasi
+  pesanan · Putuskan selisih bayar · Lihat permintaan desain · Lihat operasi gudang · Lihat pesanan sample). Tab
+  `customers-master` → Pelanggan & CRM; `internal-prices` → Transaksi Antar Badan Usaha; `reimburse-payables` → Kas Kecil;
+  `amendment-reasons`, `bank-recon-rules` → Kas, Bank & Kasus Keuangan; `settings-receiving-ocr` → Operasi Gudang.
+- `home` dan `my-desk` tidak masuk modul: untuk peran kustom tampil menurut sifat peran (halaman awal ber-menu `home`;
+  kategori kerja terisi). `permission-matrix` (alias), `cs-bom`, `hr-my-profile` tidak berubah.
+
 ### KF-T6 — 14 Nov 2026 (tab Kontrol dua orang)
 - Pengaturan › **Persetujuan** (hub `settings-approval`) mendapat tab ke-4 **Kontrol dua orang** (view
   `settings-dual-control`, `features/settings/kontrol/DualControlView.jsx`; testid `dual-control-view`). Modul akses:

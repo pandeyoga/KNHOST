@@ -371,7 +371,8 @@ export default function InventoryStockView({ warehouses = [], products = [], ent
         <button onClick={handleRefresh} data-testid="inventory-refresh" className="p-1.5 rounded-lg border border-[#E5E5EA] text-[#6B6B73] hover:bg-[#FAFBFC]">
           <RefreshCw size={13} />
         </button>
-        {can(user?.permissions || {}, "inventory", "create") && (
+        {/* PR-T5 — izin yang memang diperiksa `POST /inventory/initial-stock` (dulu `inventory.create`, tidak diperiksa server). */}
+        {can(user?.permissions || {}, "product", "create") && (
           <button onClick={openStockForm} data-testid="add-stock-button"
             className="primary-button flex items-center gap-1.5 !px-3 !py-1.5 !text-[12px]">
             <Plus size={12} /> Tambah Stok

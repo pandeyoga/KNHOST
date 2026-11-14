@@ -1,5 +1,5 @@
 <!-- DIHASILKAN OTOMATIS oleh scripts/gen_codebase_map.py — JANGAN EDIT TANGAN -->
-<!-- Dihasilkan dari commit: 9783875 pada 2026-11-14 -->
+<!-- Dihasilkan dari commit: cb49f7c pada 2026-11-14 -->
 # CODEBASE MAP — Kain Nusantara (dihasilkan otomatis)
 
 Peta ini dihitung dari kode oleh `scripts/gen_codebase_map.py`. Kalau angka di sini
@@ -13,7 +13,7 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 | Ukuran | Nilai |
 |---|---:|
 | Router (`backend/routers/*.py`) | 163 |
-| Endpoint (`@router.<method>`) | 1770 |
+| Endpoint (`@router.<method>`) | 1771 |
 | Service (`backend/services/*.py`) | 386 |
 | Koleksi MongoDB disentuh kode produksi | 201 |
 | Direktori fitur frontend (`src/features/*`) | 39 |
@@ -28,12 +28,12 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 | `schemas.py` | 1123 |
 | `schemas_purchasing.py` | 625 |
 | `dependencies.py` | 233 |
-| `permissions_config.py` | 773 |
+| `permissions_config.py` | 801 |
 | `entity_scope.py` | 728 |
 | `pagination.py` | 145 |
 | `indexes.py` | 792 |
-| `bootstrap.py` | 2144 |
-| `login_only_endpoints.py` | 79 |
+| `bootstrap.py` | 2146 |
+| `login_only_endpoints.py` | 80 |
 
 ### Fungsi utilitas — JANGAN re-implementasi
 
@@ -120,7 +120,7 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 | Berkas | Endpoint | Baris | Path |
 |---|---:|---:|---|
 | `access_review.py` | 2 | 87 | `/access/role-reality`, `/access/role-reality/{user_id}/apply` |
-| `access_roles.py` | 10 | 177 | `/modules`, `/roles`, `/roles/preview`, `/roles/{rid}`, `/roles/{rid}/follow-base`, `/roles/{rid}/move-users` … |
+| `access_roles.py` | 11 | 186 | `/labels`, `/modules`, `/roles`, `/roles/preview`, `/roles/{rid}`, `/roles/{rid}/follow-base` … |
 | `admin.py` | 10 | 562 | `/admin/seed-demo`, `/master-data/export-customers`, `/master-data/export-products`, `/master-data/export-warehouses`, `/master-data/export-yarn`, `/master-data/import-customers` … |
 | `ai_analytics.py` | 32 | 436 | `/analyze-change`, `/catalog`, `/chat`, `/export.xlsx`, `/facts/rebuild`, `/facts/status` … |
 | `ai_assist.py` | 5 | 44 | `/actions/{pid}`, `/actions/{pid}/confirm`, `/actions/{pid}/dismiss`, `/insights`, `/insights/scan` |
@@ -132,7 +132,7 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 | `ar_aging.py` | 4 | 103 | `/ar/advance-report`, `/ar/aging`, `/ar/aging/{customer_id}`, `/ar/aging/{customer_id}/accrue-penalties` |
 | `ar_receipts.py` | 7 | 141 | `/ar-receipts`, `/ar-receipts/deposit`, `/ar-receipts/open-orders`, `/ar-receipts/{receipt_id}`, `/ar-receipts/{receipt_id}/repost`, `/ar-receipts/{receipt_id}/void` |
 | `audit.py` | 2 | 98 | `/audit-logs`, `/audit-logs/resource` |
-| `auth.py` | 5 | 213 | `/auth/context`, `/auth/login`, `/auth/logout`, `/auth/me`, `/roles` |
+| `auth.py` | 5 | 214 | `/auth/context`, `/auth/login`, `/auth/logout`, `/auth/me`, `/roles` |
 | `bank.py` | 6 | 135 | `/bank-accounts`, `/bank-accounts/position`, `/bank-accounts/{account_id}`, `/bank-accounts/{account_id}/ledger`, `/cash-transactions/{txn_id}/reconcile` |
 | `bank_reconciliation.py` | 23 | 436 | `/bank-reconciliation/auto-match`, `/bank-reconciliation/formats`, `/bank-reconciliation/formats/{format_id}`, `/bank-reconciliation/holding`, `/bank-reconciliation/import`, `/bank-reconciliation/import-file` … |
 | `budgets.py` | 9 | 175 | `/finance/budget-check`, `/finance/budget-keys`, `/finance/budget-rules`, `/finance/budget-vs-actual`, `/finance/budgets`, `/finance/budgets/{budget_id}` |
@@ -191,7 +191,7 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 | `incentive_rates.py` | 4 | 105 | `/incentive-rates`, `/incentive-rates/{rate_id}` |
 | `initial_registration.py` | 22 | 329 | `/registration/freeze`, `/registration/sessions`, `/registration/sessions/{sid}`, `/registration/sessions/{sid}/approve`, `/registration/sessions/{sid}/approve-count`, `/registration/sessions/{sid}/bins` … |
 | `input_tax.py` | 6 | 190 | `/input-tax-invoices`, `/input-tax-invoices/eligible-bills`, `/input-tax-invoices/{fpm_id}`, `/input-tax-invoices/{fpm_id}/cancel`, `/tax/vat-summary` |
-| `inspections.py` | 18 | 538 | `/inspections`, `/inspections/export`, `/inspections/meta`, `/inspections/meta/ref-docs`, `/inspections/qc-4point`, `/inspections/queue/qc-tasks` … |
+| `inspections.py` | 18 | 543 | `/inspections`, `/inspections/export`, `/inspections/meta`, `/inspections/meta/ref-docs`, `/inspections/qc-4point`, `/inspections/queue/qc-tasks` … |
 | `integrations.py` | 4 | 84 | `/admin/integrations`, `/admin/integrations/gemini/test`, `/admin/integrations/openai/test` |
 | `interco.py` | 38 | 595 | `/interco/accounts`, `/interco/accounts/{from_entity_id}/{to_entity_id}`, `/interco/accounts/{payer_entity_id}/{payee_entity_id}/remind`, `/interco/contracts`, `/interco/margin-by-product`, `/interco/margin-report` … |
 | `interco_loans.py` | 8 | 138 | `/interco/loans`, `/interco/loans/meta`, `/interco/loans/{loan_id}`, `/interco/loans/{loan_id}/cancel`, `/interco/loans/{loan_id}/disburse`, `/interco/loans/{loan_id}/repay` … |
@@ -237,7 +237,7 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 | `putaway_orders.py` | 15 | 292 | `/putaway-orders`, `/putaway-orders/auto-draft`, `/putaway-orders/suggest`, `/putaway-orders/verify-labels`, `/putaway-orders/{order_id}`, `/putaway-orders/{order_id}/arrival-trips` … |
 | `qc_inspection.py` | 9 | 191 | `/inbound/qc/tasks/{task_id}/plan`, `/inbound/qc/tasks/{task_id}/rolls`, `/inbound/rolls/{roll_id}/inspect`, `/inventory/rolls/{roll_id}/grade-history`, `/inventory/rolls/{roll_id}/grade-override`, `/inventory/rolls/{roll_id}/hold` … |
 | `repair_orders.py` | 10 | 188 | `/inventory/rolls/{roll_id}/repairs`, `/repair-orders`, `/repair-orders/candidate-rolls`, `/repair-orders/target-products`, `/repair-orders/{ro_id}`, `/repair-orders/{ro_id}/cancel` … |
-| `reporting.py` | 6 | 323 | `/reports/order-velocity`, `/reports/reservation-funnel`, `/reports/stock-aging`, `/reports/summary`, `/reports/top-customers`, `/reports/warehouse-utilization` |
+| `reporting.py` | 6 | 324 | `/reports/order-velocity`, `/reports/reservation-funnel`, `/reports/stock-aging`, `/reports/summary`, `/reports/top-customers`, `/reports/warehouse-utilization` |
 | `restock_sources.py` | 3 | 38 | `/product-templates/{template_id}/restock-source`, `/restock-sources` |
 | `return_disposition.py` | 8 | 137 | `/return-dispositions/inbox`, `/return-dispositions/summary`, `/sales-returns/{return_id}/disposition`, `/sales-returns/{return_id}/disposition/internal`, `/sales-returns/{return_id}/disposition/photos`, `/sales-returns/{return_id}/disposition/photos/{att_id}` … |
 | `return_policies.py` | 7 | 241 | `/return-policies/supplier-deadlines`, `/sales-return-policies`, `/sales-return-policies/eligibility`, `/sales-return-policies/{policy_id}` |
@@ -357,7 +357,7 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 | `costing_service.py` | 146 | Costing service (EPIC3A) — Weighted Average Cost (WAC) per produk/entitas. |
 | `crm_omnichannel_service.py` | 249 | CRM Omnichannel (MVP manual) — Lead pipeline + timeline interaksi. |
 | `csv_money.py` | 39 | SATU definisi “cara membaca angka rupiah dari CSV” untuk seluruh sistem. |
-| `custom_role_service.py` | 691 | PERAN KUSTOM & TINGKAT AKSES — aturan bisnis untuk layar "Peran & Hak Akses". |
+| `custom_role_service.py` | 754 | PERAN KUSTOM & TINGKAT AKSES — aturan bisnis untuk layar "Peran & Hak Akses". |
 | `customer_feedback_service.py` | 153 | FEEDBACK / KOMPLAIN PELANGGAN per Sales Order (2026-09, sesi #075). |
 | `customer_merge_service.py` | 99 | P18 MASTER-05 / COMM-01 — gabung pelanggan duplikat (sumber → target) tanpa memutus riwayat. |
 | `customer_price_service.py` | 568 | F1b (D-14) — **Daftar Harga per Pelanggan** (customer pricelist) dengan histori, |
@@ -682,7 +682,7 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 
 | Fitur (`src/features/`) | Berkas | Baris |
 |---|---:|---:|
-| `__tests__` | 90 | 13305 |
+| `__tests__` | 91 | 13481 |
 | `admin` | 34 | 6586 |
 | `approvals` | 9 | 1719 |
 | `catalog` | 24 | 1450 |
@@ -717,10 +717,10 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 | `sales` | 97 | 15798 |
 | `sales_admin` | 11 | 1880 |
 | `samples` | 8 | 776 |
-| `settings` | 58 | 10869 |
+| `settings` | 58 | 10964 |
 | `tanya` | 25 | 1592 |
 | `transfers` | 1 | 20 |
-| `wms` | 99 | 13195 |
+| `wms` | 99 | 13196 |
 
 **Komponen bersama (`src/components/*.jsx`, 104):** `ArchivedReadOnlyBanner.jsx`, `AskKnButton.jsx`, `AttachmentThumb.jsx`, `AuditHistoryPanel.jsx`, `BaseFabricPicker.jsx`, `BinSelect.jsx`, `CartPanel.jsx`, `CartPanelBanners.jsx`, `Collapse.jsx`, `CommandPalette.jsx`, `ConfirmHost.jsx`, `ConfirmModal.jsx`, `CoreWidgets.jsx`, `CustomerPanel.jsx`, `DecimalInput.jsx`, `DesktopOnlyNotice.jsx`, `DetailDrawer.jsx`, `DetailModal.jsx`, `DetailParts.jsx`, `DetailPopup.jsx`, `DualName.jsx`, `EntityBadge.jsx`, `EntityRequiredNotice.jsx`, `EntityScopeBanner.jsx`, `EntitySwitcher.jsx`, `ErrorBoundary.jsx`, `ErrorNotice.jsx`, `ExportMenu.jsx`, `FilterChips.jsx`, `FormModal.jsx`, `FormSection.jsx`, `FulfillmentInfo.jsx`, `GroupEntityBadge.jsx`, `GuidedActionPanel.jsx`, `GuidedTour.jsx`, `HubTabs.jsx`, `KNDatePicker.jsx`, `KNDateTimePicker.jsx`, `KNMonthPicker.jsx`, `KNPager.jsx`, `KNSelect.jsx`, `KNTimePicker.jsx`, `LabelPrinterModal.jsx`, `LineFilter.jsx`, `LinkCard.jsx`, `ListControls.jsx`, `ListPageParts.jsx`, `LoadingLine.jsx`, `LocationFields.jsx`, `LocationScopeBar.jsx`, `LoginScreen.jsx`, `MakloonSelect.jsx`, `MediaLightbox.jsx`, `MixedLotConfirmModal.jsx`, `MoneyInput.jsx`, `NotificationCenter.jsx`, `OkNotice.jsx`, `OnboardingPanel.jsx`, `OpeningCostBanner.jsx`, `PageTabs.jsx`, `PagedRows.jsx`, `PaginationBar.jsx`, `PantoneFinder.jsx`, `PaymentBadge.jsx`, `PeggingModal.jsx`, `PeriodUnlockBanner.jsx`, `PeriodUnlockCard.jsx`, `PrinterStatusWidget.jsx`, `ProductCard.jsx`, `ProductColorChip.jsx`, `ProductColorTriad.jsx`, `ProductDetail.jsx`, `ProductGallery.jsx`, `ProductQuickView.jsx`, `ProductSelect.jsx`, `QcRequestPicker.jsx`, `QcStatusBadge.jsx`, `QtyDual.jsx`, `ResponsiveTable.jsx`, `ReturnPolicyEditor.jsx`, `ReturnTimeline.jsx`, `RevisionProgress.jsx`, `RollCheckChips.jsx`, `RollLabelActions.jsx`, `RollPicker.jsx`, `RollReconcileSheet.jsx`, `SalesStockSummary.jsx`, `SampleKindChooser.jsx`, `ScopeReadOnlyBanner.jsx`, `SeeAllModal.jsx`, `SiteSelect.jsx`, `SoStatusBadges.jsx`, `StarRating.jsx`, `StockFigures.jsx`, `StoreCreditBadge.jsx`, `SupersedeHint.jsx`, `TableFilter.jsx`, `TourMenu.jsx`, `UomConvertHint.jsx`, `UomInputConvert.jsx`, `VariantAxisPicker.jsx`, `WaitingBoardsStrip.jsx`, `WaitingQueueBoard.jsx`, `WarehouseModeBadge.jsx`
 
@@ -746,7 +746,7 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 | `frontend/src/features/orders/OrderDetailPanel.jsx` | 702 | 500 |
 | `frontend/src/features/purchasing/PurchaseReturns.jsx` | 630 | 500 |
 | `frontend/src/features/wms/OutboundScanInterface.jsx` | 624 | 500 |
-| `frontend/src/features/wms/InventoryStockView.jsx` | 599 | 500 |
+| `frontend/src/features/wms/InventoryStockView.jsx` | 600 | 500 |
 | `frontend/src/features/internal_requests/InternalRequestsView.jsx` | 561 | 500 |
 | `frontend/src/features/purchasing/makloon/MakloonWizard.jsx` | 542 | 500 |
 | `frontend/src/features/pos/CheckoutDrawer.jsx` | 535 | 500 |

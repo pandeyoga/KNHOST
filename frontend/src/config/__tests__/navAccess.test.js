@@ -66,14 +66,16 @@ test("Turunan Manager tanpa Akuntansi: menu akuntansi dicabut, sisanya tetap", (
 });
 
 // Fase 3 · P8 — "Pengaturan" kini GRUP berisi kelompok (P16-K1): peran kustom mendapat kelompok dari modul domainnya.
+// PR-T5 — modul Admin dipecah lima (Akun, Peran, Badan Usaha, Pusat Pengaturan, Penjadwal); id lama `admin` = alias kelimanya.
+// Template Dokumen pindah ke modul Dokumen; Perangkat tetap milik Operasi Gudang, SDM, dan Perangkat (PR-T2).
 test("Pengaturan untuk peran kustom: modul Admin = kelompok umum; tanpa kebijakan domain", () => {
   const s = menu("cr_settings_admin")["settings-hub"];
   expect(s["settings-company"]).toEqual(["entities-access"]);
   expect(s["settings-approval"]).toEqual(["approval-rules", "settings-cfg-approval", "settings-dual-control"]);   // KF-T6
   expect(s["settings-masters"]).toEqual(["entity-masters", "domain-registry"]);
-  expect(s["settings-documents"]).toEqual(["pdf-templates", "settings-cfg-documents"]);
+  expect(s["settings-documents"]).toEqual(["settings-cfg-documents"]);   // PR-T5 — Template Dokumen = modul Dokumen
   expect(s["settings-notify"]).toEqual(["scheduler", "settings-cfg-notify"]);
-  expect(s["settings-system"]).toEqual(["settings-config", "settings-cfg-system", "settings-devices", "admin"]);
+  expect(s["settings-system"]).toEqual(["settings-config", "settings-cfg-system", "admin"]);   // PR-T5 — tanpa Perangkat
   ["settings-sales", "settings-finance", "settings-hr"].forEach((id) => expect(s[id]).toBeUndefined());
 });
 
@@ -83,7 +85,7 @@ test("Pengaturan untuk peran kustom domain: SDM, Akuntansi, Operasi Gudang", () 
   expect(hr["settings-system"]).toEqual(["settings-devices"]);              // D-29 — tab Mesin absen
   expect(menu("cr_accounting")["settings-hub"]["settings-finance"]).toEqual(["settings-cfg-finance", "gl-account-mappings"]);
   const wh = menu("cr_warehouse_ops")["settings-hub"];
-  expect(wh["settings-warehouse"]).toEqual(["settings-cfg-warehouse"]);
+  expect(wh["settings-warehouse"]).toEqual(["settings-cfg-warehouse", "settings-receiving-ocr"]);   // PR-T5 — tab di luar katalog
   expect(wh["settings-system"]).toEqual(["settings-devices"]);              // D-29 — tab RFID (alias cs-rfid-devices)
   expect(menu("cr_interco")["settings-hub"]).toBeUndefined();
 });

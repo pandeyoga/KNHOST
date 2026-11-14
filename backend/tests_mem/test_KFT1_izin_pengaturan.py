@@ -17,7 +17,8 @@ from services import config_resolver as resolver
 
 pytestmark = pytest.mark.anyio
 
-B1 = "Anda belum punya akses untuk melihat pengaturan. Minta Admin menambahkan akses 'Pengaturan, Pengguna & Hak Akses'."
+# PR-T5 — modul gabungan "Pengaturan, Pengguna & Hak Akses" dipecah; pemilik `settings` = modul "Pusat Pengaturan".
+B1 = "Anda belum punya akses untuk melihat pengaturan. Minta Admin menambahkan akses 'Pusat Pengaturan'."
 KUNCI_TERBUKA = ["finance.default_payment_term_code", "inventory.min_cut_qty", "sales.allow_item_discount",
                  "sales.allow_order_discount", "tax.ppn_rate", "tax.ppn_mode", "tax.dpp_nilai_lain",
                  "allocation.roll_pick_sales", "purchasing.allow_item_discount", "purchasing.allow_order_discount",
@@ -98,7 +99,7 @@ async def test_U04_lihat_saja_tidak_bisa_ubah(klien, akun, sesi, peran_tanpa_acu
     _, h = await _orang(akun, sesi, rid)
     r = await klien.put("/api/config/values", headers=h, json=_put("sales.allow_partial_shipment", True))
     assert r.status_code == 403, r.text
-    assert "'Pengaturan, Pengguna & Hak Akses'" in _detail(r)
+    assert "'Pusat Pengaturan'" in _detail(r)   # PR-T5 — modul pemilik `settings` (dulu modul gabungan)
     assert "settings.manage" not in _detail(r)
     r = await klien.get("/api/config/registry", headers=h)
     assert r.status_code == 200, r.text

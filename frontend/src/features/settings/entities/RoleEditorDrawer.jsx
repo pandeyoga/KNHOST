@@ -8,7 +8,7 @@ import { useEscapeClose } from "@/utils/escapeLayers";
 import { X, Save, Loader2, ShieldCheck, Copy, Trash2, RotateCcw, Info, Lock } from "lucide-react";
 
 import KNSelect from "../../../components/KNSelect";
-import RoleModuleRow, { LEVELS, levelLabel } from "./RoleModuleRow";
+import RoleModuleRow, { LEVELS, levelLabel, partialLabel } from "./RoleModuleRow";
 import RoleMenuPreview from "./RoleMenuPreview";
 import RoleAccountsList from "./RoleAccountsList";
 import RoleDangerDialog from "./RoleDangerDialog";
@@ -16,7 +16,7 @@ import RoleNotifPreview from "./RoleNotifPreview";
 import RoleAdvancedPanel from "./RoleAdvancedPanel";
 import RoleNavTree, { titleOf } from "./RoleNavTree";
 import RoleTraitsPanel, { traitChangeLines, traitPayload } from "./RoleTraitsPanel";
-import { applyLevel, levelOf, moduleActionsChanged, setResource, toggleAction } from "./roleAccessUtil";
+import { actionDiff, applyLevel, levelOf, levelsAvailable, moduleActionsChanged, sensitiveAdded, setResource, toggleAction } from "./roleAccessUtil";
 import { createAccessRole, patchAccessRole, deleteAccessRole, resetAccessRole, followBaseAccessRole, errText } from "./entityApi";
 
 const permsOf = (src) => {
@@ -87,7 +87,23 @@ export default function RoleEditorDrawer({ role, template, roles, modules, label
   }, [modules]);
 
   const changes = modules.filter((m) => moduleActionsChanged(perms, originalPerms, m));
-  const counts = LEVELS.map((l) => ({ ...l, n: modules.filter((m) => levels[m.id] === l.id).length }));
+  // PR-T5 — ringkasan empat keadaan (sebagian tidak lagi dihitung sebagai "semua aksi").
+  const isPartial = (m) => Boolean(levelInfo[m.id]?.partial);
+  const counts = [
+    { id: "manage", label: "semua aksi", on: LEVELS[2].on, n: modules.filter((m) => levels[m.id] === "manage" && !isPartial(m)).length },
+    { id: "partial", label: "sebagian", on: "border-kn-field-border bg-kn-warning-soft text-kn-warning-text", n: modules.filter(isPartial).length },
+    { id: "view", label: "lihat", on: LEVELS[1].on, n: modules.filter((m) => levels[m.id] === "view").length },
+    { id: "none", label: "tidak ada", on: LEVELS[0].on, n: modules.filter((m) => levels[m.id] === "none").length },
+  ];
+  // PR-T5 — aksi berisiko yang DITAMBAHKAN simpan ini (kalimat akibat dari `sensitive_actions` server).
+  const riskyAdded = sensitiveAdded(perms, originalPerms, modules);
+  const rl = labels?.resource_labels || {};
+  const al = labels?.action_labels || {};
+  const actLabel = (res, a) => al[`${res}.${a}`] || al[a] || a;
+  const diffText = (m) => actionDiff(perms, originalPerms, m).map(({ resource, added, removed }) =>
+    `${rl[resource] || resource}: ${[added.map((a) => `+${actLabel(resource, a)}`).join(", "),
+      removed.map((a) => `−${actLabel(resource, a)}`).join(", ")].filter(Boolean).join(" · ")}`);
+  const stateText = (m, lvl, info) => (info?.partial ? partialLabel(info.held, info.total) : levelLabel(lvl, m));
   const nameError = custom && label.trim().length < 2 ? "Nama peran minimal 2 karakter." : "";
   const nothingOn = modules.every((m) => levels[m.id] === "none");
   const managesAccounts = ["create", "update"].some((a) => (perms?.user || []).includes(a));
@@ -112,7 +128,8 @@ export default function RoleEditorDrawer({ role, template, roles, modules, label
     setPerms(permsOf(src));
     if (!editing && !crossTouched) setCross(Boolean(src.cross_entity));   // ikut peran acuan
   };
-  const setAll = (lvl) => setPerms((p) => modules.reduce((acc, m) => applyLevel(acc, m, lvl), p));
+  // PR-T5 — modul yang tidak punya tingkat itu (mis. "Lihat saja" pada modul sakelar) dibiarkan apa adanya.
+  const setAll = (lvl) => setPerms((p) => modules.reduce((acc, m) => (levelsAvailable(m).includes(lvl) ? applyLevel(acc, m, lvl) : acc), p));
   const setModuleLevel = (m, lvl) => setPerms((p) => applyLevel(p, m, lvl));
   const onToggleAction = (m) => (res, act) => setPerms((p) => toggleAction(p, m, res, act));
   const onSetResource = (m) => (res, all) => setPerms((p) => setResource(p, m, res, all));
@@ -258,7 +275,10 @@ export default function RoleEditorDrawer({ role, template, roles, modules, label
                 <div className="space-y-1.5">
                   {g.items.map((m) => (
                     <RoleModuleRow key={m.id} module={m} value={levels[m.id]} original={original[m.id]}
-                                   partial={levelInfo[m.id]?.partial} disabled={readOnly || busy}
+                                   dirty={moduleActionsChanged(perms, originalPerms, m)}
+                                   originalLabel={stateText(m, original[m.id], levelsFromPerms(originalPerms, [m])[m.id])}
+                                   partial={levelInfo[m.id]?.partial} held={levelInfo[m.id]?.held}
+                                   total={levelInfo[m.id]?.total} disabled={readOnly || busy}
                                    onChange={(v) => setModuleLevel(m, v)}
                                    advanced={!!advanced[m.id]}
                                    onToggleAdvanced={readOnly ? null : () => setAdvanced((s) => ({ ...s, [m.id]: !s[m.id] }))}>
@@ -406,14 +426,17 @@ export default function RoleEditorDrawer({ role, template, roles, modules, label
                 <ul className="space-y-1">
                   {(editing ? changes : modules.filter((m) => levels[m.id] !== "none")).map((m) => (
                     <li key={m.id} className="text-[11px] text-[#1C1C1E]" data-testid={`role-editor-confirm-${m.id}`}>
-                      <b>{m.label}</b>: {editing ? `${levelLabel(original[m.id])} → ` : ""}<span className="font-semibold text-[#0058CC]">{levelLabel(levels[m.id])}{levelInfo[m.id]?.partial ? " (sebagian aksi)" : ""}</span>
-                      {editing && original[m.id] === levels[m.id] && <span className="ml-1 text-[10px] text-[#8C4A00]">· aksi rinci berubah</span>}
+                      <b>{m.label}</b>: {editing ? `${stateText(m, original[m.id], levelsFromPerms(originalPerms, [m])[m.id])} → ` : ""}<span className="font-semibold text-[#0058CC]">{stateText(m, levels[m.id], levelInfo[m.id])}</span>
+                      {/* PR-T5 — aksi yang ditambah & dicabut per halaman: "{halaman}: +aksi, +aksi · −aksi". */}
+                      {diffText(m).map((t) => (
+                        <span key={t} className="block pl-2 text-fs-12 text-kn-text" data-testid={`role-editor-confirm-diff-${m.id}`}>{t}</span>
+                      ))}
                     </li>
                   ))}
                 </ul>
-                {changes.some((m) => m.sensitive && levels[m.id] !== "none") && (
+                {riskyAdded.length > 0 && (
                   <p className="mt-2 text-[10.5px] font-semibold text-[#B45309]" data-testid="role-editor-confirm-sensitive">
-                    Perhatian: modul sensitif dinyalakan — peran ini bisa mengubah pengaturan/akun orang lain.
+                    Perhatian — peran ini akan bisa: {riskyAdded.join("; ")}.
                   </p>
                 )}
               </div>

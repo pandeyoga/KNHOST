@@ -1,6 +1,6 @@
 /** RoleAdvancedPanel — konfigurasi lanjutan satu modul: tiap halaman/bagian (sumber daya izin)
  *  dengan aksi rinci (Lihat · Buat · Ubah · Hapus · Setujui …). */
-import { Check } from "lucide-react";
+import { AlertTriangle, Check } from "lucide-react";
 
 import { fullActions, sameActions } from "./roleAccessUtil";
 
@@ -41,13 +41,17 @@ export default function RoleAdvancedPanel({ module, perms, original, labels, dis
             <div className="flex flex-wrap gap-1">
               {full.map((a) => {
                 const on = have.has(a);
+                // PR-T5 — aksi berisiko: ikon peringatan + petunjuk berisi kalimat akibatnya.
+                const risk = module.sensitive_actions?.[res]?.[a];
                 return (
                   <button key={a} type="button" disabled={disabled} aria-pressed={on}
-                          data-testid={`role-action-${res}-${a}`}
+                          data-testid={`role-action-${res}-${a}`} title={risk ? `Peran ini bisa ${risk}.` : undefined}
                           onClick={() => onToggle(res, a)}
                           className={`inline-flex items-center gap-0.5 rounded-md border px-1.5 py-0.5 text-[10px] font-semibold transition-colors disabled:opacity-50 ${
                             on ? "border-[#0058CC] bg-[#EAF2FF] text-[#0058CC]" : "border-[#E5E5EA] bg-white text-[#8E8E93] hover:border-[#1C1C1E]/40"}`}>
                     {on && <Check size={9} />} {al[`${res}.${a}`] || al[a] || a}
+                    {risk && <AlertTriangle size={9} className="text-kn-warning-text" aria-label={`Berisiko: peran ini bisa ${risk}`}
+                                            data-testid={`role-action-sensitive-${res}-${a}`} />}
                   </button>
                 );
               })}

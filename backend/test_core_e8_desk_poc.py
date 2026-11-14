@@ -268,21 +268,26 @@ def a_ownership(s1, s2, sa):
     # BUKAN "tidak ada pelanggan yang sama" (dua sales memang boleh melayani pelanggan
     # yang sama), melainkan: setiap pelanggan di laporan HARUS berasal dari pesanan
     # milik sales itu sendiri, dan nilainya tidak boleh melebihi nilai pesanannya.
-    tc1 = s1.get("/api/reports/top-customers").json()
-    tc2 = s2.get("/api/reports/top-customers").json()
-    milik = {"ayu": {o["customer_id"] for o in l1}, "bima": {o["customer_id"] for o in l2}}
-    bocor1 = [c["customer_name"] for c in tc1 if c["customer_id"] not in milik["ayu"]]
-    bocor2 = [c["customer_name"] for c in tc2 if c["customer_id"] not in milik["bima"]]
-    check("US11 — laporan pelanggan teratas hanya dari pesanan SENDIRI (Ayu)",
-          not bocor1, str(bocor1)[:70])
-    check("US11 — laporan pelanggan teratas hanya dari pesanan SENDIRI (Bima)",
-          not bocor2, str(bocor2)[:70])
-    tca = {c["customer_id"]: c["order_count"] for c in
-           sa.get("/api/reports/top-customers").json()}
-    lebih = [c["customer_name"] for c in tc2
-             if c["order_count"] > tca.get(c["customer_id"], 0)]
-    check("US11 — angka laporan sales tidak pernah melebihi angka Admin Sales",
-          not lebih, str(lebih)[:70])
+    # PR-T5 — laporan ini kini dijaga `reports.view`; Sales bawaan tidak memegangnya → pintu belakang tertutup (403).
+    # Bila data acuan memberi Sales izin Laporan, invarian kepemilikan di bawah tetap diuji.
+    r1, r2 = s1.get("/api/reports/top-customers"), s2.get("/api/reports/top-customers")
+    if r1.status_code == 403 and r2.status_code == 403:
+        check("US11 · PR-T5 — sales tanpa izin Laporan tidak bisa membuka laporan pelanggan teratas (403)", True)
+    else:
+        tc1, tc2 = r1.json(), r2.json()
+        milik = {"ayu": {o["customer_id"] for o in l1}, "bima": {o["customer_id"] for o in l2}}
+        bocor1 = [c["customer_name"] for c in tc1 if c["customer_id"] not in milik["ayu"]]
+        bocor2 = [c["customer_name"] for c in tc2 if c["customer_id"] not in milik["bima"]]
+        check("US11 — laporan pelanggan teratas hanya dari pesanan SENDIRI (Ayu)",
+              not bocor1, str(bocor1)[:70])
+        check("US11 — laporan pelanggan teratas hanya dari pesanan SENDIRI (Bima)",
+              not bocor2, str(bocor2)[:70])
+        tca = {c["customer_id"]: c["order_count"] for c in
+               sa.get("/api/reports/top-customers").json()}
+        lebih = [c["customer_name"] for c in tc2
+                 if c["order_count"] > tca.get(c["customer_id"], 0)]
+        check("US11 — angka laporan sales tidak pernah melebihi angka Admin Sales",
+              not lebih, str(lebih)[:70])
     mine = sa.get("/api/sales-orders", params={"mine": "true"}).json()
     check("peran non-sales boleh MEMINTA saringan 'punya saya' (mine=true)",
           isinstance(mine, list) and len(mine) <= na, f"{len(mine)} dari {na}")

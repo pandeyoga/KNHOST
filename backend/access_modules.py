@@ -1,14 +1,17 @@
 """KATALOG MODUL HAK AKSES — bahasa manusia di atas matriks izin teknis.
 
 Satu "modul" = kelompok sumber daya izin (`permissions_config`) + menu/tab yang
-membukanya. Admin mengatur per modul dengan 3 tingkat: none · view · manage.
+membukanya. Admin mengatur per modul dengan 3 tingkat: none · view · manage ("Tidak ada" · "Lihat saja" · "Semua aksi");
+tingkat yang tidak berlaku untuk sebuah modul tidak ditawarkan (`levels_available`, PR-T5). Aksi berisiko diberi kalimat
+akibat per aksi (`SENSITIVE_ACTIONS`). Label sumber daya & aksi di sini adalah SATU kamus untuk editor peran, pesan
+penolakan, dan jejak audit (`GET /api/access/labels`).
 """
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Tuple
 
 from permissions_config import AI_TEMPLATES, DEFAULT_PERMISSIONS, EXTRA_ACTIONS
 
 LEVELS = ("none", "view", "manage")
-LEVEL_LABEL = {"none": "Tidak ada", "view": "Lihat saja", "manage": "Kelola penuh"}
+LEVEL_LABEL = {"none": "Tidak ada", "view": "Lihat saja", "manage": "Semua aksi"}   # PR-T5 — dulu "Kelola penuh"
 
 #: Menu yang selalu terlihat oleh peran kustom apa pun.
 ALWAYS_NAV = ["hr-my-profile"]
@@ -194,14 +197,12 @@ MODULE_CATALOG: List[Dict[str, Any]] = [
                     "tidak bisa dipakai input baru di semua form, histori tetap terbaca.",
      "resources": ["grade_master"],
      "nav": ["grade-master", "settings-hub", "settings-warehouse"]},   # fase 3 · P8 — Pengaturan › Gudang & Mutu
-    {"id": "field_visibility", "group": "Penjualan", "label": "Visibilitas Atribut Stok (grade · LOT · asal)",
+    # PR-T5 — modul sakelar (Mati/Nyala); pindah ke grup Gudang. Modul "Profil POV Sales Komersial" (`sales_pov`) dihapus:
+    # tidak dibaca kode mana pun (`services/field_visibility.hidden_for` sengaja mengabaikannya).
+    {"id": "field_visibility", "group": "Gudang", "label": "Melihat grade, nomor lot & asal barang",
      "description": "Boleh melihat grade, LOT (internal/supplier/dye lot) dan asal lokal/impor di layar, API, detail, "
                     "ekspor dan dokumen cetak. Tanpa izin ini atribut disembunyikan server.",
      "resources": ["field_visibility"], "nav": []},
-    {"id": "sales_profile", "group": "Penjualan", "label": "Profil POV Sales Komersial",
-     "description": "Menandai peran sebagai POV komersial Sales: hanya varian warna; GRADE SELALU disembunyikan "
-                    "walau izin visibilitas grade dicentang (berlaku juga saat trial).",
-     "resources": ["sales_pov"], "nav": []},
     # PR-T2 (K-47) — wewenang yang dulu ditentukan nama peran kini modul akses yang terlihat & bisa dicabut.
     {"id": "sales_force", "group": "Penjualan", "label": "Pengawasan Tim Sales & Kredit",
      "description": "Target & insentif sales, tarif komisi, penugasan ulang pelanggan, akrual insentif ke buku besar, "
@@ -227,23 +228,62 @@ MODULE_CATALOG: List[Dict[str, Any]] = [
      "description": "Asisten analitik: chat, templat laporan (per templat), jadwal laporan; margin & nilai persediaan "
                     "dipisah; pemakaian & biaya asisten.",
      "resources": ["ai", "ai_template"], "nav": ["tanya-kn"]},
-    {"id": "admin", "group": "Organisasi", "label": "Pengaturan, Pengguna & Hak Akses",
-     "description": "Pengaturan sistem, badan usaha, akun pengguna, peran & hak akses, penjadwal. Hati-hati: 'Kelola penuh' berarti bisa mengubah hak akses orang lain.",
-     "resources": ["user", "permission", "settings", "entity", "scheduler"],
-     "nav": ["settings-hub", "settings-config", "entities-access", "admin", "entity-masters",
-             "scheduler", "pdf-templates", "domain-registry", "approval-rules",
-             # Fase 3 · P8 (P16-K1) — "Pengaturan" kini grup: menu kelompoknya + layar Pusat Pengaturan terkunci per
-             # kelompok yang bukan milik modul domain + Perangkat (D-29).
-             "settings-company", "settings-approval", "settings-masters", "settings-documents", "settings-notify",
-             "settings-system", "settings-cfg-approval", "settings-cfg-documents", "settings-cfg-notify",
-             "settings-cfg-system", "settings-devices"],
+    # PR-T5 (PR-08) — modul "Pengaturan, Pengguna & Hak Akses" (`admin`) DIPECAH lima: memberi "kelola akun" tidak lagi
+    # ikut memberi "ubah peran", "kelola PT", "ubah pengaturan", dan "penjadwal". Id lama `admin` tetap diterima sebagai
+    # alias kelimanya (`MODULE_ALIASES`). `pdf-templates`/`settings-documents` pindah ke modul Dokumen (pemilik
+    # `pdf_template`); `settings-devices` tetap milik Operasi Gudang, SDM, dan Perangkat (PR-T2).
+    {"id": "accounts", "group": "Organisasi", "label": "Akun Pengguna",
+     "description": "Membuat, mengubah, menonaktifkan akun dan mereset sandi.",
+     "resources": ["user"], "nav": ["settings-hub", "settings-company", "entities-access"], "sensitive": True},
+    {"id": "roles", "group": "Organisasi", "label": "Peran & Hak Akses",
+     "description": "Mengatur hak akses peran. Hati-hati: bisa mengubah hak akses orang lain.",
+     "resources": ["permission"], "nav": ["settings-hub", "settings-company", "entities-access"], "sensitive": True},
+    {"id": "entities", "group": "Organisasi", "label": "Badan Usaha (PT)",
+     "description": "Data PT dalam grup (identitas, pajak, kode dokumen), master per PT, dan pengarsipan PT.",
+     "resources": ["entity"],
+     "nav": ["settings-hub", "settings-company", "entities-access", "settings-masters", "entity-masters"],
      "sensitive": True},
+    {"id": "settings", "group": "Organisasi", "label": "Pusat Pengaturan",
+     "description": "Aturan sistem yang dipakai mesin: persetujuan, master domain, dokumen, notifikasi, dan integrasi.",
+     "resources": ["settings"],
+     "nav": ["settings-hub", "settings-system", "settings-config", "settings-cfg-system", "admin",
+             "settings-approval", "approval-rules", "settings-cfg-approval", "settings-masters", "domain-registry",
+             "settings-cfg-documents", "settings-notify", "settings-cfg-notify",
+             # Induk tab `settings-cfg-documents` (hubTabs "settings-documents"): tanpa ini tab dokumen Pusat Pengaturan
+             # tidak terjangkau pemegang modul ini. Grup yang sama juga milik modul Dokumen (tab Template Dokumen).
+             "settings-documents"],
+     "sensitive": True},
+    {"id": "scheduler", "group": "Organisasi", "label": "Penjadwal & Notifikasi Otomatis",
+     "description": "Jadwal tugas otomatis (pengingat, ringkasan, sinkronisasi) dan saluran notifikasi otomatisnya.",
+     "resources": ["scheduler"], "nav": ["settings-hub", "settings-notify", "scheduler"]},
 ]
 
-# KF-T6 — tab Pengaturan › Persetujuan › Kontrol dua orang ikut modul Admin (blok sendiri, tidak menyunting daftar).
-next(m for m in MODULE_CATALOG if m["id"] == "admin")["nav"].append("settings-dual-control")
+# KF-T6 — tab Pengaturan › Persetujuan › Kontrol dua orang ikut modul Pusat Pengaturan (PR-T5: dulu modul `admin`).
+next(m for m in MODULE_CATALOG if m["id"] == "settings")["nav"].append("settings-dual-control")
+
+# ─── PR-T5 — menu/tab di luar katalog (lampiran B C.2) masuk modul pemilik datanya ─────────────────────────────────
+# Meja peran + grup `meja-peran` ikut modul alur kerjanya (menu baru tampil hanya bila syarat aksi
+# `VIEW_ACTION_REQUIREMENTS` terpenuhi). `home` dan `my-desk` tidak masuk modul: menurut sifat peran
+# (`role_registry.apply_traits`). `permission-matrix` (alias), `cs-bom` (segera hadir), `hr-my-profile` tidak berubah.
+_PRT5_NAV = {
+    "penjualan": ["sales-admin-desk", "meja-peran"],
+    "ar": ["finance-desk", "meja-peran"],
+    "design": ["md-desk", "meja-peran"],
+    "warehouse_ops": ["warehouse-admin-desk", "meja-peran", "settings-receiving-ocr"],
+    "sample_order": ["sample-admin-desk", "meja-peran"],
+    "customer": ["customers-master"],
+    "interco": ["internal-prices"],
+    "petty_cash": ["reimburse-payables"],
+    "finance_ops": ["amendment-reasons", "bank-recon-rules"],
+    "documents": ["pdf-templates", "settings-documents"],
+}
+for _m in MODULE_CATALOG:
+    _m["nav"].extend(v for v in _PRT5_NAV.get(_m["id"], []) if v not in _m["nav"])
 
 MODULE_BY_ID = {m["id"]: m for m in MODULE_CATALOG}
+#: PR-T5 — id modul lama → id modul penggantinya. `apply_levels`/`nav_for_levels` menerima id lama (permintaan, uji, dan
+#: `custom_roles.levels` lama); jawaban selalu memakai id baru.
+MODULE_ALIASES: Dict[str, List[str]] = {"admin": ["accounts", "roles", "entities", "settings", "scheduler"]}
 _ADMIN = DEFAULT_PERMISSIONS["admin"]
 
 
@@ -251,28 +291,84 @@ def full_actions(resource: str) -> List[str]:
     return list(_ADMIN.get(resource, [])) or list(EXTRA_ACTIONS.get(resource, []))
 
 
+def _held_total(perms: Dict[str, List[str]], mod: Dict[str, Any]) -> Tuple[int, int]:
+    """PR-T5 — (aksi dipegang, aksi penuh) sebuah modul; "*" = semua aksi sumber daya itu."""
+    held = total = 0
+    for r in mod["resources"]:
+        full = full_actions(r)
+        have = set(perms.get(r, []) or [])
+        total += len(full)
+        held += len(full) if "*" in have else len(have & set(full))
+    return held, total
+
+
 def level_of(perms: Dict[str, List[str]], module_id: str) -> Dict[str, Any]:
-    """Tingkat efektif sebuah modul dari daftar aksi mentah."""
+    """Tingkat efektif sebuah modul dari daftar aksi mentah. PR-T5: + `held`/`total` (jumlah aksi dipegang / penuh)
+    supaya layar menulis "Sebagian (7 dari 13 aksi)" alih-alih "Kelola penuh · sebagian"."""
     mod = MODULE_BY_ID[module_id]
+    held, total = _held_total(perms, mod)
     acts = set()
     for r in mod["resources"]:
         acts.update(perms.get(r, []) or [])
     if not acts:
-        return {"level": "none", "partial": False}
+        return {"level": "none", "partial": False, "held": 0, "total": total}
     if acts <= {"view"}:
-        return {"level": "view", "partial": False}
+        return {"level": "view", "partial": False, "held": held, "total": total}
     full = all(set(perms.get(r, []) or []) >= set(full_actions(r)) for r in mod["resources"])
-    return {"level": "manage", "partial": not full}
+    return {"level": "manage", "partial": not full, "held": held, "total": total}
 
 
 def levels_of(perms: Dict[str, List[str]]) -> Dict[str, Dict[str, Any]]:
     return {m["id"]: level_of(perms, m["id"]) for m in MODULE_CATALOG}
 
 
+def expand_aliases(levels: Dict[str, Any]) -> Dict[str, Any]:
+    """PR-T5 — `{"admin": x}` → kelima modul penggantinya bernilai x; id baru yang disebut langsung menang."""
+    out: Dict[str, Any] = {}
+    for k, v in (levels or {}).items():
+        for nk in MODULE_ALIASES.get(k, []):
+            out[nk] = v
+    out.update({k: v for k, v in (levels or {}).items() if k not in MODULE_ALIASES})
+    return out
+
+
+def levels_available(module_id: str) -> List[str]:
+    """PR-T5 — tingkat yang berlaku untuk modul ini. Tanpa aksi `view` di sumber daya mana pun = modul sakelar
+    (`none`/`manage`, layar: Mati/Nyala); satu-satunya aksi semua sumber dayanya `view` = `none`/`view`."""
+    acts = [full_actions(r) for r in MODULE_BY_ID[module_id]["resources"]]
+    if not any("view" in a for a in acts):
+        return ["none", "manage"]
+    if all(set(a) <= {"view"} for a in acts):
+        return ["none", "view"]
+    return list(LEVELS)
+
+
+def view_excludes(module_id: str) -> List[str]:
+    """PR-T5 — label sumber daya yang DIBUANG pada "Lihat saja" karena tidak punya aksi lihat."""
+    if "view" not in levels_available(module_id):
+        return []
+    return [RESOURCE_LABEL.get(r, r) for r in MODULE_BY_ID[module_id]["resources"] if "view" not in full_actions(r)]
+
+
+def level_error(module_id: str, level: str) -> str:
+    return (f"Tingkat “{LEVEL_LABEL.get(level, level)}” tidak berlaku untuk modul "
+            f"“{MODULE_BY_ID[module_id]['label']}”.")
+
+
+def check_levels(levels: Dict[str, Any]) -> None:
+    """PR-T5 — `ValueError` bila ada tingkat di luar `levels_available` modulnya (alias diperluas dulu)."""
+    for module_id, level in expand_aliases(levels).items():
+        lvl = level.get("level") if isinstance(level, dict) else level
+        if module_id in MODULE_BY_ID and lvl in LEVELS and lvl not in levels_available(module_id):
+            raise ValueError(level_error(module_id, lvl))
+
+
 def apply_levels(base: Dict[str, List[str]], levels: Dict[str, str]) -> Dict[str, List[str]]:
-    """Terapkan tingkat per modul ke matriks aksi. Modul yang tidak disebut tetap utuh."""
+    """Terapkan tingkat per modul ke matriks aksi. Modul yang tidak disebut tetap utuh.
+    PR-T5: id lama `admin` diperluas (`MODULE_ALIASES`); tingkat yang tidak berlaku → `ValueError` (`check_levels`)."""
+    check_levels(levels)
     out = {k: list(v) for k, v in (base or {}).items()}
-    for module_id, level in (levels or {}).items():
+    for module_id, level in expand_aliases(levels).items():
         mod = MODULE_BY_ID.get(module_id)
         if not mod or level not in LEVELS:
             continue
@@ -290,6 +386,7 @@ def apply_levels(base: Dict[str, List[str]], levels: Dict[str, str]) -> Dict[str
 
 
 def nav_for_levels(levels: Dict[str, str]) -> Dict[str, List[str]]:
+    levels = expand_aliases(levels)   # PR-T5 — `custom_roles.levels` lama ber-id `admin`
     add, remove = set(ALWAYS_NAV), set()
     for m in MODULE_CATALOG:
         lvl = (levels.get(m["id"]) or {}) if isinstance(levels.get(m["id"]), dict) else levels.get(m["id"])
@@ -301,7 +398,48 @@ def nav_for_levels(levels: Dict[str, str]) -> Dict[str, List[str]]:
 
 
 def public_catalog() -> List[Dict[str, Any]]:
-    return [{**m, "actions": {r: full_actions(r) for r in m["resources"]}} for m in MODULE_CATALOG]
+    """PR-T5 — + `levels_available`, `view_excludes`, `sensitive_actions` per modul."""
+    return [{**m, "actions": {r: full_actions(r) for r in m["resources"]},
+             "levels_available": levels_available(m["id"]), "view_excludes": view_excludes(m["id"]),
+             "sensitive_actions": sensitive_actions_of(m["id"])} for m in MODULE_CATALOG]
+
+
+#: PR-T5 (PR-UX-30) — aksi berisiko PER AKSI; nilai = kalimat akibat ("Peran ini bisa …"). Hanya memunculkan
+#: peringatan di editor peran (ikon di "Atur rinci", kalimat di dialog "Periksa sebelum menyimpan"); izin tidak berubah.
+_SENSITIVE_GROUPS: List[Tuple[str, Tuple[Tuple[str, str], ...]]] = [
+    ("membuka periode yang sudah ditutup dan mencatat bertanggal mundur",
+     (("period", "unlock"), ("period", "backdate"), ("accounting", "reopen"))),
+    ("membatalkan jurnal dan menutup buku", (("accounting", "void"), ("accounting", "manage"))),
+    ("membayar pemasok dan mencairkan dana",
+     (("vendor_bill", "pay"), ("contra_bon", "pay"), ("landed_cost", "pay"), ("cash_advance", "disburse"))),
+    ("membebaskan atau mengubah denda", (("penalty", "waive"), ("penalty", "adjust"))),
+    ("membatalkan kwitansi, faktur pajak, atau rencana bayar",
+     (("ar_receipt", "void"), ("tax_invoice", "cancel"), ("payment_plan", "void"))),
+    ("mengirim barang sebelum lunas dan mengubah pesanan terkunci",
+     (("order", "release_unpaid"), ("order", "override"), ("order", "approve_price_edit"))),
+    ("mengelola gaji dan melihat data pribadi karyawan", (("hr", "manage_payroll"), ("hr", "view_pii"))),
+    ("menghapus data induk",
+     (("product", "delete"), ("product", "retire"), ("customer", "delete"), ("supplier", "delete"),
+      ("warehouse", "delete"), ("uom", "delete"), ("entity", "delete"))),
+    ("mengelola akun dan hak akses orang lain",
+     (("user", "create"), ("user", "update"), ("user", "delete"), ("permission", "update"))),
+    ("mengubah pengaturan perusahaan", (("settings", "manage"),)),
+    ("melihat HPP dan margin", (("costing", "view"), ("ai", "view_margin"), ("od_pricing", "view_cost"))),
+    ("menyetujui nilai persediaan, melepas aset, dan mencatat akrual insentif",
+     (("inventory", "approve_value"), ("fixed_asset", "dispose"), ("sales_force", "post"))),
+    ("mengatur perangkat dan alat sistem", (("rfid_device", "configure"), ("system_tools", "configure"))),
+]
+SENSITIVE_ACTIONS: Dict[Tuple[str, str], str] = {pair: kalimat for kalimat, pairs in _SENSITIVE_GROUPS
+                                                 for pair in pairs}
+
+
+def sensitive_actions_of(module_id: str) -> Dict[str, Dict[str, str]]:
+    out: Dict[str, Dict[str, str]] = {}
+    for r in MODULE_BY_ID[module_id]["resources"]:
+        for a in full_actions(r):
+            if (r, a) in SENSITIVE_ACTIONS:
+                out.setdefault(r, {})[a] = SENSITIVE_ACTIONS[(r, a)]
+    return out
 
 
 #: Label manusia untuk sumber daya izin (dipakai "Konfigurasi lanjutan" di editor peran).
@@ -327,7 +465,7 @@ RESOURCE_LABEL = {
     "vehicle_log": "Log Kendaraan", "vendor_bill": "Tagihan Supplier", "warehouse": "Gudang", "wms": "Operasi Gudang (WMS)",
     "goods_receipt": "Kedatangan Barang (GRN)",
     "md_quality": "MD Quality (warna & handfeel)", "qc": "QC (4-point & random check)",
-    "field_visibility": "Visibilitas Atribut Stok", "sales_pov": "Profil POV Sales",
+    "field_visibility": "Visibilitas Atribut Stok",
     "grade_master": "Master Grade Mutu",
     "od_fulfillment": "Pemenuhan Pesanan Khusus (supplier/makloon)",
     "od_pricing": "Harga Pesanan Khusus (kunci, harga PIC, biaya kontrak)",
@@ -338,6 +476,8 @@ RESOURCE_LABEL = {
     "costing": "HPP & Margin Produk", "manager_home": "Beranda Manajer",
     "system_tools": "Kebersihan Data & Alat Sistem", "rfid_device": "Perangkat RFID & Handheld",
     "ai": "Asisten Tanya KN", "ai_template": "Templat Laporan Tanya KN",
+    # PR-T5 — label yang belum ada di kamus server (teks dari kamus layar lama `auditLabels.js`).
+    "marketing": "Pemasaran",
 }
 
 ACTION_LABEL = {
@@ -363,7 +503,6 @@ ACTION_LABEL = {
     "release_unpaid": "Kirim tanpa lunas (pengecualian termin CBD/DP)",
     "record_loss": "Catat susut/hilang di mitra", "approve_loss": "Setujui susut di atas toleransi",
     "activate": "Aktif / nonaktifkan", "grade": "Lihat grade", "lot": "Lihat LOT", "origin": "Lihat asal lokal/impor",
-    "commercial": "POV komersial (grade selalu tersembunyi)",
     "unlock": "Buka kunci", "untagged_override": "Pengecualian roll tanpa tag", "verify": "Verifikasi", "view_pii": "Lihat data pribadi", "void": "Void", "waive": "Bebaskan",
     # Label khusus satu pasangan `<sumber daya>.<aksi>` (didahulukan editor peran atas label aksi umum).
     "cash.configure": "Kelola rekening kas & bank",   # PK-17
@@ -385,6 +524,8 @@ ACTION_LABEL = {
 ACTION_LABEL.update({"manage_credit": "Ubah plafon & blokir kredit", "tax_override": "Buat pesanan tanpa PPN"})
 # PR-T4 — KPI & komisi sales lain (modul Pesanan Penjualan; dulu daftar nama peran di `_kpi_scope`).
 ACTION_LABEL.update({"order.view_sales_kpi": "Lihat KPI & komisi sales lain"})
+# PR-T5 — aksi yang belum berlabel (`set` dari kamus layar lama `auditLabels.js`).
+ACTION_LABEL.update({"count": "Hitung", "review": "Tinjau", "close": "Tutup", "set": "Atur"})
 #: PR-T2 — label aksi templat laporan Tanya KN = judul templat.
 ACTION_LABEL.update({f"ai_template.{t['id']}": t["title"] for t in AI_TEMPLATES})
 
@@ -455,6 +596,26 @@ VIEW_RESOURCE_OVERRIDES["settings-dual-control"] = ["settings"]
 VIEW_RESOURCE_OVERRIDES["settings-cfg-finance"] = ["settings", "entity"]
 
 
+#: PR-T5 — menu yang butuh AKSI tertentu (bukan sekadar "ada aksi apa pun pada sumber daya modulnya"). Dikirim
+#: bersama `view_resources` di `GET /api/auth/me` sebagai `view_actions`; `roles.accessBlocks` menyembunyikan menu bila
+#: tidak satu pun pasangan dipegang. Syaratnya sama dengan halaman awal meja itu (`role_registry.HOME_CHOICES`).
+VIEW_ACTION_REQUIREMENTS: Dict[str, List[Tuple[str, str]]] = {
+    "sales-admin-desk": [("order", "confirm")],
+    "finance-desk": [("payment_variance", "decide")],
+    "md-desk": [("design_request", "view")],
+    "warehouse-admin-desk": [("wms", "view")],
+    "sample-admin-desk": [("sample_order", "view")],
+}
+
+
+def view_actions_index() -> Dict[str, List[List[str]]]:
+    return {k: [list(p) for p in v] for k, v in VIEW_ACTION_REQUIREMENTS.items()}
+
+
+def _holds_any(perms: Dict[str, List[str]], pairs: List[Tuple[str, str]]) -> bool:
+    return any(a in (perms.get(r) or []) or "*" in (perms.get(r) or []) for r, a in pairs)
+
+
 def view_resources_index() -> Dict[str, List[str]]:
     """L01 LN-015 — id menu/tab → sumber daya izin modul yang membukanya (untuk menyaring navigasi
     dari izin EFEKTIF, bukan nama peran)."""
@@ -477,7 +638,23 @@ def nav_allowed_for_perms(perms: Dict[str, List[str]]) -> List[str]:
     for m in MODULE_CATALOG:
         if level_of(perms, m["id"])["level"] != "none":
             allowed.update(m["nav"])
+    allowed -= {v for v, need in VIEW_ACTION_REQUIREMENTS.items() if not _holds_any(perms, need)}   # PR-T5
     return sorted(allowed)
+
+
+def labels_dictionary() -> Dict[str, Dict[str, str]]:
+    """PR-T5 — SATU kamus label (`GET /api/access/labels`): sumber daya, aksi (termasuk label khusus `<sumber daya>.<aksi>`),
+    dan label modul pemilik tiap sumber daya. Dipakai editor peran, penerjemah pesan penolakan, dan jejak audit."""
+    return {"resources": dict(RESOURCE_LABEL), "actions": dict(ACTION_LABEL),
+            "modules": {r: m["label"] for m in MODULE_CATALOG for r in m["resources"]}}
+
+
+def module_label_of(resource: str) -> str:
+    """Label modul pemilik sebuah sumber daya izin (untuk pesan Z6 "Minta Admin menambahkan akses '…'")."""
+    for m in MODULE_CATALOG:
+        if resource in m["resources"]:
+            return m["label"]
+    return resource
 
 
 def module_of_link(link: str) -> str:

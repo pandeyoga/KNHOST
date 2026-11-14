@@ -28,7 +28,7 @@ router = APIRouter(prefix="/api")
 async def stock_aging(request: Request, days_threshold: int = 30,
                       entity_id: Optional[str] = Query(None)) -> List[Dict[str, Any]]:
     """Products with no inventory movement in last N days (per entitas pemilik stok)."""
-    await require_permission(request, "product", "view")
+    await require_permission(request, "reports", "view")   # PR-T5 — dulu `product.view`; pemanggilnya layar Ringkasan
     ctx = await entity_ctx(request)
     bal_scope = resolve_list_scope("inventory_balances", {"on_hand_qty": {"$gt": 0}}, ctx, entity_id)
     balances = await db.inventory_balances.find(bal_scope, {"_id": 0}).to_list(1000)
@@ -184,7 +184,7 @@ async def top_customers(request: Request, limit: int = 10,
     & nilai belanja milik rekan satu PT, padahal daftar pesanannya sudah dibatasi —
     laporan adalah pintu belakang yang paling mudah terlupakan.
     """
-    actor = await require_permission(request, "order", "view")
+    actor = await require_permission(request, "reports", "view")   # PR-T5 — dulu `order.view`
     ctx = await entity_ctx(request)
     match = resolve_list_scope(
         "sales_orders", {"status": {"$nin": NOT_SOLD}}, ctx, entity_id)   # temuan lama #11
@@ -218,7 +218,7 @@ async def top_customers(request: Request, limit: int = 10,
 async def warehouse_utilization(request: Request,
                                 entity_id: Optional[str] = Query(None)) -> List[Dict[str, Any]]:
     """Warehouse utilization: on_hand vs total capacity (stok per entitas pemilik)."""
-    await require_permission(request, "warehouse", "view")
+    await require_permission(request, "reports", "view")   # PR-T5 — dulu `warehouse.view`
     ctx = await entity_ctx(request)
     warehouses = await db.warehouses.find({}, {"_id": 0}).to_list(100)
     result = []
@@ -286,8 +286,9 @@ def _wib_day(iso: str) -> str:
 @router.get("/reports/summary")
 async def dashboard_summary(request: Request,
                             entity_id: Optional[str] = Query(None)) -> Dict[str, Any]:
-    """Executive summary for manager dashboard (per entitas)."""
-    actor = await require_permission(request, "order", "view")
+    """Executive summary for manager dashboard (per entitas). PR-T5 — izin `reports.view` (dulu `order.view`): modul
+    Laporan kini benar-benar membuka/menutup layar Ringkasan. Cakupan kepemilikan sales tetap berlaku."""
+    actor = await require_permission(request, "reports", "view")
     ctx = await entity_ctx(request)
     today = _wib_start_utc()
     month_ago = _wib_start_utc(29)

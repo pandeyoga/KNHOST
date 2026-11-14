@@ -13,7 +13,8 @@ const NO_MANAGE_HINT = "Peran Anda tidak diberi wewenang mengelola akun/peran in
 
 function RoleCard({ role, onOpen, onDuplicate }) {
   const lv = Object.values(role.levels || {});
-  const n = (k) => lv.filter((x) => x.level === k).length;
+  const n = (k) => lv.filter((x) => x.level === k && !x.partial).length;   // PR-T5 — sebagian dihitung terpisah
+  const partial = lv.filter((x) => x.partial).length;
   return (
     <div role="button" tabIndex={0} data-testid={`role-card-${role.id}`} onClick={() => onOpen(role)}
          onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onOpen(role); } }}
@@ -40,9 +41,10 @@ function RoleCard({ role, onOpen, onDuplicate }) {
         <span className="inline-flex items-center gap-1 rounded-full border border-[#E5E5EA] px-2 py-0.5 font-semibold text-[#3A3A3C]" data-testid={`role-card-users-${role.id}`}>
           <Users size={10} /> {role.users} akun
         </span>
-        <span className="rounded-full bg-[#EEF9F1] px-2 py-0.5 font-semibold text-[#1B7F4B]">{n("manage")} kelola</span>
-        <span className="rounded-full bg-[#EAF2FF] px-2 py-0.5 font-semibold text-[#0058CC]">{n("view")} lihat</span>
-        <span className="rounded-full bg-[#F2F2F7] px-2 py-0.5 font-semibold text-[#6B6B73]">{n("none")} tidak ada</span>
+        <span className="rounded-full bg-[#EEF9F1] px-2 py-0.5 font-semibold text-[#1B7F4B]" data-testid={`role-card-count-manage-${role.id}`}>{n("manage")} semua aksi</span>
+        <span className="rounded-full bg-kn-warning-soft px-2 py-0.5 font-semibold text-kn-warning-text" data-testid={`role-card-count-partial-${role.id}`}>{partial} sebagian</span>
+        <span className="rounded-full bg-[#EAF2FF] px-2 py-0.5 font-semibold text-[#0058CC]" data-testid={`role-card-count-view-${role.id}`}>{n("view")} lihat</span>
+        <span className="rounded-full bg-[#F2F2F7] px-2 py-0.5 font-semibold text-[#6B6B73]" data-testid={`role-card-count-none-${role.id}`}>{n("none")} tidak ada</span>
         {role.locked && <span className="inline-flex items-center gap-0.5 rounded-full bg-[#FCEBEA] px-2 py-0.5 font-semibold text-[#A8221A]"><Lock size={9} /> dikunci</span>}
         {role.modified && <span className="inline-flex items-center gap-0.5 rounded-full bg-[#FEF7EC] px-2 py-0.5 font-semibold text-[#8C4A00]" data-testid={`role-card-modified-${role.id}`}><Pencil size={9} /> diubah dari bawaan</span>}
         {role.cross_entity && <span className="inline-flex items-center gap-0.5 rounded-full bg-[#F2F7FF] px-2 py-0.5 font-semibold text-[#0058CC]" data-testid={`role-card-cross-${role.id}`}>Semua PT</span>}
@@ -96,7 +98,8 @@ export default function RoleAccessPanel({ canManage, onChanged, onError }) {
         <div className="min-w-0 flex-1">
           <p className="text-[11.5px] font-bold text-[#1C1C1E]">Peran menentukan modul mana yang boleh dilihat dan dikelola.</p>
           <p className="text-[10.5px] text-[#6B6B73]">
-            Tiga tingkat per modul: <b>Tidak ada</b> (menu tersembunyi) · <b>Lihat saja</b> (baca tanpa tombol ubah) · <b>Kelola penuh</b>.
+            Tingkat per modul: <b>Tidak ada</b> (menu tersembunyi) · <b>Lihat saja</b> (baca tanpa tombol ubah) · <b>Semua aksi</b>;
+            bila hanya sebagian aksi yang diberikan, modul berlencana <b>Sebagian</b> (rinciannya di "Menu, tab &amp; aktivitas").
             Notifikasi mengikuti pengaturan ini — pengguna hanya menerima pemberitahuan untuk layar yang boleh dibukanya.
             Buat peran kustom bila peran bawaan tidak pas — misalnya "Staf Penagihan" yang hanya butuh piutang & pelanggan.
           </p>

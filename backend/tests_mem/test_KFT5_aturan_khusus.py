@@ -29,9 +29,10 @@ KUNCI_PELANGGAN = {"ar.denda_rate_pct_per_month", "ar.grace_days", "payment.pena
                    "payment.penalty_cap_pct", "payment.variance_tolerance_rupiah", "payment.variance_underpay_default",
                    "payment.variance_overpay_default"}
 KUNCI_BARANG = {"cutting.remnant_threshold", "cutting.remnant_grade", "cutting.waste_limit_pct"}
-B1 = "Anda belum punya akses untuk melihat pengaturan. Minta Admin menambahkan akses 'Pengaturan, Pengguna & Hak Akses'."
+# PR-T5 — modul gabungan "Pengaturan, Pengguna & Hak Akses" dipecah; pemilik `settings` = modul "Pusat Pengaturan".
+B1 = "Anda belum punya akses untuk melihat pengaturan. Minta Admin menambahkan akses 'Pusat Pengaturan'."
 PESAN_U_GRACE = ("Anda belum punya akses untuk mengubah pengaturan “Masa tenggang sebelum denda”. Minta Admin "
-                 "menambahkan akses 'Pengaturan, Pengguna & Hak Akses'.")
+                 "menambahkan akses 'Pusat Pengaturan'.")
 
 
 @pytest.fixture(scope="module", autouse=True)

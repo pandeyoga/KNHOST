@@ -25,7 +25,7 @@ from services import approval_policy_service as aps
 
 router = APIRouter(prefix="/api/approval-policies", tags=["approval-policies"])
 
-_MODUL = "'Pengaturan, Pengguna & Hak Akses'"
+_MODUL = "'Pusat Pengaturan'"   # PR-T5 — modul pemilik `settings` (dulu modul gabungan)
 PESAN_LIHAT = f"Anda belum punya akses untuk melihat aturan persetujuan. Minta Admin menambahkan akses {_MODUL}."
 PESAN_UBAH = f"Anda belum punya akses untuk mengubah aturan persetujuan. Minta Admin menambahkan akses {_MODUL}."
 

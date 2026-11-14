@@ -164,7 +164,8 @@ async def test_KPT4_U6_manajer_kosong_tiga_pintu_403_izin(klien, db, orang, akun
 async def test_KPT4_U7_migrasi_memberi_izin_setara(klien, db, orang, akun, sesi, kepala_admin):
     mods = (await klien.get("/api/access/modules", headers=kepala_admin)).json()
     mods = mods.get("modules", mods) if isinstance(mods, dict) else mods
-    levels = {m["id"]: "manage" for m in mods}
+    # PR-T5 — tingkat tertinggi YANG BERLAKU per modul (modul hanya-lihat menolak "Semua aksi" dengan 400).
+    levels = {m["id"]: (m.get("levels_available") or ["manage"])[-1] for m in mods}
     levels["purchasing"] = "none"
     r = await klien.post("/api/access/roles", headers=kepala_admin, json={
         "label": "Manajer Tanpa Pembelian", "base_role": "manager", "description": "peran uji", "levels": levels})

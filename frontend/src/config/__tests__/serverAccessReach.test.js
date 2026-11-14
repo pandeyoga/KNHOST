@@ -15,6 +15,7 @@ import { aliasTarget } from "../viewAliases";
 const BUILTIN = ROLE_IDS.filter((r) => !String(r).startsWith("cr_") && r !== "__preview");
 const login = (role) => setAccessContext({
   role, permissions: builtin.permissions[role] || {}, view_resources: builtin.view_resources, hidden_views: [],
+  view_actions: builtin.view_actions,   // PR-T5 — syarat aksi menu meja peran (sama dengan respons login)
 });
 afterEach(() => setAccessContext(null));
 

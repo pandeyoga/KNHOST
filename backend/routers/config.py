@@ -89,7 +89,7 @@ def _module_label(resource: str) -> str:
     return resource
 
 
-ADMIN_MODULE = "Pengaturan, Pengguna & Hak Akses"
+ADMIN_MODULE = "Pusat Pengaturan"   # PR-T5 — modul pemilik `settings` (dulu "Pengaturan, Pengguna & Hak Akses")
 
 
 def _perm_error(entry: Dict[str, Any]) -> str:

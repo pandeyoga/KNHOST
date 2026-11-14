@@ -195,6 +195,17 @@ sementara", `inspection.release` "Lepas / tolak tahanan barang", `product.retire
 Pengaturan yang digantikan izin ini berstatus "tidak dipakai" dengan alasan "Diatur di Peran & Hak Akses › …"
 (`ai.enabled_roles`, `ai.margin_roles`, `ai.stock_value_roles`, `returns.cutloss_treatment_roles`).
 
+**Tingkat akses & modul organisasi (PR-T5).** Satu kamus label (`GET /api/access/labels`, sumber `access_modules.py`)
+dipakai editor peran, pesan penolakan, dan jejak audit; perbaikan kata per label di PR-T6.
+
+| Istilah | Teks layar | Arti |
+|---|---|---|
+| Tingkat akses | **Tidak ada** · **Lihat saja** · **Semua aksi** (dulu "Kelola penuh") | Hanya tingkat yang berlaku untuk modul itu yang ditawarkan. Modul tanpa aksi lihat = sakelar **Mati** · **Nyala** (mis. "Melihat grade, nomor lot & asal barang", "Perangkat RFID & Handheld"); modul yang satu-satunya aksinya lihat tidak punya "Semua aksi" (mis. "Pusat Persetujuan", "Beranda Manajer", "HPP & Margin Produk", "Laporan & Analitik"). Pesan 400: "Tingkat “{tingkat}” tidak berlaku untuk modul “{modul}”." |
+| Sebagian | Lencana **"Sebagian ({n} dari {m} aksi)"** di kanan nama modul; tidak ada tombol tingkat yang menyala | Peran memegang sebagian aksi modul (diatur di "Menu, tab & aktivitas"). Kartu peran: "{n} semua aksi · {n} sebagian · {n} lihat · {n} tidak ada" |
+| Tidak termasuk pada Lihat saja | "Tidak termasuk pada Lihat saja: {halaman}." | Halaman yang tidak punya aksi lihat ikut tercabut pada "Lihat saja" (mis. Periode & Tutup Buku, Amandemen Keuangan, Harga Pesanan Khusus) |
+| Aksi berisiko | Ikon peringatan + petunjuk "Peran ini bisa {akibat}." · dialog simpan: "Perhatian — peran ini akan bisa: {akibat}; {akibat}." | Daftar `SENSITIVE_ACTIONS` (membuka periode, membayar pemasok, mengelola akun orang lain, …); hanya peringatan, izin tidak berubah |
+| Modul organisasi | **Akun Pengguna** · **Peran & Hak Akses** · **Badan Usaha (PT)** · **Pusat Pengaturan** · **Penjadwal & Notifikasi Otomatis** | Pengganti modul gabungan "Pengaturan, Pengguna & Hak Akses": memberi "kelola akun" tidak lagi ikut memberi ubah peran, kelola PT, ubah pengaturan, dan penjadwal. Pesan 403 menyebut modul pemilik izinnya, mis. "Minta Admin menambahkan akses 'Pusat Pengaturan'." |
+
 ### 9.2 Sifat peran (PR-T4)
 
 Empat hal yang dulu melekat pada nama peran dasar kini isian **Sifat peran** di editor Peran & Hak Akses

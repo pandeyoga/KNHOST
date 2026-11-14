@@ -348,7 +348,7 @@ async def archive_entity(entity_id: str, actor: Dict[str, Any], reason: str = ""
         if not await has_permission(actor or {}, "entity", "delete"):   # PR-T2 — dulu peran `admin` persis
             raise HTTPException(status_code=403, detail=(
                 "Anda belum punya akses untuk memaksa pengarsipan badan usaha. Minta Admin menambahkan akses "
-                "'Pengaturan, Pengguna & Hak Akses'."))
+                "'Badan Usaha (PT)'."))   # PR-T5 — modul pemilik `entity` (dulu modul gabungan)
         if not (reason or "").strip():
             raise HTTPException(status_code=400,
                                 detail="Alasan wajib diisi saat memaksa pengarsipan.")

@@ -360,6 +360,10 @@ STATIK=(
   # `pemegang` di baselines/role_gate_ui.json). Self-test menyisipkan dua gerbang nama peran → wajib memerah.
   "guard:role_gate_ui SELF-TEST (bukti-merah sisipan roleIs/includes(role))|python scripts/guardrails/verify_role_gate_ui.py --self-test"
   "guard:role_gate_ui (INV-ROLE-02, tombol dari izin)|python scripts/guardrails/verify_role_gate_ui.py"
+  # PR-T5 — INV-PERM-01: tiap pasangan izin di katalog diperiksa server (literal, katalog persetujuan, atau daftar
+  # "diperiksa dinamis" bertanda berkas pemeriksanya); tiap sumber daya tepat satu modul & berlabel; tiap aksi berlabel.
+  "guard:permission_checked SELF-TEST (bukti-merah sisipan izin tanpa pemeriksa)|python scripts/guardrails/verify_permission_checked.py --self-test"
+  "guard:permission_checked (INV-PERM-01, izin di katalog diperiksa server)|python scripts/guardrails/verify_permission_checked.py"
   # INV-UI-04 — field TURUNAN (hanya ada di respons DETAIL) tak boleh dibaca dari
   # objek hasil DAFTAR. Terukur 2026-08-15 (penutupan E-6, ditemukan uji LAYAR):
   # pita "Dipenuhi dari Badan Usaha Lain" (E9.2 · US23/US24 — "diambil dari CV Kanda

@@ -40,9 +40,9 @@ router = APIRouter(prefix="/api")
 REFERENCE_FIELDS = ("id", "code", "name", "short_name", "legal_name", "type", "is_pkp", "currency", "status",
                     "doc_prefix", "logo_url", "is_group", "write_locked", "city")
 _S5_DITOLAK = ("Anda belum punya akses untuk melihat rincian badan usaha. Minta Admin menambahkan akses "
-               "'Pengaturan, Pengguna & Hak Akses'.")
+               "'Badan Usaha (PT)'.")   # PR-T5 — modul pemilik `entity`
 _PKP_DITOLAK = ("Anda belum punya akses untuk mengubah status PKP badan usaha. Minta Admin menambahkan akses "
-                "'Pengaturan, Pengguna & Hak Akses'.")
+                "'Badan Usaha (PT)'.")   # PR-T5
 
 
 async def _with_profile(out: Dict[str, Any]) -> Dict[str, Any]:

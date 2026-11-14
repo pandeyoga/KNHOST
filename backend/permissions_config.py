@@ -771,3 +771,31 @@ PRT4_KPI_ROLES = ("admin", "manager", "sales_admin", "finance")
 for _role in PRT4_KPI_ROLES:
     _cur = list(DEFAULT_PERMISSIONS[_role].get("order") or [])
     DEFAULT_PERMISSIONS[_role]["order"] = _cur + [x for x in ("view_sales_kpi",) if x not in _cur]
+
+# ═══════════════════════════════════════════════════════════════════════════
+# PR-T5 (PR-07) — pasangan izin yang TIDAK diperiksa server di mana pun (tidak ada pemeriksa literal maupun dinamis) dan
+# tidak dipakai layar untuk keputusan yang ditegakkan server: dihapus dari katalog supaya setiap tombol izin di layar
+# peran berakibat nyata (`docs/blueprint/unit/PR-T5.md` tabel 1). Cetak dijaga `document.print`, unduhan dijaga
+# `data_export.export`, ubah transaksi antar-PT dijaga `interco.create`, tombol "Tambah Stok" memakai `product.create`
+# (izin yang memang diperiksa `POST /api/inventory/initial-stock`). Matriks tersimpan dibersihkan sekali lewat migrasi
+# `prt5:katalog` (`services/custom_role_service.migrate_prt5_catalog`). Penjaga: `scripts/guardrails/
+# verify_permission_checked.py` (INV-PERM-01) — pasangan baru wajib punya pemeriksa.
+# ═══════════════════════════════════════════════════════════════════════════
+PRT5_REMOVED_PAIRS = (
+    ("esign", "manage"), ("finance_case", "admin"), ("interco", "update"), ("inventory", "create"),
+    ("order", "print"), ("tax_invoice", "print"), ("template", "print"),
+    ("template", "import"), ("template", "export"), ("uom", "import"), ("uom", "export"),
+    ("transfer", "complete"), ("reports", "export"), ("sales_pov", "commercial"),
+)
+#: Sumber daya yang dihapus seluruhnya (modul "Profil POV Sales Komersial" tidak pernah dibaca kode mana pun).
+PRT5_REMOVED_RESOURCES = ("sales_pov",)
+for _mods in DEFAULT_PERMISSIONS.values():
+    for _res, _act in PRT5_REMOVED_PAIRS:
+        if _act in (_mods.get(_res) or []):
+            _mods[_res] = [a for a in _mods[_res] if a != _act]
+            if not _mods[_res]:
+                del _mods[_res]
+    for _res in PRT5_REMOVED_RESOURCES:
+        _mods.pop(_res, None)
+for _res in PRT5_REMOVED_RESOURCES:
+    EXTRA_ACTIONS.pop(_res, None)

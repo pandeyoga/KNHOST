@@ -29,7 +29,7 @@ async def read_settings(request: Request) -> Dict[str, Any]:
     if user.get("role") != "admin" and "view" not in (perms.get("settings") or []):
         raise HTTPException(status_code=403, detail=(
             "Anda belum punya akses untuk melihat pengaturan. Minta Admin menambahkan akses "
-            "'Pengaturan, Pengguna & Hak Akses'."))
+            "'Pusat Pengaturan'."))   # PR-T5 — modul pemilik `settings`
     return await get_global_settings()
 
 
@@ -63,7 +63,7 @@ async def update_settings(request: Request) -> Dict[str, Any]:
     jalur lama (salah satu dari `entity.update` / `sales_return.policy`) tetap diperiksa lebih dulu; tidak ada yang ditulis."""
     await require_any_permission(request, [("entity", "update"), ("sales_return", "policy")], detail=(
         "Anda belum punya akses untuk mengubah pengaturan. Minta Admin menambahkan akses "
-        "'Pengaturan, Pengguna & Hak Akses'."))
+        "'Badan Usaha (PT)'."))   # PR-T5 — izin pintu ini `entity.update` (modul Badan Usaha)
     raise HTTPException(status_code=410, detail="Pengaturan kini disimpan lewat Pusat Pengaturan.")
 
 

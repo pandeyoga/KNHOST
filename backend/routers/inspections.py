@@ -52,10 +52,15 @@ async def _guarded(ins_id: str, request: Request, actor: Dict[str, Any]) -> Dict
     return doc
 
 
+#: PR-T5 — empat endpoint BACA inspeksi (meta, daftar, unduhan, detail) terbuka bagi salah satu izin lihat menu Kualitas:
+#: modul "MD Quality" dan "QC" kini benar-benar membuka daftar SPK (dulu `md_quality.view` tidak diperiksa di mana pun).
+_VIEW_ANY = [("inspection", "view"), ("md_quality", "view"), ("qc", "view")]
+
+
 @router.get("/inspections/meta")
 async def meta(request: Request, entity_id: str = Query("")) -> Dict[str, Any]:
     """Kosakata + kebijakan selisih warna/handfeel yang BERLAKU + daftar petugas."""
-    actor = await require_permission(request, "inspection", "view")
+    actor = await require_any_permission(request, _VIEW_ANY)   # PR-T5 — + md_quality.view / qc.view
     ctx = await entity_ctx(request)
     out = await svc.meta(entity_id or ctx.active_entity_id)
     # FE-04 — petugas = akun aktif berkemampuan inspect (termasuk peran kustom) di badan usaha ini.
@@ -122,7 +127,7 @@ async def list_inspections(request: Request, entity_id: Optional[str] = Query(No
                            q: str = Query(""),
                            limit: int = Query(200, ge=1, le=500)) -> Dict[str, Any]:
     """Daftar inspeksi (berhalaman opsional, `?page=&page_size=` — kontrak P2)."""
-    actor = await require_permission(request, "inspection", "view")
+    actor = await require_any_permission(request, _VIEW_ANY)   # PR-T5 — + md_quality.view / qc.view
     ctx = await entity_ctx(request)
     scope = resolve_list_scope(svc.COLL, {}, ctx, entity_id)
     scope = line_scope.narrow(scope, actor, line)      # FASE L
@@ -153,7 +158,7 @@ async def export_inspections(request: Request, entity_id: Optional[str] = Query(
                              kind: str = Query(""), status: str = Query(""),
                              line: str = Query("")) -> StreamingResponse:
     """Unduh CSV daftar inspeksi (`;` + BOM + desimal koma — gaya Indonesia)."""
-    actor = await require_permission(request, "inspection", "view")
+    actor = await require_any_permission(request, _VIEW_ANY)   # PR-T5 — + md_quality.view / qc.view
     ctx = await entity_ctx(request)
     scope = resolve_list_scope(svc.COLL, {}, ctx, entity_id)
     scope = line_scope.narrow(scope, actor, line)
@@ -202,7 +207,7 @@ async def export_inspections(request: Request, entity_id: Optional[str] = Query(
 
 @router.get("/inspections/{ins_id}")
 async def get_inspection(ins_id: str, request: Request) -> Dict[str, Any]:
-    actor = await require_permission(request, "inspection", "view")
+    actor = await require_any_permission(request, _VIEW_ANY)   # PR-T5 — + md_quality.view / qc.view
     doc = await _guarded(ins_id, request, actor)
     # UAT 24 Okt (P11.3) — indikator "x/y roll dicek (wajib n)" di layar SPK.
     # B1 (keputusan pemilik 26 Okt 2026) — roll yang masih/akan ditahan, supaya layar memperingatkan SEBELUM

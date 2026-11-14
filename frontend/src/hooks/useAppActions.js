@@ -96,6 +96,7 @@ export function useAppActions(state) {
         permissions: response.data.permissions || {},
         role_label: response.data.role_label || response.data.user?.role || "",
         ...(response.data.view_resources ? { view_resources: response.data.view_resources,
+          view_actions: response.data.view_actions || {},   // PR-T5 — syarat aksi menu meja peran
           hidden_views: response.data.hidden_views || [] } : {}),
       };
       setUser(authedUser);

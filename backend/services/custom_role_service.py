@@ -12,7 +12,8 @@ from typing import Any, Dict, List, Optional
 
 from fastapi import HTTPException
 
-from access_modules import LEVELS, apply_levels, clean_permissions, levels_of, nav_allowed_for_perms, nav_for_levels
+from access_modules import (LEVELS, apply_levels, check_levels, clean_permissions, levels_of, nav_allowed_for_perms,
+                            nav_for_levels)
 from core_utils import now_iso
 from db import db
 from permissions_config import DEFAULT_PERMISSIONS
@@ -72,8 +73,12 @@ def _clean_levels(levels: Optional[Dict[str, Any]]) -> Dict[str, str]:
         if lvl not in LEVELS:
             raise HTTPException(status_code=400,
                                 detail=f"Tingkat akses “{lvl}” untuk modul “{k}” tidak dikenal "
-                                       f"(pilihan: Tidak ada · Lihat saja · Kelola penuh).")
+                                       f"(pilihan: Tidak ada · Lihat saja · Semua aksi).")
         out[k] = lvl
+    try:   # PR-T5 — tingkat di luar `levels_available` modulnya (mis. "Lihat saja" pada modul sakelar) ditolak
+        check_levels(out)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
     return out
 
 
@@ -355,6 +360,64 @@ async def migrate_kpi_permission() -> Dict[str, Any]:
                     {"order.view_sales_kpi": granted},
                     reason="PR-T4 — KPI sales lain dulu lewat nama peran, kini izin yang terlihat dan bisa dicabut")
     return {"diberi": granted}
+
+
+PRT5_MIGRATION_ID = "prt5:katalog"
+
+
+async def migrate_prt5_catalog() -> Dict[str, Any]:
+    """PR-T5 — sekali jalan (`prt5:katalog`): pasangan izin yang dihapus dari katalog (`permissions_config.
+    PRT5_REMOVED_PAIRS`, seluruh sumber daya `sales_pov`) dibuang dari `matrix` SEMUA peran (bawaan & kustom), dari
+    `defaults_applied`, dan dari `custom_roles.pending_defaults`; `custom_roles.levels` dihitung ulang dengan id modul
+    baru (modul `admin` dipecah lima). Tidak ada izin yang ditambahkan; pasangan yang dibuang tidak pernah diperiksa
+    server, jadi tidak ada akses yang berubah. Dipanggil `bootstrap.run_bootstrap` sesudah `ensure_permission_ledger`,
+    sebelum `sync_permission_modules`."""
+    from permissions_config import PRT5_REMOVED_PAIRS, PRT5_REMOVED_RESOURCES
+    record = await db.permission_settings.find_one({"id": "default"}, {"_id": 0})
+    if not record or record.get("migrations_applied") is None or \
+            PRT5_MIGRATION_ID in (record.get("migrations_applied") or []):
+        return {"dibuang": {}}
+
+    def bersihkan(perms: Dict[str, Any]) -> Dict[str, List[str]]:
+        """Pasangan yang dibuang dari `perms` (diubah di tempat)."""
+        out: Dict[str, List[str]] = {}
+        for res in PRT5_REMOVED_RESOURCES:
+            if res in perms:
+                out[res] = list(perms.pop(res) or [])
+        for res, act in PRT5_REMOVED_PAIRS:
+            acts = perms.get(res)
+            if isinstance(acts, list) and act in acts:
+                perms[res] = [a for a in acts if a != act]
+                out.setdefault(res, []).append(act)
+                if not perms[res]:
+                    del perms[res]
+        return out
+
+    matrix: Dict[str, Any] = record.get("matrix") or {}
+    removed = {rid: hit for rid, perms in matrix.items() if isinstance(perms, dict) and (hit := bersihkan(perms))}
+    applied = record.get("defaults_applied")
+    applied_hit = {rid: hit for rid, perms in (applied or {}).items()
+                   if isinstance(perms, dict) and (hit := bersihkan(perms))}
+    patch: Dict[str, Any] = {}
+    if removed:
+        patch.update({"matrix": matrix, "updated_at": now_iso()})
+    if applied_hit:
+        patch["defaults_applied"] = applied
+    update: Dict[str, Any] = {"$addToSet": {"migrations_applied": PRT5_MIGRATION_ID}}
+    if patch:
+        update["$set"] = patch
+    await db.permission_settings.update_one({"id": "default"}, update)
+    for c in await db.custom_roles.find({}, {"_id": 0}).to_list(500):
+        pending = {k: list(v or []) for k, v in (c.get("pending_defaults") or {}).items()}
+        bersihkan(pending)
+        await db.custom_roles.update_one({"id": c["id"]}, {"$set": {
+            "levels": {k: v["level"] for k, v in levels_of(matrix.get(c["id"]) or {}).items()},
+            "pending_defaults": {k: v for k, v in pending.items() if v}}})
+    if removed:
+        from dependencies import audit
+        await audit("Sistem (migrasi PR-T5)", "role_catalog_cleaned", "permission_settings", "default", removed,
+                    reason="PR-T5 — izin yang tidak pernah diperiksa server dihapus dari katalog")
+    return {"dibuang": removed}
 
 
 _HIDDEN: Dict[str, List[str]] = {}

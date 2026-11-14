@@ -12,6 +12,7 @@
 import { useEffect, useRef, useState } from "react";
 import axios, { API } from "../services/apiClient";
 import { homeChangedByServer, registerDynamicRoles, ROLE_REGISTRY } from "../config/roles";
+import { setServerLabels } from "../config/auditLabels";
 import { defaultNavIdForRole, defaultViewForRole, resolveDeepLinkTarget } from "../config/navigationConfig";
 
 export default function useSessionSync({ token, user, setUser, setEntityContext, setEntities, setActiveView, setActiveNavId }) {
@@ -47,6 +48,13 @@ export default function useSessionSync({ token, user, setUser, setEntityContext,
     })();
     return () => { alive = false; };
   }, [token]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // PR-T5 — SATU kamus label (nama halaman & aksi izin) dari server: pesan penolakan dan jejak audit memakai nama yang
+  // sama dengan editor peran. Gagal dimuat → label generik (tidak menghalangi apa pun).
+  useEffect(() => {
+    if (!token) return;
+    axios.get(`${API}/access/labels`).then((r) => setServerLabels(r?.data || {})).catch(() => {});
+  }, [token]);
 
   // PERAN KUSTOM & IZIN HIDUP — daftarkan peran kustom dari server ke registry
   // navigasi, lalu segarkan izin/peran tiap 60 detik (tanpa login ulang) dan saat

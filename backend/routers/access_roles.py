@@ -5,8 +5,8 @@ from typing import Any, Dict, List, Optional
 from fastapi import APIRouter, HTTPException, Request
 from pydantic import BaseModel
 
-from access_modules import ACTION_LABEL, LEVEL_LABEL, RESOURCE_LABEL, public_catalog
-from dependencies import audit, require_permission
+from access_modules import ACTION_LABEL, LEVEL_LABEL, RESOURCE_LABEL, labels_dictionary, public_catalog
+from dependencies import audit, current_user, require_permission
 from services import custom_role_service as svc
 
 def _label(rid: str) -> str:
@@ -74,6 +74,15 @@ async def list_modules(request: Request) -> Dict[str, Any]:
     await require_permission(request, "permission", "view")
     return {"modules": public_catalog(), "levels": LEVEL_LABEL,
             "resource_labels": RESOURCE_LABEL, "action_labels": ACTION_LABEL}
+
+
+@router.get("/labels")
+async def list_labels(request: Request) -> Dict[str, Any]:
+    """PR-T5 — SATU kamus label sumber daya, aksi, dan modul (data rujukan tanpa nominal; cukup login — tercatat di
+    `login_only_endpoints.LOGIN_ONLY`). Dibaca layar saat sesi dimuat: pesan penolakan dan jejak audit memakai nama
+    yang sama dengan editor peran."""
+    await current_user(request)
+    return labels_dictionary()
 
 
 @router.get("/roles")

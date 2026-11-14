@@ -1,7 +1,7 @@
 """L01 (LN-012) — visibilitas atribut stok per peran: grade · LOT · asal lokal/impor.
 
-Izin: `field_visibility.grade|lot|origin` (boleh melihat). Peran berprofil POV Sales
-komersial (`sales_pov.commercial`) TIDAK PERNAH melihat grade walau diberi izin.
+Izin: `field_visibility.grade|lot|origin` (boleh melihat) — satu-satunya penentu. (PR-T5: profil "POV Sales komersial"
+`sales_pov.commercial` dihapus dari katalog; janji "grade selalu tersembunyi" tidak pernah ditegakkan kode mana pun.)
 Penegakan di SATU choke point (middleware respons JSON + filter query) supaya layar,
 API langsung, detail dan ekspor tidak bisa lupa dipagari. PDF memakai `redact()`.
 """

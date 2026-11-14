@@ -162,8 +162,7 @@
    ],
    "esign": [
     "view",
-    "sign",
-    "manage"
+    "sign"
    ],
    "field_visibility": [
     "grade",
@@ -179,8 +178,7 @@
    "finance_case": [
     "view",
     "create",
-    "resolve",
-    "admin"
+    "resolve"
    ],
    "fixed_asset": [
     "view",
@@ -236,7 +234,6 @@
    "interco": [
     "view",
     "create",
-    "update",
     "approve",
     "ship",
     "receive",
@@ -263,7 +260,6 @@
    ],
    "inventory": [
     "view",
-    "create",
     "update",
     "cycle_count",
     "approve_count",
@@ -341,7 +337,6 @@
     "delete",
     "approve",
     "confirm",
-    "print",
     "deliver",
     "verify",
     "exact_cut",
@@ -452,8 +447,7 @@
     "cancel"
    ],
    "reports": [
-    "view",
-    "export"
+    "view"
    ],
    "rfid_device": [
     "configure",
@@ -553,17 +547,13 @@
     "create",
     "update",
     "replace",
-    "cancel",
-    "print"
+    "cancel"
    ],
    "template": [
     "view",
     "create",
     "update",
-    "delete",
-    "print",
-    "import",
-    "export"
+    "delete"
    ],
    "transfer": [
     "view",
@@ -571,16 +561,13 @@
     "update",
     "approve",
     "reject",
-    "complete",
     "cancel"
    ],
    "uom": [
     "view",
     "create",
     "update",
-    "delete",
-    "import",
-    "export"
+    "delete"
    ],
    "user": [
     "view",
@@ -772,7 +759,6 @@
    ],
    "order": [
     "view",
-    "print",
     "approve_price_edit",
     "release_unpaid",
     "view_sales_kpi"
@@ -820,8 +806,7 @@
     "view",
     "create",
     "update",
-    "replace",
-    "print"
+    "replace"
    ],
    "template": [
     "view"
@@ -984,8 +969,7 @@
    ],
    "esign": [
     "view",
-    "sign",
-    "manage"
+    "sign"
    ],
    "field_visibility": [
     "grade",
@@ -1049,7 +1033,6 @@
    "interco": [
     "view",
     "create",
-    "update",
     "approve",
     "ship",
     "receive",
@@ -1144,7 +1127,6 @@
     "update",
     "approve",
     "confirm",
-    "print",
     "deliver",
     "verify",
     "exact_cut",
@@ -1243,8 +1225,7 @@
     "cancel"
    ],
    "reports": [
-    "view",
-    "export"
+    "view"
    ],
    "rfq": [
     "view",
@@ -1331,8 +1312,7 @@
     "create",
     "update",
     "replace",
-    "cancel",
-    "print"
+    "cancel"
    ],
    "template": [
     "view"
@@ -1341,8 +1321,7 @@
     "view",
     "create",
     "approve",
-    "reject",
-    "complete"
+    "reject"
    ],
    "uom": [
     "view"
@@ -1738,7 +1717,6 @@
     "view",
     "create",
     "update",
-    "print",
     "cancel"
    ],
    "payment_plan": [
@@ -1764,9 +1742,6 @@
    "rnd": [
     "view",
     "create"
-   ],
-   "sales_pov": [
-    "commercial"
    ],
    "sales_return": [
     "view",
@@ -1892,7 +1867,6 @@
    "interco": [
     "view",
     "create",
-    "update",
     "invoice"
    ],
    "internal_request": [
@@ -1932,7 +1906,6 @@
     "create",
     "update",
     "confirm",
-    "print",
     "deliver",
     "verify",
     "exact_cut",
@@ -2035,8 +2008,7 @@
    "order": [
     "view",
     "update",
-    "confirm",
-    "print"
+    "confirm"
    ],
    "pricelist": [
     "view"
@@ -2284,7 +2256,6 @@
    ],
    "inventory": [
     "view",
-    "create",
     "cycle_count",
     "approve_count",
     "update",
@@ -2380,7 +2351,6 @@
     "update",
     "approve",
     "reject",
-    "complete",
     "cancel"
    ],
    "uom": [
@@ -2409,6 +2379,38 @@
    ]
   }
  },
+ "view_actions": {
+  "finance-desk": [
+   [
+    "payment_variance",
+    "decide"
+   ]
+  ],
+  "md-desk": [
+   [
+    "design_request",
+    "view"
+   ]
+  ],
+  "sales-admin-desk": [
+   [
+    "order",
+    "confirm"
+   ]
+  ],
+  "sample-admin-desk": [
+   [
+    "sample_order",
+    "view"
+   ]
+  ],
+  "warehouse-admin-desk": [
+   [
+    "wms",
+    "view"
+   ]
+  ]
+ },
  "view_resources": {
   "accounts-payable": [
    "contra_bon",
@@ -2417,11 +2419,7 @@
    "vendor_bill"
   ],
   "admin": [
-   "entity",
-   "permission",
-   "scheduler",
-   "settings",
-   "user"
+   "settings"
   ],
   "advance-report": [
    "ar_receipt",
@@ -2452,6 +2450,11 @@
    "tax_invoice",
    "vendor_bill"
   ],
+  "amendment-reasons": [
+   "cash",
+   "finance_amendment",
+   "finance_case"
+  ],
   "amendments": [
    "internal_request",
    "od_fulfillment",
@@ -2475,11 +2478,7 @@
    "rfq"
   ],
   "approval-rules": [
-   "entity",
-   "permission",
-   "scheduler",
-   "settings",
-   "user"
+   "settings"
   ],
   "ar-aging": [
    "ar_receipt",
@@ -2489,6 +2488,11 @@
    "tax_invoice"
   ],
   "bank-accounts": [
+   "cash",
+   "finance_amendment",
+   "finance_case"
+  ],
+  "bank-recon-rules": [
    "cash",
    "finance_amendment",
    "finance_case"
@@ -2639,6 +2643,9 @@
   "customers-crm": [
    "customer"
   ],
+  "customers-master": [
+   "customer"
+  ],
   "design-requests": [
    "design_ownership",
    "design_request"
@@ -2670,25 +2677,15 @@
    "pdf_template"
   ],
   "domain-registry": [
-   "entity",
-   "permission",
-   "scheduler",
-   "settings",
-   "user"
+   "settings"
   ],
   "entities-access": [
    "entity",
    "permission",
-   "scheduler",
-   "settings",
    "user"
   ],
   "entity-masters": [
-   "entity",
-   "permission",
-   "scheduler",
-   "settings",
-   "user"
+   "entity"
   ],
   "escalations": [
    "goods_receipt",
@@ -2719,6 +2716,13 @@
    "cash",
    "finance_amendment",
    "finance_case"
+  ],
+  "finance-desk": [
+   "ar_receipt",
+   "payment_plan",
+   "payment_variance",
+   "penalty",
+   "tax_invoice"
   ],
   "finance-tower": [
    "cash",
@@ -2849,6 +2853,11 @@
    "inventory",
    "transfer"
   ],
+  "internal-prices": [
+   "interco",
+   "interco_finance",
+   "interco_price"
+  ],
   "internal-requests": [
    "internal_request",
    "od_fulfillment",
@@ -2965,6 +2974,10 @@
    "template",
    "uom"
   ],
+  "md-desk": [
+   "design_ownership",
+   "design_request"
+  ],
   "md-products": [
    "color",
    "product",
@@ -2982,6 +2995,27 @@
    "label",
    "production",
    "repair_order",
+   "warehouse",
+   "wms"
+  ],
+  "meja-peran": [
+   "ar_receipt",
+   "design_ownership",
+   "design_request",
+   "goods_receipt",
+   "internal_request",
+   "label",
+   "od_fulfillment",
+   "od_pricing",
+   "order",
+   "payment_plan",
+   "payment_variance",
+   "penalty",
+   "production",
+   "repair_order",
+   "sales_return",
+   "sample_order",
+   "tax_invoice",
    "warehouse",
    "wms"
   ],
@@ -3025,11 +3059,10 @@
    "tax_invoice"
   ],
   "pdf-templates": [
-   "entity",
-   "permission",
-   "scheduler",
-   "settings",
-   "user"
+   "document",
+   "document_delivery",
+   "esign",
+   "pdf_template"
   ],
   "pembelian": [
    "contra_bon",
@@ -3201,6 +3234,10 @@
    "warehouse",
    "wms"
   ],
+  "reimburse-payables": [
+   "cash_advance",
+   "cash_settlement"
+  ],
   "reorder": [
    "purchase_order",
    "purchase_requisition",
@@ -3314,6 +3351,13 @@
    "order",
    "sales_return"
   ],
+  "sales-admin-desk": [
+   "internal_request",
+   "od_fulfillment",
+   "od_pricing",
+   "order",
+   "sales_return"
+  ],
   "sales-orders": [
    "internal_request",
    "od_fulfillment",
@@ -3321,24 +3365,19 @@
    "order",
    "sales_return"
   ],
+  "sample-admin-desk": [
+   "sample_order"
+  ],
   "sample-orders": [
    "sample_order"
   ],
   "scheduler": [
-   "entity",
-   "permission",
-   "scheduler",
-   "settings",
-   "user"
+   "scheduler"
   ],
   "settings-approval": [
    "design_ownership",
    "design_request",
-   "entity",
-   "permission",
-   "scheduler",
-   "settings",
-   "user"
+   "settings"
   ],
   "settings-cfg-approval": [
    "rnd",
@@ -3382,34 +3421,27 @@
   "settings-company": [
    "entity",
    "permission",
-   "scheduler",
-   "settings",
    "user"
   ],
   "settings-config": [
    "settings"
   ],
   "settings-devices": [
-   "entity",
    "goods_receipt",
    "hr",
    "label",
-   "permission",
    "production",
    "repair_order",
    "rfid_device",
-   "scheduler",
-   "settings",
-   "user",
    "warehouse",
    "wms"
   ],
   "settings-documents": [
-   "entity",
-   "permission",
-   "scheduler",
-   "settings",
-   "user"
+   "document",
+   "document_delivery",
+   "esign",
+   "pdf_template",
+   "settings"
   ],
   "settings-dual-control": [
    "settings"
@@ -3496,17 +3528,11 @@
   ],
   "settings-masters": [
    "entity",
-   "permission",
-   "scheduler",
-   "settings",
-   "user"
+   "settings"
   ],
   "settings-notify": [
-   "entity",
-   "permission",
    "scheduler",
-   "settings",
-   "user"
+   "settings"
   ],
   "settings-purchasing": [
    "contra_bon",
@@ -3523,6 +3549,14 @@
    "supplier_contract",
    "supplier_item",
    "vendor_bill"
+  ],
+  "settings-receiving-ocr": [
+   "goods_receipt",
+   "label",
+   "production",
+   "repair_order",
+   "warehouse",
+   "wms"
   ],
   "settings-rnd": [
    "design_ownership",
@@ -3541,17 +3575,13 @@
    "sales_return"
   ],
   "settings-system": [
-   "entity",
    "goods_receipt",
    "hr",
    "label",
-   "permission",
    "production",
    "repair_order",
    "rfid_device",
-   "scheduler",
    "settings",
-   "user",
    "warehouse",
    "wms"
   ],
@@ -3665,6 +3695,14 @@
    "input_tax",
    "landed_cost",
    "vendor_bill"
+  ],
+  "warehouse-admin-desk": [
+   "goods_receipt",
+   "label",
+   "production",
+   "repair_order",
+   "warehouse",
+   "wms"
   ],
   "wms-cutting": [
    "goods_receipt",

@@ -1,54 +1,27 @@
 // X-1 / X-2 (audit 2026-09-02) — label Indonesia untuk kunci mentah modul izin & aksi audit.
 // Kunci yang belum terpetakan jatuh ke pemformatan generik (snake_case → "Kata Kata").
 
+// PR-T5 (PR-UX-28) — SATU KAMUS LABEL: nama halaman (sumber daya izin) dan aksi izin datang dari server
+// (`GET /api/access/labels` = `backend/access_modules.RESOURCE_LABEL`/`ACTION_LABEL`, diisi saat sesi dimuat lewat
+// `setServerLabels`), sama dengan yang dipakai editor peran. Peta setempat di bawah HANYA untuk kunci yang BUKAN sumber
+// daya izin (mis. jenis dokumen/peran di jejak audit). Kunci yang belum terpetakan jatuh ke pemformatan generik.
+const SERVER = { resources: {}, actions: {}, modules: {} };
+
+/** Isi kamus label dari jawaban `GET /api/access/labels` ({resources, actions, modules}). */
+export function setServerLabels(data) {
+  ["resources", "actions", "modules"].forEach((k) => {
+    SERVER[k] = data && typeof data[k] === "object" && data[k] ? { ...data[k] } : {};
+  });
+}
+
 export const MODULE_LABEL = {
-  product: "Produk", customer: "Pelanggan", warehouse: "Gudang", uom: "Satuan (UOM)", template: "Template Dokumen",
-  order: "Pesanan Penjualan", sales: "Penjualan", sales_admin: "Meja Admin Sales", invoice: "Invoice",
-  ar_receipt: "Penerimaan AR", payment_plan: "Rencana Pembayaran", penalty: "Denda", tax: "Pajak", tax_invoice: "Faktur Pajak",
-  input_tax: "PPN Masukan", document: "Dokumen", document_delivery: "Pengiriman Dokumen", pdf_template: "Template PDF",
-  inventory: "Persediaan", wms: "WMS / Gudang", cycle_count: "Stock Opname", transfer: "Transfer Antar Gudang",
-  logistics: "Logistik / Pengiriman", vehicle_log: "Log Kendaraan", label: "Label RFID", inspection: "Inspeksi QC",
-  purchase_order: "Purchase Order", purchase_requisition: "Permintaan Pembelian", purchase_return: "Retur Pembelian",
-  rfq: "RFQ / Penawaran", supplier: "Supplier", supplier_contract: "Kontrak Supplier", supplier_item: "Item Supplier",
-  vendor_bill: "Tagihan Supplier", contra_bon: "Kontrabon", landed_cost: "Biaya Masuk (landed cost)", makloon: "Makloon", makloon_order: "Order Makloon",
-  process_recipe: "Resep Proses", production: "Produksi", rnd: "R&D", design_request: "Permintaan Desain", designer: "Desainer",
-  color: "Warna / Labdip", sales_return: "Retur Penjualan", internal_request: "Permintaan Internal", cash: "Kas",
-  cash_advance: "Kasbon", cash_settlement: "Pertanggungjawaban Kasbon", finance: "Keuangan", finance_case: "Kasus Keuangan",
-  finance_amendment: "Amandemen Keuangan", accounting: "Akuntansi / GL", period: "Periode Akuntansi", budget: "Anggaran",
-  fixed_asset: "Aset Tetap", interco: "Antar-Badan Usaha", interco_finance: "Keuangan Antar-BU", entity: "Badan Usaha",
-  price_approval: "Persetujuan Harga", pricelist: "Daftar Harga", approval: "Persetujuan", permission: "Matriks Izin",
-  user: "Pengguna", settings: "Pengaturan", scheduler: "Penjadwal", audit: "Audit", reports: "Laporan", report: "Laporan",
-  hr: "SDM (HRD)", esign: "Tanda Tangan Elektronik", pegging: "Alokasi Stok", driver: "Sopir",
-  // UAT 24 Okt (audit UI tahap 2) — G0-03/G0-16: modul izin yang belum berlabel (pesan 403 & matriks izin).
-  data_export: "Ekspor Data", design_ownership: "Kepemilikan Desain", gl_mapping: "Pemetaan Akun GL",
-  grade_master: "Master Grade Mutu", interco_price: "Harga Antar-BU", marketing: "Pemasaran", md_quality: "Mutu Barang (MD)",
-  od_fulfillment: "Pemenuhan Pesanan Khusus", od_pricing: "Harga Pesanan Khusus", payment_variance: "Selisih Bayar",
-  qc: "QC", repair_order: "Order Perbaikan", sample_order: "Pesanan Sample", special_order: "Pesanan Khusus",
+  sales: "Penjualan", sales_admin: "Meja Admin Sales", invoice: "Invoice", tax: "Pajak", cycle_count: "Stock Opname",
+  designer: "Desainer", finance: "Keuangan", report: "Laporan", pegging: "Alokasi Stok", driver: "Sopir",
+  special_order: "Pesanan Khusus",
 };
 
-export const ACTION_LABEL = {
-  view: "Lihat", create: "Buat", update: "Ubah", delete: "Hapus", import: "Impor", export: "Ekspor", print: "Cetak",
-  approve: "Setujui", reject: "Tolak", verify: "Verifikasi", confirm: "Konfirmasi", cancel: "Batalkan", void: "Batalkan (void)",
-  manage: "Kelola", configure: "Konfigurasi", submit: "Ajukan", complete: "Selesaikan", assign: "Tugaskan", dispatch: "Dispatch",
-  ship: "Kirim", deliver: "Serahkan", receive: "Terima", scan: "Scan", adjust: "Penyesuaian", pay: "Bayar", settle: "Lunasi",
-  disburse: "Cairkan", claim: "Klaim", claim_approve: "Setujui Klaim", waive: "Bebaskan", backdate: "Tanggal Mundur",
-  release: "Lepaskan", reopen: "Buka Kembali", unlock: "Buka Kunci", sign: "Tandatangani", send: "Kirim", run: "Jalankan",
-  generate: "Hasilkan", issue: "Terbitkan", inspect: "Inspeksi", assess: "Nilai", award: "Tetapkan Pemenang", decide: "Putuskan",
-  propose: "Usulkan", resolve: "Selesaikan Kasus", return: "Retur", replace: "Ganti", convert: "Konversi", dispose: "Hapus Buku",
-  manage_bom: "Kelola BOM", manage_org: "Kelola Organisasi", manage_attendance: "Kelola Absensi", manage_payroll: "Kelola Gaji",
-  manage_settings: "Kelola Pengaturan", policy: "Atur Kebijakan", view_pii: "Lihat Data Pribadi", approve_count: "Setujui Opname", approve_value: "Setujui Nilai Pendaftaran Awal",
-  // UAT 24 Okt (audit UI tahap 2) — G0-03/G0-16: aksi izin yang belum berlabel.
-  activate: "Aktifkan", admin: "Administrasi", approve_loss: "Setujui Susut", approve_payment: "Setujui Pembayaran",
-  cutting_config: "Atur Pemotongan", cutting_receive: "Terima Hasil Potong", decide_compensation: "Putuskan Kompensasi",
-  decide_rolls: "Putuskan per Roll", hold: "Tahan", lock: "Kunci", override: "Kecualikan Aturan", paper_check: "Cek Kertas",
-  pic_decide: "Keputusan PIC", random_check: "Cek Acak", realize: "Realisasikan", record_cutloss: "Catat Potongan Cacat",
-  record_loss: "Catat Susut", release_hold: "Lepas Tahanan", release_unpaid: "Lepas Sebelum Lunas",
-  review_credit_note: "Tinjau Nota Kredit", set: "Atur", set_price: "Tetapkan Harga", exact_cut: "Potong Roll",
-  untagged_override: "Izinkan Roll Tanpa Tag", override_fail: "Kecualikan Hasil Gagal", tax: "Pajak", report: "Laporan",
-  invoice: "Tagihkan", pegging: "Alokasi Stok", cycle_count: "Stock Opname",
-  // PK-45 — izin kredit pelanggan & pesanan tanpa PPN.
-  manage_credit: "Ubah Plafon & Blokir Kredit", tax_override: "Buat Pesanan Tanpa PPN",
-};
+/** Aksi izin: semuanya dari kamus server (tidak ada aksi di luar katalog izin). */
+export const ACTION_LABEL = {};
 
 // Aksi audit (audit_logs.action). Awalan modul dipakai untuk kunci yang belum terdaftar.
 export const AUDIT_ACTION_LABEL = {
@@ -207,14 +180,22 @@ export function auditActionInfo(key) {
   const m = /^(.+)_([a-z]+)$/.exec(k.toLowerCase());
   if (m) {
     const verb = _own(AUDIT_VERB, m[2]);
-    const res = _own(AUDIT_RESOURCE, m[1]);
+    const res = _own(AUDIT_RESOURCE, m[1]) || permissionResourceLabel(m[1]);   // PR-T5 — + kamus server
     if (verb && res) return { label: `${res} ${verb}`, known: true, code: k };
   }
   return { label: "Aksi lain", known: false, code: k };
 }
 
-export const moduleLabel = (key) => MODULE_LABEL[key] || humanize(key);
-export const actionLabel = (key) => ACTION_LABEL[key] || humanize(key);
+/** PR-T5 — label sumber daya izin dari kamus server ("" bila tidak dikenal). */
+export const permissionResourceLabel = (key) => _own(SERVER.resources, key) || "";
+/** PR-T5 — label aksi izin dari kamus server; label khusus `<sumber daya>.<aksi>` didahulukan ("" bila tidak dikenal). */
+export const permissionActionLabel = (act, resource) =>
+  (resource ? _own(SERVER.actions, `${resource}.${act}`) : "") || _own(SERVER.actions, act) || "";
+/** PR-T5 — label modul pemilik sumber daya izin (nama tombol di editor peran) ("" bila tidak dikenal). */
+export const permissionModuleLabel = (resource) => _own(SERVER.modules, resource) || "";
+
+export const moduleLabel = (key) => permissionResourceLabel(key) || _own(MODULE_LABEL, key) || humanize(key);
+export const actionLabel = (key, resource) => permissionActionLabel(key, resource) || _own(ACTION_LABEL, key) || humanize(key);
 /** UAT 24 Okt — G0-16: tidak lagi jatuh ke humanize Inggris ("Reservation Expired"); kunci tak dikenal → "Aksi lain".
  *  Pakai `auditActionInfo(key).known` untuk menampilkan kode mentah di tooltip. */
 export const auditActionLabel = (key) => auditActionInfo(key).label;

@@ -14,7 +14,8 @@
  * Modul ini sengaja TANPA dependensi (tidak impor React/axios) supaya murah dipakai
  * di komponen mana pun, termasuk yang di-`lazy()`. (Peta label `config/auditLabels` hanya data.)
  */
-import { ACTION_LABEL, MODULE_LABEL } from "../config/auditLabels";
+// PR-T5 — nama halaman & aksi dari SATU kamus server (sama dengan editor peran), bukan peta label setempat.
+import { permissionActionLabel, permissionResourceLabel } from "../config/auditLabels";
 
 const DEFAULT_FALLBACK = "Terjadi kesalahan. Coba lagi, atau hubungi admin bila berulang.";
 
@@ -65,7 +66,6 @@ function fromDetail(detail) {
 // Diterjemahkan jadi kalimat akses yang ramah; kode izin hanya ke console.debug (dev) untuk penelusuran.
 const PERM_DENIED_RE = /^\s*Permission ditolak:\s*([\s\S]*)$/i;
 const PERM_CODE_RE = /\b([a-z][a-z0-9_]*)\.([a-z][a-z0-9_]*)\b/g;
-const _lbl = (map, k) => (Object.prototype.hasOwnProperty.call(map, k) ? map[k] : "");
 
 /**
  * "Permission ditolak: approval.view" → "Anda tidak punya akses ke Persetujuan."
@@ -83,8 +83,8 @@ export function permissionDeniedText(detail) {
   }
   const parts = [];
   codes.forEach(({ mod, act }) => {
-    const modL = _lbl(MODULE_LABEL, mod) || "modul ini";
-    const actL = _lbl(ACTION_LABEL, act);
+    const modL = permissionResourceLabel(mod) || "modul ini";
+    const actL = permissionActionLabel(act, mod);
     const txt = act === "view" || !actL ? `akses ke ${modL}` : `izin “${actL}” di ${modL}`;
     if (!parts.includes(txt)) parts.push(txt);
   });

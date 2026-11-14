@@ -24,7 +24,7 @@ router = APIRouter(prefix="/api")
 # KP-T3 — jenis dokumen = yang dinilai mesin; peran = registry peran (`VALID_ROLES` statis dihapus: `owner` tidak ada
 # di registry dan selama ini diperlakukan sama dengan Manajer).
 VALID_DOC_TYPES = list(APPROVAL_DOC_TYPES)
-_MODUL = "'Pengaturan, Pengguna & Hak Akses'"
+_MODUL = "'Pusat Pengaturan'"   # PR-T5 — modul pemilik `settings` (dulu modul gabungan)
 PESAN_LIHAT = f"Anda belum punya akses untuk melihat aturan persetujuan. Minta Admin menambahkan akses {_MODUL}."
 PESAN_UBAH = f"Anda belum punya akses untuk mengubah aturan persetujuan. Minta Admin menambahkan akses {_MODUL}."
 PESAN_DISKON = "Jenis aturan 'Diskon (%)' sudah tidak dipakai. Potongan harga diatur lewat Harga Khusus."

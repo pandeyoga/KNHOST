@@ -14,7 +14,7 @@ import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from access_modules import MODULE_CATALOG, nav_for_levels, view_resources_index  # noqa: E402
+from access_modules import MODULE_CATALOG, nav_for_levels, view_actions_index, view_resources_index  # noqa: E402
 from permissions_config import DEFAULT_PERMISSIONS  # noqa: E402
 
 FIXTURE = Path(__file__).resolve().parents[2] / "frontend/src/config/__tests__/fixtures/access_nav_fixture.json"
@@ -25,7 +25,7 @@ ROLES = {
     "cr_warehouse_ops": {"base_role": "", "levels": {"warehouse_ops": "manage"}},
     "cr_qc": {"base_role": "", "levels": {"qc": "manage"}},
     # Fase 3 · P8 — Pengaturan kini GRUP (P16-K1) & Margin & HPP digabung ke Profitabilitas (D-11).
-    "cr_settings_admin": {"base_role": "", "levels": {"admin": "manage"}},
+    "cr_settings_admin": {"base_role": "", "levels": {"admin": "manage"}},   # PR-T5 — id lama = alias lima modul
     "cr_hr": {"base_role": "", "levels": {"hr": "manage"}},
     "cr_reports": {"base_role": "", "levels": {"reports": "manage"}},
     # turunan Manager: semua modul penuh kecuali Akuntansi (editor peran selalu mengirim semua modul)
@@ -42,6 +42,7 @@ def build() -> list:
 def build_builtin() -> dict:
     """Izin bawaan per peran bawaan + indeks id menu → sumber daya izin (sama dengan respons login)."""
     return {"view_resources": view_resources_index(),
+            "view_actions": view_actions_index(),   # PR-T5 — syarat aksi menu meja peran (sama dengan respons login)
             "permissions": {r: {k: list(v) for k, v in sorted((p or {}).items())}
                             for r, p in sorted(DEFAULT_PERMISSIONS.items())}}
 

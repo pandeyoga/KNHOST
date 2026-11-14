@@ -64,7 +64,7 @@ const FILTERS = [
 // (nomor dokumen seperti KSC/SO-00505 tetap tampil).
 const permText = (perm) => String(perm || "").split("/").filter(Boolean).map((p) => {
   const [m, a] = p.split(".");
-  return a ? `${moduleLabel(m)}: ${actionLabel(a)}` : moduleLabel(m);
+  return a ? `${moduleLabel(m)}: ${actionLabel(a, m)}` : moduleLabel(m);   // PR-T5 — label khusus pasangan
 }).join(" · ") || "—";
 const isTechId = (v) => /^[a-z][a-z0-9]*_[a-z0-9_]+$/.test(String(v || ""));
 

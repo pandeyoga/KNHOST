@@ -16,7 +16,7 @@ from services import dual_control
 router = APIRouter(prefix="/api/kontrol", tags=["kontrol"])
 
 _TOLAK_LIHAT = ("Anda belum punya akses untuk melihat aturan kontrol dua orang. Minta Admin menambahkan akses "
-                "'Pengaturan, Pengguna & Hak Akses'.")
+                "'Pusat Pengaturan'.")   # PR-T5 — modul pemilik `settings`
 
 
 @router.get("/aturan")

@@ -438,6 +438,15 @@ def apply_traits(overrides: Optional[Dict[str, Dict[str, Any]]],
         entry["home_view"] = view
         entry["home_nav_id"] = PROFILE_HOME[1] if fallback else _home_nav(rid, view)
         entry["home_view_fallback"] = fallback
+        # PR-T5 — menu `home` & `my-desk` peran kustom tidak dimiliki modul: mengikuti sifat peran (halaman awal
+        # ber-menu `home`; kategori kerja terisi). Ditulis ke overlay menu `nav` supaya tidak sekadar ikut peran dasar.
+        nav = entry.get("nav") if entry.get("custom") else None
+        if isinstance(nav, dict):
+            add, rem = set(nav.get("add") or []), set(nav.get("remove") or [])
+            for nid, on in (("home", entry["home_nav_id"] == "home"), ("my-desk", bool(entry["kategori_kerja"]))):
+                (add if on else rem).add(nid)
+                (rem if on else add).discard(nid)
+            entry["nav"] = {"add": sorted(add), "remove": sorted(rem)}
 
 
 def traits_of(rid: str) -> Dict[str, Any]:

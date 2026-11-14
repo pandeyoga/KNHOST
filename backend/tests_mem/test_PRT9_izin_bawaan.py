@@ -28,13 +28,19 @@ for _r in DEFAULT_PERMISSIONS:   # PR-T2 — izin pengganti gerbang nama peran (
     for _res, _acts in bootstrap._prt2_default_pairs(_r).items():
         TAMBAHAN_SESUDAH.setdefault(_r, {}).setdefault(_res, set()).update(_acts)
 # Butir di `migrations_applied`: 15 butir PR-T9 + `prt2:gerbang-peran` (PR-T2) + `prt4:sifat-peran` dan
-# `prt4:izin-kpi-sales` (PR-T4).
-JUMLAH_MIGRASI = 18
+# `prt4:izin-kpi-sales` (PR-T4) + `prt5:katalog` (PR-T5).
+JUMLAH_MIGRASI = 19
 # Pencabutan izin bawaan yang SENGAJA dibuat unit sesudah PR-T9.
 DICABUT_SESUDAH = {r: {"vendor_bill": {"view"}, "landed_cost": {"view"}, "input_tax": {"view"}}
                    for r in ("warehouse", "warehouse_admin")}   # PK-17 (IA-02)
 for _r in ("admin", "manager", "sales_admin", "finance"):   # PR-T4 — KPI & komisi sales lain (dulu nama peran)
     TAMBAHAN_SESUDAH.setdefault(_r, {}).setdefault("order", set()).add("view_sales_kpi")
+# PR-T5 (PR-07) — 14 pasangan yang tidak pernah diperiksa server dihapus dari katalog (termasuk sumber daya `sales_pov`).
+import permissions_config as _pc  # noqa: E402
+for _r, _perms in SEBELUM.items():
+    for _res, _act in _pc.PRT5_REMOVED_PAIRS:
+        if _act in (_perms.get(_res) or []):
+            DICABUT_SESUDAH.setdefault(_r, {}).setdefault(_res, set()).add(_act)
 # KP-T4 (K-47) — Finance menyetujui/menolak tagihan vendor kampanye (dulu lewat nama peran, pintu tanpa izin).
 TAMBAHAN_SESUDAH.setdefault("finance", {}).setdefault("vendor_bill", set()).update({"approve", "reject"})
 # PK-45 — izin kredit pelanggan (K-28) dan pesanan tanpa PPN (K-33).
