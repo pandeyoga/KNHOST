@@ -1,0 +1,41 @@
+# jest seluruh suite (CI=true craco test --watchAll=false)
+HEAD:  Test Suites: 35 failed, 63 passed, 98 total · Tests:       442 passed, 442 total
+baru:  Test Suites: 35 failed, 64 passed, 99 total · Tests:       445 passed, 445 total
+daftar suite gagal-muat (cmdk/radix) identik: ya
+
+# kode HEAD + uji baru
+  ● Test suite failed to run
+    Cannot find module '../settings/ApprovalPoliciesView' from 'src/features/__tests__/kpt4ApprovalPolicies.test.js'
+Test Suites: 1 failed, 1 total
+Tests:       0 total
+
+# kode baru (kpt4 + kpt3 + pk13, --verbose)
+    ✓ bertanya dulu dengan nominal & PT; Batal = 0 POST; lanjut = 1 POST …/approve (206 ms)
+    ✓ Kirim (submit) tetap langsung tanpa dialog (76 ms)
+    ✓ (i)–(iv): pesan memuat Rp 12.500.000 & PT; lanjut = 1 POST …/approve (42 ms)
+    ✓ alasan wajib ≥ 5 huruf; 'abc' = tombol lanjut mati; alasan dikirim di notes (53 ms)
+    ✓ U4 draf 3.000.000: alasan → notes; pesan tidak menyebut jurnal (37 ms)
+    ✓ U5 terposting 3.000.000 (bukan makloon): pesan 'jurnal hutangnya dibalik', alasan wajib (41 ms)
+    ✓ U6: GET tagihan dulu lalu tanya; Batal = 0 POST; lanjut = 1 POST …/approve; pesan Rp 8.000.000 (17 ms)
+    ✓ U7: GET gagal 500 → 0 POST, pesan galat, dialog tidak muncul (2 ms)
+    ✓ U8: pesan Rp 1.750.000 & PT; lanjut = 1 POST /cash-advance-settlements/{id}/approve (22 ms)
+    ✓ U9: pesan Rp 250.000; lanjut = 1 POST …/pay-reimburse berisi cash_type kas_besar (22 ms)
+    ✓ pesan Rp 40.000.000 & PT penerima (ent_kanda); lanjut = 1 POST /fixed-assets/{id}/transfer/settle (68 ms)
+    ✓ pesan Rp 5.000.000 & PT terpilih; lanjut = 1 DELETE /finance/budgets/{id} (67 ms)
+    ✓ pesan Rp 200.000 (= 10.000.000 × 2 %) & PT; lanjut = 1 DELETE /tax/pph-records/{id} (44 ms)
+    ✓ DELETE gagal 403 → tax-pph-rec-error tampil, baris tetap (44 ms)
+    ✓ entities kosong → pesan memuat 'Entitas aktif', tidak memuat 'ent_ksc'; Batal = false, lanjut = true (6 ms)
+  ✓ pembantu: kelompok urut, teks penyetuju & yang lolos (14 ms)
+  ✓ U16 (komponen): kartu Uang Muka PT Kanda — tiga jenjang berlabel, lencana sumber, yang lolos terisi (45 ms)
+  ✓ U16 (komponen): Coba nilai menampilkan jenjang dan siapa yang lolos (33 ms)
+  ✓ memuat / galat + coba lagi / pemilih PT memuat ulang (18 ms)
+  ✓ layar penuh: aturan khusus PT → Ubah & Kembali ke aturan grup; aturan grup di PT → Buat aturan khusus PT ini (26 ms)
+  ✓ Ubah: pop-up baku, alasan wajib, PUT seluruh jenjang dengan versi; peran registry bisa dicentang (69 ms)
+  ✓ Kembali ke aturan grup: alasan wajib lalu DELETE berparameter PT (31 ms)
+  ✓ tanpa izin kelola: baca-saja, tidak ada tombol ubah (19 ms)
+  ✓ pilihan: jenis dokumen tanpa Diskon, peran penyetuju tanpa Owner (label registry) (1 ms)
+  ✓ kalimat jenjang: grup + jenjang tambahan Direksi
+Test Suites: 3 passed, 3 total
+Tests:       25 passed, 25 total
+
+# phase3Settings (tiruan KNSelect hanya di folder uji): 13/13 lulus

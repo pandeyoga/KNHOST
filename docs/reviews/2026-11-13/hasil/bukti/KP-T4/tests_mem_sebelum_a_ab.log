@@ -1,0 +1,4 @@
+# tests_mem seluruhnya (python -m pytest tests_mem -q -p no:cacheprovider)
+HEAD 494a249:   364 passed, 2 skipped, 3 xfailed, 5 warnings in 41.13s
+keadaan (a):    369 passed, 2 skipped, 3 xfailed, 5 warnings in 102.41s (0:01:42)
+keadaan (a)+(b): 382 passed, 2 skipped, 3 xfailed, 5 warnings in 101.16s (0:01:41)

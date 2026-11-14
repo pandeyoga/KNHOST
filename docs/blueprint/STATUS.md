@@ -31,7 +31,7 @@ Papan kerja agen pelaksana. Aturan mengubahnya: `00_ATURAN_EKSEKUSI.md` §5. Uru
 | 24 | PR-T3 | Endpoint yang hanya butuh login: dipilah dan dijaga | PR-T2 | selesai | `36b056e` | [PR-T3](../reviews/2026-11-13/hasil/PR-T3.md) |  |
 | 25 | KF-T6 | Kontrol dua orang yang bisa diatur per PT | KF-T1 | selesai | `a053a94` · `4844181` | [KF-T6](../reviews/2026-11-13/hasil/KF-T6.md) | H3: migrasi sakelar lama berjalan saat proses awal — tinjau sebelum data nyata |
 | 26 | KP-T3 | Aturan Persetujuan: buang pilihan palsu, tampilkan jenjang efektif | KF-T1 | selesai | `3224848` | [KP-T3](../reviews/2026-11-13/hasil/KP-T3.md) | H3: --apply skrip migrasi menunggu pemilik |
-| 27 | KP-T4 | Satu tabel kebijakan persetujuan untuk semua antrean | KF-T6, KP-T3, PR-T2 | siap |  |  |  |
+| 27 | KP-T4 | Satu tabel kebijakan persetujuan untuk semua antrean | KF-T6, KP-T3, PR-T2 | selesai | `ff73676` · `0c5486e` | [KP-T4](../reviews/2026-11-13/hasil/KP-T4.md) | H3: --apply migrate_kpt4_kebijakan_persetujuan wajib saat pemasangan di data nyata |
 | 28 | PR-T4 | Sifat peran yang bisa diatur: cakupan data, beranda, penerima notifikasi | PR-T2 | selesai | `6d7dacf` · `39cdd4b` | [PR-T4](../reviews/2026-11-13/hasil/PR-T4.md) | H3: migrasi prt4:sifat-peran & prt4:izin-kpi-sales berjalan saat proses awal |
 | 29 | PR-T5 | Katalog izin dirapikan; modul akses dipecah | PR-T2 | siap |  |  |  |
 | 30 | PR-T6 | Layar Peran & Hak Akses dan Akun & Akses | PR-T4, PR-T5 | menunggu |  |  |  |

@@ -1,0 +1,32 @@
+=== <salinan-HEAD>
+peran Uji Tanpa Acuan Kosong: id=cr_uji_tanpa_acuan_kosong · jumlah izin=0
+peran Uji Manajer Kosong: id=cr_uji_manajer_kosong · jumlah izin=0
+
+-- PO Rp250.000.000 menunggu persetujuan tingkat 'manager'
+akun tanpa izin, tanpa acuan      : 403 Approval PO butuh role minimal 'manager'. Role Anda: 'cr_uji_tanpa_acuan_kosong'.
+akun tanpa izin, beracuan Manajer : 200 | di database: {'status': 'pending', 'approval_status': 'approved', 'approved_by': 'T10 mgr0'}
+tolak PO oleh akun yang sama      : 200 | di database: {'status': 'rejected'}
+
+-- PO milik ent_kanda; akun Finance bawaan yang hanya ditugaskan ke ent_ksc
+membaca PO itu                    : 404 Data tidak ditemukan untuk entitas ini
+menyetujui PO itu                 : 404 Data tidak ditemukan untuk entitas ini | di database: {'status': 'waiting_approval', 'entity_id': 'ent_kanda'}
+
+-- Tagihan pemasok Rp75.000.000 menunggu persetujuan
+akun tanpa izin, tanpa acuan      : 403 Approval bill butuh role minimal 'manager'. Role Anda: 'cr_uji_tanpa_acuan_kosong'.
+akun tanpa izin, beracuan Manajer : 200  | di database: {'status': 'posted', 'approval_status': 'approved', 'approved_by': 'T10 mgr0'}
+=== <salinan-kerja>
+peran Uji Tanpa Acuan Kosong: id=cr_uji_tanpa_acuan_kosong · jumlah izin=0
+peran Uji Manajer Kosong: id=cr_uji_manajer_kosong · jumlah izin=0
+
+-- PO Rp250.000.000 menunggu persetujuan tingkat 'manager'
+akun tanpa izin, tanpa acuan      : 403 Anda belum punya akses untuk menyetujui Pesanan Pembelian. Minta Admin menambahkan akses '
+akun tanpa izin, beracuan Manajer : 403 | di database: {'status': 'waiting_approval', 'approval_status': 'pending'}
+tolak PO oleh akun yang sama      : 403 | di database: {'status': 'waiting_approval'}
+
+-- PO milik ent_kanda; akun Finance bawaan yang hanya ditugaskan ke ent_ksc
+membaca PO itu                    : 404 Data tidak ditemukan untuk entitas ini
+menyetujui PO itu                 : 404 Data tidak ditemukan untuk entitas ini | di database: {'status': 'waiting_approval', 'entity_id': 'ent_kanda'}
+
+-- Tagihan pemasok Rp75.000.000 menunggu persetujuan
+akun tanpa izin, tanpa acuan      : 403 Anda belum punya akses untuk menyetujui Tagihan pemasok. Minta Admin menambahkan akses 'Hu
+akun tanpa izin, beracuan Manajer : 403 Anda belum punya akses untuk menyetujui Tagihan pemasok. Minta Admin menambahkan | di database: {'status': 'pending_approval', 'approval_status': 'pending'}

@@ -1,0 +1,37 @@
+### HEAD 494a249 — test_KPT4a_setara.py
+ImportError while importing test module '<salinan-HEAD>/backend/tests_mem/test_KPT4a_setara.py'.
+E   ModuleNotFoundError: No module named 'approval_kinds'
+!!!!!!!!!!!!!!!!!!!! Interrupted: 1 error during collection !!!!!!!!!!!!!!!!!!!!
+1 warning, 1 error in 0.15s
+
+### HEAD 494a249 — test_KPT4b_pengalihan.py
+PASSED tests_mem/test_KPT4b_pengalihan.py::test_KPT4_U12_po_lama_rantai_tersimpan
+FAILED tests_mem/test_KPT4b_pengalihan.py::test_KPT4_U4_izin_tanpa_tercantum_403_batas
+FAILED tests_mem/test_KPT4b_pengalihan.py::test_KPT4_U5_tercantum_di_pt_ini_saja
+FAILED tests_mem/test_KPT4b_pengalihan.py::test_KPT4_U6_manajer_kosong_tiga_pintu_403_izin
+FAILED tests_mem/test_KPT4b_pengalihan.py::test_KPT4_U7_migrasi_memberi_izin_setara
+FAILED tests_mem/test_KPT4b_pengalihan.py::test_KPT4_U8_uang_muka_jenjang3_finance_per_pt
+FAILED tests_mem/test_KPT4b_pengalihan.py::test_KPT4_U9_jenjang_tanpa_baris_dilewati
+FAILED tests_mem/test_KPT4b_pengalihan.py::test_KPT4_U11_put_tanpa_alasan_peran_asing_versi_basi
+FAILED tests_mem/test_KPT4b_pengalihan.py::test_KPT4_U13_pr_satu_pesan_dari_tabel
+FAILED tests_mem/test_KPT4b_pengalihan.py::test_KPT4_U14_tujuh_belas_kunci_tidak_dipakai
+FAILED tests_mem/test_KPT4b_pengalihan.py::test_KPT4_pintu_izin_saja_bertanya_tabel
+FAILED tests_mem/test_KPT4b_pengalihan.py::test_KPT4_can_decide_me_untuk_tombol
+FAILED tests_mem/test_KPT4b_pengalihan.py::test_KPT4_U10_pesanan_khusus_jenjang_dari_tabel
+12 failed, 1 passed, 1 warning in 2.07s
+
+### keadaan (a) — test_KPT4b_pengalihan.py
+PASSED tests_mem/test_KPT4b_pengalihan.py::test_KPT4_U7_migrasi_memberi_izin_setara
+PASSED tests_mem/test_KPT4b_pengalihan.py::test_KPT4_U12_po_lama_rantai_tersimpan
+FAILED tests_mem/test_KPT4b_pengalihan.py::test_KPT4_U4_izin_tanpa_tercantum_403_batas
+FAILED tests_mem/test_KPT4b_pengalihan.py::test_KPT4_U5_tercantum_di_pt_ini_saja
+FAILED tests_mem/test_KPT4b_pengalihan.py::test_KPT4_U6_manajer_kosong_tiga_pintu_403_izin
+FAILED tests_mem/test_KPT4b_pengalihan.py::test_KPT4_U8_uang_muka_jenjang3_finance_per_pt
+FAILED tests_mem/test_KPT4b_pengalihan.py::test_KPT4_U9_jenjang_tanpa_baris_dilewati
+FAILED tests_mem/test_KPT4b_pengalihan.py::test_KPT4_U11_put_tanpa_alasan_peran_asing_versi_basi
+FAILED tests_mem/test_KPT4b_pengalihan.py::test_KPT4_U13_pr_satu_pesan_dari_tabel
+FAILED tests_mem/test_KPT4b_pengalihan.py::test_KPT4_U14_tujuh_belas_kunci_tidak_dipakai
+FAILED tests_mem/test_KPT4b_pengalihan.py::test_KPT4_pintu_izin_saja_bertanya_tabel
+FAILED tests_mem/test_KPT4b_pengalihan.py::test_KPT4_can_decide_me_untuk_tombol
+FAILED tests_mem/test_KPT4b_pengalihan.py::test_KPT4_U10_pesanan_khusus_jenjang_dari_tabel
+11 failed, 2 passed, 1 warning in 2.10s

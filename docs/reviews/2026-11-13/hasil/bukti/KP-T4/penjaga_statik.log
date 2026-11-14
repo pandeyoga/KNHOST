@@ -1,0 +1,278 @@
+# Penjaga statik — HEAD 494a249
+=== verify_auth_coverage
+  ✗ handheld.py: `POST /tag-writes/{write_id}/confirm` TIDAK menegakkan auth (require_permission/require_any_permission/require_role/current_user/entity_ctx) → dapat diakses TANPA login. Tambah enforcer atau daftarkan di PUBLIC_ALLOWLIST bila memang publik.
+  ✗ handheld.py: `POST /tag-writes/{write_id}/fail` TIDAK menegakkan auth (require_permission/require_any_permission/require_role/current_user/entity_ctx) → dapat diakses TANPA login. Tambah enforcer atau daftarkan di PUBLIC_ALLOWLIST bila memang publik.
+  ✗ handheld.py: `GET /registration/catalog` TIDAK menegakkan auth (require_permission/require_any_permission/require_role/current_user/entity_ctx) → dapat diakses TANPA login. Tambah enforcer atau daftarkan di PUBLIC_ALLOWLIST bila memang publik.
+  ✗ handheld.py: `POST /registration/{sid}/epc-pool` TIDAK menegakkan auth (require_permission/require_any_permission/require_role/current_user/entity_ctx) → dapat diakses TANPA login. Tambah enforcer atau daftarkan di PUBLIC_ALLOWLIST bila memang publik.
+  ✗ handheld.py: `POST /registration/{sid}/lines/mark-written` TIDAK menegakkan auth (require_permission/require_any_permission/require_role/current_user/entity_ctx) → dapat diakses TANPA login. Tambah enforcer atau daftarkan di PUBLIC_ALLOWLIST bila memang publik.
+  ✗ handheld.py: `POST /registration/{sid}/label-decode` TIDAK menegakkan auth (require_permission/require_any_permission/require_role/current_user/entity_ctx) → dapat diakses TANPA login. Tambah enforcer atau daftarkan di PUBLIC_ALLOWLIST bila memang publik.
+  ✗ handheld.py: `POST /registration/{sid}/racks/{rack_id}` TIDAK menegakkan auth (require_permission/require_any_permission/require_role/current_user/entity_ctx) → dapat diakses TANPA login. Tambah enforcer atau daftarkan di PUBLIC_ALLOWLIST bila memang publik.
+→ Perbaiki sesuai INVARIANT INV-AUTH-01 (detail: memory/INVARIANTS.md).
+rc=1
+=== verify_access_catalog_nav
+verify_access_catalog_nav: 0 temuan
+rc=0
+=== verify_money_idempotency
+== INV-MONEY-IDEM-01 — form uang lewat moneyRequest.js ber-Idempotency-Key ==
+[PASS] 17 cek lolos, 0 pelanggaran.
+rc=0
+=== verify_custom_modals
+  berkas berpola: 49 (baseline 49) · pola: 51 (baseline 51)
+== INV-UI-11 — pop-up buatan sendiri hanya boleh berkurang (pakai FormModal/DetailModal) ==
+[PASS] 98 cek lolos, 0 pelanggaran.
+rc=0
+=== verify_ui_standard
+  ✗ [hex] features/settings/entities/RoleDangerDialog.jsx NAIK 6 → 7 — warna lewat token/kelas baku (text-kn-*, bg-kn-*, var(--kn-*)), bukan hex lepas.
+  ✗ [hex] features/settings/entities/RoleEditorDrawer.jsx NAIK 46 → 58 — warna lewat token/kelas baku (text-kn-*, bg-kn-*, var(--kn-*)), bukan hex lepas.
+  ✗ [hex] features/settings/ApprovalEffectiveTiers.jsx berkas BARU memakai pola usang (4×) — warna lewat token/kelas baku (text-kn-*, bg-kn-*, var(--kn-*)), bukan hex lepas.
+  ✗ [btn_custom] features/settings/ApprovalEffectiveTiers.jsx berkas BARU memakai pola usang (1×) — tombol pakai kelas baku primary/secondary/danger/ghost/icon-button (+ btn-sm/btn-touch).
+  ✗ [btn_force] features/settings/entities/RoleEditorDrawer.jsx NAIK 2 → 3 — jangan paksa ukuran tombol baku dengan !py/!h/!text — pakai pengubah resmi btn-sm / btn-touch.
+  ✗ [btn_force] features/purchasing/apPayment.jsx berkas BARU memakai pola usang (3×) — jangan paksa ukuran tombol baku dengan !py/!h/!text — pakai pengubah resmi btn-sm / btn-touch.
+  ✗ [hex] 2 warna hex BARU di aplikasi: #1F5FBF, #F5D9B0 — pakai token --kn-* / kelas kn-* (styles/tokens.css, tailwind `kn`).
+→ Perbaiki sesuai INVARIANT G-UI (Standar UI Gudang v1) (detail: memory/INVARIANTS.md).
+rc=1
+=== verify_error_notice
+  utang teknis (baseline aturan C): 6 modal lama belum punya bilah error sendiri — lihat MODAL_BASELINE.
+== INV-UI-03 — Kegagalan backend harus terlihat di layar (anti error senyap) ==
+[PASS] 283 cek lolos, 0 pelanggaran.
+rc=0
+=== verify_approval_queues
+== INV-APPR-01 — tiap pintu keputusan punya antrean yang menghitungnya ==
+[FAIL] 5 pelanggaran (dari 226 cek):
+  ✗ PINTU KEPUTUSAN BARU tanpa antrean: `gl.py::/api/gl/journal-proposals/{proposal_id}/approve` tidak ada di DOOR_QUEUE maupun DOOR_EXEMPT → dokumen yang menunggu keputusan di pintu ini tidak akan pernah muncul di KPI beranda / Pusat Persetujuan.
+  ✗ PINTU KEPUTUSAN BARU tanpa antrean: `gl.py::/api/gl/journal-proposals/{proposal_id}/reject` tidak ada di DOOR_QUEUE maupun DOOR_EXEMPT → dokumen yang menunggu keputusan di pintu ini tidak akan pernah muncul di KPI beranda / Pusat Persetujuan.
+  ✗ PINTU KEPUTUSAN BARU tanpa antrean: `initial_registration.py::/registration/sessions/{sid}/approve` tidak ada di DOOR_QUEUE maupun DOOR_EXEMPT → dokumen yang menunggu keputusan di pintu ini tidak akan pernah muncul di KPI beranda / Pusat Persetujuan.
+  ✗ PINTU KEPUTUSAN BARU tanpa antrean: `initial_registration.py::/registration/sessions/{sid}/approve-count` tidak ada di DOOR_QUEUE maupun DOOR_EXEMPT → dokumen yang menunggu keputusan di pintu ini tidak akan pernah muncul di KPI beranda / Pusat Persetujuan.
+  ✗ PINTU KEPUTUSAN BARU tanpa antrean: `initial_registration.py::/registration/sessions/{sid}/reject` tidak ada di DOOR_QUEUE maupun DOOR_EXEMPT → dokumen yang menunggu keputusan di pintu ini tidak akan pernah muncul di KPI beranda / Pusat Persetujuan.
+→ Perbaiki sesuai INVARIANT INV-APPR-01 (detail: memory/INVARIANTS.md).
+rc=1
+=== verify_codebase_map
+== INV-DOC-01 — CODEBASE_MAP.md selaras kode (selisih ≤10%) ==
+[PASS] 5 cek lolos, 0 pelanggaran.
+rc=0
+=== verify_page_tabs
+  berkas berpola: 7 (baseline 6) · pola: 7 (baseline 6)
+== INV-UI-12 — tab maksimal 2 tingkat — tab/pil buatan sendiri hanya boleh berkurang ==
+[FAIL] 1 pelanggaran (dari 13 cek):
+  ✗ features/wms/InventoryStockView.jsx — berkas BARU memakai tab/pil buatan sendiri (1×). Pakai components/PageTabs.jsx (tab) atau components/FilterChips.jsx (saringan).
+→ Perbaiki sesuai INVARIANT INV-UI-12 (detail: memory/INVARIANTS.md).
+rc=1
+=== verify_knselect_contract
+verify_knselect_contract: 0 temuan
+rc=0
+=== verify_approval_queues --self-test
+  [PASS] E: koleksi belum ada di DB tetapi ADA di kode → hijau  (harap=0 pelanggaran, dapat=0)
+  [PASS] F: mesin generik kembali tanpa produsen → merah  (harap=1 pelanggaran, dapat=1)
+  [PASS] F: mesin generik benar-benar pensiun → hijau  (harap=0 pelanggaran, dapat=0)
+  HIJAU — penjaga terbukti menuduh pintu tanpa antrean.
+=== audit_i18n_id --strict
+                 putaway → Simpan ke Rak
+
+  ✗ 113 temuan di 66 berkas.
+
+rc=1
+=== audit_create_modal
+  ✗ features/finance/JournalDetailModal.jsx:116 TOMBOL MATI: `gl-reverse-submit` menyalakan `revBusy` tetapi state itu tidak pernah dirender → klik tidak memunculkan apa pun.
+  ✗ features/settings/masters/AddFabricTypeInline.jsx:29 TOMBOL MATI: `(tanpa-testid)` menyalakan `open` tetapi state itu tidak pernah dirender → klik tidak memunculkan apa pun.
+→ Perbaiki sesuai INVARIANT INV-UI-05 (detail: memory/INVARIANTS.md).
+rc=1
+=== audit_config_wiring (jalur /app -> salinan)
+  [global] interco_payment.require_full_payment                 default=True  kode: be:services/interco_service.py
+
+── NOT_USED (1) ────────────────────────────────────────────────────────────────────
+  [global] sales.quotation_enabled                              default=False  alasan: Alur Penawaran (Quotation) BELUM ADA di sistem — tidak ada satu pun en
+
+⚠️  9 kunci bermasalah + 2 editor ganda (INV-CFG).
+rc=0
+=== config_health (tanpa DB)
+{'OK': 359, 'NOT_USED': 9, 'STALE': 4}
+
+# Penjaga statik — keadaan (a)
+=== verify_auth_coverage
+  ✗ handheld.py: `POST /tag-writes/{write_id}/confirm` TIDAK menegakkan auth (require_permission/require_any_permission/require_role/current_user/entity_ctx) → dapat diakses TANPA login. Tambah enforcer atau daftarkan di PUBLIC_ALLOWLIST bila memang publik.
+  ✗ handheld.py: `POST /tag-writes/{write_id}/fail` TIDAK menegakkan auth (require_permission/require_any_permission/require_role/current_user/entity_ctx) → dapat diakses TANPA login. Tambah enforcer atau daftarkan di PUBLIC_ALLOWLIST bila memang publik.
+  ✗ handheld.py: `GET /registration/catalog` TIDAK menegakkan auth (require_permission/require_any_permission/require_role/current_user/entity_ctx) → dapat diakses TANPA login. Tambah enforcer atau daftarkan di PUBLIC_ALLOWLIST bila memang publik.
+  ✗ handheld.py: `POST /registration/{sid}/epc-pool` TIDAK menegakkan auth (require_permission/require_any_permission/require_role/current_user/entity_ctx) → dapat diakses TANPA login. Tambah enforcer atau daftarkan di PUBLIC_ALLOWLIST bila memang publik.
+  ✗ handheld.py: `POST /registration/{sid}/lines/mark-written` TIDAK menegakkan auth (require_permission/require_any_permission/require_role/current_user/entity_ctx) → dapat diakses TANPA login. Tambah enforcer atau daftarkan di PUBLIC_ALLOWLIST bila memang publik.
+  ✗ handheld.py: `POST /registration/{sid}/label-decode` TIDAK menegakkan auth (require_permission/require_any_permission/require_role/current_user/entity_ctx) → dapat diakses TANPA login. Tambah enforcer atau daftarkan di PUBLIC_ALLOWLIST bila memang publik.
+  ✗ handheld.py: `POST /registration/{sid}/racks/{rack_id}` TIDAK menegakkan auth (require_permission/require_any_permission/require_role/current_user/entity_ctx) → dapat diakses TANPA login. Tambah enforcer atau daftarkan di PUBLIC_ALLOWLIST bila memang publik.
+→ Perbaiki sesuai INVARIANT INV-AUTH-01 (detail: memory/INVARIANTS.md).
+rc=1
+=== verify_access_catalog_nav
+verify_access_catalog_nav: 0 temuan
+rc=0
+=== verify_money_idempotency
+== INV-MONEY-IDEM-01 — form uang lewat moneyRequest.js ber-Idempotency-Key ==
+[PASS] 17 cek lolos, 0 pelanggaran.
+rc=0
+=== verify_custom_modals
+  berkas berpola: 49 (baseline 49) · pola: 51 (baseline 51)
+== INV-UI-11 — pop-up buatan sendiri hanya boleh berkurang (pakai FormModal/DetailModal) ==
+[PASS] 98 cek lolos, 0 pelanggaran.
+rc=0
+=== verify_ui_standard
+  ✗ [hex] features/settings/entities/RoleDangerDialog.jsx NAIK 6 → 7 — warna lewat token/kelas baku (text-kn-*, bg-kn-*, var(--kn-*)), bukan hex lepas.
+  ✗ [hex] features/settings/entities/RoleEditorDrawer.jsx NAIK 46 → 58 — warna lewat token/kelas baku (text-kn-*, bg-kn-*, var(--kn-*)), bukan hex lepas.
+  ✗ [hex] features/settings/ApprovalEffectiveTiers.jsx berkas BARU memakai pola usang (4×) — warna lewat token/kelas baku (text-kn-*, bg-kn-*, var(--kn-*)), bukan hex lepas.
+  ✗ [btn_custom] features/settings/ApprovalEffectiveTiers.jsx berkas BARU memakai pola usang (1×) — tombol pakai kelas baku primary/secondary/danger/ghost/icon-button (+ btn-sm/btn-touch).
+  ✗ [btn_force] features/settings/entities/RoleEditorDrawer.jsx NAIK 2 → 3 — jangan paksa ukuran tombol baku dengan !py/!h/!text — pakai pengubah resmi btn-sm / btn-touch.
+  ✗ [btn_force] features/purchasing/apPayment.jsx berkas BARU memakai pola usang (3×) — jangan paksa ukuran tombol baku dengan !py/!h/!text — pakai pengubah resmi btn-sm / btn-touch.
+  ✗ [hex] 2 warna hex BARU di aplikasi: #1F5FBF, #F5D9B0 — pakai token --kn-* / kelas kn-* (styles/tokens.css, tailwind `kn`).
+→ Perbaiki sesuai INVARIANT G-UI (Standar UI Gudang v1) (detail: memory/INVARIANTS.md).
+rc=1
+=== verify_error_notice
+  utang teknis (baseline aturan C): 6 modal lama belum punya bilah error sendiri — lihat MODAL_BASELINE.
+== INV-UI-03 — Kegagalan backend harus terlihat di layar (anti error senyap) ==
+[PASS] 284 cek lolos, 0 pelanggaran.
+rc=0
+=== verify_approval_queues
+== INV-APPR-01 — tiap pintu keputusan punya antrean yang menghitungnya ==
+[FAIL] 5 pelanggaran (dari 311 cek):
+  ✗ PINTU KEPUTUSAN BARU tanpa antrean: `gl.py::/api/gl/journal-proposals/{proposal_id}/approve` tidak ada di DOOR_QUEUE maupun DOOR_EXEMPT → dokumen yang menunggu keputusan di pintu ini tidak akan pernah muncul di KPI beranda / Pusat Persetujuan.
+  ✗ PINTU KEPUTUSAN BARU tanpa antrean: `gl.py::/api/gl/journal-proposals/{proposal_id}/reject` tidak ada di DOOR_QUEUE maupun DOOR_EXEMPT → dokumen yang menunggu keputusan di pintu ini tidak akan pernah muncul di KPI beranda / Pusat Persetujuan.
+  ✗ PINTU KEPUTUSAN BARU tanpa antrean: `initial_registration.py::/registration/sessions/{sid}/approve` tidak ada di DOOR_QUEUE maupun DOOR_EXEMPT → dokumen yang menunggu keputusan di pintu ini tidak akan pernah muncul di KPI beranda / Pusat Persetujuan.
+  ✗ PINTU KEPUTUSAN BARU tanpa antrean: `initial_registration.py::/registration/sessions/{sid}/approve-count` tidak ada di DOOR_QUEUE maupun DOOR_EXEMPT → dokumen yang menunggu keputusan di pintu ini tidak akan pernah muncul di KPI beranda / Pusat Persetujuan.
+  ✗ PINTU KEPUTUSAN BARU tanpa antrean: `initial_registration.py::/registration/sessions/{sid}/reject` tidak ada di DOOR_QUEUE maupun DOOR_EXEMPT → dokumen yang menunggu keputusan di pintu ini tidak akan pernah muncul di KPI beranda / Pusat Persetujuan.
+→ Perbaiki sesuai INVARIANT INV-APPR-01 (detail: memory/INVARIANTS.md).
+rc=1
+=== verify_codebase_map
+== INV-DOC-01 — CODEBASE_MAP.md selaras kode (selisih ≤10%) ==
+[PASS] 5 cek lolos, 0 pelanggaran.
+rc=0
+=== verify_page_tabs
+  berkas berpola: 7 (baseline 6) · pola: 7 (baseline 6)
+== INV-UI-12 — tab maksimal 2 tingkat — tab/pil buatan sendiri hanya boleh berkurang ==
+[FAIL] 1 pelanggaran (dari 13 cek):
+  ✗ features/wms/InventoryStockView.jsx — berkas BARU memakai tab/pil buatan sendiri (1×). Pakai components/PageTabs.jsx (tab) atau components/FilterChips.jsx (saringan).
+→ Perbaiki sesuai INVARIANT INV-UI-12 (detail: memory/INVARIANTS.md).
+rc=1
+=== verify_knselect_contract
+verify_knselect_contract: 0 temuan
+rc=0
+=== verify_approval_queues --self-test
+  [PASS] G: antrean tanpa jenis dokumen kebijakan → merah  (harap=1 pelanggaran, dapat=1)
+  [PASS] G: jenis dokumen menunjuk antrean yang tak ada → merah  (harap=1 pelanggaran, dapat=1)
+  [PASS] G: tiap antrean punya jenis → hijau  (harap=0 pelanggaran, dapat=0)
+  HIJAU — penjaga terbukti menuduh pintu tanpa antrean.
+=== audit_i18n_id --strict
+                 putaway → Simpan ke Rak
+
+  ✗ 113 temuan di 66 berkas.
+
+rc=1
+=== audit_create_modal
+  ✗ features/finance/JournalDetailModal.jsx:116 TOMBOL MATI: `gl-reverse-submit` menyalakan `revBusy` tetapi state itu tidak pernah dirender → klik tidak memunculkan apa pun.
+  ✗ features/settings/masters/AddFabricTypeInline.jsx:29 TOMBOL MATI: `(tanpa-testid)` menyalakan `open` tetapi state itu tidak pernah dirender → klik tidak memunculkan apa pun.
+→ Perbaiki sesuai INVARIANT INV-UI-05 (detail: memory/INVARIANTS.md).
+rc=1
+=== audit_config_wiring (jalur /app -> salinan)
+  [global] interco_payment.require_full_payment                 default=True  kode: be:services/interco_service.py
+
+── NOT_USED (1) ────────────────────────────────────────────────────────────────────
+  [global] sales.quotation_enabled                              default=False  alasan: Alur Penawaran (Quotation) BELUM ADA di sistem — tidak ada satu pun en
+
+⚠️  9 kunci bermasalah + 2 editor ganda (INV-CFG).
+rc=0
+=== config_health (tanpa DB)
+{'OK': 359, 'NOT_USED': 9, 'STALE': 4}
+
+# Penjaga statik — keadaan (a)+(b)
+=== verify_auth_coverage
+  ✗ handheld.py: `POST /tag-writes/{write_id}/confirm` TIDAK menegakkan auth (require_permission/require_any_permission/require_role/current_user/entity_ctx) → dapat diakses TANPA login. Tambah enforcer atau daftarkan di PUBLIC_ALLOWLIST bila memang publik.
+  ✗ handheld.py: `POST /tag-writes/{write_id}/fail` TIDAK menegakkan auth (require_permission/require_any_permission/require_role/current_user/entity_ctx) → dapat diakses TANPA login. Tambah enforcer atau daftarkan di PUBLIC_ALLOWLIST bila memang publik.
+  ✗ handheld.py: `GET /registration/catalog` TIDAK menegakkan auth (require_permission/require_any_permission/require_role/current_user/entity_ctx) → dapat diakses TANPA login. Tambah enforcer atau daftarkan di PUBLIC_ALLOWLIST bila memang publik.
+  ✗ handheld.py: `POST /registration/{sid}/epc-pool` TIDAK menegakkan auth (require_permission/require_any_permission/require_role/current_user/entity_ctx) → dapat diakses TANPA login. Tambah enforcer atau daftarkan di PUBLIC_ALLOWLIST bila memang publik.
+  ✗ handheld.py: `POST /registration/{sid}/lines/mark-written` TIDAK menegakkan auth (require_permission/require_any_permission/require_role/current_user/entity_ctx) → dapat diakses TANPA login. Tambah enforcer atau daftarkan di PUBLIC_ALLOWLIST bila memang publik.
+  ✗ handheld.py: `POST /registration/{sid}/label-decode` TIDAK menegakkan auth (require_permission/require_any_permission/require_role/current_user/entity_ctx) → dapat diakses TANPA login. Tambah enforcer atau daftarkan di PUBLIC_ALLOWLIST bila memang publik.
+  ✗ handheld.py: `POST /registration/{sid}/racks/{rack_id}` TIDAK menegakkan auth (require_permission/require_any_permission/require_role/current_user/entity_ctx) → dapat diakses TANPA login. Tambah enforcer atau daftarkan di PUBLIC_ALLOWLIST bila memang publik.
+→ Perbaiki sesuai INVARIANT INV-AUTH-01 (detail: memory/INVARIANTS.md).
+rc=1
+=== verify_access_catalog_nav
+verify_access_catalog_nav: 0 temuan
+rc=0
+=== verify_money_idempotency
+== INV-MONEY-IDEM-01 — form uang lewat moneyRequest.js ber-Idempotency-Key ==
+[PASS] 17 cek lolos, 0 pelanggaran.
+rc=0
+=== verify_custom_modals
+  berkas berpola: 49 (baseline 49) · pola: 51 (baseline 51)
+== INV-UI-11 — pop-up buatan sendiri hanya boleh berkurang (pakai FormModal/DetailModal) ==
+[PASS] 98 cek lolos, 0 pelanggaran.
+rc=0
+=== verify_ui_standard
+  ✗ [hex] features/settings/entities/AccountFormDrawer.jsx NAIK 59 → 60 — warna lewat token/kelas baku (text-kn-*, bg-kn-*, var(--kn-*)), bukan hex lepas.
+  ✗ [hex] features/settings/entities/RoleAccessPanel.jsx NAIK 34 → 35 — warna lewat token/kelas baku (text-kn-*, bg-kn-*, var(--kn-*)), bukan hex lepas.
+  ✗ [hex] features/settings/entities/RoleDangerDialog.jsx NAIK 6 → 7 — warna lewat token/kelas baku (text-kn-*, bg-kn-*, var(--kn-*)), bukan hex lepas.
+  ✗ [hex] features/settings/entities/RoleEditorDrawer.jsx NAIK 46 → 58 — warna lewat token/kelas baku (text-kn-*, bg-kn-*, var(--kn-*)), bukan hex lepas.
+  ✗ [btn_force] features/settings/entities/RoleEditorDrawer.jsx NAIK 2 → 3 — jangan paksa ukuran tombol baku dengan !py/!h/!text — pakai pengubah resmi btn-sm / btn-touch.
+  ✗ [btn_force] features/purchasing/apPayment.jsx berkas BARU memakai pola usang (3×) — jangan paksa ukuran tombol baku dengan !py/!h/!text — pakai pengubah resmi btn-sm / btn-touch.
+  ✗ [hex] 1 warna hex BARU di aplikasi: #F5D9B0 — pakai token --kn-* / kelas kn-* (styles/tokens.css, tailwind `kn`).
+→ Perbaiki sesuai INVARIANT G-UI (Standar UI Gudang v1) (detail: memory/INVARIANTS.md).
+rc=1
+=== verify_error_notice
+  utang teknis (baseline aturan C): 6 modal lama belum punya bilah error sendiri — lihat MODAL_BASELINE.
+== INV-UI-03 — Kegagalan backend harus terlihat di layar (anti error senyap) ==
+[PASS] 282 cek lolos, 0 pelanggaran.
+rc=0
+=== verify_approval_queues
+== INV-APPR-01 — tiap pintu keputusan punya antrean yang menghitungnya ==
+[FAIL] 5 pelanggaran (dari 312 cek):
+  ✗ PINTU KEPUTUSAN BARU tanpa antrean: `gl.py::/api/gl/journal-proposals/{proposal_id}/approve` tidak ada di DOOR_QUEUE maupun DOOR_EXEMPT → dokumen yang menunggu keputusan di pintu ini tidak akan pernah muncul di KPI beranda / Pusat Persetujuan.
+  ✗ PINTU KEPUTUSAN BARU tanpa antrean: `gl.py::/api/gl/journal-proposals/{proposal_id}/reject` tidak ada di DOOR_QUEUE maupun DOOR_EXEMPT → dokumen yang menunggu keputusan di pintu ini tidak akan pernah muncul di KPI beranda / Pusat Persetujuan.
+  ✗ PINTU KEPUTUSAN BARU tanpa antrean: `initial_registration.py::/registration/sessions/{sid}/approve` tidak ada di DOOR_QUEUE maupun DOOR_EXEMPT → dokumen yang menunggu keputusan di pintu ini tidak akan pernah muncul di KPI beranda / Pusat Persetujuan.
+  ✗ PINTU KEPUTUSAN BARU tanpa antrean: `initial_registration.py::/registration/sessions/{sid}/approve-count` tidak ada di DOOR_QUEUE maupun DOOR_EXEMPT → dokumen yang menunggu keputusan di pintu ini tidak akan pernah muncul di KPI beranda / Pusat Persetujuan.
+  ✗ PINTU KEPUTUSAN BARU tanpa antrean: `initial_registration.py::/registration/sessions/{sid}/reject` tidak ada di DOOR_QUEUE maupun DOOR_EXEMPT → dokumen yang menunggu keputusan di pintu ini tidak akan pernah muncul di KPI beranda / Pusat Persetujuan.
+→ Perbaiki sesuai INVARIANT INV-APPR-01 (detail: memory/INVARIANTS.md).
+rc=1
+=== verify_codebase_map
+== INV-DOC-01 — CODEBASE_MAP.md selaras kode (selisih ≤10%) ==
+[PASS] 5 cek lolos, 0 pelanggaran.
+rc=0
+=== verify_page_tabs
+  berkas berpola: 7 (baseline 6) · pola: 7 (baseline 6)
+== INV-UI-12 — tab maksimal 2 tingkat — tab/pil buatan sendiri hanya boleh berkurang ==
+[FAIL] 1 pelanggaran (dari 13 cek):
+  ✗ features/wms/InventoryStockView.jsx — berkas BARU memakai tab/pil buatan sendiri (1×). Pakai components/PageTabs.jsx (tab) atau components/FilterChips.jsx (saringan).
+→ Perbaiki sesuai INVARIANT INV-UI-12 (detail: memory/INVARIANTS.md).
+rc=1
+=== verify_knselect_contract
+verify_knselect_contract: 0 temuan
+rc=0
+=== verify_approval_queues --self-test
+  [PASS] G: antrean tanpa jenis dokumen kebijakan → merah  (harap=1 pelanggaran, dapat=1)
+  [PASS] G: jenis dokumen menunjuk antrean yang tak ada → merah  (harap=1 pelanggaran, dapat=1)
+  [PASS] G: tiap antrean punya jenis → hijau  (harap=0 pelanggaran, dapat=0)
+  HIJAU — penjaga terbukti menuduh pintu tanpa antrean.
+=== audit_i18n_id --strict
+                 putaway → Simpan ke Rak
+
+  ✗ 112 temuan di 65 berkas.
+
+rc=1
+=== audit_create_modal
+  ✗ features/finance/JournalDetailModal.jsx:116 TOMBOL MATI: `gl-reverse-submit` menyalakan `revBusy` tetapi state itu tidak pernah dirender → klik tidak memunculkan apa pun.
+  ✗ features/settings/masters/AddFabricTypeInline.jsx:29 TOMBOL MATI: `(tanpa-testid)` menyalakan `open` tetapi state itu tidak pernah dirender → klik tidak memunculkan apa pun.
+→ Perbaiki sesuai INVARIANT INV-UI-05 (detail: memory/INVARIANTS.md).
+rc=1
+=== audit_config_wiring (jalur /app -> salinan)
+
+── NOT_USED (2) ────────────────────────────────────────────────────────────────────
+  [global] sales.quotation_enabled                              default=False  alasan: Alur Penawaran (Quotation) BELUM ADA di sistem — tidak ada satu pun en
+  [global] approval.extra_levels.purchase_order                 default='<complex>'  alasan: Dipindah ke Aturan Persetujuan (Pengaturan › Persetujuan › Aturan Pers
+
+⚠️  9 kunci bermasalah + 2 editor ganda (INV-CFG).
+rc=0
+=== config_health (tanpa DB)
+{'OK': 342, 'NOT_USED': 26, 'STALE': 4}
+
+# verify_ui_standard daftar lengkap (bukan tail): HEAD vs (a)+(b)
+1d0
+<   ✗ [btn_custom] features/settings/ApprovalEffectiveTiers.jsx berkas BARU memakai pola usang (1×) — tombol pakai kelas baku primary/secondary/danger/ghost/icon-button (+ btn-sm/btn-touch).
+13c12
+<   ✗ [hex] 2 warna hex BARU di aplikasi: #1F5FBF, #F5D9B0 — pakai token --kn-* / kelas kn-* (styles/tokens.css, tailwind `kn`).
+---
+>   ✗ [hex] 1 warna hex BARU di aplikasi: #F5D9B0 — pakai token --kn-* / kelas kn-* (styles/tokens.css, tailwind `kn`).
+21,22d19
+<   ✗ [hex] features/settings/ApprovalEffectiveTiers.jsx berkas BARU memakai pola usang (4×) — warna lewat token/kelas baku (text-kn-*, bg-kn-*, var(--kn-*)), bukan hex lepas.
+<   ✗ [hex] features/settings/ApprovalRulesSettings.jsx NAIK 1 → 2 — warna lewat token/kelas baku (text-kn-*, bg-kn-*, var(--kn-*)), bukan hex lepas.
+jumlah: 26 → 23
