@@ -51,7 +51,7 @@ Papan kerja agen pelaksana. Aturan mengubahnya: `00_ATURAN_EKSEKUSI.md` §5. Uru
 | 44 | KP-T8 | Rahasia dan perangkat | KF-T1 | selesai | `a742da9` | [KP-T8](../reviews/2026-11-13/hasil/KP-T8.md) |  |
 | 45 | MN-T1 | Menu keuangan dan SDM: pindah dan kelompokkan | PR-T5 | selesai | `5e94a1d` | [MN-T1](../reviews/2026-11-13/hasil/MN-T1.md) |  |
 | 46 | KP-T9 | Susunan hub Pengaturan | MN-T1, KF-T4 | selesai | `b95bd0d` | [KP-T9](../reviews/2026-11-13/hasil/KP-T9.md) |  |
-| 47 | PK-18 | Penanda gagal dan panel untuk semua jenis dokumen | PK-05, PK-06 tervalidasi | menunggu |  |  |  |
+| 47 | PK-18 | Penanda gagal dan panel untuk semua jenis dokumen | PK-05, PK-06 tervalidasi | siap |  |  | Prasyarat "PK-05, PK-06 tervalidasi" dilepas atas keputusan pemilik 14 Nov (H1; lihat Menunggu pemilik) |
 | 48 | PK-19 | Kwitansi, deposit, selisih bayar: satu fungsi alokasi | PK-18 | menunggu |  |  |  |
 | 49 | PK-20 | Kas dibuat lewat satu pembuat | PK-18 | menunggu |  |  |  |
 | 50 | PK-21 | Rekonsiliasi bank satu mekanisme | PK-15 | selesai | `3c459d9` | [PK-21](../reviews/2026-11-13/hasil/PK-21.md) |  |
@@ -117,7 +117,7 @@ Diisi agen saat sebuah unit masuk `tahan`: satu kalimat pertanyaan, pilihan yang
 |---|---|---|---|
 | PK-46 (H4) | Berkas tarif PPh 21 terverifikasi (`docs/blueprint/data/pph21_terverifikasi.json`: TER A/B/C, kategori per status PTKP, PTKP, pasal 17, biaya jabatan, ≥ 5 titik uji per kategori, sumber + pemverifikasi + tanggal berlaku) sudah ada? Mekanisme selesai (`hasil/PK-46.md`); slip tetap memakai angka lama sampai berkas dimuat | Serahkan berkas · tunda | Serahkan berkas yang disalin dari lampiran peraturan dan diverifikasi orang pajak; agen menjalankan `scripts/muat_pph21_terverifikasi.py --dry-run` + U12–U13 di database tiruan; `--apply` di data nyata menunggu persetujuan (H3) |
 | PK-30 (H4) | Transaksi antar-PT ke pembeli **bukan PKP** yang ber-PPN: PPN masukan pembeli dijurnal sebagai apa? Sementara jurnal tetap seperti lama (Dr 1-1500 PPN Masukan) dan rincian menampilkan tanda peringatan (`tax_warning`) | Tetap PPN masukan · tambah ke nilai persediaan · beban | Putuskan bersama konsultan pajak; perubahan cukup di rencana jurnal `interco_service` (lihat `hasil/PK-30.md` "Menunggu pemilik"). Selisih panjang: roll pendek menurunkan tagihan tanpa membuat ulang sisa pesanan; kenaikan nilai tidak mengulang ambang persetujuan — mengikuti spesifikasi, mohon dikonfirmasi |
-| PK-05, PK-06 (H1) | Pola posting (periksa tanpa tulis → niat → efek idempoten → jurnal tahan-gagal; jurnal kembar `preflight_twin`/`post_twin`) disetujui sebagai acuan unit gelombang 3? | Setujui · minta ubah | Dilanjutkan atas arahan pemilik 13 Nov ("kerjakan sesuai rekomendasi, catat"); reviewer diminta meninjau `hasil/PK-05.md` dan `hasil/PK-06.md` |
+| PK-05, PK-06 (H1) — **diputuskan 14 Nov** | Pola posting (periksa tanpa tulis → niat → efek idempoten → jurnal tahan-gagal; jurnal kembar `preflight_twin`/`post_twin`) disetujui sebagai acuan unit gelombang 3? | Setujui · minta ubah | **Pemilik menyetujui (14 Nov, di sesi): PK-18 dan rantainya dimulai sebelum PK-05/PK-06 `tervalidasi`**; reviewer tetap memvalidasi `hasil/PK-05.md`, `hasil/PK-06.md` — bila pola ditolak, unit gelombang 3 disesuaikan |
 
 ## Catatan sesi
 
