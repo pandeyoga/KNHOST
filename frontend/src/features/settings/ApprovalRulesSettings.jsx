@@ -293,7 +293,7 @@ export default function ApprovalRulesSettings({ currentUser }) {
                       <span className="text-xs text-muted">Tanpa persetujuan (otomatis)</span>
                     )}
                     {rule.role_known === false && (
-                      <div className="text-xs text-[#A8221A]" data-testid={`rule-role-unknown-${rule.id}`}>
+                      <div className="text-xs text-kn-danger-text" data-testid={`rule-role-unknown-${rule.id}`}>
                         peran tidak dikenal — diperlakukan sebagai Manajer
                       </div>
                     )}

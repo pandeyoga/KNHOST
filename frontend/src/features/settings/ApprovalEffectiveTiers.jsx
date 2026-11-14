@@ -20,7 +20,7 @@ function TierCard({ dt }) {
   const lines = tierLines(dt);
   const unused = dt.unused_group_rules || [];
   return (
-    <div className="rounded-lg border border-[#E5E5EA] p-3" data-testid={`tier-card-${dt.doc_type}`}>
+    <div className="rounded-lg border border-kn-divider p-3" data-testid={`tier-card-${dt.doc_type}`}>
       <div className="flex items-center justify-between gap-2 mb-2">
         <p className="text-sm font-semibold">{dt.label}</p>
         <span className={`feature-badge ${badge.cls}`} data-testid={`tier-source-${dt.doc_type}`}>
@@ -35,7 +35,7 @@ function TierCard({ dt }) {
             <li key={l.key}>
               {l.text}
               {l.unknown && (
-                <span className="ml-1 text-xs text-[#A8221A]">(peran tidak dikenal — diperlakukan sebagai Manajer)</span>
+                <span className="ml-1 text-xs text-kn-danger-text">(peran tidak dikenal — diperlakukan sebagai Manajer)</span>
               )}
             </li>
           ))}
@@ -49,7 +49,7 @@ function TierCard({ dt }) {
       ))}
       {dt.source === "pt" && unused.length > 0 && (
         <div className="mt-2">
-          <button type="button" className="text-xs font-semibold text-[#1F5FBF] underline"
+          <button type="button" className="ghost-button btn-sm text-kn-action underline"
             data-testid={`tier-unused-toggle-${dt.doc_type}`} onClick={() => setShowUnused((v) => !v)}>
             {showUnused
               ? "Sembunyikan aturan grup yang tidak dipakai"
@@ -118,7 +118,7 @@ export default function ApprovalEffectiveTiers({ reloadKey = 0 }) {
         <ErrorNotice message={error} onRetry={load} testId="approval-effective-error" />
       ) : loading || !data ? (
         <div className="grid gap-3 md:grid-cols-3" data-testid="approval-effective-loading">
-          {[0, 1, 2].map((i) => <div key={i} className="h-28 rounded-lg bg-[#F0F0F3] animate-pulse" />)}
+          {[0, 1, 2].map((i) => <div key={i} className="h-28 rounded-lg bg-kn-neutral-soft animate-pulse" />)}
         </div>
       ) : docTypes.length === 0 ? (
         <p className="text-sm text-muted" data-testid="approval-effective-empty">Belum ada aturan untuk PT ini.</p>
