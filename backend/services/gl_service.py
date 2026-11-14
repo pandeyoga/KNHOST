@@ -2750,15 +2750,59 @@ async def purchase_return_basis(ret: Dict[str, Any], outcome: str = "ap_credit")
     return "gr_ir"
 
 
+#: PK-27 (IV-06) — kunci Pemetaan Akun selisih nilai nota retur beli terhadap nilai buku roll (bawaan kosong, H4).
+PURCHASE_RETURN_VARIANCE_KEY = "retur.selisih_retur_beli"
+
+
+def purchase_return_book_diff(*, amount: float, ppn: float = 0.0,
+                              book_value: Optional[float] = None) -> Optional[float]:
+    """PK-27 (IV-06) — selisih nilai buku roll yang diretur (`B`) terhadap nilai nota tanpa PPN (`D = amount − ppn`),
+    dalam rupiah 2 desimal (hitungan sen, `02` D5). `None` = retur lama tanpa nilai buku (perilaku lama)."""
+    if book_value is None:
+        return None
+    return from_cents(to_cents(book_value) - (to_cents(amount) - to_cents(ppn)))
+
+
+async def purchase_return_book_lines(ret: Dict[str, Any], lines: List[Dict[str, Any]], *, net: float,
+                                     book_value: Optional[float] = None, label: str = "") -> List[Dict[str, Any]]:
+    """PK-27 (IV-06) — baris persediaan jurnal retur beli dinilai pada NILAI BUKU roll yang keluar.
+
+    Baris kredit persediaan sebesar nilai nota (`net` = D) diganti Cr persediaan `book_value` (B) + baris selisih
+    `retur.selisih_retur_beli` (Dr bila B > D, Cr bila B < D). Tanpa `book_value`, selisih nol, atau kunci belum
+    terpetakan untuk PT retur: baris dikembalikan apa adanya (perilaku lama; selisihnya dicatat di dokumen retur).
+    Baris debit (hutang/GR-IR/kas) dan PPN masukan tidak disentuh."""
+    diff = purchase_return_book_diff(amount=net, book_value=book_value)
+    if diff is None or to_cents(diff) == 0:
+        return lines
+    eid = ret.get("entity_id") or DEFAULT_ENTITY_ID
+    if not await account_for(PURCHASE_RETURN_VARIANCE_KEY, eid):
+        return lines
+    stok = [ln for ln in lines if ln.get("account_code") == ACC_PERSEDIAAN and float(ln.get("credit") or 0) > 0]
+    if len(stok) != 1:
+        return lines
+    out = [ln for ln in lines if ln is not stok[0]]
+    nilai_buku = from_cents(to_cents(book_value))
+    if nilai_buku > 0:
+        out.append({**stok[0], "credit": nilai_buku,
+                    "description": f"Barang keluar retur beli {label} (nilai buku roll)"})
+    desc = f"Selisih nilai buku roll vs nota retur beli {label}"
+    out.append({"account_key": PURCHASE_RETURN_VARIANCE_KEY, "debit": diff if diff > 0 else 0.0,
+                "credit": -diff if diff < 0 else 0.0, "description": desc})
+    return out
+
+
 async def post_purchase_return(ret: Dict[str, Any], *, amount: float, ppn: float = 0.0,
                                label: str = "", outcome: str = "ap_credit",
-                               cash_account_code: str = "", ap_basis: str = "") -> Optional[Dict[str, Any]]:
+                               cash_account_code: str = "", ap_basis: str = "",
+                               book_value: Optional[float] = None) -> Optional[Dict[str, Any]]:
     """Session #074 (PRET-GL) — Retur beli (Nota Debit) → balik GL. Dasar (`ap_basis`, lihat `purchase_return_basis`):
       hutang : Dr Hutang(2-1100) sebesar nilai + PPN / Cr Persediaan(1-1300) neto + Cr PPN Masukan.
       kas    : Dr Kas/Bank (supplier kembalikan dana) / Cr Persediaan [+ Cr PPN Masukan].
       gr_ir  : PK-28 — Dr GR/IR(2-1150) sebesar nilai TANPA PPN / Cr Persediaan; PPN masukan tidak dibalik (barang
                belum ditagih → PPN masukannya belum pernah dicatat).
-    `ap_basis` kosong → dihitung saat ini (pemanggil lama). Idempotent (source_type='purchase_return'); `ref.po_id`."""
+    `ap_basis` kosong → dihitung saat ini (pemanggil lama). Idempotent (source_type='purchase_return'); `ref.po_id`.
+    PK-27 (IV-06) — `book_value` (nilai buku roll yang diretur): baris persediaan = nilai buku + baris selisih
+    (`purchase_return_book_lines`); tanpa `book_value` = Cr persediaan nilai nota tanpa PPN (perilaku lama)."""
     rid = ret.get("id")
     amount = round(float(amount or 0), 2)
     if not rid or amount <= EPS or await _already_posted("purchase_return", rid):
@@ -2783,6 +2827,8 @@ async def post_purchase_return(ret: Dict[str, Any], *, amount: float, ppn: float
     if ppn > EPS and basis != "gr_ir":
         lines.append({"account_code": ACC_PPN_IN, "debit": 0.0, "credit": ppn,
                       "description": f"Reversal PPN Masukan {label}"})
+
+    lines = await purchase_return_book_lines(ret, lines, net=net, book_value=book_value, label=label)   # PK-27
     return await _insert_entry(
         lines=lines, description=f"Retur beli {label}",
         date=ret.get("approved_at") or now_iso(), source_type="purchase_return",
@@ -3699,6 +3745,53 @@ async def inventory_reconciliation() -> Dict[str, Any]:
             "rounding_tolerance": toleransi,
             "reconciled": abs(total) <= toleransi,
             "as_of": now_iso()}
+
+
+#: PK-27 — roll yang sudah dihapus-buku (scrap retur, jurnal `inventory_writeoff` belum dibalik) memang bernilai 0;
+#: bukan "roll berbiaya 0" yang perlu diperbaiki datanya.
+WRITEOFF_ACTIVE: Dict[str, Any] = {"writeoff_je_id": {"$nin": [None, ""]}, "writeoff_reversed": {"$ne": True}}
+ZERO_COST: Dict[str, Any] = {"unit_cost": {"$in": [0, None]}, "base_unit_cost": {"$in": [0, None]}}
+
+
+async def zero_cost_rolls(entity_ids: List[str], *, page: int = 1, page_size: int = 50) -> Dict[str, Any]:
+    """PK-27 (IV-07) — daftar berhalaman roll berbiaya 0 per PT (`GET /api/gl/zero-cost-rolls`).
+
+    `in_stock`: roll berstatus persediaan (`OWNED_ROLL_STATUSES`), sisa > 0, `unit_cost` dan `base_unit_cost` 0/kosong,
+    bukan roll yang sudah dihapus-buku. `shipped`: baris potret `shipments.rolls[]` ber-`unit_cost` 0 pada surat jalan
+    yang tidak batal (HPP-nya nol). Jumlah total dari kueri (`02` D4), bukan dari halaman."""
+    page, page_size = max(1, int(page or 1)), min(max(1, int(page_size or 50)), 200)
+    skip = (page - 1) * page_size
+    ids = [e for e in entity_ids if e]
+    q_roll: Dict[str, Any] = {"$and": [
+        {"owner_entity_id": {"$in": ids}, "status": {"$in": OWNED_ROLL_STATUSES}, "length_remaining": {"$gt": 0},
+         **ZERO_COST},
+        {"$nor": [WRITEOFF_ACTIVE]}]}
+    total_roll = await db.inventory_rolls.count_documents(q_roll)
+    rows = await (db.inventory_rolls.find(q_roll, {"_id": 0, "id": 1, "roll_no": 1, "product_id": 1,
+                                                   "owner_entity_id": 1, "length_remaining": 1, "status": 1})
+                  .sort([("roll_no", 1), ("id", 1)]).skip(skip).limit(page_size).to_list(page_size))
+    names = {p["id"]: p.get("name") or p["id"] async for p in db.products.find(
+        {"id": {"$in": list({r.get("product_id") for r in rows})}}, {"_id": 0, "id": 1, "name": 1})}
+    in_stock = [{"roll_id": r["id"], "roll_no": r.get("roll_no") or "", "product_name": names.get(r.get("product_id"), ""),
+                 "entity_id": r.get("owner_entity_id", ""), "length_remaining": float(r.get("length_remaining") or 0),
+                 "status": r.get("status", "")} for r in rows]
+    base = [{"$match": {"entity_id": {"$in": ids}, "status": {"$nin": list(SHIPMENT_DEAD)},
+                        "rolls.unit_cost": {"$in": [0, None]}}},
+            {"$unwind": "$rolls"}, {"$match": {"rolls.unit_cost": {"$in": [0, None]}}}]
+    hit = await db.shipments.aggregate(base + [{"$group": {"_id": None, "n": {"$sum": 1}}}]).to_list(1)
+    total_ship = int((hit[0] if hit else {}).get("n") or 0)
+    srows = await db.shipments.aggregate(base + [
+        {"$sort": {"created_at": -1, "id": 1}}, {"$skip": skip}, {"$limit": page_size},
+        {"$project": {"_id": 0, "shipment_no": 1, "order_number": 1, "entity_id": 1, "created_at": 1,
+                      "roll_id": "$rolls.roll_id", "length": "$rolls.length"}}]).to_list(page_size)
+    nos = {r["id"]: r.get("roll_no") or "" async for r in db.inventory_rolls.find(
+        {"id": {"$in": [x.get("roll_id") for x in srows if x.get("roll_id")]}}, {"_id": 0, "id": 1, "roll_no": 1})}
+    shipped = [{"shipment_no": x.get("shipment_no", ""), "order_number": x.get("order_number", ""),
+                "roll_no": nos.get(x.get("roll_id"), "") or x.get("roll_id", ""),
+                "length": float(x.get("length") or 0), "shipped_at": x.get("created_at", ""),
+                "entity_id": x.get("entity_id", "")} for x in srows]
+    return {"in_stock": {"items": in_stock, "total": total_roll},
+            "shipped": {"items": shipped, "total": total_ship}, "page": page, "page_size": page_size}
 
 
 def _roll_ref(roll: Dict[str, Any]) -> Dict[str, Any]:

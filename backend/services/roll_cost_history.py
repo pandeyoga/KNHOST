@@ -31,6 +31,9 @@ REASONS: Dict[str, str] = {
     "interco_purchase_revalue": "Dinilai ulang ke harga beli internal (pembelian antar-PT)",
     "landed_cost_allocation": "Biaya masuk (landed cost) dialokasikan ke roll",
     "startup_backfill": "Migrasi startup mengisi HPP roll yang belum pernah dinilai",
+    # PK-27 (IV-02) — scrap roll retur: jurnal hapus-buku sudah mengeluarkan nilainya dari 1-1300.
+    "scrap_writeoff": "Dihapus-buku (scrap) — nilai roll menjadi 0",
+    "scrap_writeoff_reversal": "Scrap dibatalkan — biaya roll dipulihkan",
     # T8 DIBAYAR (2026-06c): `cycle_count_adjustment` DIHAPUS dari registry — tidak
     # ada satu pun penulisnya. Penyesuaian stock opname mengubah KUANTITAS roll
     # (`stock_count_service.apply_line`), bukan HPP/unit-nya, jadi tak ada perubahan
@@ -46,6 +49,19 @@ async def record(roll: Dict[str, Any], new_unit_cost: float, reason: str,
 
     `roll` = dokumen roll SEBELUM diperbarui (butuh `id`, `roll_no`, `unit_cost`).
     """
+    entry = build_entry(roll, new_unit_cost, reason, actor=actor, ref_type=ref_type, ref_id=ref_id,
+                        ref_number=ref_number, note=note)
+    if entry is None:
+        return None
+    await db[COLLECTION].insert_one(dict(entry))
+    return entry
+
+
+def build_entry(roll: Dict[str, Any], new_unit_cost: float, reason: str,
+                actor: str = "sistem", ref_type: str = "", ref_id: str = "",
+                ref_number: str = "", note: str = "") -> Optional[Dict[str, Any]]:
+    """Dokumen jejak satu perubahan HPP (tanpa menulis) — `None` bila nilainya tidak berubah. Dipakai `record` dan skrip
+    migrasi yang menulis ke database yang diberikan (PK-27)."""
     # Nilai LAMA dibaca APA ADANYA dari `unit_cost` bila fieldnya ada — termasuk 0.
     # Sengaja BUKAN `unit_cost or base_unit_cost`: roll ber-`unit_cost` 0 yang dinilai
     # ulang ke Rp 90.000 memang BERUBAH nilainya, dan justru perubahan seperti itulah
@@ -78,7 +94,6 @@ async def record(roll: Dict[str, Any], new_unit_cost: float, reason: str,
         "ref_id": ref_id,
         "ref_number": ref_number,
     }
-    await db[COLLECTION].insert_one(dict(entry))
     return entry
 
 

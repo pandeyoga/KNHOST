@@ -141,6 +141,12 @@ ENTRIES: List[Dict[str, Any]] = [
     _e("retur.cutloss_bs", "1-1300", "Persediaan potongan BS (cutloss)",
        "potongan cacat cutloss masuk stok BS", ("Persediaan BS", "Persediaan"),
        ["Cutloss retur"], remap=False),
+    # PK-27 (IV-06) — bawaan KOSONG: akunnya keputusan pemilik (titik henti H4). Selama kosong, jurnal retur beli tetap
+    # mengkredit persediaan sebesar nilai nota (perilaku lama) dan selisihnya hanya tercatat di dokumen retur.
+    _e("retur.selisih_retur_beli", "", "Selisih nilai retur beli",
+       "nilai nota debit pemasok berbeda dari nilai buku roll yang diretur",
+       ("Selisih nilai retur beli", "Persediaan"),
+       ["Retur beli"], remap=False, types=["expense", "income"], required=True),
     _e("makloon.wip_subcon", "1-1350", "Persediaan dalam proses makloon", "bahan dikirim ke mitra makloon",
        ("WIP makloon", "Persediaan"), ["Makloon"]),
     _e("makloon.piutang_klaim", "1-1260", "Piutang klaim mitra makloon", "klaim susut/ganti rugi mitra",

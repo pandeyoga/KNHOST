@@ -199,6 +199,81 @@ async def _post_cn_gl(ret: Dict[str, Any], cn: Dict[str, Any], *, raise_on_fail:
     return cn
 
 
+#: PK-27 (IV-08) — sumber biaya barang retur pelanggan, dari yang paling tepat ke cadangan.
+COST_SOURCES = ("surat_jalan", "rata_surat_jalan", "wac")
+
+
+async def _shipment_cost_rows(order_id: str, product_id: str) -> List[Dict[str, Any]]:
+    """Baris potret biaya `shipments.rolls[]` surat jalan TIDAK batal milik pesanan × produk, urut terbit (lama → baru)."""
+    if not order_id:
+        return []
+    q = {"order_id": order_id, "product_id": product_id, "status": {"$nin": list(gl_service.SHIPMENT_DEAD)}}
+    out: List[Dict[str, Any]] = []
+    async for sh in db.shipments.find(q, {"_id": 0, "rolls": 1, "created_at": 1}).sort([("created_at", 1)]):
+        for r in sh.get("rolls") or []:
+            ln = float(r.get("length") or 0)
+            uc = r.get("unit_cost")
+            ext = r.get("extended_cost")
+            if uc is None and ext is not None and ln > 0:
+                uc = float(ext) / ln
+            ext = float(ext) if ext is not None else float(uc or 0) * ln
+            out.append({"roll_id": r.get("roll_id", ""), "length": ln, "unit_cost": float(uc or 0), "extended": ext})
+    return out
+
+
+async def return_unit_cost(ret: Dict[str, Any], item: Dict[str, Any], roll_id: str = "") -> Tuple[float, float, str]:
+    """PK-27 (IV-08) — biaya per satuan barang retur pelanggan yang masuk lagi: `(biaya, biaya_dasar, sumber)`.
+
+    1. `surat_jalan` — SEMUA roll yang dikembalikan (`roll_id`, atau `item["roll_ids"]`) ada di potret biaya surat jalan
+       tidak batal pesanan itu → rata-rata potret `unit_cost` tertimbang panjang yang dikembalikan (`item["roll_qtys"]`,
+       atau panjang potret). Potret terbaru menang bila roll yang sama pernah dikirim dua kali.
+    2. `rata_surat_jalan` — baris tanpa `roll_ids`, pesanan punya potret produk itu → Σ `extended_cost` ÷ Σ panjang.
+    3. `wac` — selain itu: rata-rata tertimbang produk saat ini (perilaku lama; biaya dasar = `wac_base`).
+
+    `biaya_dasar` (1–2) = `base_unit_cost` dokumen roll asal bila ada dan ≤ biaya roll itu, selain itu = biaya roll itu
+    (ditimbang sama dengan biaya). Kondisi `damaged` → biaya 0 (sumber tetap dilaporkan). Roll yang menerima landed cost
+    sesudah terkirim tetap dinilai pada potret saat kirim (tambahan itu sudah dibebankan lewat PK-26)."""
+    pid = item.get("product_id", "")
+    rows = await _shipment_cost_rows(ret.get("order_id", ""), pid)
+    rids = [roll_id] if roll_id else [r for r in (item.get("roll_ids") or []) if r]
+    pairs: List[Tuple[str, float, float]] = []   # (roll_id, bobot, biaya)
+    source = ""
+    if rids and rows:
+        latest = {r["roll_id"]: r for r in rows if r["roll_id"]}
+        if all(r in latest for r in rids):
+            qtys = item.get("roll_qtys") or {}
+            pairs = [(r, float(qtys.get(r) or 0) or latest[r]["length"], latest[r]["unit_cost"]) for r in rids]
+            source = "surat_jalan"
+    elif not rids and rows:
+        pairs = [(r["roll_id"], r["length"], r["extended"] / r["length"]) for r in rows if r["length"] > 0]
+        source = "rata_surat_jalan" if pairs else ""
+    tot_w = sum(w for _, w, _ in pairs)
+    if source and tot_w > 0:
+        docs = {d["id"]: d async for d in db.inventory_rolls.find(
+            {"id": {"$in": list({r for r, _, _ in pairs if r})}}, {"_id": 0, "id": 1, "base_unit_cost": 1})}
+        cost_sum = base_sum = 0.0
+        for rid, w, c in pairs:
+            b = float((docs.get(rid) or {}).get("base_unit_cost") or 0)
+            cost_sum += w * c
+            base_sum += w * (b if 0 < b <= c else c)
+        cost, base = round(cost_sum / tot_w, 4), round(base_sum / tot_w, 4)
+    else:
+        source = "wac"
+        w = await costing_service.wac_for_product(pid, entity_id=ret.get("entity_id") or None)
+        cost = float(w.get("wac") or 0)
+        base = min(float(w.get("wac_base") or cost), cost)
+    if item.get("condition", "ok") == "damaged":
+        return 0.0, 0.0, source
+    return cost, base, source
+
+
+def cogs_source_of(sources: List[str]) -> str:
+    """Sumber HPP balik satu nota kredit: sumber PALING KASAR di antara barisnya (satu baris memakai cadangan →
+    nota itu tidak lagi seluruhnya dari potret surat jalan). Kosong bila tidak ada baris yang masuk stok."""
+    known = [s for s in sources if s in COST_SOURCES]
+    return max(known, key=COST_SOURCES.index) if known else ""
+
+
 async def _cn_figures(ret: Dict[str, Any], items: List[Dict] = None, post_stock: bool = True) -> Dict[str, Any]:
     """Angka Nota Kredit retur — baris (harga transaksi neto SO asal / nilai diputus Finance), DPP, PPN (rasio efektif
     SO asal), HPP balik ke stok. SATU hitungan untuk penerbitan dan pratinjau keputusan (23 Okt)."""
