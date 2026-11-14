@@ -47,15 +47,16 @@ class TestListContract:
         assert r.status_code == 200, r.text[:300]
         rules = r.json()
         assert isinstance(rules, list)
-        assert len(rules) >= 9, f"expected >=9 seed rules, got {len(rules)}"
+        # KP-T3 — dua baris benih `discount` dibuang (dan tidak lagi ditampilkan): 1 SO + 2 PO + 2 PR = 5.
+        assert len(rules) >= 5, f"expected >=5 seed rules, got {len(rules)}"
         for rule in rules:
             assert "_id" not in rule
             for f in ("id", "doc_type", "min_amount", "required_role", "sort", "active"):
                 assert f in rule, f"missing {f} in {rule}"
             assert "max_amount" in rule
-            assert rule["doc_type"] in ["sales_order", "purchase_order",
-                                        "purchase_requisition", "discount"]
-            assert rule["required_role"] in ["", "manager", "admin", "owner"]
+            # KP-T3 — jenis yang tidak dinilai mesin tidak ditampilkan; peran = registry (label + role_known).
+            assert rule["doc_type"] in ["sales_order", "purchase_order", "purchase_requisition"]
+            assert "required_role_label" in rule and isinstance(rule["role_known"], bool)
             assert isinstance(rule["active"], bool)
             # tidak ada skema paralel yang bocor
             assert "threshold_min" not in rule and "is_active" not in rule
@@ -69,9 +70,11 @@ class TestListContract:
         assert not inactive, f"seed rules inactive: {inactive}"
 
     def test_filter_by_doc_type(self, client):
-        r = client.get(f"{API}/approval-rules?doc_type=discount", timeout=30)
+        r = client.get(f"{API}/approval-rules?doc_type=purchase_order", timeout=30)
         assert r.status_code == 200
-        assert all(x["doc_type"] == "discount" for x in r.json())
+        assert all(x["doc_type"] == "purchase_order" for x in r.json())
+        # KP-T3 — aturan `discount` lama tidak ditampilkan
+        assert client.get(f"{API}/approval-rules?doc_type=discount", timeout=30).json() == []
 
 
 # ── POST validasi ────────────────────────────────────────────────────────────
@@ -97,18 +100,16 @@ class TestValidation:
                         "min_amount": -5}, timeout=30)
         assert r.status_code in (400, 422), f"{r.status_code}: {r.text[:200]}"
 
-    def test_discount_forces_is_percent(self, client, created_ids):
+    def test_discount_and_owner_rejected(self, client):
+        # KP-T3 — "Diskon (%)" dan "Owner" tidak pernah berakibat di mesin: kini ditolak (dulu diterima).
         r = client.post(f"{API}/approval-rules", json={
             "doc_type": "discount", "min_amount": 91, "max_amount": 92,
-            "required_role": "owner", "sort": 99,
-            "description": "TEST_iter273_disc"}, timeout=30)
-        assert r.status_code == 200, r.text[:300]
-        rule = r.json()
-        created_ids.append(rule["id"])
-        assert rule["is_percent"] is True
-        got = client.get(f"{API}/approval-rules/{rule['id']}", timeout=30).json()
-        assert got["is_percent"] is True
-        assert got["min_amount"] == 91 and got["max_amount"] == 92
+            "sort": 99, "description": "TEST_iter273_disc"}, timeout=30)
+        assert r.status_code == 400, r.text[:300]
+        r = client.post(f"{API}/approval-rules", json={
+            "doc_type": "purchase_order", "min_amount": 91, "max_amount": 92,
+            "required_role": "owner", "sort": 99, "description": "TEST_iter273_owner"}, timeout=30)
+        assert r.status_code == 400, r.text[:300]
 
 
 # ── CRUD + persistence ───────────────────────────────────────────────────────

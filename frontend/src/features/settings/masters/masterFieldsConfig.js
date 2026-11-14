@@ -25,12 +25,13 @@
 // tidak perlu menerjemahkan `service_only` menjadi "jasa murni" di kepalanya.
 import { MATERIAL_FLOW_LABELS, STAGE_KIND_LABELS, PROCESS_TYPE_FALLBACK } from "../../../constants/makloonVocab";
 import { roleLabel } from "../../../config/roles";
-import { DOC_TYPES } from "../approvalRulesConstants";
+import { DOC_TYPES, RETIRED_DOC_TYPES } from "../approvalRulesConstants";
 
 // UAT 24 Okt (audit UI tahap 2, G5-03) — kolom berjenis enum dulu tercetak sebagai kode (`discount`, `purchase_order`,
 // "manager", `pre_treatment`, `invoice`, "benang · tenun · celup · inspect") dan batas diskon (persen) tercetak
 // "Rp 0 – Rp 10". Peta label di bawah dipakai `labels`/`format` kolom; kode tak dikenal tetap tampil apa adanya.
-const DOC_TYPE_LABELS = Object.fromEntries(DOC_TYPES.map((t) => [t.value, t.label]));
+// KP-T3 — "Diskon (%)" bukan pilihan lagi, tetapi baris lama tetap terbaca berlabel.
+const DOC_TYPE_LABELS = Object.fromEntries([...DOC_TYPES, ...RETIRED_DOC_TYPES].map((t) => [t.value, t.label]));
 const TEMPLATE_DOC_LABELS = { invoice: "Faktur (Invoice)", surat_jalan: "Surat Jalan" };
 const FABRIC_LABELS = { woven: "Woven (tenun)", knit: "Knit (rajut)" };
 const STAGE_STEP_LABELS = {

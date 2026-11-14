@@ -164,8 +164,8 @@ DEFAULT_APPROVAL_RULES: List[Dict[str, Any]] = [
     # berapa pun (bawaan). Pemilik bisa memasang ambang lagi di Pusat Pengaturan →
     # Persetujuan & Ambang. Kredit & harga khusus tidak lewat tabel ini.
     {"doc_type": "sales_order",    "entity_id": "all", "min_amount": 0,         "max_amount": None,       "required_role": "",        "sort": 1},
-    {"doc_type": "discount",       "entity_id": "all", "min_amount": 0,         "max_amount": 10,         "required_role": "",        "sort": 1, "is_percent": True},
-    {"doc_type": "discount",       "entity_id": "all", "min_amount": 10,        "max_amount": None,       "required_role": "manager", "sort": 2, "is_percent": True},
+    # KP-T3 — dua baris `discount` dibuang: tidak ada pemanggil penilai ber-`doc_type` itu (potongan harga diatur lewat
+    # Harga Khusus). Data lama dipensiunkan skrip `scripts/migrate_kpt3_aturan_persetujuan.py`.
     {"doc_type": "purchase_order", "entity_id": "all", "min_amount": 0,         "max_amount": 100000000, "required_role": "",        "sort": 1},
     {"doc_type": "purchase_order", "entity_id": "all", "min_amount": 100000000, "max_amount": None,       "required_role": "manager", "sort": 2},
     {"doc_type": "purchase_requisition", "entity_id": "all", "min_amount": 0,         "max_amount": 50000000,  "required_role": "",        "sort": 1},
@@ -347,24 +347,238 @@ async def migrate_tax_regime() -> None:
 
 # ── Evaluasi approval (matriks configurable) ─────────────────────────────────
 
-async def evaluate_approval(doc_type: str, amount: float, entity_id: Optional[str] = None) -> Dict[str, Any]:
-    """Tentukan apakah dokumen butuh approval & role minimum, dari approval_rules.
-    Rule entitas-spesifik diutamakan; fallback ke entity_id='all'. amount untuk
-    doc_type='discount' adalah persen (is_percent)."""
+# ── KP-T3 — satu pemilih aturan untuk mesin DAN layar "Jenjang yang berlaku" ──────────────────────────────────────────
+#: Jenis dokumen yang benar-benar dinilai mesin (pemanggil `evaluate_approval`/`build_approval_chain`). `discount`
+#: dipensiunkan KP-T3: tidak ada pemanggil ber-`doc_type` itu; potongan harga diatur lewat Harga Khusus.
+APPROVAL_DOC_TYPES: Dict[str, str] = {
+    "sales_order": "Pesanan Penjualan",
+    "purchase_order": "Pesanan Pembelian",
+    "purchase_requisition": "Permintaan Pembelian",
+}
+_INF = float("inf")
+
+
+async def approval_pool(doc_type: str, entity_id: Optional[str] = None) -> Dict[str, Any]:
+    """KP-T3 — aturan yang dinilai untuk (jenis dokumen, PT): aturan aktif urut `sort`; aturan khusus PT bila ada
+    SATU saja, selain itu aturan grup. Logikanya persis yang dulu ada di dalam `evaluate_approval` (mesin tidak
+    berubah); layar memakai fungsi yang sama. KP-T4 memakainya sebagai sumber migrasi tabel kebijakan."""
     rules = await db.approval_rules.find(
         {"doc_type": doc_type, "active": True}, {"_id": 0}
     ).sort("sort", 1).to_list(200)
     scoped = [r for r in rules if r.get("entity_id") == entity_id] if entity_id else []
-    pool = scoped if scoped else [r for r in rules if r.get("entity_id") in (None, "all")]
+    group = [r for r in rules if r.get("entity_id") in (None, "all")]
+    if scoped:
+        return {"source": "grup" if entity_id == "all" else "pt", "rules": scoped, "group_rules": group}
+    return {"source": "grup" if group else "kosong", "rules": group, "group_rules": group}
+
+
+def _bounds(rule: Dict[str, Any]) -> tuple:
+    lo = float(rule.get("min_amount", 0) or 0)
+    hi = rule.get("max_amount")
+    return lo, (float(hi) if hi is not None else _INF)
+
+
+def _rule_for(rules: List[Dict[str, Any]], amount: float) -> Optional[Dict[str, Any]]:
+    """Aturan pertama (urutan `rules`) yang `min_amount ≤ nilai < max_amount`; tidak ada → None."""
     amount = float(amount or 0)
-    for r in pool:
-        lo = float(r.get("min_amount", 0) or 0)
-        hi = r.get("max_amount")
-        hi = float(hi) if hi is not None else float("inf")
-        if lo <= amount < hi or (amount == hi == float("inf")):
-            role = r.get("required_role") or ""
-            return {"requires_approval": bool(role), "required_role": role or None,
-                    "rule_id": r.get("id"), "doc_type": doc_type}
+    for r in rules:
+        lo, hi = _bounds(r)
+        if lo <= amount < hi or (amount == hi == _INF):
+            return r
+    return None
+
+
+def required_role_for(rules: List[Dict[str, Any]], amount: float) -> str:
+    """KP-T3 — peran yang dituntut untuk satu nilai menurut `rules`; tidak ada aturan yang cocok → `""`."""
+    r = _rule_for(rules, amount)
+    return (r.get("required_role") or "") if r else ""
+
+
+def validate_extra_levels(value: Any) -> Any:
+    """KP-T3 — pemeriksa isi `approval.extra_levels` (dipanggil `config_resolver.set_value` untuk kunci ini):
+    dikelompokkan per jenis dokumen; tiap baris ber-`role` peran yang dikenal dan `min_amount` angka ≥ 0.
+    Melempar `ValueError` berpesan siap tampil."""
+    import math
+    from role_registry import is_role
+    if not isinstance(value, dict):
+        raise ValueError("Jenjang tambahan harus dikelompokkan per jenis dokumen.")
+    for doc_type, rows in value.items():
+        if not isinstance(rows, list):
+            jenis = APPROVAL_DOC_TYPES.get(doc_type, doc_type)
+            raise ValueError(f"Jenjang tambahan {jenis} harus berupa daftar baris.")
+        for n, row in enumerate(rows, 1):
+            if not isinstance(row, dict):
+                raise ValueError(f"Jenjang tambahan baris {n}: isinya tidak sah.")
+            role = str(row.get("role") or "").strip()
+            if not role:
+                raise ValueError(f"Jenjang tambahan baris {n}: peran belum dipilih.")
+            if not is_role(role):
+                raise ValueError(f"Jenjang tambahan baris {n}: peran “{role}” tidak ada.")
+            raw = row.get("min_amount", 0)
+            try:
+                num = float(raw if raw not in (None, "") else 0)
+            except (TypeError, ValueError):
+                num = float("nan")
+            if isinstance(raw, bool) or not math.isfinite(num) or num < 0:
+                raise ValueError(f"Jenjang tambahan baris {n}: nilai minimal harus angka ≥ 0.")
+    return value
+
+
+def _rp(x: float) -> str:
+    v = round(float(x or 0), 2)
+    if v == int(v):
+        return "Rp" + f"{int(v):,}".replace(",", ".")
+    return "Rp" + f"{v:,.2f}".replace(",", "#").replace(".", ",").replace("#", ".")
+
+
+def _rentang(a: float, b: float) -> str:
+    return f"≥ {_rp(a)}" if b == _INF else f"{_rp(a)} s/d < {_rp(b)}"
+
+
+def _num(x: float) -> Any:
+    """Batas untuk JSON: tak terhingga → None; bilangan bulat → int."""
+    if x == _INF:
+        return None
+    return int(x) if float(x) == int(x) else x
+
+
+def _segments(rule_sets: List[List[Dict[str, Any]]]) -> List[tuple]:
+    """Ruas [a, b) di antara semua batas min/max himpunan aturan (mulai 0, berakhir tak terhingga)."""
+    pts = {0.0, _INF}
+    for rules in rule_sets:
+        for r in rules:
+            lo, hi = _bounds(r)
+            pts.update((max(lo, 0.0), hi))
+    pts = sorted(pts)
+    return [(pts[i], pts[i + 1]) for i in range(len(pts) - 1)]
+
+
+def _merge(segs: List[tuple]) -> List[tuple]:
+    """Gabung ruas bersebelahan yang membawa kunci sama: [(a, b, kunci)] → [(a, b, kunci)]."""
+    out: List[list] = []
+    for a, b, key in segs:
+        if out and out[-1][1] == a and out[-1][2] == key:
+            out[-1][1] = b
+        else:
+            out.append([a, b, key])
+    return [tuple(x) for x in out]
+
+
+def _tier_warnings(doc_type: str, source: str, rules: List[Dict[str, Any]],
+                   group_rules: List[Dict[str, Any]], extra_levels: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    from role_registry import role_label
+    warnings: List[Dict[str, Any]] = []
+    if not rules:
+        return warnings
+    segs = _segments([rules])
+    cover = [(a, b, sum(1 for r in rules if _bounds(r)[0] <= a < _bounds(r)[1])) for a, b in segs]
+    for a, b, _ in _merge([(a, b, True) for a, b, n in cover if n == 0]):
+        warnings.append({"code": "celah", "from_amount": _num(a), "to_amount": _num(b),
+                         "message": (f"Nilai {_rentang(a, b)} tidak tercakup aturan, sehingga lolos tanpa "
+                                     "persetujuan.")})
+    for a, b, _ in _merge([(a, b, True) for a, b, n in cover if n > 1]):
+        warnings.append({"code": "tumpang_tindih", "from_amount": _num(a), "to_amount": _num(b),
+                         "message": (f"Rentang {_rentang(a, b)} tercakup lebih dari satu aturan. Yang dipakai "
+                                     "aturan berurutan paling kecil.")})
+    if source == "pt" and group_rules:
+        longgar = []
+        for a, b in _segments([rules, group_rules]):
+            g_role = required_role_for(group_rules, a)
+            if g_role and not required_role_for(rules, a):
+                longgar.append((a, b, g_role))
+        jenis = APPROVAL_DOC_TYPES.get(doc_type, doc_type)
+        for a, b, g_role in _merge(longgar):
+            warnings.append({"code": "lebih_longgar_dari_grup", "from_amount": _num(a), "to_amount": _num(b),
+                             "message": (f"PT ini punya aturan sendiri, jadi aturan grup untuk {jenis} tidak "
+                                         f"dipakai. Akibatnya nilai {_rentang(a, b)} lolos tanpa persetujuan, padahal "
+                                         f"aturan grup menuntut {role_label(g_role)}.")})
+    for t in rules:
+        role = t.get("required_role") or ""
+        if role and not _role_known(role):
+            lo, hi = _bounds(t)
+            warnings.append({"code": "peran_tak_dikenal", "from_amount": _num(lo), "to_amount": _num(hi),
+                             "message": (f"Aturan ini menunjuk peran “{role}” yang tidak ada. Mesin "
+                                         "memperlakukannya sama dengan Manajer.")})
+    for lv in extra_levels:
+        if not lv["role_known"]:
+            warnings.append({"code": "peran_tak_dikenal", "from_amount": lv["min_amount"], "to_amount": None,
+                             "message": (f"Jenjang tambahan ≥ {_rp(lv['min_amount'] or 0)} menunjuk peran "
+                                         f"“{lv['role']}” yang tidak ada. Mesin memperlakukannya sama dengan "
+                                         "Manajer.")})
+    return warnings
+
+
+def _role_known(role: str) -> bool:
+    from role_registry import is_role
+    return not role or is_role(role)
+
+
+def role_view(role: str) -> Dict[str, Any]:
+    """KP-T3 — label peran penyetuju untuk layar: kosong = "Tanpa persetujuan"; peran tak dikenal ditandai."""
+    from role_registry import role_label
+    role = role or ""
+    return {"required_role_label": role_label(role) if role else "Tanpa persetujuan",
+            "role_known": _role_known(role)}
+
+
+async def effective_tiers(doc_type: str, entity_id: Optional[str] = None) -> Dict[str, Any]:
+    """KP-T3 — jenjang yang SUNGGUH berlaku untuk (jenis dokumen, PT), dari sumber yang sama dengan mesin:
+    tingkat 1 = `approval_pool` (seperti `evaluate_approval`); tingkat 2+ = `approval.extra_levels` efektif PT
+    (seperti `build_approval_chain`, hanya aktif di atas tingkat 1). Ditambah peringatan celah, tumpang tindih,
+    aturan PT yang lebih longgar dari grup, dan peran tak dikenal."""
+    from role_registry import role_label
+    from services.config_resolver import resolve
+    ent = entity_id if entity_id and entity_id != "all" else None
+    pool = await approval_pool(doc_type, ent)
+    rules = pool["rules"]
+    tiers = [{"level": 1, "rule_id": r.get("id"), "sort": r.get("sort"),
+              "min_amount": _num(_bounds(r)[0]), "max_amount": _num(_bounds(r)[1]),
+              "required_role": r.get("required_role") or "", **role_view(r.get("required_role") or "")}
+             for r in rules]
+
+    settings = await get_effective_settings(ent)
+    raw_extra = (((settings.get("approval") or {}).get("extra_levels") or {}).get(doc_type) or [])
+    res = await resolve("approval.extra_levels", {"entity_id": ent or ""})
+    ex_src = "grup"
+    if res["source_layer"] in ("entity", "legacy_entity") and doc_type in (res.get("value") or {}):
+        ex_src = "pt"   # lapisan PT menimpa daftar jenis dokumen ini; jenis lain tetap mewarisi grup
+    extra_levels: List[Dict[str, Any]] = []
+    for lv in raw_extra if isinstance(raw_extra, list) else []:
+        if not isinstance(lv, dict):
+            continue
+        role = str(lv.get("role") or "").strip()
+        if not role:
+            continue    # mesin melewati baris tanpa peran
+        try:
+            min_amt = float(lv.get("min_amount", 0) or 0)
+        except (TypeError, ValueError):
+            min_amt = 0.0
+        extra_levels.append({"level": len(extra_levels) + 2, "min_amount": _num(min_amt), "role": role,
+                             "role_label": role_label(role), "label": lv.get("label") or role.title(),
+                             "role_known": _role_known(role), "source": ex_src})
+
+    unused = []
+    if pool["source"] == "pt":
+        unused = [{"rule_id": r.get("id"), "min_amount": _num(_bounds(r)[0]), "max_amount": _num(_bounds(r)[1]),
+                   "required_role": r.get("required_role") or "",
+                   "required_role_label": role_view(r.get("required_role") or "")["required_role_label"]}
+                  for r in pool["group_rules"]]
+    return {"doc_type": doc_type, "label": APPROVAL_DOC_TYPES.get(doc_type, doc_type), "source": pool["source"],
+            "tiers": tiers, "extra_levels": extra_levels, "unused_group_rules": unused,
+            "warnings": _tier_warnings(doc_type, pool["source"], rules, pool["group_rules"], extra_levels)}
+# ── /KP-T3 ───────────────────────────────────────────────────────────────────────────────────────────────────────────
+
+
+async def evaluate_approval(doc_type: str, amount: float, entity_id: Optional[str] = None) -> Dict[str, Any]:
+    """Tentukan apakah dokumen butuh approval & role minimum, dari approval_rules.
+    Rule entitas-spesifik diutamakan; fallback ke entity_id='all'.
+    KP-T3 — pemilihan aturan lewat `approval_pool` (dipakai juga layar jenjang efektif)."""
+    pool = (await approval_pool(doc_type, entity_id))["rules"]
+    r = _rule_for(pool, amount)
+    if r:
+        role = r.get("required_role") or ""
+        return {"requires_approval": bool(role), "required_role": role or None,
+                "rule_id": r.get("id"), "doc_type": doc_type}
     return {"requires_approval": False, "required_role": None, "rule_id": None, "doc_type": doc_type}
 
 

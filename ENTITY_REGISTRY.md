@@ -2012,6 +2012,13 @@ FASE F-6 (2026-08-17): koleksi ini **TETAP HIDUP**. Rute CRUD-nya kini
   Penilai ambang yang BERLAKU hanya `config_service.evaluate_approval()` /
   `build_approval_chain()` (dipakai `routers/sales_orders.py` & `routers/purchase_orders.py`);
   penilai kembar `approval_service.check_approval_required()` DIHAPUS agar tak ada dua pendapat.
+KP-T3 (2026-11-14): doc_type yang dinilai mesin hanya sales_order|purchase_order|purchase_requisition
+  (`discount` dipensiunkan: tidak dibenihkan, ditolak saat simpan, tidak ditampilkan); required_role =
+  "" atau peran di registry peran (`owner` ditolak). Pemilih aturan satu fungsi
+  `config_service.approval_pool()` (dipakai `evaluate_approval` dan `GET /api/approval-rules/effective`).
+  Field opsional, DITULIS HANYA oleh `scripts/migrate_kpt3_aturan_persetujuan.py` (--apply):
+    migrated_from_role  teks — nilai required_role lama yang tidak dikenal (mis. "owner") sebelum diganti "manager"
+    retired_reason      teks — alasan aturan dinonaktifkan migrasi ("Jenis aturan tidak dipakai mesin", aturan discount)
 ```
 
 ### approval_requests  [DIPENSIUNKAN FASE F-6 (2026-08-17) — JANGAN DIPAKAI LAGI]

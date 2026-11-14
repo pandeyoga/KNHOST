@@ -1,16 +1,16 @@
 // Form buat/edit Approval Rule — skema MESIN: doc_type + rentang nilai + peran.
+// KP-T3 — jenis dokumen tanpa "Diskon (%)"; Peran Penyetuju = Tanpa persetujuan / Manajer / Admin (label registry).
 import { CheckCircle2, X } from "lucide-react";
 import KNSelect from "../../components/KNSelect";
 import { useEntityScope } from "../../context/EntityScopeContext";
-import { DOC_TYPES, ROLES } from "./approvalRulesConstants";
+import { DOC_TYPES, approverRoleOptions, unknownRoleLabel } from "./approvalRulesConstants";
 
 export default function ApprovalRuleForm({ formData, setFormData, onSubmit, onCancel,
                                           editingRule, variant = "card" }) {
   const isModal = variant === "modal";
-  const isPct = formData.doc_type === "discount";
   const { entities } = useEntityScope();
   const entityOptions = [
-    { value: "all", label: "Semua entitas (warisan grup)" },
+    { value: "all", label: "Semua PT (aturan grup)" },
     ...entities.map((e) => ({ value: e.id, label: e.code ? `${e.name} (${e.code})` : e.name })),
   ];
   return (
@@ -47,14 +47,15 @@ export default function ApprovalRuleForm({ formData, setFormData, onSubmit, onCa
               className="form-select"
               value={formData.required_role}
               onValueChange={v => setFormData({ ...formData, required_role: v })}
-              options={ROLES.map(r => ({ value: r.value, label: r.label }))}
+              options={approverRoleOptions()}
+              unknownLabel={unknownRoleLabel}
             />
             <p className="form-help text-xs">Kosong = dokumen pada rentang ini lolos tanpa persetujuan.</p>
           </div>
         </div>
 
         <div className="form-group">
-          <label className="form-label">Cakupan Entitas</label>
+          <label className="form-label">Berlaku untuk PT</label>
           <KNSelect
             data-testid="rule-entity-id"
             className="form-select"
@@ -62,12 +63,14 @@ export default function ApprovalRuleForm({ formData, setFormData, onSubmit, onCa
             onValueChange={v => setFormData({ ...formData, entity_id: v })}
             options={entityOptions}
           />
-          <p className="form-help text-xs">Aturan ber-entitas dinilai lebih dulu; "Semua entitas" jadi cadangan bila tidak ada.</p>
+          <p className="form-help text-xs" data-testid="rule-entity-help">
+            Aturan khusus PT <strong>menggantikan</strong> semua aturan grup untuk jenis dokumen yang sama.
+          </p>
         </div>
 
         <div className="form-row-3col">
           <div className="form-group">
-            <label className="form-label">Nilai Minimal ({isPct ? "%" : "Rp"}) <span className="req">*</span></label>
+            <label className="form-label">Nilai Minimal (Rp) <span className="req">*</span></label>
             <input
               data-testid="rule-min-amount"
               className="form-input"
@@ -81,7 +84,7 @@ export default function ApprovalRuleForm({ formData, setFormData, onSubmit, onCa
           </div>
 
           <div className="form-group">
-            <label className="form-label">Nilai Maksimal ({isPct ? "%" : "Rp"})</label>
+            <label className="form-label">Nilai Maksimal (Rp)</label>
             <input
               data-testid="rule-max-amount"
               className="form-input"

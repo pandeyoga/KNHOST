@@ -353,6 +353,7 @@ E("approval.extra_levels", group="persetujuan", type="table", default={},
   impact="Menambah antrean approval berjenjang (mis. Direksi) untuk dokumen bernilai besar.",
   example="PO ≥ Rp 500.000.000 → setelah Manager, wajib disetujui Direksi",
   consumers=("services/config_service.py:build_approval_chain",
+             "services/config_service.py:effective_tiers",   # KP-T3 — layar "Jenjang yang berlaku"
              "services/approval_service.py"), risk="high")
 
 # PENGINGAT ANTREAN PERSETUJUAN (permintaan pemilik 2026-08-15).

@@ -345,6 +345,9 @@ async def set_value(key: str, value: Any, *, scope_type: str = "global", scope_i
             f"'{entry['label']}' berisiko tinggi — alasan perubahan WAJIB diisi.")
     try:
         clean = registry.coerce(entry, value)
+        if key == "approval.extra_levels":   # KP-T3 — isi jenjang tambahan: peran dikenal, nilai minimal ≥ 0
+            from services.config_service import validate_extra_levels
+            validate_extra_levels(clean)
     except ValueError as exc:
         raise ConfigWriteError(str(exc)) from exc
 

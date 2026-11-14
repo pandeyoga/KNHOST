@@ -1,5 +1,5 @@
 <!-- DIHASILKAN OTOMATIS oleh scripts/gen_codebase_map.py — JANGAN EDIT TANGAN -->
-<!-- Dihasilkan dari commit: a053a94 pada 2026-11-14 -->
+<!-- Dihasilkan dari commit: 4844181 pada 2026-11-14 -->
 # CODEBASE MAP — Kain Nusantara (dihasilkan otomatis)
 
 Peta ini dihitung dari kode oleh `scripts/gen_codebase_map.py`. Kalau angka di sini
@@ -13,7 +13,7 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 | Ukuran | Nilai |
 |---|---:|
 | Router (`backend/routers/*.py`) | 162 |
-| Endpoint (`@router.<method>`) | 1759 |
+| Endpoint (`@router.<method>`) | 1760 |
 | Service (`backend/services/*.py`) | 382 |
 | Koleksi MongoDB disentuh kode produksi | 201 |
 | Direktori fitur frontend (`src/features/*`) | 39 |
@@ -125,7 +125,7 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 | `ai_assist.py` | 5 | 44 | `/actions/{pid}`, `/actions/{pid}/confirm`, `/actions/{pid}/dismiss`, `/insights`, `/insights/scan` |
 | `amendments.py` | 10 | 183 | `/amendment-reasons`, `/amendments`, `/amendments/doc/{doc_type}/{doc_id}`, `/amendments/preview`, `/amendments/stats/summary`, `/amendments/{amd_id}` … |
 | `ap_payments.py` | 4 | 85 | `/ap-payments/accounts`, `/ap-payments/pending`, `/ap-payments/{intent_id}/cancel`, `/ap-payments/{intent_id}/resume` |
-| `approval_rules.py` | 5 | 138 | `/approval-rules`, `/approval-rules/{rule_id}` |
+| `approval_rules.py` | 6 | 191 | `/approval-rules`, `/approval-rules/effective`, `/approval-rules/{rule_id}` |
 | `approvals_matrix.py` | 3 | 56 | `/approvals/matrix`, `/approvals/matrix-log`, `/approvals/my-queue` |
 | `ar_aging.py` | 4 | 103 | `/ar/advance-report`, `/ar/aging`, `/ar/aging/{customer_id}`, `/ar/aging/{customer_id}/accrue-penalties` |
 | `ar_receipts.py` | 7 | 141 | `/ar-receipts`, `/ar-receipts/deposit`, `/ar-receipts/open-orders`, `/ar-receipts/{receipt_id}`, `/ar-receipts/{receipt_id}/repost`, `/ar-receipts/{receipt_id}/void` |
@@ -340,8 +340,8 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 | `config_currency.py` | 64 | FASE G-0 — Konsumen nyata untuk `finance.base_currency` & `finance.fiscal_year_end_month`. |
 | `config_health.py` | 126 | FASE G-0 — KESEHATAN KONFIGURASI: apakah setiap setting benar-benar tersambung? |
 | `config_impact_service.py` | 258 | FASE G-0 — DAFTAR DAMPAK (Blast-Radius Picker). |
-| `config_resolver.py` | 618 | FASE G-0 — CONFIG RESOLVER: nilai efektif berlapis + jejak "kenapa begini" + berlaku-sejak. |
-| `config_service.py` | 592 | Config service (Fase 1A) — Configuration Foundation. |
+| `config_resolver.py` | 621 | FASE G-0 — CONFIG RESOLVER: nilai efektif berlapis + jejak "kenapa begini" + berlaku-sejak. |
+| `config_service.py` | 806 | Config service (Fase 1A) — Configuration Foundation. |
 | `config_simulator.py` | 628 | FASE G-0 — SIMULATOR KONFIGURASI ("Coba dulu"). |
 | `consolidation_service.py` | 767 | FINANCE — Konsolidasi Grup + Eliminasi Intercompany. |
 | `consolidation_stale_service.py` | 57 | consolidation_stale_service — deteksi entri eliminasi antar-PT yang BASI (Fase 4 · R6, G1-33). |
@@ -676,7 +676,7 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 
 | Fitur (`src/features/`) | Berkas | Baris |
 |---|---:|---:|
-| `__tests__` | 83 | 11867 |
+| `__tests__` | 84 | 12095 |
 | `admin` | 34 | 6577 |
 | `approvals` | 9 | 1699 |
 | `catalog` | 24 | 1449 |
@@ -711,7 +711,7 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 | `sales` | 97 | 15769 |
 | `sales_admin` | 11 | 1872 |
 | `samples` | 8 | 777 |
-| `settings` | 51 | 9553 |
+| `settings` | 52 | 9784 |
 | `tanya` | 25 | 1592 |
 | `transfers` | 1 | 20 |
 | `wms` | 99 | 13195 |

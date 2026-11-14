@@ -9,6 +9,9 @@
  *  · manajer MEMBACA aturan di sini (dulu hanya lewat Master per Badan Usaha, yang kini menautkan ke sini) — tombol
  *    buat/ubah/nonaktifkan hanya untuk izin settings.manage (server tetap penjaga: GET = settings.view);
  *  · L-02: kepala halaman baku (`PageHeader`) + tabel di `section-card`; L-04 kelas C: banner desktop di HP.
+ *
+ * KP-T3 — bagian "Jenjang yang berlaku" per PT (`ApprovalEffectiveTiers`), pilihan palsu dibuang (Owner, Diskon),
+ * baris berperan tak dikenal/hasil migrasi diberi catatan, dan peringatan server tampil di pop-up hasil simpan.
  */
 import { useState, useEffect } from "react";
 import axios, { API } from "../../services/apiClient";
@@ -16,6 +19,7 @@ import {
   AlertCircle, CheckCircle2, Edit2, Eye, Loader2, Plus, Power, Settings, X
 } from "lucide-react";
 import ApprovalRuleForm from "./ApprovalRuleForm";
+import ApprovalEffectiveTiers from "./ApprovalEffectiveTiers";
 import FormModal from "../../components/FormModal";
 import DesktopOnlyNotice from "../../components/DesktopOnlyNotice";
 import { PageHeader } from "../../components/ListPageParts";
@@ -43,6 +47,7 @@ export default function ApprovalRulesSettings({ currentUser }) {
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [editingRule, setEditingRule] = useState(null);
   const [formData, setFormData] = useState(EMPTY_FORM);
+  const [tiersKey, setTiersKey] = useState(0);   // KP-T3 — muat ulang "Jenjang yang berlaku" setelah perubahan
 
   const token = localStorage.getItem("kn_token");
   const isAdmin = can(currentUser?.permissions, "settings", "manage");   // Sisir gerbang peran (2026-10-20) — tulis /approval-rules = settings.manage
@@ -61,13 +66,18 @@ export default function ApprovalRulesSettings({ currentUser }) {
     setLoading(true);
     try {
       const res = await axios.get(`${API}/approval-rules`, auth);
-      setRules(res.data || []);
+      setRules(Array.isArray(res.data) ? res.data : []);
       setError(null);
     } catch (e) {
       setError("Gagal memuat rules: " + (e.response?.data?.detail || e.message));
     } finally {
       setLoading(false);
     }
+  }
+
+  function reloadAll() {
+    loadRules();
+    setTiersKey((k) => k + 1);
   }
 
   function resetForm() {
@@ -112,18 +122,30 @@ export default function ApprovalRulesSettings({ currentUser }) {
     if (payload.max_amount !== null && payload.max_amount <= payload.min_amount) {
       return setError("Nilai maksimal harus lebih besar dari nilai minimal");
     }
+    let res;
     try {
       if (editingRule) {
-        await axios.patch(`${API}/approval-rules/${editingRule.id}`, payload, auth);
-        setNotice("Aturan berhasil diupdate!");
+        res = await axios.patch(`${API}/approval-rules/${editingRule.id}`, payload, auth);
+        setNotice("Aturan berhasil diubah.");
       } else {
-        await axios.post(`${API}/approval-rules`, payload, auth);
-        setNotice("Aturan berhasil dibuat!");
+        res = await axios.post(`${API}/approval-rules`, payload, auth);
+        setNotice("Aturan berhasil dibuat.");
       }
-      resetForm();
-      loadRules();
     } catch (e) {
-      setError("Gagal menyimpan: " + (e.response?.data?.detail || e.message));
+      return setError("Gagal menyimpan: " + (e.response?.data?.detail || e.message));
+    }
+    resetForm();
+    reloadAll();
+    // KP-T3 — peringatan tidak menolak simpan; ditampilkan supaya akibatnya terlihat sebelum ada dokumen lolos.
+    const warnings = res?.data?.warnings || [];
+    if (warnings.length) {
+      await askConfirm({
+        title: "Aturan tersimpan. Perhatikan:",
+        message: <>{warnings.map((w, i) => <span key={i} className="block mt-1">• {w.message}</span>)}</>,
+        confirmLabel: "Mengerti",
+        cancelLabel: "Tutup",
+        testId: "approval-rule-warnings",
+      });
     }
   }
 
@@ -139,7 +161,7 @@ export default function ApprovalRulesSettings({ currentUser }) {
     try {
       await axios.delete(`${API}/approval-rules/${rule.id}`, auth);
       setNotice("Aturan dinonaktifkan.");
-      loadRules();
+      reloadAll();
     } catch (e) {
       setError("Gagal menonaktifkan: " + (e.response?.data?.detail || e.message));
     }
@@ -158,7 +180,7 @@ export default function ApprovalRulesSettings({ currentUser }) {
     try {
       await axios.patch(`${API}/approval-rules/${rule.id}`,
         { active: rule.active === false }, auth);
-      loadRules();
+      reloadAll();
     } catch (e) {
       setError("Gagal mengubah status: " + (e.response?.data?.detail || e.message));
     }
@@ -213,6 +235,8 @@ export default function ApprovalRulesSettings({ currentUser }) {
         />
       </FormModal>
 
+      <ApprovalEffectiveTiers reloadKey={tiersKey} />
+
       {loading ? (
         <div className="loading-state">
           <Loader2 size={24} className="spin" />
@@ -235,7 +259,7 @@ export default function ApprovalRulesSettings({ currentUser }) {
             <thead>
               <tr>
                 <th>Jenis Dokumen</th>
-                <th>Cakupan</th>
+                <th>Berlaku untuk PT</th>
                 <th>Rentang Nilai</th>
                 <th>Peran Penyetuju</th>
                 <th className="text-center">Urutan</th>
@@ -255,16 +279,29 @@ export default function ApprovalRulesSettings({ currentUser }) {
                     )}
                   </td>
                   <td className="text-sm">
-                    {(!rule.entity_id || rule.entity_id === "all") ? "Semua entitas" : entityName(rule.entity_id)}
+                    {(!rule.entity_id || rule.entity_id === "all") ? "Semua PT" : entityName(rule.entity_id)}
                   </td>
                   <td className="font-mono text-sm tabular-nums whitespace-nowrap">
                     {fmtRange(rule)}
                   </td>
                   <td>
                     {rule.required_role ? (
-                      <span className="feature-badge badge-purple">{roleLabel(rule.required_role)}</span>
+                      <span className="feature-badge badge-purple">
+                        {rule.required_role_label || roleLabel(rule.required_role)}
+                      </span>
                     ) : (
                       <span className="text-xs text-muted">Tanpa persetujuan (otomatis)</span>
+                    )}
+                    {rule.role_known === false && (
+                      <div className="text-xs text-[#A8221A]" data-testid={`rule-role-unknown-${rule.id}`}>
+                        peran tidak dikenal — diperlakukan sebagai Manajer
+                      </div>
+                    )}
+                    {rule.migrated_from_role && (
+                      <div className="text-xs text-muted" data-testid={`rule-role-migrated-${rule.id}`}>
+                        Dulu dipilih “{rule.migrated_from_role}”, yang selama ini sama dengan Manajer. Ubah ke Admin
+                        bila yang dimaksud Direksi.
+                      </div>
                     )}
                   </td>
                   <td className="text-center tabular-nums">{rule.sort}</td>
