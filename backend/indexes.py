@@ -198,6 +198,10 @@ INDEX_SPECS: Dict[str, List[IndexKeys]] = {
     "hr_statutory_remittances": [    # PK-22 — setoran BPJS/PPh 21 per masa (tidak unik: boleh >1 setoran per masa)
         [("entity_id", A), ("period", A), ("kind", A)],
     ],
+    "hr_pay_inputs": [               # PY-T1 — antrean masukan komponen gaji (unik `source_key`: REQUIRED_UNIQUE_INDEXES)
+        [("entity_id", A), ("pay_period", A), ("status", A)],
+        [("used_run_id", A)],
+    ],
     "credit_profile_requests": [     # CR-T1 — pengajuan perubahan profil kredit (antrean per PT, riwayat per pelanggan)
         [("entity_id", A), ("status", A), ("created_at", A)],
         [("customer_id", A), ("entity_id", A), ("status", A), ("decided_at", D)],
@@ -493,6 +497,8 @@ ID_INDEX_COLLECTIONS: List[str] = [
     "cash_transactions",
     # PK-22 — setoran kewajiban gaji: id dari kunci idempotensi (`strm_` + SHA-1), upsert bersamaan = satu setoran.
     "hr_statutory_remittances",
+    # PY-T1 — komponen gaji per PT (`pcomp_…`) dan antrean masukan komponen (`pinp_…`).
+    "hr_pay_components", "hr_pay_inputs",
 ]
 
 # FIX-5 — rujukan bersarang roll yang dicari per nilai (B3a SCH-9: index `reserved_ref` utuh tidak terpakai oleh
@@ -829,6 +835,18 @@ REQUIRED_UNIQUE_INDEXES += [
      "finder": _finder_dup("intercompany_eliminations",
                            '{source_g6_pair_id:{$type:"string",$gt:""},period_key:{$type:"string",$gt:""}}',
                            '{p:"$source_g6_pair_id",k:"$period_key"}', "$id")},
+]
+
+# PY-T1 (D7) — satu kode komponen gaji per PT; satu masukan per baris sumber (kirim ulang kunci sama = dokumen yang
+# sama). Koleksi baru: data lama tidak bisa kembar. Sisip bersamaan → `DuplicateKeyError` → 409 / membaca pemenangnya.
+REQUIRED_UNIQUE_INDEXES += [
+    {"collection": "hr_pay_components", "name": "uq_entity_code", "label": "satu kode komponen gaji per PT",
+     "keys": [("entity_id", 1), ("code", 1)], "partial": {"code": dict(_NONEMPTY)},
+     "finder": _finder_dup("hr_pay_components", '{code:{$type:"string",$gt:""}}', '{e:"$entity_id",c:"$code"}',
+                           "$id")},
+    {"collection": "hr_pay_inputs", "name": "uq_source_key", "label": "satu masukan gaji per baris sumber",
+     "keys": [("source_key", 1)], "partial": {"source_key": dict(_NONEMPTY)},
+     "finder": _finder_dup("hr_pay_inputs", '{source_key:{$type:"string",$gt:""}}', '"$source_key"', "$id")},
 ]
 
 # PM-T2 (D7) — kode bayar unik LINTAS PT (berita transfer tidak ambigu, mutasi yang salah masuk rekening PT lain tetap

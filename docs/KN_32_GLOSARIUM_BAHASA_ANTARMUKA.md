@@ -519,3 +519,14 @@ Tower (`docs/blueprint/unit/PK-41.md`, keputusan K-16).
 | **saldo awal rekening yang didaftarkan periode ini** | Baris Arus Kas di bawah "Kas Awal Periode" | Saldo awal rekening bank/kas baru yang dicatat dalam periode laporan. Menambah kas awal, bukan arus pendanaan |
 | **pencocokan ke Laba-Rugi** | Panel Profitabilitas "Pencocokan ke Laba-Rugi" (lima baris) | Jembatan dari marjin layar Profitabilitas (barang terkirim dikurangi nota kredit) ke laba kotor Laba-Rugi: penghapusan/penyesuaian persediaan dan penjualan antar-PT tidak dihitung di layar Profitabilitas |
 | **nota debit belum dipotong** | Kartu pencocokan hutang "− Nota debit belum dipotong {Rp}" | Retur beli yang sudah menurunkan akun hutang tetapi belum mengurangi sisa tagihan mana pun (potongannya baru mengurangi tagihan saat kontrabon yang memuatnya lunas) |
+
+### 9.17 Penggajian: komponen gaji, masukan, jenis proses gaji (PY-T1)
+
+Istilah SDM › Penggajian (`docs/blueprint/unit/PY-T1.md`).
+
+| Istilah | Teks layar | Arti |
+|---|---|---|
+| **proses gaji** | Tab "Proses Gaji" · "Jenis proses: Reguler · THR · Susulan" | Satu kali penghitungan gaji satu PT untuk satu periode (dokumen "Penggajian", nomor `PAY-`). Reguler = gaji bulanan semua karyawan (satu per PT per periode); THR = hanya yang punya masukan THR; susulan = masukan yang belum terpakai sesudah proses reguler |
+| **komponen gaji** | Tab "Komponen & Masukan" › bagian "Komponen gaji" · tombol "Tambah komponen" | Satu jenis baris di slip gaji (gaji pokok, tunjangan, lembur, komisi, THR, BPJS, PPh 21, bonus, potongan) — daftarnya per PT. Komponen bawaan tidak bisa dihapus atau diganti jenisnya |
+| **masukan** (gaji) | Bagian "Masukan" · tombol "Tambah masukan", "Sahkan", "Batalkan" · status "Menunggu disahkan · Disahkan · Terpakai · Dibatalkan" | Nilai satu komponen untuk satu karyawan pada satu periode bayar (mis. bonus Rp 2.000.000), dari isian manual atau modul lain. Ikut dihitung di proses gaji periode itu sesudah disahkan; "Terpakai" = sudah masuk sebuah proses gaji |
+| **tanggungan perusahaan** | Jenis komponen · bagian slip "Tanggungan perusahaan (informasi)" | Iuran yang dibayar perusahaan untuk karyawan (BPJS bagian perusahaan); tidak mengurangi gaji bersih |

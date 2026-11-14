@@ -120,7 +120,8 @@ def test_U02_pemeriksa_hijau():
     # AG-T3 menambah `ai_action_proposals.uq_pending_session` (satu kartu asisten menunggu per percakapan): + 1.
     # KM-T1 menambah `sales_targets.uq_target_pt_sales_periode`, `incentive_components.uq_component_code`,
     # `incentive_definitions.uq_definition_version`: + 3.
-    assert out.count(": terpasang · 0 kelompok kembar") == len(REQUIRED_UNIQUE_INDEXES) == 26
+    # PY-T1 menambah `hr_pay_components.uq_entity_code` dan `hr_pay_inputs.uq_source_key`: + 2.
+    assert out.count(": terpasang · 0 kelompok kembar") == len(REQUIRED_UNIQUE_INDEXES) == 28
 
 
 def test_U03_U04_U05_indeks_tak_terpasang_menolak_mulai():

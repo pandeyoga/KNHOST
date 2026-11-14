@@ -198,6 +198,25 @@ def bpjs_breakdown(base: float, emp: Dict[str, Any], cfg: Dict[str, Any]) -> Tup
     return emp_b, er_b, round(sum(emp_b.values()), 2), round(sum(er_b.values()), 2)
 
 
+def bpjs_info(emp: Dict[str, Any], cfg: Dict[str, Any]) -> Tuple[Dict[str, float], Dict[str, bool]]:
+    """PY-T1 — persen tiap iuran BPJS (1.0 = 1 %, per kode undang-undang komponen) dan program yang aktif untuk
+    karyawan ini ({"kes", "tk"}); aturan sakelar sama dengan `bpjs_breakdown`. Dipakai baris komponen slip & PDF."""
+    b = cfg.get("bpjs", {}) or {}
+    toggles = cfg.get("feature_toggles", {}) or {}
+    on = {"kes": bool(toggles.get("bpjs_kesehatan", True)) and emp.get("bpjs_kes_enabled", True) is not False,
+          "tk": bool(toggles.get("bpjs_ketenagakerjaan", True)) and emp.get("bpjs_tk_enabled", True) is not False}
+    jkk = 0.0
+    for c in cfg.get("jkk_classes", []) or []:
+        if str(c.get("class")) == str(emp.get("jkk_risk_class") or "II"):
+            jkk = float(c.get("rate") or 0)
+            break
+    rates = {"bpjs_kes_emp": b.get("kes_rate_employee"), "bpjs_jht_emp": b.get("jht_rate_employee"),
+             "bpjs_jp_emp": b.get("jp_rate_employee"), "bpjs_kes_er": b.get("kes_rate_employer"),
+             "bpjs_jht_er": b.get("jht_rate_employer"), "bpjs_jp_er": b.get("jp_rate_employer"),
+             "bpjs_jkk_er": jkk, "bpjs_jkm_er": b.get("jkm_rate_employer")}
+    return {k: float(v or 0) for k, v in rates.items()}, on
+
+
 def overtime_hour_units(hours: float, day_type: str, six_day: bool) -> float:
     """HR-02 — PP 35/2021 ps.31: hari kerja 1,5× jam pertama + 2× berikutnya; hari istirahat/libur
     5 hari kerja: 2× 8 jam, 3× jam ke-9, 4× jam ke-10–11 (6 hari kerja: 7 jam / ke-8 / ke-9–10)."""
@@ -306,11 +325,22 @@ async def _commission_for(emp: Dict[str, Any], period: str, entity_id: str) -> f
         return 0.0
 
 
+async def _components_map(entity_id: str) -> Dict[str, Dict[str, Any]]:
+    """PY-T1 — komponen gaji PT itu (isi awal dijamin); tanpa PT tunggal → isi awal bawaan (tanpa database)."""
+    from services import hr_pay_components as _pc
+    if not entity_id or entity_id == "all":
+        return _pc.by_code(_pc.DEFAULT_COMPONENTS)
+    return await _pc.components_for(entity_id)
+
+
 async def compute_payslip(emp: Dict[str, Any], period: str, entity_id: str,
-                          cfg: Dict[str, Any], aturan: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+                          cfg: Dict[str, Any], aturan: Optional[Dict[str, Any]] = None, *,
+                          comps: Optional[Dict[str, Dict[str, Any]]] = None) -> Dict[str, Any]:
     # PK-46 — `aturan` = aturan_pph21(akhir periode gaji); proses gaji membacanya sekali dan meneruskannya ke sini.
     if aturan is None:
         aturan = await aturan_pph21(akhir_periode_gaji(period))
+    if comps is None:
+        comps = await _components_map(entity_id)
     base = float(emp.get("base_salary") or 0)
     allowances = _sum_allowances(emp.get("allowances"))
     events = await overtime_events(emp["id"], period, entity_id, cfg)
@@ -347,6 +377,15 @@ async def compute_payslip(emp: Dict[str, Any], period: str, entity_id: str,
         pph21 = round(annual["annual_tax"] - annual["prior_withheld"], 2)
         pph21_method, rate = "annual_pasal17", 0.0
     net = round(gross - emp_total - pph21, 2)
+    # PY-T1 (a) — daftar komponen slip dibangun DI SAMPING kolom lama (kolom lama belum diturunkan darinya); uji PY-T1
+    # U1/U2 membuktikan Σ komponen per kolom = kolom lama.
+    from services import hr_pay_components as _pc
+    rates, on = bpjs_info(emp, cfg)
+    components = _pc.sort_components(
+        _pc.earning_components(comps, base=base, allowances=emp.get("allowances"), overtime=overtime,
+                               overtime_min=ot_min, commission=commission)
+        + _pc.statutory_components(comps, bpjs_emp=emp_b, bpjs_er=er_b, bpjs_rates=rates, bpjs_on=on, pph21=pph21,
+                                   pph21_rate_pct=rate * 100, pph21_method=pph21_method), comps)
     return {
         "employee_id": emp["id"], "employee_name": emp.get("name", ""),
         "user_id": emp.get("user_id", ""), "position": emp.get("position_name", ""),
@@ -358,7 +397,7 @@ async def compute_payslip(emp: Dict[str, Any], period: str, entity_id: str,
         "pph21_method": pph21_method, "pph21_annual": annual,
         "bpjs_emp": emp_b, "bpjs_er": er_b,
         "bpjs_emp_total": emp_total, "bpjs_er_total": er_total,
-        "pph21": pph21, "net": net,
+        "pph21": pph21, "net": net, "components": components,
         "bank": {"bank_name": emp.get("bank_name", ""), "acc_no": emp.get("bank_acc_no", ""),
                  "acc_name": emp.get("bank_acc_name", "")},
     }
@@ -402,11 +441,12 @@ async def preview_run(entity_id: str, period: str) -> Dict[str, Any]:
     # FASE E-4 (E4.5) — BPJS/PPh21/lembur mengikuti badan usaha yang digaji.
     cfg = await hr_service.get_hr_settings(entity_id)
     aturan = await aturan_pph21(akhir_periode_gaji(period))   # PK-46 — sekali per proses gaji
+    comps = await _components_map(entity_id)                  # PY-T1 — komponen PT, sekali per proses gaji
     emps = await _active_employees(entity_id, period)
     slips: List[Dict[str, Any]] = []
     totals = _empty_totals()
     for emp in emps:
-        s = await compute_payslip(emp, period, entity_id, cfg, aturan)
+        s = await compute_payslip(emp, period, entity_id, cfg, aturan, comps=comps)
         slips.append(s)
         _accumulate(totals, s)
     slips.sort(key=lambda x: x["employee_name"])

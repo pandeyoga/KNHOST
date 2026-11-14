@@ -151,6 +151,7 @@ export const LiveTrackingView = lazy(() => import("./features/hr/LiveTrackingVie
 export const VisitsView = lazy(() => import("./features/hr/VisitsView"));
 export const PayrollRunsView = lazy(() => import("./features/hr/PayrollRunsView"));
 export const PayrollRemittancesView = lazy(() => import("./features/hr/PayrollRemittancesView"));   // PK-22
+export const PayComponentsView = lazy(() => import("./features/hr/PayComponentsView"));   // PY-T1
 export const PayslipsView = lazy(() => import("./features/hr/PayslipsView"));
 export const LeaveView = lazy(() => import("./features/hr/LeaveView"));
 export const OvertimeView = lazy(() => import("./features/hr/OvertimeView"));

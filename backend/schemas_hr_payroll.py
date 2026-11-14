@@ -1,5 +1,5 @@
 """Skema input HRD H4 — Payroll."""
-from typing import Any, Dict, Optional
+from typing import Any, Dict, List, Optional
 from pydantic import BaseModel, Field
 
 
@@ -39,3 +39,53 @@ class RemittanceInput(BaseModel):
     cash_type: str = "kas_besar"   # "kas_besar" (bank) | "kas_kecil"
     reference: str = Field(default="", max_length=120)
     notes: str = Field(default="", max_length=500)
+
+
+class PayComponentCreate(BaseModel):
+    """PY-T1 — komponen gaji baru PT aktif (`02` N1: PT = PT aktif, bukan isi permintaan)."""
+    code: str = Field(max_length=30)
+    name: str = Field(max_length=80)
+    kind: str                                  # "pendapatan" | "potongan"
+    calc: str = "masukan"                      # komponen baru: hanya "masukan" (PY-T2/PY-T3 menambah cara lain)
+    bucket: str = ""                           # kosong = kolom bawaan jenisnya (other_earnings / other_deductions)
+    taxable: Optional[bool] = None
+    in_bpjs_base: bool = False                 # disimpan; belum dipakai mesin sampai PY-T3
+    in_overtime_base: bool = False
+    prorate: bool = False
+    account_code: str = Field(default="", max_length=20)
+    allowed_run_types: List[str] = ["regular", "susulan"]
+    sort: int = 300
+    is_active: bool = True
+
+
+class PayComponentPatch(BaseModel):
+    """PY-T1 — ubah komponen; field yang tidak dikirim tidak berubah."""
+    code: Optional[str] = None
+    name: Optional[str] = Field(default=None, max_length=80)
+    kind: Optional[str] = None
+    calc: Optional[str] = None
+    bucket: Optional[str] = None
+    taxable: Optional[bool] = None
+    in_bpjs_base: Optional[bool] = None
+    in_overtime_base: Optional[bool] = None
+    prorate: Optional[bool] = None
+    statutory_code: Optional[str] = None
+    account_code: Optional[str] = Field(default=None, max_length=20)
+    allowed_run_types: Optional[List[str]] = None
+    sort: Optional[int] = None
+    is_active: Optional[bool] = None
+
+
+class PayInputCreate(BaseModel):
+    """PY-T1 — masukan manual (`pending` sampai disahkan). PT = PT aktif."""
+    employee_id: str
+    component_code: str
+    pay_period: str
+    amount: float
+    label: str = Field(default="", max_length=120)
+    basis_period: str = ""
+    reason: str = Field(default="", max_length=500)
+
+
+class PayInputCancel(BaseModel):
+    reason: str = Field(default="", max_length=500)

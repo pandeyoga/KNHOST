@@ -2954,6 +2954,10 @@
    "hr",
    "payroll"
   ],
+  "hr-pay-components": [
+   "hr",
+   "payroll"
+  ],
   "hr-payroll-hub": [
    "hr",
    "payroll"

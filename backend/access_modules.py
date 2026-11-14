@@ -172,6 +172,7 @@ MODULE_CATALOG: List[Dict[str, Any]] = [
      "nav": ["hrd", "hr-people", "hr-employees", "hr-org-units", "hr-attendance-hub",
              "hr-attendance", "hr-leave", "hr-overtime", "hr-live-tracking",
              "hr-attendance-setup", "hr-payroll-hub", "hr-payroll-runs", "hr-payslips", "hr-payroll-remittances",
+             "hr-pay-components",   # PY-T1 — tab Komponen & Masukan
              "hr-kpi-hub", "cs-kpi",
              # Fase 3 · P8 (P16-K1, D-29) — Shift & Lokasi Absen + aturan SDM di Pengaturan › SDM; KP-T9 — mesin absen
              # kini tab Pengaturan › SDM › Mesin Absen (blok KP-T9 di bawah).

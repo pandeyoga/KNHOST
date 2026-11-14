@@ -2015,6 +2015,13 @@ async def run_bootstrap() -> None:
     await seed_initial_notifications()
     # FASE H0 — HRD foundation (config HR + struktur org + backfill karyawan)
     await seed_hr_foundation()
+    # PY-T1 (K-37) — isi awal komponen gaji tiap PT (idempoten; komponen yang sudah ada tidak diubah).
+    try:
+        from services import hr_pay_components as _pcomp
+        await _pcomp.ensure_defaults_all()
+    except Exception as exc:  # noqa: BLE001 — jangan gagalkan startup; daftar komponen PT diisi lagi saat dibaca
+        import logging
+        logging.getLogger("bootstrap").warning("[penggajian] isi awal komponen gaji dilewati: %s", exc)
     # FASE H1 — HRD Absensi (shift + geofence + device + contoh kehadiran)
     await seed_hr_attendance_foundation()
     # FASE H2 — HRD Live Tracking + Visits (jejak GPS + kunjungan)

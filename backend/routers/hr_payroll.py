@@ -20,9 +20,12 @@ from services import hr_payroll_service as pay
 from services import hr_service
 from services.hr_payroll_pdf import payslip_pdf_bytes
 from schemas_hr_payroll import (PayrollRunInput, PayRunInput, HrSettingsUpdate,
-                               PayrollRejectInput, PayrollReasonInput, RemittanceInput)
+                               PayrollRejectInput, PayrollReasonInput, RemittanceInput,
+                               PayComponentCreate, PayComponentPatch, PayInputCreate, PayInputCancel)
 from services import gl_service as _gl
 from services import hr_remittance_service as _rem
+from services import hr_pay_components as _pcomp   # PY-T1 — komponen gaji per PT
+from services import hr_pay_inputs as _pinp        # PY-T1 — antrean masukan komponen
 
 router = APIRouter(prefix="/api")
 
@@ -324,6 +327,124 @@ async def create_remittance(request: Request, body: RemittanceInput):
     await audit(actor["name"], "hr.payroll.remittance_create", "hr_statutory_remittances", doc["id"],
                 {"number": doc.get("number"), "kind": doc.get("kind"), "period": doc.get("period"),
                  "amount": doc.get("amount"), "cash_txn_id": doc.get("cash_txn_id")})
+    return doc
+
+
+# ───────────────────────── PY-T1 — Komponen gaji & antrean masukan ─────────────────────────
+def _pyt1_http(e: Exception) -> HTTPException:
+    if isinstance(e, (_pcomp.ComponentConflict, _pinp.InputConflict)):
+        return HTTPException(status_code=409, detail=str(e))
+    if isinstance(e, LookupError):
+        return HTTPException(status_code=404, detail=str(e))
+    return HTTPException(status_code=400, detail=str(e))
+
+
+def _pt_aktif(ctx, verb: str) -> str:
+    if ctx.view_all or not ctx.active_entity_id or ctx.active_entity_id == "all":
+        raise HTTPException(status_code=400, detail=f"Pilih satu PT dulu untuk {verb}.")
+    return ctx.active_entity_id
+
+
+@router.get("/hr/payroll/components")
+async def list_pay_components(request: Request):
+    """Daftar komponen gaji PT aktif (isi awal dijamin)."""
+    await require_permission(request, "hr", "view")
+    ctx = await entity_ctx(request)
+    eid = _pt_aktif(ctx, "melihat komponen gaji")
+    return {"items": await _pcomp.list_components(eid), "entity_id": eid}
+
+
+@router.post("/hr/payroll/components")
+async def create_pay_component(request: Request, body: PayComponentCreate):
+    actor = await require_permission(request, "hr", "manage_payroll")
+    ctx = await entity_ctx(request)
+    eid = _pt_aktif(ctx, "menambah komponen gaji")
+    data = body.model_dump()
+    if data.get("taxable") is None:
+        data.pop("taxable")
+    try:
+        doc = await _pcomp.create_component(eid, data, actor)
+    except ValueError as e:
+        raise _pyt1_http(e)
+    await audit(actor["name"], "hr.payroll.component_create", "hr_pay_components", doc["id"],
+                {"entity_id": eid, "code": doc["code"], "kind": doc["kind"], "bucket": doc["bucket"],
+                 "account_code": doc.get("account_code", "")})
+    return doc
+
+
+@router.patch("/hr/payroll/components/{comp_id}")
+async def update_pay_component(request: Request, comp_id: str, body: PayComponentPatch):
+    actor = await require_permission(request, "hr", "manage_payroll")
+    doc = await db.hr_pay_components.find_one({"id": comp_id}, {"_id": 0})
+    await guard_doc(request, "hr_pay_components", doc, not_found="Komponen gaji tidak ditemukan")
+    data = {k: v for k, v in body.model_dump().items() if v is not None}
+    try:
+        out = await _pcomp.update_component(comp_id, doc["entity_id"], data, actor)
+    except (ValueError, LookupError) as e:
+        raise _pyt1_http(e)
+    await audit(actor["name"], "hr.payroll.component_update", "hr_pay_components", comp_id,
+                {"code": doc.get("code"), "changes": data})
+    return out
+
+
+@router.get("/hr/payroll/inputs")
+async def list_pay_inputs(request: Request, pay_period: Optional[str] = Query(None),
+                          status: Optional[str] = Query(None), employee_id: Optional[str] = Query(None),
+                          entity_id: Optional[str] = Query(None), page: int = Query(1, ge=1),
+                          page_size: int = Query(50, ge=1, le=200)):
+    """Antrean masukan berhalaman (+ `total`), dicakup PT pengguna."""
+    await require_permission(request, "hr", "view")
+    ctx = await entity_ctx(request)
+    scope = resolve_list_scope("hr_pay_inputs", {}, ctx, entity_id)
+    try:
+        return await _pinp.list_inputs(scope, pay_period=pay_period or "", status=status or "",
+                                       employee_id=employee_id or "", page=page, page_size=page_size)
+    except ValueError as e:
+        raise _pyt1_http(e)
+
+
+@router.post("/hr/payroll/inputs")
+async def create_pay_input(request: Request, body: PayInputCreate):
+    """Masukan manual → `pending` (menunggu disahkan pemegang `payroll.approve`)."""
+    actor = await require_permission(request, "payroll", "create")
+    ctx = await entity_ctx(request)
+    eid = _pt_aktif(ctx, "menambah masukan gaji")
+    try:
+        doc = await _pinp.create_manual_input(eid, body.model_dump(), actor)
+    except ValueError as e:
+        raise _pyt1_http(e)
+    await audit(actor["name"], "hr.payroll.input_create", "hr_pay_inputs", doc["id"],
+                {"entity_id": eid, "employee_id": doc["employee_id"], "component_code": doc["component_code"],
+                 "pay_period": doc["pay_period"], "amount": doc["amount"]}, reason=doc.get("reason", ""))
+    return doc
+
+
+@router.post("/hr/payroll/inputs/{input_id}/approve")
+async def approve_pay_input(request: Request, input_id: str):
+    actor = await require_permission(request, "payroll", "approve")
+    await guard_doc(request, "hr_pay_inputs", await db.hr_pay_inputs.find_one({"id": input_id}, {"_id": 0}),
+                    not_found="Masukan tidak ditemukan")
+    try:
+        doc = await _pinp.approve_input(input_id, actor)
+    except (ValueError, LookupError) as e:
+        raise _pyt1_http(e)
+    await audit(actor["name"], "hr.payroll.input_approve", "hr_pay_inputs", input_id,
+                {"amount": doc.get("amount"), "pay_period": doc.get("pay_period")})
+    return doc
+
+
+@router.post("/hr/payroll/inputs/{input_id}/cancel")
+async def cancel_pay_input(request: Request, input_id: str, body: PayInputCancel):
+    actor = await require_permission(request, "payroll", "approve")
+    await guard_doc(request, "hr_pay_inputs", await db.hr_pay_inputs.find_one({"id": input_id}, {"_id": 0}),
+                    not_found="Masukan tidak ditemukan")
+    try:
+        doc = await _pinp.cancel_input_by_id(input_id, actor=actor, reason=body.reason)
+    except (ValueError, LookupError) as e:
+        raise _pyt1_http(e)
+    await audit(actor["name"], "hr.payroll.input_cancel", "hr_pay_inputs", input_id,
+                {"amount": doc.get("amount"), "pay_period": doc.get("pay_period"),
+                 "cancelled_from": doc.get("cancelled_from")}, reason=body.reason)
     return doc
 
 
