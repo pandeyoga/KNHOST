@@ -178,6 +178,12 @@ INDEX_SPECS: Dict[str, List[IndexKeys]] = {
     "journal_proposals": [           # KF-T6 — usulan jurnal manual menunggu orang kedua (antrean per PT)
         [("entity_id", A), ("status", A), ("proposed_at", D)],
     ],
+    "bank_account_changes": [        # PM-T1 — perubahan rekening menunggu orang kedua (antrean per PT)
+        [("entity_id", A), ("status", A), ("created_at", D)],
+    ],
+    "payment_methods": [             # PM-T1 — master cara bayar berlapis (baris efektif per kode × PT)
+        [("code", A), ("entity_id", A)],
+    ],
     "approval_policies": [           # KP-T4 — satu tabel kebijakan persetujuan (jenis, PT, jenjang, urutan)
         [("doc_kind", A), ("entity_id", A), ("level", A), ("sort", A)],
     ],
@@ -429,6 +435,8 @@ ID_INDEX_COLLECTIONS: List[str] = [
     "approval_policies",
     # KP-T5 — baris format nomor dokumen (`dnf_…`).
     "doc_number_formats",
+    # PM-T1 — master cara bayar (`pmeth_…`) dan perubahan rekening (`bac_…`).
+    "payment_methods", "bank_account_changes",
 ]
 
 # FIX-5 — rujukan bersarang roll yang dicari per nilai (B3a SCH-9: index `reserved_ref` utuh tidak terpakai oleh
@@ -724,6 +732,18 @@ REQUIRED_UNIQUE_INDEXES += [
      "keys": [("entity_id", 1), ("period", 1)], "partial": {"period": dict(_NONEMPTY)},
      "finder": _finder_dup("tax_period_locks", '{period:{$type:"string",$gt:""}}', '{e:"$entity_id",p:"$period"}',
                            "$id")},
+]
+
+
+# PM-T1 (K-34) — satu rekening bawaan penerimaan per (PT, cara bayar). Indeks multikey atas daftar
+# `default_receiving_methods`; hanya rekening yang punya bawaan (`default_receiving_methods.0` ada). Field ini baru,
+# jadi data lama tidak bisa kembar; dua PATCH bersamaan → satu kena DuplicateKeyError lalu diulang (`bank_service`).
+REQUIRED_UNIQUE_INDEXES += [
+    {"collection": "bank_accounts", "name": "uq_default_receiving", "label": "satu rekening bawaan per PT per cara bayar",
+     "keys": [("entity_id", 1), ("default_receiving_methods", 1)],
+     "partial": {"default_receiving_methods.0": {"$exists": True}},
+     "finder": ('db.bank_accounts.aggregate([{$unwind:"$default_receiving_methods"},{$group:{_id:{e:"$entity_id",'
+                'm:"$default_receiving_methods"},n:{$sum:1},rekening:{$push:"$id"}}},{$match:{n:{$gt:1}}}])')},
 ]
 
 

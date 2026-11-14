@@ -35,7 +35,9 @@ IDEMPOTENT_PREFIXES = ("/api/inbound/", "/api/outbound/", "/api/wms/tasks/",
                        "/api/fixed-assets", "/api/cash-advances", "/api/cash-advance-settlements",
                        "/api/payment-plans", "/api/penalties", "/api/payment-variances", "/api/finance-cases",
                        "/api/tax/pph-records", "/api/input-tax-invoices", "/api/tax-invoices",
-                       "/api/bank-reconciliation/lines/")
+                       "/api/bank-reconciliation/lines/",
+                       # PM-T1 — rekening kas/bank dan putusan perubahannya: kirim ulang = satu rekening / satu putusan.
+                       "/api/bank-accounts", "/api/bank-account-changes")
 
 
 async def _session_user_id(request: Request) -> str:

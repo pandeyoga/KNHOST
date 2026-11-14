@@ -14,12 +14,14 @@ import ErrorNotice from "../../../components/ErrorNotice";
 import FormModal from "../../../components/FormModal";
 import { KNSelect } from "../../../components/KNSelect";
 import { apiErrorText } from "../../../utils/apiError";
-import { METHOD_OPTIONS, fmtDate, todayISO } from "./contraBonApi";
+import { fmtDate, todayISO } from "./contraBonApi";
+import { canonicalMethod, usePaymentMethods } from "../../../config/paymentMethods";   // PM-T1
 
 export default function PaymentScheduleModal({ cb, onClose, onSaved, onError }) {
   const cur = cb.schedule || {};
   const [when, setWhen] = useState(cur.planned_payment_date || cb.due_date || todayISO());
-  const [method, setMethod] = useState(cur.method || "transfer");
+  const [method, setMethod] = useState(canonicalMethod(cur.method, "transfer"));
+  const payMethods = usePaymentMethods("keluar", cb.entity_id);
   const [accountId, setAccountId] = useState(cur.bank_account_id || "");
   const [notes, setNotes] = useState(cur.notes || "");
   const [accounts, setAccounts] = useState([]);
@@ -94,7 +96,7 @@ export default function PaymentScheduleModal({ cb, onClose, onSaved, onError }) 
           <div>
             <label className="mb-1 block text-[11px] font-semibold text-[#6B6B73]">Cara bayar</label>
             <KNSelect data-testid="cb-schedule-method" value={method} onValueChange={setMethod}
-              options={METHOD_OPTIONS} className="field" />
+              options={payMethods.options} className="field" />
           </div>
           <div>
             <label className="mb-1 block text-[11px] font-semibold text-[#6B6B73]">

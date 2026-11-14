@@ -42,6 +42,7 @@ CACHE_PROSES = [
     ("services.location_scope", "_CACHE"), ("services.location_scope", "_TEST_CACHE"),
     ("services.config_resolver", "_JATUH_TEMPO"),   # KF-T3 — waktu jatuh tempo jadwal pengaturan terdekat
     ("services.config_health", "_TREES"),            # KF-T3 — pohon sintaks berkas pemakai (pemeriksa kesehatan)
+    ("services.payment_method_service", "_KAMUS"),   # PM-T1 — kamus kata lama → kode cara bayar
 ]
 _AWAL: Dict[tuple, Any] = {}
 for _m, _n in CACHE_PROSES:

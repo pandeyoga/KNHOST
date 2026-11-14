@@ -2215,7 +2215,8 @@ async def post_penalty_payment(*, penalty_id: str, entity_id: str, amount: float
     if not penalty_id or amount <= EPS or await _already_posted("penalty_payment", sid):
         return None
     await seed_default_coa()
-    cash_acc = ACC_KAS_KECIL if (method or "").lower() in ("tunai", "cash") else ACC_KAS_BESAR
+    from services.payment_method_service import is_cash   # PM-T1 — satu pembeda tunai
+    cash_acc = ACC_KAS_KECIL if await is_cash(entity_id or "", method) else ACC_KAS_BESAR
     lbl = label or f"Pembayaran denda {penalty_id}"
     lines = _balanced_pair(cash_acc, ACC_PIUTANG_DENDA, amount, lbl)
     return await _insert_entry(

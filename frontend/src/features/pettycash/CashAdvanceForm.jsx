@@ -10,6 +10,7 @@ import FormModal from "../../components/FormModal";
 import { SATUAN_OPTIONS } from "./pettyCashShared";
 import useIntentKey from "../../hooks/useIntentKey";
 import { moneyPatch, moneyPost } from "../../utils/moneyRequest";
+import { canonicalMethod, usePaymentMethods } from "../../config/paymentMethods";
 
 /**
  * CashAdvanceForm — Buat / ubah Form Pengajuan Dana (PD).
@@ -31,7 +32,10 @@ export default function CashAdvanceForm({ record, entities, selectedEntity, onCa
   const [periodFrom, setPeriodFrom] = useState((record?.period_from || "").slice(0, 10));
   const [periodTo, setPeriodTo] = useState((record?.period_to || "").slice(0, 10));
   const [accountLabel, setAccountLabel] = useState(record?.account_label || "");
-  const [paymentMethod, setPaymentMethod] = useState(record?.payment_method || "tunai");
+  const [paymentMethod, setPaymentMethod] = useState(canonicalMethod(record?.payment_method, "cash"));
+  const payMethods = usePaymentMethods("keluar", entityId);   // PM-T1 — daftar induk cara bayar (arah keluar)
+  const methodOptions = useMemo(() => payMethods.methods.filter((m) => m.needs_account !== "tidak")
+    .map((m) => ({ value: m.code, label: m.name })), [payMethods.methods]);
   const [bank, setBank] = useState({
     bank: record?.bank_detail?.bank || "", no_account: record?.bank_detail?.no_account || "",
     nama: record?.bank_detail?.nama || "", cabang: record?.bank_detail?.cabang || "",
@@ -146,9 +150,9 @@ export default function CashAdvanceForm({ record, entities, selectedEntity, onCa
 
           {/* Payment */}
           <div className="grid gap-3 sm:grid-cols-2">
-            <Field label="Metode Pembayaran">
+            <Field label="Cara bayar">
               <KNSelect data-testid="ca-payment-method" className="form-input" value={paymentMethod} onValueChange={setPaymentMethod}
-                options={[{ value: "tunai", label: "Tunai (Kas)" }, { value: "transfer", label: "Transfer Bank" }]} />
+                options={methodOptions} />
             </Field>
             <Field label="Rekening Sumber / Label">
               <input data-testid="ca-account-label" className="form-input" value={accountLabel} onChange={(e) => setAccountLabel(e.target.value)} placeholder="mis. BCA 3999-988-858" />

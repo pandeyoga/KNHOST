@@ -40,6 +40,7 @@ MONEY_PREFIXES = (
     "/api/fixed-assets", "/api/cash-advances", "/api/cash-advance-settlements", "/api/payment-plans",
     "/api/penalties", "/api/payment-variances", "/api/finance-cases", "/api/tax/pph-records",
     "/api/input-tax-invoices", "/api/tax-invoices", "/api/bank-reconciliation/lines/",
+    "/api/bank-accounts", "/api/bank-account-changes",   # PM-T1 — rekening kas/bank & putusan perubahannya
 )
 # Daftar-izin (berkas relatif `frontend/src`, potongan URL) → alasan ≥ 20 huruf. Awal: kosong.
 ALLOW: dict[tuple[str, str], str] = {}

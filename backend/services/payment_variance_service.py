@@ -613,8 +613,8 @@ async def _refund(customer: Dict[str, Any], amount: float, method: str, *,
         raise VarianceError(
             f"Saldo kelebihan bayar pelanggan tidak cukup untuk dikembalikan "
             f"(tersedia {_rp(avail)}).")
-    tunai = (method or "").lower() in ("cash", "tunai", "kontan")
-    cash_type = "kas_kecil" if tunai else "kas_besar"
+    from services.payment_method_service import is_cash   # PM-T1 — satu pembeda tunai
+    cash_type = "kas_kecil" if await is_cash(entity_id or "", method) else "kas_besar"
     # FASE E-7 (E7.4) — pengembalian dana pelanggan adalah uang badan usaha penjualnya.
     from services.cash_entity_service import resolve_owner as _cash_owner
     cash_entity = _cash_owner(entity_id, DEFAULT_ENTITY_ID,
@@ -775,6 +775,14 @@ async def decide_receipt(receipt_id: str, payload: Dict[str, Any],
             raise VarianceError(_dcr["pesan"])
     if kind not in ("outstanding", "reschedule"):   # PK-37 — dua pilihan ini tanpa perubahan pembukuan
         await _periksa_periode(entity_id)
+    refund_method = ""
+    if kind == "refund":   # PM-T1 — cara pengembalian dari daftar induk cara bayar (arah keluar), sebelum menulis
+        from services import payment_method_service as _pms
+        try:
+            refund_method = (await _pms.wajib(entity_id, payload.get("method") or policy["refund_method"],
+                                              arah="keluar"))["code"]
+        except _pms.CaraBayarError as exc:
+            raise VarianceError(str(exc)) from exc
 
     number = await next_doc_number(COLL, "number", "SLB-", entity_id=entity_id or None)
     decision_id = new_id("pvd")
@@ -837,7 +845,7 @@ async def decide_receipt(receipt_id: str, payload: Dict[str, Any],
     elif kind == "refund":
         res = await _refund(
             customer or {"id": receipt.get("customer_id"), "name": receipt.get("customer_name")},
-            amount, payload.get("method") or policy["refund_method"],
+            amount, refund_method,
             decision_id=decision_id, decision_number=number, entity_id=entity_id,
             receipt_number=receipt.get("number", ""), reason_label=reason["label"], actor=actor)
         je_id, je_number = res["je_id"], res["je_number"]
@@ -991,8 +999,9 @@ async def reverse_decision(decision_id: str, reason: str,
     elif kind == "refund":
         ref = (d.get("effect") or {}).get("refund") or {}
         cash_id = ref.get("cash_txn_id", "")
-        cash_acc = gl_service.ACC_KAS_KECIL if (ref.get("method") or "").lower() in (
-            "cash", "tunai", "kontan") else gl_service.ACC_KAS_BESAR
+        from services.payment_method_service import is_cash   # PM-T1 — satu pembeda tunai
+        cash_acc = gl_service.ACC_KAS_KECIL if await is_cash(entity_id or "", ref.get("method") or "") \
+            else gl_service.ACC_KAS_BESAR
         if cash_id:
             await db.cash_transactions.update_one(
                 {"id": cash_id}, {"$set": {"status": "void", "updated_at": now_iso()}})

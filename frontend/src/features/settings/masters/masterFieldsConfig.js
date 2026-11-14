@@ -153,6 +153,19 @@ export const COLUMNS = {
   ],
 };
 
+// PM-T1 — daftar induk cara bayar: kolom & isian (kode kanonik huruf kecil; "Kata lama" = alias dokumen lama).
+const NEEDS_ACCOUNT_LABELS = { bank: "Rekening bank", kas: "Kas", tidak: "Tidak perlu rekening" };
+const DIRECTION_LABELS = { masuk: "Penerimaan", keluar: "Pembayaran" };
+COLUMNS["payment-methods"] = [
+  { key: "code", label: "Kode", mono: true },
+  { key: "name", label: "Nama cara bayar" },
+  { key: "needs_account", label: "Rekening", labels: NEEDS_ACCOUNT_LABELS },
+  { key: "directions", label: "Dipakai untuk", list: true, labels: DIRECTION_LABELS },
+  { key: "needs_reference", label: "Wajib no. referensi?", labels: { true: "Ya", false: "Tidak" } },
+  { key: "aliases", label: "Kata lama", list: true, empty: "—" },
+  { key: "sort", label: "Urut", align: "right" },
+];
+
 /** Field yang bisa diisi saat menambah baris baru, per jenis master. */
 export const CREATE_FIELDS = {
   "payment-terms": [
@@ -165,6 +178,20 @@ export const CREATE_FIELDS = {
       ] },
     { key: "net_days", label: "Jatuh tempo (hari)", type: "number" },
     { key: "dp_percent", label: "DP (%)", type: "number" },
+  ],
+  "payment-methods": [
+    { key: "code", label: "Kode", required: true, placeholder: "mis. ewallet",
+      hint: "Huruf kecil tanpa spasi. Kode ini yang tersimpan di dokumen; jangan diganti sesudah dipakai." },
+    { key: "name", label: "Nama cara bayar", required: true, placeholder: "mis. Dompet digital" },
+    { key: "needs_account", label: "Rekening yang dipilih", type: "select", default: "bank",
+      options: Object.entries(NEEDS_ACCOUNT_LABELS).map(([value, label]) => ({ value, label })) },
+    { key: "directions", label: "Dipakai untuk", type: "list", default: ["masuk"],
+      hint: "masuk = penerimaan dari pelanggan, keluar = pembayaran; pisahkan dengan koma." },
+    { key: "needs_reference", label: "Wajib nomor referensi", type: "checkbox", default: true },
+    { key: "needs_due_date", label: "Wajib tanggal jatuh tempo (giro)", type: "checkbox", default: false },
+    { key: "aliases", label: "Kata lama", type: "list", hint: "Kata di dokumen lama yang berarti cara bayar ini; pisahkan dengan koma." },
+    { key: "sort", label: "Urutan tampil", type: "number" },
+    { key: "active", label: "Aktif (muncul di pilihan)", type: "checkbox", default: true },
   ],
   "expense-categories": [
     { key: "code", label: "Kode", required: true, placeholder: "mis. bensin_operasional" },

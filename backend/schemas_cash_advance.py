@@ -38,7 +38,7 @@ class CashAdvanceCreate(BaseModel):
     period_to: str = ""
     tanggal_pengajuan: str = ""
     account_label: str = ""          # rekening SUMBER (default per entitas)
-    payment_method: str = "tunai"    # tunai | transfer
+    payment_method: str = "cash"     # kode cara bayar (PM-T1, arah keluar); kata lama `tunai` diterima lewat alias
     bank_detail: Optional[BankDetail] = None
     lines: List[CashAdvanceLine] = []
     catatan: str = ""

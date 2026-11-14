@@ -41,7 +41,6 @@ logger = logging.getLogger(__name__)
 
 
 EPS = 0.01
-CASH_METHODS = {"cash", "tunai", "kontan"}
 
 
 def _payment_status(grand_total: float, paid: float) -> str:
@@ -53,17 +52,19 @@ def _payment_status(grand_total: float, paid: float) -> str:
 
 
 # ─── Cash posting (P0-1) ─────────────────────────────────────────────────────
-def _cash_routing(method: str) -> tuple:
+async def _cash_routing(method: str, entity_id: str = "") -> tuple:
     """(cash_type, force_all_entity) berdasar metode pembayaran (P0-1/P3-9).
 
-    Tunai/kontan → kas_kecil (per entitas). Transfer/giro/qris → kas_besar (bank).
+    Tunai (cara bayar ber-rekening kas, `payment_method_service.is_cash` — PM-T1; kata lama `tunai`/`kontan` ikut
+    lewat alias) → kas_kecil (per entitas). Transfer/giro/qris → kas_besar (bank).
 
     FASE E-7 (E7.4): elemen kedua **selalu False** sekarang. `kas_besar` berarti
     "buku bank", BUKAN "milik grup" — uangnya tetap milik badan usaha penerbit
     kwitansi. Sebelum ini penerimaan `KSC/AR-0000x` tercatat `entity_id="all"`
     sehingga kas PT Kain Suka Cita terlihat kosong padahal uangnya masuk.
     """
-    if (method or "").lower() in CASH_METHODS:
+    from services.payment_method_service import is_cash
+    if await is_cash(entity_id, method):
         return "kas_kecil", False
     return "kas_besar", False
 
@@ -73,7 +74,7 @@ async def _post_cash_in(receipt: Dict[str, Any], actor: Dict[str, Any]) -> Optio
     amt = round(float(receipt.get("amount", 0) or 0), 2)
     if amt <= EPS:
         return None
-    cash_type, force_all = _cash_routing(receipt.get("method", ""))
+    cash_type, force_all = await _cash_routing(receipt.get("method", ""), receipt.get("entity_id") or "")
     # E7.4 — pemilik uang = badan usaha kwitansinya (tidak ada lagi kas grup).
     from services.cash_entity_service import resolve_owner
     entity_id = resolve_owner(receipt.get("entity_id"), DEFAULT_ENTITY_ID,
@@ -438,11 +439,14 @@ async def create_receipt(payload: Dict[str, Any], actor: Dict[str, Any]) -> Dict
     if total_funds <= EPS:
         raise HTTPException(status_code=400, detail="Jumlah pembayaran harus > 0")
 
-    method = (payload.get("method") or "transfer").strip().lower()
     receipt_date = payload.get("receipt_date") or now_iso()
     # FASE E-1 (E1.10) — kwitansi milik badan usaha pelanggan/konteks, bukan default.
     entity_id = (payload.get("entity_id") or customer.get("entity_id")
                  or active_entity_or(DEFAULT_ENTITY_ID))
+    # PM-T1 — cara bayar dari daftar induk (kata lama → kode kanonik; tak dikenal / nonaktif di PT ini → 400)
+    # SEBELUM apa pun ditulis.
+    from services.payment_method_service import kode_400
+    method = await kode_400(entity_id, payload.get("method") or "transfer", arah="masuk")
     # FN-10 — periode tertutup ditolak SEBELUM kwitansi/alokasi/deposit dimutasi.
     from services import gl_service as _glp
     try:

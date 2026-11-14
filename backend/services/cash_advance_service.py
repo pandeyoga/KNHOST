@@ -27,7 +27,11 @@ CA_COLL = "cash_advances"
 STL_COLL = "cash_advance_settlements"
 EXCAT_COLL = "expense_categories"
 
-VALID_PAYMENT = {"tunai", "transfer"}
+
+async def _cara_bayar(entity_id: str, value: str) -> str:
+    """PM-T1 — cara pencairan dari daftar induk cara bayar (arah keluar); `tunai` lama → `cash`. Galat → 400."""
+    from services.payment_method_service import kode_400
+    return await kode_400(entity_id, value or "cash", arah="keluar")
 
 # KP-T4 — rantai persetujuan PD dari Aturan Persetujuan (jenis `cash_advance`): jenjang → status lewat
 # `approval_kinds.APPROVAL_KINDS["cash_advance"]["level_status"]`; jenjang tanpa baris dilewati. Dulu `APPROVAL_STAGES`
@@ -150,11 +154,10 @@ def _compute_lines(raw_lines) -> (List[Dict[str, Any]], float):
 
 
 async def create_cash_advance(payload, ctx: EntityContext, actor: Dict[str, Any]) -> Dict[str, Any]:
-    if payload.payment_method not in VALID_PAYMENT:
-        raise HTTPException(status_code=400, detail="payment_method harus 'tunai' atau 'transfer'")
     entity_id = payload.entity_id or ctx.active_entity_id
     if entity_id not in ctx.allowed_entity_ids:
         raise HTTPException(status_code=403, detail="Tidak berwenang atas entitas ini")
+    payload.payment_method = await _cara_bayar(entity_id, payload.payment_method)
     lines, total = _compute_lines(payload.lines)
     if not lines:
         raise HTTPException(status_code=400, detail="Minimal 1 baris rincian dana")
@@ -220,9 +223,7 @@ async def update_cash_advance(ca_id: str, payload, ctx: EntityContext, actor: Di
         if v is not None:
             upd[f] = v.strip() if isinstance(v, str) else v
     if payload.payment_method is not None:
-        if payload.payment_method not in VALID_PAYMENT:
-            raise HTTPException(status_code=400, detail="payment_method tidak valid")
-        upd["payment_method"] = payload.payment_method
+        upd["payment_method"] = await _cara_bayar(doc.get("entity_id") or "", payload.payment_method)
     if payload.bank_detail is not None:
         upd["bank_detail"] = payload.bank_detail.model_dump()
     if payload.lines is not None:

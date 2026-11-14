@@ -83,6 +83,9 @@ SCOPE_FIELD: Dict[str, Optional[str]] = {
     # FASE I — master ALASAN KELUHAN RETUR: berlapis global→badan usaha, sama seperti
     # lini · tahapan · jenis sampling. Baris `entity_id="all"` = kode keluhan baku grup.
     "complaint_reasons": "entity_id",
+    # PM-T1 — master CARA BAYAR (berlapis global → PT) dan pengajuan perubahan rekening (milik PT rekeningnya).
+    "payment_methods": "entity_id",
+    "bank_account_changes": "entity_id",
     "number_sequences": SHARED,
     "counters": SHARED,
     "user_onboarding": SHARED,
@@ -199,6 +202,8 @@ SCOPED_COLLECTIONS = {
     # boleh terbaca badan usaha lain, sementara baris global tetap terlihat semua
     # (dilayani `resolve_list_scope_inherit` / `entity_master_service`).
     "product_lines",
+    # PM-T1 — master cara bayar (berlapis) + perubahan rekening yang menunggu orang kedua (rekening satu PT).
+    "payment_methods", "bank_account_changes",
     # FASE T — master tahapan proses (berlapis global→badan usaha). Alasannya sama
     # dengan lini: tahap khusus satu badan usaha tidak boleh terbaca badan usaha
     # lain, sedangkan baris global tetap terlihat semua lewat
@@ -292,6 +297,7 @@ INHERITED_GLOBAL_VALUES: Dict[str, List[Any]] = {
     # usaha. Tanpa baris ini, layar Master → Lini Produk akan tampak kosong padahal
     # lininya sedang dipakai 12 layar lain.
     "product_lines": ["all", "", None],
+    "payment_methods": ["all", "", None],   # PM-T1 — baris global cara bayar berlaku di semua PT
     # FASE T — tahapan proses: baris global "all" WAJIB tetap terlihat di semua badan
     # usaha. Tanpa baris ini, pemilih langkah SPK & layar Master → Tahapan Proses
     # akan tampak KOSONG padahal tahapnya sedang dipakai SPK.

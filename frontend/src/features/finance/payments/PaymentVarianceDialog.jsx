@@ -25,6 +25,7 @@ import KNSelect from "../../../components/KNSelect";
 import { money } from "./paymentApi";
 import MoneyInput from "../../../components/MoneyInput";
 import { parseDecimal } from "../../../utils/decimalInput";
+import { canonicalMethod, usePaymentMethods } from "../../../config/paymentMethods";
 
 // PK-42 (UX-18) — nominal alokasi (teks `MoneyInput`, koma desimal boleh) → angka; kosong/tak sah → 0.
 const amt = (v) => { const n = parseDecimal(v); return Number.isFinite(n) ? n : 0; };
@@ -38,10 +39,9 @@ const ICONS = {
   refund: HandCoins,
 };
 
-const METHODS = [
-  { value: "transfer", label: "Transfer bank (Kas Besar)" },
-  { value: "cash", label: "Tunai (Kas Kecil)" },
-];
+// PM-T1 — cara pengembalian dari daftar induk cara bayar (arah keluar); label menyebut buku kasnya.
+const refundOptions = (methods) => methods.filter((m) => m.needs_account === "bank" || m.needs_account === "kas")
+  .map((m) => ({ value: m.code, label: `${m.name} (${m.needs_account === "kas" ? "Kas Kecil" : "Kas Besar"})` }));
 
 function Sentence({ a }) {
   const gap = Math.abs(Number(a?.delta || 0));
@@ -77,8 +77,10 @@ export default function PaymentVarianceDialog({
   const [reasonCode, setReasonCode] = useState("");
   const [note, setNote] = useState("");
   const [dueDate, setDueDate] = useState(a.suggested_due_date || "");
-  const [method, setMethod] = useState(a?.policy?.refund_method || "transfer");
+  const [method, setMethod] = useState(canonicalMethod(a?.policy?.refund_method, "transfer"));
   const [alloc, setAlloc] = useState({});
+  const payMethods = usePaymentMethods("keluar", a.entity_id || "");
+  const methodOptions = useMemo(() => refundOptions(payMethods.methods), [payMethods.methods]);
 
   const gap = Math.round(Math.abs(Number(a.delta || 0)) * 100) / 100;
   const under = Number(a.delta || 0) < 0;
@@ -87,7 +89,7 @@ export default function PaymentVarianceDialog({
     const dflt = options.find((o) => o.default && o.available) || options.find((o) => o.available);
     setKind(dflt?.value || "");
     setDueDate(a.suggested_due_date || "");
-    setMethod(a?.policy?.refund_method || "transfer");
+    setMethod(canonicalMethod(a?.policy?.refund_method, "transfer"));
     // Alokasi diisi otomatis serakah (tertua dulu) supaya petugas cukup memeriksa.
     const next = {};
     let left = gap;
@@ -216,7 +218,7 @@ export default function PaymentVarianceDialog({
           <div className="grid gap-1 rounded-lg border border-[#EDEEF1] bg-white p-2.5">
             <label className="kicker">Cara pengembalian {money(gap)}</label>
             <KNSelect className="field" value={method} onValueChange={setMethod}
-              data-testid="pv-refund-method" options={METHODS} />
+              data-testid="pv-refund-method" options={methodOptions} />
             <p className="text-[10.5px] text-[#6B6B73]">
               Kas keluar dicatat di buku kas & berjurnal (Uang Muka Pelanggan turun).
             </p>

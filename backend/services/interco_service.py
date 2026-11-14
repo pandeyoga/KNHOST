@@ -1088,6 +1088,13 @@ async def create_settlement(payload: Dict[str, Any], actor: str = "", idempotenc
 
     pay_cfg = await payment_settings(payer)
     method_req = (payload.get("method") or "transfer").strip().lower()
+    if method_req != "netting":   # PM-T1 — cara bayar dari daftar induk (PT pembayar, arah keluar), sebelum menulis
+        from services import payment_method_service as _pms
+        try:
+            method_req = (await _pms.wajib(payer, method_req, arah="keluar"))["code"]
+        except _pms.CaraBayarError as exc:
+            raise IntercoError(str(exc)) from exc
+        payload = {**payload, "method": method_req}
     if method_req == "netting" and not pay_cfg["allow_netting"]:
         raise IntercoError("Netting dinonaktifkan: pembayaran antar-PT dilakukan penuh per transaksi tanpa saling "
                            "hapus (LN-024). Pilih metode transfer/kas.")
@@ -1608,6 +1615,11 @@ async def summary(scope_entity_ids: List[str], entity_id: str = "") -> Dict[str,
     }
 
 
+async def _cara_bayar_keluar() -> List[Dict[str, Any]]:
+    from services.payment_method_service import active_for
+    return [r for r in await active_for("", "keluar") if r.get("needs_account") in ("bank", "kas")]
+
+
 async def meta(seller_entity_id: str = "") -> Dict[str, Any]:
     """Kamus layar + (PK-30) mode harga & PPN BAWAAN pengaturan PT penjual — form buat menandai penyimpangan."""
     # Cadangan = bawaan registry (INV-CFG-09), bukan literal kedua.
@@ -1628,11 +1640,9 @@ async def meta(seller_entity_id: str = "") -> Dict[str, Any]:
             {"value": "tanpa_ppn", "label": "Tanpa PPN"},
             {"value": "dengan_ppn", "label": "Dengan PPN (paksa)"},
         ],
-        "settlement_methods": [
-            {"value": "netting", "label": "Netting (saling hapus, tanpa uang)"},
-            {"value": "transfer", "label": "Transfer bank"},
-            {"value": "cash", "label": "Kas"},
-        ],
+        # PM-T1 — selain netting, pilihan pelunasan = daftar induk cara bayar (arah keluar, baris global).
+        "settlement_methods": [{"value": "netting", "label": "Netting (saling hapus, tanpa uang)"}]
+        + [{"value": r["code"], "label": r["name"]} for r in await _cara_bayar_keluar()],
     }
 
 

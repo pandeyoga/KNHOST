@@ -19,7 +19,8 @@ import FormModal from "../../../components/FormModal";
 import { KNSelect } from "../../../components/KNSelect";
 import { formatCurrency } from "../../../utils/formatters";
 import { apiErrorText } from "../../../utils/apiError";
-import { METHOD_OPTIONS, todayISO } from "./contraBonApi";
+import { todayISO } from "./contraBonApi";
+import { canonicalMethod, usePaymentMethods } from "../../../config/paymentMethods";   // PM-T1
 import useIntentKey from "../../../hooks/useIntentKey";
 import { ApPaymentPending, NEED_ACCOUNT_TEXT, NO_ACCOUNT_TEXT, accountLabel, useApPayment } from "../apPayment";
 
@@ -27,7 +28,8 @@ export default function PayModal({ cb, onClose, onPaid, onError }) {
   const t = cb.totals || {};
   const firstPayment = !(cb.payments || []).length;
   const [amount, setAmount] = useState(String(t.outstanding ?? ""));
-  const [method, setMethod] = useState((cb.schedule || {}).method || "transfer");
+  const [method, setMethod] = useState(canonicalMethod((cb.schedule || {}).method, "transfer"));
+  const payMethods = usePaymentMethods("keluar", cb.entity_id);
   const [accountId, setAccountId] = useState((cb.schedule || {}).bank_account_id || "");
   const [paidAt, setPaidAt] = useState(todayISO());
   const [notes, setNotes] = useState("");
@@ -131,7 +133,7 @@ export default function PayModal({ cb, onClose, onPaid, onError }) {
           <div>
             <label className="mb-1 block text-[11px] font-semibold text-[#6B6B73]">Cara bayar</label>
             <KNSelect data-testid="cb-pay-method" value={method} onValueChange={setMethod}
-              options={METHOD_OPTIONS} className="field" />
+              options={payMethods.options} className="field" />
           </div>
           <div>
             <label className="mb-1 block text-[11px] font-semibold text-[#6B6B73]">

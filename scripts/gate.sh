@@ -271,6 +271,10 @@ STATIK=(
   "guard:config_text SELF-TEST (bukti-merah satu kasus per aturan T1–T7)|python scripts/guardrails/verify_config_text.py --self-test"
   "guard:config_text (INV-CFG-TXT, teks Pengaturan awam & bersub-judul)|python scripts/guardrails/verify_config_text.py"
   "config_key_index (KF-T4, indeks kunci layar selaras registry)|python scripts/gen_config_key_index.py --check"
+  # PM-T1 — kosakata cara bayar hanya dari daftar induk: layar lewat `config/paymentMethods.js`, server lewat
+  # `services/payment_method_service.py` (pengecualian beralasan: termin, kategori kas, jenis pengembalian retur/rekening).
+  "guard:payment_vocab SELF-TEST (bukti-merah dua arah, 18 kasus)|python scripts/guardrails/verify_payment_vocab.py --self-test"
+  "guard:payment_vocab (INV-PAY-VOCAB-01, pilihan cara bayar dari daftar induk)|python scripts/guardrails/verify_payment_vocab.py"
   # AUDIT 2026-09 T-03 — INV-PERF-01. `to_list(n>20000)` memuat seluruh koleksi ke memori
   # (63 lokasi, beberapa lalu menyaring di Python). Ratchet: angka hanya boleh turun;
   # kejadian baru wajib alasan tertulis di ALLOWLIST skrip.

@@ -1101,7 +1101,7 @@ async def backfill_ar_cash_postings() -> None:
             {"ref_type": "ar_receipt", "ref_id": r["id"], "status": {"$ne": "void"}})
         if exists:
             continue
-        cash_type, force_all = _cash_routing(r.get("method", ""))
+        cash_type, force_all = await _cash_routing(r.get("method", ""), r.get("entity_id") or "")
         # FASE E-7 (E7.4) — backfill ikut aturan baru: kas selalu milik satu badan usaha.
         entity_id = r.get("entity_id") or DEFAULT_ENTITY_ID
         if entity_id in ("all", "", None):

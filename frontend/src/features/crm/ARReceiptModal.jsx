@@ -25,12 +25,8 @@ import { offlinePost } from "../../utils/offlineQueue";
 import PaymentVarianceDialog from "../finance/payments/PaymentVarianceDialog";
 import { assessVariance, directionMeta, varianceMeta } from "../finance/payments/paymentApi";
 
-const METHODS = [
-  { value: "transfer", label: "Transfer Bank" },
-  { value: "cash", label: "Tunai" },
-  { value: "giro", label: "Giro / Cek" },
-  { value: "qris", label: "QRIS" },
-];
+// PM-T1 — pilihan cara bayar dari daftar induk (master "Cara Bayar", per PT); titipan dipakai lewat kotak deposit.
+import { usePaymentMethods } from "../../config/paymentMethods";
 const LABEL = "text-[11px] font-bold uppercase tracking-wide text-[#6B6B73]";
 
 // Cek UI UAT v3 — tanggal LOKAL (dulu toISOString = UTC: 00.00–07.00 WIB jadi tanggal kemarin).
@@ -47,6 +43,13 @@ export default function ARReceiptModal({ customerId, customerName, preselectOrde
   const [mode, setMode] = useState("auto"); // auto (FIFO) | manual
   const [amount, setAmount] = useState("");
   const [method, setMethod] = useState("transfer");
+  const pm = usePaymentMethods("masuk");
+  const methodOptions = useMemo(() => pm.methods.filter((m) => m.needs_account !== "tidak")
+    .map((m) => ({ value: m.code, label: m.name })), [pm.methods]);
+  // Cara bayar yang tidak aktif untuk PT ini tidak boleh tetap terpilih (mis. QRIS dimatikan khusus PT).
+  useEffect(() => {
+    if (methodOptions.length && !methodOptions.some((o) => o.value === method)) setMethod(methodOptions[0].value);
+  }, [methodOptions, method]);
   const [date, setDate] = useState(today());
   const [notes, setNotes] = useState("");
   const [alloc, setAlloc] = useState({}); // order_id -> amount
@@ -187,9 +190,9 @@ export default function ARReceiptModal({ customerId, customerName, preselectOrde
     } finally { setBusy(false); }
   }
 
-  const cashHint = ["cash", "tunai", "kontan"].includes(method)
-    ? "Tunai → masuk Kas Kecil (per entitas)."
-    : "Transfer/Giro/QRIS → masuk Kas Besar (bank).";
+  const cashHint = pm.isCash(method)
+    ? `${pm.labelOf(method)} → masuk Kas Kecil (per PT).`
+    : `${pm.labelOf(method)} → masuk Kas Besar (bank).`;
 
   const footer = (
     <div className="flex flex-wrap items-center justify-between gap-2">
@@ -225,8 +228,8 @@ export default function ARReceiptModal({ customerId, customerName, preselectOrde
 
           <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
             <div>
-              <label className={LABEL}>Metode</label>
-              <KNSelect data-testid="ar-receipt-method" className="field" value={method} onValueChange={setMethod} options={METHODS} />
+              <label className={LABEL}>Cara bayar</label>
+              <KNSelect data-testid="ar-receipt-method" className="field" value={method} onValueChange={setMethod} options={methodOptions} />
             </div>
             <div>
               <label className={LABEL}>Tanggal</label>

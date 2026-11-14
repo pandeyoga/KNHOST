@@ -46,6 +46,80 @@ async def backfill_cash_type() -> int:
     return n
 
 
+# ─── PM-T1 — atas nama, peruntukan, cara bayar yang dilayani, bawaan penerimaan per PT ────────────────────────────
+#: Peruntukan rekening (urutan = urutan layar). Rekening lama dianggap boleh dipakai untuk semuanya (perilaku hari ini).
+PERUNTUKAN = ("penerimaan_pelanggan", "pembayaran_pemasok", "gaji", "operasional")
+BIDANG_PM = ("holder_name", "purposes", "payment_method_codes", "default_receiving_methods", "show_on_documents")
+
+
+def _aktif(acc: Dict[str, Any]) -> bool:
+    return acc.get("is_active") is not False and acc.get("status") != "inactive"
+
+
+def _jenis(acc: Dict[str, Any]) -> str:
+    return "cash" if acc.get("account_type") == "cash" else "bank"
+
+
+def bidang_efektif(acc: Dict[str, Any], tunggal: bool = False) -> Dict[str, Any]:
+    """Nilai lima field PM-T1 yang BERLAKU untuk rekening ini. Rekening lama (field belum ada) memakai nilai awal
+    spesifikasi: empat peruntukan; cara bayar menurut jenisnya; bawaan penerimaan = cara bayar pertama jenisnya HANYA
+    bila ia satu-satunya rekening aktif PT untuk jenisnya (`tunggal`); atas nama kosong; tidak tampil di dokumen."""
+    from services.payment_method_service import kode_awal_rekening
+    kode = kode_awal_rekening(_jenis(acc))
+    return {
+        "holder_name": acc.get("holder_name", ""),
+        "purposes": list(acc["purposes"]) if "purposes" in acc else list(PERUNTUKAN),
+        "payment_method_codes": list(acc["payment_method_codes"]) if "payment_method_codes" in acc else list(kode),
+        "default_receiving_methods": (list(acc["default_receiving_methods"]) if "default_receiving_methods" in acc
+                                      else (kode[:1] if tunggal and _aktif(acc) else [])),
+        "show_on_documents": bool(acc.get("show_on_documents", False)),
+    }
+
+
+async def rekening_pt(entity_id: str) -> List[Dict[str, Any]]:
+    """Semua rekening PT + `_efektif` (field PM-T1 yang berlaku). Ketunggalan dihitung per jenis di antara yang aktif."""
+    accs = await db.bank_accounts.find({"entity_id": entity_id}, {"_id": 0}).sort("created_at", 1).to_list(500)
+    hitung: Dict[str, int] = {}
+    for a in accs:
+        if _aktif(a):
+            hitung[_jenis(a)] = hitung.get(_jenis(a), 0) + 1
+    for a in accs:
+        a["_efektif"] = bidang_efektif(a, tunggal=hitung.get(_jenis(a), 0) == 1)
+    return accs
+
+
+async def isi_awal_bidang_rekening(tulis: bool = False, entity_id: str = "") -> Dict[str, Any]:
+    """PM-T1 — pengisian awal field baru rekening LAMA (idempoten). Hanya field yang BELUM ada yang diisi (syarat
+    `$exists: False`), dengan nilai `bidang_efektif`. `tulis=False` (bawaan) = lapor saja.
+
+    Bawaan penerimaan yang akan berbenturan dengan rekening lain PT itu (yang sudah bawaan untuk cara bayar yang sama)
+    diisi `[]` — satu bawaan per (PT, cara bayar), dijaga indeks unik `uq_default_receiving`."""
+    q: Dict[str, Any] = {"$or": [{f: {"$exists": False}} for f in BIDANG_PM]}
+    if entity_id:
+        q["entity_id"] = entity_id
+    pts = sorted({a.get("entity_id") or "" async for a in db.bank_accounts.find(q, {"_id": 0, "entity_id": 1})})
+    rincian: List[Dict[str, Any]] = []
+    diubah = 0
+    for eid in pts:
+        accs = await rekening_pt(eid)
+        terpakai = {m for a in accs if "default_receiving_methods" in a for m in a["default_receiving_methods"]}
+        for a in accs:
+            hilang = [f for f in BIDANG_PM if f not in a]
+            if not hilang:
+                continue
+            isi = {f: a["_efektif"][f] for f in hilang}
+            if "default_receiving_methods" in isi:
+                isi["default_receiving_methods"] = [m for m in isi["default_receiving_methods"] if m not in terpakai]
+                terpakai |= set(isi["default_receiving_methods"])
+            rincian.append({"entity_id": eid, "account_id": a["id"], "name": a.get("name", ""), "isi": isi})
+            if tulis:
+                res = await db.bank_accounts.update_one(
+                    {"id": a["id"], **{f: {"$exists": False} for f in hilang}}, {"$set": isi})
+                diubah += res.modified_count
+    return {"mode": "tulis" if tulis else "lapor", "diperiksa": len(rincian),
+            "diubah": diubah if tulis else 0, "rincian": rincian}
+
+
 def _posted(txn: Dict[str, Any]) -> bool:
     return txn.get("status") != "void"
 
@@ -54,7 +128,9 @@ async def sole_account_id(entity_id: str, cash_type: str) -> str:
     """Rekening SATU-SATUNYA milik PT untuk jenis kas ini (kas kecil / kas besar-bank), atau "" bila 0 / lebih dari 1."""
     if not entity_id or cash_type not in CASH_TYPES:
         return ""
-    accs = [a async for a in db.bank_accounts.find({"entity_id": entity_id, "status": {"$ne": "inactive"}},
+    # PM-T1 — rekening dinonaktifkan lewat `is_active: False` (field `status` tidak pernah diisi layar ini).
+    accs = [a async for a in db.bank_accounts.find({"entity_id": entity_id, "is_active": {"$ne": False},
+                                                    "status": {"$ne": "inactive"}},
                                                     {"_id": 0, "id": 1, "cash_type": 1, "account_type": 1})]
     ids = [a["id"] for a in accs if account_cash_type(a) == cash_type]
     return ids[0] if len(ids) == 1 else ""
@@ -107,10 +183,14 @@ async def list_accounts(entity_id: Optional[str] = None,
     if scope is None and entity_id and entity_id != "all":
         q["entity_id"] = entity_id
     accounts = await db.bank_accounts.find(q, {"_id": 0}).sort("created_at", 1).to_list(500)
+    efektif: Dict[str, Dict[str, Any]] = {}   # PM-T1 — field atas nama/peruntukan/cara bayar yang BERLAKU
+    for eid in sorted({a.get("entity_id") or "" for a in accounts}):
+        for a in await rekening_pt(eid):
+            efektif[a["id"]] = a["_efektif"]
     out = []
     for acc in accounts:
         txns = await _txns_for(acc["id"])
-        out.append(_enrich(acc, txns))
+        out.append({**_enrich(acc, txns), **efektif.get(acc["id"], bidang_efektif(acc))})
     return out
 
 
@@ -161,7 +241,31 @@ async def cash_position(entity_ids: List[str]) -> Dict[str, Any]:
             "source_label": "Saldo buku besar akun kas & bank"}
 
 
-async def create_account(payload, actor: Dict[str, Any]) -> Dict[str, Any]:
+async def _cabut_bawaan_lain(entity_id: str, account_id: str, methods: List[str]) -> None:
+    """PM-T1 — satu bawaan penerimaan per (PT, cara bayar): rekening lain PT itu kehilangan tanda bawaan cara bayar
+    yang sama (operasi yang sama dengan penulisan rekening ini)."""
+    if not methods:
+        return
+    await db.bank_accounts.update_many(
+        {"entity_id": entity_id, "id": {"$ne": account_id}, "default_receiving_methods": {"$in": list(methods)}},
+        {"$pull": {"default_receiving_methods": {"$in": list(methods)}}})
+
+
+async def _tulis_bawaan(entity_id: str, account_id: str, methods: List[str], tulis) -> Any:
+    """Cabut bawaan lain lalu `tulis()`; benturan indeks unik (dua permintaan bersamaan) → ulangi (paling banyak 3×)."""
+    from pymongo.errors import DuplicateKeyError
+    for percobaan in range(3):
+        await _cabut_bawaan_lain(entity_id, account_id, methods)
+        try:
+            return await tulis()
+        except DuplicateKeyError:
+            if percobaan == 2:
+                raise
+    return None
+
+
+async def create_account(payload, actor: Dict[str, Any], bidang: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+    """`bidang` = field PM-T1 yang sudah diperiksa (`bank_account_change_service.periksa_isian`)."""
     if payload.account_type not in VALID_ACCOUNT_TYPES:
         raise ValueError("account_type harus 'bank' atau 'cash'")
     doc = {
@@ -184,10 +288,12 @@ async def create_account(payload, actor: Dict[str, Any]) -> Dict[str, Any]:
     if ct and ct not in CASH_TYPES:
         raise ValueError("cash_type harus 'kas_kecil' atau 'kas_besar'")
     doc["cash_type"] = ct or account_cash_type(doc)
+    doc.update(bidang or bidang_efektif(doc))
     from services import gl_service as _gl
     if doc["opening_balance"]:
         await _gl.preflight_posting(doc["entity_id"], now_iso())
-    await db.bank_accounts.insert_one(doc)
+    await _tulis_bawaan(doc["entity_id"], doc["id"], doc.get("default_receiving_methods") or [],
+                        lambda: db.bank_accounts.insert_one(dict(doc)))
     try:
         je = await _post_opening(doc, doc["opening_balance"], "bank_opening_balance", doc["id"])
     except Exception:
@@ -219,9 +325,17 @@ async def _post_opening(acc: Dict[str, Any], amount: float, source_type: str, so
         source_label=acc["name"])
 
 
-async def update_account(account_id: str, patch: Dict[str, Any]) -> Optional[Dict[str, Any]]:
-    acc = await db.bank_accounts.find_one({"id": account_id}, {"_id": 0})
+class RekeningBerubah(ValueError):
+    """PM-T1 — nilai yang diajukan sudah tidak sama dengan isi rekening sekarang (409)."""
+
+
+async def update_account(account_id: str, patch: Dict[str, Any],
+                         syarat: Optional[Dict[str, Any]] = None) -> Optional[Dict[str, Any]]:
+    """`syarat` (PM-T1) = nilai lama yang harus masih tersimpan (persetujuan perubahan) — beda → `RekeningBerubah`."""
+    acc = await db.bank_accounts.find_one({"id": account_id, **(syarat or {})}, {"_id": 0})
     if not acc:
+        if syarat and await db.bank_accounts.find_one({"id": account_id}, {"_id": 0, "id": 1}):
+            raise RekeningBerubah("Perubahan rekening ini sudah diputus atau datanya sudah berubah. Ajukan ulang.")
         return None
     upd = {k: v for k, v in patch.items() if v is not None}
     if "opening_balance" in upd:
@@ -244,10 +358,17 @@ async def update_account(account_id: str, patch: Dict[str, Any]) -> Optional[Dic
     if "name" in upd:
         upd["name"] = str(upd["name"]).strip()
     upd["updated_at"] = now_iso()
-    await db.bank_accounts.update_one({"id": account_id}, {"$set": upd})
+    flt = {"id": account_id, **(syarat or {})}
+
+    async def _tulis():
+        res = await db.bank_accounts.update_one(flt, {"$set": upd})
+        if syarat and not res.matched_count:
+            raise RekeningBerubah("Perubahan rekening ini sudah diputus atau datanya sudah berubah. Ajukan ulang.")
+        return res
+    await _tulis_bawaan(acc.get("entity_id") or "", account_id, upd.get("default_receiving_methods") or [], _tulis)
     acc = await db.bank_accounts.find_one({"id": account_id}, {"_id": 0})
     txns = await _txns_for(account_id)
-    return _enrich(acc, txns)
+    return {**_enrich(acc, txns), **bidang_efektif(acc)}
 
 
 async def account_ledger(account_id: str) -> Optional[Dict[str, Any]]:

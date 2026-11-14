@@ -24,6 +24,8 @@ E1 = "ent_ksc"
 SEKARANG = datetime.datetime.now(datetime.timezone.utc).isoformat()
 # PK-40 (SL-13): `uq_fkt_active`, `uq_fkt_nsfp`, `uq_fpm_active`, `uq_fpm_nsfp`, `uq_tax_period` masuk daftar wajib.
 PK40_INDEKS = 5
+# PM-T1: `bank_accounts.uq_default_receiving` (satu rekening bawaan per PT per cara bayar).
+PMT1_INDEKS = 1
 
 
 def _info_lengkap() -> dict:
@@ -57,7 +59,8 @@ def test_U12_pembanding_indeks():
     # KP-T5 — + `doc_number_formats.uq_kind_entity` (satu format nomor per jenis per PT/grup): 8 → 9.
     # PK-40 menambah 5 indeks wajib (faktur keluaran/masukan aktif & NSFP, kunci masa pajak): 9 + 5.
     # KP-T6 — + `pdf_templates.uq_doctype_entity` (satu lapisan template cetak per jenis per PT/grup): + 1.
-    assert len(indexes.REQUIRED_UNIQUE_INDEXES) == 9 + PK40_INDEKS + 1
+    # PM-T1 — + `bank_accounts.uq_default_receiving` (satu rekening penerima bawaan per cara bayar per PT): + PMT1_INDEKS.
+    assert len(indexes.REQUIRED_UNIQUE_INDEXES) == 9 + PK40_INDEKS + 1 + PMT1_INDEKS
 
 
 async def test_U13_mode_enforce_dan_warn(aplikasi, monkeypatch):

@@ -6,6 +6,7 @@ import { formatCurrency, formatQty } from "../../utils/formatters";
 import KNSelect from "../../components/KNSelect";
 import { isZeroMetric } from "../../components/ListPageParts";
 import ErrorNotice from "../../components/ErrorNotice";
+import { usePaymentMethods } from "../../config/paymentMethods";   // PM-T1 — daftar induk cara bayar
 
 /**
  * LandedCostDetailPanel (Fase 5.4) — detail voucher: biaya, alokasi HPP roll, aksi.
@@ -23,6 +24,7 @@ export default function LandedCostDetailPanel({ voucher, canApprove, decideHint 
   const [payAmount, setPayAmount] = useState("");
   const [cashType, setCashType] = useState("kas_besar");
   const [method, setMethod] = useState("transfer");
+  const payMethods = usePaymentMethods("keluar", voucher?.entity_id);
   const [showPay, setShowPay] = useState(false);
   const [busy, setBusy] = useState(false);
   // Fase 4 · R3 — galat aksi juga tampil DI DALAM pop-up (bilah halaman `onError` tertutup lapisan DetailModal).
@@ -166,9 +168,9 @@ export default function LandedCostDetailPanel({ voucher, canApprove, decideHint 
                   <KNSelect data-testid="lc-pay-cashtype" value={cashType} onValueChange={setCashType} className="field"
                     options={[{ value: "kas_besar", label: "Kas Besar" }, { value: "kas_kecil", label: "Kas Kecil" }]} />
                 </Field>
-                <Field label="Metode">
-                  <KNSelect value={method} onValueChange={setMethod} className="field"
-                    options={[{ value: "transfer", label: "Transfer" }, { value: "tunai", label: "Tunai" }, { value: "giro", label: "Giro" }]} />
+                <Field label="Cara bayar">
+                  <KNSelect data-testid="lc-pay-method" value={method} onValueChange={setMethod} className="field"
+                    options={payMethods.options} />
                 </Field>
               </div>
               <div className="flex gap-2">

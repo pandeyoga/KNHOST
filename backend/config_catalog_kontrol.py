@@ -78,6 +78,9 @@ KONTROL_AKSI: List[Dict[str, Any]] = [
     _a("jurnal_manual", "Jurnal manual", "C", "1", True, _BB),
     # PK-38 (IA-12, K-17) — bayar kontrabon: pembanding = PENYETUJU kontrabon; bawaan satu orang.
     _a("bayar_hutang", "Bayar hutang", "C", "1", True, _PB),
+    # PM-T1 — membuat rekening dan mengubah field peka rekening (nomor, bank, atas nama, peruntukan, cara bayar,
+    # bawaan penerimaan, tampil di dokumen, aktif); tanpa nominal, bawaan satu orang.
+    _a("ubah_rekening", "Ubah rekening kas/bank", "C", "1", False, _BB),
 ]
 
 #: KF-T6 serah-terima (b) — titik pasang tiap aksi (`berkas.py:fungsi`).
@@ -118,6 +121,8 @@ _TITIK: Dict[str, Tuple[str, ...]] = {
     "buka_kembali_tutup_buku": ("routers/closing.py:_reopen_dua_orang",),
     "jurnal_manual": ("routers/gl.py:create_journal", "services/journal_proposal_service.py:setujui"),
     "bayar_hutang": ("services/contra_bon_service.py:pay",),   # PK-38
+    "ubah_rekening": ("services/bank_account_change_service.py:_dua_orang",
+                      "services/bank_account_change_service.py:putuskan"),   # PM-T1
 }
 for _x in KONTROL_AKSI:
     _x["titik"] = _TITIK.get(_x["aksi"], ())

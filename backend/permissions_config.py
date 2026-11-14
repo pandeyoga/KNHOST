@@ -847,3 +847,15 @@ for _role, _mods in KPT8_DEFAULT_PAIRS.items():
     for _res, _acts in _mods.items():
         _cur = list(DEFAULT_PERMISSIONS[_role].get(_res) or [])
         DEFAULT_PERMISSIONS[_role][_res] = _cur + [a for a in _acts if a not in _cur]
+
+# ═══════════════════════════════════════════════════════════════════════════
+# PM-T1 (K-34) — menyetujui perubahan rekening kas/bank yang menunggu orang kedua (`kontrol.ubah_rekening`):
+# `cash.approve`, bawaan Admin dan Manajer (`POST /api/bank-account-changes/{id}/decision`). Mengelola daftar cara bayar
+# memakai `cash.configure` yang sudah ada (PK-17: kelola rekening kas & bank — Admin, Manajer, Finance). Instalasi lama
+# menerima pasangan baru sekali lewat `bootstrap.sync_permission_modules` (`defaults_applied`, PR-T9).
+# ═══════════════════════════════════════════════════════════════════════════
+PMT1_DEFAULT_PAIRS = {"admin": {"cash": ("approve",)}, "manager": {"cash": ("approve",)}}
+for _role, _mods in PMT1_DEFAULT_PAIRS.items():
+    for _res, _acts in _mods.items():
+        _cur = list(DEFAULT_PERMISSIONS[_role].get(_res) or [])
+        DEFAULT_PERMISSIONS[_role][_res] = _cur + [a for a in _acts if a not in _cur]

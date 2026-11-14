@@ -583,6 +583,12 @@ async def pay(penalty_id: str, amount: float, method: str, actor: Dict[str, Any]
     if amt > outstanding + EPS:
         raise PenaltyError(f"Pembayaran melebihi sisa denda ({rupiah(outstanding)})."
                            .replace(",", "."))
+    # PM-T1 — cara bayar dari daftar induk (kata lama → kode kanonik; tak dikenal / nonaktif → galat) sebelum niat lahir.
+    from services import payment_method_service as _pms
+    try:
+        method = (await _pms.wajib(p.get("entity_id", ""), method or "transfer", arah="masuk"))["code"]
+    except _pms.CaraBayarError as exc:
+        raise PenaltyError(str(exc)) from exc
     if not (account_id or "").strip():
         raise PenaltyError("Rekening penerima wajib dipilih.")
     acc = await db.bank_accounts.find_one({"id": account_id}, {"_id": 0})

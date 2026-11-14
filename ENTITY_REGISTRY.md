@@ -51,6 +51,8 @@ Sebelum membuat apapun yang baru, tanya: **"Apakah ini sudah ada di sini?"**
 | Kebijakan Persetujuan *(KP-T4)* | `approval_policies` | `routers/approval_policies.py`, `services/approval_policy_service.py` (dipanggil semua pintu persetujuan), katalog `approval_kinds.py` | — | `ApprovalPoliciesView` (Pengaturan › Persetujuan › Aturan Persetujuan) |
 | Penomoran Dokumen *(KP-T5)* | `doc_number_formats` (+ penghitung `number_sequences`) | `core_utils.next_doc_number` (satu-satunya pembuat nomor), `services/doc_numbering_service.py`, katalog `doc_number_kinds.py`, `routers/doc_numbering.py` | `DocNumberingPut`, `DocNumberingPreview` | `DocNumberingView` (Pengaturan › Dokumen & Cetak › Penomoran Dokumen) |
 | Usulan Jurnal Manual *(KF-T6)* | `journal_proposals` | `routers/gl.py` (`POST /gl/journal` → 202, `/gl/journal-proposals*`), `services/journal_proposal_service.py` | `JournalEntryCreate`, `ProposalReject` | `JournalProposalsPanel` (Buku Besar › Jurnal › Menunggu persetujuan) |
+| Cara Bayar *(PM-T1)* | `payment_methods` (master berlapis `payment-methods`) | `routers/payment_methods.py` (`GET /api/payment-methods`), `routers/entity_masters.py` (kelola, `cash.configure`), `services/payment_method_service.py` (`normalize`, `get`, `active_for`, `is_cash` — dipanggil kwitansi, bayar hutang, kontrabon, biaya masuk, uang muka, denda, selisih bayar, antar-PT) | — | `config/paymentMethods.js` (`usePaymentMethods`), `EntityMastersView` (Pengaturan › Keuangan & Pajak › Master per Badan Usaha) |
+| Perubahan Rekening *(PM-T1)* | `bank_account_changes` | `routers/bank.py` (`POST/PATCH /bank-accounts` → 202 bila dua orang, `GET /bank-account-changes`, `POST …/{id}/decision`), `services/bank_account_change_service.py` | `BankAccountCreate`, `BankAccountUpdate`, `BankAccountChangeDecision` | `BankAccountChangesPanel`, `BankAccountForm` (Keuangan › Kas & Bank › Rekening & Saldo) |
 | Kunci Masa Pajak *(PK-40)* | `tax_period_locks` | `routers/tax_center.py` (`/api/tax/periods*`), `services/tax_center_service.py` (`assert_masa_terbuka` dipanggil layanan faktur & PPh) | `TaxPeriodLockInput`, `TaxPeriodUnlockInput` | `TaxCenterView` (Akuntansi & Pajak › Pusat Pajak) |
 | Niat Bayar Hutang *(PK-05)* | `ap_payment_intents` | `routers/ap_payments.py`, `services/ap_payment_service.py` (dipanggil bayar faktur & bayar kontrabon) | `VendorBillPaymentCreate`, `ContraBonPayIn` | `VendorBillDetailPanel` & `contrabon/PayModal` (panel bayar, `features/purchasing/apPayment.jsx`) |
 | Kontrabon *(FASE G-7)* | `contra_bons` | `routers/contra_bons.py`, `services/contra_bon_service.py`, `services/contra_bon_reminder.py` | `ContraBonCreate`, `ContraBonDeductionIn`, `ContraBonDecisionIn`, `ContraBonScheduleIn`, `ContraBonPayIn`, `InvoiceExchangeIn` | `ContraBonsView` (Pembelian → Hutang Supplier (AP) → Kontrabon) |
@@ -507,6 +509,17 @@ Key Fields:
   currency          string  default IDR
   is_active         bool
   created_at / updated_at
+  — PM-T1 (K-34): field atas nama, peruntukan, cara bayar, bawaan per PT —
+  holder_name               string  atas nama ("" = belum diisi)
+  purposes                  list    penerimaan_pelanggan · pembayaran_pemasok · gaji · operasional
+  payment_method_codes      list    kode `payment_methods` yang dilayani (bank: ber-rekening bank; kas: tunai)
+  default_receiving_methods list    rekening ini bawaan penerimaan PT-nya untuk cara bayar itu
+                                    (indeks wajib uq_default_receiving: unik (entity_id, kode), parsial ".0 ada")
+  show_on_documents         bool    tampil di dokumen pelanggan (wajib atas nama + nomor, jenis bank)
+  Rekening lama tanpa field ini dibaca dengan nilai awal (`bank_service.bidang_efektif`); disimpan saat rekening PT
+  itu ditulis lagi, atau lewat `scripts/blueprint/pmt1_isi_rekening.py --terapkan` (bawaan lapor; data nyata = H3).
+  Field peka (nomor, bank, atas nama, peruntukan, cara bayar, bawaan, tampil di dokumen, aktif) + rekening baru
+  mengikuti `kontrol.ubah_rekening.*` → `bank_account_changes`.
 
 Saldo akun (derived) = opening_balance + Σ(in) − Σ(out) cash_transactions
   posted (status≠void) dengan account_id = akun tsb.
@@ -514,6 +527,8 @@ Rekonsiliasi (PK-21): saldo terekonsiliasi & "belum dicocokkan" diturunkan dari
   cash_transactions.reconciled_amount (`bank_recon_service.txn_reconciled`), bukan dari tanda tersimpan.
 ℹ️ Endpoint: GET /api/bank-accounts, POST /api/bank-accounts,
   PATCH /api/bank-accounts/{id}, GET /api/bank-accounts/{id}/ledger. RBAC: permission "cash" (admin/manager).
+  PM-T1: GET /api/bank-accounts/receiving?entity_id=&method= (salah satu `order.create`, `ar_receipt.create`,
+  `cash.view`; tanpa saldo) — rekening penerima uang pelanggan per PT & cara bayar, `is_default`.
   POST /api/cash-transactions/{id}/reconcile — PK-21: DIMATIKAN, selalu 410 (sesudah cek izin `cash.create`
   + entitas); tanda manual ya/tidak tidak ada lagi.
 ⚠️ JANGAN BUAT: bank, banks, accounts, rekening (sebagai koleksi).
@@ -1674,6 +1689,40 @@ Field baru (PENANDA, bukan field nilai — hanya pada baris berjadwal yang dibat
 ⚠️ Riwayat (`GET /api/config/history`) tetap memuat baris yang dibatalkan dengan `cancelled: true`.
 ⚠️ Tanpa migrasi. Penimpaan terdaftar (PT bukan PKP, wajib transfer antar-PT, Master Grade) = services/config_overrides.py
    — tidak menyimpan apa pun; resolver menambah `stored_value` + `overridden_by` pada jawabannya.
+```
+
+### payment_methods  [PM-T1 — daftar induk cara bayar, master berlapis global → PT]
+```
+Collection:  payment_methods           Prefix: pmeth_
+Router:      routers/payment_methods.py (GET /api/payment-methods?direction=&entity_id= — login, data rujukan)
+             routers/entity_masters.py  (kind `payment-methods`, tulis = `cash.configure`)
+Service:     services/payment_method_service.py (normalize · get · active_for · is_cash · ensure_seed)
+Component:   config/paymentMethods.js (usePaymentMethods) · Pengaturan › Keuangan & Pajak › Master per Badan Usaha
+Key Fields:
+  id, entity_id ("all" = global), code (kanonik huruf kecil, unik per lapisan), name,
+  needs_account (bank|kas|tidak), needs_reference, needs_due_date, is_new_money,
+  directions [masuk, keluar], aliases [kata lama], sort, active, notes
+Benih global: transfer · cash (tunai, kontan) · giro (cek) · qris · va (nonaktif) · edc (nonaktif, kartu) ·
+  deposit (titipan; is_new_money false). Baris khusus PT MENANG walau nonaktif (mematikan untuk satu PT).
+⚠️ BUKAN termin: `payment_terms` (tunai/kredit/DP/bertahap) dan profil bayar pelanggan tetap kosakata termin.
+```
+
+### bank_account_changes  [PM-T1 — perubahan rekening kas/bank, menunggu orang kedua / riwayat]
+```
+Collection:  bank_account_changes      Prefix: bac_
+Router:      routers/bank.py (GET /api/bank-account-changes?status=&page=, POST /{id}/decision — `cash.approve`)
+Service:     services/bank_account_change_service.py (buat, ubah, putuskan, daftar, daftar_penerima)
+Index:       uq_id (unik) · (entity_id, status, created_at)
+**SCOPED** (`entity_id` = PT rekening).
+
+  id · entity_id · entity_name · account_id ("" untuk rekening baru) · account_name
+  action            buat | ubah
+  changes[]         {field, from, to}   (nilai lama yang BERLAKU, termasuk nilai awal rekening lama)
+  payload · reason
+  status            menunggu | diterapkan | ditolak
+  requested_by(_id) · decided_by(_id) · decision_note · created_at · decided_at
+Setujui: pengaju ≠ pemutus bila `kontrol.ubah_rekening.min_orang` = 2; diterapkan hanya bila nilai `from` masih
+sama (beda → 409 "…sudah diputus atau datanya sudah berubah. Ajukan ulang.").
 ```
 
 ### payment_terms  [Fase 1A IMPLEMENTED]
@@ -2869,6 +2918,8 @@ ent_    → business_entities         [Fase 0 IMPLEMENTED]
 ntf_    → notifications             [Fase 0 IMPLEMENTED]
 set_    → system_settings           [Fase 1A IMPLEMENTED]
 pterm_  → payment_terms             [Fase 1A IMPLEMENTED]
+pmeth_  → payment_methods           [PM-T1]
+bac_    → bank_account_changes      [PM-T1]
 aprule_ → approval_rules            [Fase 1A IMPLEMENTED]
 ```
 > Prefix PLANNED (lihat bagian PLANNED ENTITIES): `pra_` price_approvals (= "special price"),

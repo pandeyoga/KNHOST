@@ -92,6 +92,12 @@ async def lifespan(app: FastAPI):
     except Exception as exc:  # noqa: BLE001
         import logging
         logging.getLogger("server").warning("[cash_type] backfill dilewati: %s", exc)
+    try:  # PM-T1 — benih master cara bayar (baris global yang belum ada) + kamus kata lama → kode kanonik
+        from services.payment_method_service import ensure_seed as _pmt1_benih
+        await _pmt1_benih()
+    except Exception as exc:  # noqa: BLE001
+        import logging
+        logging.getLogger("server").warning("[cara bayar] benih dilewati: %s", exc)
     # Sub-fase 1.7 — init object storage (best-effort; tak menggagalkan startup)
     try:
         from services.storage_service import init_storage
@@ -213,6 +219,8 @@ from routers import gl_mappings as _gl_mappings  # noqa: E402 — GL-01 pemetaan
 app.include_router(_gl_mappings.router)
 from routers import kontrol as _kontrol  # noqa: E402 — KF-T6 aturan kontrol "harus dua orang" per PT
 app.include_router(_kontrol.router)
+from routers import payment_methods as _payment_methods  # noqa: E402 — PM-T1 daftar induk cara bayar
+app.include_router(_payment_methods.router)
 from routers import approval_policies as _approval_policies  # noqa: E402 — KP-T4 satu tabel kebijakan persetujuan
 app.include_router(_approval_policies.router)
 from routers import doc_numbering as _doc_numbering  # noqa: E402 — KP-T5 tabel Penomoran Dokumen per PT

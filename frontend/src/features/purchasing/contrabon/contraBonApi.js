@@ -31,11 +31,8 @@ export const STATUS_FILTERS = [
   { value: "cancelled", label: "Dibatalkan" },
 ];
 
-export const METHOD_OPTIONS = [
-  { value: "transfer", label: "Transfer bank" },
-  { value: "giro", label: "Giro / cek" },
-  { value: "cash", label: "Tunai" },
-];
+// PM-T1 — pilihan cara bayar kontrabon dari daftar induk: `usePaymentMethods("keluar", cb.entity_id)`
+// (`config/paymentMethods.js`); dulu `METHOD_OPTIONS` ditulis di sini.
 
 export const CASH_TYPE_OPTIONS = [
   { value: "kas_besar", label: "Kas Besar" },

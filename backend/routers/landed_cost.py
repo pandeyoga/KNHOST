@@ -327,6 +327,10 @@ async def pay_landed_cost(voucher_id: str, payload: LandedCostPaymentCreate, req
     if amount > fin["outstanding"] + 0.01:
         raise HTTPException(status_code=400,
                             detail=f"Pembayaran ({amount}) melebihi sisa ({fin['outstanding']}).")
+    # PM-T1 — cara bayar dari daftar induk (kata lama → kode kanonik; tak dikenal / nonaktif → 400) sebelum kas lahir.
+    from services.payment_method_service import kode_400 as _cara_bayar
+    payload.method = await _cara_bayar(v.get("entity_id") or DEFAULT_ENTITY_ID, payload.method or "transfer",
+                                       arah="keluar")
     cash_entity = "all" if payload.cash_type == "kas_besar" else (payload.entity_id or v.get("entity_id") or DEFAULT_ENTITY_ID)
     # PK-37 (K-03) — PERIKSA periode tanggal bayar sebelum kas lahir (PT voucher, dan PT kas bila berbeda).
     from services.book_date import periksa_periode_dokumen_409

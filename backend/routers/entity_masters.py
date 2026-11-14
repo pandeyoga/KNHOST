@@ -21,6 +21,13 @@ from services import master_registry as mreg
 router = APIRouter(prefix="/api")
 
 
+async def _segarkan(kind: str) -> None:
+    """PM-T1 — kode & kata lama cara bayar baru langsung dikenali `payment_method_service.normalize`."""
+    if kind == "payment-methods":
+        from services import payment_method_service as pms
+        await pms.muat_kamus()
+
+
 @router.get("/entity-masters")
 async def list_master_groups(request: Request) -> List[Dict[str, Any]]:
     """Ringkasan tiap kelompok master (untuk kartu pilihan di layar)."""
@@ -62,6 +69,7 @@ async def create_master_row(kind: str, payload: Dict[str, Any], request: Request
     # & penyaring layar. Tanpa membuang cache, lini baru baru muncul setelah
     # backend restart (pelajaran FASE E-1 `invalidate_entity_code`).
     mreg.invalidate(kind)
+    await _segarkan(kind)
     await audit(actor["name"], "entity_master_created", kind, row.get("id", ""),
                 {"entity_id": row.get("entity_id"), "key": row.get(ems.spec(kind).key_field)})
     return row
@@ -75,6 +83,7 @@ async def update_master_row(kind: str, row_id: str, payload: Dict[str, Any],
     data = payload.get("data") if isinstance(payload, dict) and "data" in payload else payload
     row = await ems.patch(kind, row_id, data or {}, ctx)
     mreg.invalidate(kind)
+    await _segarkan(kind)
     await audit(actor["name"], "entity_master_updated", kind, row_id, data or {})
     return row
 
@@ -86,6 +95,7 @@ async def override_master_row(kind: str, row_id: str, request: Request) -> Dict[
     ctx = await entity_ctx(request)
     row = await ems.override(kind, row_id, ctx)
     mreg.invalidate(kind)
+    await _segarkan(kind)
     await audit(actor["name"], "entity_master_overridden", kind, row.get("id", ""),
                 {"source_id": row_id, "entity_id": row.get("entity_id")})
     return row
@@ -98,6 +108,7 @@ async def revert_master_row(kind: str, row_id: str, request: Request) -> Dict[st
     ctx = await entity_ctx(request)
     res = await ems.revert(kind, row_id, ctx)
     mreg.invalidate(kind)
+    await _segarkan(kind)
     await audit(actor["name"], "entity_master_reverted", kind, row_id,
                 {"key": res.get("key")})
     return res

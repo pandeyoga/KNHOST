@@ -72,6 +72,9 @@ KPT8_KUNCI = 2
 # PK-30 — satu kunci baru `antar_entitas.selisih_panjang` berizin `accounting.manage` (kelompok "pajak-pembukuan"): ikut
 # terhitung di katalog (U04) tetapi tidak bisa diubah pemegang `settings.manage` saja (U02 tetap).
 PK30_KUNCI = 1
+# PM-T1 — aksi kontrol dua orang baru `ubah_rekening` (tanpa nominal): satu kunci `kontrol.ubah_rekening.min_orang`
+# berizin `settings.manage` → ikut terhitung di U02 dan U04.
+PMT1_KUNCI = 1
 
 
 def _put(key, value, scope_type="entity", scope_id="ent_ksc"):
@@ -110,7 +113,7 @@ async def test_U02_bisa_ubah_232_kunci(klien, akun, sesi, peran_tanpa_acuan):
     # salah satu dari tiga kunci persetujuan KP-T4.
     assert sum(1 for it in r.json()["items"] if it["can_edit"]) == \
         229 + KFT6_KUNCI - KFT6_TIDAK_DIPAKAI - PRT4_TIDAK_DIPAKAI - KFT2_TIDAK_DIPAKAI - KPT4_TIDAK_DIPAKAI \
-        - KFT3_TIDAK_DIPAKAI + KFT7_KUNCI + PK38_KUNCI
+        - KFT3_TIDAK_DIPAKAI + KFT7_KUNCI + PK38_KUNCI + PMT1_KUNCI
 
 
 async def test_U03_lapisan_grup_tetap_untuk_lintas_pt(klien, akun, sesi, peran_tanpa_acuan):
@@ -136,7 +139,7 @@ async def test_U04_lihat_saja_tidak_bisa_ubah(klien, akun, sesi, peran_tanpa_acu
     # periode tertutup mengunci dokumen; PK-38 kontrol dua orang bayar hutang; KP-T8 hidup/mati & model pengenal gambar;
     # PK-30 selisih panjang roll antar-PT.
     assert r.json()["total"] == 310 + 5 + KFT6_KUNCI + KFT2_KUNCI + KPT7_KUNCI + PK36_KUNCI + KFT7_KUNCI + PK37_KUNCI \
-        + PK38_KUNCI + KPT8_KUNCI + PK30_KUNCI
+        + PK38_KUNCI + KPT8_KUNCI + PK30_KUNCI + PMT1_KUNCI
 
 
 async def test_U05_manajer_kosong_tidak_lagi_lewat_nama_peran(klien, akun, sesi, peran_manajer_kosong):

@@ -18,6 +18,16 @@ GL-01: registri `services/gl_mapping_registry.py` (54 kebutuhan) → koleksi `gl
 - 2026-10-19 (sesi E): Fase A registri+resolver+API Pemetaan Akun; Fase B UI `?view=gl-account-mappings` (Pengaturan → Keuangan); Fase C pembaca saldo (suspense, piutang denda, uang muka, selisih bayar, persediaan, AR aging) memakai akun pemetaan; Fase D jurnal ongkir retur (cara kirim, akun bayar Finance, PT pembeban, PPN via `returns.logistics_vat_enabled`, jurnal balik saat ubah/tolak); Fase E pemecahan roll cutloss (posisi cacat, BS/Dibuang oleh peran `returns.cutloss_treatment_roles`, pratinjau, SJ potongan baik merujuk SJ & SO asal); Fase F uji (iteration_244: 100%), ACC-KP-01, filter `?stage=` produk, judul/qty kartu tugas gudang Meja Saya. Detail: evidence/HANDOFF_SESI_2026-10-19E.md.
 
 - 2026-11-13/14 (blueprint `docs/blueprint/`, laporan `docs/reviews/2026-11-13/hasil/`): PK-01 garis dasar gate + 256 temuan di tracker; PK-02 kerangka uji `backend/tests_mem/` (database tiruan); PK-05 bayar hutang lewat satu pintu niat bayar (`ap_payment_intents`): periksa tanpa tulis → niat → faktur → kas (rekening wajib, milik PT tagihan) → dokumen kontrabon berversi → jurnal tahan-gagal; kunci idempotensi pada bayar faktur/kontrabon; niat menggantung bisa dilanjutkan/dibatalkan dari form. PR-T9: izin peran bawaan tidak lagi ditimpa saat server start (cabut/atur ulang lama jadi migrasi sekali-jalan tercatat di `permission_settings.migrations_applied`); peran kustom ikut izin baru peran dasarnya bila modulnya belum diubah, selain itu tombol "Ikuti peran dasar". KF-T1: Pusat Pengaturan — ubah = izin kunci (`settings.manage`, `inventory/goods_receipt/makloon.configure`, `rnd.manage`, …; tanpa jalur nama peran), baca = `settings.view` atau yang boleh mengubah kunci itu; `GET /api/settings/effective` tanpa `settings.view` hanya memuat kunci `sensitif_baca=False`.
+- 2026-11-14 PM-T1 (PM-03, PM-05; K-34, K-35 — cara bayar & rekening): satu daftar induk **cara bayar** (master
+  berlapis `payment-methods`, koleksi `payment_methods`; benih transfer · tunai · giro · QRIS · titipan, VA/EDC mati) —
+  semua form pembayaran mengambil pilihannya dari `GET /api/payment-methods` (`config/paymentMethods.js`) dan server
+  menormalkan kata lama (`tunai`/`kontan` → `cash`) lewat `services/payment_method_service.py`; kata tak dikenal / cara
+  bayar yang dimatikan untuk PT itu → 400 sebelum menulis; `is_cash` satu-satunya pembeda tunai. Rekening kas/bank punya
+  atas nama, peruntukan, cara bayar yang dilayani, bawaan penerimaan per (PT, cara bayar) (indeks wajib
+  `uq_default_receiving`), tanda tampil di dokumen pelanggan; `GET /api/bank-accounts/receiving` (tanpa saldo). Ubah
+  field peka / buat rekening ikut `kontrol.ubah_rekening.min_orang` (bawaan satu orang) → `bank_account_changes`
+  "Perubahan menunggu persetujuan" (izin baru `cash.approve`, Admin & Manajer). Rekening lama dibaca dengan nilai awal;
+  `scripts/blueprint/pmt1_isi_rekening.py` (lapor bawaan) untuk menyimpannya. Penjaga `verify_payment_vocab.py`.
 - 2026-11-14 PK-40 (SL-13, FY-16 — pajak): satu faktur pajak aktif per pesanan / transaksi antar-PT / tagihan pemasok
   dan satu NSFP per faktur aktif dijamin indeks unik wajib (`active_key`, `nsfp_key`; data lama:
   `scripts/blueprint/pk40_kunci_faktur.py`, baca-saja dulu); rekap PPN menjumlah semua faktur masa itu (masa WIB, tanpa

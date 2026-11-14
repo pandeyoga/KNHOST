@@ -310,6 +310,12 @@ async def pay_payable(*, kind: str, target_id: str, actor: Dict[str, Any], amoun
             "Lanjutkan pembayaran itu dulu.", 409, code="AP_PAYMENT_PENDING", intent_id=other["id"])
 
     doc = await _target(kind, target_id)
+    # PM-T1 — cara bayar dari daftar induk (kata lama → kode kanonik; tak dikenal / nonaktif → 400) sebelum niat lahir.
+    from services import payment_method_service as _pms
+    try:
+        method = (await _pms.wajib(doc.get("entity_id") or "", method or "transfer", arah="keluar"))["code"]
+    except _pms.CaraBayarError as exc:
+        raise ApPaymentError(str(exc), 400) from exc
     if kind == "vendor_bill":
         plan = await _plan_vendor_bill(doc, amount, paid_at, bank_account_id, method, variance, iid, actor)
     else:

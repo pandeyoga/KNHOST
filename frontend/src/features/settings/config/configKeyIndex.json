@@ -2065,6 +2065,10 @@
    "persetujuan",
    "dua-orang-hutang"
   ],
+  "kontrol.ubah_rekening.min_orang": [
+   "persetujuan",
+   "dua-orang-buku"
+  ],
   "kontrol.admin_boleh_sendiri": [
    "persetujuan",
    "dua-orang-admin"

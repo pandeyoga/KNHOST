@@ -25,8 +25,10 @@ BERNOMINAL = {"po_custom", "permintaan_pembelian", "amandemen", "setujui_po", "t
               "bayar_hutang"}   # PK-38 (K-17)
 # PK-38 — aksi ke-36 `bayar_hutang` (bayar kontrabon; bawaan satu orang, bernominal) → 36 aksi, 21 bernominal,
 # 59 kunci `kontrol.*`. Batas pengurang piutang: bawaan Rp 1.000.000, maksimum Rp 1.000.000.000 (K-11).
-N_AKSI = 36
-N_KUNCI = 59
+# PM-T1 — aksi ke-37 `ubah_rekening` (ubah/buat rekening kas-bank; bawaan satu orang, TANPA nominal) → 37 aksi,
+# 21 bernominal, 60 kunci `kontrol.*`.
+N_AKSI = 37
+N_KUNCI = 60
 BATAS_KHUSUS = {"pengurang_piutang": (1000000, 1000000000)}
 
 

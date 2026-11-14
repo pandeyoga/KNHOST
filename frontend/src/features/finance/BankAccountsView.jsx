@@ -6,11 +6,14 @@
  * Rekonsiliasi Bank dengan rekening ini terpilih.
  * PK-16 — banner PT di atas KPI (cakupan dari kepala aplikasi; /bank-accounts tidak mengirim `scope_meta`);
  * gagal memuat → kartu & posisi buku besar dikosongkan.
+ * PM-T1 — rekening punya atas nama, peruntukan, cara bayar yang dilayani, bawaan penerimaan, dan tanda tampil di
+ * dokumen pelanggan (form `BankAccountForm`, buat & ubah). Perubahan yang butuh orang kedua tampil di bagian
+ * "Perubahan menunggu persetujuan" (`BankAccountChangesPanel`, tombol Setujui/Tolak untuk `cash.approve`).
  */
 import { apiErrorText } from "../../utils/apiError";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
-  RefreshCw, Plus, Landmark, Wallet, CheckCircle2, X, Banknote, ArrowDownLeft, ArrowUpRight, ListChecks, ArrowRight,
+  RefreshCw, Plus, Landmark, Wallet, CheckCircle2, X, Banknote, ArrowDownLeft, ArrowUpRight, ListChecks, ArrowRight, Pencil,
 } from "lucide-react";
 import axios, { API } from "../../services/apiClient";
 import ErrorNotice from "../../components/ErrorNotice";
@@ -21,25 +24,26 @@ import { formatCurrency, formatDate } from "../../utils/formatters";
 import DetailModal from "../../components/DetailModal";
 import AuditHistoryPanel from "../../components/AuditHistoryPanel";
 import { can } from "../../config/roles";
-import FormModal from "../../components/FormModal";
-import KNSelect from "../../components/KNSelect";
-import MoneyInput from "@/components/MoneyInput";
 import { useAppNav } from "../../context/AppNavContext";
-
-const ACCOUNT_TYPE_OPTIONS = [
-  { value: "bank", label: "Rekening bank" },
-  { value: "cash", label: "Kas tunai" },
-];
+import { useEntityScope } from "../../context/EntityScopeContext";
+import { entityShortById } from "../../utils/entityLabel";
+import { usePaymentMethods } from "../../config/paymentMethods";
+import BankAccountForm from "./BankAccountForm";
+import BankAccountChangesPanel from "./BankAccountChangesPanel";
 
 // UAT 24 Okt (audit UI tahap 2) — G1-15: tanggal tampilan satu format ("25 Okt 2026", WIB) via formatDate.
 const fmtDate = (iso) => formatDate(iso);
-
-const EMPTY_FORM = { name: "", account_type: "bank", bank_name: "", account_number: "", opening_balance: "" };
 
 export default function BankAccountsView({ selectedEntity, currentUser }) {
   const canAudit = can(currentUser?.permissions, "audit", "view");
   const canConfigure = can(currentUser?.permissions, "cash", "configure");   // PK-17 — kelola rekening kas & bank
   const canMatch = can(currentUser?.permissions, "cash", "create");          // PK-21 — cocokkan mutasi bank
+  const canApprove = can(currentUser?.permissions, "cash", "approve");       // PM-T1 — setujui perubahan rekening
+  const { entities = [] } = useEntityScope() || {};
+  const pm = usePaymentMethods("masuk");
+  const [editing, setEditing] = useState(null);       // rekening yang sedang diubah (PM-T1)
+  const [notice, setNotice] = useState("");
+  const [changesKey, setChangesKey] = useState(0);
   const { go, canOpen } = useAppNav();
   const [detailTab, setDetailTab] = useState("ledger");
   const [accounts, setAccounts] = useState([]);
@@ -51,8 +55,6 @@ export default function BankAccountsView({ selectedEntity, currentUser }) {
   const [ledger, setLedger] = useState(null);
   const [ledgerLoading, setLedgerLoading] = useState(false);
   const [showForm, setShowForm] = useState(false);
-  const [form, setForm] = useState(EMPTY_FORM);
-  const [saving, setSaving] = useState(false);
 
   // Keputusan pemilik K-02 (26 Okt) — angka utama "Kas & Bank" = saldo buku besar akun kas+bank; kartu rekening =
   // rincian. Posisi buku besar dimuat terpisah: bila gagal (mis. izin), kartu rekening tetap tampil.
@@ -96,24 +98,16 @@ export default function BankAccountsView({ selectedEntity, currentUser }) {
     }
   }, []);
 
-  const [formErr, setFormErr] = useState("");
-  const closeForm = () => { setShowForm(false); setForm(EMPTY_FORM); setFormErr(""); };
-  const submitForm = async (e) => {
-    e?.preventDefault?.();
-    if (!canConfigure) return;
-    if (!form.name.trim()) { setFormErr("Nama akun wajib diisi."); return; }
-    setSaving(true);
-    try {
-      await axios.post(`${API}/bank-accounts`, {
-        ...form, opening_balance: Number(form.opening_balance || 0),
-      });
-      closeForm();
-      await load();
-    } catch (err) {
-      setFormErr(apiErrorText(err, "Gagal membuat akun."));
-    } finally {
-      setSaving(false);
-    }
+  const closeForm = () => { setShowForm(false); setEditing(null); };
+  // PM-T1 — 202 = perubahan butuh orang kedua: belum berlaku, tampil di "Perubahan menunggu persetujuan".
+  const onFormSaved = async ({ pending }) => {
+    const wasEdit = Boolean(editing);
+    closeForm();
+    setNotice(pending ? "Perubahan disimpan sebagai pengajuan dan berlaku setelah disetujui orang lain."
+      : wasEdit ? "Perubahan rekening disimpan." : "Akun kas/bank ditambahkan.");
+    setChangesKey((k) => k + 1);
+    await load();
+    if (wasEdit && selected) openLedger(selected, true);
   };
 
   const summary = useMemo(() => {
@@ -157,13 +151,22 @@ export default function BankAccountsView({ selectedEntity, currentUser }) {
         dicatat tanpa memilih rekening hanya terhitung di tab Transaksi Kas.
       </p>
 
+      {notice && (
+        <div className="notice-bar info mb-3" role="status" data-testid="bank-notice">
+          <CheckCircle2 size={14} aria-hidden="true" /><span>{notice}</span>
+          <button type="button" onClick={() => setNotice("")} aria-label="Tutup pemberitahuan"><X size={13} /></button>
+        </div>
+      )}
+      <BankAccountChangesPanel entityParam={selectedEntity} canApprove={canApprove} reloadKey={changesKey}
+        onDecided={async (msg) => { setNotice(msg); await load(); }} />
+
       <div className="section-card">
         <div className="section-head">
           <div className="flex items-center gap-2"><Landmark size={16} className="text-[#0058CC]" /><h2 data-testid="bank-title">Akun Kas & Bank</h2></div>
           <div className="flex items-center gap-2 ml-auto">
             {canConfigure && (
               <EntityGatedButton selectedEntity={selectedEntity} what="menambah rekening" data-testid="bank-add-toggle"
-                className="primary-button" onClick={() => setShowForm(true)}>
+                className="primary-button" onClick={() => { setEditing(null); setShowForm(true); }}>
                 <Plus size={14} /> Tambah Akun
               </EntityGatedButton>
             )}
@@ -173,40 +176,10 @@ export default function BankAccountsView({ selectedEntity, currentUser }) {
         <div className="section-body">
           <ErrorNotice message={error} onRetry={load} onDismiss={() => setError("")} testId="bank-error" />
 
-          {/* Audit UI 24 Okt (060): form inline + segmented ungu → FormModal standar. */}
-          <FormModal open={showForm} onClose={closeForm} title="Tambah Akun Kas / Bank"
-            subtitle="Rekening bank atau kas tunai milik badan usaha aktif." icon={Landmark}
-            testId="bank-add-form" onSubmit={submitForm} submitLabel="Simpan Akun"
-            submitTestId="bank-form-submit" busy={saving} error={formErr}>
-            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-              <div>
-                <label className="field-label">Nama Akun <span className="req">*</span></label>
-                <input data-testid="bank-form-name" className="field" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder="mis. BCA Operasional" />
-              </div>
-              <div>
-                <label className="field-label">Jenis <span className="req">*</span></label>
-                <KNSelect data-testid="bank-form-type" value={form.account_type} options={ACCOUNT_TYPE_OPTIONS}
-                  onValueChange={(v) => setForm({ ...form, account_type: v || "bank" })} />
-              </div>
-              {form.account_type === "bank" && (
-                <>
-                  <div>
-                    <label className="field-label">Nama Bank</label>
-                    <input data-testid="bank-form-bankname" className="field" value={form.bank_name} onChange={(e) => setForm({ ...form, bank_name: e.target.value })} placeholder="mis. BCA" />
-                  </div>
-                  <div>
-                    <label className="field-label">No. Rekening</label>
-                    <input data-testid="bank-form-accountno" className="field tabular-nums" value={form.account_number} onChange={(e) => setForm({ ...form, account_number: e.target.value })} placeholder="0123456789" />
-                  </div>
-                </>
-              )}
-              {/* G1-48 — urutan isian Jenis → Bank → No. Rek → Saldo awal (dulu saldo awal menyela detail bank). */}
-              <div>
-                <label className="field-label">Saldo Awal</label>
-                <MoneyInput testId="bank-form-opening" value={form.opening_balance} onChange={(v) => setForm({ ...form, opening_balance: v })} placeholder="0" />
-              </div>
-            </div>
-          </FormModal>
+          {/* Audit UI 24 Okt (060): form inline + segmented ungu → FormModal standar. PM-T1 — satu form buat & ubah. */}
+          <BankAccountForm open={showForm} account={editing} onClose={closeForm} onSaved={onFormSaved}
+            entityId={selectedEntity && selectedEntity !== "all" ? selectedEntity : ""}
+            entityLabel={entityShortById(entities, editing?.entity_id || selectedEntity, "")} />
 
           {srch.toolbar}
           {loading ? (
@@ -237,6 +210,14 @@ export default function BankAccountsView({ selectedEntity, currentUser }) {
                       {a.cash_type && (a.account_type !== "bank" || a.cash_type === "kas_kecil") && (
                         <span data-testid={`bank-cash-type-${a.id}`} className="inline-block mt-0.5 text-[11px] font-semibold rounded-full px-1.5 py-0.5 bg-[#EFF4FF] text-[#0058CC]">
                           {a.cash_type === "kas_kecil" ? "Kas kecil" : "Kas besar"}
+                        </span>
+                      )}
+                      {a.holder_name && (
+                        <p className="text-fs-12 text-kn-text-2 truncate" data-testid={`bank-holder-${a.id}`}>a.n. {a.holder_name}</p>
+                      )}
+                      {(a.default_receiving_methods || []).length > 0 && (
+                        <span data-testid={`bank-default-${a.id}`} className="status-pill mt-0.5 bg-kn-success-soft text-kn-success-text">
+                          <CheckCircle2 size={12} aria-hidden="true" />Bawaan: {(a.default_receiving_methods || []).map(pm.labelOf).join(", ")}
                         </span>
                       )}
                       {/* FASE E-7 (E7.4) — rekening tingkat grup sudah tidak sah lagi.
@@ -274,6 +255,10 @@ export default function BankAccountsView({ selectedEntity, currentUser }) {
             onClose={() => { setSelected(null); setLedger(null); }}
             onMatch={canMatch && canOpen("bank-reconciliation")
               ? () => go("bank-reconciliation", { preset: { bank_account_id: selected } }) : null}
+            onEdit={canConfigure ? () => {
+              const acc = accounts.find((x) => x.id === selected);
+              if (acc) { setEditing(acc); setShowForm(true); }
+            } : null}
             tabs={canAudit ? (
               <div className="tab-bar px-3" data-testid="bank-detail-tabs">
                 <button data-testid="bank-detail-tab-ledger" className={`tab-button ${detailTab === "ledger" ? "active" : ""}`} onClick={() => setDetailTab("ledger")}>Mutasi</button>
@@ -319,7 +304,7 @@ function ReconBadge({ txn }) {
   );
 }
 
-function LedgerPanel({ ledger, loading, onClose, onMatch = null, tabs = null, children = null }) {
+function LedgerPanel({ ledger, loading, onClose, onMatch = null, onEdit = null, tabs = null, children = null }) {
   return (
     <div className="section-card" data-testid="bank-ledger">
       <div className="section-head">
@@ -332,11 +317,18 @@ function LedgerPanel({ ledger, loading, onClose, onMatch = null, tabs = null, ch
       </div>
       {tabs}
       <div className="section-body">
-        {!children && onMatch && (
-          <div className="mb-2 flex justify-end">
-            <button type="button" data-testid="bank-ledger-match-link" className="secondary-button btn-sm" onClick={onMatch}>
-              Cocokkan di Rekonsiliasi Bank <ArrowRight size={13} aria-hidden="true" />
-            </button>
+        {!children && (onMatch || onEdit) && (
+          <div className="mb-2 flex flex-wrap justify-end gap-2">
+            {onEdit && (
+              <button type="button" data-testid="bank-ledger-edit" className="secondary-button btn-sm" onClick={onEdit}>
+                <Pencil size={13} aria-hidden="true" /> Ubah rekening
+              </button>
+            )}
+            {onMatch && (
+              <button type="button" data-testid="bank-ledger-match-link" className="secondary-button btn-sm" onClick={onMatch}>
+                Cocokkan di Rekonsiliasi Bank <ArrowRight size={13} aria-hidden="true" />
+              </button>
+            )}
           </div>
         )}
         {children || (loading ? (

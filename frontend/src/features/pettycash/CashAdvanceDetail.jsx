@@ -16,6 +16,7 @@ import { can } from "../../config/roles";
 import { useCanDecideMap } from "../../hooks/useCanDecide";   // KP-T4
 import useIntentKey from "../../hooks/useIntentKey";
 import { moneyPost } from "../../utils/moneyRequest";
+import { usePaymentMethods } from "../../config/paymentMethods";   // PM-T1 — label cara bayar dari daftar induk
 
 /**
  * CashAdvanceDetail — Detail Form PD: ringkasan, rincian, timeline approval,
@@ -31,6 +32,7 @@ const caDecideParams = (ca) => (CA_LEVEL[ca.status]
 
 export default function CashAdvanceDetail({ ca, currentUser, entities, onEdit, onChanged, flash }) {
   const [busy, setBusy] = useState(false);
+  const payMethods = usePaymentMethods("keluar", ca?.entity_id);
   const [err, setErr] = useState("");
   const [reject, setReject] = useState(false);
   const [disburse, setDisburse] = useState(false);
@@ -111,7 +113,7 @@ export default function CashAdvanceDetail({ ca, currentUser, entities, onEdit, o
             <Meta k="Tanggal" v={fmtDate(ca.tanggal_pengajuan)} />
             <Meta k="Kegiatan" v={ca.kegiatan || "—"} />
             <Meta k="Periode" v={`${fmtDate(ca.period_from)} — ${fmtDate(ca.period_to)}`} />
-            <Meta k="Metode" v={ca.payment_method === "transfer" ? `Transfer · ${ca.bank_detail?.bank || ""} ${ca.bank_detail?.no_account || ""}` : "Tunai"} />
+            <Meta k="Cara bayar" v={ca.payment_method === "transfer" ? `${payMethods.labelOf("transfer")} · ${ca.bank_detail?.bank || ""} ${ca.bank_detail?.no_account || ""}` : payMethods.labelOf(ca.payment_method || "cash")} />
             <Meta k="Dibuat oleh" v={ca.created_by || "—"} />
             {ca.disbursement && <Meta k="Kas Keluar" v={`${ca.disbursement.cash_txn_number} · ${ca.disbursement.cash_type === "kas_besar" ? "Kas Besar" : "Kas Kecil"}`} />}
             {ca.rejected_reason && <Meta k="Alasan Tolak" v={ca.rejected_reason} danger />}

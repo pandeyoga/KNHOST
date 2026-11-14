@@ -73,7 +73,8 @@
     "view",
     "create",
     "delete",
-    "configure"
+    "configure",
+    "approve"
    ],
    "cash_advance": [
     "view",
@@ -897,7 +898,8 @@
     "view",
     "create",
     "delete",
-    "configure"
+    "configure",
+    "approve"
    ],
    "cash_advance": [
     "view",

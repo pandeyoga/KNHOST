@@ -216,6 +216,19 @@ MASTERS: Dict[str, MasterSpec] = {
              "“Bisa diklaim ke supplier?” menandai keluhan yang wajar diteruskan sebagai klaim "
              "ke supplier.",
     ),
+    # ── PM-T1 (K-34) — CARA BAYAR: satu daftar untuk semua layar "dibayar lewat apa". Berlapis supaya satu cara bayar
+    # bisa dimatikan untuk satu PT ("Buat khusus PT" → nonaktif). Benih: `services/payment_method_service.BENIH`;
+    # pembacanya satu: `services/payment_method_service.py` (`normalize`, `get`, `active_for`, `is_cash`).
+    "payment-methods": MasterSpec(
+        kind="payment-methods", collection="payment_methods", label="Cara Bayar",
+        key_field="code", name_field="name", id_prefix="pmeth",
+        fields=("code", "name", "needs_account", "needs_reference", "needs_due_date", "is_new_money",
+                "directions", "aliases", "sort", "active", "notes"),
+        sort=(("sort", 1), ("code", 1)),
+        hint="Pilihan “dibayar lewat apa” di kwitansi, bayar tagihan pemasok, kontrabon, biaya masuk, uang muka, denda, "
+             "selisih bayar, dan pelunasan antar-PT. Nonaktifkan untuk satu PT lewat “Buat khusus”. “Kata lama” "
+             "dipetakan ke kode ini (mis. tunai → Tunai).",
+    ),
 }
 
 # Koleksi yang dikelola mesin ini — dipakai gate & migrasi supaya daftarnya satu sumber.
@@ -233,6 +246,7 @@ WRITE_PERMISSION: Dict[str, Tuple[str, str]] = {
     "process-stages": ("process_recipe", ""),          # tahapan dipakai resep proses
     "sample-types": ("rnd", "manage"),                 # jenis sampling R&D
     "complaint-reasons": ("sales_return", "policy"),   # kebijakan retur
+    "payment-methods": ("cash", "configure"),          # PM-T1 — daftar cara bayar (kelola Kas & Bank)
 }
 OP_ACTION = {"create": "create", "update": "update", "override": "create", "revert": "delete"}
 
@@ -401,13 +415,21 @@ async def _assert_key_free(s: MasterSpec, key_value: Any, entity_id: str,
             detail=f"{s.label}: '{key_value}' sudah ada pada lapisan {where}.")
 
 
+def _validasi(s: MasterSpec, data: Dict[str, Any], *, baru: bool) -> Dict[str, Any]:
+    """Pemeriksaan isian per jenis master (PM-T1: cara bayar). Jenis lain diteruskan apa adanya."""
+    if s.kind == "payment-methods":
+        from services.payment_method_service import validasi_baris
+        return validasi_baris(data, baru=baru)
+    return data
+
+
 async def create(kind: str, data: Dict[str, Any], ctx: EntityContext) -> Dict[str, Any]:
     s = spec(kind)
     if not s.manage:
         raise HTTPException(status_code=400,
                             detail=f"{s.label} dikelola di layarnya sendiri.")
     target = _target_entity_for_write(ctx, data.get("entity_id"))
-    payload = {k: v for k, v in data.items() if k in s.fields}
+    payload = _validasi(s, {k: v for k, v in data.items() if k in s.fields}, baru=True)
     key_value = payload.get(s.key_field)
     if key_value in (None, ""):
         raise HTTPException(status_code=422, detail=f"Field '{s.key_field}' wajib diisi.")
@@ -494,6 +516,7 @@ async def patch(kind: str, doc_id: str, data: Dict[str, Any],
     upd = {k: v for k, v in (data or {}).items() if k in s.fields}
     if not upd:
         raise HTTPException(status_code=422, detail="Tidak ada field yang bisa diubah.")
+    upd = _validasi(s, upd, baru=False)
     if s.key_field in upd and upd[s.key_field] != doc.get(s.key_field):
         await _assert_key_free(s, upd[s.key_field],
                                doc.get("entity_id") or GLOBAL_ID, exclude_id=doc_id)

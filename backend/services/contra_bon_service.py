@@ -1039,16 +1039,21 @@ async def schedule(cb_id: str, payload: Dict[str, Any], actor: Dict[str, Any],
     when = (payload.get("planned_payment_date") or "").strip()
     if not when:
         raise ContraBonError("Tanggal rencana pembayaran wajib diisi.")
+    from services import payment_method_service as _pms   # PM-T1 — cara bayar dari daftar induk (arah keluar)
+    try:
+        method = (await _pms.wajib(cb.get("entity_id") or "", payload.get("method") or "transfer", arah="keluar"))["code"]
+    except _pms.CaraBayarError as exc:
+        raise ContraBonError(str(exc)) from exc
     cb["schedule"] = {
         "planned_payment_date": when,
-        "method": payload.get("method") or "transfer",
+        "method": method,
         "bank_account_id": payload.get("bank_account_id", ""),
         "notes": payload.get("notes", ""),
     }
     cb["status"] = "scheduled_payment"
     cb.setdefault("timeline", []).append(_tl(
         "dijadwalkan", "Pembayaran dijadwalkan", actor.get("name", ""),
-        f"{when} · {payload.get('method') or 'transfer'}"))
+        f"{when} · {method}"))
     await _save(cb)
     return await decorate(cb)
 

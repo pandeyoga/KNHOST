@@ -62,6 +62,8 @@ CANONICAL_COLLECTIONS = {
     "ap_payment_intents",
     # ── KF-T6 (blueprint) — usulan jurnal manual yang menunggu orang kedua ──
     "journal_proposals",
+    # ── PM-T1 (blueprint) — master cara bayar + perubahan rekening yang menunggu orang kedua ──
+    "payment_methods", "bank_account_changes",
     # ── KP-T4 (blueprint) — satu tabel kebijakan persetujuan ──
     "approval_policies",
     # ── KP-T5 (blueprint) — tabel Penomoran Dokumen (format yang diubah saja) ──

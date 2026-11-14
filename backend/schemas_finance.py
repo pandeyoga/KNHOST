@@ -16,6 +16,14 @@ class BankAccountCreate(BaseModel):
     opening_balance: float = Field(0.0, ge=0)       # saldo awal
     currency: str = "IDR"
     note: str = ""
+    # PM-T1 — atas nama, peruntukan, cara bayar yang dilayani, bawaan penerimaan, tampil di dokumen pelanggan.
+    # Kosong (None) = nilai awal: empat peruntukan, cara bayar menurut jenis rekening.
+    holder_name: str = ""
+    purposes: Optional[List[str]] = None
+    payment_method_codes: Optional[List[str]] = None
+    default_receiving_methods: List[str] = Field(default_factory=list)
+    show_on_documents: bool = False
+    reason: str = ""                   # catatan untuk penyetuju (bila perubahan butuh orang kedua)
 
 
 class BankAccountUpdate(BaseModel):
@@ -25,6 +33,18 @@ class BankAccountUpdate(BaseModel):
     opening_balance: Optional[float] = Field(None, ge=0)
     is_active: Optional[bool] = None
     note: Optional[str] = None
+    holder_name: Optional[str] = None                     # PM-T1
+    purposes: Optional[List[str]] = None
+    payment_method_codes: Optional[List[str]] = None
+    default_receiving_methods: Optional[List[str]] = None
+    show_on_documents: Optional[bool] = None
+    reason: Optional[str] = None
+
+
+class BankAccountChangeDecision(BaseModel):
+    """PM-T1 — putusan atas perubahan rekening yang menunggu orang kedua."""
+    decision: str                                         # approve | reject
+    note: str = ""
 
 
 # ─── EPIC7-C: Chart of Accounts + General Ledger ─────────────────────────────

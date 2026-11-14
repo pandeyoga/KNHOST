@@ -131,7 +131,7 @@ async def simulate_payment(order_id: str, payload: PaymentSimulationCreate, requ
         # Gelombang 1 F-4 — settlement pembayaran order AR: kas masuk (Dr Kas / Cr Piutang).
         # Order tunai (NON_AR) tidak perlu — jurnal pendapatannya sudah mendebit Kas.
         if order_payment_method(order_for_gl) not in NON_AR_METHODS:
-            cash_type, force_all = _cash_routing(payload.method)
+            cash_type, force_all = await _cash_routing(payload.method, order.get("entity_id") or "")
             # FASE E-7 (E7.4) — kas grup dihapus: uang masuk milik badan usaha pesanannya.
             from services.cash_entity_service import resolve_owner as _cash_owner
             cash_entity = _cash_owner(order.get("entity_id"), DEFAULT_ENTITY_ID,

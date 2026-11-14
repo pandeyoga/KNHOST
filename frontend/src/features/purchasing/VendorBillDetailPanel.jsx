@@ -17,6 +17,7 @@ import GrnDocVariance from "./GrnDocVariance";
 import VendorBillPayments from "./VendorBillPayments";
 import { can } from "../../config/roles";
 import ErrorNotice from "../../components/ErrorNotice";
+import { usePaymentMethods } from "../../config/paymentMethods";   // PM-T1 — daftar induk cara bayar
 import { isZeroMetric } from "../../components/ListPageParts";
 
 /**
@@ -41,6 +42,7 @@ function MatchPill({ status }) {
 export default function VendorBillDetailPanel({ bill, canApprove, decideHint = "", currentUser, onClose, onAction, onError }) {
   const [payAmount, setPayAmount] = useState("");
   const [method, setMethod] = useState("transfer");
+  const payMethods = usePaymentMethods("keluar", bill?.entity_id);
   const [payDate, setPayDate] = useState(new Date().toISOString().slice(0, 10));
   const [accountId, setAccountId] = useState("");
   const [payNotes, setPayNotes] = useState("");
@@ -238,9 +240,9 @@ export default function VendorBillDetailPanel({ bill, canApprove, decideHint = "
                     placeholder="Pilih rekening…"
                     options={(ap.accounts || []).map((a) => ({ value: a.id, label: accountLabel(a) }))} />
                 </Field>
-                <Field label="Metode">
-                  <KNSelect value={method} onValueChange={setMethod} className="field"
-                    options={[{ value: "transfer", label: "Transfer" }, { value: "tunai", label: "Tunai" }, { value: "giro", label: "Giro" }]} />
+                <Field label="Cara bayar">
+                  <KNSelect data-testid="vb-pay-method" value={method} onValueChange={setMethod} className="field"
+                    options={payMethods.options} />
                 </Field>
               </div>
               <Field label="Catatan">

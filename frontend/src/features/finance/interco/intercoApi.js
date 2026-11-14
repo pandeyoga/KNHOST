@@ -60,10 +60,8 @@ export const PPN_MODES = [
   { value: "dengan_ppn", label: "Dengan PPN (paksa)" },
 ];
 
-export const SETTLEMENT_METHODS = [
-  { value: "transfer", label: "Transfer bank" },
-  { value: "cash", label: "Kas" },
-];
+// PM-T1 — cara pelunasan antar-PT dari daftar induk cara bayar: `usePaymentMethods("keluar", payer)` di
+// IntercoSettlementModal (dulu `SETTLEMENT_METHODS` ditulis di sini).
 
 /** Nama akun singkat untuk blok jurnal (bahasa layar, bukan kode saja). */
 export const ACC_LABEL = {

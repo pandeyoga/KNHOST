@@ -35,6 +35,7 @@ LOGIN_ONLY: Dict[Tuple[str, str], str] = {
     ("GET", "/api/enums/{name}"): RUJUKAN,
     ("GET", "/api/master/fabric-types"): RUJUKAN,
     ("GET", "/api/payment-terms"): RUJUKAN,              # kode, nama, dan hari termin
+    ("GET", "/api/payment-methods"): RUJUKAN,            # PM-T1 — kode & nama cara bayar aktif per PT (tanpa nominal)
     ("GET", "/api/finance/period-unlocks/active"): RUJUKAN,   # pemberitahuan tanpa nominal, terbatas PT pengguna
     ("GET", "/api/access/labels"): RUJUKAN,              # PR-T5 — kamus label sumber daya, aksi, modul
     ("GET", "/api/wilayah/countries"): RUJUKAN,

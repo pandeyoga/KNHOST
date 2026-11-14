@@ -18,7 +18,8 @@ import { formatCurrency } from "../../../utils/formatters";
 import { apiErrorText } from "../../../utils/apiError";
 import { moneyPost } from "../../../utils/moneyRequest";
 import useIntentKey from "../../../hooks/useIntentKey";
-import { SETTLEMENT_METHODS, fmtDate } from "./intercoApi";
+import { fmtDate } from "./intercoApi";
+import { usePaymentMethods } from "../../../config/paymentMethods";   // PM-T1 — daftar induk cara bayar
 
 const OPEN_STATUSES = ["confirmed", "shipped", "received", "invoiced"];
 
@@ -29,6 +30,9 @@ export default function IntercoSettlementModal({
   const [payer, setPayer] = useState(presetPayerEntityId);
   const [payee, setPayee] = useState(presetPayeeEntityId);
   const [method, setMethod] = useState("transfer");
+  const payMethods = usePaymentMethods("keluar", payer);
+  const methodOptions = payMethods.methods.filter((m) => m.needs_account === "bank" || m.needs_account === "kas")
+    .map((m) => ({ value: m.code, label: m.name }));
   const [selected, setSelected] = useState({});   // {id: appliedAmount}
   const [notes, setNotes] = useState("");
   const [busy, setBusy] = useState(false);
@@ -126,7 +130,7 @@ export default function IntercoSettlementModal({
           </div>
           <div>
             <label className="block text-xs font-medium text-[#3C3C43] mb-1">Metode</label>
-            <KNSelect value={method} onValueChange={setMethod} options={SETTLEMENT_METHODS} data-testid="interco-settle-method" />
+            <KNSelect value={method} onValueChange={setMethod} options={methodOptions} data-testid="interco-settle-method" />
           </div>
         </div>
 
