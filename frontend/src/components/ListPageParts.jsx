@@ -21,8 +21,10 @@ export function isZeroMetric(value) {
 }
 
 export function MetricRow({ items, testId }) {
-  const cols = { 3: "sm:grid-cols-3", 4: "sm:grid-cols-4", 5: "sm:grid-cols-5",
-    6: "sm:grid-cols-3 lg:grid-cols-6" }[items.length] || "sm:grid-cols-4";   // PK-41 — enam kartu (umur hutang)
+  // Cek layar 15 Nov (1024 px): lima/enam kartu sebaris di layar 1024 memotong label & rupiah ("Rp 19.599…"). Lima kartu
+  // 3+2 sampai xl, enam kartu 3+3 sampai 2xl (pola kartu KPI keuangan).
+  const cols = { 3: "sm:grid-cols-3", 4: "sm:grid-cols-4", 5: "sm:grid-cols-3 xl:grid-cols-5",
+    6: "sm:grid-cols-3 2xl:grid-cols-6" }[items.length] || "sm:grid-cols-4";   // PK-41 — enam kartu (umur hutang)
   return (
     <div data-testid={testId} className={`grid grid-cols-2 gap-2 ${cols}`}>
       {items.map(({ label, value, icon: Icon, hint, tone, testId: tid }, i) => (

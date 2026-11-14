@@ -31,6 +31,7 @@ import FilterChips from "../../components/FilterChips";
 import PageTabs from "../../components/PageTabs";
 import { PageHeader } from "../../components/ListPageParts";
 import { formatCurrency } from "../../utils/formatters";
+import { kpiValueParts } from "./financeShared";
 import ReconImportPanel from "./bank/ReconImportPanel";
 import ReconLinesTable from "./bank/ReconLinesTable";
 import ReconMatchModal from "./bank/ReconMatchModal";
@@ -210,15 +211,17 @@ export default function BankReconciliationView({ user = null }) {
       )}
 
       {summary && (
-        <div className="grid grid-cols-2 md:grid-cols-6 gap-3" data-testid="recon-summary">
+        // Cek layar PM-T3 (15 Nov): enam kartu dalam satu baris di 1024 px memotong angka ("Rp 100.000.0") — 3+3 sampai 2xl;
+        // rupiah lewat `kpiValueParts` (hanya "Rp" yang boleh turun baris).
+        <div className="grid grid-cols-2 md:grid-cols-3 2xl:grid-cols-6 gap-3" data-testid="recon-summary">
           <div className="stat-card">
             <p className="stat-label">Rekening (bersih)</p>
-            <p className="stat-value tabular-nums whitespace-nowrap">{noStatement ? "—" : formatCurrency(summary.statement.net)}</p>
+            <p className="stat-value tabular-nums">{noStatement ? "—" : kpiValueParts(formatCurrency(summary.statement.net))}</p>
             <p className="text-[11px] text-[#8E8E93]">{noStatement ? "belum ada mutasi diimpor" : `${summary.statement.lines} baris mutasi`}</p>
           </div>
           <div className="stat-card">
             <p className="stat-label">Buku (bersih)</p>
-            <p className="stat-value tabular-nums whitespace-nowrap">{formatCurrency(summary.book.net)}</p>
+            <p className="stat-value tabular-nums">{kpiValueParts(formatCurrency(summary.book.net))}</p>
             {/* K-02 (26 Okt) — kolam "buku" di sini ikut memuat transaksi kas TANPA rekening berjenis kas sama, jadi bisa
                 lebih banyak dari jumlah transaksi di kartu Rekening & Saldo. Disebut terang. */}
             <p className="text-fs-12 text-kn-text-2" data-testid="recon-unmatched-book">
@@ -239,8 +242,8 @@ export default function BankReconciliationView({ user = null }) {
           </div>
           <div className="stat-card">
             <p className="stat-label">Dana titipan</p>
-            <p className="stat-value text-[#0058CC] whitespace-nowrap" data-testid="recon-holding-balance">
-              {formatCurrency(summary.holding?.balance || 0)}
+            <p className="stat-value text-[#0058CC] tabular-nums" data-testid="recon-holding-balance">
+              {kpiValueParts(formatCurrency(summary.holding?.balance || 0))}
             </p>
             <p className="text-[11px] text-[#8E8E93]">
               {summary.holding?.count || 0} baris
@@ -249,8 +252,8 @@ export default function BankReconciliationView({ user = null }) {
           </div>
           <div className={`stat-card ${noStatement || Math.abs(summary.difference) < 0.5 ? "" : "ring-1 ring-[#F3C9C7]"}`}>
             <p className="stat-label">Selisih rekening vs buku</p>
-            <p className={`stat-value whitespace-nowrap tabular-nums ${noStatement ? "text-[#8E8E93]" : Math.abs(summary.difference) < 0.5 ? "text-[#1B7F4B]" : "text-[#C0392B]"}`}
-              data-testid="recon-difference">{noStatement ? "—" : formatCurrency(summary.difference)}</p>
+            <p className={`stat-value tabular-nums ${noStatement ? "text-[#8E8E93]" : Math.abs(summary.difference) < 0.5 ? "text-[#1B7F4B]" : "text-[#C0392B]"}`}
+              data-testid="recon-difference">{noStatement ? "—" : kpiValueParts(formatCurrency(summary.difference))}</p>
             {noStatement ? (
               <p className="text-[11px] text-[#8E8E93]" data-testid="recon-difference-hint">dihitung setelah mutasi rekening diimpor</p>
             ) : summary.fully_reconciled && (

@@ -171,7 +171,7 @@ export function CashPanel({ cash }) {
       {accounts.length === 0 ? <p className="text-[11px] text-[#9A9BA3] py-3 text-center">Belum ada akun kas/bank bersaldo.</p> : (
         <div className="space-y-1.5">
           {accounts.map((a) => (
-            <div key={a.code} className="flex items-center justify-between text-[12px] border-b border-[#F5F5F7] last:border-0 pb-1.5">
+            <div key={a.code} className="flex items-center justify-between gap-3 text-[12px] border-b border-[#F5F5F7] last:border-0 pb-1.5">
               <span className="text-[#6B6B73]"><span className="text-[10px] text-[#9A9BA3] mr-1.5">{a.code}</span>{a.name}</span>
               <span className="tabular-nums font-semibold text-[#1C1C1E]">{formatCurrency(a.balance)}</span>
             </div>

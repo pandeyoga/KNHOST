@@ -20,6 +20,13 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 KOLOM = ("base_salary", "allowances", "overtime", "commission", "salary_earnings", "gross", "tax_gross",
          "bpjs_emp_total", "bpjs_er_total", "pph21", "net")
 AKTOR = {"id": "usr_bp_pyt1", "name": "Uji PY-T1", "role": "admin"}
+# Satu event loop untuk seluruh modul: klien Motor (`db`) terikat ke loop pertama yang memakainya, sehingga dua
+# `asyncio.run` terpisah membuat uji kedua gagal "Event loop is closed" (integrator, lingkungan A 15 Nov).
+_LOOP = asyncio.new_event_loop()
+
+
+def _jalankan(coro):
+    return _LOOP.run_until_complete(coro)
 
 
 def _beda(lama: dict, baru: dict) -> dict:
@@ -72,7 +79,7 @@ def test_U2_slip_data_acuan_sama_dengan_komponen():
                     selisih.append((run.get("number"), s.get("employee_name"), d))
         print(f"[U2] {len(runs)} proses, {diperiksa} slip diperiksa, {len(selisih)} berselisih")
         assert not selisih, selisih
-    asyncio.run(jalan())
+    _jalankan(jalan())
 
 
 def test_U14_dua_proses_reguler_bersamaan_satu_proses():
@@ -98,4 +105,4 @@ def test_U14_dua_proses_reguler_bersamaan_satu_proses():
                                                          "status": {"$nin": ["cancelled", "void", "rejected"]}})
             assert n == 1, (hasil, n)
             assert await db.hr_payslips.count_documents({"entity_id": ent, "run_id": ok[0]["id"]}) == 1
-    asyncio.run(jalan())
+    _jalankan(jalan())
