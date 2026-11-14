@@ -123,9 +123,16 @@ def count(text: str, patterns=None) -> int:
     return len(hits(text, patterns))
 
 
+# Berkas uji sementara uji-diri penjaga statik (`features/__poc_<nama>_probe.jsx`) tidak dihitung: gate menjalankan penjaga
+# paralel, dan dulu uji-diri ini menulis probe-nya ke `src` sehingga pemindaian kode nyata (penjaga ini dan `role_label`)
+# kadang ikut membacanya (balapan, ditemukan 14 Nov). Uji-diri kini menghitung probe di memori.
+PROBE_RX = re.compile(r"(^|/)__poc_[a-z0-9_]+_probe\.jsx$")
+PROBE_REL = "features/__poc_role_gate_probe.jsx"
+
+
 def current_counts() -> dict:
     out = {}
-    for rel, text in iter_sources(lambda r: r in EXEMPT):
+    for rel, text in iter_sources(lambda r: r in EXEMPT or bool(PROBE_RX.search(r))):
         n = count(text)
         if n:
             out[rel] = n
@@ -216,18 +223,18 @@ def self_test() -> int:
     sisip_1 = '\nconst bolehA = roleIs(role, ["manager"]);\n'
     sisip_2 = '\nconst bolehB = ["admin"].includes(user.role);\n'
     tata = '\nconst appHp = roleIs(user.role, ["driver"]);   // tata-letak: aplikasi HP pengemudi (bukan wewenang)\n'
-    probe = SRC / "features" / "__poc_role_gate_probe.jsx"
-    try:
-        probe.write_text(text + sisip_1 + sisip_2 + tata, encoding="utf-8")
-        cur = current_counts()
-        n = cur.get("features/__poc_role_gate_probe.jsx", 0)
-        cek("2 sisipan tertangkap (roleIs + [..].includes(user.role))", n == 2, f"{n} terhitung di salinan {rel}")
-        naik, baru, _ = compare(cur, load_baseline(NAME))
-        cek("salinan bersisipan MEMERAH sebagai berkas baru", any(r == "features/__poc_role_gate_probe.jsx" for r, _, _ in baru))
-        cek("1 baris `// tata-letak:` lolos", count(tata) == 0 and count(tata.replace("// tata-letak:", "//")) == 1)
-        cek("penanda tanpa alasan tidak diakui", count('roleIs(r, ["md"]); // tata-letak:\n') == 1)
-    finally:
-        probe.unlink(missing_ok=True)
+    # Probe dihitung di memori (tidak ditulis ke `src`) lalu disisipkan ke hitungan kode nyata — sama dengan berkas baru.
+    cur = current_counts()
+    n = count(text + sisip_1 + sisip_2 + tata)
+    if n:
+        cur[PROBE_REL] = n
+    cek("2 sisipan tertangkap (roleIs + [..].includes(user.role))", n == 2, f"{n} terhitung di salinan {rel}")
+    naik, baru, _ = compare(cur, load_baseline(NAME))
+    cek("salinan bersisipan MEMERAH sebagai berkas baru", any(r == PROBE_REL for r, _, _ in baru))
+    cek("1 baris `// tata-letak:` lolos", count(tata) == 0 and count(tata.replace("// tata-letak:", "//")) == 1)
+    cek("penanda tanpa alasan tidak diakui", count('roleIs(r, ["md"]); // tata-letak:\n') == 1)
+    cek("berkas probe uji-diri penjaga lain tidak dihitung", bool(PROBE_RX.search("features/__poc_role_label_probe.jsx"))
+        and not PROBE_RX.search("features/poc_role_gate.jsx"))
     cek("komentar tidak dihitung", count('// dulu: roleIs(role, ["admin"])\n/* ["admin"].includes(role) */\n') == 0)
     cek("role === \"admin\" terhitung", count('const a = currentUser?.role === "admin";') == 1)
     cek("\"sales\" !== user.role terhitung", count('if ("sales" !== user.role) x();') == 1)

@@ -163,9 +163,18 @@ def check_1_parity(viol):
     return be, fe
 
 
+# Berkas uji sementara milik uji-diri penjaga LAIN (`features/__poc_<nama>_probe.jsx`). Gate menjalankan penjaga statik
+# paralel; tanpa ini pemindaian kode nyata ikut membaca berkas uji penjaga lain yang kebetulan sedang ada (balapan —
+# ditemukan 14 Nov: `role_label` memerah karena `__poc_role_gate_probe.jsx`). Probe milik penjaga ini tetap dipindai.
+PROBE_SENDIRI = "__poc_role_label_probe.jsx"
+PROBE_RX = re.compile(r"^__poc_[a-z0-9_]+_probe\.jsx$")
+
+
 def scan_files():
     for p in sorted(SRC.rglob("*.js")) + sorted(SRC.rglob("*.jsx")):
         if "node_modules" in p.parts or rel(p) in EXEMPT:
+            continue
+        if PROBE_RX.match(p.name) and p.name != PROBE_SENDIRI:
             continue
         yield p, p.read_text()
 
