@@ -1,0 +1,11 @@
+[96m[1m== INV-ROLE-02 — tombol & panggilan data di layar mengikuti izin, bukan nama peran ==[0m
+[92m[PASS][0m 31 cek lolos, 0 pelanggaran.
+verify_desk_targets: 33 target diperiksa, 0 temuan
+[96m[1m== INV-NAV-02 — alias layar tidak memutus pintu/hak (registri config/viewAliases.js) ==[0m
+[92m[PASS][0m 132 cek lolos, 0 pelanggaran.
+[96m[1m== INV-UI-14 — tanpa tab tingkat ketiga — komponen tab hub tampak tanpa PageTabs/kelas tab-bar ==[0m
+[92m[PASS][0m 134 cek lolos, 0 pelanggaran.
+[91m[FAIL][0m 1 pelanggaran total (INV-UI-12 1 · INV-UI-13 0 · INV-UI-14 0)
+    from motor.motor_asyncio import AsyncIOMotorClient
+ModuleNotFoundError: No module named 'motor'
+acw exit 0

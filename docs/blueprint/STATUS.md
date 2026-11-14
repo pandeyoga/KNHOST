@@ -77,7 +77,7 @@ Papan kerja agen pelaksana. Aturan mengubahnya: `00_ATURAN_EKSEKUSI.md` §5. Uru
 | 70 | PK-41 | Laporan pendukung | PK-19 | menunggu |  |  |  |
 | 71 | PK-42 | Layar: perbaikan cepat per berkas | PK-12 | selesai | `5e747b2` | [PK-42](../reviews/2026-11-13/hasil/PK-42.md) |  |
 | 72 | PK-43 | Layar: struktural | PK-06, PK-19 | menunggu |  |  |  |
-| 73 | PK-44 | Jejak dokumen dan relasi dokumen | MN-T1 | siap |  |  |  |
+| 73 | PK-44 | Jejak dokumen dan relasi dokumen | MN-T1 | selesai | `5ef71e8` | [PK-44](../reviews/2026-11-13/hasil/PK-44.md) |  |
 | 74 | PM-T1 | Induk cara bayar dan rekening ber-peruntukan | KF-T1 | selesai | `fd606e5` | [PM-T1](../reviews/2026-11-13/hasil/PM-T1.md) |  |
 | 75 | CR-T1 | Profil kredit per pelanggan per PT | PK-45, KF-T6, KF-T7 | siap |  |  |  |
 | 76 | KM-T1 | Data insentif: omzet terkirim, pencairan, harga acuan, target | PK-19 | menunggu |  |  |  |

@@ -1,0 +1,10 @@
+  ✓ PK44 U14 — useFocusDoc: jenis cocok → buka sekali + onClearFocus; jenis lain → tidak dipanggil (93 ms)
+  ✓ PK44 U14b — buka gagal → 'Dokumen {nomor} tidak ditemukan di PT ini.' (33 ms)
+  ✓ PK44 — Penggajian membaca fokus payroll_run: rincian terbuka; 404 → pemberitahuan (110 ms)
+  ✓ PK44 — DocRefsPanel: 'Dokumen Terkait', 'Lihat seluruh jejak', tombol Buka, alasan tanpa akses tertulis (28 ms)
+  ✓ PK44 — DocRefsPanel withStages: garis tahapan di kepala panel, tanpa daftar/tautan dokumen (24 ms)
+  ✓ PK44 — detail pesanan & PO: satu panel relasi (tanpa linimasa proses terpisah), cetak berjudul 'Cetak Dokumen' (3 ms)
+  ✓ PK44 — BackToOriginBar: '← Kembali ke {asal}' memanggil onBack dengan asalnya (5 ms)
+  ✓ PK44 — openDocument mencatat layar asal; kembali dari dokumen membuka jejak yang sama (12 ms)
+  ✓ PK44 — KpiCard ber-onClick menampilkan tombol tautan baku (6 ms)
+Tests:       9 passed, 9 total

@@ -1,0 +1,6 @@
+[92m[PASS][0m 31 cek lolos, 0 pelanggaran.
+verify_desk_targets: 33 target diperiksa, 0 temuan
+[92m[PASS][0m 132 cek lolos, 0 pelanggaran.
+[91m[FAIL][0m 1 pelanggaran total (INV-UI-12 1 · INV-UI-13 0 · INV-UI-14 0)
+✅ INV-CFG: setiap setting terdeklarasi punya pembaca kode DAN jalur ubah yang nyata; tidak ada editor ganda.
+acw exit 0

@@ -1,0 +1,9 @@
+verify_ui_standard --census: HEAD -> pohon kerja PK-44 (jumlah pola di luar standar; harus turun/sama)
+  font_lt12        6893 ->   6868
+  hp_font_lt14       15 ->     15
+  hex             16705 ->  16620
+  btn_custom        779 ->    774
+  btn_force         574 ->    574
+  hp_touch           13 ->     13
+  list_no_excel      12 ->     12
+Daftar pelanggaran ratchet (15) identik dengan HEAD (diff kosong).

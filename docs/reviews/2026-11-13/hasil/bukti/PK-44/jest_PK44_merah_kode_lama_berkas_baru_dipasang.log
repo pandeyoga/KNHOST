@@ -1,0 +1,40 @@
+  ✓ PK44 U14 — useFocusDoc: jenis cocok → buka sekali + onClearFocus; jenis lain → tidak dipanggil (47 ms)
+  ✓ PK44 U14b — buka gagal → 'Dokumen {nomor} tidak ditemukan di PT ini.' (30 ms)
+  ✕ PK44 — Penggajian membaca fokus payroll_run: rincian terbuka; 404 → pemberitahuan (20 ms)
+  ✕ PK44 — DocRefsPanel: 'Dokumen Terkait', 'Lihat seluruh jejak', tombol Buka, alasan tanpa akses tertulis (21 ms)
+  ✕ PK44 — DocRefsPanel withStages: garis tahapan di kepala panel, tanpa daftar/tautan dokumen (8 ms)
+  ✕ PK44 — detail pesanan & PO: satu panel relasi (tanpa linimasa proses terpisah), cetak berjudul 'Cetak Dokumen' (1 ms)
+  ✓ PK44 — BackToOriginBar: '← Kembali ke {asal}' memanggil onBack dengan asalnya (6 ms)
+  ✕ PK44 — openDocument mencatat layar asal; kembali dari dokumen membuka jejak yang sama (1 ms)
+  ✕ PK44 — KpiCard ber-onClick menampilkan tombol tautan baku (7 ms)
+    expect(received).toContain(expected) // indexOf
+    Expected value: "/api/hr/payroll/runs/run1"
+    Received array: ["/api/hr/payroll/runs", "/api/entities"]
+    [31m[1m>[22m[39m[90m 110 |[39m   expect(mockGet[33m.[39mmock[33m.[39mcalls[33m.[39mmap((c) [33m=>[39m c[[35m0[39m]))[33m.[39mtoContain([32m"/api/hr/payroll/runs/run1"[39m)[33m;[39m
+     [90m 111 |[39m   expect(q([32m"payroll-run-detail"[39m)[33m.[39mtextContent)[33m.[39mtoContain([32m"KSC/PAY-00001"[39m)[33m;[39m
+     [90m 112 |[39m   expect(clear)[33m.[39mtoHaveBeenCalled()[33m;[39m
+    expect(received).toContain(expected) // indexOf
+    Expected substring: "Dokumen Terkait"
+    Received string:    " Referensi Dokumen2Buka Jejak DokumenBerasal dariBerasal dariPO-1Pesanan Pembelian (PO) · DisetujuiDilunasi olehCB-1Kontrabon (Tukar Faktur)"
+    [31m[1m>[22m[39m[90m 139 |[39m   expect(panel[33m.[39mtextContent)[33m.[39mtoContain([32m"Dokumen Terkait"[39m)[33m;[39m
+     [90m 140 |[39m   expect(q([32m"docrefs-open-trace"[39m)[33m.[39mtextContent)[33m.[39mtoContain([32m"Lihat seluruh jejak"[39m)[33m;[39m
+     [90m 142 |[39m   expect(buka[33m.[39mtextContent)[33m.[39mtoContain([32m"Buka"[39m)[33m;[39m[0m
+    expect(received).not.toBeNull()
+    Received: null
+    [31m[1m>[22m[39m[90m 160 |[39m   expect(q([32m"process-timeline"[39m))[33m.[39mnot[33m.[39mtoBeNull()[33m;[39m
+     [90m 161 |[39m   expect(q([32m"process-stage-count-order"[39m)[33m.[39mtextContent)[33m.[39mtoContain([32m"1"[39m)[33m;[39m
+     [90m 162 |[39m   expect(q([32m"process-stage-count-shipment"[39m)[33m.[39mtextContent)[33m.[39mtoContain([32m"belum"[39m)[33m;[39m
+     [90m 163 |[39m   expect(qAll([32m"doc-node-"[39m))[33m.[39mtoHaveLength([35m0[39m)[33m;[39m   [90m// dulu: simpul dokumen bertaut di panel kedua[39m[0m
+    expect(received).not.toMatch(expected)
+    Expected pattern: not /<ProcessTimeline/
+    Received string:      "import { AskKnButton } from \"../../components/AskKnButton\";
+    [31m[1m>[22m[39m[90m 171 |[39m     expect(s)[33m.[39mnot[33m.[39mtoMatch([35m/<ProcessTimeline/[39m)[33m;[39m
+     [90m 172 |[39m     expect((s[33m.[39mmatch([35m/<DocRefsPanel/g[39m) [33m||[39m [])[33m.[39mlength)[33m.[39mtoBe([35m1[39m)[33m;[39m
+     [90m 173 |[39m     expect(s)[33m.[39mtoMatch([35m/<DocRefsPanel[^>]*withStages/[39m)[33m;[39m
+     [90m 174 |[39m     expect(s)[33m.[39mtoMatch([35m/title="Cetak Dokumen/[39m)[33m;[39m[0m
+    [31m[1m>[22m[39m[90m 201 |[39m   expect(originLabel([32m"doc-trace"[39m))[33m.[39mtoBe([32m"Jejak Dokumen"[39m)[33m;[39m
+    TypeError: Cannot read properties of null (reading 'className')
+    [31m[1m>[22m[39m[90m 239 |[39m   expect(b[33m.[39mclassName)[33m.[39mtoContain([32m"link-button"[39m)[33m;[39m
+     [90m 240 |[39m   expect(b[33m.[39mtextContent)[33m.[39mtoContain([32m"Buka Piutang"[39m)[33m;[39m
+     [90m 242 |[39m   expect(onClick)[33m.[39mtoHaveBeenCalledTimes([35m1[39m)[33m;[39m[0m
+Tests:       6 failed, 3 passed, 9 total

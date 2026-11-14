@@ -1,0 +1,31 @@
+E   AssertionError: view peta jenis dokumen tanpa layar di AppViewRouter.jsx: ['cash-bank', 'cycle-count', 'sales-returns', 'transfers']
+/tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/wt13/backend/tests_mem/test_PK44_jejak_dokumen.py:137: AssertionError: view peta jenis dokumen tanpa layar di AppViewRouter.jsx: ['cash-bank', 'cycle-count', 'sales-returns', 'transfers']
+E   AssertionError: layar tujuan yang tidak menerima focusDoc: ['amendments', 'cash-bank', 'contra-bons', 'cycle-count', 'input-tax', 'interco-transactions', 'landed-cost', 'makloon-orders', 'purchase-returns', 'rfq', 'sales-returns', 'supplier-contracts', 'tax-invoices', 'transfers', 'vendor-bills']
+/tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/wt13/backend/tests_mem/test_PK44_jejak_dokumen.py:149: AssertionError: layar tujuan yang tidak menerima focusDoc: ['amendments', 'cash-bank', 'contra-bons', 'cycle-count', 'input-tax', 'interco-transactions', 'landed-cost', 'makloon-orders', 'purchase-returns', 'rfq', 'sales-returns', 'supplier-contracts', 'tax-invoices', 'transfers', 'vendor-bills']
+E   AttributeError: module 'services.doc_refs_service' has no attribute 'link_of'
+/tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/wt13/backend/tests_mem/test_PK44_jejak_dokumen.py:154: AttributeError: module 'services.doc_refs_service' has no attribute 'link_of'
+E   AttributeError: module 'services.doc_refs_service' has no attribute 'link_of'
+/tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/wt13/backend/tests_mem/test_PK44_jejak_dokumen.py:167: AttributeError: module 'services.doc_refs_service' has no attribute 'link_of'
+E   AttributeError: module 'services.doc_refs_service' has no attribute 'link_of'
+/tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/wt13/backend/tests_mem/test_PK44_jejak_dokumen.py:181: AttributeError: module 'services.doc_refs_service' has no attribute 'link_of'
+E   AssertionError: assert 39 == 43
+/tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/wt13/backend/tests_mem/test_PK44_jejak_dokumen.py:192: AssertionError: assert 39 == 43
+E   AssertionError: assert 'Tagihan Supplier (Kontrabon)' == 'Tagihan Pemasok'
+/tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/wt13/backend/tests_mem/test_PK44_jejak_dokumen.py:201: AssertionError: assert 'Tagihan Supplier (Kontrabon)' == 'Tagihan Pemasok'
+E   AssertionError: skrip apply_pk44_lpj_refs.py belum ada
+/tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/wt13/backend/tests_mem/test_PK44_jejak_dokumen.py:212: AssertionError: skrip apply_pk44_lpj_refs.py belum ada
+E   KeyError: 'refs'
+/tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/wt13/backend/tests_mem/test_PK44_jejak_dokumen.py:129: KeyError: 'refs'
+E   AssertionError: {"detail":"Jenis dokumen 'payroll_run' belum terdaftar di peta relasi."}
+/tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/wt13/backend/tests_mem/test_PK44_jejak_dokumen.py:252: AssertionError: {"detail":"Jenis dokumen 'payroll_run' belum terdaftar di peta relasi."}
+E   AssertionError: {"detail":"Jenis dokumen 'fixed_asset' belum terdaftar di peta relasi."}
+/tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/wt13/backend/tests_mem/test_PK44_jejak_dokumen.py:264: AssertionError: {"detail":"Jenis dokumen 'fixed_asset' belum terdaftar di peta relasi."}
+E   AssertionError: assert [] == [('makloon_or..., 'mko_pk44')]
+/tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/wt13/backend/tests_mem/test_PK44_jejak_dokumen.py:271: AssertionError: assert [] == [('makloon_or..., 'mko_pk44')]
+E   KeyError: 'return'
+/tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/wt13/backend/tests_mem/test_PK44_jejak_dokumen.py:287: KeyError: 'return'
+E   assert ([])
+/tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/wt13/backend/tests_mem/test_PK44_jejak_dokumen.py:303: assert ([])
+E   AssertionError: {"detail":"Dokumen tidak ditemukan"}
+/tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/wt13/backend/tests_mem/test_PK44_jejak_dokumen.py:324: AssertionError: {"detail":"Dokumen tidak ditemukan"}
+15 failed, 1 warning in 1.41s
