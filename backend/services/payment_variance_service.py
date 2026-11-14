@@ -753,6 +753,17 @@ async def get(decision_id: str) -> Optional[Dict[str, Any]]:
 
 
 # ── Keputusan sisi AR ─────────────────────────────────────────────────────
+async def _kalah_balapan_atau(receipt_id: str, exc: Exception) -> Exception:
+    """Galat PERIKSA keputusan kwitansi: bila sementara itu keputusan lain sudah lahir untuk kwitansi ini (balapan),
+    jawab 409 "sedang atau sudah diputus"; selain itu galat aslinya."""
+    fresh = await db.ar_receipts.find_one({"id": receipt_id}, {"_id": 0, "number": 1, "variance": 1}) or {}
+    v = fresh.get("variance") or {}
+    if v.get("decision_id"):
+        d = await get(v["decision_id"])
+        return VarianceConflict(_pesan_klaim(fresh, (d or {}).get("kind") or v.get("decision_kind") or ""))
+    return exc
+
+
 def _pesan_klaim(receipt: Dict[str, Any], kind: str) -> str:
     return (f"Selisih kwitansi {receipt.get('number', '')} sedang atau sudah diputus "
             f"({KIND_LABEL.get(kind, kind) or 'keputusan lain'}).")
@@ -885,7 +896,12 @@ async def decide_receipt(receipt_id: str, payload: Dict[str, Any],
                                     f"(tersedia {_rp(avail)}).")
             effect = {"refund": refund}
     except HTTPException as exc:
-        raise _dari_http(exc) from exc
+        raise await _kalah_balapan_atau(receipt_id, _dari_http(exc)) from exc
+    except VarianceError as exc:
+        # Lapis A U16 — dua keputusan bersamaan: yang kalah bisa membaca kwitansi sebelum pemenang mengklaim, lalu
+        # gagal di PERIKSA karena pemenang sudah menulis efeknya (mis. "tidak ada tagihan terbuka"). Itu "sudah
+        # diputus" (409), bukan masukan salah (400).
+        raise await _kalah_balapan_atau(receipt_id, exc) from exc
     if kind == "reschedule":
         due = str(payload.get("due_date") or "")[:10] or (
             datetime.now(timezone.utc)
