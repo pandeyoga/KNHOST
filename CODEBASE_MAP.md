@@ -1,5 +1,5 @@
 <!-- DIHASILKAN OTOMATIS oleh scripts/gen_codebase_map.py — JANGAN EDIT TANGAN -->
-<!-- Dihasilkan dari commit: 693885f pada 2026-11-14 -->
+<!-- Dihasilkan dari commit: 4db17eb pada 2026-11-14 -->
 # CODEBASE MAP — Kain Nusantara (dihasilkan otomatis)
 
 Peta ini dihitung dari kode oleh `scripts/gen_codebase_map.py`. Kalau angka di sini
@@ -12,9 +12,9 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 
 | Ukuran | Nilai |
 |---|---:|
-| Router (`backend/routers/*.py`) | 162 |
-| Endpoint (`@router.<method>`) | 1760 |
-| Service (`backend/services/*.py`) | 383 |
+| Router (`backend/routers/*.py`) | 163 |
+| Endpoint (`@router.<method>`) | 1762 |
+| Service (`backend/services/*.py`) | 384 |
 | Koleksi MongoDB disentuh kode produksi | 201 |
 | Direktori fitur frontend (`src/features/*`) | 39 |
 
@@ -22,16 +22,16 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 
 | Berkas | Baris |
 |---|---:|
-| `server.py` | 417 |
+| `server.py` | 419 |
 | `db.py` | 12 |
 | `core_utils.py` | 394 |
 | `schemas.py` | 1116 |
 | `schemas_purchasing.py` | 625 |
 | `dependencies.py` | 233 |
 | `permissions_config.py` | 768 |
-| `entity_scope.py` | 726 |
+| `entity_scope.py` | 728 |
 | `pagination.py` | 145 |
-| `indexes.py` | 787 |
+| `indexes.py` | 792 |
 | `bootstrap.py` | 2139 |
 | `login_only_endpoints.py` | 79 |
 
@@ -126,6 +126,7 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 | `ai_assist.py` | 5 | 44 | `/actions/{pid}`, `/actions/{pid}/confirm`, `/actions/{pid}/dismiss`, `/insights`, `/insights/scan` |
 | `amendments.py` | 10 | 183 | `/amendment-reasons`, `/amendments`, `/amendments/doc/{doc_type}/{doc_id}`, `/amendments/preview`, `/amendments/stats/summary`, `/amendments/{amd_id}` … |
 | `ap_payments.py` | 4 | 85 | `/ap-payments/accounts`, `/ap-payments/pending`, `/ap-payments/{intent_id}/cancel`, `/ap-payments/{intent_id}/resume` |
+| `approval_policies.py` | 2 | 69 | `/check`, `/kinds` |
 | `approval_rules.py` | 6 | 191 | `/approval-rules`, `/approval-rules/effective`, `/approval-rules/{rule_id}` |
 | `approvals_matrix.py` | 3 | 56 | `/approvals/matrix`, `/approvals/matrix-log`, `/approvals/my-queue` |
 | `ar_aging.py` | 4 | 103 | `/ar/advance-report`, `/ar/aging`, `/ar/aging/{customer_id}`, `/ar/aging/{customer_id}/accrue-penalties` |
@@ -313,6 +314,7 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 | `app_url.py` | 90 | app_url — SATU sumber kebenaran **URL publik aplikasi** (untuk QR & tautan cetak). |
 | `approval_backlog_service.py` | 880 | services/approval_backlog_service.py — SATU sumber "apa yang menunggu keputusan". |
 | `approval_matrix_service.py` | 576 | PS-20 (D-14) — **Penegakan matriks persetujuan divisi** + antrean "Persetujuan Saya". |
+| `approval_policy_service.py` | 561 | services/approval_policy_service.py — SATU tabel kebijakan persetujuan untuk semua antrean (unit KP-T4). |
 | `approval_reminder.py` | 133 | services/approval_reminder.py — PENGINGAT HARIAN "keputusan yang menunggu Anda". |
 | `approval_service.py` | 138 | services/approval_service.py — **ATURAN AMBANG PERSETUJUAN** (`approval_rules`). |
 | `ar_aging_service.py` | 516 | EPIC7-A — AR / Piutang Aging (read/derived report). |
@@ -678,7 +680,7 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 
 | Fitur (`src/features/`) | Berkas | Baris |
 |---|---:|---:|
-| `__tests__` | 87 | 12703 |
+| `__tests__` | 88 | 12868 |
 | `admin` | 34 | 6577 |
 | `approvals` | 9 | 1719 |
 | `catalog` | 24 | 1450 |
@@ -713,7 +715,7 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 | `sales` | 97 | 15783 |
 | `sales_admin` | 11 | 1880 |
 | `samples` | 8 | 776 |
-| `settings` | 53 | 9998 |
+| `settings` | 55 | 10264 |
 | `tanya` | 25 | 1592 |
 | `transfers` | 1 | 20 |
 | `wms` | 99 | 13195 |

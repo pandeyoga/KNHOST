@@ -48,6 +48,7 @@ Sebelum membuat apapun yang baru, tanya: **"Apakah ini sudah ada di sini?"**
 | KPI Design *(FASE H5)* | `hr_kpi` | `routers/hr_kpi.py` | `KpiInput`, `KpiUpdate` | `KpiView`, `MyKpiCard` (ESS) |
 | Design Gallery *(FASE H5)* | `design_gallery` | `routers/design_gallery.py` | `GalleryInput`, `GalleryUpdate` | `DesignGalleryView` |
 | AI Integrations *(FASE H5)* | `system_settings` *(scope=integrations)* | `routers/integrations.py` | `IntegrationsUpdate` | `IntegrationsPanel` (AdminView tab Integrasi AI) |
+| Kebijakan Persetujuan *(KP-T4)* | `approval_policies` | `routers/approval_policies.py`, `services/approval_policy_service.py` (dipanggil semua pintu persetujuan), katalog `approval_kinds.py` | — | `ApprovalPoliciesView` (Pengaturan › Persetujuan › Aturan Persetujuan) |
 | Usulan Jurnal Manual *(KF-T6)* | `journal_proposals` | `routers/gl.py` (`POST /gl/journal` → 202, `/gl/journal-proposals*`), `services/journal_proposal_service.py` | `JournalEntryCreate`, `ProposalReject` | `JournalProposalsPanel` (Buku Besar › Jurnal › Menunggu persetujuan) |
 | Niat Bayar Hutang *(PK-05)* | `ap_payment_intents` | `routers/ap_payments.py`, `services/ap_payment_service.py` (dipanggil bayar faktur & bayar kontrabon) | `VendorBillPaymentCreate`, `ContraBonPayIn` | `VendorBillDetailPanel` & `contrabon/PayModal` (panel bayar, `features/purchasing/apPayment.jsx`) |
 | Kontrabon *(FASE G-7)* | `contra_bons` | `routers/contra_bons.py`, `services/contra_bon_service.py`, `services/contra_bon_reminder.py` | `ContraBonCreate`, `ContraBonDeductionIn`, `ContraBonDecisionIn`, `ContraBonScheduleIn`, `ContraBonPayIn`, `InvoiceExchangeIn` | `ContraBonsView` (Pembelian → Hutang Supplier (AP) → Kontrabon) |
@@ -1993,6 +1994,29 @@ sampai") · `milestones[]` {id, milestone, label, at, by, note, replaced, record
 * Menandai ULANG diperbolehkan (koreksi salah tanggal itu wajar) tetapi tanggal lama
   TIDAK hilang: setiap penandaan menambah baris `milestones[]` ber-`replaced`.
 * Layar: `features/sales/ReturnJourneyPanel.jsx` (di dalam `ReturnDetail`).
+
+### approval_policies  [KP-T4 — satu tabel kebijakan persetujuan untuk semua antrean]
+Satu baris = satu rentang nominal pada satu jenjang satu jenis dokumen (`approval_kinds.APPROVAL_KINDS`: tiap kunci
+`approval_backlog_service.QUEUES` punya ≥ 1 jenis, dijaga INV-APPR-01 aturan G). Yang boleh memutus = pemegang izin
+setujui jenis itu **dan** (`any_holder` atau perannya ∈ `roles` rentang yang memuat nilai dokumen) — tidak ada peringkat
+peran. Baris PT menggantikan baris grup jenis yang sama; tanpa baris sama sekali → baris bawaan dihitung dari sumber lama
+(`approval_policy_service.default_rows_for`, sumber `bawaan`) sampai `scripts/migrate_kpt4_kebijakan_persetujuan.py`
+menuliskannya (bawaan hanya-lapor; data nyata = H3). Pembuat ≠ penyetuju tetap `kontrol.<aksi>.*` (KF-T6).
+**SCOPED** dengan baris grup `entity_id = "all"` (INHERITED_GLOBAL_VALUES).
+```
+Collection:  approval_policies          Prefix: appol_
+Router:      routers/approval_policies.py   (GET /kinds, GET ?entity_id=&doc_kind=, GET /check)
+Service:     services/approval_policy_service.py  (required_levels, can_decide, assert_can_decide, who_can_decide,
+             build_default_rows, default_rows_for, rows_for, policy_view, check_view)
+Index:       uq_id (unik) · (doc_kind, entity_id, level, sort)
+
+  id · doc_kind · entity_id ("all" | id PT) · level (≥ 1) · label (mis. "Direksi")
+  min_amount (≥ 0) · max_amount (kosong = tanpa batas; berlaku bila min ≤ nilai < max) — jenis tanpa nominal: 0 & kosong
+  roles (id peran; kosong = rentang ini tidak butuh persetujuan) · any_holder (benar = siapa pun pemegang izinnya)
+  sort · active · source (bawaan | migrasi | pengguna) · version · reason · created_at · created_by · updated_at · updated_by
+```
+Batas nominal sebuah peran untuk satu jenis = batas atas rentang tempat peran itu tercantum (K-51).
+⚠️ JANGAN BUAT daftar peran penyetuju baru di kode pintu atau kunci registry — tambah baris/jenis di sini.
 
 ### approval_rules  [Fase 1A IMPLEMENTED]
 ```

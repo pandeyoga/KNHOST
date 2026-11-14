@@ -62,6 +62,8 @@ CANONICAL_COLLECTIONS = {
     "ap_payment_intents",
     # ── KF-T6 (blueprint) — usulan jurnal manual yang menunggu orang kedua ──
     "journal_proposals",
+    # ── KP-T4 (blueprint) — satu tabel kebijakan persetujuan ──
+    "approval_policies",
     "cash_transactions",
     # ── Depth #1 (Retur Beli / Nota Debit) ──
     "purchase_returns",

@@ -41,6 +41,9 @@ INVARIAN YANG DITEGAKKAN
   F. **Pensiun mesin generik tak boleh diam-diam kembali.** Bila `approval_requests`
      dipakai lagi di kode backend, `create_approval_request(` WAJIB punya ≥1 pemanggil —
      supaya koleksi mati + izin yatim (`approval.approve`) tidak lahir kembali.
+  G. **Tiap antrean punya jenis dokumen di Aturan Persetujuan** (KP-T4). Setiap kunci `QUEUES` punya ≥ 1 jenis
+     di `backend/approval_kinds.py` (`queue_key`), dan tiap jenis menunjuk kunci `QUEUES` yang ada — supaya "siapa
+     yang boleh memutus" antrean itu bisa diatur di satu tabel (`approval_policies`), bukan ditulis di kode pintu.
 
 Resilient: MongoDB tak terjangkau → invarian B & C dilewati (A/D/E/F tetap jalan).
 Exit 1 hanya bila invarian terbukti dilanggar.
@@ -386,6 +389,27 @@ def check_generic_retired(g: Guard, refs: List[str], callers: int) -> None:
               f"izin yatim `approval.approve` lahir kembali (dipensiunkan F-6).")
 
 
+def check_kinds(g: Guard, queue_keys: Set[str], kind_queue: Dict[str, str]) -> None:
+    """Invarian G (KP-T4) — tiap antrean punya ≥ 1 jenis dokumen kebijakan & tiap jenis menunjuk antrean yang ada."""
+    covered = set(kind_queue.values())
+    for key in sorted(queue_keys):
+        g.bump()
+        if key not in covered:
+            g.add(f"antrean `{key}` tidak punya jenis dokumen di `approval_kinds.APPROVAL_KINDS` → siapa yang boleh "
+                  f"memutusnya tidak bisa diatur di Aturan Persetujuan (KP-T4).")
+    for kind, key in sorted(kind_queue.items()):
+        g.bump()
+        if key not in queue_keys:
+            g.add(f"jenis dokumen `{kind}` menunjuk antrean `{key}` yang TIDAK ADA di `QUEUES` → aturan yang tidak "
+                  f"pernah terlihat di Pusat Persetujuan.")
+
+
+def kinds_from_backend() -> Dict[str, str]:
+    sys.path.insert(0, str(ROOT / "backend"))
+    from approval_kinds import APPROVAL_KINDS  # noqa: PLC0415
+    return {k: v["queue_key"] for k, v in APPROVAL_KINDS.items()}
+
+
 # ─── Bukti-merah (self-test) ─────────────────────────────────────────────────
 def self_test() -> int:
     kasus = []
@@ -445,6 +469,13 @@ def self_test() -> int:
              lambda g: check_generic_retired(g, ["routers/x.py"], 0), 1)
     jalankan("F: mesin generik benar-benar pensiun → hijau",
              lambda g: check_generic_retired(g, [], 0), 0)
+    jalankan("G: antrean tanpa jenis dokumen kebijakan → merah",
+             lambda g: check_kinds(g, QK, {"transfer": "transfer"}), 1)
+    jalankan("G: jenis dokumen menunjuk antrean yang tak ada → merah",
+             lambda g: check_kinds(g, QK, {"transfer": "transfer", "hr_leave": "hr_leave", "x": "antah"}), 1)
+    jalankan("G: tiap antrean punya jenis → hijau",
+             lambda g: check_kinds(g, QK, {"transfer": "transfer", "hr_leave": "hr_leave",
+                                           "transfer.anak": "transfer"}), 0)
 
     gagal = 0
     print(f"{B}== SELF-TEST INV-APPR-01 (penjaga antrean harus bisa MEMERAH) =={X}")
@@ -474,6 +505,7 @@ def main(verbose: bool = False) -> int:
             print(f"    {d:70s} → {tag}")
 
     check_doors(g, doors, DOOR_QUEUE, DOOR_EXEMPT, queue_keys)
+    check_kinds(g, queue_keys, kinds_from_backend())   # KP-T4 — invarian G
     check_generic_retired(
         g,
         [p for p in ("routers", "services")

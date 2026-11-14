@@ -181,6 +181,7 @@ SCOPED_COLLECTIONS = {
     "credit_notes",                   # nota kredit = dokumen keuangan entitas
     "budgets", "fin_budget_rules",    # anggaran & aturannya per entitas
     "approval_rules",                 # aturan persetujuan (warisan global→entitas di E-4)
+    "approval_policies",              # KP-T4 — kebijakan persetujuan (baris grup "all" + baris khusus PT)
     "cycle_count_sessions",           # stock opname per entitas
     "supplier_price_lists",           # daftar harga supplier = data komersial entitas
     "roll_label_prints",              # LN-042-T03 — histori cetak label roll
@@ -268,6 +269,7 @@ INHERITED_GLOBAL_VALUES: Dict[str, List[Any]] = {
     "audit_logs": [None, ""],             # jejak lama (pra-E0) belum ber-stempel
     "incentive_rates": ["all"],           # bawaan grup; override per entitas menang (E-4)
     "approval_rules": ["all"],            # idem
+    "approval_policies": ["all"],         # KP-T4 — idem (baris PT menggantikan baris grup per jenis dokumen)
     # FASE E-7 (E7.4) — `cash_transactions` & `bank_accounts` SENGAJA TIDAK LAGI di sini:
     # keputusan pemilik 3a menghapus kas tingkat grup (setiap uang wajib milik satu badan
     # usaha). Dengan dicabut dari daftar ini, gate kepatuhan akan MEMERAH bila ada lagi

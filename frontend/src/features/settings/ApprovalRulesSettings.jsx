@@ -20,6 +20,7 @@ import {
 } from "lucide-react";
 import ApprovalRuleForm from "./ApprovalRuleForm";
 import ApprovalEffectiveTiers from "./ApprovalEffectiveTiers";
+import ApprovalPoliciesView from "./ApprovalPoliciesView";   // KP-T4 (a) — satu tabel kebijakan, hanya-baca
 import FormModal from "../../components/FormModal";
 import DesktopOnlyNotice from "../../components/DesktopOnlyNotice";
 import { PageHeader } from "../../components/ListPageParts";
@@ -234,6 +235,11 @@ export default function ApprovalRulesSettings({ currentUser }) {
           editingRule={editingRule}
         />
       </FormModal>
+
+      {/* KP-T4 (a) — semua antrean dalam satu tabel kebijakan (hanya-baca; pintu lama belum dialihkan). */}
+      <section className="section-card mb-4">
+        <ApprovalPoliciesView />
+      </section>
 
       <ApprovalEffectiveTiers reloadKey={tiersKey} />
 
