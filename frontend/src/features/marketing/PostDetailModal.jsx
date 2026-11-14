@@ -9,7 +9,7 @@ import MediaLightbox from "../../components/MediaLightbox";
 import PostFormModal from "./PostFormModal";
 import DuplicatePostModal from "./DuplicatePostModal";
 import { mktApi, NEXT_ACTIONS, PlatformChip, StatusPill, METRIC_LABEL, fmtN, fmtWhen } from "./marketingShared";
-import { can, roleIs } from "../../config/roles";
+import { can } from "../../config/roles";
 
 export default function PostDetailModal({ postId, meta, campaigns, currentUser, onClose, onChanged, onOpenPost }) {
   const [post, setPost] = useState(null);
@@ -21,12 +21,11 @@ export default function PostDetailModal({ postId, meta, campaigns, currentUser, 
   const [url, setUrl] = useState("");
   const [metrics, setMetrics] = useState({});
   const [attView, setAttView] = useState(-1);
-  const role = currentUser?.role;
-  // Sisir lanjutan gerbang peran (2026-10-21): ubah/transisi/lampiran/metrik = marketing.update; hapus = marketing.delete;
-  // menyetujui = marketing.update + peran penyetuju server (APPROVE_ROLES, peran acuan dikenali).
+  // Sisir lanjutan gerbang peran (2026-10-21): ubah/transisi/lampiran/metrik = marketing.update; hapus = marketing.delete.
+  // PR-T7 (#15) — menyetujui = marketing.update (transisi) + marketing.approve (marketing_service, PR-T2; dulu nama peran).
   const canEdit = can(currentUser?.permissions, "marketing", "update");
   const canDelete = can(currentUser?.permissions, "marketing", "delete");
-  const isApprover = canEdit && roleIs(role, ["admin", "manager"]);
+  const isApprover = canEdit && can(currentUser?.permissions, "marketing", "approve");
 
   const refresh = async () => { const p = await mktApi.post(postId); setPost(p); setUrl(p.published_url || ""); setMetrics(p.metrics || {}); };
   useEffect(() => { refresh().catch(() => setErr("Konten tidak ditemukan.")); }, [postId]); // eslint-disable-line

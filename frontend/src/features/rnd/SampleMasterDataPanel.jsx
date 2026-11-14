@@ -11,7 +11,9 @@ import { specOverride } from "./requiredTests";
 import { errMsg, fabricLabel, lifecycleMeta, SPEC_STATUS_META, variantText } from "./rndMeta";
 import ProductColorChip from "../../components/ProductColorChip";
 
-export default function SampleMasterDataPanel({ sample, canDecide, canApproveSpec = true, specApprovers = "", busy, onAct }) {
+// PR-T7 — `canApprove` (ACC spesifikasi: `rnd.assess` + `caps.approve_spec`) dan `canRelease` (rilis produk:
+// `rnd.decide` + `caps.approve_spec`) dihitung pemanggil dari izin + bendera server.
+export default function SampleMasterDataPanel({ sample, canApprove = false, canRelease = false, specApprovers = "", busy, onAct }) {
   const md = sample.master_data || {};
   const dec = sample.decision || {};
   const spec = md.spec;
@@ -78,7 +80,7 @@ export default function SampleMasterDataPanel({ sample, canDecide, canApproveSpe
           </li>
         ))}
       </ol>
-      {canDecide && canApproveSpec && decided && specOpen && (
+      {canApprove && decided && specOpen && (
         <div className="mt-2 rounded-lg border border-[#BFD7FF] bg-[#F6F9FF] p-2.5" data-testid="sample-master-acc-spec">
           {!showAcc ? (
             <button className="primary-button !py-1.5 text-[11px]" disabled={busy} data-testid="sample-master-acc-spec-button" onClick={() => setShowAcc(true)}>
@@ -96,7 +98,7 @@ export default function SampleMasterDataPanel({ sample, canDecide, canApproveSpe
           )}
         </div>
       )}
-      {canDecide && canApproveSpec && prod && prod.lifecycle !== "produksi" && spec && (
+      {canRelease && prod && prod.lifecycle !== "produksi" && spec && (
         <button className="secondary-button mt-2 !py-1.5 text-[11px]" disabled={busy} data-testid="sample-master-release-button" onClick={doRelease}>
           <Rocket size={12} /> Rilis {prod.sku} ke produksi
         </button>

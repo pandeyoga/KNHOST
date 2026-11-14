@@ -18,7 +18,7 @@ import CatalogueCreateModal from "./CatalogueCreateModal";
 import CatalogueComponents from "./CatalogueComponents";
 import CuttingDesk from "./CuttingDesk";
 import CuttingLocations from "./CuttingLocations";
-import { can, roleIs } from "../../config/roles";
+import { can } from "../../config/roles";
 import ExportMenu from "../../components/ExportMenu";   // FIX-4 — tombol baku Unduh (Excel/CSV, Pusat Export)
 
 const FILTERS = [
@@ -64,11 +64,10 @@ export default function SampleOrdersView({ user, selectedEntity = "all", focusDo
   const [toast, setToast] = useState("");
   const [tab, setTab] = useState("orders");
   const [showCat, setShowCat] = useState(false);
-  const role = user?.role || "";
-  // Sisir lanjutan gerbang peran (2026-10-21): bayar = sample_order.approve_payment + peran penyetuju server (SAMPLE_PAYMENT_APPROVERS, role_in);
+  // PR-T7 (#17): bayar = sample_order.approve_payment saja (server sejak PR-T2; daftar peran penyetuju dihapus);
   // konfirmasi/terima potong/batal/buat/konfig lokasi = sample_order.confirm/cutting_receive/cancel/create/cutting_config.
   const perms = user?.permissions;
-  const canPay = can(perms, "sample_order", "approve_payment") && roleIs(role, ["finance", "sample_admin", "manager", "admin"]);
+  const canPay = can(perms, "sample_order", "approve_payment");
   const canConfirm = can(perms, "sample_order", "confirm");
   const canReceiveCut = can(perms, "sample_order", "cutting_receive");
   const canCancel = can(perms, "sample_order", "cancel");

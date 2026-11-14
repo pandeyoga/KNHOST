@@ -13,8 +13,8 @@ import { PageHeader } from "../../../components/ListPageParts";
 import { can } from "../../../config/roles";
 
 export default function PriceCorrectionsView({ currentUser, selectedEntity }) {
-  // Admin = semua izin; peran lain dibaca dari izin efektif yang dikirim server saat login.
-  const canApply = currentUser?.role === "admin" || can(currentUser?.permissions || {}, "product", "update");
+  // PR-T7 — terapkan koreksi = `product.update` (POST /config/impact-apply); Admin pun lewat izinnya (tanpa jalan nama peran).
+  const canApply = can(currentUser?.permissions || {}, "product", "update");
   return (
     <div className="cfg-hub" data-testid="price-corrections-view">
       <DesktopOnlyNotice testId="price-corrections-desktop-notice" what="Koreksi Harga" />

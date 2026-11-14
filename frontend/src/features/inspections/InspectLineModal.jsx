@@ -20,6 +20,7 @@ import QtyDual from "../../components/QtyDual";
 import MdqCutBox from "./MdqCutBox";
 import { apiText, inspectLine, INS_COLOR_LABEL, INS_HANDFEEL_LABEL } from "./inspectionsApi";
 import IntervalDefectGrid from "./IntervalDefectGrid";
+import { roleLabel } from "../../config/roles";
 
 // Nilai poin 4-point yang sah (D-01): 1 · 2 · 3 · 4 — makin panjang cacatnya, makin besar.
 const POINT_ROWS = [
@@ -31,7 +32,8 @@ const POINT_ROWS = [
 
 const KOSONG = { 1: "", 2: "", 3: "", 4: "" };
 
-const PART_TITLE = { md_quality: "MD Quality · warna & handfeel", qc: "QC · 4-point & ukur", "": "Hasil periksa" };
+// PR-T7 — nama bagian periksa memakai label peran dari registry (penjaga INV-ROLE-01 kini mengenal 13 peran).
+const PART_TITLE = { md_quality: `${roleLabel("md_quality")} · warna & handfeel`, qc: `${roleLabel("qc")} · 4-point & ukur`, "": "Hasil periksa" };
 // 23 Okt — SPK retur pelanggan: kondisi & qty aktual per roll ikut diisi (hasilnya menjadi hasil retur saat SPK ditutup).
 const RETURN_CONDITIONS = [{ value: "ok", label: "Baik" }, { value: "minor", label: "Cacat ringan" }, { value: "damaged", label: "Rusak" }];
 

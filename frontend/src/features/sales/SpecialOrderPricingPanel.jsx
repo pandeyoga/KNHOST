@@ -12,7 +12,7 @@ import { Lock, Unlock, Loader2, Percent, Handshake, Save } from "lucide-react";
 import axios, { API } from "../../services/apiClient";
 import { askReason } from "@/services/confirmService";
 import { fmtNum, fmtDate, fmtDay, docStatus } from "./SpecialOrderShared";
-import { can, roleIs } from "../../config/roles";
+import { can } from "../../config/roles";
 import { notifySuccess } from "../../utils/feedback";
 import { formatCurrency } from "../../utils/formatters";
 import SiteSelect from "../../components/SiteSelect";
@@ -30,6 +30,9 @@ export default function SpecialOrderPricingPanel({ order, currentUser, onUpdated
   const canLock = can(perms, "od_pricing", "lock") && can(perms, "order", "update") && accd && !locked && order.status !== "cancelled";
   const canSetPrice = can(perms, "od_pricing", "set_price");
   const canSeeCost = can(perms, "od_pricing", "view_cost");
+  // PR-T7 — tombol dari izin endpoint-nya: realisasi pengadaan `POST /special-orders/{id}/procure` =
+  // purchase_requisition.create + od_fulfillment.realize (dulu juga "hanya Manajer/Admin bila ada catatan pengadaan" —
+  // aturan nama peran yang tidak ada di server); buka kunci harga `POST …/unlock-price` = order.update + od_pricing.unlock.
   const canProcure = can(perms, "purchase_requisition", "create") && can(perms, "od_fulfillment", "realize");
   const canNego = can(perms, "order", "update");
   const [margin, setMargin] = useState(saved.margin_pct ?? 30);
@@ -164,7 +167,7 @@ export default function SpecialOrderPricingPanel({ order, currentUser, onUpdated
           <button type="button" className="primary-button !py-1 text-[11px]" disabled={busy || (multi ? !pv.ready : !pv.cost_price)} onClick={lock} data-testid="od-price-lock-button">{busy ? <Loader2 size={12} className="spin" /> : <Lock size={12} />} Kunci harga &amp; buat SO</button>
         )}
         {!locked && accd && !canLock && <span className="text-[10.5px] text-[#6B6B73]" data-testid="od-price-lock-hint">Harga dikunci Admin Sales / Manajer.</span>}
-        {locked && roleIs(currentUser?.role, ["admin"]) && can(perms, "order", "update") && !order.linked_pr_id && !order.linked_sales_order_id && !order.linked_po_id && !order.linked_mko_id && (
+        {locked && can(perms, "order", "update") && can(perms, "od_pricing", "unlock") && !order.linked_pr_id && !order.linked_sales_order_id && !order.linked_po_id && !order.linked_mko_id && (
           <button type="button" className="secondary-button !py-1 text-[11px]" disabled={busy} onClick={unlock} data-testid="od-price-unlock-button"><Unlock size={12} /> Buka kunci (admin)</button>
         )}
         {saved.unlocked_at && !locked && <span className="text-[10.5px] text-[#B45309]">dibuka {saved.unlocked_by} · {saved.unlock_reason}</span>}
@@ -175,7 +178,7 @@ export default function SpecialOrderPricingPanel({ order, currentUser, onUpdated
           {po && <span className="rounded-full bg-[#E9F7EF] px-2 py-0.5 font-bold text-[#1B7F4B]" data-testid="od-po-chip">{pos.filter((p) => p.status !== "cancelled").length > 1 ? `${pos.filter((p) => p.status !== "cancelled").length} PO — rincian di panel Pemenuhan produksi` : <>PO <span className="font-mono">{po.po_number}</span>{po.supplier_name ? ` · ${po.supplier_name}` : ""} · {docStatus(po.status)}{po.expected_delivery_date ? ` · tiba ${fmtDay(po.expected_delivery_date)}` : ""}</>}</span>}
           {order.linked_mko_id && <span className="rounded-full bg-[#E9F7EF] px-2 py-0.5 font-bold text-[#1B7F4B]" data-testid="od-mko-chip">MKO <span className="font-mono">{order.linked_mko_number}</span> · makloon</span>}
           {!po && !order.linked_mko_id && <span className="text-[#B45309]" data-testid="od-po-missing">{nego.block || `Pengadaan belum direalisasi${order.procurement_note ? ` — ${order.procurement_note}` : order.procurement_error ? ` — ${order.procurement_error}` : ""}`}</span>}
-          {!po && !order.linked_mko_id && canProcure && (!order.procurement_note || roleIs(currentUser?.role, ["manager", "admin"])) && (
+          {!po && !order.linked_mko_id && canProcure && (
             <button type="button" className="secondary-button !py-1 text-[11px]" disabled={busy || !!nego.block} title={nego.block || ""} onClick={procure} data-testid="od-procure-button">{busy ? <Loader2 size={12} className="spin" /> : null} Realisasi pengadaan</button>
           )}
         </div>

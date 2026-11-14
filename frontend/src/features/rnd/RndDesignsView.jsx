@@ -30,7 +30,7 @@ import {
 } from "./design/designFilters";
 import { listDesigns, studioCategories } from "./rndApi";
 import { DESIGN_STATUS_META, errMsg } from "./rndMeta";
-import { roleIs, can } from "../../config/roles";
+import { can } from "../../config/roles";
 import { actorLabel } from "../../utils/actorLabel";
 
 // Audit UI 24 Okt (049) — di HP 11 dropdown saringan (±1.300px) dilipat dulu; layar lebar tetap terbuka.
@@ -71,9 +71,11 @@ export default function RndDesignsView({ currentUser, selectedEntity, focus, onF
     if (focus?.designId) { setOpenId(focus.designId); onFocusConsumed?.(); }
   }, [focus?.nonce]); // eslint-disable-line
 
-  const role = currentUser?.role;
-  const canAssess = roleIs(role, ["admin", "manager"]);
-  const canCreate = canAssess || can(currentUser?.permissions, "design_request", "deliver") || can(currentUser?.permissions, "rnd", "manage");   // Sisir lanjutan gerbang peran (2026-10-21)
+  // PR-T7 (#5) — master kategori = `rnd.manage` (POST/PATCH /design-studio/categories); Desain Baru = izin tulis master
+  // desain server (`_perm_manage`: rnd.manage | hr.manage_attendance | design_request.deliver). Dulu nama peran admin/manajer.
+  const canAssess = can(currentUser?.permissions, "rnd", "manage");
+  const canCreate = can(currentUser?.permissions, "rnd", "manage") || can(currentUser?.permissions, "hr", "manage_attendance")
+    || can(currentUser?.permissions, "design_request", "deliver");
   const set = (k, v) => setF((p) => ({ ...p, [k]: v }));
   const gallery = mode === "gallery";
   const switchMode = (m) => {

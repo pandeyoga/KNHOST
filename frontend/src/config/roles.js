@@ -350,11 +350,14 @@ export const ROLE_NAV = {
  */
 // L01 LN-015 — konteks akses akun aktif (+ pratinjau editor). Menu/tab yang dibuka modul tanpa
 // satu pun izin efektif disembunyikan, begitu pula tab yang dimatikan di editor peran.
-const ACCESS = { current: null, preview: null };
+const ACCESS = { current: null, preview: null, role: "", perms: null };
 export function setAccessContext(user) {
   ACCESS.current = user?.role && user.role !== "admin" && user.view_resources
     ? { role: user.role, perms: user.permissions || {}, hidden: new Set(user.hidden_views || []), viewRes: user.view_resources }
     : null;
+  // PR-T7 — izin efektif dicatat walau `view_resources` (penyaring menu) belum ada, untuk `canCurrent`.
+  ACCESS.role = user?.role || "";
+  ACCESS.perms = user?.role && user.role !== "admin" && user.permissions ? user.permissions : null;
 }
 export function setPreviewAccess(perms, hidden, viewRes) {
   ACCESS.preview = perms ? { role: "__preview", perms, hidden: new Set(hidden || []), viewRes: viewRes || {} } : null;
@@ -486,9 +489,13 @@ export function can(perms, module, action) {
   return actions.includes(action) || actions.includes("*");
 }
 
-/** Izin akun aktif tanpa prop drilling; admin (konteks kosong) = boleh. Server tetap menegakkan. */
+/** Izin akun aktif tanpa prop drilling. Server tetap menegakkan.
+ *  PR-T7 (PR-UX-41) — konteks izin BELUM dimuat = TIDAK (dulu "boleh": kerangka aplikasi memanggil endpoint yang pasti
+ *  403 sebelum `/auth/me` dijawab). Admin tetap boleh. Konteks kini sudah lengkap sejak jawaban login. */
 export function canCurrent(module, action) {
-  return !ACCESS.current || can(ACCESS.current.perms, module, action);
+  if (ACCESS.role === "admin") return true;
+  const perms = ACCESS.current?.perms || ACCESS.perms;
+  return !!perms && can(perms, module, action);
 }
 
 /** Hak lihat grade dari Manajemen Peran (field_visibility). Data grade juga disamarkan server bila tidak berhak. */

@@ -17,7 +17,7 @@ import { useAppNav } from "../../context/AppNavContext";
 import useViewPreset from "../../hooks/useViewPreset";
 
 export default function ProductionView({ selectedEntity, entities, currentUser }) {
-  const perms = useMemo(() => prodPerms(currentUser?.role), [currentUser]);
+  const perms = useMemo(() => prodPerms(currentUser?.permissions), [currentUser]);   // PR-T7 — dari izin
   const [tab, setTab] = useState("wo");
   const { go, canOpen } = useAppNav();
   useViewPreset("production", (p) => { if (p.tab === "bom" || p.tab === "wo") setTab(p.tab); });

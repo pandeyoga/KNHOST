@@ -2,6 +2,7 @@
 // Pratinjau, Unduh PDF, dan E-Sign (untuk dokumen yang esignable).
 import { useCallback, useEffect, useMemo, useState } from "react";
 import axios, { API } from "../../services/apiClient";
+import { can } from "../../config/roles";
 import KNSelect from "../../components/KNSelect";
 import ESignModal from "./ESignModal";
 import WhatsAppModal from "./WhatsAppModal";
@@ -16,8 +17,6 @@ import PagedRows from "@/components/PagedRows";
 import { formatCurrency, formatDate } from "../../utils/formatters";
 import { docStatusLabel } from "../../utils/docStatus";
 
-const ESIGN_ROLES = ["admin", "manager", "sales", "warehouse"];
-const WA_MANAGE_ROLES = ["admin", "manager"];
 // 23 Okt — formatter baku (dulu toLocaleString tanpa batas desimal → "Rp 20.998,967").
 const rp = (v) => formatCurrency(v);
 // Audit UI 24 Okt (089): status dulu tampil mentah ("Waiting_stock", "Reserved", "Done").
@@ -45,8 +44,10 @@ export default function DocumentCenter({ currentUser, selectedEntity, entities =
   const [showWaSettings, setShowWaSettings] = useState(false);
   const [downloading, setDownloading] = useState("");
 
-  const canSign = ESIGN_ROLES.includes(currentUser?.role);
-  const canManageWa = WA_MANAGE_ROLES.includes(currentUser?.role);
+  // PR-T7 (#7) — tanda tangan = `esign.sign` (POST /esign/request); Pengaturan WA = `document_delivery.manage`
+  // (/deliveries/*). Dulu daftar nama peran: tombol tanda tangan hilang untuk semua peran kustom, juga Admin Sales/Finance.
+  const canSign = can(currentUser?.permissions, "esign", "sign");
+  const canManageWa = can(currentUser?.permissions, "document_delivery", "manage");
 
   const docTypeOptions = useMemo(() => docTypes.map((d) => ({ value: d.doc_type, label: d.label })), [docTypes]);
   const entityOptions = useMemo(

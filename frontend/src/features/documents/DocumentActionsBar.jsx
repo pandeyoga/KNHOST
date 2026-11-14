@@ -6,12 +6,12 @@
 // (`doc-act-preview-modal` = kartu pop-up, `doc-act-preview-close`, `doc-act-preview-frame`).
 import { useCallback, useEffect, useState } from "react";
 import axios, { API } from "../../services/apiClient";
+import { can } from "../../config/roles";
 import DetailModal from "../../components/DetailModal";
 import ESignModal from "./ESignModal";
 import WhatsAppModal from "./WhatsAppModal";
 import { Eye, Download, PenLine, MessageCircle, Loader2, X, ShieldCheck } from "lucide-react";
 
-const ESIGN_ROLES = ["admin", "manager", "sales", "warehouse"];
 
 // Cache jenis dokumen (label + esignable) agar tidak fetch berulang lintas komponen.
 let _docTypesCache = null;
@@ -42,7 +42,7 @@ export default function DocumentActionsBar({
   const [signed, setSigned] = useState(null); // {verification_code}
   const [err, setErr] = useState("");
 
-  const canSign = ESIGN_ROLES.includes(currentUser?.role);
+  const canSign = can(currentUser?.permissions, "esign", "sign");   // PR-T7 (#7) — = POST /esign/request
   const dead = ["cancelled", "canceled", "void", "voided", "rejected", "expired"].includes(String(status || "").toLowerCase());
   const showWa = !hideWhatsapp && !dead;
   const showEsign = !hideEsign && !dead;

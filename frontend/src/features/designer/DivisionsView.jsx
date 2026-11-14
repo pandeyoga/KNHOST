@@ -24,7 +24,7 @@ import KNSelect from "../../components/KNSelect";
 import { errMsg } from "../rnd/rndMeta";
 import { approvalMatrix } from "../approvals/approvalsMatrixApi";
 import { listDivisionMembers, listDivisions, setMemberDivision } from "./designerApi";
-import { roleIs, roleLabel, ROLE_REGISTRY } from "../../config/roles";
+import { can, roleLabel, ROLE_REGISTRY } from "../../config/roles";
 import { askConfirm } from "../../services/confirmService";
 
 // UAT 24 Okt (audit UI tahap 2) — G5-43: nama peran penyetuju berlabel Indonesia ("Manager" → "Manajer").
@@ -53,7 +53,7 @@ export default function DivisionsView({ currentUser, selectedEntity, section = "
   const [msg, setMsg] = useState(null);
   const [filterDiv, setFilterDiv] = useState("");   // klik kartu untuk menyaring anggota
 
-  const canManage = roleIs(currentUser?.role, ["admin", "manager"]);
+  const canManage = can(currentUser?.permissions, "rnd", "manage_org");   // PR-T7 — = PUT /rnd/divisions/members
 
   const params = useMemo(() => {
     const p = {};

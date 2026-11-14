@@ -35,7 +35,7 @@ const DESKS = {
 const canSeeOrders = () => {
   try {
     const u = JSON.parse(localStorage.getItem("kn_user") || "null");
-    return u?.role === "admin" || can(u?.permissions || {}, "order", "view");
+    return can(u?.permissions || {}, "order", "view");   // PR-T7 — Admin pun lewat izinnya (= GET /sales-orders)
   } catch { return false; }
 };
 

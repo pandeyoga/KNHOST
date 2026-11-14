@@ -19,6 +19,7 @@ import InputTaxView from "../purchasing/InputTaxView";
 import CashManagementView from "../purchasing/CashManagementView";
 import { AppNavProvider } from "../../context/AppNavContext";
 import { ViewPresetProvider } from "../../context/ViewPresetContext";
+import { setAccessContext } from "../../config/roles";
 
 const mockGet = jest.fn();
 const mockPost = jest.fn();
@@ -167,6 +168,7 @@ describe("D-10 — ringkasan laba-rugi tidak berulang", () => {
 
 describe("D-11 — Profitabilitas & Margin satu layar", () => {
   test("tab Realisasi | Margin katalog; preset {tab:'katalog'} membuka CostingView tanpa tautan lama", async () => {
+    setAccessContext({ role: "admin" });   // PR-T7 — tab Realisasi = canCurrent("accounting","view"); tanpa konteks = tidak
     routeGet({ "/costing/wac": [], "/finance/profitability": { totals: {} } });
     const host = await mount(
       <ViewPresetProvider preset={{ view: "profitability", nonce: 1, tab: "katalog" }}>
@@ -178,6 +180,7 @@ describe("D-11 — Profitabilitas & Margin satu layar", () => {
     await act(async () => { q(host, "prof-tabs-realisasi").click(); });
     await act(async () => {});
     expect(q(host, "prof-realisasi")).not.toBeNull();
+    setAccessContext(null);
   });
 
   test("tab katalog digerbang peran yang boleh membuka Margin & HPP", async () => {

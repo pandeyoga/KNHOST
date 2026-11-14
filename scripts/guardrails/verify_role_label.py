@@ -48,7 +48,15 @@ FE_NAVMETA = SRC / "config" / "navMeta.js"
 
 G, Y, R, C, B, X = "\033[92m", "\033[93m", "\033[91m", "\033[96m", "\033[1m", "\033[0m"
 
-ROLE_IDS = ("admin", "manager", "sales_admin", "finance", "sales", "warehouse")
+# PR-T7 — id peran DIBACA dari `backend/role_registry.py` (13 peran bawaan), bukan enam yang ditulis tangan:
+# peran ke-7…13 (Desainer, Sopir, MD, Admin Gudang, Admin Sample, MD Quality, QC) dulu lolos dari CHECK 2–4.
+def _registry_role_ids():
+    txt = BE_REGISTRY.read_text()
+    blok = re.search(r"ROLES:\s*Dict\[str, Dict\[str, Any\]\]\s*=\s*\{(.*?)\n\}\n", txt, re.S)
+    return tuple(re.findall(r'^    "(\w+)":\s*\{', blok.group(1) if blok else "", re.M))
+
+
+ROLE_IDS = _registry_role_ids()
 
 # Berkas yang MEMANG boleh bicara peran sebagai data (registry & cermin-nya).
 EXEMPT = {

@@ -41,7 +41,8 @@ export default function CatalogWorkspace({ currentUser, selectedEntity, focus, l
   const [legacy, setLegacy] = useState(false);
   const [filters, setFilters] = useState(emptyCatalogFilters); const [suppliers, setSuppliers] = useState([]);
   useEffect(() => { axios.get(`${API}/suppliers`).then(r => setSuppliers(Array.isArray(r.data) ? r.data : r.data?.items || [])).catch(() => setSuppliers([])); }, []);
-  const canPurge = ["admin", "md"].includes(currentUser?.role);
+  // PR-T7 (#9) — hapus permanen master = `product.view` + `product.retire` (DELETE /master/{kind}/{id}/purge → may_retire).
+  const canPurge = can(currentUser?.permissions, "product", "view") && can(currentUser?.permissions, "product", "retire");
   const caps = meta?.permissions || {};
   const canAudit = can(currentUser?.permissions, "audit", "view");
   const canExport = can(currentUser?.permissions, "product", "export");

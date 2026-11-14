@@ -20,7 +20,7 @@ import { lifecycleBoard, listSamples, performerReport, sampleTypes } from "./rnd
 import { openRnd } from "./rndDeepLink";
 import { errMsg, lifecycleMeta } from "./rndMeta";
 import { roundTypeOf, typeLabel } from "./sampleTypeMeta";
-import { roleIs } from "../../config/roles";
+import { can } from "../../config/roles";
 import { actorLabel, isTechActor } from "../../utils/actorLabel";
 
 /** Audit UI 24 Okt (042) — "Desainer Teratas": akun teknis (system-seed) bukan orang, dan desainer tanpa
@@ -45,7 +45,7 @@ export default function RndReportsView({ currentUser, selectedEntity }) {
   // md HP — designer-kpi bisa 403 untuk peran tertentu; dulu ditelan jadi "belum ada round" (galat tersamar).
   const [kpiDenied, setKpiDenied] = useState(false);
 
-  const canManage = roleIs(currentUser?.role, ["admin", "manager"]);
+  const canManage = can(currentUser?.permissions, "rnd", "manage");   // PR-T7 — = izin ubah kunci rnd.* di Pusat Pengaturan
 
   const load = useCallback(async () => {
     setLoading(true);

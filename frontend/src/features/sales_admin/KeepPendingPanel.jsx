@@ -6,6 +6,7 @@ import { formatCurrency, formatQty } from "../../utils/formatters";
 import { soTrackerLink } from "./workDeskApi";
 import PendingProductRow from "./PendingProductRow";
 import { deriveStageSub, stageMeta } from "../../utils/soStatus";
+import { canCurrent } from "../../config/roles";
 
 // Trial 22 Okt — baris Keep dulu menampilkan kode mentah ("status waiting_approval").
 const statusText = (status) => stageMeta(deriveStageSub({ status })[0]).label;
@@ -17,7 +18,14 @@ const TABS = [
 ];
 
 /** P04 IMP-02/03 — Keep (belum diverifikasi) & Pending (kebutuhan barang) dipisah; total SO unik tidak ganda. */
-export default function KeepPendingPanel({ selectedEntity = "all", onOpenDocument, testPrefix = "kp" }) {
+export default function KeepPendingPanel(props) {
+  // PR-T7 (tabel 2) — panel ikut dimuat di beranda/meja; tanpa salah satu izin `GET /sales/keep-pending`
+  // (order.verify | order.view) panel tidak memanggil dan tidak menggambar apa pun (dulu 403 senyap tiap layar).
+  if (!(canCurrent("order", "verify") || canCurrent("order", "view"))) return null;
+  return <KeepPendingBody {...props} />;
+}
+
+function KeepPendingBody({ selectedEntity = "all", onOpenDocument, testPrefix = "kp" }) {
   const [data, setData] = useState(null);
   const [tab, setTab] = useState("keep");
   const [error, setError] = useState("");

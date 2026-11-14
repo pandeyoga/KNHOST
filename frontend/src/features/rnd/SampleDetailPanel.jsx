@@ -37,7 +37,7 @@ import {
 } from "./rndApi";
 import { errMsg, SAMPLE_STEPS, sampleStatusMeta } from "./rndMeta";
 import { deliverLabel, sampleTypesOf, typeLabel } from "./sampleTypeMeta";
-import { roleIs, roleLabel } from "../../config/roles";
+import { can, roleLabel } from "../../config/roles";
 
 function Row({ label, children, testId }) {
   return (
@@ -67,6 +67,35 @@ function Stepper({ status }) {
   );
 }
 
+/**
+ * PR-T7 (#1, #2) — tombol rincian sample dari IZIN (pasangan = `require_permission` di `backend/routers/rnd.py`) dan
+ * dari BENDERA server untuk wewenang kebijakan peran (`caps`, dihitung pemeriksa yang sama dengan server):
+ *   Kirim/ronde/selesai/kirim hasil `rnd.submit` · Nilai `rnd.assess` atau `rnd.assess_<jenis>` untuk SEMUA jenis
+ *   sample (`_require_typed`) · Pilih pemenang `rnd.decide` (uji ulang: `rnd.decide` atau `rnd.decide_<jenis>`) +
+ *   `caps.pick_winner` · PIC uji ulang `rnd.pic_decide` · paksa lulus `rnd.override_fail` (server `pic-decision`) ·
+ *   Batalkan `rnd.manage` · Ubah sample/spesifikasi `rnd.create` · ACC spesifikasi `rnd.assess` + `caps.approve_spec` ·
+ *   Rilis produk `rnd.decide` + `caps.approve_spec`.
+ */
+export function sampleButtonPerms(perms, sample, codes = []) {
+  const P = (action) => can(perms, "rnd", action);
+  const typed = (action) => P(action) || (codes.length > 0 && codes.every((t) => P(`${action}_${t}`)));
+  const isReval = sample?.purpose === "revalidation" && !!sample?.revalidation;
+  const caps = sample?.caps || {};
+  return {
+    canSubmit: P("submit"),
+    canAssess: typed("assess"),
+    canDecide: isReval ? typed("decide") : P("decide"),
+    canPic: P("pic_decide"),
+    canOverride: P("override_fail"),
+    canCancel: P("manage"),
+    canEdit: P("create"),
+    canApproveSpecBtn: P("assess") && !!caps.approve_spec,
+    canReleaseBtn: P("decide") && !!caps.approve_spec,
+    mayPickWinner: !!caps.pick_winner,
+    mayApproveSpec: !!caps.approve_spec,
+  };
+}
+
 export default function SampleDetailPanel({ sampleId, currentUser, types: typesProp, onClose, onChanged, focusRoundId = "", initialType = "", onOpenSample }) {
   const [sample, setSample] = useState(null);
   const [historyOpen, setHistoryOpen] = useState(false);
@@ -83,13 +112,11 @@ export default function SampleDetailPanel({ sampleId, currentUser, types: typesP
   const [loading, setLoading] = useState(true);
   const [modal, setModal] = useState(null);
 
-  const role = currentUser?.role;
-  const canSubmit = roleIs(role, ["admin", "manager", "warehouse", "md"]);
-  const canAssess = roleIs(role, ["admin", "manager", "md"]);
-  const canDecide = roleIs(role, ["admin", "manager", "md"]);
-  const canPic = roleIs(role, ["admin", "manager", "md"]);
-  const canOverride = roleIs(role, ["admin", "manager"]);
-  const canEdit = roleIs(role, ["admin", "manager", "sales", "md"]);
+  const sampleCodes = useMemo(() => sampleTypesOf(sample), [sample]);
+  const {
+    canSubmit, canAssess, canDecide, canPic, canOverride, canCancel: mayCancel, canEdit,
+    canApproveSpecBtn, canReleaseBtn, mayPickWinner, mayApproveSpec,
+  } = sampleButtonPerms(currentUser?.permissions, sample, sampleCodes);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -129,7 +156,7 @@ export default function SampleDetailPanel({ sampleId, currentUser, types: typesP
   const pendingPic = sample?.status === "pending_pic";
   const isReval = sample?.purpose === "revalidation" && !!sample?.revalidation?.supplier_id;
   const active = !!sample && !decided && !cancelled && !pendingPic;
-  const canCancel = canDecide && !pendingPic;
+  const canCancel = mayCancel && !pendingPic;
   const canSend = !!sample && ["draft", "sent", "in_progress"].includes(sample.status);
   // UAT 24 Okt (P4.7) — "Kirim ke pelanggan" hanya untuk sampel pesanan pelanggan; selain itu diarsipkan.
   const forCustomer = !!(sample?.special_order_id || sample?.so_id || sample?.customer_id);
@@ -140,14 +167,13 @@ export default function SampleDetailPanel({ sampleId, currentUser, types: typesP
   // dulu MD (di luar kebijakan) bisa membuka & mengisi seluruh formulir lalu baru ditolak server.
   const decideRoles = (Array.isArray(policy.sample_decision_roles) ? policy.sample_decision_roles
     : String(policy.sample_decision_roles || "").split(",")).map((x) => String(x).trim()).filter(Boolean);
-  const mayPickWinner = isReval || !decideRoles.length || decideRoles.includes(role);
+  // PR-T7 (#2) — boleh memilih = bendera server `caps.pick_winner`; daftar kebijakan di atas hanya untuk teks penjelas.
   // ACC spesifikasi (lahirkan SKU) & rilis produk: kebijakan `spec_approval_roles` (bawaan Manajer/Admin).
   const specRoles = (Array.isArray(policy.spec_approval_roles) ? policy.spec_approval_roles
     : String(policy.spec_approval_roles || "").split(",")).map((x) => String(x).trim()).filter(Boolean);
-  const mayApproveSpec = !specRoles.length || specRoles.includes(role);
   const specApprovers = specRoles.map((r) => roleLabel(r)).join(" / ");
   const issues = sample?.material_issues || [];
-  const codes = useMemo(() => sampleTypesOf(sample), [sample]);
+  const codes = sampleCodes;
   // UAT 24 Okt (audit UI tahap 2) — G5-45: tombol utama = LANGKAH BERIKUTNYA (dulu "Pilih pemenang" selalu primary
   // walau nonaktif, lebih menonjol dari langkah yang disarankan).
   const nextStep = !sample ? ""
@@ -266,7 +292,7 @@ export default function SampleDetailPanel({ sampleId, currentUser, types: typesP
             </div>
           )}
 
-          {!isReval && <SampleMasterDataPanel sample={sample} canDecide={canDecide} canApproveSpec={mayApproveSpec} specApprovers={specApprovers} busy={busy} onAct={(fn, msg) => act(fn, msg)} />}
+          {!isReval && <SampleMasterDataPanel sample={sample} canApprove={canApproveSpecBtn} canRelease={canReleaseBtn} specApprovers={specApprovers} busy={busy} onAct={(fn, msg) => act(fn, msg)} />}
 
           <div className="section-card section-pad">
             <div className="flex flex-wrap items-center justify-between gap-2">

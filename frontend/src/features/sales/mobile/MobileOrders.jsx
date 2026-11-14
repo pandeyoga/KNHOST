@@ -12,7 +12,8 @@ import { ClipboardList, Search, PackageX, ChevronDown, FileEdit, ClipboardCheck,
 import { formatCurrency, formatQty } from "../../../utils/formatters";
 import { StagePill, SubStatusChips } from "../../../components/SoStatusBadges";
 import { hasPartialBackorder, isBackorderSo, isClosedSo, visibleSubs } from "../../orders/soStatusView";
-import { roleIs } from "../../../config/roles";
+import { can } from "../../../config/roles";
+import { isSalesAdminLayout } from "../../mobile/mobileLayout";
 
 const FILTERS = [
   { id: "all", label: "Semua" },
@@ -39,7 +40,11 @@ export default function MobileOrders({ orders = [], loading, onBrowse, onRefresh
   const [pay, setPay] = useState(null);
   const [busy, setBusy] = useState("");
   const [msg, setMsg] = useState(null);
-  const isAdmin = roleIs(role, ["sales_admin"]);   // Sisir lanjutan gerbang peran (2026-10-21) — meja Admin Sales (peran acuan dikenali)
+  // PR-T7 — judul daftar = tata letak Admin Sales (halaman awal peran); tombol verifikasi/lepas/pemenuhan = izin
+  // endpoint-nya: `order.confirm` (review-release, release, fulfillment-plan) + `internal_request.convert` (pilih PT sumber).
+  const isAdminLayout = isSalesAdminLayout(role);
+  const canConfirm = can(user?.permissions, "order", "confirm");
+  const canChooseSource = canConfirm && can(user?.permissions, "internal_request", "convert");
   useEffect(() => {
     if (!focusId) return;
     setOpen(focusId); setFilter("all");
@@ -69,7 +74,7 @@ export default function MobileOrders({ orders = [], loading, onBrowse, onRefresh
       <MobilePendingQueue />
       <div className="mb-2 flex items-center gap-2">
         <ClipboardList size={16} className="text-[#0058CC]" />
-        <h2 className="m-section-title">{isAdmin ? "Pesanan PT" : "Pesanan Saya"}</h2>{/* Audit UI 24 Okt — Admin Sales melihat semua SO PT */}
+        <h2 className="m-section-title">{isAdminLayout ? "Pesanan PT" : "Pesanan Saya"}</h2>{/* Audit UI 24 Okt — Admin Sales melihat semua SO PT */}
         {onDashboard && <button className="ml-auto rounded-full border border-[#0058CC] px-3 py-1 text-[11.5px] font-semibold text-[#0058CC]" onClick={onDashboard} data-testid="mobile-orders-dashboard-btn">Dasbor</button>}
       </div>
 
@@ -149,7 +154,7 @@ export default function MobileOrders({ orders = [], loading, onBrowse, onRefresh
                       ? <p className="mt-1.5 text-[11px] m-muted" data-testid={`mobile-order-pickup-${o.id}`}>Diambil di gudang{o.pickup_date ? ` · ${o.pickup_date}` : ""}</p>
                       : o.shipping_address && <p className="mt-1.5 text-[11px] m-muted">Kirim ke: {o.shipping_address.recipient_name || ""} · {o.shipping_address.address || ""}{o.shipping_address.city ? `, ${o.shipping_address.city}` : ""}</p>}
                     {o.payment_term_name && <p className="text-[11px] m-muted">Termin: {o.payment_term_name}</p>}
-                    {isAdmin && PRE_CONFIRM.includes(o.status) && (
+                    {canConfirm && PRE_CONFIRM.includes(o.status) && (
                       <div className="mt-2 grid grid-cols-2 gap-2" data-testid={`mobile-order-admin-actions-${o.id}`}>
                         {!o.release?.requested && (
                           <button className="primary-button col-span-2 flex items-center justify-center gap-1 py-2.5 text-[12px]" onClick={() => setVerify(o)} data-testid={`mobile-order-verify-${o.id}`}><ClipboardCheck size={14} /> Periksa & lepas ke gudang</button>
@@ -158,7 +163,7 @@ export default function MobileOrders({ orders = [], loading, onBrowse, onRefresh
                           <button className="primary-button col-span-2 flex items-center justify-center gap-1 py-2.5 text-[12px]" disabled={busy === o.id} onClick={() => doRelease(o)} data-testid={`mobile-order-release-${o.id}`}><CheckCircle2 size={14} /> {busy === o.id ? "Memproses…" : "Lepas ke gudang"}</button>
                         )}
                         {/* Fase 4 · R1 (keputusan pemilik R5) — helper yang sama dengan layar Pesanan desktop, bukan `has_backorder` mentah. */}
-                        {(isBackorderSo(o) || hasPartialBackorder(o)) && (
+                        {canChooseSource && (isBackorderSo(o) || hasPartialBackorder(o)) && (
                           <button className="secondary-button col-span-2 flex items-center justify-center gap-1 py-2.5 text-[12px]" onClick={() => setFulfill(o)} data-testid={`mobile-order-fulfill-${o.id}`}><PackageSearch size={14} /> Keputusan pemenuhan</button>
                         )}
                       </div>

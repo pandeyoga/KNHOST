@@ -102,6 +102,7 @@ describe("D-11 — Profitabilitas & Margin", () => {
   });
 
   test("admin & peran akuntansi: Realisasi tetap tab pertama; alias costing membuka katalog", async () => {
+    setAccessContext({ role: "admin" });   // PR-T7 — Admin yang sudah masuk (canCurrent tanpa konteks = tidak)
     await mount(withNav("admin", <ProfitabilityView selectedEntity="ent_ksc" />,
       { view: "profitability", nonce: 1, tab: "katalog" }));
     expect(q("prof-tabs-realisasi")).not.toBeNull();

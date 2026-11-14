@@ -37,7 +37,7 @@ import { typeLabel, typeMeta } from "./sampleTypeMeta";
 import {
   filterSamples, galleryKpis, LEGACY_TYPE_VIEW, PURPOSE_OPTIONS, purposeParam, SAMPLE_MODES, statusCounts,
 } from "./sampleViewUtils";
-import { roleIs } from "../../config/roles";
+import { can } from "../../config/roles";
 
 const TITLE = { revalidation: "Uji Ulang SKU", new_development: "R&D Produk Baru" };
 const STATUS_KEYS = [...SAMPLE_BOARD_ORDER, "cancelled"];
@@ -76,9 +76,9 @@ export default function RndSamplesView({ currentUser, selectedEntity, focus, onF
     if (PURPOSE_KEYS.includes(p?.purpose)) setGalleryPurpose(p.purpose);
   }
 
-  const role = currentUser?.role;
-  const canCreate = roleIs(role, ["admin", "manager", "sales", "md"]);
-  const canPic = roleIs(role, ["admin", "manager", "md"]);
+  // PR-T7 — Buat = `rnd.create` (POST /rnd/samples); antrean PIC uji ulang = `rnd.assess` (GET /rnd/revalidation/pic-queue).
+  const canCreate = can(currentUser?.permissions, "rnd", "create");
+  const canPic = can(currentUser?.permissions, "rnd", "assess");
   // UAT 24 Okt (audit UI tahap 2) — G5-63: mode "Semua badan usaha" hanya-lihat → tombol buat nonaktif.
   const scopeWritable = canWriteInScope(selectedEntity);
   const gallery = mode === "gallery";

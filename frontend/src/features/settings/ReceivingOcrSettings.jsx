@@ -5,18 +5,21 @@ import GrnProfilesPanel from "../wms/grn/GrnProfilesPanel";
 import GrnOcrSamplesPanel from "../wms/grn/GrnOcrSamplesPanel";
 import GrnOcrUsagePanel from "../wms/grn/GrnOcrUsagePanel";
 import GrnModePanel from "../wms/grn/GrnModePanel";
+import { can } from "../../config/roles";
 
-const OCR_ROLES = ["admin", "manager", "warehouse_admin"];
+// PR-T7 (#20) — tiap tab memakai izin endpoint-nya (dulu daftar nama peran). Profil SJ & Sample Uji OCR = tab pengaturan
+// (ubah profil `PATCH /goods-receipts/dn-profiles/*`, kelola sample `/ocr-samples/*`) = goods_receipt.review; Biaya OCR
+// `GET /goods-receipts/usage` = goods_receipt.approve; Mode Penerimaan `PUT /goods-receipts/mode` = goods_receipt.configure.
 const TABS = [
-  { key: "profiles", label: "Profil SJ", roles: OCR_ROLES, Panel: GrnProfilesPanel },
-  { key: "samples", label: "Sample Uji OCR", roles: OCR_ROLES, Panel: GrnOcrSamplesPanel },
-  { key: "usage", label: "Biaya OCR", roles: OCR_ROLES, Panel: GrnOcrUsagePanel },
-  { key: "mode", label: "Mode Penerimaan", roles: ["admin", "manager"], Panel: GrnModePanel },
+  { key: "profiles", label: "Profil SJ", perm: ["goods_receipt", "review"], Panel: GrnProfilesPanel },
+  { key: "samples", label: "Sample Uji OCR", perm: ["goods_receipt", "review"], Panel: GrnOcrSamplesPanel },
+  { key: "usage", label: "Biaya OCR", perm: ["goods_receipt", "approve"], Panel: GrnOcrUsagePanel },
+  { key: "mode", label: "Mode Penerimaan", perm: ["goods_receipt", "configure"], Panel: GrnModePanel },
 ];
 
 /** Pengaturan › Gudang › Penerimaan & OCR — konfigurasi (bukan pekerjaan harian gudang). */
 export default function ReceivingOcrSettings({ currentUser }) {
-  const tabs = TABS.filter((t) => t.roles.includes(currentUser?.role));
+  const tabs = TABS.filter((t) => can(currentUser?.permissions, ...t.perm));
   const [tab, setTab] = useState(tabs[0]?.key || "");
   const active = tabs.find((t) => t.key === tab) || tabs[0];
   if (!active) return <p className="empty-state">Anda tidak memiliki akses ke pengaturan penerimaan.</p>;

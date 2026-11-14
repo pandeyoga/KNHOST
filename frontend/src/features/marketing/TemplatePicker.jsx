@@ -11,9 +11,10 @@ export default function TemplatePicker({ value, onApply, currentUser }) {
   const load = () => mktApi.templates().then(setRows).catch(() => setRows([]));
   useEffect(() => { load(); }, []);
   const cur = rows.find((t) => t.id === value);
-  // Sisir gerbang peran (2026-10-20): hapus = marketing.update + (pembuat atau Manager/Admin — aturan server APPROVE_ROLES).
+  // PR-T7 (#16) — hapus = marketing.update + (pembuat ATAU marketing.delete) — aturan server `DELETE /marketing/templates`
+  // sejak PR-T2 (dulu daftar nama peran Manager/Admin).
   const canDelete = cur && can(currentUser?.permissions, "marketing", "update")
-    && (["admin", "manager"].includes(currentUser?.role) || cur.created_by_id === currentUser?.id);
+    && (can(currentUser?.permissions, "marketing", "delete") || cur.created_by_id === currentUser?.id);
 
   const remove = async () => {
     const ok = await askConfirm({ title: `Hapus template "${cur.name}"?`, danger: true, testId: "mkt-template-delete-confirm" });

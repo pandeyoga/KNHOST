@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { roleIs } from "../../config/roles";
+import { can } from "../../config/roles";
 import { MapPin, Package, Layers, Boxes, RefreshCw, PackageCheck, AlertOctagon, ChevronRight } from "lucide-react";
 import KNSelect from "../../components/KNSelect";
 import PageTabs from "../../components/PageTabs";
@@ -21,7 +21,6 @@ import { normalizeZones, fmtUnits, TERMS } from "./location/locUtils";
 import { formatQty } from "../../utils/formatters";
 import ExportMenu from "../../components/ExportMenu";   // FIX-4 — tombol baku Unduh (Excel/CSV, Pusat Export)
 
-const SUPERVISORS = ["warehouse_admin", "manager", "admin"];
 const isActiveWh = (w) => (w.status || "active") === "active" && w.active !== false;
 
 export default function LocationPutawayView({ currentUser, selectedEntity }) {
@@ -44,7 +43,7 @@ export default function LocationPutawayView({ currentUser, selectedEntity }) {
     axios.get(`${API}/entities`).then((r) => setOwners((Array.isArray(r.data) ? r.data : r.data?.items || [])
       .map((e) => ({ value: e.id, label: e.short_name || e.name || e.id })))).catch(() => setOwners([]));
   }, []);
-  const isSup = roleIs(currentUser?.role, SUPERVISORS);   // FE-04 — sama dengan placement_rules.is_supervisor (kenal peran acuan)
+  const isSup = can(currentUser?.permissions, "wms", "approve");   // PR-T7 — = placement_rules.is_supervisor (izin wms.approve sejak PR-T2)
 
   useEffect(() => {
     if (locScope === null) return;

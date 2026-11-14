@@ -22,7 +22,7 @@ import MobileDriverApp from "./MobileDriverApp";
 import MobileOpsApp from "./MobileOpsApp";
 import { EntityScopeProvider } from "../../context/EntityScopeContext";
 import { AppNavProvider } from "../../context/AppNavContext";
-import { roleIs } from "../../config/roles";
+import { mobileAppKind } from "./mobileLayout";
 
 export default function MobileAppSwitch({
   user, token, entities, selectedEntity, onSelectEntity, locationChoice = "", onLocationChange,
@@ -44,13 +44,13 @@ export default function MobileAppSwitch({
       <AppNavProvider role={user?.role} onNavigateTo={onNavigateTo} onOpenDocument={onOpenDocument}>{app}</AppNavProvider>
     </EntityScopeProvider>
   );
-  // Admin Sales mewarisi wilayah kerja sales (ROLE_NAV) → aplikasi HP sales + Meja Admin Sales.
-  const salesMobileRole = roleIs(user.role, ["sales", "sales_admin"]);   // Sisir lanjutan gerbang peran (2026-10-21) — tata letak, peran acuan dikenali
-  // MD / Merchandiser → aplikasi HP khusus (Meja MD, desain, sample, produk, PR).
-  if (roleIs(user.role, ["md"])) return wrap(<MobileMdApp {...shell} />);
-  if (!salesMobileRole) {
-    if (roleIs(user.role, ["driver"])) return wrap(<MobileDriverApp {...shell} onNavigate={onNavigate} />);
-    const MobileApp = roleIs(user.role, ["warehouse", "warehouse_admin"]) ? MobileWarehouseApp : MobileOpsApp;
+  // PR-T7 (#24) — aplikasi dipilih dari halaman awal peran (`mobileLayout.js`), bukan id peran: Admin Sales mewarisi
+  // wilayah kerja sales → aplikasi HP sales + Meja Admin Sales; MD → aplikasi MD; sopir → pengemudi; gudang → gudang.
+  const kind = mobileAppKind(user.role);
+  if (kind === "md") return wrap(<MobileMdApp {...shell} />);
+  if (kind !== "sales") {
+    if (kind === "driver") return wrap(<MobileDriverApp {...shell} onNavigate={onNavigate} />);
+    const MobileApp = kind === "warehouse" ? MobileWarehouseApp : MobileOpsApp;
     return wrap(<MobileApp {...shell} onNavigate={onNavigate}
       initialTab={wantsTanya && MobileApp === MobileOpsApp ? "tanya" : undefined} />);
   }

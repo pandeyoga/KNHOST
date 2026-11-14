@@ -62,7 +62,10 @@ function routeGet(map) {
 }
 afterEach(() => { mockGet.mockReset(); mockSync.mockReset(); mockApproveSo.mockReset(); document.body.innerHTML = ""; window.history.replaceState(null, "", "/"); });
 
-const ADMIN = { id: "u1", role: "admin", name: "Budi Santoso", permissions: { price_approval: ["*"], order: ["*"], approval: ["*"], makloon_order: ["*"], qc: ["*"] } };
+// PR-T7 — tab Tanya = izin ai.view, tombol Pintasan = izin layar tujuannya (dulu daftar nama peran): Admin uji memegang
+// izin bawaannya untuk itu juga.
+const ADMIN = { id: "u1", role: "admin", name: "Budi Santoso", permissions: { price_approval: ["*"], order: ["*"], approval: ["*"], makloon_order: ["*"], qc: ["*"],
+  ai: ["view"], product: ["view"], rnd: ["view"], goods_receipt: ["view"] } };
 const WH = { id: "u2", role: "warehouse", name: "Gita Gudang", permissions: {} };
 const MD = { id: "u3", role: "md", name: "Rina Merchandiser", permissions: { product: ["view"] } };
 const SALES = { id: "u4", role: "sales", name: "Sari Sales", permissions: {} };

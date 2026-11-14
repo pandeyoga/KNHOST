@@ -24,7 +24,7 @@ import {
   DSR_STATUS_LABEL, DSR_STEPS, getDesignRequest, rejectDesignRequest, startDesignRequest,
   submitDesignRequest, updateDesignRequest, uploadReference,
 } from "./designRequestsApi";
-import { roleIs } from "../../config/roles";
+import { canCurrent } from "../../config/roles";
 import { formatDateTime } from "../../utils/formatters";
 
 function Row({ label, children, testId }) {
@@ -66,13 +66,17 @@ export default function DesignRequestDetailPanel({ doc, meta, onChanged, onClose
   const [cat, setCat] = useState(doc.category_code || "");
   const [dcat, setDcat] = useState(doc.design_category_code || "");
 
-  const role = meta?.role || "";
-  // Cek UI UAT v3 (S13) — MD memegang izin design_request.assign/decide (permissions_config) tetapi tombol dulu
-  // hanya untuk admin/manajer: MD tidak bisa menugaskan desainer maupun memutus ACC desain.
-  const canDecide = roleIs(role, ["admin", "manager", "md"]);
-  const canAssign = canDecide;
-  const canWork = roleIs(role, ["admin", "manager", "designer"]);
-  const canRefs = roleIs(role, ["admin", "manager", "sales_admin", "md"]) && !["approved", "cancelled"].includes(doc.status);
+  // PR-T7 (#3) — tombol dari izin akun aktif, pasangan = `require_permission` di `backend/routers/design_requests.py`
+  // (dulu daftar nama peran): ACC/minta revisi `decide` · tugaskan `assign` · kategori `update` · tandai dikerjakan &
+  // tautkan desain `deliver` · rujukan & ajukan `create` · batalkan `cancel`.
+  const DR = (action) => canCurrent("design_request", action);
+  const canDecide = DR("decide");
+  const canAssign = DR("assign");
+  const canEditCats = DR("update");
+  const canWork = DR("deliver");
+  const canSubmitReq = DR("create");
+  const canCancelReq = DR("cancel");
+  const canRefs = DR("create") && !["approved", "cancelled"].includes(doc.status);
   const rounds = designRequestRounds(doc);
   const designs = doc.designs || [];
   const hasCats = !!doc.category_code && !!doc.design_category_code;
@@ -249,7 +253,7 @@ export default function DesignRequestDetailPanel({ doc, meta, onChanged, onClose
               </div>
             )}
 
-            {canAssign && active && !hasCats && (
+            {canEditCats && active && !hasCats && (
               <div className="grid gap-1.5 rounded-lg border border-[#F3D9D6] bg-[#FDF8F7] p-2" data-testid="dsr-category-box">
                 <p className="text-[10.5px] text-[#A8221A]">Lengkapi kategori agar desainer bisa membuat desain dengan kode otomatis.</p>
                 <KNSelect data-testid="dsr-edit-category" value={cat} onValueChange={setCat} options={patternOpts} className="field" placeholder="Kategori Pattern" searchable />
@@ -262,7 +266,7 @@ export default function DesignRequestDetailPanel({ doc, meta, onChanged, onClose
             )}
 
             <div className="flex flex-wrap gap-1.5">
-              {doc.status === "draft" && (
+              {canSubmitReq && doc.status === "draft" && (
                 <button data-testid="dsr-submit-button" className="secondary-button" disabled={busy}
                   onClick={() => run(() => submitDesignRequest(doc.id), "Permintaan diajukan.")}>
                   <ClipboardList size={13} /> Ajukan
@@ -274,7 +278,7 @@ export default function DesignRequestDetailPanel({ doc, meta, onChanged, onClose
                   <Play size={13} /> Tandai dikerjakan
                 </button>
               )}
-              {canDecide && active && (
+              {canCancelReq && active && (
                 <button data-testid="dsr-cancel-button" className="secondary-button" disabled={busy} onClick={batalkan}>
                   <Ban size={13} /> Batalkan
                 </button>

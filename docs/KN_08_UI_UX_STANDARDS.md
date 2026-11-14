@@ -540,9 +540,31 @@ transition: all 200ms;
 
 ---
 
+## 🔐 TOMBOL DARI IZIN, PANGGILAN KERANGKA DIJAGA IZIN (PR-T7, INV-ROLE-02)
+
+Wewenang di layar mengikuti izin efektif yang sama dengan server (`docs/blueprint/02_STANDAR.md` §3.1 Z2), bukan nama
+peran. Peran kustom tanpa peran dasar yang diberi izin harus melihat tombol kerjanya; peran berdasar Manajer yang
+izinnya dicabut tidak boleh melihat tombol yang akan ditolak.
+
+| Pemakaian | Aturan |
+|---|---|
+| Tombol, tab, atau bagian yang memanggil endpoint | `can(perms, sumber_daya, aksi)` dari `config/roles.js` dengan pasangan yang **sama persis** dengan `require_permission` endpoint itu; endpoint "salah satu dari" → `\|\|` atas pasangan yang sama |
+| Wewenang yang bergantung dokumen (jenjang persetujuan, pemilik, kebijakan peran per PT) | Bendera boolean dari server pada jawaban dokumen (mis. `caps.pick_winner` di rincian sample); layar tidak menghitung ulang dari daftar peran pengaturan |
+| Komponen kerangka (sidebar, lencana, panel beranda, pemuat awal) | Hanya memanggil endpoint bila izinnya dipegang (`canCurrent(...)`); bila tidak, tidak memanggil dan tidak menggambar apa pun. `canCurrent` menjawab **tidak** selama konteks izin belum dimuat (kecuali Admin); konteks lengkap datang bersama jawaban login |
+| Tata letak (aplikasi HP, susunan beranda) | Dari sifat peran (halaman awal; kategori kerja setelah PR-T4) — `features/mobile/mobileLayout.js` — bukan id peran |
+| Label, ikon, teks petunjuk; tur panduan per peran | Boleh tetap; baris yang masih membandingkan peran untuk tata letak/label diberi penanda `// tata-letak: <alasan>` |
+
+Penjaga `scripts/guardrails/verify_role_gate_ui.py` (INV-ROLE-02, ratchet) menghitung `roleIs(`, `roleSatisfies(`,
+`roleRank(`, `.includes(…role)`, dan `role === "<id peran>"` per berkas di `frontend/src`; berkas baru dengan gerbang
+nama peran = merah. Sisa garis dasar (`scripts/guardrails/baselines/role_gate_ui.json`) mencatat unit pemegangnya.
+
+---
+
 ## ✅ QUALITY CHECKLIST (Per Component)
 
 Before marking component as "DONE":
+
+- [ ] Tombol & tab yang memanggil endpoint memakai `can(...)` dengan pasangan izin endpoint itu (bukan nama peran)
 
 - [ ] Uses Shadcn/UI components (no custom reinvention)
 - [ ] Has loading state (skeleton/spinner)

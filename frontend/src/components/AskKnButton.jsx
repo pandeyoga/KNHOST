@@ -1,7 +1,7 @@
 import { PenLine, Sparkles } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "./ui/dropdown-menu";
+import { canCurrent } from "../config/roles";
 
-const AI_ROLES = ["admin", "manager", "sales_admin", "finance", "md", "warehouse_admin", "sales"];
 export const PENDING_KEY = "kn_tanya_pending";
 
 const PRESETS = {
@@ -16,8 +16,10 @@ const PRESETS = {
   makloon_order: ["Order makloon ini sudah sampai tahap apa dan apa yang tertahan?", "Bagaimana hasil/susut tiap tahap order ini dibanding toleransi?", "Order makloon apa saja yang masih berjalan dan mana yang terlambat?"],
 };
 
+// PR-T7 (#23) — tombol mengikuti izin `ai.view` (= gerbang asisten di server), bukan daftar tujuh nama peran: peran
+// kustom berizin kini melihatnya, peran yang izinnya dicabut tidak.
 function canAsk() {
-  try { return AI_ROLES.includes(JSON.parse(localStorage.getItem("kn_user") || "null")?.role); } catch { return false; }
+  return canCurrent("ai", "view");
 }
 
 /** Tombol "Tanya KN" di halaman detail: membuka asisten dengan konteks halaman ini. */

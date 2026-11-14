@@ -54,10 +54,10 @@ function fmtDateTime(iso) {
 }
 
 export default function ClosingView({ selectedEntity, entities = [], currentUser }) {
-  // Sisir gerbang peran (2026-10-20): tutup ulang = accounting.manage; buka kembali = accounting.manage
-  // DAN khusus Admin (aturan server, closing.py) — peran tetap dicek.
+  // Sisir gerbang peran (2026-10-20): tutup ulang = accounting.manage. PR-T7 (#22) — buka kembali & menembus blokir
+  // Suspense = accounting.manage + accounting.reopen (closing.py sejak PR-T2; dulu nama peran Admin).
   const canManageClosing = can(currentUser?.permissions, "accounting", "manage");
-  const isAdmin = canManageClosing && currentUser?.role === "admin";
+  const isAdmin = canManageClosing && can(currentUser?.permissions, "accounting", "reopen");
   const entityOptions = useMemo(
     () => entities.filter((e) => !e.is_group).map((e) => ({ value: e.id, label: e.short_name || e.legal_name || e.id })),
     [entities]);

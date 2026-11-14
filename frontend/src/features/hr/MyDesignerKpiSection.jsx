@@ -22,13 +22,13 @@ import { MyDesignerKpiCard } from "./MyDesignerKpiCard";
 
 /** Siapa yang melihat bagian ini (G5-30: hanya peran yang mengerjakan desain/ronde sample R&D). */
 export function showMyDesignerKpi(user) {
-  return roleIs(user?.role, ["designer", "md", "sample_admin", "md_quality"]) || can(user?.permissions, "design_request", "deliver");
+  return roleIs(user?.role, ["designer", "md", "sample_admin", "md_quality"]) || can(user?.permissions, "design_request", "deliver");   // tata-letak: bagian KPI Saya untuk peran pelaksana (angka milik sendiri, server menyaring; PR-T4: kategori kerja)
 }
 
 /** Tab DSR hanya untuk yang DITUGASI permintaan desain (dulu tab "Rapor Saya" = desainer, `own_only`). */
 export function showMyDsrReport(user) {
-  if (roleIs(user?.role, ["designer"])) return true;
-  return can(user?.permissions, "design_request", "deliver") && !roleIs(user?.role, ["admin", "manager", "sales_admin", "md"]);
+  if (roleIs(user?.role, ["designer"])) return true;   // tata-letak: tab Pekerjaan DSR untuk desainer (rapor milik sendiri)
+  return can(user?.permissions, "design_request", "deliver") && !roleIs(user?.role, ["admin", "manager", "sales_admin", "md"]);   // tata-letak: penilai tidak diberi tab rapor pelaksana
 }
 
 export default function MyDesignerKpiSection({ currentUser, selectedEntity = "all" }) {

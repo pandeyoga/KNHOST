@@ -113,8 +113,9 @@ test("D-24b util: tujuan server per mode, galeri tanpa batal, KPI per jenis, sar
 // ── D-24b layar ──────────────────────────────────────────────────────────────────────────────────────
 test("D-24b: alias rnd-labdip (preset gallery+labdip+all) → Sample R&D mode Galeri, chip Labdip aktif, tanpa saringan tujuan", async () => {
   mockListSamples.mockResolvedValue({ items: SAMPLES, stats: { total: 99 } });
+  // PR-T7 — tombol Buat = izin rnd.create (bawaan MD), bukan nama peran.
   await mount(withNav("md", { view: "rnd-samples", nonce: 1, mode: "gallery", type: "labdip", purpose: "all" },
-    <RndSamplesView currentUser={{ role: "md" }} selectedEntity="ent_ksc" purpose="new_development" />));
+    <RndSamplesView currentUser={{ role: "md", permissions: { rnd: ["view", "create", "submit", "assess", "decide", "manage", "pic_decide"] } }} selectedEntity="ent_ksc" purpose="new_development" />));
   expect(q("rnd-samples-view").getAttribute("data-mode")).toBe("gallery");
   expect(q("rnd-samples-tab-gallery").getAttribute("aria-selected")).toBe("true");
   expect(q("rnd-samples-filter-labdip").getAttribute("aria-pressed")).toBe("true");

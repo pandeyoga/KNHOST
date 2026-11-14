@@ -46,7 +46,7 @@ export default function FeedbackThread({ design, currentUser, canWrite, onDone, 
       {canWrite && (
         <div className="flex gap-2">
           <textarea className="field flex-1" rows={2} value={text} onChange={(e) => setText(e.target.value)} data-testid="design-feedback-input"
-            placeholder={currentUser?.role === "designer" ? "Tanya / jelaskan revisi ke penilai…" : "Arahan / catatan untuk desainer…"}
+            placeholder={currentUser?.role === "designer" ? "Tanya / jelaskan revisi ke penilai…" : "Arahan / catatan untuk desainer…"}   // tata-letak: teks petunjuk isian, bukan wewenang
             onKeyDown={(e) => { if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) send(); }} />
           <button className="primary-button self-end" disabled={busy || !text.trim()} onClick={send} data-testid="design-feedback-send">
             <Send size={13} /> Kirim

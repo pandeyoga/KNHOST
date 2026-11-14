@@ -19,6 +19,7 @@ import { useSites } from "../../components/SiteSelect";
 import ProductQuickView from "../../components/ProductQuickView";
 import { SupersedeHintList, localSupersedeHints } from "../../components/SupersedeHint";   // PREP-A
 import { useEffectivePrices, pickPrice } from "../../hooks/useEffectivePrices";
+import { roleIs } from "../../config/roles";
 
 export function SalesPortal({
   data, onAdd, cart, setCart,
@@ -316,7 +317,9 @@ export function SalesPortal({
         rndEnforcement={rndEnforcement}
         cartKind={cart.length === 0 ? "" : (sampleMode ? "sample" : "regular")}
         customerId={selectedCustomer?.id || ""}
-        allowRollPick={!(user?.role === "sales" && settings?.allocation?.roll_pick_sales === false)}
+        // PR-T7 (#19) — = `role_in(("sales",))` server (sales_orders.py); peran kustom berperan dasar Sales ikut. PR-T4 menggantinya
+        // dengan kategori kerja peran.
+        allowRollPick={!(roleIs(user?.role, ["sales"]) && settings?.allocation?.roll_pick_sales === false)}
       />
 
       <CheckoutDrawer

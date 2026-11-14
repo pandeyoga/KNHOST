@@ -333,14 +333,27 @@ async def submit_spec(spec_id: str, actor: str = "") -> Dict[str, Any]:
     return await get_spec(spec_id)
 
 
-async def _assert_role(actor: Dict[str, Any], policy_key: str, entity_id: str, what: str) -> None:
-    """Kebijakan peran (registry G-0) — wewenang tidak bisa dilangkahi lewat endpoint."""
+async def _policy_roles(policy_key: str, entity_id: str) -> List[str]:
     pol = await rnd_gate.policy(entity_id)
     allowed = pol.get(policy_key) or []
     if isinstance(allowed, str):
         allowed = [x.strip() for x in allowed.split(",") if x.strip()]
+    return list(allowed)
+
+
+async def role_allowed(actor: Dict[str, Any], policy_key: str, entity_id: str) -> bool:
+    """Jawaban pemeriksa kebijakan peran TANPA melempar. PR-T7 — dipakai `_assert_role` DAN bendera `caps` pada jawaban
+    rincian sample, supaya tombol layar dan penolakan server selalu sepakat (layar tidak lagi mencocokkan nama peran
+    dari pengaturan sendiri). Aturan kebijakannya sendiri dirombak unit KP-T4; bendera ikut otomatis."""
+    allowed = await _policy_roles(policy_key, entity_id)
+    return not allowed or (actor or {}).get("role", "") in allowed
+
+
+async def _assert_role(actor: Dict[str, Any], policy_key: str, entity_id: str, what: str) -> None:
+    """Kebijakan peran (registry G-0) — wewenang tidak bisa dilangkahi lewat endpoint."""
+    allowed = await _policy_roles(policy_key, entity_id)
     role = (actor or {}).get("role", "")
-    if allowed and role not in allowed:
+    if not await role_allowed(actor, policy_key, entity_id):
         raise RndError(f"Peran '{role}' tidak berwenang {what}. "
                        f"Kebijakan berlaku: {', '.join(allowed)} "
                        "(ubah di Pusat Pengaturan → R&D & Desain).")

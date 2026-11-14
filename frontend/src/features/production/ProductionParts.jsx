@@ -7,16 +7,18 @@ import { X, Plus, Trash2, Pencil, Layers3 } from "lucide-react";
 import KNSelect from "../../components/KNSelect";
 import FormModal from "../../components/FormModal";
 import { Badge, formatCurrency } from "../finance/financeShared";
+import { can } from "../../config/roles";
 
-// ── RBAC UI (selaras permissions_config: resource "production") ───────────────
-export function prodPerms(role) {
-  const R = (arr) => arr.includes(role);
+// ── Tombol dari IZIN efektif (PR-T7) — pasangan = `require_permission` di `backend/routers/production.py` ──────────
+// Dulu daftar nama peran tertulis: peran kustom (bahkan berdasar Gudang) tidak pernah mendapat tombol kerja.
+export function prodPerms(perms) {
+  const P = (action) => can(perms, "production", action);
   return {
-    manageBom: R(["admin", "manager"]),
-    createWo: R(["admin", "manager", "warehouse"]),
-    release: R(["admin", "manager", "warehouse"]),
-    complete: R(["admin", "manager", "warehouse"]),
-    cancel: R(["admin", "manager"]),
+    manageBom: P("manage_bom"),   // POST/PUT/DELETE /production/boms
+    createWo: P("create"),        // POST /production/work-orders
+    release: P("release"),        // POST /production/work-orders/{id}/release
+    complete: P("complete"),      // POST /production/work-orders/{id}/complete
+    cancel: P("cancel"),          // POST /production/work-orders/{id}/cancel
   };
 }
 

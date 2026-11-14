@@ -8,7 +8,7 @@ import axios, { API } from "../../services/apiClient";
 import { formatCurrency } from "../../utils/formatters";
 import KNSelect from "../../components/KNSelect";
 import SpecialPriceRequestForm from "../pricing/SpecialPriceRequestForm";
-import { can, roleIs } from "../../config/roles";
+import { can } from "../../config/roles";
 import OrderReleaseSummary from "./OrderReleaseSummary";
 import { continueNormalPrice } from "../sales_admin/workDeskApi";
 
@@ -28,9 +28,13 @@ const STATUS_META = {
 const OPEN_STATES = ["reserved", "waiting_approval", "waiting_stock", "draft"];
 
 export default function SoApprovalsPanel({ order, user, onRefresh }) {
-  const role = user?.role;
   const isApprover = can(user?.permissions, "order", "approve");   // Sisir lanjutan gerbang peran (2026-10-21) — POST .../approvals/{id}/decide
-  const isSales = roleIs(role, ["sales", "sales_admin"]);
+  // PR-T7 — aksi pengaju dari izin endpoint-nya (dulu "sales/Admin Sales atau penyetuju"): ajukan harga khusus
+  // `POST /price-approvals` = price_approval.create · minta kredit & lanjut harga normal = order.update ·
+  // batalkan pesanan `POST /sales-orders/{id}/cancel` = order.cancel.
+  const canAskPrice = can(user?.permissions, "price_approval", "create");
+  const canUpdateSo = can(user?.permissions, "order", "update");
+  const canCancelSo = can(user?.permissions, "order", "cancel");
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState("");
   const [err, setErr] = useState("");
@@ -167,21 +171,21 @@ export default function SoApprovalsPanel({ order, user, onRefresh }) {
                 </div>
               )}
 
-              {entry.status === "rejected" && entry.type === "special_price" && canRequest && (isSales || isApprover) && (
+              {entry.status === "rejected" && entry.type === "special_price" && canRequest && (canAskPrice || canUpdateSo || canCancelSo) && (
                 <div data-testid={`so-appr-rejected-actions-${entry.id}`} className="mt-2 grid gap-1.5 sm:grid-cols-3">
-                  <button data-testid={`so-appr-ask-again-${entry.id}`} disabled={busy} onClick={() => askAgain(entry)}
+                  {canAskPrice && <button data-testid={`so-appr-ask-again-${entry.id}`} disabled={busy} onClick={() => askAgain(entry)}
                     className="rounded-md border border-[#FFE2B8] bg-[#FFF7EC] px-2.5 py-1.5 text-[11px] font-semibold text-[#9A5B00]">
                     Ajukan harga lain
-                  </button>
-                  <button data-testid={`so-appr-keep-normal-${entry.id}`} disabled={busy} onClick={() => keepNormal(entry)}
+                  </button>}
+                  {canUpdateSo && <button data-testid={`so-appr-keep-normal-${entry.id}`} disabled={busy} onClick={() => keepNormal(entry)}
                     className="rounded-md border border-[#CBDFFF] bg-[#F2F7FF] px-2.5 py-1.5 text-[11px] font-semibold text-[#0058CC]">
                     Lanjut harga normal ({formatCurrency(entry.normal_price)})
-                  </button>
-                  <button data-testid={`so-appr-cancel-order-${entry.id}`} disabled={busy}
+                  </button>}
+                  {canCancelSo && <button data-testid={`so-appr-cancel-order-${entry.id}`} disabled={busy}
                     onClick={() => { setCancelOpen((v) => !v); setSpOpen(false); }}
                     className="rounded-md border border-[#F5C2C2] bg-white px-2.5 py-1.5 text-[11px] font-semibold text-[#9B1C1C]">
                     Batalkan pesanan
-                  </button>
+                  </button>}
                 </div>
               )}
               {/* Aksi per entri */}
@@ -216,15 +220,15 @@ export default function SoApprovalsPanel({ order, user, onRefresh }) {
       </div>
 
       {/* Aksi pengajuan (sales / requester) */}
-      {canRequest && (isSales || isApprover) && (
+      {canRequest && (canAskPrice || (showCreditCta && canUpdateSo)) && (
         <div className="mt-2.5 border-t border-[#EFF0F2] pt-2.5">
           <div className="flex flex-wrap gap-1.5">
-            <button data-testid="so-appr-request-sp-toggle" disabled={busy}
+            {canAskPrice && <button data-testid="so-appr-request-sp-toggle" disabled={busy}
               className="inline-flex items-center gap-1 rounded-md border border-[#FFE2B8] bg-[#FFF7EC] px-2.5 py-1 text-[10.5px] font-semibold text-[#9A5B00]"
               onClick={() => { setSpOpen((v) => !v); setCreditOpen(false); }}>
               <Tag size={12} /> Ajukan Harga Khusus
-            </button>
-            {showCreditCta && (
+            </button>}
+            {showCreditCta && canUpdateSo && (
               <button data-testid="so-appr-request-credit-toggle" disabled={busy}
                 className="inline-flex items-center gap-1 rounded-md border border-[#F5C2C2] bg-[#FDECEC] px-2.5 py-1 text-[10.5px] font-semibold text-[#9B1C1C]"
                 onClick={() => { setCreditOpen((v) => !v); setSpOpen(false); }}>

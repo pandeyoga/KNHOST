@@ -1,6 +1,6 @@
 /** P03 IMP-27 — penerimaan AKTUAL per roll: pilih/scan roll yang tiba, rusak, staging/bin, exception. */
 import { useCallback, useEffect, useState } from "react";
-import { roleIs } from "../../../config/roles";
+import { can } from "../../../config/roles";
 import { PackageCheck, ScanLine, AlertTriangle } from "lucide-react";
 import axios, { API } from "../../../services/apiClient";
 import { apiErrorText } from "../../../utils/apiError";
@@ -11,7 +11,6 @@ import { ReceiptRollTable, ReceiptResults } from "./ReceiptRollTable";
 import ReceiptExceptions from "./ReceiptExceptions";
 import { STATE_TXT } from "./transferConstants";
 
-const SUPERVISOR = ["warehouse_admin", "manager", "admin"];
 
 export default function TransferReceiptPanel({ transfer, user, onChanged }) {
   const [data, setData] = useState(null);
@@ -27,7 +26,7 @@ export default function TransferReceiptPanel({ transfer, user, onChanged }) {
   const [loadErr, setLoadErr] = useState("");
   const [loadingReceipt, setLoadingReceipt] = useState(true);
   const open = ["dispatched", "partially_received", "returning"].includes(transfer.status);   // FIX-3b — returning = terima kembali di asal
-  const isSup = roleIs(user?.role, SUPERVISOR);   // FE-04 — sama dengan supervisor di server (kenal peran acuan)
+  const isSup = can(user?.permissions, "wms", "approve");   // PR-T7 — = placement_rules.is_supervisor (izin wms.approve sejak PR-T2)
 
   const load = useCallback(async () => {
     setLoadingReceipt(true); setLoadErr("");

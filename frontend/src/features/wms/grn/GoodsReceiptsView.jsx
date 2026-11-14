@@ -20,8 +20,6 @@ import ExportMenu from "../../../components/ExportMenu";   // FIX-4 — tombol b
 import ListLimitNote, { metaFromHeaders } from "../ListLimitNote";   // FIX-5 (LST-01)
 
 const FILTERS = [["", "Semua"], ["draft,review", "Tinjau SJ"], ["counting", "Hitung"], ["reconcile,closing", "Rekonsiliasi"], ["closed", "Ditutup"], ["rejected,cancelled", "Batal/Tolak"]];
-const LEGACY_ROLES = ["admin", "warehouse", "warehouse_admin", "manager"];   // LN-140 — admin gudang setara staf gudang
-const SETTINGS_ROLES = ["admin", "manager", "warehouse_admin"];
 const mkoPreset = () => {
   const q = new URLSearchParams(window.location.search);
   return q.get("mko") ? { partner_type: "makloon", partner_id: q.get("makloon") || "", warehouse_id: q.get("wh") || "", po_ids: [q.get("mko")] } : null;
@@ -39,7 +37,11 @@ export default function GoodsReceiptsView({ currentUser, selectedEntity, focusDo
   const [err, setErr] = useState("");
   const { isGrn, entityOf } = useReceivingMode();
   const grnOnly = selectedEntity && selectedEntity !== "all" && isGrn(selectedEntity) && !(entityOf(selectedEntity)?.legacy_in_flight || []).length;
-  const showLegacy = LEGACY_ROLES.includes(currentUser?.role) && !grnOnly;
+  // PR-T7 (#20) — tab "Scan Terima per PO" (mode lama) = `wms.update` (POST /inbound/tasks/* — pemindaian terima);
+  // pintasan Pengaturan OCR = boleh membuka salah satu tab layar tujuannya (`ReceivingOcrSettings`): goods_receipt.review
+  // (Profil SJ, Sample Uji OCR) · .approve (Biaya OCR) · .configure (Mode Penerimaan). Dulu daftar nama peran.
+  const showLegacy = can(currentUser?.permissions, "wms", "update") && !grnOnly;
+  const canOcrSettings = ["review", "approve", "configure"].some((a) => can(currentUser?.permissions, "goods_receipt", a));
   const canCreateGrn = can(currentUser?.permissions, "goods_receipt", "create");   // FE-04 — POST /goods-receipts
   // FIX-1 (K-B1-02) — kedatangan lintas PT di gedung lokasi kerja: buka/aksi GRN dikirim atas nama PT GRN.
   // FIX-5 (B3b LST-01) — dulu 100 kedatangan terbaru dipotong diam-diam (angka chip = baris termuat): kini jumlah
@@ -85,7 +87,7 @@ export default function GoodsReceiptsView({ currentUser, selectedEntity, focusDo
         <PageTabs className="!mb-0 min-w-0 flex-1" value={tab} onChange={setTab} ariaLabel="Tab Barang Masuk"
           tabs={tabs.map(([k, l]) => ({ key: k, label: l, testId: `grn-view-tab-${k}` }))} />
         <div className="flex items-center gap-2 pb-1">
-          {SETTINGS_ROLES.includes(currentUser?.role) && (
+          {canOcrSettings && (
             <a data-testid="grn-open-ocr-settings" href="?view=settings-receiving-ocr" title="Profil SJ, Sample Uji OCR, Biaya OCR & Mode Penerimaan ada di Pengaturan › Gudang"
               className="secondary-button !py-1 text-[11px]"><Settings size={12} /> Pengaturan OCR</a>
           )}

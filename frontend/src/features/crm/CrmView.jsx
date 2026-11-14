@@ -7,7 +7,7 @@ import CreditOverridesPanel from "./CreditOverridesPanel";
 import IncentiveSchemeEditor from "./IncentiveSchemeEditor";
 import LeadsPipeline from "./LeadsPipeline";
 import OmnichannelInteractions from "./OmnichannelInteractions";
-import { roleIs } from "../../config/roles";
+import { can } from "../../config/roles";
 
 /**
  * CrmView — modul Pelanggan / CRM + Sales Force (KN_17).
@@ -15,16 +15,19 @@ import { roleIs } from "../../config/roles";
  * Row-level scoping ditegakkan backend (sales hanya melihat miliknya).
  */
 export default function CrmView({ currentUser, selectedEntity, focusDoc, onClearFocus }) {
-  const role = currentUser?.role;
-  const isManager = roleIs(role, ["admin", "manager"]);   // Sisir lanjutan gerbang peran (2026-10-21) — = require_role(["manager"]) server
+  // PR-T7 (#12) — tab dari izin endpoint-nya, bukan nama peran: Skema (Arsip) = `sales_force.view` (skema & target
+  // insentif), Persetujuan Kredit = `credit_override.approve` (keputusan izin lewat-batas kredit).
+  const perms = currentUser?.permissions;
+  const canSchemes = can(perms, "sales_force", "view");
+  const canCredit = can(perms, "credit_override", "approve");
   const TABS = [
     { key: "customers", label: "Pelanggan", icon: Users },
     { key: "leads", label: "Prospek (Lead)", icon: KanbanSquare },
     { key: "interactions", label: "Interaksi", icon: MessageSquare },
     { key: "collection", label: "Penagihan", icon: Receipt },
     { key: "salesforce", label: "Kinerja Sales", icon: TrendingUp },
-    ...(isManager ? [{ key: "schemes", label: "Skema (Arsip)", icon: SlidersHorizontal }] : []),
-    ...(isManager ? [{ key: "approvals", label: "Persetujuan Kredit", icon: ShieldCheck }] : []),
+    ...(canSchemes ? [{ key: "schemes", label: "Skema (Arsip)", icon: SlidersHorizontal }] : []),
+    ...(canCredit ? [{ key: "approvals", label: "Persetujuan Kredit", icon: ShieldCheck }] : []),
   ];
   const [tab, setTab] = useState("customers");
 
@@ -47,8 +50,8 @@ export default function CrmView({ currentUser, selectedEntity, focusDoc, onClear
       {tab === "interactions" && <OmnichannelInteractions currentUser={currentUser} selectedEntity={selectedEntity} />}
       {tab === "collection" && <CollectionWorklist currentUser={currentUser} selectedEntity={selectedEntity} />}
       {tab === "salesforce" && <SalesForceDashboard currentUser={currentUser} selectedEntity={selectedEntity} />}
-      {tab === "schemes" && isManager && <IncentiveSchemeEditor currentUser={currentUser} selectedEntity={selectedEntity} />}
-      {tab === "approvals" && isManager && <CreditOverridesPanel currentUser={currentUser} />}
+      {tab === "schemes" && canSchemes && <IncentiveSchemeEditor currentUser={currentUser} selectedEntity={selectedEntity} />}
+      {tab === "approvals" && canCredit && <CreditOverridesPanel currentUser={currentUser} />}
     </div>
   );
 }

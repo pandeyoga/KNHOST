@@ -8,7 +8,7 @@ import MobileOrders from "./MobileOrders";
 import MobileMore from "./MobileMore";
 import MobileShell from "../../mobile/MobileShell";
 import { notifLink } from "../../mobile/notifText";
-import { roleIs } from "../../../config/roles";
+import { isSalesAdminLayout } from "../../mobile/mobileLayout";
 import PosStartGate, { loadPosCtx, savePosCtx } from "../../pos/PosStartGate";
 import CreateCustomerModal from "../../pos/CreateCustomerModal";
 import { useSites } from "../../../components/SiteSelect";
@@ -33,7 +33,7 @@ export default function MobileSalesApp(props) {
     selectedEntity, entities, onForceDesktop, allowRollPick = true, initialSub = null, onOpenFull, onRefresh, onSelectEntity,
     settings, onCreateCustomer, notice = "",
   } = props;
-  const isAdmin = roleIs(user?.role, ["sales_admin"]);   // Sisir gerbang peran (2026-10-20) — tata letak meja Admin Sales (peran acuan dikenali)
+  const isAdmin = isSalesAdminLayout(user?.role);   // PR-T7 — tata letak meja Admin Sales dari halaman awal peran, bukan id peran
   const [orderFocus, setOrderFocus] = useState(null);
   const [subParam, setSubParam] = useState(null);
 

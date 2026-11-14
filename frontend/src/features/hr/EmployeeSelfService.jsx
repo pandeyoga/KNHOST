@@ -147,10 +147,15 @@ export default function EmployeeSelfService({ currentUser }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [notFound, setNotFound] = useState(false);
+  // PR-T7 (tabel 2) — data sesi membawa `employee_id` (tautan karyawan dari sisi HR, sumber yang sama dengan
+  // `/hr/employees/me`). Kosong = akun belum tertaut → tidak memanggil endpoint yang pasti 404. Field tidak ada (sesi
+  // tersimpan sebelum perubahan ini) = perilaku lama: tetap memanggil.
+  const unlinked = !!currentUser && currentUser.employee_id === "";
 
-  useEffect(() => { load(); }, []); // eslint-disable-line
+  useEffect(() => { load(); }, [unlinked]); // eslint-disable-line
 
   async function load() {
+    if (unlinked) { setEmp(null); setNotFound(false); setError(""); setLoading(false); return; }
     setLoading(true); setNotFound(false);
     try {
       const res = await axios.get(`${API}/hr/employees/me`);
@@ -172,6 +177,11 @@ export default function EmployeeSelfService({ currentUser }) {
 
       {loading ? (
         <div className="section-card"><div className="py-12 text-center text-[12px] text-[#6B6B73]" data-testid="ess-loading">Memuat profil...</div></div>
+      ) : unlinked ? (
+        <div className="section-card"><div className="py-12 text-center text-fs-12 text-kn-text-2" data-testid="ess-unlinked">
+          <IdCard className="mx-auto mb-2 text-gray-300" size={28} />
+          <p>Akun ini belum ditautkan ke data karyawan. Minta Admin menautkannya di Akun &amp; Akses.</p>
+        </div></div>
       ) : notFound ? (
         <div className="section-card"><div className="py-12 text-center text-[12px] text-[#6B6B73]" data-testid="ess-empty">
           <IdCard className="mx-auto mb-2 text-gray-300" size={28} />

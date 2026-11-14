@@ -12,15 +12,13 @@
 import { useEffect, useState } from "react";
 import { ChevronRight, Loader2 } from "lucide-react";
 import axios, { API } from "../../services/apiClient";
-import { roleIs } from "../../config/roles";
+import { summaryKindOf } from "./mobileLayout";
 import { formatCurrency, formatQty } from "../../utils/formatters";
 import { apiErrorText } from "../../utils/apiError";
 
 /** Jenis ringkasan untuk peran ini — "" = pakai panel umum. */
 export function roleSummaryKind(role) {
-  if (roleIs(role, ["designer"])) return "designer";
-  if (roleIs(role, ["sample_admin"])) return "sample_admin";
-  return "";
+  return summaryKindOf(role);   // PR-T7 — tata letak dari halaman awal peran (Desainer / Admin Sample), bukan id peran
 }
 
 /** Kartu angka desainer dari `summary` permintaan desain (server). Kunci yang tak dikirim server lama dilewati. */

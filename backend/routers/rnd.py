@@ -540,12 +540,13 @@ async def create_sample(payload: SampleInput, request: Request) -> Dict[str, Any
 
 @router.get("/rnd/samples/{sample_id}")
 async def get_sample(sample_id: str, request: Request) -> Dict[str, Any]:
-    await require_permission(request, "rnd", "view")
+    actor = await require_permission(request, "rnd", "view")
     ctx = await entity_ctx(request)
     doc = await _sample_guard(sample_id, ctx)
     if doc.get("spec_id"):
         doc["spec"] = await spec_svc.get_spec(doc["spec_id"])
     doc["master_data"] = await smp.master_data_of(doc)
+    doc["caps"] = await smp.caps_for(doc, actor)   # PR-T7 — bendera tombol dari pemeriksa server
     return doc
 
 

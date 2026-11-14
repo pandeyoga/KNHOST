@@ -9,6 +9,12 @@ import RegistrationDetail from "../inventory/registration/RegistrationDetail";
 import MobileRegistration from "../mobile/MobileRegistration";
 import { canonicalEpc, scopeOptions, splitCodes } from "../inventory/registration/registrationApi";
 import { AppNavProvider } from "../../context/AppNavContext";
+import { setAccessContext } from "../../config/roles";
+
+// PR-T7 — `canCurrent` kini "tidak" selama konteks izin belum dimuat (dulu "boleh"); suite ini menguji tata letak &
+// alur layar dengan izin penuh seperti sebelumnya, jadi konteks diisi sebagai Admin yang sudah masuk.
+beforeAll(() => setAccessContext({ role: "admin" }));
+afterAll(() => setAccessContext(null));
 
 jest.mock("../../services/apiClient", () => {
   const fn = { get: jest.fn(), post: jest.fn(), patch: jest.fn(), delete: jest.fn() };

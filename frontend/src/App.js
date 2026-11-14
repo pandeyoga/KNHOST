@@ -32,7 +32,7 @@ import { entityShortById } from "./utils/entityLabel";
 import { isGroupScope } from "./utils/writeScope";
 import PublicVerify from "./features/documents/PublicVerify";
 import { openNotifDocument } from "./features/notifications/notifDocTarget";
-import { setAccessContext, roleIs } from "./config/roles";
+import { setAccessContext, can } from "./config/roles";
 import {
   Archive,
   Boxes,
@@ -307,7 +307,7 @@ function App() {
           crumbs={breadcrumbFor(activeView, effectiveNavId, user?.role)}
           scopeLabel={groupScope ? "Semua Badan Usaha" : entityShortById(archivedActive ? archivedEntities : entities, selectedEntity)}
           onToggleSidebar={handleToggleSidebar}
-          onAskKn={["admin", "manager", "sales_admin", "finance", "md", "warehouse_admin", "sales"].includes(user?.role) ? () => handleNavSelect("tanya-kn", "tanya-kn") : null}
+          onAskKn={can(user?.permissions, "ai", "view") ? () => handleNavSelect("tanya-kn", "tanya-kn") : null}
           onSync={loadAll}
           syncing={loading}
           notice={notice}
@@ -321,7 +321,7 @@ function App() {
               total={notifMeta.total}
               hasMore={notifMeta.has_more}
               onLoadMore={() => loadMoreNotifications(notifMeta.page + 1)}
-              canGenerate={roleIs(user?.role, ["admin", "manager"])}
+              canGenerate={can(user?.permissions, "system_tools", "update")}   // PR-T7 — = POST /notifications/generate
               currentUserRole={user?.role}
               onMarkRead={markNotificationRead}
               onMarkAll={markAllNotificationsRead}

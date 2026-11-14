@@ -13,7 +13,7 @@ import CustomerFormModal from "./CustomerFormModal";
 import CustomerColorsSection from "./CustomerColorsSection";
 import CustomerMergeSection from "./CustomerMergeSection";
 import AuditHistoryPanel from "../../components/AuditHistoryPanel";
-import { can, roleIs } from "../../config/roles";
+import { can } from "../../config/roles";
 
 const HIST_TABS = [
   { key: "orders", label: "Pesanan" },
@@ -32,8 +32,7 @@ export default function Customer360Panel({ customerId, currentUser, salesUsers, 
   const [showEdit, setShowEdit] = useState(false);
   const [modal, setModal] = useState(null); // 'reassign' | 'override' | 'followup'
 
-  const role = currentUser?.role;
-  const isManager = roleIs(role, ["admin", "manager"]);   // Sisir lanjutan gerbang peran (2026-10-21) — = require_role(["manager"]) server
+  const canReassign = can(currentUser?.permissions, "sales_force", "assign");   // PR-T7 (#13) — = POST /customers/{id}/reassign
   const canAudit = can(currentUser?.permissions, "audit", "view");
 
   useEffect(() => { load(); }, [customerId]); // eslint-disable-line
@@ -73,7 +72,7 @@ export default function Customer360Panel({ customerId, currentUser, salesUsers, 
           <div className="flex items-center gap-1.5">
             <button data-testid="customer-360-edit" onClick={() => setShowEdit(true)} className="secondary-button"><Edit3 size={13} /> Ubah</button>
             <AskKnButton type="customer" id={data.id} label={data.name} />
-            {isManager && <button data-testid="customer-360-reassign" onClick={() => setModal("reassign")} className="secondary-button"><UserCog size={13} /> Pindah Sales</button>}
+            {canReassign && <button data-testid="customer-360-reassign" onClick={() => setModal("reassign")} className="secondary-button"><UserCog size={13} /> Pindah Sales</button>}
           </div>
         </div>
       </div>

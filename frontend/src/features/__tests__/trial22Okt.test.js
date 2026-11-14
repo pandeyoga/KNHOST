@@ -157,7 +157,8 @@ test("E10: ringkasan — harga normal → diminta, dua total berlabel, batas boo
 
 test("E10: harga ditolak → label pilih langkah + tiga tombol; Lanjut harga normal memanggil API", async () => {
   apiCalls.length = 0;
-  const user = { role: "sales", permissions: { order: ["view", "update", "cancel"] } };
+  // PR-T7 — "Ajukan harga lain" = price_approval.create (izin bawaan Sales), bukan nama peran.
+  const user = { role: "sales", permissions: { order: ["view", "update", "cancel"], price_approval: ["view", "create", "update"] } };
   const root = await mount(<SoApprovalsPanel order={spOrder("rejected")} user={user} onRefresh={() => {}} />);
   expect(q("order-release-label").textContent).toBe("Harga ditolak · pilih langkah");
   expect(q("so-appr-ask-again-a1")).not.toBeNull();

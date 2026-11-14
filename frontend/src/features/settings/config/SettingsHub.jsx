@@ -387,8 +387,9 @@ export function SettingsBrowser({ s, entities = [], groupNav = "side", excludeLi
 export default function SettingsHub({
   currentUser, selectedEntity, entities = [], focusKey = "", focusGroup = "", focusNonce = 0, onFocusConsumed,
 }) {
-  // Sisir gerbang peran (2026-10-20): tab Kunci Saga & aksi Data Hygiene tetap khusus Admin (server require_role admin).
-  const isAdmin = currentUser?.role === "admin";
+  // PR-T7 (#22b sisa) — tab Kunci Saga (`/saga-locks`) & aksi Data Hygiene (run/revert/unlock) = `system_tools.configure`
+  // (server sejak PR-T2; dulu nama peran Admin). Tombol simpan per kunci sudah dari `can_edit` server (KF-T1).
+  const isAdmin = can(currentUser?.permissions, "system_tools", "configure");
   // UAT 24 Okt (G5-15) — tab ber-izin (Kesehatan = settings.view) hanya untuk peran pemegangnya. Izin belum termuat → tampil.
   const permOk = (t) => !t.perm || !currentUser?.permissions || can(currentUser.permissions, t.perm[0], t.perm[1]);
   const [tab, setTab] = useState("settings");

@@ -8,14 +8,18 @@ import { useEscapeClose } from "../../utils/escapeLayers";
 import KNSelect from "../../components/KNSelect";
 import ErrorNotice from "../../components/ErrorNotice";
 import { KpiTile, currentPeriod, pct } from "./crmUtils";
-import { can, roleIs } from "../../config/roles";
+import { can } from "../../config/roles";
 
 /** Sales Force dashboard (KN_17 §6) — KPI + komisi + leaderboard + target. */
 export default function SalesForceDashboard({ currentUser, selectedEntity }) {
-  const role = currentUser?.role;
-  const isManager = roleIs(role, ["admin", "manager"]);   // Sisir lanjutan gerbang peran (2026-10-21) — = require_role(["manager"]) server
+  // PR-T7 (#14) — pandangan tim (pilih sales, papan peringkat, status akrual GL) = `sales_force.view` (GET /sales/leaderboard,
+  // /sales/incentive/gl-status); Set Target = `sales_force.update`; posting akrual = `sales_force.post`. Dulu nama peran.
+  const perms = currentUser?.permissions;
+  const isManager = can(perms, "sales_force", "view");
+  const canSetTarget = can(perms, "sales_force", "update");
+  const canPostGl = can(perms, "sales_force", "post");
   // PR-T4 — memilih sales lain (KPI & komisinya) = izin `order.view_sales_kpi` (server `_kpi_scope`), bukan nama peran.
-  const canPickSales = can(currentUser?.permissions, "order", "view_sales_kpi");
+  const canPickSales = can(perms, "order", "view_sales_kpi");
   const [period, setPeriod] = useState(currentPeriod());
   const [salesUsers, setSalesUsers] = useState([]);
   const [salesId, setSalesId] = useState(canPickSales ? "" : currentUser?.id);
@@ -103,7 +107,7 @@ export default function SalesForceDashboard({ currentUser, selectedEntity }) {
           <div className="flex items-center gap-2">
             {canPickSales && <KNSelect value={salesId} onValueChange={setSalesId} className="field w-[170px]" data-testid="sf-sales-select" options={salesOptions} />}
             <div className="w-[170px]"><KNMonthPicker data-testid="sf-period" value={period} onChange={setPeriod} /></div>
-            {isManager && <button data-testid="sf-set-target" onClick={() => setShowTarget(true)} className="secondary-button"><Target size={13} /> Set Target</button>}
+            {canSetTarget && <button data-testid="sf-set-target" onClick={() => setShowTarget(true)} className="secondary-button"><Target size={13} /> Set Target</button>}
           </div>
         </div>
       </div>
@@ -158,13 +162,13 @@ export default function SalesForceDashboard({ currentUser, selectedEntity }) {
                     "Belum ada jurnal akrual periode ini. Posting untuk membukukan beban insentif penjualan ke buku entitas aktif (idempotent)."
                   )}
                 </div>
-                <button
+                {canPostGl && <button
                   data-testid="sf-post-incentive-gl"
                   disabled={postingGl || !accrualEntity || !!glStatus?.posted}
                   onClick={postIncentiveGl}
                   className="primary-button inline-flex items-center gap-1.5">
                   <Landmark size={13} /> {postingGl ? "Memposting..." : glStatus?.posted ? "Sudah Diposting" : "Posting ke GL"}
-                </button>
+                </button>}
               </div>
             </div>
           )}

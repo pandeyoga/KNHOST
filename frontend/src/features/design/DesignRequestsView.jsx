@@ -45,7 +45,7 @@ import {
 } from "./designRequestsApi";
 import { DESIGN_STATUS_META } from "../rnd/rndMeta";
 import DesignImage from "../rnd/design/DesignImage";
-import { roleIs } from "../../config/roles";
+import { can } from "../../config/roles";
 import { actorLabel } from "../../utils/actorLabel";
 
 /** Kartu papan: nomor · kategori · brief · desain Studio tertaut · desainer · tenggat. */
@@ -128,9 +128,10 @@ export default function DesignRequestsView({ currentUser, selectedEntity = "all"
   const [orders, setOrders] = useState([]);
   const [error, setError] = useState("");
 
-  const role = meta.role || currentUser?.role || "";
-  const canCreate = roleIs(role, ["admin", "manager", "sales_admin", "md"]);
-  const canReport = roleIs(role, ["admin", "manager"]);
+  // PR-T7 (#4) — Buat = `design_request.create` (POST /design-requests); rapor desainer = `design_request.report`
+  // (GET /design/reports/by-designer). Dulu daftar nama peran.
+  const canCreate = can(currentUser?.permissions, "design_request", "create");
+  const canReport = can(currentUser?.permissions, "design_request", "report");
   // FASE D — desainer TIDAK melihat rapor rekan (itu wewenang atasan), tetapi ia
   // berhak melihat angkanya SENDIRI. Fase 3 · P6 (D-08): keduanya kini kartu tautan ke layar utamanya.
   const canReportMine = !canReport && !!meta.own_only;

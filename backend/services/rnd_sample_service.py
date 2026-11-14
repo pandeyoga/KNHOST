@@ -586,6 +586,21 @@ async def get_sample(sample_id: str) -> Optional[Dict[str, Any]]:
     return safe_doc(await db[COLL].find_one({"id": sample_id}, {"_id": 0}))
 
 
+async def caps_for(doc: Dict[str, Any], actor: Dict[str, Any]) -> Dict[str, bool]:
+    """PR-T7 — bendera tombol rincian sample yang wewenangnya BUKAN satu izin polos (kebijakan peran per PT), dihitung
+    pemeriksa yang SAMA dengan `decide_sample` / `rnd_spec_service.approve_spec`:
+      · `pick_winner`  — kebijakan `rnd.sample_decision_roles`; sample uji ulang selalu boleh (hasil teknis uji ulang
+                         tidak lewat kebijakan peran — `decide_sample`);
+      · `approve_spec` — kebijakan `rnd.spec_approval_roles` (ACC spesifikasi & rilis produk) pada PT spesifikasinya.
+    Izin tombolnya sendiri (`rnd.decide`, `rnd.assess`) tetap diperiksa layar dengan `can(...)`."""
+    reval = doc.get("purpose") == "revalidation" and bool(doc.get("revalidation"))
+    spec_eid = (doc.get("spec") or {}).get("entity_id") or doc.get("entity_id", "")
+    return {
+        "pick_winner": reval or await specs.role_allowed(actor, "sample_decision_roles", doc.get("entity_id", "")),
+        "approve_spec": await specs.role_allowed(actor, "spec_approval_roles", spec_eid),
+    }
+
+
 def spec_summary(spec: Dict[str, Any], template_name: str = "") -> Dict[str, Any]:
     t = spec.get("target") or {}
     return {"id": spec.get("id"), "number": spec.get("number"), "status": spec.get("status"),

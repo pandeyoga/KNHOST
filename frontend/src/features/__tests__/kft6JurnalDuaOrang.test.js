@@ -116,7 +116,8 @@ test("Tutup Buku: periode ber-pengajuan menampilkan 'Menunggu orang kedua'; reop
     reopen_request: { by_id: "u1", by: "Budi Santoso", at: "2026-07-02T00:00:00Z" } };
   mockGet.mockImplementation((url) => Promise.resolve({ data: url.endsWith("/finance/closing") ? [rec] : {} }));
   mockPost.mockResolvedValue({ status: 202, data: { status: "menunggu_orang_kedua", requested_by: "Budi Santoso" } });
-  const admin = { role: "admin", permissions: { accounting: ["view", "manage"] } };
+  // PR-T7 — buka kembali = accounting.manage + accounting.reopen (izin bawaan Admin), bukan nama peran.
+  const admin = { role: "admin", permissions: { accounting: ["view", "manage", "reopen"] } };
   await mount(<ClosingView selectedEntity="ent_ksc" entities={ENTS} currentUser={admin} />);
   expect(q("closing-reopen-pending-pc1").textContent).toBe("Menunggu orang kedua — diajukan Budi Santoso");
   await click(q("closing-reopen-pc1"));

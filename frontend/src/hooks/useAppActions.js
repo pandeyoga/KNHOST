@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef } from "react";
 import axios, { API, setAuthToken, setActiveEntity, setLocationScope } from "../services/apiClient";
 import { forgetDocEntities } from "../services/docEntityRegistry";
 import { defaultViewForRole, defaultNavIdForRole } from "../config/navigationConfig";
-import { can } from "../config/roles";
+import { can, registerDynamicRoles } from "../config/roles";
 import { formatQty } from "../utils/formatters";
 import { formatUnitTotals } from "../utils/qtyByUnit";
 import { offlinePost } from "../utils/offlineQueue";
@@ -87,10 +87,16 @@ export function useAppActions(state) {
       // layar bisa bertanya `can(currentUser.permissions, "interco", "create")` alih-alih
       // menebak dari literal peran. Tanpa ini, tombol untuk peran baru (Admin Sales /
       // Finance) tetap mati walau server mengizinkan — atau hidup lalu ditolak 403.
+      // PR-T7 (PR-UX-41) — jawaban login kini membawa konteks izin LENGKAP (penyaring menu `view_resources`, tab
+      // tersembunyi) + daftar peran: peran kustom terdaftar dan izin terpasang SEBELUM layar pertama digambar
+      // (dulu beranda sementara = beranda Sales dan `canCurrent()` menjawab "boleh" sampai `/auth/me` dijawab).
+      if (Array.isArray(response.data.roles)) registerDynamicRoles(response.data.roles);
       const authedUser = {
         ...response.data.user,
         permissions: response.data.permissions || {},
         role_label: response.data.role_label || response.data.user?.role || "",
+        ...(response.data.view_resources ? { view_resources: response.data.view_resources,
+          hidden_views: response.data.hidden_views || [] } : {}),
       };
       setUser(authedUser);
       localStorage.setItem("kn_token", response.data.token);

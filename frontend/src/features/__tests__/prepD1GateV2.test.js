@@ -8,6 +8,12 @@ import { createRoot } from "react-dom/client";
 
 import U300Operations from "../rfid/U300Operations";
 import { REASON, SCENARIOS, reasonText, verdictInfo } from "../rfid/u300Labels";
+import { setAccessContext } from "../../config/roles";
+
+// PR-T7 — `canCurrent` kini "tidak" selama konteks izin belum dimuat; panel diuji sebagai Admin yang sudah masuk
+// (hanya penyiapan uji; logika gerbang RFID tidak berubah).
+beforeAll(() => setAccessContext({ role: "admin" }));
+afterAll(() => setAccessContext(null));
 
 jest.mock("../../services/apiClient", () => {
   const fn = { get: jest.fn(), post: jest.fn(), put: jest.fn(), patch: jest.fn(), delete: jest.fn() };

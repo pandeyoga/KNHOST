@@ -24,6 +24,11 @@ import BiFinanceView from "../finance/BiFinanceView";
 import BankAccountsView from "../finance/BankAccountsView";
 import CashManagementView from "../purchasing/CashManagementView";
 import JournalEntryModal from "../finance/JournalEntryModal";
+import { setAccessContext } from "../../config/roles";
+
+// PR-T7 — `canCurrent` kini "tidak" selama konteks izin belum dimuat; layar diuji sebagai Admin yang sudah masuk.
+beforeAll(() => setAccessContext({ role: "admin" }));
+afterAll(() => setAccessContext(null));
 
 const mockGet = jest.fn();
 const mockPost = jest.fn();

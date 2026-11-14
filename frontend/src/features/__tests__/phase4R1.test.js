@@ -281,7 +281,9 @@ test("Pesanan HP (keputusan pemilik R5): Backorder = status Menunggu stok saja; 
     { id: "x1", number: "SO-X", status: "cancelled", has_backorder: true, customer_name: "D", items: item },
     { id: "d1", number: "SO-D", status: "delivered", has_backorder: true, customer_name: "E", items: item },
   ];
-  const { host } = await mount(<MobileOrders orders={orders} role="sales_admin" user={{ role: "sales_admin" }} />);
+  // PR-T7 — tombol verifikasi/lepas/pemenuhan = izin order.confirm (+ internal_request.convert untuk pilih PT sumber),
+  // izin bawaan Admin Sales; bukan nama peran.
+  const { host } = await mount(<MobileOrders orders={orders} role="sales_admin" user={{ role: "sales_admin", permissions: { order: ["view", "confirm", "verify"], internal_request: ["convert"] } }} />);
   expect(q(host, "mobile-order-backorder-chip-w1").textContent).toBe("Backorder");
   expect(q(host, "mobile-order-partial-stock-chip-w1")).toBeNull();
   for (const id of ["c1", "r1"]) {

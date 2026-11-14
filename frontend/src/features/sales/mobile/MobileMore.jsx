@@ -1,6 +1,6 @@
 import { Users, RotateCcw, FileStack, Tags, ChevronRight, ArrowLeft, Target, Sparkles, BarChart3 } from "lucide-react";
 import { Scissors, FlaskConical, Truck, Briefcase, Wallet, Car, Megaphone, FileText, UserCheck, ExternalLink, FileEdit } from "lucide-react";
-import { roleIs } from "../../../config/roles";
+import { isSalesAdminLayout, salesMenuRole } from "../../mobile/mobileLayout";
 import TanyaKnView from "../../tanya/TanyaKnView";
 import MobileAmendments from "./MobileAmendments";
 import { useEffect, useLayoutEffect, useMemo, useRef } from "react";
@@ -59,7 +59,9 @@ const navIdsFor = (role) => new Set(buildNavigation(role).filter((e) => !e.comin
 // Menu & grup layar HP sales (MENU/GROUPS) tidak punya `nav` — cukup cek peran. Dulu ikut disaring `allowed`
 // (yang mewajibkan `nav` di sidebar) sehingga SEMUA menu HP sales hilang (Retur, Pesanan Sample, Pesanan Khusus,
 // Minta Harga Khusus, …) — cek UI UAT v3 (2026-10-22).
-const roleOk = (item, role) => !item.roles || item.roles.includes(role);
+// PR-T7 — `roles:` di MENU/GROUPS/FULL_VIEWS = rancangan menu HP (seperti navStructure), dicocokkan dengan peran
+// RANCANGAN dari halaman awal peran (Admin Sales / Sales), supaya peran kustom berperan dasar ikut mendapat menunya.
+const roleOk = (item, role) => !item.roles || item.roles.includes(salesMenuRole(role));   // tata-letak: menu HP sales per rancangan peran
 // Fitur tampilan penuh (FULL_VIEWS) — hanya yang memang ada di sidebar desktop peran ini.
 const allowed = (item, role) => {
   if (!roleOk(item, role)) return false;
@@ -191,7 +193,7 @@ export default function MobileMore({ onOpenOrder, user, token, selectedEntity, e
       <MobileAccountMenu user={user} entities={entities} selectedEntity={selectedEntity} onSelectEntity={onSelectEntity}
         onForceDesktop={onForceDesktop} onLogout={onLogout} header={<MobilePendingQueue />}
         entityNote={'Mode "Semua Entitas" hanya untuk melihat — pilih satu badan usaha untuk membuat pesanan, retur, atau permintaan.'}
-        footer={`Kain Nusantara — Mobile ${roleIs(role, ["sales_admin"]) ? "Admin Sales" : "Sales"}`}>
+        footer={`Kain Nusantara — Mobile ${isSalesAdminLayout(role) ? "Admin Sales" : "Sales"}`}>
         {GROUPS.filter((g) => roleOk(g, role)).map((g) => {
           // Satu menu hanya tampil sekali (grup pertama yang memuatnya) — testid tetap unik.
           const items = g.items.map((id) => MENU.find((m) => m.id === id)).filter((m) => m && roleOk(m, role) && !shownIds.has(m.id));

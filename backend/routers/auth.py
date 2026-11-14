@@ -57,6 +57,23 @@ async def _my_nav(role: str) -> Dict[str, Any]:
             "view_resources": view_resources_index()}
 
 
+# PR-T7 — tautan karyawan dibaca dari SUMBER YANG SAMA dengan `GET /api/hr/employees/me` (`hr_employees.user_id`).
+# `users.employee_id` tidak cukup: proses awal menautkan karyawan hanya dari sisi HR (data acuan: 14 dari 17 akun
+# tertaut tanpa `users.employee_id`). Layar Profil Saya tidak memanggil `/hr/employees/me` bila nilainya kosong.
+async def _employee_id_of(user: Dict[str, Any]) -> str:
+    emp = await db.hr_employees.find_one({"user_id": user.get("id") or ""}, {"_id": 0, "id": 1})
+    return (emp or {}).get("id", "") or ""
+
+
+async def _roles_list() -> list:
+    """PR-T7 (PR-UX-41) — daftar peran berbentuk `GET /api/roles`, supaya peran kustom terdaftar di layar SEBELUM
+    layar pertama digambar (dulu beranda sementara = beranda Sales sampai `/roles` dijawab)."""
+    from role_registry import public_list
+    from services.custom_role_service import sync_registry
+    await sync_registry()
+    return public_list()
+
+
 def _client_ip(request: Request) -> str:
     fwd = request.headers.get("x-forwarded-for", "")
     if fwd:
@@ -141,8 +158,12 @@ async def login(payload: LoginRequest, request: Request, response: Response) -> 
     entity_context = await build_entity_context(user)
     perms = await _my_permissions(user)
     user["role_label"] = perms["role_label"]
+    user["employee_id"] = await _employee_id_of(user)   # PR-T7
+    # PR-T7 (PR-UX-41) — konteks izin LENGKAP sejak jawaban login (sama dengan `GET /api/auth/me`) + daftar peran:
+    # dulu `view_resources` baru datang dari `/auth/me`, dan selama itu `canCurrent()` menjawab "boleh".
     return {"token": token, "user": user, "onboarding": onboarding,
-            "entity_context": entity_context, **perms}
+            "entity_context": entity_context, **perms, **(await _my_nav(user.get("role") or "")),
+            "roles": await _roles_list()}
 
 
 @router.get("/roles")
@@ -168,6 +189,7 @@ async def me(request: Request) -> Dict[str, Any]:
     perms = await _my_permissions(user)
     user["role_label"] = perms["role_label"]
     user["permissions"] = perms["permissions"]
+    user["employee_id"] = await _employee_id_of(user)   # PR-T7
     user.update(await _my_nav(user.get("role") or ""))
     return user
 

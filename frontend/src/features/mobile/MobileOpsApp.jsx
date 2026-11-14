@@ -1,4 +1,5 @@
-import { can, roleIs } from "../../config/roles";
+import { can } from "../../config/roles";
+import { hasShortcutTab, homeViewOf } from "./mobileLayout";
 import { useCallback, useEffect, useState } from "react";
 import { Inbox, Gauge, Loader2, ClipboardList, Sparkles, LayoutGrid, ExternalLink } from "lucide-react";
 import axios, { API } from "../../services/apiClient";
@@ -135,10 +136,11 @@ function KpiPanel() {
   ) : <div className="p-8 text-center text-sm text-[#6E6E73]" data-testid="mo-kpi-empty">Belum ada angka ringkas untuk peran ini.</div>;
 }
 
-const AI_ROLES = ["admin", "manager", "sales_admin", "finance", "md", "warehouse_admin"];
-// Keputusan pemilik K-11 (26 Okt) — Admin Sample TIDAK memutus pesanan khusus (SORD) di HP: tab/aksi PO custom
-// disembunyikan apa pun izin yang termuat (server: matriks bawaan sample_admin tanpa `order.approve` → 403).
-const NO_SORD_DECISION_ROLES = ["sample_admin"];
+// PR-T7 — tab Tanya = izin `ai.view` (dulu daftar enam nama peran). Keputusan pesanan khusus (SORD) di HP = izin
+// `order.approve` (= `POST /special-orders/{id}/approve`). Keputusan pemilik K-11 (26 Okt) — Admin Sample TIDAK memutus
+// SORD di HP apa pun izin yang termuat — adalah TATA LETAK aplikasi HP-nya: kini dibaca dari halaman awal peran
+// (`sample-admin-desk`, ikut peran kustom berperan dasar Admin Sample), bukan dari daftar id peran.
+const NO_SORD_HOME = "sample-admin-desk";
 
 export default function MobileOpsApp(props) {
   // UAT 24 Okt (audit UI tahap 2, G5-08) — tab dibentuk dari IZIN (sumber yang sama dengan penjaga server). Dulu
@@ -148,7 +150,7 @@ export default function MobileOpsApp(props) {
   const perms = user?.permissions;
   const allow = (m, a) => !perms || can(perms, m, a);
   const canPrice = allow("price_approval", "approve");
-  const canSpecial = allow("order", "approve") && !roleIs(user?.role, NO_SORD_DECISION_ROLES);
+  const canSpecial = allow("order", "approve") && homeViewOf(user?.role) !== NO_SORD_HOME;
   const canQueue = allow("approval", "view");
   // Satu daftar keputusan HP untuk tab Persetujuan, dedup antrean & lencana "Putuskan di HP" di lonceng.
   const pending = usePendingApprovals({ canPrice, canSpecial });
@@ -195,15 +197,15 @@ export default function MobileOpsApp(props) {
     : <KpiPanel />) });
   const qcAllowed = can(perms, "qc", "inspect") || can(perms, "qc", "random_check");
   const qcButton = <button type="button" data-testid="mobile-open-inspections" className="primary-button w-full justify-center" onClick={() => openFull("quality-hub", "inspections")}>Meja QC · SPK inspeksi & random check scan</button>;
-  if (["admin", "manager", "md"].includes(user?.role)) tabs.push({
+  if (hasShortcutTab(user?.role)) tabs.push({   // PR-T7 — tata letak dari halaman awal peran; tiap tombol dari izin
     // Audit UI HP (manager) — tab ini berisi pintasan (produk, sample R&D, kedatangan barang, order makloon).
     // Fase 3 · P7 — pintasan dibuka sebagai tampilan penuh + tombol kembali (dulu sebagian tidak berpindah layar).
     id: "catalog", label: "Pintasan", icon: LayoutGrid,
     render: () => (
       <div className="space-y-3 p-5">
-        <button type="button" data-testid="mobile-open-catalog" className="primary-button w-full justify-center" onClick={() => openFull("products-pricing", "md-products")}>Produk & varian</button>
-        <button type="button" data-testid="mobile-open-rnd" className="secondary-button w-full justify-center" onClick={() => openFull("rnd-hub", "rnd-samples")}>Permintaan Sample R&D</button>
-        {user?.role !== "md" && <button type="button" data-testid="mobile-open-grn-ops" className="secondary-button w-full justify-center" onClick={() => openFull("wms-operations", "goods-receipts")}>Kedatangan Barang & foto SJ</button>}
+        {can(perms, "product", "view") && <button type="button" data-testid="mobile-open-catalog" className="primary-button w-full justify-center" onClick={() => openFull("products-pricing", "md-products")}>Produk & varian</button>}
+        {can(perms, "rnd", "view") && <button type="button" data-testid="mobile-open-rnd" className="secondary-button w-full justify-center" onClick={() => openFull("rnd-hub", "rnd-samples")}>Permintaan Sample R&D</button>}
+        {can(perms, "goods_receipt", "view") && <button type="button" data-testid="mobile-open-grn-ops" className="secondary-button w-full justify-center" onClick={() => openFull("wms-operations", "goods-receipts")}>Kedatangan Barang & foto SJ</button>}
         {can(perms, "makloon_order", "view") && <button type="button" data-testid="mobile-open-makloon-orders" className="secondary-button w-full justify-center" onClick={() => openFull("purchase-orders", "makloon-orders")}>Order Makloon (detail & retur bahan)</button>}
         {qcAllowed && qcButton}
       </div>
@@ -211,7 +213,7 @@ export default function MobileOpsApp(props) {
   });
   // L05 — petugas QC/MD Quality: Meja QC (SPK, random check dari scan) bisa dibuka dari HP.
   else if (qcAllowed) tabs.push({ id: "qc", label: "QC", icon: ClipboardList, render: () => <div className="space-y-3 p-5">{qcButton}</div> });
-  if (AI_ROLES.includes(user?.role)) {
+  if (can(perms, "ai", "view")) {
     tabs.push({ id: "tanya", label: "Tanya", icon: Sparkles, render: () => (
       <div className="m-tanya" data-testid="mo-tanya"><TanyaKnView selectedEntity={props.selectedEntity} entities={props.entities} /></div>) });
   }

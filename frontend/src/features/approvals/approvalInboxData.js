@@ -8,9 +8,14 @@
  *                    dipakai untuk hitungan kartu tautan tab "Amandemen".
  *  · `backlog`     — ringkasan SELURUH antrean (`GET /approvals/backlog`, sumber sama dengan KPI beranda).
  *  · `unavailable` — kategori yang GAGAL dibaca (izin/jaringan) — disebut di layar, bukan diam-diam kosong.
+ *
+ * PR-T7 (tabel 2) — `loadInbox(perms)`: hanya kategori yang izin lihatnya DIPEGANG yang dipanggil (pasangan yang sama
+ * dengan gerbang endpoint-nya). Kategori di luar izin peran bukan "gagal dibaca" → tidak dihitung "belum lengkap"
+ * (dulu enam kategori dijawab 403 untuk peran penagihan dan layar memperingatkan "Daftar ini belum lengkap").
  */
 import { Tag, ShoppingCart, RotateCcw, ClipboardCheck, ShieldCheck, CreditCard, FileEdit } from "lucide-react";
 import axios, { API } from "../../services/apiClient";
+import { can } from "../../config/roles";
 import { formatCurrency } from "../../utils/formatters";
 import { discountInfo } from "../sales/priceApprovals/priceApprovalText";
 import { SO_DEAD_STATUSES } from "./inboxTabs";
@@ -35,25 +40,40 @@ const SO_KIND_BY_TYPE = { nilai: "so_nilai", kredit: "so_kredit", special_price:
 const arr = (d) => (Array.isArray(d) ? d : (Array.isArray(d?.items) ? d.items : []));
 const byAt = (a, b) => new Date(a.at || 0) - new Date(b.at || 0);
 
-export async function loadInbox() {
+// Izin lihat tiap kategori = gerbang endpoint-nya ("salah satu dari" → salah satu pasangan cukup).
+const QUEUE_PERMS = [["order", "approve"], ["approval", "view"]];   // /approvals/queue, /approvals/backlog
+export const CATEGORY_PERMS = {
+  "Pesanan Penjualan": QUEUE_PERMS,
+  "Pembelian (PO)": [["purchase_order", "view"]],
+  "Harga Khusus": [["price_approval", "view"]],
+  "Retur Penjualan": [["sales_return", "view"], ["wms", "scan"], ["qc", "inspect"]],
+  "Retur Pembelian": [["purchase_return", "view"]],
+  "Stock Opname": [["inventory", "cycle_count"]],
+  "Amandemen": [["finance_amendment", "propose"]],
+  "Ringkasan Antrean": QUEUE_PERMS,
+  "Kredit Pelanggan": [["customer", "view"]],
+};
+
+export async function loadInbox(perms) {
   const gagal = [];
-  /** Ambil satu sumber; catat namanya bila tak boleh/gagal (bukan diam-diam kosong). */
-  const grab = (label, promise) => promise.catch((e) => {
+  const boleh = (label) => (CATEGORY_PERMS[label] || []).some(([m, a]) => can(perms, m, a));
+  /** Ambil satu sumber; catat namanya bila tak boleh/gagal (bukan diam-diam kosong). Tanpa izin lihat = tidak dipanggil. */
+  const grab = (label, call) => (!boleh(label) ? Promise.resolve({ data: [], _skipped: true }) : call().catch((e) => {
     gagal.push(label);
     return { data: [], _failed: e };
-  });
+  }));
   const [queueRes, poRes, prRes, srRes, purRes, ccRes, amdRes, blRes, coRes] = await Promise.all([
-    grab("Pesanan Penjualan", axios.get(`${API}/approvals/queue`)),
-    grab("Pembelian (PO)", axios.get(`${API}/purchase-orders`)),
-    grab("Harga Khusus", axios.get(`${API}/price-approvals`, { params: { status: "pending" } })),
-    grab("Retur Penjualan", axios.get(`${API}/sales-returns`, { params: { status: "pending_approval" } })),
-    grab("Retur Pembelian", axios.get(`${API}/purchase-returns`)),
-    grab("Stock Opname", axios.get(`${API}/cycle-count/sessions`)),
-    grab("Amandemen", axios.get(`${API}/amendments`, { params: { status: "pending_approval" } })),
+    grab("Pesanan Penjualan", () => axios.get(`${API}/approvals/queue`)),
+    grab("Pembelian (PO)", () => axios.get(`${API}/purchase-orders`)),
+    grab("Harga Khusus", () => axios.get(`${API}/price-approvals`, { params: { status: "pending" } })),
+    grab("Retur Penjualan", () => axios.get(`${API}/sales-returns`, { params: { status: "pending_approval" } })),
+    grab("Retur Pembelian", () => axios.get(`${API}/purchase-returns`)),
+    grab("Stock Opname", () => axios.get(`${API}/cycle-count/sessions`)),
+    grab("Amandemen", () => axios.get(`${API}/amendments`, { params: { status: "pending_approval" } })),
     // FASE F-6 — `?oldest=` sekalian membawa DOKUMEN paling lama menunggu dari SEMUA antrean (termasuk antrean
     // yang layar ini tidak muat: transfer gudang, kontrabon, permintaan internal, cuti, lembur, …).
-    grab("Ringkasan Antrean", axios.get(`${API}/approvals/backlog`, { params: { oldest: 50 } })),
-    grab("Kredit Pelanggan", axios.get(`${API}/credit-overrides`, { params: { status: "pending" } })),
+    grab("Ringkasan Antrean", () => axios.get(`${API}/approvals/backlog`, { params: { oldest: 50 } })),
+    grab("Kredit Pelanggan", () => axios.get(`${API}/credit-overrides`, { params: { status: "pending" } })),
   ]);
 
   // FASE 5 — Sales Order approvals (SSOT pending_approvals): nilai / kredit / harga khusus.

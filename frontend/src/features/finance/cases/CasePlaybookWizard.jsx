@@ -22,6 +22,7 @@ import { entityFull } from "../../../utils/entityLabel";
 import { apiErrorText } from "../../../utils/apiError";
 import { moneyPost } from "../../../utils/moneyRequest";
 import useIntentKey from "../../../hooks/useIntentKey";
+import { roleLabel } from "../../../config/roles";
 
 export default function CasePlaybookWizard({ caseData, reasons, entities, customers,
   suppliers, accounts, policy, onClose, onDone, onError }) {
@@ -355,7 +356,7 @@ export default function CasePlaybookWizard({ caseData, reasons, entities, custom
             <span>
               Nominal {formatCurrency(effAmount)} melebihi ambang persetujuan{" "}
               {formatCurrency(policy.approval_above)} — hanya{" "}
-              <b>{policy.approver_role === "admin" ? "admin" : "manager"}</b> atau admin
+              <b>{roleLabel(policy.approver_role || "manager")}</b> atau {roleLabel("admin")}
               yang boleh menutup kasus ini.
             </span>
           </div>

@@ -86,7 +86,7 @@ export default function ApprovalInbox({ currentUser, onNavigate, onOpenDocument 
   async function load() {
     setLoading(true);
     try {
-      const res = await loadInbox();
+      const res = await loadInbox(currentUser?.permissions);   // PR-T7 — kategori di luar izin tidak dipanggil
       setItems(res.items);
       setAmendments(res.amendments);
       setBacklog(res.backlog);

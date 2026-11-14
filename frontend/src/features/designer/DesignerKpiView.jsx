@@ -35,7 +35,7 @@ import DesignScoreTrendChart from "./DesignScoreTrendChart";
 import DesignerSlaPanel from "./DesignerSlaPanel";
 import { designerKpi, downloadDesignerKpi, downloadDesignerReport, runSlaEscalation, saveBlob, slaBoard } from "./designerApi";
 import { gradeFormula, gradeMeta, num, PERIOD_OPTIONS } from "./designerMeta";
-import { roleIs } from "../../config/roles";
+import { can } from "../../config/roles";
 import { actorLabel, isTechActor } from "../../utils/actorLabel";
 
 const TABS = [
@@ -65,7 +65,8 @@ export default function DesignerKpiView({ currentUser, selectedEntity }) {
   const [reportBusy, setReportBusy] = useState("");
   const [reportModal, setReportModal] = useState(null); // {designer, note} | null
 
-  const canManage = roleIs(currentUser?.role, ["admin", "manager"]);
+  // PR-T7 — bobot nilai (kunci rnd.kpi_weight*) & eskalasi SLA (POST /rnd/sla/escalate) = `rnd.manage`.
+  const canManage = can(currentUser?.permissions, "rnd", "manage");
 
   const params = useMemo(() => {
     const p = {};

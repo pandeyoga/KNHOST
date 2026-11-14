@@ -7,8 +7,11 @@ import axios, { API } from "../services/apiClient";
 // Lencana jumlah posting gagal (menu Keuangan) — pemegang accounting.view (= GET /finance/posting-failures/count), polling 60 dtk.
 function usePostingFailureCount(role) {
   const [n, setN] = useState(0);
+  // PR-T7 — tanpa izin = tidak memanggil (canCurrent kini "tidak" selama konteks izin belum dimuat); dihitung ulang
+  // saat izin berubah, bukan hanya saat peran berganti.
+  const allowed = canCurrent("accounting", "view");
   useEffect(() => {
-    if (!canCurrent("accounting", "view")) return undefined;   // Sisir lanjutan gerbang peran (2026-10-21)
+    if (!allowed) return undefined;
     let alive = true;
     const load = () => axios.get(`${API}/finance/posting-failures/count`)
       .then((r) => { if (alive) setN(Number(r.data?.total) || 0); }).catch(() => {});
@@ -16,8 +19,8 @@ function usePostingFailureCount(role) {
     const t = setInterval(load, 60000);
     window.addEventListener("kn-posting-failures-changed", load);
     return () => { alive = false; clearInterval(t); window.removeEventListener("kn-posting-failures-changed", load); };
-  }, [role]);
-  return n;
+  }, [role, allowed]);
+  return allowed ? n : 0;
 }
 
 const CountBadge = ({ n, testId }) => (n > 0 ? (

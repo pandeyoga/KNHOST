@@ -355,6 +355,11 @@ STATIK=(
   # (c) registry peran bercabang di 3 berkas (server · layar · beranda).
   # Self-test = bukti-merah (menyuntik pelanggaran → wajib tertangkap).
   "guard:role_label (INV-ROLE-01, peran dari registry & izin)|python scripts/guardrails/verify_role_label.py --self-test"
+  # PR-T7 — INV-ROLE-02: tombol & panggilan data di SELURUH layar dari izin, bukan nama peran (ratchet per berkas:
+  # `roleIs(`, `roleSatisfies(`, `.includes(…role)`, `role === "<id>"`). Sisa garis dasar = milik unit lain (catatan
+  # `pemegang` di baselines/role_gate_ui.json). Self-test menyisipkan dua gerbang nama peran → wajib memerah.
+  "guard:role_gate_ui SELF-TEST (bukti-merah sisipan roleIs/includes(role))|python scripts/guardrails/verify_role_gate_ui.py --self-test"
+  "guard:role_gate_ui (INV-ROLE-02, tombol dari izin)|python scripts/guardrails/verify_role_gate_ui.py"
   # INV-UI-04 — field TURUNAN (hanya ada di respons DETAIL) tak boleh dibaca dari
   # objek hasil DAFTAR. Terukur 2026-08-15 (penutupan E-6, ditemukan uji LAYAR):
   # pita "Dipenuhi dari Badan Usaha Lain" (E9.2 · US23/US24 — "diambil dari CV Kanda

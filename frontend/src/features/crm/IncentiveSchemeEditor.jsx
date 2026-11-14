@@ -6,7 +6,7 @@ import KNSelect from "../../components/KNSelect";
 import ErrorNotice from "../../components/ErrorNotice";
 import { currentPeriod } from "./crmUtils";
 import MoneyInput from "@/components/MoneyInput";
-import { roleIs } from "../../config/roles";
+import { can } from "../../config/roles";
 
 /**
  * IncentiveSchemeEditor (KN_17 §6.1/§6.2) — editor Target sales per periode +
@@ -14,8 +14,8 @@ import { roleIs } from "../../config/roles";
  * Backend: GET/POST /api/sales-targets, GET/POST /api/sales-incentives.
  */
 export default function IncentiveSchemeEditor({ currentUser, selectedEntity }) {
-  const role = currentUser?.role;
-  const isManager = roleIs(role, ["admin", "manager"]);   // Sisir lanjutan gerbang peran (2026-10-21) — = require_role(["manager"]) server
+  // PR-T7 — simpan target & skema = `sales_force.update` (POST /sales-targets, POST /sales-incentives); dulu nama peran.
+  const isManager = can(currentUser?.permissions, "sales_force", "update");
 
   const [salesUsers, setSalesUsers] = useState([]);
   const [salesId, setSalesId] = useState("");
@@ -142,7 +142,7 @@ export default function IncentiveSchemeEditor({ currentUser, selectedEntity }) {
     return (
       <div className="section-card" data-testid="incentive-editor-denied">
         <div className="section-body py-10 text-center text-[12px] text-[#6B6B73]">
-          Hanya Manager / Admin yang dapat mengatur skema insentif & target.
+          Anda belum punya akses untuk mengatur skema insentif &amp; target. Minta Admin menambahkan akses “Pengawasan Tim Sales &amp; Kredit”.
         </div>
       </div>
     );

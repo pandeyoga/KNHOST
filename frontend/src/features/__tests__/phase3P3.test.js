@@ -161,7 +161,8 @@ test("D-06: inbox admin — tab Matriks divisi, amandemen tidak didaftar/diputus
   routeGet(INBOX);
   const { host } = await mount(
     <AppNavProvider role="admin" onNavigateTo={() => {}} onOpenDocument={() => {}}>
-      <ApprovalInbox currentUser={{ role: "admin" }} onNavigate={() => {}} />
+      {/* PR-T7 — kategori hanya dimuat bila izin lihatnya dipegang: Admin uji memegang izin bawaan antrean & amandemen. */}
+      <ApprovalInbox currentUser={{ role: "admin", permissions: { approval: ["view"], finance_amendment: ["propose", "approve"] } }} onNavigate={() => {}} />
     </AppNavProvider>);
   expect(q(host, "approval-inbox-tab-matrix")).not.toBeNull();
   expect(q(host, "approval-inbox-item-amd1")).toBeNull();                       // tidak lagi di daftar keputusan

@@ -16,8 +16,8 @@ import { formatCurrency } from "../../../utils/formatters";
 import AmendmentProposeModal from "./AmendmentProposeModal";
 import OdCancelNoteActions, { OdCancelNoteInfo } from "./OdCancelNoteActions";
 import { amendmentsForDoc, errText, methodMeta, statusMeta } from "./amendmentApi";
+import { can } from "../../../config/roles";
 
-const PROPOSER_ROLES = ["admin", "manager", "sales"];
 
 function shortDate(iso) {
   if (!iso) return "—";
@@ -32,7 +32,9 @@ export default function AmendmentTrailPanel({ order, currentUser, onRefresh }) {
   const [error, setError] = useState("");
   const [showModal, setShowModal] = useState(false);
 
-  const canPropose = PROPOSER_ROLES.includes(currentUser?.role);
+  // PR-T7 (#8) — usul amandemen = `finance_amendment.propose` (POST /amendments); dulu daftar nama peran (Admin Sales &
+  // Finance bawaan memegang izinnya tetapi tidak melihat tombolnya).
+  const canPropose = can(currentUser?.permissions, "finance_amendment", "propose");
 
   const load = useCallback(async () => {
     if (!order?.id) return;

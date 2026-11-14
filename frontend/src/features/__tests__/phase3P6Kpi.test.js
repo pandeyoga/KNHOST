@@ -96,7 +96,8 @@ test("D-08: Permintaan Desain (admin) — tanpa tab rapor; kartu tautan → KPI 
   routeGet({ "/design-requests/meta": { role: "admin", own_only: false, designers: [], sources: [] }, "/design-requests": DSR_LIST, "/sales-orders": [] });
   mockDsrMeta.mockResolvedValue({ role: "admin", own_only: false, designers: [], sources: [] });
   const nav = jest.fn();
-  await mount(withNav("admin", null, <DesignRequestsView currentUser={{ role: "admin" }} selectedEntity="ent_ksc" />, nav));
+  // PR-T7 — kartu rapor desainer = izin design_request.report (bawaan Admin), bukan nama peran.
+  await mount(withNav("admin", null, <DesignRequestsView currentUser={{ role: "admin", permissions: { design_request: ["view", "create", "report"] } }} selectedEntity="ent_ksc" />, nav));
   expect(q("dsr-tab-report")).toBeNull();
   expect(q("dsr-tab-myreport")).toBeNull();
   expect(q("dsr-tab-board").getAttribute("role")).toBe("tab");

@@ -26,7 +26,7 @@ import ProductPicker from "./ProductPicker";
 import RoundsProgress, { RoundBadge } from "./RoundsProgress";
 import { ScoreBadge } from "./ScoreInput";
 import { HoldBadge, OriginBadge, ProofingBadge } from "./DesignBadges";
-import { can, roleIs } from "../../../config/roles";
+import { can } from "../../../config/roles";
 import DesignOwnershipPanel from "../../hr/DesignOwnershipPanel";
 import { ACC_STATUSES } from "./designFilters";
 
@@ -44,9 +44,11 @@ export default function DesignDetailPage({ designId, currentUser, onBack, onChan
   const [ok, setOk] = useState("");
   const [edit, setEdit] = useState(false);
 
-  const role = currentUser?.role;
-  const canAssess = roleIs(role, ["admin", "manager"]);
-  const canEdit = canAssess || can(currentUser?.permissions, "design_request", "deliver") || can(currentUser?.permissions, "rnd", "manage");   // Sisir lanjutan gerbang peran (2026-10-21) — = _perm_manage server
+  // PR-T7 (#5) — penilai = `rnd.assess` (gerbang `_perm_assess` di design_studio.py); ubah = `_perm_manage` server
+  // (rnd.manage | hr.manage_attendance | design_request.deliver); master kategori = `rnd.manage`.
+  const canAssess = can(currentUser?.permissions, "rnd", "assess");
+  const canManageMaster = can(currentUser?.permissions, "rnd", "manage");
+  const canEdit = canManageMaster || can(currentUser?.permissions, "hr", "manage_attendance") || can(currentUser?.permissions, "design_request", "deliver");
   const canHold = can(currentUser?.permissions, "rnd", "hold") || meta?.hold?.can_hold === true;
   const canRelease = can(currentUser?.permissions, "design_request", "release_hold") || meta?.hold?.can_release === true;
   const canPaper = canEdit && (can(currentUser?.permissions, "design_request", "paper_check") || meta?.can_paper_check === true);
@@ -215,7 +217,7 @@ export default function DesignDetailPage({ designId, currentUser, onBack, onChan
       </div>
 
       {edit && (
-        <DesignFormModal mode="edit" design={d} canManageMaster={canAssess} onClose={() => setEdit(false)}
+        <DesignFormModal mode="edit" design={d} canManageMaster={canManageMaster} onClose={() => setEdit(false)}
           onSaved={() => { setEdit(false); done("Desain diperbarui."); }} />
       )}
     </div>

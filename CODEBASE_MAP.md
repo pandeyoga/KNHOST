@@ -1,5 +1,5 @@
 <!-- DIHASILKAN OTOMATIS oleh scripts/gen_codebase_map.py — JANGAN EDIT TANGAN -->
-<!-- Dihasilkan dari commit: 6d7dacf pada 2026-11-14 -->
+<!-- Dihasilkan dari commit: db7e563 pada 2026-11-14 -->
 # CODEBASE MAP — Kain Nusantara (dihasilkan otomatis)
 
 Peta ini dihitung dari kode oleh `scripts/gen_codebase_map.py`. Kalau angka di sini
@@ -131,7 +131,7 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 | `ar_aging.py` | 4 | 103 | `/ar/advance-report`, `/ar/aging`, `/ar/aging/{customer_id}`, `/ar/aging/{customer_id}/accrue-penalties` |
 | `ar_receipts.py` | 7 | 141 | `/ar-receipts`, `/ar-receipts/deposit`, `/ar-receipts/open-orders`, `/ar-receipts/{receipt_id}`, `/ar-receipts/{receipt_id}/repost`, `/ar-receipts/{receipt_id}/void` |
 | `audit.py` | 2 | 98 | `/audit-logs`, `/audit-logs/resource` |
-| `auth.py` | 5 | 191 | `/auth/context`, `/auth/login`, `/auth/logout`, `/auth/me`, `/roles` |
+| `auth.py` | 5 | 213 | `/auth/context`, `/auth/login`, `/auth/logout`, `/auth/me`, `/roles` |
 | `bank.py` | 6 | 135 | `/bank-accounts`, `/bank-accounts/position`, `/bank-accounts/{account_id}`, `/bank-accounts/{account_id}/ledger`, `/cash-transactions/{txn_id}/reconcile` |
 | `bank_reconciliation.py` | 23 | 436 | `/bank-reconciliation/auto-match`, `/bank-reconciliation/formats`, `/bank-reconciliation/formats/{format_id}`, `/bank-reconciliation/holding`, `/bank-reconciliation/import`, `/bank-reconciliation/import-file` … |
 | `budgets.py` | 9 | 175 | `/finance/budget-check`, `/finance/budget-keys`, `/finance/budget-rules`, `/finance/budget-vs-actual`, `/finance/budgets`, `/finance/budgets/{budget_id}` |
@@ -246,7 +246,7 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 | `rfid_v2_ops.py` | 10 | 166 | `/rfid/v2/ops/devices/{device_id}/gate-latch/acknowledge`, `/rfid/v2/ops/devices/{device_id}/gate-parameters`, `/rfid/v2/ops/devices/{device_id}/health`, `/rfid/v2/ops/devices/{device_id}/protocol`, `/rfid/v2/ops/devices/{device_id}/sessions`, `/rfid/v2/ops/devices/{device_id}/simulate` … |
 | `rfid_v2_review.py` | 13 | 220 | `/rfid/v2/ops/crossings`, `/rfid/v2/ops/crossings/move`, `/rfid/v2/ops/crossings/release`, `/rfid/v2/ops/devices/{device_id}/kiosk`, `/rfid/v2/ops/reviews`, `/rfid/v2/ops/reviews/summary` … |
 | `rfq.py` | 8 | 222 | `/rfqs`, `/rfqs/{rfq_id}`, `/rfqs/{rfq_id}/award`, `/rfqs/{rfq_id}/cancel`, `/rfqs/{rfq_id}/compare`, `/rfqs/{rfq_id}/quote` … |
-| `rnd.py` ⚠️>800 | 46 | 1057 | `/rnd/base-fabrics`, `/rnd/labdip-history`, `/rnd/lifecycle-board`, `/rnd/meta`, `/rnd/products/{product_id}/supplier-eligibility`, `/rnd/reports/designer-kpi` … |
+| `rnd.py` ⚠️>800 | 46 | 1058 | `/rnd/base-fabrics`, `/rnd/labdip-history`, `/rnd/lifecycle-board`, `/rnd/meta`, `/rnd/products/{product_id}/supplier-eligibility`, `/rnd/reports/designer-kpi` … |
 | `rnd_org.py` | 3 | 70 | `/rnd/divisions`, `/rnd/divisions/members` |
 | `saga_locks.py` | 3 | 121 | `/saga-locks`, `/saga-locks/{collection}/{doc_id}/inspect`, `/saga-locks/{collection}/{doc_id}/release` |
 | `sales_orders.py` ⚠️>800 | 3 | 804 | `/sales-orders`, `/sales-orders/{order_id}` |
@@ -595,9 +595,9 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 | `rnd_org_service.py` | 95 | PS-17 — Layanan Organisasi R&D (divisi + anggota). |
 | `rnd_required_tests.py` | 91 | W2-REQ-03 — uji wajib SKU hasil MD (keputusan pemilik 2026-10-04: PERINGATAN, bukan blokir). |
 | `rnd_revalidation_service.py` | 340 | L03 LN-034 — uji ulang SKU existing per supplier: siklus terpisah, hasil teknis tanpa kontrak, keputusan PIC. |
-| `rnd_sample_service.py` | 1632 | FASE F · PS-12/13/14/18/19 — Layanan **PERMINTAAN SAMPLE** (`md_samples`), |
+| `rnd_sample_service.py` | 1647 | FASE F · PS-12/13/14/18/19 — Layanan **PERMINTAAN SAMPLE** (`md_samples`), |
 | `rnd_sla_service.py` | 176 | PS-18 — **ESKALASI SLA SAMPLE R&D** (dari papan pasif menjadi pengingat aktif). |
-| `rnd_spec_service.py` | 507 | FASE F · PS-12 — Layanan **SPESIFIKASI PRODUK versi R&D** (`md_specs`). |
+| `rnd_spec_service.py` | 520 | FASE F · PS-12 — Layanan **SPESIFIKASI PRODUK versi R&D** (`md_specs`). |
 | `role_desk_service.py` | 284 | U-2 (2026-09) — Meja kerja untuk 6 peran tersisa: admin, manager, sales, warehouse, designer, driver. |
 | `role_reality_service.py` | 691 | **CEK KENYATAAN PERAN** — utang migrasi (ii) FASE E-8/E-6. |
 | `roll_cost_history.py` | 88 | services/roll_cost_history.py — JEJAK setiap perubahan HPP satu roll. |
@@ -678,42 +678,42 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 
 | Fitur (`src/features/`) | Berkas | Baris |
 |---|---:|---:|
-| `__tests__` | 85 | 12249 |
+| `__tests__` | 86 | 12552 |
 | `admin` | 34 | 6577 |
-| `approvals` | 9 | 1699 |
-| `catalog` | 24 | 1449 |
+| `approvals` | 9 | 1719 |
+| `catalog` | 24 | 1450 |
 | `costing` | 1 | 150 |
-| `crm` | 17 | 3651 |
-| `design` | 8 | 1580 |
-| `designer` | 8 | 1624 |
+| `crm` | 17 | 3657 |
+| `design` | 8 | 1585 |
+| `designer` | 8 | 1625 |
 | `desks` | 2 | 229 |
-| `documents` | 18 | 2675 |
+| `documents` | 18 | 2676 |
 | `export` | 9 | 700 |
-| `finance` | 94 | 21063 |
+| `finance` | 94 | 21066 |
 | `home` | 5 | 1130 |
-| `hr` | 33 | 5340 |
-| `inspections` | 12 | 2171 |
+| `hr` | 33 | 5350 |
+| `inspections` | 12 | 2173 |
 | `interco_prices` | 4 | 287 |
 | `internal_requests` | 3 | 854 |
 | `inventory` | 21 | 4443 |
 | `logistics` | 15 | 1666 |
 | `manager` | 2 | 620 |
 | `marketing` | 13 | 1283 |
-| `mobile` | 12 | 1717 |
+| `mobile` | 13 | 1758 |
 | `notifications` | 1 | 33 |
-| `orders` | 23 | 3851 |
+| `orders` | 23 | 3855 |
 | `pdf` | 5 | 901 |
 | `pettycash` | 11 | 1614 |
 | `pos` | 23 | 2632 |
 | `pricing` | 1 | 151 |
-| `production` | 3 | 751 |
+| `production` | 3 | 753 |
 | `purchasing` | 86 | 18214 |
 | `rfid` | 21 | 3556 |
-| `rnd` | 66 | 7874 |
-| `sales` | 97 | 15769 |
-| `sales_admin` | 11 | 1872 |
-| `samples` | 8 | 777 |
-| `settings` | 53 | 9994 |
+| `rnd` | 66 | 7906 |
+| `sales` | 97 | 15782 |
+| `sales_admin` | 11 | 1880 |
+| `samples` | 8 | 776 |
+| `settings` | 53 | 9998 |
 | `tanya` | 25 | 1592 |
 | `transfers` | 1 | 20 |
 | `wms` | 99 | 13195 |
@@ -732,7 +732,7 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 |---|---:|---:|
 | `backend/routers/special_orders.py` | 1499 | 800 |
 | `backend/routers/sales_returns.py` | 1306 | 800 |
-| `backend/routers/rnd.py` | 1057 | 800 |
+| `backend/routers/rnd.py` | 1058 | 800 |
 | `backend/routers/purchase_orders.py` | 1014 | 800 |
 | `backend/routers/sales_orders_extra.py` | 1006 | 800 |
 | `backend/routers/transfers.py` | 858 | 800 |
