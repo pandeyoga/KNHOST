@@ -1820,8 +1820,9 @@ async def reverse_document(source_type: str, source_id: str, *, reason: str = ""
 
 
 async def post_goods_receipt(*, task_id: str, entity_id: str, amount: float,
-                             label: str = "", date: str = "") -> Optional[Dict[str, Any]]:
-    """Gelombang 1 F-3 — GR → GL: Dr Persediaan / Cr GR-IR (barang diterima belum ditagih)."""
+                             label: str = "", date: str = "", po_id: str = "") -> Optional[Dict[str, Any]]:
+    """Gelombang 1 F-3 — GR → GL: Dr Persediaan / Cr GR-IR (barang diterima belum ditagih).
+    PK-28 — `po_id` → `ref.po_id` jurnal (sisa GR/IR per PO, `vendor_bill_service.grir_by_po`)."""
     amount = round(float(amount or 0), 2)
     if amount <= EPS or not task_id or await _already_posted("goods_receipt", task_id):
         return None
@@ -1830,7 +1831,38 @@ async def post_goods_receipt(*, task_id: str, entity_id: str, amount: float,
     return await _insert_entry(
         lines=lines, description=f"Goods Receipt {label}".strip(), date=date or now_iso(),
         source_type="goods_receipt", source_id=task_id, entity_id=entity_id,
-        created_by="system", source_label=label)
+        created_by="system", source_label=label, ref={"po_id": po_id} if po_id else None)
+
+
+async def post_grir_clearing(po: Dict[str, Any], clearing: Dict[str, Any]) -> Optional[Dict[str, Any]]:
+    """PK-28 (IV-03) — kliring sisa GR/IR satu PO ke akun selisih harga pembelian (`pembelian.selisih_harga`).
+
+      `direction="debit_grir"`  (sisa kredit, balance > 0) → Dr GR/IR / Cr selisih harga
+      `direction="kredit_grir"` (sisa debit,  balance < 0) → Dr selisih harga / Cr GR/IR
+    Nominal = `clearing.amount` (positif). Akun GR/IR dan akun selisih dari pemetaan PT PO (`02` P9). Idempoten per
+    unsur kliring (`source_id = "<po_id>:<seq>"`). Tanggal = hari kliring (`clearing.at`)."""
+    po_id, seq = po.get("id") or "", int(clearing.get("seq") or 0)
+    amount = round(float(clearing.get("amount") or 0), 2)
+    src = f"{po_id}:{seq}"
+    if not po_id or not seq or amount <= EPS or await _already_posted("grir_clearing", src):
+        return None
+    eid = po.get("entity_id") or DEFAULT_ENTITY_ID
+    selisih = await account_for("pembelian.selisih_harga", eid)
+    if not selisih:
+        raise JournalValidationError('Akun "Selisih harga pembelian" belum diatur untuk PT ini.')
+    await seed_default_coa()
+    num = po.get("po_number") or po_id
+    desc = f"Kliring GR/IR {num} — {clearing.get('reason') or ''}".strip(" —")
+    grir = {"account_key": "pembelian.gr_ir", "description": desc}
+    lawan = {"account_key": "pembelian.selisih_harga", "description": desc}
+    if clearing.get("direction") == "kredit_grir":
+        lines = [{**lawan, "debit": amount, "credit": 0.0}, {**grir, "debit": 0.0, "credit": amount}]
+    else:
+        lines = [{**grir, "debit": amount, "credit": 0.0}, {**lawan, "debit": 0.0, "credit": amount}]
+    return await _insert_entry(
+        lines=lines, description=f"Kliring GR/IR {num}", date=clearing.get("at") or now_iso(),
+        source_type="grir_clearing", source_id=src, entity_id=eid, created_by=clearing.get("by") or "system",
+        source_label=f"{num} · kliring {seq}", ref={"po_id": po_id})
 
 
 # ── M2 (Makloon/Subcon) — WIP-at-vendor postings ─────────────────────────────
@@ -3670,6 +3702,7 @@ JOURNAL_SOURCE_LABEL: Dict[str, str] = {
     "sales_order": "Penjualan", "shipment_revenue": "Pendapatan Kirim", "contra_bon_deduction": "Potongan Kontrabon",
     "amendment_credit_note": "Nota Kredit Koreksi", "return_logistics": "Ongkir Retur",
     "suspense_reclass": "Reklas Akun Penampung", "finance_case": "Kasus Keuangan",
+    "grir_clearing": "Kliring GR/IR",   # PK-28
 }
 
 

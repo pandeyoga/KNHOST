@@ -108,6 +108,12 @@ ENTRIES: List[Dict[str, Any]] = [
        ("Persediaan", "Barang diterima belum ditagih"), ["Penerimaan PO", "Tagihan supplier"]),
     _e("pembelian.ppn_masukan", "1-1500", "PPN masukan", "tagihan supplier ber-PPN",
        ("PPN masukan", "Hutang"), ["Tagihan supplier", "Pajak masukan"]),
+    # PK-28 (IV-03) — bawaan KOSONG: akunnya keputusan pemilik (titik henti H4). Selama kosong, selisih harga faktur
+    # tetap di GR/IR (perilaku lama) dan kliring GR/IR ditolak; dipanggil eksplisit (`account_key`), bukan dialihkan.
+    _e("pembelian.selisih_harga", "", "Selisih harga pembelian",
+       "harga faktur pemasok berbeda dari harga PO, atau sisa GR/IR dikliring",
+       ("Barang diterima belum ditagih", "Selisih harga pembelian"), ["Tagihan supplier", "Kliring GR/IR"],
+       remap=False, types=["expense", "income"], required=True),
     _e("pembelian.landed_cost", "5-9000", "Biaya masuk pembelian (angkut/bea)", "biaya angkut/bea pembelian",
        ("Biaya masuk", "Hutang"), ["Landed cost"]),
     _e("pembelian.beban_operasional", "6-4000", "Beban operasional", "pengeluaran operasional umum",

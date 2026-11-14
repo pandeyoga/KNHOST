@@ -226,6 +226,8 @@ from routers import payment_methods as _payment_methods  # noqa: E402 — PM-T1 
 app.include_router(_payment_methods.router)
 from routers import credit_profiles as _credit_profiles  # noqa: E402 — CR-T1 profil kredit pelanggan per PT
 app.include_router(_credit_profiles.router)
+from routers import gr_ir as _gr_ir  # noqa: E402 — PK-28 sisa GR/IR per PO + kliring
+app.include_router(_gr_ir.router)
 from routers import approval_policies as _approval_policies  # noqa: E402 — KP-T4 satu tabel kebijakan persetujuan
 app.include_router(_approval_policies.router)
 from routers import doc_numbering as _doc_numbering  # noqa: E402 — KP-T5 tabel Penomoran Dokumen per PT

@@ -318,23 +318,11 @@ async def complete_task(task_id: str, payload: Optional[GRCompletePayload], acto
             _po_doc = safe_doc(await db.purchase_orders.find_one({"id": task["po_id"]}, {"_id": 0}))
         _po_unit_price = 0.0
         if _po_doc:
-            for _it in _po_doc.get("items", []):
-                if _it.get("product_id") == task["product_id"]:
-                    # KN-A09 — HPP memakai harga NETO baris (line_total ÷ qty), bukan `price`
-                    # bruto: diskon pembelian ikut menurunkan nilai persediaan. Diskon header
-                    # PO dibagi proporsional ke tiap baris.
-                    _q = float(_it.get("quantity", _it.get("qty", 0)) or 0)
-                    _lt = _it.get("line_total")
-                    if _lt is not None and _q > 0:
-                        _po_unit_price = float(_lt or 0) / _q
-                    else:
-                        _po_unit_price = float(_it.get("price", 0) or 0) * (
-                            1 - float(_it.get("discount_percent", 0) or 0) / 100.0)
-                    _hdr_pct = float(_po_doc.get("order_discount_percent", 0) or 0)
-                    if _hdr_pct > 0:
-                        _po_unit_price *= (1 - _hdr_pct / 100.0)
-                    _po_unit_price = round(_po_unit_price, 4)
-                    break
+            # KN-A09 — HPP memakai harga NETO baris (line_total ÷ qty), bukan `price` bruto: diskon pembelian ikut
+            # menurunkan nilai persediaan; diskon header PO dibagi proporsional ke tiap baris. PK-28 — hitungannya satu
+            # fungsi bersama dengan nilai GR/IR yang dihapus faktur pemasok (`services/po_pricing.py`).
+            from services.po_pricing import po_line_net_unit_price
+            _po_unit_price = po_line_net_unit_price(_po_doc, product_id=task["product_id"])
         if _po_unit_price <= 0:
             _po_unit_price = float(product_doc.get("harga_pokok", 0) or 0)
         _total_base = round(sum(s["length_base"] for s in roll_specs), 4)
@@ -592,7 +580,8 @@ async def complete_task(task_id: str, payload: Optional[GRCompletePayload], acto
             try:
                 from services import gl_service
                 _je = await gl_service.post_goods_receipt(
-                    task_id=task_id, entity_id=owner_entity_id, amount=_gr_value, label=_glp["label"])
+                    task_id=task_id, entity_id=owner_entity_id, amount=_gr_value, label=_glp["label"],
+                    po_id=task.get("po_id") or "")   # PK-28 — `ref.po_id` (sisa GR/IR per PO)
                 _glp.update({"status": "posted", "je_id": (_je or {}).get("id", ""), "error": ""})
             except Exception as exc:  # noqa: BLE001
                 import logging

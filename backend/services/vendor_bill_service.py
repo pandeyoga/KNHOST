@@ -10,6 +10,7 @@ Prinsip:
 - INVARIAN-SAFE: item.subtotal = price × billed_qty (GROSS); total_amount = Σ subtotal.
   Diskon & PPN disimpan di field terpisah (mengikuti pola PO P0-1).
 """
+import re
 from typing import Any, Dict, List, Optional
 from db import db
 from core_utils import now_iso
@@ -307,3 +308,118 @@ async def build_billing_context(po: Dict[str, Any]) -> Dict[str, Any]:
         "receipt_variances": po.get("receipt_variances") or [],
         "items": items,
     }
+
+
+# ═════════════════════════════════════════════════════════════════════════════
+#  PK-28 (IV-03) — sisa GR/IR per PO
+# ═════════════════════════════════════════════════════════════════════════════
+#: Jenis jurnal yang menyentuh GR/IR → (koleksi dokumen sumber, kategori nilai). Jurnal lama tanpa `ref.po_id`
+#: dihubungkan ke PO lewat dokumen sumbernya; sumber berakhiran `_reversal` mengikuti dokumen asalnya.
+GRIR_SOURCES: Dict[str, tuple] = {
+    "goods_receipt": ("wms_tasks", "received"),
+    "vendor_bill": ("vendor_bills", "billed"),
+    "purchase_return": ("purchase_returns", "returned"),
+    "grir_clearing": ("", "cleared"),
+}
+_REV = "_reversal"
+
+
+def grir_base_source(source_type: str) -> str:
+    st = source_type or ""
+    return st[:-len(_REV)] if st.endswith(_REV) else st
+
+
+async def _grir_groups(entity_id: str, codes: List[str], po_id: str = "") -> List[Dict[str, Any]]:
+    """Satu agregasi: baris jurnal GR/IR PT itu per (source_type, source_id, ref.po_id). Tanpa batas `to_list`
+    (`02` D4) — kursor dibaca habis. `po_id` → hanya jurnal yang ber-`ref.po_id` itu atau bersumber dokumen PO itu."""
+    match: Dict[str, Any] = {"entity_id": entity_id, "status": {"$ne": "void"}, "lines.account_code": {"$in": codes}}
+    if po_id:
+        src_ids = [po_id]
+        for coll in ("wms_tasks", "vendor_bills", "purchase_returns"):
+            src_ids += [d["id"] async for d in db[coll].find({"po_id": po_id}, {"_id": 0, "id": 1})]
+        match["$or"] = [{"ref.po_id": po_id}, {"source_id": {"$in": src_ids}},
+                        {"source_id": {"$regex": f"^{re.escape(po_id)}:"}}]
+    pipeline = [
+        {"$match": match},
+        {"$unwind": "$lines"},
+        {"$match": {"lines.account_code": {"$in": codes}}},
+        {"$group": {"_id": {"st": "$source_type", "sid": "$source_id", "po": "$ref.po_id"},
+                    "debit": {"$sum": "$lines.debit"}, "credit": {"$sum": "$lines.credit"},
+                    "last_date": {"$max": "$date"}}},
+    ]
+    return [g async for g in db.journal_entries.aggregate(pipeline)]
+
+
+async def _legacy_po_links(groups: List[Dict[str, Any]]) -> Dict[tuple, str]:
+    """(source_type dasar, source_id) → po_id untuk kelompok tanpa `ref.po_id` (jurnal lama)."""
+    want: Dict[str, set] = {}
+    for g in groups:
+        k = g["_id"] or {}
+        if k.get("po"):
+            continue
+        base = grir_base_source(k.get("st") or "")
+        coll = (GRIR_SOURCES.get(base) or ("", ""))[0]
+        if coll and k.get("sid"):
+            want.setdefault(coll, set()).add(k["sid"])
+    out: Dict[tuple, str] = {}
+    for coll, ids in want.items():
+        base = next(b for b, v in GRIR_SOURCES.items() if v[0] == coll)
+        async for d in db[coll].find({"id": {"$in": sorted(ids)}}, {"_id": 0, "id": 1, "po_id": 1}):
+            if d.get("po_id"):
+                out[(base, d["id"])] = d["po_id"]
+    return out
+
+
+async def grir_by_po(entity_id: str, po_id: str = "") -> Dict[str, dict]:
+    """Sisa akun GR/IR (`pembelian.gr_ir`, semua kode yang pernah dipakai) PT `entity_id` per PO.
+
+    → `{po_id: {received_value, billed_value, returned_value, cleared_value, other_value, balance, last_receipt_at,
+    last_activity_at}}`; `balance` = kredit − debit (positif = barang diterima belum ditagih). Kunci `""` = baris yang
+    tidak bisa dihubungkan ke PO (jurnal manual, potongan kontrabon, jurnal lama yang dokumen sumbernya hilang).
+    `po_id` diisi → hanya PO itu (dipakai rekonsiliasi tutup-kurang)."""
+    from services.gl_mapping_service import known_codes
+    codes = [c for c in await known_codes("pembelian.gr_ir") if c]
+    groups = await _grir_groups(entity_id, codes, po_id)
+    legacy = await _legacy_po_links(groups)
+    out: Dict[str, dict] = {}
+    for g in groups:
+        k = g["_id"] or {}
+        st, sid = k.get("st") or "", k.get("sid") or ""
+        base = grir_base_source(st)
+        pid = k.get("po") or legacy.get((base, sid)) or ""
+        if not pid and base == "grir_clearing" and ":" in sid:
+            pid = sid.rsplit(":", 1)[0]
+        if po_id and pid != po_id:
+            continue
+        row = out.setdefault(pid, {"received_value": 0.0, "billed_value": 0.0, "returned_value": 0.0,
+                                   "cleared_value": 0.0, "other_value": 0.0, "balance": 0.0,
+                                   "last_receipt_at": "", "last_activity_at": ""})
+        d, c = float(g.get("debit") or 0), float(g.get("credit") or 0)
+        cat = (GRIR_SOURCES.get(base) or ("", "other"))[1]
+        if cat == "received":
+            row["received_value"] += c - d
+            if st == "goods_receipt":
+                row["last_receipt_at"] = max(row["last_receipt_at"], str(g.get("last_date") or ""))
+        else:
+            row[f"{cat}_value"] += d - c if cat != "other" else c - d
+        row["balance"] += c - d
+        row["last_activity_at"] = max(row["last_activity_at"], str(g.get("last_date") or ""))
+    for row in out.values():
+        for f in ("received_value", "billed_value", "returned_value", "cleared_value", "other_value", "balance"):
+            row[f] = round(row[f], 2)
+    return out
+
+
+async def grir_ledger_balance(entity_id: str) -> float:
+    """Saldo kredit akun GR/IR PT itu di buku besar (kredit − debit, semua jurnal tidak-void) — dihitung TERPISAH dari
+    pengelompokan per PO supaya `Σ sisa per PO + tak terhubung = saldo buku besar` benar-benar diperiksa."""
+    from services.gl_mapping_service import known_codes
+    codes = [c for c in await known_codes("pembelian.gr_ir") if c]
+    pipeline = [
+        {"$match": {"entity_id": entity_id, "status": {"$ne": "void"}, "lines.account_code": {"$in": codes}}},
+        {"$unwind": "$lines"},
+        {"$match": {"lines.account_code": {"$in": codes}}},
+        {"$group": {"_id": None, "debit": {"$sum": "$lines.debit"}, "credit": {"$sum": "$lines.credit"}}},
+    ]
+    res = [g async for g in db.journal_entries.aggregate(pipeline)]
+    return round(float(res[0]["credit"] or 0) - float(res[0]["debit"] or 0), 2) if res else 0.0

@@ -303,14 +303,15 @@ async def _post_task(grn: Dict[str, Any], task_id: str, lines: List[Dict[str, An
 async def _ensure_gr_posted(task_id: str) -> None:
     """IX-14 — jurnal GR yang gagal diulang (idempotent per task); masih gagal → 409 sehingga baris
     GRN 'failed' dan GRN tetap `closing` (bisa ditutup ulang setelah penyebab dibereskan)."""
-    task = await db.wms_tasks.find_one({"id": task_id}, {"_id": 0, "gl_posting": 1}) or {}
+    task = await db.wms_tasks.find_one({"id": task_id}, {"_id": 0, "gl_posting": 1, "po_id": 1}) or {}
     glp = task.get("gl_posting") or {}
     if glp.get("status") != "failed":
         return
     from services import gl_service
     try:
         je = await gl_service.post_goods_receipt(task_id=task_id, entity_id=glp.get("entity_id", ""),
-                                                 amount=float(glp.get("amount") or 0), label=glp.get("label", ""))
+                                                 amount=float(glp.get("amount") or 0), label=glp.get("label", ""),
+                                                 po_id=task.get("po_id") or "")   # PK-28 — `ref.po_id`
     except Exception as exc:  # noqa: BLE001
         await db.wms_tasks.update_one({"id": task_id}, {"$set": {"gl_posting.error": str(exc)[:300],
                                                                  "gl_posting.at": now_iso()}})

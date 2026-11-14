@@ -14,7 +14,9 @@ koleksi, saringan "jurnal gagal", nomor, nominal, dan jalur ulang tiap jenis (`0
   retry            `async retry(doc, actor) -> None` — menerbitkan jurnal yang kurang TEPAT SEKALI: semua fungsi
                    `post_*` yang dipanggil memeriksa `_already_posted`, jadi ulang tidak menggandakan jurnal. Gagal lagi →
                    melempar (router: 409 "Posting masih gagal: …", penanda galat diperbarui `post_durable`)
-  per_step         (opsional) satu baris panel per unsur `steps[]` yang gagal; id baris = `<id dokumen>:<seq>`
+  per_step         (opsional) satu baris panel per unsur larik yang gagal; id baris = `<id dokumen>:<seq>`. Lariknya
+                   `items_field` (bawaan `steps`), nominal unsur `item_amount` (bawaan `makloon_step_amount`), sebutan
+                   unsur di nomor baris `item_label` (bawaan "langkah") — PK-28 memakai `grir_clearings[]`
   link             (opsional) tujuan tautan tetap bila jenis dokumennya tidak ada di `DOC_TYPES`
 
 `KINDS` sengaja berupa literal: penjaga statik membacanya tanpa mengimpor aplikasi. Jenis dari PK-05 (`contra_bon`),
@@ -100,8 +102,8 @@ async def _retry_interco_settlement(doc: Dict[str, Any], actor: Dict[str, Any]) 
 
 
 # ── PK-18 — resep posting yang memanggil BEBERAPA fungsi `post_*` (dipakai aksi dokumen DAN ulang) ─────────────────────
-def step_of(order: Dict[str, Any], seq: int) -> Dict[str, Any]:
-    return next((s for s in order.get("steps") or [] if int(s.get("seq") or 0) == int(seq)), {})
+def step_of(order: Dict[str, Any], seq: int, field: str = "steps") -> Dict[str, Any]:
+    return next((s for s in order.get(field) or [] if int(s.get("seq") or 0) == int(seq)), {})
 
 
 def _moves(step: Dict[str, Any]) -> bool:
@@ -242,6 +244,29 @@ async def _retry_credit_note(doc: Dict[str, Any], actor: Dict[str, Any]) -> None
         await _post_cn_gl(ret, doc, raise_on_fail=True)
 
 
+async def durable_grir_clearing(po: Dict[str, Any], clearing: Dict[str, Any], *,
+                                raise_on_fail: bool = False) -> Dict[str, Any]:
+    """PK-28 — pintu tahan-gagal satu kliring GR/IR: hasil ditulis ke `grir_clearings.$.gl_status` unsur itu."""
+    from services import gl_service as gl
+    seq = int(clearing["seq"])
+    return await gl.post_durable("purchase_orders", po["id"], lambda: gl.post_grir_clearing(po, clearing),
+                                 source_type="grir_clearing", source_id=f"{po['id']}:{seq}",
+                                 field="grir_clearings.$.gl_status", match={"grir_clearings.seq": seq},
+                                 raise_on_fail=raise_on_fail)
+
+
+def grir_clearing_amount(clearing: Dict[str, Any]) -> float:
+    return round(float(clearing.get("amount") or 0), 2)
+
+
+async def _retry_grir_clearing(doc: Dict[str, Any], actor: Dict[str, Any]) -> None:
+    seq = int(str(doc["_baris"]).rsplit(":", 1)[1])
+    clearing = step_of(doc, seq, "grir_clearings")
+    if not clearing:
+        raise RuntimeError("Unsur kliring GR/IR tidak ditemukan.")
+    await durable_grir_clearing(doc, clearing, raise_on_fail=True)
+
+
 # ── Registri ─────────────────────────────────────────────────────────────────────────────────────────────────────────
 KINDS: Dict[str, Dict[str, Any]] = {
     "cash_transaction": {
@@ -349,6 +374,14 @@ KINDS: Dict[str, Dict[str, Any]] = {
         "status_field": "gl_status", "error_field": "gl_error", "failed_at_field": "gl_failed_at",
         "doc_type": "", "link": {"view": "fixed-assets", "tab": "", "focus_type": "fixed_asset"},
         "posters": ("post_asset_acquisition",), "retry": _retry_fixed_asset},
+    # ── PK-28 — kliring sisa GR/IR: satu baris panel per unsur `grir_clearings[]` yang gagal ──
+    "grir_clearing": {
+        "label": "Kliring GR/IR", "collection": "purchase_orders", "failed_query": {"grir_clearings.gl_status": "failed"},
+        "entity_field": "entity_id", "number_field": "po_number", "amount_field": "grir_clearings",
+        "status_field": "grir_clearings.$.gl_status", "error_field": "gl_error", "failed_at_field": "updated_at",
+        "doc_type": "purchase_order", "per_step": True, "items_field": "grir_clearings",
+        "item_amount": grir_clearing_amount, "item_label": "kliring",
+        "posters": ("post_grir_clearing",), "retry": _retry_grir_clearing},
 }
 
 LABELS: Dict[str, str] = {k: v["label"] for k, v in KINDS.items()}
@@ -387,10 +420,11 @@ def rows_of(kind: str, doc: Dict[str, Any]) -> List[Dict[str, Any]]:
     base = {"kind": kind, "kind_label": spec["label"], "entity_id": pick(doc, spec["entity_field"]) or "",
             "updated_at": doc.get("updated_at") or doc.get("created_at") or "", "link": _link(spec, doc, number)}
     if spec.get("per_step"):
-        return [{**base, "id": f"{doc['id']}:{st.get('seq')}", "number": f"{number} · langkah {st.get('seq')}",
-                 "amount": makloon_step_amount(st), "error": st.get("gl_error") or "",
+        amount_of, unsur = spec.get("item_amount") or makloon_step_amount, spec.get("item_label") or "langkah"
+        return [{**base, "id": f"{doc['id']}:{st.get('seq')}", "number": f"{number} · {unsur} {st.get('seq')}",
+                 "amount": amount_of(st), "error": st.get("gl_error") or "",
                  "failed_at": st.get("gl_failed_at") or base["updated_at"]}
-                for st in doc.get("steps") or [] if st.get("gl_status") == "failed"]
+                for st in doc.get(_items_field(spec)) or [] if st.get("gl_status") == "failed"]
     return [{**base, "id": doc["id"], "number": number, "amount": _amount(spec, doc),
              "error": pick(doc, spec["error_field"]) or doc.get("gl_error") or "",
              "failed_at": pick(doc, spec["failed_at_field"]) or base["updated_at"]}]
@@ -402,13 +436,18 @@ def lookup(kind: str, row_id: str) -> Dict[str, Any]:
         doc_id, _, seq = str(row_id).rpartition(":")
         if not doc_id or not seq.isdigit():
             return {"id": "__tidak_ada__"}
-        return {"id": doc_id, "steps": {"$elemMatch": {"seq": int(seq), "gl_status": "failed"}}}
+        return {"id": doc_id, _items_field(KINDS[kind]): {"$elemMatch": {"seq": int(seq), "gl_status": "failed"}}}
     return {"id": row_id}
+
+
+def _items_field(spec: Dict[str, Any]) -> str:
+    return spec.get("items_field") or "steps"
 
 
 def count_pipeline(kind: str, query: Dict[str, Any]) -> List[Dict[str, Any]]:
     """Hitungan baris (bukan dokumen) untuk jenis `per_step`."""
-    return [{"$match": query}, {"$unwind": "$steps"}, {"$match": {"steps.gl_status": "failed"}}, {"$count": "n"}]
+    arr = _items_field(KINDS[kind])
+    return [{"$match": query}, {"$unwind": f"${arr}"}, {"$match": {f"{arr}.gl_status": "failed"}}, {"$count": "n"}]
 
 
 def sort_spec(kind: str) -> List[tuple]:
@@ -423,7 +462,7 @@ def sort_key(kind: str, doc: Dict[str, Any]) -> tuple:
 def status_of(kind: str, doc: Dict[str, Any], row_id: str = "") -> Dict[str, Any]:
     spec = KINDS[kind]
     if spec.get("per_step"):
-        st = step_of(doc, int(str(row_id).rpartition(":")[2] or 0))
+        st = step_of(doc, int(str(row_id).rpartition(":")[2] or 0), _items_field(spec))
         return {"gl_status": st.get("gl_status"), "journal_entry_id": st.get("journal_entry_id") or ""}
     f = spec["status_field"]
     jfield = f[:-len("gl_status")] + "journal_entry_id" if f.endswith("gl_status") else "journal_entry_id"
