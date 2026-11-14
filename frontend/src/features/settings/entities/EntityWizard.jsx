@@ -181,7 +181,7 @@ export default function EntityWizard({ entities = [], onClose, onCreated, onDone
         <div className="flex items-start gap-2 border-b border-[#EFF0F2] px-4 py-3">
           <Building2 size={16} className="mt-0.5 text-[#0058CC]" />
           <div className="min-w-0 flex-1">
-            <h3 className="text-[13.5px] font-bold">Tambah Badan Usaha</h3>
+            <h3 className="text-[13.5px] font-bold">Tambah PT</h3>
             <p className="text-[11px] text-[#6B6B73]">
               Langkah {step} dari {LAST_STEP} · {STEPS[step - 1].label}
             </p>
@@ -221,7 +221,7 @@ export default function EntityWizard({ entities = [], onClose, onCreated, onDone
         <div className="space-y-3 p-4" style={{ maxHeight: "58vh", overflowY: "auto" }}>
           {step === 1 && (
             <div className="grid gap-2.5" data-testid="entity-wizard-panel-1">
-              <Field label="Jenis badan usaha" testId="entity-wizard-type"
+              <Field label="Jenis badan hukum" testId="entity-wizard-type"
                      hint={typeMeta?.description
                        || "Jenis TIDAK menentukan PKP — status PKP diatur di langkah berikutnya."}>
                 <KNSelect

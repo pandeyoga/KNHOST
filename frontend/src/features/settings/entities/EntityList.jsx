@@ -81,9 +81,9 @@ export default function EntityList({ entities = [], loading, canManage, onOpen,
     <div className="section-card" data-testid="entity-list-card">
       <div className="section-head">
         <div className="flex items-center gap-2">
-          <h2 data-testid="entity-list-title">Daftar Badan Usaha</h2>
+          <h2 data-testid="entity-list-title">Daftar PT</h2>
           <span className="text-[10.5px] text-[#9A9BA3]" data-testid="entity-list-count">
-            {rows.length} badan usaha
+            {rows.length} PT
           </span>
         </div>
         <div className="ml-auto flex flex-wrap items-center gap-2">

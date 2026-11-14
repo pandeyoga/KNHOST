@@ -120,11 +120,10 @@ export default function EntitiesAccessView({ currentUser, selectedEntity, onNavi
         <Building2 size={14} className="mt-0.5 text-[#0058CC]" />
         <div className="min-w-0">
           <p className="text-[11.5px] font-bold text-[#1C1C1E]">
-            Satu perusahaan, beberapa badan usaha — buku keuangan, pajak, harga, dan
-            pelanggannya terpisah.
+            Satu grup, beberapa PT — buku keuangan, pajak, harga, dan pelanggan tiap PT terpisah.
           </p>
           <p className="text-[10.5px] text-[#6B6B73]">
-            Karyawan hanya melihat data badan usaha tempat dia ditugaskan. Badan usaha
+            Karyawan hanya melihat data PT tempat dia ditugaskan. PT
             utama akun diambil dari data karyawan (HR) supaya penggajian dan hak akses
             tidak pernah bertentangan.
           </p>
@@ -148,7 +147,7 @@ export default function EntitiesAccessView({ currentUser, selectedEntity, onNavi
               data-testid="entity-add-button"
               onClick={() => setWizardOpen(true)}
             >
-              <Plus size={14} /> Tambah Badan Usaha
+              <Plus size={14} /> Tambah PT
             </button>
           )}
           <button
