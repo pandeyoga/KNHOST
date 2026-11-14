@@ -3388,6 +3388,7 @@
    "settings"
   ],
   "settings-cfg-finance": [
+   "accounting",
    "entity",
    "scheduler",
    "settings"

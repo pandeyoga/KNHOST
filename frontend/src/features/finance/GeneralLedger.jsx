@@ -91,11 +91,14 @@ export default function GeneralLedger({ selectedEntity, entities = [], focusDoc,
   // PK-12 — kunci idempotensi untuk tulis ke /gl/ (kirim ulang setelah koneksi putus diputar ulang server).
   const syncIntent = useIntentKey("glsync");
 
+  // PK-36 — bagan akun PT yang sedang dibuka: tanda `manual_allowed` (akun kontrol) mengikuti pengaturan & pemetaan
+  // PT itu; "Semua PT" → lapisan global.
+  const accEntity = selectedEntity && selectedEntity !== "all" ? selectedEntity : "";
   const loadMeta = useCallback(async () => {
     try {
       const [s, a] = await Promise.all([
         axios.get(`${API}/gl/summary`),
-        axios.get(`${API}/gl/accounts`),
+        axios.get(`${API}/gl/accounts`, accEntity ? { params: { entity_id: accEntity } } : undefined),
       ]);
       setSummary(s.data || null);
       setAccounts(Array.isArray(a.data) ? a.data : []);
@@ -103,7 +106,7 @@ export default function GeneralLedger({ selectedEntity, entities = [], focusDoc,
       setError(apiErrorText(e, "Gagal memuat data GL."));
       setSummary(null);   // PK-16 (RP-04) — KPI tidak menyisakan angka permintaan sebelumnya
     }
-  }, []);
+  }, [accEntity]);
 
   useEffect(() => { loadMeta(); }, [loadMeta]);
 

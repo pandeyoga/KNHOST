@@ -29,8 +29,10 @@ export default function SuspensePanel({ refreshKey, accounts = [], entities = []
   const entityOptions = useMemo(
     () => entities.filter((e) => !e.is_group).map((e) => ({ value: e.id, label: e.short_name || e.legal_name || e.id })),
     [entities]);
+  // PK-36 (IC-06) — saringan yang sama dengan jurnal manual: akun kontrol yang ditolak pengaturan PT tidak ditawarkan.
   const targetOptions = useMemo(
-    () => accounts.filter((a) => a.is_postable && a.code !== "1-9999").map((a) => ({ value: a.code, label: `${a.code} — ${a.name}` })),
+    () => accounts.filter((a) => a.is_postable && a.code !== "1-9999" && a.manual_allowed !== false)
+      .map((a) => ({ value: a.code, label: `${a.code} — ${a.name}` })),
     [accounts]);
 
   const initialEntity = (selectedEntity && selectedEntity !== "all") ? selectedEntity : (entityOptions[0]?.value || "");

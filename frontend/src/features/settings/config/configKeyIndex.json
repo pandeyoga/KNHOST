@@ -1559,6 +1559,10 @@
    "pajak-pembukuan",
    "tutup-buku"
   ],
+  "gl.jurnal_manual_akun_kontrol": [
+   "pajak-pembukuan",
+   "tutup-buku"
+  ],
   "ai.sales_definition": [
    "sistem",
    "tanya-kn"

@@ -7,6 +7,9 @@
  *
  * PK-16 (UX-07) — kepala pop-up menyebut buku PT tujuan ("Dicatat di buku …", PT di kepala aplikasi); mode Semua PT
  * → "hanya untuk melihat". Banner = `subtitle` FormModal supaya ikut menempel saat isi digulir.
+ *
+ * PK-36 (IC-06) — pilihan akun tanpa akun kontrol yang ditolak pengaturan PT (`manual_allowed === false`) + kalimat
+ * keterangan di bawah tabel baris (hanya bila ada akun yang disembunyikan).
  */
 import { apiErrorText } from "../../utils/apiError";
 import KNDatePicker from "@/components/KNDatePicker";
@@ -48,10 +51,14 @@ export default function JournalEntryModal({ accounts, onClose, onSaved }) {
     return () => { active = false; };
   }, [date]);
 
+  // PK-36 (IC-06) — akun kontrol (piutang, hutang, persediaan, antar-PT) tidak ditawarkan bila pengaturan PT menolak
+  // jurnal manual ke akun itu (`manual_allowed` dari server; server tetap menolak dengan 422).
+  const usable = useMemo(() => accounts.filter((a) => a.is_postable && a.is_active !== false), [accounts]);
   const accountOptions = useMemo(
-    () => accounts.filter((a) => a.is_postable && a.is_active !== false)
+    () => usable.filter((a) => a.manual_allowed !== false)
       .map((a) => ({ value: a.code, label: `${a.code} — ${a.name}` })),
-    [accounts]);
+    [usable]);
+  const hiddenControl = usable.some((a) => a.manual_allowed === false);
 
   const totals = useMemo(() => {
     const d = lines.reduce((s, l) => s + (Number(l.debit) || 0), 0);
@@ -158,6 +165,13 @@ export default function JournalEntryModal({ accounts, onClose, onSaved }) {
           </tfoot>
         </table>
       </div>
+
+      {hiddenControl && (
+        <p data-testid="je-control-note" className="mt-2 text-fs-12 text-kn-text-2">
+          Akun piutang, hutang, persediaan, dan antar-PT tidak ada di daftar ini karena saldonya dijaga dokumen. Koreksi
+          lewat dokumennya.
+        </p>
+      )}
 
       <div className="mt-2 flex flex-wrap items-center gap-2">
         <button type="button" data-testid="je-add-line" className="secondary-button" onClick={addLine}><Plus size={13} /> Tambah Baris</button>

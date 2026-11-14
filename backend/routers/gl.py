@@ -173,6 +173,8 @@ async def create_journal(payload: JournalEntryCreate, request: Request) -> Dict[
         from services import journal_proposal_service as jps
         try:
             prop = await jps.ajukan(payload, actor, eid, can_backdate)
+        except gl_service.ControlAccountError as e:   # PK-36 — akun kontrol: 422, sebelum ValueError
+            raise HTTPException(status_code=422, detail=str(e))
         except ValueError as e:
             raise HTTPException(status_code=400, detail=str(e))
         await audit(actor["name"], "journal_proposal_created", "journal_proposal", prop["id"],
@@ -182,6 +184,8 @@ async def create_journal(payload: JournalEntryCreate, request: Request) -> Dict[
         je = await gl_service.create_manual_entry(payload, actor,
                                                   entity_id=eid,
                                                   can_backdate=can_backdate)
+    except gl_service.ControlAccountError as e:   # PK-36 — akun kontrol: 422, sebelum ValueError
+        raise HTTPException(status_code=422, detail=str(e))
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
     await audit(actor["name"], "journal_entry_created", "journal_entry", je["id"],
@@ -223,6 +227,8 @@ async def approve_journal_proposal(proposal_id: str, request: Request) -> Dict[s
     can_backdate = "backdate" in matrix.get(actor.get("role"), {}).get("period", [])
     try:
         res = await jps.setujui(proposal_id, actor, can_backdate)
+    except gl_service.ControlAccountError as e:   # PK-36 — aturan akun kontrol diperiksa ulang saat disetujui
+        raise HTTPException(status_code=422, detail=str(e))
     except gl_service.ClosedPeriodError as e:
         raise HTTPException(status_code=409, detail=str(e))
     except ValueError as e:
@@ -270,6 +276,8 @@ async def reverse_journal(entry_id: str, payload: ReversePayload, request: Reque
                     not_found="Jurnal tidak ditemukan")
     try:
         rev = await gl_service.reverse_entry(entry_id, payload.date, payload.reason, actor)
+    except gl_service.ControlAccountError as e:   # PK-36 — jurnal otomatis ke akun kontrol: batalkan dokumennya
+        raise HTTPException(status_code=422, detail=str(e))
     except gl_service.ClosedPeriodError as e:
         raise HTTPException(status_code=409, detail=f"Tanggal pembalik harus di periode terbuka. {e}")
     except ValueError as e:
@@ -411,6 +419,8 @@ async def gl_suspense_reclass(payload: SuspenseReclassInput, request: Request) -
         je = await gl_service.reclass_suspense(
             amount=payload.amount, side=payload.side, target_account=payload.target_account,
             note=payload.note, entity_id=eid, actor_name=actor.get("name", "system"))
+    except gl_service.ControlAccountError as e:   # PK-36 — akun tujuan akun kontrol: 422
+        raise HTTPException(status_code=422, detail=str(e))
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
     await audit(actor["name"], "suspense_reclass", "journal_entry", je["id"],

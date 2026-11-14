@@ -307,11 +307,22 @@ async def list_accounts(active_only: bool = False,
     # membedakan "akun ini memang milik badan usaha saya" dari "akun ini warisan
     # template grup", padahal keduanya tampil identik dan konsekuensinya beda:
     # menonaktifkan yang pertama hanya kena satu badan usaha, yang kedua kena semua.
+    # PK-36 (IC-06) — tanda akun kontrol & boleh-tidaknya jurnal manual, dari pengaturan dan pemetaan PT ini (tanpa PT =
+    # lapisan global). Layar memakai `manual_allowed` untuk pilihan akun jurnal manual / reklas suspense.
+    from services.config_resolver import value_of
+    from services import gl_mapping_registry as _reg, gl_mapping_service as _glm
+    kontrol = await _glm.control_accounts(entity_id)
+    tolak = await value_of("gl.jurnal_manual_akun_kontrol", {"entity_id": entity_id or ""}) != "izinkan"
     for row in result:
         own = entity_id and row.get("entity_id") == entity_id
         row["entity_scope"] = "entity" if own else "global"
         row["source_label"] = "Badan usaha ini" if own else "Global"
         row["is_entity_override"] = bool(own)
+        ledger = kontrol.get(row.get("code", ""), "")
+        row["is_control"] = bool(ledger)
+        row["control_ledger"] = ledger
+        row["control_ledger_label"] = _reg.CONTROL_LEDGERS[ledger]["label"] if ledger else ""
+        row["manual_allowed"] = not (ledger and tolak)
     result.sort(key=lambda a: a.get("code", ""))
     return result
 
@@ -413,7 +424,8 @@ async def update_account(code: str, patch: Dict[str, Any],
 
 async def delete_account(code: str, entity_id: Optional[str] = None) -> None:
     """Hapus akun. Untuk akun template global (entity_id=None) tidak boleh sistem.
-    Untuk override PT, hanya menghapus override (template tetap)."""
+    Untuk override PT, hanya menghapus override (template tetap). PK-36 (GL-10): akun khusus PT yang dipakai jurnal
+    PT itu, dan akun yang masih dipetakan di Pemetaan Akun, tidak bisa dihapus."""
     scope: Dict[str, Any] = {"code": code}
     if entity_id:
         scope["entity_id"] = entity_id
@@ -424,8 +436,25 @@ async def delete_account(code: str, entity_id: Optional[str] = None) -> None:
         raise ValueError("Akun tidak ditemukan.")
     if acc.get("system") and not entity_id:
         raise ValueError("Akun baku sistem tidak dapat dihapus (boleh dinonaktifkan).")
-    # Cegah hapus bila dipakai jurnal (hanya cek untuk template global; override
-    # PT boleh dilepas karena posting selalu memakai kode template).
+    # PK-36 (GL-10) — baris PT: (1) ada templat berkode sama → hanya penimpa, hapus boleh (laporan kembali ke templat);
+    # (2) akun khusus PT → tolak bila dipakai jurnal PT itu; (3) templat maupun akun khusus PT → tolak bila masih
+    # dipetakan (Pemetaan Akun). Pemetaan diperiksa dulu: pesannya bisa ditindaklanjuti (ganti pemetaan).
+    penimpa = bool(entity_id) and bool(await db.gl_accounts.find_one(
+        {"code": code, "entity_id": {"$in": [None, ""]}}, {"_id": 0, "id": 1}))
+    if not penimpa:
+        from services import gl_mapping_registry as _reg, gl_mapping_service as _glm
+        lapisan: Dict[str, Any] = {"entity_id": {"$in": ["", None, entity_id]}} if entity_id else {}
+        dipetakan = await db[_glm.COLL].find({"account_code": code, **lapisan}, {"_id": 0, "key": 1}).to_list(100)
+        if dipetakan:
+            label = ", ".join(sorted({(_reg.BY_KEY.get(m["key"]) or {}).get("label", m["key"]) for m in dipetakan}))
+            raise ValueError(f"Akun {code} sedang dipakai di Pemetaan Akun ({label}). Ganti pemetaannya dulu.")
+    if entity_id and not penimpa:
+        used = await db.journal_entries.count_documents(
+            {"entity_id": entity_id, "lines.account_code": code, "status": {"$ne": "void"}})
+        if used:
+            raise ValueError(f"Akun {code} dipakai pada {used} jurnal PT ini, jadi tidak bisa dihapus. "
+                             f"Nonaktifkan saja bila tidak dipakai lagi.")
+    # Cegah hapus bila dipakai jurnal (template global; override PT boleh dilepas karena kode templat tetap ada).
     if not entity_id:
         used = await db.journal_entries.count_documents(
             {"lines.account_code": code, "status": {"$ne": "void"}}
@@ -515,6 +544,45 @@ async def enforce_closed_period_guard(entity_id: str, date: str, *,
 
 class JournalValidationError(ValueError):
     """FN-15 — jurnal ditolak di pintu insert (tidak seimbang / angka / akun tidak layak)."""
+
+
+# ─── PK-36 (IC-06) — akun kontrol hanya berubah lewat dokumennya ─────────────────────────────────────────────────────
+class ControlAccountError(JournalValidationError):
+    """PK-36 — jurnal manual / reklas suspense / pembalikan manual menyentuh akun kontrol (router → 422)."""
+
+    def __init__(self, message: str, *, code: str, ledger: str) -> None:
+        super().__init__(message)
+        self.code = code
+        self.ledger = ledger
+
+
+async def assert_no_control_accounts(codes: List[str], entity_id: Optional[str], *, aksi: str,
+                                     jurnal: Optional[Dict[str, Any]] = None) -> None:
+    """PK-36 — tolak bila salah satu `codes` akun kontrol PT itu (pengaturan `gl.jurnal_manual_akun_kontrol` = tolak).
+
+    `aksi`: "jurnal_manual" · "reklas_suspense" · "pembalikan_manual" (`jurnal` = jurnal asal, untuk pesannya).
+    Tidak dipasang di `_insert_entry`: jurnal otomatis dokumen tetap bebas menulis akun kontrol (02 §1 P10)."""
+    from services.config_resolver import value_of
+    from services import gl_mapping_registry as _reg, gl_mapping_service as _glm
+    if await value_of("gl.jurnal_manual_akun_kontrol", {"entity_id": entity_id or ""}) == "izinkan":
+        return
+    kontrol = await _glm.control_accounts(entity_id)
+    kena = sorted({c for c in codes if c in kontrol})
+    if not kena:
+        return
+    code = kena[0]
+    ledger = kontrol[code]
+    info = _reg.CONTROL_LEDGERS[ledger]
+    if aksi == "pembalikan_manual":
+        je = jurnal or {}
+        msg = (f"Jurnal {je.get('number') or je.get('id', '')} berasal dari "
+               f"{journal_source_label(je.get('source_type'))} dan menyentuh akun kontrol {info['label']}. "
+               f"Batalkan atau koreksi dokumen sumbernya; pembalikan manual ditolak.")
+    else:
+        nama = ((await effective_accounts([code], entity_id)).get(code) or {}).get("name", "")
+        msg = (f"Akun {code}{f' · {nama}' if nama else ''} adalah akun kontrol {info['label']} dan tidak menerima "
+               f"jurnal manual. Koreksi lewat {info['dokumen']}.")
+    raise ControlAccountError(msg, code=code, ledger=ledger)
 
 
 async def effective_accounts(codes: Optional[List[str]] = None,
@@ -712,6 +780,8 @@ async def create_manual_entry(payload, actor: Dict[str, Any],
             raise ValueError(f"Akun '{c}' adalah header — pilih akun detail (postable).")
         if accounts[c].get("is_active") is False:
             raise ValueError(f"Akun '{c}' nonaktif.")
+    # PK-36 (IC-06) — akun kontrol hanya lewat dokumennya; juga untuk usulan (`hanya_periksa`) & saat disetujui.
+    await assert_no_control_accounts(codes, eid, aksi="jurnal_manual")
     names = {c: accounts[c]["name"] for c in codes}
     lines = _norm_lines(raw, names)
     import math as _math
@@ -852,10 +922,13 @@ async def void_entry(entry_id: str, actor: Dict[str, Any],
 
 
 async def reverse_entry(entry_id: str, date: str, reason: str,
-                        actor: Dict[str, Any]) -> Optional[Dict[str, Any]]:
+                        actor: Dict[str, Any], *, periksa_akun_kontrol: bool = True) -> Optional[Dict[str, Any]]:
     """Kebijakan 2026-10-05 — jurnal pembalik (debit↔kredit) bertanggal pilihan user yang WAJIB di
     periode terbuka (jendela unlock tidak dipakai). Manual + otomatis; jurnal asli & dokumen sumber
-    tidak berubah. Satu jurnal hanya bisa dibalik sekali (CAS), jurnal penutup/pembalik tidak."""
+    tidak berubah. Satu jurnal hanya bisa dibalik sekali (CAS), jurnal penutup/pembalik tidak.
+
+    PK-36 — jurnal otomatis yang menyentuh akun kontrol tidak bisa dibalik manual (dokumennya yang dibatalkan).
+    `periksa_akun_kontrol=False` hanya untuk pemilik dokumen yang membalik jurnalnya sendiri (P10)."""
     je = await db.journal_entries.find_one({"id": entry_id}, {"_id": 0})
     if not je:
         return None
@@ -874,6 +947,11 @@ async def reverse_entry(entry_id: str, date: str, reason: str,
         raise ValueError(f"Jurnal sudah dibalik oleh {prior.get('number') or prior.get('id')}.")
     if d < (je.get("date") or "")[:10]:
         raise ValueError("Tanggal pembalik tidak boleh sebelum tanggal jurnal asli.")
+    # PK-36 (IC-06) — sebelum klaim `reversed_by_entry_id`. Jurnal `manual` lama yang telanjur menyentuh akun kontrol
+    # tetap boleh dibalik: pembalikannya justru mengembalikan saldo ke buku pembantu.
+    if periksa_akun_kontrol and je.get("source_type") != "manual":
+        await assert_no_control_accounts([ln.get("account_code", "") for ln in je.get("lines") or []],
+                                         je.get("entity_id"), aksi="pembalikan_manual", jurnal=je)
     await enforce_closed_period_guard(je["entity_id"], d, source_type="reversal", can_backdate=False)
     return await _reverse_once(
         je, source_type="reversal", source_id=entry_id, date=f"{d}T00:00:00",
@@ -1594,6 +1672,7 @@ async def reclass_suspense(*, amount: float, side: str, target_account: str, not
         raise ValueError(f"Akun '{target_account}' tidak ditemukan.")
     if not acc.get("is_postable", True):
         raise ValueError(f"Akun '{target_account}' adalah header — pilih akun detail (postable).")
+    await assert_no_control_accounts([target_account], entity_id, aksi="reklas_suspense")   # PK-36 (IC-06)
     desc = (note or "").strip() or "Reklasifikasi saldo suspense"
     if side == "credit":
         lines = [{"account_code": ACC_SUSPENSE, "debit": amount, "credit": 0.0, "description": desc},
@@ -3460,6 +3539,13 @@ JOURNAL_SOURCE_LABEL: Dict[str, str] = {
     "manual": "Manual", "reversal": "Pembalik", "rnd_sample_issue": "Pemakaian Sample R&D",
     "return_cutloss": "Rugi Retur (cut-loss)", "return_grade_impairment": "Penurunan Grade Retur",
     "inter_company_transfer": "Transfer Antar-PT", "tanpa sumber": "Tanpa sumber",
+    # PK-36 — sumber jurnal otomatis yang menyentuh akun kontrol disebut di pesan tolak pembalikan manual (padanan
+    # frontend glSourceLabels.js).
+    "cash_transaction": "Kas", "interco_settlement": "Pelunasan Antar-PT", "interco_loan": "Pinjaman Antar-PT",
+    "interco_loan_repayment": "Cicilan Pinjaman Antar-PT", "ar_receipt_deposit": "Penerimaan Piutang",
+    "sales_order": "Penjualan", "shipment_revenue": "Pendapatan Kirim", "contra_bon_deduction": "Potongan Kontrabon",
+    "amendment_credit_note": "Nota Kredit Koreksi", "return_logistics": "Ongkir Retur",
+    "suspense_reclass": "Reklas Akun Penampung", "finance_case": "Kasus Keuangan",
 }
 
 

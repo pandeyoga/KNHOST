@@ -49,6 +49,10 @@ KFT3_TIDAK_DIPAKAI = 1
 # (U04) tetapi tidak bisa diubah pemegang `settings.manage` saja (U02 tetap). Tab "notifikasi", "keuangan-dasar",
 # "persetujuan", dan "rnd" kini juga terbuka bagi pemegang izin `scheduler` (U14, `VIEW_RESOURCE_OVERRIDES`).
 KPT7_KUNCI = 19
+# PK-36 — satu kunci baru `gl.jurnal_manual_akun_kontrol` berizin `accounting.manage` (kelompok "keuangan-dasar"): ikut
+# terhitung di katalog (U04) tetapi tidak bisa diubah pemegang `settings.manage` saja (U02 tetap). Tab "keuangan-dasar"
+# kini juga terbuka bagi pemegang izin `accounting` (U14, `VIEW_RESOURCE_OVERRIDES`).
+PK36_KUNCI = 1
 
 
 def _put(key, value, scope_type="entity", scope_id="ent_ksc"):
@@ -109,8 +113,8 @@ async def test_U04_lihat_saja_tidak_bisa_ubah(klien, akun, sesi, peran_tanpa_acu
     r = await klien.get("/api/config/registry", headers=h)
     assert r.status_code == 200, r.text
     # PK-46 menambah lima kunci PPh 21 bertanggal; KF-T6 kunci kontrol.*; KF-T2 kunci retur & jadwal bayar antar-PT;
-    # KP-T7 kunci pengingat & penjadwal.
-    assert r.json()["total"] == 310 + 5 + KFT6_KUNCI + KFT2_KUNCI + KPT7_KUNCI
+    # KP-T7 kunci pengingat & penjadwal; PK-36 kunci akun kontrol.
+    assert r.json()["total"] == 310 + 5 + KFT6_KUNCI + KFT2_KUNCI + KPT7_KUNCI + PK36_KUNCI
 
 
 async def test_U05_manajer_kosong_tidak_lagi_lewat_nama_peran(klien, akun, sesi, peran_manajer_kosong):

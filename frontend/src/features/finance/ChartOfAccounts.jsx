@@ -273,6 +273,14 @@ export default function ChartOfAccounts({ entities = [], currentUser }) {
                                   global
                                 </span>
                               )}
+                              {/* PK-36 (IC-06) — akun kontrol: saldonya hanya berubah lewat dokumen buku pembantunya. */}
+                              {a.is_control && (
+                                <span data-testid={`coa-badge-control-${a.code}`}
+                                  title={`Hanya berubah lewat dokumen ${a.control_ledger_label || ""}`.trim()}
+                                  className="ml-2 rounded bg-kn-warning-soft px-1.5 py-0.5 text-fs-12 font-bold text-kn-warning-text">
+                                  Akun kontrol
+                                </span>
+                              )}
                             </td>
                             {/* FASE E-4 (E4.4) — kolom "dipakai badan usaha ini" */}
                             {scopeEntityId && (

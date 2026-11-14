@@ -78,6 +78,27 @@ async def known_codes(key: str) -> List[str]:
     return sorted(codes)
 
 
+async def control_accounts(entity_id: Optional[str]) -> Dict[str, str]:
+    """PK-36 (IC-06) — peta {kode akun: id buku pembantu} akun kontrol satu PT (tanpa PT = lapisan global).
+
+    Untuk tiap kebutuhan ber-`control`: kode bawaan registri ∪ akun pemetaan efektif (PT → global → bawaan) ∪ kode
+    `from_code`/`to_code` riwayat pemetaan global atau PT itu. Kode lama tetap terhitung: saldo buku pembantunya masih di
+    sana. Riwayat dibaca sekali per panggilan; pemetaan memakai cache `_rows`."""
+    eid = _eid(entity_id)
+    by_key = {e["key"]: e["control"] for e in reg.ENTRIES if e.get("control")}
+    out: Dict[str, str] = {}
+    for key, ledger in by_key.items():
+        out.setdefault(reg.require(key)["default"], ledger)
+        out.setdefault((await resolve(key, eid))["account_code"], ledger)
+    lapisan: List[Any] = ["", None] + ([eid] if eid else [])
+    async for h in db[HIST].find({"key": {"$in": list(by_key)}, "entity_id": {"$in": lapisan}},
+                                 {"_id": 0, "key": 1, "from_code": 1, "to_code": 1}):
+        for code in (h.get("from_code"), h.get("to_code")):
+            if code:
+                out.setdefault(code, by_key[h["key"]])
+    return out
+
+
 async def _accounts(entity_id: str) -> Dict[str, Dict[str, Any]]:
     from services.gl_service import effective_accounts
     return await effective_accounts(None, entity_id or None)

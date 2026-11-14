@@ -31,3 +31,20 @@ E("periode.max_days_after_close", group="pajak-pembukuan", section="tutup-buku",
   consumers=("services/period_unlock_service.py:request_unlock",),
   risk="high",
   related=("periode.unlock_window_hours",))
+
+# PK-36 (IC-06, K-02) — akun kontrol (piutang, hutang, persediaan, antar-PT) hanya berubah lewat dokumennya. Bawaan
+# "tolak" menyimpang dari "bawaan = perilaku hari ini" (02 §2.1) karena keputusan pemilik K-02 menyebut bawaannya.
+# Izin pengubah `accounting.manage` (`accounting.configure` belum ada di matriks izin — ASUMSI unit).
+E("gl.jurnal_manual_akun_kontrol", group="pajak-pembukuan", section="tutup-buku", type="enum", default="tolak",
+  options=({"value": "tolak", "label": "Tolak"}, {"value": "izinkan", "label": "Izinkan"}),
+  scopes=G,
+  label="Jurnal manual ke akun kontrol",
+  help="Akun piutang, hutang, persediaan, dan antar-PT dijaga dokumennya. Pilih Tolak supaya akun itu tidak bisa "
+       "diisi lewat jurnal manual, reklasifikasi suspense, atau pembalikan manual.",
+  impact="Bila diizinkan, saldo buku besar bisa berbeda dari daftar piutang, hutang, stok, atau saldo antar-PT tanpa "
+         "ada dokumen yang menjelaskannya.",
+  example="Tolak · jurnal manual Dr 1-1200 Piutang Rp 500.000 → ditolak, diarahkan ke Nota Kredit",
+  consumers=("services/gl_service.py:assert_no_control_accounts",
+             "services/gl_service.py:list_accounts"),
+  risk="high", requires_reason=True,
+  permission=("accounting", "manage"))

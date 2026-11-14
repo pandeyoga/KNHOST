@@ -26,6 +26,16 @@ GL-01: registri `services/gl_mapping_registry.py` (54 kebutuhan) → koleksi `gl
   Sebagian {rupiah} / Belum + tautan "Cocokkan di Rekonsiliasi Bank" (rekening terpilih). Pembangun ulang
   `rebuild_reconciled`; INV-BNK-02 mencakup semua kas bertanda/berangka rekonsiliasi (tanda manual lama = peringatan;
   memulihkan/menghapusnya = paket perbaikan data, keputusan pemilik).
+- 2026-11-14 PK-36 (akun kontrol tertutup dari jurnal manual, IC-06/GL-10, K-02): akun piutang, hutang, persediaan,
+  dan antar-PT (registri Pemetaan Akun `control` + `CONTROL_LEDGERS`; per PT = kode bawaan ∪ pemetaan efektif ∪ kode
+  riwayat pemetaan, `gl_mapping_service.control_accounts`) hanya berubah lewat dokumennya. Jurnal manual (termasuk
+  usulan dua orang dan saat disetujui), reklasifikasi suspense, dan pembalikan manual jurnal otomatis yang menyentuh
+  akun itu → 422 dengan pesan yang menyebut dokumen penggantinya (`gl_service.assert_no_control_accounts`); jurnal
+  manual lama ke akun kontrol tetap boleh dibalik; jurnal otomatis dokumen tidak diperiksa (P10). Pengaturan
+  `gl.jurnal_manual_akun_kontrol` (Tolak · Izinkan, bawaan Tolak, per PT, izin `accounting.manage`). `GET
+  /api/gl/accounts` menambah `is_control`, `control_ledger`, `control_ledger_label`, `manual_allowed`; layar jurnal
+  manual & suspense tidak menawarkan akun kontrol, Bagan Akun berlencana "Akun kontrol". GL-10: akun khusus PT yang
+  dipakai jurnal PT itu, atau akun yang masih dipetakan, tidak bisa dihapus (penimpa akun templat tetap boleh).
 - 2026-11-14 PR-T4 (sifat peran yang bisa diatur, K-47): cakupan data (`data_scope`: milik sendiri · timnya ·
   semua), halaman awal (`home_view`, daftar `role_registry.HOME_CHOICES` bersyarat izin), kategori kerja
   (`kategori_kerja`: sales · sopir · desainer · gudang · pengawas) dan alamat notifikasi tambahan (`notify_like`) per

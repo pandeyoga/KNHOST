@@ -93,7 +93,8 @@ async def _active(ret_id: str, t: str) -> Optional[Dict[str, Any]]:
 
 
 async def _reverse(je: Dict[str, Any], reason: str, actor: Dict[str, Any]) -> None:
-    await gl_service.reverse_entry(je["id"], now_iso()[:10], reason, actor)
+    # PK-36 — dokumen ini pemilik jurnalnya (ongkir ditagih ke pelanggan = Dr piutang): bukan pembalikan manual (P10).
+    await gl_service.reverse_entry(je["id"], now_iso()[:10], reason, actor, periksa_akun_kontrol=False)
 
 
 async def sync_journals(ret: Dict[str, Any], rows: List[Dict[str, Any]], actor: Dict[str, Any]) -> None:

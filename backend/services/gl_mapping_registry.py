@@ -24,10 +24,24 @@ def norm_type(t: Any) -> str:
     return TYPE_ALIAS.get(t, t) if isinstance(t, str) else ""
 
 
-def _e(key, default, label, used_when, dr_cr, used_by, remap=True, types=None, required=True):
+# PK-36 (IC-06) — buku pembantu pemilik akun kontrol. Akun kebutuhan ber-`control` hanya berubah lewat dokumennya:
+# jurnal manual, reklasifikasi suspense, dan pembalikan manual jurnal otomatis ditolak (`gl_service.assert_no_control_
+# accounts`). `label` & `dokumen` = teks pesan penolakan (dokumen pengganti); satu tempat, bukan di tiap pemanggil.
+CONTROL_LEDGERS: Dict[str, Dict[str, str]] = {
+    "piutang": {"label": "piutang usaha", "dokumen": "Kwitansi, Nota Kredit, atau Kasus Keuangan"},
+    "hutang": {"label": "hutang usaha", "dokumen": "Tagihan Pemasok, Retur Beli, atau Kontrabon"},
+    "persediaan": {"label": "persediaan",
+                   "dokumen": "Penyesuaian Stok, Stock Opname, atau Biaya Masuk (Landed Cost)"},
+    "antar_pt": {"label": "antar-PT", "dokumen": "dokumen Antar-PT (transaksi, pelunasan, atau retur)"},
+}
+
+
+def _e(key, default, label, used_when, dr_cr, used_by, remap=True, types=None, required=True, control=""):
+    assert not control or control in CONTROL_LEDGERS, f"buku pembantu tidak dikenal: {control}"
     return {"key": key, "module": key.split(".")[0], "default": default, "label": label,
             "used_when": used_when, "example": dr_cr, "used_by": list(used_by), "remap": remap,
-            "allowed_types": list(types or [TYPE_BY_DIGIT[default[0]]]), "required": required}
+            "allowed_types": list(types or [TYPE_BY_DIGIT[default[0]]]), "required": required,
+            "control": control}   # PK-36 — id buku pembantu pemilik akun ini; "" = bukan akun kontrol
 
 
 ENTRIES: List[Dict[str, Any]] = [
@@ -53,7 +67,7 @@ ENTRIES: List[Dict[str, Any]] = [
     _e("kas_bank.piutang_karyawan", "1-1280", "Piutang titipan karyawan", "uang perusahaan dipegang karyawan",
        ("Piutang karyawan", "Kas"), ["Kas & Bank"]),
     _e("penjualan.piutang", "1-1200", "Piutang usaha", "penjualan kredit & penagihan",
-       ("Piutang", "Pendapatan"), ["Penjualan", "Kwitansi AR", "Aging"]),
+       ("Piutang", "Pendapatan"), ["Penjualan", "Kwitansi AR", "Aging"], control="piutang"),
     _e("penjualan.pendapatan", "4-1000", "Pendapatan penjualan", "barang dikirim ke pelanggan",
        ("Piutang", "Pendapatan"), ["Penjualan", "Surat Jalan"]),
     _e("penjualan.ppn_keluaran", "2-1200", "PPN keluaran", "penjualan ber-PPN",
@@ -75,7 +89,7 @@ ENTRIES: List[Dict[str, Any]] = [
     _e("penjualan.beban_pemasaran", "6-4700", "Beban pemasaran", "realisasi biaya kampanye",
        ("Beban pemasaran", "Kas"), ["Marketing"]),
     _e("persediaan.persediaan", "1-1300", "Persediaan barang", "barang masuk/keluar gudang",
-       ("Persediaan", "Barang diterima belum ditagih"), ["Penerimaan", "HPP", "Opname"]),
+       ("Persediaan", "Barang diterima belum ditagih"), ["Penerimaan", "HPP", "Opname"], control="persediaan"),
     _e("persediaan.transit_antar_pt", "1-1310", "Persediaan dalam perjalanan antar-PT", "transfer antar-PT dikirim",
        ("Persediaan transit", "Persediaan"), ["Transfer antar-PT"]),
     _e("persediaan.hpp", "5-1000", "Harga pokok penjualan", "barang terjual dikirim",
@@ -89,7 +103,7 @@ ENTRIES: List[Dict[str, Any]] = [
     _e("persediaan.beban_rnd", "6-7000", "Beban sample & pengembangan", "bahan sample keluar gudang",
        ("Beban R&D", "Persediaan"), ["R&D Sample"]),
     _e("pembelian.hutang", "2-1100", "Hutang usaha", "tagihan supplier",
-       ("Barang diterima belum ditagih", "Hutang"), ["Tagihan supplier", "Pembayaran supplier"]),
+       ("Barang diterima belum ditagih", "Hutang"), ["Tagihan supplier", "Pembayaran supplier"], control="hutang"),
     _e("pembelian.gr_ir", "2-1150", "Barang diterima belum ditagih (GR/IR)", "barang PO diterima gudang",
        ("Persediaan", "Barang diterima belum ditagih"), ["Penerimaan PO", "Tagihan supplier"]),
     _e("pembelian.ppn_masukan", "1-1500", "PPN masukan", "tagihan supplier ber-PPN",
@@ -130,9 +144,9 @@ ENTRIES: List[Dict[str, Any]] = [
     _e("makloon.jasa_tak_terserap", "5-1200", "Jasa makloon tak terserap", "jasa murni yang tak menempel ke kain",
        ("Jasa tak terserap", "Hutang"), ["Makloon"]),
     _e("antar_pt.piutang_ic", "1-1250", "Piutang antar-PT", "penjualan/transfer antar-PT",
-       ("Piutang antar-PT", "Pendapatan"), ["Transaksi antar-PT"]),
+       ("Piutang antar-PT", "Pendapatan"), ["Transaksi antar-PT"], control="antar_pt"),
     _e("antar_pt.utang_ic", "2-1250", "Utang antar-PT", "pembelian/transfer antar-PT",
-       ("Persediaan", "Utang antar-PT"), ["Transaksi antar-PT"]),
+       ("Persediaan", "Utang antar-PT"), ["Transaksi antar-PT"], control="antar_pt"),
     _e("sdm.beban_gaji", "6-1000", "Beban gaji & upah", "payroll diposting",
        ("Beban gaji", "Hutang gaji"), ["Payroll"]),
     _e("sdm.beban_bpjs", "6-1100", "Beban BPJS perusahaan", "payroll diposting",

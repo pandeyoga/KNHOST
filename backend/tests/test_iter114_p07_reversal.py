@@ -291,10 +291,16 @@ def test_reverse_manager_allowed(admin_h, manager_h):
 # ═══════════════════════════════════════════════════════════════════════════
 def test_reverse_auto_cash_transaction_je(admin_h):
     # Pick a non-reversed cash_transaction JE from seed data.
+    # PK-36 — jurnal kas yang menyentuh akun kontrol (bayar tagihan = Dr Hutang, terima piutang = Cr Piutang) tidak
+    # bisa dibalik manual (422, dokumennya yang dibatalkan): pilih jurnal kas tanpa akun kontrol PT ini.
+    accs = requests.get(f"{BASE_URL}/api/gl/accounts", params={"entity_id": ENTITY}, headers=admin_h, timeout=20)
+    assert accs.status_code == 200, accs.text[:200]
+    kontrol = [a["code"] for a in accs.json() if a.get("is_control") and a.get("manual_allowed") is False]
     je = db.journal_entries.find_one(
         {"entity_id": ENTITY, "source_type": "cash_transaction",
          "status": "posted",
-         "reversed_by_entry_id": {"$exists": False}},
+         "reversed_by_entry_id": {"$exists": False},
+         "lines.account_code": {"$nin": kontrol}},
         {"_id": 0, "id": 1, "number": 1, "date": 1},
     )
     if not je:

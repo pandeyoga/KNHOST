@@ -599,6 +599,9 @@ VIEW_RESOURCE_OVERRIDES["settings-cfg-finance"] = ["settings", "entity"]
 for _v in ("settings-cfg-notify", "settings-cfg-finance", "settings-cfg-approval", "settings-cfg-rnd"):
     VIEW_RESOURCE_OVERRIDES[_v] = [*VIEW_RESOURCE_OVERRIDES[_v], "scheduler"]
 del _v
+# PK-36 — kunci `gl.jurnal_manual_akun_kontrol` (kelompok "keuangan-dasar") diubah pemegang `accounting.manage`; aturan
+# KF-T1 (U14): tab kelompok itu juga terbuka bagi pemegang izin pengubah kuncinya.
+VIEW_RESOURCE_OVERRIDES["settings-cfg-finance"] = [*VIEW_RESOURCE_OVERRIDES["settings-cfg-finance"], "accounting"]
 
 
 #: PR-T5 — menu yang butuh AKSI tertentu (bukan sekadar "ada aksi apa pun pada sumber daya modulnya"). Dikirim
