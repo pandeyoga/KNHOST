@@ -1,0 +1,2 @@
+BUKTI IV-09: {'reconciled': True, 'total_difference': 0.0, 'rows_out_of_sync': '(field tidak ada)', 'total_abs_difference': '(field tidak ada)', 'rows': [('ent_uji_buktia', 5000.0, '(field tidak ada)'), ('ent_uji_buktib', -5000.0, '(field tidak ada)')]}
+BUKTI IV-09: {'reconciled': False, 'total_difference': 0.0, 'rows_out_of_sync': 2, 'total_abs_difference': 10000.0, 'rows': [('ent_uji_buktia', 5000.0, False), ('ent_uji_buktib', -5000.0, False)]}

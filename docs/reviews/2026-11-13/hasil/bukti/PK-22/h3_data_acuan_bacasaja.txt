@@ -1,0 +1,1 @@
+Data acuan lingkungan A, baca-saja: proses gaji posted/paid tanpa journal_id = 0 dari 2

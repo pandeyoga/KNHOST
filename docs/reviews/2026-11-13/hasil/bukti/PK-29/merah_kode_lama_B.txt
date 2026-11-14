@@ -1,0 +1,86 @@
+FFFFFFFFFFFFFF.                                                          [100%]
+=================================== FAILURES ===================================
+E   AssertionError: assert ['ent_ksc', '...t_uji_p29u1b'] == ['ent_uji_p29...t_uji_p29u1b']
+      
+      At index 0 diff: 'ent_ksc' != 'ent_uji_p29u1a'
+      Left contains 3 more items, first extra item: 'ent_58cbabef8e8d'
+      Use -v to get more diff
+---------------------------- Captured stdout setup -----------------------------
+$S/pk29/lama/repo/backend/tests_mem/test_PK29_rekonsiliasi_persediaan.py:144: AssertionError: assert ['ent_ksc', '...t_uji_p29u1b'] == ['ent_uji_p29...t_uji_p29u1b']
+E   AssertionError: {'rows': [{'entity_id': 'ent_ksc', 'entity_name': 'Sukacita Textile', 'subledger_value': 0.0, 'gl_balance': 750000.0, ...l_balance': 10000000.0, ...}, ...], 'total_difference': -750000.0, 'rounding_tolerance': 1.0, 'reconciled': False, ...}
+    assert False is True
+$S/pk29/lama/repo/backend/tests_mem/test_PK29_rekonsiliasi_persediaan.py:164: AssertionError: {'rows': [{'entity_id': 'ent_ksc', 'entity_name': 'Sukacita Textile', 'subledger_value': 0.0, 'gl_balance': 750000.0, ...l_balance': 10000000.0, ...}, ...], 'total_difference': -750000.0, 'rounding_tolerance': 1.0, 'reconciled': False, ...}
+E   AssertionError: {'entity_id': 'ent_uji_p29u3a', 'entity_name': 'PT Uji P29U3A', 'subledger_value': 1000000.0, 'gl_balance': 0.0, ...}
+    assert (0.0, 1000000.0) == (1000000, 0)
+      
+      At index 0 diff: 0.0 != 1000000
+      Use -v to get more diff
+$S/pk29/lama/repo/backend/tests_mem/test_PK29_rekonsiliasi_persediaan.py:187: AssertionError: {'entity_id': 'ent_uji_p29u3a', 'entity_name': 'PT Uji P29U3A', 'subledger_value': 1000000.0, 'gl_balance': 0.0, ...}
+E   AssertionError: {'entity_id': 'ent_uji_p29u3a', 'entity_name': 'PT Uji P29U3A', 'subledger_value': 1000000.0, 'gl_balance': 0.0, ...}
+    assert (1000000.0, 0.0, 1000000.0) == (1000000, 1000000, 0)
+      
+      At index 1 diff: 0.0 != 1000000
+      Use -v to get more diff
+$S/pk29/lama/repo/backend/tests_mem/test_PK29_rekonsiliasi_persediaan.py:199: AssertionError: {'entity_id': 'ent_uji_p29u3a', 'entity_name': 'PT Uji P29U3A', 'subledger_value': 1000000.0, 'gl_balance': 0.0, ...}
+E   AssertionError: {'entity_id': 'ent_uji_p29u4a', 'entity_name': 'PT Uji P29U4A', 'subledger_value': 1234560000.0, 'gl_balance': 0.0, ...}
+    assert 1234560000.0 == 1851840000.0
+$S/pk29/lama/repo/backend/tests_mem/test_PK29_rekonsiliasi_persediaan.py:262: AssertionError: {'entity_id': 'ent_uji_p29u4a', 'entity_name': 'PT Uji P29U4A', 'subledger_value': 1234560000.0, 'gl_balance': 0.0, ...}
+E   assert (6 == 1)
+$S/pk29/lama/repo/backend/tests_mem/test_PK29_rekonsiliasi_persediaan.py:277: assert (6 == 1)
+E   AssertionError: {"posted":[{"entity_id":"ent_uji_p29u3a","amount":1000000.0,"journal_number":"P29U3A/JE-00003","reason":"stok awal gudang utama"},{"entity_id":"ent_uji_p29u6a","amount":5000.0,"journal_number":"P29U6A/JE-00002","reason":"stok awal gudang utama"}],"count":2}
+    assert 200 == 409
+     +  where 200 = <Response [200 OK]>.status_code
+$S/pk29/lama/repo/backend/tests_mem/test_PK29_rekonsiliasi_persediaan.py:297: AssertionError: {"posted":[{"entity_id":"ent_uji_p29u3a","amount":1000000.0,"journal_number":"P29U3A/JE-00003","reason":"stok awal gudang utama"},{"entity_id":"ent_uji_p29u6a","amount":5000.0,"journal_number":"P29U6A/JE-00002","reason":"stok awal gudang utama"}],"count":2}
+E   AssertionError: {"detail":"Setting 'inventory.trueup_hanya_saldo_awal' tidak ada di registry"}
+    assert 404 == 200
+     +  where 404 = <Response [404 Not Found]>.status_code
+$S/pk29/lama/repo/backend/tests_mem/test_PK29_rekonsiliasi_persediaan.py:111: AssertionError: {"detail":"Setting 'inventory.trueup_hanya_saldo_awal' tidak ada di registry"}
+E   AssertionError: {"posted":[{"entity_id":"ent_uji_p29u3a","amount":1000000.0,"journal_number":"P29U3A/JE-00004","reason":""},{"entity_id":"ent_uji_p29u7b","amount":5000.0,"journal_number":"P29U7B/JE-00002","reason":""},{"entity_id":"ent_uji_p29u8a","amount":2000000.0,"journal_number":"P29U8A/JE-00001","reason":""}],"count":3}
+    assert 200 == 400
+     +  where 200 = <Response [200 OK]>.status_code
+$S/pk29/lama/repo/backend/tests_mem/test_PK29_rekonsiliasi_persediaan.py:336: AssertionError: {"posted":[{"entity_id":"ent_uji_p29u3a","amount":1000000.0,"journal_number":"P29U3A/JE-00004","reason":""},{"entity_id":"ent_uji_p29u7b","amount":5000.0,"journal_number":"P29U7B/JE-00002","reason":""},{"entity_id":"ent_uji_p29u8a","amount":2000000.0,"journal_number":"P29U8A/JE-00001","reason":""}],"count":3}
+E   AssertionError: {"posted":[{"entity_id":"ent_uji_p29u3a","amount":1000000.0,"journal_number":"P29U3A/JE-00005","reason":"stok awal gudang utama"},{"entity_id":"ent_uji_p29u9a","amount":2000000.0,"journal_number":"P29U9A/JE-00001","reason":"stok awal gudang utama"}],"count":2}
+    assert 200 == 400
+     +  where 200 = <Response [200 OK]>.status_code
+$S/pk29/lama/repo/backend/tests_mem/test_PK29_rekonsiliasi_persediaan.py:363: AssertionError: {"posted":[{"entity_id":"ent_uji_p29u3a","amount":1000000.0,"journal_number":"P29U3A/JE-00005","reason":"stok awal gudang utama"},{"entity_id":"ent_uji_p29u9a","amount":2000000.0,"journal_number":"P29U9A/JE-00001","reason":"stok awal gudang utama"}],"count":2}
+E   AssertionError: Internal Server Error
+    assert 500 == 409
+     +  where 500 = <Response [500 Internal Server Error]>.status_code
+$S/pk29/lama/repo/backend/tests_mem/test_PK29_rekonsiliasi_persediaan.py:374: AssertionError: Internal Server Error
+E   AssertionError: ['ent_ksc', 'ent_kanda', 'ent_58cbabef8e8d', 'ent_uji_p29u1a', 'ent_uji_p29u1b', 'ent_uji_p29u2a', ...]
+    assert ['ent_ksc', '..._p29u2a', ...] == ['ent_uji_p29u11a']
+      
+      At index 0 diff: 'ent_ksc' != 'ent_uji_p29u11a'
+      Left contains 17 more items, first extra item: 'ent_kanda'
+      Use -v to get more diff
+$S/pk29/lama/repo/backend/tests_mem/test_PK29_rekonsiliasi_persediaan.py:388: AssertionError: ['ent_ksc', 'ent_kanda', 'ent_58cbabef8e8d', 'ent_uji_p29u1a', 'ent_uji_p29u1b', 'ent_uji_p29u2a', ...]
+E   KeyError: "Setting 'inventory.trueup_hanya_saldo_awal' tidak ada di registry"
+$S/pk29/lama/repo/backend/config_registry.py:395: KeyError: "Setting 'inventory.trueup_hanya_saldo_awal' tidak ada di registry"
+E   AssertionError: 
+      [96m[1mL4-GL — Invarian General Ledger (keseimbangan & rekonsiliasi)[0m
+        [92m[PASS][0m GL: 27 jurnal — setiap entri seimbang (Σdebit == Σkredit)
+        [92m[PASS][0m GL: trial balance seimbang untuk 14 buku entitas
+        [93m[WARN][0m GL: 5 entitas drift persediaan subledger vs GL 1-1300: ['ent_uji_p29u3a(Δ1,000,000)', 'ent_uji_p29u10a(Δ2,000,000)', 'ent_uji_p29u11a(Δ100,000)', 'ent_uji_p29u11b(Δ100,000)', 'ent_uji_p29gl3(Δ-100,000)']  [93m→ jalankan post_inventory_opening_balance / cek posting GR·COGS·retur·LC (INV-GL-DRIFT)[0m
+        [92m[PASS][0m GL: setiap order berpendapatan juga punya jurnal HPP (tidak ada COGS-ZERO)
+        [92m[PASS][0m GL: Piutang 1-1200 ter-rekonsiliasi per entitas (tak bocor ke 'all', tak negatif)
+        [92m[PASS][0m GL: voucher biaya masuk — persediaan + makloon + beban = nominal teralokasi = jurnal (INV-LC-01)
+        [92m[PASS][0m GL: roll scrap yang sudah dihapus-buku bernilai 0 (GL-SCRAP)
+      
+    assert (4 > 0 and None)
+$S/pk29/lama/repo/backend/tests_mem/test_PK29_rekonsiliasi_persediaan.py:448: AssertionError:
+=========================== short test summary info ============================
+FAILED tests_mem/test_PK29_rekonsiliasi_persediaan.py::test_PK29_U1_selisih_berlawanan_tidak_sinkron[asyncio]
+FAILED tests_mem/test_PK29_rekonsiliasi_persediaan.py::test_PK29_U2_jurnal_tepat_sinkron[asyncio]
+FAILED tests_mem/test_PK29_rekonsiliasi_persediaan.py::test_PK29_U3_akun_pemetaan_pt_terbaca[asyncio]
+FAILED tests_mem/test_PK29_rekonsiliasi_persediaan.py::test_PK29_U12_penjelas_selisih_membaca_akun_pemetaan[asyncio]
+FAILED tests_mem/test_PK29_rekonsiliasi_persediaan.py::test_PK29_U4_nilai_roll_tanpa_batas[asyncio]
+FAILED tests_mem/test_PK29_rekonsiliasi_persediaan.py::test_PK29_U5_trueup_hanya_pt_aktif[asyncio]
+FAILED tests_mem/test_PK29_rekonsiliasi_persediaan.py::test_PK29_U6_pt_bertransaksi_ditolak[asyncio]
+FAILED tests_mem/test_PK29_rekonsiliasi_persediaan.py::test_PK29_U7_pengaturan_pt_dimatikan[asyncio]
+FAILED tests_mem/test_PK29_rekonsiliasi_persediaan.py::test_PK29_U8_alasan_wajib[asyncio]
+FAILED tests_mem/test_PK29_rekonsiliasi_persediaan.py::test_PK29_U9_semua_pt_ditolak[asyncio]
+FAILED tests_mem/test_PK29_rekonsiliasi_persediaan.py::test_PK29_U10_periode_tertutup[asyncio]
+FAILED tests_mem/test_PK29_rekonsiliasi_persediaan.py::test_PK29_U11_hanya_pt_yang_ditugaskan[asyncio]
+FAILED tests_mem/test_PK29_rekonsiliasi_persediaan.py::test_PK29_U13_putaran_t1_config_dan_penjaga[asyncio]
+FAILED tests_mem/test_PK29_rekonsiliasi_persediaan.py::test_PK29_invarian_GL3_satu_rumus[asyncio]
+14 failed, 1 passed in 3.46s

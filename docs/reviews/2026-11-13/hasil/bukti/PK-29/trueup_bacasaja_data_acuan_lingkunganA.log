@@ -1,0 +1,6 @@
+PT Kanda Fabric (ent_kanda) · nilai roll 2.226.190.647 · buku besar 2.226.190.647 (akun 1-1300) · selisih 0 · sinkron · boleh true-up
+CV Cipta Sandang Textile (ent_94f8683a109f) · nilai roll 25.387.355.892 · buku besar 25.387.355.892 (akun 1-1300) · selisih 0 · sinkron · true-up ditolak aturan saldo awal
+  True-up lama CST/JE-00001 2026-11-15 · 24.912.768.679 · sesudah jurnal persediaan operasional CST/JE-00005 (2026-11-15) · dasar: Stok awal migrasi master produk KN (MOCK)
+  True-up lama CST/JE-00004 2026-11-15 · 472.667.213 · sesudah jurnal persediaan operasional CST/JE-00005 (2026-11-15) · dasar: Stok awal demo tahap bahan
+Ringkasan: 3 PT · 0 belum sinkron · total selisih mutlak 0 · 4 true-up lama sesudah transaksi
+Mode baca-saja: tidak ada yang diubah. True-up satu PT: --apply --pt <id> --alasan "…" (data nyata = keputusan pemilik).

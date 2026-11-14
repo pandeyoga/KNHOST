@@ -1,0 +1,7 @@
+FAILED tests_mem/test_PK36_akun_kontrol.py::test_PK36_U5b_izinkan_juga_membuka_pembalikan
+FAILED tests_mem/test_PK36_akun_kontrol.py::test_PK36_U6_pembalikan_manual_jurnal_antar_pt_ditolak
+FAILED tests_mem/test_PK36_akun_kontrol.py::test_PK36_U7_jurnal_manual_lama_boleh_dibalik
+FAILED tests_mem/test_PK36_akun_kontrol.py::test_PK36_U8_pembalikan_jurnal_kas_tanpa_akun_kontrol
+FAILED tests_mem/test_PK10_jurnal_pembalik.py::test_U04_balik_manual_lalu_batal_kas
+FAILED tests_mem/test_PK10_jurnal_pembalik.py::test_U07_manual_lalu_dokumen
+6 failed, 1687 passed, 2 skipped, 3 xfailed in 440.10s (0:07:20)

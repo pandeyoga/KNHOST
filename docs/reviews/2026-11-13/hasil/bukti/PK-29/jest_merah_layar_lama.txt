@@ -1,0 +1,12 @@
+  ✕ U15 — U1: banner 2 PT belum sinkron (jumlah aljabar 0), lencana di kedua baris, kolom Akun (89 ms)
+  ✕ U15 — PT aktif sudah bertransaksi: tombol mati, alasan server tertulis di samping (20 ms)
+  ✕ U15 — Semua PT: tombol mati dengan petunjuk; PT sinkron: mati dengan keterangan (7 ms)
+  ✕ U15 — dialog menyebut satu PT dan nominal; POST hanya membawa alasan (PT dari konteks) (7 ms)
+  ✕ pembantu murni — banner, keadaan tombol, teks dialog
+    Expected: "2 PT belum sinkron: PT Uji A, PT Uji B. Total selisih mutlak Rp 10.000."
+    Received: "GL Persediaan sinkron dengan subledger roll.Posting Saldo Awal"
+    TypeError: Cannot read properties of null (reading 'textContent')
+    TypeError: Cannot read properties of null (reading 'textContent')
+    TypeError: Cannot read properties of undefined (reading '0')
+    TypeError: (0 , _InventoryReconTab.bannerText) is not a function
+Tests:       5 failed, 5 total

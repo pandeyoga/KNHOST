@@ -1,0 +1,4 @@
+FAILED tests_mem/test_KPT5b_pengaturan.py::test_KPT5_U14_izin[asyncio] - Asse...
+FAILED tests_mem/test_KPT5b_pengaturan.py::test_KPT5_daftar_lengkap_dan_contoh_berikutnya[asyncio]
+FAILED tests_mem/test_PK46_pph21.py::test_PK46_U5_slip_per_periode_mengikuti_tanggal_berlaku
+3 failed, 1574 passed, 2 skipped, 15 xfailed, 11 warnings in 990.05s (0:16:30)

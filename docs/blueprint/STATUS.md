@@ -55,14 +55,14 @@ Papan kerja agen pelaksana. Aturan mengubahnya: `00_ATURAN_EKSEKUSI.md` §5. Uru
 | 48 | PK-19 | Kwitansi, deposit, selisih bayar: satu fungsi alokasi | PK-18 | selesai | 1204bac | [PK-19](../reviews/2026-11-13/hasil/PK-19.md) |  |
 | 49 | PK-20 | Kas dibuat lewat satu pembuat | PK-18 | selesai | 7f9a527 | [PK-20](../reviews/2026-11-13/hasil/PK-20.md) |  |
 | 50 | PK-21 | Rekonsiliasi bank satu mekanisme | PK-15 | selesai | `3c459d9` | [PK-21](../reviews/2026-11-13/hasil/PK-21.md) |  |
-| 51 | PK-22 | Penggajian: tanggal buku, hitung ulang, batal, setoran kewajiban | PK-18 | dikerjakan |  |  | Dikerjakan paralel (worktree terpisah), 14 Nov |
+| 51 | PK-22 | Penggajian: tanggal buku, hitung ulang, batal, setoran kewajiban | PK-18 | selesai | 8c8d5ab | [PK-22](../reviews/2026-11-13/hasil/PK-22.md) |  |
 | 52 | PK-23 | Aset tetap | PK-06, PK-18 | selesai | 5a635ec | [PK-23](../reviews/2026-11-13/hasil/PK-23.md) | H4: akun lawan perolehan hutang/saldo awal belum diatur pemilik |
 | 53 | PK-24 | Kas kecil dan pertanggungjawaban | PK-18 | selesai | edce0af | [PK-24](../reviews/2026-11-13/hasil/PK-24.md) |  |
 | 54 | PK-25 | Kasus keuangan: periksa dulu, efek kemudian | PK-09, PK-19 | dikerjakan |  |  | Dikerjakan paralel (worktree terpisah), 15 Nov |
 | 55 | PK-26 | Landed cost untuk roll yang sudah terjual | PK-18 | selesai | 550c400 | [PK-26](../reviews/2026-11-13/hasil/PK-26.md) |  |
 | 56 | PK-27 | Biaya roll pada scrap, retur, dan HPP | PK-18 | selesai | 9d29e77 | [PK-27](../reviews/2026-11-13/hasil/PK-27.md) | H4: akun selisih retur beli belum diatur pemilik |
 | 57 | PK-28 | GR/IR: varians, umur, kliring | PK-18 | selesai | 3267c09 | [PK-28](../reviews/2026-11-13/hasil/PK-28.md) | H4: akun Selisih harga pembelian belum diatur pemilik (kliring GR/IR menunggu) |
-| 58 | PK-29 | Rekonsiliasi persediaan per PT; true-up dibatasi | PK-27 | dikerjakan |  |  | Dikerjakan paralel (worktree terpisah), 14 Nov |
+| 58 | PK-29 | Rekonsiliasi persediaan per PT; true-up dibatasi | PK-27 | selesai | 9871d7f | [PK-29](../reviews/2026-11-13/hasil/PK-29.md) | H3: true-up data nyata = skrip --apply (keputusan pemilik) |
 | 59 | PK-30 | Antar-PT: panjang aktual, jalur lama, harga dan PPN | PK-06 | selesai | `a4b7c8d` · `a0ae755` | [PK-30](../reviews/2026-11-13/hasil/PK-30.md) | H4 PPN masukan pembeli non-PKP → Menunggu pemilik |
 | 60 | PK-31 | Eliminasi per periode; rantai A→B→C; retur setelah lunas | PK-30 | selesai | dae12fc | [PK-31](../reviews/2026-11-13/hasil/PK-31.md) |  |
 | 61 | PK-32 | Nota kredit satu mesin | PK-19 | dikerjakan |  |  | Dikerjakan paralel (worktree terpisah), 15 Nov |
@@ -84,7 +84,7 @@ Papan kerja agen pelaksana. Aturan mengubahnya: `00_ATURAN_EKSEKUSI.md` §5. Uru
 | 77 | KM-T2 | Layar Capaian (cari dan jumlahkan) | KM-T1, PK-41 | menunggu |  |  |  |
 | 78 | AG-T1 | Asisten: rapikan kartu tindakan yang ada | PK-02 | selesai | 3e1a42c | [AG-T1](../reviews/2026-11-13/hasil/AG-T1.md) |  |
 | 79 | AG-T2 | Asisten: baca keuangan lewat pintu aplikasi | AG-T1, PK-09, PK-16, PK-17, PR-T3 | selesai | 4ffc907 | [AG-T2](../reviews/2026-11-13/hasil/AG-T2.md) |  |
-| 80 | PY-T1 | Komponen gaji per PT, antrean masukan, jenis proses gaji | PK-22 | menunggu |  |  |  |
+| 80 | PY-T1 | Komponen gaji per PT, antrean masukan, jenis proses gaji | PK-22 | siap |  |  |  |
 | 81 | PY-T2 | Riwayat kompensasi dan penugasan PT | PY-T1 | menunggu |  |  |  |
 | 82 | PY-T3 | Aturan hitung gaji dari pengaturan | PY-T1 | menunggu |  |  |  |
 | 83 | PY-T4 | Bayar gaji dan setor kewajiban | PY-T1, PM-T1 | menunggu |  |  |  |
