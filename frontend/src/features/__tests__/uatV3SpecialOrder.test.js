@@ -4,7 +4,7 @@
 // harga khusus yang diajukan tanpa SO menjadi harga langganan.
 import React, { act } from "react";
 import { createRoot } from "react-dom/client";
-import { formatStamp } from "../../utils/formatters";
+import { formatStamp, todayWib } from "../../utils/formatters";
 import { docStatus } from "../sales/SpecialOrderShared";
 import DecideModal from "../rnd/DecideModal";
 import SampleFinishModal from "../rnd/SampleFinishModal";
@@ -26,10 +26,6 @@ async function mount(el) {
   await tick();
   return root;
 }
-const localToday = () => {
-  const d = new Date(); const p = (n) => String(n).padStart(2, "0");
-  return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`;
-};
 
 test("stempel riwayat: ISO UTC → jam lokal; teks tanpa zona waktu apa adanya", () => {
   const iso = "2026-10-21T22:36:12.5+00:00";
@@ -54,9 +50,12 @@ test("ACC pemenang: tombol nonaktif menyebut isian yang kurang", async () => {
   act(() => root.unmount());
 });
 
-test("Sample jadi: tanggal bawaan = tanggal lokal hari ini (bukan kosong → tanggal UTC server)", async () => {
+// 15 Nov — harapan diganti dari tanggal zona PERANGKAT ke hari ini WIB (standar tanggal aplikasi). Harapan lama hanya
+// benar bila perangkat berzona WIB; di perangkat UTC pukul 00.00–07.00 WIB ia justru mengunci bug "tercatat kemarin".
+// Skenario jam beku + perangkat UTC: tanggalBawaanWib.test.js.
+test("Sample jadi: tanggal bawaan = hari ini WIB (bukan kosong → tanggal UTC server)", async () => {
   const root = await mount(<SampleFinishModal mode="finish" sample={{ number: "SMP-1" }} onClose={() => {}} onConfirm={() => {}} />);
-  expect(q("sample-finish-date").value).toBe(localToday());
+  expect(q("sample-finish-date").value).toBe(todayWib());
   act(() => root.unmount());
 });
 

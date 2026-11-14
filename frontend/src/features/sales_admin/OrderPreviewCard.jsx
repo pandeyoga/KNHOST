@@ -6,7 +6,7 @@
  * TEPAT di samping daftar periksa — sumber datanya `order_preview` dari server.
  */
 import { CalendarDays, MapPin, Package, StickyNote, UserRound, Wallet } from "lucide-react";
-import { formatCurrency, formatQty } from "../../utils/formatters";
+import { formatCurrency, formatQty, wibDate } from "../../utils/formatters";
 import { taxBreakdownRows } from "../../utils/taxBreakdown";   // K-03 (26 Okt) — rincian PPN seragam layar & PDF
 
 export default function OrderPreviewCard({ preview, testPrefix = "order-preview" }) {
@@ -24,13 +24,9 @@ export default function OrderPreviewCard({ preview, testPrefix = "order-preview"
   const taxRows = ppn > 0 ? taxBreakdownRows(t) : [];
   const addr = preview.shipping_address || {};
   const isPickup = (preview.fulfillment_method || "kirim") === "ambil";
-  // Cek UI UAT v3 (S15) — tanggal lokal (dulu potongan ISO UTC: pesanan 22 Okt dini hari tertulis 21 Okt).
-  const tanggal = (() => {
-    const d = new Date(preview.created_at || "");
-    if (Number.isNaN(d.getTime())) return (preview.created_at || "").slice(0, 10);
-    const p = (n) => String(n).padStart(2, "0");
-    return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`;
-  })();
+  // Cek UI UAT v3 (S15) — dulu potongan ISO UTC: pesanan 22 Okt dini hari tertulis 21 Okt. 15 Nov: tanggal WIB
+  // (dulu zona perangkat — salah lagi di perangkat yang tidak berzona WIB).
+  const tanggal = wibDate(preview.created_at) || (preview.created_at || "").slice(0, 10);
 
   return (
     <div className="rounded-lg border border-[#EFF0F2]" data-testid={testPrefix}>

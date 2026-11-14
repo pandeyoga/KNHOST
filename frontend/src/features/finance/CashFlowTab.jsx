@@ -20,13 +20,13 @@ import axios, { API } from "../../services/apiClient";
 import ErrorNotice from "../../components/ErrorNotice";
 import EntityScopeBanner, { useScopeMeta, scopeFileTag } from "../../components/EntityScopeBanner";
 import {
-  FC, NOW, ymd, compactIDR, entityParam, saveBlob, chartTooltip,
+  FC, ytdRangeWib, compactIDR, entityParam, saveBlob, chartTooltip,
   KpiCard, Panel, EmptyState, formatCurrency,
 } from "./financeShared";
 import { TraceNotice, TraceValue, useLedgerTrace } from "./traceLedger";
 
 export default function CashFlowTab({ selectedEntity }) {
-  const [range, setRange] = useState({ start: `${NOW.getFullYear()}-01-01`, end: ymd(NOW) });
+  const [range, setRange] = useState(() => ytdRangeWib());   // WIB, dihitung saat layar dipasang
   const tr = useLedgerTrace({ from: "financial-statements", fromTab: "cf", selectedEntity });
   const traceRow = (code) => tr.trace(code, { start: range.start, end: range.end });
   const [data, setData] = useState(null);

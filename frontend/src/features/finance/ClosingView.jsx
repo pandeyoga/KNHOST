@@ -20,13 +20,13 @@ import FinReportLink from "./FinReportLink";
 import axios, { API } from "../../services/apiClient";
 import ErrorNotice from "../../components/ErrorNotice";
 import KNSelect from "../../components/KNSelect";
-import { formatCurrency, formatDateTime } from "../../utils/formatters";
+import { formatCurrency, formatDateTime, todayWib } from "../../utils/formatters";
+import { yearOptions } from "./financeShared";
 import { askConfirm, askReason } from "../../services/confirmService";
 import { can } from "../../config/roles";
 import ClosingChecklistPanel, { checklistWarnings, useClosingChecklist } from "./ClosingChecklistPanel";   // PK-43
 import ClosingSections, { Labeled, MiniStat, useClosingSections } from "./ClosingParts";   // MN-T2
 
-const NOW = new Date();
 // PK-11 — "2026-12-01" → "1 Desember 2026" (bulan penuh, sama dengan pesan server).
 function tanggalPenuh(iso) {
   const [y, m, d] = String(iso || "").slice(0, 10).split("-");
@@ -48,10 +48,6 @@ const MONTHS = [
   { value: "09", label: "September" }, { value: "10", label: "Oktober" },
   { value: "11", label: "November" }, { value: "12", label: "Desember" },
 ];
-const YEARS = Array.from({ length: 6 }, (_, i) => {
-  const y = String(NOW.getFullYear() - i);
-  return { value: y, label: y };
-});
 
 // PK-42 (UX-18) — satu pemformat waktu WIB bersama ("23 Okt 2026 01.47 WIB"); dulu zona perangkat.
 const fmtDateTime = (iso) => formatDateTime(iso);
@@ -75,8 +71,10 @@ export default function ClosingView({ selectedEntity, entities = [], currentUser
   const entityLabel = entityOptions.find((e) => e.value === entityId)?.label || entityId;
 
   const [periodType, setPeriodType] = useState("month");
-  const [month, setMonth] = useState(String(NOW.getMonth() + 1).padStart(2, "0"));
-  const [year, setYear] = useState(String(NOW.getFullYear()));
+  // Periode bawaan = bulan berjalan WIB, dihitung saat layar dipasang (dulu `NOW` tingkat modul, zona perangkat).
+  const [month, setMonth] = useState(() => todayWib().slice(5, 7));
+  const [year, setYear] = useState(() => todayWib().slice(0, 4));
+  const years = useMemo(() => yearOptions(), []);
 
   const [closings, setClosings] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -311,7 +309,7 @@ export default function ClosingView({ selectedEntity, entities = [], currentUser
                   )}
                   <Labeled label="Tahun">
                     <div className="w-[110px]">
-                      <KNSelect data-testid="closing-year" className="field py-1.5 text-[12px]" value={year} onValueChange={setYear} options={YEARS} />
+                      <KNSelect data-testid="closing-year" className="field py-1.5 text-[12px]" value={year} onValueChange={setYear} options={years} />
                     </div>
                   </Labeled>
                   <button data-testid="closing-preview-btn" onClick={doPreview} disabled={busy}

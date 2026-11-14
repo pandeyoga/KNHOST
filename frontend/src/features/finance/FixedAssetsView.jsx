@@ -24,7 +24,7 @@ import FilterChips from "../../components/FilterChips";
 import { SearchBox } from "../../components/ListPageParts";
 import useFocusDoc from "../../hooks/useFocusDoc";
 import DesktopOnlyNotice from "../../components/DesktopOnlyNotice";
-import { formatCurrency, formatPeriod } from "../../utils/formatters";
+import { formatCurrency, formatPeriod, todayWib } from "../../utils/formatters";
 import { askConfirm } from "../../services/confirmService";
 import {
   AssetStatusPill, FaKpi, AddAssetDialog, ScheduleDialog, DisposeDialog, TransferAssetDialog, fmtDate,
@@ -37,7 +37,8 @@ import { entityFullById } from "../../utils/entityLabel";
 import { useAppNav } from "../../context/AppNavContext";
 import { canCurrent } from "../../config/roles";
 
-const thisPeriod = () => new Date().toISOString().slice(0, 7);
+// Periode bawaan = bulan berjalan WIB (dulu potongan ISO UTC: 1 Des pukul 00.00–07.00 WIB masih "November").
+const thisPeriod = () => todayWib().slice(0, 7);
 // Saringan daftar (bukan tab): status kepemilikan aset.
 const OWNED = ["active", "fully_depreciated", "transferring", "disposing"];
 const FILTERS = [

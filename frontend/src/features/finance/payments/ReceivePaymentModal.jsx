@@ -27,7 +27,7 @@ import MoneyInput from "../../../components/MoneyInput";
 import ErrorNotice from "../../../components/ErrorNotice";
 import FormModal from "../../../components/FormModal";
 import FilterChips from "../../../components/FilterChips";
-import { formatCurrency } from "../../../utils/formatters";
+import { formatCurrency, todayWib } from "../../../utils/formatters";
 import { apiErrorText } from "../../../utils/apiError";
 import { offlinePost } from "../../../utils/offlineQueue";
 import { moneyPost } from "../../../utils/moneyRequest";
@@ -45,7 +45,9 @@ export const TEKS_PILIH_PT = "Pilih satu PT untuk mencatat pembayaran.";
 export const ALOKASI = [{ key: "auto", label: "Tertua dulu" }, { key: "manual", label: "Atur sendiri" }];
 
 // Tanggal LOKAL (WIB) — toISOString polos = UTC: 00.00–07.00 WIB jadi tanggal kemarin.
-function today() { const d = new Date(); return new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 10); }
+// P23 (15 Nov, dipindah dari ARReceiptModal saat integrasi) — tanggal bawaan = hari ini WIB, bukan zona perangkat:
+// di peramban berzona UTC pukul 00.00–07.00 WIB kwitansi dulu tercatat kemarin.
+const today = () => todayWib();
 
 /** Isi `POST /api/ar-receipts` dari keadaan form (satu pembentuk — dipakai form dan uji kontrak). */
 export function receiptBody({ customerId, amount, method, date, notes = "", depositUse = 0, accountId = "",

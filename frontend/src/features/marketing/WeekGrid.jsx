@@ -1,7 +1,8 @@
 /** WeekGrid — tampilan mingguan kalender konten: 7 kolom Senin–Minggu, konten terurut jam tayang. */
 import { useMemo, useState } from "react";
 import { GripVertical, Plus } from "lucide-react";
-import { dayKey, PlatformChip, StatusPill, weekDays } from "./marketingShared";
+import { PlatformChip, StatusPill, weekDays } from "./marketingShared";
+import { todayWib } from "../../utils/formatters";
 
 const DOW = ["Senin", "Selasa", "Rabu", "Kamis", "Jumat", "Sabtu", "Minggu"];
 
@@ -15,7 +16,7 @@ export default function WeekGrid({ week, posts, multi, canCreate, onCreate, onOp
     if (p && p.publish_at.slice(0, 10) !== day) onMove(p, day);
   };
   const days = weekDays(week);
-  const today = dayKey(new Date());
+  const today = todayWib();   // sorotan "hari ini" = tanggal WIB (bukan zona perangkat)
   const byDay = useMemo(() => {
     const map = {};
     posts.filter((p) => p.publish_at).forEach((p) => { (map[p.publish_at.slice(0, 10)] ||= []).push(p); });

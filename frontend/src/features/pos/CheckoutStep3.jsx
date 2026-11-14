@@ -3,7 +3,7 @@
 import { useState } from "react";
 import KNDatePicker from "@/components/KNDatePicker";
 import { Truck, PackageCheck, Receipt, ShieldAlert, ShieldCheck, CreditCard } from "lucide-react";
-import { formatCurrency } from "../../utils/formatters";
+import { formatCurrency, todayWib } from "../../utils/formatters";
 import { Row } from "./CheckoutItemCard";
 import CreditOverrideRequest from "./CreditOverrideRequest";
 import CreditGateBox from "./CreditGateBox";   // CR-T3 — hasil satu mesin gerbang kredit
@@ -17,7 +17,7 @@ export default function CheckoutStep3({
   hasBackorderLine, allowBackorder, requiresLotConfirmation, mixedLotLines, sampleCount = 0,
   sampleMode = false, sampleBilling = "", termInfo = null, nonPpn = null, entityId = "",
 }) {
-  const today = (() => { const d = new Date(); return new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 10); })();   // tanggal lokal (WIB)
+  const today = todayWib();   // batas bawah tanggal ambil/kirim = hari ini WIB (bukan zona perangkat)
   const [pickDate, setPickDate] = useState(!!deliveryDate);
   const freeSample = sampleMode && sampleBilling === "free";
   // Sample gratis: tampilkan "Free", bukan "Rp 0".

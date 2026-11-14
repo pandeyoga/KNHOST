@@ -3,7 +3,7 @@
  * (Arus Kas, Profitabilitas, Proyeksi Kas, Anggaran, Control Tower).
  * Konsisten dgn gaya existing (section-card, #6B219A, recharts, formatCurrency).
  */
-import { formatCurrency, formatCompactIDR, formatPct } from "../../utils/formatters";
+import { formatCurrency, formatCompactIDR, formatPct, todayWib } from "../../utils/formatters";
 import { ChevronRight } from "lucide-react";
 import { isZeroMetric } from "../../components/ListPageParts";
 
@@ -15,15 +15,23 @@ export const FC = {
 };
 export const PIE = ["#6B219A", "#0058CC", "#1B7F4B", "#C77700", "#0F766E", "#C0392B", "#8E44AD", "#2E86DE"];
 
-export const NOW = new Date();
-export const YEARS = Array.from({ length: 6 }, (_, i) => {
-  const y = String(NOW.getFullYear() - i);
+// 15 Nov — tanggal acuan laporan = hari ini menurut WIB, dihitung SAAT DIPANGGIL (dipakai di penginisialisasi
+// state, jadi saat layar dipasang). Dulu `NOW = new Date()` di tingkat modul (basi bila aplikasi terbuka melewati
+// tengah malam) + `getFullYear/getMonth/getDate` zona perangkat: di perangkat berzona UTC pukul 00.00–07.00 WIB
+// rentang bawaan berakhir KEMARIN, jurnal hari ini tidak ikut terhitung.
+/** Pilihan tahun: tahun berjalan (WIB) mundur `n` tahun. */
+export const yearOptions = (n = 6, today = todayWib()) => Array.from({ length: n }, (_, i) => {
+  const y = String(Number(today.slice(0, 4)) - i);
   return { value: y, label: y };
 });
+/** Rentang bawaan "awal tahun s.d. hari ini" (WIB). */
+export const ytdRangeWib = (today = todayWib()) => ({ start: `${today.slice(0, 4)}-01-01`, end: today });
+/** Hari terakhir bulan lalu (WIB) — "YYYY-MM-DD". Aritmetika kalender murni (UTC), lepas dari zona perangkat. */
+export const endOfPrevMonthWib = (today = todayWib()) => {
+  const [y, m] = today.split("-").map(Number);
+  return new Date(Date.UTC(y, m - 1, 0)).toISOString().slice(0, 10);
+};
 export const MONTHS_SHORT = ["Jan", "Feb", "Mar", "Apr", "Mei", "Jun", "Jul", "Agu", "Sep", "Okt", "Nov", "Des"];
-
-const pad = (n) => String(n).padStart(2, "0");
-export const ymd = (d) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
 
 // UAT 24 Okt (audit UI tahap 2) — G1-14: sumbu/ringkas & persen keuangan dulu "150.0 jt", "1.4 M", "32.4%".
 // Kini satu sumber id-ID (utils/formatters G0-14): "150 jt", "1,4 M", "32,4%".

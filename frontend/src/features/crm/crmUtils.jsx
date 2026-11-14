@@ -1,13 +1,11 @@
-import { formatCurrency, formatDate } from "../../utils/formatters";
+import { formatCurrency, formatDate, todayWib } from "../../utils/formatters";
 
 /** Shared CRM helpers, pills, badges (KN_17). */
 // PK-42 (UX-18) — satu pemformat tanggal WIB bersama (`utils/formatters`); dulu zona perangkat / bentuk sendiri.
 export const fmtDate = (iso) => formatDate(iso);
 
-export const currentPeriod = () => {
-  const d = new Date();
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
-};
+/** Periode bawaan "YYYY-MM" = bulan berjalan WIB (bukan zona perangkat). */
+export const currentPeriod = () => todayWib().slice(0, 7);
 
 export const pct = (v) => `${Math.round((Number(v) || 0) * 100)}%`;
 

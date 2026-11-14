@@ -17,7 +17,10 @@ import { KNSelect } from "../../../components/KNSelect";
 import ErrorNotice from "../../../components/ErrorNotice";
 import FormModal from "../../../components/FormModal";
 import { apiErrorText } from "../../../utils/apiError";
-import { formatCurrency, formatDate } from "../../../utils/formatters";
+import { formatCurrency, formatDate, todayWib } from "../../../utils/formatters";
+
+// Tahun acuan baris mutasi tanpa tahun = tahun berjalan WIB (bukan zona perangkat — beda di malam tahun baru).
+const yearHint = () => Number(todayWib().slice(0, 4));
 
 // PK-42 (UX-18) — satu pemformat tanggal WIB bersama (`utils/formatters`); dulu zona perangkat / bentuk sendiri.
 const fmtDate = (s) => formatDate(s);
@@ -50,7 +53,7 @@ export default function ReconImportPanel({ accountId, formats, onDone, onClose }
     setBusy("preview"); setErr("");
     try {
       const r = await axios.post(`${API}/bank-reconciliation/preview`,
-        { raw, format_id: formatId || "", year_hint: new Date().getFullYear() });
+        { raw, format_id: formatId || "", year_hint: yearHint() });
       setPreview(r.data);
     } catch (e) { setErr(apiErrorText(e)); setPreview(null); } finally { setBusy(""); }
   }
@@ -60,7 +63,7 @@ export default function ReconImportPanel({ accountId, formats, onDone, onClose }
     try {
       const r = await axios.post(`${API}/bank-reconciliation/import-file`,
         { bank_account_id: accountId, raw, format_id: formatId || "",
-          year_hint: new Date().getFullYear() });
+          year_hint: yearHint() });
       const d = r.data || {};
       onDone(`Impor ${d.format_name || ""}: ${d.imported} baris baru, ${d.skipped} dilewati `
         + `(sudah pernah masuk)${d.error_count ? `, ${d.error_count} baris tidak terbaca` : ""}.`);

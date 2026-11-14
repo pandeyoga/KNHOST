@@ -23,7 +23,7 @@ import KNSelect from "../../../components/KNSelect";
 import MoneyInput from "../../../components/MoneyInput";
 import ErrorNotice from "../../../components/ErrorNotice";
 import FormModal from "../../../components/FormModal";
-import { formatCurrency, formatDate } from "../../../utils/formatters";
+import { formatCurrency, formatDate, todayWib } from "../../../utils/formatters";
 import { apiErrorText } from "../../../utils/apiError";
 import { moneyPost } from "../../../utils/moneyRequest";
 import useIntentKey from "../../../hooks/useIntentKey";
@@ -34,8 +34,8 @@ import { entityShortById } from "../../../utils/entityLabel";
 import { ApPaymentPending, NEED_ACCOUNT_TEXT, NO_ACCOUNT_TEXT, accountLabel, useApPayment } from "../../purchasing/apPayment";
 import { TEKS_PILIH_PT } from "./ReceivePaymentModal";
 
-const pad = (n) => String(n).padStart(2, "0");
-function today() { const d = new Date(); return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`; }
+// P23 (15 Nov, integrasi) — tanggal bayar bawaan = hari ini WIB, bukan zona perangkat.
+const today = () => todayWib();
 
 export const JENIS_DOKUMEN = { vendor_bill: "Tagihan pemasok", contra_bon: "Kontrabon" };
 

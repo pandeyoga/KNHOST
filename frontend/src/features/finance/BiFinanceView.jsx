@@ -14,15 +14,11 @@ import { RefreshCw, TrendingUp, Percent, Scale, Building2, Activity, Landmark } 
 import axios, { API } from "../../services/apiClient";
 import ErrorNotice from "../../components/ErrorNotice";
 import KNSelect from "../../components/KNSelect";
-import { formatCompactIDR, formatCurrency, formatPct } from "../../utils/formatters";
+import { formatCompactIDR, formatCurrency, formatPct, todayWib } from "../../utils/formatters";
+import { yearOptions } from "./financeShared";
 import FinReportLink from "./FinReportLink";
 import EntityScopeBanner from "../../components/EntityScopeBanner";
 
-const NOW = new Date();
-const YEARS = Array.from({ length: 6 }, (_, i) => {
-  const y = String(NOW.getFullYear() - i);
-  return { value: y, label: y };
-});
 
 const COLOR = {
   revenue: "#1B7F4B",
@@ -49,7 +45,8 @@ const entityParam = (selectedEntity) =>
   selectedEntity && selectedEntity !== "all" ? { entity_id: selectedEntity } : {};
 
 export default function BiFinanceView({ selectedEntity }) {
-  const [year, setYear] = useState(String(NOW.getFullYear()));
+  const [year, setYear] = useState(() => todayWib().slice(0, 4));   // tahun berjalan WIB, dihitung saat layar dipasang
+  const years = useMemo(() => yearOptions(), []);
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -97,7 +94,7 @@ export default function BiFinanceView({ selectedEntity }) {
           <div className="flex flex-wrap items-center gap-2 ml-auto">
             <FinReportLink testId="bi-pl-link" />
             <div className="w-[110px]">
-              <KNSelect data-testid="bi-year-select" className="field py-1.5 text-[12px]" value={year} onValueChange={setYear} options={YEARS} />
+              <KNSelect data-testid="bi-year-select" className="field py-1.5 text-[12px]" value={year} onValueChange={setYear} options={years} />
             </div>
             <button data-testid="bi-refresh" className="icon-button" onClick={load} aria-label="Muat ulang" title="Muat ulang"><RefreshCw size={14} className={loading ? "animate-spin" : ""} /></button>
           </div>

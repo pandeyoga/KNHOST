@@ -23,8 +23,9 @@ import ErrorNotice from "../../components/ErrorNotice";
 import EntityGatedButton from "../../components/EntityGatedButton";   // PK-42 (UX-05)
 import DesktopOnlyNotice from "../../components/DesktopOnlyNotice";
 import KNSelect from "../../components/KNSelect";
+import { todayWib } from "../../utils/formatters";
 import {
-  FC, NOW, YEARS, compactIDR, entityParam, chartTooltip, fmtPct,
+  FC, yearOptions, compactIDR, entityParam, chartTooltip, fmtPct,
   KpiCard, Panel, EmptyState, formatCurrency,
 } from "./financeShared";
 import {
@@ -41,7 +42,8 @@ import { TraceNotice, useLedgerTrace } from "./traceLedger";   // MN-T3 — real
 
 export default function BudgetView({ selectedEntity, currentUser }) {
   const { entities } = useEntityScope();
-  const [year, setYear] = useState(String(NOW.getFullYear()));
+  const [year, setYear] = useState(() => todayWib().slice(0, 4));   // tahun berjalan WIB
+  const years = useMemo(() => yearOptions(), []);
   const tr = useLedgerTrace({ from: { view: "budget" }, selectedEntity });
   const [tab, setTab] = useState("account");
   const [data, setData] = useState(null);
@@ -195,7 +197,7 @@ export default function BudgetView({ selectedEntity, currentUser }) {
           <label className="block text-[10px] font-bold uppercase text-[#8E8E93] mb-1">Tahun</label>
           <div className="w-[110px]">
             <KNSelect data-testid="budget-year" className="field py-1.5 text-[12px]" value={year}
-              onValueChange={setYear} options={YEARS} />
+              onValueChange={setYear} options={years} />
           </div>
         </div>
         <div>

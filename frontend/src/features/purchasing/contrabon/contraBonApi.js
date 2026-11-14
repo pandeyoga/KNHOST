@@ -7,6 +7,8 @@
  */
 import { formatDate, formatDateTime } from "../../../utils/formatters";
 
+import { todayWib } from "../../../utils/formatters";
+
 /** Warna pil status — mengikuti bahasa visual pil status modul lain. */
 export const STATUS_CLASS = {
   draft: "bg-[#F2F2F5] text-[#5A5A60]",
@@ -65,12 +67,8 @@ export const fmtDate = (s) => formatDate(s);
 
 export const fmtDateTime = (s) => formatDateTime(s);
 
-/** Tanggal hari ini dalam bentuk `YYYY-MM-DD` (zona lokal pengguna). */
-export function todayISO() {
-  const d = new Date();
-  const p = (n) => String(n).padStart(2, "0");
-  return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`;
-}
+/** Tanggal hari ini `YYYY-MM-DD` menurut WIB (dulu zona perangkat — salah di perangkat yang tidak berzona WIB). */
+export const todayISO = () => todayWib();
 
 /** Umur/sisa hari dalam kalimat manusia, bukan angka telanjang. */
 export function humanDays(days) {

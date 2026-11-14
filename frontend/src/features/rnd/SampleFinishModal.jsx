@@ -9,14 +9,13 @@ import FormModal from "../../components/FormModal";
 import KNSelect from "../../components/KNSelect";
 import { Field, Footer, Hint } from "./RndField";
 import { DELIVER_LABEL } from "./sampleTypeMeta";
+import { todayWib } from "../../utils/formatters";
 
 export default function SampleFinishModal({ mode = "finish", sample, targets, busy, onClose, onConfirm, error = "" }) {
   const isFinish = mode === "finish";
   // Cek UI UAT v3 (S13) — tanggal kosong dulu jadi "hari ini" versi server (UTC): sample jadi 22 Okt WIB tercatat 21 Okt.
-  const [date, setDate] = useState(() => {
-    const d = new Date(); const p = (n) => String(n).padStart(2, "0");
-    return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`;
-  });
+  // 15 Nov: bawaan = hari ini WIB (bukan zona perangkat).
+  const [date, setDate] = useState(() => todayWib());
   const [note, setNote] = useState("");
   const [to, setTo] = useState("");
   const [toName, setToName] = useState("");

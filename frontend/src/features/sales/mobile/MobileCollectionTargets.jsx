@@ -2,11 +2,12 @@ import { useEffect, useMemo, useState } from "react";
 import { AlertTriangle, BellRing, CheckCircle2, PhoneCall, Trophy, X } from "lucide-react";
 import axios, { API } from "../../../services/apiClient";
 import KNSelect from "../../../components/KNSelect";
-import { formatCurrency } from "../../../utils/formatters";
+import { formatCurrency, todayWib } from "../../../utils/formatters";
 import { PromiseFields, promiseError } from "../../crm/promiseUi";   // CR-T5 — janji bayar wajib bertanggal & bernominal
 import MyIncentiveCard, { bulanIni, MODE_TANPA_MESIN } from "../../incentive/MyIncentiveCard";   // KM-T5
 
 const fmtDate = (s) => (s ? new Date(s).toLocaleDateString("id-ID", { day: "2-digit", month: "short", year: "2-digit" }) : "-");
+const thisMonth = () => todayWib().slice(0, 7);   // bulan berjalan WIB (dulu potongan ISO UTC)
 const errOf = (e, fb) => { const d = e?.response?.data?.detail; return (typeof d === "string" ? d : d?.message) || fb; };
 const OUTCOMES = [{ value: "contacted", label: "Dihubungi" }, { value: "promised", label: "Dijanjikan bayar" },
   { value: "paid", label: "Sudah bayar" }, { value: "no_response", label: "Tak respon" }, { value: "escalated", label: "Eskalasi" }];
