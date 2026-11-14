@@ -334,7 +334,8 @@ def test_history() -> None:
     r = set_cfg("tax.ppn_rate", 15.0, reason="")
     check(r.status_code == 400 and "alasan" in r.text.lower(),
           "INV-CFG-06: setting risiko tinggi WAJIB beralasan", r.text[:140])
-    r = set_cfg("hr.ptkp_table", {"TK0": 1}, reason="uji")
+    # PK-46 — `hr.ptkp_table` kini AKTIF (tabel PPh 21 bertanggal); contoh setting "tidak dipakai" diganti.
+    r = set_cfg("sales.quotation_enabled", True, reason="uji")
     check(r.status_code == 400 and "tidak dipakai" in r.text.lower(),
           "setting 'tidak dipakai' menolak perubahan + menjelaskan sebabnya", r.text[:160])
 

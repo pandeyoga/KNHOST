@@ -302,21 +302,22 @@ class ConfigAPITester:
                 print(f"   ⚠️  Got 403 but message unclear: {detail}")
 
     def test_backend_5_admin_not_used_setting(self):
-        """BACKEND-5: PUT /api/config/values for hr.ptkp_table (status not_used) - should be 400"""
+        """BACKEND-5: PUT /api/config/values for sales.quotation_enabled (status not_used) - should be 400
+        (PK-46: hr.ptkp_table kini aktif sebagai tabel PPh 21 bertanggal, bukan lagi contoh 'tidak dipakai')"""
         print("\n" + "="*70)
         print("BACKEND-5: Admin Edit Not-Used Setting (Should Explain Why)")
         print("="*70)
         
         success, response = self.run_test(
-            "Admin PUT /config/values for hr.ptkp_table (should be 400)",
+            "Admin PUT /config/values for sales.quotation_enabled (should be 400)",
             "PUT",
             "/config/values",
             400,
             token=self.tokens.get('admin'),
             data={
                 "items": [{
-                    "key": "hr.ptkp_table",
-                    "value": {"TK0": 54000000},
+                    "key": "sales.quotation_enabled",
+                    "value": True,
                     "scope_type": "global",
                     "scope_id": "",
                     "reason": "Test not_used setting"

@@ -73,7 +73,7 @@ async def test_U04_lihat_saja_tidak_bisa_ubah(klien, akun, sesi, peran_tanpa_acu
     assert "settings.manage" not in _detail(r)
     r = await klien.get("/api/config/registry", headers=h)
     assert r.status_code == 200, r.text
-    assert r.json()["total"] == 310
+    assert r.json()["total"] == 310 + 5   # PK-46 menambah lima kunci PPh 21 bertanggal (hr.ptkp_table sudah ada)
 
 
 async def test_U05_manajer_kosong_tidak_lagi_lewat_nama_peran(klien, akun, sesi, peran_manajer_kosong):

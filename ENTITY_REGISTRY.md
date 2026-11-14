@@ -1591,6 +1591,28 @@ Key Fields:
 ⚠️ JANGAN BUAT: settings, config, configuration (lepas) — gunakan system_settings.
 ```
 
+### config_values — sifat `bertanggal` pada pengaturan  [PK-46]
+```
+Collection:  config_values            Prefix: cfgv_   (append-only; FASE G-0)
+Service:     services/config_resolver.py (set_value · resolve(key, ctx, at=…) · apply_due_values)
+Registry:    config_registry.E(..., bertanggal=True, value_format="tarif_berjenjang")
+Key Fields:  key, scope_type, scope_id, value, prev_value, effective_from, reason, changed_by, applied_at, cleared
+
+⚠️ Kunci `bertanggal` (PK-46): nilai HANYA dari bawaan registry + baris config_values menurut effective_from;
+   TIDAK diproyeksikan ke system_settings dan resolver TIDAK membaca lapisan lama (legacy_global/legacy_entity).
+   Pembaca wajib memberi tanggal: resolve(key, ctx, at=<akhir hari tanggal dokumen, WIB>). value_of() = hari ini (layar).
+⚠️ Enam kunci PPh 21 bertanggal (grup sdm, lapisan grup saja, izin hr.manage_payroll, alasan wajib):
+   hr.pph21.ter_table · hr.pph21.ptkp_to_ter · hr.ptkp_table (kini aktif) · hr.pph21.pasal17_table ·
+   hr.pph21.biaya_jabatan_pct · hr.pph21.biaya_jabatan_maks_bulanan
+   Pembaca: services/hr_payroll_service.py:aturan_pph21(tanggal akhir periode gaji).
+Berkas data pajak:
+   backend/data/pph21_bawaan.py — bawaan registry = konstanta kode lama dipindah apa adanya (BELUM diverifikasi, PY-03)
+   docs/blueprint/data/pph21_terverifikasi.json — berkas PEMILIK (K-42); BELUM ADA (titik henti H4).
+     Dimuat dengan scripts/muat_pph21_terverifikasi.py --dry-run | --apply (--apply di data nyata = H3)
+   backend/tests_mem/data/pph21_sintetis.json — tabel uji sintetis, BUKAN tarif nyata
+   backend/tests_mem/data/pph21_snapshot_kode_lama.json — perilaku kode lama (dibuat buat_snapshot_pph21.py)
+```
+
 ### payment_terms  [Fase 1A IMPLEMENTED]
 ```
 Collection:  payment_terms             Prefix: pterm_
@@ -2891,6 +2913,8 @@ Key Fields:  bpjs (rates+ceiling), jkk_classes[], ptkp_table, ter_enabled,
              feature_toggles {bpjs_kesehatan, bpjs_ketenagakerjaan, pph21, npwp_required},
              employment_types[], payroll_commission_mode (default accrue_then_settle)
 ⚠️ Config-driven (regulasi mudah update). Perhitungan statutory dipakai di FASE H4 (payroll).
+⚠️ PK-46 — `ptkp_table` di dokumen ini TIDAK dibaca mesin gaji. Tabel PPh 21 (TER, kategori PTKP, PTKP setahun,
+   pasal 17, biaya jabatan) = kunci `bertanggal` di config_values (lihat bagian config_values), tidak diproyeksikan ke sini.
 ```
 
 #### HRD H1 — Absensi (IMPLEMENTED · FASE H1)

@@ -1,0 +1,1733 @@
+{
+ "keterangan": "Perilaku PPh 21 kode lama (sebelum PK-46). Dihasilkan skrip, bukan diketik; BUKAN tabel terverifikasi — hanya pembanding agar perilaku tidak berubah sebelum berkas pemilik dimuat.",
+ "dibuat_dari": {
+  "commit": "ea0de78ad85e993a9a397d3e8ac5584ae3b384cb",
+  "berkas": "backend/services/hr_payroll_service.py",
+  "skrip": "backend/tests_mem/data/buat_snapshot_pph21.py"
+ },
+ "titik_ter": [
+  {
+   "kategori": "A",
+   "bruto": 0,
+   "tarif": 0.0
+  },
+  {
+   "kategori": "A",
+   "bruto": 5400000,
+   "tarif": 0.0
+  },
+  {
+   "kategori": "A",
+   "bruto": 5400001,
+   "tarif": 0.0025
+  },
+  {
+   "kategori": "A",
+   "bruto": 5650000,
+   "tarif": 0.0025
+  },
+  {
+   "kategori": "A",
+   "bruto": 5650001,
+   "tarif": 0.005
+  },
+  {
+   "kategori": "A",
+   "bruto": 5950000,
+   "tarif": 0.005
+  },
+  {
+   "kategori": "A",
+   "bruto": 5950001,
+   "tarif": 0.0075
+  },
+  {
+   "kategori": "A",
+   "bruto": 6300000,
+   "tarif": 0.0075
+  },
+  {
+   "kategori": "A",
+   "bruto": 6300001,
+   "tarif": 0.01
+  },
+  {
+   "kategori": "A",
+   "bruto": 6750000,
+   "tarif": 0.01
+  },
+  {
+   "kategori": "A",
+   "bruto": 6750001,
+   "tarif": 0.0125
+  },
+  {
+   "kategori": "A",
+   "bruto": 7500000,
+   "tarif": 0.0125
+  },
+  {
+   "kategori": "A",
+   "bruto": 7500001,
+   "tarif": 0.015
+  },
+  {
+   "kategori": "A",
+   "bruto": 8550000,
+   "tarif": 0.015
+  },
+  {
+   "kategori": "A",
+   "bruto": 8550001,
+   "tarif": 0.0175
+  },
+  {
+   "kategori": "A",
+   "bruto": 9650000,
+   "tarif": 0.0175
+  },
+  {
+   "kategori": "A",
+   "bruto": 9650001,
+   "tarif": 0.02
+  },
+  {
+   "kategori": "A",
+   "bruto": 10750000,
+   "tarif": 0.02
+  },
+  {
+   "kategori": "A",
+   "bruto": 10750001,
+   "tarif": 0.025
+  },
+  {
+   "kategori": "A",
+   "bruto": 11250000,
+   "tarif": 0.025
+  },
+  {
+   "kategori": "A",
+   "bruto": 11250001,
+   "tarif": 0.03
+  },
+  {
+   "kategori": "A",
+   "bruto": 11600000,
+   "tarif": 0.03
+  },
+  {
+   "kategori": "A",
+   "bruto": 11600001,
+   "tarif": 0.035
+  },
+  {
+   "kategori": "A",
+   "bruto": 12500000,
+   "tarif": 0.035
+  },
+  {
+   "kategori": "A",
+   "bruto": 12500001,
+   "tarif": 0.04
+  },
+  {
+   "kategori": "A",
+   "bruto": 13750000,
+   "tarif": 0.04
+  },
+  {
+   "kategori": "A",
+   "bruto": 13750001,
+   "tarif": 0.045
+  },
+  {
+   "kategori": "A",
+   "bruto": 15100000,
+   "tarif": 0.045
+  },
+  {
+   "kategori": "A",
+   "bruto": 15100001,
+   "tarif": 0.05
+  },
+  {
+   "kategori": "A",
+   "bruto": 16950000,
+   "tarif": 0.05
+  },
+  {
+   "kategori": "A",
+   "bruto": 16950001,
+   "tarif": 0.06
+  },
+  {
+   "kategori": "A",
+   "bruto": 19750000,
+   "tarif": 0.06
+  },
+  {
+   "kategori": "A",
+   "bruto": 19750001,
+   "tarif": 0.07
+  },
+  {
+   "kategori": "A",
+   "bruto": 24150000,
+   "tarif": 0.07
+  },
+  {
+   "kategori": "A",
+   "bruto": 24150001,
+   "tarif": 0.08
+  },
+  {
+   "kategori": "A",
+   "bruto": 26450000,
+   "tarif": 0.08
+  },
+  {
+   "kategori": "A",
+   "bruto": 26450001,
+   "tarif": 0.09
+  },
+  {
+   "kategori": "A",
+   "bruto": 29550000,
+   "tarif": 0.09
+  },
+  {
+   "kategori": "A",
+   "bruto": 29550001,
+   "tarif": 0.1
+  },
+  {
+   "kategori": "A",
+   "bruto": 33450000,
+   "tarif": 0.1
+  },
+  {
+   "kategori": "A",
+   "bruto": 33450001,
+   "tarif": 0.11
+  },
+  {
+   "kategori": "A",
+   "bruto": 38450000,
+   "tarif": 0.11
+  },
+  {
+   "kategori": "A",
+   "bruto": 38450001,
+   "tarif": 0.12
+  },
+  {
+   "kategori": "A",
+   "bruto": 44550000,
+   "tarif": 0.12
+  },
+  {
+   "kategori": "A",
+   "bruto": 44550001,
+   "tarif": 0.13
+  },
+  {
+   "kategori": "A",
+   "bruto": 52050000,
+   "tarif": 0.13
+  },
+  {
+   "kategori": "A",
+   "bruto": 52050001,
+   "tarif": 0.14
+  },
+  {
+   "kategori": "A",
+   "bruto": 61250000,
+   "tarif": 0.14
+  },
+  {
+   "kategori": "A",
+   "bruto": 61250001,
+   "tarif": 0.15
+  },
+  {
+   "kategori": "A",
+   "bruto": 72650000,
+   "tarif": 0.15
+  },
+  {
+   "kategori": "A",
+   "bruto": 72650001,
+   "tarif": 0.16
+  },
+  {
+   "kategori": "A",
+   "bruto": 86350000,
+   "tarif": 0.16
+  },
+  {
+   "kategori": "A",
+   "bruto": 86350001,
+   "tarif": 0.17
+  },
+  {
+   "kategori": "A",
+   "bruto": 102650000,
+   "tarif": 0.17
+  },
+  {
+   "kategori": "A",
+   "bruto": 102650001,
+   "tarif": 0.18
+  },
+  {
+   "kategori": "A",
+   "bruto": 122050000,
+   "tarif": 0.18
+  },
+  {
+   "kategori": "A",
+   "bruto": 122050001,
+   "tarif": 0.19
+  },
+  {
+   "kategori": "A",
+   "bruto": 145150000,
+   "tarif": 0.19
+  },
+  {
+   "kategori": "A",
+   "bruto": 145150001,
+   "tarif": 0.2
+  },
+  {
+   "kategori": "A",
+   "bruto": 172550000,
+   "tarif": 0.2
+  },
+  {
+   "kategori": "A",
+   "bruto": 172550001,
+   "tarif": 0.21
+  },
+  {
+   "kategori": "A",
+   "bruto": 204650000,
+   "tarif": 0.21
+  },
+  {
+   "kategori": "A",
+   "bruto": 204650001,
+   "tarif": 0.22
+  },
+  {
+   "kategori": "A",
+   "bruto": 242050000,
+   "tarif": 0.22
+  },
+  {
+   "kategori": "A",
+   "bruto": 242050001,
+   "tarif": 0.23
+  },
+  {
+   "kategori": "A",
+   "bruto": 285550000,
+   "tarif": 0.23
+  },
+  {
+   "kategori": "A",
+   "bruto": 285550001,
+   "tarif": 0.24
+  },
+  {
+   "kategori": "A",
+   "bruto": 335550000,
+   "tarif": 0.24
+  },
+  {
+   "kategori": "A",
+   "bruto": 335550001,
+   "tarif": 0.25
+  },
+  {
+   "kategori": "A",
+   "bruto": 392150000,
+   "tarif": 0.25
+  },
+  {
+   "kategori": "A",
+   "bruto": 392150001,
+   "tarif": 0.26
+  },
+  {
+   "kategori": "A",
+   "bruto": 455550000,
+   "tarif": 0.26
+  },
+  {
+   "kategori": "A",
+   "bruto": 455550001,
+   "tarif": 0.27
+  },
+  {
+   "kategori": "A",
+   "bruto": 525850000,
+   "tarif": 0.27
+  },
+  {
+   "kategori": "A",
+   "bruto": 525850001,
+   "tarif": 0.28
+  },
+  {
+   "kategori": "A",
+   "bruto": 603050000,
+   "tarif": 0.28
+  },
+  {
+   "kategori": "A",
+   "bruto": 603050001,
+   "tarif": 0.29
+  },
+  {
+   "kategori": "A",
+   "bruto": 687150000,
+   "tarif": 0.29
+  },
+  {
+   "kategori": "A",
+   "bruto": 687150001,
+   "tarif": 0.3
+  },
+  {
+   "kategori": "A",
+   "bruto": 778250000,
+   "tarif": 0.3
+  },
+  {
+   "kategori": "A",
+   "bruto": 778250001,
+   "tarif": 0.31
+  },
+  {
+   "kategori": "A",
+   "bruto": 876350000,
+   "tarif": 0.31
+  },
+  {
+   "kategori": "A",
+   "bruto": 876350001,
+   "tarif": 0.32
+  },
+  {
+   "kategori": "A",
+   "bruto": 981450000,
+   "tarif": 0.32
+  },
+  {
+   "kategori": "A",
+   "bruto": 981450001,
+   "tarif": 0.33
+  },
+  {
+   "kategori": "A",
+   "bruto": 1100000000,
+   "tarif": 0.33
+  },
+  {
+   "kategori": "A",
+   "bruto": 1100000001,
+   "tarif": 0.34
+  },
+  {
+   "kategori": "B",
+   "bruto": 0,
+   "tarif": 0.0
+  },
+  {
+   "kategori": "B",
+   "bruto": 6200000,
+   "tarif": 0.0
+  },
+  {
+   "kategori": "B",
+   "bruto": 6200001,
+   "tarif": 0.0025
+  },
+  {
+   "kategori": "B",
+   "bruto": 6500000,
+   "tarif": 0.0025
+  },
+  {
+   "kategori": "B",
+   "bruto": 6500001,
+   "tarif": 0.005
+  },
+  {
+   "kategori": "B",
+   "bruto": 6850000,
+   "tarif": 0.005
+  },
+  {
+   "kategori": "B",
+   "bruto": 6850001,
+   "tarif": 0.0075
+  },
+  {
+   "kategori": "B",
+   "bruto": 7300000,
+   "tarif": 0.0075
+  },
+  {
+   "kategori": "B",
+   "bruto": 7300001,
+   "tarif": 0.01
+  },
+  {
+   "kategori": "B",
+   "bruto": 9200000,
+   "tarif": 0.01
+  },
+  {
+   "kategori": "B",
+   "bruto": 9200001,
+   "tarif": 0.0125
+  },
+  {
+   "kategori": "B",
+   "bruto": 10750000,
+   "tarif": 0.0125
+  },
+  {
+   "kategori": "B",
+   "bruto": 10750001,
+   "tarif": 0.015
+  },
+  {
+   "kategori": "B",
+   "bruto": 11250000,
+   "tarif": 0.015
+  },
+  {
+   "kategori": "B",
+   "bruto": 11250001,
+   "tarif": 0.02
+  },
+  {
+   "kategori": "B",
+   "bruto": 11600000,
+   "tarif": 0.02
+  },
+  {
+   "kategori": "B",
+   "bruto": 11600001,
+   "tarif": 0.025
+  },
+  {
+   "kategori": "B",
+   "bruto": 12600000,
+   "tarif": 0.025
+  },
+  {
+   "kategori": "B",
+   "bruto": 12600001,
+   "tarif": 0.03
+  },
+  {
+   "kategori": "B",
+   "bruto": 13600000,
+   "tarif": 0.03
+  },
+  {
+   "kategori": "B",
+   "bruto": 13600001,
+   "tarif": 0.035
+  },
+  {
+   "kategori": "B",
+   "bruto": 14950000,
+   "tarif": 0.035
+  },
+  {
+   "kategori": "B",
+   "bruto": 14950001,
+   "tarif": 0.04
+  },
+  {
+   "kategori": "B",
+   "bruto": 16950000,
+   "tarif": 0.04
+  },
+  {
+   "kategori": "B",
+   "bruto": 16950001,
+   "tarif": 0.05
+  },
+  {
+   "kategori": "B",
+   "bruto": 19750000,
+   "tarif": 0.05
+  },
+  {
+   "kategori": "B",
+   "bruto": 19750001,
+   "tarif": 0.06
+  },
+  {
+   "kategori": "B",
+   "bruto": 24150000,
+   "tarif": 0.06
+  },
+  {
+   "kategori": "B",
+   "bruto": 24150001,
+   "tarif": 0.07
+  },
+  {
+   "kategori": "B",
+   "bruto": 26450000,
+   "tarif": 0.07
+  },
+  {
+   "kategori": "B",
+   "bruto": 26450001,
+   "tarif": 0.08
+  },
+  {
+   "kategori": "B",
+   "bruto": 29550000,
+   "tarif": 0.08
+  },
+  {
+   "kategori": "B",
+   "bruto": 29550001,
+   "tarif": 0.09
+  },
+  {
+   "kategori": "B",
+   "bruto": 33450000,
+   "tarif": 0.09
+  },
+  {
+   "kategori": "B",
+   "bruto": 33450001,
+   "tarif": 0.1
+  },
+  {
+   "kategori": "B",
+   "bruto": 38450000,
+   "tarif": 0.1
+  },
+  {
+   "kategori": "B",
+   "bruto": 38450001,
+   "tarif": 0.11
+  },
+  {
+   "kategori": "B",
+   "bruto": 44550000,
+   "tarif": 0.11
+  },
+  {
+   "kategori": "B",
+   "bruto": 44550001,
+   "tarif": 0.12
+  },
+  {
+   "kategori": "B",
+   "bruto": 52050000,
+   "tarif": 0.12
+  },
+  {
+   "kategori": "B",
+   "bruto": 52050001,
+   "tarif": 0.13
+  },
+  {
+   "kategori": "B",
+   "bruto": 61250000,
+   "tarif": 0.13
+  },
+  {
+   "kategori": "B",
+   "bruto": 61250001,
+   "tarif": 0.14
+  },
+  {
+   "kategori": "B",
+   "bruto": 72650000,
+   "tarif": 0.14
+  },
+  {
+   "kategori": "B",
+   "bruto": 72650001,
+   "tarif": 0.15
+  },
+  {
+   "kategori": "B",
+   "bruto": 86350000,
+   "tarif": 0.15
+  },
+  {
+   "kategori": "B",
+   "bruto": 86350001,
+   "tarif": 0.16
+  },
+  {
+   "kategori": "B",
+   "bruto": 102650000,
+   "tarif": 0.16
+  },
+  {
+   "kategori": "B",
+   "bruto": 102650001,
+   "tarif": 0.17
+  },
+  {
+   "kategori": "B",
+   "bruto": 122050000,
+   "tarif": 0.17
+  },
+  {
+   "kategori": "B",
+   "bruto": 122050001,
+   "tarif": 0.18
+  },
+  {
+   "kategori": "B",
+   "bruto": 145150000,
+   "tarif": 0.18
+  },
+  {
+   "kategori": "B",
+   "bruto": 145150001,
+   "tarif": 0.19
+  },
+  {
+   "kategori": "B",
+   "bruto": 172550000,
+   "tarif": 0.19
+  },
+  {
+   "kategori": "B",
+   "bruto": 172550001,
+   "tarif": 0.2
+  },
+  {
+   "kategori": "B",
+   "bruto": 204650000,
+   "tarif": 0.2
+  },
+  {
+   "kategori": "B",
+   "bruto": 204650001,
+   "tarif": 0.21
+  },
+  {
+   "kategori": "B",
+   "bruto": 242050000,
+   "tarif": 0.21
+  },
+  {
+   "kategori": "B",
+   "bruto": 242050001,
+   "tarif": 0.22
+  },
+  {
+   "kategori": "B",
+   "bruto": 285550000,
+   "tarif": 0.22
+  },
+  {
+   "kategori": "B",
+   "bruto": 285550001,
+   "tarif": 0.23
+  },
+  {
+   "kategori": "B",
+   "bruto": 335550000,
+   "tarif": 0.23
+  },
+  {
+   "kategori": "B",
+   "bruto": 335550001,
+   "tarif": 0.24
+  },
+  {
+   "kategori": "B",
+   "bruto": 392150000,
+   "tarif": 0.24
+  },
+  {
+   "kategori": "B",
+   "bruto": 392150001,
+   "tarif": 0.25
+  },
+  {
+   "kategori": "B",
+   "bruto": 455550000,
+   "tarif": 0.25
+  },
+  {
+   "kategori": "B",
+   "bruto": 455550001,
+   "tarif": 0.26
+  },
+  {
+   "kategori": "B",
+   "bruto": 525850000,
+   "tarif": 0.26
+  },
+  {
+   "kategori": "B",
+   "bruto": 525850001,
+   "tarif": 0.27
+  },
+  {
+   "kategori": "B",
+   "bruto": 603050000,
+   "tarif": 0.27
+  },
+  {
+   "kategori": "B",
+   "bruto": 603050001,
+   "tarif": 0.28
+  },
+  {
+   "kategori": "B",
+   "bruto": 687150000,
+   "tarif": 0.28
+  },
+  {
+   "kategori": "B",
+   "bruto": 687150001,
+   "tarif": 0.29
+  },
+  {
+   "kategori": "B",
+   "bruto": 778250000,
+   "tarif": 0.29
+  },
+  {
+   "kategori": "B",
+   "bruto": 778250001,
+   "tarif": 0.3
+  },
+  {
+   "kategori": "B",
+   "bruto": 876350000,
+   "tarif": 0.3
+  },
+  {
+   "kategori": "B",
+   "bruto": 876350001,
+   "tarif": 0.31
+  },
+  {
+   "kategori": "B",
+   "bruto": 981450000,
+   "tarif": 0.31
+  },
+  {
+   "kategori": "B",
+   "bruto": 981450001,
+   "tarif": 0.34
+  },
+  {
+   "kategori": "C",
+   "bruto": 0,
+   "tarif": 0.0
+  },
+  {
+   "kategori": "C",
+   "bruto": 6600000,
+   "tarif": 0.0
+  },
+  {
+   "kategori": "C",
+   "bruto": 6600001,
+   "tarif": 0.0025
+  },
+  {
+   "kategori": "C",
+   "bruto": 6950000,
+   "tarif": 0.0025
+  },
+  {
+   "kategori": "C",
+   "bruto": 6950001,
+   "tarif": 0.005
+  },
+  {
+   "kategori": "C",
+   "bruto": 7350000,
+   "tarif": 0.005
+  },
+  {
+   "kategori": "C",
+   "bruto": 7350001,
+   "tarif": 0.0075
+  },
+  {
+   "kategori": "C",
+   "bruto": 7800000,
+   "tarif": 0.0075
+  },
+  {
+   "kategori": "C",
+   "bruto": 7800001,
+   "tarif": 0.01
+  },
+  {
+   "kategori": "C",
+   "bruto": 8850000,
+   "tarif": 0.01
+  },
+  {
+   "kategori": "C",
+   "bruto": 8850001,
+   "tarif": 0.0125
+  },
+  {
+   "kategori": "C",
+   "bruto": 9800000,
+   "tarif": 0.0125
+  },
+  {
+   "kategori": "C",
+   "bruto": 9800001,
+   "tarif": 0.015
+  },
+  {
+   "kategori": "C",
+   "bruto": 10950000,
+   "tarif": 0.015
+  },
+  {
+   "kategori": "C",
+   "bruto": 10950001,
+   "tarif": 0.0175
+  },
+  {
+   "kategori": "C",
+   "bruto": 11200000,
+   "tarif": 0.0175
+  },
+  {
+   "kategori": "C",
+   "bruto": 11200001,
+   "tarif": 0.02
+  },
+  {
+   "kategori": "C",
+   "bruto": 12600000,
+   "tarif": 0.02
+  },
+  {
+   "kategori": "C",
+   "bruto": 12600001,
+   "tarif": 0.025
+  },
+  {
+   "kategori": "C",
+   "bruto": 13600000,
+   "tarif": 0.025
+  },
+  {
+   "kategori": "C",
+   "bruto": 13600001,
+   "tarif": 0.03
+  },
+  {
+   "kategori": "C",
+   "bruto": 14950000,
+   "tarif": 0.03
+  },
+  {
+   "kategori": "C",
+   "bruto": 14950001,
+   "tarif": 0.035
+  },
+  {
+   "kategori": "C",
+   "bruto": 16950000,
+   "tarif": 0.035
+  },
+  {
+   "kategori": "C",
+   "bruto": 16950001,
+   "tarif": 0.04
+  },
+  {
+   "kategori": "C",
+   "bruto": 19750000,
+   "tarif": 0.04
+  },
+  {
+   "kategori": "C",
+   "bruto": 19750001,
+   "tarif": 0.05
+  },
+  {
+   "kategori": "C",
+   "bruto": 24150000,
+   "tarif": 0.05
+  },
+  {
+   "kategori": "C",
+   "bruto": 24150001,
+   "tarif": 0.06
+  },
+  {
+   "kategori": "C",
+   "bruto": 26450000,
+   "tarif": 0.06
+  },
+  {
+   "kategori": "C",
+   "bruto": 26450001,
+   "tarif": 0.07
+  },
+  {
+   "kategori": "C",
+   "bruto": 29550000,
+   "tarif": 0.07
+  },
+  {
+   "kategori": "C",
+   "bruto": 29550001,
+   "tarif": 0.08
+  },
+  {
+   "kategori": "C",
+   "bruto": 33450000,
+   "tarif": 0.08
+  },
+  {
+   "kategori": "C",
+   "bruto": 33450001,
+   "tarif": 0.09
+  },
+  {
+   "kategori": "C",
+   "bruto": 38450000,
+   "tarif": 0.09
+  },
+  {
+   "kategori": "C",
+   "bruto": 38450001,
+   "tarif": 0.1
+  },
+  {
+   "kategori": "C",
+   "bruto": 44550000,
+   "tarif": 0.1
+  },
+  {
+   "kategori": "C",
+   "bruto": 44550001,
+   "tarif": 0.11
+  },
+  {
+   "kategori": "C",
+   "bruto": 52050000,
+   "tarif": 0.11
+  },
+  {
+   "kategori": "C",
+   "bruto": 52050001,
+   "tarif": 0.12
+  },
+  {
+   "kategori": "C",
+   "bruto": 61250000,
+   "tarif": 0.12
+  },
+  {
+   "kategori": "C",
+   "bruto": 61250001,
+   "tarif": 0.13
+  },
+  {
+   "kategori": "C",
+   "bruto": 72650000,
+   "tarif": 0.13
+  },
+  {
+   "kategori": "C",
+   "bruto": 72650001,
+   "tarif": 0.14
+  },
+  {
+   "kategori": "C",
+   "bruto": 86350000,
+   "tarif": 0.14
+  },
+  {
+   "kategori": "C",
+   "bruto": 86350001,
+   "tarif": 0.15
+  },
+  {
+   "kategori": "C",
+   "bruto": 102650000,
+   "tarif": 0.15
+  },
+  {
+   "kategori": "C",
+   "bruto": 102650001,
+   "tarif": 0.16
+  },
+  {
+   "kategori": "C",
+   "bruto": 122050000,
+   "tarif": 0.16
+  },
+  {
+   "kategori": "C",
+   "bruto": 122050001,
+   "tarif": 0.17
+  },
+  {
+   "kategori": "C",
+   "bruto": 145150000,
+   "tarif": 0.17
+  },
+  {
+   "kategori": "C",
+   "bruto": 145150001,
+   "tarif": 0.18
+  },
+  {
+   "kategori": "C",
+   "bruto": 172550000,
+   "tarif": 0.18
+  },
+  {
+   "kategori": "C",
+   "bruto": 172550001,
+   "tarif": 0.19
+  },
+  {
+   "kategori": "C",
+   "bruto": 204650000,
+   "tarif": 0.19
+  },
+  {
+   "kategori": "C",
+   "bruto": 204650001,
+   "tarif": 0.2
+  },
+  {
+   "kategori": "C",
+   "bruto": 242050000,
+   "tarif": 0.2
+  },
+  {
+   "kategori": "C",
+   "bruto": 242050001,
+   "tarif": 0.21
+  },
+  {
+   "kategori": "C",
+   "bruto": 285550000,
+   "tarif": 0.21
+  },
+  {
+   "kategori": "C",
+   "bruto": 285550001,
+   "tarif": 0.22
+  },
+  {
+   "kategori": "C",
+   "bruto": 335550000,
+   "tarif": 0.22
+  },
+  {
+   "kategori": "C",
+   "bruto": 335550001,
+   "tarif": 0.23
+  },
+  {
+   "kategori": "C",
+   "bruto": 392150000,
+   "tarif": 0.23
+  },
+  {
+   "kategori": "C",
+   "bruto": 392150001,
+   "tarif": 0.24
+  },
+  {
+   "kategori": "C",
+   "bruto": 455550000,
+   "tarif": 0.24
+  },
+  {
+   "kategori": "C",
+   "bruto": 455550001,
+   "tarif": 0.25
+  },
+  {
+   "kategori": "C",
+   "bruto": 525850000,
+   "tarif": 0.25
+  },
+  {
+   "kategori": "C",
+   "bruto": 525850001,
+   "tarif": 0.26
+  },
+  {
+   "kategori": "C",
+   "bruto": 603050000,
+   "tarif": 0.26
+  },
+  {
+   "kategori": "C",
+   "bruto": 603050001,
+   "tarif": 0.27
+  },
+  {
+   "kategori": "C",
+   "bruto": 687150000,
+   "tarif": 0.27
+  },
+  {
+   "kategori": "C",
+   "bruto": 687150001,
+   "tarif": 0.28
+  },
+  {
+   "kategori": "C",
+   "bruto": 778250000,
+   "tarif": 0.28
+  },
+  {
+   "kategori": "C",
+   "bruto": 778250001,
+   "tarif": 0.29
+  },
+  {
+   "kategori": "C",
+   "bruto": 876350000,
+   "tarif": 0.29
+  },
+  {
+   "kategori": "C",
+   "bruto": 876350001,
+   "tarif": 0.3
+  },
+  {
+   "kategori": "C",
+   "bruto": 981450000,
+   "tarif": 0.3
+  },
+  {
+   "kategori": "C",
+   "bruto": 981450001,
+   "tarif": 0.31
+  },
+  {
+   "kategori": "C",
+   "bruto": 1100000000,
+   "tarif": 0.31
+  },
+  {
+   "kategori": "C",
+   "bruto": 1100000001,
+   "tarif": 0.34
+  },
+  {
+   "kategori": "X",
+   "bruto": 0,
+   "tarif": 0.0
+  },
+  {
+   "kategori": "X",
+   "bruto": 5400000,
+   "tarif": 0.0
+  },
+  {
+   "kategori": "X",
+   "bruto": 5400001,
+   "tarif": 0.0025
+  },
+  {
+   "kategori": "X",
+   "bruto": 5650000,
+   "tarif": 0.0025
+  },
+  {
+   "kategori": "X",
+   "bruto": 5650001,
+   "tarif": 0.005
+  },
+  {
+   "kategori": "X",
+   "bruto": 5950000,
+   "tarif": 0.005
+  },
+  {
+   "kategori": "X",
+   "bruto": 5950001,
+   "tarif": 0.0075
+  },
+  {
+   "kategori": "X",
+   "bruto": 6300000,
+   "tarif": 0.0075
+  },
+  {
+   "kategori": "X",
+   "bruto": 6300001,
+   "tarif": 0.01
+  },
+  {
+   "kategori": "X",
+   "bruto": 6750000,
+   "tarif": 0.01
+  },
+  {
+   "kategori": "X",
+   "bruto": 6750001,
+   "tarif": 0.0125
+  },
+  {
+   "kategori": "X",
+   "bruto": 7500000,
+   "tarif": 0.0125
+  },
+  {
+   "kategori": "X",
+   "bruto": 7500001,
+   "tarif": 0.015
+  },
+  {
+   "kategori": "X",
+   "bruto": 8550000,
+   "tarif": 0.015
+  },
+  {
+   "kategori": "X",
+   "bruto": 8550001,
+   "tarif": 0.0175
+  },
+  {
+   "kategori": "X",
+   "bruto": 9650000,
+   "tarif": 0.0175
+  },
+  {
+   "kategori": "X",
+   "bruto": 9650001,
+   "tarif": 0.02
+  },
+  {
+   "kategori": "X",
+   "bruto": 10750000,
+   "tarif": 0.02
+  },
+  {
+   "kategori": "X",
+   "bruto": 10750001,
+   "tarif": 0.025
+  },
+  {
+   "kategori": "X",
+   "bruto": 11250000,
+   "tarif": 0.025
+  },
+  {
+   "kategori": "X",
+   "bruto": 11250001,
+   "tarif": 0.03
+  },
+  {
+   "kategori": "X",
+   "bruto": 11600000,
+   "tarif": 0.03
+  },
+  {
+   "kategori": "X",
+   "bruto": 11600001,
+   "tarif": 0.035
+  },
+  {
+   "kategori": "X",
+   "bruto": 12500000,
+   "tarif": 0.035
+  },
+  {
+   "kategori": "X",
+   "bruto": 12500001,
+   "tarif": 0.04
+  },
+  {
+   "kategori": "X",
+   "bruto": 13750000,
+   "tarif": 0.04
+  },
+  {
+   "kategori": "X",
+   "bruto": 13750001,
+   "tarif": 0.045
+  },
+  {
+   "kategori": "X",
+   "bruto": 15100000,
+   "tarif": 0.045
+  },
+  {
+   "kategori": "X",
+   "bruto": 15100001,
+   "tarif": 0.05
+  },
+  {
+   "kategori": "X",
+   "bruto": 16950000,
+   "tarif": 0.05
+  },
+  {
+   "kategori": "X",
+   "bruto": 16950001,
+   "tarif": 0.06
+  },
+  {
+   "kategori": "X",
+   "bruto": 19750000,
+   "tarif": 0.06
+  },
+  {
+   "kategori": "X",
+   "bruto": 19750001,
+   "tarif": 0.07
+  },
+  {
+   "kategori": "X",
+   "bruto": 24150000,
+   "tarif": 0.07
+  },
+  {
+   "kategori": "X",
+   "bruto": 24150001,
+   "tarif": 0.08
+  },
+  {
+   "kategori": "X",
+   "bruto": 26450000,
+   "tarif": 0.08
+  },
+  {
+   "kategori": "X",
+   "bruto": 26450001,
+   "tarif": 0.09
+  },
+  {
+   "kategori": "X",
+   "bruto": 29550000,
+   "tarif": 0.09
+  },
+  {
+   "kategori": "X",
+   "bruto": 29550001,
+   "tarif": 0.1
+  },
+  {
+   "kategori": "X",
+   "bruto": 33450000,
+   "tarif": 0.1
+  },
+  {
+   "kategori": "X",
+   "bruto": 33450001,
+   "tarif": 0.11
+  },
+  {
+   "kategori": "X",
+   "bruto": 38450000,
+   "tarif": 0.11
+  },
+  {
+   "kategori": "X",
+   "bruto": 38450001,
+   "tarif": 0.12
+  },
+  {
+   "kategori": "X",
+   "bruto": 44550000,
+   "tarif": 0.12
+  },
+  {
+   "kategori": "X",
+   "bruto": 44550001,
+   "tarif": 0.13
+  },
+  {
+   "kategori": "X",
+   "bruto": 52050000,
+   "tarif": 0.13
+  },
+  {
+   "kategori": "X",
+   "bruto": 52050001,
+   "tarif": 0.14
+  },
+  {
+   "kategori": "X",
+   "bruto": 61250000,
+   "tarif": 0.14
+  },
+  {
+   "kategori": "X",
+   "bruto": 61250001,
+   "tarif": 0.15
+  },
+  {
+   "kategori": "X",
+   "bruto": 72650000,
+   "tarif": 0.15
+  },
+  {
+   "kategori": "X",
+   "bruto": 72650001,
+   "tarif": 0.16
+  },
+  {
+   "kategori": "X",
+   "bruto": 86350000,
+   "tarif": 0.16
+  },
+  {
+   "kategori": "X",
+   "bruto": 86350001,
+   "tarif": 0.17
+  },
+  {
+   "kategori": "X",
+   "bruto": 102650000,
+   "tarif": 0.17
+  },
+  {
+   "kategori": "X",
+   "bruto": 102650001,
+   "tarif": 0.18
+  },
+  {
+   "kategori": "X",
+   "bruto": 122050000,
+   "tarif": 0.18
+  },
+  {
+   "kategori": "X",
+   "bruto": 122050001,
+   "tarif": 0.19
+  },
+  {
+   "kategori": "X",
+   "bruto": 145150000,
+   "tarif": 0.19
+  },
+  {
+   "kategori": "X",
+   "bruto": 145150001,
+   "tarif": 0.2
+  },
+  {
+   "kategori": "X",
+   "bruto": 172550000,
+   "tarif": 0.2
+  },
+  {
+   "kategori": "X",
+   "bruto": 172550001,
+   "tarif": 0.21
+  },
+  {
+   "kategori": "X",
+   "bruto": 204650000,
+   "tarif": 0.21
+  },
+  {
+   "kategori": "X",
+   "bruto": 204650001,
+   "tarif": 0.22
+  },
+  {
+   "kategori": "X",
+   "bruto": 242050000,
+   "tarif": 0.22
+  },
+  {
+   "kategori": "X",
+   "bruto": 242050001,
+   "tarif": 0.23
+  },
+  {
+   "kategori": "X",
+   "bruto": 285550000,
+   "tarif": 0.23
+  },
+  {
+   "kategori": "X",
+   "bruto": 285550001,
+   "tarif": 0.24
+  },
+  {
+   "kategori": "X",
+   "bruto": 335550000,
+   "tarif": 0.24
+  },
+  {
+   "kategori": "X",
+   "bruto": 335550001,
+   "tarif": 0.25
+  },
+  {
+   "kategori": "X",
+   "bruto": 392150000,
+   "tarif": 0.25
+  },
+  {
+   "kategori": "X",
+   "bruto": 392150001,
+   "tarif": 0.26
+  },
+  {
+   "kategori": "X",
+   "bruto": 455550000,
+   "tarif": 0.26
+  },
+  {
+   "kategori": "X",
+   "bruto": 455550001,
+   "tarif": 0.27
+  },
+  {
+   "kategori": "X",
+   "bruto": 525850000,
+   "tarif": 0.27
+  },
+  {
+   "kategori": "X",
+   "bruto": 525850001,
+   "tarif": 0.28
+  },
+  {
+   "kategori": "X",
+   "bruto": 603050000,
+   "tarif": 0.28
+  },
+  {
+   "kategori": "X",
+   "bruto": 603050001,
+   "tarif": 0.29
+  },
+  {
+   "kategori": "X",
+   "bruto": 687150000,
+   "tarif": 0.29
+  },
+  {
+   "kategori": "X",
+   "bruto": 687150001,
+   "tarif": 0.3
+  },
+  {
+   "kategori": "X",
+   "bruto": 778250000,
+   "tarif": 0.3
+  },
+  {
+   "kategori": "X",
+   "bruto": 778250001,
+   "tarif": 0.31
+  },
+  {
+   "kategori": "X",
+   "bruto": 876350000,
+   "tarif": 0.31
+  },
+  {
+   "kategori": "X",
+   "bruto": 876350001,
+   "tarif": 0.32
+  },
+  {
+   "kategori": "X",
+   "bruto": 981450000,
+   "tarif": 0.32
+  },
+  {
+   "kategori": "X",
+   "bruto": 981450001,
+   "tarif": 0.33
+  },
+  {
+   "kategori": "X",
+   "bruto": 1100000000,
+   "tarif": 0.33
+  },
+  {
+   "kategori": "X",
+   "bruto": 1100000001,
+   "tarif": 0.34
+  }
+ ],
+ "contoh_setahun": [
+  {
+   "masukan": {
+    "tax_gross": 150000000,
+    "pension_deduction": 3600000,
+    "months": 12,
+    "ptkp_status": "K1"
+   },
+   "keluaran": {
+    "tax_gross": 150000000,
+    "biaya_jabatan": 6000000,
+    "pension_deduction": 3600000,
+    "neto": 140400000,
+    "ptkp": 63000000.0,
+    "pkp": 77400000.0,
+    "annual_tax": 5610000.0
+   }
+  },
+  {
+   "masukan": {
+    "tax_gross": 1250000000,
+    "pension_deduction": 12000000,
+    "months": 12,
+    "ptkp_status": "TK0"
+   },
+   "keluaran": {
+    "tax_gross": 1250000000,
+    "biaya_jabatan": 6000000,
+    "pension_deduction": 12000000,
+    "neto": 1232000000,
+    "ptkp": 54000000.0,
+    "pkp": 1178000000.0,
+    "annual_tax": 297400000.0
+   }
+  },
+  {
+   "masukan": {
+    "tax_gross": 60000000,
+    "pension_deduction": 1200000,
+    "months": 12,
+    "ptkp_status": "ZZ"
+   },
+   "keluaran": {
+    "tax_gross": 60000000,
+    "biaya_jabatan": 3000000.0,
+    "pension_deduction": 1200000,
+    "neto": 55800000.0,
+    "ptkp": 54000000.0,
+    "pkp": 1800000.0,
+    "annual_tax": 90000.0
+   }
+  }
+ ]
+}

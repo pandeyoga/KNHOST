@@ -226,6 +226,12 @@ export default function SettingCard({
                         value={effFrom} onChange={setEffFrom} placeholder="Sekarang (langsung berlaku)"
                         data-testid={`cfg-efffrom-${item.key}`} />
                       <em>Sebelum tanggal ini, nilai lama tetap dipakai mesin.</em>
+                      {/* PK-46 — kunci bertanggal (tabel PPh 21): dibaca menurut tanggal periode, bukan tanggal hitung. */}
+                      {item.bertanggal ? (
+                        <em data-testid={`cfg-efffrom-bertanggal-${item.key}`}>
+                          Slip dengan periode sebelum tanggal ini tetap memakai tabel lama.
+                        </em>
+                      ) : null}
                     </label>
                   ) : null}
                 </div>

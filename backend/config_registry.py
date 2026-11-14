@@ -178,6 +178,7 @@ def E(
     permission: Optional[Tuple[str, str]] = None,
     value_format: str = "",
     sensitif_baca: Optional[bool] = None,
+    bertanggal: bool = False,
 ) -> Dict[str, Any]:
     """Daftarkan satu setting. Validasi ketat supaya registry tidak pernah setengah jadi."""
     if key in _REGISTRY:
@@ -252,6 +253,10 @@ def E(
         "legacy_scope": legacy_scope,
         "legacy_path": legacy_path,
         "editable": status == "active",
+        # PK-46 — kunci BERTANGGAL BERLAKU: nilainya hanya dari bawaan registry + baris `config_values` menurut
+        # `effective_from`, dibaca dengan tanggal (`resolve(key, ctx, at=…)`). Resolver tidak memproyeksikannya ke
+        # `system_settings` dan tidak membaca lapisan lama, supaya pembacaan untuk tanggal lampau tidak jatuh ke nilai baru.
+        "bertanggal": bool(bertanggal),
     }
     _REGISTRY[key] = entry
     _ORDER.append(key)
@@ -308,7 +313,7 @@ def search(term: str) -> List[Dict[str, Any]]:
 
 
 # ── Validasi & koersi nilai (dipakai PUT /api/config/values) ─────────────────
-VALUE_FORMATS = ("regex", "json_map")
+VALUE_FORMATS = ("regex", "json_map", "tarif_berjenjang")
 
 
 def _check_format(entry: Dict[str, Any], value: Any) -> Any:
@@ -335,7 +340,90 @@ def _check_format(entry: Dict[str, Any], value: Any) -> Any:
         if not isinstance(obj, dict):
             raise ValueError(f"'{key}' harus objek JSON {{...}}.")
         return value if isinstance(value, str) else _json.dumps(obj)
+    if fmt == "tarif_berjenjang":
+        return _tarif_berjenjang(entry, value)
     return value
+
+
+# ── PK-46 — `value_format="tarif_berjenjang"`: tabel tarif berlapis (PPh 21 TER, pasal 17) ─────────────────────────────
+def _angka_tarif(label: str, tempat: str, nama: str, nilai: Any) -> float:
+    import math
+    from core_utils import parse_decimal
+    if isinstance(nilai, bool):
+        raise ValueError(f"{label} {tempat}: {nama} harus angka.")
+    try:
+        num = parse_decimal(nilai, 6, default=float("nan"))
+    except ValueError as exc:
+        raise ValueError(f"{label} {tempat}: {nama} harus angka ({exc}).") from exc
+    if not math.isfinite(num):
+        raise ValueError(f"{label} {tempat}: {nama} wajib diisi dengan angka.")
+    return num
+
+
+def _ribuan(num: float) -> str:
+    return f"{num:,.0f}".replace(",", ".")
+
+
+def _periksa_jenjang(label: str, baris: List[Tuple[int, Dict[str, Any]]], awalan: str) -> List[Dict[str, Any]]:
+    """Satu tabel berlapis: tidak kosong; `batas_atas` naik tegas; TEPAT baris terakhir tanpa batas; tarif 0–100."""
+    if not baris:
+        raise ValueError(f"{label} {awalan}tidak boleh kosong.")
+    out: List[Dict[str, Any]] = []
+    sebelumnya: Optional[float] = None
+    for pos, (nomor, r) in enumerate(baris, 1):
+        tempat = f"{awalan}baris {pos}" + (f" (baris {nomor} di tabel)" if awalan else "")
+        terakhir = pos == len(baris)
+        mentah = r.get("batas_atas")
+        if mentah is None or (isinstance(mentah, str) and not mentah.strip()):
+            if not terakhir:
+                raise ValueError(f"{label} {tempat}: hanya baris terakhir yang boleh tanpa batas atas.")
+            batas = None
+        else:
+            if terakhir:
+                raise ValueError(f"{label} {tempat}: baris terakhir harus tanpa batas atas (kosongkan), supaya "
+                                 f"penghasilan di atas batas tertinggi tetap punya tarif.")
+            num = _angka_tarif(label, tempat, "batas atas", mentah)
+            if num < 0:
+                raise ValueError(f"{label} {tempat}: batas atas tidak boleh negatif.")
+            if sebelumnya is not None and num <= sebelumnya:
+                raise ValueError(f"{label} {tempat}: batas atas {_ribuan(num)} harus lebih besar dari batas baris "
+                                 f"sebelumnya ({_ribuan(sebelumnya)}).")
+            sebelumnya = num
+            batas = int(num) if float(num).is_integer() else num
+        tarif = _angka_tarif(label, tempat, "tarif", r.get("tarif_pct"))
+        if tarif < 0 or tarif > 100:
+            raise ValueError(f"{label} {tempat}: tarif {tarif:g}% di luar 0–100%.")
+        out.append({"batas_atas": batas, "tarif_pct": float(tarif)})
+    return out
+
+
+def _tarif_berjenjang(entry: Dict[str, Any], value: Any) -> List[Dict[str, Any]]:
+    """Tabel tanpa kolom `kategori` diperiksa utuh; tabel BERKATEGORI (kolom `kategori` berpilihan, mis.
+    `hr.pph21.ter_table`) diperiksa per kategori dan SETIAP pilihan kategori wajib ada."""
+    label = f"'{entry['label']}'"
+    if not isinstance(value, list) or not value:
+        raise ValueError(f"{label} harus berupa daftar baris tarif dan tidak boleh kosong.")
+    for i, r in enumerate(value, 1):
+        if not isinstance(r, dict):
+            raise ValueError(f"{label} baris {i}: harus berisi batas atas dan tarif.")
+    kol = next((c for c in entry.get("columns") or [] if c.get("name") == "kategori"), None)
+    if not kol:
+        return _periksa_jenjang(label, list(enumerate(value, 1)), "")
+    pilihan = [str(o["value"]) for o in kol.get("options") or []]
+    per_kat: Dict[str, List[Tuple[int, Dict[str, Any]]]] = {k: [] for k in pilihan}
+    for i, r in enumerate(value, 1):
+        k = str(r.get("kategori") or "").strip()
+        if k not in per_kat:
+            raise ValueError(f"{label} baris {i}: kategori '{k}' tidak dikenal (pilihan: {', '.join(pilihan)}).")
+        per_kat[k].append((i, r))
+    kosong = [k for k, rows in per_kat.items() if not rows]
+    if kosong:
+        raise ValueError(f"{label}: kategori {', '.join(kosong)} wajib ada — setiap kategori "
+                         f"({', '.join(pilihan)}) harus punya tabel sendiri.")
+    out: List[Dict[str, Any]] = []
+    for k in pilihan:
+        out += [{"kategori": k, **b} for b in _periksa_jenjang(label, per_kat[k], f"kategori {k} ")]
+    return out
 
 
 def coerce(entry: Dict[str, Any], value: Any) -> Any:

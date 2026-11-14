@@ -5,8 +5,9 @@ jurnal SEIMBANG, komisi accrue_then_settle (anti double-count). Config-driven vi
 `system_settings.hr` (get_hr_settings). Koleksi kanonik (entity-scoped):
 `hr_payroll_runs` (prun_), `hr_payslips` (slip_).
 
-TER tables = PMK 168/2023 (bulanan), kategori A/B/C menurut PTKP. Disimpan sebagai
-(batas_atas_inklusif, tarif). Penghasilan bruto <= batas → tarif tsb. (lapis pertama match).
+PK-46 — tabel TER bulanan (kategori A/B/C menurut PTKP), PTKP, tarif pasal 17, dan biaya jabatan dibaca dari
+pengaturan BERTANGGAL BERLAKU lewat `aturan_pph21(tanggal)` (blok PK-46 di bawah), bukan konstanta. Baris tabel:
+`{batas_atas, tarif_pct}`; bruto <= batas → tarif tsb. (baris pertama yang cocok; baris terakhir tanpa batas).
 """
 import re
 from typing import Any, Dict, List, Optional, Tuple
@@ -20,63 +21,68 @@ INF = float("inf")
 WORK_HOURS_DIVISOR = 173  # jam kerja/bulan (rumus upah-sejam Kepmenaker)
 PAYROLL_PREFIX = "PAY-"   # K-09 (26 Okt): awalan nomor penggajian baru (dulu "PR-", bentrok Permintaan Pembelian)
 
-# ── PPh21 TER bulanan (PMK 168/2023) — (upper_inclusive, rate) ─────────────────
-TER_A: List[Tuple[float, float]] = [
-    (5_400_000, 0.0), (5_650_000, 0.0025), (5_950_000, 0.005), (6_300_000, 0.0075),
-    (6_750_000, 0.01), (7_500_000, 0.0125), (8_550_000, 0.015), (9_650_000, 0.0175),
-    (10_750_000, 0.02), (11_250_000, 0.025), (11_600_000, 0.03), (12_500_000, 0.035),
-    (13_750_000, 0.04), (15_100_000, 0.045), (16_950_000, 0.05), (19_750_000, 0.06),
-    (24_150_000, 0.07), (26_450_000, 0.08), (29_550_000, 0.09), (33_450_000, 0.10),
-    (38_450_000, 0.11), (44_550_000, 0.12), (52_050_000, 0.13), (61_250_000, 0.14),
-    (72_650_000, 0.15), (86_350_000, 0.16), (102_650_000, 0.17), (122_050_000, 0.18),
-    (145_150_000, 0.19), (172_550_000, 0.20), (204_650_000, 0.21), (242_050_000, 0.22),
-    (285_550_000, 0.23), (335_550_000, 0.24), (392_150_000, 0.25), (455_550_000, 0.26),
-    (525_850_000, 0.27), (603_050_000, 0.28), (687_150_000, 0.29), (778_250_000, 0.30),
-    (876_350_000, 0.31), (981_450_000, 0.32), (1_100_000_000, 0.33), (INF, 0.34),
-]
-TER_B: List[Tuple[float, float]] = [
-    (6_200_000, 0.0), (6_500_000, 0.0025), (6_850_000, 0.005), (7_300_000, 0.0075),
-    (9_200_000, 0.01), (10_750_000, 0.0125), (11_250_000, 0.015), (11_600_000, 0.02),
-    (12_600_000, 0.025), (13_600_000, 0.03), (14_950_000, 0.035), (16_950_000, 0.04),
-    (19_750_000, 0.05), (24_150_000, 0.06), (26_450_000, 0.07), (29_550_000, 0.08),
-    (33_450_000, 0.09), (38_450_000, 0.10), (44_550_000, 0.11), (52_050_000, 0.12),
-    (61_250_000, 0.13), (72_650_000, 0.14), (86_350_000, 0.15), (102_650_000, 0.16),
-    (122_050_000, 0.17), (145_150_000, 0.18), (172_550_000, 0.19), (204_650_000, 0.20),
-    (242_050_000, 0.21), (285_550_000, 0.22), (335_550_000, 0.23), (392_150_000, 0.24),
-    (455_550_000, 0.25), (525_850_000, 0.26), (603_050_000, 0.27), (687_150_000, 0.28),
-    (778_250_000, 0.29), (876_350_000, 0.30), (981_450_000, 0.31), (INF, 0.34),
-]
-TER_C: List[Tuple[float, float]] = [
-    (6_600_000, 0.0), (6_950_000, 0.0025), (7_350_000, 0.005), (7_800_000, 0.0075),
-    (8_850_000, 0.01), (9_800_000, 0.0125), (10_950_000, 0.015), (11_200_000, 0.0175),
-    (12_600_000, 0.02), (13_600_000, 0.025), (14_950_000, 0.03), (16_950_000, 0.035),
-    (19_750_000, 0.04), (24_150_000, 0.05), (26_450_000, 0.06), (29_550_000, 0.07),
-    (33_450_000, 0.08), (38_450_000, 0.09), (44_550_000, 0.10), (52_050_000, 0.11),
-    (61_250_000, 0.12), (72_650_000, 0.13), (86_350_000, 0.14), (102_650_000, 0.15),
-    (122_050_000, 0.16), (145_150_000, 0.17), (172_550_000, 0.18), (204_650_000, 0.19),
-    (242_050_000, 0.20), (285_550_000, 0.21), (335_550_000, 0.22), (392_150_000, 0.23),
-    (455_550_000, 0.24), (525_850_000, 0.25), (603_050_000, 0.26), (687_150_000, 0.27),
-    (778_250_000, 0.28), (876_350_000, 0.29), (981_450_000, 0.30), (1_100_000_000, 0.31), (INF, 0.34),
-]
-TER_TABLES = {"A": TER_A, "B": TER_B, "C": TER_C}
-PTKP_TO_TER = {
-    "TK0": "A", "TK1": "A", "K0": "A",
-    "TK2": "B", "TK3": "B", "K1": "B", "K2": "B",
-    "K3": "C",
+
+# ── PK-46 — aturan PPh 21 dari pengaturan BERTANGGAL BERLAKU ─────────────────────────────────────────────────────────
+# Tabel tarif efektif (TER), kategori per status PTKP, PTKP setahun, tarif pasal 17, dan biaya jabatan TIDAK lagi
+# konstanta di sini. Keenamnya kunci registry `bertanggal` (bawaan = isi kode lama, dipindah ke `data/pph21_bawaan.py`)
+# dan dibaca SEKALI per proses gaji untuk tanggal akhir periode gaji (WIB): slip periode sebelum tanggal berlaku tabel
+# baru tetap memakai tabel lama, termasuk bila dihitung ulang sesudah tabel baru disimpan. Rumus tidak berubah.
+PPH21_KUNCI: Dict[str, str] = {
+    "ter": "hr.pph21.ter_table",
+    "ptkp_ke_ter": "hr.pph21.ptkp_to_ter",
+    "ptkp": "hr.ptkp_table",
+    "pasal17": "hr.pph21.pasal17_table",
+    "biaya_jabatan_pct": "hr.pph21.biaya_jabatan_pct",
+    "biaya_jabatan_maks": "hr.pph21.biaya_jabatan_maks_bulanan",
 }
 
 
-# ── PPh21 masa terakhir (Pasal 17 UU HPP + PTKP PMK 101/2016) ────────────────
-PTKP_AMOUNT = {"TK0": 54_000_000, "TK1": 58_500_000, "TK2": 63_000_000, "TK3": 67_500_000,
-               "K0": 58_500_000, "K1": 63_000_000, "K2": 67_500_000, "K3": 72_000_000}
-PASAL17: List[Tuple[float, float]] = [(60_000_000, 0.05), (250_000_000, 0.15), (500_000_000, 0.25),
-                                      (5_000_000_000, 0.30), (INF, 0.35)]
-BIAYA_JABATAN_RATE, BIAYA_JABATAN_MONTHLY_CAP = 0.05, 500_000
+def _akhir_hari_wib(tanggal: str):
+    """Akhir hari `tanggal` (TTTT-BB-HH) waktu WIB, sebagai datetime UTC — titik baca pengaturan bertanggal."""
+    from datetime import date, datetime, time, timezone
+    from services.analytics_time import WIB
+    d = date.fromisoformat(str(tanggal)[:10])
+    return datetime.combine(d, time.max, tzinfo=WIB).astimezone(timezone.utc)
 
 
-def pasal17_tax(pkp: float) -> float:
+def akhir_periode_gaji(period: str) -> str:
+    """'2026-12' → '2026-12-31' (tanggal akhir periode gaji; K-13)."""
+    import calendar
+    try:
+        y, m = int(str(period)[:4]), int(str(period)[5:7])
+        return f"{y:04d}-{m:02d}-{calendar.monthrange(y, m)[1]:02d}"
+    except (ValueError, calendar.IllegalMonthError) as exc:
+        raise ValueError(f"Periode gaji harus berbentuk TTTT-BB (diberi '{period}').") from exc
+
+
+def _baris_tarif(rows: Any) -> List[Dict[str, Any]]:
+    return [{"batas_atas": r.get("batas_atas"), "tarif_pct": float(r.get("tarif_pct") or 0)}
+            for r in (rows or []) if isinstance(r, dict)]
+
+
+async def aturan_pph21(tanggal: str) -> Dict[str, Any]:
+    """Enam kunci PPh 21 yang BERLAKU pada akhir hari `tanggal` (WIB).
+
+    Bentuk: {"ter": {"A": [{batas_atas, tarif_pct}, …], "B": …, "C": …}, "ptkp_ke_ter": {status: kategori},
+    "ptkp": {status: rupiah setahun}, "pasal17": [{batas_atas, tarif_pct}, …], "biaya_jabatan_pct": persen,
+    "biaya_jabatan_maks": rupiah sebulan}. `batas_atas` None = baris terakhir (tanpa batas)."""
+    from services.config_resolver import resolve
+    at = _akhir_hari_wib(tanggal)
+    v = {nama: (await resolve(kunci, {}, at=at))["value"] for nama, kunci in PPH21_KUNCI.items()}
+    ter: Dict[str, List[Dict[str, Any]]] = {}
+    for r in v["ter"] or []:
+        if isinstance(r, dict):
+            ter.setdefault(str(r.get("kategori")), []).extend(_baris_tarif([r]))
+    return {"ter": ter, "ptkp_ke_ter": dict(v["ptkp_ke_ter"] or {}), "ptkp": dict(v["ptkp"] or {}),
+            "pasal17": _baris_tarif(v["pasal17"]), "biaya_jabatan_pct": float(v["biaya_jabatan_pct"] or 0),
+            "biaya_jabatan_maks": float(v["biaya_jabatan_maks"] or 0)}
+
+
+def pasal17_tax(pkp: float, aturan: Dict[str, Any]) -> float:
     tax, lower = 0.0, 0.0
-    for upper, rate in PASAL17:
+    for row in aturan["pasal17"]:
+        upper = INF if row["batas_atas"] is None else float(row["batas_atas"])
+        rate = row["tarif_pct"] / 100
         if pkp <= lower:
             break
         tax += (min(pkp, upper) - lower) * rate
@@ -84,23 +90,31 @@ def pasal17_tax(pkp: float) -> float:
     return round(tax, 2)
 
 
-def annual_pph21(*, tax_gross: float, pension_deduction: float, months: int, ptkp_status: str) -> Dict[str, float]:
-    """HR-01 — PPh21 setahun/bagian tahun (penghasilan aktual, PTKP setahun penuh)."""
-    biaya_jabatan = min(tax_gross * BIAYA_JABATAN_RATE, BIAYA_JABATAN_MONTHLY_CAP * max(1, months))
+def annual_pph21(*, tax_gross: float, pension_deduction: float, months: int, ptkp_status: str,
+                 aturan: Dict[str, Any]) -> Dict[str, float]:
+    """HR-01 — PPh21 setahun/bagian tahun (penghasilan aktual, PTKP setahun penuh). PK-46: angka dari `aturan`."""
+    biaya_jabatan = min(tax_gross * (aturan["biaya_jabatan_pct"] / 100), aturan["biaya_jabatan_maks"] * max(1, months))
     neto = tax_gross - biaya_jabatan - pension_deduction
-    ptkp = PTKP_AMOUNT.get(ptkp_status, PTKP_AMOUNT["TK0"])
+    tabel_ptkp = aturan["ptkp"]
+    status = ptkp_status if ptkp_status in tabel_ptkp else "TK0"   # status tak dikenal → TK0 (perilaku kode lama)
+    if status not in tabel_ptkp:
+        raise ValueError(f"Status PTKP '{ptkp_status}' tidak ada di tabel PTKP setahun, dan tabel itu tidak memuat TK0.")
+    ptkp = float(tabel_ptkp[status])
     pkp = max(0.0, float(int(max(0.0, neto - ptkp) // 1000) * 1000))
     return {"tax_gross": round(tax_gross, 2), "biaya_jabatan": round(biaya_jabatan, 2),
             "pension_deduction": round(pension_deduction, 2), "neto": round(neto, 2), "ptkp": float(ptkp),
-            "pkp": pkp, "annual_tax": pasal17_tax(pkp)}
+            "pkp": pkp, "annual_tax": pasal17_tax(pkp, aturan)}
 
 
-def ter_rate(category: str, gross: float) -> float:
-    table = TER_TABLES.get(category, TER_A)
-    for upper, rate in table:
-        if gross <= upper:
-            return rate
-    return table[-1][1]
+def ter_rate(category: str, gross: float, aturan: Dict[str, Any]) -> float:
+    """Baris pertama dengan `gross <= batas_atas`; baris terakhir (tanpa batas) menangkap sisanya.
+    Kategori tak dikenal → kategori A (perilaku kode lama)."""
+    table = aturan["ter"].get(category) or aturan["ter"].get("A") or []
+    for row in table:
+        if row["batas_atas"] is None or gross <= row["batas_atas"]:
+            return row["tarif_pct"] / 100
+    return table[-1]["tarif_pct"] / 100 if table else 0.0
+# ── akhir blok PK-46 ──────────────────────────────────────────────────────────────────────────────────────────────────
 
 
 def _pct(v: Any) -> float:
@@ -265,7 +279,10 @@ async def _commission_for(emp: Dict[str, Any], period: str, entity_id: str) -> f
 
 
 async def compute_payslip(emp: Dict[str, Any], period: str, entity_id: str,
-                          cfg: Dict[str, Any]) -> Dict[str, Any]:
+                          cfg: Dict[str, Any], aturan: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+    # PK-46 — `aturan` = aturan_pph21(akhir periode gaji); proses gaji membacanya sekali dan meneruskannya ke sini.
+    if aturan is None:
+        aturan = await aturan_pph21(akhir_periode_gaji(period))
     base = float(emp.get("base_salary") or 0)
     allowances = _sum_allowances(emp.get("allowances"))
     events = await overtime_events(emp["id"], period, entity_id, cfg)
@@ -280,12 +297,12 @@ async def compute_payslip(emp: Dict[str, Any], period: str, entity_id: str,
     # HR-01 — bruto pajak memuat premi JKK, JKM & BPJS Kesehatan yang dibayar pemberi kerja.
     tax_gross = round(gross + er_b["jkk"] + er_b["jkm"] + er_b["kesehatan"], 2)
     ptkp = emp.get("ptkp_status") or "TK0"
-    category = PTKP_TO_TER.get(ptkp, "A")
+    category = aturan["ptkp_ke_ter"].get(ptkp, "A")   # PK-46 — kategori dari pengaturan bertanggal
     # FASE G-0 — `hr.feature_toggles.pph21` kini benar-benar mengendalikan pemotongan PPh 21
     # (sebelumnya toggle ini tersimpan tetapi tidak pernah diperiksa mesin payroll).
     _pph21_on = bool((cfg.get("feature_toggles", {}) or {}).get("pph21", True))
     tax_on = bool(cfg.get("ter_enabled", True) and _pph21_on)
-    rate = ter_rate(category, tax_gross) if tax_on else 0.0
+    rate = ter_rate(category, tax_gross, aturan) if tax_on else 0.0
     pph21 = round(tax_gross * rate, 2)
     pph21_method, annual = "ter", None
     if tax_on and _is_final_tax_period(emp, period):
@@ -295,7 +312,7 @@ async def compute_payslip(emp: Dict[str, Any], period: str, entity_id: str,
         annual = annual_pph21(
             tax_gross=tax_gross + sum(float(s.get("tax_gross", s.get("gross", 0)) or 0) for s in prior),
             pension_deduction=pension({"bpjs_emp": emp_b}) + sum(pension(s) for s in prior),
-            months=len(prior) + 1, ptkp_status=ptkp)
+            months=len(prior) + 1, ptkp_status=ptkp, aturan=aturan)
         annual["prior_withheld"] = round(sum(float(s.get("pph21", 0) or 0) for s in prior), 2)
         annual["months"] = len(prior) + 1
         # selisih negatif = lebih potong dikembalikan lewat slip ini (jurnal mendebit Hutang PPh 21)
@@ -356,11 +373,12 @@ async def _active_employees(entity_id: str, period: str = "") -> List[Dict[str, 
 async def preview_run(entity_id: str, period: str) -> Dict[str, Any]:
     # FASE E-4 (E4.5) — BPJS/PPh21/lembur mengikuti badan usaha yang digaji.
     cfg = await hr_service.get_hr_settings(entity_id)
+    aturan = await aturan_pph21(akhir_periode_gaji(period))   # PK-46 — sekali per proses gaji
     emps = await _active_employees(entity_id, period)
     slips: List[Dict[str, Any]] = []
     totals = _empty_totals()
     for emp in emps:
-        s = await compute_payslip(emp, period, entity_id, cfg)
+        s = await compute_payslip(emp, period, entity_id, cfg, aturan)
         slips.append(s)
         _accumulate(totals, s)
     slips.sort(key=lambda x: x["employee_name"])

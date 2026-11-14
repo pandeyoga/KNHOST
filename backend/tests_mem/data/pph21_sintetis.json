@@ -1,0 +1,33 @@
+{
+ "keterangan": "TABEL UJI SINTETIS PK-46 — BUKAN TARIF NYATA. Angka bulat sembarang (dua baris per kategori) hanya untuk menguji mekanisme pengaturan bertanggal dan pemuat. Jangan dimuat ke data nyata.",
+ "sumber": "Tabel uji sintetis PK-46 — BUKAN TARIF NYATA",
+ "diverifikasi_oleh": "Tidak diverifikasi — data uji mekanisme",
+ "tanggal_verifikasi": "2026-11-14",
+ "berlaku_sejak": "2027-01-01",
+ "ter": {
+  "A": [{"batas_atas": 10000000, "tarif_pct": 1}, {"batas_atas": null, "tarif_pct": 2}],
+  "B": [{"batas_atas": 10000000, "tarif_pct": 3}, {"batas_atas": null, "tarif_pct": 4}],
+  "C": [{"batas_atas": 10000000, "tarif_pct": 5}, {"batas_atas": null, "tarif_pct": 6}]
+ },
+ "ptkp_ke_ter": {"TK0": "A", "K0": "B", "K1": "C"},
+ "ptkp": {"TK0": 10000000, "K0": 20000000, "K1": 30000000},
+ "pasal17": [{"batas_atas": 100000000, "tarif_pct": 10}, {"batas_atas": null, "tarif_pct": 20}],
+ "biaya_jabatan": {"tarif_pct": 1, "maks_bulanan": 100000},
+ "titik_uji": [
+  {"kategori": "A", "bruto": 0, "tarif_pct": 1},
+  {"kategori": "A", "bruto": 5000000, "tarif_pct": 1},
+  {"kategori": "A", "bruto": 10000000, "tarif_pct": 1},
+  {"kategori": "A", "bruto": 150000000, "tarif_pct": 2},
+  {"kategori": "A", "bruto": 10000001, "tarif_pct": 2},
+  {"kategori": "B", "bruto": 0, "tarif_pct": 3},
+  {"kategori": "B", "bruto": 5000000, "tarif_pct": 3},
+  {"kategori": "B", "bruto": 10000000, "tarif_pct": 3},
+  {"kategori": "B", "bruto": 150000000, "tarif_pct": 4},
+  {"kategori": "B", "bruto": 10000001, "tarif_pct": 4},
+  {"kategori": "C", "bruto": 0, "tarif_pct": 5},
+  {"kategori": "C", "bruto": 5000000, "tarif_pct": 5},
+  {"kategori": "C", "bruto": 10000000, "tarif_pct": 5},
+  {"kategori": "C", "bruto": 150000000, "tarif_pct": 6},
+  {"kategori": "C", "bruto": 10000001, "tarif_pct": 6}
+ ]
+}

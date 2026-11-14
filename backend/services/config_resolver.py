@@ -14,6 +14,8 @@ Desain:
 - **Kompatibilitas penuh:** dokumen `system_settings` lama TETAP dibaca sebagai lapisan
   dan setiap penulisan level global/entitas juga **diproyeksikan** ke sana, sehingga
   seluruh mesin lama (yang membaca `system_settings`) langsung ikut berubah tanpa migrasi.
+- PK-46 — kecuali kunci registry `bertanggal`: tidak diproyeksikan dan tidak membaca lapisan lama; nilainya untuk
+  tanggal tertentu dibaca dengan `resolve(key, ctx, at=<waktu>)`.
 
 INV-CFG-03: baris `config_values` tidak pernah di-update pada field nilai. Hanya
 `applied_at` (penanda bookkeeping proyeksi) yang boleh diisi sekali.
@@ -148,15 +150,22 @@ async def build_layers(key: str, ctx: Optional[Dict[str, Any]] = None,
     pre = preloaded or {}
 
     legacy_scope, legacy_path = entry["legacy_scope"], entry["legacy_path"]
-    legacy_global = pre.get(f"legacy:{legacy_scope}")
-    if legacy_global is None:
-        legacy_global = await _legacy_doc(legacy_scope)
+    # PK-46 — kunci `bertanggal` tidak membaca lapisan lama (`system_settings` tidak bertanggal): nilainya hanya bawaan
+    # registry + baris `config_values` yang sudah berlaku pada `at`.
+    bertanggal = bool(entry.get("bertanggal"))
     ent_id = ctx.get("entity_id") or ""
+    legacy_global: Dict[str, Any] = {}
     legacy_entity: Dict[str, Any] = {}
-    if ent_id and ent_id != "all" and legacy_scope == "global":
-        legacy_entity = pre.get(f"legacy:{ent_id}")
-        if legacy_entity is None:
-            legacy_entity = await _legacy_doc(ent_id)
+    if not bertanggal:
+        legacy_global = pre.get(f"legacy:{legacy_scope}")
+        if legacy_global is None:
+            legacy_global = await _legacy_doc(legacy_scope)
+        if ent_id and ent_id != "all" and legacy_scope == "global":
+            legacy_entity = pre.get(f"legacy:{ent_id}")
+            if legacy_entity is None:
+                legacy_entity = await _legacy_doc(ent_id)
+    catatan_bertanggal = ("Tidak dibaca: pengaturan bertanggal hanya memakai nilai Pusat Pengaturan menurut "
+                          "tanggal berlakunya.")
 
     rows_map: Dict[Tuple[str, str], List[Dict[str, Any]]] = pre.get("rows") or {}
     if not pre:
@@ -173,7 +182,7 @@ async def build_layers(key: str, ctx: Optional[Dict[str, Any]] = None,
     layers.append({
         "layer": "legacy_global", "label": LAYER_LABEL["legacy_global"], "scope_id": legacy_scope,
         "present": lg is not _MISSING, "value": None if lg is _MISSING else lg,
-        "note": f"Dokumen system_settings scope '{legacy_scope}' (dibaca mesin lama).",
+        "note": catatan_bertanggal if bertanggal else f"Dokumen system_settings scope '{legacy_scope}' (dibaca mesin lama).",
         "changed_by": (legacy_global or {}).get("updated_by", ""),
         "changed_at": (legacy_global or {}).get("updated_at", ""),
         "reason": "", "effective_from": "",
@@ -208,7 +217,8 @@ async def build_layers(key: str, ctx: Optional[Dict[str, Any]] = None,
     layers.append({
         "layer": "legacy_entity", "label": LAYER_LABEL["legacy_entity"], "scope_id": ent_id,
         "present": le is not _MISSING, "value": None if le is _MISSING else le,
-        "note": (f"Override entitas di system_settings scope '{ent_id}'." if ent_id
+        "note": (catatan_bertanggal if bertanggal else
+                 f"Override entitas di system_settings scope '{ent_id}'." if ent_id
                  else "Tidak ada konteks entitas."),
         "changed_by": (legacy_entity or {}).get("updated_by", ""),
         "changed_at": (legacy_entity or {}).get("updated_at", ""),
@@ -303,7 +313,7 @@ async def resolve_group(group_id: Optional[str] = None, ctx: Optional[Dict[str, 
             "key", "group", "label", "help", "impact", "example", "type", "default",
             "min", "max", "step", "options", "unit", "scopes", "consumers",
             "risk", "requires_reason", "status", "not_used_reason", "simulate", "related",
-            "row_shape", "columns", "editable")},
+            "row_shape", "columns", "editable", "bertanggal")},
             "value": res["value"], "source_layer": res["source_layer"],
             "source_label": res["source_label"], "scheduled": res["scheduled"],
             "is_default": res["source_layer"] == "code_default"})
@@ -383,7 +393,12 @@ async def _project(entry: Dict[str, Any], scope_type: str, scope_id: str,
     Hanya level `global` & `entity` yang punya padanan di penyimpanan lama. Level
     lain (customer/supplier/product/document) HANYA dibaca lewat resolver — karena itu
     registry hanya mengizinkan level tersebut untuk kunci yang mesinnya sudah memakai resolver.
+
+    PK-46 — kunci `bertanggal` TIDAK diproyeksikan: penyimpanan lama tidak bertanggal, sehingga nilai baru yang
+    diproyeksikan akan ikut terbaca untuk tanggal lampau. Pembacanya memakai `resolve(key, ctx, at=…)`.
     """
+    if entry.get("bertanggal"):
+        return
     if scope_type == "global":
         target_scope = entry["legacy_scope"]
     elif scope_type == "entity":

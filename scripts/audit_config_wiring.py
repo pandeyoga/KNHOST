@@ -467,8 +467,15 @@ def build_rows(declared, be, fe_consumers, fe_editors, reg_index, wired: bool):
             if any(k.endswith(ded) for k in fe_consumers) or any(k.endswith(ded) for k in fe_editors):
                 ui.append(f"{ded} (editor khusus scope)")
 
+        not_used_reason = (entry or {}).get("not_used_reason", "")
         if entry is not None and entry.get("status") == "not_used":
             status = "NOT_USED"
+        elif entry is not None and entry.get("bertanggal"):
+            # PK-46 — kunci `bertanggal`: resolver TIDAK membaca nilai di `system_settings` dan tidak memproyeksikan ke
+            # sana (`config_resolver.build_layers`/`_project`); mesin membaca `config_values` menurut tanggal berlaku.
+            # Nilai lama yang masih tersimpan di dokumen ini memang tidak dipakai — sama dengan status sebelum PK-46.
+            status = "NOT_USED"
+            not_used_reason = BERTANGGAL_REASON
         else:
             status = classify(consumers, ui)
 
@@ -484,10 +491,14 @@ def build_rows(declared, be, fe_consumers, fe_editors, reg_index, wired: bool):
                 "ui": ui[:6],
                 "ui_count": len(ui),
                 "legacy_ui": legacy_ui[:6],
-                "not_used_reason": (entry or {}).get("not_used_reason", ""),
+                "not_used_reason": not_used_reason,
             }
         )
     return rows
+
+
+BERTANGGAL_REASON = ("Pengaturan bertanggal (PK-46): nilai di system_settings tidak dibaca mesin maupun resolver; "
+                     "nilainya dari config_values menurut tanggal berlaku.")
 
 
 # Status yang dianggap PELANGGARAN oleh gate (INV-CFG).
@@ -580,6 +591,24 @@ def self_test() -> int:
     if diff:
         ok = False
         print("    GAGAL: jalur cepat mengubah hasil audit — optimasi tidak sah.")
+
+    # 7. PK-46 — pengecualian `bertanggal` HANYA berlaku untuk kunci bertanggal: daun lama tabel yang sama, bila
+    #    kuncinya TIDAK bertanggal, wajib tetap dinilai (daun dua huruf `K0` tak terlacak → pelanggaran).
+    bt = next((k for k, e in reg_index.items() if e.get("bertanggal") and e.get("type") == "table"
+               and e.get("legacy_scope") != "global"), "")
+    if bt:
+        scope_bt, path_bt = reg_index[bt]["legacy_scope"], reg_index[bt]["legacy_path"] + ".K0"
+        r_bt = build_rows([(scope_bt, path_bt, 1)], be, fe_consumers, fe_editors, reg_index, True)[0]
+        biasa = {**reg_index, bt: {**reg_index[bt], "bertanggal": False}}
+        r_biasa = build_rows([(scope_bt, path_bt, 1)], be, fe_consumers, fe_editors, biasa, True)[0]
+        sah = r_bt["status"] == "NOT_USED" and r_biasa["status"] in VIOLATIONS
+        print(f"[7] daun lama kunci bertanggal: {r_bt['status']} · bila tidak bertanggal: {r_biasa['status']} "
+              f"(harus NOT_USED · pelanggaran)")
+        if not sah:
+            ok = False
+            print("    GAGAL: pengecualian kunci bertanggal salah sasaran.")
+    else:
+        print("[7] tidak ada kunci tabel bertanggal di registry — dilewati")
 
     print()
     print("SELF-TEST:", "PASS — guardrail terbukti bisa memerah" if ok else "FAIL")

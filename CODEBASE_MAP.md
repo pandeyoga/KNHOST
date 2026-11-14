@@ -1,5 +1,5 @@
 <!-- DIHASILKAN OTOMATIS oleh scripts/gen_codebase_map.py — JANGAN EDIT TANGAN -->
-<!-- Dihasilkan dari commit: 2df7b60 pada 2026-11-14 -->
+<!-- Dihasilkan dari commit: 2965eb5 pada 2026-11-14 -->
 # CODEBASE MAP — Kain Nusantara (dihasilkan otomatis)
 
 Peta ini dihitung dari kode oleh `scripts/gen_codebase_map.py`. Kalau angka di sini
@@ -339,7 +339,7 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 | `config_currency.py` | 64 | FASE G-0 — Konsumen nyata untuk `finance.base_currency` & `finance.fiscal_year_end_month`. |
 | `config_health.py` | 121 | FASE G-0 — KESEHATAN KONFIGURASI: apakah setiap setting benar-benar tersambung? |
 | `config_impact_service.py` | 258 | FASE G-0 — DAFTAR DAMPAK (Blast-Radius Picker). |
-| `config_resolver.py` | 603 | FASE G-0 — CONFIG RESOLVER: nilai efektif berlapis + jejak "kenapa begini" + berlaku-sejak. |
+| `config_resolver.py` | 618 | FASE G-0 — CONFIG RESOLVER: nilai efektif berlapis + jejak "kenapa begini" + berlaku-sejak. |
 | `config_service.py` | 592 | Config service (Fase 1A) — Configuration Foundation. |
 | `config_simulator.py` | 628 | FASE G-0 — SIMULATOR KONFIGURASI ("Coba dulu"). |
 | `consolidation_service.py` | 767 | FINANCE — Konsolidasi Grup + Eliminasi Intercompany. |
@@ -430,7 +430,7 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 | `hr_kpi_service.py` | 167 | HRD H5 services — KPI Design (input manual per karyawan/periode + rekap). |
 | `hr_leave_service.py` | 404 | HRD H3 services — Cuti, Izin & Lembur (Leave/Permit & Overtime). |
 | `hr_payroll_pdf.py` | 111 | HRD H4 — Payslip PDF (reportlab). Slip gaji ringkas, profesional, Bahasa Indonesia. |
-| `hr_payroll_service.py` | 611 | HRD H4 — Payroll & Payslip engine + run lifecycle. |
+| `hr_payroll_service.py` | 629 | HRD H4 — Payroll & Payslip engine + run lifecycle. |
 | `hr_service.py` | 176 | HRD services (FASE H0) — helper murni-orchestration untuk modul HR. |
 | `inbound_complete_service.py` | 683 | Penyelesaian penerimaan tugas inbound — SATU-SATUNYA jalur yang memposting stok, `received_qty` PO, |
 | `inbound_qc_common.py` | 77 | Aturan barang MASUK GUDANG yang dipakai bersama jalur PO (`inbound_complete_service.complete_task`) dan hasil |
@@ -708,7 +708,7 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 | `sales` | 97 | 15769 |
 | `sales_admin` | 11 | 1872 |
 | `samples` | 8 | 777 |
-| `settings` | 49 | 9232 |
+| `settings` | 50 | 9290 |
 | `tanya` | 25 | 1592 |
 | `transfers` | 1 | 20 |
 | `wms` | 99 | 13195 |

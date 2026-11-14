@@ -478,21 +478,86 @@ E("hr.ter_enabled", group="sdm", type="bool", default=True, scopes=G,
   consumers=("services/hr_payroll_service.py",),
   related=("hr.ptkp_table",), risk="high", permission=_HR_PAYROLL)
 
-E("hr.ptkp_table", group="sdm", type="table", default={}, scopes=G,
-  status="not_used",
+# ── PK-46 — tabel PPh 21 dari pengaturan BERTANGGAL BERLAKU (PY-03, KP-36) ─────────────────────────────────────────────
+# Bawaan = isi konstanta kode lama APA ADANYA, dipindah tanpa diketik ulang ke `data/pph21_bawaan.py` (satu-satunya
+# pemakainya blok ini). Isi itu BELUM diverifikasi terhadap lampiran peraturan; tabel terverifikasi pemilik dimuat
+# lewat `scripts/muat_pph21_terverifikasi.py` (K-42, titik henti H4). Bentuk nilai: tarif dalam PERSEN, batas atas
+# rupiah, baris terakhir tanpa batas (`None`) — konversi dari bentuk kode lama (pecahan, `INF`) ada di `_jenjang`.
+from data.pph21_bawaan import (  # noqa: E402
+    BIAYA_JABATAN_MONTHLY_CAP, BIAYA_JABATAN_RATE, PASAL17, PTKP_AMOUNT, PTKP_TO_TER, TER_TABLES,
+)
+
+
+def _jenjang(tabel):
+    """[(batas_atas, tarif pecahan)] kode lama → [{batas_atas, tarif_pct}] pengaturan (INF → tanpa batas)."""
+    return [{"batas_atas": None if batas == float("inf") else batas, "tarif_pct": round(tarif * 100, 10)}
+            for batas, tarif in tabel]
+
+
+_KATEGORI_TER = ({"value": "A", "label": "A"}, {"value": "B", "label": "B"}, {"value": "C", "label": "C"})
+_PPH21 = dict(
+    group="sdm", scopes=("global",), bertanggal=True, risk="high", requires_reason=True, permission=_HR_PAYROLL,
+    consumers=("services/hr_payroll_service.py:aturan_pph21",),
+    impact="Mengubah PPh 21 yang dipotong mulai tanggal berlaku; slip periode sebelum tanggal itu tidak berubah.",
+)
+# `example` tanpa angka sampai berkas terverifikasi pemilik dimuat (unit PK-46 bagian Pengaturan).
+_CONTOH_BERTANGGAL = ("Isi tabel tahun depan, pilih 'Berlaku sejak' awal tahun itu — slip bulan-bulan sebelumnya "
+                      "tetap dihitung dengan tabel lama")
+
+E("hr.pph21.ter_table", type="table", **_PPH21,
+  default=[{"kategori": k, **baris} for k in ("A", "B", "C") for baris in _jenjang(TER_TABLES[k])],
+  row_shape="list", value_format="tarif_berjenjang",
+  columns=({"name": "kategori", "label": "Kategori", "type": "enum", "default": "A",
+            "options": _KATEGORI_TER, "width": "110px"},
+           {"name": "batas_atas", "label": "Batas atas bruto sebulan (kosong = tanpa batas)", "type": "money",
+            "default": ""},
+           {"name": "tarif_pct", "label": "Tarif", "type": "pct", "default": 0.0, "unit": "%", "width": "120px"}),
+  label="Tarif efektif PPh 21 bulanan",
+  help="Tarif menurut penghasilan bruto sebulan untuk tiap kategori. Baris terakhir tiap kategori tanpa batas atas. "
+       "Bawaan sistem belum diverifikasi terhadap lampiran peraturan.",
+  example=_CONTOH_BERTANGGAL)
+
+E("hr.pph21.ptkp_to_ter", type="table", **_PPH21,
+  default=dict(PTKP_TO_TER),
+  row_shape="map",
+  columns=({"name": "__key", "label": "Status PTKP", "type": "text", "width": "160px"},
+           {"name": "__value", "label": "Kategori tarif", "type": "enum", "options": _KATEGORI_TER}),
+  label="Kategori tarif per status PTKP",
+  help="Status PTKP karyawan menentukan kategori A, B, atau C.",
+  example="Status karyawan dicari di tabel ini; kategorinya menentukan tabel tarif efektif yang dipakai slip")
+
+E("hr.ptkp_table", type="table", **_PPH21,
+  default=dict(PTKP_AMOUNT),
   row_shape="map",
   columns=({"name": "__key", "label": "Status PTKP", "type": "text", "width": "160px"},
            {"name": "__value", "label": "PTKP setahun", "type": "money"}),
-  not_used_reason="Payroll memakai metode TER (hr.ter_enabled = aktif). Tabel PTKP tahunan "
-                  "tidak dipakai dalam perhitungan PPh 21 bulanan. Angka di sini hanya "
-                  "referensi; mengubahnya TIDAK mengubah slip gaji.",
-  label="Tabel PTKP tahunan (referensi)",
-  help="Penghasilan Tidak Kena Pajak per status keluarga. Dipakai metode perhitungan lama; "
-       "sistem sekarang memakai TER sehingga tabel ini tidak lagi menjadi dasar hitung.",
-  impact="TIDAK ADA dampak selama metode TER aktif. Status karyawan (TK0/K1/…) tetap dipakai "
-         "untuk menentukan kategori TER.",
-  example="K1 Rp 63.000.000/tahun — hanya referensi, tidak dipakai hitung PPh 21 bulanan",
-  related=("hr.ter_enabled",), risk="low", permission=_HR_PAYROLL)
+  label="PTKP setahun per status",
+  help="Dipakai saat menghitung ulang pajak pada masa pajak terakhir (Desember atau bulan karyawan keluar).",
+  example=_CONTOH_BERTANGGAL,
+  related=("hr.ter_enabled",))
+
+E("hr.pph21.pasal17_table", type="table", **_PPH21,
+  default=_jenjang(PASAL17),
+  row_shape="list", value_format="tarif_berjenjang",
+  columns=({"name": "batas_atas", "label": "Batas atas penghasilan kena pajak setahun (kosong = tanpa batas)",
+            "type": "money", "default": ""},
+           {"name": "tarif_pct", "label": "Tarif", "type": "pct", "default": 0.0, "unit": "%", "width": "120px"}),
+  label="Tarif pajak penghasilan setahun (berlapis)",
+  help="Dipakai pada masa pajak terakhir.",
+  example=_CONTOH_BERTANGGAL)
+
+E("hr.pph21.biaya_jabatan_pct", type="pct", **_PPH21,
+  default=round(BIAYA_JABATAN_RATE * 100, 10), min=0, max=100, step=0.01, unit="%",
+  label="Biaya jabatan (% dari bruto)",
+  help="Pengurang penghasilan pada hitung ulang setahun. 0 = tanpa biaya jabatan.",
+  example="Persen ini dikalikan bruto setahun, lalu dibatasi batas bulanan × jumlah bulan bekerja")
+
+E("hr.pph21.biaya_jabatan_maks_bulanan", type="money", **_PPH21,
+  default=BIAYA_JABATAN_MONTHLY_CAP, min=0, max=100000000, step=1000, unit="Rp",
+  label="Batas biaya jabatan per bulan (Rp)",
+  help="0 = biaya jabatan selalu nol.",
+  example="Batas ini dikalikan jumlah bulan bekerja dalam setahun pajak")
+# ── akhir blok PK-46 ──────────────────────────────────────────────────────────────────────────────────────────────────
 
 E("hr.overtime.multiplier", group="sdm", type="decimal", default=1.5, min=1, max=5,
   step=0.1, unit="× upah/jam", scopes=G, simulate="payroll_overtime",
