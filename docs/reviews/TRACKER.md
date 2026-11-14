@@ -266,7 +266,7 @@ P14-K1 → Bima). Laporan hasil di `docs/uat/2026-10-21/hasil/UAT24-*.md`.
 | KM-05 | Tanpa dokumen keputusan; angka sumber bergerak mundur | Sedang | KM-T3 | open | belum dicek — diisi unit pemegang | — | — |
 | KM-06 | Serah-terima pelanggan tidak memindah tim sales | Sedang | KM-T1 | open | belum dicek — diisi unit pemegang | — | — |
 | KM-07 | Field tak terpakai; daftar "sales" tidak seragam | Rendah | KM-T4 | open | belum dicek — diisi unit pemegang | — | — |
-| CR-01 | Sales bisa mengubah plafon dan status blokir pelanggannya | Tinggi | PK-45 | open | belum dicek — diisi unit pemegang | — | — |
+| CR-01 | Sales bisa mengubah plafon dan status blokir pelanggannya | Tinggi | PK-45 | implemented_pending_review | ya — dijalankan (bukti merah 17/20 di kode lama) | `8d952cb` | [PK-45](2026-11-13/hasil/PK-45.md) |
 | CR-02 | Kredit hanya diperiksa saat pesanan lahir | Tinggi | CR-T3 | open | belum dicek — diisi unit pemegang | — | — |
 | CR-03 | Ambang telat dan peringatan ditulis mati di dua berkas | Sedang | KF-T7 | open | belum dicek — diisi unit pemegang | — | — |
 | CR-04 | Izin kredit tanpa masa berlaku, nominal 0 = tak terbatas, tanpa penjaga entitas | Sedang | CR-T3 | open | belum dicek — diisi unit pemegang | — | — |
@@ -281,10 +281,10 @@ P14-K1 → Bima). Laporan hasil di `docs/uat/2026-10-21/hasil/UAT24-*.md`.
 | PM-04 | Rekonsiliasi tidak dibatasi rekening yang sama | Sedang | PM-T3 | open | belum dicek — diisi unit pemegang | — | — |
 | PM-05 | Master rekening tanpa peruntukan dan bawaan; saringan aktif memakai field yang salah | Sedang | PM-T1 | open | belum dicek — diisi unit pemegang | — | — |
 | PM-06 | Tunai di tangan sales tanpa alur titipan dan setoran | Sedang | PM-T4 | open | belum dicek — diisi unit pemegang | — | — |
-| TX-01 | Faktur asli tetap terjumlah di rekap PPN setelah diganti: 110.000 menjadi 220.000 | Tinggi | PK-45 | open | belum dicek — diisi unit pemegang | — | — |
-| TX-02 | Kunci amandemen tidak lepas setelah faktur batal | Sedang | PK-45 | open | belum dicek — diisi unit pemegang | — | — |
-| TX-03 | Ubah/ganti/batal faktur tanpa penjaga entitas | Tinggi | PK-45 | open | belum dicek — diisi unit pemegang | — | — |
-| TX-04 | Pesanan non-PPN lewat API tanpa izin khusus | Tinggi | PK-45 | open | belum dicek — diisi unit pemegang | — | — |
+| TX-01 | Faktur asli tetap terjumlah di rekap PPN setelah diganti: 110.000 menjadi 220.000 | Tinggi | PK-45 | implemented_pending_review | ya — dijalankan (bukti merah 17/20 di kode lama) | `8d952cb` | [PK-45](2026-11-13/hasil/PK-45.md) |
+| TX-02 | Kunci amandemen tidak lepas setelah faktur batal | Sedang | PK-45 | implemented_pending_review | ya — dijalankan (bukti merah 17/20 di kode lama) | `8d952cb` | [PK-45](2026-11-13/hasil/PK-45.md) |
+| TX-03 | Ubah/ganti/batal faktur tanpa penjaga entitas | Tinggi | PK-45 | implemented_pending_review | ya — dijalankan (bukti merah 17/20 di kode lama) | `8d952cb` | [PK-45](2026-11-13/hasil/PK-45.md) |
+| TX-04 | Pesanan non-PPN lewat API tanpa izin khusus | Tinggi | PK-45 | implemented_pending_review | ya — dijalankan (bukti merah 17/20 di kode lama) | `8d952cb` | [PK-45](2026-11-13/hasil/PK-45.md) |
 | TX-05 | Faktur per pesanan dan manual; tidak terikat surat jalan, uang muka, retur | Sedang | TX-T2 | open | belum dicek — diisi unit pemegang | — | — |
 | TX-06 | Faktor DPP, pembulatan, kode transaksi ditulis mati; tanpa data pajak pelanggan/barang | Sedang | TX-T1 | open | belum dicek — diisi unit pemegang | — | — |
 | AG-01 | Konfirmasi gagal kembali ke antre; bisa menggandakan PO | Sedang | AG-T1 | open | belum dicek — diisi unit pemegang | — | — |
@@ -297,12 +297,12 @@ P14-K1 → Bima). Laporan hasil di `docs/uat/2026-10-21/hasil/UAT24-*.md`.
 | PY-02 | Satu proses gaji per PT per periode | Tinggi | PY-T1 | open | belum dicek — diisi unit pemegang | — | — |
 | PY-03 | Tabel tarif PPh 21 tampak tidak disalin dari peraturan | Tinggi | PK-46 | open | belum dicek — diisi unit pemegang | — | — |
 | PY-04 | Tanpa prorata dan potongan absen | Tinggi | PY-T3 | open | belum dicek — diisi unit pemegang | — | — |
-| PY-05 | Karyawan keluar tidak terhitung masa terakhirnya | Tinggi | PK-45 | open | belum dicek — diisi unit pemegang | — | — |
+| PY-05 | Karyawan keluar tidak terhitung masa terakhirnya | Tinggi | PK-45 | implemented_pending_review | ya — dijalankan (bukti merah 17/20 di kode lama) | `8d952cb` | [PK-45](2026-11-13/hasil/PK-45.md) |
 | PY-06 | Mode komisi "mati" tidak dihormati | Sedang | KM-T4 | open | belum dicek — diisi unit pemegang | — | — |
 | PY-07 | Pengaturan lembur tidak berpengaruh | Sedang | PY-T3 | open | belum dicek — diisi unit pemegang | — | — |
 | PY-08 | Lembur dari absensi otomatis disetujui | Sedang | PY-T3 | open | belum dicek — diisi unit pemegang | — | — |
 | PY-09 | Tanpa riwayat gaji dan penugasan PT bertanggal | Sedang | PY-T2 | open | belum dicek — diisi unit pemegang | — | — |
-| PY-10 | Pratinjau gaji menerima entitas mentah | Sedang | PK-45 | open | belum dicek — diisi unit pemegang | — | — |
+| PY-10 | Pratinjau gaji menerima entitas mentah | Sedang | PK-45 | implemented_pending_review | ya — dijalankan (bukti merah 17/20 di kode lama) | `8d952cb` | [PK-45](2026-11-13/hasil/PK-45.md) |
 | PY-11 | Bayar gaji selalu dari satu akun; tanpa daftar transfer | Sedang | PY-T4 | open | belum dicek — diisi unit pemegang | — | — |
 | PY-12 | Tanpa saldo awal pajak tahun berjalan | Sedang | PY-T3 | open | belum dicek — diisi unit pemegang | — | — |
 | PY-13 | PDF slip berbaris tetap dan berangka mati | Rendah | PY-T1 | open | belum dicek — diisi unit pemegang | — | — |
