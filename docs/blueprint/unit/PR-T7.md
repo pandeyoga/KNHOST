@@ -45,7 +45,7 @@ Hanya tambahan bendera kemampuan pada jawaban yang sudah ada, untuk tombol yang 
 | Jawaban | Field baru | Dihitung dari |
 |---|---|---|
 | `GET /api/rnd/samples/{sample_id}` | `caps: {"pick_winner": bool, "approve_spec": bool}` | Aturan yang sama dengan pemeriksa server saat itu (`backend/services/rnd_spec_service.py:336`, `_assert_role`) — layar tidak lagi menghitung sendiri dari daftar peran di pengaturan |
-| `POST /api/auth/login` | `view_resources`, `view_actions`, `hidden_views`, dan daftar peran (bentuk `GET /api/roles`) | Sama dengan `GET /api/auth/me`, supaya konteks izin sudah lengkap sebelum layar pertama digambar (PR-UX-41) |
+| `POST /api/auth/login` | `view_resources`, `hidden_views`, dan daftar peran (bentuk `GET /api/roles`) — koreksi: `GET /api/auth/me` tidak punya field `view_actions` | Sama dengan `GET /api/auth/me`, supaya konteks izin sudah lengkap sebelum layar pertama digambar (PR-UX-41) |
 
 Tidak ada endpoint baru dan tidak ada izin yang berubah.
 
@@ -145,7 +145,7 @@ Persiapan bersama: peran uji baku `02` §6. "Staf Penagihan Uji" = peran kustom 
 |---|---|---|---|---|
 | U1 | B | — | `python scripts/guardrails/verify_role_gate_ui.py` dan `--self-test` | Keluar 0; self-test: 2 sisipan tertangkap, 1 baris tata letak lolos |
 | U2 | B | — | Hitung `roleIs(` di `frontend/src` di luar berkas yang dikecualikan | Hanya baris berpenanda `// tata-letak:`; garis dasar hanya memuat baris milik KP-T4, KF-T1, PR-T6 yang belum selesai |
-| U3 | B | — | `POST /api/auth/login` sebagai akun "Staf Penagihan Uji" | Jawaban memuat `view_resources`, `view_actions`, `hidden_views`, dan daftar peran yang memuat peran itu |
+| U3 | B | — | `POST /api/auth/login` sebagai akun "Staf Penagihan Uji" | Jawaban memuat `view_resources`, `hidden_views` (sama dengan `GET /api/auth/me`; field `view_actions` tidak ada di kode — koreksi), dan daftar peran yang memuat peran itu |
 | U4 | B | sample dengan `rnd.sample_decision_roles` = `["manager"]` | `GET /api/rnd/samples/{id}` oleh manajer seed, oleh "Tanpa Acuan" + `rnd.view` + `rnd.decide`, dan oleh Sopir | `caps.pick_winner`: benar · sama dengan jawaban pemeriksa server untuk peran itu · 403 |
 | U5 | komponen | konteks izin belum dimuat, peran bukan Admin | `canCurrent("accounting", "view")` | `false`; dengan peran Admin `true` |
 | U6 | komponen | izin `{production: ["view", "create"]}` | `prodPerms(perms)` | `createWo` benar; `manageBom`, `release`, `complete`, `cancel` salah |
