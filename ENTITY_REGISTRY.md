@@ -3107,8 +3107,12 @@ hr_shifts (shift_)      — Router: routers/hr_attendance.py → GET/POST /hr/sh
           work_days[1..7], status(active|inactive), entity_id, created_at/by, updated_at
 hr_geofences (geo_)     — GET/POST /hr/geofences, PATCH/DELETE /hr/geofences/{id}
   Fields: id, name, lat, lon, radius_m, address, status, entity_id, audit. (validasi haversine)
-hr_devices (dev_)       — GET/POST /hr/devices, PATCH/DELETE /hr/devices/{id}
-  Fields: id, name, code(SN), location, device_token(auth ingest), last_sync, status, entity_id, audit
+hr_devices (dev_)       — GET/POST /hr/devices, PATCH/DELETE /hr/devices/{id}, POST /hr/devices/{id}/rotate-token (KP-T8)
+  Fields: id, name, code(SN), location, device_token_hash(SHA-256 token, auth ingest; indeks unik parsial
+          uq_device_token_hash), device_token_hint(4 karakter terakhir), device_token_at, token_rotation_required,
+          last_sync, status, entity_id, audit
+  KP-T8: token tampil SEKALI saat buat/ganti (`at_`+32 heks); daftar tidak pernah mengirim token/hash. Bentuk lama
+          `device_token` polos masih dibaca ingest sampai `scripts/migrate_kpt8_rahasia.py` dijalankan pemilik (H3).
 hr_attendance (att_)    — GET /hr/attendance, /hr/attendance/recap, /hr/attendance/me,
                           POST /hr/attendance/{clock-in,clock-out,manual,import,ingest}, PATCH /hr/attendance/{id}
   Fields: id, employee_id, employee_name, date(YYYY-MM-DD WIB), shift_id, shift_name,
@@ -3144,8 +3148,18 @@ design_gallery (dsgn_) — Router: routers/design_gallery.py → GET/POST /desig
   AI:     services/hr_ai_service.py — Anthropic Claude DIRECT SDK (paket `anthropic`), key di
           system_settings scope='integrations'. GRACEFUL: key kosong → autotag {enabled:false} (galeri tetap jalan).
 system_settings (scope="integrations")  (SHARED, bukan koleksi baru) — Router: routers/integrations.py →
-          GET/PUT /admin/integrations (admin only via hr.manage_settings). Key TIDAK pernah dikembalikan plaintext
-          (GET → has_key:bool + model + enabled). Service: services/integrations_service.py (deep-merge anti data-loss).
+          GET/PUT /admin/integrations (izin integration.manage — KP-T8; dulu hr.manage_settings). Key TIDAK pernah
+          dikembalikan plaintext (GET → has_key:bool + model + enabled + secrets_key_configured). Service:
+          services/integrations_service.py (deep-merge anti data-loss). Kunci dibungkus services/secret_box.py
+          (`enc:v1:`, KN_SECRETS_KEY). `anthropic.enabled|model` = kunci registry `integrations.anthropic.*` (KP-T8).
+  KP-T8 objek `whatsapp` = KONEKSI WhatsApp TUNGGAL untuk Pengingat & Kirim Dokumen: {provider, access_token,
+          fonnte_token (keduanya selalu terbungkus), phone_number_id, sender, sender_label, default_country_code,
+          template_name, template_lang, source(manual|alerts|documents|gabungan), updated_at, updated_by}.
+          Service: services/wa_connection.py (`for_consumer("alerts"|"documents")`). Router: GET/PUT
+          /admin/integrations/whatsapp, POST …/whatsapp/adopt, POST …/whatsapp/test (integration.manage). Pengaturan
+          pemakaian tetap di system_settings{scope:"alerts"}.wa (enabled, pic_number, send_to_roles, min_severity,
+          delivery_mode, critical_bypass) dan integration_settings{id:"whatsapp"} (enabled, simulate); field koneksi
+          lama di dua tempat itu hanya dibaca selama koneksi tunggal belum ada.
 ⚠️ entity_id = SCOPED (hr_kpi, design_gallery). JANGAN pakai 'kpi/gallery/motif' polos.
 ```
 
@@ -3192,8 +3206,10 @@ Key Fields:  id, employee_id, date, check_in, check_out, method (fingerprint|geo
 Collection:  hr_devices        Prefix: dev_
 Router:      routers/hr_attendance.py
 Service:     services/hr_attendance_service.py
-Key Fields:  id, name, code, location, device_token, last_sync, status, entity_id
-⚠️ entity_id = SCOPED (per-PT). device_token = kredensial push mesin (jaga rahasia).
+Key Fields:  id, name, code, location, device_token_hash, device_token_hint, device_token_at,
+             token_rotation_required, last_sync, status, entity_id
+⚠️ entity_id = SCOPED (per-PT). Token mesin = kredensial push mesin: disimpan hanya hash-nya (KP-T8); `device_token`
+   polos = bentuk lama (dibaca ingest sampai dimigrasi `scripts/migrate_kpt8_rahasia.py`).
 ```
 
 #### hr_field_tracks  [FASE H2 IMPLEMENTED — Breadcrumb GPS Live Tracking]

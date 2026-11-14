@@ -1,16 +1,18 @@
 import { useEffect, useState } from "react";
 import axios, { API } from "../../services/apiClient";
-import { Sparkles, KeyRound, CheckCircle2, AlertCircle } from "lucide-react";
-import KNSelect from "../../components/KNSelect";
+import { Sparkles, KeyRound, CheckCircle2, AlertCircle, ShieldAlert } from "lucide-react";
+import LinkCard from "../../components/LinkCard";
 
-// FASE H5 — Panel Integrasi AI (Anthropic Claude). Admin only. Keputusan 1a.
+// FASE H5 — Panel Integrasi AI (Anthropic Claude). Keputusan 1a.
 // Key TIDAK pernah ditampilkan plaintext — hanya status has_key.
-export default function IntegrationsPanel() {
+// KP-T8 — wewenang = izin `integration.manage` (prop `canManage`, dihitung `can(...)` di pemanggil). Hidup/mati dan
+// model pengenal gambar (KP-31) pindah ke Pusat Pengaturan (`integrations.anthropic.*`); kartu ini menampilkan nilai
+// yang dipakai mesin + kunci penyedia. Peringatan bila kunci enkripsi server (`secrets_key_configured`) belum dipasang.
+export default function IntegrationsPanel({ canManage = true }) {
   const [cfg, setCfg] = useState(null);
+  const [secretsOk, setSecretsOk] = useState(true);
   const [loading, setLoading] = useState(true);
   const [apiKey, setApiKey] = useState("");
-  const [model, setModel] = useState("claude-sonnet-4-6");
-  const [enabled, setEnabled] = useState(false);
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState("");
   const [err, setErr] = useState("");
@@ -20,29 +22,28 @@ export default function IntegrationsPanel() {
     setLoading(true);
     try {
       const r = await axios.get(`${API}/admin/integrations`);
-      const a = r.data?.anthropic || {};
-      setCfg(a); setModel(a.model || "claude-sonnet-4-6"); setEnabled(!!a.enabled); setApiKey("");
+      setCfg(r.data?.anthropic || {}); setSecretsOk(r.data?.secrets_key_configured !== false); setApiKey("");
     } catch (e) { setErr(e.response?.data?.detail || "Gagal memuat konfigurasi."); }
     finally { setLoading(false); }
   }
 
   async function save({ clear = false } = {}) {
     setBusy(true); setErr(""); setMsg("");
-    const payload = { anthropic_model: model, anthropic_enabled: enabled };
+    const payload = {};
     if (clear) payload.anthropic_clear_key = true;
     else if (apiKey.trim()) payload.anthropic_api_key = apiKey.trim();
+    if (!Object.keys(payload).length) { setBusy(false); setErr("Isi API key dulu."); return; }
     try {
       const r = await axios.put(`${API}/admin/integrations`, payload);
-      const a = r.data?.anthropic || {};
-      setCfg(a); setModel(a.model); setEnabled(!!a.enabled); setApiKey("");
+      setCfg(r.data?.anthropic || {}); setSecretsOk(r.data?.secrets_key_configured !== false); setApiKey("");
       setMsg(clear ? "API key dihapus." : "Konfigurasi tersimpan.");
     } catch (e) { setErr(e.response?.data?.detail || "Gagal menyimpan."); }
     finally { setBusy(false); }
   }
 
   const hasKey = !!cfg?.has_key;
+  const enabled = !!cfg?.enabled;
   const active = hasKey && enabled;
-  const modelOpts = (cfg?.models_available || ["claude-sonnet-4-6", "claude-opus-4-7", "claude-haiku-4-5"]).map((m) => ({ value: m, label: m }));
 
   return (
     <section className="section-card" data-testid="integrations-panel">
@@ -52,6 +53,11 @@ export default function IntegrationsPanel() {
           <p className="text-[12px] text-[#6B6B73] py-4">Memuat…</p>
         ) : (
           <div className="grid gap-3 max-w-[560px]">
+            {!secretsOk && (
+              <div className="flex items-center gap-2 rounded-lg bg-kn-warning-soft px-3 py-2 text-fs-12 font-semibold text-kn-warning-text" data-testid="integrations-secrets-warning">
+                <ShieldAlert size={15} /> Kunci enkripsi server belum dipasang. Rahasia yang disimpan sekarang belum terenkripsi.
+              </div>
+            )}
             <div className={`flex items-center gap-2 rounded-lg px-3 py-2 text-[12px] font-semibold ${active ? "bg-[#E7F5EC] text-[#1F7A45]" : "bg-[#FBF3E2] text-[#B7791F]"}`} data-testid="integrations-status">
               {active ? <CheckCircle2 size={15} /> : <AlertCircle size={15} />}
               {active ? "AI aktif — auto-tag galeri tersedia." : hasKey ? "Key tersimpan, tetapi AI dinonaktifkan." : "AI nonaktif — belum ada API key. Galeri tetap berfungsi penuh."}
@@ -67,20 +73,16 @@ export default function IntegrationsPanel() {
               <p className="text-[10.5px] text-[#9A9BA3]">Key disimpan aman di server & tidak pernah ditampilkan kembali.</p>
             </div>
 
-            <div className="grid gap-1">
-              <label className="text-[11px] font-bold uppercase text-[#6B6B73]">Model</label>
-              <KNSelect data-testid="integrations-model" value={model} onValueChange={setModel} options={modelOpts} className="field !w-[260px]" />
-            </div>
+            <p className="text-fs-12 text-kn-text-2" data-testid="integrations-model-used">Model dipakai: {cfg?.model || "—"}</p>
+            <LinkCard testId="integrations-registry-link" what="Hidup/mati dan model pengenal gambar"
+              where="Pengaturan › Integrasi & Sistem › AI & Tampilan" view="settings-cfg-system" />
 
-            <label className="flex items-center gap-2 text-[12.5px] cursor-pointer">
-              <input data-testid="integrations-enabled" type="checkbox" checked={enabled} onChange={(e) => setEnabled(e.target.checked)} className="h-4 w-4 accent-[#0058CC]" />
-              Aktifkan auto-tag AI pada Galeri Desain
-            </label>
-
-            <div className="flex items-center gap-2 pt-1">
-              <button data-testid="integrations-save" className="btn-primary" onClick={() => save()} disabled={busy}>{busy ? "Menyimpan…" : "Simpan Konfigurasi"}</button>
-              {hasKey && <button data-testid="integrations-clear" className="btn-secondary" onClick={() => save({ clear: true })} disabled={busy}>Hapus Key</button>}
-            </div>
+            {canManage && (
+              <div className="flex items-center gap-2 pt-1">
+                <button data-testid="integrations-save" className="btn-primary" onClick={() => save()} disabled={busy}>{busy ? "Menyimpan…" : "Simpan Kunci"}</button>
+                {hasKey && <button data-testid="integrations-clear" className="btn-secondary" onClick={() => save({ clear: true })} disabled={busy}>Hapus Key</button>}
+              </div>
+            )}
           </div>
         )}
       </div>

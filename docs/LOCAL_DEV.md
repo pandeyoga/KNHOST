@@ -43,7 +43,7 @@ sama dengan tombol login cepat di layar masuk. Sumber: `backend/scripts/demo_api
    TZ=Asia/Jakarta
    # OPENAI_API_KEY=      (opsional: Tanya KN / OCR)
    # GEMINI_API_KEY=
-   # KN_SECRETS_KEY=      (opsional: kunci Fernet untuk API key terenkripsi di DB)
+   # KN_SECRETS_KEY=      (opsional: kunci Fernet untuk rahasia terenkripsi di DB — lihat catatan di bawah)
    ```
    `frontend/.env`
    ```
@@ -56,6 +56,13 @@ sama dengan tombol login cepat di layar masuk. Sumber: `backend/scripts/demo_api
    * `SESSION_COOKIE_SECURE=false` — tanpa ini cookie login tidak tersimpan di `http://`.
    * `DB_NAME=test_database` — banyak script lama memakai nama ini.
    * `KN_DEMO_DATA=true` — akun awal bersandi `demo12345` (bukan sandi acak).
+   * `KN_SECRETS_KEY` (KP-T8) — satu kunci untuk SEMUA rahasia yang dikirim ke pihak luar (kunci penyedia AI, token
+     WhatsApp): disimpan berawalan `enc:v1:` (`backend/services/secret_box.py`). Tanpa variabel ini rahasia disimpan
+     polos dan layar Integrasi menampilkan peringatan "Kunci enkripsi server belum dipasang"; dengan variabel ini rahasia
+     polos lama dibungkus saat pertama dibaca. Kunci dibuat sekali, mis.
+     `python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())"`, lalu dicadangkan —
+     kunci hilang = rahasia terbungkus tidak terbaca (isi ulang di layar). Token mesin absen dan kunci perangkat RFID
+     tidak memakai kunci ini (disimpan sebagai hash). Untuk dev cukup dikosongkan; memasang di server produksi = pemilik.
 
 ## Menjalankan
 

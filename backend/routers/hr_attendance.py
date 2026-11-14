@@ -7,7 +7,13 @@ hr_attendance (att_), hr_devices (dev_). Lihat ENTITY_REGISTRY.md + memory/PLAN_
 RBAC: read = hr.view · CRUD shift/geofence/device + manual/approve/import = hr.manage_attendance.
 ESS clock-in/out + /me = autentikasi + karyawan ter-link (lihat data SENDIRI).
 Ingest (agen jembatan on-prem) = auth device_token (tanpa sesi).
+
+KP-T8 (KP-14) — token mesin absen disimpan sebagai HASH (`device_token_hash`, `secret_box.hash_token`) dan hanya
+ditampilkan sekali saat dibuat/diganti (`shown_once`); daftar perangkat tidak pernah mengirim token maupun hash-nya.
+Ingest membandingkan hash token kiriman, lalu bentuk lama `device_token` polos (perangkat yang belum dimigrasi
+`scripts/migrate_kpt8_rahasia.py`), sehingga mesin terpasang tidak putus.
 """
+import secrets
 from typing import Any, Dict, List
 from fastapi import APIRouter, HTTPException, Request
 from pymongo import ReturnDocument
@@ -25,6 +31,7 @@ from schemas_hr_attendance import (
 )
 from services import hr_attendance_service as att
 from services import hr_service
+from services import secret_box
 
 router = APIRouter(prefix="/api")
 
@@ -32,6 +39,8 @@ SHIFT_FIELDS = {"name", "code", "jam_in", "jam_out", "grace_late_min", "break_mi
                 "work_days", "status", "entity_id"}
 GEO_FIELDS = {"name", "lat", "lon", "radius_m", "address", "status", "entity_id"}
 DEVICE_FIELDS = {"name", "code", "location", "status", "entity_id"}
+#: KP-T8 — field rahasia perangkat yang tidak pernah dikirim ke layar.
+DEVICE_SECRET_FIELDS = ("device_token", "device_token_hash")
 ATT_PATCH_FIELDS = {"status", "note", "approved", "clock_in", "clock_out"}
 
 
@@ -185,13 +194,39 @@ async def deactivate_geofence(geo_id: str, request: Request) -> Dict[str, Any]:
 
 
 # ════════════════════════════ DEVICES ═══════════════════════════════════════
+def new_device_token() -> str:
+    """KP-T8 — `at_` + 32 karakter heksadesimal acak (dulu `devtok_` + 12)."""
+    return f"at_{secrets.token_hex(16)}"
+
+
+def token_fields(token: str, rotation_required: bool = False) -> Dict[str, Any]:
+    """Field penyimpanan token: hanya hash + 4 karakter terakhir (untuk dikenali di layar)."""
+    return {"device_token_hash": secret_box.hash_token(token), "device_token_hint": token[-4:],
+            "device_token_at": now_iso(), "token_rotation_required": bool(rotation_required)}
+
+
+def public_device(doc: Dict[str, Any]) -> Dict[str, Any]:
+    """Baris perangkat untuk layar: tanpa token maupun hash. Bentuk lama (token polos, belum dimigrasi) ditandai
+    `token_rotation_required` — token itu pernah tampil di layar."""
+    doc = safe_doc(dict(doc or {}))
+    lama = str(doc.get("device_token") or "")
+    out = {k: v for k, v in doc.items() if k not in DEVICE_SECRET_FIELDS}
+    if lama:
+        out.setdefault("device_token_hint", lama[-4:])
+        out["token_rotation_required"] = True
+    out.setdefault("device_token_hint", "")
+    out.setdefault("device_token_at", "")
+    out["token_rotation_required"] = bool(out.get("token_rotation_required"))
+    return out
+
+
 @router.get("/hr/devices")
 async def list_devices(request: Request, entity_id: str = None) -> List[Dict[str, Any]]:
     await require_permission(request, "hr", "view")
     ctx = await entity_ctx(request)
     q = resolve_list_scope("hr_devices", {}, ctx, entity_id)
     rows = await db.hr_devices.find(q, {"_id": 0}).sort("name", 1).to_list(500)
-    return rows
+    return [public_device(r) for r in rows]
 
 
 @router.post("/hr/devices")
@@ -200,16 +235,34 @@ async def create_device(payload: HrDeviceCreate, request: Request) -> Dict[str, 
     ctx = await entity_ctx(request)
     if not payload.name.strip():
         raise HTTPException(status_code=400, detail="Nama perangkat wajib diisi")
+    token = new_device_token()
     doc = {
         "id": new_id("dev"), "name": payload.name.strip(), "code": payload.code.strip(),
-        "location": payload.location or "", "device_token": new_id("devtok"),
+        "location": payload.location or "", **token_fields(token),
         "last_sync": "", "status": "active",
         "entity_id": payload.entity_id or ctx.active_entity_id,
         "created_by": actor["name"], "created_at": now_iso(), "updated_at": now_iso(),
     }
     await db.hr_devices.insert_one(doc)
     await audit(actor["name"], "hr_device_created", "hr_device", doc["id"], {"name": doc["name"]})
-    return safe_doc(doc)
+    # Token ditampilkan SEKALI di jawaban ini; yang tersimpan hanya hash-nya.
+    return {**public_device(doc), "device_token": token, "shown_once": True}
+
+
+@router.post("/hr/devices/{dev_id}/rotate-token")
+async def rotate_device_token(dev_id: str, request: Request) -> Dict[str, Any]:
+    """KP-T8 — terbitkan token baru (tampil sekali); token lama langsung tidak berlaku. Cakupan PT seperti PATCH."""
+    actor = await require_permission(request, "hr", "manage_attendance")
+    ctx = await entity_ctx(request)
+    cur = safe_doc(await db.hr_devices.find_one({"id": dev_id}, {"_id": 0}))
+    if not cur:
+        raise HTTPException(status_code=404, detail="Perangkat tidak ditemukan")
+    assert_entity_access(cur, "hr_devices", ctx)
+    token = new_device_token()
+    await db.hr_devices.update_one({"id": dev_id}, {"$set": {**token_fields(token), "updated_at": now_iso()},
+                                                    "$unset": {"device_token": ""}})
+    await audit(actor["name"], "hr_device_token_rotated", "hr_device", dev_id, {"name": cur.get("name", "")})
+    return {"device_id": dev_id, "device_token": token, "device_token_hint": token[-4:], "shown_once": True}
 
 
 @router.patch("/hr/devices/{dev_id}")
@@ -227,7 +280,7 @@ async def update_device(dev_id: str, payload: GenericPatch, request: Request) ->
     updated = await db.hr_devices.find_one_and_update(
         {"id": dev_id}, {"$set": updates}, projection={"_id": 0}, return_document=ReturnDocument.AFTER)
     await audit(actor["name"], "hr_device_updated", "hr_device", dev_id, updates)
-    return safe_doc(updated)
+    return public_device(updated)
 
 
 @router.delete("/hr/devices/{dev_id}")
@@ -242,7 +295,7 @@ async def deactivate_device(dev_id: str, request: Request) -> Dict[str, Any]:
         {"id": dev_id}, {"$set": {"status": "inactive", "updated_at": now_iso()}},
         projection={"_id": 0}, return_document=ReturnDocument.AFTER)
     await audit(actor["name"], "hr_device_deactivated", "hr_device", dev_id, {})
-    return safe_doc(updated)
+    return public_device(updated)
 
 
 # ════════════════════════════ ATTENDANCE (read) ═════════════════════════════
@@ -502,11 +555,16 @@ async def import_attendance(payload: AttendanceImportInput, request: Request) ->
 
 @router.post("/hr/attendance/ingest")
 async def ingest_attendance(payload: AttendanceIngestInput, request: Request) -> Dict[str, Any]:
-    """Endpoint agen jembatan on-prem (ZKTeco pull). Auth: device_token (tanpa sesi)."""
+    """Endpoint agen jembatan on-prem (ZKTeco pull). Auth: device_token (tanpa sesi).
+
+    KP-T8 — cocokkan hash token kiriman; bila tidak ada, bentuk lama `device_token` polos (belum dimigrasi)."""
     if not payload.device_token:
         raise HTTPException(status_code=401, detail="device_token diperlukan")
     device = await db.hr_devices.find_one(
-        {"device_token": payload.device_token, "status": "active"}, {"_id": 0})
+        {"device_token_hash": secret_box.hash_token(payload.device_token), "status": "active"}, {"_id": 0})
+    if not device:
+        device = await db.hr_devices.find_one(
+            {"device_token": payload.device_token, "status": "active"}, {"_id": 0})
     if not device:
         raise HTTPException(status_code=401, detail="device_token tidak valid")
     result = await _ingest_records(payload.records or [], device["entity_id"])

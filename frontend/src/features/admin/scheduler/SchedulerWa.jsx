@@ -4,12 +4,17 @@
  * Mode default = SIMULASI: pesan TIDAK dikirim ke jaringan tetapi tetap tercatat di
  * Outbox (tujuan + isi lengkap) sehingga user bisa memverifikasi sebelum mengisi
  * kredensial provider nyata (Meta Cloud API / Fonnte).
+ *
+ * KP-T8 (KP-16) — setelah koneksi WhatsApp tunggal ada (`wa.connection_managed`), penyedia & kredensial diatur di
+ * Pengaturan › Integrasi & Sistem › Integrasi & Audit: isian koneksi di sini diganti ringkasan hanya-baca + tautan,
+ * dan simpan hanya mengirim isian pemakaian (server menolak field koneksi).
  */
 import { useState } from "react";
 import { Send, RotateCcw, ShieldCheck, Info, Loader2, Trash2, Eye } from "lucide-react";
 import KNSelect from "../../../components/KNSelect";
 import { Badge } from "../../finance/financeShared";
 import { inputCls, labelCls, fmtWaktu } from "./SchedulerParts";
+import LinkCard from "../../../components/LinkCard";
 
 const PROVIDER_OPTS = [
   { value: "simulated", label: "Simulasi (tercatat di Outbox, tidak dikirim)" },
@@ -51,14 +56,18 @@ export function WaSettingsPanel({ wa, perms, saving, onSave, onTest, testing, on
   });
   const [testPhone, setTestPhone] = useState(wa.pic_number || "");
   const set = (k, v) => setForm((f) => ({ ...f, [k]: v }));
+  const managed = !!wa.connection_managed;   // KP-T8 — koneksi tunggal diatur di layar Integrasi
+  const conn = wa.connection || {};
 
   const submit = () => {
     const payload = {
-      enabled: form.enabled, provider: form.provider,
+      enabled: form.enabled,
       pic_number: form.pic_number, send_to_roles: form.send_to_roles,
       min_severity: form.min_severity,
       delivery_mode: form.delivery_mode, critical_bypass: form.critical_bypass,
     };
+    if (managed) { onSave(payload); return; }
+    payload.provider = form.provider;
     if (form.provider === "meta_cloud") {
       payload.phone_number_id = form.phone_number_id;
       payload.template_name = form.template_name;
@@ -96,12 +105,14 @@ export function WaSettingsPanel({ wa, perms, saving, onSave, onTest, testing, on
                    className="h-4 w-4 accent-[#6B219A]" />
             Aktifkan kanal WhatsApp untuk alert
           </label>
+          {!managed && (
           <div className="mb-3">
             <label className={labelCls}>Provider</label>
             <KNSelect data-testid="wa-provider-select" value={form.provider}
                       onValueChange={(v) => set("provider", v)} options={PROVIDER_OPTS}
                       className={inputCls} disabled={!perms.configure} />
           </div>
+          )}
           <div className="mb-3">
             <label className={labelCls}>Kirim untuk tingkat kepentingan</label>
             <KNSelect data-testid="wa-severity-select" value={form.min_severity}
@@ -160,12 +171,22 @@ export function WaSettingsPanel({ wa, perms, saving, onSave, onTest, testing, on
           <div className="mb-2.5 flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wide text-[#8E8E93]">
             <ShieldCheck size={13} /> Kredensial
           </div>
-          {form.provider === "simulated" && (
+          {managed && (
+            <div className="space-y-2" data-testid="wa-connection-managed">
+              <p className="text-fs-12 text-kn-text">
+                {conn.provider_label || conn.provider}{conn.phone_number_id ? ` · nomor pengirim ${conn.phone_number_id}` : ""}
+                {` · token ${conn.has_access_token || conn.has_fonnte_token ? "sudah terisi" : "belum terisi"}`}
+              </p>
+              <LinkCard testId="wa-connection-link" what="Koneksi WhatsApp" label="Atur koneksi di Integrasi"
+                where="Pengaturan › Integrasi & Sistem › Integrasi & Audit" view="admin" />
+            </div>
+          )}
+          {!managed && form.provider === "simulated" && (
             <p className="text-[11.5px] text-[#8E8E93]">
               Mode simulasi tidak memerlukan kredensial. Pilih provider lain untuk mengirim nyata.
             </p>
           )}
-          {form.provider === "fonnte" && (
+          {!managed && form.provider === "fonnte" && (
             <div>
               <label className={labelCls}>Fonnte API Token {wa.has_fonnte_token && <span className="text-[#1B7F4B]">· tersimpan</span>}</label>
               <input data-testid="wa-fonnte-token-input" type="password" className={inputCls}
@@ -175,7 +196,7 @@ export function WaSettingsPanel({ wa, perms, saving, onSave, onTest, testing, on
               <p className="mt-1 text-[10px] text-[#9A9BA3]">Dapatkan di dasbor Fonnte → menu Device → Token.</p>
             </div>
           )}
-          {form.provider === "meta_cloud" && (
+          {!managed && form.provider === "meta_cloud" && (
             <div className="space-y-2.5">
               <div>
                 <label className={labelCls}>Phone Number ID</label>
@@ -225,7 +246,7 @@ export function WaSettingsPanel({ wa, perms, saving, onSave, onTest, testing, on
       </div>
 
       <div className="flex items-center justify-end gap-2">
-        {perms.configure && (wa.has_access_token || wa.has_fonnte_token) && (
+        {perms.configure && !managed && (wa.has_access_token || wa.has_fonnte_token) && (
           <button data-testid="wa-clear-tokens" disabled={saving}
                   onClick={() => onSave({ clear_tokens: true, provider: "simulated", enabled: form.enabled })}
                   className="inline-flex items-center gap-1.5 rounded-lg border border-[#F3D6D6] px-3 py-2 text-[12px] font-semibold text-[#C0392B] hover:bg-[#FDECEC] disabled:opacity-40">

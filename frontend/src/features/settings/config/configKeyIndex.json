@@ -1685,6 +1685,14 @@
    "sistem",
    "tanya-kn"
   ],
+  "integrations.anthropic.enabled": [
+   "sistem",
+   "tanya-kn"
+  ],
+  "integrations.anthropic.model": [
+   "sistem",
+   "tanya-kn"
+  ],
   "rfid.evidence_retention_mode": [
    "sistem",
    "rfid-proses"

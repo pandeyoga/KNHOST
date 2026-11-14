@@ -826,3 +826,16 @@ for _role, _mods in MNT1_DEFAULT_PAIRS.items():
         if "view" in _acts and "view" not in _cur:
             _cur.insert(0, "view")
         DEFAULT_PERMISSIONS[_role][_res] = _cur + [a for a in _acts if a not in _cur]
+
+# ═══════════════════════════════════════════════════════════════════════════
+# KP-T8 (KP-32, K-47) — kunci integrasi dijaga izinnya sendiri `integration.manage` (dulu `hr.manage_settings`, yang juga
+# menjaga pengaturan SDM). Bawaan: Admin — satu-satunya peran bawaan pemegang `hr.manage_settings`, jadi tidak ada yang
+# kehilangan akses. Instalasi lama menerima pasangan ini sekali lewat `bootstrap.sync_permission_modules`
+# (`defaults_applied`, PR-T9); peran kustom/bawaan lain yang memegang `hr.manage_settings` diberi `integration.manage`
+# oleh `scripts/migrate_kpt8_rahasia.py` (dijalankan pemilik — H3).
+# ═══════════════════════════════════════════════════════════════════════════
+KPT8_DEFAULT_PAIRS = {"admin": {"integration": ("manage",)}}
+for _role, _mods in KPT8_DEFAULT_PAIRS.items():
+    for _res, _acts in _mods.items():
+        _cur = list(DEFAULT_PERMISSIONS[_role].get(_res) or [])
+        DEFAULT_PERMISSIONS[_role][_res] = _cur + [a for a in _acts if a not in _cur]

@@ -1471,10 +1471,15 @@ async def seed_hr_attendance_foundation() -> None:
                 await db.hr_employees.update_one({"id": e["id"]}, {"$set": updates})
 
     # 3) Registry device fingerprint utk entitas utama (idempotent)
+    # KP-T8 — token contoh disimpan sebagai hash dan tidak pernah ditampilkan; pakai "Ganti token" untuk memasang mesin.
     if not await db.hr_devices.count_documents({"entity_id": PRIMARY_ENTITY_ID}):
+        import secrets as _secrets
+        from services import secret_box
+        _tok = f"at_{_secrets.token_hex(16)}"
         await db.hr_devices.insert_one({
             "id": new_id("dev"), "name": "ZKTeco K40 — Pintu Utama", "code": "ZK-K40-001",
-            "location": "Lobby Kantor Pusat", "device_token": new_id("devtok"),
+            "location": "Lobby Kantor Pusat", "device_token_hash": secret_box.hash_token(_tok),
+            "device_token_hint": _tok[-4:], "device_token_at": now_iso(), "token_rotation_required": False,
             "last_sync": "", "status": "active", "entity_id": PRIMARY_ENTITY_ID,
             "created_by": "seed", "created_at": now_iso(), "updated_at": now_iso(),
         })

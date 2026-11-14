@@ -245,7 +245,8 @@ MODULE_CATALOG: List[Dict[str, Any]] = [
      "sensitive": True},
     {"id": "settings", "group": "Organisasi", "label": "Pusat Pengaturan",
      "description": "Aturan sistem yang dipakai mesin: persetujuan, master domain, dokumen, notifikasi, dan integrasi.",
-     "resources": ["settings"],
+     # KP-T8 (KP-32) — `integration` = kunci layanan luar & koneksi WhatsApp (layar Integrasi & Audit, id menu `admin`).
+     "resources": ["settings", "integration"],
      "nav": ["settings-hub", "settings-system", "settings-config", "settings-cfg-system", "admin",
              "settings-approval", "approval-rules", "settings-cfg-approval", "settings-masters", "domain-registry",
              # KF-T4 — `settings-cfg-documents` & `settings-cfg-notify` kini alias ke `settings-cfg-approval` (sub-judul
@@ -463,6 +464,8 @@ _SENSITIVE_GROUPS: List[Tuple[str, Tuple[Tuple[str, str], ...]]] = [
     ("menyetujui nilai persediaan, melepas aset, dan mencatat akrual insentif",
      (("inventory", "approve_value"), ("fixed_asset", "dispose"), ("sales_force", "post"))),
     ("mengatur perangkat dan alat sistem", (("rfid_device", "configure"), ("system_tools", "configure"))),
+    # KP-T8 — kunci layanan luar (AI, WhatsApp) = rahasia yang dikirim ke pihak luar.
+    ("mengisi kunci layanan luar dan koneksi WhatsApp", (("integration", "manage"),)),
 ]
 SENSITIVE_ACTIONS: Dict[Tuple[str, str], str] = {pair: kalimat for kalimat, pairs in _SENSITIVE_GROUPS
                                                  for pair in pairs}
@@ -559,6 +562,9 @@ ACTION_LABEL = {
 ACTION_LABEL.update({"manage_credit": "Ubah plafon & blokir kredit", "tax_override": "Buat pesanan tanpa PPN"})
 # PR-T4 — KPI & komisi sales lain (modul Pesanan Penjualan; dulu daftar nama peran di `_kpi_scope`).
 ACTION_LABEL.update({"order.view_sales_kpi": "Lihat KPI & komisi sales lain"})
+# KP-T8 — kunci layanan luar & koneksi WhatsApp (modul Pusat Pengaturan).
+RESOURCE_LABEL["integration"] = "Integrasi & Kunci Layanan Luar"
+ACTION_LABEL["integration.manage"] = "Kelola"
 # PR-T5 — aksi yang belum berlabel (`set` dari kamus layar lama `auditLabels.js`).
 ACTION_LABEL.update({"count": "Hitung", "review": "Tinjau", "close": "Tutup", "set": "Atur"})
 #: PR-T2 — label aksi templat laporan Tanya KN = judul templat.
@@ -662,6 +668,9 @@ del _v
 # PK-37 — kunci `periode.kunci_dokumen` (kelompok "Pajak, pembukuan & antar-PT") diubah pemegang `accounting.manage`;
 # aturan KF-T1 (U14): tab kelompok itu juga terbuka bagi pemegang izin pengubah kuncinya.
 VIEW_RESOURCE_OVERRIDES["settings-cfg-finance"] = [*VIEW_RESOURCE_OVERRIDES["settings-cfg-finance"], "accounting"]
+# KP-T8 — kunci `integrations.anthropic.*` (kelompok "sistem") diubah pemegang `integration.manage`; aturan KF-T1 (U14):
+# tab kelompok itu juga terbuka bagi pemegang izin pengubah kuncinya.
+VIEW_RESOURCE_OVERRIDES["settings-cfg-system"] = [*VIEW_RESOURCE_OVERRIDES["settings-cfg-system"], "integration"]
 
 
 #: PR-T5 — menu yang butuh AKSI tertentu (bukan sekadar "ada aksi apa pun pada sumber daya modulnya"). Dikirim

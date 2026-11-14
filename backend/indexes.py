@@ -639,6 +639,14 @@ async def ensure_performance_indexes() -> dict:
         uq_summary["failed"].append("supplier_items.supplier_sku")
         logger.error("[indexes] UNIK supplier_items(supplier_id,supplier_sku) GAGAL — jalankan "
                      "scripts/check_supplier_item_duplicates.py: %s", exc)
+    try:
+        # KP-T8 (KP-14) — satu token mesin absen per perangkat: hash token unik (hanya dokumen yang punya field itu).
+        await db.hr_devices.create_index(
+            [("device_token_hash", ASCENDING)], name="uq_device_token_hash", unique=True, background=True,
+            partialFilterExpression={"device_token_hash": {"$type": "string"}})
+    except Exception as exc:  # noqa: BLE001
+        uq_summary["failed"].append("hr_devices.device_token_hash")
+        logger.error("[indexes] UNIK hr_devices.device_token_hash GAGAL: %s", exc)
     summary["unique"] = uq_summary
     logger.info(
         "[indexes] performance indexes → created=%d existed=%d failed=%d",

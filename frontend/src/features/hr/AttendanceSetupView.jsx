@@ -7,12 +7,15 @@
  *    Geofence tersisa kartu TAUTAN ke sana (keputusan pemilik: duplikat = tautan, fitur & hak tetap).
  *  · L-01 — tab buatan sendiri (`TabBtn`) → `PageTabs` baku; L-03 — laci (Sheet) → `FormModal` baku (di HP
  *    layar penuh, isian tetap lengkap).
+ *  · KP-T8 (KP-14) — token mesin absen tidak lagi ikut daftar: tombol "Salin token perangkat" dibuang. Token tampil
+ *    SEKALI di pop-up "Token perangkat" setelah buat / Ganti token (`POST /hr/devices/{id}/rotate-token`); baris hanya
+ *    menulis "Token berakhiran …{hint}" dan tanda "Disarankan ganti" untuk token lama yang pernah tampil di layar.
  */
 import { useEffect, useMemo, useState } from "react";
 import apiErrorText from "../../utils/apiError";
 import axios, { API } from "../../services/apiClient";
 import KNTimePicker from "@/components/KNTimePicker";
-import { Clock, MapPin, Cpu, Plus, Pencil, Power, Crosshair, Copy, CheckCircle2 } from "lucide-react";
+import { Clock, MapPin, Cpu, Plus, Pencil, Power, Crosshair, Copy, CheckCircle2, KeyRound, AlertTriangle } from "lucide-react";
 import EntityBadge from "../../components/EntityBadge";
 import ErrorNotice from "../../components/ErrorNotice";
 import ConfirmModal from "../../components/ConfirmModal";
@@ -32,7 +35,8 @@ const KIND = {
 const ENDPOINTS = {
   shift: { list: `${API}/hr/shifts`, item: (id) => `${API}/hr/shifts/${id}` },
   geofence: { list: `${API}/hr/geofences`, item: (id) => `${API}/hr/geofences/${id}` },
-  device: { list: `${API}/hr/devices`, item: (id) => `${API}/hr/devices/${id}` },
+  device: { list: `${API}/hr/devices`, item: (id) => `${API}/hr/devices/${id}`,
+    rotate: (id) => `${API}/hr/devices/${id}/rotate-token` },
 };
 const EMPTY = {
   shift: { name: "", code: "", jam_in: "08:00", jam_out: "17:00", grace_late_min: 10, break_min: 60, work_days: [1, 2, 3, 4, 5] },
@@ -59,7 +63,9 @@ export default function AttendanceSetupView({ currentUser, selectedEntity, only 
   const [editId, setEditId] = useState(null);
   const [saving, setSaving] = useState(false);
   const [deactivate, setDeactivate] = useState(null);
-  const [copied, setCopied] = useState("");
+  const [copied, setCopied] = useState(false);
+  const [rotate, setRotate] = useState(null);          // KP-T8 — perangkat yang akan diganti tokennya
+  const [shownToken, setShownToken] = useState(null);  // KP-T8 — {name, token} tampil sekali
   const [formErr, setFormErr] = useState("");
   const cfg = KIND[tab];
   // G5-28: tombol simpan nonaktif sampai isian wajib terisi; galat simpan tampil DI DALAM pop-up.
@@ -104,7 +110,10 @@ export default function AttendanceSetupView({ currentUser, selectedEntity, only 
     if (selectedEntity && selectedEntity !== "all") payload.entity_id = selectedEntity;
     try {
       if (editId) await axios.patch(ENDPOINTS[tab].item(editId), { data: payload });
-      else await axios.post(ENDPOINTS[tab].list, payload);
+      else {
+        const r = await axios.post(ENDPOINTS[tab].list, payload);
+        if (tab === "device" && r.data?.device_token) showToken(r.data.name, r.data.device_token);
+      }
       setNotice(editId ? `${cfg.label} diperbarui.` : `${cfg.label} baru dibuat.`); setDrawerOpen(false); load();
     } catch (e) { setFormErr(apiErrorText(e, `Gagal menyimpan ${cfg.label}.`)); }
     finally { setSaving(false); }
@@ -113,7 +122,14 @@ export default function AttendanceSetupView({ currentUser, selectedEntity, only 
     try { await axios.delete(ENDPOINTS[tab].item(it.id)); setNotice(`${it.name} dinonaktifkan.`); setDeactivate(null); load(); }
     catch (e) { setError(apiErrorText(e, "Gagal menonaktifkan.")); setDeactivate(null); }
   }
-  function copyToken(t) { navigator.clipboard?.writeText(t); setCopied(t); setTimeout(() => setCopied(""), 1500); }
+  function showToken(name, token) { setCopied(false); setShownToken({ name, token }); }
+  function copyToken() { navigator.clipboard?.writeText(shownToken?.token || ""); setCopied(true); }
+  async function doRotate(it) {
+    try {
+      const r = await axios.post(ENDPOINTS.device.rotate(it.id));
+      setRotate(null); showToken(it.name, r.data.device_token); load();
+    } catch (e) { setError(apiErrorText(e, "Gagal mengganti token.")); setRotate(null); }
+  }
 
   return (
     <div data-testid={deviceOnly ? "attendance-devices-view" : "attendance-setup-view"}>
@@ -155,14 +171,24 @@ export default function AttendanceSetupView({ currentUser, selectedEntity, only 
                       {tab === "device" && `${it.code || "—"}${it.location ? ` · ${it.location}` : ""} · sync: ${it.last_sync ? it.last_sync.slice(0, 16).replace("T", " ") : "belum pernah"}`}
                     </p>
                     {tab === "device" && (
-                      <button data-testid={`device-token-${it.id}`} onClick={() => copyToken(it.device_token)} className="mt-1 inline-flex items-center gap-1 text-[10.5px] text-[#0058CC] hover:underline">
-                        {copied === it.device_token ? <><CheckCircle2 size={11} /> Token disalin</> : <><Copy size={11} /> Salin token perangkat</>}
-                      </button>
+                      <div className="mt-1 flex flex-wrap items-center gap-1.5">
+                        <span data-testid={`device-token-${it.id}`} className="inline-flex items-center gap-1 text-fs-12 text-kn-text-2">
+                          <KeyRound size={12} aria-hidden="true" />
+                          {it.device_token_hint ? <>Token berakhiran …{it.device_token_hint}</> : "Belum ada token — tekan Ganti token."}
+                        </span>
+                        {it.token_rotation_required && (
+                          <span data-testid={`device-token-warn-${it.id}`} className="inline-flex flex-wrap items-center gap-1 text-fs-12 text-kn-warning-text">
+                            <span className="status-pill pill-warning !normal-case"><AlertTriangle size={12} aria-hidden="true" /> Disarankan ganti</span>
+                            {" — token lama pernah tampil di layar."}
+                          </span>
+                        )}
+                      </div>
                     )}
                   </div>
                 </div>
                 {canManage && (
                   <div className="flex items-center gap-1 shrink-0">
+                    {tab === "device" && <button data-testid={`device-rotate-${it.id}`} onClick={() => setRotate(it)} className="secondary-button btn-sm"><KeyRound size={13} /> Ganti token</button>}
                     <button data-testid={`setup-edit-${it.id}`} onClick={() => openEdit(it)} className="icon-button" title="Ubah" aria-label="Ubah"><Pencil size={13} /></button>
                     {it.status !== "inactive" && <button data-testid={`setup-deactivate-${it.id}`} onClick={() => setDeactivate(it)} className="icon-button text-red-400 hover:text-red-600" title="Nonaktifkan" aria-label="Nonaktifkan"><Power size={13} /></button>}
                   </div>
@@ -211,7 +237,7 @@ export default function AttendanceSetupView({ currentUser, selectedEntity, only 
           {tab === "device" && (<>
             <Field label="Nomor seri / kode" optional><input data-testid="setup-code" value={form.code} onChange={(e) => set("code", e.target.value)} className="field" placeholder="mis. nomor seri di label mesin" /></Field>
             <Field label="Lokasi pemasangan" optional><input data-testid="setup-location" value={form.location} onChange={(e) => set("location", e.target.value)} className="field" placeholder="mis. Lobi kantor pusat" /></Field>
-            <p className="text-[11px] text-[#6B6B73]">Setelah dibuat, salin <b>token perangkat</b> dari daftar untuk dipasang di aplikasi penghubung mesin absen.</p>
+            <p className="text-fs-12 text-kn-text-2">Setelah dibuat, <b>token perangkat</b> tampil sekali untuk dipasang di aplikasi penghubung mesin absen.</p>
           </>)}
         </div>
       </FormModal>
@@ -219,6 +245,26 @@ export default function AttendanceSetupView({ currentUser, selectedEntity, only 
       <ConfirmModal open={!!deactivate} title={`Nonaktifkan ${cfg.label} · ${deactivate?.name || ""}`}
         message={`${cfg.label} akan dinonaktifkan dan tidak dipakai untuk absensi baru.`} confirmLabel="Nonaktifkan" danger
         onConfirm={() => doDeactivate(deactivate)} onCancel={() => setDeactivate(null)} testId="setup-deactivate-modal" />
+
+      {/* KP-T8 — ganti token: token lama langsung tidak berlaku. */}
+      <ConfirmModal open={!!rotate} title={`Ganti token ${rotate?.name || ""}?`}
+        message="Mesin yang masih memakai token lama berhenti mengirim absen sampai diisi token baru." confirmLabel="Ganti token"
+        onConfirm={() => doRotate(rotate)} onCancel={() => setRotate(null)} testId="device-rotate-modal" />
+
+      {/* KP-T8 — token tampil sekali (server hanya menyimpan hash-nya). */}
+      <FormModal open={!!shownToken} onClose={() => setShownToken(null)} testId="device-token-modal" size="sm" icon={KeyRound}
+        title="Token perangkat" subtitle={shownToken?.name || ""}
+        footer={<button type="button" className="primary-button" data-testid="device-token-done" onClick={() => setShownToken(null)}>Selesai</button>}>
+        <div className="grid gap-2">
+          <code data-testid="device-token-value" className="block break-all rounded-md bg-kn-neutral-soft px-2 py-2 text-fs-13 text-kn-text">{shownToken?.token}</code>
+          <button type="button" data-testid="device-token-copy" onClick={copyToken} className="secondary-button">
+            {copied ? <><CheckCircle2 size={13} /> Token disalin</> : <><Copy size={13} /> Salin</>}
+          </button>
+          <p className="flex items-center gap-1.5 rounded-md bg-kn-warning-soft px-2 py-1.5 text-fs-12 font-semibold text-kn-warning-text">
+            <AlertTriangle size={14} aria-hidden="true" /> Token hanya ditampilkan sekali. Simpan sekarang.
+          </p>
+        </div>
+      </FormModal>
     </div>
   );
 }

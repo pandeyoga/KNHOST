@@ -74,11 +74,18 @@ def valid_phone(phone: str) -> bool:
 
 # ═══ Pengaturan ══════════════════════════════════════════════════════════════
 async def raw_settings() -> Dict[str, Any]:
+    """Pengaturan pengingat + WhatsApp (token TERBUKA — hanya untuk server; respons API lewat `mask_wa`).
+
+    KP-T8 — token disimpan terbungkus (`secret_box`); token polos lama dibungkus saat pertama dibaca bila
+    `KN_SECRETS_KEY` terpasang. Token yang tidak bisa dibuka dibiarkan terbungkus (`secret_error` berisi galatnya) supaya
+    penjadwal tetap berjalan dan simpan berikutnya tidak menghapusnya."""
+    from services import wa_connection
     doc = await db.system_settings.find_one({"scope": SETTINGS_SCOPE}, {"_id": 0}) or {}
     wa = {**DEFAULT_WA, **(doc.get("wa") or {})}
+    wa, galat = await wa_connection.bungkus_malas("system_settings", {"scope": SETTINGS_SCOPE}, "wa.", wa)
     return {"scope": SETTINGS_SCOPE, "jobs": doc.get("jobs") or {}, "wa": wa,
             "escalation": doc.get("escalation") or {},
-            "updated_at": doc.get("updated_at", "")}
+            "updated_at": doc.get("updated_at", ""), "secret_error": galat}
 
 
 def mask_wa(wa: Dict[str, Any]) -> Dict[str, Any]:
@@ -149,11 +156,19 @@ def compose_text(notif: Dict[str, Any]) -> str:
 
 async def _dispatch(wa: Dict[str, Any], phone: str, text: str,
                     notif: Dict[str, Any]) -> Dict[str, Any]:
-    """Kirim via provider terpilih. Return {status, provider, error, message_id}."""
+    """Kirim via provider terpilih. Return {status, provider, error, message_id}.
+
+    KP-T8 — penyedia & kredensial dari `wa_connection.for_consumer("alerts")` (koneksi tunggal bila ada; bila belum,
+    konfigurasi lama pengingat); `wa` hanya menyumbang pengaturan pemakaian."""
+    from services import wa_connection
+    conn = await wa_connection.for_consumer("alerts")
+    wa = {**wa, **{k: conn[k] for k in wa_connection.KONEKSI_FIELDS}}
     provider_name = wa.get("provider") or "simulated"
     if provider_name == "simulated":
         logger.info("[WA:simulated] → %s :: %s", phone, notif.get("title", ""))
         return {"status": "simulated", "provider": "simulated", "error": "", "message_id": ""}
+    if conn.get("secret_error"):
+        return {"status": "failed", "provider": provider_name, "error": conn["secret_error"], "message_id": ""}
     settings = {k: v for k, v in wa.items()}
     provider = get_wa_provider(provider_name, settings)
     try:

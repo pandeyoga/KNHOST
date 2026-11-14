@@ -2,6 +2,9 @@
 // Fase 4 · R2 — L-03: `div fixed inset-0 z-[70]` buatan sendiri (tanpa Esc) → `FormModal` baku (kaki Simpan
 // menempel di tab Koneksi, layar penuh di HP). L-01: `TabBtn` buatan sendiri → `PageTabs` (`wa-tab-*` tetap).
 // Testid lain tetap (`wa-settings-modal` = kartu pop-up, `wa-set-*`).
+// KP-T8 (KP-16) — setelah koneksi WhatsApp tunggal ada (`connection_managed`), penyedia/nomor/token diatur di
+// Pengaturan › Integrasi & Sistem › Integrasi & Audit: isian itu diganti ringkasan hanya-baca + tautan; simpan hanya
+// mengirim isian pemakaian (`simulate`, `enabled`) — server menolak field koneksi.
 import { useEffect, useState } from "react";
 import axios, { API } from "../../services/apiClient";
 import FormModal from "../../components/FormModal";
@@ -10,6 +13,7 @@ import PageTabs from "../../components/PageTabs";
 import { Switch } from "@/components/ui/switch";
 import { Save, Loader2, MessageCircle, Settings2, Zap } from "lucide-react";
 import WhatsAppRules from "./WhatsAppRules";
+import LinkCard from "../../components/LinkCard";
 
 export default function WhatsAppSettings({ open, onClose }) {
   const [s, setS] = useState(null);
@@ -33,12 +37,12 @@ export default function WhatsAppSettings({ open, onClose }) {
   const save = async () => {
     setBusy(true); setErr(""); setMsg("");
     try {
-      const payload = {
+      const payload = s.connection_managed ? { simulate: s.simulate, enabled: s.enabled } : {
         provider: s.provider, simulate: s.simulate, enabled: s.enabled,
         phone_number_id: s.phone_number_id, default_country_code: s.default_country_code,
         sender_label: s.sender_label,
       };
-      if (token.trim()) payload.access_token = token.trim();
+      if (!s.connection_managed && token.trim()) payload.access_token = token.trim();
       const r = await axios.put(`${API}/deliveries/whatsapp/settings`, payload);
       setS(r.data); setToken(""); setMsg("Pengaturan tersimpan.");
     } catch (e) { setErr(e.response?.data?.detail || "Gagal menyimpan."); }
@@ -80,6 +84,16 @@ export default function WhatsAppSettings({ open, onClose }) {
               <span className="text-[12.5px] font-medium">Integrasi aktif</span>
               <Switch checked={!!s.enabled} onCheckedChange={(v) => patch("enabled", v)} data-testid="wa-set-enabled" />
             </label>
+            {s.connection_managed ? (
+              <div className="grid gap-2" data-testid="wa-set-connection-managed">
+                <p className="text-fs-12 text-kn-text">
+                  {s.connection?.provider_label || s.provider}{s.phone_number_id ? ` · nomor pengirim ${s.phone_number_id}` : ""}
+                  {` · ${s.sender_label || ""} · token ${s.has_token ? "sudah terisi" : "belum terisi"}`}
+                </p>
+                <LinkCard testId="wa-set-connection-link" what="Koneksi WhatsApp" label="Atur koneksi di Integrasi"
+                  where="Pengaturan › Integrasi & Sistem › Integrasi & Audit" view="admin" />
+              </div>
+            ) : (<>
             <div className="grid gap-1">
               <label className="text-[11px] font-bold uppercase tracking-[0.03em] text-[#6B6B73]">Provider</label>
               <KNSelect value={s.provider} onValueChange={(v) => patch("provider", v)}
@@ -104,6 +118,7 @@ export default function WhatsAppSettings({ open, onClose }) {
               <label className="text-[11px] font-bold uppercase tracking-[0.03em] text-[#6B6B73]">Access Token {s.has_token && <span className="text-[#1F7A45]">(tersimpan)</span>}</label>
               <input className="form-input" type="password" value={token} onChange={(e) => setToken(e.target.value)} placeholder={s.has_token ? "•••• (isi untuk mengganti)" : "opsional (mode nyata)"} data-testid="wa-set-token" />
             </div>
+            </>)}
           </div>
         )}
       </div>

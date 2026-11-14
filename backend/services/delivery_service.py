@@ -26,28 +26,47 @@ def normalize_phone(raw: str, default_cc: str = "62") -> str:
     return p
 
 
-async def get_settings() -> Dict[str, Any]:
+async def raw_row() -> tuple:
+    """KP-T8 — baris `integration_settings{id: "whatsapp"}` dengan token TERBUKA (hanya untuk server) + galat buka.
+    Token polos lama dibungkus saat pertama dibaca bila `KN_SECRETS_KEY` terpasang."""
+    from services import wa_connection
     row = await db.integration_settings.find_one({"id": SETTINGS_ID}, {"_id": 0}) or {}
+    if not row:
+        return {}, ""
+    return await wa_connection.bungkus_malas("integration_settings", {"id": SETTINGS_ID}, "", row)
+
+
+async def get_settings() -> Dict[str, Any]:
+    """Pengaturan kirim dokumen. KP-T8 — bila koneksi WhatsApp tunggal ada (`connection_managed`), penyedia & kredensial
+    yang tampil (dan dipakai) berasal dari koneksi itu; isian pemakaian (`enabled`, `simulate`) tetap di sini."""
+    from services import wa_connection
+    row = await db.integration_settings.find_one({"id": SETTINGS_ID}, {"_id": 0}) or {}
+    conn = await wa_connection.for_consumer("documents")
     return {
         "id": SETTINGS_ID,
-        "provider": row.get("provider", "simulated"),
+        "provider": conn.get("provider") or "simulated",
         "simulate": row.get("simulate", True),
         "enabled": row.get("enabled", True),
-        "phone_number_id": row.get("phone_number_id", ""),
-        "default_country_code": row.get("default_country_code", "62"),
-        "sender_label": row.get("sender_label", "Kain Nusantara"),
-        "has_token": bool(row.get("access_token")),
+        "phone_number_id": conn.get("phone_number_id", ""),
+        "default_country_code": conn.get("default_country_code") or "62",
+        "sender_label": conn.get("sender_label") or "Kain Nusantara",
+        "has_token": bool(conn.get("access_token") or conn.get("fonnte_token")),
+        "connection_managed": bool(conn.get("managed")),
+        "connection": wa_connection.ringkas(conn) if conn.get("managed") else None,
+        "secrets_key_configured": wa_connection.secret_box.available(),
         "available_providers": available_providers(),
     }
 
 
 async def save_settings(data: Dict[str, Any], actor: str = "") -> Dict[str, Any]:
+    """KP-T8 — token disimpan terbungkus. Field koneksi ditolak router bila koneksi tunggal sudah ada."""
+    from services import secret_box
     upd: Dict[str, Any] = {}
     for k in ["provider", "simulate", "enabled", "phone_number_id", "default_country_code", "sender_label"]:
         if data.get(k) is not None:
             upd[k] = data[k]
     if data.get("access_token"):  # hanya update bila diisi (jangan timpa dengan kosong)
-        upd["access_token"] = data["access_token"]
+        upd["access_token"] = secret_box.seal(str(data["access_token"]))
     await db.integration_settings.update_one(
         {"id": SETTINGS_ID},
         {"$set": {"id": SETTINGS_ID, **upd, "updated_by": actor, "updated_at": now_iso()}},
@@ -68,6 +87,8 @@ async def send_whatsapp(doc_type: str, source_id: str, entity_id: Optional[str],
     settings = await get_settings()
     if not settings["enabled"]:
         raise ValueError("Integrasi WhatsApp dinonaktifkan")
+    from services import wa_connection
+    conn = await wa_connection.for_consumer("documents")   # KP-T8 — koneksi tunggal bila ada, bila belum konfigurasi lama
 
     # Render PDF sebagai lampiran (validasi pipeline; di mode simulasi tak dikirim nyata).
     try:
@@ -79,11 +100,11 @@ async def send_whatsapp(doc_type: str, source_id: str, entity_id: Optional[str],
     eid = entity_id or built["source"].get("entity_id")
     phone = normalize_phone(to, settings["default_country_code"])
 
-    provider_name = "simulated" if settings["simulate"] else settings["provider"]
-    prov_settings = dict(settings)
-    # sertakan token asli untuk provider nyata
-    row = await db.integration_settings.find_one({"id": SETTINGS_ID}, {"_id": 0}) or {}
-    prov_settings["access_token"] = row.get("access_token", "")
+    provider_name = "simulated" if settings["simulate"] else (conn.get("provider") or "simulated")
+    if provider_name != "simulated" and conn.get("secret_error"):
+        raise ValueError(conn["secret_error"])
+    # token asli (sudah dibuka) untuk provider nyata
+    prov_settings = {**settings, **{k: conn[k] for k in wa_connection.KONEKSI_FIELDS}}
     provider = get_wa_provider(provider_name, prov_settings)
 
     doc_meta = {"doc_type": doc_type, "number": number, "label": reg["label"],

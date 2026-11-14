@@ -19,6 +19,7 @@ from services import scheduler_service as sched
 from services import wa_alert_service as wa
 from services import digest_service as digest
 from services import escalation_service as escalation
+from services import wa_connection
 from role_registry import role_in  # peran acuan dikenali (keputusan owner 2026-10-21)
 
 router = APIRouter(prefix="/api")
@@ -69,11 +70,22 @@ async def list_runs(request: Request, job_id: Optional[str] = None,
 
 
 # ═══ Pengaturan (jadwal + WhatsApp) ══════════════════════════════════════
+async def _wa_view(st: Dict[str, Any]) -> Dict[str, Any]:
+    """KP-T8 — `wa` ter-mask; bila koneksi WhatsApp tunggal ada, field koneksi berasal dari koneksi itu
+    (`connection_managed`, ringkasan tanpa token di `connection`)."""
+    conn = await wa_connection.for_consumer("alerts")
+    view = wa.mask_wa({**st["wa"], **{k: conn[k] for k in wa_connection.KONEKSI_FIELDS}})
+    view["connection_managed"] = bool(conn.get("managed"))
+    view["connection"] = wa_connection.ringkas(conn) if conn.get("managed") else None
+    view["secret_error"] = conn.get("secret_error") or st.get("secret_error", "")
+    return view
+
+
 @router.get("/scheduler/settings")
 async def get_settings(request: Request) -> Dict[str, Any]:
     await require_permission(request, "scheduler", "view")
     st = await wa.raw_settings()
-    return {"jobs": await sched.effective_config(), "wa": wa.mask_wa(st["wa"]),
+    return {"jobs": await sched.effective_config(), "wa": await _wa_view(st),
             "escalation": await escalation.effective_config(),
             "providers": list(VALID_PROVIDERS), "severities": list(VALID_SEVERITY),
             "delivery_modes": list(wa.DELIVERY_MODES),
@@ -112,6 +124,10 @@ async def update_settings(payload: SchedulerSettingsUpdate, request: Request) ->
     if payload.wa:
         cur = dict(st["wa"])
         patch = payload.wa.model_dump(exclude_unset=True)
+        # KP-T8 — koneksi tunggal ada: penyedia & kredensial diatur di layar Integrasi; pemakaian tetap di sini.
+        managed = await wa_connection.ada_koneksi_tunggal()
+        if managed and wa_connection.field_lama_ditolak(patch):
+            raise HTTPException(status_code=400, detail=wa_connection.PESAN_DIATUR_DI_INTEGRASI)
         if patch.pop("clear_tokens", False):
             cur["access_token"] = ""
             cur["fonnte_token"] = ""
@@ -137,16 +153,19 @@ async def update_settings(payload: SchedulerSettingsUpdate, request: Request) ->
             cur[k] = v
         if cur.get("pic_number"):
             cur["pic_number"] = wa.format_id_phone(cur["pic_number"])
-        # Validasi kesiapan provider saat WA diaktifkan.
-        if cur.get("enabled") and cur.get("provider") == "meta_cloud" \
-                and not (cur.get("access_token") and cur.get("phone_number_id")):
+        # Validasi kesiapan provider saat WA diaktifkan (KP-T8: koneksi tunggal bila ada).
+        siap = ({**cur, **{k: v for k, v in (await wa_connection.for_consumer("alerts")).items()
+                           if k in wa_connection.KONEKSI_FIELDS}} if managed else cur)
+        if cur.get("enabled") and siap.get("provider") == "meta_cloud" \
+                and not (siap.get("access_token") and siap.get("phone_number_id")):
             raise HTTPException(status_code=400,
                                 detail="Meta Cloud butuh access_token + phone_number_id. "
                                        "Isi kredensial atau pilih provider Simulasi.")
-        if cur.get("enabled") and cur.get("provider") == "fonnte" and not cur.get("fonnte_token"):
+        if cur.get("enabled") and siap.get("provider") == "fonnte" and not siap.get("fonnte_token"):
             raise HTTPException(status_code=400,
                                 detail="Fonnte butuh fonnte_token. Isi token atau pilih provider Simulasi.")
-        set_doc["wa"] = cur
+        # KP-T8 — token disimpan terbungkus (`secret_box`; tanpa KN_SECRETS_KEY tetap polos seperti sebelumnya).
+        set_doc["wa"] = wa_connection.bungkus(cur)
 
     # ── Kebijakan eskalasi (R6.6) ──
     if payload.escalation:
@@ -185,7 +204,7 @@ async def update_settings(payload: SchedulerSettingsUpdate, request: Request) ->
                  "tokens_changed": bool(payload.wa and (payload.wa.access_token
                                                         or payload.wa.fonnte_token
                                                         or payload.wa.clear_tokens))})
-    return {"jobs": await sched.effective_config(), "wa": wa.mask_wa(new_st["wa"]),
+    return {"jobs": await sched.effective_config(), "wa": await _wa_view(new_st),
             "escalation": await escalation.effective_config(),
             "reschedule": resched, "updated_at": new_st.get("updated_at", "")}
 

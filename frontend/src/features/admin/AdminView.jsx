@@ -18,6 +18,7 @@ import CategoryManager from "./CategoryManager";
 import IntegrationsPanel from "./IntegrationsPanel";
 import GeminiIntegrationPanel from "./GeminiIntegrationPanel";
 import OpenAiIntegrationPanel from "./OpenAiIntegrationPanel";
+import WhatsAppConnectionPanel from "./WhatsAppConnectionPanel";
 import AdminAuditList from "./AdminAuditList";
 import FormModal from "../../components/FormModal";
 import PageTabs from "../../components/PageTabs";
@@ -235,7 +236,10 @@ export default function AdminView({
       </section>
       )}
       {tab === "categories" && <CategoryManager onChanged={loadCategories} />}
-      {tab === "integrations" && <div className="grid gap-3"><IntegrationsPanel /><GeminiIntegrationPanel /><OpenAiIntegrationPanel /></div>}
+      {/* KP-T8 (KP-32) — kunci layanan luar & koneksi WhatsApp dijaga izin `integration.manage` (bukan `hr.manage_settings`). */}
+      {tab === "integrations" && (can(currentUser?.permissions, "integration", "manage")
+        ? <div className="grid gap-3"><IntegrationsPanel canManage /><WhatsAppConnectionPanel canManage /><GeminiIntegrationPanel /><OpenAiIntegrationPanel /></div>
+        : <p className="text-fs-12 text-kn-text-2" data-testid="integrations-denied">Anda belum punya akses untuk mengatur integrasi. Minta Admin menambahkan akses &apos;Pusat Pengaturan&apos;.</p>)}
       {/* Audit UI 099 — "Reset Demo Data" (menghapus data) di zona berbahaya terpisah. */}
       {!embedded && onSeedDemo && tab === "integrations" && (
         <section className="section-card mt-3" data-testid="admin-danger-zone">

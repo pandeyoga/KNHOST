@@ -38,10 +38,16 @@ SYSTEM_PROMPT = (
 
 
 async def is_enabled() -> bool:
-    """True bila integrasi Anthropic aktif DAN key terisi."""
+    """True bila integrasi Anthropic aktif DAN key terisi.
+
+    KP-T8 (KP-31) — hidup/mati = kunci registry `integrations.anthropic.enabled` (Pusat Pengaturan); nilainya tetap
+    tersimpan di `system_settings{scope: "integrations"}.anthropic.enabled` (awalan `integrations` di
+    `LEGACY_SCOPED_PREFIXES`), jadi nilai yang diatur sebelum KP-T8 tetap terbaca."""
+    from services.config_resolver import value_of
+    if not await value_of("integrations.anthropic.enabled"):
+        return False
     cfg = await integ.get_integrations()
-    ant = cfg.get("anthropic", {})
-    return bool(ant.get("enabled") and ant.get("api_key"))
+    return bool((cfg.get("anthropic") or {}).get("api_key"))
 
 
 def _parse_json(text: str) -> Dict[str, Any]:
@@ -90,14 +96,15 @@ async def autotag_image(image_bytes: bytes, content_type: str,
     - {enabled: True, error: "..."}                 → aktif tapi gagal (format/SDK/API).
     - {enabled: True, model, tags[], summary, attributes, analyzed_at} → sukses.
     """
-    cfg = await integ.get_integrations()
-    ant = cfg.get("anthropic", {})
-    if not (ant.get("enabled") and ant.get("api_key")):
+    from services.config_resolver import value_of
+    if not await is_enabled():
         return {"enabled": False}
+    ant = (await integ.get_integrations()).get("anthropic", {})
     media = (content_type or "").lower().split(";")[0].strip()
     if media not in VISION_MEDIA:
         return {"enabled": True, "error": f"Format {media or 'tidak dikenal'} tidak didukung AI vision."}
-    model = ant.get("model") or integ.DEFAULT_MODEL
+    # KP-T8 (KP-31) — model = kunci registry `integrations.anthropic.model` (Pusat Pengaturan).
+    model = str(await value_of("integrations.anthropic.model") or integ.DEFAULT_MODEL)
     try:
         image_b64 = base64.b64encode(image_bytes).decode("ascii")
         raw = await asyncio.to_thread(

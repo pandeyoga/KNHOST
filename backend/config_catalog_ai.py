@@ -160,3 +160,23 @@ E("ai.anomaly_cover_days", group="sistem", section="tanya-kn", type="int", defau
   impact="Lebih besar = peringatan lebih awal tetapi lebih banyak.", example="14 → stok 100 yard, terjual 10 "
                                                                              "yard/hari (cukup 10 hari) → ditandai", consumers=("services/ai_insights.py:scan",), risk="low",
   unit="hari")
+
+# ── KP-T8 (KP-31) — pengenal gambar desain: hidup/mati & model di satu tempat (dulu sakelar di kartu Integrasi) ────────
+# Awalan `integrations` ada di `LEGACY_SCOPED_PREFIXES` → nilainya tersimpan di dokumen yang sama dengan sebelum KP-T8
+# (`system_settings{scope: "integrations"}.anthropic.enabled|model`), tanpa migrasi. Kunci penyedia tetap di layar
+# Integrasi (rahasia, bukan pengaturan).
+from services.integrations_service import ANTHROPIC_MODELS as _ANT_MODELS, DEFAULT_MODEL as _ANT_DEFAULT  # noqa: E402
+
+E("integrations.anthropic.enabled", group="sistem", section="tanya-kn", type="bool", default=False, scopes=_G,
+  label="Pengenal gambar desain aktif",
+  help="Menyalakan pemberian tag otomatis pada gambar di galeri desain. Butuh kunci penyedia di Integrasi.",
+  impact="Mati = unggahan desain tidak diberi tag otomatis; galeri tetap berjalan.",
+  example="Aktif → desain baru mendapat tag motif dan warna dalam beberapa detik",
+  consumers=("services/hr_ai_service.py:is_enabled",), risk="low", permission=("integration", "manage"))
+E("integrations.anthropic.model", group="sistem", section="tanya-kn", type="enum", default=_ANT_DEFAULT, scopes=_G,
+  options=tuple({"value": m, "label": m} for m in _ANT_MODELS),
+  label="Model pengenal gambar desain",
+  help="Model yang dipakai memberi tag gambar desain.",
+  impact="Model lebih besar lebih teliti dan lebih mahal per gambar.",
+  example="Model bawaan untuk pemakaian harian",
+  consumers=("services/hr_ai_service.py:autotag_image",), risk="low", permission=("integration", "manage"))

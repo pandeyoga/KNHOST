@@ -231,6 +231,9 @@
     "reopen",
     "release"
    ],
+   "integration": [
+    "manage"
+   ],
    "interco": [
     "view",
     "create",
@@ -2427,6 +2430,7 @@
    "vendor_bill"
   ],
   "admin": [
+   "integration",
    "settings"
   ],
   "advance-report": [
@@ -2483,6 +2487,7 @@
    "rfq"
   ],
   "approval-rules": [
+   "integration",
    "settings"
   ],
   "ar-aging": [
@@ -2720,6 +2725,7 @@
    "pdf_template"
   ],
   "domain-registry": [
+   "integration",
    "settings"
   ],
   "entities-access": [
@@ -3455,6 +3461,7 @@
   "settings-approval": [
    "design_ownership",
    "design_request",
+   "integration",
    "settings"
   ],
   "settings-cfg-approval": [
@@ -3493,6 +3500,7 @@
    "settings"
   ],
   "settings-cfg-system": [
+   "integration",
    "settings"
   ],
   "settings-cfg-warehouse": [
@@ -3526,6 +3534,7 @@
    "document",
    "document_delivery",
    "esign",
+   "integration",
    "pdf_template",
    "settings"
   ],
@@ -3572,6 +3581,7 @@
    "hr",
    "input_tax",
    "inspection",
+   "integration",
    "internal_request",
    "inventory",
    "label",
@@ -3612,6 +3622,7 @@
   ],
   "settings-masters": [
    "entity",
+   "integration",
    "settings"
   ],
   "settings-notify": [
@@ -3658,6 +3669,7 @@
   "settings-system": [
    "goods_receipt",
    "hr",
+   "integration",
    "label",
    "production",
    "repair_order",

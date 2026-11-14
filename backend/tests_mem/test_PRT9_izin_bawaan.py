@@ -56,6 +56,10 @@ for _r, _tambah in _pc.MNT1_DEFAULT_PAIRS.items():
         TAMBAHAN_SESUDAH.setdefault(_r, {}).setdefault(_res, set()).update(_aksi)
 # PK-38 (K-17, IA-12) — Finance membayar kontrabon (view + pay; bukan verify/approve).
 TAMBAHAN_SESUDAH.setdefault("finance", {}).setdefault("contra_bon", set()).update({"view", "pay"})
+# KP-T8 (KP-32, K-47) — kunci integrasi dijaga izin sendiri `integration.manage` (bawaan Admin; `KPT8_DEFAULT_PAIRS`).
+for _r, _tambah in _pc.KPT8_DEFAULT_PAIRS.items():
+    for _res, _aksi in _tambah.items():
+        TAMBAHAN_SESUDAH.setdefault(_r, {}).setdefault(_res, set()).update(_aksi)
 
 
 def _himpunan(perms: dict) -> dict:

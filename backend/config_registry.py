@@ -59,7 +59,9 @@ ROW_SHAPES = {"list", "map", "json",
               "grouped_list"}
 
 # Prefix kunci yang tersimpan di dokumen `system_settings` scope tersendiri.
-LEGACY_SCOPED_PREFIXES: Tuple[str, ...] = ("uom", "lot", "makloon", "receiving", "hr")
+# KP-T8 (KP-31) — `integrations`: hidup/mati & model pengenal gambar (`integrations.anthropic.*`) tersimpan di dokumen
+# `system_settings{scope: "integrations"}` yang sama dengan sebelum unit itu (tanpa migrasi).
+LEGACY_SCOPED_PREFIXES: Tuple[str, ...] = ("uom", "lot", "makloon", "receiving", "hr", "integrations")
 
 
 # ── Grup: dikelompokkan berdasarkan PERTANYAAN BISNIS, bukan nama modul ──────

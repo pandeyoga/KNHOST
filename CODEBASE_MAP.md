@@ -1,5 +1,5 @@
 <!-- DIHASILKAN OTOMATIS oleh scripts/gen_codebase_map.py — JANGAN EDIT TANGAN -->
-<!-- Dihasilkan dari commit: 4aa20c3 pada 2026-11-14 -->
+<!-- Dihasilkan dari commit: 1ebbdaa pada 2026-11-14 -->
 # CODEBASE MAP — Kain Nusantara (dihasilkan otomatis)
 
 Peta ini dihitung dari kode oleh `scripts/gen_codebase_map.py`. Kalau angka di sini
@@ -13,8 +13,8 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 | Ukuran | Nilai |
 |---|---:|
 | Router (`backend/routers/*.py`) | 164 |
-| Endpoint (`@router.<method>`) | 1781 |
-| Service (`backend/services/*.py`) | 392 |
+| Endpoint (`@router.<method>`) | 1786 |
+| Service (`backend/services/*.py`) | 394 |
 | Koleksi MongoDB disentuh kode produksi | 202 |
 | Direktori fitur frontend (`src/features/*`) | 39 |
 
@@ -28,11 +28,11 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 | `schemas.py` | 1123 |
 | `schemas_purchasing.py` | 625 |
 | `dependencies.py` | 286 |
-| `permissions_config.py` | 828 |
+| `permissions_config.py` | 841 |
 | `entity_scope.py` | 729 |
 | `pagination.py` | 145 |
-| `indexes.py` | 826 |
-| `bootstrap.py` | 2150 |
+| `indexes.py` | 834 |
+| `bootstrap.py` | 2155 |
 | `login_only_endpoints.py` | 80 |
 
 ### Fungsi utilitas — JANGAN re-implementasi
@@ -158,7 +158,7 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 | `cycle_count.py` | 14 | 629 | `/cycle-count/sessions`, `/cycle-count/sessions/{session_id}`, `/cycle-count/sessions/{session_id}/approve`, `/cycle-count/sessions/{session_id}/items`, `/cycle-count/sessions/{session_id}/items/{item_id}`, `/cycle-count/sessions/{session_id}/reject` … |
 | `dashboard.py` | 1 | 198 | `/dashboard` |
 | `data_hygiene.py` | 9 | 85 | `/data-hygiene/location/{collection}/{doc_id}`, `/data-hygiene/log`, `/data-hygiene/log/{log_id}/revert`, `/data-hygiene/preview`, `/data-hygiene/run`, `/data-hygiene/summary` … |
-| `deliveries.py` | 9 | 119 | `/whatsapp/recipient/{doc_type}/{source_id}`, `/whatsapp/rules`, `/whatsapp/rules/{rule_id}`, `/whatsapp/send`, `/whatsapp/settings`, `/{doc_type}/{source_id}` |
+| `deliveries.py` | 9 | 125 | `/whatsapp/recipient/{doc_type}/{source_id}`, `/whatsapp/rules`, `/whatsapp/rules/{rule_id}`, `/whatsapp/send`, `/whatsapp/settings`, `/{doc_type}/{source_id}` |
 | `design_gallery.py` | 26 | 496 | `/design-gallery`, `/design-gallery-ai/status`, `/design-gallery-products/unlink`, `/design-gallery/{gallery_id}`, `/design-gallery/{gallery_id}/ai-illustrate`, `/design-gallery/{gallery_id}/approve` … |
 | `design_requests.py` | 20 | 407 | `/design-requests`, `/design-requests-for-so/{so_id}`, `/design-requests/meta`, `/design-requests/{req_id}`, `/design-requests/{req_id}/approve`, `/design-requests/{req_id}/assign` … |
 | `design_studio.py` | 25 | 344 | `/design-gallery/{gallery_id}/colorways`, `/design-gallery/{gallery_id}/colorways/{cw_id}`, `/design-gallery/{gallery_id}/feedback`, `/design-gallery/{gallery_id}/files-kind/{kind}`, `/design-gallery/{gallery_id}/history`, `/design-gallery/{gallery_id}/lifecycle/activate` … |
@@ -184,7 +184,7 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 | `home.py` | 5 | 117 | `/admin`, `/finance`, `/manager`, `/sales`, `/warehouse` |
 | `hr.py` | 15 | 517 | `/hr/employees`, `/hr/employees/me`, `/hr/employees/{employee_id}`, `/hr/employees/{employee_id}/360`, `/hr/org-units`, `/hr/org-units/tree` … |
 | `hr_analytics.py` | 1 | 23 | `/hr/analytics/summary` |
-| `hr_attendance.py` | 21 | 514 | `/hr/attendance`, `/hr/attendance/clock-in`, `/hr/attendance/clock-out`, `/hr/attendance/import`, `/hr/attendance/ingest`, `/hr/attendance/manual` … |
+| `hr_attendance.py` | 22 | 572 | `/hr/attendance`, `/hr/attendance/clock-in`, `/hr/attendance/clock-out`, `/hr/attendance/import`, `/hr/attendance/ingest`, `/hr/attendance/manual` … |
 | `hr_kpi.py` | 5 | 107 | `/hr/kpi`, `/hr/kpi/me`, `/hr/kpi/{kpi_id}` |
 | `hr_leave.py` | 18 | 278 | `/hr/leave-balance/me`, `/hr/leave-balances`, `/hr/leave-balances/set`, `/hr/leave-calendar`, `/hr/leave-requests`, `/hr/leave-requests/me` … |
 | `hr_payroll.py` | 15 | 268 | `/hr/payroll/runs`, `/hr/payroll/runs/preview`, `/hr/payroll/runs/{run_id}`, `/hr/payroll/runs/{run_id}/approve`, `/hr/payroll/runs/{run_id}/pay`, `/hr/payroll/runs/{run_id}/post-gl` … |
@@ -196,7 +196,7 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 | `initial_registration.py` | 22 | 329 | `/registration/freeze`, `/registration/sessions`, `/registration/sessions/{sid}`, `/registration/sessions/{sid}/approve`, `/registration/sessions/{sid}/approve-count`, `/registration/sessions/{sid}/bins` … |
 | `input_tax.py` | 6 | 203 | `/input-tax-invoices`, `/input-tax-invoices/eligible-bills`, `/input-tax-invoices/{fpm_id}`, `/input-tax-invoices/{fpm_id}/cancel`, `/tax/vat-summary` |
 | `inspections.py` | 18 | 543 | `/inspections`, `/inspections/export`, `/inspections/meta`, `/inspections/meta/ref-docs`, `/inspections/qc-4point`, `/inspections/queue/qc-tasks` … |
-| `integrations.py` | 4 | 84 | `/admin/integrations`, `/admin/integrations/gemini/test`, `/admin/integrations/openai/test` |
+| `integrations.py` | 8 | 172 | `/admin/integrations`, `/admin/integrations/gemini/test`, `/admin/integrations/openai/test`, `/admin/integrations/whatsapp`, `/admin/integrations/whatsapp/adopt`, `/admin/integrations/whatsapp/test` |
 | `interco.py` | 38 | 595 | `/interco/accounts`, `/interco/accounts/{from_entity_id}/{to_entity_id}`, `/interco/accounts/{payer_entity_id}/{payee_entity_id}/remind`, `/interco/contracts`, `/interco/margin-by-product`, `/interco/margin-report` … |
 | `interco_loans.py` | 8 | 138 | `/interco/loans`, `/interco/loans/meta`, `/interco/loans/{loan_id}`, `/interco/loans/{loan_id}/cancel`, `/interco/loans/{loan_id}/disburse`, `/interco/loans/{loan_id}/repay` … |
 | `interco_prices.py` | 5 | 76 | `/interco/prices/access`, `/interco/prices/bulk`, `/interco/prices/missing`, `/interco/prices/request`, `/interco/prices/summary` |
@@ -261,7 +261,7 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 | `sales_returns.py` ⚠️>800 | 41 | 1317 | `/credit-notes`, `/credit-notes/{cn_id}`, `/returns/chain/{doc_id}`, `/sales-returns`, `/sales-returns/eligible-orders`, `/sales-returns/meta/complaint-reasons` … |
 | `sample_orders.py` | 11 | 258 | `/sample-orders`, `/sample-orders/catalogue/preview`, `/sample-orders/catalogue/templates`, `/sample-orders/desk`, `/sample-orders/kinds`, `/sample-orders/limits` … |
 | `sample_sales.py` | 5 | 102 | `/outbound/so/{order_id}/cut-samples`, `/outbound/tasks/{task_id}/cut-sample`, `/sample-prices`, `/sample-prices/{template_id}`, `/sample-quote` |
-| `scheduler.py` | 10 | 222 | `/scheduler/digest-preview`, `/scheduler/jobs`, `/scheduler/jobs/{job_id}/run`, `/scheduler/runs`, `/scheduler/settings`, `/scheduler/summary` … |
+| `scheduler.py` | 10 | 241 | `/scheduler/digest-preview`, `/scheduler/jobs`, `/scheduler/jobs/{job_id}/run`, `/scheduler/runs`, `/scheduler/settings`, `/scheduler/summary` … |
 | `settings.py` | 10 | 165 | `/payment-terms`, `/payment-terms/{term_id}`, `/payment-terms/{term_id}/override`, `/settings`, `/settings/compute-tax`, `/settings/effective` … |
 | `so_approvals.py` | 8 | 553 | `/approvals/backlog`, `/approvals/queue`, `/approvals/queue-board/{key}`, `/sales-orders/{order_id}/approvals/{approval_id}/decide`, `/sales-orders/{order_id}/approvals/{approval_id}/evidence`, `/sales-orders/{order_id}/approvals/{approval_id}/evidence/{att_id}/download` … |
 | `so_override.py` | 2 | 55 | `/sales-orders/{order_id}/override`, `/sales-orders/{order_id}/override-context` |
@@ -372,7 +372,7 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 | `cycle_count_service.py` | 184 | CYCLE COUNT RFID — stock opname kilat via sweep handheld. |
 | `data_hygiene_service.py` | 204 | Kebersihan Data (K-1/K-2 otomatis) — normalisasi EYD nama & nomor telepon pada data LAMA. |
 | `data_scope.py` | 113 | PR-T4 — CAKUPAN DATA per peran: dokumen ber-pemilik siapa yang terlihat dan bisa diubah (di dalam PT yang bole |
-| `delivery_service.py` | 267 | delivery_service.py — Pengiriman dokumen via WhatsApp (mode simulasi default) + |
+| `delivery_service.py` | 288 | delivery_service.py — Pengiriman dokumen via WhatsApp (mode simulasi default) + |
 | `demo_seed_service.py` | 97 | Demo Seed Service |
 | `design_gallery_service.py` | 721 | HRD H5 services — Design Gallery (motif kain) + upload gambar (storage lokal). |
 | `design_ownership_service.py` | 267 | UAT 24 Okt (P1 + P6) — KEPEMILIKAN DESAIN & rantai desain → SKU. |
@@ -439,7 +439,7 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 | `handheld_tags.py` | 313 | PREP-G — EPC dibuat sistem lalu DITULIS ke tag oleh C72 (K-OPN-05: EPC bawaan tag dianggap TIDAK unik). |
 | `handheld_tasks.py` | 446 | PREP-G — daftar tugas per jenis + unduhan "yang diharapkan" per dokumen untuk C72 (pencocokan di perangkat & o |
 | `home_service.py` | 517 | EPIC 1 — Agregasi Home/landing per role (Control Tower / Performa Saya). |
-| `hr_ai_service.py` | 117 | H5 service — AI auto-tag motif via Anthropic Claude (SDK LANGSUNG, bukan Emergent). |
+| `hr_ai_service.py` | 124 | H5 service — AI auto-tag motif via Anthropic Claude (SDK LANGSUNG, bukan Emergent). |
 | `hr_analytics_service.py` | 210 | HRD H6 service — HR Analytics (Dashboard BI SDM). |
 | `hr_attendance_service.py` | 273 | HRD H1 services — Absensi (attendance). |
 | `hr_kpi_service.py` | 167 | HRD H5 services — KPI Design (input manual per karyawan/periode + rekap). |
@@ -456,7 +456,7 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 | `initial_registration_service.py` | 285 | PREP-B — mode "pendaftaran awal gedung" (KEPUTUSAN_GATE_RFID §8, K-OPN-01..05): siklus sesi. |
 | `input_tax_service.py` | 248 | Faktur Pajak Masukan (tax_invoices_in) service — Fase 5.5 / P0-3. |
 | `inspection_service.py` | 1888 | FASE I — **INSPEKSI & QC SEBAGAI DOKUMEN** (`<ENT>/INS-#####`). |
-| `integrations_service.py` | 159 | H5 service — Integrasi pihak ketiga (config runtime di system_settings). |
+| `integrations_service.py` | 153 | H5 service — Integrasi pihak ketiga (config runtime di system_settings). |
 | `interco_loan_service.py` | 268 | FASE E-7 (E7f) — **PINJAMAN UANG ANTAR-PT** (`<ENT>/ICL-#####`). |
 | `interco_margin.py` | 427 | FASE G-6b — **RAPOR MARGIN GRUP** antar-PT (realized vs unrealized). |
 | `interco_money_service.py` | 217 | FASE E-7 (E7f + E7g) — **UANG & ASET ANTAR-PT** yang bukan jual-beli. |
@@ -627,6 +627,7 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 | `sales_stock_service.py` | 97 | Stok GLOBAL untuk layar sales (Kasir/POS, katalog): sales tidak memilah per entitas — |
 | `sample_sale_service.py` | 563 | §3-C Jual Sample — SATU alur dengan pesanan roll (keputusan pemilik 2026-09-16). |
 | `scheduler_service.py` | 727 | R6.5 — Scheduler (APScheduler) untuk alert & notifikasi terjadwal. |
+| `secret_box.py` | 69 | KP-T8 (KP-15) — satu cara menyimpan rahasia (docs/blueprint/unit/KP-T8.md, bagian Server · Pembungkus rahasia) |
 | `shipment_service.py` | 186 | Shipment service (Sub-fase 1.8) — partial/multi shipment, SSOT-safe. |
 | `site_receiving_service.py` | 120 | UAT 24 Okt (P9, fase F1) — LOKASI (site) sebagai tujuan kirim & konteks kerja. |
 | `site_stock_service.py` | 54 | UAT 24 Okt (P8, fase F1) — stok per LOKASI untuk katalog POS / HP. |
@@ -674,7 +675,8 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 | `user_admin_service.py` | 405 | FASE E-2 — AKUN PENGGUNA TERTAUT BADAN USAHA (via HR) & PENEGAKAN AKSES. |
 | `variant_axes.py` | 56 | Sumbu varian yang dapat dikonfigurasi pemilik (rnd.variant_axes_default / _optional). |
 | `vendor_bill_service.py` | 309 | Vendor Bill service (Fase 5.2 — P0-2) — 3-Way Matching PO ↔ GR ↔ Bill. |
-| `wa_alert_service.py` | 282 | R6.5 — Kanal WhatsApp untuk notifikasi/alert (Kain Nusantara). |
+| `wa_alert_service.py` | 297 | R6.5 — Kanal WhatsApp untuk notifikasi/alert (Kain Nusantara). |
+| `wa_connection.py` | 276 | KP-T8 (KP-16) — satu koneksi WhatsApp untuk dua pemakai: Pengingat (`alerts`) dan Kirim Dokumen (`documents`). |
 | `warehouse_profile_service.py` | 364 | FASE R0 — Profil gudang: site (lokasi), peran gedung, rules penyimpanan, gate config. |
 | `warehouse_scope_service.py` | 288 | FASE E-4 (E4.1) — GUDANG BERSAMA vs GUDANG KHUSUS BADAN USAHA. |
 | `web_push_service.py` | 110 | Web Push (PWA) — kirim notifikasi lonceng ke HP walau aplikasi sedang ditutup. |
@@ -692,8 +694,8 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 
 | Fitur (`src/features/`) | Berkas | Baris |
 |---|---:|---:|
-| `__tests__` | 101 | 15471 |
-| `admin` | 35 | 6764 |
+| `__tests__` | 102 | 15689 |
+| `admin` | 36 | 6971 |
 | `approvals` | 9 | 1720 |
 | `catalog` | 24 | 1450 |
 | `costing` | 1 | 150 |
@@ -701,11 +703,11 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 | `design` | 8 | 1585 |
 | `designer` | 8 | 1628 |
 | `desks` | 2 | 229 |
-| `documents` | 18 | 2676 |
+| `documents` | 18 | 2691 |
 | `export` | 9 | 700 |
 | `finance` | 95 | 21283 |
 | `home` | 5 | 1130 |
-| `hr` | 33 | 5350 |
+| `hr` | 33 | 5396 |
 | `inspections` | 12 | 2181 |
 | `interco_prices` | 4 | 287 |
 | `internal_requests` | 3 | 854 |
