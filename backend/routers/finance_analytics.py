@@ -14,7 +14,7 @@ from fastapi import APIRouter, Request, Query
 
 from dependencies import require_permission
 from core_utils import strip_cost_fields
-from entity_scope import entity_ctx, resolve_list_scope
+from entity_scope import entity_ctx, resolve_list_scope, scope_line, scope_meta
 from services import profitability_service as prof
 from services import cashflow_forecast_service as fc
 from services import finance_tower_service as tower
@@ -40,8 +40,9 @@ async def get_profitability(
     scope = await _scope(request, "sales_orders", entity_id)
     ent = entity_id if entity_id and entity_id != "all" else None
     # Tanya KN F0.4 — HPP/margin hanya untuk admin/manager (finance menerima pendapatan & qty).
-    return strip_cost_fields(await prof.profitability(start=start, end=end, scope=scope, entity_id=ent),
-                             actor.get("role"))
+    out = strip_cost_fields(await prof.profitability(start=start, end=end, scope=scope, entity_id=ent),
+                            actor.get("role"))
+    return {**out, "scope_meta": await scope_meta(await entity_ctx(request), entity_id)}   # PK-16
 
 
 @router.get("/finance/profitability/export.xlsx")
@@ -62,6 +63,7 @@ async def export_profitability(
     ent = entity_id if entity_id and entity_id != "all" else None
     data = await prof.profitability(start=start, end=end, scope=scope, entity_id=ent)
     cost_ok = role_in(actor.get("role"), COST_SAFE_ROLES)
+    pt_row = [scope_line(await scope_meta(await entity_ctx(request), entity_id))]   # PK-16 — baris kepala PT/cakupan
 
     def _cell(v: Any) -> Any:
         return "'" + v if isinstance(v, str) and v[:1] in ("=", "+", "-", "@", "\t", "\r") else v
@@ -72,8 +74,9 @@ async def export_profitability(
         head = [label, "Realisasi Pendapatan"] + (["Realisasi HPP", "Realisasi Marjin", "Realisasi Marjin %"] if cost_ok else []) \
             + ["Estimasi Pendapatan"] + (["Estimasi HPP", "Estimasi Marjin"] if cost_ok else []) \
             + ["Selisih Pendapatan (Realisasi − Estimasi)", "Pesanan Realisasi", "Pesanan Estimasi"]
+        ws.append(pt_row)
         ws.append(head)
-        for c in ws[1]:
+        for c in ws[2]:
             c.font = Font(bold=True)
         keys = sorted(set(real) | set(est), key=lambda k: -float((real.get(k) or est.get(k) or {}).get("revenue") or 0))
         for k in keys:
@@ -119,7 +122,8 @@ async def get_cashflow_forecast(
     await require_permission(request, "accounting", "view")
     scope = await _scope(request, "sales_orders", entity_id)
     ent = entity_id if entity_id and entity_id != "all" else None
-    return await fc.cashflow_forecast(scope=scope, entity_id=ent)
+    return {**(await fc.cashflow_forecast(scope=scope, entity_id=ent)),
+            "scope_meta": await scope_meta(await entity_ctx(request), entity_id)}   # PK-16
 
 
 @router.get("/finance/tower")
@@ -137,4 +141,5 @@ async def get_finance_tower(
     else:
         ent = entity_id or ctx.active_entity_id
         comp_ids = [ent]
-    return await tower.finance_tower(scope=scope, entity_id=ent, entity_ids=comp_ids)
+    return {**(await tower.finance_tower(scope=scope, entity_id=ent, entity_ids=comp_ids)),
+            "scope_meta": await scope_meta(ctx, entity_id)}   # PK-16

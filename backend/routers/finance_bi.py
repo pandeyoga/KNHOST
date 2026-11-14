@@ -9,7 +9,7 @@ from typing import Any, Dict, List, Optional
 from fastapi import APIRouter, Request, Query
 
 from dependencies import require_permission
-from entity_scope import entity_ctx, resolve_list_scope
+from entity_scope import entity_ctx, resolve_list_scope, scope_meta
 from services import finance_bi_service as bi
 
 router = APIRouter(prefix="/api")
@@ -33,4 +33,4 @@ async def finance_bi_dashboard(
     else:
         comp_ids = list(ctx.allowed_entity_ids)
 
-    return await bi.finance_bi(y, scope, comp_ids)
+    return {**(await bi.finance_bi(y, scope, comp_ids)), "scope_meta": await scope_meta(ctx, entity_id)}   # PK-16

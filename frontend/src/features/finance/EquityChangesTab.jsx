@@ -1,6 +1,7 @@
 /**
  * EquityChangesTab (FINANCE) — Laporan Perubahan Ekuitas (Statement of Changes in Equity).
  * Sumber: /api/finance/equity-changes (+ export.csv). Dipakai di FinancialStatementsView.
+ * PK-16 — banner PT (`scope_meta`), gagal memuat → data dikosongkan, nama unduhan memuat PT / `gabungan`.
  */
 import { apiErrorText } from "../../utils/apiError";
 import KNDatePicker from "@/components/KNDatePicker";
@@ -11,6 +12,7 @@ import {
 import { RefreshCw, Download, PiggyBank, TrendingUp, Landmark, ArrowRightLeft } from "lucide-react";
 import axios, { API } from "../../services/apiClient";
 import ErrorNotice from "../../components/ErrorNotice";
+import EntityScopeBanner, { useScopeMeta, scopeFileTag } from "../../components/EntityScopeBanner";
 import {
   FC, NOW, ymd, compactIDR, entityParam, saveBlob, chartTooltip,
   KpiCard, Panel, EmptyState, formatCurrency,
@@ -21,6 +23,7 @@ export default function EquityChangesTab({ selectedEntity }) {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const scope = useScopeMeta(data?.scope_meta);
 
   const load = useCallback(async () => {
     setLoading(true); setError("");
@@ -32,6 +35,7 @@ export default function EquityChangesTab({ selectedEntity }) {
       setData(res.data || null);
     } catch (e) {
       setError(apiErrorText(e, "Gagal memuat Laporan Perubahan Ekuitas."));
+      setData(null);   // PK-16 (RP-04) — tidak ada angka dari permintaan sebelumnya
     } finally { setLoading(false); }
   }, [selectedEntity, range]);
 
@@ -43,7 +47,7 @@ export default function EquityChangesTab({ selectedEntity }) {
         params: { ...entityParam(selectedEntity), start: range.start, end: range.end },
         responseType: "blob",
       });
-      saveBlob(res.data, `perubahan-ekuitas_${range.start}_${range.end}.csv`);
+      saveBlob(res.data, `perubahan-ekuitas_${scopeFileTag(scope)}_${range.start}_${range.end}.csv`);
     } catch { setError("Gagal mengunduh CSV."); }
   };
 
@@ -60,6 +64,7 @@ export default function EquityChangesTab({ selectedEntity }) {
 
   return (
     <div data-testid="fs-equity-changes">
+      <EntityScopeBanner meta={scope} />
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-3">
         <KpiCard testId="eq-kpi-begin" label="Ekuitas Awal" value={formatCurrency(data?.begin_total)} icon={Landmark} accent={FC.muted} />
         <KpiCard testId="eq-kpi-netincome" label="Laba Periode Berjalan" value={formatCurrency(data?.net_income)} icon={TrendingUp} accent={FC.revenue} tone={(data?.net_income ?? 0) >= 0 ? "text-[#1B7F4B]" : "text-[#C0392B]"} />
@@ -85,11 +90,14 @@ export default function EquityChangesTab({ selectedEntity }) {
       {loading ? (
         <div className="h-[280px] bg-[#F5F5F7] rounded animate-pulse" data-testid="eq-loading" />
       ) : !data ? (
-        /* FASE P5 — dulu `null`: layar KOSONG tanpa satu kata pun, sehingga pengguna tidak
+        /* PK-16 — gagal memuat → area angka hanya memuat galat + "Coba lagi", bukan "belum ada data".
+           FASE P5 — dulu `null`: layar KOSONG tanpa satu kata pun, sehingga pengguna tidak
            bisa membedakan "belum ada data ekuitas" dari "masih memuat" atau "gagal". */
-        <EmptyState icon={PiggyBank} testId="eq-empty"
-          title="Belum ada data perubahan ekuitas untuk rentang ini"
-          hint="Coba lebarkan rentang tanggal, atau pastikan sudah ada jurnal pada periode tersebut." />
+        error ? null : (
+          <EmptyState icon={PiggyBank} testId="eq-empty"
+            title="Belum ada data perubahan ekuitas untuk rentang ini"
+            hint="Coba lebarkan rentang tanggal, atau pastikan sudah ada jurnal pada periode tersebut." />
+        )
       ) : (
         <div className="grid lg:grid-cols-5 gap-3">
           <div className="lg:col-span-2">

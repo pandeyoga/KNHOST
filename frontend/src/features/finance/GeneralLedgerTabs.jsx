@@ -2,6 +2,8 @@
  * GeneralLedgerTabs — tab "Neraca Saldo" & "Buku Besar" layar Jurnal & Buku Besar.
  * Fase 3 · P4 — diekstrak apa adanya dari GeneralLedger.jsx supaya berkas utama di bawah batas 500 baris
  * (GeneralLedger mendapat DesktopOnlyNotice L-04 kelas C). Perilaku tidak berubah.
+ * PK-16 — banner PT dipasang SEKALI di GeneralLedger (di atas KPI, berlaku untuk kedua tab ini). Gagal memuat →
+ * data dikosongkan dan area angka tidak menulis "belum ada saldo/mutasi" (galatnya di bilah galat induk + Coba lagi).
  */
 import { apiErrorText } from "../../utils/apiError";
 import { useCallback, useEffect, useMemo, useState } from "react";
@@ -16,14 +18,18 @@ const fmtDate = (iso) => formatDate(iso);
 export function TrialBalanceTab({ refreshKey, onError, onDrill }) {
   const [tb, setTb] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [failed, setFailed] = useState(false);
 
   const load = useCallback(async () => {
     setLoading(true);
     try {
       const res = await axios.get(`${API}/gl/trial-balance`);
       setTb(res.data || null);
+      setFailed(false);
     } catch (e) {
       onError(apiErrorText(e, "Gagal memuat neraca saldo."));
+      setTb(null);   // PK-16 (RP-04) — tidak ada angka dari permintaan sebelumnya
+      setFailed(true);
     } finally {
       setLoading(false);
     }
@@ -32,6 +38,7 @@ export function TrialBalanceTab({ refreshKey, onError, onDrill }) {
   useEffect(() => { load(); }, [load, refreshKey]);
 
   if (loading) return <div className="grid gap-2" data-testid="gl-trial-loading">{[0, 1, 2, 3, 4].map((i) => <div key={i} className="h-9 bg-[#F5F5F7] rounded animate-pulse" />)}</div>;
+  if (failed) return null;
   if (!tb || (tb.rows || []).length === 0) return <div data-testid="gl-trial-empty" className="py-12 text-center text-[12px] text-[#8E8E93]"><Scale size={26} className="mx-auto mb-2 text-gray-300" />Belum ada saldo. Posting jurnal terlebih dahulu.</div>;
 
   return (
@@ -76,6 +83,7 @@ export function TrialBalanceTab({ refreshKey, onError, onDrill }) {
 export function LedgerTab({ accounts, refreshKey, code, setCode, onError }) {
   const [ledger, setLedger] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [failed, setFailed] = useState(false);
 
   const postableOptions = useMemo(
     () => accounts.filter((a) => a.is_postable).map((a) => ({ value: a.code, label: `${a.code} — ${a.name}` })),
@@ -87,9 +95,11 @@ export function LedgerTab({ accounts, refreshKey, code, setCode, onError }) {
     try {
       const res = await axios.get(`${API}/gl/accounts/${c}/ledger`);
       setLedger(res.data || null);
+      setFailed(false);
     } catch (e) {
       onError(apiErrorText(e, "Gagal memuat buku besar."));
       setLedger(null);
+      setFailed(true);
     } finally {
       setLoading(false);
     }
@@ -111,7 +121,7 @@ export function LedgerTab({ accounts, refreshKey, code, setCode, onError }) {
         <div data-testid="gl-ledger-prompt" className="py-12 text-center text-[12px] text-[#8E8E93]"><BookOpen size={26} className="mx-auto mb-2 text-gray-300" />Pilih akun untuk menampilkan buku besar.</div>
       ) : loading ? (
         <div className="grid gap-2" data-testid="gl-ledger-loading">{[0, 1, 2].map((i) => <div key={i} className="h-9 bg-[#F5F5F7] rounded animate-pulse" />)}</div>
-      ) : !ledger || (ledger.lines || []).length === 0 ? (
+      ) : failed ? null : !ledger || (ledger.lines || []).length === 0 ? (
         <div data-testid="gl-ledger-empty" className="py-10 text-center text-[12px] text-[#8E8E93]">Belum ada mutasi pada akun ini.</div>
       ) : (
         <div className="overflow-auto rounded-md border border-[#EFF0F2]">

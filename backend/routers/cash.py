@@ -11,7 +11,7 @@ from pymongo import ReturnDocument
 from db import db
 from dependencies import require_permission, audit
 from core_utils import new_id, now_iso, safe_doc
-from entity_scope import entity_ctx, resolve_scope_ids, guard_doc, resolve_requested_entity
+from entity_scope import entity_ctx, resolve_scope_ids, guard_doc, resolve_requested_entity, scope_meta
 from schemas import CashTransactionCreate
 from services import cash_entity_service
 from role_registry import role_in  # peran acuan dikenali (keputusan owner 2026-10-21)
@@ -119,6 +119,7 @@ async def cash_summary(request: Request, entity_id: str = None) -> Dict[str, Any
         "kas_kecil_per_entity": per_entity,
         # E7.4 — sisa data kas tingkat grup (harus nol setelah migrasi dijalankan).
         "group_cash_pending": await cash_entity_service.group_cash_pending(db),
+        "scope_meta": await scope_meta(ctx, entity_id),   # PK-16
     }
 
 

@@ -10,7 +10,7 @@ from fastapi import APIRouter, Request, Query, HTTPException
 from pydantic import BaseModel
 
 from dependencies import require_permission, audit
-from entity_scope import (entity_ctx, resolve_list_scope, assert_entity_access, guard_doc, resolve_requested_entity,
+from entity_scope import (scope_meta, entity_ctx, resolve_list_scope, assert_entity_access, guard_doc, resolve_requested_entity,
                           resolve_write_entity)
 
 
@@ -125,7 +125,7 @@ async def gl_account_ledger(code: str, request: Request, as_of: Optional[str] = 
     led = await gl_service.account_ledger(code, as_of=as_of, scope=scope)
     if led is None:
         raise HTTPException(status_code=404, detail="Akun tidak ditemukan")
-    return led
+    return {**led, "scope_meta": await scope_meta(await entity_ctx(request), entity_id)}   # PK-16
 
 
 # ─── Journal Entries ─────────────────────────────────────────────────────────
@@ -255,7 +255,8 @@ async def trial_balance(request: Request, as_of: Optional[str] = Query(None),
     """Neraca saldo (trial balance) — buku terpisah per entitas."""
     await require_permission(request, "accounting", "view")
     scope = await _gl_scope(request, entity_id)
-    return await gl_service.trial_balance(as_of=as_of, scope=scope)
+    return {**(await gl_service.trial_balance(as_of=as_of, scope=scope)),
+            "scope_meta": await scope_meta(await entity_ctx(request), entity_id)}   # PK-16
 
 
 @router.get("/gl/summary")
@@ -263,7 +264,8 @@ async def gl_summary(request: Request, entity_id: Optional[str] = Query(None)) -
     """KPI ringkas GL (jumlah jurnal, total debit/kredit, seimbang?) — per entitas."""
     await require_permission(request, "accounting", "view")
     scope = await _gl_scope(request, entity_id)
-    return await gl_service.gl_summary(scope=scope)
+    return {**(await gl_service.gl_summary(scope=scope)),
+            "scope_meta": await scope_meta(await entity_ctx(request), entity_id)}   # PK-16
 
 
 @router.get("/gl/consolidation")

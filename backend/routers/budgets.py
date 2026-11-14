@@ -20,7 +20,7 @@ from fastapi import APIRouter, Request, Query, HTTPException
 from pydantic import BaseModel, Field
 
 from dependencies import require_permission, audit
-from entity_scope import entity_ctx, resolve_list_scope
+from entity_scope import entity_ctx, resolve_list_scope, scope_meta
 from schemas import BudgetCreate, BudgetUpdate
 from services import budget_service as budget
 from services import cash_advance_service as ca_svc
@@ -122,7 +122,8 @@ async def budget_vs_actual(
     # Realisasi & komitmen diturunkan dari jurnal/PO/LPJ → scope dgn koleksi ber-entity_id.
     scope = resolve_list_scope("journal_entries", {}, ctx, entity_id)
     rules_entity = entity_id if (entity_id and entity_id != "all") else (ctx.active_entity_id or "")
-    return await budget.budget_vs_actual(scope, year, entity_id_for_rules=rules_entity)
+    return {**(await budget.budget_vs_actual(scope, year, entity_id_for_rules=rules_entity)),
+            "scope_meta": await scope_meta(ctx, entity_id)}   # PK-16
 
 
 @router.get("/finance/budget-keys")

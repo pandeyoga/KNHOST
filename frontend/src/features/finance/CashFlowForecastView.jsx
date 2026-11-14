@@ -1,6 +1,7 @@
 /**
  * CashFlowForecastView (FINANCE) — Proyeksi Arus Kas (AR/AP jatuh tempo).
  * Sumber: /api/finance/cashflow-forecast.
+ * PK-16 — banner PT (`scope_meta`); gagal memuat → data dikosongkan.
  */
 import { apiErrorText } from "../../utils/apiError";
 import { useCallback, useEffect, useState } from "react";
@@ -12,6 +13,7 @@ import {
 } from "lucide-react";
 import axios, { API } from "../../services/apiClient";
 import ErrorNotice from "../../components/ErrorNotice";
+import EntityScopeBanner from "../../components/EntityScopeBanner";
 import { formatDate } from "../../utils/formatters";
 import {
   FC, compactIDR, entityParam, chartTooltip,
@@ -37,6 +39,7 @@ export default function CashFlowForecastView({ selectedEntity }) {
       setData(res.data || null);
     } catch (e) {
       setError(apiErrorText(e, "Gagal memuat proyeksi kas."));
+      setData(null);   // PK-16 (RP-04) — tidak ada angka dari permintaan sebelumnya
     } finally { setLoading(false); }
   }, [selectedEntity]);
 
@@ -50,6 +53,7 @@ export default function CashFlowForecastView({ selectedEntity }) {
 
   return (
     <div data-testid="cashflow-forecast-view">
+      <EntityScopeBanner meta={data?.scope_meta} />
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-3">
         {/* K-02 (26 Okt) — label sumber: kas = saldo buku besar akun kas & bank (angka utama "Kas & Bank"). */}
         <KpiCard testId="fcst-kpi-cash" label="Kas Saat Ini" value={formatCurrency(data?.cash_now)} icon={Wallet} accent={FC.cash} tone="text-[#0058CC]" sub="Saldo buku besar akun kas & bank" />

@@ -4,6 +4,9 @@
  *
  * Fase 4 · R2 (L-03) — `div fixed inset-0` buatan sendiri → `FormModal` baku (Esc/klik latar seragam, kepala &
  * kaki menempel, layar penuh di HP). Isian & testid tetap (`je-modal`, `je-modal-close`, `je-submit`, `je-error`).
+ *
+ * PK-16 (UX-07) — kepala pop-up menyebut buku PT tujuan ("Dicatat di buku …", PT di kepala aplikasi); mode Semua PT
+ * → "hanya untuk melihat". Banner = `subtitle` FormModal supaya ikut menempel saat isi digulir.
  */
 import { apiErrorText } from "../../utils/apiError";
 import KNDatePicker from "@/components/KNDatePicker";
@@ -16,6 +19,7 @@ import FormModal from "../../components/FormModal";
 import { formatCurrency, todayWib } from "../../utils/formatters";
 import useIntentKey from "../../hooks/useIntentKey";
 import { moneyPost } from "../../utils/moneyRequest";
+import EntityScopeBanner from "../../components/EntityScopeBanner";
 
 const emptyLine = () => ({ account_code: "", debit: "", credit: "", description: "" });
 
@@ -86,6 +90,7 @@ export default function JournalEntryModal({ accounts, onClose, onSaved }) {
 
   return (
     <FormModal open onClose={onClose} title="Jurnal Manual Baru" icon={Scale} size="lg"
+      subtitle={<EntityScopeBanner variant="form" testId="je-scope" className="mt-1" />}
       testId="je-modal" busy={saving}
       footer={(
         <div className="flex items-center justify-end gap-2">

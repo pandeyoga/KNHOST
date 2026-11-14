@@ -1,6 +1,8 @@
 /**
  * BankAccountsView (EPIC7-B) — Kas & Bank: multi-akun + ledger + rekonsiliasi.
  * Akses admin/manager (permission "cash"). Sumber: /api/bank-accounts (+ /ledger, /reconcile).
+ * PK-16 — banner PT di atas KPI (cakupan dari kepala aplikasi; /bank-accounts tidak mengirim `scope_meta`);
+ * gagal memuat → kartu & posisi buku besar dikosongkan.
  */
 import { apiErrorText } from "../../utils/apiError";
 import { useCallback, useEffect, useMemo, useState } from "react";
@@ -9,6 +11,7 @@ import {
 } from "lucide-react";
 import axios, { API } from "../../services/apiClient";
 import ErrorNotice from "../../components/ErrorNotice";
+import EntityScopeBanner from "../../components/EntityScopeBanner";
 import useListSearch from "@/hooks/useListSearch";
 import { formatCurrency, formatDate } from "../../utils/formatters";
 import DetailModal from "../../components/DetailModal";
@@ -37,6 +40,7 @@ export default function BankAccountsView({ selectedEntity, currentUser }) {
   const srch = useListSearch(accounts, null, { testId: "bank-accounts", pageSize: 24, placeholder: "Cari nama / bank / nomor rekening…" });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [loadFailed, setLoadFailed] = useState(false);
   const [selected, setSelected] = useState(null);     // account id
   const [ledger, setLedger] = useState(null);
   const [ledgerLoading, setLedgerLoading] = useState(false);
@@ -62,8 +66,13 @@ export default function BankAccountsView({ selectedEntity, currentUser }) {
       setAccounts(Array.isArray(res.data) ? res.data : []);
       setPosition(pos?.data && typeof pos.data.gl_total === "number" ? pos.data : null);
       setError("");
+      setLoadFailed(false);
     } catch (e) {
       setError(apiErrorText(e, "Gagal memuat akun kas/bank."));
+      // PK-16 (RP-04) — saldo dari permintaan sebelumnya tidak boleh tertinggal di kartu/KPI.
+      setAccounts([]);
+      setPosition(null);
+      setLoadFailed(true);
     } finally {
       setLoading(false);
     }
@@ -139,6 +148,7 @@ export default function BankAccountsView({ selectedEntity, currentUser }) {
 
   return (
     <div data-testid="bank-accounts-view">
+      <EntityScopeBanner />
       <div className="grid grid-cols-2 lg:grid-cols-5 gap-3 mb-1.5">
         {/* K-02 — angka utama: saldo buku besar akun kas & bank (= Dasbor Keuangan & Proyeksi Arus Kas). */}
         <Kpi testId="bank-kpi-gl" label="Kas & Bank (buku besar)" value={position ? formatCurrency(position.gl_total) : "—"}
@@ -217,7 +227,8 @@ export default function BankAccountsView({ selectedEntity, currentUser }) {
           {srch.toolbar}
           {loading ? (
             <div className="grid grid-cols-2 lg:grid-cols-3 gap-3" data-testid="bank-loading">{[0, 1, 2].map((i) => <div key={i} className="h-28 bg-[#F5F5F7] rounded-lg animate-pulse" />)}</div>
-          ) : srch.shown.length === 0 ? (
+          ) : loadFailed ? null /* PK-16 — gagal memuat: hanya galat + "Coba lagi", bukan "belum ada akun" */
+            : srch.shown.length === 0 ? (
             <div data-testid="bank-empty" className="py-12 text-center text-[12px] text-[#8E8E93]">
               <Landmark size={26} className="mx-auto mb-2 text-gray-300" />Belum ada akun. Klik “Tambah Akun”.
             </div>

@@ -1,6 +1,8 @@
 /**
  * GeneralLedger (EPIC7-C) — Jurnal Umum, Neraca Saldo, Buku Besar.
  * Akses admin/manager (permission "accounting"). Sumber: /api/gl/*.
+ * PK-16 — SATU banner PT (`scope_meta` /gl/summary) di atas KPI berlaku untuk tab Jurnal, Neraca Saldo & Buku Besar
+ * (cakupan ketiganya sama: header PT); gagal memuat ringkasan → KPI dikosongkan.
  */
 import { apiErrorText } from "../../utils/apiError";
 import { useCallback, useEffect, useMemo, useState } from "react";
@@ -20,6 +22,7 @@ import SuspensePanel from "./SuspensePanel";
 import { Kpi, BalancedKpi } from "./GeneralLedgerParts";
 import { TrialBalanceTab, LedgerTab } from "./GeneralLedgerTabs";
 import DesktopOnlyNotice from "../../components/DesktopOnlyNotice";
+import EntityScopeBanner from "../../components/EntityScopeBanner";
 import PageTabs from "../../components/PageTabs";
 import { SOURCE_LABELS, sourceLabel } from "./glSourceLabels";
 import { askConfirm } from "../../services/confirmService";
@@ -96,6 +99,7 @@ export default function GeneralLedger({ selectedEntity, entities = [], focusDoc,
       setAccounts(Array.isArray(a.data) ? a.data : []);
     } catch (e) {
       setError(apiErrorText(e, "Gagal memuat data GL."));
+      setSummary(null);   // PK-16 (RP-04) — KPI tidak menyisakan angka permintaan sebelumnya
     }
   }, []);
 
@@ -129,6 +133,7 @@ export default function GeneralLedger({ selectedEntity, entities = [], focusDoc,
     <div data-testid="gl-view">
       {/* Fase 3 · P4 (L-04 kelas C) — akuntansi: cukup pemberitahuan "paling nyaman di desktop" di HP. */}
       <DesktopOnlyNotice testId="gl-desktop-notice" what="Jurnal & Buku Besar" />
+      <EntityScopeBanner meta={summary?.scope_meta} />
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-3">
         <Kpi testId="gl-kpi-count" label={summary?.void_count ? "Total Jurnal (tanpa anulir)" : "Total Jurnal"} value={summary?.journal_count ?? "—"} icon={FileStack} />
         <Kpi testId="gl-kpi-debit" label="Total Debit" value={formatCurrency(summary?.total_debit)} icon={Scale} tone="text-[#0058CC]" />

@@ -3,6 +3,9 @@
  * Diturunkan dari GL (journal_entries + gl_accounts). Akses admin/manager.
  * Sumber: /api/finance/income-statement, /api/finance/balance-sheet (+ export.csv).
  * Ikut gaya modul GL (section-card, #6B219A, KNSelect, formatCurrency, ErrorNotice).
+ *
+ * PK-16 (UX-06, RC-01, RP-02, K-15) — tiap tab menyebut PT angkanya (`EntityScopeBanner`, `scope_meta` server);
+ * gagal memuat → data dikosongkan (tidak ada angka periode lama); nama berkas unduhan memuat PT / `gabungan`.
  */
 import { apiErrorText } from "../../utils/apiError";
 import KNDatePicker from "@/components/KNDatePicker";
@@ -21,6 +24,7 @@ import EquityChangesTab from "./EquityChangesTab";
 import PageTabs from "../../components/PageTabs";
 import DesktopOnlyNotice from "../../components/DesktopOnlyNotice";
 import useViewPreset from "../../hooks/useViewPreset";
+import EntityScopeBanner, { useScopeMeta, scopeFileTag } from "../../components/EntityScopeBanner";
 
 const NOW = new Date();
 
@@ -115,6 +119,7 @@ function IncomeStatementTab({ selectedEntity }) {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const scope = useScopeMeta(data?.scope_meta);
 
   const effRange = useMemo(() => {
     if (mode === "range") return { start: range.start, end: range.end };
@@ -134,6 +139,7 @@ function IncomeStatementTab({ selectedEntity }) {
       setData(res.data || null);
     } catch (e) {
       setError(apiErrorText(e, "Gagal memuat Laba-Rugi."));
+      setData(null);   // PK-16 (RP-04) — angka periode sebelumnya tidak boleh tertinggal di layar saat periode baru gagal
     } finally {
       setLoading(false);
     }
@@ -147,12 +153,13 @@ function IncomeStatementTab({ selectedEntity }) {
         params: { ...entityParam(selectedEntity), start: effRange.start, end: effRange.end },
         responseType: "blob",
       });
-      saveBlob(res.data, `laba-rugi_${effRange.start || "awal"}_${effRange.end || "akhir"}.csv`);
+      saveBlob(res.data, `laba-rugi_${scopeFileTag(scope)}_${effRange.start || "awal"}_${effRange.end || "akhir"}.csv`);
     } catch (e) { setError("Gagal mengunduh CSV."); }
   };
 
   return (
     <div data-testid="fs-income-statement">
+      <EntityScopeBanner meta={scope} />
       {/* KPI */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-3">
         <Kpi testId="fs-pl-kpi-revenue" label="Pendapatan" value={formatCurrency(data?.revenue_total)} icon={TrendingUp} tone="text-[#1B7F4B]" />
@@ -257,6 +264,7 @@ function BalanceSheetTab({ selectedEntity }) {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const scope = useScopeMeta(data?.scope_meta);
 
   const load = useCallback(async () => {
     setLoading(true); setError("");
@@ -282,7 +290,7 @@ function BalanceSheetTab({ selectedEntity }) {
         params: { ...entityParam(selectedEntity), as_of: asOf, ...(comparative && compareAsOf ? { compare_as_of: compareAsOf } : {}) },
         responseType: "blob",
       });
-      saveBlob(res.data, `neraca_${asOf}.csv`);
+      saveBlob(res.data, `neraca_${scopeFileTag(scope)}_${asOf}.csv`);
     } catch (e) { setError("Gagal mengunduh CSV."); }
   };
 
@@ -291,6 +299,7 @@ function BalanceSheetTab({ selectedEntity }) {
 
   return (
     <div data-testid="fs-balance-sheet">
+      <EntityScopeBanner meta={scope} />
       {/* KPI */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-3">
         <Kpi testId="fs-bs-kpi-assets" label="Total Aset" value={formatCurrency(data?.assets_total)} icon={Building2} tone="text-[#0058CC]" />

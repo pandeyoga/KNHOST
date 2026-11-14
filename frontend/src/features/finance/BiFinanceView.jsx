@@ -2,6 +2,7 @@
  * BiFinanceView (FINANCE) — Dashboard BI Keuangan.
  * Tren bulanan (Pendapatan/Beban/Laba Bersih), KPI YTD, rasio, & perbandingan
  * antar PT. Sumber: /api/finance/bi. Chart: recharts. Gaya modul GL/existing.
+ * PK-16 — banner PT (`scope_meta`) di bawah judul; gagal memuat → data dikosongkan dan area angka hanya memuat galat.
  */
 import { apiErrorText } from "../../utils/apiError";
 import { useCallback, useEffect, useMemo, useState } from "react";
@@ -15,6 +16,7 @@ import ErrorNotice from "../../components/ErrorNotice";
 import KNSelect from "../../components/KNSelect";
 import { formatCompactIDR, formatCurrency, formatPct } from "../../utils/formatters";
 import FinReportLink from "./FinReportLink";
+import EntityScopeBanner from "../../components/EntityScopeBanner";
 
 const NOW = new Date();
 const YEARS = Array.from({ length: 6 }, (_, i) => {
@@ -59,6 +61,7 @@ export default function BiFinanceView({ selectedEntity }) {
       setData(res.data || null);
     } catch (e) {
       setError(apiErrorText(e, "Gagal memuat data BI Keuangan."));
+      setData(null);   // PK-16 (RP-04) — tidak ada angka dari permintaan sebelumnya
     } finally {
       setLoading(false);
     }
@@ -101,6 +104,7 @@ export default function BiFinanceView({ selectedEntity }) {
         </div>
 
         <div className="section-body">
+          <EntityScopeBanner meta={data?.scope_meta} />
           <ErrorNotice message={error} onRetry={load} onDismiss={() => setError("")} testId="bi-error" />
 
           {loading ? (
@@ -108,7 +112,7 @@ export default function BiFinanceView({ selectedEntity }) {
               <div className="h-[280px] bg-[#F5F5F7] rounded animate-pulse" />
               <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">{[0, 1, 2, 3].map((i) => <div key={i} className="h-20 bg-[#F5F5F7] rounded animate-pulse" />)}</div>
             </div>
-          ) : (
+          ) : !data && error ? null /* PK-16 — gagal memuat: tanpa rasio 0 %/grafik kosong, hanya galat + "Coba lagi" */ : (
             <>
               {/* Tren Bulanan */}
               <div className="rounded-lg border border-[#EFF0F2] p-3 mb-4" data-testid="bi-monthly-chart">

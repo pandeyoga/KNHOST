@@ -12,15 +12,21 @@ import { apiErrorText } from "../../utils/apiError";
 import { can } from "../../config/roles";
 import useIntentKey from "../../hooks/useIntentKey";
 import { moneyPost } from "../../utils/moneyRequest";
+import EntityScopeBanner from "../../components/EntityScopeBanner";
 
 /**
  * CashManagementView (Fase 3 — Pengelolaan Kas).
  * Kas kecil (per entitas) + kas besar (gabungan). Catat kas masuk/keluar + saldo.
  * Koleksi kanonik: cash_transactions (prefix cash_).
+ *
+ * PK-16 (UX-07, UX-14) — ringkasan saldo menyebut PT angkanya (`scope_meta` /cash-transactions/summary); gagal
+ * memuat → data dikosongkan. Form "Catat Transaksi Kas": isian "Entitas" beserta pilihan bawaan berisi nama PT yang
+ * ditulis mati DIHAPUS; `entity_id` tidak dikirim — server memakai PT di kepala aplikasi (D-14, PK-09). Banner
+ * varian form menyebut buku PT penerima catatan.
  */
 const EMPTY_FORM = {
   cash_type: "kas_kecil", direction: "out", amount: "",
-  category: "operasional", description: "", entity_id: "",
+  category: "operasional", description: "",
 };
 const CATEGORIES = [
   { value: "operasional", label: "Operasional" },
@@ -49,6 +55,7 @@ export default function CashManagementView({ currentUser, selectedEntity }) {
   const [entities, setEntities] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [loadFailed, setLoadFailed] = useState(false);
   const [notice, setNotice] = useState("");
   const [filter, setFilter] = useState("all"); // all | kas_kecil | kas_besar
   const [showForm, setShowForm] = useState(false);
@@ -78,8 +85,13 @@ export default function CashManagementView({ currentUser, selectedEntity }) {
       setSummary(sRes.data || { kas_kecil: {}, kas_besar: {}, kas_kecil_per_entity: {} });
       setEntities(Array.isArray(eRes.data) ? eRes.data : []);
       setError("");
+      setLoadFailed(false);
     } catch (e) {
       setError(apiErrorText(e, "Gagal memuat data kas."));
+      // PK-16 (RP-04) — saldo & daftar dari permintaan sebelumnya tidak boleh tertinggal di layar.
+      setTxns([]);
+      setSummary({ kas_kecil: {}, kas_besar: {}, kas_kecil_per_entity: {} });
+      setLoadFailed(true);
     } finally {
       setLoading(false);
     }
@@ -149,6 +161,7 @@ export default function CashManagementView({ currentUser, selectedEntity }) {
     <div data-testid="cash-management-view">
       {notice && <div className="notice-bar success" data-testid="cash-notice"><span>{notice}</span><button onClick={() => setNotice("")}><X size={13} /></button></div>}
       <ErrorNotice message={error} onRetry={loadAll} onDismiss={() => setError("")} testId="cash-error" />
+      <EntityScopeBanner meta={summary.scope_meta} />
 
       {/* FASE E-7 (E7.4) — kas tingkat grup DIHAPUS (setiap uang wajib milik satu badan
           usaha). Sisa data lama tidak disembunyikan: ia ditegur di sini, dengan perintah
@@ -210,7 +223,7 @@ export default function CashManagementView({ currentUser, selectedEntity }) {
             <h2 data-testid="cash-title">Pengelolaan Kas</h2>
           </div>
           {canCreate && (
-            <button data-testid="create-cash-button" onClick={() => { setShowForm(!showForm); setForm({ ...EMPTY_FORM, entity_id: (selectedEntity && selectedEntity !== "all") ? selectedEntity : "" }); }} className="primary-button">
+            <button data-testid="create-cash-button" onClick={() => { setShowForm(!showForm); setForm({ ...EMPTY_FORM }); }} className="primary-button">
               <Plus size={13} /> Catat Transaksi
             </button>
           )}
@@ -244,6 +257,8 @@ export default function CashManagementView({ currentUser, selectedEntity }) {
         error={error}
       >
         <div className="space-y-3">
+            {/* PK-16 — menggantikan isian "Entitas": catatan masuk ke buku PT di kepala aplikasi. */}
+            <EntityScopeBanner variant="form" testId="cash-form-scope" className="" />
             <div className="grid grid-cols-2 gap-3">
               <Field label="Jenis Kas">
                 <KNSelect data-testid="cash-type-select" value={form.cash_type} onValueChange={(v) => setForm({ ...form, cash_type: v })} className="field"
@@ -259,12 +274,6 @@ export default function CashManagementView({ currentUser, selectedEntity }) {
               <Field label="Kategori">
                 <KNSelect data-testid="cash-category-select" value={form.category} onValueChange={(v) => setForm({ ...form, category: v })} className="field" options={CATEGORIES} searchable={false} />
               </Field>
-              {form.cash_type === "kas_kecil" && (
-                <Field label="Entitas">
-                  <KNSelect data-testid="cash-entity-select" value={form.entity_id} onValueChange={(v) => setForm({ ...form, entity_id: v })} className="field" placeholder="Pilih Entitas"
-                    options={[{ value: "", label: "— Default (PT Kain Suka Cita) —" }, ...entities.map((e) => ({ value: e.id, label: e.short_name || e.legal_name }))]} />
-                </Field>
-              )}
             </div>
             <Field label="Deskripsi">
               <input data-testid="cash-description-input" value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} className="field" placeholder="Keterangan transaksi..." />
@@ -284,7 +293,8 @@ export default function CashManagementView({ currentUser, selectedEntity }) {
           </div>
           {loading ? (
             <div className="py-10 text-center text-[12px] text-[#6B6B73]">Memuat transaksi kas...</div>
-          ) : srch.shown.length === 0 ? (
+          ) : loadFailed ? null /* PK-16 — gagal memuat: hanya galat + "Coba lagi", bukan "belum ada transaksi" */
+            : srch.shown.length === 0 ? (
             <div className="py-12 text-center text-[12px] text-[#6B6B73]">
               <Wallet className="mx-auto mb-2 text-gray-300" size={28} />
               <p>Belum ada transaksi kas.</p>

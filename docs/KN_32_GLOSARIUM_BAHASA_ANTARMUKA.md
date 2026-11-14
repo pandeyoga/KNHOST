@@ -135,3 +135,20 @@ bash scripts/rebuild_frontend.sh             # preview = bundel statis, WAJIB re
   untuk label DAN testid (`demo-login-${role}`), kini dipisah `key` vs `label`.
 * Angka acuan sesi ini: **757 penggantian** di **±230 berkas** (FE + BE),
   audit akhir **0 temuan**.
+
+## 8. Istilah cakupan PT di laporan & form uang (PK-16 · K-15)
+
+Laporan keuangan, form uang, dan berkas unduhan selalu menyebut PT yang angkanya ditampilkan
+(`frontend/src/components/EntityScopeBanner.jsx`, field `scope_meta` di jawaban server). Kalimatnya baku —
+jangan diganti sinonim di layar lain, supaya pengguna mengenali keadaan yang sama di semua laporan.
+
+| Istilah | Arti | Dipakai di |
+|---|---|---|
+| **Penjumlahan semua PT** | Mode "Semua PT": angka laporan = jumlah buku tiap PT dalam cakupan pengguna, **bukan** angka grup. Selalu diikuti nama pendek PT-nya dalam kurung. | banner laporan mode gabungan; baris `Cakupan:` di unduhan CSV/XLSX |
+| **belum dieliminasi** | Transaksi antar-PT (jual/beli, pinjaman, pelunasan antar-PT) masih ikut terhitung di kedua sisi; angka grup yang sudah dieliminasi hanya ada di **Konsolidasi Grup** (Akuntansi & Pajak › Laporan). Kalimat lengkap: "transaksi antar-PT **belum** dieliminasi". | banner laporan mode gabungan; label `scope_meta.label` |
+| **Angka untuk {PT}** | Laporan satu PT; nama lengkap PT (bukan id, bukan singkatan). | banner laporan satu PT |
+| **Dicatat di buku {PT}** | Form uang menyimpan ke buku PT di kepala aplikasi (bukan pilihan lokal di form). | form "Catat Transaksi Kas", form jurnal manual |
+| **gabungan** | Penanda mode "Semua PT" pada **nama berkas** unduhan (`laba-rugi_gabungan_…csv`); satu PT memakai nama pendeknya (`laba-rugi_KSC_…csv`). | nama berkas CSV/XLSX laporan |
+
+Mode gabungan memakai mesin konsolidasi (angka sudah dieliminasi) baru menyusul di PK-31; saat itu kalimat
+"belum dieliminasi" diganti.

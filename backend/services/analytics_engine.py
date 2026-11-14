@@ -208,7 +208,9 @@ async def _src_returns(metrics, dims, grain, p, filters, sc, w, _s):
 
 async def _src_journal(metrics, dims, grain, p, filters, sc, w, _s):
     fq = _match_filters("journal", filters, w)
-    pre = [{"$match": {"entity_id": {"$in": sc.entity_ids}, "status": "posted", "date": p.mongo_range(), **fq}},
+    # PK-16 (RP-04) — jurnal penutup bukan pendapatan periode (bertanggal …T23:59:59, terbaca hari berikutnya di WIB).
+    pre = [{"$match": {"entity_id": {"$in": sc.entity_ids}, "status": "posted", "source_type": {"$ne": "closing"},
+                       "date": p.mongo_range(), **fq}},
            {"$unwind": "$lines"}, {"$match": {"lines.account_code": cat.REVENUE_ACCOUNT}}]
     res = await _group("journal_entries", pre, dims, "journal", _grain(_wib_day("$date"), grain) if grain else None,
                        {"v": {"$sum": {"$subtract": [{"$ifNull": ["$lines.credit", 0]}, {"$ifNull": ["$lines.debit", 0]}]}}})

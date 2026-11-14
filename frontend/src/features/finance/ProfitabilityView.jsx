@@ -6,6 +6,8 @@
  * Tab kedua = `CostingView` (dulu menu Analitik › Margin & HPP). Alias `costing` → {tab:"katalog"} diaktifkan P8.
  * Gerbang per tab: katalog hanya bila peran boleh membuka `costing` (server: /costing/wac admin/manager);
  * realisasi dijaga izin akuntansi di server (/finance/profitability → accounting.view).
+ * PK-16 — tab Realisasi menyebut PT angkanya (`scope_meta`), gagal memuat → data dikosongkan, nama berkas Excel
+ * memuat PT / `gabungan`.
  */
 import { apiErrorText } from "../../utils/apiError";
 import KNDatePicker from "@/components/KNDatePicker";
@@ -19,6 +21,7 @@ import {
 } from "lucide-react";
 import axios, { API } from "../../services/apiClient";
 import ErrorNotice from "../../components/ErrorNotice";
+import EntityScopeBanner, { useScopeMeta, scopeFileTag } from "../../components/EntityScopeBanner";
 import { formatUnitTotals } from "../../utils/qtyByUnit";
 import PageTabs from "../../components/PageTabs";
 import FilterChips from "../../components/FilterChips";
@@ -74,6 +77,7 @@ function RealisasiPanel({ selectedEntity }) {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const scope = useScopeMeta(data?.scope_meta);
 
   const load = useCallback(async () => {
     setLoading(true); setError("");
@@ -85,6 +89,7 @@ function RealisasiPanel({ selectedEntity }) {
       setData(res.data || null);
     } catch (e) {
       setError(apiErrorText(e, "Gagal memuat analisis profitabilitas."));
+      setData(null);   // PK-16 (RP-04) — tidak ada angka dari permintaan sebelumnya
     } finally { setLoading(false); }
   }, [selectedEntity, range]);
 
@@ -97,7 +102,7 @@ function RealisasiPanel({ selectedEntity }) {
       const res = await axios.get(`${API}/finance/profitability/export.xlsx`, {
         params: { ...entityParam(selectedEntity), start: range.start, end: range.end }, responseType: "blob",
       });
-      saveBlob(res.data, `profitabilitas_${range.start}_${range.end}.xlsx`);
+      saveBlob(res.data, `profitabilitas_${scopeFileTag(scope)}_${range.start}_${range.end}.xlsx`);
     } catch { setError("Gagal mengunduh Excel profitabilitas."); } finally { setExporting(false); }
   };
 
@@ -112,6 +117,7 @@ function RealisasiPanel({ selectedEntity }) {
 
   return (
     <div data-testid="prof-realisasi">
+      <EntityScopeBanner meta={scope} />
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-3">
         <KpiCard testId="prof-kpi-revenue" label="Pendapatan (Realisasi · terkirim)" value={formatCurrency(tot.revenue)} icon={TrendingUp} accent={FC.revenue} tone="text-[#1B7F4B]" sub={`Estimasi nilai pesanan ${compactIDR(est.revenue || 0)}`} />
         <KpiCard testId="prof-kpi-cogs" label="HPP (saat kirim)" value={formatCurrency(tot.cogs)} icon={Coins} accent={FC.amber} tone="text-[#C77700]" sub={tot.landed_included ? `termasuk biaya masuk (landed) ${compactIDR(tot.cogs_landed || 0)}` : "belum ada biaya masuk (landed) yang dibebankan"} />
@@ -139,7 +145,8 @@ function RealisasiPanel({ selectedEntity }) {
 
       {loading ? (
         <div className="grid gap-3" data-testid="prof-loading"><div className="h-[280px] bg-[#F5F5F7] rounded animate-pulse" /></div>
-      ) : !hasData ? (
+      ) : !data && error ? null /* PK-16 — gagal memuat: hanya galat + "Coba lagi", bukan "belum ada penjualan" */
+        : !hasData ? (
         <Panel title="Profitabilitas" icon={Boxes}><EmptyState icon={Boxes} title="Belum ada penjualan pada periode ini" hint="Pilih rentang tanggal lain atau pastikan ada Pesanan Penjualan terkonfirmasi." testId="prof-empty" /></Panel>
       ) : (
         <>

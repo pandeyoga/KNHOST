@@ -86,7 +86,8 @@ METRICS: Dict[str, Dict[str, Any]] = {
     "returns_value": M("Nilai retur", "returns", "sum", "idr", "Σ nilai bersih nota kredit",
                        date_basis="tanggal nota (WIB)"),
     "recognized_revenue": M("Pendapatan diakui", "journal", "sum", "idr",
-                            "Σ kredit − debit akun 4-1000 di jurnal posted (diakui saat barang dikirim, sudah dikurangi retur)",
+                            "Σ kredit − debit akun 4-1000 di jurnal posted, tanpa jurnal penutup (diakui saat barang dikirim, "
+                            "sudah dikurangi retur)",
                             perms=(("accounting", "view"),), date_basis="tanggal jurnal (WIB)"),
     "sample_orders_count": M("Pesanan sample", "fact_sample", "orders", "count",
                              "Jumlah pesanan hidup bertipe sample", additive=False),

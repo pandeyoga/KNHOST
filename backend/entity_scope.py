@@ -590,6 +590,43 @@ async def resolve_work_scope(collection: str, query: Optional[Dict[str, Any]], c
     return q
 
 
+def _entity_full(e: Dict[str, Any]) -> str:
+    return e.get("legal_name") or e.get("name") or e.get("short_name") or e.get("code") or e.get("id", "")
+
+
+def _entity_short(e: Dict[str, Any]) -> str:
+    return e.get("short_name") or e.get("code") or e.get("name") or e.get("legal_name") or e.get("id", "")
+
+
+async def scope_meta(ctx: EntityContext, entity_id_param: Optional[str] = None) -> Dict[str, Any]:
+    """PK-16 (UX-06, RC-01, K-15) — keterangan cakupan PT untuk laporan dan unduhan.
+
+    Aturan cakupan SAMA dengan `resolve_list_scope`/`resolve_scope_ids`. `mode` `single` bila satu PT, `combined` bila
+    lebih; `eliminated` selalu salah (angka gabungan = penjumlahan; konsolidasi menyusul PK-31). Id PT tidak masuk
+    `label`."""
+    from db import db
+    ids = [i for i in resolve_scope_ids(ctx, entity_id_param) if i and i != "all"]
+    rows = await db.business_entities.find(
+        {"id": {"$in": ids}}, {"_id": 0, "id": 1, "short_name": 1, "legal_name": 1, "name": 1, "code": 1}).to_list(50)
+    by_id = {r["id"]: r for r in rows}
+    ents = [by_id.get(i) or {"id": i} for i in ids]
+    combined = len(ids) > 1
+    if combined:
+        label = (f"Penjumlahan semua PT ({', '.join(_entity_short(e) for e in ents)}) — "
+                 "transaksi antar-PT belum dieliminasi")
+    else:
+        label = _entity_full(ents[0]) if ents else ""
+    return {"mode": "combined" if combined else "single", "entity_ids": ids,
+            "entities": [{"id": e.get("id"), "short_name": _entity_short(e), "legal_name": _entity_full(e)}
+                         for e in ents],
+            "eliminated": False, "label": label}
+
+
+def scope_line(meta: Dict[str, Any]) -> str:
+    """Baris kepala unduhan: `PT: {nama lengkap}` atau `Cakupan: {label gabungan}`."""
+    return f"Cakupan: {meta.get('label', '')}" if meta.get("mode") == "combined" else f"PT: {meta.get('label', '')}"
+
+
 def resolve_scope_ids(ctx: EntityContext, entity_id_param: Optional[str] = None) -> List[str]:
     """Daftar entity_id dalam cakupan baca. Dipakai koleksi yang punya record
     'all' (grup) yang harus selalu terlihat (mis. kas_besar / akun bank grup)."""

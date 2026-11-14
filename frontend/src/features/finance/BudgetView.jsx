@@ -6,6 +6,7 @@
  *
  * Fase 3 · P4 (L-03) — "Tambah Anggaran" kini membuka pop-up FormModal (dulu form inline di atas tabel);
  * banner "paling nyaman di desktop" di HP (L-04 kelas C).
+ * PK-16 — banner PT (`scope_meta`) di atas KPI; gagal memuat → data dikosongkan.
  */
 import { apiErrorText } from "../../utils/apiError";
 import { useCallback, useEffect, useMemo, useState } from "react";
@@ -29,6 +30,7 @@ import {
 import { can } from "../../config/roles";
 import { confirmMoney } from "../../utils/moneyConfirm";
 import { useEntityScope } from "../../context/EntityScopeContext";
+import EntityScopeBanner from "../../components/EntityScopeBanner";
 
 export default function BudgetView({ selectedEntity, currentUser }) {
   const { entities } = useEntityScope();
@@ -58,6 +60,7 @@ export default function BudgetView({ selectedEntity, currentUser }) {
       setRules(rl.data || rep.data?.rules || null);
     } catch (e) {
       setError(apiErrorText(e, "Gagal memuat anggaran."));
+      setData(null);   // PK-16 (RP-04) — tidak ada angka dari permintaan sebelumnya
     } finally { setLoading(false); }
   }, [year, selectedEntity]);
 
@@ -138,6 +141,7 @@ export default function BudgetView({ selectedEntity, currentUser }) {
   return (
     <div data-testid="budget-view">
       <DesktopOnlyNotice testId="budget-desktop-notice" what="Anggaran vs Realisasi" />
+      <EntityScopeBanner meta={data?.scope_meta} />
       {/* KPI */}
       <div className="grid grid-cols-2 lg:grid-cols-5 gap-3 mb-3">
         <KpiCard testId="budget-kpi-total" label={`Anggaran ${year}`} value={formatCurrency(tot.budget)}
@@ -212,7 +216,8 @@ export default function BudgetView({ selectedEntity, currentUser }) {
 
       {loading ? (
         <div className="h-[280px] bg-[#F5F5F7] rounded animate-pulse" data-testid="budget-loading" />
-      ) : rows.length === 0 ? (
+      ) : !data && error ? null /* PK-16 — gagal memuat: hanya galat + "Coba lagi", bukan "belum ada anggaran" */
+        : rows.length === 0 ? (
         <Panel title={`Anggaran vs Realisasi — ${DIM_TABS.find((t) => t.value === tab)?.label}`} icon={Target}>
           <EmptyState icon={Target} title="Belum ada anggaran untuk dimensi & tahun ini"
             hint="Klik ‘Tambah Anggaran’ untuk menetapkan pagu per akun COA atau per kategori beban."

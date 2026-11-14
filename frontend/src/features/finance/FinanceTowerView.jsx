@@ -2,12 +2,14 @@
  * FinanceTowerView (FINANCE) — Dashboard Keuangan terpadu (Control Tower).
  * KPI posisi kas/AR/AP/modal kerja + Laba-Rugi MTD/YTD + tren + aging + rasio.
  * Sumber: /api/finance/tower. Panel dipisah ke FinanceTowerParts.jsx.
+ * PK-16 — banner PT (`scope_meta`); gagal memuat → data dikosongkan (bukan "belum ada data").
  */
 import { apiErrorText } from "../../utils/apiError";
 import { useCallback, useEffect, useState } from "react";
 import { RefreshCw, Wallet, Users, Truck, Coins, CalendarDays } from "lucide-react";
 import axios, { API } from "../../services/apiClient";
 import ErrorNotice from "../../components/ErrorNotice";
+import EntityScopeBanner from "../../components/EntityScopeBanner";
 import { FC, entityParam, KpiCard, EmptyState, formatCurrency } from "./financeShared";
 import {
   MonthlyTrendPanel, RatiosStrip, ArAgingPanel, ApAgingPanel,
@@ -26,6 +28,7 @@ export default function FinanceTowerView({ selectedEntity }) {
       setData(res.data || null);
     } catch (e) {
       setError(apiErrorText(e, "Gagal memuat dashboard keuangan."));
+      setData(null);   // PK-16 (RP-04) — tidak ada angka dari permintaan sebelumnya
     } finally { setLoading(false); }
   }, [selectedEntity]);
 
@@ -43,6 +46,7 @@ export default function FinanceTowerView({ selectedEntity }) {
         </div>
         <button data-testid="tower-refresh" className="icon-button" onClick={load} aria-label="Refresh"><RefreshCw size={14} className={loading ? "animate-spin" : ""} /></button>
       </div>
+      <EntityScopeBanner meta={data?.scope_meta} />
 
       <ErrorNotice message={error} onRetry={load} onDismiss={() => setError("")} testId="tower-error" />
 
@@ -51,7 +55,7 @@ export default function FinanceTowerView({ selectedEntity }) {
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">{[0, 1, 2, 3].map((i) => <div key={i} className="h-20 bg-[#F5F5F7] rounded-xl animate-pulse" />)}</div>
           <div className="h-[280px] bg-[#F5F5F7] rounded-xl animate-pulse" />
         </div>
-      ) : !data ? (
+      ) : !data && error ? null /* PK-16 — gagal memuat: hanya galat + "Coba lagi" */ : !data ? (
         /* FASE P5 — dulu `null`: seluruh dasbor keuangan menjadi HALAMAN KOSONG tanpa
            satu kalimat pun. Pengguna tak bisa membedakan "belum ada data" dari "gagal
            memuat" — padahal bilah galat di atas hanya muncul bila ada exception. */

@@ -173,12 +173,10 @@ async def test_PK02_FX02_denda_dibayar_dua_kali(aplikasi):
     assert cocok(await saldo_akun("1-1270", eid), 0)
 
 
-@pytest.mark.xfail(strict=True, reason="RC-01 — mode Semua Entitas menjumlah tanpa eliminasi dan tanpa keterangan")
 async def test_PK02_RC01_gabungan_tanpa_eliminasi(aplikasi):
     """Selisih sebelum/sesudah data dimasukkan, supaya jurnal PT lain di modul ini tidak ikut terhitung."""
     from services import financial_statement_service as fs
     pl0 = await fs.income_statement("2026-10-01", "2026-10-31", {})
-    bs0 = await fs.balance_sheet("2026-10-31", scope={})
     a, b = await pt_uji("R1A"), await pt_uji("R1B")
     for args in [
         (a, "2026-10-01", [("1-1100", 100 * JT, 0), ("3-1000", 0, 100 * JT)], "Setor modal", "rc_a1"),
@@ -194,12 +192,12 @@ async def test_PK02_RC01_gabungan_tanpa_eliminasi(aplikasi):
     ]:
         await jurnal(*args)
     pl = await fs.income_statement("2026-10-01", "2026-10-31", {})
-    bs = await fs.balance_sheet("2026-10-31", scope={})
-    berlabel = pl.get("eliminated") is False and bs.get("eliminated") is False
-    benar = (cocok(pl["revenue_total"] - pl0["revenue_total"], 50 * JT)
-             and cocok(bs["assets_total"] - bs0["assets_total"], (115 + 35.5 + 18) * JT + (20 - 8) * JT + 2.2 * JT))
-    assert berlabel or benar, (f"pendapatan +{pl['revenue_total'] - pl0['revenue_total']:,.2f}, "
-                               f"aset +{bs['assets_total'] - bs0['assets_total']:,.2f}, tanpa penanda eliminated")
+    # PK-16 (K-15) — gabungan tetap PENJUMLAHAN (70 jt, belum dieliminasi), tetapi kini BERLABEL lewat `scope_meta`.
+    from entity_scope import EntityContext, scope_meta
+    meta = await scope_meta(EntityContext(user={"role": "admin"}, active_entity_id=a, allowed_entity_ids=[a, b],
+                                          view_all=True), "all")
+    assert meta["mode"] == "combined" and meta["eliminated"] is False and "belum dieliminasi" in meta["label"]
+    assert cocok(pl["revenue_total"] - pl0["revenue_total"], 70 * JT)
 
 
 @pytest.mark.xfail(strict=True, reason="RP-06 — klasifikasi arus kas menyimpang dari hitungan baku")

@@ -1,5 +1,5 @@
 <!-- DIHASILKAN OTOMATIS oleh scripts/gen_codebase_map.py — JANGAN EDIT TANGAN -->
-<!-- Dihasilkan dari commit: bab8301 pada 2026-11-13 -->
+<!-- Dihasilkan dari commit: e3e9869 pada 2026-11-13 -->
 # CODEBASE MAP — Kain Nusantara (dihasilkan otomatis)
 
 Peta ini dihitung dari kode oleh `scripts/gen_codebase_map.py`. Kalau angka di sini
@@ -29,7 +29,7 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 | `schemas_purchasing.py` | 625 |
 | `dependencies.py` | 233 |
 | `permissions_config.py` | 694 |
-| `entity_scope.py` | 687 |
+| `entity_scope.py` | 724 |
 | `pagination.py` | 145 |
 | `indexes.py` | 782 |
 | `bootstrap.py` | 1984 |
@@ -91,6 +91,8 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 | `resolve_write_entity()` | PK-09 — PT untuk TULIS dari isi permintaan: `all` → 400; di luar penugasan → 403; kosong → PT aktif. |
 | `resolve_list_scope()` | Logika scope LIST yang baku & backward-compatible. |
 | `resolve_work_scope()` | FIX-1 (K-B1-01/02, B2a D1, B3a keputusan 6) — cakupan daftar PEKERJAAN FISIK. |
+| `scope_meta()` | PK-16 (UX-06, RC-01, K-15) — keterangan cakupan PT untuk laporan dan unduhan. |
+| `scope_line()` | Baris kepala unduhan: `PT: {nama lengkap}` atau `Cakupan: {label gabungan}`. |
 | `resolve_scope_ids()` | Daftar entity_id dalam cakupan baca. Dipakai koleksi yang punya record |
 | `resolve_list_scope_inherit()` | Seperti `resolve_list_scope`, tetapi baris **GLOBAL tetap terlihat**. |
 | `scope_value()` | Nilai siap-pakai untuk field entitas: `str` bila satu, `{"$in": [...]}` bila banyak. |
@@ -130,9 +132,9 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 | `audit.py` | 2 | 98 | `/audit-logs`, `/audit-logs/resource` |
 | `auth.py` | 5 | 191 | `/auth/context`, `/auth/login`, `/auth/logout`, `/auth/me`, `/roles` |
 | `bank.py` | 6 | 131 | `/bank-accounts`, `/bank-accounts/position`, `/bank-accounts/{account_id}`, `/bank-accounts/{account_id}/ledger`, `/cash-transactions/{txn_id}/reconcile` |
-| `bank_reconciliation.py` | 23 | 431 | `/bank-reconciliation/auto-match`, `/bank-reconciliation/formats`, `/bank-reconciliation/formats/{format_id}`, `/bank-reconciliation/holding`, `/bank-reconciliation/import`, `/bank-reconciliation/import-file` … |
-| `budgets.py` | 9 | 174 | `/finance/budget-check`, `/finance/budget-keys`, `/finance/budget-rules`, `/finance/budget-vs-actual`, `/finance/budgets`, `/finance/budgets/{budget_id}` |
-| `cash.py` | 4 | 250 | `/cash-transactions`, `/cash-transactions/summary`, `/cash-transactions/{txn_id}/void` |
+| `bank_reconciliation.py` | 23 | 436 | `/bank-reconciliation/auto-match`, `/bank-reconciliation/formats`, `/bank-reconciliation/formats/{format_id}`, `/bank-reconciliation/holding`, `/bank-reconciliation/import`, `/bank-reconciliation/import-file` … |
+| `budgets.py` | 9 | 175 | `/finance/budget-check`, `/finance/budget-keys`, `/finance/budget-rules`, `/finance/budget-vs-actual`, `/finance/budgets`, `/finance/budgets/{budget_id}` |
+| `cash.py` | 4 | 251 | `/cash-transactions`, `/cash-transactions/summary`, `/cash-transactions/{txn_id}/void` |
 | `cash_advances.py` | 19 | 168 | `/cash-advance-settlements`, `/cash-advance-settlements/reimburse-payables`, `/cash-advance-settlements/{stl_id}`, `/cash-advance-settlements/{stl_id}/approve`, `/cash-advance-settlements/{stl_id}/pay-reimburse`, `/cash-advance-settlements/{stl_id}/reject` … |
 | `categories.py` | 5 | 169 | `/product-categories`, `/product-categories/{category_id}`, `/product-motifs` |
 | `client_dataset.py` | 6 | 60 | `/batches`, `/batches/{batch_id}`, `/batches/{batch_id}/commit`, `/batches/{batch_id}/rollback`, `/template`, `/upload` |
@@ -162,13 +164,13 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 | `esign.py` | 4 | 91 | `/request`, `/signatures/{doc_type}/{source_id}`, `/verify`, `/verify/{code}` |
 | `export_center.py` | 15 | 396 | `/coverage`, `/datasets`, `/jobs`, `/jobs/{job_id}`, `/jobs/{job_id}/download`, `/jobs/{job_id}/retry` … |
 | `fabric_type_master.py` | 2 | 31 | `/master/fabric-types` |
-| `finance_analytics.py` | 4 | 140 | `/finance/cashflow-forecast`, `/finance/profitability`, `/finance/profitability/export.xlsx`, `/finance/tower` |
+| `finance_analytics.py` | 4 | 145 | `/finance/cashflow-forecast`, `/finance/profitability`, `/finance/profitability/export.xlsx`, `/finance/tower` |
 | `finance_bi.py` | 1 | 36 | `/finance/bi` |
 | `finance_cases.py` | 13 | 194 | `/finance-cases`, `/finance-cases/playbooks`, `/finance-cases/policy`, `/finance-cases/reasons`, `/finance-cases/scan`, `/finance-cases/stats` … |
-| `financial_statements.py` | 8 | 261 | `/finance/balance-sheet`, `/finance/balance-sheet/export.csv`, `/finance/cash-flow`, `/finance/cash-flow/export.csv`, `/finance/equity-changes`, `/finance/equity-changes/export.csv` … |
+| `financial_statements.py` | 8 | 270 | `/finance/balance-sheet`, `/finance/balance-sheet/export.csv`, `/finance/cash-flow`, `/finance/cash-flow/export.csv`, `/finance/equity-changes`, `/finance/equity-changes/export.csv` … |
 | `fixed_assets.py` | 10 | 199 | `/fixed-assets`, `/fixed-assets/meta`, `/fixed-assets/run-depreciation`, `/fixed-assets/summary`, `/fixed-assets/{asset_id}`, `/fixed-assets/{asset_id}/dispose` … |
 | `fulfillment.py` | 3 | 49 | `/fulfillment/wizard/{so_id}`, `/fulfillment/wizard/{so_id}/create-interco`, `/fulfillment/wizard/{so_id}/create-pr` |
-| `gl.py` | 20 | 348 | `/gl/accounts`, `/gl/accounts/{code}`, `/gl/accounts/{code}/ledger`, `/gl/cash-accounts`, `/gl/consolidation`, `/gl/inventory-drift-explain` … |
+| `gl.py` | 20 | 350 | `/gl/accounts`, `/gl/accounts/{code}`, `/gl/accounts/{code}/ledger`, `/gl/cash-accounts`, `/gl/consolidation`, `/gl/inventory-drift-explain` … |
 | `gl_mappings.py` | 5 | 82 | `/gl/account-mappings`, `/gl/account-mappings/history`, `/gl/account-mappings/{key}`, `/gl/account-mappings/{key}/candidates`, `/gl/account-mappings/{key}/reset` |
 | `goods_receipts.py` | 37 | 316 | `/goods-receipts`, `/goods-receipts/dn-profiles`, `/goods-receipts/dn-profiles/{partner_id}`, `/goods-receipts/doc-variance`, `/goods-receipts/mode`, `/goods-receipts/partners` … |
 | `grade_master.py` | 4 | 62 | `/master/grades`, `/master/grades/{code}`, `/master/grades/{code}/active` |
@@ -299,9 +301,9 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 | `alert_ops_service.py` | 355 | PS-21 — Generator ALERT OPERASIONAL (quick win di atas mesin R6.5/R6.6). |
 | `alert_service.py` | 331 | R6.5 — Generator ALERT untuk Scheduler & Notifikasi (Kain Nusantara). |
 | `amendment_service.py` | 1058 | FASE G-1 — **FONDASI AMANDEMEN**: tidak ada lagi perubahan angka secara diam-diam. |
-| `analytics_catalog.py` | 144 | Tanya KN F1.2 — katalog semantik `cat-v1` sebagai DATA (satu-satunya tempat definisi). |
+| `analytics_catalog.py` | 145 | Tanya KN F1.2 — katalog semantik `cat-v1` sebagai DATA (satu-satunya tempat definisi). |
 | `analytics_config.py` | 22 | Tanya KN F0.5 — kebijakan data asisten analitik (keputusan klien §7) dari konfigurasi. |
-| `analytics_engine.py` | 732 | Tanya KN F1.3 — kompilator `query_metrics` & `analyze_change` → agregasi Mongo. |
+| `analytics_engine.py` | 734 | Tanya KN F1.3 — kompilator `query_metrics` & `analyze_change` → agregasi Mongo. |
 | `analytics_facts.py` | 289 | Tanya KN F1.1 — tabel fakta `fact_sales_lines`. |
 | `analytics_snapshots.py` | 73 | Tanya KN F5 — snapshot harian stok & piutang (23.55 WIB) → posisi `as_of` masa lalu di mesin analitik. |
 | `analytics_time.py` | 218 | Tanya KN F0.1 — periode analitik dalam WIB (Asia/Jakarta) → batas UTC. |
@@ -312,11 +314,11 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 | `approval_reminder.py` | 133 | services/approval_reminder.py — PENGINGAT HARIAN "keputusan yang menunggu Anda". |
 | `approval_service.py` | 138 | services/approval_service.py — **ATURAN AMBANG PERSETUJUAN** (`approval_rules`). |
 | `ar_aging_service.py` | 515 | EPIC7-A — AR / Piutang Aging (read/derived report). |
-| `ar_receipt_service.py` | 809 | AR Receipt service (EPIC3B) — Penerimaan pembayaran customer + aplikasi ke SO. |
+| `ar_receipt_service.py` | 811 | AR Receipt service (EPIC3B) — Penerimaan pembayaran customer + aplikasi ke SO. |
 | `atomic_claim.py` | 63 | Klaim atomik dokumen induk untuk endpoint tulis multi-koleksi (T-01 Opsi B — saga). |
 | `atp_policy.py` | 127 | KN-D11 (audit 2026-09-21) — SATU definisi ATP (Available-to-Promise) untuk seluruh sistem. |
 | `backorder_service.py` | 232 | Backorder service (Sub-fase 1.6) — auto-fulfill lifecycle. |
-| `bank_recon_service.py` | 1414 | FASE G-8 — REKONSILIASI BANK OTOMATIS (skor berbobot · split · aturan · titipan). |
+| `bank_recon_service.py` | 1504 | FASE G-8 — REKONSILIASI BANK OTOMATIS (skor berbobot · split · aturan · titipan). |
 | `bank_service.py` | 277 | Bank/Cash Accounts service (EPIC7-B) — multi-akun kas & bank + rekonsiliasi. |
 | `bank_statement_parser.py` | 536 | FASE G-8 — PARSER MUTASI BANK MULTI-FORMAT. |
 | `base_fabric.py` | 26 | Kain dasar — rujukan induk master data (mis. kain polos woven yang menjadi bahan printing). |
@@ -671,7 +673,7 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 
 | Fitur (`src/features/`) | Berkas | Baris |
 |---|---:|---:|
-| `__tests__` | 77 | 10627 |
+| `__tests__` | 79 | 11169 |
 | `admin` | 34 | 6577 |
 | `approvals` | 9 | 1699 |
 | `catalog` | 24 | 1449 |
@@ -682,7 +684,7 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 | `desks` | 2 | 229 |
 | `documents` | 18 | 2640 |
 | `export` | 9 | 700 |
-| `finance` | 93 | 20772 |
+| `finance` | 93 | 20861 |
 | `home` | 5 | 1130 |
 | `hr` | 33 | 5340 |
 | `inspections` | 12 | 2171 |
@@ -700,7 +702,7 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 | `pos` | 23 | 2632 |
 | `pricing` | 1 | 151 |
 | `production` | 3 | 751 |
-| `purchasing` | 86 | 18193 |
+| `purchasing` | 86 | 18203 |
 | `rfid` | 21 | 3556 |
 | `rnd` | 66 | 7874 |
 | `sales` | 97 | 15769 |
@@ -711,7 +713,7 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 | `transfers` | 1 | 20 |
 | `wms` | 99 | 13195 |
 
-**Komponen bersama (`src/components/*.jsx`, 103):** `ArchivedReadOnlyBanner.jsx`, `AskKnButton.jsx`, `AttachmentThumb.jsx`, `AuditHistoryPanel.jsx`, `BaseFabricPicker.jsx`, `BinSelect.jsx`, `CartPanel.jsx`, `CartPanelBanners.jsx`, `Collapse.jsx`, `CommandPalette.jsx`, `ConfirmHost.jsx`, `ConfirmModal.jsx`, `CoreWidgets.jsx`, `CustomerPanel.jsx`, `DecimalInput.jsx`, `DesktopOnlyNotice.jsx`, `DetailDrawer.jsx`, `DetailModal.jsx`, `DetailParts.jsx`, `DetailPopup.jsx`, `DualName.jsx`, `EntityBadge.jsx`, `EntityRequiredNotice.jsx`, `EntitySwitcher.jsx`, `ErrorBoundary.jsx`, `ErrorNotice.jsx`, `ExportMenu.jsx`, `FilterChips.jsx`, `FormModal.jsx`, `FormSection.jsx`, `FulfillmentInfo.jsx`, `GroupEntityBadge.jsx`, `GuidedActionPanel.jsx`, `GuidedTour.jsx`, `HubTabs.jsx`, `KNDatePicker.jsx`, `KNDateTimePicker.jsx`, `KNMonthPicker.jsx`, `KNPager.jsx`, `KNSelect.jsx`, `KNTimePicker.jsx`, `LabelPrinterModal.jsx`, `LineFilter.jsx`, `LinkCard.jsx`, `ListControls.jsx`, `ListPageParts.jsx`, `LoadingLine.jsx`, `LocationFields.jsx`, `LocationScopeBar.jsx`, `LoginScreen.jsx`, `MakloonSelect.jsx`, `MediaLightbox.jsx`, `MixedLotConfirmModal.jsx`, `MoneyInput.jsx`, `NotificationCenter.jsx`, `OkNotice.jsx`, `OnboardingPanel.jsx`, `OpeningCostBanner.jsx`, `PageTabs.jsx`, `PagedRows.jsx`, `PaginationBar.jsx`, `PantoneFinder.jsx`, `PaymentBadge.jsx`, `PeggingModal.jsx`, `PeriodUnlockBanner.jsx`, `PeriodUnlockCard.jsx`, `PrinterStatusWidget.jsx`, `ProductCard.jsx`, `ProductColorChip.jsx`, `ProductColorTriad.jsx`, `ProductDetail.jsx`, `ProductGallery.jsx`, `ProductQuickView.jsx`, `ProductSelect.jsx`, `QcRequestPicker.jsx`, `QcStatusBadge.jsx`, `QtyDual.jsx`, `ResponsiveTable.jsx`, `ReturnPolicyEditor.jsx`, `ReturnTimeline.jsx`, `RevisionProgress.jsx`, `RollCheckChips.jsx`, `RollLabelActions.jsx`, `RollPicker.jsx`, `RollReconcileSheet.jsx`, `SalesStockSummary.jsx`, `SampleKindChooser.jsx`, `ScopeReadOnlyBanner.jsx`, `SeeAllModal.jsx`, `SiteSelect.jsx`, `SoStatusBadges.jsx`, `StarRating.jsx`, `StockFigures.jsx`, `StoreCreditBadge.jsx`, `SupersedeHint.jsx`, `TableFilter.jsx`, `TourMenu.jsx`, `UomConvertHint.jsx`, `UomInputConvert.jsx`, `VariantAxisPicker.jsx`, `WaitingBoardsStrip.jsx`, `WaitingQueueBoard.jsx`, `WarehouseModeBadge.jsx`
+**Komponen bersama (`src/components/*.jsx`, 104):** `ArchivedReadOnlyBanner.jsx`, `AskKnButton.jsx`, `AttachmentThumb.jsx`, `AuditHistoryPanel.jsx`, `BaseFabricPicker.jsx`, `BinSelect.jsx`, `CartPanel.jsx`, `CartPanelBanners.jsx`, `Collapse.jsx`, `CommandPalette.jsx`, `ConfirmHost.jsx`, `ConfirmModal.jsx`, `CoreWidgets.jsx`, `CustomerPanel.jsx`, `DecimalInput.jsx`, `DesktopOnlyNotice.jsx`, `DetailDrawer.jsx`, `DetailModal.jsx`, `DetailParts.jsx`, `DetailPopup.jsx`, `DualName.jsx`, `EntityBadge.jsx`, `EntityRequiredNotice.jsx`, `EntityScopeBanner.jsx`, `EntitySwitcher.jsx`, `ErrorBoundary.jsx`, `ErrorNotice.jsx`, `ExportMenu.jsx`, `FilterChips.jsx`, `FormModal.jsx`, `FormSection.jsx`, `FulfillmentInfo.jsx`, `GroupEntityBadge.jsx`, `GuidedActionPanel.jsx`, `GuidedTour.jsx`, `HubTabs.jsx`, `KNDatePicker.jsx`, `KNDateTimePicker.jsx`, `KNMonthPicker.jsx`, `KNPager.jsx`, `KNSelect.jsx`, `KNTimePicker.jsx`, `LabelPrinterModal.jsx`, `LineFilter.jsx`, `LinkCard.jsx`, `ListControls.jsx`, `ListPageParts.jsx`, `LoadingLine.jsx`, `LocationFields.jsx`, `LocationScopeBar.jsx`, `LoginScreen.jsx`, `MakloonSelect.jsx`, `MediaLightbox.jsx`, `MixedLotConfirmModal.jsx`, `MoneyInput.jsx`, `NotificationCenter.jsx`, `OkNotice.jsx`, `OnboardingPanel.jsx`, `OpeningCostBanner.jsx`, `PageTabs.jsx`, `PagedRows.jsx`, `PaginationBar.jsx`, `PantoneFinder.jsx`, `PaymentBadge.jsx`, `PeggingModal.jsx`, `PeriodUnlockBanner.jsx`, `PeriodUnlockCard.jsx`, `PrinterStatusWidget.jsx`, `ProductCard.jsx`, `ProductColorChip.jsx`, `ProductColorTriad.jsx`, `ProductDetail.jsx`, `ProductGallery.jsx`, `ProductQuickView.jsx`, `ProductSelect.jsx`, `QcRequestPicker.jsx`, `QcStatusBadge.jsx`, `QtyDual.jsx`, `ResponsiveTable.jsx`, `ReturnPolicyEditor.jsx`, `ReturnTimeline.jsx`, `RevisionProgress.jsx`, `RollCheckChips.jsx`, `RollLabelActions.jsx`, `RollPicker.jsx`, `RollReconcileSheet.jsx`, `SalesStockSummary.jsx`, `SampleKindChooser.jsx`, `ScopeReadOnlyBanner.jsx`, `SeeAllModal.jsx`, `SiteSelect.jsx`, `SoStatusBadges.jsx`, `StarRating.jsx`, `StockFigures.jsx`, `StoreCreditBadge.jsx`, `SupersedeHint.jsx`, `TableFilter.jsx`, `TourMenu.jsx`, `UomConvertHint.jsx`, `UomInputConvert.jsx`, `VariantAxisPicker.jsx`, `WaitingBoardsStrip.jsx`, `WaitingQueueBoard.jsx`, `WarehouseModeBadge.jsx`
 
 **Hooks (`src/hooks/`):** `use-toast.js`, `useAppActions.js`, `useAppNavigation.js`, `useBlobUrl.js`, `useCaseDeepLink.js`, `useCatalogMasters.js`, `useConfigDeepLink.js`, `useDeepLinks.js`, `useDomainEnums.js`, `useEffectivePrices.js`, `useIntentKey.js`, `useIsMobile.js`, `useListSearch.jsx`, `useLogisticsDeepLink.js`, `usePagedList.js`, `usePagedRows.js`, `useProcessTypes.js`, `useReceivingMode.js`, `useReceivingUom.js`, `useRndDeepLink.js`, `useSessionSync.js`, `useTraceDeepLink.js`, `useUomConversions.js`, `useViewDeepLink.js`, `useViewPreset.js`
 

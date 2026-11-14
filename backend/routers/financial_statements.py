@@ -17,7 +17,7 @@ from typing import Any, Dict, List, Optional
 from fastapi import APIRouter, Request, Query, Response
 
 from dependencies import require_permission
-from entity_scope import entity_ctx, resolve_list_scope
+from entity_scope import entity_ctx, resolve_list_scope, scope_line, scope_meta
 from services import financial_statement_service as fs
 from services import cash_flow_service as cf
 from services import equity_statement_service as eq
@@ -29,6 +29,11 @@ async def _je_scope(request: Request, entity_id: Optional[str]) -> Dict[str, Any
     """Fragmen filter entitas untuk jurnal (default: entitas aktif)."""
     ctx = await entity_ctx(request)
     return resolve_list_scope("journal_entries", {}, ctx, entity_id)
+
+
+async def _meta(request: Request, entity_id: Optional[str]) -> Dict[str, Any]:
+    """PK-16 — keterangan cakupan PT (aturan sama dengan `_je_scope`)."""
+    return await scope_meta(await entity_ctx(request), entity_id)
 
 
 # ═════════════════════════════════════════════════════════════════════════════
@@ -45,7 +50,7 @@ async def get_income_statement(
     """Laba-Rugi (Income Statement) untuk periode — per entitas."""
     await require_permission(request, "accounting", "view")
     scope = await _je_scope(request, entity_id)
-    return await fs.income_statement(start=start, end=end, scope=scope)
+    return {**(await fs.income_statement(start=start, end=end, scope=scope)), "scope_meta": await _meta(request, entity_id)}   # PK-16
 
 
 @router.get("/finance/balance-sheet")
@@ -61,7 +66,7 @@ async def get_balance_sheet(
     """
     await require_permission(request, "accounting", "view")
     scope = await _je_scope(request, entity_id)
-    return await fs.balance_sheet(as_of=as_of, compare_as_of=compare_as_of, scope=scope)
+    return {**(await fs.balance_sheet(as_of=as_of, compare_as_of=compare_as_of, scope=scope)), "scope_meta": await _meta(request, entity_id)}   # PK-16
 
 
 @router.get("/finance/cash-flow")
@@ -74,7 +79,7 @@ async def get_cash_flow(
     """Laporan Arus Kas (Cash Flow Statement) metode tak langsung — per entitas."""
     await require_permission(request, "accounting", "view")
     scope = await _je_scope(request, entity_id)
-    return await cf.cash_flow_statement(start=start, end=end, scope=scope)
+    return {**(await cf.cash_flow_statement(start=start, end=end, scope=scope)), "scope_meta": await _meta(request, entity_id)}   # PK-16
 
 
 @router.get("/finance/equity-changes")
@@ -87,7 +92,7 @@ async def get_equity_changes(
     """Laporan Perubahan Ekuitas (Statement of Changes in Equity) — per entitas."""
     await require_permission(request, "accounting", "view")
     scope = await _je_scope(request, entity_id)
-    return await eq.equity_statement(start=start, end=end, scope=scope)
+    return {**(await eq.equity_statement(start=start, end=end, scope=scope)), "scope_meta": await _meta(request, entity_id)}   # PK-16
 
 
 # ═════════════════════════════════════════════════════════════════════════════
@@ -118,6 +123,7 @@ async def export_income_statement(
     data = await fs.income_statement(start=start, end=end, scope=scope)
 
     rows: List[List[Any]] = [["Laba-Rugi (Income Statement)"]]
+    rows.append([scope_line(await _meta(request, entity_id))])   # PK-16 — baris 2: PT / cakupan
     period = data.get("period", {})
     rows.append([f"Periode: {period.get('start') or '-'} s/d {period.get('end') or '-'}"])
     rows.append([])
@@ -148,6 +154,7 @@ async def export_balance_sheet(
     comparative = data.get("comparative")
 
     rows: List[List[Any]] = [["Neraca (Balance Sheet)"]]
+    rows.append([scope_line(await _meta(request, entity_id))])   # PK-16 — baris 2: PT / cakupan
     rows.append([f"Posisi per: {data.get('as_of')}"])
     if comparative:
         rows.append([f"Pembanding per: {data.get('compare_as_of')}"])
@@ -217,6 +224,7 @@ async def export_cash_flow(
 
     period = data.get("period", {})
     rows: List[List[Any]] = [["Laporan Arus Kas (Cash Flow Statement)"]]
+    rows.append([scope_line(await _meta(request, entity_id))])   # PK-16 — baris 2: PT / cakupan
     rows.append([f"Periode: {period.get('start') or '-'} s/d {period.get('end') or '-'}"])
     rows.append([])
     op = data.get("operating", {})
@@ -252,6 +260,7 @@ async def export_equity_changes(
     data = await eq.equity_statement(start=start, end=end, scope=scope)
     period = data.get("period", {})
     rows: List[List[Any]] = [["Laporan Perubahan Ekuitas"]]
+    rows.append([scope_line(await _meta(request, entity_id))])   # PK-16 — baris 2: PT / cakupan
     rows.append([f"Periode: {period.get('start') or '-'} s/d {period.get('end') or '-'}"])
     rows.append([])
     rows.append(["Komponen", "Saldo Awal", "Pergerakan", "Saldo Akhir"])

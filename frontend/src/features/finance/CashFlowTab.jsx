@@ -1,6 +1,7 @@
 /**
  * CashFlowTab (FINANCE) — Laporan Arus Kas (metode tak langsung).
  * Sumber: /api/finance/cash-flow (+ export.csv). Dipakai di FinancialStatementsView.
+ * PK-16 — banner PT (`scope_meta`), gagal memuat → data dikosongkan, nama unduhan memuat PT / `gabungan`.
  */
 import { apiErrorText } from "../../utils/apiError";
 import KNDatePicker from "@/components/KNDatePicker";
@@ -13,6 +14,7 @@ import {
 } from "lucide-react";
 import axios, { API } from "../../services/apiClient";
 import ErrorNotice from "../../components/ErrorNotice";
+import EntityScopeBanner, { useScopeMeta, scopeFileTag } from "../../components/EntityScopeBanner";
 import {
   FC, NOW, ymd, compactIDR, entityParam, saveBlob, chartTooltip,
   KpiCard, Panel, EmptyState, formatCurrency,
@@ -23,6 +25,7 @@ export default function CashFlowTab({ selectedEntity }) {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const scope = useScopeMeta(data?.scope_meta);
 
   const load = useCallback(async () => {
     setLoading(true); setError("");
@@ -34,6 +37,7 @@ export default function CashFlowTab({ selectedEntity }) {
       setData(res.data || null);
     } catch (e) {
       setError(apiErrorText(e, "Gagal memuat Laporan Arus Kas."));
+      setData(null);   // PK-16 (RP-04) — tidak ada angka dari permintaan sebelumnya
     } finally { setLoading(false); }
   }, [selectedEntity, range]);
 
@@ -45,7 +49,7 @@ export default function CashFlowTab({ selectedEntity }) {
         params: { ...entityParam(selectedEntity), start: range.start, end: range.end },
         responseType: "blob",
       });
-      saveBlob(res.data, `arus-kas_${range.start}_${range.end}.csv`);
+      saveBlob(res.data, `arus-kas_${scopeFileTag(scope)}_${range.start}_${range.end}.csv`);
     } catch { setError("Gagal mengunduh CSV."); }
   };
 
@@ -61,6 +65,7 @@ export default function CashFlowTab({ selectedEntity }) {
 
   return (
     <div data-testid="fs-cash-flow">
+      <EntityScopeBanner meta={scope} />
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-3">
         <KpiCard testId="cf-kpi-begin" label="Kas Awal Periode" value={formatCurrency(data?.begin_cash)} icon={Wallet} accent={FC.muted} />
         <KpiCard testId="cf-kpi-operating" label="Kas Bersih Operasi" value={formatCurrency(op.total)} icon={TrendingUp} accent={FC.revenue} tone={(op.total ?? 0) >= 0 ? "text-[#1B7F4B]" : "text-[#C0392B]"} />
