@@ -301,14 +301,14 @@ async def fase_e2(cl: httpx.AsyncClient, adm: str, ctxdata: Dict[str, Any]) -> N
 
     r = await cl.post(f"{BASE}/api/users", headers=H(adm), json={
         "name": "Poc Gagal", "email": "poc.gagal@example.test", "role": "sales",
-        "employee_id": emp_no_ent["id"]})
+        "password": PWD, "employee_id": emp_no_ent["id"]})   # PR-T6 — sandi wajib (tanpa sandi bawaan)
     check("E2.1e", "karyawan HR tanpa badan usaha → 400 menuntun ke perbaikan HR",
           r.status_code == 400 and "badan usaha" in r.text.lower(),
           f"HTTP {r.status_code} · {r.text[:140]}")
 
     r = await cl.post(f"{BASE}/api/users", headers=H(adm), json={
         "name": "Poc Dobel", "email": "poc.dobel@example.test", "role": "sales",
-        "employee_id": emp_ok["id"]})
+        "password": PWD, "employee_id": emp_ok["id"]})   # PR-T6 — sandi wajib (tanpa sandi bawaan)
     check("E2.1f", "satu karyawan = satu akun (dobel → 409)", r.status_code == 409,
           f"HTTP {r.status_code}")
 

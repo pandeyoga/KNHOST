@@ -8,10 +8,13 @@
  *     editor peran menyimpan (`kn:roles-changed`).
  *  3. Peran kustom baru terdaftar → arahkan ke berandanya, KECUALI alamat menyebut layar sah.
  *  4. Landing per peran DETERMINISTIK saat pengguna berganti (bukan saat berpindah view).
+ *  5. PR-T6 — peran akun BERUBAH di tengah sesi (akun yang sama) → arahkan ke halaman awal peran baru + pemberitahuan
+ *     "Peran Anda berubah menjadi {label}." (dulu layar peran lama tertinggal).
  */
 import { useEffect, useRef, useState } from "react";
 import axios, { API } from "../services/apiClient";
-import { homeChangedByServer, registerDynamicRoles, ROLE_REGISTRY } from "../config/roles";
+import { homeChangedByServer, registerDynamicRoles, roleLabel, ROLE_REGISTRY } from "../config/roles";
+import { toast } from "./use-toast";
 import { setServerLabels } from "../config/auditLabels";
 import { defaultNavIdForRole, defaultViewForRole, resolveDeepLinkTarget } from "../config/navigationConfig";
 
@@ -111,12 +114,25 @@ export default function useSessionSync({ token, user, setUser, setEntityContext,
   // "Operasi Gudang". Deep-link tidak terganggu: efek hanya jalan saat `user.id`
   // benar-benar berubah, bukan saat berpindah view.
   const lastUserIdRef = useRef(user?.id || "");
+  const lastRoleRef = useRef(user?.role || "");   // PR-T6
   useEffect(() => {
     const id = user?.id || "";
-    if (!id) { lastUserIdRef.current = ""; return; }
-    if (id === lastUserIdRef.current) return;
+    if (!id) { lastUserIdRef.current = ""; lastRoleRef.current = ""; return; }
+    if (id === lastUserIdRef.current) {
+      // PR-T6 — akun yang sama, peran berubah (mis. dipindah Admin): ke halaman awal peran baru + pemberitahuan.
+      if (user.role && lastRoleRef.current && user.role !== lastRoleRef.current) {
+        lastRoleRef.current = user.role;
+        setActiveView(defaultViewForRole(user.role));
+        setActiveNavId(defaultNavIdForRole(user.role));
+        toast({ title: `Peran Anda berubah menjadi ${user.role_label || roleLabel(user.role)}.` });
+      } else if (user.role) {
+        lastRoleRef.current = user.role;
+      }
+      return;
+    }
     const firstLoad = lastUserIdRef.current === "";
     lastUserIdRef.current = id;
+    lastRoleRef.current = user.role || "";
     if (firstLoad) return;   // state awal sudah dihitung dari peran tersimpan
     setActiveView(defaultViewForRole(user.role));
     setActiveNavId(defaultNavIdForRole(user.role));

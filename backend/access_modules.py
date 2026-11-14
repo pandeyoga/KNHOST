@@ -528,6 +528,24 @@ ACTION_LABEL.update({"order.view_sales_kpi": "Lihat KPI & komisi sales lain"})
 ACTION_LABEL.update({"count": "Hitung", "review": "Tinjau", "close": "Tutup", "set": "Atur"})
 #: PR-T2 — label aksi templat laporan Tanya KN = judul templat.
 ACTION_LABEL.update({f"ai_template.{t['id']}": t["title"] for t in AI_TEMPLATES})
+# PR-T6 (tabel 8, lampiran B §7) — label sehari-hari pengganti singkatan/jargon; dipakai editor peran, ringkasan peran,
+# pesan penolakan (`dependencies.denied_message`) dan jejak audit lewat `GET /api/access/labels`.
+RESOURCE_LABEL.update({
+    "marketing": "Marketing & Sosial Media", "goods_receipt": "Kedatangan Barang",
+    "internal_request": "Permintaan Internal Antar PT", "sample_order": "Pesanan Sample",
+    "rfq": "Permintaan Penawaran Harga", "landed_cost": "Biaya Masuk Barang", "wms": "Operasi Gudang",
+})
+ACTION_LABEL.update({
+    "close": "Tutup penerimaan", "count": "Hitung fisik", "review": "Periksa hasil hitung",
+    "set": "Tetapkan harga internal", "pegging": "Kaitkan stok ke pesanan", "dispatch": "Berangkatkan kiriman",
+    "generate": "Buat label", "void": "Batalkan (void)", "override": "Ubah pesanan yang sudah terkunci",
+    "hold": "Tahan", "random_check": "Cek acak", "scan": "Pindai", "manage_bom": "Kelola resep produksi",
+    "manage_payroll": "Kelola gaji", "release": "Lepas / rilis",
+})
+for _mid, _lbl in (("warehouse_ops", "Operasi Gudang"), ("rnd", "Pengembangan Produk & Sample"),
+                   ("petty_cash", "Kas Kecil (pengajuan dana & pertanggungjawaban)")):
+    MODULE_BY_ID[_mid]["label"] = _lbl
+del _mid, _lbl
 
 
 def clean_permissions(perms: Any) -> Dict[str, List[str]]:

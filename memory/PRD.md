@@ -60,6 +60,21 @@ GL-01: registri `services/gl_mapping_registry.py` (54 kebutuhan) → koleksi `gl
   (`SENSITIVE_ACTIONS`). Satu kamus label `GET /api/access/labels` untuk editor, pesan penolakan, dan jejak audit; meja
   peran dan delapan tab di luar katalog masuk modul pemiliknya (meja tampil hanya bila aksinya dipegang, `view_actions`).
   Penjaga INV-PERM-01 `scripts/guardrails/verify_permission_checked.py`.
+- 2026-11-14 PR-T6 (layar Peran & Hak Akses dan Akun & Akses, PR-09, K-47/K-50/K-51): pesan 403 untuk manusia
+  (`dependencies.denied_message`: "Anda belum punya akses untuk {aksi} {halaman}. Minta Admin menambahkan akses '{modul}'.",
+  kode izin hanya di header `X-Permission-Denied`) di `require_permission`/`require_any_permission` dan sembilan tempat yang
+  menulis "Permission ditolak" sendiri. Ringkasan peran `GET /api/access/roles/{id}/summary` (izin `permission.view` atau
+  `user.view`) dan `summary` + `nav_added` di pratinjau: halaman awal, data yang terlihat, kategori kerja, PT, batas
+  persetujuan (`approval_policies` lapisan grup, atau "Mengikuti tingkat …"), per modul "bisa … tidak bisa …" per halaman,
+  aksi berisiko, sifat yang mengikuti peran dasar. Peran dasar bisa diganti (`PATCH … base_role`, hanya peran kustom; izin
+  dan lintas PT tetap) dan terpisah dari "Salin hak akses dari…"; menu peran bawaan boleh bertambah sebesar selisih izin
+  sekarang terhadap izin bawaannya (`GET /api/roles` → `nav.add`, kosong saat pasang). Lintas PT: bawaan peran kustom =
+  nilai efektif peran dasarnya, simpanan selalu eksplisit, `accounts_to_review` saat dimatikan; pelanggan/rekening/kas
+  tingkat grup memakai `CROSS_ENTITY_ROLES` hidup. Akun: sandi wajib ≥ 8 (tanpa sandi bawaan), tautan karyawan lama
+  dibersihkan, pindah akun massal lewat jalur ubah akun (PT dihitung ulang, audit per akun), "bisa dihapus" dari semua akun
+  (+ `users_inactive`). Riwayat peran `GET /api/access/roles/{id}/history` dari potret `before`/`after` jejak audit. Layar:
+  panel Ringkasan peran, mode baca "Lihat Hak Akses", tab Riwayat, "Atur rinci", dialog "Tinjau penugasan PT", formulir
+  akun tanpa peran awal + ringkasan peran + kalimat lintas PT dari server, tab Badan Usaha & Akses mengikuti izin.
 - 2026-11-14 KF-T6 (kontrol "harus dua orang" per PT): satu pembantu `services/dual_control.py`
   (`butuh_orang_kedua`, `pelaku_sama`, `tolak_bila_pelaku_sama`) membaca `kontrol.<aksi>.min_orang` ("1"/"2") dan
   `kontrol.<aksi>.batas_nominal` (35 aksi, katalog `config_catalog_kontrol.py`) plus `kontrol.admin_boleh_sendiri` /

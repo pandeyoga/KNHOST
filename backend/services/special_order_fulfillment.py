@@ -216,7 +216,14 @@ async def _can(user: Dict[str, Any], action: str) -> bool:
 
 async def _require(user: Dict[str, Any], action: str, what: str) -> None:
     if not await _can(user, action):
-        raise PermissionError(f"Permission ditolak: od_fulfillment.{action} ({what}).")
+        from dependencies import denied_message   # PR-T6 (Z6) — kalimat tanpa kode izin
+        raise PermissionError(denied_message([("od_fulfillment", action)]))
+
+
+def denied_for(action: str):
+    """PR-T6 (Z6) — 403 baku (kalimat + header `X-Permission-Denied`) untuk aksi `od_fulfillment.<action>`."""
+    from dependencies import denied
+    return denied([("od_fulfillment", action)])
 
 
 # ─── Pilih / ubah jalur ──────────────────────────────────────────────────────

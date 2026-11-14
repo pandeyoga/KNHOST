@@ -1,6 +1,6 @@
 {
  "_catatan": "Garis dasar ratchet INV-ROLE-02 (gerbang nama peran di layar: roleIs/roleSatisfies/roleRank, .includes(…role), role === \"<id>\"), dibuat unit PR-T7. Hanya boleh TURUN; kencangkan dengan --update. `pemegang` = unit yang akan menghapus sisa baris berkas itu.",
- "total": 19,
+ "total": 18,
  "files": {
   "components/NotificationCenter.jsx": 1,
   "features/admin/po/POCompactPanel.jsx": 1,
@@ -16,7 +16,6 @@
   "features/rfid/RfidTagsView.jsx": 1,
   "features/sales/SalesPortal.jsx": 1,
   "features/sales/mobile/MobileSalesHome.jsx": 1,
-  "features/settings/entities/AccountFormDrawer.jsx": 1,
   "features/wms/StockOpnameTab.jsx": 1
  },
  "pemegang": {
@@ -34,7 +33,6 @@
   "features/rfid/RfidTagsView.jsx": "Titik henti H7 (RFID) — antrean printer tag khusus Admin",
   "features/sales/SalesPortal.jsx": "PR-T4 — kategori kerja `sales` (#19); sementara `roleIs(role, [\"sales\"])` = `role_in` server",
   "features/sales/mobile/MobileSalesHome.jsx": "PR-T4 — cakupan data: papan 'PO custom pelanggan Anda' untuk sales (owner_scope server)",
-  "features/settings/entities/AccountFormDrawer.jsx": "PR-T6 — formulir akun (#25, CROSS_ROLES)",
   "features/wms/StockOpnameTab.jsx": "Titik henti H7 (RFID) — metode Sapu RFID dikecualikan untuk Manajer (keputusan D-15)"
  }
 }

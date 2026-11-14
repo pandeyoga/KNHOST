@@ -231,7 +231,8 @@ async def pic_decide(cur: Dict[str, Any], payload: Dict[str, Any], actor: Dict[s
     if len(reason) < 5:
         raise RevalError("Alasan keputusan PIC wajib (min. 5 karakter).")
     if action == "override" and not can_override:
-        raise PermissionError("Permission ditolak: rnd.override_fail (override hasil gagal).")
+        from dependencies import denied_message   # PR-T6 (Z6) — kalimat tanpa kode izin
+        raise PermissionError(denied_message([("rnd", "override_fail")]))
     scope = payload.get("scope") or {}
     rv = cur.get("revalidation") or {}
     rec = {"action": action, "action_label": PIC_ACTIONS[action], "reason": reason, "by": actor.get("name", ""),

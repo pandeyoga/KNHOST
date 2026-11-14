@@ -1,26 +1,26 @@
 /**
  * entityApi.js — lapisan API untuk layar "Badan Usaha & Akses" (FASE E-3).
  *
- * Satu berkas supaya komponen tidak menyebar URL. Semua pesan galat dikembalikan
- * apa adanya dari server (server sudah berbahasa Indonesia & menuntun), sehingga
- * layar tidak perlu mengarang kalimat sendiri.
+ * Satu berkas supaya komponen tidak menyebar URL. Pesan galat server (sudah berbahasa
+ * Indonesia & menuntun) lewat penerjemah pusat `utils/apiError` — PR-T6: penolakan izin
+ * lama ("Permission ditolak: x.y") ikut diterjemahkan, sama dengan layar lain.
  */
 import axios, { API } from "../../../services/apiClient";
-// FASE E-8 (E8.1) — pilihan peran & daftar peran lintas-entitas TIDAK lagi ditulis
-// di sini. Sumber tunggal: `config/roles.js` (cermin `backend/role_registry.py`),
-// supaya peran baru muncul otomatis di formulir akun tanpa menyunting layar.
-import { ROLE_OPTIONS as REG_ROLE_OPTIONS, CROSS_ENTITY_ROLES as REG_CROSS_ROLES }
-  from "../../../config/roles";
+import { apiErrorText, permissionDeniedText } from "../../../utils/apiError";
+// FASE E-8 (E8.1) — pilihan peran TIDAK lagi ditulis di sini. Sumber tunggal: `config/roles.js` (cermin
+// `backend/role_registry.py`), supaya peran baru muncul otomatis di formulir akun tanpa menyunting layar.
+// PR-T6 — "lintas PT" tidak lagi dari daftar tertulis: formulir akun membaca `cross_entity` jawaban `GET /api/roles`.
+import { ROLE_OPTIONS as REG_ROLE_OPTIONS } from "../../../config/roles";
 
-/** Ubah galat axios menjadi kalimat manusia (mendukung detail berbentuk objek). */
+/** Ubah galat axios menjadi kalimat manusia. Detail berbentuk objek dengan daftar penghalang (`blockers`) / petunjuk
+ *  (`hint`) dirangkai seperti dulu; selebihnya lewat `apiErrorText` (PR-T6). */
 export function errText(err, fallback = "Terjadi kesalahan.") {
   const d = err?.response?.data?.detail;
-  if (typeof d === "string") return d;
-  if (d && typeof d === "object") {
+  if (d && typeof d === "object" && !Array.isArray(d) && ((d.blockers || []).length || d.hint)) {
     const parts = [d.message || "", ...(d.blockers || []), d.hint || ""].filter(Boolean);
-    if (parts.length) return parts.join(" · ");
+    return parts.map((p) => permissionDeniedText(p) || p).join(" · ");
   }
-  return err?.response?.data?.detail ? String(err.response.data.detail) : (err?.message || fallback);
+  return apiErrorText(err, fallback);
 }
 
 /** Penghalang terstruktur (dipakai dialog arsip agar bisa ditampilkan sebagai daftar). */
@@ -158,8 +158,6 @@ export const entityTypes = () =>
 
 export const ROLE_OPTIONS = REG_ROLE_OPTIONS;
 
-export const CROSS_ROLES = REG_CROSS_ROLES;
-
 // ─── Peran & Hak Akses (peran kustom, 3 tingkat per modul) ──────────────────
 export const accessModules = () =>
   axios.get(`${API}/access/modules`).then((r) => r.data || { modules: [], levels: {} });
@@ -196,6 +194,13 @@ export const deleteAccessRole = (id) =>
 
 export const previewAccessRole = (body) =>
   axios.post(`${API}/access/roles/preview`, body).then((r) => r.data);
+
+// PR-T6 — ringkasan "peran ini akhirnya bisa apa" (izin `permission.view` atau `user.view`) dan riwayat perubahan peran.
+export const accessRoleSummary = (id) =>
+  axios.get(`${API}/access/roles/${id}/summary`).then((r) => r.data);
+
+export const accessRoleHistory = (id, limit = 50) =>
+  axios.get(`${API}/access/roles/${id}/history`, { params: { limit } }).then((r) => r.data?.items || []);
 
 export const moveAccessRoleUsers = (id, toRole) =>
   axios.post(`${API}/access/roles/${id}/move-users`, { to_role: toRole }).then((r) => r.data);

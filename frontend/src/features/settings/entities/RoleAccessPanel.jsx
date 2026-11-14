@@ -48,16 +48,16 @@ function RoleCard({ role, onOpen, onDuplicate }) {
         {role.locked && <span className="inline-flex items-center gap-0.5 rounded-full bg-[#FCEBEA] px-2 py-0.5 font-semibold text-[#A8221A]"><Lock size={9} /> dikunci</span>}
         {role.modified && <span className="inline-flex items-center gap-0.5 rounded-full bg-[#FEF7EC] px-2 py-0.5 font-semibold text-[#8C4A00]" data-testid={`role-card-modified-${role.id}`}><Pencil size={9} /> diubah dari bawaan</span>}
         {role.cross_entity && <span className="inline-flex items-center gap-0.5 rounded-full bg-[#F2F7FF] px-2 py-0.5 font-semibold text-[#0058CC]" data-testid={`role-card-cross-${role.id}`}>Semua PT</span>}
-        {role.base_role_label && <span className="text-[#8E8E93]">acuan: {role.base_role_label}</span>}
+        {role.base_role_label && <span className="text-kn-text-2">peran dasar: {role.base_role_label}</span>}
       </div>
       {role.can_manage === false && !role.locked && (
-        <p className="text-[10px] text-[#8E8E93]" data-testid={`role-card-no-manage-${role.id}`}>{NO_MANAGE_HINT}</p>
+        <p className="text-fs-12 text-kn-text-2" data-testid={`role-card-no-manage-${role.id}`}>{NO_MANAGE_HINT}</p>
       )}
     </div>
   );
 }
 
-export default function RoleAccessPanel({ canManage, onChanged, onError }) {
+export default function RoleAccessPanel({ canManage, onChanged, onError, onOpenAccounts }) {
   const [roles, setRoles] = useState([]);
   const [modules, setModules] = useState([]);
   const [labels, setLabels] = useState({});
@@ -99,7 +99,7 @@ export default function RoleAccessPanel({ canManage, onChanged, onError }) {
           <p className="text-[11.5px] font-bold text-[#1C1C1E]">Peran menentukan modul mana yang boleh dilihat dan dikelola.</p>
           <p className="text-[10.5px] text-[#6B6B73]">
             Tingkat per modul: <b>Tidak ada</b> (menu tersembunyi) · <b>Lihat saja</b> (baca tanpa tombol ubah) · <b>Semua aksi</b>;
-            bila hanya sebagian aksi yang diberikan, modul berlencana <b>Sebagian</b> (rinciannya di "Menu, tab &amp; aktivitas").
+            bila hanya sebagian aksi yang diberikan, modul berlencana <b>Sebagian</b> (rinciannya di "Atur rinci").
             Notifikasi mengikuti pengaturan ini — pengguna hanya menerima pemberitahuan untuk layar yang boleh dibukanya.
             Buat peran kustom bila peran bawaan tidak pas — misalnya "Staf Penagihan" yang hanya butuh piutang & pelanggan.
           </p>
@@ -111,7 +111,7 @@ export default function RoleAccessPanel({ canManage, onChanged, onError }) {
         )}
       </div>
 
-      {loading && <p className="text-[11px] text-[#8E8E93]" data-testid="role-access-loading">Memuat peran…</p>}
+      {loading && <p className="text-fs-12 text-kn-text-2" data-testid="role-access-loading">Memuat peran…</p>}
 
       {!loading && (
         <>
@@ -140,7 +140,8 @@ export default function RoleAccessPanel({ canManage, onChanged, onError }) {
       {editor && (
         <RoleEditorDrawer key={`${editor.id || editor.template?.id || "new"}:${editor.version || ""}`}
                           role={editor.id ? editor : null} template={editor.template || null} roles={roles} modules={modules} labels={labels}
-                          canEditAssignable={canEditAssignable} canFollow={canManage}
+                          canEditAssignable={canEditAssignable} canFollow={canManage} canManage={canManage}
+                          onOpenAccounts={onOpenAccounts ? () => { setEditor(null); onOpenAccounts(); } : undefined}
                           onClose={() => setEditor(null)}
                           onSaved={(msg) => { setEditor(null); onChanged?.(msg); load(); }}
                           onRefresh={refreshEditor}

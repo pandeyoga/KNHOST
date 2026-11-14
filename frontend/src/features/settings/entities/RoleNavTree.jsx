@@ -17,6 +17,19 @@ const NAV_LABEL = (() => {
 })();
 export const titleOf = (id) => NAV_LABEL[id] || PAGE_META[id]?.title || id;
 
+// PR-T6 (PR-UX-…) — id GRUP sidebar (mis. Pengaturan, Penjualan) dan id menu hub dimiliki bersama banyak modul: dulu
+// tampil sebagai centang biasa di "Menu lain" dan satu centang menyembunyikan seluruh grup. Kini tidak ditampilkan.
+const SHARED_IDS = (() => {
+  const out = new Set(Object.keys(HUB_TABS));
+  const walk = (list) => (list || []).forEach((e) => {
+    if (e.groupId) out.add(e.groupId);
+    if (e.hub && e.id) out.add(e.id);
+    walk(e.items);
+  });
+  walk(NAV_STRUCTURE);
+  return out;
+})();
+
 export function navTree(module) {
   const nav = new Set(module.nav || []);
   const menus = [];
@@ -28,7 +41,7 @@ export function navTree(module) {
     used.add(hub);
     menus.push({ id: hub, label: titleOf(hub), tabs: inMod.map((t) => ({ id: t.view, label: t.label })) });
   });
-  const single = [...nav].filter((v) => !used.has(v) && !HUB_TABS[v]);
+  const single = [...nav].filter((v) => !used.has(v) && !SHARED_IDS.has(v));
   if (single.length) menus.push({ id: `${module.id}-lain`, label: "Menu lain", tabs: single.map((v) => ({ id: v, label: titleOf(v) })) });
   return menus;
 }
@@ -38,7 +51,8 @@ export default function RoleNavTree({ module, hidden, original, disabled, off, o
   if (!menus.length) return null;
   return (
     <div className="space-y-1.5" data-testid={`role-nav-tree-${module.id}`}>
-      <p className="text-[10px] font-semibold text-[#3A3A3C]">Menu & tab yang tampil {off && <span className="font-normal text-[#A8221A]">· modul “Tidak ada”: semua tersembunyi</span>}</p>
+      <p className="text-fs-12 font-semibold text-kn-text">Menu & tab yang tampil {off && <span className="font-normal text-kn-danger-text">· modul “Tidak ada”: semua tersembunyi</span>}</p>
+      <p className="text-fs-12 text-kn-text-2" data-testid={`role-nav-tree-note-${module.id}`}>Menyembunyikan hanya merapikan menu; izin tetap berlaku.</p>
       {menus.map((m) => {
         const shown = m.tabs.filter((t) => !hidden.has(t.id)).length;
         const state = shown === 0 ? "none" : shown === m.tabs.length ? "all" : "partial";

@@ -8,7 +8,8 @@ from datetime import datetime, timezone, timedelta
 from fastapi import HTTPException
 from db import db
 from core_utils import safe_doc, DEFAULT_ENTITY_ID, rupiah
-from role_registry import role_in  # peran acuan dikenali (keputusan owner 2026-10-21)
+# PR-T6 — lintas PT dari himpunan HIDUP `CROSS_ENTITY_ROLES` (pengaturan per peran), bukan daftar nama admin/manager.
+from role_registry import CROSS_ENTITY_ROLES
 from services.data_scope import in_clause, own_scoped, owner_ids, owner_ids_now   # PR-T4 — cakupan data peran
 
 # Ambang kontrol kredit (KN_17 §5.2)
@@ -411,8 +412,8 @@ async def can_access_customer(user: Dict[str, Any], customer: Dict[str, Any]) ->
     if not user or not customer:
         return False
     role = user.get("role")
-    # admin/manager = CROSS_ENTITY_ROLES → oversight semua entitas.
-    if role_in(role, ("admin", "manager")):
+    # Peran lintas PT (bawaan: Admin & Manajer; diatur per peran) → oversight semua entitas.
+    if role in CROSS_ENTITY_ROLES:
         return True
     # INV-ENTITY-01 (KN-076-IDOR-READ-SUBRES P0): isolasi lintas-entitas untuk role ter-scope.
     # Dokumen customer di luar entitas yang diizinkan aktor → TOLAK, walau assigned_sales_id cocok
@@ -447,7 +448,7 @@ async def can_collect_customer(user: Dict[str, Any], customer: Dict[str, Any]) -
 
 def can_view_credit(user: Dict[str, Any], customer: Dict[str, Any]) -> bool:
     """Status kredit saat checkout: sales boleh melihat pelanggan mana pun yang bisa ia pesankan (entitas sama)."""
-    if role_in(user.get("role"), ("admin", "manager")):
+    if user.get("role") in CROSS_ENTITY_ROLES:   # PR-T6
         return True
     return _entity_allowed(user, customer)
 

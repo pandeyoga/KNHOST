@@ -102,7 +102,8 @@ async def assert_roll_rounding(it_in: Any, actor: Dict[str, Any]) -> Dict[str, A
             raise HTTPException(status_code=422, detail=(
                 "Baris memotong roll — pilih eksplisit 'Potong roll (pas)' sebelum finalisasi."))
         if not await has_permission(actor, "order", "exact_cut"):
-            raise HTTPException(status_code=403, detail="Permission ditolak: order.exact_cut (potong roll).")
+            from dependencies import denied   # PR-T6 (Z6)
+            raise denied([("order", "exact_cut")])
     if target is not None and target > 0:
         delta = round(final - float(target), 2)
         if not choice:

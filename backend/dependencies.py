@@ -1,6 +1,6 @@
 """Shared auth/permission dependencies and audit helper."""
 from datetime import datetime, timedelta, timezone
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Tuple
 from fastapi import HTTPException, Request
 from db import db
 from core_utils import safe_doc, now_iso, new_id, SESSION_TTL_HOURS
@@ -108,12 +108,50 @@ async def has_permission(user: Dict[str, Any], module: str, action: str) -> bool
     return action in allowed or "*" in allowed
 
 
+# ─── PR-T6 (Z6, PR-09) — pesan penolakan untuk manusia ─────────────────────────────────────────────────────────────
+#: Frasa kata kerja per aksi baku (`02_STANDAR.md` §3.2); aksi lain: "melakukan “{label aksi}” pada".
+DENIED_VERB = {"view": "melihat", "create": "membuat", "update": "mengubah", "delete": "menghapus",
+               "approve": "menyetujui", "reject": "menolak", "post": "mencatat ke buku besar", "pay": "membayar",
+               "void": "membatalkan", "export": "mengekspor", "configure": "mengatur", "release": "melepas"}
+DENIED_HEADER = "X-Permission-Denied"
+
+
+def denied_message(pairs: List[Tuple[str, str]]) -> str:
+    """Kalimat 403 tanpa kode izin: satu izin → "Anda belum punya akses untuk {frasa} {halaman}. Minta Admin
+    menambahkan akses '{modul}'."; beberapa izin (salah satu cukup) → "Anda belum punya akses ke layar ini. Minta Admin
+    menambahkan salah satu akses: '{modul}', '{modul}'." Label dari kamus server (`access_modules`)."""
+    from access_modules import ACTION_LABEL, RESOURCE_LABEL, module_label_of
+    pairs = [(str(r), str(a)) for r, a in (pairs or [])]
+    if len(pairs) == 1:
+        res, act = pairs[0]
+        page = RESOURCE_LABEL.get(res) or "layar ini"
+        verb = DENIED_VERB.get(act) or (
+            f"melakukan “{ACTION_LABEL.get(f'{res}.{act}') or ACTION_LABEL.get(act) or act.replace('_', ' ')}” pada")
+        return (f"Anda belum punya akses untuk {verb} {page}. "
+                f"Minta Admin menambahkan akses '{module_label_of(res)}'.")
+    mods: List[str] = []
+    for res, _act in pairs:
+        lbl = module_label_of(res)
+        if lbl not in mods:
+            mods.append(lbl)
+    return ("Anda belum punya akses ke layar ini. Minta Admin menambahkan salah satu akses: "
+            + ", ".join(f"'{m}'" for m in mods) + ".")
+
+
+def denied(pairs: List[Tuple[str, str]], detail: str = "", note: str = "") -> HTTPException:
+    """403 baku: `detail` (kalimat khusus pemanggil) atau `denied_message` (+ `note`, kalimat penjelas tanpa kode);
+    header `X-Permission-Denied: <sumber daya>.<aksi>[,…]` untuk alat uji — isi `detail` tetap teks."""
+    text = detail or (denied_message(pairs) + (f" {note.strip()}" if note and note.strip() else ""))
+    return HTTPException(status_code=403, detail=text,
+                         headers={DENIED_HEADER: ",".join(f"{r}.{a}" for r, a in pairs or [])})
+
+
 async def require_permission(request: Request, module: str, action: str, detail: str = "") -> Dict[str, Any]:
-    """`detail` (PK-17, standar Z6) — kalimat 403 untuk manusia; kosong = pesan teknis lama."""
+    """`detail` (PK-17, standar Z6) — kalimat 403 khusus; kosong = `denied_message` (PR-T6)."""
     user = await current_user(request)
     if await has_permission(user, module, action):
         return user
-    raise HTTPException(status_code=403, detail=detail or f"Permission ditolak: {module}.{action}")
+    raise denied([(module, action)], detail)
 
 
 async def require_any_permission(request: Request,
@@ -134,9 +172,7 @@ async def require_any_permission(request: Request,
         allowed = role_perms.get(module, [])
         if action in allowed or "*" in allowed:
             return user
-    opts = " / ".join(f"{m}.{a}" for m, a in options)
-    raise HTTPException(status_code=403,
-                        detail=detail or f"Permission ditolak: butuh salah satu dari {opts}")
+    raise denied([(m, a) for m, a in options], detail)   # PR-T6 — dulu "Permission ditolak: butuh salah satu dari …"
 
 
 _SECRET_KEY_HINTS = ("password", "passwd", "secret", "token", "api_key", "apikey", "private_key",

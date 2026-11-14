@@ -33,6 +33,8 @@ async def sync_registry() -> None:
     reg.apply_cross_entity(rec.get("cross_entity") or {})
     # PR-T4 — sifat peran (cakupan data, halaman awal, kategori kerja, alamat notifikasi) sesudah lintas PT.
     reg.apply_traits(rec.get("role_traits") or {}, {**DEFAULT_PERMISSIONS, **(rec.get("matrix") or {})})
+    # PR-T6 — menu peran bawaan boleh bertambah sebesar selisih izin sekarang terhadap izin bawaannya.
+    reg.apply_builtin_nav({**DEFAULT_PERMISSIONS, **(rec.get("matrix") or {})})
     from core_utils import refresh_cost_safe_roles   # PR-T2 — kolom biaya/HPP mengikuti izin `costing.view`
     refresh_cost_safe_roles(rec.get("matrix") or DEFAULT_PERMISSIONS)
 
@@ -58,9 +60,10 @@ async def _save_matrix(matrix: Dict[str, Any]) -> None:
     invalidate()
 
 
-async def _users_by_role() -> Dict[str, int]:
+async def _users_by_role(active: bool = True) -> Dict[str, int]:
+    """Jumlah akun per peran: aktif (bawaan) atau — PR-T6 — yang TIDAK aktif (`active=False`)."""
     rows = await db.users.aggregate([
-        {"$match": {"status": "active"}},
+        {"$match": {"status": "active" if active else {"$ne": "active"}}},
         {"$group": {"_id": "$role", "n": {"$sum": 1}}},
     ]).to_list(200)
     return {r["_id"]: r["n"] for r in rows if r.get("_id")}
@@ -137,7 +140,7 @@ def _modified_parts(rid: str, perms: Dict[str, Any], custom: bool) -> List[str]:
 
 
 def _role_view(rid: str, matrix: Dict[str, Any], users: Dict[str, int],
-               custom_docs: Dict[str, Dict[str, Any]]) -> Dict[str, Any]:
+               custom_docs: Dict[str, Dict[str, Any]], inactive: Optional[Dict[str, int]] = None) -> Dict[str, Any]:
     entry = reg.ROLES.get(rid) or {}
     perms = matrix.get(rid, {}) or {}
     custom = rid in custom_docs
@@ -160,8 +163,10 @@ def _role_view(rid: str, matrix: Dict[str, Any], users: Dict[str, int],
         "cross_entity_locked": rid in LOCKED_ROLES,
         "home_view": entry.get("home_view", ""),
         "users": users.get(rid, 0),
+        # PR-T6 — "bisa dihapus" = peran kustom tanpa akun APA PUN (penghapusan menolak akun nonaktif juga).
+        "users_inactive": (inactive or {}).get(rid, 0),
         "locked": rid in LOCKED_ROLES,
-        "deletable": custom and users.get(rid, 0) == 0,
+        "deletable": custom and users.get(rid, 0) == 0 and (inactive or {}).get(rid, 0) == 0,
         "modified": bool(parts),
         "modified_parts": parts,
         # PR-T9 — izin baru peran dasar yang belum diikuti peran kustom ini (modulnya pernah diubah).
@@ -476,7 +481,8 @@ async def all_roles() -> List[Dict[str, Any]]:
     await load_hidden_views()
     matrix, users, customs = await _matrix(), await _users_by_role(), await list_custom()
     cdocs = {c["id"]: c for c in customs}
-    return [_role_view(rid, matrix, users, cdocs) for rid in reg.role_ids()]
+    inactive = await _users_by_role(active=False)
+    return [_role_view(rid, matrix, users, cdocs, inactive) for rid in reg.role_ids()]
 
 
 async def get_role(rid: str) -> Dict[str, Any]:
@@ -485,7 +491,7 @@ async def get_role(rid: str) -> Dict[str, Any]:
         raise HTTPException(status_code=404, detail="Peran tidak ditemukan.")
     await load_hidden_views()
     cdocs = {c["id"]: c for c in await list_custom()}
-    out = _role_view(rid, await _matrix(), await _users_by_role(), cdocs)
+    out = _role_view(rid, await _matrix(), await _users_by_role(), cdocs, await _users_by_role(active=False))
     out["accounts"] = await _accounts_of_role(rid)
     return out
 
@@ -512,11 +518,12 @@ async def create_custom(payload: Dict[str, Any]) -> Dict[str, Any]:
     label = _clean_label(payload.get("label", ""))
     await _assert_label_unique(label)
     base = (payload.get("base_role") or "").strip()
+    if base in LOCKED_ROLES:   # PR-T6 — satu istilah "peran dasar" (dulu "peran acuan (template)")
+        raise HTTPException(status_code=400, detail=MSG_BASE_ADMIN)
     if base and (base not in reg.ROLES):
-        raise HTTPException(status_code=400, detail="Peran acuan (template) tidak dikenal.")
-    if base in LOCKED_ROLES:
-        raise HTTPException(status_code=400, detail="Peran Admin tidak bisa dijadikan template.")
+        raise HTTPException(status_code=400, detail=MSG_BASE_UNKNOWN)
     levels = _clean_levels(payload.get("levels"))
+    hidden_in = _clean_hidden(payload.get("hidden_views")) if payload.get("hidden_views") is not None else None
     traits_in = payload.get("traits")
     rid = _slug(label)
     existing = {r["id"] for r in await list_custom()}
@@ -538,6 +545,9 @@ async def create_custom(payload: Dict[str, Any]) -> Dict[str, Any]:
     if payload.get("cross_entity") is not None:   # tanpa nilai → mengikuti peran acuan
         await _set_cross_entity(rid, bool(payload["cross_entity"]))
     await _save_traits(rid, traits)
+    if hidden_in is not None:   # PR-T6 (PR-UX-37) — menu tersembunyi ikut dalam satu panggilan pembuatan
+        await _save_hidden(rid, hidden_in)
+        await load_hidden_views()
     await sync_registry()
     return await get_role(rid)
 
@@ -558,6 +568,7 @@ async def update_role(rid: str, payload: Dict[str, Any]) -> Dict[str, Any]:
             "message": "Peran ini baru saja diubah admin lain. Muat ulang versi terbaru lalu ulangi perubahan Anda — tidak ada yang ditimpa."})
     matrix = await _matrix()
     changes: Dict[str, Any] = {}
+    new_base = await _clean_base_change(rid, custom, payload)   # PR-T6 — peran dasar (hanya peran kustom)
     if "levels" in payload and payload["levels"] is not None:
         levels = _clean_levels(payload["levels"])
         current = matrix.get(rid)
@@ -566,18 +577,26 @@ async def update_role(rid: str, payload: Dict[str, Any]) -> Dict[str, Any]:
         matrix[rid] = apply_levels(deepcopy(current), levels)
         changes["levels"] = levels
     if payload.get("hidden_views") is not None:
-        from access_modules import all_nav_ids
-        hv = sorted({str(v) for v in payload["hidden_views"] if str(v) in all_nav_ids()})
-        bad = [v for v in payload["hidden_views"] if str(v) not in all_nav_ids()]
-        if bad:
-            raise HTTPException(status_code=400, detail=f"Menu/tab tidak dikenal: {', '.join(map(str, bad))}")
-        await db.permission_settings.update_one({"id": "default"}, {"$set": {f"hidden_views.{rid}": hv}})
+        hv = _clean_hidden(payload["hidden_views"])
+        await _save_hidden(rid, hv)
         changes["hidden_views"] = hv
+    accounts_to_review: Optional[List[Dict[str, Any]]] = None
+    was_cross = bool(reg.ROLES[rid].get("cross_entity"))
     if payload.get("cross_entity") is not None:
         want = bool(payload["cross_entity"])
-        # sama dengan bawaan → simpan sebagai "ikut bawaan" supaya perubahan bawaan/peran acuan tetap mengalir
-        await _set_cross_entity(rid, None if want == reg.cross_entity_default(rid) else want)
+        # Peran bawaan: sama dengan bawaan → "ikut bawaan" (perubahan bawaan sistem tetap mengalir). PR-T6: peran kustom
+        # SELALU menyimpan nilai eksplisit (dulu "sama dengan bawaan" disimpan "ikut", lalu nilai efektifnya mengikuti
+        # peran dasar yang sudah diubah — mematikan lintas PT tidak berefek).
+        await _set_cross_entity(rid, want if custom else (None if want == reg.cross_entity_default(rid) else want))
         changes["cross_entity"] = want
+        if was_cross and not want:   # PR-T6 — penugasan tidak diubah otomatis; Admin meninjau daftarnya
+            accounts_to_review = await _accounts_to_review(rid)
+    elif new_base is not None and custom and new_base != (reg.ROLES[rid].get("base_role") or ""):
+        # PR-T6 — mengganti peran dasar tidak mengubah lintas PT: nilai efektif sekarang dipatok bila belum disimpan.
+        stored = ((await db.permission_settings.find_one({"id": "default"}, {"_id": 0, "cross_entity": 1}) or {})
+                  .get("cross_entity") or {})
+        if rid not in stored:
+            await _set_cross_entity(rid, was_cross)
     if payload.get("assignable_roles") is not None:   # PR-T1 — router memastikan hanya Admin yang sampai di sini
         wanted = [str(r) for r in payload["assignable_roles"]]
         bad = [r for r in wanted if r not in reg.ROLES or r in LOCKED_ROLES]
@@ -610,6 +629,9 @@ async def update_role(rid: str, payload: Dict[str, Any]) -> Dict[str, Any]:
             changes["label"] = label
         if payload.get("description") is not None:
             patch["description"] = str(payload["description"]).strip()[:200]
+        if new_base is not None:   # PR-T6 — izin tidak berubah; sifat turunan & menu warisan ikut peran dasar baru
+            patch["base_role"] = new_base
+            changes["base_role"] = new_base
         patch["levels"] = {k: v["level"] for k, v in levels_of(matrix.get(rid, {})).items()}
         await db.custom_roles.update_one({"id": rid}, {"$set": patch})
     elif payload.get("label") is not None or payload.get("description") is not None:
@@ -621,6 +643,8 @@ async def update_role(rid: str, payload: Dict[str, Any]) -> Dict[str, Any]:
     await sync_registry()
     out = await get_role(rid)
     out["changes"] = changes
+    if accounts_to_review is not None:
+        out["accounts_to_review"] = accounts_to_review
     return out
 
 
@@ -704,11 +728,16 @@ async def delete_custom(rid: str) -> Dict[str, Any]:
 
 
 async def preview_role(payload: Dict[str, Any]) -> Dict[str, Any]:
-    """Pratinjau hak (tanpa menyimpan): notifikasi giliran & layar yang notifikasinya lolos."""
+    """Pratinjau hak (tanpa menyimpan): notifikasi giliran, layar yang notifikasinya lolos, tingkat — PR-T6: + `summary`
+    (ringkasan peran dari izin, peran dasar, sifat, dan lintas PT yang sedang disunting) dan `nav_added` (menu peran
+    bawaan yang bertambah dibanding izin bawaannya)."""
     await sync_registry()
-    src = (payload.get("role_id") or payload.get("base_role") or "").strip()
+    rid = (payload.get("role_id") or "").strip()
+    base_in = payload.get("base_role")
+    base_in = base_in.strip() if isinstance(base_in, str) else None
+    src = rid or (base_in or "")
     if src and src not in reg.ROLES:
-        raise HTTPException(status_code=400, detail="Peran acuan tidak dikenal.")
+        raise HTTPException(status_code=400, detail=MSG_BASE_UNKNOWN)
     matrix = await _matrix()
     current = matrix.get(src) if src else {}
     if current is None:
@@ -716,8 +745,13 @@ async def preview_role(payload: Dict[str, Any]) -> Dict[str, Any]:
     perms = apply_levels(deepcopy(current or {}), _clean_levels(payload.get("levels")))
     if payload.get("permissions") is not None:
         perms = _clean_perms(payload["permissions"])
+    if base_in and base_in not in reg.ROLES:
+        raise HTTPException(status_code=400, detail=MSG_BASE_UNKNOWN)
+    from services.role_insight_service import role_summary   # PR-T6
+    summary = await role_summary(rid or None, perms=perms, base_role=base_in, traits=payload.get("traits"),
+                                 cross_entity=payload.get("cross_entity"))
     return {"turn_alerts": _turn_alerts(perms), "screens": sorted(nav_allowed_for_perms(perms)),
-            "levels": levels_of(perms)}
+            "levels": levels_of(perms), "summary": summary, "nav_added": reg.nav_added_for(rid, perms)}
 
 
 async def move_users(rid: str, to_role: str, *, exclude_user_id: str = "") -> Dict[str, Any]:
@@ -734,15 +768,21 @@ async def move_users(rid: str, to_role: str, *, exclude_user_id: str = "") -> Di
     query: Dict[str, Any] = {"role": rid}
     if exclude_user_id:   # akun pelaku sendiri tidak ikut dipindah
         query["id"] = {"$ne": exclude_user_id}
-    ids = [u["id"] for u in await db.users.find(query, {"_id": 0, "id": 1}).to_list(500)]
-    if ids:
-        await db.users.update_many({"role": rid, "id": {"$in": ids}},
-                                   {"$set": {"role": to_role, "updated_at": now_iso()}})
-        from services.user_admin_service import revoke_sessions   # sama seperti ubah peran satu akun
-        for uid in ids:
-            await revoke_sessions(uid, reason="role_moved")
+    rows = await db.users.find(query, {"_id": 0, "id": 1, "name": 1}).to_list(500)
+    # PR-T6 — tiap akun lewat jalur ubah akun yang sama dengan layar Akun & Akses: penugasan PT dihitung ulang menurut
+    # aturan peran tujuan dan sesinya dicabut (dulu `role` ditulis langsung). Akun yang ditolak dilaporkan, bukan
+    # menggagalkan seluruh pemindahan. `updated` dipakai router untuk jejak audit per akun (tidak dikirim ke layar).
+    from services.user_admin_service import update_user
+    moved, failed, updated = [], [], []
+    for u in rows:
+        try:
+            updated.append(await update_user(u["id"], {"role": to_role}))
+            moved.append(u["id"])
+        except HTTPException as exc:
+            failed.append({"id": u["id"], "name": u.get("name", ""),
+                           "reason": exc.detail if isinstance(exc.detail, str) else str(exc.detail)})
     return {"from_role": rid, "to_role": to_role, "to_role_label": reg.role_label(to_role),
-            "moved": len(ids), "user_ids": ids}
+            "moved": len(moved), "user_ids": moved, "failed": failed, "updated": updated}
 
 
 async def assert_valid_role_async(role: str) -> str:
@@ -752,3 +792,65 @@ async def assert_valid_role_async(role: str) -> str:
 
 def nav_of(levels: Dict[str, str]) -> Dict[str, List[str]]:
     return nav_for_levels(levels)
+
+
+# ─── PR-T6 — peran dasar, menu saat dibuat, lintas PT ─────────────────────────────────────────────────────────────────
+MSG_BASE_CUSTOM_ONLY = "Peran dasar hanya bisa diatur pada peran kustom."
+MSG_BASE_ADMIN = "Peran Admin tidak bisa dijadikan peran dasar."
+MSG_BASE_UNKNOWN = "Peran dasar tidak dikenal."
+
+
+async def _save_hidden(rid: str, hidden: List[str]) -> None:
+    """Simpan menu/tab yang disembunyikan satu peran (`permission_settings.hidden_views.<id>`, pola `_set_cross_entity`)."""
+    await db.permission_settings.update_one({"id": "default"}, {"$set": {f"hidden_views.{rid}": hidden}}, upsert=True)
+
+
+def _clean_hidden(values: Any) -> List[str]:
+    """Id menu/tab yang disembunyikan (400 bila tidak dikenal) — dipakai buat (PR-UX-37) dan ubah peran."""
+    from access_modules import all_nav_ids
+    vals = [str(v) for v in (values or [])]
+    bad = [v for v in vals if v not in all_nav_ids()]
+    if bad:
+        raise HTTPException(status_code=400, detail=f"Menu/tab tidak dikenal: {', '.join(bad)}")
+    return sorted(set(vals))
+
+
+async def _clean_base_change(rid: str, custom: bool, payload: Dict[str, Any]) -> Optional[str]:
+    """`base_role` di PATCH: None = tidak diubah; "" = tanpa peran dasar; selain itu peran bawaan selain Admin.
+    Diperiksa SEBELUM apa pun ditulis."""
+    if payload.get("base_role") is None:
+        return None
+    if not custom:
+        raise HTTPException(status_code=400, detail=MSG_BASE_CUSTOM_ONLY)
+    base = str(payload["base_role"]).strip()
+    if base in LOCKED_ROLES:
+        raise HTTPException(status_code=400, detail=MSG_BASE_ADMIN)
+    if base and (base not in DEFAULT_PERMISSIONS or base == rid):
+        raise HTTPException(status_code=400, detail=MSG_BASE_UNKNOWN)
+    return base
+
+
+async def _entity_labels() -> Dict[str, str]:
+    return {e["id"]: e.get("short_name") or e.get("legal_name") or "PT tanpa nama"
+            for e in await db.business_entities.find({}, {"_id": 0, "id": 1, "short_name": 1, "legal_name": 1})
+            .to_list(500)}
+
+
+async def _accounts_to_review(rid: str) -> List[Dict[str, Any]]:
+    """Akun peran `rid` yang penugasannya lebih dari satu PT (ditinjau Admin sesudah lintas PT dimatikan)."""
+    labels = await _entity_labels()
+    rows = await db.users.find({"role": rid}, {"_id": 0, "id": 1, "name": 1, "allowed_entity_ids": 1}) \
+        .sort("name", 1).to_list(500)
+    return [{"id": u["id"], "name": u.get("name", ""),
+             "allowed_entities": [labels.get(e, "PT tidak dikenal") for e in u.get("allowed_entity_ids") or []]}
+            for u in rows if len(u.get("allowed_entity_ids") or []) > 1]
+
+
+def projected_scope_after(rid: str, traits: Optional[Dict[str, Any]], base_role: Optional[str]) -> Optional[str]:
+    """Cakupan data HASIL simpan bila PATCH juga mengganti peran dasar (sifat yang belum diisi sendiri ikut peran dasar
+    baru). `None` = cakupan tidak berubah oleh simpan ini."""
+    if base_role is None:
+        return projected_scope(rid, traits)
+    from services.role_insight_service import hypothetical_traits
+    after = hypothetical_traits(rid, base_role.strip(), traits, {})[0]["data_scope"]
+    return None if after == reg.traits_of(rid)["data_scope"] else after

@@ -703,7 +703,8 @@ async def lock_price(order_id: str, payload: LockPriceBody, request: Request) ->
     from dependencies import has_permission
     may_set = await has_permission(user, "od_pricing", "set_price")
     if (payload.item_prices or payload.unit_price) and not may_set:
-        raise HTTPException(status_code=403, detail="Permission ditolak: od_pricing.set_price (harga item tanpa induk diisi PIC Special Order).")
+        from dependencies import denied   # PR-T6 (Z6)
+        raise denied([("od_pricing", "set_price")], note="Harga item tanpa induk diisi PIC Pesanan Khusus.")
     od = await _od_or_404(order_id, request)
     await _site_to_warehouse(payload, od)
     try:
@@ -821,7 +822,7 @@ async def fulfillment_cancel(order_id: str, item_key: str, payload: FulfillmentC
     od = await _od_or_404(order_id, request)
     from services import special_order_fulfillment as ful
     if not await ful._can(user, "cancel"):  # noqa: SLF001
-        raise HTTPException(status_code=403, detail="Permission ditolak: od_fulfillment.cancel (membatalkan dokumen pengadaan OD).")
+        raise ful.denied_for("cancel")   # PR-T6 (Z6) — kalimat tanpa kode izin
     try:
         n = ful._need((await ful.progress(od))["items"], item_key)  # noqa: SLF001
     except ValueError as exc:

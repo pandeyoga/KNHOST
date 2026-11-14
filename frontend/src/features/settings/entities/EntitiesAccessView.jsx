@@ -30,20 +30,24 @@ import EntityReadinessPanel from "./EntityReadinessPanel";
 import { listEntities, errText } from "./entityApi";
 import useViewPreset from "../../../hooks/useViewPreset";
 
+// PR-T6 — `need` = izin yang membuka tab (tanpa izin tab tidak tampil; dulu tampil lalu 403).
 const TABS = [
   { key: "entities", label: "Badan Usaha", icon: Building2 },
-  { key: "accounts", label: "Akun & Akses", icon: Users },
+  { key: "accounts", label: "Akun & Akses", icon: Users, need: ["user", "view"] },
   // Peran kustom & tingkat akses per modul — diatur admin dari layar ini.
-  { key: "roles", label: "Peran & Hak Akses", icon: ShieldCheck },
+  { key: "roles", label: "Peran & Hak Akses", icon: ShieldCheck, need: ["permission", "view"] },
   // Utang migrasi (ii) E-8 — tab ini menjawab "peran siapa yang tidak cocok dengan
   // pekerjaannya", dihitung dari jejak nyata. Letaknya SETELAH "Akun & Akses"
   // karena ia menilai isi tab itu.
-  { key: "role-reality", label: "Cek Peran", icon: UserCheck },
+  { key: "role-reality", label: "Cek Peran", icon: UserCheck, need: ["permission", "view"] },
   { key: "readiness", label: "Kesiapan", icon: ClipboardCheck },
 ];
 
 export default function EntitiesAccessView({ currentUser, selectedEntity, onNavigate, initialTab = "entities" }) {
-  const [tab, setTab] = useState(initialTab);
+  const perms = currentUser?.permissions;
+  const tabs = TABS.filter((t) => !t.need || can(perms, t.need[0], t.need[1]));   // PR-T6
+  const [tabState, setTab] = useState(initialTab);
+  const tab = tabs.some((t) => t.key === tabState) ? tabState : (tabs[0]?.key || "entities");
   const [entities, setEntities] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -53,7 +57,6 @@ export default function EntitiesAccessView({ currentUser, selectedEntity, onNavi
   const [reloadKey, setReloadKey] = useState(0);
 
   // FE-04 — izin efektif per aksi (badan usaha / matriks peran), bukan nama peran Admin.
-  const perms = currentUser?.permissions;
   const canCreateEntity = can(perms, "entity", "create");
   const canEditEntity = can(perms, "entity", "update");
   const canEditRoles = can(perms, "permission", "update");
@@ -111,7 +114,7 @@ export default function EntitiesAccessView({ currentUser, selectedEntity, onNavi
       <div className="mb-3 flex flex-wrap items-center gap-1.5">
         <div className="min-w-0 flex-1">
           <PageTabs testId="entities-access-tabs" tabTestId={(k) => `entities-access-tab-${k}`} value={tab} onChange={setTab}
-            ariaLabel="Badan Usaha & Akses" tabs={TABS.map((t) => ({ key: t.key, label: t.label, icon: t.icon }))} />
+            ariaLabel="Badan Usaha & Akses" tabs={tabs.map((t) => ({ key: t.key, label: t.label, icon: t.icon }))} />
         </div>
         <div className="ml-auto flex items-center gap-2">
           {tab === "entities" && canCreateEntity && (
@@ -174,6 +177,7 @@ export default function EntitiesAccessView({ currentUser, selectedEntity, onNavi
           canManage={canEditRoles}
           onChanged={(msg) => { setFlash(msg); window.dispatchEvent(new CustomEvent("kn:roles-changed")); }}
           onError={setError}
+          onOpenAccounts={tabs.some((t) => t.key === "accounts") ? () => setTab("accounts") : undefined}
         />
       )}
 

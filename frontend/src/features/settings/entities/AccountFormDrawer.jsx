@@ -4,8 +4,9 @@
  * Aturan yang DITAMPILKAN, bukan disembunyikan:
  *  · Kalau akun ditautkan ke karyawan HR, badan usaha utamanya HANYA-BACA dan
  *    diambil dari HR — supaya penggajian dan hak akses tidak pernah bertentangan.
- *  · Peran sales/gudang terkunci di badan usahanya; penugasan tambahan harus
- *    disebut satu per satu (bukan “semua badan usaha” diam-diam).
+ *  · Peran yang tidak lintas PT terkunci di PT-nya; penugasan tambahan harus disebut satu per
+ *    satu (bukan “semua PT” diam-diam). PR-T6: "lintas PT" dibaca dari nilai peran di server
+ *    (`GET /api/roles` → `cross_entity`), bukan daftar tertulis Admin/Manajer.
  *  · Mengubah peran/penugasan MENCABUT sesi — dikatakan sebelum disimpan supaya
  *    admin tidak bingung kenapa orangnya tiba-tiba diminta masuk lagi.
  */
@@ -14,19 +15,21 @@ import { X, Save, Loader2, UserCog, Info, Search, Link2, Star } from "lucide-rea
 
 import KNSelect from "../../../components/KNSelect";
 import { AccountLocationScope } from "./AccountLocationScope";
+import AccountRoleSummary from "./AccountRoleSummary";
 import useDomainEnums from "../../../hooks/useDomainEnums";
 import { entityFull } from "../../../utils/entityLabel";
-import { createUser, patchUser, availableEmployees, ROLE_OPTIONS, CROSS_ROLES,
+import { askConfirm } from "../../../services/confirmService";
+import { createUser, patchUser, availableEmployees, ROLE_OPTIONS, publicRoles,
   errText, manageableRoles } from "./entityApi";
 
 export default function AccountFormDrawer({ user, entities = [], selectedEntity,
-  onClose, onSaved, onError }) {
+  onClose, onSaved, onError, canViewRoles = false }) {
   const editing = Boolean(user?.id);
   const [form, setForm] = useState(() => ({
     name: user?.name || "",
     email: user?.email || "",
     phone: user?.phone || "",
-    role: user?.role || "sales",
+    role: user?.role || "",   // PR-T6 — tanpa pilihan awal pada akun baru (dulu Sales); wajib dipilih
     password: "",
     employee_id: user?.employee_id || "",
     home_entity_id: user?.home_entity_id
@@ -46,7 +49,16 @@ export default function AccountFormDrawer({ user, entities = [], selectedEntity,
   const [tried, setTried] = useState(false);
 
   const set = (patch) => setForm((f) => ({ ...f, ...patch }));
-  const isCross = CROSS_ROLES.includes(form.role);
+  // PR-T6 — daftar peran server: lintas PT (`cross_entity`) dan peran dasar peran kustom untuk label pilihan.
+  const [serverRoles, setServerRoles] = useState(null);
+  useEffect(() => {
+    let alive = true;
+    Promise.resolve().then(() => publicRoles()).then((r) => { if (alive) setServerRoles(r || []); })
+      .catch(() => { if (alive) setServerRoles([]); });
+    return () => { alive = false; };
+  }, []);
+  const roleRow = (serverRoles || []).find((r) => r.id === form.role);
+  const isCross = Boolean(roleRow?.cross_entity);
   // PR-T1 — pilihan peran hanya yang boleh dikelola pelaku (null = semua). Peran akun yang sedang diubah tetap
   // tampil supaya isian tidak kosong.
   const [allowedRoles, setAllowedRoles] = useState(null);
@@ -57,10 +69,14 @@ export default function AccountFormDrawer({ user, entities = [], selectedEntity,
       .catch(() => { if (alive) setAllowedRoles(null); });
     return () => { alive = false; };
   }, []);
-  const roleOptions = ROLE_OPTIONS.filter((r) => !allowedRoles || allowedRoles.has(r.value) || (editing && r.value === user?.role));
+  const baseName = (id) => (serverRoles || []).find((r) => r.id === id)?.label || id;
+  const roleOptions = ((serverRoles && serverRoles.length)
+    ? serverRoles.map((r) => ({ value: r.id, label: r.custom && r.base_role ? `${r.label} · peran dasar ${baseName(r.base_role)}` : r.label }))
+    : ROLE_OPTIONS.map((r) => ({ value: r.value, label: r.label })))
+    .filter((r) => !allowedRoles || allowedRoles.has(r.value) || (editing && r.value === user?.role));
   useEffect(() => {
-    if (!editing && allowedRoles && !allowedRoles.has(form.role) && roleOptions[0]) set({ role: roleOptions[0].value });
-  }, [allowedRoles]);
+    if (!editing && allowedRoles && form.role && !allowedRoles.has(form.role)) set({ role: "" });
+  }, [allowedRoles]);   // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     let alive = true;
@@ -92,6 +108,7 @@ export default function AccountFormDrawer({ user, entities = [], selectedEntity,
     const out = [];
     if (!form.name.trim()) out.push("Nama wajib diisi.");
     if (!form.email.trim()) out.push("Email wajib diisi (dipakai untuk masuk).");
+    if (!form.role) out.push("Peran wajib dipilih.");
     if (!editing && !form.password) out.push("Sandi awal wajib diisi.");
     if (form.password && form.password.length < 8) {
       out.push("Sandi minimal 8 karakter.");
@@ -99,6 +116,18 @@ export default function AccountFormDrawer({ user, entities = [], selectedEntity,
     if (!effectiveHome) out.push("Badan usaha utama wajib dipilih.");
     return out;
   }, [form, editing, effectiveHome]);
+
+  // PR-T6 — melepas / mengganti tautan karyawan yang sudah tersimpan meminta konfirmasi.
+  const chooseEmployee = async (id) => {
+    const saved = editing ? (user?.employee_id || "") : "";
+    if (saved && form.employee_id === saved && id !== saved) {
+      const name = linkedEmployee?.name || user?.employee?.name || "karyawan ini";
+      const ok = await askConfirm({ title: `Lepas tautan ke ${name}?`,
+        message: "Data karyawan lama tidak lagi menunjuk akun ini setelah disimpan.", confirmLabel: "Ya, lepas" });
+      if (!ok) return;
+    }
+    set({ employee_id: id });
+  };
 
   const toggleAllowed = (id) => {
     setForm((f) => {
@@ -217,21 +246,20 @@ export default function AccountFormDrawer({ user, entities = [], selectedEntity,
           </div>
 
           <div className="grid gap-1">
-            <label className="kicker">Peran</label>
-            <KNSelect className="field" data-testid="account-form-role"
-                      value={form.role} onValueChange={(v) => set({ role: v })}
-                      options={roleOptions.map((r) => ({
-                        value: r.value, label: `${r.label} — ${r.scope}` }))} />
+            <label className="kicker">Peran <span className="text-kn-danger-text">*</span></label>
+            <KNSelect className="field" data-testid="account-form-role" placeholder="Pilih peran…"
+                      value={form.role} onValueChange={(v) => set({ role: v })} options={roleOptions} />
             {allowedRoles && (
               <p className="text-[10px] text-[#8E8E93]" data-testid="account-form-role-limited">
                 Hanya peran yang boleh Anda kelola yang ditampilkan.
               </p>
             )}
-            <p className="text-[10px] text-[#8E8E93]">
-              {isCross
-                ? "Peran ini otomatis boleh melihat SEMUA badan usaha aktif (pengawasan grup)."
-                : "Peran ini terkunci di badan usahanya. Penugasan tambahan harus dipilih di bawah."}
-            </p>
+            {form.role && (
+              <p className="text-fs-12 text-kn-text-2" data-testid="account-form-cross">
+                {isCross ? "Peran ini membuka semua PT aktif." : "Peran ini hanya membuka PT yang dicentang di bawah."}
+              </p>
+            )}
+            <AccountRoleSummary roleId={form.role} canViewRoles={canViewRoles} />
           </div>
 
           {/* E2.1 — taut karyawan HR */}
@@ -249,7 +277,7 @@ export default function AccountFormDrawer({ user, entities = [], selectedEntity,
             </div>
             <div className="max-h-28 overflow-auto">
               <button type="button" data-testid="account-form-hr-none"
-                      onClick={() => set({ employee_id: "" })}
+                      onClick={() => chooseEmployee("")}
                       className={`mb-1 w-full rounded-md border px-2 py-1 text-left text-[11px] ${
                         !form.employee_id ? "border-[#0058CC] bg-[#EAF2FF] font-semibold"
                           : "border-[#E5E5EA] bg-white"}`}>
@@ -264,7 +292,7 @@ export default function AccountFormDrawer({ user, entities = [], selectedEntity,
               )}
               {employees.map((e) => (
                 <button key={e.id} type="button" data-testid={`account-form-hr-${e.id}`}
-                        onClick={() => set({ employee_id: e.id })}
+                        onClick={() => chooseEmployee(e.id)}
                         className={`mb-1 w-full rounded-md border px-2 py-1 text-left text-[11px] ${
                           form.employee_id === e.id
                             ? "border-[#0058CC] bg-[#EAF2FF] font-semibold"

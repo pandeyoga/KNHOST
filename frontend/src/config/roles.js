@@ -392,12 +392,18 @@ export function navExplicitlyHidden(role, id) {
   return !!(rule && rule.remove.includes(id));
 }
 
+// PR-T6 — menu tambahan PERAN BAWAAN dari server (`GET /api/roles` → `nav.add`): menu yang dibuka izin sekarang di luar
+// izin bawaan peran itu. Hanya untuk peran itu sendiri (tidak diwariskan ke peran kustom berdasarnya — peran kustom
+// memakai menunya sendiri dari tingkat modul).
+const NAV_EXTRA = {};
+
 export function roleCanSee(roles, role, id, depth = 0) {
   if (depth === 0 && accessBlocks(role, id)) return false;
   const rule = ROLE_NAV[role];
   if (rule && id && rule.remove.includes(id)) return false;
   if (!Array.isArray(roles)) return true;      // tab tanpa `roles` = semua peran
   if (roles.includes(role)) return true;
+  if (id && depth === 0 && (NAV_EXTRA[role] || []).includes(id)) return true;   // PR-T6
   if (!rule) return false;
   if (id && rule.add.includes(id)) return true;
   // Peran kustom mewarisi peran acuannya (yang mungkin punya overlay sendiri).
@@ -464,6 +470,13 @@ export function registerDynamicRoles(list) {
   (list || []).filter((r) => r && r.id && typeof r.kategori_kerja === "string").forEach((r) => {
     ROLE_CATEGORY[r.id] = r.kategori_kerja;
   });
+  // PR-T6 — menu tambahan peran bawaan (selisih izin sekarang terhadap izin bawaannya).
+  const extraBefore = JSON.stringify(NAV_EXTRA);
+  (list || []).filter((r) => r && r.id && !r.custom && WRITTEN_HOME[r.id]).forEach((r) => {
+    const add = Array.isArray(r.nav?.add) ? r.nav.add.filter(Boolean) : [];
+    if (add.length) NAV_EXTRA[r.id] = add; else delete NAV_EXTRA[r.id];
+  });
+  const extraChanged = extraBefore !== JSON.stringify(NAV_EXTRA);
   const before = JSON.stringify([...CUSTOM_IDS].sort().map((id) => [id, ROLE_NAV[id], ROLE_REGISTRY[id]?.label]));
   for (const id of [...CUSTOM_IDS]) {
     delete ROLE_REGISTRY[id]; delete ROLE_NAV[id]; delete ROLE_HOME_REGISTRY[id];
@@ -482,7 +495,7 @@ export function registerDynamicRoles(list) {
   });
   rebuildDerived();
   const after = JSON.stringify([...CUSTOM_IDS].sort().map((id) => [id, ROLE_NAV[id], ROLE_REGISTRY[id]?.label]));
-  return before !== after || homesBefore !== homes();
+  return before !== after || homesBefore !== homes() || extraChanged;
 }
 
 /** Overlay sementara untuk PRATINJAU menu di editor peran (id `__preview`). */

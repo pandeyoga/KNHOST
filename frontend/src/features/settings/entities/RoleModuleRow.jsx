@@ -81,7 +81,7 @@ export default function RoleModuleRow({ module, value, partial, held, total, ori
                   onClick={onToggleAdvanced}
                   className={`inline-flex items-center gap-1 rounded-full border px-2.5 py-1 text-[10.5px] font-semibold transition-colors disabled:opacity-50 ${
                     advanced ? "border-[#6B219A] bg-[#F3E9FA] text-[#6B219A]" : "border-[#E5E5EA] bg-white text-[#6B6B73] hover:border-[#6B219A]/50"}`}>
-            {advanced ? <ChevronUp size={11} /> : <SlidersHorizontal size={11} />} Menu, tab &amp; aktivitas
+            {advanced ? <ChevronUp size={11} /> : <SlidersHorizontal size={11} />} Atur rinci{/* PR-T6 — dulu "Menu, tab & aktivitas" */}
           </button>
         )}
       </div>

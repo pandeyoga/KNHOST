@@ -123,8 +123,8 @@ async def _require_typed(request: Request, action: str, sample_id: str) -> Dict[
     missing = [t for t in types if not await has_permission(user, "rnd", f"{action}_{t}")]
     if doc and types and not missing:
         return user
-    need = " / ".join(f"rnd.{action}_{t}" for t in (missing or ["<jenis>"]))
-    raise HTTPException(status_code=403, detail=f"Permission ditolak: rnd.{action} atau {need}")
+    from dependencies import denied   # PR-T6 (Z6) — kalimat tanpa kode; kode izin di header untuk alat uji
+    raise denied([("rnd", action), *[("rnd", f"{action}_{t}") for t in (missing or [])]])
 
 
 async def _sample_guard(sample_id: str, ctx) -> Dict[str, Any]:
@@ -710,7 +710,9 @@ async def decide_sample(sample_id: str, payload: SampleDecideBody,
         return doc
     from dependencies import has_permission
     if not await has_permission(actor, "rnd", "decide"):
-        raise HTTPException(status_code=403, detail="Permission ditolak: rnd.decide — keputusan ini membuat kontrak harga; ACC teknis per jenis uji tidak memberi hak kontrak.")
+        from dependencies import denied   # PR-T6 (Z6)
+        raise denied([("rnd", "decide")], note="Keputusan ini membuat kontrak harga; ACC teknis per jenis uji tidak "
+                                              "memberi hak kontrak.")
     # PS-20 (D-14) — tahap "ACC Sample" kini mengikat (matriks persetujuan divisi).
     ev = await amx.guard("sample_acc", actor, cur, cur.get("entity_id", ""), action="approve")
     try:

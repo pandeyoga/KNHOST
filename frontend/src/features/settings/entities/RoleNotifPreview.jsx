@@ -1,15 +1,21 @@
 /** RoleNotifPreview — pratinjau LANGSUNG notifikasi "giliran" yang akan diterima
- *  peran dengan tingkat akses yang sedang disunting (belum disimpan). */
+ *  peran dengan tingkat akses yang sedang disunting (belum disimpan).
+ *  PR-T6 — editor peran mengirim hasil SATU pratinjau bersama (`alerts`, `loading`); tanpa itu komponen memanggil
+ *  pratinjau sendiri seperti dulu. */
 import { useEffect, useState } from "react";
 import { Bell, Loader2 } from "lucide-react";
 
 import { previewAccessRole } from "./entityApi";
 
-export default function RoleNotifPreview({ roleId, baseRole, permissions, saved = [] }) {
-  const [alerts, setAlerts] = useState(null);
-  const [busy, setBusy] = useState(false);
+export default function RoleNotifPreview({ roleId, baseRole, permissions, saved = [], alerts: given, loading }) {
+  const [own, setAlerts] = useState(null);
+  const [ownBusy, setBusy] = useState(false);
+  const shared = given !== undefined;
+  const alerts = shared ? given : own;
+  const busy = shared ? Boolean(loading) : ownBusy;
 
   useEffect(() => {
+    if (shared) return undefined;
     let alive = true;
     setBusy(true);
     const t = setTimeout(() => {
@@ -19,7 +25,7 @@ export default function RoleNotifPreview({ roleId, baseRole, permissions, saved 
         .finally(() => { if (alive) setBusy(false); });
     }, 350);
     return () => { alive = false; clearTimeout(t); };
-  }, [roleId, baseRole, permissions]);
+  }, [roleId, baseRole, permissions, shared]);
 
   const list = alerts ?? saved;
   const gained = alerts ? alerts.filter((t) => !saved.includes(t)) : [];

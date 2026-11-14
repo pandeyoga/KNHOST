@@ -219,7 +219,10 @@ async def create_user(payload: Dict[str, Any]) -> Tuple[Dict[str, Any], Dict[str
     await assert_email_unique(payload.get("email", ""))
     role = (payload.get("role") or "").strip()
     if not role:
-        raise HTTPException(status_code=400, detail="Role wajib dipilih.")
+        raise HTTPException(status_code=400, detail="Peran wajib dipilih.")
+    # PR-T6 — sandi awal wajib dari pemanggil (dulu sandi cadangan bawaan dipakai bila kosong).
+    if len(payload.get("password") or "") < 8:
+        raise HTTPException(status_code=400, detail="Kata sandi minimal 8 karakter.")
     # FASE E-8 (E8.1) — `role` dulu teks bebas: salah ketik membuat akun TANPA izin
     # apa pun dan pemiliknya bingung kenapa semua layar kosong. Sekarang divalidasi
     # terhadap registry peran, dengan pesan yang menyebut pilihan yang sah.
@@ -246,7 +249,7 @@ async def create_user(payload: Dict[str, Any]) -> Tuple[Dict[str, Any], Dict[str
         "name": (payload.get("name") or "").strip(),
         "email": (payload.get("email") or "").strip(),
         "role": role,
-        "password_hash": hash_password(payload.get("password") or "demo12345"),
+        "password_hash": hash_password(payload["password"]),
         "phone": (payload.get("phone") or "").strip(),
         "home_entity_id": home,
         "allowed_entity_ids": allowed,
@@ -308,7 +311,7 @@ async def update_user(user_id: str, data: Dict[str, Any]) -> Dict[str, Any]:
         patch["employee_id"] = employee_id
         lost = set(before.get("allowed_entity_ids") or []) - set(allowed)
         if role_changed:
-            revoke_reasons.append("role berubah")
+            revoke_reasons.append("peran berubah")   # PR-T6 — istilah glosarium (dulu "role berubah")
         if lost:
             revoke_reasons.append("akses badan usaha dicabut")
         if before.get("home_entity_id") != home:
@@ -341,6 +344,12 @@ async def update_user(user_id: str, data: Dict[str, Any]) -> Dict[str, Any]:
 
     patch["updated_at"] = now_iso()
     await db.users.update_one({"id": user_id}, {"$set": patch})
+    if "employee_id" in (data or {}):
+        # PR-T6 — tautan karyawan diganti/dilepas: karyawan LAIN yang masih menunjuk akun ini dikosongkan di langkah yang
+        # sama (dulu `hr_employees.user_id` karyawan lama tertinggal sehingga satu akun tertaut dua karyawan).
+        await db.hr_employees.update_many(
+            {"user_id": user_id, "id": {"$ne": patch.get("employee_id") or ""}},
+            {"$set": {"user_id": "", "updated_at": now_iso()}})
     if patch.get("employee_id"):
         await db.hr_employees.update_one(
             {"id": patch["employee_id"]},

@@ -634,8 +634,8 @@ async def scan_label_loading_check(session_id: str, payload: Dict[str, Any], req
     actor = await require_permission(request, "wms", "update")
     from dependencies import has_permission
     if not await has_permission(actor, "wms", "untagged_override"):
-        raise HTTPException(status_code=403, detail=(
-            "Permission ditolak: wms.untagged_override — roll tanpa tag wajib dicetak/diverifikasi RFID."))
+        from dependencies import denied   # PR-T6 (Z6)
+        raise denied([("wms", "untagged_override")], note="Roll tanpa tag wajib dicetak/diverifikasi RFID.")
     ctx = await entity_ctx(request)
     reason = str(payload.get("reason") or "")
     sess = await _lc.scan_label(session_id, str(payload.get("code") or ""), _resolve_scope_ids(ctx, None),

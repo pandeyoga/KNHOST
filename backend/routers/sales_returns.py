@@ -376,7 +376,8 @@ async def approve_return(
     await _need_evidence(existing, "approve")
     if payload.roll_decisions:   # terima/tolak per roll di langkah ACC yang sama
         if not await has_permission(user, "sales_return", "decide_rolls"):
-            raise HTTPException(status_code=403, detail="Permission ditolak: sales_return.decide_rolls")
+            from dependencies import denied   # PR-T6 (Z6)
+            raise denied([("sales_return", "decide_rolls")])
         from services.return_rolls_service import decide_rolls
         try:
             existing = await decide_rolls(existing, [d.dict() for d in payload.roll_decisions], user)

@@ -3,7 +3,7 @@ import { Loader2, Trash2, RotateCcw, ArrowRightLeft, AlertTriangle, GitMerge } f
 
 const META = {
   delete: {
-    icon: Trash2, tone: "text-[#A8221A]", btn: "!bg-[#A8221A]", confirm: "Ya, hapus peran",
+    icon: Trash2, tone: "text-kn-danger-text", btn: "!bg-[#A8221A]", confirm: "Ya, hapus peran",
     title: (l) => `Hapus peran “${l}”?`,
     body: () => "Peran beserta pengaturan hak aksesnya dihapus permanen. Tindakan ini tidak bisa dibatalkan.",
   },

@@ -281,12 +281,15 @@ CROSS_ENTITY_ROLES = {rid for rid, r in ROLES.items() if r["cross_entity"]}
 
 
 def cross_entity_default(rid: str) -> bool:
-    """Nilai bawaan tanpa pengaturan admin: peran bawaan → registry; peran kustom → peran acuannya."""
+    """Nilai bawaan tanpa pengaturan admin: peran bawaan → registry; peran kustom → nilai EFEKTIF peran dasarnya
+    (PR-T6 — dulu nilai asli peran dasar, sehingga "sama dengan bawaan" tersimpan sebagai "ikut bawaan" dan nilai
+    efektifnya justru mengikuti peran dasar yang sudah diubah Admin)."""
     if rid == "admin":
         return True
     if rid in BUILTIN_CROSS_ENTITY:
         return BUILTIN_CROSS_ENTITY[rid]
-    return BUILTIN_CROSS_ENTITY.get((ROLES.get(rid) or {}).get("base_role") or "", False)
+    base = (ROLES.get(rid) or {}).get("base_role") or ""
+    return bool((ROLES.get(base) or {}).get("cross_entity", False)) if base and base != rid else False
 
 
 def apply_cross_entity(overrides: Optional[Dict[str, Any]]) -> None:
@@ -499,6 +502,33 @@ def home_choices_for(perms: Optional[Dict[str, Any]], category: str) -> List[Dic
 apply_traits({})   # PR-T4 — peran bawaan langsung bersifat bawaan sebelum `sync_registry` pertama
 
 
+# ─── PR-T6 — menu peran BAWAAN boleh bertambah (tidak pernah berkurang lewat jalur ini) ─────────────────────────────
+_BUILTIN_NAV_BASE: Dict[str, frozenset] = {}
+
+
+def nav_added_for(rid: str, perms: Optional[Dict[str, Any]]) -> List[str]:
+    """Menu yang dibuka izin `perms` tetapi TIDAK dibuka izin bawaan peran bawaan `rid`
+    (`nav_allowed_for_perms(perms) − nav_allowed_for_perms(DEFAULT_PERMISSIONS[rid])`). Peran kustom/tak dikenal: []."""
+    from access_modules import nav_allowed_for_perms
+    from permissions_config import DEFAULT_PERMISSIONS
+    if rid not in DEFAULT_PERMISSIONS or (ROLES.get(rid) or {}).get("custom") or perms is None:
+        return []
+    if rid not in _BUILTIN_NAV_BASE:
+        _BUILTIN_NAV_BASE[rid] = frozenset(nav_allowed_for_perms(DEFAULT_PERMISSIONS[rid]))
+    return sorted(set(nav_allowed_for_perms(perms)) - _BUILTIN_NAV_BASE[rid])
+
+
+def apply_builtin_nav(matrix: Optional[Dict[str, Dict[str, Any]]]) -> None:
+    """`ROLES[rid]["nav"] = {"add": nav_added_for(...), "remove": []}` untuk peran bawaan (dipanggil
+    `custom_role_service.sync_registry` dengan izin efektif). Saat pemasangan matriks = bawaan → `add` kosong."""
+    from permissions_config import DEFAULT_PERMISSIONS
+    for rid in BUILTIN_HOME:
+        if rid in ROLES and not ROLES[rid].get("custom"):
+            perms = (matrix or {}).get(rid)
+            ROLES[rid]["nav"] = {"add": nav_added_for(rid, perms if perms is not None
+                                                     else DEFAULT_PERMISSIONS.get(rid, {})), "remove": []}
+
+
 #: Peringkat yang dipakai bila `required_role` diisi nilai yang tidak dikenal.
 #: Sengaja = peringkat manajer (perilaku lama), supaya konfigurasi persetujuan yang
 #: sudah tersimpan di basis data tidak mendadak jadi lebih longgar.
@@ -582,7 +612,8 @@ def public_list() -> List[Dict[str, Any]]:
             "new_in": ROLES[rid].get("new_in", ""),
             "custom": bool(ROLES[rid].get("custom")),
             "base_role": ROLES[rid].get("base_role", ""),
-            "nav": ROLES[rid].get("nav"),
+            # PR-T6 — peran bawaan: {"add": menu yang dibuka izin sekarang di luar izin bawaannya, "remove": []}.
+            "nav": ROLES[rid].get("nav") or (None if ROLES[rid].get("custom") else {"add": [], "remove": []}),
             # PR-T4 — sifat efektif (halaman awal di atas sudah efektif).
             "data_scope": data_scope_of(rid),
             "kategori_kerja": category_of(rid),

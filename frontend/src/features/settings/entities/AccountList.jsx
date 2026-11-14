@@ -434,6 +434,7 @@ export default function AccountList({ entities = [], currentUser, selectedEntity
           onClose={() => setEditing(null)}
           onSaved={(msg) => { setEditing(null); onChanged?.(msg); load(); }}
           onError={onError}
+          canViewRoles={can(currentUser?.permissions, "permission", "view")}
         />
       )}
     </div>

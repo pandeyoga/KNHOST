@@ -1,0 +1,26 @@
+{
+ "manager": {
+  "GET /api/access/roles": {
+   "kode": 403
+  },
+  "GET /api/bank-accounts": {
+   "baris": 1,
+   "kode": 200
+  },
+  "GET /api/cash-transactions": {
+   "baris": 5,
+   "kode": 200
+  },
+  "GET /api/customers": {
+   "baris": 3,
+   "kode": 200
+  },
+  "GET /api/customers/cust_prt6_sapu/360": {
+   "kode": 200
+  },
+  "GET /api/users": {
+   "baris": 4,
+   "kode": 200
+  }
+ }
+}

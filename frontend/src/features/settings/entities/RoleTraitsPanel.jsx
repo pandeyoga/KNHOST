@@ -58,9 +58,13 @@ export function homeAllowed(choice, perms, category) {
   return acts.includes(act) || acts.includes("*");
 }
 
-/** Nilai turunan (tanpa simpanan): peran yang disunting → `traits_default`; peran baru → peran dasar. */
+/** PR-T6 — peran kustom yang peran dasarnya sedang diganti di editor (belum disimpan). */
+const baseChanged = (role, baseRole) => Boolean(role?.custom) && baseRole !== undefined && baseRole !== (role.base_role || "");
+
+/** Nilai turunan (tanpa simpanan): peran yang disunting → `traits_default`; peran baru — atau peran kustom yang peran
+ *  dasarnya sedang diganti (PR-T6) — → peran dasar. */
 export function derivedTraits({ role, baseRole, roles }) {
-  if (role?.traits_default) return role.traits_default;
+  if (role?.traits_default && !baseChanged(role, baseRole)) return role.traits_default;
   const base = (roles || []).find((r) => r.id === baseRole);
   if (base?.traits) return { ...base.traits, notify_like: base.custom ? (base.traits.notify_like || []) : [base.id] };
   return { data_scope: "semua", home_view: PROFILE_HOME, kategori_kerja: "", notify_like: [] };
@@ -116,7 +120,7 @@ export function traitChangeLines({ role, baseRole, roles, draft }) {
 
 function followText({ role, baseRole, roles }) {
   if (role && !role.custom) return "Mengikuti bawaan sistem";
-  const base = role ? role.base_role : baseRole;
+  const base = role && baseRole === undefined ? role.base_role : baseRole;
   const label = (roles || []).find((r) => r.id === base)?.label;
   return label ? `Mengikuti ${label}` : "Mengikuti bawaan";
 }

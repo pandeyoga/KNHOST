@@ -86,6 +86,8 @@ export const AUDIT_ACTION_LABEL = {
   sales_return_cutloss_split: "Roll retur dipecah (potongan cacat)", sales_return_cutloss_return_sj: "SJ potongan baik retur dibuat",
   material_loss_recorded: "Susut bahan dicatat", material_loss_approved: "Susut bahan disetujui",
   role_access_updated: "Akses peran diubah", role_access_reset: "Akses peran diatur ulang", permissions_updated: "Matriks izin diubah",
+  // PR-T6 — tiga aksi peran yang belum berlabel (Riwayat peran & jejak audit).
+  custom_role_created: "Peran dibuat", custom_role_deleted: "Peran dihapus", role_users_moved: "Akun dipindahkan ke peran lain",
   so_approval_approved: "Persetujuan SO diberikan", so_approval_rejected: "Persetujuan SO ditolak",
   so_special_price_requested: "Harga khusus SO diajukan", entity_provisioned: "Badan usaha disiapkan",
   // KP-T1 — tindakan "Ubah status PKP" (bertanggal berlaku, beralasan).

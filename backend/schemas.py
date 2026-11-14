@@ -174,7 +174,7 @@ class UserCreate(BaseModel):
     name: str
     email: str
     role: str
-    password: str = "demo12345"
+    password: str                         # PR-T6 — wajib, tanpa sandi bawaan (minimal 8 karakter, diperiksa layanan)
     phone: PhoneStr = ""                  # R6.5 — nomor WhatsApp untuk alert (08xx / 62xx) — K-2 divalidasi
     home_entity_id: str = ""              # F6 — badan usaha kerja/payroll (diabaikan bila employee_id terisi)
     allowed_entity_ids: List[str] = []    # F6 — badan usaha yang boleh dioperasikan (multi-entitas)
