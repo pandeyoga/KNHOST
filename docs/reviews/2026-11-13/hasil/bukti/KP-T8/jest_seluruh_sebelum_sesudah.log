@@ -1,0 +1,5 @@
+HEAD: Test Suites: 35 failed, 83 passed, 118 total
+HEAD: Tests:       644 passed, 644 total
+sesudah: Test Suites: 35 failed, 84 passed, 119 total
+sesudah: Tests:       651 passed, 651 total
+35 suite gagal dimuat identik di HEAD dan sesudah: Cannot find module '@radix-ui/primitive/is-development' (kendala lingkungan)

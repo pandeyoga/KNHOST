@@ -1,0 +1,7 @@
+## config_health.report(): HEAD a323bb0 vs KF-T8 (akar berkas = worktree)
+baris 430 vs 430 · ringkasan {'OK': 394, 'NOT_USED': 36} vs {'OK': 394, 'NOT_USED': 36} · rusak 0 vs 0
+isi baris identik: True · waktu 4.67 dtk → 2.86 dtk
+
+## Pembanding kedua: registry & berkas 3132cc4 (aturan ketat KF-T3 → banyak STALE/MISSING)
+baris 310 vs 310 · ringkasan {'OK': 214, 'STALE': 83, 'NOT_USED': 4, 'MISSING': 9} vs {'OK': 214, 'STALE': 83, 'NOT_USED': 4, 'MISSING': 9}
+isi baris identik: True

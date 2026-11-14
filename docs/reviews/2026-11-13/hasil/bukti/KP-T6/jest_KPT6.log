@@ -1,0 +1,92 @@
+# Suite baru kpt6CetakPerPt — di src LAMA (eef7bb9): merah
+    ✕ U14 (komponen) — kop tanpa isian teks identitas; identitas hanya-baca dari Profil PT (146 ms)
+    ✕ U14 (komponen) — kotak teks lama: tabel selisih + dua tombol; pilihan meminta alasan & menyebut PT (94 ms)
+    ✕ kotak teks lama tanpa akses ubah Profil PT: tombol disembunyikan, alasan dijelaskan (121 ms)
+    ✕ U14 (komponen) — Berlaku untuk: lapisan PT memuat/menyimpan ber-entity_id; isian grup abu-abu (89 ms)
+    ✕ naskah memuat keterangan {{rekening_bank}} (65 ms)
+    ✕ isian Nama di kop surat, Slogan, Situs web; disimpan lewat PATCH (128 ms)
+Tests:       6 failed, 6 total
+
+# Suite baru + kpt1ProfilPt — di src BARU: hijau
+PASS src/features/__tests__/kpt1ProfilPt.test.js
+PASS src/features/__tests__/kpt6CetakPerPt.test.js
+Tests:       14 passed, 14 total
+
+# Seluruh suite (src/config src/features src/hooks src/components)
+## LAMA
+Test Suites: 35 failed, 81 passed, 116 total
+Tests:       632 passed, 632 total
+## BARU
+Test Suites: 35 failed, 82 passed, 117 total
+Tests:       638 passed, 638 total
+## suite gagal dimuat (sama di keduanya; @radix-ui/cmdk tidak termuat lokal)
+src/components/__tests__/knSelect.test.js
+src/components/__tests__/knSelect.test.js
+src/features/__tests__/audit2G2.test.js
+src/features/__tests__/audit2G2.test.js
+src/features/__tests__/auditUi2G5b.test.js
+src/features/__tests__/auditUi2G5b.test.js
+src/features/__tests__/decisionsD1.test.js
+src/features/__tests__/decisionsD1.test.js
+src/features/__tests__/decisionsD3.test.js
+src/features/__tests__/decisionsD3.test.js
+src/features/__tests__/f10DispatchPaymentGate.test.js
+src/features/__tests__/f10DispatchPaymentGate.test.js
+src/features/__tests__/f11LayarOperatorView.test.js
+src/features/__tests__/f11LayarOperatorView.test.js
+src/features/__tests__/fe06PriceFocus.test.js
+src/features/__tests__/fe06PriceFocus.test.js
+src/features/__tests__/fe07ReturnErrors.test.js
+src/features/__tests__/fe07ReturnErrors.test.js
+src/features/__tests__/fix1Cakupan.test.js
+src/features/__tests__/fix1Cakupan.test.js
+src/features/__tests__/fix3bForms.test.js
+src/features/__tests__/fix3bForms.test.js
+src/features/__tests__/mkl02RecapPaging.test.js
+src/features/__tests__/mkl02RecapPaging.test.js
+src/features/__tests__/mobileShell.test.js
+src/features/__tests__/mobileShell.test.js
+src/features/__tests__/permissionGates.test.js
+src/features/__tests__/permissionGates.test.js
+src/features/__tests__/phase3P3.test.js
+src/features/__tests__/phase3P3.test.js
+src/features/__tests__/phase3P4Finance.test.js
+src/features/__tests__/phase3P4Finance.test.js
+src/features/__tests__/phase3P4Popups.test.js
+src/features/__tests__/phase3P4Popups.test.js
+src/features/__tests__/phase3P5.test.js
+src/features/__tests__/phase3P5.test.js
+src/features/__tests__/phase3P6Kpi.test.js
+src/features/__tests__/phase3P6Kpi.test.js
+src/features/__tests__/phase3P6Rnd.test.js
+src/features/__tests__/phase3P6Rnd.test.js
+src/features/__tests__/phase3P8Activation.test.js
+src/features/__tests__/phase3P8Activation.test.js
+src/features/__tests__/phase3Settings.test.js
+src/features/__tests__/phase3Settings.test.js
+src/features/__tests__/phase4R1.test.js
+src/features/__tests__/phase4R1.test.js
+src/features/__tests__/phase4R2.test.js
+src/features/__tests__/phase4R2.test.js
+src/features/__tests__/phase4R6.test.js
+src/features/__tests__/phase4R6.test.js
+src/features/__tests__/prepBInitialRegistration.test.js
+src/features/__tests__/prepBInitialRegistration.test.js
+src/features/__tests__/roleGateSweep.test.js
+src/features/__tests__/roleGateSweep.test.js
+src/features/__tests__/roleGateSweep2.test.js
+src/features/__tests__/roleGateSweep2.test.js
+src/features/__tests__/uat24F4.test.js
+src/features/__tests__/uat24F4.test.js
+src/features/__tests__/uatV3MobileSales.test.js
+src/features/__tests__/uatV3MobileSales.test.js
+src/features/__tests__/uatV3ReturnsOps.test.js
+src/features/__tests__/uatV3ReturnsOps.test.js
+src/features/__tests__/uatV3S2Cbd.test.js
+src/features/__tests__/uatV3S2Cbd.test.js
+src/features/__tests__/uatV3SpecialOrder.test.js
+src/features/__tests__/uatV3SpecialOrder.test.js
+src/features/__tests__/uatV3UiGaps.test.js
+src/features/__tests__/uatV3UiGaps.test.js
+src/features/wms/transfer/__tests__/TransferDetailModal.test.js
+src/features/wms/transfer/__tests__/TransferDetailModal.test.js

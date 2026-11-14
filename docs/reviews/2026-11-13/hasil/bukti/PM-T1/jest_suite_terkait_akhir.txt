@@ -1,0 +1,10 @@
+PASS src/features/__tests__/phase4R2.test.js
+PASS src/features/__tests__/phase4R1.test.js
+PASS src/features/__tests__/pk16ScopeBanner.test.js
+PASS src/features/__tests__/decisionsD1.test.js
+PASS src/features/__tests__/pk13MoneyConfirm.test.js
+PASS src/features/__tests__/pk17NominalBerizin.test.js
+PASS src/features/__tests__/pk12MoneyIntentB.test.js
+PASS src/features/__tests__/pk21RekonsiliasiSatuMekanisme.test.js
+PASS src/features/__tests__/pmt1CaraBayar.test.js
+Tests:       104 passed, 104 total

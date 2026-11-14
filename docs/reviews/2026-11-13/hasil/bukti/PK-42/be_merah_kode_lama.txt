@@ -1,0 +1,26 @@
+# tests_mem/test_PK42_daftar_berhalaman.py di kode lama (5 berkas server HEAD c38fc92, berkas uji baru)
+E       AssertionError: jawaban bukan amplop halaman: list
+E       assert False
+E        +  where False = isinstance([{'id': 'rcp_pk42_00029', 'number': 'KSC/AR-00029', 'entity_id': 'ent_ksc', 'customer_id': 'cus_uji', ...}, {'id': 'rc..., ...}, {'id': 'rcp_pk42_00024', 'number': 'KSC/AR-00024', 'entity_id': 'ent_ksc', 'customer_id': 'cus_uji', ...}, ...], dict)
+tests_mem/test_PK42_daftar_berhalaman.py:45: AssertionError
+E       TypeError: list indices must be integers or slices, not str
+tests_mem/test_PK42_daftar_berhalaman.py:62: TypeError
+E       AssertionError: assert 'KSC/AR-01999' == 'KSC/AR-05000'
+E         - KSC/AR-05000
+E         + KSC/AR-01999
+tests_mem/test_PK42_daftar_berhalaman.py:100: AssertionError
+E       AssertionError: jawaban bukan amplop halaman: list (panjang 501)
+E       assert False
+E        +  where False = isinstance([{'id': 'cash_pk42_00500', 'number': 'KSC/CASH-00500', 'entity_id': 'ent_ksc', 'cash_type': 'kas_besar', ...}, {'id': .....}, {'id': 'cash_pk42_00495', 'number': 'KSC/CASH-00495', 'entity_id': 'ent_ksc', 'cash_type': 'kas_besar', ...}, ...], dict)
+tests_mem/test_PK42_daftar_berhalaman.py:115: AssertionError
+E       TypeError: list indices must be integers or slices, not str
+tests_mem/test_PK42_daftar_berhalaman.py:134: TypeError
+E       ImportError: cannot import name 'RECEIPT_SEARCH_FIELDS' from 'services.ar_receipt_service' (/tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/wt10/backend/services/ar_receipt_service.py)
+tests_mem/test_PK42_daftar_berhalaman.py:182: ImportError
+FAILED tests_mem/test_PK42_daftar_berhalaman.py::test_PK42_U9_kwitansi_halaman_kedua
+FAILED tests_mem/test_PK42_daftar_berhalaman.py::test_PK42_U9b_kwitansi_cari_nomor_dan_pelanggan
+FAILED tests_mem/test_PK42_daftar_berhalaman.py::test_PK42_U10_kwitansi_terbaru_tidak_terbuang
+FAILED tests_mem/test_PK42_daftar_berhalaman.py::test_PK42_U11_kas_halaman_dan_hitungan_tab
+FAILED tests_mem/test_PK42_daftar_berhalaman.py::test_PK42_U11b_kas_cari_dan_tanpa_halaman
+FAILED tests_mem/test_PK42_daftar_berhalaman.py::test_PK42_unduh_ikut_cari_daftar
+6 failed, 2 passed, 1 warning in 15.25s

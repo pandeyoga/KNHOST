@@ -1,0 +1,13 @@
+# audit_i18n_id.py --strict — HEAD c38fc92 → kode baru
+HEAD:   ✗ 109 temuan di 62 berkas.
+baru:   ✗ 104 temuan di 60 berkas. (5 temuan berkurang: ARAgingDetail 3, ClosingView 2; tidak ada temuan baru)
+
+## Berkas yang hilang dari daftar
+26,27d25
+<   frontend/src/features/finance/ARAgingDetail.jsx
+<   frontend/src/features/finance/ClosingView.jsx
+
+## Berkas tabel 'UX-18 — teks' di keluaran baru (harus 0)
+ClosingView.jsx: 0
+ARAgingDetail.jsx: 0
+IntercoPaymentSchedule.jsx: 0

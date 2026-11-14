@@ -42,13 +42,13 @@ Papan kerja agen pelaksana. Aturan mengubahnya: `00_ATURAN_EKSEKUSI.md` §5. Uru
 | 35 | KF-T4 | Bahasa, pengelompokan, dan editor Pusat Pengaturan | KF-T2 | selesai | `13b84dd` | [KF-T4](../reviews/2026-11-13/hasil/KF-T4.md) |  |
 | 36 | KF-T5 | Pengaturan per pelanggan dan per barang punya layar | KF-T1 | selesai | `0da3656` | [KF-T5](../reviews/2026-11-13/hasil/KF-T5.md) |  |
 | 37 | KF-T7 | Nilai bisnis yang ditulis mati menjadi pengaturan | KF-T2 | selesai | `885daca` | [KF-T7](../reviews/2026-11-13/hasil/KF-T7.md) | H3: migrasi margin pesanan khusus saat proses awal |
-| 38 | KF-T8 | Penjaga pengaturan: uji putaran semua kunci menjadi gate | KF-T2 | siap |  |  |  |
+| 38 | KF-T8 | Penjaga pengaturan: uji putaran semua kunci menjadi gate | KF-T2 | selesai | `e13e29b` | [KF-T8](../reviews/2026-11-13/hasil/KF-T8.md) |  |
 | 39 | KP-T1 | Profil PT yang jujur dan bisa diubah | KF-T1 | selesai | `69cc4e3` | [KP-T1](../reviews/2026-11-13/hasil/KP-T1.md) | H3: --apply migrate_kpt1_profil_pt di data nyata |
 | 40 | KP-T2 | Kesiapan PT, wizard lanjutan, dan arsip PT | KP-T1 | selesai | `aea3cec` | [KP-T2](../reviews/2026-11-13/hasil/KP-T2.md) |  |
 | 41 | KP-T5 | Penomoran dokumen per PT | KP-T1 | selesai | `4e816a0` · `eb4e0e1` | [KP-T5](../reviews/2026-11-13/hasil/KP-T5.md) | Titik henti H3 untuk dokumen lama |
-| 42 | KP-T6 | Dokumen dan cetak per PT | KP-T1 | siap |  |  |  |
+| 42 | KP-T6 | Dokumen dan cetak per PT | KP-T1 | selesai | `1ebbdaa` | [KP-T6](../reviews/2026-11-13/hasil/KP-T6.md) |  |
 | 43 | KP-T7 | Pengingat dan penjadwal yang bisa diatur | KF-T1 | selesai | `0a91095` | [KP-T7](../reviews/2026-11-13/hasil/KP-T7.md) |  |
-| 44 | KP-T8 | Rahasia dan perangkat | KF-T1 | siap |  |  |  |
+| 44 | KP-T8 | Rahasia dan perangkat | KF-T1 | selesai | `a742da9` | [KP-T8](../reviews/2026-11-13/hasil/KP-T8.md) |  |
 | 45 | MN-T1 | Menu keuangan dan SDM: pindah dan kelompokkan | PR-T5 | selesai | `5e94a1d` | [MN-T1](../reviews/2026-11-13/hasil/MN-T1.md) |  |
 | 46 | KP-T9 | Susunan hub Pengaturan | MN-T1, KF-T4 | siap |  |  |  |
 | 47 | PK-18 | Penanda gagal dan panel untuk semua jenis dokumen | PK-05, PK-06 tervalidasi | menunggu |  |  |  |
@@ -63,8 +63,8 @@ Papan kerja agen pelaksana. Aturan mengubahnya: `00_ATURAN_EKSEKUSI.md` §5. Uru
 | 56 | PK-27 | Biaya roll pada scrap, retur, dan HPP | PK-18 | menunggu |  |  |  |
 | 57 | PK-28 | GR/IR: varians, umur, kliring | PK-18 | menunggu |  |  |  |
 | 58 | PK-29 | Rekonsiliasi persediaan per PT; true-up dibatasi | PK-27 | menunggu |  |  |  |
-| 59 | PK-30 | Antar-PT: panjang aktual, jalur lama, harga dan PPN | PK-06 | siap |  |  |  |
-| 60 | PK-31 | Eliminasi per periode; rantai A→B→C; retur setelah lunas | PK-30 | menunggu |  |  |  |
+| 59 | PK-30 | Antar-PT: panjang aktual, jalur lama, harga dan PPN | PK-06 | selesai | `a4b7c8d` · `a0ae755` | [PK-30](../reviews/2026-11-13/hasil/PK-30.md) | H4 PPN masukan pembeli non-PKP → Menunggu pemilik |
+| 60 | PK-31 | Eliminasi per periode; rantai A→B→C; retur setelah lunas | PK-30 | siap |  |  |  |
 | 61 | PK-32 | Nota kredit satu mesin | PK-19 | menunggu |  |  |  |
 | 62 | PK-33 | Hijaukan penjaga atomisitas | PK-19, PK-20 | menunggu |  |  |  |
 | 63 | PK-34 | Replica set satu anggota, transaksi di jalur uang, pustaka database | gelombang 3 tervalidasi (PK-18 … PK-25; dengan sendirinya PK-05, PK-06) | tahan |  |  | Titik henti H2 |
@@ -75,10 +75,10 @@ Papan kerja agen pelaksana. Aturan mengubahnya: `00_ATURAN_EKSEKUSI.md` §5. Uru
 | 68 | PK-39 | Anggaran | PK-18 | menunggu |  |  |  |
 | 69 | PK-40 | Pajak: keunikan, masa pajak, basis | PK-14 | selesai | `a78f552` | [PK-40](../reviews/2026-11-13/hasil/PK-40.md) |  |
 | 70 | PK-41 | Laporan pendukung | PK-19 | menunggu |  |  |  |
-| 71 | PK-42 | Layar: perbaikan cepat per berkas | PK-12 | siap |  |  |  |
+| 71 | PK-42 | Layar: perbaikan cepat per berkas | PK-12 | selesai | `5e747b2` | [PK-42](../reviews/2026-11-13/hasil/PK-42.md) |  |
 | 72 | PK-43 | Layar: struktural | PK-06, PK-19 | menunggu |  |  |  |
 | 73 | PK-44 | Jejak dokumen dan relasi dokumen | MN-T1 | siap |  |  |  |
-| 74 | PM-T1 | Induk cara bayar dan rekening ber-peruntukan | KF-T1 | siap |  |  |  |
+| 74 | PM-T1 | Induk cara bayar dan rekening ber-peruntukan | KF-T1 | selesai | `fd606e5` | [PM-T1](../reviews/2026-11-13/hasil/PM-T1.md) |  |
 | 75 | CR-T1 | Profil kredit per pelanggan per PT | PK-45, KF-T6, KF-T7 | siap |  |  |  |
 | 76 | KM-T1 | Data insentif: omzet terkirim, pencairan, harga acuan, target | PK-19 | menunggu |  |  |  |
 | 77 | KM-T2 | Layar Capaian (cari dan jumlahkan) | KM-T1, PK-41 | menunggu |  |  |  |
@@ -96,7 +96,7 @@ Papan kerja agen pelaksana. Aturan mengubahnya: `00_ATURAN_EKSEKUSI.md` §5. Uru
 | 89 | CR-T3 | Gerbang kredit di empat titik; izin kredit | CR-T1, CR-T2, PK-38 | menunggu |  |  | Titik henti H5 |
 | 90 | CR-T4 | Denda berlapis PT → pelanggan | PK-08, CR-T2 | menunggu |  |  |  |
 | 91 | CR-T5 | Daftar kerja kredit dan rekening koran pelanggan | CR-T2 | menunggu |  |  |  |
-| 92 | PM-T2 | Cara bayar dan rekening tujuan di pesanan; instruksi bayar | PM-T1 | menunggu |  |  |  |
+| 92 | PM-T2 | Cara bayar dan rekening tujuan di pesanan; instruksi bayar | PM-T1 | siap |  |  |  |
 | 93 | PM-T3 | Kwitansi ber-rekening; terverifikasi bank | PK-19, PK-20, PK-21, PM-T2 | menunggu |  |  |  |
 | 94 | PM-T4 | Titipan tunai sales dan setoran | PM-T3 | menunggu |  |  | Titik henti H5 |
 | 95 | PM-T5 | Virtual account / QRIS | PM-T3 | tahan |  |  | Titik henti H8 (K-35) |
@@ -116,6 +116,7 @@ Diisi agen saat sebuah unit masuk `tahan`: satu kalimat pertanyaan, pilihan yang
 | Unit | Pertanyaan | Pilihan | Usulan |
 |---|---|---|---|
 | PK-46 (H4) | Berkas tarif PPh 21 terverifikasi (`docs/blueprint/data/pph21_terverifikasi.json`: TER A/B/C, kategori per status PTKP, PTKP, pasal 17, biaya jabatan, ≥ 5 titik uji per kategori, sumber + pemverifikasi + tanggal berlaku) sudah ada? Mekanisme selesai (`hasil/PK-46.md`); slip tetap memakai angka lama sampai berkas dimuat | Serahkan berkas · tunda | Serahkan berkas yang disalin dari lampiran peraturan dan diverifikasi orang pajak; agen menjalankan `scripts/muat_pph21_terverifikasi.py --dry-run` + U12–U13 di database tiruan; `--apply` di data nyata menunggu persetujuan (H3) |
+| PK-30 (H4) | Transaksi antar-PT ke pembeli **bukan PKP** yang ber-PPN: PPN masukan pembeli dijurnal sebagai apa? Sementara jurnal tetap seperti lama (Dr 1-1500 PPN Masukan) dan rincian menampilkan tanda peringatan (`tax_warning`) | Tetap PPN masukan · tambah ke nilai persediaan · beban | Putuskan bersama konsultan pajak; perubahan cukup di rencana jurnal `interco_service` (lihat `hasil/PK-30.md` "Menunggu pemilik"). Selisih panjang: roll pendek menurunkan tagihan tanpa membuat ulang sisa pesanan; kenaikan nilai tidak mengulang ambang persetujuan — mengikuti spesifikasi, mohon dikonfirmasi |
 | PK-05, PK-06 (H1) | Pola posting (periksa tanpa tulis → niat → efek idempoten → jurnal tahan-gagal; jurnal kembar `preflight_twin`/`post_twin`) disetujui sebagai acuan unit gelombang 3? | Setujui · minta ubah | Dilanjutkan atas arahan pemilik 13 Nov ("kerjakan sesuai rekomendasi, catat"); reviewer diminta meninjau `hasil/PK-05.md` dan `hasil/PK-06.md` |
 
 ## Catatan sesi

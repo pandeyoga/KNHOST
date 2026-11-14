@@ -1,0 +1,14 @@
+## U2–U5 bukti-merah (-s) + varian U4 (hanya lapisan entity dibuang)
+[bukti-merah]
+P1 tax.ppn_mode: lapisan grup: pembaca lama (get_effective_settings) memberi 'excluded', ditulis 'included'
+P3 tax.ppn_mode: sesudah lapisan PT ent_kanda dicabut: pembaca lama (get_effective_settings) memberi 'excluded', ditulis 'included'
+.[bukti-merah]
+P4 ar.grace_days: nilai tak sah 1000180 tidak ditolak (HTTP 200, harus 400)
+P4 ar.grace_days: nilai tak sah -1000000 tidak ditolak (HTTP 200, harus 400)
+.[bukti-merah]
+P2 sales.allow_partial_shipment: lapisan PT ent_kanda: GET /api/config/effective memberi false, ditulis true
+P2 sales.allow_partial_shipment: lapisan PT ent_kanda: value_of memberi false, ditulis true
+.[bukti-merah]
+P5 tax.ppn_mode: tulisan tanpa alasan diterima (HTTP 200, harus 400)
+[varian U4: hanya `entity` dibuang] gagal = tidak ada (nilai PT terbaca lewat legacy_entity)
+5 passed, 432 deselected, 1 warning in 3.08s

@@ -1,0 +1,7 @@
+FAIL src/features/__tests__/pmt1CaraBayar.test.js
+FAIL src/features/__tests__/pmt1CaraBayar.test.js
+Test Suites: 35 failed, 78 passed, 113 total
+Tests:       613 passed, 613 total
+FAIL src/features/__tests__/pmt1CaraBayar.test.js
+  ● Test suite failed to run
+    Cannot find module '../finance/BankAccountForm' from 'src/features/__tests__/pmt1CaraBayar.test.js'

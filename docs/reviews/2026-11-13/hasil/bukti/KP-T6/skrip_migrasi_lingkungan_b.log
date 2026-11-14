@@ -1,0 +1,17 @@
+== KP-T6 lapisan template PT — mode lapor (1 baris pdf_templates) ==
+Baris tanpa entity_id → "all": 1 (belum ditulis — mode lapor)
+  - invoice
+Jenis dokumen dengan baris semua PT kembar: 0 (tidak diubah — H6, bereskan dulu)
+Indeks unik lama pada doc_type saja: -
+(mode lapor; jalankan dengan --apply untuk menulis)
+== KP-T6 lapisan template PT — mode tulis (1 baris pdf_templates) ==
+Baris tanpa entity_id → "all": 1
+  - invoice
+Jenis dokumen dengan baris semua PT kembar: 0 (tidak diubah — H6, bereskan dulu)
+Indeks unik lama pada doc_type saja: -
+Ditulis: 1 · indeks dihapus: -
+== KP-T6 lapisan template PT — mode tulis (1 baris pdf_templates) ==
+Baris tanpa entity_id → "all": 0
+Jenis dokumen dengan baris semua PT kembar: 0 (tidak diubah — H6, bereskan dulu)
+Indeks unik lama pada doc_type saja: -
+Ditulis: 0 · indeks dihapus: -

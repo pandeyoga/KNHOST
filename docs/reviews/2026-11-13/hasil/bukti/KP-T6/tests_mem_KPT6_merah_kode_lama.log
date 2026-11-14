@@ -1,0 +1,100 @@
+# KP-T6 — uji penerimaan di KODE LAMA (git archive eef7bb9 backend+scripts, berkas uji baru disalin) — lingkungan B
+
+____________________ test_KPT6_U1_identitas_dari_profil_pt _____________________
+E       AssertionError: assert 'Kanda Fabric' == 'KANDA TEKSTIL'
+E         
+E         - KANDA TEKSTIL
+E         + Kanda Fabric
+tests_mem/test_KPT6_cetak_per_pt.py:85: AssertionError
+_____________ test_KPT6_U2_teks_lama_tetap_dan_selisih_dilaporkan ______________
+E       KeyError: 'identity_conflicts'
+tests_mem/test_KPT6_cetak_per_pt.py:97: KeyError
+__________________________ test_KPT6_U3_pakai_profil ___________________________
+E       AssertionError: {"detail":"Not Found"}
+E       assert (404 == 400)
+E        +  where 404 = <Response [404 Not Found]>.status_code
+tests_mem/test_KPT6_cetak_per_pt.py:110: AssertionError
+_________________ test_KPT6_U4_salin_ke_profil_npwp_tidak_sah __________________
+E       AssertionError: {"detail":"Not Found"}
+E       assert 404 == 400
+E        +  where 404 = <Response [404 Not Found]>.status_code
+tests_mem/test_KPT6_cetak_per_pt.py:134: AssertionError
+____________________ test_KPT6_U4b_salin_ke_profil_berhasil ____________________
+E       AssertionError: {"detail":"Not Found"}
+E       assert 404 == 200
+E        +  where 404 = <Response [404 Not Found]>.status_code
+tests_mem/test_KPT6_cetak_per_pt.py:147: AssertionError
+________________________ test_KPT6_U5_teks_kop_ditolak _________________________
+E       AssertionError: {"entity_id":"ent_kanda","company_name":"X","tagline":"","address":"Alamat Lama 1, Jakarta","phone":"021-555","email":"","website":"","npwp":"03.456.789.0-123.000","logo_src":"","header_image_src":"","footer_image_src":"","stamp_src":"","signatures":[]}
+E       assert 200 == 400
+E        +  where 200 = <Response [200 OK]>.status_code
+tests_mem/test_KPT6_cetak_per_pt.py:161: AssertionError
+__________________________ test_KPT6_U6_naskah_per_pt __________________________
+E       AssertionError: {"detail":"Placeholder tidak dikenal di naskah: {{rekening_bank}}. Yang sah: {{nomor}}, {{tanggal}}, {{judul}}, {{status}}, {{perusahaan}}, {{alamat_perusahaan}}, {{npwp_perusahaan}}, {{pihak}}, {{alamat_pihak}}, {{grand_total}}, {{terbilang}}, {{jumlah_baris}}, {{hari_ini}}"}
+E       assert 400 == 200
+E        +  where 400 = <Response [400 Bad Request]>.status_code
+tests_mem/test_KPT6_cetak_per_pt.py:179: AssertionError
+________________ test_KPT6_U7_kunci_grup_ditolak_di_lapisan_pt _________________
+E       AssertionError: {"doc_type":"invoice","config":{"paper_size":"A5","orientation":"portrait","margin_top":16,"margin_right":14,"margin_bottom":16,"margin_left":14,"font_family":"'DejaVu Sans'","font_size":10,"color_primary":"#0058CC","color_accent":"#1a1a1a","show_logo":true,"show_terbilang":true,"watermark_text":"","watermark_opacity":6,"footer_text":"","show_page_numbers":true,"title_override":"","custom_fields":[],"signature_slots":[],"hidden_fields":[],"header_mode":"system","footer_mode":"text","intro_text":"","closing_note":"","show_place_date":false,"place":"","show_materai":false,"materai_note":"Bermeterai cukup","show_generated_note":false,"sections":{"parties":true,"meta":true,"items":true,"totals":true,"notes":true,"signatures":true,"refs":true},"table":{"grid":"full","show_header":true,"header_fill":true,"zebra":false,"total_highlight":true,"font_size":9,"grid_color":"#bbbbbb"}},"meta":{"customized":true,"version":2,"updated_at":"2026-11-14T08:50:06.826104+00:00","updated_by":"Budi Santoso","override_keys":["paper_size"]}}
+E       assert 200 == 400
+E        +  where 200 = <Response [200 OK]>.status_code
+tests_mem/test_KPT6_cetak_per_pt.py:204: AssertionError
+________________________ test_KPT6_U8_buang_lapisan_pt _________________________
+E       assert ('Bandung,' in '\n<!doctype html><html lang="id"><head><meta charset="utf-8"/>\n<style>\n  @page { size: A4 portrait; margin: 16mm 14...<span style="color:#888">Customer</span></div></div>\n      \n    </div>\n    \n    \n\n    \n  </div>\n</body></html>')
+tests_mem/test_KPT6_cetak_per_pt.py:216: AssertionError
+_________________________ test_KPT6_U8b_urutan_lapisan _________________________
+E       assert False
+E        +  where False = <built-in method startswith of str object at 0x7fc6ad3006c0>('Bandung, ')
+E        +    where <built-in method startswith of str object at 0x7fc6ad3006c0> = 'Depok, 14 Nov 2026'.startswith
+E        +      where 'Depok, 14 Nov 2026' = _tempat('\n<!doctype html><html lang="id"><head><meta charset="utf-8"/>\n<style>\n  @page { size: A4 portrait; margin: 16mm 14...<span style="color:#888">Customer</span></div></div>\n      \n    </div>\n    \n    \n\n    \n  </div>\n</body></html>')
+tests_mem/test_KPT6_cetak_per_pt.py:226: AssertionError
+_______________________ test_KPT6_U9_token_rekening_bank _______________________
+E       AssertionError: {"detail":"Placeholder tidak dikenal di naskah: {{rekening_bank}}. Yang sah: {{nomor}}, {{tanggal}}, {{judul}}, {{status}}, {{perusahaan}}, {{alamat_perusahaan}}, {{npwp_perusahaan}}, {{pihak}}, {{alamat_pihak}}, {{grand_total}}, {{terbilang}}, {{jumlah_baris}}, {{hari_ini}}"}
+E       assert 400 == 200
+E        +  where 400 = <Response [400 Bad Request]>.status_code
+tests_mem/test_KPT6_cetak_per_pt.py:246: AssertionError
+_______________________ test_KPT6_U10_token_tak_dikenal ________________________
+E       AssertionError: assert '{{rekening_bank}}' in 'Placeholder tidak dikenal di naskah: {{rekening_bca}}. Yang sah: {{nomor}}, {{tanggal}}, {{judul}}, {{status}}, {{per...an}}, {{npwp_perusahaan}}, {{pihak}}, {{alamat_pihak}}, {{grand_total}}, {{terbilang}}, {{jumlah_baris}}, {{hari_ini}}'
+E        +  where 'Placeholder tidak dikenal di naskah: {{rekening_bca}}. Yang sah: {{nomor}}, {{tanggal}}, {{judul}}, {{status}}, {{per...an}}, {{npwp_perusahaan}}, {{pihak}}, {{alamat_pihak}}, {{grand_total}}, {{terbilang}}, {{jumlah_baris}}, {{hari_ini}}' = _detail(<Response [400 Bad Request]>)
+tests_mem/test_KPT6_cetak_per_pt.py:263: AssertionError
+___________________________ test_KPT6_U11_cakupan_pt ___________________________
+E       AssertionError: ('{"entity_id": "ent_kanda", "company_name": "X", "tagline": "", "address": "Alamat Lama 1, Jakarta", "phone": "021-55...1, "updated_at": "2026-11-14T08:50:07.307615+00:00", "updated_by": "Uji sales 1", "override_keys": ["closing_note"]}}')
+E       assert [200, 200, 200] == [403, 403, 403]
+E         
+E         At index 0 diff: 200 != 403
+E         Use -v to get more diff
+tests_mem/test_KPT6_cetak_per_pt.py:283: AssertionError
+____________ test_KPT6_U11b_contoh_pratinjau_dan_cetak_ikut_cakupan ____________
+E       AssertionError: {"doc_type": "invoice", "source_id": "so_kpt6_kanda", "entity_id": "ent_kanda", "number": "KANDA/SO-KPT6-1", "label": "Faktur Komersial"}
+E       assert 200 == 403
+E        +  where 200 = <Response [200 OK]>.status_code
+tests_mem/test_KPT6_cetak_per_pt.py:294: AssertionError
+______________ test_KPT6_U12_mesin_lama_tanpa_nama_tertulis_mati _______________
+E       AssertionError: assert ('Kain Nusantara' not in '\n    <html.../html>\n    '
+E         
+E         'Kain Nusantara' is contained here:
+E           ><div><h1>Kain Nusantara</h1><p class='muted'>Surat Jalan Gudang Jakarta</p></div><div><h2>SURAT JALAN</h2><p>KANDA/SO-KPT6-1</p><p>14 Nov 2026</p></div></div><section><h3>Customer & Tujuan</h3><p><b>-</b> — <br/>Alamat |  | <br/>, </p></section><section><h3>Item</h3><table><thead><tr><th>SKU</th><th>Barang</th><th>Qty</th><th>Unit</th><th>Harga</th><th>Subtotal</th></tr></thead><tbody><tr><td>KPT6-1</td><td>Kain Uji</td><td>10</td><td>m</td><td>Rp 1.000</td><td>Rp 10.000</td></tr></tbody></table><table class='totals'><tbody><tr><td>Subtotal (br...
+E         
+E         ...Full output truncated (3 lines hidden), use '-vv' to show)
+tests_mem/test_KPT6_cetak_per_pt.py:320: AssertionError
+______________________ test_KPT6_U13_migrasi_lapisan_grup ______________________
+tests_mem/test_KPT6_cetak_per_pt.py:338: 
+tests_mem/test_KPT6_cetak_per_pt.py:328: in _skrip
+E   FileNotFoundError: [Errno 2] No such file or directory: '/tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/kpt6/head_tree/scripts/migrate_kpt6_template_pt.py'
+FAILED tests_mem/test_KPT6_cetak_per_pt.py::test_KPT6_U1_identitas_dari_profil_pt
+FAILED tests_mem/test_KPT6_cetak_per_pt.py::test_KPT6_U2_teks_lama_tetap_dan_selisih_dilaporkan
+FAILED tests_mem/test_KPT6_cetak_per_pt.py::test_KPT6_U3_pakai_profil - Asser...
+FAILED tests_mem/test_KPT6_cetak_per_pt.py::test_KPT6_U4_salin_ke_profil_npwp_tidak_sah
+FAILED tests_mem/test_KPT6_cetak_per_pt.py::test_KPT6_U4b_salin_ke_profil_berhasil
+FAILED tests_mem/test_KPT6_cetak_per_pt.py::test_KPT6_U5_teks_kop_ditolak - A...
+FAILED tests_mem/test_KPT6_cetak_per_pt.py::test_KPT6_U6_naskah_per_pt - Asse...
+FAILED tests_mem/test_KPT6_cetak_per_pt.py::test_KPT6_U7_kunci_grup_ditolak_di_lapisan_pt
+FAILED tests_mem/test_KPT6_cetak_per_pt.py::test_KPT6_U8_buang_lapisan_pt - a...
+FAILED tests_mem/test_KPT6_cetak_per_pt.py::test_KPT6_U8b_urutan_lapisan - as...
+FAILED tests_mem/test_KPT6_cetak_per_pt.py::test_KPT6_U9_token_rekening_bank
+FAILED tests_mem/test_KPT6_cetak_per_pt.py::test_KPT6_U10_token_tak_dikenal
+FAILED tests_mem/test_KPT6_cetak_per_pt.py::test_KPT6_U11_cakupan_pt - Assert...
+FAILED tests_mem/test_KPT6_cetak_per_pt.py::test_KPT6_U11b_contoh_pratinjau_dan_cetak_ikut_cakupan
+FAILED tests_mem/test_KPT6_cetak_per_pt.py::test_KPT6_U12_mesin_lama_tanpa_nama_tertulis_mati
+FAILED tests_mem/test_KPT6_cetak_per_pt.py::test_KPT6_U13_migrasi_lapisan_grup
+16 failed, 1 warning in 3.05s

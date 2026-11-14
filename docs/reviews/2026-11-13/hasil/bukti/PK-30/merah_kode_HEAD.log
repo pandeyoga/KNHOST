@@ -1,0 +1,439 @@
+FFFFFFFFF.FFFFFFFFFFF                                                    [100%]
+=================================== FAILURES ===================================
+__________ test_PK30_a_U1_fungsi_langsung_roll_lebih_panjang[asyncio] __________
+
+klien = <httpx.AsyncClient object at 0x7fd690c32190>
+db = <motor.motor_asyncio.AsyncIOMotorDatabase object at 0x7fd6a2d7a750>
+siap = {'pt3': 'ent_uji_tga', 'mgr': {'Authorization': 'Bearer tok_uji_c13039e1eb0c4fb1bf5511c20d8dd208', 'X-Entity-Id': 'ent...-Id': 'ent_ksc'}, 'sa': {'Authorization': 'Bearer tok_uji_ce072328c18648fbbe847ed4338d2ccb', 'X-Entity-Id': 'ent_ksc'}}
+
+    async def test_PK30_a_U1_fungsi_langsung_roll_lebih_panjang(klien, db, siap):
+        pid, sid, bid, trf = await siapkan_langsung(klien, db, siap, 100, 130)
+        n0 = await jumlah_je_pasangan(db, pid)                         # 2 jurnal konfirmasi
+>       pre = await ics.precheck_warehouse_task(trf)
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AttributeError: module 'services.interco_service' has no attribute 'precheck_warehouse_task'
+
+tests_mem/test_PK30_antar_pt.py:189: AttributeError
+---------------------------- Captured stdout setup -----------------------------
+[bootstrap] SANDI AWAL akun seed (ganti segera): pILuS3xB3Hgk7Xw7
+[bootstrap] FASE F lifecycle backfill: 5 produk distempel 'produksi'
+[bootstrap] kebersihan data: 5 record dirapikan {'customers': 3, 'suppliers': 0, 'users': 0, 'hr_employees': 2, 'makloons': 0}
+______ test_PK30_a_U2_fungsi_langsung_roll_lebih_pendek_dan_pas[asyncio] _______
+
+klien = <httpx.AsyncClient object at 0x7fd690c32190>
+db = <motor.motor_asyncio.AsyncIOMotorDatabase object at 0x7fd6a2d7a750>
+siap = {'pt3': 'ent_uji_tga', 'mgr': {'Authorization': 'Bearer tok_uji_c13039e1eb0c4fb1bf5511c20d8dd208', 'X-Entity-Id': 'ent...-Id': 'ent_ksc'}, 'sa': {'Authorization': 'Bearer tok_uji_ce072328c18648fbbe847ed4338d2ccb', 'X-Entity-Id': 'ent_ksc'}}
+
+    async def test_PK30_a_U2_fungsi_langsung_roll_lebih_pendek_dan_pas(klien, db, siap):
+        pid, _, _, trf = await siapkan_langsung(klien, db, siap, 100, 90)
+>       pre = await ics.precheck_warehouse_task(trf)
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AttributeError: module 'services.interco_service' has no attribute 'precheck_warehouse_task'
+
+tests_mem/test_PK30_antar_pt.py:223: AttributeError
+_______________ test_PK30_a_U3_fungsi_langsung_ber_ppn[asyncio] ________________
+
+klien = <httpx.AsyncClient object at 0x7fd690c32190>
+kepala_admin = {'Authorization': 'Bearer tok_uji_c9fb54ac1e0048c3a0c51d7df9d2a265', 'X-Entity-Id': 'ent_ksc'}
+db = <motor.motor_asyncio.AsyncIOMotorDatabase object at 0x7fd6a2d7a750>
+siap = {'pt3': 'ent_uji_tga', 'mgr': {'Authorization': 'Bearer tok_uji_c13039e1eb0c4fb1bf5511c20d8dd208', 'X-Entity-Id': 'ent...-Id': 'ent_ksc'}, 'sa': {'Authorization': 'Bearer tok_uji_ce072328c18648fbbe847ed4338d2ccb', 'X-Entity-Id': 'ent_ksc'}}
+
+    async def test_PK30_a_U3_fungsi_langsung_ber_ppn(klien, kepala_admin, db, siap):
+        await atur(klien, kepala_admin, "antar_entitas.ppn_mode", "ikut_pkp")
+        try:
+            pid, _, _, trf = await siapkan_langsung(klien, db, siap, 100, 130, buyer=siap["pt3"])
+            s = (await dokumen(db, pid))["seller"]
+            assert (s["tax_rate"], s["tax_amount"], s["grand_total"]) == (11.0, 275_000, 2_775_000)
+>           pre = await ics.precheck_warehouse_task(trf)
+                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E           AttributeError: module 'services.interco_service' has no attribute 'precheck_warehouse_task'
+
+tests_mem/test_PK30_antar_pt.py:248: AttributeError
+__________ test_PK30_a_U4_fungsi_langsung_tolak_dan_periode[asyncio] ___________
+
+klien = <httpx.AsyncClient object at 0x7fd690c32190>
+kepala_admin = {'Authorization': 'Bearer tok_uji_c9fb54ac1e0048c3a0c51d7df9d2a265', 'X-Entity-Id': 'ent_ksc'}
+db = <motor.motor_asyncio.AsyncIOMotorDatabase object at 0x7fd6a2d7a750>
+siap = {'pt3': 'ent_uji_tga', 'mgr': {'Authorization': 'Bearer tok_uji_c13039e1eb0c4fb1bf5511c20d8dd208', 'X-Entity-Id': 'ent...-Id': 'ent_ksc'}, 'sa': {'Authorization': 'Bearer tok_uji_ce072328c18648fbbe847ed4338d2ccb', 'X-Entity-Id': 'ent_ksc'}}
+
+    async def test_PK30_a_U4_fungsi_langsung_tolak_dan_periode(klien, kepala_admin, db, siap):
+        pid, _, _, trf = await siapkan_langsung(klien, db, siap, 100, 130)
+>       await atur(klien, kepala_admin, KUNCI, "tolak")
+
+tests_mem/test_PK30_antar_pt.py:263: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+klien = <httpx.AsyncClient object at 0x7fd690c32190>
+h = {'Authorization': 'Bearer tok_uji_c9fb54ac1e0048c3a0c51d7df9d2a265', 'X-Entity-Id': 'ent_ksc'}
+key = 'antar_entitas.selisih_panjang', value = 'tolak', scope_type = 'entity'
+scope_id = 'ent_ksc'
+
+    async def atur(klien, h, key, value, scope_type="entity", scope_id=KSC):
+        r = await klien.put("/api/config/values", headers=h, json=_isi(key, value, scope_type, scope_id))
+>       assert r.status_code == 200, r.text
+E       AssertionError: {"detail":"Setting 'antar_entitas.selisih_panjang' tidak ada di registry"}
+E       assert 404 == 200
+E        +  where 404 = <Response [404 Not Found]>.status_code
+
+tests_mem/test_PK30_antar_pt.py:57: AssertionError
+________ test_PK30_a_U6_sisi_pembeli_gagal_diulang_lewat_panel[asyncio] ________
+
+klien = <httpx.AsyncClient object at 0x7fd690c32190>
+kepala_admin = {'Authorization': 'Bearer tok_uji_c9fb54ac1e0048c3a0c51d7df9d2a265', 'X-Entity-Id': 'ent_ksc'}
+db = <motor.motor_asyncio.AsyncIOMotorDatabase object at 0x7fd6a2d7a750>
+siap = {'pt3': 'ent_uji_tga', 'mgr': {'Authorization': 'Bearer tok_uji_c13039e1eb0c4fb1bf5511c20d8dd208', 'X-Entity-Id': 'ent...-Id': 'ent_ksc'}, 'sa': {'Authorization': 'Bearer tok_uji_ce072328c18648fbbe847ed4338d2ccb', 'X-Entity-Id': 'ent_ksc'}}
+paksa_jurnal_gagal = <function paksa_jurnal_gagal.<locals>._paksa at 0x7fd68faeb1a0>
+
+    async def test_PK30_a_U6_sisi_pembeli_gagal_diulang_lewat_panel(klien, kepala_admin, db, siap, paksa_jurnal_gagal):
+        pid, sid, bid, trf = await siapkan_langsung(klien, db, siap, 100, 130)
+>       pre = await ics.precheck_warehouse_task(trf)
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AttributeError: module 'services.interco_service' has no attribute 'precheck_warehouse_task'
+
+tests_mem/test_PK30_antar_pt.py:284: AttributeError
+___ test_PK30_U1_roll_lebih_panjang_dokumen_dan_jurnal_menyesuaikan[asyncio] ___
+
+klien = <httpx.AsyncClient object at 0x7fd690c32190>
+db = <motor.motor_asyncio.AsyncIOMotorDatabase object at 0x7fd6a2d7a750>
+siap = {'pt3': 'ent_uji_tga', 'mgr': {'Authorization': 'Bearer tok_uji_c13039e1eb0c4fb1bf5511c20d8dd208', 'X-Entity-Id': 'ent...-Id': 'ent_ksc'}, 'sa': {'Authorization': 'Bearer tok_uji_ce072328c18648fbbe847ed4338d2ccb', 'X-Entity-Id': 'ent_ksc'}}
+
+    @XFAIL_A_IC02
+    async def test_PK30_U1_roll_lebih_panjang_dokumen_dan_jurnal_menyesuaikan(klien, db, siap):
+        a = await alur(klien, db, siap, 100, 130)
+        assert a["task"].status_code == 200, a["task"].text
+        assert a["approve"].status_code == 200, a["approve"].text
+        pid = a["pid"]
+        # konfirmasi (jumlah pesanan)
+        assert await baris(db, pid, "seller") == (KSC, {"1-1250": (2_500_000, 0), "4-1000": (0, 2_500_000)})
+        assert await baris(db, pid, "buyer") == (KANDA, {"1-1310": (2_500_000, 0), "2-1250": (0, 2_500_000)})
+        # penyesuaian 30 × 25.000 = 750.000
+>       assert await baris(db, pid, "adj:seller") == (KSC, {"1-1250": (750_000, 0), "4-1000": (0, 750_000)})
+E       AssertionError: assert None == ('ent_ksc', {'1-1250': (750000, 0), '4-1000': (0, 750000)})
+
+tests_mem/test_PK30_antar_pt.py:312: AssertionError
+_____________ test_PK30_U2_roll_lebih_pendek_dan_roll_pas[asyncio] _____________
+
+klien = <httpx.AsyncClient object at 0x7fd690c32190>
+db = <motor.motor_asyncio.AsyncIOMotorDatabase object at 0x7fd6a2d7a750>
+siap = {'pt3': 'ent_uji_tga', 'mgr': {'Authorization': 'Bearer tok_uji_c13039e1eb0c4fb1bf5511c20d8dd208', 'X-Entity-Id': 'ent...-Id': 'ent_ksc'}, 'sa': {'Authorization': 'Bearer tok_uji_ce072328c18648fbbe847ed4338d2ccb', 'X-Entity-Id': 'ent_ksc'}}
+
+    @XFAIL_A_IC02
+    async def test_PK30_U2_roll_lebih_pendek_dan_roll_pas(klien, db, siap):
+        a = await alur(klien, db, siap, 100, 90)
+>       assert a["task"].status_code == 200, a["task"].text
+E       AssertionError: {"detail":"Roll yang dipilih tidak cukup untuk transfer (tersedia 90.0 dari 100.0)."}
+E       assert 400 == 200
+E        +  where 400 = <Response [400 Bad Request]>.status_code
+
+tests_mem/test_PK30_antar_pt.py:333: AssertionError
+__________________ test_PK30_U3_ber_ppn_pembeli_pkp[asyncio] ___________________
+
+klien = <httpx.AsyncClient object at 0x7fd690c32190>
+kepala_admin = {'Authorization': 'Bearer tok_uji_c9fb54ac1e0048c3a0c51d7df9d2a265', 'X-Entity-Id': 'ent_ksc'}
+db = <motor.motor_asyncio.AsyncIOMotorDatabase object at 0x7fd6a2d7a750>
+siap = {'pt3': 'ent_uji_tga', 'mgr': {'Authorization': 'Bearer tok_uji_c13039e1eb0c4fb1bf5511c20d8dd208', 'X-Entity-Id': 'ent...-Id': 'ent_ksc'}, 'sa': {'Authorization': 'Bearer tok_uji_ce072328c18648fbbe847ed4338d2ccb', 'X-Entity-Id': 'ent_ksc'}}
+
+    @XFAIL_A_IC02
+    async def test_PK30_U3_ber_ppn_pembeli_pkp(klien, kepala_admin, db, siap):
+        await atur(klien, kepala_admin, "antar_entitas.ppn_mode", "ikut_pkp")
+        try:
+            a = await alur(klien, db, siap, 100, 130, buyer=siap["pt3"])
+            assert a["approve"].status_code == 200, a["approve"].text
+            pid = a["pid"]
+            assert await baris(db, pid, "seller") == (KSC, {"1-1250": (2_775_000, 0), "4-1000": (0, 2_500_000),
+                                                            "2-1200": (0, 275_000)})
+>           la = (await dokumen(db, pid))["seller"]["length_adjustment"]
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E           KeyError: 'length_adjustment'
+
+tests_mem/test_PK30_antar_pt.py:360: KeyError
+__________ test_PK30_U4_mode_tolak_tugas_gudang_tidak_terbit[asyncio] __________
+
+klien = <httpx.AsyncClient object at 0x7fd690c32190>
+kepala_admin = {'Authorization': 'Bearer tok_uji_c9fb54ac1e0048c3a0c51d7df9d2a265', 'X-Entity-Id': 'ent_ksc'}
+db = <motor.motor_asyncio.AsyncIOMotorDatabase object at 0x7fd6a2d7a750>
+siap = {'pt3': 'ent_uji_tga', 'mgr': {'Authorization': 'Bearer tok_uji_c13039e1eb0c4fb1bf5511c20d8dd208', 'X-Entity-Id': 'ent...-Id': 'ent_ksc'}, 'sa': {'Authorization': 'Bearer tok_uji_ce072328c18648fbbe847ed4338d2ccb', 'X-Entity-Id': 'ent_ksc'}}
+
+    async def test_PK30_U4_mode_tolak_tugas_gudang_tidak_terbit(klien, kepala_admin, db, siap):
+>       await atur(klien, kepala_admin, KUNCI, "tolak")
+
+tests_mem/test_PK30_antar_pt.py:371: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+klien = <httpx.AsyncClient object at 0x7fd690c32190>
+h = {'Authorization': 'Bearer tok_uji_c9fb54ac1e0048c3a0c51d7df9d2a265', 'X-Entity-Id': 'ent_ksc'}
+key = 'antar_entitas.selisih_panjang', value = 'tolak', scope_type = 'entity'
+scope_id = 'ent_ksc'
+
+    async def atur(klien, h, key, value, scope_type="entity", scope_id=KSC):
+        r = await klien.put("/api/config/values", headers=h, json=_isi(key, value, scope_type, scope_id))
+>       assert r.status_code == 200, r.text
+E       AssertionError: {"detail":"Setting 'antar_entitas.selisih_panjang' tidak ada di registry"}
+E       assert 404 == 200
+E        +  where 404 = <Response [404 Not Found]>.status_code
+
+tests_mem/test_PK30_antar_pt.py:57: AssertionError
+_________ test_PK30_U5b_periode_tertutup_tanpa_kunci_dokumen[asyncio] __________
+
+klien = <httpx.AsyncClient object at 0x7fd690c32190>
+kepala_admin = {'Authorization': 'Bearer tok_uji_c9fb54ac1e0048c3a0c51d7df9d2a265', 'X-Entity-Id': 'ent_ksc'}
+db = <motor.motor_asyncio.AsyncIOMotorDatabase object at 0x7fd6a2d7a750>
+siap = {'pt3': 'ent_uji_tga', 'mgr': {'Authorization': 'Bearer tok_uji_c13039e1eb0c4fb1bf5511c20d8dd208', 'X-Entity-Id': 'ent...-Id': 'ent_ksc'}, 'sa': {'Authorization': 'Bearer tok_uji_ce072328c18648fbbe847ed4338d2ccb', 'X-Entity-Id': 'ent_ksc'}}
+
+    @XFAIL_A_IC02
+    async def test_PK30_U5b_periode_tertutup_tanpa_kunci_dokumen(klien, kepala_admin, db, siap):
+        """Tambahan: sakelar PK-37 `periode.kunci_dokumen` dimatikan untuk PT pembeli — pemeriksaan jurnal penyesuaian,
+        HPP, dan penerimaan (`precheck_warehouse_task`) tetap menolak sebelum kepemilikan roll pindah."""
+        a = await alur(klien, db, siap, 100, 130, setujui=False)
+        n0 = await db.journal_entries.count_documents({})
+        await atur(klien, kepala_admin, "periode.kunci_dokumen", False, scope_id=KANDA)
+        c = await tutup_periode(KANDA, periode_buku())
+        try:
+            r = await setujui_tugas(klien, siap, a["tid"])
+        finally:
+            await db.period_closings.delete_one({"id": c["id"]})
+            await pulihkan(klien, kepala_admin, "periode.kunci_dokumen", scope_id=KANDA)
+>       assert r.status_code == 409, r.text
+E       AssertionError: Internal Server Error
+E       assert 500 == 409
+E        +  where 500 = <Response [500 Internal Server Error]>.status_code
+
+tests_mem/test_PK30_antar_pt.py:411: AssertionError
+____________ test_PK30_U6_sisi_pembeli_gagal_lalu_diulang[asyncio] _____________
+
+klien = <httpx.AsyncClient object at 0x7fd690c32190>
+kepala_admin = {'Authorization': 'Bearer tok_uji_c9fb54ac1e0048c3a0c51d7df9d2a265', 'X-Entity-Id': 'ent_ksc'}
+db = <motor.motor_asyncio.AsyncIOMotorDatabase object at 0x7fd6a2d7a750>
+siap = {'pt3': 'ent_uji_tga', 'mgr': {'Authorization': 'Bearer tok_uji_c13039e1eb0c4fb1bf5511c20d8dd208', 'X-Entity-Id': 'ent...-Id': 'ent_ksc'}, 'sa': {'Authorization': 'Bearer tok_uji_ce072328c18648fbbe847ed4338d2ccb', 'X-Entity-Id': 'ent_ksc'}}
+paksa_jurnal_gagal = <function paksa_jurnal_gagal.<locals>._paksa at 0x7fd690986e80>
+
+    @XFAIL_A_IC02
+    async def test_PK30_U6_sisi_pembeli_gagal_lalu_diulang(klien, kepala_admin, db, siap, paksa_jurnal_gagal):
+        a = await alur(klien, db, siap, 100, 130, setujui=False)
+        async with paksa_jurnal_gagal("sisip", entity_id=KANDA, source_type="interco_transaction", kali=1):
+            r = await setujui_tugas(klien, siap, a["tid"])
+>       assert r.status_code == 200, r.text
+E       AssertionError: Internal Server Error
+E       assert 500 == 200
+E        +  where 500 = <Response [500 Internal Server Error]>.status_code
+
+tests_mem/test_PK30_antar_pt.py:423: AssertionError
+_____________________ test_PK30_U7_jalur_lama_410[asyncio] _____________________
+
+klien = <httpx.AsyncClient object at 0x7fd690c32190>
+kepala_admin = {'Authorization': 'Bearer tok_uji_c9fb54ac1e0048c3a0c51d7df9d2a265', 'X-Entity-Id': 'ent_ksc'}
+db = <motor.motor_asyncio.AsyncIOMotorDatabase object at 0x7fd6a2d7a750>
+siap = {'pt3': 'ent_uji_tga', 'mgr': {'Authorization': 'Bearer tok_uji_c13039e1eb0c4fb1bf5511c20d8dd208', 'X-Entity-Id': 'ent...-Id': 'ent_ksc'}, 'sa': {'Authorization': 'Bearer tok_uji_ce072328c18648fbbe847ed4338d2ccb', 'X-Entity-Id': 'ent_ksc'}}
+
+    @XFAIL_A_IC09
+    async def test_PK30_U7_jalur_lama_410(klien, kepala_admin, db, siap):
+        rid = await buat_roll(db, 50)
+        n0 = await db.warehouse_transfers.count_documents({})
+        r = await klien.post("/api/transfers/inter-company", headers=kepala_admin, json={
+            "source_entity_id": KSC, "dest_entity_id": KANDA,
+            "items": [{"product_id": P1, "quantity": 10, "unit": "meter"}], "notes": "uji PK-30"})
+>       assert r.status_code == 410, r.text
+E       AssertionError: {"id":"trn_eda9305db5aa","code":"KSC/TRF-00007","transfer_kind":"inter_entity","entity_id":"ent_ksc","source_entity_id":"ent_ksc","dest_entity_id":"ent_kanda","source_warehouse_id":"wh_pk30","dest_warehouse_id":"wh_pk30","status":"waiting_approval","items":[{"product_id":"prd_pk30","qty":10.0,"unit":"meter","sku":"PK30-001","product_name":"Kain Uji PK-30","lots":["LOT-PK30"],"rolls":[{"roll_id":"roll_c7b01c373a45","roll_no":"R-6532e2-1","lot":"LOT-PK30","warehouse_id":"wh_pk30","length":10.0}],"line_code":"","qty_rolls":1}],"line_codes":[],"transfer_price":null,"linked_order_id":null,"interco_pair_id":null,"interco_id":null,"interco_number":"","notes":"uji PK-30","requested_by":"Budi Santoso","requested_by_id":"user_admin_01","approved_by":null,"approved_at":null,"rejected_by":null,"rejected_at":null,"rejected_reason":null,"created_at":"2026-11-14T08:30:41.858638+00:00","updated_at":"2026-11-14T08:30:41.858641+00:00"}
+E       assert 200 == 410
+E        +  where 200 = <Response [200 OK]>.status_code
+
+tests_mem/test_PK30_antar_pt.py:447: AssertionError
+_ test_PK30_U8_transfer_lama_tidak_bisa_disetujui_tetap_bisa_ditolak[asyncio] __
+
+klien = <httpx.AsyncClient object at 0x7fd690c32190>
+db = <motor.motor_asyncio.AsyncIOMotorDatabase object at 0x7fd6a2d7a750>
+siap = {'pt3': 'ent_uji_tga', 'mgr': {'Authorization': 'Bearer tok_uji_c13039e1eb0c4fb1bf5511c20d8dd208', 'X-Entity-Id': 'ent...-Id': 'ent_ksc'}, 'sa': {'Authorization': 'Bearer tok_uji_ce072328c18648fbbe847ed4338d2ccb', 'X-Entity-Id': 'ent_ksc'}}
+
+    @XFAIL_A_IC09
+    async def test_PK30_U8_transfer_lama_tidak_bisa_disetujui_tetap_bisa_ditolak(klien, db, siap):
+        tid = f"trn_pk30_lama_{uuid.uuid4().hex[:6]}"
+        rid = await buat_roll(db, 20, ref_transfer=tid)
+        await db.warehouse_transfers.insert_one({
+            "id": tid, "code": f"TRF/{tid}", "transfer_kind": "inter_entity", "status": "waiting_approval",
+            "entity_id": KSC, "source_entity_id": KSC, "dest_entity_id": KANDA, "source_warehouse_id": WH,
+            "dest_warehouse_id": WH, "items": [{"product_id": P1, "qty": 20, "unit": "meter",
+                                                "rolls": [{"roll_id": rid, "length": 20}]}],
+            "interco_pair_id": None, "requested_by": "Kasir Lama", "requested_by_id": "usr_kasir_lama",
+            "created_at": now_iso(), "updated_at": now_iso()})
+        r = await setujui_tugas(klien, siap, tid)
+>       assert r.status_code == 409, r.text
+E       AssertionError: {"id":"trn_pk30_lama_ce4627","code":"TRF/trn_pk30_lama_ce4627","transfer_kind":"inter_entity","status":"completed","entity_id":"ent_ksc","source_entity_id":"ent_ksc","dest_entity_id":"ent_kanda","source_warehouse_id":"wh_pk30","dest_warehouse_id":"wh_pk30","items":[{"product_id":"prd_pk30","qty":20,"unit":"meter","rolls":[{"roll_id":"roll_pk30_6abe25a1","length":20}],"unit_cost_snapshot":18000.0}],"interco_pair_id":null,"requested_by":"Kasir Lama","requested_by_id":"usr_kasir_lama","created_at":"2026-11-14T08:30:41.872434+00:00","updated_at":"2026-11-14T08:30:41.887492+00:00","approved_by":"Admin Gudang","approved_at":"2026-11-14T08:30:41.887490+00:00","ownership_moved":{"moved_qty":20.0,"rolls":1},"rule_exception":null,"je_intercompany":{"posted":true,"total":360000.0,"pair_id":"ict_trn_pk30_lama_ce4627","source_je":{"id":"je_92d08fb385cf","number":"KSC/JE-00020","entity_id":"ent_ksc"},"dest_je":{"id":"je_d6b83c38366f","number":"KANDA/JE-00013","entity_id":"ent_kanda"},"breakdown":[{"product_id":"prd_pk30","sku":"PK30-001","name":"Kain Uji PK-30","qty":20.0,"unit_cost":18000.0,"value":360000.0,"cost_source":"roll_snapshot"}]}}
+E       assert 200 == 409
+E        +  where 200 = <Response [200 OK]>.status_code
+
+tests_mem/test_PK30_antar_pt.py:478: AssertionError
+___________ test_PK30_U9_admin_sales_tanpa_izin_ubah_harga[asyncio] ____________
+
+klien = <httpx.AsyncClient object at 0x7fd690c32190>
+db = <motor.motor_asyncio.AsyncIOMotorDatabase object at 0x7fd6a2d7a750>
+siap = {'pt3': 'ent_uji_tga', 'mgr': {'Authorization': 'Bearer tok_uji_c13039e1eb0c4fb1bf5511c20d8dd208', 'X-Entity-Id': 'ent...-Id': 'ent_ksc'}, 'sa': {'Authorization': 'Bearer tok_uji_ce072328c18648fbbe847ed4338d2ccb', 'X-Entity-Id': 'ent_ksc'}}
+
+    async def test_PK30_U9_admin_sales_tanpa_izin_ubah_harga(klien, db, siap):
+        n0 = await db.interco_transactions.count_documents({})
+        r = await klien.post("/api/interco/transactions", headers=siap["sa"], json=isi_transaksi(unit_price=20_000))
+>       assert r.status_code == 403, r.text
+E       AssertionError: {"pair_id":"icp_e96780646b35","seller":{"pair_id":"icp_e96780646b35","seller_entity_id":"ent_ksc","seller_entity_name":"Sukacita Textile","buyer_entity_id":"ent_kanda","buyer_entity_name":"Kanda Fabric","counterpart_number":"KANDA/IC-00010","items":[{"product_id":"prd_pk30","sku":"PK30-001","product_name":"Kain Uji PK-30","quantity":100.0,"unit":"meter","unit_price":20000.0,"price_source":"override","contract_id":"","line_subtotal":2000000.0,"notes":"","preferred_roll_ids":[],"qty_rolls":null,"line_code":""}],"subtotal":2000000.0,"tax_apply":false,"tax_rate":0.0,"tax_rate_nominal":0.0,"tax_dpp_nilai_lain":false,"tax_amount":0.0,"grand_total":2000000.0,"pricing_mode":"fixed_price","ppn_mode":"tanpa_ppn","contract_id":"","source_request_id":"","source_request_number":"","source_order_id":"","source_order_number":"","doc_date":"2026-11-14","due_date":"","notes":"","status":"draft","confirmed_at":"","confirmed_by":"","settled_amount":0.0,"created_at":"2026-11-14T08:30:41.913968+00:00","created_by":"Uji sales_admin 3","updated_at":"2026-11-14T08:30:41.915276+00:00","updated_by":"Uji sales_admin 3","id":"ict_bf9a8a0f2b24","number":"KSC/IC-00012","role":"seller","entity_id":"ent_ksc","counterpart_id":"ict_95a614663ac4","line_codes":[],"refs":[{"rel":"child","doc_type":"interco_transaction","doc_id":"ict_95a614663ac4","doc_number":"KANDA/IC-00010","note":"Dokumen kembar antar-PT (PO internal ↔ SO/SJ/Invoice)","at":"2026-11-14T08:30:41.915201+00:00"}]},"buyer":{"pair_id":"icp_e96780646b35","seller_entity_id":"ent_ksc","seller_entity_name":"Sukacita Textile","buyer_entity_id":"ent_kanda","buyer_entity_name":"Kanda Fabric","counterpart_number":"KSC/IC-00012","items":[{"product_id":"prd_pk30","sku":"PK30-001","product_name":"Kain Uji PK-30","quantity":100.0,"unit":"meter","unit_price":20000.0,"price_source":"override","contract_id":"","line_subtotal":2000000.0,"notes":"","preferred_roll_ids":[],"qty_rolls":null,"line_code":""}],"subtotal":2000000.0,"tax_apply":false,"tax_rate":0.0,"tax_rate_nominal":0.0,"tax_dpp_nilai_lain":false,"tax_amount":0.0,"grand_total":2000000.0,"pricing_mode":"fixed_price","ppn_mode":"tanpa_ppn","contract_id":"","source_request_id":"","source_request_number":"","source_order_id":"","source_order_number":"","doc_date":"2026-11-14","due_date":"","notes":"","status":"draft","confirmed_at":"","confirmed_by":"","settled_amount":0.0,"created_at":"2026-11-14T08:30:41.913968+00:00","created_by":"Uji sales_admin 3","updated_at":"2026-11-14T08:30:41.915589+00:00","updated_by":"Uji sales_admin 3","id":"ict_95a614663ac4","number":"KANDA/IC-00010","role":"buyer","entity_id":"ent_kanda","counterpart_id":"ict_bf9a8a0f2b24","line_codes":[],"refs":[{"rel":"parent","doc_type":"interco_transaction","doc_id":"ict_bf9a8a0f2b24","doc_number":"KSC/IC-00012","note":"Dokumen kembar antar-PT (PO internal ↔ SO/SJ/Invoice)","at":"2026-11-14T08:30:41.915201+00:00"}]}}
+E       assert 200 == 403
+E        +  where 200 = <Response [200 OK]>.status_code
+
+tests_mem/test_PK30_antar_pt.py:493: AssertionError
+_________________ test_PK30_U10_manajer_wajib_alasan[asyncio] __________________
+
+klien = <httpx.AsyncClient object at 0x7fd690c32190>
+db = <motor.motor_asyncio.AsyncIOMotorDatabase object at 0x7fd6a2d7a750>
+siap = {'pt3': 'ent_uji_tga', 'mgr': {'Authorization': 'Bearer tok_uji_c13039e1eb0c4fb1bf5511c20d8dd208', 'X-Entity-Id': 'ent...-Id': 'ent_ksc'}, 'sa': {'Authorization': 'Bearer tok_uji_ce072328c18648fbbe847ed4338d2ccb', 'X-Entity-Id': 'ent_ksc'}}
+
+    async def test_PK30_U10_manajer_wajib_alasan(klien, db, siap):
+        r = await klien.post("/api/interco/transactions", headers=siap["mgr"], json=isi_transaksi(unit_price=20_000))
+>       assert r.status_code == 400, r.text
+E       AssertionError: {"pair_id":"icp_012efbd179a5","seller":{"pair_id":"icp_012efbd179a5","seller_entity_id":"ent_ksc","seller_entity_name":"Sukacita Textile","buyer_entity_id":"ent_kanda","buyer_entity_name":"Kanda Fabric","counterpart_number":"KANDA/IC-00011","items":[{"product_id":"prd_pk30","sku":"PK30-001","product_name":"Kain Uji PK-30","quantity":100.0,"unit":"meter","unit_price":20000.0,"price_source":"override","contract_id":"","line_subtotal":2000000.0,"notes":"","preferred_roll_ids":[],"qty_rolls":null,"line_code":""}],"subtotal":2000000.0,"tax_apply":false,"tax_rate":0.0,"tax_rate_nominal":0.0,"tax_dpp_nilai_lain":false,"tax_amount":0.0,"grand_total":2000000.0,"pricing_mode":"fixed_price","ppn_mode":"tanpa_ppn","contract_id":"","source_request_id":"","source_request_number":"","source_order_id":"","source_order_number":"","doc_date":"2026-11-14","due_date":"","notes":"","status":"draft","confirmed_at":"","confirmed_by":"","settled_amount":0.0,"created_at":"2026-11-14T08:30:41.939039+00:00","created_by":"Uji manager 1","updated_at":"2026-11-14T08:30:41.940343+00:00","updated_by":"Uji manager 1","id":"ict_c612b48ecae7","number":"KSC/IC-00013","role":"seller","entity_id":"ent_ksc","counterpart_id":"ict_497118a16d10","line_codes":[],"refs":[{"rel":"child","doc_type":"interco_transaction","doc_id":"ict_497118a16d10","doc_number":"KANDA/IC-00011","note":"Dokumen kembar antar-PT (PO internal ↔ SO/SJ/Invoice)","at":"2026-11-14T08:30:41.940275+00:00"}]},"buyer":{"pair_id":"icp_012efbd179a5","seller_entity_id":"ent_ksc","seller_entity_name":"Sukacita Textile","buyer_entity_id":"ent_kanda","buyer_entity_name":"Kanda Fabric","counterpart_number":"KSC/IC-00013","items":[{"product_id":"prd_pk30","sku":"PK30-001","product_name":"Kain Uji PK-30","quantity":100.0,"unit":"meter","unit_price":20000.0,"price_source":"override","contract_id":"","line_subtotal":2000000.0,"notes":"","preferred_roll_ids":[],"qty_rolls":null,"line_code":""}],"subtotal":2000000.0,"tax_apply":false,"tax_rate":0.0,"tax_rate_nominal":0.0,"tax_dpp_nilai_lain":false,"tax_amount":0.0,"grand_total":2000000.0,"pricing_mode":"fixed_price","ppn_mode":"tanpa_ppn","contract_id":"","source_request_id":"","source_request_number":"","source_order_id":"","source_order_number":"","doc_date":"2026-11-14","due_date":"","notes":"","status":"draft","confirmed_at":"","confirmed_by":"","settled_amount":0.0,"created_at":"2026-11-14T08:30:41.939039+00:00","created_by":"Uji manager 1","updated_at":"2026-11-14T08:30:41.940657+00:00","updated_by":"Uji manager 1","id":"ict_497118a16d10","number":"KANDA/IC-00011","role":"buyer","entity_id":"ent_kanda","counterpart_id":"ict_c612b48ecae7","line_codes":[],"refs":[{"rel":"parent","doc_type":"interco_transaction","doc_id":"ict_c612b48ecae7","doc_number":"KSC/IC-00013","note":"Dokumen kembar antar-PT (PO internal ↔ SO/SJ/Invoice)","at":"2026-11-14T08:30:41.940275+00:00"}]}}
+E       assert 200 == 400
+E        +  where 200 = <Response [200 OK]>.status_code
+
+tests_mem/test_PK30_antar_pt.py:506: AssertionError
+______ test_PK30_U11_peran_kustom_tanpa_acuan_dan_manajer_kosong[asyncio] ______
+
+klien = <httpx.AsyncClient object at 0x7fd690c32190>
+akun = <function akun.<locals>._akun at 0x7fd68fa42160>
+sesi = <function sesi.<locals>._sesi at 0x7fd68fa41e40>
+peran_tanpa_acuan = <function peran_tanpa_acuan.<locals>._peran at 0x7fd68f9c5940>
+peran_manajer_kosong = <function peran_manajer_kosong.<locals>._peran at 0x7fd68f9c7ce0>
+siap = {'pt3': 'ent_uji_tga', 'mgr': {'Authorization': 'Bearer tok_uji_c13039e1eb0c4fb1bf5511c20d8dd208', 'X-Entity-Id': 'ent...-Id': 'ent_ksc'}, 'sa': {'Authorization': 'Bearer tok_uji_ce072328c18648fbbe847ed4338d2ccb', 'X-Entity-Id': 'ent_ksc'}}
+
+    async def test_PK30_U11_peran_kustom_tanpa_acuan_dan_manajer_kosong(klien, akun, sesi, peran_tanpa_acuan,
+                                                                         peran_manajer_kosong, siap):
+>       rid = await peran_tanpa_acuan({"interco": ["view", "create", "override_terms"]}, label="Ubah Harga Antar-PT")
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests_mem/test_PK30_antar_pt.py:524: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+izin = {'interco': ['view', 'create', 'override_terms']}
+label = 'Ubah Harga Antar-PT'
+
+    async def _peran(izin: Dict[str, list], *, label: str = "") -> str:
+        r = await klien.post("/api/access/roles", headers=kepala_admin,
+                             json={"label": label or f"Tanpa Acuan {next(nomor)}", "base_role": "",
+                                   "permissions": izin, "description": "peran uji"})
+>       assert r.status_code == 200, r.text
+E       AssertionError: {"detail":"Aksi ['override_terms'] tidak berlaku untuk “Transaksi Antar PT (barang)”."}
+E       assert 400 == 200
+E        +  where 400 = <Response [400 Bad Request]>.status_code
+
+tests_mem/conftest.py:157: AssertionError
+_______ test_PK30_U12_penjual_non_pkp_tidak_boleh_memungut_ppn[asyncio] ________
+
+klien = <httpx.AsyncClient object at 0x7fd690c32190>
+db = <motor.motor_asyncio.AsyncIOMotorDatabase object at 0x7fd6a2d7a750>
+siap = {'pt3': 'ent_uji_tga', 'mgr': {'Authorization': 'Bearer tok_uji_c13039e1eb0c4fb1bf5511c20d8dd208', 'X-Entity-Id': 'ent...-Id': 'ent_ksc'}, 'sa': {'Authorization': 'Bearer tok_uji_ce072328c18648fbbe847ed4338d2ccb', 'X-Entity-Id': 'ent_ksc'}}
+
+    async def test_PK30_U12_penjual_non_pkp_tidak_boleh_memungut_ppn(klien, db, siap):
+        n0 = await db.interco_transactions.count_documents({})
+        r = await klien.post("/api/interco/transactions", headers=siap["mgr"],
+                             json=isi_transaksi(seller=KANDA, buyer=KSC, ppn_mode="dengan_ppn",
+                                                override_reason="uji PPN paksa"))
+>       assert r.status_code == 400, r.text
+E       AssertionError: {"pair_id":"icp_e45b9f3169a5","seller":{"pair_id":"icp_e45b9f3169a5","seller_entity_id":"ent_kanda","seller_entity_name":"Kanda Fabric","buyer_entity_id":"ent_ksc","buyer_entity_name":"Sukacita Textile","counterpart_number":"KSC/IC-00014","items":[{"product_id":"prd_pk30","sku":"PK30-001","product_name":"Kain Uji PK-30","quantity":100.0,"unit":"meter","unit_price":25000.0,"price_source":"fixed_price","contract_id":"ctr_pk30_1","line_subtotal":2500000.0,"notes":"","preferred_roll_ids":[],"qty_rolls":null,"line_code":""}],"subtotal":2500000.0,"tax_apply":true,"tax_rate":11.0,"tax_rate_nominal":12.0,"tax_dpp_nilai_lain":true,"tax_amount":275000.0,"grand_total":2775000.0,"pricing_mode":"fixed_price","ppn_mode":"dengan_ppn","contract_id":"","source_request_id":"","source_request_number":"","source_order_id":"","source_order_number":"","doc_date":"2026-11-14","due_date":"","notes":"","status":"draft","confirmed_at":"","confirmed_by":"","settled_amount":0.0,"created_at":"2026-11-14T08:30:42.004753+00:00","created_by":"Uji manager 1","updated_at":"2026-11-14T08:30:42.007020+00:00","updated_by":"Uji manager 1","id":"ict_d867c32ac834","number":"KANDA/IC-00012","role":"seller","entity_id":"ent_kanda","counterpart_id":"ict_afbc7d2dea88","line_codes":[],"refs":[{"rel":"child","doc_type":"interco_transaction","doc_id":"ict_afbc7d2dea88","doc_number":"KSC/IC-00014","note":"Dokumen kembar antar-PT (PO internal ↔ SO/SJ/Invoice)","at":"2026-11-14T08:30:42.006899+00:00"}]},"buyer":{"pair_id":"icp_e45b9f3169a5","seller_entity_id":"ent_kanda","seller_entity_name":"Kanda Fabric","buyer_entity_id":"ent_ksc","buyer_entity_name":"Sukacita Textile","counterpart_number":"KANDA/IC-00012","items":[{"product_id":"prd_pk30","sku":"PK30-001","product_name":"Kain Uji PK-30","quantity":100.0,"unit":"meter","unit_price":25000.0,"price_source":"fixed_price","contract_id":"ctr_pk30_1","line_subtotal":2500000.0,"notes":"","preferred_roll_ids":[],"qty_rolls":null,"line_code":""}],"subtotal":2500000.0,"tax_apply":true,"tax_rate":11.0,"tax_rate_nominal":12.0,"tax_dpp_nilai_lain":true,"tax_amount":275000.0,"grand_total":2775000.0,"pricing_mode":"fixed_price","ppn_mode":"dengan_ppn","contract_id":"","source_request_id":"","source_request_number":"","source_order_id":"","source_order_number":"","doc_date":"2026-11-14","due_date":"","notes":"","status":"draft","confirmed_at":"","confirmed_by":"","settled_amount":0.0,"created_at":"2026-11-14T08:30:42.004753+00:00","created_by":"Uji manager 1","updated_at":"2026-11-14T08:30:42.007606+00:00","updated_by":"Uji manager 1","id":"ict_afbc7d2dea88","number":"KSC/IC-00014","role":"buyer","entity_id":"ent_ksc","counterpart_id":"ict_d867c32ac834","line_codes":[],"refs":[{"rel":"parent","doc_type":"interco_transaction","doc_id":"ict_d867c32ac834","doc_number":"KANDA/IC-00012","note":"Dokumen kembar antar-PT (PO internal ↔ SO/SJ/Invoice)","at":"2026-11-14T08:30:42.006899+00:00"}]}}
+E       assert 200 == 400
+E        +  where 200 = <Response [200 OK]>.status_code
+
+tests_mem/test_PK30_antar_pt.py:541: AssertionError
+_____________ test_PK30_U13_pembeli_non_pkp_diberi_tanda[asyncio] ______________
+
+klien = <httpx.AsyncClient object at 0x7fd690c32190>
+kepala_admin = {'Authorization': 'Bearer tok_uji_c9fb54ac1e0048c3a0c51d7df9d2a265', 'X-Entity-Id': 'ent_ksc'}
+siap = {'pt3': 'ent_uji_tga', 'mgr': {'Authorization': 'Bearer tok_uji_c13039e1eb0c4fb1bf5511c20d8dd208', 'X-Entity-Id': 'ent...-Id': 'ent_ksc'}, 'sa': {'Authorization': 'Bearer tok_uji_ce072328c18648fbbe847ed4338d2ccb', 'X-Entity-Id': 'ent_ksc'}}
+
+    async def test_PK30_U13_pembeli_non_pkp_diberi_tanda(klien, kepala_admin, siap):
+        await atur(klien, kepala_admin, "antar_entitas.ppn_mode", "ikut_pkp")
+        try:
+            r = await klien.post("/api/interco/transactions", headers=siap["mgr"], json=isi_transaksi())
+        finally:
+            await atur(klien, kepala_admin, "antar_entitas.ppn_mode", "tanpa_ppn")
+        assert r.status_code == 200, r.text
+        s = r.json()["seller"]
+        assert s["tax_amount"] == 275_000                                                # 2.500.000 × 11 %
+>       assert (s["seller_is_pkp"], s["buyer_is_pkp"], s["tax_warning"]) == (True, False, "pembeli_non_pkp")
+                ^^^^^^^^^^^^^^^^^^
+E       KeyError: 'seller_is_pkp'
+
+tests_mem/test_PK30_antar_pt.py:557: KeyError
+___________________ test_PK30_U14_putaran_t1_config[asyncio] ___________________
+
+klien = <httpx.AsyncClient object at 0x7fd690c32190>
+kepala_admin = {'Authorization': 'Bearer tok_uji_c9fb54ac1e0048c3a0c51d7df9d2a265', 'X-Entity-Id': 'ent_ksc'}
+
+    async def test_PK30_U14_putaran_t1_config(klien, kepala_admin):
+        import config_registry as registry
+        from services.config_resolver import value_of
+>       e = registry.require(KUNCI)
+            ^^^^^^^^^^^^^^^^^^^^^^^
+
+tests_mem/test_PK30_antar_pt.py:565: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+key = 'antar_entitas.selisih_panjang'
+
+    def require(key: str) -> Dict[str, Any]:
+        entry = _REGISTRY.get(key)
+        if not entry:
+>           raise KeyError(f"Setting '{key}' tidak ada di registry")
+E           KeyError: "Setting 'antar_entitas.selisih_panjang' tidak ada di registry"
+
+config_registry.py:389: KeyError
+________________ test_PK30_U14_yang_dibaca_pt_penjual[asyncio] _________________
+
+klien = <httpx.AsyncClient object at 0x7fd690c32190>
+kepala_admin = {'Authorization': 'Bearer tok_uji_c9fb54ac1e0048c3a0c51d7df9d2a265', 'X-Entity-Id': 'ent_ksc'}
+db = <motor.motor_asyncio.AsyncIOMotorDatabase object at 0x7fd6a2d7a750>
+siap = {'pt3': 'ent_uji_tga', 'mgr': {'Authorization': 'Bearer tok_uji_c13039e1eb0c4fb1bf5511c20d8dd208', 'X-Entity-Id': 'ent...-Id': 'ent_ksc'}, 'sa': {'Authorization': 'Bearer tok_uji_ce072328c18648fbbe847ed4338d2ccb', 'X-Entity-Id': 'ent_ksc'}}
+
+    @XFAIL_A_IC02
+    async def test_PK30_U14_yang_dibaca_pt_penjual(klien, kepala_admin, db, siap):
+>       await atur(klien, kepala_admin, KUNCI, "tolak", scope_id=KANDA)        # lapisan PT PEMBELI
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests_mem/test_PK30_antar_pt.py:590: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+klien = <httpx.AsyncClient object at 0x7fd690c32190>
+h = {'Authorization': 'Bearer tok_uji_c9fb54ac1e0048c3a0c51d7df9d2a265', 'X-Entity-Id': 'ent_ksc'}
+key = 'antar_entitas.selisih_panjang', value = 'tolak', scope_type = 'entity'
+scope_id = 'ent_kanda'
+
+    async def atur(klien, h, key, value, scope_type="entity", scope_id=KSC):
+        r = await klien.put("/api/config/values", headers=h, json=_isi(key, value, scope_type, scope_id))
+>       assert r.status_code == 200, r.text
+E       AssertionError: {"detail":"Setting 'antar_entitas.selisih_panjang' tidak ada di registry"}
+E       assert 404 == 200
+E        +  where 404 = <Response [404 Not Found]>.status_code
+
+tests_mem/test_PK30_antar_pt.py:57: AssertionError
+=============================== warnings summary ===============================
+../../venv311/lib/python3.11/site-packages/starlette/formparsers.py:12
+  /tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/venv311/lib/python3.11/site-packages/starlette/formparsers.py:12: PendingDeprecationWarning: Please use `import python_multipart` instead.
+    import multipart
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests_mem/test_PK30_antar_pt.py::test_PK30_a_U1_fungsi_langsung_roll_lebih_panjang[asyncio]
+FAILED tests_mem/test_PK30_antar_pt.py::test_PK30_a_U2_fungsi_langsung_roll_lebih_pendek_dan_pas[asyncio]
+FAILED tests_mem/test_PK30_antar_pt.py::test_PK30_a_U3_fungsi_langsung_ber_ppn[asyncio]
+FAILED tests_mem/test_PK30_antar_pt.py::test_PK30_a_U4_fungsi_langsung_tolak_dan_periode[asyncio]
+FAILED tests_mem/test_PK30_antar_pt.py::test_PK30_a_U6_sisi_pembeli_gagal_diulang_lewat_panel[asyncio]
+FAILED tests_mem/test_PK30_antar_pt.py::test_PK30_U1_roll_lebih_panjang_dokumen_dan_jurnal_menyesuaikan[asyncio]
+FAILED tests_mem/test_PK30_antar_pt.py::test_PK30_U2_roll_lebih_pendek_dan_roll_pas[asyncio]
+FAILED tests_mem/test_PK30_antar_pt.py::test_PK30_U3_ber_ppn_pembeli_pkp[asyncio]
+FAILED tests_mem/test_PK30_antar_pt.py::test_PK30_U4_mode_tolak_tugas_gudang_tidak_terbit[asyncio]
+FAILED tests_mem/test_PK30_antar_pt.py::test_PK30_U5b_periode_tertutup_tanpa_kunci_dokumen[asyncio]
+FAILED tests_mem/test_PK30_antar_pt.py::test_PK30_U6_sisi_pembeli_gagal_lalu_diulang[asyncio]
+FAILED tests_mem/test_PK30_antar_pt.py::test_PK30_U7_jalur_lama_410[asyncio]
+FAILED tests_mem/test_PK30_antar_pt.py::test_PK30_U8_transfer_lama_tidak_bisa_disetujui_tetap_bisa_ditolak[asyncio]
+FAILED tests_mem/test_PK30_antar_pt.py::test_PK30_U9_admin_sales_tanpa_izin_ubah_harga[asyncio]
+FAILED tests_mem/test_PK30_antar_pt.py::test_PK30_U10_manajer_wajib_alasan[asyncio]
+FAILED tests_mem/test_PK30_antar_pt.py::test_PK30_U11_peran_kustom_tanpa_acuan_dan_manajer_kosong[asyncio]
+FAILED tests_mem/test_PK30_antar_pt.py::test_PK30_U12_penjual_non_pkp_tidak_boleh_memungut_ppn[asyncio]
+FAILED tests_mem/test_PK30_antar_pt.py::test_PK30_U13_pembeli_non_pkp_diberi_tanda[asyncio]
+FAILED tests_mem/test_PK30_antar_pt.py::test_PK30_U14_putaran_t1_config[asyncio]
+FAILED tests_mem/test_PK30_antar_pt.py::test_PK30_U14_yang_dibaca_pt_penjual[asyncio]
+20 failed, 1 passed, 1 warning in 2.93s

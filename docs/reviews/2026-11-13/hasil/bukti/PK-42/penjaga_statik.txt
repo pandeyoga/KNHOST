@@ -1,0 +1,67 @@
+# hitung_penjaga.sh (16 penjaga statik) — HEAD c38fc92 → kode baru
+## HEAD
+verify_auth_coverage: [FAIL] 28 pelanggaran :
+verify_ui_standard: [FAIL] 15 pelanggaran :
+verify_approval_queues: 
+audit_i18n_id:   ✗ 109 temuan di 62 berkas.
+audit_create_modal: [FAIL] 6 pelanggaran :
+verify_page_tabs: [FAIL] 1 pelanggaran total (INV-UI-12 1 · INV-UI-13 0 · INV-UI-14 0)
+verify_to_list_bound: [FAIL] 6 pelanggaran :
+verify_list_export: [PASS] 0 pelanggaran.
+verify_error_notice: [PASS] 0 pelanggaran.
+verify_custom_modals: [PASS] 0 pelanggaran.
+verify_knselect_contract: verify_knselect_contract: 0 temuan
+verify_entity_label:   ✗ 2 pelanggaran:
+verify_access_catalog_nav: verify_access_catalog_nav: 0 temuan
+verify_money_idempotency: [PASS] 0 pelanggaran.
+verify_codebase_map: [PASS] 0 pelanggaran.
+verify_scope_guard: 
+
+## Kode baru
+verify_auth_coverage: [FAIL] 28 pelanggaran :
+verify_ui_standard: [FAIL] 13 pelanggaran :
+verify_approval_queues: 
+audit_i18n_id:   ✗ 104 temuan di 60 berkas.
+audit_create_modal: [FAIL] 6 pelanggaran :
+verify_page_tabs: [FAIL] 1 pelanggaran total (INV-UI-12 1 · INV-UI-13 0 · INV-UI-14 0)
+verify_to_list_bound: [FAIL] 6 pelanggaran :
+verify_list_export: [PASS] 0 pelanggaran.
+verify_error_notice: [PASS] 0 pelanggaran.
+verify_custom_modals: [PASS] 0 pelanggaran.
+verify_knselect_contract: verify_knselect_contract: 0 temuan
+verify_entity_label:   ✗ 2 pelanggaran:
+verify_access_catalog_nav: verify_access_catalog_nav: 0 temuan
+verify_money_idempotency: [PASS] 0 pelanggaran.
+verify_codebase_map: [PASS] 0 pelanggaran.
+verify_scope_guard: 
+
+## verify_role_gate_ui
+[PASS] 31 cek lolos, 0 pelanggaran.
+## verify_ui_contrast
+[PASS] 58 cek lolos, 0 pelanggaran.
+## audit_config_wiring --strict (salinan berjalur)
+✅ INV-CFG: setiap setting terdeklarasi punya pembaca kode DAN jalur ubah yang nyata; tidak ada editor ganda.
+## verify_ui_standard — total (HEAD dari `--census --ref HEAD --json`)
+HEAD: font_lt12 6897 · hex 16710 · btn_custom 780 · btn_force 574 · list_no_excel 12
+  font_lt12      sekarang   6867 di  758 berkas · baseline   6937 · turun di 21 berkas
+  hp_font_lt14   sekarang     15 di    3 berkas · baseline     15
+  hex            sekarang  16652 di  816 berkas · baseline  16810 · turun di 24 berkas
+  btn_custom     sekarang    779 di  345 berkas · baseline    784 · turun di 5 berkas
+  btn_force      sekarang    574 di  162 berkas · baseline    577 · turun di 3 berkas
+  hp_touch       sekarang     13 di    4 berkas · baseline     13
+  list_no_excel  sekarang     12 di   11 berkas · baseline     12
+  hex berbeda    sekarang 704 · baseline 703
+## verify_ui_standard rinci (sesudah)
+  ✗ [font_lt12] features/documents/trace/TraceGraph.jsx NAIK 16 → 18 — huruf minimum 12 px (text-fs-12 … text-fs-24; HP info ≥ 16, pendukung ≥ 14).
+  ✗ [font_lt12] features/documents/trace/TraceSearch.jsx NAIK 5 → 6 — huruf minimum 12 px (text-fs-12 … text-fs-24; HP info ≥ 16, pendukung ≥ 14).
+  ✗ [font_lt12] features/finance/ClosingView.jsx NAIK 19 → 20 — huruf minimum 12 px (text-fs-12 … text-fs-24; HP info ≥ 16, pendukung ≥ 14).
+  ✗ [font_lt12] features/finance/payments/PenaltyPanel.jsx NAIK 9 → 11 — huruf minimum 12 px (text-fs-12 … text-fs-24; HP info ≥ 16, pendukung ≥ 14).
+  ✗ [font_lt12] features/purchasing/VendorBillDetailPanel.jsx NAIK 22 → 23 — huruf minimum 12 px (text-fs-12 … text-fs-24; HP info ≥ 16, pendukung ≥ 14).
+  ✗ [hex] features/documents/trace/DocTraceView.jsx NAIK 35 → 36 — warna lewat token/kelas baku (text-kn-*, bg-kn-*, var(--kn-*)), bukan hex lepas.
+  ✗ [hex] features/documents/trace/TraceGraph.jsx NAIK 36 → 38 — warna lewat token/kelas baku (text-kn-*, bg-kn-*, var(--kn-*)), bukan hex lepas.
+  ✗ [hex] features/documents/trace/TraceSearch.jsx NAIK 16 → 17 — warna lewat token/kelas baku (text-kn-*, bg-kn-*, var(--kn-*)), bukan hex lepas.
+  ✗ [hex] features/finance/ClosingView.jsx NAIK 63 → 68 — warna lewat token/kelas baku (text-kn-*, bg-kn-*, var(--kn-*)), bukan hex lepas.
+  ✗ [hex] features/finance/payments/PenaltyPanel.jsx NAIK 10 → 12 — warna lewat token/kelas baku (text-kn-*, bg-kn-*, var(--kn-*)), bukan hex lepas.
+  ✗ [hex] features/purchasing/VendorBillDetailPanel.jsx NAIK 29 → 30 — warna lewat token/kelas baku (text-kn-*, bg-kn-*, var(--kn-*)), bukan hex lepas.
+  ✗ [btn_force] features/purchasing/apPayment.jsx berkas BARU memakai pola usang (3×) — jangan paksa ukuran tombol baku dengan !py/!h/!text — pakai pengubah resmi btn-sm / btn-touch.
+  ✗ [hex] 1 warna hex BARU di aplikasi: #F5D9B0 — pakai token --kn-* / kelas kn-* (styles/tokens.css, tailwind `kn`).

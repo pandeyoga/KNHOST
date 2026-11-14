@@ -1,0 +1,20 @@
+=== CONTOH U1 — pesan 100 m @ Rp 25.000, roll pilihan 130 m (biaya Rp 18.000/m), KSC → Kanda, tanpa PPN
+seller      ent_ksc    KSC/JE-00005       D 1-1250 2,500,000 · K 4-1000 2,500,000
+buyer       ent_kanda  KANDA/JE-00002     D 1-1310 2,500,000 · K 2-1250 2,500,000
+adj:seller  ent_ksc    KSC/JE-00006       D 1-1250 750,000 · K 4-1000 750,000
+adj:buyer   ent_kanda  KANDA/JE-00003     D 1-1310 750,000 · K 2-1250 750,000
+cogs        ent_ksc    KSC/JE-00007       D 5-1000 2,340,000 · K 1-1300 2,340,000
+receipt     ent_kanda  KANDA/JE-00004     D 1-1300 3,250,000 · K 1-1310 3,250,000
+roll R-cfba44: pemilik ent_kanda, 130.0 m × 25,000 = 3,250,000
+saldo pasangan ent_ksc 1-1250: 3,250,000
+saldo pasangan ent_kanda 2-1250: -3,250,000
+saldo pasangan ent_kanda 1-1310: 0
+saldo pasangan ent_kanda 1-1300: 3,250,000
+saldo pasangan ent_ksc 4-1000: -3,250,000
+saldo pasangan ent_ksc 5-1000: 2,340,000
+saldo pasangan ent_ksc 1-1300: -2,340,000
+dokumen seller KSC/IC-00001: quantity_ordered 100.0 → quantity 130.0, subtotal 3,250,000, grand_total 3,250,000, gl_status_adj posted, length_adjustment.delta_total 750,000
+dokumen buyer  KANDA/IC-00001: quantity_ordered 100.0 → quantity 130.0, subtotal 3,250,000, grand_total 3,250,000, gl_status_adj posted, length_adjustment.delta_total 750,000
+Saldo Antar-PT KSC→Kanda (proyeksi): gross 3,250,000, outstanding 3,250,000
+=============================== warnings summary ===============================
+1 passed, 22 deselected, 1 warning in 1.42s

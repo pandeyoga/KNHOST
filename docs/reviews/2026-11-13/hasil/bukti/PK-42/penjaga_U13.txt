@@ -1,0 +1,19 @@
+$ python3 scripts/guardrails/verify_error_notice.py --self-test
+  utang teknis (baseline aturan C): 6 modal lama belum punya bilah error sendiri — lihat MODAL_BASELINE.
+  [PASS] SELF-TEST: 2 pelanggaran tertangkap · 2 pemakaian benar tidak salah-tuduh (bukti-merah sah).
+== INV-UI-03 — Kegagalan backend harus terlihat di layar (anti error senyap) ==
+[PASS] 287 cek lolos, 0 pelanggaran.
+exit=0
+
+$ python3 scripts/guardrails/verify_error_notice.py
+== INV-UI-03 — Kegagalan backend harus terlihat di layar (anti error senyap) ==
+[PASS] 287 cek lolos, 0 pelanggaran.
+
+$ python3 scripts/guardrails/verify_modal_dismiss.py
+== INV-UI-01 — Backdrop modal & dropdown ber-portal (anti auto-close) ==
+[PASS] 9 cek lolos, 0 pelanggaran.
+
+$ python3 scripts/audit_i18n_id.py --strict (ringkas)
+exit=1
+  ✗ 104 temuan di 60 berkas.
+

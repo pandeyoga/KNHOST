@@ -1,0 +1,30 @@
+== INV-PAY-VOCAB-01 — kosakata cara bayar hanya dari daftar induk (PM-T1) ==
+[FAIL] 27 pelanggaran (dari 1736 cek):
+  ✗ features/crm/ARReceiptModal.jsx baris 29: pilihan cara bayar ditulis sendiri ({ value: "transfer"…) — pakai `usePaymentMethods(arah)` dari `config/paymentMethods.js`.
+  ✗ features/crm/ARReceiptModal.jsx baris 30: pilihan cara bayar ditulis sendiri ({ value: "cash"…) — pakai `usePaymentMethods(arah)` dari `config/paymentMethods.js`.
+  ✗ features/crm/ARReceiptModal.jsx baris 31: pilihan cara bayar ditulis sendiri ({ value: "giro"…) — pakai `usePaymentMethods(arah)` dari `config/paymentMethods.js`.
+  ✗ features/crm/ARReceiptModal.jsx baris 32: pilihan cara bayar ditulis sendiri ({ value: "qris"…) — pakai `usePaymentMethods(arah)` dari `config/paymentMethods.js`.
+  ✗ features/crm/ARReceiptModal.jsx baris 190: himpunan kata cara bayar ditulis sendiri (["cash", "tunai"…) — pakai `usePaymentMethods(arah)` dari `config/paymentMethods.js`.
+  ✗ features/finance/BankAccountsView.jsx baris 30: pilihan cara bayar ditulis sendiri ({ value: "cash"…) — pakai `usePaymentMethods(arah)` dari `config/paymentMethods.js`.
+  ✗ features/finance/interco/intercoApi.js baris 63: pilihan cara bayar ditulis sendiri ({ value: "transfer"…) — pakai `usePaymentMethods(arah)` dari `config/paymentMethods.js`.
+  ✗ features/finance/interco/intercoApi.js baris 64: pilihan cara bayar ditulis sendiri ({ value: "cash"…) — pakai `usePaymentMethods(arah)` dari `config/paymentMethods.js`.
+  ✗ features/finance/payments/PaymentVarianceDialog.jsx baris 37: pilihan cara bayar ditulis sendiri ({ value: "transfer"…) — pakai `usePaymentMethods(arah)` dari `config/paymentMethods.js`.
+  ✗ features/finance/payments/PaymentVarianceDialog.jsx baris 38: pilihan cara bayar ditulis sendiri ({ value: "cash"…) — pakai `usePaymentMethods(arah)` dari `config/paymentMethods.js`.
+  ✗ features/pettycash/CashAdvanceForm.jsx baris 151: pilihan cara bayar ditulis sendiri ({ value: "tunai"…) — pakai `usePaymentMethods(arah)` dari `config/paymentMethods.js`.
+  ✗ features/pettycash/CashAdvanceForm.jsx baris 151: pilihan cara bayar ditulis sendiri ({ value: "transfer"…) — pakai `usePaymentMethods(arah)` dari `config/paymentMethods.js`.
+  ✗ features/purchasing/LandedCostDetailPanel.jsx baris 171: pilihan cara bayar ditulis sendiri ({ value: "transfer"…) — pakai `usePaymentMethods(arah)` dari `config/paymentMethods.js`.
+  ✗ features/purchasing/LandedCostDetailPanel.jsx baris 171: pilihan cara bayar ditulis sendiri ({ value: "tunai"…) — pakai `usePaymentMethods(arah)` dari `config/paymentMethods.js`.
+  ✗ features/purchasing/LandedCostDetailPanel.jsx baris 171: pilihan cara bayar ditulis sendiri ({ value: "giro"…) — pakai `usePaymentMethods(arah)` dari `config/paymentMethods.js`.
+  ✗ features/purchasing/VendorBillDetailPanel.jsx baris 243: pilihan cara bayar ditulis sendiri ({ value: "transfer"…) — pakai `usePaymentMethods(arah)` dari `config/paymentMethods.js`.
+  ✗ features/purchasing/VendorBillDetailPanel.jsx baris 243: pilihan cara bayar ditulis sendiri ({ value: "tunai"…) — pakai `usePaymentMethods(arah)` dari `config/paymentMethods.js`.
+  ✗ features/purchasing/VendorBillDetailPanel.jsx baris 243: pilihan cara bayar ditulis sendiri ({ value: "giro"…) — pakai `usePaymentMethods(arah)` dari `config/paymentMethods.js`.
+  ✗ features/purchasing/contrabon/contraBonApi.js baris 34: pilihan cara bayar ditulis sendiri ({ value: "transfer"…) — pakai `usePaymentMethods(arah)` dari `config/paymentMethods.js`.
+  ✗ features/purchasing/contrabon/contraBonApi.js baris 35: pilihan cara bayar ditulis sendiri ({ value: "giro"…) — pakai `usePaymentMethods(arah)` dari `config/paymentMethods.js`.
+  ✗ features/purchasing/contrabon/contraBonApi.js baris 36: pilihan cara bayar ditulis sendiri ({ value: "cash"…) — pakai `usePaymentMethods(arah)` dari `config/paymentMethods.js`.
+  ✗ services/ar_receipt_service.py baris 44: himpunan kata cara bayar ['cash', 'kontan', 'tunai'] ditulis sendiri — pakai `payment_method_service.normalize` / `is_cash`.
+  ✗ services/cash_advance_service.py baris 30: himpunan kata cara bayar ['transfer', 'tunai'] ditulis sendiri — pakai `payment_method_service.normalize` / `is_cash`.
+  ✗ services/gl_service.py baris 2218: himpunan kata cara bayar ['cash', 'tunai'] ditulis sendiri — pakai `payment_method_service.normalize` / `is_cash`.
+  ✗ services/payment_variance_service.py baris 616: himpunan kata cara bayar ['cash', 'kontan', 'tunai'] ditulis sendiri — pakai `payment_method_service.normalize` / `is_cash`.
+  ✗ services/payment_variance_service.py baris 994: himpunan kata cara bayar ['cash', 'kontan', 'tunai'] ditulis sendiri — pakai `payment_method_service.normalize` / `is_cash`.
+  ✗ pengecualian basi (tidak ada lagi yang cocok): features/finance/BankAccountForm.jsx · cash
+→ Perbaiki sesuai INVARIANT INV-PAY-VOCAB-01 (detail: memory/INVARIANTS.md).

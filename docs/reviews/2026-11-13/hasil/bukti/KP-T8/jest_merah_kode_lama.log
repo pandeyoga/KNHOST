@@ -1,0 +1,94 @@
+FAIL src/features/__tests__/kpt8RahasiaPerangkat.test.js
+  KP-T8 mesin absen
+    ✕ baris tanpa token; Ganti token → konfirmasi → token tampil sekali (51 ms)
+    ✓ lihat saja: tanpa tombol Ganti token (21 ms)
+    ✕ buat perangkat → pop-up token (46 ms)
+  KP-T8 integrasi
+    ✕ kartu penyedia: tanpa sakelar & model; tautan ke Pusat Pengaturan; peringatan kunci enkripsi (12 ms)
+    ✓ kartu WhatsApp: token hanya-tulis, dipakai oleh, dua koneksi berbeda + alasan wajib (37 ms)
+  KP-T8 pemakai lama setelah koneksi tunggal
+    ✕ Pusat Dokumen: ringkasan + tautan; simpan hanya isian pemakaian (13 ms)
+    ✕ Penjadwal: ringkasan + tautan; simpan tanpa penyedia (11 ms)
+
+  ● KP-T8 mesin absen › baris tanpa token; Ganti token → konfirmasi → token tampil sekali
+
+    expect(received).not.toContain(expected) // indexOf
+
+    Expected substring: not "Salin token perangkat"
+    Received string:        "Daftar Mesin Absen Tambah Mesin Absenent_kscMesin A — · sync: belum pernah Salin token perangkatent_kscMesin Lama — · sync: belum pernah Salin token perangkat"
+
+    [0m [90m 100 |[39m       device_token_hint[33m:[39m [32m"cdef"[39m[33m,[39m shown_once[33m:[39m [36mtrue[39m } })[33m;[39m
+     [90m 101 |[39m     [36mawait[39m mount([33m<[39m[33mAttendanceSetupView[39m currentUser[33m=[39m{[33mADMIN[39m} selectedEntity[33m=[39m[32m"ent_ksc"[39m only[33m=[39m[32m"device"[39m [33m/[39m[33m>[39m)[33m;[39m
+    [31m[1m>[22m[39m[90m 102 |[39m     expect(teks())[33m.[39mnot[33m.[39mtoContain([32m"Salin token perangkat"[39m)[33m;[39m
+     [90m     |[39m                        [31m[1m^[22m[39m
+     [90m 103 |[39m     expect(q([32m"device-token-dev_a"[39m)[33m.[39mtextContent)[33m.[39mtoContain([32m"Token berakhiran …9f3c"[39m)[33m;[39m
+     [90m 104 |[39m     expect(q([32m"device-token-warn-dev_a"[39m))[33m.[39mtoBeNull()[33m;[39m
+     [90m 105 |[39m     expect(q([32m"device-token-warn-dev_lama"[39m)[33m.[39mtextContent)[33m.[39mtoContain([32m"Disarankan ganti — token lama pernah tampil di layar."[39m)[33m;[39m[0m
+
+      at Object.<anonymous> (src/features/__tests__/kpt8RahasiaPerangkat.test.js:102:24)
+
+  ● KP-T8 mesin absen › buat perangkat → pop-up token
+
+    TypeError: Cannot read properties of null (reading 'textContent')
+
+    [0m [90m 135 |[39m     [36mawait[39m type(q([32m"setup-name"[39m)[33m,[39m [32m"Mesin B"[39m)[33m;[39m
+     [90m 136 |[39m     [36mawait[39m click(q([32m"setup-save"[39m))[33m;[39m
+    [31m[1m>[22m[39m[90m 137 |[39m     expect(q([32m"device-token-value"[39m)[33m.[39mtextContent)[33m.[39mtoBe([32m"at_ffffffffffffffffffffffffffffffff"[39m)[33m;[39m
+     [90m     |[39m                                   [31m[1m^[22m[39m
+     [90m 138 |[39m   })[33m;[39m
+     [90m 139 |[39m })[33m;[39m
+     [90m 140 |[39m[0m
+
+      at Object.<anonymous> (src/features/__tests__/kpt8RahasiaPerangkat.test.js:137:35)
+
+  ● KP-T8 integrasi › kartu penyedia: tanpa sakelar & model; tautan ke Pusat Pengaturan; peringatan kunci enkripsi
+
+    expect(received).toBeNull()
+
+    Received: <select data-testid="integrations-model"><option value="m-1">m-1</option></select>
+
+    [0m [90m 144 |[39m       anthropic[33m:[39m { has_key[33m:[39m [36mtrue[39m[33m,[39m enabled[33m:[39m [36mtrue[39m[33m,[39m model[33m:[39m [32m"m-1"[39m[33m,[39m models_available[33m:[39m [[32m"m-1"[39m] } } })[33m;[39m
+     [90m 145 |[39m     [36mawait[39m mount([33m<[39m[33mIntegrationsPanel[39m canManage [33m/[39m[33m>[39m)[33m;[39m
+    [31m[1m>[22m[39m[90m 146 |[39m     expect(q([32m"integrations-model"[39m))[33m.[39mtoBeNull()[33m;[39m
+     [90m     |[39m                                     [31m[1m^[22m[39m
+     [90m 147 |[39m     expect(q([32m"integrations-enabled"[39m))[33m.[39mtoBeNull()[33m;[39m
+     [90m 148 |[39m     expect(q([32m"integrations-registry-link-readonly"[39m) [33m||[39m q([32m"integrations-registry-link"[39m))[33m.[39mnot[33m.[39mtoBeNull()[33m;[39m
+     [90m 149 |[39m     expect(q([32m"integrations-secrets-warning"[39m)[33m.[39mtextContent)[33m.[39mtoContain([0m
+
+      at Object.<anonymous> (src/features/__tests__/kpt8RahasiaPerangkat.test.js:146:37)
+
+  ● KP-T8 pemakai lama setelah koneksi tunggal › Pusat Dokumen: ringkasan + tautan; simpan hanya isian pemakaian
+
+    TypeError: Cannot read properties of null (reading 'textContent')
+
+    [0m [90m 195 |[39m     mockPut[33m.[39mmockResolvedValue({ data[33m:[39m { provider[33m:[39m [32m"fonnte"[39m[33m,[39m simulate[33m:[39m [36mtrue[39m[33m,[39m enabled[33m:[39m [36mtrue[39m[33m,[39m connection_managed[33m:[39m [36mtrue[39m } })[33m;[39m
+     [90m 196 |[39m     [36mawait[39m mount([33m<[39m[33mWhatsAppSettings[39m open onClose[33m=[39m{() [33m=>[39m {}} [33m/[39m[33m>[39m)[33m;[39m
+    [31m[1m>[22m[39m[90m 197 |[39m     expect(q([32m"wa-set-connection-managed"[39m)[33m.[39mtextContent)[33m.[39mtoContain([32m"Fonnte"[39m)[33m;[39m
+     [90m     |[39m                                          [31m[1m^[22m[39m
+     [90m 198 |[39m     expect(q([32m"wa-set-provider"[39m))[33m.[39mtoBeNull()[33m;[39m
+     [90m 199 |[39m     expect(q([32m"wa-set-token"[39m))[33m.[39mtoBeNull()[33m;[39m
+     [90m 200 |[39m     [36mawait[39m click(q([32m"wa-set-save"[39m))[33m;[39m[0m
+
+      at Object.<anonymous> (src/features/__tests__/kpt8RahasiaPerangkat.test.js:197:42)
+
+  ● KP-T8 pemakai lama setelah koneksi tunggal › Penjadwal: ringkasan + tautan; simpan tanpa penyedia
+
+    expect(received).toBeNull()
+
+    Received: <select data-testid="wa-provider-select"><option value="simulated">Simulasi (tercatat di Outbox, tidak dikirim)</option><option value="fonnte">Fonnte (gateway lokal · 1 token, teks bebas)</option><option value="meta_cloud">Meta WhatsApp Cloud API (resmi · wajib template)</option></select>
+
+    [0m [90m 207 |[39m       wa[33m=[39m{{ enabled[33m:[39m [36mtrue[39m[33m,[39m provider[33m:[39m [32m"fonnte"[39m[33m,[39m connection_managed[33m:[39m [36mtrue[39m[33m,[39m has_fonnte_token[33m:[39m [36mtrue[39m[33m,[39m
+     [90m 208 |[39m         connection[33m:[39m { provider[33m:[39m [32m"fonnte"[39m[33m,[39m provider_label[33m:[39m [32m"Fonnte"[39m[33m,[39m has_fonnte_token[33m:[39m [36mtrue[39m } }} [33m/[39m[33m>[39m)[33m;[39m
+    [31m[1m>[22m[39m[90m 209 |[39m     expect(q([32m"wa-provider-select"[39m))[33m.[39mtoBeNull()[33m;[39m
+     [90m     |[39m                                     [31m[1m^[22m[39m
+     [90m 210 |[39m     expect(q([32m"wa-fonnte-token-input"[39m))[33m.[39mtoBeNull()[33m;[39m
+     [90m 211 |[39m     expect(q([32m"wa-clear-tokens"[39m))[33m.[39mtoBeNull()[33m;[39m
+     [90m 212 |[39m     expect(q([32m"wa-connection-managed"[39m)[33m.[39mtextContent)[33m.[39mtoContain([32m"Fonnte"[39m)[33m;[39m[0m
+
+      at Object.<anonymous> (src/features/__tests__/kpt8RahasiaPerangkat.test.js:209:37)
+
+Test Suites: 1 failed, 1 total
+Tests:       5 failed, 2 passed, 7 total
+Snapshots:   0 total
+Time:        0.775 s, estimated 2 s
+Ran all test suites matching /kpt8RahasiaPerangkat/i.

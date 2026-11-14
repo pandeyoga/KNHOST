@@ -1,0 +1,32 @@
+== HEAD (salinan pohon eef7bb9) ==
+Total kunci terdeklarasi : 121
+  OK          104   wiring lengkap (dibaca kode + bisa diubah user)
+  NOT_USED     17   registry menyatakan tidak dipakai + alasan (SAH)
+  HIDDEN        0   dibaca kode TAPI TANPA UI (hanya via DB/API)
+  ORPHAN_UI     0   ADA UI TAPI TIDAK DIBACA KODE  <-- tombol palsu
+  DEAD          0   tidak dibaca & tidak ada UI
+  global         total= 71  OK= 64 HIDDEN=  0 ORPHAN_UI=  0 DEAD=  0 NOT_USED=  7
+  hr             total= 27  OK= 19 HIDDEN=  0 ORPHAN_UI=  0 DEAD=  0 NOT_USED=  8
+  lot            total=  8  OK=  7 HIDDEN=  0 ORPHAN_UI=  0 DEAD=  0 NOT_USED=  1
+  makloon        total=  7  OK=  6 HIDDEN=  0 ORPHAN_UI=  0 DEAD=  0 NOT_USED=  1
+  receiving      total=  3  OK=  3 HIDDEN=  0 ORPHAN_UI=  0 DEAD=  0 NOT_USED=  0
+  uom            total=  5  OK=  5 HIDDEN=  0 ORPHAN_UI=  0 DEAD=  0 NOT_USED=  0
+── NOT_USED (17) ────────────────────────────────────────────────────────────────────
+✅ INV-CFG: setiap setting terdeklarasi punya pembaca kode DAN jalur ubah yang nyata; tidak ada editor ganda.
+exit 0
+== sesudah ==
+Total kunci terdeklarasi : 121
+  OK          104   wiring lengkap (dibaca kode + bisa diubah user)
+  NOT_USED     17   registry menyatakan tidak dipakai + alasan (SAH)
+  HIDDEN        0   dibaca kode TAPI TANPA UI (hanya via DB/API)
+  ORPHAN_UI     0   ADA UI TAPI TIDAK DIBACA KODE  <-- tombol palsu
+  DEAD          0   tidak dibaca & tidak ada UI
+  global         total= 71  OK= 64 HIDDEN=  0 ORPHAN_UI=  0 DEAD=  0 NOT_USED=  7
+  hr             total= 27  OK= 19 HIDDEN=  0 ORPHAN_UI=  0 DEAD=  0 NOT_USED=  8
+  lot            total=  8  OK=  7 HIDDEN=  0 ORPHAN_UI=  0 DEAD=  0 NOT_USED=  1
+  makloon        total=  7  OK=  6 HIDDEN=  0 ORPHAN_UI=  0 DEAD=  0 NOT_USED=  1
+  receiving      total=  3  OK=  3 HIDDEN=  0 ORPHAN_UI=  0 DEAD=  0 NOT_USED=  0
+  uom            total=  5  OK=  5 HIDDEN=  0 ORPHAN_UI=  0 DEAD=  0 NOT_USED=  0
+── NOT_USED (17) ────────────────────────────────────────────────────────────────────
+✅ INV-CFG: setiap setting terdeklarasi punya pembaca kode DAN jalur ubah yang nyata; tidak ada editor ganda.
+exit 0

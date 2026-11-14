@@ -1,0 +1,20 @@
+## SEBELUM (HEAD a323bb0) — cd backend && python -m pytest tests_mem -q -p no:cacheprovider
+699 passed, 2 skipped, 2 xfailed, 11 warnings in 225.51s (0:03:45)
+
+real	3m55.021s
+user	4m26.117s
+sys	0m3.283s
+
+## SESUDAH (worktree + KF-T8, akhir)
+1134 passed, 2 skipped, 4 xfailed, 11 warnings in 226.90s (0:03:46)
+
+real	3m53.388s
+user	6m21.678s
+sys	0m3.451s
+
+## (antara: jalan pertama sesudah, sebelum U14b & percepatan config_health; berbarengan dengan proses lain — lama jalan tidak representatif)
+1133 passed, 2 skipped, 4 xfailed, 11 warnings in 459.61s (0:07:39)
+
+real	7m45.477s
+user	6m27.449s
+sys	0m3.394s

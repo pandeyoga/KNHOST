@@ -1,0 +1,22 @@
+  OK  F1 pilihan 'tunai' di layar: merah
+  OK  F1 pilihan 'transfer' satu baris options: merah
+  OK  F2 larik kata cara bayar: merah
+  OK  F sumber resmi boleh: hijau
+  OK  F berkas uji boleh: hijau
+  OK  F komentar tidak dihitung: hijau
+  OK  F kata lain (kredit) bukan cara bayar: hijau
+  OK  F pengecualian beralasan: hijau
+  OK  F pengecualian basi = merah: merah
+  OK  F pengecualian tanpa alasan = merah: merah
+  OK  S1 himpunan tunai di server: merah
+  OK  S1 tuple di perbandingan: merah
+  OK  S1 sumber resmi boleh: hijau
+  OK  S1 satu kata + termin bukan himpunan cara bayar: hijau
+  OK  S1 pasangan kode–label bukan himpunan: hijau
+  OK  S1 komentar tidak dihitung: hijau
+  OK  S1 berkas uji & benih boleh: hijau
+  OK  S1 pengecualian beralasan: hijau
+  18/18 kasus sesuai harapan.
+  HIJAU — penjaga terbukti menuduh kosakata cara bayar yang ditulis sendiri.
+[96m[1m== INV-PAY-VOCAB-01 — kosakata cara bayar hanya dari daftar induk (PM-T1) ==[0m
+[92m[PASS][0m 1740 cek lolos, 0 pelanggaran.

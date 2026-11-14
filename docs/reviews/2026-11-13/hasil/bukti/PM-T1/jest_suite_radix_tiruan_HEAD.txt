@@ -1,0 +1,8 @@
+PASS src/features/__tests__/auditUi2G5b.test.js
+PASS src/features/__tests__/uatV3S2Cbd.test.js
+PASS src/features/__tests__/decisionsD1.test.js
+FAIL src/features/__tests__/roleGateSweep2.test.js
+PASS src/features/__tests__/phase4R1.test.js (6.191 s)
+PASS src/features/__tests__/phase4R2.test.js
+Test Suites: 1 failed, 5 passed, 6 total
+Tests:       1 failed, 49 passed, 50 total

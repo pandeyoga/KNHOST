@@ -1,0 +1,3 @@
+## Cabang tanpa mongomock-motor (python sistem, tanpa paket itu) — potongan blok gate.sh dijalankan apa adanya
+pasang mongomock-motor (lihat 03_LINGKUNGAN_UJI §3)
+rc=1

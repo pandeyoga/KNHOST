@@ -1,0 +1,8 @@
+    Cannot find module '@radix-ui/primitive/is-development' from '../fe/node_modules/cmdk/node_modules/@radix-ui/react-use-controllable-state/dist/index.js'
+    Expected substring: "Buat Permintaan Internal (30 meter)"
+    Received string:    "Minta Transfer dari Kanda (30 meter)"
+    Expected: true
+    Received: false
+    Received: null
+Test Suites: 2 failed, 2 total
+Tests:       4 failed, 4 total

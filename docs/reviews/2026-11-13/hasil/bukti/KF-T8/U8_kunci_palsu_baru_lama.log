@@ -1,0 +1,96 @@
+## U8 — salinan pohon kerja + E("uji.kunci_palsu", …, consumers=("services/config_service.py:compute_tax",)) di akhir config_catalog_nilai.py (hanya di salinan bukti)
+### skrip BARU --strict
+================================================================================================
+AUDIT WIRING KONFIGURASI — apakah setiap setting benar-benar berfungsi?
+================================================================================================
+Total kunci terdeklarasi: 431 (registry 431)
+  OK          394   wiring lengkap (dibaca kode + bisa diubah user)
+  NOT_USED     36   registry menyatakan tidak dipakai + alasan (SAH)
+  HIDDEN        0   dibaca kode TAPI TANPA UI (hanya via DB/API)
+  ORPHAN_UI     1   ADA UI TAPI TIDAK DIBACA KODE  <-- tombol palsu
+  DEAD          0   tidak dibaca & tidak ada UI
+
+Pusat Pengaturan (UI generik): TERSAMBUNG
+Registry termuat utuh: setiap backend/config_catalog_*.py ada di registry
+Editor konfigurasi di luar Pusat Pengaturan: TIDAK ADA (satu sumber kebenaran)
+
+Per scope:
+  global         total=358  OK=323 HIDDEN=  0 ORPHAN_UI=  1 DEAD=  0 NOT_USED= 34
+  hr             total= 25  OK= 25 HIDDEN=  0 ORPHAN_UI=  0 DEAD=  0 NOT_USED=  0
+  lot            total=  8  OK=  7 HIDDEN=  0 ORPHAN_UI=  0 DEAD=  0 NOT_USED=  1
+  makloon        total=  7  OK=  6 HIDDEN=  0 ORPHAN_UI=  0 DEAD=  0 NOT_USED=  1
+  receiving      total= 28  OK= 28 HIDDEN=  0 ORPHAN_UI=  0 DEAD=  0 NOT_USED=  0
+  uom            total=  5  OK=  5 HIDDEN=  0 ORPHAN_UI=  0 DEAD=  0 NOT_USED=  0
+
+── ORPHAN_UI (1) ───────────────────────────────────────────────────────────────────
+  [global] uji.kunci_palsu                                      default=False  kunci uji.kunci_palsu: pemakai STALE services/config_service.py:compute_tax
+
+── NOT_USED (36) ────────────────────────────────────────────────────────────────────
+  [global] tax.efaktur_enabled                                  default=True  alasan: Penerbitan faktur pajak mengikuti status PKP di profil PT.
+  [global] sales.quotation_enabled                              default=False  alasan: Alur Penawaran (Quotation) BELUM ADA di sistem — tidak ada satu pun en
+  [global] approval.extra_levels                                default='<complex>'  alasan: Dipindah ke Aturan Persetujuan (Pengaturan › Persetujuan › Aturan Pers
+  [global] inventory.stock_analytics.fast_max_days              default=30  alasan: Diganti K-05 (26 Okt 2026): kelas Analitik Stok kini dari moving avera
+  [global] inventory.stock_analytics.slow_max_days              default=90  alasan: Diganti K-05 (26 Okt 2026): kelas Analitik Stok kini dari moving avera
+  [global] role_home.admin                                      default='admin'  alasan: Diatur per peran di Peran & Hak Akses › Halaman awal
+  [global] role_home.manager                                    default='reports'  alasan: Diatur per peran di Peran & Hak Akses › Halaman awal
+  [global] role_home.sales                                      default='sales'  alasan: Diatur per peran di Peran & Hak Akses › Halaman awal
+  [global] role_home.warehouse                                  default='operations'  alasan: Diatur per peran di Peran & Hak Akses › Halaman awal
+  [lot] number_format                                        default='LOT-YYMM-####'  alasan: Nomor lot saat ini selalu berbentuk KODE-PT/LOT-TTBB-urutan. Format ya
+  [makloon] claim_approval_roles                                 default='<complex>'  alasan: Dipindah ke Aturan Persetujuan (Pengaturan › Persetujuan › Aturan Pers
+  [global] returns.cutloss_treatment_roles                      default='<complex>'  alasan: Diatur di Peran & Hak Akses › Pesanan Penjualan (Pilih potongan cacat:
+  [global] amendment.approver_role                              default='manager'  alasan: Dipindah ke Aturan Persetujuan (Pengaturan › Persetujuan › Aturan Pers
+  [global] amendment.admin_approval_above                       default=50000000  alasan: Dipindah ke Aturan Persetujuan (Pengaturan › Persetujuan › Aturan Pers
+  [global] amendment.dual_control                               default=True  alasan: Dipindahkan ke Pengaturan › Persetujuan › Kontrol dua orang.
+  [global] payment.variance_writeoff_approver_role              default='manager'  alasan: Dipindah ke Aturan Persetujuan (Pengaturan › Persetujuan › Aturan Pers
+  [global] bank.holding_account_code                            default='2-1950'  alasan: Akun ini diatur di Pengaturan › Keuangan & Pajak › Pemetaan Akun.
+  [global] bank.charge_account_code                             default='6-8000'  alasan: Akun ini diatur di Pengaturan › Keuangan & Pajak › Pemetaan Akun.
+  [global] bank.interest_account_code                           default='4-9000'  alasan: Akun ini diatur di Pengaturan › Keuangan & Pajak › Pemetaan Akun.
+  [global] contra_bon.qty_tolerance_percent                     default=1.0  alasan: Toleransi jumlah kontrabon mengikuti pengaturan 'Toleransi jumlah tagi
+  [global] contra_bon.approval_threshold_rupiah                 default=50000000  alasan: Dipindah ke Aturan Persetujuan (Pengaturan › Persetujuan › Aturan Pers
+  [global] contra_bon.approval_role                             default='manager'  alasan: Dipindah ke Aturan Persetujuan (Pengaturan › Persetujuan › Aturan Pers
+  [global] contra_bon.high_value_approval_role                  default='admin'  alasan: Dipindah ke Aturan Persetujuan (Pengaturan › Persetujuan › Aturan Pers
+  [global] antar_entitas.approval_threshold_rupiah              default=100000000  alasan: Dipindah ke Aturan Persetujuan (Pengaturan › Persetujuan › Aturan Pers
+  [global] antar_entitas.approval_role                          default='manager'  alasan: Dipindah ke Aturan Persetujuan (Pengaturan › Persetujuan › Aturan Pers
+  [global] antar_entitas.high_value_approval_role               default='admin'  alasan: Dipindah ke Aturan Persetujuan (Pengaturan › Persetujuan › Aturan Pers
+  [global] ai.margin_roles                                      default='<complex>'  alasan: Diatur di Peran & Hak Akses › Asisten Tanya KN
+  [global] ai.stock_value_roles                                 default='<complex>'  alasan: Diatur di Peran & Hak Akses › Asisten Tanya KN
+  [global] ai.enabled_roles                                     default='<complex>'  alasan: Diatur di Peran & Hak Akses › Asisten Tanya KN
+  [global] rnd.spec_approval_roles                              default='<complex>'  alasan: Dipindah ke Aturan Persetujuan (Pengaturan › Persetujuan › Aturan Pers
+  [global] rnd.sample_decision_roles                            default='<complex>'  alasan: Dipindah ke Aturan Persetujuan (Pengaturan › Persetujuan › Aturan Pers
+  [global] approval.matrix_enforcement                          default='enforce'  alasan: Dipindah ke Aturan Persetujuan (Pengaturan › Persetujuan › Aturan Pers
+  [global] approval.matrix_scope                                default='all_pending'  alasan: Dipindah ke Aturan Persetujuan (Pengaturan › Persetujuan › Aturan Pers
+  [global] approval.matrix_effective_from                       default=''  alasan: Dipindah ke Aturan Persetujuan (Pengaturan › Persetujuan › Aturan Pers
+  [global] approval.matrix_sod                                  default=True  alasan: Dipindahkan ke Pengaturan › Persetujuan › Kontrol dua orang.
+  [global] approval.po_custom_direksi_min                       default=50000000  alasan: Dipindah ke Aturan Persetujuan (Pengaturan › Persetujuan › Aturan Pers
+
+⚠️  1 kunci bermasalah + 0 editor ganda + 0 katalog tak termuat (INV-CFG).
+rc=1
+
+### skrip LAMA (HEAD) --strict pada salinan yang sama
+================================================================================================
+AUDIT WIRING KONFIGURASI — apakah setiap setting benar-benar berfungsi?
+================================================================================================
+Total kunci terdeklarasi : 71
+  OK           64   wiring lengkap (dibaca kode + bisa diubah user)
+  NOT_USED      7   registry menyatakan tidak dipakai + alasan (SAH)
+  HIDDEN        0   dibaca kode TAPI TANPA UI (hanya via DB/API)
+  ORPHAN_UI     0   ADA UI TAPI TIDAK DIBACA KODE  <-- tombol palsu
+  DEAD          0   tidak dibaca & tidak ada UI
+
+Pusat Pengaturan (UI generik): TERSAMBUNG
+Editor konfigurasi di luar Pusat Pengaturan: TIDAK ADA (satu sumber kebenaran)
+
+Per scope:
+  global         total= 71  OK= 64 HIDDEN=  0 ORPHAN_UI=  0 DEAD=  0 NOT_USED=  7
+
+── NOT_USED (7) ────────────────────────────────────────────────────────────────────
+  [global] tax.efaktur_enabled                                  default=True  alasan: Penerbitan faktur pajak mengikuti status PKP di profil PT.
+  [global] sales.quotation_enabled                              default=False  alasan: Alur Penawaran (Quotation) BELUM ADA di sistem — tidak ada satu pun en
+  [global] approval.extra_levels.purchase_order                 default='<complex>'  alasan: Dipindah ke Aturan Persetujuan (Pengaturan › Persetujuan › Aturan Pers
+  [global] role_home.admin                                      default='admin'  alasan: Diatur per peran di Peran & Hak Akses › Halaman awal
+  [global] role_home.manager                                    default='reports'  alasan: Diatur per peran di Peran & Hak Akses › Halaman awal
+  [global] role_home.sales                                      default='sales'  alasan: Diatur per peran di Peran & Hak Akses › Halaman awal
+  [global] role_home.warehouse                                  default='operations'  alasan: Diatur per peran di Peran & Hak Akses › Halaman awal
+
+✅ INV-CFG: setiap setting terdeklarasi punya pembaca kode DAN jalur ubah yang nyata; tidak ada editor ganda.
+rc=0 (kunci palsu tidak terdeteksi: hanya 71 daun DEFAULT_GLOBAL_SETTINGS dinilai)

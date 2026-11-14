@@ -1,0 +1,28 @@
+  ✓ U4: VendorBillPayments — galat batal-bayar tampil di vb-payments-error (dan onError tetap dipanggil) (9 ms)
+  ✓ U6 (tidak berlaku sejak PK-21): mutasi rekening hanya lencana baca-saja, tidak ada tombol/kiriman tanda (41 ms)
+  ✓ U8: Debit 1250000 → pratinjau 'Rp 1.250.000'; nilai terkirim angka 1250000 (43 ms)
+  ✓ U12: ARReceiptsHistory — 'Menampilkan 1–25 dari 30 penerimaan', tombol berikut aktif, PT ikut kueri (148 ms)
+  ✓ Transaksi Kas: 50 per halaman di server, lencana tab dari summary.counts, saringan tab ikut kueri, tanggal WIB (26 ms)
+  ✓ UX-18: pemformat tanggal lokal = formatDate/formatDateTime WIB (tahun empat angka) (2 ms)
+    ✓ U1: Semua PT → mati, alasan di title DAN tertulis di samping tombol; klik tidak memanggil onClick (24 ms)
+    ✓ U2: satu PT → aktif, onClick sekali, tanpa petunjuk (4 ms)
+    ✓ kepala kartu padat: hint={false} + EntityGateNote = alasan di bilah sendiri (hanya di Semua PT) (8 ms)
+    ✓ Jurnal & Buku Besar + Transaksi Kas, PT all → mati true (80 ms)
+    ✓ Jurnal & Buku Besar + Transaksi Kas, PT ent_ksc → mati false (46 ms)
+    ✓ finance/GeneralLedger.jsx · gl-new-journal lewat EntityGatedButton (1 ms)
+    ✓ purchasing/CashManagementView.jsx · create-cash-button lewat EntityGatedButton (1 ms)
+    ✓ purchasing/VendorBillsView.jsx · create-vendor-bill-button lewat EntityGatedButton (1 ms)
+    ✓ purchasing/contrabon/ContraBonsView.jsx · cb-new lewat EntityGatedButton (1 ms)
+    ✓ purchasing/LandedCostView.jsx · create-landed-cost-button lewat EntityGatedButton (1 ms)
+    ✓ purchasing/InputTaxView.jsx · it-create-button lewat EntityGatedButton
+    ✓ finance/FixedAssetsView.jsx · add-asset-btn lewat EntityGatedButton
+    ✓ finance/BudgetView.jsx · budget-add-toggle lewat EntityGatedButton
+    ✓ finance/BankAccountsView.jsx · bank-add-toggle lewat EntityGatedButton
+    ✓ pettycash/CashAdvancesView.jsx · ca-create-btn lewat EntityGatedButton (1 ms)
+    ✓ pettycash/SettlementsView.jsx · stl-create-btn lewat EntityGatedButton
+    ✓ simpan tanpa catatan → 'Catatan wajib diisi.' di DALAM worklist-followup-modal; tidak ada kiriman (10 ms)
+    ✓ server menolak → pesan server di dalam pop-up; cadangan 'Gagal menyimpan tindak lanjut.' (23 ms)
+    ✓ mengatakan yang sebenarnya (akan ditolak) + tautan Ajukan Buka Periode (29 ms)
+    ✓ tautan disembunyikan bila layar Buka Periode tidak boleh dibuka (15 ms)
+Test Suites: 1 passed, 1 total
+Tests:       26 passed, 26 total

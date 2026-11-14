@@ -1,0 +1,4 @@
+== sebelum (HEAD eef7bb9) ==
+(hitung: 762 lulus, 2 dilewati, 2 xfail — ringkasan -q -q tidak mencetak baris akhir; dihitung dari keluaran titik)
+== sesudah ==
+778 passed, 2 skipped, 2 xfailed, 11 warnings in 556.39s (0:09:16)

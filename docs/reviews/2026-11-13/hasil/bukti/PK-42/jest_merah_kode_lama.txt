@@ -1,0 +1,78 @@
+# Jest pk42LayarKeuangan di kode lama
+## (a) pohon HEAD c38fc92 apa adanya + berkas uji baru
+  ● Test suite failed to run
+    Cannot find module '../../components/EntityGatedButton' from 'src/features/__tests__/pk42LayarKeuangan.test.js'
+Tests:       0 total
+
+## (b) pohon HEAD + hanya komponen baru EntityGatedButton.jsx (+ kata 'export' pada WorklistFollowup supaya bisa dirender)
+  ✕ U4: VendorBillPayments — galat batal-bayar tampil di vb-payments-error (dan onError tetap dipanggil) (11 ms)
+  ✓ U6 (tidak berlaku sejak PK-21): mutasi rekening hanya lencana baca-saja, tidak ada tombol/kiriman tanda (65 ms)
+  ✕ U8: Debit 1250000 → pratinjau 'Rp 1.250.000'; nilai terkirim angka 1250000 (22 ms)
+  ✕ U12: ARReceiptsHistory — 'Menampilkan 1–25 dari 30 penerimaan', tombol berikut aktif, PT ikut kueri (5 ms)
+  ✕ Transaksi Kas: 50 per halaman di server, lencana tab dari summary.counts, saringan tab ikut kueri, tanggal WIB (53 ms)
+  ✕ UX-18: pemformat tanggal lokal = formatDate/formatDateTime WIB (tahun empat angka) (2 ms)
+    ✓ U1: Semua PT → mati, alasan di title DAN tertulis di samping tombol; klik tidak memanggil onClick (33 ms)
+    ✓ U2: satu PT → aktif, onClick sekali, tanpa petunjuk (4 ms)
+    ✕ Jurnal & Buku Besar + Transaksi Kas, PT all → mati true (89 ms)
+    ✓ Jurnal & Buku Besar + Transaksi Kas, PT ent_ksc → mati false (52 ms)
+    ✕ finance/GeneralLedger.jsx · gl-new-journal lewat EntityGatedButton (2 ms)
+    ✕ purchasing/CashManagementView.jsx · create-cash-button lewat EntityGatedButton (1 ms)
+    ✕ purchasing/VendorBillsView.jsx · create-vendor-bill-button lewat EntityGatedButton (1 ms)
+    ✕ purchasing/contrabon/ContraBonsView.jsx · cb-new lewat EntityGatedButton (1 ms)
+    ✕ purchasing/LandedCostView.jsx · create-landed-cost-button lewat EntityGatedButton (1 ms)
+    ✕ purchasing/InputTaxView.jsx · it-create-button lewat EntityGatedButton (1 ms)
+    ✕ finance/FixedAssetsView.jsx · add-asset-btn lewat EntityGatedButton (10 ms)
+    ✕ finance/BudgetView.jsx · budget-add-toggle lewat EntityGatedButton (1 ms)
+    ✕ finance/BankAccountsView.jsx · bank-add-toggle lewat EntityGatedButton (1 ms)
+    ✕ pettycash/CashAdvancesView.jsx · ca-create-btn lewat EntityGatedButton (1 ms)
+    ✕ pettycash/SettlementsView.jsx · stl-create-btn lewat EntityGatedButton (1 ms)
+    ✕ simpan tanpa catatan → 'Catatan wajib diisi.' di DALAM worklist-followup-modal; tidak ada kiriman (9 ms)
+    ✕ server menolak → pesan server di dalam pop-up; cadangan 'Gagal menyimpan tindak lanjut.' (15 ms)
+    ✕ mengatakan yang sebenarnya (akan ditolak) + tautan Ajukan Buka Periode (37 ms)
+    ✓ tautan disembunyikan bila layar Buka Periode tidak boleh dibuka (42 ms)
+Tests:       20 failed, 5 passed, 25 total
+
+### Sebab merah
+  ● U3 — tombol buat di layar uang › Jurnal & Buku Besar + Transaksi Kas, PT all → mati true
+    Expected: true
+    Received: false
+  ● U3 — tombol buat di layar uang › finance/GeneralLedger.jsx · gl-new-journal lewat EntityGatedButton
+    Expected pattern: /<EntityGatedButton\s[^>]*selectedEntity=\{selectedEntity\}[^>]*what="membuat jurnal"[^>]*data-testid="gl-new-journal"/s
+  ● U3 — tombol buat di layar uang › purchasing/CashManagementView.jsx · create-cash-button lewat EntityGatedButton
+    Expected pattern: /<EntityGatedButton\s[^>]*selectedEntity=\{selectedEntity\}[^>]*what="mencatat transaksi kas"[^>]*data-testid="create-cash-button"/s
+  ● U3 — tombol buat di layar uang › purchasing/VendorBillsView.jsx · create-vendor-bill-button lewat EntityGatedButton
+    Expected pattern: /<EntityGatedButton\s[^>]*selectedEntity=\{selectedEntity\}[^>]*what="membuat tagihan pemasok"[^>]*data-testid="create-vendor-bill-button"/s
+  ● U3 — tombol buat di layar uang › purchasing/contrabon/ContraBonsView.jsx · cb-new lewat EntityGatedButton
+    Expected pattern: /<EntityGatedButton\s[^>]*selectedEntity=\{selectedEntity\}[^>]*what="membuat kontrabon"[^>]*data-testid="cb-new"/s
+  ● U3 — tombol buat di layar uang › purchasing/LandedCostView.jsx · create-landed-cost-button lewat EntityGatedButton
+    Expected pattern: /<EntityGatedButton\s[^>]*selectedEntity=\{selectedEntity\}[^>]*what="mencatat biaya masuk"[^>]*data-testid="create-landed-cost-button"/s
+  ● U3 — tombol buat di layar uang › purchasing/InputTaxView.jsx · it-create-button lewat EntityGatedButton
+    Expected pattern: /<EntityGatedButton\s[^>]*selectedEntity=\{selectedEntity\}[^>]*what="mencatat faktur pajak masukan"[^>]*data-testid="it-create-button"/s
+  ● U3 — tombol buat di layar uang › finance/FixedAssetsView.jsx · add-asset-btn lewat EntityGatedButton
+    Expected pattern: /<EntityGatedButton\s[^>]*selectedEntity=\{selectedEntity\}[^>]*what="menambah aset tetap"[^>]*data-testid="add-asset-btn"/s
+  ● U3 — tombol buat di layar uang › finance/BudgetView.jsx · budget-add-toggle lewat EntityGatedButton
+    Expected pattern: /<EntityGatedButton\s[^>]*selectedEntity=\{selectedEntity\}[^>]*what="menambah anggaran"[^>]*data-testid="budget-add-toggle"/s
+  ● U3 — tombol buat di layar uang › finance/BankAccountsView.jsx · bank-add-toggle lewat EntityGatedButton
+    Expected pattern: /<EntityGatedButton\s[^>]*selectedEntity=\{selectedEntity\}[^>]*what="menambah rekening"[^>]*data-testid="bank-add-toggle"/s
+  ● U3 — tombol buat di layar uang › pettycash/CashAdvancesView.jsx · ca-create-btn lewat EntityGatedButton
+    Expected pattern: /<EntityGatedButton\s[^>]*selectedEntity=\{selectedEntity\}[^>]*what="mengajukan dana"[^>]*data-testid="ca-create-btn"/s
+  ● U3 — tombol buat di layar uang › pettycash/SettlementsView.jsx · stl-create-btn lewat EntityGatedButton
+    Expected pattern: /<EntityGatedButton\s[^>]*selectedEntity=\{selectedEntity\}[^>]*what="membuat pertanggungjawaban"[^>]*data-testid="stl-create-btn"/s
+  ● U4: VendorBillPayments — galat batal-bayar tampil di vb-payments-error (dan onError tetap dipanggil)
+  ● U5 — WorklistFollowup › simpan tanpa catatan → 'Catatan wajib diisi.' di DALAM worklist-followup-modal; tidak ada kiriman
+    Expected: "dialog"
+    Received: null
+  ● U5 — WorklistFollowup › server menolak → pesan server di dalam pop-up; cadangan 'Gagal menyimpan tindak lanjut.'
+    Expected substring: "Pelanggan diarsipkan"
+    Received string:    "Follow-up: Toko MelatiPesanan KSC/SO-0001 · Rp 1.250.000 · telat 3 hariJanji transfer Jumat-DihubungiDijanjikan bayarSudah bayarTak responEskalasiBatalSimpan"
+  ● U7 — pita periode tertutup › mengatakan yang sebenarnya (akan ditolak) + tautan Ajukan Buka Periode
+    Expected substring: "Periode Oktober 2026 sudah ditutup."
+    Received string:    "Perhatian: periode Oktober 2026 sudah ditutup. Jurnal tetap dapat diposting, namun sebaiknya buka kembali (reopen) periode bila ini koreksi resmi."
+  ● U8: Debit 1250000 → pratinjau 'Rp 1.250.000'; nilai terkirim angka 1250000
+    Expected: "text"
+    Received: "number"
+  ● U12: ARReceiptsHistory — 'Menampilkan 1–25 dari 30 penerimaan', tombol berikut aktif, PT ikut kueri
+  ● Transaksi Kas: 50 per halaman di server, lencana tab dari summary.counts, saringan tab ikut kueri, tanggal WIB
+  ● UX-18: pemformat tanggal lokal = formatDate/formatDateTime WIB (tahun empat angka)
+    Expected: "23 Okt 2026"
+    Received: "22/10/2026"

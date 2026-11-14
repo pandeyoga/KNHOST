@@ -1,0 +1,102 @@
+# hitung_penjaga.sh — SEBELUM (eef7bb9)
+verify_auth_coverage: [FAIL] 28 pelanggaran :
+verify_ui_standard: [FAIL] 15 pelanggaran :
+verify_approval_queues: 
+audit_i18n_id:   ✗ 109 temuan di 62 berkas.
+audit_create_modal: [FAIL] 6 pelanggaran :
+verify_page_tabs: [FAIL] 1 pelanggaran total (INV-UI-12 1 · INV-UI-13 0 · INV-UI-14 0)
+verify_to_list_bound: [FAIL] 6 pelanggaran :
+verify_list_export: [PASS] 0 pelanggaran.
+verify_error_notice: [PASS] 0 pelanggaran.
+verify_custom_modals: [PASS] 0 pelanggaran.
+verify_knselect_contract: verify_knselect_contract: 0 temuan
+verify_entity_label:   ✗ 2 pelanggaran:
+verify_access_catalog_nav: verify_access_catalog_nav: 0 temuan
+verify_money_idempotency: [PASS] 0 pelanggaran.
+verify_codebase_map: [PASS] 0 pelanggaran.
+verify_scope_guard: 
+
+# hitung_penjaga.sh — SESUDAH (KP-T6)
+verify_auth_coverage: [FAIL] 28 pelanggaran :
+verify_ui_standard: [FAIL] 15 pelanggaran :
+verify_approval_queues: 
+audit_i18n_id:   ✗ 109 temuan di 62 berkas.
+audit_create_modal: [FAIL] 6 pelanggaran :
+verify_page_tabs: [FAIL] 1 pelanggaran total (INV-UI-12 1 · INV-UI-13 0 · INV-UI-14 0)
+verify_to_list_bound: [FAIL] 6 pelanggaran :
+verify_list_export: [PASS] 0 pelanggaran.
+verify_error_notice: [PASS] 0 pelanggaran.
+verify_custom_modals: [PASS] 0 pelanggaran.
+verify_knselect_contract: verify_knselect_contract: 0 temuan
+verify_entity_label:   ✗ 2 pelanggaran:
+verify_access_catalog_nav: verify_access_catalog_nav: 0 temuan
+verify_money_idempotency: [PASS] 0 pelanggaran.
+verify_codebase_map: [PASS] 0 pelanggaran.
+verify_scope_guard: 
+
+# verify_role_gate_ui.py — sesudah
+[PASS] 31 cek lolos, 0 pelanggaran.
+
+# audit_config_wiring.py --strict (salinan berjalur worktree) — sebelum / sesudah
+✅ INV-CFG: setiap setting terdeklarasi punya pembaca kode DAN jalur ubah yang nyata; tidak ada editor ganda.
+✅ INV-CFG: setiap setting terdeklarasi punya pembaca kode DAN jalur ubah yang nyata; tidak ada editor ganda.
+
+# 26 penjaga statik lain — SEBELUM (git archive eef7bb9)
+python scripts/audit_create_modal.py ::   ✗ features/settings/masters/AddFabricTypeInline.jsx:29 TOMBOL MATI: `(tanpa-testid)` menyalakan `open` tetapi state itu tidak pernah dirender → klik tidak memunculkan apa pun. → Perbaiki sesuai INVARIANT INV-UI-0
+python scripts/audit_i18n_id.py --strict ::                  putaway → Simpan ke Rak   ✗ 109 temuan di 62 berkas. 
+python scripts/check_nav_map.py :: ✓ Navigation map COMPLIANT dengan KN_13 (grouped IA) ✓ NAV MAP: PASS 
+python scripts/guardrails/verify_access_catalog_nav.py :: verify_access_catalog_nav: 0 temuan 
+python scripts/guardrails/verify_atomic_claim.py ::   ✗ BELUM DITINJAU = 95 > baseline 0. Endpoint multi-koleksi BARU wajib memakai atomic_claim.claim()/CAS dan dicatat di REVIEWED: client_dataset.py POST /batches/{batch_id}/rollback; cycle_count.py POST /cy
+python scripts/guardrails/verify_auth_coverage.py ::   ✗ handheld.py: `POST /registration/{sid}/racks/{rack_id}` TIDAK menegakkan auth (require_permission/require_any_permission/require_role/current_user/entity_ctx) → dapat diakses TANPA login. Tambah enfo
+python scripts/guardrails/verify_blocking_dialogs.py :: == INV-UI-06 — dialog bawaan peramban (alert/confirm/prompt) dilarang == [PASS] 1 cek lolos, 0 pelanggaran. 
+python scripts/guardrails/verify_codebase_map.py :: == INV-DOC-01 — CODEBASE_MAP.md selaras kode (selisih ≤10%) == [PASS] 5 cek lolos, 0 pelanggaran. 
+python scripts/guardrails/verify_custom_modals.py :: == INV-UI-11 — pop-up buatan sendiri hanya boleh berkurang (pakai FormModal/DetailModal) == [PASS] 98 cek lolos, 0 pelanggaran. 
+python scripts/guardrails/verify_derived_fields.py :: == INV-UI-04 — Field turunan dibaca dari sumbernya sendiri (bukan dari respons daftar) == [PASS] 3 cek lolos, 0 pelanggaran. 
+python scripts/guardrails/verify_desk_targets.py :: verify_desk_targets: 33 target diperiksa, 0 temuan 
+python scripts/guardrails/verify_detail_modal.py :: == INV-UI-08 — panel rincian wajib pop-up (bukan diselipkan di bawah daftar) == [PASS] 28 cek lolos, 0 pelanggaran. 
+python scripts/guardrails/verify_escape_layers.py :: == INV-UI-10 — Esc menutup lapisan TERATAS saja (satu tumpukan, bukan pendengar sendiri) == [PASS] 1253 cek lolos, 0 pelanggaran. 
+python scripts/guardrails/verify_knselect_contract.py :: verify_knselect_contract: 0 temuan 
+python scripts/guardrails/verify_list_export.py :: == INV-UI-07 — daftar berhalaman wajib bisa diunduh (CSV) & CSV-nya benar == [PASS] 22 cek lolos, 0 pelanggaran. 
+python scripts/guardrails/verify_modal_dismiss.py :: == INV-UI-01 — Backdrop modal & dropdown ber-portal (anti auto-close) == [PASS] 10 cek lolos, 0 pelanggaran. 
+python scripts/guardrails/verify_money_idempotency.py :: == INV-MONEY-IDEM-01 — form uang lewat moneyRequest.js ber-Idempotency-Key == [PASS] 17 cek lolos, 0 pelanggaran. 
+python scripts/guardrails/verify_notification_audience.py ::   ✓ nol peristiwa ber-pemilik yang disiarkan ke "all"; nol `recipient_role` + `recipient_user` bersamaan.   (9 peristiwa ber-pemilik dijaga di kode DAN data) 
+python scripts/guardrails/verify_page_tabs.py :: [PASS] 134 cek lolos, 0 pelanggaran. [FAIL] 1 pelanggaran total (INV-UI-12 1 · INV-UI-13 0 · INV-UI-14 0) 
+python scripts/guardrails/verify_picker_portal.py :: == INV-UI-09 — pemilih (pemicu+pop-up) wajib ber-portal · pop-up bukan anak <label> == [PASS] 322 cek lolos, 0 pelanggaran. 
+python scripts/guardrails/verify_ref_unlink.py ::   ✗ services/ar_receipt_service.py:504 — `db.ar_receipts.delete_one()` menghapus dokumen ber-`refs` ('ar_receipts') di `_rollback_unfinished_receipt()` TANPA memanggil `unlink_all`/`safe_unlink_all` → tau
+python scripts/guardrails/verify_to_list_bound.py ::   ✗ backend/services/gl_service.py to_list(50000) ada di ALLOWLIST tetapi tidak lagi di kode — hapus entrinya (ratchet). → Perbaiki sesuai INVARIANT INV-PERF-01 (detail: memory/INVARIANTS.md). 
+python scripts/guardrails/verify_view_aliases.py :: == INV-NAV-02 — alias layar tidak memutus pintu/hak (registri config/viewAliases.js) == [PASS] 132 cek lolos, 0 pelanggaran. 
+python scripts/ux_audit.py --strict ::     · features/wms/grn/GrnLineCard.jsx     · features/wms/repair/RepairOrderDetail.jsx 
+python scripts/validate_compliance.py ::    [IMPORTS] ... dan 12 temuan lain ❌ 1 failure harus difix sebelum task dianggap DONE 
+cd backend && python -m entity_write_guard --self-test ::    HIJAU — pagar terbukti bisa memerah. 
+
+# 26 penjaga statik lain — SESUDAH (sebelum baris REVIEWED KP-T6 di verify_atomic_claim)
+python scripts/audit_create_modal.py ::   ✗ features/settings/masters/AddFabricTypeInline.jsx:29 TOMBOL MATI: `(tanpa-testid)` menyalakan `open` tetapi state itu tidak pernah dirender → klik tidak memunculkan apa pun. → Perbaiki sesuai INVARIANT INV-UI-0
+python scripts/audit_i18n_id.py --strict ::                  putaway → Simpan ke Rak   ✗ 109 temuan di 62 berkas. 
+python scripts/check_nav_map.py :: ✓ Navigation map COMPLIANT dengan KN_13 (grouped IA) ✓ NAV MAP: PASS 
+python scripts/guardrails/verify_access_catalog_nav.py :: verify_access_catalog_nav: 0 temuan 
+python scripts/guardrails/verify_atomic_claim.py ::   ✗ BELUM DITINJAU = 96 > baseline 0. Endpoint multi-koleksi BARU wajib memakai atomic_claim.claim()/CAS dan dicatat di REVIEWED: client_dataset.py POST /batches/{batch_id}/rollback; cycle_count.py POST /cy
+python scripts/guardrails/verify_auth_coverage.py ::   ✗ handheld.py: `POST /registration/{sid}/racks/{rack_id}` TIDAK menegakkan auth (require_permission/require_any_permission/require_role/current_user/entity_ctx) → dapat diakses TANPA login. Tambah enfo
+python scripts/guardrails/verify_blocking_dialogs.py :: == INV-UI-06 — dialog bawaan peramban (alert/confirm/prompt) dilarang == [PASS] 1 cek lolos, 0 pelanggaran. 
+python scripts/guardrails/verify_codebase_map.py :: == INV-DOC-01 — CODEBASE_MAP.md selaras kode (selisih ≤10%) == [PASS] 5 cek lolos, 0 pelanggaran. 
+python scripts/guardrails/verify_custom_modals.py :: == INV-UI-11 — pop-up buatan sendiri hanya boleh berkurang (pakai FormModal/DetailModal) == [PASS] 98 cek lolos, 0 pelanggaran. 
+python scripts/guardrails/verify_derived_fields.py :: == INV-UI-04 — Field turunan dibaca dari sumbernya sendiri (bukan dari respons daftar) == [PASS] 3 cek lolos, 0 pelanggaran. 
+python scripts/guardrails/verify_desk_targets.py :: verify_desk_targets: 33 target diperiksa, 0 temuan 
+python scripts/guardrails/verify_detail_modal.py :: == INV-UI-08 — panel rincian wajib pop-up (bukan diselipkan di bawah daftar) == [PASS] 28 cek lolos, 0 pelanggaran. 
+python scripts/guardrails/verify_escape_layers.py :: == INV-UI-10 — Esc menutup lapisan TERATAS saja (satu tumpukan, bukan pendengar sendiri) == [PASS] 1254 cek lolos, 0 pelanggaran. 
+python scripts/guardrails/verify_knselect_contract.py :: verify_knselect_contract: 0 temuan 
+python scripts/guardrails/verify_list_export.py :: == INV-UI-07 — daftar berhalaman wajib bisa diunduh (CSV) & CSV-nya benar == [PASS] 22 cek lolos, 0 pelanggaran. 
+python scripts/guardrails/verify_modal_dismiss.py :: == INV-UI-01 — Backdrop modal & dropdown ber-portal (anti auto-close) == [PASS] 10 cek lolos, 0 pelanggaran. 
+python scripts/guardrails/verify_money_idempotency.py :: == INV-MONEY-IDEM-01 — form uang lewat moneyRequest.js ber-Idempotency-Key == [PASS] 17 cek lolos, 0 pelanggaran. 
+python scripts/guardrails/verify_notification_audience.py ::   ✓ nol peristiwa ber-pemilik yang disiarkan ke "all"; nol `recipient_role` + `recipient_user` bersamaan.   (9 peristiwa ber-pemilik dijaga di kode DAN data) 
+python scripts/guardrails/verify_page_tabs.py :: [PASS] 134 cek lolos, 0 pelanggaran. [FAIL] 1 pelanggaran total (INV-UI-12 1 · INV-UI-13 0 · INV-UI-14 0) 
+python scripts/guardrails/verify_picker_portal.py :: == INV-UI-09 — pemilih (pemicu+pop-up) wajib ber-portal · pop-up bukan anak <label> == [PASS] 322 cek lolos, 0 pelanggaran. 
+python scripts/guardrails/verify_ref_unlink.py ::   ✗ services/ar_receipt_service.py:504 — `db.ar_receipts.delete_one()` menghapus dokumen ber-`refs` ('ar_receipts') di `_rollback_unfinished_receipt()` TANPA memanggil `unlink_all`/`safe_unlink_all` → tau
+python scripts/guardrails/verify_to_list_bound.py ::   ✗ backend/services/gl_service.py to_list(50000) ada di ALLOWLIST tetapi tidak lagi di kode — hapus entrinya (ratchet). → Perbaiki sesuai INVARIANT INV-PERF-01 (detail: memory/INVARIANTS.md). 
+python scripts/guardrails/verify_view_aliases.py :: == INV-NAV-02 — alias layar tidak memutus pintu/hak (registri config/viewAliases.js) == [PASS] 132 cek lolos, 0 pelanggaran. 
+python scripts/ux_audit.py --strict ::     · features/wms/grn/GrnLineCard.jsx     · features/wms/repair/RepairOrderDetail.jsx 
+python scripts/validate_compliance.py ::    [IMPORTS] ... dan 12 temuan lain ❌ 1 failure harus difix sebelum task dianggap DONE 
+cd backend && python -m entity_write_guard --self-test ::    HIJAU — pagar terbukti bisa memerah. 
+
+# verify_atomic_claim — SESUDAH baris REVIEWED KP-T6
+[FAIL] 6 pelanggaran (dari 130 cek):
+  ✗ BELUM DITINJAU = 95 > baseline 0. Endpoint multi-koleksi BARU wajib memakai atomic_claim.claim()/CAS dan dicatat di REVIEWED: client_dataset.py POST /batches/{batch_id}/rollback; cycle_count.py 

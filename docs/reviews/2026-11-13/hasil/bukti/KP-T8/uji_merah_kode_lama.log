@@ -1,0 +1,58 @@
+FFFFFFFFFFFFFFFF                                                         [100%]
+=================================== FAILURES ===================================
+E   ImportError: cannot import name 'secret_box' from 'services' ($W/backend/services/__init__.py)
+$W/backend/tests_mem/test_KPT8_rahasia_perangkat.py:54: ImportError: cannot import name 'secret_box' from 'services' ($W/backend/service
+E   AssertionError: assert (False)
+---------------------------- Captured stdout setup -----------------------------
+[bootstrap] SANDI AWAL akun seed (ganti segera): FoGtt7t_yJAMf4qL
+[bootstrap] FASE F lifecycle backfill: 5 produk distempel 'produksi'
+[bootstrap] kebersihan data: 5 record dirapikan {'customers': 3, 'suppliers': 0, 'users': 0, 'hr_employees': 2, 'makloons': 0}
+$W/backend/tests_mem/test_KPT8_rahasia_perangkat.py:77: AssertionError: assert (False)
+E   KeyError: 'tok_a'
+$W/backend/tests_mem/test_KPT8_rahasia_perangkat.py:92: KeyError: 'tok_a'
+E   AssertionError: assert ('device_token' not in {'id': 'dev_lama_u3', 'name': 'Mesin Lama', 'device_token': 'devtok_abc123abc123', 'status': 'active', ...})
+$W/backend/tests_mem/test_KPT8_rahasia_perangkat.py:106: AssertionError: assert ('device_token' not in {'id': 'dev_lama_u3', 'name': 'Mesin Lama', 'device_token': 'devtok_abc123abc123', 'status': 'active', ...})
+E   KeyError: 'dev_a'
+$W/backend/tests_mem/test_KPT8_rahasia_perangkat.py:123: KeyError: 'dev_a'
+E   AssertionError: assert ([{'id': 'dev_81179e8b57a4', 'name': 'Mesin A', 'code': '', 'location': '', ...}, {'id': 'dev_lama_u3', 'name': 'Mesin ...: 'dev_854cc54c1999', 'name': 'ZKTeco K40 — Pintu Utama', 'code': 'ZK-K40-001', 'location': 'Lobby Kantor Pusat', ...}] and False)
+$W/backend/tests_mem/test_KPT8_rahasia_perangkat.py:148: AssertionError: assert ([{'id': 'dev_81179e8b57a4', 'name': 'Mesin A', 'code': '', 'location': '', ...}, {'id': 'dev_lama_u3', 'name': 'Mesin ...: 'dev_854cc54c1
+E   KeyError: 'device_token_hash'
+$W/backend/tests_mem/test_KPT8_rahasia_perangkat.py:157: KeyError: 'device_token_hash'
+E   ImportError: cannot import name 'wa_connection' from 'services' ($W/backend/services/__init__.py)
+$W/backend/tests_mem/test_KPT8_rahasia_perangkat.py:168: ImportError: cannot import name 'wa_connection' from 'services' ($W/backend/ser
+E   KeyError: 'secrets_key_configured'
+$W/backend/tests_mem/test_KPT8_rahasia_perangkat.py:188: KeyError: 'secrets_key_configured'
+E   AssertionError: assert (False)
+$W/backend/tests_mem/test_KPT8_rahasia_perangkat.py:198: AssertionError: assert (False)
+E   ImportError: cannot import name 'wa_connection' from 'services' ($W/backend/services/__init__.py)
+$W/backend/tests_mem/test_KPT8_rahasia_perangkat.py:213: ImportError: cannot import name 'wa_connection' from 'services' ($W/backend/ser
+E   FileNotFoundError: [Errno 2] No such file or directory: '$W/scripts/migrate_kpt8_rahasia.py'
+<frozen importlib._bootstrap_external>:1130: FileNotFoundError: [Errno 2] No such file or directory: '$W/scripts/migrate_kpt8_rahasia.py'
+E   AssertionError: {"jobs":{"ar_overdue":{"enabled":true,"hour":8,"minute":0},"ap_due":{"enabled":true,"hour":8,"minute":5},"depreciation_due":{"enabled":true,"hour":8,"minute":10},"budget_alert":{"enabled":true,"hour":8,"minute":15},"production_stalled":{"enabled":true,"hour":8,"minute":20},"ops_s
+$W/backend/tests_mem/test_KPT8_rahasia_perangkat.py:308: AssertionError: {"jobs":{"ar_overdue":{"enabled":true,"hour":8,"minute":0},"ap_due":{"enabled":true,"hour":8,"minute":5},"depreciation_due":{"enabled":true,"hour
+E   assert 200 == 403
+$W/backend/tests_mem/test_KPT8_rahasia_perangkat.py:322: assert 200 == 403
+E   AssertionError: {"detail":"Sumber daya izin “integration” tidak dikenal."}
+$W/backend/tests_mem/conftest.py:157: AssertionError: {"detail":"Sumber daya izin “integration” tidak dikenal."}
+E   AssertionError: {"detail":"Setting 'integrations.anthropic.enabled' tidak ada di registry"}
+$W/backend/tests_mem/test_KPT8_rahasia_perangkat.py:350: AssertionError: {"detail":"Setting 'integrations.anthropic.enabled' tidak ada di registry"}
+../../venv311/lib/python3.11/site-packages/starlette/formparsers.py:12
+
+=========================== short test summary info ============================
+FAILED tests_mem/test_KPT8_rahasia_perangkat.py::test_KPT8_secret_box_aturan_pakai
+FAILED tests_mem/test_KPT8_rahasia_perangkat.py::test_KPT8_U1_token_baru_tampil_sekali_dan_hanya_hash_tersimpan
+FAILED tests_mem/test_KPT8_rahasia_perangkat.py::test_KPT8_U2_ingest_mencocokkan_hash
+FAILED tests_mem/test_KPT8_rahasia_perangkat.py::test_KPT8_U3_token_lama_tetap_berlaku_sesudah_migrasi
+FAILED tests_mem/test_KPT8_rahasia_perangkat.py::test_KPT8_U4_ganti_token_memutus_token_lama
+FAILED tests_mem/test_KPT8_rahasia_perangkat.py::test_KPT8_U5_lihat_saja_tanpa_token_dan_tidak_bisa_ganti
+FAILED tests_mem/test_KPT8_rahasia_perangkat.py::test_KPT8_U6_ganti_token_perangkat_pt_lain_ditolak
+FAILED tests_mem/test_KPT8_rahasia_perangkat.py::test_KPT8_U7_token_pengingat_dibungkus
+FAILED tests_mem/test_KPT8_rahasia_perangkat.py::test_KPT8_U8_tanpa_kunci_disimpan_polos
+FAILED tests_mem/test_KPT8_rahasia_perangkat.py::test_KPT8_U9_token_polos_lama_dibungkus_saat_dibaca
+FAILED tests_mem/test_KPT8_rahasia_perangkat.py::test_KPT8_U10_satu_konfigurasi_terisi_disalin
+FAILED tests_mem/test_KPT8_rahasia_perangkat.py::test_KPT8_U11_dua_koneksi_berbeda_tidak_digabung
+FAILED tests_mem/test_KPT8_rahasia_perangkat.py::test_KPT8_U12_field_koneksi_ditolak_setelah_koneksi_tunggal
+FAILED tests_mem/test_KPT8_rahasia_perangkat.py::test_KPT8_U14_peran_lama_hr_manage_settings_diberi_izin_integrasi
+FAILED tests_mem/test_KPT8_rahasia_perangkat.py::test_KPT8_U13_izin_integrasi_sendiri
+FAILED tests_mem/test_KPT8_rahasia_perangkat.py::test_KPT8_U15_hidup_mati_pengenal_gambar_di_registry
+16 failed, 1 warning in 1.46s

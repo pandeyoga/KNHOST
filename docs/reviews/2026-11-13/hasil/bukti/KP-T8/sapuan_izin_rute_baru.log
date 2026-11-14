@@ -1,0 +1,45 @@
+== HEAD ==
+mode cepat · awalan /api/ · 1780 rute (803 GET) · 7923 permintaan · 152.8 dtk
+  pelanggaran: 20 (M0 6, M1 14)
+== sesudah ==
+mode cepat · awalan /api/ · 1785 rute (804 GET) · 7944 permintaan · 78.8 dtk
+  pelanggaran: 20 (M0 6, M1 14)
+Daftar pelanggaran identik (20, tidak ada rute KP-T8).
+kosong GET /api/admin/integrations 403 ditolak
+kosong GET /api/admin/integrations/whatsapp 403 ditolak
+kosong POST /api/admin/integrations/gemini/test 403 ditolak
+kosong POST /api/admin/integrations/openai/test 403 ditolak
+kosong POST /api/admin/integrations/whatsapp/adopt 403 ditolak
+kosong POST /api/admin/integrations/whatsapp/test 403 ditolak
+kosong POST /api/hr/devices/{dev_id}/rotate-token 403 ditolak
+kosong PUT /api/admin/integrations 403 ditolak
+kosong PUT /api/admin/integrations/whatsapp 403 ditolak
+mgr0 GET /api/admin/integrations 403 ditolak
+mgr0 GET /api/admin/integrations/whatsapp 403 ditolak
+mgr0 POST /api/admin/integrations/gemini/test 403 ditolak
+mgr0 POST /api/admin/integrations/openai/test 403 ditolak
+mgr0 POST /api/admin/integrations/whatsapp/adopt 403 ditolak
+mgr0 POST /api/admin/integrations/whatsapp/test 403 ditolak
+mgr0 POST /api/hr/devices/{dev_id}/rotate-token 403 ditolak
+mgr0 PUT /api/admin/integrations 403 ditolak
+mgr0 PUT /api/admin/integrations/whatsapp 403 ditolak
+penuh GET /api/admin/integrations 200 lolos
+penuh GET /api/admin/integrations/whatsapp 200 lolos
+sopir GET /api/admin/integrations 403 ditolak
+sopir GET /api/admin/integrations/whatsapp 403 ditolak
+sopir POST /api/admin/integrations/gemini/test 403 ditolak
+sopir POST /api/admin/integrations/openai/test 403 ditolak
+sopir POST /api/admin/integrations/whatsapp/adopt 403 ditolak
+sopir POST /api/admin/integrations/whatsapp/test 403 ditolak
+sopir POST /api/hr/devices/{dev_id}/rotate-token 403 ditolak
+sopir PUT /api/admin/integrations 403 ditolak
+sopir PUT /api/admin/integrations/whatsapp 403 ditolak
+tanpa_token GET /api/admin/integrations 401 ditolak
+tanpa_token GET /api/admin/integrations/whatsapp 401 ditolak
+tanpa_token POST /api/admin/integrations/gemini/test 401 ditolak
+tanpa_token POST /api/admin/integrations/openai/test 401 ditolak
+tanpa_token POST /api/admin/integrations/whatsapp/adopt 401 ditolak
+tanpa_token POST /api/admin/integrations/whatsapp/test 401 ditolak
+tanpa_token POST /api/hr/devices/{dev_id}/rotate-token 401 ditolak
+tanpa_token PUT /api/admin/integrations 401 ditolak
+tanpa_token PUT /api/admin/integrations/whatsapp 401 ditolak

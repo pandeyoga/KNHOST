@@ -1,0 +1,55 @@
+# KP-T6 — uji penerimaan di KODE BARU (+ test_PK14_indeks_wajib.py), -s: keluaran skrip migrasi
+
+...............Argumen tidak dikenal atau bertentangan: --salah (tanpa argumen / --dry-run untuk lapor, --apply untuk menulis)
+== KP-T6 lapisan template PT — mode lapor (1 baris pdf_templates) ==
+Baris tanpa entity_id → "all": 1 (belum ditulis — mode lapor)
+  - invoice
+Jenis dokumen dengan baris semua PT kembar: 0 (tidak diubah — H6, bereskan dulu)
+Indeks unik lama pada doc_type saja: -
+(mode lapor; jalankan dengan --apply untuk menulis)
+== KP-T6 lapisan template PT — mode tulis (1 baris pdf_templates) ==
+Baris tanpa entity_id → "all": 1
+  - invoice
+Jenis dokumen dengan baris semua PT kembar: 0 (tidak diubah — H6, bereskan dulu)
+Indeks unik lama pada doc_type saja: -
+Ditulis: 1 · indeks dihapus: -
+== KP-T6 lapisan template PT — mode tulis (1 baris pdf_templates) ==
+Baris tanpa entity_id → "all": 0
+Jenis dokumen dengan baris semua PT kembar: 0 (tidak diubah — H6, bereskan dulu)
+Indeks unik lama pada doc_type saja: -
+Ditulis: 0 · indeks dihapus: -
+..[bootstrap] FASE F lifecycle backfill: 5 produk distempel 'produksi'
+.....
+=============================== warnings summary ===============================
+../../venv311/lib/python3.11/site-packages/starlette/formparsers.py:12
+  /tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/venv311/lib/python3.11/site-packages/starlette/formparsers.py:12: PendingDeprecationWarning: Please use `import python_multipart` instead.
+    import multipart
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+==================================== PASSES ====================================
+________________________ test_U13_mode_enforce_dan_warn ________________________
+------------------------------ Captured log call -------------------------------
+=========================== short test summary info ============================
+PASSED tests_mem/test_KPT6_cetak_per_pt.py::test_KPT6_U1_identitas_dari_profil_pt
+PASSED tests_mem/test_KPT6_cetak_per_pt.py::test_KPT6_U2_teks_lama_tetap_dan_selisih_dilaporkan
+PASSED tests_mem/test_KPT6_cetak_per_pt.py::test_KPT6_U3_pakai_profil
+PASSED tests_mem/test_KPT6_cetak_per_pt.py::test_KPT6_U4_salin_ke_profil_npwp_tidak_sah
+PASSED tests_mem/test_KPT6_cetak_per_pt.py::test_KPT6_U4b_salin_ke_profil_berhasil
+PASSED tests_mem/test_KPT6_cetak_per_pt.py::test_KPT6_U5_teks_kop_ditolak
+PASSED tests_mem/test_KPT6_cetak_per_pt.py::test_KPT6_U6_naskah_per_pt
+PASSED tests_mem/test_KPT6_cetak_per_pt.py::test_KPT6_U7_kunci_grup_ditolak_di_lapisan_pt
+PASSED tests_mem/test_KPT6_cetak_per_pt.py::test_KPT6_U8_buang_lapisan_pt
+PASSED tests_mem/test_KPT6_cetak_per_pt.py::test_KPT6_U8b_urutan_lapisan
+PASSED tests_mem/test_KPT6_cetak_per_pt.py::test_KPT6_U9_token_rekening_bank
+PASSED tests_mem/test_KPT6_cetak_per_pt.py::test_KPT6_U10_token_tak_dikenal
+PASSED tests_mem/test_KPT6_cetak_per_pt.py::test_KPT6_U11_cakupan_pt
+PASSED tests_mem/test_KPT6_cetak_per_pt.py::test_KPT6_U11b_contoh_pratinjau_dan_cetak_ikut_cakupan
+PASSED tests_mem/test_KPT6_cetak_per_pt.py::test_KPT6_U12_mesin_lama_tanpa_nama_tertulis_mati
+PASSED tests_mem/test_KPT6_cetak_per_pt.py::test_KPT6_U13_migrasi_lapisan_grup
+PASSED tests_mem/test_PK14_indeks_wajib.py::test_U12_pembanding_indeks
+PASSED tests_mem/test_PK14_indeks_wajib.py::test_U13_mode_enforce_dan_warn
+PASSED tests_mem/test_PK14_indeks_wajib.py::test_U14a_rencana_kembar_jadi_pesan
+PASSED tests_mem/test_PK14_indeks_wajib.py::test_U14b_kasus_kembar_jadi_pesan
+PASSED tests_mem/test_PK14_indeks_wajib.py::test_U14c_nota_denda_kembar_kembalikan_yang_ada
+PASSED tests_mem/test_PK14_indeks_wajib.py::test_U14d_jurnal_kembar_kembalikan_yang_ada
+22 passed, 1 warning in 3.14s

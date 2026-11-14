@@ -1,0 +1,13 @@
+# tests_mem seluruhnya — SEBELUM (HEAD eef7bb9)
+762 passed, 2 skipped, 2 xfailed, 11 warnings in 359.47s (0:05:59)
+
+real	6m7.691s
+user	5m2.402s
+sys	0m2.524s
+
+# tests_mem seluruhnya — SESUDAH (KP-T6)
+778 passed, 2 skipped, 2 xfailed, 11 warnings in 274.56s (0:04:34)
+
+real	4m41.773s
+user	4m43.733s
+sys	0m3.451s

@@ -1,0 +1,15 @@
+Baris STATIK: 64  (HEAD a323bb0: 60)
+▶ guard:config_text SELF-TEST (bukti-merah satu kasus per aturan T1–T7) → rc=0 (0 dtk) —   SELF-TEST HIJAU (0 gagal)
+▶ guard:config_text (INV-CFG-TXT, teks Pengaturan awam & bersub-judul) → rc=0 (0 dtk) — [PASS] 3024 cek lolos, 0 pelanggaran.
+▶ config_key_index (KF-T4, indeks kunci layar selaras registry) → rc=0 (0 dtk) — configKeyIndex.json selaras registry
+▶ config_wiring (INV-CFG-01/04, satu sumber kebenaran) → rc=0 (10 dtk) — ✅ INV-CFG: setiap setting terdeklarasi punya pembaca kode DAN jalur ubah yang nyata; tidak ada editor ganda.
+▶ config_wiring SELF-TEST (bukti-merah guardrail) → rc=0 (28 dtk) — SELF-TEST: PASS — guardrail terbukti bisa memerah
+▶ guard:config_fallback SELF-TEST (bukti-merah cadangan ≠ bawaan, konstanta, pengecualian basi) → rc=0 (12 dtk) — SELF-TEST: PASS — penjaga terbukti bisa memerah
+▶ guard:config_fallback (INV-CFG-09, cadangan = bawaan registry) → rc=0 (4 dtk) — [PASS] 143 cek lolos, 0 pelanggaran.
+▶ guard:config_entity SELF-TEST (bukti-merah value_of tanpa PT dokumen) → rc=0 (7 dtk) — SELF-TEST: PASS — penjaga terbukti bisa memerah
+▶ guard:config_entity (INV-CFG-10, nilai PT diteruskan) → rc=0 (4 dtk) — [PASS] 143 cek lolos, 0 pelanggaran.
+Mode non-quick (tidak dijalankan di sini):
+13:#                                          + config_roundtrip (KF-T8, lingkungan B, ±90 s tambahan)
+513:  skip_gate "config_roundtrip (INV-CFG-08, tiap kunci tulis→baca tiga jalur)" "mode --quick"   # KF-T8
+562:  run_gate "config_roundtrip (INV-CFG-08, tiap kunci tulis→baca tiga jalur)" "python -m pytest backend/tests_mem/test_KFT8_putaran_pengaturan.py -n 0 -q"
+564:  run_gate "config_roundtrip (INV-CFG-08, tiap kunci tulis→baca tiga jalur)" "echo 'pasang mongomock-motor (lihat 03_LINGKUNGAN_UJI §3)'; exit 1"

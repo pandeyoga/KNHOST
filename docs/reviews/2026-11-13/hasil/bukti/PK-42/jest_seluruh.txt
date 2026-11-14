@@ -1,0 +1,12 @@
+# Jest seluruh suite (folder salinan, CI=true)
+## HEAD c38fc92
+Test Suites: 35 failed, 84 passed, 119 total
+Tests:       649 passed, 649 total
+## Kode baru
+Test Suites: 35 failed, 85 passed, 120 total
+Tests:       675 passed, 675 total
+
+## Selisih daftar suite (lulus/gagal dimuat) HEAD → baru
+89a90
+> PASS src/features/__tests__/pk42LayarKeuangan.test.js
+(35 suite yang gagal dimuat sama persis: @radix-ui/cmdk tidak termuat lokal — kendala lingkungan; lihat jest_suite_lama_tiruan.txt)

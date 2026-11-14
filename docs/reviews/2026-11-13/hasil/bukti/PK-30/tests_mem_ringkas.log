@@ -1,0 +1,6 @@
+HEAD eef7bb9:
+762 passed, 2 skipped, 2 xfailed, 9 warnings in 385.08s (0:06:25)
+serah-terima (a):
+774 passed, 2 skipped, 11 xfailed, 9 warnings in 306.72s (0:05:06)
+serah-terima (b) / akhir:
+784 passed, 2 skipped, 2 xfailed, 9 warnings in 443.63s (0:07:23)

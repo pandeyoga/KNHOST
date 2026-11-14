@@ -1,0 +1,9 @@
+## verify_data_integrity.layer_config_invariants di database tiruan kosong (mongomock-motor; salinan berjalur ke worktree; audit_config_wiring berjalur worktree; bukan database backend/.env)
+
+L4-CFG — Invarian Pusat Pengaturan (FASE G-0 · satu sumber kebenaran)
+  [PASS] INV-CFG-01: 430 setting (registry 430) — 394 aktif & bisa diubah user, 36 ditandai tidak dipakai + alasan; nol tersembunyi/palsu/mati
+  [PASS] INV-CFG-02: menu → route → SettingsHub → SettingEditor tersambung
+  [PASS] INV-CFG-03: 430 entri registry lengkap (consumers · alasan · bentuk tabel)
+  [PASS] INV-CFG-04: satu-satunya jalur tulis konfigurasi dari UI adalah PUT /api/config/values
+  [PASS] INV-CFG-05: 0 nilai konfigurasi tersimpan patuh batas (min/max/enum) — mesin tidak pernah menerima angka liar
+{'pass': 5, 'fail': 0, 'warn': 0}

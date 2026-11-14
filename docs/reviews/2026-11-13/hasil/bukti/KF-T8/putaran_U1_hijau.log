@@ -1,0 +1,16 @@
+## python -m pytest backend/tests_mem/test_KFT8_putaran_pengaturan.py -n 0 -q (+ -p no:cacheprovider -rx) — worktree a323bb0 + KF-T8
+=========================== short test summary info ============================
+XFAIL backend/tests_mem/test_KFT8_putaran_pengaturan.py::test_KFT8_putaran[allocation.allow_intercompany] - KF-04 — P8: pembaca lama (get_effective_settings) tidak menerapkan penimpa wajib_transfer_antar_pt; nilai PT true tetap terbaca padahal value_of = false (hanya get_allocation_policy yang menerapkannya sendiri)
+XFAIL backend/tests_mem/test_KFT8_putaran_pengaturan.py::test_KFT8_putaran[returns.grade_price_factors] - KF-04 — P2: pembaca lama (get_effective_settings) menggabung tabel PT dengan tabel grup (deep-merge); pasangan yang tidak ada di tabel PT tetap terbaca dari grup, value_of benar
+434 passed, 2 xfailed, 1 warning in 99.43s (0:01:39)
+
+real	1m49.487s
+user	1m46.682s
+sys	0m1.091s
+
+## pohon main terbaru (bcce72a + tambalan KF-T8, salinan git archive)
+436 passed, 2 xfailed, 1 warning in 87.66s (0:01:27)
+
+real	1m38.055s
+user	1m36.492s
+sys	0m0.897s

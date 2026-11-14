@@ -1,0 +1,30 @@
+== KP-T8 rahasia & perangkat — mode lapor · kunci enkripsi terpasang ==
+1. Perangkat absen ber-token polos: 1 (belum diubah — mode lapor)
+   - dev_lama_contoh Mesin Lama (ent_ksc) token berakhiran …c123 · ditandai disarankan ganti
+2. Token WhatsApp polos: 2
+   - alerts.wa.fonnte_token
+   - integration_settings.whatsapp.access_token
+3. Koneksi WhatsApp: dua koneksi berbeda — TIDAK digabung; putuskan di Pengaturan › Integrasi & Sistem › Integrasi & Audit
+   - Pengingat: Fonnte · token ada
+   - Kirim Dokumen: Meta WhatsApp Cloud · nomor 1098765 · token ada
+4. Peran pemegang hr.manage_settings tanpa integration.manage: 1
+   - cr_sdm_lama (Pengatur SDM Lama, kustom)
+(mode lapor; jalankan dengan --apply untuk menulis)
+== KP-T8 rahasia & perangkat — mode tulis · kunci enkripsi terpasang ==
+1. Perangkat absen ber-token polos: 1 · diubah 1
+   - dev_lama_contoh Mesin Lama (ent_ksc) token berakhiran …c123 · ditandai disarankan ganti
+2. Token WhatsApp polos: 2 · dibungkus 2
+   - alerts.wa.fonnte_token
+   - integration_settings.whatsapp.access_token
+3. Koneksi WhatsApp: dua koneksi berbeda — TIDAK digabung; putuskan di Pengaturan › Integrasi & Sistem › Integrasi & Audit · ditulis tidak
+   - Pengingat: Fonnte · token ada
+   - Kirim Dokumen: Meta WhatsApp Cloud · nomor 1098765 · token ada
+4. Peran pemegang hr.manage_settings tanpa integration.manage: 1 · diberi 1
+   - cr_sdm_lama (Pengatur SDM Lama, kustom)
+== KP-T8 rahasia & perangkat — mode tulis · kunci enkripsi terpasang ==
+1. Perangkat absen ber-token polos: 0 · diubah 0
+2. Token WhatsApp polos: 0 · dibungkus 0
+3. Koneksi WhatsApp: dua koneksi berbeda — TIDAK digabung; putuskan di Pengaturan › Integrasi & Sistem › Integrasi & Audit · ditulis tidak
+   - Pengingat: Fonnte · token ada
+   - Kirim Dokumen: Meta WhatsApp Cloud · nomor 1098765 · token ada
+4. Peran pemegang hr.manage_settings tanpa integration.manage: 0 · diberi 0

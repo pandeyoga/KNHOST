@@ -1,0 +1,328 @@
+FFFFFFFFFFFFFFFFF                                                        [100%]
+=================================== FAILURES ===================================
+____________________ test_PMT1_U1_daftar_masuk_dari_master _____________________
+
+klien = <httpx.AsyncClient object at 0x7fdf93616410>
+orang = {'sls': {'id': 'usr_uji_bc1b42f1e6', 'name': 'Uji sales 1', 'email': 'uji1.usr_uji_bc1b42f1e6@uji.id', 'role': 'sales'...nt_ksc'}, 'h_mgr': {'Authorization': 'Bearer tok_uji_4ed1f064c0e34f62b9b27dac743c952d', 'X-Entity-Id': 'ent_ksc'}, ...}
+
+    async def test_PMT1_U1_daftar_masuk_dari_master(klien, orang):
+        r = await klien.get("/api/payment-methods", headers=orang["h_sls"], params={"direction": "masuk"})
+>       assert r.status_code == 200, r.text
+E       AssertionError: {"detail": "Not Found"}
+E       assert 404 == 200
+E        +  where 404 = <Response [404 Not Found]>.status_code
+
+tests_mem/test_PMT1_cara_bayar.py:65: AssertionError
+---------------------------- Captured stdout setup -----------------------------
+[bootstrap] SANDI AWAL akun seed (ganti segera): [disamarkan — sandi acak database tiruan]
+[bootstrap] FASE F lifecycle backfill: 5 produk distempel 'produksi'
+[bootstrap] kebersihan data: 5 record dirapikan {'customers': 3, 'suppliers': 0, 'users': 0, 'hr_employees': 2, 'makloons': 0}
+___________________ test_PMT1_U2_matikan_qris_hanya_di_kanda ___________________
+
+klien = <httpx.AsyncClient object at 0x7fdf93616410>
+orang = {'sls': {'id': 'usr_uji_bc1b42f1e6', 'name': 'Uji sales 1', 'email': 'uji1.usr_uji_bc1b42f1e6@uji.id', 'role': 'sales'...nt_ksc'}, 'h_mgr': {'Authorization': 'Bearer tok_uji_4ed1f064c0e34f62b9b27dac743c952d', 'X-Entity-Id': 'ent_ksc'}, ...}
+
+    async def test_PMT1_U2_matikan_qris_hanya_di_kanda(klien, orang):
+        h = orang["h_adm_kanda"]
+        r = await klien.get("/api/entity-masters/payment-methods", headers=h, params={"entity_id": KANDA})
+>       assert r.status_code == 200, r.text
+E       AssertionError: {"detail":"Master 'payment-methods' tidak dikenal"}
+E       assert 404 == 200
+E        +  where 404 = <Response [404 Not Found]>.status_code
+
+tests_mem/test_PMT1_cara_bayar.py:76: AssertionError
+_________________ test_PMT1_U3_kwitansi_alias_disimpan_kanonik _________________
+
+klien = <httpx.AsyncClient object at 0x7fdf93616410>
+db = <motor.motor_asyncio.AsyncIOMotorDatabase object at 0x7fdf910e36d0>
+orang = {'sls': {'id': 'usr_uji_bc1b42f1e6', 'name': 'Uji sales 1', 'email': 'uji1.usr_uji_bc1b42f1e6@uji.id', 'role': 'sales'...nt_ksc'}, 'h_mgr': {'Authorization': 'Bearer tok_uji_4ed1f064c0e34f62b9b27dac743c952d', 'X-Entity-Id': 'ent_ksc'}, ...}
+
+    async def test_PMT1_U3_kwitansi_alias_disimpan_kanonik(klien, db, orang):
+        cus, so = await _pelanggan(db)
+        for kata in ("tunai", "kontan"):
+            r = await _kwitansi(klien, orang["h_mgr"], cus, so, kata)
+            assert r.status_code == 200, r.text
+            rc = await db.ar_receipts.find_one({"id": r.json()["id"]})
+>           assert rc["method"] == "cash", (kata, rc["method"])
+E           AssertionError: ('tunai', 'tunai')
+E           assert 'tunai' == 'cash'
+E             
+E             - cash
+E             + tunai
+
+tests_mem/test_PMT1_cara_bayar.py:113: AssertionError
+_________________ test_PMT1_U4_kwitansi_qris_nonaktif_di_kanda _________________
+
+klien = <httpx.AsyncClient object at 0x7fdf93616410>
+db = <motor.motor_asyncio.AsyncIOMotorDatabase object at 0x7fdf910e36d0>
+orang = {'sls': {'id': 'usr_uji_bc1b42f1e6', 'name': 'Uji sales 1', 'email': 'uji1.usr_uji_bc1b42f1e6@uji.id', 'role': 'sales'...nt_ksc'}, 'h_mgr': {'Authorization': 'Bearer tok_uji_4ed1f064c0e34f62b9b27dac743c952d', 'X-Entity-Id': 'ent_ksc'}, ...}
+
+    async def test_PMT1_U4_kwitansi_qris_nonaktif_di_kanda(klien, db, orang):
+        cus, so = await _pelanggan(db, KANDA)
+        sebelum = await db.ar_receipts.count_documents({})
+        r = await _kwitansi(klien, orang["h_mgr_kanda"], cus, so, "qris", ent=KANDA)
+>       assert (r.status_code, r.json().get("detail")) == (400, "Cara bayar QRIS tidak aktif untuk PT ini."), r.text
+E       AssertionError: {"id":"arc_91cf71da4f8c","number":"KANDA/AR-00001","customer_id":"cus_pmt1_9f0f1a41","customer_name":"Toko PMT1 2","entity_id":"ent_kanda","receipt_date":"2026-11-14T09:01:46.034771+00:00","method":"qris","amount":100000.0,"used_deposit":0.0,"total_funds":100000.0,"applied_total":100000.0,"unapplied_amount":0.0,"deposit_delta":0.0,"allocations":[{"order_id":"so_pmt1_964a8b8f","order_number":"SO-PMT1-2","applied":100000.0,"outstanding_after":900000.0,"payment_status":"partial","entity_id":"ent_kanda","plan_line_seq":0}],"notes":"uji PM-T1","status":"posted","effects_done":true,"variance":{"expected":1000000.0,"funds":100000.0,"capacity":100000.0,"boundary":1000000.0,"boundary_label":"tagihan yang jatuh tempo","delta":-900000.0,"direction":"under","tolerance":5000.0,"needs_decision":true,"target_order_ids":["so_pmt1_964a8b8f"],"decision_id":"","decision_kind":"","decision_number":"","resolved":false,"explain":["Uang masuk Rp 100.000","Tagihan yang jatuh tempo (1 pesanan tujuan) = Rp 1.000.000","Selisih Rp 900.000 KURANG bayar","Toleransi berlaku Rp 5.000 (Pusat Pengaturan → Uang Masuk & Piutang)"]},"created_by":"usr_uji_965ce19156","created_by_name":"Uji manager 2","created_at":"2026-11-14T09:01:46.038529+00:00","updated_at":"2026-11-14T09:01:46.039050+00:00","refs":[{"rel":"settles","doc_type":"sales_order","doc_id":"so_pmt1_964a8b8f","doc_number":"SO-PMT1-2","note":"pembayaran dialokasikan ke pesanan","at":"2026-11-14T09:01:46.038999+00:00"}],"gl_status":"posted","gl_error":"","cash_txn_id":"cash_f0377acbffe9","deposit_credited":true}
+E       assert (200, None) == (400, 'Cara b...ntuk PT ini.')
+E         
+E         At index 0 diff: 200 != 400
+E         Use -v to get more diff
+
+tests_mem/test_PMT1_cara_bayar.py:126: AssertionError
+________________ test_PMT1_U5_rekening_tunggal_abaikan_nonaktif ________________
+
+db = <motor.motor_asyncio.AsyncIOMotorDatabase object at 0x7fdf910e36d0>
+
+    async def test_PMT1_U5_rekening_tunggal_abaikan_nonaktif(db):
+        from services import bank_service
+        eid = await pt_uji("PMT1A")
+        aktif, mati = _id("bank"), _id("bank")
+        for bid, nyala in ((aktif, True), (mati, False)):
+            await db.bank_accounts.insert_one({"id": bid, "name": f"Bank {bid[-4:]}", "account_type": "bank",
+                                               "cash_type": "kas_besar", "entity_id": eid, "is_active": nyala,
+                                               "created_at": now_iso()})
+>       assert await bank_service.sole_account_id(eid, "kas_besar") == aktif
+E       AssertionError: assert '' == 'bank_pmt1_f3007fd9'
+E         
+E         - bank_pmt1_f3007fd9
+
+tests_mem/test_PMT1_cara_bayar.py:139: AssertionError
+________________ test_PMT1_U6_tampil_di_dokumen_wajib_atas_nama ________________
+
+klien = <httpx.AsyncClient object at 0x7fdf93616410>
+db = <motor.motor_asyncio.AsyncIOMotorDatabase object at 0x7fdf910e36d0>
+orang = {'sls': {'id': 'usr_uji_bc1b42f1e6', 'name': 'Uji sales 1', 'email': 'uji1.usr_uji_bc1b42f1e6@uji.id', 'role': 'sales'...nt_ksc'}, 'h_mgr': {'Authorization': 'Bearer tok_uji_4ed1f064c0e34f62b9b27dac743c952d', 'X-Entity-Id': 'ent_ksc'}, ...}
+
+    async def test_PMT1_U6_tampil_di_dokumen_wajib_atas_nama(klien, db, orang):
+        sebelum = await db.bank_accounts.count_documents({})
+        r = await klien.post("/api/bank-accounts", headers=orang["h_adm"], json={
+            "name": "Rek tanpa atas nama", "account_type": "bank", "bank_name": "BCA", "account_number": "123",
+            "show_on_documents": True})
+>       assert (r.status_code, r.json().get("detail")) == (400, PESAN_DOKUMEN), r.text
+E       AssertionError: {"id":"bank_6ba1e5747cb4","name":"Rek tanpa atas nama","account_type":"bank","cash_type":"kas_besar","cash_type_source":"explicit","bank_name":"BCA","account_number":"123","entity_id":"ent_ksc","opening_balance":0.0,"currency":"IDR","note":"","is_active":true,"created_at":"2026-11-14T09:01:46.072147+00:00","updated_at":"2026-11-14T09:01:46.072155+00:00","balance":0.0,"reconciled_balance":0.0,"inflow":0,"outflow":0,"txn_count":0,"unreconciled_count":0}
+E       assert (200, None) == (400, 'Rekeni...or rekening.')
+E         
+E         At index 0 diff: 200 != 400
+E         Use -v to get more diff
+
+tests_mem/test_PMT1_cara_bayar.py:154: AssertionError
+________________ test_PMT1_U7_satu_bawaan_per_pt_dan_cara_bayar ________________
+
+klien = <httpx.AsyncClient object at 0x7fdf93616410>
+orang = {'sls': {'id': 'usr_uji_bc1b42f1e6', 'name': 'Uji sales 1', 'email': 'uji1.usr_uji_bc1b42f1e6@uji.id', 'role': 'sales'...nt_ksc'}, 'h_mgr': {'Authorization': 'Bearer tok_uji_4ed1f064c0e34f62b9b27dac743c952d', 'X-Entity-Id': 'ent_ksc'}, ...}
+
+    async def test_PMT1_U7_satu_bawaan_per_pt_dan_cara_bayar(klien, orang):
+        h = orang["h_adm"]
+        ra = await _rekening(klien, h, payment_method_codes=["transfer", "giro"], default_receiving_methods=["transfer"])
+        assert ra.status_code == 200, ra.text
+        rb = await _rekening(klien, h, payment_method_codes=["transfer"])
+        assert rb.status_code == 200, rb.text
+        a, b = ra.json()["id"], rb.json()["id"]
+        SIMPAN.update(a=a, b=b)
+        r = await klien.patch(f"/api/bank-accounts/{b}", headers=h, json={"default_receiving_methods": ["transfer"]})
+        assert r.status_code == 200, r.text
+        r = await _penerima(klien, h)
+>       assert r.status_code == 200, r.text
+E       AssertionError: {"detail":"Method Not Allowed"}
+E       assert 405 == 200
+E        +  where 405 = <Response [405 Method Not Allowed]>.status_code
+
+tests_mem/test_PMT1_cara_bayar.py:174: AssertionError
+____________________ test_PMT1_U8_rekening_penerima_per_pt _____________________
+
+klien = <httpx.AsyncClient object at 0x7fdf93616410>
+orang = {'sls': {'id': 'usr_uji_bc1b42f1e6', 'name': 'Uji sales 1', 'email': 'uji1.usr_uji_bc1b42f1e6@uji.id', 'role': 'sales'...nt_ksc'}, 'h_mgr': {'Authorization': 'Bearer tok_uji_4ed1f064c0e34f62b9b27dac743c952d', 'X-Entity-Id': 'ent_ksc'}, ...}
+
+    async def test_PMT1_U8_rekening_penerima_per_pt(klien, orang):
+        rk = await _rekening(klien, orang["h_adm_kanda"], entity_id=KANDA)
+        assert rk.status_code == 200, rk.text
+        r = await _penerima(klien, orang["h_sls"])
+>       assert r.status_code == 200, r.text
+E       AssertionError: {"detail": "Method Not Allowed"}
+E       assert 405 == 200
+E        +  where 405 = <Response [405 Method Not Allowed]>.status_code
+
+tests_mem/test_PMT1_cara_bayar.py:188: AssertionError
+__________________ test_PMT1_U9_ubah_nomor_butuh_orang_kedua ___________________
+
+klien = <httpx.AsyncClient object at 0x7fdf93616410>
+db = <motor.motor_asyncio.AsyncIOMotorDatabase object at 0x7fdf910e36d0>
+orang = {'sls': {'id': 'usr_uji_bc1b42f1e6', 'name': 'Uji sales 1', 'email': 'uji1.usr_uji_bc1b42f1e6@uji.id', 'role': 'sales'...nt_ksc'}, 'h_mgr': {'Authorization': 'Bearer tok_uji_4ed1f064c0e34f62b9b27dac743c952d', 'X-Entity-Id': 'ent_ksc'}, ...}
+
+    async def test_PMT1_U9_ubah_nomor_butuh_orang_kedua(klien, db, orang):
+>       await _atur_dua_orang("2")
+
+tests_mem/test_PMT1_cara_bayar.py:202: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests_mem/test_PMT1_cara_bayar.py:198: in _atur_dua_orang
+    await resolver.set_value(MIN_ORANG, nilai, scope_type="entity", scope_id=KSC, actor="uji", reason="uji PM-T1")
+services/config_resolver.py:503: in set_value
+    entry = registry.require(key)
+            ^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+key = 'kontrol.ubah_rekening.min_orang'
+
+    def require(key: str) -> Dict[str, Any]:
+        entry = _REGISTRY.get(key)
+        if not entry:
+>           raise KeyError(f"Setting '{key}' tidak ada di registry")
+E           KeyError: "Setting 'kontrol.ubah_rekening.min_orang' tidak ada di registry"
+
+config_registry.py:389: KeyError
+_____________ test_PMT1_U10_pt_lain_dan_bukan_field_peka_langsung ______________
+
+klien = <httpx.AsyncClient object at 0x7fdf93616410>
+db = <motor.motor_asyncio.AsyncIOMotorDatabase object at 0x7fdf910e36d0>
+orang = {'sls': {'id': 'usr_uji_bc1b42f1e6', 'name': 'Uji sales 1', 'email': 'uji1.usr_uji_bc1b42f1e6@uji.id', 'role': 'sales'...nt_ksc'}, 'h_mgr': {'Authorization': 'Bearer tok_uji_4ed1f064c0e34f62b9b27dac743c952d', 'X-Entity-Id': 'ent_ksc'}, ...}
+
+    async def test_PMT1_U10_pt_lain_dan_bukan_field_peka_langsung(klien, db, orang):
+>       kanda = SIMPAN["kanda"]
+                ^^^^^^^^^^^^^^^
+E       KeyError: 'kanda'
+
+tests_mem/test_PMT1_cara_bayar.py:228: KeyError
+____________________ test_PMT1_U11_pengisian_awal_idempoten ____________________
+
+db = <motor.motor_asyncio.AsyncIOMotorDatabase object at 0x7fdf910e36d0>
+
+    async def test_PMT1_U11_pengisian_awal_idempoten(db):
+        from services import bank_service
+        eid = await pt_uji("PMT1B")
+        bank, kas1, kas2 = _id("bank"), _id("bank"), _id("bank")
+        for bid, jenis in ((bank, "bank"), (kas1, "cash"), (kas2, "cash")):
+            await db.bank_accounts.insert_one({"id": bid, "name": f"Lama {bid[-4:]}", "account_type": jenis,
+                                               "entity_id": eid, "is_active": True, "created_at": now_iso()})
+>       hasil1 = await bank_service.isi_awal_bidang_rekening(tulis=True)
+                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AttributeError: module 'services.bank_service' has no attribute 'isi_awal_bidang_rekening'
+
+tests_mem/test_PMT1_cara_bayar.py:249: AttributeError
+__________________ test_PMT1_U12_izin_putus_dan_kelola_master __________________
+
+klien = <httpx.AsyncClient object at 0x7fdf93616410>
+akun = <function akun.<locals>._akun at 0x7fdf7da93c40>
+sesi = <function sesi.<locals>._sesi at 0x7fdf7da93e20>
+orang = {'sls': {'id': 'usr_uji_bc1b42f1e6', 'name': 'Uji sales 1', 'email': 'uji1.usr_uji_bc1b42f1e6@uji.id', 'role': 'sales'...nt_ksc'}, 'h_mgr': {'Authorization': 'Bearer tok_uji_4ed1f064c0e34f62b9b27dac743c952d', 'X-Entity-Id': 'ent_ksc'}, ...}
+peran_tanpa_acuan = <function peran_tanpa_acuan.<locals>._peran at 0x7fdf7d914c20>
+peran_manajer_kosong = <function peran_manajer_kosong.<locals>._peran at 0x7fdf7d920040>
+peran_sopir = 'driver'
+
+    async def test_PMT1_U12_izin_putus_dan_kelola_master(klien, akun, sesi, orang, peran_tanpa_acuan,
+                                                         peran_manajer_kosong, peran_sopir):
+        baris = {"code": f"uji{next(_n)}", "name": "Cara bayar uji", "needs_account": "bank", "directions": ["masuk"],
+                 "active": True}
+>       h_ta_approve = await sesi(await akun(await peran_tanpa_acuan({"cash": ["approve"]}, label="Tanpa Acuan PMT1 a")))
+                                             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests_mem/test_PMT1_cara_bayar.py:278: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+izin = {'cash': ['approve']}, label = 'Tanpa Acuan PMT1 a'
+
+    async def _peran(izin: Dict[str, list], *, label: str = "") -> str:
+        r = await klien.post("/api/access/roles", headers=kepala_admin,
+                             json={"label": label or f"Tanpa Acuan {next(nomor)}", "base_role": "",
+                                   "permissions": izin, "description": "peran uji"})
+>       assert r.status_code == 200, r.text
+E       AssertionError: {"detail":"Aksi ['approve'] tidak berlaku untuk “Kas & Bank”."}
+E       assert 400 == 200
+E        +  where 400 = <Response [400 Bad Request]>.status_code
+
+tests_mem/conftest.py:157: AssertionError
+________________________ test_PMT1_U13_penjaga_kosakata ________________________
+
+    def test_PMT1_U13_penjaga_kosakata():
+        skrip = REPO / "scripts" / "guardrails" / "verify_payment_vocab.py"
+>       assert skrip.exists(), "penjaga verify_payment_vocab.py belum ada"
+E       AssertionError: penjaga verify_payment_vocab.py belum ada
+E       assert False
+E        +  where False = exists()
+E        +    where exists = PosixPath('<repo>/scripts/guardrails/verify_payment_vocab.py').exists
+
+tests_mem/test_PMT1_cara_bayar.py:302: AssertionError
+___________________ test_PMT1_normalisasi_pintu_bayar_hutang ___________________
+
+db = <motor.motor_asyncio.AsyncIOMotorDatabase object at 0x7fdf910e36d0>
+
+    async def test_PMT1_normalisasi_pintu_bayar_hutang(db):
+        """Bayar tagihan pemasok / kontrabon (satu pintu `ap_payment_service.pay_payable`): kata tak dikenal ditolak
+        SEBELUM niat bayar lahir. Tagihan = fixture."""
+        from services import ap_payment_service as aps
+        vb = _id("vb")
+        await db.vendor_bills.insert_one({"id": vb, "bill_number": "VB-PMT1", "entity_id": KSC, "status": "posted",
+                                          "total": 500_000, "created_at": now_iso()})
+        with pytest.raises(aps.ApPaymentError) as e:
+            await aps.pay_payable(kind="vendor_bill", target_id=vb, actor={"id": "u", "name": "Uji"}, amount=100_000,
+                                  method="bitcoin")
+>       assert (e.value.status_code, str(e.value)) == (400, "Cara bayar tidak dikenal: bitcoin.")
+E       assert (400, 'Pembay...pembayaran).') == (400, 'Cara b...al: bitcoin.')
+E         
+E         At index 1 diff: "Pembayaran (100000.0) melebihi sisa hutang (0.0). Bila memang ingin membayar lebih, pilih keputusan 'Kelebihan jadi uang muka supplier' (selisih pembayaran)." != 'Cara bayar tidak dikenal: bitcoin.'
+E         Use -v to get more diff
+
+tests_mem/test_PMT1_cara_bayar.py:320: AssertionError
+_______________________ test_PMT1_normalisasi_uang_muka ________________________
+
+klien = <httpx.AsyncClient object at 0x7fdf93616410>
+db = <motor.motor_asyncio.AsyncIOMotorDatabase object at 0x7fdf910e36d0>
+orang = {'sls': {'id': 'usr_uji_bc1b42f1e6', 'name': 'Uji sales 1', 'email': 'uji1.usr_uji_bc1b42f1e6@uji.id', 'role': 'sales'...nt_ksc'}, 'h_mgr': {'Authorization': 'Bearer tok_uji_4ed1f064c0e34f62b9b27dac743c952d', 'X-Entity-Id': 'ent_ksc'}, ...}
+
+    async def test_PMT1_normalisasi_uang_muka(klien, db, orang):
+        r = await klien.post("/api/cash-advances", headers=orang["h_adm"], json={
+            "kegiatan": "uji PM-T1", "payment_method": "tunai",
+            "lines": [{"description": "bensin", "qty": 1, "unit_price": 50_000}]})
+        assert r.status_code == 200, r.text
+>       assert (await db.cash_advances.find_one({"id": r.json()["id"]}))["payment_method"] == "cash"
+E       AssertionError: assert 'tunai' == 'cash'
+E         
+E         - cash
+E         + tunai
+
+tests_mem/test_PMT1_cara_bayar.py:329: AssertionError
+__________________ test_PMT1_is_cash_mengganti_himpunan_tunai __________________
+
+    async def test_PMT1_is_cash_mengganti_himpunan_tunai():
+>       from services import payment_method_service as pms
+E       ImportError: cannot import name 'payment_method_service' from 'services' (<repo>/backend/services/__init__.py)
+
+tests_mem/test_PMT1_cara_bayar.py:337: ImportError
+____________________ test_PMT1_master_menolak_isian_tak_sah ____________________
+
+klien = <httpx.AsyncClient object at 0x7fdf93616410>
+orang = {'sls': {'id': 'usr_uji_bc1b42f1e6', 'name': 'Uji sales 1', 'email': 'uji1.usr_uji_bc1b42f1e6@uji.id', 'role': 'sales'...nt_ksc'}, 'h_mgr': {'Authorization': 'Bearer tok_uji_4ed1f064c0e34f62b9b27dac743c952d', 'X-Entity-Id': 'ent_ksc'}, ...}
+
+    async def test_PMT1_master_menolak_isian_tak_sah(klien, orang):
+        r = await klien.post("/api/entity-masters/payment-methods", headers=orang["h_adm"],
+                             json={"code": "aneh", "name": "Aneh", "needs_account": "dompet", "directions": ["masuk"]})
+>       assert r.status_code == 400, r.text
+E       AssertionError: {"detail":"Master 'payment-methods' tidak dikenal"}
+E       assert 404 == 400
+E        +  where 404 = <Response [404 Not Found]>.status_code
+
+tests_mem/test_PMT1_cara_bayar.py:349: AssertionError
+=============================== warnings summary ===============================
+../../venv311/lib/python3.11/site-packages/starlette/formparsers.py:12
+  <venv>/lib/python3.11/site-packages/starlette/formparsers.py:12: PendingDeprecationWarning: Please use `import python_multipart` instead.
+    import multipart
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests_mem/test_PMT1_cara_bayar.py::test_PMT1_U1_daftar_masuk_dari_master
+FAILED tests_mem/test_PMT1_cara_bayar.py::test_PMT1_U2_matikan_qris_hanya_di_kanda
+FAILED tests_mem/test_PMT1_cara_bayar.py::test_PMT1_U3_kwitansi_alias_disimpan_kanonik
+FAILED tests_mem/test_PMT1_cara_bayar.py::test_PMT1_U4_kwitansi_qris_nonaktif_di_kanda
+FAILED tests_mem/test_PMT1_cara_bayar.py::test_PMT1_U5_rekening_tunggal_abaikan_nonaktif
+FAILED tests_mem/test_PMT1_cara_bayar.py::test_PMT1_U6_tampil_di_dokumen_wajib_atas_nama
+FAILED tests_mem/test_PMT1_cara_bayar.py::test_PMT1_U7_satu_bawaan_per_pt_dan_cara_bayar
+FAILED tests_mem/test_PMT1_cara_bayar.py::test_PMT1_U8_rekening_penerima_per_pt
+FAILED tests_mem/test_PMT1_cara_bayar.py::test_PMT1_U9_ubah_nomor_butuh_orang_kedua
+FAILED tests_mem/test_PMT1_cara_bayar.py::test_PMT1_U10_pt_lain_dan_bukan_field_peka_langsung
+FAILED tests_mem/test_PMT1_cara_bayar.py::test_PMT1_U11_pengisian_awal_idempoten
+FAILED tests_mem/test_PMT1_cara_bayar.py::test_PMT1_U12_izin_putus_dan_kelola_master
+FAILED tests_mem/test_PMT1_cara_bayar.py::test_PMT1_U13_penjaga_kosakata - As...
+FAILED tests_mem/test_PMT1_cara_bayar.py::test_PMT1_normalisasi_pintu_bayar_hutang
+FAILED tests_mem/test_PMT1_cara_bayar.py::test_PMT1_normalisasi_uang_muka - A...
+FAILED tests_mem/test_PMT1_cara_bayar.py::test_PMT1_is_cash_mengganti_himpunan_tunai
+FAILED tests_mem/test_PMT1_cara_bayar.py::test_PMT1_master_menolak_isian_tak_sah
+17 failed, 1 warning in 1.82s

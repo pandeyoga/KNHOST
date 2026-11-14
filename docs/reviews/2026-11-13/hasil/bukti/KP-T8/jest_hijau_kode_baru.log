@@ -1,0 +1,17 @@
+PASS src/features/__tests__/kpt8RahasiaPerangkat.test.js
+  KP-T8 mesin absen
+    ✓ baris tanpa token; Ganti token → konfirmasi → token tampil sekali (83 ms)
+    ✓ lihat saja: tanpa tombol Ganti token (7 ms)
+    ✓ buat perangkat → pop-up token (27 ms)
+  KP-T8 integrasi
+    ✓ kartu penyedia: tanpa sakelar & model; tautan ke Pusat Pengaturan; peringatan kunci enkripsi (16 ms)
+    ✓ kartu WhatsApp: token hanya-tulis, dipakai oleh, dua koneksi berbeda + alasan wajib (30 ms)
+  KP-T8 pemakai lama setelah koneksi tunggal
+    ✓ Pusat Dokumen: ringkasan + tautan; simpan hanya isian pemakaian (16 ms)
+    ✓ Penjadwal: ringkasan + tautan; simpan tanpa penyedia (14 ms)
+
+Test Suites: 1 passed, 1 total
+Tests:       7 passed, 7 total
+Snapshots:   0 total
+Time:        0.763 s, estimated 2 s
+Ran all test suites matching /kpt8RahasiaPerangkat/i.

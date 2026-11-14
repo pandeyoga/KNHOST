@@ -1,0 +1,18 @@
+# tests_mem (venv 3.11, -n 0)
+## HEAD c38fc92
+782 passed, 2 skipped, 2 xfailed, 9 warnings in 496.11s (0:08:16)
+EXIT 0
+## Kode baru
+790 passed, 2 skipped, 2 xfailed, 9 warnings in 289.21s (0:04:49)
+EXIT 0
+
+## Modul baru test_PK42_daftar_berhalaman.py di kode baru
+tests_mem/test_PK42_daftar_berhalaman.py::test_PK42_U9_kwitansi_halaman_kedua PASSED [ 12%]
+tests_mem/test_PK42_daftar_berhalaman.py::test_PK42_U9b_kwitansi_cari_nomor_dan_pelanggan PASSED [ 25%]
+tests_mem/test_PK42_daftar_berhalaman.py::test_PK42_U9c_kwitansi_tanpa_halaman_tetap_larik PASSED [ 37%]
+tests_mem/test_PK42_daftar_berhalaman.py::test_PK42_U10_kwitansi_terbaru_tidak_terbuang PASSED [ 50%]
+tests_mem/test_PK42_daftar_berhalaman.py::test_PK42_U11_kas_halaman_dan_hitungan_tab PASSED [ 62%]
+tests_mem/test_PK42_daftar_berhalaman.py::test_PK42_U11b_kas_cari_dan_tanpa_halaman PASSED [ 75%]
+tests_mem/test_PK42_daftar_berhalaman.py::test_PK42_rute_tombol_buat_semua_pt PASSED [ 87%]
+tests_mem/test_PK42_daftar_berhalaman.py::test_PK42_unduh_ikut_cari_daftar PASSED [100%]
+======================== 8 passed, 1 warning in 13.43s =========================
