@@ -224,6 +224,17 @@ async def create_order(payload: SalesOrderCreate, request: Request) -> Dict[str,
     # `DEFAULT_ENTITY_ID` hanya cadangan terakhir (skrip/seed di luar request).
     entity_id = (payload.entity_id or customer.get("entity_id")
                  or active_entity_or(DEFAULT_ENTITY_ID))
+    # PM-T2 — cara bayar & rekening tujuan (daftar induk PM-T1): diperiksa SEBELUM harga dihitung, nomor diambil, dan roll
+    # direservasi — rekening PT lain / bukan penerimaan pelanggan → 400 tanpa pesanan dan tanpa reservasi. "Wajib cara
+    # bayar" hanya untuk pesanan lewat checkout (`POST /api/sales-orders`); pesanan buatan sistem yang memanggil fungsi ini
+    # dari rute lain (konversi pesanan khusus, pengganti retur) tidak membawa cara bayar dan tidak ikut ditolak.
+    from services import payment_code_service as _pcs
+    from services.config_resolver import value_of as _nilai_pengaturan
+    dari_checkout = request.url.path.rstrip("/").endswith("/api/sales-orders")
+    tujuan_bayar = await _pcs.resolve_destination(
+        entity_id, payload.payment_method_code, payload.receiving_account_id,
+        wajib=dari_checkout and bool(await _nilai_pengaturan("payment.wajib_cara_bayar_di_pesanan",
+                                                             {"entity_id": entity_id})))
     # F1a/F1b — harga jual: harga langganan PELANGGAN → harga per-entitas (PT) →
     # harga global `products.price`. Harga khusus per-order (price_approvals) tetap
     # menang di bawah, karena itu keputusan sadar yang disetujui manajemen.
@@ -649,6 +660,8 @@ async def create_order(payload: SalesOrderCreate, request: Request) -> Dict[str,
         "payment_term_code": term_code,
         "payment_term_name": (term or {}).get("name", term_code),
         "payment_status": "pending",
+        # PM-T2 — cara bayar, rekening tujuan + potretnya (D3); kode bayar lahir saat pesanan bayar-dulu dikonfirmasi.
+        **tujuan_bayar, "payment_code": "",
         # KN_17 — snapshot kredit saat order + flag warning + override yang dipakai
         "credit_status_at_order": credit_gate["credit"]["status"],
         "credit_warning": credit_gate["level"] == "warning",
@@ -746,6 +759,8 @@ async def create_order(payload: SalesOrderCreate, request: Request) -> Dict[str,
         "number": order["number"], "customer": customer["name"], "total_amount": total_amount,
         "grand_total": pricing["grand_total"], "ppn_amount": pricing["ppn_amount"],
         "discount_total": pricing["discount_total"], "payment_term": term_code,
+        "payment_method": tujuan_bayar["payment_method_code"],
+        "receiving_account_id": tujuan_bayar["receiving_account_id"],
         "approval_required": appr["requires_approval"], "required_role": appr["required_role"],
         "has_backorder": has_backorder,
         "backorder_lines": len(backorders),

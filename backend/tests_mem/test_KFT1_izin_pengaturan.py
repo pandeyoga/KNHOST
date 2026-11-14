@@ -83,6 +83,10 @@ CRT1_KUNCI = 3
 # AG-T1 — satu kunci baru `ai.kartu_masa_berlaku_jam` (masa berlaku kartu tindakan asisten, berlapis PT) berizin
 # `settings.manage` dan aktif → ikut terhitung di U02 (bisa diubah pemegang `settings.manage`) dan di katalog (U04).
 AGT1_KUNCI = 1
+# PM-T2 — dua kunci baru `payment.wajib_cara_bayar_di_pesanan`, `payment.kode_bayar_awalan` berizin `cash.configure`
+# (kelola rekening & cara bayar): ikut terhitung di katalog (U04) tetapi tidak bisa diubah pemegang `settings.manage` saja
+# (U02 tetap).
+PMT2_KUNCI = 2
 
 
 def _put(key, value, scope_type="entity", scope_id="ent_ksc"):
@@ -147,7 +151,7 @@ async def test_U04_lihat_saja_tidak_bisa_ubah(klien, akun, sesi, peran_tanpa_acu
     # periode tertutup mengunci dokumen; PK-38 kontrol dua orang bayar hutang; KP-T8 hidup/mati & model pengenal gambar;
     # PK-30 selisih panjang roll antar-PT; PM-T1 kontrol dua orang ubah rekening; AG-T1 masa berlaku kartu asisten.
     assert r.json()["total"] == 310 + 5 + KFT6_KUNCI + KFT2_KUNCI + KPT7_KUNCI + PK36_KUNCI + KFT7_KUNCI + PK37_KUNCI \
-        + PK38_KUNCI + KPT8_KUNCI + PK30_KUNCI + PMT1_KUNCI + CRT1_KUNCI + AGT1_KUNCI
+        + PK38_KUNCI + KPT8_KUNCI + PK30_KUNCI + PMT1_KUNCI + CRT1_KUNCI + AGT1_KUNCI + PMT2_KUNCI
 
 
 async def test_U05_manajer_kosong_tidak_lagi_lewat_nama_peran(klien, akun, sesi, peran_manajer_kosong):

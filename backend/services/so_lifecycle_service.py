@@ -90,6 +90,14 @@ async def confirm_core(order_id: str, actor: Dict[str, Any]) -> Dict[str, Any]:
                     {"tasks_count": len(tasks)})
     await recompute_so_status(order_id)
     _final = safe_doc(await db.sales_orders.find_one({"id": order_id}, {"_id": 0}))
+    # PM-T2 — pesanan bayar-dulu mendapat kode bayar (idempoten) SEBELUM dokumen dikirim otomatis, supaya Konfirmasi
+    # Pesanan yang terkirim sudah memuat instruksi bayar. Gagal = dicatat; pesanan tetap terkonfirmasi.
+    try:
+        from services import payment_code_service as _pcs
+        if await _pcs.ensure_for_order(_final or {}):
+            _final = safe_doc(await db.sales_orders.find_one({"id": order_id}, {"_id": 0}))
+    except Exception as exc:  # noqa: BLE001
+        logger.warning("[confirm_order] kode bayar %s gagal dibuat: %s", order_id, exc)
     # Fase 5 — auto-kirim WhatsApp bila ada aturan aktif (best-effort, non-blocking).
     try:
         from services import delivery_service as _ds

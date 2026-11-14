@@ -89,6 +89,8 @@ SCOPE_FIELD: Dict[str, Optional[str]] = {
     # CR-T1 — profil kredit dan pengajuannya milik PT PESANAN (bukan PT pemilik data pelanggan).
     "customer_credit_profiles": "entity_id",
     "credit_profile_requests": "entity_id",
+    # PM-T2 — kode bayar milik PT pesanannya (unik lintas PT, dibaca lewat pesanan).
+    "payment_codes": "entity_id",
     "number_sequences": SHARED,
     "counters": SHARED,
     "user_onboarding": SHARED,
@@ -207,6 +209,7 @@ SCOPED_COLLECTIONS = {
     "product_lines",
     # PM-T1 — master cara bayar (berlapis) + perubahan rekening yang menunggu orang kedua (rekening satu PT).
     "payment_methods", "bank_account_changes",
+    "payment_codes",                  # PM-T2 — kode bayar pesanan (milik PT pesanan)
     # FASE T — master tahapan proses (berlapis global→badan usaha). Alasannya sama
     # dengan lini: tahap khusus satu badan usaha tidak boleh terbaca badan usaha
     # lain, sedangkan baris global tetap terlihat semua lewat

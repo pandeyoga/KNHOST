@@ -9,6 +9,7 @@ from dependencies import audit, has_permission, require_permission
 from entity_scope import assert_entity_access, entity_ctx
 from schemas import SoOverrideIn
 from services import amendment_service as amd_svc
+from services import payment_code_service as _pcs
 from services import so_override_service as svc
 
 router = APIRouter(prefix="/api")
@@ -30,7 +31,9 @@ async def override_context(order_id: str, request: Request) -> Dict[str, Any]:
     return {"locked_reason": await svc.lock_reason(order), "addresses": cust.get("addresses") or [],
             # PK-38 (FX-16) — layar mematikan pilihan termin yang lebih longgar bila pelaku tidak berizin.
             "can_loosen_term": await has_permission(actor, "order", "release_unpaid"),
-            "current_term": await svc.current_term(order)}
+            "current_term": await svc.current_term(order),
+            # PM-T2 — pilihan cara bayar & rekening penerima PT pesanan untuk dua isian override (tanpa saldo).
+            **await _pcs.receiving_options(order.get("entity_id") or "")}
 
 
 @router.post("/sales-orders/{order_id}/override")

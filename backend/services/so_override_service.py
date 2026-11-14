@@ -1,6 +1,6 @@
 """2026-10 — OVERRIDE SO oleh Admin Sales · Manager · Admin, SEBELUM picking.
 
-Header (alamat · metode · tanggal · termin · catatan) dan baris (qty · tambah · hapus)
+Header (alamat · metode · tanggal · termin · cara bayar & rekening tujuan [PM-T2] · catatan) dan baris (qty · tambah · hapus)
 langsung berlaku dan tercatat sebagai amandemen `auto_applied`. Harga/diskon TIDAK
 langsung berlaku: lahir amandemen menunggu pemegang izin `order.approve_price_edit`.
 Reservasi mengikuti mesin yang ada (lepas sebagian / alokasi FEFO + backorder).
@@ -20,7 +20,10 @@ from services.so_status import stage_fields
 EDITABLE_STATUSES = ("draft", "reserved", "waiting_approval", "approved", "waiting_stock", "confirmed")
 HEADER_LABEL = {"shipping_address_id": "Alamat kirim", "fulfillment_method": "Metode pemenuhan",
                 "delivery_date": "Tanggal kirim", "pickup_date": "Tanggal ambil",
-                "payment_term_code": "Termin bayar", "notes": "Catatan"}
+                "payment_term_code": "Termin bayar", "payment_method_code": "Cara bayar",
+                "receiving_account_id": "Rekening tujuan", "notes": "Catatan"}
+#: PM-T2 — dua field yang diperiksa BERSAMA (`payment_code_service.resolve_destination`, langkah 2–4 spesifikasi).
+BAYAR_FIELDS = ("payment_method_code", "receiving_account_id")
 PRICE_FIELDS = ("price", "discount_percent")
 EPS = 0.01
 
@@ -93,7 +96,7 @@ async def _header(order: Dict[str, Any], header: Dict[str, Any], *,
     diff: List[Dict[str, Any]] = []
     loosened = False
     for f, label in HEADER_LABEL.items():
-        if header.get(f) is None:
+        if header.get(f) is None or f in BAYAR_FIELDS:
             continue
         new, old = str(header[f]).strip(), str(order.get(f) or "")
         if new == old:
@@ -129,7 +132,45 @@ async def _header(order: Dict[str, Any], header: Dict[str, Any], *,
     method = patch.get("fulfillment_method", order.get("fulfillment_method") or "kirim")
     if method == "ambil" and not patch.get("pickup_date", order.get("pickup_date")):
         raise OverrideError("Order Pengambilan membutuhkan tanggal ambil.")
+    if any(header.get(f) is not None for f in BAYAR_FIELDS):
+        await _tujuan_bayar(order, header, patch, diff)
     return patch, diff
+
+
+async def _tujuan_bayar(order: Dict[str, Any], header: Dict[str, Any], patch: Dict[str, Any],
+                        diff: List[Dict[str, Any]]) -> None:
+    """PM-T2 — cara bayar & rekening tujuan diperiksa sama dengan `create_order` (daftar induk PM-T1; rekening milik PT
+    pesanan, aktif, untuk penerimaan pelanggan, melayani cara bayar itu). Cara bayar diganti tanpa memilih rekening →
+    rekening bawaan cara bayar baru. Perubahan = baris amandemen (nama, bukan kode/id)."""
+    from fastapi import HTTPException
+    from services import payment_code_service as pcs
+    from services import payment_method_service as pms
+    eid = order.get("entity_id") or ""
+    old_m, old_a = str(order.get("payment_method_code") or ""), str(order.get("receiving_account_id") or "")
+    new_m = str(header["payment_method_code"]).strip() if header.get("payment_method_code") is not None else old_m
+    try:
+        kanon = pms.normalize(new_m) if new_m else ""
+    except ValueError:
+        kanon = new_m   # pesan berkalimat dari resolve_destination
+    if header.get("receiving_account_id") is not None:
+        new_a = str(header["receiving_account_id"]).strip()
+    else:
+        new_a = old_a if kanon == old_m else ""
+    try:
+        hasil = await pcs.resolve_destination(eid, new_m, new_a)
+    except HTTPException as exc:
+        raise OverrideError(str(exc.detail)) from exc
+    if hasil["payment_method_code"] != old_m:
+        patch["payment_method_code"] = hasil["payment_method_code"]
+        diff.append(_chg("Pesanan", "payment_method_code", HEADER_LABEL["payment_method_code"],
+                         (await pms.nama(eid, old_m)) if old_m else "—",
+                         (await pms.nama(eid, hasil["payment_method_code"])) if hasil["payment_method_code"] else "—"))
+    if hasil["receiving_account_id"] != old_a:
+        patch["receiving_account_id"] = hasil["receiving_account_id"]
+        patch["receiving_account"] = hasil["receiving_account"]
+        diff.append(_chg("Pesanan", "receiving_account_id", HEADER_LABEL["receiving_account_id"],
+                         pcs.teks_rekening(order.get("receiving_account")) if old_a else "—",
+                         pcs.teks_rekening(hasil["receiving_account"]) if hasil["receiving_account_id"] else "—"))
 
 
 HELD_STATUSES = ("reserved", "committed", "picked", "packed")

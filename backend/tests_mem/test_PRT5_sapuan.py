@@ -47,6 +47,15 @@ def _kunci(metode: str, jalur: str) -> str:
     return f"{metode} {jalur}"
 
 
+#: Perubahan SAH sesudah PR-T5 oleh unit lain (bukan gerbang laporan): {(peran, rute): (lama, baru, alasan)}.
+SESUDAH_PRT5 = {
+    ("finance", "GET /api/config/registry"): (403, 200, (
+        "PM-T2 — dua kunci pengaturan baru (`payment.wajib_cara_bayar_di_pesanan`, `payment.kode_bayar_awalan`) "
+        "berizin `cash.configure`; Finance memegangnya, jadi katalog Pusat Pengaturan terbuka hanya untuk kunci yang "
+        "boleh diubahnya (aturan KF-T1)")),
+}
+
+
 def _memegang_laporan(peran: str) -> bool:
     return "view" in (permissions_config.DEFAULT_PERMISSIONS.get(peran, {}).get("reports") or [])
 
@@ -78,6 +87,8 @@ async def test_PRT5_U14_kode_jawaban_peran_bawaan(klien, akun, sesi):
         for rute, kode in rutes.items():
             lama = sebelum[peran][rute]
             if lama == kode:
+                continue
+            if SESUDAH_PRT5.get((peran, rute), (None, None))[:2] == (lama, kode):
                 continue
             berubah.append((peran, rute, lama, kode))
             if peran in ("admin", "manager"):

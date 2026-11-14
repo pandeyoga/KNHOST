@@ -52,6 +52,7 @@ Sebelum membuat apapun yang baru, tanya: **"Apakah ini sudah ada di sini?"**
 | Penomoran Dokumen *(KP-T5)* | `doc_number_formats` (+ penghitung `number_sequences`) | `core_utils.next_doc_number` (satu-satunya pembuat nomor), `services/doc_numbering_service.py`, katalog `doc_number_kinds.py`, `routers/doc_numbering.py` | `DocNumberingPut`, `DocNumberingPreview` | `DocNumberingView` (Pengaturan › Dokumen & Cetak › Penomoran Dokumen) |
 | Usulan Jurnal Manual *(KF-T6)* | `journal_proposals` | `routers/gl.py` (`POST /gl/journal` → 202, `/gl/journal-proposals*`), `services/journal_proposal_service.py` | `JournalEntryCreate`, `ProposalReject` | `JournalProposalsPanel` (Buku Besar › Jurnal › Menunggu persetujuan) |
 | Cara Bayar *(PM-T1)* | `payment_methods` (master berlapis `payment-methods`) | `routers/payment_methods.py` (`GET /api/payment-methods`), `routers/entity_masters.py` (kelola, `cash.configure`), `services/payment_method_service.py` (`normalize`, `get`, `active_for`, `is_cash` — dipanggil kwitansi, bayar hutang, kontrabon, biaya masuk, uang muka, denda, selisih bayar, antar-PT) | — | `config/paymentMethods.js` (`usePaymentMethods`), `EntityMastersView` (Pengaturan › Keuangan & Pajak › Master per Badan Usaha) |
+| Kode Bayar & Instruksi Bayar *(PM-T2)* | `payment_codes` (+ field pesanan `payment_method_code`, `receiving_account_id`, `receiving_account`, `payment_code`; `payment_plans.lines[].pay_code`) | `services/payment_code_service.py` (`resolve_destination` dipanggil `create_order` & override SO; `ensure_for_order` dari `confirm_core`; `ensure_for_line` untuk jadwal tagihan CR-T2; `find_in_text` untuk PM-T3; `instruction`), `routers/payment_methods.py` (`GET /api/sales-orders/{id}/payment-instruction`), `services/pdf_resolvers.py` (blok "Instruksi Pembayaran" Konfirmasi Pesanan & Faktur) | `SalesOrderCreate`, `SoOverrideIn` | `CheckoutPaymentDestination` (checkout desktop & HP), `OrderPaymentInstructionCard` (detail pesanan), `SalesOrderOverrideDialog` |
 | Perubahan Rekening *(PM-T1)* | `bank_account_changes` | `routers/bank.py` (`POST/PATCH /bank-accounts` → 202 bila dua orang, `GET /bank-account-changes`, `POST …/{id}/decision`), `services/bank_account_change_service.py` | `BankAccountCreate`, `BankAccountUpdate`, `BankAccountChangeDecision` | `BankAccountChangesPanel`, `BankAccountForm` (Keuangan › Kas & Bank › Rekening & Saldo) |
 | Profil Kredit Pelanggan *(CR-T1)* | `customer_credit_profiles` (satu per pelanggan × PT pesanan), `credit_profile_requests` | `routers/credit_profiles.py` (`GET /customers/{id}/credit-profile`, `POST /customers/{id}/credit-profile-requests`, `GET /credit-profile-requests`, `POST …/{id}/decision`, `POST …/{id}/cancel`), `services/credit_profile_service.py` (`effective`, `status_from` — dipakai `customer_service.compute_customer_credit`, `ar_aging_service`) | `CreditProfileRequestCreate`, `CreditProfileDecision`, `CreditProfileCancel` | `CustomerCreditTab` + `CreditProfileRequestModal` (kartu pelanggan › Kredit), `CreditProfileRequestsPanel` (Keuangan › Piutang › Kredit & Plafon) |
 | Kartu Tindakan Asisten *(AG-T1)* | `ai_action_proposals` | `routers/ai_assist.py` (`GET /api/ai/actions/{id}`, `POST …/{id}/confirm`, `POST …/{id}/dismiss`), `services/ai_actions.py` (disiapkan alat `propose_action`, `POST /api/ai/tools/propose_action`) | — | `TanyaActionCard` (Tanya KN › percakapan) |
@@ -1423,6 +1424,12 @@ Key Fields:
   dpp float   ppn_rate float   ppn_mode enum(excluded|included)   is_pkp bool
   ppn_amount float   grand_total float  (= yang dibayar customer)
   payment_term_code string   payment_term_name string   payment_status enum(pending|paid_partial|paid)
+  # PM-T2 — cara bayar & rekening tujuan (master PM-T1), kode bayar:
+  payment_method_code string  kode kanonik daftar induk cara bayar | "" (belum ditentukan; pesanan lama & bawaan)
+  receiving_account_id string FK → bank_accounts.id (PT pesanan, penerimaan pelanggan, melayani cara bayar) | ""
+  receiving_account  {bank_name, account_number, holder_name}  POTRET saat dipilih (D3) — dokumen lama tetap
+                     menyebut rekening yang berlaku saat itu; {} bila tanpa rekening
+  payment_code string  kode bayar tingkat pesanan (hanya pesanan bayar-dulu, diisi saat dikonfirmasi) | ""
   tax_override string  "" (ikut PKP PT) | "non_ppn" — PK-45 (K-33): "non_ppn" butuh izin `order.tax_override`
   tax_override_reason string  PK-45 — alasan pesanan tanpa PPN (≥ 10 huruf); terisi HANYA bila tax_override == "non_ppn"
   # Fase 1B — approval dinamis (dari approval_rules):
@@ -1736,6 +1743,29 @@ Key Fields:
 Benih global: transfer · cash (tunai, kontan) · giro (cek) · qris · va (nonaktif) · edc (nonaktif, kartu) ·
   deposit (titipan; is_new_money false). Baris khusus PT MENANG walau nonaktif (mematikan untuk satu PT).
 ⚠️ BUKAN termin: `payment_terms` (tunai/kredit/DP/bertahap) dan profil bayar pelanggan tetap kosakata termin.
+```
+
+### payment_codes  [PM-T2 — kode bayar per pesanan / baris tagihan (berita transfer pelanggan)]
+```
+Collection:  payment_codes             Prefix: pyc_
+Service:     services/payment_code_service.py (ensure_for_order, ensure_for_line, find_in_text, instruction)
+Router:      routers/payment_methods.py (GET /api/sales-orders/{id}/payment-instruction — `order.view` + PT + pemilik)
+Index:       uq_id · (entity_id, status, created_at) · WAJIB uq_pay_code (code, unik LINTAS PT) ·
+             WAJIB uq_pay_code_line (order_id, line_id)
+**SCOPED** (`entity_id` = PT pesanan).
+
+  id · code "{awalan}-{5 karakter}" (karakter 23456789ABCDEFGHJKLMNPQRSTUVWXYZ — tanpa 0, 1, I, O; awalan
+       `payment.kode_bayar_awalan`, bawaan "KN"; dibuat `secrets`, tabrakan → ulang ≤ 5 kali)
+  entity_id · order_id · order_number · customer_id
+  plan_id · line_id   baris tagihan `payment_plans.lines[].line_id`; "" = kode tingkat pesanan
+  order_level bool    kode tingkat pesanan (baris `dp` jadwal tagihan memakai ulang kode ini: plan_id/line_id diisi)
+  percent             persen wajib bayar-dulu saat kode lahir (tunai 100, DP50 50; 0 untuk kode baris)
+  amount · due_date   POTRET jumlah & jatuh tempo saat kode lahir ("" = sebelum barang dikirim)
+  status              aktif | lunas | batal   (lunas/batal diurus PM-T3)
+  created_at · updated_at
+Lahir: pesanan bayar-dulu (termin `type: cash` atau `dp_percent > 0`) dikonfirmasi → satu kode (nilai × persen);
+  pesanan tempo → belum ada kode sampai jadwal tagihan CR-T2 memanggil `ensure_for_line`.
+Instruksi bayar dicetak hanya bila cara bayar ber-rekening bank DAN rekening tujuan `show_on_documents: true`.
 ```
 
 ### bank_account_changes  [PM-T1 — perubahan rekening kas/bank, menunggu orang kedua / riwayat]
@@ -3017,6 +3047,7 @@ bac_    → bank_account_changes      [PM-T1]
 ccp_    → customer_credit_profiles  [CR-T1]
 cpr_    → credit_profile_requests   [CR-T1]
 aiact_  → ai_action_proposals       [AG-T1]
+pyc_    → payment_codes             [PM-T2]
 aprule_ → approval_rules            [Fase 1A IMPLEMENTED]
 ```
 > Prefix PLANNED (lihat bagian PLANNED ENTITIES): `pra_` price_approvals (= "special price"),
@@ -3182,6 +3213,8 @@ INDEKS UNIK WAJIB (PK-14, `backend/indexes.py` REQUIRED_UNIQUE_INDEXES — aplik
   tax_invoices_in.uq_fpm_active (active_key) · tax_invoices_in.uq_fpm_nsfp (nsfp_key) ·
   tax_period_locks.uq_tax_period (entity_id, period) ·
   PK-31: intercompany_eliminations.uq_pair_period (source_g6_pair_id, period_key | keduanya terisi)
+  PM-T1: bank_accounts.uq_default_receiving (entity_id, default_receiving_methods) ·
+  PM-T2: payment_codes.uq_pay_code (code) · payment_codes.uq_pay_code_line (order_id, line_id)
 ⚠️ AR aging/Outstanding = DERIVED dari invoices + credit_limit; denda 1–3% pada invoices
 ⚠️ JANGAN buat: ledger, accounts, gl (pakai journal_entries/chart_of_accounts/bank_accounts)
 ```
@@ -3474,7 +3507,7 @@ Key Fields:  id, epc, tag_id, roll_id, sku, product_name, roll_no, device_id, de
 | tax_invoices_in | tii_ | routers/input_tax.py | Faktur Pajak Masukan (PPN in). |
 | credit_notes | cn_ | routers/sales_returns.py, crm | Nota kredit pelanggan. |
 | amendment_reasons | amr_ | services/amendment_service.py, services/penalty_service.py | FASE G-1/G-2 — taksonomi label alasan koreksi & keputusan denda (dikelola admin). |
-| payment_plans | pyp_ | services/payment_plan_service.py, routers/payment_plans.py | FASE G-2 — rencana pembayaran fleksibel per dokumen (DP/cicilan/milestone), nomor `<ENT>/RPB-#####`. Scoped `entity_id`. PK-09: `schedule_history[]` (`at` · `by` · `reason` · `lines_before`) — satu butir tiap ubah baris jadwal; status & terbayar baris tidak dari klien. |
+| payment_plans | pyp_ | services/payment_plan_service.py, routers/payment_plans.py | FASE G-2 — rencana pembayaran fleksibel per dokumen (DP/cicilan/milestone), nomor `<ENT>/RPB-#####`. Scoped `entity_id`. PK-09: `schedule_history[]` (`at` · `by` · `reason` · `lines_before`) — satu butir tiap ubah baris jadwal; status & terbayar baris tidak dari klien. PM-T2: `lines[].pay_code` = kode bayar baris tagihan (`payment_codes`, diisi `payment_code_service.ensure_for_line`). |
 | penalties | pnl_ | services/penalty_service.py, routers/payment_plans.py | FASE G-2 — nota denda keterlambatan (`draft` tanpa jurnal → `issued`/`waived`/`adjusted`/`paid`), nomor `<ENT>/DN-DENDA-#####`. Scoped `entity_id`. PK-08: `days_prior` (hari yang sudah dimuat nota sebelumnya untuk baris yang sama; `billable_days` = hari nota ini saja, `days_late` kumulatif), `payments[]` (`id` pnp_ · `amount` · `method` · `account_id` · `cash_txn_id` · `status` pending→applied→done · `at` · `by` · `cash_doc`), `adjustments[]` (`seq` · `from` · `to` · `delta` · `reason_code` · `je_id` · `at` · `by`; jurnal pembalik `<id>:adjust:<seq>`). Bayar denda = kas `cash_transactions` `cash_pnl_<id pembayaran>` (`ref_type: "penalty"`, `ref_id` = nota, lawan 1-1270). |
 | payment_variance_decisions | pvd_ | services/payment_variance_service.py, routers/payment_variance.py | FASE G-3 — keputusan **selisih pembayaran** (lebih/kurang bayar), nomor `<ENT>/SLB-#####`. Jenis: `outstanding`/`reschedule`/`writeoff`/`deposit`/`allocate`/`refund` (+`rounding_*` otomatis, +`ap_*` sisi supplier). Wajib `reason_code` & pemutus; pemindahan uang selalu ber-jurnal; `status: reversed` bila dianulir. Scoped `entity_id`. |
 | credit_overrides | cro_ | routers/sales_orders.py, so_approvals | Override limit kredit (pending→approved). |

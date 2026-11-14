@@ -147,6 +147,11 @@ MASTER_TEMPLATE = r"""
   .refs .nums { font-weight:700; font-size:9.5pt; }
   .refs .rel { color:#666; }
   .refs .hint { color:#888; font-size:7.5pt; margin-top:2px; }
+  /* PM-T2 — instruksi bayar berkode (rekening tujuan dari master, bukan naskah ketikan) */
+  .payins { margin:10px 0 4px; border:1.5px solid {{ cfg.color_primary }}; border-radius:6px; padding:8px 10px; page-break-inside:avoid; }
+  .payins .ttl { font-size:8pt; text-transform:uppercase; letter-spacing:.4px; color:{{ cfg.color_primary }}; font-weight:800; margin-bottom:4px; }
+  .payins .blk { font-family:'DejaVu Sans Mono', monospace; font-size:9pt; white-space:pre; line-height:1.45; }
+  .payins .blk + .blk { margin-top:6px; padding-top:6px; border-top:1px dashed #bbb; }
 </style></head><body>
   {% if cfg.watermark_text or doc.watermark %}<div class="watermark">{{ cfg.watermark_text or doc.watermark }}</div>{% endif %}
   <div class="content">
@@ -210,6 +215,13 @@ MASTER_TEMPLATE = r"""
       {% for t in doc.totals %}<div class="row {% if t.strong %}strong{% endif %}"><span>{{ t.label }}</span><span>{{ t.value }}</span></div>{% endfor %}
     </div>
     <div style="clear:both"></div>
+    {% endif %}
+
+    {% if doc.payment_instruction %}
+    <div class="payins">
+      <div class="ttl">Instruksi Pembayaran</div>
+      {% for b in doc.payment_instruction %}<div class="blk">{{ b.lines | join('\n') }}</div>{% endfor %}
+    </div>
     {% endif %}
 
     {% if doc.swatches %}

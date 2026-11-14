@@ -272,6 +272,14 @@ def _col_rolls(label: str = "Roll"):
 
 
 # ── Sales Order / Order Confirmation ─────────────────────────────────────────
+async def _payment_instruction(doc) -> dict:
+    """PM-T2 — blok "Instruksi Pembayaran" (satu per tagihan berkode yang belum lunas) + potret rekening tujuan untuk
+    token naskah `{{rekening_bank}}`. Kunci `payment_instruction` tidak ikut hash isi e-sign (`canonical_content`)."""
+    from services import payment_code_service as pcs
+    return {"payment_instruction": await pcs.blocks_for_document(doc),
+            "_receiving_account": (doc.get("receiving_account") or {}) if doc.get("receiving_account_id") else {}}
+
+
 async def resolve_sales_order(doc, db):
     items = []
     for i, it in enumerate(doc.get("items", []), 1):
@@ -310,6 +318,7 @@ async def resolve_sales_order(doc, db):
         "watermark": ("HARGA BELUM FINAL" if any(
             p.get("type") == "special_price" and p.get("status") in ("pending", "rejected")
             for p in doc.get("pending_approvals") or []) else None),
+        **(await _payment_instruction(doc)),   # PM-T2
     }
 
 
@@ -1061,6 +1070,7 @@ async def resolve_invoice(doc, db):
         "signatures": [{"label": "Hormat Kami", "role": "Finance", "name": ""},
                        {"label": "Diterima", "role": "Customer", "name": ""}],
         "_amount": grand,
+        **(await _payment_instruction(doc)),   # PM-T2
     }
 
 

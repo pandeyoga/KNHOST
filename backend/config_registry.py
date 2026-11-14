@@ -488,7 +488,9 @@ def search(term: str) -> List[Dict[str, Any]]:
 # ── Validasi & koersi nilai (dipakai PUT /api/config/values) ─────────────────
 VALUE_FORMATS = ("regex", "json_map", "tarif_berjenjang",
                  # KF-T4 — `date`: kosong atau `YYYY-MM-DD` · `multiline`: teks bebas berbaris (kotak multi-baris).
-                 "date", "multiline")
+                 "date", "multiline",
+                 # PM-T2 — `kode_huruf`: 2–4 huruf besar A–Z (awalan kode bayar, mis. `KN`).
+                 "kode_huruf")
 
 
 def _check_format(entry: Dict[str, Any], value: Any) -> Any:
@@ -517,6 +519,12 @@ def _check_format(entry: Dict[str, Any], value: Any) -> Any:
         return value if isinstance(value, str) else _json.dumps(obj)
     if fmt == "tarif_berjenjang":
         return _tarif_berjenjang(entry, value)
+    if fmt == "kode_huruf":
+        import re as _re
+        teks = str(value or "").strip()
+        if not _re.fullmatch(r"[A-Z]{2,4}", teks):
+            raise ValueError(f"'{entry['label']}' harus 2–4 huruf besar A–Z (mis. KN).")
+        return teks
     if fmt == "date":
         import datetime as _dt
         teks = str(value or "").strip()

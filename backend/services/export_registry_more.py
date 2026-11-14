@@ -280,6 +280,7 @@ EXCLUDED_MORE = {
     "payment_terms": "Kamus syarat bayar (Master)", "process_stages": "Kamus tahapan proses (Master)",
     "payment_methods": "Kamus cara bayar (Master, PM-T1)",
     "bank_account_changes": "Riwayat & pengajuan perubahan rekening (layar Rekening & Saldo, PM-T1)",
+    "payment_codes": "Kode bayar pesanan (tampil di detail pesanan & dokumen; pencocokan mutasi PM-T3)",
     "product_categories": "Kamus kategori produk (Master)", "product_lines": "Kamus lini produk (Master)",
     "sample_types": "Kamus jenis sample (Master)", "uom_conversion_rules": "Kamus konversi satuan (Master)",
     "uoms": "Kamus satuan (Master)", "hr_devices": "Konfigurasi perangkat absensi",

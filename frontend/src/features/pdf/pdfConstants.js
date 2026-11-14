@@ -53,6 +53,7 @@ export const SECTION_LABELS = [
   ["parties", "Blok Dari / Kepada"], ["meta", "Info meta (tanggal, termin, dll.)"],
   ["items", "Tabel rincian"], ["totals", "Ringkasan total"], ["notes", "Catatan"],
   ["signatures", "Kolom tanda tangan"], ["refs", "Referensi dokumen (QR jejak)"],
+  ["payment_instruction", "Instruksi pembayaran (rekening tujuan & kode bayar)"],
 ];
 
 export const EDITOR_TABS = [

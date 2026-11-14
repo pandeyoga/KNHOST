@@ -18,6 +18,7 @@ import OrderPriceRequestModal from "./OrderPriceRequestModal";
 import { CheckoutItemCard, Row } from "./CheckoutItemCard";
 import { MixedCartNotice } from "./MixedCartNotice";
 import CheckoutStep3 from "./CheckoutStep3";
+import CheckoutPaymentDestination from "./CheckoutPaymentDestination";
 import { SalesTeamEditor, salesTeamError, customerDefaultTeam } from "./SalesTeamEditor";
 import { useEffectivePrices, pickPrice, sourceMeta } from "../../hooks/useEffectivePrices";
 import { useEntityScope } from "../../context/EntityScopeContext";
@@ -42,6 +43,9 @@ export default function CheckoutDrawer({
   const { canWrite, writeBlockHint } = useEntityScope();
   const [orderDiscount, setOrderDiscount] = useState(0);
   const [paymentTerm, setPaymentTerm] = useState("");
+  // PM-T2 — cara bayar + rekening tujuan (daftar induk PM-T1 · rekening penerimaan PT pesanan).
+  const [payDest, setPayDest] = useState({ method: "", account: "" });
+  const payMethodRequired = Boolean(settings?.payment?.wajib_cara_bayar_di_pesanan);
   const [allowBackorder, setAllowBackorder] = useState(false);
   const [qcReq, setQcReq] = useState({ mode: "none", pct: 10 });
   const [showMixedConfirm, setShowMixedConfirm] = useState(false);
@@ -66,7 +70,7 @@ export default function CheckoutDrawer({
 
   const defaultTerm = settings?.finance?.default_payment_term_code || "";
   useEffect(() => { if (!paymentTerm && defaultTerm) setPaymentTerm(defaultTerm); }, [defaultTerm]); // eslint-disable-line
-  useEffect(() => { if (open) { setStep(1); setSpReq({}); setSampleBilling(""); setQcReq({ mode: "none", pct: 10 }); } }, [open]);
+  useEffect(() => { if (open) { setStep(1); setSpReq({}); setSampleBilling(""); setQcReq({ mode: "none", pct: 10 }); setPayDest({ method: "", account: "" }); } }, [open]);
   // F-4c REVISI — prefill tim sales dari default customer saat customer dipilih (boleh di-override per order).
   useEffect(() => { setSalesTeam(customerDefaultTeam(selectedCustomer)); }, [selectedCustomer?.id]); // eslint-disable-line
 
@@ -207,6 +211,7 @@ export default function CheckoutDrawer({
   const doSubmit = (confirmMixed) => {
     onSubmitOrder({
       order_discount_percent: 0, payment_term_code: paymentTerm,
+      payment_method_code: payDest.method, receiving_account_id: payDest.method ? payDest.account : "",
       allow_backorder: allowBackorder, special_prices: linePrices, special_requests: spReq, confirm_mixed_lot: !!confirmMixed, ...qcPayload(qcReq),
       needs_tax_invoice: p.isPkp !== false ? needsTaxInvoice : false,
       fulfillment_method: fulfillmentMethod,
@@ -243,6 +248,7 @@ export default function CheckoutDrawer({
   const billingInvalid = sampleMode && !sampleBilling;
   const pickupInvalid = fulfillmentMethod === "ambil" && !pickupDate;
   const teamInvalid = !!salesTeamError(salesTeam);
+  const payMethodMissing = payMethodRequired && !payDest.method;   // PM-T2 — pengaturan PT mewajibkan cara bayar
   // Trial 22 Okt (E1) — banding dengan tanggal LOKAL (WIB); toISOString() = UTC → pagi hari "hari ini" dianggap lampau/kemarin.
   const todayLocal = (() => { const d = new Date(); return new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 10); })();
   const deliveryInvalid = fulfillmentMethod === "kirim" && !!deliveryDate && deliveryDate < todayLocal;
@@ -423,6 +429,7 @@ export default function CheckoutDrawer({
                     <KNSelect data-testid="payment-term-select" className="field" value={paymentTerm} onValueChange={setPaymentTerm}
                       options={paymentTerms.length === 0 ? [{ value: "", label: "Default" }] : paymentTerms.map((t) => ({ value: t.code, label: t.name }))} />
                   </div>
+                  <CheckoutPaymentDestination entityId={entityFor} value={payDest} onChange={setPayDest} required={payMethodRequired} />
                   {allowOrderDiscount && (
                     <div>
                       <label className="text-[9px] font-bold uppercase tracking-wide text-[#8E8E93]">Diskon Pesanan (%)</label>
@@ -514,8 +521,8 @@ export default function CheckoutDrawer({
                 Lanjut <ChevronRight size={14} />
               </button>
             ) : (
-              <button data-testid="checkout-submit" className={`primary-button ${sampleMode ? "!bg-[#9A5B00] hover:!bg-[#7A4700]" : ""}`} disabled={!canWrite || mixedCart || !selectedCustomer || !selectedAddress || cart.length === 0 || lotPlan.loading || creditBlocked || pickupInvalid || deliveryInvalid || teamInvalid || billingInvalid || !!priceError} title={priceError ? "Harga pelanggan gagal dimuat — muat ulang dulu." : writeBlockHint} onClick={handleSubmitClick}>
-                <PackageCheck size={14} /> {!canWrite ? "Pilih Badan Usaha Dulu" : mixedCart ? "Pisahkan Sample & Ecer" : billingInvalid ? "Pilih Gratis/Berbayar" : creditBlocked ? "Terblokir Kredit" : pickupInvalid ? "Pilih Tanggal Ambil" : teamInvalid ? "Perbaiki Tim Sales" : deliveryInvalid ? "Tanggal Kirim Tak Valid" : requiresLotConfirmation ? "Tinjau Lot & Buat" : sampleMode ? `Buat Pesanan Sample (${sampleBilling === "free" ? "Gratis" : "Berbayar"})` : "Buat Sales Order"}
+              <button data-testid="checkout-submit" className={`primary-button ${sampleMode ? "!bg-[#9A5B00] hover:!bg-[#7A4700]" : ""}`} disabled={!canWrite || mixedCart || !selectedCustomer || !selectedAddress || cart.length === 0 || lotPlan.loading || creditBlocked || pickupInvalid || deliveryInvalid || teamInvalid || billingInvalid || payMethodMissing || !!priceError} title={priceError ? "Harga pelanggan gagal dimuat — muat ulang dulu." : writeBlockHint} onClick={handleSubmitClick}>
+                <PackageCheck size={14} /> {!canWrite ? "Pilih Badan Usaha Dulu" : mixedCart ? "Pisahkan Sample & Ecer" : billingInvalid ? "Pilih Gratis/Berbayar" : creditBlocked ? "Terblokir Kredit" : pickupInvalid ? "Pilih Tanggal Ambil" : teamInvalid ? "Perbaiki Tim Sales" : deliveryInvalid ? "Tanggal Kirim Tak Valid" : payMethodMissing ? "Pilih Cara Bayar" : requiresLotConfirmation ? "Tinjau Lot & Buat" : sampleMode ? `Buat Pesanan Sample (${sampleBilling === "free" ? "Gratis" : "Berbayar"})` : "Buat Sales Order"}
               </button>
             )}
           </div>

@@ -6,6 +6,7 @@ import { apiErrorText } from "../../utils/apiError";
 import KNSelect from "../../components/KNSelect";
 import KNDatePicker from "../../components/KNDatePicker";
 import { OverrideLinesEditor } from "./OverrideLinesEditor";
+import { accountText, PESAN_REKENING_KOSONG } from "../pos/CheckoutPaymentDestination";
 
 const num = (v) => (v === "" || v == null ? null : Number(v));
 
@@ -52,6 +53,15 @@ export default function SalesOrderOverrideDialog({ order, onClose, onDone }) {
   });
   const termPicked = terms.find((t) => t.code === header.payment_term_code);
   const warnLoosen = Boolean(termPicked) && Boolean(ctx?.can_loosen_term) && longgar(termPicked);
+  // PM-T2 — cara bayar & rekening tujuan: pilihan dari server (daftar induk + rekening penerimaan PT pesanan).
+  const payMethod = hv("payment_method_code");
+  const payRow = (ctx?.payment_methods || []).find((m) => m.code === payMethod) || null;
+  const accRows = (ctx?.receiving_accounts || {})[payMethod] || [];
+  const pickMethod = (v) => {
+    const rows = (ctx?.receiving_accounts || {})[v] || [];
+    const def = rows.find((a) => a.is_default) || (rows.length === 1 ? rows[0] : null);
+    setHeader((cur) => ({ ...cur, payment_method_code: v, receiving_account_id: def ? def.id : "" }));
+  };
 
   async function submit() {
     setBusy(true); setError("");
@@ -98,6 +108,26 @@ export default function SalesOrderOverrideDialog({ order, onClose, onDone }) {
                   options={termOptions} />
                 {warnLoosen && (
                   <p data-testid="override-term-loosen-warning" className="mt-1 text-fs-12 text-kn-warning-text">{PERINGATAN_TERMIN_LONGGAR}</p>
+                )}
+              </div>
+              <div>
+                <span className="field-label">Cara bayar</span>
+                <KNSelect data-testid="override-payment-method" className="field" value={payMethod} onValueChange={pickMethod}
+                  options={[{ value: "", label: "Belum ditentukan" },
+                    ...(ctx.payment_methods || []).map((m) => ({ value: m.code, label: m.name }))]} />
+              </div>
+              <div>
+                <span className="field-label">Rekening tujuan</span>
+                {payRow?.needs_account !== "bank" ? (
+                  <p className="text-fs-12 text-kn-text-2" data-testid="override-account-none">
+                    {payMethod ? "Cara bayar ini tidak memakai rekening bank." : "Pilih cara bayar dulu."}
+                  </p>
+                ) : accRows.length === 0 ? (
+                  <p className="text-fs-12 text-kn-warning-text" data-testid="override-account-empty">{PESAN_REKENING_KOSONG}</p>
+                ) : (
+                  <KNSelect data-testid="override-receiving-account" className="field" value={hv("receiving_account_id")}
+                    placeholder="Pilih rekening tujuan" onValueChange={(v) => setH("receiving_account_id", v)}
+                    options={accRows.map((a) => ({ value: a.id, label: accountText(a) }))} />
                 )}
               </div>
               <div>

@@ -705,6 +705,9 @@ VIEW_RESOURCE_OVERRIDES["incentive-schemes"] = ["sales_force"]
 # KF-T2 — kunci `interco_payment.*` (kelompok "antar-entitas") diubah pemegang `entity.update`; aturan KF-T1 (U14): tab
 # kelompok itu juga terbuka bagi pemegang izin pengubah kuncinya.
 VIEW_RESOURCE_OVERRIDES["settings-cfg-finance"] = ["settings", "entity"]
+# PM-T2 — kunci `payment.wajib_cara_bayar_di_pesanan` dan `payment.kode_bayar_awalan` (kelompok "Pembayaran pelanggan")
+# diubah pemegang `cash.configure` (kelola rekening & cara bayar); aturan KF-T1 (U14) yang sama.
+VIEW_RESOURCE_OVERRIDES["settings-cfg-finance"].append("cash")
 # KP-T7 — kunci pengingat/penjadwal (izin `scheduler.configure`) masuk kelompok "notifikasi", "keuangan-dasar",
 # "persetujuan", dan "rnd"; aturan KF-T1 (U14): tab kelompok itu juga terbuka bagi pemegang izin pengubah kuncinya.
 for _v in ("settings-cfg-notify", "settings-cfg-finance", "settings-cfg-approval", "settings-cfg-rnd"):

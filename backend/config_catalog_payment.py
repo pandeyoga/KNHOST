@@ -76,6 +76,28 @@ E("payment.default_installment_interval", group="pembayaran-pelanggan", section=
   consumers=("services/payment_plan_service.py:plan_policy",), risk="low",
   related=("payment.default_installments",))
 
+# ── PM-T2 — cara bayar & rekening tujuan di pesanan, kode bayar ─────────────
+# Kelompok "uang-masuk" (alias kelompok ini). Diubah pemegang izin kelola rekening (`cash.configure`), seperti daftar
+# Cara Bayar dan rekening penerimaan (PM-T1).
+E("payment.wajib_cara_bayar_di_pesanan", group="uang-masuk", section="syarat-bayar", type="bool", default=False,
+  scopes=G, permission=("cash", "configure"),
+  sensitif_baca=False,   # dibaca layar checkout semua sales (pilihan "Belum ditentukan" disembunyikan bila menyala)
+  label="Wajibkan cara bayar saat membuat pesanan",
+  help="Bila menyala, pesanan tidak bisa dibuat tanpa memilih cara bayar.",
+  impact="Sales harus memilih cara bayar di checkout; aplikasi lama yang tidak mengirimnya akan ditolak.",
+  example="Menyala · checkout tanpa cara bayar → ditolak",
+  consumers=("routers/sales_orders.py:create_order",), risk="medium",
+  related=("payment.kode_bayar_awalan",))
+
+E("payment.kode_bayar_awalan", group="uang-masuk", section="syarat-bayar", type="text", default="KN",
+  scopes=("global",), permission=("cash", "configure"), value_format="kode_huruf",   # kode unik lintas PT
+  label="Awalan kode bayar",
+  help="Huruf di depan kode bayar yang ditulis pelanggan di berita transfer. Dua sampai empat huruf besar.",
+  impact="Hanya kode baru yang memakai awalan baru; kode lama tetap berlaku.",
+  example="KN → KN-7F3K2",
+  consumers=("services/payment_code_service.py:ensure_for_order", "services/payment_code_service.py:ensure_for_line"),
+  risk="low", related=("payment.wajib_cara_bayar_di_pesanan",))
+
 # ── Denda keterlambatan sebagai DOKUMEN ────────────────────────────────────
 E("payment.penalty_mode", group="pembayaran-pelanggan", section="denda", type="enum", default="draft",
   options=({"value": "off", "label": "Mati (tidak ada denda)"},

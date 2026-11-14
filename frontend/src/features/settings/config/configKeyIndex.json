@@ -1326,6 +1326,14 @@
    "pembayaran-pelanggan",
    "syarat-bayar"
   ],
+  "payment.wajib_cara_bayar_di_pesanan": [
+   "pembayaran-pelanggan",
+   "syarat-bayar"
+  ],
+  "payment.kode_bayar_awalan": [
+   "pembayaran-pelanggan",
+   "syarat-bayar"
+  ],
   "payment.penalty_mode": [
    "pembayaran-pelanggan",
    "denda"

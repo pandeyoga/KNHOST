@@ -188,6 +188,9 @@ INDEX_SPECS: Dict[str, List[IndexKeys]] = {
     "payment_methods": [             # PM-T1 — master cara bayar berlapis (baris efektif per kode × PT)
         [("code", A), ("entity_id", A)],
     ],
+    "payment_codes": [               # PM-T2 — kode bayar per pesanan / baris tagihan (unik: REQUIRED_UNIQUE_INDEXES)
+        [("entity_id", A), ("status", A), ("created_at", D)],
+    ],
     "approval_policies": [           # KP-T4 — satu tabel kebijakan persetujuan (jenis, PT, jenjang, urutan)
         [("doc_kind", A), ("entity_id", A), ("level", A), ("sort", A)],
     ],
@@ -449,6 +452,8 @@ ID_INDEX_COLLECTIONS: List[str] = [
     "customer_credit_profiles", "credit_profile_requests",
     # AG-T1 — kartu tindakan Tanya KN (`aiact_…`).
     "ai_action_proposals",
+    # PM-T2 — kode bayar (`pyc_…`).
+    "payment_codes",
 ]
 
 # FIX-5 — rujukan bersarang roll yang dicari per nilai (B3a SCH-9: index `reserved_ref` utuh tidak terpakai oleh
@@ -785,6 +790,19 @@ REQUIRED_UNIQUE_INDEXES += [
      "finder": _finder_dup("intercompany_eliminations",
                            '{source_g6_pair_id:{$type:"string",$gt:""},period_key:{$type:"string",$gt:""}}',
                            '{p:"$source_g6_pair_id",k:"$period_key"}', "$id")},
+]
+
+# PM-T2 (D7) — kode bayar unik LINTAS PT (berita transfer tidak ambigu, mutasi yang salah masuk rekening PT lain tetap
+# dikenali) dan satu kode per (pesanan, baris tagihan; "" = tingkat pesanan). Koleksi baru: data lama tidak bisa kembar.
+# Tabrakan kode acak → `DuplicateKeyError` pada `uq_pay_code` → diulang (`payment_code_service._sisip`, ≤ 5 kali).
+REQUIRED_UNIQUE_INDEXES += [
+    {"collection": "payment_codes", "name": "uq_pay_code", "label": "kode bayar unik lintas PT",
+     "keys": [("code", 1)], "partial": {"code": dict(_NONEMPTY)},
+     "finder": _finder_dup("payment_codes", '{code:{$type:"string",$gt:""}}', '"$code"', "$id")},
+    {"collection": "payment_codes", "name": "uq_pay_code_line", "label": "satu kode bayar per pesanan per baris tagihan",
+     "keys": [("order_id", 1), ("line_id", 1)], "partial": {"order_id": dict(_NONEMPTY)},
+     "finder": _finder_dup("payment_codes", '{order_id:{$type:"string",$gt:""}}', '{o:"$order_id",l:"$line_id"}',
+                           "$code")},
 ]
 
 

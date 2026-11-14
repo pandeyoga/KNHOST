@@ -396,6 +396,8 @@ export function useAppActions(state) {
         delivery_date: extra.delivery_date || "",
         sales_team: Array.isArray(extra.sales_team) ? extra.sales_team : [],
         payment_term_code: extra.payment_term_code || "",
+        payment_method_code: extra.payment_method_code || "",      // PM-T2 — cara bayar (kode daftar induk)
+        receiving_account_id: extra.receiving_account_id || "",    // PM-T2 — rekening tujuan ("" = bawaan PT)
         allow_backorder: Boolean(extra.allow_backorder),
         qc_request: extra.qc_request || "none",
         qc_sample_pct: Number(extra.qc_sample_pct) || 10,

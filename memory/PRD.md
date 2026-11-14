@@ -42,6 +42,17 @@ GL-01: registri `services/gl_mapping_registry.py` (54 kebutuhan) → koleksi `gl
   di PT ini.") di 17 layar tujuan; bilah "← Kembali ke …" (`BackToOriginBar`, asal dari `openDocument`/`preset.from`);
   satu panel relasi "Dokumen Terkait" (garis tahapan di kepalanya, "Lihat seluruh jejak", tombol "Buka"); kartu Posisi
   Kas/Piutang/Hutang (Dasbor Keuangan) dan Penjualan/Tertagih (Control Tower) bertujuan; label peta "Tagihan Pemasok" dkk.
+- 2026-11-14 PM-T2 (PM-01; K-34, K-35 — instruksi bayar): pesanan menyimpan **cara bayar** (daftar induk PM-T1) dan
+  **rekening tujuan** + potretnya (`payment_method_code`, `receiving_account_id`, `receiving_account`); checkout
+  (desktop & HP) dan Edit / Override SO memilihnya dari rekening penerimaan PT pesanan (terisi bawaan, rekening PT lain
+  → 400). Pengaturan `payment.wajib_cara_bayar_di_pesanan` (bawaan mati) dan `payment.kode_bayar_awalan` ("KN", global).
+  Pesanan bayar-dulu (termin tunai / ber-DP) yang dikonfirmasi mendapat **kode bayar** `KN-XXXXX` (koleksi
+  `payment_codes`, unik lintas PT — indeks wajib `uq_pay_code`, `uq_pay_code_line`; `services/payment_code_service.py`:
+  `ensure_for_order`, `ensure_for_line` untuk jadwal tagihan CR-T2, `find_in_text` untuk PM-T3). Konfirmasi Pesanan &
+  Faktur mencetak kotak "Instruksi Pembayaran" (bagian template `payment_instruction`, hanya rekening ber-"Tampilkan di
+  dokumen pelanggan"); detail pesanan menampilkan blok yang sama + tombol "Salin instruksi bayar"
+  (`GET /api/sales-orders/{id}/payment-instruction`). Token naskah `{{rekening_bank}}` = rekening tujuan pesanan, lalu
+  rekening bawaan transfer PT. Templat bernomor rekening ketikan: `scripts/blueprint/pmt2_rekening_ketikan_lapor.py`.
 - 2026-11-14 PM-T1 (PM-03, PM-05; K-34, K-35 — cara bayar & rekening): satu daftar induk **cara bayar** (master
   berlapis `payment-methods`, koleksi `payment_methods`; benih transfer · tunai · giro · QRIS · titipan, VA/EDC mati) —
   semua form pembayaran mengambil pilihannya dari `GET /api/payment-methods` (`config/paymentMethods.js`) dan server

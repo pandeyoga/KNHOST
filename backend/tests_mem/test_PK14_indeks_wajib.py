@@ -31,6 +31,8 @@ PMT1_INDEKS = 1
 CRT1_INDEKS = 2
 # PK-31 (IC-03): `intercompany_eliminations.uq_pair_period` (satu eliminasi otomatis per pasangan per bulan).
 PK31_INDEKS = 1
+# PM-T2: `payment_codes.uq_pay_code` (kode bayar unik lintas PT) + `uq_pay_code_line` (satu kode per pesanan per baris).
+PMT2_INDEKS = 2
 
 
 def _info_lengkap() -> dict:
@@ -66,7 +68,8 @@ def test_U12_pembanding_indeks():
     # KP-T6 — + `pdf_templates.uq_doctype_entity` (satu lapisan template cetak per jenis per PT/grup): + 1.
     # PM-T1 — + `bank_accounts.uq_default_receiving` (satu rekening penerima bawaan per cara bayar per PT): + PMT1_INDEKS.
     # PK-31 — + `intercompany_eliminations.uq_pair_period` (satu eliminasi otomatis per pasangan per bulan): + PK31_INDEKS.
-    assert len(indexes.REQUIRED_UNIQUE_INDEXES) == 9 + PK40_INDEKS + 1 + PMT1_INDEKS + CRT1_INDEKS + PK31_INDEKS
+    # PM-T2 — + `payment_codes.uq_pay_code`, `uq_pay_code_line` (kode bayar unik lintas PT; satu per tagihan): + PMT2_INDEKS.
+    assert len(indexes.REQUIRED_UNIQUE_INDEXES) == 9 + PK40_INDEKS + 1 + PMT1_INDEKS + CRT1_INDEKS + PK31_INDEKS + PMT2_INDEKS
 
 
 async def test_U13_mode_enforce_dan_warn(aplikasi, monkeypatch):

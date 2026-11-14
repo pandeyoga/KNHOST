@@ -538,6 +538,8 @@ class SalesOrderCreate(BaseModel):
     entity_id: str = ""
     order_discount_percent: float = Field(0, ge=0, le=100)     # Fase 1B — diskon level order (0–100%)
     payment_term_code: str = ""           # Fase 1B — term pembayaran (kode)
+    payment_method_code: str = ""         # PM-T2 — cara bayar (kode/alias daftar induk PM-T1); "" = belum ditentukan
+    receiving_account_id: str = ""        # PM-T2 — rekening tujuan (`bank_accounts`); "" = bawaan (PT, cara bayar)
     allow_backorder: bool = False         # Sub-fase 1.6 — izinkan reservasi parsial + backorder
     confirm_mixed_lot: bool = False       # Sub-fase 1.7/MixedLot — konfirmasi pemenuhan lintas-lot
     confirm_makloon_override: bool = False  # W2-REQ-07 — pakai stok cadangan makloon (mode approve → persetujuan manajer)

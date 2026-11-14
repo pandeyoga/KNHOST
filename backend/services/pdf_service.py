@@ -44,7 +44,9 @@ DEFAULT_TEMPLATE_CFG = {
     "show_generated_note": False,
     # Bagian dokumen yang boleh dimatikan (angka tetap milik mesin — hanya tampil/sembunyi)
     "sections": {"parties": True, "meta": True, "items": True, "totals": True,
-                 "notes": True, "signatures": True, "refs": True},
+                 "notes": True, "signatures": True, "refs": True,
+                 # PM-T2 — kotak "Instruksi Pembayaran" (rekening tujuan + kode bayar) di bawah total
+                 "payment_instruction": True},
     # Gaya tabel rincian
     "table": {"grid": "full", "show_header": True, "header_fill": True, "zebra": False,
               "total_highlight": True, "font_size": 9, "grid_color": "#bbbbbb"},
@@ -64,8 +66,8 @@ PLACEHOLDERS = {
 }
 #: KP-T6 — keterangan token di layar naskah (dikirim bersama daftar token).
 PLACEHOLDER_NOTES = {
-    "rekening_bank": ("Rekening bank pembayaran PT. Kosong bila PT punya lebih dari satu rekening dan belum ada "
-                      "rekening tujuan di pesanan."),
+    "rekening_bank": ("Rekening tujuan pesanan; bila pesanan belum punya, rekening bawaan penerimaan transfer PT. "
+                      "Kosong bila keduanya tidak ada."),
 }
 
 # KP-T6 (KP-19) — lapisan PT hanya boleh memuat naskah, tempat-tanggal, tanda tangan, dan tanda air. Tata letak (kertas,
@@ -344,23 +346,15 @@ def register_token_provider(name: str, fn) -> None:
     _TOKEN_PROVIDERS[name] = fn
 
 
-async def default_bank_text(entity_id: str | None, doc: dict) -> str:
-    """Bawaan KP-T6: PT dengan TEPAT SATU rekening bank aktif → "{bank} {nomor} ({nama})"; selain itu kosong.
-    (`ASUMSI` spesifikasi — belum ada penanda rekening utama; rekening tujuan per pesanan = unit PM-T2.)"""
-    if not entity_id:
-        return ""
-    rows = await db.bank_accounts.find(
-        {"entity_id": entity_id, "account_type": "bank", "is_active": {"$ne": False}},
-        {"_id": 0, "bank_name": 1, "account_number": 1, "name": 1}).to_list(2)
-    if len(rows) != 1:
-        return ""
-    a = rows[0]
-    head = " ".join(x for x in (str(a.get("bank_name") or "").strip(), str(a.get("account_number") or "").strip()) if x)
-    name = str(a.get("name") or "").strip()
-    return f"{head} ({name})" if head and name else (head or name)
+async def rekening_bank_text(entity_id: str | None, doc: dict) -> str:
+    """PM-T2 — potret rekening tujuan pesanan (`doc._receiving_account`, dari resolver pesanan/faktur), lalu rekening
+    bawaan penerimaan `transfer` PT (PM-T1; rekening bank aktif satu-satunya PT otomatis menjadi bawaan). Menggantikan
+    penyedia KP-T6 "tepat satu rekening bank aktif"."""
+    from services import payment_code_service as pcs
+    return await pcs.rekening_bank_token(entity_id, doc)
 
 
-register_token_provider("rekening_bank", default_bank_text)
+register_token_provider("rekening_bank", rekening_bank_text)
 
 
 async def token_values(cfg: dict, entity_id: str | None, doc: dict) -> dict:
@@ -560,6 +554,8 @@ def _apply_cfg_to_doc(doc: dict, cfg: dict, branding: dict, tokens: dict | None 
         doc["notes"] = ""
     if not sec.get("signatures"):
         doc["signatures"] = []
+    if not sec.get("payment_instruction"):
+        doc["payment_instruction"] = []
     doc["_hide_refs"] = not sec.get("refs")
     # Naskah pembuka/penutup + tempat-tanggal (placeholder diisi dari konteks nyata).
     doc["intro_text"] = render_text(cfg.get("intro_text") or "", doc, branding, tokens)
@@ -578,8 +574,9 @@ _VOLATILE_META = {"Dicetak"}
 
 def canonical_content(content: dict) -> dict:
     """CX-10 — isi dokumen yang ditandatangani: output resolver tanpa stempel cetak/metadata turunan."""
+    # PM-T2 — `payment_instruction` berubah saat tagihan lunas / rekening tujuan diganti; bukan isi yang ditandatangani.
     c = {k: v for k, v in copy.deepcopy(content or {}).items()
-         if not k.startswith("_") and k not in ("esign", "esign_superseded", "refs")}
+         if not k.startswith("_") and k not in ("esign", "esign_superseded", "refs", "payment_instruction")}
     if isinstance(c.get("meta"), list):
         c["meta"] = [m for m in c["meta"] if not (isinstance(m, dict) and m.get("label") in _VOLATILE_META)]
     return c

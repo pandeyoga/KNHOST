@@ -115,7 +115,8 @@ def test_U02_pemeriksa_hijau():
     # NSFP keluaran/masukan, kunci masa pajak): 9 + 5; KP-T6 menambah `pdf_templates.uq_doctype_entity`: + 1;
     # PM-T1 menambah `bank_accounts.uq_default_receiving`: + 1. CR-T1 menambah `customer_credit_profiles.uq_customer_entity`
     # dan `credit_profile_requests.uq_open_request`: + 2. PK-31 menambah `intercompany_eliminations.uq_pair_period`: + 1.
-    assert out.count(": terpasang · 0 kelompok kembar") == len(REQUIRED_UNIQUE_INDEXES) == 19
+    # PM-T2 menambah `payment_codes.uq_pay_code` dan `payment_codes.uq_pay_code_line`: + 2.
+    assert out.count(": terpasang · 0 kelompok kembar") == len(REQUIRED_UNIQUE_INDEXES) == 21
 
 
 def test_U03_U04_U05_indeks_tak_terpasang_menolak_mulai():

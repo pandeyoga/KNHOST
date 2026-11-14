@@ -19,6 +19,7 @@ import SoPaymentPanel from "../finance/payments/SoPaymentPanel";
 import DispatchPaymentGatePanel from "./DispatchPaymentGatePanel";
 import PodProgressNote from "./PodProgressNote";
 import SoApprovalsPanel from "./SoApprovalsPanel";
+import OrderPaymentInstructionCard from "./OrderPaymentInstructionCard";   // PM-T2 — cara bayar, rekening, kode bayar
 import OrderFulfillmentBadges from "./OrderFulfillmentBadges";
 // FASE E-9 (E9.2 · US23/US24) — pita "diambil dari PT lain lewat KSC/IC-000xx".
 import OrderIntercoSupplyPanel from "./OrderIntercoSupplyPanel";
@@ -523,6 +524,8 @@ export function OrderDetailPanel({
             <p className="text-[10.5px] text-[#6B6B73] pt-0.5">Termin: <span className="font-semibold text-[#3C3C43]">{sel.payment_term_name}</span></p>
           )}
         </div>
+
+        {sel.order_type !== "sample" && <OrderPaymentInstructionCard order={sel} />}
 
         {/* Faktur Pajak Jual (Sub-fase 1.9) — opsional, hanya entitas PKP + ber-PPN */}
         {taxEligible && (

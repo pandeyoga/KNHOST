@@ -219,6 +219,8 @@ def _teks_lain(e: Dict[str, Any], base: Any, opsi_ref: Sequence[str]) -> List[An
         return [(d + datetime.timedelta(days=1)).isoformat()]
     if fmt == "multiline":
         return [(teks + "\nuji").strip()]
+    if fmt == "kode_huruf":                                # PM-T2 — 2–4 huruf besar
+        return ["KNX" if teks != "KNX" else "KNY"]
     out: List[Any] = [(teks + " uji").strip()]
     contoh = str(e.get("example") or "").split()
     if contoh:                                             # kata pertama contoh registry (mis. nomor telepon)
@@ -295,6 +297,8 @@ def nilai_tak_sah(e: Dict[str, Any]) -> List[Any]:
             out.append("{patah")
         elif fmt == "date":
             out.append("bukan-tanggal")
+        elif fmt == "kode_huruf":
+            out += ["kn", "K1", "KNABC"]
     elif t == "list":
         out.append("bukan-daftar")
         items = e.get("items") or ""
