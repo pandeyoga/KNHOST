@@ -431,10 +431,13 @@ def e_finance(fin):
     # Matriks izin sah kemudian menambah dua KEPUTUSAN Finance atas pesanan: `approve_price_edit` (2026-10,
     # setujui harga/diskon override) & `release_unpaid` (F-10, lepas kirim SO belum lunas ber-alasan).
     # Yang dijaga E8.2 tetap: Finance tidak membuat/mengubah/mengonfirmasi/mengirim pesanan.
+    # PR-T4 (K-47) — `view_sales_kpi` (lihat KPI & komisi sales lain; dulu daftar nama peran pengawas yang memuat
+    # Finance) adalah izin LIHAT, bukan buat/ubah/konfirmasi.
     order_perms = set(perms.get("order") or [])
     check("izin efektif Finance: pesanan hanya lihat/cetak + keputusan keuangan (tanpa buat/ubah/konfirmasi)",
           {"view", "print"} <= order_perms
-          and order_perms <= {"view", "print", "approve_price_edit", "release_unpaid"}, str(perms.get("order")))
+          and order_perms <= {"view", "print", "approve_price_edit", "release_unpaid", "view_sales_kpi"},
+          str(perms.get("order")))
     check("izin efektif Finance: TANPA sisi hutang (vendor_bill/contra_bon/landed_cost)",
           not any(perms.get(m) for m in ("vendor_bill", "contra_bon", "landed_cost")))
     check("izin efektif Finance: batal faktur pajak TETAP manajer",
