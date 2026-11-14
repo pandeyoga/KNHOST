@@ -66,7 +66,7 @@ Papan kerja agen pelaksana. Aturan mengubahnya: `00_ATURAN_EKSEKUSI.md` §5. Uru
 | 59 | PK-30 | Antar-PT: panjang aktual, jalur lama, harga dan PPN | PK-06 | selesai | `a4b7c8d` · `a0ae755` | [PK-30](../reviews/2026-11-13/hasil/PK-30.md) | H4 PPN masukan pembeli non-PKP → Menunggu pemilik |
 | 60 | PK-31 | Eliminasi per periode; rantai A→B→C; retur setelah lunas | PK-30 | selesai | dae12fc | [PK-31](../reviews/2026-11-13/hasil/PK-31.md) |  |
 | 61 | PK-32 | Nota kredit satu mesin | PK-19 | dikerjakan |  |  | Dikerjakan paralel (worktree terpisah), 15 Nov |
-| 62 | PK-33 | Hijaukan penjaga atomisitas | PK-19, PK-20 | siap |  |  |  |
+| 62 | PK-33 | Hijaukan penjaga atomisitas | PK-19, PK-20 | dikerjakan |  |  |  |
 | 63 | PK-34 | Replica set satu anggota, transaksi di jalur uang, pustaka database | gelombang 3 tervalidasi (PK-18 … PK-25; dengan sendirinya PK-05, PK-06) | tahan |  |  | Titik henti H2 |
 | 64 | PK-35 | Uang sebagai bilangan bulat; validator; penomoran jurnal | PK-34 | tahan |  |  | Titik henti H2, H3 |
 | 65 | PK-36 | Akun kontrol tertutup dari jurnal manual | PK-10 | selesai | `16b50fe` | [PK-36](../reviews/2026-11-13/hasil/PK-36.md) |  |
