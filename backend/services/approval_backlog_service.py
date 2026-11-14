@@ -148,6 +148,10 @@ QUEUES: List[tuple] = [
      {"steps.claim.status": "pending_approval"}),
     ("period_unlock", "Permintaan buka periode menunggu ACC", "period-unlock",
      "period_unlock_requests", {"status": "pending"}),
+    # KF-T6 (GL-06) — usulan jurnal manual yang menunggu orang kedua (`kontrol.jurnal_manual.min_orang` = 2); pintu
+    # keputusannya `gl.py` `/gl/journal-proposals/{id}/approve|reject`, layarnya pita di Buku Besar.
+    ("journal_proposal", "Usulan jurnal manual menunggu orang kedua", "general-ledger", "journal_proposals",
+     {"status": "pending"}),
     ("hr_leave", "Pengajuan cuti menunggu ACC", "hr-leave", "hr_leave_requests",
      {"status": "pending"}),
     ("hr_overtime", "Pengajuan lembur menunggu ACC", "hr-overtime", "hr_overtime",
@@ -301,6 +305,8 @@ AGING_META: Dict[str, Dict[str, List[str]]] = {
     "period_unlock": {"since": ["requested_at", "created_at"],
                       "number": ["number", "period_label", "id"],
                       "title": ["reason", "period_label"]},
+    "journal_proposal": {"since": ["proposed_at"], "number": ["id"],
+                         "title": ["payload.description", "proposed_by"]},
     "hr_leave": {"since": ["created_at"], "number": ["number"],
                  "title": ["employee_name", "leave_label"]},
     "hr_overtime": {"since": ["created_at"], "number": ["number"],

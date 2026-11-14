@@ -96,6 +96,9 @@ DOOR_QUEUE: Dict[str, str] = {
     "makloon_orders.py::/api/makloon-orders/{mko_id}/claim/reject": "makloon_claim",
     "period_unlocks.py::/api/finance/period-unlocks/{plu_id}/approve": "period_unlock",
     "period_unlocks.py::/api/finance/period-unlocks/{plu_id}/reject": "period_unlock",
+    # KF-T6 (GL-06) — jurnal manual dua orang.
+    "gl.py::/api/gl/journal-proposals/{proposal_id}/approve": "journal_proposal",
+    "gl.py::/api/gl/journal-proposals/{proposal_id}/reject": "journal_proposal",
     "price_approvals.py::/api/price-approvals/{approval_id}/approve": "price",
     "price_approvals.py::/api/price-approvals/{approval_id}/reject": "price",
     "purchase_orders.py::/api/purchase-orders/{po_id}/approve": "purchase_order",
