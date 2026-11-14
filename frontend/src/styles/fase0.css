@@ -6,6 +6,9 @@
 
 /* ── Entity Switcher ──────────────────────────────────────────────────────── */
 .topbar-entity { display: flex; align-items: center; flex-shrink: 0; }
+/* Cek visual 14 Nov — teks "Lokasi kerja belum diatur…" melebarkan bilah atas di 1024 px (halaman bergulir mendatar).
+   Di bawah 1280 px cukup ikon peringatan + tooltip (dan petunjuk di menu lokasi). */
+@media (max-width: 1279px) { .topbar .location-unset-text { display: none; } }
 /* EntityBadge (F0-B+) — pill berwarna per entitas legal */
 .entity-badge {
   display: inline-flex; align-items: center; gap: 4px;
