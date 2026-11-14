@@ -19,6 +19,7 @@ from typing import Any, Dict, List
 from core_utils import new_id, now_iso, rupiah, timeline_entry
 from db import db
 from services import gl_service
+from services.book_date import tanggal_buku   # PK-37
 from services import interco_return_service as icret
 from services.return_policy_service import return_assumptions, supplier_deadlines
 from services.return_service import interco_origin_of_roll
@@ -46,7 +47,7 @@ def _hari(a: Dict[str, Any], leaf: str) -> int:
 
 
 def _today() -> str:
-    return now_iso()[:10]
+    return tanggal_buku()   # PK-37 — tanggal klaim/buang = tanggal buku WIB (dulu tanggal UTC)
 
 
 async def _rolls(return_id: str, roll_ids: List[str] = None) -> List[Dict[str, Any]]:
@@ -332,6 +333,10 @@ async def decide_supplier(ret: Dict[str, Any], roll_ids: List[str], decision: st
                           attachment_ids: List[str], actor: str) -> Dict[str, Any]:
     if decision not in STAGE2:
         raise DispositionError("Keputusan tahap 2 tidak dikenal.")
+    if decision == "dispose":   # PK-37 (K-03) — buang BS dijurnal hapus-buku: PERIKSA periode tiap PT pemilik roll
+        from services.book_date import periksa_periode_dokumen_409
+        _pemilik = sorted({r.get("owner_entity_id") or "" for r in await _rolls(ret["id"], roll_ids)})
+        await periksa_periode_dokumen_409(_pemilik, None, jenis="penghapusan stok")
     if decision == "dispose" and roll_ids:
         stages = {x["roll_id"]: x["stage"] for x in (await view(ret))["rows"]}
         if all(stages.get(r) == "supplier_dispose_failed" for r in roll_ids):

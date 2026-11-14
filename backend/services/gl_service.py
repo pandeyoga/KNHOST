@@ -520,9 +520,10 @@ async def enforce_closed_period_guard(entity_id: str, date: str, *,
     """
     if source_type == "closing":
         return None
-    d = (date or "")[:10]
-    if not d or not entity_id:
+    if not date or not entity_id:
         return None
+    from services.book_date import tanggal_buku   # PK-37 (GL-05) — tanggal buku WIB, bukan potong 10 huruf stempel UTC
+    d = tanggal_buku(date)
     from services import closing_service as _cs
     st = await _cs.status_for_date(d, entity_id)
     if not st.get("closed"):
@@ -642,7 +643,8 @@ async def _validate_entry_lines(norm: List[Dict[str, Any]], entity_id: Optional[
 
 async def preflight_posting(entity_id: str, date: str = "") -> None:
     """P03 — cek periode SEBELUM efek bisnis ditulis (gagal cepat, tanpa state setengah jadi)."""
-    await enforce_closed_period_guard(entity_id or DEFAULT_ENTITY_ID, date or now_iso(),
+    from services.book_date import tanggal_buku   # PK-37 — kosong = hari ini di WIB
+    await enforce_closed_period_guard(entity_id or DEFAULT_ENTITY_ID, tanggal_buku(date),
                                       source_type="preflight", can_backdate=True)
 
 
@@ -692,11 +694,13 @@ async def _insert_entry(*, lines: List[Dict[str, Any]], description: str, date: 
     await _validate_entry_lines(norm, entity_id)  # FN-15 — pintu kontrol, bukan tanggung jawab tiap caller
     total_debit = round(sum(l["debit"] for l in norm), 2)
     total_credit = round(sum(l["credit"] for l in norm), 2)
+    from services.book_date import tanggal_buku   # PK-37 (GL-05) — tanggal buku WIB 10 huruf; stempel di created_at
+    book_date = tanggal_buku(date)
     number = await next_doc_number("journal_entries", "number", "JE-", entity_id=entity_id)
     doc = {
         "id": new_id("je"),
         "number": number,
-        "date": date or now_iso(),
+        "date": book_date,
         "description": description,
         "source": source_type,
         "source_type": source_type,
@@ -805,11 +809,13 @@ async def create_manual_entry(payload, actor: Dict[str, Any],
                                           can_backdate=can_backdate)
         return {"entity_id": eid, "lines": lines, "total_debit": total_debit, "total_credit": total_credit}
     # FASE E-1 (E1.10) — jurnal manual masuk buku badan usaha konteks bila tak disebut (eid di atas).
+    from services.book_date import tanggal_buku   # PK-37 (GL-05) — tanggal buku WIB 10 huruf
+    book_date = tanggal_buku(payload.date)
     number = await next_doc_number("journal_entries", "number", "JE-", entity_id=eid)
     doc = {
         "id": new_id("je"),
         "number": number,
-        "date": payload.date or now_iso(),
+        "date": book_date,
         "description": (payload.description or "").strip() or "Jurnal manual",
         "source": "manual",
         "source_type": "manual",

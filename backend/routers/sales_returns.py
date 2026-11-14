@@ -632,6 +632,9 @@ async def settle_return(
         raise HTTPException(status_code=400, detail=(
             "Keputusan akhir (refund / store credit / nego) baru bisa diambil sesudah QC selesai. "
             f"Status retur sekarang: {existing.get('status')}."))
+    # PK-37 (K-03) — PERIKSA periode buku hari ini (nota kredit, stok, kas retur) sebelum ada yang ditulis.
+    from services.book_date import periksa_periode_dokumen_409
+    await periksa_periode_dokumen_409(existing.get("entity_id") or ctx.active_entity_id, None, jenis="nota kredit retur")
     from services import return_exception_service as rex
     try:
         await rex.assert_settle_allowed(existing, payload.outcome)
@@ -786,6 +789,9 @@ async def roll_settlement_execute(return_id: str, payload: RollSettleIn, request
     from services import return_exception_service as rex
     ret = await _roll_ret(return_id, request)
     await _need_evidence(ret, "settle")
+    # PK-37 (K-03) — PERIKSA periode buku hari ini sebelum penyelesaian per roll dicatat.
+    from services.book_date import periksa_periode_dokumen_409
+    await periksa_periode_dokumen_409(ret.get("entity_id") or "", None, jenis="nota kredit retur")
     try:
         await rex.assert_settle_allowed(ret, st.OUTCOME_REFUND)
         cond = rex.condition_decision(ret, payload.decision_note, user)
@@ -810,7 +816,9 @@ async def roll_settlement_execute(return_id: str, payload: RollSettleIn, request
 async def roll_settlement_complete(return_id: str, settlement_id: str, request: Request) -> Dict[str, Any]:
     user = await require_permission(request, "sales_return", "approve")
     from services import return_roll_settlement_service as rrs
-    await _roll_ret(return_id, request)
+    _r = await _roll_ret(return_id, request)
+    from services.book_date import periksa_periode_dokumen_409   # PK-37 (K-03) — melengkapi = jurnal yang tertunda
+    await periksa_periode_dokumen_409(_r.get("entity_id") or "", None, jenis="nota kredit retur")
     try:
         doc = await rrs.complete(return_id, settlement_id, user)
     except ValueError as e:

@@ -160,6 +160,10 @@ async def decide(receipt_id: str, body: DecideBody, request: Request) -> Dict[st
         "pengurang_piutang", rcpt or {}, actor, (rcpt or {}).get("entity_id", ""),
         nominal=float(body.model_dump().get("amount") or 0) or abs(float(_v.get("delta") or 0)),
         pengaju=[(rcpt or {}).get("created_by")])
+    if str(body.model_dump().get("kind") or "") not in ("outstanding", "reschedule"):
+        # PK-37 (K-03) — jalur antrean: PERIKSA periode buku hari ini → 409 (di layanan menjadi VarianceError).
+        from services.book_date import periksa_periode_dokumen_409
+        await periksa_periode_dokumen_409((rcpt or {}).get("entity_id") or "", None, jenis="keputusan selisih bayar")
     try:
         row = await pvs.decide_receipt(receipt_id, body.model_dump(), actor)
     except pvs.VarianceError as exc:

@@ -212,6 +212,9 @@ async def record_loss(mko_id: str, seq: int, *, roll_ids: Optional[List[str]], r
                 "status": "pending_approval" if qty - within > EPS else "auto"}
         step.setdefault("material_losses", []).append(loss)
         if loss["status"] == "auto":
+            # PK-37 (K-03) — susut dalam toleransi langsung dijurnal: PERIKSA periode (belum ada yang disimpan).
+            from services.book_date import periksa_periode_dokumen_409
+            await periksa_periode_dokumen_409(order.get("entity_id") or "", None, jenis="klaim makloon")
             await _execute(order, step, loss, name)
         else:
             order.setdefault("timeline", []).append({
@@ -231,6 +234,10 @@ async def decide_loss(mko_id: str, seq: int, loss_id: str, *, approve: bool, not
         raise HTTPException(status_code=400, detail="Cara penyelesaian: tagih_ganti atau potong_bon.")
     if approve and settle == "potong_bon" and not bill_id:
         raise HTTPException(status_code=400, detail="Pilih tagihan jasa mitra yang akan dipotong.")
+    if approve:   # PK-37 (K-03) — PERIKSA periode buku hari ini sebelum order dikunci & susut dijurnal
+        from services.book_date import periksa_periode_dokumen_409
+        _o = await db.makloon_orders.find_one({"id": mko_id}, {"_id": 0, "entity_id": 1}) or {}
+        await periksa_periode_dokumen_409(_o.get("entity_id") or "", None, jenis="klaim makloon")
 
     async def run(order):
         step = _find_step(order, seq)

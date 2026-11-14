@@ -1454,6 +1454,9 @@ async def issue_material(sample_id: str, payload: Dict[str, Any],
     if cur.get("status") not in OPEN_STATUSES:
         raise RndError(f"Permintaan berstatus '{cur.get('status')}' tidak bisa "
                        "mengambil bahan lagi.")
+    # PK-37 (K-03) — PERIKSA periode buku hari ini sebelum roll berkurang (HTTP 409; RndError = 400 di router).
+    from services.book_date import periksa_periode_dokumen_409
+    await periksa_periode_dokumen_409(cur.get("entity_id", ""), None, jenis="pengeluaran bahan sample")
     pol = await rnd_gate.policy(cur.get("entity_id", ""))
     if not bool(pol.get("sample_material_from_stock", True)):
         raise RndError("Pengambilan bahan sample dari stok sedang dimatikan di "

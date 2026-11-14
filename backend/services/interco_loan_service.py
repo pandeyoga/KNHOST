@@ -27,6 +27,7 @@ from db import db
 from core_utils import new_id, next_doc_number, now_iso, rupiah, safe_doc, timeline_entry
 from services import gl_service
 from services import interco_money_service as money
+from services.book_date import tanggal_buku   # PK-37
 
 COLL = "interco_loans"
 EPS = 0.01
@@ -115,7 +116,7 @@ async def create(payload: Dict[str, Any], actor: Dict[str, Any]) -> Dict[str, An
         "purpose": purpose,
         "interest_note": (payload.get("interest_note") or "").strip(),
         "agreed_return_date": (payload.get("agreed_return_date") or "").strip(),
-        "doc_date": (payload.get("doc_date") or now_iso()[:10]),
+        "doc_date": (payload.get("doc_date") or tanggal_buku()),   # PK-37 — bawaan hari ini WIB
         "notes": (payload.get("notes") or "").strip(),
         "status": STATUS_DRAFT, "repayments": [],
         "disbursed_at": "", "disbursed_by": "",

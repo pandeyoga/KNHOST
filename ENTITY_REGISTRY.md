@@ -1213,7 +1213,11 @@ Component:   features/finance/GeneralLedger.jsx
 Key Fields:
   id                string  prefix "je_"
   number            string  JE-NNNNN (number series)
-  date              string  ISO tanggal jurnal
+  date              string  tanggal buku WIB `YYYY-MM-DD` (10 huruf) — PK-37 (GL-05): semua jurnal baru lewat
+                            `services/book_date.tanggal_buku` (stempel ber-zona → WIB; isian tanpa zona apa adanya).
+                            Jurnal LAMA bisa masih berstempel ISO UTC; skrip `scripts/blueprint/pk37_tanggal_buku_lama.py`
+                            (bawaan baca-saja; `--terapkan` = keputusan pemilik H3) mengubahnya dan menyimpan
+  date_asli         string  (hanya jurnal yang diubah skrip PK-37) nilai `date` lama
   description       string
   source / source_type  enum  manual | sales_order | cash_transaction
   source_id         string  FK dokumen sumber ("" utk manual)

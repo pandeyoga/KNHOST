@@ -292,6 +292,9 @@ async def adjust(*, customer_id: str, entity_id: Optional[str], amount_signed: f
     if not customer:
         raise HTTPException(status_code=404, detail="Customer tidak ditemukan")
     entity_id = entity_id or customer.get("entity_id") or DEFAULT_ENTITY_ID
+    # PK-37 (K-03) — PERIKSA periode buku hari ini sebelum jurnal & buku saldo kredit ditulis.
+    from services.book_date import periksa_periode_dokumen_409
+    await periksa_periode_dokumen_409(entity_id, None, jenis="saldo kredit pelanggan")
     if amt < 0:
         avail = await balance(customer_id, entity_id)
         if -amt > avail + EPS:

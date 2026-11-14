@@ -72,6 +72,10 @@ async def cut(ins_id: str, line_id: str, *, cut_yard: float = 0.25, weight_kg: O
         raise HTTPException(status_code=400, detail=f"Satuan roll '{unit}' belum didukung potong MDQ.")
     if unit != "kg":
         basis = f"{cut_yard} yard"
+    # PK-37 (K-03) — potong uji dijurnal hapus-buku: PERIKSA periode buku hari ini sebelum catatan & roll berubah.
+    from services.book_date import periksa_periode_dokumen_409
+    await periksa_periode_dokumen_409(roll.get("owner_entity_id") or ins.get("entity_id") or "", None,
+                                      jenis="penghapusan stok")
     doc = {"_id": key, "id": new_id("mdqc"), "inspection_id": ins_id, "line_id": line_id, "roll_id": roll["id"],
            "cut_yard": float(cut_yard), "qty": round(qty, 4), "unit": unit, "basis": basis,
            "weight_kg": weight_kg, "reason": (reason or "Potong uji MD Quality").strip()[:200],

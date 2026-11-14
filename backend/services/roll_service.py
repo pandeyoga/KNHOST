@@ -688,6 +688,9 @@ async def confirm_cut(roll_id: str, reservation_id: str, actual_length: Optional
             from input_rules import require_reason
             waste_reason = require_reason(waste_reason or note, label=(
                 f"Alasan susut {waste:g} ({pct:g}% > batas {limit:g}%)"))
+    if waste > 0:   # PK-37 (K-03) — susut dijurnal hapus-buku: PERIKSA periode buku hari ini sebelum induk dikurangi
+        from services.book_date import periksa_periode_dokumen_409
+        await periksa_periode_dokumen_409(parent.get("owner_entity_id") or "", None, jenis="penghapusan stok")
     used = round(actual + waste, 2)
     cut = {"reservation_id": reservation_id, "reserved_qty": rsv["qty"], "actual_length": actual,
            "waste": waste, "mode": mode, "by": actor, "at": now_iso(), "note": note,

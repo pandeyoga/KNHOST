@@ -79,6 +79,11 @@ async def complete_task(task_id: str, payload: Optional[GRCompletePayload], acto
             status_code=400,
             detail=f"Task harus dalam status qc_check atau put_away (current: {task['status']})"
         )
+    # PK-37 (K-03) — PERIKSA periode buku hari ini (jurnal penerimaan PT pemilik = PT PO) sebelum stok/roll berubah.
+    from services.book_date import periksa_periode_dokumen_409
+    _po_ent = ((await db.purchase_orders.find_one({"id": task["po_id"]}, {"_id": 0, "entity_id": 1}) or {})
+               .get("entity_id") if task.get("po_id") else "")
+    await periksa_periode_dokumen_409(_po_ent or DEFAULT_ENTITY_ID, None, jenis="penerimaan barang")
     # FIX-3a (B2a OPN-01/STM-IN-01) — kait pembekuan pendaftaran awal di jalur PENERIMAAN: gudang yang dibekukan penuh
     # menolak barang masuk; bin di zona beku ditolak. Dulu jalur ini tanpa kait -> roll lahir di rak beku -> stok ganda.
     # Bin tugas data lama yang tidak ada di struktur gudang tidak dipakai (roll lahir tanpa bin + peringatan).

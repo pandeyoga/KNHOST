@@ -24,6 +24,7 @@ from typing import Any, Dict, List, Optional
 from db import db
 from core_utils import new_id, next_doc_number, now_iso, rupiah, safe_doc
 from services import gl_service
+from services.book_date import tanggal_buku   # PK-37
 
 EPS = 0.01
 
@@ -198,7 +199,7 @@ async def sync_non_trade_elimination(*, source_key: str, pair_id: str, from_enti
     payload = {
         "name": f"Auto E-7: Eliminasi {label}",
         "entity_from": from_entity, "entity_to": to_entity,
-        "effective_date": now_iso()[:10],
+        "effective_date": tanggal_buku(),   # PK-37 — tanggal buku WIB (dulu tanggal UTC)
         "note": ("Auto-generated FASE E-7 (E7f/E7g): piutang & utang antar-PT dari pinjaman "
                  "uang / pindah aset tetap saling menghapus di konsolidasi karena uangnya "
                  f"tidak pernah keluar dari grup. Saldo terkini {rupiah(outstanding)}. "

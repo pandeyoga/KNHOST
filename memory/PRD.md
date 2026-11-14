@@ -18,6 +18,16 @@ GL-01: registri `services/gl_mapping_registry.py` (54 kebutuhan) → koleksi `gl
 - 2026-10-19 (sesi E): Fase A registri+resolver+API Pemetaan Akun; Fase B UI `?view=gl-account-mappings` (Pengaturan → Keuangan); Fase C pembaca saldo (suspense, piutang denda, uang muka, selisih bayar, persediaan, AR aging) memakai akun pemetaan; Fase D jurnal ongkir retur (cara kirim, akun bayar Finance, PT pembeban, PPN via `returns.logistics_vat_enabled`, jurnal balik saat ubah/tolak); Fase E pemecahan roll cutloss (posisi cacat, BS/Dibuang oleh peran `returns.cutloss_treatment_roles`, pratinjau, SJ potongan baik merujuk SJ & SO asal); Fase F uji (iteration_244: 100%), ACC-KP-01, filter `?stage=` produk, judul/qty kartu tugas gudang Meja Saya. Detail: evidence/HANDOFF_SESI_2026-10-19E.md.
 
 - 2026-11-13/14 (blueprint `docs/blueprint/`, laporan `docs/reviews/2026-11-13/hasil/`): PK-01 garis dasar gate + 256 temuan di tracker; PK-02 kerangka uji `backend/tests_mem/` (database tiruan); PK-05 bayar hutang lewat satu pintu niat bayar (`ap_payment_intents`): periksa tanpa tulis → niat → faktur → kas (rekening wajib, milik PT tagihan) → dokumen kontrabon berversi → jurnal tahan-gagal; kunci idempotensi pada bayar faktur/kontrabon; niat menggantung bisa dilanjutkan/dibatalkan dari form. PR-T9: izin peran bawaan tidak lagi ditimpa saat server start (cabut/atur ulang lama jadi migrasi sekali-jalan tercatat di `permission_settings.migrations_applied`); peran kustom ikut izin baru peran dasarnya bila modulnya belum diubah, selain itu tombol "Ikuti peran dasar". KF-T1: Pusat Pengaturan — ubah = izin kunci (`settings.manage`, `inventory/goods_receipt/makloon.configure`, `rnd.manage`, …; tanpa jalur nama peran), baca = `settings.view` atau yang boleh mengubah kunci itu; `GET /api/settings/effective` tanpa `settings.view` hanya memuat kunci `sensitif_baca=False`.
+- 2026-11-14 PK-37 (GL-05, K-03 — satu tanggal buku WIB & kunci periode dokumen): `services/book_date.py`
+  (`tanggal_buku`, `periode_buku`, `periksa_periode_dokumen`). Tanggal jurnal baru = tanggal buku WIB 10 huruf (stempel UTC
+  tetap di `created_at`); penjaga periode, pemeriksa di muka, status periode per tanggal, "hari ini" antar-PT, dan bulan
+  pajak berjalan memakai fungsi yang sama — transaksi 00.00–06.59 WIB tanggal 1 masuk bulan yang benar. Dokumen,
+  pembayaran, dan mutasi stok di 20 titik (tagihan pemasok, biaya masuk, surat jalan, penerimaan, opname, hapus-buku roll,
+  retur, nota kredit, makloon, denda, selisih bayar, produksi, rekonsiliasi bank, transfer antar-PT, bahan sample, klaim
+  makloon, saldo kredit, kasus keuangan) ditolak di muka (409 "Periode … sudah ditutup, jadi … tidak bisa dicatat …")
+  sebelum ada yang tersimpan; sakelar per PT `periode.kunci_dokumen` (bawaan menyala, izin `accounting.manage`). Jendela
+  Buka Periode yang aktif tetap meloloskan. Skrip jurnal lama `scripts/blueprint/pk37_tanggal_buku_lama.py`
+  (baca-saja; `--terapkan` menunggu pemilik, H3).
 - 2026-11-14 PK-21 (rekonsiliasi bank satu mekanisme, SL-10): status "terekonsiliasi" transaksi kas hanya dari
   alokasi mutasi bank (`reconciled_amount`, pemilik `bank_recon_service`); `reconciled`/`matched_line_ids` turunan
   yang ditulis dalam satu pembaruan bersyarat. Lepas-cocok mengklaim baris (`match_lock`) lalu mengurangi bersyarat —

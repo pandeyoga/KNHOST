@@ -248,6 +248,9 @@ async def approve_landed_cost(voucher_id: str, request: Request) -> Dict[str, An
     from services import dual_control as _dc
     await _dc.tolak_bila_pelaku_sama("biaya_masuk", v, actor, v.get("entity_id", ""),
                                      nominal=float(v.get("total_cost") or 0), pengaju=[v.get("created_by_id")])
+    # PK-37 (K-03) — PERIKSA periode buku hari ini sebelum HPP roll diubah.
+    from services.book_date import periksa_periode_dokumen_409
+    await periksa_periode_dokumen_409(v.get("entity_id") or DEFAULT_ENTITY_ID, None, jenis="biaya masuk (landed cost)")
     # Recompute alokasi terhadap kondisi roll TERKINI (anti-drift), lalu terapkan.
     rolls = await resolve_target_rolls(v.get("po_ids", []), v.get("entity_id", ""))
     if not rolls:
@@ -325,6 +328,10 @@ async def pay_landed_cost(voucher_id: str, payload: LandedCostPaymentCreate, req
         raise HTTPException(status_code=400,
                             detail=f"Pembayaran ({amount}) melebihi sisa ({fin['outstanding']}).")
     cash_entity = "all" if payload.cash_type == "kas_besar" else (payload.entity_id or v.get("entity_id") or DEFAULT_ENTITY_ID)
+    # PK-37 (K-03) — PERIKSA periode tanggal bayar sebelum kas lahir (PT voucher, dan PT kas bila berbeda).
+    from services.book_date import periksa_periode_dokumen_409
+    _pt_bayar = [v.get("entity_id") or DEFAULT_ENTITY_ID] + ([cash_entity] if cash_entity != "all" else [])
+    await periksa_periode_dokumen_409(_pt_bayar, payload.paid_at or None, jenis="pembayaran")
     # INV-ATOMIC-01 — klaim voucher (status applied) SESUDAH validasi sisa, sebelum kas lahir:
     # dua pembayaran bersamaan tidak boleh sama-sama lolos cek sisa → satu 409.
     from services import atomic_claim as _saga

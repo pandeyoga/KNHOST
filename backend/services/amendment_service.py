@@ -616,6 +616,11 @@ async def propose(doc_type: str, doc_id: str, reason_code: str,
 
     amd = await _amd_doc(pv, reason_code, reason["label"], bool(reason.get("affects_master")),
                          actor, note, attachments)
+    if not pv["requires_approval"] and amd["method"] == "credit_note":
+        # PK-37 (K-03) — langsung diterapkan = nota kredit berjurnal hari ini: PERIKSA periode sebelum usulan disimpan.
+        # (HTTP 409 — AmendmentError dipetakan router ke 400.)
+        from services.book_date import periksa_periode_dokumen_409
+        await periksa_periode_dokumen_409(amd.get("entity_id") or "", None, jenis="nota kredit")
     await db[AMD_COLL].insert_one(dict(amd))
     if amd["method"] in _NOTE_METHODS:
         await _yield_to_earlier_note(amd)
@@ -776,6 +781,10 @@ async def decide(amd_id: str, action: str, actor: Dict[str, Any],
 
     if action != "approve":
         raise AmendmentError("Aksi harus 'approve' atau 'reject'.")
+    if amd.get("method") == "credit_note":
+        # PK-37 (K-03) — nota kredit berjurnal hari ini: PERIKSA periode sebelum keputusan ditulis (HTTP 409).
+        from services.book_date import periksa_periode_dokumen_409
+        await periksa_periode_dokumen_409(amd.get("entity_id") or "", None, jenis="nota kredit")
     if amd.get("method") in _NOTE_METHODS:
         await _assert_note_still_valid(amd)
 

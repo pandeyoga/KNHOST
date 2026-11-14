@@ -26,7 +26,8 @@ _ACTIVE_SO_EXCLUDE = {"cancelled", "draft", "rejected"}
 
 
 def _cur_month() -> str:
-    return now_iso()[:7]
+    from services.book_date import periode_buku   # PK-37 — bulan berjalan WIB (dulu bulan UTC)
+    return periode_buku()
 
 
 def _ent_q(entity_id: Any) -> Dict[str, Any]:

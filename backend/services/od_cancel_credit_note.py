@@ -88,6 +88,10 @@ async def review(cn_id: str, action: str, body: Dict[str, Any], actor: Dict[str,
         raise HTTPException(status_code=409, detail=f"Nota {doc.get('number')} sudah berstatus '{doc.get('status')}'.")
     who, now = actor.get("name", ""), now_iso()
     note = (body.get("note") or "").strip()
+    if action == "issue" and doc.get("revenue_recognized"):
+        # PK-37 (K-03) — terbit = jurnal koreksi pendapatan hari ini: PERIKSA periode sebelum status berubah.
+        from services.book_date import periksa_periode_dokumen_409
+        await periksa_periode_dokumen_409(doc.get("entity_id") or "", None, jenis="nota kredit")
     if action == "adjust":
         if len(note) < 5:
             raise HTTPException(status_code=400, detail="Alasan koreksi wajib (minimal 5 huruf).")

@@ -16,6 +16,7 @@ from db import db
 from core_utils import new_id, now_iso, rupiah, safe_doc
 from services import financial_statement_service as fs
 from services.consolidation_stale_service import stale_g6_eliminations   # Fase 4 · R6 (G1-33)
+from services.book_date import tanggal_buku   # PK-37
 
 IC_KEYWORDS = ["intercompany", "inter-co", "interco", "antar entitas",
                "antar-entitas", "antar-pt", "antar pt", "antarperusahaan",
@@ -242,7 +243,7 @@ async def create_elimination(data: Dict[str, Any], actor: Dict[str, Any]) -> Dic
         "name": (data.get("name") or "Eliminasi Intercompany").strip(),
         "entity_from": data.get("entity_from") or None,
         "entity_to": data.get("entity_to") or None,
-        "effective_date": (data.get("effective_date") or now_iso())[:10],
+        "effective_date": (data.get("effective_date") or tanggal_buku())[:10],   # PK-37 — bawaan hari ini WIB
         "note": (data.get("note") or "").strip(),
         "lines": lines,
         "total_debit": round(total_d, 2),
@@ -355,7 +356,7 @@ async def sync_ic_eliminations_from_pairs(as_of: str = "") -> Dict[str, Any]:
             "name": f"Auto: Eliminasi IC transfer {p['pair_id']}",
             "entity_from": p["source_entity_id"],
             "entity_to": p["dest_entity_id"],
-            "effective_date": p["effective_date"] or now_iso()[:10],
+            "effective_date": p["effective_date"] or tanggal_buku(),   # PK-37 — bawaan hari ini WIB
             "note": "Dibuat otomatis dari pasangan jurnal transfer antar-PT. "
                     "Menghapus dobel-hitung piutang↔utang antar-PT di neraca konsolidasi.",
             "lines": lines,
@@ -685,7 +686,7 @@ async def sync_g6_ic_eliminations(as_of: str = "", pair_id: str = "") -> Dict[st
             "name": f"Eliminasi otomatis antar-PT {p['seller_number'] or p['pair_id']}",
             "entity_from": p["seller_entity_id"],
             "entity_to": p["buyer_entity_id"],
-            "effective_date": p["effective_date"] or now_iso()[:10],
+            "effective_date": p["effective_date"] or tanggal_buku(),   # PK-37 — bawaan hari ini WIB
             "note": (
                 "Dibuat otomatis dari transaksi antar-PT. "
                 "Mengeliminasi pendapatan & HPP intra-grup, laba yang belum terealisasi "

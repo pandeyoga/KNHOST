@@ -32,7 +32,6 @@ Invarian: **INV-IC-08** (di `scripts/verify_data_integrity.py`).
 """
 from __future__ import annotations
 
-from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional, Tuple
 
 from core_utils import new_id, next_doc_number, now_iso, rupiah, safe_doc, timeline_entry
@@ -63,7 +62,8 @@ class IntercoReturnError(Exception):
 
 
 def _today() -> str:
-    return datetime.now(timezone.utc).date().isoformat()
+    from services.book_date import tanggal_buku   # PK-37 — "hari ini" = tanggal buku WIB (dulu tanggal UTC)
+    return tanggal_buku()
 
 
 # ═══════════════════════════════════════════════════════════════════════════

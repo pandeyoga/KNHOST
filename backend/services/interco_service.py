@@ -82,7 +82,8 @@ class IntercoError(Exception):
 # Utils
 # ═══════════════════════════════════════════════════════════════════════════
 def _today() -> str:
-    return datetime.now(timezone.utc).date().isoformat()
+    from services.book_date import tanggal_buku   # PK-37 — "hari ini" = tanggal buku WIB (dulu tanggal UTC)
+    return tanggal_buku()
 
 
 async def _entity_snapshot(entity_id: str) -> Dict[str, str]:

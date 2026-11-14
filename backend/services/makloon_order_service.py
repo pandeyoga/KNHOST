@@ -673,6 +673,9 @@ async def issue_step(mko_id: str, seq: int, *, from_warehouse_id: str = "",
     wh = from_warehouse_id or order.get("from_warehouse_id") or ""
     if not wh:
         raise HTTPException(status_code=400, detail="Gudang sumber bahan wajib diisi")
+    # PK-37 (K-03) — PERIKSA periode buku hari ini sebelum bahan keluar gudang (jurnal persediaan → WIP makloon).
+    from services.book_date import periksa_periode_dokumen_409
+    await periksa_periode_dokumen_409(order.get("entity_id") or "", None, jenis="dokumen makloon")
     input_pid = step["input_product_id"]
     input_qty = round(float(step["input_qty"] or 0), 2)
     # Kasus celup (20 roll Esmica Blue) — roll TERTENTU yang dimuat ke truk; qty = Σ panjang roll (satuan dasar).
@@ -851,6 +854,9 @@ async def record_service_step(mko_id: str, seq: int, data: Dict[str, Any], *,
                                 detail=f"Langkah {seq - 1} harus diselesaikan dulu")
 
     entity_id = order["entity_id"]
+    # PK-37 (K-03) — PERIKSA periode buku hari ini sebelum tagihan jasa & jurnalnya dicatat.
+    from services.book_date import periksa_periode_dokumen_409
+    await periksa_periode_dokumen_409(entity_id, None, jenis="dokumen makloon")
     label = f"{order.get('mko_number')} step{seq}"
     input_qty = round(float(step.get("input_qty") or 0), 3)
 
@@ -972,6 +978,9 @@ async def receive_step(mko_id: str, seq: int, data: Dict[str, Any], *,
             detail=f"Langkah {seq} ({step.get('stage_label') or step.get('process_type')}) "
                    "adalah JASA MURNI — tidak ada kain yang diterima. Selesaikan dengan "
                    "aksi \"Catat Jasa\".")
+    # PK-37 (K-03) — PERIKSA periode buku hari ini sebelum roll hasil lahir (jurnal WIP → persediaan).
+    from services.book_date import periksa_periode_dokumen_409
+    await periksa_periode_dokumen_409(order.get("entity_id") or "", None, jenis="dokumen makloon")
     out_pid = step.get("output_product_id")
     if not out_pid:
         raise HTTPException(status_code=400, detail="Produk output step belum ditentukan")

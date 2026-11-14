@@ -48,6 +48,10 @@ async def dispatch_task(
         raise HTTPException(status_code=400, detail="Task ini bukan outbound task")
     if task.get("status") in NON_DISPATCHABLE:
         raise HTTPException(status_code=400, detail=f"Task tidak bisa dispatch (status: {task.get('status')})")
+    # PK-37 (K-03) — PERIKSA periode buku hari ini (jurnal pendapatan & HPP PT pesanan) sebelum roll dipindah.
+    from services.book_date import periksa_periode_dokumen_409
+    _so = await db.sales_orders.find_one({"id": task.get("order_id")}, {"_id": 0, "entity_id": 1}) or {}
+    await periksa_periode_dokumen_409(_so.get("entity_id") or task.get("entity_id") or "", None, jenis="surat jalan")
 
     quantity = round(float(task.get("quantity", 0) or 0), 2)
     already = round(float(task.get("shipped_qty", 0) or 0), 2)

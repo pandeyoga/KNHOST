@@ -424,6 +424,8 @@ async def issue(penalty_id: str, actor: Dict[str, Any], auto: bool = False) -> D
         raise PenaltyError(f"Nota denda sudah berstatus '{STATUS_LABEL.get(p['status'], p['status'])}'.")
     if float(p["amount"]) <= EPS:
         raise PenaltyError("Nominal denda nol — tidak ada yang bisa diterbitkan.")
+    from services.book_date import periksa_periode_dokumen   # PK-37 (K-03) — PERIKSA periode jurnal terbit (hari ini)
+    await periksa_periode_dokumen(p.get("entity_id", ""), None, jenis="nota denda")
     je = await gl_service.post_penalty_issue(
         penalty_id=p["id"], entity_id=p.get("entity_id", ""), amount=float(p["amount"]),
         label=f"{p['number']} · {p.get('customer_name', '')}",
@@ -450,6 +452,9 @@ async def waive(penalty_id: str, reason_code: str, note: str,
         raise PenaltyError("Nota denda tidak ditemukan.")
     if p["status"] in ("waived", "paid"):
         raise PenaltyError(f"Nota denda sudah '{STATUS_LABEL.get(p['status'], p['status'])}'.")
+    if p["status"] in ("issued", "adjusted"):   # PK-37 (K-03) — berjurnal pembalik hari ini: PERIKSA periode
+        from services.book_date import periksa_periode_dokumen
+        await periksa_periode_dokumen(p.get("entity_id", ""), None, jenis="nota denda")
     reason = await _reason_or_fail(reason_code)
     appr = await _needs_approval(p)
     if appr["required"] and not role_in((actor.get("role") or ""), (appr["role"], "admin")):
@@ -501,6 +506,10 @@ async def adjust(penalty_id: str, new_amount: float, reason_code: str, note: str
     if amt < paid - EPS:   # PK-08 — tidak boleh di bawah yang sudah dibayar (piutang denda jadi minus)
         raise PenaltyError(f"Nominal baru tidak boleh lebih kecil dari yang sudah dibayar ({rupiah(paid)})."
                            .replace(",", "."))
+    if p["status"] in ("issued", "adjusted") and round(float(p["amount"]) - amt, 2) > EPS:
+        # PK-37 (K-03) — berjurnal selisih hari ini: PERIKSA periode sebelum apa pun ditulis.
+        from services.book_date import periksa_periode_dokumen
+        await periksa_periode_dokumen(p.get("entity_id", ""), None, jenis="nota denda")
     reason = await _reason_or_fail(reason_code)
     appr = await _needs_approval(p)
     if appr["required"] and not role_in((actor.get("role") or ""), (appr["role"], "admin")):
@@ -560,6 +569,9 @@ async def pay(penalty_id: str, amount: float, method: str, actor: Dict[str, Any]
     # ── PERIKSA ─────────────────────────────────────────────────────────
     if p["status"] not in ("issued", "adjusted"):
         raise PenaltyError("Denda harus DITERBITKAN dulu sebelum bisa menerima pembayaran.")
+    # PK-37 (K-03) — PERIKSA periode buku hari ini (sakelar per PT); `preflight_posting` di bawah tetap tanpa syarat.
+    from services.book_date import periksa_periode_dokumen
+    await periksa_periode_dokumen(p.get("entity_id", ""), None, jenis="nota denda")
     amt = round(float(amount or 0), 2)
     paid_read = round(float(p.get("paid_amount") or 0), 2)
     pending = round(sum(float(x.get("amount") or 0) for x in (p.get("payments") or [])

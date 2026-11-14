@@ -458,6 +458,9 @@ async def complete_work_order(wo_id: str, scope: Optional[Dict[str, Any]] = None
     if not comps:
         raise ValueError("Work Order tidak punya resep bahan yang dibekukan.")
     entity_id, warehouse_id = wo["entity_id"], wo["warehouse_id"]
+    # PK-37 (K-03) — PERIKSA periode buku hari ini sebelum klaim & konsumsi bahan (HTTP 409; ValueError = 400 di router).
+    from services.book_date import periksa_periode_dokumen_409
+    await periksa_periode_dokumen_409(entity_id, None, jenis="hasil produksi")
     planned_qty = _r(wo["planned_qty"])
     stage = (wo.get("completion") or {}).get("stage", "")
 

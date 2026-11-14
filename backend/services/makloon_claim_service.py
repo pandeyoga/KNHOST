@@ -167,6 +167,9 @@ async def approve_claim(mko_id: str, seq: int, *, actor: str = "system",
     await _assert_policy(order, claim, actor_role, "approve")
     if claim.get("status") != "pending_approval":
         raise ClaimError("Tidak ada pengajuan klaim yang menunggu persetujuan pada langkah ini.")
+    # PK-37 (K-03) — PERIKSA periode buku hari ini sebelum tagihan dipotong / jurnal klaim (HTTP 409; ClaimError = 400).
+    from services.book_date import periksa_periode_dokumen_409
+    await periksa_periode_dokumen_409(order.get("entity_id") or "", None, jenis="klaim makloon")
     action = claim.get("action")
     amount = parse_decimal(claim.get("amount"), 2)
     effect: Dict[str, Any] = {"action": action, "amount": amount, "journal_id": "",

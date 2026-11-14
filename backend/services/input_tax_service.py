@@ -14,7 +14,6 @@ eksternal; kewajiban finansial sudah dibuat oleh Vendor Bill.)
 """
 from typing import Any, Dict, List, Optional
 from db import db
-from core_utils import now_iso
 
 # Vendor bill yang AP-relevan (lihat vendor_bill_service.AP_BILL_STATUSES).
 ELIGIBLE_BILL_STATUSES = {"posted", "paid"}
@@ -43,8 +42,11 @@ def format_nsfp_display(nsfp: Optional[str]) -> str:
 
 def period_of(iso_date: Optional[str]) -> str:
     """Periode pajak YYYY-MM dari tanggal faktur (default sekarang)."""
-    s = (iso_date or "") or now_iso()
-    return s[:7]
+    from services.book_date import periode_buku   # PK-37 — periode WIB (stempel UTC dini hari tgl 1 = bulan baru)
+    try:
+        return periode_buku(iso_date)
+    except ValueError:   # isian tak dikenal: perilaku lama (7 huruf pertama)
+        return str(iso_date)[:7]
 
 
 async def find_active_duplicate_nsfp(nsfp_digits: str, exclude_id: str = "") -> Optional[Dict[str, Any]]:
@@ -119,7 +121,10 @@ async def vat_summary(period: str = "", entity_id: str = "", entity_ids: Optiona
     Masukan  = Σ ppn_amount Faktur Pajak Masukan (tax_invoices_in, status recorded).
     Net      = Keluaran − Masukan → >0 KURANG BAYAR (setor), <0 LEBIH BAYAR (kredit).
     """
-    period = (period or now_iso()[:7]).strip()
+    if not period:   # PK-37 — bulan pajak berjalan WIB (dulu bulan UTC)
+        from services.book_date import periode_buku
+        period = periode_buku()
+    period = period.strip()
 
     def _in_period(doc: Dict[str, Any]) -> bool:
         return (doc.get("faktur_date", "") or "")[:7] == period

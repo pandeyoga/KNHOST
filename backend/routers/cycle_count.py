@@ -303,6 +303,12 @@ async def approve_session(session_id: str, payload: CycleCountApprove, request: 
     await _dc.tolak_bila_pelaku_sama("stok_opname", session, actor, session.get("entity_id", ""),
                                      pengaju=[session.get("submitted_by_id"), session.get("submitted_by")])
     _assert_item_owners(session, await entity_ctx(request))
+    # PK-37 (K-03) — PERIKSA periode buku hari ini untuk tiap PT pemilik baris berselisih, sebelum sesi diklaim.
+    from services.book_date import periksa_periode_dokumen_409
+    _by_id = {i["id"]: i for i in session.get("items", [])}
+    await periksa_periode_dokumen_409(sorted({
+        _by_id[d["item_id"]].get("owner_entity_id") or DEFAULT_ENTITY_ID for d in session.get("discrepancies", [])
+        if d.get("item_id") in _by_id and abs(float(d.get("difference") or 0)) >= 0.001}), None, jenis="penyesuaian stok")
     # FIX-3a (B2a OPN-05) — pembekuan bisa mulai sesudah item ditambah: cek ulang sebelum selisih diterapkan.
     for _it in session.get("items", []):
         await rfz.assert_count_scope(session["warehouse_id"], [_it["bin_id"]] if _it.get("bin_id") else None,
@@ -561,6 +567,9 @@ async def roll_finalize(session_id: str, payload: RollFinalizePayload, request: 
             raise HTTPException(status_code=400, detail=f"Kode {ln['code']}: produk tanpa biaya acuan — isi alasan biaya nol")
     # FIX-3a — K-14 dihitung huruf; dicek SESUDAH izin & cakupan PT (403 lebih dulu), SEBELUM ada penulisan.
     require_reason(payload.reason, label="Alasan finalisasi")
+    # PK-37 (K-03) — PERIKSA periode buku hari ini untuk tiap PT pemilik yang tersentuh, sebelum sesi diklaim.
+    from services.book_date import periksa_periode_dokumen_409
+    await periksa_periode_dokumen_409(sorted(owners), None, jenis="penyesuaian stok")
     await _saga.claim("cycle_count_sessions", session_id, "cycle_count_roll_finalize",
                       precondition={"status": "open"}, actor=actor["name"])
     recount, blocked, held = [], 0, 0

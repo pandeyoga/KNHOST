@@ -583,6 +583,11 @@ async def approve_transfer(transfer_id: str, payload: TransferApprove, request: 
             if len(reason) < 5:
                 raise HTTPException(status_code=400, detail="Alasan pengecualian minimal 5 karakter.")
             rule_exc = {"by": actor["name"], "reason": reason, "at": now_iso(), "violations": viol[:20]}
+    if transfer.get("transfer_kind") == "inter_entity":
+        # PK-37 (K-03) — PERIKSA periode buku hari ini untuk KEDUA PT sebelum kepemilikan roll pindah (jurnal M-3).
+        from services.book_date import periksa_periode_dokumen_409
+        await periksa_periode_dokumen_409([transfer.get("source_entity_id") or "", transfer.get("dest_entity_id") or ""],
+                                          None, jenis="transfer antar-PT")
     # T-01 Opsi B (INV-ATOMIC-01) — klaim sebelum kepemilikan roll pindah + jurnal diposting.
     from services import atomic_claim as _saga
     await _saga.claim("warehouse_transfers", transfer_id, "transfer_approve",

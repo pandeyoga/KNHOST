@@ -55,8 +55,8 @@ async def test_PK02_GL04_tutup_bulan_berjalan(aplikasi):
     await jurnal(eid, now_iso()[:10], [("6-2000", 1000, 0), ("1-1100", 0, 1000)], "jurnal hari ini", "g04")
 
 
-@pytest.mark.xfail(strict=True, reason="GL-05 — tanggal buku campur UTC dan WIB")
 async def test_PK02_GL05_tanggal_buku_wib(aplikasi):
+    """Tanda "diharapkan gagal" dicabut PK-37: tanggal jurnal = tanggal buku WIB (`services/book_date.tanggal_buku`)."""
     from services import financial_statement_service as fs
     eid = await pt_uji("G05")
     await jurnal(eid, "2026-10-20", [("6-2000", 4 * JT, 0), ("1-1100", 0, 4 * JT)], "Sewa", "g05a")

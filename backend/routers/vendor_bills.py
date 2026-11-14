@@ -392,6 +392,10 @@ async def _do_submit(bill_id: str, actor: Dict[str, Any], locked: bool = False) 
 
 
 async def _post_bill(bill_id: str, actor: Dict[str, Any], note: str = "") -> Dict[str, Any]:
+    # PK-37 (K-03) — PERIKSA periode buku hari ini sebelum tagihan berubah status (jalur ajukan → langsung posting).
+    from services.book_date import periksa_periode_dokumen_409
+    _b = await db.vendor_bills.find_one({"id": bill_id}, {"_id": 0, "entity_id": 1}) or {}
+    await periksa_periode_dokumen_409(_b.get("entity_id") or DEFAULT_ENTITY_ID, None, jenis="tagihan pemasok")
     # KN-B05 — posting berprasyarat status: dua submit/approve bersamaan → tepat satu jurnal AP.
     updated = await db.vendor_bills.find_one_and_update(
         {"id": bill_id, "status": {"$in": ["draft", "pending_approval"]}},
@@ -464,6 +468,9 @@ async def approve_vendor_bill(bill_id: str, request: Request) -> Dict[str, Any]:
     await _dc.tolak_bila_pelaku_sama("tagihan_pemasok", bill, actor, bill.get("entity_id", ""),
                                      nominal=float(bill.get("grand_total") or bill.get("total_amount") or 0),
                                      pengaju=[bill.get("created_by_id")])
+    # PK-37 (K-03) — PERIKSA periode sebelum tanda setuju ditulis (`_post_bill` memeriksa lagi untuk jalur ajukan).
+    from services.book_date import periksa_periode_dokumen_409
+    await periksa_periode_dokumen_409(bill.get("entity_id") or DEFAULT_ENTITY_ID, None, jenis="tagihan pemasok")
     await db.vendor_bills.update_one(
         {"id": bill_id},
         {"$set": {"approval_status": "approved", "approved_by": actor["name"], "approved_at": now_iso()}})
@@ -621,6 +628,9 @@ async def cancel_vendor_bill(bill_id: str, payload: VendorBillDecision, request:
         raise HTTPException(status_code=409, detail=(
             "Tagihan jasa makloon sudah diserap ke nilai hasil makloon — tidak bisa dibatalkan dari sini. "
             "Koreksi lewat order makloon (klaim potong bon) agar utang, WIP dan nilai persediaan tetap sejalan."))
+    if bill.get("status") == "posted":   # PK-37 (K-03) — pembatalan berjurnal pembalik: PERIKSA periode hari ini
+        from services.book_date import periksa_periode_dokumen_409
+        await periksa_periode_dokumen_409(bill.get("entity_id") or DEFAULT_ENTITY_ID, None, jenis="pembatalan tagihan")
     # T-01 Opsi B (INV-ATOMIC-01) — klaim bill sebelum jurnal dibalik + PO disinkronkan;
     # dua "Batalkan" bersamaan tidak membalik jurnal dua kali. Status akhir ditulis finish_set.
     from services import atomic_claim as _saga

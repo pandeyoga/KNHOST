@@ -1041,6 +1041,9 @@ async def book_charge(line_id: str, kind: str, note: str, actor: str,
     # Akun bisa berasal dari Pusat Pengaturan; pastikan bagan akun baku ada supaya jurnal
     # tidak jatuh ke Suspense pada database baru.
     await gl.seed_default_coa()
+    # PK-37 (K-03) — PERIKSA periode tanggal mutasi (sakelar per PT, pesan dokumen); pemeriksa PK-15 di bawah tetap.
+    from services.book_date import periksa_periode_dokumen
+    await periksa_periode_dokumen(ent, ln.get("stmt_date") or None, jenis="transaksi bank")
     # PK-15 (SL-04) — periode tertutup ditolak SEBELUM kas tercatat (ClosedPeriodError → 409 di router).
     await gl.preflight_posting(ent, ln.get("stmt_date") or "")
     from services import atomic_claim as _saga
@@ -1223,6 +1226,9 @@ async def to_holding(line_id: str, note: str, actor: str,
 
     from core_utils import next_doc_number
     from services import gl_service as gl
+    # PK-37 (K-03) — PERIKSA periode tanggal mutasi sebelum nomor & kas titipan lahir (ClosedPeriodError → 409).
+    from services.book_date import periksa_periode_dokumen
+    await periksa_periode_dokumen(ent, ln.get("stmt_date") or None, jenis="transaksi bank")
     # Pastikan akun titipan ADA sebelum menjurnal. Tanpa ini, jurnal pertama di DB baru
     # jatuh ke akun Suspense (terukur di POC G-8) sehingga saldo titipan tak terbaca.
     await gl.seed_default_coa()
@@ -1321,6 +1327,9 @@ async def allocate_holding(line_id: str, allocations: List[Dict[str, Any]], cust
             raise ValueError(
                 f"Pesanan {order.get('number', order_id)} bukan milik pelanggan yang dipilih")
         orders.append((order_id, amt, order))
+    # PK-37 (K-03) — PERIKSA periode buku hari ini (jurnal alokasi bertanggal hari ini); pemeriksa PK-15 tetap.
+    from services.book_date import periksa_periode_dokumen
+    await periksa_periode_dokumen(ln.get("entity_id") or "", None, jenis="transaksi bank")
     # PK-15 (SL-03) — periode tertutup ditolak sebelum apa pun ditulis.
     await gl.preflight_posting(ln.get("entity_id") or "")
     from services import atomic_claim as _saga

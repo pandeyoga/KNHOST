@@ -498,6 +498,10 @@ async def resolve(case_id: str, payload: Dict[str, Any], actor: Dict[str, Any],
     auto_ok = (case["case_type"] == "selisih_biaya_bank"
                and amount <= float(pol["auto_charge_max"] or 0) + EPS)
     approver = "" if auto_ok else _assert_authority(action, amount, pol, actor)
+    # PK-37 (K-03) — PERIKSA periode buku hari ini sebelum kasus diklaim & dokumen turunan lahir (HTTP 409; CaseError
+    # dipetakan router ke 400).
+    from services.book_date import periksa_periode_dokumen_409
+    await periksa_periode_dokumen_409(case.get("entity_id") or "", None, jenis="penyelesaian kasus")
 
     # G3 D4-CASE-02 — KLAIM kasus sebelum efek samping: dua penyelesaian paralel → satu menang,
     # yang kalah tidak meninggalkan kas. Gagal di tengah → kunci dilepas; retry mengadopsi kas

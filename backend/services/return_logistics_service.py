@@ -10,6 +10,7 @@ from typing import Any, Dict, List, Optional
 from core_utils import now_iso
 from db import db
 from services import gl_service
+from services.book_date import tanggal_buku   # PK-37
 
 TYPES = {"customer_return": "Ongkir retur dari customer", "qc_trip": "Perjalanan Jakarta–Rancamalang (QC)",
          "replacement_shipping": "Kirim barang pengganti"}
@@ -94,7 +95,8 @@ async def _active(ret_id: str, t: str) -> Optional[Dict[str, Any]]:
 
 async def _reverse(je: Dict[str, Any], reason: str, actor: Dict[str, Any]) -> None:
     # PK-36 — dokumen ini pemilik jurnalnya (ongkir ditagih ke pelanggan = Dr piutang): bukan pembalikan manual (P10).
-    await gl_service.reverse_entry(je["id"], now_iso()[:10], reason, actor, periksa_akun_kontrol=False)
+    # PK-37 — tanggal buku WIB.
+    await gl_service.reverse_entry(je["id"], tanggal_buku(), reason, actor, periksa_akun_kontrol=False)
 
 
 async def sync_journals(ret: Dict[str, Any], rows: List[Dict[str, Any]], actor: Dict[str, Any]) -> None:

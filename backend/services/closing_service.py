@@ -596,9 +596,13 @@ async def _finish_reclose(closing_id, rec, entity_id, start, end, stmt, je, resi
 
 async def status_for_date(date_iso: str, entity_id: str) -> Dict[str, Any]:
     """Cek apakah `date_iso` berada dalam periode tertutup (untuk warning soft)."""
-    d = (date_iso or "")[:10]
-    if not d:
+    if not date_iso:
         return {"closed": False}
+    from services.book_date import tanggal_buku   # PK-37 (GL-05) — tanggal buku WIB, bukan potong 10 huruf
+    try:
+        d = tanggal_buku(date_iso)
+    except ValueError:   # isian tak dikenal di endpoint peringatan: perilaku lama (potong 10 huruf)
+        d = str(date_iso)[:10]
     rows = await db.period_closings.find(
         {"entity_id": entity_id, "status": "closed"}, {"_id": 0}).to_list(500)
     for r in rows:

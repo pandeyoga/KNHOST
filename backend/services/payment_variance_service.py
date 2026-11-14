@@ -100,6 +100,17 @@ REASON_DOC_TYPE = "payment_variance"     # `amendment_reasons.applies_to` (takso
 SENSITIVE_KINDS = ("writeoff", "refund", "ap_writeoff")
 
 
+async def _periksa_periode(entity_id: str) -> None:
+    """PK-37 (K-03) — PERIKSA periode buku hari ini untuk keputusan berjurnal; tertutup → `VarianceError` berpesan sama
+    (dipanggil sesudah uang masuk/keluar di jalur kwitansi & bayar tagihan: keputusan menunggu di antrean)."""
+    from services import gl_service as _gl
+    from services.book_date import periksa_periode_dokumen
+    try:
+        await periksa_periode_dokumen(entity_id, None, jenis="keputusan selisih bayar")
+    except _gl.ClosedPeriodError as exc:
+        raise VarianceError(str(exc)) from exc
+
+
 class VarianceError(ValueError):
     """Kesalahan selisih pembayaran dengan pesan siap tampil (Bahasa Indonesia)."""
 
@@ -732,6 +743,8 @@ async def decide_receipt(receipt_id: str, payload: Dict[str, Any],
                                  pengaju=[receipt.get("created_by")])
         if _dcr["ditolak"]:
             raise VarianceError(_dcr["pesan"])
+    if kind not in ("outstanding", "reschedule"):   # PK-37 — dua pilihan ini tanpa perubahan pembukuan
+        await _periksa_periode(entity_id)
 
     number = await next_doc_number(COLL, "number", "SLB-", entity_id=entity_id or None)
     decision_id = new_id("pvd")
@@ -1045,6 +1058,7 @@ async def decide_bill(bill: Dict[str, Any], assessment: Dict[str, Any],
     if kind not in AP_KINDS + ("ap_rounding_writeoff", "ap_rounding_advance"):
         raise VarianceError(f"Pilihan '{kind}' tidak dikenal untuk selisih pembayaran supplier.")
     entity_id = assessment["entity_id"]
+    await _periksa_periode(entity_id)   # PK-37 (K-03) — sebelum nomor keputusan & jurnal selisih
     policy = assessment["policy"]
     gap = round(abs(float(assessment["delta"])), 2)
     reason_code = payload.get("reason_code") or (
