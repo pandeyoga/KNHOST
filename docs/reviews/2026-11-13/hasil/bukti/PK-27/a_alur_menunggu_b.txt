@@ -1,0 +1,36 @@
+PASSED [ 82%]
+E   assert ('damaged', 12000, 11000) == ('damaged', 0, 0)
+E     At index 1 diff: 12000 != 0
+E   assert (None)
+E   assert (1 == 1 and {'2-1100': (5...0.0, 55000.0)} == {'2-1100': (5...': (0, 55000)}
+E     Differing items:
+E     {'1-1300': (0.0, 500000.0)} != {'1-1300': (0, 525000)}
+E     {'5-9910': (25000, 0)}
+E   KeyError: 'book_value'
+E   assert (1 == 1 and {'2-1100': (6...0.0, 60500.0)} == {'2-1100': (6...': (0, 25000)}
+E     Differing items:
+E     {'1-1300': (0.0, 550000.0)} != {'1-1300': (0, 525000)}
+E     {'5-9910': (0, 25000)}
+    assert (d["gl_status"], d["stock_adjusted"], d["book_value"]) == ("failed", True, 525_000), d
+E   KeyError: 'book_value'
+E   assert (1 == 1 and {'5-1000': (2...0, 2000000.0)} == {'5-1000': (1... (0, 1000000)}
+E     Differing items:
+E     {'1-1300': (0.0, 2000000.0)} != {'1-1300': (0, 1000000)}
+E     {'5-1000': (2000000.0, 0.0)} != {'5-1000': (1000000, 0)}
+E   assert (2000000.0, 1600000.0) == (2000000, 1400000)
+E     At index 1 diff: 1600000.0 != 1400000
+E   assert (1000000.0, 800000.0) == (1000000, 600000)
+E     At index 1 diff: 800000.0 != 600000
+E   assert (1600000.0, 2000000.0) == (1400000, 2000000)
+E     At index 0 diff: 1600000.0 != 1400000
+FAILED tests_mem/test_PK27_biaya_roll.py::test_PK27_U1_scrap_menolkan_biaya_roll[asyncio]
+FAILED tests_mem/test_PK27_biaya_roll.py::test_PK27_U2_batal_scrap_memulihkan_biaya[asyncio]
+FAILED tests_mem/test_PK27_biaya_roll.py::test_PK27_U3_retur_beli_nilai_buku_dan_selisih_terpetakan[asyncio]
+FAILED tests_mem/test_PK27_biaya_roll.py::test_PK27_U4_tanpa_pemetaan_jurnal_lama_selisih_tercatat[asyncio]
+FAILED tests_mem/test_PK27_biaya_roll.py::test_PK27_U5_harga_nota_di_atas_nilai_buku[asyncio]
+FAILED tests_mem/test_PK27_biaya_roll.py::test_PK27_U6_jurnal_gagal_lalu_setujui_ulang[asyncio]
+FAILED tests_mem/test_PK27_biaya_roll.py::test_PK27_U7_hpp_surat_jalan_memuat_roll_berbiaya_nol[asyncio]
+FAILED tests_mem/test_PK27_biaya_roll.py::test_PK27_U10_retur_roll_dinilai_potret_surat_jalan[asyncio]
+FAILED tests_mem/test_PK27_biaya_roll.py::test_PK27_U11_retur_tanpa_roll_rata_rata_surat_jalan[asyncio]
+FAILED tests_mem/test_PK27_biaya_roll.py::test_PK27_U12_penyelesaian_per_roll[asyncio]
+=================== 10 failed, 7 passed, 2 warnings in 2.17s ===================

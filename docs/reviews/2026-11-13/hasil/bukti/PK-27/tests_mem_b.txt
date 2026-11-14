@@ -1,0 +1,15 @@
+  /tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/wt23/backend/routers/export_center.py:99: PydanticDeprecatedSince20: The `dict` method is deprecated; use `model_dump` instead. Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.13/migration/
+    plan = await eng.build_plan(payload.dict(), user, ctx)
+
+tests_mem/test_PRT3_login_saja.py::test_PRT3_U11_pratinjau_tidak_menulis
+tests_mem/test_PRT3_login_saja.py::test_PRT3_U11_pratinjau_tidak_menulis
+  /tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/wt23/backend/routers/sales_return_exceptions.py:284: PydanticDeprecatedSince20: The `dict` method is deprecated; use `model_dump` instead. Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.13/migration/
+    return await rsp.simulate_cutloss(payload.dict(), ctx.active_entity_id)
+
+tests_mem/test_PRT3_login_saja.py::test_PRT3_U11_pratinjau_tidak_menulis
+tests_mem/test_PRT3_login_saja.py::test_PRT3_U11_pratinjau_tidak_menulis
+  /tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/wt23/backend/routers/sales_return_exceptions.py:293: PydanticDeprecatedSince20: The `dict` method is deprecated; use `model_dump` instead. Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.13/migration/
+    return await rsp.simulate_discount(payload.dict(), ctx.active_entity_id)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+1524 passed, 2 skipped, 3 xfailed, 14 warnings in 261.69s (0:04:21)

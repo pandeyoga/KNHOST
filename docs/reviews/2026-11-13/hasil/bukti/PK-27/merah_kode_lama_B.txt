@@ -1,0 +1,31 @@
+E   AssertionError: {'id': 'rtn_pk27_265ca6d1', 'roll_no': 'R27-265CA6D1', 'product_id': 'prd_pk27_724d5cb7', 'warehouse_id': 'wh_pk27_b585aeb7', ...}
+tests_mem/test_PK27_biaya_roll.py:146: AssertionError: {'id': 'rtn_pk27_265ca6d1', 'roll_no': 'R27-265CA6D1', 'product_id': 'prd_pk27_724d5cb7', 'warehouse_id': 'wh_pk27_b585aeb7', ...}
+E   AssertionError: None
+tests_mem/test_PK27_biaya_roll.py:166: AssertionError: None
+E   KeyError: 'Kebutuhan akun tidak dikenal: retur.selisih_retur_beli'
+services/gl_mapping_registry.py:177: KeyError: 'Kebutuhan akun tidak dikenal: retur.selisih_retur_beli'
+E   KeyError: 'book_value'
+tests_mem/test_PK27_biaya_roll.py:233: KeyError: 'book_value'
+E   KeyError: 'Kebutuhan akun tidak dikenal: retur.selisih_retur_beli'
+services/gl_mapping_registry.py:177: KeyError: 'Kebutuhan akun tidak dikenal: retur.selisih_retur_beli'
+E   KeyError: 'Kebutuhan akun tidak dikenal: retur.selisih_retur_beli'
+services/gl_mapping_registry.py:177: KeyError: 'Kebutuhan akun tidak dikenal: retur.selisih_retur_beli'
+E   AttributeError: module 'services.gl_service' has no attribute 'zero_cost_rolls'
+tests_mem/test_PK27_biaya_roll.py:305: AttributeError: module 'services.gl_service' has no attribute 'zero_cost_rolls'
+E   AssertionError: {"detail":"Not Found"}
+tests_mem/test_PK27_biaya_roll.py:322: AssertionError: {"detail":"Not Found"}
+E   AssertionError: {'id': 'cn_991dfa375a45', 'number': 'CN-00001', 'return_id': 'sr_pk27_3af66378', 'return_number': 'RJ/PK27/f66378', ...}
+tests_mem/test_PK27_biaya_roll.py:416: AssertionError: {'id': 'cn_991dfa375a45', 'number': 'CN-00001', 'return_id': 'sr_pk27_3af66378', 'return_number': 'RJ/PK27/f66378', ...}
+E   AssertionError: {'id': 'cn_54f05ebbfec2', 'number': 'CN-00002', 'return_id': 'sr_pk27_679ef455', 'return_number': 'RJ/PK27/9ef455', ...}
+tests_mem/test_PK27_biaya_roll.py:434: AssertionError: {'id': 'cn_54f05ebbfec2', 'number': 'CN-00002', 'return_id': 'sr_pk27_679ef455', 'return_number': 'RJ/PK27/9ef455', ...}
+E   AssertionError: {'rolls': [{'roll_id': 'r2_pk27_797b8308', 'roll_no': 'R27-797B8308', 'item_index': 0, 'product_id': 'prd_pk27_5a187a8...Kain Uji PK-27 Retur Jual', 'quantity': 100.0, 'unit': 'meter', ...}], 'net_amount': 2000000.0, 'ppn_amount': 0.0, ...}
+tests_mem/test_PK27_biaya_roll.py:455: AssertionError: {'rolls': [{'roll_id': 'r2_pk27_797b8308', 'roll_no': 'R27-797B8308', 'item_index': 0, 'product_id': 'prd_pk27_5a187a8...Kain Uji PK-27 Retur Jual', 'quantity': 100.0, 'unit': 'meter', ...}], 'net_amount':
+E   assert 404 == 403
+E   FileNotFoundError: [Errno 2] No such file or directory: '/tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/pk27/lama/scripts/migrasi_pk27_biaya_roll_scrap.py'
+E   TypeError: post_purchase_return() got an unexpected keyword argument 'book_value'
+tests_mem/test_PK27_biaya_roll.py:531: TypeError: post_purchase_return() got an unexpected keyword argument 'book_value'
+E   KeyError: 'Kebutuhan akun tidak dikenal: retur.selisih_retur_beli'
+services/gl_mapping_registry.py:177: KeyError: 'Kebutuhan akun tidak dikenal: retur.selisih_retur_beli'
+E   ImportError: cannot import name 'cogs_source_of' from 'services.return_service' (services/return_service.py)
+tests_mem/test_PK27_biaya_roll.py:566: ImportError: cannot import name 'cogs_source_of' from 'services.return_service' (/tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/pk27/lama/backend/services/return_service.py)
+16 failed, 1 passed, 2 warnings in 2.40s

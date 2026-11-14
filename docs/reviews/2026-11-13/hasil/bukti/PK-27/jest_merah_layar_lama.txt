@@ -1,0 +1,12 @@
+FAIL src/features/__tests__/pk27BiayaRoll.test.js
+  ● Test suite failed to run
+
+    Cannot find module '../finance/ZeroCostRollsSection' from 'src/features/__tests__/pk27BiayaRoll.test.js'
+
+    [0m [90m  6 |[39m [36mimport[39m [33mReact[39m[33m,[39m { act } [36mfrom[39m [32m"react"[39m[33m;[39m
+     [90m  7 |[39m [36mimport[39m { createRoot } [36mfrom[39m [32m"react-dom/client"[39m[33m;[39m
+    [31m[1m>[22m[39m[90m  8 |[39m [36mimport[39m [33mZeroCostRollsSection[39m[33m,[39m { [33mTEKS_GALAT[39m[33m,[39m [33mTEKS_KOSONG[39m[33m,[39m [33mTEKS_MEMUAT[39m } [36mfrom[39m [32m"../finance/ZeroCostRollsSection"[39m[33m;[39m
+     [90m    |[39m [31m[1m^[22m[39m
+     [90m  9 |[39m [36mimport[39m [33mReturnBookValue[39m[33m,[39m { [33mTEKS_BELUM_JURNAL[39m } [36mfrom[39m [32m"../purchasing/ReturnBookValue"[39m[33m;[39m
+     [90m 10 |[39m
+     [90m 11 |[39m [36mconst[39m mockGet [33m=[39m jest[33m.[39mfn()[33m;[39m[0m
