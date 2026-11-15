@@ -91,11 +91,11 @@ Papan kerja agen pelaksana. Aturan mengubahnya: `00_ATURAN_EKSEKUSI.md` §5. Uru
 | 84 | KM-T3 | Lembar Insentif (dokumen keputusan) | KM-T2, KF-T6 | dikerjakan |  |  | Dikerjakan paralel (worktree terpisah), 15 Nov |
 | 85 | KM-T4 | Lembar Insentif masuk gaji dan buku besar | KM-T3, PY-T1 | menunggu |  |  | Titik henti H5 |
 | 86 | KM-T5 | Kartu "Capaian & Insentif Saya"; layar lama dipindah | KM-T4, MN-T1 | menunggu |  |  |  |
-| 87 | PY-T5 | Swalayan karyawan: slip setelah dibayar | PY-T1 | siap |  |  |  |
+| 87 | PY-T5 | Swalayan karyawan: slip setelah dibayar | PY-T1 | dikerjakan |  |  | Dikerjakan paralel (worktree terpisah), 15 Nov |
 | 88 | CR-T2 | Jadwal tagihan dan saldo piutang tersimpan | PK-19, PK-41 | selesai | 76a337d | [CR-T2](../reviews/2026-11-13/hasil/CR-T2.md) | H3: build_billing_schedule.py --apply di data nyata (dry-run data acuan: 0 pelanggan berubah status kredit) |
 | 89 | CR-T3 | Gerbang kredit di empat titik; izin kredit | CR-T1, CR-T2, PK-38 | dikerjakan |  |  | Dikerjakan paralel (worktree terpisah), 15 Nov |
 | 90 | CR-T4 | Denda berlapis PT → pelanggan | PK-08, CR-T2 | selesai | fc95d36 | [CR-T4](../reviews/2026-11-13/hasil/CR-T4.md) | H3: migrate_penalty_customer_layer.py di data nyata (0 baris di data acuan); H4 nilai denda tetap bawaan registry |
-| 91 | CR-T5 | Daftar kerja kredit dan rekening koran pelanggan | CR-T2 | siap |  |  |  |
+| 91 | CR-T5 | Daftar kerja kredit dan rekening koran pelanggan | CR-T2 | dikerjakan |  |  | Dikerjakan paralel (worktree terpisah), 15 Nov |
 | 92 | PM-T2 | Cara bayar dan rekening tujuan di pesanan; instruksi bayar | PM-T1 | selesai | 73314a8 | [PM-T2](../reviews/2026-11-13/hasil/PM-T2.md) |  |
 | 93 | PM-T3 | Kwitansi ber-rekening; terverifikasi bank | PK-19, PK-20, PK-21, PM-T2 | selesai | a2c1e19 | [PM-T3](../reviews/2026-11-13/hasil/PM-T3.md) | H3: isi rekening kas kwitansi lama (backfill_receipt_accounts.py --terapkan) di data nyata sebelum (b) dipakai PT berekening ganda |
 | 94 | PM-T4 | Titipan tunai sales dan setoran | PM-T3 | selesai | 38c715f | [PM-T4](../reviews/2026-11-13/hasil/PM-T4.md) | H5: mode tunai sales per PT tetap kas_langsung — PT, batas, tenggat titipan diputuskan pemilik (Menunggu pemilik) |
