@@ -1,0 +1,28 @@
+#### kmt3_head
+verify_posting_coverage: [PASS] 137 cek lolos, 0 pelanggaran.
+verify_atomic_claim: [PASS] 161 cek lolos, 0 pelanggaran.
+verify_role_gate_ui: [PASS] 31 cek lolos, 0 pelanggaran.
+verify_detail_modal: [PASS] 30 cek lolos, 0 pelanggaran.
+verify_cash_single_door: [PASS] 748 cek lolos, 0 pelanggaran.
+atomic self-test:   SELF-TEST HIJAU (64 kasus, 0 gagal).
+config_fallback : [PASS] 161 cek lolos, 0 pelanggaran.
+config_fallback --entity: [PASS] 161 cek lolos, 0 pelanggaran.
+payment_vocab: [PASS] 1855 cek lolos, 0 pelanggaran.
+config_text: [PASS] 3472 cek lolos, 0 pelanggaran.
+approval_queues (statik): [FAIL] 9 pelanggaran (dari 328 cek):
+acw: ✅ INV-CFG: setiap setting terdeklarasi punya pembaca kode DAN jalur ubah yang nyata; tidak ada editor ganda.
+nav_map: ✓ NAV MAP: PASS
+#### wt29
+verify_posting_coverage: [PASS] 137 cek lolos, 0 pelanggaran.
+verify_atomic_claim: [PASS] 161 cek lolos, 0 pelanggaran.
+verify_role_gate_ui: [PASS] 31 cek lolos, 0 pelanggaran.
+verify_detail_modal: [PASS] 31 cek lolos, 0 pelanggaran.
+verify_cash_single_door: [PASS] 749 cek lolos, 0 pelanggaran.
+atomic self-test:   SELF-TEST HIJAU (64 kasus, 0 gagal).
+config_fallback : [PASS] 162 cek lolos, 0 pelanggaran.
+config_fallback --entity: [PASS] 162 cek lolos, 0 pelanggaran.
+payment_vocab: [PASS] 1858 cek lolos, 0 pelanggaran.
+config_text: [PASS] 3486 cek lolos, 0 pelanggaran.
+approval_queues (statik): [FAIL] 9 pelanggaran (dari 334 cek):
+acw: ✅ INV-CFG: setiap setting terdeklarasi punya pembaca kode DAN jalur ubah yang nyata; tidak ada editor ganda.
+nav_map: ✓ NAV MAP: PASS

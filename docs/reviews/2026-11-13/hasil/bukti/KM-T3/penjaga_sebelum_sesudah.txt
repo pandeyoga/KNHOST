@@ -1,0 +1,136 @@
+# Catatan: bagian "HEAD fc95d36" dan "T (fc95d36 + KM-T3)" = gabung pertama yang dibatalkan (HEAD bergeser). Angka akhir HEAD d2684ea / T: penjaga_HEAD_d2684ea.txt, penjaga_T.txt, penjaga_lain_HEAD_T.txt.
+
+## hitung_penjaga.sh — W basis f64c9d3
+verify_auth_coverage: [FAIL] 26 pelanggaran :
+verify_ui_standard: [FAIL] 13 pelanggaran :
+verify_approval_queues: 
+audit_i18n_id:   ✗ 103 temuan di 60 berkas.
+audit_create_modal: [FAIL] 6 pelanggaran :
+verify_page_tabs: [FAIL] 1 pelanggaran total (INV-UI-12 1 · INV-UI-13 0 · INV-UI-14 0)
+verify_to_list_bound: [FAIL] 5 pelanggaran :
+verify_list_export: [PASS] 0 pelanggaran.
+verify_error_notice: [PASS] 0 pelanggaran.
+verify_custom_modals: [PASS] 0 pelanggaran.
+verify_knselect_contract: verify_knselect_contract: 0 temuan
+verify_entity_label:   ✗ 2 pelanggaran:
+verify_access_catalog_nav: verify_access_catalog_nav: 0 temuan
+verify_money_idempotency: [PASS] 0 pelanggaran.
+verify_codebase_map: [PASS] 0 pelanggaran.
+verify_scope_guard: 
+
+## hitung_penjaga.sh — W sesudah KM-T3
+verify_auth_coverage: [FAIL] 26 pelanggaran :
+verify_ui_standard: [FAIL] 13 pelanggaran :
+verify_approval_queues: 
+audit_i18n_id:   ✗ 103 temuan di 60 berkas.
+audit_create_modal: [FAIL] 6 pelanggaran :
+verify_page_tabs: [FAIL] 1 pelanggaran total (INV-UI-12 1 · INV-UI-13 0 · INV-UI-14 0)
+verify_to_list_bound: [FAIL] 5 pelanggaran :
+verify_list_export: [PASS] 0 pelanggaran.
+verify_error_notice: [PASS] 0 pelanggaran.
+verify_custom_modals: [PASS] 0 pelanggaran.
+verify_knselect_contract: verify_knselect_contract: 0 temuan
+verify_entity_label:   ✗ 2 pelanggaran:
+verify_access_catalog_nav: verify_access_catalog_nav: 0 temuan
+verify_money_idempotency: [PASS] 0 pelanggaran.
+verify_codebase_map: [PASS] 0 pelanggaran.
+verify_scope_guard: 
+
+## hitung_penjaga.sh — HEAD fc95d36 (murni)
+verify_auth_coverage: [FAIL] 26 pelanggaran :
+verify_ui_standard: [FAIL] 11 pelanggaran :
+verify_approval_queues: 
+audit_i18n_id:   ✗ 103 temuan di 60 berkas.
+audit_create_modal: [FAIL] 6 pelanggaran :
+verify_page_tabs: [FAIL] 1 pelanggaran total (INV-UI-12 1 · INV-UI-13 0 · INV-UI-14 0)
+verify_to_list_bound: [FAIL] 5 pelanggaran :
+verify_list_export: [PASS] 0 pelanggaran.
+verify_error_notice: [PASS] 0 pelanggaran.
+verify_custom_modals: [PASS] 0 pelanggaran.
+verify_knselect_contract: verify_knselect_contract: 0 temuan
+verify_entity_label:   ✗ 2 pelanggaran:
+verify_access_catalog_nav: verify_access_catalog_nav: 0 temuan
+verify_money_idempotency: [PASS] 0 pelanggaran.
+verify_codebase_map: [PASS] 0 pelanggaran.
+verify_scope_guard: 
+
+## hitung_penjaga.sh — T (fc95d36 + KM-T3)
+verify_auth_coverage: [FAIL] 26 pelanggaran :
+verify_ui_standard: [FAIL] 11 pelanggaran :
+verify_approval_queues: 
+audit_i18n_id:   ✗ 103 temuan di 60 berkas.
+audit_create_modal: [FAIL] 6 pelanggaran :
+verify_page_tabs: [FAIL] 1 pelanggaran total (INV-UI-12 1 · INV-UI-13 0 · INV-UI-14 0)
+verify_to_list_bound: [FAIL] 5 pelanggaran :
+verify_list_export: [PASS] 0 pelanggaran.
+verify_error_notice: [PASS] 0 pelanggaran.
+verify_custom_modals: [PASS] 0 pelanggaran.
+verify_knselect_contract: verify_knselect_contract: 0 temuan
+verify_entity_label:   ✗ 2 pelanggaran:
+verify_access_catalog_nav: verify_access_catalog_nav: 0 temuan
+verify_money_idempotency: [PASS] 0 pelanggaran.
+verify_codebase_map: [PASS] 0 pelanggaran.
+verify_scope_guard: 
+
+## penjaga lain — HEAD murni (kmt3_head) lalu T (wt29)
+#### kmt3_head
+verify_posting_coverage: [PASS] 138 cek lolos, 0 pelanggaran.
+verify_atomic_claim: [PASS] 161 cek lolos, 0 pelanggaran.
+verify_role_gate_ui: [PASS] 31 cek lolos, 0 pelanggaran.
+verify_detail_modal: [PASS] 29 cek lolos, 0 pelanggaran.
+verify_cash_single_door: [PASS] 740 cek lolos, 0 pelanggaran.
+atomic self-test:   SELF-TEST HIJAU (64 kasus, 0 gagal).
+config_fallback : [PASS] 159 cek lolos, 0 pelanggaran.
+config_fallback --entity: [PASS] 159 cek lolos, 0 pelanggaran.
+payment_vocab: [PASS] 1835 cek lolos, 0 pelanggaran.
+config_text: [PASS] 3402 cek lolos, 0 pelanggaran.
+approval_queues (statik): [FAIL] 9 pelanggaran (dari 328 cek):
+acw: ✅ INV-CFG: setiap setting terdeklarasi punya pembaca kode DAN jalur ubah yang nyata; tidak ada editor ganda.
+nav_map: 
+#### wt29
+verify_posting_coverage: [PASS] 138 cek lolos, 0 pelanggaran.
+verify_atomic_claim: [PASS] 161 cek lolos, 0 pelanggaran.
+verify_role_gate_ui: [PASS] 31 cek lolos, 0 pelanggaran.
+verify_detail_modal: [PASS] 30 cek lolos, 0 pelanggaran.
+verify_cash_single_door: [PASS] 741 cek lolos, 0 pelanggaran.
+atomic self-test:   SELF-TEST HIJAU (64 kasus, 0 gagal).
+config_fallback : [PASS] 160 cek lolos, 0 pelanggaran.
+config_fallback --entity: [PASS] 160 cek lolos, 0 pelanggaran.
+payment_vocab: [PASS] 1838 cek lolos, 0 pelanggaran.
+config_text: [PASS] 3416 cek lolos, 0 pelanggaran.
+approval_queues (statik): [FAIL] 9 pelanggaran (dari 334 cek):
+acw: ✅ INV-CFG: setiap setting terdeklarasi punya pembaca kode DAN jalur ubah yang nyata; tidak ada editor ganda.
+nav_map: 
+
+## verify_approval_queues statik (MongoDB tidak dihubungi) — W basis vs W
+  ✗ PINTU KEPUTUSAN BARU tanpa antrean: `cash_holdings.py::/api/cash-deposits/{dep_id}/reject` tidak ada di DOOR_QUEUE maupun DOOR_EXEMPT → dokumen yang menunggu keputusan di pintu ini tidak akan pernah muncul di KPI beranda / Pusat Persetujuan.
+  ✗ PINTU KEPUTUSAN BARU tanpa antrean: `hr_compensation.py::/api/hr/assignments/{row_id}/approve` tidak ada di DOOR_QUEUE maupun DOOR_EXEMPT → dokumen yang menunggu keputusan di pintu ini tidak akan pernah muncul di KPI beranda / Pusat Persetujuan.
+  ✗ PINTU KEPUTUSAN BARU tanpa antrean: `hr_compensation.py::/api/hr/assignments/{row_id}/reject` tidak ada di DOOR_QUEUE maupun DOOR_EXEMPT → dokumen yang menunggu keputusan di pintu ini tidak akan pernah muncul di KPI beranda / Pusat Persetujuan.
+  ✗ PINTU KEPUTUSAN BARU tanpa antrean: `hr_compensation.py::/api/hr/compensation/{row_id}/approve` tidak ada di DOOR_QUEUE maupun DOOR_EXEMPT → dokumen yang menunggu keputusan di pintu ini tidak akan pernah muncul di KPI beranda / Pusat Persetujuan.
+  ✗ PINTU KEPUTUSAN BARU tanpa antrean: `hr_compensation.py::/api/hr/compensation/{row_id}/reject` tidak ada di DOOR_QUEUE maupun DOOR_EXEMPT → dokumen yang menunggu keputusan di pintu ini tidak akan pernah muncul di KPI beranda / Pusat Persetujuan.
+  ✗ PINTU KEPUTUSAN BARU tanpa antrean: `hr_payroll.py::/api/hr/payroll/inputs/{input_id}/approve` tidak ada di DOOR_QUEUE maupun DOOR_EXEMPT → dokumen yang menunggu keputusan di pintu ini tidak akan pernah muncul di KPI beranda / Pusat Persetujuan.
+  ✗ PINTU KEPUTUSAN BARU tanpa antrean: `initial_registration.py::/registration/sessions/{sid}/approve-count` tidak ada di DOOR_QUEUE maupun DOOR_EXEMPT → dokumen yang menunggu keputusan di pintu ini tidak akan pernah muncul di KPI beranda / Pusat Persetujuan.
+  ✗ PINTU KEPUTUSAN BARU tanpa antrean: `initial_registration.py::/registration/sessions/{sid}/approve` tidak ada di DOOR_QUEUE maupun DOOR_EXEMPT → dokumen yang menunggu keputusan di pintu ini tidak akan pernah muncul di KPI beranda / Pusat Persetujuan.
+  ✗ PINTU KEPUTUSAN BARU tanpa antrean: `initial_registration.py::/registration/sessions/{sid}/reject` tidak ada di DOOR_QUEUE maupun DOOR_EXEMPT → dokumen yang menunggu keputusan di pintu ini tidak akan pernah muncul di KPI beranda / Pusat Persetujuan.
+[FAIL] 9 pelanggaran (dari 328 cek):
+---
+  ✗ PINTU KEPUTUSAN BARU tanpa antrean: `cash_holdings.py::/api/cash-deposits/{dep_id}/reject` tidak ada di DOOR_QUEUE maupun DOOR_EXEMPT → dokumen yang menunggu keputusan di pintu ini tidak akan pernah muncul di KPI beranda / Pusat Persetujuan.
+  ✗ PINTU KEPUTUSAN BARU tanpa antrean: `hr_compensation.py::/api/hr/assignments/{row_id}/approve` tidak ada di DOOR_QUEUE maupun DOOR_EXEMPT → dokumen yang menunggu keputusan di pintu ini tidak akan pernah muncul di KPI beranda / Pusat Persetujuan.
+  ✗ PINTU KEPUTUSAN BARU tanpa antrean: `hr_compensation.py::/api/hr/assignments/{row_id}/reject` tidak ada di DOOR_QUEUE maupun DOOR_EXEMPT → dokumen yang menunggu keputusan di pintu ini tidak akan pernah muncul di KPI beranda / Pusat Persetujuan.
+  ✗ PINTU KEPUTUSAN BARU tanpa antrean: `hr_compensation.py::/api/hr/compensation/{row_id}/approve` tidak ada di DOOR_QUEUE maupun DOOR_EXEMPT → dokumen yang menunggu keputusan di pintu ini tidak akan pernah muncul di KPI beranda / Pusat Persetujuan.
+  ✗ PINTU KEPUTUSAN BARU tanpa antrean: `hr_compensation.py::/api/hr/compensation/{row_id}/reject` tidak ada di DOOR_QUEUE maupun DOOR_EXEMPT → dokumen yang menunggu keputusan di pintu ini tidak akan pernah muncul di KPI beranda / Pusat Persetujuan.
+  ✗ PINTU KEPUTUSAN BARU tanpa antrean: `hr_payroll.py::/api/hr/payroll/inputs/{input_id}/approve` tidak ada di DOOR_QUEUE maupun DOOR_EXEMPT → dokumen yang menunggu keputusan di pintu ini tidak akan pernah muncul di KPI beranda / Pusat Persetujuan.
+  ✗ PINTU KEPUTUSAN BARU tanpa antrean: `initial_registration.py::/registration/sessions/{sid}/approve-count` tidak ada di DOOR_QUEUE maupun DOOR_EXEMPT → dokumen yang menunggu keputusan di pintu ini tidak akan pernah muncul di KPI beranda / Pusat Persetujuan.
+  ✗ PINTU KEPUTUSAN BARU tanpa antrean: `initial_registration.py::/registration/sessions/{sid}/approve` tidak ada di DOOR_QUEUE maupun DOOR_EXEMPT → dokumen yang menunggu keputusan di pintu ini tidak akan pernah muncul di KPI beranda / Pusat Persetujuan.
+  ✗ PINTU KEPUTUSAN BARU tanpa antrean: `initial_registration.py::/registration/sessions/{sid}/reject` tidak ada di DOOR_QUEUE maupun DOOR_EXEMPT → dokumen yang menunggu keputusan di pintu ini tidak akan pernah muncul di KPI beranda / Pusat Persetujuan.
+[FAIL] 9 pelanggaran (dari 334 cek):
+nav_map kmt3_head: ✓ NAV MAP: PASS
+nav_map wt29: ✓ NAV MAP: PASS
+nav_map wt27: ✓ NAV MAP: PASS
+## penjaga lain — W sesudah
+verify_posting_coverage: [PASS] 138 cek lolos, 0 pelanggaran.
+verify_atomic_claim: [PASS] 161 cek lolos, 0 pelanggaran.
+verify_role_gate_ui: [PASS] 31 cek lolos, 0 pelanggaran.
+verify_detail_modal: [PASS] 31 cek lolos, 0 pelanggaran.
+verify_cash_single_door: [PASS] 741 cek lolos, 0 pelanggaran.
+config_text: [PASS] 3416 cek lolos, 0 pelanggaran.

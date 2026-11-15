@@ -1,0 +1,29 @@
+# Varian bukti-merah: fixture tanpa izin baru (sa = akun manager) supaya terlihat endpoint lembar belum ada (404)
+E       AssertionError: {"detail":"Not Found"}
+E       AssertionError: {"detail":"Not Found"}
+E       AssertionError: {"detail":"Not Found"}
+E       AssertionError: {"detail":"Not Found"}
+E       AssertionError: {"detail":"Not Found"}
+E       AssertionError: {"detail":"Not Found"}
+E       AssertionError: {"detail":"Not Found"}
+E       AssertionError: {"detail":"Not Found"}
+E           AssertionError: admin
+FAILED tests_mem/test_KMT3_lembar_insentif.py::test_KMT3_U1_buat_lembar_potret_dan_nominal
+FAILED tests_mem/test_KMT3_lembar_insentif.py::test_KMT3_U1_galat_isian - Ass...
+FAILED tests_mem/test_KMT3_lembar_insentif.py::test_KMT3_U2_ajukan_lalu_kunci
+FAILED tests_mem/test_KMT3_lembar_insentif.py::test_KMT3_U14_antrean_pusat_persetujuan
+FAILED tests_mem/test_KMT3_lembar_insentif.py::test_KMT3_U3_sahkan_tanpa_jurnal
+FAILED tests_mem/test_KMT3_lembar_insentif.py::test_KMT3_U8_baris_kembar_lintas_lembar
+FAILED tests_mem/test_KMT3_lembar_insentif.py::test_KMT3_U15_ekspor - KeyErro...
+FAILED tests_mem/test_KMT3_lembar_insentif.py::test_KMT3_U4_potret_tetap_drift_tampil
+FAILED tests_mem/test_KMT3_lembar_insentif.py::test_KMT3_U11_definisi_berubah_potret_tetap
+FAILED tests_mem/test_KMT3_lembar_insentif.py::test_KMT3_U5_segarkan_draf - A...
+FAILED tests_mem/test_KMT3_lembar_insentif.py::test_KMT3_U6_dua_orang - Asser...
+FAILED tests_mem/test_KMT3_lembar_insentif.py::test_KMT3_U7_koreksi_pemutus
+FAILED tests_mem/test_KMT3_lembar_insentif.py::test_KMT3_U9_baris_penyesuaian
+FAILED tests_mem/test_KMT3_lembar_insentif.py::test_KMT3_U10_kembalikan - Key...
+FAILED tests_mem/test_KMT3_lembar_insentif.py::test_KMT3_ajukan_tanpa_nominal_dan_batal
+FAILED tests_mem/test_KMT3_lembar_insentif.py::test_KMT3_U12_izin - Assertion...
+FAILED tests_mem/test_KMT3_lembar_insentif.py::test_KMT3_U13_lembar_pt_lain
+FAILED tests_mem/test_KMT3_lembar_insentif.py::test_KMT3_katalog - AssertionE...
+18 failed, 1 warning in 3.34s

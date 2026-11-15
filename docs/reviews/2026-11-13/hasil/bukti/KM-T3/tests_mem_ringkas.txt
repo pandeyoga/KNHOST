@@ -1,0 +1,8 @@
+# tests_mem penuh
+W basis f64c9d3: 2101 passed, 2 skipped, 2 xfailed, 14 warnings in 1232.75s (0:20:32)
+W sesudah KM-T3: 2121 passed, 2 skipped, 2 xfailed, 14 warnings in 1180.11s (0:19:40)
+HEAD d08d664 (murni): 2245 passed, 2 skipped, 2 xfailed, 14 warnings in 329.91s (0:05:29)
+T (d08d664 + KM-T3): 2265 passed, 2 skipped, 2 xfailed, 14 warnings in 655.31s (0:10:55)
+
+Jalan pertama W sesudah: 3 failed, 2118 passed, 2 skipped, 2 xfailed, 14 warnings in 825.25s (0:13:45) — 3 merah diperbaiki: KF-T6 U15 (literal nama aksi), KP-T5b U14/daftar lengkap (jenis nomor + 1)
+Gabungan antara (dibatalkan karena HEAD bergeser): eaba57f-T 2219/HEAD 2199; b014a38-T 2231; efc1cc6-T 2248/HEAD 2228 — semuanya tanpa merah

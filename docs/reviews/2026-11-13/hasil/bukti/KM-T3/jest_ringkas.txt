@@ -1,0 +1,6 @@
+# jest penuh (folder jest terpisah; 35 suite gagal dimuat = cmdk/@radix-ui, daftar sama di semua keadaan)
+B: Tests:       1018 passed, 1018 total | Test Suites: 35 failed, 127 passed, 162 total
+W: Tests:       1025 passed, 1025 total | Test Suites: 35 failed, 128 passed, 163 total
+H: Tests:       1064 passed, 1064 total | Test Suites: 35 failed, 134 passed, 169 total
+T: Tests:       1071 passed, 1071 total | Test Suites: 35 failed, 135 passed, 170 total
+B = f64c9d3, W = B + KM-T3, H = d08d664 (HEAD tujuan), T = d08d664 + KM-T3

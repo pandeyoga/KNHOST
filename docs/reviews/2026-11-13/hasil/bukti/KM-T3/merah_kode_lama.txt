@@ -1,0 +1,38 @@
+# Uji KM-T3 dijalankan di kode basis B (f64c9d3): berkas backend yang diubah unit dikembalikan ke B, layanan baru disingkirkan
+E       AssertionError: {"detail":"Aksi ['prepare'] tidak berlaku untuk “Kinerja & Insentif”."}
+E       AssertionError: {"detail":"Aksi ['prepare'] tidak berlaku untuk “Kinerja & Insentif”."}
+E       AssertionError: {"detail":"Aksi ['prepare'] tidak berlaku untuk “Kinerja & Insentif”."}
+E       AssertionError: {"detail":"Aksi ['prepare'] tidak berlaku untuk “Kinerja & Insentif”."}
+E       AssertionError: {"detail":"Aksi ['prepare'] tidak berlaku untuk “Kinerja & Insentif”."}
+E       AssertionError: {"detail":"Aksi ['prepare'] tidak berlaku untuk “Kinerja & Insentif”."}
+E       AssertionError: {"detail":"Aksi ['prepare'] tidak berlaku untuk “Kinerja & Insentif”."}
+E       AssertionError: {"detail":"Aksi ['prepare'] tidak berlaku untuk “Kinerja & Insentif”."}
+E       AssertionError: {"detail":"Aksi ['prepare'] tidak berlaku untuk “Kinerja & Insentif”."}
+E       AssertionError: {"detail":"Aksi ['prepare'] tidak berlaku untuk “Kinerja & Insentif”."}
+E       AssertionError: {"detail":"Aksi ['prepare'] tidak berlaku untuk “Kinerja & Insentif”."}
+E       AssertionError: {"detail":"Aksi ['prepare'] tidak berlaku untuk “Kinerja & Insentif”."}
+E       AssertionError: {"detail":"Aksi ['prepare'] tidak berlaku untuk “Kinerja & Insentif”."}
+E       AssertionError: {"detail":"Aksi ['prepare'] tidak berlaku untuk “Kinerja & Insentif”."}
+E       AssertionError: {"detail":"Aksi ['prepare'] tidak berlaku untuk “Kinerja & Insentif”."}
+E       AssertionError: {"detail":"Aksi ['prepare'] tidak berlaku untuk “Kinerja & Insentif”."}
+E       AssertionError: {"detail":"Aksi ['prepare'] tidak berlaku untuk “Kinerja & Insentif”."}
+E           AssertionError: admin
+FAILED tests_mem/test_KMT3_lembar_insentif.py::test_KMT3_katalog - AssertionE...
+ERROR tests_mem/test_KMT3_lembar_insentif.py::test_KMT3_U1_buat_lembar_potret_dan_nominal
+ERROR tests_mem/test_KMT3_lembar_insentif.py::test_KMT3_U1_galat_isian - Asse...
+ERROR tests_mem/test_KMT3_lembar_insentif.py::test_KMT3_U2_ajukan_lalu_kunci
+ERROR tests_mem/test_KMT3_lembar_insentif.py::test_KMT3_U14_antrean_pusat_persetujuan
+ERROR tests_mem/test_KMT3_lembar_insentif.py::test_KMT3_U3_sahkan_tanpa_jurnal
+ERROR tests_mem/test_KMT3_lembar_insentif.py::test_KMT3_U8_baris_kembar_lintas_lembar
+ERROR tests_mem/test_KMT3_lembar_insentif.py::test_KMT3_U15_ekspor - Assertio...
+ERROR tests_mem/test_KMT3_lembar_insentif.py::test_KMT3_U4_potret_tetap_drift_tampil
+ERROR tests_mem/test_KMT3_lembar_insentif.py::test_KMT3_U11_definisi_berubah_potret_tetap
+ERROR tests_mem/test_KMT3_lembar_insentif.py::test_KMT3_U5_segarkan_draf - As...
+ERROR tests_mem/test_KMT3_lembar_insentif.py::test_KMT3_U6_dua_orang - Assert...
+ERROR tests_mem/test_KMT3_lembar_insentif.py::test_KMT3_U7_koreksi_pemutus - ...
+ERROR tests_mem/test_KMT3_lembar_insentif.py::test_KMT3_U9_baris_penyesuaian
+ERROR tests_mem/test_KMT3_lembar_insentif.py::test_KMT3_U10_kembalikan - Asse...
+ERROR tests_mem/test_KMT3_lembar_insentif.py::test_KMT3_ajukan_tanpa_nominal_dan_batal
+ERROR tests_mem/test_KMT3_lembar_insentif.py::test_KMT3_U12_izin - AssertionE...
+ERROR tests_mem/test_KMT3_lembar_insentif.py::test_KMT3_U13_lembar_pt_lain - ...
+1 failed, 1 warning, 17 errors in 2.29s

@@ -1,0 +1,8 @@
+  ✓ teks bantu: konfirmasi Sahkan, selisih potret, isian nominal, alasan tombol (78 ms)
+  ✓ daftar: status berikon + teks, kosong satu kalimat, Buat lembar mati saat Semua PT dengan alasan (162 ms)
+  ✓ rincian disahkan: nominal terkunci, lencana Disahkan, tanpa tombol tulis (30 ms)
+  ✓ rincian draf: isian nominal untuk penyiap; tanpa izin siapkan → teks + alasan (54 ms)
+  ✓ U17 pengganti: Sahkan meminta konfirmasi '2 baris · total Rp …' + nama PT, lalu lencana Disahkan (37 ms)
+  ✓ rincian: 'Berubah sejak dipotret' tampil di rincian baris (bahan penyesuaian) (37 ms)
+  ✓ Capaian: tombol Buat lembar insentif mati sampai sales dicentang (163 ms)
+Tests:       7 passed, 7 total

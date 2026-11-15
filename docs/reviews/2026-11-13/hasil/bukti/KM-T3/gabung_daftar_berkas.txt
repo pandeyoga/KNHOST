@@ -1,0 +1,82 @@
+# Gabung akhir ke b014a38
+REGEN CODEBASE_MAP.md
+MERGE-OK ENTITY_REGISTRY.md
+MERGE-OK backend/access_modules.py
+COPY backend/approval_kinds.py
+MERGE-OK backend/config_catalog_kontrol.py
+COPY backend/doc_number_kinds.py
+MERGE-OK backend/entity_scope.py
+CONFLICT backend/idempotency.py
+MERGE-OK backend/indexes.py
+CONFLICT backend/permissions_config.py
+COPY backend/routers/incentive.py
+COPY backend/schemas_incentive.py
+MERGE-OK backend/services/approval_backlog_service.py
+COPY backend/services/incentive_achievement.py
+NEW backend/services/incentive_sheet_service.py
+NEW backend/tests/test_bp_KMT3_lembar_bersamaan_mongo.py
+COPY backend/tests/test_bp_PK14_indeks_wajib.py
+CONFLICT backend/tests_mem/test_KFT1_izin_pengaturan.py
+COPY backend/tests_mem/test_KFT6_kontrol.py
+NEW backend/tests_mem/test_KMT3_lembar_insentif.py
+COPY backend/tests_mem/test_KPT4a_setara.py
+COPY backend/tests_mem/test_KPT5a_setara.py
+COPY backend/tests_mem/test_KPT5b_pengaturan.py
+COPY backend/tests_mem/test_PK14_indeks_wajib.py
+CONFLICT backend/tests_mem/test_PRT9_izin_bawaan.py
+MERGE-OK docs/KN_13_NAVIGATION_MAP.md
+CONFLICT docs/KN_32_GLOSARIUM_BAHASA_ANTARMUKA.md
+MERGE-OK frontend/src/AppViewRouter.jsx
+MERGE-OK frontend/src/appViewImports.js
+MERGE-OK frontend/src/config/__tests__/fixtures/access_builtin_fixture.json
+COPY frontend/src/config/__tests__/fixtures/access_nav_fixture.json
+MERGE-OK frontend/src/config/__tests__/fixtures/view_main_permission.json
+COPY frontend/src/config/__tests__/mnt1MenuKeuangan.test.js
+COPY frontend/src/config/__tests__/roleReach.test.js
+COPY frontend/src/config/hubTabs.js
+MERGE-OK frontend/src/config/navMeta.js
+NEW frontend/src/features/__tests__/kmt3LembarInsentif.test.js
+MERGE-OK frontend/src/features/__tests__/prt7TombolIzin.test.js
+COPY frontend/src/features/incentive/CapaianView.jsx
+NEW frontend/src/features/incentive/IncentiveSheetDetail.jsx
+NEW frontend/src/features/incentive/IncentiveSheetsView.jsx
+MERGE-OK frontend/src/features/settings/config/configKeyIndex.json
+MERGE-OK memory/PRD.md
+COPY scripts/guardrails/verify_approval_queues.py
+COPY scripts/guardrails/verify_home_kpi.py
+MERGE-OK scripts/verify_contract.py
+# lalu b014a38 (PY-T5): tiga arah basis eaba57f — CONFLICT tests_mem/test_KFT1_izin_pengaturan.py (diselesaikan: + PYT5_KUNCI + KMT3_KUNCI_KONTROL), CONFLICT docs/KN_32 (KM-T3 → §9.29), MERGE-OK memory/PRD.md; CODEBASE_MAP.md, configKeyIndex.json, fixture akses dibangkitkan ulang
+# lalu 61cf7a1 (PY-T4): tiga arah basis b014a38
+REGEN CODEBASE_MAP.md
+MERGE-OK ENTITY_REGISTRY.md
+MERGE-OK backend/access_modules.py
+CONFLICT backend/permissions_config.py
+CONFLICT backend/tests_mem/test_PRT9_izin_bawaan.py
+MERGE-OK docs/KN_13_NAVIGATION_MAP.md
+CONFLICT docs/KN_32_GLOSARIUM_BAHASA_ANTARMUKA.md
+REGEN frontend/src/config/__tests__/fixtures/access_builtin_fixture.json
+MERGE-OK frontend/src/config/__tests__/fixtures/view_main_permission.json
+MERGE-OK frontend/src/config/__tests__/mnt1MenuKeuangan.test.js
+CONFLICT frontend/src/config/__tests__/roleReach.test.js
+MERGE-OK frontend/src/config/hubTabs.js
+MERGE-OK frontend/src/config/navMeta.js
+MERGE-OK memory/PRD.md
+# CONFLICT diselesaikan: permissions_config (CR-T3 + PY-T4 + KM-T3), test_PRT9 (semua), roleReach (...PYT4_SETORAN_FINANCE, ...KMT3_LEMBAR), KN_32 (KM-T3 → §9.30)
+# lalu efc1cc6: checkout (3 berkas penggajian/cuti, tidak bersinggungan)
+# lalu d08d664 (CR-T5): tiga arah basis efc1cc6
+REGEN CODEBASE_MAP.md
+MERGE-OK ENTITY_REGISTRY.md
+MERGE-OK backend/access_modules.py
+MERGE-OK backend/indexes.py
+MERGE-OK docs/KN_13_NAVIGATION_MAP.md
+CONFLICT docs/KN_32_GLOSARIUM_BAHASA_ANTARMUKA.md
+MERGE-OK frontend/src/AppViewRouter.jsx
+MERGE-OK frontend/src/appViewImports.js
+REGEN frontend/src/config/__tests__/fixtures/access_builtin_fixture.json
+MERGE-OK frontend/src/config/__tests__/fixtures/view_main_permission.json
+MERGE-OK frontend/src/config/hubTabs.js
+MERGE-OK frontend/src/config/navMeta.js
+MERGE-OK frontend/src/features/__tests__/prt7TombolIzin.test.js
+MERGE-OK memory/PRD.md
+# CONFLICT diselesaikan: KN_32 (KM-T3 → §9.31); turunan dibangkitkan ulang
+# lalu d2684ea: checkout (creditDeskParts.jsx, STATUS, TRACKER — tidak bersinggungan)
