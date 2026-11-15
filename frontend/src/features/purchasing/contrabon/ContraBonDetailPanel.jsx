@@ -27,7 +27,7 @@ import {
 } from "./ContraBonParts";
 import DeductionModal from "./DeductionModal";
 import DecisionModal from "./DecisionModal";
-import PayModal from "./PayModal";
+import PaySupplierModal from "../../finance/payments/PaySupplierModal";   // MN-T3 — satu form Bayar pemasok (dulu PayModal)
 import PaymentScheduleModal from "./PaymentScheduleModal";
 import ReasonNoteModal from "./ReasonNoteModal";
 import { STATUS_CLASS, fmtDate, nextStep, pendingExceptions, slaText } from "./contraBonApi";
@@ -266,7 +266,7 @@ export default function ContraBonDetailPanel({ cb, meta, currentUser, entityLabe
       )}
 
       {modal === "pay" && (
-        <PayModal cb={cb} onClose={() => setModal("")}
+        <PaySupplierModal target={{ type: "contra_bon", id: cb.id }} onClose={() => setModal("")}
           onPaid={(updated) => {
             setModal("");
             onChanged(updated);

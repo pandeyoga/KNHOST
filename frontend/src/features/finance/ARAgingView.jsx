@@ -31,7 +31,7 @@ import { bucketColumns } from "./agingBuckets";
 // INV-ROLE-01 — wewenang dibaca dari IZIN, bukan dari daftar nama peran.
 import { can } from "../../config/roles";
 import DetailModal from "../../components/DetailModal";
-import ARReceiptModal from "../crm/ARReceiptModal";   // PK-43 — form kwitansi baku
+import ReceivePaymentModal, { TEKS_PILIH_PT } from "./payments/ReceivePaymentModal";   // MN-T3 — satu form terima pembayaran
 import { CustomerCardLink } from "./cards/partyCards";   // MN-T3 — nama pelanggan → kartu pelanggan
 
 // PK-41 — nada sel per kolom umur (kunci tetap; judul kolom dari server).
@@ -58,6 +58,7 @@ export default function ARAgingView({ selectedEntity, currentUser, focusDoc, onC
   const [accruing, setAccruing] = useState("");
   const [flash, setFlash] = useState("");
   const [payFor, setPayFor] = useState(null);   // PK-43 — { orderId } form kwitansi yang sedang dibuka
+  const [rowPay, setRowPay] = useState(null);   // MN-T3 — { id, name } dari tombol baris
   const [paidMsg, setPaidMsg] = useState("");    // PK-43 — pemberitahuan sukses dari form kwitansi (di rincian)
 
   const load = useCallback(async () => {
@@ -152,6 +153,9 @@ export default function ARAgingView({ selectedEntity, currentUser, focusDoc, onC
    * tombolnya — server mengizinkan, layar melarang. Wewenang dibaca dari IZIN.
    */
   const canAccrue = can(currentUser?.permissions || {}, "penalty", "issue");
+  // MN-T3 — tombol "Terima pembayaran" per baris pelanggan (= POST /ar-receipts); Semua PT → mati + alasan di atas tabel.
+  const canReceive = can(currentUser?.permissions || {}, "ar_receipt", "create");
+  const allPt = !selectedEntity || selectedEntity === "all";
 
   return (
     <div data-testid="ar-aging-view">
@@ -245,6 +249,7 @@ export default function ARAgingView({ selectedEntity, currentUser, focusDoc, onC
             /* Fase 3 · P4 (L-07) — tabel mentah → `.table-wrap` + `.data-table` baku. Kepala kelompok umur dari util
                bersama (D-12). Di HP tabel bergulir di dalam wadahnya; pesan kosong & pager di luar wadah gulir. */
             <div className="table-wrap">
+              {canReceive && allPt && <p className="px-3 py-2 text-fs-12 text-kn-text-2" data-testid="ar-aging-receive-scope-note">{TEKS_PILIH_PT}</p>}
               <table className="data-table head-wrap min-w-[860px]" data-testid="ar-aging-table">
                 <thead>
                   <tr>
@@ -253,6 +258,7 @@ export default function ARAgingView({ selectedEntity, currentUser, focusDoc, onC
                     <th className="text-right">Belum Lunas</th>
                     <th className="text-right">Denda</th>
                     <th className="text-center">Kredit</th>
+                    {canReceive && <th className="text-right col-sticky-end">Aksi</th>}
                   </tr>
                 </thead>
                 <tbody>
@@ -301,6 +307,15 @@ export default function ARAgingView({ selectedEntity, currentUser, focusDoc, onC
                         ) : <span className="text-[#C7C7CC]">—</span>}
                       </td>
                       <td className="px-3 py-2 text-center"><CreditStatusPill status={c.credit_status} testId={`ar-credit-${c.customer_id}`} /></td>
+                      {canReceive && (
+                        <td className="px-3 py-2 text-right col-sticky-end">
+                          <button type="button" className="primary-button btn-sm whitespace-nowrap" disabled={allPt}
+                            data-testid={`ar-aging-receive-${c.customer_id}`}
+                            onClick={(e) => { e.stopPropagation(); setRowPay({ id: c.customer_id, name: c.customer_name }); }}>
+                            Terima pembayaran
+                          </button>
+                        </td>
+                      )}
                     </tr>
                   )}</PagedRows>
                 </tbody>
@@ -318,13 +333,14 @@ export default function ARAgingView({ selectedEntity, currentUser, focusDoc, onC
                       </span>
                     </td>
                     <td className="px-3 py-2" />
+                    {canReceive && <td className="px-3 py-2 col-sticky-end" />}
                   </tr>
                   {filtered && (
                     <tr className="bg-[#FAFBFC] text-[10.5px] text-[#6B6B73]" data-testid="ar-aging-total-all-row">
                       <td className="px-3 py-1.5 uppercase text-[10px]">Total semua pelanggan</td>
                       <td colSpan={cols.length} />
                       <td className="px-3 py-1.5 text-right tabular-nums" data-testid="ar-aging-total-all">{formatCurrency(totals.total)}</td>
-                      <td colSpan={2} />
+                      <td colSpan={canReceive ? 3 : 2} />
                     </tr>
                   )}
                 </tfoot>
@@ -367,8 +383,12 @@ export default function ARAgingView({ selectedEntity, currentUser, focusDoc, onC
           />
         </DetailModal>
       )}
+      {rowPay && (
+        <ReceivePaymentModal customerId={rowPay.id} customerName={rowPay.name} onClose={() => setRowPay(null)}
+          onDone={(m) => { setRowPay(null); setFlash(m || "Pembayaran dicatat."); load(); }} />
+      )}
       {selected && payFor && (
-        <ARReceiptModal customerId={selected} customerName={detail?.customer_name || ""}
+        <ReceivePaymentModal customerId={selected} customerName={detail?.customer_name || ""}
           preselectOrderId={payFor.orderId || undefined} onClose={() => setPayFor(null)}
           onDone={(m) => { setPayFor(null); setPaidMsg(m || "Pembayaran dicatat."); setFlash(m || "Pembayaran dicatat.");
             load(); openDetail(selected); }} />

@@ -19,6 +19,7 @@ import EntityGatedButton from "../../components/EntityGatedButton";   // PK-42 (
 import FocusNotice from "../../components/FocusNotice";
 import { BudgetPreview } from "../../components/BudgetCheckNotice";   // PK-39 — pratinjau anggaran kas keluar
 import useFocusDoc, { gulirKe } from "../../hooks/useFocusDoc";
+import { useAppNav } from "../../context/AppNavContext";
 import CashAccountField, { cashAccountBlocked, cashAccountBlockReason } from "../../components/CashAccountField";   // PK-20
 
 /**
@@ -75,6 +76,7 @@ const REF_LABEL = {
 };
 
 export default function CashManagementView({ currentUser, selectedEntity, focusDoc, onClearFocus }) {
+  const { go, canOpen } = useAppNav();   // MN-T3 — tautan ke Hutang › Tagihan (form Bayar pemasok)
   const [summary, setSummary] = useState({ kas_kecil: {}, kas_besar: {}, kas_kecil_per_entity: {} });
   const [entities, setEntities] = useState([]);
   const [error, setError] = useState("");
@@ -337,6 +339,14 @@ export default function CashManagementView({ currentUser, selectedEntity, focusD
             <Field label="Deskripsi">
               <input data-testid="cash-description-input" value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} className="field" placeholder="Keterangan transaksi..." />
             </Field>
+            {/* MN-T3 — kas keluar untuk tagihan pemasok lewat satu form Bayar pemasok (hutang ikut berkurang). */}
+            {form.direction === "out" && canOpen("vendor-bills") && (
+              <p className="text-fs-12 text-kn-text-2" data-testid="cash-pay-supplier-link">
+                Membayar tagihan pemasok?{" "}
+                <button type="button" className="link-button" onClick={() => { setShowForm(false); go("vendor-bills"); }}>
+                  Pakai form Bayar pemasok</button>
+              </p>
+            )}
             {form.direction === "out" && showForm && (
               <BudgetPreview entityId={selectedEntity} source="cash_out" category={form.category}
                 amount={form.amount} date={form.txn_date || ""} testId="cash-budget-preview" />

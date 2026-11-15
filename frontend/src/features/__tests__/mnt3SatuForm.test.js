@@ -42,7 +42,8 @@ jest.mock("../finance/payments/paymentApi", () => ({
   assessVariance: () => Promise.resolve({ direction: "none" }),
   directionMeta: () => ({ label: "", bg: "", fg: "" }), varianceMeta: () => Promise.resolve({ reasons: [] }),
   varianceKindMeta: () => ({ label: "", bg: "", fg: "" }), penaltyMeta: () => ({ label: "", bg: "", fg: "" }),
-  money: (n) => String(n),
+  money: (n) => String(n), errText: (e, f) => f, planByDoc: () => Promise.resolve({ plan: null }),
+  fetchMeta: () => Promise.resolve({}), accrueNow: () => Promise.resolve({}), lineMeta: () => ({ label: "", bg: "", fg: "" }),
 }));
 jest.mock("../finance/payments/PenaltyPanel", () => () => <div data-testid="stub-penalty-panel" />);
 jest.mock("../documents/DocumentActionsBar", () => () => null);
@@ -359,4 +360,80 @@ test("U16 — Konsolidasi: angka PT lain → petunjuk pindah PT; PT aktif → La
   await click(q("cons-trace-revenue-ent_ksc"));
   expect(onNavigateTo).toHaveBeenCalledWith("financial-statements", expect.objectContaining({
     preset: expect.objectContaining({ tab: "pl", start: expect.stringMatching(/-01-01$/), end: expect.stringMatching(/-12-31$/) }) }));
+});
+
+// ── Serah-terima (b) ───────────────────────────────────────────────────────────────────────────────────────────────
+// U6 — 13 peran bawaan (izin dari fixture): tombol "Terima pembayaran" hanya bagi pemegang `ar_receipt.create`, tombol
+// "Bayar" hanya bagi pemegang izin bayar dokumennya (`vendor_bill.pay` / `contra_bon.pay`); tidak ada tombol yang
+// berujung 403. Titik masuk yang dirender: Piutang › Saldo & Umur, Penagihan & Penerimaan, detail pesanan (panel bayar),
+// gerbang kirim, kartu pelanggan (U15), Rekonsiliasi (mutasi masuk/keluar), detail tagihan, daftar tagihan, kartu pemasok.
+/* eslint-disable import/first */
+import ARAgingView from "../finance/ARAgingView";
+import CollectionWorklist from "../crm/CollectionWorklist";
+import SoPaymentPanel from "../finance/payments/SoPaymentPanel";
+import DispatchPaymentGatePanel from "../orders/DispatchPaymentGatePanel";
+import ReconLinesTable from "../finance/bank/ReconLinesTable";
+import VendorBillDetailPanel from "../purchasing/VendorBillDetailPanel";
+/* eslint-enable import/first */
+
+const AGING = { customers: [{ customer_id: "c1", customer_name: "Toko C", outstanding: 8000000, current: 8000000 }],
+  totals: { total: 8000000 }, buckets: [], penalty_policy: {} };
+const REMIND = [{ order_id: "so1", order_number: "SO-1", customer_id: "c1", customer_name: "Toko C", outstanding: 8000000,
+  days_late: 0, due_date: "2026-11-30" }];
+const BILL = { id: "vb1", bill_number: "VB-1", supplier_name: "Pemasok S", entity_id: "ent_ksc", status: "posted", items: [],
+  financials: { grand_total: 7000000, outstanding: 7000000, amount_paid: 0 }, timeline: [] };
+const LINES = [{ id: "lin", direction: "in", status: "unmatched", amount: 5000000, stmt_date: "2026-11-10", description: "TRF MASUK" },
+  { id: "lout", direction: "out", status: "unmatched", amount: 7000000, stmt_date: "2026-11-11", description: "TRF KELUAR" }];
+
+test.each(Object.keys(BUILTIN.permissions))("U6 — titik masuk form, peran bawaan %s: tombol mengikuti izin", async (role) => {
+  const perms = BUILTIN.permissions[role];
+  const user = { id: `u_${role}`, role, permissions: perms };
+  const terima = can(perms, "ar_receipt", "create");
+  routeGet({ "/ar/aging": AGING, "/collection-reminders": REMIND, "/ar-receipts": { items: [], total: 0 },
+    "/dispatch-payment-gate": { applies: true, blocked: true, shortfall: 8000000 }, "/payment-plans/by-doc": { plan: null },
+    "/payment-plans/meta": {}, "/penalty-policy": {}, "/vendor-bills/vb1": BILL });
+  const cek = [];
+  await mount(<ARAgingView selectedEntity="ent_ksc" currentUser={user} />);
+  cek.push(["Saldo & Umur", Boolean(q("ar-aging-receive-c1")), terima]);
+  await act(async () => { roots[0].unmount(); }); roots = []; document.body.innerHTML = "";
+  await mount(<CollectionWorklist currentUser={user} selectedEntity="ent_ksc" />);
+  cek.push(["Penagihan & Penerimaan", Boolean(q("collection-pay-so1")), terima]);
+  await act(async () => { roots[0].unmount(); }); roots = []; document.body.innerHTML = "";
+  await mount(<SoPaymentPanel order={{ id: "so1", customer_id: "c1", customer_name: "Toko C", status: "confirmed",
+    payment_status: "unpaid", entity_id: "ent_ksc", grand_total: 8000000 }} currentUser={user} />);
+  cek.push(["Detail pesanan", Boolean(q("sop-receive")), terima]);
+  await act(async () => { roots[0].unmount(); }); roots = []; document.body.innerHTML = "";
+  await mount(<DispatchPaymentGatePanel orderId="so1" customerId="c1" customerName="Toko C" currentUser={user} testPrefix="gate" />);
+  cek.push(["Gerbang kirim", Boolean(q("gate-receipt-open")), terima]);
+  await act(async () => { roots[0].unmount(); }); roots = []; document.body.innerHTML = "";
+  // Rekonsiliasi: BankReconciliationView memberi `onRecordReceipt` hanya bila `ar_receipt.create` (dicek statik di bawah).
+  await mount(<ReconLinesTable lines={LINES} busy="" onAction={() => {}} onOpenMatch={() => {}} onError={() => {}} onNotify={() => {}}
+    onRecordReceipt={terima ? () => {} : null} perms={perms} />);
+  cek.push(["Rekonsiliasi (masuk)", Boolean(q("recon-record-receipt-lin")), terima]);
+  cek.push(["Rekonsiliasi (keluar)", Boolean(q("recon-contrabon-lout")),
+    (can(perms, "contra_bon", "pay") && can(perms, "contra_bon", "view")) || (can(perms, "vendor_bill", "pay") && can(perms, "vendor_bill", "view"))]);
+  await act(async () => { roots[0].unmount(); }); roots = []; document.body.innerHTML = "";
+  await mount(<VendorBillDetailPanel bill={BILL} canApprove={false} currentUser={user} onClose={() => {}} onAction={() => {}} />);
+  cek.push(["Detail tagihan", Boolean(q("vb-action-pay")), can(perms, "vendor_bill", "pay")]);
+  expect(cek.filter(([, tampil, boleh]) => tampil !== boleh)).toEqual([]);
+});
+
+test("U6 — Rekonsiliasi: pemberi `onRecordReceipt` = izin ar_receipt.create; kartu pemasok: Bayar per izin bayar", async () => {
+  const fs = require("fs");
+  const path = require("path");
+  const src = fs.readFileSync(path.join(__dirname, "..", "finance", "BankReconciliationView.jsx"), "utf8");
+  expect(src).toMatch(/const canRecordReceipt = can\(user\?\.permissions \|\| \{\}, "ar_receipt", "create"\)/);
+  expect(src).toMatch(/onRecordReceipt=\{canRecordReceipt \?/);
+  const sup = { id: "s1", name: "Pemasok S", entity_id: "ent_ksc", status: "active", sections_allowed: ["tagihan", "kontrabon", "lainnya"],
+    bills: [BILL], contra_bons: [{ id: "cb1", number: "CB-1", status: "approved", bills: [], totals: { outstanding: 100, net_payable: 100 } }],
+    payments: [], documents: [], price_history: [], payables: null };
+  for (const [perms, harapB, harapC] of [[{ supplier: ["view"], vendor_bill: ["view"], contra_bon: ["view"] }, false, false],
+    [{ supplier: ["view"], vendor_bill: ["view", "pay"], contra_bon: ["view", "pay"] }, true, true]]) {
+    routeGet({ "/suppliers/s1/360": sup, "/price-list": [] });
+    await mount(<Supplier360Panel variant="card" supplierId="s1" currentUser={{ role: "x", permissions: perms }} selectedEntity="ent_ksc" />);
+    expect(Boolean(q("supplier-360-pay-vb1"))).toBe(harapB);
+    await click(q("supplier-360-tab-kontrabon"));
+    expect(Boolean(q("supplier-360-pay-cb1"))).toBe(harapC);
+    await act(async () => { roots[0].unmount(); }); roots = []; document.body.innerHTML = "";
+  }
 });

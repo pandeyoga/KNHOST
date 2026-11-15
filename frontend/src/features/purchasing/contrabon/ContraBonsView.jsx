@@ -328,7 +328,7 @@ export default function ContraBonsView({ currentUser, selectedEntity, entities =
 
               {/* UI/UX 2026-06 — tabel full-width saat detail belum dipilih (audit: sel wrap karena tabel dipaksa ½ lebar) */}
               <div className={active ? "grid grid-cols-1 gap-4 xl:grid-cols-2" : "grid grid-cols-1 gap-4"}>
-                <ContraBonListTable rows={rows} loading={loading} activeId={active?.id}
+                <ContraBonListTable rows={rows} loading={loading} activeId={active?.id} perms={currentUser?.permissions}
                   onOpen={setActive} />
                 {active && (
                   <ContraBonDetailPanel cb={active} meta={meta} currentUser={currentUser}

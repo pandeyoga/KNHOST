@@ -26,7 +26,7 @@ jest.mock("../../components/KNSelect", () => {
 jest.mock("../finance/InventoryReconTab", () => () => <div data-testid="layar-rekon-persediaan" />);
 jest.mock("../finance/SuspensePanel", () => () => <div data-testid="layar-akun-sementara" />);
 jest.mock("../sales_admin/SoTrackerCard", () => () => null);
-jest.mock("../crm/ARReceiptModal", () => () => null);
+jest.mock("../finance/payments/ReceivePaymentModal", () => () => null);   // MN-T3 — dulu crm/ARReceiptModal
 jest.mock("../pettycash/CashAdvanceDetail", () => (p) => <div data-testid="layar-rincian-pd">{p.ca?.number}</div>);
 jest.mock("../pettycash/SettlementDetail", () => (p) => <div data-testid="layar-rincian-lpj">{p.stl?.number}</div>);
 jest.mock("../pettycash/CashAdvanceForm", () => () => <div data-testid="layar-form-pd" />);

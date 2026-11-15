@@ -101,7 +101,7 @@ export default function PaySupplierModal({ target, bankLineId = "", preset = nul
   }, [sum]);
   const payMethods = usePaymentMethods("keluar", sum?.entityId);
   const ap = useApPayment(type, id, Boolean(id));
-  const accounts = ap.accounts || [];
+  const accounts = useMemo(() => ap.accounts || [], [ap.accounts]);
   const accountOptions = useMemo(() => accounts.map((a) => ({ value: a.id, label: accountLabel(a) })), [accounts]);
   const accLabel = (accounts.find((a) => a.id === accountId) && accountLabel(accounts.find((a) => a.id === accountId)))
     || "rekening terpilih";

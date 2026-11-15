@@ -3,7 +3,10 @@
  *
  * SATU daftar berkelompok. Tiap kelompok tampil hanya bila pengguna memegang izin modul sumbernya (`PERLU_TINDAKAN`)
  * DAN kelompok itu berisi; tiap baris punya satu tombol yang membuka layar penanganannya (dua dikerjakan langsung di
- * sini seperti dulu: terbitkan Faktur Pajak dan catat kwitansi lewat `ARReceiptModal`). Sumber angka tidak berubah:
+ * sini seperti dulu: terbitkan Faktur Pajak dan terima pembayaran lewat satu form `ReceivePaymentModal`, MN-T3).
+ * MN-T3 — baris "Uang masuk perlu dicatat" bertombol **Terima pembayaran** (pelanggan + pesanan terisi); nama pelanggan
+ * membuka kartu pelanggan; baris "Hutang jatuh tempo" (PO bersisa) bertombol **Bayar** yang membuka kartu pemasok PO itu
+ * (tagihannya dibayar dari sana dengan satu form `PaySupplierModal`). Sumber angka tidak berubah:
  *  · antrean meja `GET /api/finance/desk` (`payment_variance.decide`) — uang masuk, selisih bayar, faktur pajak, nota
  *    kredit, hutang (PO) jatuh tempo ≤ 7 hari, denda, piutang lewat jatuh tempo, sample berbayar, retur;
  *  · papan hutang `GET /api/home/finance` (`contra_bon.view` / `vendor_bill.view`, PK-17) — kontrabon menunggu
@@ -25,7 +28,8 @@ import { boardRowLink } from "../../config/waitingBoards";
 import DeskQueueCard from "../sales_admin/DeskQueueCard";
 import SoTrackerCard from "../sales_admin/SoTrackerCard";
 import { financeDesk, issueTaxInvoice, rowLink, soTrackerLink } from "../sales_admin/workDeskApi";
-import ARReceiptModal from "../crm/ARReceiptModal";
+import ReceivePaymentModal from "./payments/ReceivePaymentModal";
+import { CustomerCardLink } from "./cards/partyCards";
 
 export const TEKS_KOSONG = "Tidak ada yang perlu ditindak hari ini.";
 const POSTING_ROWS = 20;
@@ -114,7 +118,7 @@ export function susunKelompok(perms, { desk, boards, posting }, canOpen = () => 
 
 export default function FinanceDesk({ currentUser, selectedEntity = "all", onOpenDocument }) {
   const perms = currentUser?.permissions || {};
-  const { go, canOpen } = useAppNav();
+  const { go, canOpen, openSupplierCard, cardsEnabled } = useAppNav();
   const pakaiDesk = can(perms, "payment_variance", "decide");
   const pakaiPapan = can(perms, "contra_bon", "view") || can(perms, "vendor_bill", "view");
   const pakaiPosting = can(perms, "accounting", "view") && canOpen("posting-failures");
@@ -148,7 +152,16 @@ export default function FinanceDesk({ currentUser, selectedEntity = "all", onOpe
   }, [selectedEntity, pakaiDesk, pakaiPapan, pakaiPosting]);
   useEffect(() => { load(); }, [load]);
 
-  const groups = useMemo(() => susunKelompok(perms, src, canOpen), [perms, src, canOpen]);
+  const groups = useMemo(() => susunKelompok(perms, src, canOpen).map((g) => ({ ...g, rows: g.rows.map((r) => {
+    if (r.action_kind === "receipt") {
+      return { ...r, action: "Terima pembayaran", _titleNode: <CustomerCardLink id={r.ref_id} name={r.title} perms={perms}
+        testId={`fin-desk-customer-${r.row_key || r.ref_id}`} /> };
+    }
+    if (r._queue === "hutang_jatuh_tempo" && r.supplier_id && cardsEnabled && can(perms, "supplier", "view")) {
+      return { ...r, action: "Bayar", action_kind: "supplier_card" };
+    }
+    return r;
+  }) })), [perms, src, canOpen, cardsEnabled]);
 
   function flash(msg) { setToast(msg); setTimeout(() => setToast(""), 5000); }
 
@@ -169,6 +182,7 @@ export default function FinanceDesk({ currentUser, selectedEntity = "all", onOpe
       setPayRow({ customer_id: row.ref_id, customer_name: row.title, order_id: row.order_id });
       return;
     }
+    if (row.action_kind === "supplier_card") { openSupplierCard(row.supplier_id); return; }
     if (row._view) { go(row._view, { preset: { from: { view: "finance-desk" } } }); return; }
     if (row._link) { onOpenDocument?.(row._link); return; }
     onOpenDocument?.(rowLink(row, row._queue, "finance"));
@@ -235,7 +249,7 @@ export default function FinanceDesk({ currentUser, selectedEntity = "all", onOpe
       )}
 
       {payRow && (
-        <ARReceiptModal
+        <ReceivePaymentModal
           customerId={payRow.customer_id}
           customerName={payRow.customer_name}
           preselectOrderId={payRow.order_id}

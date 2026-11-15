@@ -15,8 +15,9 @@ Persiapan (FIXTURE = disisipkan langsung; ALUR = lewat API):
     mnt3_isi_form.json` (jest memastikan form mengirim isi itu persis).
 
 Hitung tangan:
-  U3   C3 bersisa 8.000.000; kwitansi 5.000.000 "tertua dulu" (tanpa `allocations`) → seluruhnya ke satu-satunya pesanan
-       → sisa 8.000.000 − 5.000.000 = 3.000.000; rekening kwitansi = rekening yang dipilih form.
+  U3   C3 (pesanan sudah dikirim) bersisa 8.000.000; kwitansi 5.000.000 "tertua dulu" (tanpa `allocations`) →
+       seluruhnya ke satu-satunya pesanan → sisa 8.000.000 − 5.000.000 = 3.000.000; rekening kwitansi = rekening yang
+       dipilih form; jurnal kas Dr kas/bank 5.000.000 / Cr 1-1200 Piutang 5.000.000 (contoh angka `00` §9).
   U4   S4: bayar tagihan 7.000.000 penuh → satu kas keluar 7.000.000 dari rekening dipilih; sisa 0 → `paid`. Kontrabon
        berisi tagihan 4.000.000 tanpa potongan → bersih 4.000.000; bayar 4.000.000 → satu kas keluar; tagihannya lunas.
   U12  saldo hutang S = 7.000.000 + 3.000.000 − 2.000.000 = 8.000.000; pembayaran = 1 baris 2.000.000.
@@ -62,9 +63,9 @@ async def _pelanggan(db, nama: str, *, ent: str = KSC, sales_id: str = "") -> st
     return cid
 
 
-async def _pesanan(db, cid: str, nama: str, total: float) -> dict:
+async def _pesanan(db, cid: str, nama: str, total: float, *, status: str = "confirmed") -> dict:
     so = {"id": _id("so"), "number": f"SO-MNT3-{uuid.uuid4().hex[:5]}", "entity_id": KSC, "customer_id": cid,
-          "customer_name": nama, "status": "confirmed", "grand_total": float(total), "total_amount": float(total),
+          "customer_name": nama, "status": status, "grand_total": float(total), "total_amount": float(total),
           "payments": [], "paid_total": 0, "payment_status": "unpaid", "payment_term_code": "NET30",
           "created_at": now_iso(), "items": []}
     await db.sales_orders.insert_one(dict(so))
@@ -92,8 +93,20 @@ async def data(klien, db, kepala_admin):
     c = await _pelanggan(db, "Toko C MN-T3", sales_id=sales["id"])
     so_c = await _pesanan(db, c, "Toko C MN-T3", 8 * JT)
     c3 = await _pelanggan(db, "Toko C3 MN-T3", sales_id=sales["id"])
-    so_c3 = await _pesanan(db, c3, "Toko C3 MN-T3", 8 * JT)
+    # C3 sudah dikirim (piutang): kwitansinya mengkredit akun piutang, bukan uang muka pesanan belum dikirim.
+    so_c3 = await _pesanan(db, c3, "Toko C3 MN-T3", 8 * JT, status="shipped")
     d = await _pelanggan(db, "Toko D MN-T3")
+    from services import gl_service as gl
+    # FIXTURE — surat jalan C3 + jurnal pengakuan (Dr 1-1200 Piutang 8.000.000 / Cr 4-1000 Penjualan) bentuk
+    # `post_shipment_revenue`: piutangnya sudah lahir, sehingga kwitansi U3 mengkredit piutang (bukan uang muka).
+    shp = _id("shp")
+    await db.shipments.insert_one({"id": shp, "shipment_no": "SJ-MNT3-1", "order_id": so_c3["id"], "entity_id": KSC,
+                                   "status": "dispatched", "created_at": now_iso()})
+    await gl._insert_entry(lines=[{"account_code": "1-1200", "debit": 8.0 * JT, "credit": 0.0},
+                                  {"account_code": "4-1000", "debit": 0.0, "credit": 8.0 * JT}],
+                           description="uji MN-T3 surat jalan C3", date=now_iso(), source_type="shipment_revenue",
+                           source_id=shp, entity_id=KSC, created_by="system", source_label="SJ-MNT3-1",
+                           ref={"order_id": so_c3["id"], "order_number": so_c3["number"]})
     # FIXTURE — kwitansi C 1.000.000 + kas masuk + jurnal (Dr kas / Cr piutang), tidak dialokasikan ke pesanan C.
     rid, tid = _id("arr"), _id("cash")
     await db.ar_receipts.insert_one({"id": rid, "number": "KW-MNT3-1", "customer_id": c, "customer_name": "Toko C MN-T3",
@@ -103,7 +116,6 @@ async def data(klien, db, kepala_admin):
     await db.cash_transactions.insert_one({"id": tid, "number": "KAS-KW-MNT3-1", "ref_type": "ar_receipt",
                                            "ref_id": rid, "entity_id": KSC, "direction": "in", "amount": 1.0 * JT,
                                            "status": "posted", "txn_date": now_iso()[:10], "account_id": rek})
-    from services import gl_service as gl
     await gl._insert_entry(lines=[{"account_code": "1-1100", "debit": 1.0 * JT, "credit": 0.0},
                                   {"account_code": "1-1200", "debit": 0.0, "credit": 1.0 * JT}],
                            description="uji MN-T3 kwitansi C", date=now_iso(), source_type="cash_transaction",
@@ -154,6 +166,15 @@ async def test_MNT3_U3_isi_form_terima_ke_pintu_kwitansi(klien, db, kepala_admin
     assert round(float(so["grand_total"]) - float(so.get("paid_total") or 0), 2) == 3 * JT
     kas = await db.cash_transactions.find_one({"ref_type": "ar_receipt", "ref_id": rows[0]["id"]}, {"_id": 0})
     assert kas and kas["account_id"] == data["rek"], kas
+    # Contoh angka (`00` §9): kwitansi 5.000.000 → kas masuk 5.000.000 → jurnal Dr kas/bank 5.000.000 / Cr piutang
+    # 5.000.000 → sisa piutang pesanan 8.000.000 − 5.000.000 = 3.000.000.
+    assert kas["amount"] == 5 * JT
+    je = await db.journal_entries.find_one({"source_type": "cash_transaction", "source_id": kas["id"]}, {"_id": 0})
+    assert je, "jurnal kas kwitansi tidak ada"
+    debit = {ln["account_code"]: ln["debit"] for ln in je["lines"] if ln.get("debit")}
+    kredit = {ln["account_code"]: ln["credit"] for ln in je["lines"] if ln.get("credit")}
+    assert sum(debit.values()) == 5 * JT and kredit.get("1-1200") == 5 * JT, je["lines"]
+    print("CONTOH_ANGKA", kas.get("number"), je.get("number"), debit, kredit)
 
 
 async def test_MNT3_U4_isi_form_bayar_ke_pintu_tagihan_dan_kontrabon(klien, db, kepala_admin, data):

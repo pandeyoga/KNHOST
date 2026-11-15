@@ -16,6 +16,8 @@
  * jenisnya). Mutasi berkode bayar tanpa kwitansi → "Catat kwitansi dari mutasi ini" (izin `ar_receipt.create`):
  * form kwitansi terisi (pelanggan, pesanan, nominal, rekening mutasi, referensi); sesudah tersimpan mutasi ditautkan ke
  * kas kwitansi itu sehingga kwitansinya langsung "Terverifikasi bank".
+ * MN-T3 — tombol itu kini "Catat sebagai kwitansi" di TIAP mutasi masuk belum cocok (satu form `ReceivePaymentModal`,
+ * `bankLineId` → form yang menautkan); mutasi keluar → "Bayar pemasok" (`ReconPayablePicker` → `PaySupplierModal`).
  */
 import KNDatePicker from "@/components/KNDatePicker";
 import { useCallback, useEffect, useMemo, useState } from "react";
@@ -40,7 +42,7 @@ import DesktopOnlyNotice from "../../components/DesktopOnlyNotice";
 import useIntentKey from "../../hooks/useIntentKey";
 import useViewPreset from "../../hooks/useViewPreset";
 import { moneyPost } from "../../utils/moneyRequest";
-import ARReceiptModal from "../crm/ARReceiptModal";
+import ReceivePaymentModal from "./payments/ReceivePaymentModal";   // MN-T3 — satu form terima pembayaran
 import { can } from "../../config/roles";
 import { useEntityScope } from "../../context/EntityScopeContext";
 
@@ -333,7 +335,7 @@ export default function BankReconciliationView({ user = null }) {
               <ReconLinesTable lines={lines} busy={busy} onAction={lineAction}
                 onOpenMatch={(l) => setMatchFor(l)} onReload={loadData} onError={fail}
                 onNotify={notify} onRecordReceipt={canRecordReceipt ? (line, hit) => setReceiptFor({ line, hit }) : null}
-                recordBlockReason={canWrite ? "" : writeBlockHint} />
+                recordBlockReason={canWrite ? "" : writeBlockHint} perms={user?.permissions || {}} />
             </>
           )}
 
@@ -350,23 +352,15 @@ export default function BankReconciliationView({ user = null }) {
       )}
 
       {receiptFor && (
-        <ARReceiptModal customerId={receiptFor.hit.customer_id} customerName={receiptFor.hit.customer_name}
-          preselectOrderId={receiptFor.hit.order_id} testId="recon-receipt-modal"
-          preset={{ amount: receiptFor.line.amount, accountId: receiptFor.line.bank_account_id,
-            reference: receiptFor.line.ref || receiptFor.hit.code, date: receiptFor.line.stmt_date }}
+        /* MN-T3 — "Catat sebagai kwitansi": satu form Terima pembayaran dengan `bankLineId` (form menautkan kas kwitansi
+           ke mutasi ini sesudah tersimpan → kwitansi terverifikasi bank). Tanpa kode bayar → langkah Pilih pelanggan. */
+        <ReceivePaymentModal customerId={receiptFor.hit?.customer_id || ""} customerName={receiptFor.hit?.customer_name || ""}
+          preselectOrderId={receiptFor.hit?.order_id} testId="recon-receipt-modal" bankLineId={receiptFor.line.id}
+          amountHint={receiptFor.line.amount}
+          preset={{ accountId: receiptFor.line.bank_account_id, reference: receiptFor.line.ref || receiptFor.hit?.code || "",
+            date: receiptFor.line.stmt_date }}
           onClose={() => setReceiptFor(null)} onError={() => {}}
-          onDone={async (pesan, rc) => {
-            const line = receiptFor.line;
-            setReceiptFor(null);
-            if (rc?.cash_txn_id) {
-              // Kas kwitansi baru = pasangan mutasi ini → tautkan sekarang (kwitansi menjadi "Terverifikasi bank").
-              await lineAction(line.id, "match", { txn_id: rc.cash_txn_id },
-                `${pesan} Mutasi ditautkan ke kwitansi ${rc.number || ""} — kwitansi terverifikasi bank.`);
-            } else {
-              notify(pesan);
-              await loadData();
-            }
-          }} />
+          onDone={async (pesan) => { setReceiptFor(null); notify(pesan); await loadData(); }} />
       )}
 
       {matchFor && (

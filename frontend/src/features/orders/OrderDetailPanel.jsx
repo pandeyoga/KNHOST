@@ -40,6 +40,7 @@ import CancelOrderDialog from "./CancelOrderDialog";
 import OrderFeedbackPanel from "./OrderFeedbackPanel";   // feedback/komplain pelanggan per SO
 import VerifyOrderDialog from "../sales_admin/VerifyOrderDialog";
 import { releaseMessage, releaseOrder } from "../sales_admin/workDeskApi";
+import { CustomerCardLink } from "../finance/cards/partyCards";
 import { useAppNav } from "../../context/AppNavContext";
 // F1b — arti `price_source` yang di-snapshot pada baris SO (dari resolver harga).
 const PRICE_SOURCE_BADGE = {
@@ -209,7 +210,9 @@ export function OrderDetailPanel({
           />
         )}
         <div>
-          <p data-testid="order-customer-detail" className={embedded ? "sr-only" : "text-[12px] font-semibold"}>{sel.customer_name}</p>
+          <p data-testid="order-customer-detail" className={embedded ? "sr-only" : "text-[12px] font-semibold"}>
+            {/* MN-T3 — nama pelanggan membuka kartu pelanggan (izin `customer.view`). */}
+            <CustomerCardLink id={sel.customer_id} name={sel.customer_name} perms={user?.permissions} testId="order-customer-card" /></p>
           <p className="text-[11px] text-[#6B6B73]">{sel.customer_city || sel.shipping_city || "—"} · Sales: {sel.sales_name || "—"}</p>
           {/* G2-06 — dulu tanggal ungu tanpa label ("28/10/2026, 12.53.59"), juga pada SO batal/selesai. */}
           {sel.reservation_expires_at && ["reserved", "waiting_approval", "approved", "waiting_stock", "draft"].includes(sel.status) && (

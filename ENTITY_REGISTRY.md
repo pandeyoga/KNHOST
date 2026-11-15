@@ -4538,6 +4538,16 @@ kompensasi dan penugasan di PT itu; baris slip "{nama} ({tgl awal}–{tgl akhir}
 | PPh 21 hitung ulang tahunan | Slip terdahulu hanya di PT proses itu (`_prior_year_slips` disaring `entity_id`) | `hr_payroll_service.compute_payslip` |
 
 
+## MN-T3 — kartu pelanggan & kartu pemasok (tanpa koleksi/field baru)
+
+Tidak ada koleksi atau field tersimpan baru. Jawaban baca yang bertambah (dihitung saat dibaca, `services/party_card.py`):
+`GET /api/customers/{id}/360` + `sections_allowed` (bagian kartu yang izinnya dipegang; angka kredit/piutang yang sudah
+ada = `null` tanpa izin `payment_plan.view`/`credit_profile.view`, K-18); `GET /api/suppliers/{id}/360` + `payables`
+(`outstanding` · `due_soon` · `advance` per PT dari `vendor_bills` lewat `vendor_bill_service.open_payables` dan uang muka
+`contra_bon_service.available_credits`), `bills`, `contra_bons`, `payments` (= `vendor_bills.payments[]` tidak batal),
+`landed_costs`, `sections_allowed` — `null` bila izin sumbernya tidak dipegang. Saringan baru: `vendor_bills.supplier_id`
+(`GET /vendor-bills?supplier_id`), `finance_cases.customer_id` (`GET /finance-cases?customer_id`).
+
 ## PY-T3 — aturan hitung gaji dari pengaturan per PT: prorata, potongan, lembur, kalender libur, saldo awal pajak
 
 | Collection | Prefix/ID | Penulis (SSOT) | Pembaca | Catatan |

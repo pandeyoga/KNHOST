@@ -4,7 +4,7 @@ import React, { act } from "react";
 import { createRoot } from "react-dom/client";
 import DecisionModal from "../purchasing/contrabon/DecisionModal";
 import DeductionModal from "../purchasing/contrabon/DeductionModal";
-import PayModal from "../purchasing/contrabon/PayModal";
+import PaySupplierModal from "../finance/payments/PaySupplierModal";   // MN-T3 — pengganti contrabon/PayModal
 import ReasonNoteModal from "../purchasing/contrabon/ReasonNoteModal";
 import ContraBonsView from "../purchasing/contrabon/ContraBonsView";
 import JournalEntryModal from "../finance/JournalEntryModal";
@@ -12,7 +12,7 @@ import JournalDetailModal from "../finance/JournalDetailModal";
 import { RedeemModal, ReverseModal } from "../finance/StoreCreditModals";
 import TaxInvoices from "../finance/TaxInvoices";
 import BankReconciliationView from "../finance/BankReconciliationView";
-import ReconContraBonModal from "../finance/bank/ReconContraBonModal";
+import ReconPayablePicker from "../finance/bank/ReconPayablePicker";   // MN-T3 — pengganti ReconContraBonModal
 import ReconMatchModal from "../finance/bank/ReconMatchModal";
 import PaymentVarianceDialog from "../finance/payments/PaymentVarianceDialog";
 import PenaltyPanel from "../finance/payments/PenaltyPanel";
@@ -100,7 +100,7 @@ test("Kontrabon: 4 pop-up keputusan = FormModal (dialog, Esc menutup), testid to
   const cases = [
     ["cb-decision-modal", "cb-decision-save", (p) => <DecisionModal cb={CB} exception={{ key: "k", amount: 5 }} meta={META} {...p} />],
     ["cb-deduction-modal", "cb-deduction-save", (p) => <DeductionModal cb={CB} meta={META} {...p} />],
-    ["cb-pay-modal", "cb-pay-submit", (p) => <PayModal cb={CB} {...p} />],
+    ["pay-supplier-modal", "pay-supplier-submit", (p) => <PaySupplierModal target={{ type: "contra_bon", id: CB.id }} {...p} />],
     ["cb-dispute-modal", "cb-dispute-submit", (p) => <ReasonNoteModal cb={CB} kind="dispute" meta={META} {...p} />],
   ];
   for (const [tid, submit, make] of cases) {
@@ -186,14 +186,14 @@ test("Rekonsiliasi Bank: PageHeader, PageTabs, saringan status FilterChips, impo
   expect(q(host, "recon-holding-panel")).not.toBeNull();
 });
 
-test("Rekonsiliasi: Bayar kontrabon dari mutasi minta konfirmasi dulu; mode cocokkan = chip", async () => {
+test("Rekonsiliasi: Bayar pemasok dari mutasi — pilih dokumen dulu (tanpa tulisan); mode cocokkan = chip", async () => {
   routeGet({ "/contra-bons/bank-line-candidates/l1": { candidates: [{ id: "cb1", number: "CB-1", supplier_name: "Solo", exact: true, outstanding: 10 }] },
     "/bank-reconciliation/lines/l1/candidates": { candidates: [], auto_min: 80, suggest_min: 60 } });
   const line = { id: "l1", amount: 10, direction: "out", stmt_date: "2026-10-20", description: "TRF" };
-  const { host } = await mount(<ReconContraBonModal line={line} onClose={() => {}} onDone={() => {}} />);
-  expectStdDialog(host, "recon-contrabon-modal");
-  await click(q(host, "recon-cb-pay-cb1"));
-  expect(askConfirm).toHaveBeenCalled();
+  const PERM = { contra_bon: ["view", "pay"] };
+  const { host } = await mount(<ReconPayablePicker line={line} perms={PERM} onClose={() => {}} onDone={() => {}} />);
+  expectStdDialog(host, "recon-payable-picker");
+  await click(q(host, "recon-payable-pick-cb1"));   // memilih → satu form Bayar pemasok (konfirmasi di sana)
   expect(mockPost).not.toHaveBeenCalled();
   document.body.innerHTML = "";
   const { host: h2 } = await mount(<ReconMatchModal line={line} onClose={() => {}} onDone={() => {}} />);

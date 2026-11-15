@@ -35,7 +35,7 @@ jest.mock("../finance/payments/paymentApi", () => ({
 }));
 
 /* eslint-disable import/first */
-import ARReceiptModal from "../crm/ARReceiptModal";
+import ARReceiptModal from "../finance/payments/ReceivePaymentModal";   // MN-T3 — dulu crm/ARReceiptModal
 import BankAccountForm from "../finance/BankAccountForm";
 import BankAccountChangesPanel from "../finance/BankAccountChangesPanel";
 import { canonicalMethod, invalidatePaymentMethods } from "../../config/paymentMethods";

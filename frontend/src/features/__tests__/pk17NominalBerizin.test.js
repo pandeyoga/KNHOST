@@ -32,7 +32,7 @@ jest.mock("../../components/KNSelect", () => {
   return { __esModule: true, default: S, KNSelect: S };
 });
 jest.mock("../sales_admin/SoTrackerCard", () => () => null);
-jest.mock("../crm/ARReceiptModal", () => () => null);
+jest.mock("../finance/payments/ReceivePaymentModal", () => () => null);   // MN-T3 — dulu crm/ARReceiptModal
 jest.mock("../purchasing/contrabon/ContraBonDetailPanel", () => () => null);
 jest.mock("../purchasing/contrabon/ContraBonCreateWizard", () => () => null);
 jest.mock("../purchasing/contrabon/ExchangeScheduleModal", () => () => null);

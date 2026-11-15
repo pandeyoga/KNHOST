@@ -6,9 +6,10 @@ import { FileText, AlertTriangle, Clock } from "lucide-react";
 import { formatCurrency } from "../../../utils/formatters";
 import { STATUS_CLASS, fmtDate, slaText, pendingExceptions } from "./contraBonApi";
 
+import { SupplierCardLink } from "../../finance/cards/partyCards";
 import PagedRows from "@/components/PagedRows";
 
-export default function ContraBonListTable({ rows, loading, activeId, onOpen }) {
+export default function ContraBonListTable({ rows, loading, activeId, onOpen, perms = {} }) {
   // Audit UI 24 Okt (032 HP): empty state dulu berada di dalam tabel min-w 880px sehingga
   // kalimatnya terpotong di layar sempit ("…saat supplier data"). Kosong → kotak biasa.
   if (!loading && rows.length === 0) {
@@ -65,7 +66,9 @@ export default function ContraBonListTable({ rows, loading, activeId, onOpen }) 
                     <p className="text-[10px] text-[#8E8E93]">{fmtDate(cb.cycle_date)}</p>
                   </td>
                   <td className="px-3 py-2">
-                    <p className="font-semibold text-[#1C1C1E]">{cb.supplier_name || "—"}</p>
+                    {/* MN-T3 — nama pemasok membuka kartu pemasok */}
+                    <p className="font-semibold text-[#1C1C1E]"><SupplierCardLink id={cb.supplier_id} name={cb.supplier_name} perms={perms}
+                      testId={`cb-supplier-card-${cb.id}`} /></p>
                     <p className="text-[10px] text-[#8E8E93]">
                       {cb.supplier_pic ? `diserahkan ${cb.supplier_pic}` : "tanpa nama pengantar"}
                     </p>

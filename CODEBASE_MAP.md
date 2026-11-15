@@ -737,7 +737,7 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 | `web_push_service.py` | 110 | Web Push (PWA) — kirim notifikasi lonceng ke HP walau aplikasi sedang ditutup. |
 | `wilayah_service.py` | 213 | Wilayah (2026-09) — registry wilayah Indonesia (Kepmendagri 300.2.2-2138/2025 + kode pos) dan |
 | `wms_health_service.py` | 125 | DASHBOARD KESEHATAN GUDANG — satu layar ringkas per gudang: |
-| `work_desk_service.py` | 1035 | FASE E-8 (E8.7/E8.15/E8.20) — **MEJA KERJA BERBASIS ANTREAN** (Admin Sales & Finance). |
+| `work_desk_service.py` | 1037 | FASE E-8 (E8.7/E8.15/E8.20) — **MEJA KERJA BERBASIS ANTREAN** (Admin Sales & Finance). |
 | `work_labels.py` | 59 | FIX-1 (K-B1-02, B2a FLW-IN-07) — label baris daftar PEKERJAAN FISIK lintas PT. |
 | `zpl_text.py` | 18 | RF-11 — teks bebas di label ZPL di-encode lewat ^FH (hex escape) sehingga ^ ~ _ tidak pernah |
 
@@ -749,18 +749,18 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 
 | Fitur (`src/features/`) | Berkas | Baris |
 |---|---:|---:|
-| `__tests__` | 151 | 25406 |
-| `admin` | 36 | 6981 |
+| `__tests__` | 151 | 25485 |
+| `admin` | 36 | 6983 |
 | `approvals` | 9 | 1724 |
 | `catalog` | 24 | 1459 |
 | `costing` | 1 | 150 |
-| `crm` | 31 | 5629 |
+| `crm` | 30 | 5625 |
 | `design` | 8 | 1585 |
 | `designer` | 8 | 1628 |
 | `desks` | 2 | 229 |
 | `documents` | 18 | 2580 |
 | `export` | 9 | 700 |
-| `finance` | 113 | 26790 |
+| `finance` | 113 | 26822 |
 | `home` | 6 | 1191 |
 | `hr` | 40 | 7751 |
 | `incentive` | 5 | 1835 |
@@ -773,17 +773,17 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 | `marketing` | 13 | 1300 |
 | `mobile` | 13 | 1758 |
 | `notifications` | 1 | 33 |
-| `orders` | 26 | 4231 |
+| `orders` | 26 | 4234 |
 | `pdf` | 5 | 1075 |
 | `pettycash` | 10 | 1834 |
 | `pos` | 26 | 2912 |
 | `pricing` | 1 | 151 |
 | `production` | 3 | 753 |
-| `purchasing` | 88 | 19009 |
+| `purchasing` | 87 | 18802 |
 | `rfid` | 21 | 3556 |
 | `rnd` | 66 | 7906 |
 | `sales` | 98 | 15989 |
-| `sales_admin` | 11 | 1882 |
+| `sales_admin` | 11 | 1883 |
 | `samples` | 8 | 776 |
 | `settings` | 71 | 13172 |
 | `tanya` | 27 | 2483 |
@@ -810,7 +810,7 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 | `backend/routers/sales_orders.py` | 914 | 800 |
 | `backend/routers/inventory.py` | 840 | 800 |
 | `backend/routers/rfid.py` | 817 | 800 |
-| `frontend/src/features/orders/OrderDetailPanel.jsx` | 753 | 500 |
+| `frontend/src/features/orders/OrderDetailPanel.jsx` | 756 | 500 |
 | `frontend/src/features/purchasing/PurchaseReturns.jsx` | 639 | 500 |
 | `frontend/src/features/wms/OutboundScanInterface.jsx` | 624 | 500 |
 | `frontend/src/features/wms/InventoryStockView.jsx` | 600 | 500 |

@@ -18,6 +18,7 @@ import RelatedDocsPanel from "../../documents/RelatedDocsPanel";
 import QtyDual from "../../../components/QtyDual";      // FASE U — dua satuan
 import axios, { API } from "../../../services/apiClient";
 import useReceivingMode from "../../../hooks/useReceivingMode";
+import { SupplierCardLink } from "../../finance/cards/partyCards";
 import { printRollLabelsBulk } from "../../../utils/rollLabels";
 
 /** Cetak massal label QR semua roll yang lahir dari PO ini (popup) atau kirim ke antrean printer gudang. */
@@ -162,7 +163,8 @@ export default function PODetailPanel({ po, currentUser, onClose, onApprove, onC
         <div className="grid grid-cols-2 gap-2 text-[11.5px]">
           <div className="rounded-md border border-[#EFF0F2] bg-[#FAFBFC] p-2">
             <p className="text-[10px] text-[#6B6B73] uppercase font-semibold mb-0.5">Supplier</p>
-            <p className="font-semibold">{po.supplier_name}</p>
+            {/* MN-T3 — nama pemasok membuka kartu pemasok (izin `supplier.view`). */}
+            <p className="font-semibold"><SupplierCardLink id={po.supplier_id} name={po.supplier_name} perms={currentUser?.permissions} testId="po-supplier-card" /></p>
             <p className="text-[10.5px] text-[#6B6B73]">{po.supplier_contact}</p>
           </div>
           <div className="rounded-md border border-[#EFF0F2] bg-[#FAFBFC] p-2">

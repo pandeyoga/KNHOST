@@ -10,7 +10,7 @@
  * di HP). Testid tetap (`recon-group-modal`, `recon-group-cand-*`, `recon-group-error`).
  *
  * PM-T3 — mutasi yang memuat kode bayar pesanan (`pay_code_hits`) diberi lencana "Kode bayar {kode}"; bila pesanan itu
- * belum punya kwitansi yang menunggu dicocokkan, tombol **Catat kwitansi dari mutasi ini** (`onRecordReceipt`) membuka
+ * belum punya kwitansi yang menunggu dicocokkan, tombol **Catat sebagai kwitansi** (MN-T3: semua mutasi masuk belum cocok; `onRecordReceipt`) membuka
  * form kwitansi terisi. Lencana & tombol ada di sel Keterangan (kolom Tindakan tidak melebar).
  */
 import { useMemo, useState } from "react";
@@ -24,7 +24,8 @@ import { AskKnButton } from "../../../components/AskKnButton";
 import ErrorNotice from "../../../components/ErrorNotice";
 import FormModal from "../../../components/FormModal";
 import { apiErrorText } from "../../../utils/apiError";
-import ReconContraBonModal from "./ReconContraBonModal";
+import ReconPayablePicker from "./ReconPayablePicker";   // MN-T3 — pilih dokumen, bayar lewat satu form Bayar pemasok
+import { can } from "../../../config/roles";
 import useListSearch from "@/hooks/useListSearch";
 
 // PK-42 (UX-18) — satu pemformat tanggal WIB bersama (`utils/formatters`); dulu zona perangkat / bentuk sendiri.
@@ -70,7 +71,10 @@ function ScoreBadge({ score, explain, testId }) {
 }
 
 export default function ReconLinesTable({ lines, busy, onAction, onOpenMatch, onReload,
-  onError, onNotify, onRecordReceipt = null, recordBlockReason = "" }) {
+  onError, onNotify, onRecordReceipt = null, recordBlockReason = "", perms = {} }) {
+  // MN-T3 — "Bayar pemasok" dari mutasi keluar hanya bagi pemegang izin bayar dokumennya.
+  const canPaySupplier = (can(perms, "contra_bon", "pay") && can(perms, "contra_bon", "view"))
+    || (can(perms, "vendor_bill", "pay") && can(perms, "vendor_bill", "view"));
   const srch = useListSearch(lines || [], null, { testId: "recon-lines", pageSize: 50, placeholder: "Cari keterangan / nominal / status…" });
   const [picked, setPicked] = useState([]);
   const [groupTxn, setGroupTxn] = useState(null);   // { candidates, total }
@@ -190,12 +194,16 @@ export default function ReconLinesTable({ lines, busy, onAction, onOpenMatch, on
                         ))}
                       </div>
                     )}
-                    {l.status === "unmatched" && onRecordReceipt && (l.pay_code_hits || []).some((h) => !h.has_open_receipt) && (
+                    {/* MN-T3 — tiap mutasi MASUK belum cocok: "Catat sebagai kwitansi" (form Terima pembayaran; pelanggan &
+                        pesanan terisi dari kode bayar bila ada, selain itu langkah Pilih pelanggan). PM-T3 tetap: bila
+                        semua pesanan berkode bayar di mutasi ini sudah punya kwitansi menunggu → cocokkan saja (tanpa tombol). */}
+                    {l.status === "unmatched" && l.direction === "in" && onRecordReceipt
+                      && !((l.pay_code_hits || []).length && (l.pay_code_hits || []).every((h) => h.has_open_receipt)) && (
                       <div className="mt-1 flex flex-wrap items-center gap-2">
                         <button type="button" className="secondary-button btn-sm whitespace-nowrap"
                           data-testid={`recon-record-receipt-${l.id}`} disabled={Boolean(recordBlockReason)}
-                          onClick={() => onRecordReceipt(l, (l.pay_code_hits || []).find((h) => !h.has_open_receipt))}>
-                          <FilePlus2 size={12} aria-hidden="true" /> Catat kwitansi dari mutasi ini
+                          onClick={() => onRecordReceipt(l, (l.pay_code_hits || []).find((h) => !h.has_open_receipt) || null)}>
+                          <FilePlus2 size={12} aria-hidden="true" /> Catat sebagai kwitansi
                         </button>
                         {recordBlockReason && (
                           <span className="text-fs-12 text-kn-text-2" data-testid={`recon-record-receipt-reason-${l.id}`}>
@@ -296,12 +304,14 @@ export default function ReconLinesTable({ lines, busy, onAction, onOpenMatch, on
                                 "Biaya bank dibukukan (Dr Beban Adm Bank / Cr Bank).")}>
                               <Receipt size={12} /> Catat biaya bank
                             </button>
-                            {/* FASE G-7 US8 — uang keluar untuk siklus tukar faktur supplier:
-                                tunjuk kontrabonnya, sistem membuat kas + menautkan barisnya. */}
-                            <button data-testid={`recon-contrabon-${l.id}`} className="link-button"
-                              style={{ color: "#6B219A" }} onClick={() => setCbLine(l)}>
-                              <Receipt size={12} /> Bayar kontrabon
-                            </button>
+                            {/* FASE G-7 US8 + MN-T3 — uang keluar untuk pemasok: tunjuk kontrabon/tagihannya, lalu satu form
+                                Bayar pemasok (kas lahir + baris mutasi tertaut). */}
+                            {canPaySupplier && (
+                              <button data-testid={`recon-contrabon-${l.id}`} className="link-button"
+                                onClick={() => setCbLine(l)}>
+                                <Receipt size={12} /> Bayar pemasok
+                              </button>
+                            )}
                           </>
                         ) : (
                           <button data-testid={`recon-interest-${l.id}`} className="link-button"
@@ -366,7 +376,7 @@ export default function ReconLinesTable({ lines, busy, onAction, onOpenMatch, on
         </FormModal>
       )}
       {cbLine && (
-        <ReconContraBonModal line={cbLine} onClose={() => setCbLine(null)}
+        <ReconPayablePicker line={cbLine} perms={perms} onClose={() => setCbLine(null)}
           onDone={(note) => { setCbLine(null); onNotify(note); onReload?.(); }}
           onError={onError} />
       )}

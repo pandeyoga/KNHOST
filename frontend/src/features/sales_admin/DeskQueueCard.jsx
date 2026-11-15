@@ -205,7 +205,8 @@ function QueueRow({ row, queue, isQty, busy, onAction, testPrefix }) {
           <span className={`rounded-full border px-1.5 py-0.5 text-[9.5px] font-bold ${age.cls}`}
                 title="Umur baris ini">{age.label}</span>
         </div>
-        <p className="truncate text-[12px] font-semibold text-[#1C1C1E]">{row.title}</p>
+        {/* MN-T3 — `_titleNode` (opsional): judul sebagai tautan (mis. nama pelanggan → kartu pelanggan). */}
+        <p className="truncate text-[12px] font-semibold text-[#1C1C1E]">{row._titleNode || row.title}</p>
         {row.subtitle && (
           <p className="truncate text-[10.5px] text-[#8E8E93]">{row.subtitle}</p>
         )}

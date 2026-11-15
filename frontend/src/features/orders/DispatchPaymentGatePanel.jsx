@@ -10,7 +10,7 @@ import { Loader2, ShieldAlert, ShieldCheck } from "lucide-react";
 import axios, { API } from "../../services/apiClient";
 import { can } from "../../config/roles";
 import { formatCurrency } from "../../utils/formatters";
-import ARReceiptModal from "../crm/ARReceiptModal";
+import ReceivePaymentModal from "../finance/payments/ReceivePaymentModal";   // MN-T3 — satu form terima pembayaran
 
 export const fetchGate = (orderId) => axios.get(`${API}/sales-orders/${orderId}/dispatch-payment-gate`).then((r) => r.data);
 export const releaseGate = (orderId, reason) =>
@@ -78,11 +78,11 @@ export default function DispatchPaymentGatePanel({ orderId, currentUser, onChang
     <div className="space-y-1.5" data-testid={testPrefix}>
       <GateSummary gate={gate} testPrefix={testPrefix} />
       {canReceipt && (
-        <button type="button" className="primary-button !py-1 !text-[11px]" data-testid={`${testPrefix}-receipt-open`}
-                onClick={() => setPaying(true)}>Catat pembayaran ({formatCurrency(gate.shortfall)})</button>
+        <button type="button" className="primary-button btn-sm whitespace-nowrap" data-testid={`${testPrefix}-receipt-open`}
+                onClick={() => setPaying(true)}>Terima pembayaran ({formatCurrency(gate.shortfall)})</button>
       )}
       {paying && (
-        <ARReceiptModal customerId={customerId} customerName={customerName} preselectOrderId={orderId}
+        <ReceivePaymentModal customerId={customerId} customerName={customerName} preselectOrderId={orderId}
                         onClose={() => setPaying(false)}
                         onDone={() => { setPaying(false); load(); onChanged?.(); }} />
       )}

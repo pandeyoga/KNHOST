@@ -3,7 +3,7 @@
 // lembar alamat & tindak lanjut → FormModal, menu HP MD Labdip/Handfeel/Proofing → satu baris R&D Produk Baru.
 import React, { act } from "react";
 import { createRoot } from "react-dom/client";
-import ARReceiptModal from "../crm/ARReceiptModal";
+import ARReceiptModal from "../finance/payments/ReceivePaymentModal";   // MN-T3 — dulu crm/ARReceiptModal
 import MobileArReceipt from "../sales/mobile/MobileArReceipt";
 import MobileAmendSheet from "../sales/mobile/MobileAmendSheet";
 import AmendmentProposeModal from "../finance/amendments/AmendmentProposeModal";

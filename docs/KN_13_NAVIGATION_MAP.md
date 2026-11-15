@@ -533,6 +533,7 @@ dalam 4 grup); grup "Kas & Aset" dihapus.
 | Keuangan › Piutang (`ar-aging`) | Rencana & Denda (`payment-plans`) | A M F |
 | Keuangan › Piutang (`ar-aging`) | Titipan & Saldo Kredit (`customer-credit`) — MN-T2: satu tabel per pelanggan (Uang muka pesanan belum dikirim · Deposit · Saldo kredit · Jumlah · Umur tertua); baris dibuka = pesanan penyumbang + saldo kredit per PT & riwayatnya; Pakai saldo / Sesuaikan / Balik per PT (mati di Semua PT) | A M F |
 | Keuangan › Piutang (`ar-aging`) | Kredit & Plafon (`credit-overrides`) — CR-T5: daftar kerja kredit enam antrean (Menunggu keputusan · Ditahan · Jatuh tempo · Janji bayar · Kaji ulang · Denda) + riwayat izin kredit & pengajuan profil; tampil = `credit_profile.view` (modul `ar`); kartu pelanggan dibuka di tempat (tab Tagihan, Rekening Koran) | A M F |
+| Semua layar (MN-T3) | **Kartu pelanggan / kartu pemasok** — bukan menu & bukan tab hub: pop-up rincian dibuka dari nama pelanggan/pemasok (`useAppNav().openCustomerCard` / `openSupplierCard`); bagian kartu = chip menurut `sections_allowed`. **Form "Terima pembayaran" / "Bayar pemasok"** dibuka di tempat dari titik masuknya (tanpa pindah menu). Telusur laporan → Jurnal & Buku Besar › Buku Besar (preset PK-43) | menurut izin |
 | Keuangan › Piutang (`ar-aging`) | Kasus (`finance-cases`) | A M F S SA |
 | Keuangan › Hutang (`accounts-payable`) | Tagihan (`vendor-bills`) | A M F |
 | Keuangan › Hutang (`accounts-payable`) | Kontrabon (`contra-bons`) | A M F G GA |

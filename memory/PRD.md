@@ -151,6 +151,22 @@ GL-01: registri `services/gl_mapping_registry.py` (54 kebutuhan) → koleksi `gl
   Kewajiban** (hutang BPJS & PPh 21 per masa, Catat Setoran → kas keluar + jurnal; koleksi `hr_statutory_remittances`).
   Lima izin `payroll.create/approve/post/void/pay` (Admin, Manajer; peran yang memegang `hr.manage_payroll` diberi sekali
   lewat migrasi `pk22:izin-penggajian`). Tarif PPh 21 tetap dari PK-46 (H4).
+- 2026-11-15 MN-T3 (K-17, K-18, K-34, K-46 — satu form pembayaran, kartu pelanggan, kartu pemasok, telusur angka):
+  **form "Terima pembayaran pelanggan"** (`features/finance/payments/ReceivePaymentModal.jsx`, pengganti
+  `crm/ARReceiptModal.jsx`; tanpa pelanggan → langkah Pilih pelanggan; `bankLineId` → kas kwitansi ditautkan ke mutasi)
+  dari Perlu Tindakan, Piutang › Saldo & Umur (tombol baris) & Penagihan, kartu pelanggan, detail pesanan (panel bayar),
+  gerbang kirim, Rekonsiliasi ("Catat sebagai kwitansi" di tiap mutasi masuk), HP sales; **form "Bayar pemasok"**
+  (`PaySupplierModal.jsx`; tagihan & kontrabon, pintu PK-05) dari detail tagihan, daftar tagihan, detail kontrabon,
+  Rekonsiliasi ("Bayar pemasok" → `bank/ReconPayablePicker.jsx`), kartu pemasok; form bayar lama di detail tagihan,
+  `contrabon/PayModal.jsx` dan `bank/ReconContraBonModal.jsx` dihapus. **Kartu pelanggan/pemasok** (`Customer360Panel`/
+  `Supplier360Panel` varian "card", dibuka `useAppNav().openCustomerCard/openSupplierCard` dari nama di Piutang,
+  Perlu Tindakan, detail pesanan, Hutang › Tagihan & Kontrabon, detail PO): `GET /customers/{id}/360` + `sections_allowed`
+  (angka kredit/piutang `null` tanpa izinnya, K-18); `GET /suppliers/{id}/360` + `payables`, `bills`, `contra_bons`,
+  `payments`, `landed_costs`, `sections_allowed` (`services/party_card.py`; saldo hutang dari satu pembaca
+  `vendor_bill_service.open_payables`); saringan baru `GET /vendor-bills?supplier_id`, `GET /finance-cases?customer_id`.
+  **Telusur** (`features/finance/traceLedger.jsx`): Neraca Saldo (per tanggal) · Arus Kas · Perubahan Ekuitas · realisasi
+  Anggaran → buku besar akun (preset PK-43); Konsolidasi → Laporan Keuangan PT itu / "Pindah ke … untuk menelusuri";
+  Semua PT → "Pilih satu PT untuk menelusuri angka ini.". Tanpa endpoint tulis baru, koleksi atau izin baru.
 - 2026-11-15 CR-T5 (CR-08, K-31 — daftar kerja "Kredit & Plafon", janji bayar, rekening koran pelanggan): tab
   Keuangan › Piutang › **Kredit & Plafon** (`CreditDeskView.jsx`, syarat tampil `credit_profile.view`, id menu pindah ke
   modul `ar`) = enam antrean berjumlah (`services/credit_desk_service.py`, `GET /api/credit-desk?queue=` +

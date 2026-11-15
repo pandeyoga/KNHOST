@@ -6,7 +6,7 @@
  *    sehingga tombol × berada di x≈403 (di luar layar) dan panel bisa digeser ke samping. Kini baris 1 = judul + ×
  *    (selalu terlihat), baris 2 = ringkasan + aksi, keduanya membungkus;
  *  · L-07: tabel mentah → `.table-wrap` + `.data-table` baku (bergulir di dalam wadahnya sendiri).
- * PK-43 (UX-15) — **Catat Pembayaran** (`ar-aging-pay`, di bilah aksi kepala panel) dan **Bayar** per pesanan
+ * PK-43 (UX-15) — **Terima pembayaran** (MN-T3; dulu "Catat Pembayaran") (`ar-aging-pay`, bilah aksi kepala panel) dan **Bayar** per pesanan
  * (`ar-aging-pay-{id}`, kolom aksi menempel kanan) membuka form kwitansi baku (`onPay`). Tampil hanya bagi pemegang
  * `ar_receipt.create`; di "Semua PT" mati dengan alasan tertulis di bilah sendiri.
  * PK-41 (K-16) — tiap pesanan bisa dibuka menjadi baris per surat jalan (Tagihan, Tanggal, Jatuh Tempo, Nilai,
@@ -76,7 +76,7 @@ export default function ARAgingDetail({ detail, customerId, loading, currentUser
                   aria-describedby="ar-aging-pay-scope-note" data-testid="ar-aging-pay"
                   className="primary-button btn-sm whitespace-nowrap" disabled={loading}
                   onClick={() => onPay()}>
-                  <Wallet size={13} aria-hidden="true" /> Catat Pembayaran
+                  <Wallet size={13} aria-hidden="true" /> Terima pembayaran
                 </EntityGatedButton>
               )}
             </div>

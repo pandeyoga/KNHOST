@@ -4,6 +4,10 @@
  * Menjawab dua pertanyaan yang tiap hari ditanyakan di lapangan:
  *   “Kapan pelanggan ini janji bayar, berapa per tahap?” dan
  *   “Ada denda tidak? Sudah jadi dokumen, atau masih usulan?”
+ *
+ * MN-T3 (b) — panel bayar detail pesanan: tombol **Terima pembayaran** (pemegang `ar_receipt.create`, pesanan belum
+ * lunas) membuka satu form `ReceivePaymentModal` dengan pelanggan & pesanan terisi (pengganti tombol simulasi bayar
+ * yang dicabut PK-19). Semua PT → tombol mati + alasan tertulis di bilah sendiri.
  */
 import { useCallback, useEffect, useState } from "react";
 import { CalendarClock, Loader2, PencilLine, RefreshCw, Timer } from "lucide-react";
@@ -13,6 +17,10 @@ import { accrueNow, errText, fetchMeta, lineMeta, money, planByDoc } from "./pay
 import { can } from "../../../config/roles";
 import useIntentKey from "../../../hooks/useIntentKey";
 import { billingTotal } from "../../../utils/orderBilling";   // PK-32 — nilai tagihan
+import { useEntityScope } from "../../../context/EntityScopeContext";
+import ReceivePaymentModal, { TEKS_PILIH_PT } from "./ReceivePaymentModal";
+
+const DEAD = new Set(["cancelled", "expired", "draft"]);
 
 export default function SoPaymentPanel({ order, currentUser, onChanged }) {
   const [data, setData] = useState(null);
@@ -22,6 +30,9 @@ export default function SoPaymentPanel({ order, currentUser, onChanged }) {
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState("");
   const accrueIntent = useIntentKey("pp-denda");   // PK-12 — satu niat hitung denda = satu Idempotency-Key
+  const [receive, setReceive] = useState(false);
+  const { selectedEntity } = useEntityScope();
+  const allPt = !selectedEntity || selectedEntity === "all";
 
   const docId = order?.id;
   const total = billingTotal(order);   // PK-32 — grand total + tagihan tambahan nota debit
@@ -48,6 +59,8 @@ export default function SoPaymentPanel({ order, currentUser, onChanged }) {
   const canEdit = can(currentUser?.permissions, "payment_plan", plan?.id ? "update" : "create");
   const canAccrue = can(currentUser?.permissions, "penalty", "issue");
   const penalties = data?.penalties || [];
+  const canReceive = can(currentUser?.permissions, "ar_receipt", "create") && Boolean(order?.customer_id)
+    && order?.payment_status !== "paid" && !DEAD.has(order?.status);
 
   const runAccrual = async () => {
     if (!plan?.id) return;
@@ -67,7 +80,11 @@ export default function SoPaymentPanel({ order, currentUser, onChanged }) {
           <CalendarClock size={12} className="text-[#0058CC]" /> Jadwal Pembayaran & Denda
           {plan?.number && <span className="rounded-full bg-[#EFF4FF] px-1.5 text-[9px] font-bold text-[#0058CC]">{plan.number}</span>}
         </p>
-        <div className="flex items-center gap-1">
+        <div className="flex flex-wrap items-center justify-end gap-1">
+          {canReceive && (
+            <button type="button" className="primary-button btn-sm whitespace-nowrap" disabled={allPt}
+              onClick={() => setReceive(true)} data-testid="sop-receive">Terima pembayaran</button>
+          )}
           <button type="button" title="Muat ulang" onClick={load} data-testid="sop-refresh"
             className="rounded-md border border-[#EDEEF1] bg-white p-1 text-[#4A4B52] hover:bg-[#F2F3F5]">
             {loading ? <Loader2 size={11} className="animate-spin" /> : <RefreshCw size={11} />}
@@ -87,6 +104,12 @@ export default function SoPaymentPanel({ order, currentUser, onChanged }) {
         </div>
       </div>
 
+      {canReceive && allPt && <p className="mb-2 text-fs-12 text-kn-text-2" data-testid="sop-receive-reason">{TEKS_PILIH_PT}</p>}
+      {receive && (
+        <ReceivePaymentModal customerId={order.customer_id} customerName={order.customer_name || ""} preselectOrderId={order.id}
+          onClose={() => setReceive(false)}
+          onDone={async () => { setReceive(false); await load(); if (onChanged) onChanged(); }} />
+      )}
       {err && <div className="notice-bar danger !py-1.5" data-testid="sop-error">
         <span className="text-[11.5px]">{err}</span></div>}
 

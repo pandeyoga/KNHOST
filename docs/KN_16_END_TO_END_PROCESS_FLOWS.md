@@ -216,6 +216,10 @@ AKUNTANSI & PAJAK, DAN SDM").
 | Posisi kas/piutang/hutang; analisis tren | Keuangan › Beranda Keuangan › Posisi · Analisis | A M F (`accounting.view`) |
 | Umur piutang & denda | Keuangan › Piutang › Saldo & Umur · Rencana & Denda | A M F |
 | Menagih pelanggan & mencatat kwitansi | Keuangan › Piutang › Penagihan & Penerimaan | A M F S SA (`order.view`; kwitansi `ar_receipt.create`) |
+| Menerima pembayaran pelanggan (MN-T3: SATU form "Terima pembayaran" — dari Perlu Tindakan, Piutang › Saldo & Umur / Penagihan, kartu pelanggan, detail pesanan, gerbang kirim, Rekonsiliasi "Catat sebagai kwitansi", HP sales) | form Terima pembayaran → kwitansi → kas → jurnal (pintu PK-19, rekening PM-T3) | A M F S (`ar_receipt.create`) |
+| Membayar pemasok (MN-T3: SATU form "Bayar pemasok" — dari detail tagihan, daftar tagihan, detail kontrabon, Rekonsiliasi "Bayar pemasok", kartu pemasok; Transaksi Kas menautkan ke Hutang › Tagihan) | form Bayar pemasok → kas keluar → jurnal → tagihan/kontrabon lunas (pintu PK-05) | A M F (`vendor_bill.pay` / `contra_bon.pay`) |
+| Melihat seluruh posisi uang pelanggan / pemasok | nama pelanggan/pemasok di Piutang, Perlu Tindakan, detail pesanan, Hutang, detail PO → kartu pelanggan / kartu pemasok | bagian menurut izin sumber (K-18) |
+| Menelusuri angka laporan sampai dokumen | Laporan (Laba-Rugi, Neraca, Arus Kas, Perubahan Ekuitas, Anggaran, Konsolidasi) · Neraca Saldo → Buku Besar akun → rincian jurnal → Buka Dokumen Sumber | A M F (`accounting.view`) |
 | Uang muka / titipan & saldo kredit pelanggan | Keuangan › Piutang › Titipan & Saldo Kredit (chip) | A M F |
 | Pengecualian batas kredit | Keuangan › Piutang › Kredit & Plafon (memutus: `credit_override.approve`) | A M (F baca) |
 | Uang nyangkut (salah transfer, dobel, giro ditolak) | Keuangan › Piutang › Kasus | A M F; S SA melapor |

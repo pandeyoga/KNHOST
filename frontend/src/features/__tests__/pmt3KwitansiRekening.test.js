@@ -44,7 +44,7 @@ jest.mock("../finance/payments/paymentApi", () => ({
 jest.mock("../documents/DocumentActionsBar", () => () => null);
 
 /* eslint-disable import/first */
-import ARReceiptModal from "../crm/ARReceiptModal";
+import ARReceiptModal from "../finance/payments/ReceivePaymentModal";   // MN-T3 — dulu crm/ARReceiptModal
 import ARReceiptsHistory, { receiptStatus } from "../crm/ARReceiptsHistory";
 import ReconLinesTable from "../finance/bank/ReconLinesTable";
 import { invalidatePaymentMethods } from "../../config/paymentMethods";
@@ -225,7 +225,9 @@ test("rekonsiliasi: lencana kode bayar; tombol catat kwitansi hanya bila pesanan
   expect(q("recon-paycode-l2-KN-8H4M3")).not.toBeNull();
   expect(q("recon-record-receipt-l2")).toBeNull();                         // sudah ada kwitansi → cocokkan saja
   expect(q("recon-paycodes-l3")).toBeNull();
-  expect(q("recon-record-receipt-l1").textContent).toContain("Catat kwitansi dari mutasi ini");
+  // MN-T3 — label tombol kini "Catat sebagai kwitansi" dan juga tampil untuk mutasi masuk tanpa kode bayar (l3).
+  expect(q("recon-record-receipt-l1").textContent).toContain("Catat sebagai kwitansi");
+  expect(q("recon-record-receipt-l3")).not.toBeNull();
   await click(q("recon-record-receipt-l1"));
   expect(onRecord).toHaveBeenCalledWith(lines[0], hit);
 });

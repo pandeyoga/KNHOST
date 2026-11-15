@@ -8,7 +8,8 @@ import FormModal from "../../components/FormModal";
 import { apiErrorText } from "../../utils/apiError";
 import { can } from "../../config/roles";
 import { KpiTile, fmtDate } from "./crmUtils";
-import ARReceiptModal from "./ARReceiptModal";
+import ReceivePaymentModal from "../finance/payments/ReceivePaymentModal";   // MN-T3 — satu form terima pembayaran
+import { CustomerCardLink } from "../finance/cards/partyCards";
 import ARReceiptsHistory from "./ARReceiptsHistory";
 import FocusNotice from "../../components/FocusNotice";
 import useFocusDoc from "../../hooks/useFocusDoc";
@@ -106,7 +107,8 @@ export default function CollectionWorklist({ currentUser, selectedEntity, focusD
                 {view.map((r) => (
                   <div key={r.order_id} data-testid={`collection-row-${r.order_id}`} className="grid grid-cols-[1.2fr_92px_120px_104px_80px_120px] items-center px-3 py-2.5 text-[11.5px]">
                     <div className="min-w-0">
-                      <p className="font-semibold truncate">{r.customer_name}</p>
+                      <p className="font-semibold truncate"><CustomerCardLink id={r.customer_id} name={r.customer_name}
+                        perms={currentUser?.permissions} testId={`collection-card-${r.order_id}`} /></p>
                       <p className="text-[10px] text-[#6B6B73]">{r.sales_name}{r.reminded && <span className="ml-1 text-[#1E8E5A]">· diingatkan</span>}</p>
                     </div>
                     <span className="text-[#0058CC] font-semibold">{r.order_number}</span>
@@ -125,7 +127,7 @@ export default function CollectionWorklist({ currentUser, selectedEntity, focusD
                         </button>
                       )}
                       {canTakeMoney && (
-                        <button data-testid={`collection-pay-${r.order_id}`} onClick={() => setPayRow(r)} className="icon-button text-[#1B7F4B]" title="Catat pembayaran"><Wallet size={14} /></button>
+                        <button data-testid={`collection-pay-${r.order_id}`} onClick={() => setPayRow(r)} className="icon-button text-[#1B7F4B]" title="Terima pembayaran" aria-label="Terima pembayaran"><Wallet size={14} /></button>
                       )}
                       <button data-testid={`collection-followup-${r.order_id}`} onClick={() => setFu(r)} className="icon-button text-[#0058CC]" title="Catat tindak lanjut" aria-label="Catat tindak lanjut"><PhoneCall size={14} /></button>
                     </div>
@@ -141,7 +143,7 @@ export default function CollectionWorklist({ currentUser, selectedEntity, focusD
       <ARReceiptsHistory refreshKey={receiptRefresh} selectedEntity={selectedEntity} currentUser={currentUser} focus={receiptFocus}
         onChanged={(m) => { setNotice(m); setReceiptRefresh((k) => k + 1); load(); }} />
 
-      {payRow && <ARReceiptModal customerId={payRow.customer_id} customerName={payRow.customer_name}
+      {payRow && <ReceivePaymentModal customerId={payRow.customer_id} customerName={payRow.customer_name}
         preselectOrderId={payRow.order_id} onClose={() => setPayRow(null)}
         onDone={(m) => { setPayRow(null); setNotice(m); setReceiptRefresh((k) => k + 1); load(); }} />}
 

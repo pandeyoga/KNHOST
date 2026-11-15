@@ -551,7 +551,7 @@ async def finance_desk(actor: Dict[str, Any], scope: Dict[str, Any],
                    "status": {"$nin": ["cancelled", "closed", "draft", "rejected"]},
                    "po_type": {"$ne": "blanket"},
                    "payment_status": {"$ne": "paid"}}),
-        {"_id": 0, "id": 1, "po_number": 1, "supplier_name": 1, "payment_due_date": 1,
+        {"_id": 0, "id": 1, "po_number": 1, "supplier_name": 1, "supplier_id": 1, "payment_due_date": 1,
          "grand_total": 1, "total_amount": 1, "amount_paid": 1, "outstanding": 1,
          "payment_term_code": 1, "parent_po_number": 1, "status": 1}
     ).sort("payment_due_date", 1).to_list(200)
@@ -573,7 +573,9 @@ async def finance_desk(actor: Dict[str, Any], scope: Dict[str, Any],
             value=sisa, age_days=max(0, late),
             badge="lewat" if late > 0 else "segera",
             action="Bayar", action_kind="open",
-            extra={"payment_due_date": p["payment_due_date"], "overdue": late > 0}))
+            # MN-T3 — `supplier_id`: tombol "Bayar" membuka kartu pemasok (tagihan PO itu dibayar dari sana).
+            extra={"payment_due_date": p["payment_due_date"], "overdue": late > 0,
+                   "supplier_id": p.get("supplier_id", "")}))
     queues.append(_queue(
         "hutang_jatuh_tempo", "Hutang supplier jatuh tempo",
         "PO belum lunas yang sudah lewat / ≤7 hari menuju jatuh tempo bayar (termin kontrak/supplier).",

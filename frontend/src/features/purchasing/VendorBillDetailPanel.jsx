@@ -1,29 +1,28 @@
 import { AskKnButton } from "../../components/AskKnButton";
-import MoneyInput from "../../components/MoneyInput";
 import { useState } from "react";
-import KNDatePicker from "../../components/KNDatePicker";
 import useIntentKey from "../../hooks/useIntentKey";
-import { ApPaymentPending, NEED_ACCOUNT_TEXT, NO_ACCOUNT_TEXT, accountLabel, useApPayment } from "./apPayment";
 import { API } from "../../services/apiClient";
 import { moneyPost } from "../../utils/moneyRequest";
 import { askBillCancel, askBillReject, confirmBillApprove } from "../../utils/moneyConfirm";
 import { useEntityScope } from "../../context/EntityScopeContext";
 import { X, CheckCircle2, AlertTriangle, Wallet, Send, XCircle, Ban } from "lucide-react";
 import { formatCurrency, formatQty } from "../../utils/formatters";
-import KNSelect from "../../components/KNSelect";
 import DocumentActionsBar from "../documents/DocumentActionsBar";
 import DocRefsPanel from "../documents/trace/DocRefsPanel";
 import GrnDocVariance from "./GrnDocVariance";
 import VendorBillPayments from "./VendorBillPayments";
 import { can } from "../../config/roles";
 import ErrorNotice from "../../components/ErrorNotice";
-import { usePaymentMethods } from "../../config/paymentMethods";   // PM-T1 — daftar induk cara bayar
+// MN-T3 — bayar lewat SATU form "Bayar pemasok" (form bayar di panel ini dihapus).
+import PaySupplierModal from "../finance/payments/PaySupplierModal";
 import { isZeroMetric } from "../../components/ListPageParts";
 import { JournalStatusBar } from "../../components/JournalStatusBadge";   // PK-18 — status jurnal tagihan
 import { BudgetCheckNotice } from "../../components/BudgetCheckNotice";   // PK-39 — tagihan tanpa PO
 
 /**
  * VendorBillDetailPanel (Fase 5.2) — detail bill: 3-way match, keuangan, aksi.
+ * MN-T3 (b) — tombol "Bayar" (pemegang `vendor_bill.pay`) membuka satu form `PaySupplierModal`; panel isian bayar
+ * yang dulu diselipkan di sini (PK-05) dihapus — pintu server tetap sama.
  */
 function StatusPill({ status }) {
   const map = {
@@ -42,23 +41,15 @@ function MatchPill({ status }) {
 }
 
 export default function VendorBillDetailPanel({ bill, canApprove, decideHint = "", currentUser, onClose, onAction, onError, onOpenDocument }) {
-  const [payAmount, setPayAmount] = useState("");
-  const [method, setMethod] = useState("transfer");
-  const payMethods = usePaymentMethods("keluar", bill?.entity_id);
-  const [payDate, setPayDate] = useState(new Date().toISOString().slice(0, 10));
-  const [accountId, setAccountId] = useState("");
-  const [payNotes, setPayNotes] = useState("");
-  const [showPay, setShowPay] = useState(false);
+  const [payOpen, setPayOpen] = useState(false);
   const [busy, setBusy] = useState(false);
   const [warn, setWarn] = useState("");
-  // PK-05 — satu niat bayar = satu Idempotency-Key; rekening dari PT tagihan; niat menggantung bisa dilanjutkan.
-  const intent = useIntentKey("vbpay");
   // PK-12 — aksi alur tagihan: satu niat per aksi = satu Idempotency-Key (klik ganda / kirim ulang = satu efek).
   const actIntents = {
     submit: useIntentKey("vbsub"), approve: useIntentKey("vbapv"),
-    reject: useIntentKey("vbrej"), cancel: useIntentKey("vbcan"), pay: intent,
+    reject: useIntentKey("vbrej"), cancel: useIntentKey("vbcan"),
   };
-  const ap = useApPayment("vendor_bill", bill?.id, showPay && bill?.status === "posted");
+  const canPay = can(currentUser?.permissions, "vendor_bill", "pay");   // = POST /vendor-bills/{id}/pay
   const { entities } = useEntityScope();
   // Fase 4 · R3 — galat aksi juga tampil DI DALAM pop-up (bilah halaman `onError` tertutup lapisan DetailModal).
   const [err, setErr] = useState("");
@@ -75,7 +66,6 @@ export default function VendorBillDetailPanel({ bill, canApprove, decideHint = "
         approve: `${API}/vendor-bills/${bill.id}/approve`,
         reject: `${API}/vendor-bills/${bill.id}/reject`,
         cancel: `${API}/vendor-bills/${bill.id}/cancel`,
-        pay: `${API}/vendor-bills/${bill.id}/pay`,
       };
       const payload = body || {};
       const r = await actIntents[action].send({ id: bill.id, aksi: action, ...payload },
@@ -97,23 +87,6 @@ export default function VendorBillDetailPanel({ bill, canApprove, decideHint = "
   async function cancelBill() {
     const notes = await askBillCancel(bill, entities);
     if (notes !== null) await act("cancel", { notes });
-  }
-
-  async function doPay() {
-    const amt = Number(payAmount || 0);
-    if (amt <= 0) { fail("Nominal pembayaran harus > 0."); return; }
-    if (!accountId) { fail(NEED_ACCOUNT_TEXT); return; }
-    const body = { amount: amt, method, paid_at: payDate, bank_account_id: accountId, notes: payNotes.trim() };
-    setBusy(true); setErr(""); setWarn("");
-    try {
-      const r = await intent.send(body, (key) => moneyPost(`${API}/vendor-bills/${bill.id}/pay`, body, key));
-      if (r.data?.warning) setWarn(r.data.warning);
-      onAction?.("pay", r.data);
-      setShowPay(false); setPayAmount(""); setPayNotes("");
-    } catch (e) {
-      fail(e.response?.data?.detail?.message || e.response?.data?.detail || "Gagal mencatat pembayaran.");
-      ap.reload();
-    } finally { setBusy(false); }
   }
 
   const exceptions = bill.match_exceptions || [];
@@ -225,42 +198,6 @@ export default function VendorBillDetailPanel({ bill, canApprove, decideHint = "
             </div>
           )}
 
-          {/* Pay panel */}
-          {showPay && bill.status === "posted" && (
-            <div className="rounded-md border border-[#EFF0F2] p-3 space-y-2.5" data-testid="vb-pay-panel">
-              <ApPaymentPending pending={ap.pending} testId="vb-pay-pending"
-                onDone={(d) => { ap.reload(); onAction?.("pay", d); }} onError={fail} />
-              {ap.accounts && ap.accounts.length === 0 && (
-                <p className="text-[11.5px] text-[#A8221A]" data-testid="vb-pay-no-account">{NO_ACCOUNT_TEXT}</p>
-              )}
-              <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2">
-                <Field label="Nominal Bayar">
-                  <MoneyInput testId="vb-pay-amount" className="field" value={payAmount} onChange={(v) => setPayAmount(v)} />
-                </Field>
-                <Field label="Tanggal Pembayaran">
-                  <KNDatePicker data-testid="vb-pay-date" value={payDate} onChange={setPayDate} clearable={false} />
-                </Field>
-                <Field label="Rekening / Kas">
-                  <KNSelect data-testid="vb-pay-account" value={accountId} onValueChange={setAccountId} className="field"
-                    placeholder="Pilih rekening…"
-                    options={(ap.accounts || []).map((a) => ({ value: a.id, label: accountLabel(a) }))} />
-                </Field>
-                <Field label="Cara bayar">
-                  <KNSelect data-testid="vb-pay-method" value={method} onValueChange={setMethod} className="field"
-                    options={payMethods.options} />
-                </Field>
-              </div>
-              <Field label="Catatan">
-                <input className="field" data-testid="vb-pay-notes" value={payNotes} onChange={(e) => setPayNotes(e.target.value)}
-                  placeholder="Opsional — mis. nomor bukti transfer" />
-              </Field>
-              <div className="flex gap-2">
-                <button data-testid="vb-pay-confirm" onClick={doPay} disabled={busy || !!ap.pending} className="primary-button">
-                  {busy ? "Memproses…" : "Catat Pembayaran"}</button>
-                <button onClick={() => setShowPay(false)} disabled={busy} className="secondary-button">Batal</button>
-              </div>
-            </div>
-          )}
         </div>
 
         {/* Actions footer */}
@@ -285,13 +222,19 @@ export default function VendorBillDetailPanel({ bill, canApprove, decideHint = "
               {bill.bill_type !== "makloon_service" && (
                 <button data-testid="vb-action-cancel-posted" onClick={() => cancelBill()} disabled={busy} className="secondary-button"><Ban size={13} /> Batalkan</button>
               )}
-              <button data-testid="vb-action-pay" onClick={() => { setShowPay((s) => !s); if (!payAmount && Number(fin.outstanding) > 0) setPayAmount(String(fin.outstanding)); }} disabled={busy} className="primary-button"><Wallet size={13} /> Bayar</button>
+              {canPay && Number(fin.outstanding) > 0.01 && (
+                <button data-testid="vb-action-pay" onClick={() => setPayOpen(true)} disabled={busy} className="primary-button btn-sm whitespace-nowrap"><Wallet size={13} /> Bayar</button>
+              )}
             </>
           )}
           {bill.status === "paid" && <span className="text-[11.5px] font-semibold text-green-700 flex items-center gap-1"><CheckCircle2 size={14} /> Tagihan lunas.</span>}
           {bill.status === "cancelled" && <span className="text-[11.5px] text-[#9A9BA3]">Bill dibatalkan.</span>}
         </div>
       </div>
+      {payOpen && (
+        <PaySupplierModal target={{ type: "vendor_bill", id: bill.id }} onClose={() => setPayOpen(false)}
+          onPaid={(data) => { setPayOpen(false); if (data?.warning) setWarn(data.warning); onAction?.("pay", data); }} />
+      )}
     </div>
   );
 }
@@ -321,15 +264,6 @@ function Card({ label, value, tone, testId }) {
     <div className="rounded-md border border-[#EFF0F2] px-3 py-2" data-testid={testId}>
       <p className="text-[9.5px] font-bold uppercase text-[#6B6B73]">{label}</p>
       <p className={`text-[14px] font-bold tabular-nums ${zero ? "text-[#8E8E93]" : (tone || "text-[#0F1115]")}`}>{value}</p>
-    </div>
-  );
-}
-
-function Field({ label, children }) {
-  return (
-    <div>
-      <label className="block text-[10.5px] font-semibold text-[#6B6B73] mb-1">{label}</label>
-      {children}
     </div>
   );
 }

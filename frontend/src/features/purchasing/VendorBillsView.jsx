@@ -34,6 +34,7 @@ import { useCanDecideMap } from "../../hooks/useCanDecide";   // KP-T4
 import useFocusDoc from "../../hooks/useFocusDoc";
 import FocusNotice from "../../components/FocusNotice";
 import { SupplierCardLink } from "../finance/cards/partyCards";   // MN-T3 — nama pemasok → kartu pemasok
+import PaySupplierModal from "../finance/payments/PaySupplierModal";   // MN-T3 — satu form Bayar pemasok
 
 /**
  * VendorBillsView (Fase 5.2 — P0-2) — Tagihan Supplier (Vendor Bill) + 3-Way Matching.
@@ -111,6 +112,8 @@ export default function VendorBillsView({ currentUser, selectedEntity, focusDoc,
   const quickIntents = { submit: useIntentKey("vbsub"), approve: useIntentKey("vbapv") };
 
   const canCreate = can(currentUser?.permissions, "vendor_bill", "create");   // POST /vendor-bills
+  const canPay = can(currentUser?.permissions, "vendor_bill", "pay");   // MN-T3 — = POST /vendor-bills/{id}/pay
+  const [payBill, setPayBill] = useState(null);
 
   // P2 — paginasi server-side; tab status jadi filter server, search q server-side.
   const params = useMemo(() => {
@@ -265,8 +268,8 @@ export default function VendorBillsView({ currentUser, selectedEntity, focusDoc,
                       {b.status === "pending_approval" && canApproveDoc(b) && (
                         <button data-testid={`vb-quick-approve-${b.id}`} onClick={() => quickAct(b, "approve")} disabled={!!quickBusy} className="primary-button !px-2 !py-1 text-[11px]">Setujui</button>
                       )}
-                      {b.status === "posted" && (
-                        <button data-testid={`vb-quick-pay-${b.id}`} onClick={() => setDetail(b)} className="secondary-button !px-2 !py-1 text-[11px]"><Wallet size={11} /> Bayar</button>
+                      {b.status === "posted" && canPay && (b.financials?.outstanding ?? b.outstanding) > 0.01 && (
+                        <button data-testid={`vb-quick-pay-${b.id}`} onClick={() => setPayBill(b)} className="secondary-button btn-sm whitespace-nowrap"><Wallet size={12} /> Bayar</button>
                       )}
                       <button className="link-button" onClick={() => setDetail(b)} data-testid={`vb-open-${b.id}`}>Detail →</button>
                     </div>
@@ -309,6 +312,10 @@ export default function VendorBillsView({ currentUser, selectedEntity, focusDoc,
             onOpenDocument={onOpenDocument}
           />
         </DetailModal>
+      )}
+      {payBill && (
+        <PaySupplierModal target={{ type: "vendor_bill", id: payBill.id }} onClose={() => setPayBill(null)}
+          onPaid={(data, msg) => { setPayBill(null); setNotice(msg || `${payBill.bill_number}: pembayaran dicatat.`); if (data?.id) reload(); }} />
       )}
     </div>
   );

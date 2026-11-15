@@ -297,7 +297,9 @@ export default function ReceivePaymentModal({ customerId: customerIdProp = "", c
   }
 
   const blockReason = (needsAccount || titipan) ? receiptBlockReason(payState) : "";
-  const reason = allPt ? TEKS_PILIH_PT : blockReason;
+  // Tombol mati selalu beralasan tertulis di sampingnya (KN_37).
+  const reason = allPt ? TEKS_PILIH_PT : !customerId ? "Pilih pelanggan dulu." : (!loading && totalFunds <= 0)
+    ? "Isi nominal diterima." : blockReason;
   const cashHint = titipan ? TEKS_TITIPAN
     : pm.isCash(method) ? `${pm.labelOf(method)} → masuk Kas Kecil (per PT).` : `${pm.labelOf(method)} → masuk Kas Besar (bank).`;
   const dir = assessment?.direction && assessment.direction !== "none" ? directionMeta(assessment.direction) : null;
@@ -311,7 +313,8 @@ export default function ReceivePaymentModal({ customerId: customerIdProp = "", c
         {dir && <span className="status-pill status-pending ml-2" data-testid="ar-receipt-variance-badge"><Scale size={12} aria-hidden="true" />{dir.label}</span>}
       </div>
       <div className="ml-auto flex flex-wrap items-center justify-end gap-2">
-        {reason && <span className="text-fs-12 text-kn-text-2" data-testid={allPt ? "ar-receipt-scope-note" : "ar-receipt-account-reason"}>{reason}</span>}
+        {reason && <span className="text-fs-12 text-kn-text-2"
+          data-testid={allPt ? "ar-receipt-scope-note" : reason === blockReason ? "ar-receipt-account-reason" : "ar-receipt-reason"}>{reason}</span>}
         <button type="button" onClick={onClose} className="secondary-button btn-sm whitespace-nowrap" disabled={busy} data-testid="ar-receipt-cancel">Batal</button>
         <button type="button" data-testid="ar-receipt-submit" className="primary-button btn-sm whitespace-nowrap"
           disabled={busy || !customerId || totalFunds <= 0 || Boolean(reason)} onClick={() => submit()}>
