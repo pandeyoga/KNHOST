@@ -1,0 +1,64 @@
+E        +  where 404 = <Response [404 Not Found]>.status_code
+
+tests_mem/test_CRT5_meja_kredit.py:249: AssertionError
+=============================== warnings summary ===============================
+../../venv311/lib/python3.11/site-packages/starlette/formparsers.py:12
+../../venv311/lib/python3.11/site-packages/starlette/formparsers.py:12
+../../venv311/lib/python3.11/site-packages/starlette/formparsers.py:12
+  /tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/venv311/lib/python3.11/site-packages/starlette/formparsers.py:12: PendingDeprecationWarning: Please use `import python_multipart` instead.
+    import multipart
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests_mem/test_CRT5_meja_kredit.py::test_CRT5_U1_rekening_koran_oktober
+FAILED tests_mem/test_CRT5_meja_kredit.py::test_CRT5_U2_rekening_koran_november
+FAILED tests_mem/test_CRT5_meja_kredit.py::test_CRT5_U3_pt_lain_tidak_tercampur_dan_semua_pt_ditolak
+FAILED tests_mem/test_CRT5_meja_kredit.py::test_CRT5_U4_pdf_rekening_koran - ...
+FAILED tests_mem/test_CRT5_meja_kredit.py::test_CRT5_U5_janji_tanpa_tanggal_atau_lampau_ditolak
+FAILED tests_mem/test_CRT5_meja_kredit.py::test_CRT5_U6_status_janji_dihitung_saat_dibaca
+FAILED tests_mem/test_CRT5_meja_kredit.py::test_CRT5_U7_menunggu_keputusan_dua_jenis
+FAILED tests_mem/test_CRT5_meja_kredit.py::test_CRT5_U8_pesanan_ditahan - Ass...
+FAILED tests_mem/test_CRT5_meja_kredit.py::test_CRT5_U9_jatuh_tempo_per_pelanggan
+FAILED tests_mem/test_CRT5_meja_kredit.py::test_CRT5_U10_kaji_ulang - Asserti...
+FAILED tests_mem/test_CRT5_meja_kredit.py::test_CRT5_U11_ringkasan_sama_dengan_total
+FAILED tests_mem/test_CRT5_meja_kredit.py::test_CRT5_U12_pt_lain_tidak_melihat
+FAILED tests_mem/test_CRT5_meja_kredit.py::test_CRT5_U14_peran_uji_baku - Ass...
+FAILED tests_mem/test_CRT5_meja_kredit.py::test_CRT5_U15_naskah_pengingat - K...
+FAILED tests_mem/test_CRT5_meja_kredit.py::test_CRT5_U13_sales_hanya_pelanggan_miliknya
+FAILED tests_mem/test_CRT5_meja_kredit.py::test_CRT5_X1_kotak_eksposur_baris_berlabel
+FAILED tests_mem/test_CRT5_meja_kredit.py::test_CRT5_X2_antrean_denda_menandai_jadwal_void
+17 failed, 3 warnings in 31.02s
+>       assert r.status_code == 200, r.text
+tests_mem/test_CRT5_meja_kredit.py:163: AssertionError
+>       assert r.status_code == 200, r.text
+tests_mem/test_CRT5_meja_kredit.py:188: AssertionError
+>       assert r.status_code == 200, r.text
+tests_mem/test_CRT5_meja_kredit.py:197: AssertionError
+>       assert r.status_code == 200, r.text
+tests_mem/test_CRT5_meja_kredit.py:208: AssertionError
+>       assert r.status_code == 400 and r.json()["detail"] == "Tanggal janji bayar wajib diisi.", r.text
+tests_mem/test_CRT5_meja_kredit.py:222: AssertionError
+        assert r.status_code == 200, r.text
+>       assert (doc["promise_date"], doc["promise_amount"]) == (tanggal, nominal)
+tests_mem/test_CRT5_meja_kredit.py:241: KeyError
+>       assert r.status_code == 200, r.text
+tests_mem/test_CRT5_meja_kredit.py:249: AssertionError
+>       assert r.status_code == 200, r.text
+tests_mem/test_CRT5_meja_kredit.py:249: AssertionError
+>       assert r.status_code == 200, r.text
+tests_mem/test_CRT5_meja_kredit.py:249: AssertionError
+>       assert r.status_code == 200, r.text
+tests_mem/test_CRT5_meja_kredit.py:249: AssertionError
+>       assert r.status_code == 200, r.text
+tests_mem/test_CRT5_meja_kredit.py:369: AssertionError
+>       assert r.status_code == 200, r.text
+tests_mem/test_CRT5_meja_kredit.py:249: AssertionError
+>       assert r.status_code == 200, r.text
+tests_mem/test_CRT5_meja_kredit.py:388: AssertionError
+tests_mem/test_CRT5_meja_kredit.py:405: KeyError
+>       assert r.status_code == 200, r.text
+tests_mem/test_CRT5_meja_kredit.py:249: AssertionError
+>       assert r.status_code == 200, r.text
+tests_mem/test_CRT5_meja_kredit.py:435: AssertionError
+>       assert r.status_code == 200, r.text
+tests_mem/test_CRT5_meja_kredit.py:249: AssertionError

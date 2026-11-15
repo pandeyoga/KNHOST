@@ -1,0 +1,8 @@
+      at Object.<anonymous> (src/features/__tests__/phase3P4Finance.test.js:9:1)
+
+
+Test Suites: 35 failed, 130 passed, 165 total
+Tests:       1043 passed, 1043 total
+Snapshots:   0 total
+Time:        31.329 s, estimated 116 s
+Ran all test suites.
