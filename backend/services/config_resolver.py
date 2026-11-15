@@ -534,6 +534,9 @@ async def set_value(key: str, value: Any, *, scope_type: str = "global", scope_i
             validate_extra_levels(clean)
         from services.reminder_policy import periksa_nilai   # KP-T7 — penerima/rantai/peran/hari/nomor PIC pengingat
         clean = periksa_nilai(key, clean)
+        if key == "tax.pemicu_faktur":   # TX-T2 (K-32) — pilihan "uang muka" terdaftar tetapi belum bisa dipakai (H4)
+            from services.tax_config_service import periksa_pemicu_faktur
+            clean = periksa_pemicu_faktur(clean)
     except ValueError as exc:
         raise ConfigWriteError(str(exc)) from exc
     if entry.get("ref"):   # KF-T4 — rujukan master harus ada di pilihannya (PT sasaran bila lapisan PT)

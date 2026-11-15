@@ -844,12 +844,28 @@ async def layer_tax_invoice_invariants(db):
     # FKT-3: maksimal 1 faktur AKTIF (bukan batal & belum diganti) per order + nomor unik
     # PK-40 (SL-13): dikelompokkan per kunci pemilik (`so:{order_id}` / `ic:{interco_pair_id}`) — faktur internal
     # antar-PT ber-`order_id` kosong tidak lagi tertumpuk jadi satu kelompok.
+    # TX-T2: kunci pemilik = `kunci_aktif_keluaran` (juga `sj:{pesanan}:{surat jalan}` · `retur:{nota kredit}`); satu
+    # pesanan berfaktur per pesanan SEKALIGUS punya dokumen hidup per surat jalan = pelanggaran juga.
     from collections import defaultdict
+    try:
+        sys.path.insert(0, str(ROOT / "backend"))
+        from services.tax_invoice_service import kunci_aktif_keluaran as _kunci_fkt
+    except Exception:  # noqa: BLE001 — layanan tak termuat: aturan lama (so:/ic:)
+        def _kunci_fkt(f):
+            if f.get("status") == "batal" or f.get("replaced_by_id"):
+                return {}
+            return {"active_key": f"ic:{f['interco_pair_id']}" if f.get("interco_pair_id") else f"so:{f.get('order_id')}"}
     active_by_order = defaultdict(int)
+    mode_by_order = defaultdict(set)
     for f in fakturs:
-        if f.get("status") != "batal" and not f.get("replaced_by_id"):
-            pemilik = f"ic:{f['interco_pair_id']}" if f.get("interco_pair_id") else f"so:{f.get('order_id')}"
+        pemilik = _kunci_fkt(f).get("active_key")
+        if pemilik:
             active_by_order[pemilik] += 1
+            if f.get("order_id") and f.get("doc_kind") != "retur" and not f.get("interco_pair_id"):
+                mode_by_order[f["order_id"]].add("sj" if pemilik.startswith("sj:") else "so")
+    for oid, modes in mode_by_order.items():
+        if len(modes) > 1:
+            active_by_order[f"so+sj:{oid}"] += 2
     dup_active = [oid for oid, n in active_by_order.items() if n > 1]
     numbers = [f.get("number") for f in fakturs]
     dup_no = len(numbers) != len(set(numbers))
@@ -903,6 +919,57 @@ async def layer_tax_invoice_invariants(db):
     else:
         results["pass"] += 1
         line("PASS", G, "faktur: rantai pengganti konsisten (replaces_id valid)")
+
+    await _inv_tax_out_01(db)
+
+
+#: TX-T2 — serah-terima (a): INV-TAX-OUT-01 hanya peringatan; (b): wajib hijau (selisih tak terjelaskan = FAIL).
+INV_TAX_OUT_WAJIB = False
+
+
+async def _inv_tax_out_01(db):
+    """TX-T2 (TX-05, `02` D2) — INV-TAX-OUT-01: untuk tiap PT PKP dan tiap masa yang punya faktur terbit atau jurnal PPN
+    keluaran, selisih faktur − dokumen retur vs buku besar (akun pemetaan `penjualan.ppn_keluaran` PT) harus
+    terjelaskan seluruhnya (`unexplained == 0`). Sebab yang terjelaskan (surat jalan tanpa faktur, faktur tanpa jurnal,
+    retur tanpa dokumen pajak) dicetak sebagai peringatan. Rumus satu tempat: `tax_invoice_service.output_reconciliation`
+    (sama dengan panel Pencocokan PPN keluaran)."""
+    sys.path.insert(0, str(ROOT / "backend"))
+    try:
+        from services import tax_invoice_service as _tis
+        from services.tax_center_service import bulan_tahun
+        from core_utils import rupiah
+        pasangan = await _tis.output_reconciliation_periods()
+        nama = {e["id"]: e.get("name") or e.get("legal_name") or e["id"]
+                async for e in db.business_entities.find({}, {"_id": 0, "id": 1, "name": 1, "legal_name": 1})}
+        merah, terjelaskan = [], []
+        for eid, per in pasangan:
+            rec = await _tis.output_reconciliation(eid, per)
+            label = f"{nama.get(eid, eid)} masa {bulan_tahun(per)}"
+            if abs(float(rec["unexplained"])) > 0.005:
+                jurnal = ", ".join(j.get("number") or j.get("id") for j in rec["unexplained_journals"][:3])
+                merah.append(f"{label}: {rupiah(rec['unexplained'])} belum terjelaskan ({jurnal})")
+            n = sum(len(v) for v in rec["causes"].values())
+            if n:
+                terjelaskan.append(f"{label}: {n} sebab, selisih {rupiah(rec['difference'])}")
+    except Exception as exc:  # noqa: BLE001 — penjaga tidak boleh buta diam-diam
+        results["fail"] += 1
+        line("FAIL", R, f"INV-TAX-OUT-01: pencocokan PPN keluaran tidak bisa diperiksa ({exc.__class__.__name__}: {exc})")
+        return
+    if merah:
+        if INV_TAX_OUT_WAJIB:
+            results["fail"] += 1
+            line("FAIL", R, f"INV-TAX-OUT-01: {len(merah)} PT-masa berselisih PPN keluaran belum terjelaskan: {merah[:5]}",
+                 "→ Akuntansi & Pajak › Pajak › Faktur Keluaran › Pencocokan PPN keluaran")
+        else:
+            results["warn"] += 1
+            line("WARN", Y, f"INV-TAX-OUT-01: {len(merah)} PT-masa berselisih PPN keluaran belum terjelaskan: {merah[:5]}",
+                 "(serah-terima (a): peringatan dulu)")
+    else:
+        results["pass"] += 1
+        line("PASS", G, f"INV-TAX-OUT-01: {len(pasangan)} PT-masa — selisih PPN keluaran terjelaskan seluruhnya")
+    if terjelaskan:
+        results["warn"] += 1
+        line("WARN", Y, f"INV-TAX-OUT-01: {len(terjelaskan)} PT-masa punya selisih terjelaskan: {terjelaskan[:5]}")
 
 
 async def layer_pr_invariants(db):

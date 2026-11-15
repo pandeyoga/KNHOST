@@ -846,6 +846,23 @@ class TaxInvoiceCancel(BaseModel):
     reason: str
 
 
+class TaxInvoiceIssueDraft(BaseModel):
+    """TX-T2 — terbitkan draf faktur / dokumen pajak retur."""
+    faktur_date: Optional[str] = None      # kosong = tanggal draf (tanggal buku jurnal sumbernya)
+    nsfp: Optional[str] = None             # boleh menyusul
+    kode_transaksi: Optional[str] = None   # kosong = kode draf
+
+
+class TaxInvoiceDiscard(BaseModel):
+    """TX-T2 — buang draf (alasan wajib; diperiksa layanan supaya pesannya untuk manusia)."""
+    reason: Optional[str] = ""
+
+
+class TaxDraftRebuild(BaseModel):
+    """TX-T2 — bangun ulang draf satu masa (PT = PT aktif pengguna)."""
+    period: str
+
+
 # ─── Sales Returns / Retur & Barang Sisa (Sub-fase 1.11) ─────────────────────
 
 # Detail & keputusan PER ROLL (permintaan pemilik 23 Okt) — satu kontrak untuk retur jual, supplier & antar-PT.

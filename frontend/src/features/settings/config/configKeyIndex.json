@@ -505,6 +505,10 @@
    "pajak-pembukuan",
    "pajak"
   ],
+  "tax.pemicu_faktur": [
+   "pajak-pembukuan",
+   "pajak"
+  ],
   "finance.base_currency": [
    "pajak-pembukuan",
    "tutup-buku"

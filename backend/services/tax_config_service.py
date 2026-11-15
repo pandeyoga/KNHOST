@@ -150,6 +150,23 @@ def faktor_teks(snapshot: Optional[Dict[str, Any]]) -> str:
     return f"{int(s['dpp_pembilang'])}/{int(s['dpp_penyebut'])}"
 
 
+# ── TX-T2 (K-32) — pemicu faktur ────────────────────────────────────────────────────────────────────────────────────
+#: Nilai `tax.pemicu_faktur` yang terdaftar tetapi belum bisa dipakai → pesan penolakan saat disimpan (H4: jurnal PPN atas
+#: uang muka belum ditetapkan; konfirmasi konsultan pajak).
+PEMICU_BELUM_BISA = {
+    "uang_muka": "Pemicu 'uang muka' belum bisa dipakai: menunggu ketetapan jurnal PPN atas uang muka.",
+}
+
+
+def periksa_pemicu_faktur(value: Any) -> Any:
+    """Penjaga simpan `tax.pemicu_faktur` (dipanggil `config_resolver.set_value`): nilai terdaftar yang belum bisa
+    dipakai → `ValueError` berpesan (400). Nilai lain dikembalikan apa adanya."""
+    pesan = PEMICU_BELUM_BISA.get(str(value or ""))
+    if pesan:
+        raise ValueError(pesan)
+    return value
+
+
 # ── kode transaksi faktur ───────────────────────────────────────────────────────────────────────────────────────────
 def pesan_kode_tidak_dipakai(kode: str) -> str:
     return f"Kode transaksi {kode} tidak dipakai PT ini."

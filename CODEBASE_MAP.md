@@ -1,5 +1,5 @@
 <!-- DIHASILKAN OTOMATIS oleh scripts/gen_codebase_map.py — JANGAN EDIT TANGAN -->
-<!-- Dihasilkan dari commit: 5f193df pada 2026-11-15 -->
+<!-- Dihasilkan dari commit: 5edef21 pada 2026-11-15 -->
 # CODEBASE MAP — Kain Nusantara (dihasilkan otomatis)
 
 Peta ini dihitung dari kode oleh `scripts/gen_codebase_map.py`. Kalau angka di sini
@@ -13,7 +13,7 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 | Ukuran | Nilai |
 |---|---:|
 | Router (`backend/routers/*.py`) | 170 |
-| Endpoint (`@router.<method>`) | 1841 |
+| Endpoint (`@router.<method>`) | 1845 |
 | Service (`backend/services/*.py`) | 424 |
 | Koleksi MongoDB disentuh kode produksi | 208 |
 | Direktori fitur frontend (`src/features/*`) | 40 |
@@ -25,7 +25,7 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 | `server.py` | 445 |
 | `db.py` | 12 |
 | `core_utils.py` | 439 |
-| `schemas.py` | 1134 |
+| `schemas.py` | 1151 |
 | `schemas_purchasing.py` | 628 |
 | `dependencies.py` | 287 |
 | `permissions_config.py` | 975 |
@@ -280,7 +280,7 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 | `supplier_items.py` | 11 | 208 | `/supplier-items`, `/supplier-items/import`, `/supplier-items/import-file`, `/supplier-items/import-template`, `/supplier-items/lookup`, `/supplier-items/stats` … |
 | `suppliers.py` | 13 | 388 | `/supplier-price-list/resolve`, `/supplier-price-list/{entry_id}`, `/suppliers`, `/suppliers/{supplier_id}`, `/suppliers/{supplier_id}/360`, `/suppliers/{supplier_id}/price-list` … |
 | `tax_center.py` | 7 | 104 | `/tax/periods`, `/tax/periods/{period}/lock`, `/tax/periods/{period}/unlock`, `/tax/pph-records`, `/tax/pph-records/{record_id}`, `/tax/summary` |
-| `tax_invoices.py` | 7 | 106 | `/sales-orders/{order_id}/tax-invoice`, `/tax-invoices`, `/tax-invoices/{fkt_id}`, `/tax-invoices/{fkt_id}/cancel`, `/tax-invoices/{fkt_id}/document`, `/tax-invoices/{fkt_id}/nsfp` … |
+| `tax_invoices.py` | 11 | 171 | `/sales-orders/{order_id}/tax-invoice`, `/tax-invoices`, `/tax-invoices/drafts/rebuild`, `/tax-invoices/{fkt_id}`, `/tax-invoices/{fkt_id}/cancel`, `/tax-invoices/{fkt_id}/discard` … |
 | `transfers.py` | 14 | 764 | `/transfers`, `/transfers/inter-company`, `/transfers/so-options`, `/transfers/so-rolls`, `/transfers/{transfer_id}`, `/transfers/{transfer_id}/approve` … |
 | `uom_conversions.py` | 10 | 226 | `/uom-conversions/catalog`, `/uom-conversions/check-variance`, `/uom-conversions/convert`, `/uom-conversions/rules`, `/uom-conversions/rules/{rule_id}`, `/uom-conversions/rules/{rule_id}/status` … |
 | `uoms.py` | 5 | 186 | `/uoms`, `/uoms/vocab`, `/uoms/{uom_id}` |
@@ -366,7 +366,7 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 | `config_health.py` | 229 | FASE G-0 — KESEHATAN KONFIGURASI: apakah setiap setting benar-benar tersambung? |
 | `config_impact_service.py` | 258 | FASE G-0 — DAFTAR DAMPAK (Blast-Radius Picker). |
 | `config_overrides.py` | 114 | KF-T3 (KF-04, standar §2.2 / L6) — PENIMPAAN TERDAFTAR: aturan lain yang menimpa nilai sebuah pengaturan. |
-| `config_resolver.py` | 945 | FASE G-0 — CONFIG RESOLVER: nilai efektif berlapis + jejak "kenapa begini" + berlaku-sejak. |
+| `config_resolver.py` | 948 | FASE G-0 — CONFIG RESOLVER: nilai efektif berlapis + jejak "kenapa begini" + berlaku-sejak. |
 | `config_scoped_rules.py` | 133 | KF-T5 — aturan khusus per pelanggan dan per barang (`docs/blueprint/unit/KF-T5.md`). |
 | `config_service.py` | 879 | Config service (Fase 1A) — Configuration Foundation. |
 | `config_simulator.py` | 650 | FASE G-0 — SIMULATOR KONFIGURASI ("Coba dulu"). |
@@ -482,7 +482,7 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 | `initial_registration_lines.py` | 328 | PREP-B — baris pendaftaran di lapangan (HP/handheld): EPC → produk → panjang → simpan & lanjut. |
 | `initial_registration_plan.py` | 215 | PREP-B — rencana & rekonsiliasi pendaftaran awal gedung (K-OPN-01/02). |
 | `initial_registration_service.py` | 285 | PREP-B — mode "pendaftaran awal gedung" (KEPUTUSAN_GATE_RFID §8, K-OPN-01..05): siklus sesi. |
-| `input_tax_service.py` | 248 | Faktur Pajak Masukan (tax_invoices_in) service — Fase 5.5 / P0-3. |
+| `input_tax_service.py` | 257 | Faktur Pajak Masukan (tax_invoices_in) service — Fase 5.5 / P0-3. |
 | `inspection_service.py` | 1888 | FASE I — **INSPEKSI & QC SEBAGAI DOKUMEN** (`<ENT>/INS-#####`). |
 | `integrations_service.py` | 153 | H5 service — Integrasi pihak ketiga (config runtime di system_settings). |
 | `interco_elimination_engine.py` | 482 | PK-31 (IC-03, IC-04, RP-10) — MESIN ELIMINASI ANTAR-PT PER PERIODE dari data BERTANGGAL. |
@@ -695,8 +695,8 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 | `supplier_item_service.py` | 578 | FASE E — SERVICE `supplier_items` (Barang Supplier / katalog versi supplier). |
 | `supplier_service.py` | 485 | Depth #3 — Supplier Intelligence: Price-List resolution + Scorecard. |
 | `tax_center_service.py` | 411 | EPIC 7 — Pusat Pajak (PPN + PPh) service. |
-| `tax_config_service.py` | 298 | TX-T1 (K-33, TX-06) — aturan pajak per PT yang bisa dijadwalkan, potret aturan di dokumen, dan data pajak pela |
-| `tax_invoice_service.py` | 506 | Faktur Pajak Jual (tax_invoices) service — Sub-fase 1.9. |
+| `tax_config_service.py` | 315 | TX-T1 (K-33, TX-06) — aturan pajak per PT yang bisa dijadwalkan, potret aturan di dokumen, dan data pajak pela |
+| `tax_invoice_service.py` | 1196 | Faktur Pajak Jual (tax_invoices) service — Sub-fase 1.9. |
 | `text_normalize.py` | 88 | K-1/K-2 (feedback klien 2026-09) — normalisasi penulisan (EYD) & nomor telepon/WhatsApp. |
 | `three_way_policy.py` | 32 | KN-D16 (audit 2026-09-21) — SATU ambang toleransi 3-way match (PO ↔ terima ↔ faktur). |
 | `tolerances.py` | 9 | KN-A13 (audit 2026-09-21) — SATU sumber toleransi numerik. |

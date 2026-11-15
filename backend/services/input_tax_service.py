@@ -176,7 +176,8 @@ async def _gl_ppn_masa(period: str, entity_q: Dict[str, Any]) -> Dict[str, float
 async def vat_summary(period: str = "", entity_id: str = "", entity_ids: Optional[List[str]] = None) -> Dict[str, Any]:
     """Rekap PPN Masukan vs Keluaran untuk satu periode (YYYY-MM).
 
-    Keluaran = Σ ppn_amount Faktur Pajak Jual aktif (tax_invoices: bukan batal, belum diganti — PK-45 TX-01).
+    Keluaran = Σ ppn_amount Faktur Pajak Jual aktif (tax_invoices: bukan batal, belum diganti — PK-45 TX-01)
+               − Σ ppn_amount dokumen pajak retur terbit (TX-T2, `doc_kind: retur`). Draf (TX-T2) tidak dihitung.
     Masukan  = Σ ppn_amount Faktur Pajak Masukan (tax_invoices_in, status recorded).
     Net      = Keluaran − Masukan → >0 KURANG BAYAR (setor), <0 LEBIH BAYAR (kredit).
     PK-40 (SL-13): masa = `period_of(faktur_date)` (WIB), disaring di kueri lalu persis di baris; kursor dibaca habis
@@ -190,8 +191,9 @@ async def vat_summary(period: str = "", entity_id: str = "", entity_ids: Optiona
     def _in_period(doc: Dict[str, Any]) -> bool:
         return period_of(doc.get("faktur_date", "") or "") == period
 
-    from services.tax_invoice_service import saringan_keluaran_aktif
+    from services.tax_invoice_service import saringan_keluaran_aktif, saringan_retur_aktif
     out_q: Dict[str, Any] = saringan_keluaran_aktif()   # PK-45 (TX-01) — faktur yang sudah diganti tidak dihitung
+    ret_q: Dict[str, Any] = saringan_retur_aktif()      # TX-T2 — dokumen pajak retur (pengurang)
     in_q: Dict[str, Any] = {"status": {"$in": list(ACTIVE_INPUT_STATUSES)}}
     ent_q: Dict[str, Any] = {}
     if entity_id and entity_id != "all":
@@ -199,6 +201,7 @@ async def vat_summary(period: str = "", entity_id: str = "", entity_ids: Optiona
     elif entity_ids is not None:   # PK-09 — gabungan = PT yang ditugaskan
         ent_q = {"entity_id": {"$in": list(entity_ids)}}
     out_q.update(ent_q)
+    ret_q.update(ent_q)
     in_q.update(ent_q)
     try:
         jendela = _jendela_masa(period)
@@ -206,13 +209,18 @@ async def vat_summary(period: str = "", entity_id: str = "", entity_ids: Optiona
         jendela = None
     if jendela:
         out_q["faktur_date"] = dict(jendela)
+        ret_q["faktur_date"] = dict(jendela)
         in_q["faktur_date"] = dict(jendela)
 
     out_docs = [d async for d in db.tax_invoices.find(out_q, _FIELDS_REKAP) if _in_period(d)]
+    ret_docs = [d async for d in db.tax_invoices.find(ret_q, _FIELDS_REKAP) if _in_period(d)]
     in_docs = [d async for d in db.tax_invoices_in.find(in_q, _FIELDS_REKAP) if _in_period(d)]
 
-    keluaran_ppn = round(sum(float(d.get("ppn_amount", 0) or 0) for d in out_docs), 2)
-    keluaran_dpp = round(sum(float(d.get("dpp", 0) or 0) for d in out_docs), 2)
+    faktur_ppn = round(sum(float(d.get("ppn_amount", 0) or 0) for d in out_docs), 2)
+    retur_ppn = round(sum(float(d.get("ppn_amount", 0) or 0) for d in ret_docs), 2)
+    keluaran_ppn = round(faktur_ppn - retur_ppn, 2)
+    keluaran_dpp = round(sum(float(d.get("dpp", 0) or 0) for d in out_docs)
+                         - sum(float(d.get("dpp", 0) or 0) for d in ret_docs), 2)
     masukan_ppn = round(sum(float(d.get("ppn_amount", 0) or 0) for d in in_docs), 2)
     masukan_dpp = round(sum(float(d.get("dpp", 0) or 0) for d in in_docs), 2)
 
@@ -237,7 +245,8 @@ async def vat_summary(period: str = "", entity_id: str = "", entity_ids: Optiona
     return {
         "period": period,
         "keluaran": {"ppn": keluaran_ppn, "dpp": keluaran_dpp, "count": len(out_docs), "gl_ppn": gl["keluaran"],
-                     "selisih": round(keluaran_ppn - gl["keluaran"], 2)},
+                     "selisih": round(keluaran_ppn - gl["keluaran"], 2),
+                     "faktur_ppn": faktur_ppn, "retur_ppn": retur_ppn, "retur_count": len(ret_docs)},
         "masukan": {"ppn": masukan_ppn, "dpp": masukan_dpp, "count": len(in_docs), "gl_ppn": gl["masukan"],
                     "selisih": round(masukan_ppn - gl["masukan"], 2)},
         "selisih_note": SELISIH_NOTE,

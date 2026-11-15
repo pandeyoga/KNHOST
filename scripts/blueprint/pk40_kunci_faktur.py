@@ -49,7 +49,9 @@ async def kumpulkan(db) -> Dict[str, Dict[str, Any]]:
         grup: Dict[Tuple[str, str], List[str]] = {}
         async for d in db[koleksi].find({}, {"_id": 0, "id": 1, "number": 1, "status": 1, "replaced_by_id": 1,
                                              "order_id": 1, "interco_pair_id": 1, "vendor_bill_id": 1, "nsfp": 1,
-                                             "nsfp_digits": 1, "active_key": 1, "nsfp_key": 1}):
+                                             "nsfp_digits": 1, "active_key": 1, "nsfp_key": 1,
+                                             # TX-T2 — kosakata kunci sj:/retur: butuh asal & sumber dokumen
+                                             "doc_kind": 1, "trigger": 1, "shipment_no": 1, "credit_note_id": 1}):
             k = kunci_seharusnya(koleksi, d)
             for f, v in k.items():
                 grup.setdefault((f, v), []).append(d.get("number") or d.get("id"))

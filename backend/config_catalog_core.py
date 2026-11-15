@@ -156,6 +156,22 @@ E("tax.kode_transaksi_bawaan_dpp_nilai_lain", sensitif_baca=False, **_TXT1,
   impact="Mengisi otomatis kode faktur pajak baru. Kode yang tidak ada di daftar kode PT ditolak saat terbit.",
   example="04")
 
+# TX-T2 (K-32, TX-05) — kapan faktur pajak lahir. Bawaan `pesanan` = perilaku sebelum TX-T2 (diterbitkan orang untuk
+# seluruh pesanan). `uang_muka` terdaftar (K-32) tetapi DITOLAK saat disimpan (`tax_config_service.periksa_pemicu_faktur`):
+# jurnal PPN atas uang muka belum ditetapkan (H4, konfirmasi konsultan pajak). Mengubahnya untuk PT nyata = H5.
+E("tax.pemicu_faktur", sensitif_baca=False, **{**_TXT1, "consumers": (
+      "services/tax_invoice_service.py:draft_for_shipment", "services/tax_invoice_service.py:issue_tax_invoice")},
+  type="enum", default="pesanan",
+  options=({"value": "pesanan", "label": "Per pesanan"},
+           {"value": "surat_jalan", "label": "Per surat jalan"},
+           {"value": "uang_muka", "label": "Per uang muka (belum bisa dipakai)"}),
+  label="Faktur pajak dibuat saat",
+  help=("'Per pesanan' = diterbitkan orang untuk seluruh pesanan, seperti sekarang. 'Per surat jalan' = draf muncul "
+        "sendiri tiap barang keluar."),
+  impact=("Mengubah kapan dan berapa banyak faktur per pesanan. Pesanan yang sudah berfaktur per pesanan tidak diberi "
+          "draf per surat jalan."),
+  example="Per surat jalan · pesanan dikirim dua kali → dua draf faktur")
+
 # ═══════════════════════════════════════════════════════════════════════════
 # DASAR KEUANGAN & PERIODE
 # ═══════════════════════════════════════════════════════════════════════════
