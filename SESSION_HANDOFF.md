@@ -1,5 +1,12 @@
 # SESSION HANDOFF — Kain Nusantara (WMS/ERP)
 
+> Diperbarui: **2026-11-15 — akhir eksekusi blueprint (cabang `claude/nifty-carson-jjx3c8`)**. Sesi berikutnya:
+> **review oleh pemilik**. Mulai dari `docs/blueprint/STATUS.md` (bagian "Menunggu pemilik", "Jawaban pemilik 15 Nov
+> 2026", "Rencana berikutnya" R1–R9) dan `docs/blueprint/EVALUASI_EKSEKUSI_2026-11-15.md` (perubahan, waktu & biaya,
+> pelanggaran yang lolos gate, relevansi uji/gate, peta cakupan kode yang belum diaudit, celah kredit Pesanan Khusus,
+> cara komisi sekarang). 97 unit selesai, 7 tahan; belum ada yang dipasang ke produksi atau dijalankan di data nyata.
+> Aturan uji wajib: `docs/blueprint/03_LINGKUNGAN_UJI.md` §6 (uji hemat, gate per pelanggaran).
+
 > Diperbarui: **2026-06 (sesi lanjutan ke-8)** — repo kini di
 > `github.com/pandeyoga/KN020926`; lingkungan di-restore dengan `.restore_env.sh`
 > (mongo hidup → restart backend → seed → fondasi lengkap → build FE), data demo

@@ -155,6 +155,24 @@ diubah karena jawaban ini; tiap butir dikerjakan sesudah pemilik memberi aba-aba
 | 20 | KM-T5 — peran kustom `sales_force` tanpa `incentive` | Ok | Bila ada peran begitu di data nyata: tambah `incentive.view` |
 | 21 | KM-T3 — nomor `LIN-` | Ok | — |
 
+## Rencana berikutnya — disetujui pemilik 15 Nov 2026, **belum dikerjakan**
+
+Urutan yang disetujui: jangan menambah fitur dulu. Bahan dan angka pendukung: `EVALUASI_EKSEKUSI_2026-11-15.md`.
+Uji dan gate mengikuti `03_LINGKUNGAN_UJI.md` §6 (uji hemat, gate per pelanggaran).
+
+| Urutan | Pekerjaan | Isi | Titik henti / syarat |
+|---|---|---|---|
+| R1 | Cadangan & uji pulih (PK-04) | Cadangan tiap 6 jam, akhir bulan disimpan lebih lama, perintah uji pulih | H2: jendela waktu server produksi dari pemilik |
+| R2 | Cek data nyata (PK-03) | Pemeriksaan hanya-baca pada salinan database produksi: masalah mana yang sudah terjadi di data, berapa banyak | H3: dijalankan/diizinkan pemilik; hasilnya menentukan prioritas R3–R5 |
+| R3 | Perapian uji & gate | Pilah 16 POC merah (perbarui/arsipkan); pilah ±403 uji lama `backend/tests/` (masuk gate atau arsip); perbaiki 35 suite jest yang tidak termuat; perbaiki 2 skrip seed data acuan; pilah tuduhan palsu penjaga (mis. `auth_coverage`); target gate `--ci` hijau atau merah hanya untuk temuan tercatat yang disetujui pemilik | — |
+| R4 | Bereskan pelanggaran baru dari eksekusi | Daftar di "Menunggu pemilik" (baris "Pelanggaran baru yang lolos gate") dan `EVALUASI_EKSEKUSI_2026-11-15.md` §4; sesudahnya perbarui garis dasar `garis-dasar-gate/` | — |
+| R5 | Audit sapuan modul operasional (hanya membaca) | Cara sama dengan audit keuangan, termasuk pencarian "pintu kedua" per modul; temuan masuk tracker, pemilik memilih yang diperbaiki. Urutan: gudang & stok → penjualan & Pesanan Khusus → pembelian → produksi (repair, resep, cutting, makloon) → RFID cetak & handheld → R&D/desain/marketing. Cakupan: 22% service (36 rb baris) dan 44% layar (69 rb baris) belum pernah diperiksa (`scripts/blueprint/peta_cakupan_audit.py`) | RFID/handheld: aturan H7 (`docs/rfid/KEPUTUSAN_GATE_RFID.md`) |
+| R6 | Aturan anti-duplikasi tertulis | Setiap fitur baru wajib menyebut pintu yang dipakai ulang dan jalur lama yang dimatikan; jalur lama dihapus di unit yang sama atau serah-terima (b) bertanggal | Usulan integrator — tulis di `02_STANDAR.md` sesudah disetujui |
+| R7 | Validasi reviewer | 348 temuan `implemented_pending_review` divalidasi reviewer (Codex), mulai unit keuangan risiko tinggi; PK-34 menunggu gelombang 3 `tervalidasi` | Hanya reviewer yang menetapkan `verified`/`reopened` |
+| R8 | Staging, uji pakai, pemasangan bertahap | Lingkungan staging berisi salinan data produksi; skrip H3 mode coba → tinjau → jalankan (Jawaban pemilik no. 11); uji pakai staf per peran; rencana mundur; komunikasi perubahan perilaku (slip sesudah dibayar, lembur wajib pengajuan, gerbang kredit, menu pindah, form bayar disatukan) | Sesudah R1; H2/H3 |
+| R9 | Ringkasan per modul untuk manusia | Satu halaman per modul: apa yang dilakukan, pintunya di mana, aturannya di mana | — |
+| — | Unit baru: kredit Pesanan Khusus | Periksa kredit sebelum pengadaan/produksi; tahan sampai izin kredit atau DP (persen DP = pengaturan); opsional periksa ulang di surat jalan (`EVALUASI_EKSEKUSI_2026-11-15.md` §7) | Menunggu konfirmasi pemilik |
+
 ## Catatan sesi
 
 Diisi agen di akhir tiap sesi: tanggal, unit yang selesai, unit yang tertahan dan mengapa.
@@ -199,3 +217,8 @@ Diisi agen di akhir tiap sesi: tanggal, unit yang selesai, unit yang tertahan da
 - Akhir sesi: **semua unit `siap` habis** — 97 `selesai`, 7 `tahan` — PK-03 (H3 cek data nyata), PK-04, PK-34 (H2), PK-35 (H2, H3), PK-46 (H4 berkas PPh 21),
   PM-T5, TX-T3 (H8 kredensial penyedia/Coretax). Tidak ada unit
   `menunggu` yang prasyaratnya terpenuhi.
+- Lanjutan 15 Nov (sesudah unit terakhir ditutup): pemilik menjawab 21 butir keputusan (dicatat, belum dikerjakan);
+  kebijakan uji hemat dan pembanding gate per pelanggaran disimpan (`03_LINGKUNGAN_UJI.md` §6); pembanding baru menemukan
+  pelanggaran yang lolos selama eksekusi (belum dibereskan); peta cakupan audit dibuat; rencana R1–R9 disetujui pemilik.
+  Evaluasi biaya, waktu, cakupan, dan celah kredit Pesanan Khusus: `EVALUASI_EKSEKUSI_2026-11-15.md`. Sesi berikutnya =
+  review oleh pemilik.

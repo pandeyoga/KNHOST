@@ -1,6 +1,14 @@
 # SESSION HANDOFF — Kain Nusantara (KN10)
 
-## ▶ MULAI DI SINI — Sesi P18 (2026-10-03) — 18 kasus partial → lulus (59 lulus · 37 partial), 6 bug + 3 fitur ✅
+## ▶ MULAI DI SINI — 2026-11-15 — akhir eksekusi blueprint, sesi berikutnya review pemilik
+> Diperbarui: **2026-11-15 — akhir eksekusi blueprint (cabang `claude/nifty-carson-jjx3c8`)**. Sesi berikutnya:
+> **review oleh pemilik**. Mulai dari `docs/blueprint/STATUS.md` (bagian "Menunggu pemilik", "Jawaban pemilik 15 Nov
+> 2026", "Rencana berikutnya" R1–R9) dan `docs/blueprint/EVALUASI_EKSEKUSI_2026-11-15.md` (perubahan, waktu & biaya,
+> pelanggaran yang lolos gate, relevansi uji/gate, peta cakupan kode yang belum diaudit, celah kredit Pesanan Khusus,
+> cara komisi sekarang). 97 unit selesai, 7 tahan; belum ada yang dipasang ke produksi atau dijalankan di data nyata.
+> Aturan uji wajib: `docs/blueprint/03_LINGKUNGAN_UJI.md` §6 (uji hemat, gate per pelanggaran).
+
+## Sesi P18 (2026-10-03) — 18 kasus partial → lulus (59 lulus · 37 partial), 6 bug + 3 fitur ✅
 > **Baca `memory/HANDOFF_P18_2026-10-03.md`** (setup lingkungan baru, packing list permanen aktif, harness p18a..f, sisa 37 partial) — lalu P16 untuk aturan git.
 
 ## Sesi P17 (2026-10-03) — 9 kasus planned diuji, 5 bug diperbaiki, arsip baca-saja, OCR sungguhan aktif ✅
