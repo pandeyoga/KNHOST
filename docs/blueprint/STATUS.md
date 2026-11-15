@@ -93,8 +93,8 @@ Papan kerja agen pelaksana. Aturan mengubahnya: `00_ATURAN_EKSEKUSI.md` §5. Uru
 | 86 | KM-T5 | Kartu "Capaian & Insentif Saya"; layar lama dipindah | KM-T4, MN-T1 | menunggu |  |  |  |
 | 87 | PY-T5 | Swalayan karyawan: slip setelah dibayar | PY-T1 | siap |  |  |  |
 | 88 | CR-T2 | Jadwal tagihan dan saldo piutang tersimpan | PK-19, PK-41 | selesai | 76a337d | [CR-T2](../reviews/2026-11-13/hasil/CR-T2.md) | H3: build_billing_schedule.py --apply di data nyata (dry-run data acuan: 0 pelanggan berubah status kredit) |
-| 89 | CR-T3 | Gerbang kredit di empat titik; izin kredit | CR-T1, CR-T2, PK-38 | siap |  |  | Titik henti H5 |
-| 90 | CR-T4 | Denda berlapis PT → pelanggan | PK-08, CR-T2 | siap |  |  |  |
+| 89 | CR-T3 | Gerbang kredit di empat titik; izin kredit | CR-T1, CR-T2, PK-38 | dikerjakan |  |  | Dikerjakan paralel (worktree terpisah), 15 Nov |
+| 90 | CR-T4 | Denda berlapis PT → pelanggan | PK-08, CR-T2 | dikerjakan |  |  | Dikerjakan paralel (worktree terpisah), 15 Nov |
 | 91 | CR-T5 | Daftar kerja kredit dan rekening koran pelanggan | CR-T2 | siap |  |  |  |
 | 92 | PM-T2 | Cara bayar dan rekening tujuan di pesanan; instruksi bayar | PM-T1 | selesai | 73314a8 | [PM-T2](../reviews/2026-11-13/hasil/PM-T2.md) |  |
 | 93 | PM-T3 | Kwitansi ber-rekening; terverifikasi bank | PK-19, PK-20, PK-21, PM-T2 | selesai | a2c1e19 | [PM-T3](../reviews/2026-11-13/hasil/PM-T3.md) | H3: isi rekening kas kwitansi lama (backfill_receipt_accounts.py --terapkan) di data nyata sebelum (b) dipakai PT berekening ganda |
