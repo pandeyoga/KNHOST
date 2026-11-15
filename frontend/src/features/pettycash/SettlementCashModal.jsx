@@ -22,7 +22,7 @@ import { todayWib } from "../../utils/formatters";
  *
  * Isian: Jenis kas · Rekening (`CashAccountField`, rekening tunggal PT terisi otomatis) · Tanggal. Simpan meminta
  * konfirmasi yang menyebut nominal, karyawan, rekening, dan PT (`02` N5); kirim ber-Idempotency-Key (N4). Dipakai
- * rincian LPJ (`SettlementDetail`) dan daftar Hutang Reimburse (`ReimbursePayablesView`).
+ * rincian LPJ (`SettlementDetail`; di panel Kas Kecil sejak MN-T2 — daftar Hutang Reimburse lama dihapus).
  *
  *   <SettlementCashModal mode="return" stl={{ id, number, entity_id, amount, employee }} entities={…}
  *     onClose={…} onDone={(lpj) => …} />

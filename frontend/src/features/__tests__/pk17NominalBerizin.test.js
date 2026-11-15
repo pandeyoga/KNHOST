@@ -1,5 +1,8 @@
 // PK-17 (IA-01, IA-03, IA-09) — layar mengikuti penyaringan nominal dari server (docs/blueprint/unit/PK-17.md).
 //   U15 — Meja Finance: `/home/finance` dijawab 403 → papan `fin-home-*` tidak digambar, `fin-desk-error` tidak tampil.
+//         MN-T2 — Meja Finance kini Beranda Keuangan › Perlu Tindakan: papan hutang menjadi kelompok "Hutang jatuh tempo"
+//         / "Kontrabon menunggu" yang hanya dimuat bila peran memegang `contra_bon.view`/`vendor_bill.view`; 403 tetap
+//         = kelompok tidak digambar tanpa galat; galat lain tetap TIDAK berbunyi kabar baik (regresi B5).
 //   U16 — Jejak Dokumen: simpul ber-`amount_hidden` menulis "Nilai disembunyikan"; tombol buka simpul itu mati
 //         (TraceGraph) dan hasil pencarian tidak menampilkan nominal (TraceSearch).
 //   U17 — Kontrabon: tanpa `vendor_bill.view` tab "Daftar Kontrabon" tidak ada dan tab aktif "GR Belum Ditagih";
@@ -78,20 +81,26 @@ test("PK17 U15 — Meja Finance: papan 403 tidak digambar dan tidak ada pesan ga
     "/home/finance": { __status: 403, detail: "Anda belum punya akses untuk melihat antrean hutang pemasok." },
     "/finance/desk": { queues: [], totals: {}, not_my_desk: [] },
   });
+  // Tanpa izin hutang: papan tidak diminta sama sekali.
   await mount(<FinanceDesk currentUser={{ role: "driver", permissions: {} }} selectedEntity="ent_ksc" />);
-  expect(mockGet.mock.calls.some(([u]) => u.endsWith("/home/finance"))).toBe(true);
+  expect(mockGet.mock.calls.some(([u]) => u.endsWith("/home/finance"))).toBe(false);
   expect(q("finance-desk")).not.toBeNull();
-  expect(qAll("fin-home-")).toHaveLength(0);
-  expect(q("fin-desk-error")).toBeNull();
+  // Berizin di layar tetapi server menjawab 403: kelompok tidak digambar, tidak ada galat.
+  await mount(<FinanceDesk currentUser={{ role: "finance", permissions: { contra_bon: ["view"] } }} selectedEntity="ent_ksc" />);
+  expect(mockGet.mock.calls.some(([u]) => u.endsWith("/home/finance"))).toBe(true);
+  expect(qAll("fin-desk-queue-kontrabon")).toHaveLength(0);
+  expect(qAll("fin-desk-error")).toHaveLength(0);
 });
 
-test("PK17 U15b — Meja Finance: galat selain 403 tetap menggambar papan 'tidak bisa dibaca' (regresi B5)", async () => {
+test("PK17 U15b — Meja Finance: galat selain 403 tidak berbunyi kabar baik (regresi B5)", async () => {
   routeGet({
     "/home/finance": { __status: 500 },
     "/finance/desk": { queues: [], totals: {}, not_my_desk: [] },
   });
-  await mount(<FinanceDesk currentUser={{ role: "finance", permissions: {} }} selectedEntity="ent_ksc" />);
-  expect(q("fin-home-boards")).not.toBeNull();
+  await mount(<FinanceDesk currentUser={{ role: "finance", permissions: { contra_bon: ["view"], payment_variance: ["decide"] } }}
+    selectedEntity="ent_ksc" />);
+  expect(q("fin-desk-error-boards")).not.toBeNull();
+  expect(q("fin-desk-empty")).toBeNull();
 });
 
 // ── U16 ────────────────────────────────────────────────────────────────────────────────────────────────────────────

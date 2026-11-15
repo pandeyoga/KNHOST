@@ -227,7 +227,8 @@ async def test_PK43_U11_suspense_menghalangi(klien, kepala_admin, monkeypatch):
     j = await _ceklis(klien, kepala_admin, eid)
     sn = _butir(j, "suspense_nol")
     assert sn["status"] == "blocking" and sn["value"] == 10_000_000
-    assert sn["link"] == {"view": "general-ledger", "preset": {"tab": "suspense"}}
+    # MN-T2 — tautan butir ini kini membuka seksi Akun sementara di layar Tutup Buku (dulu tab Suspense di Jurnal).
+    assert sn["link"] == {"view": "closing", "preset": {"seksi": "akun-sementara"}}
     assert j["can_close"] is False
 
 

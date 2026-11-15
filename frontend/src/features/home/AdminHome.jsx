@@ -1,7 +1,7 @@
 import { apiErrorText } from "../../utils/apiError";
 import { useEffect, useState, useCallback } from "react";
 import {
-  Banknote, TrendingUp, ArrowUpRight, Receipt, AlertTriangle,
+  Banknote, TrendingUp, AlertTriangle,
   Clock, PackageX, Award, RefreshCw, Trophy,
 } from "lucide-react";
 import axios, { API } from "../../services/apiClient";
@@ -13,6 +13,7 @@ import SeeAllModal, { SeeAllFooter } from "../../components/SeeAllModal";
 import { useAppNav } from "../../context/AppNavContext";
 import HomeWaitingBoards from "./HomeWaitingBoards";
 import { queueLink } from "../approvals/inboxTabs";
+import FinanceHomeCard from "./FinanceHomeCard";   // MN-T2 — satu kartu Keuangan (angka = Beranda Keuangan › Posisi)
 
 const fmt = new Intl.NumberFormat("id-ID");
 const fmtCur = (v) => `Rp ${fmt.format(Math.round(v || 0))}`;
@@ -70,7 +71,6 @@ export default function AdminHome({ token, selectedEntity = "all", onNavigate })
   useEffect(() => { load(); }, [load]);
 
   const sales = data?.sales || {};
-  const ar = data?.ar || {};
   // K-04 (26 Okt) — KPI "Stok Rendah" = definisi tunggal (`low_stock`); papan "Stok Perlu Reorder" = saran reorder
   // (di bawah ROP, `reorder`). Respons lama tanpa `reorder` → papan memakai `low_stock` lama (isi = saran reorder).
   const lowStock = data?.low_stock || {};
@@ -151,19 +151,6 @@ export default function AdminHome({ token, selectedEntity = "all", onNavigate })
             onClick={tujuan("orders")} />
           <KPICard icon={TrendingUp} label="Penjualan Bulan Ini" value={fmtCur(sales.mtd)} sub="Bulan berjalan" color="#34C759" loading={loading}
             onClick={tujuan("orders")} />
-          <KPICard icon={ArrowUpRight} label="Tertagih Bulan Ini" value={fmtCur(sales.collected_mtd)} sub="Kas masuk" color="#30D158" loading={loading}
-            onClick={tujuan("collection-worklist")} />
-          {/* Keputusan pemilik K-01 (26 Okt): kedua KPI piutang = SEMUA pelanggan, sumber sub-buku (dokumen belum
-              lunas) — angka & definisi lewat tempo SAMA dengan layar Piutang. Dulu (G1-13) hanya pelanggan ber-sales aktif.
-              Label sumber wajib tampil di kartu. */}
-          <KPICard icon={Receipt} label="Belum Lunas" value={fmtCur(ar.outstanding)}
-            sub={`Semua pelanggan · sub-buku (dokumen belum lunas) · buku piutang ${fmtCur(ar.ar_ledger)} · eksposur ${fmtCur(ar.exposure)}`}
-            color="#5856D6" loading={loading} testId="kpi-belum-lunas" onClick={onNavigate ? () => onNavigate("ar-aging") : undefined} />
-          <KPICard icon={AlertTriangle} label="Piutang Lewat Tempo" value={fmtCur(ar.overdue)}
-            sub={(ar.overdue_customers || 0) > 0
-              ? `Semua pelanggan · ${ar.overdue_customers} pelanggan · sama dengan layar Piutang`
-              : "Semua pelanggan · sama dengan layar Piutang"}
-            color="#FF3B30" loading={loading} testId="kpi-piutang-lewat-tempo" onClick={onNavigate ? () => onNavigate("ar-aging") : undefined} />
           {/* AUDIT PERAN 2026-08-15 — KPI ini dulu SELALU 0 (menghitung koleksi
               `approval_requests` yang tak pernah diisi siapa pun), padahal 16 dokumen
               memang menunggu keputusan. Sekarang angkanya = antrean nyata, `sub`
@@ -180,6 +167,10 @@ export default function AdminHome({ token, selectedEntity = "all", onNavigate })
             color="#FF6B00" loading={loading} testId="kpi-stok-rendah" onClick={onNavigate ? () => onNavigate("operations") : undefined} />
           <KPICard icon={Award} label="Insentif Sales" value={fmtCur(data?.incentive_payout)} sub="Estimasi bulan ini" color="#AF52DE" loading={loading} />
         </div>
+
+        {/* MN-T2 — kartu keuangan beranda (Tertagih, Belum Lunas, Piutang Lewat Tempo) diganti SATU kartu Keuangan: tiga
+            angka dari endpoint tab Posisi Beranda Keuangan (K-01: piutang semua pelanggan, sumber sama dengan Piutang). */}
+        <FinanceHomeCard selectedEntity={selectedEntity} onNavigate={onNavigate} testId="admin-home-finance" className="mt-4" />
 
         {/* FASE G-5 — ringkasan periode yang sedang dibuka (unlock) + sisa waktu */}
         <PeriodUnlockCard onNavigate={onNavigate} />

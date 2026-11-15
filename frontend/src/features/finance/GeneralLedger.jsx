@@ -7,11 +7,14 @@
  * Keuangan (`from: "financial-statements"`) tampil tombol **← Kembali ke Laporan Keuangan** di atas tab (tab & periode
  * asal). Baris buku besar membuka rincian jurnal; rincian jurnal membuka dokumen sumbernya (`onOpenDocument`) dan
  * bilah kembali dokumen itu membawa preset buku besar yang sama.
+ * MN-T2 — tab "Rekonsiliasi Persediaan" dan "Suspense" pindah ke Tutup Buku (seksi lipat "Persediaan vs buku besar" dan
+ * "Akun sementara"); layar ini tinggal Jurnal · Neraca Saldo · Buku Besar + satu tautan ke Tutup Buku. Preset lama
+ * `{tab: "recon" | "suspense"}` dialihkan ke `closing` `{seksi}` (bila peran boleh membuka Tutup Buku).
  */
 import { apiErrorText } from "../../utils/apiError";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
-  RefreshCw, FileStack, Scale, BookOpen, Plus, RotateCcw, X, CheckCircle2, Boxes, ArrowLeftRight, Search, ArrowLeft,
+  RefreshCw, FileStack, Scale, BookOpen, Plus, RotateCcw, X, CheckCircle2, Search, ArrowLeft, ArrowRight,
 } from "lucide-react";
 import axios, { API } from "../../services/apiClient";
 import ErrorNotice from "../../components/ErrorNotice";
@@ -21,8 +24,6 @@ import KNSelect from "../../components/KNSelect";
 import { formatCurrency, formatDate } from "../../utils/formatters";
 import JournalEntryModal from "./JournalEntryModal";
 import JournalDetailModal from "./JournalDetailModal";
-import InventoryReconTab from "./InventoryReconTab";
-import SuspensePanel from "./SuspensePanel";
 import { Kpi, BalancedKpi } from "./GeneralLedgerParts";
 import { TrialBalanceTab, LedgerTab } from "./GeneralLedgerTabs";
 import DesktopOnlyNotice from "../../components/DesktopOnlyNotice";
@@ -57,9 +58,10 @@ const TABS = [
   { id: "journal", label: "Jurnal", icon: FileStack },
   { id: "trial", label: "Neraca Saldo", icon: Scale },
   { id: "ledger", label: "Buku Besar", icon: BookOpen },
-  { id: "recon", label: "Rekonsiliasi Persediaan", icon: Boxes },
-  { id: "suspense", label: "Suspense", icon: ArrowLeftRight },
 ];
+/** MN-T2 — preset tab lama → seksi di layar Tutup Buku. */
+export const TAB_PINDAH_KE_TUTUP_BUKU = { recon: "persediaan", suspense: "akun-sementara" };
+export const TEKS_PINDAH = "Rekonsiliasi persediaan dan akun sementara kini di Tutup Buku";
 
 // UAT 24 Okt (audit UI tahap 2) — G1-15: tanggal tampilan satu format ("25 Okt 2026", WIB) via formatDate.
 const fmtDate = (iso) => formatDate(iso);
@@ -83,14 +85,19 @@ const reportOrigin = (p) => (p?.from === "financial-statements"
   ? { tab: p.fromTab || "pl", start: p.fromTab === "bs" ? "" : (p.start || ""), end: p.end || "" } : null);
 
 export default function GeneralLedger({ selectedEntity, entities = [], focusDoc, onClearFocus, onOpenDocument }) {
+  const { go, canOpen } = useAppNav();
+  const bukaTutupBuku = canOpen("closing");
   const preset = useViewPreset("general-ledger", (p) => {
+    if (TAB_PINDAH_KE_TUTUP_BUKU[p.tab] && bukaTutupBuku) {
+      go("closing", { preset: { seksi: TAB_PINDAH_KE_TUTUP_BUKU[p.tab] } });
+      return;
+    }
     if (TAB_IDS.includes(p.tab)) setTab(p.tab);
     if (p.code) { setLedgerCode(p.code); setLedgerRange({ start: p.start || "", end: p.end || "" }); }
     setFromReport(reportOrigin(p));
   });
   const [tab, setTab] = useState(() => (TAB_IDS.includes(preset?.tab) ? preset.tab : "journal"));
   const [fromReport, setFromReport] = useState(() => reportOrigin(preset));
-  const { go } = useAppNav();
   const [focusJe, setFocusJe] = useState(null);
   // Dibuka dari Jejak Dokumen → langsung tampilkan jurnal yang diklik.
   useEffect(() => {
@@ -202,6 +209,13 @@ export default function GeneralLedger({ selectedEntity, entities = [], focusDoc,
         <div className="section-body">
           {/* PK-42 — kepala kartu sudah berisi lima tab + tiga tombol: alasan tombol Jurnal Baru yang mati di bilah sendiri. */}
           {tab === "journal" && <EntityGateNote selectedEntity={selectedEntity} what="membuat jurnal" testId="gl-new-journal-scope-note" />}
+          {/* MN-T2 — dua tab lama kini seksi di Tutup Buku (tautan hanya bila peran boleh membukanya). */}
+          {bukaTutupBuku && (
+            <p className="mb-2 text-fs-12 text-kn-text-2" data-testid="gl-moved-note">
+              <button type="button" className="link-button inline-flex items-center gap-1" data-testid="gl-moved-link"
+                onClick={() => go("closing")}>{TEKS_PINDAH} <ArrowRight size={12} aria-hidden="true" /></button>
+            </p>
+          )}
           <ErrorNotice message={error} onRetry={refreshAll} onDismiss={() => setError("")} testId="gl-error" />
           {notice && (
             <div data-testid="gl-notice" className="mb-3 rounded-md bg-[#E6F6EC] border border-[#BDE5CC] text-[#1B7F4B] text-[12px] px-3 py-2 flex items-center gap-2">
@@ -217,8 +231,6 @@ export default function GeneralLedger({ selectedEntity, entities = [], focusDoc,
           {tab === "ledger" && <LedgerTab accounts={accounts} refreshKey={refreshKey} code={ledgerCode} setCode={setLedgerCode} onError={setError}
             range={ledgerRange} setRange={setLedgerRange} entities={entities} selectedEntity={selectedEntity}
             sourceMeta={sourceMeta} onChanged={refreshAll} onOpenDocument={openSource} />}
-          {tab === "recon" && <InventoryReconTab refreshKey={refreshKey} onError={setError} onNotice={setNotice} onChanged={refreshAll} selectedEntity={selectedEntity} entities={entities} />}
-          {tab === "suspense" && <SuspensePanel refreshKey={refreshKey} accounts={accounts} entities={entities} selectedEntity={selectedEntity} onNotice={setNotice} onChanged={refreshAll} />}
         </div>
       </div>
 

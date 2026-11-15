@@ -15,7 +15,7 @@ import ConfirmHost from "../../components/ConfirmHost";
 import { EntityScopeProvider } from "../../context/EntityScopeContext";
 import SettlementDetail from "../pettycash/SettlementDetail";
 import SettlementForm from "../pettycash/SettlementForm";
-import ReimbursePayablesView from "../pettycash/ReimbursePayablesView";
+import PettyCashView from "../pettycash/PettyCashView";   // MN-T2 — daftar Hutang Reimburse lama digabung ke Kas Kecil
 import CashAdvanceDetail from "../pettycash/CashAdvanceDetail";
 
 const mockGet = jest.fn();
@@ -189,25 +189,29 @@ describe("L4 — ringkasan sisa mengikuti keadaan", () => {
   });
 });
 
-describe("L5 — Hutang Reimburse: Bayar per baris", () => {
-  const DATA = { total_outstanding: 150000, aging: { "0-7": 150000 }, buckets: ["0-7", "8-14", "15-30", ">30"],
-    by_employee: [{ employee: "Sari", outstanding: 150000, count: 1, oldest_days: 2, aging: { "0-7": 150000 } }],
-    items: [{ id: "stl9", number: "STL-0009", employee: "Sari", cash_advance_number: "PD-9", entity_id: "ent_ksc",
-      approved_at: "2026-11-12", amount: 150000, days: 2, bucket: "0-7" }] };
+// MN-T2 — daftar Hutang Reimburse lama digabung ke Kas Kecil (satu daftar bertahap): baris PD yang LPJ-nya masih
+// berhutang reimburse membawa tombol Bayar (pop-up yang sama dengan rincian LPJ); tanpa izin bayar → tombol Buka.
+describe("L5 — Hutang Reimburse: Bayar per baris (di Kas Kecil sejak MN-T2)", () => {
+  const DATA = { items: [{ id: "ca9", number: "PD-9", entity_id: "ent_ksc", requester: "Sari", purpose: "uji",
+    amount: 100000, stage: "dipertanggungjawabkan", status: "settled", updated_at: "2026-11-12T03:00:00Z",
+    settlement: { id: "stl9", number: "STL-0009", status: "posted_to_gl", spent: 250000, refund_due: 0,
+      reimburse_due: 150000 } }], total: 1, page: 1, page_size: 25,
+  stage_counts: { diajukan: 0, dicairkan: 0, dipertanggungjawabkan: 1, selesai: 0 } };
   test("pemegang izin bayar: tombol Bayar → pop-up yang sama dengan rincian LPJ", async () => {
-    mockGet.mockImplementation((url) => Promise.resolve({ data: url.endsWith("/reimburse-payables") ? DATA
+    mockGet.mockImplementation((url) => Promise.resolve({ data: url.endsWith("/petty-cash/worklist") ? DATA
       : url.endsWith("/bank-accounts") ? REK : [] }));
-    await mount(<ReimbursePayablesView currentUser={FIN} selectedEntity="ent_ksc" entities={ENTS} />);
-    expect(q("rp-search")).not.toBeNull();
-    await click(q("rp-pay-stl9"));
+    await mount(<PettyCashView currentUser={FIN} selectedEntity="ent_ksc" entities={ENTS} />);
+    expect(q("pc-search")).not.toBeNull();
+    await click(q("pc-pay-ca9"));
     expect(q("stl-reimburse-modal")).not.toBeNull();
     expect(q("stl-reimburse-modal-account")).not.toBeNull();
   });
   test("tanpa izin bayar: tidak ada tombol Bayar", async () => {
-    mockGet.mockImplementation((url) => Promise.resolve({ data: url.endsWith("/reimburse-payables") ? DATA : [] }));
-    await mount(<ReimbursePayablesView currentUser={MGR} selectedEntity="ent_ksc" entities={ENTS} />);
-    expect(q("rp-item-stl9")).not.toBeNull();
-    expect(q("rp-pay-stl9")).toBeNull();
+    mockGet.mockImplementation((url) => Promise.resolve({ data: url.endsWith("/petty-cash/worklist") ? DATA : [] }));
+    await mount(<PettyCashView currentUser={MGR} selectedEntity="ent_ksc" entities={ENTS} />);
+    expect(q("pc-row-ca9")).not.toBeNull();
+    expect(q("pc-pay-ca9")).toBeNull();
+    expect(q("pc-open-ca9")).not.toBeNull();
   });
 });
 

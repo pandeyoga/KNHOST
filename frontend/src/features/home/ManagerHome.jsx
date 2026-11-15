@@ -25,6 +25,7 @@ import { queueLink } from "../approvals/inboxTabs";
 import { formatCurrency } from "../../utils/formatters";
 import SeeAllModal, { SeeAllFooter } from "../../components/SeeAllModal";
 import { gradeMeta, num } from "../designer/designerMeta";
+import FinanceHomeCard from "./FinanceHomeCard";   // MN-T2 — satu kartu Keuangan (angka = Beranda Keuangan › Posisi)
 
 const pct = (v) => (v === null || v === undefined ? "—" : `${v}%`);
 
@@ -57,8 +58,6 @@ export default function ManagerHome({ selectedEntity = "all", onNavigate }) {
   };
 
   const totals = data?.totals || {};
-  const arAll = data?.ar_all || null;   // K-01 — piutang semua pelanggan (sumber layar Piutang)
-  const arOverdue = arAll ? arAll.overdue : totals.overdue_amount;
   const target = data?.target || {};
   const approvals = data?.approvals || {};
   const late = data?.late_today || {};
@@ -135,20 +134,11 @@ export default function ManagerHome({ selectedEntity = "all", onNavigate }) {
               data-testid="manager-home-loading">Memuat dasbor manajer…</p>
           ) : (
             <>
-              <div className="grid grid-cols-2 gap-2 md:grid-cols-6"
+              {/* MN-T2 — Tertagih, Piutang berjalan, Piutang lewat tempo pindah ke SATU kartu Keuangan di bawah (angka tab
+                  Posisi Beranda Keuangan; K-01 piutang semua pelanggan tetap berlaku di sumbernya). */}
+              <div className="grid grid-cols-2 gap-2 md:grid-cols-3"
                 data-testid="manager-home-kpi">
                 <Kpi label="Penjualan tim (bulan ini)" value={formatCurrency(totals.total_sales || 0)} />
-                <Kpi label="Tertagih" value={formatCurrency(totals.total_collected || 0)}
-                  tone="#1B7F4B" />
-                {/* Keputusan pemilik K-01 (26 Okt) — piutang = SEMUA pelanggan, sub-buku (sama dengan layar Piutang);
-                    dulu Σ papan tim (pelanggan ber-sales aktif). Data lama tanpa `ar_all` jatuh ke angka tim. */}
-                <Kpi label="Piutang berjalan" value={formatCurrency((arAll ? arAll.outstanding : totals.ar_outstanding) || 0)}
-                  tone="#0058CC" note={arAll ? "Semua pelanggan · sub-buku" : "Pelanggan tim sales"}
-                  onClick={() => go("ar-aging")} testId="manager-home-ar-kpi" />
-                <Kpi label="Piutang lewat tempo" value={formatCurrency(arOverdue || 0)}
-                  tone={(arOverdue || 0) > 0 ? "#C0392B" : "#1B7F4B"}
-                  note={arAll ? "Semua pelanggan · = layar Piutang" : "Pelanggan tim sales"}
-                  onClick={() => go("ar-aging")} testId="manager-home-ar-overdue-kpi" />
                 <Kpi label="Menunggu tanda tangan"
                   value={boardsUnreadable ? "—" : String(approvals.total ?? 0)}
                   tone={boardsUnreadable ? "#C0392B"
@@ -188,6 +178,8 @@ export default function ManagerHome({ selectedEntity = "all", onNavigate }) {
           )}
         </div>
       </section>
+
+      <FinanceHomeCard selectedEntity={selectedEntity} onNavigate={onNavigate} testId="manager-home-finance" />
 
       <div className="grid gap-3 lg:grid-cols-2">
         {/* ── Antrean persetujuan ───────────────────────────────────────── */}

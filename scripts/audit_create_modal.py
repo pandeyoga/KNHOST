@@ -145,10 +145,6 @@ NAVIGATE_DISETUJUI: Dict[str, str] = {
         "syarat bayar). Keputusan pemilik: alur create kompleks tetap halaman.",
     "features/inventory/CycleCount.jsx":
         "Sesi stock opname = pekerjaan berjam-jam di gudang (scan per roll), bukan satu form.",
-    "features/pettycash/CashAdvancesView.jsx":
-        "Pengajuan dana punya banyak baris rincian + lampiran → halaman penuh.",
-    "features/pettycash/SettlementsView.jsx":
-        "Pertanggungjawaban mencocokkan realisasi vs pengajuan baris demi baris → halaman penuh.",
     "features/purchasing/PurchaseRequisitions.jsx":
         "PR multi-baris + saran reorder + pemilihan supplier → halaman penuh.",
     "features/sales/SpecialOrders.jsx":

@@ -1,5 +1,5 @@
 <!-- DIHASILKAN OTOMATIS oleh scripts/gen_codebase_map.py — JANGAN EDIT TANGAN -->
-<!-- Dihasilkan dari commit: 2a6eb6c pada 2026-11-15 -->
+<!-- Dihasilkan dari commit: c3fa3f8 pada 2026-11-15 -->
 # CODEBASE MAP — Kain Nusantara (dihasilkan otomatis)
 
 Peta ini dihitung dari kode oleh `scripts/gen_codebase_map.py`. Kalau angka di sini
@@ -13,7 +13,7 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 | Ukuran | Nilai |
 |---|---:|
 | Router (`backend/routers/*.py`) | 173 |
-| Endpoint (`@router.<method>`) | 1865 |
+| Endpoint (`@router.<method>`) | 1866 |
 | Service (`backend/services/*.py`) | 431 |
 | Koleksi MongoDB disentuh kode produksi | 213 |
 | Direktori fitur frontend (`src/features/*`) | 40 |
@@ -141,7 +141,7 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 | `bank_reconciliation.py` | 23 | 436 | `/bank-reconciliation/auto-match`, `/bank-reconciliation/formats`, `/bank-reconciliation/formats/{format_id}`, `/bank-reconciliation/holding`, `/bank-reconciliation/import`, `/bank-reconciliation/import-file` … |
 | `budgets.py` | 10 | 207 | `/finance/budget-check`, `/finance/budget-keys`, `/finance/budget-rules`, `/finance/budget-vs-actual`, `/finance/budgets`, `/finance/budgets/{budget_id}` … |
 | `cash.py` | 4 | 292 | `/cash-transactions`, `/cash-transactions/summary`, `/cash-transactions/{txn_id}/void` |
-| `cash_advances.py` | 24 | 217 | `/cash-advance-settlements`, `/cash-advance-settlements/reimburse-payables`, `/cash-advance-settlements/{stl_id}`, `/cash-advance-settlements/{stl_id}/approve`, `/cash-advance-settlements/{stl_id}/attachments`, `/cash-advance-settlements/{stl_id}/attachments/{att_id}` … |
+| `cash_advances.py` | 25 | 233 | `/cash-advance-settlements`, `/cash-advance-settlements/reimburse-payables`, `/cash-advance-settlements/{stl_id}`, `/cash-advance-settlements/{stl_id}/approve`, `/cash-advance-settlements/{stl_id}/attachments`, `/cash-advance-settlements/{stl_id}/attachments/{att_id}` … |
 | `cash_holdings.py` | 7 | 132 | `/cash-deposits`, `/cash-deposits/{dep_id}/cancel`, `/cash-deposits/{dep_id}/receive`, `/cash-deposits/{dep_id}/reject`, `/cash-holdings`, `/cash-holdings/me/summary` |
 | `categories.py` | 5 | 169 | `/product-categories`, `/product-categories/{category_id}`, `/product-motifs` |
 | `client_dataset.py` | 6 | 60 | `/batches`, `/batches/{batch_id}`, `/batches/{batch_id}/commit`, `/batches/{batch_id}/rollback`, `/template`, `/upload` |
@@ -354,7 +354,7 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 | `blanket_po_service.py` | 348 | Blanket / Contract PO service (P2 — call-off). |
 | `book_date.py` | 123 | PK-37 (GL-05, keputusan K-03) — SATU tanggal buku WIB dan kunci periode untuk dokumen, pembayaran, dan mutasi  |
 | `budget_service.py` | 867 | R6.3 — Budget Control penuh: Anggaran vs Komitmen vs Realisasi + enforcement. |
-| `cash_advance_service.py` | 1020 | Service — Cash Advance (Form PD) + Pertanggungjawaban (Settlement) + Expense Categories. |
+| `cash_advance_service.py` | 1134 | Service — Cash Advance (Form PD) + Pertanggungjawaban (Settlement) + Expense Categories. |
 | `cash_entity_service.py` | 98 | FASE E-7 (E7.4 · keputusan pemilik 3a) — **KAS TINGKAT GRUP DIHAPUS**. |
 | `cash_flow_service.py` | 198 | FINANCE — Laporan Arus Kas (Cash Flow Statement). FN-04: klasifikasi per jurnal kas |
 | `cash_holding_service.py` | 672 | PM-T4 (PM-06, K-36) — tunai yang diterima sales dicatat sebagai TITIPAN di tangan pencatatnya sampai disetor. |
@@ -363,7 +363,7 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 | `catalog_access.py` | 53 | Pagar bersama template, SKU, media dan relasi R&D. Produk tetap SHARED. |
 | `catalog_rules.py` | 102 | Kontrak murni induk/axis/SKU; digunakan R&D, generator, editor dan impor. |
 | `client_dataset_service.py` | 291 | L01 LN-011 — IMPOR DATASET CLIENT (DATA-01): artikel · tahap · jenis kain · supplier/warna. |
-| `closing_checklist.py` | 280 | PK-43 (UX-16) — DAFTAR PERIKSA SEBELUM TUTUP BUKU: angka diambil dari sistem, satu PT, satu periode. |
+| `closing_checklist.py` | 281 | PK-43 (UX-16) — DAFTAR PERIKSA SEBELUM TUTUP BUKU: angka diambil dari sistem, satu PT, satu periode. |
 | `closing_service.py` | 618 | FINANCE — Tutup Buku (Period Closing) bulanan & tahunan. |
 | `color_card_pdf.py` | 76 | Kartu Warna Pelanggan (PDF) — swatch, kode, versi supplier per warna + kop badan usaha aktif. |
 | `color_lock_service.py` | 165 | Kunci Warna Eksklusif + Penanda Warna Otomatis. |
@@ -740,7 +740,7 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 
 | Fitur (`src/features/`) | Berkas | Baris |
 |---|---:|---:|
-| `__tests__` | 142 | 23488 |
+| `__tests__` | 143 | 23784 |
 | `admin` | 36 | 6981 |
 | `approvals` | 9 | 1722 |
 | `catalog` | 24 | 1459 |
@@ -751,8 +751,8 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 | `desks` | 2 | 229 |
 | `documents` | 18 | 2580 |
 | `export` | 9 | 700 |
-| `finance` | 107 | 24932 |
-| `home` | 5 | 1136 |
+| `finance` | 106 | 24990 |
+| `home` | 6 | 1191 |
 | `hr` | 38 | 7083 |
 | `incentive` | 3 | 1013 |
 | `inspections` | 12 | 2181 |
@@ -766,7 +766,7 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 | `notifications` | 1 | 33 |
 | `orders` | 25 | 4125 |
 | `pdf` | 5 | 1075 |
-| `pettycash` | 13 | 2075 |
+| `pettycash` | 10 | 1834 |
 | `pos` | 25 | 2807 |
 | `pricing` | 1 | 151 |
 | `production` | 3 | 753 |

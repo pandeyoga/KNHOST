@@ -4,7 +4,9 @@ import { ChevronDown, ChevronRight, Clock, Layers3, LogOut, Menu, RefreshCw, Sea
 import { roleLabel, canCurrent } from "../config/roles";
 import axios, { API } from "../services/apiClient";
 
-// Lencana jumlah posting gagal (menu Keuangan) — pemegang accounting.view (= GET /finance/posting-failures/count), polling 60 dtk.
+// Lencana jumlah posting gagal — pemegang accounting.view (= GET /finance/posting-failures/count), polling 60 dtk.
+// MN-T2 — lencana menempel pada entri **Tutup Buku** (`closing`; hub berisi tab Posting Gagal), bukan lagi pada grup
+// Akuntansi & Pajak; jumlah yang sama juga tampil sebagai kelompok "Posting gagal" di Beranda Keuangan › Perlu Tindakan.
 function usePostingFailureCount(role) {
   const [n, setN] = useState(0);
   // PR-T7 — tanpa izin = tidak memanggil (canCurrent kini "tidak" selama konteks izin belum dimuat); dihitung ulang
@@ -243,7 +245,6 @@ export function Sidebar({ groups = [], activeNavId, activeView, onSelect, user, 
                   >
                     <GroupIcon size={14} className="group-icon" />
                     <span className="group-label">{entry.label}</span>
-                    {entry.groupId === "akuntansi" && <CountBadge n={failCount} testId="nav-badge-akuntansi" />}
                     {isOpen
                       ? <ChevronDown size={12} className="chevron" />
                       : <ChevronRight size={12} className="chevron" />
@@ -275,7 +276,7 @@ export function Sidebar({ groups = [], activeNavId, activeView, onSelect, user, 
                           >
                             <ItemIcon size={14} />
                             <span className="label">{item.label}</span>
-                            {item.id === "posting-failures" && <CountBadge n={failCount} testId="nav-badge-posting-failures" />}
+                            {item.id === "closing" && <CountBadge n={failCount} testId="nav-badge-closing" />}
                             {item.comingSoon ? (
                               <span className="cs-badge-inline" title="Segera hadir">
                                 <Clock size={9} />

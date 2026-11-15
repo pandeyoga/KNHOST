@@ -179,8 +179,9 @@ describe("U3 — tombol buat di layar uang", () => {
     ["finance/FixedAssetsView.jsx", "add-asset-btn", "menambah aset tetap"],
     ["finance/BudgetView.jsx", "budget-add-toggle", "menambah anggaran"],
     ["finance/BankAccountsView.jsx", "bank-add-toggle", "menambah rekening"],
-    ["pettycash/CashAdvancesView.jsx", "ca-create-btn", "mengajukan dana"],
-    ["pettycash/SettlementsView.jsx", "stl-create-btn", "membuat pertanggungjawaban"],
+    // MN-T2 — Kas Kecil satu daftar (PettyCashView): "Ajukan dana" tetap bergerbang PT; LPJ dibuat dari panel PD
+    // dicairkan (PT = PT pengajuan dananya), jadi tombol "LPJ Baru" di daftar LPJ lama tidak ada lagi.
+    ["pettycash/PettyCashView.jsx", "pc-create-btn", "mengajukan dana"],
   ])("%s · %s lewat EntityGatedButton", (file, testId, what) => {
     const src = fs.readFileSync(path.join(SRC, file), "utf8");
     const tag = new RegExp(`<EntityGatedButton\\s[^>]*selectedEntity=\\{selectedEntity\\}[^>]*what="${what}"[^>]*data-testid="${testId}"`, "s");

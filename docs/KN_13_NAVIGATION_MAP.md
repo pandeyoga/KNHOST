@@ -525,13 +525,13 @@ dalam 4 grup); grup "Kas & Aset" dihapus.
 
 | Grup › Entri (id menu) | Tab (view) | Peran bawaan yang melihatnya |
 |---|---|---|
-| Keuangan › Beranda Keuangan (`finance-tower`) | Perlu Tindakan (`finance-desk`) | A M F |
+| Keuangan › Beranda Keuangan (`finance-tower`) | Perlu Tindakan (`finance-desk`) — MN-T2: satu daftar berkelompok (Uang masuk perlu dicatat · Selisih bayar perlu diputus · Faktur pajak perlu terbit · Nota kredit perlu ditinjau · Hutang jatuh tempo · Kontrabon menunggu · Posting gagal · Denda · Piutang lewat jatuh tempo · Sample berbayar · Retur putus nilai); kelompok tampil menurut izin modul sumbernya dan hanya bila berisi; tiap baris satu tombol ke layar penanganannya | A M F |
 | Keuangan › Beranda Keuangan (`finance-tower`) | Posisi (`finance-tower`) | A M F |
 | Keuangan › Beranda Keuangan (`finance-tower`) | Analisis (`bi-finance`) | A M F |
 | Keuangan › Piutang (`ar-aging`) | Saldo & Umur (`ar-aging`) | A M F |
 | Keuangan › Piutang (`ar-aging`) | Penagihan & Penerimaan (`collection-worklist`) | A M F S SA |
 | Keuangan › Piutang (`ar-aging`) | Rencana & Denda (`payment-plans`) | A M F |
-| Keuangan › Piutang (`ar-aging`) | Titipan & Saldo Kredit (`customer-credit`) | A M F |
+| Keuangan › Piutang (`ar-aging`) | Titipan & Saldo Kredit (`customer-credit`) — MN-T2: satu tabel per pelanggan (Uang muka pesanan belum dikirim · Deposit · Saldo kredit · Jumlah · Umur tertua); baris dibuka = pesanan penyumbang + saldo kredit per PT & riwayatnya; Pakai saldo / Sesuaikan / Balik per PT (mati di Semua PT) | A M F |
 | Keuangan › Piutang (`ar-aging`) | Kredit & Plafon (`credit-overrides`) | A M F |
 | Keuangan › Piutang (`ar-aging`) | Kasus (`finance-cases`) | A M F S SA |
 | Keuangan › Hutang (`accounts-payable`) | Tagihan (`vendor-bills`) | A M F |
@@ -540,12 +540,12 @@ dalam 4 grup); grup "Kas & Aset" dihapus.
 | Keuangan › Kas & Bank (`cash-bank`) | Rekening & Saldo (`bank-accounts`) | A M F |
 | Keuangan › Kas & Bank (`cash-bank`) | Transaksi Kas (`cash-management`) | A M F |
 | Keuangan › Kas & Bank (`cash-bank`) | Rekonsiliasi (`bank-reconciliation`) | A M F |
-| Keuangan › Kas & Bank (`cash-bank`) | Kas Kecil (`petty-cash`) — PK-24: Finance & Manajer mencairkan PD (`cash_advance.disburse`), membayar reimburse & menerima pengembalian sisa (`cash_settlement.pay`) | A M F S SA |
+| Keuangan › Kas & Bank (`cash-bank`) | Kas Kecil (`petty-cash`) — MN-T2: satu daftar bertahap (`GET /api/petty-cash/worklist`; chip Diajukan · Dicairkan · Dipertanggungjawabkan · Selesai), panel PD + LPJ dalam satu pop-up, Ajukan dana / Pertanggungjawabkan / Bayar per baris. PK-24: Finance & Manajer mencairkan PD (`cash_advance.disburse`), membayar reimburse & menerima pengembalian sisa (`cash_settlement.pay`) | A M F S SA |
 | Keuangan › Kas & Bank (`cash-bank`) | Titipan Sales (`cash-holdings`) — PM-T4: setoran titipan tunai sales menunggu diterima (`cash_holding.approve`) + titipan belum disetor per orang; sales menyetor dari kartu HP "Titipan Saya" | A M F |
 | Keuangan › Antar-PT (`interco-transactions`) | — (view `interco-transactions`) | A M F SA G GA |
-| Akuntansi & Pajak › Buku Besar (`ledger`) | Jurnal (`general-ledger`) | A M F |
+| Akuntansi & Pajak › Buku Besar (`ledger`) | Jurnal (`general-ledger`) — MN-T2: tinggal Jurnal · Neraca Saldo · Buku Besar (Rekonsiliasi Persediaan & Suspense pindah ke Tutup Buku; preset lama dialihkan) | A M F |
 | Akuntansi & Pajak › Buku Besar (`ledger`) | Bagan Akun (`chart-of-accounts`) | A M F |
-| Akuntansi & Pajak › Tutup Buku (`closing`) | Daftar Periksa & Tutup (`closing`) | A M |
+| Akuntansi & Pajak › Tutup Buku (`closing`) | Daftar Periksa & Tutup (`closing`) — MN-T2: + seksi lipat "Persediaan vs buku besar" dan "Akun sementara" (preset `{seksi}`); lencana posting gagal di entri menu ini | A M |
 | Akuntansi & Pajak › Tutup Buku (`closing`) | Buka Periode (`period-unlock`) | A M |
 | Akuntansi & Pajak › Tutup Buku (`closing`) | Posting Gagal (`posting-failures`) | A M |
 | Akuntansi & Pajak › Laporan (`fin-reports`) | Laba-Rugi, Neraca & Arus Kas (`financial-statements`) | A M |
@@ -584,11 +584,11 @@ menampilkan "nama lama → kini di …"):
 
 | Id lama | Mendarat di | Preset |
 |---|---|---|
-| `advance-report` (Uang Muka Pelanggan) | Keuangan › Piutang › Titipan & Saldo Kredit (`customer-credit`) | `{bagian: "titipan"}` |
-| `store-credit` (Saldo Kredit) | idem | `{bagian: "saldo"}` |
-| `cash-advances` (Pengajuan Dana) | Keuangan › Kas & Bank › Kas Kecil (`petty-cash`) | `{bagian: "pengajuan"}` |
-| `settlements` (Pertanggungjawaban) | idem | `{bagian: "pertanggungjawaban"}` |
-| `reimburse-payables` (Hutang Reimburse) | idem (chip dengan `cash_settlement.view` — PK-24, dulu `accounting.view`) | `{bagian: "reimburse"}` |
+| `advance-report` (Uang Muka Pelanggan) | Keuangan › Piutang › Titipan & Saldo Kredit (`customer-credit`) | `{bagian: "titipan"}` → saringan "Punya uang muka" (MN-T2) |
+| `store-credit` (Saldo Kredit) | idem | `{bagian: "saldo"}` → saringan "Punya saldo kredit" (MN-T2) |
+| `cash-advances` (Pengajuan Dana) | Keuangan › Kas & Bank › Kas Kecil (`petty-cash`) | `{bagian: "pengajuan"}` → chip Semua (MN-T2) |
+| `settlements` (Pertanggungjawaban) | idem | `{bagian: "pertanggungjawaban"}` → chip Dipertanggungjawabkan (MN-T2) |
+| `reimburse-payables` (Hutang Reimburse) | idem | `{bagian: "reimburse"}` → chip Dipertanggungjawabkan (MN-T2) |
 | `kas-aset` (id grup lama, `legacy`) | Keuangan › Kas & Bank › Kas Kecil | — |
 
 Id yang tetap tetapi berpindah induk: `finance-desk` (kini tab pertama Beranda Keuangan; beranda peran Finance tetap,
@@ -603,7 +603,7 @@ menu yang disorot `finance-tower`), `period-unlock`, `posting-failures` (tab Tut
 | Mulai | Langkah | Kembali |
 |---|---|---|
 | Akuntansi & Pajak › Laporan › Laba-Rugi / Neraca (`financial-statements`) | klik nama akun (`fs-line-{kode}`) → Buku Besar › Jurnal › tab **Buku Besar** (`general-ledger`, preset `{tab: "ledger", code, start, end, from: "financial-statements", fromTab}`) → klik baris mutasi → rincian jurnal → **Buka Dokumen Sumber** (`source_doc.link`, peta tujuan PK-44) | layar dokumen: bilah "← Kembali ke Jurnal & Buku Besar" (preset buku besar yang sama); buku besar: **← Kembali ke Laporan Keuangan** (tab & periode asal) |
-| Akuntansi & Pajak › Tutup Buku (`closing`) | **Pratinjau** → panel Daftar Periksa Sebelum Tutup Buku → **Buka** per butir: Suspense / Neraca Saldo / Rekonsiliasi Persediaan (`general-ledger` ber-tab), `posting-failures`, `bank-reconciliation`, `interco-transactions` (tab Saldo Antar-PT), `period-unlock`, `fixed-assets`, `hr-payroll-runs` | bilah "← Kembali ke Tutup Buku" (`preset.from`) |
+| Akuntansi & Pajak › Tutup Buku (`closing`) | **Pratinjau** → panel Daftar Periksa Sebelum Tutup Buku → **Buka** per butir: akun penampung & persediaan = seksi lipat di layar yang sama (MN-T2, tanpa pindah layar); Posting Gagal & Buka Periode = tab hub yang sama; Neraca Saldo (`general-ledger` tab Neraca Saldo), `bank-reconciliation`, `interco-transactions` (tab Saldo Antar-PT), `fixed-assets`, `hr-payroll-runs` | bilah "← Kembali ke Tutup Buku" (`preset.from`) |
 | Keuangan › Piutang › Saldo & Umur (`ar-aging`) | rincian pelanggan → **Catat Pembayaran** / **Bayar** per pesanan (form kwitansi baku, izin `ar_receipt.create`) | tetap di rincian; daftar & rincian dimuat ulang |
 | Keuangan › Antar-PT (`interco-transactions`) | **Buat Pelunasan** (izin `interco.settle`) → pop-up Pelunasan Antar-PT: kandidat dari server untuk pasangan pembayar → penerima, tanggal & rekening pembayar | tetap di layar |
 
@@ -681,6 +681,20 @@ Bank › Rekening & Saldo, Perusahaan (PT) › Master per PT (syarat pembayaran)
 Data Gudang; WhatsApp → Pusat Dokumen (WhatsApp kirim dokumen). Pemilih PT di kepala aplikasi: **"Semua PT"**.
 
 ## 📝 CHANGELOG
+
+### MN-T2 — 15 Nov 2026 (penyatuan layar keuangan)
+- **Piutang › Titipan & Saldo Kredit**: satu tabel per pelanggan (dulu dua layar ber-chip); Deposit = satu angka per
+  pelanggan tanpa PT, Saldo kredit = per PT berriwayat (label di kepala kolom; tidak digabung di server).
+- **Kas & Bank › Kas Kecil**: satu daftar bertahap (dulu Pengajuan Dana · Pertanggungjawaban · Hutang Reimburse); endpoint
+  baca baru `GET /api/petty-cash/worklist` (`cash_advance.view` atau `cash_settlement.view`).
+- **Tutup Buku › Daftar Periksa & Tutup**: + seksi lipat Persediaan vs buku besar & Akun sementara; butir daftar periksa
+  `suspense_nol`/`stok_cocok` kini `{view: "closing", preset: {seksi}}`. **Buku Besar › Jurnal** tinggal 3 tab.
+- **Beranda Keuangan › Perlu Tindakan**: satu daftar berkelompok berizin (pengganti Meja Finance apa adanya); Beranda
+  Admin & Dasbor Manajer: kartu-kartu keuangan diganti satu kartu **Keuangan** (angka tab Posisi); lencana posting gagal
+  pindah dari grup Akuntansi & Pajak ke entri Tutup Buku.
+- Layar daftar lama dihapus: `CashAdvancesView`, `SettlementsView`, `ReimbursePayablesView`, `AdvanceReportView`,
+  `StoreCreditView` (alias & rute cadangan id lama mendarat di layar baru dengan chip/saringan padanannya).
+- Slip gaji di dalam Proses Gaji: sudah oleh PY-T1 (diperiksa U12/U13).
 
 ### KP-T9 — 14 Nov 2026 (Pengaturan: sembilan hub, satu istilah "PT")
 - Grup Pengaturan 12 hub + 2 sub-judul → **9 hub tanpa sub-judul**: Perusahaan (PT) · Pengguna & Hak Akses (baru) ·

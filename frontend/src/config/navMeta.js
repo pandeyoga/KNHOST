@@ -21,7 +21,8 @@ export const PAGE_META = {
   // jatuh ke cadangan "BERANDA · Kain Nusantara" di layar yang justru jadi tempat kerja
   // harian dua peran (kelas bug yang ditangkap `check_nav_map.py` CHECK 5).
   "sales-admin-desk":     { kicker: "Admin Sales",    title: "Meja Admin Sales \u00b7 Antrean Alur Pesanan" },
-  "finance-desk":         { kicker: "Finance",        title: "Meja Finance \u00b7 Uang Masuk & Pajak Keluaran" },
+  // MN-T2 — Meja Finance apa adanya → Beranda Keuangan › Perlu Tindakan (satu daftar berkelompok berizin).
+  "finance-desk":         { kicker: "Keuangan \u00b7 Beranda Keuangan", title: "Perlu Tindakan \u00b7 Pekerjaan Uang yang Menunggu" },
   "md-desk":              { kicker: "MD",             title: "Meja MD \u00b7 Desain, Sample & Bahan" },
   "my-desk":              { kicker: "Kerja saya",     title: "Meja Saya \u00b7 Giliran & Antrean Peran" },
   "tanya-kn":             { kicker: "Asisten analitik", title: "Tanya KN \u00b7 Laporan & Pertanyaan Data" },

@@ -39,6 +39,20 @@ GL-01: registri `services/gl_mapping_registry.py` (54 kebutuhan) → koleksi `gl
   saringan "Belum terverifikasi lebih dari N hari"; Rekonsiliasi Bank lencana "Kode bayar {kode}" + **Catat kwitansi dari
   mutasi ini** (form terisi, lalu mutasi ditautkan); cetakan kwitansi baru memuat Cara bayar, Rekening, No. referensi. Kas
   kwitansi lama tanpa rekening: `scripts/backfill_receipt_accounts.py` (bawaan lapor; `--terapkan` = H3).
+- 2026-11-15 MN-T2 (K-18, K-46 — penyatuan layar keuangan): lima tempat menjadi satu layar masing-masing.
+  **Kas & Bank › Kas Kecil** = satu daftar bertahap dari `GET /api/petty-cash/worklist?stage&q&page&page_size`
+  (`cash_advance.view` atau `cash_settlement.view`; satu baris per PD + LPJ-nya; tahap turunan Diajukan · Dicairkan ·
+  Dipertanggungjawabkan · Selesai, `stage_counts`; `settlement.reimburse_due` hanya bagi pemegang `cash_settlement.view`;
+  cakupan PT = kueri daftar PD/LPJ yang sama, `cash_advance_query`/`settlement_query`); panel PD + LPJ dalam satu pop-up,
+  Ajukan dana · Pertanggungjawabkan · Bayar per baris. **Piutang › Titipan & Saldo Kredit** = satu tabel per pelanggan
+  (uang muka pesanan belum dikirim · deposit tanpa PT · saldo kredit per PT berriwayat · jumlah · umur tertua; sumber tidak
+  digabung, D1), aksi Pakai saldo / Sesuaikan / Balik per PT (mati di Semua PT). **Tutup Buku** + seksi lipat Persediaan
+  vs buku besar & Akun sementara (tab Jurnal & Buku Besar tinggal 3; preset lama dialihkan); tautan daftar periksa
+  `suspense_nol`/`stok_cocok` = `{view: "closing", preset: {seksi}}`. **Beranda Keuangan › Perlu Tindakan** = satu daftar
+  berkelompok menurut izin modul sumber (Meja Finance, papan hutang `/home/finance`, posting gagal); Beranda Admin &
+  Dasbor Manajer: satu kartu Keuangan (Kas & bank, Piutang lewat jatuh tempo, Hutang belum dibayar — `/finance/tower`);
+  lencana posting gagal di entri Tutup Buku. Layar daftar lama dihapus (`CashAdvancesView`, `SettlementsView`,
+  `ReimbursePayablesView`, `AdvanceReportView`, `StoreCreditView`); id lama = alias + rute cadangan ke layar baru.
 - 2026-11-15 PM-T4 (PM-06; K-36 — tunai yang diterima sales dicatat sebagai **titipan** sampai disetor): pengaturan per PT
   `pembayaran.sales_terima_tunai` = `kas_langsung` (bawaan, perilaku lama) · `titipan` · `dilarang` (403), batas titipan
   per orang `pembayaran.titipan_batas_nominal` (0 = tanpa batas, 409 bila terlewati) dan tenggat setor

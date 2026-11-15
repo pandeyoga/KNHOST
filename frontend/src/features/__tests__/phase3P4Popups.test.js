@@ -5,8 +5,7 @@ import { createRoot } from "react-dom/client";
 import FixedAssetsView from "../finance/FixedAssetsView";
 import ChartOfAccounts from "../finance/ChartOfAccounts";
 import BudgetView from "../finance/BudgetView";
-import CashAdvancesView from "../pettycash/CashAdvancesView";
-import SettlementsView from "../pettycash/SettlementsView";
+import PettyCashView from "../pettycash/PettyCashView";   // MN-T2 — dulu CashAdvancesView & SettlementsView
 
 const mockGet = jest.fn();
 jest.mock("../../services/apiClient", () => ({
@@ -94,37 +93,48 @@ test("Anggaran: Tambah Anggaran = FormModal (dulu inline), banner desktop", asyn
 const CA = { id: "ca1", number: "PD-0001", status: "draft", entity_id: "ent_ksc", lines: [], approvals: [],
   total_amount: 150000, kegiatan: "Pameran", divisi: "Marketing" };
 
+// MN-T2 — Kas Kecil satu daftar bertahap (`GET /petty-cash/worklist`); form & rincian tetap pop-up.
+const WL_ROW = { id: "ca1", number: "PD-0001", entity_id: "ent_ksc", requester: "Staf", purpose: "Pameran", amount: 150000,
+  stage: "diajukan", status: "draft", settlement: null, updated_at: "2026-10-20T03:00:00Z" };
+const WL = (items) => ({ items, total: items.length, page: 1, page_size: 25, stage_counts: { diajukan: items.length } });
+
 test("Pengajuan Dana: form & rincian = pop-up, daftar tetap tampil (dulu halaman penuh)", async () => {
-  routeGet({ "/cash-advances": [CA], "/cash-advances/ca1": CA });
-  const { host } = await mount(<CashAdvancesView currentUser={ADMIN} selectedEntity="ent_ksc" entities={[{ id: "ent_ksc", short_name: "Sukacita" }]} />);
-  await click(q(host, "ca-create-btn"));
+  routeGet({ "/petty-cash/worklist": WL([WL_ROW]), "/cash-advances/ca1": CA });
+  const { host } = await mount(<PettyCashView currentUser={ADMIN} selectedEntity="ent_ksc" entities={[{ id: "ent_ksc", short_name: "Sukacita" }]} />);
+  await click(q(host, "pc-create-btn"));
   expect(q(host, "ca-form").getAttribute("role")).toBe("dialog");
   expect(q(host, "ca-form-title").textContent).toContain("Buat Pengajuan Dana");
-  expect(q(host, "cash-advances-view")).not.toBeNull();
+  expect(q(host, "petty-cash-view")).not.toBeNull();
   expect(q(host, "ca-submit")).not.toBeNull();
   await click(q(host, "ca-form-close"));
   expect(q(host, "ca-form")).toBeNull();
-  await click(q(host, "ca-open-ca1"));
-  expect(q(host, "ca-detail-modal").getAttribute("role")).toBe("dialog");
+  await click(q(host, "pc-open-ca1"));
+  expect(q(host, "pc-detail-modal").getAttribute("role")).toBe("dialog");
   expect(q(host, "ca-detail-number").textContent).toBe("PD-0001");
-  expect(q(host, "cash-advances-view")).not.toBeNull();
+  expect(q(host, "petty-cash-view")).not.toBeNull();
 });
 
 test("LPJ: daftar = tabel baku (ResponsiveTable), rincian & form = pop-up", async () => {
   const STL = { id: "s1", number: "LPJ-0001", status: "draft", entity_id: "ent_ksc", cash_advance_number: "PD-0001",
     total_pengeluaran: 90000, total_pettycash: 150000, sisa_kurang_dana: 60000,
     expense_lines: [{ date: "2026-10-20", description: "Parkir", category: "transport", amount: 90000 }] };
-  routeGet({ "/cash-advance-settlements": [STL], "/cash-advance-settlements/s1": STL, "/expense-categories": [], "/cash-advances": [] });
-  const { host } = await mount(<SettlementsView currentUser={ADMIN} selectedEntity="ent_ksc" entities={[]} />);
-  expect(q(host, "stl-table")).not.toBeNull();
-  expect(q(host, "stl-table").querySelector("table.data-table")).not.toBeNull();
-  expect(q(host, "stl-row-s1")).not.toBeNull();
-  await click(q(host, "stl-open-s1"));
-  expect(q(host, "stl-detail-modal").getAttribute("role")).toBe("dialog");
+  const PD_CAIR = { ...CA, id: "ca2", number: "PD-0002", status: "disbursed" };
+  routeGet({ "/petty-cash/worklist": WL([{ ...WL_ROW, stage: "dicairkan", status: "settled",
+    settlement: { id: "s1", number: "LPJ-0001", status: "draft", spent: 90000, refund_due: 60000, reimburse_due: 0 } },
+  { ...WL_ROW, id: "ca2", number: "PD-0002", stage: "dicairkan", status: "disbursed" }]),
+  "/cash-advance-settlements/s1": STL, "/cash-advances/ca1": CA, "/cash-advances/ca2": PD_CAIR,
+  "/expense-categories": [], "/cash-advances": [] });
+  const { host } = await mount(<PettyCashView currentUser={ADMIN} selectedEntity="ent_ksc" entities={[]} />);
+  expect(q(host, "pc-table")).not.toBeNull();
+  expect(q(host, "pc-table").querySelector("table.data-table")).not.toBeNull();
+  expect(q(host, "pc-row-ca1")).not.toBeNull();
+  await click(q(host, "pc-open-ca1"));
+  expect(q(host, "pc-detail-modal").getAttribute("role")).toBe("dialog");
   expect(q(host, "stl-detail-lines").className).toContain("data-table");
   expect(q(host, "stl-detail-sisa").textContent).toContain("60.000");
-  await click(q(host, "stl-detail-modal-close-x"));
-  await click(q(host, "stl-create-btn"));
+  await click(q(host, "pc-detail-modal-close-x"));
+  await click(q(host, "pc-open-ca2"));
+  await click(q(host, "pc-settle-btn"));
   expect(q(host, "stl-form").getAttribute("role")).toBe("dialog");
-  expect(q(host, "settlements-view")).not.toBeNull();
+  expect(q(host, "petty-cash-view")).not.toBeNull();
 });

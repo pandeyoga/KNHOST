@@ -203,11 +203,18 @@ async def create_cash_advance(payload, ctx: EntityContext, actor: Dict[str, Any]
     return safe_doc(doc)
 
 
-async def list_cash_advances(ctx: EntityContext, entity_id: Optional[str] = None,
-                             status: Optional[str] = None) -> List[Dict[str, Any]]:
+def cash_advance_query(ctx: EntityContext, entity_id: Optional[str] = None,
+                       status: Optional[str] = None) -> Dict[str, Any]:
+    """Kueri daftar PD yang boleh dilihat pemanggil (aturan PT satu tempat: daftar PD dan daftar kerja kas kecil)."""
     q = resolve_list_scope(CA_COLL, {}, ctx, entity_id)
     if status:
         q["status"] = status
+    return q
+
+
+async def list_cash_advances(ctx: EntityContext, entity_id: Optional[str] = None,
+                             status: Optional[str] = None) -> List[Dict[str, Any]]:
+    q = cash_advance_query(ctx, entity_id, status)
     rows = await db[CA_COLL].find(q, {"_id": 0}).sort("created_at", -1).to_list(1000)
     return rows
 
@@ -509,14 +516,21 @@ async def create_settlement(payload, ctx: EntityContext, actor: Dict[str, Any]) 
     return safe_doc(doc)
 
 
-async def list_settlements(ctx: EntityContext, entity_id: Optional[str] = None,
-                           cash_advance_id: Optional[str] = None,
-                           status: Optional[str] = None) -> List[Dict[str, Any]]:
+def settlement_query(ctx: EntityContext, entity_id: Optional[str] = None, cash_advance_id: Optional[str] = None,
+                     status: Optional[str] = None) -> Dict[str, Any]:
+    """Kueri daftar LPJ yang boleh dilihat pemanggil (aturan PT satu tempat: daftar LPJ dan daftar kerja kas kecil)."""
     q = resolve_list_scope(STL_COLL, {}, ctx, entity_id)
     if cash_advance_id:
         q["cash_advance_id"] = cash_advance_id
     if status:
         q["status"] = status
+    return q
+
+
+async def list_settlements(ctx: EntityContext, entity_id: Optional[str] = None,
+                           cash_advance_id: Optional[str] = None,
+                           status: Optional[str] = None) -> List[Dict[str, Any]]:
+    q = settlement_query(ctx, entity_id, cash_advance_id, status)
     return await db[STL_COLL].find(q, {"_id": 0}).sort("created_at", -1).to_list(1000)
 
 
@@ -1018,3 +1032,103 @@ async def reject_settlement(stl_id: str, reason: str, ctx: EntityContext, actor:
     await audit(actor.get("name", ""), "settlement_rejected", "cash_advance_settlement", stl_id,
                 {"reason": reason})
     return safe_doc(updated)
+
+
+# ═══ MN-T2 — daftar kerja Kas Kecil (satu baris per PD, tahap turunan) ═════════════════════════════════════════════
+#: Tahap layar Kas Kecil, diturunkan dari status PD dan LPJ-nya (tanpa field baru):
+#:   diajukan = PD belum dicairkan (draf, menunggu tiap jenjang, disetujui, ditolak);
+#:   dicairkan = PD dicairkan, LPJ belum diajukan (tanpa LPJ, draf, atau ditolak);
+#:   dipertanggungjawabkan = LPJ diajukan/disetujui (jurnal belum terbit), atau sudah dijurnal tetapi sisa uang muka
+#:     belum kembali / hutang reimburse belum dibayar;
+#:   selesai = LPJ dijurnal dan tidak ada sisa di kedua arah.
+WORKLIST_STAGES = ("diajukan", "dicairkan", "dipertanggungjawabkan", "selesai")
+_EPS = 0.005
+
+
+def _lpj_terpilih(rows: List[Dict[str, Any]]) -> Optional[Dict[str, Any]]:
+    """LPJ yang mewakili PD: yang aktif (bukan ditolak; paling banyak satu per PD), selain itu yang ditolak terbaru."""
+    aktif = [d for d in rows if d.get("status") in STL_ACTIVE_STATUSES]
+    pilih = aktif or rows
+    return max(pilih, key=lambda d: str(d.get("created_at") or "")) if pilih else None
+
+
+def _sisa_lpj(stl: Dict[str, Any], advance: float) -> tuple:
+    """(sisa kembali, hutang reimburse) yang belum tuntas. LPJ dijurnal: dari catatan sisa/hutang yang masih terbuka;
+    LPJ draf/diajukan/disetujui: perkiraan dari pengeluaran vs uang muka (angka final ditetapkan saat dijurnal)."""
+    st = stl.get("status")
+    if st == "posted_to_gl":
+        sr, hr = stl.get("sisa_dikembalikan") or {}, stl.get("hutang_reimburse") or {}
+        kembali = _r(sr.get("amount")) if sr.get("status") in ("open", "returning") else 0.0
+        reimburse = _r(hr.get("amount")) if hr.get("status") == "open" else 0.0
+        return kembali, reimburse
+    if st in ("draft", "submitted", "approved"):
+        spent = _r(stl.get("total_pengeluaran"))
+        return _r(max(advance - spent, 0.0)), _r(max(spent - advance, 0.0))
+    return 0.0, 0.0
+
+
+def worklist_stage(ca: Dict[str, Any], stl: Optional[Dict[str, Any]]) -> str:
+    """Tahap Kas Kecil satu PD (lihat `WORKLIST_STAGES`)."""
+    if ca.get("status") not in ("disbursed", "settled"):
+        return "diajukan"
+    if not stl:
+        return "selesai" if ca.get("status") == "settled" else "dicairkan"
+    st = stl.get("status")
+    if st in ("draft", "rejected"):
+        return "dicairkan"
+    if st in ("submitted", "approved"):
+        return "dipertanggungjawabkan"
+    kembali, reimburse = _sisa_lpj(stl, _r(ca.get("total_amount")))
+    return "dipertanggungjawabkan" if kembali > _EPS or reimburse > _EPS else "selesai"
+
+
+def _baris_kerja(ca: Dict[str, Any], stl: Optional[Dict[str, Any]], lihat_reimburse: bool) -> Dict[str, Any]:
+    advance = _r(ca.get("total_amount"))
+    lpj = None
+    if stl:
+        kembali, reimburse = _sisa_lpj(stl, advance)
+        lpj = {"id": stl.get("id"), "number": stl.get("number", ""), "status": stl.get("status", ""),
+               "spent": _r(stl.get("total_pengeluaran")), "refund_due": kembali,
+               "reimburse_due": reimburse if lihat_reimburse else None}
+    terbaru = max(str(ca.get("updated_at") or ca.get("created_at") or ""),
+                  str((stl or {}).get("updated_at") or (stl or {}).get("created_at") or ""))
+    return {"id": ca.get("id"), "number": ca.get("number", ""), "entity_id": ca.get("entity_id", ""),
+            "requester": ca.get("created_by", ""), "purpose": ca.get("kegiatan", ""), "divisi": ca.get("divisi", ""),
+            "amount": advance, "stage": worklist_stage(ca, stl), "status": ca.get("status", ""),
+            "settlement": lpj, "updated_at": terbaru}
+
+
+async def petty_cash_worklist(ctx: EntityContext, *, entity_id: Optional[str] = None, stage: str = "", q: str = "",
+                              page: int = 1, page_size: int = 25, lihat_pd: bool = True,
+                              lihat_reimburse: bool = False) -> Dict[str, Any]:
+    """MN-T2 — `GET /api/petty-cash/worklist`: satu baris per PD dengan LPJ-nya, tahap turunan, jumlah per tahap.
+
+    Cakupan = kueri daftar PD dan LPJ yang sama dengan `GET /api/cash-advances` dan `/api/cash-advance-settlements`
+    (aturan PT tidak disalin). Dibaca dengan kursor (tanpa batas 1000 baris); halaman dipotong di sini dengan `total`.
+    `lihat_pd` False (pemanggil hanya ber-`cash_settlement.view`) → hanya PD yang punya LPJ terlihat. `lihat_reimburse`
+    False → `settlement.reimburse_due` = None."""
+    stage = (stage or "").strip()
+    if stage and stage not in WORKLIST_STAGES:
+        raise HTTPException(status_code=400, detail="Tahap tidak dikenal.")
+    per_pd: Dict[str, List[Dict[str, Any]]] = {}
+    async for d in db[STL_COLL].find(settlement_query(ctx, entity_id), {"_id": 0}):
+        per_pd.setdefault(d.get("cash_advance_id") or "", []).append(d)
+    cari = (q or "").strip().lower()
+    rows: List[Dict[str, Any]] = []
+    async for ca in db[CA_COLL].find(cash_advance_query(ctx, entity_id), {"_id": 0}):
+        stl = _lpj_terpilih(per_pd.get(ca.get("id") or "", []))
+        if not lihat_pd and not stl:
+            continue
+        if cari and not any(cari in str(v or "").lower() for v in (
+                ca.get("number"), ca.get("kegiatan"), ca.get("divisi"), ca.get("created_by"), (stl or {}).get("number"))):
+            continue
+        rows.append(_baris_kerja(ca, stl, lihat_reimburse))
+    counts = {s: 0 for s in WORKLIST_STAGES}
+    for r in rows:
+        counts[r["stage"]] += 1
+    pilih = [r for r in rows if not stage or r["stage"] == stage]
+    pilih.sort(key=lambda r: (r["updated_at"], r["number"]), reverse=True)
+    page, page_size = max(int(page or 1), 1), min(max(int(page_size or 25), 1), 100)
+    awal = (page - 1) * page_size
+    return {"items": pilih[awal:awal + page_size], "total": len(pilih), "page": page, "page_size": page_size,
+            "stage_counts": counts}

@@ -13,6 +13,7 @@ import AdminHome from "../home/AdminHome";
 import SalesHome from "../home/SalesHome";
 import { BalancesPanel } from "../finance/interco/IntercoPanels";
 import { askConfirm, askReason } from "../../services/confirmService";
+import { setAccessContext } from "../../config/roles";
 
 const mockGet = jest.fn();
 const mockPost = jest.fn();
@@ -184,12 +185,17 @@ test("K-01: Control Tower — piutang semua pelanggan berlabel sumber, baris 'Ta
       low_stock: { count: 7, items: [], threshold: 100, label: "produk dengan tersedia di atas 0 dan di bawah 100" },
       reorder: { count: 1, items: [{ product_id: "p1", product_name: "Batik Parang", sku: "BTK-1", on_hand: 20, reorder_point: 50 }] },
     },
+    "/finance/tower": { cash: { total: 50000000 }, ar: { outstanding: 407850942, overdue: 1193250 }, ap: { outstanding: 0 } },
   });
   const nav = jest.fn();
+  // MN-T2 — kartu keuangan beranda (Belum Lunas, Piutang Lewat Tempo, Tertagih) = SATU kartu Keuangan dari endpoint tab
+  // Posisi Beranda Keuangan (`/finance/tower`, sumber piutang sama dengan layar Piutang — K-01 tetap berlaku).
+  setAccessContext({ role: "admin" });
   const { host } = await mount(<AdminHome token="t" selectedEntity="ent_ksc" onNavigate={nav} />);
-  expect(q(host, "kpi-belum-lunas").textContent).toContain("Semua pelanggan");
-  expect(q(host, "kpi-belum-lunas").textContent).toContain("407.850.942");
-  expect(q(host, "kpi-piutang-lewat-tempo").textContent).toContain("sama dengan layar Piutang");
+  expect(q(host, "kpi-belum-lunas")).toBeNull();
+  expect(q(host, "admin-home-finance-ar-overdue").textContent).toContain("1.193.250");
+  expect(q(host, "admin-home-finance-ar-overdue").textContent).toContain("Semua pelanggan · sama dengan layar Piutang");
+  setAccessContext(null);
   expect(q(host, "admin-home-overdue-row-none").textContent).toContain("Tanpa sales");
   expect(host.textContent).not.toContain("Pelanggan ber-sales");
   const low = q(host, "kpi-stok-rendah");

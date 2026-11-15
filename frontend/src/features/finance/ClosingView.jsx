@@ -4,6 +4,7 @@
  * (soft). Admin dapat Reopen. Sumber: /api/finance/closing/*. Gaya modul GL.
  * PK-43 (UX-16) — panel Daftar Periksa (`ClosingChecklistPanel`) di antara pemilih periode dan pratinjau, dimuat bersama
  * Pratinjau; butir "perlu dilihat" ikut ditulis di konfirmasi Tutup Buku.
+ * MN-T2 — dua seksi lipat di bawah pratinjau (`ClosingSections`: persediaan & akun sementara, dulu tab Jurnal).
  */
 import { apiErrorText } from "../../utils/apiError";
 import { useCallback, useEffect, useMemo, useState } from "react";
@@ -23,6 +24,7 @@ import { formatCurrency, formatDateTime } from "../../utils/formatters";
 import { askConfirm, askReason } from "../../services/confirmService";
 import { can } from "../../config/roles";
 import ClosingChecklistPanel, { checklistWarnings, useClosingChecklist } from "./ClosingChecklistPanel";   // PK-43
+import ClosingSections, { Labeled, MiniStat, useClosingSections } from "./ClosingParts";   // MN-T2
 
 const NOW = new Date();
 // PK-11 — "2026-12-01" → "1 Desember 2026" (bulan penuh, sama dengan pesan server).
@@ -85,6 +87,7 @@ export default function ClosingView({ selectedEntity, entities = [], currentUser
 
   const periodKey = periodType === "year" ? year : `${year}-${month}`;
   const ceklis = useClosingChecklist(entityId, periodType, periodKey);
+  const seksi = useClosingSections(entityId);   // MN-T2 — dibuka "Buka" daftar periksa atau preset `{ seksi }`
 
   const load = useCallback(async () => {
     if (!entityId) { setClosings([]); setLoading(false); return; }
@@ -148,7 +151,7 @@ export default function ClosingView({ selectedEntity, entities = [], currentUser
     if (suspenseBlocked) {
       const balText = formatCurrency(pv.suspense_balance);
       if (!isAdmin) {
-        setError(`Tutup buku diblokir: saldo Suspense (1-9999) belum nol (${balText}). Reklasifikasi dulu lewat Buku Besar › Suspense, atau minta Admin menembus blokir dengan alasan.`);
+        setError(`Tutup buku diblokir: saldo Suspense (1-9999) belum nol (${balText}). Reklasifikasi dulu di seksi Akun sementara di bawah, atau minta Admin menembus blokir dengan alasan.`);
         return;
       }
       const reason = await askReason({
@@ -322,7 +325,7 @@ export default function ClosingView({ selectedEntity, entities = [], currentUser
                   </button>
                 </div>
 
-                <ClosingChecklistPanel {...ceklis} />
+                <ClosingChecklistPanel {...ceklis} onOpenSection={seksi.buka} />
                 {/* Pratinjau */}
                 {preview && (
                   <div className="mt-3 pt-3 border-t border-[#EFF0F2]" data-testid="closing-preview">
@@ -339,10 +342,10 @@ export default function ClosingView({ selectedEntity, entities = [], currentUser
                       </div>
                     )}
                     {preview.suspense_warning && (
-                      <div className="mb-2 rounded-md bg-[#FDEDE7] border border-[#F5C6C0] text-[#C0392B] text-[12px] px-3 py-2 flex items-center gap-2" data-testid="closing-preview-suspense">
+                      <div className="mb-2 rounded-md bg-kn-danger-soft border border-kn-divider text-kn-danger-text text-fs-12 px-3 py-2 flex items-center gap-2" data-testid="closing-preview-suspense">
                         <AlertTriangle size={14} className="shrink-0" />
                         <span>
-                          <b>Tutup buku diblokir:</b> saldo Suspense (1-9999) belum nol: {formatCurrency(preview.suspense_balance)}. Reklasifikasi dulu via Buku Besar → tab Suspense.
+                          <b>Tutup buku diblokir:</b> saldo Suspense (1-9999) belum nol: {formatCurrency(preview.suspense_balance)}. Reklasifikasi dulu di seksi <b>Akun sementara</b> di bawah.
                           {isAdmin ? " Sebagai Admin, Anda dapat menembus blokir dengan alasan (tercatat di audit)." : " Hanya Admin yang dapat menembus blokir ini dengan alasan."}
                         </span>
                       </div>
@@ -388,6 +391,8 @@ export default function ClosingView({ selectedEntity, entities = [], currentUser
                   </div>
                 )}
               </div>
+
+              <ClosingSections ctl={seksi} entityId={entityId} entities={entities} onError={setError} onNotice={setNotice} />
 
               {/* Riwayat penutupan */}
               <p className="text-[11px] font-bold uppercase tracking-wide text-[#8E8E93] mb-2">Riwayat Tutup Buku</p>
@@ -475,24 +480,6 @@ export default function ClosingView({ selectedEntity, entities = [], currentUser
           )}
         </div>
       </div>
-    </div>
-  );
-}
-
-function Labeled({ label, children }) {
-  return (
-    <div className="flex flex-col gap-1">
-      <span className="text-[10px] font-bold uppercase tracking-wide text-[#8E8E93]">{label}</span>
-      {children}
-    </div>
-  );
-}
-
-function MiniStat({ label, value, tone = "text-[#1C1C1E]" }) {
-  return (
-    <div className="rounded-md border border-[#EFF0F2] px-3 py-2 bg-white">
-      <p className="text-[9px] font-bold uppercase tracking-wide text-[#9A9BA3]">{label}</p>
-      <p className={`text-[13px] font-bold tabular-nums ${tone}`}>{value}</p>
     </div>
   );
 }

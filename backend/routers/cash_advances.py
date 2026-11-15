@@ -10,7 +10,7 @@ from pydantic import BaseModel
 from fastapi import APIRouter, File, Query, Request, UploadFile
 from fastapi.responses import Response
 
-from dependencies import require_permission
+from dependencies import has_permission, require_any_permission, require_permission
 from services import approval_policy_service as _aps   # KP-T4 — satu tabel kebijakan persetujuan
 from entity_scope import entity_ctx
 from schemas_cash_advance import (
@@ -94,6 +94,22 @@ async def disburse_cash_advance(ca_id: str, payload: DisburseInput, request: Req
     actor = await require_permission(request, "cash_advance", "disburse")
     ctx = await entity_ctx(request)
     return await svc.disburse_cash_advance(ca_id, payload, ctx, actor)
+
+
+# ─── MN-T2 — daftar kerja Kas Kecil (Keuangan › Kas & Bank › Kas Kecil) ─────────────────────────
+@router.get("/petty-cash/worklist")
+async def petty_cash_worklist(request: Request, stage: str = Query(""), q: str = Query(""),
+                              page: int = Query(1, ge=1), page_size: int = Query(25, ge=1, le=100),
+                              entity_id: str = Query(None)) -> Dict[str, Any]:
+    """Satu baris per pengajuan dana + pertanggungjawabannya, tahap turunan, jumlah per tahap.
+    Izin salah satu: `cash_advance.view` · `cash_settlement.view`. Hutang reimburse per baris hanya bagi pemegang
+    `cash_settlement.view` (izin laporan Hutang Reimburse sejak PK-24)."""
+    actor = await require_any_permission(request, [("cash_advance", "view"), ("cash_settlement", "view")])
+    ctx = await entity_ctx(request)
+    return await svc.petty_cash_worklist(
+        ctx, entity_id=entity_id, stage=stage, q=q, page=page, page_size=page_size,
+        lihat_pd=await has_permission(actor, "cash_advance", "view"),
+        lihat_reimburse=await has_permission(actor, "cash_settlement", "view"))
 
 
 # ─── Settlement (Pertanggungjawaban) ────────────────────────────────

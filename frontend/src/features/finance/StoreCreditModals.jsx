@@ -1,5 +1,5 @@
 /**
- * Pop-up Store Credit — Pakai saldo, Sesuaikan saldo, Batalkan entri (dipakai StoreCreditView).
+ * Pop-up Store Credit — Pakai saldo, Sesuaikan saldo, Batalkan entri (dipakai Titipan & Saldo Kredit — `CustomerCreditView`, MN-T2; dulu StoreCreditView).
  *
  * Fase 4 · R2 (L-03) — diekstrak dari `StoreCreditView.jsx`; cangkang `Modal` buatan sendiri (`div fixed inset-0
  * z-[120]`, tanpa Esc/klik latar) → `FormModal` baku (Esc lewat tumpukan lapisan, klik latar gestur utuh, layar penuh

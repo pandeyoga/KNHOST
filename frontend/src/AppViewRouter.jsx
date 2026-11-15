@@ -19,7 +19,7 @@ import { configDeepLinkTarget } from "./hooks/useDeepLinks";
 
 // ── Lazy views (dipisah per chunk) — daftar di ./appViewImports.js (fase 3 · P1, batas 500 baris) ──
 import { SalesPortal, PriceApprovals, OrdersView, CrmView, OperationsView, QcHubView, InspectionsView,
-  DocumentsView, AdminView, CostingView, ARAgingView, AdvanceReportView, StoreCreditView, BankAccountsView,
+  DocumentsView, AdminView, CostingView, ARAgingView, BankAccountsView,
   BankReconciliationView, FinanceCasesView, FixedAssetsView, ProductionView, SchedulerView, ChartOfAccounts,
   GeneralLedger, GroupConsolidationView, FinancialStatementsView, ClosingView, PeriodUnlockView,
   PostingFailuresView, BiFinanceView, FinanceTowerView, ProfitabilityView, CashFlowForecastView, BudgetView,
@@ -38,8 +38,8 @@ import { SalesPortal, PriceApprovals, OrdersView, CrmView, OperationsView, QcHub
   AttendanceSetupView, LiveTrackingView, VisitsView, PayrollRunsView, PayrollRemittancesView, PayComponentsView, HolidaysView, LeaveView, OvertimeView,
   KpiView, DesignGalleryView, HrAnalyticsView, StockAnalyticsView, ExportCenterView, LocationPutawayView,
   GoodsReceiptsView, OutboundView, CuttingOpsView, ReceivingOcrSettings, RfidTagsView,
-  RfidGateMonitorView, RfidLocationsView, CashAdvancesView, SettlementsView, ExpenseCategoriesView,
-  GLAccountMappingView, ReimbursePayablesView, VehicleLogsView, RoleDesk, TanyaKnView,
+  RfidGateMonitorView, RfidLocationsView, ExpenseCategoriesView,
+  GLAccountMappingView, VehicleLogsView, RoleDesk, TanyaKnView,
   SampleAdminDesk, SampleOrdersView, DocumentCenter, DocTraceView, PaymentPlansView, RndSpecsView,
   RndSamplesView, SampleTypeGalleryView, RndDesignsView, RndReportsView, DesignerKpiView, ContentCalendar,
   MktCampaigns, MarketingAnalytics, SocialAccounts, DivisionsView,
@@ -196,11 +196,12 @@ export default function AppViewRouter(props) {
       {/* Fase 3 · P8 (D-11) — `costing` = alias ke Profitabilitas & Margin tab katalog; rute cadangan = panel yang sama. */}
       {activeView === "costing" && <CostingView selectedEntity={selectedEntity} />}
       {activeView === "ar-aging" && <ARAgingView selectedEntity={selectedEntity} currentUser={user} focusDoc={focusDoc} onClearFocus={() => setFocusDoc(null)} />}
-      {activeView === "advance-report" && <AdvanceReportView selectedEntity={selectedEntity} onOpenDocument={openDocument} />}
+      {/* MN-T2 — `advance-report`/`store-credit` = alias ke `customer-credit`; rute cadangan id lama = layar yang sama. */}
+      {activeView === "advance-report" && <CustomerCreditView currentUser={user} selectedEntity={selectedEntity} onOpenDocument={openDocument} saringanAwal="uang_muka" />}
       {activeView === "payment-plans" && <PaymentPlansView currentUser={user} selectedEntity={selectedEntity} onOpenDocument={openDocument} focusDoc={focusDoc} onClearFocus={() => setFocusDoc(null)} />}
-      {activeView === "store-credit" && <StoreCreditView selectedEntity={selectedEntity} currentUser={user} />}
-      {/* MN-T1 — Keuangan › Piutang: tab baru = layar lama tanpa perubahan (dulu sub-tab CRM) + pembungkus ber-chip.
-          `advance-report`/`store-credit` = alias ke `customer-credit` (viewAliases.js); dua rute di atas = rute cadangan. */}
+      {activeView === "store-credit" && <CustomerCreditView currentUser={user} selectedEntity={selectedEntity} onOpenDocument={openDocument} saringanAwal="saldo_kredit" />}
+      {/* MN-T1 — Keuangan › Piutang: tab baru = layar lama tanpa perubahan (dulu sub-tab CRM). MN-T2 — Titipan & Saldo
+          Kredit = satu tabel per pelanggan (CustomerCreditView). */}
       {activeView === "collection-worklist" && <CollectionWorklist currentUser={user} selectedEntity={selectedEntity} {...focusDocProps} />}
       {activeView === "customer-credit" && <CustomerCreditView currentUser={user} selectedEntity={selectedEntity} onOpenDocument={openDocument} />}
       {activeView === "credit-overrides" && <><CreditOverridesPanel currentUser={user} /><CreditProfileRequestsPanel currentUser={user} /></>}
@@ -233,17 +234,17 @@ export default function AppViewRouter(props) {
       {activeView === "cashflow-forecast" && <CashFlowForecastView selectedEntity={selectedEntity} />}
       {activeView === "budget" && <BudgetView selectedEntity={selectedEntity} currentUser={user} />}
       {activeView === "cs-pajak" && <TaxCenterView currentUser={user} selectedEntity={selectedEntity} />}
-      {/* Kas & Aset — Digitalisasi Formulir Sukacita (PD / LPJ / Kendaraan) */}
-      {activeView === "cash-advances" && <CashAdvancesView currentUser={user} selectedEntity={selectedEntity} entities={entities} {...focusDocProps} />}
-      {activeView === "settlements" && <SettlementsView currentUser={user} selectedEntity={selectedEntity} entities={entities} {...focusDocProps} />}
-      {/* MN-T1 — Keuangan › Kas & Bank › Kas Kecil (pembungkus ber-chip). `cash-advances`/`settlements`/
-          `reimburse-payables` = alias ke `petty-cash`; rute di atas & di bawah = rute cadangan id lama. */}
+      {/* Kas & Aset — Digitalisasi Formulir Sukacita (PD / LPJ / Kendaraan). MN-T2 — Keuangan › Kas & Bank › Kas Kecil =
+          SATU daftar bertahap; `cash-advances`/`settlements`/`reimburse-payables` = alias ke `petty-cash`, rute cadangan
+          id lama = layar yang sama dengan chip tahap padanannya. */}
+      {activeView === "cash-advances" && <PettyCashView currentUser={user} selectedEntity={selectedEntity} entities={entities} {...focusDocProps} bagianAwal="pengajuan" />}
+      {activeView === "settlements" && <PettyCashView currentUser={user} selectedEntity={selectedEntity} entities={entities} {...focusDocProps} bagianAwal="pertanggungjawaban" />}
+      {activeView === "reimburse-payables" && <PettyCashView currentUser={user} selectedEntity={selectedEntity} entities={entities} {...focusDocProps} bagianAwal="reimburse" />}
       {activeView === "petty-cash" && <PettyCashView currentUser={user} selectedEntity={selectedEntity} entities={entities} {...focusDocProps} />}
       {/* PM-T4 — Kas & Bank › Titipan Sales: setoran titipan tunai sales menunggu diterima + titipan belum disetor */}
       {activeView === "cash-holdings" && <CashHoldingsView currentUser={user} />}
       {activeView === "expense-categories" && <ExpenseCategoriesView currentUser={user} selectedEntity={selectedEntity} entities={entities} />}
       {activeView === "gl-account-mappings" && <GLAccountMappingView currentUser={user} />}
-      {activeView === "reimburse-payables" && <ReimbursePayablesView selectedEntity={selectedEntity} entities={entities} />}
       {activeView === "vehicle-logs" && <VehicleLogsView currentUser={user} selectedEntity={selectedEntity} entities={entities} />}
       {activeView === "consolidation" && <GroupConsolidationView entities={entities} />}
       {activeView === "sales-home" && <SalesHome token={token} user={user} onNavigate={(target) => onNavSelect(target, target)} onOpenDocument={openDocument} />}

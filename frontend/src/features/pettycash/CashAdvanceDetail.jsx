@@ -24,7 +24,7 @@ import { confirmMoney } from "../../utils/moneyConfirm";   // PK-24 — konfirma
  * CashAdvanceDetail — Detail Form PD: ringkasan, rincian, timeline approval,
  * dan aksi state-machine (submit → approve/reject berjenjang → disburse) + cetak.
  *
- * Fase 3 · P4 (L-03) — isi pop-up rincian: CashAdvancesView membungkusnya dengan DetailModal framed (× di pojok
+ * Fase 3 · P4 (L-03) — isi pop-up rincian: Kas Kecil (`PettyCashView`, MN-T2; dulu CashAdvancesView) membungkusnya dengan DetailModal framed (× di pojok
  * menggantikan tombol "Kembali"). Dialog "Cairkan" (`.modal-card` buatan sendiri) → FormModal.
  */
 // KP-T4 — status uang muka → nomor jenjang Aturan Persetujuan (`approval_kinds` `level_status`).

@@ -9,7 +9,7 @@ import QcHubView from "../inspections/QcHubView";
 import VisitsView from "../hr/VisitsView";
 import SupplierItemsView from "../purchasing/supplier-items/SupplierItemsView";
 import ContractsView from "../purchasing/contracts/ContractsView";
-import CashAdvancesView from "../pettycash/CashAdvancesView";
+import PettyCashView from "../pettycash/PettyCashView";   // MN-T2 — dulu CashAdvancesView
 
 const html = (el) => renderToStaticMarkup(el);
 
@@ -106,9 +106,9 @@ describe("Kontrak supplier — buat = supplier_contract.create, pintasan kebijak
 
 describe("Kasbon — buat = cash_advance.create", () => {
   test("Finance berizin create melihat tombol (sebelumnya disembunyikan nama peran)", () => {
-    expect(html(<CashAdvancesView currentUser={{ role: "finance", permissions: { cash_advance: ["view", "create"] } }} />)).toContain("ca-create-btn");
+    expect(html(<PettyCashView currentUser={{ role: "finance", permissions: { cash_advance: ["view", "create"] } }} />)).toContain("pc-create-btn");
   });
   test("Sales tanpa izin create tidak melihat tombol", () => {
-    expect(html(<CashAdvancesView currentUser={{ role: "sales", permissions: { cash_advance: ["view"] } }} />)).not.toContain("ca-create-btn");
+    expect(html(<PettyCashView currentUser={{ role: "sales", permissions: { cash_advance: ["view"] } }} />)).not.toContain("pc-create-btn");
   });
 });

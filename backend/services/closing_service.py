@@ -299,7 +299,7 @@ async def preview(period_type: str, period_key: str, entity_id: str) -> Dict[str
 
 def _suspense_message(balance: float) -> str:
     return (f"Tutup buku diblokir: saldo Suspense (1-9999) belum nol ({rupiah(balance)}). "
-            "Reklasifikasi dulu lewat Buku Besar › Suspense, atau admin menembus blokir dengan alasan.")
+            "Reklasifikasi dulu di Tutup Buku › seksi Akun sementara, atau admin menembus blokir dengan alasan.")
 
 
 async def check_suspense_gate(entity_id: str, end: str, override_reason: str = "",

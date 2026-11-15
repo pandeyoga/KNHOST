@@ -12,7 +12,7 @@ import FinanceTowerView from "../finance/FinanceTowerView";
 import BiFinanceView from "../finance/BiFinanceView";
 import ProfitabilityView from "../finance/ProfitabilityView";
 import FinancialStatementsView from "../finance/FinancialStatementsView";
-import AdvanceReportView from "../finance/AdvanceReportView";
+import CustomerCreditView from "../finance/CustomerCreditView";   // MN-T2 — dulu AdvanceReportView
 import ARAgingDetail from "../finance/ARAgingDetail";
 import TaxCenterView from "../finance/TaxCenterView";
 import InputTaxView from "../purchasing/InputTaxView";
@@ -83,16 +83,20 @@ describe("D-12 B — agingBuckets (satu definisi Piutang & Uang Muka)", () => {
       .toEqual({ current: 5, b1_30: 10, b31_60: 0, b61_90: 0, b90_plus: 7.5 });
   });
 
+  // MN-T2 — Uang Muka Pelanggan kini kolom di Titipan & Saldo Kredit; umur tiap pesanan penyumbang tetap memakai
+  // kelompok yang sama (label util `agingBuckets`).
   test("Uang Muka Pelanggan memakai 5 kelompok yang sama (dihitung dari umur pesanan)", async () => {
     routeGet({ "/ar/advance-report": { totals: { liability: 15, advance_orders: 15 }, rows: [
       { customer_id: "c1", customer_name: "Butik", advance_orders: 15, deposit_balance: 0, total: 15, oldest_days: 40,
         orders: [{ order_id: "o1", order_number: "SO-1", age_days: 0, advance_unrecognized: 5, receipts: [] },
-          { order_id: "o2", order_number: "SO-2", age_days: 40, advance_unrecognized: 10, receipts: [] }] }] } });
-    const host = await mount(<AdvanceReportView selectedEntity="ent_ksc" />);
-    expect(q(host, "advance-bucket-current").textContent).toContain("Lancar");
-    expect(q(host, "advance-bucket-current").textContent).toContain("5");
-    expect(q(host, "advance-bucket-b31_60").textContent).toContain("10");
-    expect(q(host, "advance-bucket-0_30")).toBeNull();          // kelompok lama "≤ 30 hari" hilang
+          { order_id: "o2", order_number: "SO-2", age_days: 40, advance_unrecognized: 10, receipts: [] }] }] },
+    "/store-credit": [] });
+    const host = await mount(<CustomerCreditView currentUser={{ role: "admin", permissions: { accounting: ["view"] } }}
+      selectedEntity="ent_ksc" />);
+    await act(async () => { q(host, "cc-toggle-c1").click(); });
+    expect(q(host, "cc-order-o1").textContent).toContain("Lancar");
+    expect(q(host, "cc-order-o2").textContent).toContain("31-60 hr");
+    expect(host.textContent).not.toContain("≤ 30 hari");          // kelompok lama "≤ 30 hari" hilang
   });
 });
 

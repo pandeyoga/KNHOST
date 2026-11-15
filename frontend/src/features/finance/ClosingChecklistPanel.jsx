@@ -5,6 +5,8 @@
  * PT + satu periode. Dimuat bersama tombol **Pratinjau** (dan sebelum konfirmasi Tutup Buku bila belum dimuat).
  * Tiap butir (`closing-check-{key}`): status ikon + teks + warna (`status-pill`), label, keterangan, nilai, dan tombol
  * **Buka** ke layar sumbernya (`go(link.view, { preset })`; layar tujuan menampilkan "← Kembali ke Tutup Buku").
+ * MN-T2 — tautan ke layar ini sendiri (`link.view === "closing"` + `preset.seksi`: akun sementara, persediaan) membuka
+ * seksi lipatnya lewat `onOpenSection(seksi)` tanpa navigasi; Posting Gagal dan Buka Periode = tab hub yang sama.
  * Memuat / galat / kosong dibedakan. Galat tidak menghalangi tutup buku — aturan server yang menentukan.
  *
  *   const ceklis = useClosingChecklist(entityId, periodType, periodKey);
@@ -89,7 +91,10 @@ export function useClosingChecklist(entityId, periodType, periodKey) {
   return { state, data, error, load };
 }
 
-export default function ClosingChecklistPanel({ state, data, error, load }) {
+/** Butir yang tautannya membuka seksi di layar Tutup Buku sendiri (MN-T2) → kunci seksinya; selain itu "". */
+export const seksiOf = (link) => (link?.view === "closing" && link?.preset?.seksi ? link.preset.seksi : "");
+
+export default function ClosingChecklistPanel({ state, data, error, load, onOpenSection }) {
   const { go, canOpen } = useAppNav();
   if (state === "idle") return null;
   const items = data?.items || [];
@@ -121,7 +126,8 @@ export default function ClosingChecklistPanel({ state, data, error, load }) {
             const st = CHECK_STATUS[it.status] || CHECK_STATUS.unknown;
             const { Icon } = st;
             const nilai = checkValueText(it);
-            const bisaBuka = Boolean(it.link?.view) && canOpen(it.link.view);
+            const seksi = seksiOf(it.link);
+            const bisaBuka = seksi ? typeof onOpenSection === "function" : Boolean(it.link?.view) && canOpen(it.link.view);
             return (
               <li key={it.key} className="flex flex-wrap items-start gap-x-3 gap-y-1 px-3 py-2" data-testid={`closing-check-${it.key}`}
                 data-status={it.status}>
@@ -139,7 +145,8 @@ export default function ClosingChecklistPanel({ state, data, error, load }) {
                 {bisaBuka && (
                   <button type="button" className="secondary-button btn-sm shrink-0 whitespace-nowrap"
                     data-testid={`closing-check-${it.key}-open`}
-                    onClick={() => go(it.link.view, { preset: { ...(it.link.preset || {}), from: { view: "closing" } } })}>
+                    onClick={() => (seksi ? onOpenSection(seksi)
+                      : go(it.link.view, { preset: { ...(it.link.preset || {}), from: { view: "closing" } } }))}>
                     <ExternalLink size={13} aria-hidden="true" /> Buka
                   </button>
                 )}

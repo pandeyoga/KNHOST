@@ -95,13 +95,14 @@ async def _tidak_bentrok(k: Konteks) -> Dict[str, Any]:
                                      "untuk menutup ulang.")
 
 
-@butir("suspense_nol", "Saldo akun penampung nol", {"view": "general-ledger", "preset": {"tab": "suspense"}})
+# MN-T2 — dua butir membuka seksinya di layar Tutup Buku (dulu tab Suspense / Rekonsiliasi di Jurnal & Buku Besar).
+@butir("suspense_nol", "Saldo akun penampung nol", {"view": "closing", "preset": {"seksi": "akun-sementara"}})
 async def _suspense_nol(k: Konteks) -> Dict[str, Any]:
     saldo = await gl.suspense_balance(k.entity_id, k.end)
     if abs(saldo) <= cs.EPS:
         return _hasil("ok", 0.0, f"Saldo akun penampung (Suspense) per {_tgl(k.end)} Rp 0.")
     return _hasil("blocking", saldo, f"Saldo akun penampung (Suspense) per {_tgl(k.end)} {rupiah(saldo)} — "
-                                     "reklasifikasi dulu lewat Jurnal & Buku Besar › Suspense.")
+                                     "reklasifikasi dulu di seksi Akun sementara (Tutup Buku).")
 
 
 # ── 4–11: butir peringatan ─────────────────────────────────────────────────────────────────────────────────────────
@@ -142,7 +143,7 @@ async def _neraca_saldo(k: Konteks) -> Dict[str, Any]:
     return _hasil("warning", selisih, f"Debit − kredit per {_tgl(k.end)} berselisih {rupiah(selisih)}.")
 
 
-@butir("stok_cocok", "Nilai stok sama dengan akun persediaan", {"view": "general-ledger", "preset": {"tab": "recon"}})
+@butir("stok_cocok", "Nilai stok sama dengan akun persediaan", {"view": "closing", "preset": {"seksi": "persediaan"}})
 async def _stok_cocok(k: Konteks) -> Dict[str, Any]:
     rec = await gl.inventory_reconciliation([k.entity_id])
     row = next((r for r in rec.get("rows") or [] if r.get("entity_id") == k.entity_id), None)
