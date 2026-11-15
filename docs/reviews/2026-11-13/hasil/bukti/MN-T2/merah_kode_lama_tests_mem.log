@@ -1,0 +1,24 @@
+>       assert r.status_code == 200, r.text
+E       assert 404 == 200
+>       assert r.status_code == 200, r.text
+E       assert 404 == 200
+>       assert r.status_code == 200, r.text
+E       assert 404 == 200
+>       assert r.status_code == 403, r.text
+E       assert 404 == 403
+>       assert r.status_code == 400 and r.json()["detail"] == "Tahap tidak dikenal.", r.text
+E       assert (404 == 400)
+>       assert (await klien.get(WL, headers=h)).status_code == 403
+E       assert 404 == 403
+        assert r.status_code == 200, r.text
+        assert [it["key"] for it in j["items"]] == CEKLIS_PK43
+>       assert butir["suspense_nol"]["link"] == {"view": "closing", "preset": {"seksi": "akun-sementara"}}
+E       AssertionError: assert {'view': 'gen...: 'suspense'}} == {'view': 'clo...n-sementara'}}
+FAILED tests_mem/test_MNT2_layar_keuangan.py::test_MNT2_U3_worklist_admin_empat_tahap
+FAILED tests_mem/test_MNT2_layar_keuangan.py::test_MNT2_U4_saring_dipertanggungjawabkan
+FAILED tests_mem/test_MNT2_layar_keuangan.py::test_MNT2_U5_tanpa_acuan_hanya_cash_advance_view
+FAILED tests_mem/test_MNT2_layar_keuangan.py::test_MNT2_U6_sopir_ditolak - As...
+FAILED tests_mem/test_MNT2_layar_keuangan.py::test_MNT2_U7_tahap_aneh_400 - A...
+FAILED tests_mem/test_MNT2_layar_keuangan.py::test_MNT2_U11_manajer_kosong_dan_semua_pt
+FAILED tests_mem/test_MNT2_layar_keuangan.py::test_MNT2_U8_tautan_daftar_periksa_ke_seksi_tutup_buku
+7 failed, 1 warning in 1.60s

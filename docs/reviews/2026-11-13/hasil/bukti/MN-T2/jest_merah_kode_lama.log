@@ -1,0 +1,22 @@
+FAIL src/features/__tests__/mnt2LayarKeuangan.test.js
+  ✕ U9 — klik Buka pada butir akun sementara: seksi Akun sementara terbuka, tanpa navigasi keluar hub (35 ms)
+  ✕ U12 — layar Jurnal 3 tab (+ tautan ke Tutup Buku); hub Penggajian tanpa hr-payslips (42 ms)
+  ✓ U13 — resolveDeepLinkTarget('hr-payslips', 'admin') → Proses Gaji (2 ms)
+    ✕ U1 — satu baris C: 2.000.000 · 500.000 · 300.000 · jumlah 2.800.000; kepala kolom berlabel sumber (105 ms)
+    ✕ U2 — Semua PT: Pakai saldo, Sesuaikan, Balik mati dengan petunjuk tertulis (37 ms)
+    ✕ saringan chip, kosong satu pesan, kolom tanpa izin tidak ditampilkan (bukan 0) (1 ms)
+    ✕ U17 padanan — preset alias `store-credit` {bagian: saldo} → saringan Punya saldo kredit (32 ms)
+    ✕ tab suspense → seksi akun-sementara (28 ms)
+    ✕ tab recon → seksi persediaan (21 ms)
+    ✕ Finance (izin fixture) tanpa vendor_bill.view & contra_bon.view: tanpa kelompok hutang & kontrabon (43 ms)
+    ✕ Finance berizin penuh (fixture): kelompok hutang & kontrabon tampil, satu tombol per baris (39 ms)
+    ✕ semua sumber kosong → satu pesan; galat sumber → tidak berbunyi kosong (32 ms)
+    ✕ chip tahap berjumlah, baris berlabel tahap & sisa, membuka satu panel PD + LPJ (38 ms)
+    ✕ PD dicairkan tanpa LPJ: tombol Pertanggungjawabkan membuka form LPJ dengan PD terpilih (16 ms)
+    ✕ Semua PT: Ajukan dana mati dengan alasan tertulis; kosong satu pesan (19 ms)
+    ✕ U17 padanan — preset alias bagian=reimburse → chip dipertanggungjawabkan (16 ms)
+    ✕ U17 padanan — preset alias bagian=pertanggungjawaban → chip dipertanggungjawabkan (26 ms)
+    ✕ U17 padanan — preset alias bagian=pengajuan → chip all (10 ms)
+    ✓ tanpa izin lihat kas kecil: pesan akses, tidak memanggil server (1 ms)
+Test Suites: 1 failed, 1 total
+Tests:       17 failed, 2 passed, 19 total

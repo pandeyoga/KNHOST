@@ -1,0 +1,20 @@
+PASS src/features/__tests__/pk42LayarKeuangan.test.js (8 s)
+PASS src/features/__tests__/prt4SifatPeran.test.js (7.76 s)
+PASS src/config/__tests__/roleReach.test.js
+PASS src/features/__tests__/pk17NominalBerizin.test.js
+PASS src/features/__tests__/prt6LayarPeran.test.js
+PASS src/features/__tests__/pk43AlurLayar.test.js
+PASS src/features/__tests__/pk36AkunKontrol.test.js
+PASS src/features/__tests__/pyt1KomponenMasukan.test.js
+PASS src/config/__tests__/serverAccessReach.test.js
+PASS src/features/__tests__/pk24KasKecil.test.js
+PASS src/config/__tests__/mnt1MenuKeuangan.test.js
+PASS src/config/__tests__/viewAliases.test.js
+PASS src/features/__tests__/mnt2LayarKeuangan.test.js (13.859 s)
+PASS src/features/__tests__/mnt1Pembungkus.test.js
+PASS src/features/__tests__/pyt1ProsesGaji.test.js
+PASS src/config/__tests__/navAccess.test.js
+PASS src/config/__tests__/prt4HalamanAwal.test.js
+PASS src/features/__tests__/pk29RekonPersediaan.test.js
+Test Suites: 18 passed, 18 total
+Tests:       269 passed, 269 total

@@ -1,0 +1,14 @@
+  ✗ [font_lt12] features/documents/trace/TraceGraph.jsx NAIK 16 → 18 — huruf minimum 12 px (text-fs-12 … text-fs-24; HP info ≥ 16, pendukung ≥ 14).
+  ✗ [font_lt12] features/documents/trace/TraceSearch.jsx NAIK 5 → 6 — huruf minimum 12 px (text-fs-12 … text-fs-24; HP info ≥ 16, pendukung ≥ 14).
+  ✗ [font_lt12] features/finance/payments/PenaltyPanel.jsx NAIK 9 → 11 — huruf minimum 12 px (text-fs-12 … text-fs-24; HP info ≥ 16, pendukung ≥ 14).
+  ✗ [font_lt12] features/purchasing/VendorBillDetailPanel.jsx NAIK 22 → 23 — huruf minimum 12 px (text-fs-12 … text-fs-24; HP info ≥ 16, pendukung ≥ 14).
+  ✗ [hex] features/documents/trace/DocTraceView.jsx NAIK 35 → 36 — warna lewat token/kelas baku (text-kn-*, bg-kn-*, var(--kn-*)), bukan hex lepas.
+  ✗ [hex] features/documents/trace/TraceGraph.jsx NAIK 36 → 38 — warna lewat token/kelas baku (text-kn-*, bg-kn-*, var(--kn-*)), bukan hex lepas.
+  ✗ [hex] features/documents/trace/TraceSearch.jsx NAIK 16 → 17 — warna lewat token/kelas baku (text-kn-*, bg-kn-*, var(--kn-*)), bukan hex lepas.
+  ✗ [hex] features/finance/ClosingView.jsx NAIK 63 → 64 — warna lewat token/kelas baku (text-kn-*, bg-kn-*, var(--kn-*)), bukan hex lepas.
+  ✗ [hex] features/finance/payments/PenaltyPanel.jsx NAIK 10 → 12 — warna lewat token/kelas baku (text-kn-*, bg-kn-*, var(--kn-*)), bukan hex lepas.
+  ✗ [hex] features/purchasing/VendorBillDetailPanel.jsx NAIK 29 → 30 — warna lewat token/kelas baku (text-kn-*, bg-kn-*, var(--kn-*)), bukan hex lepas.
+  ✗ [btn_custom] features/finance/ClosingParts.jsx berkas BARU memakai pola usang (1×) — tombol pakai kelas baku primary/secondary/danger/ghost/icon-button (+ btn-sm/btn-touch).
+  ✗ [btn_custom] features/finance/CustomerCreditView.jsx berkas BARU memakai pola usang (1×) — tombol pakai kelas baku primary/secondary/danger/ghost/icon-button (+ btn-sm/btn-touch).
+  ✗ [btn_force] features/purchasing/apPayment.jsx berkas BARU memakai pola usang (3×) — jangan paksa ukuran tombol baku dengan !py/!h/!text — pakai pengubah resmi btn-sm / btn-touch.
+  ✗ [hex] 1 warna hex BARU di aplikasi: #F5D9B0 — pakai token --kn-* / kelas kn-* (styles/tokens.css, tailwind `kn`).

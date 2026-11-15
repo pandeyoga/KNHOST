@@ -106,7 +106,7 @@ Papan kerja agen pelaksana. Aturan mengubahnya: `00_ATURAN_EKSEKUSI.md` §5. Uru
 | 99 | AG-T3 | Asisten: kartu tindakan golongan A dan B | AG-T2, PK-15, PK-18, PK-21 | selesai | 78bbbd9 | [AG-T3](../reviews/2026-11-13/hasil/AG-T3.md) | H5: sakelar per PT ai.tindakan_uang_masuk bawaan mati — dinyalakan pemilik per PT |
 | 100 | AG-T4 | Asisten: paket tutup buku dan ringkasan pagi | AG-T2, PK-18 | selesai | f94f6bc | [AG-T4](../reviews/2026-11-13/hasil/AG-T4.md) |  |
 | 101 | AG-T5 | Asisten: kartu tindakan uang keluar dan jurnal | AG-T3, PK-05, PK-10, PK-12, PK-20, PK-36, KF-T6 | selesai | df23cb2 | [AG-T5](../reviews/2026-11-13/hasil/AG-T5.md) | H5: sakelar per PT ai.tindakan_uang_keluar bawaan mati — dinyalakan pemilik per PT |
-| 102 | MN-T2 | Penyatuan layar keuangan | MN-T1, PK-18, PK-24, PK-43, PY-T1 | dikerjakan |  |  | Dikerjakan paralel (worktree terpisah), 15 Nov |
+| 102 | MN-T2 | Penyatuan layar keuangan | MN-T1, PK-18, PK-24, PK-43, PY-T1 | selesai | b7837de | [MN-T2](../reviews/2026-11-13/hasil/MN-T2.md) | Keputusan menu: Finance tidak lagi melihat rekonsiliasi persediaan & akun sementara (kini di Tutup Buku) |
 | 103 | MN-T3 | Satu form pembayaran, kartu pelanggan, kartu pemasok | PK-05, PK-19, PK-43, PM-T3, CR-T5 | menunggu |  |  |  |
 
 ## Menunggu pemilik

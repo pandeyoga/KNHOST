@@ -1,0 +1,5 @@
+FAILED tests_mem/test_PK44_jejak_dokumen.py::test_PK44_U01_tiap_view_peta_dirender_perute
+FAILED tests_mem/test_PK44_jejak_dokumen.py::test_PK44_U13_tiap_view_tujuan_menerima_fokus
+2 failed, 2050 passed, 2 skipped, 2 xfailed, 12 warnings in 708.37s (0:11:48)
+--- sesudah rute cadangan eksplisit dikembalikan (dua uji PK-44 di atas):
+67 passed, 1 warning in 20.66s

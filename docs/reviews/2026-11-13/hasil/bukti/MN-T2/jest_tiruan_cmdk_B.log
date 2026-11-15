@@ -1,0 +1,43 @@
+PASS src/features/__tests__/phase4R1.test.js (26.256 s)
+PASS src/features/__tests__/mobileShell.test.js (31.674 s)
+PASS src/features/__tests__/phase4R2.test.js (33.052 s)
+PASS src/features/__tests__/phase3Settings.test.js
+PASS src/features/__tests__/phase3P6Rnd.test.js (11.469 s)
+PASS src/features/__tests__/phase3P3b.test.js (6.212 s)
+PASS src/features/__tests__/phase3P4Finance.test.js
+FAIL src/features/__tests__/phase3P3.test.js
+PASS src/features/__tests__/decisionsD3.test.js
+PASS src/features/__tests__/phase4R6.test.js
+PASS src/features/__tests__/decisionsD1.test.js
+PASS src/features/__tests__/fix1Cakupan.test.js
+PASS src/features/__tests__/prepBInitialRegistration.test.js
+FAIL src/features/__tests__/phase3P8Activation.test.js
+PASS src/features/__tests__/uatV3S2Cbd.test.js
+PASS src/features/__tests__/auditUi2G5b.test.js
+PASS src/features/__tests__/phase3P6Kpi.test.js
+PASS src/features/__tests__/f11LayarOperatorView.test.js
+PASS src/features/__tests__/uatV3ReturnsOps.test.js
+PASS src/features/__tests__/phase3P5.test.js
+FAIL src/features/__tests__/fe07ReturnErrors.test.js
+PASS src/features/__tests__/fix3bForms.test.js
+PASS src/features/__tests__/uat24F4.test.js
+PASS src/features/__tests__/phase3P4Popups.test.js (7.115 s)
+PASS src/features/__tests__/uatV3SpecialOrder.test.js
+PASS src/features/__tests__/roleGateSweep.test.js
+PASS src/features/__tests__/f10DispatchPaymentGate.test.js
+FAIL src/components/__tests__/knSelect.test.js
+PASS src/features/__tests__/audit2G2.test.js
+PASS src/features/__tests__/fe06PriceFocus.test.js
+PASS src/features/__tests__/uatV3UiGaps.test.js
+PASS src/features/__tests__/uatV3MobileSales.test.js
+FAIL src/features/__tests__/roleGateSweep2.test.js
+PASS src/features/wms/transfer/__tests__/TransferDetailModal.test.js
+PASS src/features/__tests__/permissionGates.test.js
+PASS src/features/__tests__/mkl02RecapPaging.test.js
+FAIL src/features/__tests__/phase3P3.test.js
+FAIL src/features/__tests__/phase3P8Activation.test.js
+FAIL src/features/__tests__/fe07ReturnErrors.test.js
+FAIL src/components/__tests__/knSelect.test.js
+FAIL src/features/__tests__/roleGateSweep2.test.js
+Test Suites: 5 failed, 31 passed, 36 total
+Tests:       9 failed, 257 passed, 266 total
