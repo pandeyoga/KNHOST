@@ -298,3 +298,26 @@ membandingkan yang tampil di layar dengan jawaban API. Untuk butir bertanda "uji
 lingkungan A, login sebagai peran yang disebut, ikuti langkahnya, dan simpan tangkapan layar di laporan unit.
 
 Uji komponen frontend: `yarn test --watchAll=false <pola>` di container frontend (belum dijalankan di sesi perancangan).
+
+## 6. Kebijakan uji hemat (pemilik, 15 Nov 2026) — berlaku untuk semua agen
+
+Alasan: pada eksekusi 13–15 Nov uji yang sama diulang 3–4 kali per unit (±480 jalan `tests_mem` penuh, ±170 jest penuh,
+±90 gate), dan gate dinilai per status sehingga pelanggaran baru di gate yang sudah merah lolos. Aturannya: **setiap kode
+diuji cukup sekali di tempat yang tepat; uji yang sama tidak diulang tanpa perubahan kode di antaranya; gate dinilai per
+pelanggaran.**
+
+| Tahap | Wajib | Tidak dilakukan |
+|---|---|---|
+| Selama mengerjakan (worktree kerja) | Uji terarah: berkas uji unit + berkas uji yang menyentuh berkas yang diubah (`pytest <berkas>` / `-k`), jest suite terkait, penjaga statik yang disebut unit | `tests_mem` atau jest penuh di tiap iterasi |
+| Sekali sebelum serah-terima | `tests_mem` penuh **sekali** dan jest penuh **sekali** pada pohon akhir (sesudah digabung ke HEAD terbaru); `hitung_penjaga` sebelum → sesudah | Jalan penuh sebelum gabung lalu diulang sesudah gabung tanpa perubahan kode; jalan penuh "untuk memastikan" |
+| Integrator memasang ke cabang | Bila pohon yang dipasang sama dengan pohon akhir pelaksana (dibandingkan per berkas) → angka pelaksana dipakai. Integrator hanya menjalankan berkas uji yang ia ubah sendiri (bentrok, cek layar) + suite terkait | `tests_mem` penuh ulang untuk pohon yang identik |
+| Lingkungan A | Satu `restore_demo` per gelombang untuk lapis A (hanya berkas lapis A unit) + uji jalan layar | Restore per unit |
+| Gate | Satu gate `--quick` + `--ci` per gelombang (3–4 unit), dijalankan saat lingkungan A menganggur; `--quick` per unit hanya bila unit mengubah penjaga | Gate penuh per unit |
+| Menilai gate | Dua pembanding, keduanya harus bersih: `python docs/reviews/2026-11-13/garis-dasar/bandingkan_gate.py` (status) **dan** `python3 scripts/blueprint/bandingkan_pelanggaran_gate.py docs/blueprint/garis-dasar-gate/2026-11-15_gate_ci.log <log gate baru>` (per pelanggaran). Pelanggaran baru = merah walau gate-nya sudah merah sebelumnya | Menyatakan "tidak lebih merah" hanya dari status gate |
+| Uji panjang (> 5 menit) | Dijalankan di latar; agen mengerjakan hal lain atau menunggu notifikasi selesai | Menunggu dengan memeriksa berulang (konteks besar dibaca ulang tiap pemeriksaan) |
+| Kendala lingkungan | Dicatat sekali di garis dasar dan dirujuk: 35 suite jest gagal dimuat (`cmdk`/`@radix-ui` lokal), `test_w2_020` butuh `pytest-asyncio`, rantai `restore_demo` gagal di `seed_demo_transaksi_kn.py` + `seed_p03_kn.py` | Diselidiki ulang di tiap unit |
+
+Garis dasar per pelanggaran sesudah eksekusi 15 Nov: `docs/blueprint/garis-dasar-gate/2026-11-15_gate_ci.log` (+ `_quick`,
+kuitansi). Pelanggaran yang ada di sana dan **lahir selama eksekusi blueprint** (dibandingkan dengan
+`docs/reviews/2026-11-13/garis-dasar/08_gate_ci.log`) belum dibereskan — daftar dan usulan perbaikannya di `STATUS.md`
+"Menunggu pemilik". Garis dasar ini diperbarui hanya bila pelanggaran berkurang, bukan untuk menerima pelanggaran baru.

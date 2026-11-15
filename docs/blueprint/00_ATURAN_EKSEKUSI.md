@@ -34,7 +34,7 @@ berakhir di tengah, kembalikan kode ke keadaan hijau terakhir, catat di laporan 
 | 3. Uji dulu | Tulis tiap baris tabel "Uji penerimaan" sebagai tes otomatis. Jalankan: harus **gagal** karena sebab yang sama dengan masalahnya. Untuk fitur baru: gagal karena fiturnya belum ada | Keluaran merah |
 | 4. Ubah | Ikuti bagian "Perubahan" unit dan standar di `02_STANDAR.md`. Sesedikit mungkin di luar itu | Daftar berkas |
 | 5. Hijau | Semua uji penerimaan lulus; tes "diharapkan gagal" milik temuan ini dicabut tandanya | Keluaran hijau |
-| 6. Gate | `bash scripts/gate.sh --quick` selalu; `bash scripts/gate.sh` bila unit menyentuh server; penjaga yang disebut unit | Selisih terhadap garis dasar (§4 `03_LINGKUNGAN_UJI.md` dan hasil PK-01) |
+| 6. Uji & gate | Ikuti **kebijakan uji hemat** `03_LINGKUNGAN_UJI.md` §6: uji terarah selama bekerja; `tests_mem` dan jest penuh masing-masing sekali pada pohon akhir; gate sekali per gelombang; penjaga yang disebut unit | Angka uji pohon akhir + selisih gate terhadap garis dasar **per pelanggaran** (`scripts/blueprint/bandingkan_pelanggaran_gate.py`) |
 | 7. Dokumen | Perbarui berkas yang disebut bagian "Dokumen ikut berubah" pada unit | Daftar |
 | 8. Laporan | `docs/reviews/2026-11-13/hasil/<ID>.md` memakai templat di `docs/reviews/README.md` + tabel uji penerimaan (uji → lapis → hasil) + daftar "Asumsi" | Tautan |
 

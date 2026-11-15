@@ -69,6 +69,9 @@ docker compose -f docker-compose.dev.yml exec backend bash  # di dalamnya repo =
 * Jangan ubah `deploy/docker-compose.yml`, `deploy/Dockerfile.backend|frontend` untuk
   kebutuhan dev — itu jalur produksi VPS. Dev memakai `docker-compose.dev.yml` dan `*.dev`.
 * Jangan jalankan dua POC/gate bersamaan (beberapa POC mengubah pengaturan global sementara).
+* **Uji hemat** (pemilik 15 Nov): ikuti `docs/blueprint/03_LINGKUNGAN_UJI.md` §6 — uji terarah selama bekerja,
+  suite penuh sekali pada pohon akhir, gate sekali per gelombang, gate dinilai per pelanggaran
+  (`scripts/blueprint/bandingkan_pelanggaran_gate.py`), uji panjang di latar.
 * Lebih dari satu agent bisa bekerja di repo ini — jangan mengedit file yang sedang dikerjakan
   agent lain; cek `git status` sebelum mulai dan sebelum commit.
 * Sebelum menyatakan selesai: jalankan gate yang relevan dari `docs/KN_00_AGENT_QUICK_START.md`
