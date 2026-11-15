@@ -13,6 +13,18 @@ Tiap klaim ditelusuri ke kode sampai terbukti/gugur. **Dua klaim pass awal dikor
 1. **Dulu diklaim** "SKU Pesanan Khusus lahir dengan stage kosong" → **salah**: `stamp_domain_defaults` mengisi stage default `finished`. Temuan yang benar (MS-01): produk cacat-domain (kekurangan field WAJIB per stage) tetap **disimpan** sebagai `domain_gaps`/`needs_review` karena `strict=False`, sedangkan pintu form menolak 400.
 2. **Dulu diklaim** "dua pintu keputusan grade / aturan grade tak ditegakkan" (QM-01) → **salah / ditarik**: grade roll punya **satu penulis** `grade_service.set_roll_grade()` dengan `grade_history`; `grade-override` adalah jalur koreksi terkendali (izin `wms:approve` + alasan wajib). Lihat `E-QC-MDQ.md`.
 
+## Status verifikasi per domain (sesi backend hidup + data acuan)
+
+| Domain | Metode | Status | Catatan |
+|---|---|---|---|
+| A master & stage | runtime + kode | **MS-01 & MS-05 runtime-verified** | bukti diproduksi (form 400 vs impor 200; orderable memuat pfd/pfp) |
+| B makloon | runtime + kode | MK-02 dikuatkan runtime; MK-01/03 kode | 3 makloon_orders; steps tak simpan from_stage/to_stage |
+| C R&D | kode | TERHAMBAT-DATA (0 special_orders) | RD-01 akar sama MS-01 (sudah runtime-verified) |
+| D retur | kode | TERHAMBAT-DATA (0 retur) | RT-01 sah (kode); RT-02 pertanyaan-perlu-data |
+| E QC & MDQ | kode | QM-01 ditarik (kode decisive); runtime TERHAMBAT-DATA (0 grade_history) | grade satu penulis |
+| F pesanan sesudah POS | runtime + kode | **SO-01 divergensi KODE terkonfirmasi, TAK tereproduksi di seed** (3 pintu setuju) → Tinggi | pemicu (gudang tak-dihitung / makloon sebagian) tak hadir di seed |
+
+
 ## Peta duplikasi — "pekerjaan → pintu yang ada → yang seharusnya satu"
 
 | Pekerjaan | Pintu/sumber sekarang | Yang seharusnya |

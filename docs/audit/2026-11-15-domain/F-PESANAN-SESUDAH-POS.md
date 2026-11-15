@@ -6,7 +6,21 @@ HEAD: `91a3ec0`.
 
 ## SO-01 — Dua pintu fulfillment menghitung ketersediaan dari koleksi MENTAH (lewati SSOT)
 
-- **Keparahan:** Kritis · **Jenis akar:** duplikasi / cacat logika → layar beda angka beda
+- **Keparahan:** Tinggi (semula Kritis — diturunkan: divergensi NYATA di kode, tetapi TIDAK termaterialisasi di data seed; risiko laten) · **Jenis akar:** duplikasi / cacat logika
+
+### Verifikasi runtime (backend hidup, data acuan) — JUJUR: divergensi tak tereproduksi pada SO sampel
+
+Diuji di SO `KANDA/SO-00006` (produk RIVERA RIB BW A), ketiga pintu dipanggil:
+```
+GET /sales-admin/orders/{id}/fulfillment       (decision, SSOT) → own available 0.0
+GET /sales-admin/orders/{id}/fulfillment-plan  (plan, MENTAH)   → own 0.0 · lain: Cipta Sandang 700.35, Sukacita 593.58
+GET /fulfillment/wizard/{id}                    (wizard, MENTAH) → own 0   · lain: Cipta Sandang 700.35, Sukacita 593.58
+```
+→ **plan == wizard** (angka sama). Sebab: (a) 1 cadangan makloon aktif di seed sudah **terkunci penuh** (`qty=300, locked=300, left=0`) sehingga `stock_figures` tak mengurangi apa pun ekstra; (b) gudang dengan saldo pada SO itu termasuk dihitung. Jadi kondisi pemicu divergensi tidak hadir di data seed.
+
+**Kesimpulan jujur:** divergensi KODE terkonfirmasi (lihat di bawah), tetapi pada data acuan saat ini ketiga pintu **setuju**. Divergensi akan muncul hanya bila: saldo ada di gudang **tak-dihitung** (`counted` false / nonaktif), atau cadangan makloon **sebagian** (`qty>locked`). Perlu data uji khusus untuk mereproduksi (dicatat sebagai langkah berikut).
+
+### Bukti kode (tetap berlaku)
 - **Fakta terverifikasi:**
   - **Selaras SSOT** (`stock_figures`, FIX-2 — hanya gudang DIHITUNG & cadangan makloon dialokasikan):
     - `fulfillment_service.build_supply_index` (`:39,56-60`) → `stock_figures.segments`.

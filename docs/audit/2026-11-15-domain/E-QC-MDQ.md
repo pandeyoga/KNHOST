@@ -25,3 +25,9 @@ Domain QC/MDQ belum diaudit tuntas tingkat-alur di sesi ini. Yang perlu pass ber
 
 Tidak dibuat temuan baru tanpa bukti. Modul relevan: `qc_service`, `qc_inspection_service`, `inspection_service`+`inspection_state`,
 `makloon_receipt_qc`, `inbound_qc_common`, `grade_service`, `grade_master_service`, `return_grade_impairment`.
+
+---
+
+## Verifikasi runtime (sesi backend hidup)
+
+Status: **kode decisive; runtime TERHAMBAT-DATA**. `db.inventory_rolls.countDocuments({grade_history:{$exists:true,$ne:[]}})` = **0** di data acuan (seed belum menjalankan inspeksi/override), jadi jalur grade belum bisa dipicu lewat data. Namun QM-01 ditarik atas dasar **kode decisive** (satu penulis `grade_service.set_roll_grade`, `grade_history` wajib, override berizin) — tidak bergantung data. Cakupan terima/tolak/karantina (pintu keputusan selain grade) perlu seed inspeksi untuk reproduksi runtime; dicatat sebagai pendalaman lanjutan, bukan temuan tanpa bukti.

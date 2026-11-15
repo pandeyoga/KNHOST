@@ -36,6 +36,13 @@ HEAD: `91a3ec0`.
 
 ---
 
+## Verifikasi runtime (sesi backend hidup + data acuan)
+
+Status: **sebagian terkonfirmasi**. Data acuan berisi 3 makloon_orders (tenun/rajut/celup).
+- **MK-02 dikuatkan runtime:** proyeksi `db.makloon_orders` menunjukkan `steps[]` hanya menyimpan `seq`, `process_type`, `stage_label` — **tidak ada field `from_stage`/`to_stage` tersimpan pada langkah**. Jadi transisi stage per langkah memang nominal (tak ada data stage yang bisa diadu dengan roll input). Konsisten dengan temuan kode.
+- **MK-01:** kedua endpoint pembuatan (`/makloon-orders` dari dua pintu UI) terjangkau; belum dibuat SPK baru (menghindari mutasi tak perlu). Terkonfirmasi tingkat kode + kedua pintu dirender.
+- Alur nilai/HPP/terima-sebagian: perlu membuat SPK baru (mutasi) → tidak dijalankan di sesi baca-saja ini; dicatat untuk pendalaman lanjutan.
+
 ## Tindak lanjut (butuh data acuan)
 
 Alur nilai (bahan+jasa+susut → HPP hasil), terima sebagian, kirim balik, perbaikan, batal di tengah, mitra beda per

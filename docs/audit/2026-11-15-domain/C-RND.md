@@ -20,6 +20,10 @@ HEAD: `91a3ec0`.
 
 ---
 
+## Verifikasi runtime (sesi backend hidup)
+
+Status: **TERHAMBAT-DATA**. `db.special_orders.countDocuments({})` = **0** di data acuan (seed tidak membuat Pesanan Khusus). Maka pintu `create-sku` (RD-01) tak bisa dipicu lewat data acuan di sesi ini. Namun akar RD-01 = **sama dengan MS-01** yang sudah **runtime-verified lewat pintu impor** (produk cacat-domain, bahkan stage tak sah, tersimpan via `save_product(strict=False)`; lihat `bukti/RUNTIME-DOMAIN-A.md`). Jadi cacat penegakan domain pada pintu `strict=False` sudah terbukti; khusus jalur R&D→sample→spec→SKU perlu data acuan R&D untuk reproduksi runtime penuh.
+
 ## Tindak lanjut R&D (butuh data acuan)
 
 Alur permintaan → sample → keputusan pelanggan → spesifikasi → SKU/varian → produksi/makloon; gerbang `rnd_gate` yang
