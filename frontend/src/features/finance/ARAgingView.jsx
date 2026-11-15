@@ -250,14 +250,13 @@ export default function ARAgingView({ selectedEntity, currentUser, focusDoc, onC
                bersama (D-12). Di HP tabel bergulir di dalam wadahnya; pesan kosong & pager di luar wadah gulir. */
             <div className="table-wrap">
               {canReceive && allPt && <p className="px-3 py-2 text-fs-12 text-kn-text-2" data-testid="ar-aging-receive-scope-note">{TEKS_PILIH_PT}</p>}
-              <table className="data-table head-wrap min-w-[860px]" data-testid="ar-aging-table">
+              <table className="data-table head-wrap min-w-[700px]" data-testid="ar-aging-table">
                 <thead>
                   <tr>
                     <th>Pelanggan</th>
                     {cols.map((b) => <th key={b.key} className="text-right" data-testid={`ar-aging-col-${b.key}`}>{b.label}</th>)}
                     <th className="text-right">Belum Lunas</th>
                     <th className="text-right">Denda</th>
-                    <th className="text-center">Kredit</th>
                     {canReceive && <th className="text-right col-sticky-end">Aksi</th>}
                   </tr>
                 </thead>
@@ -273,6 +272,9 @@ export default function ARAgingView({ selectedEntity, currentUser, focusDoc, onC
                         <p className="font-semibold text-[#1C1C1E]"><CustomerCardLink id={c.customer_id} name={c.customer_name}
                           perms={currentUser?.permissions} testId={`ar-aging-card-${c.customer_id}`} /></p>
                         <p className="text-[10px] text-[#9A9BA3]">{c.assigned_sales_name || "—"}{c.oldest_days > 0 ? ` · telat ${c.oldest_days} hr` : ""}</p>
+                        {/* Cek layar MN-T3 (1024 px): tabel 10 kolom (min 860 px) di kartu ±732 px — kolom Denda & Kredit tertutup
+                            kolom aksi lekat. Status kredit pindah ke bawah nama pelanggan (9 kolom, min 700 px). */}
+                        <div className="mt-1"><CreditStatusPill status={c.credit_status} testId={`ar-credit-${c.customer_id}`} /></div>
                       </td>
                       {cols.map((b) => <Cell key={b.key} v={c[b.key]} warn={WARN_KEYS.has(b.key)} danger={DANGER_KEYS.has(b.key)} />)}
                       <td className="px-3 py-2 text-right tabular-nums font-bold text-[#1C1C1E]">{formatCurrency(c.outstanding)}</td>
@@ -306,13 +308,15 @@ export default function ARAgingView({ selectedEntity, currentUser, focusDoc, onC
                           </div>
                         ) : <span className="text-[#C7C7CC]">—</span>}
                       </td>
-                      <td className="px-3 py-2 text-center"><CreditStatusPill status={c.credit_status} testId={`ar-credit-${c.customer_id}`} /></td>
                       {canReceive && (
                         <td className="px-3 py-2 text-right col-sticky-end">
+                          {/* Cek layar MN-T3 (1024 px): tabel 10 kolom 860 px di kartu ±732 px — label tombol dipendekkan ("Terima",
+                              nama lengkap di title/aria-label) supaya kolom Denda & Kredit tidak tertutup kolom aksi lekat. */}
                           <button type="button" className="primary-button btn-sm whitespace-nowrap" disabled={allPt}
-                            data-testid={`ar-aging-receive-${c.customer_id}`}
+                            data-testid={`ar-aging-receive-${c.customer_id}`} title="Terima pembayaran"
+                            aria-label={`Terima pembayaran ${c.customer_name || ""}`.trim()}
                             onClick={(e) => { e.stopPropagation(); setRowPay({ id: c.customer_id, name: c.customer_name }); }}>
-                            Terima pembayaran
+                            Terima
                           </button>
                         </td>
                       )}
@@ -332,7 +336,6 @@ export default function ARAgingView({ selectedEntity, currentUser, focusDoc, onC
                         est. {formatCurrency(foot.denda)}
                       </span>
                     </td>
-                    <td className="px-3 py-2" />
                     {canReceive && <td className="px-3 py-2 col-sticky-end" />}
                   </tr>
                   {filtered && (
@@ -340,7 +343,7 @@ export default function ARAgingView({ selectedEntity, currentUser, focusDoc, onC
                       <td className="px-3 py-1.5 uppercase text-[10px]">Total semua pelanggan</td>
                       <td colSpan={cols.length} />
                       <td className="px-3 py-1.5 text-right tabular-nums" data-testid="ar-aging-total-all">{formatCurrency(totals.total)}</td>
-                      <td colSpan={canReceive ? 3 : 2} />
+                      <td colSpan={canReceive ? 2 : 1} />
                     </tr>
                   )}
                 </tfoot>
