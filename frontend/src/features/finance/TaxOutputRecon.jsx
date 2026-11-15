@@ -4,6 +4,7 @@ import axios, { API } from "../../services/apiClient";
 import { apiErrorText } from "../../utils/apiError";
 import { formatCurrency, todayWib } from "../../utils/formatters";
 import ErrorNotice from "../../components/ErrorNotice";
+import KNMonthPicker from "../../components/KNMonthPicker";
 import { MetricRow } from "../../components/ListPageParts";
 import { useEntityScope } from "../../context/EntityScopeContext";
 import { useAppNav } from "../../context/AppNavContext";
@@ -105,11 +106,11 @@ export default function TaxOutputRecon({ canRebuild = false }) {
       </div>
       <div className="section-body space-y-3">
         <div className="flex flex-wrap items-end gap-2">
-          <label className="flex flex-col gap-1 text-fs-12 text-kn-text-2">
+          <div className="flex flex-col gap-1 text-fs-12 text-kn-text-2">
             Masa pajak
-            <input type="month" data-testid="fkt-recon-period" className="field" value={period}
-              onChange={(e) => setPeriod(e.target.value)} />
-          </label>
+            <KNMonthPicker data-testid="fkt-recon-period" value={period} onChange={(v) => setPeriod(v || "")}
+              placeholder="Pilih masa" />
+          </div>
           {data && (
             <label className="flex flex-col gap-1 text-fs-12 text-kn-text-2">
               Cari sumber

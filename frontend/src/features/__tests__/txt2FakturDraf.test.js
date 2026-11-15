@@ -27,6 +27,15 @@ jest.mock("../../components/KNSelect", () => {
   return { __esModule: true, default: S, KNSelect: S };
 });
 jest.mock("../documents/DocumentActionsBar", () => () => null);
+jest.mock("../../components/KNDatePicker", () => ({
+  __esModule: true,
+  default: (p) => <input data-testid={p["data-testid"]} value={p.value || ""} onChange={(e) => p.onChange?.(e.target.value)} />,
+}));
+jest.mock("../../components/KNMonthPicker", () => ({
+  __esModule: true,
+  default: (p) => <input data-testid={p["data-testid"]} value={p.value || ""} onChange={(e) => p.onChange?.(e.target.value)} />,
+  formatPeriodId: (v) => v,
+}));
 
 // eslint-disable-next-line import/first
 import TaxInvoices from "../finance/TaxInvoices";
@@ -108,8 +117,13 @@ test("Draf: status ikon+teks, kolom Sumber, saringan Draf/Diganti, sakelar jenis
     "/settings/effective": { tax: { kode_transaksi_diizinkan: ["01", "04"] } } });
   const buka = jest.fn();
   await mount(wrap(<TaxInvoices currentUser={{ role: "admin", permissions: PERMS }} />, { onOpen: buka }));
-  expect([...document.body.querySelectorAll("thead th")].slice(0, 8).map((t) => t.textContent)).toEqual([
-    "No. Faktur · Status", "NSFP", "Sumber", "Pembeli", "DPP", "PPN", "Total (termasuk PPN)", "Aksi"]);
+  // Cek layar integrator (1024 px): 8 kolom = 1069 px > kartu ±730 px → 5 kolom; NSFP di bawah nomor, DPP · PPN · total
+  // satu kolom berlabel.
+  expect([...q("fkt-table").querySelectorAll("thead th")].map((t) => t.textContent)).toEqual([
+    "No. Faktur · Status · NSFP", "Sumber", "Pembeli", "DPP · PPN · Total", "Aksi"]);
+  expect(q("fkt-nsfp-text-d1").textContent).toMatch(/NSFP\s*belum diisi/);
+  expect(q("fkt-ppn-d1").textContent).toMatch(/^PPN\s/);
+  expect(q("fkt-total-d1").textContent).toMatch(/^Total\s/);
   expect(q("fkt-row-d1").querySelector(".status-pill").textContent).toBe("Draf");
   expect(q("fkt-row-d1").querySelector(".status-pill svg")).not.toBeNull();
   expect(q("fkt-row-f0").querySelector(".status-pill").textContent).toBe("Diganti");

@@ -78,5 +78,11 @@ async def _putaran():
 
 def test_TXT2_U17_dua_draf_bersamaan_satu_draf():
     assert os.environ.get("MONGO_URL"), "lapis A: butuh MongoDB asli (MONGO_URL)"
-    for _ in range(3):   # beberapa putaran: balapan tidak selalu muncul di satu percobaan
-        asyncio.run(_putaran())
+    # Satu event loop untuk semua putaran: klien Motor (`db.db`) terikat ke loop pertama yang memakainya; `asyncio.run`
+    # per putaran menutup loop itu sehingga putaran kedua gagal "Event loop is closed".
+    loop = asyncio.new_event_loop()
+    try:
+        for _ in range(3):   # beberapa putaran: balapan tidak selalu muncul di satu percobaan
+            loop.run_until_complete(_putaran())
+    finally:
+        loop.close()

@@ -8,6 +8,7 @@ import { formatCurrency } from "../../utils/formatters";
 import { docDpp, usesDppNilaiLain, dppFactorText, taxRuleRows } from "../../utils/taxBreakdown";
 import DetailModal from "../../components/DetailModal";
 import KNSelect from "../../components/KNSelect";
+import KNDatePicker from "../../components/KNDatePicker";
 import ErrorNotice from "../../components/ErrorNotice";
 import DocumentActionsBar from "../documents/DocumentActionsBar";
 import FormModal from "../../components/FormModal";
@@ -98,7 +99,7 @@ function SourceCell({ fkt, onOpenOrder }) {
           onClick={() => onOpenOrder(fkt)}>{fkt.order_number || "Pesanan"}</button>
       ) : <span className="whitespace-nowrap">{fkt.order_number || "—"}</span>}
       {fkt.trigger === "surat_jalan" && fkt.shipment_no && (
-        <span className="block whitespace-nowrap text-fs-12 text-kn-text-2">Surat jalan {fkt.shipment_no}</span>
+        <span className="block text-fs-12 text-kn-text-2">Surat jalan <span className="whitespace-nowrap">{fkt.shipment_no}</span></span>
       )}
       {isRetur(fkt) && (
         <span className="block text-fs-12 text-kn-text-2">
@@ -314,25 +315,23 @@ export default function TaxInvoices({ currentUser = {}, focusDoc, onClearFocus }
           </div>
 
           <div className="overflow-x-auto rounded-md border border-kn-divider">
-            {/* Cek layar KN_37 — 8 kolom (status di bawah nomor) agar muat di 1280 px: judul boleh dua baris
-                (`head-wrap`), nomor & "belum diisi" tidak dipatah, ikon aksi 2×2, kolom aksi lekat di kanan. */}
+            {/* Cek layar KN_37 — 5 kolom agar muat di kartu 1024 px (±730 px) tanpa gulir: status & NSFP di bawah
+                nomor, DPP · PPN · total satu kolom berlabel, ikon aksi satu kisi 3 kolom, kolom aksi lekat di kanan.
+                Uji jalan TX-T2 (integrator): 8 kolom = 1069 px — DPP/PPN/total tertutup di 1024 px. */}
             <table className="data-table head-wrap" data-testid="fkt-table">
               <thead>
                 <tr>
-                  <th>No. Faktur · Status</th>
-                  <th>NSFP</th>
+                  <th>No. Faktur · Status · NSFP</th>
                   <th>Sumber</th>
                   <th>Pembeli</th>
-                  <th className="text-right">DPP</th>
-                  <th className="text-right">PPN</th>
-                  <th className="text-right" data-testid="fkt-col-total">Total (termasuk PPN)</th>
+                  <th className="text-right" data-testid="fkt-col-total">DPP · PPN · Total</th>
                   <th className="col-sticky-end text-right">Aksi</th>
                 </tr>
               </thead>
               <tbody>
                 {filtered.length === 0 ? (
                   <tr>
-                    <td colSpan={8} className="py-6 text-center text-kn-text-2">
+                    <td colSpan={5} className="py-6 text-center text-kn-text-2">
                       {loading ? "Memuat…" : filter === "draf" && !search.trim() ? "Tidak ada draf faktur."
                         : (rows.length ? "Tidak ada faktur yang cocok dengan saringan." : "Belum ada Faktur Pajak.")}
                     </td>
@@ -346,44 +345,47 @@ export default function TaxInvoices({ currentUser = {}, focusDoc, onClearFocus }
                         <td>
                           <span className="block whitespace-nowrap font-bold text-kn-action">{f.number}</span>
                           <span className="mt-1 inline-block"><StatusPill status={f.status} /></span>
-                        </td>
-                        <td>
-                          {f.nsfp ? (
-                            <span className="tabular-nums">{f.nsfp}</span>
-                          ) : (
-                            <span className="whitespace-nowrap text-kn-warning-text">belum diisi</span>
-                          )}
+                          <span className="mt-1 block whitespace-nowrap text-fs-12" data-testid={`fkt-nsfp-text-${f.id}`}>
+                            <span className="text-kn-text-2">NSFP </span>
+                            {f.nsfp ? <span className="tabular-nums">{f.nsfp}</span>
+                              : <span className="text-kn-warning-text">belum diisi</span>}
+                          </span>
                         </td>
                         <td><SourceCell fkt={f} onOpenOrder={openOrder} /></td>
                         <td>
-                          <span className="block max-w-[180px] truncate">{f.customer_name}</span>
+                          <span className="block max-w-[150px] truncate" title={f.customer_name}>{f.customer_name}</span>
                           <span className="block text-fs-12 text-kn-text-2">{buyerId(f)}</span>
                           <IncompletePill fkt={f} onOpen={openCustomer} />
                         </td>
                         {/* Keputusan pemilik K-03 (26 Okt) — DPP = harga sebelum PPN; rezim 12% → baris DPP nilai lain.
                             TX-T1 — pecahan dari potret pajak faktur (faktur lama: 11/12). */}
-                        <td className="text-right tabular-nums" data-testid={`fkt-dpp-${f.id}`}>
-                          {formatCurrency(docDpp(f))}
+                        <td className="text-right tabular-nums">
+                          <span className="block whitespace-nowrap" data-testid={`fkt-dpp-${f.id}`}>
+                            <span className="text-fs-12 text-kn-text-2">DPP </span>{formatCurrency(docDpp(f))}
+                          </span>
                           {usesDppNilaiLain(f) && (
                             <span className="block whitespace-normal text-fs-12 text-kn-text-2">
                               <span className="whitespace-nowrap">nilai lain ({dppFactorText(f)})</span>{" "}
                               <span className="whitespace-nowrap">{formatCurrency(f.dpp)}</span>
                             </span>
                           )}
+                          <span className="block whitespace-nowrap" data-testid={`fkt-ppn-${f.id}`}>
+                            <span className="text-fs-12 text-kn-text-2">PPN </span>{formatCurrency(f.ppn_amount)}
+                          </span>
+                          <span className="block whitespace-nowrap font-semibold" data-testid={`fkt-total-${f.id}`}>
+                            <span className="text-fs-12 font-normal text-kn-text-2">Total </span>{formatCurrency(f.grand_total)}
+                          </span>
                         </td>
-                        <td className="text-right tabular-nums">{formatCurrency(f.ppn_amount)}</td>
-                        <td className="text-right tabular-nums font-semibold">{formatCurrency(f.grand_total)}</td>
                         <td className="col-sticky-end">
-                          {/* Lebar minimum = ikon rincian + dua kisi 2×2, supaya kisi tidak runtuh jadi satu kolom. */}
-                          <div className="flex min-w-[172px] flex-nowrap items-center justify-end gap-1">
+                          {/* Satu kisi 3 kolom: rincian, aksi dokumen (`contents` → tombolnya ikut kisi), cetak, aksi faktur. */}
+                          <div className="grid grid-cols-[repeat(3,2rem)] justify-end gap-1">
                             <button type="button" data-testid={`fkt-detail-${f.id}`} className="icon-button" title="Rincian faktur & aturan pajak"
                               aria-label="Rincian faktur" onClick={() => setDetail(f)}>
                               <Info size={13} />
                             </button>
                             <DocumentActionsBar docType="tax_invoice" sourceId={f.id} entityId={f.entity_id}
                               number={f.number} label="Faktur Pajak" currentUser={currentUser}
-                              compact autoCheckSignature={false} />
-                            <div className="grid grid-cols-2 gap-1">
+                              compact autoCheckSignature={false} className="contents" />
                             <button data-testid={`fkt-print-${f.id}`} className="icon-button" title="Cetak Faktur (format lama)" onClick={() => openDoc(f.id)}>
                               <Printer size={13} />
                             </button>
@@ -414,7 +416,6 @@ export default function TaxInvoices({ currentUser = {}, focusDoc, onClearFocus }
                                 <Ban size={13} />
                               </button>
                             )}
-                            </div>
                           </div>
                         </td>
                       </tr>
@@ -490,9 +491,9 @@ export default function TaxInvoices({ currentUser = {}, focusDoc, onClearFocus }
 
           {modal.type === "issue" && (
             <div className="space-y-2" data-testid="fkt-issue-form">
-              <label className="field-label" htmlFor="fkt-issue-date">Tanggal faktur</label>
-              <input id="fkt-issue-date" type="date" data-testid="fkt-issue-date" value={dateVal}
-                onChange={(e) => setDateVal(e.target.value)} className="field w-full" />
+              <label className="field-label">Tanggal faktur</label>
+              <KNDatePicker data-testid="fkt-issue-date" value={dateVal} onChange={(v) => setDateVal(v || "")}
+                placeholder="Tanggal faktur" />
               <p className="text-fs-12 text-kn-text-2">Bawaan = tanggal surat jalan / nota kreditnya. Masa pajak yang sudah ditandai dilaporkan ditolak.</p>
               <label className="field-label mt-2">Kode transaksi</label>
               <KNSelect data-testid="fkt-kode-select" value={kodeVal} onValueChange={setKodeVal} className="field w-full"
