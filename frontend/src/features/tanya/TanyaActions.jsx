@@ -7,7 +7,8 @@ import { kpiValueParts } from "../finance/financeShared";
 import { CARD_STATUS_LABEL, StatusPill, TanyaActionCard } from "./TanyaActionCard";
 import { fetchActions } from "./tanyaApi";
 
-/** Saringan tab "Tindakan" (AG-T3). "Menunggu orang lain" kosong sampai ada persetujuan orang kedua (AG-T5). */
+/** Saringan tab "Tindakan" (AG-T3). "Menunggu orang lain" (AG-T5) = kartu yang menunggu persetujuan orang kedua di PT
+ *  aktif: yang boleh Anda putus sebagai orang kedua, dan kartu Anda sendiri yang sedang menunggu. */
 export const ACTION_BOXES = [["mine", "Menunggu saya"], ["others", "Menunggu orang lain"], ["done", "Selesai"],
   ["failed", "Gagal"]];
 const PAGE_SIZE = 20;
@@ -17,8 +18,8 @@ const COLS = ["Tindakan", "PT", "Nominal", "Dibuat", "Berlaku sampai", "Status"]
  * Tanya KN › Tindakan — daftar kartu tindakan milik pengguna, per saringan, berhalaman dengan jumlah total. Baris
  * dipilih → kartunya tampil di pop-up (`DetailModal`, INV-UI-08; setujui/abaikan dari sini sama dengan di percakapan).
  */
-export function TanyaActions({ refreshKey }) {
-  const [box, setBox] = useState("mine");
+export function TanyaActions({ refreshKey, initialBox = "mine" }) {
+  const [box, setBox] = useState(ACTION_BOXES.some(([k]) => k === initialBox) ? initialBox : "mine");
   const [page, setPage] = useState(1);
   const [data, setData] = useState(null);
   const [error, setError] = useState(false);
@@ -64,7 +65,7 @@ export function TanyaActions({ refreshKey }) {
                   <td data-label={COLS[1]}>{it.entity_name || "—"}</td>
                   <td data-label={COLS[2]} className="tabular-nums"><span>{amount > 0 ? kpiValueParts(formatCurrency(amount)) : "—"}</span></td>
                   <td data-label={COLS[3]}>{formatDateTime(it.created_at)}</td>
-                  <td data-label={COLS[4]}>{it.status === "pending" ? formatDateTime(it.expires_at) : "—"}</td>
+                  <td data-label={COLS[4]}>{["pending", "awaiting_second"].includes(it.status) ? formatDateTime(it.expires_at) : "—"}</td>
                   <td data-label={COLS[5]}><StatusPill status={it.status} labels={CARD_STATUS_LABEL} testId={`tanya-actions-pill-${it.id}`} /></td>
                 </tr>
               );

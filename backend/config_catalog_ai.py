@@ -155,6 +155,14 @@ E("ai.tindakan_uang_masuk", group="asisten-analitik", section="tanya-kn-tindakan
   impact="Mati = kartu golongan itu tidak bisa disiapkan maupun disetujui untuk PT ini.",
   example="Ya untuk PT A saja",
   consumers=("services/ai_cards.py:_sakelar_b",), risk="high", requires_reason=True, permission=("ai", "configure"))
+# ── AG-T5 (K-44, H5) — kartu tindakan golongan C (uang keluar dan jurnal); bawaan mati, pemilik yang menyalakan per PT ──
+E("ai.tindakan_uang_keluar", group="asisten-analitik", section="tanya-kn-tindakan", type="bool", default=False,
+  scopes=("global", "entity"),
+  label="Izinkan asisten untuk uang keluar dan jurnal",
+  help="Menyala = pengguna yang dinyalakan boleh menyetujui kartu bayar pemasok, kas manual, dan jurnal untuk PT ini.",
+  impact="Mati = kartu golongan itu tidak bisa disiapkan.",
+  example="Ya untuk PT A saja",
+  consumers=("services/ai_cards.py:_sakelar_c",), risk="high", requires_reason=True, permission=("ai", "configure"))
 E("ai.tindakan_maks_per_hari", group="asisten-analitik", section="tanya-kn-tindakan", type="int", default=0, min=0,
   max=1000, scopes=("global", "entity"), unit="kartu",
   label="Batas kartu disetujui per orang per hari",

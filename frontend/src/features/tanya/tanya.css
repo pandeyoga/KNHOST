@@ -352,3 +352,6 @@ body.tanya-open [data-testid="help-tours-button"] span { display: none; }
 /* AG-T3 — enam tab samping di panel 320 px: dua baris (tidak ada tab yang tersembunyi di gulir datar). */
 .tanya-layout .tanya-side-tabs { flex-wrap: wrap; overflow-x: visible; }
 .tanya-action-buttons .btn-sm, .tanya-actions-pager .btn-sm, .tanya-action-outcome .btn-sm { white-space: nowrap; }
+/* AG-T5 — kartu golongan C yang menunggu orang kedua: alasan pembuat, isian alasan, bilah tombol (baris sendiri). */
+.tanya-card-second { display: flex; flex-direction: column; gap: var(--sp-2); margin-top: var(--sp-2); min-width: 0; }
+.tanya-card-second .tanya-action-hint { flex-basis: 100%; }

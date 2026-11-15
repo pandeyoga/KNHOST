@@ -1773,6 +1773,10 @@
    "sistem",
    "tanya-kn-tindakan"
   ],
+  "ai.tindakan_uang_keluar": [
+   "sistem",
+   "tanya-kn-tindakan"
+  ],
   "ai.tindakan_maks_per_hari": [
    "sistem",
    "tanya-kn-tindakan"
@@ -2192,6 +2196,14 @@
   "kontrol.cairkan_uang_muka.batas_nominal": [
    "persetujuan",
    "dua-orang-sdm"
+  ],
+  "kontrol.asisten_uang_keluar.min_orang": [
+   "persetujuan",
+   "dua-orang-buku"
+  ],
+  "kontrol.asisten_uang_keluar.batas_nominal": [
+   "persetujuan",
+   "dua-orang-buku"
   ],
   "kontrol.admin_boleh_sendiri": [
    "persetujuan",

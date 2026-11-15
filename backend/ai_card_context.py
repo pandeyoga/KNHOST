@@ -2,7 +2,8 @@
 
 Kartu tindakan (`services/ai_cards.py`) menjalankan SATU panggilan tulis lewat pintu aplikasi sendiri dengan header
 `X-Asisten-Kartu: <id kartu>`. Middleware kecil di sini menaruh id itu di konteks permintaan **hanya bila** kartunya
-berstatus `running` dan milik pengguna sesi permintaan tersebut; di luar itu header diabaikan (U17 — header palsu dari
+berstatus `running` dan pelaksananya pengguna sesi permintaan tersebut (pembuat, atau — AG-T5 — orang kedua yang
+menjalankan kartu golongan C; `executor_id`); di luar itu header diabaikan (U17 — header palsu dari
 klien biasa tidak pernah menempel di dokumen). Layanan tujuan membaca `current_card_id()` lalu menulis `ai_card_id`:
 
     from ai_card_context import current_card_id
@@ -39,8 +40,11 @@ async def _verified_card(scope: Dict[str, Any], card_id: str) -> str:
     user_id = await _session_user_id(Request(scope))
     if not user_id:
         return ""
-    card = await db.ai_action_proposals.find_one({"id": card_id, "status": "running", "user_id": user_id},
-                                                 {"_id": 0, "id": 1})
+    # AG-T5 — pelaksana = `executor_id` (pembuat atau orang kedua); kartu lama tanpa field itu: pembuatnya.
+    card = await db.ai_action_proposals.find_one(
+        {"id": card_id, "status": "running",
+         "$or": [{"executor_id": user_id}, {"user_id": user_id, "executor_id": {"$exists": False}}]},
+        {"_id": 0, "id": 1})
     return card_id if card else ""
 
 

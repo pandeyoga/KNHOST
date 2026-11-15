@@ -108,6 +108,9 @@ export const fetchAction = (id) => axios.get(`${API}/ai/actions/${id}`).then((r)
 export const confirmAction = (id, edits, extra = {}) =>
   axios.post(`${API}/ai/actions/${id}/confirm`, { edits, ...extra }).then((r) => r.data);
 export const dismissAction = (id, reason = "") => axios.post(`${API}/ai/actions/${id}/dismiss`, reason ? { reason } : {}).then((r) => r.data);
+// AG-T5 — orang kedua memutus kartu golongan C yang menunggu: `decision` = "approve" | "reject" (alasan wajib saat menolak).
+export const secondAction = (id, decision, reason = "") =>
+  axios.post(`${API}/ai/actions/${id}/second`, { decision, reason }).then((r) => r.data);
 export const fetchActions = (box, page = 1, pageSize = 20) =>
   axios.get(`${API}/ai/actions`, { params: { box, page, page_size: pageSize } }).then((r) => r.data);
 export const fetchInsights = () => axios.get(`${API}/ai/insights`).then((r) => (Array.isArray(r.data) ? r.data : []));

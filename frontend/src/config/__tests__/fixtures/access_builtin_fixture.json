@@ -17,7 +17,9 @@
    ],
    "ai_finance": [
     "view",
-    "create"
+    "create",
+    "pay",
+    "approve"
    ],
    "ai_template": [
     "daily_brief",
@@ -689,7 +691,8 @@
    ],
    "ai_finance": [
     "view",
-    "create"
+    "create",
+    "pay"
    ],
    "ai_template": [
     "daily_brief",
@@ -877,7 +880,9 @@
    ],
    "ai_finance": [
     "view",
-    "create"
+    "create",
+    "pay",
+    "approve"
    ],
    "ai_template": [
     "daily_brief",

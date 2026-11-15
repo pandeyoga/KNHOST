@@ -188,12 +188,12 @@ async def propose_action(args, user, ctx, session_id=None) -> Dict[str, Any]:
 async def _segarkan(doc: Dict[str, Any]) -> Dict[str, Any]:
     """Kedaluwarsa & proses mati diterapkan saat kartu dibaca (data lama ikut, tanpa skrip migrasi)."""
     now = datetime.now(timezone.utc)
-    if doc.get("status") == "pending":
+    if doc.get("status") in ("pending", "awaiting_second"):   # AG-T5 — kartu menunggu orang kedua juga kedaluwarsa
         exp = doc.get("expires_at") or ((_waktu(doc.get("created_at")) or now) + await _masa_berlaku(doc["entity_id"])).isoformat()
         doc["expires_at"] = exp   # kartu lama: dihitung dari created_at + pengaturan PT kartu, tidak disimpan
         if (_waktu(exp) or now) <= now:
             res = await db.ai_action_proposals.update_one(
-                {"id": doc["id"], "status": "pending"},
+                {"id": doc["id"], "status": doc["status"]},
                 {"$set": {"status": "expired", "finished_at": now.isoformat(), "updated_at": now.isoformat()}})
             if res.modified_count:
                 doc.update(status="expired", finished_at=now.isoformat())

@@ -333,6 +333,12 @@ async def pay_payable(*, kind: str, target_id: str, actor: Dict[str, Any], amoun
     token = claimed[_saga.LOCK]["token"]
     ent = plan["entity_id"]
     cash, adv = plan["cash"], plan["advance"]
+    # AG-T5 — pembayaran dari kartu tindakan asisten: id kartu menempel di niat, kas, dan catatan bayar dokumen.
+    from ai_card_context import card_field
+    kartu = card_field()
+    for c in (cash, adv):
+        if c:
+            c.update(kartu)
     from services import cash_ledger
     try:
         if cash:
@@ -352,6 +358,7 @@ async def pay_payable(*, kind: str, target_id: str, actor: Dict[str, Any], amoun
             "status": "pending", "step": "intent", "gl_status": "pending", "gl_error": "", "lock_token": token,
             "error": "", "attempts": 0, "variance_decision_id": "", "created_by": actor.get("name", ""),
             "created_by_id": actor.get("id", ""), "created_at": now_iso(), "updated_at": now_iso(), "done_at": "",
+            **kartu,
         }
         await db[COLL].insert_one(dict(intent))
     except Exception:
@@ -433,6 +440,8 @@ async def _apply_allocations(intent: Dict[str, Any], actor: Dict[str, Any]) -> N
                  "cash_txn_number": intent.get("cash_txn_number", "") if al["source"] == "cash" else "",
                  "cash_type": intent.get("cash_type", ""), "notes": intent.get("notes", ""),
                  "payment_intent_id": intent["id"], "paid_by": actor.get("name", ""), "paid_at": intent["paid_at"]}
+        if intent.get("ai_card_id"):   # AG-T5
+            entry["ai_card_id"] = intent["ai_card_id"]
         if via_cb:
             entry.update({"contra_bon_id": intent["target_id"], "contra_bon_number": intent["target_number"],
                           "notes": f"Pelunasan lewat kontrabon {intent['target_number']}"
@@ -471,7 +480,8 @@ async def _insert_cash(intent: Dict[str, Any]) -> None:
     for c in (intent.get("cash_doc"), intent.get("advance_cash_doc")):
         if not c or _r(c.get("amount")) <= EPS:
             continue
-        tambahan = {k: c[k] for k in ("number", "ref_number", "counterparty_name", "payment_intent_id") if c.get(k)}
+        tambahan = {k: c[k] for k in ("number", "ref_number", "counterparty_name", "payment_intent_id", "ai_card_id")
+                    if c.get(k)}
         try:
             await cash_ledger.create_cash(
                 entity_id=c["entity_id"], direction=c.get("direction") or "out", amount=_r(c["amount"]),
@@ -515,7 +525,8 @@ async def _update_document(intent: Dict[str, Any], actor: Dict[str, Any]) -> Non
             "bank_line_id": intent.get("bank_line_id", ""), "notes": intent.get("notes", ""),
             "payment_intent_id": intent["id"], "paid_by": actor.get("name", ""), "paid_at": intent["paid_at"],
             "allocations": [{"bill_id": a["bill_id"], "bill_number": a["bill_number"], "amount": a["amount"],
-                             "source": "cash"} for a in intent["allocations"] if a["source"] == "cash"]})
+                             "source": "cash"} for a in intent["allocations"] if a["source"] == "cash"],
+            **({"ai_card_id": intent["ai_card_id"]} if intent.get("ai_card_id") else {})})
     cbs.recompute(cb)
     if cb["totals"]["outstanding"] <= EPS:
         cb["status"] = "paid"

@@ -175,6 +175,7 @@ async def create_cash_transaction(payload: CashTransactionCreate, request: Reque
         raise HTTPException(status_code=400, detail=(
             "Transaksi kas manual tidak boleh menunjuk dokumen lain. Catat pembayaran dari dokumennya."))
     # PK-20 — PERIKSA rekening & periode lebih dulu (urutan lama: rekening → periode → anggaran), tanpa tulisan.
+    from ai_card_context import card_field
     from services import cash_ledger
     from services import gl_service as _gl
     rek = await cash_ledger.periksa_rekening(entity_id, getattr(payload, "account_id", "") or "", payload.cash_type)
@@ -203,7 +204,8 @@ async def create_cash_transaction(payload: CashTransactionCreate, request: Reque
             ref_id=ref_id, account_id=rek["account_id"], cash_type=payload.cash_type,
             txn_date=payload.txn_date or "", category=payload.category.strip(), description=payload.description.strip(),
             actor=actor.get("name", ""),   # PK-09 — nilai klien `created_by` diabaikan
-            extra={"budget_check": budget_check} if budget_check is not None else None)
+            # AG-T5 — kas manual dari kartu tindakan asisten membawa `ai_card_id` (hanya kartu `running` milik pelaksana).
+            extra={**({"budget_check": budget_check} if budget_check is not None else {}), **card_field()} or None)
     except cash_ledger.CashPostingError as exc:
         await audit(actor["name"], "cash_transaction_created", "cash_transaction", exc.txn.get("id", ""), {
             "number": exc.txn.get("number", ""), "cash_type": exc.txn.get("cash_type", ""),

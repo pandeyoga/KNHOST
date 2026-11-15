@@ -1,5 +1,5 @@
 <!-- DIHASILKAN OTOMATIS oleh scripts/gen_codebase_map.py — JANGAN EDIT TANGAN -->
-<!-- Dihasilkan dari commit: c1be042 pada 2026-11-15 -->
+<!-- Dihasilkan dari commit: 15d3258 pada 2026-11-15 -->
 # CODEBASE MAP — Kain Nusantara (dihasilkan otomatis)
 
 Peta ini dihitung dari kode oleh `scripts/gen_codebase_map.py`. Kalau angka di sini
@@ -13,8 +13,8 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 | Ukuran | Nilai |
 |---|---:|
 | Router (`backend/routers/*.py`) | 170 |
-| Endpoint (`@router.<method>`) | 1845 |
-| Service (`backend/services/*.py`) | 424 |
+| Endpoint (`@router.<method>`) | 1846 |
+| Service (`backend/services/*.py`) | 425 |
 | Koleksi MongoDB disentuh kode produksi | 208 |
 | Direktori fitur frontend (`src/features/*`) | 40 |
 
@@ -28,7 +28,7 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 | `schemas.py` | 1151 |
 | `schemas_purchasing.py` | 628 |
 | `dependencies.py` | 287 |
-| `permissions_config.py` | 975 |
+| `permissions_config.py` | 992 |
 | `entity_scope.py` | 751 |
 | `pagination.py` | 145 |
 | `indexes.py` | 1047 |
@@ -126,7 +126,7 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 | `access_roles.py` | 13 | 228 | `/labels`, `/modules`, `/roles`, `/roles/preview`, `/roles/{rid}`, `/roles/{rid}/follow-base` … |
 | `admin.py` | 10 | 563 | `/admin/seed-demo`, `/master-data/export-customers`, `/master-data/export-products`, `/master-data/export-warehouses`, `/master-data/export-yarn`, `/master-data/import-customers` … |
 | `ai_analytics.py` | 32 | 523 | `/analyze-change`, `/catalog`, `/chat`, `/export.xlsx`, `/facts/rebuild`, `/facts/status` … |
-| `ai_assist.py` | 6 | 68 | `/actions`, `/actions/{pid}`, `/actions/{pid}/confirm`, `/actions/{pid}/dismiss`, `/insights`, `/insights/scan` |
+| `ai_assist.py` | 7 | 82 | `/actions`, `/actions/{pid}`, `/actions/{pid}/confirm`, `/actions/{pid}/dismiss`, `/actions/{pid}/second`, `/insights` … |
 | `ai_finance_packs.py` | 3 | 126 | `/finance/closing-pack`, `/finance/closing-pack/{pack_id}`, `/finance/closing-pack/{pack_id}/export.xlsx` |
 | `amendments.py` | 10 | 187 | `/amendment-reasons`, `/amendments`, `/amendments/doc/{doc_type}/{doc_id}`, `/amendments/preview`, `/amendments/stats/summary`, `/amendments/{amd_id}` … |
 | `ap_payments.py` | 4 | 85 | `/ap-payments/accounts`, `/ap-payments/pending`, `/ap-payments/{intent_id}/cancel`, `/ap-payments/{intent_id}/resume` |
@@ -140,7 +140,7 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 | `bank.py` | 9 | 188 | `/bank-account-changes`, `/bank-account-changes/{change_id}/decision`, `/bank-accounts`, `/bank-accounts/position`, `/bank-accounts/receiving`, `/bank-accounts/{account_id}` … |
 | `bank_reconciliation.py` | 23 | 436 | `/bank-reconciliation/auto-match`, `/bank-reconciliation/formats`, `/bank-reconciliation/formats/{format_id}`, `/bank-reconciliation/holding`, `/bank-reconciliation/import`, `/bank-reconciliation/import-file` … |
 | `budgets.py` | 10 | 207 | `/finance/budget-check`, `/finance/budget-keys`, `/finance/budget-rules`, `/finance/budget-vs-actual`, `/finance/budgets`, `/finance/budgets/{budget_id}` … |
-| `cash.py` | 4 | 290 | `/cash-transactions`, `/cash-transactions/summary`, `/cash-transactions/{txn_id}/void` |
+| `cash.py` | 4 | 292 | `/cash-transactions`, `/cash-transactions/summary`, `/cash-transactions/{txn_id}/void` |
 | `cash_advances.py` | 24 | 217 | `/cash-advance-settlements`, `/cash-advance-settlements/reimburse-payables`, `/cash-advance-settlements/{stl_id}`, `/cash-advance-settlements/{stl_id}/approve`, `/cash-advance-settlements/{stl_id}/attachments`, `/cash-advance-settlements/{stl_id}/attachments/{att_id}` … |
 | `categories.py` | 5 | 169 | `/product-categories`, `/product-categories/{category_id}`, `/product-motifs` |
 | `client_dataset.py` | 6 | 60 | `/batches`, `/batches/{batch_id}`, `/batches/{batch_id}/commit`, `/batches/{batch_id}/rollback`, `/template`, `/upload` |
@@ -284,7 +284,7 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 | `transfers.py` | 14 | 764 | `/transfers`, `/transfers/inter-company`, `/transfers/so-options`, `/transfers/so-rolls`, `/transfers/{transfer_id}`, `/transfers/{transfer_id}/approve` … |
 | `uom_conversions.py` | 10 | 226 | `/uom-conversions/catalog`, `/uom-conversions/check-variance`, `/uom-conversions/convert`, `/uom-conversions/rules`, `/uom-conversions/rules/{rule_id}`, `/uom-conversions/rules/{rule_id}/status` … |
 | `uoms.py` | 5 | 186 | `/uoms`, `/uoms/vocab`, `/uoms/{uom_id}` |
-| `users.py` | 11 | 273 | `/hr-employees-available`, `/users`, `/users/count`, `/users/manageable-roles`, `/users/{user_id}`, `/users/{user_id}/reactivate` … |
+| `users.py` | 11 | 276 | `/hr-employees-available`, `/users`, `/users/count`, `/users/manageable-roles`, `/users/{user_id}`, `/users/{user_id}/reactivate` … |
 | `vehicle_logs.py` | 9 | 214 | `/vehicle-usage-logs`, `/vehicle-usage-logs/summary`, `/vehicle-usage-logs/{log_id}`, `/vehicles`, `/vehicles/{veh_id}` |
 | `vendor_bills.py` | 12 | 761 | `/purchase-orders/{po_id}/billing-context`, `/vendor-bills`, `/vendor-bills/payables/summary`, `/vendor-bills/status-counts`, `/vendor-bills/{bill_id}`, `/vendor-bills/{bill_id}/approve` … |
 | `warehouse_sites.py` | 6 | 91 | `/warehouse-sites`, `/warehouse-sites/seed-blueprint`, `/warehouse-sites/{site_id}`, `/warehouse-sites/{site_id}/receiving` |
@@ -300,7 +300,8 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 | `access_guard.py` | 111 | PR-T1 — penjaga KENAIKAN HAK lewat kelola akun dan kelola peran (docs/blueprint/02_STANDAR.md §3.3 E1–E4). |
 | `advance_report_service.py` | 111 | KEB-PDPT (Sesi #090) — Laporan Uang Muka Pelanggan. |
 | `ai_actions.py` | 373 | Tanya KN — draf tindakan dari jawaban AI. Tidak ada yang tersimpan/terkirim sebelum pengguna menekan Setujui. |
-| `ai_cards.py` | 965 | AG-T3 — mesin kartu tindakan asisten golongan A dan B lewat pintu aplikasi sendiri (K-44, K-45). |
+| `ai_card_rules.py` | 139 | AG-T5 — daftar larangan kartu tindakan asisten (`docs/blueprint/unit/AG-T5.md`, rancangan `08` §4.3). |
+| `ai_cards.py` | 1436 | AG-T3 — mesin kartu tindakan asisten golongan A dan B lewat pintu aplikasi sendiri (K-44, K-45). |
 | `ai_chat_service.py` | 557 | Tanya KN F2.2 — orkestrator chat bebas (pemanggilan alat lewat penyedia model). |
 | `ai_cost.py` | 37 | Tanya KN F2.5 — biaya per panggilan model + rem anggaran bulanan (`ai.monthly_budget_usd`). |
 | `ai_finance_reports.py` | 752 | AG-T4 — Asisten Keuangan: paket tutup buku bulanan dan ringkasan pagi keuangan. |
@@ -314,7 +315,7 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 | `ai_provider.py` | 174 | AG-T1 — satu lapisan antara mesin percakapan Tanya KN dan penyedia model. |
 | `ai_provider_fake.py` | 78 | AG-T1 — pelaksana penyedia model TIRUAN untuk tes (tanpa panggilan ke luar, tanpa kunci). |
 | `ai_schedules.py` | 198 | Tanya KN F4 — laporan terjadwal (in-app) + pemeliharaan harian (retensi sesi chat). |
-| `ai_self_api.py` | 196 | AG-T2 (AG-03) — asisten membaca data lewat pintu aplikasi sendiri, dengan sesi pengguna yang bertanya. |
+| `ai_self_api.py` | 207 | AG-T2 (AG-03) — asisten membaca data lewat pintu aplikasi sendiri, dengan sesi pengguna yang bertanya. |
 | `ai_templates.py` | 158 | Tanya KN F4 (dasar) — template laporan `tpl-v1`: resep dijalankan server TANPA model. |
 | `ai_tools.py` | 538 | Tanya KN F2.1 — eksekusi 6 tool (Lampiran C). Semua baca-saja, identitas pengguna asli. |
 | `ai_usage_report.py` | 112 | Halaman Biaya AI — pemakaian harian per fitur, per pengguna, per model (tanggal WIB). |
@@ -327,7 +328,7 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 | `analytics_facts.py` | 302 | Tanya KN F1.1 — tabel fakta `fact_sales_lines`. |
 | `analytics_snapshots.py` | 73 | Tanya KN F5 — snapshot harian stok & piutang (23.55 WIB) → posisi `as_of` masa lalu di mesin analitik. |
 | `analytics_time.py` | 218 | Tanya KN F0.1 — periode analitik dalam WIB (Asia/Jakarta) → batas UTC. |
-| `ap_payment_service.py` | 687 | PK-05 — Bayar hutang pemasok (faktur langsung atau kontrabon) lewat SATU pintu: niat bayar (`ap_payment_intent |
+| `ap_payment_service.py` | 698 | PK-05 — Bayar hutang pemasok (faktur langsung atau kontrabon) lewat SATU pintu: niat bayar (`ap_payment_intent |
 | `app_url.py` | 90 | app_url — SATU sumber kebenaran **URL publik aplikasi** (untuk QR & tautan cetak). |
 | `approval_backlog_service.py` | 880 | services/approval_backlog_service.py — SATU sumber "apa yang menunggu keputusan". |
 | `approval_matrix_service.py` | 520 | PS-20 (D-14) — **Penegakan matriks persetujuan divisi** + antrean "Persetujuan Saya". |
@@ -730,7 +731,7 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 
 | Fitur (`src/features/`) | Berkas | Baris |
 |---|---:|---:|
-| `__tests__` | 136 | 22357 |
+| `__tests__` | 137 | 22585 |
 | `admin` | 36 | 6981 |
 | `approvals` | 9 | 1720 |
 | `catalog` | 24 | 1459 |
@@ -741,7 +742,7 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 | `desks` | 2 | 229 |
 | `documents` | 18 | 2580 |
 | `export` | 9 | 700 |
-| `finance` | 105 | 24401 |
+| `finance` | 105 | 24403 |
 | `home` | 5 | 1136 |
 | `hr` | 36 | 6735 |
 | `incentive` | 1 | 500 |
@@ -766,8 +767,8 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 | `sales` | 97 | 15826 |
 | `sales_admin` | 11 | 1880 |
 | `samples` | 8 | 776 |
-| `settings` | 70 | 13061 |
-| `tanya` | 27 | 2373 |
+| `settings` | 70 | 13074 |
+| `tanya` | 27 | 2470 |
 | `transfers` | 1 | 20 |
 | `wms` | 99 | 13202 |
 
@@ -795,15 +796,15 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 | `frontend/src/features/purchasing/PurchaseReturns.jsx` | 639 | 500 |
 | `frontend/src/features/wms/OutboundScanInterface.jsx` | 624 | 500 |
 | `frontend/src/features/wms/InventoryStockView.jsx` | 600 | 500 |
-| `frontend/src/features/finance/TaxInvoices.jsx` | 594 | 500 |
+| `frontend/src/features/finance/TaxInvoices.jsx` | 595 | 500 |
 | `frontend/src/features/finance/TaxCenterView.jsx` | 572 | 500 |
 | `frontend/src/features/internal_requests/InternalRequestsView.jsx` | 561 | 500 |
 | `frontend/src/features/pos/CheckoutDrawer.jsx` | 560 | 500 |
 | `frontend/src/features/purchasing/makloon/MakloonWizard.jsx` | 542 | 500 |
+| `frontend/src/features/settings/entities/AccountFormDrawer.jsx` | 521 | 500 |
 | `frontend/src/features/settings/entities/EntityDetailDrawer.jsx` | 518 | 500 |
 | `frontend/src/features/finance/InventoryReconTab.jsx` | 513 | 500 |
 | `frontend/src/features/finance/interco/IntercoView.jsx` | 513 | 500 |
 | `frontend/src/features/settings/entities/RoleRealityPanel.jsx` | 511 | 500 |
-| `frontend/src/features/settings/entities/AccountFormDrawer.jsx` | 508 | 500 |
 | `frontend/src/features/purchasing/contrabon/ContraBonCreateWizard.jsx` | 502 | 500 |
 | `frontend/src/features/wms/warehouses/WarehouseMasterView.jsx` | 502 | 500 |

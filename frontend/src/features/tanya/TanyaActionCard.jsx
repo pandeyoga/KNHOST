@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { AlertTriangle, CheckCircle2, Clock3, ExternalLink, Hourglass, Loader2, Repeat, Wand2, XCircle } from "lucide-react";
+import { AlertTriangle, CheckCircle2, Clock3, ExternalLink, Hourglass, Loader2, Repeat, UserCheck, Wand2, XCircle } from "lucide-react";
 import { useAppNav } from "../../context/AppNavContext";
 import { useEntityScope } from "../../context/EntityScopeContext";
 import { toast } from "../../hooks/use-toast";
@@ -8,7 +8,7 @@ import { docStatusLabel } from "../../utils/docStatus";
 import { entityShortById } from "../../utils/entityLabel";
 import { formatCurrency, formatDate, formatDateTime } from "../../utils/formatters";
 import { kpiValueParts } from "../finance/financeShared";
-import { confirmAction, dismissAction, fetchAction } from "./tanyaApi";
+import { confirmAction, dismissAction, fetchAction, secondAction } from "./tanyaApi";
 
 // AG-T1 — status kartu = ikon + teks + warna (KN_37 §1 butir 3). `failed` dan `expired` tidak bisa diulang.
 // Label lewat `docStatusLabel` (peta lokal kartu didahulukan) → kode status tak dikenal tidak pernah tampil mentah.
@@ -20,7 +20,7 @@ const STATUS_LABEL = {
 // Kedaluwarsa · Diganti. Dipakai juga tab "Tindakan" (`TanyaActions`).
 export const CARD_STATUS_LABEL = {
   pending: "Menunggu", running: "Sedang diproses", confirmed: "Berhasil", failed: "Gagal", dismissed: "Diabaikan",
-  expired: "Kedaluwarsa", superseded: "Diganti",
+  expired: "Kedaluwarsa", superseded: "Diganti", awaiting_second: "Menunggu orang kedua",   // AG-T5
 };
 const STATUS_TONE = {
   pending: { Icon: Clock3, tone: "bg-kn-warning-soft text-kn-warning-text" },
@@ -30,6 +30,7 @@ const STATUS_TONE = {
   failed: { Icon: AlertTriangle, tone: "bg-kn-danger-soft text-kn-danger-text" },
   expired: { Icon: Hourglass, tone: "bg-kn-neutral-soft text-kn-neutral" },
   superseded: { Icon: Repeat, tone: "bg-kn-neutral-soft text-kn-neutral" },
+  awaiting_second: { Icon: UserCheck, tone: "bg-kn-warning-soft text-kn-warning-text" },   // AG-T5
 };
 
 /** Pil status kartu: ikon + teks + warna (KN_37 §1 butir 3); kode tak dikenal tidak tampil mentah (`docStatusLabel`). */
@@ -184,6 +185,89 @@ function CardOutcome({ doc }) {
   );
 }
 
+/** AG-T5 — baris "Menunggu orang kedua · disetujui {pembuat}, {tanggal jam} WIB" (semua yang membuka kartu). */
+function FirstLine({ doc }) {
+  if (!doc.first_by?.name || !["awaiting_second", "running", "confirmed", "failed", "dismissed", "expired"].includes(doc.status)) return null;
+  const tunggu = doc.status === "awaiting_second";
+  return (
+    <p className="tanya-action-meta" data-testid="tanya-card-first">
+      {tunggu ? "Menunggu orang kedua · " : ""}disetujui {doc.first_by.name}, {formatDateTime(doc.first_at)}
+      {doc.second_by?.name ? ` · orang kedua ${doc.second_by.name}, ${formatDateTime(doc.second_at)}` : ""}
+    </p>
+  );
+}
+
+/**
+ * AG-T5 — kartu golongan C yang menunggu orang kedua. Orang kedua (`can_second`): rencana + alasan pembuat, isian
+ * "Alasan" (wajib saat menolak), "Setujui dan jalankan" (konfirmasi nominal, PT, pembuat) dan "Tolak". Selain itu
+ * alasan tertulis kenapa tidak bisa memutus (`second_block`); pembuat bisa menarik kartunya ("Abaikan").
+ */
+function SecondPanel({ doc, proposalId, ptName, onDone }) {
+  const [reason, setReason] = useState("");
+  const [busy, setBusy] = useState(false);
+  const plan = doc.plan || {};
+  const run = async (fn, okMsg) => {
+    setBusy(true);
+    try {
+      const d = await fn();
+      onDone(d);
+      if (d.status === "failed") toast({ title: "Tindakan gagal", description: d.error || "", variant: "destructive" });
+      else toast({ title: okMsg });
+    } catch (e) {
+      toast({ title: "Gagal", description: e?.response?.data?.detail || "", variant: "destructive" });
+      if ([403, 409].includes(e?.response?.status)) fetchAction(proposalId).then(onDone).catch(() => {});
+    } finally { setBusy(false); }
+  };
+  const approve = async () => {
+    if (!(await askConfirm({
+      title: "Jalankan kartu tindakan?",
+      message: `Jalankan ${doc.title} sebesar ${formatCurrency(Number(plan.amount) || 0)} untuk ${ptName} atas permintaan ${doc.first_by?.name || doc.user_name || "pembuat kartu"}?`,
+      confirmLabel: "Ya, jalankan", cancelLabel: "Batal", testId: "tanya-card-second-confirm",
+    }))) return;
+    await run(() => secondAction(proposalId, "approve", reason.trim()), "Kartu dijalankan");
+  };
+  const rejectOk = reason.trim().length >= 10;
+  return (
+    <div className="tanya-card-second" data-testid="tanya-card-second">
+      {doc.reason && <p className="tanya-note" data-testid="tanya-card-maker-reason">Alasan pembuat: {doc.reason}</p>}
+      {doc.can_second ? (<>
+        <div className="tanya-card-fields">
+          <label className="tanya-card-field">
+            <span>Alasan</span>
+            <input type="text" className="input-field" placeholder="Wajib diisi bila menolak (minimal 10 huruf)."
+              value={reason} maxLength={500} disabled={busy} onChange={(e) => setReason(e.target.value)}
+              data-testid="tanya-card-second-reason" />
+          </label>
+        </div>
+        <div className="tanya-answer-actions tanya-action-buttons">
+          <button type="button" className="primary-button btn-sm" disabled={busy} data-testid="tanya-card-second-approve"
+            onClick={approve}>
+            {busy ? <Loader2 size={14} className="animate-spin" aria-hidden="true" /> : <CheckCircle2 size={14} aria-hidden="true" />}
+            Setujui dan jalankan
+          </button>
+          <button type="button" className="secondary-button btn-sm" disabled={busy || !rejectOk} data-testid="tanya-card-second-reject"
+            onClick={() => run(() => secondAction(proposalId, "reject", reason.trim()), "Kartu ditolak")}>
+            <XCircle size={14} aria-hidden="true" /> Tolak
+          </button>
+          {!rejectOk && <p className="tanya-action-hint" data-testid="tanya-card-second-hint">Tulis alasan (minimal 10 huruf) untuk menolak.</p>}
+        </div>
+      </>) : (
+        <div className="tanya-answer-actions tanya-action-buttons">
+          {doc.is_maker && (
+            <button type="button" className="secondary-button btn-sm" disabled={busy} data-testid="tanya-action-dismiss"
+              onClick={() => run(() => dismissAction(proposalId), "Kartu ditarik")}>
+              <XCircle size={14} aria-hidden="true" /> Abaikan
+            </button>
+          )}
+          <p className="tanya-action-hint" data-testid="tanya-card-second-block">
+            {doc.is_maker ? "Kartu ini dijalankan sesudah orang lain yang berwenang menyetujuinya." : doc.second_block}
+          </p>
+        </div>
+      )}
+    </div>
+  );
+}
+
 const EDIT_INPUT = { date: "date", text: "text" };
 
 /**
@@ -219,6 +303,7 @@ function ActionCardV2({ doc, setDoc, proposalId, onChanged }) {
       const d = await fn();
       done(d);
       if (d.status === "failed") toast({ title: "Tindakan gagal", description: d.error || "", variant: "destructive" });
+      else if (d.status === "awaiting_second") toast({ title: "Kartu menunggu persetujuan orang kedua" });   // AG-T5
       else toast({ title: okMsg });
     } catch (e) {
       toast({ title: "Gagal", description: e?.response?.data?.detail || "", variant: "destructive" });
@@ -242,10 +327,11 @@ function ActionCardV2({ doc, setDoc, proposalId, onChanged }) {
         <StatusPill status={doc.status} labels={CARD_STATUS_LABEL} />
       </div>
       <p className="tanya-action-meta" data-testid="tanya-action-meta">
-        PT: {ptName}{pending && doc.expires_at ? ` · berlaku sampai ${formatDateTime(doc.expires_at)}` : ""}
+        PT: {ptName}{(pending || doc.status === "awaiting_second") && doc.expires_at ? ` · berlaku sampai ${formatDateTime(doc.expires_at)}` : ""}
       </p>
       {plan.summary && <p className="tanya-note" data-testid="tanya-card-summary">{plan.summary}</p>}
       <PlanTable plan={plan} />
+      <FirstLine doc={doc} />
       {pending && (doc.editable || []).length > 0 && (
         <div className="tanya-card-fields" data-testid="tanya-card-edits">
           {(doc.editable || []).map((e) => (
@@ -288,8 +374,15 @@ function ActionCardV2({ doc, setDoc, proposalId, onChanged }) {
             <XCircle size={14} aria-hidden="true" /> Abaikan
           </button>
           {blocked && <p className="tanya-action-hint" data-testid="tanya-action-pt-hint">{blocked}</p>}
+          {doc.second_preview && (
+            <p className="tanya-action-hint" data-testid="tanya-card-second-preview">
+              Kartu ini akan menunggu persetujuan orang kedua sebelum dijalankan.
+            </p>
+          )}
         </div>
-      ) : <CardOutcome doc={doc} />}
+      ) : doc.status === "awaiting_second"
+        ? <SecondPanel doc={doc} proposalId={proposalId} ptName={ptName} onDone={done} />
+        : <CardOutcome doc={doc} />}
     </section>
   );
 }

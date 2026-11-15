@@ -56,7 +56,7 @@ Sebelum membuat apapun yang baru, tanya: **"Apakah ini sudah ada di sini?"**
 | Perubahan Rekening *(PM-T1)* | `bank_account_changes` | `routers/bank.py` (`POST/PATCH /bank-accounts` → 202 bila dua orang, `GET /bank-account-changes`, `POST …/{id}/decision`), `services/bank_account_change_service.py` | `BankAccountCreate`, `BankAccountUpdate`, `BankAccountChangeDecision` | `BankAccountChangesPanel`, `BankAccountForm` (Keuangan › Kas & Bank › Rekening & Saldo) |
 | Profil Kredit Pelanggan *(CR-T1)* | `customer_credit_profiles` (satu per pelanggan × PT pesanan), `credit_profile_requests` | `routers/credit_profiles.py` (`GET /customers/{id}/credit-profile`, `POST /customers/{id}/credit-profile-requests`, `GET /credit-profile-requests`, `POST …/{id}/decision`, `POST …/{id}/cancel`), `services/credit_profile_service.py` (`effective`, `status_from` — dipakai `customer_service.compute_customer_credit`, `ar_aging_service`) | `CreditProfileRequestCreate`, `CreditProfileDecision`, `CreditProfileCancel` | `CustomerCreditTab` + `CreditProfileRequestModal` (kartu pelanggan › Kredit), `CreditProfileRequestsPanel` (Keuangan › Piutang › Kredit & Plafon) |
 | Meja Insentif — data dasar *(KM-T1)* | `sales_targets` (kunci baru PT × sales × jenis periode × periode), `incentive_components`, `incentive_definitions`, `fact_shipment_sales`, `fact_collections` (turunan) | `routers/incentive.py` (`GET/PUT /api/incentive/targets`, `POST …/targets/copy`, `GET/POST/PATCH /api/incentive/components`, `GET …/definitions/current`, `GET …/reconciliation`, `POST …/facts/rebuild`), `services/incentive_targets.py`, `incentive_periods.py`, `incentive_definitions.py`, `incentive_facts.py` | `IncentiveTargetSave`, `IncentiveTargetCopy`, `IncentiveComponentCreate`, `IncentiveComponentUpdate`, `IncentiveFactRebuild` (`schemas_incentive.py`) | `IncentiveSetupView` (SDM › Kinerja & Insentif › Target & Aturan) |
-| Kartu Tindakan Asisten *(AG-T1, AG-T3)* | `ai_action_proposals` | `routers/ai_assist.py` (`GET /api/ai/actions?box=`, `GET /api/ai/actions/{id}`, `POST …/{id}/confirm`, `POST …/{id}/dismiss`), `services/ai_actions.py` (jenis lama, alat `propose_action`), `services/ai_cards.py` (golongan A/B, alat `prepare_action`, `POST /api/ai/tools/prepare_action`) | — | `TanyaActionCard` (percakapan & tab), `TanyaActions` (Tanya KN › Tindakan) |
+| Kartu Tindakan Asisten *(AG-T1, AG-T3, AG-T5)* | `ai_action_proposals` | `routers/ai_assist.py` (`GET /api/ai/actions?box=`, `GET /api/ai/actions/{id}`, `POST …/{id}/confirm`, `POST …/{id}/dismiss`, `POST …/{id}/second` — orang kedua AG-T5), `services/ai_actions.py` (jenis lama, alat `propose_action`), `services/ai_cards.py` (golongan A/B/C, alat `prepare_action`, `POST /api/ai/tools/prepare_action`), `services/ai_card_rules.py` (daftar larangan) | — | `TanyaActionCard` (percakapan & tab), `TanyaActions` (Tanya KN › Tindakan) |
 | Kunci Masa Pajak *(PK-40)* | `tax_period_locks` | `routers/tax_center.py` (`/api/tax/periods*`), `services/tax_center_service.py` (`assert_masa_terbuka` dipanggil layanan faktur & PPh) | `TaxPeriodLockInput`, `TaxPeriodUnlockInput` | `TaxCenterView` (Akuntansi & Pajak › Pusat Pajak) |
 | Niat Bayar Hutang *(PK-05)* | `ap_payment_intents` | `routers/ap_payments.py`, `services/ap_payment_service.py` (dipanggil bayar faktur & bayar kontrabon) | `VendorBillPaymentCreate`, `ContraBonPayIn` | `VendorBillDetailPanel` & `contrabon/PayModal` (panel bayar, `features/purchasing/apPayment.jsx`) |
 | Kontrabon *(FASE G-7)* | `contra_bons` | `routers/contra_bons.py`, `services/contra_bon_service.py`, `services/contra_bon_reminder.py` | `ContraBonCreate`, `ContraBonDeductionIn`, `ContraBonDecisionIn`, `ContraBonScheduleIn`, `ContraBonPayIn`, `InvoiceExchangeIn` | `ContraBonsView` (Pembelian → Hutang Supplier (AP) → Kontrabon) |
@@ -106,6 +106,10 @@ Key Fields:
                            Kosong/tidak ada = golongan B ditolak. PATCH boleh mengirim `enabled` dan/atau `classes`; yang
                            tidak dikirim dipertahankan. Golongan B juga menuntut izin `ai_finance.create` dan
                            `ai.tindakan_uang_masuk` menyala untuk PT kartu.
+                           [AG-T5] nilai `"C"` = uang keluar dan jurnal (bayar tagihan pemasok & kontrabon, kas manual);
+                           layar Akun menawarkan "Baca saja" `[]` · "Uang masuk" `["B"]` · "Uang masuk, uang keluar, dan
+                           jurnal" `["B","C"]`. Golongan C juga menuntut izin `ai_finance.pay` dan `ai.tindakan_uang_keluar`
+                           menyala untuk PT kartu; orang kedua = izin `ai_finance.approve` + `C` + izin pintu tindakannya.
   created_at  string   ISO 8601 UTC
 
 ⚠️ JANGAN BUAT: staff, karyawan, operator, employee (untuk user system)
@@ -2056,6 +2060,24 @@ Dokumen hasil ber-`ai_card_id` (id kartu; diisi dari konteks `ai_card_context` h
   bank_statement_lines.holding_allocated[].ai_card_id · ulang jurnal: `audit_logs` `posting_failure_retried` saja.
 ```
 
+**AG-T5 — kartu golongan C (uang keluar) dan orang kedua.** Tindakan `vendor_bill_pay` (`POST /api/vendor-bills/{id}/pay`),
+`contra_bon_pay` (`POST /api/contra-bons/{id}/pay`), `cash_manual` (`POST /api/cash-transactions`); semua `high`. Kode di
+luar REGISTRY yang cocok daftar larangan (`services/ai_card_rules.FORBIDDEN`, L1–L13) dijawab alasan barisnya. Field tambahan:
+```
+  class             + C (uang keluar dan jurnal)
+  status            + awaiting_second ("Menunggu orang kedua"): pending → awaiting_second → running → confirmed | failed ·
+                    awaiting_second → dismissed (ditolak orang kedua / ditarik pembuat) | expired. Masuk awaiting_second →
+                    `expires_at` dihitung ulang dari saat itu (`ai.kartu_masa_berlaku_jam` PT kartu)
+  second_required   {needed: bool, basis: "min_orang" | "batas_nominal" | ""} — potret keputusan kontrol
+                    `kontrol.asisten_uang_keluar.*` saat pembuat menyetujui (D3)
+  first_by · first_at              {id, name} · ISO — pembuat yang menyetujui tahap pertama
+  second_by · second_at · second_reason   {id, name} · ISO · teks — orang kedua (alasan wajib saat menolak)
+  executor_id       id pengguna yang sesinya menjalankan pintu (pembuat, atau orang kedua) — dibaca `ai_card_context`
+Index:  (entity_id, status) yang sudah ada melayani kotak "Menunggu orang lain" (`box=others`)
+Dokumen hasil ber-`ai_card_id`: cash_transactions.ai_card_id (kas bayar hutang dan kas manual) · ap_payment_intents.ai_card_id ·
+  vendor_bills.payments[].ai_card_id · contra_bons.payments[].ai_card_id.
+```
+
 ### ai_chat_sessions · ai_results — field AG-T2 (Asisten Keuangan)
 Percakapan Tanya KN (`services/ai_chat_service.py`) dan hasil alat (`services/analytics_engine.save_result`). AG-T2 menambah
 field berikut (tanpa migrasi; dokumen lama tanpa field = mode umum / tanpa keterangan):
@@ -2935,6 +2957,8 @@ INV-CASH-01 `scripts/guardrails/verify_cash_single_door.py`); nomor hanya dari `
                              `seq#2`, `#3`…  Unik: indeks `uq_id` (`indexes.ID_INDEX_COLLECTIONS`).
   ref_type, ref_id   string  WAJIB — dokumen induk. Kas manual: `ref_type="manual"`, `ref_id` = kunci idempotensi
                              permintaan (atau id baru). Indeks tidak unik (ref_type, ref_id, direction).
+  ai_card_id         string  AG-T5 — id kartu tindakan asisten (kas manual, bayar tagihan pemasok / kontrabon) yang
+                             mencatat kas ini; tidak ada = dicatat di layar.
   seq                string  pembeda kas searah satu dokumen (id pembayaran landed cost, `out`/`in` antar-PT, langkah
                              kasus, `charge`/`holding` baris mutasi bank); kosong untuk satu kas per dokumen.
   account_id         string  WAJIB — id `bank_accounts` AKTIF milik `entity_id` (dikirim, atau rekening tunggal PT

@@ -156,7 +156,9 @@ AI_FINANCE_DENIED = "Asisten Keuangan hanya bisa dinyalakan oleh pemegang akses 
 
 #: AG-T3 — golongan kartu tindakan yang bisa dinyalakan per akun (`users.ai_finance.classes`). Golongan A tidak butuh
 #: sakelar; golongan B = tindakan uang masuk (kwitansi, pencocokan bank, alokasi titipan, ulang jurnal gagal).
-AI_FINANCE_CLASSES = ("B",)
+#: AG-T5 — golongan C = uang keluar dan jurnal (bayar tagihan pemasok & kontrabon, kas manual, jurnal manual, balik
+#: jurnal). Layar Akun menawarkan "Baca saja" ([]) · "Uang masuk" (["B"]) · "Uang masuk, uang keluar, dan jurnal".
+AI_FINANCE_CLASSES = ("B", "C")
 
 
 async def _guard_ai_finance(actor: Dict[str, Any], value: Any) -> None:
@@ -172,7 +174,8 @@ async def _guard_ai_finance(actor: Dict[str, Any], value: Any) -> None:
     if "classes" in value:
         cl = value.get("classes")
         if (not isinstance(cl, list) or any(c not in AI_FINANCE_CLASSES for c in cl) or len(set(cl)) != len(cl)):
-            raise HTTPException(status_code=400, detail="Golongan tindakan asisten hanya boleh 'B' (uang masuk).")
+            raise HTTPException(status_code=400, detail=(
+                "Golongan tindakan asisten hanya boleh uang masuk (B) dan/atau uang keluar dan jurnal (C)."))
 
 
 @router.patch("/users/{user_id}")

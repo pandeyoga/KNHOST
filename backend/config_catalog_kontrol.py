@@ -87,6 +87,10 @@ KONTROL_AKSI: List[Dict[str, Any]] = [
     # PK-24 (K-17) — mencairkan uang muka yang sudah disetujui; pembanding = PEMOHON PD (penerima dana); bernominal =
     # nilai PD, bawaan satu orang.
     _a("cairkan_uang_muka", "Cairkan uang muka", "C", "1", True, _SDM),
+    # AG-T5 (K-44) — kartu tindakan asisten golongan C (bayar tagihan pemasok, bayar kontrabon, kas manual, jurnal manual,
+    # balik jurnal): pembanding = pembuat kartu yang menyetujuinya (`first_by`); bernominal = nominal kartu (total
+    # debit untuk jurnal), bawaan satu orang.
+    _a("asisten_uang_keluar", "Tindakan uang keluar dan jurnal lewat asisten", "C", "1", True, _BB),
 ]
 
 #: KF-T6 serah-terima (b) — titik pasang tiap aksi (`berkas.py:fungsi`).
@@ -131,6 +135,7 @@ _TITIK: Dict[str, Tuple[str, ...]] = {
                       "services/bank_account_change_service.py:putuskan"),   # PM-T1
     "ubah_profil_kredit": ("services/credit_profile_service.py:decide",),   # CR-T1
     "cairkan_uang_muka": ("services/cash_advance_service.py:disburse_cash_advance",),   # PK-24
+    "asisten_uang_keluar": ("services/ai_cards.py:decide", "services/ai_cards.py:second"),   # AG-T5
 }
 for _x in KONTROL_AKSI:
     _x["titik"] = _TITIK.get(_x["aksi"], ())
@@ -150,6 +155,12 @@ _PENDEK: Dict[str, str] = {
     "pengurang_piutang": "Pengurang piutang", "lewat_batas_kredit": "Lewat batas kredit",   # PK-38
     "nilai_pesanan": "Nilai pesanan",
     "ubah_profil_kredit": "Profil kredit pelanggan",   # CR-T1
+    "asisten_uang_keluar": "Kartu asisten uang keluar",   # AG-T5
+}
+#: AG-T5 — contoh khusus (`example`) untuk kunci min_orang / batas_nominal satu aksi (spesifikasi unit).
+_CONTOH: Dict[str, Tuple[str, str]] = {
+    "asisten_uang_keluar": ("2 → kartu bayar pemasok yang disetujui Rina menunggu orang lain",
+                            "25.000.000 → kartu di atas Rp 25 juta menunggu orang kedua"),
 }
 for _x in KONTROL_AKSI:
     _x["sub_judul"] = next((s for s, aksi in _SUB_JUDUL.items() if _x["aksi"] in aksi), _SUB_BAGIAN.get(_x["bagian"], ""))
@@ -197,7 +208,8 @@ for _x in KONTROL_AKSI:
       help="1 = orang yang mengajukan boleh memutuskan sendiri. 2 = harus diputuskan orang lain.",
       impact=(f"Bila 2, pengaju “{_x['label']}” tidak bisa memutuskannya sendiri — rekan lain yang berwenang "
               "harus memutuskan. Bila 1, satu orang cukup."),
-      example=f"Rina mengajukan “{_x['label']}” lalu memutuskannya sendiri → ditolak bila 2, lolos bila 1",
+      example=(_CONTOH[_x["aksi"]][0] if _x["aksi"] in _CONTOH else
+               f"Rina mengajukan “{_x['label']}” lalu memutuskannya sendiri → ditolak bila 2, lolos bila 1"),
       consumers=_cons, risk="high", requires_reason=True, permission=("settings", "manage"), edit_at=_EDIT_AT,
       related=((kunci_batas(_x["aksi"]),) if _x["punya_nominal"] else ()) + (K_ADMIN_BOLEH,))
     if _x["punya_nominal"] and _x["aksi"] in _BATAS_KHUSUS:
@@ -211,7 +223,8 @@ for _x in KONTROL_AKSI:
           help="Di atas nilai ini selalu dua orang walau jumlah orang = 1. 0 = tidak dipakai.",
           impact=("Dokumen bernilai di atas batas ini wajib diputuskan orang selain pengajunya, walau jumlah "
                   "orang diatur 1."),
-          example=f"Batas 5.000.000 · “{_x['label']}” Rp 6.000.000 diajukan Rina → harus diputuskan rekan lain",
+          example=(_CONTOH[_x["aksi"]][1] if _x["aksi"] in _CONTOH else
+                   f"Batas 5.000.000 · “{_x['label']}” Rp 6.000.000 diajukan Rina → harus diputuskan rekan lain"),
           consumers=_cons, risk="high", requires_reason=True, permission=("settings", "manage"), edit_at=_EDIT_AT,
           related=(kunci_min_orang(_x["aksi"]),))
 

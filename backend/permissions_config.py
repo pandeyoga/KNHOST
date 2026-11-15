@@ -920,6 +920,23 @@ for _role, _mods in AGT3_DEFAULT_PAIRS.items():
         DEFAULT_PERMISSIONS[_role][_res] = _cur + [a for a in _acts if a not in _cur]
 
 # ═══════════════════════════════════════════════════════════════════════════
+# AG-T5 (K-17, K-44) — kartu tindakan golongan C lewat asisten: `ai_finance.pay` (bayar tagihan pemasok, bayar
+# kontrabon, kas manual; Admin, Manajer, Finance — K-17) dan `ai_finance.approve` (menyetujui kartu golongan C sebagai
+# orang kedua; Admin, Manajer). Tanpa sakelar akun `C` (`users.ai_finance.classes`) dan pengaturan PT
+# `ai.tindakan_uang_keluar` (bawaan mati, H5) izin ini belum berakibat apa pun. Instalasi lama menerima pasangan baru
+# sekali lewat `bootstrap.sync_permission_modules` (`defaults_applied`, PR-T9).
+# ═══════════════════════════════════════════════════════════════════════════
+AGT5_DEFAULT_PAIRS = {
+    "admin": {"ai_finance": ("pay", "approve")},
+    "manager": {"ai_finance": ("pay", "approve")},
+    "finance": {"ai_finance": ("pay",)},
+}
+for _role, _mods in AGT5_DEFAULT_PAIRS.items():
+    for _res, _acts in _mods.items():
+        _cur = list(DEFAULT_PERMISSIONS[_role].get(_res) or [])
+        DEFAULT_PERMISSIONS[_role][_res] = _cur + [a for a in _acts if a not in _cur]
+
+# ═══════════════════════════════════════════════════════════════════════════
 # PK-24 (IA-05, K-17) — kas kecil: `cash_settlement.pay` (baru) = membayar hutang reimburse karyawan dan menerima
 # pengembalian sisa uang muka (`POST /api/cash-advance-settlements/{id}/pay-reimburse` | `/return-remainder`; dulu bayar
 # reimburse dijaga `accounting.create`). Bawaan Admin, Manajer, Finance. Mencairkan uang muka (`cash_advance.disburse`)

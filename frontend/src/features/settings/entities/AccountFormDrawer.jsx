@@ -22,6 +22,11 @@ import { askConfirm } from "../../../services/confirmService";
 import { createUser, patchUser, availableEmployees, ROLE_OPTIONS, publicRoles,
   errText, manageableRoles } from "./entityApi";
 
+
+// AG-T5 — tiga pilihan golongan kartu tindakan asisten pada sakelar "Asisten Keuangan" (urutan tampil).
+const AI_LEVELS = [["", "Baca saja"], ["B", "Uang masuk"], ["C", "Uang masuk, uang keluar, dan jurnal"]];
+const AI_LEVEL_CLASSES = { "": [], B: ["B"], C: ["B", "C"] };
+
 export default function AccountFormDrawer({ user, entities = [], selectedEntity,
   onClose, onSaved, onError, canViewRoles = false, canConfigureAi = false }) {
   const editing = Boolean(user?.id);
@@ -43,10 +48,12 @@ export default function AccountFormDrawer({ user, entities = [], selectedEntity,
   // AG-T2 (K-45) — sakelar Asisten Keuangan per akun; hanya pemegang `ai.configure` yang bisa mengubahnya.
   const savedAiFinance = Boolean(user?.ai_finance?.enabled);
   const [aiFinance, setAiFinance] = useState(savedAiFinance);
-  // AG-T3 — golongan kartu tindakan per akun: `B` = boleh menyetujui kartu uang masuk (kwitansi, pencocokan bank,
-  // alokasi titipan, ulang jurnal gagal). Tetap butuh izin & sakelar PT; diubah pemegang `ai.configure`.
-  const savedClassB = (user?.ai_finance?.classes || []).includes("B");
-  const [classB, setClassB] = useState(savedClassB);
+  // AG-T3 / AG-T5 — golongan kartu tindakan per akun: "Baca saja" ([]) · "Uang masuk" (["B"]: kwitansi, pencocokan bank,
+  // alokasi titipan, ulang jurnal gagal) · "Uang masuk, uang keluar, dan jurnal" (["B","C"]). Tetap butuh izin & sakelar
+  // PT; diubah pemegang `ai.configure`.
+  const savedClasses = user?.ai_finance?.classes || [];
+  const savedLevel = savedClasses.includes("C") ? "C" : savedClasses.includes("B") ? "B" : "";
+  const [aiLevel, setAiLevel] = useState(savedLevel);
   const [empQuery, setEmpQuery] = useState("");
   const [employees, setEmployees] = useState([]);
   const [busy, setBusy] = useState(false);
@@ -172,9 +179,9 @@ export default function AccountFormDrawer({ user, entities = [], selectedEntity,
           allowed_line_codes: form.allowed_line_codes || [],   // FASE L
           location_site_ids: form.location_site_ids || [], location_warehouse_ids: form.location_warehouse_ids || [],
           ...(form.password ? { password: form.password } : {}),
-          ...(canConfigureAi && (aiFinance !== savedAiFinance || classB !== savedClassB) ? { ai_finance: {
+          ...(canConfigureAi && (aiFinance !== savedAiFinance || aiLevel !== savedLevel) ? { ai_finance: {
             ...(aiFinance !== savedAiFinance ? { enabled: aiFinance } : {}),
-            ...(classB !== savedClassB ? { classes: classB ? ["B"] : [] } : {}) } } : {}),
+            ...(aiLevel !== savedLevel ? { classes: AI_LEVEL_CLASSES[aiLevel] } : {}) } } : {}),
         };
         const res = await patchUser(user.id, data);
         onSaved?.(
@@ -443,18 +450,24 @@ export default function AccountFormDrawer({ user, entities = [], selectedEntity,
               <p className="mt-1 text-fs-12 text-kn-text-2">
                 Mati = akun ini tidak bisa bertanya soal keuangan lewat Tanya KN.
               </p>
-              <label className="mt-2 flex items-center gap-2">
-                <input type="checkbox" role="switch" className="h-4 w-4" data-testid="account-form-ai-class-b"
-                       checked={classB} disabled={!canConfigureAi}
-                       onChange={(e) => setClassB(e.target.checked)} />
-                <span className="text-fs-13 font-semibold text-kn-text">Boleh menyetujui kartu uang masuk</span>
-                <span className="text-fs-12 text-kn-text-2" data-testid="account-form-ai-class-b-state">
-                  {classB ? "Menyala" : "Mati"}
-                </span>
-              </label>
-              <p className="mt-1 text-fs-12 text-kn-text-2">
-                Kartu kwitansi, pencocokan bank, alokasi titipan, dan ulang jurnal yang disiapkan asisten. Juga butuh
-                akses &apos;Siapkan dan setujui tindakan&apos; dan pengaturan PT yang menyala.
+              <fieldset className="mt-2" data-testid="account-form-ai-level" disabled={!canConfigureAi}>
+                <legend className="text-fs-13 font-semibold text-kn-text">Kartu tindakan yang boleh disetujui</legend>
+                <div className="mt-1 flex flex-col gap-1">
+                  {AI_LEVELS.map(([value, label]) => (
+                    <label key={value || "baca"} className="flex items-center gap-2 text-fs-13 text-kn-text">
+                      <input type="radio" name="account-form-ai-level" className="h-4 w-4" value={value}
+                             checked={aiLevel === value} onChange={() => setAiLevel(value)}
+                             data-testid={`account-form-ai-level-${value || "baca"}`} />
+                      {label}
+                    </label>
+                  ))}
+                </div>
+              </fieldset>
+              <p className="mt-1 text-fs-12 text-kn-text-2" data-testid="account-form-ai-level-help">
+                Uang masuk: kwitansi, pencocokan bank, alokasi titipan, dan ulang jurnal yang disiapkan asisten (butuh akses
+                &apos;Siapkan dan setujui tindakan&apos;). Uang keluar dan jurnal: bayar tagihan pemasok, bayar kontrabon,
+                dan kas manual (butuh akses &apos;Tindakan uang keluar&apos;). Keduanya juga butuh pengaturan PT yang
+                menyala.
               </p>
               {!canConfigureAi && (
                 <p className="mt-1 text-fs-12 text-kn-text-2" data-testid="account-form-ai-finance-readonly">

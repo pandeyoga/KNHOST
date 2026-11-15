@@ -12,6 +12,9 @@ PT aktif permintaan asal. Akibatnya izin, PT, cakupan data, dan saringan bidang 
     finally:
         await api.aclose()
 
+AG-T5 — mode tulis untuk kartu golongan C (`card_class="C"`): daftar larangan `services/ai_card_rules.FORBIDDEN`
+diperiksa PALING AWAL (sebelum aturan jalur di bawah) → 403 berisi alasan baris, aplikasi tidak dipanggil.
+
 Aturan `call` (urutan tetap): jalur harus `/api/…` dan bukan `/api/ai/…` maupun `/api/auth/…` (400) → baca-saja dan
 metode bukan GET → 403 tanpa memanggil aplikasi → `params`/`json` memuat kunci `entity_id` → 400 (PT dari sesi, N1) →
 kirim dengan `Authorization: Bearer <token>`, `X-Entity-Id: <header asal, termasuk "all">`, `X-Via: asisten` →
@@ -82,12 +85,14 @@ def _detail(resp: httpx.Response) -> str:
 
 
 class SelfApi:
-    def __init__(self, app: Any, *, token: str, entity_header: str, read_only: bool = True, card_id: str = "") -> None:
+    def __init__(self, app: Any, *, token: str, entity_header: str, read_only: bool = True, card_id: str = "",
+                 card_class: str = "") -> None:
         self.app = app if app is not None else _APP
         self.token = token or ""
         self.entity_header = (entity_header or "").strip()
         self.read_only = bool(read_only)
         self.card_id = card_id or ""
+        self.card_class = (card_class or "").strip().upper()   # AG-T5 — golongan kartu yang memakai pintu tulis ini
         self._client: Optional[httpx.AsyncClient] = None
         self._temp_token = ""
         self.last_status = 0
@@ -123,6 +128,12 @@ class SelfApi:
                    idempotency_key: str = "") -> Any:
         method = (method or "").upper()
         path = path or ""
+        if not self.read_only and self.card_class == "C":
+            # AG-T5 — daftar larangan lebih dulu: alasan barisnya yang ditampilkan, aplikasi tidak dipanggil.
+            from services.ai_card_rules import forbidden_reason
+            why = forbidden_reason(method, path)
+            if why:
+                raise SelfApiError(403, why)
         if (not path.startswith("/api/") or any(path.startswith(p) for p in _BLOCKED_PREFIXES)
                 or path.rstrip("/") in ("/api/ai", "/api/auth") or ".." in path or "?" in path or "#" in path):
             raise SelfApiError(400, PATH_MESSAGE)

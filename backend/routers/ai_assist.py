@@ -2,6 +2,7 @@
 
 AG-T3 — kartu golongan A/B (`services/ai_cards.py`) dan tiga jenis kartu lama (`services/ai_actions.py`) berbagi koleksi
 `ai_action_proposals` dan endpoint yang sama; jenis kartu menentukan mesinnya.
+AG-T5 — kartu golongan C (uang keluar) yang menunggu orang kedua diputus lewat `POST /api/ai/actions/{id}/second`.
 """
 from typing import Any, Dict, List, Optional
 
@@ -20,12 +21,25 @@ async def list_actions(request: Request, box: str = "mine", page: int = 1,
                        page_size: int = ai_cards.PAGE_SIZE_DEFAULT) -> Dict[str, Any]:
     """AG-T3 — tab Tindakan: kartu MILIK pengguna per kotak (`mine` · `others` · `done` · `failed`), berhalaman."""
     user = await require_permission(request, "ai", "view", detail=_DENY_AI)   # = `_ai_user` (pagar auth terbaca)
-    return await ai_cards.list_cards(user, box, page, page_size)
+    # AG-T5 — kotak "Menunggu orang lain" = kartu menunggu orang kedua di PT aktif (butuh konteks PT).
+    return await ai_cards.list_cards(user, box, page, page_size, ctx=await entity_ctx(request))
 
 
 @router.get("/actions/{pid}")
 async def get_action(pid: str, request: Request) -> Dict[str, Any]:
-    return await ai_actions.load(pid, await _ai_user(request))
+    # AG-T5 — kartu golongan C orang lain yang menunggu orang kedua terbaca pemegang `ai_finance.approve` di PT kartu.
+    user = await _ai_user(request)
+    return await ai_cards.load_view(pid, user, await entity_ctx(request))
+
+
+@router.post("/actions/{pid}/second")
+async def second_action(pid: str, request: Request, payload: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+    """AG-T5 — orang kedua memutus kartu golongan C `awaiting_second`: `{decision: "approve" | "reject", reason}`.
+    Setujui → kartu dijalankan dengan sesi orang kedua (yang wajib memegang izin pintu tindakan itu)."""
+    user = await require_permission(request, "ai_finance", "approve", detail=ai_cards.MSG_IZIN_KEDUA)
+    payload = payload or {}
+    return await ai_cards.second(pid, request=request, user=user, ctx=await entity_ctx(request),
+                                 decision=str(payload.get("decision") or ""), reason=str(payload.get("reason") or ""))
 
 
 @router.post("/actions/{pid}/confirm")

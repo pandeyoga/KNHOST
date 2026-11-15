@@ -132,6 +132,11 @@ PYT2_KUNCI = 1
 # "pajak-pembukuan", seperti TX-T1): ikut terhitung di katalog (U04) tetapi tidak bisa diubah pemegang `settings.manage`
 # saja (U02 tetap).
 TXT2_KUNCI = 1
+# AG-T5 — tiga kunci baru: `ai.tindakan_uang_keluar` (izin `ai.configure`: ikut katalog U04, tidak bisa diubah pemegang
+# `settings.manage` saja) dan `kontrol.asisten_uang_keluar.{min_orang,batas_nominal}` (izin `settings.manage`: ikut U02
+# dan U04).
+AGT5_KUNCI = 3
+AGT5_KUNCI_KONTROL = 2
 
 
 def _put(key, value, scope_type="entity", scope_id="ent_ksc"):
@@ -171,7 +176,7 @@ async def test_U02_bisa_ubah_232_kunci(klien, akun, sesi, peran_tanpa_acuan):
     assert sum(1 for it in r.json()["items"] if it["can_edit"]) == \
         229 + KFT6_KUNCI - KFT6_TIDAK_DIPAKAI - PRT4_TIDAK_DIPAKAI - KFT2_TIDAK_DIPAKAI - KPT4_TIDAK_DIPAKAI \
         - KFT3_TIDAK_DIPAKAI + KFT7_KUNCI + PK38_KUNCI + PMT1_KUNCI + CRT1_KUNCI_KONTROL + AGT1_KUNCI \
-        + PK24_KUNCI_KONTROL
+        + PK24_KUNCI_KONTROL + AGT5_KUNCI_KONTROL
 
 
 async def test_U03_lapisan_grup_tetap_untuk_lintas_pt(klien, akun, sesi, peran_tanpa_acuan):
@@ -200,11 +205,12 @@ async def test_U04_lihat_saja_tidak_bisa_ubah(klien, akun, sesi, peran_tanpa_acu
     # masuk roll yang sudah terjual; AG-T2 penyamaran nama pihak ke penyedia model; PK-24 kontrol dua orang
     # cairkan uang muka dan LPJ wajib berlampiran; PK-29 true-up persediaan hanya untuk saldo awal; PK-22
     # tanggal jurnal periodik; AG-T3 sakelar kartu uang masuk & batas kartu per hari; KM-T1 empat definisi angka insentif;
-    # PM-T3 tiga kunci kwitansi/rekening; PY-T2 gaji/PT berubah di tengah bulan; TX-T2 pemicu faktur pajak.
+    # PM-T3 tiga kunci kwitansi/rekening; PY-T2 gaji/PT berubah di tengah bulan; TX-T2 pemicu faktur pajak;
+    # AG-T5 sakelar kartu uang keluar & kontrol dua orang kartu asisten.
     assert r.json()["total"] == 310 + 5 + KFT6_KUNCI + KFT2_KUNCI + KPT7_KUNCI + PK36_KUNCI + KFT7_KUNCI + PK37_KUNCI \
         + PK38_KUNCI + KPT8_KUNCI + PK30_KUNCI + PMT1_KUNCI + CRT1_KUNCI + AGT1_KUNCI + PMT2_KUNCI + TXT1_KUNCI \
         + PK39_KUNCI + PK26_KUNCI + AGT2_KUNCI + PK24_KUNCI + PK29_KUNCI + PK22_KUNCI + AGT3_KUNCI + KMT1_KUNCI + PMT3_KUNCI \
-        + PYT2_KUNCI + TXT2_KUNCI
+        + PYT2_KUNCI + TXT2_KUNCI + AGT5_KUNCI
 
 
 async def test_U05_manajer_kosong_tidak_lagi_lewat_nama_peran(klien, akun, sesi, peran_manajer_kosong):

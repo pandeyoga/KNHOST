@@ -547,7 +547,9 @@ async def test_AGT3_pintu_tulis_hanya_jalur_terdaftar(aplikasi, siap):
     api = SelfApi(pengintai, token=siap["h_fin"]["Authorization"].split(" ", 1)[1], entity_header=KSC, read_only=False,
                   card_id="aiact_x")
     try:
-        for jalur in ("/api/gl/journal", "/api/ar-receipts/x/void", "/api/cash-transactions"):
+        # AG-T5 — `/api/cash-transactions` (kas manual) dan `/api/gl/journal` (jurnal manual) kini pintu kartu golongan C
+        # yang terdaftar; contoh jalur tak terdaftar diganti jalur tulis lain yang tetap di luar daftar.
+        for jalur in ("/api/cash-advances", "/api/ar-receipts/x/void", "/api/finance-cases"):
             with pytest.raises(SelfApiError) as e:
                 await api.call("POST", jalur, json={})
             assert e.value.status == 403 and e.value.message == WRITE_PATH_MESSAGE
