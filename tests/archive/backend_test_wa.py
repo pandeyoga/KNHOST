@@ -8,7 +8,7 @@ import sys
 from datetime import datetime
 
 # Use public endpoint from frontend/.env
-BASE_URL = "https://docflow-verify-1.preview.emergentagent.com/api"
+BASE_URL = "https://kain-nusantara-erp-1--59s529vc.preview.emergentagent.com/api"
 
 # Test credentials
 EMAIL = "admin@kainnusantara.id"

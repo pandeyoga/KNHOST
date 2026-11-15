@@ -14,7 +14,7 @@ import datetime
 import pytest
 import requests
 
-BASE = (os.environ.get("REACT_APP_BACKEND_URL") or "https://internal-pricing.preview.emergentagent.com").rstrip("/")
+BASE = (os.environ.get("REACT_APP_BACKEND_URL") or "https://kain-nusantara-erp-1--59s529vc.preview.emergentagent.com").rstrip("/")
 
 ADMIN = ("admin@kainnusantara.id", "demo12345")
 FINANCE = ("finance@kainnusantara.id", "demo12345")

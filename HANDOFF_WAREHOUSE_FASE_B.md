@@ -133,7 +133,7 @@ Setelah testing: baca `/app/test_reports/iteration_{n}.json`, perbaiki semua bug
 
 - Password semua user: `demo12345`
 - Users: `admin@kainnusantara.id`, `sales@kainnusantara.id`, `manager@kainnusantara.id`, `warehouse@kainnusantara.id`
-- Preview URL: https://epic-cannon-6.preview.emergentagent.com
+- Preview URL: https://kain-nusantara-erp-1--59s529vc.preview.emergentagent.com
 
 ---
 

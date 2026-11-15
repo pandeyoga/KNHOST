@@ -3,7 +3,7 @@ import os
 import pytest
 import requests
 
-BASE = os.environ.get("REACT_APP_BACKEND_URL", "https://kain-control.preview.emergentagent.com").rstrip("/")
+BASE = os.environ.get("REACT_APP_BACKEND_URL", "https://kain-nusantara-erp-1--59s529vc.preview.emergentagent.com").rstrip("/")
 EMAIL = "admin@kainnusantara.id"
 PASSWORD = "demo12345"
 ENTITY = "ent_ksc"

@@ -7,7 +7,7 @@ import requests
 import sys
 from datetime import datetime
 
-BASE_URL = "https://hub-manager-preview.preview.emergentagent.com"
+BASE_URL = "https://kain-nusantara-erp-1--59s529vc.preview.emergentagent.com"
 PASSWORD = "demo12345"
 
 class E3BackendTester:

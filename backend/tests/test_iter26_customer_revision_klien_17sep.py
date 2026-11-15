@@ -5,7 +5,7 @@ import pytest
 import requests
 from pymongo import MongoClient
 
-BASE_URL = os.environ.get("REACT_APP_BACKEND_URL", "").rstrip("/") or "https://sample-tracker-25.preview.emergentagent.com"
+BASE_URL = os.environ.get("REACT_APP_BACKEND_URL", "").rstrip("/") or "https://kain-nusantara-erp-1--59s529vc.preview.emergentagent.com"
 ENTITY = "ent_ksc"
 
 # Mongo (cleanup)

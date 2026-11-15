@@ -243,7 +243,7 @@
 [96m[1mL4-REF — Invarian Relasi Dokumen (FASE G-4 · tidak ada surat buntu)[0m
   [92m[PASS][0m INV-REF-01: 77 dokumen turunan semuanya menunjuk dokumen induk yang hidup · 1 dokumen SAH berdiri sendiri (tanpa kolom sumber: tax_invoice)
   [92m[PASS][0m INV-REF-02: relasi dua arah konsisten pada 148 dokumen ber-referensi (bisa ditelusuri dari sisi mana pun)
-  [92m[PASS][0m INV-REF-03: dokumen cetak SO-0001 menampilkan blok referensi (PICK-14693F · SJ-00001 · FKT-00001 · AR-00001 · SRET-00001 · KSC/RPB-00001) + QR Jejak Dokumen (juga saat dirender tanpa browser: https://interco-trace.preview.emergentagent.com/…)
+  [92m[PASS][0m INV-REF-03: dokumen cetak SO-0001 menampilkan blok referensi (PICK-14693F · SJ-00001 · FKT-00001 · AR-00001 · SRET-00001 · KSC/RPB-00001) + QR Jejak Dokumen (juga saat dirender tanpa browser: https://kain-nusantara-erp-1--59s529vc.preview.emergentagent.com/…)
 
 [96m[1mL4-PAY — Invarian Rencana Pembayaran & Denda (FASE G-2)[0m
   [92m[PASS][0m INV-PAY-01: 3 rencana pembayaran jumlahnya PAS dengan nilai dokumen sumber

@@ -12,7 +12,7 @@ Tests:
 import sys
 import requests
 
-BASE = "https://supplier-rma-portal.preview.emergentagent.com/api"
+BASE = "https://kain-nusantara-erp-1--59s529vc.preview.emergentagent.com/api"
 ADMIN = {"email": "admin@kainnusantara.id", "password": "demo12345"}
 
 class TestRunner:

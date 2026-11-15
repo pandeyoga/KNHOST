@@ -174,7 +174,7 @@ Before creating PR:
    - MongoDB: localhost:27017
 
 2. Preview (Kubernetes)
-   - URL: https://po-pdf-sender.preview.emergentagent.com
+   - URL: https://kain-nusantara-erp-1--59s529vc.preview.emergentagent.com
    - Auto-deploy from develop branch
    - Seed data available
 

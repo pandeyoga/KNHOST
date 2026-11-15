@@ -285,7 +285,7 @@ python /app/seed_realistic.py                    # re-seed data realistis
 cd /app/frontend && GENERATE_SOURCEMAP=false yarn build
 ```
 
-> Preview URL sesi ini: https://kn-fase-e-sourcing.preview.emergentagent.com
+> Preview URL sesi ini: https://kain-nusantara-erp-1--59s529vc.preview.emergentagent.com
 
 ---
 

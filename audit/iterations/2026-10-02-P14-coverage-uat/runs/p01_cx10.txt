@@ -4,7 +4,7 @@
   "id": "CX-10",
   "invariant": "control: signed version carries esign block",
   "pass": true,
-  "detail": "{'code': '7UGPUIJX', 'signers': 'Signer Versi 1', 'people': [{'name': 'Signer Versi 1', 'role': 'Direktur', 'at': '2026-10-02 19:21:47'}], 'signed_at': '2026-10-02 19:21:47', 'hash_short': 'a5418ffb62a9c6f2b1e4c77e…', 'verify_url': 'https://knhost-audit-1.preview.emergentagent.com/verify-document/7U"
+  "detail": "{'code': '7UGPUIJX', 'signers': 'Signer Versi 1', 'people': [{'name': 'Signer Versi 1', 'role': 'Direktur', 'at': '2026-10-02 19:21:47'}], 'signed_at': '2026-10-02 19:21:47', 'hash_short': 'a5418ffb62a9c6f2b1e4c77e…', 'verify_url': 'https://kain-nusantara-erp-1--59s529vc.preview.emergentagent.com/verify-document/7U"
  },
  {
   "id": "CX-10",
@@ -46,7 +46,7 @@
   "id": "CX-10",
   "invariant": "new PDF carries only new-version signature",
   "pass": true,
-  "detail": "{'code': 'YSBEOQVC', 'signers': 'Signer Versi 2', 'people': [{'name': 'Signer Versi 2', 'role': 'Direktur', 'at': '2026-10-02 19:21:48'}], 'signed_at': '2026-10-02 19:21:48', 'hash_short': '8aa71a3d885f31133999d8f3…', 'verify_url': 'https://knhost-audit-1.preview.emergentagent.com/verify-document/YS"
+  "detail": "{'code': 'YSBEOQVC', 'signers': 'Signer Versi 2', 'people': [{'name': 'Signer Versi 2', 'role': 'Direktur', 'at': '2026-10-02 19:21:48'}], 'signed_at': '2026-10-02 19:21:48', 'hash_short': '8aa71a3d885f31133999d8f3…', 'verify_url': 'https://kain-nusantara-erp-1--59s529vc.preview.emergentagent.com/verify-document/YS"
  },
  {
   "id": "CX-10",

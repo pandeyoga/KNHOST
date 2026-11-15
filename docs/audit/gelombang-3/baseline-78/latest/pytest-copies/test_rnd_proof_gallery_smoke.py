@@ -3,7 +3,7 @@ import os
 import requests
 import pytest
 
-BASE_URL = os.environ["REACT_APP_BACKEND_URL"].rstrip("/") if os.environ.get("REACT_APP_BACKEND_URL") else "https://kn-erp-dev.preview.emergentagent.com"
+BASE_URL = os.environ["REACT_APP_BACKEND_URL"].rstrip("/") if os.environ.get("REACT_APP_BACKEND_URL") else "https://kain-nusantara-erp-1--59s529vc.preview.emergentagent.com"
 HEADERS_ENT = {"X-Entity-Id": "ent_ksc"}
 
 

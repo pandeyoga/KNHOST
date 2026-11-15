@@ -1,6 +1,6 @@
 """G3 Fase 03 — uji live V3-PO-01/02/03 (tugas selisih PO, amend qty→received, close setelah approve).
 
-Jalankan: cd /app && REACT_APP_BACKEND_URL=https://internal-pricing.preview.emergentagent.com \
+Jalankan: cd /app && REACT_APP_BACKEND_URL=https://kain-nusantara-erp-1--59s529vc.preview.emergentagent.com \
     python -m pytest backend/tests/test_g3_phase03b_live.py -q -n 0
 """
 import os

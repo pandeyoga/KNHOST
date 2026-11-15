@@ -11,7 +11,7 @@ import os
 import pytest
 import requests
 
-BASE = os.environ.get("REACT_APP_BACKEND_URL", "https://knhost-erp.preview.emergentagent.com").rstrip("/")
+BASE = os.environ.get("REACT_APP_BACKEND_URL", "https://kain-nusantara-erp-1--59s529vc.preview.emergentagent.com").rstrip("/")
 ENT = "ent_kanda"
 SO_03 = "so_df1f8042999f"
 SO_04 = "so_450bfacd5813"

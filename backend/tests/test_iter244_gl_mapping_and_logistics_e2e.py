@@ -6,7 +6,7 @@ import os, time
 import pytest
 import requests
 
-BASE_URL = os.environ.get("REACT_APP_BACKEND_URL", "https://knhost-textile.preview.emergentagent.com").rstrip("/")
+BASE_URL = os.environ.get("REACT_APP_BACKEND_URL", "https://kain-nusantara-erp-1--59s529vc.preview.emergentagent.com").rstrip("/")
 
 CREDS = {
     "admin": ("admin@kainnusantara.id", "demo12345"),

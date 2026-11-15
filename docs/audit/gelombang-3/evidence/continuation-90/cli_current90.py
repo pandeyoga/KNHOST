@@ -109,7 +109,7 @@ for name in selected:
  original_path=R/'scripts'/name
  src=original_path.read_text(encoding='utf-8-sig')
  src=src.replace('/app/',R.as_posix()+'/')
- for old in ['http://localhost:8001','http://127.0.0.1:8001','https://kain-control.preview.emergentagent.com']:
+ for old in ['http://localhost:8001','http://127.0.0.1:8001','https://kain-nusantara-erp-1--59s529vc.preview.emergentagent.com']:
   src=src.replace(old,base)
  src=src.replace('mongodb://localhost:27017','mongodb://127.0.0.1:27919').replace('mongodb://127.0.0.1:27017','mongodb://127.0.0.1:27919')
  sys.argv=[str(original_path)];asyncio.set_event_loop(asyncio.new_event_loop())

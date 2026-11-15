@@ -6,7 +6,7 @@ import requests
 import sys
 from typing import Dict, Any, List, Optional
 
-BASE_URL = "https://po-pdf-sender.preview.emergentagent.com/api"
+BASE_URL = "https://kain-nusantara-erp-1--59s529vc.preview.emergentagent.com/api"
 
 class F0EBackendTester:
     def __init__(self):

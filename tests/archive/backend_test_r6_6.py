@@ -10,7 +10,7 @@ import requests
 import sys
 from datetime import datetime
 
-BASE_URL = "https://job-notif.preview.emergentagent.com/api"
+BASE_URL = "https://kain-nusantara-erp-1--59s529vc.preview.emergentagent.com/api"
 
 class R66APITester:
     def __init__(self):

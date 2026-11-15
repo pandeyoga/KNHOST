@@ -3,7 +3,7 @@
   "id": "CX-10",
   "invariant": "control: signed version carries esign block",
   "pass": true,
-  "detail": "{'code': 'IWLY9B0E', 'signers': 'Signer Versi 1', 'people': [{'name': 'Signer Versi 1', 'role': 'Direktur', 'at': '2026-09-30 16:23:53'}], 'signed_at': '2026-09-30 16:23:53', 'hash_short': '64359bcbcfb533ed1b221f00…', 'verify_url': 'https://knhost-audit.preview.emergentagent.com/verify-document/IWLY"
+  "detail": "{'code': 'IWLY9B0E', 'signers': 'Signer Versi 1', 'people': [{'name': 'Signer Versi 1', 'role': 'Direktur', 'at': '2026-09-30 16:23:53'}], 'signed_at': '2026-09-30 16:23:53', 'hash_short': '64359bcbcfb533ed1b221f00…', 'verify_url': 'https://kain-nusantara-erp-1--59s529vc.preview.emergentagent.com/verify-document/IWLY"
  },
  {
   "id": "CX-10",
@@ -15,7 +15,7 @@
   "id": "CX-10",
   "invariant": "changed doc does NOT carry old signature",
   "pass": false,
-  "detail": "{'code': 'IWLY9B0E', 'signers': 'Signer Versi 1', 'people': [{'name': 'Signer Versi 1', 'role': 'Direktur', 'at': '2026-09-30 16:23:53'}], 'signed_at': '2026-09-30 16:23:53', 'hash_short': '64359bcbcfb533ed1b221f00…', 'verify_url': 'https://knhost-audit.preview.emergentagent.com/verify-document/IWLY"
+  "detail": "{'code': 'IWLY9B0E', 'signers': 'Signer Versi 1', 'people': [{'name': 'Signer Versi 1', 'role': 'Direktur', 'at': '2026-09-30 16:23:53'}], 'signed_at': '2026-09-30 16:23:53', 'hash_short': '64359bcbcfb533ed1b221f00…', 'verify_url': 'https://kain-nusantara-erp-1--59s529vc.preview.emergentagent.com/verify-document/IWLY"
  },
  {
   "id": "CX-10",

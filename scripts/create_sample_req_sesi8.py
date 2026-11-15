@@ -2,7 +2,7 @@
 """Create a sample request as sales user, return wms_task_id + suggested_roll_id + child info."""
 import os, sys, json, requests
 
-BASE = os.environ.get("REACT_APP_BACKEND_URL", "https://vendor-bills-wms.preview.emergentagent.com").rstrip("/")
+BASE = os.environ.get("REACT_APP_BACKEND_URL", "https://kain-nusantara-erp-1--59s529vc.preview.emergentagent.com").rstrip("/")
 API = BASE + "/api"
 ENT = "ent_ksc"
 

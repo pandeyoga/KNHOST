@@ -23,6 +23,6 @@
   "seed_data_creation": "none",
   "retest_needed": false,
   "should_main_agent_self_test": true,
-  "context_for_next_testing_agent": "Frontend is served from static bundle — after src edits run `bash /app/scripts/rebuild_frontend.sh`. Preview URL: https://knhost-responsive.preview.emergentagent.com. MD login md@kainnusantara.id/demo12345 lands on data-testid=mobile-md-app at 390x844. Testable write flows require switching entity to ent_ksc via m-md-entity-ent_ksc (Semua mode blocks writes with 409). Notif sheet close testid should be added or the sheet needs a stable close button testid — Escape closing is not reliable across all overlay implementations.",
+  "context_for_next_testing_agent": "Frontend is served from static bundle — after src edits run `bash /app/scripts/rebuild_frontend.sh`. Preview URL: https://kain-nusantara-erp-1--59s529vc.preview.emergentagent.com. MD login md@kainnusantara.id/demo12345 lands on data-testid=mobile-md-app at 390x844. Testable write flows require switching entity to ent_ksc via m-md-entity-ent_ksc (Semua mode blocks writes with 409). Notif sheet close testid should be added or the sheet needs a stable close button testid — Escape closing is not reliable across all overlay implementations.",
   "rca_of_issue": "n/a — no confirmed bug"
 }

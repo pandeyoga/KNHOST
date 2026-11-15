@@ -16,7 +16,7 @@ import requests
 from datetime import datetime
 
 # Use public endpoint from frontend/.env
-BASE_URL = os.environ.get("REACT_APP_BACKEND_URL", "https://return-reconcile-r3.preview.emergentagent.com")
+BASE_URL = os.environ.get("REACT_APP_BACKEND_URL", "https://kain-nusantara-erp-1--59s529vc.preview.emergentagent.com")
 API = f"{BASE_URL}/api"
 
 # Test credentials from review request

@@ -4,7 +4,7 @@ Verify that trial balance is balanced and JE entries are correct
 import requests
 import sys
 
-BASE_URL = "https://code-continue-37.preview.emergentagent.com/api"
+BASE_URL = "https://kain-nusantara-erp-1--59s529vc.preview.emergentagent.com/api"
 ADMIN_CREDS = {"email": "admin@kainnusantara.id", "password": "demo12345"}
 
 def login():

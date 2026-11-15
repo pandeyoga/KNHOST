@@ -3,7 +3,7 @@ and verifies totals match rows. Does NOT create data. Writes JSON dump.
 """
 import os, json, requests
 
-BASE = os.environ.get('REACT_APP_BACKEND_URL', 'https://kain-control.preview.emergentagent.com').rstrip('/')
+BASE = os.environ.get('REACT_APP_BACKEND_URL', 'https://kain-nusantara-erp-1--59s529vc.preview.emergentagent.com').rstrip('/')
 tok = requests.post(f'{BASE}/api/auth/login',
                     json={'email':'admin@kainnusantara.id','password':'demo12345'}).json()
 TOKEN = tok.get('token') or tok.get('access_token')

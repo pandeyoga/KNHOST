@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """T-05 (audit 2026-09) — codemod: URL preview LAMA yang di-hardcode di skrip uji → env.
 
-Setiap literal `"https://<slug>.preview.emergentagent.com"` (opsional `/api`) diganti
+Setiap literal `"https://kain-nusantara-erp-1--59s529vc.preview.emergentagent.com"` (opsional `/api`) diganti
 `os.environ["REACT_APP_BACKEND_URL"]` (+ `"/api"`), `import os` ditambah bila belum ada.
 Gagal berisik bila env kosong (KeyError) — bukan 404 dari ingress yang menyesatkan.
 

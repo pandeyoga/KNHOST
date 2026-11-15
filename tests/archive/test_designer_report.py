@@ -5,7 +5,7 @@ Tests FEATURE 1: Ringkasan Rapor (Designer Report with Evaluation Note)
 import requests
 import sys
 
-BASE_URL = "https://po-grid-layout.preview.emergentagent.com"
+BASE_URL = "https://kain-nusantara-erp-1--59s529vc.preview.emergentagent.com"
 ENTITY_ID = "ent_ksc"
 
 def login(email: str, password: str) -> str:

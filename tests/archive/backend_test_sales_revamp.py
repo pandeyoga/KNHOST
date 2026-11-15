@@ -6,7 +6,7 @@ Tests roll picker, reconciliation, and cross-entity features
 import requests
 import sys
 
-BASE_URL = "https://po-pdf-sender.preview.emergentagent.com/api"
+BASE_URL = "https://kain-nusantara-erp-1--59s529vc.preview.emergentagent.com/api"
 
 class TestRunner:
     def __init__(self):

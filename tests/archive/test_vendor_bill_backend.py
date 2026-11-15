@@ -11,7 +11,7 @@ import requests
 from datetime import datetime
 
 # Use PUBLIC endpoint from frontend/.env
-BASE = "https://po-pdf-sender.preview.emergentagent.com"
+BASE = "https://kain-nusantara-erp-1--59s529vc.preview.emergentagent.com"
 API = f"{BASE}/api"
 
 ADMIN = {"email": "admin@kainnusantara.id", "password": "demo12345"}

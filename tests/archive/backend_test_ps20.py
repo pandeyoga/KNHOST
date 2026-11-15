@@ -14,7 +14,7 @@ import sys
 from typing import Dict, Any, Optional
 from datetime import date, timedelta
 
-BASE_URL = "https://kain-rnd-org.preview.emergentagent.com/api"
+BASE_URL = "https://kain-nusantara-erp-1--59s529vc.preview.emergentagent.com/api"
 ENTITY_ID = "ent_ksc"
 PASSWORD = "demo12345"
 

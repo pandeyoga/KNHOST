@@ -19,7 +19,7 @@ import sys
 from typing import Dict, Any
 
 # Use public endpoint
-BASE_URL = "https://po-grid-layout.preview.emergentagent.com/api"
+BASE_URL = "https://kain-nusantara-erp-1--59s529vc.preview.emergentagent.com/api"
 PASSWORD = "demo12345"
 
 # Test users

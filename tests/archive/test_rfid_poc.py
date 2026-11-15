@@ -12,7 +12,7 @@ from dotenv import load_dotenv
 from motor.motor_asyncio import AsyncIOMotorClient
 
 load_dotenv("/app/backend/.env")
-BASE = "https://warehouse-fase-b.preview.emergentagent.com"
+BASE = "https://kain-nusantara-erp-1--59s529vc.preview.emergentagent.com"
 MONGO = os.environ["MONGO_URL"]
 DBN = os.environ["DB_NAME"]
 

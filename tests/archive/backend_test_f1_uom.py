@@ -8,7 +8,7 @@ import requests
 import sys
 from datetime import datetime
 
-BASE_URL = "https://kainnusantara-stage.preview.emergentagent.com/api"
+BASE_URL = "https://kain-nusantara-erp-1--59s529vc.preview.emergentagent.com/api"
 
 # Test credentials
 TEST_USER = {"email": "admin@kainnusantara.id", "password": "demo12345"}

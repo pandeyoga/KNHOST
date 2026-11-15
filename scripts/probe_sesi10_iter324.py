@@ -2,7 +2,7 @@
 import os, sys, asyncio, httpx, json, time
 from motor.motor_asyncio import AsyncIOMotorClient
 
-BASE = os.environ.get("REACT_APP_BACKEND_URL", "https://vendor-bills-wms.preview.emergentagent.com").rstrip("/")
+BASE = os.environ.get("REACT_APP_BACKEND_URL", "https://kain-nusantara-erp-1--59s529vc.preview.emergentagent.com").rstrip("/")
 MONGO = os.environ.get("MONGO_URL", "mongodb://localhost:27017")
 DB = os.environ.get("DB_NAME", "test_database")
 

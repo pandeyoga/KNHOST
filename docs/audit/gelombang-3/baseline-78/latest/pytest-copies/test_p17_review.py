@@ -6,7 +6,7 @@ import pytest
 import requests
 import threading
 
-BASE_URL = (os.environ.get('REACT_APP_BACKEND_URL') or 'https://knhost-preview-3.preview.emergentagent.com').rstrip('/')
+BASE_URL = (os.environ.get('REACT_APP_BACKEND_URL') or 'https://kain-nusantara-erp-1--59s529vc.preview.emergentagent.com').rstrip('/')
 ENT_TARGET = "ent_d1772c5f5ced"
 ENT_KSC = "ent_ksc"
 

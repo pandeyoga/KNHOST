@@ -9,7 +9,7 @@ from datetime import datetime
 from typing import Dict, Any, Optional
 
 # Public endpoint from frontend/.env
-BASE_URL = "https://kn-dev-continue-1.preview.emergentagent.com/api"
+BASE_URL = "https://kain-nusantara-erp-1--59s529vc.preview.emergentagent.com/api"
 
 # Test credentials from test_credentials.md
 CREDENTIALS = {

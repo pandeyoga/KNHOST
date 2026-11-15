@@ -3,7 +3,7 @@
 import requests
 import sys
 
-BASE_URL = "https://hahabannamaka-test.preview.emergentagent.com/api"
+BASE_URL = "https://kain-nusantara-erp-1--59s529vc.preview.emergentagent.com/api"
 CREDENTIALS = {
     "admin": {"email": "admin@kainnusantara.id", "password": "demo12345"},
     "manager": {"email": "manager@kainnusantara.id", "password": "demo12345"},

@@ -3,7 +3,7 @@
 Keputusan pemilik: **"Hapus yang sudah basi, ubah sisanya."**
 
 ## 1. Ubah: 55 skrip ber-URL hardcoded → env (`scripts/codemod_env_url.py`)
-- Codemod mekanis: literal `https://<slug>.preview.emergentagent.com[/api]` → `os.environ["REACT_APP_BACKEND_URL"]`
+- Codemod mekanis: literal `https://kain-nusantara-erp-1--59s529vc.preview.emergentagent.com[/api]` → `os.environ["REACT_APP_BACKEND_URL"]`
   (+ `"/api"`), `import os` disisipkan bila belum ada. Gagal berisik (KeyError) bila env kosong — bukan 404 ingress.
 - Dijalankan atas seluruh korpus `run_corpus.py --list` (63 berkas berubah: 51 direct + 12 pytest/poc) + 4 berkas
   di luar korpus (`backend_test_fase_d.py`, `backend_test_fase_l.py`, `scripts/debug_blank.py`, `scripts/crawl_blank.py`).

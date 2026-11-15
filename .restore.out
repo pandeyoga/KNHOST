@@ -26,7 +26,7 @@ YARN_EXIT=0
 mongodb: ERROR (already started)
 mongodb SIAP setelah 1x percobaan.
 === [3b/7] backend/.env: CORS_ORIGINS wajib eksplisit (T-02 gagal-berisik) Thu Sep 24 15:32:46 UTC 2026
-CORS_ORIGINS ok: https://exclusive-palette.preview.emergentagent.com,http://localhost:3000
+CORS_ORIGINS ok: https://kain-nusantara-erp-1--59s529vc.preview.emergentagent.com,http://localhost:3000
 === [4/7] restart backend — bootstrap fondasi menulis ke DB yang HIDUP Thu Sep 24 15:32:46 UTC 2026
 backend: stopped
 backend: started

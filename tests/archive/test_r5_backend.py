@@ -3,7 +3,7 @@ import requests
 import sys
 from typing import Dict, Any
 
-BASE_URL = "https://supplier-rma-portal.preview.emergentagent.com/api"
+BASE_URL = "https://kain-nusantara-erp-1--59s529vc.preview.emergentagent.com/api"
 ADMIN_CREDS = {"email": "admin@kainnusantara.id", "password": "demo12345"}
 
 class R53BackendTester:

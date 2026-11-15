@@ -12,7 +12,7 @@ import os
 import sys
 import requests
 
-API = os.environ.get("REACT_APP_BACKEND_URL", "https://return-reconcile-r3.preview.emergentagent.com") + "/api"
+API = os.environ.get("REACT_APP_BACKEND_URL", "https://kain-nusantara-erp-1--59s529vc.preview.emergentagent.com") + "/api"
 ADMIN = {"email": "admin@kainnusantara.id", "password": "demo12345"}
 PASS, FAIL = 0, 0
 

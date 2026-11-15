@@ -6,7 +6,7 @@ Focus: Price consistency verification and regression testing
 import requests
 import sys
 
-BASE = "https://number-separator.preview.emergentagent.com/api"
+BASE = "https://kain-nusantara-erp-1--59s529vc.preview.emergentagent.com/api"
 ENTITY = "ent_ksc"
 PASSWORD = "demo12345"
 

@@ -403,6 +403,28 @@ P14-K1 → Bima). Laporan hasil di `docs/uat/2026-10-21/hasil/UAT24-*.md`.
 | T8-08 | `POST /api/special-orders/{order_id}/fulfillment/{item_key}/cancel`: pesanan dimuat sebelum `od_fulfillment.cancel` — tanpa izin 404 — M1 | implemented_pending_review (`435b470`) | [PR-T8](2026-11-13/hasil/PR-T8.md) · [PR-T8b](2026-11-13/hasil/PR-T8b.md) |
 | T8-09 | `POST /api/config/values/cancel-scheduled`: baris jadwal dimuat sebelum wewenang ubah pengaturan — tanpa izin 404 — M1 | implemented_pending_review (`435b470`) | [PR-T8](2026-11-13/hasil/PR-T8.md) · [PR-T8b](2026-11-13/hasil/PR-T8b.md) |
 
+## Audit domain — 2026-11-15 (baca-saja; HEAD `91a3ec0`)
+
+Sumber: [`docs/reviews/PERINTAH_AUDIT_DOMAIN_2026-11-15.md`](PERINTAH_AUDIT_DOMAIN_2026-11-15.md).
+Hasil lengkap & bukti: [`docs/audit/2026-11-15-domain/`](../audit/2026-11-15-domain/00-RINGKASAN.md).
+Kolom **Fase** dikosongkan (diisi saat pemilik memilih & blueprint membuat unit). Status semua `open`.
+
+| ID | Judul | Prio | Jenis akar | Domain | Fase | Status | Bukti utama (HEAD) | Laporan |
+|---|---|---|---|---|---|---|---|---|
+| MS-01 | Validasi stage domain di-bypass lewat `save_product(strict=False)` (Pesanan Khusus & impor) | Kritis | aturan tidak ditegakkan / pintu ganda | A master-stage |  | open | `special_order_service.py:317,64` · `product_variant_service.py:166` · `admin.py:184/192` vs `products.py:100` | [A](../audit/2026-11-15-domain/A-MASTER-STAGE.md) |
+| MS-02 | `STAGE_TRANSITIONS` tidak ditegakkan; 86 titik menulis `stage` langsung | Tinggi | cacat logika | A master-stage |  | open | `domain_registry.py` (hanya dibaca `line_scope.py`) | [A](../audit/2026-11-15-domain/A-MASTER-STAGE.md) |
+| MS-03 | Dua sistem label stage PFP/PFD + salinan hardcode di ±14 `.jsx` | Sedang | duplikasi | A master-stage |  | open | `domain_registry.py:55/57` vs `448-461` | [A](../audit/2026-11-15-domain/A-MASTER-STAGE.md) |
+| MS-04 | Dropdown stage langkah makloon tak disaring; `from_stage` tak diadu bahan masuk | Tinggi | pilihan salah / aturan tidak ditegakkan | A master-stage |  | open | `MakloonStepEditor.jsx:67-68` · `makloon_order_service._resolve_stage` | [A](../audit/2026-11-15-domain/A-MASTER-STAGE.md) |
+| MK-01 | Dua pintu pembuatan SPK makloon (Wizard via PR vs Create-Modal via resep) | Tinggi | pintu ganda | B makloon |  | open | `MakloonWizard.jsx:305/307` · `MakloonOrderCreateModal.jsx:192` | [B](../audit/2026-11-15-domain/B-MAKLOON.md) |
+| MK-02 | `from_stage` langkah makloon tak ditegakkan terhadap bahan masuk | Tinggi | aturan tidak ditegakkan | B makloon |  | open | lihat MS-04 | [B](../audit/2026-11-15-domain/B-MAKLOON.md) |
+| MK-03 | Langkah mitra bisa disimpan tanpa mitra (peringatan, keputusan pemilik 3b) | Sedang | status | B makloon |  | open | `makloon_order_service.py:291-299` | [B](../audit/2026-11-15-domain/B-MAKLOON.md) |
+| RD-01 | Penciptaan SKU punya 4–5 pintu; penegakan domain tidak seragam | Tinggi | pintu ganda / aturan tidak ditegakkan | C R&D |  | open | `products.py:114` · `product_templates.py:116` · `rnd.py:325` · `special_orders.py:1303` | [C](../audit/2026-11-15-domain/C-RND.md) |
+| RT-01 | Pembagian state retur (jual & beli) terverifikasi SAH, bukan duplikat | — | (tidak ada) | D retur |  | open | `sales_return_transition.py:3` · `purchase_return_state.py` vs `purchase_return_doc_state.py` | [D](../audit/2026-11-15-domain/D-RETUR.md) |
+| RT-02 | Banyak pintu penyelesaian retur: risiko uang/stok ganda (perlu data acuan) | Sedang | duplikasi (dugaan) | D retur |  | open | `return_roll_settlement`/`compensation`/`replacement`/`cutloss_split` | [D](../audit/2026-11-15-domain/D-RETUR.md) |
+| QM-01 | Dua pintu menetapkan grade satu roll (SPK 4-point vs grade-override) | Tinggi | pintu ganda | E QC & MDQ |  | open | `inspections.py:94/257/530` vs `qc_inspection.py:169` | [E](../audit/2026-11-15-domain/E-QC-MDQ.md) |
+| SO-01 | Empat modul fulfillment menghitung ketersediaan sendiri-sendiri | Kritis | duplikasi | F pesanan sesudah POS |  | open | `fulfillment_service/decision_service/plan_service/wizard_service` (4 router) | [F](../audit/2026-11-15-domain/F-PESANAN-SESUDAH-POS.md) |
+
+
 ## Keputusan yang ditunggu
 
 | ID | Pertanyaan untuk owner | Dicatat |
@@ -417,6 +439,7 @@ P14-K1 → Bima). Laporan hasil di `docs/uat/2026-10-21/hasil/UAT24-*.md`.
 
 | Tanggal | Oleh | Perubahan |
 |---|---|---|
+| 2026-11-15 | Claude Code | Audit domain R5 (baca-saja, HEAD `91a3ec0`) didaftarkan: 12 temuan `open` (MS-01..04, MK-01..03, RD-01, RT-01/02, QM-01, SO-01) di bagian "Audit domain — 2026-11-15"; hasil & bukti di [`docs/audit/2026-11-15-domain/`](../audit/2026-11-15-domain/00-RINGKASAN.md). Tidak ada kode/data/server/`main` diubah; backend acuan tak dijalankan (tanpa `MONGO_URL`/seed) demi batas H2/H3 → bukti berbasis kode + langkah reproduksi |
 | 2026-11-15 | Claude Code | P24 (semula P23) tanggal bawaan WIB implemented_pending_review (`7371f9d`, [P23](../uat/2026-10-21/hasil/UAT24-P23-TANGGAL-WIB.md)): `NOW` tingkat modul keuangan → helper WIB saat dipasang (`yearOptions`/`ytdRangeWib`/`endOfPrevMonthWib`), tanggal/bulan bawaan form → `todayWib()`; uji jam beku 2026-11-14T19:30Z di lingkungan jest perangkat UTC (kode lama 6/7 merah → 7/7); Jest penuh 86/86 suite (TZ UTC & WIB); harapan `uatV3SpecialOrder` (tanggal sampel) diganti dari zona perangkat ke WIB |
 | 2026-11-14 | Implementer | [PR-T8b] Temuan penjaga matriks izin T8-01…T8-09 (laporan PR-T8) didaftarkan di "Temuan tambahan dari implementer" dan ditetapkan implemented_pending_review (`66c1de3`, [PR-T8b](2026-11-13/hasil/PR-T8b.md)): A = 6 putusan `LOGIN_ONLY`, B = gerbang sesi + izin sebelum dokumen dimuat di 8 rute; `sapuan_izin.py` cepat & `--penuh` keluar 0; tests_mem 577 → 593; gate `--quick` identik |
 | 2026-11-13 | Implementer | [PK-01] Paket 2026-11-13 didaftarkan dari HEAD `fb6bc75`: audit keuangan 139 baris, temuan tambahan riset modul 48 baris, audit konfigurasi dan peran 69 baris (KF 13 + KF-UX, PR 16 + PR-UX, KP 36, MB 2); semua `open`, Fase = unit blueprint ([PK-01](2026-11-13/hasil/PK-01.md)) |

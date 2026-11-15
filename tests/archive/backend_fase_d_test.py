@@ -22,7 +22,7 @@ import requests
 from datetime import datetime
 
 # PUBLIC ENDPOINT (from frontend/.env)
-BASE_URL = "https://kn-makloon-wms.preview.emergentagent.com"
+BASE_URL = "https://kain-nusantara-erp-1--59s529vc.preview.emergentagent.com"
 API_URL = f"{BASE_URL}/api"
 
 # Test credentials

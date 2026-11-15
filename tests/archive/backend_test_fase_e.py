@@ -11,7 +11,7 @@ import json
 from datetime import datetime, timedelta
 
 # Use public URL as instructed
-BASE_URL = "https://kn-makloon-wms.preview.emergentagent.com"
+BASE_URL = "https://kain-nusantara-erp-1--59s529vc.preview.emergentagent.com"
 API_URL = f"{BASE_URL}/api"
 
 # Test credentials from test_credentials.md

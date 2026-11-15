@@ -6,7 +6,7 @@ import sys
 import time
 from datetime import datetime
 
-BASE_URL = "https://po-pdf-sender.preview.emergentagent.com"
+BASE_URL = "https://kain-nusantara-erp-1--59s529vc.preview.emergentagent.com"
 API = f"{BASE_URL}/api"
 
 class BackorderTester:

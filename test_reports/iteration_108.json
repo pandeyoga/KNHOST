@@ -23,6 +23,6 @@
   "seed_data_creation": "None. Restored the one device I temporarily disabled (rdev_ce3fe47fdf18) back to enabled. Did not rotate any keys.",
   "retest_needed": false,
   "should_main_agent_self_test": true,
-  "context_for_next_testing_agent": "P01 scope hotfix + Device Key Protection are fully green. Run all three invariant scripts from /app/audit/iterations/2026-09-30-P01-*/repro_*.py — env: KN_API=https://knhost-audit.preview.emergentagent.com/api MONGO_URL=mongodb://localhost:27017 DB_NAME=test_database, cwd=/app/backend. Plus /app/backend/tests/test_iter108_regression.py for regression smoke. Frontend is a static bundle — after src edits run bash /app/scripts/rebuild_frontend.sh. If you disable a device via UI, remember to re-enable it before finishing.",
+  "context_for_next_testing_agent": "P01 scope hotfix + Device Key Protection are fully green. Run all three invariant scripts from /app/audit/iterations/2026-09-30-P01-*/repro_*.py — env: KN_API=https://kain-nusantara-erp-1--59s529vc.preview.emergentagent.com/api MONGO_URL=mongodb://localhost:27017 DB_NAME=test_database, cwd=/app/backend. Plus /app/backend/tests/test_iter108_regression.py for regression smoke. Frontend is a static bundle — after src edits run bash /app/scripts/rebuild_frontend.sh. If you disable a device via UI, remember to re-enable it before finishing.",
   "rca of the issue": "N/A — no bugs found. All 19 scope findings + RF-12/RF-13 device credential protections are correctly enforced at server level and the RFID Devices UI exposes the intended data-testid contract."
 }

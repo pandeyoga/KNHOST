@@ -7,7 +7,7 @@ import sys
 import os
 
 # Get backend URL from frontend .env
-BACKEND_URL = "https://po-pdf-sender.preview.emergentagent.com"
+BACKEND_URL = "https://kain-nusantara-erp-1--59s529vc.preview.emergentagent.com"
 API = f"{BACKEND_URL}/api"
 
 class FASE3BackendTester:

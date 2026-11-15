@@ -7,7 +7,7 @@ import requests
 from datetime import datetime
 
 # Get the public backend URL
-BASE_URL = os.environ.get('REACT_APP_BACKEND_URL', 'https://supplier-rma-portal.preview.emergentagent.com')
+BASE_URL = os.environ.get('REACT_APP_BACKEND_URL', 'https://kain-nusantara-erp-1--59s529vc.preview.emergentagent.com')
 API_BASE = f"{BASE_URL}/api"
 
 class R5ReversalTester:

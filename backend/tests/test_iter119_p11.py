@@ -15,7 +15,7 @@ import uuid
 import pytest
 import requests
 
-BASE = os.environ.get("REACT_APP_BACKEND_URL", "https://rfid-gate-monitor.preview.emergentagent.com").rstrip("/")
+BASE = os.environ.get("REACT_APP_BACKEND_URL", "https://kain-nusantara-erp-1--59s529vc.preview.emergentagent.com").rstrip("/")
 ENTITY = "ent_ksc"
 WAREHOUSE = "wh_jakarta"
 

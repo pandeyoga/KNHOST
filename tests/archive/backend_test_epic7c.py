@@ -7,7 +7,7 @@ import sys
 from typing import Dict, Any
 
 # Use public URL
-BASE_URL = "https://po-pdf-sender.preview.emergentagent.com/api"
+BASE_URL = "https://kain-nusantara-erp-1--59s529vc.preview.emergentagent.com/api"
 
 class TestResults:
     def __init__(self):

@@ -5,7 +5,7 @@ Tests the new "Minta Harga Khusus" feature backend integration
 import requests
 import sys
 
-BASE_URL = "https://warehouse-fase-b.preview.emergentagent.com/api"
+BASE_URL = "https://kain-nusantara-erp-1--59s529vc.preview.emergentagent.com/api"
 ADMIN_EMAIL = "admin@kainnusantara.id"
 ADMIN_PASSWORD = "demo12345"
 SALES_EMAIL = "sales@kainnusantara.id"

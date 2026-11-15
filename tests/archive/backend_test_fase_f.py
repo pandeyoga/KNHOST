@@ -7,7 +7,7 @@ import requests
 import sys
 from datetime import datetime
 
-BASE_URL = "https://kn-supplier-verify.preview.emergentagent.com"
+BASE_URL = "https://kain-nusantara-erp-1--59s529vc.preview.emergentagent.com"
 API = f"{BASE_URL}/api"
 
 # Test credentials (all password: demo12345)

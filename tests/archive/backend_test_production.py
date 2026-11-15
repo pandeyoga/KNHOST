@@ -8,7 +8,7 @@ import sys
 from datetime import datetime
 
 # Use public endpoint from frontend/.env
-BASE_URL = "https://kn-inventory-prod.preview.emergentagent.com/api"
+BASE_URL = "https://kain-nusantara-erp-1--59s529vc.preview.emergentagent.com/api"
 
 # Test credentials
 ADMIN = {"email": "admin@kainnusantara.id", "password": "demo12345"}

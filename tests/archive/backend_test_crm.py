@@ -20,7 +20,7 @@ import requests
 from datetime import datetime
 
 # Use public URL from frontend/.env
-BASE = os.environ.get("BACKEND_URL", "https://po-pdf-sender.preview.emergentagent.com").rstrip("/")
+BASE = os.environ.get("BACKEND_URL", "https://kain-nusantara-erp-1--59s529vc.preview.emergentagent.com").rstrip("/")
 API = f"{BASE}/api"
 PASS, FAIL = [], []
 

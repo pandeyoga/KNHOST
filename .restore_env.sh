@@ -64,7 +64,7 @@ _cors=$(grep -E '^CORS_ORIGINS=' /app/backend/.env 2>/dev/null | cut -d= -f2- | 
 if [ -z "$_cors" ] || [ "$_cors" = "*" ]; then
   _fe=$(grep -E '^REACT_APP_BACKEND_URL=' /app/frontend/.env 2>/dev/null | cut -d= -f2- | tr -d '"'"'")
   echo "!! CORS_ORIGINS di backend/.env kosong atau '*' — backend akan menolak start."
-  echo "   Isi contoh:  CORS_ORIGINS=\"${_fe:-https://<app>.preview.emergentagent.com},http://localhost:3000\""
+  echo "   Isi contoh:  CORS_ORIGINS=\"${_fe:-https://kain-nusantara-erp-1--59s529vc.preview.emergentagent.com},http://localhost:3000\""
   echo "   (lihat komentar T-02 di backend/server.py; SESSION_COOKIE_SECURE=\"true\" untuk HTTPS)"
   exit 1
 fi

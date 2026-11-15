@@ -106,7 +106,7 @@ copies=output/'pytest-deep90-copies';copies.mkdir(exist_ok=True)
 os.environ['OCR_ALLOW_MOCK']='1'
 for p in (R/'backend/tests').glob('*.py'):
  text=p.read_text(encoding='utf-8-sig').replace('/app/',R.as_posix()+'/')
- for old in ['http://localhost:8001','http://127.0.0.1:8001','https://kain-control.preview.emergentagent.com','http://127.0.0.1:8006']:
+ for old in ['http://localhost:8001','http://127.0.0.1:8001','https://kain-nusantara-erp-1--59s529vc.preview.emergentagent.com','http://127.0.0.1:8006']:
   text=text.replace(old,base)
  text=text.replace('mongodb://localhost:27017','mongodb://127.0.0.1:27919').replace('mongodb://127.0.0.1:27017','mongodb://127.0.0.1:27919')
  text=text.replace('knhost_data_audit_latest_pytest',db.name)

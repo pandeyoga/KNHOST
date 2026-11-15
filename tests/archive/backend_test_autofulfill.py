@@ -6,7 +6,7 @@ import sys
 import time
 import subprocess
 
-BASE_URL = "https://po-pdf-sender.preview.emergentagent.com"
+BASE_URL = "https://kain-nusantara-erp-1--59s529vc.preview.emergentagent.com"
 API = f"{BASE_URL}/api"
 
 class AutoFulfillTester:

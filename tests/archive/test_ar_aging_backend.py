@@ -13,7 +13,7 @@ Tests:
 import os
 import requests
 
-BASE = "https://po-pdf-sender.preview.emergentagent.com"
+BASE = "https://kain-nusantara-erp-1--59s529vc.preview.emergentagent.com"
 API = f"{BASE}/api"
 PASS, FAIL = 0, 0
 BUCKETS = ["current", "b1_30", "b31_60", "b61_90", "b90_plus"]

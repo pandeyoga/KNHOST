@@ -23,7 +23,7 @@ from dotenv import load_dotenv
 load_dotenv("/app/backend/.env")
 
 # Use public endpoint for testing
-BASE = "https://po-pdf-sender.preview.emergentagent.com"
+BASE = "https://kain-nusantara-erp-1--59s529vc.preview.emergentagent.com"
 API = f"{BASE}/api"
 MONGO_URL = os.environ["MONGO_URL"]
 DB_NAME = os.environ["DB_NAME"]

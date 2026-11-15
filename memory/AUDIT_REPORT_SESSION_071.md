@@ -1030,7 +1030,7 @@ warehouse@kainnusantara.id/ demo12345
 **Environment:**
 - `MONGO_URL` (backend/.env): `mongodb://localhost:27017` — TIDAK DIUBAH
 - `DB_NAME` (backend/.env): `test_database` — TIDAK DIUBAH
-- `REACT_APP_BACKEND_URL` (frontend/.env): `https://repo-loader-57.preview.emergentagent.com` — TIDAK DIUBAH
+- `REACT_APP_BACKEND_URL` (frontend/.env): `https://kain-nusantara-erp-1--59s529vc.preview.emergentagent.com` — TIDAK DIUBAH
 
 ---
 

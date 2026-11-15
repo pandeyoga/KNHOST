@@ -9,7 +9,7 @@ import pytest
 import requests
 from pymongo import MongoClient
 
-BASE_URL = os.environ.get("REACT_APP_BACKEND_URL", "https://kn-dev-review-1.preview.emergentagent.com").rstrip("/")
+BASE_URL = os.environ.get("REACT_APP_BACKEND_URL", "https://kain-nusantara-erp-1--59s529vc.preview.emergentagent.com").rstrip("/")
 MONGO_URL = os.environ.get("MONGO_URL", "mongodb://127.0.0.1:27919")
 DB_NAME = os.environ.get("DB_NAME", "knhost_data_audit_latest_pytest")
 ENT = "ent_ksc"

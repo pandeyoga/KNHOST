@@ -6,7 +6,7 @@ import requests
 import sys
 from typing import Dict, Any
 
-BASE_URL = "https://po-grid-layout.preview.emergentagent.com"
+BASE_URL = "https://kain-nusantara-erp-1--59s529vc.preview.emergentagent.com"
 ENTITY_ID = "ent_ksc"
 
 class DesignerKpiTester:

@@ -8,7 +8,7 @@ import sys
 from typing import Dict, Any, List
 
 # Use public endpoint
-BASE_URL = "https://gudang-nusantara.preview.emergentagent.com"
+BASE_URL = "https://kain-nusantara-erp-1--59s529vc.preview.emergentagent.com"
 ADMIN_EMAIL = "admin@kainnusantara.id"
 ADMIN_PASSWORD = "demo12345"
 

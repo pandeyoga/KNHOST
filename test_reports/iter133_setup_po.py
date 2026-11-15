@@ -1,6 +1,6 @@
 """Create a fresh PO for P19 iter 133 GRN-01 full-UI test."""
 import os, json, requests
-BASE = os.environ.get("REACT_APP_BACKEND_URL", "https://textile-erp-uat.preview.emergentagent.com").rstrip("/")
+BASE = os.environ.get("REACT_APP_BACKEND_URL", "https://kain-nusantara-erp-1--59s529vc.preview.emergentagent.com").rstrip("/")
 API = f"{BASE}/api"
 ENT = "ent_ksc"
 s = requests.Session()

@@ -1,7 +1,7 @@
 """Regression smoke for iter108: verify login for all roles + a handful of key endpoints for ent_ksc."""
 import os, requests, pytest
 
-BASE = os.environ.get("REACT_APP_BACKEND_URL", "https://knhost-audit.preview.emergentagent.com").rstrip("/")
+BASE = os.environ.get("REACT_APP_BACKEND_URL", "https://kain-nusantara-erp-1--59s529vc.preview.emergentagent.com").rstrip("/")
 API = BASE + "/api"
 
 CREDS = {

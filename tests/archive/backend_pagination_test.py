@@ -19,7 +19,7 @@ import requests
 import sys
 from typing import Dict, Any, List
 
-BASE_URL = "https://inventory-perf-2.preview.emergentagent.com"
+BASE_URL = "https://kain-nusantara-erp-1--59s529vc.preview.emergentagent.com"
 
 class PaginationTester:
     def __init__(self):

@@ -8,7 +8,7 @@ import sys
 from datetime import datetime
 
 # Use preview URL as specified in requirements
-BASE_URL = "https://kn-dev-preview-1.preview.emergentagent.com"
+BASE_URL = "https://kain-nusantara-erp-1--59s529vc.preview.emergentagent.com"
 API = f"{BASE_URL}/api"
 
 # Test credentials from requirements
