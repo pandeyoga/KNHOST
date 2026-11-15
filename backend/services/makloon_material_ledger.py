@@ -22,8 +22,11 @@ async def _stock(product_id: str, entity_id: str) -> Dict[str, float]:
     on_hand = _r(sum(float(r.get("on_hand_qty") or 0) for r in rows))
     available = _r(sum(float(r.get("available_qty") or 0) for r in rows))
     reserved_all = await mres.reserved_by_others(product_id, entity_id)
+    # FIX-9 — saldo `available_qty` sudah tanpa panjang terkunci; yang dikurangkan hanya cadangan BELUM terkunci.
+    unlocked_all = await mres.unlocked_by_others(product_id, entity_id)
     return {"on_hand": on_hand, "available_physical": available, "reserved_all_orders": _r(reserved_all),
-            "free_for_new_commitment": _r(max(available - reserved_all, 0.0)),
+            "unlocked_all_orders": _r(unlocked_all),
+            "free_for_new_commitment": _r(max(available - unlocked_all, 0.0)),
             "at_partners_all_orders": _r(sum(float(r.get("subcon_qty") or 0) for r in rows))}
 
 
@@ -55,6 +58,10 @@ async def material_ledger(order: Dict[str, Any]) -> Dict[str, Any]:
     pid, ent = order.get("material_product_id") or "", order.get("entity_id") or ""
     res = await db.material_reservations.find({"ref_id": order["id"]}, {"_id": 0, "history": 0}).to_list(20)
     reserved_active = _r(sum(float(r.get("qty") or 0) for r in res if r.get("status") == "active"))
+    locked_active = _r(sum(float(r.get("locked_qty") or 0) for r in res if r.get("status") == "active"))
+    whs = {w["id"]: w.get("name") or w["id"] async for w in db.warehouses.find({}, {"_id": 0, "id": 1, "name": 1})}
+    locks = [{**x, "warehouse_name": whs.get(x.get("warehouse_id"), x.get("warehouse_id") or "")}
+             for r in res if r.get("status") == "active" for x in (r.get("locks") or [])]
     steps = [await _step_row(s) for s in order.get("steps", [])]
     first = next((x for x in steps if x["material_moves"]), None)
     out = {
@@ -64,6 +71,9 @@ async def material_ledger(order: Dict[str, Any]) -> Dict[str, Any]:
         "forecast_need": _r(order.get("material_qty")),
         "reservation": {"required": _r(sum(float(r.get("required_qty") or 0) for r in res)),
                         "active": reserved_active,
+                        # FIX-9 — terkunci di roll / belum terkunci (stok kurang saat mengunci) + daftar roll
+                        "locked": locked_active, "unlocked": _r(max(reserved_active - locked_active, 0.0)),
+                        "locks": locks,
                         "consumed_by_issue": _r(sum(float(r.get("consumed_qty") or 0) for r in res)),
                         "shortage": _r(sum(float(r.get("shortage_qty") or 0) for r in res if r.get("status") == "active")),
                         "statuses": sorted({r.get("status") for r in res})},
@@ -85,6 +95,12 @@ def _explain(x: Dict[str, Any]) -> List[str]:
     if rv["required"] and (rv["active"] > EPS or rv["shortage"] > EPS or not rv["consumed_by_issue"]):
         lines.append(f"Dicadangkan {rv['active']:g} {u} (belum keluar gudang; fisik tidak berkurang)"
                      + (f", kurang {rv['shortage']:g} {u}" if rv["shortage"] > EPS else "") + ".")
+    if rv.get("locked", 0) > EPS:
+        lines.append(f"Terkunci di {len(rv.get('locks') or [])} roll {rv['locked']:g} {u} — roll itu tidak bisa dijual "
+                     "atau dipakai order lain; kunci dilepas saat roll di-issue ke mitra.")
+    if rv.get("unlocked", 0) > EPS:
+        lines.append(f"Belum terkunci {rv['unlocked']:g} {u} — stok roll bebas di gudang sumber tidak cukup saat "
+                     "mengunci; tetap dikurangkan dari angka Tersedia.")
     if m["issued"]:
         lines.append(f"Dikirim ke mitra {m['issued']:g} {u} — fisik gudang berkurang saat issue; cadangan terpakai "
                      f"{rv['consumed_by_issue']:g} {u}.")

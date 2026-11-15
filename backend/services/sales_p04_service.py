@@ -388,9 +388,11 @@ async def sales_stock_summary(product_id: str, entity_id: str) -> Dict[str, Any]
             r["blocked"] += q
         elif st.startswith("in_transit"):
             r["in_transit"] += q
-    # cadangan makloon PT ini (aturan alokasi tunggal) — dikurangkan dari Bebas Reguler dulu, lalu BS
+    # cadangan makloon PT ini (aturan alokasi tunggal) — dikurangkan dari Bebas Reguler dulu, lalu BS.
+    # FIX-9 — hanya sisa BELUM terkunci: panjang terkunci di roll sudah keluar dari "Bebas" (ada di `length_reserved`).
     segs = await _sf.segments([product_id])
-    makloon = round(sum(float(x.get("makloon_reserved_qty") or 0) for x in segs if x["owner_entity_id"] == entity_id), 2)
+    makloon = round(sum(float(x.get("makloon_reserved_qty") or 0) - float(x.get("makloon_locked_qty") or 0)
+                        for x in segs if x["owner_entity_id"] == entity_id), 2)
     left = makloon
     for cls in ("regular", "bs"):
         r = rows.get(cls)

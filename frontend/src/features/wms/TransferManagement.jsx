@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Truck, Plus, ArrowRight, Search } from "lucide-react";
+import { Truck, Plus, ArrowRight } from "lucide-react";
 import axios, { API } from "../../services/apiClient";
 import { rememberDocEntities } from "../../services/docEntityRegistry";
 import ErrorNotice from "../../components/ErrorNotice";
@@ -11,11 +11,34 @@ import { askConfirm, askReason } from "../../services/confirmService";
 import { formatQty } from "../../utils/formatters";
 import { statusLabel, TRANSFER_STATUS_FILTERS } from "./transfer/transferConstants";
 import TransferCreateForm from "./transfer/TransferCreateForm";
-import TransferList, { transferKindOf } from "./transfer/TransferList";
+import TransferList, { TRANSFER_OPTIONAL_COLUMNS, transferKindOf } from "./transfer/TransferList";
 import FormModal from "../../components/FormModal";
 import TransferDetailModal from "./transfer/TransferDetailModal";
 import ExportMenu from "../../components/ExportMenu";   // FIX-4 — tombol baku Unduh (Excel/CSV, Pusat Export)
 import ListLimitNote, { metaFromHeaders } from "./ListLimitNote";   // FIX-5 (LST-01)
+import KNSelect from "../../components/KNSelect";
+import { SearchInput } from "../../components/ListPageParts";   // FIX-8 — satu kotak cari baku
+import SavedViewsMenu from "../../components/SavedViewsMenu";   // FIX-8 (K-B4-12) — tampilan tersimpan
+import useSavedViews from "../../hooks/useSavedViews";
+import { ROLE_OPTIONS } from "../../config/roles";
+import { entityOptions } from "../../utils/entityLabel";
+
+// FIX-8 (K-B4-12, B1 UI-15) — urutan daftar transfer (di atas transfer yang sudah dimuat, sama dengan saringan Jenis &
+// cari di layar ini; ekspor mengikuti urutan yang sama lewat Pusat Export).
+const SORTS = [
+  { value: "", label: "Terbaru dulu" }, { value: "created_at:asc", label: "Terlama dulu" },
+  { value: "code:asc", label: "Nomor transfer" }, { value: "status:asc", label: "Status" },
+];
+const BASE_VIEW = { filters: {}, sort: null, columns: [], mode: "" };
+const sortRows = (rows, sort) => {
+  if (!sort) return rows;
+  const dir = sort.dir === "desc" ? -1 : 1;
+  return [...rows].sort((a, b) => dir * String(a?.[sort.key] ?? "").localeCompare(String(b?.[sort.key] ?? ""), "id-ID"));
+};
+const sharedEntities = () => {
+  try { return entityOptions(JSON.parse(localStorage.getItem("kn_entity_ctx") || "null")?.entities || [], { short: true }); }
+  catch { return []; }
+};
 
 /**
  * TransferManagement
@@ -46,6 +69,9 @@ export default function TransferManagement({
   const setKind = (k) => { setKindLocal(k); onKindChange?.(k); };
   const [lineFilter, setLineFilter] = useState("");   // FASE L — dulu hanya di daftar antar-PT
   const [search, setSearch] = useState("");
+  const [sort, setSort] = useState(null);             // FIX-8 — urutan (tampilan tersimpan)
+  const [hiddenCols, setHiddenCols] = useState([]);   // FIX-8 — kolom disembunyikan (tampilan tersimpan)
+  const [loadErr, setLoadErr] = useState(null);       // FIX-8 (UI-49) — galat muat daftar (403 ≠ kosong)
 
   // FASE P5 — galat muncul DI TEMPAT pengguna sedang bekerja, bukan lewat `alert()`
   // yang memblokir peramban:
@@ -90,6 +116,19 @@ export default function TransferManagement({
     });
   }, [transfers, kind, search]);
 
+  // FIX-8 (K-B4-12) — tampilan tersimpan: saringan (jenis, status, lini) + urut + kolom; cakupan PT/lokasi tidak ikut.
+  const viewState = { filters: { kind, status: filterStatus, line: lineFilter }, sort, columns: hiddenCols, mode: "" };
+  const sv = useSavedViews("wms.transfers", {
+    state: viewState, base: BASE_VIEW,
+    apply: (st) => {
+      setKind(st.filters.kind || "all"); setFilterStatus(st.filters.status || "all"); setLineFilter(st.filters.line || "");
+      setSort(st.sort || null); setHiddenCols(st.columns || []);
+    },
+  });
+  const sorted = useMemo(() => sortRows(shown, sort), [shown, sort]);
+  const filteredActive = kind !== "all" || filterStatus !== "all" || Boolean(lineFilter) || Boolean(search.trim());
+  const resetFilters = () => { setKind("all"); setFilterStatus("all"); setLineFilter(""); setSearch(""); };
+
   // Deep-link dari Meja Admin Gudang ("Setujui") → transfer yang diklik langsung terbuka.
   useEffect(() => {
     if (!focusTransferId || !transfers.length) return;
@@ -130,8 +169,10 @@ export default function TransferManagement({
       setTransfers(rows);
       setListMeta(metaFromHeaders(response, rows.length, 0));
       setError("");
+      setLoadErr(null);
     } catch (error) {
       setError(apiErrorText(error, "Gagal memuat daftar transfer."));
+      setLoadErr(error);
     } finally {
       setLoading(false);
     }
@@ -315,16 +356,21 @@ export default function TransferManagement({
         <div className="flex flex-wrap items-center gap-2">
           <LineFilter value={lineFilter} onChange={setLineFilter} storageKey="transfers"
             allowed={user?.allowed_line_codes} testId="trf-line-filter" />
-          <label className="flex min-w-0 flex-1 items-center gap-2 rounded-md border border-[#E5E5EA] bg-white px-2 py-1.5 sm:max-w-xs">
-            <Search size={14} className="shrink-0 text-[#6B6B73]" />
-            <input data-testid="trf-search" className="w-full min-w-0 bg-transparent text-[13px] outline-none"
-              placeholder="Cari kode / gudang / PT / produk…" value={search} onChange={(e) => setSearch(e.target.value)} />
-          </label>
+          {/* FIX-8 — kotak cari baku (dulu isian buatan layar) */}
+          <SearchInput className="kn-search-grow sm:max-w-xs" testId="trf-search" value={search} onChange={setSearch}
+            placeholder="Cari kode / gudang / PT / produk…" />
+          <div className="w-40" title="Urutan daftar (di atas transfer yang sudah dimuat)">
+            <KNSelect data-testid="trf-sort" className="field" aria-label="Urutkan transfer" options={SORTS}
+              value={sort ? `${sort.key}:${sort.dir}` : ""}
+              onValueChange={(v) => { const [key, dir] = String(v || "").split(":"); setSort(key ? { key, dir: dir || "asc" } : null); }} />
+          </div>
+          <SavedViewsMenu sv={sv} testId="trf-views" columns={TRANSFER_OPTIONAL_COLUMNS} hidden={hiddenCols}
+            onColumnsChange={setHiddenCols} shareRoles={ROLE_OPTIONS} shareEntities={sharedEntities()} />
           <ExportMenu dataset="warehouse_transfers" label="transfer" scope="work" testId="trf-export" search={search}
             filters={[filterStatus !== "all" && ["status", "eq", filterStatus],
               kind === "inter_entity" && ["transfer_kind", "eq", "inter_entity"],
               kind === "intra_entity" && ["transfer_kind", "ne", "inter_entity"], lineFilter && ["line_codes", "eq", lineFilter]]}
-            sort={[{ key: "created_at", dir: "desc" }]} />
+            sort={sort ? [sort] : [{ key: "created_at", dir: "desc" }]} />
         </div>
       </div>
 
@@ -367,10 +413,11 @@ export default function TransferManagement({
 
       {/* Transfers List */}
       <ErrorNotice message={error} onRetry={fetchTransfers} onDismiss={() => setError("")} testId="transfer-error" />
-      <TransferList rows={shown} loading={loading}
-        emptyText={transfers.length
+      <TransferList rows={sorted} loading={loading} hidden={hiddenCols}
+        emptyText={transfers.length || filteredActive
           ? "Tidak ada transfer yang cocok dengan saringan."
           : "Belum ada transfer. Buat transfer untuk memindahkan stok antar gudang."}
+        error={loadErr} onRetry={fetchTransfers} filtered={filteredActive} onReset={resetFilters}
         onOpen={(transfer) => { setSelectedTransfer(transfer); setActionError(""); }} />
       <ListLimitNote meta={listMeta} noun="transfer" onMore={loadMoreTransfers} loading={moreBusy}
         hint="saringan & pencarian di atas hanya mencakup transfer yang sudah dimuat." testId="transfer-list-limit" />

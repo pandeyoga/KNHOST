@@ -14,7 +14,7 @@ representasi "ditahan"): saldo, alokasi SO, pemilih roll, dan katalog otomatis t
 from typing import Any, Dict, Optional
 from db import db
 from core_utils import now_iso, safe_doc
-from services.roll_service import rebuild_balance
+from services import roll_state as _rs   # FIX-10 (SSOT-1) — satu penulis status roll (CAS + jejak + saldo)
 
 HOLDABLE_STATUSES = ("available", "quarantine")
 HOLD_STATUS = "blocked"
@@ -37,13 +37,10 @@ async def hold_roll(roll: Dict[str, Any], reason: str, actor: Dict[str, Any]) ->
         raise ValueError("Roll sedang di-peg untuk pelanggan — lepas peg dulu sebelum ditahan.")
     now = now_iso()
     hold = {"held": True, "reason": reason, "by": actor.get("name", ""), "at": now, "prev_status": status}
-    res = await db.inventory_rolls.update_one(
-        {"id": roll["id"], "status": status},
-        {"$set": {"status": HOLD_STATUS, "hold": hold, "updated_at": now},
-         "$push": {"hold_history": _entry("hold", reason, actor, status, HOLD_STATUS)}})
-    if not res.modified_count:
+    if not await _rs.transition(roll["id"], HOLD_STATUS, from_=status, reason=f"ditahan: {reason}",
+                                actor=actor.get("name", ""), action="hold", extra_set={"hold": hold},
+                                push={"hold_history": _entry("hold", reason, actor, status, HOLD_STATUS)}):
         raise ValueError("Status roll berubah bersamaan — muat ulang lalu coba lagi.")
-    await rebuild_balance(roll["product_id"], roll["warehouse_id"], roll.get("owner_entity_id"))
     return safe_doc(await db.inventory_rolls.find_one({"id": roll["id"]}, {"_id": 0}))
 
 
@@ -61,10 +58,11 @@ async def release_roll(roll: Dict[str, Any], note: str, actor: Dict[str, Any]) -
                "$push": {"hold_history": _entry("release", note, actor, HOLD_STATUS, prev)}}
         if insp_hold.get("held"):
             upd["$set"]["inspection.hold.held"] = False
-        res = await db.inventory_rolls.update_one({"id": roll["id"], "status": HOLD_STATUS}, upd)
-        if not res.modified_count:
+        if not await _rs.transition(roll["id"], prev, from_=HOLD_STATUS, reason=f"tahanan dilepas: {note}",
+                                    actor=actor.get("name", ""), action="hold_release",
+                                    extra_set={k: v for k, v in upd["$set"].items() if k not in ("status", "updated_at")},
+                                    push=upd["$push"]):
             raise ValueError("Status roll berubah bersamaan — muat ulang lalu coba lagi.")
-        await rebuild_balance(roll["product_id"], roll["warehouse_id"], roll.get("owner_entity_id"))
     elif insp_hold.get("held"):
         st = roll.get("status", "")
         await db.inventory_rolls.update_one(
@@ -103,24 +101,20 @@ async def sync_inspection_hold(roll_id: str, actor: Optional[Dict[str, Any]] = N
         reason = (ih.get("reason") or "Ditahan inspeksi (warna/handfeel beda dari sample)").strip()
         new_hold = {"held": True, "reason": reason, "source": INSPECTION_HOLD_SOURCE,
                     "by": ih.get("by") or actor.get("name", ""), "at": now, "prev_status": st}
-        res = await db.inventory_rolls.update_one(
-            {"id": roll_id, "status": st},
-            {"$set": {"status": HOLD_STATUS, "hold": new_hold, "updated_at": now},
-             "$push": {"hold_history": _entry("hold_inspection", reason, actor, st, HOLD_STATUS)}})
-        if not res.modified_count:
+        if not await _rs.transition(roll_id, HOLD_STATUS, from_=st, reason=f"ditahan inspeksi: {reason}",
+                                    actor=actor.get("name", ""), action="hold_inspection", extra_set={"hold": new_hold},
+                                    push={"hold_history": _entry("hold_inspection", reason, actor, st, HOLD_STATUS)}):
             return None
-        await rebuild_balance(roll["product_id"], roll["warehouse_id"], roll.get("owner_entity_id"))
         return HOLD_STATUS
     if st == HOLD_STATUS and hold.get("held") and hold.get("source") == INSPECTION_HOLD_SOURCE:
         prev = hold.get("prev_status") or "available"
         note = (ih.get("release_reason") or "Tahanan inspeksi dilepas").strip()
-        res = await db.inventory_rolls.update_one(
-            {"id": roll_id, "status": HOLD_STATUS},
-            {"$set": {"status": prev, "hold": {**hold, "held": False, "released_by": actor.get("name", ""),
-                                               "released_at": now, "release_note": note}, "updated_at": now},
-             "$push": {"hold_history": _entry("release_inspection_hold", note, actor, HOLD_STATUS, prev)}})
-        if not res.modified_count:
+        if not await _rs.transition(
+                roll_id, prev, from_=HOLD_STATUS, reason=f"tahanan inspeksi dilepas: {note}", actor=actor.get("name", ""),
+                action="release_inspection_hold",
+                extra_set={"hold": {**hold, "held": False, "released_by": actor.get("name", ""), "released_at": now,
+                                    "release_note": note}},
+                push={"hold_history": _entry("release_inspection_hold", note, actor, HOLD_STATUS, prev)}):
             return None
-        await rebuild_balance(roll["product_id"], roll["warehouse_id"], roll.get("owner_entity_id"))
         return prev
     return None

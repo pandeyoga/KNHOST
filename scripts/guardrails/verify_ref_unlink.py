@@ -81,6 +81,10 @@ DYNAMIC_OK: Dict[str, str] = {
     "services/entity_master_service.py":
         "`db[s.collection]` = koleksi MASTER dari registry (produk, kategori, UOM, warna). "
         "Master data bukan surat; tidak ada doc_type yang menautnya lewat `refs`.",
+    "services/log_retention.py":
+        "FIX-7 masa simpan log: `db[coll]` dibatasi assert `coll in DELETABLE and coll not in PROTECTED` — DELETABLE = "
+        "log teknis dari RULES (sys_scheduler_runs, outbox WhatsApp, klaim digest), bukan dokumen bernomor ber-`refs`; "
+        "jejak bisnis (audit_logs, jurnal, mutasi, roll) ada di PROTECTED.",
 }
 
 #: Pembebasan per (berkas, koleksi) — kosong itu bagus. Isi HANYA dengan alasan

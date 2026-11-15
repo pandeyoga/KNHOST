@@ -8,6 +8,7 @@ import { useState } from "react";
 import { canCurrent } from "../../config/roles";
 import { Pill } from "./rfidShared";
 import { LEVEL_COLOR, reasonText, txnStateInfo, verdictInfo } from "./u300Labels";
+import { formatDateTime, formatTime } from "../../utils/formatters";   // FIX-8 (G-OUT-01) — waktu WIB
 
 function Reasons({ decision }) {
   const items = (decision?.reasons || []).filter((r) => r.level !== "INFO" || decision.verdict === "CANCELLED");
@@ -57,7 +58,7 @@ export default function U300PassageList({ passages, busy, onAcknowledge, onEvide
                 && (p.decision.verdict !== "RED" || canCurrent("wms", "approve"));
               return (
                 <tr key={id} className="border-t border-[#EFF0F2] align-top" data-testid={`u300-passage-${id}`}>
-                  <td className="p-2">{new Date(p.created_at).toLocaleString("id-ID")}
+                  <td className="p-2">{formatDateTime(p.created_at)}
                     {p.simulated && <div><Pill color="purple">simulasi</Pill></div>}
                     {p.decision?.sources?.length > 0 && <div className="text-[10px] text-[#6B6B73]">{p.decision.sources.map((s) => s.display_ref).join(", ")}</div>}
                   </td>
@@ -68,7 +69,7 @@ export default function U300PassageList({ passages, busy, onAcknowledge, onEvide
                       <div className="mt-0.5" data-testid={`u300-txn-${id}`}>
                         <Pill color={txnStateInfo(p).color}>{txnStateInfo(p).label}</Pill>
                         {p.gate_txn_state === "error" && !p.gate_txn_gave_up && p.gate_txn_next_at && (
-                          <div className="text-fs-12 text-kn-text-2">diulang {new Date(p.gate_txn_next_at).toLocaleTimeString("id-ID")}
+                          <div className="text-fs-12 text-kn-text-2">diulang {formatTime(p.gate_txn_next_at)}
                             {p.gate_txn_attempts ? ` · percobaan ${p.gate_txn_attempts}` : ""}</div>
                         )}
                       </div>

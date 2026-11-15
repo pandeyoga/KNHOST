@@ -13,7 +13,8 @@ import useReceivingMode from "../../../hooks/useReceivingMode";
 import { SearchBox } from "../../../components/ListControls";
 import { STATUS, errText, grnApi } from "./grnApi";
 import { formatDateTime } from "../../../utils/formatters";
-import LoadingLine from "../../../components/LoadingLine";
+import EmptyState, { isForbidden } from "../../../components/EmptyState";   // FIX-8 — memuat/kosong/saringan/galat/tanpa izin
+import DocNumber, { docEntityId } from "../../../components/DocNumber";   // FIX-8 (UI-58) — nomor dokumen satu skema tampilan
 import PageTabs from "../../../components/PageTabs";
 import FilterChips from "../../../components/FilterChips";
 import ExportMenu from "../../../components/ExportMenu";   // FIX-4 — tombol baku Unduh (Excel/CSV, Pusat Export)
@@ -35,6 +36,7 @@ export default function GoodsReceiptsView({ currentUser, selectedEntity, focusDo
   const [wizard, setWizard] = useState(mkoPreset);
   const [legacyPo, setLegacyPo] = useState("");
   const [err, setErr] = useState("");
+  const [loadErr, setLoadErr] = useState(null);   // FIX-8 (B1b UI-49) — galat muat daftar (403 ≠ "belum ada")
   const { isGrn, entityOf } = useReceivingMode();
   const grnOnly = selectedEntity && selectedEntity !== "all" && isGrn(selectedEntity) && !(entityOf(selectedEntity)?.legacy_in_flight || []).length;
   // PR-T7 (#20) — tab "Scan Terima per PO" (mode lama) = `wms.update` (POST /inbound/tasks/* — pemindaian terima);
@@ -52,7 +54,8 @@ export default function GoodsReceiptsView({ currentUser, selectedEntity, focusDo
     const list = rememberDocEntities(r);
     setRows(list);
     setMeta(metaFromHeaders(res, list.length, 0));
-  }).catch((e) => { setErr(errText(e)); setRows((r) => r || []); }), [status, q]);
+    setLoadErr(null);
+  }).catch((e) => { setErr(errText(e)); setLoadErr(e); setRows((r) => r || []); }), [status, q]);
   const loadMore = async () => {
     setMoreBusy(true);
     try {
@@ -129,12 +132,12 @@ export default function GoodsReceiptsView({ currentUser, selectedEntity, focusDo
             filters={[status && ["status", "in", status.split(",")]]} search={q} sort={[{ key: "created_at", dir: "desc" }]} />
         </div>
         <div className="grid gap-2 md:grid-cols-2 xl:grid-cols-3" data-testid="grn-list">
-          {rows === null && <LoadingLine className="col-span-full" text="Memuat kedatangan…" testId="grn-list-loading" />}
+          {rows === null && <div className="col-span-full"><EmptyState kind="loading" what="kedatangan" compact testId="grn-list-loading" /></div>}
           {(rows || []).map((r) => (
             <button key={r.id} data-testid={`grn-card-${r.id}`} onClick={() => setOpenId(r.id)}
               className="rounded-xl border border-[#EFF0F2] bg-white p-3 text-left transition-shadow hover:shadow-md">
               <div className="flex items-center justify-between">
-                <span className="font-mono text-[12px] font-bold">{r.number}</span>
+                <DocNumber number={r.number} entityId={docEntityId(r)} className="font-mono text-[12px]" testId={`grn-number-${r.id}`} />
                 <GrnStatusBadge status={r.status} />
               </div>
               <p className="mt-1 text-[12px] font-semibold">{r.partner_name}</p>
@@ -149,10 +152,15 @@ export default function GoodsReceiptsView({ currentUser, selectedEntity, focusDo
           ))}
           <div className="col-span-full"><ListLimitNote meta={meta} noun="kedatangan" onMore={loadMore} loading={moreBusy} testId="grn-list-limit" /></div>
           {rows && !rows.length && (
-            <div className="empty-state col-span-full w-full" data-testid="grn-list-empty">
-              <p className="font-semibold">Belum ada kedatangan{status ? ` berstatus ${STATUS[status.split(",")[0]]?.label || status}` : ""}.</p>
-              <p className="text-sm text-muted" style={{ maxWidth: 480 }}>Catat barang yang tiba: foto Surat Jalan dibaca otomatis (OCR), lalu hitung fisik & rekonsiliasi dengan PO.</p>
-              {canCreateGrn && <button className="primary-button" style={{ marginTop: 8 }} onClick={() => setWizard({})}><Plus size={13} /> Kedatangan baru</button>}
+            <div className="col-span-full w-full">
+              {/* FIX-8 (B4 §3.10) — 403 = "tanpa akses", galat lain = "gagal memuat", saringan aktif = "tidak ada yang cocok"
+                  (+ Reset), bukan satu teks "Belum ada kedatangan" untuk semuanya. */}
+              <EmptyState testId="grn-list-empty" what="kedatangan" error={loadErr} onRetry={load}
+                kind={loadErr ? (isForbidden(loadErr) ? "forbidden" : "error") : (status || q) ? "filtered" : "empty"}
+                title={!loadErr && status ? `Belum ada kedatangan berstatus ${STATUS[status.split(",")[0]]?.label || "ini"}.` : undefined}
+                text={!loadErr && !status && !q ? "Catat barang yang tiba: foto Surat Jalan dibaca otomatis (OCR), lalu hitung fisik & rekonsiliasi dengan PO." : undefined}
+                onReset={() => { setStatus(""); setQ(""); }}
+                actionLabel={canCreateGrn ? "Kedatangan baru" : undefined} onAction={canCreateGrn ? () => setWizard({}) : undefined} />
             </div>
           )}
         </div>

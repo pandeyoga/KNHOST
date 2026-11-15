@@ -11,11 +11,15 @@ import { q, fmtTime, Pill, EmptyBox, SectionCard } from "./rfidShared";
 // PREP-F — status job & per label dipakai bersama dengan Antrean Printer (cetak sebagian, tidak pasti, gagal).
 import { ITEM_STATUS, JOB_STATUS, jobProgress } from "./printerLabels";
 import ExportMenu from "../../components/ExportMenu";   // FIX-4 — tombol baku Unduh (Excel/CSV, Pusat Export)
+import ListLimitNote from "../wms/ListLimitNote";   // FIX-7 (B3b LST-01)
 
 export default function RfidPrintVerifyPanel({ whId, selectedEntity, onChanged }) {
   const [candidates, setCandidates] = useState([]);
   const [selected, setSelected] = useState([]);
   const [jobs, setJobs] = useState([]);
+  const [candMeta, setCandMeta] = useState(null);   // FIX-7 — jumlah sungguhan (badan respons server)
+  const [jobMeta, setJobMeta] = useState(null);
+  const [moreBusy, setMoreBusy] = useState("");
   const [activeJob, setActiveJob] = useState(null);
   const [session, setSession] = useState(null);
   const [scanInput, setScanInput] = useState("");
@@ -23,7 +27,10 @@ export default function RfidPrintVerifyPanel({ whId, selectedEntity, onChanged }
   const [error, setError] = useState("");
   const [msg, setMsg] = useState("");
 
+  // FIX-8 (B1b UI-49/UI-50) — keadaan muat daftar kandidat & job: memuat ≠ kosong; galat/403 tidak tampil kosong.
+  const [listSt, setListSt] = useState({ loading: true, error: null });
   const load = async () => {
+    setListSt((x) => ({ ...x, loading: true }));
     setError("");
     try {
       const params = whId ? { warehouse_id: whId } : {};
@@ -33,7 +40,29 @@ export default function RfidPrintVerifyPanel({ whId, selectedEntity, onChanged }
       ]);
       setCandidates(u.data.rolls || []);
       setJobs(j.data.jobs || []);
-    } catch (e) { setError(e.response?.data?.detail || e.message); }
+      setCandMeta(metaOf(u.data, (u.data.rolls || []).length));   // FIX-7 — jumlah sungguhan
+      setJobMeta(metaOf(j.data, (j.data.jobs || []).length));
+      setListSt({ loading: false, error: null });   // FIX-8 — keadaan daftar
+    } catch (e) { setError(e.response?.data?.detail || e.message); setListSt({ loading: false, error: e }); }
+  };
+  const metaOf = (d, shown) => (d && d.total !== undefined ? { total: d.total, truncated: shown < d.total, shown, skip: 0 } : null);
+  // FIX-7 (B3b LST-01) — dulu 500 roll / 100 job tanpa tanda; kini "Muat berikutnya" dari server.
+  const loadMore = async (kind) => {
+    setMoreBusy(kind);
+    try {
+      const base = whId ? { warehouse_id: whId } : {};
+      if (kind === "cand") {
+        const u = await axios.get(`${API}/rfid/untagged-rolls`, { params: { ...base, skip: candidates.length } });
+        const seen = new Set(candidates.map((r) => r.id));
+        const next = [...candidates, ...(u.data.rolls || []).filter((r) => !seen.has(r.id))];
+        setCandidates(next); setCandMeta(metaOf(u.data, next.length));
+      } else {
+        const j = await axios.get(`${API}/rfid/print-jobs`, { params: { ...base, skip: jobs.length } });
+        const seen = new Set(jobs.map((x) => x.id));
+        const next = [...jobs, ...(j.data.jobs || []).filter((x) => !seen.has(x.id))];
+        setJobs(next); setJobMeta(metaOf(j.data, next.length));
+      }
+    } catch (e) { setError(e.response?.data?.detail || e.message); } finally { setMoreBusy(""); }
   };
   useEffect(() => { load(); setSelected([]); setActiveJob(null); setSession(null); }, [whId, selectedEntity]); // eslint-disable-line
 
@@ -64,8 +93,9 @@ export default function RfidPrintVerifyPanel({ whId, selectedEntity, onChanged }
     try {
       const r = await axios.get(`${API}/rfid/print-jobs/${jobId}`);
       setActiveJob(r.data);
-      const s = await axios.get(`${API}/rfid/print-jobs`, { params: {} });
+      const s = await axios.get(`${API}/rfid/print-jobs`, { params: whId ? { warehouse_id: whId } : {} });
       setJobs(s.data.jobs || []);
+      setJobMeta(metaOf(s.data, (s.data.jobs || []).length));
     } catch (e) { fail(e, "Gagal memuat job"); }
   };
 
@@ -90,7 +120,7 @@ export default function RfidPrintVerifyPanel({ whId, selectedEntity, onChanged }
       const r = await axios.get(`${API}/rfid/print-jobs/${activeJob.id}/zpl`, { responseType: "blob" });
       const url = URL.createObjectURL(r.data);
       const a = document.createElement("a");
-      a.href = url; a.download = `${activeJob.job_number || activeJob.id}.zpl`;
+      a.href = url; a.download = `${activeJob.job_number || "job-cetak"}.zpl`;
       document.body.appendChild(a); a.click(); a.remove();
       setTimeout(() => URL.revokeObjectURL(url), 1000);
     } catch (e) { fail(e, "Gagal mengunduh ZPL"); } finally { setBusy(false); }
@@ -136,7 +166,7 @@ export default function RfidPrintVerifyPanel({ whId, selectedEntity, onChanged }
   const leaseInfo = (j) => {
     if (!j?.lease || j.status !== "queued") return null;
     const left = Math.round((new Date(j.lease.expires_at).getTime() - nowTs) / 1000);
-    const who = j.lease.device_name || j.lease.device_id;
+    const who = j.lease.device_name || "perangkat tanpa nama";
     return left > 0
       ? { live: true, low: left <= 60, text: `Dikerjakan ${who} · sisa klaim ${Math.floor(left / 60)}:${String(left % 60).padStart(2, "0")}${left <= 60 ? " — HAMPIR HABIS" : ""}` }
       : { live: false, text: `Klaim ${who} kedaluwarsa — bisa diambil printer lain` };
@@ -165,7 +195,7 @@ export default function RfidPrintVerifyPanel({ whId, selectedEntity, onChanged }
               <Printer size={13} /> Print Job ({selected.length})
             </button>
           </div>}>
-          {candidates.length === 0 ? <EmptyBox icon={PackageCheck} text="Tidak ada roll tanpa tag di gudang ini." /> : (
+          {candidates.length === 0 ? <EmptyBox icon={PackageCheck} loading={listSt.loading} error={listSt.error} onRetry={load} what="roll tanpa tag" text="Tidak ada roll tanpa tag di gudang ini." /> : (
             <div className="max-h-72 space-y-1 overflow-y-auto">
               {candidates.map((r) => (
                 <label key={r.id} data-testid={`rfid-print-cand-${r.id}`}
@@ -179,13 +209,15 @@ export default function RfidPrintVerifyPanel({ whId, selectedEntity, onChanged }
               ))}
             </div>
           )}
+          <ListLimitNote meta={candMeta} noun="roll" onMore={() => loadMore("cand")} loading={moreBusy === "cand"}
+            testId="rfid-print-cand-limit" />
         </SectionCard>
 
         {/* Daftar job */}
         <SectionCard title={`Print Jobs (${jobs.length})`} right={
           <ExportMenu dataset="rfid_print_jobs" label="job-cetak-label" testId="rfid-jobs-export"
             filters={[whId && ["warehouse_id", "eq", whId]]} sort={[{ key: "created_at", dir: "desc" }]} />}>
-          {jobs.length === 0 ? <EmptyBox icon={Printer} text="Belum ada print job." /> : (
+          {jobs.length === 0 ? <EmptyBox icon={Printer} loading={listSt.loading} error={listSt.error} onRetry={load} what="job cetak" text="Belum ada print job." /> : (
             <div className="max-h-72 space-y-1 overflow-y-auto">
               {jobs.map((j) => {
                 const [color, label] = JOB_STATUS[j.status] || ["gray", j.status];
@@ -212,6 +244,8 @@ export default function RfidPrintVerifyPanel({ whId, selectedEntity, onChanged }
               })}
             </div>
           )}
+          <ListLimitNote meta={jobMeta} noun="job" onMore={() => loadMore("jobs")} loading={moreBusy === "jobs"}
+            testId="rfid-jobs-limit" />
         </SectionCard>
       </div>
 

@@ -126,6 +126,38 @@ async def assert_roll_rounding(it_in: Any, actor: Dict[str, Any]) -> Dict[str, A
             "confirmed_by": actor.get("name", ""), "confirmed_at": now_iso()}
 
 
+async def _makloon_locked_pick(roll: Dict[str, Any], take: float, policy: Dict[str, Any],
+                               makloon_override: bool, order_id: str) -> None:
+    """FIX-9 (B3a SSOT-4) — roll pilihan sales yang panjangnya DIKUNCI cadangan makloon: mode Blokir → 409 menyebut
+    MKO/PR pemiliknya; mode approve → minta persetujuan manajer (409 `MAKLOON_RESERVED_APPROVAL`), lalu sesudah
+    disetujui kunci di roll itu DIPINJAM sebanyak kekurangannya."""
+    from services import makloon_roll_lock as _mlk
+    free = round(float(roll.get("length_remaining", 0) or 0) - float(roll.get("length_reserved") or 0), 2)
+    need = round(float(take) - free, 2)
+    locked = _mlk.roll_locked_qty(roll)
+    if need <= 0.01 or locked <= 0:
+        return
+    tag = roll.get("roll_no") or roll.get("id")
+    why = _mlk.hold_text(roll)
+    if (policy or {}).get("makloon_reserve_mode") == "approve":
+        if makloon_override:
+            await _mlk.borrow_for_order(roll["product_id"], roll["owner_entity_id"], min(need, locked), order_id,
+                                        actor="Persetujuan manajer (mode approve)", roll_ids=[roll["id"]])
+            return
+        raise HTTPException(status_code=409, detail={
+            "code": "MAKLOON_RESERVED_APPROVAL",
+            "message": (f"Roll {tag}: {why}. Panjang bebasnya hanya {free:g}. Lanjutkan memakai stok cadangan makloon "
+                        "dengan persetujuan manajer?"),
+            "product_id": roll.get("product_id"), "free_qty": free, "makloon_reserved_qty": locked,
+            "requested_qty": round(float(take), 2)})
+    raise HTTPException(status_code=409, detail={
+        "code": "MAKLOON_RESERVED",
+        "message": (f"Roll {tag}: {why} — panjang itu tidak bisa dijual. Panjang bebas roll ini {free:g}; pilih roll "
+                    "lain atau kurangi jumlah."),
+        "product_id": roll.get("product_id"), "free_qty": free, "makloon_reserved_qty": locked,
+        "requested_qty": round(float(take), 2)})
+
+
 async def reserve_roll_mode_item(
     order_id: str, product_id: str, roll_lines: List[Dict[str, Any]], selling_entity_id: str,
     requested_by: str, warehouses: Dict[str, Any], products: Dict[str, Any],
@@ -157,6 +189,8 @@ async def reserve_roll_mode_item(
             raise HTTPException(status_code=409, detail=str(e))
         if take <= 0:  # WM-02 — "roll utuh" = panjang BEBAS (sisa − reservasi potong tertunda)
             take = round(float(roll.get("length_remaining", 0) or 0) - float(roll.get("length_reserved") or 0), 2)
+        if roll.get("owner_entity_id") == selling_entity_id:
+            await _makloon_locked_pick(roll, take, policy, makloon_override, order_id)
         norm.append({"roll_id": rid, "take_qty": take, "owner": roll.get("owner_entity_id")})
 
     own_lines = [{"roll_id": n["roll_id"], "take_qty": n["take_qty"]} for n in norm if n["owner"] == selling_entity_id]

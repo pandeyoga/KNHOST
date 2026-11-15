@@ -11,6 +11,7 @@ import KNSelect from "../../components/KNSelect";
 import BinSelect from "../../components/BinSelect";
 import ReceiveUomPanel from "../wms/inbound/ReceiveUomPanel";
 import GRCatchWeightModal from "../wms/inbound/GRCatchWeightModal";
+import InspectionRequestToggle from "../wms/inbound/InspectionRequestToggle";
 import PickListPanel from "../wms/PickListPanel";
 
 export { printSampleLabel, printInboundRollLabels, reprintRollLabel };
@@ -64,7 +65,7 @@ export function InboundActions({ task, onDone, onCompleted }) {
     return run(async () => {
       const body = { product_id: task.product_id, doc_uom: f.doc_uom || uom.options?.task_uom || "", doc_qty: f.doc_qty,
         batch: f.batch, lot: f.lot, dye_lot: f.dye_lot, grade: f.grade, roll_id: f.roll_id, bin_id: f.bin_id };
-      const r = await offlinePost(`${API}/inbound/tasks/${task.id}/scan-receive`, body, { label: `Terima ${task.product_name || task.id} ${f.doc_qty} ${body.doc_uom}`, idempotencyKey: intent.current });
+      const r = await offlinePost(`${API}/inbound/tasks/${task.id}/scan-receive`, body, { label: `Terima ${task.product_name || task.sku || "tugas"} ${f.doc_qty} ${body.doc_uom}`, idempotencyKey: intent.current });
       setF((p) => ({ ...EMPTY_RECEIVE, doc_uom: p.doc_uom })); intent.current = null;
       uom.reload?.();
       return r;
@@ -92,7 +93,7 @@ export function InboundActions({ task, onDone, onCompleted }) {
     try {
       const rolls = (gr?.rolls || []).map((r) => ({ length: Number(r.length) || 0, weight: Number(r.weight) || 0,
         dye_lot: r.dye_lot || "", grade: r.grade || "A" }));
-      const r = await offlinePost(`${API}/inbound/tasks/${task.id}/complete`, { rolls, ...lotFields }, { label: `Selesai barang masuk ${task.product_name || task.id}` });
+      const r = await offlinePost(`${API}/inbound/tasks/${task.id}/complete`, { rolls, ...lotFields }, { label: `Selesai barang masuk ${task.product_name || task.sku || "tugas"}` });
       if (r.queued) { setGr(null); setMsg({ ok: true, text: "Offline — penyelesaian tersimpan di HP; label roll bisa dicetak setelah sinkron." }); return; }
       setGr(null);
       // Hasil + tombol cetak label diangkat ke induk (bertahan setelah kartu hilang dari daftar).
@@ -113,6 +114,7 @@ export function InboundActions({ task, onDone, onCompleted }) {
           {task.status === "escalated" ? "Menunggu keputusan manajer atas eskalasi — belum bisa menerima barang."
             : "Barang tugas ini sudah masuk stok/karantina (keputusan QC di layar QC) — tidak ada aksi terima di sini."}
         </div>
+        <InspectionRequestToggle task={task} onTaskUpdated={() => onDone?.()} touch />
         <ReprintRollButton task={task} />
       </div>
     );
@@ -150,6 +152,7 @@ export function InboundActions({ task, onDone, onCompleted }) {
           tolPct={uom.options?.line_qty_tolerance_pct ?? 2} sjMode={uom.options?.supplier_dn_mode || "warn"}
           sjKnown={uom.options?.supplier_dn_known || []} />
       )}
+      <InspectionRequestToggle task={task} onTaskUpdated={() => onDone?.()} touch />
       <ReprintRollButton task={task} />
       {msg && <div className={`notice-bar ${msg.ok ? "success" : "danger"}`} data-testid={`mw-action-msg-${task.id}`}>{msg.text}</div>}
     </div>
@@ -172,9 +175,9 @@ export function OutboundActions({ task, onDone }) {
   const run = async (fn, ok) => { setBusy(true); setMsg(null); try { const r = await fn(); setMsg(r?.queued ? { ok: true, text: "Offline — tersimpan di HP, akan dikirim saat sinyal kembali (tanpa dobel)." } : { ok: true, text: ok }); if (!r?.queued) { setCode(""); setQty(""); setReason(""); onDone?.(); } } catch (e) { setMsg({ ok: false, text: errText(e, "Gagal.") }); } finally { setBusy(false); } };
   const pick = () => run(() => offlinePost(`${API}/outbound/tasks/${task.id}/scan-pick`, null, {
     params: emergency ? { actual_qty: parseDecimal(qty) || 0, reason } : { roll_id: code.trim() },
-    label: emergency ? `Ambil darurat ${task.product_name || task.id} ${qty}` : `Ambil roll ${code.trim()}` }),
+    label: emergency ? `Ambil darurat ${task.product_name || task.sku || "tugas"} ${qty}` : `Ambil roll ${code.trim()}` }),
   "Roll diambil. Lanjut pindai roll berikutnya atau Berangkatkan.");
-  const dispatch = () => run(() => offlinePost(`${API}/outbound/tasks/${task.id}/dispatch`, null, { label: `Berangkatkan ${task.order_number || task.id}` }), "Diberangkatkan — surat jalan dibuat.");
+  const dispatch = () => run(() => offlinePost(`${API}/outbound/tasks/${task.id}/dispatch`, null, { label: `Berangkatkan ${task.order_number || "tugas"}` }), "Diberangkatkan — surat jalan dibuat.");
   const picked = Number(task.picked_qty || 0); const shipped = Number(task.shipped_qty || 0); const total = Number(task.quantity || 0);
   if (task.status === "escalated") {
     return (
@@ -234,7 +237,7 @@ export function SampleCutActions({ task, onCut, onDone }) {
     setBusy(true); setMsg(null);
     try {
       const body = useSuggested ? { roll_id: task.suggested_roll_id, actual_length: parseFloat(length) || undefined } : { epc, actual_length: parseFloat(length) || undefined, reason };
-      const r = await offlinePost(`${API}/outbound/tasks/${task.id}/cut-sample`, body, { label: `Potong sample ${task.order_number || task.id}` });
+      const r = await offlinePost(`${API}/outbound/tasks/${task.id}/cut-sample`, body, { label: `Potong sample ${task.order_number || "tugas"}` });
       if (r.queued) { setMsg({ ok: true, text: "Offline — potongan tersimpan di HP; label bisa dicetak setelah sinkron." }); return; }
       // Hasil + tombol cetak diangkat ke induk (TaskList) supaya tetap tampil setelah kartu tugas hilang dari daftar.
       onCut?.(r.data.cut);

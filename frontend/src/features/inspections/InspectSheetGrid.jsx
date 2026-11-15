@@ -1,9 +1,9 @@
 import { useEffect, useMemo, useState } from "react";
 import { parseDecimal } from "../../utils/decimalInput";
 import { Printer, Save } from "lucide-react";
-import axios, { API } from "../../services/apiClient";
 import { apiText, inspectLine } from "./inspectionsApi";
 import KNSelect from "../../components/KNSelect";
+import useGrades, { GradeLoadNote } from "../../hooks/useGrades";   // FIX-8 (UI-49) — galat grade terlihat
 
 /**
  * Lembar Inspect — Trial 22 Okt 2026 (F5, permintaan pemilik): form QC 4-point MENYERUPAI kertas "DATA HASIL INSPECT".
@@ -53,14 +53,12 @@ export default function InspectSheetGrid({ doc, meta, editable, onSaved }) {
   const [rows, setRows] = useState({});
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState("");
-  const [grades, setGrades] = useState([]);
+  // FIX-8 (B1b UI-49) — 403 grade_master.view dulu = pemilih grade kosong tanpa kabar.
+  const { grades, error: gradesError } = useGrades();
   const gradeAuto = Boolean(meta?.grade_auto);
   // KF-T7 — jarak titik inspeksi dari Pengaturan (`policy.inspection_points`, sama dengan server); 15 = cadangan.
   const IV = Number(meta?.policy?.inspection_points?.interval_yard) > 0 ? Number(meta.policy.inspection_points.interval_yard) : 15;
   useEffect(() => { setRows(Object.fromEntries(lines.map((ln) => [ln.id, rowFromLine(ln)]))); }, [lines]);
-  useEffect(() => {
-    axios.get(`${API}/master/grades`).then((r) => setGrades((r.data || []).filter((g) => g.active !== false))).catch(() => setGrades([]));
-  }, []);
 
   const cols = Math.max(MIN_COLS, ...lines.map((ln) => Math.ceil(parseDecimal(rows[ln.id]?.yards || 0) / IV - 1e-9)));
   const upd = (id, patch) => setRows((r) => ({ ...r, [id]: { ...r[id], ...patch, dirty: true } }));
@@ -111,6 +109,7 @@ export default function InspectSheetGrid({ doc, meta, editable, onSaved }) {
   const inp = "w-full min-w-[44px] bg-transparent text-center text-[11px] outline-none";
   return (
     <div data-testid="ins-sheet" className="section-card overflow-hidden">
+      <GradeLoadNote error={gradesError} testId="ins-sheet-grade-load-note" />
       <div className="flex flex-wrap items-center justify-between gap-2 border-b border-[#EFF0F2] px-3 py-2">
         <div className="text-[11px] text-[#3C3C43]">
           <b className="text-[12px]">Data hasil inspect</b> · Periode {doc.spk_date || "—"} · Supplier {doc.supplier_name || "—"} · Artikel {lines[0]?.article || "—"}

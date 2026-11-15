@@ -1,33 +1,18 @@
-import { Search, XCircle } from "lucide-react";
+/**
+ * ListControls — kontrol daftar (tab status bergaris + jumlah, cari di kiri, filter sesudahnya).
+ *
+ * FIX-8 (Standar UI Gudang v1 tahap 2 · B4 §3.13): berkas ini TIDAK lagi punya implementasi sendiri — `StatusTabs`
+ * dan `SearchBox` adalah komponen yang sama dengan `ListPageParts` (satu versi kotak cari & tab status). API lama
+ * dipertahankan: `testIdPrefix`, angka 0 tetap tampil, `SearchBox` tanpa pembungkus bilah saring.
+ */
+import { SearchInput, StatusTabs as BaseStatusTabs } from "./ListPageParts";
 
-// Standar daftar: tab status bergaris bawah + jumlah, lalu baris alat (cari di kiri, filter sesudahnya).
 export function StatusTabs({ tabs, value, onChange, testIdPrefix = "status-tab" }) {
-  return (
-    <div className="tab-bar" data-testid={`${testIdPrefix}-bar`}>
-      {tabs.map((t) => (
-        <button key={t.key || "all"} type="button" data-testid={`${testIdPrefix}-${t.testKey || t.key || "all"}`}
-          className={`tab-button ${value === t.key ? "active" : ""}`} onClick={() => onChange(t.key)}>
-          {t.label}
-          {t.count != null && <span className="tab-badge">{t.count}</span>}
-        </button>
-      ))}
-    </div>
-  );
+  return <BaseStatusTabs tabs={tabs} value={value} onChange={onChange} testIdPrefix={testIdPrefix} showZero />;
 }
 
-export function SearchBox({ value, onChange, placeholder, testId }) {
-  return (
-    <div className="search-box">
-      <Search size={14} />
-      <input data-testid={testId} type="text" placeholder={placeholder} value={value}
-        onChange={(e) => onChange(e.target.value)} />
-      {value && (
-        <button type="button" data-testid={`${testId}-clear`} aria-label="Hapus pencarian" onClick={() => onChange("")}>
-          <XCircle size={14} />
-        </button>
-      )}
-    </div>
-  );
+export function SearchBox({ value, onChange, placeholder, testId, ariaLabel }) {
+  return <SearchInput value={value} onChange={onChange} placeholder={placeholder} testId={testId} ariaLabel={ariaLabel} />;
 }
 
 export function ListToolbar({ children, testId }) {

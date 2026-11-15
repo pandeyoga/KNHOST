@@ -455,6 +455,10 @@ async def complete_task(task_id: str, payload: Optional[GRCompletePayload], acto
                 "rfid_tag_id": None,
                 **({"supplier_roll_no": str(task.get("roll_id")).strip()}
                    if (task.get("roll_id") and not is_multi and not _ex) else {}),
+                # FIX-6 (keputusan pemilik 10 Nov) — penanda "minta inspeksi" (baris PO / saat penerimaan) → roll;
+                # dibaca `putaway_draft_service.inspection_requested` → draf PA ke gedung inspeksi.
+                **({"inspection_request": task["inspection_request"]}
+                   if (task.get("inspection_request") or {}).get("requested") else {}),
                 "is_remnant": False,
                 # FASE R0 — journey (jejak fisik, terpisah dari status bucket stok)
                 "journey": {"stage": _stage0, "routing": "store",
@@ -469,9 +473,26 @@ async def complete_task(task_id: str, payload: Optional[GRCompletePayload], acto
                          "tracking_mode", "received_date", "acquired"}
                 _final = {k: v for k, v in roll_doc.items() if k not in _keep}
                 _final["journey"] = {"stage": _stage0, "routing": "store", "updated_at": now_iso()}
-                await db.inventory_rolls.update_one({"id": _ex["id"]}, {"$set": _final})
-                roll_doc = {**_ex, **_final}
+                # FIX-10 (SSOT-1) — `receiving → karantina/tersedia` lewat roll_state: CAS status pindai (dulu `{id}`
+                # saja) + jejak status roll; saldo segmen dibangun ulang sesudah semua roll (di bawah).
+                from services import roll_state as _rs
+                _st = _final.pop("status")
+                _final.pop("updated_at", None)
+                if not await _rs.transition(_ex["id"], _st, from_="receiving", actor=actor["name"],
+                                            reason="penerimaan diposting" + (" — menunggu QC" if qc_on_receipt else ""),
+                                            action="inbound_post", ref={"type": "wms_task", "id": task_id,
+                                                                        "no": task.get("po_number", "")},
+                                            extra_set=_final, rebuild=False):
+                    raise HTTPException(status_code=409, detail=(
+                        f"Roll {_ex.get('roll_no') or _ex['id']} berubah bersamaan (bukan lagi 'sedang diterima') — "
+                        "muat ulang lalu selesaikan lagi."))
+                roll_doc = {**_ex, **_final, "status": _st}
             else:
+                from services import roll_state as _rs
+                _rs.assert_known(roll_doc["status"])   # FIX-10 — status lahir roll wajib dikenal
+                roll_doc["status_history"] = [_rs.history_entry(
+                    roll_doc["status"], "", reason="penerimaan diposting", actor=actor["name"], action="inbound_post",
+                    ref={"type": "wms_task", "id": task_id, "no": task.get("po_number", "")})]
                 await db.inventory_rolls.insert_one(dict(roll_doc))
             _created_rolls.append({"id": roll_doc["id"], "roll_no": roll_doc.get("roll_no"), "length": roll_doc.get("length_initial"),
                                    "unit": roll_doc.get("unit"), "grade": roll_doc.get("grade"), "lot": roll_doc.get("lot"), "dye_lot": roll_doc.get("dye_lot")})

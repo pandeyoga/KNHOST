@@ -39,7 +39,7 @@ function SessionRow({ s, busy, onClose }) {
         <ul className="mt-1 max-h-40 overflow-y-auto text-[11px]">
           {s.rolls.map((r) => (
             <li key={r.roll_id} className="flex justify-between border-t border-[#F2F2F7] py-0.5">
-              <span>{r.roll_no || r.roll_id}</span>
+              <span>{r.roll_no || "Roll tanpa nomor"}</span>
               <span className={r.passed ? "text-[#1B7E3B]" : "text-[#8A5A00]"}>
                 {r.passed ? `lewat${r.review ? " (diperiksa)" : ""}` : "belum lewat"}</span>
             </li>

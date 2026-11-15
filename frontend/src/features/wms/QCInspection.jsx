@@ -14,6 +14,7 @@ import { apiText, createQc4point } from "../inspections/inspectionsApi";
 import QcPlanPanel from "./QcPlanPanel";
 import useListSearch from "@/hooks/useListSearch";
 import ExportMenu from "../../components/ExportMenu";   // FIX-4 — tombol baku Unduh (Excel/CSV, Pusat Export)
+import ReturnRemedyChoice, { remedyProblem } from "./ReturnRemedyChoice";   // FIX-6 (D2) — ganti barang / potong tagihan
 
 /**
  * QC Inspection (Depth #3a) — antrian inspeksi QC barang masuk.
@@ -63,6 +64,8 @@ export default function QCInspection({ currentUser, selectedEntity, onOpenSpk })
   const [accept, setAccept] = useState("");
   const [reject, setReject] = useState("");
   const [disposition, setDisposition] = useState("damaged");
+  const [remedy, setRemedy] = useState("");            // FIX-6 (D2) — replace | bill_cut
+  const [remedyReason, setRemedyReason] = useState("");
   const [acceptGrade, setAcceptGrade] = useState("A");
   const [defects, setDefects] = useState("");
   const [reason, setReason] = useState("");
@@ -90,6 +93,8 @@ export default function QCInspection({ currentUser, selectedEntity, onOpenSpk })
     setAccept(String(task.quarantine_qty ?? task.quantity ?? 0));
     setReject("0");
     setDisposition("damaged");
+    setRemedy("");
+    setRemedyReason("");
     setAcceptGrade("A");
     setDefects("");
     setReason("");
@@ -124,11 +129,17 @@ export default function QCInspection({ currentUser, selectedEntity, onOpenSpk })
       setFormErr("Alasan menolak barang wajib diisi (minimal 5 huruf) — dibaca supplier & menjadi dasar retur.");
       return;
     }
+    // FIX-6 (keputusan pemilik 10 Nov, D2) — retur ke supplier wajib memilih ganti barang / potong tagihan + alasan.
+    if (rejectNum > 0.01 && disposition === "return" && remedyProblem(remedy, remedyReason)) {
+      setFormErr(remedyProblem(remedy, remedyReason));
+      return;
+    }
     setBusy(true); setFormErr("");
     try {
       const res = await axios.post(`${API}/inbound/tasks/${active.id}/qc-decision`, {
         accept_qty: acceptNum, reject_qty: rejectNum,
         reject_disposition: disposition, reason,
+        ...(rejectNum > 0.01 && disposition === "return" ? { return_remedy: remedy, return_remedy_reason: remedyReason } : {}),
         accept_grade: acceptGrade,
         defects: defects.split(",").map((s) => s.trim()).filter(Boolean),
       });
@@ -136,7 +147,7 @@ export default function QCInspection({ currentUser, selectedEntity, onOpenSpk })
       let msg = `QC ${active.po_number || ""}: diterima ${formatQty(r.accepted_qty || 0)}`;
       if ((r.rejected_qty || 0) > 0) {
         msg += `, ditolak ${formatQty(r.rejected_qty)}`;
-        if (r.purchase_return?.number) msg += ` → Nota Debit ${r.purchase_return.number}`;
+        if (r.purchase_return?.number) msg += ` → retur beli ${r.purchase_return.number}${r.purchase_return.remedy_label ? ` (${r.purchase_return.remedy_label})` : ""}`;
         else msg += ` (rusak)`;
       }
       flash(msg + ".");
@@ -218,8 +229,8 @@ export default function QCInspection({ currentUser, selectedEntity, onOpenSpk })
                 <div key={t.id} data-testid={`qc-task-row-${i}`}
                      className="grid grid-cols-[1.6fr_1fr_120px_120px] items-center px-3 py-2.5 border-t border-[#F4F5F7]">
                   <div className="min-w-0">
-                    <p className="text-[12.5px] font-semibold truncate">{t.product_name || t.product_id}</p>
-                    <p className="text-[10.5px] text-[#9A9BA3]">{t.sku} · {t.warehouse_name || t.warehouse_id}</p>
+                    <p className="text-[12.5px] font-semibold truncate">{t.product_name || t.sku || "Produk tanpa nama"}</p>
+                    <p className="text-[10.5px] text-[#9A9BA3]">{t.sku} · {t.warehouse_name || "Gudang tanpa nama"}</p>
                   </div>
                   <div className="min-w-0">
                     <p className="text-[12px] font-semibold text-[#0058CC] truncate">{t.po_number || "—"}</p>
@@ -352,6 +363,10 @@ export default function QCInspection({ currentUser, selectedEntity, onOpenSpk })
                     ? <><RotateCcw size={12} /> Membuat retur beli (Nota Debit) ke {active.supplier_name || "supplier"}.</>
                     : <><Trash2 size={12} /> Barang dicatat sebagai rusak & tetap di gudang.</>}
                 </p>
+                {disposition === "return" && (
+                  <ReturnRemedyChoice testId="qc-return-remedy" value={remedy} reason={remedyReason}
+                    onChange={setRemedy} onReason={setRemedyReason} />
+                )}
               </div>
             )}
 

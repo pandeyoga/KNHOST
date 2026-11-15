@@ -1882,6 +1882,26 @@
    "sistem",
    "rfid-proses"
   ],
+  "ops.log_retention_mode": [
+   "persetujuan",
+   "pemberitahuan"
+  ],
+  "ops.scheduler_runs_retention_days": [
+   "persetujuan",
+   "pemberitahuan"
+  ],
+  "ops.scheduler_runs_failed_retention_days": [
+   "persetujuan",
+   "pemberitahuan"
+  ],
+  "ops.wa_outbox_retention_days": [
+   "persetujuan",
+   "pemberitahuan"
+  ],
+  "ops.digest_claims_retention_days": [
+   "persetujuan",
+   "pemberitahuan"
+  ],
   "rnd.lifecycle_enforcement": [
    "rnd",
    "boleh-dijual"

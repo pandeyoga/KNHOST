@@ -3,8 +3,14 @@ import { ArrowLeft } from "lucide-react";
 
 export const K = ({ children }) => <p className="text-[10px] font-bold uppercase tracking-wide text-[#8E8E93]">{children}</p>;
 
+/**
+ * DetailHeader — kepala halaman DETAIL SEBARIS baku (object page): bilah "← Kembali ke daftar …" + judul + lencana +
+ * aksi. FIX-8 (B1b UI-60, B4 §3.7) — pola tunggal untuk dokumen kerja bertahap (GRN, Perbaikan, Retur, Makloon);
+ * `dangerActions` (batalkan/tolak) dirender TERPISAH di ujung kanan bergaris pemisah, tidak bersebelahan dengan aksi
+ * utama atau "Tanya KN".
+ */
 export function DetailHeader({ onBack, backLabel = "Kembali", backTestId, icon: Icon, iconClass = "text-[#0058CC]",
-  title, titleTestId, badges, subtitle, actions }) {
+  title, titleTestId, badges, subtitle, actions, dangerActions }) {
   return (
     <>
       {onBack && (
@@ -22,7 +28,12 @@ export function DetailHeader({ onBack, backLabel = "Kembali", backTestId, icon: 
           </div>
           {subtitle && <p className="detail-subtitle">{subtitle}</p>}
         </div>
-        {actions && <div className="detail-actions">{actions}</div>}
+        {(actions || dangerActions) && (
+          <div className="detail-actions">
+            {actions}
+            {dangerActions && <span className="kn-detail-danger" data-testid="detail-danger-actions">{dangerActions}</span>}
+          </div>
+        )}
       </div>
     </>
   );

@@ -303,6 +303,11 @@ STATIK=(
   # jurnal tahan-gagal); sisipan `cash_transactions`, pintu jurnal kas lama, dan salinan pemberi nomor kas = MERAH.
   "guard:cash_single_door SELF-TEST (bukti-merah dua arah, 15 kasus)|python scripts/guardrails/verify_cash_single_door.py --self-test"
   "guard:cash_single_door (INV-CASH-01, kas lewat satu pembuat)|python scripts/guardrails/verify_cash_single_door.py"
+  # FIX-10 (audit 2026-11-09 B3a SSOT-1) — INV-ROLL-02. Status roll dulu ditulis 63+ panggilan di 18 berkas tanpa
+  # tabel transisi; kini satu pintu `services/roll_state.transition()` (daftar-izin + CAS + jejak + saldo). Ratchet:
+  # penulis `status` inventory_rolls di luar roll_state hanya boleh turun (baseline 0); berkas baru = MERAH.
+  "guard:roll_status_writer SELF-TEST (bukti-merah dua arah, 14 kasus + ratchet)|python scripts/guardrails/verify_roll_status_writer.py --self-test"
+  "guard:roll_status_writer (INV-ROLL-02, satu penulis status roll)|python scripts/guardrails/verify_roll_status_writer.py"
   # FASE P5 — baseline UX (loading/empty/chart) akhirnya jadi GATE. Sebelum ini
   # `ux_audit.py` hanya dijalankan manual, tak punya `--self-test`, dan angkanya tak
   # pernah dibuktikan: dari 22 "ERROR" yang dilaporkannya, 17 ternyata TUDUHAN PALSU

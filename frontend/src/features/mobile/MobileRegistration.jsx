@@ -76,7 +76,7 @@ function FieldForm({ session }) {
   useEffect(() => {
     regApi.bins(sid).then(setBins).catch((e) => setErr(apiErrorText(e, "Gagal memuat bin cakupan")));
     axios.get(`${API}/entities`).then((r) => setOwners((Array.isArray(r.data) ? r.data : r.data?.items || [])
-      .map((e) => ({ value: e.id, label: e.short_name || e.name || e.id })))).catch(() => setOwners([]));
+      .map((e) => ({ value: e.id, label: e.short_name || e.legal_name || e.name || "PT tanpa nama" })))).catch(() => setOwners([]));
     regApi.lines(sid, { limit: 8 }).then(setRecent).catch(() => {});
   }, [sid]);
   const curBin = bins.find((b) => b.id === bin);

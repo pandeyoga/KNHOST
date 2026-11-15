@@ -11,36 +11,23 @@ import { askReason } from "../../../services/confirmService";
 import InboundScanForm from "../InboundScanForm";
 import ReceiveTrailHistory from "./ReceiveTrailHistory";
 import ScanLabelPanel from "./ScanLabelPanel";
+import InspectionRequestToggle from "./InspectionRequestToggle";
 import DocRefsPanel from "../../documents/trace/DocRefsPanel";
 import { formatQty } from "../../../utils/formatters";
 import QtyDual, { hasRolls, rollsText } from "../../../components/QtyDual";      // FASE U — dua satuan
-import { docStatusLabel } from "../../../utils/docStatus";
+import StatusBadge from "../../../components/StatusBadge";
+import { DOMAIN_LABELS } from "../../../utils/statusVocab";
 
 // UAT 24 Okt (audit UI tahap 2) — dulu "Waiting/Put Away/Escalated" Inggris & kode tak terpetakan ("cancelled")
-// tampil mentah huruf kecil. Peta lengkap + cadangan docStatusLabel (bukan kode).
-export const STATUS_MAP = {
-  waiting_goods: { label: "Menunggu barang", cls: "bg-gray-100 text-gray-600" },
-  receiving:     { label: "Sedang diterima", cls: "bg-blue-100 text-blue-700" },
-  qc_check:      { label: "Cek QC", cls: "bg-purple-100 text-purple-700" },
-  put_away:      { label: "Penempatan rak", cls: "bg-indigo-100 text-indigo-700" },
-  completed:     { label: "Selesai", cls: "bg-green-100 text-green-700" },
-  escalated:     { label: "Dieskalasi", cls: "bg-red-100 text-red-700" },
-  qc_pending:    { label: "Menunggu QC", cls: "bg-amber-100 text-amber-700" },
-  qc_rejected:   { label: "Ditolak QC", cls: "bg-red-100 text-red-700" },
-  cancelled:     { label: "Dibatalkan", cls: "bg-gray-100 text-gray-500" },
-  closed:        { label: "Ditutup", cls: "bg-gray-100 text-gray-500" },
-};
+// tampil mentah huruf kecil. FIX-8 — peta label dipindah ke kosakata tunggal `utils/statusVocab.js` (ranah "task_in",
+// istilah sama persis); `STATUS_MAP` tetap diekspor ({label}) untuk pemakai lama.
+export const STATUS_MAP = Object.fromEntries(Object.entries(DOMAIN_LABELS.task_in).map(([k, label]) => [k, { label }]));
 // Tugas yang sudah final — tidak menawarkan scan/eskalasi lagi (UAT 24 Okt: tugas "cancelled" dulu masih
 // menampilkan Scan Label Supplier / Input Manual / Eskalasi).
 const FINAL_STATUSES = ["completed", "escalated", "cancelled", "closed"];
 
 export function TaskBadge({ status }) {
-  const s = STATUS_MAP[status] || { label: docStatusLabel(status) || "—", cls: "bg-gray-100 text-gray-600" };
-  return (
-    <span className={`inline-flex items-center rounded px-1.5 py-0.5 text-[10px] font-semibold ${s.cls}`}>
-      {s.label}
-    </span>
-  );
+  return <StatusBadge status={status} domain="task_in" testId={`inbound-status-badge-${status}`} />;
 }
 
 export default function InboundTaskPanel({
@@ -155,6 +142,9 @@ export default function InboundTaskPanel({
             )}
           </div>
         )}
+
+        {/* Keputusan pemilik 10 Nov — penanda "minta inspeksi" saat penerimaan (API FIX-6). */}
+        <InspectionRequestToggle task={task} onTaskUpdated={onTaskUpdated} />
 
         {/* Escalation info */}
         {task.status === "escalated" && task.escalation && (

@@ -68,10 +68,13 @@ async def cancel_line(order: Dict[str, Any], od_item_id: str, reason: str, actor
     rolls = await db.inventory_rolls.find(
         {"reserved_ref.id": order["id"], "product_id": pid, "status": "reserved"}, {"_id": 0}).to_list(1000)
     released, segments = 0.0, set()
+    from services import roll_state as _rs   # FIX-10 (SSOT-1) — satu penulis status roll
     for r in rolls:
-        await db.inventory_rolls.update_one(
-            {"id": r["id"], "status": "reserved", "reserved_ref.id": order["id"]},
-            {"$set": {"status": "available", "reserved_ref": None, "updated_at": stamp}})
+        await _rs.transition(r["id"], "available", from_="reserved", actor=who, action="so_line_cancel",
+                             reason=f"baris pesanan dibatalkan: {reason}",
+                             ref={"type": "sales_order", "id": order["id"], "no": order.get("number", "")},
+                             extra_filter={"reserved_ref.id": order["id"]}, extra_set={"reserved_ref": None},
+                             rebuild=False)   # saldo segmen dibangun ulang di bawah
         qty = round(float(r.get("length_remaining", 0) or 0), 2)
         released = round(released + qty, 2)
         segments.add((r.get("warehouse_id"), r.get("owner_entity_id")))

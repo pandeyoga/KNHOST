@@ -4,19 +4,14 @@
  * merapikan masukan sebelum dikirim dan menyediakan label Bahasa Indonesia.
  */
 import axios, { API } from "../../../services/apiClient";
+import { DOMAIN_LABELS } from "../../../utils/statusVocab";
 import { rememberDocEntities } from "../../../services/docEntityRegistry";
 
 export const REG = `${API}/registration/sessions`;
 
-export const STATUS_LABEL = {
-  draft: "Draf", running: "Berjalan", pending_approval: "Menunggu persetujuan", approved: "Disetujui",
-  approved_with_exceptions: "Disetujui — ada pengecualian", rejected: "Ditolak",
-};
-export const STATUS_TONE = {
-  draft: "bg-gray-50 text-gray-700 border-gray-200", running: "bg-blue-50 text-blue-700 border-blue-200",
-  pending_approval: "bg-amber-50 text-amber-700 border-amber-200", approved: "bg-green-50 text-green-700 border-green-200",
-  approved_with_exceptions: "bg-orange-50 text-orange-700 border-orange-200", rejected: "bg-red-50 text-red-700 border-red-200",
-};
+// FIX-8 (KN_37 §8) — label status pendaftaran dipindah ke kosakata tunggal `utils/statusVocab.js` (ranah
+// "registration", istilah sama persis); warna = nada kosakata lewat StatusBadge (dulu kelas Tailwind per status).
+export const STATUS_LABEL = DOMAIN_LABELS.registration;
 export const FREEZE_OPTIONS = [
   { value: "zone", label: "Beku per zona/rak (gedung besar) — zona lain tetap melayani" },
   { value: "warehouse", label: "Beku penuh (gedung kecil) — semua gerakan gedung ditolak" },
@@ -46,8 +41,8 @@ export function canonicalEpc(raw) {
 export function scopeOptions(zones) {
   const out = [];
   (zones || []).forEach((z) => {
-    out.push({ id: z.id, label: z.name || z.id, kind: "zona" });
-    (z.racks || []).forEach((r) => out.push({ id: r.id, label: `${z.name || z.id} › ${r.name || r.id}`, kind: "rak", parent: z.id }));
+    out.push({ id: z.id, label: z.name || "Zona tanpa nama", kind: "zona" });
+    (z.racks || []).forEach((r) => out.push({ id: r.id, label: `${z.name || "Zona"} › ${r.name || "Rak tanpa nama"}`, kind: "rak", parent: z.id }));
   });
   return out;
 }
@@ -63,6 +58,10 @@ export function recalledBin(sid) {
 export const regApi = {
   // FIX-1 (K-B1-02) — sesi lintas PT di gedung lokasi kerja: aksi sesi dikirim atas nama PT sesi.
   list: (params) => axios.get(REG, { params }).then((r) => rememberDocEntities(r.data || [])),
+  // FIX-7 (B3b LST-01) — daftar + jumlah sungguhan (header X-Total-Count/X-Truncated) untuk penanda batas.
+  listPage: (params) => axios.get(REG, { params }).then((r) => ({
+    rows: rememberDocEntities(r.data || []), total: Number(r.headers?.["x-total-count"] ?? NaN),
+    truncated: String(r.headers?.["x-truncated"] || "0") === "1" })),
   create: (body) => axios.post(REG, body).then((r) => r.data),
   get: (sid) => axios.get(`${REG}/${sid}`).then((r) => r.data),
   start: (sid) => axios.post(`${REG}/${sid}/start`).then((r) => r.data),

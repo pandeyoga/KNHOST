@@ -73,9 +73,21 @@ async def wait_thresholds(entity_id: Optional[str]) -> Dict[str, int]:
     return {"warn_minutes": warn, "late_minutes": max(warn, late)}
 
 
-async def desk(scope: Dict[str, Any], entity_id: Optional[str] = None) -> Dict[str, Any]:
+DESK_LIMIT = 500
+DESK_CLOSED = ("cancelled", "dispatched", "shipped", "delivered", "done")   # = status yang `_queue_of` buang
+
+
+async def desk(scope: Dict[str, Any], entity_id: Optional[str] = None, limit: int = DESK_LIMIT) -> Dict[str, Any]:
+    """FIX-7 (B3b LST-02, P1) — dulu `find(semua sample_cut).sort(created_at, NAIK).to_list(500)` tanpa saringan status:
+    begitu total tugas sample (termasuk yang sudah selesai) > 500, tugas BARU tidak pernah tampil. Kini hanya tugas
+    TERBUKA (status yang memang masuk antrean), 500 TERBARU, lalu diurut naik lagi untuk antrean; jumlah sungguhan
+    `total_open` + `truncated` dikirim agar layar memberi tanda bila antrean terbuka melebihi batas."""
     th = await wait_thresholds(entity_id)
-    tasks = await db.wms_tasks.find({**scope, "task_subtype": "sample_cut"}, {"_id": 0}).sort("created_at", 1).to_list(500)
+    flt = {"task_subtype": "sample_cut", "status": {"$nin": list(DESK_CLOSED)}}
+    q = {"$and": [scope, flt]} if scope else flt
+    total_open = await db.wms_tasks.count_documents(q)
+    tasks = await db.wms_tasks.find(q, {"_id": 0}).sort("created_at", -1).to_list(limit)
+    tasks.reverse()   # antrean: terlama dulu (urutan lama)
     orders = {o["id"]: o for o in await db.sales_orders.find(
         {"id": {"$in": list({t["order_id"] for t in tasks})}}, {"_id": 0, "id": 1, "items": 1, "number": 1, "catalogue": 1}).to_list(500)}
     whs = {w["id"]: w.get("name", "") async for w in db.warehouses.find({}, {"_id": 0, "id": 1, "name": 1})}
@@ -104,7 +116,8 @@ async def desk(scope: Dict[str, Any], entity_id: Optional[str] = None) -> Dict[s
     buckets["to_receive"].sort(key=lambda r: -(r["wait_minutes"] or 0))
     late = sum(1 for r in buckets["to_receive"] if (r["wait_minutes"] or 0) >= th["late_minutes"])
     return {"queues": [{"key": k, "label": lbl, "rows": buckets[k]} for k, lbl in QUEUES],
-            "wait_thresholds": th, "late_count": late}
+            "wait_thresholds": th, "late_count": late,
+            "total_open": total_open, "shown": len(tasks), "limit": limit, "truncated": total_open > len(tasks)}
 
 
 TERMINAL_TASK = ("cancelled", "dispatched", "shipped", "delivered", "done", "completed")

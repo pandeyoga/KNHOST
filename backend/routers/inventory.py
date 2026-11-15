@@ -1,4 +1,5 @@
 """Inventory router: balances (owner-aware), rolls (SSOT), movements, history."""
+import re
 from typing import Any, Dict, List, Optional
 from fastapi import APIRouter, HTTPException, Request
 from pydantic import BaseModel
@@ -180,12 +181,16 @@ async def inventory_status_board(
     # rincian stok per gudang milik PT lain ke sales.
     ctx = await entity_ctx(request)
     ids = resolve_scope_ids(ctx, owner_entity_id)
+    # FIX-7 — segmen saldo (`stock_figures.segments`) dibaca SEKALI untuk papan + dua angka (dulu dua kali).
+    from services import stock_figures as _sf
+    _segs = await _sf.segments([product_id] if product_id else None)
     rows = await _status_board(
         product_id=product_id,
         owner_entity_id=owner_entity_id if ctx.is_cross_entity else None,
         visible_entity_ids=None if (ctx.is_cross_entity and not owner_entity_id) else ids,
         cross_entity_detail=ctx.is_cross_entity,
         registered_only=True,   # K-04 — definisi tunggal "Tersedia": gudang terdaftar saja
+        segs=_segs,
     )
     # FIX-1 (B3a SCP-2) — petugas berpagar lokasi dulu melihat RINCIAN gudang di luar lokasinya (Soreang melihat
     # RCM-RETUR milik Kanda, padahal /inventory/balances menyembunyikannya). Rincian per gudang kini dipangkas ke
@@ -200,10 +205,9 @@ async def inventory_status_board(
                     r["location_trimmed"] = True
     # FIX-2 (B1 UI-06/UI-40, K-B1-03) — dua angka per produk {LOKAL, GLOBAL} dari SATU layanan: chip "Habis" di desktop
     # dan HP kini dihitung dari angka yang sama dan menyebut cakupannya (dulu 292 desktop vs 128 HP).
-    from services import stock_figures as _sf
     _scope = await _sf.viewer_scope(ctx, site_id=site_id or "",
                                     entity_id=owner_entity_id if owner_entity_id and owner_entity_id != "all" else "")
-    figs = await _sf.figures_for([r["product_id"] for r in rows], _scope)
+    figs = await _sf.figures_for([r["product_id"] for r in rows], _scope, _segs)
     for r in rows:
         r["stock_figures"] = figs.get(r["product_id"])
         r["stock_scope_label"] = _scope["label"]
@@ -308,17 +312,60 @@ async def _rolls_query(actor: Dict[str, Any], ctx: Any, *, product_id: Optional[
     return _lines.narrow(query, actor, line)
 
 
-def _roll_search(qry: Dict[str, Any], text: str, products: Dict[str, Dict[str, Any]]) -> Dict[str, Any]:
+ROLL_SEARCH_FIELDS = ("roll_no", "lot", "dye_lot", "batch", "grade", "consignor_ref")
+# FIX-7 (FIX-5 §8.1: cari roll 2,0–2,5 dtk pada 346.700 roll) — dulu `$or` 6 regex "mengandung" (tanpa index) +
+# product_id → pindai penuh koleksi DUA kali (hitung + halaman). Kini HASIL SAMA (regex & aturan kutip yang sama,
+# `search_pattern`) tetapi tiap cabang memakai index:
+#   * field berkardinalitas sedang (lot, dye_lot, batch, grade, consignor_ref): nilai berbeda dibaca lewat index
+#     (`distinct` = DISTINCT_SCAN, ratusan–ribuan nilai), dicocokkan di Python → `{field: {$in: nilai}}`;
+#   * nomor roll (unik per roll): regex dievaluasi di KUNCI index `kn_roll_no_1` saja (kueri tertutup, tanpa membaca
+#     dokumen) sekali → `{roll_no: {$in: nomor}}`; bila cocok > `_ROLL_NO_IN_MAX` (cari terlalu umum) kembali ke
+#     regex (hasil tetap sama, hanya lebih lambat);
+#   * EPC (baru): teks heksadesimal ≥ 16 karakter dicari persis di `rfid_tags.epc` → roll pemilik tag.
+_DISTINCT_SEARCH_FIELDS = ("lot", "dye_lot", "batch", "grade", "consignor_ref")
+_ROLL_NO_IN_MAX = 5000
+_EPC_RE = re.compile(r"^[0-9A-Fa-f]{16,}$")
+
+
+async def _roll_search(qry: Dict[str, Any], text: str, products: Dict[str, Dict[str, Any]]) -> Dict[str, Any]:
     if not text:
         return qry
+    from pagination import search_pattern
+    pattern = search_pattern(text)
+    rx = re.compile(pattern, re.IGNORECASE)
+    mongo_rx = {"$regex": pattern, "$options": "i"}
+    branches: List[Dict[str, Any]] = []
+    # nomor roll — kueri tertutup pada index (hanya kunci), dibatasi
+    try:
+        nos = await (db.inventory_rolls.find({"roll_no": mongo_rx}, {"_id": 0, "roll_no": 1})
+                     .hint("kn_roll_no_1").limit(_ROLL_NO_IN_MAX + 1).to_list(_ROLL_NO_IN_MAX + 1))
+        hit = sorted({r["roll_no"] for r in nos if isinstance(r.get("roll_no"), str)})
+        branches.append({"roll_no": mongo_rx} if len(nos) > _ROLL_NO_IN_MAX else {"roll_no": {"$in": hit}})
+    except Exception:  # noqa: BLE001 — index belum ada (DB baru) → regex biasa, hasil sama
+        branches.append({"roll_no": mongo_rx})
+    for field in _DISTINCT_SEARCH_FIELDS:
+        try:
+            vals = await db.inventory_rolls.distinct(field)
+        except Exception:  # noqa: BLE001 — distinct > 16 MB / gagal → regex biasa
+            branches.append({field: mongo_rx})
+            continue
+        hit = [v for v in vals if isinstance(v, str) and rx.search(v)]
+        if hit:
+            branches.append({field: {"$in": hit}})
     # Cari juga lewat nama/SKU produk (tak tersimpan di roll → resolusi product_id).
     ql = text.lower()
     match_pids = [pid for pid, p in products.items()
                   if ql in (p.get("name", "").lower()) or ql in (p.get("sku", "").lower())]
-    search = build_search(text, ["roll_no", "lot", "dye_lot", "batch", "grade", "consignor_ref"])
     if match_pids:
-        search = {"$or": search.get("$or", []) + [{"product_id": {"$in": match_pids}}]}
-    return merge_query(qry, search)
+        branches.append({"product_id": {"$in": match_pids}})
+    if _EPC_RE.match(text.strip()):
+        rids = [t["roll_id"] async for t in db.rfid_tags.find({"epc": text.strip().upper()}, {"_id": 0, "roll_id": 1})
+                if t.get("roll_id")]
+        if rids:
+            branches.append({"id": {"$in": rids}})
+    branches = [b for b in branches if not (isinstance(next(iter(b.values())), dict)
+                                            and next(iter(b.values())).get("$in") == [])]
+    return merge_query(qry, {"$or": branches} if branches else {"id": {"$in": []}})
 
 
 @router.get("/inventory/rolls")
@@ -366,12 +413,12 @@ async def list_rolls(
             r["owner_entity_name"] = ent.get("short_name") or ent.get("legal_name", r.get("owner_entity_id", ""))
         return rows
 
-    def _with_search(qry: Dict[str, Any], text: str) -> Dict[str, Any]:
-        return _roll_search(qry, text, products)
+    async def _with_search(qry: Dict[str, Any], text: str) -> Dict[str, Any]:
+        return await _roll_search(qry, text, products)
 
     if is_paged(request):
         page, page_size, pq, _sort = get_page_params(request)
-        query = _with_search(query, pq)
+        query = await _with_search(query, pq)
         items, total = await fetch_page(db.inventory_rolls, query, page, page_size,
                                         sort_field="created_at", sort_dir=-1)
         _enrich(items)
@@ -384,7 +431,7 @@ async def list_rolls(
     from pagination import clamp_limit
     limit = clamp_limit(limit, 5000, 5000)
     sk = clamp_limit(skip, 0, 10 ** 7, minimum=0)
-    query = _with_search(query, (q or "").strip())
+    query = await _with_search(query, (q or "").strip())
     rolls = await (db.inventory_rolls.find(query, {"_id": 0}).sort("created_at", -1)
                    .skip(sk).limit(limit + 1).to_list(limit + 1))
     more = len(rolls) > limit
@@ -450,7 +497,7 @@ async def roll_groups(
         query["lot"] = lot if lot else {"$in": [None, ""]}
     products = {p["id"]: p for p in await db.products.find(
         {}, {"_id": 0, "id": 1, "sku": 1, "name": 1, "base_unit": 1}).to_list(None)}
-    query = _roll_search(query, (q or "").strip(), products)
+    query = await _roll_search(query, (q or "").strip(), products)
     key = {"product": {"p": "$product_id"}, "lot": {"lot": {"$ifNull": ["$lot", ""]}},
            "location": {"w": "$warehouse_id", "b": {"$ifNull": ["$bin_id", ""]}}}[level]
     sort = {"product": {"rolls": -1, "_id.p": 1}, "lot": {"_id.lot": 1},
@@ -526,9 +573,11 @@ async def list_rolls_available(
     ctx = await entity_ctx(request)
     selling_entity = (entity_id or getattr(ctx, "active_entity_id", "") or "").strip()
     owner_scope = "" if all_entities else (selling_entity or "")
+    _allowed = list(getattr(ctx, "allowed_entity_ids", None) or [])
     data = await roll_service.list_available_rolls(
         product_id=product_id, owner_entity_id=owner_scope, all_entities=all_entities,
         sort=sort, skip=max(0, skip), limit=max(0, limit), warehouse_id=(warehouse_id or "").strip(),
+        visible_entity_ids=_allowed or None,   # FIX-9 (B3a #7) — nomor MKO/PR kunci makloon hanya PT yang diizinkan
     )
     for it in data["items"]:
         it["is_cross_entity"] = bool(selling_entity and it.get("owner_entity_id") != selling_entity)

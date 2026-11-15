@@ -160,6 +160,9 @@ KMT3_KUNCI_KONTROL = 2
 # KM-T4 — `commission.incentive_unit` ditandai tidak dipakai (mesin komisi memakai satuan dasar barang): tidak lagi bisa
 # diubah pemegang `settings.manage` (U02 − 1); tetap terhitung di katalog (U04 tetap).
 KMT4_TIDAK_DIPAKAI = 1
+# R0 (integrasi `main` FIX-6…FIX-10, 15 Nov) — FIX-7 lima kunci masa simpan log teknis (`ops.log_retention_mode` +
+# empat `ops.*_retention_days`), berizin `settings.manage`.
+R0_FIX7_KUNCI = 5
 
 
 def _put(key, value, scope_type="entity", scope_id="ent_ksc"):
@@ -199,7 +202,7 @@ async def test_U02_bisa_ubah_232_kunci(klien, akun, sesi, peran_tanpa_acuan):
     assert sum(1 for it in r.json()["items"] if it["can_edit"]) == \
         229 + KFT6_KUNCI - KFT6_TIDAK_DIPAKAI - PRT4_TIDAK_DIPAKAI - KFT2_TIDAK_DIPAKAI - KPT4_TIDAK_DIPAKAI \
         - KFT3_TIDAK_DIPAKAI + KFT7_KUNCI + PK38_KUNCI + PMT1_KUNCI + CRT1_KUNCI_KONTROL + AGT1_KUNCI \
-        + PK24_KUNCI_KONTROL + AGT5_KUNCI_KONTROL + KMT3_KUNCI_KONTROL - KMT4_TIDAK_DIPAKAI
+        + PK24_KUNCI_KONTROL + AGT5_KUNCI_KONTROL + KMT3_KUNCI_KONTROL - KMT4_TIDAK_DIPAKAI + R0_FIX7_KUNCI
 
 
 async def test_U03_lapisan_grup_tetap_untuk_lintas_pt(klien, akun, sesi, peran_tanpa_acuan):
@@ -231,11 +234,12 @@ async def test_U04_lihat_saja_tidak_bisa_ubah(klien, akun, sesi, peran_tanpa_acu
     # PM-T3 tiga kunci kwitansi/rekening; PY-T2 gaji/PT berubah di tengah bulan; TX-T2 pemicu faktur pajak;
     # AG-T5 sakelar kartu uang keluar & kontrol dua orang kartu asisten; PM-T4 tiga kunci titipan tunai sales; PY-T3 sepuluh aturan hitung gaji;
     # PY-T5 kapan slip terlihat karyawan.
-    # KM-T3 kontrol dua orang lembar insentif.
+    # KM-T3 kontrol dua orang lembar insentif. R0 — FIX-7 lima kunci masa simpan log teknis.
     assert r.json()["total"] == 310 + 5 + KFT6_KUNCI + KFT2_KUNCI + KPT7_KUNCI + PK36_KUNCI + KFT7_KUNCI + PK37_KUNCI \
         + PK38_KUNCI + KPT8_KUNCI + PK30_KUNCI + PMT1_KUNCI + CRT1_KUNCI + AGT1_KUNCI + PMT2_KUNCI + TXT1_KUNCI \
         + PK39_KUNCI + PK26_KUNCI + AGT2_KUNCI + PK24_KUNCI + PK29_KUNCI + PK22_KUNCI + AGT3_KUNCI + KMT1_KUNCI + PMT3_KUNCI \
-        + PYT2_KUNCI + TXT2_KUNCI + AGT5_KUNCI + PMT4_KUNCI + PYT3_KUNCI + CRT3_KUNCI + PYT5_KUNCI + KMT3_KUNCI_KONTROL
+        + PYT2_KUNCI + TXT2_KUNCI + AGT5_KUNCI + PMT4_KUNCI + PYT3_KUNCI + CRT3_KUNCI + PYT5_KUNCI + KMT3_KUNCI_KONTROL \
+        + R0_FIX7_KUNCI
 
 
 async def test_U05_manajer_kosong_tidak_lagi_lewat_nama_peran(klien, akun, sesi, peran_manajer_kosong):

@@ -3,6 +3,7 @@ import { Package } from "lucide-react";
 import { formatQty, stockStatus, ROW_CLASSES, STATUS_BADGE } from "./inventoryConstants";
 
 import PagedRows from "@/components/PagedRows";
+import EmptyState, { listStateKind } from "@/components/EmptyState";
 
 // UAT 24 Okt (audit UI tahap 2) — "STOK FISIK 562 · DIPESAN 8 · TERSEDIA 4" tak bisa dicocokkan: sisanya (terikat SO
 // yang sudah dikonfirmasi, diambil/dikemas, ditahan QC, karantina, diblokir, rusak, WIP, makloon) tidak punya kolom.
@@ -18,7 +19,9 @@ const otherTitle = (b) => {
   return `Fisik ${formatQty(b.on_hand_qty)} = Dipesan ${formatQty(b.reserved_qty)} + Tersedia ${formatQty(b.available_qty)} + Lainnya ${formatQty(otherOf(b))}${parts.length ? ` (${parts.join(", ")})` : ""}`;
 };
 
-export default function BalancesTable({ loading, rows = [], selectedRow, onRowClick }) {
+export default function BalancesTable({ loading, error = null, filtered = false, onRetry, onReset, rows = [], selectedRow, onRowClick }) {
+  // Integrasi FIX-8 — keadaan daftar baku: memuat ≠ kosong ≠ saringan ≠ galat (B1b UI-50).
+  const stateKind = listStateKind({ loading, error, count: rows.length, filtered });
   return (
     <div className="bg-white rounded-xl border border-[#EFF0F2] overflow-hidden">
       <div className="overflow-x-auto">
@@ -38,16 +41,9 @@ export default function BalancesTable({ loading, rows = [], selectedRow, onRowCl
             </tr>
           </thead>
           <tbody className="divide-y divide-[#EFF0F2]">
-            {loading && (
-              <tr><td colSpan={9} className="text-center py-8 text-[12px] text-[#6B6B73]">Memuat…</td></tr>
-            )}
-            {!loading && rows.length === 0 && (
-              <tr>
-                <td colSpan={9} className="text-center py-10">
-                  <Package size={28} className="mx-auto mb-2 text-gray-300" />
-                  <p className="text-[12px] text-[#6B6B73]">Tidak ada data stok</p>
-                </td>
-              </tr>
+            {stateKind && (
+              <EmptyState asRow colSpan={9} kind={stateKind} what="data stok" error={error} onRetry={onRetry}
+                onReset={onReset} icon={Package} testId="balances-table-state" />
             )}
             <PagedRows rows={rows} testId="balances-table-pager">{(b) => {
               const st = stockStatus(b);

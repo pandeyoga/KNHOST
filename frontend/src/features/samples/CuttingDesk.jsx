@@ -8,6 +8,7 @@ import { apiErrorText } from "../../utils/apiError";
 import { formatQty } from "../../utils/formatters";
 import { KNSelect } from "../../components/KNSelect";
 import { cuttingDesk, cuttingLocations, receiveCut, receiveOrderCuts } from "./sampleApi";
+import ListLimitNote from "../wms/ListLimitNote";   // FIX-7 (B3b LST-02)
 
 // Hanya gudang yang boleh dipakai pemilik roll (bersama, atau khusus untuk PT itu).
 const destFor = (locs, owner) => locs.filter((l) => !owner || l.sharing_mode !== "dedicated" || (l.entity_ids || []).includes(owner));
@@ -80,6 +81,10 @@ export default function CuttingDesk({ selectedEntity = "all", canReceive }) {
         <p data-testid="cutting-late-alert" className="rounded-lg bg-[#FDECEC] px-3 py-2 text-[11.5px] font-semibold text-[#C62828]">
           {data.late_count} potongan menunggu diterima Admin Cutting lebih dari {fmtWait(data.wait_thresholds.late_minutes)}.</p>
       )}
+      {/* FIX-7 (B3b LST-02, P1) — server kini hanya memuat tugas TERBUKA (500 terbaru) dan memberi jumlah sungguhan; bila
+          antrean terbuka melebihi batas, tanda ini muncul (dulu tugas baru hilang diam-diam setelah 500 tugas sample). */}
+      <ListLimitNote meta={data?.truncated ? { total: data.total_open, truncated: true, shown: data.shown, skip: 0 } : null}
+        noun="tugas potong terbuka" hint="yang tampil = tugas terbuka TERBARU; tugas terbuka paling lama tidak ikut — tuntaskan atau batalkan di Operasi Gudang › Cutting." testId="cutting-desk-limit" />
       <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
         {(data?.queues || []).map((q) => (q.key === "to_cut" ? <ToCutSummary key={q.key} queue={q} /> : (
           <div key={q.key} data-testid={`cutting-queue-${q.key}`} className="section-card overflow-hidden">

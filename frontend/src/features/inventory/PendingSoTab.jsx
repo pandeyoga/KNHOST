@@ -6,7 +6,7 @@
  */
 import { Building2, Clock, PackageSearch, TruckIcon } from "lucide-react";
 import EntityBadge from "../../components/EntityBadge";
-import { formatQty } from "../../utils/formatters";
+import { formatDate, formatQty } from "../../utils/formatters";
 
 const COVERAGE = {
   covered: { label: "Perkiraan Tertutup", tone: "bg-[#E6F6EC] text-[#1B7F4B] border-[#BDE5CC]" },
@@ -14,14 +14,8 @@ const COVERAGE = {
   uncovered: { label: "Belum Ada Suplai", tone: "bg-[#FDEDE7] text-[#C0392B] border-[#F3C9BD]" },
 };
 
-function fmtDate(s) {
-  if (!s) return "—";
-  try {
-    return new Date(s).toLocaleDateString("id-ID", { day: "2-digit", month: "short", year: "numeric" });
-  } catch {
-    return s;
-  }
-}
+// FIX-8 (B3b INP-15 · G-OUT-01) — tanggal lewat formatter tunggal WIB (dulu zona perangkat).
+const fmtDate = (s) => formatDate(s);
 
 import PagedRows from "@/components/PagedRows";
 
@@ -62,7 +56,7 @@ export default function PendingSoTab({ rows = [], entities = [], loading = false
                   data-testid={`sb-pending-row-${r.order_id}-${r.product_id}`}
                   className="border-b border-[#F5F5F7] last:border-0 align-top">
                 <td className="px-3 py-2">
-                  <span className="font-semibold text-[#1C1C1E]">{r.order_number || r.order_id}</span>
+                  <span className="font-semibold text-[#1C1C1E]">{r.order_number || "SO tanpa nomor"}</span>
                   <span className="block text-[11px] text-[#6B6B73]">{r.customer_name}{r.customer_city ? ` · ${r.customer_city}` : ""}</span>
                 </td>
                 <td className="px-3 py-2">

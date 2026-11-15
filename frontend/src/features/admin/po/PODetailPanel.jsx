@@ -1,4 +1,5 @@
 import { AskKnButton } from "../../../components/AskKnButton";
+import StatusBadge from "../../../components/StatusBadge";   // FIX-6 × FIX-8 — penanda baris PO
 import { DualName } from "../../../components/DualName";
 import { useState } from "react";
 import { FileText, CheckCircle, XCircle, AlertCircle, Receipt, Ban, FileEdit, PackageCheck, Printer, ListOrdered } from "lucide-react";
@@ -220,6 +221,14 @@ export default function PODetailPanel({ po, currentUser, onClose, onApprove, onC
                   <span className="text-[#6B6B73]">Rencana <QtyDual rolls={item.qty_rolls} measure={item.quantity} unit={item.unit} factor={item.unit_factor} factorTo={item.unit_factor_to} compact testId={`po-item-${i}-plan-dual`} /></span>
                   <span className="text-[#6B6B73]">Diterima <QtyDual rolls={item.received_rolls} measure={item.received_qty} unit={item.unit} compact testId={`po-item-${i}-recv-dual`} /></span>
                 </div>
+                {/* FIX-6 — penanda minta inspeksi & retur tolak QC (ganti barang / potong tagihan) per baris */}
+                {(item.inspection_requested || Number(item.replaced_qty || 0) > 0 || Number(item.returned_qty || 0) > 0) && (
+                  <div className="mt-1 flex flex-wrap gap-1 text-fs-12" data-testid={`po-item-${i}-fix6`}>
+                    {item.inspection_requested && <StatusBadge tone="special" icon="tag" label="Minta inspeksi" />}
+                    {Number(item.replaced_qty || 0) > 0 && <StatusBadge tone="info" icon="truck" testId={`po-item-${i}-replaced`}>ganti barang {item.replaced_qty} {item.unit}</StatusBadge>}
+                    {Number(item.returned_qty || 0) > 0 && <StatusBadge tone="neutral" icon="archive" testId={`po-item-${i}-returned`}>diretur (potong tagihan) {item.returned_qty} {item.unit}</StatusBadge>}
+                  </div>
+                )}
                 {/* FASE F-2 — jejak asal harga (kontrak / harga terakhir / manual) */}
                 {(item.price_source || item.contract_number || item.supplier_sku) && (() => {
                   const SRC = {

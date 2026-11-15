@@ -16,6 +16,9 @@ import PutawayDraftsPanel from "./PutawayDraftsPanel";
 import ListLimitNote from "./ListLimitNote";   // FIX-5 (LST-01)
 import { ARRIVAL_STATUSES, parseCodes, pendingCount, statusOf, tripMessage } from "./putawayUtils";
 import ExportMenu from "../../components/ExportMenu";   // FIX-4 — tombol baku Unduh (Excel/CSV, Pusat Export)
+import StatusBadge from "../../components/StatusBadge";   // FIX-8 — lencana status baku
+import EmptyState, { listStateKind } from "../../components/EmptyState";   // FIX-8 — memuat/kosong/galat/tanpa izin
+import DocNumber, { docEntityId } from "../../components/DocNumber";   // FIX-8 (UI-58) — nomor dokumen satu skema tampilan
 
 const nf = new Intl.NumberFormat("id-ID");
 const q = (v) => nf.format(Math.round((v || 0) * 100) / 100);
@@ -36,6 +39,8 @@ export default function PutawayOrdersPanel({ whId, selectedEntity }) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [msg, setMsg] = useState("");
+  // FIX-8 (B1b UI-49/UI-50) — keadaan muat daftar PA: sebelum data datang = "Memuat", bukan "Belum ada …"; 403 = tanpa akses.
+  const [listState, setListState] = useState({ loading: true, error: null });
 
   // FIX-5 (B3b LST-01) — dulu 100 PA terbaru (termasuk draf/selesai) dipotong diam-diam → PA yang MASIH BERJALAN tetapi
   // lebih lama hilang dari layar. Kini: SEMUA PA berjalan (`status=live`, ≤ 500) + riwayat 100 terbaru dengan jumlah
@@ -60,7 +65,8 @@ export default function PutawayOrdersPanel({ whId, selectedEntity }) {
       setOrders(rememberDocEntities(merge(live.data.orders || [], o.data.orders || [])));   // FIX-1 — PA lintas PT: aksi atas nama PT PA
       setHistMeta(o.data.total !== undefined ? { total: o.data.total, truncated: !!o.data.truncated,
         shown: (o.data.orders || []).length, skip: 0 } : null);
-    } catch (e) { setError(e.response?.data?.detail || e.message); }
+      setListState({ loading: false, error: null });
+    } catch (e) { setError(e.response?.data?.detail || e.message); setListState({ loading: false, error: e }); }
   };
   const loadMore = async () => {
     if (!histMeta) return;
@@ -248,25 +254,28 @@ export default function PutawayOrdersPanel({ whId, selectedEntity }) {
               whId && { op: "or", items: [["from_warehouse_id", "eq", whId], ["to_warehouse_id", "eq", whId]] }]}
             sort={[{ key: "created_at", dir: "desc" }]} /></div>
         <div className="section-body space-y-2">
-          {active.length === 0 && <p className="py-6 text-center text-[12px] text-[#8E8E93]">Belum ada Perintah Simpan ke Rak.</p>}
+          {active.length === 0 && (
+            <EmptyState kind={listStateKind({ ...listState, count: 0 })} what="Perintah Simpan ke Rak" error={listState.error}
+              onRetry={load} compact testId="pa-list-state" />
+          )}
           <ListLimitNote meta={histMeta} noun="riwayat PA" onMore={loadMore} loading={moreBusy}
             hint="semua PA yang masih berjalan sudah tampil; riwayat lama dimuat bertahap." testId="pa-list-limit" />
           {active.map((o) => {
-            const [color, label] = statusOf(o);
+            const [tone, label] = statusOf(o);
             const excItems = (o.items || []).filter((i) => i.status === "exception");
             const waiting = pendingCount(o);
             return (
               <div key={o.id} data-testid={`pa-row-${o.id}`} className="rounded-lg border border-[#EFF0F2] p-2.5">
                 <div className="flex flex-wrap items-center gap-2">
                   <div className="min-w-0 flex-1">
-                    <p className="text-[12.5px] font-bold">{o.pa_number}
+                    <p className="text-[12.5px] font-bold"><DocNumber number={o.pa_number} entityId={docEntityId(o)} testId={`pa-number-${o.id}`} />
                       {o.work_entity_id && <span className="ml-2" data-testid={`pa-pt-${o.id}`}><EntityBadge entityId={o.work_entity_id} /></span>}
                       {o.btg_number && <span className="ml-2 rounded bg-[#E6F6EC] px-1.5 py-0.5 text-[10px] font-bold text-[#1B7F4B]">BTG {o.btg_number}</span>}
                     </p>
                     <p className="text-[11px] text-[#6B6B73]">{o.from_warehouse_name} → <b>{o.to_warehouse_name}</b> · {o.item_count} roll · <span data-testid={`pa-qty-${o.id}`}>{qtyLabel(o)}</span>
                       {(o.arrival_trips || []).length > 0 && <span data-testid={`pa-trips-${o.id}`}> · {o.arrival_trips.length} trip · {waiting} roll menunggu</span>}</p>
                   </div>
-                  <span className="rounded px-2 py-0.5 text-[10.5px] font-bold" style={{ color, background: `${color}18` }}>{label}</span>
+                  <StatusBadge status={o.status} tone={tone} label={label} testId={`pa-status-${o.id}`} />
                   {o.status === "open" && (
                     <button data-testid={`pa-dispatch-${o.id}`} disabled={busy} onClick={() => dispatch(o.id)}
                       className="rounded-lg bg-[#FF9500] px-3 py-1.5 text-[11px] font-semibold text-white disabled:opacity-40">Kirim</button>

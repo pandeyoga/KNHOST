@@ -18,6 +18,7 @@ import ReturnChainPanel from "../../sales/ReturnChainPanel";
 import ReturnRollsPanel from "../../sales/ReturnRollsPanel";
 import ConfirmModal from "../../../components/ConfirmModal";
 import ExportMenu from "../../../components/ExportMenu";   // FIX-4 — tombol baku Unduh (Excel/CSV, Pusat Export)
+import EmptyState from "../../../components/EmptyState";   // FIX-8 — memuat ≠ kosong
 
 /** Baris retur antar-PT → bentuk baris panel roll (sama dengan retur pelanggan). */
 const toPanelItems = (r) => (r.items || []).map((it) => ({
@@ -25,7 +26,7 @@ const toPanelItems = (r) => (r.items || []).map((it) => ({
 }));
 
 export default function IntercoReturnsPanel({ rows, canWrite, canDecideRolls, activeEntityId, onApprove, onTask, onCancel, onChanged,
-  focusId = "" }) {
+  focusId = "", loading = false }) {
   const [chainFor, setChainFor] = useState("");
   const [rollsFor, setRollsFor] = useState("");
   const [askCancel, setAskCancel] = useState(null);
@@ -60,7 +61,9 @@ export default function IntercoReturnsPanel({ rows, canWrite, canDecideRolls, ac
               </tr>
             </thead>
             <tbody className="divide-y divide-[#F2F2F5]">
-              {rows.length === 0 && (
+              {/* FIX-8 (B1b UI-50) — selama memuat: "Memuat retur antar-PT…", bukan "Belum ada retur antar-PT". */}
+              {rows.length === 0 && loading && <EmptyState asRow colSpan={8} kind="loading" what="retur antar-PT" testId="interco-returns-loading" />}
+              {rows.length === 0 && !loading && (
                 <tr><td colSpan={8} className="px-4 py-10 text-center text-[#8E8E93]">
                   Belum ada retur antar-PT. Retur dibuat dari menu <b>Akuntansi &amp; Pajak › Antar Entitas (Grup)</b>:
                   tekan tombol <b>Retur</b> pada transaksi yang barangnya sudah berpindah.

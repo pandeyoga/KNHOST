@@ -14,10 +14,12 @@ from db import db
 from services import dual_qty_service as _dual  # FASE U — dua satuan (roll + ukuran)
 from core_utils import now_iso, new_id, rupiah, next_doc_number
 from services.roll_service import rebuild_balance
+from services import roll_state as _rs   # FIX-10 (SSOT-1) — satu penulis status roll
 from services import gl_service
 from services import costing_service
 from services import return_policy_service as rps
 from services import return_state as st
+from services import sales_return_transition as _srt   # FIX-6 — CAS + status_history status retur
 from services import return_journey_service as _journey   # L08 LN-081 / F-12 — gerbang penerimaan QC
 from services import qc_inspection_service as qc
 from services import grade_service   # Fase A · PS-09 — SSOT perubahan grade roll
@@ -858,12 +860,12 @@ async def approve_return(return_id: str, approved_by: str, notes: str = "") -> D
     # R1-06 — re-check batas saat approve (defense-in-depth).
     await assert_return_within_limits(ret["order_id"], ret.get("items", []), exclude_id=ret["id"])
     now = now_iso()
-    await db.sales_returns.update_one(
-        {"id": return_id},
-        {"$set": {"status": st.APPROVED, "approved_by": approved_by, "approved_at": now,
-                  "approval_notes": notes, "updated_at": now}})
-    ret = await db.sales_returns.find_one({"id": return_id})
-    ret.pop("_id", None)
+    # FIX-6 — CAS status asal + jejak status_history (dulu tulis `{id}` saja).
+    ret = await _srt.transition(return_id, ret["status"], st.APPROVED, actor_name=approved_by, note=notes,
+                                action="approve", set_fields={"approved_by": approved_by, "approved_at": now,
+                                                              "approval_notes": notes})
+    if not ret:
+        raise ValueError("Retur baru saja berubah oleh pengguna lain — muat ulang lalu ulangi.")
     return ret
 
 
@@ -878,12 +880,11 @@ async def start_inspection(return_id: str, actor: str) -> Dict[str, Any]:
     st.assert_transition(ret["status"], st.INSPECTING)
     _journey.assert_ready_for_qc(ret)          # F-12 — QC tidak mendahului penerimaan barang
     now = now_iso()
-    await db.sales_returns.update_one(
-        {"id": return_id},
-        {"$set": {"status": st.INSPECTING, "inspection_status": "in_progress",
-                  "inspection_started_by": actor, "inspection_started_at": now, "updated_at": now}})
-    ret = await db.sales_returns.find_one({"id": return_id})
-    ret.pop("_id", None)
+    ret = await _srt.transition(return_id, ret["status"], st.INSPECTING, actor_name=actor, action="inspect_start",
+                                set_fields={"inspection_status": "in_progress", "inspection_started_by": actor,
+                                            "inspection_started_at": now})
+    if not ret:
+        raise ValueError("Retur baru saja berubah oleh pengguna lain — muat ulang lalu ulangi.")
     return ret
 
 
@@ -964,11 +965,10 @@ async def complete_inspection(return_id: str, actor: str,
         "recommended_outcome": _recommend_outcome(worst_grade, worst_cond) if grades else "",
         "thresholds": th, "notes": notes, "inspected_by": actor, "inspected_at": now,
     }
-    await db.sales_returns.update_one(
-        {"id": return_id},
-        {"$set": {"status": st.INSPECTED, "inspection_status": "done", "items": items,
-                  "inspection": summary, "inspected_by": actor, "inspected_at": now,
-                  "updated_at": now}})
+    if not await _srt.transition(return_id, ret["status"], st.INSPECTED, actor_name=actor, action="inspect_complete",
+                                 set_fields={"inspection_status": "done", "items": items, "inspection": summary,
+                                             "inspected_by": actor, "inspected_at": now}):
+        raise ValueError("Retur baru saja berubah oleh pengguna lain — muat ulang lalu ulangi.")
     # FIX-3a (B2a FLW-IN-09) — inspeksi retur lewat FORM retur: SPK QC retur yang lahir otomatis (belum diisi) ditutup,
     # tidak menggantung `draft` sesudah retur selesai (dua jalur inspeksi retur tidak lagi tidak sinkron).
     await _close_return_spk(return_id, actor, "Retur sudah diinspeksi lewat form retur")
@@ -1031,12 +1031,10 @@ async def mark_inspecting(return_id: str, actor: str) -> None:
     """23 Okt — SPK QC per roll: retur masuk `inspecting` saat roll PERTAMA diperiksa. Gerbang penerimaan dicek
     PER ROLL di SPK (`return_journey_service.roll_not_ready_for_qc`); penutupan (`complete_inspection`) tetap
     menuntut SEMUA roll sudah diterima (F-12)."""
-    st.assert_transition(st.APPROVED, st.INSPECTING)
     now = now_iso()
-    await db.sales_returns.update_one(
-        {"id": return_id, "status": st.APPROVED},
-        {"$set": {"status": st.INSPECTING, "inspection_status": "in_progress",
-                  "inspection_started_by": actor, "inspection_started_at": now, "updated_at": now}})
+    await _srt.transition(return_id, st.APPROVED, st.INSPECTING, actor_name=actor, action="inspect_start",
+                          set_fields={"inspection_status": "in_progress", "inspection_started_by": actor,
+                                      "inspection_started_at": now})
 
 
 async def complete_inspection_from_spk(return_id: str, lines: List[Dict[str, Any]], actor: str,
@@ -1255,8 +1253,22 @@ async def _restock_returned_items(ret: Dict[str, Any], items: List[Dict], now: s
             placed = await _rid.restock_identity(ret, item, roll, qty, now)
         else:
             await db.inventory_rolls.insert_one(roll)
-            placed = [(roll, qty)]
-        for roll, qty in placed:
+            placed = [(roll, qty, None)]
+        for roll, qty, intake_prev in placed:
+          if intake_prev is not None:
+              # FIX-6 (D5) — roll sudah masuk karantina retur saat DIPINDAI (mutasi masuk sudah tercatat): settle hanya
+              # MENILAI roll itu (nilai WAC + jurnal Nota Kredit di bawah) dan mencatat koreksi qty hasil QC bila beda.
+              _delta = round(float(qty) - float(intake_prev), 2)
+              if abs(_delta) > 0.005:
+                  await db.inventory_movements.insert_one({
+                      "id": new_id("mov"), "product_id": product_id, "warehouse_id": roll["warehouse_id"],
+                      "owner_entity_id": owner_entity_id, "type": "return_qc_adjust", "movement_type": "return_qc_adjust",
+                      "direction": "in" if _delta > 0 else "out", "quantity": abs(_delta),
+                      "unit": roll.get("unit") or base_unit, "roll_id": roll["id"], "qty_rolls": 1,
+                      "ref_type": "sales_return", "ref_id": ret["id"], "source_document": ret["id"], "timestamp": now,
+                      "notes": f"Koreksi qty hasil QC retur {ret['number']}: {intake_prev} → {qty}"})
+              combos.add((product_id, roll["warehouse_id"], owner_entity_id))
+              continue
           await db.inventory_movements.insert_one({
             "id": new_id("mov"), "product_id": product_id, "warehouse_id": roll["warehouse_id"],
             "owner_entity_id": owner_entity_id,
@@ -1313,6 +1325,8 @@ async def get_return_quarantine_rolls(return_id: str) -> List[Dict[str, Any]]:
         r["landed_per_unit"] = round(max(_uc - _base, 0.0), 2)
         r["landed_included"] = r["landed_per_unit"] > 0.005
         r["cost_basis"] = "wac_landed" if r["landed_included"] else "wac"
+        # FIX-6 (D5) — karantina retur hasil pindai, nilai ditetapkan saat penyelesaian (belum bisa dilepas).
+        r["intake_pending_valuation"] = (r.get("return_intake") or {}).get("state") == "received"             and r.get("status") == "quarantine"
     return rolls
 
 
@@ -1322,8 +1336,14 @@ async def release_quarantine(return_id: str, actor: str,
     action per roll: 'release' → available (grade final), 'scrap' → damaged (keluar available).
     Tanpa `decisions` → release semua roll karantina return apa adanya. Rebuild balance."""
     rolls = await get_return_quarantine_rolls(return_id)
-    q_rolls = [r for r in rolls if r.get("status") == "quarantine"]
+    # FIX-6 (D5) — roll karantina retur yang BELUM dinilai (dipindai diterima, retur belum diselesaikan) tidak boleh
+    # dilepas ke stok tersedia: nilainya baru ditetapkan saat settle.
+    from services import return_intake_service as _intake
+    q_rolls = [r for r in rolls if r.get("status") == "quarantine" and not _intake.is_unvalued(r)]
     if not q_rolls:
+        if any(_intake.is_unvalued(r) for r in rolls):
+            raise ValueError("Roll retur ini masih karantina retur yang belum dinilai — selesaikan retur (settle) dulu; "
+                             "nilai & jurnal ditetapkan saat penyelesaian.")
         raise ValueError("Tidak ada roll karantina untuk retur ini")
     _ret_doc = await db.sales_returns.find_one({"id": return_id}, {"_id": 0, "number": 1, "entity_id": 1}) or {}
     ret_number = _ret_doc.get("number", return_id)
@@ -1405,10 +1425,17 @@ async def release_quarantine(return_id: str, actor: str,
                 roll_set.update({"writeoff_unit_cost": float(r.get("unit_cost") or 0),
                                  "writeoff_base_unit_cost": float(r.get("base_unit_cost") or 0),
                                  "unit_cost": 0.0, "base_unit_cost": 0.0})
-        _roll_update: Dict[str, Any] = {"$set": roll_set}
-        if grade_hist_entry:
-            _roll_update["$push"] = {"grade_history": grade_hist_entry}
-        await db.inventory_rolls.update_one({"id": r["id"]}, _roll_update)
+        # FIX-10 — CAS karantina (dulu `{id}` saja sesudah dibaca) + jejak status roll; saldo dibangun ulang di bawah.
+        # R0 — kolom biaya PK-27 (penolan saat scrap) ikut di tulisan yang sama lewat `extra_set`.
+        if not await _rs.transition(
+                r["id"], new_status, from_="quarantine", actor=actor, action=f"return_quarantine_{action}",
+                reason=f"karantina retur {ret_number} → {'scrap' if action == 'scrap' else 'dilepas'}"
+                       + (f": {notes}" if notes else ""),
+                ref={"type": "sales_return", "id": return_id, "no": ret_number},
+                extra_set={k: v for k, v in roll_set.items() if k not in ("status", "updated_at")},
+                push={"grade_history": grade_hist_entry} if grade_hist_entry else None, rebuild=False):
+            raise ValueError(f"Roll {r.get('roll_no') or r['id']} tidak lagi berstatus karantina (berubah bersamaan) — "
+                             "muat ulang; kunci saga retur perlu dilepas admin bila menggantung.")
         if "writeoff_unit_cost" in roll_set:
             from services import roll_cost_history as _rch
             await _rch.record(r, 0.0, "scrap_writeoff", actor=actor, ref_type="sales_return", ref_id=return_id,
@@ -1557,11 +1584,12 @@ async def transfer_return_roll_ownership(return_id: str, roll_id: str,
     from services import atomic_claim as _saga
     await _saga.claim("sales_returns", return_id, "transfer_ownership", actor=actor)
     # Reservasi roll SPESIFIK ini untuk transfer (agar execute_ownership_transfer memindah tepat roll ini).
-    upd = await db.inventory_rolls.update_one(
-        {"id": roll_id, "status": "available", "active_movement": None, "length_reserved": {"$not": {"$gt": 0}}},
-        {"$set": {"status": "reserved", "reserved_ref": {"type": "transfer", "id": transfer_id},
-                  "updated_at": now}})
-    if upd.modified_count != 1:
+    upd_n = await _rs.transition(
+        roll_id, "reserved", from_="available", actor=actor, action="reserve",
+        reason="roll retur dipesan untuk pindah kepemilikan", ref={"type": "transfer", "id": transfer_id},
+        extra_filter={"active_movement": None, "length_reserved": {"$not": {"$gt": 0}}},
+        extra_set={"reserved_ref": {"type": "transfer", "id": transfer_id}}, rebuild=False)
+    if upd_n != 1:
         await _saga.release("sales_returns", return_id)
         raise ValueError("Roll berubah status saat memulai transfer. Coba lagi.")
 
@@ -1589,9 +1617,10 @@ async def transfer_return_roll_ownership(return_id: str, roll_id: str,
         # rollback reservasi bila gagal SEBELUM kepemilikan pindah
         still_src = await db.inventory_rolls.find_one({"id": roll_id, "owner_entity_id": src}, {"_id": 1})
         if still_src:
-            await db.inventory_rolls.update_one(
-                {"id": roll_id, "reserved_ref.id": transfer_id},
-                {"$set": {"status": "available", "reserved_ref": None, "updated_at": now_iso()}})
+            await _rs.transition(roll_id, "available", from_="reserved", actor=actor, action="reserve_rollback",
+                                 reason="pindah kepemilikan roll retur gagal — reservasi dilepas",
+                                 ref={"type": "transfer", "id": transfer_id},
+                                 extra_filter={"reserved_ref.id": transfer_id}, extra_set={"reserved_ref": None})
             await db.warehouse_transfers.update_one({"id": transfer_id}, {"$set": {"status": "cancelled"}})
         await _saga.release("sales_returns", return_id)
         raise
@@ -1864,6 +1893,11 @@ async def settle_return(return_id: str, actor: str, outcome: str,
             logging.getLogger("gl.sales_return").exception(
                 "Gagal Credit Note/GL settle retur %s: %s", return_id, e)
 
+    # FIX-6 (D5, keputusan pemilik 10 Nov) — roll yang sudah masuk KARANTINA RETUR saat dipindai: yang ikut stok sudah
+    # DINILAI di `_restock_returned_items` (roll yang sama, tanpa roll/jurnal kedua); sisanya (nego tanpa gerak stok,
+    # baris ditolak / sebagian) bukan stok perusahaan → dibalik (roll kembali "di pelanggan"). Idempoten.
+    from services import return_intake_service as _intake
+    await _intake.reverse(ret, None, actor, f"Penyelesaian {outcome}: barang tidak masuk stok")
     update = {
         "status": target, "outcome": outcome, "items": items,
         "settlement": settlement, "settled_by": actor, "settled_at": now,
@@ -1885,7 +1919,9 @@ async def settle_return(return_id: str, actor: str, outcome: str,
             "Nota kredit tercatat, tetapi mutasi kas refund gagal dicatat — retur BELUM selesai. "
             f"Ulangi 'Selesaikan' untuk melengkapi buku kas. ({cash_failed})"))
     update["settlement_pending"] = None
-    await db.sales_returns.update_one({"id": return_id}, _saga.finish_set(update))
+    _fin = _saga.finish_set(update)
+    _fin["$push"] = {"status_history": _srt.history_entry(target, actor, notes, "settle")}
+    await db.sales_returns.update_one({"id": return_id}, _fin)
     ret = await db.sales_returns.find_one({"id": return_id})
     ret.pop("_id", None)
     return ret
@@ -2012,7 +2048,9 @@ async def reverse_settlement(return_id: str, actor: str, reason: str = "") -> Di
         "reversal_reason": reason, "reversal_je_ids": [j.get("id") for j in rev_jes],
         "stock_adjusted": False, "updated_at": now,
     }
-    await db.sales_returns.update_one({"id": return_id}, _saga.finish_set(update))
+    _fin = _saga.finish_set(update)
+    _fin["$push"] = {"status_history": _srt.history_entry(st.CANCELLED, actor, reason, "reverse_settlement")}
+    await db.sales_returns.update_one({"id": return_id}, _fin)
     ret = await db.sales_returns.find_one({"id": return_id})
     ret.pop("_id", None)
     ret["_reversal_summary"] = {"reversal_jes": len(rev_jes), "rolls_removed": len(rolls),
@@ -2069,14 +2107,17 @@ async def reverse_writeoff(return_id: str, actor: str, roll_ids: List[str] = Non
         pulih = ({"unit_cost": float(r.get("writeoff_unit_cost") or 0),
                   "base_unit_cost": float(r.get("writeoff_base_unit_cost") or 0)}
                  if "writeoff_unit_cost" in r else {})
-        await db.inventory_rolls.update_one({"id": rid}, {"$set": {
-            **pulih,
-            "status": restore_status, "qc_status": "released",
-            "writeoff_reversed": True, "writeoff_reversed_at": now, "writeoff_reversed_by": actor,
-            "writeoff_reversal_reason": reason,
-            "writeoff_reversal_je_id": rev_je.get("id", ""),
-            "writeoff_reversal_je_number": rev_je.get("number", ""),
-            "unscrapped_from": "damaged", "updated_at": now}})
+        # FIX-10 — CAS `damaged` & belum dibalik (dulu `{id}` saja) + jejak status roll; saldo di bawah.
+        # R0 — biaya roll dipulihkan (PK-27) di tulisan yang sama (`extra_set`).
+        await _rs.transition(rid, restore_status, from_="damaged", actor=actor, action="writeoff_reversal",
+                             reason=f"write-off dibatalkan (un-scrap){': ' + reason if reason else ''}",
+                             ref={"type": "sales_return", "id": return_id, "no": ret.get("number", "")},
+                             extra_filter={"writeoff_reversed": {"$ne": True}},
+                             extra_set={**pulih, "qc_status": "released", "writeoff_reversed": True, "writeoff_reversed_at": now,
+                                        "writeoff_reversed_by": actor, "writeoff_reversal_reason": reason,
+                                        "writeoff_reversal_je_id": rev_je.get("id", ""),
+                                        "writeoff_reversal_je_number": rev_je.get("number", ""),
+                                        "unscrapped_from": "damaged"}, rebuild=False)
         if pulih:
             from services import roll_cost_history as _rch
             await _rch.record(r, pulih["unit_cost"], "scrap_writeoff_reversal", actor=actor, ref_type="sales_return",
@@ -2118,13 +2159,17 @@ async def reject_return(return_id: str, rejected_by: str, reason: str) -> Dict[s
         raise ValueError(f"Return {return_id} tidak ditemukan")
     st.assert_transition(ret["status"], st.REJECTED)
     now = now_iso()
-    await db.sales_returns.update_one(
-        {"id": return_id},
-        {"$set": {"status": st.REJECTED, "outcome": st.OUTCOME_REJECT,
-                  "rejected_by": rejected_by, "rejected_at": now,
-                  "reject_reason": reason, "updated_at": now}})
-    ret = await db.sales_returns.find_one({"id": return_id})
-    ret.pop("_id", None)
+    ret = await _srt.transition(return_id, ret["status"], st.REJECTED, actor_name=rejected_by, note=reason,
+                                action="reject", set_fields={"outcome": st.OUTCOME_REJECT, "rejected_by": rejected_by,
+                                                             "rejected_at": now, "reject_reason": reason})
+    if not ret:
+        raise ValueError("Retur baru saja berubah oleh pengguna lain — muat ulang lalu ulangi.")
+    # FIX-6 (D5) — retur DITOLAK sebelum settle: roll karantina retur hasil pindai diterima dibalik (roll utuh kembali
+    # "di pelanggan", potongan dihapus) — barangnya bukan stok perusahaan.
+    from services import return_intake_service as _intake
+    rev = await _intake.reverse(ret, None, rejected_by, f"Retur {ret.get('number', '')} ditolak: {reason}")
+    if rev.get("reversed"):
+        ret["_intake_reversed"] = rev
     return ret
 
 

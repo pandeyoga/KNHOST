@@ -13,10 +13,14 @@ DEFINISI (tabel lengkap: docs/audit/2026-11-09-wms-rfid/hasil/FIX-2-ANGKA-STOK.m
                            yang dipesan untuk potong & reservasi — yaitu ember `available_qty` saldo yang DIBANGUN
                            ULANG DARI ROLL (`roll_service.rebuild_balance`; tahan QC/karantina/blokir/hold/MD Quality
                            = status ≠ available, jadi otomatis keluar) — DIKURANGI cadangan bahan makloon aktif
-                           (`material_reservations`). Cadangan makloon per produk×PT dialokasikan ke gudang PT itu
-                           dengan SATU aturan: gudang bertersedia terbesar dulu (aturan lama `deduct_makloon`).
-* Roll tersedia          = jumlah roll yang masih punya panjang bebas (saldo `roll_count`). Cadangan makloon belum
-                           dikunci per roll, jadi jumlah roll tidak dikurangi cadangan (dicatat: langkah lanjut).
+                           (`material_reservations`). FIX-9: bagian cadangan yang TERKUNCI di roll (`length_reservations`
+                           bertipe makloon) sudah keluar dari ember `available_qty` lewat `rebuild_balance` — saldo
+                           menandainya `makloon_locked_qty` dan angka ini memindahkannya dari "Dipesan" ke "Cadangan
+                           makloon". Yang masih dialokasikan secara agregat hanya sisa BELUM terkunci (`qty −
+                           locked_qty`) per produk×PT, ke gudang PT itu dengan SATU aturan: gudang bertersedia terbesar
+                           dulu (aturan lama `deduct_makloon`). Rumus Tersedia tidak berubah dan tidak dobel-kurang.
+* Roll tersedia          = jumlah roll yang masih punya panjang bebas (saldo `roll_count`; roll yang terkunci penuh
+                           untuk makloon tidak terhitung — FIX-9).
 * LOKAL                  = Tersedia di cakupan kerja pengguna: PT aktif (mode gabungan: semua PT yang diizinkan) ∩
                            site kerja (sales: site POS tersimpan di server; gudang: lokasi tugas; selain itu: semua site,
                            atau `?site_id=`). Titik kait FIX-1: `location_scope.work_site_ids(user)` bila tersedia.
@@ -98,15 +102,18 @@ async def counted_warehouse_ids() -> Set[str]:
 
 
 async def makloon_by_product_entity(product_ids: Optional[Iterable[str]] = None) -> Dict[tuple, float]:
-    """{(product_id, owner_entity_id): qty} cadangan makloon aktif — SATU pembaca `material_reservations`."""
+    """{(product_id, owner_entity_id): qty} cadangan makloon aktif yang BELUM terkunci di roll — SATU pembaca
+    `material_reservations`. FIX-9: bagian terkunci (`locked_qty`) sudah dikurangi lewat saldo roll."""
     q: Dict[str, Any] = {"status": "active"}
     ids = [p for p in (product_ids or []) if p]
     if ids:
         q["product_id"] = {"$in": ids}
     out: Dict[tuple, float] = {}
-    async for m in db.material_reservations.find(q, {"_id": 0, "product_id": 1, "owner_entity_id": 1, "qty": 1}):
+    async for m in db.material_reservations.find(q, {"_id": 0, "product_id": 1, "owner_entity_id": 1, "qty": 1,
+                                                     "locked_qty": 1}):
         k = (m.get("product_id"), m.get("owner_entity_id") or DEFAULT_ENTITY_ID)
-        out[k] = round(out.get(k, 0.0) + float(m.get("qty") or 0), 4)
+        left = max(float(m.get("qty") or 0) - float(m.get("locked_qty") or 0), 0.0)
+        out[k] = round(out.get(k, 0.0) + left, 4)
     return out
 
 
@@ -141,7 +148,7 @@ async def segments(product_ids: Optional[Iterable[str]] = None) -> List[Dict[str
     ids = [p for p in (product_ids or []) if p]
     q: Dict[str, Any] = {"product_id": {"$in": ids}} if ids else {}
     proj = {"_id": 0, "product_id": 1, "warehouse_id": 1, "owner_entity_id": 1, "roll_count": 1,
-            "on_hand_roll_count": 1, "roll_counts": 1, **{f: 1 for f in BUCKET_FIELDS}}
+            "on_hand_roll_count": 1, "roll_counts": 1, "makloon_locked_qty": 1, **{f: 1 for f in BUCKET_FIELDS}}
     segs: List[Dict[str, Any]] = []
     async for b in db.inventory_balances.find(q, proj):
         pid, wid = b.get("product_id"), b.get("warehouse_id")
@@ -155,6 +162,11 @@ async def segments(product_ids: Optional[Iterable[str]] = None) -> List[Dict[str
         for f in BUCKET_FIELDS:
             s[f] = float(b.get(f) or 0)
         s["balance_available_qty"] = s["available_qty"]
+        # FIX-9 — panjang terkunci makloon ada di ember `reserved_qty` saldo; tampil sebagai "Cadangan makloon".
+        locked = min(float(b.get("makloon_locked_qty") or 0), s["reserved_qty"])
+        s["makloon_locked_qty"] = round(locked, 4)
+        s["makloon_reserved_qty"] = round(locked, 4)
+        s["reserved_qty"] = round(s["reserved_qty"] - locked, 4)
         segs.append(s)
     allocate_makloon(segs, await makloon_by_product_entity(ids or None))
     return segs
@@ -162,7 +174,8 @@ async def segments(product_ids: Optional[Iterable[str]] = None) -> List[Dict[str
 
 def _empty_totals() -> Dict[str, float]:
     t = {f: 0.0 for f in BUCKET_FIELDS}
-    t.update(available_rolls=0, on_hand_rolls=0, makloon_reserved_qty=0.0, balance_available_qty=0.0)
+    t.update(available_rolls=0, on_hand_rolls=0, makloon_reserved_qty=0.0, makloon_locked_qty=0.0,
+             balance_available_qty=0.0)
     return t
 
 
@@ -173,6 +186,7 @@ def sum_segments(segs: Iterable[Dict[str, Any]]) -> Dict[str, Any]:
         for f in BUCKET_FIELDS:
             t[f] += s.get(f, 0.0)
         t["makloon_reserved_qty"] += s.get("makloon_reserved_qty", 0.0)
+        t["makloon_locked_qty"] += s.get("makloon_locked_qty", 0.0)
         t["balance_available_qty"] += s.get("balance_available_qty", 0.0)
         t["available_rolls"] += s.get("available_rolls", 0)
         t["on_hand_rolls"] += s.get("on_hand_rolls", 0)
@@ -448,11 +462,17 @@ async def incoming_rows(product_ids: Optional[Iterable[str]] = None, *,
     if "return" in want:
         async for rt in db.sales_returns.find({"status": {"$in": RETURN_PENDING_STATUSES}, **item_q},
                                               {"_id": 0, "id": 1, "number": 1, "status": 1, "entity_id": 1,
-                                               "warehouse_id": 1, "items": 1, "expected_date": 1}):
+                                               "warehouse_id": 1, "items": 1, "expected_date": 1,
+                                               "roll_locations": 1}):
+            locs = rt.get("roll_locations") or {}
             for it in rt.get("items") or []:
                 if not ok(it.get("product_id")):
                     continue
                 qty = float(it.get("quantity_base") or it.get("quantity_returned") or it.get("quantity") or 0)
+                # FIX-6 (D5) — roll yang sudah dipindai diterima sudah MASUK STOK (karantina retur, kelompok
+                # "Ditahan / QC"); "akan datang" hanya sisa yang belum diterima (tanpa dihitung dua kali).
+                qty -= sum(float((it.get("roll_qtys") or {}).get(r) or 0) for r in it.get("roll_ids") or []
+                           if (locs.get(r) or {}).get("stage") in ("received", "arrived", "in_transit"))
                 if qty <= 0.01:
                     continue
                 rows.append({"source": "return", "label": "Retur disetujui, belum diterima",
@@ -631,5 +651,7 @@ def adjust_balance_row(b: Dict[str, Any], idx: Dict[tuple, Dict[str, Any]]) -> D
         return b
     b["counted"] = True
     b["makloon_reserved_qty"] = round(s.get("makloon_reserved_qty", 0.0), 2)
+    b["makloon_locked_qty"] = round(s.get("makloon_locked_qty", 0.0), 2)
+    b["reserved_qty"] = round(s.get("reserved_qty", 0.0), 2)   # FIX-9 — kunci makloon pindah ke "Cadangan makloon"
     b["available_qty"] = round(max(s["available_qty"], 0.0), 2)
     return b

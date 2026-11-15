@@ -16,9 +16,10 @@
 import { useState } from "react";
 import { can } from "../../config/roles";
 import {
-  CheckCircle2, FlaskConical, Lock, Play, RotateCcw, User,
+  CheckCircle2, FlaskConical, Play, RotateCcw, User,
 } from "lucide-react";
 import ErrorNotice from "../../components/ErrorNotice";
+import StatusBadge from "../../components/StatusBadge";   // FIX-8 — lencana status baku
 import KNSelect from "../../components/KNSelect";
 import QtyDual from "../../components/QtyDual";
 import { askConfirm, askReason } from "../../services/confirmService";
@@ -27,12 +28,13 @@ import { formatDate } from "../../utils/formatters";
 import DocumentActionsBar from "../documents/DocumentActionsBar";
 import InspectLineModal from "./InspectLineModal";
 import InspectSheetGrid from "./InspectSheetGrid";
+import ReturnRemedyChoice, { remedyProblem } from "../wms/ReturnRemedyChoice";   // FIX-6 (D2)
 // Fase 4 · R3 — panel ini dipecah (658 → <500 baris) tanpa mengubah perilaku: tabel baris + bagian tanpa aksi.
 import InspectionLinesTable from "./InspectionLinesTable";
 import { InspectionHistory, localTs, Qc4Picker, Row } from "./InspectionDetailParts";
 import {
   apiText, assignInspection, finishInspection, INS_DECISION_LABEL,
-  INS_KIND_LABEL, INS_STATUS_CLASS, INS_STATUS_LABEL, MD_QUALITY_KINDS,
+  INS_KIND_LABEL, MD_QUALITY_KINDS,
   createQc4point, rejectHold, releaseHold, reopenInspection, startInspection,
 } from "./inspectionsApi";
 
@@ -53,6 +55,8 @@ export default function InspectionDetailPanel({ doc, meta, currentUser, onChange
   const isMakloonQc = doc.kind === "makloon_output" && Boolean(doc.task_id);
   const isPoReceipt = (doc.kind === "po_receipt" || isMakloonQc) && Boolean(doc.task_id);
   const [disposition, setDisposition] = useState("");
+  const [remedy, setRemedy] = useState("");              // FIX-6 (D2) — replace | bill_cut
+  const [remedyReason, setRemedyReason] = useState("");
   const [rejectedRolls, setRejectedRolls] = useState([]);
   const isMdKind = (meta?.md_quality_kinds || MD_QUALITY_KINDS).includes(doc.kind);
   const canAssign = can(currentUser?.permissions, "inspection", "assign");   // FE-04
@@ -99,8 +103,10 @@ export default function InspectionDetailPanel({ doc, meta, currentUser, onChange
   const needsDisposition = isPoReceipt && ["tolak", "terima_sebagian"].includes(decision);
   const partialMissing = isPoReceipt && decision === "terima_sebagian"
     && (rejectedRolls.length === 0 || rejectedRolls.length >= (doc.lines || []).length);
+  const needsRemedy = needsDisposition && disposition === "return";   // FIX-6 (keputusan pemilik 10 Nov, D2)
   const quarantineExtra = () => (isPoReceipt
-    ? { reject_disposition: needsDisposition ? disposition : "", rejected_roll_ids: decision === "terima_sebagian" ? rejectedRolls : [] }
+    ? { reject_disposition: needsDisposition ? disposition : "", rejected_roll_ids: decision === "terima_sebagian" ? rejectedRolls : [],
+        ...(needsRemedy ? { return_remedy: remedy, return_remedy_reason: remedyReason } : {}) }
     : {});
   const toggleRejected = (rid) => setRejectedRolls((cur) => (cur.includes(rid) ? cur.filter((x) => x !== rid) : [...cur, rid]));
   // B1 (keputusan pemilik 26 Okt) — "Diterima seluruhnya" padahal masih ada roll ditahan/gagal QC: bawaan PERINGATAN
@@ -116,6 +122,7 @@ export default function InspectionDetailPanel({ doc, meta, currentUser, onChange
   async function tutupDenganKeputusan() {
     if (!decision) return;
     if (needsDisposition && !disposition) { setErr("Pilih tindakan untuk roll yang ditolak: retur ke supplier atau barang rusak."); return; }
+    if (needsRemedy && remedyProblem(remedy, remedyReason)) { setErr(remedyProblem(remedy, remedyReason)); return; }
     if (partialMissing) { setErr("Diterima sebagian: centang roll yang DITOLAK (minimal satu, tidak semuanya)."); return; }
     if (acceptAllWithHeld) {
       if (acceptHoldBlocked) {
@@ -200,14 +207,9 @@ export default function InspectionDetailPanel({ doc, meta, currentUser, onChange
           </p>
         </div>
         <div className="flex flex-col items-end gap-1">
-          <span data-testid="ins-detail-status"
-            className={`status-pill ${INS_STATUS_CLASS[doc.status] || "pill-muted"}`}>
-            {INS_STATUS_LABEL[doc.status] || doc.status}
-          </span>
+          <StatusBadge status={doc.status} domain="inspection" testId="ins-detail-status" />
           {summary.hold ? (
-            <span data-testid="ins-detail-hold-badge" className="status-pill pill-danger">
-              <Lock size={9} className="mr-0.5 inline" />{summary.hold} barang ditahan
-            </span>
+            <StatusBadge status="hold" tone="danger" icon="lock" testId="ins-detail-hold-badge">{summary.hold} barang ditahan</StatusBadge>
           ) : null}
         </div>
       </div>
@@ -380,8 +382,15 @@ export default function InspectionDetailPanel({ doc, meta, currentUser, onChange
                     className="field" placeholder="Pilih tindakan" />
                 </label>
               )}
+              {needsRemedy && (
+                <div className="w-full max-w-md">
+                  <ReturnRemedyChoice testId="ins-return-remedy" value={remedy} reason={remedyReason}
+                    onChange={setRemedy} onReason={setRemedyReason} />
+                </div>
+              )}
               <button data-testid="ins-finish-button" className="primary-button"
                 disabled={busy || !decision || (needsDisposition && !disposition) || partialMissing
+                  || (needsRemedy && !!remedyProblem(remedy, remedyReason))
                   || (acceptAllWithHeld && acceptHoldBlocked)}
                 title={acceptAllWithHeld && acceptHoldBlocked ? "Pengaturan QC memblokir 'Diterima seluruhnya' selama masih ada roll ditahan" : undefined}
                 onClick={tutupDenganKeputusan}>

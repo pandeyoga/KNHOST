@@ -507,7 +507,9 @@ DEFAULT_PERMISSIONS = {
     # Sesi #087 — MD / Merchandiser: pengembangan produk. TANPA uang, TANPA gudang.
     "md": {
         "field_visibility": ["grade", "lot", "origin"],   # L01 LN-012 — lihat atribut stok
-        "product": ["view", "create", "update"],
+        # FIX-6 (keputusan pemilik 10 Nov 2026) — MD boleh MENGUNDUH lembar perbaikan master / ekspor produk
+        # (`product.export`; PREP-A K-OPN-06). `sync_permission_modules` menambahkannya ke matriks tersimpan saat start.
+        "product": ["view", "create", "update", "export"],
         "pricelist": ["view", "manage"],
         "price_approval": ["view", "create", "update"],
         "uom": ["view"], "template": ["view"],

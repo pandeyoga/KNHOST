@@ -8,20 +8,41 @@ import axios, { API } from "../../services/apiClient";
 import { SectionCard, EmptyBox, Pill, fmtTime } from "./rfidShared";
 import { apiErrorText } from "../../utils/apiError";
 import ExportMenu from "../../components/ExportMenu";   // FIX-4 — tombol baku Unduh (Excel/CSV, Pusat Export)
+import ListLimitNote from "../wms/ListLimitNote";   // FIX-7 (B3b LST-01)
 
 export default function CycleCountPanel({ whId, selectedEntity }) {
   const [session, setSession] = useState(null);
   const [result, setResult] = useState(null);
   const [history, setHistory] = useState([]);
+  const [histMeta, setHistMeta] = useState(null);   // FIX-7 — jumlah sungguhan (dulu 30 terbaru tanpa tanda)
+  const [moreBusy, setMoreBusy] = useState(false);
   const [epcInput, setEpcInput] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
 
+  // FIX-8 (B1b UI-49) — dulu `catch { /* noop */ }`: galat/403 tampil sebagai "Belum ada cycle count.".
+  const [histSt, setHistSt] = useState({ loading: true, error: null });
+  const metaOf = (d, shown) => (d && d.total !== undefined ? { total: d.total, truncated: shown < d.total, shown, skip: 0 } : null);
   const loadHistory = async () => {
+    setHistSt((x) => ({ ...x, loading: true }));
     try {
       const r = await axios.get(`${API}/rfid/cycle-counts`, { params: { warehouse_id: whId || undefined } });
       setHistory(r.data.counts || []);
-    } catch { /* noop */ }
+      setHistMeta(metaOf(r.data, (r.data.counts || []).length));   // FIX-7 — jumlah sungguhan
+      setHistSt({ loading: false, error: null });
+    } catch (e) {   // FIX-7 LST-06: galat tidak ditelan (bilah galat panel) + FIX-8: daftar menampilkan keadaan galat/403,
+      setError(apiErrorText(e, "Gagal memuat riwayat cycle count."));   // bukan "Belum ada cycle count."
+      setHistSt({ loading: false, error: e });
+    }
+  };
+  const loadMore = async () => {
+    setMoreBusy(true);
+    try {
+      const r = await axios.get(`${API}/rfid/cycle-counts`, { params: { warehouse_id: whId || undefined, skip: history.length } });
+      const seen = new Set(history.map((c) => c.id));
+      const next = [...history, ...(r.data.counts || []).filter((c) => !seen.has(c.id))];
+      setHistory(next); setHistMeta(metaOf(r.data, next.length));
+    } catch (e) { setError(apiErrorText(e, "Gagal memuat riwayat berikutnya.")); } finally { setMoreBusy(false); }
   };
   useEffect(() => { loadHistory(); setSession(null); setResult(null); }, [whId, selectedEntity]); // eslint-disable-line
 
@@ -108,7 +129,8 @@ export default function CycleCountPanel({ whId, selectedEntity }) {
       <SectionCard title={`Riwayat Cycle Count (${history.length})`} right={
         <ExportMenu dataset="rfid_cycle_counts" label="opname-rfid" testId="cc-rfid-export"
           filters={[whId && ["warehouse_id", "eq", whId]]} sort={[{ key: "created_at", dir: "desc" }]} />}>
-        {history.length === 0 ? <EmptyBox icon={ClipboardCheck} text="Belum ada cycle count." /> : (
+        {history.length === 0 ? <EmptyBox icon={ClipboardCheck} loading={histSt.loading} error={histSt.error} onRetry={loadHistory}
+          what="riwayat opname RFID" text="Belum ada cycle count." testId="cc-history-state" /> : (
           <div className="space-y-1" data-testid="cc-history">
             {history.map((c) => (
               <div key={c.id} className="flex items-center gap-2 rounded bg-[#FAFAFB] px-2 py-1.5 text-[11.5px]">
@@ -121,6 +143,7 @@ export default function CycleCountPanel({ whId, selectedEntity }) {
             ))}
           </div>
         )}
+        <ListLimitNote meta={histMeta} noun="cycle count" onMore={loadMore} loading={moreBusy} testId="cc-rfid-limit" />
       </SectionCard>
     </div>
   );

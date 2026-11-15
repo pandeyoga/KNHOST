@@ -29,6 +29,11 @@ export const formatDateTime = (v) => {
   const d = _validDate(v);
   return d ? `${d.toLocaleString("id-ID", { day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit", timeZone: WIB })} WIB` : "—";
 };
+/** FIX-8 (B3b INP-15 · G-OUT-01) — jam saja "14.05 WIB" (jejak pindai, lintasan gate hari ini). Kosong → "—". */
+export const formatTime = (v) => {
+  const d = _validDate(v);
+  return d ? `${d.toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit", timeZone: WIB })} WIB` : "—";
+};
 /** "YYYY-MM-DD" menurut WIB dari stempel waktu ISO — untuk pengelompokan/ekspor. 23 Okt: `.slice(0, 10)` pada
  *  stempel UTC menghasilkan tanggal KEMARIN untuk aksi sebelum 07.00 WIB. Kosong/tak sah → "". */
 export const wibDate = (v) => {

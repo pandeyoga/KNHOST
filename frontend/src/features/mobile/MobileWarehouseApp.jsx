@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { ClipboardList, ScanLine, Tags, PackageCheck, AlertTriangle, CheckCircle2, Loader2, Scissors, Printer, Camera } from "lucide-react";
+import { ClipboardList, ScanLine, Tags, PackageCheck, AlertTriangle, CheckCircle2, Scissors, Printer, Camera } from "lucide-react";
 import axios, { API } from "../../services/apiClient";
 import { rememberDocEntities } from "../../services/docEntityRegistry";
 import LocationScopeBar from "../../components/LocationScopeBar";
@@ -13,8 +13,11 @@ import PageTabs from "../../components/PageTabs";
 import { linkView } from "./notifText";
 import { InboundActions, OutboundActions, SampleCutActions } from "./MobileTaskActions";
 import ErrorNotice from "../../components/ErrorNotice";
-import { formatQty } from "../../utils/formatters";
-import { docStatusLabel } from "../../utils/docStatus";
+import { formatDateTime, formatQty } from "../../utils/formatters";
+import { statusLabel } from "../../utils/statusVocab";
+import { entityShortFromCtx } from "../../utils/entityLabel";
+import StatusBadge from "../../components/StatusBadge";   // FIX-8 — lencana status baku (ikon + teks + warna)
+import EmptyState, { isForbidden } from "../../components/EmptyState";   // FIX-8 — memuat/galat/tanpa izin
 import { rollStatusLabel } from "../wms/inventory/inventoryConstants";
 
 // Audit UI HP (warehouse) — nama gudang, bukan id mentah ("wh_jakarta"); dipakai di Belum Tag & hasil pindai.
@@ -23,25 +26,22 @@ function useWarehouseNames() {
   useEffect(() => {
     axios.get(`${API}/warehouses`).then((r) => {
       const list = Array.isArray(r.data) ? r.data : r.data?.items || [];
-      setNames(Object.fromEntries(list.map((w) => [w.id, w.name || w.code || w.id])));
+      setNames(Object.fromEntries(list.map((w) => [w.id, w.name || w.code || "Gudang tanpa nama"])));   // FIX-8 (G-OUT-02)
     }).catch(() => {});
   }, []);
   return names;
 }
 
 // UAT 24 Okt (audit UI tahap 2) — kode yang ada di data tetapi tak terpetakan dulu tampil mentah ("Waiting_goods",
-// "Qc_pending", "Created"). Peta dilengkapi + cadangan docStatusLabel (bukan kode).
-const STATUS_ID = {
-  pending: "Menunggu", created: "Baru", waiting_goods: "Menunggu barang", receiving: "Menerima", qc_check: "Cek QC",
-  qc_pending: "Menunggu QC", qc_rejected: "Ditolak QC", put_away: "Simpan", picking: "Ambil", picked: "Sudah diambil",
-  packing: "Kemas", packed: "Sudah dikemas", escalated: "Eskalasi", completed: "Selesai", shipped: "Terkirim",
-  dispatched: "Diberangkatkan", cancelled: "Dibatalkan",
-};
-const statusText = (s) => STATUS_ID[s] || docStatusLabel(s) || "—";
+// "Qc_pending", "Created"). FIX-8 — peta label dipindah ke kosakata tunggal `utils/statusVocab.js` (ranah "task_hp",
+// istilah sama persis) + cadangan peta umum (bukan kode).
+const statusText = (s) => statusLabel(s, "task_hp");
 // FIX-2 (B1b UI-54) — tugas menunggu keputusan QC / ditolak QC bukan pekerjaan terima petugas: dihitung terpisah dan
 // berpil abu (dulu ikut "30 terbuka" dengan pil oranye yang sama).
 const WAITING_QC = ["qc_pending", "qc_check", "qc_rejected"];
-const pillFor = (s) => (s === "escalated" ? "pill-danger" : WAITING_QC.includes(s) ? "pill-muted" : "pill-warning");
+// FIX-8 (B1 UI-08, B1b "semua pil oranye") — nada lencana: eskalasi = bahaya, menunggu/ditolak QC = netral (FIX-2),
+// sisanya = nada kosakata status (berjalan = info, menunggu = perhatian) — tidak lagi satu warna untuk semua.
+const toneFor = (s) => (s === "escalated" ? "danger" : WAITING_QC.includes(s) ? "neutral" : undefined);
 
 function TaskList({ type, focusTaskId, onFocused }) {
   const [rows, setRows] = useState(null);
@@ -50,13 +50,14 @@ function TaskList({ type, focusTaskId, onFocused }) {
   const [lastCut, setLastCut] = useState(null);
   const [lastInbound, setLastInbound] = useState(null);
   const [fromCache, setFromCache] = useState(false);
+  const [truncated, setTruncated] = useState(false);   // FIX-7 (B3b LST-01) — header `X-Truncated` FIX-5 kini ditampilkan
   // UAT 24 Okt (audit UI tahap 2) — daftar Masuk 100+ kartu dulu tanpa judul/jumlah/cari.
   const [q, setQ] = useState("");
   // FIX-1 (K-B1-02) — daftar = semua PT yang ditugaskan di gedung lokasi kerja; PT = label + saringan (chip).
   const [pt, setPt] = useState("");
   const whNames = useWarehouseNames();
-  const load = () => axios.get(`${API}/wms/tasks`).then((r) => { setFromCache(r.headers?.["x-from-cache"] === "true"); setRows(rememberDocEntities((Array.isArray(r.data) ? r.data : r.data.items || r.data.tasks || []).filter((t) => (type === "sample_cut" ? t.task_subtype === "sample_cut" : ((t.flow_type || t.type) === type && t.task_subtype !== "sample_cut")) && !["completed", "shipped", "cancelled", "done", "dispatched"].includes(t.status)))); })
-    .catch((e) => setErr(e.response?.data?.detail || "Gagal memuat tugas."));
+  const load = () => axios.get(`${API}/wms/tasks`).then((r) => { setFromCache(r.headers?.["x-from-cache"] === "true"); setTruncated(String(r.headers?.["x-truncated"] || "0") === "1"); setRows(rememberDocEntities((Array.isArray(r.data) ? r.data : r.data.items || r.data.tasks || []).filter((t) => (type === "sample_cut" ? t.task_subtype === "sample_cut" : ((t.flow_type || t.type) === type && t.task_subtype !== "sample_cut")) && !["completed", "shipped", "cancelled", "done", "dispatched"].includes(t.status)))); })
+    .catch((e) => setErr(e));   // FIX-8 (B1b UI-49) — objek galat dibawa: 403 = "tanpa akses", bukan teks mentah; FIX-7: tanda terpotong
   useEffect(() => { load(); }, [type]); // eslint-disable-line
   // Pindai → aksi: kartu tugas hasil pindai dibuka & digulir ke layar, lalu fokus dilepas.
   useEffect(() => {
@@ -66,13 +67,20 @@ function TaskList({ type, focusTaskId, onFocused }) {
     onFocused?.();
   }, [focusTaskId, rows]); // eslint-disable-line
   // Audit UI HP (warehouse/Masuk) — galat muat (mis. sesi baru saja diperbarui → 401 sesaat) kini bisa dicoba ulang.
-  if (err) return <div className="p-3"><ErrorNotice message={String(err)} onRetry={() => { setErr(""); load(); }} testId="mw-task-error" /></div>;
-  if (rows === null) return <div className="p-6 text-center text-sm"><Loader2 className="animate-spin inline" size={16} /> Memuat…</div>;
+  if (err) {
+    return (
+      <div className="p-3">
+        <EmptyState kind={isForbidden(err) ? "forbidden" : "error"} what="tugas gudang" error={err}
+          onRetry={() => { setErr(""); load(); }} testId="mw-task-error" />
+      </div>
+    );
+  }
+  if (rows === null) return <EmptyState kind="loading" what="tugas" testId="mw-task-loading" />;
   const label = { inbound: "barang masuk", outbound: "barang keluar", sample_cut: "potong sample" }[type] || type;
   if (!rows.length) return <div className="p-8 text-center text-fs-14 text-kn-text-2" data-testid="mw-task-empty">Tidak ada tugas {label} yang terbuka.</div>;
   const Actions = { inbound: InboundActions, outbound: OutboundActions, sample_cut: SampleCutActions }[type];
   const term = q.trim().toLowerCase();
-  const pts = [...new Map(rows.filter((t) => t.work_entity_id).map((t) => [t.work_entity_id, t.work_entity_name || t.work_entity_id])).entries()];
+  const pts = [...new Map(rows.filter((t) => t.work_entity_id).map((t) => [t.work_entity_id, t.work_entity_name || entityShortFromCtx(t.work_entity_id)])).entries()];
   const ptRows = pt ? rows.filter((t) => t.work_entity_id === pt) : rows;
   const shownRows = term ? ptRows.filter((t) => [t.product_name, t.sku, t.po_number, t.order_number, t.customer_name, whNames[t.warehouse_id] || t.warehouse_name, statusText(t.status), t.work_entity_name, t.task_kind_label]
     .some((v) => String(v || "").toLowerCase().includes(term))) : ptRows;
@@ -101,6 +109,7 @@ function TaskList({ type, focusTaskId, onFocused }) {
           aria-label={`Cari tugas ${label}`} value={q} onChange={(e) => setQ(e.target.value)} data-testid={`mw-task-search-${type}`} />
       )}
       {term && shownRows.length === 0 && <div className="p-6 text-center text-fs-14 text-kn-text-2" data-testid={`mw-task-nomatch-${type}`}>Tidak ada tugas yang cocok.</div>}
+      {truncated && <div className="notice-bar warning text-fs-14" data-testid="mw-task-truncated">Tugas aktif lebih banyak dari yang dapat dimuat HP — yang tampil = tugas TERBARU. Lihat daftar lengkap di layar desktop Operasi Gudang.</div>}
       {fromCache && <div className="notice-bar warning text-fs-14" data-testid="mw-task-from-cache">Offline — menampilkan daftar tugas terakhir yang tersimpan di HP. Aksi akan diantrekan.</div>}
       {lastInbound && (
         <div className="m-card p-3 bg-kn-success-soft space-y-2" data-testid={`mw-inbound-done-${lastInbound.task.id}`}>
@@ -119,8 +128,8 @@ function TaskList({ type, focusTaskId, onFocused }) {
       )}
       {shownRows.map((t) => (
         <div key={t.id} className={`m-card p-3 ${focusTaskId === t.id ? "ring-2 ring-kn-action" : ""}`} data-testid={`mw-task-${t.id}`} onClick={() => setOpen(open === t.id ? "" : t.id)}>
-          <div className="flex items-center justify-between"><b className="kn-hp-title">{t.product_name || t.product_id}</b>
-            <span className={`status-pill ${pillFor(t.status)}`}>{statusText(t.status)}</span></div>
+          <div className="flex items-center justify-between"><b className="kn-hp-title">{t.product_name || t.sku || "Produk tanpa nama"}</b>
+            <StatusBadge status={t.status} domain="task_hp" tone={toneFor(t.status)} testId={`mw-task-status-${t.id}`} /></div>
           {/* FIX-1 (K-B1-02, B2a FLW-IN-07) — tiap kartu menyebut PT pemilik & jenis tugas (daftar kini lintas PT). */}
           <div className="flex flex-wrap items-center gap-1.5 mt-1" data-testid={`mw-task-tags-${t.id}`}>
             {t.task_kind_label && <span className="kn-hp-tag" data-testid={`mw-task-kind-${t.id}`}>{t.task_kind_label}</span>}
@@ -145,7 +154,8 @@ function ScanPanel({ onOpenTask }) {
   const videoRef = useRef(null);
   const canCamera = typeof window !== "undefined" && "BarcodeDetector" in window && !!navigator.mediaDevices;
   const whNames = useWarehouseNames();
-  const fmtScan = (s) => s ? `${new Date(s.at).toLocaleString("id-ID", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" })} · ${s.by || "-"}${s.warehouse_id ? ` · ${whNames[s.warehouse_id] || s.warehouse_id}` : ""}${s.bin_id ? ` · bin ${s.bin_id}` : ""}` : "";
+  // FIX-8 (G-OUT-01/02) — waktu WIB lewat formatter tunggal (dulu zona HP); gudang/bin tanpa id mentah.
+  const fmtScan = (s) => s ? `${formatDateTime(s.at)} · ${s.by || "-"}${s.warehouse_id ? ` · ${whNames[s.warehouse_id] || s.warehouse_name || "gudang lain"}` : ""}${s.bin_code ? ` · bin ${s.bin_code}` : s.bin_id ? " · bin tercatat" : ""}` : "";
   const lookup = async (code) => {
     if (!code.trim()) return;
     setBusy(true); setRes(null); setTasks([]);
@@ -154,7 +164,7 @@ function ScanPanel({ onOpenTask }) {
       const r = data.roll || {};
       const held = ["reserved", "committed", "picked", "packed"].includes(r.status);
       setRes({ kind: held ? "warn" : "ok", title: held ? "TERIKAT PESANAN" : "COCOK", roll: r, productName: data.product_name, lastScan: data.last_scan,
-        text: `${r.roll_no} · ${data.product_name || r.product_id || ""} · status ${rollStatusLabel(r.status)} · ${whNames[r.warehouse_id] || r.warehouse_id || ""} · sisa ${r.length_remaining == null ? "-" : formatQty(r.length_remaining)} ${r.unit || ""} · ${data.via === "rfid" ? "via tag RFID" : "via label QR"}${data.tagged ? "" : " · roll belum bertag"}` });
+        text: `${r.roll_no} · ${data.product_name || r.sku || ""} · status ${rollStatusLabel(r.status)} · ${whNames[r.warehouse_id] || r.warehouse_name || ""} · sisa ${r.length_remaining == null ? "-" : formatQty(r.length_remaining)} ${r.unit || ""} · ${data.via === "rfid" ? "via tag RFID" : "via label QR"}${data.tagged ? "" : " · roll belum bertag"}` });
       // Pindai → aksi: tugas terbuka yang menyentuh roll ini (dari backend) langsung ditawarkan.
       setTasks(data.open_tasks || []);
     } catch (e) {
@@ -218,7 +228,7 @@ function ScanPanel({ onOpenTask }) {
               {tasks.length > 0 && <div className="kn-hp-support font-semibold" data-testid="mw-scan-tasks">Tugas terbuka untuk roll ini:</div>}
               {tasks.map((t) => (
                 <button key={t.id} className="primary-button btn-touch w-full !justify-between" onClick={() => onOpenTask?.(t.task_subtype === "sample_cut" ? "sample" : (TAB_OF[t.flow_type] || "inbound"), t.id)} data-testid={`mw-scan-task-${t.id}`}>
-                  <span>{t.task_subtype === "sample_cut" ? "Potong" : (LABEL_OF[t.flow_type] || t.flow_type)} · {t.product_name || t.product_id}{t.task_subtype === "sample_cut" && t.customer_name ? ` · ${t.customer_name}` : ""}</span><span className="text-fs-14 opacity-90">{t.order_number || t.po_number || statusText(t.status)}</span>
+                  <span>{t.task_subtype === "sample_cut" ? "Potong" : (LABEL_OF[t.flow_type] || t.flow_type)} · {t.product_name || t.sku || "Produk tanpa nama"}{t.task_subtype === "sample_cut" && t.customer_name ? ` · ${t.customer_name}` : ""}</span><span className="text-fs-14 opacity-90">{t.order_number || t.po_number || statusText(t.status)}</span>
                 </button>
               ))}
             </div>
@@ -259,7 +269,7 @@ function UntaggedPanel() {
       {filtered.length === 0 && <div className="p-6 text-center text-fs-14 text-kn-text-2" data-testid="mw-untagged-nomatch">Tidak ada roll yang cocok.</div>}
       {filtered.slice(0, shown).map((r) => (
         <div key={r.id} className="m-card p-3 flex items-center justify-between" data-testid={`mw-untagged-${r.id}`}>
-          <div className="min-w-0"><b className="kn-hp-title">{r.roll_no}</b><div className="kn-hp-support">{r.product_name || r.product_id} · {whNames[r.warehouse_id] || r.warehouse_id} · sisa <span className="tabular-nums">{formatQty(r.length_remaining)}</span> {r.unit || ""}</div></div>
+          <div className="min-w-0"><b className="kn-hp-title">{r.roll_no}</b><div className="kn-hp-support">{r.product_name || r.sku || "Produk tanpa nama"} · {whNames[r.warehouse_id] || r.warehouse_name || "Gudang"} · sisa <span className="tabular-nums">{formatQty(r.length_remaining)}</span> {r.unit || ""}</div></div>
           <Tags size={18} className="shrink-0" />
         </div>
       ))}

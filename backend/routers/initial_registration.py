@@ -127,7 +127,9 @@ async def create_reg_session(payload: RegSessionCreate, request: Request) -> Dic
 
 @router.get("/registration/sessions")
 async def list_reg_sessions(request: Request, warehouse_id: str = "", status: str = "",
-                            entity_id: str = "") -> List[Dict[str, Any]]:
+                            entity_id: str = "", limit: int = 200, skip: int = 0) -> Any:
+    """FIX-7 (B3b LST-01) — `skip`/`limit` (bawaan 200 = batas lama, maks 500) + jumlah sungguhan di header
+    `X-Total-Count`/`X-Truncated` (dulu terpotong 200 diam-diam). Array tetap (kompatibel)."""
     await require_any_permission(request, _READ_PERMS)
     # FIX-1 (K-B1-02, B2a STM-IN-02) — per GEDUNG dalam lokasi kerja, lintas PT yang ditugaskan (dulu Rancamalang
     # "Semua" melihat sesi Soreang & Jakarta; petugas berpagar kini hanya gedungnya).
@@ -138,9 +140,15 @@ async def list_reg_sessions(request: Request, warehouse_id: str = "", status: st
         q["warehouse_id"] = warehouse_id
     if status:
         q["status"] = {"$in": status.split(",")}
+    from pagination import clamp_limit, window_meta, window_headers
+    lim, sk = clamp_limit(limit, 200, 500), clamp_limit(skip, 0, 10 ** 7, minimum=0)
+    total = await db.cycle_count_sessions.count_documents(q)
     rows = await db.cycle_count_sessions.find(q, {"_id": 0, "roll_count": 0, "registration.bin_ids": 0, "freeze.bin_ids": 0}
-                                              ).sort("created_at", -1).to_list(200)
-    return [{**safe_doc(r), "status_label": irs.STATUS_LABEL.get(r.get("status"), r.get("status"))} for r in rows]
+                                              ).sort([("created_at", -1), ("id", -1)]).skip(sk).limit(lim).to_list(lim)
+    out = [{**safe_doc(r), "status_label": irs.STATUS_LABEL.get(r.get("status"), r.get("status"))} for r in rows]
+    from fastapi.encoders import jsonable_encoder
+    from starlette.responses import JSONResponse
+    return JSONResponse(jsonable_encoder(out), headers=window_headers(window_meta(total, len(out), sk, lim)))
 
 
 @router.get("/registration/sessions/{sid}")

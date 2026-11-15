@@ -145,3 +145,6 @@ mengubah berkas yang sama. Bentrok 15 berkas diselesaikan dengan mempertahankan 
 saat layar dipasang) + tambahan blueprint (telusur buku besar MN-T3, saringan aset, panel eliminasi, cara bayar PM-T2, kartu
 insentif KM-T5). `crm/ARReceiptModal.jsx` sudah dihapus MN-T3 (diganti satu form bayar); perbaikan tanggalnya dipindahkan ke
 `finance/payments/ReceivePaymentModal.jsx` (kwitansi) dan `PaySupplierModal.jsx` (bayar pemasok), yang membawa bug sama.
+
+Catatan nomor (15 Nov, integrasi `main`): `main` sudah memakai ID **P23** untuk lanjutan audit WMS-RFID (FIX-6…10). Temuan ini
+didaftarkan ulang di `docs/reviews/TRACKER.md` sebagai **P24**; nama berkas laporan ini tidak diubah.

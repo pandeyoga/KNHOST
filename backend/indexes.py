@@ -43,6 +43,13 @@ INDEX_SPECS: Dict[str, List[IndexKeys]] = {
         [("lot_id", A)],
         [("created_at", D)],
         [("line_code", A), ("status", A)],   # FASE L — penyaring lini di Daftar Roll
+        # FIX-7 — kotak cari roll (`/inventory/rolls?q=`): tiap cabang `$or` wajib ber-index agar planner memakai
+        # rencana OR (bukan pindai penuh); nilai berbeda dibaca lewat index (DISTINCT_SCAN). `lot` juga dipakai
+        # saringan lot & tampilan Kelompok roll (FIX-5).
+        [("lot", A)],
+        [("batch", A)],
+        [("grade", A)],
+        [("consignor_ref", A)],
     ],
     # RF-12 — autentikasi device via hash key
     "rfid_devices": [
@@ -84,6 +91,9 @@ INDEX_SPECS: Dict[str, List[IndexKeys]] = {
         [("lot_id", A)],
         [("movement_type", A), ("timestamp", D)],
         [("timestamp", D)],
+        # FIX-7 (FIX-5 §8.3) — daftar mutasi petugas berpagar lokasi (`warehouse_id ∈ gedung lokasi kerja`, urut waktu):
+        # dulu index (owner_entity_id, timestamp) memindai mutasi SEMUA gedung PT lalu menyaring gedung.
+        [("warehouse_id", A), ("timestamp", D)],
     ],
     "inventory_balances": [
         [("product_id", A), ("warehouse_id", A), ("owner_entity_id", A)],
@@ -186,7 +196,18 @@ INDEX_SPECS: Dict[str, List[IndexKeys]] = {
         [("product_id", A)],
         [("source_type", A), ("status", A)],
         [("created_at", D)],
+        # FIX-7 (butir 4) — Meja Cutting & saringan tugas potong (`task_subtype` + status terbuka, terbaru dulu)
+        [("task_subtype", A), ("status", A), ("created_at", D)],
     ],
+    # FIX-7 (butir 4) — daftar berhalaman server: urutan & hitung atas status/tanggal
+    "logistics_deliveries": [
+        [("status", A), ("created_at", D)],
+        [("created_at", D)],
+        [("status", A), ("updated_at", D)],
+    ],
+    "repair_orders": [[("entity_id", A), ("created_at", D)]],
+    "rfid_print_jobs": [[("owner_entity_id", A), ("created_at", D)]],
+    "rfid_cycle_counts": [[("warehouse_id", A), ("created_at", D)]],
     # ── Finance / GL ──────────────────────────────────────────────────────
     "journal_entries": [
         [("entity_id", A), ("date", D)],
@@ -471,6 +492,11 @@ INDEX_SPECS: Dict[str, List[IndexKeys]] = {
     "cash_transactions": [
         [("ref_type", A), ("ref_id", A), ("direction", A)],
     ],
+    # ── FIX-8 (K-B4-12) — tampilan tersimpan daftar: dibaca per daftar, disaring pemilik/berbagi di layanan ──
+    "saved_views": [
+        [("list_key", A), ("owner_user_id", A)],
+        [("id", A)],
+    ],
 }
 
 
@@ -556,6 +582,29 @@ ID_INDEX_COLLECTIONS: List[str] = [
     # KM-T4 — tagihan antar-PT ber-id turunan (proses gaji × PT tertagih, `icc_` + SHA-1).
     "interco_charges",
 ]
+# FIX-7 (butir 7, FIX-5 §8.7) — koleksi bisnis/master lain yang dicari per `id` di jalur permintaan (sensus kode: ≥ 3
+# pemakaian `find_one/update_one({"id": …})`; sensus data acuan 10 Nov 2026: 0 `id` kembar di semua kandidat).
+# DIKECUALIKAN (bukan dokumen bisnis / boleh berulang menurut rancangan): `audit_logs`, `migrations`, `ai_usage_log`,
+# `sys_wa_outbox`, `ai_fact_state`, `permission_settings`, `data_hygiene_*`, `*_runs` penjadwal. Aturan sama dengan
+# FIX-5: unik-parsial; data yang sudah kembar → index non-unik `kn_id_dupe` + galat berisik (start tidak gagal).
+ID_INDEX_COLLECTIONS_MORE: List[str] = [
+    # penjualan & keuangan
+    "purchase_requisitions", "vendor_bills", "ar_receipts", "cash_transactions", "credit_notes", "journal_entries",
+    "tax_invoices", "contra_bons", "landed_cost_vouchers", "finance_cases", "intercompany_eliminations",
+    "store_credit_ledger", "bank_accounts", "bank_statement_lines", "bank_statement_formats", "bank_match_rules",
+    "gl_accounts", "payment_terms", "period_closings", "fin_fixed_assets", "entity_prices", "price_approvals",
+    "esign_requests", "sales_return_policies",
+    # produk, desain, R&D, pemasok, produksi
+    "product_templates", "design_gallery", "design_requests", "md_samples", "md_specs", "color_library",
+    "supplier_items", "supplier_contracts", "makloons", "mfg_work_orders", "process_recipes", "rfqs",
+    "po_variance_tasks", "uoms", "ocr_samples", "ocr_sample_runs", "master_governance_batches",
+    # SDM, pemasaran, CRM
+    "hr_employees", "hr_attendance", "hr_org_units", "hr_payroll_runs", "hr_leave_requests", "hr_overtime",
+    "hr_shifts", "hr_kpi", "hr_devices", "mkt_posts", "mkt_campaigns", "mkt_templates", "mkt_accounts", "crm_leads",
+    # aplikasi (dibuka per id dari layar/notifikasi)
+    "notifications", "export_jobs", "export_templates", "client_dataset_imports", "ai_action_proposals",
+    "ai_chat_sessions", "ai_schedules",
+]
 
 # FIX-5 — rujukan bersarang roll yang dicari per nilai (B3a SCH-9: index `reserved_ref` utuh tidak terpakai oleh
 # kueri `reserved_ref.id`). Parsial `$gt ""` → hanya roll yang punya rujukan itu yang masuk index (kecil).
@@ -582,6 +631,11 @@ async def ensure_id_index(coll_name: str) -> str:
     except Exception:  # noqa: BLE001
         info = {}
     state = "existed" if ("uq_id" in info or "kn_id_dupe" in info) else ""
+    # FIX-7 — index `{id: 1}` lain yang sudah dibuat modulnya sendiri (mis. `product_templates.catalog_parent_id`,
+    # unik penuh) dihormati: tidak dibuat index kedua dengan kunci sama. `kn_gate_id_1` (PREP-H) tetap diganti.
+    if not state and any(n != "kn_gate_id_1" and [(k, str(d)) for k, d in (v.get("key") or [])] in ([("id", "1")], [("id", "1.0")])
+                         for n, v in info.items()):
+        return "existed"
     if not state:
         try:
             await coll.create_index([("id", ASCENDING)], name="uq_id", unique=True, background=True,
@@ -617,8 +671,8 @@ async def ensure_id_indexes() -> Dict[str, Any]:
     try:
         present = set(await db.list_collection_names())
     except Exception:  # noqa: BLE001
-        present = set(ID_INDEX_COLLECTIONS) | {"inventory_rolls"} | set(HOT_PATH_INDEXES)
-    for name in ID_INDEX_COLLECTIONS:
+        present = set(ID_INDEX_COLLECTIONS) | set(ID_INDEX_COLLECTIONS_MORE) | {"inventory_rolls"} | set(HOT_PATH_INDEXES)
+    for name in ID_INDEX_COLLECTIONS + ID_INDEX_COLLECTIONS_MORE:
         if name not in present:
             continue
         st = await ensure_id_index(name)

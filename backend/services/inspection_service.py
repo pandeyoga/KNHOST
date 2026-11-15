@@ -39,6 +39,7 @@ from typing import Any, Dict, List, Optional, Tuple
 from core_utils import new_id, next_doc_number, now_iso, safe_doc, timeline_entry
 from db import db
 from services import line_scope
+from services import inspection_state as _ist   # FIX-10 — tabel transisi SPK (CAS + riwayat status)
 logger = logging.getLogger(__name__)
 
 
@@ -326,14 +327,26 @@ def summarize(doc: Dict[str, Any]) -> Dict[str, Any]:
 
 async def _save(doc: Dict[str, Any], event: str, label: str, actor: Dict[str, Any],
                 note: str = "", **fields: Any) -> Dict[str, Any]:
-    """Satu pintu simpan: ringkasan selalu ikut dihitung, riwayat selalu bertambah."""
+    """Satu pintu simpan: ringkasan selalu ikut dihitung, riwayat selalu bertambah.
+    FIX-10 — tulisan CAS lewat tabel `inspection_state` (status asal ∈ daftar-izin aksi peristiwa ini; dulu `{id}`
+    saja sesudah cek di Python) + `status_history` saat status berganti. Kalah balapan → InspectionError."""
+    action = _ist.EVENT_ACTION.get(event, "edit")
+    frm = str(doc.get("status") or "")
+    to = str(fields.get("status") or frm)
+    try:
+        _ist.check(action, frm, to)
+    except ValueError as exc:
+        raise InspectionError(f"Inspeksi berstatus \u201c{STATUS_LABEL.get(frm, frm)}\u201d tidak bisa diubah "
+                              f"ke \u201c{STATUS_LABEL.get(to, to)}\u201d.") from exc
     merged = {**doc, **fields}
     fields["summary"] = summarize(merged)
     fields["updated_at"] = now_iso()
-    await db[COLL].update_one(
-        {"id": doc["id"]},
-        {"$set": fields,
-         "$push": {"history": timeline_entry(event, label, actor.get("name", ""), note)}})
+    push: Dict[str, Any] = {"history": timeline_entry(event, label, actor.get("name", ""), note)}
+    if to != frm:
+        push["status_history"] = _ist.history_entry(to, actor.get("name", ""), note, action, frm)
+    res = await db[COLL].update_one(_ist.cas_filter(doc["id"], action), {"$set": fields, "$push": push})
+    if not res.matched_count:
+        raise InspectionError("Inspeksi ini baru saja ditutup/diubah orang lain. Muat ulang layar.")
     return safe_doc(await db[COLL].find_one({"id": doc["id"]}, {"_id": 0}))
 
 
@@ -640,6 +653,9 @@ async def _new_doc(*, kind: str, entity_id: str, actor: Dict[str, Any],
         "history": [timeline_entry("created", f"{KIND_LABEL[kind]} dibuat",
                                    actor.get("name", ""),
                                    ref_doc_number or task_id or "")],
+        # FIX-10 — riwayat STATUS (bentuk SSOT), terpisah dari linimasa peristiwa `history`.
+        "status_history": _ist.initial_history(STATUS_ASSIGNED if assigned_id else STATUS_DRAFT,
+                                               actor.get("name", ""), ref_doc_number or task_id or ""),
     }
     doc["summary"] = summarize(doc)
     if assigned_id:
@@ -1167,7 +1183,15 @@ async def inspect_line(ins_id: str, line_id: str, payload: Dict[str, Any],
     if not doc.get("started_at"):
         sets["started_at"] = now_iso()
     if doc.get("status") in (STATUS_DRAFT, STATUS_ASSIGNED) and part != "md_quality":
-        sets["status"] = STATUS_IN_PROGRESS
+        # FIX-10 — status berganti lewat tabel `inspection_state` (CAS status persis seperti dibaca + riwayat status),
+        # terpisah dari tulisan baris: pemeriksa kedua yang bersamaan tidak membuat riwayat ganda.
+        _ist.check("inspect_line", doc["status"], STATUS_IN_PROGRESS)
+        await db[COLL].update_one(
+            {"id": doc["id"], "status": doc["status"]},
+            {"$set": {"status": STATUS_IN_PROGRESS, "updated_at": now_iso()},
+             "$push": {"status_history": _ist.history_entry(STATUS_IN_PROGRESS, actor.get("name", ""),
+                                                            "baris pertama diperiksa", "inspect_line",
+                                                            doc["status"])}})
     res = await db[COLL].update_one(
         {"id": doc["id"], "status": {"$in": list(allowed)}},
         {"$set": sets, "$push": {"history": timeline_entry(
@@ -1269,7 +1293,8 @@ async def _inspect_return_roll(doc: Dict[str, Any], line: Dict[str, Any], payloa
 
 
 async def _release_quarantine(doc: Dict[str, Any], dec: str, note: str, actor: Dict[str, Any],
-                              reject_disposition: str, rejected_roll_ids: Optional[List[str]]) -> Optional[Dict[str, Any]]:
+                              reject_disposition: str, rejected_roll_ids: Optional[List[str]],
+                              return_remedy: str = "", return_remedy_reason: str = "") -> Optional[Dict[str, Any]]:
     """F-14 (uji pra-UAT 2026-10-21, keputusan owner Q-03a) — SATU keputusan: menutup SPK penerimaan PO
     sekaligus memutus karantina tugas penerimaannya (roll diterima → tersedia, ditolak → retur supplier/rusak)
     lewat mesin yang sama dengan antrean karantina (`qc_service.process_qc_decision`).
@@ -1335,7 +1360,8 @@ async def _release_quarantine(doc: Dict[str, Any], dec: str, note: str, actor: D
         res = await qc_service.process_qc_decision(
             task, acc_qty, rej_qty, disp, reason, actor, accept_grade="A",
             roll_order=accepted + [r for r in ids if r in rejected] + held_rejected, roll_grades=grades,
-            reject_held_roll_ids=held_rejected)
+            reject_held_roll_ids=held_rejected,
+            return_remedy=return_remedy, return_remedy_reason=return_remedy_reason)
     except ValueError as exc:
         raise InspectionError(str(exc)) from exc
     # UAT 24 Okt (P11.3) — roll yang diterima TANPA dicek MD Quality ditandai "lolos lewat sampling" (dulu tidak bisa
@@ -1368,7 +1394,8 @@ async def _release_quarantine(doc: Dict[str, Any], dec: str, note: str, actor: D
 
 async def finish(ins_id: str, decision: str, remark: str,
                  actor: Dict[str, Any], reject_disposition: str = "",
-                 rejected_roll_ids: Optional[List[str]] = None) -> Dict[str, Any]:
+                 rejected_roll_ids: Optional[List[str]] = None,
+                 return_remedy: str = "", return_remedy_reason: str = "") -> Dict[str, Any]:
     """Tutup inspeksi dengan KEPUTUSAN. `tolak` wajib ber-alasan (tersimpan di dokumen).
     F-14 — SPK penerimaan PO: keputusan ini sekaligus memutus karantina (`_release_quarantine`)."""
     doc = await _load(ins_id)
@@ -1439,7 +1466,8 @@ async def finish(ins_id: str, decision: str, remark: str,
     if doc.get("kind") in RECEIPT_QC_KINDS and doc.get("task_id"):
         # Karantina diputus DULU: bila gagal (roll ditahan, cakupan belum terpenuhi, …) SPK tetap terbuka —
         # tidak ada lagi "SPK ditutup terima tetapi roll masih karantina" (F-14).
-        qres = await _release_quarantine(doc, dec, note, actor, reject_disposition, rejected_roll_ids)
+        qres = await _release_quarantine(doc, dec, note, actor, reject_disposition, rejected_roll_ids,
+                                         return_remedy, return_remedy_reason)
     extra = {"quarantine_result": qres} if qres else {}
     if held:   # B1 — peringatan diterima: jejaknya tinggal di dokumen & riwayat.
         extra["accepted_with_held_rolls"] = [{"roll_no": h["roll_no"], "reason": h["reason"]} for h in held]

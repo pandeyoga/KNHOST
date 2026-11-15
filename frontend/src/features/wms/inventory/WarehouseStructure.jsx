@@ -34,7 +34,7 @@ export default function WarehouseStructure({ warehouses = [], loading = false })
                 <div className="grid grid-cols-3 gap-1">
                   {bins.map(bin => (
                     <div key={bin.id} className="rounded border border-[#EFF0F2] bg-[#FAFBFC] px-1.5 py-1">
-                      <p className="text-[10px] font-semibold">{bin.code || bin.id || "-"}</p>
+                      <p className="text-[10px] font-semibold">{bin.code || "-"}</p>
                     </div>
                   ))}
                 </div>

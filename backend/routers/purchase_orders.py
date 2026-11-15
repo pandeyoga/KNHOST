@@ -135,6 +135,12 @@ async def recompute_po_payment_status(po_id: str) -> None:
                   "updated_at": now_iso()}})
 
 
+def _inspection_request_from_po(po: Dict[str, Any], item: Dict[str, Any]) -> Dict[str, Any]:
+    """FIX-6 — jejak penanda "minta inspeksi" yang berasal dari baris PO."""
+    return {"requested": True, "source": "po_line", "po_number": po.get("po_number", ""),
+            "by": po.get("created_by", ""), "at": now_iso()}
+
+
 async def _create_inbound_tasks_for_po(po: Dict[str, Any]) -> None:
     """Buat inbound receiving task untuk tiap item PO (dipanggil saat PO siap
     diterima: langsung bila tak butuh approval, atau setelah di-approve)."""
@@ -154,6 +160,11 @@ async def _create_inbound_tasks_for_po(po: Dict[str, Any]) -> None:
             "status": {"$nin": ["cancelled", "completed"]},
         }, {"_id": 0, "id": 1, "expected_qty": 1})
         if existing:
+            # FIX-6 — penanda "minta inspeksi" baris PO (amandemen) ikut ke tugas yang masih menunggu barang.
+            if item.get("inspection_requested"):
+                await db.wms_tasks.update_one(
+                    {"id": existing["id"], "inspection_request.requested": {"$ne": True}},
+                    {"$set": {"inspection_request": _inspection_request_from_po(po, item)}})
             # KN-E18 — tugas sisa (kiriman parsial) mengharapkan SISA baris PO, bukan qty penuh.
             want = round(max(0.0, float(item["quantity"] or 0) - float(item.get("received_qty") or 0)), 2)
             if abs(float(existing.get("expected_qty", 0) or 0) - want) > 0.001:
@@ -202,6 +213,8 @@ async def _create_inbound_tasks_for_po(po: Dict[str, Any]) -> None:
             "supplier_uom": item.get("supplier_uom", ""),
             "supplier_conv_factor": item.get("supplier_conv_factor", 0),
             "expected_grade": item.get("expected_grade", ""),
+            # FIX-6 (keputusan pemilik 10 Nov) — "minta inspeksi" dari baris PO.
+            "inspection_request": (_inspection_request_from_po(po, item) if item.get("inspection_requested") else None),
             "bin_id": "", "batch": "", "lot": "", "roll_id": "",
             "status": stages[0], "stages": stages, "scan_log": [],
             "escalation": None,
@@ -540,6 +553,8 @@ async def _create_po_core(payload: PurchaseOrderCreate, actor: Dict[str, Any], *
             "line_code": str(product.get("line_code") or "").strip().lower(),
             "expected_grade": _eg["grade"],              # PS-09 — ekspektasi mutu di awal PO
             "expected_grade_source": _eg["source"],
+            # FIX-6 — penanda "minta inspeksi" per baris (dibawa ke tugas penerimaan → roll → draf PA inspeksi).
+            "inspection_requested": bool(getattr(item_in, "inspection_requested", False)),
             "quantity": item_in.quantity,
             "unit": item_in.unit,
             "base_unit": base_unit,                # Fase 8 — satuan stok produk

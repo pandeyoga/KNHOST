@@ -16,6 +16,7 @@ import ErrorNotice from "../../../components/ErrorNotice";
 import QtyDual from "../../../components/QtyDual";
 import { formatQty } from "../../../utils/formatters";
 import { fetchIssueRolls } from "./makloonApi";
+import StatusBadge from "../../../components/StatusBadge";
 
 /** Bentuk kanonik EPC (sama dengan `services/epc.py`): tanpa pemisah, huruf besar. */
 export const canonCode = (s) => String(s || "").trim().replace(/[\s\-:_.]/g, "").toUpperCase();
@@ -109,6 +110,11 @@ export default function MkoIssueRollPicker({ mkoId, step, warehouseId, picked, o
             <span className="flex-1 min-w-0 truncate">
               <b>{r.roll_no || r.id}</b>{r.lot ? ` · LOT ${r.lot}` : ""}{r.grade ? ` · ${r.grade}` : ""}
               {r.epc && <span className="text-[9.5px] text-[#9A9BA3]"> · EPC {r.epc}</span>}
+              {/* FIX-9 — roll yang dikunci cadangan MKO ini sendiri (dikirim dulu; kuncinya lepas saat issue) */}
+              {Number(r.locked_for_this_qty) > 0 && (
+                <StatusBadge status="makloon_reserved" domain="roll" className="ml-1" testId={`mko-issue-locked-${r.id}`}
+                  label={`Dikunci untuk MKO ini · ${formatQty(r.locked_for_this_qty)} ${r.unit || unit}`} />
+              )}
             </span>
             <span className="tabular-nums">{formatQty(r.length_remaining)} {r.unit || unit}</span>
           </label>

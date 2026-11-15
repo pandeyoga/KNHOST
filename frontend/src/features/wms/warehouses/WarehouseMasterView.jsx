@@ -47,6 +47,7 @@ import { askConfirm } from "../../../services/confirmService";
 import ExportMenu from "../../../components/ExportMenu";   // FIX-4 — tombol baku Unduh (Excel/CSV, Pusat Export)
 
 const ROLE_LABELS = Object.fromEntries(WH_ROLES.map((r) => [r.key, r.label]));
+import StatusBadge from "../../../components/StatusBadge";   // FIX-8 — lencana baku
 
 // PREP-C (K-GDG-07) — semua gedung dipakai bersama semua PT: bawaan form kini "bersama" (mode khusus tetap bisa dipilih).
 const EMPTY_FORM = { code: "", name: "", city: "", bin_code: "A1-01", bin_capacity: 1000, lat: "", lng: "", sharing_mode: "shared" };
@@ -219,10 +220,10 @@ export default function WarehouseMasterView({ entities = [], selectedEntity, cur
   return (
     <div data-testid="warehouse-master-view">
       <div className="mb-3 grid grid-cols-2 gap-3 lg:grid-cols-4">
-        <Kpi testId="wh-kpi-total" label="Total gudang" value={stats.total} icon={Warehouse} />
-        <Kpi testId="wh-kpi-shared" label="Bersama" value={stats.shared} icon={Users} tone="text-[#0058CC]" />
-        <Kpi testId="wh-kpi-dedicated" label="Khusus badan usaha" value={stats.dedicated} icon={Building2} tone="text-[#6B219A]" />
-        <Kpi testId="wh-kpi-usable" label={`Boleh dipakai ${activeEntityLabel}`} value={stats.usable} icon={CheckCircle2} tone="text-[#1B7F4B]" />
+        <Kpi testId="wh-kpi-total" loading={loading} label="Total gudang" value={stats.total} icon={Warehouse} />
+        <Kpi testId="wh-kpi-shared" loading={loading} label="Bersama" value={stats.shared} icon={Users} tone="text-[#0058CC]" />
+        <Kpi testId="wh-kpi-dedicated" loading={loading} label="Khusus badan usaha" value={stats.dedicated} icon={Building2} tone="text-[#6B219A]" />
+        <Kpi testId="wh-kpi-usable" loading={loading} label={`Boleh dipakai ${activeEntityLabel}`} value={stats.usable} icon={CheckCircle2} tone="text-[#1B7F4B]" />
       </div>
 
       <section className="section-card mb-3" data-testid="wh-sites-bar">
@@ -230,8 +231,9 @@ export default function WarehouseMasterView({ entities = [], selectedEntity, cur
           <span className="text-[11px] font-bold uppercase tracking-wide text-[#6B6B73]">
             <MapPin size={11} className="mr-0.5 inline" /> Lokasi Gudang:
           </span>
+          {/* FIX-8 (B1b UI-50) — dulu "Belum ada lokasi." tampil selama data masih dimuat. */}
           {sites.length === 0 ? (
-            <span className="text-[12px] text-[#8E8E93]">Belum ada lokasi.</span>
+            <span className="text-[12px] text-[#8E8E93]" data-testid="wh-sites-state">{loading ? "Memuat lokasi…" : "Belum ada lokasi."}</span>
           ) : sites.map((s) => (
             <span key={s.id} data-testid={`wh-site-chip-${s.id}`}
               className="inline-flex items-center gap-1.5 rounded-full border border-[#E5E5EA] bg-[#FAFBFC] px-2.5 py-1 text-[11.5px] font-semibold">
@@ -345,7 +347,7 @@ export default function WarehouseMasterView({ entities = [], selectedEntity, cur
                         className="border-b border-[#F5F5F7] last:border-0 hover:bg-[#FBFCFE]">
                         <td className="min-w-[170px] px-3 py-2">
                           <span className="font-semibold text-[#1C1C1E]">{w.name}</span>
-                          {w.active === false && <span data-testid={`wh-inactive-${w.id}`} className="ml-1 status-pill pill-muted">Nonaktif</span>}
+                          {w.active === false && <StatusBadge status="inactive" className="ml-1" testId={`wh-inactive-${w.id}`} />}
                           <span className="block text-[11px] text-[#8E8E93]">
                             <MapPin size={10} className="inline" /> {w.code} · {siteName(w.site_id) || w.city || "—"}
                           </span>
@@ -406,9 +408,7 @@ export default function WarehouseMasterView({ entities = [], selectedEntity, cur
                           )}
                         </td>
                         <td className="px-3 py-2 text-center">
-                          <span className={`status-pill ${w.active === false ? "pill-muted" : "pill-success"}`}>
-                            {w.active === false ? "Nonaktif" : "Aktif"}
-                          </span>
+                          <StatusBadge status={w.active === false ? "inactive" : "active"} testId={`wh-active-${w.id}`} />
                         </td>
                         <td className="sticky right-0 bg-white px-3 py-2 text-right whitespace-nowrap shadow-[-6px_0_6px_-6px_rgba(0,0,0,0.12)]">
                           {(canEdit || canDelete) && (
@@ -484,7 +484,8 @@ export default function WarehouseMasterView({ entities = [], selectedEntity, cur
   );
 }
 
-function Kpi({ label, value, icon: Icon, tone = "", testId }) {
+// FIX-8 (B1b UI-50) — angka KPI selama memuat = "…" (bukan "0" yang terbaca sebagai fakta).
+function Kpi({ label, value, icon: Icon, tone = "", testId, loading = false }) {
   return (
     <div className="section-card" data-testid={testId}>
       <div className="section-body flex items-center gap-3 py-3">
@@ -494,7 +495,7 @@ function Kpi({ label, value, icon: Icon, tone = "", testId }) {
         <div className="min-w-0">
           <p className="text-[11px] font-bold uppercase tracking-wide text-[#8E8E93]">{label}</p>
           <p className={`truncate text-[17px] font-bold tabular-nums ${tone || "text-[#1C1C1E]"}`}
-            data-testid={`${testId}-value`}>{value}</p>
+            data-testid={`${testId}-value`} aria-busy={loading || undefined}>{loading ? "…" : value}</p>
         </div>
       </div>
     </div>

@@ -1,14 +1,11 @@
 import { Check } from "lucide-react";
 import { STATUS, STEPS } from "./grnApi";
-import { docStatusLabel } from "../../../utils/docStatus";
+import StatusBadge from "../../../components/StatusBadge";
 
+// FIX-8 (KN_37 §8) — lencana status GRN = StatusBadge baku (ikon + teks + warna token; label ranah "grn" di
+// kosakata tunggal `utils/statusVocab.js`, istilah sama persis).
 export function GrnStatusBadge({ status, testId }) {
-  const s = STATUS[status] || { label: docStatusLabel(status) || "—", cls: "bg-[#F2F2F7] text-[#3C3C43]" };
-  return (
-    <span data-testid={testId} className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10.5px] font-semibold ${s.cls}`}>
-      {s.label}
-    </span>
-  );
+  return <StatusBadge status={status} domain="grn" testId={testId} />;
 }
 
 // UAT 24 Okt (audit UI tahap 2) — dokumen Ditutup dulu menampilkan langkah "5 Ditutup" sebagai langkah AKTIF (bukan
@@ -34,9 +31,7 @@ export function GrnStepper({ status }) {
       })}
       {TERMINAL[status] && (
         <li className="ml-1 flex items-center" data-testid="grn-stepper-terminal">
-          <span className={`rounded-full px-2 py-0.5 ${status === "rejected" ? "bg-[#FDECEC] text-[#B4231F]" : "bg-[#F2F2F7] text-[#6B6B73]"}`}>
-            {TERMINAL[status]}
-          </span>
+          <StatusBadge status={status} domain="grn" label={TERMINAL[status]} />
         </li>
       )}
     </ol>

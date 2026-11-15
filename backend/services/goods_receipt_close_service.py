@@ -140,7 +140,8 @@ async def finish_count(grn_id: str, expected_version: int, actor: Dict[str, Any]
     grn = await refresh_counted(grn, actor["name"], expected_version)
     lines, discs = await compute_recon(grn)
     doc = await cas(grn, ["counting"], grn["version"], {"status": "reconcile", "lines": lines,
-                                                        "discrepancies": discs, "count_finished_at": now_iso()})
+                                                        "discrepancies": discs, "count_finished_at": now_iso()},
+                    action="finish_count")
     await audit(actor["name"], "grn_count_finished", "goods_receipt", grn_id,
                 {"discrepancies": [d["key"] for d in discs]}, scope_entity_id=grn["entity_id"])
     return doc
@@ -149,7 +150,7 @@ async def finish_count(grn_id: str, expected_version: int, actor: Dict[str, Any]
 async def reopen_count(grn_id: str, expected_version: int, actor: Dict[str, Any], ctx: EntityContext):
     grn = await load(grn_id, ctx)
     require_status(grn, ["reconcile"], "Buka hitung ulang")
-    doc = await cas(grn, ["reconcile"], expected_version, {"status": "counting"})
+    doc = await cas(grn, ["reconcile"], expected_version, {"status": "counting"}, action="reopen_count")
     await audit(actor["name"], "grn_count_reopened", "goods_receipt", grn_id, {}, scope_entity_id=grn["entity_id"])
     return doc
 
@@ -390,7 +391,8 @@ async def close_grn(grn_id: str, expected_version: int, actor: Dict[str, Any], c
             raise HTTPException(status_code=400, detail={"code": "NOT_POSTABLE", "errors": pre,
                                                          "message": " ".join(pre)})
         grn = await cas(grn, ["reconcile"], expected_version,
-                        {"status": "closing", "lines": lines, "discrepancies": discs, "closing_started_at": now_iso()})
+                        {"status": "closing", "lines": lines, "discrepancies": discs, "closing_started_at": now_iso()},
+                        action="close_begin")
     grn = await _saga.claim("goods_receipts", grn_id, "grn_close", precondition={"status": "closing"},
                             actor=actor["name"])
     results: List[Dict[str, Any]] = []
@@ -427,7 +429,7 @@ async def close_grn(grn_id: str, expected_version: int, actor: Dict[str, Any], c
     fresh = await db.goods_receipts.find_one({"id": grn_id}, {"_id": 0})
     if all((ln.get("posted") or {}).get("status") in ("done", "skipped") for ln in fresh["lines"]):
         fresh = await cas(fresh, ["closing"], None, {"status": "closed", "closed_by": actor["name"],
-                                                     "closed_at": now_iso()})
+                                                     "closed_at": now_iso()}, action="close_done")
         await release_tasks(grn_id)
         await _learn_profile(fresh)
         from services import po_variance_task_service as _pvt
@@ -501,7 +503,7 @@ async def return_to_reconcile(grn_id: str, expected_version: int, actor: Dict[st
         raise HTTPException(status_code=409, detail="Penutupan sedang berjalan — tunggu selesai.")
     if not any((ln.get("posted") or {}).get("status") == "failed" for ln in grn.get("lines") or []):
         raise HTTPException(status_code=400, detail="Tidak ada baris yang gagal diposting.")
-    doc = await cas(grn, ["closing"], expected_version, {"status": "reconcile"})
+    doc = await cas(grn, ["closing"], expected_version, {"status": "reconcile"}, action="return_to_reconcile")
     await audit(actor["name"], "grn_returned_to_reconcile", "goods_receipt", grn_id, {},
                 scope_entity_id=grn["entity_id"])
     return doc
@@ -517,7 +519,7 @@ async def reject_grn(grn_id: str, body: Any, actor: Dict[str, Any], ctx: EntityC
     grn = await load(grn_id, ctx)
     require_status(grn, ["review"], "Tolak kedatangan")
     doc = await cas(grn, ["review"], body.expected_version, {"status": "rejected", "reject_reason": body.reason.strip()},
-                    extra={"$unset": {"active_key": ""}})
+                    extra={"$unset": {"active_key": ""}}, action="reject", note=body.reason.strip())
     await audit(actor["name"], "grn_rejected", "goods_receipt", grn_id, {}, reason=body.reason,
                 scope_entity_id=grn["entity_id"])
     return doc
@@ -532,7 +534,7 @@ async def cancel_grn(grn_id: str, body: Any, actor: Dict[str, Any], ctx: EntityC
     else:
         require_status(grn, allowed, "Batalkan kedatangan")
         doc = await cas(grn, allowed, body.expected_version, {"status": "cancelled", "cancel_reason": body.reason.strip()},
-                        extra={"$unset": {"active_key": ""}})
+                        extra={"$unset": {"active_key": ""}}, action="cancel", note=body.reason.strip())
     try:
         for ln in grn.get("lines") or []:
             await _undo_line_rolls(grn, ln["line_no"])

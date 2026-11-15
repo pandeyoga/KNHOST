@@ -61,7 +61,7 @@ export default function TransferReceiptPanel({ transfer, user, onChanged }) {
   if (!data && loadErr && !loadingReceipt) {
     return (
       <div data-testid="transfer-receipt-load-failed" className="rounded-xl border border-[#F3D6D3] bg-[#FFF8F7] p-3">
-        <p className="mb-1 text-[11px] text-[#3C3C43]">Penerimaan transfer <b>{transfer.code || transfer.number || transfer.id}</b> belum bisa dimuat.</p>
+        <p className="mb-1 text-[11px] text-[#3C3C43]">Penerimaan transfer <b>{transfer.code || transfer.number || "ini"}</b> belum bisa dimuat.</p>
         <ErrorNotice message={loadErr} onRetry={load} testId="transfer-receipt-load-error" />
       </div>
     );

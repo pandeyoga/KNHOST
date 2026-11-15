@@ -1,7 +1,9 @@
 import { useMemo, useState } from "react";
 import { QcStatusBadge } from "../../components/QcStatusBadge";
 import { ArrowUpDown, ArrowUp, ArrowDown, Camera, MapPin, ExternalLink, ChevronRight, AlertTriangle } from "lucide-react";
-import { STATUS_PILL, MODE_PILL, todayWib, carrierText } from "./logisticsApi";
+import { MODE_PILL, todayWib, carrierText } from "./logisticsApi";
+import StatusBadge from "../../components/StatusBadge";   // FIX-8 — lencana status baku (ikon + teks + warna token)
+import { LEGACY_TONE } from "../../utils/statusVocab";
 import { formatDateId } from "../../components/KNDatePicker";
 import { openOrderJourney } from "./logisticsDeepLink";
 
@@ -70,14 +72,14 @@ export default function DeliveryTable({ rows, onOpen, canOpenOrder }) {
                   <div className="text-[10.5px] text-[#6B6B73]">{d.customer_name}</div>
                 </td>
                 <td className="text-[11px]">{(d.shipment_nos || []).join(", ")}</td>
-                <td className="text-[11.5px]"><span className={`status-pill ${MODE_PILL[d.mode] || "pill-muted"}`}>{d.mode_label}</span></td>
+                <td className="text-[11.5px]"><StatusBadge tone={LEGACY_TONE[MODE_PILL[d.mode]] || "neutral"} icon="tag">{d.mode_label}</StatusBadge></td>
                 <td className="text-[11.5px]">{carrier(d)}</td>
                 <td className={`text-[11.5px] tabular-nums ${isLate(d) ? "text-[#C0341D] font-bold" : ""}`} data-testid={`logistics-eta-${d.id}`}>
                   {d.eta ? formatDateId(d.eta, "dd MMM yyyy") : "—"}{isLate(d) && <span className="ml-1 inline-flex items-center gap-0.5 text-[9.5px]" title="Melewati ETA"><AlertTriangle size={10} /> terlambat</span>}
                 </td>
                 <td className="text-[11px] text-[#6B6B73]">{d.last_position ? <span className="flex items-center gap-1"><MapPin size={11} />{d.last_position.location}</span> : "—"}</td>
                 <td className="text-[11px]"><span className="flex items-center gap-1"><Camera size={11} /> {d.photo_counts?.load || 0} muat · {d.photo_counts?.pod || 0} POD</span></td>
-                <td><span className={`status-pill ${STATUS_PILL[d.status]}`} data-testid={`logistics-status-${d.id}`}>{d.status_label}</span></td>
+                <td><StatusBadge status={d.status} domain="delivery" label={d.status_label} testId={`logistics-status-${d.id}`} /></td>
                 <td className="text-[#9A9BA3]"><ChevronRight size={14} /></td>
               </tr>
             )}</PagedRows>
@@ -93,7 +95,7 @@ export default function DeliveryTable({ rows, onOpen, canOpenOrder }) {
           <button key={d.id} type="button" data-testid={`logistics-card-${d.id}`} onClick={() => onOpen(d.id)} className="section-card !p-3 text-left hover:bg-[#F0F5FF]">
             <div className="flex items-center justify-between gap-2">
               <span className="font-mono text-[11.5px] font-bold text-[#0058CC]">{d.number}</span>
-              <span className={`status-pill ${STATUS_PILL[d.status]}`}>{d.status_label}</span>
+              <StatusBadge status={d.status} domain="delivery" label={d.status_label} />
             </div>
             <div className="text-[12px] font-semibold mt-1 flex items-center gap-1 flex-wrap">{d.order_number} · {d.customer_name} <QcStatusBadge status={d.qc_status} testId={`logistics-card-qc-status-${d.id}`} /></div>
             <div className="text-[11px] text-[#6B6B73] mt-0.5">{d.mode_label} · {carrier(d)}</div>

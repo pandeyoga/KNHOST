@@ -270,16 +270,26 @@ async def create_print_job(roll_ids: List[str], scope_ids: List[str],
     return safe_doc(job)
 
 
-async def list_print_jobs(scope_ids: List[str], warehouse_id: Optional[str],
-                          status: Optional[str], limit: int = 100) -> List[Dict[str, Any]]:
+def _jobs_query(scope_ids: List[str], warehouse_id: Optional[str], status: Optional[str]) -> Dict[str, Any]:
     q: Dict[str, Any] = {"owner_entity_id": {"$in": scope_ids}}
     if warehouse_id:
         q["warehouse_id"] = warehouse_id
     if status:
         q["status"] = {"$in": status.split(",")} if "," in status else status
-    jobs = await db.rfid_print_jobs.find(q, {"_id": 0, "items.zpl": 0, "items.results": 0}) \
-        .sort("created_at", -1).to_list(limit)
+    return q
+
+
+async def list_print_jobs(scope_ids: List[str], warehouse_id: Optional[str],
+                          status: Optional[str], limit: int = 100, skip: int = 0) -> List[Dict[str, Any]]:
+    jobs = await db.rfid_print_jobs.find(_jobs_query(scope_ids, warehouse_id, status),
+                                         {"_id": 0, "items.zpl": 0, "items.results": 0}) \
+        .sort([("created_at", -1), ("id", -1)]).skip(max(0, int(skip or 0))).to_list(limit)
     return [safe_doc(_decorate(j)) for j in jobs]
+
+
+async def count_print_jobs(scope_ids: List[str], warehouse_id: Optional[str], status: Optional[str]) -> int:
+    """FIX-7 (B3b LST-01) — jumlah sungguhan untuk penanda daftar berbatas."""
+    return await db.rfid_print_jobs.count_documents(_jobs_query(scope_ids, warehouse_id, status))
 
 
 def _lease_live(job: Dict[str, Any], now: Optional[str] = None) -> bool:

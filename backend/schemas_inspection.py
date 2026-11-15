@@ -90,6 +90,9 @@ class InspectionFinish(BaseModel):
     # F-14 — SPK penerimaan PO memutus karantina: tindakan untuk roll ditolak + roll mana yang ditolak (sebagian)
     reject_disposition: str = Field("", description="return (retur supplier + Nota Debit) | damaged (rusak)")
     rejected_roll_ids: List[str] = Field(default_factory=list)
+    # FIX-6 (D2) — disposisi `return`: replace (ganti barang) | bill_cut (potong tagihan) + alasan K-14.
+    return_remedy: str = ""
+    return_remedy_reason: str = ""
 
 
 class InspectionReason(BaseModel):

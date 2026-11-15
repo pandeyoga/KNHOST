@@ -190,7 +190,7 @@ export default function WarehouseProfileDrawer({ warehouse, sites = [], categori
                       onClick={() => toggle(owners, setOwners, e.id)}
                       className={`rounded-md border px-2 py-1 text-[11.5px] font-semibold ${
                         owners.includes(e.id) ? "border-[#1B7F4B] bg-[#E6F6EC] text-[#1B7F4B]" : "border-[#E5E5EA] bg-white text-[#6B6B73]"}`}>
-                      {e.short_name || e.name || e.id}
+                      {e.short_name || e.legal_name || e.name || "PT tanpa nama"}
                     </button>
                   ))}
                   <p className="self-center text-[10.5px] text-[#8E8E93]">PT pemilik roll yang boleh disimpan — kosong = semua PT (gedung dipakai bersama).</p>

@@ -19,8 +19,9 @@ def _norm_plate(v: str) -> str:
     return re.sub(r"\s+", " ", (v or "").strip().upper())
 
 
-async def list_vehicles(scope: Dict[str, Any]) -> List[Dict[str, Any]]:
-    rows = await db[COLL].find(scope, {"_id": 0}).sort("plate", 1).to_list(500)
+async def list_vehicles(scope: Dict[str, Any], *, skip: int = 0, limit: int = 500) -> List[Dict[str, Any]]:
+    # FIX-7 (B3b LST-01) — `skip`/`limit` (bawaan 500 = batas lama); jumlah sungguhan dihitung router (header).
+    rows = await db[COLL].find(scope, {"_id": 0}).sort([("plate", 1), ("id", 1)]).skip(max(0, int(skip or 0)))         .to_list(max(1, int(limit or 500)))
     return [_enrich(safe_doc(r)) for r in rows]
 
 

@@ -8,7 +8,7 @@ from fastapi.responses import Response
 from db import db
 from dependencies import audit, has_permission, require_any_permission, require_permission
 from entity_scope import entity_ctx
-from schemas_goods_receipt import (GRNCatalogIn, GRNCountRollIn, GRNCreateIn, GRNDnPatch, GRNLineIn, GRNLinePatch,
+from schemas_goods_receipt import (GRNArrivalIn, GRNCatalogIn, GRNCountRollIn, GRNCreateIn, GRNDnPatch, GRNLineIn, GRNLinePatch,
                                    GRNModeIn, GRNProfilePatch, GRNReasonIn, GRNResolveIn, GRNScanIn, GRNVersionIn)
 from services import goods_receipt_close_service as gc
 from services import goods_receipt_ocr_service as go
@@ -32,6 +32,22 @@ async def _out(doc: Dict[str, Any], user: Dict[str, Any]) -> Dict[str, Any]:
 async def create_grn(body: GRNCreateIn, request: Request) -> Dict[str, Any]:
     actor, ctx = await _act(request, "create")
     return await _out(await gs.create_grn(body, actor, ctx), actor)
+
+
+@router.get("/goods-receipts/arrival-candidates")
+async def grn_arrival_candidates(request: Request, partner_id: str) -> Dict[str, Any]:
+    """FIX-6 (keputusan pemilik 10 Nov, D9) — PO terbuka supplier ini di SEMUA PT penugasan akun, per lokasi."""
+    actor, ctx = await _act(request, "create")
+    return await gs.arrival_candidates(partner_id, actor, ctx)
+
+
+@router.post("/goods-receipts/arrival")
+async def create_grn_arrival(body: GRNArrivalIn, request: Request) -> Dict[str, Any]:
+    """FIX-6 (D9) — satu SJ supplier untuk beberapa PT → GRN per PT pemilik (masing-masing ke PO-nya)."""
+    actor, ctx = await _act(request, "create")
+    res = await gs.create_arrival(body, actor, ctx)
+    res["grns"] = [await _out(g, actor) for g in res["grns"]]
+    return res
 
 
 @router.post("/goods-receipts/photo-check")

@@ -39,6 +39,7 @@ def _entity_label(entities: Dict[str, Dict[str, Any]], eid: str) -> str:
 async def build_supply_index(
     product_ids: Optional[List[str]] = None,
     registered_only: bool = False,
+    segs: Optional[List[Dict[str, Any]]] = None,
 ) -> Dict[str, Dict[str, Any]]:
     """Bangun indeks pasokan per produk → per entitas → per gudang.
 
@@ -72,7 +73,9 @@ async def build_supply_index(
         })
         return ent, wh
 
-    for b in await _segments(product_ids):
+    # FIX-7 — `segs` = segmen yang SUDAH dibaca pemanggil (`stock_figures.segments`, satu pembacaan saldo untuk papan
+    # stok + dua angka), bukan rumus lain; tanpa `segs` dibaca di sini seperti dulu.
+    for b in (segs if segs is not None else await _segments(product_ids)):
         pid, eid, wid = b["product_id"], b["owner_entity_id"] or DEFAULT_ENTITY_ID, b["warehouse_id"]
         ent, wh = _seg(pid, eid, wid)
         avail = float(b.get("available_qty", 0) or 0)
@@ -129,11 +132,14 @@ async def build_supply_index(
         ent["incoming"] += float(r["qty"] or 0)
 
     # KN-D11 — ATP = available + incoming(horizon) − backorder aktif (SATU rumus: atp_policy).
+    # FIX-7 — backorder aktif dibaca SEKALI (`backorder_index`); dulu `pending_backorder_qty` = satu kueri `sales_orders`
+    # per (produk, PT) + per (produk, PT, gudang) → ratusan–ribuan kueri per buka papan stok. Aturan & angka sama.
+    bo_idx = await _atp.backorder_index(product_ids)
     for pid, ents in supply.items():
         for eid, ent in ents.items():
-            pending_ent = await _atp.pending_backorder_qty(pid, eid)
+            pending_ent = bo_idx.pending(pid, eid)
             for wid, wh in ent["warehouses"].items():
-                pending_wh = await _atp.pending_backorder_qty(pid, eid, wid, include_unassigned=False)
+                pending_wh = bo_idx.pending(pid, eid, wid, include_unassigned=False)
                 wh["pending_demand"] = pending_wh
                 wh["atp"] = _atp.compute_atp(wh["available"], wh["incoming"], pending_wh)
                 for k in ("available", "reserved", "on_hand", "incoming", "committed"):
@@ -277,6 +283,7 @@ async def status_board(
     visible_entity_ids: Optional[List[str]] = None,
     cross_entity_detail: bool = True,
     registered_only: bool = False,
+    segs: Optional[List[Dict[str, Any]]] = None,
 ) -> List[Dict[str, Any]]:
     """Inventory Status Board: ringkasan per produk (on_hand/available/reserved/
     incoming/atp) + breakdown per entitas & gudang + indikator peluang inter-entitas.
@@ -298,7 +305,7 @@ async def status_board(
     products = {p["id"]: p for p in products_cur}
     warehouses = {w["id"]: w for w in await db.warehouses.find({}, {"_id": 0}).to_list(200)}
     entities = await _entity_map()
-    supply = await build_supply_index(product_ids, registered_only=registered_only)
+    supply = await build_supply_index(product_ids, registered_only=registered_only, segs=segs)
 
     rows: List[Dict[str, Any]] = []
     for pid, prod in products.items():

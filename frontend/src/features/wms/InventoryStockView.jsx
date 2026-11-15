@@ -7,8 +7,9 @@
  *
  * Sub-components live in ./inventory/ (kept under file-size limits per KN_02).
  */
+import FilterChips from "../../components/FilterChips";   // saklar tampilan roll baku
 import { useEffect, useState, useMemo } from "react";
-import { BarChart2, Plus, X, History, RefreshCw, Search, MapPin, Layers, Building2, Anchor, PackagePlus } from "lucide-react";
+import { BarChart2, Plus, History, RefreshCw, MapPin, Layers, Building2, Anchor, PackagePlus } from "lucide-react";
 import { parseDecimal } from "../../utils/decimalInput";
 import axios, { API } from "../../services/apiClient";
 import { can } from "../../config/roles";
@@ -21,7 +22,7 @@ import InventorySummaryCards from "./inventory/InventorySummaryCards";
 import InitialStockForm from "./inventory/InitialStockForm";
 import OpeningCostAlert from "./inventory/OpeningCostAlert";
 import BalancesTable from "./inventory/BalancesTable";
-import RollsTable from "./inventory/RollsTable";
+import RollsTable, { ROLL_OPTIONAL_COLUMNS } from "./inventory/RollsTable";
 import RollGroupView from "./inventory/RollGroupView";   // FIX-5 — roll dikelompokkan Produk › Lot › Lokasi
 import LedgerTable from "./inventory/LedgerTable";
 import ProductHistoryPanel from "./inventory/ProductHistoryPanel";
@@ -34,6 +35,14 @@ import PaginationBar from "../../components/PaginationBar";
 import { usePagedList } from "../../hooks/usePagedList";
 import ExportMenu from "../../components/ExportMenu";   // FIX-4 — tombol baku Unduh (Excel/CSV, Pusat Export)
 import { qtyDualRootCsvColumns } from "../../utils/qtyDualCsv";   // FASE U — dua satuan di CSV
+import { SearchInput } from "../../components/ListPageParts";   // FIX-8 — satu kotak cari baku
+import SavedViewsMenu from "../../components/SavedViewsMenu";   // FIX-8 (K-B4-12) — tampilan tersimpan
+import useSavedViews from "../../hooks/useSavedViews";
+import { ROLE_OPTIONS } from "../../config/roles";
+import { entityOptions } from "../../utils/entityLabel";
+
+// FIX-8 (K-B4-12) — "Tampilan standar" tab Roll = tanpa saringan, mode Daftar, semua kolom.
+const BASE_ROLL_VIEW = { filters: {}, sort: null, columns: [], mode: "list" };
 
 // FASE P6 — kolom Unduh CSV untuk tab Roll (mengikuti kolom RollsTable).
 const ROLL_CSV_COLUMNS = [
@@ -73,7 +82,7 @@ export default function InventoryStockView({ warehouses = [], products = [], ent
   // K-04 (keputusan pemilik 26 Okt) — "Stok rendah" dari definisi tunggal server (per produk per badan usaha).
   const [lowSummary, setLowSummary] = useState(null);
   const [peggedRolls, setPeggedRolls] = useState([]);
-  const [loading, setLoading]         = useState(false);
+  const [loading, setLoading]         = useState(true);   // render pertama = memuat, bukan "kosong" (UI-50)
   const [error, setError]             = useState("");
   const [warehouseFilter, setWarehouseFilter] = useState("all");
   const [lineFilter, setLineFilter] = useState("");   // FASE L — penyaring lini roll
@@ -103,6 +112,28 @@ export default function InventoryStockView({ warehouses = [], products = [], ent
     setRollView(v);
     try { window.localStorage.setItem("kn.inventory.rollView", v); } catch { /* penyimpanan ditolak — abaikan */ }
   };
+  // FIX-8 (K-B4-12) — tampilan tersimpan tab Roll di SERVER: saringan (gudang, lini, status cek, hanya di-peg) + mode
+  // (Kelompok/Daftar) + kolom. Cakupan PT/lokasi kerja (bilah "Lokasi: … ▾", PT aktif) TIDAK ikut tampilan (FIX-1).
+  const [hiddenCols, setHiddenCols] = useState([]);
+  const rollViewState = {
+    filters: { warehouse_id: warehouseFilter === "all" ? "" : warehouseFilter, line: lineFilter, check: checkFilter,
+      peg_only: pegOnly },
+    sort: null, columns: hiddenCols, mode: rollView,
+  };
+  const rollSv = useSavedViews("wms.inventory_rolls", {
+    state: rollViewState, base: BASE_ROLL_VIEW,
+    apply: (st) => {
+      const wh = st.filters.warehouse_id;
+      // Gudang di luar daftar gudang pengguna (tampilan bersama dari PT/lokasi lain) diabaikan — tidak memperluas cakupan.
+      setWarehouseFilter(wh && warehouses.some((w) => w.id === wh) ? wh : "all");
+      setLineFilter(st.filters.line || ""); setCheckFilter(st.filters.check || ""); setPegOnly(Boolean(st.filters.peg_only));
+      setHiddenCols(st.columns || []); if (st.mode) chooseRollView(st.mode);
+    },
+  });
+  const shareEntities = (() => {
+    try { return entityOptions(JSON.parse(localStorage.getItem("kn_entity_ctx") || "null")?.entities || [], { short: true }); }
+    catch { return []; }
+  })();
 
   // FIX-1 (K-B1-01) — layar stok gudang memakai cakupan lokasi kerja (bilah cakupan "Lokasi: … ▾"); server
   // menyaring `location_view=1` (pemilih gudang eksplisit di bawah tetap menang).
@@ -148,11 +179,11 @@ export default function InventoryStockView({ warehouses = [], products = [], ent
     { key: "timestamp", header: "Waktu", type: "datetime" },
     { header: "Tipe", get: (m) => movTypeLabel(m.movement_type) },
     { header: "SKU", get: (m) => balances.find((b) => b.product_id === m.product_id)?.sku
-      || m.product_id },
+      || m.sku || "" },
     { header: "Produk", get: (m) => balances.find((b) => b.product_id === m.product_id)?.product_name
       || "" },
     { header: "Gudang", get: (m) => balances.find((b) => b.warehouse_id === m.warehouse_id)?.warehouse_name
-      || m.warehouse_id },
+      || m.warehouse_name || "" },
     { header: "Batch/Lot/Roll",
       get: (m) => [m.batch, m.lot, m.roll_id].filter(Boolean).join(" · ") },
     // FASE U — dua satuan pada kartu mutasi. `qty_rolls` di mutasi adalah ROOT
@@ -248,7 +279,7 @@ export default function InventoryStockView({ warehouses = [], products = [], ent
       await fetchBalances();
       rollsPaged.refresh();
       setError("");
-      notifySuccess("Pegging dilepas", `Roll ${roll.roll_no || roll.id} kembali tersedia untuk semua pesanan.`);
+      notifySuccess("Pegging dilepas", `Roll ${roll.roll_no || "ini"} kembali tersedia untuk semua pesanan.`);
     } catch (e) { setError(apiErrorText(e, "Gagal melepas pegging roll.")); }
     finally { setPegBusyId(null); }
   };
@@ -320,23 +351,9 @@ export default function InventoryStockView({ warehouses = [], products = [], ent
         </span>
       </div>
 
-      {/* Search Bar */}
-      <div className="flex items-center gap-2 rounded-lg border border-[#E5E5EA] bg-white px-3 py-2">
-        <Search size={14} className="text-[#6B6B73]" />
-        <input
-          type="text"
-          data-testid="inventory-search-input"
-          className="flex-1 bg-transparent text-[13px] outline-none placeholder:text-[#8E8E93]"
-          placeholder="Cari SKU, produk, gudang, lot, roll, pemilik..."
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-        />
-        {searchQuery && (
-          <button onClick={() => setSearchQuery("")} className="text-[#6B6B73] hover:text-black">
-            <X size={14} />
-          </button>
-        )}
-      </div>
+      {/* Search Bar — FIX-8: kotak cari baku (dulu isian buatan layar dengan tombol hapus tanpa label) */}
+      <SearchInput testId="inventory-search-input" value={searchQuery} onChange={setSearchQuery}
+        placeholder="Cari SKU, produk, gudang, lot, roll, pemilik..." />
 
       {/* Warehouse filter + tabs + actions */}
       <div className="flex flex-wrap items-center gap-2">
@@ -412,15 +429,13 @@ export default function InventoryStockView({ warehouses = [], products = [], ent
             <KNSelect data-testid="roll-check-filter" className="field !h-8 !text-[11.5px]"
               value={checkFilter} onValueChange={setCheckFilter} options={ROLL_CHECK_FILTERS} placeholder="Semua status cek" />
           </div>
-          <div className="ml-auto flex items-center gap-1" role="group" aria-label="Tampilan roll" data-testid="roll-view-toggle">
-            {[["group", "Kelompok"], ["list", "Daftar"]].map(([k, label]) => (
-              <button key={k} type="button" onClick={() => chooseRollView(k)} data-testid={`roll-view-${k}`}
-                aria-pressed={rollView === k} className={rollView === k ? "primary-button btn-sm" : "secondary-button btn-sm"}>
-                {label}
-              </button>
-            ))}
-          </div>
-          {rollView === "list" && <span className="text-[11px] text-[#8E8E93]" data-testid="roll-check-total">{rollsPaged.total || 0} roll</span>}
+          <SavedViewsMenu sv={rollSv} testId="roll-views" columns={rollView === "list" || pegOnly ? ROLL_OPTIONAL_COLUMNS : []}
+            hidden={hiddenCols} onColumnsChange={setHiddenCols} shareRoles={ROLE_OPTIONS} shareEntities={shareEntities} />
+          {/* Integrasi FIX-5 × FIX-8 — saklar tampilan memakai FilterChips baku (dulu tombol primary/secondary buatan
+              sendiri, G-UI page_tabs); jumlah tidak tampil "0 roll" selama memuat (UI-50). */}
+          <FilterChips className="ml-auto" ariaLabel="Tampilan roll" testId="roll-view-toggle" chipTestId={(k) => `roll-view-${k}`}
+            value={rollView} onChange={chooseRollView} options={[{ key: "group", label: "Kelompok" }, { key: "list", label: "Daftar" }]} />
+          {rollView === "list" && <span className="text-[11px] text-[#8E8E93]" data-testid="roll-check-total">{rollsPaged.loading && !rollsPaged.total ? "Memuat…" : `${rollsPaged.total || 0} roll`}</span>}
         </div>
       )}
 
@@ -491,6 +506,10 @@ export default function InventoryStockView({ warehouses = [], products = [], ent
             </div>
             <BalancesTable
               loading={loading}
+              error={balances.length ? null : error || null}
+              onRetry={fetchBalances}
+              filtered={warehouseFilter !== "all" || Boolean(searchQuery.trim())}
+              onReset={() => { setWarehouseFilter("all"); setSearchQuery(""); }}
               rows={filteredBalances}
               selectedRow={selectedRow}
               onRowClick={handleRowClick}
@@ -507,6 +526,11 @@ export default function InventoryStockView({ warehouses = [], products = [], ent
             <RollsTable
               loading={rollsLoading}
               rolls={rollsToShow}
+              hidden={hiddenCols}
+              error={pegOnly ? null : rollsPaged.error || null}
+              onRetry={() => rollsPaged.refresh()}
+              filtered={!pegOnly && (warehouseFilter !== "all" || Boolean(lineFilter) || Boolean(checkFilter) || Boolean(searchQuery.trim()))}
+              onReset={() => { setWarehouseFilter("all"); setLineFilter(""); setCheckFilter(""); setSearchQuery(""); }}
               canPeg={canPeg}
               onPeg={setPegRoll}
               onUnpeg={handleUnpeg}

@@ -57,6 +57,9 @@ class POItemCreate(BaseModel):
     # ber-`factor_per_document=true` (mis. PANEL); dijaga `uom_service.line_factor`.
     unit_factor: Optional[float] = Field(None, gt=0)
     unit_factor_to: str = ""
+    # FIX-6 (keputusan pemilik 10 Nov) — penanda "minta inspeksi": roll baris ini otomatis dirutekan ke gedung
+    # berperan inspeksi (draf putaway `purpose=inspection`) sesudah diterima.
+    inspection_requested: bool = False
 
 
 class PurchaseOrderCreate(BaseModel):
@@ -586,6 +589,10 @@ class QCDecision(BaseModel):
     accept_qty: float = Field(0.0, ge=0)
     reject_qty: float = Field(0.0, ge=0)
     reject_disposition: str = "damaged"   # damaged | return
+    # FIX-6 (keputusan pemilik 10 Nov, D2) — WAJIB bila disposisi `return`: replace (ganti barang) | bill_cut (potong
+    # tagihan); alasan K-14 (kosong → memakai `reason`).
+    return_remedy: str = ""
+    return_remedy_reason: str = ""
     accept_grade: str = "A"               # P0-4/Fase A — grade aktual (enum A|A1|A2|B|BS, divalidasi)
     defects: List[str] = []               # P0-4 — profil cacat (mis. ["belang", "noda"])
     reason: str = ""

@@ -400,7 +400,7 @@ export default function IntercoView({ currentUser, selectedEntity, entities = []
       {tab === "schedule" && <IntercoPaymentSchedule selectedEntity={selectedEntity} entities={entities} />}
       {tab === "returns" && (
         <IntercoReturnsPanel
-          rows={returns} canWrite={canWrite} focusId={sorot}
+          rows={returns} canWrite={canWrite} focusId={sorot} loading={busy}
           canDecideRolls={can(perms, "interco", "decide_rolls")} activeEntityId={entityId}
           onChanged={refresh}
           onApprove={async (r) => {

@@ -48,6 +48,17 @@ def get_page_params(
     return page, page_size, q, sort
 
 
+def search_pattern(q: str) -> str:
+    """Pola regex (tanpa opsi; selalu dipakai case-insensitive) untuk kotak cari daftar — SATU sumber untuk
+    `build_search` dan pencocokan di Python (FIX-7, cari roll)."""
+    q = (q or "").strip()
+    # Konvensi "nomor tepat": q ber-tanda kutip ("SO-0001") → cocok PERSIS (tanpa case),
+    # bukan substring — dipakai lompatan dari meja kerja agar SO-00010 tidak ikut muncul.
+    if len(q) >= 3 and q[0] == q[-1] == '"':
+        return f"^{re.escape(q[1:-1].strip())}$"
+    return re.escape(q)
+
+
 def build_search(q: str, fields: Iterable[str]) -> Dict[str, Any]:
     """Bangun filter `$or` regex case-insensitive untuk daftar field.
 
@@ -57,12 +68,7 @@ def build_search(q: str, fields: Iterable[str]) -> Dict[str, Any]:
     fields = list(fields or [])
     if not q or not fields:
         return {}
-    # Konvensi "nomor tepat": q ber-tanda kutip ("SO-0001") → cocok PERSIS (tanpa case),
-    # bukan substring — dipakai lompatan dari meja kerja agar SO-00010 tidak ikut muncul.
-    if len(q) >= 3 and q[0] == q[-1] == '"':
-        rx = {"$regex": f"^{re.escape(q[1:-1].strip())}$", "$options": "i"}
-    else:
-        rx = {"$regex": re.escape(q), "$options": "i"}
+    rx = {"$regex": search_pattern(q), "$options": "i"}
     return {"$or": [{f: rx} for f in fields]}
 
 

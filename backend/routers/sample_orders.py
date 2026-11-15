@@ -96,7 +96,10 @@ async def catalogue_soft(order_id: str, payload: SoftIn, request: Request) -> Di
 
 @router.get("/sample-orders")
 async def list_sample_orders(request: Request, status: str = None, entity_id: str = None,
-                             mine: Optional[bool] = None, customer_id: str = None) -> List[Dict[str, Any]]:
+                             mine: Optional[bool] = None, customer_id: str = None, limit: int = 300,
+                             skip: int = 0) -> Any:
+    """FIX-7 (B3b LST-01) — `skip`/`limit` (bawaan 300 = batas lama, maks 500) + jumlah sungguhan di header
+    `X-Total-Count`/`X-Truncated` (dulu terpotong 300 diam-diam). Array tetap (kompatibel)."""
     actor = await require_permission(request, "sample_order", "view")
     q = _base_q(await entity_ctx(request), entity_id)
     if status:
@@ -105,8 +108,14 @@ async def list_sample_orders(request: Request, status: str = None, entity_id: st
     if customer_id:
         q["customer_id"] = customer_id
     q = sales_ownership.apply_scope(q, actor, mine)
-    rows = await db.sales_orders.find(q, {"_id": 0}).sort("created_at", -1).to_list(300)
-    return strip_cost_fields([norm_backorder(safe_doc(o)) for o in rows], actor.get("role"))
+    from pagination import clamp_limit, window_meta, window_headers
+    lim, sk = clamp_limit(limit, 300, 500), clamp_limit(skip, 0, 10 ** 7, minimum=0)
+    total = await db.sales_orders.count_documents(q)
+    rows = await db.sales_orders.find(q, {"_id": 0}).sort("created_at", -1).skip(sk).limit(lim).to_list(lim)
+    out = strip_cost_fields([norm_backorder(safe_doc(o)) for o in rows], actor.get("role"))
+    from fastapi.encoders import jsonable_encoder
+    from starlette.responses import JSONResponse
+    return JSONResponse(jsonable_encoder(out), headers=window_headers(window_meta(total, len(out), sk, lim)))
 
 
 @router.get("/sample-orders/stats/summary")

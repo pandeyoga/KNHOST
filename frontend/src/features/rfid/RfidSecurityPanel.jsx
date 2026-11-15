@@ -22,8 +22,11 @@ export default function RfidSecurityPanel({ whId, selectedEntity }) {
   const [note, setNote] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
+  // FIX-8 (B1b UI-49/UI-50) — memuat ≠ "Tidak ada insiden"; galat/403 tidak tampil kosong.
+  const [listSt, setListSt] = useState({ loading: true, error: null });
 
   const load = async () => {
+    setListSt((x) => ({ ...x, loading: true }));
     setError("");
     try {
       const [i, s, h] = await Promise.all([
@@ -34,7 +37,8 @@ export default function RfidSecurityPanel({ whId, selectedEntity }) {
       setIncidents(i.data.incidents || []); setShrink(s.data); setHealth(h.data);
       setIncMeta(i.data.total !== undefined ? { total: i.data.total, truncated: !!i.data.truncated,
         shown: (i.data.incidents || []).length, skip: 0 } : null);
-    } catch (e) { setError(e.response?.data?.detail || e.message); }
+      setListSt({ loading: false, error: null });
+    } catch (e) { setError(e.response?.data?.detail || e.message); setListSt({ loading: false, error: e }); }
   };
   useEffect(() => { load(); }, [whId, statusFilter, selectedEntity]); // eslint-disable-line
 
@@ -77,7 +81,7 @@ export default function RfidSecurityPanel({ whId, selectedEntity }) {
         </div>}>
         <ListLimitNote meta={incMeta} noun="insiden" hint="tindak lanjuti yang terbaru dulu atau persempit saringan status."
           testId="rfid-incidents-limit" />
-        {incidents.length === 0 ? <EmptyBox icon={ShieldAlert} text="Tidak ada insiden." /> : (
+        {incidents.length === 0 ? <EmptyBox icon={ShieldAlert} loading={listSt.loading} error={listSt.error} onRetry={load} what="insiden" text="Tidak ada insiden." testId="rfid-incident-state" /> : (
           <div className="max-h-96 space-y-1.5 overflow-y-auto">
             {incidents.map((inc) => {
               const [color, sev] = SEV[inc.severity] || ["gray", inc.severity];
@@ -126,7 +130,7 @@ export default function RfidSecurityPanel({ whId, selectedEntity }) {
 
       <div className="grid gap-3 lg:grid-cols-2">
         <SectionCard title="Shrinkage per Gudang (30 hari)">
-          {!shrink || shrink.per_warehouse.length === 0 ? <EmptyBox icon={ShieldAlert} text="Belum ada data." /> : (
+          {!shrink || shrink.per_warehouse.length === 0 ? <EmptyBox icon={ShieldAlert} loading={listSt.loading} error={listSt.error} onRetry={load} what="data susut" text="Belum ada data." /> : (
             <table className="w-full text-[11.5px]" data-testid="rfid-shrinkage-table">
               <thead><tr className="border-b border-[#EFF0F2] text-left text-[10px] text-[#8E8E93]">
                 <th className="py-1">Gudang</th><th className="text-right">Merah</th>

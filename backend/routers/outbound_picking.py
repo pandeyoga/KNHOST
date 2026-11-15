@@ -25,29 +25,46 @@ async def _auto_release_due_scheduled() -> int:
     return res.modified_count
 
 
+OUTBOUND_LIST_DEFAULT, OUTBOUND_LIST_MAX = 200, 500
+
+
 @router.get("/outbound/tasks")
 async def list_outbound_tasks(request: Request, status: str = None, warehouse_id: str = None,
-                              entity_id: str = None) -> List[Dict[str, Any]]:
+                              entity_id: str = None, task_subtype: str = None, exclude_status: str = "",
+                              limit: int = OUTBOUND_LIST_DEFAULT, skip: int = 0) -> Any:
     """List all outbound picking tasks, optionally filtered.
 
     W-1 (Gelombang 2) — ter-scope entitas aktif (X-Entity-Id / ?entity_id), konsisten
-    dengan inbound. entity_id='all' utk role lintas-entitas."""
+    dengan inbound. entity_id='all' utk role lintas-entitas.
+
+    FIX-7 (B3b LST-01) — dulu `to_list(200)` diam-diam (tugas ke-201 dst. tak terjangkau, termasuk tugas potong
+    sample yang disaring layar Cutting dari 200 tugas yang sama). Kini `skip`/`limit` (bawaan 200, maks 500) + jumlah
+    sungguhan di header `X-Total-Count`/`X-Truncated`; `task_subtype` (mis. `sample_cut`) & `exclude_status`
+    (dipisah koma) disaring di SERVER. Bentuk respons tetap array (kompatibel)."""
     await require_permission(request, "wms", "view")
     await _auto_release_due_scheduled()
 
-    query = {"flow_type": "outbound", "source_type": "sales_order"}
+    query: Dict[str, Any] = {"flow_type": "outbound", "source_type": "sales_order"}
+    excl = [s for s in (exclude_status or "").split(",") if s.strip()]
     if status:
-        query["status"] = status
+        query["status"] = status if status not in excl else {"$in": []}
     else:
-        query["status"] = {"$ne": "scheduled"}  # hold pengambilan dikecualikan dari antrean aktif
+        query["status"] = {"$nin": ["scheduled", *excl]}  # hold pengambilan dikecualikan dari antrean aktif
     if warehouse_id:
         query["warehouse_id"] = warehouse_id
+    if task_subtype:
+        query["task_subtype"] = task_subtype
     ctx = await entity_ctx(request)
     # FIX-1 (K-B1-02) — antrean keluar per GEDUNG dalam lokasi kerja, lintas PT yang ditugaskan (PT = label +
     # saringan `entity_id`); dulu dipagari PT aktif. Aksi tetap diperiksa per tugas (`assert_entity_access`).
     query = await resolve_work_scope("wms_tasks", query, ctx, entity_id)
-    
-    tasks = await db.wms_tasks.find(query, {"_id": 0}).sort("created_at", -1).to_list(200)
+
+    from pagination import clamp_limit, window_meta, window_headers
+    lim = clamp_limit(limit, OUTBOUND_LIST_DEFAULT, OUTBOUND_LIST_MAX)
+    sk = clamp_limit(skip, 0, 10 ** 7, minimum=0)
+    total = await db.wms_tasks.count_documents(query)
+    tasks = await (db.wms_tasks.find(query, {"_id": 0}).sort("created_at", -1)
+                   .skip(sk).limit(lim).to_list(lim))
     
     # Enrich with SO info
     so_ids = list(set(t.get("order_id") for t in tasks if t.get("order_id")))
@@ -70,7 +87,9 @@ async def list_outbound_tasks(request: Request, status: str = None, warehouse_id
             task["payment_hold"] = hold if hold and hold["applies"] else None
     from services.work_labels import label_rows
     await label_rows(tasks)
-    return tasks
+    from fastapi.encoders import jsonable_encoder
+    from starlette.responses import JSONResponse
+    return JSONResponse(jsonable_encoder(tasks), headers=window_headers(window_meta(total, len(tasks), sk, lim)))
 
 
 @router.get("/outbound/tasks/{task_id}/pick-list")
@@ -144,7 +163,9 @@ async def _resolve_pick_roll(task: Dict[str, Any], code: str, bin_id: str, lot: 
     if task.get("entity_id") and roll.get("owner_entity_id") and roll["owner_entity_id"] != task["entity_id"]:
         problems.append("pemilik berbeda")
     if (roll.get("reserved_ref") or {}).get("id") != task.get("order_id") or roll.get("status") not in SHIPPABLE_STATUSES:
-        problems.append("tidak ter-alokasi untuk order ini")
+        from services import makloon_roll_lock as _mlk   # FIX-9 — sebut MKO/PR bila roll dikunci cadangan makloon
+        held = _mlk.hold_text(roll, [task["entity_id"]] if task.get("entity_id") else None)             if _mlk.roll_locked_qty(roll) > 0 else ""
+        problems.append("tidak ter-alokasi untuk order ini" + (f" ({held})" if held else ""))
     if bin_id and roll.get("bin_id") and roll["bin_id"] != bin_id:
         problems.append("bin berbeda")
     rlen = round(float(roll.get("length_remaining") or 0), 4)

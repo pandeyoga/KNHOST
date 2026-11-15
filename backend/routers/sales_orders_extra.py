@@ -644,10 +644,12 @@ async def reallocate_line_rolls(order_id: str, product_id: str, payload: SoReall
         raise
     if newly and held_status == "committed":
         # FIX-3b (STM-OUT-3) — SO sudah disetujui: roll pengganti langsung `committed` seperti roll lama.
+        from services import roll_state as _rs   # FIX-10 (SSOT-1) — satu penulis status roll
         for r in newly:
             if not r.get("pending_cut"):
-                await db.inventory_rolls.update_one({"id": r["id"], "status": "reserved", "reserved_ref.id": order_id},
-                                                    {"$set": {"status": "committed", "updated_at": now_iso()}})
+                await _rs.transition(r["id"], "committed", from_="reserved", actor=actor["name"], action="reallocate",
+                                     reason="Ganti Roll — SO sudah disetujui", ref={"type": "sales_order", "id": order_id},
+                                     extra_filter={"reserved_ref.id": order_id}, rebuild=False)   # saldo di bawah
                 r["status"] = "committed"
             else:
                 await db.inventory_rolls.update_one(
@@ -655,11 +657,13 @@ async def reallocate_line_rolls(order_id: str, product_id: str, payload: SoReall
                     array_filters=[{"x.id": r.get("reservation_id")}])
     dropped = [r for r in current if r["id"] not in keep_ids]
     segments = set()
+    from services import roll_state as _rs   # FIX-10 (SSOT-1)
     for r in dropped:
-        res_d = await db.inventory_rolls.update_one(
-            {"id": r["id"], "status": r["status"], "reserved_ref.id": order_id},
-            {"$set": {"status": "available", "reserved_ref": None, "updated_at": now_iso()}})
-        if res_d.modified_count:   # FIX-3b (B3a SCH-6) — pelepasan Ganti Roll kini bermutasi
+        res_d = await _rs.transition(r["id"], "available", from_=r["status"], actor=actor["name"], action="reallocate",
+                                     reason="Ganti Roll — roll lama dilepas", ref={"type": "sales_order", "id": order_id},
+                                     extra_filter={"reserved_ref.id": order_id}, extra_set={"reserved_ref": None},
+                                     rebuild=False)   # saldo segmen di bawah
+        if res_d:   # FIX-3b (B3a SCH-6) — pelepasan Ganti Roll kini bermutasi
             await db.inventory_movements.insert_one({
                 "id": new_id("mov"), "product_id": product_id, "warehouse_id": r["warehouse_id"],
                 "owner_entity_id": r["owner_entity_id"], "movement_type": "release_reservation",
@@ -776,10 +780,12 @@ async def release_line_rolls(order_id: str, product_id: str, payload: SoReleaseR
                       precondition={"status": order["status"]}, actor=actor["name"])
     segments = set()
     released_qty = 0.0
+    from services import roll_state as _rs   # FIX-10 (SSOT-1)
     for r in dropped:
-        await db.inventory_rolls.update_one(
-            {"id": r["id"], "status": r["status"], "reserved_ref.id": order_id},
-            {"$set": {"status": "available", "reserved_ref": None, "updated_at": now_iso()}})
+        await _rs.transition(r["id"], "available", from_=r["status"], actor=actor["name"], action="release_partial",
+                             reason=f"lepas reservasi sebagian: {reason}", ref={"type": "sales_order", "id": order_id},
+                             extra_filter={"reserved_ref.id": order_id}, extra_set={"reserved_ref": None},
+                             rebuild=False)   # saldo segmen di bawah
         qty = round(float(r.get("length_remaining", 0) or 0), 2)
         released_qty = round(released_qty + qty, 2)
         segments.add((r["warehouse_id"], r["owner_entity_id"]))

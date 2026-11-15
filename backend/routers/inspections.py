@@ -335,7 +335,9 @@ async def finish_inspection(ins_id: str, payload: InspectionFinish,
     try:
         out = await svc.finish(doc["id"], payload.decision, payload.remark, actor,
                                reject_disposition=payload.reject_disposition,
-                               rejected_roll_ids=payload.rejected_roll_ids)
+                               rejected_roll_ids=payload.rejected_roll_ids,
+                               return_remedy=payload.return_remedy,
+                               return_remedy_reason=payload.return_remedy_reason)
     except svc.InspectionError as exc:
         raise _fail(exc) from exc
     await audit(actor["name"], "inspection_finished", "inspection", doc["id"],

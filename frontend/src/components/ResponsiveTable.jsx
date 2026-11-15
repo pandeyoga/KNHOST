@@ -25,11 +25,13 @@
  * Props lain: `rows` · `rowKey` (nama field atau fungsi; bawaan "id") · `onRowClick(row)` · `actions(row)`
  *   (kolom terakhir di desktop, kaki kartu di HP; `actionsHeader` bawaan "Aksi"; `stickyActions` = kolom aksi
  *   menempel kanan saat tabel bergulir) · `loading` · `empty` · `footer` (pager — di LUAR wadah gulir, P-05)
+ *   · FIX-8: `error` (+ `onRetry`; 403 → "tanpa akses") · `filtered` (+ `onReset`) · `what` (kata benda keadaan)
  *   · `testId` (baris: `${testId}-row-${key}`) · `rowTestId(row)` · `rowClassName(row)` · `breakpoint` (bawaan
  *   640) · `mode` ("auto" | "table" | "cards") · `cardFields`.
  */
 import { useState } from "react";
 import useIsMobile from "../hooks/useIsMobile";
+import EmptyState, { listStateKind } from "./EmptyState";
 
 const EMPTY_CELL = "—";
 const alignCls = (a) => (a === "right" ? "text-right" : a === "center" ? "text-center" : "");
@@ -106,6 +108,7 @@ export default function ResponsiveTable({
   columns = [], rows = [], rowKey = "id", onRowClick, actions, actionsHeader = "Aksi", stickyActions = false,
   loading = false, empty = "Tidak ada data.", footer = null, testId, rowTestId, rowClassName,
   breakpoint = 640, mode = "auto", cardFields = 4, className = "",
+  error = null, onRetry, filtered = false, onReset, what = "data",
 }) {
   const narrow = useIsMobile(breakpoint);
   const cards = mode === "cards" || (mode === "auto" && narrow);
@@ -114,12 +117,25 @@ export default function ResponsiveTable({
   const tidOf = (row, i) => (rowTestId ? rowTestId(row, i) : (testId ? `${testId}-row-${keyOf(rowKey, row, i)}` : undefined));
   const clickable = typeof onRowClick === "function";
 
+  // FIX-8 (B4 §3.10 · KN_37 §6a) — keadaan kosong = `EmptyState` baku: memuat · kosong · hasil saringan kosong ·
+  // galat (+ Coba lagi) · tanpa izin (403 ≠ "kosong", B1b UI-49). `empty` (teks/node) tetap judul keadaan kosong.
+  const kind = listStateKind({ loading, error, count: list.length, filtered });
   let body;
-  if (loading && list.length === 0) {
-    body = <div className="rt-state" data-testid={testId ? `${testId}-loading` : undefined}>Memuat…</div>;
-  } else if (list.length === 0) {
+  if (kind) {
     // Pesan kosong di LUAR wadah gulir (P-05): tidak ikut tergeser ke samping di HP.
-    body = <div className="rt-state" data-testid={testId ? `${testId}-empty` : undefined}>{empty}</div>;
+    const tid = kind === "loading" ? "loading" : kind === "empty" || kind === "filtered" ? "empty" : "error";
+    // `empty` berupa elemen buatan layar (ikon/teks sendiri) dirender apa adanya untuk keadaan kosong — tidak dibungkus
+    // EmptyState kedua (ikon ganda / <div> di dalam <p>); memuat/galat/tanpa izin tetap EmptyState baku.
+    const custom = (kind === "empty" || kind === "filtered") && empty !== null && typeof empty === "object";
+    body = (
+      <div className="rt-state" data-testid={testId ? `${testId}-${tid}` : undefined}>
+        {custom ? empty : (
+          <EmptyState kind={kind} what={what} compact error={error} onRetry={onRetry} onReset={onReset}
+            testId={testId ? `${testId}-state` : undefined}
+            title={kind === "empty" || kind === "filtered" ? empty : undefined} />
+        )}
+      </div>
+    );
   } else if (cards) {
     const roles = mobileRoles(cols);
     body = (

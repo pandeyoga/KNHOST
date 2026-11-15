@@ -16,6 +16,7 @@ from fastapi import HTTPException
 
 from core_utils import new_id, now_iso
 from db import db
+from services import cycle_count_state as _ccs   # FIX-10 — riwayat status sesi turunan
 from services.location_service import flatten_bins
 from services.roll_service import PHYSICAL_ROLL_STATUSES, rebuild_balance
 
@@ -216,8 +217,21 @@ async def _movement_once(roll: Dict[str, Any], qty: float, mtype: str, ref: str,
 
 
 async def _cas_op(op: Dict[str, Any]) -> bool:
+    upd = dict(op["upd"])
+    to = upd.pop("status", None)
+    if to:
+        # FIX-10 (SSOT-1) — roll keluar stok lewat opname (`consumed`): roll_state (daftar-izin, CAS status fisik
+        # seperti sebelumnya, jejak status roll). Saldo dibangun ulang di `_finish_op` (op["rebuild"]).
+        from services import roll_state as _rs
+        upd.pop("updated_at", None)
+        n = await _rs.transition(op["roll"]["id"], to, from_=PHYSICAL_ROLL_STATUSES,
+                                 reason=f"opname — {op.get('ref') or ''}".strip(" —"), action="cycle_count",
+                                 ref={"type": "cycle_count", "id": str(op.get("ref") or "").split(":")[0]},
+                                 extra_filter=dict(op["cas"]), extra_set={**upd, "count_op": op["token"]},
+                                 rebuild=False)
+        return n == 1
     cas = {"id": op["roll"]["id"], **op["cas"], "status": {"$in": PHYSICAL_ROLL_STATUSES}}
-    res = await db.inventory_rolls.update_one(cas, {"$set": {**op["upd"], "count_op": op["token"]}})
+    res = await db.inventory_rolls.update_one(cas, {"$set": {**upd, "count_op": op["token"]}})
     return res.modified_count == 1
 
 
@@ -455,6 +469,8 @@ async def create_followup_session(session: Dict[str, Any], rec: Dict[str, Any], 
             f"Sesi turunan otomatis: {len(pending)} roll tidak ditemukan dan belum dihitung ulang saat sesi "
             f"{session.get('name') or session['id']} disetujui."),
         "status": "open", "mode": "roll", "items": [], "parent_session_id": session["id"],
+        "status_history": _ccs.initial_history("open", actor, "create_followup",
+                                               f"tindak lanjut {session.get('name') or session['id']}"),   # FIX-10
         "roll_count": {"node_id": rc0.get("node_id", ""), "node_label": rc0.get("node_label", ""),
                        "bin_ids": rc0.get("bin_ids") or [], "snapshot_at": now_iso(), "owners": rc0.get("owners"),
                        "expected": [{k: m.get(k) for k in ("roll_id", "roll_no", "product_id", "owner_entity_id", "bin_id",

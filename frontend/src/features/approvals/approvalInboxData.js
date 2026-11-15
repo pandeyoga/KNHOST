@@ -68,7 +68,7 @@ export async function loadInbox(perms) {
     grab("Harga Khusus", () => axios.get(`${API}/price-approvals`, { params: { status: "pending" } })),
     grab("Retur Penjualan", () => axios.get(`${API}/sales-returns`, { params: { status: "pending_approval" } })),
     grab("Retur Pembelian", () => axios.get(`${API}/purchase-returns`)),
-    grab("Stock Opname", () => axios.get(`${API}/cycle-count/sessions`)),
+    grab("Stock Opname", () => axios.get(`${API}/cycle-count/sessions`, { params: { status: "submitted", limit: 500 } })),
     grab("Amandemen", () => axios.get(`${API}/amendments`, { params: { status: "pending_approval" } })),
     // FASE F-6 — `?oldest=` sekalian membawa DOKUMEN paling lama menunggu dari SEMUA antrean (termasuk antrean
     // yang layar ini tidak muat: transfer gudang, kontrabon, permintaan internal, cuti, lembur, …).
@@ -126,7 +126,7 @@ export async function loadInbox(perms) {
 
   const cycleCounts = arr(ccRes.data).filter((s) => s.status === "submitted").map((s) => ({
     kind: "cycle", id: s.id, title: s.name || "Cycle Count", subtitle: s.warehouse_name || "Gudang",
-    meta: `${s.items?.length || 0} item dihitung`,
+    meta: `${s.item_count ?? s.items?.length ?? 0} item dihitung`,
     amount: null, requester: s.submitted_by || s.created_by, role: "manager",
     at: s.submitted_at || s.created_at, target: "wms-cycle", targetView: "operations", targetTab: "cycle",
   }));

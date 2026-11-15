@@ -23,10 +23,22 @@ import KNSelect from "../../components/KNSelect";
 import { TaskTakeoverButton } from "./TaskTakeoverButton";
 import { useLocationScope } from "./LocationScopeBadge";
 import ExportMenu from "../../components/ExportMenu";   // FIX-4 — tombol baku Unduh (Excel/CSV, Pusat Export)
+import EmptyState, { listStateKind } from "../../components/EmptyState";   // FIX-8 — keadaan daftar baku
+import DocNumber, { docEntityId } from "../../components/DocNumber";   // FIX-8 (UI-58) — nomor dokumen satu skema tampilan
+import StatusBadge from "../../components/StatusBadge";   // FIX-8 — lencana baku
+import { SearchInput } from "../../components/ListPageParts";   // FIX-8 — satu kotak cari baku
+import SavedViewsMenu from "../../components/SavedViewsMenu";   // FIX-8 (K-B4-12) — tampilan tersimpan
+import useSavedViews from "../../hooks/useSavedViews";
+import { ROLE_OPTIONS } from "../../config/roles";
+import ListLimitNote, { metaFromHeaders } from "./ListLimitNote";   // FIX-7 (B3b LST-01)
+
+const BASE_OUT_VIEW = { filters: {}, sort: null, columns: [], mode: "" };
 
 export default function OutboundScanInterface({ user, focusTaskId = "", onFocusConsumed }) {
   const locScope = useLocationScope();   // FIX-3b (B3b K-B3b-08) — "Ambil alih tugas" untuk supervisor lokasi
   const [tasks, setTasks] = useState([]);
+  const [listMeta, setListMeta] = useState(null);     // FIX-7 — jumlah sungguhan dari server (header X-Total-Count)
+  const [moreBusy, setMoreBusy] = useState(false);
   const [loading, setLoading] = useState(false);
   const [fetched, setFetched] = useState(false);
   const [error, setError] = useState("");
@@ -36,6 +48,13 @@ export default function OutboundScanInterface({ user, focusTaskId = "", onFocusC
   const [q, setQ] = useState("");
   const [kind, setKind] = useState("all");
   const [whFilter, setWhFilter] = useState("");
+  const [loadErr, setLoadErr] = useState(null);   // FIX-8 (UI-49) — galat muat (403 ≠ "tidak ada tugas")
+  // FIX-8 (K-B4-12) — tampilan tersimpan daftar tugas keluar: status, gudang, jenis (SO/Sample). Cakupan tidak ikut.
+  const outViewHook = useSavedViews("wms.outbound_tasks", {
+    state: { filters: { status: filterStatus, warehouse_id: whFilter, kind }, sort: null, columns: [], mode: "" },
+    base: BASE_OUT_VIEW,
+    apply: (st) => { setFilterStatus(st.filters.status || "all"); setWhFilter(st.filters.warehouse_id || ""); setKind(st.filters.kind || "all"); },
+  });
 
   const [cameraActive, setCameraActive] = useState(false);
   const [scanValue, setScanValue] = useState("");
@@ -56,8 +75,8 @@ export default function OutboundScanInterface({ user, focusTaskId = "", onFocusC
       const roll = list.find(r => String(r.roll_no || "").toLowerCase() === q.toLowerCase() || r.id === q);
       if (!roll) { setRollInfo(null); setError(`Roll "${q}" tidak ditemukan untuk produk tugas ini (${selectedTask?.sku || selectedTask?.product_name || "-"}).`); return; }
       const problems = [];
-      if (selectedTask?.warehouse_id && roll.warehouse_id !== selectedTask.warehouse_id) problems.push(`ada di gudang ${roll.warehouse_name || roll.warehouse_id}, bukan ${selectedTask.warehouse_name || "gudang tugas"}`);
-      if (selectedTask?.entity_id && roll.owner_entity_id && roll.owner_entity_id !== selectedTask.entity_id) problems.push(`milik ${roll.owner_entity_name || roll.owner_entity_id}`);
+      if (selectedTask?.warehouse_id && roll.warehouse_id !== selectedTask.warehouse_id) problems.push(`ada di gudang ${roll.warehouse_name || "lain"}, bukan ${selectedTask.warehouse_name || "gudang tugas"}`);
+      if (selectedTask?.entity_id && roll.owner_entity_id && roll.owner_entity_id !== selectedTask.entity_id) problems.push(`milik ${roll.owner_entity_name || "PT lain"}`);
       if ((roll.reserved_ref || {}).id !== selectedTask?.order_id || !SHIPPABLE.includes(roll.status)) problems.push(`belum dicadangkan untuk pesanan ini (status ${roll.status || "-"})`);
       if (problems.length) { setRollInfo(null); setError(`Roll ${roll.roll_no || q} tidak bisa diambil: ${problems.join("; ")}.`); return; }
       setRollInfo(roll);
@@ -107,10 +126,26 @@ export default function OutboundScanInterface({ user, focusTaskId = "", onFocusC
       const res = await axios.get(`${API}/outbound/tasks${params}`);
       // FIX-1 (K-B1-02) — antrean lintas PT di gedung lokasi kerja: aksi tugas dikirim atas nama PT tugasnya.
       setTasks(rememberDocEntities(res.data));
+      setListMeta(metaFromHeaders(res, (res.data || []).length));
       setSelectedTask((cur) => (cur ? res.data.find((t) => t.id === cur.id) || cur : cur));
       setError("");
-    } catch (e) { setError(e.response?.data?.detail || "Gagal memuat outbound task."); }
+      setLoadErr(null);
+    } catch (e) { setError(e.response?.data?.detail || "Gagal memuat outbound task."); setLoadErr(e); }
     finally { setLoading(false); setFetched(true); }
+  };
+
+  // FIX-7 (B3b LST-01) — dulu 200 tugas terbaru tanpa tanda; kini "Muat berikutnya" dari server (skip = sudah dimuat).
+  const loadMoreTasks = async () => {
+    setMoreBusy(true);
+    try {
+      const res = await axios.get(`${API}/outbound/tasks`, {
+        params: { ...(filterStatus !== "all" ? { status: filterStatus } : {}), skip: tasks.length } });
+      const seen = new Set(tasks.map((t) => t.id));
+      const next = [...tasks, ...rememberDocEntities(res.data || []).filter((t) => !seen.has(t.id))];
+      setTasks(next);
+      const m = metaFromHeaders(res, next.length);
+      setListMeta(m ? { ...m, shown: next.length, skip: 0 } : null);
+    } catch (e) { setError(apiErrorText(e, "Gagal memuat tugas berikutnya.")); } finally { setMoreBusy(false); }
   };
 
   const startCamera = async () => {
@@ -207,7 +242,7 @@ export default function OutboundScanInterface({ user, focusTaskId = "", onFocusC
     });
   }, [tasks, q, kind, whFilter]);
   const warehousesInList = useMemo(() => {
-    const m = {}; (tasks || []).forEach((t) => { if (t.warehouse_id) m[t.warehouse_id] = t.warehouse_name || t.warehouse_id; });
+    const m = {}; (tasks || []).forEach((t) => { if (t.warehouse_id) m[t.warehouse_id] = t.warehouse_name || "Gudang tanpa nama"; });
     return Object.entries(m).map(([value, label]) => ({ value, label }));
   }, [tasks]);
   // Trial 22 Okt (A2) — semua tugas pesanan ini di gudang ini yang siap kirim → SATU Surat Jalan.
@@ -294,7 +329,8 @@ export default function OutboundScanInterface({ user, focusTaskId = "", onFocusC
             {FILTER_LABELS[s]}
           </button>
         ))}
-        <span className="ml-auto text-[11px] text-[#6B6B73] whitespace-nowrap" data-testid="outbound-task-count">{visibleTasks.length} tugas</span>
+        <span className="ml-auto text-[11px] text-[#6B6B73] whitespace-nowrap" data-testid="outbound-task-count">{fetched ? `${visibleTasks.length} tugas` : "Memuat…"}</span>
+        <SavedViewsMenu sv={outViewHook} testId="outbound-views" shareRoles={ROLE_OPTIONS} />
         <ExportMenu dataset="wms_tasks" label="tugas-barang-keluar" scope="work" testId="outbound-export" search={q}
           filters={[["flow_type", "eq", "outbound"], filterStatus !== "all" && ["status", "eq", filterStatus],
             whFilter && ["warehouse_id", "eq", whFilter],
@@ -304,8 +340,7 @@ export default function OutboundScanInterface({ user, focusTaskId = "", onFocusC
           sort={[{ key: "created_at", dir: "desc" }]} />
       </div>
       <div className="grid grid-cols-1 gap-2 md:grid-cols-[1fr_auto_200px]">
-        <input data-testid="outbound-search" value={q} onChange={(e) => setQ(e.target.value)}
-          className="rounded-lg border border-[#E5E5EA] bg-white px-3 py-1.5 text-[12px]" placeholder="Cari no. pesanan, pelanggan, produk, SKU…" />
+        <SearchInput testId="outbound-search" value={q} onChange={setQ} placeholder="Cari no. pesanan, pelanggan, produk, SKU…" />
         <div className="flex gap-1">
           {[["all", "Semua"], ["so", "Pesanan (SO)"], ["sample", "Sample"]].map(([k, l]) => (
             <button key={k} data-testid={`outbound-kind-${k}`} onClick={() => setKind(k)}
@@ -326,13 +361,14 @@ export default function OutboundScanInterface({ user, focusTaskId = "", onFocusC
             <span className="text-[11px] font-bold uppercase tracking-wide text-[#6B6B73]">Tugas Barang Keluar</span>
             <button onClick={fetchTasks} className="text-[#007AFF] text-[11px] font-medium">Muat ulang</button>
           </div>
-          {loading ? (
-            <div className="py-8 text-center text-[12px] text-[#6B6B73]">Memuat…</div>
-          ) : visibleTasks.length === 0 ? (
-            <div className="py-8 text-center text-[12px] text-[#6B6B73]">
-              <Truck size={28} className="mx-auto mb-2 text-gray-300" />
-              <p>Tidak ada tugas barang keluar</p>
-            </div>
+          {/* FIX-8 (B4 §3.10 · UI-49/UI-50) — memuat · kosong · saringan kosong (+ Reset) · galat · tanpa akses */}
+          {listStateKind({ loading: loading || !fetched, error: loadErr, count: visibleTasks.length,
+            filtered: filterStatus !== "all" || kind !== "all" || Boolean(whFilter) || Boolean(q.trim()) }) ? (
+            <EmptyState compact what="tugas barang keluar" icon={Truck} error={loadErr} onRetry={fetchTasks}
+              kind={listStateKind({ loading: loading || !fetched, error: loadErr, count: visibleTasks.length,
+                filtered: filterStatus !== "all" || kind !== "all" || Boolean(whFilter) || Boolean(q.trim()) })}
+              title={!loadErr && !(loading || !fetched) && filterStatus === "all" && kind === "all" && !whFilter && !q.trim() ? "Tidak ada tugas barang keluar" : undefined}
+              onReset={() => { setFilterStatus("all"); setKind("all"); setWhFilter(""); setQ(""); }} testId="outbound-list-state" />
           ) : (
             <div className="divide-y divide-[#EFF0F2] overflow-y-auto max-h-[520px]">
               {visibleTasks.map(task => {
@@ -344,7 +380,7 @@ export default function OutboundScanInterface({ user, focusTaskId = "", onFocusC
                     onClick={() => { setSelectedTask(task); stopCamera(); }}
                     className={`w-full text-left px-3 py-2.5 hover:bg-[#FFF8EE] transition-colors ${isSelected ? 'bg-[#FFF4E0] border-l-2 border-[#FF9500]' : ''}`}>
                     <div className="flex items-center justify-between gap-2 mb-1">
-                      <span className="text-[12px] font-bold text-[#FF9500]">{task.order_number}{task.task_subtype === "sample_cut" && <span data-testid={`outbound-task-sample-${task.id}`} className="ml-1.5 rounded-full bg-[#FFF3D6] px-1.5 py-0.5 text-[9px] font-bold text-[#9A5B00]">SAMPEL</span>}
+                      <span className="text-[12px] text-[#8C4A00]"><DocNumber number={task.order_number} entityId={docEntityId(task)} />{task.task_subtype === "sample_cut" && <StatusBadge tone="special" icon="tag" className="ml-1.5" testId={`outbound-task-sample-${task.id}`}>SAMPEL</StatusBadge>}
                         {task.work_entity_id && <span className="ml-1.5" data-testid={`outbound-task-pt-${task.id}`}><EntityBadge entityId={task.work_entity_id} /></span>}</span>
                       <div className="flex items-center gap-1">
                         <Badge status={task.status} />
@@ -375,6 +411,8 @@ export default function OutboundScanInterface({ user, focusTaskId = "", onFocusC
               })}
             </div>
           )}
+          <ListLimitNote meta={listMeta} noun="tugas" onMore={loadMoreTasks} loading={moreBusy}
+            hint="cari & saringan di layar hanya atas tugas yang sudah dimuat." testId="outbound-limit" />
         </div>
 
         {/* RIGHT: Pick Panel */}

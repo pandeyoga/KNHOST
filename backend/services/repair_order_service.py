@@ -13,6 +13,7 @@ Keputusan pemilik (usulan bawaan §4):
 """
 from __future__ import annotations
 
+import re
 from typing import Optional, Any, Dict, List
 
 from db import db
@@ -194,16 +195,19 @@ async def send(ro_id: str, actor: Dict[str, Any]) -> Dict[str, Any]:
         raise RepairError("Hanya perbaikan berstatus Draf yang bisa dikirim.")
     ref = {"type": "repair", "id": ro["id"], "number": ro["number"], "partner": ro.get("partner_name", "")}
     moved, segs = [], set()
+    from services import roll_state as _rs   # FIX-10 (SSOT-1) — satu penulis status roll
     for ln in ro["lines"]:
-        res = await db.inventory_rolls.update_one(
-            {"id": ln["roll_id"], "status": ln["prev_status"], "reserved_ref": {"$in": [None, ""]},
-             "repair_open": {"$in": [None, ""]}},
-            {"$set": {"status": REPAIR_STATUS, "bucket_ref": ref, "repair_open": ro["id"], "updated_at": now_iso()}})
-        if not res.modified_count:
+        ok = await _rs.transition(ln["roll_id"], REPAIR_STATUS, from_=ln["prev_status"], actor=actor.get("name", ""),
+                                  action="repair_send", reason=f"{_label(ro)} dikirim ke {ro.get('partner_name', '')}",
+                                  ref=ref, extra_filter={"reserved_ref": {"$in": [None, ""]},
+                                                         "repair_open": {"$in": [None, ""]}},
+                                  extra_set={"bucket_ref": ref, "repair_open": ro["id"]}, rebuild=False)
+        if not ok:
             for done in moved:   # kembalikan yang sudah terpindah — semua atau tidak sama sekali
-                await db.inventory_rolls.update_one({"id": done["roll_id"], "repair_open": ro["id"]},
-                                                    {"$set": {"status": done["prev_status"], "bucket_ref": None,
-                                                              "repair_open": "", "updated_at": now_iso()}})
+                await _rs.transition(done["roll_id"], done["prev_status"], from_=REPAIR_STATUS, action="repair_send_rollback",
+                                     reason=f"{_label(ro)} batal kirim — roll lain berubah", ref=ref,
+                                     extra_filter={"repair_open": ro["id"]},
+                                     extra_set={"bucket_ref": None, "repair_open": ""}, rebuild=False)
             raise RepairError(f"Roll {ln.get('roll_no') or ln['roll_id']} berubah sejak dokumen dibuat (dipesan/dipindah) "
                               "— keluarkan dari daftar lalu kirim lagi.")
         moved.append(ln)
@@ -246,11 +250,15 @@ async def receive_back(ro_id: str, actor: Dict[str, Any], roll_ids: Optional[Lis
     for ln in ro["lines"]:
         if ln["roll_id"] not in want:
             continue
-        res = await db.inventory_rolls.update_one(
-            {"id": ln["roll_id"], "repair_open": ro["id"], "status": REPAIR_STATUS},
-            {"$set": {"status": ln["prev_status"], "bucket_ref": None, "repair_open": "", "updated_at": now_iso(),
-                      "returned_from_repair": {"ref_id": ro["id"], "at": now_iso(), "by": actor.get("name", "")}}})
-        if res.modified_count:
+        from services import roll_state as _rs   # FIX-10 (SSOT-1)
+        if await _rs.transition(ln["roll_id"], ln["prev_status"], from_=REPAIR_STATUS, actor=actor.get("name", ""),
+                                action="repair_receive_back", reason=f"{_label(ro)} dibatalkan — roll diterima kembali",
+                                ref={"type": "repair", "id": ro["id"], "no": ro.get("number", "")},
+                                extra_filter={"repair_open": ro["id"]},
+                                extra_set={"bucket_ref": None, "repair_open": "",
+                                           "returned_from_repair": {"ref_id": ro["id"], "at": now_iso(),
+                                                                    "by": actor.get("name", "")}},
+                                rebuild=False):   # saldo segmen di bawah
             r = await db.inventory_rolls.find_one({"id": ln["roll_id"]}, {"_id": 0})
             await _movement(r, "repair_cancel", ln["qty_sent"], ro, "Perbaikan dibatalkan — roll diterima kembali")
             segs.add((r["product_id"], r["warehouse_id"], r["owner_entity_id"]))
@@ -299,6 +307,8 @@ async def receive(ro_id: str, data: Dict[str, Any], actor: Dict[str, Any]) -> Di
     sum_out = sum(r["qty_out"] for r in results)
     target_pid = (ro.get("target") or {}).get("product_id") or ""
     segs = set()
+    from services import roll_state as _rs   # FIX-10 (SSOT-1)
+    _ref = {"type": "repair", "id": ro["id"], "no": ro.get("number", "")}
     for r in results:
         roll = await db.inventory_rolls.find_one({"id": r["roll_id"], "repair_open": ro["id"]}, {"_id": 0})
         if not roll:
@@ -315,9 +325,14 @@ async def receive(ro_id: str, data: Dict[str, Any], actor: Dict[str, Any]) -> Di
         if r["shrink"] > EPS:
             await _movement(roll, "repair_loss", r["shrink"], ro, "Susut perbaikan")
         if r["qty_out"] <= EPS:   # roll habis/rusak total di perbaikan
-            await db.inventory_rolls.update_one({"id": roll["id"]}, {
-                "$set": {"status": "consumed", "length_remaining": 0.0, "consumed_ref": ro["id"], "bucket_ref": None,
-                         "repair_open": "", "updated_at": now_iso()}, "$push": {"repair_history": hist}})
+            # FIX-10 — CAS status seperti dibaca + roll milik perbaikan ini (dulu `{id}` saja).
+            if not await _rs.transition(roll["id"], "consumed", from_=roll.get("status"), actor=actor.get("name", ""),
+                                        action="repair_receive", reason=f"{_label(ro)}: roll habis/rusak total",
+                                        ref=_ref, extra_filter={"repair_open": ro["id"]},
+                                        extra_set={"length_remaining": 0.0, "consumed_ref": ro["id"],
+                                                   "bucket_ref": None, "repair_open": ""},
+                                        push={"repair_history": hist}, rebuild=False):
+                raise RepairError(f"Roll {r.get('roll_no')} berubah bersamaan — muat ulang lalu terima lagi.")
             continue
         if ro["kind"] == "celup_ulang" and target_pid and target_pid != roll["product_id"]:
             child = {**roll, "id": new_id("roll"), "roll_no": f"{roll.get('roll_no') or 'ROLL'}-C",
@@ -328,20 +343,29 @@ async def receive(ro_id: str, data: Dict[str, Any], actor: Dict[str, Any]) -> Di
                      "base_unit_cost": new_uc, "repair_history": list(roll.get("repair_history") or []) + [hist],
                      "created_at": now_iso(), "updated_at": now_iso(), "source": "repair"}
             child.pop("_id", None)
+            if not await _rs.transition(roll["id"], "consumed", from_=roll.get("status"), actor=actor.get("name", ""),
+                                        action="repair_receive", reason=f"{_label(ro)}: celup ulang → SKU baru",
+                                        ref=_ref, extra_filter={"repair_open": ro["id"]},
+                                        extra_set={"length_remaining": 0.0, "consumed_ref": ro["id"], "bucket_ref": None,
+                                                   "repair_open": "", "child_roll_ids": [child["id"]]},
+                                        push={"repair_history": hist}, rebuild=False):
+                raise RepairError(f"Roll {r.get('roll_no')} berubah bersamaan — muat ulang lalu terima lagi.")
+            child["status_history"] = [_rs.history_entry("available", "", reason=f"{_label(ro)}: hasil celup ulang",
+                                                         actor=actor.get("name", ""), action="repair_receive", ref=_ref)]
             await db.inventory_rolls.insert_one(child)
-            await db.inventory_rolls.update_one({"id": roll["id"]}, {
-                "$set": {"status": "consumed", "length_remaining": 0.0, "consumed_ref": ro["id"], "bucket_ref": None,
-                         "repair_open": "", "child_roll_ids": [child["id"]], "updated_at": now_iso()},
-                "$push": {"repair_history": hist}})
             await _movement(child, "repair_receive", r["qty_out"], ro, f"Celup ulang → SKU {ro['target'].get('product_sku', '')}")
             r.update({"result_roll_id": child["id"], "result_roll_no": child["roll_no"], "result_product_id": target_pid})
             segs.add((target_pid, child["warehouse_id"], child["owner_entity_id"]))
         else:
-            await db.inventory_rolls.update_one({"id": roll["id"]}, {
-                "$set": {"status": "available", "bucket_ref": None, "repair_open": "", "length_remaining": r["qty_out"],
-                         "grade": r["grade_after"], "lot": r["lot_after"], "unit_cost": new_uc, "base_unit_cost": new_uc,
-                         **({"lot_id": ""} if r["lot_after"] != r.get("lot_before") else {}), "updated_at": now_iso()},
-                "$push": {"repair_history": hist}})
+            if not await _rs.transition(
+                    roll["id"], "available", from_=roll.get("status"), actor=actor.get("name", ""), action="repair_receive",
+                    reason=f"{_label(ro)}: hasil perbaikan kembali ke stok", ref=_ref,
+                    extra_filter={"repair_open": ro["id"]},
+                    extra_set={"bucket_ref": None, "repair_open": "", "length_remaining": r["qty_out"],
+                               "grade": r["grade_after"], "lot": r["lot_after"], "unit_cost": new_uc,
+                               "base_unit_cost": new_uc, **({"lot_id": ""} if r["lot_after"] != r.get("lot_before") else {})},
+                    push={"repair_history": hist}, rebuild=False):
+                raise RepairError(f"Roll {r.get('roll_no')} berubah bersamaan — muat ulang lalu terima lagi.")
             await _movement({**roll, "lot": r["lot_after"]}, "repair_receive", r["qty_out"], ro, "Hasil perbaikan kembali ke stok")
             r.update({"result_roll_id": roll["id"], "result_roll_no": roll.get("roll_no", ""), "result_product_id": roll["product_id"]})
     for p, w, o in segs:
@@ -366,14 +390,35 @@ async def receive(ro_id: str, data: Dict[str, Any], actor: Dict[str, Any]) -> Di
     return out
 
 
-async def list_orders(entity_ids: List[str], status: str = "", q: str = "", limit: int = 200) -> List[Dict[str, Any]]:
+def _list_query(entity_ids: List[str], status: str = "", q: str = "") -> Dict[str, Any]:
     query: Dict[str, Any] = {"entity_id": {"$in": entity_ids}}
     if status:
         query["status"] = status
     if q.strip():
-        rx = {"$regex": q.strip(), "$options": "i"}
+        # FIX-7 (B3b matriks B.2 "regex tanpa escape") — kata kunci dicari apa adanya (karakter khusus di-escape);
+        # dulu "(" atau "[" di kotak cari → galat 500 regex.
+        rx = {"$regex": re.escape(q.strip()), "$options": "i"}
         query["$or"] = [{"number": rx}, {"partner_name": rx}, {"lines.roll_no": rx}, {"lines.sku": rx}]
-    return await db.repair_orders.find(query, {"_id": 0, "timeline": 0}).sort("created_at", -1).to_list(limit)
+    return query
+
+
+async def list_orders(entity_ids: List[str], status: str = "", q: str = "", limit: int = 200,
+                      skip: int = 0) -> List[Dict[str, Any]]:
+    return await (db.repair_orders.find(_list_query(entity_ids, status, q), {"_id": 0, "timeline": 0})
+                  .sort([("created_at", -1), ("id", -1)]).skip(max(0, int(skip or 0))).limit(limit).to_list(limit))
+
+
+async def count_orders(entity_ids: List[str], status: str = "", q: str = "") -> int:
+    return await db.repair_orders.count_documents(_list_query(entity_ids, status, q))
+
+
+async def status_counts(entity_ids: List[str]) -> Dict[str, int]:
+    """FIX-7 — jumlah per status lewat `$group` (dulu memuat 2.000 dokumen perbaikan utuh hanya untuk menghitung)."""
+    out: Dict[str, int] = {}
+    async for g in db.repair_orders.aggregate([{"$match": {"entity_id": {"$in": entity_ids}}},
+                                               {"$group": {"_id": "$status", "n": {"$sum": 1}}}]):
+        out[g["_id"]] = int(g["n"])
+    return out
 
 
 async def roll_repairs(roll_id: str) -> List[Dict[str, Any]]:

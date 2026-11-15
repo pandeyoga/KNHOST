@@ -39,7 +39,7 @@ export default function RollCountPanel({ session, canApprove, products = [], onC
     load();
     axios.get(`${API}/warehouses/${session.warehouse_id}/locations`).then((r) => setLoc(r.data)).catch(() => setLoc(null));
     axios.get(`${API}/entities`).then((r) => setOwners((Array.isArray(r.data) ? r.data : r.data?.items || [])
-      .map((e) => ({ value: e.id, label: e.short_name || e.name || e.id })))).catch(() => setOwners([]));
+      .map((e) => ({ value: e.id, label: e.short_name || e.legal_name || e.name || "PT tanpa nama" })))).catch(() => setOwners([]));
   }, [sid]); // eslint-disable-line
 
   const binOpts = useMemo(() => (loc?.bins || []).map((b) => ({ value: b.bin_id, label: `${b.code} — ${b.path}` })), [loc]);

@@ -73,14 +73,18 @@ class ReasonIn(BaseModel):
 
 
 @router.get("/repair-orders")
-async def list_repairs(request: Request, status: str = "", q: str = "", entity_id: Optional[str] = Query(None)) -> Dict[str, Any]:
+async def list_repairs(request: Request, status: str = "", q: str = "", entity_id: Optional[str] = Query(None),
+                       limit: int = 200, skip: int = 0) -> Dict[str, Any]:
+    """FIX-7 (B3b LST-01) — `skip`/`limit` (bawaan 200 = batas lama, maks 500) + `total/truncated/skip/limit` di badan
+    (dulu terpotong 200 diam-diam); jumlah per status lewat `$group` (dulu memuat 2.000 dokumen utuh)."""
     await require_permission(request, "repair_order", "view")
     ids = resolve_scope_ids(await entity_ctx(request), entity_id)
-    items = await svc.list_orders(ids, status, q)
-    counts: Dict[str, int] = {}
-    for it in await svc.list_orders(ids, "", "", limit=2000):
-        counts[it["status"]] = counts.get(it["status"], 0) + 1
-    return {"items": items, "counts": counts, "kinds": svc.KINDS, "cost_basis": svc.COST_BASIS}
+    from pagination import clamp_limit, window_meta
+    lim, sk = clamp_limit(limit, 200, 500), clamp_limit(skip, 0, 10 ** 7, minimum=0)
+    items = await svc.list_orders(ids, status, q, limit=lim, skip=sk)
+    counts = await svc.status_counts(ids)
+    return {"items": items, "counts": counts, "kinds": svc.KINDS, "cost_basis": svc.COST_BASIS,
+            **window_meta(await svc.count_orders(ids, status, q), len(items), sk, lim)}
 
 
 @router.get("/repair-orders/candidate-rolls")

@@ -84,10 +84,11 @@ export default function LocationScopeBar({ value = "", onChange, compact = false
         {canPick && <ChevronDown size={13} className={open ? "rotate-180 transition-transform" : "transition-transform"} />}
       </button>
       {unset && !compact && (
-        // Cek visual 14 Nov: teks ini tidak bisa menyusut → bilah atas meluap 117 px di 1024 px (halaman bergulir mendatar).
-        // `location-unset-text` disembunyikan di bawah 1280 px; ikon peringatan, tooltip, dan petunjuk di menu tetap ada.
-        <span className="location-unset-text text-[11.5px] font-semibold text-[#8C4A00] ml-1" data-testid={`${testId}-unset`}>
-          Lokasi kerja belum diatur — minta admin mengisinya di Pengguna
+        // Teks pendek + terpotong rapi: kalimat panjang dulu mendorong bilah atas melebar (halaman bergeser ke samping
+        // di ±1024 px). Penjelasan lengkap tetap di tooltip pemicu & menu.
+        <span className="location-scope-unset" data-testid={`${testId}-unset`}
+          title="Lokasi kerja akun Anda belum diatur — minta admin mengisinya di Pengaturan › Pengguna.">
+          Lokasi kerja belum diatur
         </span>
       )}
       {open && (

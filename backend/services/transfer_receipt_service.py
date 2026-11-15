@@ -14,6 +14,7 @@ from fastapi import HTTPException
 from db import db
 from core_utils import new_id, now_iso
 from services import placement_rules as pr
+from services import roll_state as _rs   # FIX-10 (SSOT-1) — satu penulis status roll
 from services.roll_service import (held_cas, owned_by_transfer, rebuild_balance, so_still_open,
                                    transfer_held_rolls)
 
@@ -342,8 +343,13 @@ async def _land(roll: Dict[str, Any], transfer: Dict[str, Any], dest: Dict[str, 
                            "via": "transfer_in"}
     except Exception:  # noqa: BLE001 — tahap fisik tidak boleh menggagalkan penerimaan
         pass
-    res = await db.inventory_rolls.update_one(held_cas(roll), {"$set": _set})
-    if not res.matched_count:
+    cas = {k: v for k, v in held_cas(roll).items() if k not in ("id", "status")}
+    if not await _rs.transition(
+            roll["id"], status, from_=roll["status"], reason=f"transfer {transfer.get('code') or ''} diterima ({status_kind})",
+            actor=actor.get("name", ""), action="transfer_receive",
+            ref={"type": "warehouse_transfer", "id": transfer["id"], "no": transfer.get("code", "")},
+            extra_filter=cas, extra_set={k: v for k, v in _set.items() if k not in ("status", "updated_at")},
+            rebuild=False):   # saldo: memo.flush / rebuild di bawah (kedua gudang)
         return None
     if memo:
         memo.remember({**roll, **_set})
@@ -574,11 +580,17 @@ async def resolve(transfer: Dict[str, Any], exc_id: str, body: Any, actor: Dict[
             raise HTTPException(status_code=400, detail="Roll exception ini tidak lagi dalam perjalanan.")
         so_id = (roll.get("transfer_ref") or {}).get("so_id")
         keep = bool(so_id) and await so_still_open(so_id)
-        res = await db.inventory_rolls.update_one(held_cas(roll), {"$set": {
-            "status": "reserved" if keep else "available", "reserved_ref": roll.get("reserved_ref") if keep else None,
-            "transfer_ref": None, "returned_from_transfer": {"ref_id": transfer["id"], "at": now_iso(), "reason": reason},
-            "updated_at": now_iso()}})
-        if res.matched_count:
+        cas = {k: v for k, v in held_cas(roll).items() if k not in ("id", "status")}
+        back = await _rs.transition(
+            roll["id"], "reserved" if keep else "available", from_=roll["status"],
+            reason=f"exception transfer: kembali ke gudang asal — {reason}", actor=actor.get("name", ""),
+            action="transfer_return_to_source",
+            ref={"type": "warehouse_transfer", "id": transfer["id"], "no": transfer.get("code", "")},
+            extra_filter=cas, extra_set={"reserved_ref": roll.get("reserved_ref") if keep else None, "transfer_ref": None,
+                                         "returned_from_transfer": {"ref_id": transfer["id"], "at": now_iso(),
+                                                                    "reason": reason}},
+            rebuild=False)   # saldo dibangun di bawah
+        if back:
             await db.inventory_movements.insert_one({
                 "id": new_id("mov"), "product_id": roll["product_id"], "warehouse_id": roll["warehouse_id"],
                 "owner_entity_id": roll["owner_entity_id"], "movement_type": "transfer_cancelled",

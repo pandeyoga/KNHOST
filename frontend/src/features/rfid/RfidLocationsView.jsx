@@ -8,6 +8,7 @@ import useListSearch from "@/hooks/useListSearch";
 import axios, { API } from "../../services/apiClient";
 import { Stat, EmptyBox, Pill, SectionCard, RfidHeader, fmtTime, useWarehouses } from "./rfidShared";
 import ExportMenu from "../../components/ExportMenu";   // FIX-4 — tombol baku Unduh (Excel/CSV, Pusat Export)
+import ListLimitNote from "../wms/ListLimitNote";   // FIX-7 (B3b LST-01)
 
 const STATE_COLOR = { tracked: "green", unseen: "gray", drift: "red" };
 
@@ -15,6 +16,8 @@ export default function RfidLocationsView({ currentUser, selectedEntity }) {
   const { whId, setWhId, whOpts } = useWarehouses();
   const nav = useAppNav();
   const [items, setItems] = useState([]);
+  const [locMeta, setLocMeta] = useState(null);   // FIX-7 — jumlah sungguhan tag aktif di cakupan
+  const [moreBusy, setMoreBusy] = useState(false);
   const srch = useListSearch(items, null, { testId: "rfid-loc", placeholder: "Cari EPC / produk / roll / bin…" });
   const [readers, setReaders] = useState([]);
   const [simMode, setSimMode] = useState(false);
@@ -33,6 +36,8 @@ export default function RfidLocationsView({ currentUser, selectedEntity }) {
         axios.get(`${API}/rfid/devices`, { params }),
       ]);
       setItems(l.data.items || []);
+      setLocMeta(l.data.total !== undefined ? { total: l.data.total, truncated: !!l.data.truncated,
+        shown: (l.data.items || []).length, skip: 0 } : null);
       setSimMode(!!d.data.rfid_simulation);   // FIX-3a (FRM-13) — simulasi pindai area hanya di mode simulasi RFID
       const rdrs = (d.data.devices || []).filter((x) => x.type !== "gate");
       setReaders(rdrs);
@@ -41,6 +46,17 @@ export default function RfidLocationsView({ currentUser, selectedEntity }) {
     finally { setLoading(false); }
   };
   useEffect(() => { load(); }, [whId, selectedEntity]); // eslint-disable-line
+
+  const loadMore = async () => {   // FIX-7 (B3b LST-01) — dulu 1.000 tag tanpa tanda
+    setMoreBusy(true);
+    try {
+      const l = await axios.get(`${API}/rfid/locations`, { params: { ...(whId ? { warehouse_id: whId } : {}), skip: items.length } });
+      const seen = new Set(items.map((i) => i.tag_id));
+      const next = [...items, ...(l.data.items || []).filter((i) => !seen.has(i.tag_id))];
+      setItems(next);
+      setLocMeta({ total: l.data.total, truncated: next.length < l.data.total, shown: next.length, skip: 0 });
+    } catch (e) { setError(e.response?.data?.detail || e.message || "Gagal memuat lokasi RFID"); } finally { setMoreBusy(false); }
+  };
 
   const flash = (m) => { setMsg(m); setTimeout(() => setMsg(""), 2500); };
   const sweep = async () => {
@@ -123,6 +139,8 @@ export default function RfidLocationsView({ currentUser, selectedEntity }) {
         <ExportMenu dataset="rfid_tags" label="lokasi-tag-rfid" testId="rfid-loc-export" search={srch.q}
           filters={[whId && ["warehouse_id", "eq", whId]]} sort={[{ key: "last_seen_at", dir: "desc" }]} />}>
         {srch.toolbar}
+        <ListLimitNote meta={locMeta} noun="tag" onMore={loadMore} loading={moreBusy}
+          hint="pencarian di sini hanya mencakup tag yang sudah dimuat." testId="rfid-loc-limit" />
         {loading ? <div className="h-16 bg-[#F5F5F7] rounded animate-pulse" />
           : srch.shown.length === 0 ? <EmptyBox icon={MapPin} text={items.length ? "Tidak ada tag yang cocok dengan pencarian." : "Belum ada tag. Encode roll di menu Tag RFID dulu."} />
             : (

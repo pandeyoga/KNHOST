@@ -183,6 +183,8 @@ REVIEWED: dict[tuple[str, str], tuple[str, str]] = {
     ("users.py", "POST /users"): ("service", "POST: users baru per permintaan; hr_employees.user_id gagal → akun yang baru lahir dihapus (kompensasi saga); tak ada saldo bersama"),
     ("users.py", "PATCH /users/{user_id}"): ("service", "PATCH: users $set + hr_employees.user_id (idempoten, tautan satu arah) + sesi dicabut (delete_many) — tulisan independen tanpa saldo/stok, aman diulang"),
     ("warehouse_sites.py", "POST /warehouse-sites/seed-blueprint"): ("service", "POST seed: warehouses/warehouse_sites di-upsert per kode (idempoten) — pengulangan tidak menggandakan; tak ada saldo"),
+    # ── FIX-6 (keputusan pemilik 10 Nov 2026) — penanda "minta inspeksi" saat penerimaan ─────────────
+    ("inbound_receiving_extra.py", "POST /inbound/tasks/{task_id}/inspection-request"): ("cas", "FIX-6: find_one_and_update wms_tasks berprasyarat status ∈ (belum lepas karantina) → 409 bila kalah; penanda yang sama ditempel ke roll tugas (update_many idempoten, nilai sama bila diulang) + audit append-only; tanpa saldo/stok"),
     # ── PREP-A (K-OPN-06, 9 Nov 2026) — lembar perbaikan master produk ─────────────────────
     ("master_governance.py", "POST /master-governance/cleanup/apply"): ("service", "rencana batch durable (status planned) → klaim master_cleanup_batches sesudah validasi+tanda tangan pratinjau; per baris CAS produk (status/updated_at/belum digantikan seperti dibaca), produk baru insert ber-SKU unik + kompensasi; finish_set status applied", "master_cleanup_service.apply_cleanup"),
     ("master_governance.py", "POST /master-governance/cleanup/batches/{batch_id}/rollback"): ("service", "klaim master_cleanup_batches (status applied*) sesudah validasi alasan/peran; tiap baris dibalik dengan CAS last_cleanup_batch + nilai sesudah; produk yatim dipindai dari penanda batch; finish_set rolled_back", "master_cleanup_service.rollback_cleanup"),
@@ -230,9 +232,13 @@ RE_KEY = re.compile(r"^(POST|PUT|PATCH|DELETE) /")
 RE_CLAIM = re.compile(r"atomic_claim|_saga\.claim\(|family_lock\(")
 # PK-33 — pencabut kunci lewat alias modul (`from services import atomic_claim as saga` → `saga.release(`) dan nama
 # kanoniknya (`atomic_claim.release(`) juga sah; dulu hanya `_saga.release(` yang dikenali.
-RE_FINISH = re.compile(r"finish_set\(|\$unset\"?\s*:\s*\{\s*\"saga_lock\"|so_transition|_transition\(|\b_?saga\.release\(|atomic_claim\.release\(|family_lock\(")
+# FIX-10 — `claimed=True` (`cycle_count_state.transition`) & `_pst.finish_claimed(` (`putaway_state`) = tulisan akhir
+# klaim yang mensyaratkan kunci masih dipegang lalu mencabutnya (setara finish_set).
+RE_FINISH = re.compile(r"finish_set\(|\$unset\"?\s*:\s*\{\s*\"saga_lock\"|so_transition|_transition\(|\b_?saga\.release\(|atomic_claim\.release\(|family_lock\(|claimed=True|_pst\.finish_claimed\(")
 # FIX-3a — `_its.transition(` = `services/inbound_task_state.transition` (CAS: filter id + status asal ∈ daftar-izin).
 # FIX-3b — `_ots.transition(` = `services/outbound_task_state.transition` (CAS daftar-izin tugas ambil keluar).
+# FIX-10 — `_rs.transition(` (`roll_state`: CAS status asal roll + daftar-izin), `ccs.transition(` (`cycle_count_state`),
+# `_ist.cas_filter(` (`inspection_state`) = CAS status asal ∈ daftar-izin di filter tulis.
 # PK-33 — pola CAS sah yang dulu tak dikenali (masing-masing berpasangan uji-diri hijau/merah):
 #   · `$elemMatch` berprasyarat pada unsur larik di filter tulis (`{"payments": {"$elemMatch": {"id": p, "voided": {"$ne": True}}}}`)
 #   · prasyarat status yang DITERUSKAN ke penulis tunggal (`place_roll(…, cas={"status": "receiving"})` → filter update_one)
@@ -248,7 +254,8 @@ RE_CAS = re.compile(r"find_one_and_update\(\s*\{[^}]*\"(status|escalation\.statu
                     r"|(?P<cv1>\b\w+)\s*=\s*\{[^}]*\"status\"[\s\S]*?find_one_and_update\(\s*(?P=cv1)\s*,"
                     r"|(?P<cv2>\b\w+)\s*=\s*\{[^}]*\"status\"[\s\S]*?update_one\(\s*(?P=cv2)\s*,[^\n]*\n(?:[^\n]*\n){0,2}?[^\n]*(modified|matched)_count"
                     r"|update_one\(\s*\{[^}]*\"status\"[^\n]*\n(?:[^\n]*\n){0,2}?[^\n]*(modified|matched)_count"
-                    r"|\bupdate_one\(\s*held_cas\(")
+                    r"|\bupdate_one\(\s*held_cas\("
+                    r"|_rs\.transition\(|\bccs\.transition\(|_ist\.cas_filter\(")
 RE_COMP = re.compile(r"except[^\n]*:\s*\n\s*await (release_|_release|rollback|compensate)")
 # Validasi 400/404/422 SESUDAH klaim meninggalkan saga_lock → percobaan ulang yang benar ditolak 409
 # (bukti: inbound complete × pagar lot mode block, sesi 4). Klaim wajib SESUDAH semua validasi.

@@ -173,7 +173,7 @@ export default function RfidGateMonitorView({ currentUser, selectedEntity }) {
           manajer; Pengaturan › Sistem › Perangkat RFID tinggal konfigurasi. Aksi tetap dijaga izin server (simulator/konfigurasi = admin). */}
       {tab === "ops" && (
         <div className="space-y-3" data-testid="gate-ops">
-          {devices.length === 0 ? <EmptyBox icon={Cpu} text="Belum ada gerbang di lokasi ini." /> : (
+          {devices.length === 0 ? <EmptyBox icon={Cpu} loading={loading} what="gerbang" text="Belum ada gerbang di lokasi ini." /> : (
             <div className="max-w-md"><label className="text-[11px] text-[#6B6B73]">Gate</label>
               <KNSelect data-testid="gate-ops-select" value={gateId} onValueChange={setGateId} options={gateOpts} className="field mt-1 text-[12px]" placeholder="Pilih gate" /></div>
           )}
@@ -197,7 +197,9 @@ export default function RfidGateMonitorView({ currentUser, selectedEntity }) {
 
       <SectionCard title="Simulasi Pembacaan Gate">
         {devices.length === 0 ? (
-          <EmptyBox icon={Cpu} text="Belum ada gerbang di gudang ini. Buat dulu di Pengaturan › Sistem › Perangkat RFID." />
+          // FIX-8 (B1b UI-50) — selama memuat: "Memuat gerbang…", bukan "Belum ada gerbang di gudang ini".
+          <EmptyBox icon={Cpu} loading={loading} what="gerbang" testId="rfid-gate-none"
+            text="Belum ada gerbang di gudang ini. Buat dulu di Pengaturan › Sistem › Perangkat RFID." />
         ) : (
           <div className="space-y-3">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">

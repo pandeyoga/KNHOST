@@ -22,6 +22,7 @@ from db import db
 from core_utils import new_id, now_iso, safe_doc
 from services import atomic_claim
 from services import roll_service
+from services import roll_state as _rs   # FIX-10 (SSOT-1) — satu penulis status roll
 from services import gl_service
 
 EPS = 0.005
@@ -365,13 +366,23 @@ async def _consume_material(product_id: str, warehouse_id: str, owner_entity_id:
                 "qty_rolls": 1, "source_document": wo_id, "operation_id": op_id, "timestamp": now_iso(),
                 "pending": True, "wal": True,
             })
-            won = await db.inventory_rolls.find_one_and_update(
-                {**q, "id": r["id"], "$expr": {"$gte": [_FREE, take - EPS]}},
-                [{"$set": {"length_remaining": {"$round": [{"$subtract": ["$length_remaining", take]}, 2]},
-                           "op_marks": {"$concatArrays": [{"$ifNull": ["$op_marks", []]}, [mov_id]]},
-                           "updated_at": now_iso()}},
-                 {"$set": {"status": {"$cond": [{"$lte": ["$length_remaining", EPS]}, "consumed", "$status"]}}}],
-                projection={"_id": 0, "id": 1})
+            stages = [{"$set": {"length_remaining": {"$round": [{"$subtract": ["$length_remaining", take]}, 2]},
+                                "op_marks": {"$concatArrays": [{"$ifNull": ["$op_marks", []]}, [mov_id]]},
+                                "updated_at": now_iso()}}]
+            if float(r.get("length_remaining") or 0) - take <= EPS:
+                # FIX-10 (SSOT-1) — roll HABIS → `consumed` lewat roll_state (CAS panjang persis seperti dibaca supaya
+                # keputusan "habis" sama dengan hasil tulisan; dulu `$cond` di pipeline tanpa jejak status).
+                won = await _rs.transition(
+                    r["id"], "consumed", from_=q["status"], action="production_consume",
+                    reason=f"bahan produksi terpakai habis ({wo_id})", ref={"type": "work_order", "id": wo_id},
+                    extra_filter={**{k: v for k, v in q.items() if k != "status"},
+                                  "length_remaining": r["length_remaining"], "$expr": {"$gte": [_FREE, take - EPS]}},
+                    pipeline=stages, rebuild=False, return_doc=True,
+                    projection={"_id": 0, "id": 1})   # saldo dibangun ulang sesudah putaran
+            else:
+                won = await db.inventory_rolls.find_one_and_update(
+                    {**q, "id": r["id"], "$expr": {"$gte": [_FREE, take - EPS]}},
+                    stages, projection={"_id": 0, "id": 1})
             if not won:
                 await db.inventory_movements.delete_one({"id": mov_id, "pending": True})
                 continue  # roll berubah/di-hold bersamaan — dicoba lagi di putaran berikut
@@ -400,6 +411,24 @@ async def reconcile_pending_consumes(op_id: str) -> None:
             await db.inventory_movements.delete_one({"id": m["id"], "pending": True})
 
 
+async def _restore_consumed(m: Dict[str, Any], op_id: str, flt: Dict[str, Any], sets: Dict[str, Any]) -> int:
+    """FIX-10 (SSOT-1) — kembalikan panjang bahan; roll yang sempat `consumed` (habis) kembali `available` lewat
+    roll_state (CAS + jejak). Dulu satu pipeline `$cond` status. Hasil: jumlah roll yang ditulis (0/1)."""
+    cur = await db.inventory_rolls.find_one(flt, {"_id": 0, "status": 1})
+    if not cur:
+        return 0
+    if cur.get("status") == "consumed":
+        n = await _rs.transition(m["roll_id"], "available", from_="consumed", action="production_reverse",
+                                 reason=f"operasi produksi dibalik ({op_id}) — bahan kembali",
+                                 ref={"type": "production_operation", "id": op_id},
+                                 extra_filter={k: v for k, v in flt.items() if k != "id"},
+                                 pipeline=[{"$set": sets}], rebuild=False)   # saldo segmen dibangun pemanggil
+        if n:
+            return n
+    res = await db.inventory_rolls.update_one({**flt, "status": {"$ne": "consumed"}}, [{"$set": sets}])
+    return res.modified_count
+
+
 async def reverse_operation(op_id: str) -> float:
     """Balik HANYA kontribusi operasi `op_id`. G3 V3-PROD-02 — restore roll + cabut penanda `op_marks`
     dalam SATU update ber-syarat penanda; movement baru ditandai reversed SESUDAH itu, sehingga retry
@@ -414,16 +443,13 @@ async def reverse_operation(op_id: str) -> float:
                 {"id": m["id"], "reversed": {"$ne": True}}, {"$set": {"reversed": True, "reversed_at": now_iso()}})
             if mark.modified_count != 1:
                 continue
-            await db.inventory_rolls.update_one({"id": m["roll_id"]}, [
-                {"$set": {"status": {"$cond": [{"$eq": ["$status", "consumed"]}, "available", "$status"]},
-                          "length_remaining": {"$round": [{"$add": ["$length_remaining", qty]}, 2]}}}])
+            await _restore_consumed(m, op_id, {"id": m["roll_id"]},
+                                    {"length_remaining": {"$round": [{"$add": ["$length_remaining", qty]}, 2]}})
         else:
-            res = await db.inventory_rolls.update_one({"id": m["roll_id"], "op_marks": m["id"]}, [
-                {"$set": {"status": {"$cond": [{"$eq": ["$status", "consumed"]}, "available", "$status"]},
-                          "length_remaining": {"$round": [{"$add": ["$length_remaining", qty]}, 2]},
-                          "op_marks": {"$setDifference": ["$op_marks", [m["id"]]]},
-                          "updated_at": now_iso()}}])
-            if res.modified_count != 1:
+            n = await _restore_consumed(m, op_id, {"id": m["roll_id"], "op_marks": m["id"]}, {
+                "length_remaining": {"$round": [{"$add": ["$length_remaining", qty]}, 2]},
+                "op_marks": {"$setDifference": ["$op_marks", [m["id"]]]}, "updated_at": now_iso()})
+            if n != 1:
                 qty = 0.0  # penanda sudah dicabut oleh percobaan sebelumnya — restore sudah terjadi
         # restore sudah pasti terjadi tepat sekali → movement pembalik (id deterministik) + tandai reversed
         await db.inventory_movements.update_one(

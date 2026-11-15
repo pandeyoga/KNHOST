@@ -27,6 +27,8 @@ export default function RfidTagsView({ currentUser, selectedEntity }) {
   const [tagMoreBusy, setTagMoreBusy] = useState(false);
   const srch = useListSearch(tags, null, { testId: "rfid-tags", placeholder: "Cari EPC / SKU / produk / roll…" });
   const [untagged, setUntagged] = useState([]);
+  const [untagMeta, setUntagMeta] = useState(null);   // FIX-7 (B3b LST-01) — jumlah sungguhan roll belum ber-tag
+  const [untagMoreBusy, setUntagMoreBusy] = useState(false);
   // UAT 24 Okt (audit UI tahap 2) — tab Belum Ber-tag dulu merender 500 kartu sekaligus tanpa cari/paginasi.
   const srchU = useListSearch(untagged, ["roll_no", "sku", "product_name", "lot"], { testId: "rfid-untagged", placeholder: "Cari roll / SKU / produk / lot…" });
   const [loading, setLoading] = useState(true);
@@ -59,6 +61,8 @@ export default function RfidTagsView({ currentUser, selectedEntity }) {
         axios.get(`${API}/rfid/untagged-rolls`, { params }),
       ]);
       setSummary(s.data); setTags(t.data.tags || []); setUntagged(u.data.rolls || []);
+      setUntagMeta(u.data.total !== undefined ? { total: u.data.total, truncated: !!u.data.truncated,
+        shown: (u.data.rolls || []).length, skip: 0 } : null);
       setTagMeta(t.data.total !== undefined ? { total: t.data.total, truncated: !!t.data.truncated,
         shown: (t.data.tags || []).length, skip: 0 } : null);
     } catch (e) { setError(e.response?.data?.detail || e.message || "Gagal memuat data RFID"); }
@@ -74,6 +78,17 @@ export default function RfidTagsView({ currentUser, selectedEntity }) {
       setTags(next);
       setTagMeta({ total: t.data.total, truncated: !!t.data.truncated, shown: next.length, skip: 0 });
     } catch (e) { setError(e.response?.data?.detail || e.message || "Gagal memuat tag"); } finally { setTagMoreBusy(false); }
+  };
+
+  const loadMoreUntagged = async () => {   // FIX-7 (B3b LST-01) — dulu 500 roll tanpa tanda
+    setUntagMoreBusy(true);
+    try {
+      const u = await axios.get(`${API}/rfid/untagged-rolls`, { params: { ...(whId ? { warehouse_id: whId } : {}), skip: untagged.length } });
+      const seen = new Set(untagged.map((r) => r.id));
+      const next = [...untagged, ...(u.data.rolls || []).filter((r) => !seen.has(r.id))];
+      setUntagged(next);
+      setUntagMeta({ total: u.data.total, truncated: next.length < u.data.total, shown: next.length, skip: 0 });
+    } catch (e) { setError(e.response?.data?.detail || e.message || "Gagal memuat roll"); } finally { setUntagMoreBusy(false); }
   };
 
   const flash = (m) => { setMsg(m); setTimeout(() => setMsg(""), 2500); };
@@ -200,6 +215,8 @@ export default function RfidTagsView({ currentUser, selectedEntity }) {
                       filters={[["rfid_tag_id", "empty"], ["length_remaining", "gt", 0], whId && ["warehouse_id", "eq", whId],
                         ["status", "in", ["available", "reserved", "committed", "picked", "packed", "hold", "wip", "quarantine", "blocked", "damaged"]]]} />
                   </div>
+                  <ListLimitNote meta={untagMeta} noun="roll" onMore={loadMoreUntagged} loading={untagMoreBusy}
+                    hint="pencarian di sini hanya mencakup roll yang sudah dimuat." testId="rfid-untagged-limit" />
                   {srchU.shown.length === 0 && <EmptyBox icon={PackageSearch} text="Tidak ada roll yang cocok dengan pencarian." />}
                   {srchU.pageRows.map((r) => (
                     <div key={r.id} data-testid={`rfid-untagged-${r.id}`} className="flex flex-wrap items-center gap-2 rounded-lg bg-[#FAFAFB] p-2">

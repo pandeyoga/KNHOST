@@ -127,6 +127,8 @@ def evaluate_match(
         lk = line_key(po, bi)  # FN-02 — cocokkan per BARIS PO, bukan per produk
         po_it = po_items.get(lk) or next((it for it in po.get("items", []) if it.get("product_id") == pid), {})
         ordered = float(po_it.get("quantity", 0) or 0)
+        # R0 (integrasi FIX-6, 15 Nov) — qty retur "potong tagihan" dikurangi SATU kali lewat `returned_unbilled` (PK-28,
+        # retur ber-dasar GR/IR); `returned_qty` baris PO (FIX-6) hanya keterangan, tidak dikurangi lagi di sini.
         received = float(po_it.get("received_qty", 0) or 0)
         prior = float(billed_so_far.get(lk, 0) or 0) + in_bill.get(lk, 0.0)
         in_bill[lk] = in_bill.get(lk, 0.0) + float(bi.get("billed_qty", bi.get("quantity", 0)) or 0)
@@ -306,6 +308,7 @@ async def build_billing_context(po: Dict[str, Any]) -> Dict[str, Any]:
     for idx, it in enumerate(po_items):
         pid = it.get("product_id")
         ordered = float(it.get("quantity", 0) or 0)
+        # R0 — retur sebelum ditagih dikurangi sekali lewat `returned_unbilled_map` (PK-28), bukan `returned_qty` FIX-6.
         received = float(it.get("received_qty", 0) or 0)
         # FN-02 — sudah-ditagih dibaca per BARIS PO (kunci sama dengan already_billed_map)
         lid = po_line_id(it, idx)
@@ -372,7 +375,10 @@ async def returned_unbilled_map(po_id: str) -> Dict[str, float]:
     po = await db.purchase_orders.find_one({"id": po_id}, {"_id": 0, "items": 1}) or {}
     rets = [r async for r in db.purchase_returns.find(
         {"po_id": po_id, "stock_adjusted": True, "reversed": {"$ne": True}, "status": {"$ne": "cancelled"}},
-        {"_id": 0, "id": 1, "ap_basis": 1, "items": 1})]
+        {"_id": 0, "id": 1, "ap_basis": 1, "items": 1, "remedy": 1})]
+    # R0 (FIX-6 D2) — "ganti barang" tidak mengurangi qty tertagih: `received_qty` PO sudah diturunkan saat retur dan naik
+    # lagi oleh penerimaan pengganti; tagihan supplier tetap untuk qty penuh.
+    rets = [r for r in rets if (r.get("remedy") or {}).get("choice") != "replace"]
     lama = [r["id"] for r in rets if not r.get("ap_basis")]
     lama_grir: set = set()
     if lama:

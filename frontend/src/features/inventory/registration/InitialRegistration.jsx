@@ -13,9 +13,13 @@ import FormModal from "../../../components/FormModal";
 import ErrorNotice from "../../../components/ErrorNotice";
 import axios, { API } from "../../../services/apiClient";
 import { apiErrorText } from "../../../utils/apiError";
-import { EPC_OPTIONS, FREEZE_OPTIONS, STATUS_LABEL, STATUS_TONE, regApi, scopeOptions } from "./registrationApi";
+import { EPC_OPTIONS, FREEZE_OPTIONS, STATUS_LABEL, regApi, scopeOptions } from "./registrationApi";
+import StatusBadge from "../../../components/StatusBadge";   // FIX-8 — lencana baku
+import EmptyState from "../../../components/EmptyState";   // FIX-8 — memuat ≠ kosong
+import { formatDate } from "../../../utils/formatters";   // FIX-8 (G-OUT-01) — tanggal WIB
 import RegistrationDetail from "./RegistrationDetail";
 import ExportMenu from "../../../components/ExportMenu";   // FIX-4 — tombol baku Unduh (Excel/CSV, Pusat Export)
+import ListLimitNote from "../../wms/ListLimitNote";   // FIX-7 (B3b LST-01)
 
 const EMPTY = { warehouse_id: "", name: "", notes: "", freeze_mode: "zone", epc_mode: "read", node_ids: [] };
 
@@ -30,10 +34,24 @@ export default function InitialRegistration({ warehouses = [] }) {
   const [formErr, setFormErr] = useState("");
   const [busy, setBusy] = useState(false);
 
+  const [listMeta, setListMeta] = useState(null);   // FIX-7 — jumlah sungguhan (header server)
+  const [moreBusy, setMoreBusy] = useState(false);
+  const metaOf = (r, shown) => (Number.isFinite(r.total) ? { total: r.total, truncated: shown < r.total, shown, skip: 0 } : null);
   const load = async () => {
     setLoading(true);
-    try { setRows(await regApi.list()); setErr(""); } catch (e) { setErr(apiErrorText(e, "Gagal memuat sesi pendaftaran")); }
+    try { const r = await regApi.listPage(); setRows(r.rows); setListMeta(metaOf(r, r.rows.length)); setErr(""); }
+    catch (e) { setErr(apiErrorText(e, "Gagal memuat sesi pendaftaran")); }
     setLoading(false);
+  };
+  const loadMore = async () => {   // FIX-7 (B3b LST-01) — dulu 200 sesi terbaru tanpa tanda
+    setMoreBusy(true);
+    try {
+      const r = await regApi.listPage({ skip: rows.length });
+      const seen = new Set(rows.map((x) => x.id));
+      const next = [...rows, ...r.rows.filter((x) => !seen.has(x.id))];
+      setRows(next); setListMeta(metaOf(r, next.length));
+    } catch (e) { setErr(apiErrorText(e, "Gagal memuat sesi berikutnya")); }
+    setMoreBusy(false);
   };
   useEffect(() => { load(); }, []);   // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -82,20 +100,21 @@ export default function InitialRegistration({ warehouses = [] }) {
         <div className="grid grid-cols-1 gap-3 lg:grid-cols-[300px_1fr]">
           <div className="rounded-md border border-[#EFF0F2] bg-[#FAFBFC] p-3" data-testid="reg-list">
             <div className="mb-2 flex items-center justify-between"><h3 className="text-[13px] font-bold">Sesi</h3><span className="text-[11px] text-[#6B6B73]">{rows.length} sesi</span></div>
-            {rows.length === 0 && !loading && <div className="py-4 text-center text-[12px] text-[#6B6B73]" data-testid="reg-empty">Belum ada sesi pendaftaran awal.</div>}
+            {rows.length === 0 && <EmptyState kind={loading ? "loading" : "empty"} what="sesi pendaftaran awal" compact testId="reg-empty" />}
             <div className="grid max-h-[28rem] gap-1.5 overflow-auto">
               {rows.map((s) => (
                 <button key={s.id} type="button" data-testid={`reg-session-${s.id}`} onClick={() => setSelectedId(s.id)}
                   className={`rounded-lg border bg-white p-2.5 text-left ${selectedId === s.id ? "border-[#007AFF]" : "border-[#EFF0F2] hover:border-[#C7C7CC]"}`}>
                   <div className="flex items-center justify-between gap-2">
                     <span className="truncate text-[12px] font-bold">{s.number || s.name}</span>
-                    <span className={`rounded border px-1.5 py-0.5 text-[10px] font-bold ${STATUS_TONE[s.status] || ""}`}>{STATUS_LABEL[s.status] || s.status_label}</span>
+                    <StatusBadge status={s.status} domain="registration" label={STATUS_LABEL[s.status] || s.status_label} />
                   </div>
                   <p className="mt-0.5 text-[11px] text-[#6B6B73]">{s.warehouse_name} · {(s.registration?.node_labels || []).join(", ")}</p>
-                  <p className="text-[10.5px] text-[#8E8E93]">{s.freeze?.active ? "Beku aktif" : "Tidak membekukan"} · {s.created_at?.slice(0, 10)}</p>
+                  <p className="text-[10.5px] text-[#8E8E93]">{s.freeze?.active ? "Beku aktif" : "Tidak membekukan"} · {formatDate(s.created_at)}</p>
                 </button>
               ))}
             </div>
+            <ListLimitNote meta={listMeta} noun="sesi" onMore={loadMore} loading={moreBusy} testId="reg-limit" />
           </div>
           {selectedId ? <RegistrationDetail key={selectedId} sessionId={selectedId} onChanged={load} /> : (
             <div className="rounded-md border border-dashed border-[#C7C7CC] p-8 text-center text-[12.5px] text-[#6B6B73]" data-testid="reg-pick-hint">

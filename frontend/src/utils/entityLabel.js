@@ -68,6 +68,21 @@ export const ENTITY_ALL_LABEL = ALL_LABEL;
  * padahal berkas ini sejak awal berbunyi "JANGAN PERNAH menampilkan `entity.id`".
  * Sumber datanya sama dengan yang dipakai `components/EntityBadge.jsx`.
  */
+/**
+ * FIX-8 (B1b UI-58) — KODE nomor dokumen PT (mis. "KSC") dari konteks login: `doc_prefix` → `code` → `short_name`
+ * (urutan yang sama dengan server `core_utils.entity_code`). Tak dikenal → "" (lencana PT disembunyikan, BUKAN id).
+ */
+export function entityCodeFromCtx(id) {
+  if (!id || id === "all") return "";
+  try {
+    const list = JSON.parse(localStorage.getItem("kn_entity_ctx") || "null")?.entities || [];
+    const e = list.find((x) => x && x.id === id);
+    return e ? (e.doc_prefix || e.code || e.short_name || "") : "";
+  } catch {
+    return "";
+  }
+}
+
 export function entityShortFromCtx(id, fallback = UNKNOWN_LABEL) {
   if (!id || id === "all") return ALL_LABEL;
   try {

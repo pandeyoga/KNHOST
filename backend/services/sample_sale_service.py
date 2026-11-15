@@ -339,9 +339,12 @@ async def _resolve_roll(product_id: str, sku: str, take: float, unit: str, roll_
     from services.roll_service import free_length
     free = free_length(roll)
     if free + 0.001 < take:
+        from services.makloon_roll_lock import hold_text, roll_locked_qty   # FIX-9 — kunci makloon menyebut MKO/PR
+        held = (f"dipegang dokumen lain ({hold_text(roll)})" if roll_locked_qty(roll) > 0
+                else "dipesan pesanan lain (reservasi potong)")
         raise HTTPException(status_code=409, detail={"code": "ROLL_LENGTH_RESERVED", "message": (
             f"Roll {roll.get('roll_no')} sisa {roll.get('length_remaining')} {unit}, tetapi {roll.get('length_reserved')} "
-            f"sudah dipesan pesanan lain (reservasi potong) — panjang bebas {free:g} < {take:g}. Pilih roll lain.")})
+            f"sudah {held} — panjang bebas {free:g} < {take:g}. Pilih roll lain.")})
     return roll
 
 

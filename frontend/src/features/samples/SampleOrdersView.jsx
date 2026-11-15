@@ -8,7 +8,8 @@ import ErrorNotice from "../../components/ErrorNotice";
 import { apiErrorText } from "../../utils/apiError";
 import { formatCurrency, formatDateTime, formatPct, formatQty } from "../../utils/formatters";
 import { SAMPLE_STATUS_LABEL } from "../../utils/sampleOrder";
-import { listSampleOrders, sampleStats, cancelSampleOrder, approveSamplePayment, confirmSampleOrder } from "./sampleApi";
+import { listSampleOrders, listSampleOrdersPage, sampleStats, cancelSampleOrder, approveSamplePayment, confirmSampleOrder } from "./sampleApi";
+import ListLimitNote from "../wms/ListLimitNote";   // FIX-7 (B3b LST-01)
 import { StatusTabs, SearchBox, ListToolbar } from "../../components/ListControls";
 import PageTabs from "../../components/PageTabs";
 import ResponsiveTable from "../../components/ResponsiveTable";
@@ -54,6 +55,8 @@ const SAMPLE_COLUMNS = [
 
 export default function SampleOrdersView({ user, selectedEntity = "all", focusDoc, onClearFocus }) {
   const [orders, setOrders] = useState([]);
+  const [totalRows, setTotalRows] = useState(null);   // FIX-7 — jumlah sungguhan (header server)
+  const [moreBusy, setMoreBusy] = useState(false);
   const [stats, setStats] = useState(null);
   const [filter, setFilter] = useState("all");
   const [q, setQ] = useState("");
@@ -73,18 +76,35 @@ export default function SampleOrdersView({ user, selectedEntity = "all", focusDo
   const canCancel = can(perms, "sample_order", "cancel");
   const canCreateCat = can(perms, "sample_order", "create");
 
+  // FIX-7 — daftar + jumlah sungguhan; bila pembantu halaman tak tersedia (mis. tiruan uji lama) → daftar biasa tanpa catatan.
+  const fetchPage = (params) => (typeof listSampleOrdersPage === "function"
+    ? listSampleOrdersPage(params) : listSampleOrders(params).then((rows) => ({ rows, total: NaN })));
   const load = useCallback(async () => {
     setLoading(true);
     try {
       const params = {};
       if (selectedEntity && selectedEntity !== "all") params.entity_id = selectedEntity;
       if (filter !== "all") params.status = filter;
-      const [rows, st] = await Promise.all([listSampleOrders(params), sampleStats(params.entity_id ? { entity_id: params.entity_id } : {})]);
-      setOrders(rows); setStats(st); setError("");
+      const [page, st] = await Promise.all([fetchPage(params), sampleStats(params.entity_id ? { entity_id: params.entity_id } : {})]);
+      setOrders(page.rows); setStats(st); setError("");
+      setTotalRows(Number.isFinite(page.total) ? page.total : null);
     } catch (e) { setError(apiErrorText(e, "Gagal memuat pesanan sample.")); }
     finally { setLoading(false); }
   }, [selectedEntity, filter]);
   useEffect(() => { load(); }, [load]);
+  // FIX-7 (B3b LST-01) — dulu 300 pesanan terbaru tanpa tanda; kini "Muat berikutnya" dari server.
+  const loadMore = async () => {
+    setMoreBusy(true);
+    try {
+      const params = { skip: orders.length };
+      if (selectedEntity && selectedEntity !== "all") params.entity_id = selectedEntity;
+      if (filter !== "all") params.status = filter;
+      const page = await fetchPage(params);
+      const seen = new Set(orders.map((o) => o.id));
+      setOrders([...orders, ...page.rows.filter((o) => !seen.has(o.id))]);
+      if (Number.isFinite(page.total)) setTotalRows(page.total);
+    } catch (e) { setError(apiErrorText(e, "Gagal memuat pesanan sample berikutnya.")); } finally { setMoreBusy(false); }
+  };
   useEffect(() => {
     if (focusDoc?.focus_type === "sample_order" && focusDoc?.focus_id) { setFilter("all"); setSelectedId(focusDoc.focus_id); onClearFocus?.(); }
   }, [focusDoc]); // eslint-disable-line
@@ -172,6 +192,9 @@ export default function SampleOrdersView({ user, selectedEntity = "all", focusDo
             rowClassName={(o) => (sel?.id === o.id ? "bg-[#FFF3D6]" : "")}
             empty={<span data-testid="sample-orders-empty">{q.trim() ? `Tidak ada pesanan sample yang cocok dengan “${q.trim()}”.` : "Belum ada pesanan sample untuk saringan ini."}</span>}
             footer={shown.length > 20 ? <div className="px-3 py-2">{pgOrders.pager}</div> : null} />
+          <ListLimitNote noun="pesanan sample" onMore={loadMore} loading={moreBusy} testId="sample-orders-limit"
+            hint="pencarian di layar hanya atas pesanan yang sudah dimuat (Unduh mengikuti semua hasil)."
+            meta={totalRows != null ? { total: totalRows, truncated: orders.length < totalRows, shown: orders.length, skip: 0 } : null} />
         </section>
 
         <aside ref={detailRef} className="section-card min-w-0" data-testid="sample-order-detail">

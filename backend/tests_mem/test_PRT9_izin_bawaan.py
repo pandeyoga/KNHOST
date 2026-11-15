@@ -123,6 +123,9 @@ for _r, _tambah in _pc.PYT4_DEFAULT_PAIRS.items():
 for _r, _tambah in _pc.KMT3_DEFAULT_PAIRS.items():
     for _res, _aksi in _tambah.items():
         TAMBAHAN_SESUDAH.setdefault(_r, {}).setdefault(_res, set()).update(_aksi)
+# R0 (integrasi `main` FIX-6, keputusan pemilik 10 Nov 2026) — MD mengunduh lembar perbaikan master / ekspor produk
+# (`product.export`, `DEFAULT_PERMISSIONS["md"]`; matriks tersimpan menerimanya lewat `sync_permission_modules`).
+TAMBAHAN_SESUDAH.setdefault("md", {}).setdefault("product", set()).add("export")
 
 
 def _himpunan(perms: dict) -> dict:

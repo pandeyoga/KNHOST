@@ -28,6 +28,7 @@ from core_utils import new_id, next_doc_number, now_iso, safe_doc
 from db import db
 from services import placement_rules as pr
 from services import putaway_order_service as pa
+from services import putaway_state as _pst   # FIX-10 — tabel transisi Putaway Order
 from services import warehouse_profile_service as whp
 
 DRAFTABLE_STAGES = ("received_transit", "tag_printed", "tag_verified", "label_verified")
@@ -45,13 +46,20 @@ async def auto_draft_enabled(entity_id: str) -> bool:
 
 
 async def inspection_requested(roll_ids: List[str]) -> Set[str]:
-    """Penanda "minta inspeksi" (K-GDG-04): roll tercantum di SPK QC 4-point (inspeksi per 15 yard) yang terbuka."""
+    """Penanda "minta inspeksi" (K-GDG-04): roll tercantum di SPK QC 4-point (inspeksi per 15 yard) yang terbuka,
+    ATAU — FIX-6 (keputusan pemilik 10 Nov) — roll bertanda `inspection_request.requested` (dipilih di BARIS PO atau
+    saat PENERIMAAN) yang BELUM pernah singgah di gedung inspeksi (`journey.inspection_site` kosong). Sesudah tiba di
+    gedung inspeksi, perjalanan berikutnya mengikuti aturan biasa (SPK 4-point terbuka tetap menahan rutenya)."""
     if not roll_ids:
         return set()
     wanted, out = set(roll_ids), set()
     async for d in db.inspections.find({"kind": "qc_4point", "status": {"$in": list(OPEN_SPK)},
                                         "lines.roll_id": {"$in": list(roll_ids)}}, {"_id": 0, "lines.roll_id": 1}):
         out |= {ln.get("roll_id") for ln in d.get("lines") or []} & wanted
+    async for r in db.inventory_rolls.find(
+            {"id": {"$in": list(roll_ids)}, "inspection_request.requested": True,
+             "journey.inspection_site": {"$in": [None, ""]}}, {"_id": 0, "id": 1}):
+        out.add(r["id"])
     return out
 
 
@@ -110,7 +118,7 @@ async def choose_destination(src: Dict[str, Any], roll: Dict[str, Any], product:
             return None, "", "menunggu inspeksi di gedung ini"
         for w in targets["inspection"]:
             if not await pr.warehouse_violations(w, roll, product, attrs=False):
-                return w, "inspection", "diminta inspeksi (SPK QC 4-point terbuka)"
+                return w, "inspection", "diminta inspeksi (SPK QC 4-point terbuka / penanda minta inspeksi PO-penerimaan)"
     visiting = ((roll.get("journey") or {}).get("inspection_site") or "") == src.get("id")
     if whp.has_role(src, *whp.STORAGE_ROLES):
         if not visiting:
@@ -146,6 +154,8 @@ async def _insert_draft(key: str, src: Dict[str, Any], dest: Dict[str, Any], own
            "owner_entity_id": owner, "items": items, **pa.qty_summary(items),
            "auto": {"trigger": trigger, "at": now_iso()}, "draft_rev": 0, "split_from": split_from,
            "btg_number": None, "created_at": now_iso(), "created_by": actor_name or SYSTEM_ACTOR,
+           "status_history": _pst.initial_history("draft", actor_name or SYSTEM_ACTOR, "create_draft",
+                                                  f"pemicu {trigger.get('type') or '—'}"),   # FIX-10
            "dispatched_at": None, "confirmed_at": None, "confirmed_by": None}
     try:
         await db.putaway_orders.insert_one(dict(doc))
@@ -263,7 +273,7 @@ async def detail(order_id: str, scope_ids: List[str]) -> Dict[str, Any]:
                                      "roles": w.get("roles") or []} for w in opts.values()]
     order["ready_count"] = sum(1 for i in order["items"] if i["ready"])
     if requested and order.get("purpose") != "inspection":
-        order["inspection_warning"] = (f"{len(requested)} roll diminta inspeksi (SPK QC 4-point terbuka) — "
+        order["inspection_warning"] = (f"{len(requested)} roll diminta inspeksi (SPK QC 4-point / penanda minta inspeksi) — "
                                        "pertimbangkan tujuan gedung inspeksi.")
     return safe_doc(order)
 
@@ -359,9 +369,9 @@ async def publish(order_id: str, scope_ids: List[str], actor_name: str, split_un
         await pa.claim_rolls(ok, order_id, order["pa_number"], order["from_warehouse_id"])
         claimed = True
         now = now_iso()
-        await db.putaway_orders.update_one({"id": order_id}, _saga.finish_set({
+        await _pst.finish_claimed(order_id, "draft", "publish", _saga.finish_set({
             "status": "open", "items": ok, **pa.qty_summary(ok), "published_at": now, "published_by": actor_name,
-            "updated_at": now}))
+            "updated_at": now}), actor_name)
     except BaseException:
         if claimed:
             await pa._release_claims([i["roll_id"] for i in ok], order_id)
@@ -396,8 +406,10 @@ async def release_inspection_drafts(roll_ids: List[str], why: str, actor_name: s
         if not keep:
             upd.update({"status": "cancelled", "cancel_reason": why, "cancelled_by": actor_name,
                         "cancelled_at": now_iso()})
+        op = _pst.with_history({"$set": upd, "$inc": {"draft_rev": 1}}, "release_inspection_draft", "draft",
+                               upd.get("status", "draft"), actor_name, why)
         res = await db.putaway_orders.update_one({"id": d["id"], "status": "draft", "draft_rev": d.get("draft_rev", 0)},
-                                                 {"$set": upd, "$inc": {"draft_rev": 1}})
+                                                 op)
         freed += gone if res.modified_count else 0
     return freed
 
@@ -408,8 +420,9 @@ async def cancel_draft(order_id: str, reason: str, scope_ids: List[str], actor_n
     await _draft(order_id, scope_ids)
     res = await db.putaway_orders.find_one_and_update(
         {"id": order_id, "status": "draft"},
-        {"$set": {"status": "cancelled", "cancel_reason": why, "cancelled_by": actor_name, "cancelled_at": now_iso(),
-                  "updated_at": now_iso()}}, projection={"_id": 0})
+        _pst.with_history({"$set": {"status": "cancelled", "cancel_reason": why, "cancelled_by": actor_name,
+                                    "cancelled_at": now_iso(), "updated_at": now_iso()}},
+                          "cancel_draft", "draft", "cancelled", actor_name, why), projection={"_id": 0})
     if not res:
         raise HTTPException(status_code=409, detail="Draf baru saja diterbitkan/diubah — muat ulang.")
     return await pa._get(order_id, scope_ids)

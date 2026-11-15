@@ -24,6 +24,7 @@ from services import interco_return_service as icret
 from services.return_policy_service import return_assumptions, supplier_deadlines
 from services.return_service import interco_origin_of_roll
 from services.roll_service import rebuild_balance
+from services import roll_state as _rs   # FIX-10 (SSOT-1) — satu penulis status roll
 
 STAGE1 = {"keep": "Simpan di pemilik sekarang", "return_internal": "Kembalikan ke PT pemasok internal"}
 STAGE2 = {"keep": "Simpan sebagai stok", "supplier_return": "Retur ke supplier", "dispose": "Buang (BS) dengan bukti"}
@@ -263,10 +264,14 @@ async def _dispose(ret: Dict[str, Any], rolls: List[Dict[str, Any]], reason: str
         if not je:   # sudah diposting pada percobaan sebelumnya (idempoten per roll)
             je = await db.journal_entries.find_one({"source_type": "inventory_writeoff", "source_id": r["id"],
                                                     "status": {"$ne": "void"}}, {"_id": 0, "id": 1})
-        await db.inventory_rolls.update_one({"id": r["id"], "disposal_key": {"$ne": dkey}}, {"$set": {
-            "status": "damaged", "length_remaining": 0, "disposed_qty": qty, "disposed_at": now_iso(),
-            "writeoff_amount": amount, "writeoff_je_id": (je or {}).get("id", ""), "disposal_key": dkey,
-            "updated_at": now_iso()}})
+        # FIX-10 — CAS status seperti dibaca (dulu `{id}` + kunci buang saja) + jejak status roll; saldo di bawah.
+        await _rs.transition(r["id"], "damaged", from_=r.get("status") or "", actor=actor, action="return_dispose",
+                             reason=f"BS retur dibuang: {reason}",
+                             ref={"type": "sales_return", "id": ret["id"], "no": ret.get("number", "")},
+                             extra_filter={"disposal_key": {"$ne": dkey}},
+                             extra_set={"length_remaining": 0, "disposed_qty": qty, "disposed_at": now_iso(),
+                                        "writeoff_amount": amount, "writeoff_je_id": (je or {}).get("id", ""),
+                                        "disposal_key": dkey}, rebuild=False)
         if not await db.inventory_movements.find_one({"roll_id": r["id"], "movement_type": "return_disposal",
                                                       "ref_id": ret["id"]}, {"_id": 1}):
             await db.inventory_movements.insert_one({

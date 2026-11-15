@@ -199,6 +199,9 @@ async def _build_items(payload, old_items, received_map, supplier_id, old_suppli
             "quantity": item_in.quantity, "unit": item_in.unit, "base_unit": base_unit,
             "quantity_base": qbase, "price": price,
             "discount_percent": float(item_in.discount_percent or 0), "received_qty": rq,
+            # FIX-6 — penanda "minta inspeksi" per baris tetap terbawa amandemen.
+            "inspection_requested": bool(getattr(item_in, "inspection_requested", False)
+                                         or (old or {}).get("inspection_requested")),
         })
     return raw_items
 

@@ -79,8 +79,11 @@ def test_t01_jakarta_transit_qc_by_scans_only(h):
     assert tl["rolls"][0]["location"].startswith("Area QC")
     inbound = [e for e in tl["events"] if e["lane"] == "inbound"]
     assert [e["doc_no"].split("/")[-1] for e in inbound] == ["TRM-1", "SJ-1", "TBA-1"]
-    # roll di inventori TIDAK berpindah karena scan sebelum penyelesaian (masih tercatat di pelanggan)
-    assert DB.inventory_rolls.find_one({"id": roll["roll_id"]})["status"] == "delivered"
+    # FIX-6 (keputusan pemilik 10 Nov, D5) — barang retur MASUK STOK saat dipindai: karantina retur di gudang lokasi
+    # fisik terakhir (ikut pindah saat tiba), NILAI NOL sampai penyelesaian (dulu: tetap "delivered" sampai settle).
+    _r = DB.inventory_rolls.find_one({"id": roll["roll_id"]})
+    assert _r["status"] == "quarantine" and _r["warehouse_id"] == RCM_QC and float(_r["unit_cost"]) == 0.0
+    assert _r["return_intake"]["state"] == "received"
     assert requests.post(f"{BASE}/sales-returns/{rid}/inspect/complete", headers=h,
                          json={"inspections": [{"index": 0, "grade": "A", "condition": "ok"}]}).status_code == 200
     bad = requests.post(f"{BASE}/sales-returns/{rid}/settle", headers=h,
