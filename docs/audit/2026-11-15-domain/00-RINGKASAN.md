@@ -29,7 +29,10 @@ Tiap klaim ditelusuri ke kode sampai terbukti/gugur. **Dua klaim pass awal dikor
 1. **SO-01 (Kritis, duplikasi):** `plan_service` & `wizard_service` menghitung ketersediaan dari koleksi mentah, melewati saringan gudang-dihitung & alokasi makloon yang dipakai papan ATP/meja keputusan → layar berbeda, angka berbeda untuk SO yang sama. **Akar keluhan alokasi/tagihan berubah.**
 2. **MS-01 (Tinggi, aturan tidak ditegakkan seragam):** pintu non-form menyimpan produk cacat-domain (`domain_gaps`), pintu form menolak 400.
 3. **MS-02 (Tinggi, duplikasi + aturan tidak ditegakkan):** dua sumber transisi stage paralel; jalur produksi utama (makloon/potong) tak lewat validator transisi.
-4. **MS-04/MK-02 (Tinggi, pilihan salah + aturan tidak ditegakkan):** dropdown stage langkah makloon tak disaring; server tak mengadu stage roll input vs `from_stage`/`to_stage`.
+4. **MS-05 (Tinggi, RUNTIME-VERIFIED):** katalog POS/orderable memuat barang non-finished (PFD/PFP/byproduct) karena `is_orderable` cek lifecycle saja, bukan stage — menjawab keluhan "bisakah greige dijual di POS".
+5. **MS-04/MK-02 (Tinggi, pilihan salah + aturan tidak ditegakkan):** dropdown Satuan Dasar di Master Produk & dropdown stage langkah makloon tak disaring menurut stage (0 data cacat di seed — celah form, bukan data rusak).
+
+> **Catatan pendalaman (Domain A):** diaudit dengan backend hidup + data acuan. MS-01 & MS-05 runtime-verified (bukti diproduksi, lihat `bukti/RUNTIME-DOMAIN-A.md`). Domain B–F masih tingkat kode; pendalaman runtime menyusul per domain.
 5. **RD-01 (Tinggi, pintu ganda):** 4–5 pintu pembuatan SKU, penegakan domain tak seragam (akar sama MS-01).
 6. **MK-01 (Sedang, pintu ganda):** dua pintu aktif pembuatan SPK makloon.
 7. **MS-03 (Sedang, duplikasi):** dua label stage + ±14 salinan hardcode.
