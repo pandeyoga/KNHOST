@@ -390,6 +390,7 @@ P14-K1 → Bima). Laporan hasil di `docs/uat/2026-10-21/hasil/UAT24-*.md`.
 | ENV-02 | Skrip restore terikat lingkungan Emergent (`supervisorctl`, `localhost`) — perlu varian Docker | implemented_pending_review (`6e64b2c`) | [ENV](2026-10-20/hasil/ENV.md) |
 | ENV-03 | `seed_realistic.py` melewati data Interco & SPK printing | open | [validasi](2026-10-20/hasil/VALIDASI_TEMUAN.md) |
 | ROLE-01 | 83 gerbang nama peran frontend di luar daftar FE-04 (kelas yang sama) — tombol tidak mengikuti izin efektif server | implemented_pending_review (`ac62dc3`; default matriks `af24f9c`) | [ROLE-GATE-SWEEP](2026-10-20/hasil/ROLE-GATE-SWEEP.md) · [KEPUTUSAN](2026-10-20/hasil/KEPUTUSAN-2026-10-21.md) |
+| T4-01 | `POST /api/ar/aging/{customer_id}/accrue-penalties` menerima `?today=` dari klien sebagai "hari ini" akrual denda (kelas PK-08; ditemukan saat CR-T4) — berlaku di HEAD `fc95d36`: ya, bukti merah U1–U4 lapis B (`?today=2099-01-01` → nota 87.966.666,67 / 26.390 hari) | implemented_pending_review (`20c6096`) | [CR-T4b](2026-11-13/hasil/CR-T4b.md) |
 
 ## Keputusan yang ditunggu
 
