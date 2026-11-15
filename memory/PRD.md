@@ -95,6 +95,22 @@ GL-01: registri `services/gl_mapping_registry.py` (54 kebutuhan) → koleksi `gl
   tetap 403. Kartu **Slip Gaji Saya** (selebar halaman, di bawah kartu absen/cuti/KPI): ringkasan slip terakhir, riwayat
   per tahun (pilihan tahun), rincian komponen Pendapatan · Potongan · Gaji bersih per baris, PDF per baris; keadaan
   memuat, galat (dengan Coba lagi), dan kosong ("Slip muncul setelah gaji dibayar.") dibedakan.
+- 2026-11-15 PY-T4 (PY-11 — penggajian, K-41, K-34): **bayar gaji dari rekening berperuntukan Gaji dengan daftar transfer
+  per karyawan; Finance membayar dan menyetor**. Tab SDM › Penggajian › **Setoran & Pajak** (dulu Setoran Kewajiban):
+  "Gaji siap dibayar" (antrean proses Diposting, `GET /api/hr/payroll/pay-queue`), pop-up **Bayar gaji** (rekening hanya
+  yang ditandai Gaji — `GET …/pay-accounts`; tanggal bayar, bawaan hari ini dan tidak sebelum tanggal jurnal gaji;
+  konfirmasi menyebut nominal, rekening, PT), **Daftar transfer** (diturunkan dari slip, Σ = gaji bersih; tunai bila
+  tanpa rekening; "Unduh Excel" `transfer-gaji-<nomor>.xlsx`, pengunduhan tercatat di jejak audit tanpa nominal), setoran
+  BPJS & PPh 21 dengan rekap setahun 12 masa per jenis dan tombol **Batalkan** setoran (`payroll.void`, alasan wajib;
+  kas setoran dibalik bertanggal setor), tautan Rekap PPh 21 di Pusat Pajak. Bayar = satu kas keluar lewat pembuat kas
+  (`ref_type="payroll_run"`, id kas tetap dari id proses) yang menjurnal Dr hutang gaji (pemetaan `sdm.hutang_gaji`) /
+  Cr kas rekening itu bertanggal bayar; kode akun dari isi permintaan tidak dibaca lagi (`gl_service.pay_payroll_run`
+  dihapus). Jurnal gagal → proses tetap Diposting, kas tampil di Posting Gagal; ulang (Bayar lagi atau dari panel)
+  memakai kas dan jurnal yang sama. Finance bawaan mendapat `payroll.pay` (tanpa `hr.view`: tidak membuka karyawan, slip
+  rinci, komponen; izin `payroll.*` saja tidak membuka menu SDM lain — `view_actions`); peran "HR" = peran kustom
+  buatan Admin (modul SDM & Penggajian tanpa sahkan/posting/anulir/bayar).
+  Rincian Proses Gaji: "Dibayar {tanggal} dari {rekening}" + Daftar transfer + Lihat jurnal. Layanan
+  `services/hr_payroll_pay.py`; layar `features/hr/PayrollPayPanel.jsx`, `features/hr/TransferListPanel.jsx`.
 - 2026-11-15 PY-T3 (PY-04, PY-07, PY-08, PY-12 — penggajian, K-38, K-39): **aturan hitung gaji dari Pengaturan per PT**
   (`services/hr_pay_rules.py:rules` satu-satunya pembaca; kalender kerja `services/hr_work_calendar.py`). Lembur: "Lembur
   dibayar berdasarkan" (`hr.overtime.sumber`, bawaan **pengajuan yang disetujui saja** — K-39; pilihan absensi = cara

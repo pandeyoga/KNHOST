@@ -1047,3 +1047,18 @@ for _role, _mods in CRT3_DEFAULT_PAIRS.items():
     for _res, _acts in _mods.items():
         _cur = list(DEFAULT_PERMISSIONS[_role].get(_res) or [])
         DEFAULT_PERMISSIONS[_role][_res] = _cur + [a for a in _acts if a not in _cur]
+
+# ═══════════════════════════════════════════════════════════════════════════
+# PY-T4 (PY-11, K-41) — Finance membayar gaji dan menyetor BPJS/PPh 21 (`docs/blueprint/unit/PY-T4.md`, tabel "Izin
+# dan peran"): `payroll.pay` bawaan Finance. Finance TIDAK mendapat `hr.view` — rekening bayar, antrean bayar, daftar
+# transfer, dan kewajiban setoran dibuka dengan `payroll.pay` saja; karyawan, slip rinci, dan komponen tetap tertutup.
+# Admin & Manajer tetap memegang kelima izin `payroll.*` (blok PK-22). Instalasi lama menerima pasangan baru sekali
+# lewat `bootstrap.sync_permission_modules` (`defaults_applied`, PR-T9).
+# ═══════════════════════════════════════════════════════════════════════════
+PYT4_DEFAULT_PAIRS = {
+    "finance": {"payroll": ("pay",)},
+}
+for _role, _mods in PYT4_DEFAULT_PAIRS.items():
+    for _res, _acts in _mods.items():
+        _cur = list(DEFAULT_PERMISSIONS[_role].get(_res) or [])
+        DEFAULT_PERMISSIONS[_role][_res] = _cur + [a for a in _acts if a not in _cur]

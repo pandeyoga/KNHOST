@@ -10,8 +10,10 @@ class PayrollRunInput(BaseModel):
 
 
 class PayRunInput(BaseModel):
-    cash_account: Optional[str] = None  # kode akun kas/bank untuk disbursement
-    account_id: str = ""               # PK-20 — rekening sumber (`bank_accounts`); kosong = rekening tunggal PT
+    """PY-T4 — bayar gaji. Rekening & tanggal diperiksa layanan (`services/hr_payroll_pay.py`, pesan Indonesia)."""
+    account_id: str = ""               # rekening sumber berperuntukan Gaji; kosong = satu-satunya rekening gaji PT
+    paid_date: str = ""                # TTTT-BB-HH; kosong = hari ini (WIB); tidak boleh sebelum tanggal jurnal gaji
+    cash_account: Optional[str] = None  # PY-T4 — TIDAK dibaca lagi (dulu kode akun kas); diterima demi klien lama
 
 
 class HrSettingsUpdate(BaseModel):

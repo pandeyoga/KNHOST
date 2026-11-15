@@ -114,6 +114,10 @@ for _r, _tambah in _pc.KMT2_DEFAULT_PAIRS.items():
 for _r, _tambah in _pc.CRT3_DEFAULT_PAIRS.items():
     for _res, _aksi in _tambah.items():
         TAMBAHAN_SESUDAH.setdefault(_r, {}).setdefault(_res, set()).update(_aksi)
+# PY-T4 (K-41) — Finance membayar gaji dan menyetor BPJS/PPh 21 `payroll.pay` (`permissions_config.PYT4_DEFAULT_PAIRS`).
+for _r, _tambah in _pc.PYT4_DEFAULT_PAIRS.items():
+    for _res, _aksi in _tambah.items():
+        TAMBAHAN_SESUDAH.setdefault(_r, {}).setdefault(_res, set()).update(_aksi)
 
 
 def _himpunan(perms: dict) -> dict:

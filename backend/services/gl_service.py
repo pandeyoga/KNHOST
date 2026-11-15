@@ -2627,12 +2627,13 @@ async def post_variance_reversal(*, decision_id: str, entity_id: str, amount: fl
 
 
 async def post_cash_void(txn_id: str, *, label: str = "",
-                         created_by: str = "system") -> Optional[Dict[str, Any]]:
+                         created_by: str = "system", date: str = "") -> Optional[Dict[str, Any]]:
     """Pembalik jurnal mutasi kas yang DI-VOID (append-only, idempotent).
 
     Dipakai saat kwitansi / pembayaran dibatalkan: jurnal aslinya tidak diubah, dibuat
     jurnal baru dengan debit-kredit tertukar sehingga buku besar ikut kembali dan tidak
     ada saldo hantu (mis. Piutang sudah ter-kredit padahal uangnya dianulir).
+    `date` kosong = hari ini (perilaku lama); PY-T4 — batal setoran kewajiban gaji membalik pada tanggal setornya.
     """
     if not txn_id:
         return None
@@ -2643,7 +2644,7 @@ async def post_cash_void(txn_id: str, *, label: str = "",
         return None
     # PK-10 (GL-01) — sudah dibalik manual / oleh rekonsiliasi → jurnal pembalik itu yang dipakai (tidak dibalik lagi).
     return await _reverse_once(
-        orig, source_type="cash_transaction_void", source_id=txn_id, date=now_iso(),
+        orig, source_type="cash_transaction_void", source_id=txn_id, date=date or now_iso(),
         description=f"Pembalik mutasi kas · {label or orig.get('source_label', txn_id)}", created_by=created_by,
         source_label=orig.get("source_label", ""), line_prefix="Pembalik", reason=label)
 
@@ -3766,49 +3767,10 @@ async def post_payroll_run(run: Dict[str, Any], slips: List[Dict[str, Any]],
         created_by=created_by, source_label=label)
 
 
-async def payroll_cash_accounts(entity_id: str) -> List[str]:
-    """PK-22 (FY-09) — akun yang boleh membayar gaji: hasil pemetaan `kas_bank.kas_besar` dan `kas_bank.kas_kecil` PT itu."""
-    out: List[str] = []
-    for key in ("kas_bank.kas_besar", "kas_bank.kas_kecil"):
-        code = await account_for(key, entity_id)
-        if code and code not in out:
-            out.append(code)
-    return out
-
-
-async def assert_payroll_cash_account(entity_id: str, cash_account: Optional[str]) -> str:
-    """PK-22 (FY-09) — langkah PERIKSA bayar gaji: akun sumber harus salah satu akun pemetaan kas besar/kas kecil PT itu,
-    aktif, dan bisa diposting (dulu cukup "anak 1-1000", jadi piutang & persediaan pun lolos). → kode akun."""
-    allowed = await payroll_cash_accounts(entity_id)
-    cash = cash_account or (allowed[0] if allowed else ACC_KAS_BESAR)
-    acc = await db.gl_accounts.find_one(
-        {"code": cash, "is_postable": True, "entity_id": {"$in": [None, "", entity_id]}}, {"_id": 0})
-    if cash not in allowed or not acc or acc.get("is_active") is False:
-        raise ValueError(f"Akun pembayaran '{cash}' bukan akun kas/bank aktif — pilih akun Kas/Bank.")
-    return cash
-
-
-async def pay_payroll_run(run: Dict[str, Any], created_by: str = "system",
-                          cash_account: Optional[str] = None, *, date: str = "") -> Optional[Dict[str, Any]]:
-    """Disbursement: Dr Hutang Gaji (2-1600) / Cr Kas/Bank. Idempotent per proses (`payroll_source_id`)."""
-    entity_id = run.get("entity_id")
-    period = run.get("period")
-    src_id = await payroll_source_id(run)
-    existing = await db.journal_entries.find_one(
-        {"source_type": "payroll_pay", "source_id": src_id, "status": {"$ne": "void"}}, {"_id": 0})
-    if existing:
-        return safe_doc(existing)
-    await seed_default_coa()
-    net = round(float((run.get("totals") or {}).get("net", 0) or 0), 2)
-    if net <= EPS:
-        return None
-    cash = await assert_payroll_cash_account(entity_id, cash_account)   # W2-023 → PK-22: hanya akun kas/bank pemetaan
-    label = run.get("number", f"PAY-{period}")   # K-09
-    lines = _balanced_pair(ACC_HUTANG_GAJI, cash, net, f"Pembayaran gaji {period} ({label})")
-    return await _insert_entry(
-        lines=lines, description=f"Pembayaran gaji {period} ({label})", date=date or now_iso(),
-        source_type="payroll_pay", source_id=src_id, entity_id=entity_id,
-        created_by=created_by, source_label=label)
+# PY-T4 (PY-11) — bayar gaji tidak lagi menjurnal dari sini: kas keluar `cash_ledger.create_cash(ref_type="payroll_run")`
+# berlawan akun pemetaan `sdm.hutang_gaji` menjurnal Dr hutang gaji / Cr kas rekening (`services/hr_payroll_pay.py`).
+# `pay_payroll_run`, `assert_payroll_cash_account`, `payroll_cash_accounts` (akun bayar dari kode akun isi permintaan)
+# dihapus; jurnal lama `payroll_pay` tetap dibaca (`payroll_source_id`, Jejak Dokumen, label sumber).
 
 
 

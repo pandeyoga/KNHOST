@@ -12,7 +12,12 @@ Koleksi `hr_statutory_remittances` (`strm_`, nomor `STR-` per PT). Satu setoran 
 
 Kewajiban masa = Σ dari proses gaji `posted`/`paid` PT itu masa itu: BPJS = `totals.bpjs_emp + totals.bpjs_er`,
 PPh 21 = `totals.pph21`. Disetor = Σ setoran masa itu (termasuk yang masih `pending`, supaya dua setoran bersamaan
-tidak melampaui sisa). Denda keterlambatan bukan dokumen ini (ASUMSI unit).
+tidak melampaui sisa; PY-T4 — setoran `void` tidak dihitung). Denda keterlambatan bukan dokumen ini (ASUMSI unit).
+
+PY-T4 — batal setoran yang salah catat (`void_remittance`, izin `payroll.void`): PERIKSA `done` + alasan ≥ 5 huruf +
+`preflight_posting(PT, tanggal setor)` → NIAT `done → voiding` bersyarat → kas setoran dibalik lewat pintu tahan-gagal
+(`post_durable` jenis `cash_transaction_void`, bertanggal setor) lalu kas `void` → `void`. Gagal → kembali `done`.
+Kewajiban setahun per masa: `outstanding_year` (12 masa per jenis).
 """
 from __future__ import annotations
 
@@ -24,6 +29,8 @@ from db import db
 
 COLL = "hr_statutory_remittances"
 KIND_LABEL = {"bpjs": "BPJS", "pph21": "PPh 21"}
+#: Label status setoran (pesan 409 "…berstatus {label}…"; layar memakai label yang sama).
+STATUS_LABEL = {"pending": "Diproses", "done": "Tercatat", "voiding": "Sedang dibatalkan", "void": "Dibatalkan"}
 MAP_KEY = {"bpjs": "sdm.hutang_bpjs", "pph21": "sdm.hutang_pph21"}
 REF_TYPE = "statutory_remittance"
 EPS = 0.005
@@ -31,6 +38,10 @@ EPS = 0.005
 
 class RemittanceError(ValueError):
     """Ditolak di langkah PERIKSA (400) — pesan siap tampil."""
+
+
+class RemittanceConflict(ValueError):
+    """PY-T4 — aksi pada status yang salah (router → 409). Pesan siap tampil."""
 
 
 def _r(v: Any) -> float:
@@ -57,7 +68,8 @@ async def outstanding(entity_id: str, period: str) -> Dict[str, Any]:
         kew["pph21"] += float(t.get("pph21") or 0)
         runs += 1
     setor = {"bpjs": 0.0, "pph21": 0.0}
-    async for d in db[COLL].find({"entity_id": entity_id, "period": period}, {"_id": 0, "kind": 1, "amount": 1}):
+    async for d in db[COLL].find({"entity_id": entity_id, "period": period, "status": {"$ne": "void"}},
+                                 {"_id": 0, "kind": 1, "amount": 1}):
         if d.get("kind") in setor:
             setor[d["kind"]] += float(d.get("amount") or 0)
     items = []
@@ -66,6 +78,39 @@ async def outstanding(entity_id: str, period: str) -> Dict[str, Any]:
                       "sisa": _r(kew[k] - setor[k])})
     return {"entity_id": entity_id, "period": period, "period_label": pp.label_periode(period), "runs": runs,
             "items": items, **{it["kind"]: it for it in items}}
+
+
+async def outstanding_year(entity_id: str, year: Any) -> Dict[str, Any]:
+    """PY-T4 — kewajiban, sudah disetor, sisa untuk 12 masa satu tahun, per jenis (dua kueri, bukan 12 × 2)."""
+    from services import periodic_posting as pp
+    try:
+        y = int(str(year).strip())
+    except (TypeError, ValueError) as exc:
+        raise RemittanceError("Tahun harus berbentuk TTTT, mis. 2026.") from exc
+    if not 2000 <= y <= 2100:
+        raise RemittanceError("Tahun harus berbentuk TTTT, mis. 2026.")
+    masa = [f"{y:04d}-{m:02d}" for m in range(1, 13)]
+    kew = {k: {p: 0.0 for p in masa} for k in KIND_LABEL}
+    runs = {p: 0 for p in masa}
+    async for run in db.hr_payroll_runs.find({"entity_id": entity_id, "period": {"$in": masa},
+                                              "status": {"$in": ["posted", "paid"]}},
+                                             {"_id": 0, "period": 1, "totals": 1}):
+        t = run.get("totals") or {}
+        kew["bpjs"][run["period"]] += float(t.get("bpjs_emp") or 0) + float(t.get("bpjs_er") or 0)
+        kew["pph21"][run["period"]] += float(t.get("pph21") or 0)
+        runs[run["period"]] += 1
+    setor = {k: {p: 0.0 for p in masa} for k in KIND_LABEL}
+    async for d in db[COLL].find({"entity_id": entity_id, "period": {"$in": masa}, "status": {"$ne": "void"}},
+                                 {"_id": 0, "kind": 1, "period": 1, "amount": 1}):
+        if d.get("kind") in setor:
+            setor[d["kind"]][d["period"]] += float(d.get("amount") or 0)
+    kinds = []
+    for k, label in KIND_LABEL.items():
+        rows = [{"period": p, "period_label": pp.label_periode(p), "runs": runs[p], "kewajiban": _r(kew[k][p]),
+                 "disetor": _r(setor[k][p]), "sisa": _r(kew[k][p] - setor[k][p])} for p in masa]
+        kinds.append({"kind": k, "label": label, "rows": rows,
+                      "total": {f: _r(sum(r[f] for r in rows)) for f in ("kewajiban", "disetor", "sisa")}})
+    return {"entity_id": entity_id, "year": y, "kinds": kinds}
 
 
 async def list_remittances(scope: Dict[str, Any], *, period: str = "", kind: str = "", page: int = 1,
@@ -175,4 +220,58 @@ async def finish_remittance(rid: str) -> Dict[str, Any]:
         "cash_txn_id": txn["id"], "cash_txn_number": txn.get("number", ""),
         "journal_entry_id": (je or {}).get("id", ""), "journal_entry_number": (je or {}).get("number", ""),
         "updated_at": now_iso()}})
+    return safe_doc(await db[COLL].find_one({"id": rid}, {"_id": 0}))
+
+
+async def void_remittance(rid: str, actor: Dict[str, Any], reason: str) -> Dict[str, Any]:
+    """PY-T4 — batalkan setoran `done` yang salah catat. Galat: `RemittanceError` 400 (alasan), `RemittanceConflict`
+    409 (status / kas sudah dicocokkan / jurnal pembalik gagal), `ClosedPeriodError` 409 (periode tanggal setor)."""
+    from services import cash_ledger, gl_service as gl
+    doc = await db[COLL].find_one({"id": rid}, {"_id": 0})
+    if not doc:
+        raise RemittanceError("Setoran tidak ditemukan.")
+    # ── 1. PERIKSA (tanpa tulisan) ────────────────────────────────────────────────────────────────────────────────
+    if doc.get("status") != "done":
+        lbl = STATUS_LABEL.get(doc.get("status") or "", doc.get("status") or "")
+        raise RemittanceConflict(f"Setoran {doc.get('number') or rid} berstatus {lbl}, jadi tidak bisa dibatalkan.")
+    alasan = (reason or "").strip()
+    if len(alasan) < 5:   # K-14 (26 Okt): alasan minimum seragam 5 huruf
+        raise RemittanceError("Alasan wajib diisi (minimal 5 huruf).")
+    tanggal = doc.get("paid_date") or ""
+    await gl.preflight_posting(doc["entity_id"], tanggal)
+    cid = doc.get("cash_txn_id") or ""
+    kas = await db.cash_transactions.find_one({"id": cid or "__none__"}, {"_id": 0})
+    if kas and float(kas.get("reconciled_amount") or 0) > 0:
+        raise RemittanceConflict("Kas setoran ini sudah dicocokkan dengan mutasi bank — lepaskan dulu.")
+    # ── 2. NIAT ────────────────────────────────────────────────────────────────────────────────────────────────────
+    nama = actor.get("name", "system")
+    if not (await db[COLL].update_one({"id": rid, "status": "done"}, {"$set": {
+            "status": "voiding", "void_reason": alasan, "updated_at": now_iso()}})).matched_count:
+        fresh = await db[COLL].find_one({"id": rid}, {"_id": 0}) or doc
+        lbl = STATUS_LABEL.get(fresh.get("status") or "", fresh.get("status") or "")
+        raise RemittanceConflict(f"Setoran {doc.get('number') or rid} berstatus {lbl}, jadi tidak bisa dibatalkan.")
+    # ── 3. EFEK + JURNAL (pintu kas tahan-gagal) ──────────────────────────────────────────────────────────────────
+    rev: Dict[str, Any] = {}
+    try:
+        if kas and kas.get("status") != "void":
+            await cash_ledger.ensure_posted(cid)   # jurnal setoran asal ada (mis. sesudah ulang dari panel)
+            res = await gl.post_durable(
+                "cash_transactions", cid,
+                lambda: gl.post_cash_void(cid, label=doc.get("number", ""), created_by=nama, date=tanggal),
+                source_type="cash_transaction_void", source_id=cid, field="void_gl_status", raise_on_fail=True)
+            rev = res.get("journal") or ({"id": res["journal_entry_id"]} if res.get("journal_entry_id") else {})
+            await db.cash_transactions.update_one({"id": cid, "status": {"$ne": "void"}}, {"$set": {
+                "status": "void", "void_journal_entry_id": rev.get("id", ""), "void_reason": alasan,
+                "voided_by": nama, "voided_at": now_iso(), "updated_at": now_iso()}})
+    except Exception as exc:  # noqa: BLE001 — jurnal pembalik gagal: setoran kembali Tercatat, kas tidak di-void
+        await db[COLL].update_one({"id": rid, "status": "voiding"}, {"$set": {"status": "done", "updated_at": now_iso()},
+                                                                      "$unset": {"void_reason": ""}})
+        pesan = getattr(exc, "error", None) or str(exc)
+        raise RemittanceConflict(f"Jurnal pembalik setoran gagal: {pesan}. Setoran tetap Tercatat.") from exc
+    if rev.get("id") and not rev.get("number"):
+        rev = await db.journal_entries.find_one({"id": rev["id"]}, {"_id": 0, "id": 1, "number": 1}) or rev
+    # ── 4. SELESAI ─────────────────────────────────────────────────────────────────────────────────────────────────
+    await db[COLL].update_one({"id": rid, "status": "voiding"}, {"$set": {
+        "status": "void", "voided_by": nama, "voided_by_id": actor.get("id", ""), "voided_at": now_iso(),
+        "void_journal_id": rev.get("id", ""), "void_journal_number": rev.get("number", ""), "updated_at": now_iso()}})
     return safe_doc(await db[COLL].find_one({"id": rid}, {"_id": 0}))

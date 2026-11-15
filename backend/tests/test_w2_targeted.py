@@ -233,61 +233,76 @@ class TestW2_017_ConcurrentDepositUse:
 
 # ═══════════════════════════ W2-022 / W2-023 ═══════════════════════════
 class TestW2_022_023_PayrollPay:
+    # PK-22 (FY-06) — kunci jurnal gaji = id proses. PY-T4 (PY-11) — kode akun isi permintaan (`cash_account`) TIDAK dibaca
+    # lagi: sumber bayar = rekening berperuntukan Gaji milik PT proses (`account_id`), jurnal bayar = jurnal kas keluar
+    # (`source_type="cash_transaction"`, Dr hutang gaji / Cr kas), bukan `payroll_pay`. Periode lampau (2020-02) supaya
+    # tanggal bayar bawaan (hari ini) tidak sebelum tanggal jurnal gaji.
     def _make_posted_run(self) -> str:
-        # PK-22 (FY-06) — jurnal bayar gaji berkunci id proses (dulu "{PT}:{periode}").
         rid = f"prun_{PREFIX}_{uuid.uuid4().hex[:6]}"
         db.hr_payroll_runs.insert_one({
             "id": rid, "number": f"PR-{PREFIX}-{uuid.uuid4().hex[:4]}",
-            "entity_id": ENT, "period": "2099-02", "status": "posted",
-            "totals": {"net": 100000.0, "gross": 100000.0}, "payslips": [],
-            "created_at": "2099-02-01T00:00:00",
+            "entity_id": ENT, "period": "2020-02", "status": "posted", "journal_date": "2020-02-29",
+            "totals": {"net": 100000.0, "gross": 100000.0, "employees": 1},
+            "created_at": "2020-02-01T00:00:00",
         })
+        db.hr_payslips.insert_one({"id": f"{rid}_s0", "number": f"SLIP-{PREFIX}", "run_id": rid, "entity_id": ENT,
+                                   "period": "2020-02", "status": "posted", "employee_id": f"emp_{PREFIX}",
+                                   "employee_name": f"{PREFIX} Karyawan", "net": 100000.0,
+                                   "bank": {"bank_name": "BCA", "acc_no": "111", "acc_name": "Uji"}})
         _mark("hr_payroll_runs", rid)
+        _mark("hr_payslips", f"{rid}_s0")
         return rid
+
+    def _rekening(self, purposes) -> str:
+        aid = f"acc_{PREFIX}_{uuid.uuid4().hex[:6]}"
+        db.bank_accounts.insert_one({"id": aid, "name": f"{PREFIX} Rekening", "entity_id": ENT, "account_type": "bank",
+                                     "cash_type": "kas_besar", "bank_name": "BCA", "account_number": "9999",
+                                     "purposes": list(purposes), "is_active": True, "opening_balance": 0.0})
+        _mark("bank_accounts", aid)
+        return aid
 
     def test_pay_with_expense_account_rejected(self):
         s = admin_session()
         rid = self._make_posted_run()
+        ops = self._rekening(["operasional"])
         r = s.post(f"{BASE}/hr/payroll/runs/{rid}/pay",
-                   json={"cash_account": "6-1000"}, timeout=30)
+                   json={"cash_account": "6-1000", "account_id": ops}, timeout=30)
         assert r.status_code == 400, r.text
-        # No journal, run still posted
-        je = db.journal_entries.find_one(
-            {"source_type": "payroll_pay", "source_id": rid})
-        assert je is None
+        assert "tidak ditandai untuk pembayaran gaji" in r.json()["detail"]
         run = db.hr_payroll_runs.find_one({"id": rid})
         assert run["status"] == "posted"
-        # No cash txn
         assert db.cash_transactions.count_documents({"ref_type": "payroll_run", "ref_id": rid}) == 0
 
     def test_pay_with_cash_account_posts_journal_and_cash_txn(self):
         s = admin_session()
         rid = self._make_posted_run()
+        gaji = self._rekening(["gaji"])
         r = s.post(f"{BASE}/hr/payroll/runs/{rid}/pay",
-                   json={"cash_account": "1-1100"}, timeout=30)
+                   json={"cash_account": "6-1000", "account_id": gaji}, timeout=30)   # `cash_account` diabaikan
         assert r.status_code == 200, r.text
         run = r.json()
-        assert run["status"] == "paid"
-
-        je = db.journal_entries.find_one(
-            {"source_type": "payroll_pay", "source_id": rid, "status": {"$ne": "void"}})
-        assert je is not None
-        _mark("journal_entries", je["id"])
+        assert run["status"] == "paid" and run["pay_account_id"] == gaji
 
         cash = list(db.cash_transactions.find({"ref_type": "payroll_run", "ref_id": rid}))
         assert len(cash) == 1, f"Expected 1 cash_transaction, got {len(cash)}"
         _mark("cash_transactions", cash[0]["id"])
         assert cash[0]["direction"] == "out"
         assert round(cash[0]["amount"], 2) == 100000.0
+        je = db.journal_entries.find_one(
+            {"source_type": "cash_transaction", "source_id": cash[0]["id"], "status": {"$ne": "void"}})
+        assert je is not None
+        _mark("journal_entries", je["id"])
+        debit = {ln["account_code"]: ln["debit"] for ln in je["lines"] if ln["debit"]}
+        assert round(sum(debit.values()), 2) == 100000.0 and "6-1000" not in debit
 
-        # Repeat pay — idempotent (rejected or no 2nd cash txn)
-        r2 = s.post(f"{BASE}/hr/payroll/runs/{rid}/pay",
-                    json={"cash_account": "1-1100"}, timeout=30)
+        # Repeat pay — 409, tanpa kas / jurnal kedua
+        r2 = s.post(f"{BASE}/hr/payroll/runs/{rid}/pay", json={"account_id": gaji}, timeout=30)
+        assert r2.status_code == 409, r2.text
         cash_after = db.cash_transactions.count_documents(
             {"ref_type": "payroll_run", "ref_id": rid})
         assert cash_after == 1, f"Repeat pay created extra cash_txn (count now {cash_after})"
         je_after = db.journal_entries.count_documents(
-            {"source_type": "payroll_pay", "source_id": rid, "status": {"$ne": "void"}})
+            {"source_type": "cash_transaction", "source_id": cash[0]["id"], "status": {"$ne": "void"}})
         assert je_after == 1
 
 

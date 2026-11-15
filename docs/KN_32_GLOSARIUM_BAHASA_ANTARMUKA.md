@@ -672,3 +672,17 @@ Istilah kartu "Slip Gaji Saya" (Profil Saya) dan Pengaturan › Gaji & SDM (`doc
 | **slip terbit** | Kosong "Belum ada slip gaji yang terbit." · "Slip muncul setelah gaji dibayar." (atau "…setelah penggajian disahkan.") · pesan "Slip gaji ini belum terbit." · Pengaturan "Slip terlihat karyawan sejak": "Setelah gaji dibayar · Sejak penggajian disahkan" | Slip yang sudah boleh dilihat pemiliknya di Profil Saya. Bawaan: setelah penggajiannya dibayar. Slip draf, menunggu pengesahan, dibatalkan, atau dianulir tidak pernah terlihat oleh pemiliknya. Bagian SDM (akses melihat SDM) tetap melihat semua slip |
 | **slip gaji saya** | Kartu "Slip Gaji Saya" · "Periode {bulan tahun}" · "Gaji bersih diterima" · "Dibayar {tanggal}" · tombol "Lihat slip (PDF)" | Ringkasan slip terakhir yang terbit milik akun yang sedang masuk (karyawan yang tertaut akun itu) |
 | **riwayat slip** | Bagian "Riwayat slip" · pilihan tahun · kolom "Periode · Jenis · Dibayar · Gaji bersih" · tombol "Rincian", "PDF" · "Belum dibayar" (pengaturan "Sejak penggajian disahkan") | Semua slip terbit satu tahun, terbaru di atas. "Rincian" membuka komponen slip berkelompok Pendapatan dan Potongan lalu Gaji bersih; jenis = Reguler · THR · Susulan |
+
+### 9.29 Penggajian: bayar gaji, daftar transfer, rekening pembayaran, batal setoran (PY-T4)
+
+Istilah SDM › Penggajian › Setoran & Pajak dan rincian Proses Gaji (`docs/blueprint/unit/PY-T4.md`).
+
+| Istilah | Teks layar | Arti |
+|---|---|---|
+| **rekening pembayaran** (gaji) | Pop-up "Bayar gaji" › "Rekening pembayaran" · "Hanya rekening yang ditandai untuk pembayaran gaji." · "Belum ada rekening berperuntukan Gaji di PT ini…" | Rekening aktif PT yang di Rekening & Saldo diberi peruntukan **Gaji**. Gaji hanya dibayar dari rekening seperti itu; bila PT punya tepat satu, rekening itu dipakai tanpa dipilih |
+| **daftar transfer** | Tombol "Daftar transfer" · kolom "No. · Nama penerima · Bank · Nomor rekening · Nominal · Slip" · kaki "Total Rp … · {n} penerima" · "Unduh Excel" | Daftar penerima gaji satu penggajian, diturunkan dari slip setiap kali dibuka (tidak disimpan terpisah), jadi jumlahnya selalu sama dengan total gaji bersih. Berkas Excel memuat kolom "Berita" ("Gaji {bulan tahun} {PT}") untuk diunggah ke bank |
+| **tanpa rekening — bayar tunai** | Penanda baris daftar transfer · ringkasan "({m} tanpa rekening, dibayar tunai)" | Karyawan yang slipnya tidak memuat nomor rekening. Gajinya ikut kas keluar yang sama; penyerahan tunainya di luar sistem |
+| **gaji siap dibayar** | Bagian "Gaji siap dibayar" · "Tidak ada penggajian yang menunggu dibayar." | Penggajian yang sudah diposting dan belum dibayar |
+| **bayar gaji** | Tombol "Bayar" · konfirmasi "Bayar gaji {nomor} — {bulan tahun}? Rp … dari {rekening} · {PT}." · "Dibayar {tanggal} dari {rekening}" | Satu kas keluar sebesar total gaji bersih dari rekening pembayaran pada tanggal bayar (bawaan hari ini; tidak boleh sebelum tanggal jurnal gaji). Jurnalnya: hutang gaji berkurang, kas berkurang |
+| **batalkan setoran** | Tombol "Batalkan" di riwayat setoran · status "Dibatalkan" | Membatalkan setoran BPJS/PPh 21 yang salah catat (alasan wajib): kas setoran dibatalkan dan jurnalnya dibalik pada tanggal setornya, sehingga kewajiban masa itu kembali menjadi sisa |
+| **rekap setoran setahun** | Bagian "Rekap setoran setahun" · kolom "Masa · Kewajiban · Sudah disetor · Sisa" | Kewajiban BPJS dan PPh 21 dari gaji yang sudah diposting, setoran yang tercatat (tanpa yang dibatalkan), dan sisanya untuk 12 masa satu tahun |

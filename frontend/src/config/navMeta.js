@@ -212,7 +212,7 @@ export const PAGE_META = {
   "hr-visits":            { kicker: "Penjualan",      title: "Kunjungan Sales (Visit)" },
   "hr-payroll-runs":      { kicker: "SDM (HRD)",      title: "Penggajian \u00b7 Proses Gaji" },   // MN-T1
   "hr-payslips":          { kicker: "SDM (HRD)",      title: "Penggajian \u00b7 Proses Gaji" },   // PY-T1 — alias ke Proses Gaji (Cari slip)
-  "hr-payroll-remittances": { kicker: "SDM (HRD)",    title: "Penggajian \u00b7 Setoran Kewajiban" },   // PK-22
+  "hr-payroll-remittances": { kicker: "SDM (HRD)",    title: "Penggajian \u00b7 Setoran & Pajak" },   // PK-22 · PY-T4
   "hr-pay-components":    { kicker: "SDM (HRD)",      title: "Penggajian \u00b7 Komponen & Masukan" },   // PY-T1
   "hr-leave":             { kicker: "SDM (HRD)",      title: "Cuti & Izin" },
   "hr-overtime":          { kicker: "SDM (HRD)",      title: "Lembur (Overtime)" },

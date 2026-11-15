@@ -8,7 +8,8 @@ Pendamping di berkas yang sama:
   * `periksa_rekening` — langkah PERIKSA rekening (tanpa tulisan) untuk pemanggil yang perlu memeriksa lebih awal;
   * `next_cash_number` — satu-satunya pemberi nomor kas;
   * `ensure_posted` — memastikan jurnal kas asal ada (jalur batal & ulang posting);
-  * `record_return_cash` — kas refund retur / bayar gaji yang dijurnal dokumen induknya (R5.3).
+  * `record_return_cash` — kas refund retur yang dijurnal dokumen induknya (R5.3). (PY-T4: bayar gaji kini kas biasa
+    `create_cash(ref_type="payroll_run", contra_account_code=<hutang gaji>)`, `services/hr_payroll_pay.py`.)
 
 Cara memakai: laporan unit `docs/reviews/2026-11-13/hasil/PK-20.md` bagian "Cara memakai pembuat kas".
 """
@@ -260,8 +261,8 @@ async def record_return_cash(*, direction: str, amount: float, account_code: str
                              ref_type: str, ref_id: str, journal_entry_id: str = "",
                              created_by: str = "system", txn_date: str = "",
                              account_id: str = "") -> Optional[Dict[str, Any]]:
-    """R5.3 — 1 mutasi kas untuk refund retur (in = pemasok kembalikan dana; out = refund ke pelanggan) dan bayar gaji,
-    yang JURNALNYA milik dokumen induk (nota kredit / nota debit / proses gaji, `account_code` = akun kas jurnal itu).
+    """R5.3 — 1 mutasi kas untuk refund retur (in = pemasok kembalikan dana; out = refund ke pelanggan), yang JURNALNYA
+    milik dokumen induk (nota kredit / nota debit, `account_code` = akun kas jurnal itu).
 
     PK-20 — pembungkus `create_cash(..., journal_by_parent=…)`: rekening = `account_id` (rekening dokumen) atau rekening
     tunggal PT untuk jenis kas `account_code`; `account_id` tidak pernah lagi berisi kode akun. Idempoten per rujukan

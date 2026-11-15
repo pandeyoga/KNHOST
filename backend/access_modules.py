@@ -167,7 +167,7 @@ MODULE_CATALOG: List[Dict[str, Any]] = [
              "settings-hub", "settings-finance", "settings-cfg-finance"]},
     {"id": "hr", "group": "Organisasi", "label": "SDM & Penggajian",
      "description": "Karyawan, struktur organisasi, presensi, cuti, lembur, payroll, KPI.",
-     # PK-22 — `payroll` (siapkan · sahkan · posting · void · bayar & setor kewajiban); tab Setoran Kewajiban.
+     # PK-22 — `payroll` (siapkan · sahkan · posting · void · bayar & setor kewajiban); tab Setoran & Pajak (PY-T4).
      "resources": ["hr", "payroll"],
      "nav": ["hrd", "hr-people", "hr-employees", "hr-org-units", "hr-attendance-hub",
              "hr-attendance", "hr-leave", "hr-overtime", "hr-live-tracking",
@@ -836,6 +836,24 @@ VIEW_ACTION_REQUIREMENTS: Dict[str, List[Tuple[str, str]]] = {
     "warehouse-admin-desk": [("wms", "view")],
     "sample-admin-desk": [("sample_order", "view")],
 }
+
+
+# PY-T4 (PY-11, K-41) — modul "SDM & Penggajian" memuat dua sumber daya (`hr`, `payroll`); Finance bawaan kini memegang
+# `payroll.pay` saja. Tanpa syarat ini SELURUH menu modul SDM dianggap "dibuka" izin bayar gaji (`nav_allowed_for_perms`
+# bertingkat modul), sehingga menu Karyawan, Kehadiran, Proses Gaji, dst. masuk menu dasar Finance dan tidak lagi
+# "bertambah" ketika Admin memberinya akses SDM (PR-T6, `role_registry.nav_added_for`). Layar SDM yang hanya melayani
+# sumber daya `hr` butuh salah satu aksi `hr.*`; tab Setoran & Pajak butuh `hr.view` ATAU `payroll.pay` (= izin
+# endpoint utamanya). Menu bersama modul lain (`hrd`, `hr-kpi-hub`, `settings-hub`) tidak diberi syarat.
+PYT4_HR_SCREENS = ("hr-people", "hr-employees", "hr-org-units", "hr-attendance-hub", "hr-attendance", "hr-leave",
+                   "hr-overtime", "hr-live-tracking", "hr-attendance-setup", "hr-payroll-runs", "hr-payslips",
+                   "hr-pay-components", "hr-holidays", "cs-kpi", "settings-hr", "settings-attendance-devices")
+for _v in PYT4_HR_SCREENS:
+    VIEW_ACTION_REQUIREMENTS[_v] = [("hr", _a) for _a in full_actions("hr")]
+# `settings-cfg-hr` juga dibuka pemegang `settings` (KF-T1, `VIEW_RESOURCE_OVERRIDES`).
+VIEW_ACTION_REQUIREMENTS["settings-cfg-hr"] = [("hr", _a) for _a in full_actions("hr")] + \
+    [("settings", _a) for _a in full_actions("settings")]
+VIEW_ACTION_REQUIREMENTS["hr-payroll-remittances"] = [("hr", "view"), ("payroll", "pay")]
+del _v
 
 
 def view_actions_index() -> Dict[str, List[List[str]]]:

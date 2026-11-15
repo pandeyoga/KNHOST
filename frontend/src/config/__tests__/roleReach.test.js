@@ -48,6 +48,9 @@ const PYT1_KOMPONEN = ["hr-pay-components"];
 // PM-T4 (K-36) — layar BARU Keuangan › Kas & Bank › Titipan Sales (setoran titipan tunai; `cash_holding.approve`): admin,
 // manajer, Finance.
 const PMT4_TITIPAN = ["cash-holdings"];
+// PY-T4 (K-41) — Finance mendapat SDM › Penggajian › Setoran & Pajak (`payroll.pay`: bayar gaji, setor BPJS/PPh 21);
+// tab lain hub Penggajian tetap admin & manajer.
+const PYT4_SETORAN_FINANCE = ["hr-payroll-remittances"];
 // PY-T3 — layar BARU Pengaturan › SDM › Kalender Libur (tab hub SDM; lihat `hr.view`, ubah `hr.manage_attendance`): admin, manajer.
 const PYT3_LIBUR = ["hr-holidays"];
 // KP-T9 — id layar BARU untuk bagian layar yang SUDAH ADA: layar wadah Badan Usaha & Akses, Perangkat, dan Penjadwal &
@@ -86,7 +89,7 @@ export const ROLE_REACH_ADDITIONS = {
   // Piutang yang dulu sub-tab CRM (Penagihan & Penerimaan; Kredit & Plafon tanpa hak memutus).
   finance: ["bank-accounts", "bank-reconciliation", "petty-cash", "general-ledger", "chart-of-accounts",
     "vendor-bills", "contra-bons", "bi-finance", "gl-account-mappings", "collection-worklist", "credit-overrides",
-    ...PK28_GRIR, ...KMT1_TARGET_ATURAN, ...KMT2_CAPAIAN, ...PMT4_TITIPAN],
+    ...PK28_GRIR, ...KMT1_TARGET_ATURAN, ...KMT2_CAPAIAN, ...PMT4_TITIPAN, ...PYT4_SETORAN_FINANCE],
 };
 /** Id MENU/HUB yang kini mendarat di tab pertama LAIN di hub yang sama (urutan/isi tab baru), sementara layar lamanya tetap
  *  terjangkau (diperiksa): { peran: { id: "view baru" } } + alasan.

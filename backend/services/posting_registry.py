@@ -56,6 +56,9 @@ async def _retry_cash(doc: Dict[str, Any], actor: Dict[str, Any]) -> None:
     if doc.get("ref_type") == "statutory_remittance" and doc.get("ref_id"):   # PK-22 — setoran kewajiban selesai
         from services.hr_remittance_service import finish_remittance
         await finish_remittance(doc["ref_id"])
+    if doc.get("ref_type") == "payroll_run" and doc.get("ref_id"):   # PY-T4 — kas bayar gaji: proses menjadi Dibayar
+        from services.hr_payroll_pay import selesaikan_dari_kas
+        await selesaikan_dari_kas(doc)
     if doc.get("ref_type") == "cash_deposit" and doc.get("ref_id"):   # PM-T4 — penanda jurnal setoran titipan ikut
         from services.cash_holding_service import tandai_jurnal_kas
         await tandai_jurnal_kas(doc)
@@ -648,15 +651,16 @@ KINDS: Dict[str, Dict[str, Any]] = {
         "status_field": "gl_status", "error_field": "gl_error", "failed_at_field": "gl_failed_at",
         "doc_type": "", "link": {"view": "fixed-assets", "tab": "", "focus_type": "fixed_asset"},
         "posters": ("post_asset_acquisition",), "retry": _retry_fixed_asset},
-    # ── PK-22 — jurnal gaji (proses tetap `approved` saat gagal; ulang = posting lagi). Bayar & void gagal → status
-    # kembali (`posted`) dan galat tampil di layar penggajian; keduanya lewat `post_durable` (`pay_gl_status`,
-    # `void_gl_status`) tetapi tidak menunggu di panel karena butuh isian pengguna (rekening, alasan).
+    # ── PK-22 — jurnal gaji (proses tetap `approved` saat gagal; ulang = posting lagi). Void gagal → status kembali
+    # (`posted`) dan galat tampil di layar penggajian (`void_gl_status`; butuh alasan, tidak menunggu di panel).
+    # PY-T4 — bayar gaji = kas keluar lewat pembuat kas: jurnalnya yang gagal tampil sebagai Transaksi Kas; ulangnya
+    # menyelesaikan proses (`_retry_cash` → `hr_payroll_pay.selesaikan_dari_kas`).
     "payroll_run": {
         "label": "Penggajian", "collection": "hr_payroll_runs",
         "failed_query": {"gl_status": "failed", "status": "approved"},
         "entity_field": "entity_id", "number_field": "number", "amount_field": "totals.net",
         "status_field": "gl_status", "error_field": "gl_error", "failed_at_field": "gl_failed_at",
-        "doc_type": "payroll_run", "posters": ("post_payroll_run", "post_incentive_accrual", "pay_payroll_run"),
+        "doc_type": "payroll_run", "posters": ("post_payroll_run", "post_incentive_accrual"),
         "retry": _retry_payroll_run},
     # ── PK-24 — pertanggungjawaban kas kecil (LPJ) yang disetujui; jurnal beban per kategori / Cr uang muka ──
     "petty_cash_settlement": {

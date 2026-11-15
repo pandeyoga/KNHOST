@@ -37,7 +37,7 @@
   "vehicle-logs": {"izin": [["vehicle_log", "view"]], "endpoint": "/api/vehicle-usage-logs"},
   "hr-payroll-runs": {"izin": [["hr", "view"]], "endpoint": "/api/hr/payroll/runs"},
   "hr-payslips": {"izin": [["hr", "view"]], "endpoint": "/api/hr/payslips"},
-  "hr-payroll-remittances": {"izin": [["hr", "view"]], "endpoint": "/api/hr/payroll/remittances"},
+  "hr-payroll-remittances": {"izin": [["hr", "view"], ["payroll", "pay"]], "endpoint": "/api/hr/payroll/remittances"},
   "hr-pay-components": {"izin": [["hr", "view"]], "endpoint": "/api/hr/payroll/inputs"},
   "hr-holidays": {"izin": [["hr", "view"]], "endpoint": "/api/hr/holidays"},
   "sales-performance": {"izin": [["order", "view"]], "endpoint": "/api/sales/kpi"},

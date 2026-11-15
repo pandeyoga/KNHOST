@@ -10,6 +10,9 @@
  *   create = Hitung gaji · Hitung Ulang · Ajukan · Batalkan draf   approve = Sahkan · Kembalikan · Batalkan yang diajukan
  *   post = Posting Jurnal   void = Anulir   pay = Bayar
  * Aksi uang meminta konfirmasi yang menyebut periode, jumlah karyawan, gaji bersih, dan PT; batal & void meminta alasan.
+ * PY-T4 — Bayar membuka pop-up yang sama dengan tab Setoran & Pajak (`PayrollPayPanel.PayDialog`: rekening berperuntukan
+ * Gaji, tanggal bayar, ringkasan daftar transfer); sesudah dibayar tampil "Dibayar {tanggal} dari {rekening}" dengan
+ * tautan Daftar transfer (`TransferListPanel`) dan Lihat jurnal (L8). "Semua PT" → Bayar mati + "Pilih satu PT dulu."
  * Jurnal gagal (posting) tampil di bilah sendiri; prosesnya tetap Disahkan dan bisa diulang dari Posting Gagal.
  */
 import { useEffect, useMemo, useState } from "react";
@@ -28,6 +31,8 @@ import useIntentKey from "../../hooks/useIntentKey";
 import useViewPreset from "../../hooks/useViewPreset";
 import { useAppNav } from "../../context/AppNavContext";
 import PayslipsView from "./PayslipsView";
+import { PayDialog, TEKS_PILIH_PT } from "./PayrollPayPanel";
+import TransferListPanel from "./TransferListPanel";
 import { moneyPost } from "../../utils/moneyRequest";
 import { canCurrent } from "../../config/roles";
 import { rp, pct, RUN_STATUS, CAN_CANCEL, CAN_RECALC, CAN_VOID, RUN_TYPE_OPTIONS, recentMonths, curMonth, runTypeLabel,
@@ -129,11 +134,15 @@ export default function PayrollRunsView({ selectedEntity, focusDoc, onClearFocus
   const [openSlip, setOpenSlip] = useState({});
   const [cari, setCari] = useState(!!cariAwal);
   const { canOpen } = useAppNav();
+  const semuaPt = !selectedEntity || selectedEntity === "all";
   // Id lama `hr-payslips` (alias) — gerbang panel Cari slip memakai id lama supaya `hidden_views` peran kustom dipatuhi.
   const bisaCariSlip = canOpen("hr-payslips");
   useViewPreset("hr-payroll-runs", (p) => { if (p?.cari) setCari(true); });
   const [busy, setBusy] = useState("");
   const [sel, setSel] = useState(null);
+  const [payOpen, setPayOpen] = useState(false);
+  const [transferOpen, setTransferOpen] = useState(false);
+  const { openDocument } = useAppNav();
   const intent = useIntentKey("gaji");
   const perms = payrollPerms();
 
@@ -173,12 +182,11 @@ export default function PayrollRunsView({ selectedEntity, focusDoc, onClearFocus
   const ringkas = (run) => `${formatPeriod(run.period)}${run.run_type && run.run_type !== "regular" ? ` · proses ${runTypeLabel(run.run_type)}` : ""} · ${run.totals?.employees ?? 0} karyawan · gaji bersih `
     + `${rp(run.totals?.net)} · ${ptName(run)}.`;
 
-  // UAT 24 Okt (audit UI tahap 2) — G5-33: Sahkan / Posting / Bayar menulis jurnal & mengunci gaji → konfirmasi dulu
-  // dengan periode, total, PT, dan akibatnya (PK-22: `02` N5).
+  // UAT 24 Okt (audit UI tahap 2) — G5-33: Sahkan / Posting menulis jurnal & mengunci gaji → konfirmasi dulu dengan
+  // periode, total, PT, dan akibatnya (PK-22: `02` N5). PY-T4 — Bayar lewat pop-up `PayDialog` (konfirmasinya sendiri).
   const ACT_CONFIRM = {
     approve: { title: "Sahkan penggajian", effect: TEKS_SAHKAN, label: "Sahkan" },
     "post-gl": { title: "Posting jurnal gaji", effect: "Jurnal beban gaji & utang gaji dibuat di buku besar, bertanggal akhir periode gajinya.", label: "Posting" },
-    pay: { title: "Catat pembayaran gaji", effect: "Jurnal pembayaran gaji dan kas keluar dibuat.", label: "Catat pembayaran" },
     recalculate: { title: "Hitung ulang penggajian", effect: "Slip dihitung lagi dari data karyawan, lembur, dan komisi terbaru.", label: "Hitung ulang" },
   };
   async function act(id, action, label) {
@@ -188,7 +196,6 @@ export default function PayrollRunsView({ selectedEntity, focusDoc, onClearFocus
         title: `${c.title} ${sel.number}?`,
         message: `${ringkas(sel)} ${c.effect}`,
         confirmLabel: c.label,
-        danger: action === "pay",
       });
       if (!ok) return;
     }
@@ -199,8 +206,7 @@ export default function PayrollRunsView({ selectedEntity, focusDoc, onClearFocus
       if (action === "submit") r = await axios.post(`${API}/hr/payroll/runs/${id}/submit`);
       else if (action === "approve") r = await axios.post(`${API}/hr/payroll/runs/${id}/approve`);
       else if (action === "recalculate") r = await axios.post(`${API}/hr/payroll/runs/${id}/recalculate`);
-      else if (action === "post-gl") r = await intent.send({ id, action }, (k) => moneyPost(`${API}/hr/payroll/runs/${id}/post-gl`, {}, k));
-      else r = await intent.send({ id, action }, (k) => moneyPost(`${API}/hr/payroll/runs/${id}/pay`, {}, k));
+      else r = await intent.send({ id, action }, (k) => moneyPost(`${API}/hr/payroll/runs/${id}/post-gl`, {}, k));
       const failed = action === "post-gl" && r.data?.gl_status === "failed";
       setNotice(failed ? `Jurnal gaji ${r.data.number} gagal — penggajian tetap Disahkan. Perbaiki penyebabnya lalu posting lagi.`
         : `${label} berhasil.`);
@@ -365,7 +371,9 @@ export default function PayrollRunsView({ selectedEntity, focusDoc, onClearFocus
                     <button type="button" data-testid="payroll-reject" disabled={!!busy} onClick={() => rejectRun(sel.id)} className="secondary-button btn-sm whitespace-nowrap"><Undo2 size={13} /> Kembalikan ke Draf</button>
                   </>}
                   {st === "approved" && perms.post && <button type="button" data-testid="payroll-post-gl" disabled={!!busy} onClick={() => act(sel.id, "post-gl", "Posting jurnal")} className="primary-button btn-sm whitespace-nowrap"><BookCheck size={13} /> {sel.gl_status === "failed" ? "Posting Ulang" : "Posting Jurnal"}</button>}
-                  {st === "posted" && perms.pay && <button type="button" data-testid="payroll-pay" disabled={!!busy} onClick={() => act(sel.id, "pay", "Bayar")} className="primary-button btn-sm whitespace-nowrap"><Banknote size={13} /> Bayar</button>}
+                  {st === "posted" && perms.pay && <button type="button" data-testid="payroll-pay" disabled={!!busy || semuaPt} onClick={() => setPayOpen(true)} className="primary-button btn-sm whitespace-nowrap"><Banknote size={13} /> Bayar</button>}
+                  {st === "posted" && perms.pay && semuaPt && <span className="text-fs-12 text-kn-text-2" data-testid="payroll-pay-why">{TEKS_PILIH_PT}</span>}
+                  {["posted", "paid"].includes(st) && perms.pay && <button type="button" data-testid="payroll-transfer" onClick={() => setTransferOpen(true)} className="secondary-button btn-sm whitespace-nowrap"><FileText size={13} /> Daftar transfer</button>}
                   {bisaBatal && <button type="button" data-testid="payroll-cancel" disabled={!!busy} onClick={() => cancelRun(sel)} className="secondary-button btn-sm whitespace-nowrap"><Ban size={13} /> Batalkan</button>}
                   {CAN_VOID.includes(st) && perms.void && <button type="button" data-testid="payroll-void" disabled={!!busy} onClick={() => voidRun(sel)} className="danger-button btn-sm whitespace-nowrap"><XCircle size={13} /> Anulir</button>}
                   {hint && <span className="text-fs-12 text-kn-text-2" data-testid="payroll-next-hint">{hint}</span>}
@@ -403,6 +411,14 @@ export default function PayrollRunsView({ selectedEntity, focusDoc, onClearFocus
                     {sel.paid_journal_number && <span data-testid="payroll-paid-ref">Jurnal bayar: <b className="text-kn-success-text">{sel.paid_journal_number}</b></span>}
                   </div>
                 )}
+                {st === "paid" && (sel.paid_date || sel.pay_account_name) && (
+                  <div className="mb-2 flex flex-wrap items-center gap-3 text-fs-12" data-testid="payroll-paid-info">
+                    <span className="text-kn-text">Dibayar {sel.paid_date ? formatDate(sel.paid_date) : ""}{sel.pay_account_name ? ` dari ${sel.pay_account_name}` : ""}{sel.transfer_count ? ` · ${sel.transfer_count} penerima` : ""}.</span>
+                    {perms.pay && <button type="button" className="link-button" data-testid="payroll-paid-transfer" onClick={() => setTransferOpen(true)}>Daftar transfer</button>}
+                    {sel.paid_journal_id && canCurrent("accounting", "view") && <button type="button" className="link-button" data-testid="payroll-paid-journal"
+                      onClick={() => openDocument({ view: "general-ledger", focus_type: "journal_entry", focus_id: sel.paid_journal_id })}>Lihat jurnal</button>}
+                  </div>
+                )}
                 <div className="overflow-x-auto">
                   <table className="data-table head-wrap w-full tabular-nums" data-testid="payroll-payslips-table">
                     <thead><tr>
@@ -421,6 +437,14 @@ export default function PayrollRunsView({ selectedEntity, focusDoc, onClearFocus
           )}
         </div>
       </div>
+      {sel && <PayDialog open={payOpen} pt={ptName(sel)} onClose={() => setPayOpen(false)}
+        run={{ id: sel.id, number: sel.number, period: sel.period, entity_id: sel.entity_id, net: sel.totals?.net,
+          employees: sel.totals?.employees, journal_date: sel.journal_date }}
+        onPaid={async (run) => {
+          setPayOpen(false); setNotice(`Gaji ${run.number} dibayar dari ${run.pay_account_name || "rekening gaji"}.`); setError("");
+          await openRun(run.id); await loadRuns(); setTransferOpen(true);
+        }} />}
+      {sel && transferOpen && <TransferListPanel runId={sel.id} onClose={() => setTransferOpen(false)} />}
     </div>
   );
 }

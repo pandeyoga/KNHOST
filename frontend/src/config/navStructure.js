@@ -333,7 +333,8 @@ export const NAV_STRUCTURE = [
     items: [
       { id: "hr-people",         label: "Karyawan", icon: UserCheck,  roles: ["admin", "manager"], hub: "hr-people" },
       { id: "hr-attendance-hub", label: "Kehadiran",      icon: Clock,      roles: ["admin", "manager"], hub: "hr-attendance-hub" },
-      { id: "hr-payroll-hub",    label: "Penggajian",               icon: Calculator, roles: ["admin", "manager"], hub: "hr-payroll-hub" },
+      // PY-T4 — + finance: Penggajian › Setoran & Pajak (bayar gaji & setor BPJS/PPh 21; izin `payroll.pay`).
+      { id: "hr-payroll-hub",    label: "Penggajian",               icon: Calculator, roles: ["admin", "manager", "finance"], hub: "hr-payroll-hub" },
       // MN-T1 — "KPI" → "Kinerja & Insentif": menyerap Kinerja Sales & Skema (CRM) + Komisi & Insentif (Pengaturan).
       { id: "hr-kpi-hub",        label: "Kinerja & Insentif", icon: Target, roles: ["admin", "manager", "sales", "finance"], hub: "hr-kpi-hub" },
     ],

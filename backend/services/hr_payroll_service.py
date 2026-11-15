@@ -1079,6 +1079,14 @@ async def void_run(run_id: str, actor: Dict[str, Any], reason: str) -> Dict[str,
     if run["status"] != "posted":
         raise _status_conflict(run, "dianulir")
     alasan = _min_reason(reason)
+    # PY-T4 — kas pembayaran yang jurnalnya gagal menahan proses di `posted`; anulir sekarang membuat jurnal bayar yang
+    # menyusul mendebit hutang gaji proses yang sudah dibalik. Selesaikan pembayarannya dulu.
+    from services.hr_payroll_pay import kas_bayar_hidup
+    kas = await kas_bayar_hidup(run_id)
+    if kas:
+        raise PayrollConflict(f"Penggajian {run.get('number') or run_id} sudah punya kas pembayaran "
+                              f"{kas.get('number') or ''}, jadi tidak bisa dianulir. Selesaikan pembayarannya dulu "
+                              "(ulangi Bayar).")
     src_id = await gl_service.payroll_source_id(run)
     je = await db.journal_entries.find_one({"id": run.get("journal_id") or "__none__"}, {"_id": 0, "date": 1}) or \
         await db.journal_entries.find_one({"source_type": "payroll_run", "source_id": src_id,
@@ -1115,65 +1123,9 @@ async def void_run(run_id: str, actor: Dict[str, Any], reason: str) -> Dict[str,
         "decision_history": hist})
 
 
-async def pay_run(run_id: str, actor: Dict[str, Any], cash_account: Optional[str] = None,
-                  account_id: str = "") -> Dict[str, Any]:
-    """PK-20 — `account_id` = rekening sumber (`bank_accounts`, milik PT proses gaji); kosong = rekening tunggal PT untuk
-    jenis kas akun `cash_account`. Diperiksa SEBELUM jurnal gaji; layar menyusul di PY-T4.
-
-    PK-22 (FY-09) — `cash_account` hanya akun pemetaan `kas_bank.kas_besar`/`kas_bank.kas_kecil` PT itu (dulu cukup
-    "anak 1-1000", jadi piutang & persediaan lolos) — diperiksa SEBELUM klaim; kontrol dua orang; jurnal bayar lewat
-    `post_durable` (`pay_gl_status`), kunci = id proses."""
-    from services import gl_service
-    from services import cash_ledger
-    run = await get_run(run_id)
-    if not run:
-        raise ValueError("Payroll run tidak ditemukan.")
-    if run["status"] not in ("posted",):
-        raise ValueError(f"Run status '{run['status']}' harus 'posted' sebelum dibayar.")
-    net = round(float((run.get("totals") or {}).get("net", 0) or 0), 2)
-    if net > 0.01:
-        cash_account = await gl_service.assert_payroll_cash_account(run.get("entity_id", ""), cash_account)
-    await _kontrol_dua_orang(run, actor)
-    if net > 0.01:
-        account_id = (await cash_ledger.periksa_rekening(
-            run.get("entity_id", ""), account_id, cash_ledger.cash_type_for(cash_account or "1-1100")))["account_id"]
-        await gl_service.preflight_posting(run.get("entity_id", ""), now_iso())
-    if not (await db.hr_payroll_runs.update_one({"id": run_id, "status": "posted"},
-                                                {"$set": {"status": "paying"}})).modified_count:
-        raise ValueError("Payroll ini sedang/sudah dibayar — muat ulang.")
-    name = actor.get("name", "system")
-    try:
-        src_id = await gl_service.payroll_source_id(run)
-        res = await gl_service.post_durable(
-            "hr_payroll_runs", run_id, lambda: gl_service.pay_payroll_run(run, name, cash_account),
-            source_type="payroll_pay", source_id=src_id, field="pay_gl_status", raise_on_fail=True)
-    except Exception:
-        await db.hr_payroll_runs.update_one({"id": run_id, "status": "paying"}, {"$set": {"status": "posted"}})
-        raise
-    je = res.get("journal") or {}
-    if not je and res.get("journal_entry_id"):
-        je = await db.journal_entries.find_one({"id": res["journal_entry_id"]}, {"_id": 0}) or {}
-    patch = {"status": "paid", "paid_at": now_iso(), "paid_by": name, "paid_by_id": actor.get("id", "")}
-    if je:
-        patch["paid_journal_id"] = je.get("id", "")
-        patch["paid_journal_number"] = je.get("number", "")
-        # W2-022 — kredit kas GL WAJIB punya pasangan di buku kas (idempotent per run).
-        acc_code = next((ln.get("account_code") for ln in je.get("lines") or [] if float(ln.get("credit") or 0) > 0),
-                        cash_account or "1-1100")
-        try:
-            ctxn = await cash_ledger.record_return_cash(
-                direction="out", amount=net, account_code=acc_code, category="Pembayaran Gaji",
-                description=f"Pembayaran gaji {run.get('period', '')} ({run.get('number', '')})",
-                entity_id=run.get("entity_id", ""), ref_type="payroll_run", ref_id=run_id,
-                journal_entry_id=je.get("id", ""), created_by=name, account_id=account_id)
-        except Exception as exc:
-            await db.hr_payroll_runs.update_one({"id": run_id, "status": "paying"}, {"$set": {
-                "status": "posted", "cash_error": str(exc)[:300]}})   # retry: jurnal idempotent, kas dilengkapi
-            raise ValueError(f"Jurnal gaji tercatat, tetapi buku kas gagal — ulangi Bayar. ({exc})") from exc
-        if ctxn:
-            patch["cash_txn_id"] = ctxn.get("id", "")
-            patch["cash_txn_number"] = ctxn.get("number", "")
-    return await _set_run(run_id, patch)
+# PY-T4 (PY-11) — bayar gaji pindah ke `services/hr_payroll_pay.py` (`pay_run`): rekening berperuntukan Gaji, tanggal
+# bayar, daftar transfer, satu kas keluar lewat pembuat kas yang menjurnal Dr hutang gaji / Cr kas. Jalur lama (jurnal
+# `payroll_pay` dari kode akun isi permintaan + kas `record_return_cash`) dihapus — pemanggilnya hanya router bayar.
 
 
 async def overtime_impact(entity_id: str, period: str) -> Dict[str, Any]:

@@ -5,12 +5,15 @@ RBAC: read run/payslip = hr.view (PII gaji → pemilik view juga punya view_pii)
        PK-22 (FY-09, K-41) — siapkan (buat/hitung ulang/ajukan/batal draf) = payroll.create; sahkan/kembalikan/batal
        yang diajukan = payroll.approve; posting = payroll.post; void = payroll.void; bayar & setor kewajiban =
        payroll.pay. Pengaturan gaji tetap hr.manage_payroll.
+       PY-T4 (PY-11, K-41) — rekening bayar, antrean bayar, daftar transfer (+ Excel), bayar = payroll.pay (Finance
+       bawaan memegangnya tanpa hr.view: tidak melihat karyawan maupun slip rinci); riwayat & kewajiban setoran = hr.view
+       ATAU payroll.pay; batal setoran = payroll.void.
        /payslips/me + /pdf milik sendiri = autentikasi + karyawan ter-link.
 Lihat memory/PLAN_HRD.md §6 H4 + §4.3/§4.4 (integrasi komisi & GL).
 """
 from typing import Optional
 from fastapi import APIRouter, HTTPException, Request, Query
-from fastapi.responses import StreamingResponse
+from fastapi.responses import Response, StreamingResponse
 
 from db import db
 from services import approval_policy_service as _aps   # KP-T4 — satu tabel kebijakan persetujuan
@@ -24,6 +27,7 @@ from schemas_hr_payroll import (PayrollRunInput, PayRunInput, HrSettingsUpdate,
                                PayComponentCreate, PayComponentPatch, PayInputCreate, PayInputCancel)
 from services import gl_service as _gl
 from services import hr_remittance_service as _rem
+from services import hr_payroll_pay as _pp        # PY-T4 — bayar gaji, daftar transfer
 from services import hr_pay_components as _pcomp   # PY-T1 — komponen gaji per PT
 from services import hr_pay_inputs as _pinp        # PY-T1 — antrean masukan komponen
 
@@ -32,7 +36,7 @@ router = APIRouter(prefix="/api")
 
 def _http(e: Exception) -> HTTPException:
     """PK-22 — periode tertutup & status yang salah = 409 (pesan apa adanya); galat isian lain = 400."""
-    if isinstance(e, (_gl.ClosedPeriodError, pay.PayrollConflict)):
+    if isinstance(e, (_gl.ClosedPeriodError, pay.PayrollConflict, _rem.RemittanceConflict)):
         return HTTPException(status_code=409, detail=str(e))
     return HTTPException(status_code=400, detail=str(e))
 
@@ -268,17 +272,72 @@ async def void_payroll_run(request: Request, run_id: str, body: PayrollReasonInp
     return run
 
 
+# ───────────────────────── PY-T4 — bayar gaji & daftar transfer (`payroll.pay`) ─────────────────────────
+@router.get("/hr/payroll/pay-accounts")
+async def payroll_pay_accounts(request: Request, entity_id: Optional[str] = Query(None)):
+    """Rekening aktif PT (aktif, atau `entity_id` yang ditugaskan) yang berperuntukan Gaji — tanpa saldo."""
+    await require_permission(request, "payroll", "pay")
+    from entity_scope import resolve_requested_entity
+    eid = resolve_requested_entity(await entity_ctx(request), entity_id)
+    if not eid or eid == "all":
+        raise HTTPException(status_code=400, detail="Pilih satu PT dulu untuk melihat rekening pembayaran gaji.")
+    return await _pp.pay_accounts(eid)
+
+
+@router.get("/hr/payroll/pay-queue")
+async def payroll_pay_queue(request: Request, entity_id: Optional[str] = Query(None), page: int = Query(1, ge=1),
+                            page_size: int = Query(50, ge=1, le=200)):
+    """Penggajian berstatus Diposting yang menunggu dibayar (berhalaman + `total`), tanpa rincian slip."""
+    await require_permission(request, "payroll", "pay")
+    scope = resolve_list_scope("hr_payroll_runs", {}, await entity_ctx(request), entity_id)
+    return await _pp.pay_queue(scope, page=page, page_size=page_size)
+
+
+async def _run_untuk_bayar(request: Request, run_id: str):
+    doc = await db.hr_payroll_runs.find_one({"id": run_id}, {"_id": 0})
+    await guard_doc(request, "hr_payroll_runs", doc, strict=False, not_found="Payroll run tidak ditemukan")
+    return doc
+
+
+@router.get("/hr/payroll/runs/{run_id}/transfer-list")
+async def payroll_transfer_list(request: Request, run_id: str):
+    """Daftar transfer per karyawan (diturunkan dari slip; Σ = gaji bersih proses)."""
+    await require_permission(request, "payroll", "pay")
+    run = await _run_untuk_bayar(request, run_id)
+    try:
+        return await _pp.transfer_list(run)
+    except ValueError as e:
+        raise _http(e)
+
+
+@router.get("/hr/payroll/runs/{run_id}/transfer-list/export")
+async def payroll_transfer_export(request: Request, run_id: str):
+    """Berkas `.xlsx` daftar transfer; pengunduhan dicatat di jejak audit tanpa nominal."""
+    actor = await require_permission(request, "payroll", "pay")
+    run = await _run_untuk_bayar(request, run_id)
+    try:
+        body, nama, ringkas = await _pp.transfer_xlsx(run)
+    except ValueError as e:
+        raise _http(e)
+    await audit(actor["name"], "hr.payroll.transfer_export", "hr_payroll_runs", run_id, ringkas)
+    return Response(content=body, media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                    headers={"Content-Disposition": f'attachment; filename="{nama}"'})
+
+
 @router.post("/hr/payroll/runs/{run_id}/pay")
 async def pay_payroll_run(request: Request, run_id: str, body: PayRunInput):
+    """PY-T4 — bayar dari rekening berperuntukan Gaji (`account_id`; kosong = satu-satunya rekening gaji PT) pada
+    `paid_date` (bawaan hari ini WIB). `cash_account` (kode akun) tidak dibaca lagi."""
     actor = await require_permission(request, "payroll", "pay")   # PK-22
     await guard_doc(request, "hr_payroll_runs", await db.hr_payroll_runs.find_one({"id": run_id}, {"_id": 0}),
                     not_found="Payroll run tidak ditemukan")  # KN-B30
     try:
-        run = await pay.pay_run(run_id, actor, body.cash_account, account_id=body.account_id)
+        run = await _pp.pay_run(run_id, actor, account_id=body.account_id, paid_date=body.paid_date)
     except ValueError as e:
         raise _http(e)
     await audit(actor["name"], "hr.payroll.run_pay", "hr_payroll_runs", run_id,
-                {"paid_journal_number": run.get("paid_journal_number")})
+                {"paid_journal_number": run.get("paid_journal_number"), "pay_account_id": run.get("pay_account_id"),
+                 "paid_date": run.get("paid_date"), "cash_txn_number": run.get("cash_txn_number")})
     return run
 
 
@@ -287,8 +346,8 @@ async def pay_payroll_run(request: Request, run_id: str, body: PayRunInput):
 async def list_remittances(request: Request, period: Optional[str] = Query(None), kind: Optional[str] = Query(None),
                            entity_id: Optional[str] = Query(None), page: int = Query(1, ge=1),
                            page_size: int = Query(50, ge=1, le=200)):
-    """Riwayat setoran berhalaman (+ `total`), dicakup PT pengguna."""
-    await require_permission(request, "hr", "view")
+    """Riwayat setoran berhalaman (+ `total`), dicakup PT pengguna. PY-T4 — `hr.view` ATAU `payroll.pay`."""
+    await require_any_permission(request, [("hr", "view"), ("payroll", "pay")])
     ctx = await entity_ctx(request)
     scope = resolve_list_scope("hr_statutory_remittances", {}, ctx, entity_id)
     try:
@@ -299,13 +358,19 @@ async def list_remittances(request: Request, period: Optional[str] = Query(None)
 
 
 @router.get("/hr/payroll/remittances/outstanding")
-async def remittance_outstanding(request: Request, period: str = Query(...)):
-    """Per jenis (BPJS, PPh 21): kewajiban masa itu, sudah disetor, sisa — untuk PT aktif."""
-    await require_permission(request, "hr", "view")
+async def remittance_outstanding(request: Request, period: Optional[str] = Query(None),
+                                 year: Optional[str] = Query(None)):
+    """Per jenis (BPJS, PPh 21): kewajiban masa itu, sudah disetor, sisa — untuk PT aktif. PY-T4 — `year=TTTT`:
+    12 masa per jenis; izin `hr.view` ATAU `payroll.pay`."""
+    await require_any_permission(request, [("hr", "view"), ("payroll", "pay")])
     ctx = await entity_ctx(request)
     if ctx.view_all or not ctx.active_entity_id or ctx.active_entity_id == "all":
         raise HTTPException(status_code=400, detail="Pilih satu PT dulu untuk melihat kewajiban setoran.")
     try:
+        if year and not period:
+            return await _rem.outstanding_year(ctx.active_entity_id, year)
+        if not period:
+            raise ValueError("Isi masa (TTTT-BB) atau tahun (TTTT).")
         return await _rem.outstanding(ctx.active_entity_id, period)
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
@@ -329,6 +394,24 @@ async def create_remittance(request: Request, body: RemittanceInput):
     await audit(actor["name"], "hr.payroll.remittance_create", "hr_statutory_remittances", doc["id"],
                 {"number": doc.get("number"), "kind": doc.get("kind"), "period": doc.get("period"),
                  "amount": doc.get("amount"), "cash_txn_id": doc.get("cash_txn_id")})
+    return doc
+
+
+@router.post("/hr/payroll/remittances/{remittance_id}/void")
+async def void_remittance(request: Request, remittance_id: str, body: PayrollReasonInput):
+    """PY-T4 — batalkan setoran yang salah catat: kas setoran dibalik (jurnal pembalik bertanggal setor), setoran `void`
+    tidak lagi dihitung "sudah disetor"."""
+    actor = await require_permission(request, "payroll", "void")
+    await guard_doc(request, "hr_statutory_remittances",
+                    await db.hr_statutory_remittances.find_one({"id": remittance_id}, {"_id": 0}),
+                    not_found="Setoran tidak ditemukan")
+    try:
+        doc = await _rem.void_remittance(remittance_id, actor, body.reason)
+    except ValueError as e:
+        raise _http(e)
+    await audit(actor["name"], "hr.payroll.remittance_void", "hr_statutory_remittances", remittance_id,
+                {"number": doc.get("number"), "kind": doc.get("kind"), "period": doc.get("period"),
+                 "void_journal_number": doc.get("void_journal_number")}, reason=body.reason)
     return doc
 
 

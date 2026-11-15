@@ -4534,3 +4534,36 @@ Aturan hitung (`services/hr_pay_rules.py:rules` — satu-satunya pembaca kunci `
 | `hr_pay_components.calc` `per_hari_hadir` / `persen_dasar` + `rate` | Komponen buatan pengguna: `rate` × hari hadir (rekaman hadir/telat, atau di luar lokasi yang disetujui) / `rate` % × gaji pokok slip (sesudah prorata). Hanya proses reguler (`allowed_run_types = ["regular"]`) | `create_component` / `update_component` |
 | `hr_payslips.attendance_summary` | Ringkasan kehadiran masa kerja bila dipakai (potongan / per hari hadir): `work_days`, `alpha_days`, `unpaid_days`, `late_min`, `present_days` | `compute_payslip` (`hr_pay_rules.hitung_kehadiran`) |
 | Baris slip prorata masuk/keluar | `hr.prorata_masuk_keluar` `hari_kalender` / `hari_kerja`: komponen ber-`prorate` × hari (kerja) masa kerja ÷ hari (kerja) bulan, label "{nama} ({tgl}–{tgl} {bulan})", pembulatan slip. Karyawan yang masuk sesudah akhir periode tidak ikut proses (tanpa sakelar) | `hr_pay_rules.atur_potongan` + `hr_pay_components.nilai_tetap` |
+
+## PY-T4 — bayar gaji dari rekening berperuntukan Gaji, daftar transfer, batal setoran kewajiban
+
+Bayar gaji (`services/hr_payroll_pay.py:pay_run`, `POST /api/hr/payroll/runs/{id}/pay`, izin `payroll.pay`): rekening
+sumber = rekening AKTIF milik PT proses yang `purposes`-nya (PM-T1) memuat `gaji` (kosong → satu-satunya rekening gaji
+PT); tanggal bayar `paid_date` (bawaan hari ini WIB, tidak sebelum tanggal jurnal gaji). Satu kas keluar
+`cash_transactions` `ref_type="payroll_run"`, `ref_id` = id proses (id kas tetap dari id proses — kirim ulang = kas yang
+sama), `contra_account_code` = akun pemetaan `sdm.hutang_gaji` → jurnal kas (`source_type="cash_transaction"`) Dr hutang
+gaji / Cr kas rekening itu, bertanggal bayar. Jurnal bayar `payroll_pay` (jalur lama, kode akun dari isi permintaan) tidak
+terbit lagi; jurnal lama tetap dibaca (Jejak Dokumen, label sumber). Proses dengan jurnal `payroll_pay` lama yang kasnya
+gagal: kas baru menumpang jurnal itu (`journal_by_parent`). **Daftar transfer tidak disimpan** — diturunkan dari slip
+(`hr_payslips.net` + potret `bank`) tiap kali dibaca (`transfer_list`), Σ wajib = `totals.net` (selain itu 409).
+
+| Field (`hr_payroll_runs`, ditambah) | Arti | Ditulis oleh |
+|---|---|---|
+| `pay_account_id`, `pay_account_name` | Rekening sumber pembayaran (nama = potret saat dibayar, untuk tampilan "Dibayar … dari …") | `pay_run` (niat) → `_selesai` (dari kas) |
+| `paid_date` (`YYYY-MM-DD`) | Tanggal bayar = tanggal kas & jurnal bayar | `pay_run` (niat) → `_selesai` |
+| `transfer_total`, `transfer_count` | Σ nominal daftar transfer (= kas keluar) dan jumlah penerima saat dibayar | `_selesai` |
+| `paid_by`, `paid_by_id` | Pembayar (kontrol dua orang `kontrol.proses_gaji`, K-41) | `pay_run` (niat) |
+| `cash_txn_id`, `cash_txn_number`, `paid_journal_id`, `paid_journal_number` | Kas keluar dan jurnal kasnya (L8) | `_selesai` (kas juga saat jurnal gagal) |
+| `pay_gl_status` (`pending` · `posted` · `failed` · `not_required`), `pay_gl_error`, `pay_gl_failed_at` | Penanda jurnal bayar; `failed` → proses kembali `posted`, kas tersimpan dan tampil di Posting Gagal jenis Transaksi Kas; ulang dari panel → `hr_payroll_pay.selesaikan_dari_kas` (`posting_registry._retry_cash`) | `pay_run` |
+
+Tanpa migrasi: proses lama yang sudah dibayar tidak diisi field baru. Proses `posted` dengan kas pembayaran hidup tidak
+bisa dianulir (`void_run` 409).
+
+| Field (`hr_statutory_remittances`, ditambah) | Arti | Ditulis oleh |
+|---|---|---|
+| `status` `voiding` · `void` | Batal setoran (`POST /api/hr/payroll/remittances/{id}/void`, izin `payroll.void`, alasan ≥ 5 huruf): klaim `done → voiding` → kas setoran dibalik lewat `post_durable` (`cash_transaction_void`, bertanggal setor) lalu kas `void` → `void`; gagal → kembali `done`. Setoran `void` tidak dihitung "sudah disetor" (`outstanding`, `outstanding_year`) | `hr_remittance_service.void_remittance` |
+| `void_reason`, `voided_by`, `voided_by_id`, `voided_at`, `void_journal_id`, `void_journal_number` | Jejak batal setoran | `void_remittance` |
+
+`GET /api/hr/payroll/remittances` dan `…/outstanding` (`?period=` atau `?year=` → 12 masa per jenis) menerima `hr.view`
+**atau** `payroll.pay`. `cash_transactions` setoran yang dibatalkan: `status: void`, `void_journal_entry_id`, `void_reason`,
+`voided_by`, `voided_at`.

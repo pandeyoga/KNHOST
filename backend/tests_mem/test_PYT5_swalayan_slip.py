@@ -83,8 +83,8 @@ async def _alur(klien, h, run_id: str, *langkah: str) -> dict:
 
 
 async def _bayar(klien, db, h, run_id: str) -> dict:
-    """Bayar lewat endpoint bayar yang berlaku di HEAD (PK-22: akun kas pemetaan + rekening tunggal PT). Bila cara
-    bayar berubah (PY-T4), cukup sesuaikan di sini — yang diuji unit ini hanya "sudah dibayar" (`paid`)."""
+    """Bayar lewat endpoint bayar (PK-22; sejak PY-T4 rekening berperuntukan Gaji + tanggal bayar — `cash_account`
+    diabaikan). Yang diuji unit ini hanya "sudah dibayar" (`paid`)."""
     rek = await _rekening(db, KANDA)
     r = await klien.post(f"/api/hr/payroll/runs/{run_id}/pay", json={"cash_account": "1-1100", "account_id": rek},
                          headers=h)
@@ -185,7 +185,9 @@ async def test_PYT5_U2_terlihat_setelah_dibayar(klien, db, uji):
     # bersih 8.646.000 = 8.800.000 − 154.000 (hitungan di kepala berkas)
     assert (s["gross"], s["pph21"], s["net"]) == (8_800_000, 154_000, 8_646_000)
     assert s["paid_at"] == run["paid_at"] and s["paid_at"]
-    assert s["paid_date"] == book_date.tanggal_buku(run["paid_at"])   # tanggal bayar WIB
+    # Tanggal bayar: sejak PY-T4 = tanggal bayar proses (`paid_date`, bawaan tanggal buku saat dibayar); sebelum PY-T4 =
+    # tanggal WIB dari stempel `paid_at`.
+    assert s["paid_date"] == (run.get("paid_date") or book_date.tanggal_buku(run["paid_at"]))   # tanggal bayar WIB
     baris = [(c["label"], c["amount"], c["kind"]) for c in s["components"]]
     assert ("Tunjangan — Transport", 500_000, "pendapatan") in baris, baris
     assert ("Gaji Pokok", 8_000_000, "pendapatan") in baris and ("PPh 21", 154_000, "potongan") in baris

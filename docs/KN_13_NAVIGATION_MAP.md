@@ -565,7 +565,7 @@ dalam 4 grup); grup "Kas & Aset" dihapus.
 | SDM › Kehadiran (`hr-attendance-hub`) | Lacak Lapangan (`hr-live-tracking`) | A M |
 | SDM › Penggajian (`hr-payroll-hub`) | Proses Gaji (`hr-payroll-runs`) — PY-T1: jenis proses (Reguler · THR · Susulan), slip berkomponen, panel "Cari slip" | A M |
 | SDM › Penggajian (`hr-payroll-hub`) | ~~Slip Gaji (`hr-payslips`)~~ — PY-T1: tab dihapus; id lama = alias ke Proses Gaji (panel "Cari slip" terbuka) | — |
-| SDM › Penggajian (`hr-payroll-hub`) | Setoran Kewajiban (`hr-payroll-remittances`) — PK-22: hutang BPJS & PPh 21 per masa, Catat Setoran (`payroll.pay`) | A M |
+| SDM › Penggajian (`hr-payroll-hub`) | Setoran & Pajak (`hr-payroll-remittances`; dulu Setoran Kewajiban) — PK-22: hutang BPJS & PPh 21 per masa, Catat Setoran (`payroll.pay`). PY-T4: Gaji siap dibayar (antrean, pop-up Bayar, Daftar transfer + Unduh Excel), rekap setoran setahun, Batalkan setoran (`payroll.void`), tautan Rekap PPh 21 di Pusat Pajak. Finance: tab ini saja di hub Penggajian (`payroll.pay`, tanpa `hr.view`) | A M F |
 | SDM › Penggajian (`hr-payroll-hub`) | Komponen & Masukan (`hr-pay-components`) — PY-T1: komponen gaji per PT (ubah `hr.manage_payroll`) dan antrean masukan (tambah `payroll.create`, sahkan/batalkan `payroll.approve`) | A M |
 | SDM › Kinerja & Insentif (`hr-kpi-hub`) | Capaian (`incentive-capaian`) — KM-T2: tab pertama; angka dasar insentif per sales per PT (cari, telusur ke dokumen, jumlah pilihan, ekspor Excel; hanya baca, `incentive.view`, kolom margin `incentive.view_margin`) | A M F |
 | SDM › Kinerja & Insentif (`hr-kpi-hub`) | Kinerja Sales (`sales-performance`) | A M S SA |
@@ -716,6 +716,19 @@ Data Gudang; WhatsApp → Pusat Dokumen (WhatsApp kirim dokumen). Pemilih PT di 
 - Wizard PT langkah 3 (Penomoran & Dokumen): empat contoh nomor dari `POST /api/doc-numbering/preview` (format grup yang
   berlaku, kode = isian wizard).
 
+### PY-T4 — 15 Nov 2026 (Penggajian › Setoran & Pajak; menu Finance)
+- Tab `hr-payroll-remittances` berlabel **Setoran & Pajak** (judul halaman "Penggajian · Setoran & Pajak"); isi: Gaji
+  siap dibayar · Setoran BPJS dan PPh 21 · Rekap setoran setahun. Pop-up **Bayar gaji** dan pop-up **Daftar transfer**
+  juga dibuka dari rincian Proses Gaji (`hr-payroll-runs`).
+- Menu **Finance**: SDM › **Penggajian** muncul dengan satu tab (Setoran & Pajak) — `navStructure` item `hr-payroll-hub`
+  dan tab `hubTabs` + `finance`; izin bawaan Finance + `payroll.pay` (`permissions_config.PYT4_DEFAULT_PAIRS`). Proses
+  Gaji dan Komponen & Masukan tetap Admin & Manajer (Finance tidak memegang `hr.view`). Peran kustom dari modul "SDM &
+  Penggajian" mendapat menunya dari katalog modul akses (tidak berubah).
+- Syarat aksi menu (`access_modules.VIEW_ACTION_REQUIREMENTS`, dikirim sebagai `view_actions`): layar SDM yang hanya
+  melayani sumber daya `hr` (Karyawan, Kehadiran, Proses Gaji, Komponen & Masukan, Kalender Libur, KPI Karyawan,
+  Pengaturan › SDM) butuh salah satu aksi `hr.*`; Setoran & Pajak butuh `hr.view` atau `payroll.pay`. Izin `payroll.*`
+  saja tidak membuka menu SDM lain (menu peran bawaan tetap bertambah dari izin SDM, PR-T6).
+
 ### MN-T1 — 14 Nov 2026 (menu keuangan & SDM: pindah dan kelompokkan, isi layar tetap)
 - Keuangan: **Beranda Keuangan** (Perlu Tindakan · Posisi · Analisis; Meja Finance bukan lagi menu lepas/butir Meja
   Peran) · **Piutang** (6 tab; Penagihan & Kredit dari CRM, Uang Muka + Saldo Kredit = satu tab pembungkus ber-chip,
@@ -834,7 +847,7 @@ SIDEBAR (grouped, collapsible, role-filtered)
   (💼 Kas & Aset — DIHAPUS MN-T1: Kas Kecil → Keuangan › Kas & Bank, Kendaraan → Gudang & Logistik, Aset Tetap →
      Akuntansi & Pajak; alamat `?view=kas-aset` → Kas Kecil)
   👥 SDM (HRD) ✅
-     ├── Karyawan · Kehadiran · Penggajian (Proses Gaji · Setoran Kewajiban — PK-22 · Komponen & Masukan — PY-T1; Slip Gaji = panel "Cari slip") · Kinerja & Insentif (MN-T1)
+     ├── Karyawan · Kehadiran · Penggajian (Proses Gaji · Setoran & Pajak — PK-22, PY-T4 · Komponen & Masukan — PY-T1; Slip Gaji = panel "Cari slip") · Kinerja & Insentif (MN-T1)
   📊 Analitik (BI)
      └── Sales / Stock / Finance / HR dashboards 🆕
   📝 Dokumen

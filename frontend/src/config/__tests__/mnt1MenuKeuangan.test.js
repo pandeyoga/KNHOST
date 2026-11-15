@@ -68,7 +68,8 @@ describe("U2 — jumlah tab tampak per hub (admin)", () => {
     expect(labels("fin-reports")).toEqual(["Laba-Rugi, Neraca & Arus Kas", "Profitabilitas", "Proyeksi Kas", "Anggaran", "Konsolidasi"]);
     expect(labels("tax-hub")).toEqual(["Faktur Keluaran", "Faktur Masukan", "PPN & PPh"]);
     // PK-22 (Setoran Kewajiban) · PY-T1 (Komponen & Masukan; tab Slip Gaji dihapus — panel "Cari slip" di Proses Gaji).
-    expect(labels("hr-payroll-hub")).toEqual(["Proses Gaji", "Setoran Kewajiban", "Komponen & Masukan"]);
+    // PY-T4 — tab setoran berlabel "Setoran & Pajak" (bayar gaji + setoran BPJS/PPh 21).
+    expect(labels("hr-payroll-hub")).toEqual(["Proses Gaji", "Setoran & Pajak", "Komponen & Masukan"]);
     // KM-T1 — tab Meja Insentif "Target & Aturan" (`incentive-setup`); tab lama `incentive-rates` berlabel "Komisi Otomatis".
     // KM-T2 — tab "Capaian" (`incentive-capaian`) di urutan pertama.
     expect(labels("hr-kpi-hub")).toEqual(["Capaian", "Kinerja Sales", "Target & Aturan", "Komisi Otomatis", "Skema (Arsip)", "KPI Karyawan"]);

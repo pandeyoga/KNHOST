@@ -354,24 +354,29 @@ async def test_PK22_U8b_setoran_pph21_dari_pemetaan_dan_mode_semua_pt(klien, db,
 
 
 # ── U9 — bayar hanya dari akun kas/bank pemetaan ─────────────────────────────────────────────────────────────────────
+# PY-T4 (perilaku yang sengaja diubah) — kode akun dari isi permintaan (`cash_account`) tidak dibaca lagi: sumber bayar =
+# rekening berperuntukan Gaji milik PT proses; jurnal bayar = jurnal kas keluar Dr hutang gaji / Cr kas rekening itu
+# (dulu jurnal `payroll_pay` + kas `record_return_cash`). Rincian aturan rekening: `test_PYT4_bayar_gaji.py`.
 async def test_PK22_U9_bayar_dari_piutang_ditolak(klien, db, adm):
     eid = await pt_uji("P22J")
     run = await _proses(db, eid, "posted", tag="u9")
     h = await adm(eid)
     r = await klien.post(f"/api/hr/payroll/runs/{run['id']}/pay", json={"cash_account": "1-1200"}, headers=h)
     assert r.status_code == 400, r.text
-    assert r.json()["detail"] == "Akun pembayaran '1-1200' bukan akun kas/bank aktif — pilih akun Kas/Bank."
+    assert r.json()["detail"].startswith("Belum ada rekening berperuntukan Gaji di PT ini.")
     assert (await db.hr_payroll_runs.find_one({"id": run["id"]}))["status"] == "posted"
-    assert await jumlah("journal_entries", {"source_type": "payroll_pay", "source_id": run["id"]}) == 0
-    # Akun kas besar pemetaan + rekening tunggal Bank PT → dibayar; jurnal bayar berkunci id proses.
+    assert await jumlah("cash_transactions", {"ref_type": "payroll_run", "ref_id": run["id"]}) == 0
+    # Rekening tunggal Bank PT (rekening lama tanpa peruntukan = keempat peruntukan, termasuk Gaji) → dibayar; kode akun
+    # 1-1200 diabaikan, kredit tetap akun kas rekening (1-1100).
     rek = await _rekening(db, eid)
-    r = await klien.post(f"/api/hr/payroll/runs/{run['id']}/pay", json={"cash_account": "1-1100"}, headers=h)
+    r = await klien.post(f"/api/hr/payroll/runs/{run['id']}/pay", json={"cash_account": "1-1200"}, headers=h)
     assert r.status_code == 200, r.text
     assert r.json()["status"] == "paid" and r.json()["pay_gl_status"] == "posted" and r.json()["paid_by_id"]
-    je = (await _jurnal(db, "payroll_pay", run["id"]))[0]
-    assert _baris(je) == [("1-1100", 0, 8_490_000), ("2-1600", 8_490_000, 0)]
     kas = await db.cash_transactions.find_one({"id": r.json()["cash_txn_id"]})
-    assert kas["account_id"] == rek and kas["amount"] == 8_490_000
+    assert kas["account_id"] == rek and kas["amount"] == 8_490_000 and kas["ref_id"] == run["id"]
+    je = (await _jurnal(db, "cash_transaction", kas["id"]))[0]
+    assert _baris(je) == [("1-1100", 0, 8_490_000), ("2-1600", 8_490_000, 0)]
+    assert await jumlah("journal_entries", {"source_type": "payroll_pay", "source_id": run["id"]}) == 0
     r = await klien.post(f"/api/hr/payroll/runs/{run['id']}/void", json={"reason": "sudah dibayar kok"}, headers=h)
     assert r.status_code == 409, r.text
     assert r.json()["detail"] == f"Penggajian {run['number']} berstatus Dibayar, jadi tidak bisa dianulir."
