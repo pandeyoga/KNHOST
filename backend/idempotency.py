@@ -54,14 +54,18 @@ IDEMPOTENT_PREFIXES = ("/api/inbound/", "/api/outbound/", "/api/wms/tasks/",
                        # PY-T2 — sahkan/tolak riwayat kompensasi & penugasan PT (sahkan bisa menerbitkan masukan rapel).
                        "/api/hr/compensation/", "/api/hr/assignments/",
                        # PM-T4 — setoran titipan tunai sales: ajukan/terima/tolak/batal dikirim ulang = satu tulisan.
-                       "/api/cash-deposits")
+                       "/api/cash-deposits",
+                       # CR-T3 — putusan izin kredit dikirim ulang = satu putusan.
+                       "/api/credit-overrides")
 #: CR-T1 — jalur ber-id di tengah yang tidak bisa dinyatakan sebagai awalan (`/api/customers/{id}/credit-profile-requests`:
 #: mengajukan perubahan kredit). Dicocokkan penuh terhadap jalur permintaan.
 IDEMPOTENT_PATTERNS = (re.compile(r"^/api/customers/[^/]+/credit-profile-requests/?$"),
                        # AG-T3 — tindak lanjut penagihan / janji bayar dari kartu tindakan asisten
                        re.compile(r"^/api/customers/[^/]+/followups/?$"),
                        # PY-T2 — usulan riwayat kompensasi / penugasan PT karyawan: kirim ulang = satu baris usulan
-                       re.compile(r"^/api/hr/employees/[^/]+/(compensation|assignments)/?$"))
+                       re.compile(r"^/api/hr/employees/[^/]+/(compensation|assignments)/?$"),
+                       # CR-T3 — pengajuan izin kredit: klik ganda = satu izin
+                       re.compile(r"^/api/customers/[^/]+/credit-override/?$"))
 
 
 def is_idempotent_path(path: str) -> bool:

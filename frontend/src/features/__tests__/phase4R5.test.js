@@ -77,7 +77,8 @@ test("R5 Pusat Persetujuan: entri SO mati & override tertaut SO tidak tampil; ov
     "/approvals/backlog": { total: 2, items: [], all_items: [{ key: "sales_order", count: 1 }, { key: "credit_override", count: 1 }] },
   });
   // PR-T7 — kategori hanya dipanggil bila izin lihatnya dipegang: peran uji memegang approval.view + customer.view.
-  const res = await loadInbox({ approval: ["view"], customer: ["view"] });
+  // CR-T3 — daftar izin kredit dijaga `credit_override.view` (dulu `customer.view`).
+  const res = await loadInbox({ approval: ["view"], customer: ["view"], credit_override: ["view"] });
   expect(res.items.map((i) => i.id)).toEqual(["a2", "cro2"]);
   expect(res.items.find((i) => i.id === "cro2").kind).toBe("credit");
   expect(SO_DEAD_STATUSES).toEqual(expect.arrayContaining(["cancelled", "expired"]));

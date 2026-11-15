@@ -64,12 +64,16 @@ class SalesIncentiveCreate(BaseModel):
 
 
 class CreditOverrideCreate(BaseModel):
-    """Permohonan bypass blokir kredit (KN_17 §5.2 / S37)."""
-    customer_id: str
-    order_id: str = ""
+    """Permohonan izin kredit (KN_17 §5.2 / S37; CR-T3 — berlingkup, beralasan dari master alasan)."""
+    customer_id: str = ""
+    order_id: str = ""                     # CR-T3 — wajib bila `scope == "pesanan"`
     # PK-45 (CR-04) — nominal 0 (= tanpa batas) ditolak 400 berpesan di handler; negatif tetap ditolak skema.
     amount: float = Field(0, ge=0)
-    reason: str
+    scope: str = "pelanggan"               # CR-T3 — pesanan | pelanggan
+    reason_code: str = ""                  # CR-T3 — wajib; master alasan ber-applies_to `credit_override`
+    reason: str = ""                       # catatan (wajib bila alasan "Lainnya")
+    entity_id: str = ""                    # CR-T3 — PT izin (N1: diadu dengan penugasan pengguna)
+    rejection_id: str = ""                 # CR-T3 — penolakan gerbang yang dilanjutkan (opsional)
     evidence_url: str = ""
 
 

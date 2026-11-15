@@ -1025,3 +1025,25 @@ for _role, _mods in KMT2_DEFAULT_PAIRS.items():
     for _res, _acts in _mods.items():
         _cur = list(DEFAULT_PERMISSIONS[_role].get(_res) or [])
         DEFAULT_PERMISSIONS[_role][_res] = _cur + [a for a in _acts if a not in _cur]
+
+# ═══════════════════════════════════════════════════════════════════════════
+# CR-T3 (CR-04, K-28) — izin kredit (`docs/blueprint/unit/CR-T3.md`, tabel "Izin dan peran"). Sumber daya
+# `credit_override` (lahir PR-T2 dengan `approve`; modul "Pengawasan Tim Sales & Kredit") menerima dua aksi: `view`
+# melihat izin kredit & penolakan gerbang (dulu `customer.view`), `create` mengajukan izin (dulu `order.create`).
+# Penerima bawaan = pemegang izin lama hari ini (setara akses; `customer.view` hari ini juga dipegang MD dan Admin
+# Sample — ikut menerima `view` supaya tidak ada akses yang hilang). `approve` (Admin, Manajer) tidak diubah.
+# Instalasi lama menerima pasangan baru sekali lewat `bootstrap.sync_permission_modules` (`defaults_applied`, PR-T9).
+# ═══════════════════════════════════════════════════════════════════════════
+CRT3_DEFAULT_PAIRS = {
+    "admin": {"credit_override": ("view", "create")},
+    "manager": {"credit_override": ("view", "create")},
+    "sales": {"credit_override": ("view", "create")},
+    "sales_admin": {"credit_override": ("view", "create")},
+    "finance": {"credit_override": ("view",)},
+    "md": {"credit_override": ("view",)},
+    "sample_admin": {"credit_override": ("view",)},
+}
+for _role, _mods in CRT3_DEFAULT_PAIRS.items():
+    for _res, _acts in _mods.items():
+        _cur = list(DEFAULT_PERMISSIONS[_role].get(_res) or [])
+        DEFAULT_PERMISSIONS[_role][_res] = _cur + [a for a in _acts if a not in _cur]

@@ -175,7 +175,8 @@ describe("Tabel 2 — panggilan kerangka aplikasi dijaga izin", () => {
   });
   test("Pusat Persetujuan: hanya kategori yang izin lihatnya dipegang yang dipanggil; sisanya bukan 'belum lengkap'", async () => {
     // Server tiruan: kategori di luar izin peran → 403 (seperti hasil uji jalan audit butir C3).
-    const izin = { ar: ["view", "create"], customer: ["view"], approval: ["view"] };
+    // CR-T3 — daftar izin kredit kini dijaga `credit_override.view` (dulu `customer.view`).
+    const izin = { ar: ["view", "create"], customer: ["view"], approval: ["view"], credit_override: ["view"] };
     const boleh = ["/approvals/queue", "/approvals/backlog", "/credit-overrides"];
     mockGet.mockImplementation((url) => (boleh.includes(String(url).replace(/^\/api/, ""))
       ? Promise.resolve({ data: [] }) : Promise.reject(Object.assign(new Error("403"), { response: { status: 403 } }))));

@@ -126,7 +126,9 @@
     "view"
    ],
    "credit_override": [
-    "approve"
+    "approve",
+    "view",
+    "create"
    ],
    "credit_profile": [
     "view",
@@ -744,6 +746,9 @@
     "view",
     "pay"
    ],
+   "credit_override": [
+    "view"
+   ],
    "credit_profile": [
     "view",
     "update"
@@ -996,7 +1001,9 @@
     "view"
    ],
    "credit_override": [
-    "approve"
+    "approve",
+    "view",
+    "create"
    ],
    "credit_profile": [
     "view",
@@ -1468,6 +1475,9 @@
     "create",
     "update"
    ],
+   "credit_override": [
+    "view"
+   ],
    "customer": [
     "view"
    ],
@@ -1748,6 +1758,10 @@
     "view",
     "create"
    ],
+   "credit_override": [
+    "view",
+    "create"
+   ],
    "credit_profile": [
     "view",
     "update"
@@ -1915,6 +1929,10 @@
    ],
    "color": [
     "view"
+   ],
+   "credit_override": [
+    "view",
+    "create"
    ],
    "credit_profile": [
     "view",
@@ -2088,6 +2106,9 @@
   },
   "sample_admin": {
    "color": [
+    "view"
+   ],
+   "credit_override": [
     "view"
    ],
    "customer": [
@@ -2589,6 +2610,7 @@
    "ar_receipt",
    "cash",
    "cash_holding",
+   "credit_override",
    "credit_profile",
    "customer",
    "finance_amendment",
@@ -2600,6 +2622,7 @@
    "payment_plan",
    "payment_variance",
    "penalty",
+   "sales_force",
    "sales_return",
    "tax_invoice"
   ],
@@ -2722,7 +2745,9 @@
    "costing"
   ],
   "credit-overrides": [
-   "customer"
+   "credit_override",
+   "customer",
+   "sales_force"
   ],
   "cs-bi-hrd": [
    "audit",
@@ -3104,6 +3129,7 @@
    "cash_holding",
    "cash_settlement",
    "contra_bon",
+   "credit_override",
    "credit_profile",
    "customer",
    "finance_amendment",
@@ -3123,6 +3149,7 @@
    "payment_variance",
    "penalty",
    "period",
+   "sales_force",
    "sales_return",
    "tax_invoice",
    "vendor_bill"

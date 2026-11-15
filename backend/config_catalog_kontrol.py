@@ -69,7 +69,9 @@ KONTROL_AKSI: List[Dict[str, Any]] = [
     _a("lpj_uang_muka", "Pertanggungjawaban uang muka", "C", "1", True, _SDM),
     # PK-38 — nama diperluas: aksi ini kini juga mencakup kasus keuangan yang menutup piutang tanpa uang masuk.
     _a("pengurang_piutang", "Pengurang piutang tanpa uang masuk", "C", "1", True, _PJ),
-    _a("lewat_batas_kredit", "Izin lewat batas kredit", "C", "1", True, _PJ),
+    # CR-T3 — izin kredit (lewat plafon, telat, termin): label "Izin kredit" (spesifikasi menamainya aksi `izin_kredit`;
+    # id aksi KF-T6 dipertahankan supaya nilai `kontrol.lewat_batas_kredit.*` yang sudah tersimpan tetap berlaku).
+    _a("lewat_batas_kredit", "Izin kredit", "C", "1", True, _PJ),
     _a("klaim_makloon", "Klaim selisih makloon", "C", "1", True, _GD),
     _a("permintaan_internal", "Permintaan internal antar-PT", "C", "1", False, _GD),
     _a("permintaan_desain", "Permintaan desain", "C", "1", False, _GD),
@@ -123,7 +125,7 @@ _TITIK: Dict[str, Tuple[str, ...]] = {
     "uang_muka": ("services/cash_advance_service.py:approve_cash_advance",),
     "lpj_uang_muka": ("services/cash_advance_service.py:approve_settlement",),
     "pengurang_piutang": ("services/penalty_service.py:waive", "services/payment_variance_service.py:decide_receipt", "services/payment_variance_service.py:decide_bill", "routers/payment_variance.py:decide", "services/ar_reduction_guard.py:periksa"),   # PK-38 — + satu pintu pengurang piutang
-    "lewat_batas_kredit": ("routers/crm.py:decide_credit_override",),
+    "lewat_batas_kredit": ("services/credit_override_service.py:decide",),   # CR-T3 — satu layanan keputusan izin
     "klaim_makloon": ("routers/makloon_orders.py:approve_claim",),
     "permintaan_internal": ("services/internal_request_service.py:convert",),
     "permintaan_desain": ("services/design_request_service.py:approve",),
@@ -152,7 +154,7 @@ _PENDEK: Dict[str, str] = {
     "po_custom": "Pesanan khusus", "permintaan_pembelian": "Permintaan pembelian", "amandemen": "Koreksi dokumen",
     "po_tingkat_berikut": "PO tingkat berikutnya", "susut_makloon": "Susut makloon",
     "registrasi_stok_awal": "Nilai stok awal", "lpj_uang_muka": "Laporan uang muka",
-    "pengurang_piutang": "Pengurang piutang", "lewat_batas_kredit": "Lewat batas kredit",   # PK-38
+    "pengurang_piutang": "Pengurang piutang", "lewat_batas_kredit": "Izin kredit",   # PK-38 · CR-T3
     "nilai_pesanan": "Nilai pesanan",
     "ubah_profil_kredit": "Profil kredit pelanggan",   # CR-T1
     "asisten_uang_keluar": "Kartu asisten uang keluar",   # AG-T5

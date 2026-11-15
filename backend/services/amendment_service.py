@@ -174,6 +174,16 @@ DEFAULT_REASONS: List[Dict[str, Any]] = [
      "help": "Sampai batas waktu pemilik dana tidak ditemukan, sehingga uangnya "
              "dikembalikan ke pengirim.",
      "affects_master": False, "applies_to": ["finance_case"]},
+    # CR-T3 — alasan IZIN KREDIT (ASUMSI unit: tiga benih; Admin bisa mengubahnya di master alasan).
+    {"code": "cr_riwayat_baik", "label": "Riwayat bayar baik",
+     "help": "Pelanggan selama ini membayar tepat waktu, jadi kelebihan plafon atau telat kali ini bisa ditoleransi.",
+     "affects_master": False, "applies_to": ["credit_override"]},
+    {"code": "cr_jaminan", "label": "Ada jaminan atau giro mundur",
+     "help": "Pelanggan menyerahkan jaminan atau giro bertanggal mundur senilai izin yang diminta.",
+     "affects_master": False, "applies_to": ["credit_override"]},
+    {"code": "cr_lain", "label": "Lainnya (jelaskan di catatan)",
+     "help": "Alasan di luar daftar; jelaskan di catatan supaya pemutus dan auditor bisa membacanya.",
+     "affects_master": False, "applies_to": ["credit_override"]},
 ]
 
 

@@ -109,6 +109,11 @@ for _r, _tambah in _pc.PMT4_DEFAULT_PAIRS.items():
 for _r, _tambah in _pc.KMT2_DEFAULT_PAIRS.items():
     for _res, _aksi in _tambah.items():
         TAMBAHAN_SESUDAH.setdefault(_r, {}).setdefault(_res, set()).update(_aksi)
+# CR-T3 — izin kredit `credit_override.view` (Admin, Manajer, Sales, Admin Sales, Finance, MD, Admin Sample) dan
+# `.create` (Admin, Manajer, Sales, Admin Sales) (`permissions_config.CRT3_DEFAULT_PAIRS`).
+for _r, _tambah in _pc.CRT3_DEFAULT_PAIRS.items():
+    for _res, _aksi in _tambah.items():
+        TAMBAHAN_SESUDAH.setdefault(_r, {}).setdefault(_res, set()).update(_aksi)
 
 
 def _himpunan(perms: dict) -> dict:

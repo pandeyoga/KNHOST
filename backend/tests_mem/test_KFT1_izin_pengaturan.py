@@ -146,6 +146,10 @@ PMT4_KUNCI = 3
 # `hr.manage_payroll` (kelompok "sdm"): ikut terhitung di katalog (U04) tetapi tidak bisa diubah pemegang
 # `settings.manage` saja (U02 tetap).
 PYT3_KUNCI = 10
+# CR-T3 — sembilan kunci gerbang kredit (`ar.periksa_kredit_*` 4, `ar.eksposur_*` 3, `ar.izin_kredit_masa_berlaku_hari`,
+# `finance.tahan_kirim_tunai`) berizin `credit_profile.approve` (seperti `ar.default_credit_limit` CR-T1): ikut terhitung
+# di katalog (U04) tetapi tidak bisa diubah pemegang `settings.manage` saja (U02 tetap).
+CRT3_KUNCI = 9
 
 
 def _put(key, value, scope_type="entity", scope_id="ent_ksc"):
@@ -215,11 +219,12 @@ async def test_U04_lihat_saja_tidak_bisa_ubah(klien, akun, sesi, peran_tanpa_acu
     # cairkan uang muka dan LPJ wajib berlampiran; PK-29 true-up persediaan hanya untuk saldo awal; PK-22
     # tanggal jurnal periodik; AG-T3 sakelar kartu uang masuk & batas kartu per hari; KM-T1 empat definisi angka insentif;
     # PM-T3 tiga kunci kwitansi/rekening; PY-T2 gaji/PT berubah di tengah bulan; TX-T2 pemicu faktur pajak;
-    # AG-T5 sakelar kartu uang keluar & kontrol dua orang kartu asisten; PM-T4 tiga kunci titipan tunai sales; PY-T3 sepuluh aturan hitung gaji.
+    # AG-T5 sakelar kartu uang keluar & kontrol dua orang kartu asisten; PM-T4 tiga kunci titipan tunai sales; PY-T3 sepuluh aturan hitung gaji;
+    # CR-T3 sembilan kunci gerbang kredit.
     assert r.json()["total"] == 310 + 5 + KFT6_KUNCI + KFT2_KUNCI + KPT7_KUNCI + PK36_KUNCI + KFT7_KUNCI + PK37_KUNCI \
         + PK38_KUNCI + KPT8_KUNCI + PK30_KUNCI + PMT1_KUNCI + CRT1_KUNCI + AGT1_KUNCI + PMT2_KUNCI + TXT1_KUNCI \
         + PK39_KUNCI + PK26_KUNCI + AGT2_KUNCI + PK24_KUNCI + PK29_KUNCI + PK22_KUNCI + AGT3_KUNCI + KMT1_KUNCI + PMT3_KUNCI \
-        + PYT2_KUNCI + TXT2_KUNCI + AGT5_KUNCI + PMT4_KUNCI + PYT3_KUNCI
+        + PYT2_KUNCI + TXT2_KUNCI + AGT5_KUNCI + PMT4_KUNCI + PYT3_KUNCI + CRT3_KUNCI
 
 
 async def test_U05_manajer_kosong_tidak_lagi_lewat_nama_peran(klien, akun, sesi, peran_manajer_kosong):

@@ -867,3 +867,4 @@ import config_catalog_kontrol  # noqa: E402,F401  (KF-T6 — kontrol "harus dua 
 import config_catalog_nilai  # noqa: E402,F401  (KF-T7 — nilai bisnis yang dulu ditulis mati di kode)
 import config_catalog_budget  # noqa: E402,F401  (PK-39 — mode pemeriksaan anggaran)
 import config_catalog_insentif  # noqa: E402,F401  (KM-T1 — definisi angka insentif per PT)
+import config_catalog_kredit  # noqa: E402,F401  (CR-T3 — gerbang kredit: titik periksa, eksposur, izin kredit)

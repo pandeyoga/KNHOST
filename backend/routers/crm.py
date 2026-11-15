@@ -19,6 +19,7 @@ from services.customer_service import (
     evaluate_credit_gate, collection_reminders,
 )
 from services.sales_force_service import sales_kpi, compute_commission, leaderboard, commission_history
+from services import credit_override_service as cos   # CR-T3 — izin kredit
 from services import gl_service
 from entity_scope import entity_ctx, guard_doc, resolve_list_scope
 from ai_card_context import card_field
@@ -115,94 +116,106 @@ async def reassign_customer(customer_id: str, payload: CustomerReassign, request
     return safe_doc(updated)
 
 
-# ── Credit override (KN_17 5.2 / S37) ────────────────────────────────────────
+# ── Izin kredit (KN_17 5.2 / S37; CR-T3 — `services/credit_override_service.py`) ─────────────────────────────
+PESAN_IZIN_LIHAT = ("Anda belum punya akses untuk melihat izin kredit. Minta Admin menambahkan akses "
+                    "'Pengawasan Tim Sales & Kredit'.")
+PESAN_IZIN_AJU = ("Anda belum punya akses untuk mengajukan izin kredit. Minta Admin menambahkan akses "
+                  "'Pengawasan Tim Sales & Kredit'.")
+
+
 @router.post("/customers/{customer_id}/credit-override")
 async def request_credit_override(customer_id: str, payload: CreditOverrideCreate, request: Request) -> Dict[str, Any]:
-    actor = await require_permission(request, "order", "create")
+    """CR-T3 — ajukan izin kredit (`credit_override.create`, dulu `order.create`): `scope` pesanan · pelanggan,
+    `order_id` wajib bila pesanan, `reason_code` wajib, nominal > 0 (PK-45). PT = PT yang diminta (N1)."""
+    actor = await require_permission(request, "credit_override", "create", detail=PESAN_IZIN_AJU)
     customer = safe_doc(await db.customers.find_one({"id": customer_id}, {"_id": 0}))
     if not customer:
         raise HTTPException(status_code=404, detail="Customer tidak ditemukan")
     if not await can_access_customer(actor, customer):
         raise HTTPException(status_code=403, detail="Customer ini bukan milik Anda")
-    # PK-45 (CR-04) — nominal 0 dulu berarti "tanpa batas"; permohonan baru wajib bernominal. Izin lama yang sudah
-    # disetujui dengan nominal 0 tetap dibaca seperti sebelumnya (customer_service.evaluate_credit_gate) sampai CR-T3.
-    if float(payload.amount or 0) <= 0:
-        raise HTTPException(status_code=400, detail="Nominal izin wajib lebih dari 0.")
-    credit = await compute_customer_credit(customer)
-    doc = {
-        "id": new_id("cro"),
-        "customer_id": customer_id,
-        "customer_name": customer.get("name", ""),
-        "order_id": payload.order_id,
-        "amount": float(payload.amount or 0),
-        "reason": payload.reason,
-        "evidence_url": payload.evidence_url,
-        "credit_snapshot": credit,
-        "entity_id": customer.get("entity_id", DEFAULT_ENTITY_ID),
-        "status": "pending",
-        "requested_by": actor["name"],
-        "requested_by_id": actor["id"],
-        "created_at": now_iso(),
-    }
-    await db.credit_overrides.insert_one(dict(doc))
-    await audit(actor["name"], "credit_override_requested", "credit_override", doc["id"], doc)
-    return safe_doc(doc)
+    if float(payload.amount or 0) <= 0:   # PK-45 (CR-04) — nominal 0 dulu berarti "tanpa batas"
+        raise HTTPException(status_code=400, detail=cos.PESAN_NOMINAL)
+    from entity_scope import resolve_requested_entity
+    eid = resolve_requested_entity(await entity_ctx(request), payload.entity_id or customer.get("entity_id") or "")
+    order = None
+    if (payload.scope or "pelanggan") == "pesanan":
+        order = safe_doc(await db.sales_orders.find_one({"id": payload.order_id or "__tanpa__"}, {"_id": 0}))
+        if not order or order.get("customer_id") != customer_id:
+            raise HTTPException(status_code=400, detail=cos.PESAN_ORDER)
+        await guard_doc(request, "sales_orders", order, strict=False)   # N2 — pesanan milik PT yang sama
+        eid = order.get("entity_id") or eid
+    return await cos.create(customer, eid, scope=payload.scope or "pelanggan", amount=payload.amount,
+                            reason_code=payload.reason_code, note=payload.reason, actor=actor, order=order,
+                            evidence_url=payload.evidence_url, rejection_id=payload.rejection_id)
+
+
+@router.get("/credit-override-reasons")
+async def list_credit_override_reasons(request: Request) -> List[Dict[str, Any]]:
+    """CR-T3 — pilihan "Alasan" pop-up izin kredit (master alasan, `applies_to` memuat `credit_override`)."""
+    await require_any_permission(request, [("credit_override", "create"), ("credit_override", "view")],
+                                 detail=PESAN_IZIN_LIHAT)
+    return await cos.reasons()
+
+
+async def _cakupan_izin(actor: Dict[str, Any], query: Dict[str, Any]) -> Dict[str, Any]:
+    """PR-T4 — cakupan data peran: pengguna "milik sendiri/tim" melihat izin yang ia ajukan atau milik pelanggannya."""
+    if own_scoped(actor):
+        from services.customer_service import scope_query
+        cids = await db.customers.distinct("id", scope_query(actor, {}))
+        ands = list(query.pop("$and", []) or [])
+        ands.append({"$or": [{"requested_by_id": in_clause(await owner_ids(actor))}, {"customer_id": {"$in": cids}}]})
+        query["$and"] = ands
+    return query
 
 
 @router.get("/credit-overrides")
-async def list_credit_overrides(request: Request, status: str = None) -> List[Dict[str, Any]]:
-    actor = await require_permission(request, "customer", "view")
+async def list_credit_overrides(request: Request, status: str = None, scope: str = None, valid: str = None,
+                                customer_id: str = None) -> List[Dict[str, Any]]:
+    """CR-T3 — `credit_override.view` (dulu `customer.view`); saringan `status`, `scope` (pesanan · pelanggan),
+    `valid=1` (disetujui, belum kedaluwarsa, bersisa), `customer_id`; cakupan PT (PK-45) dan pelanggan (PR-T4)."""
+    actor = await require_permission(request, "credit_override", "view", detail=PESAN_IZIN_LIHAT)
     query: Dict[str, Any] = {}
     if status:
         query["status"] = status
-    if own_scoped(actor):   # PR-T4 — cakupan data peran
-        query["requested_by_id"] = in_clause(await owner_ids(actor))
+    if customer_id:
+        query["customer_id"] = customer_id
+    query = await _cakupan_izin(actor, query)
     query = resolve_list_scope("credit_overrides", query, await entity_ctx(request))   # PK-45 (CR-04) — per PT
-    return await db.credit_overrides.find(query, {"_id": 0}).sort("created_at", -1).to_list(200)
+    rows = [cos.tampil(r) for r in await db.credit_overrides.find(query, {"_id": 0}).sort("created_at", -1)
+            .to_list(200)]
+    if scope in cos.LINGKUP:
+        rows = [r for r in rows if r["scope"] == scope]
+    if str(valid or "").lower() in ("1", "true", "ya"):
+        rows = [r for r in rows if r["usable"]]
+    return rows
 
 
 @router.get("/credit-overrides/{override_id}")
 async def get_credit_override(override_id: str, request: Request) -> Dict[str, Any]:
-    actor = await require_permission(request, "customer", "view")
+    actor = await require_permission(request, "credit_override", "view", detail=PESAN_IZIN_LIHAT)
     doc = await db.credit_overrides.find_one({"id": override_id}, {"_id": 0})
-    if not doc or (own_scoped(actor) and not await owns(actor, doc.get("requested_by_id"))):
-        raise HTTPException(status_code=404, detail="Permohonan override kredit tidak ditemukan")
+    if doc and own_scoped(actor) and not await owns(actor, doc.get("requested_by_id")):
+        cust = await db.customers.find_one({"id": doc.get("customer_id")}, {"_id": 0}) or {}
+        if not await can_access_customer(actor, cust):
+            doc = None
+    if not doc:
+        raise HTTPException(status_code=404, detail="Izin kredit tidak ditemukan")
     await guard_doc(request, "credit_overrides", doc, strict=False)   # PK-45 (CR-04) — PT lain → 404
-    return doc
+    return cos.tampil(doc)
 
 
 @router.post("/credit-overrides/{override_id}/decision")
 async def decide_credit_override(override_id: str, payload: CreditOverrideDecision, request: Request) -> Dict[str, Any]:
+    """CR-T3 — `credit_override.approve` + Aturan Persetujuan (`credit_override`, nominal izin) + kontrol dua orang
+    (`kontrol.lewat_batas_kredit.*`); sudah diputus/kedaluwarsa → 409. Disetujui: masa berlaku, sisa, pesanan yang
+    ditahan pelanggan itu diperiksa ulang."""
     actor = await require_permission(request, "credit_override", "approve")
     if payload.decision not in ("approve", "reject"):
         raise HTTPException(status_code=400, detail="decision harus approve|reject")
-    new_status = "approved" if payload.decision == "approve" else "rejected"
     # PK-45 (CR-04) — PT dokumen diadu dengan penugasan pemutus sebelum keputusan ditulis.
     co = await db.credit_overrides.find_one({"id": override_id}, {"_id": 0})
-    await guard_doc(request, "credit_overrides", co, strict=False,
-                    not_found="Permohonan tidak ditemukan / sudah diputuskan")
-    if co:   # KP-T4 — siapa yang boleh memutus dari Aturan Persetujuan (bawaan: semua pemegang izin)
-        from services import approval_policy_service as _aps
-        await _aps.assert_can_decide("credit_override", co.get("entity_id") or None, float(co.get("amount") or 0),
-                                     actor, action="approve" if payload.decision == "approve" else "reject",
-                                     check_permission=False)
-    # KF-T6 — pemohon ≠ pemutus dari `kontrol.lewat_batas_kredit.*` (bawaan satu orang).
-    if (co or {}).get("status") == "pending":
-        from services import dual_control as _dc
-        await _dc.tolak_bila_pelaku_sama("lewat_batas_kredit", co, actor, co.get("entity_id", ""),
-                                         nominal=float(co.get("amount") or 0),
-                                         pengaju=[co.get("requested_by_id")])
-    updated = await db.credit_overrides.find_one_and_update(
-        {"id": override_id, "status": "pending"},
-        {"$set": {"status": new_status, "decided_by": actor["name"], "decided_by_id": actor["id"],
-                  "decision_reason": payload.reason, "decided_at": now_iso()}},
-        projection={"_id": 0}, return_document=ReturnDocument.AFTER,
-    )
-    if not updated:
-        raise HTTPException(status_code=404, detail="Permohonan tidak ditemukan / sudah diputuskan")
-    await audit(actor["name"], f"credit_override_{new_status}", "credit_override", override_id,
-                {"reason": payload.reason})
-    return safe_doc(updated)
+    await guard_doc(request, "credit_overrides", co, strict=False, not_found="Izin kredit tidak ditemukan")
+    return cos.tampil(await cos.decide(override_id, payload.decision, payload.reason, actor))
 
 
 # ── Collection worklist + follow-up (KN_17 7 / S39) ──────────────────────────

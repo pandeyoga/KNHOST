@@ -2397,6 +2397,42 @@
   "insentif.harga_acuan": [
    "penjualan",
    "komisi"
+  ],
+  "ar.periksa_kredit_pesanan_dibuat": [
+   "pembayaran-pelanggan",
+   "kredit"
+  ],
+  "ar.periksa_kredit_pesanan_diubah": [
+   "pembayaran-pelanggan",
+   "kredit"
+  ],
+  "ar.periksa_kredit_lepas_gudang": [
+   "pembayaran-pelanggan",
+   "kredit"
+  ],
+  "ar.periksa_kredit_surat_jalan": [
+   "pembayaran-pelanggan",
+   "kredit"
+  ],
+  "ar.eksposur_pesanan_belum_kirim": [
+   "pembayaran-pelanggan",
+   "kredit"
+  ],
+  "ar.eksposur_giro_belum_cair": [
+   "pembayaran-pelanggan",
+   "kredit"
+  ],
+  "ar.eksposur_titipan_mengurangi": [
+   "pembayaran-pelanggan",
+   "kredit"
+  ],
+  "ar.izin_kredit_masa_berlaku_hari": [
+   "pembayaran-pelanggan",
+   "kredit"
+  ],
+  "finance.tahan_kirim_tunai": [
+   "pembayaran-pelanggan",
+   "syarat-bayar"
   ]
  }
 }

@@ -212,9 +212,10 @@ MODULE_CATALOG: List[Dict[str, Any]] = [
     # PR-T2 (K-47) — wewenang yang dulu ditentukan nama peran kini modul akses yang terlihat & bisa dicabut.
     {"id": "sales_force", "group": "Penjualan", "label": "Pengawasan Tim Sales & Kredit",
      "description": "Target & insentif sales, tarif komisi, penugasan ulang pelanggan, akrual insentif ke buku besar, "
-                    "dan persetujuan pengecualian batas kredit.",
+                    "dan izin kredit (melihat, mengajukan, memutus).",
      "resources": ["sales_force", "credit_override"],
-     "nav": ["settings-hub", "settings-sales", "incentive-rates"]},
+     # CR-T3 — izin kredit diajukan dari kartu pelanggan dan checkout (menu Pelanggan & CRM, `customers-crm`).
+     "nav": ["settings-hub", "settings-sales", "incentive-rates", "customers-crm"]},
     {"id": "costing", "group": "Alat", "label": "HPP & Margin Produk",
      "description": "Harga pokok rata-rata (HPP) per produk dan kolom biaya/margin di layar lain. Tanpa izin ini kolom "
                     "biaya disembunyikan server.",
@@ -309,7 +310,10 @@ _MNT1_NAV_ADD = {
     "payable": ["keuangan", "purchase-orders"],                    # Hutang + induk tab Landed Cost
     "interco": ["keuangan"],
     "petty_cash": ["keuangan", "cash-bank", "petty-cash"],
-    "sales_force": ["hrd", "hr-kpi-hub", "incentive-schemes"],
+    "sales_force": ["hrd", "hr-kpi-hub", "incentive-schemes",
+                    # CR-T3 — endpoint utama tab Kredit & Plafon (`GET /api/credit-overrides`) kini `credit_override.view`;
+                    # pembaca pelanggan (`customer`, MN-T1) tetap membuka tabnya (panel pengajuan profil kredit di sana).
+                    "keuangan", "ar-aging", "credit-overrides"],
 }
 _MNT1_NAV_REMOVE = {
     "accounting": ["kas-aset"],
@@ -584,7 +588,7 @@ RESOURCE_LABEL = {
     "repair_order": "Perbaikan / Celup Ulang Roll",
     "data_export": "Pusat Export Data",
     # PR-T2
-    "sales_force": "Tim Sales: Target, Insentif & Penugasan", "credit_override": "Pengecualian Batas Kredit",
+    "sales_force": "Tim Sales: Target, Insentif & Penugasan", "credit_override": "Izin Kredit",   # CR-T3
     "costing": "HPP & Margin Produk", "manager_home": "Beranda Manajer",
     "system_tools": "Kebersihan Data & Alat Sistem", "rfid_device": "Perangkat RFID & Handheld",
     "ai": "Asisten Tanya KN", "ai_template": "Templat Laporan Tanya KN",
@@ -662,6 +666,10 @@ RESOURCE_LABEL["cash_holding"] = "Titipan Tunai Sales"
 ACTION_LABEL.update({"cash_holding.view": "Lihat titipan tunai (milik sendiri; semua bila boleh menerima setoran)",
                      "cash_holding.create": "Ajukan setoran titipan sendiri",
                      "cash_holding.approve": "Terima atau tolak setoran titipan"})
+# CR-T3 — izin kredit (modul Pengawasan Tim Sales & Kredit): melihat, mengajukan, memutus.
+ACTION_LABEL.update({"credit_override.view": "Lihat izin kredit & pesanan yang ditolak gerbang kredit",
+                     "credit_override.create": "Ajukan izin kredit",
+                     "credit_override.approve": "Putuskan izin kredit"})
 # KM-T1 — Meja Insentif (modul Kinerja & Insentif).
 RESOURCE_LABEL["incentive"] = "Kinerja & Insentif"
 ACTION_LABEL.update({"incentive.view": "Lihat", "incentive.configure": "Konfigurasi"})

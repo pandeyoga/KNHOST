@@ -1,7 +1,6 @@
 import { AskKnButton } from "../../components/AskKnButton";
 import KNDatePicker from "@/components/KNDatePicker";
 import { useEffect, useState } from "react";
-import MoneyInput from "@/components/MoneyInput";
 import axios, { API } from "../../services/apiClient";
 import { ArrowLeft, Edit3, UserCog, ShieldAlert, PhoneCall, MapPin, CreditCard, X } from "lucide-react";
 import { formatCurrency } from "../../utils/formatters";
@@ -16,6 +15,8 @@ import AuditHistoryPanel from "../../components/AuditHistoryPanel";
 import { can } from "../../config/roles";
 import ScopedRulesSection from "../settings/config/ScopedRulesSection";   // KF-T5
 import CustomerCreditTab from "./CustomerCreditTab";   // CR-T1
+import CreditOverrideModal from "./CreditOverrideModal";   // CR-T3 — pop-up izin kredit baku
+import { SCOPE_LABEL } from "./creditOverrideUi";
 
 const HIST_TABS = [
   { key: "orders", label: "Pesanan" },
@@ -23,7 +24,7 @@ const HIST_TABS = [
   { key: "prices", label: "Harga Khusus" },
   { key: "samples", label: "Sample" },
   { key: "followups", label: "Penagihan" },
-  { key: "overrides", label: "Override Kredit" },
+  { key: "overrides", label: "Izin Kredit" },   // CR-T3 — glosarium "izin kredit"
 ];
 
 /** Detail pelanggan 360 — profil + kredit + riwayat + aksi. */
@@ -37,6 +38,7 @@ export default function Customer360Panel({ customerId, currentUser, salesUsers, 
   const canReassign = can(currentUser?.permissions, "sales_force", "assign");   // PR-T7 (#13) — = POST /customers/{id}/reassign
   const canAudit = can(currentUser?.permissions, "audit", "view");
   const canCredit = can(currentUser?.permissions, "credit_profile", "view");   // CR-T1 — tab Kredit
+  const canAskCredit = can(currentUser?.permissions, "credit_override", "create");   // CR-T3 — = POST …/credit-override
 
   useEffect(() => { load(); }, [customerId]); // eslint-disable-line
 
@@ -95,15 +97,16 @@ export default function Customer360Panel({ customerId, currentUser, salesUsers, 
               <KpiTile label="Jatuh Tempo (Lewat Tempo)" value={formatCurrency(credit.overdue_amount)} tone={Number(credit.overdue_amount) > 0 ? "text-[#C0392B]" : ""} sub={credit.max_overdue_days ? `${credit.max_overdue_days} hari` : ""} testId="customer-360-overdue" />
               <KpiTile label="Sisa Kredit" value={credit.available_credit != null ? formatCurrency(credit.available_credit) : "∞"} sub={`${credit.open_orders || 0} pesanan terbuka`} />
             </div>
-            {/* UAT 24 Okt (audit UI tahap 2) — G2-10: pelanggan tanpa limit (∞) tidak butuh override kredit. */}
-            {limit > 0 ? (
+            {/* CR-T3 — izin kredit juga melepas tahanan karena telat (bukan hanya lewat plafon): tombol untuk pemegang
+                `credit_override.create`; tanpa izin itu ditulis siapa yang mengajukan. */}
+            {canAskCredit ? (
               <div className="px-3 pb-3">
-                <button data-testid="customer-360-override" onClick={() => setModal("override")} className="secondary-button w-full justify-center">
-                  <ShieldAlert size={13} /> Ajukan Override Kredit
+                <button data-testid="customer-360-override" onClick={() => setModal("override")} className="secondary-button btn-sm w-full justify-center whitespace-nowrap">
+                  <ShieldAlert size={13} /> Ajukan izin kredit
                 </button>
               </div>
             ) : (
-              <p className="px-3 pb-3 text-[10.5px] text-[#9A9BA3]" data-testid="customer-360-override-none">Tanpa limit kredit — override tidak diperlukan.</p>
+              <p className="px-3 pb-3 text-fs-12 text-kn-text-2" data-testid="customer-360-override-none">Izin kredit diajukan pemegang akses mengajukan izin kredit.</p>
             )}
           </div>
 
@@ -223,8 +226,9 @@ export default function Customer360Panel({ customerId, currentUser, salesUsers, 
 
       {modal === "reassign" && <ReassignModal customer={data} salesUsers={salesUsers} onClose={() => setModal(null)}
         onDone={(msg) => { setModal(null); onChanged?.(msg); load(); }} onError={onError} />}
-      {modal === "override" && <OverrideModal customer={data} onClose={() => setModal(null)}
-        onDone={(msg) => { setModal(null); onChanged?.(msg); load(); }} onError={onError} />}
+      <CreditOverrideModal open={modal === "override"} customer={data}
+        entityId={selectedEntity && selectedEntity !== "all" ? selectedEntity : data.entity_id || ""}
+        onClose={() => setModal(null)} onSaved={(msg) => { setModal(null); onChanged?.(msg); load(); }} />
       {modal === "followup" && <FollowupModal customer={data} onClose={() => setModal(null)}
         onDone={(msg) => { setModal(null); onChanged?.(msg); load(); }} onError={onError} />}
     </div>
@@ -273,9 +277,16 @@ function HistoryTable({ data, tab }) {
         </div>
       ))}
       {tab === "overrides" && rows.map((ov) => (
-        <div key={ov.id} className="flex items-start justify-between py-2 text-[11.5px] gap-2">
-          <div className="min-w-0"><p className="truncate">{ov.reason}</p><p className="text-[10px] text-[#6B6B73]">{formatCurrency(ov.amount)} · {ov.requested_by} · {fmtDate(ov.created_at)}</p></div>
-          <span className={`status-pill ${ov.status === "approved" ? "pill-success" : ov.status === "rejected" ? "pill-danger" : "pill-warning"}`}>{docStatusLabel(ov.status)}</span>
+        <div key={ov.id} className="flex items-start justify-between py-2 text-[11.5px] gap-2" data-testid={`customer-360-izin-${ov.id}`}>
+          <div className="min-w-0">
+            <p className="truncate">{ov.reason_label || ov.reason}{ov.reason_label && ov.reason && ov.reason !== ov.reason_label ? ` — ${ov.reason}` : ""}</p>
+            {/* CR-T3 — lingkup, sisa, masa berlaku, dan jejak pemakaian izin */}
+            <p className="text-fs-12 text-kn-text-2">{formatCurrency(ov.amount)} · {SCOPE_LABEL[ov.scope === "pesanan" ? "pesanan" : "pelanggan"]}{ov.order_number ? ` ${ov.order_number}` : ""} · sisa {formatCurrency(ov.remaining_amount ?? (ov.consumed ? 0 : ov.amount))}{ov.valid_until ? ` · berlaku sampai ${fmtDate(ov.valid_until)}` : ""} · {ov.requested_by} · {fmtDate(ov.created_at)}</p>
+            {(ov.used_by || []).map((u) => (
+              <p key={u.order_id} className="text-fs-12 text-kn-text-2">Dipakai pesanan {u.order_number || u.order_id} · {formatCurrency(u.amount)} · {fmtDate(u.at)}</p>
+            ))}
+          </div>
+          <span className={`status-pill ${ov.status === "approved" ? "status-done" : ov.status === "rejected" ? "status-rejected" : "status-pending"}`}>{docStatusLabel(ov.status)}</span>
         </div>
       ))}
     </div>
@@ -328,44 +339,6 @@ function ReassignModal({ customer, salesUsers, onClose, onDone, onError }) {
       <div>
         <MLabel optional>Alasan</MLabel>
         <input data-testid="reassign-reason" value={reason} onChange={(e) => setReason(e.target.value)} className="field" placeholder="mis. wilayah sales berubah" />
-      </div>
-    </MiniModal>
-  );
-}
-
-function OverrideModal({ customer, onClose, onDone, onError }) {
-  const [amount, setAmount] = useState("");
-  const [reason, setReason] = useState("");
-  const [evidence, setEvidence] = useState("");
-  const [busy, setBusy] = useState(false);
-  async function go() {
-    if (!reason.trim()) { onError?.("Alasan override wajib diisi."); return; }
-    setBusy(true);
-    try {
-      await axios.post(`${API}/customers/${customer.id}/credit-override`, {
-        customer_id: customer.id, amount: Number(amount) || 0, reason, evidence_url: evidence });
-      onDone?.("Permohonan override kredit diajukan (menunggu approval).");
-    } catch (e) { onError?.(apiErrorText(e, "Gagal mengajukan override.")); } finally { setBusy(false); }
-  }
-  return (
-    <MiniModal title="Ajukan Override Kredit" icon={<ShieldAlert size={16} className="text-[#B45309]" />} onClose={onClose} testId="override-modal"
-      footer={<>
-        <button onClick={onClose} className="secondary-button">Batal</button>
-        <button data-testid="override-submit" disabled={busy || !reason.trim()} onClick={go} className="primary-button">{busy ? "Mengajukan…" : "Ajukan"}</button>
-      </>}>
-      {/* G2-10 — tiap isian berlabel; rujukan spesifikasi internal "(KN_17 §5.2)" dihapus dari teks pengguna. */}
-      <p className="text-[11px] text-[#6B6B73]">Permohonan diteruskan ke Manager/Finance untuk persetujuan.</p>
-      <div>
-        <MLabel>Nilai pesanan</MLabel>
-        <MoneyInput testId="override-amount" value={amount} onChange={(v) => setAmount(v)} className="field" placeholder="Rp 0" />
-      </div>
-      <div>
-        <MLabel req>Alasan</MLabel>
-        <textarea data-testid="override-reason" value={reason} onChange={(e) => setReason(e.target.value)} className="field" rows="2" placeholder="mis. PO besar sudah dikonfirmasi" />
-      </div>
-      <div>
-        <MLabel optional>Tautan bukti</MLabel>
-        <input data-testid="override-evidence" value={evidence} onChange={(e) => setEvidence(e.target.value)} className="field" placeholder="https://…" />
       </div>
     </MiniModal>
   );

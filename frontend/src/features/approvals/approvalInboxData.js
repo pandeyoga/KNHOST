@@ -31,7 +31,7 @@ export const KIND_META = {
   purchase_return: { label: "Retur Pembelian",    icon: RotateCcw,      fg: "#0E7490", bg: "#E0F2FE", group: "returns" },
   cycle:           { label: "Stok Opname",   icon: ClipboardCheck, fg: "#15803D", bg: "#DCFCE7", group: "cycle" },
   // IA 2026-10 (B9) — override kredit pelanggan (dulu hanya di CRM › Persetujuan Kredit).
-  credit:          { label: "Override Kredit", icon: CreditCard, fg: "#0058CC", bg: "#E8F1FF", group: "credit" },
+  credit:          { label: "Izin Kredit", icon: CreditCard, fg: "#0058CC", bg: "#E8F1FF", group: "credit" },
   // FASE G-1 — koreksi angka dokumen keuangan; D-06: hanya untuk tampilan sisa (tidak dirender di daftar).
   amendment:       { label: "Amandemen Dokumen", icon: FileEdit,   fg: "#7A2CA0", bg: "#F3E9FA", group: "amendment" },
 };
@@ -51,7 +51,7 @@ export const CATEGORY_PERMS = {
   "Stock Opname": [["inventory", "cycle_count"]],
   "Amandemen": [["finance_amendment", "propose"]],
   "Ringkasan Antrean": QUEUE_PERMS,
-  "Kredit Pelanggan": [["customer", "view"]],
+  "Kredit Pelanggan": [["credit_override", "view"]],   // CR-T3 — GET /credit-overrides (dulu customer.view)
 };
 
 export async function loadInbox(perms) {
@@ -133,9 +133,11 @@ export async function loadInbox(perms) {
 
   // Fase 4 · R5 — hanya override MANDIRI (tanpa SO). Yang tertaut SO = entri kredit SO itu (grup Pesanan Penjualan,
   // diputus lewat entri SO supaya status SO ikut) — dulu tampil DUA kali; sama dengan baris `credit_override` server.
-  const credits = arr(coRes.data).filter((c) => !c.order_id).map((c) => ({
+  // CR-T3 — izin lingkup pesanan yang diajukan dari kartu pelanggan/checkout (tanpa entri persetujuan di pesanan) ikut di
+  // sini; yang punya entri persetujuan pesanan (`has_so_entry`, atau izin lama ber-pesanan) diputus lewat entri itu.
+  const credits = arr(coRes.data).filter((c) => !c.order_id || (c.scope === "pesanan" && !c.has_so_entry)).map((c) => ({
     kind: "credit", id: c.id, title: c.customer_name || "Pelanggan",
-    subtitle: c.order_number || c.reason || "Override batas kredit",
+    subtitle: c.order_number || c.reason_label || c.reason || "Izin kredit",
     meta: c.reason || "", amount: c.amount ?? c.requested_amount ?? null,
     requester: c.requested_by, role: "manager", at: c.created_at,
     // MN-T1 — sub-tab CRM "Persetujuan Kredit" kini Keuangan › Piutang › Kredit & Plafon.

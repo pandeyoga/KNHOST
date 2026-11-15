@@ -8,7 +8,7 @@
   "collection-worklist": {"izin": [["order", "view"]], "endpoint": "/api/collection-reminders"},
   "payment-plans": {"izin": [["payment_plan", "view"]], "endpoint": "/api/payment-plans"},
   "customer-credit": {"izin": [["accounting", "view"], ["penalty", "issue"], ["ar_receipt", "view"]], "endpoint": "/api/store-credit", "endpoint_per_izin": {"accounting.view": "/api/ar/advance-report", "penalty.issue": "/api/ar/advance-report", "ar_receipt.view": "/api/store-credit"}},
-  "credit-overrides": {"izin": [["customer", "view"]], "endpoint": "/api/credit-overrides"},
+  "credit-overrides": {"izin": [["credit_override", "view"]], "endpoint": "/api/credit-overrides"},
   "finance-cases": {"izin": [["finance_case", "view"]], "endpoint": "/api/finance-cases"},
   "vendor-bills": {"izin": [["vendor_bill", "view"]], "endpoint": "/api/vendor-bills"},
   "contra-bons": {"izin": [["contra_bon", "view"]], "endpoint": "/api/contra-bons"},

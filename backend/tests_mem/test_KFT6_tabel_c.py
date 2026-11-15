@@ -126,7 +126,8 @@ async def test_lewat_batas_kredit(klien, db, orang):
     co = {"id": _id("cov"), "entity_id": "ent_ksc", "customer_id": "", "amount": 1000000, "status": "pending",
           "requested_by": orang["mgr"]["name"], "requested_by_id": orang["mgr"]["id"], "created_at": now_iso()}
     await db.credit_overrides.insert_one(dict(co))
-    r2 = await _dua_orang(klien, "lewat_batas_kredit", "Izin lewat batas kredit",
+    # CR-T3 — label aksi `lewat_batas_kredit` kini "Izin kredit" (izin kredit juga melepas tahan karena telat).
+    r2 = await _dua_orang(klien, "lewat_batas_kredit", "Izin kredit",
                           f"/api/credit-overrides/{co['id']}/decision", orang, {"decision": "approve", "reason": "ok"})
     assert r2.status_code == 200, r2.text
 
