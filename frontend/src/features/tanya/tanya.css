@@ -339,10 +339,11 @@ body.tanya-open [data-testid="help-tours-button"] span { display: none; }
 .tanya-actions-pager { display: flex; align-items: center; justify-content: space-between; gap: var(--sp-2); flex-wrap: wrap; }
 .tanya-actions-state { font-size: var(--fs-13); color: var(--kn-text-2); padding: var(--sp-2) 0; }
 .tanya-actions-table .link-button { text-align: left; white-space: normal; }
-/* Tabel enam kolom butuh ±600 px. Di bawah itu (HP, dan panel utama di layar 1024 px yang hanya ±410 px karena
-   panel samping) menjadi kartu bertumpuk berlabel — mengikuti lebar PANEL, bukan lebar layar (cek layar 1024 px:
-   kolom terpotong dan pil status keluar kartu). */
-@container (max-width: 600px) {
+/* Tabel enam kolom butuh ±740 px sejak AG-T5 (pil "Menunggu orang kedua" ±170 px, tidak boleh patah). Di bawah itu
+   (HP, panel utama 1024 px ±410 px, dan panel utama 1280 px ±650 px karena panel samping) menjadi kartu bertumpuk
+   berlabel — mengikuti lebar PANEL, bukan lebar layar (cek layar AG-T3 1024 px dan AG-T5 1280 px: pil status keluar
+   kartu, halaman bergeser 40 px). */
+@container (max-width: 740px) {
   .tanya-actions-table thead { display: none; }
   .tanya-actions-table, .tanya-actions-table tbody, .tanya-actions-table tr, .tanya-actions-table td { display: block; width: 100%; }
   .tanya-actions-table tr { border-bottom: 1px solid var(--kn-divider); padding: var(--sp-2) 0; }
