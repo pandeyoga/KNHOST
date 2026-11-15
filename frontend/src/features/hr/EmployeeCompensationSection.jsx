@@ -31,9 +31,9 @@ import { useEntityScope } from "../../context/EntityScopeContext";
 /** Lencana baris riwayat: ikon + teks + warna (bukan warna saja). */
 export const ROW_BADGE = {
   pending: { label: "Menunggu disahkan", cls: "status-pending", Icon: Clock },
-  berlaku: { label: "Berlaku", cls: "status-approved", Icon: CheckCircle2 },
-  akan: { label: "Akan berlaku", cls: "status-confirmed", Icon: CalendarClock },
-  berakhir: { label: "Berakhir", cls: "status-closed", Icon: HistoryIcon },
+  berlaku: { label: "Berlaku", cls: "status-done", Icon: CheckCircle2 },
+  akan: { label: "Akan berlaku", cls: "status-shipped", Icon: CalendarClock },
+  berakhir: { label: "Berakhir", cls: "status-draft", Icon: HistoryIcon },
   rejected: { label: "Ditolak", cls: "status-rejected", Icon: XCircle },
   cancelled: { label: "Dibatalkan", cls: "status-cancelled", Icon: Ban },
 };
