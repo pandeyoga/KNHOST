@@ -50,13 +50,13 @@ kategori yang izinnya dipegang).
 | Uji FIX-7 `test_fix7_perf_sisa`: rencana kueri pagar gudang memilih indeks PT pada data acuan ini (indeks `warehouse_id+timestamp` ada); indeks `id` `store_credit_ledger` tidak dibuat karena koleksinya belum ada | data | Bergantung data, bukan kode |
 | Uji lapis A KF-T6/KP-T4 memakai akun & nama dari `seed_realistic.py` (`manager.printing@`, "Dewi Rahayu", "Fajar Nugroho") yang tidak dibuat rantai seed | uji | R3: ikutkan ke rantai seed atau buat akun di fixture uji |
 
-## 4. Uji dan bukti (pohon akhir, sebelum commit gabungan)
+## 4. Uji dan bukti (pohon akhir = commit gabungan `0f0ff4e`)
 
 | Uji | Hasil |
 |---|---|
 | Penjaga: `verify_atomic_claim` (+uji-diri 64 kasus), `verify_posting_coverage` (+uji-diri), `verify_roll_status_writer` (+uji-diri), `verify_cash_single_door` (+uji-diri), `verify_role_gate_ui`, `verify_codebase_map` | semua hijau (0 pelanggaran) |
 | Uji baru `backend/tests_mem/test_R0_integrasi_fix6.py` (7): ganti barang PO sudah ditagih → satu jurnal Dr 2-1150 / Cr 1-1300 neto, tanpa Nota Debit, AP tetap; potong tagihan belum ditagih → satu jurnal GR-IR + Nota Debit + AP turun bruto sekali; potong tagihan sudah ditagih → satu jurnal Dr 2-1100 bruto / Cr 1-1300 / Cr 1-1500, setujui ulang tetap satu; tidak ada pintu jurnal kedua; qty tertagih potong tagihan dikurangi sekali (30); ganti barang tetap penuh (50); scrap/batal scrap = biaya PK-27 + jejak status `roll_state` | 7 lulus; bukti-merah: aturan "ganti barang = GR-IR" disabotase → uji 1 merah; pengurangan ganda dikembalikan → 2 uji qty merah |
-| `tests_mem` penuh | 2.334 lulus, 8 gagal (registri pengaturan/izin, §1 baris 8) → sesudah perbaikan 8 berkas terkait + uji R0: 579 lulus, 2 xfail |
+| `tests_mem` penuh | putaran pertama 2.334 lulus, 8 gagal (registri pengaturan/izin, §1 baris 8); putaran akhir pada pohon commit `0f0ff4e`: **2.344 lulus**, 2 dilewati, 2 xfail, 0 gagal |
 | jest penuh | 1.157 lulus, 1 gagal (`fix7DaftarServer` LST-01/07, §2) → sesudah penyesuaian 4/4 lulus; 36 suite gagal dimuat = 35 garis dasar + `fix8StandarUi2` (baru dari `main`), sebab sama (`cmdk`/`@radix-ui`, lingkungan) |
 | Lapis A FIX (MongoDB 7 asli, backend pohon gabungan): `test_fix6_keputusan_10nov`, `test_fix10_roll_state`, `test_fix9_makloon_lock`, `test_fix8_saved_views`, `test_fix7_lists`, `test_fix7_perf_sisa`, `test_fix7_data_scripts` | FIX-6 semua lulus sesudah §1 baris 7 (sebelumnya `test_d2_bill_cut_unbilled…` gagal 10 ≠ 30); FIX-7 skrip data 7 lulus (salinan DB `kainnusantara` sementara, dihapus sesudahnya); `test_fix7_perf_sisa` 2 gagal bergantung data (§3) |
 | Lapis A blueprint terkait: KF-T6, KP-T4, KP-T5, PK-18, PK-27, PK-28, PK-32, PK-33, PR-T2, PR-T7 | lulus (KF-T6/KP-T4 dengan akun & nama sementara, dipulihkan sesudahnya); PR-T2/PR-T7 2 dilewati (data acuan tanpa peran kustom / permintaan sample) |
