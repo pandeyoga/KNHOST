@@ -55,13 +55,16 @@ async def ar_aging(
 
 
 @router.post("/ar/aging/{customer_id}/accrue-penalties")
-async def ar_aging_accrue(customer_id: str, request: Request,
-                          today: str = Query("")) -> Dict[str, Any]:
+async def ar_aging_accrue(customer_id: str, request: Request) -> Dict[str, Any]:
     """Ubah denda ESTIMASI pelanggan ini menjadi **nota denda** (dokumen) yang bisa ditagih.
 
     Memakai mesin FASE G-2: nota lahir sebagai `draft` (belum menyentuh buku besar) supaya
     masih bisa dinegosiasikan / dibebaskan dengan alasan. Idempotent per periode — ditekan
     berkali-kali tidak menggandakan nota.
+
+    CR-T4b (T4-01, kelas PK-08) — "hari ini" selalu tanggal buku SERVER WIB (`book_date.tanggal_buku`): dulu
+    `?today=` dari klien menentukan hari telat dan kunci periode nota (2099-01-01 → 26.390 hari telat). Rincian umur
+    piutang di jawaban juga per tanggal server.
     """
     actor = await require_permission(request, "penalty", "issue")
     ctx = await entity_ctx(request)
@@ -69,14 +72,11 @@ async def ar_aging_accrue(customer_id: str, request: Request,
     if await ar_aging_service.customer_aging_detail(customer_id, entity_ids=ids) is None:
         raise HTTPException(status_code=404, detail="Customer tidak ditemukan untuk entitas ini")
     from services import penalty_service as penalties
-    rows = await penalties.accrue_customer(customer_id, today=today or None,
-                                           actor_name=actor.get("name", ""))
+    rows = await penalties.accrue_customer(customer_id, actor_name=actor.get("name", ""))
     await audit(actor.get("name", ""), "ar_aging_penalty_accrued", "customers", customer_id,
                 {"penalties": [r.get("number") for r in rows], "count": len(rows)})
     return {"customer_id": customer_id, "count": len(rows), "penalties": rows,
-            "detail": await ar_aging_service.customer_aging_detail(customer_id,
-                                                                  as_of=today or None,
-                                                                  entity_ids=ids)}
+            "detail": await ar_aging_service.customer_aging_detail(customer_id, entity_ids=ids)}
 
 
 @router.get("/ar/aging/{customer_id}")
