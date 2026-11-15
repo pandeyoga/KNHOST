@@ -71,8 +71,9 @@ async def test_MNT1_U11_modul_pesanan_lihat_saja_membuka_piutang_penagihan(klien
     add = set(next(x for x in lst if x["id"] == rid)["nav"]["add"])
     assert {"keuangan", "ar-aging", "collection-worklist"} <= add, sorted(add)
     assert "vendor-bills" not in add
-    # SDM › Kinerja & Insentif › Kinerja Sales juga dibuka modul pemilik `order` (endpoint /api/sales/kpi = order.view).
-    assert {"hrd", "hr-kpi-hub", "sales-performance"} <= add
+    # SDM › Kinerja & Insentif › Kinerja Sales dulu dibuka modul pemilik `order` (endpoint /api/sales/kpi = order.view).
+    # KM-T5 — tab Kinerja Sales dicabut (alias ke Capaian, modul Kinerja & Insentif) → modul ini tidak lagi membuka hub SDM.
+    assert not ({"hrd", "hr-kpi-hub", "sales-performance"} & add), sorted(add)
 
 
 async def test_MNT1_U12_hidden_views_kas_aset_dibuang_saat_dimuat(klien, db, kepala_admin):

@@ -52,14 +52,25 @@ async def sales_home(sales_id: str, entity_id: Optional[str] = None,
                      allowed: Optional[Dict[str, Any]] = None,
                      actor: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
     """Performa Saya — komisi MTD (akrual+proyeksi), target & capaian, customer+kredit,
-    penagihan, order terbaru. TANPA biaya/HPP."""
-    period = _current_month()
-    comm = await sf.compute_commission(sales_id, period, entity_id)
-    kpi = comm["kpi"]
-    history = await sf.commission_history(sales_id, "month", period, 6, entity_id)
+    penagihan, order terbaru. TANPA biaya/HPP.
 
-    day, dim = _month_progress()
-    projection = round(comm["total_incentive"] / day * dim, 2) if day else comm["total_incentive"]
+    KM-T5 — `incentive_mode` = sakelar insentif PT (`hr.payroll_commission_mode`). PT bermode `sheet` / `off`: mesin
+    komisi TIDAK dipanggil (`commission` = None, `history` = []); layar menampilkan kartu "Capaian & Insentif Saya"
+    (`GET /api/incentive/me`). PT bermode komisi otomatis: seperti dulu."""
+    from services import incentive_payroll as ipay
+    period = _current_month()
+    mode = await ipay.mode_pt(entity_id or "")
+    tanpa_mesin = mode in ipay.TANPA_MESIN
+    comm: Optional[Dict[str, Any]] = None
+    if tanpa_mesin:
+        kpi = await sf.sales_kpi(sales_id, period, entity_id)
+        history: List[Dict[str, Any]] = []
+    else:
+        comm = await sf.compute_commission(sales_id, period, entity_id)
+        kpi = comm["kpi"]
+        history = await sf.commission_history(sales_id, "month", period, 6, entity_id)
+        day, dim = _month_progress()
+        projection = round(comm["total_incentive"] / day * dim, 2) if day else comm["total_incentive"]
 
     # Customer saya + kredit
     cust_filter: Dict[str, Any] = {"assigned_sales_id": sales_id}
@@ -99,9 +110,13 @@ async def sales_home(sales_id: str, entity_id: Optional[str] = None,
                 "created_at": o.get("created_at"),
             })
 
+    target = await _sales_target(sales_id, period, kpi["total_sales"], entity_id)
+    if comm is not None:   # target PENAGIHAN & capaiannya = basis komisi mesin (hanya PT bermode komisi otomatis)
+        target = {"amount": comm["target_amount"], "achievement_pct": comm["achievement_pct"], **target}
     return {
         "period": period,
-        "commission": {
+        "incentive_mode": mode,
+        "commission": None if comm is None else {
             "mtd_accrual": comm["total_incentive"],
             "projection_month_end": projection,
             "projection_full": comm.get("projection_full", comm["total_incentive"]),
@@ -111,8 +126,7 @@ async def sales_home(sales_id: str, entity_id: Optional[str] = None,
             "applied_rate": comm["applied_rate"],
             "bonus_new_customer": comm["bonus_new_customer"],
         },
-        "target": {"amount": comm["target_amount"], "achievement_pct": comm["achievement_pct"],
-                   **(await _sales_target(sales_id, period, kpi["total_sales"], entity_id))},
+        "target": target,
         "kpi": {
             "total_sales": kpi["total_sales"],
             "total_collected": kpi["total_collected"],
@@ -431,6 +445,42 @@ async def ar_all_customers(entity_id: Optional[str]) -> Dict[str, Any]:
     }
 
 
+LABEL_BELUM_DIBAYAR = "Belum dibayar"
+LABEL_ESTIMASI = "Estimasi bulan ini"
+LABEL_CAMPURAN = "Belum dibayar + estimasi bulan ini"
+
+
+async def _incentive_payout(board: List[Dict[str, Any]], period: str, entity_id: Optional[str]) -> Tuple[float, str]:
+    """KM-T5 — kartu "Insentif Sales" beranda admin, per PT menurut sakelar `hr.payroll_commission_mode`:
+    PT bermode `sheet` → Σ nominal baris lembar disahkan yang belum dibayar ("Belum dibayar"); PT lain → estimasi mesin
+    komisi bulan berjalan seperti dulu ("Estimasi bulan ini"). "Semua PT" tanpa satu pun PT bermode `sheet` = perilaku
+    lama persis (mesin dengan cakupan semua PT); bila ada, dijumlah per PT (sales = `sales_roster` PT itu)."""
+    from services import incentive_payroll as ipay
+    from services.incentive_targets import sales_roster
+    if entity_id and entity_id != "all":
+        if await ipay.mode_pt(entity_id) == ipay.MODE_SHEET:
+            return float(await ipay.belum_dibayar(entity_id)), LABEL_BELUM_DIBAYAR
+        ids: List[str] = []
+    else:
+        ids = [e["id"] async for e in db.business_entities.find({}, {"_id": 0, "id": 1}) if e.get("id")]
+    lembar = [e for e in ids if await ipay.mode_pt(e) == ipay.MODE_SHEET]
+    if not lembar:
+        payout = 0.0
+        for r in board:
+            c = await sf.compute_commission(r["sales_id"], period, entity_id)
+            payout += c["total_incentive"]
+        return payout, LABEL_ESTIMASI
+    payout = 0.0
+    for e in ids:
+        if e in lembar:
+            payout += await ipay.belum_dibayar(e)
+            continue
+        for s in await sales_roster(e):
+            if s.get("active"):
+                payout += (await sf.compute_commission(s["id"], period, e))["total_incentive"]
+    return payout, LABEL_BELUM_DIBAYAR if len(lembar) == len(ids) else LABEL_CAMPURAN
+
+
 async def admin_home(entity_id: Optional[str] = None,
                      allowed: Optional[Dict[str, Any]] = None,
                      actor: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
@@ -481,10 +531,7 @@ async def admin_home(entity_id: Optional[str] = None,
     from services.stock_availability import low_stock_summary
     low = await low_stock_summary([entity_id] if entity_id and entity_id != "all" else None, limit=8)
 
-    payout = 0.0
-    for r in board:
-        c = await sf.compute_commission(r["sales_id"], period, entity_id)
-        payout += c["total_incentive"]
+    payout, payout_label = await _incentive_payout(board, period, entity_id)
 
     top_overdue = ar_all["by_sales"][:5]
 
@@ -506,6 +553,7 @@ async def admin_home(entity_id: Optional[str] = None,
                       "threshold": low["threshold"]},
         "reorder": {"count": len(reorder_items), "items": reorder_items[:8]},
         "incentive_payout": round(payout, 2),
+        "incentive_payout_label": payout_label,   # KM-T5 — "Belum dibayar" (Lembar Insentif) / "Estimasi bulan ini"
         "leaderboard_top": board[:5],
         # K-01 — per sales dari laporan aging yang sama (baris "Tanpa sales" ikut), bukan papan sales aktif.
         "top_overdue": [

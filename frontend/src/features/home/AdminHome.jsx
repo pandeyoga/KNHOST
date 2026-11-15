@@ -165,7 +165,9 @@ export default function AdminHome({ token, selectedEntity = "all", onNavigate })
           <KPICard icon={PackageX} label="Stok Rendah" value={lowStock.count ?? "—"}
             sub={lowStock.threshold ? `produk · tersedia < ${lowStock.threshold} (papan stok) · per badan usaha` : "Perlu reorder"}
             color="#FF6B00" loading={loading} testId="kpi-stok-rendah" onClick={onNavigate ? () => onNavigate("operations") : undefined} />
-          <KPICard icon={Award} label="Insentif Sales" value={fmtCur(data?.incentive_payout)} sub="Estimasi bulan ini" color="#AF52DE" loading={loading} />
+          {/* KM-T5 — PT bermode Lembar Insentif: Σ baris lembar disahkan yang belum dibayar ("Belum dibayar"); PT lain:
+              estimasi komisi otomatis bulan berjalan. Sub-teks dari server (`incentive_payout_label`). */}
+          <KPICard icon={Award} label="Insentif Sales" value={fmtCur(data?.incentive_payout)} sub={data?.incentive_payout_label || "Estimasi bulan ini"} color="#AF52DE" loading={loading} />
         </div>
 
         {/* MN-T2 — kartu keuangan beranda (Tertagih, Belum Lunas, Piutang Lewat Tempo) diganti SATU kartu Keuangan: tiga

@@ -30,9 +30,7 @@ jest.mock("../../components/ui/dropdown-menu", () => {
 // Isi tab CRM tidak diuji di sini (memanggil API & memuat pemilih bawaan) — cukup kerangka tabnya.
 jest.mock("../crm/CustomerList", () => () => null);
 jest.mock("../crm/CollectionWorklist", () => () => null);
-jest.mock("../crm/SalesForceDashboard", () => () => null);
 jest.mock("../crm/CreditOverridesPanel", () => () => null);
-jest.mock("../crm/IncentiveSchemeEditor", () => () => null);
 jest.mock("../crm/LeadsPipeline", () => () => null);
 jest.mock("../crm/OmnichannelInteractions", () => () => null);
 // Kartu Profil Saya memanggil endpoint sendiri — di luar uji ini.
@@ -41,11 +39,12 @@ jest.mock("../hr/MyPayslipCard", () => ({ MyPayslipCard: () => null }));
 jest.mock("../hr/MyLeaveCard", () => ({ MyLeaveCard: () => null }));
 jest.mock("../hr/MyKpiCard", () => ({ MyKpiCard: () => null }));
 jest.mock("../hr/MyDesignerKpiSection", () => ({ __esModule: true, default: () => null, showMyDesignerKpi: () => false }));
+jest.mock("../incentive/MyIncentiveCard", () => () => null);   // KM-T5 — kartu insentif memanggil endpoint sendiri
 
 import { canCurrent, registerDynamicRoles, setAccessContext } from "../../config/roles";
 import { prodPerms } from "../production/ProductionParts";
 import CrmView from "../crm/CrmView";
-import { hubForView, hubTabsForRole } from "../../config/navigationConfig";
+import { HUB_TABS, hubTabsForRole } from "../../config/navigationConfig";
 import { AskKnButton } from "../../components/AskKnButton";
 import KeepPendingPanel from "../sales_admin/KeepPendingPanel";
 import EmployeeSelfService from "../hr/EmployeeSelfService";
@@ -116,13 +115,15 @@ describe("U7/U8 — tab bekas CRM dari izin (MN-T1: kini tab hub)", () => {
     const html = renderToStaticMarkup(<CrmView currentUser={user} selectedEntity="ent_ksc" />);
     return { kredit: html.includes('data-testid="crm-tab-approvals"'), skema: html.includes('data-testid="crm-tab-schemes"') };
   };
-  const NAV = ["keuangan", "ar-aging", "credit-overrides", "hrd", "hr-kpi-hub", "incentive-schemes", "sales-performance"];
+  const NAV = ["keuangan", "ar-aging", "credit-overrides", "hrd", "hr-kpi-hub"];
   const tabHub = (role, permissions) => {
     setAccessContext({ role, permissions, view_resources: BUILTIN.view_resources, hidden_views: [], view_actions: BUILTIN.view_actions });
     return { kredit: hubTabsForRole("ar-aging", role).some((t) => t.view === "credit-overrides"),
-             // KM-T3 — "Skema (Arsip)" kini tab tersembunyi (hub Kinerja & Insentif enam tab, L3): yang diuji tetap
-             // gerbang izinnya — layar terbuka (`hubForView`) hanya bagi pemegang sumber izin `sales_force`.
-             skema: !!hubForView("incentive-schemes", role) };
+             // KM-T3 — "Skema (Arsip)" tab tersembunyi; KM-T5 — layar lamanya dihapus: jenjang komisi kini bagian "Komisi
+             // otomatis (cara lama)" di Target & Aturan (alias `incentive-schemes` → `incentive-setup`), gerbang izin
+             // `sales_force` di dalam bagian itu (uji `kmt5KartuSales.test.js`). Yang diuji di sini: tidak ada lagi tab
+             // Skema di hub mana pun.
+             skema: Object.values(HUB_TABS).flat().some((t) => t.view === "incentive-schemes") };
   };
   // CR-T5 — tab Kredit & Plafon kini daftar kerja kredit: syarat tampil `credit_profile.view` (dulu `customer.view`,
   // MN-T1); `customer.view` saja tidak lagi membukanya.
@@ -140,8 +141,8 @@ describe("U7/U8 — tab bekas CRM dari izin (MN-T1: kini tab hub)", () => {
     // CR-T3 (digabung) — pembaca izin kredit saja tetap membuka tabnya (daftar izin kredit, tanpa antrean).
     expect(tabHub("cr_mgr", { credit_override: ["view"] })).toEqual({ kredit: true, skema: false });
   });
-  test("Manajer bawaan (izin bawaan) tetap melihat kedua tab di tempat barunya", () => {
-    expect(tabHub("manager", BUILTIN.permissions.manager)).toEqual({ kredit: true, skema: true });
+  test("Manajer bawaan (izin bawaan) tetap melihat Kredit & Plafon; Skema (Arsip) tidak lagi tab (KM-T5)", () => {
+    expect(tabHub("manager", BUILTIN.permissions.manager)).toEqual({ kredit: true, skema: false });
     expect(crm({ role: "manager", permissions: BUILTIN.permissions.manager })).toEqual({ kredit: false, skema: false });
   });
 });

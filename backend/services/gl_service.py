@@ -3512,15 +3512,7 @@ async def post_incentive_accrual(entity_id: str, period: str,
     src_id = f"{entity_id}:{period}"
     await seed_default_coa()
     if total is None:
-        from services import sales_force_service as sf
-        from services.incentive_targets import sales_roster
-        # KM-T4 (KM-07) — daftar sales akrual manual = daftar sales PT itu (`sales_roster`: akun berperan acuan sales
-        # yang ditugaskan di PT + yang punya fakta/target bulan itu), sama dengan Meja Insentif. Dulu: semua akun
-        # berkategori sales di seluruh grup.
-        total = 0.0
-        for u in await sales_roster(entity_id, "month", period):
-            c = await sf.compute_commission(u["id"], period, entity_id=entity_id)
-            total += float(c.get("total_incentive", 0) or 0)
+        total = await incentive_accrual_estimate(entity_id, period)
     total = round(float(total or 0), 2)
     tgl = date or now_iso()
     if not await _already_posted("incentive_accrual", src_id):
@@ -3559,6 +3551,20 @@ async def _incentive_accrued(src_id: str) -> float:
         for ln in je.get("lines") or []:
             if ln.get("account_code") == ACC_HUTANG_INSENTIF:
                 total += float(ln.get("credit") or 0) - float(ln.get("debit") or 0)
+    return round(total, 2)
+
+
+async def incentive_accrual_estimate(entity_id: str, period: str) -> float:
+    """Σ komisi otomatis bulan itu untuk daftar sales PT — angka yang dibukukan akrual manual (`post_incentive_accrual`
+    tanpa `total`). KM-T4 (KM-07) — daftar = `sales_roster` (akun berperan acuan sales yang ditugaskan di PT + yang punya
+    fakta/target bulan itu), sama dengan Meja Insentif; dulu semua akun berkategori sales seluruh grup. KM-T5 — juga
+    dibaca layar sebelum konfirmasi "Bukukan akrual komisi {bulan}" (nominal di kalimat konfirmasi)."""
+    from services import sales_force_service as sf
+    from services.incentive_targets import sales_roster
+    total = 0.0
+    for u in await sales_roster(entity_id, "month", period):
+        c = await sf.compute_commission(u["id"], period, entity_id=entity_id)
+        total += float(c.get("total_incentive", 0) or 0)
     return round(total, 2)
 
 

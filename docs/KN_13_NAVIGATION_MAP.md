@@ -570,11 +570,17 @@ dalam 4 grup); grup "Kas & Aset" dihapus.
 | SDM › Penggajian (`hr-payroll-hub`) | Komponen & Masukan (`hr-pay-components`) — PY-T1: komponen gaji per PT (ubah `hr.manage_payroll`) dan antrean masukan (tambah `payroll.create`, sahkan/batalkan `payroll.approve`) | A M |
 | SDM › Kinerja & Insentif (`hr-kpi-hub`) | Capaian (`incentive-capaian`) — KM-T2: tab pertama; angka dasar insentif per sales per PT (cari, telusur ke dokumen, jumlah pilihan, ekspor Excel; hanya baca, `incentive.view`, kolom margin `incentive.view_margin`) | A M F |
 | SDM › Kinerja & Insentif (`hr-kpi-hub`) | Lembar Insentif (`incentive-sheets`) — KM-T3: tab kedua; dokumen keputusan insentif per PT per periode bayar (nominal diketik, angka dasar dipotret; ajukan · sahkan · kembalikan · batalkan · penyesuaian · ekspor Excel). Siapkan `incentive.prepare`, sahkan `incentive.approve`; dibuka juga dari Pusat Persetujuan (antrean "Lembar insentif menunggu pengesahan") dan tombol "Buat lembar insentif dari tampilan ini" di Capaian | A M F SA |
-| SDM › Kinerja & Insentif (`hr-kpi-hub`) | Kinerja Sales (`sales-performance`) | A M S SA |
-| SDM › Kinerja & Insentif (`hr-kpi-hub`) | Target & Aturan (`incentive-setup`) — KM-T1: target per PT, komponen, definisi angka, pencocokan | A M F |
-| SDM › Kinerja & Insentif (`hr-kpi-hub`) | Komisi Otomatis (`incentive-rates`) — KM-T1: label baru (dulu "Target & Aturan") | A M |
-| SDM › Kinerja & Insentif (`hr-kpi-hub`) | Skema (Arsip) (`incentive-schemes`) — KM-T3: tidak tampil di bilah tab (hub enam tab, L3); layarnya dibuka lewat tautan "Skema insentif lama (arsip)" di Lembar Insentif (tab tersembunyi, sorotan tab Lembar Insentif) | A M |
+| SDM › Kinerja & Insentif (`hr-kpi-hub`) | ~~Kinerja Sales (`sales-performance`)~~ — KM-T5: tab dicabut; id lama = alias ke Capaian. Sales melihat angkanya di kartu "Capaian & Insentif Saya" (Beranda Sales, Profil Saya, HP) | — |
+| SDM › Kinerja & Insentif (`hr-kpi-hub`) | Target & Aturan (`incentive-setup`) — KM-T1: target per PT, komponen, definisi angka, pencocokan. KM-T5: + bagian "Komisi otomatis (cara lama)" (akrual bulanan, bawaan komisi, tarif per kategori, jenjang per sales; lihat `sales_force.view`) hanya untuk PT yang belum beralih ke Lembar Insentif | A M F |
+| SDM › Kinerja & Insentif (`hr-kpi-hub`) | ~~Komisi Otomatis (`incentive-rates`)~~ — KM-T5: tab dicabut; id lama = alias ke Target & Aturan (bagian "Komisi otomatis (cara lama)") | — |
+| SDM › Kinerja & Insentif (`hr-kpi-hub`) | ~~Skema (Arsip) (`incentive-schemes`)~~ — KM-T5: tab tersembunyi & tautan "Skema insentif lama (arsip)" dicabut; id lama = alias ke Target & Aturan | — |
 | SDM › Kinerja & Insentif (`hr-kpi-hub`) | KPI Karyawan (`cs-kpi`) | A M |
+
+KM-T5 — hub Kinerja & Insentif kini empat tab (Capaian · Lembar Insentif · Target & Aturan · KPI Karyawan); grup SDM tidak
+lagi tampil untuk sales (Admin Sales tetap: Lembar Insentif). CRM & Pelanggan tetap tiga sub-tab tanpa insentif; Pengaturan ›
+Penjualan tanpa Komisi & Insentif. Alamat lama: `sales-performance` → Capaian (`incentive-capaian`), `incentive-rates` dan
+`incentive-schemes` → Target & Aturan (`incentive-setup`), `since: "KM-T5"`; rute cadangan merender layar tujuan. Kunci
+`commission.*` dari Pusat Pengaturan membuka Target & Aturan (`COMMISSION_HOME`).
 
 Dipindah ke luar keuangan: **Pembelian › Pesanan Pembelian › Landed Cost** (`landed-cost`, A M; hub kini 7 tab — baseline
 INV-UI-13) dan **Gudang & Logistik › Kendaraan** (`vehicle-logs`, A M G S). CRM & Pelanggan tinggal tiga sub-tab
@@ -596,7 +602,7 @@ menampilkan "nama lama → kini di …"):
 Id yang tetap tetapi berpindah induk: `finance-desk` (kini tab pertama Beranda Keuangan; beranda peran Finance tetap,
 menu yang disorot `finance-tower`), `period-unlock`, `posting-failures` (tab Tutup Buku), `payment-plans`,
 `finance-cases` (tab Piutang), `interco-transactions` (Keuangan), `fixed-assets` (Akuntansi & Pajak), `incentive-rates`
-(SDM › Kinerja & Insentif). Penjaga: `verify_access_catalog_nav.py`, `verify_view_aliases.py`, `verify_desk_targets.py`,
+(SDM › Kinerja & Insentif; KM-T5: alias ke Target & Aturan). Penjaga: `verify_access_catalog_nav.py`, `verify_view_aliases.py`, `verify_desk_targets.py`,
 `verify_page_tabs.py` (INV-UI-12/13/14), jest `roleReach.test.js`, `serverAccessReach.test.js`, `navAccess.test.js`,
 `mnt1MenuKeuangan.test.js`.
 
@@ -849,7 +855,7 @@ SIDEBAR (grouped, collapsible, role-filtered)
   (💼 Kas & Aset — DIHAPUS MN-T1: Kas Kecil → Keuangan › Kas & Bank, Kendaraan → Gudang & Logistik, Aset Tetap →
      Akuntansi & Pajak; alamat `?view=kas-aset` → Kas Kecil)
   👥 SDM (HRD) ✅
-     ├── Karyawan · Kehadiran · Penggajian (Proses Gaji · Setoran & Pajak — PK-22, PY-T4 · Komponen & Masukan — PY-T1; Slip Gaji = panel "Cari slip") · Kinerja & Insentif (MN-T1)
+     ├── Karyawan · Kehadiran · Penggajian (Proses Gaji · Setoran & Pajak — PK-22, PY-T4 · Komponen & Masukan — PY-T1; Slip Gaji = panel "Cari slip") · Kinerja & Insentif (MN-T1; KM-T5: Capaian · Lembar Insentif · Target & Aturan · KPI Karyawan)
   📊 Analitik (BI)
      └── Sales / Stock / Finance / HR dashboards 🆕
   📝 Dokumen

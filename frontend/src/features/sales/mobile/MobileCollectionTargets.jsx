@@ -4,20 +4,21 @@ import axios, { API } from "../../../services/apiClient";
 import KNSelect from "../../../components/KNSelect";
 import { formatCurrency } from "../../../utils/formatters";
 import { PromiseFields, promiseError } from "../../crm/promiseUi";   // CR-T5 — janji bayar wajib bertanggal & bernominal
+import MyIncentiveCard, { bulanIni, MODE_TANPA_MESIN } from "../../incentive/MyIncentiveCard";   // KM-T5
 
 const fmtDate = (s) => (s ? new Date(s).toLocaleDateString("id-ID", { day: "2-digit", month: "short", year: "2-digit" }) : "-");
-const thisMonth = () => new Date().toISOString().slice(0, 7);
 const errOf = (e, fb) => { const d = e?.response?.data?.detail; return (typeof d === "string" ? d : d?.message) || fb; };
 const OUTCOMES = [{ value: "contacted", label: "Dihubungi" }, { value: "promised", label: "Dijanjikan bayar" },
   { value: "paid", label: "Sudah bayar" }, { value: "no_response", label: "Tak respon" }, { value: "escalated", label: "Eskalasi" }];
 
-/** Penagihan & Target versi HP: pengingat tagih (tandai/follow-up) + target, komisi, riwayat, peringkat saya. */
+/** Penagihan & Target versi HP: pengingat tagih (tandai/follow-up) + kartu "Capaian & Insentif Saya" (KM-T5), peringkat
+ *  saya, dan — hanya di PT yang masih memakai komisi otomatis — rincian komisi & riwayatnya. */
 export default function MobileCollectionTargets({ selectedEntity, initialTab = "collection" }) {
   const [tab, setTab] = useState(initialTab);
   return (
     <div className="space-y-2 p-3" data-testid="m-collect-targets">
       <div className="grid grid-cols-2 gap-1 rounded-xl bg-[#F2F3F5] p-1">
-        {[["collection", "Penagihan"], ["targets", "Target & Komisi"]].map(([k, l]) => (
+        {[["collection", "Penagihan"], ["targets", "Target & Insentif"]].map(([k, l]) => (
           <button key={k} onClick={() => setTab(k)} data-testid={`m-ct-tab-${k}`}
             className={`rounded-lg py-2 text-[12.5px] font-semibold ${tab === k ? "bg-white text-[#0058CC] shadow-sm" : "text-[#6B6B73]"}`}>{l}</button>
         ))}
@@ -28,10 +29,11 @@ export default function MobileCollectionTargets({ selectedEntity, initialTab = "
 }
 
 function Kpi({ label, value, tone = "", testId }) {
+  // KM-T5 — huruf ≥ 12 px di HP 390 px (dulu 9,5 px); nominal tidak patah (pecah hanya di antara kata).
   return (
     <div className="m-card p-2.5" data-testid={testId}>
-      <p className="text-[9.5px] font-semibold uppercase tracking-wide text-[#6B6B73]">{label}</p>
-      <p className={`text-[13px] font-bold tabular-nums ${tone}`}>{value}</p>
+      <p className="text-fs-12 font-semibold uppercase tracking-wide text-kn-text-2">{label}</p>
+      <p className={`text-fs-13 font-bold tabular-nums ${tone}`}>{value}</p>
     </div>
   );
 }
@@ -152,7 +154,33 @@ function FollowupSheet({ row, onClose, onDone }) {
 }
 
 function Targets({ selectedEntity }) {
-  const [period, setPeriod] = useState(thisMonth());
+  // KM-T5 — satu pemilih bulan (di kartu); kartu melapor sakelar PT (`mode`). Komisi otomatis (`/sales/commission`) hanya
+  // dipanggil untuk PT yang belum beralih ke Lembar Insentif — PT bermode `sheet`/`off` menolaknya (409).
+  const [period, setPeriod] = useState(bulanIni());
+  const [kartu, setKartu] = useState(null);
+  const [rank, setRank] = useState(null);
+  const otomatis = !!kartu && !MODE_TANPA_MESIN.includes(kartu.mode);
+  useEffect(() => {
+    const entity_id = selectedEntity && selectedEntity !== "all" ? selectedEntity : undefined;
+    axios.get(`${API}/sales/my-rank`, { params: { period, entity_id } }).then((r) => setRank(r.data)).catch(() => setRank(null));
+  }, [period, selectedEntity]);
+  return (
+    <div className="space-y-2" data-testid="m-targets">
+      <MyIncentiveCard variant="mobile" period={period} onPeriodChange={setPeriod} onLoaded={setKartu} testId="m-targets-card" />
+      <div className="m-card flex items-center gap-3 p-3" data-testid="m-targets-rank">
+        <Trophy size={22} className="text-kn-warning-text" aria-hidden="true" />
+        <div className="min-w-0 flex-1">
+          <p className="text-fs-12 font-semibold uppercase text-kn-text-2">Peringkat saya</p>
+          <p className="text-fs-14 font-bold" data-testid="m-targets-rank-value">
+            {rank && rank.rank && Number(rank.total_sales) > 0 ? `#${rank.rank} dari ${rank.total} sales` : "Belum ada penjualan periode ini"}</p>
+        </div>
+      </div>
+      {otomatis && <KomisiOtomatis period={period} selectedEntity={selectedEntity} />}
+    </div>
+  );
+}
+
+function KomisiOtomatis({ period, selectedEntity }) {
   const [data, setData] = useState(null);
   const [err, setErr] = useState("");
   useEffect(() => {
@@ -161,64 +189,54 @@ function Targets({ selectedEntity }) {
     Promise.all([
       axios.get(`${API}/sales/commission`, { params: { period, entity_id } }),
       axios.get(`${API}/sales/commission-history`, { params: { period_type: "month", anchor: period, count: 6, entity_id } }),
-      axios.get(`${API}/sales/my-rank`, { params: { period, entity_id } }).catch(() => ({ data: null })),
-    ]).then(([c, h, rk]) => setData({ c: c.data, h: Array.isArray(h.data) ? h.data : [], rk: rk.data }))
-      .catch((e) => setErr(errOf(e, "Gagal memuat target & komisi.")));
+    ]).then(([c, h]) => setData({ c: c.data, h: Array.isArray(h.data) ? h.data : [] }))
+      .catch((e) => setErr(errOf(e, "Gagal memuat komisi otomatis.")));
   }, [period, selectedEntity]);
   const c = data?.c || {};
   const k = c.kpi || {};
   const pct = Math.max(0, Math.min(100, Number(c.achievement_pct || 0)));
   const maxH = Math.max(1, ...(data?.h || []).map((x) => Number(x.base_amount ?? x.total_sales ?? 0)));
   return (
-    <div className="space-y-2" data-testid="m-targets">
-      <input type="month" className="w-full rounded-lg border border-[#E5E5EA] p-2.5 text-sm" value={period} onChange={(e) => setPeriod(e.target.value || thisMonth())} data-testid="m-targets-period" />
+    <div className="space-y-2" data-testid="m-targets-auto">
       {err && <div className="notice-bar danger text-xs" data-testid="m-targets-error">{err}</div>}
       {!data && !err && <p className="p-6 text-center text-sm m-muted">Memuat…</p>}
       {data && (<>
         <div className="m-card p-3" data-testid="m-targets-progress">
           <div className="flex items-end justify-between">
-            <div><p className="text-[10px] font-semibold uppercase text-[#6B6B73]">Pencapaian target</p>
-              <p className="text-[20px] font-bold tabular-nums" data-testid="m-targets-pct">{Number(c.achievement_pct || 0).toFixed(1)}%</p></div>
-            <p className="text-right text-[11px] m-muted">{formatCurrency(c.base_amount || 0)}<br />dari {formatCurrency(c.target_amount || 0)}</p>
+            <div><p className="text-fs-12 font-semibold uppercase text-kn-text-2">Pencapaian target penagihan</p>
+              <p className="text-fs-20 font-bold tabular-nums" data-testid="m-targets-pct">{Number(c.achievement_pct || 0).toFixed(1)}%</p></div>
+            <p className="text-right text-fs-12 m-muted"><span className="whitespace-nowrap">{formatCurrency(c.base_amount || 0)}</span><br />dari <span className="whitespace-nowrap">{formatCurrency(c.target_amount || 0)}</span></p>
           </div>
-          <div className="mt-2 h-2 rounded-full bg-[#EFF0F2]"><div className="h-2 rounded-full bg-[#0058CC]" style={{ width: `${pct}%` }} /></div>
-          {!c.target_amount && <p className="mt-1 text-[10.5px] text-[#A05000]">Target periode ini belum diatur manajer.</p>}
+          <div className="mt-2 h-2 rounded-full bg-kn-neutral-soft"><div className="h-2 rounded-full bg-kn-action" style={{ width: `${pct}%` }} /></div>
+          {!c.target_amount && <p className="mt-1 text-fs-12 text-kn-warning-text">Target periode ini belum diatur manajer.</p>}
         </div>
         <div className="grid grid-cols-2 gap-1.5">
-          <Kpi label="Insentif (perkiraan)" value={formatCurrency(c.total_incentive || 0)} tone="text-[#1B7F4B]" testId="m-targets-incentive" />
+          <Kpi label="Komisi (perkiraan)" value={formatCurrency(c.total_incentive || 0)} tone="text-kn-success-text" testId="m-targets-incentive" />
           <Kpi label="Proyeksi akhir bulan" value={formatCurrency(c.projection_full || 0)} testId="m-targets-projection" />
           <Kpi label="Penjualan" value={formatCurrency(k.total_sales || 0)} testId="m-targets-sales" />
           <Kpi label="Tertagih" value={`${formatCurrency(k.total_collected || 0)} · ${Number(k.collection_rate || 0).toFixed(0)}%`} testId="m-targets-collected" />
           <Kpi label="Piutang" value={formatCurrency(k.ar_outstanding || 0)} testId="m-targets-ar" />
-          <Kpi label="Lewat tempo" value={formatCurrency(k.overdue_amount || 0)} tone="text-[#C0392B]" testId="m-targets-overdue" />
-        </div>
-        <div className="m-card flex items-center gap-3 p-3" data-testid="m-targets-rank">
-          <Trophy size={22} className="text-[#B7791F]" />
-          <div className="min-w-0 flex-1">
-            <p className="text-[10px] font-semibold uppercase text-[#6B6B73]">Peringkat saya</p>
-            <p className="text-[14px] font-bold" data-testid="m-targets-rank-value">
-              {data.rk && data.rk.rank && Number(data.rk.total_sales) > 0 ? `#${data.rk.rank} dari ${data.rk.total} sales` : "Belum ada penjualan periode ini"}</p>
-          </div>
+          <Kpi label="Lewat tempo" value={formatCurrency(k.overdue_amount || 0)} tone="text-kn-danger-text" testId="m-targets-overdue" />
         </div>
         {(c.breakdown || []).length > 0 && (
           <div className="m-card p-3" data-testid="m-targets-breakdown">
-            <p className="mb-1 text-[10px] font-semibold uppercase text-[#6B6B73]">Rincian komisi</p>
+            <p className="mb-1 text-fs-12 font-semibold uppercase text-kn-text-2">Rincian komisi</p>
             {c.breakdown.slice(0, 8).map((b, i) => (
-              <p key={i} className="flex justify-between text-[11.5px]"><span className="truncate">{b.name || b.category || b.sku || "-"}</span>
-                <span className="shrink-0 tabular-nums">{formatCurrency(b.commission ?? b.amount ?? 0)}</span></p>
+              <p key={i} className="flex justify-between gap-2 text-fs-13"><span className="truncate">{b.name || b.category || b.sku || "-"}</span>
+                <span className="shrink-0 whitespace-nowrap tabular-nums">{formatCurrency(b.commission ?? b.amount ?? 0)}</span></p>
             ))}
           </div>
         )}
         {data.h.length > 0 && (
           <div className="m-card p-3" data-testid="m-targets-history">
-            <p className="mb-2 text-[10px] font-semibold uppercase text-[#6B6B73]">6 bulan terakhir</p>
+            <p className="mb-2 text-fs-12 font-semibold uppercase text-kn-text-2">6 bulan terakhir</p>
             <div className="flex h-24 items-end gap-1.5">
               {data.h.map((x, i) => {
                 const v = Number(x.base_amount ?? x.total_sales ?? 0);
                 return (
                   <div key={i} className="flex flex-1 flex-col items-center gap-1">
-                    <div className="w-full rounded-t bg-[#0058CC]" style={{ height: `${Math.max(3, (v / maxH) * 80)}px`, opacity: i === data.h.length - 1 ? 1 : 0.45 }} title={formatCurrency(v)} />
-                    <span className="text-[9px] m-muted">{String(x.period || x.label || "").slice(5) || i + 1}</span>
+                    <div className="w-full rounded-t bg-kn-action" style={{ height: `${Math.max(3, (v / maxH) * 80)}px`, opacity: i === data.h.length - 1 ? 1 : 0.45 }} title={formatCurrency(v)} />
+                    <span className="text-fs-12 m-muted">{String(x.period || x.label || "").slice(5) || i + 1}</span>
                   </div>
                 );
               })}

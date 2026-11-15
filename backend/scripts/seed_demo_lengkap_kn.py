@@ -296,9 +296,10 @@ async def seed_partners(sys_admin, cst: str) -> None:
     for s in sales.values():
         if await db.sales_targets.find_one({"sales_id": s["id"], "period": period}, {"_id": 1}):
             continue
-        await sys_admin.post("/sales-targets", {"sales_id": s["id"], "entity_id": s.get("home_entity_id") or KSC, "period_type": "month",
-                                                "period": period, "target_sales_amount": 500_000_000, "target_collection_amount": 350_000_000,
-                                                "target_new_customers": 3, "notes": "Target demo"}, entity=s.get("home_entity_id") or KSC)
+        # KM-T5 — `POST /sales-targets` dihapus; target per (PT, sales, jenis periode, periode) lewat Meja Insentif.
+        await sys_admin.put("/incentive/targets", {"sales_id": s["id"], "period_type": "month",
+                                                   "period": period, "target_sales_amount": 500_000_000, "target_collection_amount": 350_000_000,
+                                                   "target_new_customers": 3, "notes": "Target demo"}, entity=s.get("home_entity_id") or KSC)
         n += 1
     log(f"   + target sales bulan {period}: {n}")
 

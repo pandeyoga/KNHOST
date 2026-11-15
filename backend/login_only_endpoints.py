@@ -81,4 +81,7 @@ LOGIN_ONLY: Dict[Tuple[str, str], str] = {
     # PM-T4 — ringkasan titipan tunai MILIK SENDIRI (disaring `holder_user_id` aktor) + mode tunai akun ini di PT aktif:
     # bahan teks bantu form kwitansi (siapa pun pencatatnya) dan kartu "Titipan Saya" di HP.
     ("GET", "/api/cash-holdings/me/summary"): MILIK_SENDIRI,
+    # KM-T5 — kartu "Capaian & Insentif Saya": capaian & baris lembar disahkan MILIK PELAKU di PT aktifnya (`sales_id`
+    # tidak diterima; baris sales lain tidak pernah dikirim).
+    ("GET", "/api/incentive/me"): MILIK_SENDIRI,
 }

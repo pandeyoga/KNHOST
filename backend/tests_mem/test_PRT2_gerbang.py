@@ -63,15 +63,19 @@ async def test_U03_papan_peringkat_dan_tarif(klien, akun, sesi, peran_tanpa_acua
 
 
 async def test_U04_target_sales(klien, db, akun, sesi, peran_tanpa_acuan, peran_manajer_kosong, peran_sopir):
+    # KM-T5 — `POST /api/sales-targets` (layar lama "Set Target") dihapus; gerbang `sales_force.update` yang sama diuji
+    # lewat skema insentif lama (`POST /api/sales-incentives`, bagian "Komisi otomatis (cara lama)"). Target sales kini
+    # `PUT /api/incentive/targets` (`incentive.configure`, uji KM-T1).
     mk, _ = await _kosong_dan_sopir(akun, sesi, peran_manajer_kosong, peran_sopir)
     sales = await db.users.find_one({"email": "sales@kainnusantara.id"}, {"_id": 0, "id": 1})
-    isi = {"sales_id": sales["id"], "period_type": "month", "period": "2026-11", "target_sales_amount": 1000000}
-    assert await _kode(klien, "POST", "/api/sales-targets", mk, {**isi, "target_sales_amount": 5}) == 403
+    isi = {"sales_id": sales["id"], "period": "2026-11", "basis": "sales", "bonus_new_customer": 1000}
+    assert await _kode(klien, "POST", "/api/sales-incentives", mk, {**isi, "bonus_new_customer": 5}) == 403
     ta = await _tanpa_acuan(akun, sesi, peran_tanpa_acuan, {"sales_force": ["view", "update"]}, "TA Target")
-    assert await _kode(klien, "POST", "/api/sales-targets", ta, isi) == 200
-    assert await db.sales_targets.count_documents({"sales_id": sales["id"], "period": "2026-11"}) == 1
-    doc = await db.sales_targets.find_one({"sales_id": sales["id"], "period": "2026-11"})
-    assert doc["target_sales_amount"] == 1000000   # tulisan Manajer Kosong tidak sampai
+    assert await _kode(klien, "POST", "/api/sales-incentives", ta, isi) == 200
+    assert await db.sales_incentives.count_documents({"sales_id": sales["id"], "period": "2026-11"}) == 1
+    doc = await db.sales_incentives.find_one({"sales_id": sales["id"], "period": "2026-11"})
+    assert doc["bonus_new_customer"] == 1000   # tulisan Manajer Kosong tidak sampai
+    assert await _kode(klien, "POST", "/api/sales-targets", ta, {**isi, "target_sales_amount": 1}) in (404, 405)
 
 
 async def test_U05_kebersihan_data(klien, akun, sesi, peran_tanpa_acuan):

@@ -13,6 +13,7 @@ import { getStage, stageMeta } from "../../../utils/soStatus";
 import KeepPendingPanel from "../../sales_admin/KeepPendingPanel";
 import { roleIs } from "../../../config/roles";
 import MobileCashHoldingCard from "./MobileCashHoldingCard";   // PM-T4 — kartu "Titipan Saya" (tunai belum disetor)
+import MyIncentiveCard, { MODE_TANPA_MESIN } from "../../incentive/MyIncentiveCard";   // KM-T5
 
 function MiniKpi({ icon: Icon, label, value, sub, color = "#007AFF", loading }) {
   return (
@@ -65,6 +66,10 @@ export default function MobileSalesHome({ token, user, onNewOrder, onOpenTab, on
 
   useEffect(() => { load(); }, [load]);
 
+  // KM-T5 — PT bermode Lembar Insentif / tanpa komisi: server tidak memanggil mesin komisi (`commission` null) → ubin
+  // Komisi MTD, Proyeksi, Capaian Target, kartu target penagihan, rincian & tren komisi diganti kartu "Capaian & Insentif
+  // Saya" (versi HP). PT bermode komisi otomatis: tetap seperti dulu (kartu ada di Penagihan & Target › Target).
+  const tanpaMesin = !!data && (MODE_TANPA_MESIN.includes(data.incentive_mode) || data.commission === null);
   const comm = data?.commission || {};
   const target = data?.target || {};
   const kpi = data?.kpi || {};
@@ -146,18 +151,20 @@ export default function MobileSalesHome({ token, user, onNewOrder, onOpenTab, on
       </div>
 
       <div className="grid grid-cols-2 gap-2.5">
-        <MiniKpi icon={Wallet} label="Komisi MTD" value={formatCurrency(comm.mtd_accrual)} sub="Akrual berjalan" color="#34C759" loading={loading} />
-        <MiniKpi icon={TrendingUp} label="Proyeksi" value={formatCurrency(comm.projection_month_end)} sub="Akhir bulan" color="#007AFF" loading={loading} />
+        {!tanpaMesin && <MiniKpi icon={Wallet} label="Komisi MTD" value={formatCurrency(comm.mtd_accrual)} sub="Akrual berjalan" color="#34C759" loading={loading} />}
+        {!tanpaMesin && <MiniKpi icon={TrendingUp} label="Proyeksi" value={formatCurrency(comm.projection_month_end)} sub="Akhir bulan" color="#007AFF" loading={loading} />}
         <MiniKpi icon={Banknote} label="Penjualan MTD" value={formatCurrency(kpi.total_sales)} sub={`${kpi.orders_count || 0} pesanan`} color="#FF9500" loading={loading} />
         <MiniKpi icon={ArrowUpRight} label="Tertagih" value={formatCurrency(kpi.total_collected)} sub={`${Math.round((kpi.collection_rate || 0) * 1000) / 10}% tertagih`} color="#30D158" loading={loading} />
         <MiniKpi icon={Receipt} label="Belum Lunas" value={formatCurrency(kpi.ar_outstanding)} sub={`Ledger ${formatCurrency(kpi.ar_ledger || 0)} · eksposur ${formatCurrency(kpi.exposure || 0)}`} color="#007AFF" loading={loading} />
         <MiniKpi icon={AlertTriangle} label="Lewat Jatuh Tempo" value={formatCurrency(kpi.overdue_amount)} sub="Lewat ≥ 1 hari (definisi Piutang)" color="#FF3B30" loading={loading} />
         <MiniKpi icon={Users} label="Pelanggan Saya" value={kpi.customers_count || 0} sub={`${kpi.new_customers || 0} baru bulan ini`} color="#8E8E93" loading={loading} />
-        <MiniKpi icon={Target} label="Capaian Target" value={`${target.achievement_pct || 0}%`} sub={formatCurrency(target.amount)} color="#5856D6" loading={loading} />
+        {!tanpaMesin && <MiniKpi icon={Target} label="Capaian Target" value={`${target.achievement_pct || 0}%`} sub={formatCurrency(target.amount)} color="#5856D6" loading={loading} />}
       </div>
 
+      {tanpaMesin && <MyIncentiveCard variant="mobile" testId="m-home-my-incentive" />}
+
       {/* Target progress */}
-      <div className="m-card p-4">
+      {!tanpaMesin && <div className="m-card p-4">
         <div className="mb-2 flex items-center justify-between">
           <h3 className="text-[13px] font-bold">Capaian Target Penagihan</h3>
           <span className="text-[12px] font-bold tabular-nums text-[#5856D6]">{target.achievement_pct || 0}%</span>
@@ -169,10 +176,10 @@ export default function MobileSalesHome({ token, user, onNewOrder, onOpenTab, on
           <span>Tertagih {formatCurrency(kpi.total_collected)}</span>
           <span>Target {formatCurrency(target.amount)}</span>
         </div>
-      </div>
+      </div>}
 
       {/* Rincian komisi per SKU + tren (setara desktop) */}
-      {comm.strategy === "per_sku" && (
+      {!tanpaMesin && comm.strategy === "per_sku" && (
         <div className="m-card" data-testid="m-home-commission-breakdown">
           <div className="flex items-center justify-between border-b border-[#EFF0F2] px-4 py-2.5">
             <h3 className="text-[13px] font-bold">Rincian Komisi per SKU</h3>
@@ -191,7 +198,7 @@ export default function MobileSalesHome({ token, user, onNewOrder, onOpenTab, on
           </div>
         </div>
       )}
-      <div className="m-card p-4" data-testid="m-home-trend">
+      {!tanpaMesin && <div className="m-card p-4" data-testid="m-home-trend">
         <h3 className="mb-2 text-[13px] font-bold">Tren Komisi (6 bulan)</h3>
         {/* Audit UI 24 Okt (HP Beranda) — grafik datar bernilai 0 dulu berlabel "0k" lima kali & sumbu bulan "05…10";
             kini: tanpa komisi → pesan kosong; sumbu Y ringkas (rb/jt), sumbu X nama bulan. */}
@@ -205,7 +212,7 @@ export default function MobileSalesHome({ token, user, onNewOrder, onOpenTab, on
             </LineChart>
           </ResponsiveContainer>
         ) : <p className="py-6 text-center text-[12px] m-muted" data-testid="m-home-trend-empty">Belum ada komisi dalam 6 bulan terakhir — komisi terbentuk saat pembayaran pelanggan masuk.</p>}
-      </div>
+      </div>}
 
       {/* Recent orders */}
       <div className="m-card">

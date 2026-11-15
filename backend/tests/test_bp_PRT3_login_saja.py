@@ -42,7 +42,8 @@ def sopir():
 
 
 def test_sopir_ditolak_atau_tersaring(sopir):
-    for jalur in ("/sales-targets", "/sales-incentives", "/sales-users", "/entities/ent_ksc",
+    # KM-T5 — `/sales-targets` dihapus (target lewat `/incentive/targets`); sisa rute S3 = skema insentif.
+    for jalur in ("/sales-incentives", "/sales-users", "/entities/ent_ksc",
                   "/entities/ent_ksc/readiness", "/entities/count", "/finance/period-unlocks",
                   "/purchase-orders/resolve-sourcing?product_id=x"):
         assert requests.get(f"{BASE}{jalur}", headers=sopir, timeout=60).status_code == 403, jalur
@@ -63,14 +64,16 @@ def test_manajer_tidak_kehilangan_isi():
     assert d["products"] and d["warehouses"] and d["metrics"]["available_by_unit"] is not None
     rows = requests.get(f"{BASE}/entities", headers=mgr, timeout=60).json()
     assert rows and all("user_count" in r for r in rows)
-    for jalur in ("/sales-targets", "/sales-users", "/finance/period-unlocks", "/entities/ent_ksc"):
+    for jalur in ("/sales-incentives", "/sales-users", "/finance/period-unlocks", "/entities/ent_ksc"):
         assert requests.get(f"{BASE}{jalur}", headers=mgr, timeout=60).status_code == 200, jalur
 
 
 def test_sales_hanya_target_miliknya():
+    # KM-T5 — `GET /sales-targets` dihapus (404/405); skema insentif tetap tersaring milik sendiri.
     sls = _login("sales@kainnusantara.id")
     me = requests.get(f"{BASE}/auth/me", headers=sls, timeout=30).json()
     uid = (me.get("user") or me)["id"]
-    r = requests.get(f"{BASE}/sales-targets", headers=sls, timeout=60)
+    assert requests.get(f"{BASE}/sales-targets", headers=sls, timeout=60).status_code in (404, 405)
+    r = requests.get(f"{BASE}/sales-incentives", headers=sls, timeout=60)
     assert r.status_code == 200
     assert all(t.get("sales_id") == uid for t in r.json())

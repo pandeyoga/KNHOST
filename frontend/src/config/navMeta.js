@@ -123,7 +123,8 @@ export const PAGE_META = {
   "internal-prices":      { kicker: "Produk & Harga", title: "Harga Internal Antar-PT" },
   "amendment-reasons":    { kicker: "Pengaturan · Penjualan", title: "Alasan Koreksi" },
   // Fase 3 · P2 (D-03) — tarif per kategori + bawaan komisi (`commission.*`) digabung di satu layar.
-  "incentive-rates":      { kicker: "SDM · Kinerja & Insentif", title: "Komisi & Insentif \u00b7 Bawaan Komisi & Tarif per Kategori" },
+  // KM-T5 — id lama = alias (viewAliases.js); judul rute cadangannya = layar tujuan.
+  "incentive-rates":      { kicker: "SDM · Kinerja & Insentif", title: "Target & Aturan Insentif" },
   "incentive-setup":      { kicker: "SDM · Kinerja & Insentif", title: "Target & Aturan Insentif" },   // KM-T1
   "incentive-capaian":    { kicker: "SDM · Kinerja & Insentif", title: "Capaian Insentif" },   // KM-T2
   "incentive-sheets":     { kicker: "SDM · Kinerja & Insentif", title: "Lembar Insentif" },   // KM-T3
@@ -227,8 +228,8 @@ export const PAGE_META = {
   "collection-worklist":  { kicker: "Keuangan \u00b7 Piutang", title: "Penagihan & Penerimaan \u00b7 Daftar Kerja Penagihan" },
   "customer-credit":      { kicker: "Keuangan \u00b7 Piutang", title: "Titipan & Saldo Kredit Pelanggan" },
   "credit-overrides":     { kicker: "Keuangan \u00b7 Piutang", title: "Kredit & Plafon \u00b7 Daftar Kerja Kredit" },   // CR-T5
-  "sales-performance":    { kicker: "SDM \u00b7 Kinerja & Insentif", title: "Kinerja Sales \u00b7 KPI, Komisi & Papan Peringkat" },
-  "incentive-schemes":    { kicker: "SDM \u00b7 Kinerja & Insentif", title: "Skema Insentif (Arsip) \u00b7 Target & Skema per Sales" },
+  "sales-performance":    { kicker: "SDM \u00b7 Kinerja & Insentif", title: "Capaian Insentif" },   // KM-T5 — alias
+  "incentive-schemes":    { kicker: "SDM \u00b7 Kinerja & Insentif", title: "Target & Aturan Insentif" },   // KM-T5 — alias
   "petty-cash":           { kicker: "Keuangan \u00b7 Kas & Bank", title: "Kas Kecil \u00b7 Pengajuan Dana, Pertanggungjawaban & Hutang Reimburse" },
   "cash-holdings":        { kicker: "Keuangan \u00b7 Kas & Bank", title: "Titipan Sales \u00b7 Tunai yang Dipegang Sales & Setorannya" },
 };

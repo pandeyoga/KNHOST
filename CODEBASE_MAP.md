@@ -1,5 +1,5 @@
 <!-- DIHASILKAN OTOMATIS oleh scripts/gen_codebase_map.py — JANGAN EDIT TANGAN -->
-<!-- Dihasilkan dari commit: 2bb1a76 pada 2026-11-15 -->
+<!-- Dihasilkan dari commit: 47b48d6 pada 2026-11-15 -->
 # CODEBASE MAP — Kain Nusantara (dihasilkan otomatis)
 
 Peta ini dihitung dari kode oleh `scripts/gen_codebase_map.py`. Kalau angka di sini
@@ -13,8 +13,8 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 | Ukuran | Nilai |
 |---|---:|
 | Router (`backend/routers/*.py`) | 175 |
-| Endpoint (`@router.<method>`) | 1900 |
-| Service (`backend/services/*.py`) | 441 |
+| Endpoint (`@router.<method>`) | 1899 |
+| Service (`backend/services/*.py`) | 442 |
 | Koleksi MongoDB disentuh kode produksi | 218 |
 | Direktori fitur frontend (`src/features/*`) | 40 |
 
@@ -33,7 +33,7 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 | `pagination.py` | 145 |
 | `indexes.py` | 1157 |
 | `bootstrap.py` | 2171 |
-| `login_only_endpoints.py` | 84 |
+| `login_only_endpoints.py` | 87 |
 
 ### Fungsi utilitas — JANGAN re-implementasi
 
@@ -153,7 +153,7 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 | `costing.py` | 2 | 27 | `/wac`, `/wac/{product_id}` |
 | `credit_desk.py` | 6 | 150 | `/credit-desk`, `/credit-desk/summary`, `/customers/{customer_id}/exposure`, `/customers/{customer_id}/reminder-text`, `/customers/{customer_id}/statement`, `/customers/{customer_id}/statement.pdf` |
 | `credit_profiles.py` | 5 | 146 | `/credit-profile-requests`, `/credit-profile-requests/{request_id}/cancel`, `/credit-profile-requests/{request_id}/decision`, `/customers/{customer_id}/credit-profile`, `/customers/{customer_id}/credit-profile-requests` |
-| `crm.py` | 27 | 609 | `/collection-reminders`, `/collection-reminders/mark`, `/collection-worklist`, `/credit-gate-rejections`, `/credit-gate-rejections/{rejection_id}`, `/credit-override-reasons` … |
+| `crm.py` | 25 | 594 | `/collection-reminders`, `/collection-reminders/mark`, `/collection-worklist`, `/credit-gate-rejections`, `/credit-gate-rejections/{rejection_id}`, `/credit-override-reasons` … |
 | `crm_omnichannel.py` | 10 | 206 | `/crm/interactions`, `/crm/interactions/{intx_id}`, `/crm/leads`, `/crm/leads/board`, `/crm/leads/{lead_id}`, `/crm/leads/{lead_id}/convert` … |
 | `customer_balances.py` | 3 | 93 | `/ar/balances/rebuild`, `/customers/{customer_id}/balance`, `/customers/{customer_id}/billing-schedule` |
 | `customer_feedback.py` | 5 | 95 | `/customer-feedback`, `/customer-feedback/meta`, `/customer-feedback/summary`, `/customer-feedback/{fb_id}` |
@@ -200,7 +200,7 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 | `inbound_receiving.py` | 5 | 332 | `/inbound/tasks`, `/inbound/tasks/{task_id}/complete`, `/inbound/tasks/{task_id}/escalate`, `/inbound/tasks/{task_id}/resolve-escalation`, `/inbound/tasks/{task_id}/scan-receive` |
 | `inbound_receiving_extra.py` | 7 | 300 | `/inbound/po/{po_id}/receiving-goods-document`, `/inbound/qc/queue`, `/inbound/tasks/{task_id}/preview-uom`, `/inbound/tasks/{task_id}/qc-decision`, `/inbound/tasks/{task_id}/uom-options`, `/receiving/uom-settings` |
 | `inbound_scan_label.py` | 10 | 333 | `/inbound/rolls/{roll_id}/confirm-measure`, `/inbound/rolls/{roll_id}/putaway`, `/inbound/rolls/{roll_id}/scan`, `/inbound/rolls/{roll_id}/tag`, `/inbound/scan-label/stats`, `/inbound/tasks/{task_id}/scan-label` … |
-| `incentive.py` | 27 | 532 | `/achievement`, `/achievement/export`, `/achievement/sources`, `/components`, `/components/{component_id}`, `/definitions/current` … |
+| `incentive.py` | 28 | 554 | `/achievement`, `/achievement/export`, `/achievement/sources`, `/components`, `/components/{component_id}`, `/definitions/current` … |
 | `incentive_rates.py` | 4 | 105 | `/incentive-rates`, `/incentive-rates/{rate_id}` |
 | `initial_registration.py` | 22 | 329 | `/registration/freeze`, `/registration/sessions`, `/registration/sessions/{sid}`, `/registration/sessions/{sid}/approve`, `/registration/sessions/{sid}/approve-count`, `/registration/sessions/{sid}/bins` … |
 | `input_tax.py` | 6 | 203 | `/input-tax-invoices`, `/input-tax-invoices/eligible-bills`, `/input-tax-invoices/{fpm_id}`, `/input-tax-invoices/{fpm_id}/cancel`, `/tax/vat-summary` |
@@ -458,7 +458,7 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 | `gemini_image_service.py` | 193 | FB-01 — Ilustrasi AI Galeri Desain via Google Gemini "Nano Banana Pro" (SDK google-genai LANGSUNG). |
 | `gl_mapping_registry.py` | 204 | GL-01 — registri kebutuhan akun (SSOT di kode). Satu baris = satu kebutuhan fitur. |
 | `gl_mapping_service.py` | 217 | GL-01 — pemetaan akun terpusat. Resolver: mapping PT → mapping global → bawaan registri. |
-| `gl_service.py` | 4650 | EPIC7-C — General Ledger & Chart of Accounts (akuntansi inti). |
+| `gl_service.py` | 4656 | EPIC7-C — General Ledger & Chart of Accounts (akuntansi inti). |
 | `goods_receipt_close_service.py` | 596 | GRN Fase 2 — rekonsiliasi (§4.4), penyelesaian selisih, penutupan (§4.5), sisa PO, tolak & batal. |
 | `goods_receipt_ocr_service.py` | 604 | GRN Fase 4 — baca surat jalan dengan OpenAI: praproses, panggil, pembaca kedua, log biaya, rem anggaran, pemet |
 | `goods_receipt_service.py` | 1003 | GRN Fase 2 — Kedatangan Barang (satu surat jalan · satu mitra): buat, berkas, kepala SJ, baris, hitung. |
@@ -471,7 +471,7 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 | `handheld_sync.py` | 419 | PREP-G — kiriman batch C72 (idempoten) + penyelesaian dokumen + potong sampel. |
 | `handheld_tags.py` | 313 | PREP-G — EPC dibuat sistem lalu DITULIS ke tag oleh C72 (K-OPN-05: EPC bawaan tag dianggap TIDAK unik). |
 | `handheld_tasks.py` | 446 | PREP-G — daftar tugas per jenis + unduhan "yang diharapkan" per dokumen untuk C72 (pencocokan di perangkat & o |
-| `home_service.py` | 517 | EPIC 1 — Agregasi Home/landing per role (Control Tower / Performa Saya). |
+| `home_service.py` | 565 | EPIC 1 — Agregasi Home/landing per role (Control Tower / Performa Saya). |
 | `hr_ai_service.py` | 124 | H5 service — AI auto-tag motif via Anthropic Claude (SDK LANGSUNG, bukan Emergent). |
 | `hr_analytics_service.py` | 210 | HRD H6 service — HR Analytics (Dashboard BI SDM). |
 | `hr_attendance_service.py` | 292 | HRD H1 services — Absensi (attendance). |
@@ -494,7 +494,8 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 | `incentive_achievement.py` | 912 | KM-T2 (keputusan K-19, K-20, K-21, K-23, K-24) — **Capaian**: angka dasar insentif per sales, per PT dan perio |
 | `incentive_definitions.py` | 67 | KM-T1 (keputusan K-19, K-20, K-21, K-23) — versi DEFINISI ANGKA insentif per PT (`incentive_definitions`). |
 | `incentive_facts.py` | 740 | KM-T1 (KM-01, KM-02, KM-03; keputusan K-19, K-20, K-21, K-23) — fakta insentif: omzet terkirim dan pencairan. |
-| `incentive_payroll.py` | 397 | KM-T4 (KM-07, PY-06; keputusan K-13, K-22, K-26) — Lembar Insentif tersambung ke gaji dan buku besar, per PT. |
+| `incentive_me.py` | 112 | KM-T5 (keputusan K-22, K-46) — kartu **Capaian & Insentif Saya**: angka milik pelaku sendiri, satu PT, satu bu |
+| `incentive_payroll.py` | 408 | KM-T4 (KM-07, PY-06; keputusan K-13, K-22, K-26) — Lembar Insentif tersambung ke gaji dan buku besar, per PT. |
 | `incentive_periods.py` | 143 | KM-T1 (KM-04, keputusan K-24) — periode target insentif: bulan · triwulan · tahun, mengikuti tahun buku PT. |
 | `incentive_sheet_service.py` | 718 | KM-T3 (KM-05, keputusan K-25; K-19 … K-24 lewat versi definisi yang dipotret) — **Lembar Insentif**. |
 | `incentive_targets.py` | 248 | KM-T1 (KM-04, keputusan K-24) — target insentif per PT dan komponen insentif per PT; `sales_roster`. |
@@ -676,7 +677,7 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 | `roll_service.py` | 2733 | Roll service (Fase 0.5) — Roll-as-SSOT inventory engine. |
 | `roll_timeline_service.py` | 174 | JEJAK BARANG (Item Passport) — timeline satu roll lintas SEMUA dokumen. |
 | `saga_lock_watch.py` | 93 | services/saga_lock_watch.py — PEMANTAU KUNCI SAGA MENGGANTUNG (T-01 Opsi B). |
-| `sales_force_service.py` | 471 | Sales Force service (KN_17 §6) — KPI per salesperson + komisi (pencairan + tiered). |
+| `sales_force_service.py` | 482 | Sales Force service (KN_17 §6) — KPI per salesperson + komisi (pencairan + tiered). |
 | `sales_order_dashboard.py` | 99 | Dasbor Pesanan HP sales — omzet, status, tren 8 minggu, pelanggan teratas & pesanan butuh tindakan (data milik |
 | `sales_order_helpers.py` | 316 | Helper functions extracted from routers/sales_orders.py. |
 | `sales_ownership.py` | 129 | FASE E-8 (E8.4 · US11) — **SATU definisi "Pesanan Saya"**. |
@@ -752,21 +753,21 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 
 | Fitur (`src/features/`) | Berkas | Baris |
 |---|---:|---:|
-| `__tests__` | 152 | 25675 |
+| `__tests__` | 153 | 25966 |
 | `admin` | 36 | 6983 |
 | `approvals` | 9 | 1724 |
 | `catalog` | 24 | 1459 |
 | `costing` | 1 | 150 |
-| `crm` | 30 | 5616 |
+| `crm` | 27 | 4711 |
 | `design` | 8 | 1585 |
 | `designer` | 8 | 1628 |
 | `desks` | 2 | 229 |
 | `documents` | 18 | 2580 |
 | `export` | 9 | 700 |
-| `finance` | 114 | 27050 |
-| `home` | 6 | 1191 |
-| `hr` | 40 | 7751 |
-| `incentive` | 5 | 1945 |
+| `finance` | 114 | 27053 |
+| `home` | 6 | 1203 |
+| `hr` | 40 | 7755 |
+| `incentive` | 8 | 2783 |
 | `inspections` | 12 | 2181 |
 | `interco_prices` | 4 | 287 |
 | `internal_requests` | 3 | 854 |
@@ -785,10 +786,10 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 | `purchasing` | 87 | 18802 |
 | `rfid` | 21 | 3556 |
 | `rnd` | 66 | 7906 |
-| `sales` | 98 | 15989 |
+| `sales` | 98 | 16014 |
 | `sales_admin` | 11 | 1883 |
 | `samples` | 8 | 776 |
-| `settings` | 71 | 13171 |
+| `settings` | 71 | 13175 |
 | `tanya` | 27 | 2483 |
 | `transfers` | 1 | 20 |
 | `wms` | 99 | 13202 |
@@ -814,6 +815,7 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 | `backend/routers/inventory.py` | 840 | 800 |
 | `backend/routers/rfid.py` | 817 | 800 |
 | `frontend/src/features/orders/OrderDetailPanel.jsx` | 756 | 500 |
+| `frontend/src/features/incentive/IncentiveSetupView.jsx` | 695 | 500 |
 | `frontend/src/features/purchasing/PurchaseReturns.jsx` | 639 | 500 |
 | `frontend/src/features/wms/OutboundScanInterface.jsx` | 624 | 500 |
 | `frontend/src/features/wms/InventoryStockView.jsx` | 600 | 500 |
@@ -822,12 +824,11 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 | `frontend/src/features/finance/TaxCenterView.jsx` | 572 | 500 |
 | `frontend/src/features/pos/CheckoutDrawer.jsx` | 572 | 500 |
 | `frontend/src/features/internal_requests/InternalRequestsView.jsx` | 561 | 500 |
-| `frontend/src/features/incentive/IncentiveSetupView.jsx` | 557 | 500 |
 | `frontend/src/features/purchasing/makloon/MakloonWizard.jsx` | 542 | 500 |
 | `frontend/src/features/settings/entities/AccountFormDrawer.jsx` | 521 | 500 |
 | `frontend/src/features/finance/interco/IntercoView.jsx` | 519 | 500 |
 | `frontend/src/features/settings/entities/EntityDetailDrawer.jsx` | 518 | 500 |
 | `frontend/src/features/finance/InventoryReconTab.jsx` | 513 | 500 |
 | `frontend/src/features/settings/entities/RoleRealityPanel.jsx` | 511 | 500 |
-| `frontend/src/features/wms/warehouses/WarehouseMasterView.jsx` | 502 | 500 |
 | `frontend/src/features/purchasing/contrabon/ContraBonCreateWizard.jsx` | 502 | 500 |
+| `frontend/src/features/wms/warehouses/WarehouseMasterView.jsx` | 502 | 500 |

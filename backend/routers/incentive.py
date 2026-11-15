@@ -1,6 +1,7 @@
 """KM-T1 — Meja Insentif: Target & Aturan, definisi angka, pencocokan angka, bangun ulang fakta.
 
-  GET   /api/incentive/targets?period_type&period&sales_id     incentive.view       target PT aktif (+ daftar sales)
+  GET   /api/incentive/targets?period_type&period&sales_id     incentive.view       target PT aktif (+ daftar sales,
+                                                                                    + KM-T5 sakelar insentif PT)
   PUT   /api/incentive/targets                                 incentive.configure  simpan menurut kunci unik
   POST  /api/incentive/targets/copy                            incentive.configure  salin dari periode lain
   GET   /api/incentive/components                              incentive.view
@@ -22,6 +23,8 @@
   GET   /api/incentive/sheets/{id}/export                      view|prepare|approve KM-T3 — .xlsx Lembar · Potret
   GET   /api/incentive/switch-readiness                        incentive.configure  KM-T4 — kesiapan beralih ke Lembar
                                                                                     Insentif (`{mode, checks}`)
+  GET   /api/incentive/me?period=YYYY-MM                       login (milik sendiri) KM-T5 — kartu "Capaian & Insentif
+                                                                                    Saya" (`services/incentive_me.py`)
 
 PT = PT konteks pengguna (`02_STANDAR.md` §3.4 N1); mode "Semua PT" hanya baca (tulis → 409 `assert_write_entity`, N3).
 Logika di `services/incentive_targets.py`, `incentive_periods.py`, `incentive_definitions.py`, `incentive_facts.py`;
@@ -35,7 +38,7 @@ from fastapi import APIRouter, HTTPException, Query, Request
 from fastapi.responses import Response
 
 from db import db
-from dependencies import audit, has_permission, require_any_permission, require_permission
+from dependencies import audit, current_user, has_permission, require_any_permission, require_permission
 from entity_scope import assert_write_entity, entity_ctx, guard_doc, resolve_list_scope
 from schemas_incentive import (IncentiveComponentCreate, IncentiveComponentUpdate, IncentiveFactRebuild,
                                IncentiveSheetApprove, IncentiveSheetCreate, IncentiveSheetLineAdd,
@@ -78,6 +81,20 @@ def _all_pt(ctx) -> bool:
 
 
 # ── Target ───────────────────────────────────────────────────────────────────────────────────────────────────────────
+# ── KM-T5 — kartu "Capaian & Insentif Saya" (milik sendiri) ─────────────────────────────────────────────────────────
+@router.get("/me")
+async def get_my_incentive(request: Request, period: str = Query("")) -> Dict[str, Any]:
+    """Capaian bulan `period` dan lembar disahkan milik PELAKU di PT aktifnya (Z3: cukup login, data milik sendiri —
+    `login_only_endpoints.LOGIN_ONLY`). `sales_id` tidak diterima; pelaku tanpa angka = nol & `sheets: []` (200)."""
+    user = await current_user(request)
+    ctx = await entity_ctx(request)
+    from services import incentive_me as ime
+    try:
+        return await ime.kartu(ctx.active_entity_id, user["id"], period)
+    except ime.KartuError as exc:
+        raise HTTPException(status_code=400, detail=str(exc))
+
+
 @router.get("/targets")
 async def get_targets(request: Request, period_type: str = Query("month"), period: str = Query(""),
                       sales_id: str = Query("")) -> Dict[str, Any]:
@@ -99,9 +116,14 @@ async def get_targets(request: Request, period_type: str = Query("month"), perio
     else:
         items = await itg.list_targets(eid, pt, p, sales_id)
         roster = await itg.sales_roster(eid, pt, p)
+    # KM-T5 — sakelar insentif tiap PT (`hr.payroll_commission_mode`): bagian "Komisi otomatis (cara lama)" di layar
+    # Target & Aturan hanya tampil untuk PT yang belum beralih ke Lembar Insentif (bukan `sheet`, bukan `off`).
+    from services import incentive_payroll as ipay
+    modes = {e: await ipay.mode_pt(e) for e in (ctx.allowed_entity_ids if _all_pt(ctx) else [eid])}
     return {"period_type": pt, "period": p, "period_label": ip.period_label(pt, p),
             "previous_period": ip.previous_period(pt, p), "bounds": {"start": start, "end": end},
             "entity_id": "" if _all_pt(ctx) else eid, "all_pt": _all_pt(ctx), "items": items, "roster": roster,
+            "commission_mode": "" if _all_pt(ctx) else modes.get(eid, ""), "commission_modes": modes,
             "period_types": [{"value": k, "label": v} for k, v in ip.PERIOD_TYPE_LABEL.items()]}
 
 

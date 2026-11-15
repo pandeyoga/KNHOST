@@ -68,18 +68,17 @@ async def test_PRT3_U2_target_dan_insentif_tersaring(klien, akun, sesi, db, kepa
     sls = await sesi("sales@kainnusantara.id")
     sls_doc = await db.users.find_one({"email": "sales@kainnusantara.id"}, {"_id": 0, "id": 1})
     sales2 = await akun("sales")
-    # Alur: adm membuat satu target + satu skema insentif untuk `sls` dan untuk sales kedua (periode sama).
+    # Alur: adm membuat satu skema insentif untuk `sls` dan untuk sales kedua (periode sama). KM-T5 — `GET`/`POST
+    # /api/sales-targets` dihapus (target lewat `/api/incentive/targets`, izin `incentive.*`); saringan S3 diuji pada
+    # skema insentif yang tersisa.
     for sid in (sls_doc["id"], sales2["id"]):
-        r = await klien.post("/api/sales-targets", headers=kepala_admin,
-                             json={"sales_id": sid, "period": "2026-11", "target_sales_amount": 1000000})
-        assert r.status_code == 200, r.text
         r = await klien.post("/api/sales-incentives", headers=kepala_admin,
                              json={"sales_id": sid, "period": "2026-11", "basis": "sales"})
         assert r.status_code == 200, r.text
     sopir = await sesi(await akun(peran_sopir))
     ta_o = await _ta(akun, sesi, peran_tanpa_acuan, {"order": ["view"]}, "TA U2 pesanan")
     ta_os = await _ta(akun, sesi, peran_tanpa_acuan, {"order": ["view"], "sales_force": ["view"]}, "TA U2 tim sales")
-    for jalur in ("/api/sales-targets?period=2026-11", "/api/sales-incentives?period=2026-11"):
+    for jalur in ("/api/sales-incentives?period=2026-11",):
         assert await _kode(klien, "GET", jalur, sopir) == 403, jalur
         mine = (await klien.get(jalur, headers=sls)).json()
         assert [r["sales_id"] for r in mine] == [sls_doc["id"]], jalur          # 1 baris: miliknya
@@ -301,13 +300,14 @@ async def test_PRT3_U13_daftar_login_only_menunjuk_rute(aplikasi):
     import login_only_endpoints as lo
     # + PR-T5: `GET /api/access/labels` (kamus label, data rujukan); + PM-T1: `GET /api/payment-methods` (cara bayar)
     # + PM-T4: `GET /api/cash-holdings/me/summary` (ringkasan titipan tunai milik sendiri)
-    assert len(lo.LOGIN_ONLY) == 53 + 1 + 1 + 1
+    # + KM-T5: `GET /api/incentive/me` (kartu "Capaian & Insentif Saya", milik sendiri)
+    assert len(lo.LOGIN_ONLY) == 53 + 1 + 1 + 1 + 1
     assert set(lo.LOGIN_ONLY.values()) <= {"milik_sendiri", "rujukan", "sesi"}
     rute = {(m, rt.path) for rt in aplikasi.routes for m in (getattr(rt, "methods", None) or ())}
     hilang = [k for k in lo.LOGIN_ONLY if k not in rute]
     assert not hilang, hilang
     # rute yang diberi izin / disaring oleh unit ini tidak boleh tercatat sebagai login-saja sah
-    for k in (("GET", "/api/sales-users"), ("GET", "/api/sales-targets"), ("GET", "/api/sales-incentives"),
+    for k in (("GET", "/api/sales-users"), ("GET", "/api/sales-incentives"),   # KM-T5 — /api/sales-targets dihapus
               ("GET", "/api/dashboard"), ("GET", "/api/entities/{entity_id}"), ("GET", "/api/entities/count"),
               ("GET", "/api/finance/period-unlocks"), ("GET", "/api/purchase-orders/resolve-sourcing")):
         assert k not in lo.LOGIN_ONLY, k

@@ -390,6 +390,19 @@ for _m in MODULE_CATALOG:
         _m["nav"].extend(v for v in ("cash-bank", "cash-holdings") if v not in _m["nav"])
 del _m
 
+# ─── KM-T5 — layar insentif lama dicabut (docs/blueprint/unit/KM-T5.md, "Izin dan peran") ──────────────────────────
+# Tab "Komisi Otomatis" (`incentive-rates`), "Kinerja Sales" (`sales-performance`), dan "Skema (Arsip)"
+# (`incentive-schemes`) hilang dari SDM › Kinerja & Insentif (alias ke Capaian / Target & Aturan, `viewAliases.js`) →
+# dicabut dari `nav` modul mana pun. Modul Pesanan Penjualan (`penjualan`) dan Pengawasan Tim Sales & Kredit
+# (`sales_force`) hanya membuka hub SDM itu lewat tab tersebut (MN-T1) → id grup `hrd` dan hub `hr-kpi-hub` ikut dicabut
+# dari keduanya. `nav` modul Kinerja & Insentif (`incentive`) tidak berubah.
+_KMT5_DICABUT = ("incentive-rates", "sales-performance", "incentive-schemes")
+_KMT5_TANPA_HUB = {"penjualan", "sales_force"}
+for _m in MODULE_CATALOG:
+    _m["nav"] = [v for v in _m["nav"] if v not in _KMT5_DICABUT
+                 and not (_m["id"] in _KMT5_TANPA_HUB and v in ("hrd", "hr-kpi-hub"))]
+del _m
+
 MODULE_BY_ID = {m["id"]: m for m in MODULE_CATALOG}
 #: PR-T5 — id modul lama → id modul penggantinya. `apply_levels`/`nav_for_levels` menerima id lama (permintaan, uji, dan
 #: `custom_roles.levels` lama); jawaban selalu memakai id baru.
@@ -767,15 +780,13 @@ VIEW_RESOURCE_OVERRIDES: Dict[str, List[str]] = {
     "settings-cfg-warehouse": ["settings", "uom", "inventory", "goods_receipt"],
     # PR-T2 — menu hanya untuk pemegang izinnya (bukan semua pemegang modul Laporan / Penjualan).
     "costing": ["costing"],
-    "incentive-rates": ["sales_force"],
 }
 # KF-T6 — tab Kontrol dua orang dibuka izin `settings` (GET /api/kontrol/aturan = `settings.view`).
 VIEW_RESOURCE_OVERRIDES["settings-dual-control"] = ["settings"]
 # KP-T5 — tab Penomoran Dokumen dibuka izin `settings` (GET /api/doc-numbering = `settings.view`).
 VIEW_RESOURCE_OVERRIDES["settings-doc-numbering"] = ["settings"]
-# MN-T1 — SDM › Kinerja & Insentif › Skema (Arsip) (dulu sub-tab CRM bergerbang `sales_force.view`): sumber izin sama
-# dengan Target & Aturan, bukan seluruh modul Pengawasan Tim Sales & Kredit (`credit_override`).
-VIEW_RESOURCE_OVERRIDES["incentive-schemes"] = ["sales_force"]
+# KM-T5 — `incentive-rates` & `incentive-schemes` (MN-T1: sumber izin `sales_force`) dicabut dari menu; tidak ada lagi
+# penimpaan sumber izinnya (alias ke Target & Aturan, sumber izin `incentive`).
 # KF-T2 — kunci `interco_payment.*` (kelompok "antar-entitas") diubah pemegang `entity.update`; aturan KF-T1 (U14): tab
 # kelompok itu juga terbuka bagi pemegang izin pengubah kuncinya.
 VIEW_RESOURCE_OVERRIDES["settings-cfg-finance"] = ["settings", "entity"]

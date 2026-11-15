@@ -117,7 +117,7 @@ async def case_side_modules(tok):
         ("L2", "/api/payment-plans", "payment_plans"),
         ("L3", "/api/payment-variances", "payment_variance_decisions"),
         ("L4", "/api/penalties", "penalties"),
-        ("L5", "/api/sales-targets", "sales_targets"),
+        ("L5", "/api/incentive/targets", "sales_targets"),   # KM-T5 — dulu /api/sales-targets (dihapus)
         ("L6", "/api/sales-incentives", "sales_incentives"),
     ]
     for code, path, coll in specs:

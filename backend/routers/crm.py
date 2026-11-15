@@ -1,7 +1,7 @@
 """CRM / Sales Force router (KN_17 CRM-lite).
 
 Customer 360, reassign, credit override, collection worklist/followups,
-sales KPI/leaderboard/commission, sales targets & incentive schemes.
+sales KPI/leaderboard/commission, incentive schemes (KM-T5: target sales lewat `/api/incentive/targets`).
 All derived data via services. Row-level scoping enforced (sales -> own customers).
 """
 from typing import Any, Dict, List
@@ -11,7 +11,7 @@ from db import db
 from dependencies import has_permission, require_any_permission, require_permission, current_user, audit
 from core_utils import new_id, now_iso, safe_doc, DEFAULT_ENTITY_ID
 from schemas import (
-    CustomerReassign, SalesTargetCreate, SalesIncentiveCreate,
+    CustomerReassign, SalesIncentiveCreate,
     CreditOverrideCreate, CreditOverrideDecision, CollectionFollowupCreate,
 )
 from services.customer_service import (
@@ -53,13 +53,16 @@ async def list_sales_users(request: Request, entity_id: str = None) -> List[Dict
                                                  or getattr(ctx, "view_all", False))
            else [ctx.active_entity_id])
     ids = [i for i in ids if i in ctx.allowed_entity_ids] or list(ctx.allowed_entity_ids)
+    # KM-T5 — daftar = `incentive_targets.sales_roster` tiap PT (akun aktif berperan acuan / berkategori sales yang
+    # ditugaskan di PT itu — satu daftar dengan Meja Insentif, papan peringkat, dan akrual).
+    from services.incentive_targets import sales_roster
+    roster = set()
+    for e in ids:
+        roster |= {u["id"] for u in await sales_roster(e) if u.get("active")}
     rows = await db.users.find(
-        {"role": {"$in": roles_in_category("sales")}, "status": "active",
-         "$or": [{"allowed_entity_ids": {"$in": ids}},
-                 {"home_entity_id": {"$in": ids}},
-                 {"entity_id": {"$in": ids}}]},
+        {"id": {"$in": sorted(roster)}},
         {"_id": 0, "id": 1, "name": 1, "email": 1, "home_entity_id": 1}
-    ).sort("name", 1).to_list(100)
+    ).sort("name", 1).to_list(None)
     return [safe_doc(r) for r in rows]
 
 
@@ -440,9 +443,23 @@ async def get_my_rank(request: Request, period: str = None, entity_id: str = Non
             "total_sales": float(mine.get("total_sales") or 0) if mine else 0.0}
 
 
+PESAN_TANPA_KOMISI = "PT ini tidak memakai komisi otomatis. Lihat Capaian & Insentif."
+
+
+async def _tolak_tanpa_komisi(entity_id: str) -> None:
+    """KM-T5 — komisi otomatis hanya untuk PT yang sakelar insentifnya (`hr.payroll_commission_mode`) bukan `sheet` /
+    `off` → selain itu 409. "Semua PT": ditolak bila SEMUA PT sudah tidak memakai komisi otomatis."""
+    from services import incentive_payroll as ipay
+    ents = ([entity_id] if entity_id and entity_id != "all"
+            else [e["id"] async for e in db.business_entities.find({}, {"_id": 0, "id": 1}) if e.get("id")])
+    if ents and all([await ipay.mode_pt(e) in ipay.TANPA_MESIN for e in ents]):
+        raise HTTPException(status_code=409, detail=PESAN_TANPA_KOMISI)
+
+
 @router.get("/sales/commission")
 async def get_commission(request: Request, sales_id: str = None, period: str = Query(...), entity_id: str = None) -> Dict[str, Any]:
     sales_id, entity_id = await _kpi_scope(request, sales_id, entity_id)
+    await _tolak_tanpa_komisi(entity_id)
     return await compute_commission(sales_id, period, entity_id=entity_id)
 
 
@@ -450,6 +467,7 @@ async def get_commission(request: Request, sales_id: str = None, period: str = Q
 async def get_commission_history(request: Request, sales_id: str = None, period_type: str = "month",
                                  anchor: str = None, count: int = 6, entity_id: str = None) -> List[Dict[str, Any]]:
     sales_id, entity_id = await _kpi_scope(request, sales_id, entity_id)   # KN-E38 — izin + entitas
+    await _tolak_tanpa_komisi(entity_id)
     count = max(1, min(int(count or 6), 12))
     return await commission_history(sales_id, period_type=period_type, anchor=anchor, count=count, entity_id=entity_id)
 
@@ -464,7 +482,13 @@ async def get_incentive_gl_status(request: Request, period: str = Query(...),
     eid = entity_id or ctx.active_entity_id
     if eid == "all" or eid not in ctx.allowed_entity_ids:
         raise HTTPException(status_code=400, detail="Pilih entitas spesifik untuk status akrual insentif.")
-    return await gl_service.incentive_accrual_status(eid, period)
+    out = await gl_service.incentive_accrual_status(eid, period)
+    # KM-T5 — sakelar PT + angka yang akan dibukukan (konfirmasi "Bukukan akrual komisi {bulan}" menyebut nominalnya).
+    from services import incentive_payroll as ipay
+    out["mode"] = await ipay.mode_pt(eid)
+    out["estimate"] = (await gl_service.incentive_accrual_estimate(eid, period)
+                       if out["mode"] == ipay.MODE_ACCRUE else 0.0)
+    return out
 
 
 @router.post("/sales/incentive/post-gl")
@@ -511,48 +535,9 @@ _S3_DITOLAK = ("Anda belum punya akses untuk melihat target dan skema insentif s
                "'Pesanan Penjualan'.")
 
 
-@router.get("/sales-targets")
-async def list_targets(request: Request, sales_id: str = None, period: str = None,
-                       entity_id: str = None) -> List[Dict[str, Any]]:
-    """FASE E-0 (L5) — target sales WAJIB ter-scope entitas: dulu target lintas-entitas
-    terlihat karena penyaringan hanya per `sales_id`. PR-T3 (S3) — dulu cukup login; kini `order.view` + isi
-    tersaring `_target_sales_query`."""
-    actor = await require_permission(request, "order", "view", detail=_S3_DITOLAK)
-    ctx = await entity_ctx(request)
-    query: Dict[str, Any] = {}
-    sq = await _target_sales_query(actor, sales_id)
-    if sq:
-        query["sales_id"] = sq
-    if period:
-        query["period"] = period
-    query = resolve_list_scope("sales_targets", query, ctx, entity_id)
-    return await db.sales_targets.find(query, {"_id": 0}).sort("period", -1).to_list(200)
-
-
-@router.post("/sales-targets")
-async def create_target(payload: SalesTargetCreate, request: Request) -> Dict[str, Any]:
-    """KM-T1 — jalur lama layar "Set Target" (sampai KM-T5 menghapusnya) DITERUSKAN ke penyimpan baru
-    `incentive_targets.save_target` dengan `period_type = "month"`: kunci (PT, sales, jenis periode, periode), PT = PT
-    konteks pengguna (N1 — dulu PT asal sales dan kunci tanpa PT), sales = akun aktif yang ditugaskan di PT itu (dulu
-    hanya kategori sales). Izin tetap `sales_force.update` (pemegang layar lama)."""
-    actor = await require_permission(request, "sales_force", "update")
-    from entity_scope import assert_write_entity
-    from services import incentive_targets as _itg
-    eid = assert_write_entity(await entity_ctx(request), "mengatur target")
-    try:
-        saved = await _itg.save_target(eid, {
-            "sales_id": payload.sales_id, "period_type": "month", "period": payload.period,
-            "target_sales_amount": payload.target_sales_amount,
-            "target_collection_amount": payload.target_collection_amount,
-            "target_new_customers": payload.target_new_customers, "notes": payload.notes}, actor)
-    except _itg.InsentifError as exc:
-        raise HTTPException(status_code=exc.status, detail=str(exc))
-    if payload.target_focus_products:   # field lama layar Set Target (tidak dipakai Meja Insentif)
-        await db.sales_targets.update_one({"id": saved["id"]},
-                                          {"$set": {"target_focus_products": payload.target_focus_products}})
-        saved["target_focus_products"] = payload.target_focus_products
-    await audit(actor["name"], "sales_target_set", "sales_target", saved["id"], saved)
-    return saved
+# KM-T5 — `GET`/`POST /api/sales-targets` (layar lama "Set Target" & editor skema) DIHAPUS: pencarian
+# `rg "sales-targets" frontend/src` tanpa pemanggil sesudah layar lama dihapus; target dibaca & diubah lewat
+# `GET`/`PUT /api/incentive/targets` (Meja Insentif › Target & Aturan, KM-T1).
 
 
 # ── Sales incentive schemes ──────────────────────────────────────────────────

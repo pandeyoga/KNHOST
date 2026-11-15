@@ -21,8 +21,6 @@ jest.mock("../crm/CustomerList", () => () => <div data-testid="layar-customers" 
 jest.mock("../crm/LeadsPipeline", () => () => null);
 jest.mock("../crm/OmnichannelInteractions", () => () => null);
 jest.mock("../crm/CollectionWorklist", () => () => null);
-jest.mock("../crm/SalesForceDashboard", () => () => null);
-jest.mock("../crm/IncentiveSchemeEditor", () => () => null);
 
 import CrmView from "../crm/CrmView";
 import CreditOverridesPanel from "../crm/CreditOverridesPanel";

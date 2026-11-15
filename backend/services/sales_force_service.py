@@ -456,14 +456,25 @@ async def commission_history(
 
 
 async def leaderboard(period: Optional[str] = None, entity_id: Optional[str] = None) -> List[Dict[str, Any]]:
-    """KPI semua salesperson, urut total_sales desc (Manager view)."""
-    from role_registry import roles_in_category   # PR-T4 — semua akun berkategori kerja "sales"
-    sales_users = await db.users.find({"role": {"$in": roles_in_category("sales")}, "status": "active"},
-                                      {"_id": 0, "id": 1, "name": 1}).to_list(100)
+    """KPI semua salesperson, urut total_sales desc (Manager view).
+
+    KM-T5 — daftar sales = `incentive_targets.sales_roster` PT itu (akun aktif berperan acuan / berkategori sales yang
+    ditugaskan di PT — sama dengan Meja Insentif); "Semua PT" = gabungan daftar tiap PT. Dulu: semua akun berkategori sales
+    seluruh grup (PR-T4), termasuk sales PT lain berangka 0."""
+    from services.incentive_targets import sales_roster
+    if entity_id and entity_id != "all":
+        ents = [entity_id]
+    else:
+        ents = [e["id"] async for e in db.business_entities.find({}, {"_id": 0, "id": 1}) if e.get("id")]
+    sales_users: Dict[str, str] = {}
+    for e in ents:
+        for u in await sales_roster(e):
+            if u.get("active"):
+                sales_users.setdefault(u["id"], u.get("name") or "")
     rows = []
-    for u in sales_users:
-        kpi = await sales_kpi(u["id"], period, entity_id)
-        kpi["sales_name"] = u.get("name", "")
+    for uid, name in sales_users.items():
+        kpi = await sales_kpi(uid, period, entity_id)
+        kpi["sales_name"] = name
         rows.append(kpi)
     rows.sort(key=lambda r: r["total_sales"], reverse=True)
     for i, r in enumerate(rows):

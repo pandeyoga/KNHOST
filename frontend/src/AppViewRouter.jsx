@@ -33,7 +33,7 @@ import { SalesPortal, PriceApprovals, OrdersView, CrmView, OperationsView, QcHub
   AmendmentCenterView, ApprovalRulesSettings, EntityMastersView, MakloonClaimRecapView, ClientDatasetImportView,
   GradeMasterView, EntitiesAccessView, WarehouseMasterView, SettingsHub, SuppliersView, MakloonsView,
   ProcessRecipesView, MakloonOrdersView, MakloonClaimsView, ContractsView, InternalPricesView,
-  AmendmentReasonsPanel, IncentiveRatesEditor, IncentiveSetupView, CapaianView, IncentiveSheetsView, BankRulesSettingsView, SupplierItemsView, PurchaseApprovalView,
+  AmendmentReasonsPanel, IncentiveSetupView, CapaianView, IncentiveSheetsView, BankRulesSettingsView, SupplierItemsView, PurchaseApprovalView,
   CashManagementView, PurchaseReturns, VendorBillsView, GrIrView, ContraBonsView, IntercoView, InternalRequestsView,
   KeepPendingPanel, RepairOrdersView, DesignRequestsView, LogisticsView, LandedCostView, InputTaxView, RFQView,
   PurchaseRequisitions, ReorderSuggestions, EmployeesView, OrgUnitsView, EmployeeSelfService, AttendanceView,
@@ -46,7 +46,7 @@ import { SalesPortal, PriceApprovals, OrdersView, CrmView, OperationsView, QcHub
   RndSamplesView, SampleTypeGalleryView, RndDesignsView, RndReportsView, DesignerKpiView, ContentCalendar,
   MktCampaigns, MarketingAnalytics, SocialAccounts, DivisionsView,
   SettingsGroupView, SettingsLinkCards, DevicesView, PriceCorrectionsView, DocTemplatesView, DualControlView, DocNumberingView,
-  CollectionWorklist, SalesForceDashboard, IncentiveSchemeEditor, CustomerCreditView, PettyCashView,
+  CollectionWorklist, CustomerCreditView, PettyCashView,
   CashHoldingsView, CreditDeskView,
 } from "./appViewImports";
 
@@ -352,8 +352,9 @@ export default function AppViewRouter(props) {
       {activeView === "internal-prices" && <InternalPricesView />}
       {activeView === "supplier-internal-prices" && <InternalPricesView />}
       {activeView === "amendment-reasons" && <AmendmentReasonsPanel currentUser={user} />}
-      {activeView === "incentive-rates" && <IncentiveRatesEditor currentUser={user} selectedEntity={selectedEntity} entities={entities} {...cfgFocus} />}
-      {activeView === "incentive-setup" && <IncentiveSetupView />}
+      {/* KM-T5 — `incentive-rates` (Komisi Otomatis) & `incentive-schemes` (Skema Arsip) = alias Target & Aturan; rute
+          cadangan merender layar tujuan (bagian "Komisi otomatis (cara lama)"). Fokus kunci `commission.*` ikut. */}
+      {["incentive-setup", "incentive-rates", "incentive-schemes"].includes(activeView) && <IncentiveSetupView {...cfgFocus} />}
       {activeView === "incentive-capaian" && <CapaianView currentUser={user} />}
       {activeView === "incentive-sheets" && <IncentiveSheetsView currentUser={user} {...focusDocProps} />}
       {activeView === "bank-recon-rules" && <BankRulesSettingsView />}
@@ -436,9 +437,8 @@ export default function AppViewRouter(props) {
       {activeView === "hr-leave" && <LeaveView currentUser={user} selectedEntity={selectedEntity} />}
       {activeView === "hr-overtime" && <OvertimeView currentUser={user} selectedEntity={selectedEntity} />}
       {activeView === "cs-kpi" && <KpiView currentUser={user} selectedEntity={selectedEntity} />}
-      {/* MN-T1 — SDM › Kinerja & Insentif: Kinerja Sales & Skema (Arsip) dulu sub-tab CRM (komponen tanpa perubahan). */}
-      {activeView === "sales-performance" && <SalesForceDashboard currentUser={user} selectedEntity={selectedEntity} />}
-      {activeView === "incentive-schemes" && <IncentiveSchemeEditor currentUser={user} selectedEntity={selectedEntity} />}
+      {/* KM-T5 — Kinerja Sales (dulu sub-tab CRM, MN-T1 tab SDM) = alias Capaian; rute cadangan merender Capaian. */}
+      {activeView === "sales-performance" && <CapaianView currentUser={user} />}
       {/* Fase 3 · P8 (D-09) — alias ke Desain & Pattern mode Galeri; rute cadangan (antrean backend design_gallery). */}
       {activeView === "cs-design-gallery" && <DesignGalleryView currentUser={user} selectedEntity={selectedEntity} />}
       {activeView === "cs-bi-hrd" && <HrAnalyticsView currentUser={user} selectedEntity={selectedEntity} />}

@@ -12,6 +12,7 @@ import ErrorNotice from "../../components/ErrorNotice";
 import KeepPendingPanel from "../sales_admin/KeepPendingPanel";
 import { selectWaitingBoards } from "../../config/waitingBoards";
 import HomeWaitingBoards from "./HomeWaitingBoards";
+import MyIncentiveCard, { MODE_TANPA_MESIN } from "../incentive/MyIncentiveCard";
 
 const fmt = new Intl.NumberFormat("id-ID");
 const fmtCur = (v) => `Rp ${fmt.format(Math.round(v || 0))}`;
@@ -65,6 +66,10 @@ export default function SalesHome({ token, user, onNavigate, onOpenDocument }) {
 
   useEffect(() => { load(); }, [load]);
 
+  // KM-T5 — PT bermode Lembar Insentif / tanpa komisi (`incentive_mode` sheet/off): server tidak memanggil mesin komisi
+  // (`commission` null) → kartu Komisi MTD, Proyeksi, Capaian Target Penagihan, rincian & tren komisi diganti kartu
+  // "Capaian & Insentif Saya". PT bermode komisi otomatis: kartu lama tetap + kartu baru (baris "Komisi berjalan").
+  const tanpaMesin = !!data && (MODE_TANPA_MESIN.includes(data.incentive_mode) || data.commission === null);
   const comm = data?.commission || {};
   const target = data?.target || {};
   const kpi = data?.kpi || {};
@@ -79,7 +84,7 @@ export default function SalesHome({ token, user, onNavigate, onOpenDocument }) {
   return (
     <section data-testid="sales-home" className="section-card">
       <div className="section-head">
-        <p className="text-[12px] text-[#6B6B73] min-w-0 truncate">Komisi, target & penagihan{data?.period ? ` — ${data.period}` : ""}</p>
+        <p className="text-[12px] text-[#6B6B73] min-w-0 truncate">{tanpaMesin ? "Capaian, insentif & penagihan" : "Komisi, target & penagihan"}{data?.period ? ` — ${data.period}` : ""}</p>
         <div className="flex items-center gap-2 flex-shrink-0">
           <button onClick={() => onNavigate && onNavigate("sales")} className="primary-button" data-testid="sales-home-new-order">
             <ShoppingBag size={14} /> Buat Pesanan
@@ -109,9 +114,11 @@ export default function SalesHome({ token, user, onNavigate, onOpenDocument }) {
 
         {/* KPI */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-          <KPICard icon={Wallet} label="Komisi MTD" value={fmtCur(comm.mtd_accrual)} sub="Akrual berjalan" color="#34C759" loading={loading} />
-          <KPICard icon={TrendingUp} label="Proyeksi Bulan" value={fmtCur(comm.projection_month_end)} sub="Estimasi akhir bulan" color="#007AFF" loading={loading} />
-          <KPICard icon={Target} label="Capaian Target Penagihan" value={`${target.achievement_pct || 0}%`} sub={`dari ${fmtCur(target.amount)}`} color="#5856D6" loading={loading} />
+          {!tanpaMesin && <>
+            <KPICard icon={Wallet} label="Komisi MTD" value={fmtCur(comm.mtd_accrual)} sub="Akrual berjalan" color="#34C759" loading={loading} />
+            <KPICard icon={TrendingUp} label="Proyeksi Bulan" value={fmtCur(comm.projection_month_end)} sub="Estimasi akhir bulan" color="#007AFF" loading={loading} />
+            <KPICard icon={Target} label="Capaian Target Penagihan" value={`${target.achievement_pct || 0}%`} sub={`dari ${fmtCur(target.amount)}`} color="#5856D6" loading={loading} />
+          </>}
           <KPICard icon={Banknote} label="Penjualan MTD" value={fmtCur(kpi.total_sales)} sub={target.sales_amount ? `${target.sales_pct || 0}% dari target ${fmtCur(target.sales_amount)}` : `${kpi.orders_count || 0} pesanan`} color="#FF9500" loading={loading} />
           <KPICard icon={ArrowUpRight} label="Tertagih" value={fmtCur(kpi.total_collected)} sub={`${Math.round((kpi.collection_rate || 0) * 1000) / 10}% dari penjualan`} color="#30D158" loading={loading} />
           {/* K-01 (26 Okt) — label cakupan: Performa Saya = pelanggan milik sales ini saja (bukan semua pelanggan). */}
@@ -120,8 +127,11 @@ export default function SalesHome({ token, user, onNavigate, onOpenDocument }) {
           <KPICard icon={Users} label="Pelanggan Saya" value={kpi.customers_count || 0} sub={`${kpi.new_customers || 0} baru bulan ini`} color="#8E8E93" loading={loading} />
         </div>
 
+        {/* KM-T5 — kartu "Capaian & Insentif Saya" (semua mode; di PT Lembar Insentif menggantikan kartu komisi). */}
+        {data && <div className="mt-4"><MyIncentiveCard testId="sales-home-my-incentive" /></div>}
+
         {/* Target progress */}
-        <div className="mt-4 rounded-xl border border-[#EFF0F2] bg-white p-4">
+        {!tanpaMesin && <div className="mt-4 rounded-xl border border-[#EFF0F2] bg-white p-4">
           <div className="flex items-center justify-between mb-2">
             <h3 className="text-[14px] font-bold">Progress Target Penagihan</h3>
             <span className="text-[12px] font-bold text-[#5856D6] tabular-nums">{target.achievement_pct || 0}%</span>
@@ -138,10 +148,10 @@ export default function SalesHome({ token, user, onNavigate, onOpenDocument }) {
             <div className="rounded-lg bg-[#F8F9FB] p-2"><span className="text-[#8E8E93]">{comm.strategy === "per_sku" ? "Strategi" : "Rate"}</span><p className="font-bold tabular-nums">{comm.strategy === "per_sku" ? "Per-SKU v2" : `${((comm.applied_rate || 0) * 100).toFixed(1)}%`}</p></div>
             <div className="rounded-lg bg-[#F8F9FB] p-2"><span className="text-[#8E8E93]">Proyeksi saat lunas</span><p className="font-bold tabular-nums text-[#1B7F4B]">{fmtCur(comm.projection_full ?? comm.projection_month_end)}</p></div>
           </div>
-        </div>
+        </div>}
 
         {/* Rincian komisi per-SKU (EPIC4 — hanya mode per_sku) */}
-        {comm.strategy === "per_sku" && (
+        {!tanpaMesin && comm.strategy === "per_sku" && (
           <div className="mt-4 rounded-xl border border-[#EFF0F2] bg-white p-4" data-testid="sales-home-commission-breakdown">
             <div className="flex items-center justify-between mb-3">
               <h3 className="text-[14px] font-bold">Rincian Komisi per Kategori / SKU</h3>
@@ -179,7 +189,7 @@ export default function SalesHome({ token, user, onNavigate, onOpenDocument }) {
         )}
 
         {/* History trend */}
-        <div className="mt-4 rounded-xl border border-[#EFF0F2] bg-white p-4">
+        {!tanpaMesin && <div className="mt-4 rounded-xl border border-[#EFF0F2] bg-white p-4">
           <h3 className="text-[14px] font-bold mb-3">Tren Komisi (6 bulan)</h3>
           {loading ? (
             <div className="h-36 bg-[#F5F5F7] rounded animate-pulse" />
@@ -196,7 +206,7 @@ export default function SalesHome({ token, user, onNavigate, onOpenDocument }) {
           ) : (
             <div className="h-36 flex items-center justify-center text-center text-[13px] text-[#8E8E93]">Belum ada komisi dalam 6 bulan terakhir — komisi terbentuk saat pembayaran pelanggan masuk.</div>
           )}
-        </div>
+        </div>}
 
         {/* Penagihan + Order terbaru */}
         <div className="mt-4 grid gap-4 lg:grid-cols-2">

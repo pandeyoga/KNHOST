@@ -12,9 +12,12 @@
  *
  * Lebar tabel (kartu ±750 px di layar 1024): 7 kolom tanpa kolom aksi (nomor = tautan), judul kolom boleh dua baris,
  * total tanpa "Rp" (keterangan di atas tabel); nama penyiap/pemutus boleh turun baris.
+ *
+ * KM-T5 — tautan "Skema insentif lama (arsip)" dicabut: jenjang komisi otomatis kini di Target & Aturan › "Komisi otomatis
+ * (cara lama)" (hanya PT yang belum beralih ke Lembar Insentif).
  */
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Archive, ClipboardList, Plus, Search } from "lucide-react";
+import { ClipboardList, Plus, Search } from "lucide-react";
 import axios, { API } from "../../services/apiClient";
 import EntityScopeBanner from "../../components/EntityScopeBanner";
 import ErrorNotice from "../../components/ErrorNotice";
@@ -26,7 +29,6 @@ import useIntentKey from "../../hooks/useIntentKey";
 import useViewPreset from "../../hooks/useViewPreset";
 import { moneyPost } from "../../utils/moneyRequest";
 import { canCurrent } from "../../config/roles";
-import { useAppNav } from "../../context/AppNavContext";
 import { useEntityScope } from "../../context/EntityScopeContext";
 import { entityFullById } from "../../utils/entityLabel";
 import { apiErrorText } from "../../utils/apiError";
@@ -51,7 +53,6 @@ export const periodeBayarBawaan = () => String(todayWib()).slice(0, 7);
 
 export default function IncentiveSheetsView({ focusDoc, onClearFocus }) {
   const { canWrite, selectedEntity, entities } = useEntityScope();
-  const nav = useAppNav();
   const canPrepare = canCurrent("incentive", "prepare");
   const pt = entityFullById(entities, selectedEntity, "PT ini");
   const [periode, setPeriode] = useState("");
@@ -169,9 +170,6 @@ export default function IncentiveSheetsView({ focusDoc, onClearFocus }) {
             </div>
             <div className="flex flex-wrap items-center justify-between gap-2 border-t border-kn-divider px-3 py-2 text-fs-12 text-kn-text-2">
               <span data-testid="isheets-count">{items.length} dari {data?.total ?? items.length} lembar</span>
-              {nav.canOpen("incentive-schemes") && (
-                <button type="button" className="link-button flex items-center gap-1 whitespace-nowrap" data-testid="isheets-legacy"
-                  onClick={() => nav.go("incentive-schemes")}><Archive size={12} aria-hidden="true" /> Skema insentif lama (arsip)</button>)}
             </div>
             <KNPager page={page} pageSize={UKURAN_HALAMAN} total={data?.total || 0} onChange={setPage} testId="isheets-pager" />
           </>

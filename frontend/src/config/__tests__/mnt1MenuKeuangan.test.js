@@ -52,7 +52,8 @@ describe("U2 — jumlah tab tampak per hub (admin)", () => {
   test.each([
     // PK-28 — Hutang mendapat tab ketiga GR/IR (Diterima Belum Ditagih).
     ["finance-tower", 3], ["ar-aging", 6], ["accounts-payable", 3], ["cash-bank", 5], ["closing", 3], ["ledger", 2],
-    ["hr-kpi-hub", 6], ["purchase-orders", 7],   // KM-T1 — + Target & Aturan (Meja Insentif); KM-T2 — + Capaian
+    // KM-T1 — + Target & Aturan (Meja Insentif); KM-T2 — + Capaian; KM-T5 — − Kinerja Sales, − Komisi Otomatis.
+    ["hr-kpi-hub", 4], ["purchase-orders", 7],
   ])("%s = %i tab", (hub, n) => {
     expect(hubTabsForRole(hub, "admin")).toHaveLength(n);
   });
@@ -74,7 +75,8 @@ describe("U2 — jumlah tab tampak per hub (admin)", () => {
     // KM-T2 — tab "Capaian" (`incentive-capaian`) di urutan pertama.
     // KM-T3 — tab "Lembar Insentif" (`incentive-sheets`) sesudah Capaian; "Skema (Arsip)" tersembunyi (batas enam tab L3,
     // layarnya tetap terbuka lewat tautan di Lembar Insentif).
-    expect(labels("hr-kpi-hub")).toEqual(["Capaian", "Lembar Insentif", "Kinerja Sales", "Target & Aturan", "Komisi Otomatis", "KPI Karyawan"]);
+    // KM-T5 — "Kinerja Sales", "Komisi Otomatis", dan "Skema (Arsip)" dicabut (alias ke Capaian / Target & Aturan).
+    expect(labels("hr-kpi-hub")).toEqual(["Capaian", "Lembar Insentif", "Target & Aturan", "KPI Karyawan"]);
     expect(HUB_TABS["purchase-orders"].map((t) => t.view)).toContain("landed-cost");
     expect(HUB_TABS["settings-sales"].map((t) => t.view)).not.toContain("incentive-rates");
     expect(HUB_TABS["petty-cash"]).toBeUndefined();
@@ -160,10 +162,11 @@ describe("U7–U10 — menu per peran", () => {
     ["closing", "fin-reports", "fixed-assets"].forEach((id) => expect(m.akuntansi[id]).toBeUndefined());
     expect(m["settings-hub"]["settings-finance"]).toEqual(["gl-account-mappings"]);   // IA-06
   });
-  test("U8 Sales: Keuangan hanya Piutang (Penagihan, Kasus) + Kas & Bank (Kas Kecil); SDM hanya Kinerja Sales", () => {
+  test("U8 Sales: Keuangan hanya Piutang (Penagihan, Kasus) + Kas & Bank (Kas Kecil); SDM tidak tampil (KM-T5)", () => {
     const m = menu("sales");
     expect(m.keuangan).toEqual({ "ar-aging": ["collection-worklist", "finance-cases"], "cash-bank": ["petty-cash"] });
-    expect(m.hrd).toEqual({ "hr-kpi-hub": ["sales-performance"] });
+    // KM-T5 — tab Kinerja Sales dicabut: sales melihat capaian & insentifnya di kartu "Capaian & Insentif Saya".
+    expect(m.hrd).toBeUndefined();
     expect(m.akuntansi).toBeUndefined();
   });
   test("U9 Gudang: Keuangan hanya Hutang › Kontrabon dan Antar-PT; Akuntansi & Pajak tidak tampil", () => {
@@ -184,8 +187,8 @@ describe("U7–U10 — menu per peran", () => {
   test("Manajer: Perlu Tindakan (Meja Finance) dan semua tab Kinerja & Insentif", () => {
     const m = menu("manager");
     expect(m.keuangan["finance-tower"]).toEqual(["finance-desk", "finance-tower", "bi-finance"]);
-    // KM-T1, KM-T2; KM-T3 — + Lembar Insentif, Skema (Arsip) tersembunyi.
-    expect(m.hrd["hr-kpi-hub"]).toEqual(["incentive-capaian", "incentive-sheets", "sales-performance", "incentive-setup", "incentive-rates", "cs-kpi"]);
+    // KM-T1, KM-T2; KM-T3 — + Lembar Insentif; KM-T5 — Kinerja Sales, Komisi Otomatis, Skema (Arsip) dicabut.
+    expect(m.hrd["hr-kpi-hub"]).toEqual(["incentive-capaian", "incentive-sheets", "incentive-setup", "cs-kpi"]);
     expect(m.akuntansi.closing).toEqual(["closing", "period-unlock", "posting-failures"]);
   });
 });

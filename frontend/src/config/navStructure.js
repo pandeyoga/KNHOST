@@ -328,15 +328,16 @@ export const NAV_STRUCTURE = [
     groupId: "hrd",
     label:   "SDM",
     icon:    Users,
-    // MN-T1 — + sales: SDM › Kinerja & Insentif › Kinerja Sales (dulu sub-tab CRM) sampai KM-T5 menggantinya.
-    roles:   ["admin", "manager", "sales", "finance"],   // KM-T1 — + finance: Kinerja & Insentif › Target & Aturan (lihat)
+    // KM-T5 — sales dicabut (tab Kinerja Sales diganti kartu "Capaian & Insentif Saya" di Beranda/Profil/HP); Admin Sales
+    // (dulu lewat warisan menu sales) tetap: Kinerja & Insentif › Lembar Insentif (penyiap, KM-T3).
+    roles:   ["admin", "manager", "sales_admin", "finance"],   // KM-T1 — + finance: Kinerja & Insentif › Target & Aturan (lihat)
     items: [
       { id: "hr-people",         label: "Karyawan", icon: UserCheck,  roles: ["admin", "manager"], hub: "hr-people" },
       { id: "hr-attendance-hub", label: "Kehadiran",      icon: Clock,      roles: ["admin", "manager"], hub: "hr-attendance-hub" },
       // PY-T4 — + finance: Penggajian › Setoran & Pajak (bayar gaji & setor BPJS/PPh 21; izin `payroll.pay`).
       { id: "hr-payroll-hub",    label: "Penggajian",               icon: Calculator, roles: ["admin", "manager", "finance"], hub: "hr-payroll-hub" },
       // MN-T1 — "KPI" → "Kinerja & Insentif": menyerap Kinerja Sales & Skema (CRM) + Komisi & Insentif (Pengaturan).
-      { id: "hr-kpi-hub",        label: "Kinerja & Insentif", icon: Target, roles: ["admin", "manager", "sales", "finance"], hub: "hr-kpi-hub" },
+      { id: "hr-kpi-hub",        label: "Kinerja & Insentif", icon: Target, roles: ["admin", "manager", "sales_admin", "finance"], hub: "hr-kpi-hub" },
     ],
   },
 

@@ -3675,16 +3675,9 @@
    "payroll"
   ],
   "hr-kpi-hub": [
-   "credit_override",
    "hr",
    "incentive",
-   "internal_request",
-   "od_fulfillment",
-   "od_pricing",
-   "order",
-   "payroll",
-   "sales_force",
-   "sales_return"
+   "payroll"
   ],
   "hr-leave": [
    "hr",
@@ -3730,25 +3723,12 @@
    "customer"
   ],
   "hrd": [
-   "credit_override",
    "hr",
    "incentive",
-   "internal_request",
-   "od_fulfillment",
-   "od_pricing",
-   "order",
-   "payroll",
-   "sales_force",
-   "sales_return"
+   "payroll"
   ],
   "incentive-capaian": [
    "incentive"
-  ],
-  "incentive-rates": [
-   "sales_force"
-  ],
-  "incentive-schemes": [
-   "sales_force"
   ],
   "incentive-setup": [
    "incentive"
@@ -4299,13 +4279,6 @@
    "sales_return"
   ],
   "sales-orders": [
-   "internal_request",
-   "od_fulfillment",
-   "od_pricing",
-   "order",
-   "sales_return"
-  ],
-  "sales-performance": [
    "internal_request",
    "od_fulfillment",
    "od_pricing",

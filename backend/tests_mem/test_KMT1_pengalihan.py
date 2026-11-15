@@ -1,12 +1,13 @@
 """KM-T1 serah-terima (b) — jalur yang ada dialihkan: harga pembanding & potret pemilik angka di `create_order`,
 `analytics_facts.build_rows` membaca potret, serah-terima pelanggan mengganti PIC tim, `POST /api/sales-targets` lama
-diteruskan ke penyimpan target baru, dua skrip data lama. Spesifikasi `docs/blueprint/unit/KM-T1.md` U9, U10, U14
+diteruskan ke penyimpan target baru (KM-T5: jalur lama dihapus; U14 memakai `PUT /api/incentive/targets`), dua skrip data
+lama. Spesifikasi `docs/blueprint/unit/KM-T1.md` U9, U10, U14
 (lingkungan B); U17 (dua simpan bersamaan) = lapis A `backend/tests/test_bp_KMT1_target_bersamaan_mongo.py`.
 
 Fixture (DISISIP langsung): produk `prd_kmt1b_*` (harga umum per yard, tanpa stok → baris jadi backorder), pelanggan
 `cus_kmt1b_*` di `ent_ksc` dengan tim sales PIC S1, harga daftar PT (`entity_prices`) dan harga langganan
 (`customer_prices`) untuk U10. Pesanan dibuat lewat API (`POST /api/sales-orders`, Admin seed); serah-terima lewat API
-(`POST /api/customers/{id}/reassign`); target lewat API (`PUT /api/incentive/targets`, `POST /api/sales-targets`).
+(`POST /api/customers/{id}/reassign`); target lewat API (`PUT /api/incentive/targets`).
 
 Hitung tangan U10: harga langganan 48.000 menang (`price` 48.000, `price_source` customer); pembanding = harga daftar PT
 55.000 (`list_price_source` entity); harga umum 60.000. Satuan jual = satuan dasar (yard) → faktor 1.
@@ -136,25 +137,29 @@ async def test_KMT1_U14_target_peran_kustom_acuan_sales(klien, db, akun, uji):
         "sales_id": senior["id"], "period_type": "month", "period": "2026-12", "target_sales_amount": 150_000_000})
     assert r.status_code == 200, r.text
     assert (r.json()["entity_id"], r.json()["sales_name"]) == (KANDA, senior["name"])
-    # Jalur lama layar "Set Target" diteruskan ke penyimpan baru: PT = PT konteks (bukan PT asal sales), kunci PT.
-    r = await klien.post("/api/sales-targets", headers=h, json={
-        "sales_id": senior["id"], "period": "2026-12", "target_sales_amount": 175_000_000,
+    # KM-T5 — jalur lama `POST /api/sales-targets` (layar "Set Target") DIHAPUS; sifat yang dulu diuji lewat jalur itu
+    # (PT = PT konteks, kunci per PT, periode salah 400, "Semua PT" 409) kini diuji lewat penyimpan yang sama
+    # (`PUT /api/incentive/targets`).
+    r = await klien.put("/api/incentive/targets", headers=h, json={
+        "sales_id": senior["id"], "period_type": "month", "period": "2026-12", "target_sales_amount": 175_000_000,
         "target_collection_amount": 90_000_000})
     assert r.status_code == 200, r.text
     assert (r.json()["entity_id"], r.json()["period_type"], r.json()["target_sales_amount"]) == (
         KANDA, "month", 175_000_000), r.json()
     docs = await db.sales_targets.find({"sales_id": senior["id"], "period": "2026-12"}, {"_id": 0}).to_list(None)
     assert [(d["entity_id"], d["target_sales_amount"]) for d in docs] == [(KANDA, 175_000_000)], docs
-    r = await klien.post("/api/sales-targets", headers={**uji["adm"], "X-Entity-Id": KSC}, json={
-        "sales_id": senior["id"], "period": "2026-12", "target_sales_amount": 10_000_000})
+    r = await klien.put("/api/incentive/targets", headers={**uji["adm"], "X-Entity-Id": KSC}, json={
+        "sales_id": senior["id"], "period_type": "month", "period": "2026-12", "target_sales_amount": 10_000_000})
     assert r.status_code == 200 and r.json()["entity_id"] == KSC
     assert await db.sales_targets.count_documents({"sales_id": senior["id"], "period": "2026-12"}) == 2   # per PT
-    r = await klien.post("/api/sales-targets", headers={**uji["adm"], "X-Entity-Id": KSC}, json={
-        "sales_id": senior["id"], "period": "2026-Q4", "target_sales_amount": 1})
+    r = await klien.put("/api/incentive/targets", headers={**uji["adm"], "X-Entity-Id": KSC}, json={
+        "sales_id": senior["id"], "period_type": "month", "period": "2026-Q4", "target_sales_amount": 1})
     assert r.status_code == 400 and r.json()["detail"].startswith("Periode tidak sesuai jenisnya")
-    r = await klien.post("/api/sales-targets", headers={**uji["adm"], "X-Entity-Id": "all"}, json={
-        "sales_id": senior["id"], "period": "2026-12", "target_sales_amount": 1})
+    r = await klien.put("/api/incentive/targets", headers={**uji["adm"], "X-Entity-Id": "all"}, json={
+        "sales_id": senior["id"], "period_type": "month", "period": "2026-12", "target_sales_amount": 1})
     assert r.status_code == 409, r.text
+    r = await klien.post("/api/sales-targets", headers=h, json={"sales_id": senior["id"], "period": "2026-12"})
+    assert r.status_code in (404, 405), r.text
 
 
 # ═══ Skrip data lama (dijalankan di database tiruan; data nyata = H3) ══════════════════════════════════════════════

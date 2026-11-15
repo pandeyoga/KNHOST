@@ -122,7 +122,8 @@ describe("kelompok registri → layar domain (tanpa yatim)", () => {
 
   test("deep link openConfig: komisi → Komisi & Insentif; kelompok → layar domain; MD (K-11) tetap Semua pengaturan", () => {
     // MN-T1 — Komisi & Insentif kini SDM › Kinerja & Insentif › Target & Aturan (menu `hr-kpi-hub`).
-    expect(configTargetFor({ key: "commission.strategy" })).toEqual({ view: "incentive-rates", nav: "hr-kpi-hub" });
+    // KM-T5 — tab Komisi Otomatis dicabut: bawaan komisi di Target & Aturan › "Komisi otomatis (cara lama)".
+    expect(configTargetFor({ key: "commission.strategy" })).toEqual({ view: "incentive-setup", nav: "hr-kpi-hub" });
     // KP-T9 — Aturan Pembelian & Makloon dan R&D & Desain kini tab Gudang, Pembelian & Produksi.
     expect(configTargetFor({ group: "makloon", key: "makloon.contract_mode" })).toEqual({ view: "settings-cfg-purchasing", nav: "settings-warehouse" });
     expect(configTargetFor({ key: "tidak_dikenal.x" })).toEqual({ view: "settings-config", nav: "settings-system" });

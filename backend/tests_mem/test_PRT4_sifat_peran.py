@@ -219,12 +219,15 @@ async def test_PRT4_U3_peran_berdasar_sales_ikut_daftar_pilih(klien, akun, siap,
 
 
 async def test_PRT4_U4_papan_peringkat_semua_akun_kategori_sales(klien, siap, db):
-    r = await klien.get("/api/sales/leaderboard", headers=siap["adm"])
+    # KM-T5 — papan peringkat = daftar sales PT (`incentive_targets.sales_roster`): akun aktif berkategori sales yang
+    # ditugaskan di PT papan; dulu semua akun berkategori sales seluruh grup. Dibaca dengan PT uji PR-T4 aktif.
+    r = await klien.get("/api/sales/leaderboard", headers=siap["adm_pt"])
     assert r.status_code == 200, r.text
     # Berkategori sales = peran Sales + peran kustom yang (turunan dari) peran dasar Sales; tidak ada yang diubah Admin.
     kategori = ["sales", *[c["id"] async for c in db.custom_roles.find({"base_role": "sales"}, {"id": 1})]]
-    harap = await db.users.count_documents({"role": {"$in": kategori}, "status": "active"})
-    assert harap >= 4   # seed sales@ + sA + sB + sS
+    harap = await db.users.count_documents({"role": {"$in": kategori}, "status": "active",
+                                            "$or": [{"allowed_entity_ids": siap["pt"]}, {"home_entity_id": siap["pt"]}]})
+    assert harap >= 3   # sA + sB + sS
     assert len(r.json()) == harap
     assert siap["sS"]["id"] in {x["sales_id"] for x in r.json()}
 
@@ -347,7 +350,8 @@ async def test_PRT4_U12_kpi_sales_lain_butuh_izin(klien, peran_tanpa_acuan, pera
 TABEL_1 = {
     "services/sales_ownership.py": ["is_owner_locked"],
     "services/customer_service.py": ["scope_query", "can_collect_customer", "collection_worklist"],
-    "routers/crm.py": ["list_credit_overrides", "get_credit_override", "_kpi_scope", "list_targets", "list_incentives"],
+    # KM-T5 — `list_targets` (GET /api/sales-targets) dihapus.
+    "routers/crm.py": ["list_credit_overrides", "get_credit_override", "_kpi_scope", "list_incentives"],
     "routers/crm_omnichannel.py": ["_read_scope", "_guard_lead_owner", "delete_interaction"],
     "routers/customers.py": ["create_customer"],
     "routers/admin.py": ["import_customers"],
@@ -370,7 +374,7 @@ TABEL_1 = {
 #: `can_access_customer` — hanya bagian sales (admin/manajer lolos sebelum cek PT = PR-T6, di luar lingkup).
 TABEL_1_SALES_SAJA = {"services/customer_service.py": ["can_access_customer"]}
 TABEL_2 = {
-    "routers/crm.py": ["list_sales_users", "reassign_customer", "create_target", "create_incentive"],
+    "routers/crm.py": ["list_sales_users", "reassign_customer", "create_incentive"],   # KM-T5 — create_target dihapus
     "routers/customers.py": ["create_customer"],
     "routers/products.py": ["list_sales_owners"],
     "routers/admin.py": ["import_customers", "export_customers"],

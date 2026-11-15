@@ -13,6 +13,8 @@ import OmnichannelInteractions from "./OmnichannelInteractions";
  * Piutang › Kredit & Plafon (`credit-overrides`), Kinerja Sales → SDM › Kinerja & Insentif › Kinerja Sales
  * (`sales-performance`), Skema (Arsip) → SDM › Kinerja & Insentif › Skema (Arsip) (`incentive-schemes`).
  * Gerbang izinnya (PR-T7) kini di katalog akses tab tersebut + tombol memutus kredit (`credit_override.approve`).
+ * KM-T5 — Kinerja Sales & Skema (Arsip) dicabut juga dari SDM › Kinerja & Insentif (layar lama dihapus; alias ke Capaian
+ * dan Target & Aturan). CRM tetap tiga sub-tab ini; tidak ada sub-tab insentif.
  */
 export default function CrmView({ currentUser, selectedEntity, focusDoc, onClearFocus }) {
   const TABS = [

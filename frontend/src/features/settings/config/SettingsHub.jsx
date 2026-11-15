@@ -50,8 +50,9 @@ const TABS = [
 /** Kunci komisi (D-03) disembunyikan dari Semua pengaturan & Aturan Penjualan — rumahnya Komisi & Insentif. */
 export const COMMISSION_EXCLUDE = [COMMISSION_PREFIX];
 export const COMMISSION_LINK = {
-  testId: "cfg-commission-link", what: "Bawaan komisi sales", view: "incentive-rates",
-  where: "SDM › Kinerja & Insentif › Komisi Otomatis",   // MN-T1 — dulu Pengaturan › Penjualan › Komisi & Insentif; KM-T1 — label tab
+  testId: "cfg-commission-link", what: "Bawaan komisi sales", view: "incentive-setup",
+  // MN-T1 — dulu Pengaturan › Penjualan › Komisi & Insentif; KM-T5 — tab Komisi Otomatis dicabut (bagian di Target & Aturan)
+  where: "SDM › Kinerja & Insentif › Target & Aturan › Komisi otomatis (cara lama)",
 };
 
 /** Pita simpan/galat + mesin tampilan daftar (re-export agar impor lama — `SettingsGroupView`, uji — tidak patah).

@@ -31,7 +31,7 @@ PERAN_BAWAAN = ["admin", "sales", "manager", "sales_admin", "finance", "warehous
 
 # (kode putusan, metode, jalur, isi)
 RUTE: List[Tuple[str, str, str, Optional[Dict[str, Any]]]] = [
-    ("S3", "GET", "/api/sales-targets", None),
+    # KM-T5 — ("S3", "GET", "/api/sales-targets") dicabut: rutenya dihapus (target lewat `/api/incentive/targets`).
     ("S3", "GET", "/api/sales-incentives", None),
     ("S4", "GET", "/api/sales-users", None),
     ("S5", "GET", "/api/entities/count", None),
@@ -141,7 +141,7 @@ async def test_PRT3_U14_kode_jawaban_peran_bawaan(klien, akun, sesi):
     # Bunyi U14: S3/S4 menolak Desainer, Sopir, MD Quality, QC; S5 hanya Admin & Manajer; S6 + Finance; S7 hanya
     # Admin & Manajer (semua dibaca dari kode jawaban sesudah unit).
     for peran in ("designer", "driver", "md_quality", "qc"):
-        for rute in ("GET /api/sales-targets", "GET /api/sales-incentives", "GET /api/sales-users"):
+        for rute in ("GET /api/sales-incentives", "GET /api/sales-users"):
             assert sesudah[peran][rute] == 403, (peran, rute)
     for peran in PERAN_BAWAAN:
         boleh5 = peran in ("admin", "manager")

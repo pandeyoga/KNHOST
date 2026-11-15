@@ -7,6 +7,7 @@ import ErrorNotice from "../../components/ErrorNotice";
 import { formatCurrency, formatDate } from "../../utils/formatters";
 import { STATUS_PILL, fmtTime, fmtMin } from "./AttendanceView";
 import { MyPayslipCard } from "./MyPayslipCard";
+import MyIncentiveCard from "../incentive/MyIncentiveCard";
 import { MyLeaveCard } from "./MyLeaveCard";
 import { MyKpiCard } from "./MyKpiCard";
 import MyDesignerKpiSection, { showMyDesignerKpi } from "./MyDesignerKpiSection";
@@ -216,6 +217,9 @@ export default function EmployeeSelfService({ currentUser }) {
 
           {/* PY-T5 — Slip Gaji Saya: kartu selebar halaman (ringkasan + riwayat per tahun + rincian komponen). */}
           <MyPayslipCard />
+
+          {/* KM-T5 — "Capaian & Insentif Saya" di bawah kartu slip; tampil hanya bila capaian atau lembar berisi. */}
+          <MyIncentiveCard hideWhenEmpty testId="ess-my-incentive" />
 
           {/* Details */}
           <div className="grid grid-cols-1 gap-3 md:grid-cols-2">

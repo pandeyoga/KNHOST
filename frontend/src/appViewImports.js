@@ -112,7 +112,6 @@ export const MakloonClaimsView = lazy(() => import("./features/purchasing/makloo
 export const ContractsView = lazy(() => import("./features/purchasing/contracts/ContractsView"));
 export const InternalPricesView = lazy(() => import("./features/interco_prices/InternalPricesView"));
 export const AmendmentReasonsPanel = lazy(() => import("./features/finance/amendments/AmendmentReasonsPanel"));
-export const IncentiveRatesEditor = lazy(() => import("./features/crm/IncentiveRatesEditor"));
 export const IncentiveSetupView = lazy(() => import("./features/incentive/IncentiveSetupView"));   // KM-T1
 export const CapaianView = lazy(() => import("./features/incentive/CapaianView"));   // KM-T2
 export const IncentiveSheetsView = lazy(() => import("./features/incentive/IncentiveSheetsView"));   // KM-T3
@@ -204,8 +203,6 @@ export const CreditOverridesPanel = lazy(() => import("./features/crm/CreditOver
 export const CreditDeskView = lazy(() => import("./features/finance/CreditDeskView"));
 // CR-T1 — antrean pengajuan perubahan kredit di bawah panel izin lewat batas kredit (tab Kredit & Plafon).
 export const CreditProfileRequestsPanel = lazy(() => import("./features/crm/CreditProfileRequestsPanel"));
-export const SalesForceDashboard = lazy(() => import("./features/crm/SalesForceDashboard"));
-export const IncentiveSchemeEditor = lazy(() => import("./features/crm/IncentiveSchemeEditor"));
 export const CustomerCreditView = lazy(() => import("./features/finance/CustomerCreditView"));
 export const PettyCashView = lazy(() => import("./features/pettycash/PettyCashView"));
 // PM-T4 — Keuangan › Kas & Bank › Titipan Sales (setoran titipan tunai sales).

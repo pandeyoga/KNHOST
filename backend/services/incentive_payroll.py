@@ -378,6 +378,17 @@ async def kesiapan(entity_id: str) -> Dict[str, Any]:
             "ready": all(c["ok"] for c in checks)}
 
 
+# ── KM-T5 — beranda admin: insentif disahkan yang belum dibayar ─────────────────────────────────────────────────────
+async def belum_dibayar(entity_id: str) -> int:
+    """Σ nominal baris lembar disahkan (`approved` / `paid`) PT itu yang belum ber-`paid_run_id` (rupiah bulat; baris
+    penyesuaian negatif ikut mengurangi). Kartu "Insentif Sales" beranda admin untuk PT bermode `sheet`."""
+    tot = 0
+    async for s in db.incentive_sheets.find({"entity_id": entity_id, "status": {"$in": list(iss.DISAHKAN)}},
+                                            {"_id": 0, "lines": 1}):
+        tot += sum(int(x.get("amount") or 0) for x in s.get("lines") or [] if not x.get("paid_run_id"))
+    return tot
+
+
 # ── INV-KM-4 ─────────────────────────────────────────────────────────────────────────────────────────────────────────
 async def cek_hutang_insentif(entity_id: Optional[str] = None) -> List[Dict[str, Any]]:
     """INV-KM-4, per PT bermode `sheet`: saldo akun hutang insentif = Σ nominal baris lembar `payroll_linked` yang

@@ -146,6 +146,14 @@ export const VIEW_ALIASES = {
   "settings-notify": {
     to: "scheduler", nav: "settings-documents", label: "Notifikasi & Penjadwal", legacy: true, since: "KP-T9",
   },
+
+  // ── KM-T5 — layar insentif lama dicabut dari SDM › Kinerja & Insentif (docs/blueprint/unit/KM-T5.md). Kinerja Sales
+  // (KPI + papan peringkat) → tab Capaian; Komisi Otomatis (tarif + bawaan komisi) & Skema (Arsip) (jenjang) → Target &
+  // Aturan bagian "Komisi otomatis (cara lama)". Rute cadangan `activeView === "<lama>"` merender layar tujuannya; sales
+  // (dulu memegang Kinerja Sales) tidak mendapat pintu ke Capaian — angkanya di kartu "Capaian & Insentif Saya".
+  "sales-performance": { to: "incentive-capaian", nav: "hr-kpi-hub", label: "Kinerja Sales", since: "KM-T5" },
+  "incentive-rates": { to: "incentive-setup", nav: "hr-kpi-hub", label: "Komisi Otomatis", since: "KM-T5" },
+  "incentive-schemes": { to: "incentive-setup", nav: "hr-kpi-hub", label: "Skema Insentif (Arsip)", since: "KM-T5" },
 };
 
 /** Alias untuk `view` → `{ from, to, nav, preset, label, since, legacy }`, atau null bila bukan alias. */

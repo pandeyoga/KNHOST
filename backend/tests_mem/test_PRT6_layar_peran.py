@@ -104,9 +104,10 @@ async def test_PRT6_U4_pratinjau_memuat_ringkasan_dan_menu_tambahan(klien, kepal
     j = r.json()
     hr = next((m for m in j["summary"]["modules"] if m["id"] == "hr"), None)
     assert hr is not None and hr["level"] == "view", j["summary"]["modules"]
-    # MN-T1 — grup `hrd` kini sudah dibuka modul Pesanan (SDM › Kinerja & Insentif › Kinerja Sales = `order.view`), jadi
-    # bukan lagi menu TAMBAHAN bagi Sales; menu SDM yang dibuka izin `hr` (Karyawan) tetap tambahan.
-    assert "hr-people" in j["nav_added"] and "hrd" not in j["nav_added"], j["nav_added"]
+    # MN-T1 — grup `hrd` sempat dibuka modul Pesanan (SDM › Kinerja & Insentif › Kinerja Sales = `order.view`). KM-T5 — tab
+    # Kinerja Sales dicabut (alias ke Capaian, modul Kinerja & Insentif), jadi grup SDM kembali menu TAMBAHAN bagi Sales
+    # bersama menu yang dibuka izin `hr` (Karyawan).
+    assert "hr-people" in j["nav_added"] and "hrd" in j["nav_added"], j["nav_added"]
     assert "turn_alerts" in j and "screens" in j   # jawaban lama tetap
 
 

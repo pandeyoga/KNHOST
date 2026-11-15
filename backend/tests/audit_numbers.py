@@ -34,7 +34,7 @@ def gather_api():
         "/api/home/finance",
         "/api/sales/kpi",
         "/api/sales/leaderboard",
-        "/api/sales-targets",
+        "/api/incentive/targets",   # KM-T5 — dulu /api/sales-targets (dihapus)
         "/api/ar/aging",
         "/api/sales-orders?limit=1",
         "/api/purchase-orders?limit=1",
