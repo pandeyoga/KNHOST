@@ -1270,6 +1270,10 @@
    "sdm",
    "prorata-potongan"
   ],
+  "hr.slip_swalayan_sejak": [
+   "sdm",
+   "lembur"
+  ],
   "catalog.sales_hidden_stages": [
    "stok",
    "memilih-stok"

@@ -462,9 +462,14 @@ async def list_payslips(request: Request, entity_id: Optional[str] = Query(None)
 
 
 @router.get("/hr/payslips/me")
-async def my_payslips(request: Request, period: Optional[str] = Query(None)):
+async def my_payslips(request: Request, period: Optional[str] = Query(None), year: Optional[str] = Query(None)):
+    """PY-T5 — slip TERBIT milik sendiri (`hr.slip_swalayan_sejak` PT slip), per tahun (bawaan tahun berjalan WIB)."""
     user = await current_user(request)
-    return await pay.my_payslips(user, period)
+    from services import hr_payslip_self as _self
+    try:
+        return await _self.my_payslips(user, year=year, period=period)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
 
 
 @router.get("/hr/payslips/{slip_id}")
@@ -494,12 +499,17 @@ async def payslip_pdf(request: Request, slip_id: str):
 
 
 async def _can_view_slip(request: Request, user, slip) -> bool:
-    """Pemilik slip (karyawan ter-link) ATAU pemegang hr.view."""
-    emp = await db.hr_employees.find_one({"user_id": user["id"]}, {"_id": 0, "id": 1})
-    if emp and emp["id"] == slip.get("employee_id"):
-        return True
+    """Pemegang hr.view (slip apa pun) ATAU pemilik slip (karyawan ter-link). PY-T5 — pemilik tanpa hr.view hanya slip
+    yang sudah terbit (`hr_payslip_self.slip_visible_to_owner`); belum terbit → 404 "Slip gaji ini belum terbit."."""
     try:
         await require_permission(request, "hr", "view")
         return True
     except HTTPException:
-        return False
+        pass
+    emp = await db.hr_employees.find_one({"user_id": user["id"]}, {"_id": 0, "id": 1})
+    if emp and emp["id"] == slip.get("employee_id"):
+        from services import hr_payslip_self as _self
+        if not await _self.slip_visible_to_owner(slip):
+            raise HTTPException(status_code=404, detail=_self.BELUM_TERBIT)
+        return True
+    return False

@@ -1,5 +1,5 @@
 <!-- DIHASILKAN OTOMATIS oleh scripts/gen_codebase_map.py — JANGAN EDIT TANGAN -->
-<!-- Dihasilkan dari commit: 41c0b60 pada 2026-11-15 -->
+<!-- Dihasilkan dari commit: eaba57f pada 2026-11-15 -->
 # CODEBASE MAP — Kain Nusantara (dihasilkan otomatis)
 
 Peta ini dihitung dari kode oleh `scripts/gen_codebase_map.py`. Kalau angka di sini
@@ -14,7 +14,7 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 |---|---:|
 | Router (`backend/routers/*.py`) | 173 |
 | Endpoint (`@router.<method>`) | 1871 |
-| Service (`backend/services/*.py`) | 433 |
+| Service (`backend/services/*.py`) | 434 |
 | Koleksi MongoDB disentuh kode produksi | 215 |
 | Direktori fitur frontend (`src/features/*`) | 40 |
 
@@ -194,7 +194,7 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 | `hr_kpi.py` | 5 | 107 | `/hr/kpi`, `/hr/kpi/me`, `/hr/kpi/{kpi_id}` |
 | `hr_leave.py` | 18 | 278 | `/hr/leave-balance/me`, `/hr/leave-balances`, `/hr/leave-balances/set`, `/hr/leave-calendar`, `/hr/leave-requests`, `/hr/leave-requests/me` … |
 | `hr_pay_rules.py` | 6 | 143 | `/hr/employees/{employee_id}/tax-opening`, `/hr/holidays`, `/hr/holidays/{holiday_id}`, `/hr/payroll/overtime-impact` |
-| `hr_payroll.py` | 28 | 505 | `/hr/payroll/components`, `/hr/payroll/components/{comp_id}`, `/hr/payroll/inputs`, `/hr/payroll/inputs/{input_id}/approve`, `/hr/payroll/inputs/{input_id}/cancel`, `/hr/payroll/remittances` … |
+| `hr_payroll.py` | 28 | 515 | `/hr/payroll/components`, `/hr/payroll/components/{comp_id}`, `/hr/payroll/inputs`, `/hr/payroll/inputs/{input_id}/approve`, `/hr/payroll/inputs/{input_id}/cancel`, `/hr/payroll/remittances` … |
 | `hr_tracking.py` | 9 | 254 | `/hr/field-tracks`, `/hr/field-tracks/latest`, `/hr/visits`, `/hr/visits/check-in`, `/hr/visits/me`, `/hr/visits/mine` … |
 | `inbound_receiving.py` | 5 | 332 | `/inbound/tasks`, `/inbound/tasks/{task_id}/complete`, `/inbound/tasks/{task_id}/escalate`, `/inbound/tasks/{task_id}/resolve-escalation`, `/inbound/tasks/{task_id}/scan-receive` |
 | `inbound_receiving_extra.py` | 7 | 300 | `/inbound/po/{po_id}/receiving-goods-document`, `/inbound/qc/queue`, `/inbound/tasks/{task_id}/preview-uom`, `/inbound/tasks/{task_id}/qc-decision`, `/inbound/tasks/{task_id}/uom-options`, `/receiving/uom-settings` |
@@ -478,7 +478,8 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 | `hr_pay_inputs.py` | 296 | PY-T1 (PY-02, K-37, K-40) — antrean masukan komponen gaji (`hr_pay_inputs`). |
 | `hr_pay_rules.py` | 358 | PY-T3 (PY-04, PY-07, PY-08, PY-12; K-38, K-39) — aturan hitung gaji per PT dari Pusat Pengaturan. |
 | `hr_payroll_pdf.py` | 177 | HRD H4 — Payslip PDF (reportlab). Slip gaji ringkas, profesional, Bahasa Indonesia. |
-| `hr_payroll_service.py` | 1239 | HRD H4 — Payroll & Payslip engine + run lifecycle. |
+| `hr_payroll_service.py` | 1227 | HRD H4 — Payroll & Payslip engine + run lifecycle. |
+| `hr_payslip_self.py` | 157 | PY-T5 — swalayan slip gaji karyawan (Profil Saya › kartu "Slip Gaji Saya"). |
 | `hr_remittance_service.py` | 178 | PK-22 (FY-07) — setoran kewajiban gaji: hutang BPJS (2-1700) dan PPh 21 (2-1800) turun lewat dokumen setoran. |
 | `hr_service.py` | 172 | HRD services (FASE H0) — helper murni-orchestration untuk modul HR. |
 | `hr_work_calendar.py` | 170 | PY-T3 (PY-07, PY-08; K-38, K-39) — kalender kerja per PT: hari libur (`hr_holidays`) + pola hari kerja semingg |
@@ -742,12 +743,12 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 
 | Fitur (`src/features/`) | Berkas | Baris |
 |---|---:|---:|
-| `__tests__` | 145 | 24172 |
+| `__tests__` | 146 | 24309 |
 | `admin` | 36 | 6981 |
 | `approvals` | 9 | 1724 |
 | `catalog` | 24 | 1459 |
 | `costing` | 1 | 150 |
-| `crm` | 26 | 5288 |
+| `crm` | 26 | 5299 |
 | `design` | 8 | 1585 |
 | `designer` | 8 | 1628 |
 | `desks` | 2 | 229 |
@@ -755,7 +756,7 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 | `export` | 9 | 700 |
 | `finance` | 107 | 25178 |
 | `home` | 6 | 1191 |
-| `hr` | 38 | 7083 |
+| `hr` | 38 | 7237 |
 | `incentive` | 3 | 1013 |
 | `inspections` | 12 | 2181 |
 | `interco_prices` | 4 | 287 |

@@ -1225,15 +1225,3 @@ async def list_payslips(scope: Dict[str, Any], period: Optional[str] = None,
 
 async def get_payslip(slip_id: str) -> Optional[Dict[str, Any]]:
     return safe_doc(await db.hr_payslips.find_one({"id": slip_id}, {"_id": 0}))
-
-
-async def my_payslips(user: Dict[str, Any], period: Optional[str] = None) -> Dict[str, Any]:
-    emp = await db.hr_employees.find_one({"user_id": user["id"]}, {"_id": 0, "id": 1, "name": 1})
-    if not emp:
-        return {"employee": None, "payslips": []}
-    q: Dict[str, Any] = {"employee_id": emp["id"], "status": {"$in": ["posted", "paid", "approved"]}}
-    if period:
-        q["period"] = period
-    rows = await db.hr_payslips.find(q, {"_id": 0}).sort("period", -1).to_list(200)
-    return {"employee": {"id": emp["id"], "name": emp.get("name", "")},
-            "payslips": [safe_doc(r) for r in rows]}

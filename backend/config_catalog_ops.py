@@ -787,6 +787,19 @@ E("hr.prorata_perubahan_gaji", group="sdm", section="prorata-potongan", type="en
              "services/hr_pay_rules.py:rules"),
   risk="high", requires_reason=True, permission=_HR_PAYROLL)
 
+# PY-T5 — kapan slip terlihat karyawan di Profil Saya (rancangan `09` §3.6 dijadikan pengaturan, `00` §4.1). Bawaan
+# `dibayar`; `disahkan` = perilaku sebelum unit ini. Draf/diajukan/dibatalkan/dianulir selalu tertutup bagi pemiliknya.
+E("hr.slip_swalayan_sejak", group="sdm", section="lembur", type="enum", default="dibayar",
+  options=({"value": "dibayar", "label": "Setelah gaji dibayar"},
+           {"value": "disahkan", "label": "Sejak penggajian disahkan"}),
+  scopes=G,
+  label="Slip terlihat karyawan sejak",
+  help="Menentukan kapan karyawan bisa melihat slip gajinya sendiri di Profil Saya.",
+  impact="Pada pilihan 'disahkan', karyawan melihat slip sebelum uangnya ditransfer.",
+  example="Gaji November disahkan 28 Nov, dibayar 1 Des → 'dibayar': slip muncul 1 Des",
+  consumers=("services/hr_payslip_self.py:visible_since",),
+  risk="medium", permission=_HR_PAYROLL)
+
 # ═══════════════════════════════════════════════════════════════════════════
 # P01 (IMP-12 / IMP-20) — kelayakan jual per tahap & cakupan lokasi kerja gudang
 # ═══════════════════════════════════════════════════════════════════════════

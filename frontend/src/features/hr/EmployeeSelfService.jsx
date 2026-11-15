@@ -207,13 +207,15 @@ export default function EmployeeSelfService({ currentUser }) {
             </div>
           </div>
 
-          {/* Live attendance (H1) + Slip Gaji (H4) + Cuti & Lembur (H3) + KPI Saya (H5) */}
-          <div className="grid grid-cols-1 gap-3 md:grid-cols-2 lg:grid-cols-4">
+          {/* Live attendance (H1) + Cuti & Lembur (H3) + KPI Saya (H5) */}
+          <div className="grid grid-cols-1 gap-3 md:grid-cols-2 lg:grid-cols-3">
             <AttendanceClockCard />
-            <MyPayslipCard />
             <MyLeaveCard />
             <MyKpiCard />
           </div>
+
+          {/* PY-T5 — Slip Gaji Saya: kartu selebar halaman (ringkasan + riwayat per tahun + rincian komponen). */}
+          <MyPayslipCard />
 
           {/* Details */}
           <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
