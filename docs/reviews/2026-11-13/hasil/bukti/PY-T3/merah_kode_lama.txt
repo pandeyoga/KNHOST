@@ -1,0 +1,124 @@
+bringing up nodes...
+bringing up nodes...
+FFFFFFFFFFFFFFFFFFFFFFF                                                  [100%]
+=================================== FAILURES ===================================
+[gw1] linux -- Python 3.11.18 /tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/venv311/bin/python
+E   AssertionError: ('bawaan', 'emp_pyt3s_s1')
+    assert {'kolom': {'a...ahunan': None} == {'kolom': {'a...ahunan': None}
+      Omitting 2 identical items, use -vv to show
+      Differing items:
+      {'kolom': {'allowances': 500000.0, 'base_salary': 7000000.0, 'bpjs_emp': {'jht': 140000.0, 'jp': 70000.0, 'kesehatan': 70000.0}, 'bpjs_emp_total': 280000.0, ...}} != {'kolom': {'allowances': 500000.0, 'base_salary': 7000000.0, 'bpjs_emp': {'jht': 140000.0, 'jp': 70000.0, 'kesehatan': 70000.0}, 'bpjs_emp_total': 280000.0, ...}}
+      {'komponen': [['GAJI_POKOK', 'Gaji Pokok', 7000000.0], ['TUNJANGAN', 'Tunjangan — Transport', 500000.0], ['BPJS_KES', ...an', 70000.0], ['BPJS_JHT', 'BPJS JHT', 140000.0], ['BPJS_JP', 'BPJS...
+      ...Full output truncated (2 lines hidden), use '-vv' to show
+---------------------------- Captured stdout setup -----------------------------
+[bootstrap] SANDI AWAL akun seed (ganti segera): Tj4R-L2p5n-4k-_D
+[bootstrap] FASE F lifecycle backfill: 5 produk distempel 'produksi'
+[bootstrap] kebersihan data: 5 record dirapikan {'customers': 3, 'suppliers': 0, 'users': 0, 'hr_employees': 2, 'makloons': 0}
+/tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/wt27/backend/tests_mem/test_PYT3_setara.py:155: AssertionError: ('bawaan', 'emp_pyt3s_s1')
+[gw0] linux -- Python 3.11.18 /tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/venv311/bin/python
+E   KeyError: "Setting 'hr.prorata_masuk_keluar' tidak ada di registry"
+---------------------------- Captured stdout setup -----------------------------
+[bootstrap] SANDI AWAL akun seed (ganti segera): _ZbWYvat89WyClvq
+[bootstrap] FASE F lifecycle backfill: 5 produk distempel 'produksi'
+[bootstrap] kebersihan data: 5 record dirapikan {'customers': 3, 'suppliers': 0, 'users': 0, 'hr_employees': 2, 'makloons': 0}
+/tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/wt27/backend/config_registry.py:399: KeyError: "Setting 'hr.prorata_masuk_keluar' tidak ada di registry"
+[gw0] linux -- Python 3.11.18 /tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/venv311/bin/python
+E   KeyError: "Setting 'hr.prorata_masuk_keluar' tidak ada di registry"
+/tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/wt27/backend/config_registry.py:399: KeyError: "Setting 'hr.prorata_masuk_keluar' tidak ada di registry"
+[gw0] linux -- Python 3.11.18 /tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/venv311/bin/python
+E   KeyError: "Setting 'hr.prorata_masuk_keluar' tidak ada di registry"
+/tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/wt27/backend/config_registry.py:399: KeyError: "Setting 'hr.prorata_masuk_keluar' tidak ada di registry"
+[gw0] linux -- Python 3.11.18 /tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/venv311/bin/python
+E   KeyError: "Setting 'hr.prorata_masuk_keluar' tidak ada di registry"
+/tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/wt27/backend/config_registry.py:399: KeyError: "Setting 'hr.prorata_masuk_keluar' tidak ada di registry"
+[gw0] linux -- Python 3.11.18 /tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/venv311/bin/python
+E   KeyError: "Setting 'hr.prorata_masuk_keluar' tidak ada di registry"
+During handling of the above exception, another exception occurred:
+E   KeyError: "Setting 'hr.prorata_masuk_keluar' tidak ada di registry"
+/tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/wt27/backend/config_registry.py:399: KeyError: "Setting 'hr.prorata_masuk_keluar' tidak ada di registry"
+[gw0] linux -- Python 3.11.18 /tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/venv311/bin/python
+E   KeyError: "Setting 'hr.prorata_masuk_keluar' tidak ada di registry"
+/tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/wt27/backend/config_registry.py:399: KeyError: "Setting 'hr.prorata_masuk_keluar' tidak ada di registry"
+[gw0] linux -- Python 3.11.18 /tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/venv311/bin/python
+E   KeyError: "Setting 'hr.overtime.sumber' tidak ada di registry"
+/tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/wt27/backend/config_registry.py:399: KeyError: "Setting 'hr.overtime.sumber' tidak ada di registry"
+[gw0] linux -- Python 3.11.18 /tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/venv311/bin/python
+E   KeyError: "Setting 'hr.overtime.sumber' tidak ada di registry"
+/tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/wt27/backend/config_registry.py:399: KeyError: "Setting 'hr.overtime.sumber' tidak ada di registry"
+[gw0] linux -- Python 3.11.18 /tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/venv311/bin/python
+E   AssertionError: {"detail":"Not Found"}
+    assert 404 == 200
+     +  where 404 = <Response [404 Not Found]>.status_code
+/tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/wt27/backend/tests_mem/test_PYT3_aturan_hitung.py:263: AssertionError: {"detail":"Not Found"}
+[gw0] linux -- Python 3.11.18 /tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/venv311/bin/python
+E   KeyError: "Setting 'hr.overtime.mode' tidak ada di registry"
+/tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/wt27/backend/config_registry.py:399: KeyError: "Setting 'hr.overtime.mode' tidak ada di registry"
+[gw0] linux -- Python 3.11.18 /tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/venv311/bin/python
+E   ImportError: cannot import name 'hr_work_calendar' from 'services' (/tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/wt27/backend/services/__init__.py)
+/tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/wt27/backend/tests_mem/test_PYT3_aturan_hitung.py:291: ImportError: cannot import name 'hr_work_calendar' from 'services' (/tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/wt27/backend/services/__init__.py)
+[gw0] linux -- Python 3.11.18 /tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/venv311/bin/python
+E   assert 50000.0 == 60000
+/tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/wt27/backend/tests_mem/test_PYT3_aturan_hitung.py:315: assert 50000.0 == 60000
+[gw0] linux -- Python 3.11.18 /tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/venv311/bin/python
+E   AssertionError: {"detail":"Not Found"}
+    assert 404 == 200
+     +  where 404 = <Response [404 Not Found]>.status_code
+/tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/wt27/backend/tests_mem/test_PYT3_aturan_hitung.py:333: AssertionError: {"detail":"Not Found"}
+[gw0] linux -- Python 3.11.18 /tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/venv311/bin/python
+E   AssertionError: {"detail":"Not Found"}
+    assert (404 == 400)
+     +  where 404 = <Response [404 Not Found]>.status_code
+/tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/wt27/backend/tests_mem/test_PYT3_aturan_hitung.py:357: AssertionError: {"detail":"Not Found"}
+[gw0] linux -- Python 3.11.18 /tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/venv311/bin/python
+E   KeyError: "Setting 'hr.overtime.hitung_absensi' tidak ada di registry"
+/tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/wt27/backend/config_registry.py:399: KeyError: "Setting 'hr.overtime.hitung_absensi' tidak ada di registry"
+[gw0] linux -- Python 3.11.18 /tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/venv311/bin/python
+E   KeyError: "Setting 'hr.prorata_masuk_keluar' tidak ada di registry"
+/tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/wt27/backend/config_registry.py:399: KeyError: "Setting 'hr.prorata_masuk_keluar' tidak ada di registry"
+[gw0] linux -- Python 3.11.18 /tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/venv311/bin/python
+E   AssertionError: {"detail": "Not Found"}
+    assert 404 == 403
+     +  where 404 = <Response [404 Not Found]>.status_code
+/tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/wt27/backend/tests_mem/test_PYT3_aturan_hitung.py:423: AssertionError: {"detail": "Not Found"}
+[gw0] linux -- Python 3.11.18 /tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/venv311/bin/python
+E   AssertionError: {"detail":"Not Found"}
+    assert 404 == 200
+     +  where 404 = <Response [404 Not Found]>.status_code
+/tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/wt27/backend/tests_mem/test_PYT3_aturan_hitung.py:457: AssertionError: {"detail":"Not Found"}
+[gw0] linux -- Python 3.11.18 /tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/venv311/bin/python
+E   ImportError: cannot import name 'hr_work_calendar' from 'services' (/tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/wt27/backend/services/__init__.py)
+/tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/wt27/backend/tests_mem/test_PYT3_aturan_hitung.py:468: ImportError: cannot import name 'hr_work_calendar' from 'services' (/tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/wt27/backend/services/__init__.py)
+[gw0] linux -- Python 3.11.18 /tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/venv311/bin/python
+E   KeyError: "Setting 'hr.potongan_alpha' tidak ada di registry"
+/tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/wt27/backend/config_registry.py:399: KeyError: "Setting 'hr.potongan_alpha' tidak ada di registry"
+[gw0] linux -- Python 3.11.18 /tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/venv311/bin/python
+E   KeyError: "Setting 'hr.potongan_cuti_tanpa_gaji' tidak ada di registry"
+/tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/wt27/backend/config_registry.py:399: KeyError: "Setting 'hr.potongan_cuti_tanpa_gaji' tidak ada di registry"
+[gw0] linux -- Python 3.11.18 /tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/venv311/bin/python
+E   KeyError: "Setting 'hr.potongan_telat_per_menit' tidak ada di registry"
+/tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/wt27/backend/config_registry.py:399: KeyError: "Setting 'hr.potongan_telat_per_menit' tidak ada di registry"
+=========================== short test summary info ============================
+FAILED tests_mem/test_PYT3_setara.py::test_PYT3_a_setara_kode_lama[asyncio]
+FAILED tests_mem/test_PYT3_aturan_hitung.py::test_PYT3_U1_prorata_mati_gaji_penuh[asyncio]
+FAILED tests_mem/test_PYT3_aturan_hitung.py::test_PYT3_U2_prorata_hari_kalender_per_pt[asyncio]
+FAILED tests_mem/test_PYT3_aturan_hitung.py::test_PYT3_U3a_prorata_hari_kerja[asyncio]
+FAILED tests_mem/test_PYT3_aturan_hitung.py::test_PYT3_U16_pembulatan_rupiah[asyncio]
+FAILED tests_mem/test_PYT3_aturan_hitung.py::test_PYT3_U4_masuk_sesudah_periode_tidak_digaji[asyncio]
+FAILED tests_mem/test_PYT3_aturan_hitung.py::test_PYT3_U5_prorata_keluar[asyncio]
+FAILED tests_mem/test_PYT3_aturan_hitung.py::test_PYT3_U9a_sumber_absensi_dan_ambang[asyncio]
+FAILED tests_mem/test_PYT3_aturan_hitung.py::test_PYT3_U9b_bawaan_hanya_pengajuan[asyncio]
+FAILED tests_mem/test_PYT3_aturan_hitung.py::test_PYT3_dampak_lembur_absensi[asyncio]
+FAILED tests_mem/test_PYT3_aturan_hitung.py::test_PYT3_U10_mode_flat_dan_simulator[asyncio]
+FAILED tests_mem/test_PYT3_aturan_hitung.py::test_PYT3_U12_hari_kerja_seminggu[asyncio]
+FAILED tests_mem/test_PYT3_aturan_hitung.py::test_PYT3_U13_dasar_bpjs_dari_tanda_komponen[asyncio]
+FAILED tests_mem/test_PYT3_aturan_hitung.py::test_PYT3_U14_saldo_awal_pajak[asyncio]
+FAILED tests_mem/test_PYT3_aturan_hitung.py::test_PYT3_U14b_saldo_awal_validasi_dan_terkunci[asyncio]
+FAILED tests_mem/test_PYT3_aturan_hitung.py::test_PYT3_U15_menit_lembur_absensi[asyncio]
+FAILED tests_mem/test_PYT3_aturan_hitung.py::test_PYT3_U17_kunci_pengaturan[asyncio]
+FAILED tests_mem/test_PYT3_aturan_hitung.py::test_PYT3_U18_izin_dan_hari_libur[asyncio]
+FAILED tests_mem/test_PYT3_aturan_hitung.py::test_PYT3_U3b_libur_mengurangi_hari_kerja[asyncio]
+FAILED tests_mem/test_PYT3_aturan_hitung.py::test_PYT3_U11_lembur_hari_libur[asyncio]
+FAILED tests_mem/test_PYT3_aturan_hitung.py::test_PYT3_U6_potongan_tidak_hadir_dan_jurnal[asyncio]
+FAILED tests_mem/test_PYT3_aturan_hitung.py::test_PYT3_U7_potongan_cuti_tanpa_gaji[asyncio]
+FAILED tests_mem/test_PYT3_aturan_hitung.py::test_PYT3_U8_potongan_terlambat[asyncio]
+23 failed in 15.33s

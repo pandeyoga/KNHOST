@@ -1,0 +1,42 @@
+== test_bp_PYT3_data_acuan
+.
+Dampak K-39 (menit lembur absensi tanpa pengajuan yang dibayar bila sumber = absensi):
+  ent_ksc 2026-11: 4 karyawan · 148 menit · Rp 200,505.80 (sumber sekarang: pengajuan)
+  ent_ksc 2026-10: 0 karyawan · 0 menit · Rp 0.00 (sumber sekarang: pengajuan)
+  ent_ksc 2026-09: 0 karyawan · 0 menit · Rp 0.00 (sumber sekarang: pengajuan)
+  ent_kanda 2026-11: 0 karyawan · 0 menit · Rp 0.00 (sumber sekarang: pengajuan)
+  ent_kanda 2026-10: 0 karyawan · 0 menit · Rp 0.00 (sumber sekarang: pengajuan)
+  ent_kanda 2026-09: 0 karyawan · 0 menit · Rp 0.00 (sumber sekarang: pengajuan)
+  ent_e51f009c7613 2026-11: 0 karyawan · 0 menit · Rp 0.00 (sumber sekarang: pengajuan)
+  ent_e51f009c7613 2026-10: 0 karyawan · 0 menit · Rp 0.00 (sumber sekarang: pengajuan)
+  ent_e51f009c7613 2026-09: 0 karyawan · 0 menit · Rp 0.00 (sumber sekarang: pengajuan)
+.Dampak lembur PT ent_ksc 2026-11: 4 karyawan · 148 menit absensi tanpa pengajuan · Rp 200,505.80
+Dampak lembur PT ent_ksc 2026-10: 0 karyawan · 0 menit absensi tanpa pengajuan · Rp 0.00
+Dampak lembur PT ent_ksc 2026-09: 0 karyawan · 0 menit absensi tanpa pengajuan · Rp 0.00
+Dampak lembur PT ent_kanda 2026-11: 0 karyawan · 0 menit absensi tanpa pengajuan · Rp 0.00
+Dampak lembur PT ent_kanda 2026-10: 0 karyawan · 0 menit absensi tanpa pengajuan · Rp 0.00
+Dampak lembur PT ent_kanda 2026-09: 0 karyawan · 0 menit absensi tanpa pengajuan · Rp 0.00
+Dampak lembur PT ent_e51f009c7613 2026-11: 0 karyawan · 0 menit absensi tanpa pengajuan · Rp 0.00
+Dampak lembur PT ent_e51f009c7613 2026-10: 0 karyawan · 0 menit absensi tanpa pengajuan · Rp 0.00
+Dampak lembur PT ent_e51f009c7613 2026-09: 0 karyawan · 0 menit absensi tanpa pengajuan · Rp 0.00
+Ringkasan: 0 komponen akan ditandai Diprorata · 0 komponen potongan belum ada · 0 tanggal libur lama · 0 komponen buatan pengguna bertanda dasar · 0 slip draf karyawan masuk kemudian
+Mode baca-saja: tidak ada yang diubah. Pakai --apply untuk menandai (data nyata = keputusan pemilik).
+.
+3 passed in 1.15s
+== test_bp_PK14_indeks_wajib
+.........
+9 passed in 63.52s (0:01:03)
+== test_bp_PYT2_migrasi
+PT ent_e51f009c7613: 4 karyawan tanpa riwayat · gaji pokok + tunjangan master Rp 20.500.000 · nilai baris yang dibuat Rp 20.500.000 → SAMA
+PT ent_kanda: 3 karyawan tanpa riwayat · gaji pokok + tunjangan master Rp 15.500.000 · nilai baris yang dibuat Rp 15.500.000 → SAMA
+PT ent_ksc: 16 karyawan tanpa riwayat · gaji pokok + tunjangan master Rp 96.300.000 · nilai baris yang dibuat Rp 96.300.000 → SAMA
+Ringkasan: 23 karyawan · 23 tanpa riwayat lengkap (23 tanpa kompensasi, 23 tanpa penugasan) · 0 memakai tanggal dibuat
+Mode baca-saja: tidak ada yang diubah. Pakai --apply untuk menulis (data nyata = keputusan pemilik).
+.s.
+tests/test_bp_PYT2_migrasi.py::test_U11_dua_pengesahan_bersamaan_satu_baris_sah
+2 passed, 1 skipped, 1 warning in 0.80s
+== test_bp_PYT1_data_acuan
+[U2] 2 proses, 12 slip diperiksa, 0 berselisih
+..
+tests/test_bp_PYT1_data_acuan.py::test_U2_slip_data_acuan_sama_dengan_komponen
+2 passed, 1 warning in 1.56s

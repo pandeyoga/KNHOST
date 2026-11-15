@@ -1,0 +1,2 @@
+FAILED tests_mem/test_PK18_penanda_gagal.py::test_PK18_U14_penjaga_cakupan_posting[arg0]
+1 failed, 1941 passed, 2 skipped, 2 xfailed in 1544.83s (0:25:44)

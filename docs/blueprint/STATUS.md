@@ -81,14 +81,14 @@ Papan kerja agen pelaksana. Aturan mengubahnya: `00_ATURAN_EKSEKUSI.md` §5. Uru
 | 74 | PM-T1 | Induk cara bayar dan rekening ber-peruntukan | KF-T1 | selesai | `fd606e5` | [PM-T1](../reviews/2026-11-13/hasil/PM-T1.md) |  |
 | 75 | CR-T1 | Profil kredit per pelanggan per PT | PK-45, KF-T6, KF-T7 | selesai | 281374f | [CR-T1](../reviews/2026-11-13/hasil/CR-T1.md) |  |
 | 76 | KM-T1 | Data insentif: omzet terkirim, pencairan, harga acuan, target | PK-19 | selesai | b9753a3 | [KM-T1](../reviews/2026-11-13/hasil/KM-T1.md) | H3: migrasi target lama (migrate_sales_targets_km_t1.py) & isi harga acuan pesanan lama di data nyata; H6: kunci target kembar |
-| 77 | KM-T2 | Layar Capaian (cari dan jumlahkan) | KM-T1, PK-41 | dikerjakan |  |  | Dikerjakan paralel (worktree terpisah), 15 Nov |
+| 77 | KM-T2 | Layar Capaian (cari dan jumlahkan) | KM-T1, PK-41 | selesai | 4b219c4 | [KM-T2](../reviews/2026-11-13/hasil/KM-T2.md) | Pembanding H5 (dasar omzet, sumber harga acuan) tetap bawaan; kinerja periode panjang belum diukur |
 | 78 | AG-T1 | Asisten: rapikan kartu tindakan yang ada | PK-02 | selesai | 3e1a42c | [AG-T1](../reviews/2026-11-13/hasil/AG-T1.md) |  |
 | 79 | AG-T2 | Asisten: baca keuangan lewat pintu aplikasi | AG-T1, PK-09, PK-16, PK-17, PR-T3 | selesai | 4ffc907 | [AG-T2](../reviews/2026-11-13/hasil/AG-T2.md) |  |
 | 80 | PY-T1 | Komponen gaji per PT, antrean masukan, jenis proses gaji | PK-22 | selesai | 64143aa | [PY-T1](../reviews/2026-11-13/hasil/PY-T1.md) | H4: tarif PPh 21 tabel bawaan PK-46 belum diverifikasi; H3/H6: migrasi proses gaji lama (migrasi_pyt1_proses_gaji.py --apply) |
 | 81 | PY-T2 | Riwayat kompensasi dan penugasan PT | PY-T1 | selesai | 82ef1bb | [PY-T2](../reviews/2026-11-13/hasil/PY-T2.md) | H3: migrasi riwayat kompensasi (migrate_hr_compensation_py_t2.py --apply) di data nyata; regresi lembur/komisi slip reguler (ditemukan PY-T3) diperbaiki PY-T3 (a) — proses gaji yang dihitung dengan PY-T2 dihitung ulang/susulan (H3) |
-| 82 | PY-T3 | Aturan hitung gaji dari pengaturan | PY-T1 | dikerjakan |  |  | Dikerjakan paralel (worktree terpisah), 15 Nov |
+| 82 | PY-T3 | Aturan hitung gaji dari pengaturan | PY-T1 | selesai | 649b7dc | [PY-T3](../reviews/2026-11-13/hasil/PY-T3.md) | K-39: lembur absensi tanpa pengajuan tidak dibayar (dampak data acuan ent_ksc Nov Rp 200.505,80); H4 hari libur diisi pemilik; H3 migrasi_pyt3_aturan_gaji.py --apply; memperbaiki regresi lembur/komisi PY-T2 |
 | 83 | PY-T4 | Bayar gaji dan setor kewajiban | PY-T1, PM-T1 | dikerjakan |  |  | Dikerjakan paralel (worktree terpisah), 15 Nov |
-| 84 | KM-T3 | Lembar Insentif (dokumen keputusan) | KM-T2, KF-T6 | menunggu |  |  |  |
+| 84 | KM-T3 | Lembar Insentif (dokumen keputusan) | KM-T2, KF-T6 | siap |  |  |  |
 | 85 | KM-T4 | Lembar Insentif masuk gaji dan buku besar | KM-T3, PY-T1 | menunggu |  |  | Titik henti H5 |
 | 86 | KM-T5 | Kartu "Capaian & Insentif Saya"; layar lama dipindah | KM-T4, MN-T1 | menunggu |  |  |  |
 | 87 | PY-T5 | Swalayan karyawan: slip setelah dibayar | PY-T1 | siap |  |  |  |

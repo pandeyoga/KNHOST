@@ -1,0 +1,1058 @@
+{
+ "bawaan": {
+  "jumlah_slip": [
+   "emp_pyt3s_s1",
+   "emp_pyt3s_s2",
+   "emp_pyt3s_s3",
+   "emp_pyt3s_s4",
+   "emp_pyt3s_s5"
+  ],
+  "slip": {
+   "emp_pyt3s_s1": {
+    "kolom": {
+     "allowances": 500000.0,
+     "base_salary": 7000000.0,
+     "bpjs_emp": {
+      "jht": 140000.0,
+      "jp": 70000.0,
+      "kesehatan": 70000.0
+     },
+     "bpjs_emp_total": 280000.0,
+     "bpjs_er": {
+      "jht": 259000.0,
+      "jkk": 37800.0,
+      "jkm": 21000.0,
+      "jp": 140000.0,
+      "kesehatan": 280000.0
+     },
+     "bpjs_er_total": 737800.0,
+     "commission": 0.0,
+     "gross": 7500000.0,
+     "net": 7141612.0,
+     "other_deductions": 0.0,
+     "other_earnings": 0.0,
+     "overtime": 0.0,
+     "overtime_auto_min": 90,
+     "overtime_filed_min": 660,
+     "overtime_min": 750,
+     "pph21": 78388.0,
+     "pph21_method": "ter",
+     "pph21_month": 78388.0,
+     "pph21_rate": 0.01,
+     "salary_earnings": 7500000.0,
+     "tax_gross": 7838800.0,
+     "ter_category": "B"
+    },
+    "komponen": [
+     [
+      "GAJI_POKOK",
+      "Gaji Pokok",
+      7000000.0
+     ],
+     [
+      "TUNJANGAN",
+      "Tunjangan — Transport",
+      500000.0
+     ],
+     [
+      "BPJS_KES",
+      "BPJS Kesehatan",
+      70000.0
+     ],
+     [
+      "BPJS_JHT",
+      "BPJS JHT",
+      140000.0
+     ],
+     [
+      "BPJS_JP",
+      "BPJS JP",
+      70000.0
+     ],
+     [
+      "PPH21",
+      "PPh 21",
+      78388.0
+     ],
+     [
+      "BPJS_KES_PT",
+      "BPJS Kesehatan (perusahaan)",
+      280000.0
+     ],
+     [
+      "BPJS_JHT_PT",
+      "BPJS JHT (perusahaan)",
+      259000.0
+     ],
+     [
+      "BPJS_JP_PT",
+      "BPJS JP (perusahaan)",
+      140000.0
+     ],
+     [
+      "BPJS_JKK",
+      "BPJS JKK",
+      37800.0
+     ],
+     [
+      "BPJS_JKM",
+      "BPJS JKM",
+      21000.0
+     ]
+    ],
+    "lembur": [
+     [
+      "2026-11-02",
+      "filed",
+      180,
+      "workday",
+      5.5,
+      222543.35
+     ],
+     [
+      "2026-11-04",
+      "filed",
+      180,
+      "holiday",
+      6.0,
+      242774.57
+     ],
+     [
+      "2026-11-05",
+      "attendance",
+      90,
+      "workday",
+      2.5,
+      101156.07
+     ],
+     [
+      "2026-11-07",
+      "filed",
+      300,
+      "rest",
+      10.0,
+      404624.28
+     ]
+    ],
+    "tahunan": null
+   },
+   "emp_pyt3s_s2": {
+    "kolom": {
+     "allowances": 1900000.0,
+     "base_salary": 12500000.0,
+     "bpjs_emp": {
+      "jht": 250000.0,
+      "jp": 100423.0,
+      "kesehatan": 120000.0
+     },
+     "bpjs_emp_total": 470423.0,
+     "bpjs_er": {
+      "jht": 462500.0,
+      "jkk": 67500.0,
+      "jkm": 37500.0,
+      "jp": 200846.0,
+      "kesehatan": 480000.0
+     },
+     "bpjs_er_total": 1248346.0,
+     "commission": 0.0,
+     "gross": 14400000.0,
+     "net": 13330177.0,
+     "other_deductions": 0.0,
+     "other_earnings": 0.0,
+     "overtime": 0.0,
+     "overtime_auto_min": 0,
+     "overtime_filed_min": 0,
+     "overtime_min": 0,
+     "pph21": 599400.0,
+     "pph21_method": "ter",
+     "pph21_month": 599400.0,
+     "pph21_rate": 0.04,
+     "salary_earnings": 14400000.0,
+     "tax_gross": 14985000.0,
+     "ter_category": "B"
+    },
+    "komponen": [
+     [
+      "GAJI_POKOK",
+      "Gaji Pokok",
+      12500000.0
+     ],
+     [
+      "TUNJANGAN",
+      "Tunjangan — Jabatan",
+      1500000.0
+     ],
+     [
+      "TUNJANGAN",
+      "Tunjangan — Makan",
+      400000.0
+     ],
+     [
+      "BPJS_KES",
+      "BPJS Kesehatan",
+      120000.0
+     ],
+     [
+      "BPJS_JHT",
+      "BPJS JHT",
+      250000.0
+     ],
+     [
+      "BPJS_JP",
+      "BPJS JP",
+      100423.0
+     ],
+     [
+      "PPH21",
+      "PPh 21",
+      599400.0
+     ],
+     [
+      "BPJS_KES_PT",
+      "BPJS Kesehatan (perusahaan)",
+      480000.0
+     ],
+     [
+      "BPJS_JHT_PT",
+      "BPJS JHT (perusahaan)",
+      462500.0
+     ],
+     [
+      "BPJS_JP_PT",
+      "BPJS JP (perusahaan)",
+      200846.0
+     ],
+     [
+      "BPJS_JKK",
+      "BPJS JKK",
+      67500.0
+     ],
+     [
+      "BPJS_JKM",
+      "BPJS JKM",
+      37500.0
+     ]
+    ],
+    "lembur": [],
+    "tahunan": null
+   },
+   "emp_pyt3s_s3": {
+    "kolom": {
+     "allowances": 0.0,
+     "base_salary": 4000000.0,
+     "bpjs_emp": {
+      "jht": 80000.0,
+      "jp": 40000.0,
+      "kesehatan": 40000.0
+     },
+     "bpjs_emp_total": 160000.0,
+     "bpjs_er": {
+      "jht": 148000.0,
+      "jkk": 21600.0,
+      "jkm": 12000.0,
+      "jp": 80000.0,
+      "kesehatan": 160000.0
+     },
+     "bpjs_er_total": 421600.0,
+     "commission": 0.0,
+     "gross": 4000000.0,
+     "net": 3840000.0,
+     "other_deductions": 0.0,
+     "other_earnings": 0.0,
+     "overtime": 0.0,
+     "overtime_auto_min": 0,
+     "overtime_filed_min": 0,
+     "overtime_min": 0,
+     "pph21": 0.0,
+     "pph21_method": "ter",
+     "pph21_month": 0.0,
+     "pph21_rate": 0.0,
+     "salary_earnings": 4000000.0,
+     "tax_gross": 4193600.0,
+     "ter_category": "B"
+    },
+    "komponen": [
+     [
+      "GAJI_POKOK",
+      "Gaji Pokok",
+      4000000.0
+     ],
+     [
+      "BPJS_KES",
+      "BPJS Kesehatan",
+      40000.0
+     ],
+     [
+      "BPJS_JHT",
+      "BPJS JHT",
+      80000.0
+     ],
+     [
+      "BPJS_JP",
+      "BPJS JP",
+      40000.0
+     ],
+     [
+      "PPH21",
+      "PPh 21",
+      0.0
+     ],
+     [
+      "BPJS_KES_PT",
+      "BPJS Kesehatan (perusahaan)",
+      160000.0
+     ],
+     [
+      "BPJS_JHT_PT",
+      "BPJS JHT (perusahaan)",
+      148000.0
+     ],
+     [
+      "BPJS_JP_PT",
+      "BPJS JP (perusahaan)",
+      80000.0
+     ],
+     [
+      "BPJS_JKK",
+      "BPJS JKK",
+      21600.0
+     ],
+     [
+      "BPJS_JKM",
+      "BPJS JKM",
+      12000.0
+     ]
+    ],
+    "lembur": [],
+    "tahunan": null
+   },
+   "emp_pyt3s_s4": {
+    "kolom": {
+     "allowances": 0.0,
+     "base_salary": 6000000.0,
+     "bpjs_emp": {
+      "jht": 120000.0,
+      "jp": 60000.0,
+      "kesehatan": 60000.0
+     },
+     "bpjs_emp_total": 240000.0,
+     "bpjs_er": {
+      "jht": 222000.0,
+      "jkk": 32400.0,
+      "jkm": 18000.0,
+      "jp": 120000.0,
+      "kesehatan": 240000.0
+     },
+     "bpjs_er_total": 632400.0,
+     "commission": 0.0,
+     "gross": 6000000.0,
+     "net": 6480000.0,
+     "other_deductions": 0.0,
+     "other_earnings": 0.0,
+     "overtime": 0.0,
+     "overtime_auto_min": 0,
+     "overtime_filed_min": 0,
+     "overtime_min": 0,
+     "pph21": -720000.0,
+     "pph21_method": "annual_pasal17",
+     "pph21_month": -720000.0,
+     "pph21_rate": 0.0,
+     "salary_earnings": 6000000.0,
+     "tax_gross": 6290400.0,
+     "ter_category": "A"
+    },
+    "komponen": [
+     [
+      "GAJI_POKOK",
+      "Gaji Pokok",
+      6000000.0
+     ],
+     [
+      "BPJS_KES",
+      "BPJS Kesehatan",
+      60000.0
+     ],
+     [
+      "BPJS_JHT",
+      "BPJS JHT",
+      120000.0
+     ],
+     [
+      "BPJS_JP",
+      "BPJS JP",
+      60000.0
+     ],
+     [
+      "PPH21",
+      "PPh 21",
+      -720000.0
+     ],
+     [
+      "BPJS_KES_PT",
+      "BPJS Kesehatan (perusahaan)",
+      240000.0
+     ],
+     [
+      "BPJS_JHT_PT",
+      "BPJS JHT (perusahaan)",
+      222000.0
+     ],
+     [
+      "BPJS_JP_PT",
+      "BPJS JP (perusahaan)",
+      120000.0
+     ],
+     [
+      "BPJS_JKK",
+      "BPJS JKK",
+      32400.0
+     ],
+     [
+      "BPJS_JKM",
+      "BPJS JKM",
+      18000.0
+     ]
+    ],
+    "lembur": [],
+    "tahunan": {
+     "annual_tax": 0.0,
+     "biaya_jabatan": 2726520.0,
+     "months": 9,
+     "neto": 50183880.0,
+     "pension_deduction": 1620000.0,
+     "pkp": 0.0,
+     "prior_withheld": 720000.0,
+     "ptkp": 54000000.0,
+     "tax_gross": 54530400.0
+    }
+   },
+   "emp_pyt3s_s5": {
+    "kolom": {
+     "allowances": 0.0,
+     "base_salary": 5500000.0,
+     "bpjs_emp": {
+      "jht": 110000.0,
+      "jp": 55000.0,
+      "kesehatan": 55000.0
+     },
+     "bpjs_emp_total": 220000.0,
+     "bpjs_er": {
+      "jht": 203500.0,
+      "jkk": 29700.0,
+      "jkm": 16500.0,
+      "jp": 110000.0,
+      "kesehatan": 220000.0
+     },
+     "bpjs_er_total": 579700.0,
+     "commission": 0.0,
+     "gross": 5500000.0,
+     "net": 5251169.0,
+     "other_deductions": 0.0,
+     "other_earnings": 0.0,
+     "overtime": 0.0,
+     "overtime_auto_min": 200,
+     "overtime_filed_min": 0,
+     "overtime_min": 200,
+     "pph21": 28831.0,
+     "pph21_method": "ter",
+     "pph21_month": 28831.0,
+     "pph21_rate": 0.005,
+     "salary_earnings": 5500000.0,
+     "tax_gross": 5766200.0,
+     "ter_category": "A"
+    },
+    "komponen": [
+     [
+      "GAJI_POKOK",
+      "Gaji Pokok",
+      5500000.0
+     ],
+     [
+      "BPJS_KES",
+      "BPJS Kesehatan",
+      55000.0
+     ],
+     [
+      "BPJS_JHT",
+      "BPJS JHT",
+      110000.0
+     ],
+     [
+      "BPJS_JP",
+      "BPJS JP",
+      55000.0
+     ],
+     [
+      "PPH21",
+      "PPh 21",
+      28831.0
+     ],
+     [
+      "BPJS_KES_PT",
+      "BPJS Kesehatan (perusahaan)",
+      220000.0
+     ],
+     [
+      "BPJS_JHT_PT",
+      "BPJS JHT (perusahaan)",
+      203500.0
+     ],
+     [
+      "BPJS_JP_PT",
+      "BPJS JP (perusahaan)",
+      110000.0
+     ],
+     [
+      "BPJS_JKK",
+      "BPJS JKK",
+      29700.0
+     ],
+     [
+      "BPJS_JKM",
+      "BPJS JKM",
+      16500.0
+     ]
+    ],
+    "lembur": [
+     [
+      "2026-11-10",
+      "attendance",
+      200,
+      "workday",
+      6.1667,
+      196050.1
+     ]
+    ],
+    "tahunan": null
+   }
+  }
+ },
+ "lama_flat_enam_hari": {
+  "jumlah_slip": [
+   "emp_pyt3s_s1",
+   "emp_pyt3s_s2",
+   "emp_pyt3s_s3",
+   "emp_pyt3s_s4",
+   "emp_pyt3s_s5"
+  ],
+  "slip": {
+   "emp_pyt3s_s1": {
+    "kolom": {
+     "allowances": 500000.0,
+     "base_salary": 7000000.0,
+     "bpjs_emp": {
+      "jht": 140000.0,
+      "jp": 70000.0,
+      "kesehatan": 70000.0
+     },
+     "bpjs_emp_total": 280000.0,
+     "bpjs_er": {
+      "jht": 259000.0,
+      "jkk": 37800.0,
+      "jkm": 21000.0,
+      "jp": 140000.0,
+      "kesehatan": 280000.0
+     },
+     "bpjs_er_total": 737800.0,
+     "commission": 0.0,
+     "gross": 7500000.0,
+     "net": 7141612.0,
+     "other_deductions": 0.0,
+     "other_earnings": 0.0,
+     "overtime": 0.0,
+     "overtime_auto_min": 90,
+     "overtime_filed_min": 660,
+     "overtime_min": 750,
+     "pph21": 78388.0,
+     "pph21_method": "ter",
+     "pph21_month": 78388.0,
+     "pph21_rate": 0.01,
+     "salary_earnings": 7500000.0,
+     "tax_gross": 7838800.0,
+     "ter_category": "B"
+    },
+    "komponen": [
+     [
+      "GAJI_POKOK",
+      "Gaji Pokok",
+      7000000.0
+     ],
+     [
+      "TUNJANGAN",
+      "Tunjangan — Transport",
+      500000.0
+     ],
+     [
+      "BPJS_KES",
+      "BPJS Kesehatan",
+      70000.0
+     ],
+     [
+      "BPJS_JHT",
+      "BPJS JHT",
+      140000.0
+     ],
+     [
+      "BPJS_JP",
+      "BPJS JP",
+      70000.0
+     ],
+     [
+      "PPH21",
+      "PPh 21",
+      78388.0
+     ],
+     [
+      "BPJS_KES_PT",
+      "BPJS Kesehatan (perusahaan)",
+      280000.0
+     ],
+     [
+      "BPJS_JHT_PT",
+      "BPJS JHT (perusahaan)",
+      259000.0
+     ],
+     [
+      "BPJS_JP_PT",
+      "BPJS JP (perusahaan)",
+      140000.0
+     ],
+     [
+      "BPJS_JKK",
+      "BPJS JKK",
+      37800.0
+     ],
+     [
+      "BPJS_JKM",
+      "BPJS JKM",
+      21000.0
+     ]
+    ],
+    "lembur": [
+     [
+      "2026-11-02",
+      "filed",
+      180,
+      "workday",
+      5.25,
+      212427.75
+     ],
+     [
+      "2026-11-04",
+      "filed",
+      180,
+      "holiday",
+      5.25,
+      212427.75
+     ],
+     [
+      "2026-11-05",
+      "attendance",
+      90,
+      "workday",
+      2.625,
+      106213.87
+     ],
+     [
+      "2026-11-07",
+      "filed",
+      300,
+      "workday",
+      8.75,
+      354046.24
+     ]
+    ],
+    "tahunan": null
+   },
+   "emp_pyt3s_s2": {
+    "kolom": {
+     "allowances": 1900000.0,
+     "base_salary": 12500000.0,
+     "bpjs_emp": {
+      "jht": 250000.0,
+      "jp": 100423.0,
+      "kesehatan": 120000.0
+     },
+     "bpjs_emp_total": 470423.0,
+     "bpjs_er": {
+      "jht": 462500.0,
+      "jkk": 67500.0,
+      "jkm": 37500.0,
+      "jp": 200846.0,
+      "kesehatan": 480000.0
+     },
+     "bpjs_er_total": 1248346.0,
+     "commission": 0.0,
+     "gross": 14400000.0,
+     "net": 13330177.0,
+     "other_deductions": 0.0,
+     "other_earnings": 0.0,
+     "overtime": 0.0,
+     "overtime_auto_min": 0,
+     "overtime_filed_min": 0,
+     "overtime_min": 0,
+     "pph21": 599400.0,
+     "pph21_method": "ter",
+     "pph21_month": 599400.0,
+     "pph21_rate": 0.04,
+     "salary_earnings": 14400000.0,
+     "tax_gross": 14985000.0,
+     "ter_category": "B"
+    },
+    "komponen": [
+     [
+      "GAJI_POKOK",
+      "Gaji Pokok",
+      12500000.0
+     ],
+     [
+      "TUNJANGAN",
+      "Tunjangan — Jabatan",
+      1500000.0
+     ],
+     [
+      "TUNJANGAN",
+      "Tunjangan — Makan",
+      400000.0
+     ],
+     [
+      "BPJS_KES",
+      "BPJS Kesehatan",
+      120000.0
+     ],
+     [
+      "BPJS_JHT",
+      "BPJS JHT",
+      250000.0
+     ],
+     [
+      "BPJS_JP",
+      "BPJS JP",
+      100423.0
+     ],
+     [
+      "PPH21",
+      "PPh 21",
+      599400.0
+     ],
+     [
+      "BPJS_KES_PT",
+      "BPJS Kesehatan (perusahaan)",
+      480000.0
+     ],
+     [
+      "BPJS_JHT_PT",
+      "BPJS JHT (perusahaan)",
+      462500.0
+     ],
+     [
+      "BPJS_JP_PT",
+      "BPJS JP (perusahaan)",
+      200846.0
+     ],
+     [
+      "BPJS_JKK",
+      "BPJS JKK",
+      67500.0
+     ],
+     [
+      "BPJS_JKM",
+      "BPJS JKM",
+      37500.0
+     ]
+    ],
+    "lembur": [],
+    "tahunan": null
+   },
+   "emp_pyt3s_s3": {
+    "kolom": {
+     "allowances": 0.0,
+     "base_salary": 4000000.0,
+     "bpjs_emp": {
+      "jht": 80000.0,
+      "jp": 40000.0,
+      "kesehatan": 40000.0
+     },
+     "bpjs_emp_total": 160000.0,
+     "bpjs_er": {
+      "jht": 148000.0,
+      "jkk": 21600.0,
+      "jkm": 12000.0,
+      "jp": 80000.0,
+      "kesehatan": 160000.0
+     },
+     "bpjs_er_total": 421600.0,
+     "commission": 0.0,
+     "gross": 4000000.0,
+     "net": 3840000.0,
+     "other_deductions": 0.0,
+     "other_earnings": 0.0,
+     "overtime": 0.0,
+     "overtime_auto_min": 0,
+     "overtime_filed_min": 0,
+     "overtime_min": 0,
+     "pph21": 0.0,
+     "pph21_method": "ter",
+     "pph21_month": 0.0,
+     "pph21_rate": 0.0,
+     "salary_earnings": 4000000.0,
+     "tax_gross": 4193600.0,
+     "ter_category": "B"
+    },
+    "komponen": [
+     [
+      "GAJI_POKOK",
+      "Gaji Pokok",
+      4000000.0
+     ],
+     [
+      "BPJS_KES",
+      "BPJS Kesehatan",
+      40000.0
+     ],
+     [
+      "BPJS_JHT",
+      "BPJS JHT",
+      80000.0
+     ],
+     [
+      "BPJS_JP",
+      "BPJS JP",
+      40000.0
+     ],
+     [
+      "PPH21",
+      "PPh 21",
+      0.0
+     ],
+     [
+      "BPJS_KES_PT",
+      "BPJS Kesehatan (perusahaan)",
+      160000.0
+     ],
+     [
+      "BPJS_JHT_PT",
+      "BPJS JHT (perusahaan)",
+      148000.0
+     ],
+     [
+      "BPJS_JP_PT",
+      "BPJS JP (perusahaan)",
+      80000.0
+     ],
+     [
+      "BPJS_JKK",
+      "BPJS JKK",
+      21600.0
+     ],
+     [
+      "BPJS_JKM",
+      "BPJS JKM",
+      12000.0
+     ]
+    ],
+    "lembur": [],
+    "tahunan": null
+   },
+   "emp_pyt3s_s4": {
+    "kolom": {
+     "allowances": 0.0,
+     "base_salary": 6000000.0,
+     "bpjs_emp": {
+      "jht": 120000.0,
+      "jp": 60000.0,
+      "kesehatan": 60000.0
+     },
+     "bpjs_emp_total": 240000.0,
+     "bpjs_er": {
+      "jht": 222000.0,
+      "jkk": 32400.0,
+      "jkm": 18000.0,
+      "jp": 120000.0,
+      "kesehatan": 240000.0
+     },
+     "bpjs_er_total": 632400.0,
+     "commission": 0.0,
+     "gross": 6000000.0,
+     "net": 6480000.0,
+     "other_deductions": 0.0,
+     "other_earnings": 0.0,
+     "overtime": 0.0,
+     "overtime_auto_min": 0,
+     "overtime_filed_min": 0,
+     "overtime_min": 0,
+     "pph21": -720000.0,
+     "pph21_method": "annual_pasal17",
+     "pph21_month": -720000.0,
+     "pph21_rate": 0.0,
+     "salary_earnings": 6000000.0,
+     "tax_gross": 6290400.0,
+     "ter_category": "A"
+    },
+    "komponen": [
+     [
+      "GAJI_POKOK",
+      "Gaji Pokok",
+      6000000.0
+     ],
+     [
+      "BPJS_KES",
+      "BPJS Kesehatan",
+      60000.0
+     ],
+     [
+      "BPJS_JHT",
+      "BPJS JHT",
+      120000.0
+     ],
+     [
+      "BPJS_JP",
+      "BPJS JP",
+      60000.0
+     ],
+     [
+      "PPH21",
+      "PPh 21",
+      -720000.0
+     ],
+     [
+      "BPJS_KES_PT",
+      "BPJS Kesehatan (perusahaan)",
+      240000.0
+     ],
+     [
+      "BPJS_JHT_PT",
+      "BPJS JHT (perusahaan)",
+      222000.0
+     ],
+     [
+      "BPJS_JP_PT",
+      "BPJS JP (perusahaan)",
+      120000.0
+     ],
+     [
+      "BPJS_JKK",
+      "BPJS JKK",
+      32400.0
+     ],
+     [
+      "BPJS_JKM",
+      "BPJS JKM",
+      18000.0
+     ]
+    ],
+    "lembur": [],
+    "tahunan": {
+     "annual_tax": 0.0,
+     "biaya_jabatan": 2726520.0,
+     "months": 9,
+     "neto": 50183880.0,
+     "pension_deduction": 1620000.0,
+     "pkp": 0.0,
+     "prior_withheld": 720000.0,
+     "ptkp": 54000000.0,
+     "tax_gross": 54530400.0
+    }
+   },
+   "emp_pyt3s_s5": {
+    "kolom": {
+     "allowances": 0.0,
+     "base_salary": 5500000.0,
+     "bpjs_emp": {
+      "jht": 110000.0,
+      "jp": 55000.0,
+      "kesehatan": 55000.0
+     },
+     "bpjs_emp_total": 220000.0,
+     "bpjs_er": {
+      "jht": 203500.0,
+      "jkk": 29700.0,
+      "jkm": 16500.0,
+      "jp": 110000.0,
+      "kesehatan": 220000.0
+     },
+     "bpjs_er_total": 579700.0,
+     "commission": 0.0,
+     "gross": 5500000.0,
+     "net": 5251169.0,
+     "other_deductions": 0.0,
+     "other_earnings": 0.0,
+     "overtime": 0.0,
+     "overtime_auto_min": 200,
+     "overtime_filed_min": 0,
+     "overtime_min": 200,
+     "pph21": 28831.0,
+     "pph21_method": "ter",
+     "pph21_month": 28831.0,
+     "pph21_rate": 0.005,
+     "salary_earnings": 5500000.0,
+     "tax_gross": 5766200.0,
+     "ter_category": "A"
+    },
+    "komponen": [
+     [
+      "GAJI_POKOK",
+      "Gaji Pokok",
+      5500000.0
+     ],
+     [
+      "BPJS_KES",
+      "BPJS Kesehatan",
+      55000.0
+     ],
+     [
+      "BPJS_JHT",
+      "BPJS JHT",
+      110000.0
+     ],
+     [
+      "BPJS_JP",
+      "BPJS JP",
+      55000.0
+     ],
+     [
+      "PPH21",
+      "PPh 21",
+      28831.0
+     ],
+     [
+      "BPJS_KES_PT",
+      "BPJS Kesehatan (perusahaan)",
+      220000.0
+     ],
+     [
+      "BPJS_JHT_PT",
+      "BPJS JHT (perusahaan)",
+      203500.0
+     ],
+     [
+      "BPJS_JP_PT",
+      "BPJS JP (perusahaan)",
+      110000.0
+     ],
+     [
+      "BPJS_JKK",
+      "BPJS JKK",
+      29700.0
+     ],
+     [
+      "BPJS_JKM",
+      "BPJS JKM",
+      16500.0
+     ]
+    ],
+    "lembur": [
+     [
+      "2026-11-10",
+      "attendance",
+      200,
+      "workday",
+      5.8333,
+      185452.79
+     ]
+    ],
+    "tahunan": null
+   }
+  }
+ }
+}

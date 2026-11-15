@@ -296,15 +296,15 @@ P14-K1 → Bima). Laporan hasil di `docs/uat/2026-10-21/hasil/UAT24-*.md`.
 | PY-01 | Slip berkolom tetap | Tinggi | PY-T1 | implemented_pending_review | ya — dijalankan (bukti merah U1–U16 lapis B, jest; U2/U14 lapis A lulus) | `e980399` · `64143aa` | [PY-T1](2026-11-13/hasil/PY-T1.md) |
 | PY-02 | Satu proses gaji per PT per periode | Tinggi | PY-T1 | implemented_pending_review | ya — dijalankan (bukti merah U1–U16 lapis B, jest; U2/U14 lapis A lulus) | `e980399` · `64143aa` | [PY-T1](2026-11-13/hasil/PY-T1.md) |
 | PY-03 | Tabel tarif PPh 21 tampak tidak disalin dari peraturan | Tinggi | PK-46 | pending_decision | ya — dibaca; mekanisme siap, isi tabel menunggu berkas pemilik (H4) | `c38ab35` | [PK-46](2026-11-13/hasil/PK-46.md) |
-| PY-04 | Tanpa prorata dan potongan absen | Tinggi | PY-T3 | open | belum dicek — diisi unit pemegang | — | — |
+| PY-04 | Tanpa prorata dan potongan absen | Tinggi | PY-T3 | implemented_pending_review | ya — dijalankan (bukti merah 23/23 di kode lama; lapis A U18/L1/L3 lulus) | `9794ec7` · `649b7dc` | [PY-T3](2026-11-13/hasil/PY-T3.md) |
 | PY-05 | Karyawan keluar tidak terhitung masa terakhirnya | Tinggi | PK-45 | implemented_pending_review | ya — dijalankan (bukti merah 17/20 di kode lama) | `8d952cb` | [PK-45](2026-11-13/hasil/PK-45.md) |
 | PY-06 | Mode komisi "mati" tidak dihormati | Sedang | KM-T4 | open | belum dicek — diisi unit pemegang | — | — |
-| PY-07 | Pengaturan lembur tidak berpengaruh | Sedang | PY-T3 | open | belum dicek — diisi unit pemegang | — | — |
-| PY-08 | Lembur dari absensi otomatis disetujui | Sedang | PY-T3 | open | belum dicek — diisi unit pemegang | — | — |
+| PY-07 | Pengaturan lembur tidak berpengaruh | Sedang | PY-T3 | implemented_pending_review | ya — dijalankan (bukti merah 23/23 di kode lama; lapis A U18/L1/L3 lulus) | `9794ec7` · `649b7dc` | [PY-T3](2026-11-13/hasil/PY-T3.md) |
+| PY-08 | Lembur dari absensi otomatis disetujui | Sedang | PY-T3 | implemented_pending_review | ya — dijalankan (bukti merah 23/23 di kode lama; lapis A U18/L1/L3 lulus) | `9794ec7` · `649b7dc` | [PY-T3](2026-11-13/hasil/PY-T3.md) |
 | PY-09 | Tanpa riwayat gaji dan penugasan PT bertanggal | Sedang | PY-T2 | implemented_pending_review | ya — dijalankan (bukti merah 17/17 di kode lama; lapis A U1/U11 lulus) | `5edef21` · `82ef1bb` | [PY-T2](2026-11-13/hasil/PY-T2.md) |
 | PY-10 | Pratinjau gaji menerima entitas mentah | Sedang | PK-45 | implemented_pending_review | ya — dijalankan (bukti merah 17/20 di kode lama) | `8d952cb` | [PK-45](2026-11-13/hasil/PK-45.md) |
 | PY-11 | Bayar gaji selalu dari satu akun; tanpa daftar transfer | Sedang | PY-T4 | open | belum dicek — diisi unit pemegang | — | — |
-| PY-12 | Tanpa saldo awal pajak tahun berjalan | Sedang | PY-T3 | open | belum dicek — diisi unit pemegang | — | — |
+| PY-12 | Tanpa saldo awal pajak tahun berjalan | Sedang | PY-T3 | implemented_pending_review | ya — dijalankan (bukti merah 23/23 di kode lama; lapis A U18/L1/L3 lulus) | `9794ec7` · `649b7dc` | [PY-T3](2026-11-13/hasil/PY-T3.md) |
 | PY-13 | PDF slip berbaris tetap dan berangka mati | Rendah | PY-T1 | implemented_pending_review | ya — dijalankan (bukti merah U1–U16 lapis B, jest; U2/U14 lapis A lulus) | `e980399` · `64143aa` | [PY-T1](2026-11-13/hasil/PY-T1.md) |
 | PY-14 | Validasi periode; teks layar keliru; label belum diindonesiakan | Rendah | PY-T1 | implemented_pending_review | ya — dijalankan (bukti merah U1–U16 lapis B, jest; U2/U14 lapis A lulus) | `e980399` · `64143aa` | [PY-T1](2026-11-13/hasil/PY-T1.md) |
 
