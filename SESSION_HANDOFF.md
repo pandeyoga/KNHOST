@@ -10,7 +10,8 @@
 > satu commit gabungan; `main` tidak disentuh. 22 bentrok + 2 duplikasi yang tergabung otomatis (qty tertagih retur beli
 > dikurangi dua kali; registri pengaturan/izin) diselesaikan — keputusan, uji, temuan sampingan dan gate di
 > `docs/blueprint/INTEGRASI_MAIN_FIX6-10.md`. Pemilik menyetujui 8 keputusannya; `main` sudah dimajukan ke cabang ini
-> (fast-forward) dan 4 cabang lama dihapus. Deploy VPS = pemilik; skrip migrasi `--apply` (H3) di kolom "Titik henti" STATUS.
+> (fast-forward). 4 cabang lama boleh dihapus (isinya sudah tergabung) — sesi ditolak GitHub (403), pemilik menghapusnya di
+> halaman Branches. Deploy VPS = pemilik; skrip migrasi `--apply` (H3) di kolom "Titik henti" STATUS.
 
 > Diperbarui: **2026-06 (sesi lanjutan ke-8)** — repo kini di
 > `github.com/pandeyoga/KN020926`; lingkungan di-restore dengan `.restore_env.sh`
