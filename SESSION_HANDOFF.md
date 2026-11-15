@@ -6,6 +6,8 @@
 > pelanggaran yang lolos gate, relevansi uji/gate, peta cakupan kode yang belum diaudit, celah kredit Pesanan Khusus,
 > cara komisi sekarang). 97 unit selesai, 7 tahan; belum ada yang dipasang ke produksi atau dijalankan di data nyata.
 > Aturan uji wajib: `docs/blueprint/03_LINGKUNGAN_UJI.md` §6 (uji hemat, gate per pelanggaran).
+> **Pertama (R0):** `main` kini `bfb3d0c` (FIX-6…FIX-10) dan belum digabung ke cabang blueprint — 22 bentrok, 6 semantis;
+> rencana di `docs/blueprint/INTEGRASI_MAIN_FIX6-10.md`. Jangan gabungkan cabang blueprint ke `main` sebelum R0 selesai.
 
 > Diperbarui: **2026-06 (sesi lanjutan ke-8)** — repo kini di
 > `github.com/pandeyoga/KN020926`; lingkungan di-restore dengan `.restore_env.sh`

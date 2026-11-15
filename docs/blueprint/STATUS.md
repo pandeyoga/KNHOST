@@ -163,6 +163,7 @@ Uji dan gate mengikuti `03_LINGKUNGAN_UJI.md` §6 (uji hemat, gate per pelanggar
 
 | Urutan | Pekerjaan | Isi | Titik henti / syarat |
 |---|---|---|---|
+| R0 | Gabungkan `main` (FIX-6…FIX-10, `bfb3d0c`) ke cabang blueprint | 33 commit audit WMS-RFID sudah di `main` (dipush pemilik 15 Nov). Uji gabung: 22 berkas bentrok, 6 di antaranya dua implementasi alur keuangan/stok yang sama (retur beli GR-IR, nota kredit retur, scrap retur, cek nama peran di inspeksi, jurnal langkah makloon, opname). Rencana dan arah penyelesaian: `INTEGRASI_MAIN_FIX6-10.md`. Syarat sebelum cabang blueprint boleh masuk `main` | Keuangan: baca audit keuangan; RFID: H7 |
 | R1 | Cadangan & uji pulih (PK-04) | Cadangan tiap 6 jam, akhir bulan disimpan lebih lama, perintah uji pulih | H2: jendela waktu server produksi dari pemilik |
 | R2 | Cek data nyata (PK-03) | Pemeriksaan hanya-baca pada salinan database produksi: masalah mana yang sudah terjadi di data, berapa banyak | H3: dijalankan/diizinkan pemilik; hasilnya menentukan prioritas R3–R5 |
 | R3 | Perapian uji & gate | Pilah 16 POC merah (perbarui/arsipkan); pilah ±403 uji lama `backend/tests/` (masuk gate atau arsip); perbaiki 35 suite jest yang tidak termuat; perbaiki 2 skrip seed data acuan; pilah tuduhan palsu penjaga (mis. `auth_coverage`); target gate `--ci` hijau atau merah hanya untuk temuan tercatat yang disetujui pemilik | — |
@@ -236,3 +237,6 @@ Diisi agen di akhir tiap sesi: tanggal, unit yang selesai, unit yang tertahan da
   dipindah ke `ReceivePaymentModal`/`PaySupplierModal`). Uji pohon akhir: `tests_mem` 2.332 lulus; jest 1.134 lulus
   (35 suite gagal dimuat = kendala lingkungan tercatat). Belum digabung: 33 commit FIX-6…FIX-10 (audit WMS-RFID 9–10 Nov)
   yang masih di `main` lokal komputer pemilik — `main` di GitHub ditahan sampai commit itu ikut digabung.
+- 15 Nov (akhir): pemilik mem-push 33 commit FIX-6…FIX-10 ke `main` (`bfb3d0c`, tanpa force-push). Penggabungan `main` ke
+  cabang ini dicoba lalu dibatalkan: 6 berkas backend berisi dua implementasi alur yang sama (risiko jurnal ganda / pintu
+  kedua) — dijadikan R0 dengan rencana di `INTEGRASI_MAIN_FIX6-10.md`. Cabang blueprint belum digabung ke `main`.

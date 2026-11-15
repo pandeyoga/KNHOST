@@ -7,6 +7,8 @@
 > pelanggaran yang lolos gate, relevansi uji/gate, peta cakupan kode yang belum diaudit, celah kredit Pesanan Khusus,
 > cara komisi sekarang). 97 unit selesai, 7 tahan; belum ada yang dipasang ke produksi atau dijalankan di data nyata.
 > Aturan uji wajib: `docs/blueprint/03_LINGKUNGAN_UJI.md` §6 (uji hemat, gate per pelanggaran).
+> **Pertama (R0):** `main` kini `bfb3d0c` (FIX-6…FIX-10) dan belum digabung ke cabang blueprint — 22 bentrok, 6 semantis;
+> rencana di `docs/blueprint/INTEGRASI_MAIN_FIX6-10.md`. Jangan gabungkan cabang blueprint ke `main` sebelum R0 selesai.
 
 ## Sesi P18 (2026-10-03) — 18 kasus partial → lulus (59 lulus · 37 partial), 6 bug + 3 fitur ✅
 > **Baca `memory/HANDOFF_P18_2026-10-03.md`** (setup lingkungan baru, packing list permanen aktif, harness p18a..f, sisa 37 partial) — lalu P16 untuk aturan git.
