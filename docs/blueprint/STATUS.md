@@ -230,3 +230,9 @@ Diisi agen di akhir tiap sesi: tanggal, unit yang selesai, unit yang tertahan da
   `claude/nifty-carson-jjx3c8` oleh integrator 15 Nov (`66c1de3` → `435b470`), sebelum cabang dimajukan ke `main`.
 - PR-T8b selesai (T8-01…T8-09): `guard:matriks_izin` kini hijau (cepat dan `--penuh`). Lingkungan A tidak tersedia —
   gate bawaan/`--ci`/`--full` belum dijalankan untuk unit ini.
+- Integrasi 15 Nov (atas persetujuan pemilik): 4 cabang sesi cloud dipetik ke cabang ini — CR-T4b `?today=` (`018e660`…),
+  PR-T8b gerbang izin (`435b470`, `263ed25`), perapian Meja Finance (`5c4bd26`: Bantuan di topbar + urutan kelompok; lipatan
+  antrean kosong tidak dipakai karena MN-T2), P23 tanggal bawaan WIB (`7371f9d`, `9ed15a9`; perbaikan form kwitansi lama
+  dipindah ke `ReceivePaymentModal`/`PaySupplierModal`). Uji pohon akhir: `tests_mem` 2.332 lulus; jest 1.134 lulus
+  (35 suite gagal dimuat = kendala lingkungan tercatat). Belum digabung: 33 commit FIX-6…FIX-10 (audit WMS-RFID 9–10 Nov)
+  yang masih di `main` lokal komputer pemilik — `main` di GitHub ditahan sampai commit itu ikut digabung.

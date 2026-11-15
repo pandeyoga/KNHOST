@@ -15,7 +15,9 @@ import { todayISO } from "../purchasing/contrabon/contraBonApi";
 import { monthKey, weekStart } from "../marketing/marketingShared";
 import { presetRange } from "../rnd/design/DateQuickNav";
 import FinancialStatementsView from "../finance/FinancialStatementsView";
-import ARReceiptModal from "../crm/ARReceiptModal";
+// Integrasi 15 Nov: `crm/ARReceiptModal` dihapus MN-T3 → perbaikan tanggal dipindah ke dua form bayar baru.
+import ReceivePaymentModal from "../finance/payments/ReceivePaymentModal";
+import PaySupplierModal from "../finance/payments/PaySupplierModal";
 import SampleFinishModal from "../rnd/SampleFinishModal";
 
 const mockGet = jest.fn();
@@ -34,6 +36,18 @@ jest.mock("../finance/payments/paymentApi", () => ({
   varianceMeta: async () => ({ reasons: [] }),
   directionMeta: () => ({ label: "", bg: "#fff", fg: "#000" }),
 }));
+// `KNSelect` memuat `cmdk` (@radix-ui) yang tidak termuat di lingkungan uji lokal → tiruan seperti uji lain (mnt3SatuForm).
+jest.mock("../../components/KNSelect", () => {
+  const S = (p) => (
+    <select data-testid={p["data-testid"]} value={p.value || ""} disabled={p.disabled}
+      onChange={(e) => p.onValueChange && p.onValueChange(e.target.value)}>
+      <option value="" />
+      {(p.options || []).map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
+    </select>
+  );
+  return { __esModule: true, default: S, KNSelect: S };
+});
+jest.mock("../../components/AskKnButton", () => ({ __esModule: true, AskKnButton: () => null, PENDING_KEY: "x" }));
 jest.mock("recharts", () => {
   const Box = () => <div />;
   return new Proxy({}, { get: () => Box });
@@ -135,18 +149,21 @@ describe("layar: tanggal bawaan = 2026-11-15", () => {
     expect(call[1].params).toMatchObject({ as_of: "2026-11-15", compare_as_of: "2026-10-31" });
   });
 
-  test("Catat Pembayaran (kwitansi): tanggal bawaan & yang dikirim = 15 Nov", async () => {
+  test("Terima pembayaran (kwitansi, form MN-T3): tanggal bawaan = 15 Nov", async () => {
     routeGet({
-      "/ar-receipts/open-orders": [{ order_id: "so1", number: "KSC/SO-0001", outstanding: 50000 }],
-      "/ar-receipts/deposit": {},
+      "/payment-methods": [], "/ar-receipts/open-orders": [{ order_id: "so1", number: "KSC/SO-0001", outstanding: 50000 }],
+      "/ar-receipts/deposit": {}, "/bank-accounts/receiving": [], "/settings/effective": { payment: {} },
+      "/cash-holdings/me/summary": {},
     });
-    mockPost.mockResolvedValue({ data: { number: "AR-1", amount: 50000 } });
-    const host = await mount(<ARReceiptModal customerId="c1" customerName="Toko A" onClose={() => {}} onDone={() => {}} onError={() => {}} />);
+    const host = await mount(<ReceivePaymentModal customerId="c1" customerName="Toko A" onClose={() => {}} onDone={() => {}} />);
     expect(q(host, "ar-receipt-date").textContent).toContain("15 Nov 2026");
-    await click(q(host, "ar-receipt-submit"));
-    const [url, body] = mockPost.mock.calls[0];
-    expect(url).toBe("/api/ar-receipts");
-    expect(body.receipt_date.slice(0, 10)).toBe("2026-11-15");
+  });
+
+  test("Bayar pemasok (form MN-T3): tanggal bayar bawaan = 15 Nov", async () => {
+    routeGet({ "/vendor-bills/vb1": { id: "vb1", number: "VB-1", entity_id: "ent_ksc", outstanding: 70000, status: "approved" },
+      "/bank-accounts": [], "/payment-methods": [], "/settings/effective": { payment: {} } });
+    const host = await mount(<PaySupplierModal target={{ type: "vendor_bill", id: "vb1" }} onClose={() => {}} onPaid={() => {}} />);
+    expect(q(host, "pay-supplier-date").textContent).toContain("15 Nov 2026");
   });
 
   test("Terima sampel fisik (R&D): tanggal bawaan = 15 Nov", async () => {
