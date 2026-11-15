@@ -163,6 +163,10 @@ async def dispatch_task(
     except Exception as exc:  # noqa: BLE001
         logger.warning("[dispatch_task] draf faktur surat jalan %s gagal (dipulihkan job harian): %s",
                        shipment.get("shipment_no"), exc)
+    # CR-T2 (K-16) — baris tagihan nomor surat jalan ini lahir dari jurnalnya; gagal → `billing_status: failed` (panel
+    # Posting Gagal), surat jalan tetap sah.
+    from services import billing_schedule_service as _bss
+    shipment["billing_status"] = await _bss.after_shipment_journal(shipment)
     return safe_doc(updated), safe_doc(shipment)
 
 

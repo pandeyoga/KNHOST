@@ -212,7 +212,7 @@ async def _order_due_now(order: Dict[str, Any], outstanding: float,
     Tidak ada rencana → pakai jatuh tempo term pesanan; kalau belum jatuh tempo,
     harapannya adalah seluruh sisa tagihan pesanan itu (yang lazim ditagih).
     """
-    plan = await plans.get_active("sales_order", order.get("id", ""))
+    plan = await plans.get_manual("sales_order", order.get("id", ""))   # CR-T2 — rencana orang, bukan jadwal mesin
     if plan:
         due_now = plans.due_now_amount(plan, as_of)
         rows = plans.due_lines(plan, as_of)

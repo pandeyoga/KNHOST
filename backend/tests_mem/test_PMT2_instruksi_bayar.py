@@ -229,7 +229,11 @@ async def test_PMT2_U6_konfirmasi_cbd_melahirkan_satu_kode(klien, db, siap):
     assert RX_KODE.match(k["code"]), k["code"]
     assert k["status"] == "aktif" and k["id"].startswith("pyc_")
     assert (k["entity_id"], k["order_number"], k["customer_id"]) == (KSC, r.json()["number"], siap["pel"][KSC]["cus"])
-    assert (k["plan_id"], k["line_id"]) == ("", "")
+    # CR-T2 — jadwal tagihan lahir saat konfirmasi; baris uang muka (CBD = DP 100 %) memakai ulang kode pesanan
+    jadwal = await db.payment_plans.find_one({"doc_id": oid, "origin": "term", "status": {"$ne": "void"}}, {"_id": 0})
+    [dp] = [ln for ln in jadwal["lines"] if ln["kind"] == "dp"]
+    assert dp["amount"] == 2_000_000 and dp["pay_code"] == k["code"]
+    assert (k["plan_id"], k["line_id"]) == (jadwal["id"], dp["line_id"])
     assert (await db.sales_orders.find_one({"id": oid}))["payment_code"] == k["code"]
     SIMPAN["u6"] = oid
 
@@ -319,14 +323,30 @@ async def test_PMT2_U11_pesanan_tempo_tanpa_kode(klien, db, siap):
     assert r.status_code == 200, r.text
     oid = r.json()["id"]
     await _konfirmasi(klien, siap["h"], oid)
-    if importlib.util.find_spec("services.billing_schedule_service") is not None:
-        pytest.fail("CR-T2 sudah ada: lengkapi cabang U11 (satu surat jalan → satu tagihan berkode dengan jatuh tempo "
-                    "baris itu) dan kaitkan `payment_code_service.ensure_for_line` saat baris tagihan lahir")
     r = await _instruksi(klien, siap["h"], oid)
     assert r.status_code == 200, r.text
     assert r.json()["items"] == [] and r.json()["text"] == ""
     assert r.json()["note"] == "Instruksi bayar tersedia setelah barang dikirim."
     assert await db.payment_codes.count_documents({"order_id": oid}) == 0
+    # CR-T2 — satu surat jalan → satu tagihan berkode dengan jatuh tempo baris itu (`ensure_for_line` saat baris lahir).
+    # Fixture: surat jalan 2 Nov 2026 + jurnal pendapatannya Dr piutang Rp 400.000 → jatuh tempo 2 Nov + 30 = 2 Des.
+    from services import billing_schedule_service as bss
+    from services import gl_service as gl
+    so = await db.sales_orders.find_one({"id": oid}, {"_id": 0})
+    shid = _id("shp")
+    await db.shipments.insert_one({"id": shid, "shipment_no": "SJ-PMT2-U11", "order_id": oid, "entity_id": KSC,
+                                   "status": "dispatched", "created_at": "2026-11-02T03:00:00+00:00"})
+    await gl._insert_entry(lines=[{"account_code": "1-1200", "debit": 400_000.0, "credit": 0.0},
+                                  {"account_code": "4-1000", "debit": 0.0, "credit": 400_000.0}],
+                           description="fixture PM-T2 U11", date="2026-11-02T03:00:00+00:00",
+                           source_type="shipment_revenue", source_id=shid, entity_id=KSC, created_by="uji",
+                           source_label="SJ-PMT2-U11", ref={"order_id": oid, "order_number": so["number"]})
+    await bss.on_shipment_posted(oid, "SJ-PMT2-U11")
+    kode = await db.payment_codes.find({"order_id": oid}, {"_id": 0}).to_list(5)
+    assert [(k["amount"], k["due_date"], k["order_level"]) for k in kode] == [(400_000, "2026-12-02", False)], kode
+    r = await _instruksi(klien, siap["h"], oid)
+    assert [(it["amount"], it["due_label"], it["pay_code"]) for it in r.json()["items"]] == [
+        (400_000, "2 Des 2026", kode[0]["code"])], r.json()
     # pesanan bayar-dulu yang belum dikonfirmasi
     r = await _pesan(klien, db, siap, term="CBD", payment_method_code="transfer")
     r = await _instruksi(klien, siap["h"], r.json()["id"])
@@ -450,22 +470,34 @@ async def test_PMT2_find_in_text(db, siap):
 
 
 async def test_PMT2_kode_per_baris_tagihan(db, siap, klien):
-    """`ensure_for_line` (dipanggil CR-T2 saat baris tagihan lahir): baris DP memakai ulang kode pesanan; baris lain kode
-    baru. Rencana bayar = fixture (CR-T2 belum ada)."""
+    """`ensure_for_line` (dipanggil jadwal tagihan CR-T2 saat baris lahir): baris DP memakai ulang kode pesanan; baris
+    surat jalan kode baru. Jadwal = hasil kait konfirmasi (U7) + surat jalan fixture 1 Des 2026 (Dr piutang
+    Rp 2.000.000; DP50 → baris surat jalan 2.000.000 × 50 % = Rp 1.000.000, jatuh tempo 1 Des + 14 = 15 Des)."""
+    from services import billing_schedule_service as bss
+    from services import gl_service as gl
     from services import payment_code_service as pcs
     oid = SIMPAN["u7"]
     kode_pesanan = (await db.payment_codes.find_one({"order_id": oid}))["code"]
-    plan = {"id": _id("pplan"), "doc_type": "sales_order", "doc_id": oid, "entity_id": KSC, "status": "active",
-            "lines": [{"seq": 1, "line_id": "ppl_dp", "kind": "dp", "label": "Uang Muka (DP)", "amount": 1_000_000,
-                       "due_date": "", "status": "open"},
-                      {"seq": 2, "line_id": "ppl_lunas", "kind": "installment", "label": "Pelunasan",
-                       "amount": 1_000_000, "due_date": "2026-12-15", "status": "open"}]}
-    await db.payment_plans.insert_one(dict(plan))
-    dp = await pcs.ensure_for_line(plan, plan["lines"][0])
-    assert dp["code"] == kode_pesanan and (dp["plan_id"], dp["line_id"]) == (plan["id"], "ppl_dp")
-    lunas = await pcs.ensure_for_line(plan, plan["lines"][1])
+    plan = await db.payment_plans.find_one({"doc_id": oid, "origin": "term", "status": {"$ne": "void"}}, {"_id": 0})
+    dp_line = plan["lines"][0]
+    assert (dp_line["kind"], dp_line["amount"], dp_line["pay_code"]) == ("dp", 1_000_000, kode_pesanan)
+    dp = await pcs.ensure_for_line(plan, dp_line)
+    assert dp["code"] == kode_pesanan and (dp["plan_id"], dp["line_id"]) == (plan["id"], dp_line["line_id"])
+    so = await db.sales_orders.find_one({"id": oid}, {"_id": 0})
+    shid = _id("shp")
+    await db.shipments.insert_one({"id": shid, "shipment_no": "SJ-PMT2-KB", "order_id": oid, "entity_id": KSC,
+                                   "status": "dispatched", "created_at": "2026-12-01T03:00:00+00:00"})
+    await gl._insert_entry(lines=[{"account_code": "1-1200", "debit": 2_000_000.0, "credit": 0.0},
+                                  {"account_code": "4-1000", "debit": 0.0, "credit": 2_000_000.0}],
+                           description="fixture PM-T2", date="2026-12-01T03:00:00+00:00",
+                           source_type="shipment_revenue", source_id=shid, entity_id=KSC, created_by="uji",
+                           source_label="SJ-PMT2-KB", ref={"order_id": oid, "order_number": so["number"]})
+    plan = await bss.on_shipment_posted(oid, "SJ-PMT2-KB")
+    baris_sj = plan["lines"][1]
+    assert (baris_sj["kind"], baris_sj["amount"], baris_sj["due_date"]) == ("shipment", 1_000_000, "2026-12-15")
+    lunas = await db.payment_codes.find_one({"order_id": oid, "line_id": baris_sj["line_id"]}, {"_id": 0})
     assert lunas["code"] != kode_pesanan and lunas["amount"] == 1_000_000 and lunas["due_date"] == "2026-12-15"
-    assert (await pcs.ensure_for_line(plan, plan["lines"][1]))["code"] == lunas["code"]
+    assert (await pcs.ensure_for_line(plan, baris_sj))["code"] == lunas["code"]
     assert await db.payment_codes.count_documents({"order_id": oid}) == 2
     so = await db.sales_orders.find_one({"id": oid}, {"_id": 0})
     assert (await pcs.ensure_for_order(so))["code"] == kode_pesanan   # pesanan tetap satu kode tingkat pesanan

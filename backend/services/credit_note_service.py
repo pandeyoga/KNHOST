@@ -496,6 +496,8 @@ async def _baris_tagihan(note: Dict[str, Any], order: Dict[str, Any]) -> Tuple[s
         await aas._segarkan(order["id"])
     except Exception as exc:  # noqa: BLE001 — turunan, bukan syarat sah tagihan tambahan
         _log.warning("status bayar %s gagal disegarkan: %s", order.get("number"), exc)
+    from services import billing_schedule_service as _bss   # CR-T2 — baris jadwal `debit_note` + saldo tersimpan
+    await _bss.kait_aman("nota debit", _bss.on_debit_note, order["id"])
     return "done", {"billing_status": "billed", "open_amount": 0.0}
 
 

@@ -130,6 +130,8 @@ async def _append(*, customer_id: str, entity_id: str, kind: str, amount_signed:
         "created_at": now_iso(),
     }
     await db.store_credit_ledger.insert_one(dict(entry))
+    from services import customer_balance_service as _cbs   # CR-T2 — saldo kredit di saldo tersimpan (turunan)
+    await _cbs.refresh_safe(customer_id, entity_id or None)
     return entry
 
 

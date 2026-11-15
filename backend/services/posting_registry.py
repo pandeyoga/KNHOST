@@ -78,6 +78,14 @@ async def _retry_shipment(doc: Dict[str, Any], actor: Dict[str, Any]) -> None:
     from services import gl_service as gl
     await gl.post_durable("shipments", doc["id"], lambda: gl.post_order_revenue_and_cogs(doc["order_id"]),
                           source_type="shipment_revenue", source_id=doc["id"], raise_on_fail=True)
+    from services import billing_schedule_service as bss   # CR-T2 — baris tagihan lahir dari jurnal yang baru terbit
+    await bss.after_shipment_journal(doc)
+
+
+async def _retry_shipment_billing(doc: Dict[str, Any], actor: Dict[str, Any]) -> None:
+    """CR-T2 — jurnal surat jalan sudah terbit tetapi baris jadwal tagihannya gagal dibuat: kait diulang."""
+    from services import billing_schedule_service as bss
+    await bss.retry_shipment_billing(doc, actor)
 
 
 async def _retry_contra_bon(doc: Dict[str, Any], actor: Dict[str, Any]) -> None:
@@ -532,6 +540,12 @@ KINDS: Dict[str, Dict[str, Any]] = {
         "posters": ("post_order_revenue_and_cogs", "post_shipment_revenue", "post_shipment_cogs", "post_sales_order",
                     "post_order_cogs", "post_advance_reclass"),
         "retry": _retry_shipment},
+    # CR-T2 — jadwal tagihan surat jalan (bukan jurnal: kait sesudah jurnal pendapatan `shipment_revenue` terbit)
+    "shipment_billing": {
+        "label": "Jadwal Tagihan Surat Jalan", "collection": "shipments", "failed_query": {"billing_status": "failed"},
+        "entity_field": "entity_id", "number_field": "shipment_no", "amount_field": _NOMINAL_LAMA,
+        "status_field": "billing_status", "error_field": "billing_error", "failed_at_field": "billing_failed_at",
+        "doc_type": "shipment", "posters": (), "retry": _retry_shipment_billing},
     "contra_bon": {   # PK-05 — jurnal potongan
         "label": "Kontrabon (jurnal potongan)", "collection": "contra_bons", "failed_query": {"gl_status": "failed"},
         "entity_field": "entity_id", "number_field": "number", "amount_field": _NOMINAL_LAMA,

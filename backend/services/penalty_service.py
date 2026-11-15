@@ -271,8 +271,8 @@ async def accrue_order(order: Dict[str, Any], today: Optional[str] = None,
     keputusan yang SAMA — jadi tidak ada mesin denda kedua yang bisa bercerita beda.
     """
     day = (today or now_iso())[:10]
-    if await plans.get_active("sales_order", order.get("id", "")):
-        return []   # ada rencana → nota denda lahir dari barisnya (jangan dobel)
+    if await plans.get_manual("sales_order", order.get("id", "")):
+        return []   # ada rencana → nota denda lahir dari barisnya (jangan dobel). CR-T2: jadwal mesin bukan rencana
     policy = await penalty_policy(order.get("entity_id") or "",
                                   order.get("customer_id") or "")
     if policy["mode"] == "off":
@@ -337,8 +337,9 @@ async def accrue_customer(customer_id: str, today: Optional[str] = None,
     berubah menjadi dokumen nyata yang bisa ditagih, dinegosiasikan, atau dibebaskan.
     """
     out: List[Dict[str, Any]] = []
-    async for row in db[plans.COLL].find({"customer_id": customer_id, "status": "active"},
-                                         {"_id": 0}):
+    # CR-T2 — jadwal tagihan mesin (`origin: "term"`) belum melahirkan denda (pengalihan denda = CR-T4)
+    async for row in db[plans.COLL].find({"customer_id": customer_id, "status": "active",
+                                          "origin": {"$ne": plans.ORIGIN_TERM}}, {"_id": 0}):
         out.extend(await accrue_plan(safe_doc(row), today=today, actor_name=actor_name))
     async for row in db.sales_orders.find({"customer_id": customer_id}, {"_id": 0}):
         out.extend(await accrue_order(safe_doc(row), today=today, actor_name=actor_name))
@@ -395,6 +396,13 @@ async def _notify(doc: Dict[str, Any]) -> None:
 
 
 # ── Siklus keputusan ──────────────────────────────────────────────────
+async def _saldo(p: Dict[str, Any]) -> None:
+    """CR-T2 — nota denda terbit, dibayar, dibebaskan, atau diubah → saldo piutang tersimpan pasangan dihitung ulang
+    (turunan; galatnya tidak membatalkan nota)."""
+    from services import customer_balance_service as _cbs
+    await _cbs.refresh_safe(p.get("customer_id") or "", p.get("entity_id") or "")
+
+
 async def get(penalty_id: str) -> Optional[Dict[str, Any]]:
     row = await db[COLL].find_one({"id": penalty_id}, {"_id": 0})
     return safe_doc(row) if row else None
@@ -435,6 +443,7 @@ async def issue(penalty_id: str, actor: Dict[str, Any], auto: bool = False) -> D
         "je_id": (je or {}).get("id", ""), "je_number": (je or {}).get("number", ""),
         "issued_by": actor.get("name", "system"), "issued_at": now_iso(),
         "issued_auto": bool(auto), "updated_at": now_iso()}})
+    await _saldo(p)   # CR-T2 — saldo piutang tersimpan pasangan (pelanggan, PT)
     return await get(p["id"])
 
 
@@ -486,6 +495,7 @@ async def waive(penalty_id: str, reason_code: str, note: str,
         "approver_role_required": appr["role"] if appr["required"] else "",
         "reversal_je_id": (je or {}).get("id", ""),
         "updated_at": now_iso()}})
+    await _saldo(p)   # CR-T2 — saldo piutang tersimpan pasangan (pelanggan, PT)
     return await get(p["id"])
 
 
@@ -543,6 +553,7 @@ async def adjust(penalty_id: str, new_amount: float, reason_code: str, note: str
         "approver_role_required": appr["role"] if appr["required"] else "",
         "adjust_je_id": (je or {}).get("id", ""),
         "updated_at": now_iso()}})
+    await _saldo(p)   # CR-T2 — saldo piutang tersimpan pasangan (pelanggan, PT)
     return await get(p["id"])
 
 
@@ -670,6 +681,7 @@ async def _resume_payment(p: Dict[str, Any], item: Dict[str, Any], actor: Dict[s
             float(fresh.get("paid_amount") or 0) >= round(float(fresh.get("amount") or 0), 2) - EPS:
         await db[COLL].update_one({"id": p["id"], "status": {"$in": ["issued", "adjusted"]}}, {"$set": {
             "status": "paid", "status_label": STATUS_LABEL["paid"], "paid_at": now_iso(), "updated_at": now_iso()}})
+    await _saldo(p)   # CR-T2 — saldo piutang tersimpan pasangan (pelanggan, PT)
     return await get(p["id"])
 
 
@@ -760,7 +772,8 @@ async def job_penalty_accrual() -> Dict[str, Any]:
     """Pindai seluruh rencana aktif → bentuk/perbarui usulan denda. Idempotent per periode."""
     created = updated = 0
     scanned = 0
-    async for row in db[plans.COLL].find({"status": "active"}, {"_id": 0}):
+    async for row in db[plans.COLL].find({"status": "active", "origin": {"$ne": plans.ORIGIN_TERM}},
+                                         {"_id": 0}):   # CR-T2 — jadwal mesin: denda di CR-T4
         plan = safe_doc(row)
         scanned += 1
         before = await db[COLL].count_documents({"plan_id": plan["id"]})

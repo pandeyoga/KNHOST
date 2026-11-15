@@ -47,6 +47,7 @@ from services import rfid_v2_retention as rfidretention   # PREP-H — masa simp
 from services import wa_alert_service as wa
 from services import analytics_facts as _facts           # Tanya KN F1 — fakta penjualan
 from services import incentive_facts as _incentive_facts  # KM-T1 — fakta insentif (omzet terkirim & pencairan)
+from services import customer_balance_service as _cbal    # CR-T2 — saldo piutang tersimpan per pelanggan per PT
 from services import ai_schedules as _aisched            # Tanya KN F4 — laporan terjadwal
 from services import analytics_snapshots as _snaps       # Tanya KN F5 — snapshot stok & piutang
 from services import ai_chat_service as _aichat          # Tanya KN §7.3 — prewarm cache prompt
@@ -282,6 +283,11 @@ JOBS: List[Dict[str, Any]] = [
                     "mencatat versi definisi angka insentif tiap PT. Dipakai Kinerja & Insentif.",
      "kind": "interval", "interval_minutes": 5, "fn": _incentive_facts.job_incentive_fact_sync,
      "link": "notifications"},
+    # CR-T2 — pergantian hari mengubah lewat tempo tanpa dokumen baru: saldo yang dihitung untuk tanggal lain dihitung ulang
+    {"id": "customer_balance_overdue", "label": "Saldo Piutang Pelanggan (lewat tempo harian)",
+     "description": "Menghitung ulang saldo piutang tersimpan per pelanggan per PT yang dihitung untuk tanggal lain atau "
+                    "ditandai basi, supaya angka lewat jatuh tempo di kartu kredit dan daftar tagih mengikuti hari ini.",
+     "kind": "daily", "hour": 0, "minute": 10, "fn": _cbal.job_refresh_overdue, "link": "ar-aging"},
     {"id": "incentive_fact_nightly", "label": "Fakta Insentif (bangun ulang 90 hari)",
      "description": "Membangun ulang fakta insentif 90 hari terakhir setiap malam sebagai jaring pengaman.",
      "kind": "daily", "hour": 2, "minute": 30, "fn": _incentive_facts.job_incentive_fact_nightly,

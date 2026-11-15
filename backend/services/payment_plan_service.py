@@ -42,8 +42,15 @@ from services.config_resolver import resolve
 COLL = "payment_plans"
 EPS = 0.01
 
-MODES = ("dp_installment", "milestone", "net", "custom")
+MODES = ("dp_installment", "milestone", "net", "custom", "term")
+#: CR-T2 — mode yang boleh dipilih orang (`term` = jadwal tagihan mesin, `billing_schedule_service`).
+MANUAL_MODES = ("dp_installment", "milestone", "net", "custom")
 KINDS = ("dp", "installment", "retention", "milestone")
+#: CR-T2 — jenis baris jadwal tagihan mesin (`origin: "term"`): `shipment` (per surat jalan), `debit_note` (nota debit).
+TERM_KINDS = ("dp", "shipment", "debit_note")
+ORIGIN_TERM = "term"
+PESAN_JADWAL_MESIN = ("Jadwal tagihan ini mengikuti termin pesanan dan diperbarui otomatis dari surat jalan. "
+                      "Buat rencana cicilan bila jadwalnya perlu diubah.")
 DUE_RULES = ("net_days", "monthly", "weekly", "fixed_date")
 LINE_STATUSES = ("open", "partial", "paid")
 PLAN_STATUSES = ("active", "closed", "void")
@@ -53,12 +60,15 @@ MODE_LABEL = {
     "milestone": "Milestone (tahap pekerjaan)",
     "net": "Sekali bayar (NET)",
     "custom": "Bebas / campuran",
+    "term": "Mengikuti termin",
 }
 KIND_LABEL = {
     "dp": "Uang Muka (DP)",
     "installment": "Cicilan",
     "retention": "Retensi",
     "milestone": "Milestone",
+    "shipment": "Surat jalan",
+    "debit_note": "Nota debit",
 }
 
 
@@ -253,10 +263,33 @@ def source_paid(order: Dict[str, Any]) -> float:
 
 # ── CRUD ───────────────────────────────────────────────────────────────────
 async def get_active(doc_type: str, doc_id: str) -> Optional[Dict[str, Any]]:
-    row = await db[COLL].find_one({"doc_type": doc_type, "doc_id": doc_id,
-                                   "status": {"$ne": "void"}}, {"_id": 0},
-                                  sort=[("created_at", -1)])
+    """Jadwal HIDUP dokumen (apa pun asalnya). CR-T2 — rencana buatan orang menang atas jadwal mesin bila keduanya
+    sempat hidup bersamaan (data lama sebelum indeks `uq_plan_live_doc`)."""
+    rows = await db[COLL].find({"doc_type": doc_type, "doc_id": doc_id, "status": {"$ne": "void"}},
+                               {"_id": 0}).sort("created_at", -1).to_list(10)
+    if not rows:
+        return None
+    manual = [r for r in rows if r.get("origin") != ORIGIN_TERM]
+    return safe_doc((manual or rows)[0])
+
+
+async def get_manual(doc_type: str, doc_id: str) -> Optional[Dict[str, Any]]:
+    """CR-T2 — rencana pembayaran buatan ORANG yang hidup (tanpa jadwal tagihan mesin `origin: "term"`). Dipakai
+    pembaca lama yang perilakunya belum dialihkan (denda, selisih bayar, panel rencana, kebijakan wajib rencana)."""
+    row = await db[COLL].find_one({"doc_type": doc_type, "doc_id": doc_id, "status": {"$ne": "void"},
+                                   "origin": {"$ne": ORIGIN_TERM}}, {"_id": 0}, sort=[("created_at", -1)])
     return safe_doc(row) if row else None
+
+
+def _isi_line_id(lines: List[Dict[str, Any]], old: Optional[List[Dict[str, Any]]] = None) -> None:
+    """CR-T2 — `line_id` (`ppl_…`) identitas tetap tiap baris; baris lama ber-`seq` sama mempertahankan miliknya."""
+    from core_utils import new_id as _nid
+    lama = {int(l.get("seq") or 0): l.get("line_id") for l in (old or []) if l.get("line_id")}
+    for ln in lines:
+        if not ln.get("line_id"):
+            ln["line_id"] = lama.get(int(ln.get("seq") or 0)) or _nid("ppl")
+        ln.setdefault("source_type", "manual")
+        ln.setdefault("source_id", "")
 
 
 async def get(plan_id: str) -> Optional[Dict[str, Any]]:
@@ -290,7 +323,7 @@ async def create_plan(doc_type: str, doc_id: str, payload: Dict[str, Any],
     policy = await plan_policy(entity_id, order.get("customer_id") or "")
     total = source_total(order)
     mode = str(payload.get("mode") or "custom")
-    if mode not in MODES:
+    if mode not in MANUAL_MODES:
         raise PlanError(f"Mode rencana '{mode}' tidak dikenal.")
 
     raw_lines = payload.get("lines")
@@ -308,12 +341,14 @@ async def create_plan(doc_type: str, doc_id: str, payload: Dict[str, Any],
         raise PlanError(
             f"Jumlah seluruh baris belum sama dengan nilai dokumen (selisih {rupiah(diff)}). "
             f"Toleransi yang berlaku {rupiah(policy['tolerance'])}.")
+    _isi_line_id(lines)
 
-    # Satu rencana aktif per dokumen: yang lama di-void (jejaknya tetap ada).
+    # Satu rencana aktif per dokumen: yang lama di-void (jejaknya tetap ada). CR-T2 — termasuk jadwal tagihan mesin
+    # (`origin: "term"`): rencana cicilan menggantikannya dan pembuatan otomatis berhenti untuk dokumen ini.
     old = await get_active(doc_type, doc_id)
     if old:
         await db[COLL].update_one({"id": old["id"]}, {"$set": {
-            "status": "void", "void_reason": "diganti rencana baru",
+            "status": "void", "void_reason": "diganti rencana baru", "rev": int(old.get("rev") or 0) + 1,
             "voided_by": actor.get("name", ""), "updated_at": now_iso()}})
 
     now = now_iso()
@@ -323,6 +358,7 @@ async def create_plan(doc_type: str, doc_id: str, payload: Dict[str, Any],
         "id": new_id("pyp"), "number": number, "entity_id": entity_id,
         "doc_type": doc_type, "doc_id": doc_id, "doc_number": order.get("number", ""),
         "customer_id": order.get("customer_id", ""), "customer_name": order.get("customer_name", ""),
+        "origin": "manual", "rev": 0,   # CR-T2
         "mode": mode, "mode_label": MODE_LABEL.get(mode, mode),
         "total_amount": total, "lines": lines,
         "penalty": {
@@ -355,7 +391,13 @@ async def create_plan(doc_type: str, doc_id: str, payload: Dict[str, Any],
     from services import doc_refs_service as _refs
     await _refs.safe_link(("payment_plan", plan["id"]), (doc_type, doc_id), "parent",
                           note="jadwal pembayaran dokumen ini")
-    return await recompute_paid(plan["id"])
+    out = await recompute_paid(plan["id"])
+    try:   # CR-T2 — rencana cicilan kini menentukan telat: saldo piutang tersimpan pasangan ini dihitung ulang
+        from services import customer_balance_service as _cbs
+        await _cbs.refresh_safe(plan["customer_id"], entity_id)
+    except Exception:  # noqa: BLE001
+        pass
+    return out
 
 
 async def update_plan(plan_id: str, payload: Dict[str, Any],
@@ -365,14 +407,16 @@ async def update_plan(plan_id: str, payload: Dict[str, Any],
         raise PlanError("Rencana pembayaran tidak ditemukan.")
     if plan["status"] == "void":
         raise PlanError("Rencana pembayaran sudah dibatalkan — buat rencana baru.")
+    if plan.get("origin") == ORIGIN_TERM:
+        raise PlanError(PESAN_JADWAL_MESIN)
     order = await _load_source(plan["doc_type"], plan["doc_id"])
     policy = await plan_policy(plan.get("entity_id") or "", plan.get("customer_id") or "")
     total = source_total(order)
 
-    set_doc: Dict[str, Any] = {"updated_at": now_iso(), "total_amount": total,
+    set_doc: Dict[str, Any] = {"updated_at": now_iso(), "total_amount": total, "rev": int(plan.get("rev") or 0) + 1,
                                "updated_by": actor.get("name", "")}
     if payload.get("mode"):
-        if payload["mode"] not in MODES:
+        if payload["mode"] not in MANUAL_MODES:
             raise PlanError(f"Mode rencana '{payload['mode']}' tidak dikenal.")
         set_doc["mode"] = payload["mode"]
         set_doc["mode_label"] = MODE_LABEL.get(payload["mode"], payload["mode"])
@@ -391,6 +435,7 @@ async def update_plan(plan_id: str, payload: Dict[str, Any],
             prev = old.get(int(ln["seq"]))
             ln["status"] = (prev or {}).get("status") or "open"
             ln["paid_amount"] = round(float((prev or {}).get("paid_amount") or 0), 2)
+        _isi_line_id(lines, plan.get("lines") or [])   # CR-T2
         set_doc["lines"] = lines
         push_doc["schedule_history"] = {"at": now_iso(), "by": actor.get("name", ""),
                                         "reason": str(payload.get("reason") or "").strip(),
@@ -412,10 +457,12 @@ async def void_plan(plan_id: str, reason: str, actor: Dict[str, Any]) -> Dict[st
     plan = await get(plan_id)
     if not plan:
         raise PlanError("Rencana pembayaran tidak ditemukan.")
+    if plan.get("origin") == ORIGIN_TERM:
+        raise PlanError(PESAN_JADWAL_MESIN)
     if not (reason or "").strip():
         raise PlanError("Alasan pembatalan rencana wajib diisi.")
     await db[COLL].update_one({"id": plan_id}, {"$set": {
-        "status": "void", "void_reason": reason.strip(),
+        "status": "void", "void_reason": reason.strip(), "rev": int(plan.get("rev") or 0) + 1,
         "voided_by": actor.get("name", ""), "voided_at": now_iso(),
         "updated_at": now_iso()}})
     return await get(plan_id)
@@ -458,6 +505,14 @@ async def recompute_paid(plan_id: str) -> Dict[str, Any]:
     kwitansi masuk/void. Karena angkanya DITURUNKAN dari `payments[]`, jadwal tidak
     mungkin bercerita beda dengan kas yang benar-benar masuk.
     """
+    for _coba in range(6):   # CR-T2 — tulis bersyarat `rev` (jadwal tagihan mesin menambah baris bersamaan)
+        out = await _recompute_once(plan_id)
+        if out is not None:
+            return out
+    raise PlanError("Rencana pembayaran terus berubah bersamaan — ulangi.")
+
+
+async def _recompute_once(plan_id: str) -> Optional[Dict[str, Any]]:
     plan = await get(plan_id)
     if not plan:
         raise PlanError("Rencana pembayaran tidak ditemukan.")
@@ -502,10 +557,14 @@ async def recompute_paid(plan_id: str) -> Dict[str, Any]:
     status = plan["status"]
     if status != "void":
         status = "closed" if total_paid >= plan_total - EPS else "active"
-    await db[COLL].update_one({"id": plan_id}, {"$set": {
+        if plan.get("origin") == ORIGIN_TERM and not (plan.get("billed_complete") and plan_total > EPS):
+            status = "active"   # CR-T2 — jadwal mesin masih akan bertambah baris (bagian belum dikirim)
+    res = await db[COLL].update_one({"id": plan_id, "rev": plan.get("rev")}, {"$set": {
         "lines": lines, "paid_total": total_paid,
         "outstanding": round(plan_total - total_paid, 2),
-        "status": status, "updated_at": now_iso()}})
+        "status": status, "rev": int(plan.get("rev") or 0) + 1, "updated_at": now_iso()}})
+    if not res.matched_count:
+        return None
     return await get(plan_id)
 
 
@@ -526,6 +585,8 @@ async def reschedule_line(plan_id: str, seq: int, amount: float, new_due_date: s
         raise PlanError("Rencana pembayaran tidak ditemukan.")
     if plan.get("status") == "void":
         raise PlanError("Rencana pembayaran sudah dibatalkan — buat rencana baru.")
+    if plan.get("origin") == ORIGIN_TERM:
+        raise PlanError(PESAN_JADWAL_MESIN)
     day = str(new_due_date or "")[:10]
     if not day:
         raise PlanError("Tanggal jatuh tempo baru wajib diisi.")
@@ -588,7 +649,7 @@ async def reschedule_line(plan_id: str, seq: int, amount: float, new_due_date: s
         "reason_label": reason_label, "note": note,
     })
     await db[COLL].update_one({"id": plan_id}, {"$set": {
-        "lines": lines, "history": history, "updated_at": now_iso(),
+        "lines": lines, "history": history, "updated_at": now_iso(), "rev": int(plan.get("rev") or 0) + 1,
         "updated_by": (actor or {}).get("name", "")}})
     await db[COLL].update_one({"id": plan_id}, {"$push": {"explain": (
         f"Sisa {rupiah(amt)} pada '{moved_label}' {action} ke tempo {day}"
@@ -597,7 +658,7 @@ async def reschedule_line(plan_id: str, seq: int, amount: float, new_due_date: s
 
 
 async def recompute_for_doc(doc_type: str, doc_id: str) -> Optional[Dict[str, Any]]:
-    """Dipanggil dari jalur kwitansi (`ar_receipt_service`) — best-effort."""
+    """Dipanggil dari jalur kwitansi (`ar_receipt_service`) — best-effort. CR-T2 — jadwal hidup apa pun asalnya."""
     plan = await get_active(doc_type, doc_id)
     if not plan:
         return None
@@ -649,7 +710,7 @@ def due_now_amount(plan: Dict[str, Any], today: Optional[str] = None) -> float:
 
 async def list_plans(entity_id: str = "", status: str = "", q: str = "",
                      limit: int = 100) -> List[Dict[str, Any]]:
-    flt: Dict[str, Any] = {}
+    flt: Dict[str, Any] = {"origin": {"$ne": ORIGIN_TERM}}   # CR-T2 — jadwal tagihan mesin punya layarnya sendiri
     # FASE E-0 (L2) — `entity_id` boleh berupa dict `{"$in": [...]}` dari
     # `entity_scope.scope_value()` sehingga isolasi ditegakkan di lapisan query.
     if isinstance(entity_id, dict):
@@ -683,4 +744,4 @@ async def needs_plan(order: Dict[str, Any]) -> bool:
         return False
     if source_total(order) < limit:
         return False
-    return not await get_active("sales_order", order.get("id", ""))
+    return not await get_manual("sales_order", order.get("id", ""))   # CR-T2 — jadwal mesin bukan rencana cicilan

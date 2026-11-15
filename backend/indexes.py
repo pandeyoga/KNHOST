@@ -221,6 +221,14 @@ INDEX_SPECS: Dict[str, List[IndexKeys]] = {
     "payment_codes": [               # PM-T2 — kode bayar per pesanan / baris tagihan (unik: REQUIRED_UNIQUE_INDEXES)
         [("entity_id", A), ("status", A), ("created_at", D)],
     ],
+    "payment_plans": [               # CR-T2 — jadwal tagihan: baris per `line_id`; jadwal hidup per asal (job denda)
+        [("lines.line_id", A)],
+        [("origin", A), ("status", A)],
+        [("customer_id", A), ("status", A)],
+    ],
+    "customer_balances": [           # CR-T2 — saldo piutang tersimpan (unik pasangan: REQUIRED_UNIQUE_INDEXES)
+        [("entity_id", A), ("overdue_as_of", A)],
+    ],
     "budget_history": [              # PK-39 — riwayat pagu per pagu (terbaru dulu) · pagu unik: REQUIRED_UNIQUE_INDEXES
         [("budget_id", A), ("at", D)],
     ],
@@ -510,6 +518,8 @@ ID_INDEX_COLLECTIONS: List[str] = [
     "hr_pay_components", "hr_pay_inputs",
     # PY-T2 — riwayat kompensasi (`hcomp_…`) dan penugasan PT (`hasg_…`).
     "hr_compensation_history", "hr_employee_assignments",
+    # CR-T2 — saldo piutang tersimpan per pelanggan per PT (`cbl_…`).
+    "customer_balances",
 ]
 
 # FIX-5 — rujukan bersarang roll yang dicari per nilai (B3a SCH-9: index `reserved_ref` utuh tidak terpakai oleh
@@ -937,6 +947,24 @@ REQUIRED_UNIQUE_INDEXES += [
      "keys": [("entity_id", 1), ("version", 1)], "partial": {"entity_id": dict(_NONEMPTY)},
      "finder": _finder_dup("incentive_definitions", '{entity_id:{$type:"string",$gt:""}}',
                            '{e:"$entity_id",v:"$version"}', "$id")},
+]
+
+
+# CR-T2 (D7) — satu jadwal HIDUP (aktif atau lunas) per dokumen: `payment_plans` kini juga memuat jadwal tagihan mesin
+# (`origin: "term"`). Indeks lama `uq_plan_active_doc` hanya menjaga status `active`; yang ini ikut `closed`. Kunci sengaja
+# dibalik (`doc_id`, `doc_type`) supaya tidak berpola kunci sama dengan indeks lama. Dua kait bersamaan (konfirmasi +
+# surat jalan) → satu kena DuplicateKeyError lalu memakai jadwal pemenangnya (`billing_schedule_service._buat_jadwal`).
+# Data lama yang kembar (aktif + lunas) → indeks gagal dibuat → titik henti H6; kueri pencarinya = `finder`.
+# Saldo piutang tersimpan (`customer_balances`): satu baris per (pelanggan, PT); koleksi baru → data lama tidak kembar.
+REQUIRED_UNIQUE_INDEXES += [
+    {"collection": "payment_plans", "name": "uq_plan_live_doc", "label": "satu jadwal tagihan hidup per dokumen",
+     "keys": [("doc_id", 1), ("doc_type", 1)], "partial": {"status": {"$in": ["active", "closed"]}},
+     "finder": _finder_dup("payment_plans", '{status:{$in:["active","closed"]}}', '{t:"$doc_type",d:"$doc_id"}',
+                           "$id")},
+    {"collection": "customer_balances", "name": "uq_customer_entity", "label": "satu saldo piutang per pelanggan per PT",
+     "keys": [("customer_id", 1), ("entity_id", 1)], "partial": {"customer_id": dict(_NONEMPTY)},
+     "finder": _finder_dup("customer_balances", '{customer_id:{$type:"string",$gt:""}}',
+                           '{c:"$customer_id",e:"$entity_id"}', "$id")},
 ]
 
 

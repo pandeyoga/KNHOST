@@ -255,6 +255,10 @@ async def so_transition(
     if closed:
         await so_approvals.close_detail_docs(db, closed, closed[0].get("cancel_reason", ""), actor_name)
     await audit(actor_name, action, "sales_order", order_id, {"status": new_status})
+    from services.customer_service import DEAD_STATUSES as _mati
+    if new_status in _mati:   # CR-T2 — pesanan mati: jadwal tagihan di-void, saldo piutang tersimpan dihitung ulang
+        from services import billing_schedule_service as _bss
+        await _bss.kait_aman("pesanan berubah", _bss.on_order_changed, order_id)
     return order
 
 

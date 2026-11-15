@@ -3272,7 +3272,13 @@ async def layer_payment_penalty_invariants(db):
 
     INV-PAY-01  Σ baris rencana pembayaran == nilai dokumen sumber (toleransi dibaca dari
                 `payment.plan_tolerance_rupiah`). Rencana yang tidak pas = jadwal tagih yang
-                menyesatkan; penagihan jadi salah sejak awal.
+                menyesatkan; penagihan jadi salah sejak awal. CR-T2 — jadwal tagihan mesin
+                (`origin: "term"`, baris lahir per surat jalan): Σ baris == `billed_total` ≤ nilai
+                dokumen + toleransi, dan == nilai yang ditagih (nilai dokumen − nota kredit
+                tertangguh) bila pesanan sudah terkirim seluruhnya.
+    INV-PAY-05  (WARN, CR-T2) pesanan hidup yang sudah berjurnal pendapatan tetapi belum punya
+                jadwal tagihan tersimpan (dibaca dari pembangun yang sama, tidak disimpan) →
+                `scripts/build_billing_schedule.py` (baca-saja dulu; data nyata = H3).
     INV-PAY-02  Alokasi terbayar tidak boleh melebihi nominal baris, dan Σ terbayar pada
                 rencana tidak boleh melebihi pembayaran NYATA di dokumen sumber (tak ada uang
                 hantu di jadwal).
@@ -3294,7 +3300,7 @@ async def layer_payment_penalty_invariants(db):
 
     # ── INV-PAY-01 & INV-PAY-02 ─────────────────────────────────────────────
     bad_total, bad_paid = [], []
-    total_plans = 0
+    total_plans = term_plans = 0
     async for row in db[plans.COLL].find({"status": {"$ne": "void"}}, {"_id": 0}):
         total_plans += 1
         policy = await plans.plan_policy(row.get("entity_id") or "", row.get("customer_id") or "")
@@ -3302,9 +3308,26 @@ async def layer_payment_penalty_invariants(db):
         if not order:
             continue
         total = plans.source_total(order)
-        okay, diff = plans.check_total(row.get("lines") or [], total, policy["tolerance"])
-        if not okay:
-            bad_total.append(f"{row.get('number')} selisih Rp {diff:,.0f}".replace(",", "."))
+        if row.get("origin") == plans.ORIGIN_TERM:   # CR-T2 — jadwal tagihan mesin
+            term_plans += 1
+            tol = float(policy["tolerance"]) + 0.0001
+            billed = round(sum(float(l.get("amount") or 0) for l in row.get("lines") or []), 2)
+            tangguh = sum(float(p.get("amount") or 0) for p in order.get("payments") or []
+                          if p.get("gl_bucket") == "nota_tangguh")
+            efektif = round(total - max(0.0, tangguh), 2)
+            sebab = ""
+            if abs(billed - float(row.get("billed_total") or 0)) > tol:
+                sebab = f"Σ baris Rp {billed:,.0f} ≠ tertagih Rp {float(row.get('billed_total') or 0):,.0f}"
+            elif billed > total + tol:
+                sebab = f"Σ baris Rp {billed:,.0f} > nilai Rp {total:,.0f}"
+            elif order.get("status") in ("shipped", "done") and abs(billed - efektif) > tol:
+                sebab = f"terkirim penuh: Σ baris Rp {billed:,.0f} ≠ nilai Rp {efektif:,.0f}"
+            if sebab:
+                bad_total.append(f"jadwal {order.get('number') or row.get('doc_id')}: {sebab}".replace(",", "."))
+        else:
+            okay, diff = plans.check_total(row.get("lines") or [], total, policy["tolerance"])
+            if not okay:
+                bad_total.append(f"{row.get('number')} selisih Rp {diff:,.0f}".replace(",", "."))
         paid_sum = round(sum(float(l.get("paid_amount") or 0) for l in (row.get("lines") or [])), 2)
         real_paid = plans.source_paid(order)
         over_line = [l.get("label") for l in (row.get("lines") or [])
@@ -3320,7 +3343,7 @@ async def layer_payment_penalty_invariants(db):
     else:
         results["pass"] += 1
         line("PASS", G, f"INV-PAY-01: {total_plans} rencana pembayaran jumlahnya PAS dengan "
-                        "nilai dokumen sumber")
+                        f"nilai dokumen sumber (termasuk {term_plans} jadwal tagihan per surat jalan)")
     if bad_paid:
         results["fail"] += 1
         line("FAIL", R, f"INV-PAY-02: {len(bad_paid)} rencana mencatat pembayaran melebihi "
@@ -3329,6 +3352,25 @@ async def layer_payment_penalty_invariants(db):
         results["pass"] += 1
         line("PASS", G, "INV-PAY-02: alokasi pembayaran pada jadwal tidak pernah melebihi "
                         "kas yang benar-benar masuk")
+
+    # ── INV-PAY-05 (CR-T2, WARN) — pesanan berjurnal pendapatan tanpa jadwal tagihan tersimpan ──────────────────
+    berjurnal = set(await db.journal_entries.distinct("ref.order_id", {
+        "status": {"$ne": "void"}, "source_type": "shipment_revenue"}))
+    berjurnal |= set(await db.journal_entries.distinct("source_id", {"status": {"$ne": "void"},
+                                                                     "source_type": "sales_order"}))
+    berjadwal = set(await db[plans.COLL].distinct("doc_id", {"status": {"$ne": "void"}}))
+    hidup = set(await db.sales_orders.distinct("id", {"id": {"$in": sorted(i for i in berjurnal if i)},
+                                                      "status": {"$nin": ["cancelled", "draft", "expired", "rejected"]},
+                                                      "order_type": {"$ne": "sample"}}))
+    tanpa = sorted(hidup - berjadwal)
+    if tanpa:
+        results["warn"] += 1
+        line("WARN", Y, f"INV-PAY-05: {len(tanpa)} pesanan berjurnal pendapatan belum punya jadwal tagihan tersimpan",
+             f"{tanpa[:5]} → python scripts/build_billing_schedule.py --dry-run (umur piutang tetap membacanya dari "
+             "pembangun yang sama)")
+    else:
+        results["pass"] += 1
+        line("PASS", G, "INV-PAY-05: semua pesanan berjurnal pendapatan punya jadwal tagihan tersimpan")
 
     # ── INV-PEN-01 ──────────────────────────────────────────────────────────
     drafts_je = await pen.drafts_with_journal()
@@ -3366,6 +3408,54 @@ async def layer_payment_penalty_invariants(db):
         results["pass"] += 1
         line("PASS", G, f"INV-PEN-03: Σ denda terbit belum dibayar == saldo GL 1-1270 "
                         f"(Rp {doc_out:,.0f})".replace(",", "."))
+
+
+async def layer_balance_invariants(db):
+    """CR-T2 (`02_STANDAR.md` §5 D2) — SALDO PIUTANG TERSIMPAN per (pelanggan, PT) (`customer_balances`).
+
+    INV-BAL-01  isi tersimpan = hasil hitung ulang penuh dari dokumen untuk tanggal hitungnya (`overdue_as_of`); baris
+                basi (`stale`) ikut merah. Pasangan berpiutang yang belum punya baris = WARN (dibangun pembaca).
+    INV-BAL-02  per PT: Σ `ar_delivered` (piutang atas barang terkirim belum lunas, dihitung dari dokumen) = saldo akun
+                piutang (`penjualan.piutang`, semua akun yang pernah dipakai). Selisih yang terjelaskan (daftar sebab
+                PK-41: jurnal tanpa pesanan, kasus keuangan) = WARN beserta sebabnya; sisa tak terjelaskan = FAIL.
+    Rumus satu tempat: `services/customer_balance_service.py` (`verify_stored`, `reconcile_gl`)."""
+    print(f"\n{C}{B}BAL — Saldo piutang tersimpan per pelanggan per PT (CR-T2){X}")
+    sys.path.insert(0, str(ROOT / "backend"))
+    try:
+        from services import customer_balance_service as _cbs
+        st = await _cbs.verify_stored()
+        ents = [e["id"] async for e in db.business_entities.find({}, {"_id": 0, "id": 1})]
+        recs = [await _cbs.reconcile_gl(e) for e in ents]
+    except Exception as exc:  # noqa: BLE001 — penjaga tidak boleh buta diam-diam
+        results["fail"] += 1
+        line("FAIL", R, f"INV-BAL: saldo piutang tersimpan tidak bisa diperiksa ({exc.__class__.__name__}: {exc})")
+        return
+    if st["bad"]:
+        results["fail"] += 1
+        line("FAIL", R, f"INV-BAL-01: {len(st['bad'])} saldo tersimpan ≠ hasil hitung ulang: {st['bad'][:5]}",
+             "→ POST /api/ar/balances/rebuild (Keuangan › Piutang) lalu cari penulis yang melewati `refresh`")
+    else:
+        results["pass"] += 1
+        line("PASS", G, f"INV-BAL-01: {st['checked']} saldo tersimpan = hasil hitung ulang penuh dari dokumen")
+    if st["missing"]:
+        results["warn"] += 1
+        line("WARN", Y, f"INV-BAL-01: {len(st['missing'])} pasangan pelanggan/PT belum punya saldo tersimpan",
+             f"{st['missing'][:5]} → POST /api/ar/balances/rebuild (dibangun juga saat pertama dibaca)")
+    merah = [r for r in recs if abs(r["unexplained"]) > 0.0049]
+    kuning = [r for r in recs if abs(r["unexplained"]) <= 0.0049 and abs(r["difference"]) > 0.0049]
+    if merah:
+        results["fail"] += 1
+        line("FAIL", R, f"INV-BAL-02: {len(merah)} PT piutang terkirim ≠ saldo akun piutang tanpa sebab yang dikenal: "
+                        + str([f"{r['entity_id']} Δ{r['unexplained']:,.0f}" for r in merah[:5]]),
+             "→ Keuangan › Piutang (pencocokan) lalu Buku Besar akun piutang untuk jurnal penyebabnya")
+    elif kuning:
+        results["warn"] += 1
+        line("WARN", Y, "INV-BAL-02: selisih piutang terkirim vs saldo akun piutang terjelaskan: "
+                        + str([f"{r['entity_id']} Δ{r['difference']:,.0f} ({', '.join(r['explained'])})"
+                               for r in kuning[:5]]))
+    else:
+        results["pass"] += 1
+        line("PASS", G, f"INV-BAL-02: Σ piutang terkirim belum lunas = saldo akun piutang ({len(recs)} PT)")
 
 
 async def layer_rnd_invariants(db):
@@ -5049,6 +5139,7 @@ def _layer_registry():
         ("amendment",   layer_amendment_invariants,       True,  ("INV-AMD",)),
         ("docref",      layer_docref_invariants,          True,  ("INV-REF",)),
         ("payment",     layer_payment_penalty_invariants, True,  ("INV-PAY", "INV-PEN")),
+        ("balance",     layer_balance_invariants,         True,  ("INV-BAL",)),
         ("variance",    layer_payment_variance_invariants, True, ("INV-VAR",)),
         ("bank",        layer_bank_invariants,            True,  ("INV-BNK",)),
         ("case",        layer_finance_case_invariants,    True,  ("INV-CASE",)),

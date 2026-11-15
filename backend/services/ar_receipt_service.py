@@ -297,6 +297,8 @@ async def _adjust_deposit(customer_id: str, delta: float) -> None:
         pred, {"$inc": {"deposit_balance": round(delta, 2)}, "$set": {"updated_at": now_iso()}})
     if res.matched_count == 0 and delta < 0:
         raise HTTPException(status_code=409, detail="Deposit pelanggan tidak cukup (baru saja terpakai proses lain).")
+    from services import customer_balance_service as _cbs   # CR-T2 — cermin titipan di saldo tersimpan (turunan)
+    await _cbs.refresh_safe(customer_id)
 
 
 async def adjust_deposit(customer_id: str, delta: float) -> None:
@@ -601,6 +603,9 @@ async def _create_receipt_after_reserve(payload, actor, customer, amount, use_de
     out = safe_doc(fresh or doc)
     if decision:
         out["variance_decision"] = decision
+    # CR-T2 — kwitansi tersimpan (pembayaran terakhir, giro belum cair): saldo piutang tersimpan pasangan dihitung ulang
+    from services import customer_balance_service as _cbs
+    await _cbs.refresh_safe(out.get("customer_id") or "", out.get("entity_id") or None)
     return out
 
 
@@ -726,7 +731,10 @@ async def void_receipt(receipt_id: str, actor: Dict[str, Any], reason: str = "")
             "void_intent.status": "done", "void_intent.done_at": now_iso(), "updated_at": now_iso()}))
     finally:
         await _saga.release("ar_receipts", receipt_id, token)
-    return safe_doc(await db.ar_receipts.find_one({"id": receipt_id}, {"_id": 0}))
+    out = safe_doc(await db.ar_receipts.find_one({"id": receipt_id}, {"_id": 0}))
+    from services import customer_balance_service as _cbs   # CR-T2 — kwitansi batal: saldo tersimpan (turunan)
+    await _cbs.refresh_safe(out.get("customer_id") or "", out.get("entity_id") or None)
+    return out
 
 
 #: PK-42 (UX-12) — urutan daftar kwitansi: terbaru dulu, DI KUERI. Dulu 2.000 baris diambil tanpa urutan lalu diurutkan

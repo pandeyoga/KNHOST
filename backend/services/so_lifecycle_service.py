@@ -98,6 +98,10 @@ async def confirm_core(order_id: str, actor: Dict[str, Any]) -> Dict[str, Any]:
             _final = safe_doc(await db.sales_orders.find_one({"id": order_id}, {"_id": 0}))
     except Exception as exc:  # noqa: BLE001
         logger.warning("[confirm_order] kode bayar %s gagal dibuat: %s", order_id, exc)
+    # CR-T2 (K-16) — jadwal tagihan lahir (+ baris uang muka bila termin ber-DP); gagal = dicatat, pesanan tetap
+    # terkonfirmasi (dibangun ulang kait berikutnya atau `scripts/build_billing_schedule.py`).
+    from services import billing_schedule_service as _bss
+    await _bss.kait_aman("konfirmasi", _bss.on_order_confirmed, order_id)
     # Fase 5 — auto-kirim WhatsApp bila ada aturan aktif (best-effort, non-blocking).
     try:
         from services import delivery_service as _ds

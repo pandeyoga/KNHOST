@@ -173,7 +173,7 @@ async def plan_by_doc(doc_type: str, doc_id: str, request: Request) -> Dict[str,
     await require_permission(request, "payment_plan", "view")
     await _guard_source(request, doc_type, doc_id)   # PK-09 E16 — nota denda per doc_id hanya bila sumbernya milik PT
     ctx = await entity_ctx(request)
-    plan = await plans.get_active(doc_type, doc_id)
+    plan = await plans.get_manual(doc_type, doc_id)   # CR-T2 — jadwal tagihan mesin: GET /customers/{id}/billing-schedule
     if plan:
         assert_entity_access(plan, "payment_plans", ctx)   # FASE E-0 (L2)
     if plan:

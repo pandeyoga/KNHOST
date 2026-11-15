@@ -76,6 +76,8 @@ CANONICAL_COLLECTIONS = {
     "doc_number_formats",
     # ── CR-T1 (blueprint) — profil kredit per pelanggan per PT + pengajuan perubahannya ──
     "customer_credit_profiles", "credit_profile_requests",
+    # ── CR-T2 (blueprint) — saldo piutang tersimpan per pelanggan per PT (turunan; jadwal tagihan = `payment_plans`) ──
+    "customer_balances",
     # ── PK-39 (blueprint) — riwayat pagu anggaran (buat · ubah · hapus; sebelum/sesudah, alasan) ──
     "budget_history",
     # ── PK-22 (blueprint) — proses gaji (jenis `payroll_run` registri posting) + setoran kewajiban (BPJS, PPh 21) ──

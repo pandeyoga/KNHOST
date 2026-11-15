@@ -183,6 +183,9 @@ async def _segarkan(order_id: str, order: Optional[Dict[str, Any]] = None) -> st
         await _plans.recompute_for_doc("sales_order", order_id)
     except Exception as exc:  # noqa: BLE001 — jadwal bayar turunan dari payments[]
         logger.warning("[ar_allocation] rencana bayar %s gagal dihitung ulang: %s", order_id, exc)  # KN-C10
+    # CR-T2 — sesudah langkah efek: saldo piutang tersimpan pasangan (pelanggan, PT) dihitung ulang penuh (turunan)
+    from services import customer_balance_service as _cbs
+    await _cbs.refresh_safe(o.get("customer_id") or "", o.get("entity_id") or "")
     return status
 
 
@@ -404,4 +407,6 @@ async def remove_unborn(source_id: str) -> List[str]:
             await _plans.recompute_for_doc("sales_order", o["id"])
         except Exception as exc:  # noqa: BLE001
             logger.warning("[ar_allocation] rencana bayar %s gagal dihitung ulang: %s", o["id"], exc)  # KN-C10
+        from services import customer_balance_service as _cbs   # CR-T2 — saldo tersimpan (turunan)
+        await _cbs.refresh_safe(o.get("customer_id") or "", o.get("entity_id") or "")
     return touched

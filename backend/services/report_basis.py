@@ -85,6 +85,20 @@ async def peta_termin(orders: Iterable[Dict[str, Any]]) -> Dict[Tuple[str, str],
     return out
 
 
+def hari_termin(customer: Dict[str, Any], order: Dict[str, Any],
+                terms: Optional[Dict[Any, Optional[int]]] = None) -> int:
+    """CR-T2 — hari termin satu pesanan (SATU aturan untuk umur piutang, jadwal tagihan, proyeksi kas, nota debit):
+    snapshot hari termin pesanan → kode termin pesanan di `terms` (`peta_termin`) → profil pelanggan → 30."""
+    from services.customer_service import _term_days
+    return _term_days(customer, order, terms)
+
+
+def jatuh_tempo(tanggal: Any, hari: int) -> str:
+    """CR-T2 — SATU rumus jatuh tempo: tanggal buku WIB `tanggal` + `hari` hari kalender (`YYYY-MM-DD`). Dipakai
+    `baris_tagihan` (PK-41) dan pembangun jadwal tagihan (`billing_schedule_service.bangun_baris`)."""
+    return (_tgl(tanggal) + timedelta(days=int(hari or 0))).isoformat()
+
+
 # ── Baris tagihan piutang ───────────────────────────────────────────────────────────────────────────────────────────
 def pesanan_piutang(o: Dict[str, Any]) -> bool:
     """Aturan pesanan yang ikut piutang (aturan yang ada): status bukan status mati dan metode bayar bukan tunai.
@@ -153,7 +167,7 @@ async def baris_tagihan(orders: List[Dict[str, Any]], customers: Dict[str, Dict[
     4. `hari_lewat = hari_antara(jatuh_tempo, per)`.
     5. Baris bersisa ≤ 0,01 dibuang (daftar pesanan boleh kosong = lunas per tanggal itu).
     """
-    from services.customer_service import _order_grand_total, _term_days
+    from services.customer_service import _order_grand_total
     per_tgl = tanggal_buku(per)
     hidup = [o for o in orders if o.get("id") and pesanan_piutang(o)]
     jurnal = await _jurnal_pendapatan([o["id"] for o in hidup])
@@ -162,7 +176,7 @@ async def baris_tagihan(orders: List[Dict[str, Any]], customers: Dict[str, Dict[
     out: Dict[str, List[Dict[str, Any]]] = {}
     for o in hidup:
         cust = customers.get(o.get("customer_id") or "") or {}
-        hari_termin = _term_days(cust, o, termin)
+        n_hari = hari_termin(cust, o, termin)
         terkirim: List[Dict[str, Any]] = []
         for je in jurnal.get(o["id"], []):
             tgl = _tgl_aman(je.get("date"))
@@ -174,7 +188,7 @@ async def baris_tagihan(orders: List[Dict[str, Any]], customers: Dict[str, Dict[
             if nilai <= 0:
                 continue
             lama = je.get("source_type") == "sales_order"
-            jt = (date.fromisoformat(tgl) + timedelta(days=hari_termin)).isoformat()
+            jt = jatuh_tempo(tgl, n_hari)
             terkirim.append({
                 "sumber": SUMBER_PESANAN if lama else (
                     SUMBER_NOTA_DEBIT if je.get("source_type") == "amendment_debit_note" else SUMBER_SURAT_JALAN),

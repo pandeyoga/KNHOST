@@ -506,7 +506,7 @@ async def customer_aging_detail(customer_id: str, as_of: Optional[str] = None,
         pen_rows = pen_by_doc.get(o.get("id")) or []
         pen = penalties.summarize(pen_rows)
         _add_penalties(totals, pen)
-        plan = await plans.get_active("sales_order", o.get("id", ""))
+        plan = await plans.get_manual("sales_order", o.get("id", ""))   # CR-T2 — kolom "rencana" = rencana cicilan
         if plan:
             nd = plans.next_due(plan) or {}
             plan_rows.append({
