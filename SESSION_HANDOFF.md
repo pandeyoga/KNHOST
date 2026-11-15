@@ -14,6 +14,8 @@
 > halaman Branches. Deploy VPS = pemilik; skrip migrasi `--apply` (H3) di kolom "Titik henti" STATUS.
 > **Review berikutnya:** perintah lengkap untuk sesi review (prompt siap tempel, bacaan wajib, prioritas A–F, cara uji,
 > hambatan lingkungan, keluaran) ada di `docs/reviews/PERINTAH_REVIEW_2026-11-15.md`.
+> **Audit domain (R5, oleh reviewer):** `docs/reviews/PERINTAH_AUDIT_DOMAIN_2026-11-15.md` — master data & jenis barang
+> (benang, greige, PFP, PFD, bahan jadi), makloon, R&D, retur, QC & MD Quality, pesanan sesudah POS (alokasi, tagihan, keep/pending).
 
 > Diperbarui: **2026-06 (sesi lanjutan ke-8)** — repo kini di
 > `github.com/pandeyoga/KN020926`; lingkungan di-restore dengan `.restore_env.sh`

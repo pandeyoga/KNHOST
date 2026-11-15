@@ -15,6 +15,8 @@
 > halaman Branches. Deploy VPS = pemilik; skrip migrasi `--apply` (H3) di kolom "Titik henti" STATUS.
 > **Review berikutnya:** perintah lengkap untuk sesi review (prompt siap tempel, bacaan wajib, prioritas A–F, cara uji,
 > hambatan lingkungan, keluaran) ada di `docs/reviews/PERINTAH_REVIEW_2026-11-15.md`.
+> **Audit domain (R5, oleh reviewer):** `docs/reviews/PERINTAH_AUDIT_DOMAIN_2026-11-15.md` — master data & jenis barang
+> (benang, greige, PFP, PFD, bahan jadi), makloon, R&D, retur, QC & MD Quality, pesanan sesudah POS (alokasi, tagihan, keep/pending).
 
 ## Sesi P18 (2026-10-03) — 18 kasus partial → lulus (59 lulus · 37 partial), 6 bug + 3 fitur ✅
 > **Baca `memory/HANDOFF_P18_2026-10-03.md`** (setup lingkungan baru, packing list permanen aktif, harness p18a..f, sisa 37 partial) — lalu P16 untuk aturan git.
