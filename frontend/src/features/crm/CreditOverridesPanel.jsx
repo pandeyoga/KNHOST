@@ -110,20 +110,31 @@ export default function CreditOverridesPanel({ currentUser }) {
                 <table className="data-table head-wrap w-full text-fs-12" data-testid="overrides-table">
                   <thead>
                     <tr>
-                      <th>Pelanggan</th><th>Lingkup</th><th className="text-right">Nominal</th><th className="text-right">Sisa</th>
-                      <th>Berlaku sampai</th><th>Alasan</th><th>Pemohon</th><th>Status</th><th className="col-sticky-end">Keputusan</th>
+                      {/* Cek layar CR-T3 (integrator, 1024 px): 9 kolom = 1007 px di kartu ±732 px — Alasan tertutup kolom Keputusan
+                          lekat, Pemohon/Status di balik gulir. Kini 6 kolom: lingkup di bawah pelanggan, sisa & berlaku sampai di bawah
+                          nominal, pemohon di bawah alasan (5 kolom). */}
+                      <th>Pelanggan · Lingkup</th><th className="text-right">Nominal · Sisa · Berlaku sampai</th>
+                      <th>Alasan · Pemohon</th><th>Status</th><th className="col-sticky-end">Keputusan</th>
                     </tr>
                   </thead>
                   <tbody>
                     {srch.pageRows.map((r) => (
                       <tr key={r.id} data-testid={`override-row-${r.id}`}>
-                        <td className="min-w-[150px]"><p className="font-semibold">{r.customer_name}</p><p className="text-kn-text-2">{ptName(r)}</p></td>
-                        <td data-testid={`override-scope-${r.id}`}>{SCOPE_LABEL[r.scope === "pesanan" ? "pesanan" : "pelanggan"]}{r.order_number ? <span className="block text-kn-text-2">{r.order_number}</span> : null}</td>
-                        <td className="text-right tabular-nums font-semibold">{formatCurrency(r.amount)}</td>
-                        <td className="text-right tabular-nums" data-testid={`override-remaining-${r.id}`}>{r.status === "approved" ? formatCurrency(r.remaining_amount) : "—"}</td>
-                        <td data-testid={`override-valid-${r.id}`}>{r.status !== "approved" ? "—" : r.valid_until ? fmtDate(r.valid_until) : "Tanpa batas"}</td>
-                        <td className="min-w-[140px]"><p>{r.reason_label || "—"}</p>{r.reason && r.reason !== r.reason_label ? <p className="text-kn-text-2">{r.reason}</p> : null}</td>
-                        <td><p>{r.requested_by}</p><p className="text-kn-text-2">{fmtDate(r.created_at)}</p></td>
+                        <td className="min-w-[140px]">
+                          <p className="font-semibold">{r.customer_name}</p><p className="text-kn-text-2">{ptName(r)}</p>
+                          <p className="text-kn-text-2" data-testid={`override-scope-${r.id}`}>{SCOPE_LABEL[r.scope === "pesanan" ? "pesanan" : "pelanggan"]}{r.order_number ? <> · <span className="whitespace-nowrap">{r.order_number}</span></> : null}</p>
+                        </td>
+                        <td className="text-right tabular-nums">
+                          <p className="whitespace-nowrap font-semibold">{formatCurrency(r.amount)}</p>
+                          {r.status === "approved" && (<>
+                            <p className="whitespace-nowrap text-kn-text-2" data-testid={`override-remaining-${r.id}`}>sisa {formatCurrency(r.remaining_amount)}</p>
+                            <p className="whitespace-nowrap text-kn-text-2" data-testid={`override-valid-${r.id}`}>{r.valid_until ? `s.d. ${fmtDate(r.valid_until)}` : "Tanpa batas"}</p>
+                          </>)}
+                        </td>
+                        <td className="min-w-[140px]">
+                          <p>{r.reason_label || "—"}</p>{r.reason && r.reason !== r.reason_label ? <p className="text-kn-text-2">{r.reason}</p> : null}
+                          <p className="text-kn-text-2">oleh {r.requested_by} · <span className="whitespace-nowrap">{fmtDate(r.created_at)}</span></p>
+                        </td>
                         <td><IzinStatus row={r} /></td>
                         <td className="col-sticky-end">
                           {r.status === "pending" && canDecide ? (
