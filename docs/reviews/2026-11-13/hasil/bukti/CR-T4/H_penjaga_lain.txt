@@ -1,0 +1,8 @@
+verify_payment_vocab.py: [PASS] 1833 cek lolos, 0 pelanggaran.
+verify_detail_modal.py: [PASS] 29 cek lolos, 0 pelanggaran.
+verify_permission_checked.py: [PASS] 615 cek lolos, 0 pelanggaran.
+verify_cash_single_door.py: [PASS] 740 cek lolos, 0 pelanggaran.
+verify_config_text.py: [PASS] 3402 cek lolos, 0 pelanggaran.
+verify_role_gate_ui.py: [PASS] 31 cek lolos, 0 pelanggaran.
+verify_posting_coverage.py: [PASS] 138 cek lolos, 0 pelanggaran.
+verify_atomic_claim.py: [PASS] 161 cek lolos, 0 pelanggaran.

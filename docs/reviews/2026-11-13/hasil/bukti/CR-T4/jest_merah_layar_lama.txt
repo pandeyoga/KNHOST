@@ -1,0 +1,11 @@
+  ✕ CR-T4 U17 (a): Kredit › Aturan denda menulis tarif 1 % 'khusus pelanggan', unsur lain 'ikut PT' (50 ms)
+  ✕ CR-T4 (b): bebas denda → lencana 'Bebas denda s.d. …' + alasan; tanpa izin denda → kalimat penjelas (76 ms)
+  ✕ CR-T4 (c): pop-up — bebas wajib alasan & tanggal; khusus mengirim penalty_rule baku (46 ms)
+  ✕ CR-T4 (d): form rencana bayar — bagian lipat aturan denda; tarif 0,5 dikirim sebagai penalty (40 ms)
+  ✕ CR-T4 (e): panel denda — 'Aturan dari' per nota; dua pelanggan dikelompokkan (10 ms)
+  ● CR-T4 U17 (a): Kredit › Aturan denda menulis tarif 1 % 'khusus pelanggan', unsur lain 'ikut PT'
+  ● CR-T4 (b): bebas denda → lencana 'Bebas denda s.d. …' + alasan; tanpa izin denda → kalimat penjelas
+  ● CR-T4 (c): pop-up — bebas wajib alasan & tanggal; khusus mengirim penalty_rule baku
+  ● CR-T4 (d): form rencana bayar — bagian lipat aturan denda; tarif 0,5 dikirim sebagai penalty
+  ● CR-T4 (e): panel denda — 'Aturan dari' per nota; dua pelanggan dikelompokkan
+Tests:       5 failed, 5 total

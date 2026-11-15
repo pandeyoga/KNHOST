@@ -1,0 +1,3 @@
+  [hr] ptkp_table.K3                                        default=72000000  alasan: Pengaturan bertanggal (PK-46): nilai di system_settings tidak dibaca m
+
+✅ INV-CFG: setiap setting terdeklarasi punya pembaca kode DAN jalur ubah yang nyata; tidak ada editor ganda.

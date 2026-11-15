@@ -1,0 +1,25 @@
+== test_bp_CRT4_putaran_pertama
+[CR-T4] sebelum: jadwal hidup per asal {'manual': {'jadwal': 3, 'draf': 1}}; nota draf seluruhnya 1
+[CR-T4] hasil job: {'id': 'srun_bea946000520', 'job_id': 'penalty_accrual', 'job_label': 'Hitung Denda Keterlambatan', 'trigger': 'manual', 'actor': 'Budi Santoso', 'started_at': '2026-11-15T10:32:43.868069+00:00', 'status': 'success', 'created': 0, 'scanned': 0, 'wa_queued': 0, 'detail': '', 'error': '', 'duration_ms': 96, 'finished_at': '2026-11-15T10:32:43.964461+00:00'}
+[CR-T4] sesudah: per asal {'manual': {'jadwal': 3, 'draf': 1}}; nota draf seluruhnya 1 (+0)
+.[CR-T4] aturan denda cust_toko_kain @ ent_ksc: {'mode': 'draft', 'rate_pct_per_month': 2.0, 'base': 'installment', 'cap_pct': 0.0, 'grace_days': 0, 'min_amount': 10000.0} asal {'mode': 'global', 'base': 'global', 'cap_pct': 'global', 'rate_pct_per_month': 'global', 'grace_days': 'global', 'min_amount': 'global'}
+[CR-T4] baris lapisan pelanggan lima kunci denda (dipindah skrip migrate_penalty_customer_layer): 0
+.
+2 passed in 1.51s
+== test_bp_KFT5_aturan_khusus
+[KF-T5] config_values scope_type=customer: 0 baris; kunci: []
+[KF-T5] config_values scope_type=product: 0 baris; kunci: []
+[KF-T5] baris lapisan pelanggan allocation.* (tidak lagi dibaca resolver): 0
+....
+4 passed in 2.09s
+== test_g0_config_poc
+no tests ran in 0.00s
+ERROR: file or directory not found: tests/test_g0_config_poc.py
+
+[96m[1m==============================================================================
+RINGKASAN
+==============================================================================[0m
+  PASS 111 / FAIL 4  (total 115)
+
+[91m[1m✗ 4 pemeriksaan GAGAL — perbaiki sebelum lanjut.[0m
+

@@ -1,0 +1,80 @@
+FFFFFFFFFFF.FFFFFF                                                       [100%]
+=================================== FAILURES ===================================
+E   ValueError: not enough values to unpack (expected 1, got 0)
+---------------------------- Captured stdout setup -----------------------------
+[bootstrap] SANDI AWAL akun seed (ganti segera): aOvRq8ZJO3SWTlw-
+[bootstrap] FASE F lifecycle backfill: 5 produk distempel 'produksi'
+[bootstrap] kebersihan data: 5 record dirapikan {'customers': 3, 'suppliers': 0, 'users': 0, 'hr_employees': 2, 'makloons': 0}
+$S/wt25/backend/tests_mem/test_CRT4_denda_berlapis.py:150: ValueError: not enough values to unpack (expected 1, got 0)
+E   ValueError: not enough values to unpack (expected 1, got 0)
+$S/wt25/backend/tests_mem/test_CRT4_denda_berlapis.py:169: ValueError: not enough values to unpack (expected 1, got 0)
+E   ValueError: not enough values to unpack (expected 1, got 0)
+$S/wt25/backend/tests_mem/test_CRT4_denda_berlapis.py:188: ValueError: not enough values to unpack (expected 1, got 0)
+E   AssertionError: {'mode': 'draft', 'base': 'installment', 'cap_pct': 0.0, 'min_amount': 10000.0, ...}
+    assert ('draft' == 'off'
+      
+      - off
+      + draft)
+$S/wt25/backend/tests_mem/test_CRT4_denda_berlapis.py:208: AssertionError: {'mode': 'draft', 'base': 'installment', 'cap_pct': 0.0, 'min_amount': 10000.0, ...}
+E   KeyError: 'waiver'
+$S/wt25/backend/tests_mem/test_CRT4_denda_berlapis.py:227: KeyError: 'waiver'
+E   AssertionError: {'id': 'pnl_9e7263d760f0', 'number': 'KANDA/DN-DENDA-00001', 'entity_id': 'ent_kanda', 'doc_type': 'sales_order', ...}
+    assert 37500.0 == 25000
+$S/wt25/backend/tests_mem/test_CRT4_denda_berlapis.py:250: AssertionError: {'id': 'pnl_9e7263d760f0', 'number': 'KANDA/DN-DENDA-00001', 'entity_id': 'ent_kanda', 'doc_type': 'sales_order', ...}
+E   AssertionError: {"id":"pyp_b339d32a88a1","number":"KANDA/RPB-00002","entity_id":"ent_kanda","doc_type":"sales_order","doc_id":"so_crt4_1e34aaea","doc_number":"SO-CRT4-c3fef","customer_id":"cus_crt4_2f21963a","customer_name":"Toko CR-T4","origin":"manual","rev":1,"mode":"custom","mode_label":"Bebas / campuran","total_amount":5000000.0,"lines":[{"seq":1,"kind":"installment","label":"Pelunasan","basis":"amount","percent":0.0,"amount":5000000.0,"due_rule":"fixed_date","due_date":"2026-10-01","status":"open","paid_amount":0.0,"line_id":"ppl_fd874ba36578","source_type":"manual","source_id":"","targeted_amount":0.0}],"penalty":{"mode":"","grace_days":null,"rate_pct_per_month":120,"base":"","cap_pct":null},"note":"","status":"active","created_by":"Budi Santoso","created_at":"2026-11-15T09:01:43.955351+00:00","updated_at":"2026-11-15T09:01:43.956949+00:00","replaces_plan_id":"pyp_9f8e94159ed6","refs":[{"rel":"parent","doc_type":"sales_order","doc_id":"so_crt4_1e34aaea","doc_number":"SO-CRT4-c3fef","note":"jadwal pembayaran dokumen ini","at":"2026-11-15T09:01:43.956235+00:00"}],"explain":["Nilai dokumen SO-CRT4-c3fef = Rp 5.000.000","Mode Bebas / campuran · 1 baris","Toleransi pembulatan Rp 1 (Pusat Pengaturan)"],"paid_total":0.0,"outstanding":5000000.0}
+    assert 200 == 400
+     +  where 200 = <Response [200 OK]>.status_code
+$S/wt25/backend/tests_mem/test_CRT4_denda_berlapis.py:262: AssertionError: {"id":"pyp_b339d32a88a1","number":"KANDA/RPB-00002","entity_id":"ent_kanda","doc_type":"sales_order","doc_id":"so_crt4_1e34aaea","doc_number":"SO-CRT4-c3fef","customer_id":"cus_crt4_2f21963a","customer_name":"Toko CR-T4","origin":"manual","rev":1,"mode":"custom","mode_label":"Bebas / campuran","total_amount":5000000.0,"lines":[{"seq":1,"kind":"installment","label":"Pelunasan","basis":"amount","percent":0.0,"amount":5000000.0,"due_rule":"fixed_date","due_date":"2026-10-01","status":"open","paid_amount":0.0,"line_id":"ppl_fd874ba36578","source_type":"manual","source_id":"","targeted_amount":0.0}],"penalty":{"mode":"","grace_days":null,"rate_pct_per_month":120,"base":"","cap_pct":null},"note":"","status":"active","created_by":"Budi Santoso","created_at":"2026-11-15T09:01:43.955351+00:00","updated_at":"2026-11-15T09:01:43.956949+00:00","replaces_plan_id":"pyp_9f8e94159ed6","refs":[{"rel":"parent","doc_type":"sales_order","doc_id":"so_crt4_1e34aaea","doc_number":"SO-CRT4-c3fef","note":"jadwal pembayaran dokumen ini","at":"2026-11-15T09:01:43.956235+00:00"}],"explain":["Nilai dokumen SO-CRT4-c3fef = Rp 5.000.000","Mode Bebas / campuran · 1 baris","Toleransi pembulatan Rp 1 (Pusat Pengaturan)"],"paid_total":0.0,"outstanding":5000000.0}
+E   ValueError: not enough values to unpack (expected 1, got 0)
+$S/wt25/backend/tests_mem/test_CRT4_denda_berlapis.py:273: ValueError: not enough values to unpack (expected 1, got 0)
+E   ValueError: not enough values to unpack (expected 1, got 0)
+$S/wt25/backend/tests_mem/test_CRT4_denda_berlapis.py:285: ValueError: not enough values to unpack (expected 1, got 0)
+E   ValueError: not enough values to unpack (expected 1, got 0)
+$S/wt25/backend/tests_mem/test_CRT4_denda_berlapis.py:296: ValueError: not enough values to unpack (expected 1, got 0)
+E   AssertionError: {'order_id': 'so_crt4_5f3cff3f', 'order_number': 'SO-CRT4-96459', 'grand_total': 400000.0, 'paid_total': 0.0, ...}
+    assert 8000.0 == 0
+$S/wt25/backend/tests_mem/test_CRT4_denda_berlapis.py:310: AssertionError: {'order_id': 'so_crt4_5f3cff3f', 'order_number': 'SO-CRT4-96459', 'grand_total': 400000.0, 'paid_total': 0.0, ...}
+E   ValueError: not enough values to unpack (expected 1, got 0)
+$S/wt25/backend/tests_mem/test_CRT4_denda_berlapis.py:373: ValueError: not enough values to unpack (expected 1, got 0)
+E   AssertionError: {'order_id': 'so_crt4_7292f2fd', 'order_number': 'SO-CRT4-68349', 'grand_total': 5000000.0, 'paid_total': 0.0, ...}
+    assert (45, 200000.0) == (45, 150000)
+      
+      At index 1 diff: 200000.0 != 150000
+      Use -v to get more diff
+$S/wt25/backend/tests_mem/test_CRT4_denda_berlapis.py:393: AssertionError: {'order_id': 'so_crt4_7292f2fd', 'order_number': 'SO-CRT4-68349', 'grand_total': 5000000.0, 'paid_total': 0.0, ...}
+E   AssertionError: {"saved":[{"id":"cfgv_10767beeec9f","key":"payment.penalty_mode","scope_type":"customer","scope_id":"cus_crt4_98843e18","value":"off","prev_value":"draft","prev_source_layer":"code_default","effective_from":"2026-11-15T09:01:44.228049+00:00","effective_to":"","reason":"uji CR-T4","changed_by":"Budi Santoso","changed_by_id":"user_admin_01","approved_by":"","risk":"high","changed_at":"2026-11-15T09:01:44.228253+00:00","created_at":"2026-11-15T09:01:44.228256+00:00","applied_at":"2026-11-15T09:01:44.228253+00:00"}],"count":1}
+    assert 200 == 400
+     +  where 200 = <Response [200 OK]>.status_code
+$S/wt25/backend/tests_mem/test_CRT4_denda_berlapis.py:414: AssertionError: {"saved":[{"id":"cfgv_10767beeec9f","key":"payment.penalty_mode","scope_type":"customer","scope_id":"cus_crt4_98843e18","value":"off","prev_value":"draft","prev_source_layer":"code_default","effective_from":"2026-11-15T09:01:44.228049+00:00","effective_to":"","reason":"uji CR-T4","changed_by":"Budi Santoso","changed_by_id":"user_admin_01","approved_by":"","risk":"high","changed_at":"2026-11-15T09:01:44.228253+00:00","created_at":"2026-11-15T09:01:44.228256+00:00","applied_at":"2026-11-15T09:01:44.228253+00:00"}],"count":1}
+E   AssertionError: {"detail": "Not Found"}
+    assert 404 == 200
+     +  where 404 = <Response [404 Not Found]>.status_code
+$S/wt25/backend/tests_mem/test_CRT4_denda_berlapis.py:431: AssertionError: {"detail": "Not Found"}
+E   AssertionError: ({'mode': 'bebas', 'valid_until': '2026-12-31'}, '{"id":"cpr_55b5d9908243","number":"KANDA/PKR-00008","customer_id":"c...th":null,"cap_pct":null,"grace_days":null,"base":"","reason":"","valid_until":"2026-12-31"},"label":"Aturan denda"}]}')
+    assert (200 == 400)
+     +  where 200 = <Response [200 OK]>.status_code
+$S/wt25/backend/tests_mem/test_CRT4_denda_berlapis.py:453: AssertionError: ({'mode': 'bebas', 'valid_until': '2026-12-31'}, '{"id":"cpr_55b5d9908243","number":"KANDA/PKR-00008","customer_id":"c...th":null,"cap_pct":null,"grace_days":null,"base":"","reason":"","valid_until":"2026-12-31"},"label":"Aturan denda"}]}')
+E   ModuleNotFoundError: No module named 'migrate_penalty_customer_layer'
+<frozen importlib._bootstrap>:1140: ModuleNotFoundError: No module named 'migrate_penalty_customer_layer'
+=============================== warnings summary ===============================
+../../venv311/lib/python3.11/site-packages/starlette/formparsers.py:12
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests_mem/test_CRT4_denda_berlapis.py::test_CRT4_U1_nota_dari_jadwal_tagihan
+FAILED tests_mem/test_CRT4_denda_berlapis.py::test_CRT4_U2_tarif_khusus_pelanggan
+FAILED tests_mem/test_CRT4_denda_berlapis.py::test_CRT4_U3_tarif_per_pt - Val...
+FAILED tests_mem/test_CRT4_denda_berlapis.py::test_CRT4_U4_bebas_denda_masih_berlaku
+FAILED tests_mem/test_CRT4_denda_berlapis.py::test_CRT4_U5_bebas_denda_sudah_lewat
+FAILED tests_mem/test_CRT4_denda_berlapis.py::test_CRT4_U6_aturan_rencana_menimpa_pelanggan
+FAILED tests_mem/test_CRT4_denda_berlapis.py::test_CRT4_U6b_tarif_rencana_di_luar_batas_ditolak
+FAILED tests_mem/test_CRT4_denda_berlapis.py::test_CRT4_U7_tenggang_khusus_pelanggan
+FAILED tests_mem/test_CRT4_denda_berlapis.py::test_CRT4_U8_batas_atas_khusus_pelanggan
+FAILED tests_mem/test_CRT4_denda_berlapis.py::test_CRT4_U9_dasar_sisa_baris
+FAILED tests_mem/test_CRT4_denda_berlapis.py::test_CRT4_U10_di_bawah_minimum
+FAILED tests_mem/test_CRT4_denda_berlapis.py::test_CRT4_U12_bebas_berlaku_sesudah_diputus
+FAILED tests_mem/test_CRT4_denda_berlapis.py::test_CRT4_U13_taksiran_sama_dengan_nota
+FAILED tests_mem/test_CRT4_denda_berlapis.py::test_CRT4_U14_lapisan_pelanggan_ditolak
+FAILED tests_mem/test_CRT4_denda_berlapis.py::test_CRT4_U15_izin_penalty_policy
+FAILED tests_mem/test_CRT4_denda_berlapis.py::test_CRT4_U15b_validasi_pengajuan
+FAILED tests_mem/test_CRT4_denda_berlapis.py::test_CRT4_U16_migrasi_lapisan_pelanggan
+17 failed, 1 passed, 1 warning in 1.99s

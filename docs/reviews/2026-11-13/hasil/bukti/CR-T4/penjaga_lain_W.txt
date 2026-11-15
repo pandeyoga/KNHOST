@@ -1,0 +1,20 @@
+verify_role_gate_ui.py: [PASS] 31 cek lolos, 0 pelanggaran. 
+verify_config_fallback.py: 
+verify_config_fallback.py --entity: 
+verify_config_fallback.py --self-test: 
+verify_payment_vocab.py: [PASS] 1829 cek lolos, 0 pelanggaran. 
+verify_access_catalog_nav.py: verify_access_catalog_nav: 0 temuan 
+verify_posting_coverage.py: [PASS] 138 cek lolos, 0 pelanggaran. 
+verify_posting_coverage.py --self-test:   [PASS] retry jenis registri bukan fungsi → MERAH → MERAH   [PASS] kode nyata saat ini HIJAU (0 pelanggaran) 
+verify_atomic_claim.py: [PASS] 161 cek lolos, 0 pelanggaran. 
+verify_atomic_claim.py --self-test:   [PASS] kode nyata saat ini HIJAU (0 pelanggaran) → hijau   SELF-TEST HIJAU (64 kasus, 0 gagal). 
+verify_cash_single_door.py: [PASS] 736 cek lolos, 0 pelanggaran. 
+verify_config_text.py: 
+verify_detail_modal.py:   panel rincian diperiksa: 30 → pop-up 27 · berdampingan (2 kolom) 3 · INLINE (pelanggaran) 0 · pengecualian terdaftar: 0 [PASS] 30 cek lolos, 0 pelanggaran. 
+verify_permission_checked.py: [PASS] 613 cek lolos, 0 pelanggaran. 
+verify_codebase_map.py: [PASS] 5 cek lolos, 0 pelanggaran. 
+verify_config_fallback.py:   ✗ pengecualian basi: backend/services/penalty_service.py [payment.penalty_min_amount] `await val("payment.penalty_min_amount") or 0` — tidak cocok dengan kode lagi; hapus dari config_fallback_allow.json   ✗ pengecualian basi: backend/services/penalty_service.py [payment.penalty_mode] `await val("payment.penalty_mode") or "draft"` — tidak cocok dengan kode lagi; hapus dari config_fallback_allow.json   ✗ pengecualian basi: backend/services/penalty_service.py [payment.penalty_waive_approver_role] `await val("payment.penalty_waive_approver_role") or "manager"` — tidak cocok dengan kode lagi; hapus dari config_fallback_allow.json 
+verify_config_fallback.py --entity:   159 berkas pemakai · 1 temuan mentah · temuan tersisa 0 · pengecualian dipakai 1 (garis_dasar 1) [PASS] 159 cek lolos, 0 pelanggaran. 
+verify_config_fallback.py --self-test:   ✗ [1] pohon nyata: 0 temuan tersisa, 0 pengecualian basi (temuan 0, basi 7)   ✓ [7] pengecualian basi terdeteksi SELF-TEST: FAIL 
+verify_config_text.py:   474 kunci · 14 kelompok · pelanggaran per aturan: 0 [PASS] 3332 cek lolos, 0 pelanggaran. 
+verify_config_text.py --self-test: 

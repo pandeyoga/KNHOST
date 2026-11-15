@@ -1,0 +1,14 @@
+verify_role_gate_ui.py: [PASS] 31 cek lolos, 0 pelanggaran.
+verify_payment_vocab.py: [PASS] 1827 cek lolos, 0 pelanggaran.
+verify_posting_coverage.py: [PASS] 138 cek lolos, 0 pelanggaran.
+verify_atomic_claim.py: [PASS] 161 cek lolos, 0 pelanggaran.
+verify_cash_single_door.py: [PASS] 736 cek lolos, 0 pelanggaran.
+verify_permission_checked.py: [PASS] 613 cek lolos, 0 pelanggaran.
+verify_detail_modal.py: [PASS] 30 cek lolos, 0 pelanggaran.
+verify_config_fallback.py: 
+verify_config_fallback.py --entity: 
+verify_config_text.py: 
+verify_codebase_map.py: [PASS] 5 cek lolos, 0 pelanggaran.
+verify_config_fallback.py: [PASS] 159 cek lolos, 0 pelanggaran.
+verify_config_fallback.py --entity: [PASS] 159 cek lolos, 0 pelanggaran.
+verify_config_text.py: [PASS] 3332 cek lolos, 0 pelanggaran.

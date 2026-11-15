@@ -1,0 +1,15 @@
+verify_role_gate_ui.py: [PASS] 31 cek lolos, 0 pelanggaran.
+verify_config_fallback.py: [PASS] 159 cek lolos, 0 pelanggaran.
+verify_config_fallback.py --entity: [PASS] 159 cek lolos, 0 pelanggaran.
+verify_config_fallback.py --self-test: SELF-TEST: PASS — penjaga terbukti bisa memerah
+verify_payment_vocab.py: [PASS] 1835 cek lolos, 0 pelanggaran.
+verify_access_catalog_nav.py: verify_access_catalog_nav: 0 temuan
+verify_posting_coverage.py: [PASS] 138 cek lolos, 0 pelanggaran.
+verify_posting_coverage.py --self-test:   SELF-TEST HIJAU (0 gagal).
+verify_atomic_claim.py: [PASS] 161 cek lolos, 0 pelanggaran.
+verify_atomic_claim.py --self-test:   SELF-TEST HIJAU (64 kasus, 0 gagal).
+verify_cash_single_door.py: [PASS] 740 cek lolos, 0 pelanggaran.
+verify_permission_checked.py: [PASS] 615 cek lolos, 0 pelanggaran.
+verify_detail_modal.py: [PASS] 29 cek lolos, 0 pelanggaran.
+verify_config_text.py: [PASS] 3402 cek lolos, 0 pelanggaran.
+verify_codebase_map.py: [PASS] 5 cek lolos, 0 pelanggaran.

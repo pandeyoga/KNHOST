@@ -1,0 +1,5 @@
+    return await rsp.simulate_discount(payload.dict(), ctx.active_entity_id)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+2063 passed, 2 skipped, 2 xfailed, 14 warnings in 1223.63s (0:20:23)
+EXIT 0
