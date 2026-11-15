@@ -126,6 +126,34 @@ Diisi agen saat sebuah unit masuk `tahan`: satu kalimat pertanyaan, pilihan yang
 | PK-23 (H4) | Akun lawan perolehan aset **secara hutang** (`aset.sumber_hutang`) dan **saldo awal aset lama** (`aset.sumber_saldo_awal`) per PT belum dipilih (usulan pelaksana 2-1100 / 3-2900); juga: apakah perolehan secara hutang wajib lewat faktur pemasok? Sampai diisi, dua pilihan sumber dana itu mati di form Tambah Aset | Pilih akun · wajib faktur? · tunda | Pemilik/akuntan memilih akun di Pengaturan › Keuangan & Pajak › Pemetaan Akun (`hasil/PK-23.md`) |
 | PK-05, PK-06 (H1) — **diputuskan 14 Nov** | Pola posting (periksa tanpa tulis → niat → efek idempoten → jurnal tahan-gagal; jurnal kembar `preflight_twin`/`post_twin`) disetujui sebagai acuan unit gelombang 3? | Setujui · minta ubah | **Pemilik menyetujui (14 Nov, di sesi): PK-18 dan rantainya dimulai sebelum PK-05/PK-06 `tervalidasi`**; reviewer tetap memvalidasi `hasil/PK-05.md`, `hasil/PK-06.md` — bila pola ditolak, unit gelombang 3 disesuaikan |
 
+### Jawaban pemilik 15 Nov 2026 — dicatat, **belum dikerjakan**
+
+Nomor mengikuti daftar keputusan yang dijelaskan integrator di sesi 15 Nov. Tidak ada kode, pengaturan, atau data yang
+diubah karena jawaban ini; tiap butir dikerjakan sesudah pemilik memberi aba-aba.
+
+| No | Butir | Jawaban pemilik | Tindak lanjut (belum dikerjakan) |
+|---|---|---|---|
+| 1 | KM-T4 — beralih ke Lembar Insentif | Belum diputuskan; pemilik meminta penjelasan cara komisi yang berlaku sekarang dulu | Penjelasan diberikan di sesi; keputusan PT & bulan menyusul |
+| 2 | PM-T4 — titipan tunai sales | Saat ini sales tidak menerima tunai; fitur dicadangkan (tetap ada). Mekanisme titipan disetujui; batas dan tenggat harus bisa dikonfigurasi | Batas (`pembayaran.titipan_batas_nominal`) dan tenggat (`pembayaran.titipan_tenggat_setor_hari`) sudah pengaturan per PT; mode PT tidak diubah |
+| 3 | CR-T3 — titik periksa kredit | Pesanan biasa: cukup saat pesanan dibuat (POS). Pesanan custom: minta pendapat integrator | Analisis integrator di sesi: pada Pesanan Khusus, pemeriksaan kredit baru berjalan saat SO lahir ketika harga dikunci; bila tertahan, kunci harga tetap berhasil (gagal hanya tercatat "SO otomatis gagal") dan PO otomatis ke pemasok bisa sudah terbit. Usulan unit baru: periksa kredit sebelum pengadaan, tahan pengadaan sampai izin kredit/DP — menunggu konfirmasi |
+| 4 | AG-T3, AG-T5 — asisten tindakan uang masuk & keluar | Nyalakan di semua PT, semua golongan | Sakelar `ai.tindakan_uang_masuk`, `ai.tindakan_uang_keluar` per PT; akun yang dinyalakan (K-45) dan aturan orang kedua uang keluar perlu dipastikan saat dikerjakan |
+| 5 | PK-28 — akun Selisih harga pembelian | Setuju | Akuntan memilih akun per PT di Pemetaan Akun |
+| 6 | PK-27 — akun Selisih retur beli | Setuju | Akuntan memilih akun per PT di Pemetaan Akun |
+| 7 | PK-23 — akun aset dibeli secara hutang & saldo awal | Setuju usulan: 2-1100 dan 3-2900; pembelian aset secara hutang wajib lewat faktur pemasok | Isi pemetaan per PT + aturan wajib faktur |
+| 8 | PK-30 — PPN antar-PT ke pembeli non-PKP | Setuju usulan: (b) ditambahkan ke nilai persediaan untuk barang dagang; dua perilaku selisih panjang roll dikonfirmasi | Ubah rencana jurnal `interco_service` |
+| 9 | PK-46 — berkas tarif PPh 21 | Belum ada berkas | Tetap `tahan` |
+| 10 | TX-T2 — faktur per surat jalan | Setuju usulan: tetap per pesanan sampai konsultan menjawab butir 1–2 | — |
+| 11 | Pemasangan ke data nyata (skrip H3) | Setuju urutan: cadangan → mode coba → tinjau → jalankan | Jadwal & pelaksana belum ditentukan |
+| 12 | PK-04 — cadangan & uji pulih | Setuju | Butuh jendela waktu server produksi |
+| 13 | PK-34, PK-35 — replica set, transaksi, nominal bulat | Setuju | Butuh validasi gelombang 3 oleh reviewer + jendela waktu |
+| 14–15 | PM-T5 VA/QRIS, TX-T3 Coretax | Nanti | Tetap `tahan` |
+| 16 | PY-T5 — slip terlihat sesudah dibayar | Ok | — |
+| 17 | PY-T4 — menu SDM untuk peran payroll tanpa izin SDM | Ok | — |
+| 18 | MN-T3 — nominal tersembunyi di kartu bagi peran tanpa izin | Ok | — |
+| 19 | MN-T3 — uang muka pemasok lewat Kasus Keuangan | Ya, digabung ke angka "Uang muka ke pemasok" di kartu pemasok | Perubahan kode kecil di `party_card.py` |
+| 20 | KM-T5 — peran kustom `sales_force` tanpa `incentive` | Ok | Bila ada peran begitu di data nyata: tambah `incentive.view` |
+| 21 | KM-T3 — nomor `LIN-` | Ok | — |
+
 ## Catatan sesi
 
 Diisi agen di akhir tiap sesi: tanggal, unit yang selesai, unit yang tertahan dan mengapa.
