@@ -219,6 +219,15 @@
 .metric-card .metric-label { font-size: 12px; color: var(--ios-muted-2); font-weight: 600; text-transform: uppercase; letter-spacing: 0.03em; }
 .metric-card .metric-value { font-family: 'Outfit', sans-serif; font-size: 20px; font-weight: 700; color: #0B0B0F; margin-top: 2px; }
 .metric-card .metric-hint { font-size: 12px; color: var(--ios-blue-strong); font-weight: 600; margin-top: 1px; }
+/* Cek layar 390 px (MN-T3, tampilan penuh di HP): dua kartu sebaris ±175 px → "Rp 106.665.380" 20 px terpotong di tepi kartu.
+   Di layar sempit ikon hiasan disembunyikan, kartu dipadatkan, angka 16 px (patah di spasi bila tetap tak muat); di atas
+   640 px tidak berubah. */
+@media (max-width: 640px) {
+  .metric-card { padding: 10px 12px; }
+  .metric-card .metric-icon { display: none; }
+  .metric-card .metric-label { letter-spacing: 0.01em; overflow-wrap: break-word; }
+  .metric-card .metric-value { font-size: 16px; overflow-wrap: break-word; }
+}
 
 @keyframes rise-in {
   from { opacity: 0; transform: translateY(6px); }
