@@ -192,6 +192,7 @@ SCOPED_COLLECTIONS = {
     "penalties",                      # L4 — nota denda
     "sales_targets", "sales_incentives",   # L5/L6 — target & insentif sales
     "incentive_components", "incentive_definitions",   # KM-T1 — komponen & versi definisi angka insentif per PT
+    "incentive_sheets",                                # KM-T3 — lembar insentif (dokumen keputusan per PT)
     "fact_shipment_sales", "fact_collections",         # KM-T1 — fakta omzet terkirim & pencairan (turunan, per PT)
     "warehouse_transfers",            # L13/L14 — transfer gudang (antar-entitas: lihat E0.8b)
     "purchase_returns",               # retur beli = dokumen entitas

@@ -86,6 +86,8 @@ CANONICAL_COLLECTIONS = {
     "hr_payroll_runs", "hr_statutory_remittances",
     # ── KM-T1 (blueprint) — Meja Insentif: target per PT (kunci baru), komponen, versi definisi, dua fakta turunan ──
     "sales_targets", "incentive_components", "incentive_definitions", "fact_shipment_sales", "fact_collections",
+    # ── KM-T3 (blueprint) — lembar insentif (dokumen keputusan, potret angka dasar per baris) ──
+    "incentive_sheets",
     # ── PY-T1 (blueprint) — komponen gaji per PT + antrean masukan komponen ──
     "hr_pay_components", "hr_pay_inputs",
     # ── PY-T2 (blueprint) — riwayat kompensasi & penugasan PT karyawan bertanggal berlaku ──

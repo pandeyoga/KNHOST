@@ -12,25 +12,36 @@
   GET   /api/incentive/achievement                             incentive.view       KM-T2 — Capaian per sales (margin: view_margin)
   GET   /api/incentive/achievement/sources                     incentive.view       KM-T2 — dokumen di balik satu sel
   GET   /api/incentive/achievement/export                      incentive.view       KM-T2 — .xlsx Definisi · Capaian · Dokumen
+  GET   /api/incentive/sheets                                  view|prepare|approve KM-T3 — daftar lembar (tanpa potret)
+  POST  /api/incentive/sheets                                  incentive.prepare    KM-T3 — lembar draf (+ baris dipotret)
+  GET   /api/incentive/sheets/adjustable-lines?sales_id        incentive.prepare    KM-T3 — rujukan baris penyesuaian
+  GET   /api/incentive/sheets/{id}                             view|prepare|approve KM-T3 — lembar + `drift`
+  POST/PATCH/DELETE /api/incentive/sheets/{id}/lines[/{line}]  incentive.prepare    KM-T3 — baris (hanya draf)
+  POST  /api/incentive/sheets/{id}/refresh · submit · cancel   incentive.prepare    KM-T3
+  POST  /api/incentive/sheets/{id}/approve · return            incentive.approve    KM-T3 — kontrol dua orang K-25
+  GET   /api/incentive/sheets/{id}/export                      view|prepare|approve KM-T3 — .xlsx Lembar · Potret
 
 PT = PT konteks pengguna (`02_STANDAR.md` §3.4 N1); mode "Semua PT" hanya baca (tulis → 409 `assert_write_entity`, N3).
 Logika di `services/incentive_targets.py`, `incentive_periods.py`, `incentive_definitions.py`, `incentive_facts.py`;
-Capaian (KM-T2, hanya baca; "Semua PT" → 400) di `services/incentive_achievement.py`.
+Capaian (KM-T2, hanya baca; "Semua PT" → 400) di `services/incentive_achievement.py`; Lembar Insentif (KM-T3) di
+`services/incentive_sheet_service.py` (PT lembar = PT dokumen, diadu dengan cakupan pengguna lewat `guard_doc`).
 """
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Tuple
 
 from fastapi import APIRouter, HTTPException, Query, Request
 from fastapi.responses import Response
 
 from db import db
-from dependencies import audit, has_permission, require_permission
-from entity_scope import assert_write_entity, entity_ctx, guard_doc
+from dependencies import audit, has_permission, require_any_permission, require_permission
+from entity_scope import assert_write_entity, entity_ctx, guard_doc, resolve_list_scope
 from schemas_incentive import (IncentiveComponentCreate, IncentiveComponentUpdate, IncentiveFactRebuild,
-                               IncentiveTargetCopy, IncentiveTargetSave)
+                               IncentiveSheetApprove, IncentiveSheetCreate, IncentiveSheetLineAdd,
+                               IncentiveSheetLinePatch, IncentiveSheetReason, IncentiveTargetCopy, IncentiveTargetSave)
 from services import incentive_achievement as iach
 from services import incentive_definitions as idef
 from services import incentive_facts as ifacts
 from services import incentive_periods as ip
+from services import incentive_sheet_service as iss
 from services import incentive_targets as itg
 
 router = APIRouter(prefix="/api/incentive")
@@ -39,6 +50,9 @@ MODUL = "Kinerja & Insentif"
 PESAN_LIHAT = f"Anda belum punya akses untuk melihat target dan aturan insentif. Minta Admin menambahkan akses '{MODUL}'."
 PESAN_ATUR = f"Anda belum punya akses untuk mengatur target dan aturan insentif. Minta Admin menambahkan akses '{MODUL}'."
 PESAN_CAPAIAN = f"Anda belum punya akses untuk melihat capaian insentif. Minta Admin menambahkan akses '{MODUL}'."
+PESAN_LEMBAR_LIHAT = f"Anda belum punya akses untuk melihat lembar insentif. Minta Admin menambahkan akses '{MODUL}'."
+PESAN_LEMBAR_SIAP = f"Anda belum punya akses untuk menyiapkan lembar insentif. Minta Admin menambahkan akses '{MODUL}'."
+PESAN_LEMBAR_SAH = f"Anda belum punya akses untuk mengesahkan lembar insentif. Minta Admin menambahkan akses '{MODUL}'."
 
 
 def _err(exc: Exception) -> HTTPException:
@@ -287,5 +301,214 @@ async def get_achievement_export(request: Request, period_type: str = Query("mon
                                             only_numbers=only_numbers)
     except iach.CapaianError as exc:
         raise HTTPException(status_code=400, detail=str(exc))
+    return Response(content=body, media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                    headers={"Content-Disposition": f'attachment; filename="{name}"'})
+
+
+# ── KM-T3 — Lembar Insentif (dokumen keputusan; nominal diketik orang, angka dasar dipotret) ────────────────────────
+#: Membaca lembar: pemegang `incentive.view`, juga penyiap (`prepare`) dan pemutus (`approve`) — keduanya bekerja di
+#: lembar yang sama (penyiap bawaan Admin Sales tidak memegang `incentive.view`).
+BACA_LEMBAR = [("incentive", "view"), ("incentive", "prepare"), ("incentive", "approve")]
+SHEETS = "incentive_sheets"
+PESAN_LEMBAR_404 = "Lembar insentif tidak ditemukan."
+
+
+def _lembar_err(exc: iss.LembarError) -> HTTPException:
+    return HTTPException(status_code=exc.status, detail=str(exc))
+
+
+async def _lembar(request: Request, sheet_id: str) -> Dict[str, Any]:
+    """Lembar ber-id → PT dokumen diadu dengan cakupan pengguna (N1/N2); tidak ada/PT lain → 404."""
+    doc = await iss.get_sheet(sheet_id)
+    await guard_doc(request, SHEETS, doc, not_found=PESAN_LEMBAR_404)
+    return doc
+
+
+async def _siap(request: Request, sheet_id: str, action: str) -> Tuple[Dict[str, Any], Dict[str, Any]]:
+    actor = await require_permission(request, "incentive", "prepare", detail=PESAN_LEMBAR_SIAP)
+    assert_write_entity(await entity_ctx(request), action)
+    return actor, await _lembar(request, sheet_id)
+
+
+async def _sah(request: Request, sheet_id: str, action: str) -> Tuple[Dict[str, Any], Dict[str, Any]]:
+    actor = await require_permission(request, "incentive", "approve", detail=PESAN_LEMBAR_SAH)
+    assert_write_entity(await entity_ctx(request), action)
+    return actor, await _lembar(request, sheet_id)
+
+
+async def _jejak(actor: Dict[str, Any], action: str, doc: Dict[str, Any], extra: Optional[Dict[str, Any]] = None,
+                 reason: str = "") -> None:
+    await audit(actor.get("name", ""), action, "incentive_sheet", doc.get("id", ""),
+                {"number": doc.get("number"), "status": doc.get("status"), "totals": doc.get("totals"),
+                 **(extra or {})}, reason=reason, scope_entity_id=doc.get("entity_id") or "")
+
+
+@router.get("/sheets")
+async def list_incentive_sheets(request: Request, pay_period: str = Query(""), status: str = Query(""),
+                                q: str = Query(""), page: int = Query(1, ge=1),
+                                page_size: int = Query(25, ge=1, le=100)) -> Dict[str, Any]:
+    """Daftar lembar PT aktif (mode "Semua PT": semua PT yang ditugaskan, hanya baca) — tanpa potret baris. `q` = cari
+    nomor atau judul (tanpa beda huruf besar)."""
+    await require_any_permission(request, BACA_LEMBAR, detail=PESAN_LEMBAR_LIHAT)
+    ctx = await entity_ctx(request)
+    query: Dict[str, Any] = {}
+    if pay_period.strip():
+        query["pay_period"] = pay_period.strip()
+    if status.strip():
+        if status.strip() not in iss.STATUSES:
+            raise HTTPException(status_code=400, detail="Status lembar tidak dikenal.")
+        query["status"] = status.strip()
+    if q.strip():
+        import re
+        rx = {"$regex": re.escape(q.strip()[:60]), "$options": "i"}
+        query["$or"] = [{"number": rx}, {"title": rx}]
+    out = await iss.list_sheets(resolve_list_scope(SHEETS, query, ctx), page=page, page_size=page_size)
+    return {**out, "all_pt": _all_pt(ctx), "statuses": [{"value": k, "label": v} for k, v in iss.STATUS_LABEL.items()]}
+
+
+@router.post("/sheets")
+async def create_incentive_sheet(payload: IncentiveSheetCreate, request: Request) -> Dict[str, Any]:
+    actor = await require_permission(request, "incentive", "prepare", detail=PESAN_LEMBAR_SIAP)
+    eid = assert_write_entity(await entity_ctx(request), "membuat lembar insentif")
+    try:
+        doc = await iss.create_sheet(eid, payload.model_dump(), actor)
+    except iss.LembarError as exc:
+        raise _lembar_err(exc)
+    await _jejak(actor, "incentive_sheet_created", doc, {"pay_period": doc.get("pay_period")})
+    return iss.sheet_out(doc, await has_permission(actor, "incentive", "view_margin"))
+
+
+@router.get("/sheets/options")
+async def get_sheet_options(request: Request) -> Dict[str, Any]:
+    """Pilihan isian baris lembar untuk PT aktif: daftar sales (`sales_roster`) dan komponen yang aktif."""
+    await require_any_permission(request, BACA_LEMBAR, detail=PESAN_LEMBAR_LIHAT)
+    ctx = await entity_ctx(request)
+    if _all_pt(ctx):
+        return {"all_pt": True, "sales": [], "components": []}
+    eid = ctx.active_entity_id
+    comps = [itg.component_labels(c) for c in await itg.list_components(eid) if c.get("is_active") is not False]
+    return {"all_pt": False, "sales": [{"id": s["id"], "name": s["name"]} for s in await itg.sales_roster(eid)
+                                       if s.get("active")],
+            "components": [{k: c.get(k) for k in ("id", "code", "name", "basis_period_type", "basis_label")}
+                           for c in comps]}
+
+
+@router.get("/sheets/adjustable-lines")
+async def get_adjustable_lines(request: Request, sales_id: str = Query(...)) -> Dict[str, Any]:
+    await require_permission(request, "incentive", "prepare", detail=PESAN_LEMBAR_SIAP)
+    ctx = await entity_ctx(request)
+    if _all_pt(ctx):
+        return {"items": [], "all_pt": True}
+    return await iss.adjustable_lines(ctx.active_entity_id, sales_id)
+
+
+@router.get("/sheets/{sheet_id}")
+async def get_incentive_sheet(sheet_id: str, request: Request) -> Dict[str, Any]:
+    actor = await require_any_permission(request, BACA_LEMBAR, detail=PESAN_LEMBAR_LIHAT)
+    doc = await _lembar(request, sheet_id)
+    out = iss.sheet_out(doc, await has_permission(actor, "incentive", "view_margin"))
+    out["drift"] = await iss.drift(doc)
+    return out
+
+
+@router.post("/sheets/{sheet_id}/lines")
+async def add_incentive_sheet_line(sheet_id: str, payload: IncentiveSheetLineAdd, request: Request) -> Dict[str, Any]:
+    actor, doc = await _siap(request, sheet_id, "mengubah lembar insentif")
+    try:
+        out = await iss.add_line(doc, payload.model_dump(), actor)
+    except iss.LembarError as exc:
+        raise _lembar_err(exc)
+    await _jejak(actor, "incentive_sheet_line_added", out, {"line": (out.get("lines") or [{}])[-1].get("id")})
+    return iss.sheet_out(out, await has_permission(actor, "incentive", "view_margin"))
+
+
+@router.patch("/sheets/{sheet_id}/lines/{line_id}")
+async def patch_incentive_sheet_line(sheet_id: str, line_id: str, payload: IncentiveSheetLinePatch,
+                                     request: Request) -> Dict[str, Any]:
+    actor, doc = await _siap(request, sheet_id, "mengubah lembar insentif")
+    try:
+        out = await iss.patch_line(doc, line_id, payload.model_dump(exclude_unset=True), actor)
+    except iss.LembarError as exc:
+        raise _lembar_err(exc)
+    await _jejak(actor, "incentive_sheet_line_updated", out, {"line": line_id,
+                                                              **payload.model_dump(exclude_unset=True)})
+    return iss.sheet_out(out, await has_permission(actor, "incentive", "view_margin"))
+
+
+@router.delete("/sheets/{sheet_id}/lines/{line_id}")
+async def delete_incentive_sheet_line(sheet_id: str, line_id: str, request: Request) -> Dict[str, Any]:
+    actor, doc = await _siap(request, sheet_id, "mengubah lembar insentif")
+    try:
+        out = await iss.delete_line(doc, line_id, actor)
+    except iss.LembarError as exc:
+        raise _lembar_err(exc)
+    await _jejak(actor, "incentive_sheet_line_deleted", out, {"line": line_id})
+    return iss.sheet_out(out, await has_permission(actor, "incentive", "view_margin"))
+
+
+@router.post("/sheets/{sheet_id}/refresh")
+async def refresh_incentive_sheet(sheet_id: str, request: Request) -> Dict[str, Any]:
+    actor, doc = await _siap(request, sheet_id, "menyegarkan angka dasar lembar insentif")
+    try:
+        res = await iss.refresh_sheet(doc, actor)
+    except iss.LembarError as exc:
+        raise _lembar_err(exc)
+    await _jejak(actor, "incentive_sheet_refreshed", res["sheet"], {"changed": res["changed"]})
+    return {"changed": res["changed"],
+            "sheet": iss.sheet_out(res["sheet"], await has_permission(actor, "incentive", "view_margin"))}
+
+
+@router.post("/sheets/{sheet_id}/submit")
+async def submit_incentive_sheet(sheet_id: str, request: Request) -> Dict[str, Any]:
+    actor, doc = await _siap(request, sheet_id, "mengajukan lembar insentif")
+    try:
+        out = await iss.submit_sheet(doc, actor)
+    except iss.LembarError as exc:
+        raise _lembar_err(exc)
+    await _jejak(actor, "incentive_sheet_submitted", out)
+    return iss.sheet_out(out, await has_permission(actor, "incentive", "view_margin"))
+
+
+@router.post("/sheets/{sheet_id}/approve")
+async def approve_incentive_sheet(sheet_id: str, request: Request,
+                                  payload: Optional[IncentiveSheetApprove] = None) -> Dict[str, Any]:
+    actor, doc = await _sah(request, sheet_id, "mengesahkan lembar insentif")
+    corr = [c.model_dump() for c in ((payload.corrections if payload else None) or [])]
+    try:
+        out = await iss.approve_sheet(doc, corr, actor)
+    except iss.LembarError as exc:
+        raise _lembar_err(exc)
+    await _jejak(actor, "incentive_sheet_approved", out, {"corrections": corr})
+    return iss.sheet_out(out, await has_permission(actor, "incentive", "view_margin"))
+
+
+@router.post("/sheets/{sheet_id}/return")
+async def return_incentive_sheet(sheet_id: str, payload: IncentiveSheetReason, request: Request) -> Dict[str, Any]:
+    actor, doc = await _sah(request, sheet_id, "mengembalikan lembar insentif")
+    try:
+        out = await iss.return_sheet(doc, payload.reason, actor)
+    except iss.LembarError as exc:
+        raise _lembar_err(exc)
+    await _jejak(actor, "incentive_sheet_returned", out, reason=out.get("return_reason") or "")
+    return iss.sheet_out(out, await has_permission(actor, "incentive", "view_margin"))
+
+
+@router.post("/sheets/{sheet_id}/cancel")
+async def cancel_incentive_sheet(sheet_id: str, payload: IncentiveSheetReason, request: Request) -> Dict[str, Any]:
+    actor, doc = await _siap(request, sheet_id, "membatalkan lembar insentif")
+    try:
+        out = await iss.cancel_sheet(doc, payload.reason, actor)
+    except iss.LembarError as exc:
+        raise _lembar_err(exc)
+    await _jejak(actor, "incentive_sheet_cancelled", out, reason=out.get("cancel_reason") or "")
+    return iss.sheet_out(out, await has_permission(actor, "incentive", "view_margin"))
+
+
+@router.get("/sheets/{sheet_id}/export")
+async def export_incentive_sheet(sheet_id: str, request: Request) -> Response:
+    """Berkas `lembar-insentif-<nomor>.xlsx`: Lembar (kolom layar + total) · Potret (seluruh angka potret)."""
+    actor = await require_any_permission(request, BACA_LEMBAR, detail=PESAN_LEMBAR_LIHAT)
+    doc = await _lembar(request, sheet_id)
+    body, name = await iss.export_xlsx(doc, await has_permission(actor, "incentive", "view_margin"))
     return Response(content=body, media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
                     headers={"Content-Disposition": f'attachment; filename="{name}"'})

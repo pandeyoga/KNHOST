@@ -101,6 +101,7 @@ DOOR_QUEUE: Dict[str, str] = {
     "period_unlocks.py::/api/finance/period-unlocks/{plu_id}/reject": "period_unlock",
     # KF-T6 (GL-06) — jurnal manual dua orang.
     "gl.py::/api/gl/journal-proposals/{proposal_id}/approve": "journal_proposal",
+    "incentive.py::/api/incentive/sheets/{sheet_id}/approve": "incentive_sheet",   # KM-T3 — lembar insentif
     "gl.py::/api/gl/journal-proposals/{proposal_id}/reject": "journal_proposal",
     "price_approvals.py::/api/price-approvals/{approval_id}/approve": "price",
     "price_approvals.py::/api/price-approvals/{approval_id}/reject": "price",

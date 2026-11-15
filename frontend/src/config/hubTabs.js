@@ -218,13 +218,19 @@ export const HUB_TABS = {
     // KM-T2 — Meja Insentif › Capaian: angka dasar insentif per sales per PT (hanya baca; `incentive.view`, margin
     // `incentive.view_margin`). Tab pertama hub (spesifikasi KM-T2 "Layar").
     { view: "incentive-capaian", label: "Capaian",               roles: ["admin", "manager", "finance"] },
+    // KM-T3 — Meja Insentif › Lembar Insentif: dokumen keputusan (nominal diketik, angka dasar dipotret). Penyiap
+    // `incentive.prepare` (admin · manajer · Finance · Admin Sales), pemutus `incentive.approve` (admin · manajer).
+    { view: "incentive-sheets",  label: "Lembar Insentif",       roles: ["admin", "manager", "finance", "sales_admin"] },
     { view: "sales-performance", label: "Kinerja Sales",         roles: ["admin", "manager", "sales"] },
     // KM-T1 — Meja Insentif: target per PT per jenis periode, komponen, definisi angka, pencocokan (`incentive.*`).
     { view: "incentive-setup",   label: "Target & Aturan",       roles: ["admin", "manager", "finance"] },
     // D-03 — tarif per kategori + bawaan komisi (`commission.*`) di satu layar (view sama). KM-T1 — label "Komisi
     // Otomatis" (dulu "Target & Aturan", kini tab Meja Insentif); dihapus/dialiaskan KM-T5.
     { view: "incentive-rates",   label: "Komisi Otomatis",       roles: ["admin", "manager"] },
-    { view: "incentive-schemes", label: "Skema (Arsip)",         roles: ["admin", "manager"] },
+    // KM-T3 — "Skema (Arsip)" tidak lagi tampil di bilah tab: hub sudah enam tab (batas `02_STANDAR.md` L3, penjaga
+    // INV-UI-13) dan Lembar Insentif menggantikan skema lama sebagai dokumen keputusan. Layarnya tetap ada dan terbuka
+    // lewat tautan "Skema insentif lama (arsip)" di Lembar Insentif (izin & peran sama).
+    { view: "incentive-schemes", label: "Skema (Arsip)",         roles: ["admin", "manager"], hidden: true, aliasOf: "incentive-sheets" },
     { view: "cs-kpi",            label: "KPI Karyawan",          roles: ["admin", "manager"] },
   ],
   "analytics": [

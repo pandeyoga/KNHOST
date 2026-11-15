@@ -2266,6 +2266,14 @@
    "persetujuan",
    "dua-orang-buku"
   ],
+  "kontrol.lembar_insentif.min_orang": [
+   "persetujuan",
+   "dua-orang-sdm"
+  ],
+  "kontrol.lembar_insentif.batas_nominal": [
+   "persetujuan",
+   "dua-orang-sdm"
+  ],
   "kontrol.admin_boleh_sendiri": [
    "persetujuan",
    "dua-orang-admin"

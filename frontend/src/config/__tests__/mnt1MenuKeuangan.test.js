@@ -72,7 +72,9 @@ describe("U2 — jumlah tab tampak per hub (admin)", () => {
     expect(labels("hr-payroll-hub")).toEqual(["Proses Gaji", "Setoran & Pajak", "Komponen & Masukan"]);
     // KM-T1 — tab Meja Insentif "Target & Aturan" (`incentive-setup`); tab lama `incentive-rates` berlabel "Komisi Otomatis".
     // KM-T2 — tab "Capaian" (`incentive-capaian`) di urutan pertama.
-    expect(labels("hr-kpi-hub")).toEqual(["Capaian", "Kinerja Sales", "Target & Aturan", "Komisi Otomatis", "Skema (Arsip)", "KPI Karyawan"]);
+    // KM-T3 — tab "Lembar Insentif" (`incentive-sheets`) sesudah Capaian; "Skema (Arsip)" tersembunyi (batas enam tab L3,
+    // layarnya tetap terbuka lewat tautan di Lembar Insentif).
+    expect(labels("hr-kpi-hub")).toEqual(["Capaian", "Lembar Insentif", "Kinerja Sales", "Target & Aturan", "Komisi Otomatis", "KPI Karyawan"]);
     expect(HUB_TABS["purchase-orders"].map((t) => t.view)).toContain("landed-cost");
     expect(HUB_TABS["settings-sales"].map((t) => t.view)).not.toContain("incentive-rates");
     expect(HUB_TABS["petty-cash"]).toBeUndefined();
@@ -182,7 +184,8 @@ describe("U7–U10 — menu per peran", () => {
   test("Manajer: Perlu Tindakan (Meja Finance) dan semua tab Kinerja & Insentif", () => {
     const m = menu("manager");
     expect(m.keuangan["finance-tower"]).toEqual(["finance-desk", "finance-tower", "bi-finance"]);
-    expect(m.hrd["hr-kpi-hub"]).toEqual(["incentive-capaian", "sales-performance", "incentive-setup", "incentive-rates", "incentive-schemes", "cs-kpi"]);   // KM-T1, KM-T2
+    // KM-T1, KM-T2; KM-T3 — + Lembar Insentif, Skema (Arsip) tersembunyi.
+    expect(m.hrd["hr-kpi-hub"]).toEqual(["incentive-capaian", "incentive-sheets", "sales-performance", "incentive-setup", "incentive-rates", "cs-kpi"]);
     expect(m.akuntansi.closing).toEqual(["closing", "period-unlock", "posting-failures"]);
   });
 });

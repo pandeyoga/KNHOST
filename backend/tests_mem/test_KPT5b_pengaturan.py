@@ -259,8 +259,8 @@ async def test_KPT5_U14_izin(klien, akun, sesi, peran_sopir, peran_tanpa_acuan):
     lihat = await sesi(await akun(rid))
     r = await klien.get(URL, headers=lihat, params={"entity_id": "ent_ksc"})
     # CR-T1 — jenis `pkr` (pengajuan perubahan kredit); PK-22 — jenis `str` (setoran kewajiban gaji).
-    # PM-T4 — + jenis `ttp` (titipan tunai sales) dan `stt` (setoran titipan): + 2.
-    assert r.status_code == 200 and len(r.json()["rows"]) == 66 + 1 + 1 + 2
+    # PM-T4 — + jenis `ttp` (titipan tunai sales) dan `stt` (setoran titipan): + 2. KM-T3 — + jenis `lin` (lembar insentif).
+    assert r.status_code == 200 and len(r.json()["rows"]) == 66 + 1 + 1 + 2 + 1
     r = await klien.put(f"{URL}/so", headers=lihat, json=_isi(entity_id="ent_ksc"))
     assert r.status_code == 403 and "penomoran dokumen" in r.json()["detail"]
     # Baris grup hanya untuk orang yang ditugaskan di semua PT (penugasan, bukan nama peran)
@@ -289,8 +289,8 @@ async def test_KPT5_daftar_lengkap_dan_contoh_berikutnya(klien, kepala_admin, db
         {"entity_id": "__shared__", "doc_type": "sales_returns:number:SRET-", "last_no": 7}])
     j = (await klien.get(URL, headers=kepala_admin, params={"entity_id": "ent_ksc"})).json()
     rows = {x["kind"]: x for x in j["rows"]}
-    # CR-T1 — + jenis `pkr`; PK-22 — + jenis `str`; PM-T4 — + jenis `ttp`, `stt`
-    assert len(rows) == 66 + 1 + 1 + 2 and j["groups"][0] == "Penjualan"
+    # CR-T1 — + jenis `pkr`; PK-22 — + jenis `str`; PM-T4 — + jenis `ttp`, `stt`; KM-T3 — + jenis `lin`
+    assert len(rows) == 66 + 1 + 1 + 2 + 1 and j["groups"][0] == "Penjualan"
     assert rows["sret"]["next_preview"] == "SRET-00008" and rows["sret"]["format"]["scope"] == "bersama"
     assert rows["so"]["next_preview"] == "KSC/SO-00001" and rows["so"]["last_no"] == 0
     assert rows["inv"]["locked"] and rows["inv"]["next_preview"].startswith("INV-")

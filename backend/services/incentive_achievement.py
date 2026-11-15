@@ -711,6 +711,23 @@ async def sources(entity_id: str, per: Periode, defn: Dict[str, Any], flt: Sarin
             "sum": _rp(total_c), "page": page, "page_size": size, "items": [_butir_keluar(it) for it in part]}
 
 
+async def angka_sales(entity_id: str, per: Periode, defn: Dict[str, Any],
+                      sales_ids: Iterable[str]) -> Dict[str, Dict[str, Any]]:
+    """KM-T3 — angka satu periode untuk beberapa sales sekaligus, untuk POTRET lembar insentif: baris Capaian per sales
+    (margin ikut; layar lembar menyaringnya menurut izin) dan dokumen penyusun omzet · retur · uang masuk per sales.
+    Satu pengumpul dengan tabel Capaian (`_kumpulkan` + `achievement`), jadi angka potret = angka sel Capaian."""
+    ids = tuple(dict.fromkeys(s for s in sales_ids if s))
+    flt = saringan(ids)
+    kp = await _kumpulkan(entity_id, per, defn, flt, "sales")
+    res = await achievement(entity_id, per, defn, flt, "sales", True, kp=kp)
+    rows = {r["key"]: r for r in res["rows"]}
+    out: Dict[str, Dict[str, Any]] = {}
+    for sid in ids:
+        out[sid] = {"row": rows.get(sid),
+                    "docs": {m: _ringkas_butir([it for it in kp.items[m] if it["key"] == sid]) for m in METRICS}}
+    return out
+
+
 # ── Definisi & pencocokan ────────────────────────────────────────────────────────────────────────────────────────────
 def column_help(defn: Dict[str, Any], per: Periode) -> Dict[str, str]:
     """Keterangan tiap judul kolom (disorot di layar; lembar Definisi ekspor) — mengikuti versi definisi PT."""

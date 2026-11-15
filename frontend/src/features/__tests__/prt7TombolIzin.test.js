@@ -45,7 +45,7 @@ jest.mock("../hr/MyDesignerKpiSection", () => ({ __esModule: true, default: () =
 import { canCurrent, registerDynamicRoles, setAccessContext } from "../../config/roles";
 import { prodPerms } from "../production/ProductionParts";
 import CrmView from "../crm/CrmView";
-import { hubTabsForRole } from "../../config/navigationConfig";
+import { hubForView, hubTabsForRole } from "../../config/navigationConfig";
 import { AskKnButton } from "../../components/AskKnButton";
 import KeepPendingPanel from "../sales_admin/KeepPendingPanel";
 import EmployeeSelfService from "../hr/EmployeeSelfService";
@@ -120,7 +120,9 @@ describe("U7/U8 — tab bekas CRM dari izin (MN-T1: kini tab hub)", () => {
   const tabHub = (role, permissions) => {
     setAccessContext({ role, permissions, view_resources: BUILTIN.view_resources, hidden_views: [], view_actions: BUILTIN.view_actions });
     return { kredit: hubTabsForRole("ar-aging", role).some((t) => t.view === "credit-overrides"),
-             skema: hubTabsForRole("hr-kpi-hub", role).some((t) => t.view === "incentive-schemes") };
+             // KM-T3 — "Skema (Arsip)" kini tab tersembunyi (hub Kinerja & Insentif enam tab, L3): yang diuji tetap
+             // gerbang izinnya — layar terbuka (`hubForView`) hanya bagi pemegang sumber izin `sales_force`.
+             skema: !!hubForView("incentive-schemes", role) };
   };
   // CR-T5 — tab Kredit & Plafon kini daftar kerja kredit: syarat tampil `credit_profile.view` (dulu `customer.view`,
   // MN-T1); `customer.view` saja tidak lagi membukanya.

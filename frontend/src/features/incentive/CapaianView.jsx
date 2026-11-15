@@ -4,7 +4,8 @@
  * Pemutus insentif memilih periode lalu melihat per sales: target & capaian omzet, target & capaian pencairan, kualitas
  * harga jual. Setiap angka Omzet / Retur / Uang masuk bisa ditelusuri sampai dokumennya (panel telusur
  * `CapaianSourcesPanel`, pop-up rincian baku `DetailModal`); baris yang dicentang dijumlahkan DI LAYAR dari angka yang sedang tampil (tanpa permintaan baru).
- * Layar ini hanya membaca — tidak ada tombol tulis; nominal insentif diputuskan di lembar insentif (KM-T3).
+ * Layar ini hanya membaca angka. KM-T3 — satu tombol tulis: "Buat lembar insentif dari tampilan ini" (izin
+ * `incentive.prepare`, sales dicentang) membuat lembar draf berisi satu baris per sales; nominalnya diketik di lembar.
  *
  * Sumber: GET /api/incentive/achievement (izin `incentive.view`; kolom margin hanya bila server mengirimnya — izin
  * `incentive.view_margin`) · GET …/achievement/sources · GET …/achievement/export (.xlsx). "Semua PT" → satu kalimat
@@ -16,17 +17,24 @@
  * Tampilan tersimpan (saringan, pengelompokan, kolom) di peramban per pengguna: `kn.capaian.tampilan.<id pengguna>`.
  */
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { AlertTriangle, BarChart3, Download, Save, Search } from "lucide-react";
+import { AlertTriangle, BarChart3, ClipboardList, Download, Save, Search } from "lucide-react";
 import axios, { API } from "../../services/apiClient";
 import EntityScopeBanner from "../../components/EntityScopeBanner";
 import ErrorNotice from "../../components/ErrorNotice";
+import FormModal from "../../components/FormModal";
 import KNDatePicker from "../../components/KNDatePicker";
 import KNSelect from "../../components/KNSelect";
 import { useEntityScope } from "../../context/EntityScopeContext";
+import { useAppNav } from "../../context/AppNavContext";
+import { canCurrent } from "../../config/roles";
+import useIntentKey from "../../hooks/useIntentKey";
+import { moneyPost } from "../../utils/moneyRequest";
+import { askConfirm } from "../../services/confirmService";
 import { apiErrorText } from "../../utils/apiError";
 import { formatCurrency, formatDate, formatDecimal, todayWib } from "../../utils/formatters";
 import { pilihanPeriode } from "./IncentiveSetupView";
 import CapaianSourcesPanel from "./CapaianSourcesPanel";
+import { pilihanDasar } from "./IncentiveSheetDetail";
 
 export const TEKS_SEMUA_PT = "Pilih satu PT untuk melihat Capaian. Definisi angka berbeda di tiap PT.";
 export const TEKS_MEMUAT = "Memuat capaian…";
@@ -121,6 +129,17 @@ export function jamData(iso) {
   return d.toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit", hour12: false, timeZone: "Asia/Jakarta" }).replace(".", ":");
 }
 
+/** KM-T3 — konfirmasi bila pencocokan angka KM-T1 merah sebelum lembar dibuat dari Capaian. */
+export const TEKS_REKON_MERAH = "Angka omzet atau pencairan belum cocok dengan pembukuan. Tetap buat lembar?";
+
+/** KM-T3 — alasan "Buat lembar insentif dari tampilan ini" mati (ditulis di samping tombol). "" = boleh. */
+export function alasanBuatLembar({ canPrepare, perSales, nPilih }) {
+  if (!canPrepare) return "Membuat lembar butuh akses Siapkan lembar insentif di modul Kinerja & Insentif.";
+  if (!perSales) return "Kelompokkan menurut Sales untuk membuat lembar.";
+  if (!nPilih) return "Centang sales yang akan dibuatkan lembar.";
+  return "";
+}
+
 export const kunciTampilan = (userId) => `kn.capaian.tampilan.${userId || "anon"}`;
 const BAWAAN = { jenis: "month", banding: "none", kumulatif: false, kelompok: "sales", kolom: "ringkas", adaAngka: true, cari: "" };
 
@@ -171,6 +190,14 @@ export default function CapaianView({ currentUser }) {
   const [busyExport, setBusyExport] = useState(false);
   const [exportErr, setExportErr] = useState("");
   const ubah = (patch) => { setView((v) => ({ ...v, ...patch })); setMsg(""); };
+  // KM-T3 — buat lembar insentif dari sales yang dicentang.
+  const nav = useAppNav();
+  const canPrepare = canCurrent("incentive", "prepare");
+  const [lembar, setLembar] = useState(null);
+  const [komponen, setKomponen] = useState([]);
+  const [busyLembar, setBusyLembar] = useState(false);
+  const [errLembar, setErrLembar] = useState("");
+  const kunciLembar = useIntentKey("isheet-cap");
 
   // `periode` = pilihan pengguna; kosong = periode berjalan menurut server (tahun buku PT), tanpa memuat dua kali.
   const params = useMemo(() => {
@@ -216,6 +243,40 @@ export default function CapaianView({ currentUser }) {
   const grupTampil = [...new Set(cols.map((c) => c.g))].map((g) => ({ g, n: cols.filter((c) => c.g === g).length }));
   const peringatan = teksPeringatan(data?.reconciliation);
   const periodeLabel = data?.period?.label || "";
+  const salesDipilih = perSales ? tampil.filter((r) => r.key && selected.has(r.key)).map((r) => r.key) : [];
+  const alasanLembar = alasanBuatLembar({ canPrepare, perSales, nPilih: salesDipilih.length });
+  const kompLembar = komponen.find((c) => c.id === lembar?.component_id);
+  const jenisLembar = kompLembar && kompLembar.basis_period_type !== "free" ? kompLembar.basis_period_type : (lembar?.jenis || "month");
+  const bukaLembar = async () => {
+    setErrLembar("");
+    setLembar({ pay_period: todayWib().slice(0, 7), component_id: "", jenis: "month", periode: "" });
+    try {
+      const r = await axios.get(`${API}/incentive/sheets/options`);
+      setKomponen(r.data?.components || []);
+    } catch (e) { setErrLembar(apiErrorText(e) || "Daftar komponen gagal dimuat."); }
+  };
+  const pilihKomponen = (id) => {
+    const c = komponen.find((x) => x.id === id);
+    const jenis = c && c.basis_period_type !== "free" ? c.basis_period_type : "month";
+    const tampilSama = data?.period?.type === jenis && !data?.period?.cumulative;
+    setLembar((l) => ({ ...l, component_id: id, jenis, periode: tampilSama ? data.period.key : "" }));
+  };
+  const buatLembar = async () => {
+    if (!lembar?.pay_period || !lembar?.component_id || !lembar?.periode) { setErrLembar("Isi periode bayar, komponen, dan periode dasar."); return; }
+    const rec = data?.reconciliation;
+    if (rec && !(rec.omzet_ok && rec.pencairan_ok)) {
+      const ok = await askConfirm({ title: "Angka belum cocok dengan pembukuan", message: TEKS_REKON_MERAH, confirmLabel: "Tetap buat lembar" });
+      if (!ok) return;
+    }
+    const body = { pay_period: lembar.pay_period, lines: salesDipilih.map((sid) => ({
+      sales_id: sid, component_id: lembar.component_id, basis_period_type: jenisLembar, basis_period: lembar.periode })) };
+    setBusyLembar(true); setErrLembar("");
+    try {
+      const r = await kunciLembar.send(body, (k) => moneyPost(`${API}/incentive/sheets`, body, k));
+      setLembar(null);
+      nav.go("incentive-sheets", { focus: { type: "incentive_sheet", id: r.data?.id, number: r.data?.number } });
+    } catch (e) { setErrLembar(apiErrorText(e) || "Lembar gagal dibuat."); } finally { setBusyLembar(false); }
+  };
 
   const drill = (metric, row) => setPanel({
     metric, metricLabel: METRIK_LABEL[metric], name: row.name, periodLabel: periodeLabel,
@@ -296,6 +357,12 @@ export default function CapaianView({ currentUser }) {
               {!busyExport && (state !== "ready" || rangeBelumLengkap) && <span className="text-fs-12 text-kn-text-2" data-testid="cap-export-why">Ekspor menunggu capaian termuat.</span>}
             </div>
           </div>
+          <div className="flex flex-wrap items-center gap-2" data-testid="cap-sheet-bar">
+            <button type="button" className="primary-button btn-sm whitespace-nowrap" data-testid="cap-make-sheet"
+              disabled={!!alasanLembar || state !== "ready"} onClick={bukaLembar}>
+              <ClipboardList size={13} aria-hidden="true" /> Buat lembar insentif dari tampilan ini</button>
+            {alasanLembar && <span className="text-fs-12 text-kn-text-2" data-testid="cap-make-sheet-why">{alasanLembar}</span>}
+          </div>
           {msg && <div className="notice-bar success" data-testid="cap-msg"><span className="text-fs-12">{msg}</span></div>}
           {exportErr && <ErrorNotice testId="cap-export-error" message={exportErr} />}
           {data?.definition && <p className="text-fs-12 text-kn-text-2" data-testid="cap-definition">{barisDefinisi(data.definition)}</p>}
@@ -375,6 +442,23 @@ export default function CapaianView({ currentUser }) {
         </div>
       )}
       <CapaianSourcesPanel request={panel} onClose={() => setPanel(null)} />
+      <FormModal open={!!lembar} onClose={() => setLembar(null)} title="Buat Lembar Insentif"
+        subtitle={`${salesDipilih.length} sales dipilih · nominal diketik di lembar`} icon={ClipboardList} testId="cap-sheet-form"
+        onSubmit={buatLembar} submitLabel="Buat Lembar" busy={busyLembar} error={errLembar}>
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+          <div><label className="field-label">Periode bayar <span className="req">*</span></label>
+            <KNSelect data-testid="cap-sheet-pay" value={lembar?.pay_period || ""} className="field"
+              options={pilihanPeriode("month", lembar?.pay_period || todayWib().slice(0, 7))}
+              onValueChange={(v) => setLembar((l) => ({ ...l, pay_period: v }))} /></div>
+          <div><label className="field-label">Komponen <span className="req">*</span></label>
+            <KNSelect data-testid="cap-sheet-comp" value={lembar?.component_id || ""} className="field" placeholder="Pilih komponen"
+              emptyText="Belum ada komponen aktif. Tambahkan di tab Target & Aturan."
+              options={komponen.map((c) => ({ value: c.id, label: `${c.name} (${c.basis_label})` }))} onValueChange={pilihKomponen} /></div>
+          <div><label className="field-label">Periode dasar <span className="req">*</span></label>
+            <KNSelect data-testid="cap-sheet-basis" value={lembar?.periode || ""} className="field" placeholder="Pilih periode"
+              options={pilihanDasar(jenisLembar, lembar?.periode)} onValueChange={(v) => setLembar((l) => ({ ...l, periode: v }))} /></div>
+        </div>
+      </FormModal>
     </div>
   );
 }

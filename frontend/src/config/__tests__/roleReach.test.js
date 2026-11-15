@@ -43,6 +43,9 @@ const PK22_SETORAN = ["hr-payroll-remittances"];
 const KMT1_TARGET_ATURAN = ["incentive-setup"];
 // KM-T2 — layar BARU SDM › Kinerja & Insentif › Capaian (Meja Insentif; `incentive.view`): admin, manajer, Finance.
 const KMT2_CAPAIAN = ["incentive-capaian"];
+// KM-T3 — layar BARU SDM › Kinerja & Insentif › Lembar Insentif (penyiap `incentive.prepare`: admin, manajer, Finance,
+// Admin Sales; pemutus `incentive.approve`: admin, manajer).
+const KMT3_LEMBAR = ["incentive-sheets"];
 // PY-T1 (K-37) — layar BARU SDM › Penggajian › Komponen & Masukan (tab hub Penggajian): admin, manajer.
 const PYT1_KOMPONEN = ["hr-pay-components"];
 // PM-T4 (K-36) — layar BARU Keuangan › Kas & Bank › Titipan Sales (setoran titipan tunai; `cash_holding.approve`): admin,
@@ -61,9 +64,11 @@ const KPT9_PART_TABS = ["settings-pt-readiness", "settings-accounts", "settings-
   "settings-whatsapp"];
 export const ROLE_REACH_ADDITIONS = {
   admin: [...P2_SETTINGS_VIEWS, ...P8_SUPPLIER_INTERNAL, ...KFT6_DUAL_CONTROL, ...KPT5_DOC_NUMBERING, ...MNT1_CRM_TABS,
-    ...KPT9_PART_TABS, ...PK28_GRIR, ...PK22_SETORAN, ...KMT1_TARGET_ATURAN, ...KMT2_CAPAIAN, ...PYT1_KOMPONEN, ...PMT4_TITIPAN, ...PYT3_LIBUR],
+    ...KPT9_PART_TABS, ...PK28_GRIR, ...PK22_SETORAN, ...KMT1_TARGET_ATURAN, ...KMT2_CAPAIAN, ...PYT1_KOMPONEN, ...PMT4_TITIPAN, ...PYT3_LIBUR,
+    ...KMT3_LEMBAR],
   manager: [...P2_SETTINGS_VIEWS, ...P8_SUPPLIER_INTERNAL, ...KFT6_DUAL_CONTROL, ...KPT5_DOC_NUMBERING, ...MNT1_CRM_TABS,
     ...KPT9_PART_TABS, ...PK28_GRIR, ...PK22_SETORAN, ...KMT1_TARGET_ATURAN, ...KMT2_CAPAIAN, ...PYT1_KOMPONEN, ...PMT4_TITIPAN, ...PYT3_LIBUR,
+    ...KMT3_LEMBAR,
     "finance-desk",       // MN-T1 — Beranda Keuangan › Perlu Tindakan (Meja Finance; manajer memegang payment_variance.decide)
     "approval-rules",     // D-04 — manajer membaca aturan (dulu lewat Master per Badan Usaha), tulis tetap settings.manage
     "pdf-templates",      // D-01 — tab "Kop & tata letak dasar" (dulu Master per BU kind document-templates); Desainer PDF tetap admin
@@ -82,14 +87,14 @@ export const ROLE_REACH_ADDITIONS = {
   // manajer → sales tidak pernah melihatnya; kini grup Keuangan memuat sales. + Penagihan & Penerimaan dan Kinerja Sales
   // (dulu sub-tab CRM; Admin Sales mewarisi menu sales).
   sales: ["finance-cases", "collection-worklist", "sales-performance"],
-  sales_admin: ["finance-cases", "collection-worklist", "sales-performance"],
+  sales_admin: ["finance-cases", "collection-worklist", "sales-performance", ...KMT3_LEMBAR],
   // MN-T1 — menu Finance mengikuti izin bawaannya (UX-17): Rekening & Saldo dan Rekonsiliasi (K-09: ya; izin `cash`),
   // Kas Kecil (izin `cash_advance` sudah dipegang), Buku Besar lihat saja (K-09; `accounting.view`), Hutang lihat &
   // bayar (K-17), Analisis/BI Keuangan (`accounting.view`), Pemetaan Akun (IA-06; `gl_mapping.view/update`), dan dua tab
   // Piutang yang dulu sub-tab CRM (Penagihan & Penerimaan; Kredit & Plafon tanpa hak memutus).
   finance: ["bank-accounts", "bank-reconciliation", "petty-cash", "general-ledger", "chart-of-accounts",
     "vendor-bills", "contra-bons", "bi-finance", "gl-account-mappings", "collection-worklist", "credit-overrides",
-    ...PK28_GRIR, ...KMT1_TARGET_ATURAN, ...KMT2_CAPAIAN, ...PMT4_TITIPAN, ...PYT4_SETORAN_FINANCE],
+    ...PK28_GRIR, ...KMT1_TARGET_ATURAN, ...KMT2_CAPAIAN, ...PMT4_TITIPAN, ...PYT4_SETORAN_FINANCE, ...KMT3_LEMBAR],
 };
 /** Id MENU/HUB yang kini mendarat di tab pertama LAIN di hub yang sama (urutan/isi tab baru), sementara layar lamanya tetap
  *  terjangkau (diperiksa): { peran: { id: "view baru" } } + alasan.

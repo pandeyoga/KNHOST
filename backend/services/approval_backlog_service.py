@@ -159,6 +159,11 @@ QUEUES: List[tuple] = [
      {"status": "awaiting_second"}),
     ("hr_leave", "Pengajuan cuti menunggu ACC", "hr-leave", "hr_leave_requests",
      {"status": "pending"}),
+    # KM-T3 — lembar insentif yang diajukan penyiap dan menunggu pengesahan (`incentive.approve`; kontrol dua orang
+    # `kontrol.lembar_insentif.*`). Pintunya `POST /api/incentive/sheets/{id}/approve|return`; layar SDM › Kinerja &
+    # Insentif › Lembar Insentif.
+    ("incentive_sheet", "Lembar insentif menunggu pengesahan", "incentive-sheets", "incentive_sheets",
+     {"status": "submitted"}),
     ("hr_overtime", "Pengajuan lembur menunggu ACC", "hr-overtime", "hr_overtime",
      {"status": "pending"}),
     # ── UTANG ALUR F-6.7 DIBAYAR (2026-08-18) — 4 antrean yang dulu SENGAJA dibebaskan
@@ -222,7 +227,9 @@ QUEUES: List[tuple] = [
 
 #: AG-T5 — preset layar tujuan baris antrean (tab/saringan di layar `view`), dikirim bersama barisnya ke Pusat
 #: Persetujuan. Baris tanpa preset tidak membawa field ini.
-QUEUE_PRESETS: Dict[str, Dict[str, str]] = {"ai_card_second": {"tab": "actions", "box": "others"}}
+QUEUE_PRESETS: Dict[str, Dict[str, str]] = {"ai_card_second": {"tab": "actions", "box": "others"},
+                                            # KM-T3 — Lembar Insentif dibuka dengan saringan "Diajukan".
+                                            "incentive_sheet": {"status": "submitted"}}
 
 
 def _preset(key: str) -> Dict[str, Any]:
@@ -329,6 +336,9 @@ AGING_META: Dict[str, Dict[str, List[str]]] = {
                        "title": ["user_name"]},
     "hr_leave": {"since": ["created_at"], "number": ["number"],
                  "title": ["employee_name", "leave_label"]},
+    # KM-T3 — umur tunggu sejak diajukan (dikembalikan lalu diajukan ulang = mulai lagi).
+    "incentive_sheet": {"since": ["submitted_at", "created_at"], "number": ["number"],
+                        "title": ["title", "pay_period"]},
     "hr_overtime": {"since": ["created_at"], "number": ["number"],
                     "title": ["employee_name", "reason"]},
     # ── UTANG ALUR F-6.7 DIBAYAR — umur tunggu dihitung dari kapan ia MULAI menunggu

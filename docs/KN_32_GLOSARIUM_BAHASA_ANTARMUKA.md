@@ -702,3 +702,18 @@ Istilah Keuangan › Piutang › tab "Kredit & Plafon" dan kartu pelanggan (`doc
 | **rekening koran** (pelanggan) | Tab "Rekening Koran" · isian "Dari", "Sampai" · tombol "Tampilkan", "Cetak PDF", "Salin pengingat" · kolom "Tanggal", "Dokumen", "Keterangan", "Tagihan", "Pembayaran / Kredit", "Saldo" · baris "Saldo awal", "Saldo akhir" · bagian "Denda" · PDF "Rekening Koran Pelanggan" | Mutasi piutang seorang pelanggan di satu PT dari buku besar (surat jalan, kwitansi, nota kredit, penyesuaian) dengan saldo berjalan — saldonya sama dengan buku besar per tanggal mana pun. Titipan dan uang muka ada di kotak Eksposur |
 | **tagihan** (tab kartu pelanggan) | Tab "Tagihan": "Jadwal tagihan" (Pesanan · Tagihan · Jatuh tempo · Nilai · Dibayar · Sisa · Telat (hari)) + "Nota denda" | Baris jadwal tagihan terbuka pelanggan di satu PT dan nota dendanya |
 | **izin kredit** (kartu pelanggan) | Tab "Kredit" › bagian "Izin kredit" (dulu tab "Override Kredit") | Riwayat izin lewat batas kredit pelanggan |
+
+### 9.31 Meja Insentif: lembar insentif, periode bayar, periode dasar, penyesuaian (KM-T3)
+
+Istilah SDM › Kinerja & Insentif › Lembar Insentif dan tombol di Capaian (`docs/blueprint/unit/KM-T3.md`, keputusan K-25).
+Nominal diketik orang; sistem tidak mengusulkan angka.
+
+| Istilah | Teks layar | Arti |
+|---|---|---|
+| **lembar insentif** | Tab "Lembar Insentif" · "Buat lembar" · "Buat lembar insentif dari tampilan ini" · "Lembar insentif {nomor}" · lencana Draf · Diajukan · Disahkan · Dibayarkan · Dibatalkan | Dokumen keputusan insentif satu PT untuk satu periode bayar: satu baris per sales dan komponen berisi angka dasar yang dipotret dan nominal yang diketik. Penyiap mengajukan; pemutus mengesahkan (boleh mengoreksi nominal dengan catatan) atau mengembalikan dengan alasan. Lembar yang disahkan tidak bisa diubah |
+| **periode bayar** | Saringan & isian "Periode bayar" | Bulan penggajian yang akan memuat lembar itu (mis. lembar Insentif Oktober dibayar dengan gaji November) |
+| **periode dasar** | Kolom & isian "Periode dasar" ("Okt 2026", "Triwulan III 2026") | Bulan, triwulan, atau tahun buku yang angkanya dinilai untuk baris itu — mengikuti periode dasar komponen insentifnya |
+| **dipotret** (angka dasar) | "Dipotret {tanggal jam} WIB · definisi versi {n}" · "Segarkan angka dasar" | Target, omzet, retur, uang masuk, dan kualitas harga disalin saat baris dibuat bersama versi definisi angka PT. Selagi draf bisa disegarkan; sesudah disahkan tidak berubah walau data sumber berubah |
+| **berubah sejak dipotret** | "Berubah sejak dipotret: Omzet bersih −Rp 50.000.000" | Angka dasar yang kini berbeda dari potret (mis. ada retur sesudah lembar disahkan). Bahan baris penyesuaian di lembar berikutnya, bukan perubahan otomatis |
+| **penyesuaian** | Tombol "Tambah penyesuaian" · "Penyesuaian atas {nomor}" | Baris koreksi atas baris lembar yang sudah disahkan untuk sales yang sama, dengan catatan wajib. Nominalnya boleh negatif (mengurangi insentif yang sudah disahkan) |
+| **koreksi pemutus** | Isian nominal saat mengesahkan · "penyiap Rp …" · "Catatan pemutus: …" | Pemutus mengubah nominal satu baris saat mengesahkan; catatan wajib dan nominal penyiap tetap tercatat |

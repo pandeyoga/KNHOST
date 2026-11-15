@@ -45,7 +45,8 @@ JENIS_KP35 = {"vbm", "emp", "sord"}
 # maupun fungsi lama. Setara dengan jalur lama karena katalog bawaannya = argumen titik panggil (diuji U2 seperti lainnya).
 # PK-22 — deret baru `STR-` (setoran kewajiban gaji BPJS/PPh 21, per PT): alasan sama dengan `PKR-`.
 # PM-T4 — deret baru `TTP-` (titipan tunai sales) dan `STT-` (setoran titipan tunai sales), per PT: alasan sama.
-AWALAN_SESUDAH_KPT5 = {"PKR-", "STR-", "TTP-", "STT-"}
+# KM-T3 — deret baru `LIN-` (lembar insentif, per PT; bukan `INS-` yang sudah dipakai Inspeksi mutu): alasan sama.
+AWALAN_SESUDAH_KPT5 = {"PKR-", "STR-", "TTP-", "STT-", "LIN-"}
 
 
 # ── Fungsi LAMA (salinan utuh `backend/core_utils.py` di 1392969; oracle setara) ──────────────────────────────────

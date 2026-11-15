@@ -126,6 +126,7 @@ export const PAGE_META = {
   "incentive-rates":      { kicker: "SDM · Kinerja & Insentif", title: "Komisi & Insentif \u00b7 Bawaan Komisi & Tarif per Kategori" },
   "incentive-setup":      { kicker: "SDM · Kinerja & Insentif", title: "Target & Aturan Insentif" },   // KM-T1
   "incentive-capaian":    { kicker: "SDM · Kinerja & Insentif", title: "Capaian Insentif" },   // KM-T2
+  "incentive-sheets":     { kicker: "SDM · Kinerja & Insentif", title: "Lembar Insentif" },   // KM-T3
   "bank-recon-rules":     { kicker: "Pengaturan · Keuangan & Pajak", title: "Bank" },
   "cs-bom":               { kicker: "Pembelian",      title: "BOM Printing" },
   "cs-stock-analytics":   { kicker: "Gudang",         title: "Analitik Stok (Cepat/Lambat/Mati)" },

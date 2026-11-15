@@ -568,10 +568,11 @@ dalam 4 grup); grup "Kas & Aset" dihapus.
 | SDM › Penggajian (`hr-payroll-hub`) | Setoran & Pajak (`hr-payroll-remittances`; dulu Setoran Kewajiban) — PK-22: hutang BPJS & PPh 21 per masa, Catat Setoran (`payroll.pay`). PY-T4: Gaji siap dibayar (antrean, pop-up Bayar, Daftar transfer + Unduh Excel), rekap setoran setahun, Batalkan setoran (`payroll.void`), tautan Rekap PPh 21 di Pusat Pajak. Finance: tab ini saja di hub Penggajian (`payroll.pay`, tanpa `hr.view`) | A M F |
 | SDM › Penggajian (`hr-payroll-hub`) | Komponen & Masukan (`hr-pay-components`) — PY-T1: komponen gaji per PT (ubah `hr.manage_payroll`) dan antrean masukan (tambah `payroll.create`, sahkan/batalkan `payroll.approve`) | A M |
 | SDM › Kinerja & Insentif (`hr-kpi-hub`) | Capaian (`incentive-capaian`) — KM-T2: tab pertama; angka dasar insentif per sales per PT (cari, telusur ke dokumen, jumlah pilihan, ekspor Excel; hanya baca, `incentive.view`, kolom margin `incentive.view_margin`) | A M F |
+| SDM › Kinerja & Insentif (`hr-kpi-hub`) | Lembar Insentif (`incentive-sheets`) — KM-T3: tab kedua; dokumen keputusan insentif per PT per periode bayar (nominal diketik, angka dasar dipotret; ajukan · sahkan · kembalikan · batalkan · penyesuaian · ekspor Excel). Siapkan `incentive.prepare`, sahkan `incentive.approve`; dibuka juga dari Pusat Persetujuan (antrean "Lembar insentif menunggu pengesahan") dan tombol "Buat lembar insentif dari tampilan ini" di Capaian | A M F SA |
 | SDM › Kinerja & Insentif (`hr-kpi-hub`) | Kinerja Sales (`sales-performance`) | A M S SA |
 | SDM › Kinerja & Insentif (`hr-kpi-hub`) | Target & Aturan (`incentive-setup`) — KM-T1: target per PT, komponen, definisi angka, pencocokan | A M F |
 | SDM › Kinerja & Insentif (`hr-kpi-hub`) | Komisi Otomatis (`incentive-rates`) — KM-T1: label baru (dulu "Target & Aturan") | A M |
-| SDM › Kinerja & Insentif (`hr-kpi-hub`) | Skema (Arsip) (`incentive-schemes`) | A M |
+| SDM › Kinerja & Insentif (`hr-kpi-hub`) | Skema (Arsip) (`incentive-schemes`) — KM-T3: tidak tampil di bilah tab (hub enam tab, L3); layarnya dibuka lewat tautan "Skema insentif lama (arsip)" di Lembar Insentif (tab tersembunyi, sorotan tab Lembar Insentif) | A M |
 | SDM › Kinerja & Insentif (`hr-kpi-hub`) | KPI Karyawan (`cs-kpi`) | A M |
 
 Dipindah ke luar keuangan: **Pembelian › Pesanan Pembelian › Landed Cost** (`landed-cost`, A M; hub kini 7 tab — baseline

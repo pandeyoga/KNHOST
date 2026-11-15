@@ -1062,3 +1062,21 @@ for _role, _mods in PYT4_DEFAULT_PAIRS.items():
     for _res, _acts in _mods.items():
         _cur = list(DEFAULT_PERMISSIONS[_role].get(_res) or [])
         DEFAULT_PERMISSIONS[_role][_res] = _cur + [a for a in _acts if a not in _cur]
+
+# ═══════════════════════════════════════════════════════════════════════════
+# KM-T3 — Lembar Insentif (`docs/blueprint/unit/KM-T3.md`, tabel "Izin dan peran"): `incentive.prepare` ("Siapkan lembar
+# insentif": buat lembar, ketik nominal, segarkan angka dasar, ajukan, batalkan draf) dan `incentive.approve` ("Sahkan
+# lembar insentif": sahkan — boleh mengoreksi nominal dengan catatan — atau kembalikan). Penyiap & pemutus juga boleh
+# membaca lembar (`routers/incentive.py` `BACA_LEMBAR`). Instalasi lama menerima pasangan baru sekali lewat
+# `bootstrap.sync_permission_modules` (`defaults_applied`, PR-T9).
+# ═══════════════════════════════════════════════════════════════════════════
+KMT3_DEFAULT_PAIRS = {
+    "admin": {"incentive": ("prepare", "approve")},
+    "manager": {"incentive": ("prepare", "approve")},
+    "sales_admin": {"incentive": ("prepare",)},
+    "finance": {"incentive": ("prepare",)},
+}
+for _role, _mods in KMT3_DEFAULT_PAIRS.items():
+    for _res, _acts in _mods.items():
+        _cur = list(DEFAULT_PERMISSIONS[_role].get(_res) or [])
+        DEFAULT_PERMISSIONS[_role][_res] = _cur + [a for a in _acts if a not in _cur]

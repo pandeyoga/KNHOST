@@ -138,6 +138,12 @@ INDEX_SPECS: Dict[str, List[IndexKeys]] = {
     "sales_targets": [
         [("entity_id", A), ("period_type", A), ("period", A)],
     ],
+    # KM-T3 — lembar insentif per PT per periode bayar (unik `number`: UNIQUE_DOC_NUMBER_FIELDS; unik baris berlaku
+    # `active_keys`: REQUIRED_UNIQUE_INDEXES).
+    "incentive_sheets": [
+        [("entity_id", A), ("pay_period", A), ("status", A)],
+        [("entity_id", A), ("status", A), ("created_at", D)],
+    ],
     # PM-T4 — titipan tunai sales (unik `receipt_id`: REQUIRED_UNIQUE_INDEXES) dan setorannya.
     "cash_holdings": [
         [("entity_id", A), ("holder_user_id", A), ("status", A)],
@@ -476,6 +482,7 @@ UNIQUE_DOC_NUMBER_FIELDS = [
     ("store_credit_redemptions", "number"), ("hr_employees", "code"),
     ("suppliers", "code"), ("makloons", "code"),
     ("goods_receipts", "number"),   # GRN Fase 2
+    ("incentive_sheets", "number"),   # KM-T3 — lembar insentif (`LIN-` per PT)
 ]
 
 
@@ -1007,6 +1014,20 @@ REQUIRED_UNIQUE_INDEXES += [
     {"collection": "cash_holdings", "name": "uq_holding_receipt", "label": "satu titipan tunai per kwitansi",
      "keys": [("receipt_id", 1)], "partial": {"receipt_id": dict(_NONEMPTY)},
      "finder": _finder_dup("cash_holdings", '{receipt_id:{$type:"string",$gt:""}}', '"$receipt_id"', "$id")},
+]
+
+
+# KM-T3 (D7) — satu (sales, komponen, periode dasar) hanya diputus sekali di lembar insentif yang masih berlaku: tiap baris
+# bukan penyesuaian menulis `<sales>|<komponen>|<periode dasar>` ke `active_keys` (indeks multikunci); lembar dibatalkan
+# mengosongkan daftarnya (tidak ikut indeks). Dua lembar bersamaan dengan baris yang sama → satu kena DuplicateKeyError →
+# 409 (`services/incentive_sheet_service._simpan`/`create_sheet`). Koleksi baru → data lama tidak kembar.
+REQUIRED_UNIQUE_INDEXES += [
+    {"collection": "incentive_sheets", "name": "uq_isheet_active_key",
+     "label": "satu baris lembar insentif berlaku per sales, komponen, dan periode dasar",
+     "keys": [("entity_id", 1), ("active_keys", 1)], "partial": {"active_keys": dict(_NONEMPTY)},
+     "finder": ('db.incentive_sheets.aggregate([{$match:{active_keys:{$type:"string",$gt:""}}},{$unwind:"$active_keys"},'
+                '{$group:{_id:{e:"$entity_id",k:"$active_keys"},n:{$sum:1},nomor:{$push:"$number"}}},'
+                '{$match:{n:{$gt:1}}}])')},
 ]
 
 

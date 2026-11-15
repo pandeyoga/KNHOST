@@ -128,6 +128,10 @@ APPROVAL_KINDS: Dict[str, Dict[str, Any]] = {
     # ── SDM ────────────────────────────────────────────────────────────────────────────────────────────────────────
     "hr_leave": _k("Pengajuan cuti", "SDM", "hr_leave", ("hr.manage_attendance",)),
     "hr_overtime": _k("Pengajuan lembur", "SDM", "hr_overtime", ("hr.manage_attendance",)),
+    # KM-T3 — pintu `POST /api/incentive/sheets/{id}/approve` (izin `incentive.approve`; `guard_door` + kontrol dua orang
+    # `kontrol.lembar_insentif.*`). Nominal = total lembar.
+    "incentive_sheet": _k("Pengesahan lembar insentif", "SDM", "incentive_sheet", ("incentive.approve",),
+                          amount_field="totals.amount"),
     "hr_payroll": _k("Pengesahan penggajian", "SDM", "hr_payroll", ("hr.manage_payroll",)),
 }
 

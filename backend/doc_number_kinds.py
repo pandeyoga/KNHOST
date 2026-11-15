@@ -127,6 +127,8 @@ KINDS_LIST: List[Dict[str, Any]] = [
     _k("slip", "Slip gaji", "SDM", "hr_payslips", "number", "SLIP-"),
     _k("str", "Setoran kewajiban gaji (BPJS/PPh 21)", "SDM", "hr_statutory_remittances", "number", "STR-"),   # PK-22
     _k("emp", "Kode karyawan", "SDM", "hr_employees", "code", "EMP-", scope=_B),
+    # KM-T3 — lembar insentif (per PT). Bukan `INS-` (sudah dipakai Inspeksi mutu; deret per PT berkunci awalan).
+    _k("lin", "Lembar insentif", "SDM", "incentive_sheets", "number", "LIN-"),
     # ── Master ─────────────────────────────────────────────────────────────────────────────────────────────────────
     _k("sup", "Kode pemasok", "Master", "suppliers", "code", "SUP-", scope=_B, locked=True),
     _k("mak", "Kode makloon", "Master", "makloons", "code", "MAK-", scope=_B, locked=True),
