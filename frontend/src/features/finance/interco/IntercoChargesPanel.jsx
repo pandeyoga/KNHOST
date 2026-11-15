@@ -176,8 +176,11 @@ export default function IntercoChargesPanel({ entityId = "", allowedEntityIds = 
           <div className="overflow-x-auto">
             <table className="data-table head-wrap w-full" data-testid="icc-table">
               <thead><tr>
-                <th>Nomor</th><th>Dari PT</th><th>Kepada PT</th><th className="text-right">Nominal (Rp)</th>
-                <th className="text-right">Sisa (Rp)</th><th>Status</th><th className="col-sticky-end text-right">Aksi</th>
+                {/* Cek layar integrator 1024 px: 7 kolom = ±800 px > kartu ±734 px → lencana Status tertutup kolom Aksi yang
+                    menempel ("Menung…"). PT penagih & tertagih satu kolom dua baris, Nominal & Sisa satu kolom dua baris
+                    → 5 kolom = lebar kartu. */}
+                <th>Nomor</th><th>Dari PT · ke PT</th><th className="text-right">Nominal · Sisa (Rp)</th>
+                <th>Status</th><th className="col-sticky-end text-right">Aksi</th>
               </tr></thead>
               <tbody>
                 {items.map((c) => {
@@ -186,10 +189,10 @@ export default function IntercoChargesPanel({ entityId = "", allowedEntityIds = 
                     <tr key={c.id} data-testid={`charge-row-${c.id}`} className={c.id === focusId ? "row-focus" : ""}>
                       <td className="whitespace-nowrap"><span className="font-semibold">{c.number}</span>
                         <span className="block text-fs-12 text-kn-text-2">Gaji {c.source?.run_number || "—"}</span></td>
-                      <td className="break-words">{c.from_entity_name}</td>
-                      <td className="break-words">{c.to_entity_name}</td>
-                      <td className="text-right tabular-nums">{angkaRp(c.amount)}</td>
-                      <td className="text-right tabular-nums font-semibold">{angkaRp(c.outstanding)}</td>
+                      <td className="break-words"><span className="block">{c.from_entity_name}</span>
+                        <span className="block text-fs-12 text-kn-text-2">ke {c.to_entity_name}</span></td>
+                      <td className="text-right tabular-nums"><span className="block">{angkaRp(c.amount)}</span>
+                        <span className="block whitespace-nowrap text-fs-12 font-semibold">sisa {angkaRp(c.outstanding)}</span></td>
                       <td><StatusTagihan status={c.status} testId={`charge-status-${c.id}`} /></td>
                       <td className="col-sticky-end text-right">
                         {c.status === "open" && !alasan && (

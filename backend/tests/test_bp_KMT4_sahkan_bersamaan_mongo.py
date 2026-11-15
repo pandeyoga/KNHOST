@@ -52,7 +52,9 @@ def _komponen(h):
 def _mode(h, nilai):
     item = {"key": KUNCI, "scope_type": "entity", "scope_id": ENT, "reason": "uji bersamaan KM-T4 (data acuan)"}
     if nilai is None:
-        r = requests.post(f"{BASE}/config/values/clear", headers=h, timeout=30, json={"items": [item]})
+        # Cek integrator (lingkungan A): `/config/values/clear` menerima SATU butir (`ConfigValueIn`), bukan `{"items": …}` —
+        # bentuk lama → 422, pembersihan berhenti dan lembar uji tertinggal (putaran berikut 409 "sudah ada di lembar").
+        r = requests.post(f"{BASE}/config/values/clear", headers=h, timeout=30, json=item)
     else:
         r = requests.put(f"{BASE}/config/values", headers=h, timeout=30, json={"items": [{**item, "value": nilai}]})
     assert r.status_code == 200, r.text
