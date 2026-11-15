@@ -64,7 +64,18 @@ kategori yang izinnya dipegang).
 
 ## 5. Gate
 
-(diisi sesudah gate selesai)
+`gate.sh --ci` sekali pada pohon gabungan (MongoDB 7 asli, backend pohon gabungan). Log: `garis-dasar-gate/2026-11-15_R0_gate_ci.log`.
+
+- Per status gate, dibanding garis dasar 15 Nov (`2026-11-15_gate_ci_receipt.md`): merah 39 → **38** (`guard:page_tabs`
+  menjadi hijau), hijau 102 → **105** (termasuk dua gate baru `guard:roll_status_writer` + uji-dirinya dari FIX-10). Tidak
+  ada gate yang berubah hijau → merah.
+- Per pelanggaran (`bandingkan_pelanggaran_gate.py` terhadap `2026-11-15_gate_ci.log`): **1 baru, 3 hilang**.
+  - Baru: `audit_sales_roles_ux` peran Finance, layar `goods-receipts` — baris yang **sudah merah** di garis dasar (panel
+    mati: `/inbound/scan-label/stats`, `/lots/settings`, `/warehouses`) kini juga menyebut `/inbound/tasks`. Asal: kode
+    "muat berikutnya" FIX-7 di `InboundScanInterface.jsx` membuat panggilan itu terbaca pemindai statis. Akar masalah
+    sama (layar Penerimaan Finance memuat komponen pindai lama yang dijaga `wms.update`), perilaku tidak berubah → masuk R4.
+  - Hilang: satu baris lama `finance` (diganti baris di atas), satu `guard:entity_label`, satu `guard:page_tabs`.
+- Garis dasar `2026-11-15_gate_ci.log` sengaja **tidak** diganti (diganti sesudah R4, sesuai STATUS).
 
 ## 6. Belum dikerjakan / titik henti
 
