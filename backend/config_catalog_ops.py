@@ -691,6 +691,20 @@ E("hr.payroll_commission_mode", group="sdm", section="lembur", type="enum", defa
   consumers=("services/hr_payroll_service.py", "services/sales_force_service.py"),
   risk="high", permission=_HR_PAYROLL)
 
+# PY-T2 (PY-09, K-38) — gaji/PT yang berubah di tengah bulan. Bawaan `mati` = perilaku sebelum unit ini (nilai akhir
+# bulan, sebulan penuh). Pilihan `hari_kerja` menyusul di PY-T3 (kalender kerja).
+E("hr.prorata_perubahan_gaji", group="sdm", section="lembur", type="enum", default="mati",
+  options=({"value": "mati", "label": "Tidak diprorata: pakai nilai akhir bulan"},
+           {"value": "hari_kalender", "label": "Prorata menurut hari kalender"}),
+  scopes=G,
+  label="Gaji berubah di tengah bulan",
+  help="Menentukan cara menghitung gaji bulan saat gaji atau PT karyawan berubah di tengah bulan.",
+  impact="Prorata membagi gaji bulan itu menurut jumlah hari tiap nilai berlaku; karyawan yang pindah PT dibayar "
+         "kedua PT sesuai harinya.",
+  example="Naik dari Rp 6.000.000 ke Rp 7.500.000 per 16 November → Rp 3.000.000 + Rp 3.750.000",
+  consumers=("services/hr_compensation_service.py:segments", "services/hr_compensation_service.py:prorata_mode"),
+  risk="high", requires_reason=True, permission=_HR_PAYROLL)
+
 # ═══════════════════════════════════════════════════════════════════════════
 # P01 (IMP-12 / IMP-20) — kelayakan jual per tahap & cakupan lokasi kerja gudang
 # ═══════════════════════════════════════════════════════════════════════════

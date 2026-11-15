@@ -79,6 +79,11 @@ async def _entity_tax_status_job():
     from services import entity_lifecycle_service as _lc   # KP-T1 — status PKP terjadwal (impor malas)
     return await _lc.job_entity_tax_status_due()
 
+
+async def _hr_compensation_effective_job():
+    from services import hr_compensation_service as _hc   # PY-T2 — riwayat kompensasi bertanggal (impor malas)
+    return await _hc.job_apply_effective()
+
 _owns_lock = False
 
 
@@ -310,6 +315,12 @@ JOBS: List[Dict[str, Any]] = [
                     "diterapkan pada tanggal berlakunya: status berubah, riwayat bertambah, jadwal dihapus. Dokumen "
                     "yang sudah ada tidak dihitung ulang. Idempoten — juga dijalankan saat aplikasi menyala.",
      "kind": "daily", "hour": 0, "minute": 5, "fn": _entity_tax_status_job, "link": "entities-access"},
+    # ── PY-T2 — gaji pokok, tunjangan, dan PT karyawan bertanggal berlaku (PY-09) ───────────────────────────────
+    {"id": "hr_compensation_effective", "label": "Terapkan Gaji & Penugasan PT Bertanggal",
+     "description": "Perubahan gaji pokok, tunjangan tetap, dan PT karyawan yang sudah disahkan di Riwayat Kompensasi "
+                    "kartu karyawan disalin ke data karyawan pada tanggal berlakunya. Proses gaji tetap membaca nilai "
+                    "yang berlaku pada periodenya sendiri. Idempoten — juga dijalankan saat perubahan disahkan.",
+     "kind": "daily", "hour": 0, "minute": 10, "fn": _hr_compensation_effective_job, "link": "hr-employees"},
     {"id": "ai_anomaly_scan", "label": "Peringatan Anomali Tanya KN",
      "description": "Tiap pagi memindai penjualan turun per sales, piutang mulai macet, stok yang akan habis, dan PO "
                     "supplier terlambat; hasilnya tampil di tab Peringatan Tanya KN dan dikirim ke lonceng. Tanpa biaya AI.",

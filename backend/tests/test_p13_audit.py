@@ -219,26 +219,30 @@ class TestHREmployeeAudit:
         TestHREmployeeAudit.emp_id = r.json()["id"]
 
     def test_patch_base_salary_pii_excluded(self, admin):
-        """base_salary ∈ hr_service.PII_FIELDS → sengaja dikecualikan dari jejak audit.
+        """PII (`hr_service.PII_FIELDS`) → sengaja dikecualikan dari jejak audit.
 
         Dicatat sebagai IMPLEMENTATION.md: "PATCH karyawan (PII tetap dikecualikan)".
         Jadi audit row tetap tertulis & valid (actor_id, source, hash), tetapi before/after
-        TIDAK memuat base_salary. Perubahan nilainya tetap terjadi di koleksi master.
+        TIDAK memuat nilainya. PY-T2 — gaji pokok tidak lagi bisa diubah lewat PATCH master (400; lewat Riwayat
+        Kompensasi), jadi kebijakan PII diuji dengan field PII lain (`npwp`).
         """
         s = admin["session"]
         eid = TestHREmployeeAudit.emp_id
+        r = s.patch(f"{BASE_URL}/api/hr/employees/{eid}", json={"data": {"base_salary": 7500000}})
+        assert r.status_code == 400, r.text
+        assert r.json()["detail"] == "Gaji dan penugasan PT diubah lewat Riwayat Kompensasi di kartu karyawan."
         t0 = time.time()
         r = s.patch(f"{BASE_URL}/api/hr/employees/{eid}",
-                    json={"data": {"base_salary": 7500000}})
+                    json={"data": {"npwp": "01.234.567.8-901.000"}})
         assert r.status_code == 200, r.text
-        assert float(r.json().get("base_salary") or 0) == 7500000
+        assert r.json().get("npwp") == "01.234.567.8-901.000"
         row = _latest_audit("hr_employee_updated", eid, t0)
         _assert_audit_shape(row, admin["user_id"], "hr_employee_updated")
         before = row.get("before") or {}
         after = row.get("after") or {}
-        # Verifikasi: base_salary memang dikecualikan dari before/after (PII policy)
-        assert "base_salary" not in after, "base_salary bocor di after (PII seharusnya dikecualikan)"
-        assert "base_salary" not in before, "base_salary bocor di before (PII seharusnya dikecualikan)"
+        # Verifikasi: field PII memang dikecualikan dari before/after (PII policy)
+        assert after.get("npwp") in (None, "[REDACTED]"), "npwp bocor di after (PII seharusnya dikecualikan)"
+        assert before.get("npwp") in (None, "[REDACTED]"), "npwp bocor di before (PII seharusnya dikecualikan)"
 
     def test_patch_phone_non_pii(self, admin):
         """Field non-PII (phone) MUNCUL di before/after jejak audit."""

@@ -1526,6 +1526,42 @@ async def layer_incentive_invariants(db):
         line("PASS", G, "INV-KM-3: isi fakta insentif = hasil bangun ulang penuh (jumlah baris & Σ nilai per PT per bulan)")
 
 
+async def layer_hr_compensation_invariants(db):
+    """PY-T2 (`02_STANDAR.md` §5 D2) — gaji pokok, tunjangan, dan PT di master karyawan = nilai turunan riwayat.
+
+    INV-PY-2  untuk tiap karyawan AKTIF yang punya riwayat: `base_salary`, `allowances`, dan `entity_id` di
+              `hr_employees` = baris `approved` yang berlaku hari ini (WIB) di `hr_compensation_history` /
+              `hr_employee_assignments`. Karyawan aktif tanpa riwayat sama sekali = WARN (belum dimigrasi:
+              `scripts/migrate_hr_compensation_py_t2.py`; master masih sumbernya). Pembangun ulang =
+              `hr_compensation_service.apply_effective` (tugas terjadwal `hr_compensation_effective`)."""
+    print(f"\n{C}{B}PY — Riwayat kompensasi & penugasan PT (PY-T2){X}")
+    sys.path.insert(0, str(ROOT / "backend"))
+    try:
+        from services import hr_compensation_service as _hc
+        hasil = await _hc.master_drift()
+    except Exception as exc:  # noqa: BLE001 — penjaga tidak boleh buta diam-diam
+        results["fail"] += 1
+        line("FAIL", R, f"INV-PY-2: riwayat kompensasi tidak bisa diperiksa ({exc.__class__.__name__}: {exc})")
+        return
+    if hasil["drift"]:
+        results["fail"] += 1
+        contoh = [f"{d['name'] or d['employee_id']} ({d['employee_id']}): {', '.join(d['fields'])}"
+                  for d in hasil["drift"][:5]]
+        line("FAIL", R, f"INV-PY-2: {len(hasil['drift'])} karyawan aktif, master ≠ riwayat yang berlaku "
+                        f"{hasil['date']}: {contoh}",
+             "→ master diubah di luar layanan riwayat; jalankan tugas 'Terapkan Gaji & Penugasan PT Bertanggal' "
+             "lalu cari penulisnya")
+    else:
+        results["pass"] += 1
+        line("PASS", G, f"INV-PY-2: master gaji, tunjangan & PT = riwayat yang berlaku {hasil['date']} "
+                        f"({hasil['checked']} karyawan aktif)")
+    if hasil["without_history"]:
+        results["warn"] += 1
+        line("WARN", Y, f"INV-PY-2: {len(hasil['without_history'])} karyawan aktif belum punya riwayat kompensasi/"
+                        f"penugasan (master masih sumbernya)",
+             "→ scripts/migrate_hr_compensation_py_t2.py (baca-saja dulu; data nyata = keputusan pemilik)")
+
+
 async def layer_production_invariants(db):
     """R6.4 — Produksi In-House (BOM + Work Order): resep valid, HPP konsisten,
     konsumsi bahan == movement, roll barang jadi ada, overhead terkapitalisasi di GL."""
@@ -4933,6 +4969,7 @@ def _layer_registry():
         ("asset",       layer_fixed_asset_invariants,     True,  ("INV-FA",)),
         ("budget",      layer_budget_invariants,          True,  ("INV-BUD",)),
         ("incentive",   layer_incentive_invariants,       True,  ("INV-KM",)),
+        ("hr_comp",     layer_hr_compensation_invariants, True,  ("INV-PY",)),
         ("production",  layer_production_invariants,      True,  ("INV-PROD",)),
         ("scheduler",   layer_scheduler_invariants,       True,  ("SCH-",)),
         ("ps21",        layer_ps21_invariants,            True,  ("PS21-",)),

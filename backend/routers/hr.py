@@ -30,8 +30,12 @@ EMP_UPDATE_FIELDS = {
     "employment_type", "join_date", "status", "separation_date",
     "npwp", "ptkp_status", "bpjs_kes_enabled", "bpjs_kes_no", "bpjs_tk_enabled",
     "bpjs_tk_no", "jkk_risk_class", "bank_name", "bank_acc_no", "bank_acc_name",
-    "base_salary", "allowances", "photo_url", "entity_id",
+    "photo_url",
 }
+# PY-T2 (PY-09) — gaji pokok, tunjangan, dan PT kini nilai turunan riwayat bertanggal berlaku (`hr_compensation_service`):
+# PATCH master menolaknya; perubahan lewat Riwayat Kompensasi / Penugasan PT di kartu karyawan.
+EMP_HISTORY_FIELDS = ("base_salary", "allowances", "entity_id")
+EMP_HISTORY_MSG = "Gaji dan penugasan PT diubah lewat Riwayat Kompensasi di kartu karyawan."
 ORG_UPDATE_FIELDS = {"name", "code", "unit_type", "parent_id", "head_employee_id",
                      "description", "entity_id", "status"}
 
@@ -304,6 +308,19 @@ async def create_employee(payload: HrEmployeeCreate, request: Request) -> Dict[s
     }
     doc["entity_id"] = payload.entity_id or ctx.active_entity_id
     await db.hr_employees.insert_one(doc)
+    # PY-T2 — baris kompensasi + penugasan PT pertama (`approved`), berlaku sejak tanggal masuk (kosong → hari ini WIB).
+    # Gagal → karyawan & baris yang sempat lahir dihapus (kompensasi; satu permintaan = satu karyawan utuh).
+    from services import hr_compensation_service as _hc
+    try:
+        mulai = _hc.check_date(doc["join_date"]) if doc["join_date"] else _hc.today()
+    except ValueError:
+        mulai = _hc.today()
+    try:
+        await _hc.initial_rows(doc, actor, source="manual", effective_from=mulai)
+    except Exception:
+        await _hc.remove_rows(doc["id"])
+        await db.hr_employees.delete_one({"id": doc["id"]})
+        raise
     await audit(actor["name"], "hr_employee_created", "hr_employee", doc["id"],
                 {"code": code, "name": doc["name"]})
     return safe_doc(doc)
@@ -406,6 +423,8 @@ async def update_employee(employee_id: str, payload: GenericPatch, request: Requ
     if not emp:
         raise HTTPException(status_code=404, detail="Karyawan tidak ditemukan")
     assert_entity_access(emp, "hr_employees", ctx)
+    if any(k in (payload.data or {}) for k in EMP_HISTORY_FIELDS):
+        raise HTTPException(status_code=400, detail=EMP_HISTORY_MSG)
     updates = {k: v for k, v in (payload.data or {}).items() if k in EMP_UPDATE_FIELDS}
     if any(k in updates for k in LOCATION_KEYS):
         updates.update(normalize_location({**{k: emp.get(k, "") for k in LOCATION_KEYS}, **{k: v for k, v in updates.items() if k in LOCATION_KEYS}}))
@@ -416,11 +435,6 @@ async def update_employee(employee_id: str, payload: GenericPatch, request: Requ
             {"user_id": updates["user_id"], "id": {"$ne": employee_id}}, {"_id": 0, "id": 1})
         if dup:
             raise HTTPException(status_code=409, detail="Akun user ini sudah terhubung ke karyawan lain")
-    if "base_salary" in updates:
-        try:
-            updates["base_salary"] = round(float(updates["base_salary"] or 0), 2)
-        except (ValueError, TypeError):
-            updates["base_salary"] = 0.0
     _apply_separation(emp, updates)
     updates["updated_at"] = now_iso()
     updated = await db.hr_employees.find_one_and_update(

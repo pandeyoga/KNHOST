@@ -160,6 +160,7 @@ SCOPED_COLLECTIONS = {
     "hr_payroll_runs", "hr_payslips",
     "hr_statutory_remittances",       # PK-22 — setoran kewajiban gaji (BPJS, PPh 21) milik satu PT
     "hr_pay_components", "hr_pay_inputs",   # PY-T1 — komponen gaji per PT + antrean masukan komponen
+    "hr_employee_assignments",        # PY-T2 — penugasan PT karyawan bertanggal berlaku (PT tujuan)
     "hr_leave_requests", "hr_leave_balances", "hr_overtime",
     "hr_kpi", "design_gallery",
     "logistics_deliveries",   # FB-02 — pengiriman logistik (foto muat/POD, posisi)

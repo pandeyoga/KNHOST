@@ -84,6 +84,8 @@ CANONICAL_COLLECTIONS = {
     "sales_targets", "incentive_components", "incentive_definitions", "fact_shipment_sales", "fact_collections",
     # ── PY-T1 (blueprint) — komponen gaji per PT + antrean masukan komponen ──
     "hr_pay_components", "hr_pay_inputs",
+    # ── PY-T2 (blueprint) — riwayat kompensasi & penugasan PT karyawan bertanggal berlaku ──
+    "hr_compensation_history", "hr_employee_assignments",
     "cash_transactions",
     # ── Depth #1 (Retur Beli / Nota Debit) ──
     "purchase_returns",

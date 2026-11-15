@@ -77,3 +77,26 @@ class HrSettingsUpdate(BaseModel):
     feature_toggles: Optional[Dict[str, Any]] = None
     employment_types: Optional[List[str]] = None
     payroll_commission_mode: Optional[str] = None
+
+
+class CompensationCreate(BaseModel):
+    """PY-T2 — usulan baris riwayat kompensasi (diperiksa layanan; isian longgar supaya pesan galat berbahasa
+    Indonesia, bukan 422). `fixed_components` tidak dikirim = salin dari baris yang berlaku pada tanggal itu."""
+    effective_from: Any = None
+    base_salary: Any = None
+    fixed_components: Optional[List[Dict[str, Any]]] = None
+    reason: str = ""
+
+
+class AssignmentCreate(BaseModel):
+    """PY-T2 — usulan penugasan PT (pindah PT / departemen / jabatan) bertanggal berlaku."""
+    entity_id: str = ""
+    effective_from: Any = None
+    department_id: str = ""
+    position_id: str = ""
+    reason: str = ""
+
+
+class HistoryDecision(BaseModel):
+    """PY-T2 — sahkan / tolak / batalkan baris riwayat (alasan opsional)."""
+    reason: str = ""

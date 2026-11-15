@@ -277,14 +277,19 @@ def _overtime_amount(base: float, events: List[Dict[str, Any]], cfg: Dict[str, A
     return round(total, 2)
 
 
-async def _prior_year_slips(emp_id: str, period: str) -> List[Dict[str, Any]]:
+async def _prior_year_slips(emp_id: str, period: str, entity_id: str = "") -> List[Dict[str, Any]]:
+    """Slip karyawan itu tahun pajak yang sama sebelum `period`. PY-T2 — hanya slip DI PT PROSES ITU (`entity_id`):
+    tiap PT pemotong pajak tersendiri, karyawan yang pindah PT dihitung ulang tahunannya per PT (ASUMSI spesifikasi)."""
     year = period[:4]
     dead = [r["id"] async for r in db.hr_payroll_runs.find(
         {"status": {"$in": ["void", "cancelled", "rejected"]}}, {"_id": 0, "id": 1})]
+    q: Dict[str, Any] = {"employee_id": emp_id, "period": {"$regex": f"^{year}-", "$lt": period},
+                         "run_id": {"$nin": dead}}
+    if entity_id and entity_id != "all":
+        q["entity_id"] = entity_id
     # PY-T1 — satu bulan bisa memuat beberapa proses (reguler, THR, susulan): batas 12 bulan × beberapa slip.
     return await db.hr_payslips.find(
-        {"employee_id": emp_id, "period": {"$regex": f"^{year}-", "$lt": period}, "run_id": {"$nin": dead}},
-        {"_id": 0, "period": 1, "gross": 1, "tax_gross": 1, "pph21": 1, "bpjs_emp": 1}).to_list(240)
+        q, {"_id": 0, "period": 1, "gross": 1, "tax_gross": 1, "pph21": 1, "bpjs_emp": 1}).to_list(240)
 
 
 def _tanggal_keluar(emp: Dict[str, Any]) -> str:
@@ -393,7 +398,21 @@ async def compute_payslip(emp: Dict[str, Any], period: str, entity_id: str,
         inputs = [i for i in await _pi.inputs_for_run(run["id"]) if i.get("employee_id") == emp["id"]] if run else []
     if month_prior is None:
         month_prior = (await _month_prior_index(entity_id, period, run, [emp["id"]])).get(emp["id"], [])
-    base = float(emp.get("base_salary") or 0)
+    # PY-T2 — gaji pokok & komponen tetap dari riwayat kompensasi yang berlaku pada periode itu (potongan menurut
+    # `hr.prorata_perubahan_gaji` PT itu), bukan master saat dihitung. Karyawan tanpa riwayat → master (perilaku lama).
+    segs: Optional[List[Dict[str, Any]]] = None
+    if rt == "regular":
+        from services import hr_compensation_service as _hc
+        segs = emp.get("_segments")
+        if segs is None:
+            segs = await _hc.segments(emp["id"], entity_id, period, emp=emp)
+        if not segs:   # dipanggil langsung untuk PT yang tidak menggajinya periode itu → nilai akhir periode sebulan
+            segs = await _hc.full_month_segments(emp, entity_id, period)
+        _, _, dim = _hc.period_bounds(period)
+        base = round(sum(float(sg.get("base_salary") or 0) if sg.get("full") else
+                         _hc.prorate(sg.get("base_salary"), sg["days"], dim) for sg in segs), 2)
+    else:
+        base = float(emp.get("base_salary") or 0)
     events: List[Dict[str, Any]] = []
     overtime, commission = 0.0, 0.0
     if rt == "regular":
@@ -404,7 +423,8 @@ async def compute_payslip(emp: Dict[str, Any], period: str, entity_id: str,
     ot_filed = sum(e["minutes"] for e in events if e["source"] == "filed")
     ot_min = ot_auto + ot_filed
     earn = _pc.earning_components(comps, run_type=rt, base=base, allowances=emp.get("allowances"),
-                                  overtime=overtime, overtime_min=ot_min, commission=commission, inputs=inputs)
+                                  overtime=overtime, overtime_min=ot_min, commission=commission, inputs=inputs,
+                                  segments=segs)
     rates, on = bpjs_info(emp, cfg)
     if rt == "regular":
         emp_b, er_b, _, _ = bpjs_breakdown(base, emp, cfg)
@@ -431,7 +451,7 @@ async def compute_payslip(emp: Dict[str, Any], period: str, entity_id: str,
     pph21 = round(pph21_month - prior_pph, 2) if tax_on else 0.0
     pph21_method, annual = "ter", None
     if tax_on and _is_final_tax_period(emp, period):
-        prior = await _prior_year_slips(emp["id"], period) + month_prior
+        prior = await _prior_year_slips(emp["id"], period, entity_id) + month_prior
         pension = lambda s: float((s.get("bpjs_emp") or {}).get("jht", 0) or 0) + \
             float((s.get("bpjs_emp") or {}).get("jp", 0) or 0)  # noqa: E731
         months = len({str(p.get("period") or "") for p in prior} | {period})
@@ -495,6 +515,10 @@ def _round_totals(t: Dict[str, float]) -> Dict[str, float]:
 async def _active_employees(entity_id: str, period: str = "") -> List[Dict[str, Any]]:
     # HR-01 — karyawan yang berhenti pada periode ini tetap digaji (masa pajak terakhir).
     # PK-45 (PY-05) — master karyawan menulis `separation_date`; `end_date` tetap dibaca untuk data lama.
+    # PY-T2 — PT + periode: karyawan menurut PENUGASAN bertanggal berlaku (`employees_for_run`), bukan `entity_id` master.
+    if period and entity_id and entity_id != "all":
+        from services import hr_compensation_service as _hc
+        return await _hc.employees_for_run(entity_id, period)
     awal = {"$regex": f"^{re.escape(period)}"}
     keluar = [{"separation_date": awal}, {"end_date": awal}]
     q: Dict[str, Any] = {"$or": [{"status": "active"}, {"status": {"$in": ["resigned", "inactive"]},
@@ -520,8 +544,9 @@ async def _build_slips(entity_id: str, period: str, run_type: str, *, run: Optio
     if run_type == "regular":
         emps = await _active_employees(entity_id, period)
     else:
+        # PY-T2 — masukan sudah ber-PT (antrean per PT); karyawan yang pindah PT tetap dimuat di PT masukannya.
         emps = [safe_doc(e) for e in await db.hr_employees.find(
-            {"id": {"$in": list(per_emp)}, "entity_id": entity_id}, {"_id": 0}).to_list(len(per_emp) + 1)]
+            {"id": {"$in": list(per_emp)}}, {"_id": 0}).to_list(len(per_emp) + 1)]
     prior = await _month_prior_index(entity_id, period, run)   # PPh 21 gabungan bulan — sekali per proses gaji
     slips: List[Dict[str, Any]] = []
     totals = _empty_totals()

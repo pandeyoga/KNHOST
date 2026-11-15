@@ -122,7 +122,9 @@ def test_U02_pemeriksa_hijau():
     # `incentive_definitions.uq_definition_version`: + 3.
     # PY-T1 menambah `hr_pay_components.uq_entity_code`, `hr_pay_inputs.uq_source_key` dan
     # `hr_payroll_runs.uq_active_key`: + 3.
-    assert out.count(": terpasang · 0 kelompok kembar") == len(REQUIRED_UNIQUE_INDEXES) == 29
+    # PY-T2 menambah `hr_compensation_history.uq_employee_effective_approved` dan
+    # `hr_employee_assignments.uq_employee_effective_approved` (satu baris sah per karyawan per tanggal berlaku): + 2.
+    assert out.count(": terpasang · 0 kelompok kembar") == len(REQUIRED_UNIQUE_INDEXES) == 31
 
 
 def test_U03_U04_U05_indeks_tak_terpasang_menolak_mulai():

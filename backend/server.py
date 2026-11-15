@@ -205,6 +205,8 @@ for module in [
     ap_payments,       # PK-05 — niat bayar hutang (status, rekening, lanjutkan, batalkan)
 ]:
     app.include_router(module.router)
+from routers import hr_compensation as _hr_compensation  # noqa: E402 — PY-T2 riwayat kompensasi & penugasan PT
+app.include_router(_hr_compensation.router)
 
 app.include_router(color_library.router)
 from routers import rfid_v2, rfid_v2_ops, rfid_v2_review  # noqa: E402 — gate U300 V2 (Kubus) + PREP-D1 + PREP-D2

@@ -5,8 +5,11 @@ Satu PT punya daftar komponennya sendiri (K-37). Tiap komponen menyebut kolom la
 
 Isi awal tiap PT (idempoten, saat server menyala dan saat daftar komponen PT itu pertama dibaca) menghasilkan slip
 yang SAMA PERSIS dengan hitungan kolom lama: gaji pokok, tunjangan (satu baris per tunjangan di master karyawan), lembur,
-komisi dari mesin komisi, tiga potongan BPJS karyawan, lima tanggungan BPJS perusahaan, PPh 21, dan THR (hanya proses
-THR).
+komisi dari mesin komisi, tiga potongan BPJS karyawan, lima tanggungan BPJS perusahaan, PPh 21, THR (hanya proses
+THR), dan RAPEL (PY-T2 — selisih gaji berlaku mundur, masukan proses reguler & susulan).
+
+PY-T2 — nilai Gaji Pokok dan komponen tetap bulanan dibaca dari riwayat kompensasi bertanggal berlaku
+(`segment_lines` atas potongan periode `hr_compensation_service.segments`), bukan dari master karyawan.
 
 Fungsi murni (tanpa database): `earning_components`, `statutory_components`, `derive_columns`, `components_match_columns`.
 Akses database: `ensure_defaults`, `ensure_defaults_all`, `list_components`, `create_component`, `update_component`.
@@ -64,6 +67,9 @@ DEFAULT_COMPONENTS: List[Dict[str, Any]] = [
     _c("LEMBUR", "Lembur", "pendapatan", "per_jam", "overtime", 30, taxable=True),
     _c("KOMISI", "Komisi / insentif penjualan", "pendapatan", "masukan", "commission", 40, taxable=True),
     _c("THR", "THR", "pendapatan", "masukan", "other_earnings", 50, taxable=True, run_types=("thr",)),
+    # PY-T2 — selisih gaji yang berlaku mundur (masukan `pending` dari pengesahan riwayat kompensasi).
+    _c("RAPEL", "Rapel", "pendapatan", "masukan", "other_earnings", 55, taxable=True,
+       run_types=("regular", "susulan")),
     _c("BPJS_KES", "BPJS Kesehatan", "potongan", "undang_undang", "bpjs_emp", 110, taxable=False,
        statutory_code="bpjs_kes_emp"),
     _c("BPJS_JHT", "BPJS JHT", "potongan", "undang_undang", "bpjs_emp", 120, taxable=False,
@@ -143,15 +149,56 @@ def input_line(comp: Dict[str, Any], inp: Dict[str, Any]) -> Dict[str, Any]:
                  basis_period=inp.get("basis_period") or "", source=src)
 
 
+def segment_lines(comps: Dict[str, Dict[str, Any]], segments: Iterable[Dict[str, Any]], *,
+                  run_type: str = "regular") -> List[Dict[str, Any]]:
+    """PY-T2 — baris Gaji Pokok dan komponen tetap bulanan dari potongan periode (`hr_compensation_service.segments`).
+
+    Satu potongan sebulan penuh → satu baris per komponen bernilai penuh (sama dengan slip sebelum PY-T2: "Gaji Pokok",
+    "Tunjangan — Transport"). Lebih dari satu potongan (aturan `hari_kalender`) → tiap potongan baris sendiri berlabel
+    "{nama} ({tgl awal}–{tgl akhir} {bulan})" bernilai nilai × hari potongan ÷ hari kalender bulan itu (rupiah penuh)."""
+    from services import hr_compensation_service as _hc
+    segs = list(segments or ())
+    out: List[Dict[str, Any]] = []
+    if run_type != "regular" or not segs:
+        return out
+    dim = _hc.period_bounds(segs[0]["date_from"][:7])[2]
+    potong = len(segs) > 1 or not segs[0].get("full")
+    for seg in segs:
+        akhir = f" {_hc.segment_label(seg)}" if potong else ""
+        nilai = (lambda v: _hc.prorate(v, seg["days"], dim)) if potong else (lambda v: float(v or 0))
+        extra = {"date_from": seg["date_from"], "date_to": seg["date_to"], "days": seg["days"]} if potong else {}
+        gp = comps.get("GAJI_POKOK")
+        if allowed(gp, run_type):
+            out.append(_line(gp, nilai(seg.get("base_salary")), f"{gp.get('name') or 'Gaji Pokok'}{akhir}"
+                             if potong else "", **extra))
+        for fc in seg.get("fixed_components") or ():
+            comp = comps.get(fc.get("component_code") or "TUNJANGAN")
+            if not allowed(comp, run_type) or comp.get("calc") != "tetap_bulanan" or comp["code"] == "GAJI_POKOK":
+                continue
+            amt = float(fc.get("amount") or 0)
+            if not amt:
+                continue
+            nama, ket = comp.get("name") or comp["code"], str(fc.get("label") or "").strip()
+            label = f"{nama} — {ket}" if ket and ket != nama else ""
+            if potong:
+                label = f"{label or nama}{akhir}"
+            out.append(_line(comp, nilai(amt), label, **extra))
+    return out
+
+
 def earning_components(comps: Dict[str, Dict[str, Any]], *, run_type: str = "regular", base: float = 0.0,
                        allowances: Any = None, overtime: float = 0.0, overtime_min: int = 0,
-                       commission: float = 0.0, inputs: Iterable[Dict[str, Any]] = ()) -> List[Dict[str, Any]]:
+                       commission: float = 0.0, inputs: Iterable[Dict[str, Any]] = (),
+                       segments: Optional[Iterable[Dict[str, Any]]] = None) -> List[Dict[str, Any]]:
     """Baris pendapatan dan potongan masukan satu slip (tanpa BPJS dan PPh 21).
 
     Proses reguler: gaji pokok, tunjangan per nama, lembur, komisi mesin (masing-masing bila komponennya aktif untuk
-    jenis proses itu) + masukan antrean. Proses THR/susulan: hanya masukan antrean."""
+    jenis proses itu) + masukan antrean. Proses THR/susulan: hanya masukan antrean. PY-T2 — `segments` (potongan
+    periode dari riwayat kompensasi) menggantikan `base`/`allowances` untuk baris Gaji Pokok dan komponen tetap."""
     out: List[Dict[str, Any]] = []
-    if run_type == "regular":
+    if run_type == "regular" and segments is not None:
+        out.extend(segment_lines(comps, segments, run_type=run_type))
+    elif run_type == "regular":
         gp = comps.get("GAJI_POKOK")
         if allowed(gp, run_type):
             out.append(_line(gp, base))

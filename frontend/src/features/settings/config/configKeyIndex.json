@@ -1217,6 +1217,10 @@
    "sdm",
    "lembur"
   ],
+  "hr.prorata_perubahan_gaji": [
+   "sdm",
+   "lembur"
+  ],
   "catalog.sales_hidden_stages": [
    "stok",
    "memilih-stok"

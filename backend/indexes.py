@@ -202,6 +202,15 @@ INDEX_SPECS: Dict[str, List[IndexKeys]] = {
         [("entity_id", A), ("pay_period", A), ("status", A)],
         [("used_run_id", A)],
     ],
+    # PY-T2 — riwayat kompensasi & penugasan PT per karyawan (unik baris sah per tanggal: REQUIRED_UNIQUE_INDEXES);
+    # penugasan juga dicari per PT (pemilihan karyawan proses gaji).
+    "hr_compensation_history": [
+        [("employee_id", A), ("status", A), ("effective_from", A)],
+    ],
+    "hr_employee_assignments": [
+        [("employee_id", A), ("status", A), ("effective_from", A)],
+        [("entity_id", A), ("status", A)],
+    ],
     "credit_profile_requests": [     # CR-T1 — pengajuan perubahan profil kredit (antrean per PT, riwayat per pelanggan)
         [("entity_id", A), ("status", A), ("created_at", A)],
         [("customer_id", A), ("entity_id", A), ("status", A), ("decided_at", D)],
@@ -499,6 +508,8 @@ ID_INDEX_COLLECTIONS: List[str] = [
     "hr_statutory_remittances",
     # PY-T1 — komponen gaji per PT (`pcomp_…`) dan antrean masukan komponen (`pinp_…`).
     "hr_pay_components", "hr_pay_inputs",
+    # PY-T2 — riwayat kompensasi (`hcomp_…`) dan penugasan PT (`hasg_…`).
+    "hr_compensation_history", "hr_employee_assignments",
 ]
 
 # FIX-5 — rujukan bersarang roll yang dicari per nilai (B3a SCH-9: index `reserved_ref` utuh tidak terpakai oleh
@@ -853,6 +864,17 @@ REQUIRED_UNIQUE_INDEXES += [
     {"collection": "hr_payroll_runs", "name": "uq_active_key", "label": "satu proses gaji reguler hidup per PT per periode",
      "keys": [("active_key", 1)], "partial": {"active_key": dict(_NONEMPTY)},
      "finder": _finder_dup("hr_payroll_runs", '{active_key:{$type:"string",$gt:""}}', '"$active_key"')},
+]
+
+# PY-T2 (D7) — satu baris SAH per (karyawan, tanggal berlaku) untuk riwayat kompensasi dan penugasan PT: dua
+# pengesahan bersamaan bertanggal sama → yang kalah `DuplicateKeyError` → 409 "Sudah ada perubahan … yang berlaku …".
+# Koleksi baru: data lama tidak bisa kembar (migrasi membuat satu baris per karyawan).
+REQUIRED_UNIQUE_INDEXES += [
+    {"collection": c, "name": "uq_employee_effective_approved", "label": lbl,
+     "keys": [("employee_id", 1), ("effective_from", 1)], "partial": {"status": "approved"},
+     "finder": _finder_dup(c, '{status:"approved"}', '{k:"$employee_id",t:"$effective_from"}', "$id")}
+    for c, lbl in (("hr_compensation_history", "satu perubahan kompensasi sah per karyawan per tanggal berlaku"),
+                   ("hr_employee_assignments", "satu penugasan PT sah per karyawan per tanggal berlaku"))
 ]
 
 # PM-T2 (D7) — kode bayar unik LINTAS PT (berita transfer tidak ambigu, mutasi yang salah masuk rekening PT lain tetap

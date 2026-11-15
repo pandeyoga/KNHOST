@@ -11,6 +11,7 @@ import KNSelect from "../../components/KNSelect";
 import FormModal from "../../components/FormModal";
 import FormSection from "../../components/FormSection";
 import { Switch } from "@/components/ui/switch";
+import { formatCurrency } from "../../utils/formatters";
 
 // Fase 3 · P6 (L-03/L-10) — dulu `Sheet` samping (kaki terbalik, satu dinding isian). Kini FormModal baku
 // (layar penuh 1 kolom di HP, Esc/latar aman) dengan 4 bagian bernomor. Isian & testid TIDAK berubah.
@@ -39,6 +40,22 @@ function Field({ label, req, children }) {
       {children}
     </div>
   );
+}
+
+// PY-T2 (PY-09) — gaji pokok, tunjangan, dan PT bernilai turunan Riwayat Kompensasi / Penugasan PT (bertanggal berlaku,
+// disahkan). Saat MENGUBAH karyawan ketiganya hanya-baca dan tidak dikirim (server menolaknya); saat membuat tetap diisi
+// (menjadi baris riwayat pertama, berlaku sejak tanggal masuk).
+export const PETUNJUK_RIWAYAT = "Ubah lewat Riwayat Kompensasi.";
+export const FIELD_RIWAYAT = ["base_salary", "allowances", "entity_id"];
+/** Badan permintaan simpan karyawan: mode ubah tanpa field riwayat. */
+export function badanKaryawan(form, isEdit) {
+  const payload = {
+    ...form,
+    base_salary: parseFloat(form.base_salary) || 0,
+    allowances: (form.allowances || []).filter((a) => a.name).map((a) => ({ name: a.name, amount: parseFloat(a.amount) || 0 })),
+  };
+  if (isEdit) FIELD_RIWAYAT.forEach((k) => { delete payload[k]; });
+  return payload;
 }
 
 function Section({ number, title, children }) {
@@ -85,11 +102,7 @@ export function EmployeeFormDrawer({ open, onClose, onSaved, editEmployee, depar
   async function submit() {
     if (!form.name.trim()) { setError("Nama karyawan wajib diisi."); return; }
     if (toggles.npwp_required && !String(form.npwp || "").trim()) { setError("NPWP wajib diisi (sesuai pengaturan HR)."); return; }
-    const payload = {
-      ...form,
-      base_salary: parseFloat(form.base_salary) || 0,
-      allowances: (form.allowances || []).filter((a) => a.name).map((a) => ({ name: a.name, amount: parseFloat(a.amount) || 0 })),
-    };
+    const payload = badanKaryawan(form, !!editId);
     setSaving(true);
     try {
       if (editId) await axios.patch(`${API}/hr/employees/${editId}`, { data: payload });
@@ -178,8 +191,9 @@ export function EmployeeFormDrawer({ open, onClose, onSaved, editEmployee, depar
                   <KNDatePicker data-testid="employee-separation-date-input" value={form.separation_date || ""} onChange={(v) => set("separation_date", v)} placeholder="Tanggal efektif keluar" />
                 </Field>
               )}
-              <Field label="Entitas (PT/CV)">
-                <KNSelect data-testid="employee-entity-select" value={form.entity_id} onValueChange={(v) => set("entity_id", v)} className="field" placeholder="Pilih entitas" options={entityOptions} />
+              <Field label="PT">
+                <KNSelect data-testid="employee-entity-select" value={form.entity_id} onValueChange={(v) => set("entity_id", v)} className="field" placeholder="Pilih PT" options={entityOptions} disabled={!!editId} />
+                {editId && <p className="mt-1 text-fs-12 text-kn-text-2" data-testid="employee-entity-hint">{PETUNJUK_RIWAYAT}</p>}
               </Field>
               <Field label="Shift Default (Absensi)">
                 <KNSelect data-testid="employee-shift-select" value={form.shift_id} onValueChange={(v) => set("shift_id", v)} className="field" placeholder="Shift default entitas"
@@ -250,9 +264,20 @@ export function EmployeeFormDrawer({ open, onClose, onSaved, editEmployee, depar
                 <input data-testid="employee-bank-name-acc-input" value={form.bank_acc_name} onChange={(e) => set("bank_acc_name", e.target.value)} className="field" placeholder="Nama pemilik rekening" />
               </Field>
               <Field label="Gaji Pokok (Rp)">
-                <MoneyInput testId="employee-salary-input" value={form.base_salary} onChange={(v) => set("base_salary", v)} className="field tabular-nums" placeholder="mis. 5.000.000" />
+                <MoneyInput testId="employee-salary-input" value={form.base_salary} onChange={(v) => set("base_salary", v)} className="field tabular-nums" placeholder="mis. 5.000.000" disabled={!!editId} />
+                {editId && <p className="mt-1 text-fs-12 text-kn-text-2" data-testid="employee-salary-hint">{PETUNJUK_RIWAYAT}</p>}
               </Field>
             </div>
+            {editId ? (
+              <div className="space-y-1" data-testid="employee-allowances-readonly">
+                <span className="field-label">Tunjangan</span>
+                {(form.allowances || []).map((a, i) => (
+                  <p key={i} className="flex justify-between gap-2 text-fs-13" data-testid={`allowance-row-${i}`}><span>{a.name || "Tunjangan"}</span><span className="tabular-nums">{a.amount == null ? "—" : formatCurrency(a.amount)}</span></p>
+                ))}
+                {(form.allowances || []).length === 0 && <p className="text-fs-12 text-kn-text-2">Belum ada tunjangan tambahan.</p>}
+                <p className="text-fs-12 text-kn-text-2" data-testid="employee-allowance-hint">{PETUNJUK_RIWAYAT}</p>
+              </div>
+            ) : (
             <div className="space-y-2">
               <div className="flex items-center justify-between">
                 <span className="text-[11px] font-semibold text-[#6B6B73]">Tunjangan</span>
@@ -267,6 +292,7 @@ export function EmployeeFormDrawer({ open, onClose, onSaved, editEmployee, depar
               ))}
               {(form.allowances || []).length === 0 && <p className="text-[11px] text-[#9A9BA3]">Belum ada tunjangan tambahan.</p>}
             </div>
+            )}
           </Section>
         </div>
     </FormModal>

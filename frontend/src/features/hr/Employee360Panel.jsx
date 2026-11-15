@@ -5,11 +5,14 @@ import { ArrowLeft, Edit3, UserCircle, Building2, Briefcase, MapPin, PhoneCall,
   CalendarCheck, CalendarDays, Wallet, ReceiptText, Target, Download, Loader2 } from "lucide-react";
 import { formatCurrency } from "../../utils/formatters";
 import RecordDetailModal from "../documents/RecordDetailModal";
+import EmployeeCompensationSection from "./EmployeeCompensationSection";
 import { can } from "../../config/roles";
 
 const fmtDate = (s) => (s ? new Date(s).toLocaleDateString("id-ID", { day: "2-digit", month: "short", year: "numeric" }) : "—");
 const money = (v) => formatCurrency(Number(v || 0));
-const sumAllow = (a) => (typeof a === "number" ? a : (a && typeof a === "object" ? Object.values(a).reduce((s, v) => s + (Number(v) || 0), 0) : 0));
+// PY-T2 — tunjangan master berbentuk daftar [{name, amount}] (nilai turunan riwayat kompensasi); bentuk lama angka/objek tetap.
+const sumAllow = (a) => (typeof a === "number" ? a : Array.isArray(a) ? a.reduce((s, v) => s + (Number(v?.amount ?? v) || 0), 0)
+  : (a && typeof a === "object" ? Object.values(a).reduce((s, v) => s + (Number(v) || 0), 0) : 0));
 
 const ATT_TONE = { hadir: "success", present: "success", wfh: "info", dinas: "info", cuti: "warning", izin: "warning", sakit: "warning", alfa: "danger", absent: "danger", mangkir: "danger" };
 const LEAVE_TONE = { approved: "success", pending: "warning", rejected: "danger", cancelled: "muted" };
@@ -215,6 +218,9 @@ export default function Employee360Panel({ employeeId, currentUser, onBack, onEd
           </div>
         </div>
       </div>
+
+      {/* PY-T2 — Riwayat Kompensasi & Penugasan PT: hanya bagi pemegang izin melihat data pribadi (nilai gaji). */}
+      {pii && <div className="mt-3"><EmployeeCompensationSection employee={data} currentUser={currentUser} onChanged={load} /></div>}
 
       <RecordDetailModal open={!!record} onClose={() => setRecord(null)} currentUser={currentUser} {...(record || {})} />
     </div>

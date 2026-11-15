@@ -530,3 +530,15 @@ Istilah SDM › Penggajian (`docs/blueprint/unit/PY-T1.md`).
 | **komponen gaji** | Tab "Komponen & Masukan" › bagian "Komponen gaji" · tombol "Tambah komponen" | Satu jenis baris di slip gaji (gaji pokok, tunjangan, lembur, komisi, THR, BPJS, PPh 21, bonus, potongan) — daftarnya per PT. Komponen bawaan tidak bisa dihapus atau diganti jenisnya |
 | **masukan** (gaji) | Bagian "Masukan" · tombol "Tambah masukan", "Sahkan", "Batalkan" · status "Menunggu disahkan · Disahkan · Terpakai · Dibatalkan" | Nilai satu komponen untuk satu karyawan pada satu periode bayar (mis. bonus Rp 2.000.000), dari isian manual atau modul lain. Ikut dihitung di proses gaji periode itu sesudah disahkan; "Terpakai" = sudah masuk sebuah proses gaji |
 | **tanggungan perusahaan** | Jenis komponen · bagian slip "Tanggungan perusahaan (informasi)" | Iuran yang dibayar perusahaan untuk karyawan (BPJS bagian perusahaan); tidak mengurangi gaji bersih |
+
+### 9.18 Penggajian: riwayat kompensasi, penugasan PT, rapel (PY-T2)
+
+Istilah kartu karyawan (SDM › Karyawan › buka karyawan) dan proses gaji (`docs/blueprint/unit/PY-T2.md`).
+
+| Istilah | Teks layar | Arti |
+|---|---|---|
+| **riwayat kompensasi** | Bagian "Riwayat Kompensasi" · tombol "Ajukan perubahan", "Sahkan", "Tolak" · lencana "Menunggu disahkan · Berlaku · Akan berlaku · Berakhir · Ditolak" | Daftar gaji pokok dan komponen tetap (tunjangan) karyawan menurut tanggal berlakunya. Perubahan gaji tidak lagi diketik di data karyawan: diajukan sebagai baris baru, berlaku sesudah disahkan. Proses gaji memakai baris yang berlaku pada periodenya |
+| **penugasan PT** | Bagian "Penugasan PT" · tombol "Pindahkan ke PT lain" | PT (dan departemen, jabatan) tempat karyawan digaji menurut tanggal berlaku. PT pada hari terakhir bulan yang menggaji sebulan itu, kecuali pengaturan "Gaji berubah di tengah bulan" = prorata |
+| **berlaku sejak** | Kolom & isian "Berlaku sejak" | Tanggal pertama nilai baru dipakai. Baris sebelumnya otomatis berakhir sehari sebelumnya |
+| **rapel** | Komponen "Rapel" · baris slip "Rapel gaji September 2026" | Kekurangan gaji untuk bulan yang sudah dibayar karena kenaikan yang berlaku mundur. Dibuat otomatis sebagai masukan "Menunggu disahkan" di bulan berjalan; ikut proses gaji sesudah disahkan |
+| **prorata** (gaji) | Pengaturan "Gaji berubah di tengah bulan" · baris slip "Gaji Pokok (1–15 Nov)" | Gaji bulan itu dibagi menurut jumlah hari tiap nilai (atau tiap PT) berlaku: nilai × hari ÷ jumlah hari bulan itu |

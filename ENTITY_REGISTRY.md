@@ -3577,6 +3577,9 @@ Endpoints:   GET/POST /hr/employees · GET /hr/employees/me (ESS, auth only) ·
              GET/PATCH/DELETE /hr/employees/{id} · GET /hr/summary
 ⚠️ entity_id = SCOPED (per-PT). user_id menyatukan karyawan dgn akun login (sales→komisi→payroll).
 ⚠️ employees/employee/staff/karyawan = TERLARANG (alias→users). Domain HRD WAJIB 'hr_employees'.
+⚠️ PY-T2 — base_salary, allowances, entity_id = NILAI TURUNAN baris riwayat yang berlaku hari ini (WIB)
+   (hr_compensation_history / hr_employee_assignments), ditulis HANYA hr_compensation_service.apply_effective;
+   PATCH /hr/employees/{id} menolak ketiganya (400). Invarian INV-PY-2. Lihat bagian PY-T2.
 ```
 
 #### system_settings (scope="hr")  [FASE H0 — Config HR/Payroll]
@@ -4265,3 +4268,24 @@ other_deductions`; `tax_gross` = Σ komponen kena pajak. Slip lama tanpa `compon
 Jurnal gaji dari komponen (`gl_service.payroll_journal_lines`): pendapatan → Dr 6-1000 (atau `account_code` komponen),
 komisi menurut `commission_mode`, tanggungan → Dr 6-1100, BPJS → Cr 2-1700, PPh 21 → Cr/Dr 2-1800, potongan lain → Cr
 `account_code` komponen, bersih → Cr 2-1600; kunci = id proses (PK-22). PDF slip dari `hr_payroll_pdf.payslip_pdf_rows`.
+
+## PY-T2 — riwayat kompensasi dan penugasan PT karyawan bertanggal berlaku
+
+| Collection | Prefix/ID | Penulis (SSOT) | Pembaca | Catatan |
+|-----------|-----------|----------------|---------|---------|
+| `hr_compensation_history` | `hcomp_` | `services/hr_compensation_service.py:propose_compensation` (`pending`) · `decide_compensation` (sahkan / tolak / batal, bersyarat status lama) · `initial_rows` (karyawan baru `POST /hr/employees`, migrasi `scripts/migrate_hr_compensation_py_t2.py`) | `segments` / `employees_for_run` (proses gaji), `compensation_at`, `rapel_lines`, `master_drift` (INV-PY-2); `GET /api/hr/employees/{id}/compensation`; kartu karyawan (`EmployeeCompensationSection`) | **PY-T2 (PY-09, K-37, K-38)** per karyawan (TIDAK ber-PT — PT pada tanggal berlaku dibaca dari penugasan): `employee_id`(+`employee_name`), `effective_from` (`YYYY-MM-DD`), `effective_to` (diisi sistem: sehari sebelum baris sah berikutnya; kosong = terbuka), `base_salary` (rupiah ≥ 0), `fixed_components[]` `{component_code, label, amount}` (komponen `tetap_bulanan` PT selain Gaji Pokok, mis. TUNJANGAN berlabel nama tunjangan), `status` (`pending`·`approved`·`rejected`·`cancelled` — hanya `approved` dibaca proses gaji), `reason`, `source` (`manual`·`migrasi`), `proposed_by`/`approved_by` `{id, name}`, `proposed_at`, `approved_at`, `decision_reason`, `rejected_by/_at`, `cancelled_by/_at`, `applied_at`. Baris sah paling awal berlaku sejak awal (prorata masuk/keluar = PY-T3). Unik parsial `(employee_id, effective_from)` untuk `status: "approved"` (`uq_employee_effective_approved`, REQUIRED_UNIQUE_INDEXES); indeks `(employee_id, status, effective_from)`. Nilai gaji = data pribadi: baca butuh `hr.view_pii`. |
+| `hr_employee_assignments` | `hasg_` | `services/hr_compensation_service.py:propose_assignment` (`pending`; PT tujuan dalam cakupan pelaku, departemen/jabatan milik PT tujuan) · `decide_assignment` · `initial_rows` | `employees_for_run` (pemilihan karyawan proses gaji per PT), `assignment_at`, `master_drift`; `GET /api/hr/employees/{id}/compensation` | **PY-T2** PT tempat karyawan digaji: `employee_id`, `entity_id` (PT tujuan), `effective_from`, `effective_to`, `department_id`, `position_id`, `status`, `reason`, `source`, `proposed_by`, `approved_by`, `approved_at`, `applied_at` (departemen/jabatan disalin ke master saat baris pertama kali berlaku). Unik parsial sama (`uq_employee_effective_approved`); indeks `(employee_id, status, effective_from)`, `(entity_id, status)`. **SCOPED**. |
+
+Aturan hitung (`hr_compensation_service.build_segments`, pengaturan `hr.prorata_perubahan_gaji` global → PT, bawaan
+`mati` = perilaku sebelum PY-T2): `mati` → satu potongan sebulan penuh bernilai baris yang berlaku pada hari terakhir
+periode (atau hari terakhir bekerja); PT pada hari itu yang menggaji. `hari_kalender` → potongan menurut perubahan
+kompensasi dan penugasan di PT itu; baris slip "{nama} ({tgl awal}–{tgl akhir} {bulan})" = nilai × hari ÷ hari kalender
+(rupiah penuh). Karyawan tanpa riwayat (sebelum migrasi) → master (perilaku lama).
+
+| Field / perubahan | Arti | Ditulis oleh |
+|---|---|---|
+| `hr_employees.base_salary`, `allowances`, `entity_id` | Nilai turunan baris yang berlaku hari ini (WIB); PATCH master menolaknya (400 "Gaji dan penugasan PT diubah lewat Riwayat Kompensasi di kartu karyawan.") | `apply_effective` (saat pengesahan + tugas terjadwal `hr_compensation_effective` harian 00.10 WIB) |
+| `hr_pay_components` kode `RAPEL` | Komponen bawaan baru tiap PT: pendapatan, `masukan`, kena pajak, kolom `other_earnings`, proses reguler & susulan | `hr_pay_components.ensure_defaults` |
+| `hr_pay_inputs` ber-`source_type: "rapel"` | Baris kompensasi disahkan dengan `effective_from` pada periode yang proses regulernya `posted`/`paid` → satu masukan `pending` per periode (`pay_period` = bulan berjalan, `amount` = nilai baru − nilai dibayar, label "Rapel gaji {bulan tahun}", `source_key` `rapel:<id baris>:<periode>`, PT = PT karyawan akhir bulan berjalan) | `hr_compensation_service.enqueue_rapel` → `hr_pay_inputs.enqueue_input(status="pending")` |
+| PPh 21 hitung ulang tahunan | Slip terdahulu hanya di PT proses itu (`_prior_year_slips` disaring `entity_id`) | `hr_payroll_service.compute_payslip` |
+

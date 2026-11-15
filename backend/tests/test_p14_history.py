@@ -109,7 +109,7 @@ def test_gl_account_create_patch_delete_history(admin_headers):
     assert r.status_code in (200, 204), r.text
 
 
-# --- HR base_salary masking ---
+# --- HR PII masking (PY-T2: gaji pokok lewat Riwayat Kompensasi; diuji dengan nomor rekening) ---
 
 def test_hr_base_salary_masked(admin_headers):
     r = requests.get(f"{BASE_URL}/api/hr/employees", headers=admin_headers, timeout=30)
@@ -121,12 +121,15 @@ def test_hr_base_salary_masked(admin_headers):
     emp_id = emp.get("id") or emp.get("employee_id") or emp.get("_id")
     assert emp_id
 
-    # current base_salary (may be masked); fetch raw via patch: we need to set a new value
-    # Use arbitrary value then revert
-    new_val = 7777000
+    # PY-T2 — gaji pokok tidak lagi diubah lewat PATCH master (400 → Riwayat Kompensasi); penyamaran nilai PII di
+    # jejak audit diuji dengan field PII lain (`bank_acc_no`, anggota `hr_service.PII_FIELDS`).
+    r = requests.patch(f"{BASE_URL}/api/hr/employees/{emp_id}", json={"data": {"base_salary": 7777000}},
+                       headers=admin_headers, timeout=30)
+    assert r.status_code == 400, r.text
+    new_val = "7777000123"
     r = requests.patch(
         f"{BASE_URL}/api/hr/employees/{emp_id}",
-        json={"data": {"base_salary": new_val}},
+        json={"data": {"bank_acc_no": new_val}},
         headers=admin_headers,
         timeout=30,
     )
@@ -148,18 +151,18 @@ def test_hr_base_salary_masked(admin_headers):
     serial = str(top)
     assert str(new_val) not in serial, f"plaintext salary leaked in audit row: {serial[:400]}"
     diff = top.get("diff") or []
-    bs = [d for d in diff if d.get("field") == "base_salary"]
-    assert bs, f"no base_salary diff entry; diff={diff}"
+    bs = [d for d in diff if d.get("field") == "bank_acc_no"]
+    assert bs, f"no bank_acc_no diff entry; diff={diff}"
     assert bs[0].get("masked") is True
     assert bs[0].get("from") == "[REDACTED]"
     assert bs[0].get("to") == "[REDACTED]"
 
-    # revert: set to a safe value (use original if present, else 0)
-    original = emp.get("base_salary")
-    revert_val = original if isinstance(original, (int, float)) else 0
+    # revert: set to the original value (masked/None → empty)
+    original = emp.get("bank_acc_no")
+    revert_val = original if isinstance(original, str) else ""
     requests.patch(
         f"{BASE_URL}/api/hr/employees/{emp_id}",
-        json={"data": {"base_salary": revert_val}},
+        json={"data": {"bank_acc_no": revert_val}},
         headers=admin_headers,
         timeout=30,
     )

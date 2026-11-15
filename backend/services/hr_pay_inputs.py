@@ -56,19 +56,27 @@ async def _component(entity_id: str, code: str) -> Dict[str, Any]:
 
 
 async def _employee(entity_id: str, employee_id: str) -> Dict[str, Any]:
-    emp = await db.hr_employees.find_one({"id": employee_id, "entity_id": entity_id},
-                                         {"_id": 0, "id": 1, "name": 1})
+    """Karyawan PT itu: master `entity_id` = PT itu, ATAU (PY-T2) punya penugasan sah di PT itu — karyawan yang pindah
+    PT tetap bisa menerima masukan di PT lama (mis. susulan) dan di PT barunya sebelum master berganti."""
+    emp = await db.hr_employees.find_one({"id": employee_id}, {"_id": 0, "id": 1, "name": 1, "entity_id": 1})
+    if emp and emp.get("entity_id") != entity_id and not await db.hr_employee_assignments.find_one(
+            {"employee_id": employee_id, "entity_id": entity_id, "status": "approved"}, {"_id": 1}):
+        emp = None
     if not emp:
         raise ValueError("Karyawan tidak ditemukan di PT ini.")
-    return emp
+    return {"id": emp["id"], "name": emp.get("name", "")}
 
 
 async def enqueue_input(*, entity_id: str, employee_id: str, pay_period: str, component_code: str, label: str,
                         amount: Any, source_type: str, source_key: str, source_ref: Optional[Dict[str, Any]] = None,
-                        basis_period: str = "", actor: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+                        basis_period: str = "", actor: Optional[Dict[str, Any]] = None,
+                        status: str = "approved") -> Dict[str, Any]:
     """Masukan dari modul sumber, langsung `approved` (sumbernya sudah disahkan di modulnya). Kunci `source_key` sama →
-    dokumen yang sama (tidak ditimpa, nominal tidak dobel)."""
+    dokumen yang sama (tidak ditimpa, nominal tidak dobel). PY-T2 — `status="pending"`: masukan hasil hitungan sistem
+    yang tetap disahkan orang (rapel gaji)."""
     actor = actor or {}
+    if status not in ("approved", "pending"):
+        raise ValueError("Status awal masukan harus disahkan atau menunggu disahkan.")
     key = str(source_key or "").strip()
     if not key:
         raise ValueError("Kunci sumber masukan wajib diisi.")
@@ -82,10 +90,11 @@ async def enqueue_input(*, entity_id: str, employee_id: str, pay_period: str, co
     emp = await _employee(entity_id, employee_id)
     doc = _doc(entity_id=entity_id, emp=emp, period=period, comp=comp, label=label, amount=_amount(amount),
                source_type=source_type, source_key=key, source_ref=source_ref or {}, basis_period=basis_period,
-               status="approved", actor=actor)
-    doc["approved_by"] = actor.get("name", "system")
-    doc["approved_by_id"] = actor.get("id", "")
-    doc["approved_at"] = now_iso()
+               status=status, actor=actor)
+    if status == "approved":
+        doc["approved_by"] = actor.get("name", "system")
+        doc["approved_by_id"] = actor.get("id", "")
+        doc["approved_at"] = now_iso()
     from pymongo.errors import DuplicateKeyError
     try:
         await db.hr_pay_inputs.update_one({"source_key": key}, {"$setOnInsert": doc}, upsert=True)
