@@ -1,52 +1,58 @@
-# Bukti — metode, perintah, dan batas
+# Bukti — metode, perintah, batas, dan koreksi
 
 HEAD diaudit: `91a3ec0612952bfcc88335668ef2b3f601ba926a`.
 
-## Batas lingkungan sesi audit
+## Batas lingkungan
 
-- Audit **baca-saja** (H2 server · H3 data · H8 rahasia — `docs/blueprint/00_ATURAN_EKSEKUSI.md` §6).
-- Backend tidak dijalankan: `backend/.env` tidak memuat `MONGO_URL` (backend crash `KeyError: 'MONGO_URL'` di `backend/db.py:10`), DB acuan belum di-seed (`listDatabases` → admin/config/local/test_database saja), `docker` tidak tersedia. Menyetel env / seed = melanggar batas, jadi tidak dilakukan.
-- Konsekuensi: bukti = **kode (berkas:baris)** + **langkah reproduksi** untuk diputar di stack acuan pemilik
-  (`docker compose -f docker-compose.dev.yml up -d` lalu `bash scripts/dev_restore_demo.sh`). Potret layar diambil saat
-  pelaksana menjalankan unit perbaikan.
+- Audit baca-saja (H2 server · H3 data · H8 rahasia). Backend tidak dijalankan: `backend/.env` tanpa `MONGO_URL`
+  (crash `KeyError: 'MONGO_URL'` di `backend/db.py:10`); DB acuan belum di-seed (`listDatabases` → admin/config/local/test_database);
+  `docker` tak tersedia. Menyetel env/seed = melanggar batas → tidak dilakukan.
+- Bukti = kode (berkas:baris) + langkah reproduksi untuk diputar di stack acuan pemilik
+  (`docker compose -f docker-compose.dev.yml up -d`; `bash scripts/dev_restore_demo.sh`).
 
-## Perintah kunci yang dipakai (hanya-baca, bisa diputar ulang)
+## Koreksi terhadap pass awal (jejak audit jujur)
+
+| Klaim awal | Status | Fakta |
+|---|---|---|
+| MS-01 "SKU Pesanan Khusus ber-stage kosong" | diralat | `stamp_domain_defaults` mengisi stage `finished` (`domain_registry.py:1233`); temuan benar = produk cacat-domain disimpan sebagai `domain_gaps` (`strict=False`) |
+| MS-02 "86 titik tulis stage langsung" | diralat | hitungan tercemar proyeksi Mongo `{"stage":1}` & `journey.stage`; temuan benar = dua sumber transisi paralel + validator tak dipakai jalur produksi |
+| QM-01 "dua pintu grade / aturan tak ditegakkan" | **ditarik** | grade satu penulis `grade_service.set_roll_grade` + `grade_history`; override terkendali |
+| RT-02 "uang/stok ganda retur" | diturunkan | belum terbukti; settlement lewat satu state machine; jadi pertanyaan-perlu-data |
+
+## Perintah kunci (hanya-baca, bisa diputar ulang)
 
 ```bash
-git log -1 --format='%H %ci %s'                       # commit HEAD
+git log -1 --format='%H %ci %s'
 
-# A/MS
-grep -nE 'Prepared for|Pre-treatment' backend/domain_registry.py            # dua sistem label (55/57 vs 448-461)
-grep -rl 'STAGE_TRANSITIONS' backend --include=*.py                          # hanya line_scope.py + domain_registry.py
-grep -rnE 'save_product\(' backend --include=*.py | grep strict             # strict=False: special_order_service:317, admin:184/192
-sed -n '91,102p' backend/routers/products.py                                # _apply_domain -> 400 (pintu Master menegakkan)
-sed -n '137,172p' backend/services/product_variant_service.py               # validasi hanya bila strict
-sed -n '60,92p'  backend/services/special_order_service.py                   # stage default "" (:64)
+# A/MS-01
+sed -n '91,102p' backend/routers/products.py                 # form -> 400
+sed -n '137,172p' backend/services/product_variant_service.py # validasi hanya bila strict
+sed -n '1219,1270p' backend/domain_registry.py               # stamp_domain_defaults: default finished + domain_gaps (strict=False tak lempar)
+grep -rn 'save_product(' backend --include=*.py | grep strict # special_order:317, admin:184/192
 
-# B/MK
-grep -n 'makloon-orders\|realize-makloon' frontend/src/features/purchasing/makloon/MakloonWizard.jsx   # :305/:307
-grep -n 'makloon-orders' frontend/src/features/purchasing/MakloonOrderCreateModal.jsx                   # :192
-sed -n '67,82p' frontend/src/features/purchasing/makloon/MakloonStepEditor.jsx                          # dropdown tak disaring
-sed -n '289,312p' backend/services/makloon_order_service.py                                             # needs_vendor = peringatan
+# A/MS-02 (dua sumber transisi)
+grep -rn 'STAGE_TRANSITIONS' backend --include=*.py           # def + enums + transition_matrix; line_scope hanya komentar
+grep -rn 'resolve_transition(\|check_transition(' backend --include=*.py | grep -v 'def '  # enums:98, lot_service:497
+grep -n 'stage_by_process_type\|stage_meta\|active_stages' backend/services/master_registry.py  # sumber makloon
 
-# C/RD (pintu SKU)
-grep -rnE '@router.(post).*(products|product-templates|release-product|create-sku)' backend/routers/*.py
+# B/MK-01 (dua pintu aktif)
+grep -rln '<MakloonWizard\|MakloonWizard(' frontend/src --include=*.jsx
+grep -rln '<MakloonOrderCreateModal\|MakloonOrderCreateModal(' frontend/src --include=*.jsx
 
-# E/QM
-grep -rnE '@router.(post|put)' backend/routers/inspections.py backend/routers/qc_inspection.py          # grade-override :169
+# E/QM-01 (grade satu penulis)
+grep -rn 'set_roll_grade(' backend --include=*.py | grep -v 'def '
 
-# F/SO
-for s in fulfillment_service fulfillment_decision_service fulfillment_plan_service fulfillment_wizard_service; do
-  grep -nE '^async def |^def ' backend/services/$s.py; done                                             # 4 kalkulator ketersediaan
-grep -rln 'import.*fulfillment' backend/routers/*.py                                                    # konsumen per pintu
+# F/SO-01 (divergensi ketersediaan)
+grep -n 'stock_figures' backend/services/fulfillment_service.py backend/services/fulfillment_decision_service.py
+grep -n 'inventory_balances\|inventory_rolls' backend/services/fulfillment_plan_service.py backend/services/fulfillment_wizard_service.py
 ```
 
-## Kueri data acuan yang DISARANKAN (untuk pelaksana, hanya-baca)
+## Kueri data acuan yang disarankan (pelaksana, hanya-baca)
 
 ```javascript
-// MS: produk dengan stage kosong/tak sah
-db.products.countDocuments({ $or: [ {stage: {$in: [null, ""]}}, {stage: {$nin: ["yarn","grey","pfd","pfp","finished","remnant","byproduct"]}} ] })
-// MS: produk yang stage-nya tidak cocok satuan (benang bukan kg, kain bukan meter/yard) — sesuaikan field base_unit
-// SO-01: ambil 1 SO kurang stok, panggil tiap pintu fulfillment, bandingkan angka 'tersedia/kurang'
-// QM-01: roll yang grade-nya berubah via grade-override tanpa SPK 4-point terkait
+// MS-01: produk cacat-domain yang lolos
+db.products.countDocuments({ domain_gaps: { $exists: true } })
+db.products.countDocuments({ needs_review: true })
+// SO-01: pilih SO kurang stok dgn roll di gudang tak-dihitung / cadangan makloon, bandingkan angka tiap pintu fulfillment
+// MS-02: diff GET /api/enums transitions (STAGE_TRANSITIONS) vs master process_stages (dipakai makloon)
 ```
