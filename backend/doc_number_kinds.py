@@ -116,6 +116,7 @@ KINDS_LIST: List[Dict[str, Any]] = [
     _k("ics", "Pelunasan antar-PT", "Antar-PT", "interco_settlements", "number", "ICS-"),
     _k("icl", "Pinjaman antar-PT", "Antar-PT", "interco_loans", "number", "ICL-"),
     _k("icr", "Retur antar-PT", "Antar-PT", "interco_returns", "number", "ICR-"),
+    _k("icc", "Tagihan insentif antar-PT", "Antar-PT", "interco_charges", "number", "ICC-"),   # KM-T4
     # ── R&D ────────────────────────────────────────────────────────────────────────────────────────────────────────
     _k("dsr", "Permintaan desain", "R&D", "design_requests", "number", "DSR-"),
     _k("smp", "Sampel", "R&D", "md_samples", "number", "SMP-"),

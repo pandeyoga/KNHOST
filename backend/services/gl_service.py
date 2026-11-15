@@ -3578,6 +3578,32 @@ async def incentive_accrual_status(entity_id: str, period: str) -> Dict[str, Any
     }
 
 
+async def post_incentive_sheet(sheet: Dict[str, Any], created_by: str = "system") -> Optional[Dict[str, Any]]:
+    """KM-T4 (K-22, K-13) — jurnal Lembar Insentif yang disahkan di PT bermode `sheet` (`hr.payroll_commission_mode`).
+
+    Satu jurnal per lembar di buku PT lembar, bertanggal `sheet["journal_date"]` (akhir bulan periode dasar paling akhir
+    lewat `periodic_posting.journal_date`). T = Σ nominal baris (rupiah bulat):
+      T > 0  Dr Beban Insentif Penjualan / Cr Hutang Insentif Penjualan  sebesar T
+      T < 0  Dr Hutang Insentif Penjualan / Cr Beban Insentif Penjualan  sebesar |T|   (lembar penyesuaian)
+      T = 0  tanpa jurnal (`post_durable` mencatat `not_required`)
+    Akun lewat pemetaan PT (`penjualan.beban_insentif` / `penjualan.hutang_insentif`, remap kode bawaan). Idempoten per
+    (`incentive_sheet`, id lembar). Hutangnya dilunasi jurnal gaji (Dr hutang insentif / tagihan antar-PT)."""
+    sid = sheet.get("id") or ""
+    if not sid or await _already_posted("incentive_sheet", sid):
+        return None
+    total = round(sum(float(x.get("amount") or 0) for x in sheet.get("lines") or []), 2)
+    if abs(total) <= EPS:
+        return None
+    await seed_default_coa()
+    nomor = sheet.get("number") or sid
+    desc = f"Beban insentif {nomor} (periode bayar {sheet.get('pay_period') or '-'})"
+    dr, cr = (ACC_BEBAN_INSENTIF, ACC_HUTANG_INSENTIF) if total > 0 else (ACC_HUTANG_INSENTIF, ACC_BEBAN_INSENTIF)
+    return await _insert_entry(
+        lines=_balanced_pair(dr, cr, abs(total), desc), description=desc, date=sheet.get("journal_date") or now_iso(),
+        source_type="incentive_sheet", source_id=sid, entity_id=sheet.get("entity_id") or "", created_by=created_by,
+        source_label=nomor)
+
+
 # ─── Digitalisasi Formulir Sukacita — Pertanggungjawaban petty cash → GL ─────
 
 async def post_petty_cash_settlement(*, settlement_id: str, entity_id: str,
@@ -3650,18 +3676,25 @@ async def payroll_source_id(run: Dict[str, Any]) -> str:
     return run["id"]
 
 
-def payroll_journal_lines(slips: List[Dict[str, Any]], mode: str = "accrue_then_settle") -> List[Dict[str, Any]]:
+def payroll_journal_lines(slips: List[Dict[str, Any]], mode: str = "accrue_then_settle", *, entity_id: str = "",
+                          charge_numbers: Optional[Dict[str, str]] = None) -> List[Dict[str, Any]]:
     """PY-T1 — baris jurnal gaji dari KOMPONEN slip (slip lama tanpa `components` dari kolomnya), akun dan arah tetap:
 
       pendapatan (selain kolom komisi) → Dr Beban Gaji 6-1000, atau Dr `account_code` komponen bila diisi
       kolom komisi                      → Dr Hutang Insentif 2-1500 [accrue_then_settle] / Dr Beban Insentif 6-5000
+      baris Lembar Insentif (KM-T4)     → PT lembar = PT proses: Dr Hutang Insentif 2-1500 (apa pun mode proses: bebannya
+                                          sudah diakui saat lembar disahkan); PT lain: Dr Piutang antar-PT 1-1250 per PT
+                                          tertagih (memo = nomor tagihan `charge_numbers`). Negatif = kredit.
       tanggungan perusahaan (BPJS)      → Dr Beban BPJS 6-1100
       bersih                            → Cr Hutang Gaji 2-1600
       BPJS karyawan + perusahaan        → Cr Hutang BPJS 2-1700
       PPh 21                            → Cr Hutang PPh 21 2-1800 (negatif = lebih potong dikembalikan → Dr)
       potongan lain                     → Cr `account_code` komponennya (negatif → Dr)
     Untuk slip berisi komponen bawaan saja, barisnya SAMA dengan jurnal gaji sebelum PY-T1 (Σ salary_earnings → 6-1000)."""
-    salary = er_total = emp_total = pph21 = net = commission = 0.0
+    from services.hr_pay_components import commission_parts   # KM-T4 — komisi mesin/manual vs baris Lembar Insentif
+    salary = er_total = emp_total = pph21 = net = 0.0
+    commission, lembar = commission_parts(slips)
+    lembar_pt = round(lembar.pop(entity_id, 0.0), 2) if entity_id else 0.0
     extra: Dict[str, float] = {}       # akun → nominal bertanda (+ = debit) untuk pendapatan berakun & potongan lain
     extra_desc: Dict[str, str] = {}
     for s in slips:
@@ -3669,7 +3702,6 @@ def payroll_journal_lines(slips: List[Dict[str, Any]], mode: str = "accrue_then_
         emp_total += float(s.get("bpjs_emp_total", 0) or 0)
         pph21 += float(s.get("pph21", 0) or 0)
         net += float(s.get("net", 0) or 0)
-        commission += float(s.get("commission", 0) or 0)
         comps = s.get("components")
         if not comps:
             salary += float(s.get("salary_earnings", 0) or 0)
@@ -3700,11 +3732,22 @@ def payroll_journal_lines(slips: List[Dict[str, Any]], mode: str = "accrue_then_
         lines.append(L(ACC_BEBAN_GAJI, 0, -salary, "Koreksi beban gaji"))
     if er_total > EPS:
         lines.append(L(ACC_BEBAN_BPJS, er_total, 0, "Kontribusi BPJS perusahaan"))
-    if commission > EPS:
-        if mode == "accrue_then_settle":
-            lines.append(L(ACC_HUTANG_INSENTIF, commission, 0, "Pelunasan hutang insentif via payroll"))
-        else:
-            lines.append(L(ACC_BEBAN_INSENTIF, commission, 0, "Beban insentif penjualan (payroll)"))
+    if abs(commission) > EPS:
+        acc, d = ((ACC_HUTANG_INSENTIF, "Pelunasan hutang insentif via payroll") if mode == "accrue_then_settle"
+                  else (ACC_BEBAN_INSENTIF, "Beban insentif penjualan (payroll)"))
+        lines.append(L(acc, commission, 0, d) if commission > 0 else L(acc, 0, -commission, d))
+    if abs(lembar_pt) > EPS:   # KM-T4 — beban sudah diakui saat lembar disahkan; gaji melunasi hutangnya
+        d = "Pelunasan hutang insentif — Lembar Insentif"
+        lines.append(L(ACC_HUTANG_INSENTIF, lembar_pt, 0, d) if lembar_pt > 0 else L(ACC_HUTANG_INSENTIF, 0, -lembar_pt, d))
+    for pt, amt in sorted(lembar.items()):   # KM-T4 (K-26) — insentif lembar PT lain: ditagihkan ke PT itu
+        if abs(amt) <= EPS:
+            continue
+        memo = (charge_numbers or {}).get(pt) or ""
+        d = f"Insentif sales ditagihkan antar-PT {memo}".strip()
+        ln = L(ACC_IC_AR, amt, 0, d) if amt > 0 else L(ACC_IC_AR, 0, -amt, d)
+        if memo:
+            ln["memo"] = memo
+        lines.append(ln)
     for acc, amt in extra.items():
         if amt > EPS and acc:
             lines.append(L(acc, round(amt, 2), 0, extra_desc[acc]))
@@ -3755,7 +3798,8 @@ async def post_payroll_run(run: Dict[str, Any], slips: List[Dict[str, Any]],
     mode = run.get("commission_mode", "accrue_then_settle")
     label = run.get("number", f"PAY-{period}")   # K-09 — payroll memakai awalan PAY- (bukan PR- = Permintaan Pembelian)
     desc = f"Payroll {period} ({label})"
-    lines = payroll_journal_lines(slips, mode)
+    lines = payroll_journal_lines(slips, mode, entity_id=entity_id or "",
+                                  charge_numbers=run.get("_tagihan_antar_pt") or {})
     total_debit = round(sum(l["debit"] for l in lines), 2)
     total_credit = round(sum(l["credit"] for l in lines), 2)
     if abs(total_debit - total_credit) > 0.5:

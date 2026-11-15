@@ -315,6 +315,24 @@ def _is_final_tax_period(emp: Dict[str, Any], period: str) -> bool:
     return period.endswith("-12") or (bool(end) and end[:7] == period)
 
 
+#: KM-T4 — pilihan `hr.payroll_commission_mode` yang dikenal; nilai lain yang tersimpan = perilaku komisi mesin.
+COMMISSION_MODES = ("accrue_then_settle", "pay_on_invoice", "off", "sheet")
+
+
+async def commission_mode(entity_id: str) -> str:
+    """KM-T4 (PY-06, K-22) — SATU pembaca sakelar insentif per PT (`hr.payroll_commission_mode`, global → PT):
+    `accrue_then_settle` (bawaan) · `pay_on_invoice` · `off` (tidak ada komisi di gaji) · `sheet` (Lembar Insentif yang
+    disahkan). Dipakai slip (`_commission_for`), proses & jurnal gaji, akrual manual, dan pengesahan lembar."""
+    from config_registry import require
+    from services.config_resolver import value_of
+    eid = entity_id if entity_id and entity_id != "all" else ""
+    try:
+        v = await value_of("hr.payroll_commission_mode", {"entity_id": eid})
+    except Exception:  # noqa: BLE001 — cadangan = bawaan registry (02 §2.2), bukan konstanta lain
+        v = require("hr.payroll_commission_mode")["default"]
+    return str(v or require("hr.payroll_commission_mode")["default"])
+
+
 async def _commission_for(emp: Dict[str, Any], period: str, entity_id: str) -> float:
     uid = emp.get("user_id")
     if not uid:
@@ -646,7 +664,7 @@ async def _build_slips(entity_id: str, period: str, run_type: str, *, run: Optio
         _accumulate(totals, s)
     slips.sort(key=lambda x: x["employee_name"])
     return {"entity_id": entity_id, "period": period, "run_type": run_type,
-            "commission_mode": cfg.get("payroll_commission_mode", "accrue_then_settle"),
+            "commission_mode": await commission_mode(entity_id),   # KM-T4 — satu pembaca sakelar
             "payslips": slips, "totals": _round_totals(totals), "count": len(slips)}
 
 
@@ -737,12 +755,11 @@ async def create_run(entity_id: str, period: str, actor: Dict[str, Any], run_typ
     # Keputusan pemilik K-09 (26 Okt) — awalan "PR-" dulu sama dengan Permintaan Pembelian (KSC/PR-00002 · Payroll).
     # Penggajian BARU memakai "PAY-" (deret per badan usaha sendiri: KSC/PAY-00001); nomor lama TIDAK diubah.
     number = await next_doc_number("hr_payroll_runs", "number", PAYROLL_PREFIX, entity_id=entity_id)
-    cfg = await hr_service.get_hr_settings(entity_id)
     run_id = new_id("prun")
     run = {
         "id": run_id, "number": number, "entity_id": entity_id, "period": period, "run_type": run_type,
         "seq": await _next_seq(entity_id, period, run_type),
-        "status": "draft", "commission_mode": cfg.get("payroll_commission_mode", "accrue_then_settle"),
+        "status": "draft", "commission_mode": await commission_mode(entity_id),   # KM-T4
         "totals": _round_totals(_empty_totals()), "gl_posted": False, "journal_id": "", "journal_number": "",
         "incentive_journal_id": "", "paid_journal_id": "", "paid_journal_number": "",
         "approved_by": "", "approved_at": "", "posted_at": "", "paid_at": "",
@@ -946,7 +963,9 @@ async def cancel_run(run_id: str, actor: Dict[str, Any], reason: str) -> Dict[st
         fresh = await db.hr_payroll_runs.find_one({"id": run_id}, {"_id": 0}) or run
         raise _status_conflict(fresh, "dibatalkan")
     from services import hr_pay_inputs as _pi
+    from services import interco_charge_service as _icc
     await _pi.release_for_run(run_id)
+    await _icc.batal_tertunda(run_id, actor.get("name", "system"))   # KM-T4 — niat tagihan antar-PT ikut batal
     hist = list(run.get("decision_history") or [])
     hist.append({"action": "cancelled", "by": actor.get("name", "system"), "at": now_iso(), "reason": alasan,
                  "from_status": run["status"], "to_status": "cancelled"})
@@ -1035,6 +1054,13 @@ async def post_run_gl(run_id: str, actor: Dict[str, Any]) -> Dict[str, Any]:
         raise ValueError(f"Run status '{run['status']}' harus 'approved' sebelum posting GL.")
     journal_date = await periodic_posting.journal_date(run["entity_id"], run["period"])
     await gl_service.preflight_posting(run["entity_id"], journal_date)
+    # KM-T4 (K-26) — baris Lembar Insentif PT lain: periode & akun buku PT tertagih diperiksa sebelum tulisan apa pun.
+    from services import interco_charge_service as _icc
+    tagihan = _icc.rencana(run)
+    try:
+        await _icc.periksa(run, tagihan, journal_date)
+    except _icc.ChargeError as exc:
+        raise PayrollConflict(str(exc)) from exc
     await _kontrol_dua_orang(run, actor)
     # P20 HR-05 — klaim CAS: posting bersamaan → satu menang, sisanya 400 (bukan 500 duplikat jurnal).
     if not (await db.hr_payroll_runs.update_one(
@@ -1044,6 +1070,8 @@ async def post_run_gl(run_id: str, actor: Dict[str, Any]) -> Dict[str, Any]:
     run["journal_date"] = journal_date
     name = actor.get("name", "system")
     try:
+        # KM-T4 — niat tagihan antar-PT (id turunan proses × PT tertagih); nomornya menjadi memo baris piutang antar-PT.
+        run["_tagihan_antar_pt"] = await _icc.siapkan(run, tagihan, actor)
         src_id = await gl_service.payroll_source_id(run)
         res = await gl_service.post_durable("hr_payroll_runs", run_id, lambda: _reg.post_payroll(run, name),
                                             source_type="payroll_run", source_id=src_id)
@@ -1062,7 +1090,11 @@ async def post_run_gl(run_id: str, actor: Dict[str, Any]) -> Dict[str, Any]:
         patch["journal_id"] = je.get("id", "")
         patch["journal_number"] = je.get("number", "")
         patch["incentive_journal_id"] = je.get("incentive_journal_id", "")
-    return await _set_run(run_id, patch)
+    out = await _set_run(run_id, patch)
+    # KM-T4 — sesudah jurnal gaji terbit: jurnal tagihan antar-PT di PT tertagih + baris Lembar Insentif dibayar.
+    from services import incentive_payroll as _ipay
+    await _ipay.sesudah_posting(out, actor)
+    return await get_run(run_id)
 
 
 async def void_run(run_id: str, actor: Dict[str, Any], reason: str) -> Dict[str, Any]:
@@ -1094,6 +1126,12 @@ async def void_run(run_id: str, actor: Dict[str, Any], reason: str) -> Dict[str,
     journal_date = run.get("journal_date") or (je.get("date") or "")[:10] or \
         periodic_posting.akhir_periode(run["period"])
     await gl_service.preflight_posting(run["entity_id"], journal_date)
+    # KM-T4 (K-26) — tagihan insentif antar-PT proses ini: sudah dilunasi → 409; periode PT tertagih terbuka.
+    from services import interco_charge_service as _icc
+    try:
+        await _icc.periksa_void(run, journal_date)
+    except _icc.ChargeError as exc:
+        raise PayrollConflict(str(exc)) from exc
     if not (await db.hr_payroll_runs.update_one({"id": run_id, "status": "posted"},
                                                 {"$set": {"status": "voiding"}})).modified_count:
         fresh = await db.hr_payroll_runs.find_one({"id": run_id}, {"_id": 0}) or run
@@ -1113,6 +1151,10 @@ async def void_run(run_id: str, actor: Dict[str, Any], reason: str) -> Dict[str,
     hist = list(run.get("decision_history") or [])
     hist.append({"action": "void", "by": name, "at": now_iso(), "reason": alasan,
                  "from_status": "posted", "to_status": "void"})
+    # KM-T4 — jurnal tagihan antar-PT di PT tertagih dibalik + tagihan ditutup; baris Lembar Insentif kembali belum dibayar.
+    from services import incentive_payroll as _ipay
+    await _icc.batal_void(run, alasan, name, journal_date)
+    await _ipay.lepas_dibayar(run, name)
     # PY-T1 — proses yang dianulir melepas kunci reguler hidup dan masukannya (kembali `approved`, bisa dipakai lagi).
     from services import hr_pay_inputs as _pi
     await db.hr_payroll_runs.update_one({"id": run_id}, {"$unset": {"active_key": ""}})

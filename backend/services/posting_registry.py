@@ -236,7 +236,9 @@ async def post_payroll(run: Dict[str, Any], created_by: str = "system") -> Optio
     if slips is None:
         slips = await db.hr_payslips.find({"run_id": run["id"]}, {"_id": 0}).to_list(5000)
     date = run.get("journal_date") or ""
-    commission = round(sum(float(s.get("commission", 0) or 0) for s in slips), 2)
+    # KM-T4 — baris Lembar Insentif sudah dibebankan saat lembar disahkan: tidak ikut diakru di sini (bukan beban ganda).
+    from services.hr_pay_components import commission_parts
+    commission, _lembar = commission_parts(slips)
     incentive_je_id = ""
     if commission > 0.005 and run.get("commission_mode", "accrue_then_settle") == "accrue_then_settle":
         inc = await gl.post_incentive_accrual(run["entity_id"], run["period"], created_by, total=commission, date=date)
@@ -248,6 +250,20 @@ async def post_payroll(run: Dict[str, Any], created_by: str = "system") -> Optio
     if je:
         je["incentive_journal_id"] = incentive_je_id
     return je
+
+
+async def _retry_incentive_sheet(doc: Dict[str, Any], actor: Dict[str, Any]) -> None:
+    """KM-T4 — Lembar Insentif disahkan di PT bermode `sheet` yang jurnalnya gagal: masukan gaji dipastikan ada
+    (idempoten per baris), lalu jurnal beban/hutang insentif sekali (`incentive_payroll.ulang_jurnal`)."""
+    from services.incentive_payroll import ulang_jurnal
+    await ulang_jurnal(doc, actor)
+
+
+async def _retry_interco_incentive_charge(doc: Dict[str, Any], actor: Dict[str, Any]) -> None:
+    """KM-T4 (K-26) — tagihan insentif antar-PT: jurnal PT tertagih, pelunasan yang macet, atau pembalik anulir yang
+    gagal diterbitkan lagi (`interco_charge_service.ulang`)."""
+    from services.interco_charge_service import ulang
+    await ulang(doc, actor)
 
 
 async def _retry_payroll_run(doc: Dict[str, Any], actor: Dict[str, Any]) -> None:
@@ -662,6 +678,23 @@ KINDS: Dict[str, Dict[str, Any]] = {
         "status_field": "gl_status", "error_field": "gl_error", "failed_at_field": "gl_failed_at",
         "doc_type": "payroll_run", "posters": ("post_payroll_run", "post_incentive_accrual"),
         "retry": _retry_payroll_run},
+    # ── KM-T4 — Lembar Insentif disahkan di PT bermode `sheet` (gagal → tetap `approved`, ulang = masukan + jurnal) dan
+    #    tagihan insentif antar-PT (jurnal PT tertagih lewat `twin_journal.post_twin`, pelunasan, pembalik anulir) ──
+    "incentive_sheet": {
+        "label": "Lembar Insentif", "collection": "incentive_sheets",
+        "failed_query": {"gl_status": "failed", "status": {"$in": ["approved", "paid"]}},
+        "entity_field": "entity_id", "number_field": "number", "amount_field": "totals.amount", "amount_abs": True,
+        "status_field": "gl_status", "error_field": "gl_error", "failed_at_field": "gl_failed_at", "doc_type": "",
+        "link": {"view": "incentive-sheets", "tab": "", "focus_type": "incentive_sheet"},
+        "posters": ("post_incentive_sheet",), "retry": _retry_incentive_sheet},
+    "interco_incentive_charge": {
+        "label": "Tagihan Insentif Antar-PT", "collection": "interco_charges",
+        "failed_query": {"$or": [{"gl_status": "failed"}, {"gl_status_settle_payer": "failed"},
+                                 {"gl_status_settle_payee": "failed"}, {"void_gl_status": "failed"}]},
+        "entity_field": "to_entity_id", "number_field": "number", "amount_field": "amount", "amount_abs": True,
+        "status_field": "gl_status", "error_field": "gl_error", "failed_at_field": "updated_at", "doc_type": "",
+        "link": {"view": "interco", "tab": "loans", "focus_type": "interco_charge"},
+        "posters": (), "retry": _retry_interco_incentive_charge},
     # ── PK-24 — pertanggungjawaban kas kecil (LPJ) yang disetujui; jurnal beban per kategori / Cr uang muka ──
     "petty_cash_settlement": {
         "label": "Pertanggungjawaban Kas Kecil (LPJ)", "collection": "cash_advance_settlements",

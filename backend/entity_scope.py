@@ -246,6 +246,9 @@ SCOPED_COLLECTIONS = {
     # FASE E-7 (E7f) — pinjaman uang antar-PT: dokumen kembar, satu baris per badan
     # usaha (pemberi & penerima), jadi SCOPED seperti `interco_transactions`.
     "interco_loans",
+    # KM-T4 — tagihan antar-PT non-dagang (insentif sales lintas PT). `entity_id` = PT penagih; daftar & pelunasan
+    # memakai pihak (`from_entity_id`/`to_entity_id`, `guard_party`).
+    "interco_charges",
     # FASE E-7 (E7g) — aset tetap & histori penyusutannya milik SATU badan usaha
     # (jalur pindah aset antar-PT membuatnya berpindah lewat dokumen, bukan lewat
     # mengganti `entity_id` diam-diam). Sebelum ini koleksinya kosong sehingga gate

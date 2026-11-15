@@ -1555,7 +1555,12 @@ async def layer_incentive_invariants(db):
     INV-KM-2  pencairan = kas: Σ fakta jenis `kas` (termasuk pembalik) + kas kwitansi belum dialokasikan = Σ kwitansi bulan
               itu − kwitansi batal bulan itu = Σ kas masuk kwitansi (aturan batal sama); toleransi < Rp 1.
     INV-KM-3  hasil bangun ulang penuh (dihitung di memori) = isi koleksi: jumlah baris dan Σ `net`/`amount` per PT per bulan.
-    Rumus satu tempat: `services/incentive_facts.py` (`reconcile`, `rebuild_diff`) — sama dengan layar Target & Aturan."""
+    Rumus satu tempat: `services/incentive_facts.py` (`reconcile`, `rebuild_diff`) — sama dengan layar Target & Aturan.
+    INV-KM-4  (KM-T4) per PT bermode `sheet`: saldo akun hutang insentif (semua kode pemetaan `penjualan.hutang_insentif`)
+              = Σ nominal baris Lembar Insentif `payroll_linked` yang berjurnal dan belum ber-`paid_run_id`
+              (`services/incentive_payroll.cek_hutang_insentif`).
+    INV-KM-5  (KM-T4) per pasangan PT: Σ `interco_charges.outstanding` = saldo piutang antar-PT dari jurnal tagihan
+              insentif di PT penagih = saldo utang antar-PT di PT tertagih (`services/interco_charge_service.rekonsiliasi`)."""
     print(f"\n{C}{B}KM — Fakta insentif: omzet terkirim & pencairan (KM-T1){X}")
     sys.path.insert(0, str(ROOT / "backend"))
     try:
@@ -1591,6 +1596,36 @@ async def layer_incentive_invariants(db):
     else:
         results["pass"] += 1
         line("PASS", G, "INV-KM-3: isi fakta insentif = hasil bangun ulang penuh (jumlah baris & Σ nilai per PT per bulan)")
+    # ── KM-T4 — Lembar Insentif ↔ hutang insentif; tagihan insentif antar-PT ↔ piutang/utang antar-PT ──
+    try:
+        from services import incentive_payroll as _ipay
+        from services import interco_charge_service as _icc
+        km4 = await _ipay.cek_hutang_insentif()
+        km5 = await _icc.rekonsiliasi()
+    except Exception as exc:  # noqa: BLE001 — penjaga tidak boleh buta diam-diam
+        results["fail"] += 1
+        line("FAIL", R, f"INV-KM-4/5: lembar & tagihan insentif tidak bisa diperiksa ({exc.__class__.__name__}: {exc})")
+        return
+    bad4 = [r for r in km4 if not r["ok"]]
+    if bad4:
+        results["fail"] += 1
+        line("FAIL", R, "INV-KM-4: saldo hutang insentif ≠ Σ baris lembar belum dibayar di " + ", ".join(
+            f"{r['entity_id']} (saldo Rp {r['saldo']:,.0f} · lembar Rp {r['lembar']:,.0f})" for r in bad4[:5]),
+             "→ cari lembar berjurnal gagal / tanda bayar tanpa jurnal gaji, atau akrual komisi otomatis di PT bermode sheet")
+    else:
+        results["pass"] += 1
+        line("PASS", G, f"INV-KM-4: saldo hutang insentif = Σ baris Lembar Insentif belum dibayar ({len(km4)} PT bermode "
+                        "Lembar Insentif)")
+    bad5 = [r for r in km5 if not r["ok"]]
+    if bad5:
+        results["fail"] += 1
+        line("FAIL", R, "INV-KM-5: sisa tagihan insentif antar-PT ≠ jurnal di " + ", ".join(
+            f"{r['from_entity_id']}→{r['to_entity_id']} (sisa Rp {r['outstanding']:,.0f} · piutang Rp {r['piutang']:,.0f}"
+            f" · utang Rp {r['utang']:,.0f})" for r in bad5[:5]),
+             "→ cari tagihan yang sisanya diubah di luar pelunasan, atau jurnal tagihan/pelunasan yang gagal")
+    else:
+        results["pass"] += 1
+        line("PASS", G, f"INV-KM-5: sisa tagihan insentif antar-PT = piutang penagih = utang tertagih ({len(km5)} pasangan PT)")
 
 
 async def layer_hr_compensation_invariants(db):

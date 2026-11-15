@@ -152,7 +152,7 @@ async def refresh_pair_exposure(entity_a: str, entity_b: str) -> None:
 
 
 async def non_trade_outstanding(from_entity: str, to_entity: str) -> Dict[str, Any]:
-    """Piutang NON-DAGANG `from_entity` kepada `to_entity` (pinjaman + pindah aset)."""
+    """Piutang NON-DAGANG `from_entity` kepada `to_entity` (pinjaman + pindah aset + KM-T4 tagihan insentif antar-PT)."""
     loans = await db.interco_loans.find(
         {"role": "lender", "lender_entity_id": from_entity,
          "borrower_entity_id": to_entity,
@@ -163,9 +163,11 @@ async def non_trade_outstanding(from_entity: str, to_entity: str) -> Dict[str, A
         {"transfer.from_entity_id": from_entity, "transfer.to_entity_id": to_entity,
          "transfer.settled": False}, {"_id": 0, "transfer": 1}).to_list(2000)
     asset_out = round(sum(float((r.get("transfer") or {}).get("price") or 0) for r in assets), 2)
+    from services.interco_charge_service import outstanding_between   # KM-T4 — tagihan insentif antar-PT `open`
+    chg = await outstanding_between(from_entity, to_entity)
     return {"loan_outstanding": loan_out, "loan_count": len(loans),
             "asset_transfer_outstanding": asset_out, "asset_transfer_count": len(assets),
-            "non_trade_outstanding": round(loan_out + asset_out, 2)}
+            **chg, "non_trade_outstanding": round(loan_out + asset_out + chg["charge_outstanding"], 2)}
 
 
 async def sync_non_trade_elimination(*, source_key: str, pair_id: str, from_entity: str,

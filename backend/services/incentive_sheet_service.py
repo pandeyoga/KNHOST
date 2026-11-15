@@ -17,7 +17,9 @@ Kontrol dua orang (K-25): `kontrol.lembar_insentif.min_orang` / `batas_nominal` 
 `dual_control.tolak_bila_pelaku_sama` di `approve_sheet`; siapa yang boleh memutus = Aturan Persetujuan jenis
 `incentive_sheet` (`approval_policy_service.guard_door`, bawaan semua pemegang `incentive.approve`).
 
-Unit ini tidak menjurnal dan tidak menyentuh gaji (KM-T4). Koleksi `incentive_sheets` tidak dibaca kode lain sebelum KM-T4.
+KM-T4 — di PT bermode `sheet` (`hr.payroll_commission_mode`) pengesahan diteruskan ke `incentive_payroll.sahkan_tertaut`
+(status antara `approving`, masukan gaji `INSENTIF`, jurnal beban/hutang insentif); di PT lain lembar tetap keputusan saja
+(`payroll_linked: false`, `gl_status: "not_required"`). `paid` ditulis sesudah proses gaji yang memuat barisnya diposting.
 """
 from __future__ import annotations
 
@@ -39,8 +41,8 @@ PREFIX = "LIN-"
 AKSI_KONTROL = "lembar_insentif"
 JENIS_PERSETUJUAN = "incentive_sheet"
 
-STATUS_LABEL = {"draft": "Draf", "submitted": "Diajukan", "approved": "Disahkan", "paid": "Dibayarkan",
-                "cancelled": "Dibatalkan"}
+STATUS_LABEL = {"draft": "Draf", "submitted": "Diajukan", "approving": "Sedang disahkan", "approved": "Disahkan",
+                "paid": "Dibayarkan", "cancelled": "Dibatalkan"}
 STATUSES = tuple(STATUS_LABEL)
 DISAHKAN = ("approved", "paid")
 BASIS_TYPES = ("month", "quarter", "year")
@@ -357,6 +359,8 @@ async def _simpan(doc: Dict[str, Any], dari: str, fields: Dict[str, Any], *, his
         raise LembarError(msg or PESAN_BERUBAH.format(nomor=doc.get("number") or ""), 409)
     if out is None:
         cur = await db.incentive_sheets.find_one({"id": doc["id"]}, {"_id": 0, "status": 1, "number": 1}) or {}
+        if cur.get("status") == "approving":   # KM-T4 — pengesahan lain sedang berjalan
+            raise LembarError(f"Lembar {doc.get('number') or ''} sedang diproses. Muat ulang.", 409)
         if cur.get("status") and cur.get("status") != dari:
             raise LembarError(_pesan_status(cur), 409)
         raise LembarError(PESAN_BERUBAH.format(nomor=doc.get("number") or ""), 409)
@@ -563,6 +567,9 @@ async def approve_sheet(doc: Dict[str, Any], corrections: Optional[List[Dict[str
     sebelum dan sesudah koreksi, supaya koreksi tidak bisa dipakai untuk turun di bawah batas nominal."""
     from services import approval_policy_service as aps
     from services import dual_control as dc
+    from services import incentive_payroll as ipay
+    if (doc or {}).get("status") == "approving":   # KM-T4 — pengesahan yang berhenti di tengah diteruskan
+        return await ipay.lanjutkan(doc, actor)
     _harus_status(doc, "submitted")
     lines = [dict(x) for x in doc.get("lines") or []]
     by_id = {x["id"]: x for x in lines}
@@ -591,9 +598,14 @@ async def approve_sheet(doc: Dict[str, Any], corrections: Optional[List[Dict[str
     await dc.tolak_bila_pelaku_sama("lembar_insentif", doc, actor, doc["entity_id"], nominal=float(nominal),
                                     pengaju=[(doc.get("submitted_by") or {}).get("id") or ""])
     await aps.guard_door(JENIS_PERSETUJUAN, actor, doc=doc, amount=float(totals["amount"]))
+    # KM-T4 — sakelar PT lembar: `sheet` → jurnal + masukan gaji (PERIKSA dulu, tanpa tulisan); lainnya → keputusan saja.
+    if await ipay.mode_pt(doc["entity_id"]) == ipay.MODE_SHEET:
+        rencana = await ipay.periksa(doc, lines)
+        return await ipay.sahkan_tertaut(doc, lines, totals, rencana, "; ".join(catatan), actor)
     now = now_iso()
     return await _simpan(doc, "submitted", {"status": "approved", "approved_by": _siapa(actor), "approved_at": now,
-                                            "lines": lines, "totals": totals},
+                                            "lines": lines, "totals": totals, "payroll_linked": False,
+                                            "gl_status": "not_required"},
                          history=_riwayat("approve", actor, now, "; ".join(catatan), "submitted", "approved"))
 
 

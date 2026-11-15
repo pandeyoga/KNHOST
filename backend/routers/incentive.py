@@ -20,11 +20,14 @@
   POST  /api/incentive/sheets/{id}/refresh · submit · cancel   incentive.prepare    KM-T3
   POST  /api/incentive/sheets/{id}/approve · return            incentive.approve    KM-T3 — kontrol dua orang K-25
   GET   /api/incentive/sheets/{id}/export                      view|prepare|approve KM-T3 — .xlsx Lembar · Potret
+  GET   /api/incentive/switch-readiness                        incentive.configure  KM-T4 — kesiapan beralih ke Lembar
+                                                                                    Insentif (`{mode, checks}`)
 
 PT = PT konteks pengguna (`02_STANDAR.md` §3.4 N1); mode "Semua PT" hanya baca (tulis → 409 `assert_write_entity`, N3).
 Logika di `services/incentive_targets.py`, `incentive_periods.py`, `incentive_definitions.py`, `incentive_facts.py`;
 Capaian (KM-T2, hanya baca; "Semua PT" → 400) di `services/incentive_achievement.py`; Lembar Insentif (KM-T3) di
-`services/incentive_sheet_service.py` (PT lembar = PT dokumen, diadu dengan cakupan pengguna lewat `guard_doc`).
+`services/incentive_sheet_service.py` (PT lembar = PT dokumen, diadu dengan cakupan pengguna lewat `guard_doc`); sambungan
+lembar ke gaji & buku besar per PT (KM-T4) di `services/incentive_payroll.py`.
 """
 from typing import Any, Dict, List, Optional, Tuple
 
@@ -408,6 +411,8 @@ async def get_incentive_sheet(sheet_id: str, request: Request) -> Dict[str, Any]
     doc = await _lembar(request, sheet_id)
     out = iss.sheet_out(doc, await has_permission(actor, "incentive", "view_margin"))
     out["drift"] = await iss.drift(doc)
+    from services import incentive_payroll as ipay
+    out["payroll"] = await ipay.info_lembar(doc)   # KM-T4 — sakelar PT, tanggal jurnal, baris masuk gaji (layar)
     return out
 
 
@@ -512,3 +517,16 @@ async def export_incentive_sheet(sheet_id: str, request: Request) -> Response:
     body, name = await iss.export_xlsx(doc, await has_permission(actor, "incentive", "view_margin"))
     return Response(content=body, media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
                     headers={"Content-Disposition": f'attachment; filename="{name}"'})
+
+
+# ── KM-T4 — kesiapan beralih ke Lembar Insentif ──────────────────────────────────────────────────────────────────────
+@router.get("/switch-readiness")
+async def get_switch_readiness(request: Request) -> Dict[str, Any]:
+    """Daftar periksa PT aktif sebelum sakelar `hr.payroll_commission_mode` dialihkan ke Lembar Insentif (hanya baca;
+    sakelarnya diubah di Pusat Pengaturan). "Semua PT" → 400."""
+    await require_permission(request, "incentive", "configure", detail=PESAN_ATUR)
+    ctx = await entity_ctx(request)
+    if _all_pt(ctx):
+        raise HTTPException(status_code=400, detail="Pilih satu PT untuk melihat kesiapan beralih.")
+    from services import incentive_payroll as ipay
+    return await ipay.kesiapan(ctx.active_entity_id)

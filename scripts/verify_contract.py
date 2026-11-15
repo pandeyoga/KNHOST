@@ -154,6 +154,9 @@ CANONICAL_COLLECTIONS = {
     # ── PK-25 — kasus keuangan menjurnal lewat pintu tahan-gagal (jenis registri `finance_case`); dokumen antar-PT
     #    salah transfer lahir di koleksi pinjaman antar-PT ──
     "finance_cases", "interco_loans",
+    # ── KM-T4 — tagihan insentif antar-PT menjurnal lewat pembantu jurnal kembar (jenis registri
+    #    `interco_incentive_charge`) ──
+    "interco_charges",
 }
 
 # ── Alias TERLARANG → koleksi kanonik (dari bagian FORBIDDEN ENTITY_REGISTRY) ──

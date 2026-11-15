@@ -84,6 +84,10 @@ DEFAULT_COMPONENTS: List[Dict[str, Any]] = [
     _c("TUNJANGAN", "Tunjangan", "pendapatan", "tetap_bulanan", "allowances", 20, taxable=True, prorate=True),
     _c("LEMBUR", "Lembur", "pendapatan", "per_jam", "overtime", 30, taxable=True),
     _c("KOMISI", "Komisi / insentif penjualan", "pendapatan", "masukan", "commission", 40, taxable=True),
+    # KM-T4 (K-22) — insentif dari Lembar Insentif yang disahkan di PT bermode `sheet` (masukan antrean ber-
+    # `charge_entity_id` = PT lembar). Kolom komisi; jurnal gaji melunasi hutang insentif / menagih PT lembar.
+    _c("INSENTIF", "Insentif", "pendapatan", "masukan", "commission", 45, taxable=True,
+       run_types=("regular", "susulan")),
     _c("THR", "THR", "pendapatan", "masukan", "other_earnings", 50, taxable=True, run_types=("thr",)),
     # PY-T2 — selisih gaji yang berlaku mundur (masukan `pending` dari pengesahan riwayat kompensasi).
     _c("RAPEL", "Rapel", "pendapatan", "masukan", "other_earnings", 55, taxable=True,
@@ -166,13 +170,38 @@ def allowance_rows(allowances: Any) -> List[Tuple[str, float]]:
 
 
 def input_line(comp: Dict[str, Any], inp: Dict[str, Any]) -> Dict[str, Any]:
-    """Satu masukan antrean → satu baris komponen (label = keterangan masukan)."""
+    """Satu masukan antrean → satu baris komponen (label = keterangan masukan). KM-T4 — masukan Lembar Insentif membawa
+    rujukan lembar/baris dan `charge_entity_id` (PT lembar: penanggung bebannya, dibaca jurnal gaji)."""
     src = {"type": inp.get("source_type", ""), "key": inp.get("source_key", ""), "id": inp.get("id", "")}
     ref = inp.get("source_ref") or {}
     if isinstance(ref, dict) and ref.get("number"):
         src["number"] = ref["number"]
+    if isinstance(ref, dict) and ref.get("sheet_id"):
+        src["sheet_id"], src["line_id"] = ref["sheet_id"], ref.get("line_id") or ""
+    charge = ref.get("charge_entity_id") if isinstance(ref, dict) else ""
     return _line(comp, float(inp.get("amount") or 0), inp.get("label") or "",
-                 basis_period=inp.get("basis_period") or "", source=src)
+                 basis_period=inp.get("basis_period") or "", source=src, charge_entity_id=charge or "")
+
+
+def commission_parts(slips: Iterable[Dict[str, Any]]) -> Tuple[float, Dict[str, float]]:
+    """KM-T4 — kolom komisi slip-slip dipecah: (komisi mesin & masukan manual, {PT penanggung: Σ baris Lembar
+    Insentif}). Baris lembar = baris kolom komisi ber-`charge_entity_id`; slip lama tanpa `components` → kolom komisinya
+    masuk bagian pertama. Dipakai jurnal gaji, akrual insentif saat posting, dan tagihan antar-PT."""
+    lain, lembar = 0.0, {}
+    for s in slips or ():
+        comps = s.get("components")
+        if not comps:
+            lain += float(s.get("commission", 0) or 0)
+            continue
+        for c in comps:
+            if c.get("bucket") != "commission":
+                continue
+            amt = float(c.get("amount") or 0)
+            if c.get("charge_entity_id"):
+                lembar[c["charge_entity_id"]] = lembar.get(c["charge_entity_id"], 0.0) + amt
+            else:
+                lain += amt
+    return round(lain, 2), {k: round(v, 2) for k, v in lembar.items()}
 
 
 def nilai_tetap(seg: Dict[str, Any], comp: Dict[str, Any], value: Any, dim: int, potong: bool

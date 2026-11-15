@@ -144,6 +144,12 @@ INDEX_SPECS: Dict[str, List[IndexKeys]] = {
         [("entity_id", A), ("pay_period", A), ("status", A)],
         [("entity_id", A), ("status", A), ("created_at", D)],
     ],
+    # KM-T4 — tagihan antar-PT non-dagang (insentif sales lintas PT): daftar per PT penagih / tertagih (unik `number`:
+    # UNIQUE_DOC_NUMBER_FIELDS; unik (proses gaji, PT tertagih): REQUIRED_UNIQUE_INDEXES; `id` turunan: uq_id).
+    "interco_charges": [
+        [("from_entity_id", A), ("status", A), ("created_at", D)],
+        [("to_entity_id", A), ("status", A), ("created_at", D)],
+    ],
     # PM-T4 — titipan tunai sales (unik `receipt_id`: REQUIRED_UNIQUE_INDEXES) dan setorannya.
     "cash_holdings": [
         [("entity_id", A), ("holder_user_id", A), ("status", A)],
@@ -483,6 +489,7 @@ UNIQUE_DOC_NUMBER_FIELDS = [
     ("suppliers", "code"), ("makloons", "code"),
     ("goods_receipts", "number"),   # GRN Fase 2
     ("incentive_sheets", "number"),   # KM-T3 — lembar insentif (`LIN-` per PT)
+    ("interco_charges", "number"),    # KM-T4 — tagihan antar-PT (`ICC-` per PT penagih)
 ]
 
 
@@ -546,6 +553,8 @@ ID_INDEX_COLLECTIONS: List[str] = [
     "hr_holidays", "hr_tax_opening_balances",
     # CR-T3 — penolakan gerbang kredit saat pesanan dibuat (`cgr_…`).
     "credit_gate_rejections",
+    # KM-T4 — tagihan antar-PT ber-id turunan (proses gaji × PT tertagih, `icc_` + SHA-1).
+    "interco_charges",
 ]
 
 # FIX-5 — rujukan bersarang roll yang dicari per nilai (B3a SCH-9: index `reserved_ref` utuh tidak terpakai oleh
@@ -1028,6 +1037,16 @@ REQUIRED_UNIQUE_INDEXES += [
      "finder": ('db.incentive_sheets.aggregate([{$match:{active_keys:{$type:"string",$gt:""}}},{$unwind:"$active_keys"},'
                 '{$group:{_id:{e:"$entity_id",k:"$active_keys"},n:{$sum:1},nomor:{$push:"$number"}}},'
                 '{$match:{n:{$gt:1}}}])')},
+]
+
+# KM-T4 (D7) — satu tagihan insentif antar-PT per (proses gaji PT penagih, PT tertagih): dua posting bersamaan →
+# yang kalah membaca tagihan pemenang (`services/interco_charge_service.siapkan`). Koleksi baru → data lama tidak kembar.
+REQUIRED_UNIQUE_INDEXES += [
+    {"collection": "interco_charges", "name": "uq_charge_run_to",
+     "label": "satu tagihan insentif antar-PT per proses gaji dan PT tertagih",
+     "keys": [("source.run_id", 1), ("to_entity_id", 1)], "partial": {"source.run_id": dict(_NONEMPTY)},
+     "finder": _finder_dup("interco_charges", '{"source.run_id":{$type:"string",$gt:""}}',
+                           '{r:"$source.run_id",t:"$to_entity_id"}', "$number")},
 ]
 
 

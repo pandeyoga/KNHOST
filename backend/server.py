@@ -49,6 +49,7 @@ from routers import (
     ap_payments,     # PK-05 — niat bayar hutang
     interco,         # FASE G-6 — Transaksi antar-entitas (jual-beli antar-PT + settlement)
     interco_loans,   # FASE E-7 (E7f) — Pinjaman uang antar-PT (dokumen kembar + eliminasi)
+    interco_charges,  # KM-T4 — Tagihan insentif antar-PT (sales lintas PT dibayar gaji PT induk)
     internal_requests,  # FASE E-7 (E7d) — Permintaan Internal: sales minta barang dari PT lain
     design_requests,  # FASE D — Permintaan Desain (`<ENT>/DSR-#####`) + rapor desainer
     inspections,     # FASE I — Inspeksi & QC sebagai dokumen (`<ENT>/INS-#####`)
@@ -315,6 +316,7 @@ from routers import interco_prices as _interco_prices  # noqa: E402 — 2026-10 
 app.include_router(_interco_prices.router)
 app.include_router(interco.router)
 app.include_router(interco_loans.router)       # FASE E-7 (E7f) — pinjaman antar-PT
+app.include_router(interco_charges.router)     # KM-T4 — tagihan insentif antar-PT
 app.include_router(internal_requests.router)  # FASE E-7 (E7d) — Permintaan Internal
 app.include_router(design_requests.router)    # FASE D — Permintaan Desain + rapor desainer
 from routers import design_studio as _design_studio  # noqa: E402 — Design Studio (lifecycle, nilai, colorway)

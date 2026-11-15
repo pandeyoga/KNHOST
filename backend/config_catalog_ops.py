@@ -758,18 +758,23 @@ E("hr.employment_types", group="sdm", section="lembur", type="list",
   consumers=("routers/hr.py", "services/hr_service.py"), risk="medium",
   items="text")
 
+# KM-T4 (PY-06, K-22) — sakelar per PT: komisi mesin, tidak ada komisi di gaji, atau Lembar Insentif yang disahkan.
+# Bawaan `accrue_then_settle` = perilaku hari ini (H5: nilai PT nyata diubah pemilik). Satu pembaca:
+# `hr_payroll_service.commission_mode` (slip, jurnal gaji, akrual manual, pengesahan lembar).
 E("hr.payroll_commission_mode", group="sdm", section="lembur", type="enum", default="accrue_then_settle",
-  options=({"value": "accrue_then_settle", "label": "Dicadangkan dulu, dibayar setelah lunas"},
+  options=({"value": "accrue_then_settle", "label": "Komisi otomatis: dicadangkan, dilunasi lewat gaji"},
            {"value": "pay_on_invoice", "label": "Dibayar saat faktur terbit"},
-           {"value": "off", "label": "Komisi tidak lewat penggajian"}),
+           {"value": "off", "label": "Tidak ada komisi di gaji"},
+           {"value": "sheet", "label": "Dari Lembar Insentif yang disahkan"}),
   scopes=G,
-  label="Kapan komisi sales dibayar lewat gaji",
-  help="Menentukan kapan komisi sales dibayarkan lewat penggajian: setelah pelanggan melunasi, saat faktur terbit, "
-       "atau tidak lewat penggajian.",
-  impact="Mengubah arus kas komisi dan risiko membayar komisi atas piutang yang belum tertagih.",
-  example="Dibayar setelah lunas → komisi dibayar di bulan setelah pelanggan melunasi",
-  consumers=("services/hr_payroll_service.py", "services/sales_force_service.py"),
-  risk="high", permission=_HR_PAYROLL)
+  label="Cara insentif sales masuk penggajian",
+  help="Menentukan apakah komisi dihitung otomatis, tidak dibayar lewat gaji, atau mengikuti Lembar Insentif yang "
+       "disahkan.",
+  impact="Pada pilihan Lembar Insentif, komisi otomatis berhenti masuk slip PT ini dan lembar yang disahkan menjadi "
+         "beban serta baris slip.",
+  example="Lembar Rp 8.500.000 disahkan → beban Rp 8.500.000; gaji bulan bayarnya memuat tiga baris insentif",
+  consumers=("services/hr_payroll_service.py:commission_mode",),
+  risk="high", requires_reason=True, permission=_HR_PAYROLL)
 
 # PY-T2 (PY-09, K-38) — gaji/PT yang berubah di tengah bulan. Bawaan `mati` = perilaku sebelum unit ini (nilai akhir
 # bulan, sebulan penuh). PY-T3 — pilihan `hari_kerja` (kalender kerja PT) dan sub-judul prorata.

@@ -51,7 +51,12 @@ PILIHAN_BARU = {"allocation.priority_order", "rnd.variant_axes_default", "rnd.va
 BERUBAH_SESUDAH = {"kontrol.pengurang_piutang.batas_nominal": {"default", "max"},
                    # CR-T4 — lima kunci denda kehilangan lapisan pelanggan (aturan satu pelanggan = profil kredit).
                    **{k: {"scopes"} for k in ("payment.penalty_mode", "payment.penalty_base", "payment.penalty_cap_pct",
-                                              "ar.denda_rate_pct_per_month", "ar.grace_days")}}
+                                              "ar.denda_rate_pct_per_month", "ar.grace_days")},
+                   # KM-T4 — tarif komisi dihitung dari satuan dasar barang: kunci satuan insentif ditandai tidak dipakai.
+                   "commission.incentive_unit": {"status"}}
+#: Pilihan yang SENGAJA ditambahkan unit sesudah KF-T4 (pilihan lama tetap ada, urutannya tetap).
+#: KM-T4 (K-22) — sakelar per PT `sheet` "Dari Lembar Insentif yang disahkan".
+PILIHAN_TAMBAH_SESUDAH = {"hr.payroll_commission_mode": ["sheet"]}
 
 
 def _penjaga():
@@ -94,7 +99,7 @@ def test_KFT4_U2_bidang_perilaku_sama_dengan_potret():
         if key in PILIHAN_BARU:
             assert not lama["options"] and nilai, key
         else:
-            assert nilai == lama["options"], (key, nilai, lama["options"])
+            assert nilai == lama["options"] + PILIHAN_TAMBAH_SESUDAH.get(key, []), (key, nilai, lama["options"])
     assert {e["key"] for e in registry.all_entries()} >= set(potret)
 
 
