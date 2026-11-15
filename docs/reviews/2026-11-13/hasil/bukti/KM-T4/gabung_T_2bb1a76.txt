@@ -1,0 +1,59 @@
+2298 passed, 2 skipped, 2 xfailed, 12 warnings in 464.52s (0:07:44)
+Test Suites: 35 failed, 137 passed, 172 total
+Tests:       1111 passed, 1111 total
+== hitung_penjaga HEAD murni
+verify_auth_coverage: [FAIL] 26 pelanggaran :
+verify_ui_standard: [FAIL] 9 pelanggaran :
+verify_approval_queues: 
+audit_i18n_id:   ✗ 102 temuan di 59 berkas.
+audit_create_modal: [FAIL] 5 pelanggaran :
+verify_page_tabs: [FAIL] 1 pelanggaran total (INV-UI-12 1 · INV-UI-13 0 · INV-UI-14 0)
+verify_to_list_bound: [FAIL] 5 pelanggaran :
+verify_list_export: [PASS] 0 pelanggaran.
+verify_error_notice: [PASS] 0 pelanggaran.
+verify_custom_modals: [PASS] 0 pelanggaran.
+verify_knselect_contract: verify_knselect_contract: 0 temuan
+verify_entity_label:   ✗ 2 pelanggaran:
+== hitung_penjaga T
+verify_auth_coverage: [FAIL] 26 pelanggaran :
+verify_ui_standard: [FAIL] 9 pelanggaran :
+verify_approval_queues: 
+audit_i18n_id:   ✗ 102 temuan di 59 berkas.
+audit_create_modal: [FAIL] 5 pelanggaran :
+verify_page_tabs: [FAIL] 1 pelanggaran total (INV-UI-12 1 · INV-UI-13 0 · INV-UI-14 0)
+verify_to_list_bound: [FAIL] 5 pelanggaran :
+verify_list_export: [PASS] 0 pelanggaran.
+verify_error_notice: [PASS] 0 pelanggaran.
+verify_custom_modals: [PASS] 0 pelanggaran.
+verify_knselect_contract: verify_knselect_contract: 0 temuan
+verify_entity_label:   ✗ 2 pelanggaran:
+== penjaga lain HEAD murni
+== verify_posting_coverage: [PASS] 137 cek lolos, 0 pelanggaran.
+== verify_cash_single_door: [PASS] 750 cek lolos, 0 pelanggaran.
+== verify_atomic_claim: [PASS] 161 cek lolos, 0 pelanggaran.
+== verify_role_gate_ui: [PASS] 31 cek lolos, 0 pelanggaran.
+== verify_detail_modal: [PASS] 31 cek lolos, 0 pelanggaran.
+== verify_config_text: [PASS] 3486 cek lolos, 0 pelanggaran.
+== verify_payment_vocab: [PASS] 1862 cek lolos, 0 pelanggaran.
+== verify_access_catalog_nav: verify_access_catalog_nav: 0 temuan
+== verify_atomic_claim --self-test:   SELF-TEST HIJAU (64 kasus, 0 gagal).
+== verify_posting_coverage --self-test:   SELF-TEST HIJAU (0 gagal).
+== verify_config_fallback: [PASS] 162 cek lolos, 0 pelanggaran.
+== verify_config_fallback --entity: [PASS] 162 cek lolos, 0 pelanggaran.
+== audit_config_wiring --strict: ✅ INV-CFG: setiap setting terdeklarasi punya pembaca kode DAN jalur ubah yang nyata; tidak ada editor ganda.
+== check_nav_map: ✓ NAV MAP: PASS
+== penjaga lain T
+== verify_posting_coverage: [PASS] 140 cek lolos, 0 pelanggaran.
+== verify_cash_single_door: [PASS] 753 cek lolos, 0 pelanggaran.
+== verify_atomic_claim: [PASS] 161 cek lolos, 0 pelanggaran.
+== verify_role_gate_ui: [PASS] 31 cek lolos, 0 pelanggaran.
+== verify_detail_modal: [PASS] 31 cek lolos, 0 pelanggaran.
+== verify_config_text: [PASS] 3486 cek lolos, 0 pelanggaran.
+== verify_payment_vocab: [PASS] 1866 cek lolos, 0 pelanggaran.
+== verify_access_catalog_nav: verify_access_catalog_nav: 0 temuan
+== verify_atomic_claim --self-test:   SELF-TEST HIJAU (64 kasus, 0 gagal).
+== verify_posting_coverage --self-test:   SELF-TEST HIJAU (0 gagal).
+== verify_config_fallback: [PASS] 162 cek lolos, 0 pelanggaran.
+== verify_config_fallback --entity: [PASS] 162 cek lolos, 0 pelanggaran.
+== audit_config_wiring --strict: ✅ INV-CFG: setiap setting terdeklarasi punya pembaca kode DAN jalur ubah yang nyata; tidak ada editor ganda.
+== check_nav_map: ✓ NAV MAP: PASS

@@ -1,0 +1,2 @@
+1 failed, 2283 passed, 2 skipped, 2 xfailed, 12 warnings in 416.24s (0:06:56)
+test_KFT1_izin_pengaturan.py sesudah KMT4_TIDAK_DIPAKAI: 14 passed (terarah)

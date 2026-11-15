@@ -1,0 +1,4 @@
+  ● Test suite failed to run
+    Cannot find module '../finance/interco/IntercoChargesPanel' from 'src/features/__tests__/kmt4LembarGaji.test.js'
+Test Suites: 1 failed, 1 total
+Tests:       0 total

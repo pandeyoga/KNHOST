@@ -1,0 +1,11 @@
+== tests/test_bp_KMT4_sahkan_bersamaan_mongo.py
+=========================== short test summary info ============================
+FAILED tests/test_bp_KMT4_sahkan_bersamaan_mongo.py::test_U16_dua_pengesahan_bersamaan
+1 failed, 1 passed in 1.79s
+== tests/test_bp_PK14_indeks_wajib.py
+.........                                                                [100%]
+9 passed in 41.16s
+== tests/test_bp_KMT4_sahkan_bersamaan_mongo.py (sesudah perbaikan pembersihan)
+..                                                                       [100%]
+2 passed in 1.65s
+sisa sesudah uji: lembar 0 komponen 0 nilai mode PT 3

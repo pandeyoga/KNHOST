@@ -1,0 +1,7 @@
+  [92m[PASS][0m INV-KM-1: omzet fakta = pendapatan buku besar (0 PT-bulan)
+  [92m[PASS][0m INV-KM-2: pencairan + kas belum dialokasikan = kwitansi = kas masuk (0 PT-bulan)
+  [92m[PASS][0m INV-KM-3: isi fakta insentif = hasil bangun ulang penuh (jumlah baris & Σ nilai per PT per bulan)
+  [92m[PASS][0m INV-KM-4: saldo hutang insentif = Σ baris Lembar Insentif belum dibayar (0 PT bermode Lembar Insentif)
+  [92m[PASS][0m INV-KM-5: sisa tagihan insentif antar-PT = piutang penagih = utang tertagih (0 pasangan PT)
+  [93m[WARN][0m INV-IC: belum ada transaksi antar-PT (FASE G-6) untuk diperiksa  [93mjalankan seed_realistic.py atau buat transaksi di layar Antar Entitas[0m
+  [92mPASS 5[0m  |  [91mFAIL 0[0m  |  [93mWARN 1[0m

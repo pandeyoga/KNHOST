@@ -1,0 +1,3 @@
+PASS src/features/__tests__/kmt4LembarGaji.test.js
+Test Suites: 35 failed, 136 passed, 171 total
+Tests:       1077 passed, 1077 total

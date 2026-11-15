@@ -1,0 +1,19 @@
+PASSED tests_mem/test_KMT4_insentif_gaji.py::test_KMT4_U1_sahkan_jurnal_dan_masukan
+PASSED tests_mem/test_KMT4_insentif_gaji.py::test_KMT4_U4a_invarian_hutang_sebelum_gaji
+PASSED tests_mem/test_KMT4_insentif_gaji.py::test_KMT4_U3_posting_melunasi_hutang_insentif
+PASSED tests_mem/test_KMT4_insentif_gaji.py::test_KMT4_U4b_invarian_hutang_sesudah_gaji
+PASSED tests_mem/test_KMT4_insentif_gaji.py::test_KMT4_U5_penyesuaian_negatif
+PASSED tests_mem/test_KMT4_insentif_gaji.py::test_KMT4_U11_anulir_melepas_lembar
+PASSED tests_mem/test_KMT4_insentif_gaji.py::test_KMT4_U6_pt_bawaan_tanpa_jurnal_tanpa_masukan
+PASSED tests_mem/test_KMT4_insentif_gaji.py::test_KMT4_U8_sales_tanpa_karyawan_ditolak
+PASSED tests_mem/test_KMT4_insentif_gaji.py::test_KMT4_U9_jurnal_gagal_diulang_sekali
+PASSED tests_mem/test_KMT4_insentif_gaji.py::test_KMT4_U10_periode_tertutup
+PASSED tests_mem/test_KMT4_insentif_gaji.py::test_KMT4_U12_sales_lintas_pt_tagihan_antar_pt
+PASSED tests_mem/test_KMT4_insentif_gaji.py::test_KMT4_U13_pelunasan_dan_invarian
+PASSED tests_mem/test_KMT4_insentif_gaji.py::test_KMT4_U14_akrual_manual_ditolak
+PASSED tests_mem/test_KMT4_insentif_gaji.py::test_KMT4_kesiapan_beralih
+PASSED tests_mem/test_KMT4_insentif_gaji.py::test_KMT4_U15_kunci_mode
+XFAIL tests_mem/test_KMT4_insentif_gaji.py::test_KMT4_U2_slip_dari_lembar_tanpa_komisi_mesin - PY-06 — komisi mesin masih dipanggil di PT bermode Lembar Insentif (serah-terima b)
+XFAIL tests_mem/test_KMT4_insentif_gaji.py::test_KMT4_U7_mode_off_mematikan_komisi_mesin - PY-06 — pilihan off masih memuat komisi mesin di slip (serah-terima b)
+XFAIL tests_mem/test_KMT4_insentif_gaji.py::test_KMT4_b_satuan_insentif_dicabut - KM-07 — satuan insentif masih diterima dan dikirim API tarif (serah-terima b)
+15 passed, 3 xfailed, 1 warning in 2.96s

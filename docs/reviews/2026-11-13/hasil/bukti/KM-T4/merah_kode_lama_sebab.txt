@@ -1,0 +1,12 @@
+     32             raise ConfigWriteError(f"“{entry['label']}” tidak bisa dibedakan {PER_LAPISAN.get(scope_type, scope_type)}.")
+     32             raise ConfigWriteError(f"Pilih {SASARAN.get(scope_type, 'sasarannya')} dulu.")
+     32             raise ConfigWriteError(alasan_wajib(entry))
+     32             raise ConfigWriteError(
+     16 services/config_resolver.py:541: ConfigWriteError
+     16 config_registry.py:804: ValueError
+     16 E           services.config_resolver.ConfigWriteError: 'Kapan komisi sales dibayar lewat gaji': pilihan 'sheet' tidak dikenal. Pilihan: Dicadangkan dulu, dibayar setelah lunas, Dibayar saat faktur terbit, Komisi tidak lewat penggajian.
+     16 E               ValueError: 'Kapan komisi sales dibayar lewat gaji': pilihan 'sheet' tidak dikenal. Pilihan: Dicadangkan dulu, dibayar setelah lunas, Dibayar saat faktur terbit, Komisi tidak lewat penggajian.
+     16 >           raise ConfigWriteError(str(exc)) from exc
+     16 >               raise ValueError(f"{nama}: pilihan '{value}' tidak dikenal. Pilihan: {pilihan}.")
+     16         except ValueError as exc:
+     16         Pesan error ditulis dalam Bahasa Indonesia agar bisa langsung ditampilkan ke user. KF-T4 — pesan menyebut label

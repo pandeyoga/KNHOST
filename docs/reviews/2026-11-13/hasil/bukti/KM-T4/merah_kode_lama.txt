@@ -1,0 +1,25 @@
+=============================== warnings summary ===============================
+../../venv311/lib/python3.11/site-packages/starlette/formparsers.py:12
+  /tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/venv311/lib/python3.11/site-packages/starlette/formparsers.py:12: PendingDeprecationWarning: Please use `import python_multipart` instead.
+    import multipart
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests_mem/test_KMT4_insentif_gaji.py::test_KMT4_U15_kunci_mode - Asser...
+ERROR tests_mem/test_KMT4_insentif_gaji.py::test_KMT4_U1_sahkan_jurnal_dan_masukan
+ERROR tests_mem/test_KMT4_insentif_gaji.py::test_KMT4_U4a_invarian_hutang_sebelum_gaji
+ERROR tests_mem/test_KMT4_insentif_gaji.py::test_KMT4_U2_slip_dari_lembar_tanpa_komisi_mesin
+ERROR tests_mem/test_KMT4_insentif_gaji.py::test_KMT4_U3_posting_melunasi_hutang_insentif
+ERROR tests_mem/test_KMT4_insentif_gaji.py::test_KMT4_U4b_invarian_hutang_sesudah_gaji
+ERROR tests_mem/test_KMT4_insentif_gaji.py::test_KMT4_U5_penyesuaian_negatif
+ERROR tests_mem/test_KMT4_insentif_gaji.py::test_KMT4_U11_anulir_melepas_lembar
+ERROR tests_mem/test_KMT4_insentif_gaji.py::test_KMT4_U6_pt_bawaan_tanpa_jurnal_tanpa_masukan
+ERROR tests_mem/test_KMT4_insentif_gaji.py::test_KMT4_U7_mode_off_mematikan_komisi_mesin
+ERROR tests_mem/test_KMT4_insentif_gaji.py::test_KMT4_U8_sales_tanpa_karyawan_ditolak
+ERROR tests_mem/test_KMT4_insentif_gaji.py::test_KMT4_U9_jurnal_gagal_diulang_sekali
+ERROR tests_mem/test_KMT4_insentif_gaji.py::test_KMT4_U10_periode_tertutup - ...
+ERROR tests_mem/test_KMT4_insentif_gaji.py::test_KMT4_U12_sales_lintas_pt_tagihan_antar_pt
+ERROR tests_mem/test_KMT4_insentif_gaji.py::test_KMT4_U13_pelunasan_dan_invarian
+ERROR tests_mem/test_KMT4_insentif_gaji.py::test_KMT4_U14_akrual_manual_ditolak
+ERROR tests_mem/test_KMT4_insentif_gaji.py::test_KMT4_kesiapan_beralih - serv...
+1 failed, 1 warning, 16 errors in 3.31s

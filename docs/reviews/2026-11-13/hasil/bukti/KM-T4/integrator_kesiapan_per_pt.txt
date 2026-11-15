@@ -1,0 +1,15 @@
+== Sukacita (ent_ksc) · mode: Komisi otomatis: dicadangkan, dilunasi lewat gaji · semua siap: ya
+  - Siap  · Pencocokan angka September 2026 dan Oktober 2026 cocok dengan buku besar.
+  - Siap  · Saldo hutang insentif PT ini Rp 0 — akrual komisi otomatis sudah dilunasi.
+  - Siap  · Semua sales pada lembar draf dan diajukan sudah tertaut ke data karyawan.
+  - Siap  · Tidak ada proses gaji yang belum diposting dan memuat komisi otomatis.
+== Kanda Fabric (ent_kanda) · mode: Komisi otomatis: dicadangkan, dilunasi lewat gaji · semua siap: ya
+  - Siap  · Pencocokan angka September 2026 dan Oktober 2026 cocok dengan buku besar.
+  - Siap  · Saldo hutang insentif PT ini Rp 0 — akrual komisi otomatis sudah dilunasi.
+  - Siap  · Semua sales pada lembar draf dan diajukan sudah tertaut ke data karyawan.
+  - Siap  · Tidak ada proses gaji yang belum diposting dan memuat komisi otomatis.
+== Cipta Sandang (ent_e6f6616efbc7) · mode: Komisi otomatis: dicadangkan, dilunasi lewat gaji · semua siap: ya
+  - Siap  · Pencocokan angka September 2026 dan Oktober 2026 cocok dengan buku besar.
+  - Siap  · Saldo hutang insentif PT ini Rp 0 — akrual komisi otomatis sudah dilunasi.
+  - Siap  · Semua sales pada lembar draf dan diajukan sudah tertaut ke data karyawan.
+  - Siap  · Tidak ada proses gaji yang belum diposting dan memuat komisi otomatis.
