@@ -7,11 +7,13 @@ menjadi bahan unit perbaikan sesudah pemilik memilih. Bahasa kerja: Bahasa Indon
 ## 0. Prompt untuk ditempel di sesi audit
 
 ```text
-Anda auditor untuk repo KNHOST (Kain Nusantara ERP). Baca dan ikuti docs/reviews/PERINTAH_AUDIT_DOMAIN_2026-11-15.md
-dari awal sampai akhir. Audit ini hanya membaca: jangan mengubah kode, data nyata, server, atau main. Cari AKAR masalah
-(duplikasi, cacat logika, aturan yang tidak ditegakkan) di balik keluhan UI/UX pemilik, buktikan dengan berkas:baris,
-langkah reproduksi di data acuan, dan potret layar. Tulis hasil di docs/audit/<tanggal>-domain/ dan daftarkan temuan di
-docs/reviews/TRACKER.md berstatus open. Mulai dengan menuliskan commit HEAD yang Anda audit.
+Anda auditor untuk repo KNHOST (Kain Nusantara ERP). Baca docs/reviews/PERINTAH_AUDIT_DOMAIN_2026-11-15.md seluruhnya.
+Audit ini hanya membaca: jangan mengubah kode, data nyata, server, atau main. Kerjakan domain berurutan (A dulu) sampai
+definisi selesai di §8 terpenuhi: setiap skenario wajib dijalankan sebagai pengguna dengan bukti, setiap form wajib
+diinventaris per dropdown, setiap temuan lengkap dan terdaftar di tracker. Periksa sendiri dengan
+`python3 scripts/review/periksa_selesai.py audit docs/audit/<tanggal>-domain` — jangan menyatakan selesai sebelum
+"HASIL: SELESAI". Akhiri tiap sesi dengan `periksa_selesai.py progres`, satu baris di docs/reviews/LOG_REVIEW.md, commit,
+dan push ke cabang review/<tanggal hari ini> (bukan main).
 ```
 
 ## 1. Keluhan pemilik (dasar audit — dikutip dan dirapikan)
@@ -207,3 +209,128 @@ tahapan proses, sampling (`backend/test_core_*_poc.py`).
 
 Perbaikan **tidak** dikerjakan di sesi audit. Sesudah pemilik memilih, pelaksana membuat unit blueprint baru (dengan aturan
 anti-duplikasi R6: tiap fitur menyebut pintu yang dipakai ulang dan jalur lama yang dimatikan).
+
+## 8. Tujuan dan definisi selesai (wajib, diperiksa mesin)
+
+### Tujuan terukur
+
+1. **Setiap skenario wajib di bawah dijalankan sebagai pengguna sungguhan** (akun peran, data acuan, layar 1280 px dan
+   390 px), dengan status `lulus` / `gagal` / `terhambat` dan bukti di `bukti/`.
+2. **Setiap form wajib diinventaris per komponen pilihan**: satu baris per dropdown/radio/pencari — dari mana pilihannya,
+   saringan apa yang ada, apakah server menegakkan aturan yang sama, dan apa masalahnya. Jumlah baris per form minimal
+   sama dengan jumlah komponen pilihan di berkas itu (dihitung pemeriksa; komponen anak ikut diikuti dan dicatat).
+3. **Setiap domain punya peta sumber kebenaran**: data mana yang menjadi kebenaran dan **semua** kode yang menulisnya
+   (perintah pencarian ditulis), serta peta pintu ganda.
+4. **Setiap temuan bisa dikerjakan tanpa bertanya lagi**: akar, bukti `berkas:baris`, langkah reproduksi, dampak, arah
+   perbaikan, keputusan pemilik yang dibutuhkan, dan rujukan bila temuan sudah ada.
+
+### Bentuk berkas domain (judul bagian persis, dipakai pemeriksa)
+
+`## Peta sumber kebenaran` (blok perintah pencarian + ≥ 3 `berkas:baris` penulis) · `## Pintu ganda` · `## Matriks skenario`
+(tabel `| <ID skenario> | peran | langkah yang dilakukan | lulus/gagal/terhambat | bukti/<berkas> | temuan |`) ·
+`## Inventaris form & dropdown` (domain A, B, C, D, E, F yang punya form wajib; tabel
+`| Form (nama berkas) | Field | Sumber pilihan | Saringan yang ada | Ditegakkan server? | Masalah |`) · `## Temuan`
+(satu `### <ID> — <judul>` per temuan, berisi baris `Keparahan:`, `Jenis akar:`, `Bukti:`, `Reproduksi:`, `Dampak:`,
+`Arah perbaikan:`, `Keputusan pemilik:`, `Sudah ada:`). Baris `Berkas dibaca: berkas.py:120-188, …` dicatat di tiap
+bagian supaya jumlah baris kode yang dibaca bisa dihitung. `terhambat` wajib menyebut alasannya di kolom langkah.
+
+### Skenario wajib
+
+| ID | Skenario |
+|---|---|
+| A-S1 | Buat produk baru untuk tiap stage (benang, greige, PFD, PFP, bahan jadi) lewat Master Produk: atribut wajib, satuan, kategori; apakah server menolak kombinasi yang tidak sah |
+| A-S2 | Ubah stage/satuan produk yang sudah punya stok atau dokumen |
+| A-S3 | Varian dan spesifikasi dari R&D untuk tiap stage (form spesifikasi & editor varian) |
+| A-S4 | Jual tiap stage di POS (benang, greige, PFP, PFD, bahan jadi): mana yang boleh, mana ditolak, ditolak oleh server atau hanya layar |
+| A-S5 | PO pembelian benang (kg) dan greige (meter/yard): satuan, konversi, harga per satuan |
+| A-S6 | Langkah makloon yang tidak cocok stage (printing dengan bahan greige; celup dengan PFP) — lewat layar **dan** lewat API langsung |
+| A-S7 | Tambah tahapan proses baru di master tahapan lalu pakai di SPK; nonaktifkan tahapan yang masih dipakai dokumen |
+| A-S8 | Label dan istilah stage di semua layar (PFP/PFD, greige/grey, benang/yarn): daftar ketidakkonsistenan |
+| A-S9 | Kueri hanya-baca data acuan: produk/roll yang stage, satuan, kategori, atau riwayat prosesnya tidak cocok (jumlah + contoh) |
+| B-S1 | Makloon greige → PFD → celup → bahan jadi, satu mitra per langkah, sampai stok hasil & HPP |
+| B-S2 | Makloon greige → PFP → screen → printing → bahan jadi |
+| B-S3 | Makloon benang → tenun/rajut → greige |
+| B-S4 | Terima sebagian; sisa masih di mitra; susut melebihi batas |
+| B-S5 | Hasil ditolak QC → kembali ke mitra / klaim ke mitra |
+| B-S6 | Batal di tengah saat bahan sudah di mitra |
+| B-S7 | SPK dari Pesanan Khusus/SO vs dari stok; SPK dibuat lewat Wizard vs lewat modal buat — apakah dokumennya sama |
+| B-S8 | Tagihan jasa per langkah + HPP hasil (bahan + jasa + susut) sampai ke roll, jurnal, dan rekap |
+| B-S9 | Perbaikan (repair order) dan pengerjaan ulang |
+| B-S10 | Makloon antar-PT (bahan milik PT lain / mitra dipakai beberapa PT) |
+| C-S1 | Permintaan desain → sample → keputusan pelanggan → spesifikasi → SKU |
+| C-S2 | Pesanan Khusus → R&D → sample → SKU (pintu `create-sku`) — bandingkan dengan C-S1 |
+| C-S3 | Sample ditolak, direvisi, divalidasi ulang |
+| C-S4 | Gerbang R&D dan uji wajib: yang ditawarkan layar vs yang ditolak server |
+| C-S5 | SKU dari R&D masuk produksi/makloon/pembelian (stage dan satuan yang lahir) |
+| C-S6 | KPI desainer/R&D dari data acuan dibanding hitungan tangan |
+| D-S1 | Retur jual per roll dari SO terkirim → scan masuk karantina → inspeksi → masuk stok → refund |
+| D-S2 | Retur jual → scrap → batal scrap |
+| D-S3 | Retur jual → klaim ke supplier (berantai) → retur beli |
+| D-S4 | Retur jual sebagian roll (potong) / cut-loss split |
+| D-S5 | Retur jual dengan penggantian barang / kompensasi / nego |
+| D-S6 | Retur beli manual sebelum dan sesudah ditagih; lalu koreksi (reverse) |
+| D-S7 | Retur antar-PT |
+| D-S8 | Retur ditolak atau dibatalkan sebelum diselesaikan |
+| E-S1 | Penerimaan PO ber-QC: terima, tolak sebagian, tolak + retur (ganti barang / potong tagihan) |
+| E-S2 | QC 4-point per roll → grade → harga dan stok |
+| E-S3 | SPK inspeksi MD Quality (PA ke gedung inspeksi) → hasil → kembali ke stok |
+| E-S4 | QC hasil makloon |
+| E-S5 | Pemeriksaan retur jual (grade turun, rusak) |
+| E-S6 | Siapa boleh memutuskan apa (izin, bukan nama peran) untuk `qc@`, `mdquality@`, `warehouse@`, `manager@` |
+| F-S1 | POS checkout → SO → alokasi otomatis → kirim → faktur, panjang roll nyata ≠ pesanan |
+| F-S2 | Realokasi roll sesudah DP dibayar: tagihan, DP, piutang |
+| F-S3 | Stok kurang → rencana pemenuhan (stok / PT lain / PO / tunggu) lewat keempat modul pemenuhan — hasilnya sama? |
+| F-S4 | Keep → lewat batas umur → pending → dibuka lagi: reservasi dan backorder |
+| F-S5 | Batal satu baris sesudah alokasi / sesudah bayar |
+| F-S6 | Harga khusus / persetujuan harga, lalu alokasi berubah |
+| F-S7 | Pesanan → PR/PO supplier (backorder) → barang datang → alokasi otomatis |
+| F-S8 | Angka pesanan yang sama di layar berbeda (POS, daftar pesanan, meja admin sales, piutang) — cocok? |
+
+### Form wajib (inventaris per komponen pilihan)
+
+| ID | Berkas | Domain |
+|---|---|---|
+| A-F1 | `ProductMasterForm.jsx` | master produk |
+| A-F2 | `VariantEditor.jsx` | varian |
+| A-F3 | `SpecVariantFields.jsx` | varian dari spesifikasi |
+| A-F4 | `LinkExistingVariant.jsx` | tautkan varian |
+| A-F5 | `EntityMastersView.jsx` | master per PT (ikuti komponen anak) |
+| A-F6 | `UomConversionView.jsx` | konversi satuan |
+| A-F7 | `PoStageModal.jsx` | tahap PO |
+| A-F8 | `CuttingDesk.jsx` | potong |
+| B-F1 | `MakloonWizard.jsx` | buat SPK (wizard) |
+| B-F2 | `MakloonOrderCreateModal.jsx` | buat SPK (modal) |
+| B-F3 | `MakloonStepEditor.jsx` | langkah |
+| B-F4 | `MkoStepModals.jsx` | aksi langkah |
+| B-F5 | `RecipeFormModal.jsx` | resep proses |
+| B-F6 | `MakloonOrderDetailPanel.jsx` | rincian SPK (ikuti komponen anak) |
+| C-F1 | `SpecFormModal.jsx` | spesifikasi R&D |
+| C-F2 | `SampleFormModal.jsx` | sample |
+| C-F3 | `ExistingSkuSection.jsx` | SKU yang ada |
+| C-F4 | `SpecDetailPanel.jsx` | rincian spesifikasi (ikuti komponen anak) |
+| C-F5 | `DivisionsView.jsx` | divisi desain |
+| D-F1 | `CreateReturnForm.jsx` | retur jual |
+| D-F2 | `ReturnDispositionPanel.jsx` | disposisi retur (ikuti komponen anak) |
+| D-F3 | `ReturnRollClaims.jsx` | klaim per roll |
+| D-F4 | `PurchaseReturns.jsx` | retur beli |
+| E-F1 | `QCInspection.jsx` | QC penerimaan |
+| E-F2 | `InspectLineModal.jsx` | inspeksi per baris |
+| E-F3 | `InspectSheetGrid.jsx` | lembar inspeksi |
+| F-F1 | `CheckoutDrawer.jsx` | checkout POS |
+| F-F2 | `CheckoutStep3.jsx` | langkah 3 checkout (ikuti komponen anak) |
+| F-F3 | `ReallocateRollsModal.jsx` | realokasi roll (ikuti komponen anak) |
+| F-F4 | `PriceApprovals.jsx` | persetujuan harga |
+
+### Definisi selesai
+
+- **Per domain**: semua skenario domain itu ada di matriks dengan status dan bukti (atau `terhambat` beralasan); semua form
+  wajibnya diinventaris sebanyak komponen pilihannya; peta sumber kebenaran dan pintu ganda terisi; setiap temuan lengkap
+  dan terdaftar di `TRACKER.md` (bagian baru "Audit domain — <tanggal>", status `open`); tidak ada "TODO/TBD/belum dicek".
+- **Seluruh audit**: `python3 scripts/review/periksa_selesai.py audit docs/audit/<tanggal>-domain` mencetak
+  **HASIL: SELESAI**, `00-RINGKASAN.md` berisi `## 10 masalah terbesar` (10 butir bernomor ber-ID), `## Peta duplikasi`,
+  `## Pertanyaan untuk pemilik` (bernomor).
+- **Per sesi**: `periksa_selesai.py progres` dijalankan (menulis `docs/reviews/PROGRES_REVIEW.md`), satu baris di
+  `docs/reviews/LOG_REVIEW.md`, commit, push ke cabang `review/<YYYY-MM-DD>`. Bila berhenti sebelum selesai, tulis domain
+  dan skenario terakhir yang dikerjakan di log.
+- **Bukan bukti**: membaca dokumen tanpa membuka kode/layar; "tampaknya"; skenario yang tidak dijalankan; menyalin temuan
+  audit lama tanpa memeriksa ulang di `HEAD`.

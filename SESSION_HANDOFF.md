@@ -16,6 +16,10 @@
 > hambatan lingkungan, keluaran) ada di `docs/reviews/PERINTAH_REVIEW_2026-11-15.md`.
 > **Audit domain (R5, oleh reviewer):** `docs/reviews/PERINTAH_AUDIT_DOMAIN_2026-11-15.md` — master data & jenis barang
 > (benang, greige, PFP, PFD, bahan jadi), makloon, R&D, retur, QC & MD Quality, pesanan sesudah POS (alokasi, tagihan, keep/pending).
+> **Saat pemilik kembali dari sesi reviewer:** `git fetch origin` lalu lihat cabang `origin/review/*`; baca
+> `docs/reviews/LOG_REVIEW.md` dan jalankan `python3 scripts/review/periksa_selesai.py progres` pada cabang itu
+> (mis. `git worktree add /tmp/rv origin/review/<tanggal>` → `cd /tmp/rv && python3 scripts/review/periksa_selesai.py progres`).
+> Angka di sana dihitung dari berkas hasil reviewer (butir lengkap, baris kode dibaca, uji, putusan), bukan klaim.
 
 > Diperbarui: **2026-06 (sesi lanjutan ke-8)** — repo kini di
 > `github.com/pandeyoga/KN020926`; lingkungan di-restore dengan `.restore_env.sh`

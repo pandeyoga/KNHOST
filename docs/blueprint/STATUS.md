@@ -253,3 +253,8 @@ Diisi agen di akhir tiap sesi: tanggal, unit yang selesai, unit yang tertahan da
 - 15 Nov (akhir): perintah review untuk sesi berikutnya ditulis di `docs/reviews/PERINTAH_REVIEW_2026-11-15.md`.
 - 15 Nov (akhir): R5 diubah menjadi audit domain oleh reviewer dengan fokus pemilik (master & stage, makloon, R&D, retur,
   QC & MD Quality, pesanan sesudah POS); perintah: `docs/reviews/PERINTAH_AUDIT_DOMAIN_2026-11-15.md`.
+- 15 Nov (akhir): pemilik menilai hasil agent review dangkal → kedua perintah diberi tujuan terukur dan definisi selesai
+  yang diperiksa mesin (`scripts/review/periksa_selesai.py`): review dibagi batch B0–B8 (9 + 247 butir), tiap butir wajib
+  temuan asli, ≥30 baris kode dibaca, pencarian pintu lain, uji + hasil, ≥2 upaya membantah, putusan cocok tracker; audit
+  domain wajib 47 skenario dan 30 form (inventaris ≥ jumlah komponen pilihan). Kemajuan dihitung ke
+  `docs/reviews/PROGRES_REVIEW.md`, log sesi di `docs/reviews/LOG_REVIEW.md`, reviewer push ke `review/<tanggal>`.

@@ -6,11 +6,95 @@ jadi semua konteks yang dibutuhkan ada di sini atau dirujuk dari sini. Bahasa ke
 ## 0. Prompt untuk ditempel di sesi review
 
 ```text
-Anda reviewer untuk repo KNHOST (Kain Nusantara ERP). Baca dan ikuti docs/reviews/PERINTAH_REVIEW_2026-11-15.md dari
-awal sampai akhir sebelum menyentuh apa pun. Kerjakan bagian 4 menurut urutan prioritasnya (A dulu). Anda yang
-menetapkan status verified / reopened; laporkan hasil apa adanya, termasuk yang merah. Jangan mengubah kode produksi,
-server VPS, data nyata, atau main tanpa izin pemilik. Mulai dengan menuliskan commit HEAD yang Anda review.
+Anda reviewer untuk repo KNHOST (Kain Nusantara ERP). Baca docs/reviews/PERINTAH_REVIEW_2026-11-15.md seluruhnya, lalu
+kerjakan SATU batch (mulai B0, lalu B1, B2, …) sampai definisi selesai di bagian "TUJUAN DAN DEFINISI SELESAI" terpenuhi:
+`python3 scripts/review/periksa_selesai.py review <batch>` harus mencetak "HASIL: SELESAI". Jangan menyatakan selesai
+sebelum itu. Tiap butir wajib dibuktikan sendiri (baca kode, jalankan uji, coba bantah) — laporan pelaksana bukan bukti.
+Akhiri sesi dengan: `python3 scripts/review/periksa_selesai.py progres`, satu baris di docs/reviews/LOG_REVIEW.md, commit,
+dan push ke cabang review/<tanggal hari ini> (bukan main). Jangan mengubah kode produksi, server VPS, atau data nyata.
 ```
+
+## TUJUAN DAN DEFINISI SELESAI (wajib, berlaku di atas bagian lain)
+
+### Tujuan
+
+1. **Memutuskan, dengan bukti yang dijalankan sendiri, apakah setiap perbaikan benar-benar menutup temuannya di `HEAD`**
+   — bukan apakah laporannya terdengar meyakinkan. Hasilnya satu putusan per butir: `verified`, `reopened`,
+   `perlu_keputusan_pemilik`, atau `terhambat_lingkungan`.
+2. **Mencari pintu kedua**: jalur lain di kode yang masih melakukan hal yang sama dengan cara lama (penyebab utama cacat di
+   repo ini — lihat R0 §1 baris 7).
+3. **Mencoba membantah** setiap perbaikan dengan kasus yang tidak diuji pelaksana.
+4. **Meninggalkan jejak yang bisa dihitung**, sehingga pemilik dan pelaksana tahu persis apa yang sudah dicek, berapa baris
+   kode dibaca, uji apa yang dijalankan, dan apa yang tersisa.
+
+### Batch (kerjakan berurutan; satu sesi = satu batch sampai selesai)
+
+| Batch | Isi | Butir | Berkas hasil |
+|---|---|---|---|
+| B0 | R0 — 8 keputusan integrasi + 17 fungsi yang diubah dua sisi (§4 A) | 9 | `hasil/validasi-R0.md` |
+| B1 | Keuangan Kritis/Tinggi — kas, pembayaran, piutang & hutang (PK-05, PK-15, PK-17, PK-19, PK-31, PK-38) | 17 | `hasil/validasi-<UNIT>.md` |
+| B2 | Keuangan Kritis/Tinggi — jurnal, periode, posting, laporan (18 unit) | 33 | idem |
+| B3 | Keuangan Kritis/Tinggi — antar-PT, persediaan, retur, nota (PK-06, PK-26, PK-27, PK-28, PK-30, PK-32, PK-33) | 7 | idem |
+| B4 | Riset modul Tinggi — CR-T3, KM-T1, PK-45, PM-T2, PM-T3, PY-T1, PY-T3 | 14 | idem |
+| B5 | Konfigurasi & peran Tinggi (14 unit) | 23 | idem |
+| B6 | Keuangan Sedang/Rendah | 77 | idem |
+| B7 | Riset modul Sedang/Rendah | 32 | idem |
+| B8 | Konfigurasi & peran Sedang/Rendah | 44 | idem |
+
+Daftar ID persis tiap batch (dihitung dari tracker): `python3 scripts/review/periksa_selesai.py daftar B1`.
+Berkas hasil ada di `docs/reviews/2026-11-13/hasil/`. Satu berkas per unit; satu bagian `## <ID> — <judul>` per baris tracker.
+
+### Definisi selesai — per butir (diperiksa mesin oleh `periksa_selesai.py`)
+
+Berkas `validasi-<UNIT>.md` dimulai dengan dua baris:
+`Commit yang direview: <sha yang sudah di-push>` dan `Lingkungan: <MongoDB asli/tiruan, backend hidup?, data acuan?>`.
+Tiap bagian `## <ID>` wajib berisi enam sub-bagian ini, dengan isi minimum:
+
+| Sub-bagian | Isi minimum |
+|---|---|
+| `### Temuan asli` | Apa cacatnya, dengan rujukan `berkas:baris` di `cd6963a` (baca sendiri, jangan menyalin laporan) |
+| `### Perbaikan yang diperiksa` | SHA commit unit; baris `Berkas dibaca:` berisi rentang `berkas.py:120-188` — **minimum 30 baris dari 2 berkas** per butir (kode perbaikan + pemanggil/pintu lain) |
+| `### Pintu lain` | Perintah pencarian yang Anda jalankan (blok kode) untuk mencari jalur lain yang menulis hal yang sama, lalu `Kesimpulan:` |
+| `### Uji yang dijalankan` | Perintah persis (blok kode) dan `Hasil: <n> lulus, <m> gagal` — uji pelaksana **dan** uji/skrip Anda sendiri bila perlu |
+| `### Upaya membantah` | **Minimum 2** butir `- [kategori] <yang dicoba> Hasil: <yang terjadi>`; kategori: `ulang`, `bersamaan`, `sebagian`, `pt_lain`, `tanpa_izin`, `periode_tertutup`, `jurnal_gagal`, `koreksi`, `data_lama`, `batas_nilai`, `jalur_lain`, `layar` |
+| `### Putusan` | `Putusan: verified \| reopened \| perlu_keputusan_pemilik \| terhambat_lingkungan` dan `Alasan:` ≥ 60 huruf yang menunjuk bukti (`berkas:baris` atau nama uji) |
+
+Aturan putusan:
+- `verified` hanya bila semua uji yang dijalankan lulus, tidak ada pintu kedua, dan kedua upaya membantah gagal
+  membantah. Status tracker diubah menjadi `verified`.
+- `reopened` bila ada cacat; tulis langkah reproduksi di `Alasan:`. Status tracker → `reopened`.
+- `perlu_keputusan_pemilik` bila benar/salahnya bergantung keputusan bisnis. Status tracker → `pending_decision`, dan
+  pertanyaannya ditulis di bagian itu.
+- `terhambat_lingkungan` bila uji yang diperlukan tidak bisa dijalankan di lingkungan Anda. Status tracker **tidak**
+  diubah. Membaca kode saja **tidak pernah** cukup untuk `verified`.
+
+Untuk B0 (`validasi-R0.md`) bentuknya sama, dengan bagian `## Keputusan 1` … `## Keputusan 8` (sub-bagian pertama
+`### Yang diputuskan`, putusan `benar | salah | perlu_keputusan_pemilik | terhambat_lingkungan`), ditambah bagian
+`## Fungsi yang diubah dua sisi`: satu baris per fungsi (17 nama di §4 A) dengan `berkas:baris` dan penilaian
+aman/bermasalah.
+
+### Definisi selesai — per batch dan per sesi
+
+1. `python3 scripts/review/periksa_selesai.py review <batch>` mencetak **HASIL: SELESAI** (kode keluar 0).
+2. Status setiap baris batch di `docs/reviews/TRACKER.md` sesuai putusannya (pemeriksa mencocokkan).
+3. `python3 scripts/review/periksa_selesai.py progres` dijalankan; `docs/reviews/PROGRES_REVIEW.md` ikut di-commit.
+4. Satu baris ditambahkan ke `docs/reviews/LOG_REVIEW.md` (tanggal, commit yang direview, batch, butir selesai/total,
+   baris kode dibaca, uji lulus/gagal, putusan per jenis, hambatan, batch berikutnya).
+5. Commit dan push ke cabang `review/<YYYY-MM-DD>` (bukan `main`). Pelaksana membaca kemajuan dari cabang itu.
+6. Bila sesi harus berhenti sebelum batch selesai, langkah 3–5 tetap dikerjakan dan alasan berhenti ditulis di log.
+
+### Yang tidak dihitung sebagai bukti
+
+- Isi laporan pelaksana (`hasil/<ID>.md`), pesan commit, atau STATUS — itu klaim yang sedang diuji.
+- "Uji lulus" tanpa perintah dan keluaran yang Anda jalankan sendiri.
+- Membaca dokumen tanpa membaca kode yang ditunjuk.
+- Mengambil sampel sebagian butir lalu menyimpulkan seluruh batch.
+
+### Lingkungan Anda berbeda dari lingkungan pelaksana
+
+Siapkan lingkungan menurut §5 dan `docs/LOCAL_DEV.md`. Bila MongoDB asli tidak bisa dijalankan, uji lapis A dicatat
+`terhambat_lingkungan`; uji lapis B (`backend/tests_mem`, database tiruan) tetap wajib. Catat apa yang tersedia di baris
+`Lingkungan:`. Hambatan yang sudah diketahui ada di §6 — jangan dilaporkan sebagai temuan baru.
 
 ## 1. Peran, wewenang, dan batas
 
@@ -179,12 +263,13 @@ Garis dasar sebelum blueprint: `docs/reviews/2026-11-13/garis-dasar/` (13 Nov). 
 
 ## 7. Keluaran yang diminta
 
-1. Per unit / baris tracker yang direview: `docs/reviews/2026-11-13/hasil/validasi-<ID>.md` (bukti: perintah, hasil,
-   berkas:baris) dan status di `TRACKER.md` → `verified` atau `reopened` (alasan wajib untuk `reopened`).
-2. R0: `docs/reviews/2026-11-13/hasil/validasi-R0.md` — per keputusan #1–#8: benar / salah / perlu keputusan pemilik.
+1. Per unit: `docs/reviews/2026-11-13/hasil/validasi-<UNIT>.md` dengan satu bagian `## <ID>` per baris tracker, bentuk
+   dan isi minimum menurut "TUJUAN DAN DEFINISI SELESAI"; status di `TRACKER.md` sesuai putusan.
+2. R0: `docs/reviews/2026-11-13/hasil/validasi-R0.md` — `## Keputusan 1` … `## Keputusan 8` + `## Fungsi yang diubah dua sisi`.
 3. Temuan baru: paket baru `docs/reviews/<tanggal review>/` (README + laporan) dengan ID tetap, didaftarkan di
    `TRACKER.md` berstatus `open`; sebut lensa (keuangan, stok, izin, UI, data) dan berkas:baris di `HEAD`.
-4. Ringkasan untuk pemilik (Bahasa Indonesia, singkat): apa yang aman dipasang ke VPS, skrip migrasi `--apply` mana
+4. Tiap akhir sesi: `periksa_selesai.py progres`, baris `LOG_REVIEW.md`, commit, push ke `review/<YYYY-MM-DD>`.
+5. Ringkasan untuk pemilik (Bahasa Indonesia, singkat): apa yang aman dipasang ke VPS, skrip migrasi `--apply` mana
    yang wajib dan urutannya (kolom "Titik henti" STATUS + `docs/audit/2026-11-09-wms-rfid/hasil/PANDUAN-SKRIP-DATA-PRODUKSI.md`),
    apa yang harus diperbaiki dulu, dan keputusan apa yang ditunggu dari pemilik.
 
