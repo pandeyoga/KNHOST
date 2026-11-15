@@ -51,8 +51,7 @@ async def billing_schedule(customer_id: str, request: Request, entity_id: Option
         raise HTTPException(status_code=403, detail=LUAR_CAKUPAN)
     eid = resolve_requested_entity(await entity_ctx(request), entity_id)
     from services.customer_service import DEAD_STATUSES
-    q: Dict[str, Any] = {"customer_id": customer_id, "entity_id": eid, "status": {"$nin": sorted(DEAD_STATUSES)},
-                         "order_type": {"$ne": "sample"}}
+    q: Dict[str, Any] = {"customer_id": customer_id, "entity_id": eid, "status": {"$nin": sorted(DEAD_STATUSES)}}
     if status == "open":
         q["payment_status"] = {"$ne": "paid"}
     orders = [o async for o in db.sales_orders.find(q, {"_id": 0})]

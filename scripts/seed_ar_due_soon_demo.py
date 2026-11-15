@@ -45,8 +45,9 @@ async def main() -> int:
     sys.path.insert(0, str(ROOT / "backend"))
     from services.customer_service import (            # SSOT AR (tanpa duplikasi logika)
         _order_grand_total as grand_total, _order_paid as paid,
-        order_payment_method, _term_days as term_days, DEAD_STATUSES, NON_AR_METHODS,
+        order_payment_method, DEAD_STATUSES, NON_AR_METHODS,
     )
+    from services.report_basis import hari_termin as term_days   # CR-T2 — aturan hari termin pindah (D8)
 
     customers = {c["id"]: c for c in await db.customers.find(
         {}, {"_id": 0, "id": 1, "name": 1, "payment_profile": 1,

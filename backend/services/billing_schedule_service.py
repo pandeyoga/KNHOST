@@ -201,6 +201,10 @@ async def bangun_baris(order: Dict[str, Any], termin: Dict[str, Any], journals: 
                               billed_at=g["tanggal"], source_type=g["source_type"], source_id=g["source_id"],
                               percent=(100.0 - dp) if dp > 0 else 0.0, shipment_ids=list(g["shipment_ids"]),
                               journal_ids=list(g["journal_ids"]), journal_numbers=list(g["journal_numbers"])))
+    jurnal_nota: Dict[str, List[Dict[str, Any]]] = {}
+    for je in journals:
+        if je.get("source_type") == "amendment_debit_note" and je.get("source_id"):
+            jurnal_nota.setdefault(str(je["source_id"]), []).append(je)
     for x in order.get("extra_billing_lines") or []:
         if not isinstance(x, dict):
             continue
@@ -210,10 +214,13 @@ async def bangun_baris(order: Dict[str, Any], termin: Dict[str, Any], journals: 
         dibuat = _tgl(x.get("created_at")) or tanggal_buku()
         due = _tgl(x.get("due_date")) or rb.jatuh_tempo(dibuat, net)
         nomor = x.get("debit_note_number") or x.get("debit_note_id") or ""
+        nid = str(x.get("debit_note_id") or x.get("id") or "")
+        jn = jurnal_nota.get(nid, [])
         out.append(_baris(KIND_DEBIT_NOTE, label=f"Nota debit {nomor}".strip(), amount_sen=amt, due_date=due,
-                          billed_at=x.get("created_at") or dibuat, source_type=SRC_DEBIT_NOTE,
-                          source_id=str(x.get("debit_note_id") or x.get("id") or ""),
-                          debit_note_number=x.get("debit_note_number") or ""))
+                          billed_at=x.get("created_at") or dibuat, source_type=SRC_DEBIT_NOTE, source_id=nid,
+                          debit_note_number=x.get("debit_note_number") or "",
+                          journal_ids=[j.get("id") for j in jn if j.get("id")],
+                          journal_numbers=[j.get("number") or "" for j in jn if j.get("id")]))
     return out
 
 
@@ -293,7 +300,7 @@ def _gabung(lines: List[Dict[str, Any]], mau: List[Dict[str, Any]]) -> Tuple[Lis
         if w["kind"] == KIND_DP and float(cur.get("paid_amount") or 0) > 0.0049:
             continue   # uang muka yang sudah dibayar tidak disesuaikan
         for f in ("amount", "due_date", "billed_at", "label", "percent", "shipment_ids", "journal_ids",
-                  "journal_numbers"):
+                  "journal_numbers", "debit_note_number"):
             if f in w:
                 cur[f] = w[f]
     for cur in hasil:
@@ -314,6 +321,7 @@ async def sync_order(order_id: str, *, alasan: str = "") -> Optional[Dict[str, A
             await db[plans.COLL].update_one({"id": plan["id"], "status": {"$ne": "void"}}, {"$set": {
                 "status": "void", "void_reason": alasan or "pesanan dibatalkan", "voided_by": "system",
                 "voided_at": now_iso(), "updated_at": now_iso()}, "$inc": {"rev": 1}})
+        if order.get("order_type") != "sample":
             await _segarkan_saldo(order)
         return None
     if plan and not is_term(plan):
@@ -469,9 +477,11 @@ async def lines_for_orders(orders: List[Dict[str, Any]], customers: Optional[Dic
 
     Baris = jadwal hidup tersimpan (`term` atau `manual`); pesanan tanpa jadwal → baris dari pembangun yang sama
     (`bangun_baris`), tidak disimpan. Baris `term` hanya yang ber-`billed_at` ≤ `per`; baris rencana `manual` selalu
-    (rencana menggantikan seluruh jadwal pesanan). Baris bernilai 0 dibuang."""
+    (rencana menggantikan seluruh jadwal pesanan). Baris bernilai 0 dibuang. Pesanan sample tidak pernah berjadwal
+    tersimpan — barisnya selalu dibaca dari pembangun (perilaku umur piutang yang ada)."""
+    from services.customer_service import DEAD_STATUSES
     per_tgl = tanggal_buku(per)
-    hidup = [o for o in orders if o.get("id") and _hidup(o)]
+    hidup = [o for o in orders if o.get("id") and o.get("status") not in DEAD_STATUSES]
     ids = [o["id"] for o in hidup]
     jadwal: Dict[str, Dict[str, Any]] = {}
     for i in range(0, len(ids), rb.KELOMPOK):
@@ -527,6 +537,7 @@ async def lines_for_orders(orders: List[Dict[str, Any]], customers: Optional[Dic
                 "source_type": r.get("source_type") or SRC_MANUAL, "source_id": r.get("source_id") or "",
                 "shipment_ids": list(r.get("shipment_ids") or []), "journal_ids": list(r.get("journal_ids") or []),
                 "journal_numbers": list(r.get("journal_numbers") or []),
+                "debit_note_number": r.get("debit_note_number") or "",
                 "billed_at": _tgl(r.get("billed_at")), "due_date": due,
                 "amount": from_cents(amt), "paid_amount": from_cents(paid), "outstanding": from_cents(amt - paid),
                 "days_late": rb.hari_antara(due, per_tgl) if due else 0,
@@ -546,8 +557,7 @@ async def open_lines(*, entity_ids: list, customer_ids: Optional[list] = None,
     if not ents:
         return []
     from services.customer_service import DEAD_STATUSES
-    q: Dict[str, Any] = {"entity_id": {"$in": ents}, "status": {"$nin": sorted(DEAD_STATUSES)},
-                         "order_type": {"$ne": "sample"}}
+    q: Dict[str, Any] = {"entity_id": {"$in": ents}, "status": {"$nin": sorted(DEAD_STATUSES)}}
     if customer_ids is not None:
         q["customer_id"] = {"$in": list(customer_ids)}
     if not as_of:

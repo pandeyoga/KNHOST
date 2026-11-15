@@ -12,7 +12,8 @@ Satu tempat untuk aturan yang dipakai bersama layar Piutang, Hutang, Arus Kas, P
 * `golongan_arus_kas`    — golongan arus kas menurut JENIS TRANSAKSI jurnal sebelum aturan akun lawan (RP-06).
 * `label_kelompok_umur`  — judul kolom umur piutang dari batas `ar.aging_buckets` (RP-12).
 
-Tidak ada koleksi atau field tersimpan baru: semua dihitung saat dibaca. Uang dihitung dalam sen bulat
+CR-T2 (b) — jatuh tempo `baris_tagihan` dibaca dari jadwal tagihan tersimpan (`billing_schedule_service`, satu-satunya
+pembaca jatuh tempo); `hari_termin` + `jatuh_tempo` = satu rumus jatuh tempo untuk semua pembaca. Uang dihitung dalam sen bulat
 (`core_utils.to_cents`, `02_STANDAR.md` §5 D5); tanggal dari `services.book_date.tanggal_buku` (D6).
 """
 from __future__ import annotations
@@ -68,7 +69,7 @@ def _tgl_aman(nilai: Any) -> Optional[str]:
 # ── Termin ──────────────────────────────────────────────────────────────────────────────────────────────────────────
 async def peta_termin(orders: Iterable[Dict[str, Any]]) -> Dict[Tuple[str, str], Optional[int]]:
     """`(kode termin, PT) → net_days` dari master Syarat Bayar (lapisan PT menang atas global), SATU kali per daftar.
-    Bahan `customer_service._term_days` (aturan termin yang ada: snapshot hari termin pesanan → kode termin pesanan →
+    Bahan `hari_termin` (aturan termin yang ada: snapshot hari termin pesanan → kode termin pesanan →
     profil pelanggan → 30)."""
     from services import entity_master_service as ems
     out: Dict[Tuple[str, str], Optional[int]] = {}
@@ -87,10 +88,31 @@ async def peta_termin(orders: Iterable[Dict[str, Any]]) -> Dict[Tuple[str, str],
 
 def hari_termin(customer: Dict[str, Any], order: Dict[str, Any],
                 terms: Optional[Dict[Any, Optional[int]]] = None) -> int:
-    """CR-T2 — hari termin satu pesanan (SATU aturan untuk umur piutang, jadwal tagihan, proyeksi kas, nota debit):
-    snapshot hari termin pesanan → kode termin pesanan di `terms` (`peta_termin`) → profil pelanggan → 30."""
-    from services.customer_service import _term_days
-    return _term_days(customer, order, terms)
+    """CR-T2 — hari termin satu pesanan, SATU aturan untuk umur piutang, jadwal tagihan, proyeksi kas, nota debit, denda
+    pesanan tanpa rencana, dan selisih bayar (dipindah dari `customer_service._term_days`, D8):
+
+    1. snapshot hari termin pesanan (`payment_term_days`) menang; G3 D4-FIN-02 — termin 0 (tunai/COD) tetap 0;
+    2. F-16 — kode termin pesanan di `terms` (`peta_termin`: CBD = 0, NET30 = 30, DP50 = 14, …) SEBELUM profil pelanggan
+       (pesanan CBD tidak tampil "30 hari lagi" hanya karena profil pelanggannya NET30);
+    3. profil pelanggan (`payment_profile.term_days`);
+    4. 30."""
+    pp = (customer or {}).get("payment_profile") or {}
+    if order.get("payment_term_days") not in (None, ""):
+        try:
+            return max(0, int(order["payment_term_days"]))
+        except (TypeError, ValueError):
+            pass
+    code = order.get("payment_term_code") or ""
+    if terms is not None and code:
+        nd = terms.get((code, order.get("entity_id") or ""))
+        if nd is not None:
+            return max(0, int(nd))
+    if pp.get("term_days") not in (None, ""):
+        try:
+            return max(0, int(pp["term_days"]))
+        except (TypeError, ValueError):
+            pass
+    return 30
 
 
 def jatuh_tempo(tanggal: Any, hari: int) -> str:
@@ -148,75 +170,86 @@ def _terbayar_sen(o: Dict[str, Any], per: str, *, tangguh: Optional[bool] = None
     return total
 
 
+SUMBER_UANG_MUKA = "uang_muka"     # CR-T2 — baris uang muka jadwal tagihan (termin ber-DP, jatuh tempo saat konfirmasi)
+SUMBER_RENCANA = "rencana"         # CR-T2 — baris rencana cicilan buatan orang (`payment_plans` `origin: manual`)
+
+
+def _sumber_baris(r: Dict[str, Any]) -> str:
+    """Jenis baris jadwal tagihan → `sumber` baris tagihan (bentuk PK-41)."""
+    if r.get("origin") == "manual":
+        return SUMBER_RENCANA
+    if r.get("kind") == "dp":
+        return SUMBER_UANG_MUKA
+    if r.get("kind") == "debit_note":
+        return SUMBER_NOTA_DEBIT
+    return SUMBER_PESANAN if r.get("source_type") == "order" else SUMBER_SURAT_JALAN
+
+
 async def baris_tagihan(orders: List[Dict[str, Any]], customers: Dict[str, Dict[str, Any]], *,
                         per: Any) -> Dict[str, List[Dict[str, Any]]]:
     """Per pesanan piutang (`pesanan_piutang`), daftar baris tagihan posisi tanggal `per` (kosong = hari ini WIB):
 
-    `{sumber, ref_id, ref_number, tanggal, jatuh_tempo, nilai, terbayar, sisa, hari_lewat}`
+    `{sumber, ref_id, ref_number, tanggal, jatuh_tempo, nilai, terbayar, sisa, hari_lewat, jurnal_id, jurnal_number,
+    tercatat}` (+ CR-T2: `line_id`, `plan_id`, `kind`, `label`).
 
-    1. Baris terkirim — satu per jurnal pendapatan tidak-void bertanggal ≤ `per` (surat jalan, jurnal lama per pesanan,
-       dan PK-32 tagihan tambahan nota debit yang sudah dijurnal): `nilai` = Σ debit akun `penjualan.piutang` (pemetaan
-       PT jurnal), `tanggal` = tanggal buku jurnal, `jatuh_tempo` = `tanggal` + hari termin (`customer_service._term_days`).
-       Ikut: `jurnal_id`, `jurnal_number`.
-    2. Pembayaran bertanggal ≤ `per` dialokasikan ke baris terkirim mulai jatuh tempo tertua; kelebihannya `uang_muka`.
-       Baris nota kredit amandemen bagian TERTANGGUH (PK-32, `BUCKET_NOTA_TANGGUH`) tidak dialokasikan ke surat jalan:
-       pengurangnya sudah ada di nilai efektif jurnal surat jalan berikutnya; ia mengurangi bagian belum dikirim.
-    3. Baris belum dikirim — `nilai = max(0, nilai tagihan − Σ nilai terkirim − uang_muka − Σ nota tertangguh)` (nilai
-       tagihan = `_order_grand_total`: grand total + tagihan tambahan nota debit, PK-32), tanpa jatuh tempo,
-       `hari_lewat = 0`. Ikut: `uang_muka`.
-    4. `hari_lewat = hari_antara(jatuh_tempo, per)`.
-    5. Baris bersisa ≤ 0,01 dibuang (daftar pesanan boleh kosong = lunas per tanggal itu).
+    CR-T2 (b) — jatuh tempo dibaca dari JADWAL TAGIHAN (`billing_schedule_service.lines_for_orders`, pembaca yang sama
+    dengan `open_lines`): jadwal tersimpan (`payment_plans`), atau — pesanan yang belum berjadwal — pembangun baris yang
+    sama tanpa disimpan. Rumus jatuh tempo SATU: `jatuh_tempo(tanggal, hari_termin(...))`.
+
+    1. Baris jadwal — surat jalan (nilai = Σ debit akun piutang jurnal semua dokumen bernomor itu), uang muka (termin
+       ber-DP, jatuh tempo = tanggal konfirmasi), nota debit (PK-32), atau baris rencana cicilan; baris termin hanya
+       yang lahir ≤ `per`. Pembayaran bertanggal ≤ `per` (tanpa nota kredit tertangguh) dialokasikan: dulu yang menunjuk
+       baris, lalu mulai jatuh tempo tertua; kelebihannya `uang_muka`.
+    2. Baris belum dikirim — `nilai = max(0, nilai tagihan − Σ nilai baris jadwal − uang_muka − Σ nota tertangguh)`
+       (nilai tagihan = `_order_grand_total`), tanpa jatuh tempo, `hari_lewat = 0`.
+    3. `tercatat` — bagian sisa baris yang sudah ada di akun piutang: tercatat pesanan = min(Σ sisa, max(0, pengakuan
+       piutang ≤ `per` − terbayar)) dibagi ke baris mulai jatuh tempo tertua (baris belum dikirim terakhir). Untuk
+       pesanan tanpa uang muka/rencana sama dengan sisa baris surat jalan (perilaku PK-41).
+    4. `hari_lewat = hari_antara(jatuh_tempo, per)`; baris bersisa ≤ 0,01 dibuang (daftar boleh kosong = lunas).
     """
+    from services import billing_schedule_service as bss
     from services.customer_service import _order_grand_total
     per_tgl = tanggal_buku(per)
     hidup = [o for o in orders if o.get("id") and pesanan_piutang(o)]
+    jadwal = await bss.lines_for_orders(hidup, customers, per=per_tgl)
     jurnal = await _jurnal_pendapatan([o["id"] for o in hidup])
-    termin = await peta_termin(hidup)
     kode_cache: Dict[str, set] = {}
     out: Dict[str, List[Dict[str, Any]]] = {}
     for o in hidup:
-        cust = customers.get(o.get("customer_id") or "") or {}
-        n_hari = hari_termin(cust, o, termin)
-        terkirim: List[Dict[str, Any]] = []
-        for je in jurnal.get(o["id"], []):
-            tgl = _tgl_aman(je.get("date"))
-            if tgl is None or tgl > per_tgl:
-                continue
-            kode = await _kode_piutang(je.get("entity_id") or o.get("entity_id") or "", kode_cache)
-            nilai = sum(to_cents(float(ln.get("debit") or 0)) for ln in je.get("lines") or []
-                        if ln.get("account_code") in kode)
-            if nilai <= 0:
-                continue
-            lama = je.get("source_type") == "sales_order"
-            jt = jatuh_tempo(tgl, n_hari)
-            terkirim.append({
-                "sumber": SUMBER_PESANAN if lama else (
-                    SUMBER_NOTA_DEBIT if je.get("source_type") == "amendment_debit_note" else SUMBER_SURAT_JALAN),
-                "ref_id": o["id"] if lama else (je.get("source_id") or ""),
-                "ref_number": (o.get("number") or o["id"]) if lama else (je.get("source_label") or je.get("source_id") or ""),
-                "tanggal": tgl, "jatuh_tempo": jt, "_nilai": nilai,
-                "jurnal_id": je.get("id") or "", "jurnal_number": je.get("number") or ""})
-        terkirim.sort(key=lambda r: (r["jatuh_tempo"], r["tanggal"], r["ref_id"]))
-        total_kirim = sum(r["_nilai"] for r in terkirim)
-        sisa_bayar = max(0, _terbayar_sen(o, per_tgl, tangguh=False))
-        tangguh = max(0, _terbayar_sen(o, per_tgl, tangguh=True))
+        info = jadwal.get(o["id"]) or {"rows": [], "uang_muka": 0.0}
         baris: List[Dict[str, Any]] = []
-        for r in terkirim:
-            nilai = r.pop("_nilai")
-            bayar = min(sisa_bayar, nilai)
-            sisa_bayar -= bayar
-            sisa = nilai - bayar
-            if from_cents(sisa) <= EPS:
-                continue
-            baris.append({**r, "nilai": from_cents(nilai), "terbayar": from_cents(bayar), "sisa": from_cents(sisa),
-                          "hari_lewat": hari_antara(r["jatuh_tempo"], per_tgl)})
-        # `sisa_bayar` kini = uang muka (pembayaran melebihi seluruh nilai terkirim).
-        belum = max(0, to_cents(_order_grand_total(o)) - total_kirim - sisa_bayar - tangguh)
+        ditagih = 0
+        for r in info["rows"]:
+            ditagih += to_cents(r["amount"])
+            sumber = _sumber_baris(r)
+            sj, nd = sumber == SUMBER_SURAT_JALAN, sumber == SUMBER_NOTA_DEBIT
+            baris.append({
+                "sumber": sumber,
+                "ref_id": ((r.get("shipment_ids") or [""])[0] if sj else (r.get("source_id") if nd else o["id"])),
+                "ref_number": (r.get("source_id") if sj else (r.get("debit_note_number") or o.get("number") or o["id"])),
+                "tanggal": r.get("billed_at"), "jatuh_tempo": r["due_date"], "nilai": r["amount"],
+                "terbayar": r["paid_amount"], "sisa": r["outstanding"],
+                "hari_lewat": r["days_late"] if r["due_date"] else 0,
+                "jurnal_id": (r.get("journal_ids") or [""])[0], "jurnal_number": (r.get("journal_numbers") or [""])[0],
+                "line_id": r.get("line_id") or "", "plan_id": r.get("plan_id") or "", "kind": r.get("kind") or "",
+                "label": r.get("label") or ""})
+        uang_muka = to_cents(info["uang_muka"])
+        tangguh = max(0, _terbayar_sen(o, per_tgl, tangguh=True))
+        belum = max(0, to_cents(_order_grand_total(o)) - ditagih - uang_muka - tangguh)
         if from_cents(belum) > EPS:
             baris.append({"sumber": SUMBER_BELUM_DIKIRIM, "ref_id": o["id"], "ref_number": o.get("number") or o["id"],
                           "tanggal": None, "jatuh_tempo": None, "nilai": from_cents(belum), "terbayar": 0.0,
-                          "sisa": from_cents(belum), "hari_lewat": 0, "uang_muka": from_cents(sisa_bayar),
-                          "jurnal_id": "", "jurnal_number": ""})
+                          "sisa": from_cents(belum), "hari_lewat": 0, "uang_muka": from_cents(uang_muka),
+                          "jurnal_id": "", "jurnal_number": "", "line_id": "", "plan_id": "", "kind": "",
+                          "label": ""})
+        baris = [b for b in baris if b["sisa"] > EPS]
+        akui = await bss.recognized_sen(o, jurnal.get(o["id"], []), kode_cache, per=per_tgl)
+        sisa_total = sum(to_cents(b["sisa"]) for b in baris)
+        tercatat = min(sisa_total, max(0, akui - max(0, _terbayar_sen(o, per_tgl, tangguh=False))))
+        for b in baris:   # urutan: jatuh tempo tertua dulu (jadwal), belum dikirim terakhir
+            bagian = min(to_cents(b["sisa"]), tercatat)
+            b["tercatat"] = from_cents(bagian)
+            tercatat -= bagian
         out[o["id"]] = baris
     return out
 
@@ -303,15 +336,29 @@ def terbayar_per(o: Dict[str, Any], per: Any) -> float:
     return from_cents(max(0, _terbayar_sen(o, tanggal_buku(per))))
 
 
+def tercatat_sen(r: Dict[str, Any]) -> int:
+    """Bagian sisa satu baris tagihan yang sudah tercatat di akun piutang (sen). Baris tanpa `tercatat` (pembuat lain):
+    baris terkirim = seluruh sisanya, belum dikirim = 0 (aturan PK-41)."""
+    if "tercatat" in r:
+        return to_cents(r["tercatat"])
+    return 0 if r["sumber"] == SUMBER_BELUM_DIKIRIM else to_cents(r["sisa"])
+
+
 def ringkas_baris(rows: List[Dict[str, Any]]) -> Dict[str, Any]:
-    """Ringkasan baris tagihan satu pesanan (sen bulat → rupiah): `total` = Σ sisa, `ar_ledger` = Σ sisa baris terkirim,
-    `exposure` = Σ sisa baris belum dikirim, `overdue` = Σ sisa baris lewat jatuh tempo, `oldest_days` = hari lewat
-    terlama (0 bila tidak ada), `due_date` = jatuh tempo tertua baris terkirim yang masih bersisa (None = belum dikirim)."""
+    """Ringkasan baris tagihan satu pesanan (sen bulat → rupiah): `total` = Σ sisa, `ar_ledger` = Σ bagian tercatat di
+    akun piutang (`tercatat`), `exposure` = `total − ar_ledger`, `tagih` = Σ sisa baris berjatuh tempo (yang bisa
+    ditagih: surat jalan, uang muka, nota debit, baris rencana), `overdue` = Σ sisa baris lewat jatuh tempo,
+    `oldest_days` = hari lewat terlama (0 bila tidak ada), `due_date` = jatuh tempo tertua baris berjatuh tempo yang masih
+    bersisa (None = belum dikirim). CR-T2 — sebelum ada baris uang muka/rencana, `tercatat` = sisa baris terkirim, jadi
+    `ar_ledger` = `tagih` dan `exposure` = Σ baris belum dikirim (PK-41)."""
     kirim = [r for r in rows if r["sumber"] != SUMBER_BELUM_DIKIRIM]
     lewat = [r for r in kirim if r["hari_lewat"] > 0]
-    return {"total": from_cents(sum(to_cents(r["sisa"]) for r in rows)),
-            "ar_ledger": from_cents(sum(to_cents(r["sisa"]) for r in kirim)),
-            "exposure": from_cents(sum(to_cents(r["sisa"]) for r in rows if r["sumber"] == SUMBER_BELUM_DIKIRIM)),
+    total = sum(to_cents(r["sisa"]) for r in rows)
+    ledger = sum(tercatat_sen(r) for r in rows)
+    return {"total": from_cents(total),
+            "ar_ledger": from_cents(ledger),
+            "exposure": from_cents(total - ledger),
+            "tagih": from_cents(sum(to_cents(r["sisa"]) for r in kirim)),
             "overdue": from_cents(sum(to_cents(r["sisa"]) for r in lewat)),
             "oldest_days": max((r["hari_lewat"] for r in lewat), default=0),
             "max_days": max((r["hari_lewat"] for r in kirim), default=0),

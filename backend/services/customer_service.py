@@ -152,30 +152,8 @@ def order_payment_method(o: Dict[str, Any]) -> str:
     return str((o.get("payment_profile_method") or o.get("payment_term_code") or "")).lower()
 
 
-def _term_days(customer: Dict[str, Any], order: Dict[str, Any],
-               terms: Optional[Dict[Any, Optional[int]]] = None) -> int:
-    """Termin snapshot SO menang; G3 D4-FIN-02 — termin 0 (tunai/COD) tetap 0, bukan jadi 30.
-
-    F-16 — bila `terms` (peta `(kode, entitas) → net_days` dari `report_basis.peta_termin`) diberikan, kode termin SO
-    (CBD = 0, NET30 = 30, DP50 = 14, …) dipakai SEBELUM profil pelanggan: SO CBD tidak lagi tampil
-    "30 hari lagi" hanya karena profil pelanggannya NET30."""
-    pp = customer.get("payment_profile") or {}
-    if order.get("payment_term_days") not in (None, ""):
-        try:
-            return max(0, int(order["payment_term_days"]))
-        except (TypeError, ValueError):
-            pass
-    code = order.get("payment_term_code") or ""
-    if terms is not None and code:
-        nd = terms.get((code, order.get("entity_id") or ""))
-        if nd is not None:
-            return max(0, int(nd))
-    if pp.get("term_days") not in (None, ""):
-        try:
-            return max(0, int(pp["term_days"]))
-        except (TypeError, ValueError):
-            pass
-    return 30
+# CR-T2 (D8) — `_term_days` dipindah ke `report_basis.hari_termin` (satu aturan hari termin untuk umur piutang, jadwal
+# tagihan, proyeksi kas, nota debit, denda lama, selisih bayar); pencarian membuktikan tanpa pemanggil lain.
 
 
 async def credit_thresholds(entity_id: Optional[str],
@@ -209,31 +187,19 @@ async def compute_customer_credit(customer: Dict[str, Any], entity_id: Optional[
     eff = await cps.effective(customer["id"], pt, customer=customer, cache=cache)
     cid = customer["id"]
     credit_limit = float(eff["credit_limit"] or 0)
-    # PK-41 (RP-01, RP-03) — kursor tanpa batas (dulu 2.000 pesanan), status mati & pesanan lunas disaring di kueri;
-    # jatuh tempo, lewat tempo, dan telat terlama dari BARIS TAGIHAN TERKIRIM (per surat jalan, `report_basis`), bukan
-    # seluruh sisa pesanan pada jatuh tempo surat jalan pertama. Bagian yang belum dikirim tidak pernah telat.
-    oq: Dict[str, Any] = {"customer_id": cid, "status": {"$nin": sorted(DEAD_STATUSES)},
-                          "payment_status": {"$ne": "paid"}}
-    if entity_id and entity_id != "all":
-        oq["entity_id"] = entity_id
-    orders = [o async for o in db.sales_orders.find(oq, {"_id": 0})]
-    from services import report_basis as rb
-    from services.book_date import tanggal_buku
-    lines_by_order = await rb.baris_tagihan(orders, {cid: customer}, per=tanggal_buku())
-    ar = ledger = overdue = 0   # sen bulat (`02` D5)
-    max_overdue_days = 0
-    open_orders = 0
-    for rows in lines_by_order.values():
-        if not rows:
-            continue
-        open_orders += 1
-        sm = rb.ringkas_baris(rows)
-        ar += to_cents(sm["total"])
-        ledger += to_cents(sm["ar_ledger"])
-        # Keputusan pemilik K-01 (26 Okt) — "lewat tempo" = definisi layar Piutang (`ar_aging_service`) & daftar tagih
-        # (`collection_worklist`): mulai 1 hari PENUH setelah jatuh tempo (`report_basis.hari_antara`, tanggal WIB).
-        overdue += to_cents(sm["overdue"])
-        max_overdue_days = max(max_overdue_days, sm["oldest_days"])
+    # CR-T2 (b) — angka piutang dari SALDO TERSIMPAN per (pelanggan, PT) (`customer_balance_service.get`, disegarkan bila
+    # basi atau dihitung untuk tanggal lain), bukan hitung ulang dari semua pesanan tiap dibuka. Lewat tempo & telat
+    # terlama dari baris jadwal tagihan (surat jalan, uang muka, baris rencana cicilan — K-16); bagian belum dikirim
+    # tidak pernah telat. Pesanan bertermin tunai tanpa DP tetap DILEWATI (perilaku hari ini; CR-T3 yang mengubahnya):
+    # tercatat = `ar_delivered − cash_term_amount`, belum dikirim = `open_orders_amount − cash_term_open_amount`.
+    from services import customer_balance_service as cbs
+    tot = await cbs.get_many(cid, [entity_id] if entity_id and entity_id != "all" else None)
+    ledger = to_cents(tot["ar_delivered"]) - to_cents(tot["cash_term_amount"])
+    ar = ledger + to_cents(tot["open_orders_amount"]) - to_cents(tot["cash_term_open_amount"])
+    overdue = to_cents(tot["overdue_amount"])
+    # Keputusan pemilik K-01 (26 Okt) — "lewat tempo" mulai 1 hari PENUH setelah jatuh tempo (tanggal WIB).
+    max_overdue_days = int(tot["days_overdue"] or 0)
+    open_orders = int(tot["open_orders_count"] or 0)
     ar, ledger, overdue = from_cents(ar), from_cents(ledger), from_cents(overdue)
     # CR-T1 — blokir manual kini di profil kredit (dulu `customers.status == "blocked"`); telat > 0 hari ⇔ overdue > 0
     status = cps.status_from(eff, ar, max_overdue_days)
@@ -246,7 +212,7 @@ async def compute_customer_credit(customer: Dict[str, Any], entity_id: Optional[
         "max_overdue_days": max_overdue_days,
         "open_orders": open_orders,
         "available_credit": round(max(credit_limit - ar, 0), 2) if credit_limit > 0 else None,
-        "deposit_balance": round(float(customer.get("deposit_balance", 0) or 0), 2),
+        "deposit_balance": round(float(tot["deposit_balance"] or 0), 2),   # CR-T2 — cermin titipan di saldo tersimpan
         "status": status,
         # CR-T1 (L6) — asal nilai yang dipakai mesin: kartu pelanggan & pemeriksaan kredit pesanan menuliskannya.
         "limit_source": eff["limit_source"], "profile_entity_id": eff["entity_id"],
@@ -486,7 +452,7 @@ async def collection_worklist(
             "order_id": o.get("id"), "order_number": o.get("number"),
             "customer_id": o.get("customer_id"), "customer_name": o.get("customer_name"),
             "assigned_sales_id": c.get("assigned_sales_id", ""),
-            "outstanding": sm["ar_ledger"],
+            "outstanding": sm["tagih"],   # CR-T2 — sisa baris berjatuh tempo (surat jalan, uang muka, rencana)
             "exposure": sm["exposure"],
             "due_date": sm["due_date"],
             "days_late": sm["max_days"],

@@ -51,7 +51,7 @@ async def _cash_now(scope: Optional[Dict[str, Any]]) -> float:
 async def cashflow_forecast(scope: Optional[Dict[str, Any]] = None,
                             entity_id: Optional[str] = None) -> Dict[str, Any]:
     from services import report_basis as rb
-    from services.customer_service import DEAD_STATUSES, _term_days
+    from services.customer_service import DEAD_STATUSES
     today = rb.tanggal_buku()
     cash_now = await _cash_now(scope)
 
@@ -78,7 +78,7 @@ async def cashflow_forecast(scope: Optional[Dict[str, Any]] = None,
         for ln in lines_by_order.get(o.get("id")) or []:
             if ln["sumber"] == rb.SUMBER_BELUM_DIKIRIM:
                 # belum dikirim: perkiraan paling cepat = dikirim hari ini + termin (bukan "lewat")
-                due = (date.fromisoformat(today) + timedelta(days=_term_days(cust, o, terms))).isoformat()
+                due = rb.jatuh_tempo(today, rb.hari_termin(cust, o, terms))   # CR-T2 — satu rumus jatuh tempo
                 basis = "estimate_not_shipped"
             else:
                 due, basis = ln["jatuh_tempo"], "per_sj"

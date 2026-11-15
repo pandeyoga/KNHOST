@@ -192,7 +192,7 @@ def test_date01_date_only_first_day_included():
 
 # D4-FIN-02
 def test_fin02_term_zero_kept_and_snapshot_wins():
-    from services.customer_service import _term_days
+    from services.report_basis import hari_termin as _term_days   # CR-T2 — aturan hari termin pindah (D8)
     assert _term_days({"payment_profile": {"term_days": 30}}, {"payment_term_days": 0}) == 0
     assert _term_days({"payment_profile": {"term_days": 30}}, {"payment_term_days": 90}) == 90
     assert _term_days({"payment_profile": {"term_days": 0}}, {}) == 0

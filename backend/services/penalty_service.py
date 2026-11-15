@@ -280,8 +280,8 @@ async def accrue_order(order: Dict[str, Any], today: Optional[str] = None,
     from services.customer_service import (_order_grand_total as gt_of,
                                            _order_paid as paid_of,
                                            order_payment_method, _parse_dt as parse_dt,
-                                           _term_days as term_days, DEAD_STATUSES,
-                                           NON_AR_METHODS)
+                                           DEAD_STATUSES, NON_AR_METHODS)
+    from services.report_basis import hari_termin as term_days   # CR-T2 — aturan hari termin pindah (D8)
     if order.get("status") in DEAD_STATUSES or order_payment_method(order) in NON_AR_METHODS:
         return []
     outstanding = round(gt_of(order) - paid_of(order), 2)

@@ -53,6 +53,7 @@ export default function ARAgingView({ selectedEntity, currentUser, focusDoc, onC
   const [selected, setSelected] = useState(null);   // customer_id
   const [detail, setDetail] = useState(null);
   const [detailLoading, setDetailLoading] = useState(false);
+  const [detailError, setDetailError] = useState("");   // CR-T2 — galat muat rincian dibedakan dari "kosong"
   const [accruing, setAccruing] = useState("");
   const [flash, setFlash] = useState("");
   const [payFor, setPayFor] = useState(null);   // PK-43 — { orderId } form kwitansi yang sedang dibuka
@@ -86,12 +87,14 @@ export default function ARAgingView({ selectedEntity, currentUser, focusDoc, onC
   const openDetail = useCallback(async (cid) => {
     setSelected(cid);
     setDetail(null);
+    setDetailError("");
     setDetailLoading(true);
     try {
       const res = await axios.get(`${API}/ar/aging/${cid}`);
       setDetail(res.data || null);
     } catch {
       setDetail(null);
+      setDetailError("Rincian piutang pelanggan ini gagal dimuat. Periksa koneksi lalu coba lagi.");
     } finally {
       setDetailLoading(false);
     }
@@ -349,6 +352,7 @@ export default function ARAgingView({ selectedEntity, currentUser, focusDoc, onC
             detail={detail}
             customerId={selected}
             loading={detailLoading}
+            error={detailError}
             currentUser={currentUser}
             accruing={accruing === selected}
             onAccrue={() => accrue(selected)}

@@ -2,7 +2,7 @@
 
 SSOT: diturunkan dari `sales_orders` + `payments[]` + jurnal pendapatan (SAMA dengan credit engine &
 collection_worklist). Reuse helper `customer_service` agar TIDAK terjadi drift:
-  `_order_grand_total`, `_order_paid`, `order_payment_method`, `_term_days`,
+  `_order_grand_total`, `_order_paid`, `order_payment_method` (hari termin: `report_basis.hari_termin`),
   `_parse_dt`, `DEAD_STATUSES`, `NON_AR_METHODS`.
 
 PK-41 (RP-01, RP-03, RP-05, RP-12; keputusan K-16) — piutang diumurkan PER SURAT JALAN lewat
@@ -10,6 +10,9 @@ PK-41 (RP-01, RP-03, RP-05, RP-12; keputusan K-16) — piutang diumurkan PER SUR
 termin), pembayaran per tanggal `per` dialokasikan ke jatuh tempo tertua, dan bagian pesanan yang belum dikirim menjadi
 satu baris tanpa jatuh tempo. Kelompok umur, lewat jatuh tempo, telat terlama, dan estimasi denda dihitung per baris.
 `as_of` = posisi pada tanggal itu (pembayaran sesudahnya belum dihitung; pesanan yang kini lunas tetap dibaca).
+CR-T2 (b) — baris tagihan kini dibaca dari JADWAL TAGIHAN tersimpan (`billing_schedule_service`, lewat
+`report_basis.baris_tagihan`): baris uang muka (termin ber-DP) dan baris rencana cicilan ikut menentukan kelompok umur;
+piutang tercatat/belum dikirim dari bagian `tercatat` tiap baris.
 Pelanggan dan pesanan dibaca dengan kursor tanpa batas (`02` D4); jawaban membawa pencocokan ke saldo akun piutang.
 
 Buckets aging (berdasar hari telat jatuh tempo):
@@ -224,10 +227,10 @@ def _sum_lines(acc: Dict[str, Any], lines: List[Dict[str, Any]], edges: List[int
         b = _bucket(r["hari_lewat"], edges)
         acc["_sen"][b] = acc["_sen"].get(b, 0) + sen
         acc["_sen"]["total"] = acc["_sen"].get("total", 0) + sen
-        if r["sumber"] == rb.SUMBER_BELUM_DIKIRIM:
-            acc["_sen"]["exposure"] = acc["_sen"].get("exposure", 0) + sen
-        else:
-            acc["_sen"]["ar_ledger"] = acc["_sen"].get("ar_ledger", 0) + sen
+        # CR-T2 — tercatat = bagian yang sudah di akun piutang (uang muka & baris rencana belum tentu tercatat)
+        tercatat = rb.tercatat_sen(r)
+        acc["_sen"]["ar_ledger"] = acc["_sen"].get("ar_ledger", 0) + tercatat
+        acc["_sen"]["exposure"] = acc["_sen"].get("exposure", 0) + sen - tercatat
         if r["hari_lewat"] > 0:
             acc["_sen"]["overdue"] = acc["_sen"].get("overdue", 0) + sen
             if "oldest_days" in acc:

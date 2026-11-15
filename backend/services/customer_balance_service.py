@@ -53,7 +53,7 @@ def _hari(today: Any = None) -> str:
 async def _orders(customer_id: str, entity_id: str) -> List[Dict[str, Any]]:
     from services.customer_service import DEAD_STATUSES
     q = {"customer_id": customer_id, "entity_id": entity_id, "status": {"$nin": sorted(DEAD_STATUSES)},
-         "order_type": {"$ne": "sample"}, "payment_status": {"$ne": "paid"}}
+         "payment_status": {"$ne": "paid"}}
     return [o async for o in db.sales_orders.find(q, {"_id": 0})]
 
 
@@ -127,6 +127,37 @@ async def compute(customer_id: str, entity_id: str, today: Any = None) -> Dict[s
     }
 
 
+#: Jenis jurnal pengakuan piutang pesanan (sama dengan `report_basis._jurnal_pendapatan`).
+_JURNAL_PESANAN = ("shipment_revenue", "amendment_debit_note")
+
+
+async def sidik(customer_id: str, entity_id: str) -> str:
+    """Sidik murah dokumen sumber satu pasangan: ringkasan pesanan (id, waktu ubah, status, terbayar) + banyak jurnal pengakuan
+    piutang + banyak kwitansi/nota denda. Berbeda dari sidik tersimpan → saldo basi (penulis yang melewati `refresh`,
+    mis. data disisipkan langsung) → `get` menghitung ulang. Bukan angka bisnis; tidak dibandingkan INV-BAL-01."""
+    import hashlib
+    ids: List[str] = []
+    h = hashlib.sha1()
+    async for o in db.sales_orders.find({"customer_id": customer_id, "entity_id": entity_id},
+                                        {"_id": 0, "id": 1, "updated_at": 1, "created_at": 1, "status": 1,
+                                         "paid_total": 1, "grand_total": 1, "payment_status": 1}).sort("id", 1):
+        ids.append(o["id"])
+        h.update(f"{o['id']}:{o.get('updated_at') or o.get('created_at')}:{o.get('status')}:{o.get('paid_total')}:"
+                 f"{o.get('grand_total')}:{o.get('payment_status')};".encode())
+    terakhir = h.hexdigest()[:16]
+    nj = 0
+    for i in range(0, len(ids), rb.KELOMPOK):
+        grup = ids[i:i + rb.KELOMPOK]
+        nj += await db.journal_entries.count_documents({"status": {"$ne": "void"}, "$or": [
+            {"source_type": {"$in": list(_JURNAL_PESANAN)}, "ref.order_id": {"$in": grup}},
+            {"source_type": "sales_order", "source_id": {"$in": grup}}]})
+    nk = await db.ar_receipts.count_documents({"customer_id": customer_id, "entity_id": entity_id,
+                                               "status": {"$ne": "void"}})
+    nd = await db.penalties.count_documents({"customer_id": customer_id, "entity_id": entity_id,
+                                             "status": {"$in": ["issued", "adjusted", "paid", "waived"]}})
+    return f"{len(ids)}|{terakhir}|{nj}|{nk}|{nd}"
+
+
 def _beda(a: Dict[str, Any], b: Optional[Dict[str, Any]]) -> List[str]:
     if not b:
         return list(FIELDS)
@@ -135,7 +166,8 @@ def _beda(a: Dict[str, Any], b: Optional[Dict[str, Any]]) -> List[str]:
 
 async def _tulis(doc: Dict[str, Any], *, rebuilt: bool = False) -> Dict[str, Any]:
     now = now_iso()
-    isi = {**doc, "stale": False, "stale_reason": "", "updated_at": now}
+    isi = {**doc, "stale": False, "stale_reason": "", "updated_at": now,
+           "fingerprint": await sidik(doc["customer_id"], doc["entity_id"])}
     if rebuilt:
         isi["rebuilt_at"] = now
     await db[COLL].update_one({"customer_id": doc["customer_id"], "entity_id": doc["entity_id"]},
@@ -191,10 +223,12 @@ def with_days(row: Optional[Dict[str, Any]], today: Any = None) -> Optional[Dict
 
 
 async def get(customer_id: str, entity_id: str, today: Any = None) -> Dict[str, Any]:
-    """Saldo tersimpan; disegarkan dulu bila belum ada, basi (`stale`), atau dihitung untuk tanggal lain."""
+    """Saldo tersimpan; disegarkan dulu bila belum ada, basi (`stale`), dihitung untuk tanggal lain, atau dokumen
+    sumbernya berubah tanpa lewat `refresh` (sidik berbeda — jaring pengaman untuk penulis yang belum berkait)."""
     hari = _hari(today)
     row = await db[COLL].find_one({"customer_id": customer_id, "entity_id": entity_id}, {"_id": 0})
-    if not row or row.get("stale") or row.get("overdue_as_of") != hari:
+    if not row or row.get("stale") or row.get("overdue_as_of") != hari or \
+            row.get("fingerprint") != await sidik(customer_id, entity_id):
         row = await refresh(customer_id, entity_id, today) or row
         if not row or row.get("stale"):   # gagal dihitung → jawab dari dokumen tanpa menyimpan
             row = {**(await compute(customer_id, entity_id, today)), "stale": True}
@@ -257,22 +291,28 @@ async def job_refresh_overdue() -> Dict[str, Any]:
     """Job harian 00.10 WIB: pergantian hari mengubah lewat tempo tanpa dokumen baru → pasangan yang dihitung untuk
     tanggal lain atau basi dihitung ulang."""
     hari = _hari()
-    n = 0
-    async for b in db[COLL].find({"$or": [{"overdue_as_of": {"$ne": hari}}, {"stale": True}]},
-                                 {"_id": 0, "customer_id": 1, "entity_id": 1}):
-        await refresh(b["customer_id"], b["entity_id"])
-        n += 1
-    return {"refreshed": n, "as_of": hari}
+    pasangan = [(b["customer_id"], b["entity_id"]) async for b in db[COLL].find(
+        {"$or": [{"overdue_as_of": {"$ne": hari}}, {"stale": True}]}, {"_id": 0, "customer_id": 1, "entity_id": 1})]
+    for cid, eid in pasangan:   # daftar diambil dulu: kursor tidak membaca ulang baris yang baru ditulis
+        await refresh(cid, eid)
+    return {"refreshed": len(pasangan), "as_of": hari}
 
 
 # ── Invarian (dipanggil `scripts/verify_data_integrity.py` lapisan `balance` dan uji) ───────────────────────────────
 async def verify_stored(today: Any = None) -> Dict[str, Any]:
-    """INV-BAL-01: tiap baris tersimpan = hasil hitung ulang untuk tanggal hitungnya (`overdue_as_of`). → `{bad,
-    checked, missing}`; `missing` = pasangan berpiutang yang belum punya baris (dibangun pembaca/pembangun ulang)."""
+    """INV-BAL-01: tiap baris tersimpan yang sidik dokumennya masih sama = hasil hitung ulang untuk tanggal hitungnya
+    (`overdue_as_of`); baris `stale` = merah. → `{bad, checked, missing, stale}`; `missing` = pasangan berpiutang yang belum
+    punya baris, `stale` = baris yang sidiknya sudah berbeda (disegarkan saat dibaca) — keduanya WARN."""
     bad: List[str] = []
+    basi: List[Tuple[str, str]] = []
     checked = 0
     async for row in db[COLL].find({}, {"_id": 0}):
         checked += 1
+        if not row.get("stale") and row.get("fingerprint") != await sidik(row["customer_id"], row["entity_id"]):
+            # dokumen sumber berubah lewat jalur yang belum memanggil `refresh` (mis. pesanan baru belum dikonfirmasi):
+            # baris mengaku basi lewat sidiknya dan disegarkan pembaca (`get`) / job harian — bukan kerusakan angka
+            basi.append((row["customer_id"], row["entity_id"]))
+            continue
         baru = await compute(row["customer_id"], row["entity_id"], row.get("overdue_as_of") or today)
         beda = _beda(baru, row)
         if beda or row.get("stale"):
@@ -282,7 +322,7 @@ async def verify_stored(today: Any = None) -> Dict[str, Any]:
     ada = {(b["customer_id"], b["entity_id"]) async for b in db[COLL].find({}, {"_id": 0, "customer_id": 1,
                                                                                  "entity_id": 1})}
     missing = [p for p in await _semua_pasangan() if p not in ada]
-    return {"bad": bad, "checked": checked, "missing": missing}
+    return {"bad": bad, "checked": checked, "missing": missing, "stale": basi}
 
 
 #: INV-BAL-02 — sebab selisih yang terjelaskan (daftar PK-41): source_type jurnal → label sebab.

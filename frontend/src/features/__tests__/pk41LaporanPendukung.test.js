@@ -152,7 +152,8 @@ describe("Piutang — judul kolom dari pengaturan, pencocokan ke saldo akun", ()
     await click(q("ar-detail-toggle-so1"));
     expect(q("ar-detail-toggle-so1").getAttribute("aria-expanded")).toBe("true");
     const head = [...q("ar-detail-lines-table-so1").querySelectorAll("th")].map((th) => norm(th.textContent));
-    expect(head).toEqual(["Surat Jalan", "Tanggal", "Jatuh Tempo", "Nilai", "Terbayar", "Sisa", "Hari Lewat"]);
+    // CR-T2 — kolom pertama "Tagihan" (baris kini juga uang muka dan baris rencana cicilan, bukan hanya surat jalan)
+    expect(head).toEqual(["Tagihan", "Tanggal", "Jatuh Tempo", "Nilai", "Terbayar", "Sisa", "Hari Lewat"]);
     const sj = [...q("ar-line-so1-surat_jalan").querySelectorAll("td")].map((td) => norm(td.textContent));
     expect(sj[0]).toBe("SJ-001");
     expect(sj.slice(3)).toEqual(["Rp 40.000", "Rp 0", "Rp 40.000", "45 hari"]);

@@ -57,7 +57,7 @@ async def _status_lama(customer, orders, cps, cs, rb) -> tuple:
         base = first.get(o["id"])
         if base is None:
             continue
-        telat = (now - (base + timedelta(days=cs._term_days(customer, o, terms)))).days
+        telat = (now - (base + timedelta(days=rb.hari_termin(customer, o, terms)))).days   # CR-T2 — aturan pindah
         if telat > 0:
             overdue += sisa
             maks = max(maks, telat)

@@ -229,7 +229,8 @@ async def _order_due_now(order: Dict[str, Any], outstanding: float,
                           for l in rows],
             "next_due_date": (plans.next_due(plan) or {}).get("due_date", ""),
         }
-    from services.customer_service import _parse_dt as parse_dt, _term_days as term_days
+    from services.customer_service import _parse_dt as parse_dt
+    from services.report_basis import hari_termin as term_days   # CR-T2 — aturan hari termin pindah (D8)
     cust = await db.customers.find_one({"id": order.get("customer_id")},
                                        {"_id": 0, "payment_profile": 1}) or {}
     created = parse_dt(order.get("created_at")) or datetime.now(timezone.utc)

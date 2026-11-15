@@ -3437,10 +3437,11 @@ async def layer_balance_invariants(db):
     else:
         results["pass"] += 1
         line("PASS", G, f"INV-BAL-01: {st['checked']} saldo tersimpan = hasil hitung ulang penuh dari dokumen")
-    if st["missing"]:
+    if st["missing"] or st.get("stale"):
         results["warn"] += 1
-        line("WARN", Y, f"INV-BAL-01: {len(st['missing'])} pasangan pelanggan/PT belum punya saldo tersimpan",
-             f"{st['missing'][:5]} → POST /api/ar/balances/rebuild (dibangun juga saat pertama dibaca)")
+        line("WARN", Y, f"INV-BAL-01: {len(st['missing'])} pasangan pelanggan/PT belum punya saldo tersimpan · "
+                        f"{len(st.get('stale') or [])} saldo basi (dokumen berubah tanpa kait, disegarkan saat dibaca)",
+             f"{(st['missing'] + list(st.get('stale') or []))[:5]} → POST /api/ar/balances/rebuild")
     merah = [r for r in recs if abs(r["unexplained"]) > 0.0049]
     kuning = [r for r in recs if abs(r["unexplained"]) <= 0.0049 and abs(r["difference"]) > 0.0049]
     if merah:
