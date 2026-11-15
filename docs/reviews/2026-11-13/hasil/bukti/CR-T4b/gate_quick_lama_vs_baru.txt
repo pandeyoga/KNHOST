@@ -1,0 +1,62 @@
+# gate.sh --quick di container sesi cloud (tanpa MongoDB/backend/.env), kode lama fc95d36 vs kode baru 20c6096
+# Daftar gate FAIL dari memory/GATE_RECEIPT.md (tidak di-commit), diurutkan. diff lama baru: kosong (identik).
+
+## lama fc95d36 — 22 FAIL
+audit_entity_isolation SELF-TEST (bukti-merah pagar isolasi)
+audit_i18n_id (label antarmuka Bahasa Indonesia)
+config_key_index (KF-T4, indeks kunci layar selaras registry)
+config_wiring (INV-CFG-01/04, satu sumber kebenaran)
+config_wiring SELF-TEST (bukti-merah guardrail)
+guard:auth_coverage (INV-AUTH-01)
+guard:config_entity (INV-CFG-10, nilai PT diteruskan)
+guard:config_entity SELF-TEST (bukti-merah value_of tanpa PT dokumen)
+guard:config_fallback (INV-CFG-09, cadangan = bawaan registry)
+guard:config_fallback SELF-TEST (bukti-merah cadangan ≠ bawaan, konstanta, pengecualian basi)
+guard:config_text (INV-CFG-TXT, teks Pengaturan awam & bersub-judul)
+guard:create_modal (INV-UI-05, tombol Buat = pop-up konsisten)
+guard:entity_label (INV-UI-02, id entitas tak boleh tampil)
+guard:numeric_bounds (INV-NUM-01, statik+runtime)
+guard:page_tabs (INV-UI-12/13/14, tab maks 2 tingkat · maks 6 tab per hub · tanpa tab tingkat ketiga)
+guard:ref_unlink (INV-REF-04, hapus dokumen wajib sapu tautan balik)
+guard:ref_unlink SELF-TEST (bukti-merah dua arah, 8 kasus)
+guard:to_list_bound (INV-PERF-01, to_list(n>20000) dilarang)
+guard:to_list_bound SELF-TEST (bukti-merah dua arah, 11 kasus)
+guard:warehouse_scope SELF-TEST (E4.1, gudang khusus badan usaha)
+ux_audit --strict (INV-UX-01, loading/empty/chart baseline)
+validate_compliance (file/naming/docs/api/env)
+
+## baru 20c6096 — 22 FAIL
+audit_entity_isolation SELF-TEST (bukti-merah pagar isolasi)
+audit_i18n_id (label antarmuka Bahasa Indonesia)
+config_key_index (KF-T4, indeks kunci layar selaras registry)
+config_wiring (INV-CFG-01/04, satu sumber kebenaran)
+config_wiring SELF-TEST (bukti-merah guardrail)
+guard:auth_coverage (INV-AUTH-01)
+guard:config_entity (INV-CFG-10, nilai PT diteruskan)
+guard:config_entity SELF-TEST (bukti-merah value_of tanpa PT dokumen)
+guard:config_fallback (INV-CFG-09, cadangan = bawaan registry)
+guard:config_fallback SELF-TEST (bukti-merah cadangan ≠ bawaan, konstanta, pengecualian basi)
+guard:config_text (INV-CFG-TXT, teks Pengaturan awam & bersub-judul)
+guard:create_modal (INV-UI-05, tombol Buat = pop-up konsisten)
+guard:entity_label (INV-UI-02, id entitas tak boleh tampil)
+guard:numeric_bounds (INV-NUM-01, statik+runtime)
+guard:page_tabs (INV-UI-12/13/14, tab maks 2 tingkat · maks 6 tab per hub · tanpa tab tingkat ketiga)
+guard:ref_unlink (INV-REF-04, hapus dokumen wajib sapu tautan balik)
+guard:ref_unlink SELF-TEST (bukti-merah dua arah, 8 kasus)
+guard:to_list_bound (INV-PERF-01, to_list(n>20000) dilarang)
+guard:to_list_bound SELF-TEST (bukti-merah dua arah, 11 kasus)
+guard:warehouse_scope SELF-TEST (E4.1, gudang khusus badan usaha)
+ux_audit --strict (INV-UX-01, loading/empty/chart baseline)
+validate_compliance (file/naming/docs/api/env)
+
+## gate yang gagal karena KeyError: 'MONGO_URL' (lingkungan), sama di keduanya
+config_key_index
+config_wiring
+config_wiring SELF-TEST
+guard:config_entity
+guard:config_entity SELF-TEST
+guard:config_fallback
+guard:config_fallback SELF-TEST
+guard:config_text
+guard:ref_unlink
+guard:ref_unlink SELF-TEST

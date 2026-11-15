@@ -1,0 +1,7 @@
+# python -m pytest tests_mem -q (2 pekerja, pytest.ini) — venv Python 3.11, /app -> repo
+## garis dasar fc95d36 (sebelum perubahan, sebelum symlink /app)
+FAILED tests_mem/test_KPT9_hub_pengaturan.py::test_KPT9_U02_judul_istilah_alias_dan_batas_tab
+1 failed, 2125 passed, 2 skipped, 2 xfailed, 12 warnings in 410.47s (0:06:50)
+
+## sesudah 20c6096
+2130 passed, 2 skipped, 2 xfailed, 12 warnings in 423.32s (0:07:03)
