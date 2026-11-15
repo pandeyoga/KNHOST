@@ -112,7 +112,9 @@ describe("Komponen & Masukan", () => {
     expect(q(host, "paycomp-flags-BONUS").textContent).toBe("—");
     expect(q(host, "paycomp-table").querySelector("thead th:last-child").className).toContain("col-sticky-end");
     expect(q(host, "paycomp-table").className).toContain("head-wrap");
-    expect(q(host, "paycomp-unused-note").textContent).toMatch(/belum dipakai/);
+    // PY-T3 — tanda Dasar BPJS, Dasar lembur, Diprorata kini dipakai hitungan gaji: keterangan "belum dipakai" dicabut.
+    expect(q(host, "paycomp-unused-note").textContent).not.toMatch(/belum dipakai/);
+    expect(q(host, "paycomp-unused-note").textContent).toMatch(/Diprorata = dibagi/);
     expect(q(host, "paycomp-row-GAJI_POKOK").textContent).toContain("Bawaan");
     expect(q(host, "paycomp-add").disabled).toBe(false);
   });

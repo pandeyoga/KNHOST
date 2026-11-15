@@ -47,10 +47,11 @@ class PayComponentCreate(BaseModel):
     code: str = Field(max_length=30)
     name: str = Field(max_length=80)
     kind: str                                  # "pendapatan" | "potongan"
-    calc: str = "masukan"                      # komponen baru: hanya "masukan" (PY-T2/PY-T3 menambah cara lain)
+    calc: str = "masukan"                      # PY-T3 — "masukan" | "per_hari_hadir" | "persen_dasar"
+    rate: Optional[float] = None               # PY-T3 — rupiah per hari hadir / persen gaji pokok
     bucket: str = ""                           # kosong = kolom bawaan jenisnya (other_earnings / other_deductions)
     taxable: Optional[bool] = None
-    in_bpjs_base: bool = False                 # disimpan; belum dipakai mesin sampai PY-T3
+    in_bpjs_base: bool = False                 # PY-T3 — dasar iuran BPJS
     in_overtime_base: bool = False
     prorate: bool = False
     account_code: str = Field(default="", max_length=20)
@@ -70,6 +71,7 @@ class PayComponentPatch(BaseModel):
     in_bpjs_base: Optional[bool] = None
     in_overtime_base: Optional[bool] = None
     prorate: Optional[bool] = None
+    rate: Optional[float] = None               # PY-T3 — nilai komponen per hari hadir / persen gaji pokok
     statutory_code: Optional[str] = None
     account_code: Optional[str] = Field(default=None, max_length=20)
     allowed_run_types: Optional[List[str]] = None

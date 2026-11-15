@@ -5,6 +5,10 @@ U18  Dua `add_holiday` BERSAMAAN untuk PT dan tanggal yang sama → tepat SATU t
      putaran; tanggal uji dibersihkan.
 L1   Langkah 1 spesifikasi — hitungan dampak K-39 di data acuan: `overtime_impact` tiga periode terakhir per PT (menit
      lembur absensi tanpa pengajuan yang selama ini dibayar dan nilainya). Hanya mencetak (bahan laporan), tanpa tulisan.
+L3   Skrip `scripts/migrasi_pyt3_aturan_gaji.py` mode baca-saja di data acuan: tidak menulis apa pun; mencetak komponen
+     bawaan yang belum bertanda Diprorata, daftar libur lama tersembunyi (harus kosong — bila tidak, slip berhari libur
+     lama berubah: catat untuk pemilik), komponen buatan pengguna bertanda dasar BPJS/lembur (harus kosong — bila tidak,
+     dasar BPJS/upah sejam berubah), dan slip draf karyawan yang masuk sesudah periode.
 
 Memanggil layanan langsung di proses uji (motor ke `MONGO_URL`/`DB_NAME` dari `backend/.env` lingkungan A).
 """
@@ -66,4 +70,29 @@ def test_L1_dampak_lembur_absensi_tiga_periode():
                 print(f"  {e.get('code') or e['id']} {per}: {j['count']} karyawan · {j['total_minutes']} menit · "
                       f"Rp {j['total_amount']:,.2f} (sumber sekarang: {j['sumber']})")
                 assert j["total_minutes"] >= 0
+    _jalankan(jalan())
+
+
+def test_L3_skrip_migrasi_baca_saja_data_acuan():
+    import contextlib
+    import importlib.util
+    import io
+    from pathlib import Path
+    from db import db
+    spec = importlib.util.spec_from_file_location(
+        "migrasi_pyt3", Path(__file__).resolve().parents[2] / "scripts/migrasi_pyt3_aturan_gaji.py")
+    mig = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mig)
+
+    async def jalan():
+        sebelum = await db.hr_pay_components.count_documents({"prorate": True})
+        buf = io.StringIO()
+        with contextlib.redirect_stdout(buf):
+            kode = await mig.jalankan([], db=db)
+        out = buf.getvalue()
+        print(out)
+        assert kode == 0 and "Mode baca-saja" in out, out
+        assert await db.hr_pay_components.count_documents({"prorate": True}) == sebelum
+        assert "Daftar libur lama" not in out, out          # bila muncul: slip berhari libur lama berubah (lapor)
+        assert "bertanda Dasar" not in out, out             # bila muncul: dasar BPJS / upah sejam berubah (lapor)
     _jalankan(jalan())

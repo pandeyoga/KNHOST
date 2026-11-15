@@ -1,5 +1,5 @@
 <!-- DIHASILKAN OTOMATIS oleh scripts/gen_codebase_map.py — JANGAN EDIT TANGAN -->
-<!-- Dihasilkan dari commit: c6010a9 pada 2026-11-15 -->
+<!-- Dihasilkan dari commit: 2a6eb6c pada 2026-11-15 -->
 # CODEBASE MAP — Kain Nusantara (dihasilkan otomatis)
 
 Peta ini dihitung dari kode oleh `scripts/gen_codebase_map.py`. Kalau angka di sini
@@ -469,14 +469,14 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 | `hr_ai_service.py` | 124 | H5 service — AI auto-tag motif via Anthropic Claude (SDK LANGSUNG, bukan Emergent). |
 | `hr_analytics_service.py` | 210 | HRD H6 service — HR Analytics (Dashboard BI SDM). |
 | `hr_attendance_service.py` | 292 | HRD H1 services — Absensi (attendance). |
-| `hr_compensation_service.py` | 731 | PY-T2 (PY-09, K-37, K-38) — riwayat kompensasi dan penugasan PT karyawan bertanggal berlaku. |
+| `hr_compensation_service.py` | 753 | PY-T2 (PY-09, K-37, K-38) — riwayat kompensasi dan penugasan PT karyawan bertanggal berlaku. |
 | `hr_kpi_service.py` | 167 | HRD H5 services — KPI Design (input manual per karyawan/periode + rekap). |
 | `hr_leave_service.py` | 437 | HRD H3 services — Cuti, Izin & Lembur (Leave/Permit & Overtime). |
-| `hr_pay_components.py` | 474 | PY-T1 (PY-01, PY-02) — komponen gaji per PT (`hr_pay_components`): isi awal, validasi, pembangun `components[] |
+| `hr_pay_components.py` | 602 | PY-T1 (PY-01, PY-02) — komponen gaji per PT (`hr_pay_components`): isi awal, validasi, pembangun `components[] |
 | `hr_pay_inputs.py` | 296 | PY-T1 (PY-02, K-37, K-40) — antrean masukan komponen gaji (`hr_pay_inputs`). |
 | `hr_pay_rules.py` | 358 | PY-T3 (PY-04, PY-07, PY-08, PY-12; K-38, K-39) — aturan hitung gaji per PT dari Pusat Pengaturan. |
 | `hr_payroll_pdf.py` | 177 | HRD H4 — Payslip PDF (reportlab). Slip gaji ringkas, profesional, Bahasa Indonesia. |
-| `hr_payroll_service.py` | 1207 | HRD H4 — Payroll & Payslip engine + run lifecycle. |
+| `hr_payroll_service.py` | 1239 | HRD H4 — Payroll & Payslip engine + run lifecycle. |
 | `hr_remittance_service.py` | 178 | PK-22 (FY-07) — setoran kewajiban gaji: hutang BPJS (2-1700) dan PPh 21 (2-1800) turun lewat dokumen setoran. |
 | `hr_service.py` | 172 | HRD services (FASE H0) — helper murni-orchestration untuk modul HR. |
 | `hr_work_calendar.py` | 170 | PY-T3 (PY-07, PY-08; K-38, K-39) — kalender kerja per PT: hari libur (`hr_holidays`) + pola hari kerja semingg |
@@ -740,7 +740,7 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 
 | Fitur (`src/features/`) | Berkas | Baris |
 |---|---:|---:|
-| `__tests__` | 142 | 23473 |
+| `__tests__` | 142 | 23488 |
 | `admin` | 36 | 6981 |
 | `approvals` | 9 | 1722 |
 | `catalog` | 24 | 1459 |
@@ -753,7 +753,7 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 | `export` | 9 | 700 |
 | `finance` | 107 | 24932 |
 | `home` | 5 | 1136 |
-| `hr` | 38 | 7050 |
+| `hr` | 38 | 7083 |
 | `incentive` | 3 | 1013 |
 | `inspections` | 12 | 2181 |
 | `interco_prices` | 4 | 287 |

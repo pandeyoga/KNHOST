@@ -21,6 +21,9 @@ menurut perubahan kompensasi dan penugasan, aturan `hr.prorata_perubahan_gaji` (
   * `mati`         — satu potongan sebulan penuh bernilai baris yang berlaku pada hari terakhir periode (atau hari
                      terakhir bekerja); PT pada hari itu yang menggaji, PT lama tidak memuatnya bulan itu.
   * `hari_kalender`— tiap potongan baris sendiri, nilai × hari potongan ÷ hari kalender bulan itu (rupiah penuh).
+  * `hari_kerja`   — (PY-T3) potongan sama dengan hari kalender; nilai × hari kerja potongan ÷ hari kerja bulan itu
+                     menurut kalender kerja PT (`hr_pay_rules.atur_potongan` → `rasio_ubah`; rupiah penuh).
+Prorata masuk/keluar tengah bulan (PY-T3, `hr.prorata_masuk_keluar`) memotong potongan ini lagi menurut masa kerja.
 
 Rapel: baris kompensasi yang disahkan dengan `effective_from` pada periode yang proses regulernya sudah `posted`/`paid`
 → satu masukan `pending` komponen `RAPEL` per periode (PY-T1 `enqueue_input`, kunci `rapel:<id baris>:<periode>`).
@@ -43,8 +46,10 @@ STATUS_LABEL = {"pending": "Menunggu disahkan", "approved": "Disahkan", "rejecte
                 "cancelled": "Dibatalkan"}
 SOURCES = ("manual", "migrasi")
 KUNCI_PRORATA = "hr.prorata_perubahan_gaji"
-MATI, HARI_KALENDER = "mati", "hari_kalender"
-PRORATA_MODES = (MATI, HARI_KALENDER)
+MATI, HARI_KALENDER, HARI_KERJA = "mati", "hari_kalender", "hari_kerja"
+# PY-T3 — `hari_kerja`: potongan sama dengan hari kalender; nilainya × hari kerja potongan ÷ hari kerja bulan
+# (kalender PT, `hr_pay_rules.atur_potongan` → `rasio_ubah`).
+PRORATA_MODES = (MATI, HARI_KALENDER, HARI_KERJA)
 AWAL, AKHIR = "0000-01-01", "9999-12-31"
 DATE_RE = re.compile(r"^\d{4}-\d{2}-\d{2}$")
 DATE_MSG = "Tanggal berlaku harus berbentuk TTTT-BB-HH."
@@ -181,7 +186,7 @@ def build_segments(emp: Dict[str, Any], entity_id: str, period: str, mode: str,
     start, end, dim = period_bounds(period)
     comp_rows = comp_rows or [master_comp_row(emp)]
     asg_rows = asg_rows or [master_asg_row(emp)]
-    if mode != HARI_KALENDER:
+    if mode not in (HARI_KALENDER, HARI_KERJA):
         ref = reference_day(emp, period)
         asg = row_at(asg_rows, ref)
         if not asg or asg.get("entity_id") != entity_id:
@@ -218,8 +223,18 @@ def build_segments(emp: Dict[str, Any], entity_id: str, period: str, mode: str,
     return pieces
 
 
-def segment_total(seg: Dict[str, Any], dim: int, codes: Optional[Iterable[str]] = None) -> float:
-    """Σ gaji pokok + komponen tetap satu potongan (diprorata bila bukan sebulan penuh)."""
+def segment_total(seg: Dict[str, Any], dim: int, codes: Optional[Iterable[str]] = None,
+                  comps: Optional[Dict[str, Dict[str, Any]]] = None, potong: Optional[bool] = None) -> float:
+    """Σ gaji pokok + komponen tetap satu potongan (diprorata bila bukan sebulan penuh). PY-T3 — `comps` diberikan →
+    nilai tiap komponen lewat `hr_pay_components.nilai_tetap` (prorata masuk/keluar, hari kerja), sama dengan slip."""
+    if comps is not None:
+        from services import hr_pay_components as _pc
+        cut = (not seg.get("full")) if potong is None else potong
+        items = [(comps.get("GAJI_POKOK") or {}, seg.get("base_salary") or 0)] + [
+            (comps.get(f.get("component_code") or "TUNJANGAN") or {}, f.get("amount") or 0)
+            for f in seg.get("fixed_components") or ()
+            if codes is None or (f.get("component_code") or "TUNJANGAN") in codes]
+        return round(sum(_pc.nilai_tetap(seg, c, v, dim, cut)[0] for c, v in items), 2)
     vals = [seg.get("base_salary") or 0] + [f.get("amount") or 0 for f in seg.get("fixed_components") or ()
                                             if codes is None or (f.get("component_code") or "TUNJANGAN") in codes]
     if seg.get("full"):
@@ -680,6 +695,8 @@ async def rapel_lines(row: Dict[str, Any]) -> List[Dict[str, Any]]:
     `effective_to`-nya (atau bulan berjalan): nilai menurut riwayat sekarang − nilai yang dibayar, mengikuti aturan prorata
     PT slip itu. → [{period, amount}] (selisih 0 dilewati)."""
     from services import hr_pay_components as _pc
+    from services import hr_pay_rules as _pr
+    from services import hr_work_calendar as _wc
     eid = row["employee_id"]
     now_p = today()[:7]
     start = row["effective_from"][:7]
@@ -699,7 +716,12 @@ async def rapel_lines(row: Dict[str, Any]) -> List[Dict[str, Any]]:
             comps = await _pc.components_for(ent)
             tetap = [c for c, v in comps.items() if v.get("calc") == "tetap_bulanan" and c != "GAJI_POKOK"]
             segs = build_segments(emp, ent, period, await prorata_mode(ent), comp, asg)
-            baru = round(sum(segment_total(s, dim, tetap) for s in segs), 2)
+            # PY-T3 — nilai menurut aturan slip PT itu (prorata masuk/keluar, hari kerja), supaya rapel = selisih nyata.
+            rl = await _pr.rules(ent)
+            p0, p1, _ = period_bounds(period)
+            segs = _pr.atur_potongan(segs, emp, period, rl, await _wc.calendar_for(ent, p0, p1, rl))
+            potong = len(segs) > 1 or bool(segs and not segs[0].get("full"))
+            baru = round(sum(segment_total(s, dim, tetap, comps, potong) for s in segs), 2)
             dibayar = round(sum([await _paid_fixed(s) for s in paid[period] if (s.get("entity_id") or "") == ent]), 2)
             selisih += baru - dibayar
         selisih = float(Decimal(str(selisih)).quantize(Decimal("1"), rounding=ROUND_HALF_UP))

@@ -5,11 +5,13 @@
 //  · Kartu karyawan › Saldo awal pajak {tahun}: lima isian, keterangan, galat jumlah masa, badan PUT.
 //  · Pusat Pengaturan: catatan pengali tunggal saat mode bertingkat (L6); tautan "Lihat dampaknya" (hasil
 //    overtime-impact periode berjalan).
+//  · Komponen & Masukan (serah-terima b): cara hitung baru per hari hadir / persen gaji pokok + nilainya.
 import React, { act } from "react";
 import { createRoot } from "react-dom/client";
 import HolidaysView, { alasanTambahLibur, galatLibur, JENIS, KETERANGAN, KOSONG } from "../hr/HolidaysView";
 import EmployeeTaxOpeningSection, { alasanSimpanSaldo, galatSaldoAwal, KETERANGAN_SALDO } from "../hr/EmployeeTaxOpeningSection";
 import SettingKeyExtra, { CATATAN_PENGALI, catatanPengali } from "../settings/config/SettingKeyExtra";
+import { CALC_BARU, CALC_LABEL, galatKomponen, teksNilai } from "../hr/PayComponentsView";
 import { EntityScopeProvider } from "../../context/EntityScopeContext";
 import { setAccessContext } from "../../config/roles";
 
@@ -72,6 +74,17 @@ describe("aturan murni", () => {
     expect(galatSaldoAwal({ months: "6", tax_gross: -1 })).toMatch(/Bruto/);
     expect(galatSaldoAwal({ months: "6", tax_gross: 48000000, pension_deduction: "", pph21_withheld: 720000 })).toBe("");
     expect(alasanSimpanSaldo({ canWrite: true, canManage: false })).toMatch(/izin mengatur penggajian/);
+  });
+  test("komponen per hari hadir / persen gaji pokok: pilihan, galat nilai, teks nilai", () => {
+    expect(CALC_BARU.map((c) => c.value)).toEqual(["masukan", "per_hari_hadir", "persen_dasar"]);
+    expect(CALC_LABEL.absensi).toBe("Dari absensi & pengaturan");
+    const dasar = { code: "UANG_MAKAN", name: "Uang makan", kind: "pendapatan", allowed_run_types: ["regular"] };
+    expect(galatKomponen({ ...dasar, calc: "per_hari_hadir", rate: "0" })).toMatch(/lebih dari 0/);
+    expect(galatKomponen({ ...dasar, calc: "persen_dasar", rate: "150" })).toMatch(/0–100/);
+    expect(galatKomponen({ ...dasar, calc: "per_hari_hadir", rate: "25000" })).toBe("");
+    expect(teksNilai({ calc: "per_hari_hadir", rate: 25000 })).toMatch(/25\.000\/hari hadir$/);
+    expect(teksNilai({ calc: "persen_dasar", rate: 1.5 })).toBe("1,5 % gaji pokok");
+    expect(teksNilai({ calc: "masukan" })).toBe("");
   });
   test("catatan pengali tunggal hanya saat mode bertingkat", () => {
     expect(catatanPengali({ "hr.overtime.mode": { value: "bertingkat" } })).toBe(CATATAN_PENGALI);

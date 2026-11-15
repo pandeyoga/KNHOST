@@ -643,7 +643,7 @@ E("hr.overtime.hours_divisor", group="sdm", section="lembur", type="int", defaul
 _PYT3 = dict(group="sdm", scopes=G, risk="high", requires_reason=True, permission=_HR_PAYROLL,
              consumers=("services/hr_pay_rules.py:rules",))
 
-E("hr.overtime.sumber", section="lembur", type="enum", default="absensi",
+E("hr.overtime.sumber", section="lembur", type="enum", default="pengajuan",   # K-39 — wajib pengajuan
   options=({"value": "pengajuan", "label": "Pengajuan lembur yang disetujui saja"},
            {"value": "absensi", "label": "Pengajuan, lalu menit lebih di absensi"}),
   label="Lembur dibayar berdasarkan",

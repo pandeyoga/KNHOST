@@ -3,8 +3,10 @@
  *
  * Bagian **Komponen gaji**: daftar komponen PT aktif (isi awal bawaan + buatan pengguna). Komponen bawaan tidak bisa
  * dihapus atau diganti jenisnya; komponen baru saat ini berjenis hitung "masukan" (nilainya dari antrean di bawah).
- * PY-T3 — tanda Dasar BPJS dan Dasar lembur dipakai hitungan gaji (dasar iuran BPJS, upah sejam lembur); tanda
- * Diprorata disimpan tetapi belum dipakai (menyusul serah-terima b) — ditulis di layar.
+ * PY-T3 — tanda Dasar BPJS, Dasar lembur, dan Diprorata dipakai hitungan gaji (dasar iuran BPJS, upah sejam lembur,
+ * prorata masuk/keluar & upah sehari potongan absensi). Komponen baru bisa berhitung masukan, per hari hadir (nilai ×
+ * hari hadir), atau persen gaji pokok; potongan absensi bawaan (tidak hadir, cuti tanpa gaji, terlambat) mengikuti
+ * Pengaturan › SDM.
  * Sumber: GET/POST/PATCH /api/hr/payroll/components (ubah = `hr.manage_payroll`).
  *
  * Bagian **Masukan**: antrean masukan komponen (bonus, THR, potongan, …) yang masuk ke proses gaji periode bayarnya.
@@ -36,7 +38,18 @@ import { curMonth, recentMonths } from "./payrollUtils";
 const PAGE_SIZE = 20;
 export const TEKS_SEMUA_PT = "Pilih satu PT dulu";
 export const KIND_LABEL = { pendapatan: "Pendapatan", potongan: "Potongan", tanggungan_perusahaan: "Tanggungan perusahaan" };
-export const CALC_LABEL = { tetap_bulanan: "Tetap bulanan", per_jam: "Per jam", masukan: "Masukan", undang_undang: "Menurut undang-undang" };
+export const CALC_LABEL = { tetap_bulanan: "Tetap bulanan", per_jam: "Per jam", masukan: "Masukan", undang_undang: "Menurut undang-undang",
+  absensi: "Dari absensi & pengaturan", per_hari_hadir: "Per hari hadir", persen_dasar: "Persen gaji pokok" };
+/** PY-T3 — cara hitung yang boleh dipilih untuk komponen baru. */
+export const CALC_BARU = [{ value: "masukan", label: "Masukan (nilai dari daftar Masukan)" },
+  { value: "per_hari_hadir", label: "Per hari hadir (nilai × hari hadir)" }, { value: "persen_dasar", label: "Persen gaji pokok" }];
+const RATE_CALCS = ["per_hari_hadir", "persen_dasar"];
+/** Teks nilai komponen ber-rate ("Rp 25.000/hari hadir", "1 % gaji pokok"); "" bila bukan. */
+export function teksNilai(c) {
+  if (c?.calc === "per_hari_hadir") return `${formatCurrency(c.rate)}/hari hadir`;
+  if (c?.calc === "persen_dasar") return `${String(c.rate ?? "").replace(".", ",")} % gaji pokok`;
+  return "";
+}
 export const RUN_TYPE_LABEL = { regular: "Reguler", thr: "THR", susulan: "Susulan" };
 export const SOURCE_LABEL = { incentive_sheet: "Lembar insentif", overtime: "Lembur", cash_advance: "Kasbon", rapel: "Rapel", manual: "Isian manual" };
 /** Status masukan: ikon + teks + warna (bukan warna saja). */
@@ -68,6 +81,10 @@ export function galatKomponen(f) {
   if (!String(f.name || "").trim()) return "Isi nama komponen.";
   if (f.kind === "potongan" && !String(f.account_code || "").trim()) return "Komponen potongan wajib punya akun.";
   if (!(f.allowed_run_types || []).length) return "Pilih minimal satu jenis proses gaji.";
+  if (RATE_CALCS.includes(f.calc)) {
+    const r = Number(f.rate);
+    if (!Number.isFinite(r) || r <= 0 || (f.calc === "persen_dasar" && r > 100)) return "Nilai per hari hadir harus lebih dari 0; persen gaji pokok 0–100.";
+  }
   return "";
 }
 /** Galat isian masukan baru; "" = siap. */
@@ -98,7 +115,7 @@ export function InputStatus({ status, testId }) {
   return <span className={`status-pill ${st.cls} inline-flex items-center gap-1 whitespace-nowrap`} data-testid={testId}><Icon size={12} aria-hidden="true" />{st.label}</span>;
 }
 
-const KOSONG_KOMPONEN = { code: "", name: "", kind: "pendapatan", account_code: "", taxable: true, allowed_run_types: ["regular", "susulan"],
+const KOSONG_KOMPONEN = { code: "", name: "", kind: "pendapatan", calc: "masukan", rate: "", account_code: "", taxable: true, allowed_run_types: ["regular", "susulan"],
   in_bpjs_base: false, in_overtime_base: false, prorate: false, sort: 300, is_active: true };
 
 export default function PayComponentsView() {
@@ -163,13 +180,16 @@ export default function PayComponentsView() {
         const body = f.system ? { name: f.name, sort: Number(f.sort) || 0, in_bpjs_base: f.in_bpjs_base, in_overtime_base: f.in_overtime_base, prorate: f.prorate,
           ...(f.kind === "pendapatan" && f.bucket !== "commission" ? { account_code: f.account_code || "" } : {}) }
           : { name: f.name, sort: Number(f.sort) || 0, account_code: f.account_code || "", taxable: !!f.taxable, is_active: !!f.is_active,
-            allowed_run_types: f.allowed_run_types, in_bpjs_base: f.in_bpjs_base, in_overtime_base: f.in_overtime_base, prorate: f.prorate };
+            allowed_run_types: f.allowed_run_types, in_bpjs_base: f.in_bpjs_base, in_overtime_base: f.in_overtime_base, prorate: f.prorate,
+            ...(RATE_CALCS.includes(f.calc) ? { rate: Number(f.rate) } : {}) };
         await axios.patch(`${API}/hr/payroll/components/${f.id}`, body);
         setMsg(`Komponen ${f.code} diperbarui.`);
       } else {
-        const body = { code: f.code, name: f.name, kind: f.kind, calc: "masukan", account_code: f.account_code || "",
-          taxable: f.kind === "pendapatan" ? !!f.taxable : false, allowed_run_types: f.allowed_run_types, sort: Number(f.sort) || 300,
-          in_bpjs_base: f.in_bpjs_base, in_overtime_base: f.in_overtime_base, prorate: f.prorate };
+        const rateCalc = RATE_CALCS.includes(f.calc);
+        const body = { code: f.code, name: f.name, kind: f.kind, calc: f.calc || "masukan", account_code: f.account_code || "",
+          taxable: f.kind === "pendapatan" ? !!f.taxable : false, allowed_run_types: rateCalc ? ["regular"] : f.allowed_run_types,
+          sort: Number(f.sort) || 300, in_bpjs_base: f.in_bpjs_base, in_overtime_base: f.in_overtime_base, prorate: f.prorate,
+          ...(rateCalc ? { rate: Number(f.rate) } : {}) };
         await axios.post(`${API}/hr/payroll/components`, body);
         setMsg(`Komponen ${f.code} ditambahkan.`);
       }
@@ -282,7 +302,8 @@ export default function PayComponentsView() {
                     <tr key={c.id} data-testid={`paycomp-row-${c.code}`}>
                       <td className="font-mono whitespace-nowrap">{c.code}</td>
                       <td>{c.name}{c.system && <span className="block text-fs-12 text-kn-text-2">Bawaan</span>}</td>
-                      <td>{KIND_LABEL[c.kind] || "—"}<span className="block text-fs-12 text-kn-text-2">{CALC_LABEL[c.calc] || "—"}</span></td>
+                      <td>{KIND_LABEL[c.kind] || "—"}<span className="block text-fs-12 text-kn-text-2">{CALC_LABEL[c.calc] || "—"}</span>
+                        {teksNilai(c) && <span className="block text-fs-12 text-kn-text-2 tabular-nums" data-testid={`paycomp-rate-${c.code}`}>{teksNilai(c)}</span>}</td>
                       <td><YaTidak v={c.taxable} /></td>
                       <td data-testid={`paycomp-flags-${c.code}`}>{tandaKomponen(c)}</td>
                       <td className="font-mono whitespace-nowrap">{c.account_code || <span className="font-sans text-kn-text-2">Bawaan</span>}</td>
@@ -295,7 +316,7 @@ export default function PayComponentsView() {
                 </tbody>
               </table>
             </div>
-            <p className="section-pad !pt-2 text-fs-12 text-kn-text-2" data-testid="paycomp-unused-note">* Dasar BPJS = komponen yang menjadi dasar iuran BPJS; Dasar lembur = komponen yang menjadi dasar upah sejam lembur. Tanda Diprorata disimpan tetapi belum dipakai: gaji belum diprorata.</p>
+            <p className="section-pad !pt-2 text-fs-12 text-kn-text-2" data-testid="paycomp-unused-note">* Dasar BPJS = dasar iuran BPJS; Dasar lembur = dasar upah sejam lembur; Diprorata = dibagi menurut pengaturan “Gaji karyawan masuk/keluar tengah bulan” dan menjadi dasar upah sehari potongan absensi.</p>
           </>
         )}
       </div>
@@ -377,7 +398,19 @@ export default function PayComponentsView() {
               <KNSelect data-testid="paycomp-form-kind" value={f.kind} className="field" disabled={!!f.id}
                 onValueChange={(v) => ubahKomp({ kind: v, taxable: v === "pendapatan" })}
                 options={[{ value: "pendapatan", label: "Pendapatan" }, { value: "potongan", label: "Potongan" }, ...(f.id && f.kind === "tanggungan_perusahaan" ? [{ value: "tanggungan_perusahaan", label: "Tanggungan perusahaan" }] : [])]} />
-              <p className="text-fs-12 text-kn-text-2 mt-1">{f.id ? "Jenis tidak bisa diubah." : "Cara hitung: masukan (nilai dari daftar Masukan)."}</p></div>
+              <p className="text-fs-12 text-kn-text-2 mt-1">{f.id ? "Jenis tidak bisa diubah." : "Pendapatan atau potongan slip."}</p></div>
+            {!f.id ? (
+              <div><label className="field-label">Cara hitung <span className="req">*</span></label>
+                <KNSelect data-testid="paycomp-form-calc" value={f.calc || "masukan"} className="field" onValueChange={(v) => ubahKomp({ calc: v })} options={CALC_BARU} /></div>
+            ) : (
+              <div><span className="field-label">Cara hitung</span><p className="text-fs-13" data-testid="paycomp-form-calc-text">{CALC_LABEL[f.calc] || "—"}</p></div>
+            )}
+            {RATE_CALCS.includes(f.calc) && (
+              <div><label className="field-label">{f.calc === "per_hari_hadir" ? "Nilai per hari hadir (Rp)" : "Persen dari gaji pokok (%)"} <span className="req">*</span></label>
+                <input data-testid="paycomp-form-rate" className="field tabular-nums" inputMode="decimal" value={f.rate ?? ""}
+                  onChange={(e) => ubahKomp({ rate: e.target.value.replace(/[^\d.,]/g, "").replace(",", ".") })} placeholder={f.calc === "per_hari_hadir" ? "Contoh: 25000" : "Contoh: 1"} />
+                <p className="text-fs-12 text-kn-text-2 mt-1">{f.calc === "per_hari_hadir" ? "Dikalikan hari hadir di absensi bulan itu. Hanya proses reguler." : "Dikalikan gaji pokok slip bulan itu. Hanya proses reguler."}</p></div>
+            )}
             <div><label className="field-label">Akun{f.kind === "potongan" && f.calc !== "undang_undang" ? <span className="req"> *</span> : ""}</label>
               <input data-testid="paycomp-form-account" className="field font-mono" value={f.account_code || ""} disabled={f.calc === "undang_undang" || f.bucket === "commission"}
                 onChange={(e) => ubahKomp({ account_code: e.target.value.trim() })} placeholder={f.kind === "potongan" ? "Akun yang dikredit, mis. 1-1400" : "Kosong = akun beban gaji bawaan"} />
@@ -385,7 +418,7 @@ export default function PayComponentsView() {
             {f.kind === "pendapatan" && !f.system && (
               <label className="flex items-center gap-2 text-fs-13"><input type="checkbox" data-testid="paycomp-form-taxable" checked={!!f.taxable} onChange={(e) => ubahKomp({ taxable: e.target.checked })} /> Kena pajak (masuk bruto PPh 21)</label>
             )}
-            {!f.system && (
+            {!f.system && !RATE_CALCS.includes(f.calc) && (
               <fieldset className="sm:col-span-2"><legend className="field-label">Dimuat di proses gaji <span className="req">*</span></legend>
                 <div className="flex flex-wrap gap-4 text-fs-13">
                   {Object.entries(RUN_TYPE_LABEL).map(([k, lbl]) => (
@@ -398,7 +431,7 @@ export default function PayComponentsView() {
             )}
             <div><label className="field-label">Urutan di slip</label>
               <input data-testid="paycomp-form-sort" className="field" inputMode="numeric" value={f.sort ?? ""} onChange={(e) => ubahKomp({ sort: e.target.value.replace(/[^\d]/g, "") })} /></div>
-            <fieldset className="sm:col-span-2"><legend className="field-label">Tanda (Diprorata belum dipakai hitungan gaji)</legend>
+            <fieldset className="sm:col-span-2"><legend className="field-label">Tanda</legend>
               <div className="flex flex-wrap gap-4 text-fs-13">
                 <label className="flex items-center gap-2"><input type="checkbox" checked={!!f.in_bpjs_base} onChange={(e) => ubahKomp({ in_bpjs_base: e.target.checked })} /> Dasar BPJS</label>
                 <label className="flex items-center gap-2"><input type="checkbox" checked={!!f.in_overtime_base} onChange={(e) => ubahKomp({ in_overtime_base: e.target.checked })} /> Dasar lembur</label>

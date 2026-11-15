@@ -442,7 +442,11 @@ async def compute_payslip(emp: Dict[str, Any], period: str, entity_id: str,
     base = float(emp.get("base_salary") or 0)
     events: List[Dict[str, Any]] = []
     overtime, commission, ot_base, bpjs_base = 0.0, 0.0, 0.0, 0.0
+    segs_slip = segs
+    kehadiran: Optional[Dict[str, Any]] = None
     if rt == "regular":
+        # PY-T3 (K-38) — prorata masuk/keluar & perubahan gaji hari kerja (bawaan mati → potongan tidak berubah).
+        segs_slip = _pr.atur_potongan(segs, emp, period, rl, cal)
         commission = bul(await _commission_for(emp, period, entity_id))
         # PY-T3 — dasar upah lembur & dasar BPJS = Σ komponen bertanda (isi awal: Gaji Pokok saja = angka sebelumnya).
         dasar = _pc.segment_lines(comps, segs, run_type=rt) + [
@@ -454,14 +458,34 @@ async def compute_payslip(emp: Dict[str, Any], period: str, entity_id: str,
         base = sum(float(ln["amount"]) for ln in dasar if ln.get("code") == "GAJI_POKOK")
         events = await overtime_events(emp["id"], period, entity_id, cfg, rl=rl, cal=cal)
         overtime = _overtime_amount(ot_base, events, rl)
+        perlu_hadir = rl["potongan_alpha"] or rl["potongan_cuti_tanpa_gaji"] or rl["potongan_telat_per_menit"] > 0 \
+            or any(c.get("calc") == "per_hari_hadir" and _pc.allowed(c, rt) for c in comps.values())
+        if perlu_hadir:
+            s0, e0 = _pr.masa_kerja(emp, period)
+            kehadiran = await _pr.ringkasan_kehadiran(emp["id"], s0, e0, cal)
     ot_auto = sum(e["minutes"] for e in events if e["source"] == "attendance")
     ot_filed = sum(e["minutes"] for e in events if e["source"] == "filed")
     ot_min = ot_auto + ot_filed
     earn = _pc.earning_components(comps, run_type=rt, base=base, allowances=emp.get("allowances"),
                                   overtime=overtime, overtime_min=ot_min, commission=commission, inputs=inputs,
-                                  segments=segs)
+                                  segments=segs_slip)
     for ln in earn:
         ln["amount"] = bul(ln["amount"])
+    if rt == "regular":
+        # PY-T3 — komponen per hari hadir / persen gaji pokok (sesudah prorata) dan potongan absensi. Upah sehari =
+        # Σ komponen ber-`prorate` sesudah prorata ÷ hari kerja bulan itu (kalender PT).
+        gaji_pokok = sum(float(ln["amount"]) for ln in earn if ln.get("code") == "GAJI_POKOK")
+        extra = _pc.rate_components(comps, run_type=rt, present_days=(kehadiran or {}).get("present_days", 0),
+                                    base_salary=gaji_pokok)
+        p0, p1 = _bulan(period)
+        hk = cal.work_days(p0, p1)
+        harian = _pc.basis(comps, earn, "prorate") / hk if hk else 0.0
+        extra += _pc.attendance_deductions(comps, run_type=rt, kehadiran=kehadiran, daily=harian,
+                                           per_minute=float(rl["potongan_telat_per_menit"] or 0),
+                                           alpha_on=rl["potongan_alpha"], unpaid_on=rl["potongan_cuti_tanpa_gaji"])
+        for ln in extra:
+            ln["amount"] = bul(ln["amount"])
+        earn += extra
     rates, on = bpjs_info(emp, cfg)
     if rt == "regular":
         emp_b, er_b, _, _ = bpjs_breakdown(bpjs_base, emp, cfg)
@@ -536,6 +560,8 @@ async def compute_payslip(emp: Dict[str, Any], period: str, entity_id: str,
         "other_deductions": cols["other_deductions"], "net": cols["net"], "components": components,
         # PY-T3 (02 §5 D3) — potret aturan hitung yang dipakai slip ini, dan dasar upah lembur & BPJS.
         "pay_rules": _pr.ringkas(rl), "overtime_base": bul(ot_base), "bpjs_base": bul(bpjs_base),
+        "attendance_summary": ({k: v for k, v in kehadiran.items() if not k.endswith("_dates")} if kehadiran
+                               else None),
         "bank": {"bank_name": emp.get("bank_name", ""), "acc_no": emp.get("bank_acc_no", ""),
                  "acc_name": emp.get("bank_acc_name", "")},
     }
@@ -568,7 +594,10 @@ async def _active_employees(entity_id: str, period: str = "") -> List[Dict[str, 
     # PY-T2 — PT + periode: karyawan menurut PENUGASAN bertanggal berlaku (`employees_for_run`), bukan `entity_id` master.
     if period and entity_id and entity_id != "all":
         from services import hr_compensation_service as _hc
-        return await _hc.employees_for_run(entity_id, period)
+        from services import hr_pay_rules as _pr
+        # PY-T3 (perbaikan cacat, tanpa sakelar) — karyawan yang tanggal masuknya sesudah akhir periode tidak digaji
+        # periode itu (dulu ikut digaji sebulan penuh karena dipilih dari status aktif saja).
+        return [e for e in await _hc.employees_for_run(entity_id, period) if not _pr.masuk_setelah(e, period)]
     awal = {"$regex": f"^{re.escape(period)}"}
     keluar = [{"separation_date": awal}, {"end_date": awal}]
     q: Dict[str, Any] = {"$or": [{"status": "active"}, {"status": {"$in": ["resigned", "inactive"]},
@@ -577,6 +606,9 @@ async def _active_employees(entity_id: str, period: str = "") -> List[Dict[str, 
     if entity_id and entity_id != "all":
         q["entity_id"] = entity_id
     rows = await db.hr_employees.find(q, {"_id": 0}).to_list(2000)
+    if period:
+        from services import hr_pay_rules as _pr
+        rows = [r for r in rows if not _pr.masuk_setelah(r, period)]   # PY-T3 — perbaikan tanggal masuk
     return [safe_doc(r) for r in rows]
 
 

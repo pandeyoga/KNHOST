@@ -160,7 +160,6 @@ async def test_PYT3_U1_prorata_mati_gaji_penuh(klien, db, adm, siap):
 
 
 # ── U2 — hari kalender: 6.000.000 × 15 ÷ 30 = 3.000.000; PT lain tidak berubah ──────────────────────────────────────
-@pytest.mark.xfail(strict=True, reason="PY-04 — prorata masuk/keluar aktif di serah-terima (b)")  # serah-terima (a)
 async def test_PYT3_U2_prorata_hari_kalender_per_pt(klien, db, adm, siap):
     await _atur("hr.prorata_masuk_keluar", "hari_kalender", KANDA)
     try:
@@ -176,7 +175,6 @@ async def test_PYT3_U2_prorata_hari_kalender_per_pt(klien, db, adm, siap):
 
 
 # ── U3 (a) — hari kerja: 6.000.000 × 11 ÷ 21 = 3.142.857,14 ─────────────────────────────────────────────────────────
-@pytest.mark.xfail(strict=True, reason="PY-04 — prorata hari kerja aktif di serah-terima (b)")  # serah-terima (a)
 async def test_PYT3_U3a_prorata_hari_kerja(klien, db, adm, siap):
     await _atur("hr.prorata_masuk_keluar", "hari_kerja", KANDA)
     try:
@@ -188,7 +186,6 @@ async def test_PYT3_U3a_prorata_hari_kerja(klien, db, adm, siap):
 
 
 # ── U16 — U3 pertama + pembulatan rupiah penuh → 3.142.857 ───────────────────────────────────────────────────────────
-@pytest.mark.xfail(strict=True, reason="PY-04 — bergantung prorata (b)")  # serah-terima (a)
 async def test_PYT3_U16_pembulatan_rupiah(klien, db, adm, siap):
     await _atur("hr.prorata_masuk_keluar", "hari_kerja", KANDA)
     await _atur("hr.pembulatan_rupiah", True, KANDA)
@@ -203,7 +200,6 @@ async def test_PYT3_U16_pembulatan_rupiah(klien, db, adm, siap):
 
 
 # ── U4 — masuk 5 Des → tidak ikut proses November, apa pun nilai kuncinya ────────────────────────────────────────────
-@pytest.mark.xfail(strict=True, reason="PY-04 — perbaikan tanggal masuk di serah-terima (b)")  # serah-terima (a)
 async def test_PYT3_U4_masuk_sesudah_periode_tidak_digaji(klien, db, adm, siap):
     try:
         for nilai in ("mati", "hari_kalender", "hari_kerja"):
@@ -216,7 +212,6 @@ async def test_PYT3_U4_masuk_sesudah_periode_tidak_digaji(klien, db, adm, siap):
 
 
 # ── U5 — keluar 15 Nov, hari kalender → 6.000.000 × 15 ÷ 30 = 3.000.000 ─────────────────────────────────────────────
-@pytest.mark.xfail(strict=True, reason="PY-04 — prorata keluar aktif di serah-terima (b)")  # serah-terima (a)
 async def test_PYT3_U5_prorata_keluar(klien, db, adm, siap):
     run = await _proses(klien, await adm(), KANDA, NOV)
     assert _baris(_slip(run, "emp_pyt3_k3"), "Gaji Pokok") == [("Gaji Pokok", 6_000_000)]   # bawaan mati
@@ -254,7 +249,6 @@ async def test_PYT3_U9a_sumber_absensi_dan_ambang(klien, db, adm, siap, lembur_k
         await _pulihkan("hr.overtime.sumber", KANDA)
 
 
-@pytest.mark.xfail(strict=True, reason="PY-08 — bawaan K-39 (pengajuan) di serah-terima (b)")  # serah-terima (a)
 async def test_PYT3_U9b_bawaan_hanya_pengajuan(klien, db, adm, siap, lembur_k5):
     import config_registry as registry
     assert registry.require("hr.overtime.sumber")["default"] == "pengajuan"   # K-39
@@ -456,7 +450,6 @@ async def test_PYT3_U18_izin_dan_hari_libur(klien, db, akun, sesi, adm, siap, pe
 
 
 # ── U3 (b) — libur perusahaan 25 Nov: × 10 ÷ 20 = 3.000.000 ──────────────────────────────────────────────────────────
-@pytest.mark.xfail(strict=True, reason="PY-04 — prorata hari kerja aktif di serah-terima (b)")  # serah-terima (a)
 async def test_PYT3_U3b_libur_mengurangi_hari_kerja(klien, db, adm, siap):
     h = await adm()
     r = await klien.post("/api/hr/holidays", headers=h, json={"date": "2026-11-25", "name": "Libur perusahaan",
@@ -481,7 +474,6 @@ async def test_PYT3_U11_lembur_hari_libur(klien, db, adm, siap):
 
 
 # ── U6 — potongan tidak hadir: 6.300.000 ÷ 21 × 2 = 600.000; proses → sahkan → posting ───────────────────────────────
-@pytest.mark.xfail(strict=True, reason="PY-04 — potongan absensi aktif di serah-terima (b)")  # serah-terima (a)
 async def test_PYT3_U6_potongan_tidak_hadir_dan_jurnal(klien, db, adm, siap):
     k4, eid = "emp_pyt3_k4", PT["p"]
     h = await adm(eid)
@@ -509,7 +501,6 @@ async def test_PYT3_U6_potongan_tidak_hadir_dan_jurnal(klien, db, adm, siap):
 
 
 # ── U7 — cuti tanpa gaji disetujui 12 Nov: 1 hari × 300.000 ─────────────────────────────────────────────────────────
-@pytest.mark.xfail(strict=True, reason="PY-04 — potongan absensi aktif di serah-terima (b)")  # serah-terima (a)
 async def test_PYT3_U7_potongan_cuti_tanpa_gaji(klien, db, adm, siap):
     k, eid = "emp_pyt3_k4b", PT["q"]
     await db.hr_attendance.insert_many([_absen(k, eid, d) for d in KERJA_NOV if d != "2026-11-12"])
@@ -529,7 +520,6 @@ async def test_PYT3_U7_potongan_cuti_tanpa_gaji(klien, db, adm, siap):
 
 
 # ── U8 — terlambat 45 menit × Rp 1.000 = 45.000 ──────────────────────────────────────────────────────────────────────
-@pytest.mark.xfail(strict=True, reason="PY-04 — potongan absensi aktif di serah-terima (b)")  # serah-terima (a)
 async def test_PYT3_U8_potongan_terlambat(klien, db, adm, siap):
     k, eid = "emp_pyt3_k4c", PT["q"]
     await db.hr_attendance.insert_many([_absen(k, eid, d, **({"status": "telat", "late_min": 30} if d == "2026-11-04"
@@ -542,3 +532,92 @@ async def test_PYT3_U8_potongan_terlambat(klien, db, adm, siap):
         assert _kode(s, "POT_TELAT") == [("Potongan terlambat (45 menit)", 45_000)]
     finally:
         await _pulihkan("hr.potongan_telat_per_menit", eid)
+
+
+# ── tambahan (b) — komponen bawaan potongan absensi & tanda prorata ─────────────────────────────────────────────────
+async def test_PYT3_komponen_bawaan_potongan_absensi(klien, adm, siap):
+    from services.gl_service import ACC_BEBAN_GAJI
+    comps = {c["code"]: c for c in (await klien.get("/api/hr/payroll/components", headers=await adm(PT["p"]))).json()["items"]}
+    for kode, nama in (("POT_ALPHA", "Potongan tidak hadir"), ("POT_CUTI_TG", "Potongan cuti tanpa gaji"),
+                       ("POT_TELAT", "Potongan terlambat")):
+        c = comps[kode]
+        assert (c["name"], c["kind"], c["calc"], c["bucket"], c["taxable"], c["account_code"], c["system"]) == (
+            nama, "potongan", "absensi", "other_deductions", True, ACC_BEBAN_GAJI, True), c
+    assert comps["GAJI_POKOK"]["prorate"] is True and comps["TUNJANGAN"]["prorate"] is True
+    assert comps["LEMBUR"]["prorate"] is False
+
+
+# ── tambahan (b) — cara hitung baru: per hari hadir (rate × hari hadir) dan persen gaji pokok ───────────────────────
+async def test_PYT3_komponen_per_hari_hadir_dan_persen_dasar(klien, db, adm, siap):
+    eid = PT["q"]
+    h = await adm(eid)
+    for body in ({"code": "UANG_MAKAN", "name": "Uang makan", "kind": "pendapatan", "calc": "per_hari_hadir", "rate": 0},
+                 {"code": "KOPERASI", "name": "Iuran koperasi", "kind": "potongan", "calc": "persen_dasar", "rate": 150,
+                  "account_code": "6-1000"}):
+        r = await klien.post("/api/hr/payroll/components", headers=h, json=body)
+        assert r.status_code == 400, r.text
+    r = await klien.post("/api/hr/payroll/components", headers=h, json={
+        "code": "UANG_MAKAN", "name": "Uang makan", "kind": "pendapatan", "calc": "per_hari_hadir", "rate": 25_000,
+        "allowed_run_types": ["regular", "susulan"]})
+    assert r.status_code == 200 and r.json()["allowed_run_types"] == ["regular"], r.text
+    um = r.json()["id"]
+    r = await klien.post("/api/hr/payroll/components", headers=h, json={
+        "code": "KOPERASI", "name": "Iuran koperasi", "kind": "potongan", "calc": "persen_dasar", "rate": 1,
+        "account_code": "6-1000"})
+    assert r.status_code == 200 and r.json()["rate"] == 1, r.text
+    kop = r.json()["id"]
+    try:
+        run = await _pratinjau(klien, h, eid)
+        # K4c: 21 rekaman hadir/telat → 21 × 25.000 = 525.000; 1 % × 6.300.000 = 63.000
+        s = _slip(run, "emp_pyt3_k4c")
+        assert _kode(s, "UANG_MAKAN") == [("Uang makan (21 hari)", 525_000)]
+        assert _kode(s, "KOPERASI") == [("Iuran koperasi (1 %)", 63_000)]
+        assert s["other_deductions"] == 63_000 and s["attendance_summary"]["present_days"] == 21
+        # K4b: 20 hari hadir (12 Nov cuti) → 500.000
+        assert _kode(_slip(run, "emp_pyt3_k4b"), "UANG_MAKAN") == [("Uang makan (20 hari)", 500_000)]
+    finally:
+        for cid in (um, kop):
+            await klien.patch(f"/api/hr/payroll/components/{cid}", headers=h, json={"is_active": False})
+
+
+# ── tambahan (b) — "Gaji berubah di tengah bulan" = hari kerja (pilihan baru PY-T3) ────────────────────────────────
+async def test_PYT3_prorata_perubahan_gaji_hari_kerja(klien, db, adm, siap):
+    eid, k = PT["q"], "emp_pyt3_k9"
+    await db.hr_employees.insert_one(_emp(eid, k, 7_500_000))
+    await db.hr_compensation_history.insert_many([
+        {"id": f"hcomp_{k}_1", "employee_id": k, "effective_from": "2026-01-01", "base_salary": 6_000_000,
+         "fixed_components": [], "status": "approved"},
+        {"id": f"hcomp_{k}_2", "employee_id": k, "effective_from": "2026-11-16", "base_salary": 7_500_000,
+         "fixed_components": [], "status": "approved"}])
+    await db.hr_employee_assignments.insert_one({"id": f"hasg_{k}", "employee_id": k, "entity_id": eid,
+                                                 "effective_from": "2026-01-01", "status": "approved"})
+    await _atur("hr.prorata_perubahan_gaji", "hari_kerja", eid)
+    try:
+        s = _slip(await _pratinjau(klien, await adm(eid), eid), k)
+        # 1–15 Nov: 10 hari kerja; 16–30 Nov: 11 hari kerja; dari 21 → 6.000.000 × 10 ÷ 21 = 2.857.142,86 → 2.857.143;
+        # 7.500.000 × 11 ÷ 21 = 3.928.571,43 → 3.928.571 (rupiah penuh, sama dengan prorata perubahan gaji PY-T2)
+        assert _baris(s, "Gaji Pokok") == [("Gaji Pokok (1–15 Nov)", 2_857_143), ("Gaji Pokok (16–30 Nov)", 3_928_571)]
+    finally:
+        await _pulihkan("hr.prorata_perubahan_gaji", eid)
+
+
+# ── tambahan (b) — skrip data lama: baca-saja tidak menulis; --apply menandai Diprorata, aman diulang ───────────────
+async def test_PYT3_skrip_migrasi(db, siap, capsys):
+    import importlib.util
+    from pathlib import Path
+    spec = importlib.util.spec_from_file_location(
+        "migrasi_pyt3", Path(__file__).resolve().parents[2] / "scripts/migrasi_pyt3_aturan_gaji.py")
+    mig = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mig)
+    await db.hr_pay_components.update_many({"entity_id": PT["t"], "code": {"$in": ["GAJI_POKOK", "TUNJANGAN"]}},
+                                           {"$set": {"prorate": False}})
+    assert await mig.jalankan([], db=db) == 0
+    out = capsys.readouterr().out
+    assert "Mode baca-saja" in out and "PT PYT3T: komponen bawaan belum Diprorata → GAJI_POKOK, TUNJANGAN" in out, out
+    assert "Dampak lembur PT" in out, out
+    assert await db.hr_pay_components.count_documents({"entity_id": PT["t"], "prorate": True,
+                                                       "code": {"$in": ["GAJI_POKOK", "TUNJANGAN"]}}) == 0
+    assert await mig.jalankan(["--apply", "--tanpa-dampak"], db=db) == 0
+    assert "Diterapkan: 2 komponen ditandai Diprorata." in capsys.readouterr().out
+    assert await mig.jalankan(["--apply", "--tanpa-dampak"], db=db) == 0
+    assert "Diterapkan: 0 komponen ditandai Diprorata." in capsys.readouterr().out

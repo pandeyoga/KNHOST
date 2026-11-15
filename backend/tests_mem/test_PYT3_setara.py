@@ -1,4 +1,9 @@
-"""PY-T3 serah-terima (a) — dengan semua kunci baru pada bawaannya, slip SAMA PERSIS dengan kode sebelum unit ini.
+"""PY-T3 — dengan kunci baru pada bawaannya slip SAMA PERSIS dengan kode sebelum unit ini, kecuali perubahan yang disengaja.
+
+Serah-terima (a) membuktikan kesetaraan penuh (semua kunci bawaan, `hr.overtime.sumber` sementara `absensi`). Serah-terima
+(b) — bawaan K-39 `pengajuan` dan perbaikan tanggal masuk: (1) dengan sumber `absensi` untuk PT itu = potret persis kecuali
+S3 (masuk sesudah periode) tidak ikut; (2) dengan bawaan = potret, kecuali kejadian lembur absensi tanpa pengajuan
+(S1 5 Nov, S5 10 Nov) tidak dibayar.
 
 Potret pembanding `data/pratinjau_sebelum_PYT3.json` dihasilkan MESIN LAMA dengan uji ini sendiri:
 `KN_PYT3_TULIS_POTRET=1 python -m pytest tests_mem/test_PYT3_setara.py`, dijalankan di salinan `git archive 5f193df`
@@ -129,9 +134,8 @@ async def _keadaan(klien, h, eid) -> dict:
     return _potret(r.json())
 
 
-async def test_PYT3_a_setara_kode_lama(klien, db, sesi, pt):
+async def _dua_keadaan(klien, db, h, pt) -> dict:
     from services import config_resolver as resolver
-    h = await sesi("admin@kainnusantara.id", entitas=pt)
     hasil = {"bawaan": await _keadaan(klien, h, pt)}
     await db.system_settings.update_one({"scope": "hr"}, {"$set": {"overtime.mode": "flat",
                                                                    "overtime.work_days_per_week": 6}}, upsert=True)
@@ -144,13 +148,53 @@ async def test_PYT3_a_setara_kode_lama(klien, db, sesi, pt):
                                                                          "overtime.work_days_per_week": ""}})
         await resolver.set_value("hr.overtime.multiplier", 1.5, scope_type="entity", scope_id=pt, actor="uji",
                                  reason="pulihkan uji setara PY-T3")
-    data = json.loads(json.dumps(hasil, sort_keys=True))
-    if os.environ.get("KN_PYT3_TULIS_POTRET") == "1":
-        POTRET.write_text(json.dumps(data, indent=1, sort_keys=True, ensure_ascii=False) + "\n", encoding="utf-8")
-        pytest.skip(f"potret ditulis ke {POTRET.name}")
+    return json.loads(json.dumps(hasil, sort_keys=True))
+
+
+def _lama() -> dict:
     lama = json.loads(POTRET.read_text(encoding="utf-8"))
     assert lama["bawaan"]["slip"], "potret kosong"
+    return lama
+
+
+async def test_PYT3_setara_kode_lama_dengan_sumber_absensi(klien, db, sesi, pt):
+    """Serah-terima (b): dengan "Lembur dibayar berdasarkan" = absensi (cara lama) untuk PT itu, slip = potret kode lama
+    persis, KECUALI S3 (masuk 5 Des) yang kini tidak ikut proses November (perbaikan tanggal masuk, tanpa sakelar)."""
+    from services import config_resolver as resolver
+    h = await sesi("admin@kainnusantara.id", entitas=pt)
+    await resolver.set_value("hr.overtime.sumber", "absensi", scope_type="entity", scope_id=pt, actor="uji",
+                             reason="uji setara PY-T3: cara lama")
+    try:
+        data = await _dua_keadaan(klien, db, h, pt)
+    finally:
+        await resolver.clear_layer("hr.overtime.sumber", scope_type="entity", scope_id=pt, actor="uji",
+                                   reason="pulihkan uji setara PY-T3")
+    if os.environ.get("KN_PYT3_TULIS_POTRET") == "1":   # potret hanya ditulis dari kode lama (lihat docstring modul)
+        pytest.skip("potret hanya ditulis dari kode lama")
+    lama = _lama()
     for keadaan in ("bawaan", "lama_flat_enam_hari"):
+        lama[keadaan]["slip"].pop("emp_pyt3s_s3")
+        lama[keadaan]["jumlah_slip"].remove("emp_pyt3s_s3")
         for emp in EMP:
             assert data[keadaan]["slip"].get(emp) == lama[keadaan]["slip"].get(emp), (keadaan, emp)
     assert data == lama
+
+
+async def test_PYT3_b_bawaan_lembur_hanya_pengajuan(klien, db, sesi, pt):
+    """Serah-terima (b), bawaan K-39: lembur absensi tanpa pengajuan (S1 5 Nov 90 menit, S5 10 Nov 200 menit) tidak
+    dibayar; kejadian lembur berpengajuan dan semua angka lain sama dengan potret kode lama."""
+    h = await sesi("admin@kainnusantara.id", entitas=pt)
+    data = await _dua_keadaan(klien, db, h, pt)
+    lama = _lama()
+    for keadaan in ("bawaan", "lama_flat_enam_hari"):
+        assert data[keadaan]["jumlah_slip"] == ["emp_pyt3s_s1", "emp_pyt3s_s2", "emp_pyt3s_s4", "emp_pyt3s_s5"]
+        s1, s1_lama = data[keadaan]["slip"]["emp_pyt3s_s1"], lama[keadaan]["slip"]["emp_pyt3s_s1"]
+        assert s1["lembur"] == [e for e in s1_lama["lembur"] if e[1] == "filed"], keadaan
+        tanpa = sum(e[5] for e in s1_lama["lembur"] if e[1] == "attendance")
+        assert s1["kolom"]["overtime"] == round(s1_lama["kolom"]["overtime"] - tanpa, 2), keadaan
+        assert s1["kolom"]["overtime_auto_min"] == 0 and s1["kolom"]["overtime_filed_min"] == 660
+        s5 = data[keadaan]["slip"]["emp_pyt3s_s5"]
+        assert s5["lembur"] == [] and s5["kolom"]["overtime"] == 0
+        assert [c for c in s5["komponen"] if c[0] == "LEMBUR"] == []
+        for emp in ("emp_pyt3s_s2", "emp_pyt3s_s4"):
+            assert data[keadaan]["slip"][emp] == lama[keadaan]["slip"][emp], (keadaan, emp)

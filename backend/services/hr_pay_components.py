@@ -11,7 +11,13 @@ THR), dan RAPEL (PY-T2 — selisih gaji berlaku mundur, masukan proses reguler &
 PY-T2 — nilai Gaji Pokok dan komponen tetap bulanan dibaca dari riwayat kompensasi bertanggal berlaku
 (`segment_lines` atas potongan periode `hr_compensation_service.segments`), bukan dari master karyawan.
 
-Fungsi murni (tanpa database): `earning_components`, `statutory_components`, `derive_columns`, `components_match_columns`.
+PY-T3 — tanda `in_bpjs_base`, `in_overtime_base`, `prorate` dipakai mesin (`basis`); potongan absensi bawaan
+(`POT_ALPHA`, `POT_CUTI_TG`, `POT_TELAT`, `attendance_deductions`); cara hitung buatan pengguna `per_hari_hadir` dan
+`persen_dasar` (`rate_components`); nilai komponen tetap per potongan periode lewat `nilai_tetap` (prorata masuk/keluar,
+hari kerja).
+
+Fungsi murni (tanpa database): `earning_components`, `statutory_components`, `derive_columns`, `components_match_columns`,
+`basis`, `nilai_tetap`, `rate_components`, `attendance_deductions`.
 Akses database: `ensure_defaults`, `ensure_defaults_all`, `list_components`, `create_component`, `update_component`.
 """
 import re
@@ -21,7 +27,11 @@ from db import db
 from core_utils import new_id, now_iso, safe_doc
 
 KINDS = ("pendapatan", "potongan", "tanggungan_perusahaan")
-CALCS = ("tetap_bulanan", "per_jam", "masukan", "undang_undang")
+CALCS = ("tetap_bulanan", "per_jam", "masukan", "undang_undang", "absensi", "per_hari_hadir", "persen_dasar")
+# PY-T3 — cara hitung yang boleh dipilih untuk komponen buatan pengguna (nilai dari antrean masukan, `rate` × hari hadir,
+# atau `rate` % × gaji pokok). `absensi` = potongan bawaan dari absensi & pengaturan (tidak bisa dibuat pengguna).
+USER_CALCS = ("masukan", "per_hari_hadir", "persen_dasar")
+RATE_CALCS = ("per_hari_hadir", "persen_dasar")
 BUCKETS = ("base_salary", "allowances", "overtime", "commission", "other_earnings", "bpjs_emp", "bpjs_er", "pph21",
            "other_deductions")
 STATUTORY_CODES = ("bpjs_kes_emp", "bpjs_jht_emp", "bpjs_jp_emp", "bpjs_kes_er", "bpjs_jht_er", "bpjs_jp_er",
@@ -30,7 +40,10 @@ RUN_TYPES = ("regular", "thr", "susulan")
 RUN_TYPE_LABEL = {"regular": "Reguler", "thr": "THR", "susulan": "Susulan"}
 KIND_LABEL = {"pendapatan": "Pendapatan", "potongan": "Potongan", "tanggungan_perusahaan": "Tanggungan perusahaan"}
 CALC_LABEL = {"tetap_bulanan": "Tetap bulanan", "per_jam": "Per jam", "masukan": "Masukan",
-              "undang_undang": "Menurut undang-undang"}
+              "undang_undang": "Menurut undang-undang", "absensi": "Dari absensi & pengaturan",
+              "per_hari_hadir": "Per hari hadir", "persen_dasar": "Persen gaji pokok"}
+# PY-T3 — potongan absensi bawaan (kode → (kunci pengaturan, label satuan)).
+POTONGAN_ABSENSI = {"POT_ALPHA": "hari", "POT_CUTI_TG": "hari", "POT_TELAT": "menit"}
 
 # Komponen pendapatan yang nilainya dari mesin komisi (bukan dari antrean masukan). Masukan manual untuk kode ini tetap
 # boleh (ditambahkan ke kolom komisi).
@@ -50,20 +63,25 @@ STATUTORY_SLOT = {
 
 def _c(code: str, name: str, kind: str, calc: str, bucket: str, sort: int, *, taxable: bool,
        statutory_code: str = "", run_types: Tuple[str, ...] = ("regular",), bpjs_base: bool = False,
-       ot_base: bool = False) -> Dict[str, Any]:
-    return {"code": code, "name": name, "kind": kind, "calc": calc, "bucket": bucket, "taxable": taxable,
-            "in_bpjs_base": bpjs_base, "in_overtime_base": ot_base, "prorate": False,
-            "statutory_code": statutory_code, "account_code": "", "allowed_run_types": list(run_types),
-            "sort": sort, "is_active": True, "system": True}
+       ot_base: bool = False, prorate: bool = False, akun_beban_gaji: bool = False) -> Dict[str, Any]:
+    out = {"code": code, "name": name, "kind": kind, "calc": calc, "bucket": bucket, "taxable": taxable,
+           "in_bpjs_base": bpjs_base, "in_overtime_base": ot_base, "prorate": prorate,
+           "statutory_code": statutory_code, "account_code": "", "allowed_run_types": list(run_types),
+           "sort": sort, "is_active": True, "system": True}
+    if akun_beban_gaji:   # PY-T3 — akun diisi saat isi awal dari `gl_service.ACC_BEBAN_GAJI` (P9, tidak ditulis di sini)
+        out["_akun_beban_gaji"] = True
+    return out
 
 
 # Isi awal (K-37 — data per PT; pemilik menambah komponennya sendiri lewat layar Komponen & Masukan).
 # `taxable` tanggungan Kesehatan/JKK/JKM = ya: premi yang dibayar pemberi kerja itu sudah masuk bruto pajak slip hari
 # ini (HR-01, `compute_payslip`); ditandai di sini supaya bruto pajak = Σ komponen kena pajak tanpa mengubah angka.
 DEFAULT_COMPONENTS: List[Dict[str, Any]] = [
+    # PY-T3 — Gaji Pokok & Tunjangan diprorata (bila "Gaji karyawan masuk/keluar tengah bulan" dinyalakan) dan menjadi
+    # dasar upah sehari potongan absensi.
     _c("GAJI_POKOK", "Gaji Pokok", "pendapatan", "tetap_bulanan", "base_salary", 10, taxable=True,
-       bpjs_base=True, ot_base=True),
-    _c("TUNJANGAN", "Tunjangan", "pendapatan", "tetap_bulanan", "allowances", 20, taxable=True),
+       bpjs_base=True, ot_base=True, prorate=True),
+    _c("TUNJANGAN", "Tunjangan", "pendapatan", "tetap_bulanan", "allowances", 20, taxable=True, prorate=True),
     _c("LEMBUR", "Lembur", "pendapatan", "per_jam", "overtime", 30, taxable=True),
     _c("KOMISI", "Komisi / insentif penjualan", "pendapatan", "masukan", "commission", 40, taxable=True),
     _c("THR", "THR", "pendapatan", "masukan", "other_earnings", 50, taxable=True, run_types=("thr",)),
@@ -76,6 +94,14 @@ DEFAULT_COMPONENTS: List[Dict[str, Any]] = [
        statutory_code="bpjs_jht_emp"),
     _c("BPJS_JP", "BPJS JP", "potongan", "undang_undang", "bpjs_emp", 130, taxable=False,
        statutory_code="bpjs_jp_emp"),
+    # PY-T3 (K-38) — potongan absensi bawaan: nilai dari absensi & pengaturan PT (bawaan mati → tidak muncul). Bertanda
+    # kena pajak = MENGURANGI bruto pajak; akun = beban gaji (dikredit → mengurangi beban, bukan menjadi hutang).
+    _c("POT_ALPHA", "Potongan tidak hadir", "potongan", "absensi", "other_deductions", 140, taxable=True,
+       akun_beban_gaji=True),
+    _c("POT_CUTI_TG", "Potongan cuti tanpa gaji", "potongan", "absensi", "other_deductions", 145, taxable=True,
+       akun_beban_gaji=True),
+    _c("POT_TELAT", "Potongan terlambat", "potongan", "absensi", "other_deductions", 150, taxable=True,
+       akun_beban_gaji=True),
     _c("PPH21", "PPh 21", "potongan", "undang_undang", "pph21", 190, taxable=False, statutory_code="pph21",
        run_types=("regular", "thr", "susulan")),
     _c("BPJS_KES_PT", "BPJS Kesehatan (perusahaan)", "tanggungan_perusahaan", "undang_undang", "bpjs_er", 210,
@@ -149,6 +175,33 @@ def input_line(comp: Dict[str, Any], inp: Dict[str, Any]) -> Dict[str, Any]:
                  basis_period=inp.get("basis_period") or "", source=src)
 
 
+def nilai_tetap(seg: Dict[str, Any], comp: Dict[str, Any], value: Any, dim: int, potong: bool
+                ) -> Tuple[float, Optional[Tuple[str, str, int]]]:
+    """PY-T3 — nilai satu komponen tetap dalam satu potongan periode → (nominal, rentang label atau None).
+
+    * potongan dipotong masa kerja (`masuk_keluar`, `hr_pay_rules.atur_potongan`) dan komponennya ber-`prorate` →
+      nilai × n ÷ d menurut `hr.prorata_masuk_keluar` (pembulatan slip), label = rentang masa kerja;
+    * potongan perubahan gaji ber-`rasio_ubah` (`hr.prorata_perubahan_gaji` = hari kerja) → nilai × hari kerja potongan ÷
+      hari kerja bulan (rupiah penuh, sama dengan PY-T2);
+    * selain itu PY-T2: sebulan penuh → nilai; dipotong → nilai × hari ÷ hari kalender (rupiah penuh)."""
+    from services import hr_compensation_service as _hc
+    from services import hr_pay_rules as _pr
+    mk = seg.get("masuk_keluar")
+    if mk and comp.get("prorate"):
+        n, d = mk["rasio"]
+        hari = max(0, int(mk["date_to"][8:10]) - int(mk["date_from"][8:10]) + 1)
+        amt = _pr.bulatkan(float(value or 0) * n / d, _pr.RUPIAH if mk.get("bulat") == "rupiah" else None) if d else 0.0
+        return amt, (mk["date_from"], mk["date_to"], hari)
+    if not potong:
+        return float(value or 0), None
+    if seg.get("rasio_ubah"):
+        n, d = seg["rasio_ubah"]
+        amt = _pr.bulatkan(float(value or 0) * n / d, _pr.RUPIAH) if d else 0.0
+    else:
+        amt = _hc.prorate(value, seg["days"], dim)
+    return amt, (seg["date_from"], seg["date_to"], seg["days"])
+
+
 def segment_lines(comps: Dict[str, Dict[str, Any]], segments: Iterable[Dict[str, Any]], *,
                   run_type: str = "regular") -> List[Dict[str, Any]]:
     """PY-T2 — baris Gaji Pokok dan komponen tetap bulanan dari potongan periode (`hr_compensation_service.segments`).
@@ -161,16 +214,26 @@ def segment_lines(comps: Dict[str, Dict[str, Any]], segments: Iterable[Dict[str,
     out: List[Dict[str, Any]] = []
     if run_type != "regular" or not segs:
         return out
+    from services import hr_pay_rules as _pr
     dim = _hc.period_bounds(segs[0]["date_from"][:7])[2]
     potong = len(segs) > 1 or not segs[0].get("full")
+
+    def baris(comp: Dict[str, Any], seg: Dict[str, Any], value: Any, label: str) -> Optional[Dict[str, Any]]:
+        amt, rentang = nilai_tetap(seg, comp, value, dim, potong)
+        if rentang is None:
+            return _line(comp, amt, label)
+        if seg.get("masuk_keluar") and comp.get("prorate") and not seg["masuk_keluar"]["rasio"][0]:
+            return None   # potongan seluruhnya di luar masa kerja karyawan
+        teks = _pr.rentang_label(rentang[0], rentang[1])
+        return _line(comp, amt, f"{label or comp.get('name') or comp['code']} {teks}",
+                     date_from=rentang[0], date_to=rentang[1], days=rentang[2])
+
     for seg in segs:
-        akhir = f" {_hc.segment_label(seg)}" if potong else ""
-        nilai = (lambda v: _hc.prorate(v, seg["days"], dim)) if potong else (lambda v: float(v or 0))
-        extra = {"date_from": seg["date_from"], "date_to": seg["date_to"], "days": seg["days"]} if potong else {}
         gp = comps.get("GAJI_POKOK")
         if allowed(gp, run_type):
-            out.append(_line(gp, nilai(seg.get("base_salary")), f"{gp.get('name') or 'Gaji Pokok'}{akhir}"
-                             if potong else "", **extra))
+            ln = baris(gp, seg, seg.get("base_salary"), "")
+            if ln is not None:
+                out.append(ln)
         for fc in seg.get("fixed_components") or ():
             comp = comps.get(fc.get("component_code") or "TUNJANGAN")
             if not allowed(comp, run_type) or comp.get("calc") != "tetap_bulanan" or comp["code"] == "GAJI_POKOK":
@@ -179,10 +242,9 @@ def segment_lines(comps: Dict[str, Dict[str, Any]], segments: Iterable[Dict[str,
             if not amt:
                 continue
             nama, ket = comp.get("name") or comp["code"], str(fc.get("label") or "").strip()
-            label = f"{nama} — {ket}" if ket and ket != nama else ""
-            if potong:
-                label = f"{label or nama}{akhir}"
-            out.append(_line(comp, nilai(amt), label, **extra))
+            ln = baris(comp, seg, amt, f"{nama} — {ket}" if ket and ket != nama else "")
+            if ln is not None:
+                out.append(ln)
     return out
 
 
@@ -220,6 +282,51 @@ def earning_components(comps: Dict[str, Dict[str, Any]], *, run_type: str = "reg
         comp = comps.get(inp.get("component_code") or "")
         if comp and allowed(comp, run_type) and comp.get("calc") == "masukan":
             out.append(input_line(comp, inp))
+    return out
+
+
+def _angka(v: float) -> str:
+    s = f"{float(v):,.2f}".rstrip("0").rstrip(".")
+    return s.replace(",", "_").replace(".", ",").replace("_", ".")
+
+
+def rate_components(comps: Dict[str, Dict[str, Any]], *, run_type: str = "regular", present_days: int = 0,
+                    base_salary: float = 0.0) -> List[Dict[str, Any]]:
+    """PY-T3 — komponen buatan pengguna berhitung `per_hari_hadir` (`rate` × hari hadir) dan `persen_dasar` (`rate` % ×
+    gaji pokok slip ini, sesudah prorata). Hanya proses reguler; nominal 0 tidak dibuat barisnya."""
+    out: List[Dict[str, Any]] = []
+    if run_type != "regular":
+        return out
+    for comp in sorted(comps.values(), key=lambda c: (c.get("sort", 0), c["code"])):
+        if comp.get("calc") not in RATE_CALCS or not allowed(comp, run_type):
+            continue
+        rate = float(comp.get("rate") or 0)
+        if comp["calc"] == "per_hari_hadir":
+            amt, label = rate * int(present_days or 0), f"{comp.get('name') or comp['code']} ({int(present_days or 0)} hari)"
+        else:
+            amt, label = rate / 100.0 * float(base_salary or 0), f"{comp.get('name') or comp['code']} ({_angka(rate)} %)"
+        if amt:
+            out.append(_line(comp, amt, label, qty=present_days if comp["calc"] == "per_hari_hadir" else None,
+                             rate=rate))
+    return out
+
+
+def attendance_deductions(comps: Dict[str, Dict[str, Any]], *, run_type: str = "regular",
+                          kehadiran: Optional[Dict[str, Any]] = None, daily: float = 0.0, per_minute: float = 0.0,
+                          alpha_on: bool = False, unpaid_on: bool = False) -> List[Dict[str, Any]]:
+    """PY-T3 (K-38) — potongan absensi (komponen bawaan POT_ALPHA, POT_CUTI_TG, POT_TELAT) dari ringkasan kehadiran
+    (`hr_pay_rules.hitung_kehadiran`): tidak hadir & cuti tanpa gaji = upah sehari × hari; terlambat = menit × tarif."""
+    out: List[Dict[str, Any]] = []
+    k = kehadiran or {}
+    if run_type != "regular" or not k:
+        return out
+    for code, on, n, nilai in (("POT_ALPHA", alpha_on, int(k.get("alpha_days") or 0), daily),
+                               ("POT_CUTI_TG", unpaid_on, int(k.get("unpaid_days") or 0), daily),
+                               ("POT_TELAT", per_minute > 0, int(k.get("late_min") or 0), per_minute)):
+        comp = comps.get(code)
+        if not on or not n or not allowed(comp, run_type):
+            continue
+        out.append(_line(comp, nilai * n, f"{comp.get('name') or code} ({n} {POTONGAN_ABSENSI[code]})", qty=n))
     return out
 
 
@@ -329,6 +436,9 @@ async def ensure_defaults(entity_id: str) -> int:
         if d["code"] in have:
             continue
         doc = {**d, "allowed_run_types": list(d["allowed_run_types"]), "entity_id": entity_id}
+        if doc.pop("_akun_beban_gaji", False):   # PY-T3 — potongan absensi mengkredit beban gaji (P9: konstanta GL)
+            from services.gl_service import ACC_BEBAN_GAJI
+            doc["account_code"] = ACC_BEBAN_GAJI
         res = await db.hr_pay_components.update_one(
             {"entity_id": entity_id, "code": d["code"]},
             {"$setOnInsert": {**doc, "id": new_id("pcomp"), "created_at": now_iso(), "updated_at": now_iso(),
@@ -393,8 +503,9 @@ async def create_component(entity_id: str, data: Dict[str, Any], actor: Dict[str
     if kind not in USER_BUCKETS:
         raise ValueError("Jenis komponen baru harus pendapatan atau potongan.")
     calc = str(data.get("calc") or "masukan")
-    if calc != "masukan":
-        raise ValueError("Komponen baru saat ini hanya bisa berjenis hitung masukan (nilai dari antrean masukan).")
+    if calc not in USER_CALCS:
+        raise ValueError("Cara hitung komponen baru harus masukan, per hari hadir, atau persen gaji pokok.")
+    rate = _rate(calc, data.get("rate"))
     bucket = str(data.get("bucket") or USER_BUCKETS[kind][-1])
     if bucket not in USER_BUCKETS[kind]:
         raise ValueError("Kolom slip tidak cocok dengan jenis komponen.")
@@ -407,8 +518,10 @@ async def create_component(entity_id: str, data: Dict[str, Any], actor: Dict[str
            "bucket": bucket, "taxable": bool(data.get("taxable", kind == "pendapatan")) and kind == "pendapatan",
            "in_bpjs_base": bool(data.get("in_bpjs_base")), "in_overtime_base": bool(data.get("in_overtime_base")),
            "prorate": bool(data.get("prorate")), "statutory_code": "", "account_code": account,
-           "allowed_run_types": _run_types(data.get("allowed_run_types") or ["regular", "susulan"]),
-           "sort": int(data.get("sort") or 300), "is_active": data.get("is_active", True) is not False,
+           # PY-T3 — per hari hadir / persen gaji pokok hanya bernilai di proses reguler (absensi & gaji pokok bulan itu).
+           "allowed_run_types": ["regular"] if calc in RATE_CALCS else _run_types(
+               data.get("allowed_run_types") or ["regular", "susulan"]),
+           "rate": rate, "sort": int(data.get("sort") or 300), "is_active": data.get("is_active", True) is not False,
            "system": False, "created_at": now_iso(), "updated_at": now_iso(),
            "created_by": actor.get("name", "system"), "created_by_id": actor.get("id", "")}
     from pymongo.errors import DuplicateKeyError
@@ -422,6 +535,19 @@ async def create_component(entity_id: str, data: Dict[str, Any], actor: Dict[str
 
 
 SYSTEM_LOCKED = ("kind", "calc", "bucket", "statutory_code", "allowed_run_types", "is_active", "code")
+
+
+def _rate(calc: str, v: Any) -> float:
+    """PY-T3 — nilai komponen per hari hadir (rupiah > 0) / persen gaji pokok (0 < persen ≤ 100); cara lain → 0."""
+    if calc not in RATE_CALCS:
+        return 0.0
+    try:
+        x = float(v)
+    except (TypeError, ValueError) as exc:
+        raise ValueError("Isi nilai komponen (rupiah per hari hadir atau persen gaji pokok).") from exc
+    if x <= 0 or (calc == "persen_dasar" and x > 100):
+        raise ValueError("Nilai per hari hadir harus lebih dari 0; persen gaji pokok 0–100.")
+    return round(x, 4)
 
 
 async def update_component(comp_id: str, entity_id: str, data: Dict[str, Any], actor: Dict[str, Any]) -> Dict[str, Any]:
@@ -449,6 +575,8 @@ async def update_component(comp_id: str, entity_id: str, data: Dict[str, Any], a
             patch["is_active"] = bool(data["is_active"])
         if "taxable" in data:
             patch["taxable"] = bool(data["taxable"]) and cur["kind"] == "pendapatan"
+        if "rate" in data and cur.get("calc") in RATE_CALCS:
+            patch["rate"] = _rate(cur["calc"], data["rate"])
     if "name" in data:
         name = str(data.get("name") or "").strip()
         if not name:
