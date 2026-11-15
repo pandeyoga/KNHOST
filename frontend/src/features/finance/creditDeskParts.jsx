@@ -53,7 +53,7 @@ function CustomerCell({ row, ctx }) {
     <div className="min-w-0">
       <p className="font-semibold text-kn-text break-words">{row.customer_name || "—"}</p>
       {ctx.combined && <p className="text-fs-12 text-kn-text-2">{ctx.ptName(row.entity_id)}</p>}
-      <button type="button" className="link-button text-fs-12" data-testid={`credit-desk-open-${row.id}`}
+      <button type="button" className="link-button text-left text-fs-12" data-testid={`credit-desk-open-${row.id}`}
         onClick={() => ctx.openCustomer(row)}>Buka kartu pelanggan</button>
     </div>
   );
@@ -106,6 +106,8 @@ function Head({ cols, action = true }) {
   );
 }
 
+// Cek layar CR-T5 (integrator, 1024 px): antrean Menunggu keputusan 761 px di kartu ±732 px (Ringkasan tertutup Aksi) —
+// lebar minimum Aksi 150 → 112 px (tombol boleh bertumpuk), sel pelanggan 150–170 → 130 px.
 function MenungguTable({ rows, ctx }) {
   const showAction = ctx.canApproveOverride || ctx.canApproveProfile;
   return (
@@ -116,12 +118,12 @@ function MenungguTable({ rows, ctx }) {
         {rows.map((r) => (
           <tr key={r.id} data-testid={`credit-desk-row-${r.id}`}>
             <td><Pill meta={KIND[r.kind]} testId={`credit-desk-kind-${r.id}`} /></td>
-            <td className="min-w-[150px]"><CustomerCell row={r} ctx={ctx} /></td>
+            <td className="min-w-[130px]"><CustomerCell row={r} ctx={ctx} /></td>
             <td className="text-right">{r.amount > 0 ? <Money v={r.amount} strong /> : <span className="text-kn-text-2">—</span>}</td>
             <td className="min-w-[110px]"><p>{r.requested_by || "—"}</p>
               <p className="text-fs-12 text-kn-text-2">{r.age_days ? `${r.age_days} hari` : "hari ini"}</p></td>
             <td className="min-w-[110px]"><p className="line-clamp-2 break-words">{r.summary}</p></td>
-            {showAction && <td className="col-sticky-end min-w-[150px]"><DecisionCell row={r} ctx={ctx} /></td>}
+            {showAction && <td className="col-sticky-end min-w-[112px]"><DecisionCell row={r} ctx={ctx} /></td>}
           </tr>
         ))}
       </tbody>
@@ -137,12 +139,12 @@ function DitahanTable({ rows, ctx }) {
         {rows.map((r) => (
           <tr key={r.id} data-testid={`credit-desk-row-${r.id}`}>
             <td><Pill meta={KIND[r.kind]} /></td>
-            <td className="min-w-[160px]"><CustomerCell row={r} ctx={ctx} /></td>
+            <td className="min-w-[130px]"><CustomerCell row={r} ctx={ctx} /></td>
             <td className="whitespace-nowrap">{r.order_number || "—"}</td>
             <td className="text-right"><Money v={r.amount} strong /></td>
             <td className="min-w-[110px]"><p className="break-words" data-testid={`credit-desk-reason-${r.id}`}>{r.message}</p>
               {r.since && <p className="text-fs-12 text-kn-text-2">sejak {formatDate(r.since)}</p>}</td>
-            <td className="col-sticky-end min-w-[150px]">
+            <td className="col-sticky-end min-w-[112px]">
               {r.kind === "pesanan_ditahan" ? (
                 <div className="grid gap-1">
                   <button type="button" className="secondary-button btn-sm" data-testid={`credit-desk-recheck-${r.id}`}
@@ -169,7 +171,7 @@ function JatuhTempoTable({ rows, ctx }) {
           const open = Boolean(ctx.expanded[r.id]);
           return [
             <tr key={r.id} data-testid={`credit-desk-row-${r.id}`}>
-              <td className="min-w-[170px]"><CustomerCell row={r} ctx={ctx} /></td>
+              <td className="min-w-[130px]"><CustomerCell row={r} ctx={ctx} /></td>
               <td className="min-w-[140px]">
                 <button type="button" className="link-button inline-flex items-center gap-1" aria-expanded={open}
                   data-testid={`credit-desk-lines-${r.id}`} onClick={() => ctx.toggle(r.id)}>
@@ -180,7 +182,7 @@ function JatuhTempoTable({ rows, ctx }) {
               </td>
               <td className="text-right"><Money v={r.total_outstanding} strong /></td>
               <td><LatePill days={r.max_days_late} /></td>
-              <td className="col-sticky-end min-w-[160px]">
+              <td className="col-sticky-end min-w-[120px]">
                 <div className="flex flex-wrap gap-1">
                   <button type="button" className="secondary-button btn-sm" data-testid={`credit-desk-copy-${r.id}`}
                     disabled={ctx.busy === r.id} onClick={() => ctx.onCopyReminder(r)}>
@@ -226,7 +228,7 @@ function JanjiTable({ rows, ctx }) {
       <tbody>
         {rows.map((r) => (
           <tr key={r.id} data-testid={`credit-desk-row-${r.id}`}>
-            <td className="min-w-[160px]"><CustomerCell row={r} ctx={ctx} /></td>
+            <td className="min-w-[130px]"><CustomerCell row={r} ctx={ctx} /></td>
             <td className="whitespace-nowrap">{formatDate(r.promise_date)}</td>
             <td className="text-right"><Money v={r.promise_amount} strong /></td>
             <td className="text-right"><Money v={r.paid_amount} /></td>
@@ -248,7 +250,7 @@ function KajiTable({ rows, ctx }) {
       <tbody>
         {rows.map((r) => (
           <tr key={r.id} data-testid={`credit-desk-row-${r.id}`}>
-            <td className="min-w-[160px]"><CustomerCell row={r} ctx={ctx} /></td>
+            <td className="min-w-[130px]"><CustomerCell row={r} ctx={ctx} /></td>
             <td><Pill meta={KIND[r.kind]} />
               {r.kind === "plafon" && r.credit_limit > 0 && <p className="text-fs-12 text-kn-text-2"><Money v={r.credit_limit} /></p>}</td>
             <td className="whitespace-nowrap">{formatDate(r.valid_until)}</td>
@@ -270,7 +272,7 @@ function DendaTable({ rows, ctx }) {
           <tr key={r.id} data-testid={`credit-desk-row-${r.id}`}>
             <td className="whitespace-nowrap"><p className="font-semibold">{r.number}</p>
               <p className="text-fs-12 text-kn-text-2">{r.doc_number}</p></td>
-            <td className="min-w-[160px]"><CustomerCell row={r} ctx={ctx} /></td>
+            <td className="min-w-[130px]"><CustomerCell row={r} ctx={ctx} /></td>
             <td className="text-right"><Money v={r.amount} strong /></td>
             <td className="text-right tabular-nums whitespace-nowrap">{r.days_late ? `${r.days_late} hari` : "—"}</td>
             <td className="min-w-[140px]">
@@ -281,7 +283,7 @@ function DendaTable({ rows, ctx }) {
                 </span>
               ) : <span className="text-fs-12 text-kn-text-2">{r.line_label || "—"}</span>}
             </td>
-            <td className="col-sticky-end min-w-[150px]">
+            <td className="col-sticky-end min-w-[112px]">
               <div className="flex flex-wrap gap-1">
                 {ctx.canIssue && (
                   <button type="button" className="primary-button btn-sm" data-testid={`credit-desk-issue-${r.id}`}
