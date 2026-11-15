@@ -541,6 +541,7 @@ dalam 4 grup); grup "Kas & Aset" dihapus.
 | Keuangan › Kas & Bank (`cash-bank`) | Transaksi Kas (`cash-management`) | A M F |
 | Keuangan › Kas & Bank (`cash-bank`) | Rekonsiliasi (`bank-reconciliation`) | A M F |
 | Keuangan › Kas & Bank (`cash-bank`) | Kas Kecil (`petty-cash`) — PK-24: Finance & Manajer mencairkan PD (`cash_advance.disburse`), membayar reimburse & menerima pengembalian sisa (`cash_settlement.pay`) | A M F S SA |
+| Keuangan › Kas & Bank (`cash-bank`) | Titipan Sales (`cash-holdings`) — PM-T4: setoran titipan tunai sales menunggu diterima (`cash_holding.approve`) + titipan belum disetor per orang; sales menyetor dari kartu HP "Titipan Saya" | A M F |
 | Keuangan › Antar-PT (`interco-transactions`) | — (view `interco-transactions`) | A M F SA G GA |
 | Akuntansi & Pajak › Buku Besar (`ledger`) | Jurnal (`general-ledger`) | A M F |
 | Akuntansi & Pajak › Buku Besar (`ledger`) | Bagan Akun (`chart-of-accounts`) | A M F |

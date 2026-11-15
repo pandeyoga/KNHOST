@@ -91,6 +91,10 @@ KINDS_LIST: List[Dict[str, Any]] = [
     _k("mcc", "Biaya kampanye pemasaran", "Keuangan", "mkt_campaign_costs", "number", "MCC-"),
     # CR-T1 — pengajuan perubahan profil kredit pelanggan (per PT pesanan).
     _k("pkr", "Pengajuan perubahan kredit", "Keuangan", "credit_profile_requests", "number", "PKR-"),
+    # PM-T4 — titipan tunai sales dan setorannya (per PT kwitansi). Setoran memakai `STT-`, bukan `STR-` (sudah dipakai
+    # setoran kewajiban gaji PK-22: deret per PT berkunci awalan yang sama).
+    _k("ttp", "Titipan tunai sales", "Keuangan", "cash_holdings", "number", "TTP-"),
+    _k("stt", "Setoran titipan tunai sales", "Keuangan", "cash_deposits", "number", "STT-"),
     # ── Gudang ─────────────────────────────────────────────────────────────────────────────────────────────────────
     _k("trf", "Mutasi gudang", "Gudang", "warehouse_transfers", "code", "TRF-"),
     _k("grn", "Penerimaan barang", "Gudang", "goods_receipts", "number", "GRN-"),

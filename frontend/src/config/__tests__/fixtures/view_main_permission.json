@@ -17,6 +17,7 @@
   "cash-management": {"izin": [["cash", "view"]], "endpoint": "/api/cash-transactions"},
   "bank-reconciliation": {"izin": [["cash", "view"]], "endpoint": "/api/bank-reconciliation/lines?bank_account_id=rek_uji"},
   "petty-cash": {"izin": [["cash_advance", "view"], ["cash_settlement", "view"]], "endpoint": "/api/cash-advances", "endpoint_per_izin": {"cash_advance.view": "/api/cash-advances", "cash_settlement.view": "/api/cash-advance-settlements"}},
+  "cash-holdings": {"izin": [["cash_holding", "view"]], "endpoint": "/api/cash-holdings"},
   "interco-transactions": {"izin": [["interco", "view"]], "endpoint": "/api/interco/transactions"},
   "general-ledger": {"izin": [["accounting", "view"]], "endpoint": "/api/gl/summary"},
   "chart-of-accounts": {"izin": [["accounting", "view"]], "endpoint": "/api/gl/accounts"},

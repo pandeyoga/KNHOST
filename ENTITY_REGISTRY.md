@@ -57,6 +57,7 @@ Sebelum membuat apapun yang baru, tanya: **"Apakah ini sudah ada di sini?"**
 | Jadwal Tagihan & Saldo Piutang *(CR-T2)* | `payment_plans` (`origin: term` = jadwal tagihan mesin per surat jalan / uang muka / nota debit; `manual` = rencana cicilan), `customer_balances` (saldo turunan per pelanggan × PT) | `services/billing_schedule_service.py` (kait `on_order_confirmed` dari `confirm_core`, `on_shipment_posted` sesudah jurnal surat jalan, `on_order_changed` dari `so_transition` status mati, `on_debit_note`; `open_lines` = satu-satunya pembaca jatuh tempo), `services/customer_balance_service.py` (`compute`, `refresh`, `get`, `rebuild_all`, `job_refresh_overdue`), `routers/customer_balances.py` (`GET /customers/{id}/billing-schedule`, `GET /customers/{id}/balance`, `POST /ar/balances/rebuild`), `scripts/build_billing_schedule.py` | — | `ARAgingDetail` (rincian pelanggan: baris jadwal tersimpan) |
 | Profil Kredit Pelanggan *(CR-T1)* | `customer_credit_profiles` (satu per pelanggan × PT pesanan), `credit_profile_requests` | `routers/credit_profiles.py` (`GET /customers/{id}/credit-profile`, `POST /customers/{id}/credit-profile-requests`, `GET /credit-profile-requests`, `POST …/{id}/decision`, `POST …/{id}/cancel`), `services/credit_profile_service.py` (`effective`, `status_from` — dipakai `customer_service.compute_customer_credit`, `ar_aging_service`) | `CreditProfileRequestCreate`, `CreditProfileDecision`, `CreditProfileCancel` | `CustomerCreditTab` + `CreditProfileRequestModal` (kartu pelanggan › Kredit), `CreditProfileRequestsPanel` (Keuangan › Piutang › Kredit & Plafon) |
 | Meja Insentif — data dasar *(KM-T1)* | `sales_targets` (kunci baru PT × sales × jenis periode × periode), `incentive_components`, `incentive_definitions`, `fact_shipment_sales`, `fact_collections` (turunan) | `routers/incentive.py` (`GET/PUT /api/incentive/targets`, `POST …/targets/copy`, `GET/POST/PATCH /api/incentive/components`, `GET …/definitions/current`, `GET …/reconciliation`, `POST …/facts/rebuild`), `services/incentive_targets.py`, `incentive_periods.py`, `incentive_definitions.py`, `incentive_facts.py` | `IncentiveTargetSave`, `IncentiveTargetCopy`, `IncentiveComponentCreate`, `IncentiveComponentUpdate`, `IncentiveFactRebuild` (`schemas_incentive.py`) | `IncentiveSetupView` (SDM › Kinerja & Insentif › Target & Aturan) |
+| Titipan Tunai Sales & Setoran *(PM-T4)* | `cash_holdings` (satu per kwitansi tunai yang menjadi titipan, nomor `TTP-`), `cash_deposits` (setoran, nomor `STT-`) (+ field `ar_receipts.cash_holding_id`) | `routers/cash_holdings.py` (`GET /api/cash-holdings`, `GET /api/cash-holdings/me/summary`, `GET/POST /api/cash-deposits`, `POST …/{id}/receive` · `/reject` · `/cancel`), `services/cash_holding_service.py` (`mode_tunai`, `periksa_batas`, `buat_titipan` dipanggil `ar_receipt_service.create_receipt`; `terima_setoran` → `cash_ledger.create_cash(ref_type="cash_deposit")`; `rekonsiliasi` = INV-TTP-01), `gl_service.post_cash_holding` / `reverse_cash_holding` | `DepositIn`, `ReceiveIn`, `ReasonIn` | `CashHoldingsView` (Keuangan › Kas & Bank › Titipan Sales), `MobileCashHoldingCard` (Beranda HP sales "Titipan Saya"), `ARReceiptModal` (teks bantu tunai) |
 | Kartu Tindakan Asisten *(AG-T1, AG-T3, AG-T5)* | `ai_action_proposals` | `routers/ai_assist.py` (`GET /api/ai/actions?box=`, `GET /api/ai/actions/{id}`, `POST …/{id}/confirm`, `POST …/{id}/dismiss`, `POST …/{id}/second` — orang kedua AG-T5), `services/ai_actions.py` (jenis lama, alat `propose_action`), `services/ai_cards.py` (golongan A/B/C, alat `prepare_action`, `POST /api/ai/tools/prepare_action`), `services/ai_card_rules.py` (daftar larangan) | — | `TanyaActionCard` (percakapan & tab), `TanyaActions` (Tanya KN › Tindakan) |
 | Kunci Masa Pajak *(PK-40)* | `tax_period_locks` | `routers/tax_center.py` (`/api/tax/periods*`), `services/tax_center_service.py` (`assert_masa_terbuka` dipanggil layanan faktur & PPh) | `TaxPeriodLockInput`, `TaxPeriodUnlockInput` | `TaxCenterView` (Akuntansi & Pajak › Pusat Pajak) |
 | Niat Bayar Hutang *(PK-05)* | `ap_payment_intents` | `routers/ap_payments.py`, `services/ap_payment_service.py` (dipanggil bayar faktur & bayar kontrabon) | `VendorBillPaymentCreate`, `ContraBonPayIn` | `VendorBillDetailPanel` & `contrabon/PayModal` (panel bayar, `features/purchasing/apPayment.jsx`) |
@@ -499,6 +500,11 @@ Key Fields:
   created_by / created_by_name / created_at / updated_at
 
 Indeks: `(entity_id, bank_verified, receipt_date)` (PM-T3 — daftar "Belum terverifikasi lebih dari N hari").
+PM-T4 — `cash_holding_id` (id `cth_…`, kosong = kwitansi biasa): kwitansi tunai yang dicatat bukan pemegang `cash.create`
+di PT ber-`pembayaran.sales_terima_tunai = titipan` — TANPA kas (`cash_txn_id` kosong) dan tanpa rekening; uangnya
+tercatat di `cash_holdings` sampai disetor. `gl_status` kwitansi = cermin jurnal titipannya. Pembatalan: titipan yang
+sudah (sebagian) disetor atau sedang diajukan dalam setoran → 409; selain itu titipan `batal` + jurnal pembalik
+(`void_gl_status`, sumber `cash_holding_reversal`). `bootstrap.backfill_ar_cash_postings` melewati kwitansi ini.
 Saringan daftar `GET /api/ar-receipts?bank_verified=&older_than_days=&method=` (PM-T3): kwitansi tunai & titipan tidak
 pernah masuk daftar belum terverifikasi; `older_than_days` tanpa nilai = `payment.hari_wajar_verifikasi_bank`.
 
@@ -550,6 +556,45 @@ Key Fields:
 ℹ️ Engine on-collection: iterasi line terbayar (pro-rata partial payment), cap by margin.
 ⚠️ JANGAN BUAT: incentive_rate, commission_rates, rates, sku_rates (sebagai koleksi).
 ```
+
+### cash_holdings + cash_deposits  [PM-T4 — tunai yang diterima sales dicatat sebagai titipan sampai disetor]
+
+Bila PT memilih `pembayaran.sales_terima_tunai = titipan` (bawaan `kas_langsung` = perilaku lama), kwitansi tunai yang
+dicatat orang tanpa izin `cash.create` tidak membuat kas: piutang tetap turun (alokasi kwitansi biasa), uangnya tercatat
+di sini. `dilarang` = 403. Logika: `services/cash_holding_service.py`. Kedua koleksi ber-PT (`entity_scope`).
+
+```
+cash_holdings — satu per kwitansi titipan (id `cth_` + id kwitansi tanpa awalan; `$setOnInsert`), nomor `TTP-` per PT
+  id, number, entity_id                PT kwitansi
+  holder_user_id, holder_name          pencatat kwitansi = pemegang uang
+  receipt_id, receipt_number, customer_id, customer_name
+  amount                               uang baru kwitansi (tetap)
+  deposited_amount                     sudah disetor — naik HANYA lewat penerimaan setoran (syarat ≤ amount − alokasi)
+  deposit_ids[]                        setoran yang sudah diterapkan (penanda: ulang tidak menggandakan)
+  status                               dipegang · sebagian_disetor · disetor · batal
+  received_at, due_at                  waktu terima (= tanggal kwitansi); batas setor saat dibuat ("" = PT tanpa tenggat)
+  gl_status, gl_error, gl_failed_at, journal_entry_id, je_id   jurnal titipan (P3; jenis Posting Gagal `cash_holding`)
+  void_gl_status …                     hanya kompensasi kwitansi gagal lahir
+  voided_at, voided_reason
+cash_deposits — setoran, id `cdp_…`, nomor `STT-` per PT (`STR-` sudah dipakai setoran kewajiban gaji PK-22)
+  id, number, entity_id, holder_user_id, holder_name, amount, note
+  allocations[] {holding_id, holding_number, receipt_number, amount}   tanpa pilihan = titipan tertua lebih dulu
+  status                               diajukan · diterima · ditolak · dibatalkan
+  receive_intent {status pending|done, account_id, cash_txn_id, by, by_id, at, done_at}   NIAT penerimaan (id kas tetap)
+  account_id, account_snapshot, received_by, received_by_id, received_at
+  cash_txn_id                          kas masuk `ref_type: cash_deposit` (Dr kas rekening / Cr 1-1280 lewat `contra_account_code`)
+  gl_status, gl_error, journal_entry_id   jurnal kas setoran (jenis Posting Gagal `cash_deposit`)
+  decided_by(_id), decided_at, decision_reason   tolak / batal
+```
+
+Jurnal: titipan = Dr `kas_bank.piutang_karyawan` (1-1280) / Cr sisi kredit jurnal kas kwitansi biasa
+(`gl_service._receipt_lines`: Piutang untuk bagian yang sudah diakui, Uang Muka Pelanggan untuk sisanya), sumber
+`cash_holding`. Setoran diterima = jurnal kas biasa. Indeks: `cash_holdings.uq_holding_receipt` (unik `receipt_id`,
+wajib-ada), `(entity_id, holder_user_id, status)`, `(entity_id, status, received_at)`; `cash_deposits (entity_id, status,
+created_at)`, `(entity_id, holder_user_id, status)`. Invarian INV-TTP-01 (`verify_data_integrity.py` lapisan `titipan`):
+per PT Σ (amount − deposited_amount) titipan tidak batal = Σ debit 1-1280 jurnal `cash_holding` − Σ kreditnya di
+`cash_holding_reversal` − Σ kredit 1-1280 jurnal kas `cash_deposit`; pembangun ulang `hitung_ulang_disetor`.
+⚠️ JANGAN BUAT: titipan_sales, sales_cash, setoran (sebagai koleksi).
 
 ### bank_accounts  [EPIC7-B IMPLEMENTED — Kas & Bank multi-akun + rekonsiliasi]
 Koleksi kanonik `bank_accounts` (prefix `bank_`). Master akun kas/bank; mutasi tetap
@@ -1425,6 +1470,8 @@ terdaftar di **`backend/services/posting_registry.py::KINDS`** (dibaca `routers/
 | `cash_transactions` | dokumen (sudah ada) | `gl_failed_at` baru |
 | `purchase_orders` | tiap unsur **`grir_clearings[]`** (`grir_clearings.$.gl_status`, …) — PK-28 | jenis registri `grir_clearing` ("Kliring GR/IR"), baris panel `<po_id>:<seq>` |
 | `payment_variance_decisions` | dokumen (`gl_status` = jurnal keputusan; **`reversal_gl_status`** = jurnal pembaliknya) — PK-19 | jenis registri `payment_variance` ("Keputusan Selisih Bayar"); ulang hanya untuk keputusan `done`/`reversed` |
+| `cash_holdings` | dokumen — PM-T4 | jenis registri `cash_holding` ("Titipan Tunai Sales"); status dicerminkan ke kwitansinya |
+| `cash_deposits` | dokumen — PM-T4 | jenis registri `cash_deposit` ("Setoran Titipan Tunai"); ulang = jurnal kas setoran yang sama |
 
 ### Sisa GR/IR per PO, selisih harga faktur, dan kliring  [PK-28 · IV-03]
 

@@ -138,6 +138,15 @@ INDEX_SPECS: Dict[str, List[IndexKeys]] = {
     "sales_targets": [
         [("entity_id", A), ("period_type", A), ("period", A)],
     ],
+    # PM-T4 — titipan tunai sales (unik `receipt_id`: REQUIRED_UNIQUE_INDEXES) dan setorannya.
+    "cash_holdings": [
+        [("entity_id", A), ("holder_user_id", A), ("status", A)],
+        [("entity_id", A), ("status", A), ("received_at", A)],
+    ],
+    "cash_deposits": [
+        [("entity_id", A), ("status", A), ("created_at", D)],
+        [("entity_id", A), ("holder_user_id", A), ("status", A)],
+    ],
     "purchase_orders": [
         [("entity_id", A), ("status", A), ("created_at", D)],
         [("supplier_id", A), ("created_at", D)],
@@ -965,6 +974,15 @@ REQUIRED_UNIQUE_INDEXES += [
      "keys": [("customer_id", 1), ("entity_id", 1)], "partial": {"customer_id": dict(_NONEMPTY)},
      "finder": _finder_dup("customer_balances", '{customer_id:{$type:"string",$gt:""}}',
                            '{c:"$customer_id",e:"$entity_id"}', "$id")},
+]
+
+
+# PM-T4 (D7) — satu titipan tunai per kwitansi. Id titipan sudah diturunkan dari id kwitansi (`$setOnInsert`), indeks ini
+# menjamin juga titipan yang lahir dari jalur lain tidak kembar. Data kembar (tidak mungkin sebelum unit ini) → H6.
+REQUIRED_UNIQUE_INDEXES += [
+    {"collection": "cash_holdings", "name": "uq_holding_receipt", "label": "satu titipan tunai per kwitansi",
+     "keys": [("receipt_id", 1)], "partial": {"receipt_id": dict(_NONEMPTY)},
+     "finder": _finder_dup("cash_holdings", '{receipt_id:{$type:"string",$gt:""}}', '"$receipt_id"', "$id")},
 ]
 
 

@@ -15,6 +15,11 @@
  * dan catatan alasan bila rekening ≠ instruksi bayar pesanan. Simpan meminta konfirmasi yang menyebut nominal, PT, dan
  * rekening (`02` N5). `preset` = { amount, accountId, reference, date } — form dibuka dari mutasi bank berkode bayar
  * (Rekonsiliasi Bank › "Catat kwitansi dari mutasi ini").
+ *
+ * PM-T4 — teks bantu tunai mengikuti mode tunai yang berlaku untuk akun ini di PT aktif (`GET /cash-holdings/me/summary`,
+ * pengaturan `pembayaran.sales_terima_tunai`; pemegang kas selalu kas langsung): `titipan` → "Uang tunai ini dicatat
+ * sebagai titipan di tangan Anda sampai disetor ke kasir atau bank." dan tanpa isian rekening; `dilarang` → pilihan
+ * tunai tidak ditawarkan. Gagal dimuat (mis. HP luring) → tampilan lama; server tetap memutus.
  */
 import KNDatePicker from "@/components/KNDatePicker";
 import { useCallback, useEffect, useMemo, useState } from "react";
@@ -38,6 +43,7 @@ import ReceiptPaymentFields, { receiptBlockReason } from "./ReceiptPaymentFields
 import { useEntityScope } from "../../context/EntityScopeContext";
 import { askConfirm } from "../../services/confirmService";
 import { entityShortById } from "../../utils/entityLabel";
+import { TEKS_TITIPAN } from "../finance/cashholding/cashHoldingShared";
 const LABEL = "text-[11px] font-bold uppercase tracking-wide text-[#6B6B73]";
 
 // Cek UI UAT v3 — tanggal LOKAL (dulu toISOString = UTC: 00.00–07.00 WIB jadi tanggal kemarin).
@@ -62,8 +68,11 @@ export default function ARReceiptModal({ customerId, customerName, preselectOrde
     giroDue: "", proofUrl: "", mismatchNote: "" }));
   const [payState, setPayState] = useState(null);
   const [refRequired, setRefRequired] = useState(false);
+  // PM-T4 — mode tunai akun ini di PT aktif: "kas_langsung" | "titipan" | "dilarang" ("" = belum/tidak termuat).
+  const [tunaiMode, setTunaiMode] = useState("");
   const methodOptions = useMemo(() => pm.methods.filter((m) => m.needs_account !== "tidak")
-    .map((m) => ({ value: m.code, label: m.name })), [pm.methods]);
+    .filter((m) => !(tunaiMode === "dilarang" && m.needs_account === "kas"))
+    .map((m) => ({ value: m.code, label: m.name })), [pm.methods, tunaiMode]);
   // Cara bayar yang tidak aktif untuk PT ini tidak boleh tetap terpilih (mis. QRIS dimatikan khusus PT).
   useEffect(() => {
     if (methodOptions.length && !methodOptions.some((o) => o.value === method)) setMethod(methodOptions[0].value);
@@ -123,6 +132,13 @@ export default function ARReceiptModal({ customerId, customerName, preselectOrde
       .catch(() => { if (alive) setRefRequired(false); });
     return () => { alive = false; };
   }, [selectedEntity]);
+  useEffect(() => {
+    let alive = true;
+    axios.get(`${API}/cash-holdings/me/summary`)
+      .then((r) => { if (alive) setTunaiMode(String(r.data?.mode || "")); })
+      .catch(() => { if (alive) setTunaiMode(""); });
+    return () => { alive = false; };
+  }, [selectedEntity]);
 
   useEffect(() => {
     (async () => {
@@ -152,7 +168,9 @@ export default function ARReceiptModal({ customerId, customerName, preselectOrde
     return out;
   }, [mode, openOrders, alloc, totalFunds]);
   const methodRow = pm.methods.find((m) => m.code === method) || null;
-  const needsAccount = effectiveAmount > 0;   // deposit saja = tanpa kas baru (tanpa rekening)
+  // PM-T4 — tunai yang dicatat sebagai titipan di tangan pencatat: tanpa kas (tanpa rekening) sampai disetor.
+  const titipan = tunaiMode === "titipan" && effectiveAmount > 0 && pm.isCash(method);
+  const needsAccount = effectiveAmount > 0 && !titipan;   // deposit saja = tanpa kas baru (tanpa rekening)
 
   // Takar selisih setiap kali nominal / alokasi berubah (debounce) — angka `seharusnya`
   // dihitung server dari tagihan yang jatuh tempo, bukan dari sisi layar.
@@ -212,7 +230,8 @@ export default function ARReceiptModal({ customerId, customerName, preselectOrde
     }
     // N5 — konfirmasi uang masuk menyebut nominal, PT, dan rekening penerima.
     const pt = entityShortById(entities, selectedEntity, "PT aktif");
-    const rek = needsAccount ? (payState?.accountLabel || "rekening bawaan PT") : "deposit pelanggan (tanpa uang baru)";
+    const rek = titipan ? "titipan tunai di tangan Anda (belum masuk kas)"
+      : needsAccount ? (payState?.accountLabel || "rekening bawaan PT") : "deposit pelanggan (tanpa uang baru)";
     const ok = await askConfirm({
       title: `Catat pembayaran ${formatCurrency(totalFunds)}?`,
       message: `Dari ${customerName || "pelanggan"} untuk ${pt}, masuk ke ${rek}.`,
@@ -252,11 +271,12 @@ export default function ARReceiptModal({ customerId, customerName, preselectOrde
     } finally { setBusy(false); }
   }
 
-  const blockReason = needsAccount ? receiptBlockReason(payState) : "";
+  const blockReason = (needsAccount || titipan) ? receiptBlockReason(payState) : "";
   const accBlocked = Boolean(blockReason);
-  const cashHint = pm.isCash(method)
-    ? `${pm.labelOf(method)} → masuk Kas Kecil (per PT).`
-    : `${pm.labelOf(method)} → masuk Kas Besar (bank).`;
+  const cashHint = titipan ? TEKS_TITIPAN
+    : pm.isCash(method)
+      ? `${pm.labelOf(method)} → masuk Kas Kecil (per PT).`
+      : `${pm.labelOf(method)} → masuk Kas Besar (bank).`;
 
   const footer = (
     <div className="flex flex-wrap items-center justify-between gap-2">
@@ -303,9 +323,16 @@ export default function ARReceiptModal({ customerId, customerName, preselectOrde
               <KNDatePicker data-testid="ar-receipt-date" value={date} onChange={setDate} clearable={false} />
             </div>
           </div>
-          <p className="text-[10.5px] text-[#9A9BA3] -mt-1" data-testid="ar-receipt-cash-hint">{cashHint}</p>
-          {needsAccount && (
-            <ReceiptPaymentFields entityId={selectedEntity} method={method} methodRow={methodRow}
+          {titipan ? (
+            <p className="flex items-start gap-1.5 rounded-md bg-kn-warning-soft px-2 py-1.5 text-fs-12 text-kn-warning-text"
+              data-testid="ar-receipt-cash-hint">
+              <Wallet size={13} className="mt-0.5 shrink-0" aria-hidden="true" />{cashHint}
+            </p>
+          ) : (
+            <p className="text-[10.5px] text-[#9A9BA3] -mt-1" data-testid="ar-receipt-cash-hint">{cashHint}</p>
+          )}
+          {(needsAccount || titipan) && (
+            <ReceiptPaymentFields entityId={selectedEntity} method={method} methodRow={methodRow} titipan={titipan}
               orders={allocatedOrders} refRequired={refRequired} value={pay} onChange={setPay} onState={setPayState} />
           )}
 

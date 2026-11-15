@@ -1629,6 +1629,34 @@ async def layer_hr_compensation_invariants(db):
              "→ scripts/migrate_hr_compensation_py_t2.py (baca-saja dulu; data nyata = keputusan pemilik)")
 
 
+async def layer_cash_holding_invariants(db):
+    """PM-T4 (`02_STANDAR.md` §5 D2) — titipan tunai sales sejalan dengan jurnalnya, per PT.
+
+    INV-TTP-01  Σ (amount − deposited_amount) titipan tidak batal = Σ debit piutang titipan karyawan jurnal
+                `cash_holding` − Σ kreditnya di pembalik `cash_holding_reversal` − Σ kredit akun itu di jurnal kas
+                ber-`ref_type: cash_deposit` (dibandingkan per SUMBER jurnal, bukan saldo akun: akun yang sama dipakai
+                Kasus Keuangan). Rumus satu tempat: `services/cash_holding_service.rekonsiliasi`; pembangun ulang
+                `deposited_amount` = `hitung_ulang_disetor`."""
+    print(f"\n{C}{B}TTP — Titipan tunai sales & setorannya (PM-T4){X}")
+    sys.path.insert(0, str(ROOT / "backend"))
+    try:
+        from services import cash_holding_service as _cth
+        bad = await _cth.rekonsiliasi()
+        n = await db["cash_holdings"].count_documents({})
+    except Exception as exc:  # noqa: BLE001 — penjaga tidak boleh buta diam-diam
+        results["fail"] += 1
+        line("FAIL", R, f"INV-TTP-01: titipan tunai tidak bisa diperiksa ({exc.__class__.__name__}: {exc})")
+        return
+    if bad:
+        results["fail"] += 1
+        line("FAIL", R, "INV-TTP-01: titipan ≠ jurnal di " + ", ".join(
+            f"{b['entity_id']} (titipan Rp {b['titipan']:,.0f} · jurnal Rp {b['jurnal']:,.0f})" for b in bad[:5]),
+             "→ cari titipan yang deposited_amount-nya diubah di luar setoran (hitung_ulang_disetor) atau jurnal gagal")
+    else:
+        results["pass"] += 1
+        line("PASS", G, f"INV-TTP-01: {n} titipan tunai — sisa belum disetor = jurnal titipan − setoran, per PT")
+
+
 async def layer_production_invariants(db):
     """R6.4 — Produksi In-House (BOM + Work Order): resep valid, HPP konsisten,
     konsumsi bahan == movement, roll barang jadi ada, overhead terkapitalisasi di GL."""
@@ -5128,6 +5156,7 @@ def _layer_registry():
         ("budget",      layer_budget_invariants,          True,  ("INV-BUD",)),
         ("incentive",   layer_incentive_invariants,       True,  ("INV-KM",)),
         ("hr_comp",     layer_hr_compensation_invariants, True,  ("INV-PY",)),
+        ("titipan",     layer_cash_holding_invariants,    True,  ("INV-TTP",)),
         ("production",  layer_production_invariants,      True,  ("INV-PROD",)),
         ("scheduler",   layer_scheduler_invariants,       True,  ("SCH-",)),
         ("ps21",        layer_ps21_invariants,            True,  ("PS21-",)),

@@ -177,6 +177,7 @@ SCOPED_COLLECTIONS = {
     "md_specs", "md_samples",         # FASE F — R&D: spesifikasi & permintaan sample (SCOPED)
     # Digitalisasi Formulir Sukacita (Cash Advance/Settlement + Kendaraan) — SCOPED
     "cash_advances", "cash_advance_settlements",
+    "cash_holdings", "cash_deposits",   # PM-T4 — titipan tunai sales & setorannya (uang satu PT)
     "vehicles", "vehicle_usage_logs",
     # ── FASE E-0 (L15) — 18 koleksi ber-`entity_id` yang sebelumnya TIDAK
     # terdaftar (bukan SCOPED, bukan SHARED) sehingga lolos dari gate kepatuhan.

@@ -372,6 +372,15 @@ MODULE_CATALOG.insert(next(i for i, m in enumerate(MODULE_CATALOG) if m["id"] ==
                                         # definisi angka `insentif.*` diubah di Pengaturan › Penjualan › Aturan
                                         "settings-hub", "settings-sales", "settings-cfg-sales"]})
 
+# ─── PM-T4 — titipan tunai sales (docs/blueprint/unit/PM-T4.md, "Izin dan peran") ──────────────────────────────────
+# Sumber daya `cash_holding` masuk modul "Kas, Bank & Kasus Keuangan"; tab Keuangan › Kas & Bank › Titipan Sales
+# (`cash-holdings`). Kartu "Titipan Saya" di HP sales bukan menu (Beranda HP).
+for _m in MODULE_CATALOG:
+    if _m["id"] == "finance_ops":
+        _m["resources"].append("cash_holding")
+        _m["nav"].extend(v for v in ("cash-bank", "cash-holdings") if v not in _m["nav"])
+del _m
+
 MODULE_BY_ID = {m["id"]: m for m in MODULE_CATALOG}
 #: PR-T5 — id modul lama → id modul penggantinya. `apply_levels`/`nav_for_levels` menerima id lama (permintaan, uji, dan
 #: `custom_roles.levels` lama); jawaban selalu memakai id baru.
@@ -643,6 +652,11 @@ ACTION_LABEL.update({"payroll.create": "Siapkan: buat, hitung ulang, ajukan, bat
                      "payroll.post": "Posting jurnal gaji",
                      "payroll.void": "Anulir gaji yang sudah diposting (jurnal dibalik)",
                      "payroll.pay": "Bayar gaji dan setor BPJS/PPh 21"})
+# PM-T4 — titipan tunai sales (modul Kas, Bank & Kasus Keuangan).
+RESOURCE_LABEL["cash_holding"] = "Titipan Tunai Sales"
+ACTION_LABEL.update({"cash_holding.view": "Lihat titipan tunai (milik sendiri; semua bila boleh menerima setoran)",
+                     "cash_holding.create": "Ajukan setoran titipan sendiri",
+                     "cash_holding.approve": "Terima atau tolak setoran titipan"})
 # KM-T1 — Meja Insentif (modul Kinerja & Insentif).
 RESOURCE_LABEL["incentive"] = "Kinerja & Insentif"
 ACTION_LABEL.update({"incentive.view": "Lihat", "incentive.configure": "Konfigurasi"})
@@ -784,6 +798,17 @@ VIEW_RESOURCE_OVERRIDES["customers-crm"] = ["customer"]
 # PK-28 — tab Hutang › GR/IR dibuka izin `vendor_bill` (GET /api/finance/gr-ir = `vendor_bill.view`), bukan seluruh modul
 # Hutang Supplier & Kontrabon (pemegang izin kontrabon/landed cost saja tidak mendapat tab yang langsung menolak).
 VIEW_RESOURCE_OVERRIDES["gr-ir"] = ["vendor_bill"]
+# PM-T4 — tab Kas & Bank › Titipan Sales dibuka izin `cash_holding` (GET /api/cash-holdings = `cash_holding.view`). Sales
+# memegang `cash_holding.view/create` (titipan & setorannya sendiri): tab yang HANYA milik modul "Kas, Bank & Kasus
+# Keuangan" (Rekening & Saldo, Transaksi Kas, Rekonsiliasi, Kasus, aturan bank, alasan koreksi) tetap dibuka sumber daya
+# modul sebelum unit ini (tanpa `cash_holding`), supaya pemegang titipan saja tidak mendapat tab yang langsung menolak.
+# Hub/grup/menu Pengaturan yang dipakai bersama modul lain tidak diubah.
+for _v in MODULE_BY_ID["finance_ops"]["nav"]:
+    if _v != "cash-holdings" and _v not in VIEW_RESOURCE_OVERRIDES \
+            and all(_m["id"] == "finance_ops" for _m in MODULE_CATALOG if _v in _m["nav"]):
+        VIEW_RESOURCE_OVERRIDES[_v] = [r for r in MODULE_BY_ID["finance_ops"]["resources"] if r != "cash_holding"]
+VIEW_RESOURCE_OVERRIDES["cash-holdings"] = ["cash_holding"]
+del _v
 
 
 #: PR-T5 — menu yang butuh AKSI tertentu (bukan sekadar "ada aksi apa pun pada sumber daya modulnya"). Dikirim

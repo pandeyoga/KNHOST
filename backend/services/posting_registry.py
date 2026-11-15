@@ -56,6 +56,9 @@ async def _retry_cash(doc: Dict[str, Any], actor: Dict[str, Any]) -> None:
     if doc.get("ref_type") == "statutory_remittance" and doc.get("ref_id"):   # PK-22 — setoran kewajiban selesai
         from services.hr_remittance_service import finish_remittance
         await finish_remittance(doc["ref_id"])
+    if doc.get("ref_type") == "cash_deposit" and doc.get("ref_id"):   # PM-T4 — penanda jurnal setoran titipan ikut
+        from services.cash_holding_service import tandai_jurnal_kas
+        await tandai_jurnal_kas(doc)
 
 
 async def _retry_ar_receipt(doc: Dict[str, Any], actor: Dict[str, Any]) -> None:
@@ -202,6 +205,8 @@ async def post_receipt_void(receipt: Dict[str, Any], created_by: str = "system")
             hasil.append(await gl.post_advance_reclass_reversal(order, receipt["id"], adv, label=label))
     hasil += [await gl.post_cash_void(cid, label=label, created_by=created_by)
               for cid in await _receipt_cash_ids(receipt["id"])]
+    if receipt.get("cash_holding_id"):   # PM-T4 — kwitansi titipan: pembalik jurnal titipannya (bukan kas)
+        hasil.append(await gl.reverse_cash_holding(receipt["cash_holding_id"], label=label, created_by=created_by))
     hasil.append(await gl.reverse_deposit_only_receipt(receipt["id"], label=label, created_by=created_by))
     return next((je for je in hasil if isinstance(je, dict) and je.get("id")), None)
 
@@ -211,6 +216,9 @@ async def durable_receipt_void(receipt: Dict[str, Any], created_by: str = "syste
     from services import gl_service as gl
     kas = await _receipt_cash_ids(receipt["id"])
     st, sid = ("cash_transaction_void", kas[0]) if kas else ("ar_receipt_deposit_void", receipt["id"])
+    if not kas and receipt.get("cash_holding_id") and await gl._already_posted("cash_holding",
+                                                                               receipt["cash_holding_id"]):
+        st, sid = "cash_holding_reversal", receipt["cash_holding_id"]   # PM-T4
     return await gl.post_durable("ar_receipts", receipt["id"], lambda: post_receipt_void(receipt, created_by),
                                  source_type=st, source_id=sid, field="void_gl_status", raise_on_fail=raise_on_fail)
 
@@ -501,6 +509,19 @@ async def _retry_petty_cash_settlement(doc: Dict[str, Any], actor: Dict[str, Any
     await repost_settlement(doc["id"], actor)
 
 
+async def _retry_cash_holding(doc: Dict[str, Any], actor: Dict[str, Any]) -> None:
+    """PM-T4 — jurnal titipan tunai sales yang gagal (Dr piutang titipan karyawan / Cr sisi kredit kwitansi): diulang
+    lewat pintu yang sama; status kwitansinya ikut diperbarui."""
+    from services.cash_holding_service import ulang_jurnal
+    await ulang_jurnal(doc["id"], actor.get("name", "system"))
+
+
+async def _retry_cash_deposit(doc: Dict[str, Any], actor: Dict[str, Any]) -> None:
+    """PM-T4 — setoran titipan yang kasnya tercatat tetapi jurnal kasnya gagal: jurnal kas yang sama (id tetap)."""
+    from services.cash_holding_service import ulang_jurnal_setoran
+    await ulang_jurnal_setoran(doc)
+
+
 async def _retry_finance_case(doc: Dict[str, Any], actor: Dict[str, Any]) -> None:
     """PK-25 — kasus keuangan yang penyelesaiannya tersimpan (niat `pending`) tetapi jurnalnya gagal: `resolve` dipanggil
     lagi dengan isi niat yang tersimpan — efek yang sudah jadi dipakai ulang (id tetap), jurnal ber-kunci per kejadian
@@ -618,7 +639,8 @@ KINDS: Dict[str, Dict[str, Any]] = {
         "entity_field": "entity_id", "number_field": "number", "amount_field": "amount",
         "status_field": "void_gl_status", "error_field": "void_gl_error", "failed_at_field": "void_gl_failed_at",
         "doc_type": "ar_receipt",
-        "posters": ("post_cash_void", "reverse_deposit_only_receipt", "post_advance_reclass_reversal"),
+        "posters": ("post_cash_void", "reverse_deposit_only_receipt", "post_advance_reclass_reversal",
+                    "reverse_cash_holding"),   # PM-T4 — pembalik jurnal titipan kwitansi yang dibatalkan
         "retry": _retry_receipt_void},
     "fixed_asset": {
         "label": "Aset Tetap", "collection": "fin_fixed_assets", "failed_query": {"gl_status": "failed"},
@@ -710,6 +732,19 @@ KINDS: Dict[str, Dict[str, Any]] = {
                                                                                "amount"),
         "status_field": "gl_status", "error_field": "gl_error", "failed_at_field": "gl_failed_at",
         "doc_type": "finance_case", "posters": ("post_finance_case",), "retry": _retry_finance_case},
+    # ── PM-T4 — titipan tunai sales (jurnal titipan) dan setorannya (jurnal kas lewat pembuat kas satu pintu) ──
+    "cash_holding": {
+        "label": "Titipan Tunai Sales", "collection": "cash_holdings", "failed_query": {"gl_status": "failed"},
+        "entity_field": "entity_id", "number_field": "number", "amount_field": "amount",
+        "status_field": "gl_status", "error_field": "gl_error", "failed_at_field": "gl_failed_at", "doc_type": "",
+        "link": {"view": "cash-holdings", "tab": "", "focus_type": "cash_holding"},
+        "posters": ("post_cash_holding",), "retry": _retry_cash_holding},
+    "cash_deposit": {
+        "label": "Setoran Titipan Tunai", "collection": "cash_deposits", "failed_query": {"gl_status": "failed"},
+        "entity_field": "entity_id", "number_field": "number", "amount_field": "amount",
+        "status_field": "gl_status", "error_field": "gl_error", "failed_at_field": "updated_at", "doc_type": "",
+        "link": {"view": "cash-holdings", "tab": "", "focus_type": "cash_deposit"},
+        "posters": (), "retry": _retry_cash_deposit},
 }
 
 LABELS: Dict[str, str] = {k: v["label"] for k, v in KINDS.items()}

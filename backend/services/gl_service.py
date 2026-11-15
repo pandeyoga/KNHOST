@@ -3252,6 +3252,96 @@ async def preflight_cash(txn: Dict[str, Any]) -> None:
                           entity_id=ent, date=txn.get("txn_date") or now_iso(), source_type="cash_transaction")
 
 
+async def _receipt_lines(r: Dict[str, Any], *, debit_acc: str, amount: float, number: str,
+                         desc: str) -> Tuple[List[Dict[str, Any]], List[str]]:
+    """Baris jurnal uang baru kwitansi `r` dengan sisi debit `debit_acc` (kas/bank kwitansi biasa, atau piutang titipan
+    karyawan untuk titipan tunai sales PM-T4). → (baris, pesanan yang uang mukanya perlu direklas sesudah jurnal).
+
+    KN-076-AR-GL-DRIFT (bagian deposit): jangan meng-Cr Piutang untuk SELURUH uang bila ada kelebihan bayar / pemakaian
+    deposit. Split: Dr `debit_acc` = amount (uang baru) ; Dr Uang Muka = used_deposit ; Cr Piutang = applied_total ;
+    Cr Uang Muka = unapplied (applied + unapplied == amount + used_deposit → seimbang). KEB-PDPT — alokasi ke pesanan
+    yang pendapatannya BELUM lahir (belum dikirim) adalah uang muka → Cr 2-1400, bukan Cr Piutang (pembayarannya
+    ditandai `gl_bucket=advance`)."""
+    adv_orders: List[str] = []
+    applied = round(float(r.get("applied_total", amount) or 0), 2)
+    used_dep = round(float(r.get("used_deposit", 0) or 0), 2)
+    unapplied = round(float(r.get("unapplied_amount", 0) or 0), 2)
+    advance = 0.0
+    for al in (r.get("allocations") or []):
+        oid, amt_al = al.get("order_id"), round(float(al.get("applied") or 0), 2)
+        if not oid or amt_al <= EPS:
+            continue
+        # Pesanan terkirim SEBAGIAN: piutang yang lahir bisa lebih kecil dari
+        # yang dibayar → kelebihannya uang muka (direklas pro-rata saat dikirim).
+        room = await order_ar_room(oid, exclude_receipt_id=r.get("id", ""))
+        if amt_al > room + EPS:
+            advance = round(advance + amt_al, 2)
+            adv_orders.append(oid)
+            await tag_advance_payment(oid, r.get("id", ""))
+    applied = round(applied - advance, 2)
+    lines = [{"account_code": debit_acc, "debit": amount, "credit": 0.0,
+              "description": f"{number} · {desc}"}]
+    if used_dep > EPS:
+        lines.append({"account_code": ACC_UANG_MUKA_PELANGGAN, "debit": used_dep,
+                      "credit": 0.0, "description": f"{number} · pakai deposit"})
+    if applied > EPS:
+        lines.append({"account_code": ACC_PIUTANG, "debit": 0.0, "credit": applied,
+                      "description": f"{number} · pelunasan AR"})
+    if advance > EPS:
+        lines.append({"account_code": ACC_UANG_MUKA_PELANGGAN, "debit": 0.0,
+                      "credit": advance,
+                      "description": f"{number} · uang muka pesanan belum dikirim"})
+    if unapplied > EPS:
+        lines.append({"account_code": ACC_UANG_MUKA_PELANGGAN, "debit": 0.0,
+                      "credit": unapplied, "description": f"{number} · titipan/deposit"})
+    return lines, adv_orders
+
+
+async def post_cash_holding(holding: Dict[str, Any], created_by: str = "system") -> Optional[Dict[str, Any]]:
+    """PM-T4 — jurnal titipan tunai sales (kwitansi tunai yang uangnya masih di tangan pencatatnya): Dr Piutang titipan
+    karyawan (`kas_bank.piutang_karyawan`) sebesar uang baru kwitansi / Cr sisi kredit yang SAMA dengan jurnal kas
+    kwitansi biasa (`_receipt_lines`: piutang untuk bagian yang sudah diakui, uang muka pelanggan untuk sisanya).
+    Sumber `cash_holding` + id titipan; idempoten (jurnal tidak-batal yang sudah ada → None). Dipanggil lewat pintu
+    tahan-gagal `post_durable` (`services/cash_holding_service.py`, panel Posting Gagal jenis `cash_holding`)."""
+    hid = holding.get("id") or ""
+    amount = round(float(holding.get("amount") or 0), 2)
+    if not hid or amount <= EPS or holding.get("status") == "batal" or await _already_posted("cash_holding", hid):
+        return None
+    r = await db.ar_receipts.find_one({"id": holding.get("receipt_id") or "__none__"}, {"_id": 0})
+    if not r:
+        raise ValueError(f"Kwitansi titipan {holding.get('receipt_number') or ''} tidak ditemukan.")
+    number = holding.get("number") or hid
+    desc = f"Titipan tunai {holding.get('holder_name') or ''} · {r.get('number', '')} — {r.get('customer_name', '')}"
+    lines, adv_orders = await _receipt_lines(r, debit_acc=ACC_PIUTANG_KARYAWAN, amount=amount, number=number,
+                                             desc=desc)
+    je = await _insert_entry(
+        lines=lines, description=f"Titipan tunai sales · {desc}", date=holding.get("received_at") or now_iso(),
+        source_type="cash_holding", source_id=hid, entity_id=r.get("entity_id") or holding.get("entity_id") or "",
+        created_by=created_by, source_label=number, ref={"receipt_id": r.get("id", "")})
+    for oid in adv_orders:
+        fresh = await db.sales_orders.find_one({"id": oid}, {"_id": 0})
+        if fresh:
+            await post_advance_reclass(fresh)
+    return je
+
+
+async def reverse_cash_holding(holding_id: str, *, label: str = "",
+                               created_by: str = "system") -> Optional[Dict[str, Any]]:
+    """PM-T4 — pembalik jurnal titipan tunai (kwitansi titipan dibatalkan sebelum disetor) lewat satu jalur pembalik
+    (PK-10, `02` P7): sumber `cash_holding_reversal` + id titipan; jurnal asal ditandai. Idempoten: pembalik yang sudah
+    ada dikembalikan."""
+    if not holding_id:
+        return None
+    orig = await db.journal_entries.find_one(
+        {"source_type": "cash_holding", "source_id": holding_id, "status": {"$ne": "void"}}, {"_id": 0})
+    if not orig:
+        return None
+    return await _reverse_once(
+        orig, source_type="cash_holding_reversal", source_id=holding_id, date=now_iso(),
+        description=f"Pembalik titipan tunai · {label or orig.get('source_label', '')}", created_by=created_by,
+        source_label=orig.get("source_label", ""), line_prefix="Pembalik", reason=label)
+
+
 async def _post_cash_transaction(txn: Dict[str, Any]) -> Optional[Dict[str, Any]]:
     """Mutasi kas: Dr/Cr Kas/Bank vs lawan akun berdasar ref_type / kategori.
 
@@ -3294,49 +3384,14 @@ async def _post_cash_transaction(txn: Dict[str, Any]) -> Optional[Dict[str, Any]
 
     if direction == "in":
         if ref_type == "ar_receipt":
-            # KN-076-AR-GL-DRIFT (bagian deposit): jangan meng-Cr Piutang untuk SELURUH kas bila
-            # ada kelebihan bayar / pemakaian deposit. Split:
-            #   Dr Kas = amount (kas baru) ; Dr Uang Muka = used_deposit ;
-            #   Cr Piutang = applied_total ; Cr Uang Muka = unapplied.
-            # (applied+unapplied == amount+used_deposit → seimbang). Fallback ke Cr Piutang penuh
-            # bila receipt lama tak punya field split (kompatibilitas mundur).
+            # KN-076-AR-GL-DRIFT (bagian deposit) — sisi kredit dihitung `_receipt_lines` (dipakai juga jurnal titipan
+            # tunai sales PM-T4, `post_cash_holding`, supaya kedua jurnal mengkredit akun yang sama).
             r = ar_receipt_doc
             if r is None:
                 lines = _balanced_pair(cash_acc, ACC_PIUTANG, amount, f"{number} · {desc}")
             else:
-                applied = round(float(r.get("applied_total", amount) or 0), 2)
-                used_dep = round(float(r.get("used_deposit", 0) or 0), 2)
-                unapplied = round(float(r.get("unapplied_amount", 0) or 0), 2)
-                # KEB-PDPT — alokasi ke pesanan yang pendapatannya BELUM lahir (belum
-                # dikirim) adalah uang muka → Cr 2-1400, bukan Cr Piutang.
-                advance = 0.0
-                for al in (r.get("allocations") or []):
-                    oid, amt_al = al.get("order_id"), round(float(al.get("applied") or 0), 2)
-                    if not oid or amt_al <= EPS:
-                        continue
-                    # Pesanan terkirim SEBAGIAN: piutang yang lahir bisa lebih kecil dari
-                    # yang dibayar → kelebihannya uang muka (direklas pro-rata saat dikirim).
-                    room = await order_ar_room(oid, exclude_receipt_id=r.get("id", ""))
-                    if amt_al > room + EPS:
-                        advance = round(advance + amt_al, 2)
-                        adv_orders.append(oid)
-                        await tag_advance_payment(oid, r.get("id", ""))
-                applied = round(applied - advance, 2)
-                lines = [{"account_code": cash_acc, "debit": amount, "credit": 0.0,
-                          "description": f"{number} · {desc}"}]
-                if used_dep > EPS:
-                    lines.append({"account_code": ACC_UANG_MUKA_PELANGGAN, "debit": used_dep,
-                                  "credit": 0.0, "description": f"{number} · pakai deposit"})
-                if applied > EPS:
-                    lines.append({"account_code": ACC_PIUTANG, "debit": 0.0, "credit": applied,
-                                  "description": f"{number} · pelunasan AR"})
-                if advance > EPS:
-                    lines.append({"account_code": ACC_UANG_MUKA_PELANGGAN, "debit": 0.0,
-                                  "credit": advance,
-                                  "description": f"{number} · uang muka pesanan belum dikirim"})
-                if unapplied > EPS:
-                    lines.append({"account_code": ACC_UANG_MUKA_PELANGGAN, "debit": 0.0,
-                                  "credit": unapplied, "description": f"{number} · titipan/deposit"})
+                lines, adv_orders = await _receipt_lines(r, debit_acc=cash_acc, amount=amount, number=number,
+                                                         desc=desc)
         else:
             contra = ACC_SUSPENSE  # default netral (tidak menggelembungkan pendapatan)
             cat = (txn.get("category") or "").lower()
@@ -4178,6 +4233,7 @@ JOURNAL_SOURCE_LABEL: Dict[str, str] = {
     "amendment_credit_note": "Nota Kredit Koreksi", "return_logistics": "Ongkir Retur",
     "suspense_reclass": "Reklas Akun Penampung", "finance_case": "Kasus Keuangan",
     "grir_clearing": "Kliring GR/IR",   # PK-28
+    "cash_holding": "Titipan Tunai Sales", "cash_holding_reversal": "Pembalik Titipan Tunai",   # PM-T4
 }
 
 

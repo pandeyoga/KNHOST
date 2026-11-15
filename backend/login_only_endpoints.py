@@ -78,4 +78,7 @@ LOGIN_ONLY: Dict[Tuple[str, str], str] = {
     ("GET", "/api/stock/my-site"): MILIK_SENDIRI,
     ("PUT", "/api/stock/my-site"): MILIK_SENDIRI,
     ("GET", "/api/location-scope"): MILIK_SENDIRI,       # lokasi kerja pengguna
+    # PM-T4 — ringkasan titipan tunai MILIK SENDIRI (disaring `holder_user_id` aktor) + mode tunai akun ini di PT aktif:
+    # bahan teks bantu form kwitansi (siapa pun pencatatnya) dan kartu "Titipan Saya" di HP.
+    ("GET", "/api/cash-holdings/me/summary"): MILIK_SENDIRI,
 }

@@ -92,6 +92,11 @@
     "reject",
     "disburse"
    ],
+   "cash_holding": [
+    "view",
+    "create",
+    "approve"
+   ],
    "cash_settlement": [
     "view",
     "create",
@@ -723,6 +728,10 @@
     "submit",
     "disburse"
    ],
+   "cash_holding": [
+    "view",
+    "approve"
+   ],
    "cash_settlement": [
     "view",
     "create",
@@ -951,6 +960,11 @@
     "approve",
     "reject",
     "disburse"
+   ],
+   "cash_holding": [
+    "view",
+    "create",
+    "approve"
    ],
    "cash_settlement": [
     "view",
@@ -1718,6 +1732,10 @@
     "update",
     "submit"
    ],
+   "cash_holding": [
+    "view",
+    "create"
+   ],
    "cash_settlement": [
     "view",
     "create",
@@ -1883,6 +1901,9 @@
     "create",
     "update",
     "submit"
+   ],
+   "cash_holding": [
+    "view"
    ],
    "cash_settlement": [
     "view",
@@ -2565,6 +2586,7 @@
   "ar-aging": [
    "ar_receipt",
    "cash",
+   "cash_holding",
    "credit_profile",
    "customer",
    "finance_amendment",
@@ -2625,12 +2647,16 @@
    "budget",
    "cash",
    "cash_advance",
+   "cash_holding",
    "cash_settlement",
    "finance_amendment",
    "finance_case",
    "fixed_asset",
    "gl_mapping",
    "period"
+  ],
+  "cash-holdings": [
+   "cash_holding"
   ],
   "cash-management": [
    "cash",
@@ -3066,6 +3092,7 @@
    "budget",
    "cash",
    "cash_advance",
+   "cash_holding",
    "cash_settlement",
    "contra_bon",
    "credit_profile",
@@ -3675,6 +3702,7 @@
    "budget",
    "cash",
    "cash_advance",
+   "cash_holding",
    "cash_settlement",
    "credit_profile",
    "finance_amendment",
@@ -3697,6 +3725,7 @@
    "budget",
    "cash",
    "cash_advance",
+   "cash_holding",
    "cash_settlement",
    "color",
    "contra_bon",
@@ -3780,6 +3809,7 @@
   ],
   "settings-sales": [
    "cash",
+   "cash_holding",
    "finance_amendment",
    "finance_case",
    "incentive",

@@ -39,6 +39,19 @@ GL-01: registri `services/gl_mapping_registry.py` (54 kebutuhan) → koleksi `gl
   saringan "Belum terverifikasi lebih dari N hari"; Rekonsiliasi Bank lencana "Kode bayar {kode}" + **Catat kwitansi dari
   mutasi ini** (form terisi, lalu mutasi ditautkan); cetakan kwitansi baru memuat Cara bayar, Rekening, No. referensi. Kas
   kwitansi lama tanpa rekening: `scripts/backfill_receipt_accounts.py` (bawaan lapor; `--terapkan` = H3).
+- 2026-11-15 PM-T4 (PM-06; K-36 — tunai yang diterima sales dicatat sebagai **titipan** sampai disetor): pengaturan per PT
+  `pembayaran.sales_terima_tunai` = `kas_langsung` (bawaan, perilaku lama) · `titipan` · `dilarang` (403), batas titipan
+  per orang `pembayaran.titipan_batas_nominal` (0 = tanpa batas, 409 bila terlewati) dan tenggat setor
+  `pembayaran.titipan_tenggat_setor_hari` (0 = tanpa tenggat, hanya menandai). Berlaku untuk kwitansi tunai yang dicatat
+  bukan pemegang `cash.create`; pemegang kas selalu kas langsung. Kwitansi titipan: piutang turun seperti biasa, TANPA kas,
+  satu `cash_holdings` (`TTP-`) + jurnal Dr 1-1280 Piutang titipan karyawan / Cr sisi kredit kwitansi biasa
+  (`gl_service.post_cash_holding`). Setoran `cash_deposits` (`STT-`): sales mengajukan (tertua dulu), kasir/Finance
+  (`cash_holding.approve`, bukan pemegangnya) menerima ke rekening kas/bank → satu kas `ref_type: cash_deposit` (Dr kas /
+  Cr 1-1280) lewat `create_cash`; tolak/batal tidak mengubah titipan. Batal kwitansi titipan: belum disetor → titipan batal
+  + jurnal pembalik; sudah disetor/diajukan → 409. Panel Posting Gagal jenis `cash_holding` dan `cash_deposit`; invarian
+  INV-TTP-01. Izin `cash_holding.view/create/approve`. Layar: tab **Keuangan › Kas & Bank › Titipan Sales**, kartu HP
+  **Titipan Saya** (Setor), teks bantu titipan di form kwitansi, lencana "Titipan sales" di Riwayat Pembayaran. Menyalakan
+  `titipan`/`dilarang` untuk PT nyata = keputusan pemilik (H5).
 - 2026-11-14 PK-23 (FY-01, FY-03, FY-04, FY-05, FY-20 — aset tetap): **perolehan** = PERIKSA (akun aset tetap aktif PT,
   sumber dana, periode) → aset `pending` (id dari kunci idempotensi) → kas keluar lewat `cash_ledger.create_cash`
   (sumber kas, ber-rekening, `ref_type="fixed_asset"`) → jurnal `post_durable`. **Sumber dana wajib** (`funding_source`:

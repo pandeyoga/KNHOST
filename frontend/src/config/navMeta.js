@@ -226,6 +226,7 @@ export const PAGE_META = {
   "sales-performance":    { kicker: "SDM \u00b7 Kinerja & Insentif", title: "Kinerja Sales \u00b7 KPI, Komisi & Papan Peringkat" },
   "incentive-schemes":    { kicker: "SDM \u00b7 Kinerja & Insentif", title: "Skema Insentif (Arsip) \u00b7 Target & Skema per Sales" },
   "petty-cash":           { kicker: "Keuangan \u00b7 Kas & Bank", title: "Kas Kecil \u00b7 Pengajuan Dana, Pertanggungjawaban & Hutang Reimburse" },
+  "cash-holdings":        { kicker: "Keuangan \u00b7 Kas & Bank", title: "Titipan Sales \u00b7 Tunai yang Dipegang Sales & Setorannya" },
 };
 
 // ROLE-HOME REGISTRY (F5) — landing per role

@@ -208,3 +208,5 @@ export const SalesForceDashboard = lazy(() => import("./features/crm/SalesForceD
 export const IncentiveSchemeEditor = lazy(() => import("./features/crm/IncentiveSchemeEditor"));
 export const CustomerCreditView = lazy(() => import("./features/finance/CustomerCreditView"));
 export const PettyCashView = lazy(() => import("./features/pettycash/PettyCashView"));
+// PM-T4 — Keuangan › Kas & Bank › Titipan Sales (setoran titipan tunai sales).
+export const CashHoldingsView = lazy(() => import("./features/finance/cashholding/CashHoldingsView"));

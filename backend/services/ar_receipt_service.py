@@ -96,7 +96,7 @@ async def _rencana_pesanan(customer_id: str, entity_id: str, explicit: List[Dict
 
 
 async def periksa_uang_masuk(payload: Dict[str, Any], *, entity_id: str, cara: Dict[str, Any], amount: float,
-                             customer_id: str, total_funds: float) -> Dict[str, Any]:
+                             customer_id: str, total_funds: float, titipan: bool = False) -> Dict[str, Any]:
     """PM-T3 — langkah PERIKSA rekening, referensi, dan instruksi bayar kwitansi (`02` §1 langkah 1: tanpa tulisan).
 
     → isian kwitansi `{account_id, account_snapshot, cash_type, reference_no, giro_due_date, proof_url,
@@ -105,7 +105,11 @@ async def periksa_uang_masuk(payload: Dict[str, Any], *, entity_id: str, cara: D
     Rekening (hanya bila ada uang baru): yang dikirim → (kosong) rekening tujuan pesanan yang dialokasi bila semua
     pesanan menunjuk rekening yang sama dan rekening itu menerima cara bayar ini → rekening bawaan (PT, cara bayar)
     PM-T1 → rekening tunggal PT untuk jenis kasnya (PK-20) → 409 pesan PK-20. Rekening PT lain → 400; nonaktif → 409
-    (PK-20); bukan penerimaan pelanggan / tidak melayani cara bayar → 400."""
+    (PK-20); bukan penerimaan pelanggan / tidak melayani cara bayar → 400.
+
+    PM-T4 — `titipan=True` (tunai yang dicatat sebagai titipan di tangan sales): tanpa rekening penerima (tidak ada kas
+    sampai setorannya diterima). "Tidak sesuai instruksi" = pesanan yang dialokasi berinstruksi rekening yang tidak
+    menerima tunai di PT ini (catatan alasan wajib, sama dengan tunai ke rekening kas)."""
     from services import bank_account_change_service as bacs
     from services import cash_ledger
     from services.cash_entity_service import resolve_owner
@@ -130,6 +134,19 @@ async def periksa_uang_masuk(payload: Dict[str, Any], *, entity_id: str, cara: D
     if amount <= EPS:
         return out   # deposit saja = tanpa kas baru, tanpa rekening (PK-20)
     owner = resolve_owner(entity_id, DEFAULT_ENTITY_ID, what="Kas masuk kwitansi")
+    if titipan:
+        penerima_tunai = {r["id"] for r in await bacs.daftar_penerima(owner, kode)}
+        beda = [{"order_id": o["id"], "order_number": o.get("number") or o["id"],
+                 "account_id": o.get("receiving_account_id") or "",
+                 "account_text": teks_rekening(o.get("receiving_account") or {})}
+                for o in orders if o.get("receiving_account_id") and o["receiving_account_id"] not in penerima_tunai]
+        out["reference_no"] = str(payload.get("reference_no") or "").strip()[:80]
+        if beda:
+            catatan = str(payload.get("mismatch_note") or "").strip()
+            if len(catatan) < CATATAN_MIN:
+                raise HTTPException(status_code=400, detail=PESAN_TIDAK_SESUAI)
+            out.update(instruction_mismatch=True, mismatch_note=catatan[:500], instruction_mismatch_orders=beda)
+        return out
     cash_type = "kas_kecil" if perlu == "kas" else "kas_besar"
     dikirim = str(payload.get("account_id") or "").strip()
     penerima = await bacs.daftar_penerima(owner, kode) if perlu in ("bank", "kas") else []
@@ -178,6 +195,11 @@ async def periksa_uang_masuk(payload: Dict[str, Any], *, entity_id: str, cara: D
             raise HTTPException(status_code=400, detail=PESAN_TIDAK_SESUAI)
         out.update(instruction_mismatch=True, mismatch_note=catatan[:500], instruction_mismatch_orders=beda)
     return out
+
+
+def _titipan_id(receipt_id: str) -> str:
+    from services.cash_holding_service import holding_id_for
+    return holding_id_for(receipt_id)
 
 
 def _payment_status(grand_total: float, paid: float) -> str:
@@ -259,6 +281,16 @@ async def repost_receipt(receipt_id: str) -> Dict[str, Any]:
     rc = await db.ar_receipts.find_one({"id": receipt_id}, {"_id": 0})
     if not rc:
         raise HTTPException(status_code=404, detail="Kwitansi tidak ditemukan")
+    if rc.get("cash_holding_id") and not rc.get("cash_txn_id"):
+        # PM-T4 — kwitansi titipan: jurnalnya milik titipan (`cash_holding`); ulang lewat pintu yang sama.
+        from services import cash_holding_service as _cth
+        try:
+            await _cth.ulang_jurnal(rc["cash_holding_id"], "repost")
+        except HTTPException:
+            raise
+        except Exception as exc:  # noqa: BLE001
+            raise HTTPException(status_code=409, detail=f"Jurnal masih gagal: {exc}")
+        return safe_doc(await db.ar_receipts.find_one({"id": receipt_id}, {"_id": 0}))
     if not rc.get("cash_txn_id") and float(rc.get("used_deposit") or 0) > EPS:
         await _post_deposit_gl(rc, {"name": "repost"})
         fresh = await db.ar_receipts.find_one({"id": receipt_id}, {"_id": 0})
@@ -389,10 +421,19 @@ async def create_receipt(payload: Dict[str, Any], actor: Dict[str, Any]) -> Dict
         await _glp.preflight_posting(entity_id, receipt_date)
     except _glp.ClosedPeriodError as exc:
         raise HTTPException(status_code=409, detail=str(exc))
+    # PM-T4 (K-36) — tunai yang dicatat bukan pemegang kas (`cash.create`): `pembayaran.sales_terima_tunai` PT kwitansi
+    # menentukan kas langsung (bawaan, perilaku lama) / titipan di tangan pencatat / dilarang (403). Batas titipan per
+    # orang diperiksa di sini (409) — semua SEBELUM nomor, deposit, dan alokasi.
+    from services import cash_holding_service as _cth
+    mode_tunai = await _cth.mode_tunai(entity_id, actor, cara, amount)
+    titipan = mode_tunai == _cth.MODE_TITIPAN
+    if titipan:
+        await _cth.periksa_batas(entity_id, actor, amount)
     # PK-20 + PM-T3 — rekening penerima (milik PT, aktif, penerimaan pelanggan, melayani cara bayar), nomor referensi,
     # jatuh tempo giro, dan tanda "tidak sesuai instruksi" diperiksa SEBELUM kwitansi/alokasi/deposit.
     uang = await periksa_uang_masuk(payload, entity_id=entity_id, cara=cara, amount=amount,
-                                    customer_id=customer["id"], total_funds=total_funds)
+                                    customer_id=customer["id"], total_funds=total_funds, titipan=titipan)
+    uang["titipan"] = titipan
     payload["account_id"] = uang["account_id"]
     payload["_uang_masuk"] = uang
     # PK-19 (SL-08, FX-05) — SEMUA target eksplisit diperiksa satu pemeriksa (pelanggan, PT, status pesanan, sisa
@@ -439,6 +480,9 @@ async def _rollback_unfinished_receipt(receipt_id: str, r: Optional[Dict[str, An
             await _gl.post_cash_void(c["id"], label=f"rollback {receipt_id}", created_by="system")
         except Exception as exc:  # noqa: BLE001
             logger.error("[create_receipt] rollback jurnal kas %s gagal: %s", c["id"], exc)
+    if r and r.get("cash_holding_id"):   # PM-T4 — titipan kwitansi yang gagal lahir dibatalkan + jurnalnya dibalik
+        from services import cash_holding_service as _cth
+        await _cth.batal_lahir(receipt_id)
     if r:
         try:
             await _gl.reverse_deposit_only_receipt(receipt_id, label=f"rollback {r.get('number', '')}",
@@ -538,6 +582,8 @@ async def _create_receipt_after_reserve(payload, actor, customer, amount, use_de
         "mismatch_note": uang.get("mismatch_note", ""),
         "instruction_mismatch_orders": uang.get("instruction_mismatch_orders") or [],
         **VERIFIKASI_AWAL,
+        # PM-T4 — kwitansi tunai yang uangnya dicatat sebagai titipan di tangan pencatatnya (tanpa kas sampai disetor).
+        "cash_holding_id": _titipan_id(receipt_id) if uang.get("titipan") else "",
         "notes": payload.get("notes", ""),
         "status": "posted",
         "effects_done": False,   # G3 V3-AR-01 — True hanya setelah kas/GL/deposit tuntas
@@ -559,8 +605,14 @@ async def _create_receipt_after_reserve(payload, actor, customer, amount, use_de
                                   "settles", note="pembayaran dialokasikan ke pesanan")
             # FASE G-2 — jadwal pembayaran (rencana) sudah dihitung ulang oleh `allocate` (PK-19).
 
-    # P0-1 — posting kas masuk (hanya untuk kas baru; deposit bukan kas baru).
-    cash_txn_id = await _post_cash_in(doc, actor, uang.get("pay_codes"), uang.get("cash_type") or "")
+    # P0-1 — posting kas masuk (hanya untuk kas baru; deposit bukan kas baru). PM-T4 — kwitansi titipan: TANPA kas;
+    # titipan + jurnalnya (Dr piutang titipan karyawan / Cr sisi kredit yang sama dengan jurnal kas kwitansi).
+    if doc.get("cash_holding_id"):
+        from services import cash_holding_service as _cth
+        await _cth.buat_titipan(doc, actor)
+        cash_txn_id = None
+    else:
+        cash_txn_id = await _post_cash_in(doc, actor, uang.get("pay_codes"), uang.get("cash_type") or "")
     if cash_txn_id:
         doc["cash_txn_id"] = cash_txn_id
         await db.ar_receipts.update_one({"id": receipt_id}, {"$set": {"cash_txn_id": cash_txn_id}})
@@ -642,6 +694,9 @@ async def void_receipt(receipt_id: str, actor: Dict[str, Any], reason: str = "")
             {"ref_type": "ar_receipt", "ref_id": receipt_id, "status": {"$ne": "void"},
              "reconciled_amount": {"$gt": EPS}}, {"_id": 0, "id": 1}):
         raise HTTPException(status_code=409, detail=PESAN_BATAL_TERVERIFIKASI)
+    # PM-T4 — kwitansi titipan yang titipannya sudah (sebagian) disetor / sedang diajukan dalam setoran → 409.
+    from services import cash_holding_service as _cth
+    await _cth.periksa_batal_kwitansi(r)
     # PERIKSA — periode buku hari ini (tanggal jurnal pembalik) sebelum apa pun dibalik (`02` §1 P2).
     from services.book_date import periksa_periode_dokumen_409
     await periksa_periode_dokumen_409(r.get("entity_id") or "", None, jenis="pembatalan kwitansi")
@@ -669,6 +724,10 @@ async def void_receipt(receipt_id: str, actor: Dict[str, Any], reason: str = "")
         reason = (reason or "").strip() or intent.get("reason", "")
         steps = intent.get("steps") or {}
         label = f"kwitansi {r.get('number', '')} dibatalkan"
+
+        # EFEK 0 — PM-T4: titipan kwitansi → `batal` dengan syarat belum disetor (kalah balapan dengan penerimaan
+        # setoran → 409 sebelum efek lain). Jurnal pembaliknya di langkah JURNAL (`posting_registry.post_receipt_void`).
+        await _cth.batalkan_untuk_kwitansi(r, reason or label)
 
         # EFEK 1 — P20 APAR-02 / W2-016: kelebihan bayar kwitansi ini ditarik atomik (CAS) lebih dulu.
         if dep_delta > EPS and not steps.get("deposit_pulled"):

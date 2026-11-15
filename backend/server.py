@@ -360,6 +360,8 @@ from routers import sales_return_exceptions as _srx  # noqa: E402 — LN-083/LN-
 app.include_router(_srx.router)
 from routers import return_disposition as _rdisp  # noqa: E402 — LN-093 / LN-091-T02
 app.include_router(_rdisp.router)
+from routers import cash_holdings as _cash_holdings  # noqa: E402 — PM-T4 titipan tunai sales & setorannya
+app.include_router(_cash_holdings.router)
 
 
 @app.get("/api/")

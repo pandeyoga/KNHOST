@@ -37,6 +37,7 @@ REF_LABEL = {
     "penalty": "nota denda", "interco_loan": "pinjaman antar-PT", "interco_loan_repayment": "angsuran antar-PT",
     "fixed_asset": "perolehan aset tetap", "fixed_asset_transfer": "pembayaran pindah aset antar-PT",   # PK-23
     "statutory_remittance": "setoran kewajiban gaji",   # PK-22 — setoran BPJS / PPh 21
+    "cash_deposit": "setoran titipan tunai sales",       # PM-T4 — tunai yang dipegang sales disetor ke kas/bank
 }
 
 #: Field dokumen kas yang hanya ditentukan pembuat ini — `extra` tidak boleh menimpanya.

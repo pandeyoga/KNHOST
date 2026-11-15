@@ -135,6 +135,44 @@ E("finance.tahan_kirim_dasar_bayar", group="uang-masuk", section="syarat-bayar",
   consumers=("services/dispatch_payment_gate.py:_basis",), risk="high",
   related=("finance.dispatch_payment_gate",))
 
+# ── PM-T4 — tunai yang diterima sales dicatat sebagai titipan sampai disetor (K-36) ───────────────────────────────
+# Awalan `pembayaran.` menyimpang dari `02` §2.1 (domain yang ada `payment`) karena K-36 menyebut nama kunci ini.
+# Diubah pemegang izin kelola rekening (`cash.configure`), sama dengan kunci PM-T2/PM-T3. Bawaan `kas_langsung` =
+# perilaku hari ini (titik henti H5: mengubahnya untuk PT nyata = keputusan pemilik).
+E("pembayaran.sales_terima_tunai", group="uang-masuk", section="kwitansi", type="enum", default="kas_langsung",
+  options=({"value": "kas_langsung", "label": "Kas langsung (seperti sekarang)"},
+           {"value": "titipan", "label": "Titipan di tangan sales sampai disetor"},
+           {"value": "dilarang", "label": "Dilarang (sales tidak bisa mencatat tunai)"}),
+  scopes=G, permission=("cash", "configure"), requires_reason=True,
+  sensitif_baca=False,   # dibaca form kwitansi & kartu "Titipan Saya" di HP sales (teks bantu tunai)
+  label="Tunai yang diterima sales dicatat sebagai",
+  help="'Kas langsung' = seperti sekarang. 'Titipan' = uang dianggap masih di tangan sales sampai disetor. "
+       "'Dilarang' = sales tidak bisa mencatat tunai.",
+  impact="'Titipan' membuat kas kantor tidak bertambah sampai setoran diterima.",
+  example="Titipan · sales terima Rp 300.000 → kas tetap, titipan Rp 300.000",
+  consumers=("services/cash_holding_service.py:mode_tunai",), risk="high",
+  related=("pembayaran.titipan_batas_nominal", "pembayaran.titipan_tenggat_setor_hari"))
+
+E("pembayaran.titipan_batas_nominal", group="uang-masuk", section="kwitansi", type="money", default=0,
+  min=0, max=1_000_000_000, step=100_000, unit="Rp", scopes=G, permission=("cash", "configure"),
+  sensitif_baca=False,   # kartu "Titipan Saya" menampilkan batasnya
+  label="Batas tunai yang boleh dipegang satu sales",
+  help="Jumlah titipan belum disetor per orang. 0 = tanpa batas.",
+  impact="Sales yang mencapai batas tidak bisa menerima tunai lagi sebelum menyetor.",
+  example="Rp 5.000.000 · sudah pegang Rp 4,8 jt, terima Rp 300 rb → ditolak",
+  consumers=("services/cash_holding_service.py:periksa_batas", "services/cash_holding_service.py:ringkasan_saya"),
+  risk="medium", related=("pembayaran.sales_terima_tunai",))
+
+E("pembayaran.titipan_tenggat_setor_hari", group="uang-masuk", section="kwitansi", type="int", default=0,
+  min=0, max=30, step=1, unit="hari", scopes=G, permission=("cash", "configure"),
+  sensitif_baca=False,   # kartu "Titipan Saya" & tab Titipan Sales menandai titipan lewat tenggat
+  label="Tunai harus disetor dalam (hari)",
+  help="Titipan lebih lama dari ini bertanda lewat tenggat. 0 = tanpa tenggat.",
+  impact="Hanya menandai; tidak menolak apa pun.",
+  example="1 · diterima Senin, belum disetor Rabu → lewat tenggat",
+  consumers=("services/cash_holding_service.py:tenggat_hari",), risk="low",
+  related=("pembayaran.sales_terima_tunai",))
+
 # ── Denda keterlambatan sebagai DOKUMEN ────────────────────────────────────
 E("payment.penalty_mode", group="pembayaran-pelanggan", section="denda", type="enum", default="draft",
   options=({"value": "off", "label": "Mati (tidak ada denda)"},

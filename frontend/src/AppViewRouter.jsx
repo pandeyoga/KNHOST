@@ -45,6 +45,7 @@ import { SalesPortal, PriceApprovals, OrdersView, CrmView, OperationsView, QcHub
   MktCampaigns, MarketingAnalytics, SocialAccounts, DivisionsView,
   SettingsGroupView, SettingsLinkCards, DevicesView, PriceCorrectionsView, DocTemplatesView, DualControlView, DocNumberingView,
   CollectionWorklist, CreditOverridesPanel, CreditProfileRequestsPanel, SalesForceDashboard, IncentiveSchemeEditor, CustomerCreditView, PettyCashView,
+  CashHoldingsView,
 } from "./appViewImports";
 
 // KP-T9 — bagian layar Penjadwal & Notifikasi per tab hub (konstanta: `only` dibandingkan per render).
@@ -238,6 +239,8 @@ export default function AppViewRouter(props) {
       {/* MN-T1 — Keuangan › Kas & Bank › Kas Kecil (pembungkus ber-chip). `cash-advances`/`settlements`/
           `reimburse-payables` = alias ke `petty-cash`; rute di atas & di bawah = rute cadangan id lama. */}
       {activeView === "petty-cash" && <PettyCashView currentUser={user} selectedEntity={selectedEntity} entities={entities} {...focusDocProps} />}
+      {/* PM-T4 — Kas & Bank › Titipan Sales: setoran titipan tunai sales menunggu diterima + titipan belum disetor */}
+      {activeView === "cash-holdings" && <CashHoldingsView currentUser={user} />}
       {activeView === "expense-categories" && <ExpenseCategoriesView currentUser={user} selectedEntity={selectedEntity} entities={entities} />}
       {activeView === "gl-account-mappings" && <GLAccountMappingView currentUser={user} />}
       {activeView === "reimburse-payables" && <ReimbursePayablesView selectedEntity={selectedEntity} entities={entities} />}

@@ -652,6 +652,15 @@ async def reconcile_collections(entity_id: str, period: str) -> Dict[str, Any]:
             _r(rid)["d"] += _f(c.get("amount"))
         if c.get("status") == "void" and start <= _date(voided.get(rid) or c.get("updated_at")) <= end:
             _r(rid)["d"] -= _f(c.get("amount"))
+    # PM-T4 — kwitansi tunai yang dicatat sebagai titipan di tangan sales tidak punya kas masuk sampai disetor: uangnya
+    # tercatat di titipan (`cash_holdings`, nominal = uang baru kwitansi). Titipan batal mengikuti tanggal batal kwitansi.
+    async for h in db.cash_holdings.find({"entity_id": entity_id}, {"_id": 0, "receipt_id": 1, "amount": 1,
+                                                                    "received_at": 1, "status": 1, "voided_at": 1}):
+        rid = h.get("receipt_id") or ""
+        if start <= _date(h.get("received_at")) <= end:
+            _r(rid)["d"] += _f(h.get("amount"))
+        if h.get("status") == "batal" and start <= _date(voided.get(rid) or h.get("voided_at")) <= end:
+            _r(rid)["d"] -= _f(h.get("amount"))
     tot = {k: round(sum(v[k] for v in per.values()), 2) for k in ("a", "b", "c", "d")}
     sebab = []
     for rid, v in per.items():

@@ -1409,6 +1409,18 @@
    "pembayaran-pelanggan",
    "syarat-bayar"
   ],
+  "pembayaran.sales_terima_tunai": [
+   "pembayaran-pelanggan",
+   "kwitansi"
+  ],
+  "pembayaran.titipan_batas_nominal": [
+   "pembayaran-pelanggan",
+   "kwitansi"
+  ],
+  "pembayaran.titipan_tenggat_setor_hari": [
+   "pembayaran-pelanggan",
+   "kwitansi"
+  ],
   "payment.penalty_mode": [
    "pembayaran-pelanggan",
    "denda"

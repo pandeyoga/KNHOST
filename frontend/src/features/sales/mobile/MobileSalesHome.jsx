@@ -12,6 +12,7 @@ import { formatCurrency } from "../../../utils/formatters";
 import { getStage, stageMeta } from "../../../utils/soStatus";
 import KeepPendingPanel from "../../sales_admin/KeepPendingPanel";
 import { roleIs } from "../../../config/roles";
+import MobileCashHoldingCard from "./MobileCashHoldingCard";   // PM-T4 — kartu "Titipan Saya" (tunai belum disetor)
 
 function MiniKpi({ icon: Icon, label, value, sub, color = "#007AFF", loading }) {
   return (
@@ -118,6 +119,8 @@ export default function MobileSalesHome({ token, user, onNewOrder, onOpenTab, on
       )}
 
       <ErrorNotice message={error} onRetry={load} onDismiss={() => setError("")} testId="m-home-error" />
+
+      <MobileCashHoldingCard selectedEntity={selectedEntity} />
 
       {boards.length > 0 && (
         <div className="space-y-2" data-testid="m-home-boards">

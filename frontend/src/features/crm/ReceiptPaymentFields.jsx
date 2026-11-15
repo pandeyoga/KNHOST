@@ -7,6 +7,9 @@
  * uang pelanggan dan melayani cara bayar itu — rekening PT lain tidak pernah muncul). Terisi otomatis: rekening tujuan
  * pesanan yang dialokasi (instruksi bayar PM-T2) bila semua pesanan menunjuk rekening yang sama, lalu rekening bawaan PT,
  * lalu satu-satunya rekening. Pilihan pengguna tidak ditimpa. Server memeriksa ulang semuanya (`periksa_uang_masuk`).
+ *
+ * PM-T4 — `titipan` (tunai yang dicatat sebagai titipan di tangan pencatat sampai disetor): tanpa isian rekening (belum
+ * ada kas); "Tidak sesuai instruksi" = pesanan berinstruksi rekening yang tidak menerima tunai di PT ini.
  */
 import { useEffect, useMemo, useRef, useState } from "react";
 import { AlertTriangle, Lock } from "lucide-react";
@@ -48,6 +51,7 @@ export function receiptBlockReason(state) {
 
 export default function ReceiptPaymentFields({
   entityId = "", method = "", methodRow = null, orders = [], refRequired = false, value, onChange, onState,
+  titipan = false,
 }) {
   const v = value || {};
   // Cara bayar belum dikenal (daftar induk belum termuat) → tetap minta daftar rekening untuk kode itu (server memutus).
@@ -74,7 +78,7 @@ export default function ReceiptPaymentFields({
 
   // Isi otomatis rekening penerima (instruksi pesanan → bawaan PT → satu-satunya); pilihan pengguna tidak ditimpa.
   useEffect(() => {
-    if (!needsAccount || list.key !== key || list.loading) return;
+    if (titipan || !needsAccount || list.key !== key || list.loading) return;
     if (touched.current && rows.some((a) => a.id === v.accountId)) return;
     const instr = tujuan.length === 1 ? rows.find((a) => a.id === tujuan[0]) : null;
     const pick = instr || rows.find((a) => a.is_default) || (rows.length === 1 ? rows[0] : null);
@@ -82,9 +86,12 @@ export default function ReceiptPaymentFields({
     if (next !== (v.accountId || "")) onChange({ ...v, accountId: next });
   }, [list, tujuan.join("|"), needsAccount]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const status = !needsAccount ? "tanpa"
+  const status = (titipan || !needsAccount) ? "tanpa"
     : (list.key !== key || list.loading) ? "memuat" : list.failed ? "gagal" : rows.length === 0 ? "kosong" : "siap";
-  const beda = mismatchOrders(orders, v.accountId);
+  const listReady = list.key === key && !list.loading && !list.failed;
+  const beda = titipan
+    ? (listReady ? (orders || []).filter((o) => o?.receiving_account_id && !rows.some((a) => a.id === o.receiving_account_id)) : [])
+    : mismatchOrders(orders, v.accountId);
   const chosen = rows.find((a) => a.id === v.accountId) || null;
 
   useEffect(() => {
@@ -92,7 +99,7 @@ export default function ReceiptPaymentFields({
       needsReference: Boolean(methodRow?.needs_reference), refRequired, reference: v.reference || "",
       needsDueDate: Boolean(methodRow?.needs_due_date), giroDue: v.giroDue || "", mismatch: beda,
       mismatchNote: v.mismatchNote || "", methodName: methodRow?.name || "" });
-  }, [status, v.accountId, v.reference, v.giroDue, v.mismatchNote, beda.length, refRequired, methodRow?.code, chosen?.id]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [status, v.accountId, v.reference, v.giroDue, v.mismatchNote, beda.length, refRequired, methodRow?.code, chosen?.id, titipan]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const set = (patch) => onChange({ ...v, ...patch });
   const refLabel = `No. referensi${refRequired && methodRow?.needs_reference ? " *" : ""}`;
@@ -100,7 +107,7 @@ export default function ReceiptPaymentFields({
 
   return (
     <div className="grid gap-2" data-testid="ar-receipt-payment-fields">
-      {needsAccount && (
+      {needsAccount && !titipan && (
         <div data-testid="ar-receipt-account-field">
           <span className="field-label">Rekening penerima</span>
           {status === "memuat" ? (

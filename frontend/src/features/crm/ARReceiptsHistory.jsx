@@ -12,6 +12,7 @@
  * PM-T3 — kolom "Rekening" (cara bayar + rekening penerima + tanda "Tidak sesuai instruksi") dan "No. referensi";
  * lencana status Tercatat · Terverifikasi bank · Tunai · Dianulir (ikon + teks + warna); saringan "Belum terverifikasi
  * lebih dari {N} hari" (`?bank_verified=false&older_than_days=` — batas dari `payment.hari_wajar_verifikasi_bank`).
+ * PM-T4 — lencana "Titipan sales" untuk kwitansi tunai yang uangnya masih di tangan sales (belum masuk kas).
  */
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Wallet, RefreshCw, Ban, Route, CheckCircle2, AlertTriangle, BadgeCheck, Clock, Banknote } from "lucide-react";
@@ -49,6 +50,8 @@ export const receiptAccountText = (r) => {
  */
 export function receiptStatus(r, isCash = () => false) {
   if (r?.status === "void") return { key: "void", label: docStatusLabel("void"), icon: Ban, cls: "bg-kn-danger-soft text-kn-danger-text" };
+  // PM-T4 — tunai yang dicatat sebagai titipan di tangan sales (belum masuk kas sampai setorannya diterima).
+  if (r?.cash_holding_id) return { key: "titipan", label: "Titipan sales", icon: Wallet, cls: "bg-kn-warning-soft text-kn-warning-text" };
   if (Number(r?.amount || 0) > 0 && isCash(r?.payment_method_code || r?.method)) {
     return { key: "cash", label: "Tunai", icon: Banknote, cls: "bg-kn-neutral-soft text-kn-text" };
   }

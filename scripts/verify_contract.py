@@ -133,6 +133,8 @@ CANONICAL_COLLECTIONS = {
     "rfid_tags", "rfid_devices", "rfid_reads",
     # ── Digitalisasi Formulir Sukacita (Cash Advance/Settlement + Kendaraan) ──
     "cash_advances", "cash_advance_settlements", "expense_categories",
+    # ── PM-T4 — titipan tunai sales & setorannya (jenis Posting Gagal `cash_holding` / `cash_deposit`) ──
+    "cash_holdings", "cash_deposits",
     "vehicles", "vehicle_usage_logs",
     # ── R0 (Return Policy Engine — kebijakan retur jual global/kategori/customer) ──
     "sales_return_policies",

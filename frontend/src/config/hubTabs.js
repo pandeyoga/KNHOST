@@ -168,6 +168,8 @@ export const HUB_TABS = {
     // MN-T1 — Kas Kecil (dulu hub Kas & Aset › Kas Kecil, 3 tab) = satu tab pembungkus ber-chip (PettyCashView):
     // Pengajuan dana · Pertanggungjawaban · Hutang reimburse. Id lama = alias (viewAliases.js) + rute cadangan.
     { view: "petty-cash",        label: "Kas Kecil",             roles: ["admin", "manager", "sales"] },
+    // PM-T4 — tunai yang diterima sales dan dipegang sampai disetor (setoran diterima kasir/Finance di sini).
+    { view: "cash-holdings",     label: "Titipan Sales",         roles: ["admin", "manager", "finance"] },
   ],
   "tax-hub": [
     { view: "tax-invoices",      label: "Faktur Keluaran",       roles: ["admin", "manager"] },

@@ -277,6 +277,8 @@ export const ROLE_NAV = {
       // Kas Kecil (cash_advance), Buku Besar lihat saja (K-09), Hutang lihat & bayar (K-17), tab Piutang yang dulu
       // sub-tab CRM, Analisis (BI Keuangan), Pengaturan › Keuangan & Pajak › Pemetaan Akun (izin gl_mapping, IA-06).
       "bank-accounts", "bank-reconciliation", "petty-cash",
+      // PM-T4 — Kas & Bank › Titipan Sales: menerima setoran titipan tunai sales (`cash_holding.approve`).
+      "cash-holdings",
       "ledger", "general-ledger", "chart-of-accounts",
       "accounts-payable", "vendor-bills", "contra-bons", "gr-ir",
       "collection-worklist", "customer-credit", "credit-overrides", "bi-finance",

@@ -300,7 +300,8 @@ async def test_PRT3_U12_rute_login_saja_sah_tetap_terbuka(klien, akun, sesi, per
 async def test_PRT3_U13_daftar_login_only_menunjuk_rute(aplikasi):
     import login_only_endpoints as lo
     # + PR-T5: `GET /api/access/labels` (kamus label, data rujukan); + PM-T1: `GET /api/payment-methods` (cara bayar)
-    assert len(lo.LOGIN_ONLY) == 53 + 1 + 1
+    # + PM-T4: `GET /api/cash-holdings/me/summary` (ringkasan titipan tunai milik sendiri)
+    assert len(lo.LOGIN_ONLY) == 53 + 1 + 1 + 1
     assert set(lo.LOGIN_ONLY.values()) <= {"milik_sendiri", "rujukan", "sesi"}
     rute = {(m, rt.path) for rt in aplikasi.routes for m in (getattr(rt, "methods", None) or ())}
     hilang = [k for k in lo.LOGIN_ONLY if k not in rute]

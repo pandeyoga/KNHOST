@@ -991,3 +991,22 @@ for _role, _mods in KMT1_DEFAULT_PAIRS.items():
     for _res, _acts in _mods.items():
         _cur = list(DEFAULT_PERMISSIONS[_role].get(_res) or [])
         DEFAULT_PERMISSIONS[_role][_res] = _cur + [a for a in _acts if a not in _cur]
+
+# ═══════════════════════════════════════════════════════════════════════════
+# PM-T4 (PM-06, K-36) — titipan tunai sales (`docs/blueprint/unit/PM-T4.md`, tabel "Izin dan peran"). Sumber daya baru
+# `cash_holding` (modul akses "Kas, Bank & Kasus Keuangan"): `view` melihat titipan tunai (milik sendiri; semua bila juga
+# memegang `approve`), `create` mengajukan (dan membatalkan) setoran titipan sendiri, `approve` menerima atau menolak
+# setoran. Sales tetap mencatat kwitansi seperti hari ini (K-36); titipannya sendiri yang ia lihat dan setor.
+# Instalasi lama menerima pasangan baru sekali lewat `bootstrap.sync_permission_modules` (`defaults_applied`, PR-T9).
+# ═══════════════════════════════════════════════════════════════════════════
+PMT4_DEFAULT_PAIRS = {
+    "admin": {"cash_holding": ("view", "create", "approve")},
+    "manager": {"cash_holding": ("view", "create", "approve")},
+    "finance": {"cash_holding": ("view", "approve")},
+    "sales": {"cash_holding": ("view", "create")},
+    "sales_admin": {"cash_holding": ("view",)},
+}
+for _role, _mods in PMT4_DEFAULT_PAIRS.items():
+    for _res, _acts in _mods.items():
+        _cur = list(DEFAULT_PERMISSIONS[_role].get(_res) or [])
+        DEFAULT_PERMISSIONS[_role][_res] = _cur + [a for a in _acts if a not in _cur]

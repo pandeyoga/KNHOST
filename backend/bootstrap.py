@@ -1100,6 +1100,8 @@ async def backfill_ar_cash_postings() -> None:
         amt = round(float(r.get("amount", 0) or 0), 2)
         if amt <= 0.01:
             continue
+        if r.get("cash_holding_id"):
+            continue   # PM-T4 — kwitansi titipan tunai sales: SENGAJA tanpa kas sampai setorannya diterima
         exists = await db.cash_transactions.count_documents(
             {"ref_type": "ar_receipt", "ref_id": r["id"], "status": {"$ne": "void"}})
         if exists:

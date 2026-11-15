@@ -44,7 +44,8 @@ JENIS_KP35 = {"vbm", "emp", "sord"}
 # CR-T1 — deret baru `PKR-` (pengajuan perubahan kredit, per PT) lahir sesudah KP-T5: tidak ada di daftar spesifikasi
 # maupun fungsi lama. Setara dengan jalur lama karena katalog bawaannya = argumen titik panggil (diuji U2 seperti lainnya).
 # PK-22 — deret baru `STR-` (setoran kewajiban gaji BPJS/PPh 21, per PT): alasan sama dengan `PKR-`.
-AWALAN_SESUDAH_KPT5 = {"PKR-", "STR-"}
+# PM-T4 — deret baru `TTP-` (titipan tunai sales) dan `STT-` (setoran titipan tunai sales), per PT: alasan sama.
+AWALAN_SESUDAH_KPT5 = {"PKR-", "STR-", "TTP-", "STT-"}
 
 
 # ── Fungsi LAMA (salinan utuh `backend/core_utils.py` di 1392969; oracle setara) ──────────────────────────────────
