@@ -1,0 +1,35 @@
+# HEAD fc95d36 (kode lama) — python -m pytest tests_mem/test_CRT4b_hari_ini_server.py -n 0 --tb=short
+FFFF                                                                     [100%]
+=================================== FAILURES ===================================
+___________________ test_CRT4b_U1_today_masa_depan_diabaikan ___________________
+tests_mem/test_CRT4b_hari_ini_server.py:115: in test_CRT4b_U1_today_masa_depan_diabaikan
+    assert _ringkas(await _nota(db, b["customer_id"])) == harapan
+E   AssertionError: assert [(87966666.67...-01|2099-01')] == [(100000, 30,...-01|2026-10')]
+E     
+E     At index 0 diff: (87966666.67, 26390, 26390, '2026-10-01|2099-01') != (100000, 30, 30, '2026-10-01|2026-10')
+E     Use -v to get more diff
+---------------------------- Captured stdout setup -----------------------------
+[bootstrap] SANDI AWAL akun seed (ganti segera): kiAO5d_cij8x3n0m
+[bootstrap] FASE F lifecycle backfill: 5 produk distempel 'produksi'
+[bootstrap] kebersihan data: 5 record dirapikan {'customers': 3, 'suppliers': 0, 'users': 0, 'hr_employees': 2, 'makloons': 0}
+__________________ test_CRT4b_U2_belum_jatuh_tempo_tanpa_nota __________________
+tests_mem/test_CRT4b_hari_ini_server.py:134: in test_CRT4b_U2_belum_jatuh_tempo_tanpa_nota
+    assert r.json()["count"] == 0, r.json()["penalties"]
+E   AssertionError: [{'id': 'pnl_2fa1fe706301', 'number': 'KANDA/DN-DENDA-00003', 'entity_id': 'ent_kanda', 'doc_type': 'sales_order', ...}]
+E   assert 1 == 0
+________________ test_CRT4b_U3_today_mundur_tidak_menekan_denda ________________
+tests_mem/test_CRT4b_hari_ini_server.py:144: in test_CRT4b_U3_today_mundur_tidak_menekan_denda
+    assert r.json()["count"] == 1, r.json()
+E   AssertionError: {'customer_id': 'cus_crt4b_b886e6fe', 'count': 0, 'penalties': [], 'detail': {'customer_id': 'cus_crt4b_b886e6fe', 'customer_name': 'Toko CR-T4b e6fe', 'as_of': '2026-09-15', 'credit_limit': 0.0, ...}}
+E   assert 0 == 1
+______________ test_CRT4b_U4_rute_akrual_tanpa_parameter_tanggal _______________
+tests_mem/test_CRT4b_hari_ini_server.py:156: in test_CRT4b_U4_rute_akrual_tanpa_parameter_tanggal
+    assert not (nama & NAMA_TANGGAL), f"{metode.upper()} {p} menerima tanggal dari klien: {sorted(nama)}"
+E   AssertionError: POST /api/ar/aging/{customer_id}/accrue-penalties menerima tanggal dari klien: ['today']
+E   assert not ({'today'} & {'as_of', 'date', 'hari_ini', 'tanggal', 'today'})
+=========================== short test summary info ============================
+FAILED tests_mem/test_CRT4b_hari_ini_server.py::test_CRT4b_U1_today_masa_depan_diabaikan
+FAILED tests_mem/test_CRT4b_hari_ini_server.py::test_CRT4b_U2_belum_jatuh_tempo_tanpa_nota
+FAILED tests_mem/test_CRT4b_hari_ini_server.py::test_CRT4b_U3_today_mundur_tidak_menekan_denda
+FAILED tests_mem/test_CRT4b_hari_ini_server.py::test_CRT4b_U4_rute_akrual_tanpa_parameter_tanggal
+4 failed in 2.50s
