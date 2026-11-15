@@ -208,14 +208,17 @@ const C360 = { id: "cus_p", name: "Toko P", code: "C-01", entity_id: "ent_kanda"
 
 describe("Kartu pelanggan", () => {
   test("(d) tab baru, tanpa Override Kredit; janji bayar berlencana; isian janji wajib", async () => {
-    route({ "/customers/cus_p/360": C360, "/customers/cus_p/exposure": { rows: [], penalty: null } });
+    // MN-T3 — kartu pelanggan: bagian dari `sections_allowed` server (enam bagian kartu) + "Kredit" (halaman CRM);
+    // tab lama Pesanan · Dokumen · Harga Khusus · Sample menjadi chip di "Riwayat Lain", "Penagihan" = "Tindak Lanjut".
+    const SEC = ["ringkasan", "tagihan", "pembayaran", "denda_kasus", "tindak_lanjut", "rekening_koran", "riwayat"];
+    route({ "/customers/cus_p/360": { ...C360, sections_allowed: SEC }, "/customers/cus_p/exposure": { rows: [], penalty: null } });
     const user = { ...MGR, permissions: { ...MGR.permissions, payment_plan: ["view"], ar_receipt: ["view"] } };
     await mount(<Customer360Panel customerId="cus_p" currentUser={user} selectedEntity="ent_kanda" />);
     const tabs = [...document.querySelectorAll('[data-testid^="customer-360-tab-"]')].map((b) => b.textContent.replace(/\d+$/, ""));
-    expect(tabs.slice(0, 8)).toEqual(["Pesanan", "Dokumen", "Harga Khusus", "Sample", "Penagihan", "Kredit", "Tagihan",
-      "Rekening Koran"]);
+    expect(tabs).toEqual(["Tagihan & Jadwal", "Pembayaran", "Denda & Kasus", "Tindak Lanjut", "Rekening Koran", "Riwayat Lain",
+      "Kredit"]);
     expect(text()).not.toContain("Override Kredit");
-    await click(q("customer-360-tab-followups"));
+    await click(q("customer-360-tab-tindak_lanjut"));
     expect(q("customer-360-promise-status-cfu_1").textContent).toBe("Ingkar");
     expect(q("customer-360-promise-cfu_1").textContent).toContain("Rp");
     await click(q("customer-360-followup"));

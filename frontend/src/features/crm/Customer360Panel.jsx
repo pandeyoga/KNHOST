@@ -1,10 +1,12 @@
 import { AskKnButton } from "../../components/AskKnButton";
 import KNDatePicker from "@/components/KNDatePicker";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import axios, { API } from "../../services/apiClient";
-import { ArrowLeft, Edit3, UserCog, ShieldAlert, PhoneCall, MapPin, X } from "lucide-react";
+import { ArrowLeft, Edit3, UserCog, ShieldAlert, PhoneCall, MapPin, X, Wallet, Plus } from "lucide-react";
 import { formatCurrency } from "../../utils/formatters";
 import KNSelect from "../../components/KNSelect";
+import FilterChips from "../../components/FilterChips";
+import PagedRows from "../../components/PagedRows";
 import { CreditStatusPill, SegmentBadge, OutcomePill, fmtDate, money, paymentMethodLabel, payStatusLabel, lotPolicyLabel } from "./crmUtils";
 import { docStatusLabel } from "../../utils/docStatus";
 import { apiErrorText } from "../../utils/apiError";
@@ -21,30 +23,58 @@ import CustomerExposureBox from "./CustomerExposureBox";
 import CustomerStatementTab from "./CustomerStatementTab";
 import CustomerBillingTab, { CustomerOverrideSection } from "./CustomerBillingTab";
 import { PromiseFields, PromiseStatusPill, promiseError, promiseText } from "./promiseUi";
+// MN-T3 — kartu pelanggan: kepala empat angka, enam bagian per `sections_allowed`, satu form terima pembayaran.
+import { CustomerCardHead, CustomerCasesSection, CustomerPaymentsSection } from "./CustomerCardSections";
+import ReceivePaymentModal, { TEKS_PILIH_PT } from "../finance/payments/ReceivePaymentModal";
+import { useEntityScope } from "../../context/EntityScopeContext";
+import { entityShortById } from "../../utils/entityLabel";
+
+/** MN-T3 — bagian kartu (urutan tampil). `sec` = kunci `sections_allowed` server (izin sumber, K-18). */
+export const CARD_SECTIONS = [
+  { key: "tagihan", label: "Tagihan & Jadwal" },
+  { key: "pembayaran", label: "Pembayaran" },
+  { key: "denda_kasus", label: "Denda & Kasus" },
+  { key: "tindak_lanjut", label: "Tindak Lanjut" },
+  { key: "rekening_koran", label: "Rekening Koran" },
+  { key: "riwayat", label: "Riwayat Lain" },
+];
 
 const HIST_TABS = [
   { key: "orders", label: "Pesanan" },
   { key: "documents", label: "Dokumen" },
   { key: "prices", label: "Harga Khusus" },
   { key: "samples", label: "Sample" },
-  { key: "followups", label: "Penagihan" },
-];   // CR-T5 — tab "Izin Kredit" (CR-T3) pindah ke tab Kredit (bagian "Izin kredit"); + Tagihan, Rekening Koran
+];   // MN-T3 — isi tab lama, kini chip di bagian "Riwayat Lain"; "Penagihan" = bagian "Tindak Lanjut"
 
-/** Detail pelanggan 360 — profil + kredit + riwayat + aksi. */
-export default function Customer360Panel({ customerId, currentUser, salesUsers, selectedEntity, onBack, onChanged, onError }) {
+/**
+ * Kartu pelanggan (dulu "Detail pelanggan 360") — MN-T3.
+ *  · `variant="card"`: dibuka dari baris mana pun lewat `openCustomerCard(id)` (pop-up rincian `PartyCardHost`).
+ *  · `variant="page"` (bawaan): daftar pelanggan CRM & meja Kredit & Plafon — komponen sama, ditambah kolom kiri
+ *    (Eksposur, aturan khusus, profil) dan dua bagian pengelolaan yang sudah ada: "Kredit" (CR-T1) dan
+ *    "Riwayat Perubahan" (audit).
+ * Kepala: nama, PT, empat angka (bagian `ringkasan`), tombol "Terima pembayaran" (`ar_receipt.create`; Semua PT → mati
+ * + alasan tertulis di bilah sendiri). Bagian di luar `sections_allowed` tidak ditampilkan dan tidak dimuat.
+ */
+export default function Customer360Panel({ customerId, currentUser, salesUsers, selectedEntity, onBack, onChanged, onError,
+  variant = "page" }) {
+  const isCard = variant === "card";
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [tab, setTab] = useState("orders");
+  const [loadErr, setLoadErr] = useState("");
+  const [section, setSection] = useState("");
+  const [hist, setHist] = useState("orders");
   const [showEdit, setShowEdit] = useState(false);
-  const [modal, setModal] = useState(null); // 'reassign' | 'override' | 'followup'
+  const [modal, setModal] = useState(null); // 'reassign' | 'override' | 'followup' | 'receive'
+  const [notice, setNotice] = useState("");
+  const { entities } = useEntityScope();
+  const perms = currentUser?.permissions;
 
-  const canReassign = can(currentUser?.permissions, "sales_force", "assign");   // PR-T7 (#13) — = POST /customers/{id}/reassign
-  const canAudit = can(currentUser?.permissions, "audit", "view");
-  const canCredit = can(currentUser?.permissions, "credit_profile", "view");   // CR-T1 — tab Kredit
-  const canAskCredit = can(currentUser?.permissions, "credit_override", "create");   // CR-T3 — = POST …/credit-override
-  // CR-T5 — tab Tagihan (jadwal tagihan / nota denda) dan Rekening Koran (= izin endpoint masing-masing)
-  const canBilling = can(currentUser?.permissions, "payment_plan", "view") || can(currentUser?.permissions, "penalty", "view");
-  const canStatement = can(currentUser?.permissions, "credit_profile", "view") || can(currentUser?.permissions, "ar_receipt", "view");
+  const canReassign = can(perms, "sales_force", "assign");   // PR-T7 (#13) — = POST /customers/{id}/reassign
+  const canAudit = can(perms, "audit", "view");
+  const canCredit = can(perms, "credit_profile", "view");   // CR-T1 — bagian Kredit (halaman CRM)
+  const canAskCredit = can(perms, "credit_override", "create");   // CR-T3 — = POST …/credit-override
+  const canReceive = can(perms, "ar_receipt", "create");   // MN-T3 — = POST /ar-receipts
+  const allPt = !selectedEntity || selectedEntity === "all";
 
   useEffect(() => { load(); }, [customerId]); // eslint-disable-line
 
@@ -52,196 +82,220 @@ export default function Customer360Panel({ customerId, currentUser, salesUsers, 
     setLoading(true);
     try {
       const r = await axios.get(`${API}/customers/${customerId}/360`);
-      setData(r.data);
+      setData(r.data); setLoadErr("");
     } catch (e) {
-      onError?.(apiErrorText(e, "Gagal memuat detail pelanggan."));
-      onBack?.();
+      const msg = apiErrorText(e, "Kartu pelanggan belum bisa dimuat.");
+      if (isCard) setLoadErr(msg);
+      else { onError?.(msg); onBack?.(); }
     } finally { setLoading(false); }
   }
 
-  if (loading && !data) return <div className="section-card py-12 text-center text-[12px] text-[#6B6B73]" data-testid="customer-360-loading">Memuat detail pelanggan...</div>;
+  const sections = useMemo(() => {
+    const ok = new Set(data?.sections_allowed || []);
+    const list = CARD_SECTIONS.filter((s) => ok.has(s.key));
+    if (!isCard && canCredit) list.push({ key: "kredit", label: "Kredit" });
+    if (!isCard && canAudit) list.push({ key: "perubahan", label: "Riwayat Perubahan" });
+    return list;
+  }, [data, isCard, canCredit, canAudit]);
+  const active = sections.some((s) => s.key === section) ? section : sections[0]?.key || "";
+
+  if (loading && !data) return <div className="section-card section-pad text-center text-fs-12 text-kn-text-2" data-testid="customer-360-loading">Memuat kartu pelanggan…</div>;
+  if (loadErr) return <div className="section-card section-pad text-fs-13 text-kn-danger-text" role="alert" data-testid="customer-360-error">{loadErr}</div>;
   if (!data) return null;
 
-  const credit = data.credit || {};
+  const credit = data.credit || null;
+  const allowed = new Set(data.sections_allowed || []);
+  const ptLabel = entityShortById(entities, data.entity_id, "");
+  const headEntity = allPt ? (ptLabel || "PT pelanggan") : entityShortById(entities, selectedEntity, "");
+  const done = (msg) => { setModal(null); setNotice(msg || ""); onChanged?.(msg); load(); };
 
-  return (
-    <div data-testid="customer-360-panel">
-      <button data-testid="customer-360-back" onClick={onBack} className="secondary-button mb-3"><ArrowLeft size={13} /> Kembali ke daftar</button>
+  const receiveBtn = canReceive && (
+    <button type="button" data-testid="customer-360-receive" className="primary-button btn-sm whitespace-nowrap" disabled={allPt}
+      onClick={() => setModal("receive")}><Wallet size={13} aria-hidden="true" /> Terima pembayaran</button>
+  );
 
-      {/* Header */}
-      <div className="section-card mb-3">
-        <div className="section-head">
-          <div className="min-w-0">
-            <div className="flex items-center gap-2 flex-wrap">
-              <h2 className="truncate" data-testid="customer-360-name">{data.name}</h2>
-              <SegmentBadge segment={data.segment} />
-              <CreditStatusPill status={credit.status || "active"} testId="customer-360-credit-status" />
-            </div>
-            <p className="text-[11px] text-[#6B6B73] mt-0.5">{data.code} · {data.city} · Sales: <b>{data.assigned_sales_name || "—"}</b></p>
-          </div>
-          <div className="flex items-center gap-1.5">
-            <button data-testid="customer-360-edit" onClick={() => setShowEdit(true)} className="secondary-button"><Edit3 size={13} /> Ubah</button>
-            <AskKnButton type="customer" id={data.id} label={data.name} />
-            {canReassign && <button data-testid="customer-360-reassign" onClick={() => setModal("reassign")} className="secondary-button"><UserCog size={13} /> Pindah Sales</button>}
-          </div>
-        </div>
+  const body = (
+    <div className="section-card self-start" data-testid="customer-360-sections">
+      <div className="section-head">
+        <FilterChips testId="customer-360-section" ariaLabel="Bagian kartu pelanggan" value={active} onChange={setSection}
+          options={sections} chipTestId={(k) => `customer-360-tab-${k}`} />
+        {active === "tindak_lanjut" && (
+          <button data-testid="customer-360-followup" onClick={() => setModal("followup")} className="secondary-button btn-sm whitespace-nowrap">
+            <Plus size={13} aria-hidden="true" /> Tindak lanjut</button>
+        )}
       </div>
-
-      {/* CR-T5 — dua kolom mulai 1280 px; di 1024 px ditumpuk supaya tabel Tagihan/Rekening Koran memakai lebar penuh. */}
-      <div className="grid gap-3 xl:grid-cols-[320px_1fr]">
-        {/* Left: credit + profile */}
-        <div className="space-y-3">
-          {/* CR-T5 (K-31) — kotak Eksposur (nilai yang dipakai mesin = gerbang kredit) menggantikan empat ubin "Kontrol Kredit". */}
-          <CustomerExposureBox customerId={data.id} selectedEntity={selectedEntity}>
-            {/* CR-T3 — izin kredit juga melepas tahanan karena telat (bukan hanya lewat plafon): tombol untuk pemegang
-                `credit_override.create`; tanpa izin itu ditulis siapa yang mengajukan. */}
-            {canAskCredit ? (
-              <div className="px-3 pb-3">
-                <button data-testid="customer-360-override" onClick={() => setModal("override")} className="secondary-button btn-sm w-full justify-center whitespace-nowrap">
-                  <ShieldAlert size={13} /> Ajukan izin kredit
-                </button>
-              </div>
-            ) : (
-              <p className="px-3 pb-3 text-fs-12 text-kn-text-2" data-testid="customer-360-override-none">Izin kredit diajukan pemegang akses mengajukan izin kredit.</p>
-            )}
-          </CustomerExposureBox>
-
-          {/* KF-T5 — aturan Pusat Pengaturan yang bisa dibedakan per pelanggan (denda, masa tenggang, selisih bayar). */}
-          <ScopedRulesSection scopeType="customer" scopeId={data.id} scopeLabel={data.name} entityId={data.entity_id || ""} />
-
-          {/* Profile */}
-          <div className="section-card">
-            <div className="section-head"><h3 className="text-[12.5px] font-bold">Profil & Kontak</h3></div>
-            <div className="section-body space-y-2 text-[11.5px]">
-              <p className="text-[10px] uppercase text-[#9A9BA3] font-semibold">PIC Toko (pihak pelanggan)</p>
-              {(data.contacts || []).length > 0 ? (data.contacts || []).map((ct, i) => (
-                <div key={i} className="flex items-center gap-2"><PhoneCall size={12} className="text-[#6B6B73]" />
-                  <span className="font-semibold">{ct.name}</span><span className="text-[#6B6B73]">{ct.role === "PIC" ? "PIC toko" : ct.role}</span>
-                  <span className="text-[#9A9BA3] ml-auto">{ct.phone}</span></div>
-              )) : <p className="text-[#9A9BA3]" data-testid="customer-360-pic">{data.pic_name} · {data.phone}</p>}
-              {(data.addresses || []).map((ad, i) => (
-                <div key={i} className="flex items-start gap-2"><MapPin size={12} className="text-[#6B6B73] mt-0.5" />
-                  <span className="text-[#3C3C43]">{ad.address}, {ad.city}</span></div>
-              ))}
-              <div className="pt-2 border-t border-[#EFF0F2]">
-                <p className="text-[10px] uppercase text-[#9A9BA3] font-semibold mb-1">Profil Pembayaran</p>
-                {/* G2-08 — metode bayar berlabel (dulu "Default: TEMPO", "Metode: tunai, tempo"); termin/DP hanya bila metodenya dipakai. */}
-                {(() => {
-                  const pp = data.payment_profile || {};
-                  const ms = pp.allowed_methods || [];
-                  return (<>
-                    <p data-testid="customer-360-pay-default">Metode utama: <b>{pp.default_method ? paymentMethodLabel(pp.default_method) : "—"}</b>
-                      {ms.includes("tempo") && <> · Termin {pp.term_days ?? 0} hari</>}
-                      {ms.includes("dp") && <> · DP {pp.dp_percent ?? 0}%</>}</p>
-                    <p className="text-[10.5px] text-[#6B6B73]">Metode yang diizinkan: {ms.map(paymentMethodLabel).join(", ") || "—"}</p>
-                  </>);
-                })()}
-              </div>
-              {/* SALES REVAMP V2 — Tim sales (PIC + co-sales + split) */}
-              <div className="pt-2 border-t border-[#EFF0F2]" data-testid="customer-360-sales-team">
-                <p className="text-[10px] uppercase text-[#9A9BA3] font-semibold mb-1">Tim Sales (Split Insentif)</p>
-                {(data.sales_team || []).length > 0 ? (
-                  <div className="flex flex-wrap gap-1.5">
-                    {(data.sales_team || []).map((m, i) => (
-                      <span key={i} data-testid={`customer-360-team-${i}`} className={`status-pill ${m.role === "pic" ? "status-confirmed" : "pill-muted"}`}>
-                        {m.role === "pic" ? "Penanggung jawab · " : ""}{m.name || m.sales_id} · <b className="tabular-nums">{m.split_pct}%</b>
-                      </span>
-                    ))}
-                  </div>
-                ) : (
-                  <p className="text-[10.5px] text-[#6B6B73]">Sales penanggung jawab tunggal: <b>{data.assigned_sales_name || "—"}</b> (100%)</p>
-                )}
-              </div>
-              {/* SALES REVAMP V2 — Kebijakan lot */}
-              <div className="pt-2 border-t border-[#EFF0F2]" data-testid="customer-360-lot-policy">
-                <p className="text-[10px] uppercase text-[#9A9BA3] font-semibold mb-1">Kebijakan Lot</p>
-                <p className="text-[10.5px] text-[#6B6B73]">
-                  {lotPolicyLabel(data.lot_policy)}
-                  {data.enforce_single_dye_lot ? " · Paksa 1 dye lot" : ""}
-                </p>
-              </div>
-              {(data.tags || []).length > 0 && (
-                <div className="flex flex-wrap gap-1 pt-1">
-                  {data.tags.map((t) => <span key={t} className="status-pill pill-muted">{t}</span>)}
-                </div>
-              )}
-            </div>
+      <div className="section-body">
+        {!sections.length && <p className="py-4 text-center text-fs-12 text-kn-text-2" data-testid="customer-360-no-sections">Anda belum punya akses ke bagian keuangan pelanggan ini.</p>}
+        {active === "tagihan" && <CustomerBillingTab customer={data} currentUser={currentUser} selectedEntity={selectedEntity} show="schedule" />}
+        {active === "pembayaran" && <CustomerPaymentsSection customerId={data.id} selectedEntity={selectedEntity} />}
+        {active === "denda_kasus" && (
+          <div className="grid gap-3">
+            {can(perms, "penalty", "view") && <CustomerBillingTab customer={data} currentUser={currentUser} selectedEntity={selectedEntity} show="penalty" />}
+            {can(perms, "finance_case", "view") && <CustomerCasesSection customerId={data.id} />}
           </div>
-        </div>
-
-        {/* Right: history */}
-        <div className="section-card self-start">
-          <div className="section-head">
-            <div className="flex items-center gap-3 flex-wrap">
-              <h3 className="text-[12.5px] font-bold">Riwayat 360°</h3>
-              {/* G2-08 — jumlah pesanan & nilai seumur hidup tanpa SO batal/kedaluwarsa (dihitung server). */}
-              <span className="text-[11px] text-[#6B6B73]" data-testid="customer-360-ltv">
+        )}
+        {active === "tindak_lanjut" && <HistoryTable data={data} tab="followups" />}
+        {active === "rekening_koran" && <CustomerStatementTab customer={data} currentUser={currentUser} selectedEntity={selectedEntity} />}
+        {active === "riwayat" && (
+          <div className="grid gap-2">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <FilterChips testId="customer-360-hist" ariaLabel="Riwayat lain" value={hist} onChange={setHist}
+                options={HIST_TABS.map((t) => ({ ...t, count: listFor(data, t.key).length }))} chipTestId={(k) => `customer-360-hist-${k}`} />
+              <span className="text-fs-12 text-kn-text-2" data-testid="customer-360-ltv">
                 {data.stats?.total_orders || 0} pesanan · nilai seumur hidup {money(data.stats?.lifetime_value)}
                 {Number(data.stats?.cancelled_orders) > 0 ? ` · ${data.stats.cancelled_orders} batal tidak dihitung` : ""}
               </span>
             </div>
-            <button data-testid="customer-360-followup" onClick={() => setModal("followup")} className="secondary-button text-[11px]">+ Tindak lanjut</button>
+            <HistoryTable data={data} tab={hist} />
           </div>
-          <div className="section-body">
-            <div className="tab-bar mb-2">
-              {HIST_TABS.map((t) => (
-                <button key={t.key} data-testid={`customer-360-tab-${t.key}`} className={`tab-button ${tab === t.key ? "active" : ""}`} onClick={() => setTab(t.key)}>
-                  {t.label}<span className="tab-badge">{listFor(data, t.key).length}</span>
-                </button>
-              ))}
-              {canCredit && (
-                <button data-testid="customer-360-tab-credit" className={`tab-button ${tab === "credit" ? "active" : ""}`} onClick={() => setTab("credit")}>
-                  Kredit
-                </button>
-              )}
-              {canBilling && (
-                <button data-testid="customer-360-tab-billing" className={`tab-button ${tab === "billing" ? "active" : ""}`} onClick={() => setTab("billing")}>
-                  Tagihan
-                </button>
-              )}
-              {canStatement && (
-                <button data-testid="customer-360-tab-statement" className={`tab-button ${tab === "statement" ? "active" : ""}`} onClick={() => setTab("statement")}>
-                  Rekening Koran
-                </button>
-              )}
-              {canAudit && (
-                <button data-testid="customer-360-tab-changes" className={`tab-button ${tab === "changes" ? "active" : ""}`} onClick={() => setTab("changes")}>
-                  Riwayat Perubahan
-                </button>
-              )}
+        )}
+        {active === "kredit" && canCredit && (
+          <><CustomerCreditTab customer={data} currentUser={currentUser} selectedEntity={selectedEntity} onChanged={load} />
+            <CustomerOverrideSection rows={data.credit_overrides || []} /></>
+        )}
+        {active === "perubahan" && canAudit && <AuditHistoryPanel entityType="customer" entityId={customerId} testIdPrefix="customer-360-changes" />}
+      </div>
+    </div>
+  );
+
+  return (
+    <div data-testid={isCard ? "customer-card-panel" : "customer-360-panel"}>
+      {!isCard && <button data-testid="customer-360-back" onClick={onBack} className="secondary-button btn-sm mb-3"><ArrowLeft size={13} /> Kembali ke daftar</button>}
+      {notice && (
+        <div className="notice-bar success mb-3" data-testid="customer-360-notice">
+          <span>{notice}</span><button type="button" onClick={() => setNotice("")} aria-label="Tutup">×</button>
+        </div>
+      )}
+
+      {/* Kepala kartu: nama · PT · status, tombol di sisi kanan; angka di bilah sendiri (tidak menjejali kepala). */}
+      <div className="section-card mb-3">
+        <div className="section-head">
+          <div className="min-w-0">
+            <div className="flex flex-wrap items-center gap-2">
+              <h2 className="truncate" data-testid="customer-360-name">{data.name}</h2>
+              <SegmentBadge segment={data.segment} />
+              {credit && <CreditStatusPill status={credit.status || "active"} testId="customer-360-credit-status" />}
             </div>
-            {tab === "credit" && canCredit
-              ? <><CustomerCreditTab customer={data} currentUser={currentUser} selectedEntity={selectedEntity} onChanged={load} />
-                <CustomerOverrideSection rows={data.credit_overrides || []} /></>
-              : tab === "billing" && canBilling
-                ? <CustomerBillingTab customer={data} currentUser={currentUser} selectedEntity={selectedEntity} />
-              : tab === "statement" && canStatement
-                ? <CustomerStatementTab customer={data} currentUser={currentUser} selectedEntity={selectedEntity} />
-              : tab === "changes" && canAudit
-                ? <AuditHistoryPanel entityType="customer" entityId={customerId} testIdPrefix="customer-360-changes" />
-                : <HistoryTable data={data} tab={tab} />}
+            <p className="mt-0.5 text-fs-12 text-kn-text-2">
+              {[data.code, data.city].filter(Boolean).join(" · ")}{ptLabel ? ` · PT ${ptLabel}` : ""} · Sales: <b>{data.assigned_sales_name || "—"}</b>
+            </p>
+          </div>
+          <div className="flex flex-wrap items-center justify-end gap-1.5">
+            {receiveBtn}
+            {!isCard && <button data-testid="customer-360-edit" onClick={() => setShowEdit(true)} className="secondary-button btn-sm whitespace-nowrap"><Edit3 size={13} /> Ubah</button>}
+            {!isCard && <AskKnButton type="customer" id={data.id} label={data.name} />}
+            {!isCard && canReassign && <button data-testid="customer-360-reassign" onClick={() => setModal("reassign")} className="secondary-button btn-sm whitespace-nowrap"><UserCog size={13} /> Pindah Sales</button>}
           </div>
         </div>
+        {canReceive && allPt && (
+          <p className="section-body pt-0 text-fs-12 text-kn-text-2" data-testid="customer-360-receive-reason">{TEKS_PILIH_PT}</p>
+        )}
+        {allowed.has("ringkasan") && (
+          <div className="section-body pt-0">
+            <CustomerCardHead customer={data} selectedEntity={selectedEntity} entityLabel={allPt ? headEntity : ""} />
+          </div>
+        )}
       </div>
 
-      <CustomerColorsSection customerId={customerId} customerName={data.name} />
+      {isCard ? body : (
+        /* CR-T5 — dua kolom mulai 1280 px; di 1024 px ditumpuk supaya tabel bagian memakai lebar penuh. */
+        <div className="grid gap-3 xl:grid-cols-[320px_1fr]">
+          <div className="space-y-3">
+            {/* CR-T5 (K-31) — kotak Eksposur (nilai yang dipakai mesin = gerbang kredit). */}
+            <CustomerExposureBox customerId={data.id} selectedEntity={selectedEntity}>
+              {canAskCredit ? (
+                <div className="px-3 pb-3">
+                  <button data-testid="customer-360-override" onClick={() => setModal("override")} className="secondary-button btn-sm w-full justify-center whitespace-nowrap">
+                    <ShieldAlert size={13} /> Ajukan izin kredit
+                  </button>
+                </div>
+              ) : (
+                <p className="px-3 pb-3 text-fs-12 text-kn-text-2" data-testid="customer-360-override-none">Izin kredit diajukan pemegang akses mengajukan izin kredit.</p>
+              )}
+            </CustomerExposureBox>
+            {/* KF-T5 — aturan Pusat Pengaturan yang bisa dibedakan per pelanggan (denda, masa tenggang, selisih bayar). */}
+            <ScopedRulesSection scopeType="customer" scopeId={data.id} scopeLabel={data.name} entityId={data.entity_id || ""} />
+            <ProfileCard data={data} />
+          </div>
+          {body}
+        </div>
+      )}
 
-      {can(currentUser?.permissions, "customer", "delete") && data.status !== "merged" && (
+      {!isCard && <CustomerColorsSection customerId={customerId} customerName={data.name} />}
+
+      {!isCard && can(perms, "customer", "delete") && data.status !== "merged" && (
         <CustomerMergeSection customer={data} onDone={(msg) => { onChanged?.(msg); load(); }} onError={onError} />
       )}
 
-      <CustomerFormModal open={showEdit} editTarget={data} currentUser={currentUser} salesUsers={salesUsers}
-        onClose={() => setShowEdit(false)}
-        onSaved={(c) => { setShowEdit(false); onChanged?.(`Pelanggan ${c.name} diperbarui.`); load(); }}
-        onError={onError} />
+      {!isCard && (
+        <CustomerFormModal open={showEdit} editTarget={data} currentUser={currentUser} salesUsers={salesUsers}
+          onClose={() => setShowEdit(false)}
+          onSaved={(c) => { setShowEdit(false); onChanged?.(`Pelanggan ${c.name} diperbarui.`); load(); }}
+          onError={onError} />
+      )}
 
+      {modal === "receive" && (
+        <ReceivePaymentModal customerId={data.id} customerName={data.name} onClose={() => setModal(null)} onDone={(m) => done(m)} />
+      )}
       {modal === "reassign" && <ReassignModal customer={data} salesUsers={salesUsers} onClose={() => setModal(null)}
-        onDone={(msg) => { setModal(null); onChanged?.(msg); load(); }} onError={onError} />}
+        onDone={(msg) => done(msg)} onError={onError} />}
       <CreditOverrideModal open={modal === "override"} customer={data}
         entityId={selectedEntity && selectedEntity !== "all" ? selectedEntity : data.entity_id || ""}
-        onClose={() => setModal(null)} onSaved={(msg) => { setModal(null); onChanged?.(msg); load(); }} />
+        onClose={() => setModal(null)} onSaved={(msg) => done(msg)} />
       {modal === "followup" && <FollowupModal customer={data} onClose={() => setModal(null)}
-        onDone={(msg) => { setModal(null); onChanged?.(msg); load(); }} onError={onError} />}
+        onDone={(msg) => done(msg)} onError={onError || ((m) => setNotice(m))} />}
+    </div>
+  );
+}
+
+function ProfileCard({ data }) {
+  const pp = data.payment_profile || {};
+  const ms = pp.allowed_methods || [];
+  return (
+    <div className="section-card">
+      <div className="section-head"><h3 className="text-fs-13 font-bold">Profil & Kontak</h3></div>
+      <div className="section-body space-y-2 text-fs-12">
+        <p className="field-label">PIC Toko (pihak pelanggan)</p>
+        {(data.contacts || []).length > 0 ? (data.contacts || []).map((ct, i) => (
+          <div key={i} className="flex items-center gap-2"><PhoneCall size={12} className="text-kn-text-2" aria-hidden="true" />
+            <span className="font-semibold">{ct.name}</span><span className="text-kn-text-2">{ct.role === "PIC" ? "PIC toko" : ct.role}</span>
+            <span className="ml-auto text-kn-text-2">{ct.phone}</span></div>
+        )) : <p className="text-kn-text-2" data-testid="customer-360-pic">{data.pic_name} · {data.phone}</p>}
+        {(data.addresses || []).map((ad, i) => (
+          <div key={i} className="flex items-start gap-2"><MapPin size={12} className="mt-0.5 text-kn-text-2" aria-hidden="true" />
+            <span>{ad.address}, {ad.city}</span></div>
+        ))}
+        <div className="border-t border-kn-divider pt-2">
+          <p className="field-label">Profil Pembayaran</p>
+          <p data-testid="customer-360-pay-default">Metode utama: <b>{pp.default_method ? paymentMethodLabel(pp.default_method) : "—"}</b>
+            {ms.includes("tempo") && <> · Termin {pp.term_days ?? 0} hari</>}
+            {ms.includes("dp") && <> · DP {pp.dp_percent ?? 0}%</>}</p>
+          <p className="text-kn-text-2">Metode yang diizinkan: {ms.map(paymentMethodLabel).join(", ") || "—"}</p>
+        </div>
+        <div className="border-t border-kn-divider pt-2" data-testid="customer-360-sales-team">
+          <p className="field-label">Tim Sales (Split Insentif)</p>
+          {(data.sales_team || []).length > 0 ? (
+            <div className="flex flex-wrap gap-1.5">
+              {(data.sales_team || []).map((m, i) => (
+                <span key={i} data-testid={`customer-360-team-${i}`} className={`status-pill ${m.role === "pic" ? "status-confirmed" : "status-draft"}`}>
+                  {m.role === "pic" ? "Penanggung jawab · " : ""}{m.name || m.sales_id} · <b className="tabular-nums">{m.split_pct}%</b>
+                </span>
+              ))}
+            </div>
+          ) : (
+            <p className="text-kn-text-2">Sales penanggung jawab tunggal: <b>{data.assigned_sales_name || "—"}</b> (100%)</p>
+          )}
+        </div>
+        <div className="border-t border-kn-divider pt-2" data-testid="customer-360-lot-policy">
+          <p className="field-label">Kebijakan Lot</p>
+          <p className="text-kn-text-2">{lotPolicyLabel(data.lot_policy)}{data.enforce_single_dye_lot ? " · Paksa 1 dye lot" : ""}</p>
+        </div>
+        {(data.tags || []).length > 0 && (
+          <div className="flex flex-wrap gap-1 pt-1">
+            {data.tags.map((t) => <span key={t} className="status-pill status-draft">{t}</span>)}
+          </div>
+        )}
+      </div>
     </div>
   );
 }
@@ -253,45 +307,55 @@ function listFor(data, tab) {
 
 function HistoryTable({ data, tab }) {
   const rows = listFor(data, tab);
-  if (rows.length === 0) return <div className="py-8 text-center text-[11.5px] text-[#9A9BA3]" data-testid="customer-360-history-empty">Belum ada data.</div>;
-  return (
-    <div className="divide-y divide-[#EFF0F2] max-h-[440px] overflow-y-auto" data-testid={`customer-360-history-${tab}`}>
-      {tab === "orders" && rows.map((o) => (
-        <div key={o.id} className="flex items-center justify-between py-2 text-[11.5px]">
-          <div><p className="font-semibold text-[#0058CC]">{o.number}</p><p className="text-[10px] text-[#6B6B73]">{fmtDate(o.created_at)} · {docStatusLabel(o.status)}{["cancelled", "expired"].includes(o.status) ? "" : ` · ${payStatusLabel(o.payment_status)}`}</p></div>
-          <div className="text-right"><p className="tabular-nums font-semibold">{formatCurrency(o.grand_total)}</p><p className="text-[10px] text-[#6B6B73] tabular-nums">bayar {formatCurrency(o.paid)}</p></div>
+  if (rows.length === 0) return <div className="py-6 text-center text-fs-12 text-kn-text-2" data-testid="customer-360-history-empty">Belum ada data.</div>;
+  const Row = ({ r }) => (
+    <>
+      {tab === "orders" && (
+        <div className="flex items-center justify-between gap-2 py-2 text-fs-12">
+          <div className="min-w-0"><p className="font-semibold text-kn-action">{r.number}</p><p className="text-kn-text-2">{fmtDate(r.created_at)} · {docStatusLabel(r.status)}{["cancelled", "expired"].includes(r.status) ? "" : ` · ${payStatusLabel(r.payment_status)}`}</p></div>
+          <div className="text-right"><p className="whitespace-nowrap font-semibold tabular-nums">{formatCurrency(r.grand_total)}</p><p className="whitespace-nowrap tabular-nums text-kn-text-2">bayar {formatCurrency(r.paid)}</p></div>
         </div>
-      ))}
-      {tab === "documents" && rows.map((d, i) => (
-        <div key={i} className="flex items-center justify-between py-2 text-[11.5px]">
-          <span className="font-semibold">{d.document_type || d.type || d.number || "Dokumen"}</span>
-          <span className="text-[10px] text-[#6B6B73]">{fmtDate(d.created_at)}</span>
+      )}
+      {tab === "documents" && (
+        <div className="flex items-center justify-between gap-2 py-2 text-fs-12">
+          <span className="font-semibold">{r.document_type || r.type || r.number || "Dokumen"}</span>
+          <span className="text-kn-text-2">{fmtDate(r.created_at)}</span>
         </div>
-      ))}
-      {tab === "prices" && rows.map((p, i) => (
-        <div key={i} className="flex items-center justify-between py-2 text-[11.5px]">
-          <div><p className="font-semibold">{p.product_name || p.product_id}</p><p className="text-[10px] text-[#6B6B73]">{p.status_label || docStatusLabel(p.status)} · {fmtDate(p.created_at)}</p></div>
-          <span className="tabular-nums font-semibold">{formatCurrency(p.approved_price || p.special_price || p.price)}</span>
+      )}
+      {tab === "prices" && (
+        <div className="flex items-center justify-between gap-2 py-2 text-fs-12">
+          <div className="min-w-0"><p className="font-semibold">{r.product_name || r.product_id}</p><p className="text-kn-text-2">{r.status_label || docStatusLabel(r.status)} · {fmtDate(r.created_at)}</p></div>
+          <span className="whitespace-nowrap font-semibold tabular-nums">{formatCurrency(r.approved_price || r.special_price || r.price)}</span>
         </div>
-      ))}
-      {tab === "samples" && rows.map((s) => (
-        <div key={s.id} className="flex items-center justify-between py-2 text-[11.5px]" data-testid={`customer-360-sample-${s.id}`}>
-          <div><p className="font-semibold">{s.product_name} <span className="font-mono text-[10px] text-[#6B6B73]">{s.sku}</span></p>
-            <p className="text-[10px] text-[#6B6B73]">{s.number} · {s.length} {s.unit} · {s.status === "done" ? `dipotong ${fmtDate(s.cut_at)} (${s.child_roll_no})` : s.status === "cancelled" ? "dibatalkan" : "menunggu potong"}</p></div>
-          <span className="tabular-nums font-semibold">{formatCurrency(s.amount)}</span>
+      )}
+      {tab === "samples" && (
+        <div className="flex items-center justify-between gap-2 py-2 text-fs-12" data-testid={`customer-360-sample-${r.id}`}>
+          <div className="min-w-0"><p className="font-semibold">{r.product_name} <span className="font-mono text-kn-text-2">{r.sku}</span></p>
+            <p className="text-kn-text-2">{r.number} · {r.length} {r.unit} · {r.status === "done" ? `dipotong ${fmtDate(r.cut_at)} (${r.child_roll_no})` : r.status === "cancelled" ? "dibatalkan" : "menunggu potong"}</p></div>
+          <span className="whitespace-nowrap font-semibold tabular-nums">{formatCurrency(r.amount)}</span>
         </div>
-      ))}
-      {tab === "followups" && rows.map((fu, i) => (
-        <div key={i} className="flex items-start justify-between py-2 text-[11.5px] gap-2">
-          <div className="min-w-0"><p className="truncate">{fu.note}</p><p className="text-[10px] text-[#6B6B73]">{fu.created_by} · {fmtDate(fu.created_at)}</p>
+      )}
+      {tab === "followups" && (
+        <div className="flex items-start justify-between gap-2 py-2 text-fs-12">
+          <div className="min-w-0"><p className="truncate">{r.note}</p><p className="text-kn-text-2">{r.created_by} · {fmtDate(r.created_at)}</p>
             {/* CR-T5 — janji bayar: tanggal + nominal + lencana status (dihitung server saat dibaca) */}
-            {fu.promise_date && <p className="text-fs-12 text-kn-text" data-testid={`customer-360-promise-${fu.id}`}>{promiseText(fu, fmtDate)}</p>}</div>
+            {r.promise_date && <p className="text-kn-text" data-testid={`customer-360-promise-${r.id}`}>{promiseText(r, fmtDate)}</p>}</div>
           <div className="flex flex-wrap items-center justify-end gap-1">
-            <OutcomePill outcome={fu.outcome} />
-            {fu.promise_status && <PromiseStatusPill status={fu.promise_status} testId={`customer-360-promise-status-${fu.id}`} />}
+            <OutcomePill outcome={r.outcome} />
+            {r.promise_status && <PromiseStatusPill status={r.promise_status} testId={`customer-360-promise-status-${r.id}`} />}
           </div>
         </div>
-      ))}
+      )}
+    </>
+  );
+  return (
+    <div data-testid={`customer-360-history-${tab}`}>
+      <p className="mb-1 text-fs-12 text-kn-text-2" data-testid={`customer-360-history-${tab}-total`}>{rows.length} baris</p>
+      <table className="w-full"><tbody className="divide-y divide-kn-divider">
+        <PagedRows rows={rows} pageSize={10} testId={`customer-360-history-${tab}-pager`}>{(r, i) => (
+          <tr key={r.id || i}><td><Row r={r} /></td></tr>
+        )}</PagedRows>
+      </tbody></table>
     </div>
   );
 }

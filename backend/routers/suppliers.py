@@ -366,14 +366,19 @@ async def get_supplier_scorecard(supplier_id: str, request: Request) -> Dict[str
 
 @router.get("/suppliers/{supplier_id}/360")
 async def get_supplier_360(supplier_id: str, request: Request) -> Dict[str, Any]:
-    """Supplier 360 — profil + PO + tagihan + retur + scorecard (data nyata)."""
-    await require_permission(request, "supplier", "view")
+    """Supplier 360 — profil + PO + tagihan + retur + scorecard (data nyata).
+
+    MN-T3 (K-18) — kartu pemasok: + `payables`, `bills`, `contra_bons`, `payments`, `landed_costs`, `sections_allowed`
+    (PT dari sesi; Semua PT = angka per PT). Bagian keuangan yang izin sumbernya tidak dipegang bernilai `null`."""
+    actor = await require_permission(request, "supplier", "view")
     ctx = await entity_ctx(request)
     data = await supplier_360(supplier_id)
     if not data:
         raise HTTPException(status_code=404, detail="Supplier tidak ditemukan")
     assert_entity_access(data, "suppliers", ctx)
-    return data
+    from entity_scope import resolve_scope_ids
+    from services.party_card import supplier_card
+    return await supplier_card(data, actor, resolve_scope_ids(ctx, None))
 
 
 @router.get("/suppliers/{supplier_id}/return-policy")

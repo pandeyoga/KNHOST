@@ -8,6 +8,8 @@
  * Tagihan 120 · Jatuh tempo 90 · Nilai 90 · Dibayar 90 · Sisa 90 · Telat 70). Memuat / galat / kosong dibedakan.
  *
  * Juga: `CustomerOverrideSection` — bagian **Izin kredit** di tab Kredit (dulu tab "Override Kredit").
+ *
+ * MN-T3 — `show`: "schedule" (bagian kartu "Tagihan & Jadwal"), "penalty" (bagian "Denda & Kasus"), bawaan keduanya.
  */
 import { useCallback, useEffect, useState } from "react";
 import { AlertTriangle, CheckCircle2, Clock3, ShieldAlert, XCircle } from "lucide-react";
@@ -34,10 +36,10 @@ function Late({ days }) {
   return <span className="whitespace-nowrap text-kn-text-2">{days === 0 ? "0" : `${-days} lagi`}</span>;
 }
 
-export default function CustomerBillingTab({ customer, currentUser, selectedEntity }) {
+export default function CustomerBillingTab({ customer, currentUser, selectedEntity, show = "both" }) {
   const perms = currentUser?.permissions;
-  const canPlan = can(perms, "payment_plan", "view");
-  const canPenalty = can(perms, "penalty", "view");
+  const canPlan = can(perms, "payment_plan", "view") && show !== "penalty";
+  const canPenalty = can(perms, "penalty", "view") && show !== "schedule";
   const entityId = selectedEntity && selectedEntity !== "all" ? selectedEntity : (customer?.entity_id || "");
   const [sched, setSched] = useState(null);
   const [pens, setPens] = useState(null);

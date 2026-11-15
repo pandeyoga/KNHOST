@@ -32,6 +32,7 @@ import { bucketColumns } from "./agingBuckets";
 import { can } from "../../config/roles";
 import DetailModal from "../../components/DetailModal";
 import ARReceiptModal from "../crm/ARReceiptModal";   // PK-43 — form kwitansi baku
+import { CustomerCardLink } from "./cards/partyCards";   // MN-T3 — nama pelanggan → kartu pelanggan
 
 // PK-41 — nada sel per kolom umur (kunci tetap; judul kolom dari server).
 const WARN_KEYS = new Set(["b1_30", "b31_60"]);
@@ -263,7 +264,8 @@ export default function ARAgingView({ selectedEntity, currentUser, focusDoc, onC
                       onClick={() => openDetail(c.customer_id)}
                     >
                       <td className="px-3 py-2">
-                        <p className="font-semibold text-[#1C1C1E]">{c.customer_name}</p>
+                        <p className="font-semibold text-[#1C1C1E]"><CustomerCardLink id={c.customer_id} name={c.customer_name}
+                          perms={currentUser?.permissions} testId={`ar-aging-card-${c.customer_id}`} /></p>
                         <p className="text-[10px] text-[#9A9BA3]">{c.assigned_sales_name || "—"}{c.oldest_days > 0 ? ` · telat ${c.oldest_days} hr` : ""}</p>
                       </td>
                       {cols.map((b) => <Cell key={b.key} v={c[b.key]} warn={WARN_KEYS.has(b.key)} danger={DANGER_KEYS.has(b.key)} />)}

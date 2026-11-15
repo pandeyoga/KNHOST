@@ -80,11 +80,13 @@ async def list_cases(request: Request, ctx: EntityContext = Depends(entity_ctx),
                      status: str = Query("", description="open|in_progress|resolved|rejected"),
                      case_type: str = Query(""), assignee: str = Query(""),
                      overdue_only: bool = Query(False),
-                     limit: int = Query(200, ge=1, le=1000)) -> List[Dict[str, Any]]:
+                     limit: int = Query(200, ge=1, le=1000),
+                     customer_id: str = Query("", description="MN-T3 — kasus satu pelanggan (kartu pelanggan)")
+                     ) -> List[Dict[str, Any]]:
     await require_permission(request, "finance_case", "view")
     try:
         return await svc.list_cases(_ids(ctx), status, case_type, assignee,
-                                    overdue_only, limit)
+                                    overdue_only, limit, customer_id=customer_id)
     except Exception as e:  # noqa: BLE001
         _bad(e)
 

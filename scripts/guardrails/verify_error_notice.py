@@ -69,7 +69,7 @@ MODAL_SAFE = ("<ErrorNotice", "notice-bar danger", "role=\"alert\"")
 MODAL_BASELINE = {
     "components/LabelPrinterModal.jsx",
     # Fase 3 · P3 (D-05) — CustomerFormModal kini FormModal (galat di dalam pop-up) → keluar dari baseline.
-    "features/crm/Customer360Panel.jsx",
+    # MN-T3 — kartu pelanggan: galat muat tampil di kartu, galat aksi di pop-up baku / bilah sendiri → keluar dari baseline.
     "features/purchasing/BlanketPOCreateModal.jsx",
     "features/purchasing/CallOffModal.jsx",
     "features/purchasing/RFQCreateModal.jsx",

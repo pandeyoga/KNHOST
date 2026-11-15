@@ -80,7 +80,8 @@ const JOURNAL_CSV_COLUMNS = [
 ];
 
 const TAB_IDS = TABS.map((t) => t.id);
-// PK-43 — asal "Laporan Keuangan": tab & periode laporan untuk tombol kembali.
+// PK-43 — asal "Laporan Keuangan": tab & periode laporan untuk tombol kembali. MN-T3 — juga Arus Kas & Perubahan Ekuitas.
+const REPORT_LABEL = { pl: "Laba-Rugi", bs: "Neraca", cf: "Arus Kas", eq: "Perubahan Ekuitas" };
 const reportOrigin = (p) => (p?.from === "financial-statements"
   ? { tab: p.fromTab || "pl", start: p.fromTab === "bs" ? "" : (p.start || ""), end: p.end || "" } : null);
 
@@ -178,7 +179,7 @@ export default function GeneralLedger({ selectedEntity, entities = [], focusDoc,
               end: fromReport.end } })}>
             <ArrowLeft size={13} aria-hidden="true" /> Kembali ke Laporan Keuangan
           </button>
-          <span className="text-fs-12 text-kn-text-2">Mutasi akun dari {fromReport.tab === "bs" ? "Neraca" : "Laba-Rugi"}.</span>
+          <span className="text-fs-12 text-kn-text-2">Mutasi akun dari {REPORT_LABEL[fromReport.tab] || "Laba-Rugi"}.</span>
         </div>
       )}
       <EntityScopeBanner meta={summary?.scope_meta} />
@@ -227,7 +228,8 @@ export default function GeneralLedger({ selectedEntity, entities = [], focusDoc,
           {tab === "journal" && <JournalTab refreshKey={refreshKey} onChanged={refreshAll} onError={setError} entities={entities} selectedEntity={selectedEntity}
             sources={summary?.sources} voidCount={summary?.void_count || 0} onNotice={setNotice}
             focusJe={focusJe} onFocusShown={() => setFocusJe(null)} onOpenDocument={openSource} />}
-          {tab === "trial" && <TrialBalanceTab refreshKey={refreshKey} onError={setError} onDrill={(code) => { setTab("ledger"); setLedgerCode(code); }} />}
+          {tab === "trial" && <TrialBalanceTab refreshKey={refreshKey} onError={setError} selectedEntity={selectedEntity}
+            onDrill={(p) => { setTab("ledger"); setLedgerCode(p.code); setLedgerRange({ start: p.start || "", end: p.end || "" }); }} />}
           {tab === "ledger" && <LedgerTab accounts={accounts} refreshKey={refreshKey} code={ledgerCode} setCode={setLedgerCode} onError={setError}
             range={ledgerRange} setRange={setLedgerRange} entities={entities} selectedEntity={selectedEntity}
             sourceMeta={sourceMeta} onChanged={refreshAll} onOpenDocument={openSource} />}

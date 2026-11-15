@@ -7,6 +7,9 @@
  * PK-43 (UX-13) — Buku Besar berentang (**Dari** dan **Sampai**, `start` dan `as_of` server): bila Dari diisi, baris pertama
  * **Saldo awal** dan mutasi urut tanggal (lama → baru) dengan saldo berjalan dari saldo awal. Tiap baris mutasi membuka
  * rincian jurnalnya (yang bisa membuka dokumen sumbernya).
+ * MN-T3 (bagian E) — Neraca Saldo ber-tanggal **Per tanggal** (`as_of`); klik baris akun → preset
+ * `{tab: "ledger", code, end: tanggal neraca saldo}` (buku besar akun itu sampai tanggal itu). Mode Semua PT → petunjuk
+ * "Pilih satu PT untuk menelusuri angka ini." (baris total tidak bisa diklik).
  */
 import { apiErrorText } from "../../utils/apiError";
 import { useCallback, useEffect, useMemo, useState } from "react";
@@ -16,20 +19,33 @@ import KNSelect from "../../components/KNSelect";
 import KNDatePicker from "../../components/KNDatePicker";
 import { formatCurrency, formatDate } from "../../utils/formatters";
 import JournalDetailModal from "./JournalDetailModal";
+import { TraceNotice, traceDecision } from "./traceLedger";
 import useJournalActions from "./useJournalActions";
 
 const fmtDate = (iso) => formatDate(iso);
 
 // ─── NERACA SALDO TAB ────────────────────────────────────────────────────────
-export function TrialBalanceTab({ refreshKey, onError, onDrill }) {
+const pad2 = (n) => String(n).padStart(2, "0");
+const todayLocal = () => { const d = new Date(); return `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`; };
+
+export function TrialBalanceTab({ refreshKey, onError, onDrill, selectedEntity, initialAsOf = "" }) {
   const [tb, setTb] = useState(null);
   const [loading, setLoading] = useState(true);
   const [failed, setFailed] = useState(false);
+  const [asOf, setAsOf] = useState(initialAsOf || todayLocal());
+  const [notice, setNotice] = useState("");
+  const drill = (code) => {
+    const d = traceDecision({ code, range: { end: asOf }, selectedEntity });
+    if (!d) return;
+    if (d.notice) { setNotice(d.notice); return; }
+    setNotice("");
+    onDrill(d.preset);
+  };
 
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await axios.get(`${API}/gl/trial-balance`);
+      const res = await axios.get(`${API}/gl/trial-balance`, { params: asOf ? { as_of: asOf } : {} });
       setTb(res.data || null);
       setFailed(false);
     } catch (e) {
@@ -39,16 +55,24 @@ export function TrialBalanceTab({ refreshKey, onError, onDrill }) {
     } finally {
       setLoading(false);
     }
-  }, [onError]);
+  }, [onError, asOf]);
 
   useEffect(() => { load(); }, [load, refreshKey]);
 
-  if (loading) return <div className="grid gap-2" data-testid="gl-trial-loading">{[0, 1, 2, 3, 4].map((i) => <div key={i} className="h-9 bg-[#F5F5F7] rounded animate-pulse" />)}</div>;
-  if (failed) return null;
-  if (!tb || (tb.rows || []).length === 0) return <div data-testid="gl-trial-empty" className="py-12 text-center text-[12px] text-[#8E8E93]"><Scale size={26} className="mx-auto mb-2 text-gray-300" />Belum ada saldo. Posting jurnal terlebih dahulu.</div>;
+  const asOfBar = (
+    <div className="mb-2 flex flex-wrap items-end gap-2" data-testid="gl-trial-asof-bar">
+      <div><label className="field-label">Per tanggal</label>
+        <KNDatePicker data-testid="gl-trial-asof" value={asOf} onChange={(v) => setAsOf(v || todayLocal())} clearable={false} /></div>
+    </div>
+  );
+  if (loading) return <>{asOfBar}<div className="grid gap-2" data-testid="gl-trial-loading">{[0, 1, 2, 3, 4].map((i) => <div key={i} className="h-9 bg-[#F5F5F7] rounded animate-pulse" />)}</div></>;
+  if (failed) return asOfBar;
+  if (!tb || (tb.rows || []).length === 0) return <>{asOfBar}<div data-testid="gl-trial-empty" className="py-12 text-center text-[12px] text-[#8E8E93]"><Scale size={26} className="mx-auto mb-2 text-gray-300" />Belum ada saldo. Posting jurnal terlebih dahulu.</div></>;
 
   return (
     <div data-testid="gl-trial">
+      {asOfBar}
+      <TraceNotice notice={notice} onDismiss={() => setNotice("")} testId="gl-trial-trace-notice" />
       <div className="overflow-auto rounded-md border border-[#EFF0F2]">
         <table className="w-full text-[12px]">
           <thead>
@@ -62,7 +86,7 @@ export function TrialBalanceTab({ refreshKey, onError, onDrill }) {
           </thead>
           <tbody>
             {tb.rows.map((r) => (
-              <tr key={r.code} data-testid={`gl-trial-row-${r.code}`} onClick={() => onDrill(r.code)} className="border-b border-[#F5F5F7] last:border-0 cursor-pointer hover:bg-[#FBF8FE]">
+              <tr key={r.code} data-testid={`gl-trial-row-${r.code}`} onClick={() => drill(r.code)} className="border-b border-[#F5F5F7] last:border-0 cursor-pointer hover:bg-[#FBF8FE]">
                 <td className="px-3 py-2 font-mono font-semibold text-[#3C3C43] tabular-nums">{r.code}</td>
                 <td className="px-3 py-2 text-[#1C1C1E]">{r.name}</td>
                 <td className="px-3 py-2 text-[10px] text-[#9A9BA3]">{r.type_label}</td>
@@ -80,7 +104,7 @@ export function TrialBalanceTab({ refreshKey, onError, onDrill }) {
           </tfoot>
         </table>
       </div>
-      <p className="mt-2 text-[11px] text-[#9A9BA3]">Klik baris akun untuk melihat Buku Besar (rincian mutasi).</p>
+      <p className="mt-2 text-fs-12 text-kn-text-2">Klik baris akun untuk melihat Buku Besar akun itu sampai tanggal neraca saldo.</p>
     </div>
   );
 }

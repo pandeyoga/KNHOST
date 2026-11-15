@@ -17,9 +17,12 @@ import {
   FC, NOW, ymd, compactIDR, entityParam, saveBlob, chartTooltip,
   KpiCard, Panel, EmptyState, formatCurrency,
 } from "./financeShared";
+import { TraceNotice, TraceValue, useLedgerTrace } from "./traceLedger";
 
 export default function EquityChangesTab({ selectedEntity }) {
   const [range, setRange] = useState({ start: `${NOW.getFullYear()}-01-01`, end: ymd(NOW) });
+  // MN-T3 (bagian E) — baris komponen ekuitas berkode akun → buku besar akun itu pada rentang laporan.
+  const tr = useLedgerTrace({ from: "financial-statements", fromTab: "eq", selectedEntity });
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -124,6 +127,7 @@ export default function EquityChangesTab({ selectedEntity }) {
             </Panel>
           </div>
           <div className="lg:col-span-3">
+            <TraceNotice notice={tr.notice} onDismiss={tr.clear} testId="eq-trace-notice" />
             <div className="overflow-auto rounded-xl border border-[#EFF0F2]" data-testid="eq-table">
               <table className="w-full text-[12px]">
                 <thead>
@@ -145,7 +149,9 @@ export default function EquityChangesTab({ selectedEntity }) {
                   {comps.map((c) => (
                     <tr key={c.code} data-testid={`eq-row-${c.code}`} className="border-b border-[#F5F5F7] last:border-0">
                       <td className="px-3 py-2 font-semibold text-[#1C1C1E]">
-                        {c.code !== "__pl__" && <span className="text-[10px] text-[#9A9BA3] mr-1.5">{c.code}</span>}{c.name}
+                        {c.code !== "__pl__" && <span className="text-[10px] text-[#9A9BA3] mr-1.5">{c.code}</span>}
+                        <TraceValue enabled={tr.enabled && c.code !== "__pl__"} testId={`eq-line-${c.code}`}
+                          onClick={() => tr.trace(c.code, { start: range.start, end: range.end })}>{c.name}</TraceValue>
                         {c.code === "3-2900" && !c.begin && Math.abs(Number(c.movement || 0)) > 0.005 && (
                           <span className="block text-[10px] font-normal text-[#8E8E93]" data-testid="eq-opening-note">
                             Jurnal saldo awal diposting di dalam rentang ini → tampil sebagai pergerakan.

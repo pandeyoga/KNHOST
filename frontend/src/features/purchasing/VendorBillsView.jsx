@@ -33,6 +33,7 @@ import { can } from "../../config/roles";
 import { useCanDecideMap } from "../../hooks/useCanDecide";   // KP-T4
 import useFocusDoc from "../../hooks/useFocusDoc";
 import FocusNotice from "../../components/FocusNotice";
+import { SupplierCardLink } from "../finance/cards/partyCards";   // MN-T3 — nama pemasok → kartu pemasok
 
 /**
  * VendorBillsView (Fase 5.2 — P0-2) — Tagihan Supplier (Vendor Bill) + 3-Way Matching.
@@ -247,7 +248,8 @@ export default function VendorBillsView({ currentUser, selectedEntity, focusDoc,
                 <tr key={b.id} data-testid={`vb-row-${b.id}`} onClick={() => setDetail(b)} className="cursor-pointer">
                   <td><span className="font-mono font-semibold">{b.bill_number}</span></td>
                   <td className="max-w-[340px]">
-                    <p className="truncate font-medium">{b.supplier_name}</p>
+                    <p className="truncate font-medium"><SupplierCardLink id={b.supplier_id} name={b.supplier_name}
+                      perms={currentUser?.permissions} testId={`vb-supplier-card-${b.id}`} /></p>
                     <p className="flex items-center gap-1 truncate text-xs text-muted"><EntityBadge entityId={b.entity_id} /><span className="truncate">{b.po_number || "—"} · {b.items?.length || 0} item</span></p>
                   </td>
                   <td className="text-right font-semibold tabular-nums">{formatCurrency(b.grand_total)}</td>

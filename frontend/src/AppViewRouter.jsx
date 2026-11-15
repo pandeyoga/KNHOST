@@ -15,6 +15,8 @@ import { defaultNavIdForRole, defaultViewForRole } from "./config/navigationConf
 // Fase 3 · P1 — preset layar (alias/tautan) & jalur navigasi bersama untuk LinkCard/tombol tautan.
 import { ViewPresetProvider } from "./context/ViewPresetContext";
 import { AppNavProvider } from "./context/AppNavContext";
+// MN-T3 — kartu pelanggan & kartu pemasok dibuka dari baris mana pun (`useAppNav().openCustomerCard/openSupplierCard`).
+import { PartyCardHost } from "./features/finance/cards/partyCards";
 import { configDeepLinkTarget } from "./hooks/useDeepLinks";
 
 // ── Lazy views (dipisah per chunk) — daftar di ./appViewImports.js (fase 3 · P1, batas 500 baris) ──
@@ -456,6 +458,7 @@ export default function AppViewRouter(props) {
       {activeView === "escalations" && <EscalationManagement user={user} />}
       {activeView === "documents" && <DocumentsView templates={templates} loading={loading} lastDocument={lastDocument} lastLabel={lastLabel} onGenerateLabel={generateLabel} products={data.products || []} />}
       </Suspense>
+      <PartyCardHost currentUser={user} selectedEntity={selectedEntity} />
     </div>
     </ViewPresetProvider>
     </AppNavProvider>

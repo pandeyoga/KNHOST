@@ -72,7 +72,9 @@ async def get_customer_360(customer_id: str, request: Request) -> Dict[str, Any]
         raise HTTPException(status_code=404, detail="Customer tidak ditemukan")
     if not await can_access_customer(actor, data):
         raise HTTPException(status_code=403, detail="Customer ini bukan milik Anda")
-    return data
+    # MN-T3 (K-18) — kartu pelanggan: `sections_allowed` + angka kredit/piutang dikosongkan bila izinnya tidak dipegang.
+    from services.party_card import customer_card
+    return await customer_card(data, actor)
 
 
 # ── Reassign salesperson (Manager/Admin, teraudit) ───────────────────────────

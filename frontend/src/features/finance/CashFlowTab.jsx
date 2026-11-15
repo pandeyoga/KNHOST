@@ -4,6 +4,8 @@
  * PK-16 — banner PT (`scope_meta`), gagal memuat → data dikosongkan, nama unduhan memuat PT / `gabungan`.
  * PK-41 (RP-06) — baris "Saldo awal rekening yang didaftarkan periode ini" di bawah Kas Awal (menambah kas awal, bukan
  * arus pendanaan) dan keterangan metode dari server.
+ * MN-T3 (bagian E) — baris yang membawa kode akun = tautan ke buku besar akun itu pada rentang laporan (`traceLedger`);
+ * baris laba bersih, total, dan kas awal/akhir tidak bisa diklik. Semua PT → petunjuk memilih satu PT.
  */
 import { apiErrorText } from "../../utils/apiError";
 import KNDatePicker from "@/components/KNDatePicker";
@@ -21,9 +23,12 @@ import {
   FC, NOW, ymd, compactIDR, entityParam, saveBlob, chartTooltip,
   KpiCard, Panel, EmptyState, formatCurrency,
 } from "./financeShared";
+import { TraceNotice, TraceValue, useLedgerTrace } from "./traceLedger";
 
 export default function CashFlowTab({ selectedEntity }) {
   const [range, setRange] = useState({ start: `${NOW.getFullYear()}-01-01`, end: ymd(NOW) });
+  const tr = useLedgerTrace({ from: "financial-statements", fromTab: "cf", selectedEntity });
+  const traceRow = (code) => tr.trace(code, { start: range.start, end: range.end });
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -118,14 +123,15 @@ export default function CashFlowTab({ selectedEntity }) {
             </Panel>
           </div>
           <div className="lg:col-span-3">
+            <TraceNotice notice={tr.notice} onDismiss={tr.clear} testId="cf-trace-notice" />
             <div className="overflow-auto rounded-xl border border-[#EFF0F2]" data-testid="cf-table">
               <table className="w-full text-[12px]">
                 <tbody>
                   <SectionRows label={op.label} testId="op"
                     lead={{ name: op.net_income_label, amount: op.net_income }}
-                    lines={op.working_capital} total={op.total} />
-                  <SectionRows label={inv.label} testId="inv" lines={inv.lines} total={inv.total} />
-                  <SectionRows label={fin.label} testId="fin" lines={fin.lines} total={fin.total} />
+                    lines={op.working_capital} total={op.total} trace={tr.enabled ? traceRow : null} />
+                  <SectionRows label={inv.label} testId="inv" lines={inv.lines} total={inv.total} trace={tr.enabled ? traceRow : null} />
+                  <SectionRows label={fin.label} testId="fin" lines={fin.lines} total={fin.total} trace={tr.enabled ? traceRow : null} />
                   <tr className="border-t-2 border-[#E4E4EA] bg-[#F3EAFB]">
                     <td className="px-3 py-2.5 font-bold text-[#1C1C1E]">KENAIKAN/(PENURUNAN) KAS BERSIH</td>
                     <td className="px-3 py-2.5 text-right tabular-nums font-bold text-[#6B219A]" data-testid="cf-net-change">{formatCurrency(data.net_change)}</td>
@@ -154,7 +160,7 @@ export default function CashFlowTab({ selectedEntity }) {
   );
 }
 
-function SectionRows({ label, lead, lines, total, testId }) {
+function SectionRows({ label, lead, lines, total, testId, trace = null }) {
   const arr = lines || [];
   return (
     <>
@@ -169,7 +175,8 @@ function SectionRows({ label, lead, lines, total, testId }) {
         <tr><td colSpan={2} className="px-3 py-1.5 pl-6 text-[11px] text-[#9A9BA3]">Tidak ada perubahan.</td></tr>
       ) : arr.map((ln) => (
         <tr key={ln.code} className="border-b border-[#F5F5F7]">
-          <td className="px-3 py-1.5 pl-6 text-[#3C3C43]"><span className="text-[10px] text-[#9A9BA3] mr-1.5">{ln.code}</span>{ln.name}</td>
+          <td className="px-3 py-1.5 pl-6 text-[#3C3C43]"><span className="text-[10px] text-[#9A9BA3] mr-1.5">{ln.code}</span>
+            <TraceValue enabled={Boolean(trace)} onClick={() => trace(ln.code)} testId={`cf-line-${ln.code}`}>{ln.name}</TraceValue></td>
           <td className={`px-3 py-1.5 text-right tabular-nums ${ln.amount >= 0 ? "text-[#1B7F4B]" : "text-[#C0392B]"}`}>{formatCurrency(ln.amount)}</td>
         </tr>
       ))}

@@ -43,7 +43,8 @@ export default function SupplierPriceList({ supplierId, canManage }) {
     try {
       const [eRes, pRes] = await Promise.all([
         axios.get(`${API}/suppliers/${supplierId}/price-list`, { params: { include_inactive: showInactive } }),
-        axios.get(`${API}/products`).catch(() => ({ data: [] })),
+        // MN-T3 — daftar produk hanya untuk form tambah/ubah (pemegang `supplier.update`); kartu baca saja tidak memanggilnya.
+        canManage ? axios.get(`${API}/products`).catch(() => ({ data: [] })) : Promise.resolve({ data: [] }),
       ]);
       setEntries(Array.isArray(eRes.data) ? eRes.data : []);
       setProducts(Array.isArray(pRes.data) ? pRes.data : []);

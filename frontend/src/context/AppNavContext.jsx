@@ -18,8 +18,12 @@
  *
  * Di luar provider (mis. aplikasi HP): `go` tidak melakukan apa-apa dan `canOpen` selalu false —
  * LinkCard lalu tampil sebagai ringkasan baca-saja, bukan tombol mati.
+ *
+ * MN-T3 — pembuka bersama kartu: `openCustomerCard(id)` / `openSupplierCard(id)` menyimpan `card` = {type, id, nonce};
+ * `PartyCardHost` (`features/finance/cards/partyCards.jsx`, dipasang di AppViewRouter) merendernya di atas layar mana
+ * pun; `closeCard()` menutupnya. Di luar provider `cardsEnabled` = false (nama tampil sebagai teks biasa).
  */
-import { createContext, useContext, useMemo } from "react";
+import { createContext, useContext, useMemo, useRef, useState } from "react";
 import { resolveDeepLinkTarget } from "../config/navigationConfig";
 
 const NOOP_NAV = {
@@ -27,13 +31,25 @@ const NOOP_NAV = {
   go: () => {},
   canOpen: () => false,
   openDocument: () => {},
+  card: null,
+  cardsEnabled: false,
+  openCustomerCard: () => {},
+  openSupplierCard: () => {},
+  closeCard: () => {},
 };
 
 const AppNavContext = createContext(NOOP_NAV);
 
 export function AppNavProvider({ role, onNavigateTo, onOpenDocument, children }) {
+  const [card, setCard] = useState(null);
+  const seq = useRef(0);
   const value = useMemo(() => ({
     role: role || "",
+    card,
+    cardsEnabled: true,
+    openCustomerCard: (id) => { if (id) { seq.current += 1; setCard({ type: "customer", id, nonce: seq.current }); } },
+    openSupplierCard: (id) => { if (id) { seq.current += 1; setCard({ type: "supplier", id, nonce: seq.current }); } },
+    closeCard: () => setCard(null),
     canOpen: (view) => !!(role && view && resolveDeepLinkTarget(view, role)),
     openDocument: (link) => onOpenDocument?.(link),
     go: (view, opts = {}) => {
@@ -49,7 +65,7 @@ export function AppNavProvider({ role, onNavigateTo, onOpenDocument, children })
       }
       onNavigateTo?.(view, { preset: opts.preset, tab: opts.tab, navId: opts.navId });
     },
-  }), [role, onNavigateTo, onOpenDocument]);
+  }), [role, onNavigateTo, onOpenDocument, card]);
   return <AppNavContext.Provider value={value}>{children}</AppNavContext.Provider>;
 }
 

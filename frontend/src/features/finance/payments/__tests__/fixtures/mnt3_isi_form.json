@@ -1,0 +1,20 @@
+{
+  "_catatan": "MN-T3 — isi permintaan yang DIHASILKAN form A (Terima pembayaran pelanggan) dan form B (Bayar pemasok). Uji komponen (jest, U2/U4b) memastikan form mengirim isi ini persis; uji lapis B (tests_mem/test_MNT3_kartu_pintu.py, U3/U4) mengirim isi yang sama ke pintu server. Placeholder {..} diganti pengujinya.",
+  "terima": {
+    "customer_id": "{C}",
+    "amount": 5000000,
+    "method": "transfer",
+    "receipt_date": "{TANGGAL_ISO}",
+    "notes": "Pelunasan sebagian",
+    "use_deposit_amount": 0,
+    "account_id": "{REK}",
+    "reference_no": "TRF-MNT3-01"
+  },
+  "bayar": {
+    "amount": 7000000,
+    "method": "transfer",
+    "paid_at": "{TANGGAL}",
+    "bank_account_id": "{REK}",
+    "notes": "Pelunasan tagihan"
+  }
+}

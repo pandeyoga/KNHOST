@@ -12,6 +12,10 @@
  * PK-31 — persen kepemilikan per PT di kepala kolom + Bagian non-pengendali/pemilik induk (K-10); eliminasi otomatis
  * antar-PT per bulan (lencana Beku / Bulan berjalan) dari `auto_eliminations`; peringatan bulan beku yang berbeda dari
  * hitung ulang (`eliminations_period_stale`).
+ * MN-T3 (bagian E) — angka per PT pada pos rincian (bukan total/laba) bisa ditelusuri: PT kolom = PT aktif → Laporan
+ * Keuangan PT itu pada periode yang sama (Laba-Rugi tahun / Neraca per tanggal; dari sana tiap akun → buku besar →
+ * dokumen, PK-43). PT kolom ≠ PT aktif → "Pindah ke {nama PT} untuk menelusuri angka ini."; Semua PT → "Pilih satu PT
+ * untuk menelusuri angka ini.". Matriks ini tidak memuat baris berkode akun (pos = jumlah kelompok akun).
  */
 import { apiErrorText } from "../../utils/apiError";
 import KNDatePicker from "@/components/KNDatePicker";
@@ -29,6 +33,9 @@ import { askConfirm, askReason } from "@/services/confirmService";
 import { stripInternalCodes } from "../../utils/cleanText";
 import { EliminationsPanel, EliminationModal, DetectModal, StaleEliminationsNotice } from "./GroupConsolidationParts";
 import { AutoEliminationsByMonth, OwnershipShare, PeriodStaleNotice } from "./ConsolidationPeriodParts";
+import { useAppNav } from "../../context/AppNavContext";
+import { useEntityScope } from "../../context/EntityScopeContext";
+import { TEKS_PILIH_PT_TELUSUR, TraceNotice, TraceValue, teksPindahPt } from "./traceLedger";
 
 const NOW = new Date();
 const YEARS = Array.from({ length: 6 }, (_, i) => {
@@ -72,6 +79,18 @@ export default function GroupConsolidationView({ entities = [] }) {
   const [modal, setModal] = useState(null); // {lines?, name?}
   const [detect, setDetect] = useState(null); // ic-candidates result
   const [busy, setBusy] = useState(false);
+  const [traceNotice, setTraceNotice] = useState("");
+  const { go, canOpen } = useAppNav();
+  const { selectedEntity } = useEntityScope();
+  const canTrace = canOpen("financial-statements");
+  const traceCell = (e) => {
+    if (!selectedEntity || selectedEntity === "all") { setTraceNotice(TEKS_PILIH_PT_TELUSUR); return; }
+    if (e.entity_id !== selectedEntity) { setTraceNotice(teksPindahPt(e.short_name || e.entity_name)); return; }
+    setTraceNotice("");
+    go("financial-statements", { preset: tab === "pnl"
+      ? { tab: "pl", start: `${year}-01-01`, end: `${year}-12-31`, from: { view: "group-consolidation" } }
+      : { tab: "bs", end: asOf, from: { view: "group-consolidation" } } });
+  };
 
   const load = useCallback(async () => {
     setLoading(true); setError("");
@@ -215,7 +234,12 @@ export default function GroupConsolidationView({ entities = [] }) {
             return (
               <tr key={row.key} data-testid={`cons-row-${row.key}`} className={row.strong ? "bg-[#F5F8FF] font-bold" : row.muted ? "bg-[#FCFCFD]" : ""}>
                 <td className={`sticky left-0 ${row.strong ? "bg-[#F5F8FF] font-bold" : "bg-white"} text-[#1C1C1E]`}>{row.label}</td>
-                {entityCols.map((e) => <td key={e.entity_id} className={`${colClass} text-[#3C3C43] tabular-nums`}>{formatCurrency(e[row.key])}</td>)}
+                {entityCols.map((e) => (
+                  <td key={e.entity_id} className={`${colClass} text-[#3C3C43] tabular-nums`}>
+                    <TraceValue enabled={canTrace && !row.strong && !row.muted} onClick={() => traceCell(e)}
+                      testId={`cons-trace-${row.key}-${e.entity_id}`} title="Telusuri angka ini">{formatCurrency(e[row.key])}</TraceValue>
+                  </td>
+                ))}
                 <td className={`${colClass} tabular-nums ${Math.abs(elimV) > 0.005 ? "text-[#C0392B]" : "text-[#C9C9CE]"}`} data-testid={`cons-elim-${row.key}`}>{formatCurrency(elimV)}</td>
                 <td className={`${colClass} font-bold text-[#0058CC] tabular-nums`} data-testid={`cons-consolidated-${row.key}`}>{formatCurrency(consV)}</td>
               </tr>
@@ -245,6 +269,7 @@ export default function GroupConsolidationView({ entities = [] }) {
           {/* Fase 4 · R2 (G1-33) — entri eliminasi basi dari server (R6); diam bila field tidak ada. */}
           <StaleEliminationsNotice stale={data?.eliminations_stale} />
           <PeriodStaleNotice stale={data?.eliminations_period_stale} />
+          <TraceNotice notice={traceNotice} onDismiss={() => setTraceNotice("")} testId="cons-trace-notice" />
           {notice && (
             <div data-testid="cons-notice" className="mb-3 rounded-md bg-[#E6F6EC] border border-[#BDE5CC] text-[#1B7F4B] text-[12px] px-3 py-2 flex items-center gap-2">
               <CheckCircle2 size={14} />{notice}<button className="ml-auto" onClick={() => setNotice("")}><X size={13} /></button>

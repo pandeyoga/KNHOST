@@ -227,6 +227,32 @@ def bill_financials(bill: Dict[str, Any]) -> Dict[str, Any]:
     }
 
 
+#: Status tagihan yang berhutang (dibaca ringkasan hutang dan kartu pemasok).
+PAYABLE_BILL_STATUSES = ("posted", "paid")
+
+
+async def open_payables(scope_q: Dict[str, Any]) -> List[Dict[str, Any]]:
+    """PK-41 + MN-T3 (D1) — SATU pembaca tagihan berhutang yang masih bersisa, dipakai ringkasan Hutang › Tagihan
+    (`GET /vendor-bills/payables/summary`) dan kartu pemasok (`GET /suppliers/{id}/360` › `payables`).
+
+    `scope_q` = saringan PT/pemasok dari pemanggil (sudah lewat `resolve_list_scope`). Tiap butir: `bill`, `fin`
+    (`bill_financials`), `due` (jatuh tempo `YYYY-MM-DD` atau None), `basis`, `days` (hari lewat jatuh tempo, WIB)."""
+    from services import report_basis as rb
+    q: Dict[str, Any] = {"status": {"$in": sorted(PAYABLE_BILL_STATUSES)}, "payment_status": {"$ne": "paid"},
+                         **(scope_q or {})}
+    today = rb.tanggal_buku()
+    term_cache: Dict[str, int] = {}
+    out: List[Dict[str, Any]] = []
+    async for b in db.vendor_bills.find(q, {"_id": 0}):
+        fin = bill_financials(b)
+        if fin["outstanding"] <= 0.01:
+            continue
+        due, basis = await rb.jatuh_tempo_tagihan(b, term_cache)
+        out.append({"bill": b, "fin": fin, "due": due, "basis": basis,
+                    "days": rb.hari_antara(due, today) if due else 0})
+    return out
+
+
 async def next_bill_number(entity_id: Optional[str] = None) -> str:
     """KN-A12 — sequence ATOMIK bersama (find_one_and_update $inc), bukan 'nomor tertinggi + 1'.
     KP-T5 — `entity_id` = PT dokumennya (N1): bawaan tetap deret bersama; berlaku bila grup memilih per PT."""

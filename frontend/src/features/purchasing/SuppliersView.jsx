@@ -191,7 +191,7 @@ export default function SuppliersView({ currentUser, selectedEntity }) {
   );
 
   if (detailId) {
-    return <Supplier360Panel supplierId={detailId} currentUser={currentUser} onError={setError}
+    return <Supplier360Panel supplierId={detailId} currentUser={currentUser} selectedEntity={selectedEntity} onError={setError}
       onBack={() => { setDetailId(null); loadAll(); }}
       onEdit={(s) => { setDetailId(null); openEdit(s); }} />;
   }

@@ -31,6 +31,7 @@ import DesktopOnlyNotice from "../../components/DesktopOnlyNotice";
 import useViewPreset from "../../hooks/useViewPreset";
 import EntityScopeBanner, { useScopeMeta, scopeFileTag } from "../../components/EntityScopeBanner";
 import { useAppNav } from "../../context/AppNavContext";
+import { TraceNotice, traceDecision } from "./traceLedger";   // MN-T3 — Semua PT: petunjuk, bukan buku besar gabungan
 
 const NOW = new Date();
 
@@ -96,9 +97,13 @@ export default function FinancialStatementsView({ selectedEntity }) {
   // PK-43 — kembali dari buku besar: periode laporan yang tadi dilihat (rentang Laba-Rugi / tanggal Neraca).
   const [restore] = useState(() => (preset?.end ? { start: preset.start || "", end: preset.end } : null));
   const { go, canOpen } = useAppNav();
-  const drill = (fromTab, range) => (canOpen("general-ledger") ? (code) => go("general-ledger", {
-    preset: { tab: "ledger", code, ...range, from: "financial-statements", fromTab },
-  }) : undefined);
+  const [traceNotice, setTraceNotice] = useState("");
+  const drill = (fromTab, range) => (canOpen("general-ledger") ? (code) => {
+    const d = traceDecision({ code, range, selectedEntity, from: "financial-statements", fromTab });
+    if (!d) return;
+    if (d.notice) { setTraceNotice(d.notice); return; }
+    go("general-ledger", { preset: d.preset });
+  } : undefined);
 
   return (
     <div data-testid="financial-statements-view">
@@ -109,6 +114,7 @@ export default function FinancialStatementsView({ selectedEntity }) {
             tabs={TABS.map((t) => ({ key: t.id, label: t.label, icon: t.icon }))} />
         </div>
         <div className="section-body">
+          <TraceNotice notice={traceNotice} onDismiss={() => setTraceNotice("")} testId="fs-trace-notice" />
           {tab === "pl" && <IncomeStatementTab selectedEntity={selectedEntity} drill={drill} restore={restore} />}
           {tab === "bs" && <BalanceSheetTab selectedEntity={selectedEntity} drill={drill} restore={restore} />}
           {tab === "cf" && <CashFlowTab selectedEntity={selectedEntity} />}

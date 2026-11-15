@@ -37,10 +37,12 @@ import { askReason } from "../../services/confirmService";
 import { useEntityScope } from "../../context/EntityScopeContext";
 import EntityScopeBanner from "../../components/EntityScopeBanner";
 import { SearchBox } from "../../components/ListControls";
+import { TraceNotice, useLedgerTrace } from "./traceLedger";   // MN-T3 — realisasi per akun → buku besar
 
 export default function BudgetView({ selectedEntity, currentUser }) {
   const { entities } = useEntityScope();
   const [year, setYear] = useState(String(NOW.getFullYear()));
+  const tr = useLedgerTrace({ from: { view: "budget" }, selectedEntity });
   const [tab, setTab] = useState("account");
   const [data, setData] = useState(null);
   const [keys, setKeys] = useState({ accounts: [], categories: [], default_po_account: "" });
@@ -282,9 +284,14 @@ export default function BudgetView({ selectedEntity, currentUser }) {
               <p className="py-4 text-center text-fs-12 text-kn-text-2" data-testid="budget-search-empty">
                 Tidak ada pagu yang cocok dengan “{search}”.</p>
             ) : (
+              <>
+              <TraceNotice notice={tr.notice} onDismiss={tr.clear} testId="budget-trace-notice" />
               <BudgetTable rows={rows} showEntity={combined}
+                onTrace={tab === "account" && tr.enabled
+                  ? (r) => tr.trace(r.key, { start: `${year}-01-01`, end: `${year}-12-31` }, r.entity_id || "", r.entity_name || "") : null}
                 onEdit={(r) => { setEditError(""); setEditRow({ ...r, year: Number(year) }); }}
                 onHistory={(r) => setHistoryRow({ ...r, year: Number(year) })} onDelete={removeBudget} />
+              </>
             )}
           </Panel>
         </>

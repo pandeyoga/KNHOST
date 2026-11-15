@@ -218,8 +218,10 @@ async def get(case_id: str, entity_ids: Optional[List[str]] = None) -> Dict[str,
 
 async def list_cases(entity_ids: Optional[List[str]] = None, status: str = "",
                      case_type: str = "", assignee: str = "", overdue_only: bool = False,
-                     limit: int = 200) -> List[Dict[str, Any]]:
+                     limit: int = 200, customer_id: str = "") -> List[Dict[str, Any]]:
     q: Dict[str, Any] = {**_scope_q(entity_ids)}
+    if customer_id:   # MN-T3 — kartu pelanggan › Denda & Kasus
+        q["customer_id"] = customer_id
     if status:
         q["status"] = status
     if case_type:

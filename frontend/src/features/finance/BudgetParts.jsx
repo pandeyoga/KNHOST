@@ -17,6 +17,7 @@ import KNSelect from "../../components/KNSelect";
 import FormModal from "../../components/FormModal";
 import { openConfig } from "../settings/config/configDeepLink";
 import { sourceLabel } from "./glSourceLabels";
+import { TraceValue } from "./traceLedger";
 import { FC, Panel, Progress, fmtPct, formatCurrency } from "./financeShared";
 
 export const DIM_TABS = [
@@ -110,7 +111,8 @@ function DocLine({ label, docs, testId }) {
 }
 
 /* ── Tabel rincian ─────────────────────────────────────────────────────── */
-export function BudgetTable({ rows, showEntity = false, onEdit, onDelete, onHistory }) {
+/** MN-T3 (bagian E) — `onTrace(row)` (opsional, dimensi Akun COA): angka Realisasi = tautan ke buku besar akun itu. */
+export function BudgetTable({ rows, showEntity = false, onEdit, onDelete, onHistory, onTrace = null }) {
   const rid = (r) => (showEntity ? `${r.entity_id}-${r.key}` : r.key);
   return (
     <>
@@ -146,7 +148,9 @@ export function BudgetTable({ rows, showEntity = false, onEdit, onDelete, onHist
                   <td className="text-right tabular-nums" data-testid={`budget-committed-${rid(r)}`}>
                     {r.committed > 0 ? formatCurrency(r.committed) : "—"}
                   </td>
-                  <td className="text-right tabular-nums" data-testid={`budget-actual-${rid(r)}`}>{formatCurrency(r.actual)}</td>
+                  <td className="text-right tabular-nums" data-testid={`budget-actual-${rid(r)}`}>
+                    <TraceValue enabled={Boolean(onTrace)} onClick={() => onTrace(r)} testId={`budget-trace-${rid(r)}`}>{formatCurrency(r.actual)}</TraceValue>
+                  </td>
                   <td className={`text-right tabular-nums font-semibold ${r.remaining >= 0 ? "text-kn-success-text" : "text-kn-danger-text"}`}
                     data-testid={`budget-remaining-${rid(r)}`}>{formatCurrency(r.remaining)}</td>
                   <td>

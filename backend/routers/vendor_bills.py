@@ -65,24 +65,19 @@ async def vendor_bill_payables(request: Request, entity_id: str = None) -> Dict[
     `not_due` (belum jatuh tempo), `1-30`, `31-60`, `61-90`, `>90`. `reconciliation` mencocokkan sisa tagihan + biaya
     masuk belum dibayar − nota debit belum dipotong dengan saldo akun hutang."""
     await require_permission(request, "vendor_bill", "view")
-    from services import report_basis as rb
+    from services.vendor_bill_service import open_payables
     ctx = await entity_ctx(request)
     q: Dict[str, Any] = {"status": {"$in": sorted(PAYABLE_BILL_STATUSES)}, "payment_status": {"$ne": "paid"}}
     q = resolve_list_scope("vendor_bills", q, ctx, entity_id)
-    today = rb.tanggal_buku()
     by_supplier: Dict[str, Dict[str, Any]] = {}
     aging_sen = {k: 0 for k in AP_AGING_KEYS}
     total_sen = 0
     rows = []
-    term_cache: Dict[str, int] = {}
-    async for b in db.vendor_bills.find(q, {"_id": 0}):
-        fin = bill_financials(b)
+    # MN-T3 (D1) — satu pembaca tagihan berhutang terbuka bersama kartu pemasok (`vendor_bill_service.open_payables`).
+    for item in await open_payables(q):
+        b, fin, due, basis, days = item["bill"], item["fin"], item["due"], item["basis"], item["days"]
         out = fin["outstanding"]
-        if out <= 0.01:
-            continue
         total_sen += to_cents(out)
-        due, basis = await rb.jatuh_tempo_tagihan(b, term_cache)
-        days = rb.hari_antara(due, today) if due else 0
         bucket = ap_aging_bucket(days)
         aging_sen[bucket] += to_cents(out)
         sid = b.get("supplier_id") or b.get("supplier_name") or "—"
@@ -200,9 +195,10 @@ async def vendor_bill_status_counts(request: Request, entity_id: str = None) -> 
 
 @router.get("/vendor-bills")
 async def list_vendor_bills(
-    request: Request, entity_id: str = None, status: str = None, po_id: str = None
+    request: Request, entity_id: str = None, status: str = None, po_id: str = None, supplier_id: str = None
 ) -> Any:
-    """Daftar Vendor Bill (filter entitas/status/PO). Opt-in paginasi (?page/?page_size)."""
+    """Daftar Vendor Bill (filter entitas/status/PO/pemasok). Opt-in paginasi (?page/?page_size).
+    MN-T3 — `supplier_id` menyaring tagihan satu pemasok (kartu pemasok › Tagihan)."""
     await require_permission(request, "vendor_bill", "view")
     ctx = await entity_ctx(request)
     query: Dict[str, Any] = {}
@@ -210,6 +206,8 @@ async def list_vendor_bills(
         query["status"] = status
     if po_id:
         query["po_id"] = po_id
+    if supplier_id:
+        query["supplier_id"] = supplier_id
     query = resolve_list_scope("vendor_bills", query, ctx, entity_id)
     if is_paged(request):
         page, page_size, q, _sort = get_page_params(request)
