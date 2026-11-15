@@ -68,7 +68,7 @@ export default function SoTrackerCard({ desk = "me", selectedEntity = "all", onO
         <table className="w-full min-w-[760px] text-[11.5px]">
           <thead><tr className="whitespace-nowrap border-b border-[#EFF0F2] text-left text-[10.5px] font-bold uppercase tracking-wide text-[#8E8E93]">
             <th className="px-3 py-2">SO</th><th className="px-2 py-2">Status</th><th className="px-2 py-2">Tahap berikutnya</th>
-            <th className="px-2 py-2">Waktu</th><th className="px-2 py-2 text-right">Nilai</th><th className="px-3 py-2 text-right">Tindak lanjut</th>
+            <th className="px-2 py-2">Waktu</th><th className="px-2 py-2 text-right">Nilai</th><th className="col-sticky-end px-3 py-2 text-right">Tindak lanjut</th>
           </tr></thead>
           <tbody className="divide-y divide-[#F4F5F7]">
             {pg.pageRows.map((r) => <TrackerRow key={r.id} r={r} p={p} onOpen={onOpen} />)}
@@ -104,7 +104,9 @@ function TrackerRow({ r, p, onOpen }) {
         <p>Diperbarui {fmtWhen(r.updated_at)} <span className={`ml-1 rounded-full border px-1.5 text-[9px] font-bold ${idle.cls}`}>{idle.label}</span></p>
       </td>
       <td className="px-2 py-1.5 text-right tabular-nums font-semibold">{formatCurrency(r.grand_total)}</td>
-      <td className="px-3 py-1.5 text-right">
+      {/* Cek layar MN-T2 (1024 px): tabel min 760 px + kolom Waktu dua baris = ±855 px di kartu ±762 px → kolom ini
+          terpotong di tepi gulir; kini lekat di kanan supaya aksi selalu terlihat. */}
+      <td className="col-sticky-end px-3 py-1.5 text-right">
         {r.can_act
           ? <button type="button" className="btn-secondary btn-xs" data-testid={`${p}-action-${r.id}`} onClick={() => onOpen?.(r)}>{r.action}</button>
           : <span className="text-[10.5px] text-[#6B6B73]" data-testid={`${p}-info-${r.id}`}>Menunggu {r.owner_label}</span>}

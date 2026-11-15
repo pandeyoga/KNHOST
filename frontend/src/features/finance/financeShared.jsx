@@ -53,7 +53,10 @@ export function kpiValueParts(value) {
   if (typeof value !== "string") return value;
   const m = value.match(/^(-?\s*Rp)[\s\u00a0]+(.+)$/);
   if (!m) return <span className="whitespace-nowrap">{value}</span>;
-  return (<>{m[1]}{" "}<span className="whitespace-nowrap">{m[2]}</span></>);
+  // Tanda minus + "Rp" dikunci satu baris (cek layar MN-T2: "-" sempat patah sendiri di saldo negatif); awalan positif
+  // tetap teks biasa.
+  const awal = m[1].startsWith("-") ? <span className="kpi-neg-prefix whitespace-nowrap">{m[1]}</span> : m[1];
+  return (<>{awal}{" "}<span className="whitespace-nowrap">{m[2]}</span></>);
 }
 
 /** PK-41 — sub-teks kartu: angka rupiah ("Rp 1.234.567", "Rp 1,2 jt") utuh satu baris; teks lain boleh turun baris. */

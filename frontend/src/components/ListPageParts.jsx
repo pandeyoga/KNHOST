@@ -20,6 +20,14 @@ export function isZeroMetric(value) {
   return /^(Rp\s?)?0([.,]0+)?\s*(%|[A-Za-z]\w*)?$/.test(value.trim());
 }
 
+/** Cek layar MN-T2 (Beranda 1024 px): "-Rp 236.048.300" patah sesudah tanda minus ("-" sebaris sendiri) — tanda minus
+ *  dan "Rp" dikunci satu baris; isi teks tidak berubah. */
+function metricText(value) {
+  if (typeof value !== "string" || !/^-\s*Rp/.test(value)) return value;
+  const m = value.match(/^(-\s*Rp)(.*)$/s);
+  return <><span className="whitespace-nowrap">{m[1]}</span>{m[2]}</>;
+}
+
 export function MetricRow({ items, testId }) {
   // Cek layar 15 Nov (1024 px): lima/enam kartu sebaris di layar 1024 memotong label & rupiah ("Rp 19.599…"). Lima kartu
   // 3+2 sampai xl, enam kartu 3+3 sampai 2xl (pola kartu KPI keuangan).
@@ -34,7 +42,7 @@ export function MetricRow({ items, testId }) {
             <div className="metric-label">{label}</div>
             {/* L-08 — warna `tone` hanya untuk angka yang ADA; nol berwarna merah/hijau dibaca sebagai peringatan. */}
             <div className={`metric-value tabular-nums ${isZeroMetric(value) ? "metric-zero" : ""}`.trim()}
-              style={tone && !isZeroMetric(value) ? { color: tone } : undefined}>{value}</div>
+              style={tone && !isZeroMetric(value) ? { color: tone } : undefined}>{metricText(value)}</div>
             {hint && <div className="metric-hint">{hint}</div>}
           </div>
         </div>
