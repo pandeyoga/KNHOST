@@ -176,8 +176,8 @@ async def _gl_ppn_masa(period: str, entity_q: Dict[str, Any]) -> Dict[str, float
 async def vat_summary(period: str = "", entity_id: str = "", entity_ids: Optional[List[str]] = None) -> Dict[str, Any]:
     """Rekap PPN Masukan vs Keluaran untuk satu periode (YYYY-MM).
 
-    Keluaran = Σ ppn_amount Faktur Pajak Jual aktif (tax_invoices: bukan batal, belum diganti — PK-45 TX-01)
-               − Σ ppn_amount dokumen pajak retur terbit (TX-T2, `doc_kind: retur`). Draf (TX-T2) tidak dihitung.
+    Keluaran = Σ ppn_amount faktur berstatus `normal`/`pengganti` (TX-T2; `draf`, `diganti`, `batal` tidak dihitung —
+               PK-45 TX-01) − Σ ppn_amount dokumen pajak retur berstatus `normal` (TX-T2, `doc_kind: retur`).
     Masukan  = Σ ppn_amount Faktur Pajak Masukan (tax_invoices_in, status recorded).
     Net      = Keluaran − Masukan → >0 KURANG BAYAR (setor), <0 LEBIH BAYAR (kredit).
     PK-40 (SL-13): masa = `period_of(faktur_date)` (WIB), disaring di kueri lalu persis di baris; kursor dibaca habis

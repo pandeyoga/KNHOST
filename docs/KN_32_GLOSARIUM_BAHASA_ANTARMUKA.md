@@ -542,3 +542,17 @@ Istilah kartu karyawan (SDM › Karyawan › buka karyawan) dan proses gaji (`do
 | **berlaku sejak** | Kolom & isian "Berlaku sejak" | Tanggal pertama nilai baru dipakai. Baris sebelumnya otomatis berakhir sehari sebelumnya |
 | **rapel** | Komponen "Rapel" · baris slip "Rapel gaji September 2026" | Kekurangan gaji untuk bulan yang sudah dibayar karena kenaikan yang berlaku mundur. Dibuat otomatis sebagai masukan "Menunggu disahkan" di bulan berjalan; ikut proses gaji sesudah disahkan |
 | **prorata** (gaji) | Pengaturan "Gaji berubah di tengah bulan" · baris slip "Gaji Pokok (1–15 Nov)" | Gaji bulan itu dibagi menurut jumlah hari tiap nilai (atau tiap PT) berlaku: nilai × hari ÷ jumlah hari bulan itu |
+
+### 9.19 Faktur pajak: draf faktur, diganti, dokumen pajak retur, pencocokan PPN (TX-T2)
+
+Istilah Akuntansi & Pajak › Pajak › Faktur Keluaran (`docs/blueprint/unit/TX-T2.md`). Nama dan bentuk resmi dokumen retur
+menunggu konfirmasi konsultan pajak.
+
+| Istilah | Teks layar | Arti |
+|---|---|---|
+| **pemicu faktur** | Pengaturan "Faktur pajak dibuat saat" · Per pesanan · Per surat jalan · Per uang muka (belum bisa dipakai) | Kapan faktur pajak lahir di PT itu. Per pesanan = diterbitkan orang untuk seluruh pesanan (bawaan); per surat jalan = draf muncul sendiri tiap barang keluar |
+| **draf faktur** | Status "Draf" · tombol "Terbitkan", "Buang draf" · "Lihat draf faktur (n)" · "Tidak ada draf faktur." | Faktur yang disiapkan sistem dari jurnal surat jalan (atau nota kredit) dan belum terbit; tidak dihitung rekap PPN sampai diterbitkan. Draf yang dibuang tidak dibuat ulang otomatis |
+| **diganti** | Status "Diganti" | Faktur asal yang sudah punya faktur pengganti; keluar dari rekap PPN. Bila penggantinya dibatalkan, faktur asal kembali ke status semula |
+| **dokumen pajak retur** | Sakelar "Dokumen retur" · "Terbitkan Dokumen Pajak Retur" · "Nota … atas …" | Dokumen pajak atas nota kredit ber-PPN (retur/koreksi) yang mengurangi PPN keluaran; menunjuk faktur asalnya |
+| **pencocokan PPN keluaran** | Panel "Pencocokan PPN keluaran" · "PPN di faktur", "PPN di dokumen retur", "PPN di buku besar", "Selisih", "Surat jalan tanpa faktur", "Faktur tanpa jurnal", "Retur tanpa dokumen pajak", "Belum terjelaskan" | Perbandingan satu PT satu masa antara dokumen pajak terbit dan akun PPN keluaran di buku besar; "Belum terjelaskan" = PPN di jurnal yang sumbernya tidak dikenal (mis. jurnal manual) dan wajib 0 |
+

@@ -312,4 +312,7 @@ async def bagian_pajak_layar(entity_id: str) -> Dict[str, Any]:
     s = await tax_settings(entity_id)
     out = {k.split(".", 1)[1]: s[FIELD_KUNCI[k]] for k in KUNCI_PAJAK}   # daun dokumen = kunci tanpa "tax."
     out["is_pkp"] = s["is_pkp"]
+    # TX-T2 — pemicu faktur PT (detail pesanan: tombol terbit manual vs tautan draf per surat jalan).
+    from services.config_resolver import value_of
+    out["pemicu_faktur"] = await value_of("tax.pemicu_faktur", {"entity_id": entity_id or ""})
     return out

@@ -84,6 +84,11 @@ async def _hr_compensation_effective_job():
     from services import hr_compensation_service as _hc   # PY-T2 — riwayat kompensasi bertanggal (impor malas)
     return await _hc.job_apply_effective()
 
+
+async def _tax_draft_backfill_job():
+    from services import tax_invoice_service as _tis   # TX-T2 — pemulih draf faktur pajak (impor malas)
+    return await _tis.job_tax_draft_backfill()
+
 _owns_lock = False
 
 
@@ -325,6 +330,12 @@ JOBS: List[Dict[str, Any]] = [
      "description": "Tiap pagi memindai penjualan turun per sales, piutang mulai macet, stok yang akan habis, dan PO "
                     "supplier terlambat; hasilnya tampil di tab Peringatan Tanya KN dan dikirim ke lonceng. Tanpa biaya AI.",
      "kind": "daily", "hour": 7, "minute": 0, "fn": _aiins.job_ai_anomaly_scan, "link": "tanya-kn"},
+    # ── TX-T2 (TX-05) — pemulih kait draf faktur per surat jalan & dokumen pajak retur ────────────────────────────
+    {"id": "tax_draft_backfill", "label": "Pulihkan Draf Faktur Pajak",
+     "description": "Membuat draf faktur pajak untuk surat jalan berjurnal yang belum punya dokumen pajak (PT yang memilih "
+                    "faktur per surat jalan) dan draf dokumen pajak retur untuk nota kredit ber-PPN yang belum punya. "
+                    "Jaring pengaman bila pembuatan draf saat barang keluar gagal. Draf yang dibuang tidak dibuat ulang.",
+     "kind": "daily", "hour": 1, "minute": 40, "fn": _tax_draft_backfill_job, "link": "tax-invoices"},
     # ── KF-T3 (KF-09) — dulu nilai berjadwal hanya disalin ke penyimpanan lama saat layar Pengaturan dibuka ──
     {"id": "config_apply_due", "label": "Aktifkan Pengaturan Terjadwal",
      "description": "Menerapkan perubahan pengaturan yang tanggal berlakunya sudah tiba.",

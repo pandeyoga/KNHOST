@@ -39,6 +39,7 @@ import CancelOrderDialog from "./CancelOrderDialog";
 import OrderFeedbackPanel from "./OrderFeedbackPanel";   // feedback/komplain pelanggan per SO
 import VerifyOrderDialog from "../sales_admin/VerifyOrderDialog";
 import { releaseMessage, releaseOrder } from "../sales_admin/workDeskApi";
+import { useAppNav } from "../../context/AppNavContext";
 // F1b — arti `price_source` yang di-snapshot pada baris SO (dari resolver harga).
 const PRICE_SOURCE_BADGE = {
   special_approval: { label: "Harga khusus", fg: "#6B219A", bg: "#F3E9FA" },
@@ -46,6 +47,9 @@ const PRICE_SOURCE_BADGE = {
   entity: { label: "Harga PT", fg: "#1B7F4B", bg: "#E6F6EC" },
   global: { label: "Harga umum", fg: "#6B6B73", bg: "#F5F5F7" },
 };
+
+/** TX-T2 — label status faktur pajak (kode mentah tidak tampil). */
+const FKT_STATUS_LABEL = { draf: "Draf", normal: "Normal", pengganti: "Pengganti", diganti: "Diganti", batal: "Batal" };
 
 export function OrderDetailPanel({
   order: sel,
@@ -68,6 +72,9 @@ export function OrderDetailPanel({
   const [shipments, setShipments] = useState([]);
   const [taxInvoices, setTaxInvoices] = useState([]);
   const [issuingTax, setIssuingTax] = useState(false);
+  // TX-T2 (K-32) — pemicu faktur PT pesanan (`tax.pemicu_faktur`): per surat jalan → tombol terbit manual diganti tautan draf.
+  const [pemicuFaktur, setPemicuFaktur] = useState("pesanan");
+  const nav = useAppNav();
   const [reallocItem, setReallocItem] = useState(null);   // Ganti Roll (alokasi manual)
   const [releaseItem, setReleaseItem] = useState(null);   // AS-03 — Lepas roll sebagian
   const [showOverride, setShowOverride] = useState(false);
@@ -122,6 +129,9 @@ export function OrderDetailPanel({
       axios.get(`${API}/tax-invoices`, { params: { order_id: sel.id } })
         .then((r) => { if (active) setTaxInvoices(Array.isArray(r.data) ? r.data : []); })
         .catch(() => { if (active) setTaxInvoices([]); });
+      axios.get(`${API}/settings/effective`, { params: { entity_id: sel.entity_id } })
+        .then((r) => { if (active) setPemicuFaktur(r?.data?.tax?.pemicu_faktur || "pesanan"); })
+        .catch(() => { if (active) setPemicuFaktur("pesanan"); });
     } else {
       setTaxInvoices([]);
     }
@@ -560,7 +570,17 @@ export function OrderDetailPanel({
               <p className="text-[10px] font-bold uppercase text-[#0058CC] flex items-center gap-1">
                 <FileText size={12} /> Faktur Pajak
               </p>
-              {taxInvoices.filter((f) => f.status !== "batal").length === 0 && canIssueTax && (
+              {pemicuFaktur === "surat_jalan" && (
+                <button type="button" data-testid="order-tax-draft-link" className="link-button whitespace-nowrap"
+                  onClick={() => {
+                    const d = taxInvoices.find((f) => f.status === "draf");
+                    nav?.openDocument && nav.openDocument({ view: "tax-invoices", nav_id: "tax-hub", focus_type: "tax_invoice",
+                      focus_id: d?.id, number: d?.number || "" });
+                  }}>
+                  Lihat draf faktur ({taxInvoices.filter((f) => f.status === "draf").length})
+                </button>
+              )}
+              {pemicuFaktur !== "surat_jalan" && taxInvoices.filter((f) => f.status !== "batal").length === 0 && canIssueTax && (
                 <button
                   data-testid="issue-tax-invoice-btn"
                   disabled={issuingTax}
@@ -588,11 +608,17 @@ export function OrderDetailPanel({
                               ? "bg-[#FDE2E2] text-[#9B1C1C]"
                               : f.status === "pengganti"
                               ? "bg-[#FFF3CD] text-[#8A6D00]"
+                              : f.status === "draf"
+                              ? "bg-kn-action-soft text-kn-action"
+                              : f.status === "diganti"
+                              ? "bg-kn-neutral-soft text-kn-neutral"
                               : "bg-[#E5F6EC] text-[#1B7A43]"
                           }`}
                         >
-                          {f.status}
+                          {FKT_STATUS_LABEL[f.status] || "Lainnya"}
                         </span>
+                        {f.doc_kind === "retur" && <span className="ml-1 text-fs-12 font-normal text-kn-text-2">dokumen retur</span>}
+                        {f.shipment_no && <span className="ml-1 text-fs-12 font-normal text-kn-text-2">· {f.shipment_no}</span>}
                       </p>
                       <p className="text-[10px] text-[#6B6B73] truncate">
                         {f.nsfp ? `NSFP ${f.nsfp}` : "NSFP belum diisi"} · PPN {formatCurrency(f.ppn_amount)}

@@ -122,6 +122,16 @@ GL-01: registri `services/gl_mapping_registry.py` (54 kebutuhan) → koleksi `gl
   peringatkan · tolak, global → PT; nilai lama `fin_budget_rules.mode` dipakai sampai lapisan PT diisi); pemeriksaan kini
   juga saat menyetujui tagihan tanpa PO (kampanye), mencatat kas keluar manual (akun lawan beban), mengajukan LPJ
   (tolak = peringatan) dan menyetujui LPJ. Hasil di dokumen `budget_check`; pratinjau anggaran di form kas.
+- 2026-11-15 TX-T2 (TX-05, K-32 — pemicu faktur pajak, draf otomatis, "diganti", dokumen pajak retur, pencocokan PPN):
+  pengaturan `tax.pemicu_faktur` per PT (Pengaturan › Keuangan & Pajak › Pajak; izin `accounting.manage`, beralasan):
+  `pesanan` (bawaan = perilaku lama) · `surat_jalan` (draf faktur muncul sendiri sesudah jurnal tiap surat jalan; angka
+  dari jurnal surat jalan: PPN = kredit akun PPN keluaran pemetaan PT, DPP = harga jual × faktor potret pesanan) ·
+  `uang_muka` (ditolak saat disimpan, H4). Status `draf`/`diganti`; faktur asal yang diganti keluar dari rekap,
+  pembatalan pengganti memulihkannya. Nota kredit ber-PPN (mesin PK-32) atas pesanan berfaktur terbit → draf dokumen
+  pajak retur (`doc_kind: retur`) pengurang rekap. Faktur Keluaran: saringan Draf/Diganti, sakelar Faktur · Dokumen
+  retur, kolom Sumber, Terbitkan/Buang draf, panel Pencocokan PPN keluaran per masa (faktur, retur, buku besar, selisih
+  + sebabnya; INV-TAX-OUT-01 wajib "belum terjelaskan" 0). Job harian "Pulihkan Draf Faktur Pajak"; skrip data lama
+  `scripts/migrate_tax_invoice_status.py` (H3). Mengubah pemicu PT nyata = H5 (sesudah konsultan pajak).
 - 2026-11-14 TX-T1 (TX-06, K-33 — aturan pajak per PT bertanggal & data pajak pelanggan): satu pintu
   `services/tax_config_service.py` (`tax_settings(entity_id, at)`, `round_money`, `default_kode`) membaca tarif, DPP nilai
   lain, cara harga, dan **tujuh kunci baru** Pengaturan › Keuangan & Pajak (sub-judul Pajak; izin `accounting.manage`, beralasan, bisa dijadwalkan

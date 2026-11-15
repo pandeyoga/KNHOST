@@ -54,10 +54,12 @@ def saringan_keluaran_aktif() -> Dict[str, Any]:
     `cancel_tax_invoice` mengosongkan `replaced_by_id` faktur asli sehingga faktur asli dihitung lagi.
     `replaced_by_id: None` juga cocok untuk dokumen tanpa field itu. Daftar/riwayat faktur TIDAK memakai saringan ini.
 
-    TX-T2 — `draf` belum terbit (tidak dihitung) dan dokumen pajak retur (`doc_kind: retur`) dijumlah terpisah
-    (`saringan_retur_aktif`, pengurang). Data tanpa `doc_kind` = faktur.
+    TX-T2 — himpunan status baru: hanya faktur TERBIT (`normal`/`pengganti`); `draf`, `diganti`, `batal` tidak dihitung.
+    Dokumen pajak retur (`doc_kind: retur`) dijumlah terpisah (`saringan_retur_aktif`, pengurang). Data tanpa `doc_kind`
+    = faktur. `replaced_by_id: None` tetap: faktur antar-PT asal yang diganti (layar Antar Entitas, tidak disentuh
+    TX-T2) masih berstatus `normal` ber-`replaced_by_id`.
     """
-    return {"status": {"$nin": ["batal", "draf"]}, "replaced_by_id": None, "doc_kind": {"$ne": "retur"}}
+    return {"status": {"$in": list(STATUS_TERBIT)}, "replaced_by_id": None, "doc_kind": {"$ne": "retur"}}
 
 
 def saringan_retur_aktif() -> Dict[str, Any]:
@@ -399,7 +401,7 @@ async def replace_tax_invoice(fkt_id: str, reason: Optional[str],
         raise HTTPException(status_code=409, detail=PESAN_BUKAN_TERBIT)
     if original.get("doc_kind") == "retur":   # TX-T2 — bentuk resmi dokumen retur menunggu konsultan pajak
         raise HTTPException(status_code=409, detail=PESAN_RETUR_TIDAK_DIGANTI)
-    if original.get("replaced_by_id"):
+    if original.get("replaced_by_id") or original.get("status") == "diganti":
         raise HTTPException(status_code=409, detail="Faktur ini sudah pernah diganti.")
     # PK-40 — masa faktur asli DAN masa hari ini (tanggal pengganti) harus belum dilaporkan.
     await _masa_terbuka(original.get("entity_id"), original.get("faktur_date"), "penggantian faktur")
@@ -416,10 +418,14 @@ async def replace_tax_invoice(fkt_id: str, reason: Optional[str],
         raise HTTPException(status_code=409, detail=pesan_nsfp(nsfp_raw, dup.get("number")))
     new_id_ = new_id("fkt")
     kunci_asli = kunci_aktif_keluaran(original)
+    status_asli = original.get("status") or "normal"
     # PK-40 (1) Klaim faktur asli: hanya satu penggantian yang menang; kuncinya dilepas untuk pengganti.
+    # TX-T2 — faktur asal menjadi `diganti` (keluar dari rekap dengan status yang jelas); status sebelumnya disimpan
+    # untuk dipulihkan bila penggantinya dibatalkan.
     klaim = await db.tax_invoices.update_one(
-        {"id": original["id"], "replaced_by_id": None, "status": {"$ne": "batal"}},
-        {"$set": {"replaced_by_id": new_id_, "updated_at": now_iso()}, "$unset": dict(KUNCI_FAKTUR)})
+        {"id": original["id"], "replaced_by_id": None, "status": {"$in": list(STATUS_TERBIT)}},
+        {"$set": {"replaced_by_id": new_id_, "status": "diganti", "status_before_replaced": status_asli,
+                  "updated_at": now_iso()}, "$unset": dict(KUNCI_FAKTUR)})
     if not klaim.matched_count:
         raise HTTPException(status_code=409, detail="Faktur ini sudah pernah diganti.")
     try:   # (2) sisip pengganti ber-`active_key`
@@ -448,7 +454,9 @@ async def replace_tax_invoice(fkt_id: str, reason: Optional[str],
     except Exception as exc:  # noqa: BLE001 — (3) sisip gagal → faktur asli dikembalikan, galat diteruskan
         try:
             await db.tax_invoices.update_one({"id": original["id"], "replaced_by_id": new_id_},
-                                             {"$set": {"replaced_by_id": None, "updated_at": now_iso(), **kunci_asli}})
+                                             {"$set": {"replaced_by_id": None, "status": status_asli,
+                                                       "updated_at": now_iso(), **kunci_asli},
+                                              "$unset": {"status_before_replaced": ""}})
         except Exception as exc2:  # noqa: BLE001
             print(f"[tax_invoice] faktur asli {original['id']} gagal dikembalikan: {exc2}")
         if isinstance(exc, DuplicateKeyError):
@@ -481,7 +489,10 @@ async def cancel_tax_invoice(fkt_id: str, reason: str, actor_name: str) -> Dict[
     asli = None
     if fkt.get("replaces_id") and not fkt.get("replaced_by_id"):   # pengganti yang sudah diganti lagi: asli tetap
         asli = await db.tax_invoices.find_one({"id": fkt["replaces_id"], "replaced_by_id": fkt_id}, {"_id": 0})
-    kunci_asli = kunci_aktif_keluaran({**asli, "replaced_by_id": None}) if asli else {}
+    # TX-T2 — faktur asal `diganti` kembali ke status sebelum diganti (data lama sebelum migrasi: status tersimpan).
+    status_pulih = ((asli or {}).get("status_before_replaced")
+                    or ((asli or {}).get("status") if (asli or {}).get("status") != "diganti" else "normal"))
+    kunci_asli = kunci_aktif_keluaran({**asli, "replaced_by_id": None, "status": status_pulih}) if asli else {}
     if kunci_asli.get("nsfp_key"):
         dup = await _pemakai_nsfp(kunci_asli["nsfp_key"], kecuali=(fkt_id, asli["id"]))
         if dup:
@@ -497,7 +508,8 @@ async def cancel_tax_invoice(fkt_id: str, reason: str, actor_name: str) -> Dict[
         try:
             await db.tax_invoices.update_one(
                 {"id": asli["id"], "replaced_by_id": fkt_id},
-                {"$set": {"replaced_by_id": None, "updated_at": now_iso(), **kunci_asli}})
+                {"$set": {"replaced_by_id": None, "status": status_pulih, "updated_at": now_iso(), **kunci_asli},
+                 "$unset": {"status_before_replaced": ""}})
         except DuplicateKeyError as exc:   # balapan sangat sempit: faktur aktif lain memegang kuncinya → asli tetap
             print(f"[tax_invoice] faktur asli {asli['id']} tidak diaktifkan lagi (kunci dipegang faktur lain): {exc}")
     return safe_doc(await db.tax_invoices.find_one({"id": fkt_id}, {"_id": 0}))
@@ -1086,6 +1098,55 @@ async def output_reconciliation(entity_id: str, period: str) -> Dict[str, Any]:
             "gl_ppn": gl_ppn, "difference": difference, "causes": causes,
             "unexplained": round(difference - explained, 2), "unexplained_journals": lain,
             "accounts": sorted(ppn_codes), "trigger": pemicu}
+
+
+async def _pt_pemicu(trigger: str) -> List[str]:
+    """PT PKP yang pemicu fakturnya = `trigger` (nilai efektif per PT)."""
+    from services.config_resolver import value_of
+    out = []
+    async for ent in db.business_entities.find({"default_tax_mode": "ppn"}, {"_id": 0, "id": 1}):
+        if await value_of(KUNCI_PEMICU, {"entity_id": ent["id"]}) == trigger:
+            out.append(ent["id"])
+    return out
+
+
+async def job_tax_draft_backfill() -> Dict[str, Any]:
+    """TX-T2 — job harian pemulih kait: (1) surat jalan berjurnal pendapatan pada PT berpemicu `surat_jalan` yang belum
+    punya dokumen pajak apa pun → draf per surat jalan; (2) nota kredit ber-PPN yang sudah berjurnal tanpa dokumen pajak
+    retur apa pun → draf dokumen retur. Kegagalan satu sumber tidak menghentikan sumber lain. Draf yang dibuang tidak
+    dibuat ulang (sumbernya punya dokumen `batal`)."""
+    import logging
+    log = logging.getLogger(__name__)
+    hasil: Dict[str, Any] = {"surat_jalan": 0, "retur": 0, "gagal": 0, "diperiksa": 0}
+    for eid in await _pt_pemicu("surat_jalan"):
+        sids = [je.get("source_id") async for je in db.journal_entries.find(
+            {"entity_id": eid, "source_type": "shipment_revenue", "status": {"$ne": "void"}}, {"_id": 0, "source_id": 1})]
+        pasangan = set()
+        async for sh in db.shipments.find({"id": {"$in": sids}}, {"_id": 0, "order_id": 1, "shipment_no": 1}):
+            if sh.get("order_id") and sh.get("shipment_no"):
+                pasangan.add((sh["order_id"], sh["shipment_no"]))
+        for oid, no in sorted(pasangan):
+            hasil["diperiksa"] += 1
+            if await db.tax_invoices.find_one({"order_id": oid, "shipment_no": no}, {"_id": 0, "id": 1}):
+                continue
+            try:
+                _doc, h = await _draf_surat_jalan(oid, no)
+                hasil["surat_jalan"] += int(h == "dibuat")
+            except Exception as exc:  # noqa: BLE001 — satu sumber gagal tidak menghentikan pemulihan sumber lain
+                hasil["gagal"] += 1
+                log.warning("[tax_draft_backfill] draf surat jalan %s/%s gagal: %s", oid, no, exc)
+    async for cn in db.credit_notes.find({"kind": {"$in": ["credit_note", None]}, "status": "posted",
+                                          "journal_entry_id": {"$nin": ["", None]}}, {"_id": 0}):
+        hasil["diperiksa"] += 1
+        if await db.tax_invoices.find_one({"credit_note_id": cn["id"]}, {"_id": 0, "id": 1}):
+            continue
+        try:
+            _doc, h = await _draf_retur(cn)
+            hasil["retur"] += int(h == "dibuat")
+        except Exception as exc:  # noqa: BLE001
+            hasil["gagal"] += 1
+            log.warning("[tax_draft_backfill] draf retur nota %s gagal: %s", cn.get("number"), exc)
+    return {"ok": True, **hasil}
 
 
 async def output_reconciliation_periods() -> List[Tuple[str, str]]:

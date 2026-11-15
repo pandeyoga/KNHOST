@@ -500,3 +500,217 @@ async def test_TXT2_a_draf_tidak_lewat_batal_ganti_nsfp(klien, db, dunia):
     r = await klien.post(f"/api/tax-invoices/{BAG['retur']['id']}/replace", json={"reason": "uji"},
                          headers=dunia["adm"])
     assert r.status_code == 409, r.text   # dokumen retur tidak diganti (bentuk resmi: konsultan pajak)
+
+
+# ═══════════════════════════════════════════════════════════════════════════════════════════════════════════════════
+# Serah-terima (b) — status "diganti", rekap himpunan status baru, migrasi, kait surat jalan & nota, job, kunci amandemen
+# ═══════════════════════════════════════════════════════════════════════════════════════════════════════════════════
+async def test_TXT2_U7_ganti_faktur_surat_jalan_asal_diganti_lalu_pulih(klien, db, dunia):
+    """Hitung tangan: pesanan baru SJ-1 40 % → faktur 440.000 terbit. Rekap masa R. Ganti → asal `diganti`, pengganti
+    440.000 (angka surat jalan, bukan seluruh pesanan 1.100.000); rekap tetap R (bukan R + 440.000). Batalkan pengganti
+    → asal kembali `normal`, rekap tetap R."""
+    from services import tax_invoice_service as tis
+    so = await pesanan(db, dunia)
+    await kirim(db, dunia, so, 40, "SJ-1", penutup=False)
+    d = await tis.draft_for_shipment(so["id"], "SJ-1")
+    r = await terbitkan(klien, dunia["adm"], d["id"])
+    assert r.status_code == 200, r.text
+    rek = (await rekap(klien, dunia["adm"], BAG["masa"]))["ppn"]
+    r = await klien.post(f"/api/tax-invoices/{d['id']}/replace", json={"reason": "koreksi alamat pembeli"},
+                         headers=dunia["adm"])
+    assert r.status_code == 200, r.text
+    peng = r.json()
+    asal = await db.tax_invoices.find_one({"id": d["id"]}, {"_id": 0})
+    assert (asal["status"], asal["status_before_replaced"], asal["replaced_by_id"], "active_key" in asal) == (
+        "diganti", "normal", peng["id"], False), asal
+    assert (peng["status"], peng["ppn_amount"], peng["net_subtotal"], peng["trigger"], peng["shipment_no"],
+            peng["active_key"], peng["replaces_id"]) == (
+        "pengganti", 440_000, 4_000_000, "surat_jalan", "SJ-1", f"sj:{so['id']}:SJ-1", d["id"]), peng
+    assert (await rekap(klien, dunia["adm"], BAG["masa"]))["ppn"] == rek          # bukan rek + 440.000
+    r = await klien.post(f"/api/tax-invoices/{d['id']}/replace", json={"reason": "lagi"}, headers=dunia["adm"])
+    assert r.status_code == 409 and r.json()["detail"] == "Faktur ini sudah pernah diganti.", r.text
+    r = await klien.post(f"/api/tax-invoices/{peng['id']}/cancel", json={"reason": "pengganti salah"},
+                         headers=dunia["adm"])
+    assert r.status_code == 200, r.text
+    asal = await db.tax_invoices.find_one({"id": d["id"]}, {"_id": 0})
+    assert (asal["status"], asal.get("replaced_by_id"), asal["active_key"], "status_before_replaced" in asal) == (
+        "normal", None, f"sj:{so['id']}:SJ-1", False), asal
+    assert (await rekap(klien, dunia["adm"], BAG["masa"]))["ppn"] == rek
+    r = await klien.get("/api/tax-invoices", params={"status": "diganti"}, headers=dunia["adm"])
+    assert d["id"] not in [f["id"] for f in r.json()]
+
+
+def _skrip_migrasi():
+    sys.path.insert(0, str(REPO / "scripts"))
+    return importlib.import_module("migrate_tax_invoice_status")
+
+
+async def test_TXT2_U15_migrasi_status_diganti_dua_kali_lalu_undo(klien, db, dunia, capsys):
+    """Fixture faktur LAMA (sebelum TX-T2): asal `normal` ber-`replaced_by_id`, tanpa `doc_kind`/`trigger`; penggantinya
+    `pengganti` ber-`active_key`; faktur antar-PT ber-`replaced_by_id` (tidak disentuh)."""
+    masa = "2026-09"
+    lama = [
+        {"id": "fkt_lama_a", "number": "FKT-LAMA-A", "entity_id": KSC, "order_id": "so_lama", "status": "normal",
+         "replaced_by_id": "fkt_lama_b", "ppn_amount": 110_000, "dpp": 1_000_000, "faktur_date": f"{masa}-10"},
+        {"id": "fkt_lama_b", "number": "FKT-LAMA-B", "entity_id": KSC, "order_id": "so_lama", "status": "pengganti",
+         "replaces_id": "fkt_lama_a", "replaced_by_id": None, "active_key": "so:so_lama", "ppn_amount": 110_000,
+         "dpp": 1_000_000, "faktur_date": f"{masa}-12"},
+        {"id": "fkt_lama_ic", "number": "FKT-LAMA-IC", "entity_id": KSC, "order_id": "", "status": "normal",
+         "source_type": "interco", "interco_pair_id": "icp_lama", "replaced_by_id": "fkt_lama_ic2",
+         "ppn_amount": 50_000, "dpp": 450_000, "faktur_date": f"{masa}-11"},
+    ]
+    await db.tax_invoices.insert_many([dict(x) for x in lama])
+    sebelum = await rekap(klien, dunia["adm"], masa)
+    skrip = _skrip_migrasi()
+    assert await skrip.jalankan(["--dry-run"], db=db) == 0
+    assert (await db.tax_invoices.find_one({"id": "fkt_lama_a"}))["status"] == "normal"   # dry-run tidak menulis
+    capsys.readouterr()
+    assert await skrip.jalankan([], db=db) == 0
+    a = await db.tax_invoices.find_one({"id": "fkt_lama_a"}, {"_id": 0})
+    b = await db.tax_invoices.find_one({"id": "fkt_lama_b"}, {"_id": 0})
+    ic = await db.tax_invoices.find_one({"id": "fkt_lama_ic"}, {"_id": 0})
+    assert (a["status"], a["status_before_replaced"], "active_key" in a, a["doc_kind"], a["trigger"]) == (
+        "diganti", "normal", False, "faktur", "pesanan"), a
+    assert (b["status"], b["active_key"], b["doc_kind"], b["trigger"]) == ("pengganti", "so:so_lama", "faktur",
+                                                                          "pesanan"), b
+    assert ic["status"] == "normal" and "doc_kind" not in ic and "tx_t2_migrasi" not in ic, ic
+    assert await rekap(klien, dunia["adm"], masa) == sebelum                     # rekap sebelum = sesudah
+    capsys.readouterr()
+    assert await skrip.jalankan([], db=db) == 0                                  # putaran kedua tanpa perubahan
+    assert "Selesai: 0 faktur diubah." in capsys.readouterr().out
+    assert await skrip.jalankan(["--undo"], db=db) == 0
+    a = await db.tax_invoices.find_one({"id": "fkt_lama_a"}, {"_id": 0})
+    assert (a["status"], "status_before_replaced" in a, "doc_kind" in a, "trigger" in a) == ("normal", False, False,
+                                                                                              False), a
+    assert await skrip.jalankan([], db=db) == 0                                  # pasang lagi (keadaan sesudah migrasi)
+    keluar = await _invarian(db, capsys)
+    assert any("PASS" in ln and "field kunci aktif" in ln for ln in keluar), keluar
+
+
+async def test_TXT2_b_rekap_himpunan_status_baru(klien, db, dunia):
+    """`diganti` (asal) dan `draf` tidak dihitung; pengganti dihitung sekali (data hasil migrasi U15, masa 2026-09).
+    Faktur antar-PT asal yang diganti (masih `normal` ber-`replaced_by_id`, tidak dimigrasi) juga tidak dihitung."""
+    kel = await rekap(klien, dunia["adm"], "2026-09")
+    assert (kel["faktur_ppn"], kel["count"]) == (110_000, 1), kel
+    from services.tax_invoice_service import saringan_keluaran_aktif
+    assert saringan_keluaran_aktif()["status"] == {"$in": ["normal", "pengganti"]}
+
+
+async def test_TXT2_b_kait_surat_jalan_membuat_draf(klien, db, dunia, monkeypatch):
+    """`dispatch_task` (tombol kirim) → jurnal surat jalan → draf per surat jalan. Pemindahan roll diganti tiruan
+    (`ship_order_rolls`: gerbang roll/RFID H7 tidak diuji di sini); kegagalan draf tidak membatalkan surat jalan."""
+    from services import shipment_service as shs, tax_invoice_service as tis
+    so = await pesanan(db, dunia)
+
+    async def _kirim_roll(order_id, product_id, warehouse_id, qty, roll_ids=None):
+        return {"shipped": float(qty), "rolls": [{"roll_id": uid("r"), "length": float(qty), "unit_cost": 60_000,
+                                                   "extended_cost": float(qty) * 60_000}]}
+
+    monkeypatch.setattr(shs, "ship_order_rolls", _kirim_roll)
+
+    async def _tugas(qty):
+        t = {"id": uid("wt"), "flow_type": "outbound", "status": "picked", "quantity": qty, "picked_qty": qty,
+             "shipped_qty": 0, "order_id": so["id"], "order_number": so["number"], "product_id": dunia["pid"],
+             "product_name": "Kain Uji TX-T2", "warehouse_id": dunia["wid"], "entity_id": KSC, "unit": "meter",
+             "scan_log": [], "created_at": now_iso()}
+        await db.wms_tasks.insert_one(dict(t))
+        return t
+
+    t1, t2 = await _tugas(40), await _tugas(60)   # dua baris tugas: SJ pertama = 40 % pesanan
+    _t, shp = await shs.dispatch_task(t1, 40, "Gudang Uji")
+    assert shp["gl_status"] == "posted", shp
+    d = await db.tax_invoices.find_one({"order_id": so["id"], "shipment_no": shp["shipment_no"]}, {"_id": 0})
+    assert (d["status"], d["trigger"], d["ppn_amount"], d["created_by"]) == ("draf", "surat_jalan", 440_000,
+                                                                             "Gudang Uji"), d
+
+    async def _gagal(*a, **kw):
+        raise RuntimeError("uji: draf gagal")
+
+    monkeypatch.setattr(tis, "draft_for_shipment", _gagal)
+    _t, shp2 = await shs.dispatch_task(t2, 60, "Gudang Uji")
+    assert shp2["shipment_no"] and await jumlah("shipments", {"id": shp2["id"]}) == 1   # surat jalan tetap terbit
+    assert await jumlah("tax_invoices", {"order_id": so["id"], "shipment_no": shp2["shipment_no"]}) == 0
+    BAG["sj_tanpa_draf"] = (so["id"], shp2["shipment_no"])
+
+
+async def test_TXT2_b_job_harian_memulihkan_draf(klien, db, dunia):
+    from services import scheduler_service, tax_invoice_service as tis
+    assert "tax_draft_backfill" in scheduler_service.JOB_MAP
+    oid, no = BAG["sj_tanpa_draf"]
+    hasil = await tis.job_tax_draft_backfill()
+    assert hasil["ok"] and hasil["surat_jalan"] >= 1 and hasil["gagal"] == 0, hasil
+    assert await jumlah("tax_invoices", {"order_id": oid, "shipment_no": no, "status": "draf"}) == 1
+    assert await jumlah("tax_invoices", {"order_id": BAG["dibuang"], "status": "draf"}) == 0   # dibuang: tidak dibuat ulang
+    lagi = await tis.job_tax_draft_backfill()
+    assert (lagi["surat_jalan"], lagi["retur"]) == (0, 0), lagi
+
+
+async def test_TXT2_b_kait_nota_kredit_membuat_draf_retur(klien, db, dunia):
+    """`credit_note_service.settle` (mesin PK-32) → draf dokumen pajak retur tanpa panggilan tangan. Nota 5 m atas SJ-1
+    pesanan S1: 500.000 + PPN 55.000 → jurnal Dr 2-1200 55.000 → draf retur 55.000."""
+    from services import credit_note_service as cns
+    so = await db.sales_orders.find_one({"id": BAG["s1"]["id"]}, {"_id": 0})
+    rid = uid("ret")
+    await db.sales_returns.insert_one({
+        "id": rid, "number": "RET/TXT2/002", "entity_id": KSC, "order_id": so["id"], "customer_id": "cus_txt2",
+        "status": "approved", "approved_at": now_iso(), "created_at": now_iso(),
+        "items": [{"product_id": dunia["pid"], "quantity": 5, "roll_ids": [BAG["roll_sj1"]]}]})
+    n = await cns.issue(kind="credit_note", source="sales_return", order=so, number="CN/TXT2/002", net=500_000,
+                        ppn=55_000, actor=AKTOR_UJI, refs={"return_id": rid, "return_number": "RET/TXT2/002"},
+                        lines=[], extra={"settlement": "ar", "allocation_amount": 555_000, "ppn_rate": 12})
+    n = await cns.settle(n["id"], AKTOR_UJI)
+    assert n["status"] == "posted", n
+    d = await db.tax_invoices.find_one({"credit_note_id": n["id"]}, {"_id": 0})
+    assert (d["status"], d["doc_kind"], d["ppn_amount"], d["ref_tax_invoice_id"]) == (
+        "draf", "retur", 55_000, BAG["f_sj1"]["id"]), d
+
+
+async def test_TXT2_b_kunci_amandemen_hanya_faktur_terbit(klien, db, dunia):
+    from services import amendment_service
+    so = await pesanan(db, dunia)
+    base = {"entity_id": KSC, "order_id": so["id"], "order_number": so["number"], "ppn_amount": 1_100_000,
+            "faktur_date": now_iso()}
+    await db.tax_invoices.insert_many([
+        {**base, "id": uid("fkt"), "number": "FKT-AMD-1", "status": "draf", "trigger": "surat_jalan", "shipment_no": "X"},
+        {**base, "id": uid("fkt"), "number": "FKT-AMD-2", "status": "diganti", "replaced_by_id": "fkt_x"},
+        {**base, "id": uid("fkt"), "number": "FKT-AMD-3", "status": "normal", "doc_kind": "retur",
+         "credit_note_id": "cn_x"}])
+    terbit, _ = await amendment_service.is_issued(await db.sales_orders.find_one({"id": so["id"]}, {"_id": 0}))
+    assert terbit is False
+    await db.tax_invoices.update_one({"number": "FKT-AMD-1"}, {"$set": {"status": "normal"}})
+    terbit, alasan = await amendment_service.is_issued(await db.sales_orders.find_one({"id": so["id"]}, {"_id": 0}))
+    assert (terbit, alasan) == (True, "sudah terbit Faktur Pajak FKT-AMD-1")
+    await db.tax_invoices.delete_many({"order_id": so["id"]})
+
+
+async def test_TXT2_b_meja_finance_tanpa_pesanan_pt_per_surat_jalan(klien, db, dunia):
+    so = await pesanan(db, dunia)   # terkonfirmasi, ber-PPN, belum dikirim, PT ent_ksc berpemicu surat jalan
+
+    async def _antrean():
+        r = await klien.get("/api/finance/desk", headers=dunia["adm"])
+        assert r.status_code == 200, r.text
+        q = next(x for x in r.json()["queues"] if x["id"] == "siap_faktur_pajak")
+        return [row.get("ref_id") for row in q.get("rows") or q.get("items") or []]
+
+    assert so["id"] not in await _antrean()
+    r = await pemicu(klien, dunia["adm"], "pesanan")
+    assert r.status_code == 200, r.text
+    try:
+        assert so["id"] in await _antrean()
+    finally:
+        r = await pemicu(klien, dunia["adm"], "surat_jalan")
+        assert r.status_code == 200, r.text
+
+
+async def test_TXT2_b_pengaturan_efektif_memuat_pemicu(klien, db, dunia):
+    r = await klien.get("/api/settings/effective", params={"entity_id": KSC}, headers=dunia["adm"])
+    assert r.status_code == 200 and r.json()["tax"]["pemicu_faktur"] == "surat_jalan", r.text
+    r = await klien.get("/api/settings/effective", params={"entity_id": dunia["pt3"]}, headers=dunia["adm"])
+    assert r.json()["tax"]["pemicu_faktur"] == "pesanan", r.text
+
+
+async def test_TXT2_b_invarian_wajib_hijau(klien, db, dunia, capsys):
+    assert _vdi().INV_TAX_OUT_WAJIB is True
+    keluar = await _invarian(db, capsys)
+    assert any(ln.startswith("[PASS]") and "INV-TAX-OUT-01" in ln for ln in keluar), keluar
+    assert any("PASS" in ln and "≤1 faktur aktif" in ln for ln in keluar), keluar

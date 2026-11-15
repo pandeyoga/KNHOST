@@ -259,9 +259,11 @@ async def test_U10_kueri_pt_lain_403(klien, siap):
 
 
 async def test_U11_gabungan_pajak_hanya_pt_ditugaskan(klien, db, kepala_admin, siap):
+    # TX-T2 — rekap PPN keluaran kini hanya menjumlah faktur TERBIT (`normal`/`pengganti`); fixture lama memakai status
+    # "issued" yang tidak pernah ditulis layanan faktur → disamakan dengan status nyata faktur terbit (`normal`).
     await db.tax_invoices.insert_many([
-        {"id": "fk_a", "entity_id": A, "status": "issued", "faktur_date": "2026-11-05", "ppn_amount": 110000, "dpp": 1000000},
-        {"id": "fk_b", "entity_id": B, "status": "issued", "faktur_date": "2026-11-06", "ppn_amount": 55000, "dpp": 500000}])
+        {"id": "fk_a", "entity_id": A, "status": "normal", "faktur_date": "2026-11-05", "ppn_amount": 110000, "dpp": 1000000},
+        {"id": "fk_b", "entity_id": B, "status": "normal", "faktur_date": "2026-11-06", "ppn_amount": 55000, "dpp": 500000}])
     q = {"entity_id": "all", "period": "2026-11"}
     r = await klien.get("/api/tax/summary", headers=siap["akb"], params=q)
     assert r.status_code == 200, r.text

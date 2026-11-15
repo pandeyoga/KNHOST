@@ -2626,22 +2626,39 @@ Status SO (Sub-fase 1.8): confirmed → partially_picked → picked → partiall
 ### tax_invoices  [Sub-fase 1.9 IMPLEMENTED — Faktur Pajak Jual]
 ```
 Collection:  tax_invoices             Prefix: fkt_   (No. Internal: FKT-##### + NSFP resmi 16-digit)
-Router:      routers/tax_invoices.py (GET /tax-invoices, POST /sales-orders/{id}/tax-invoice,
-             PATCH /tax-invoices/{id}/nsfp, POST .../replace, POST .../cancel, GET .../document)
-Service:     services/tax_invoice_service.py (issue/replace/cancel/set_nsfp/render_faktur_html)
-Component:   features/finance/TaxInvoices.jsx, features/orders/OrderDetailPanel.jsx
+Router:      routers/tax_invoices.py (GET /tax-invoices?status=&doc_kind=, POST /sales-orders/{id}/tax-invoice,
+             PATCH /tax-invoices/{id}/nsfp, POST .../replace, POST .../cancel, GET .../document;
+             TX-T2: POST .../{id}/issue, POST .../{id}/discard, POST /tax-invoices/drafts/rebuild,
+             GET /tax/output-reconciliation)
+Service:     services/tax_invoice_service.py (issue/replace/cancel/set_nsfp/render_faktur_html; TX-T2:
+             draft_for_shipment, draft_for_credit_note, issue_draft, discard_draft, rebuild_drafts,
+             output_reconciliation, job_tax_draft_backfill)
+Component:   features/finance/TaxInvoices.jsx, features/finance/TaxOutputRecon.jsx, features/orders/OrderDetailPanel.jsx
 Key Fields:
   id, number (FKT-#####), nsfp (16-digit resmi, opsional/menyusul), kode_transaksi (01..09),
-  status (normal|pengganti|batal), replaces_id, replaced_by_id, cancel_reason, replace_reason,
+  status (TX-T2: draf|normal|pengganti|diganti|batal), replaces_id, replaced_by_id, cancel_reason, replace_reason,
+  doc_kind (TX-T2: faktur|retur — tanpa field = faktur), trigger (TX-T2: pesanan|surat_jalan|retur — tanpa field =
+  pesanan), shipment_no, shipment_ids, credit_note_id, credit_note_number, ref_tax_invoice_id, ref_tax_invoice_number,
+  journal_entry_ids, journal_entry_numbers (jurnal sumber angka draf), status_before_replaced (status sebelum
+  `diganti`), drafted_at, issued_at, issued_by, discard_reason, discarded_at, discarded_by,
   faktur_date, order_id, order_number, entity_id,
   seller_name, seller_npwp, seller_address (snapshot entitas PKP),
   customer_id, customer_name, customer_npwp, customer_address, has_customer_npwp (snapshot),
   items[] ({product_name, sku, quantity, unit, price, subtotal, discount_amount, line_total}),
   total_amount, discount_total, net_subtotal, dpp, ppn_rate, ppn_mode, ppn_amount, grand_total,
   is_pkp, created_by, created_at, updated_at,
-  active_key (PK-40: HANYA pada faktur aktif — `so:{order_id}` / `ic:{interco_pair_id}`; dicabut saat diganti/batal),
+  active_key (PK-40: HANYA pada dokumen hidup — `so:{order_id}` / `ic:{interco_pair_id}`; TX-T2 + `sj:{order_id}:{nomor
+  surat jalan}` / `retur:{credit_note_id}`; dimiliki draf/normal/pengganti, dicabut saat diganti/batal),
   nsfp_key (PK-40: digit NSFP faktur aktif ber-NSFP)
 Dibuat saat:  MANUAL (opsional — pajak TIDAK wajib) dari Order detail; PKP-only + ppn_amount>0; idempotent (1 aktif/order).
+  TX-T2 (K-32): pengaturan `tax.pemicu_faktur` per PT — `pesanan` (bawaan = perilaku di atas) · `surat_jalan` (draf
+  otomatis sesudah jurnal tiap surat jalan, `shipment_service.dispatch_task`; angka dari jurnal surat jalan; pemulih
+  job harian `tax_draft_backfill`; terbit per pesanan ditolak 409) · `uang_muka` (terdaftar, ditolak saat disimpan — H4).
+  Dokumen pajak retur (`doc_kind: retur`) lahir sebagai draf dari `credit_note_service.settle` (nota kredit ber-PPN atas
+  pesanan berfaktur terbit; angka = PPN yang dibalik jurnal nota). Draf diterbitkan orang (`issue_draft`) atau dibuang
+  beralasan (`discard_draft`, tidak dibuat ulang otomatis). Faktur asal yang diganti → `diganti`; membatalkan pengganti
+  memulihkan status asal. Data lama: scripts/migrate_tax_invoice_status.py (H3).
+Rekap PPN keluaran (TX-T2): Σ faktur `normal`/`pengganti` (belum diganti) − Σ dokumen retur `normal`.
 Keunikan (PK-40, dijamin indeks unik wajib): `uq_fkt_active` (satu faktur aktif per pesanan / transaksi antar-PT),
   `uq_fkt_nsfp` (satu NSFP per faktur aktif, lintas PT). Penulis kunci: services/tax_invoice_service.py
   (`kunci_aktif_keluaran`), services/interco_tax_service.py; data lama: scripts/blueprint/pk40_kunci_faktur.py.
@@ -2649,7 +2666,10 @@ Keunikan (PK-40, dijamin indeks unik wajib): `uq_fkt_active` (satu faktur aktif 
 INVARIAN (verify_data_integrity L4-FKT):
   PPN == DPP × rate · Grand == DPP + PPN · ref order valid · normal/pengganti ⟹ is_pkp & ppn>0 ·
   ≤1 faktur aktif (bukan batal & belum diganti) per pemilik (`so:`/`ic:`) · nomor unik · rantai pengganti (replaces_id
-  valid) · FKT-5 (PK-40) active_key/nsfp_key = keadaan faktur (kunci lama belum diisi = WARN).
+  valid) · FKT-5 (PK-40) active_key/nsfp_key = keadaan faktur (kunci lama belum diisi = WARN) · TX-T2: FKT-3 per
+  `active_key` (sj:/retur: ikut; pesanan tidak boleh berfaktur per pesanan sekaligus per surat jalan) ·
+  INV-TAX-OUT-01 (wajib hijau): tiap PT PKP × masa — selisih faktur − retur vs buku besar akun pemetaan
+  `penjualan.ppn_keluaran` terjelaskan seluruhnya (`output_reconciliation.unexplained == 0`; sebab terjelaskan = WARN).
 ⚠️ Penomoran HYBRID: FKT-##### internal + NSFP resmi diisi menyusul (alokasi DJP/Coretax e-Faktur).
 ⚠️ JANGAN BUAT: faktur, faktur_pajak, bills, tagihan — gunakan tax_invoices.
 ```

@@ -578,6 +578,13 @@ async def settle(note_id: str, actor: Any, *, raise_on_fail: bool = False) -> Di
         await db.credit_notes.update_one({"id": note_id, "status": "issued"},
                                          {"$set": {"status": "posted", "posted_at": now_iso(), "updated_at": now_iso()}})
         note = await _nota(note_id)
+        # TX-T2 — nota kredit ber-PPN atas pesanan berfaktur terbit → draf dokumen pajak retur (diterbitkan orang).
+        # Gagal tidak mengubah nota; dipulihkan `tax_invoice_service.job_tax_draft_backfill`.
+        try:
+            from services.tax_invoice_service import draft_for_credit_note
+            await draft_for_credit_note(note, actor=_nama(actor))
+        except Exception as exc:  # noqa: BLE001
+            _log.warning("draf dokumen pajak retur nota %s gagal (dipulihkan job harian): %s", note.get("number"), exc)
     return normalize(note)
 
 

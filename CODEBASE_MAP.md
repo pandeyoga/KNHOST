@@ -1,5 +1,5 @@
 <!-- DIHASILKAN OTOMATIS oleh scripts/gen_codebase_map.py — JANGAN EDIT TANGAN -->
-<!-- Dihasilkan dari commit: 5edef21 pada 2026-11-15 -->
+<!-- Dihasilkan dari commit: c1be042 pada 2026-11-15 -->
 # CODEBASE MAP — Kain Nusantara (dihasilkan otomatis)
 
 Peta ini dihitung dari kode oleh `scripts/gen_codebase_map.py`. Kalau angka di sini
@@ -320,7 +320,7 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 | `ai_usage_report.py` | 112 | Halaman Biaya AI — pemakaian harian per fitur, per pengguna, per model (tanggal WIB). |
 | `alert_ops_service.py` | 368 | PS-21 — Generator ALERT OPERASIONAL (quick win di atas mesin R6.5/R6.6). |
 | `alert_service.py` | 335 | R6.5 — Generator ALERT untuk Scheduler & Notifikasi (Kain Nusantara). |
-| `amendment_service.py` | 1079 | FASE G-1 — **FONDASI AMANDEMEN**: tidak ada lagi perubahan angka secara diam-diam. |
+| `amendment_service.py` | 1081 | FASE G-1 — **FONDASI AMANDEMEN**: tidak ada lagi perubahan angka secara diam-diam. |
 | `analytics_catalog.py` | 155 | Tanya KN F1.2 — katalog semantik `cat-v1` sebagai DATA (satu-satunya tempat definisi). |
 | `analytics_config.py` | 15 | Tanya KN F0.5 — kebijakan data asisten analitik (keputusan klien §7) dari konfigurasi. |
 | `analytics_engine.py` | 738 | Tanya KN F1.3 — kompilator `query_metrics` & `analyze_change` → agregasi Mongo. |
@@ -377,7 +377,7 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 | `contra_bon_service.py` | 1276 | FASE G-7 — KONTRABON ADVANCED (siklus tukar faktur supplier). |
 | `contract_service.py` | 581 | FASE D — KONTRAK MITRA/SUPPLIER (`supplier_contracts`) + MESIN TARIF CONFIGURABLE. |
 | `costing_service.py` | 146 | Costing service (EPIC3A) — Weighted Average Cost (WAC) per produk/entitas. |
-| `credit_note_service.py` | 633 | PK-32 (FX-12, FX-13, FX-14, FX-15) — SATU mesin nota kredit dan nota debit pesanan. |
+| `credit_note_service.py` | 640 | PK-32 (FX-12, FX-13, FX-14, FX-15) — SATU mesin nota kredit dan nota debit pesanan. |
 | `credit_profile_service.py` | 660 | CR-T1 — profil kredit per pelanggan per PT, diubah HANYA lewat pengajuan (`docs/blueprint/unit/CR-T1.md`, K-27 |
 | `crm_omnichannel_service.py` | 249 | CRM Omnichannel (MVP manual) — Lead pipeline + timeline interaksi. |
 | `csv_money.py` | 39 | SATU definisi “cara membaca angka rupiah dari CSV” untuk seluruh sistem. |
@@ -661,9 +661,9 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 | `sales_p04_service.py` | 429 | P04 — Keep/Pending, aturan grade pelanggan, kandidat roll berkelayakan, ringkasan stok Sales. |
 | `sales_stock_service.py` | 97 | Stok GLOBAL untuk layar sales (Kasir/POS, katalog): sales tidak memilah per entitas — |
 | `sample_sale_service.py` | 565 | §3-C Jual Sample — SATU alur dengan pesanan roll (keputusan pemilik 2026-09-16). |
-| `scheduler_service.py` | 750 | R6.5 — Scheduler (APScheduler) untuk alert & notifikasi terjadwal. |
+| `scheduler_service.py` | 761 | R6.5 — Scheduler (APScheduler) untuk alert & notifikasi terjadwal. |
 | `secret_box.py` | 69 | KP-T8 (KP-15) — satu cara menyimpan rahasia (docs/blueprint/unit/KP-T8.md, bagian Server · Pembungkus rahasia) |
-| `shipment_service.py` | 180 | Shipment service (Sub-fase 1.8) — partial/multi shipment, SSOT-safe. |
+| `shipment_service.py` | 188 | Shipment service (Sub-fase 1.8) — partial/multi shipment, SSOT-safe. |
 | `site_receiving_service.py` | 120 | UAT 24 Okt (P9, fase F1) — LOKASI (site) sebagai tujuan kirim & konteks kerja. |
 | `site_stock_service.py` | 54 | UAT 24 Okt (P8, fase F1) — stok per LOKASI untuk katalog POS / HP. |
 | `so_approvals.py` | 318 | F5 — Unified Approval SSOT pada Sales Order (`pending_approvals[]`). |
@@ -695,8 +695,8 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 | `supplier_item_service.py` | 578 | FASE E — SERVICE `supplier_items` (Barang Supplier / katalog versi supplier). |
 | `supplier_service.py` | 485 | Depth #3 — Supplier Intelligence: Price-List resolution + Scorecard. |
 | `tax_center_service.py` | 411 | EPIC 7 — Pusat Pajak (PPN + PPh) service. |
-| `tax_config_service.py` | 315 | TX-T1 (K-33, TX-06) — aturan pajak per PT yang bisa dijadwalkan, potret aturan di dokumen, dan data pajak pela |
-| `tax_invoice_service.py` | 1196 | Faktur Pajak Jual (tax_invoices) service — Sub-fase 1.9. |
+| `tax_config_service.py` | 318 | TX-T1 (K-33, TX-06) — aturan pajak per PT yang bisa dijadwalkan, potret aturan di dokumen, dan data pajak pela |
+| `tax_invoice_service.py` | 1257 | Faktur Pajak Jual (tax_invoices) service — Sub-fase 1.9. |
 | `text_normalize.py` | 88 | K-1/K-2 (feedback klien 2026-09) — normalisasi penulisan (EYD) & nomor telepon/WhatsApp. |
 | `three_way_policy.py` | 32 | KN-D16 (audit 2026-09-21) — SATU ambang toleransi 3-way match (PO ↔ terima ↔ faktur). |
 | `tolerances.py` | 9 | KN-A13 (audit 2026-09-21) — SATU sumber toleransi numerik. |
@@ -718,7 +718,7 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 | `web_push_service.py` | 110 | Web Push (PWA) — kirim notifikasi lonceng ke HP walau aplikasi sedang ditutup. |
 | `wilayah_service.py` | 213 | Wilayah (2026-09) — registry wilayah Indonesia (Kepmendagri 300.2.2-2138/2025 + kode pos) dan |
 | `wms_health_service.py` | 125 | DASHBOARD KESEHATAN GUDANG — satu layar ringkas per gudang: |
-| `work_desk_service.py` | 1029 | FASE E-8 (E8.7/E8.15/E8.20) — **MEJA KERJA BERBASIS ANTREAN** (Admin Sales & Finance). |
+| `work_desk_service.py` | 1035 | FASE E-8 (E8.7/E8.15/E8.20) — **MEJA KERJA BERBASIS ANTREAN** (Admin Sales & Finance). |
 | `work_labels.py` | 59 | FIX-1 (K-B1-02, B2a FLW-IN-07) — label baris daftar PEKERJAAN FISIK lintas PT. |
 | `zpl_text.py` | 18 | RF-11 — teks bebas di label ZPL di-encode lewat ^FH (hex escape) sehingga ^ ~ _ tidak pernah |
 
@@ -730,7 +730,7 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 
 | Fitur (`src/features/`) | Berkas | Baris |
 |---|---:|---:|
-| `__tests__` | 135 | 22138 |
+| `__tests__` | 136 | 22357 |
 | `admin` | 36 | 6981 |
 | `approvals` | 9 | 1720 |
 | `catalog` | 24 | 1459 |
@@ -741,7 +741,7 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 | `desks` | 2 | 229 |
 | `documents` | 18 | 2580 |
 | `export` | 9 | 700 |
-| `finance` | 104 | 24050 |
+| `finance` | 105 | 24401 |
 | `home` | 5 | 1136 |
 | `hr` | 36 | 6735 |
 | `incentive` | 1 | 500 |
@@ -754,7 +754,7 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 | `marketing` | 13 | 1300 |
 | `mobile` | 13 | 1758 |
 | `notifications` | 1 | 33 |
-| `orders` | 25 | 4099 |
+| `orders` | 25 | 4125 |
 | `pdf` | 5 | 1075 |
 | `pettycash` | 13 | 2075 |
 | `pos` | 25 | 2807 |
@@ -779,7 +779,7 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 
 ## Berkas melewati batas ukuran
 
-23 berkas.
+24 berkas.
 
 | Berkas | Baris | Batas |
 |---|---:|---:|
@@ -791,10 +791,11 @@ memerah — jalankan ulang generatornya, jangan sunting tangan.
 | `backend/routers/sales_orders.py` | 857 | 800 |
 | `backend/routers/inventory.py` | 840 | 800 |
 | `backend/routers/rfid.py` | 817 | 800 |
-| `frontend/src/features/orders/OrderDetailPanel.jsx` | 723 | 500 |
+| `frontend/src/features/orders/OrderDetailPanel.jsx` | 749 | 500 |
 | `frontend/src/features/purchasing/PurchaseReturns.jsx` | 639 | 500 |
 | `frontend/src/features/wms/OutboundScanInterface.jsx` | 624 | 500 |
 | `frontend/src/features/wms/InventoryStockView.jsx` | 600 | 500 |
+| `frontend/src/features/finance/TaxInvoices.jsx` | 594 | 500 |
 | `frontend/src/features/finance/TaxCenterView.jsx` | 572 | 500 |
 | `frontend/src/features/internal_requests/InternalRequestsView.jsx` | 561 | 500 |
 | `frontend/src/features/pos/CheckoutDrawer.jsx` | 560 | 500 |

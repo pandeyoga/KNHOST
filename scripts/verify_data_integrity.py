@@ -924,7 +924,7 @@ async def layer_tax_invoice_invariants(db):
 
 
 #: TX-T2 — serah-terima (a): INV-TAX-OUT-01 hanya peringatan; (b): wajib hijau (selisih tak terjelaskan = FAIL).
-INV_TAX_OUT_WAJIB = False
+INV_TAX_OUT_WAJIB = True
 
 
 async def _inv_tax_out_01(db):

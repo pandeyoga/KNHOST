@@ -417,9 +417,15 @@ async def finance_desk(actor: Dict[str, Any], scope: Dict[str, Any],
                 {"order_id": {"$in": ids}, "status": {"$ne": "batal"}},
                 {"_id": 0, "order_id": 1}):
             ber_faktur.add(f["order_id"])
+    # TX-T2 (K-32) — PT berpemicu `surat_jalan` tidak menerbitkan per pesanan (draf lahir per surat jalan di Faktur
+    # Keluaran); tombol "Terbitkan" di sini akan ditolak 409, jadi pesanannya tidak masuk antrean ini.
+    from services.config_resolver import value_of
+    pemicu: Dict[str, str] = {}
+    for eid in {o.get("entity_id") or "" for o in layak}:
+        pemicu[eid] = str(await value_of("tax.pemicu_faktur", {"entity_id": eid}))
     kandidat = [o for o in layak
                 if o.get("is_pkp") is not False and float(o.get("ppn_amount") or 0) > 0
-                and o["id"] not in ber_faktur]
+                and o["id"] not in ber_faktur and pemicu.get(o.get("entity_id") or "") == "pesanan"]
     queues.append(_queue(
         "siap_faktur_pajak", "Siap terbitkan Faktur Pajak",
         "Pesanan ber-PPN yang belum punya faktur pajak keluaran aktif.",

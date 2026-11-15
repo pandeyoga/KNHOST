@@ -155,6 +155,14 @@ async def dispatch_task(
                                 source_type="shipment_revenue", source_id=shipment["id"])
     shipment.update({"gl_status": jr["gl_status"], "gl_error": jr["gl_error"],
                      "journal_entry_id": jr["journal_entry_id"]})
+    # TX-T2 (K-32) — sesudah jurnal surat jalan: draf faktur per surat jalan bila pemicu PT = `surat_jalan` (bawaan
+    # `pesanan` → tidak ada apa-apa). Gagal tidak membatalkan surat jalan; dipulihkan `job_tax_draft_backfill`.
+    try:
+        from services.tax_invoice_service import draft_for_shipment
+        await draft_for_shipment(task["order_id"], shipment["shipment_no"], actor=actor_name)
+    except Exception as exc:  # noqa: BLE001
+        logger.warning("[dispatch_task] draf faktur surat jalan %s gagal (dipulihkan job harian): %s",
+                       shipment.get("shipment_no"), exc)
     return safe_doc(updated), safe_doc(shipment)
 
 
