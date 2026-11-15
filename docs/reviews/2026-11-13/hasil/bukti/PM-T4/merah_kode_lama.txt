@@ -1,0 +1,55 @@
+        assert r.status_code == 200, r.text
+>       assert await jumlah("cash_transactions", {}) == n_kas            # tidak ada kas baru
+E       assert 6 == 5
+E       KeyError: 'u1_th'
+        assert r1.status_code == 200 and r2.status_code == 200, (r1.text, r2.text)
+>       assert r.status_code == 200, r.text
+E       AssertionError: {"detail": "Not Found"}
+E       assert 404 == 200
+        assert (await _kwitansi(klien, h, so, 300_000)).status_code == 200
+>       assert (r.status_code, r.json().get("detail")) == (400, "Setoran melebihi tunai yang Anda pegang (Rp 300.000)."), r.text
+E       AssertionError: {"detail": "Not Found"}
+E       assert (404, 'Not Found') == (400, 'Setora...Rp 300.000).')
+>       assert r.status_code == 200, r.text
+E       AssertionError: {"detail":"Sumber daya izin “cash_holding” tidak dikenal."}
+E       assert 400 == 200
+        assert (await _kwitansi(klien, h, so, 300_000)).status_code == 200
+>       assert r.status_code == 200, r.text
+E       AssertionError: {"detail":"Setting 'pembayaran.titipan_batas_nominal' tidak ada di registry"}
+E       assert 404 == 200
+>       assert r.status_code == 200, r.text
+E       AssertionError: {"detail":"Setting 'pembayaran.titipan_tenggat_setor_hari' tidak ada di registry"}
+E       assert 404 == 200
+>       assert r.status_code == 200, r.text
+E       AssertionError: {"detail":"Setting 'pembayaran.sales_terima_tunai' tidak ada di registry"}
+E       assert 404 == 200
+        assert r.status_code == 200, r.text
+E       KeyError: 'cash_holding_id'
+E       KeyError: 'cash_holding_id'
+E       AttributeError: module 'verify_data_integrity' has no attribute 'layer_cash_holding_invariants'
+        assert (await _kwitansi(klien, h, so, 100_000)).status_code == 200
+        assert (await _kwitansi(klien, h, so, 60_000)).status_code == 200
+>       assert dep1["status"] == dep2["status"] == "diajukan"
+E       KeyError: 'status'
+        assert r.status_code == 200, r.text
+>       assert j["gl_status"] == "failed"
+E       AssertionError: assert 'posted' == 'failed'
+E         - failed
+E       KeyError: 'u1_th'
+E           KeyError: "Setting 'pembayaran.sales_terima_tunai' tidak ada di registry"
+FAILED tests_mem/test_PMT4_titipan_sales.py::test_PMT4_U1_sales_tunai_menjadi_titipan_tanpa_kas
+FAILED tests_mem/test_PMT4_titipan_sales.py::test_PMT4_U4_setor_lalu_diterima_ke_rekening_kas
+FAILED tests_mem/test_PMT4_titipan_sales.py::test_PMT4_U5_setoran_dialokasikan_ke_titipan_tertua
+FAILED tests_mem/test_PMT4_titipan_sales.py::test_PMT4_U6_setoran_melebihi_titipan_ditolak
+FAILED tests_mem/test_PMT4_titipan_sales.py::test_PMT4_U7_penerima_tidak_boleh_pemegang
+FAILED tests_mem/test_PMT4_titipan_sales.py::test_PMT4_U8_batas_titipan_per_orang
+FAILED tests_mem/test_PMT4_titipan_sales.py::test_PMT4_U9_lewat_tenggat - Ass...
+FAILED tests_mem/test_PMT4_titipan_sales.py::test_PMT4_U10_pt_melarang_sales_terima_tunai
+FAILED tests_mem/test_PMT4_titipan_sales.py::test_PMT4_U11_batal_kwitansi_titipan
+FAILED tests_mem/test_PMT4_titipan_sales.py::test_PMT4_U12_terima_periode_tertutup_lalu_jurnal_gagal_diulang
+FAILED tests_mem/test_PMT4_titipan_sales.py::test_PMT4_U13_invarian_titipan
+FAILED tests_mem/test_PMT4_titipan_sales.py::test_PMT4_U14_izin_terima_dan_lihat
+FAILED tests_mem/test_PMT4_titipan_sales.py::test_PMT4_jurnal_titipan_gagal_lalu_diulang
+FAILED tests_mem/test_PMT4_titipan_sales.py::test_PMT4_contoh_angka_U1_ke_U4
+FAILED tests_mem/test_PMT4_titipan_sales.py::test_PMT4_U15_putaran_tiga_kunci
+15 failed, 2 passed, 1 warning in 3.02s

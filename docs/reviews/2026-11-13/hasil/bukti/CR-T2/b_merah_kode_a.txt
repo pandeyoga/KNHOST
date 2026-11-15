@@ -1,0 +1,12 @@
+E       KeyError: 'line_id'
+E       assert (0.0, 2000000.0, 2000000.0, 0) == (1000000, 100..., 2000000, 17)
+E         At index 0 diff: 0.0 != 1000000
+E       assert (0.0, 1000000.0, 0.0, 19) == (500000, 500000, 0, 35)
+E         At index 0 diff: 0.0 != 500000
+E       AssertionError: assert [] == [('so_crt2b_d...03', 1000000)]
+E         Right contains one more item: ('so_crt2b_d30b0af2', '2026-11-03', 1000000)
+FAILED tests_mem/test_CRT2_pengalihan.py::test_CRT2_U3_umur_piutang_dari_jadwal
+FAILED tests_mem/test_CRT2_pengalihan.py::test_CRT2_U7_uang_muka_terbaca_umur_piutang
+FAILED tests_mem/test_CRT2_pengalihan.py::test_CRT2_U8_rencana_cicilan_menentukan_telat
+FAILED tests_mem/test_CRT2_pengalihan.py::test_CRT2_b_pengingat_dan_daftar_tagih
+4 failed, 3 passed, 1 warning in 2.90s

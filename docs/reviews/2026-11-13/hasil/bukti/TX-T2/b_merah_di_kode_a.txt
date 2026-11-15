@@ -1,0 +1,264 @@
+...................FFFFFFFFFF                                            [100%]
+=================================== FAILURES ===================================
+________ test_TXT2_U7_ganti_faktur_surat_jalan_asal_diganti_lalu_pulih _________
+
+klien = <httpx.AsyncClient object at 0x7f7d81724850>
+db = <motor.motor_asyncio.AsyncIOMotorDatabase object at 0x7f7d946cdc10>
+dunia = {'pid': 'prd_txt2_b7abf530', 'wid': 'wh_txt2_dfe364b7', 'pt3': 'ent_uji_tx2', 'adm': {'Authorization': 'Bearer tok_uji_513bf227e0cb46388ecd60d75e87c69c', 'X-Entity-Id': 'ent_ksc'}}
+
+    async def test_TXT2_U7_ganti_faktur_surat_jalan_asal_diganti_lalu_pulih(klien, db, dunia):
+        """Hitung tangan: pesanan baru SJ-1 40 % → faktur 440.000 terbit. Rekap masa R. Ganti → asal `diganti`, pengganti
+        440.000 (angka surat jalan, bukan seluruh pesanan 1.100.000); rekap tetap R (bukan R + 440.000). Batalkan pengganti
+        → asal kembali `normal`, rekap tetap R."""
+        from services import tax_invoice_service as tis
+        so = await pesanan(db, dunia)
+        await kirim(db, dunia, so, 40, "SJ-1", penutup=False)
+        d = await tis.draft_for_shipment(so["id"], "SJ-1")
+        r = await terbitkan(klien, dunia["adm"], d["id"])
+        assert r.status_code == 200, r.text
+        rek = (await rekap(klien, dunia["adm"], BAG["masa"]))["ppn"]
+        r = await klien.post(f"/api/tax-invoices/{d['id']}/replace", json={"reason": "koreksi alamat pembeli"},
+                             headers=dunia["adm"])
+        assert r.status_code == 200, r.text
+        peng = r.json()
+        asal = await db.tax_invoices.find_one({"id": d["id"]}, {"_id": 0})
+>       assert (asal["status"], asal["status_before_replaced"], asal["replaced_by_id"], "active_key" in asal) == (
+                                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+            "diganti", "normal", peng["id"], False), asal
+E       KeyError: 'status_before_replaced'
+
+tests_mem/test_TXT2_pemicu_faktur.py:524: KeyError
+___________ test_TXT2_U15_migrasi_status_diganti_dua_kali_lalu_undo ____________
+
+klien = <httpx.AsyncClient object at 0x7f7d81724850>
+db = <motor.motor_asyncio.AsyncIOMotorDatabase object at 0x7f7d946cdc10>
+dunia = {'pid': 'prd_txt2_b7abf530', 'wid': 'wh_txt2_dfe364b7', 'pt3': 'ent_uji_tx2', 'adm': {'Authorization': 'Bearer tok_uji_513bf227e0cb46388ecd60d75e87c69c', 'X-Entity-Id': 'ent_ksc'}}
+capsys = <_pytest.capture.CaptureFixture object at 0x7f7d808bc690>
+
+    async def test_TXT2_U15_migrasi_status_diganti_dua_kali_lalu_undo(klien, db, dunia, capsys):
+        """Fixture faktur LAMA (sebelum TX-T2): asal `normal` ber-`replaced_by_id`, tanpa `doc_kind`/`trigger`; penggantinya
+        `pengganti` ber-`active_key`; faktur antar-PT ber-`replaced_by_id` (tidak disentuh)."""
+        masa = "2026-09"
+        lama = [
+            {"id": "fkt_lama_a", "number": "FKT-LAMA-A", "entity_id": KSC, "order_id": "so_lama", "status": "normal",
+             "replaced_by_id": "fkt_lama_b", "ppn_amount": 110_000, "dpp": 1_000_000, "faktur_date": f"{masa}-10"},
+            {"id": "fkt_lama_b", "number": "FKT-LAMA-B", "entity_id": KSC, "order_id": "so_lama", "status": "pengganti",
+             "replaces_id": "fkt_lama_a", "replaced_by_id": None, "active_key": "so:so_lama", "ppn_amount": 110_000,
+             "dpp": 1_000_000, "faktur_date": f"{masa}-12"},
+            {"id": "fkt_lama_ic", "number": "FKT-LAMA-IC", "entity_id": KSC, "order_id": "", "status": "normal",
+             "source_type": "interco", "interco_pair_id": "icp_lama", "replaced_by_id": "fkt_lama_ic2",
+             "ppn_amount": 50_000, "dpp": 450_000, "faktur_date": f"{masa}-11"},
+        ]
+        await db.tax_invoices.insert_many([dict(x) for x in lama])
+        sebelum = await rekap(klien, dunia["adm"], masa)
+>       skrip = _skrip_migrasi()
+                ^^^^^^^^^^^^^^^^
+
+tests_mem/test_TXT2_pemicu_faktur.py:564: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests_mem/test_TXT2_pemicu_faktur.py:545: in _skrip_migrasi
+    return importlib.import_module("migrate_tax_invoice_status")
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/usr/lib/python3.11/importlib/__init__.py:126: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+<frozen importlib._bootstrap>:1204: in _gcd_import
+    ???
+<frozen importlib._bootstrap>:1176: in _find_and_load
+    ???
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+name = 'migrate_tax_invoice_status'
+import_ = <function _gcd_import at 0x7f7d976f7d80>
+
+>   ???
+E   ModuleNotFoundError: No module named 'migrate_tax_invoice_status'
+
+<frozen importlib._bootstrap>:1140: ModuleNotFoundError
+____________________ test_TXT2_b_rekap_himpunan_status_baru ____________________
+
+klien = <httpx.AsyncClient object at 0x7f7d81724850>
+db = <motor.motor_asyncio.AsyncIOMotorDatabase object at 0x7f7d946cdc10>
+dunia = {'pid': 'prd_txt2_b7abf530', 'wid': 'wh_txt2_dfe364b7', 'pt3': 'ent_uji_tx2', 'adm': {'Authorization': 'Bearer tok_uji_513bf227e0cb46388ecd60d75e87c69c', 'X-Entity-Id': 'ent_ksc'}}
+
+    async def test_TXT2_b_rekap_himpunan_status_baru(klien, db, dunia):
+        """`diganti` (asal) dan `draf` tidak dihitung; pengganti dihitung sekali (data hasil migrasi U15, masa 2026-09).
+        Faktur antar-PT asal yang diganti (masih `normal` ber-`replaced_by_id`, tidak dimigrasi) juga tidak dihitung."""
+        kel = await rekap(klien, dunia["adm"], "2026-09")
+        assert (kel["faktur_ppn"], kel["count"]) == (110_000, 1), kel
+        from services.tax_invoice_service import saringan_keluaran_aktif
+>       assert saringan_keluaran_aktif()["status"] == {"$in": ["normal", "pengganti"]}
+E       AssertionError: assert {'$nin': ['batal', 'draf']} == {'$in': ['nor... 'pengganti']}
+E         
+E         Left contains 1 more item:
+E         {'$nin': ['batal', 'draf']}
+E         Right contains 1 more item:
+E         {'$in': ['normal', 'pengganti']}
+E         Use -v to get more diff
+
+tests_mem/test_TXT2_pemicu_faktur.py:596: AssertionError
+__________________ test_TXT2_b_kait_surat_jalan_membuat_draf ___________________
+
+klien = <httpx.AsyncClient object at 0x7f7d81724850>
+db = <motor.motor_asyncio.AsyncIOMotorDatabase object at 0x7f7d946cdc10>
+dunia = {'pid': 'prd_txt2_b7abf530', 'wid': 'wh_txt2_dfe364b7', 'pt3': 'ent_uji_tx2', 'adm': {'Authorization': 'Bearer tok_uji_513bf227e0cb46388ecd60d75e87c69c', 'X-Entity-Id': 'ent_ksc'}}
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7f7d807d42d0>
+
+    async def test_TXT2_b_kait_surat_jalan_membuat_draf(klien, db, dunia, monkeypatch):
+        """`dispatch_task` (tombol kirim) → jurnal surat jalan → draf per surat jalan. Pemindahan roll diganti tiruan
+        (`ship_order_rolls`: gerbang roll/RFID H7 tidak diuji di sini); kegagalan draf tidak membatalkan surat jalan."""
+        from services import shipment_service as shs, tax_invoice_service as tis
+        so = await pesanan(db, dunia)
+    
+        async def _kirim_roll(order_id, product_id, warehouse_id, qty, roll_ids=None):
+            return {"shipped": float(qty), "rolls": [{"roll_id": uid("r"), "length": float(qty), "unit_cost": 60_000,
+                                                       "extended_cost": float(qty) * 60_000}]}
+    
+        monkeypatch.setattr(shs, "ship_order_rolls", _kirim_roll)
+    
+        async def _tugas(qty):
+            t = {"id": uid("wt"), "flow_type": "outbound", "status": "picked", "quantity": qty, "picked_qty": qty,
+                 "shipped_qty": 0, "order_id": so["id"], "order_number": so["number"], "product_id": dunia["pid"],
+                 "product_name": "Kain Uji TX-T2", "warehouse_id": dunia["wid"], "entity_id": KSC, "unit": "meter",
+                 "scan_log": [], "created_at": now_iso()}
+            await db.wms_tasks.insert_one(dict(t))
+            return t
+    
+        t1, t2 = await _tugas(40), await _tugas(60)   # dua baris tugas: SJ pertama = 40 % pesanan
+        _t, shp = await shs.dispatch_task(t1, 40, "Gudang Uji")
+        assert shp["gl_status"] == "posted", shp
+        d = await db.tax_invoices.find_one({"order_id": so["id"], "shipment_no": shp["shipment_no"]}, {"_id": 0})
+>       assert (d["status"], d["trigger"], d["ppn_amount"], d["created_by"]) == ("draf", "surat_jalan", 440_000,
+                ^^^^^^^^^^^
+                                                                                 "Gudang Uji"), d
+E       TypeError: 'NoneType' object is not subscriptable
+
+tests_mem/test_TXT2_pemicu_faktur.py:623: TypeError
+____________________ test_TXT2_b_job_harian_memulihkan_draf ____________________
+
+klien = <httpx.AsyncClient object at 0x7f7d81724850>
+db = <motor.motor_asyncio.AsyncIOMotorDatabase object at 0x7f7d946cdc10>
+dunia = {'pid': 'prd_txt2_b7abf530', 'wid': 'wh_txt2_dfe364b7', 'pt3': 'ent_uji_tx2', 'adm': {'Authorization': 'Bearer tok_uji_513bf227e0cb46388ecd60d75e87c69c', 'X-Entity-Id': 'ent_ksc'}}
+
+    async def test_TXT2_b_job_harian_memulihkan_draf(klien, db, dunia):
+        from services import scheduler_service, tax_invoice_service as tis
+>       assert "tax_draft_backfill" in scheduler_service.JOB_MAP
+E       AssertionError: assert 'tax_draft_backfill' in {'ar_overdue': {'id': 'ar_overdue', 'label': 'Piutang Jatuh Tempo (AR)', 'description': 'Pindai piutang pelanggan yang...n': 'Anggaran yang TERLAMPAUI atau mendekati batas (realisasi + komitmen PO) per entitas.', 'kind': 'daily', ...}, ...}
+E        +  where {'ar_overdue': {'id': 'ar_overdue', 'label': 'Piutang Jatuh Tempo (AR)', 'description': 'Pindai piutang pelanggan yang...n': 'Anggaran yang TERLAMPAUI atau mendekati batas (realisasi + komitmen PO) per entitas.', 'kind': 'daily', ...}, ...} = <module 'services.scheduler_service' from '/tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/txt2_a_kode/backend/services/scheduler_service.py'>.JOB_MAP
+
+tests_mem/test_TXT2_pemicu_faktur.py:638: AssertionError
+_______________ test_TXT2_b_kait_nota_kredit_membuat_draf_retur ________________
+
+klien = <httpx.AsyncClient object at 0x7f7d81724850>
+db = <motor.motor_asyncio.AsyncIOMotorDatabase object at 0x7f7d946cdc10>
+dunia = {'pid': 'prd_txt2_b7abf530', 'wid': 'wh_txt2_dfe364b7', 'pt3': 'ent_uji_tx2', 'adm': {'Authorization': 'Bearer tok_uji_513bf227e0cb46388ecd60d75e87c69c', 'X-Entity-Id': 'ent_ksc'}}
+
+    async def test_TXT2_b_kait_nota_kredit_membuat_draf_retur(klien, db, dunia):
+        """`credit_note_service.settle` (mesin PK-32) → draf dokumen pajak retur tanpa panggilan tangan. Nota 5 m atas SJ-1
+        pesanan S1: 500.000 + PPN 55.000 → jurnal Dr 2-1200 55.000 → draf retur 55.000."""
+        from services import credit_note_service as cns
+        so = await db.sales_orders.find_one({"id": BAG["s1"]["id"]}, {"_id": 0})
+        rid = uid("ret")
+        await db.sales_returns.insert_one({
+            "id": rid, "number": "RET/TXT2/002", "entity_id": KSC, "order_id": so["id"], "customer_id": "cus_txt2",
+            "status": "approved", "approved_at": now_iso(), "created_at": now_iso(),
+            "items": [{"product_id": dunia["pid"], "quantity": 5, "roll_ids": [BAG["roll_sj1"]]}]})
+        n = await cns.issue(kind="credit_note", source="sales_return", order=so, number="CN/TXT2/002", net=500_000,
+                            ppn=55_000, actor=AKTOR_UJI, refs={"return_id": rid, "return_number": "RET/TXT2/002"},
+                            lines=[], extra={"settlement": "ar", "allocation_amount": 555_000, "ppn_rate": 12})
+        n = await cns.settle(n["id"], AKTOR_UJI)
+        assert n["status"] == "posted", n
+        d = await db.tax_invoices.find_one({"credit_note_id": n["id"]}, {"_id": 0})
+>       assert (d["status"], d["doc_kind"], d["ppn_amount"], d["ref_tax_invoice_id"]) == (
+                ^^^^^^^^^^^
+            "draf", "retur", 55_000, BAG["f_sj1"]["id"]), d
+E       TypeError: 'NoneType' object is not subscriptable
+
+tests_mem/test_TXT2_pemicu_faktur.py:664: TypeError
+_______________ test_TXT2_b_kunci_amandemen_hanya_faktur_terbit ________________
+
+klien = <httpx.AsyncClient object at 0x7f7d81724850>
+db = <motor.motor_asyncio.AsyncIOMotorDatabase object at 0x7f7d946cdc10>
+dunia = {'pid': 'prd_txt2_b7abf530', 'wid': 'wh_txt2_dfe364b7', 'pt3': 'ent_uji_tx2', 'adm': {'Authorization': 'Bearer tok_uji_513bf227e0cb46388ecd60d75e87c69c', 'X-Entity-Id': 'ent_ksc'}}
+
+    async def test_TXT2_b_kunci_amandemen_hanya_faktur_terbit(klien, db, dunia):
+        from services import amendment_service
+        so = await pesanan(db, dunia)
+        base = {"entity_id": KSC, "order_id": so["id"], "order_number": so["number"], "ppn_amount": 1_100_000,
+                "faktur_date": now_iso()}
+        await db.tax_invoices.insert_many([
+            {**base, "id": uid("fkt"), "number": "FKT-AMD-1", "status": "draf", "trigger": "surat_jalan", "shipment_no": "X"},
+            {**base, "id": uid("fkt"), "number": "FKT-AMD-2", "status": "diganti", "replaced_by_id": "fkt_x"},
+            {**base, "id": uid("fkt"), "number": "FKT-AMD-3", "status": "normal", "doc_kind": "retur",
+             "credit_note_id": "cn_x"}])
+        terbit, _ = await amendment_service.is_issued(await db.sales_orders.find_one({"id": so["id"]}, {"_id": 0}))
+>       assert terbit is False
+E       assert True is False
+
+tests_mem/test_TXT2_pemicu_faktur.py:679: AssertionError
+__________ test_TXT2_b_meja_finance_tanpa_pesanan_pt_per_surat_jalan ___________
+
+klien = <httpx.AsyncClient object at 0x7f7d81724850>
+db = <motor.motor_asyncio.AsyncIOMotorDatabase object at 0x7f7d946cdc10>
+dunia = {'pid': 'prd_txt2_b7abf530', 'wid': 'wh_txt2_dfe364b7', 'pt3': 'ent_uji_tx2', 'adm': {'Authorization': 'Bearer tok_uji_513bf227e0cb46388ecd60d75e87c69c', 'X-Entity-Id': 'ent_ksc'}}
+
+    async def test_TXT2_b_meja_finance_tanpa_pesanan_pt_per_surat_jalan(klien, db, dunia):
+        so = await pesanan(db, dunia)   # terkonfirmasi, ber-PPN, belum dikirim, PT ent_ksc berpemicu surat jalan
+    
+        async def _antrean():
+            r = await klien.get("/api/finance/desk", headers=dunia["adm"])
+            assert r.status_code == 200, r.text
+            q = next(x for x in r.json()["queues"] if x["id"] == "siap_faktur_pajak")
+            return [row.get("ref_id") for row in q.get("rows") or q.get("items") or []]
+    
+>       assert so["id"] not in await _antrean()
+E       AssertionError: assert 'so_txt2_268af205' not in ['so_txt2_a2a1abd3', 'so_txt2_35ce3f42', 'so_txt2_268af205']
+
+tests_mem/test_TXT2_pemicu_faktur.py:695: AssertionError
+_________________ test_TXT2_b_pengaturan_efektif_memuat_pemicu _________________
+
+klien = <httpx.AsyncClient object at 0x7f7d81724850>
+db = <motor.motor_asyncio.AsyncIOMotorDatabase object at 0x7f7d946cdc10>
+dunia = {'pid': 'prd_txt2_b7abf530', 'wid': 'wh_txt2_dfe364b7', 'pt3': 'ent_uji_tx2', 'adm': {'Authorization': 'Bearer tok_uji_513bf227e0cb46388ecd60d75e87c69c', 'X-Entity-Id': 'ent_ksc'}}
+
+    async def test_TXT2_b_pengaturan_efektif_memuat_pemicu(klien, db, dunia):
+        r = await klien.get("/api/settings/effective", params={"entity_id": KSC}, headers=dunia["adm"])
+        assert r.status_code == 200 and r.json()["tax"]["pemicu_faktur"] == "surat_jalan", r.text
+        r = await klien.get("/api/settings/effective", params={"entity_id": dunia["pt3"]}, headers=dunia["adm"])
+>       assert r.json()["tax"]["pemicu_faktur"] == "pesanan", r.text
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       KeyError: 'pemicu_faktur'
+
+tests_mem/test_TXT2_pemicu_faktur.py:709: KeyError
+_______________________ test_TXT2_b_invarian_wajib_hijau _______________________
+
+klien = <httpx.AsyncClient object at 0x7f7d81724850>
+db = <motor.motor_asyncio.AsyncIOMotorDatabase object at 0x7f7d946cdc10>
+dunia = {'pid': 'prd_txt2_b7abf530', 'wid': 'wh_txt2_dfe364b7', 'pt3': 'ent_uji_tx2', 'adm': {'Authorization': 'Bearer tok_uji_513bf227e0cb46388ecd60d75e87c69c', 'X-Entity-Id': 'ent_ksc'}}
+capsys = <_pytest.capture.CaptureFixture object at 0x7f7d80937b90>
+
+    async def test_TXT2_b_invarian_wajib_hijau(klien, db, dunia, capsys):
+>       assert _vdi().INV_TAX_OUT_WAJIB is True
+E       AssertionError: assert False is True
+E        +  where False = <module 'verify_data_integrity' from '/tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/txt2_a_kode/scripts/verify_data_integrity.py'>.INV_TAX_OUT_WAJIB
+E        +    where <module 'verify_data_integrity' from '/tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/txt2_a_kode/scripts/verify_data_integrity.py'> = _vdi()
+
+tests_mem/test_TXT2_pemicu_faktur.py:713: AssertionError
+=============================== warnings summary ===============================
+../../venv311/lib/python3.11/site-packages/starlette/formparsers.py:12
+  /tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/venv311/lib/python3.11/site-packages/starlette/formparsers.py:12: PendingDeprecationWarning: Please use `import python_multipart` instead.
+    import multipart
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests_mem/test_TXT2_pemicu_faktur.py::test_TXT2_U7_ganti_faktur_surat_jalan_asal_diganti_lalu_pulih
+FAILED tests_mem/test_TXT2_pemicu_faktur.py::test_TXT2_U15_migrasi_status_diganti_dua_kali_lalu_undo
+FAILED tests_mem/test_TXT2_pemicu_faktur.py::test_TXT2_b_rekap_himpunan_status_baru
+FAILED tests_mem/test_TXT2_pemicu_faktur.py::test_TXT2_b_kait_surat_jalan_membuat_draf
+FAILED tests_mem/test_TXT2_pemicu_faktur.py::test_TXT2_b_job_harian_memulihkan_draf
+FAILED tests_mem/test_TXT2_pemicu_faktur.py::test_TXT2_b_kait_nota_kredit_membuat_draf_retur
+FAILED tests_mem/test_TXT2_pemicu_faktur.py::test_TXT2_b_kunci_amandemen_hanya_faktur_terbit
+FAILED tests_mem/test_TXT2_pemicu_faktur.py::test_TXT2_b_meja_finance_tanpa_pesanan_pt_per_surat_jalan
+FAILED tests_mem/test_TXT2_pemicu_faktur.py::test_TXT2_b_pengaturan_efektif_memuat_pemicu
+FAILED tests_mem/test_TXT2_pemicu_faktur.py::test_TXT2_b_invarian_wajib_hijau
+10 failed, 19 passed, 1 warning in 4.26s

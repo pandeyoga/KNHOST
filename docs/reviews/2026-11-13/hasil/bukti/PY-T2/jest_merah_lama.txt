@@ -1,0 +1,27 @@
+[visual-edits] @emergentbase/visual-edits not installed — visual editing disabled.
+[visual-edits] @emergentbase/visual-edits not installed — visual editing disabled.
+FAIL src/features/__tests__/pyt2RiwayatKompensasi.test.js
+  ● Test suite failed to run
+
+    Cannot find module '../hr/EmployeeCompensationSection' from 'src/features/__tests__/pyt2RiwayatKompensasi.test.js'
+
+    [0m [90m  9 |[39m [36mimport[39m [33mReact[39m[33m,[39m { act } [36mfrom[39m [32m"react"[39m[33m;[39m
+     [90m 10 |[39m [36mimport[39m { createRoot } [36mfrom[39m [32m"react-dom/client"[39m[33m;[39m
+    [31m[1m>[22m[39m[90m 11 |[39m [36mimport[39m [33mEmployeeCompensationSection[39m[33m,[39m { badanKompensasi[33m,[39m galatKompensasi[33m,[39m galatPenugasan[33m,[39m rowBadge[33m,[39m [33mROW_BADGE[39m[33m,[39m
+     [90m    |[39m [31m[1m^[22m[39m
+     [90m 12 |[39m   teksSahkanGaji } [36mfrom[39m [32m"../hr/EmployeeCompensationSection"[39m[33m;[39m
+     [90m 13 |[39m [36mimport[39m { badanKaryawan[33m,[39m [33mEmployeeFormDrawer[39m[33m,[39m [33mPETUNJUK_RIWAYAT[39m } [36mfrom[39m [32m"../hr/EmployeeFormDrawer"[39m[33m;[39m
+     [90m 14 |[39m [36mimport[39m { [33mEntityScopeProvider[39m } [36mfrom[39m [32m"../../context/EntityScopeContext"[39m[33m;[39m[0m
+
+      at Resolver.resolveModule (../fe/node_modules/jest-resolve/build/resolver.js:324:11)
+      at Object.<anonymous> (src/features/__tests__/pyt2RiwayatKompensasi.test.js:11:1)
+      at TestScheduler.scheduleTests (../fe/node_modules/@jest/core/build/TestScheduler.js:333:13)
+      at runJest (../fe/node_modules/@jest/core/build/runJest.js:404:19)
+      at _run10000 (../fe/node_modules/@jest/core/build/cli/index.js:320:7)
+      at runCLI (../fe/node_modules/@jest/core/build/cli/index.js:173:3)
+
+Test Suites: 1 failed, 1 total
+Tests:       0 total
+Snapshots:   0 total
+Time:        0.679 s, estimated 4 s
+Ran all test suites matching /pyt2RiwayatKompensasi/i.

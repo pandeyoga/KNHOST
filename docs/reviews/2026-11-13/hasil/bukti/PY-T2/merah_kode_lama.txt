@@ -1,0 +1,467 @@
+FFFFFFFFFFFFFFFFF                                                        [100%]
+=================================== FAILURES ===================================
+____________________ test_PYT2_U1_migrasi_dua_kali[asyncio] ____________________
+
+klien = <httpx.AsyncClient object at 0x7f72d3096890>
+db = <motor.motor_asyncio.AsyncIOMotorDatabase object at 0x7f72e51ba7d0>
+adm = <function adm.<locals>._h at 0x7f72d1a14400>
+siap = {'a': 'ent_uji_pyt2a', 'b': 'ent_uji_pyt2b'}
+capsys = <_pytest.capture.CaptureFixture object at 0x7f72d1a0d390>
+
+    async def test_PYT2_U1_migrasi_dua_kali(klien, db, adm, siap, capsys):
+        h = await adm(PT["a"])
+        # sebelum: K1 dibaca dari master → bruto 6.000.000 + 500.000 = 6.500.000
+        assert (await _pratinjau(klien, h, PT["a"], K[1]))["gross"] == 6_500_000
+>       mig = _migrasi()
+              ^^^^^^^^^^
+
+tests_mem/test_PYT2_riwayat_kompensasi.py:142: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests_mem/test_PYT2_riwayat_kompensasi.py:127: in _migrasi
+    spec.loader.exec_module(mig)
+<frozen importlib._bootstrap_external>:936: in exec_module
+    ???
+<frozen importlib._bootstrap_external>:1073: in get_code
+    ???
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <_frozen_importlib_external.SourceFileLoader object at 0x7f72d2e41ed0>
+path = '/tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/wt27/scripts/migrate_hr_compensation_py_t2.py'
+
+>   ???
+E   FileNotFoundError: [Errno 2] No such file or directory: '/tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/wt27/scripts/migrate_hr_compensation_py_t2.py'
+
+<frozen importlib._bootstrap_external>:1130: FileNotFoundError
+---------------------------- Captured stdout setup -----------------------------
+[bootstrap] SANDI AWAL akun seed (ganti segera): gzUwTffqMy1u0hGC
+[bootstrap] FASE F lifecycle backfill: 5 produk distempel 'produksi'
+[bootstrap] kebersihan data: 5 record dirapikan {'customers': 3, 'suppliers': 0, 'users': 0, 'hr_employees': 2, 'makloons': 0}
+__________________ test_PYT2_U7a_pindah_pt_disahkan[asyncio] ___________________
+
+klien = <httpx.AsyncClient object at 0x7f72d3096890>
+db = <motor.motor_asyncio.AsyncIOMotorDatabase object at 0x7f72e51ba7d0>
+adm = <function adm.<locals>._h at 0x7f72d1a14400>
+siap = {'a': 'ent_uji_pyt2a', 'b': 'ent_uji_pyt2b'}
+
+    async def test_PYT2_U7a_pindah_pt_disahkan(klien, db, adm, siap):
+        h = await adm(PT["a"])
+        r = await klien.post(f"/api/hr/employees/{K[4]}/assignments", headers=h, json={
+            "entity_id": PT["b"], "effective_from": "2026-11-01", "reason": "mutasi uji PY-T2"})
+>       assert r.status_code == 200, r.text
+E       AssertionError: {"detail":"Not Found"}
+E       assert 404 == 200
+E        +  where 404 = <Response [404 Not Found]>.status_code
+
+tests_mem/test_PYT2_riwayat_kompensasi.py:170: AssertionError
+________________ test_PYT2_U5_rapel_periode_terposting[asyncio] ________________
+
+klien = <httpx.AsyncClient object at 0x7f72d3096890>
+db = <motor.motor_asyncio.AsyncIOMotorDatabase object at 0x7f72e51ba7d0>
+adm = <function adm.<locals>._h at 0x7f72d1a14400>
+siap = {'a': 'ent_uji_pyt2a', 'b': 'ent_uji_pyt2b'}
+
+    async def test_PYT2_U5_rapel_periode_terposting(klien, db, adm, siap):
+        h = await adm(PT["a"])
+        for per in (SEP, OKT):
+            run = await _run(klien, h, PT["a"], per)
+            SIMPAN[f"a:{per}"] = run
+            assert ("Gaji Pokok", 6_000_000) in _baris(_slip(run, K[5]))
+            assert _ada(run, K[4])   # U7 — K4 masih di PTA pada Sep/Okt walau master sudah PTB
+            assert (await _alur(klien, h, run["id"], "submit", "approve", "post-gl"))["status"] == "posted"
+>       row = await _usul(klien, h, K[5], "2026-09-01", 7_500_000)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests_mem/test_PYT2_riwayat_kompensasi.py:188: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+klien = <httpx.AsyncClient object at 0x7f72d3096890>
+h = {'Authorization': 'Bearer tok_uji_7b4f7a6d08014114b74d3a29e1fd5d8f', 'X-Entity-Id': 'ent_uji_pyt2a'}
+emp = 'emp_pyt2_k5', eff = '2026-09-01', gaji = 7500000, extra = {}
+
+    async def _usul(klien, h, emp, eff, gaji, **extra):
+        r = await klien.post(f"/api/hr/employees/{emp}/compensation", headers=h,
+                             json={"effective_from": eff, "base_salary": gaji, "reason": "kenaikan uji PY-T2", **extra})
+>       assert r.status_code == 200, r.text
+E       AssertionError: {"detail":"Not Found"}
+E       assert 404 == 200
+E        +  where 404 = <Response [404 Not Found]>.status_code
+
+tests_mem/test_PYT2_riwayat_kompensasi.py:112: AssertionError
+____________ test_PYT2_U2a_kenaikan_desember_master_tetap[asyncio] _____________
+
+klien = <httpx.AsyncClient object at 0x7f72d3096890>
+db = <motor.motor_asyncio.AsyncIOMotorDatabase object at 0x7f72e51ba7d0>
+adm = <function adm.<locals>._h at 0x7f72d1a14400>
+siap = {'a': 'ent_uji_pyt2a', 'b': 'ent_uji_pyt2b'}
+
+    async def test_PYT2_U2a_kenaikan_desember_master_tetap(klien, db, adm, siap):
+        h = await adm(PT["a"])
+>       row = await _usul(klien, h, K[2], "2026-12-01", 7_500_000)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests_mem/test_PYT2_riwayat_kompensasi.py:206: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+klien = <httpx.AsyncClient object at 0x7f72d3096890>
+h = {'Authorization': 'Bearer tok_uji_7b4f7a6d08014114b74d3a29e1fd5d8f', 'X-Entity-Id': 'ent_uji_pyt2a'}
+emp = 'emp_pyt2_k2', eff = '2026-12-01', gaji = 7500000, extra = {}
+
+    async def _usul(klien, h, emp, eff, gaji, **extra):
+        r = await klien.post(f"/api/hr/employees/{emp}/compensation", headers=h,
+                             json={"effective_from": eff, "base_salary": gaji, "reason": "kenaikan uji PY-T2", **extra})
+>       assert r.status_code == 200, r.text
+E       AssertionError: {"detail":"Not Found"}
+E       assert 404 == 200
+E        +  where 404 = <Response [404 Not Found]>.status_code
+
+tests_mem/test_PYT2_riwayat_kompensasi.py:112: AssertionError
+____________ test_PYT2_U3_tanpa_prorata_nilai_akhir_bulan[asyncio] _____________
+
+klien = <httpx.AsyncClient object at 0x7f72d3096890>
+db = <motor.motor_asyncio.AsyncIOMotorDatabase object at 0x7f72e51ba7d0>
+adm = <function adm.<locals>._h at 0x7f72d1a14400>
+siap = {'a': 'ent_uji_pyt2a', 'b': 'ent_uji_pyt2b'}
+
+    async def test_PYT2_U3_tanpa_prorata_nilai_akhir_bulan(klien, db, adm, siap):
+        h = await adm(PT["a"])
+>       row = await _usul(klien, h, K[3], "2026-11-16", 7_500_000)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests_mem/test_PYT2_riwayat_kompensasi.py:215: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+klien = <httpx.AsyncClient object at 0x7f72d3096890>
+h = {'Authorization': 'Bearer tok_uji_7b4f7a6d08014114b74d3a29e1fd5d8f', 'X-Entity-Id': 'ent_uji_pyt2a'}
+emp = 'emp_pyt2_k3', eff = '2026-11-16', gaji = 7500000, extra = {}
+
+    async def _usul(klien, h, emp, eff, gaji, **extra):
+        r = await klien.post(f"/api/hr/employees/{emp}/compensation", headers=h,
+                             json={"effective_from": eff, "base_salary": gaji, "reason": "kenaikan uji PY-T2", **extra})
+>       assert r.status_code == 200, r.text
+E       AssertionError: {"detail":"Not Found"}
+E       assert 404 == 200
+E        +  where 404 = <Response [404 Not Found]>.status_code
+
+tests_mem/test_PYT2_riwayat_kompensasi.py:112: AssertionError
+_______________ test_PYT2_U6_rapel_ikut_proses_november[asyncio] _______________
+
+klien = <httpx.AsyncClient object at 0x7f72d3096890>
+db = <motor.motor_asyncio.AsyncIOMotorDatabase object at 0x7f72e51ba7d0>
+adm = <function adm.<locals>._h at 0x7f72d1a14400>
+siap = {'a': 'ent_uji_pyt2a', 'b': 'ent_uji_pyt2b'}
+
+    async def test_PYT2_U6_rapel_ikut_proses_november(klien, db, adm, siap):
+        h = await adm(PT["a"])
+>       for iid in SIMPAN["rapel"]:
+                   ^^^^^^^^^^^^^^^
+E       KeyError: 'rapel'
+
+tests_mem/test_PYT2_riwayat_kompensasi.py:229: KeyError
+______________ test_PYT2_U4_prorata_hari_kalender_per_pt[asyncio] ______________
+
+klien = <httpx.AsyncClient object at 0x7f72d3096890>
+db = <motor.motor_asyncio.AsyncIOMotorDatabase object at 0x7f72e51ba7d0>
+adm = <function adm.<locals>._h at 0x7f72d1a14400>
+siap = {'a': 'ent_uji_pyt2a', 'b': 'ent_uji_pyt2b'}
+
+    async def test_PYT2_U4_prorata_hari_kalender_per_pt(klien, db, adm, siap):
+        from services import config_resolver as resolver
+        h = await adm(PT["a"])
+>       await resolver.set_value("hr.prorata_perubahan_gaji", "hari_kalender", scope_type="entity", scope_id=PT["a"],
+                                 actor="uji", reason="uji PY-T2 U4")
+
+tests_mem/test_PYT2_riwayat_kompensasi.py:244: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+services/config_resolver.py:519: in set_value
+    entry = registry.require(key)
+            ^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+key = 'hr.prorata_perubahan_gaji'
+
+    def require(key: str) -> Dict[str, Any]:
+        entry = _REGISTRY.get(key)
+        if not entry:
+>           raise KeyError(f"Setting '{key}' tidak ada di registry")
+E           KeyError: "Setting 'hr.prorata_perubahan_gaji' tidak ada di registry"
+
+config_registry.py:399: KeyError
+_________________ test_PYT2_U7b_pindah_pt_per_periode[asyncio] _________________
+
+klien = <httpx.AsyncClient object at 0x7f72d3096890>
+db = <motor.motor_asyncio.AsyncIOMotorDatabase object at 0x7f72e51ba7d0>
+adm = <function adm.<locals>._h at 0x7f72d1a14400>
+siap = {'a': 'ent_uji_pyt2a', 'b': 'ent_uji_pyt2b'}
+
+    async def test_PYT2_U7b_pindah_pt_per_periode(klien, db, adm, siap):
+        hb = await adm(PT["b"])
+        okt_b = await _run(klien, hb, PT["b"], OKT)
+        assert not _ada(okt_b, K[4]) and _ada(SIMPAN[f"a:{OKT}"], K[4])
+>       assert _ada(SIMPAN["b:nov"], K[4]) and not _ada(SIMPAN["a:nov"], K[4])
+                    ^^^^^^^^^^^^^^^
+E       KeyError: 'b:nov'
+
+tests_mem/test_PYT2_riwayat_kompensasi.py:274: KeyError
+__________________ test_PYT2_U8_pajak_tahunan_per_pt[asyncio] __________________
+
+klien = <httpx.AsyncClient object at 0x7f72d3096890>
+db = <motor.motor_asyncio.AsyncIOMotorDatabase object at 0x7f72e51ba7d0>
+adm = <function adm.<locals>._h at 0x7f72d1a14400>
+siap = {'a': 'ent_uji_pyt2a', 'b': 'ent_uji_pyt2b'}
+
+    async def test_PYT2_U8_pajak_tahunan_per_pt(klien, db, adm, siap):
+        # fixture: slip K4 Jan–Agu di PTA (disisipkan); Sep–Okt di PTA (proses U5); Nov di PTB (U4)
+        await db.hr_payslips.insert_many([
+            {"id": f"slip_pyt2_k4_{m:02d}", "run_id": "prun_pyt2_fixture", "entity_id": PT["a"], "employee_id": K[4],
+             "period": f"2026-{m:02d}", "gross": 6_500_000, "tax_gross": 6_500_000, "pph21": 0.0,
+             "bpjs_emp": {"kesehatan": 0, "jht": 0, "jp": 0}} for m in range(1, 9)])
+        _hari(2026, 12, 15)
+        hb = await adm(PT["b"])
+        run = await _run(klien, hb, PT["b"], DES)
+>       s4 = _slip(run, K[4])
+             ^^^^^^^^^^^^^^^^
+
+tests_mem/test_PYT2_riwayat_kompensasi.py:288: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+run = {'id': 'prun_86099bf38862', 'number': 'PYT2B/PAY-00002', 'entity_id': 'ent_uji_pyt2b', 'period': '2026-12', ...}
+emp_id = 'emp_pyt2_k4'
+
+    def _slip(run: dict, emp_id: str) -> dict:
+>       return next(s for s in run["payslips"] if s["employee_id"] == emp_id)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       StopIteration
+
+tests_mem/test_PYT2_riwayat_kompensasi.py:83: StopIteration
+
+The above exception was the direct cause of the following exception:
+
+pyfuncitem = <Function test_PYT2_U8_pajak_tahunan_per_pt[asyncio]>
+
+    @pytest.hookimpl(tryfirst=True)
+    def pytest_pyfunc_call(pyfuncitem: Any) -> bool | None:
+        def run_with_hypothesis(**kwargs: Any) -> None:
+            with get_runner(backend_name, backend_options) as runner:
+                runner.run_test(original_func, kwargs)
+    
+        backend = pyfuncitem.funcargs.get("anyio_backend")
+        if backend:
+            backend_name, backend_options = extract_backend_and_options(backend)
+    
+            if hasattr(pyfuncitem.obj, "hypothesis"):
+                # Wrap the inner test function unless it's already wrapped
+                original_func = pyfuncitem.obj.hypothesis.inner_test
+                if original_func.__qualname__ != run_with_hypothesis.__qualname__:
+                    if iscoroutinefunction(original_func):
+                        pyfuncitem.obj.hypothesis.inner_test = run_with_hypothesis
+    
+                return None
+    
+            if iscoroutinefunction(pyfuncitem.obj):
+                funcargs = pyfuncitem.funcargs
+                testargs = {arg: funcargs[arg] for arg in pyfuncitem._fixtureinfo.argnames}
+                with get_runner(backend_name, backend_options) as runner:
+                    try:
+>                       runner.run_test(pyfuncitem.obj, testargs)
+
+../../venv311/lib/python3.11/site-packages/anyio/pytest_plugin.py:263: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+../../venv311/lib/python3.11/site-packages/anyio/_backends/_asyncio.py:2427: in run_test
+    self._raise_async_exceptions()
+../../venv311/lib/python3.11/site-packages/anyio/_backends/_asyncio.py:2313: in _raise_async_exceptions
+    raise exceptions[0]
+../../venv311/lib/python3.11/site-packages/anyio/_backends/_asyncio.py:2406: in run_test
+    self.get_loop().run_until_complete(
+/usr/lib/python3.11/asyncio/base_events.py:654: in run_until_complete
+    return future.result()
+           ^^^^^^^^^^^^^^^
+../../venv311/lib/python3.11/site-packages/anyio/_backends/_asyncio.py:2364: in _call_in_runner_task
+    return await future
+           ^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <anyio._backends._asyncio.TestRunner object at 0x7f72e58bd110>
+receive_stream = MemoryObjectReceiveStream(_state=_MemoryObjectStreamState(max_buffer_size=1, buffer=deque([]), open_send_channels=1, o..._info=AsyncIOTaskInfo(id=140131137721472, name='Task-2'), item=None))]), waiting_senders=OrderedDict()), _closed=False)
+
+    async def _run_tests_and_fixtures(
+        self,
+        receive_stream: MemoryObjectReceiveStream[
+            tuple[Awaitable[T_Retval], asyncio.Future[T_Retval]]
+        ],
+    ) -> None:
+        from _pytest.outcomes import OutcomeException
+    
+        with receive_stream, self._send_stream:
+            async for coro, future in receive_stream:
+                try:
+>                   retval = await coro
+                             ^^^^^^^^^^
+E                   RuntimeError: coroutine raised StopIteration
+
+../../venv311/lib/python3.11/site-packages/anyio/_backends/_asyncio.py:2330: RuntimeError
+_____________ test_PYT2_U2b_desember_dan_apply_effective[asyncio] ______________
+
+klien = <httpx.AsyncClient object at 0x7f72d3096890>
+db = <motor.motor_asyncio.AsyncIOMotorDatabase object at 0x7f72e51ba7d0>
+adm = <function adm.<locals>._h at 0x7f72d1a14400>
+siap = {'a': 'ent_uji_pyt2a', 'b': 'ent_uji_pyt2b'}
+
+    async def test_PYT2_U2b_desember_dan_apply_effective(klien, db, adm, siap):
+>       from services import hr_compensation_service as hc
+E       ImportError: cannot import name 'hr_compensation_service' from 'services' (/tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/wt27/backend/services/__init__.py)
+
+tests_mem/test_PYT2_riwayat_kompensasi.py:298: ImportError
+________________ test_PYT2_U14_invarian_master_turunan[asyncio] ________________
+
+db = <motor.motor_asyncio.AsyncIOMotorDatabase object at 0x7f72e51ba7d0>
+siap = {'a': 'ent_uji_pyt2a', 'b': 'ent_uji_pyt2b'}
+capsys = <_pytest.capture.CaptureFixture object at 0x7f72d1b35010>
+
+    async def test_PYT2_U14_invarian_master_turunan(db, siap, capsys):
+>       from services import hr_compensation_service as hc
+E       ImportError: cannot import name 'hr_compensation_service' from 'services' (/tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/wt27/backend/services/__init__.py)
+
+tests_mem/test_PYT2_riwayat_kompensasi.py:309: ImportError
+____________ test_PYT2_U9_patch_ditolak_post_baris_pertama[asyncio] ____________
+
+klien = <httpx.AsyncClient object at 0x7f72d3096890>
+db = <motor.motor_asyncio.AsyncIOMotorDatabase object at 0x7f72e51ba7d0>
+adm = <function adm.<locals>._h at 0x7f72d1a14400>
+siap = {'a': 'ent_uji_pyt2a', 'b': 'ent_uji_pyt2b'}
+
+    async def test_PYT2_U9_patch_ditolak_post_baris_pertama(klien, db, adm, siap):
+        h = await adm(PT["a"])
+        pesan = "Gaji dan penugasan PT diubah lewat Riwayat Kompensasi di kartu karyawan."
+        for data in ({"base_salary": 7_000_000}, {"allowances": []}, {"entity_id": PT["b"]}):
+            r = await klien.patch(f"/api/hr/employees/{K[1]}", headers=h, json={"data": data})
+>           assert r.status_code == 400 and r.json()["detail"] == pesan, (data, r.text)
+E           AssertionError: ({'base_salary': 7000000}, '{"id":"emp_pyt2_k1","code":"EMP-PYT2-1","name":"K1 Uji PY-T2","entity_id":"ent_uji_pyt2a",...0","join_date":"2026-01-01","created_at":"2026-01-01T00:00:00+00:00","updated_at":"2026-11-15T05:39:28.638649+00:00"}')
+E           assert (200 == 400)
+E            +  where 200 = <Response [200 OK]>.status_code
+
+tests_mem/test_PYT2_riwayat_kompensasi.py:333: AssertionError
+_________________________ test_PYT2_U10_izin[asyncio] __________________________
+
+klien = <httpx.AsyncClient object at 0x7f72d3096890>
+akun = <function akun.<locals>._akun at 0x7f72d1a9de40>
+sesi = <function sesi.<locals>._sesi at 0x7f72d1a142c0>
+siap = {'a': 'ent_uji_pyt2a', 'b': 'ent_uji_pyt2b'}
+peran_tanpa_acuan = <function peran_tanpa_acuan.<locals>._peran at 0x7f72d1836520>
+
+    async def test_PYT2_U10_izin(klien, akun, sesi, siap, peran_tanpa_acuan):
+        r1 = await peran_tanpa_acuan({"hr": ["view"]}, label="SDM Lihat PY-T2")
+        h1 = await sesi(await akun(r1, entitas=(PT["a"],)), entitas=PT["a"])
+        r = await klien.get(f"/api/hr/employees/{K[1]}/compensation", headers=h1)
+>       assert r.status_code == 403, r.text
+E       AssertionError: {"detail": "Not Found"}
+E       assert 404 == 403
+E        +  where 404 = <Response [404 Not Found]>.status_code
+
+tests_mem/test_PYT2_riwayat_kompensasi.py:353: AssertionError
+__________________ test_PYT2_U11_tanggal_kembar_409[asyncio] ___________________
+
+klien = <httpx.AsyncClient object at 0x7f72d3096890>
+db = <motor.motor_asyncio.AsyncIOMotorDatabase object at 0x7f72e51ba7d0>
+adm = <function adm.<locals>._h at 0x7f72d1a14400>
+siap = {'a': 'ent_uji_pyt2a', 'b': 'ent_uji_pyt2b'}
+
+    async def test_PYT2_U11_tanggal_kembar_409(klien, db, adm, siap):
+        h = await adm(PT["a"])
+>       row = await _usul(klien, h, K[2], "2026-12-01", 8_000_000)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests_mem/test_PYT2_riwayat_kompensasi.py:367: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+klien = <httpx.AsyncClient object at 0x7f72d3096890>
+h = {'Authorization': 'Bearer tok_uji_7b4f7a6d08014114b74d3a29e1fd5d8f', 'X-Entity-Id': 'ent_uji_pyt2a'}
+emp = 'emp_pyt2_k2', eff = '2026-12-01', gaji = 8000000, extra = {}
+
+    async def _usul(klien, h, emp, eff, gaji, **extra):
+        r = await klien.post(f"/api/hr/employees/{emp}/compensation", headers=h,
+                             json={"effective_from": eff, "base_salary": gaji, "reason": "kenaikan uji PY-T2", **extra})
+>       assert r.status_code == 200, r.text
+E       AssertionError: {"detail":"Not Found"}
+E       assert 404 == 200
+E        +  where 404 = <Response [404 Not Found]>.status_code
+
+tests_mem/test_PYT2_riwayat_kompensasi.py:112: AssertionError
+_______________ test_PYT2_U12_pt_tujuan_di_luar_cakupan[asyncio] _______________
+
+klien = <httpx.AsyncClient object at 0x7f72d3096890>
+akun = <function akun.<locals>._akun at 0x7f72d1a9de40>
+sesi = <function sesi.<locals>._sesi at 0x7f72d1a142c0>
+siap = {'a': 'ent_uji_pyt2a', 'b': 'ent_uji_pyt2b'}
+peran_tanpa_acuan = <function peran_tanpa_acuan.<locals>._peran at 0x7f72d1836520>
+
+    async def test_PYT2_U12_pt_tujuan_di_luar_cakupan(klien, akun, sesi, siap, peran_tanpa_acuan):
+        rid = await peran_tanpa_acuan({"hr": ["view", "update"]}, label="SDM PTA saja PY-T2")
+        h = await sesi(await akun(rid, entitas=(PT["a"],)), entitas=PT["a"])
+        r = await klien.post(f"/api/hr/employees/{K[1]}/assignments", headers=h, json={
+            "entity_id": PT["b"], "effective_from": "2027-01-01", "reason": "mutasi uji PY-T2"})
+>       assert r.status_code == 403, r.text
+E       AssertionError: {"detail": "Not Found"}
+E       assert 404 == 403
+E        +  where 404 = <Response [404 Not Found]>.status_code
+
+tests_mem/test_PYT2_riwayat_kompensasi.py:381: AssertionError
+_____________________ test_PYT2_U13_kunci_prorata[asyncio] _____________________
+
+klien = <httpx.AsyncClient object at 0x7f72d3096890>
+kepala_admin = {'Authorization': 'Bearer tok_uji_7f6f331f7ee74102ae0656353b7ceebf', 'X-Entity-Id': 'ent_ksc'}
+
+    async def test_PYT2_U13_kunci_prorata(klien, kepala_admin):
+        import config_registry as registry
+        from test_KFT8_putaran_pengaturan import putaran
+>       e = registry.require("hr.prorata_perubahan_gaji")
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests_mem/test_PYT2_riwayat_kompensasi.py:392: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+key = 'hr.prorata_perubahan_gaji'
+
+    def require(key: str) -> Dict[str, Any]:
+        entry = _REGISTRY.get(key)
+        if not entry:
+>           raise KeyError(f"Setting '{key}' tidak ada di registry")
+E           KeyError: "Setting 'hr.prorata_perubahan_gaji' tidak ada di registry"
+
+config_registry.py:399: KeyError
+_______________ test_PYT2_validasi_usulan_dan_keputusan[asyncio] _______________
+
+klien = <httpx.AsyncClient object at 0x7f72d3096890>
+db = <motor.motor_asyncio.AsyncIOMotorDatabase object at 0x7f72e51ba7d0>
+adm = <function adm.<locals>._h at 0x7f72d1a14400>
+siap = {'a': 'ent_uji_pyt2a', 'b': 'ent_uji_pyt2b'}
+
+    async def test_PYT2_validasi_usulan_dan_keputusan(klien, db, adm, siap):
+        h = await adm(PT["a"])
+        url = f"/api/hr/employees/{K[1]}/compensation"
+        for tgl in ("2026-13-01", "16/11/2026", ""):
+            r = await klien.post(url, headers=h, json={"effective_from": tgl, "base_salary": 1, "reason": "uji"})
+>           assert r.status_code == 400 and r.json()["detail"] == "Tanggal berlaku harus berbentuk TTTT-BB-HH.", r.text
+E           AssertionError: {"detail":"Not Found"}
+E           assert (404 == 400)
+E            +  where 404 = <Response [404 Not Found]>.status_code
+
+tests_mem/test_PYT2_riwayat_kompensasi.py:411: AssertionError
+=========================== short test summary info ============================
+FAILED tests_mem/test_PYT2_riwayat_kompensasi.py::test_PYT2_U1_migrasi_dua_kali[asyncio]
+FAILED tests_mem/test_PYT2_riwayat_kompensasi.py::test_PYT2_U7a_pindah_pt_disahkan[asyncio]
+FAILED tests_mem/test_PYT2_riwayat_kompensasi.py::test_PYT2_U5_rapel_periode_terposting[asyncio]
+FAILED tests_mem/test_PYT2_riwayat_kompensasi.py::test_PYT2_U2a_kenaikan_desember_master_tetap[asyncio]
+FAILED tests_mem/test_PYT2_riwayat_kompensasi.py::test_PYT2_U3_tanpa_prorata_nilai_akhir_bulan[asyncio]
+FAILED tests_mem/test_PYT2_riwayat_kompensasi.py::test_PYT2_U6_rapel_ikut_proses_november[asyncio]
+FAILED tests_mem/test_PYT2_riwayat_kompensasi.py::test_PYT2_U4_prorata_hari_kalender_per_pt[asyncio]
+FAILED tests_mem/test_PYT2_riwayat_kompensasi.py::test_PYT2_U7b_pindah_pt_per_periode[asyncio]
+FAILED tests_mem/test_PYT2_riwayat_kompensasi.py::test_PYT2_U8_pajak_tahunan_per_pt[asyncio]
+FAILED tests_mem/test_PYT2_riwayat_kompensasi.py::test_PYT2_U2b_desember_dan_apply_effective[asyncio]
+FAILED tests_mem/test_PYT2_riwayat_kompensasi.py::test_PYT2_U14_invarian_master_turunan[asyncio]
+FAILED tests_mem/test_PYT2_riwayat_kompensasi.py::test_PYT2_U9_patch_ditolak_post_baris_pertama[asyncio]
+FAILED tests_mem/test_PYT2_riwayat_kompensasi.py::test_PYT2_U10_izin[asyncio]
+FAILED tests_mem/test_PYT2_riwayat_kompensasi.py::test_PYT2_U11_tanggal_kembar_409[asyncio]
+FAILED tests_mem/test_PYT2_riwayat_kompensasi.py::test_PYT2_U12_pt_tujuan_di_luar_cakupan[asyncio]
+FAILED tests_mem/test_PYT2_riwayat_kompensasi.py::test_PYT2_U13_kunci_prorata[asyncio]
+FAILED tests_mem/test_PYT2_riwayat_kompensasi.py::test_PYT2_validasi_usulan_dan_keputusan[asyncio]
+17 failed in 3.17s

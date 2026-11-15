@@ -1,0 +1,7 @@
+verify_role_gate_ui: [PASS] 31 cek lolos, 0 pelanggaran.
+verify_atomic_claim: [PASS] 160 cek lolos, 0 pelanggaran.
+verify_permission_checked: [PASS] 606 cek lolos, 0 pelanggaran.
+verify_posting_coverage: [PASS] 133 cek lolos, 0 pelanggaran.
+verify_cash_single_door: [PASS] 730 cek lolos, 0 pelanggaran.
+verify_detail_modal: [PASS] 30 cek lolos, 0 pelanggaran.
+verify_payment_vocab: [PASS] 1818 cek lolos, 0 pelanggaran.

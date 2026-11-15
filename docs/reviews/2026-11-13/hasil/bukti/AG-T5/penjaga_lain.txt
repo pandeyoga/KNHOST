@@ -1,0 +1,14 @@
+Penjaga statik lain (W = basis cd5aa59; T = 5f193df + AG-T5 (b)); keluaran baris PASS/FAIL:
+                         B        (a) W     (b) W     T
+verify_role_gate_ui      31/0     31/0      31/0      31/0
+verify_atomic_claim      160/0    160/0     160/0     160/0   (+ --self-test 64 kasus hijau di a, b, T)
+verify_permission_checked 606/0   608/0     609/0     609/0
+verify_posting_coverage  133/0    133/0     133/0     133/0
+verify_cash_single_door  728/0    729/0     729/0     729/0
+verify_detail_modal      30/0     30/0      30/0      30/0
+verify_payment_vocab     1814/0   1815/0    1815/0    1815/0
+verify_config_fallback   157/0    157/0     157/0     157/0   (--entity sama)
+verify_config_text       3276/0   3297/0    3297/0    3297/0
+verify_access_catalog_nav 0       0         0         0
+audit_config_wiring --strict  hijau di semua keadaan (salinan berjalur W/T)
+check_nav_map            PASS     PASS      PASS      PASS

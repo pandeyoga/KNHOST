@@ -1,0 +1,4 @@
+  ✕ balik jurnal: isian 'Ketik ulang nomor jurnal'; nomor huruf kecil diterima, digit saja ditolak (59 ms)
+  ✕ jurnal manual yang menjadi usulan (pintu jurnal dua orang): hasil menyebut layar Jurnal (15 ms)
+  ✕ Pusat Persetujuan: baris 'Tindakan asisten menunggu orang kedua' membuka Tanya KN dengan preset kotak (41 ms)
+Tests:       3 failed, 3 total

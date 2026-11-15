@@ -1,0 +1,8 @@
+      at Object.<anonymous> (src/features/__tests__/phase3P8Activation.test.js:16:1)
+
+
+Test Suites: 35 failed, 120 passed, 155 total
+Tests:       963 passed, 963 total
+Snapshots:   0 total
+Time:        55.476 s
+Ran all test suites.

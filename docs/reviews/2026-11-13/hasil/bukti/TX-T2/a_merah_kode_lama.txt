@@ -1,0 +1,319 @@
+.FFFFFFFFFFFFFFFFFF                                                      [100%]
+=================================== FAILURES ===================================
+_______________ test_TXT2_U2_pemicu_surat_jalan_draf_dari_jurnal _______________
+
+klien = <httpx.AsyncClient object at 0x7f5570218690>
+db = <motor.motor_asyncio.AsyncIOMotorDatabase object at 0x7f5582ce5b50>
+dunia = {'pid': 'prd_txt2_99fa4d61', 'wid': 'wh_txt2_878c1e61', 'pt3': 'ent_uji_tx2', 'adm': {'Authorization': 'Bearer tok_uji_1b8b64ae94534b20b5bb7f4e3986a195', 'X-Entity-Id': 'ent_ksc'}}
+
+    async def test_TXT2_U2_pemicu_surat_jalan_draf_dari_jurnal(klien, db, dunia):
+        from services import tax_invoice_service as tis
+        r = await pemicu(klien, dunia["adm"], "surat_jalan")
+>       assert r.status_code == 200, r.text
+E       AssertionError: {"detail":"Setting 'tax.pemicu_faktur' tidak ada di registry"}
+E       assert 404 == 200
+E        +  where 404 = <Response [404 Not Found]>.status_code
+
+tests_mem/test_TXT2_pemicu_faktur.py:172: AssertionError
+_______________ test_TXT2_U3_panggil_ulang_satu_draf_lalu_terbit _______________
+
+klien = <httpx.AsyncClient object at 0x7f5570218690>
+db = <motor.motor_asyncio.AsyncIOMotorDatabase object at 0x7f5582ce5b50>
+dunia = {'pid': 'prd_txt2_99fa4d61', 'wid': 'wh_txt2_878c1e61', 'pt3': 'ent_uji_tx2', 'adm': {'Authorization': 'Bearer tok_uji_1b8b64ae94534b20b5bb7f4e3986a195', 'X-Entity-Id': 'ent_ksc'}}
+
+    async def test_TXT2_U3_panggil_ulang_satu_draf_lalu_terbit(klien, db, dunia):
+        from services import tax_invoice_service as tis
+>       so, d = BAG["s1"], BAG["d_sj1"]
+                ^^^^^^^^^
+E       KeyError: 's1'
+
+tests_mem/test_TXT2_pemicu_faktur.py:196: KeyError
+_________________ test_TXT2_U5_pencocokan_selisih_terjelaskan __________________
+
+klien = <httpx.AsyncClient object at 0x7f5570218690>
+db = <motor.motor_asyncio.AsyncIOMotorDatabase object at 0x7f5582ce5b50>
+dunia = {'pid': 'prd_txt2_99fa4d61', 'wid': 'wh_txt2_878c1e61', 'pt3': 'ent_uji_tx2', 'adm': {'Authorization': 'Bearer tok_uji_1b8b64ae94534b20b5bb7f4e3986a195', 'X-Entity-Id': 'ent_ksc'}}
+capsys = <_pytest.capture.CaptureFixture object at 0x7f556f079910>
+
+    async def test_TXT2_U5_pencocokan_selisih_terjelaskan(klien, db, dunia, capsys):
+        from services import tax_invoice_service as tis
+>       so = BAG["s1"]
+             ^^^^^^^^^
+E       KeyError: 's1'
+
+tests_mem/test_TXT2_pemicu_faktur.py:215: KeyError
+_______________ test_TXT2_U6_jurnal_manual_ppn_belum_terjelaskan _______________
+
+klien = <httpx.AsyncClient object at 0x7f5570218690>
+db = <motor.motor_asyncio.AsyncIOMotorDatabase object at 0x7f5582ce5b50>
+dunia = {'pid': 'prd_txt2_99fa4d61', 'wid': 'wh_txt2_878c1e61', 'pt3': 'ent_uji_tx2', 'adm': {'Authorization': 'Bearer tok_uji_1b8b64ae94534b20b5bb7f4e3986a195', 'X-Entity-Id': 'ent_ksc'}}
+capsys = <_pytest.capture.CaptureFixture object at 0x7f556f1f8750>
+
+    async def test_TXT2_U6_jurnal_manual_ppn_belum_terjelaskan(klien, db, dunia, capsys):
+        je = await jurnal(KSC, now_iso(), [("1-1100", 50_000, 0), (PPN_OUT, 0, 50_000)], "PPN manual uji TX-T2",
+                          uid("man"))
+        try:
+>           rec = await cocok(klien, dunia["adm"], BAG["masa"])
+                                                   ^^^^^^^^^^^
+E           KeyError: 'masa'
+
+tests_mem/test_TXT2_pemicu_faktur.py:241: KeyError
+________________ test_TXT2_U9_nota_kredit_ber_ppn_dokumen_retur ________________
+
+klien = <httpx.AsyncClient object at 0x7f5570218690>
+db = <motor.motor_asyncio.AsyncIOMotorDatabase object at 0x7f5582ce5b50>
+dunia = {'pid': 'prd_txt2_99fa4d61', 'wid': 'wh_txt2_878c1e61', 'pt3': 'ent_uji_tx2', 'adm': {'Authorization': 'Bearer tok_uji_1b8b64ae94534b20b5bb7f4e3986a195', 'X-Entity-Id': 'ent_ksc'}}
+
+    async def test_TXT2_U9_nota_kredit_ber_ppn_dokumen_retur(klien, db, dunia):
+        from services import credit_note_service as cns, tax_invoice_service as tis
+>       so = await db.sales_orders.find_one({"id": BAG["s1"]["id"]}, {"_id": 0})
+                                                   ^^^^^^^^^
+E       KeyError: 's1'
+
+tests_mem/test_TXT2_pemicu_faktur.py:261: KeyError
+________ test_TXT2_U4_surat_jalan_kedua_terbit_jumlah_sama_ppn_pesanan _________
+
+klien = <httpx.AsyncClient object at 0x7f5570218690>
+db = <motor.motor_asyncio.AsyncIOMotorDatabase object at 0x7f5582ce5b50>
+dunia = {'pid': 'prd_txt2_99fa4d61', 'wid': 'wh_txt2_878c1e61', 'pt3': 'ent_uji_tx2', 'adm': {'Authorization': 'Bearer tok_uji_1b8b64ae94534b20b5bb7f4e3986a195', 'X-Entity-Id': 'ent_ksc'}}
+
+    async def test_TXT2_U4_surat_jalan_kedua_terbit_jumlah_sama_ppn_pesanan(klien, db, dunia):
+        from services import tax_invoice_service as tis
+>       so = BAG["s1"]
+             ^^^^^^^^^
+E       KeyError: 's1'
+
+tests_mem/test_TXT2_pemicu_faktur.py:297: KeyError
+__________ test_TXT2_U8_data_pajak_belum_lengkap_ditolak_lalu_lengkap __________
+
+klien = <httpx.AsyncClient object at 0x7f5570218690>
+db = <motor.motor_asyncio.AsyncIOMotorDatabase object at 0x7f5582ce5b50>
+dunia = {'pid': 'prd_txt2_99fa4d61', 'wid': 'wh_txt2_878c1e61', 'pt3': 'ent_uji_tx2', 'adm': {'Authorization': 'Bearer tok_uji_1b8b64ae94534b20b5bb7f4e3986a195', 'X-Entity-Id': 'ent_ksc'}}
+
+    async def test_TXT2_U8_data_pajak_belum_lengkap_ditolak_lalu_lengkap(klien, db, dunia):
+        from services import tax_invoice_service as tis
+        so = await pesanan(db, dunia, customer="cus_txt2_kosong")
+        await kirim(db, dunia, so, QTY, "SJ-1", penutup=True)
+>       d = await tis.draft_for_shipment(so["id"], "SJ-1")
+                  ^^^^^^^^^^^^^^^^^^^^^^
+E       AttributeError: module 'services.tax_invoice_service' has no attribute 'draft_for_shipment'
+
+tests_mem/test_TXT2_pemicu_faktur.py:315: AttributeError
+________ test_TXT2_U10_terbit_per_pesanan_ditolak_di_pt_per_surat_jalan ________
+
+klien = <httpx.AsyncClient object at 0x7f5570218690>
+db = <motor.motor_asyncio.AsyncIOMotorDatabase object at 0x7f5582ce5b50>
+dunia = {'pid': 'prd_txt2_99fa4d61', 'wid': 'wh_txt2_878c1e61', 'pt3': 'ent_uji_tx2', 'adm': {'Authorization': 'Bearer tok_uji_1b8b64ae94534b20b5bb7f4e3986a195', 'X-Entity-Id': 'ent_ksc'}}
+
+    async def test_TXT2_U10_terbit_per_pesanan_ditolak_di_pt_per_surat_jalan(klien, db, dunia):
+>       r = await klien.post(f"/api/sales-orders/{BAG['s1']['id']}/tax-invoice", json={}, headers=dunia["adm"])
+                                                  ^^^^^^^^^
+E       KeyError: 's1'
+
+tests_mem/test_TXT2_pemicu_faktur.py:333: KeyError
+_____________ test_TXT2_U11_pemicu_uang_muka_ditolak_saat_disimpan _____________
+
+klien = <httpx.AsyncClient object at 0x7f5570218690>
+db = <motor.motor_asyncio.AsyncIOMotorDatabase object at 0x7f5582ce5b50>
+dunia = {'pid': 'prd_txt2_99fa4d61', 'wid': 'wh_txt2_878c1e61', 'pt3': 'ent_uji_tx2', 'adm': {'Authorization': 'Bearer tok_uji_1b8b64ae94534b20b5bb7f4e3986a195', 'X-Entity-Id': 'ent_ksc'}}
+
+    async def test_TXT2_U11_pemicu_uang_muka_ditolak_saat_disimpan(klien, db, dunia):
+        from services.config_resolver import value_of
+        r = await pemicu(klien, dunia["adm"], "uang_muka")
+>       assert r.status_code == 400, r.text
+E       AssertionError: {"detail":"Setting 'tax.pemicu_faktur' tidak ada di registry"}
+E       assert 404 == 400
+E        +  where 404 = <Response [404 Not Found]>.status_code
+
+tests_mem/test_TXT2_pemicu_faktur.py:341: AssertionError
+_________________ test_TXT2_U12_pt_lain_dan_non_pkp_tanpa_draf _________________
+
+klien = <httpx.AsyncClient object at 0x7f5570218690>
+db = <motor.motor_asyncio.AsyncIOMotorDatabase object at 0x7f5582ce5b50>
+dunia = {'pid': 'prd_txt2_99fa4d61', 'wid': 'wh_txt2_878c1e61', 'pt3': 'ent_uji_tx2', 'adm': {'Authorization': 'Bearer tok_uji_1b8b64ae94534b20b5bb7f4e3986a195', 'X-Entity-Id': 'ent_ksc'}}
+
+    async def test_TXT2_U12_pt_lain_dan_non_pkp_tanpa_draf(klien, db, dunia):
+        from services import tax_invoice_service as tis
+        from services.config_resolver import value_of
+        so3 = await pesanan(db, dunia, entity=dunia["pt3"])
+        await kirim(db, dunia, so3, QTY, "SJ-1", penutup=True)
+>       assert await value_of(KUNCI, {"entity_id": dunia["pt3"]}) == "pesanan"
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests_mem/test_TXT2_pemicu_faktur.py:352: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+services/config_resolver.py:325: in value_of
+    return (await resolve(key, ctx))["value"]
+            ^^^^^^^^^^^^^^^^^^^^^^^
+services/config_resolver.py:278: in resolve
+    entry = registry.require(key)
+            ^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+key = 'tax.pemicu_faktur'
+
+    def require(key: str) -> Dict[str, Any]:
+        entry = _REGISTRY.get(key)
+        if not entry:
+>           raise KeyError(f"Setting '{key}' tidak ada di registry")
+E           KeyError: "Setting 'tax.pemicu_faktur' tidak ada di registry"
+
+config_registry.py:399: KeyError
+________________ test_TXT2_U13_masa_dilaporkan_draf_tetap_draf _________________
+
+klien = <httpx.AsyncClient object at 0x7f5570218690>
+db = <motor.motor_asyncio.AsyncIOMotorDatabase object at 0x7f5582ce5b50>
+dunia = {'pid': 'prd_txt2_99fa4d61', 'wid': 'wh_txt2_878c1e61', 'pt3': 'ent_uji_tx2', 'adm': {'Authorization': 'Bearer tok_uji_1b8b64ae94534b20b5bb7f4e3986a195', 'X-Entity-Id': 'ent_ksc'}}
+
+    async def test_TXT2_U13_masa_dilaporkan_draf_tetap_draf(klien, db, dunia):
+        from services import tax_invoice_service as tis
+        from services.book_date import periode_buku
+        so = await pesanan(db, dunia)
+        await kirim(db, dunia, so, QTY, "SJ-1", penutup=True)
+>       d = await tis.draft_for_shipment(so["id"], "SJ-1")
+                  ^^^^^^^^^^^^^^^^^^^^^^
+E       AttributeError: module 'services.tax_invoice_service' has no attribute 'draft_for_shipment'
+
+tests_mem/test_TXT2_pemicu_faktur.py:374: AttributeError
+________________________ test_TXT2_U14_izin_terbit_draf ________________________
+
+klien = <httpx.AsyncClient object at 0x7f5570218690>
+db = <motor.motor_asyncio.AsyncIOMotorDatabase object at 0x7f5582ce5b50>
+dunia = {'pid': 'prd_txt2_99fa4d61', 'wid': 'wh_txt2_878c1e61', 'pt3': 'ent_uji_tx2', 'adm': {'Authorization': 'Bearer tok_uji_1b8b64ae94534b20b5bb7f4e3986a195', 'X-Entity-Id': 'ent_ksc'}}
+akun = <function akun.<locals>._akun at 0x7f556f0763e0>
+sesi = <function sesi.<locals>._sesi at 0x7f556f076520>
+peran_tanpa_acuan = <function peran_tanpa_acuan.<locals>._peran at 0x7f556ee93600>
+peran_manajer_kosong = <function peran_manajer_kosong.<locals>._peran at 0x7f556ee93740>
+peran_sopir = 'driver'
+
+    async def test_TXT2_U14_izin_terbit_draf(klien, db, dunia, akun, sesi, peran_tanpa_acuan, peran_manajer_kosong,
+                                             peran_sopir):
+>       d = BAG["d_u13"]
+            ^^^^^^^^^^^^
+E       KeyError: 'd_u13'
+
+tests_mem/test_TXT2_pemicu_faktur.py:395: KeyError
+___________________ test_TXT2_U16_putaran_pengaturan_pemicu ____________________
+
+klien = <httpx.AsyncClient object at 0x7f5570218690>
+db = <motor.motor_asyncio.AsyncIOMotorDatabase object at 0x7f5582ce5b50>
+dunia = {'pid': 'prd_txt2_99fa4d61', 'wid': 'wh_txt2_878c1e61', 'pt3': 'ent_uji_tx2', 'adm': {'Authorization': 'Bearer tok_uji_1b8b64ae94534b20b5bb7f4e3986a195', 'X-Entity-Id': 'ent_ksc'}}
+
+    async def test_TXT2_U16_putaran_pengaturan_pemicu(klien, db, dunia):
+        import config_registry as registry
+        from services.config_resolver import value_of
+>       e = registry.require(KUNCI)
+            ^^^^^^^^^^^^^^^^^^^^^^^
+
+tests_mem/test_TXT2_pemicu_faktur.py:413: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+key = 'tax.pemicu_faktur'
+
+    def require(key: str) -> Dict[str, Any]:
+        entry = _REGISTRY.get(key)
+        if not entry:
+>           raise KeyError(f"Setting '{key}' tidak ada di registry")
+E           KeyError: "Setting 'tax.pemicu_faktur' tidak ada di registry"
+
+config_registry.py:399: KeyError
+____________ test_TXT2_a_buang_draf_alasan_wajib_tidak_dibuat_ulang ____________
+
+klien = <httpx.AsyncClient object at 0x7f5570218690>
+db = <motor.motor_asyncio.AsyncIOMotorDatabase object at 0x7f5582ce5b50>
+dunia = {'pid': 'prd_txt2_99fa4d61', 'wid': 'wh_txt2_878c1e61', 'pt3': 'ent_uji_tx2', 'adm': {'Authorization': 'Bearer tok_uji_1b8b64ae94534b20b5bb7f4e3986a195', 'X-Entity-Id': 'ent_ksc'}}
+
+    async def test_TXT2_a_buang_draf_alasan_wajib_tidak_dibuat_ulang(klien, db, dunia):
+        from services import tax_invoice_service as tis
+        so = await pesanan(db, dunia)
+        await kirim(db, dunia, so, QTY, "SJ-9", penutup=True)
+>       d = await tis.draft_for_shipment(so["id"], "SJ-9")
+                  ^^^^^^^^^^^^^^^^^^^^^^
+E       AttributeError: module 'services.tax_invoice_service' has no attribute 'draft_for_shipment'
+
+tests_mem/test_TXT2_pemicu_faktur.py:440: AttributeError
+___________________ test_TXT2_a_bangun_ulang_draf_idempoten ____________________
+
+klien = <httpx.AsyncClient object at 0x7f5570218690>
+db = <motor.motor_asyncio.AsyncIOMotorDatabase object at 0x7f5582ce5b50>
+dunia = {'pid': 'prd_txt2_99fa4d61', 'wid': 'wh_txt2_878c1e61', 'pt3': 'ent_uji_tx2', 'adm': {'Authorization': 'Bearer tok_uji_1b8b64ae94534b20b5bb7f4e3986a195', 'X-Entity-Id': 'ent_ksc'}}
+
+    async def test_TXT2_a_bangun_ulang_draf_idempoten(klien, db, dunia):
+        so = await pesanan(db, dunia)
+        await kirim(db, dunia, so, QTY, "SJ-1", penutup=True)   # surat jalan berjurnal tanpa draf (kait (b) belum ada)
+        assert await jumlah("tax_invoices", {"order_id": so["id"]}) == 0
+>       r = await klien.post("/api/tax-invoices/drafts/rebuild", json={"period": BAG["masa"]}, headers=dunia["adm"])
+                                                                                 ^^^^^^^^^^^
+E       KeyError: 'masa'
+
+tests_mem/test_TXT2_pemicu_faktur.py:460: KeyError
+____________________ test_TXT2_a_saringan_status_dan_jenis _____________________
+
+klien = <httpx.AsyncClient object at 0x7f5570218690>
+db = <motor.motor_asyncio.AsyncIOMotorDatabase object at 0x7f5582ce5b50>
+dunia = {'pid': 'prd_txt2_99fa4d61', 'wid': 'wh_txt2_878c1e61', 'pt3': 'ent_uji_tx2', 'adm': {'Authorization': 'Bearer tok_uji_1b8b64ae94534b20b5bb7f4e3986a195', 'X-Entity-Id': 'ent_ksc'}}
+
+    async def test_TXT2_a_saringan_status_dan_jenis(klien, db, dunia):
+        r = await klien.get("/api/tax-invoices", params={"status": "draf"}, headers=dunia["adm"])
+>       assert r.status_code == 200 and r.json() and {f["status"] for f in r.json()} == {"draf"}, r.text
+E       AssertionError: []
+E       assert (200 == 200 and [])
+E        +  where 200 = <Response [200 OK]>.status_code
+E        +  and   [] = json()
+E        +    where json = <Response [200 OK]>.json
+
+tests_mem/test_TXT2_pemicu_faktur.py:474: AssertionError
+___________________ test_TXT2_a_pencocokan_semua_pt_ditolak ____________________
+
+klien = <httpx.AsyncClient object at 0x7f5570218690>
+db = <motor.motor_asyncio.AsyncIOMotorDatabase object at 0x7f5582ce5b50>
+dunia = {'pid': 'prd_txt2_99fa4d61', 'wid': 'wh_txt2_878c1e61', 'pt3': 'ent_uji_tx2', 'adm': {'Authorization': 'Bearer tok_uji_1b8b64ae94534b20b5bb7f4e3986a195', 'X-Entity-Id': 'ent_ksc'}}
+
+    async def test_TXT2_a_pencocokan_semua_pt_ditolak(klien, db, dunia):
+>       r = await klien.get("/api/tax/output-reconciliation", params={"period": BAG["masa"], "entity_id": "all"},
+                                                                                ^^^^^^^^^^^
+                            headers=dunia["adm"])
+E       KeyError: 'masa'
+
+tests_mem/test_TXT2_pemicu_faktur.py:483: KeyError
+________________ test_TXT2_a_draf_tidak_lewat_batal_ganti_nsfp _________________
+
+klien = <httpx.AsyncClient object at 0x7f5570218690>
+db = <motor.motor_asyncio.AsyncIOMotorDatabase object at 0x7f5582ce5b50>
+dunia = {'pid': 'prd_txt2_99fa4d61', 'wid': 'wh_txt2_878c1e61', 'pt3': 'ent_uji_tx2', 'adm': {'Authorization': 'Bearer tok_uji_1b8b64ae94534b20b5bb7f4e3986a195', 'X-Entity-Id': 'ent_ksc'}}
+
+    async def test_TXT2_a_draf_tidak_lewat_batal_ganti_nsfp(klien, db, dunia):
+        so = await pesanan(db, dunia)
+        await kirim(db, dunia, so, QTY, "SJ-1", penutup=True)
+        from services import tax_invoice_service as tis
+>       d = await tis.draft_for_shipment(so["id"], "SJ-1")
+                  ^^^^^^^^^^^^^^^^^^^^^^
+E       AttributeError: module 'services.tax_invoice_service' has no attribute 'draft_for_shipment'
+
+tests_mem/test_TXT2_pemicu_faktur.py:492: AttributeError
+=============================== warnings summary ===============================
+../../venv311/lib/python3.11/site-packages/starlette/formparsers.py:12
+  /tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/venv311/lib/python3.11/site-packages/starlette/formparsers.py:12: PendingDeprecationWarning: Please use `import python_multipart` instead.
+    import multipart
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests_mem/test_TXT2_pemicu_faktur.py::test_TXT2_U2_pemicu_surat_jalan_draf_dari_jurnal
+FAILED tests_mem/test_TXT2_pemicu_faktur.py::test_TXT2_U3_panggil_ulang_satu_draf_lalu_terbit
+FAILED tests_mem/test_TXT2_pemicu_faktur.py::test_TXT2_U5_pencocokan_selisih_terjelaskan
+FAILED tests_mem/test_TXT2_pemicu_faktur.py::test_TXT2_U6_jurnal_manual_ppn_belum_terjelaskan
+FAILED tests_mem/test_TXT2_pemicu_faktur.py::test_TXT2_U9_nota_kredit_ber_ppn_dokumen_retur
+FAILED tests_mem/test_TXT2_pemicu_faktur.py::test_TXT2_U4_surat_jalan_kedua_terbit_jumlah_sama_ppn_pesanan
+FAILED tests_mem/test_TXT2_pemicu_faktur.py::test_TXT2_U8_data_pajak_belum_lengkap_ditolak_lalu_lengkap
+FAILED tests_mem/test_TXT2_pemicu_faktur.py::test_TXT2_U10_terbit_per_pesanan_ditolak_di_pt_per_surat_jalan
+FAILED tests_mem/test_TXT2_pemicu_faktur.py::test_TXT2_U11_pemicu_uang_muka_ditolak_saat_disimpan
+FAILED tests_mem/test_TXT2_pemicu_faktur.py::test_TXT2_U12_pt_lain_dan_non_pkp_tanpa_draf
+FAILED tests_mem/test_TXT2_pemicu_faktur.py::test_TXT2_U13_masa_dilaporkan_draf_tetap_draf
+FAILED tests_mem/test_TXT2_pemicu_faktur.py::test_TXT2_U14_izin_terbit_draf
+FAILED tests_mem/test_TXT2_pemicu_faktur.py::test_TXT2_U16_putaran_pengaturan_pemicu
+FAILED tests_mem/test_TXT2_pemicu_faktur.py::test_TXT2_a_buang_draf_alasan_wajib_tidak_dibuat_ulang
+FAILED tests_mem/test_TXT2_pemicu_faktur.py::test_TXT2_a_bangun_ulang_draf_idempoten
+FAILED tests_mem/test_TXT2_pemicu_faktur.py::test_TXT2_a_saringan_status_dan_jenis
+FAILED tests_mem/test_TXT2_pemicu_faktur.py::test_TXT2_a_pencocokan_semua_pt_ditolak
+FAILED tests_mem/test_TXT2_pemicu_faktur.py::test_TXT2_a_draf_tidak_lewat_batal_ganti_nsfp
+18 failed, 1 passed, 1 warning in 1.83s

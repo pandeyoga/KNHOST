@@ -1,0 +1,30 @@
+E       AssertionError: {"detail":"Tindakan ini tidak bisa dilakukan lewat asisten. Lakukan di layarnya."}
+E       assert (400 == 400 and 'Tindakan ini... di layarnya.' == 'Jurnal tidak...redit 90.000.'
+E        +  where 400 = <Response [400 Bad Request]>.status_code
+E         
+E         - Jurnal tidak seimbang: debit 100.000 ≠ kredit 90.000.
+E         + Tindakan ini tidak bisa dilakukan lewat asisten. Lakukan di layarnya.)
+E       AssertionError: {"detail":"Tindakan ini tidak bisa dilakukan lewat asisten. Lakukan di layarnya."}
+E       assert 400 == 200
+E        +  where 400 = <Response [400 Bad Request]>.status_code
+E       KeyError: 'je'
+E       ImportError: cannot import name 'MSG_IZIN_C_POST' from 'services.ai_cards' (/tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/wt21/backend/services/ai_cards.py)
+E       StopIteration
+E                   RuntimeError: coroutine raised StopIteration
+E                   AssertionError: ('', 'L1', 'Asisten hanya boleh menulis lewat pintu kartu tindakan yang terdaftar.')
+E                   assert (403, 'Asiste...g terdaftar.') == (403, 'Tutup ... Tutup Buku.')
+E                     
+E                     At index 1 diff: 'Asisten hanya boleh menulis lewat pintu kartu tindakan yang terdaftar.' != 'Tutup buku dan membukanya kembali hanya dilakukan di layar Tutup Buku.'
+E                     Use -v to get more diff
+E       AssertionError: assert {'journal_man...rnal_reverse'} <= {'ar_receipt_...up_note', ...}
+E         
+E         Extra items in the left set:
+E         'journal_manual'
+E         'journal_reverse'
+FAILED tests_mem/test_AGT5_jurnal_dan_antrean.py::test_AGT5_U12_jurnal_manual_seimbang
+FAILED tests_mem/test_AGT5_jurnal_dan_antrean.py::test_AGT5_U13_akun_kontrol_ditolak_pintu
+FAILED tests_mem/test_AGT5_jurnal_dan_antrean.py::test_AGT5_balik_jurnal - Ke...
+FAILED tests_mem/test_AGT5_jurnal_dan_antrean.py::test_AGT5_izin_post - Impor...
+FAILED tests_mem/test_AGT5_jurnal_dan_antrean.py::test_AGT5_U3_antrean_pusat_persetujuan
+FAILED tests_mem/test_AGT5_jurnal_dan_antrean.py::test_AGT5_U14b_larangan_semua_tulisan
+FAILED tests_mem/test_AGT5_jurnal_dan_antrean.py::test_AGT5_U15b_registry_jurnal

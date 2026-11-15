@@ -1,0 +1,10 @@
+  ✕ kartu pending yang akan menunggu orang kedua: kalimatnya tertulis di bawah tombol; ketik ulang nominal (105 ms)
+  ✓ tanpa aturan dua orang: tidak ada kalimat menunggu orang kedua (23 ms)
+  ✕ orang kedua: alasan pembuat, Tolak butuh alasan tertulis, Setujui → pop-up nominal + PT + pembuat (8 ms)
+  ✕ orang kedua menolak dengan alasan (16 ms)
+  ✕ pembuat & pengguna tanpa wewenang: tanpa tombol putus, alasan tertulis; pembuat bisa menarik kartu (13 ms)
+  ✕ tab Tindakan dibuka di kotak 'Menunggu orang lain'; kolom Berlaku sampai terisi untuk kartu menunggu (11 ms)
+  ✕ Akun & Akses: tiga pilihan golongan; memilih uang keluar dan jurnal mengirim classes B + C (54 ms)
+  ✕ Akun & Akses: tanpa ai.configure pilihan golongan hanya-baca (21 ms)
+Test Suites: 1 failed, 1 total
+Tests:       7 failed, 1 passed, 8 total

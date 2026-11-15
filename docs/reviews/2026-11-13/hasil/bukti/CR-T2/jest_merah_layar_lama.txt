@@ -1,0 +1,5 @@
+    ✕ kolom spesifikasi, label baris, jatuh tempo tertua dulu, telat ikon + teks, catatan kaki (187 ms)
+    ✕ pesanan dan jurnal terbuka lewat Jejak Dokumen (L8) (47 ms)
+    ✕ kosong: hanya bagian belum dikirim → 'Tidak ada tagihan terbuka.' (33 ms)
+    ✕ memuat dan galat dibedakan dari kosong (37 ms)
+Tests:       4 failed, 4 total

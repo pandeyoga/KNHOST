@@ -1,0 +1,30 @@
+_______ ERROR at setup of test_AGT5_U16_kode_terlarang_lewat_percakapan ________
+E       AssertionError: {"detail":"Aksi ['pay', 'approve'] tidak berlaku untuk “Asisten Keuangan”."}
+tests_mem/conftest.py:158: AssertionError
+_________ ERROR at setup of test_AGT5_U17_sisipan_perintah_di_tagihan __________
+E       AssertionError: {"detail":"Aksi ['pay', 'approve'] tidak berlaku untuk “Asisten Keuangan”."}
+tests_mem/conftest.py:158: AssertionError
+____________ ERROR at setup of test_AGT5_U18_pt_lain_dan_sakelar_pt ____________
+E       AssertionError: {"detail":"Aksi ['pay', 'approve'] tidak berlaku untuk “Asisten Keuangan”."}
+tests_mem/conftest.py:158: AssertionError
+E       ModuleNotFoundError: No module named 'services.ai_card_rules'
+tests_mem/test_AGT5_kartu_uang_keluar.py:481: ModuleNotFoundError
+FAILED tests_mem/test_AGT5_kartu_uang_keluar.py::test_AGT5_U15_registry_bersih
+ERROR tests_mem/test_AGT5_kartu_uang_keluar.py::test_AGT5_U1_siapkan_bayar_tagihan
+ERROR tests_mem/test_AGT5_kartu_uang_keluar.py::test_AGT5_U2_setujui_bayar_satu_orang
+ERROR tests_mem/test_AGT5_kartu_uang_keluar.py::test_AGT5_U3_dua_orang_menunggu
+ERROR tests_mem/test_AGT5_kartu_uang_keluar.py::test_AGT5_U4_pembuat_bukan_orang_kedua
+ERROR tests_mem/test_AGT5_kartu_uang_keluar.py::test_AGT5_U5_tanpa_izin_menyetujui
+ERROR tests_mem/test_AGT5_kartu_uang_keluar.py::test_AGT5_U6_orang_kedua_menjalankan
+ERROR tests_mem/test_AGT5_kartu_uang_keluar.py::test_AGT5_U7_batas_nominal - ...
+ERROR tests_mem/test_AGT5_kartu_uang_keluar.py::test_AGT5_U10_menunggu_kedaluwarsa
+ERROR tests_mem/test_AGT5_kartu_uang_keluar.py::test_AGT5_U11_data_berubah_stale
+ERROR tests_mem/test_AGT5_kartu_uang_keluar.py::test_AGT5_bayar_kontrabon - A...
+ERROR tests_mem/test_AGT5_kartu_uang_keluar.py::test_AGT5_kas_manual - Assert...
+ERROR tests_mem/test_AGT5_kartu_uang_keluar.py::test_AGT5_izin_dan_sakelar - ...
+ERROR tests_mem/test_AGT5_kartu_uang_keluar.py::test_AGT5_tolak_dan_tanpa_izin_pintu
+ERROR tests_mem/test_AGT5_kartu_uang_keluar.py::test_AGT5_U14_larangan_selfapi
+ERROR tests_mem/test_AGT5_kartu_uang_keluar.py::test_AGT5_U16_kode_terlarang_lewat_percakapan
+ERROR tests_mem/test_AGT5_kartu_uang_keluar.py::test_AGT5_U17_sisipan_perintah_di_tagihan
+ERROR tests_mem/test_AGT5_kartu_uang_keluar.py::test_AGT5_U18_pt_lain_dan_sakelar_pt
+1 failed, 3 warnings, 17 errors in 8.27s

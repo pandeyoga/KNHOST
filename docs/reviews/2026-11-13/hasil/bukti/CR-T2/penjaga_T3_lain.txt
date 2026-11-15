@@ -1,0 +1,17 @@
+verify_role_gate_ui: [PASS] 31 cek lolos, 0 pelanggaran.
+verify_payment_vocab: [PASS] 1821 cek lolos, 0 pelanggaran.
+verify_access_catalog_nav: verify_access_catalog_nav: 0 temuan
+verify_posting_coverage: [PASS] 134 cek lolos, 0 pelanggaran.
+verify_cash_single_door: [PASS] 733 cek lolos, 0 pelanggaran.
+verify_permission_checked: [PASS] 606 cek lolos, 0 pelanggaran.
+verify_detail_modal: [PASS] 30 cek lolos, 0 pelanggaran.
+verify_atomic_claim: [PASS] 160 cek lolos, 0 pelanggaran.
+verify_codebase_map: [PASS] 5 cek lolos, 0 pelanggaran.
+atomic self-test:   SELF-TEST HIJAU (64 kasus, 0 gagal).
+posting self-test:   SELF-TEST HIJAU (0 gagal).
+cash self-test:   SELF-TEST HIJAU (0 gagal).
+config_fallback: [PASS] 158 cek lolos, 0 pelanggaran.
+config_fallback --entity: [PASS] 158 cek lolos, 0 pelanggaran.
+audit_config_wiring --strict: ✅ INV-CFG: setiap setting terdeklarasi punya pembaca kode DAN jalur ubah yang nyata; tidak ada editor ganda.
+check_nav_map: ✓ NAV MAP: PASS
+inventaris multi-koleksi: tanpa selisih

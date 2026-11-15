@@ -1,0 +1,3 @@
+FAILED tests_mem/test_KPT5b_pengaturan.py::test_KPT5_U14_izin[asyncio] - Asse...
+FAILED tests_mem/test_KPT5b_pengaturan.py::test_KPT5_daftar_lengkap_dan_contoh_berikutnya[asyncio]
+2 failed, 1942 passed, 2 skipped, 2 xfailed, 12 warnings in 1475.65s (0:24:35)

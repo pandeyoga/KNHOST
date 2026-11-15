@@ -1,0 +1,18 @@
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/test_bp_PYT2_migrasi.py::test_U1_migrasi_baca_saja_data_acuan - ...
+FAILED tests/test_bp_PYT2_migrasi.py::test_U11_dua_pengesahan_bersamaan_satu_baris_sah
+FAILED tests/test_bp_TXT2_draf_bersamaan_mongo.py::test_TXT2_U17_dua_draf_bersamaan_satu_draf
+FAILED tests/test_bp_PYT1_data_acuan.py::test_U2_slip_data_acuan_sama_dengan_komponen
+FAILED tests/test_bp_PYT1_data_acuan.py::test_U14_dua_proses_reguler_bersamaan_satu_proses
+5 failed, 18 passed, 2 skipped, 1 warning in 89.97s (0:01:29)
+
+Diulang per berkas (lingkungan A, data acuan sesudah restore_demo, kode 38c715f):
+test_bp_PYT2_migrasi: 2 passed, 1 skipped
+test_bp_TXT2_draf_bersamaan_mongo: 1 passed
+test_bp_PYT1_data_acuan: 2 passed
+Catatan: kelima kegagalan di jalan gabungan = modul lapis A berbasis asyncio (PYT1/PYT2/TXT2) di SATU proses pytest —
+klien Motor `db.db` terikat ke event loop modul pertama, modul berikutnya membuat loop baru ("Event loop is closed" /
+"attached to a different loop"). Per berkas semuanya hijau; gate tidak menjalankan berkas-berkas ini bersama.
+Jalan gabungan yang lulus: CRT2 jadwal bersamaan, PMT4 terima bersamaan, PK14 indeks wajib (34), MNT1 menu keuangan,
+g3_phase03, AGT5 orang kedua bersamaan, AGT3 kartu bersamaan, PK25 selesai bersamaan (18 lulus, 2 dilewati).

@@ -85,28 +85,28 @@ Papan kerja agen pelaksana. Aturan mengubahnya: `00_ATURAN_EKSEKUSI.md` §5. Uru
 | 78 | AG-T1 | Asisten: rapikan kartu tindakan yang ada | PK-02 | selesai | 3e1a42c | [AG-T1](../reviews/2026-11-13/hasil/AG-T1.md) |  |
 | 79 | AG-T2 | Asisten: baca keuangan lewat pintu aplikasi | AG-T1, PK-09, PK-16, PK-17, PR-T3 | selesai | 4ffc907 | [AG-T2](../reviews/2026-11-13/hasil/AG-T2.md) |  |
 | 80 | PY-T1 | Komponen gaji per PT, antrean masukan, jenis proses gaji | PK-22 | selesai | 64143aa | [PY-T1](../reviews/2026-11-13/hasil/PY-T1.md) | H4: tarif PPh 21 tabel bawaan PK-46 belum diverifikasi; H3/H6: migrasi proses gaji lama (migrasi_pyt1_proses_gaji.py --apply) |
-| 81 | PY-T2 | Riwayat kompensasi dan penugasan PT | PY-T1 | dikerjakan |  |  | Dikerjakan paralel (worktree terpisah), 15 Nov |
+| 81 | PY-T2 | Riwayat kompensasi dan penugasan PT | PY-T1 | selesai | 82ef1bb | [PY-T2](../reviews/2026-11-13/hasil/PY-T2.md) | H3: migrasi riwayat kompensasi (migrate_hr_compensation_py_t2.py --apply) di data nyata; regresi lembur/komisi slip reguler (ditemukan PY-T3) diperbaiki PY-T3 (a) — proses gaji yang dihitung dengan PY-T2 dihitung ulang/susulan (H3) |
 | 82 | PY-T3 | Aturan hitung gaji dari pengaturan | PY-T1 | dikerjakan |  |  | Dikerjakan paralel (worktree terpisah), 15 Nov |
-| 83 | PY-T4 | Bayar gaji dan setor kewajiban | PY-T1, PM-T1 | siap |  |  |  |
+| 83 | PY-T4 | Bayar gaji dan setor kewajiban | PY-T1, PM-T1 | dikerjakan |  |  | Dikerjakan paralel (worktree terpisah), 15 Nov |
 | 84 | KM-T3 | Lembar Insentif (dokumen keputusan) | KM-T2, KF-T6 | menunggu |  |  |  |
 | 85 | KM-T4 | Lembar Insentif masuk gaji dan buku besar | KM-T3, PY-T1 | menunggu |  |  | Titik henti H5 |
 | 86 | KM-T5 | Kartu "Capaian & Insentif Saya"; layar lama dipindah | KM-T4, MN-T1 | menunggu |  |  |  |
 | 87 | PY-T5 | Swalayan karyawan: slip setelah dibayar | PY-T1 | siap |  |  |  |
-| 88 | CR-T2 | Jadwal tagihan dan saldo piutang tersimpan | PK-19, PK-41 | dikerjakan |  |  | Dikerjakan paralel (worktree terpisah), 15 Nov |
-| 89 | CR-T3 | Gerbang kredit di empat titik; izin kredit | CR-T1, CR-T2, PK-38 | menunggu |  |  | Titik henti H5 |
-| 90 | CR-T4 | Denda berlapis PT → pelanggan | PK-08, CR-T2 | menunggu |  |  |  |
-| 91 | CR-T5 | Daftar kerja kredit dan rekening koran pelanggan | CR-T2 | menunggu |  |  |  |
+| 88 | CR-T2 | Jadwal tagihan dan saldo piutang tersimpan | PK-19, PK-41 | selesai | 76a337d | [CR-T2](../reviews/2026-11-13/hasil/CR-T2.md) | H3: build_billing_schedule.py --apply di data nyata (dry-run data acuan: 0 pelanggan berubah status kredit) |
+| 89 | CR-T3 | Gerbang kredit di empat titik; izin kredit | CR-T1, CR-T2, PK-38 | siap |  |  | Titik henti H5 |
+| 90 | CR-T4 | Denda berlapis PT → pelanggan | PK-08, CR-T2 | siap |  |  |  |
+| 91 | CR-T5 | Daftar kerja kredit dan rekening koran pelanggan | CR-T2 | siap |  |  |  |
 | 92 | PM-T2 | Cara bayar dan rekening tujuan di pesanan; instruksi bayar | PM-T1 | selesai | 73314a8 | [PM-T2](../reviews/2026-11-13/hasil/PM-T2.md) |  |
 | 93 | PM-T3 | Kwitansi ber-rekening; terverifikasi bank | PK-19, PK-20, PK-21, PM-T2 | selesai | a2c1e19 | [PM-T3](../reviews/2026-11-13/hasil/PM-T3.md) | H3: isi rekening kas kwitansi lama (backfill_receipt_accounts.py --terapkan) di data nyata sebelum (b) dipakai PT berekening ganda |
-| 94 | PM-T4 | Titipan tunai sales dan setoran | PM-T3 | dikerjakan |  |  | Dikerjakan paralel (worktree terpisah), 15 Nov |
+| 94 | PM-T4 | Titipan tunai sales dan setoran | PM-T3 | selesai | 38c715f | [PM-T4](../reviews/2026-11-13/hasil/PM-T4.md) | H5: mode tunai sales per PT tetap kas_langsung — PT, batas, tenggat titipan diputuskan pemilik (Menunggu pemilik) |
 | 95 | PM-T5 | Virtual account / QRIS | PM-T3 | tahan |  |  | Titik henti H8 (K-35) |
 | 96 | TX-T1 | Pengaturan pajak bertanggal berlaku dan data pajak pelanggan | PK-40 | selesai | 9707664 | [TX-T1](../reviews/2026-11-13/hasil/TX-T1.md) |  |
-| 97 | TX-T2 | Pemicu faktur pajak dan daur hidupnya | TX-T1, PK-32 | dikerjakan |  |  | Titik henti H5 (bawaan pemicu = pesanan); dikerjakan paralel 15 Nov |
+| 97 | TX-T2 | Pemicu faktur pajak dan daur hidupnya | TX-T1, PK-32 | selesai | 15d3258 | [TX-T2](../reviews/2026-11-13/hasil/TX-T2.md) | H5: pemicu faktur tetap pesanan di semua PT (pertanyaan konsultan pajak di Menunggu pemilik); H3: migrate_tax_invoice_status.py di data nyata |
 | 98 | TX-T3 | Ekspor Coretax, PPh 23, bukti potong | TX-T2 | tahan |  |  | Titik henti H8 (K-08) |
 | 99 | AG-T3 | Asisten: kartu tindakan golongan A dan B | AG-T2, PK-15, PK-18, PK-21 | selesai | 78bbbd9 | [AG-T3](../reviews/2026-11-13/hasil/AG-T3.md) | H5: sakelar per PT ai.tindakan_uang_masuk bawaan mati — dinyalakan pemilik per PT |
 | 100 | AG-T4 | Asisten: paket tutup buku dan ringkasan pagi | AG-T2, PK-18 | selesai | f94f6bc | [AG-T4](../reviews/2026-11-13/hasil/AG-T4.md) |  |
-| 101 | AG-T5 | Asisten: kartu tindakan uang keluar dan jurnal | AG-T3, PK-05, PK-10, PK-12, PK-20, PK-36, KF-T6 | dikerjakan |  |  | Titik henti H5 (sakelar uang keluar tetap mati); dikerjakan paralel 15 Nov |
-| 102 | MN-T2 | Penyatuan layar keuangan | MN-T1, PK-18, PK-24, PK-43, PY-T1 | siap |  |  |  |
+| 101 | AG-T5 | Asisten: kartu tindakan uang keluar dan jurnal | AG-T3, PK-05, PK-10, PK-12, PK-20, PK-36, KF-T6 | selesai | df23cb2 | [AG-T5](../reviews/2026-11-13/hasil/AG-T5.md) | H5: sakelar per PT ai.tindakan_uang_keluar bawaan mati — dinyalakan pemilik per PT |
+| 102 | MN-T2 | Penyatuan layar keuangan | MN-T1, PK-18, PK-24, PK-43, PY-T1 | dikerjakan |  |  | Dikerjakan paralel (worktree terpisah), 15 Nov |
 | 103 | MN-T3 | Satu form pembayaran, kartu pelanggan, kartu pemasok | PK-05, PK-19, PK-43, PM-T3, CR-T5 | menunggu |  |  |  |
 
 ## Menunggu pemilik
@@ -115,6 +115,9 @@ Diisi agen saat sebuah unit masuk `tahan`: satu kalimat pertanyaan, pilihan yang
 
 | Unit | Pertanyaan | Pilihan | Usulan |
 |---|---|---|---|
+| TX-T2 (H5, konsultan pajak) | Sebelum PT memakai pemicu faktur **per surat jalan**: (1) nama, bentuk, penomoran dokumen pajak retur dan kapan wajib (setiap nota kredit ber-PPN? hanya pembeli PKP?); (2) tanggal faktur per surat jalan = tanggal penyerahan atau tanggal terbit; (3) jurnal PPN atas uang muka (akun & arah) sebelum pilihan "Per uang muka" dibuka; (4) koreksi harga cukup dokumen retur atau wajib faktur pengganti; (5) kode transaksi dokumen retur. Semua PT tetap `pesanan` (perilaku lama) | Tetap `pesanan` · aktifkan `surat_jalan` per PT sesudah jawaban | Tetap bawaan sampai butir 1–2 dijawab (`hasil/TX-T2.md`) |
+| PM-T4 (H5) | PT mana yang sales-nya boleh menerima tunai sebagai **titipan** (pengaturan `pembayaran.sales_terima_tunai`), berapa batas titipan per sales dan tenggat setor (hari)? Semua PT tetap `kas_langsung` (perilaku lama). Juga: insentif (KM-T1) kini menghitung titipan seperti uang masuk — boleh, atau hanya sesudah disetor? | `kas_langsung` · `titipan` · `dilarang`; batas; tenggat | `titipan` untuk PT yang sales-nya menagih tunai di lapangan, batas ± Rp 5 jt, tenggat 1–2 hari, dinyalakan per PT sesudah angka dicocokkan manual (`hasil/PM-T4.md`) |
+| PY-T2 / PY-T3 (H3) | Proses gaji reguler yang dihitung dengan kode PY-T2 sebelum PY-T3 tidak memuat lembur dan komisi (regresi, diperbaiki PY-T3 (a)). Di data nyata belum ada (cabang belum dipasang) — bila cabang dipasang bertahap, proses draf dihitung ulang, proses diposting/dibayar butuh susulan | Hitung ulang draf · proses susulan · tidak berlaku | Pasang PY-T2 dan PY-T3 bersamaan (`hasil/PY-T2.md`, `hasil/PY-T3.md`) |
 | PK-46 (H4) | Berkas tarif PPh 21 terverifikasi (`docs/blueprint/data/pph21_terverifikasi.json`: TER A/B/C, kategori per status PTKP, PTKP, pasal 17, biaya jabatan, ≥ 5 titik uji per kategori, sumber + pemverifikasi + tanggal berlaku) sudah ada? Mekanisme selesai (`hasil/PK-46.md`); slip tetap memakai angka lama sampai berkas dimuat | Serahkan berkas · tunda | Serahkan berkas yang disalin dari lampiran peraturan dan diverifikasi orang pajak; agen menjalankan `scripts/muat_pph21_terverifikasi.py --dry-run` + U12–U13 di database tiruan; `--apply` di data nyata menunggu persetujuan (H3) |
 | PK-30 (H4) | Transaksi antar-PT ke pembeli **bukan PKP** yang ber-PPN: PPN masukan pembeli dijurnal sebagai apa? Sementara jurnal tetap seperti lama (Dr 1-1500 PPN Masukan) dan rincian menampilkan tanda peringatan (`tax_warning`) | Tetap PPN masukan · tambah ke nilai persediaan · beban | Putuskan bersama konsultan pajak; perubahan cukup di rencana jurnal `interco_service` (lihat `hasil/PK-30.md` "Menunggu pemilik"). Selisih panjang: roll pendek menurunkan tagihan tanpa membuat ulang sisa pesanan; kenaikan nilai tidak mengulang ambang persetujuan — mengikuti spesifikasi, mohon dikonfirmasi |
 | PK-28 (H4) | Akun **Selisih harga pembelian** (`pembelian.selisih_harga`) per PT belum dipilih — bawaan sengaja kosong (isi pemetaan akun = keputusan pemilik). Akibatnya selisih harga faktur vs PO tetap di GR/IR, kliring GR/IR belum bisa dilakukan, dan kesiapan PT "Pemetaan akun" belum beres di setiap PT | Pilih akun (mis. akun beban/varians pembelian) · tunda | Pemilik/akuntan memilih akun di Pengaturan › Keuangan & Pajak › Pemetaan Akun untuk tiap PT; tidak ada kode yang perlu diubah (`hasil/PK-28.md`) |

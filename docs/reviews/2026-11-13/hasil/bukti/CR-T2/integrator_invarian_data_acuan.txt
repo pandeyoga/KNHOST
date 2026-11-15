@@ -1,0 +1,23 @@
+  [PASS] faktur: belum ada Faktur Pajak (skip — valid, pajak opsional)
+  [PASS] INV-PY-2: master gaji, tunjangan & PT = riwayat yang berlaku 2026-11-15 (0 karyawan aktif)
+  [WARN] INV-PY-2: 23 karyawan aktif belum punya riwayat kompensasi/penugasan (master masih sumbernya)  → scripts/migrate_hr_compensation_py_t2.py (baca-saja dulu; data nyata = keputusan pemilik)
+  [PASS] INV-TTP-01: 0 titipan tunai — sisa belum disetor = jurnal titipan − setoran, per PT
+  [PASS] INV-PAY-01: 4 rencana pembayaran jumlahnya PAS dengan nilai dokumen sumber (termasuk 4 jadwal tagihan per surat jalan)
+  [PASS] INV-PAY-02: alokasi pembayaran pada jadwal tidak pernah melebihi kas yang benar-benar masuk
+  [PASS] INV-PAY-05: semua pesanan berjurnal pendapatan punya jadwal tagihan tersimpan
+  [PASS] INV-PEN-01: dari 0 nota denda, tidak ada draft yang menyentuh buku besar
+  [PASS] INV-PEN-02: 0 keputusan denda semuanya ber-alasan & ber-pemutus (tidak ada denda hilang diam-diam)
+  [PASS] INV-PEN-03: Σ denda terbit belum dibayar == saldo GL 1-1270 (Rp 0)
+  [PASS] INV-BAL-01: 6 saldo tersimpan = hasil hitung ulang penuh dari dokumen
+  [WARN] INV-BAL-01: 0 pasangan pelanggan/PT belum punya saldo tersimpan · 2 saldo basi (dokumen berubah tanpa kait, disegarkan saat dibaca)  [('cust_557e94224f10', 'ent_kanda'), ('cust_bd13b5d94e9a', 'ent_kanda')] → POST /api/ar/balances/rebuild
+  [PASS] INV-BAL-02: Σ piutang terkirim belum lunas = saldo akun piutang (3 PT)
+  [PASS] INV-CASE-01: 0 kasus selesai punya dokumen turunan, alasan berlabel & penyelesai (dari 0 kasus)
+  [PASS] INV-CASE-02: 0 titipan dana berumur > 3 hari semuanya punya kasus terbuka (tidak ada uang terlupakan)
+  [PASS] INV-CASE-03: setiap kasus uang berjurnal seimbang (0 jurnal kasus terbit)
+  [PASS] dashboard: products KPI 282 == /products 282
+  [PASS] dashboard: available KPI 1377595.27 == Σbalances 1377595.27
+  [PASS] dashboard: reserved KPI 711.31 == Σbalances 711.31
+  [PASS] orders: stats total 1 == /sales-orders 1
+  [PASS] dashboard: active_orders KPI 1 == hitung penuh 1
+  PASS 19  |  FAIL 0  |  WARN 2
+  SEMUA INVARIAN VALID.

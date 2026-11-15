@@ -1,0 +1,35 @@
+E       ImportError: cannot import name 'billing_schedule_service' from 'services' (/tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/crt2_lama/backend/services/__init__.py)
+E       ImportError: cannot import name 'billing_schedule_service' from 'services' (/tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/crt2_lama/backend/services/__init__.py)
+E       ImportError: cannot import name 'billing_schedule_service' from 'services' (/tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/crt2_lama/backend/services/__init__.py)
+E       ImportError: cannot import name 'customer_balance_service' from 'services' (/tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/crt2_lama/backend/services/__init__.py)
+E       AssertionError: {"detail":"Not Found"}
+E       ImportError: cannot import name 'billing_schedule_service' from 'services' (/tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/crt2_lama/backend/services/__init__.py)
+E       TypeError: 'NoneType' object is not subscriptable
+E       ImportError: cannot import name 'billing_schedule_service' from 'services' (/tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/crt2_lama/backend/services/__init__.py)
+E       ImportError: cannot import name 'customer_balance_service' from 'services' (/tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/crt2_lama/backend/services/__init__.py)
+E       AssertionError: {"detail": "Not Found"}
+E       ImportError: cannot import name 'billing_schedule_service' from 'services' (/tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/crt2_lama/backend/services/__init__.py)
+E       ImportError: cannot import name 'billing_schedule_service' from 'services' (/tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/crt2_lama/backend/services/__init__.py)
+E       ImportError: cannot import name 'billing_schedule_service' from 'services' (/tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/crt2_lama/backend/services/__init__.py)
+E       ImportError: cannot import name 'billing_schedule_service' from 'services' (/tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/crt2_lama/backend/services/__init__.py)
+E       AssertionError: 
+E       AttributeError: module 'services.payment_plan_service' has no attribute 'get_manual'
+E       ImportError: cannot import name 'billing_schedule_service' from 'services' (/tmp/claude-0/-home-user-KNHOST/eae71b8b-a870-5a6b-a6d8-0d7c84ba5037/scratchpad/crt2_lama/backend/services/__init__.py)
+FAILED tests_mem/test_CRT2_jadwal_saldo.py::test_CRT2_U1_baris_surat_jalan_dari_jurnal
+FAILED tests_mem/test_CRT2_jadwal_saldo.py::test_CRT2_U2_panggil_ulang_tidak_menggandakan
+FAILED tests_mem/test_CRT2_jadwal_saldo.py::test_CRT2_U3_open_lines_sama_dengan_baris_tagihan
+FAILED tests_mem/test_CRT2_jadwal_saldo.py::test_CRT2_U13_inv_bal_02_jurnal_tanpa_pesanan
+FAILED tests_mem/test_CRT2_jadwal_saldo.py::test_CRT2_U4_saldo_pelanggan
+FAILED tests_mem/test_CRT2_jadwal_saldo.py::test_CRT2_U5_surat_jalan_kedua
+FAILED tests_mem/test_CRT2_jadwal_saldo.py::test_CRT2_U6_kwitansi_mengalir_ke_baris
+FAILED tests_mem/test_CRT2_jadwal_saldo.py::test_CRT2_U11_pt_lain_tidak_berubah
+FAILED tests_mem/test_CRT2_jadwal_saldo.py::test_CRT2_U12_inv_bal_01_dan_bangun_ulang
+FAILED tests_mem/test_CRT2_jadwal_saldo.py::test_CRT2_U14_izin_peran_uji_baku
+FAILED tests_mem/test_CRT2_jadwal_saldo.py::test_CRT2_U7_jadwal_dp
+FAILED tests_mem/test_CRT2_jadwal_saldo.py::test_CRT2_U8_rencana_cicilan_menggantikan
+FAILED tests_mem/test_CRT2_jadwal_saldo.py::test_CRT2_U16_pesanan_batal
+FAILED tests_mem/test_CRT2_jadwal_saldo.py::test_CRT2_kait_surat_jalan_gagal_tercatat
+FAILED tests_mem/test_CRT2_jadwal_saldo.py::test_CRT2_inv_pay_01_jadwal_termin
+FAILED tests_mem/test_CRT2_jadwal_saldo.py::test_CRT2_a_pembaca_lama_mengabaikan_jadwal_mesin
+FAILED tests_mem/test_CRT2_jadwal_saldo.py::test_CRT2_skrip_bangun_jadwal
+17 failed, 1 warning in 17.00s

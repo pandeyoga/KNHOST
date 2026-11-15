@@ -1,0 +1,29 @@
+Lingkungan A (MongoDB 7 asli, data acuan sesudah restore_demo), kode 5edef21, 15 Nov 2026
+
+$ pytest tests/test_bp_PYT2_migrasi.py tests/test_bp_PK14_indeks_wajib.py tests/test_p13_audit.py tests/test_p14_history.py --noconftest -n 0
+FAILED tests/test_p13_audit.py::TestCustomerAudit::test_patch_customer_credit_limit
+1 failed, 30 passed, 1 skipped
+  - gagal: PATCH /customers/{id} {"credit_limit": ...} → 404 "Customer tidak ditemukan": plafon tidak lagi lewat PATCH
+    sejak PK-45/CR-T1 (field diabaikan → tidak ada yang diperbarui). Berkas uji di 5f193df juga merah terhadap backend
+    yang sama; tidak terkait PY-T2 (PY-T2 hanya mengubah kelas TestHREmployeeAudit di berkas itu).
+  - dilewati: test_bp_PYT2_migrasi --apply (hanya bila KN_PYT2_TERAPKAN=1).
+  - lulus: U1 migrasi baca-saja di data acuan, U11 dua pengesahan bersamaan → satu baris sah, 31 indeks wajib,
+    test_p13 TestHREmployeeAudit (PATCH base_salary 400 + PII npwp disamarkan), test_p14_history.
+
+$ python scripts/check_required_indexes.py
+31 dari 31 indeks wajib beres.
+
+$ python scripts/verify_data_integrity.py --only hr_comp
+[WARN] INV-PY-2: 23 karyawan aktif belum punya riwayat kompensasi/penugasan (master masih sumbernya)
+PASS 1 | FAIL 0 | WARN 1 — SEMUA INVARIAN VALID.
+
+$ python scripts/migrate_hr_compensation_py_t2.py            (baca-saja)
+PT ent_3bbafe609b0e: 4 karyawan tanpa riwayat · master Rp 20.500.000 · baris dibuat Rp 20.500.000 → SAMA
+PT ent_kanda: 3 karyawan tanpa riwayat · master Rp 15.500.000 · baris dibuat Rp 15.500.000 → SAMA
+PT ent_ksc: 16 karyawan tanpa riwayat · master Rp 96.300.000 · baris dibuat Rp 96.300.000 → SAMA
+Ringkasan: 23 karyawan · 23 tanpa riwayat lengkap (23 tanpa kompensasi, 23 tanpa penugasan) · 0 memakai tanggal dibuat
+Mode baca-saja: tidak ada yang diubah.
+
+$ python scripts/migrate_hr_compensation_py_t2.py --apply    (database UJI lokal saja, untuk uji jalan layar)
+Pratinjau gaji 2026-11 PT ent_ksc: bruto sebelum 96300000.0 · sesudah 96300000.0 → SAMA
+Diterapkan: 23 baris kompensasi · 23 baris penugasan.

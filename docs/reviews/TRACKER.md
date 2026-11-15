@@ -271,21 +271,21 @@ P14-K1 → Bima). Laporan hasil di `docs/uat/2026-10-21/hasil/UAT24-*.md`.
 | CR-03 | Ambang telat dan peringatan ditulis mati di dua berkas | Sedang | KF-T7 | implemented_pending_review | ya — dijalankan (bukti merah U1–U6, U8–U15 di kode lama; lapis A lulus) | `885daca` · `64ecb19` | [KF-T7](2026-11-13/hasil/KF-T7.md) |
 | CR-04 | Izin kredit tanpa masa berlaku, nominal 0 = tak terbatas, tanpa penjaga entitas | Sedang | CR-T3 | open | belum dicek — diisi unit pemegang | — | — |
 | CR-05 | Termin bebas dipilih; pesanan tunai lolos dari kendali kredit dan tahan-kirim | Tinggi | CR-T3 | open | belum dicek — diisi unit pemegang | — | — |
-| CR-06 | Tiga definisi jatuh tempo; rencana cicilan tidak dibaca kendali kredit | Sedang | CR-T2 | open | belum dicek — diisi unit pemegang | — | — |
+| CR-06 | Tiga definisi jatuh tempo; rencana cicilan tidak dibaca kendali kredit | Sedang | CR-T2 | implemented_pending_review | ya — dijalankan (bukti merah 17/17 (a), 8/8 (b) di kode lama; U17 lapis A lulus) | `2d9709e` · `76a337d` | [CR-T2](2026-11-13/hasil/CR-T2.md) |
 | CR-07 | Denda otomatis hanya untuk pesanan ber-rencana; aturan per pelanggan tanpa layar | Sedang | CR-T4 | open | belum dicek — diisi unit pemegang | — | — |
 | CR-08 | Tanpa riwayat plafon, catatan penolakan, rekening koran pelanggan | Sedang | CR-T5 | open | belum dicek — diisi unit pemegang | — | — |
-| CR-09 | Saldo piutang dihitung dari paling banyak 2.000 pesanan | Sedang | CR-T2 | open | belum dicek — diisi unit pemegang | — | — |
+| CR-09 | Saldo piutang dihitung dari paling banyak 2.000 pesanan | Sedang | CR-T2 | implemented_pending_review | ya — dijalankan (bukti merah 17/17 (a), 8/8 (b) di kode lama; U17 lapis A lulus) | `2d9709e` · `76a337d` | [CR-T2](2026-11-13/hasil/CR-T2.md) |
 | PM-01 | Pesanan dan dokumen pelanggan tanpa cara bayar, rekening tujuan, instruksi bayar | Tinggi | PM-T2 | implemented_pending_review | ya — dijalankan (bukti merah U1–U14, U16 di kode lama; lapis A lulus) | `3017c77` · `5097cda` · `73314a8` | [PM-T2](2026-11-13/hasil/PM-T2.md) |
 | PM-02 | Kwitansi tidak mencatat rekening; metode teks bebas | Tinggi | PM-T3 | implemented_pending_review | ya — dijalankan (bukti merah U1–U16 lapis B, jest; U17 lapis A lulus) | `569c86a` · `a2c1e19` | [PM-T3](2026-11-13/hasil/PM-T3.md) |
 | PM-03 | Enam kosakata metode bayar yang berbeda | Sedang | PM-T1 | implemented_pending_review | ya — dijalankan (bukti merah U1–U13 di kode lama; U14 lapis A lulus) | `fd606e5` · `27f0853` | [PM-T1](2026-11-13/hasil/PM-T1.md) |
 | PM-04 | Rekonsiliasi tidak dibatasi rekening yang sama | Sedang | PM-T3 | implemented_pending_review | ya — dijalankan (bukti merah U1–U16 lapis B, jest; U17 lapis A lulus) | `569c86a` · `a2c1e19` | [PM-T3](2026-11-13/hasil/PM-T3.md) |
 | PM-05 | Master rekening tanpa peruntukan dan bawaan; saringan aktif memakai field yang salah | Sedang | PM-T1 | implemented_pending_review | ya — dijalankan (bukti merah U1–U13 di kode lama; U14 lapis A lulus) | `fd606e5` · `27f0853` | [PM-T1](2026-11-13/hasil/PM-T1.md) |
-| PM-06 | Tunai di tangan sales tanpa alur titipan dan setoran | Sedang | PM-T4 | open | belum dicek — diisi unit pemegang | — | — |
+| PM-06 | Tunai di tangan sales tanpa alur titipan dan setoran | Sedang | PM-T4 | implemented_pending_review | ya — dijalankan (bukti merah U1, U4–U15 di kode lama; U16 lapis A lulus) | `38c715f` | [PM-T4](2026-11-13/hasil/PM-T4.md) |
 | TX-01 | Faktur asli tetap terjumlah di rekap PPN setelah diganti: 110.000 menjadi 220.000 | Tinggi | PK-45 | implemented_pending_review | ya — dijalankan (bukti merah 17/20 di kode lama) | `8d952cb` | [PK-45](2026-11-13/hasil/PK-45.md) |
 | TX-02 | Kunci amandemen tidak lepas setelah faktur batal | Sedang | PK-45 | implemented_pending_review | ya — dijalankan (bukti merah 17/20 di kode lama) | `8d952cb` | [PK-45](2026-11-13/hasil/PK-45.md) |
 | TX-03 | Ubah/ganti/batal faktur tanpa penjaga entitas | Tinggi | PK-45 | implemented_pending_review | ya — dijalankan (bukti merah 17/20 di kode lama) | `8d952cb` | [PK-45](2026-11-13/hasil/PK-45.md) |
 | TX-04 | Pesanan non-PPN lewat API tanpa izin khusus | Tinggi | PK-45 | implemented_pending_review | ya — dijalankan (bukti merah 17/20 di kode lama) | `8d952cb` | [PK-45](2026-11-13/hasil/PK-45.md) |
-| TX-05 | Faktur per pesanan dan manual; tidak terikat surat jalan, uang muka, retur | Sedang | TX-T2 | open | belum dicek — diisi unit pemegang | — | — |
+| TX-05 | Faktur per pesanan dan manual; tidak terikat surat jalan, uang muka, retur | Sedang | TX-T2 | implemented_pending_review | ya — dijalankan (bukti merah (a) dan (b) di kode lama; U17 lapis A lulus) | `38b5c9b` · `84744dc` · `15d3258` | [TX-T2](2026-11-13/hasil/TX-T2.md) |
 | TX-06 | Faktor DPP, pembulatan, kode transaksi ditulis mati; tanpa data pajak pelanggan/barang | Sedang | TX-T1 | implemented_pending_review | ya — dijalankan (bukti merah U1–U15 kecuali bagian angka U1/U13 dan U12; lapis A d4 lulus) | `9707664` · `f1b8239` | [TX-T1](2026-11-13/hasil/TX-T1.md) |
 | AG-01 | Konfirmasi gagal kembali ke antre; bisa menggandakan PO | Sedang | AG-T1 | implemented_pending_review | ya — dijalankan (bukti merah U1, U2, U5–U16 di kode lama; lapis A lulus) | `3e1a42c` | [AG-T1](2026-11-13/hasil/AG-T1.md) |
 | AG-02 | Draf tanpa masa berlaku; entitas tidak diperiksa ulang | Sedang | AG-T1 | implemented_pending_review | ya — dijalankan (bukti merah U1, U2, U5–U16 di kode lama; lapis A lulus) | `3e1a42c` | [AG-T1](2026-11-13/hasil/AG-T1.md) |
@@ -301,7 +301,7 @@ P14-K1 → Bima). Laporan hasil di `docs/uat/2026-10-21/hasil/UAT24-*.md`.
 | PY-06 | Mode komisi "mati" tidak dihormati | Sedang | KM-T4 | open | belum dicek — diisi unit pemegang | — | — |
 | PY-07 | Pengaturan lembur tidak berpengaruh | Sedang | PY-T3 | open | belum dicek — diisi unit pemegang | — | — |
 | PY-08 | Lembur dari absensi otomatis disetujui | Sedang | PY-T3 | open | belum dicek — diisi unit pemegang | — | — |
-| PY-09 | Tanpa riwayat gaji dan penugasan PT bertanggal | Sedang | PY-T2 | open | belum dicek — diisi unit pemegang | — | — |
+| PY-09 | Tanpa riwayat gaji dan penugasan PT bertanggal | Sedang | PY-T2 | implemented_pending_review | ya — dijalankan (bukti merah 17/17 di kode lama; lapis A U1/U11 lulus) | `5edef21` · `82ef1bb` | [PY-T2](2026-11-13/hasil/PY-T2.md) |
 | PY-10 | Pratinjau gaji menerima entitas mentah | Sedang | PK-45 | implemented_pending_review | ya — dijalankan (bukti merah 17/20 di kode lama) | `8d952cb` | [PK-45](2026-11-13/hasil/PK-45.md) |
 | PY-11 | Bayar gaji selalu dari satu akun; tanpa daftar transfer | Sedang | PY-T4 | open | belum dicek — diisi unit pemegang | — | — |
 | PY-12 | Tanpa saldo awal pajak tahun berjalan | Sedang | PY-T3 | open | belum dicek — diisi unit pemegang | — | — |
