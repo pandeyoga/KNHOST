@@ -250,3 +250,4 @@ Diisi agen di akhir tiap sesi: tanggal, unit yang selesai, unit yang tertahan da
   tergabung lewat `7371f9d`/`9ed15a9`, `5c4bd26`, CR-T4b, `435b470`/`263ed25`); penghapusan dari sesi ini ditolak GitHub
   (HTTP 403), jadi dihapus pemilik lewat halaman Branches GitHub. Deploy ke VPS tetap oleh pemilik; sebelum
   dipasang di data nyata jalankan dulu skrip migrasi `--apply` yang tercantum di kolom "Titik henti" tabel unit (H3).
+- 15 Nov (akhir): perintah review untuk sesi berikutnya ditulis di `docs/reviews/PERINTAH_REVIEW_2026-11-15.md`.

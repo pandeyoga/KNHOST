@@ -12,6 +12,8 @@
 > `docs/blueprint/INTEGRASI_MAIN_FIX6-10.md`. Pemilik menyetujui 8 keputusannya; `main` sudah dimajukan ke cabang ini
 > (fast-forward). 4 cabang lama boleh dihapus (isinya sudah tergabung) — sesi ditolak GitHub (403), pemilik menghapusnya di
 > halaman Branches. Deploy VPS = pemilik; skrip migrasi `--apply` (H3) di kolom "Titik henti" STATUS.
+> **Review berikutnya:** perintah lengkap untuk sesi review (prompt siap tempel, bacaan wajib, prioritas A–F, cara uji,
+> hambatan lingkungan, keluaran) ada di `docs/reviews/PERINTAH_REVIEW_2026-11-15.md`.
 
 > Diperbarui: **2026-06 (sesi lanjutan ke-8)** — repo kini di
 > `github.com/pandeyoga/KN020926`; lingkungan di-restore dengan `.restore_env.sh`

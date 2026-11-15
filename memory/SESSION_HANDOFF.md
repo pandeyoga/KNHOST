@@ -13,6 +13,8 @@
 > `docs/blueprint/INTEGRASI_MAIN_FIX6-10.md`. Pemilik menyetujui 8 keputusannya; `main` sudah dimajukan ke cabang ini
 > (fast-forward). 4 cabang lama boleh dihapus (isinya sudah tergabung) — sesi ditolak GitHub (403), pemilik menghapusnya di
 > halaman Branches. Deploy VPS = pemilik; skrip migrasi `--apply` (H3) di kolom "Titik henti" STATUS.
+> **Review berikutnya:** perintah lengkap untuk sesi review (prompt siap tempel, bacaan wajib, prioritas A–F, cara uji,
+> hambatan lingkungan, keluaran) ada di `docs/reviews/PERINTAH_REVIEW_2026-11-15.md`.
 
 ## Sesi P18 (2026-10-03) — 18 kasus partial → lulus (59 lulus · 37 partial), 6 bug + 3 fitur ✅
 > **Baca `memory/HANDOFF_P18_2026-10-03.md`** (setup lingkungan baru, packing list permanen aktif, harness p18a..f, sisa 37 partial) — lalu P16 untuk aturan git.
